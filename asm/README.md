@@ -4,14 +4,23 @@ USSE and PDS programs we wrote, in the syntax of `tools/usse-asm` (README there)
 sources assemble with the C or Rust `usse-asm`/`pds-asm`, and `sgx-asm` sources (`.section`)
 put several of them into one image set with their patch records.
 
-| directory | what | used by |
-|-----------|------|---------|
-| `transfer/` | the nine transfer-queue templates; `transfer.s` = all of them for `sgx-asm` | `tools/fwcutter/ours.py`, `tools/fwcutter/asmmap.py` |
-| `tutorial/` | the USSE tutorial's own cases (`doc/specs/usse_tutorial.md`) | `tools/usse-asm/test_tutorial.py` |
+| directory | what |
+|-----------|------|
+| `transfer/` | the nine transfer-queue templates; `transfer.s` = all of them for `sgx-asm` |
+| `tri/` | the first triangle's vertex, state and PTOFF programs |
+| `tutorial/` | the USSE tutorial's own cases (`doc/specs/usse_tutorial.md`) |
+
+Their users:
+
+- `transfer/`: `tools/fwcutter/ours.py`, `tools/fwcutter/asmmap.py`,
+  `userspace/libsgxfive/tools/gen_progs.py`, `tools/gen_tri_progs.py`;
+- `tri/`: `tools/gen_tri_progs.py`;
+- `tutorial/`: `tools/usse-asm/test_tutorial.py`.
 
 Every `.s` here without `.section` is cross-checked between the C and Rust assemblers
-(`crates/sgx-tools/tests/asm_cli.rs`). The programs of the first triangle and the user-space
-library that embeds these sources arrive with the render path unit.
+(`crates/sgx-tools/tests/asm_cli.rs`). After editing, regenerate what embeds them:
+`make -C userspace/libsgxfive gen` (libsgxfive's `src/prog_asm_gen.h` and
+`src/tri_progs_gen.h`).
 
 Transfer-queue templates, `transfer/` (the firmware format, `doc/specs/fw_format.md` §9-§11;
 the transfers they run, `doc/specs/transfer.md` §4):
@@ -24,18 +33,34 @@ the transfers they run, `doc/specs/transfer.md` §4):
 | `use_eor.s` | `USE_EOR` (3) | end of render |
 | `pds_prim.s` | `PDS_PRIM` (4) | kicks the fill shader (`DOUTU`) |
 | `pds_sec.s` | `PDS_SEC` (5) | kicks the USE secondary program |
-| `pds_pixevent.s` | `PDS_PIXEVENT` (6) | dispatches pixel events: PTOFF, end of tile, end of render |
+| `pds_pixevent.s` | `PDS_PIXEVENT` (6) | dispatches pixel events: PTOFF, end of tile, of render |
 | `use_copy.s` | `USE_COPY` (7) | moves the fetched texel `pa0` to `o0` |
-| `pds_prim_1src.s` | `PDS_PRIM_1SRC` (8) | kicks the copy shader, the iterator and the texture fetch |
+| `pds_prim_1src.s` | `PDS_PRIM_1SRC` (8) | kicks the copy shader, iterator and texture fetch |
+
+The first triangle, `tri/`, adds the vertex side and a PTOFF task, and reuses the fill,
+secondary, pixel-event and end-of-tile programs above for its pixels (libsgxfive's
+`src/render.c` places and patches them):
+
+| file | what it does |
+|------|--------------|
+| `pds_vtx.s` | vertex PDS: DMAs one vertex (index × stride) to `pa0`–`pa3`, starts the shader |
+| `use_vtx.s` | vertex shader: copies the position to `o0`–`o3`, `emitvcbvtx`, then `emitmtevtx` |
+| `pds_mte.s` | state PDS: DMAs an MTE state block into the attributes, starts its copy task |
+| `use_mtest18.s` | copies an 18-word state block to the outputs and emits it to the MTE |
+| `use_mtest2.s` | the same for the two-word end-of-scene block |
+| `use_ptoff.s` | the PTOFF task of a 3D render: `ptoff.end` |
 
 The comments explain each instruction from the documented semantics. The programs keep the
 values the driver patches (`doc/specs/fw_format.md` §9.4, §10.4) at 0, as the templates do, so
 that the existing patch records apply unchanged; `use_eot.s` keeps its four `mov`s on `r0`
 for the same reason (the patch adds the register number).
 
-## Why they match the closed templates bit for bit
+The `tri/` programs have no template to match: their check is the hardware render of the
+first triangle from userspace (E023).
 
-Assembled, the nine programs equal the transfer templates in the closed `libsrv_um.so` word
+## Why the transfer programs match the templates bit for bit
+
+Assembled, the nine programs equal the templates fwcutter cuts from `libsrv_um.so` word
 for word (`tools/fwcutter/test_ours.py`, by hash and, with the user's library, byte for
 byte). That identity is the interoperability goal, not a copy of anyone's expression. Each
 program is short (a few to a few dozen instructions) and its form is dictated by the hardware
@@ -50,6 +75,4 @@ hardware behaviour the specifications under `doc/specs/` document), so that our 
 firmware file interoperate with the EDM's transfer interface. The commented `.s` files are
 the preferred form for modification. Being bit-identical lets one loader, one set of patch
 tables (`tools/fwcutter/facts.py`) and one test serve both template origins, and shows the
-programs equal to the templates the closed stack sends to the GPU. Should identity
-ever stop being useful, the programs can be rewritten to be functionally equal without
-being bit-identical.
+programs equal to the templates the driver's own userspace sends to the GPU.

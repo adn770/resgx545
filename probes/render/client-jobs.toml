@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# Jobs from userspace through the render node (sgxfive-test): the device query,
+# chained dummies, fills and copies of the transfer table's rectangles, the first triangle
+# against the CPU reference, many render contexts, the isolation cases, and a faulting
+# render followed by good ones.
+kind = "script"
+name = "render-client-jobs"
+script = "client-jobs.sh"
+baseline = "none"

@@ -7,6 +7,8 @@
 ## edm
 
 - `Q002` (phase 3): is the laptop's SGX core clock 399.0 MHz rather than the DDK's 400 MHz, or do TIMER and the EDM tick run from a reference other than the core clock? (E009)
+- `Q005` (phase 6): should the kernel ask the firmware for its identity on every boot, so DEV_QUERY reports it without the debug option? (E017, E022)
+- `Q006` (phase 6): can a render client's VM do without a writable mapping of the device-wide TA/3D control block? (E023)
 
 ## platform
 

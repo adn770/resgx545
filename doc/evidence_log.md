@@ -115,6 +115,27 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   leaves the EDM unable to power off until a reload and boot.
   *transfer; HW; data: `transfer-isolation`.*
 
+### 2026-11-01
+
+- `E022` Transfer jobs submitted from userspace through the render node complete exactly on the
+  laptop: a chain of eight dummies, fills of a whole 64x32 surface, an inset rectangle, a 300x70
+  rectangle across tiles and one pixel, and copies of three rectangles, three times each, with every
+  pixel as the CPU computes it and no dword of the buffer outside the rectangle changed; on a fresh
+  boot the first job starts the firmware.
+  *transfer; HW; data: `render-client-jobs`.*
+- `E023` A render job submitted from userspace draws the first triangle exactly on the laptop: ten
+  renders, at 64x64, at 128x96, at 64x64 on a context sized for 256x256 targets and at 64x64 after a
+  faulting render, each with every pixel as the CPU reference computes it; one sgxfive-test loop
+  iteration takes about 5 to 6 ms at 64x64, and in one run 32 render contexts took about 4.6 MiB of
+  low memory each.
+  *render; HW; data: `render-client-jobs`.*
+- `E024` A job that faults on the laptop is detected through the BIF fault; the kernel stops and
+  resets the core and boots the firmware again in place, the EDM answering the kick within 152 to
+  684 µs; the faulting job's wait fails 111 ms after its submit, its context is lost, a job queued
+  on another context runs again, later jobs run exactly, and the third fault from a file within a
+  minute bans the file.
+  *transfer; HW; data: `render-client-jobs`.*
+
 ## By unit
 
 ### edm
@@ -129,6 +150,10 @@ Records: E001, E002, E003, E004, E005, E010, E011, E012.
 
 Records: E006, E007, E008.
 
+### render
+
+Records: E023.
+
 ### transfer
 
-Records: E015, E016, E018, E019, E020, E021.
+Records: E015, E016, E018, E019, E020, E021, E022, E024.

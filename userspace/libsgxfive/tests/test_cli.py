@@ -1,0 +1,489 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+"""sgxfive-test against the in-process mock (--mock): every subcommand, its output and exit
+status. Run through `make check`, which builds the binary and sets SGXFIVE_TEST."""
+from __future__ import annotations
+
+import os
+import pathlib
+import re
+import subprocess
+
+import pytest
+
+HERE = pathlib.Path(__file__).resolve().parent
+TOOL = os.environ.get("SGXFIVE_TEST", str(HERE.parent / "build" / "sgxfive-test"))
+
+
+def run(*args: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run([TOOL, *args], capture_output=True, text=True, timeout=30)
+
+
+@pytest.fixture(scope="module", autouse=True)
+def tool_exists():
+    if not pathlib.Path(TOOL).exists():
+        pytest.skip(f"{TOOL} not built (run make -C userspace/libsgxfive check)")
+
+
+def test_usage_without_command():
+    r = run()
+    assert r.returncode == 2
+    assert "usage" in r.stderr
+
+
+def test_unknown_command():
+    r = run("--mock", "frobnicate")
+    assert r.returncode == 2
+    assert run("--mock", "q4").returncode == 2      # the register-access probe is regaccess
+
+
+def test_usage_names_every_command():
+    usage = run().stderr
+    for cmd in ("query", "dummy", "fill", "copy", "isolation", "tri", "contexts", "regaccess",
+                "probe"):
+        assert re.search(rf"\b{cmd}\b", usage), cmd
+    for opt in ("--every-value", "--poke", "--pixels", "--regs", "--low", "--late", "--isp2",
+                "--blk-add", "--vtx-coords", "--obj2"):
+        assert opt in usage, opt
+
+
+def test_query_rev1():
+    r = run("--mock", "query")
+    assert r.returncode == 0, r.stderr
+    out = r.stdout
+    assert re.search(r"^device\s+/dev/dri/renderD128$", out, re.M)
+    assert re.search(r"^core_id\s+0x01150000$", out, re.M)
+    assert re.search(r"^quirks\s+0x1 SAMPLE_CACHE$", out, re.M)
+    assert re.search(r"^max_updates\s+0$", out, re.M)
+    assert re.search(r"^heap GENERAL\s+base 0x3e000000 size 0xb1fff000$", out, re.M)
+    assert re.search(r"^heap KERNEL_CODE\s+base 0x30000000 size 0x0007f000 RESERVED$",
+                     out, re.M)
+    assert re.search(r"^heap USSE_PIXEL\s+base 0x37000000 size 0x00500000 FIXED_WINDOWS$",
+                     out, re.M)
+
+
+def test_query_harness_layout():
+    r = run("--mock=harness", "query")
+    assert r.returncode == 0, r.stderr
+    assert re.search(r"^heap PDS_PIXEL\s+base 0xe4000000 ", r.stdout, re.M)
+    assert re.search(r"^heap TEXTURE\s+absent$", r.stdout, re.M)
+
+
+def test_no_device_found():
+    r = run("--mock=none", "query")
+    assert r.returncode == 1
+    assert "no sgxfive render node" in r.stderr
+
+
+def test_dummy_chain():
+    r = run("--mock", "dummy", "-n", "16")
+    assert r.returncode == 0, r.stderr
+    assert "dummy: 16 jobs ok" in r.stdout
+
+
+@pytest.mark.parametrize("args", [
+    [],
+    ["--width", "32", "--height", "16", "--x", "8", "--y", "4", "--stride", "320"],
+    ["--width", "33", "--height", "16", "--x", "8", "--y", "4", "--stride", "320"],
+    ["--width", "1", "--height", "1", "--x", "5", "--y", "7"],
+])
+@pytest.mark.parametrize("layout", ["rev1", "harness"])
+def test_fill(layout, args):
+    r = run(f"--mock={layout}", "fill", *args)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "fill: ok" in r.stdout
+
+
+def test_fill_rejects_odd_stride():
+    r = run("--mock", "fill", "--stride", "260")
+    assert r.returncode == 1
+    assert "Invalid argument" in r.stderr
+
+
+@pytest.mark.parametrize("args", [
+    [],
+    ["--width", "32", "--height", "16", "--sx", "5", "--sy", "3", "--src-stride", "320",
+     "--dx", "8", "--dy", "4", "--dst-stride", "288"],
+    ["--width", "33", "--height", "16"],
+])
+def test_copy(args):
+    r = run("--mock", "copy", *args)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "copy: ok" in r.stdout
+
+
+def test_isolation():
+    r = run("--mock", "isolation")
+    assert r.returncode == 0, r.stdout + r.stderr
+    checks = re.findall(r"^(PASS|FAIL) (\S+)$", r.stdout, re.M)
+    assert [c for c, _ in checks] == ["PASS"] * 9
+    assert {n for _, n in checks} == {
+        "kernel-heap-unmappable", "same-address-separate-vms", "other-vm-address-faults",
+        "lost-context-cancelled", "other-context-survives", "read-only-faults",
+        "queued-innocent-job-reruns", "fault-recovered-quickly",
+        "faulting-file-banned",
+    }
+
+
+@pytest.mark.parametrize("cmd", ["fill", "copy", "isolation"])
+def test_fake_programs_still_run_on_the_mock(cmd):
+    r = run("--mock", "--programs=fake", cmd)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "programs fake" in r.stdout
+
+
+@pytest.mark.parametrize("cmd", ["fill", "copy"])
+def test_assembled_programs_by_default(cmd):
+    r = run("--mock", cmd)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "programs asm" in r.stdout
+
+
+def test_fake_programs_refused_on_hardware():
+    # Without --mock the tool would use the real backend; the fake program source must
+    # never be sent to the GPU, so it is refused before opening anything.
+    r = run("--device", "/nonexistent", "--programs=fake", "fill")
+    assert r.returncode == 2
+    assert "fake program source" in r.stderr
+
+
+def test_hardware_fill_needs_no_mock():
+    # The assembled programs are real: without --mock, fill goes to the device.
+    r = run("--device", "/nonexistent", "fill")
+    assert r.returncode == 1
+    assert "/nonexistent" in r.stderr and "program" not in r.stderr
+
+
+def test_unknown_program_source():
+    assert run("--mock", "--programs=fw", "fill").returncode == 2
+
+
+def test_regaccess_probe_words_are_their_source():
+    """Each regaccess probe word is usse-asm's encoding of the source in its comment."""
+    import sys
+    sys.path.insert(0, str(HERE.parent.parent.parent / "tools" / "fwcutter"))
+    import ours  # builds usse-asm on demand
+    src = (HERE.parent / "tools" / "sgxfive-test.c").read_text()
+    lines = re.findall(r"0x([0-9A-F]{16})ull,\s*/\* ([^(*]+?)\s*(?:\([^)]*\))? \*/", src)
+    assert len(lines) == 25
+    asm = "\n".join(text for _, text in lines) + "\n"
+    r = subprocess.run([str(ours._tool("usse")), "-o", "/dev/stdout", "-"], input=asm.encode(),
+                       capture_output=True, check=True)
+    words = [int.from_bytes(r.stdout[i:i + 8], "little") for i in range(0, len(r.stdout), 8)]
+    assert words == [int(w, 16) for w, _ in lines]
+
+
+def test_regaccess_runs_on_the_mock():
+    r = run("--mock", "regaccess")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^ldr-core-id: ", r.stdout, re.M)
+    assert re.search(r"^str-use-g0: ", r.stdout, re.M)
+
+
+def test_query_render():
+    r = run("--mock", "query")
+    assert r.returncode == 0, r.stderr
+    assert re.search(r"^job_types\s+0x3$", r.stdout, re.M)
+    assert re.search(r"^render_cmd\s+0x68 pb 0x422 pages max 4096x4096$", r.stdout, re.M)
+    assert re.search(r"^heap PARAMETERS\s+base 0x10000000 size 0x10000000 RESERVED$",
+                     r.stdout, re.M)
+    assert re.search(r"^heap TA_DATA\s+base 0x20000000 size 0x0d000000 RESERVED$",
+                     r.stdout, re.M)
+
+
+@pytest.mark.parametrize("size", [None, ("64", "64"), ("256", "128"), ("128", "32"),
+                                  ("256", "256"), ("100", "60"), ("1024", "768")])
+def test_tri(size):
+    args = ["--mock", "tri", "-n", "2"]
+    if size:
+        args += ["--width", size[0], "--height", size[1]]
+    r = run(*args)
+    assert r.returncode == 0, r.stdout + r.stderr
+    w, h = size or ("64", "64")
+    assert re.search(rf"^tri {w}x{h} #1: \d+ triangle, \d+ background, 0 other; "
+                     r"wrong 0 inside, 0 outside, 0 at edges; \d+ if flipped; guard 0$",
+                     r.stdout, re.M), r.stdout
+    assert "tri: 2 renders ok" in r.stdout
+
+
+def test_tri_default_is_the_first_triangle():
+    r = run("--mock", "tri", "-n", "1")
+    assert r.returncode == 0, r.stdout + r.stderr
+    m = re.search(r"^tri 64x64 #1: (\d+) triangle, (\d+) background", r.stdout, re.M)
+    assert m and int(m.group(1)) + int(m.group(2)) == 4096
+    assert 1000 < int(m.group(1)) < 1100       # 1062 on the hardware
+
+
+def test_tri_rejects_sizes_the_kernel_refuses():
+    r = run("--mock", "tri", "--width", "4098")
+    assert r.returncode == 1
+    assert "Invalid argument" in r.stderr
+
+
+def test_tri_needs_render_heaps():
+    r = run("--mock=harness", "tri")
+    assert r.returncode == 1
+
+
+def test_tri_context_maximum_is_the_target_by_default():
+    r = run("--mock", "tri", "--width", "128", "--height", "32")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "tri: render context for targets up to 128x32" in r.stdout
+
+
+def test_tri_within_a_larger_maximum():
+    r = run("--mock", "tri", "--width", "64", "--height", "64",
+            "--max-width", "1024", "--max-height", "600")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "tri: render context for targets up to 1024x600" in r.stdout
+    assert "tri: 1 renders ok" in r.stdout
+
+
+@pytest.mark.parametrize("args", [
+    ["--width", "128", "--max-width", "64"],        # wider than the context's maximum
+    ["--height", "66", "--max-height", "64"],       # taller
+])
+def test_tri_beyond_the_context_maximum(args):
+    r = run("--mock", "tri", *args)
+    assert r.returncode == 1
+    assert "render: Invalid argument" in r.stderr
+
+
+@pytest.mark.parametrize("args", [["--max-width", "4097"], ["--max-height", "0"]])
+def test_tri_context_maximum_bounds(args):
+    r = run("--mock", "tri", *args)
+    assert r.returncode == 1
+    assert "render context: Invalid argument" in r.stderr
+
+
+def test_tri_scene_overflowing_the_parameter_buffer():
+    # The mock's PB as debugfs render_pb_pages sets the kernel's: 0x62 pages take 1024x768
+    # but not 4096x4096, whose job fails with -ENOSPC; the context is not lost.
+    r = run("--mock", "--mock-pb-pages=0x62", "query")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^render_cmd +0x[0-9a-f]+ pb 0x62 pages", r.stdout, re.M), r.stdout
+    r = run("--mock", "--mock-pb-pages=0x62", "tri", "--width", "1024", "--height", "768")
+    assert r.returncode == 0, r.stdout + r.stderr
+    r = run("--mock", "--mock-pb-pages=0x62", "tri", "--width", "4096", "--height", "4096")
+    assert r.returncode == 1
+    assert ("sgxfive-test: render: scene overflowed the parameter buffer, context kept "
+            "(No space left on device)") in r.stderr, r.stderr
+    assert "tri: FAILED after 0 renders" in r.stdout
+
+
+@pytest.mark.parametrize("args", [["--mock-pb-pages=0x22", "--mock"],
+                                  ["--mock-pb-pages=0x423", "--mock"],
+                                  ["--mock-pb-pages=x", "--mock"],
+                                  ["--mock-pb-pages=0x62"]])     # the mock's only
+def test_mock_pb_pages_bounds(args):
+    r = run(*args, "query")
+    assert r.returncode == 2
+
+
+def test_contexts_reports_memory_per_context():
+    r = run("--mock", "contexts", "-n", "32", "--width", "64", "--height", "64")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^contexts: 32 render contexts for targets up to 64x64: ", r.stdout,
+                     re.M), r.stdout
+    assert "contexts: destroyed" in r.stdout
+
+
+def test_contexts_stops_at_the_vm_limit():
+    r = run("--mock", "contexts", "-n", "33")
+    assert r.returncode == 1
+    assert "render context 33: No space left on device" in r.stderr
+
+
+# ---- probe: run our own assembled programs as the fill shader ---------------------------
+
+def assemble(tmp_path, name: str, source: str) -> pathlib.Path:
+    """Assemble USSE source with tools/usse-asm into tmp_path/name.bin."""
+    import sys
+    sys.path.insert(0, str(HERE.parent.parent.parent / "tools" / "fwcutter"))
+    import ours  # builds usse-asm on demand
+    out = tmp_path / f"{name}.bin"
+    subprocess.run([str(ours._tool("usse")), "-o", str(out), "-"], input=source.encode(),
+                   capture_output=True, check=True)
+    return out
+
+
+PHAS = "phas #0, #0, pixel, end, parallel\n"
+
+
+def test_probe_reports_the_uniform_result(tmp_path):
+    # The mock's interpreter takes the colour from the second instruction's immediate.
+    f = assemble(tmp_path, "colour", PHAS + "mov.skipinv.end o0, #0x12345678\n")
+    r = run("--mock", "probe", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^probe colour: o0 0x12345678 \(2048 of 2048\)$", r.stdout, re.M), r.stdout
+
+
+def test_probe_runs_every_file_in_its_own_fill(tmp_path):
+    a = assemble(tmp_path, "a", PHAS + "mov.skipinv.end o0, #0x0000000A\n")
+    b = assemble(tmp_path, "b", PHAS + "mov.skipinv.end o0, #0x0000000B\n")
+    r = run("--mock", "probe", "--temps", "16", str(a), str(b))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.findall(r"^probe (\w+): o0 (0x\w+) ", r.stdout, re.M) == [
+        ("a", "0x0000000a"), ("b", "0x0000000b")]
+
+
+@pytest.mark.parametrize("k", [0x10, 0x8000, 0xfffc])
+def test_probe_patches_scratch_immediates(tmp_path, k):
+    # An immediate 0x5CAFnnnn is replaced by the 64 KiB scratch buffer's address + nnnn.
+    f = assemble(tmp_path, "scr", PHAS + f"mov.skipinv.end o0, #0x{0x5CAF0000 | k:08X}\n")
+    r = run("--mock", "probe", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    m = re.search(r"^probe scr: scratch at (0x\w+) \(64 KiB\)$", r.stdout, re.M)
+    assert m, r.stdout
+    o0 = re.search(r"^probe scr: o0 (0x\w+) ", r.stdout, re.M)
+    assert int(o0.group(1), 16) == int(m.group(1), 16) + k
+
+
+def pixel_rows(out: str, name: str) -> dict:
+    """--pixels output: {y: [64 values]}."""
+    rows = {}
+    for y, vals in re.findall(rf"^probe {name}: row (\d+): ([0-9a-f ]+)$", out, re.M):
+        rows[int(y)] = [int(v, 16) for v in vals.split()]
+    return rows
+
+
+def test_probe_pixels_prints_every_pixel(tmp_path):
+    f = assemble(tmp_path, "px", PHAS + "mov.skipinv.end o0, #0x12345678\n")
+    r = run("--mock", "probe", "--pixels", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    rows = pixel_rows(r.stdout, "px")
+    assert sorted(rows) == list(range(32)), r.stdout
+    assert all(v == [0x12345678] * 64 for v in rows.values())
+    # the summary line is still there
+    assert re.search(r"^probe px: o0 0x12345678 \(2048 of 2048\)$", r.stdout, re.M)
+
+
+def test_probe_without_pixels_prints_no_rows(tmp_path):
+    f = assemble(tmp_path, "px", PHAS + "mov.skipinv.end o0, #0x12345678\n")
+    r = run("--mock", "probe", str(f))
+    assert not pixel_rows(r.stdout, "px")
+
+
+def test_probe_coords_runs_the_program_as_a_copy_of_the_coordinates(tmp_path):
+    # --coords: the program is the copy shader of a 64x32 copy whose source texel (x, y)
+    # is (y << 16) | x, so pa0 holds the pixel's coordinates (on the mock: the copy shader
+    # itself, the only one its interpreter runs).
+    f = assemble(tmp_path, "xy", PHAS + "mov.skipinv.end o0, pa0\n")
+    r = run("--mock", "probe", "--temps", "8", "--coords", "--pixels", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    rows = pixel_rows(r.stdout, "xy")
+    assert sorted(rows) == list(range(32)), r.stdout
+    for y, vals in rows.items():
+        assert vals == [(y << 16) | x for x in range(64)], y
+    assert re.search(r"^probe xy: o0 mixed ", r.stdout, re.M)
+
+
+def test_probe_coords_reports_other_programs_as_failed_on_the_mock(tmp_path):
+    # The mock knows no other copy shader: a hang, the job fails, as a fill's would.
+    f = assemble(tmp_path, "other", PHAS + "mov.skipinv.end o0, #1\n")
+    r = run("--mock", "probe", "--coords", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^probe other: failed: job faulted", r.stdout, re.M), r.stdout
+
+
+@pytest.mark.parametrize("args", [["--pixels"], ["--coords"], ["--temps", "8", "--coords"]])
+def test_probe_options_need_a_file(args):
+    r = run("--mock", "probe", *args)
+    assert r.returncode == 2
+
+
+@pytest.mark.parametrize("args", [[], ["--temps", "0"], ["--temps", "200"]])
+def test_probe_usage(tmp_path, args):
+    f = assemble(tmp_path, "x", PHAS + "mov.skipinv.end o0, #1\n")
+    r = run("--mock", "probe", *args, *([str(f)] if args else []))
+    assert r.returncode == 2
+
+
+@pytest.mark.parametrize("v", ["0", "0x800", "0x100000", "0x200000", "x"])
+def test_probe_low_takes_a_page_in_the_first_mib(tmp_path, v):
+    # --low ADDR: the scratch buffer mapped again at ADDR, a page of the first MiB but page 0
+    f = assemble(tmp_path, "x", PHAS + "mov.skipinv.end o0, #1\n")
+    r = run("--mock", "probe", "--low", v, str(f))
+    assert r.returncode == 2, r.stdout + r.stderr
+
+
+def test_probe_low_is_refused_without_the_kernels_vm_low(tmp_path):
+    # the mock checks VM_MAP against the heaps, as the kernel does with debugfs vm_low off
+    f = assemble(tmp_path, "lo", PHAS + "mov.skipinv.end o0, #1\n")
+    r = run("--mock", "probe", "--low", "0x10000", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^probe lo: failed: scratch at 0x00010000: Invalid argument$", r.stdout,
+                     re.M), r.stdout
+
+
+@pytest.mark.parametrize("v", ["1:2", "1=2", "16384:0=1", "0:16384=1", "1:2=0x100000000",
+                               "x:2=3", "1:2=3:4", "5:5=1"])
+def test_probe_late_takes_ready_dword_and_value(tmp_path, v):
+    # --late R:K=V: once scratch dword R leaves its fill, the host writes V to dword K
+    f = assemble(tmp_path, "x", PHAS + "mov.skipinv.end o0, #1\n")
+    r = run("--mock", "probe", "--late", v, str(f))
+    assert r.returncode == 2, r.stdout + r.stderr
+
+
+def test_probe_late_writes_the_dword_while_the_job_runs(tmp_path):
+    # the mock's shader never sets the ready dword: the host writes after its wait, says so,
+    # and the readback shows the dword it wrote
+    f = assemble(tmp_path, "lt", PHAS + "mov.skipinv.end o0, #1\n")
+    r = run("--mock", "probe", "--late", "128:64=0x12345678", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^probe lt: late: ready \(scratch \+0x200\) not seen in \d+ us; "
+                     r"scratch \+0x100 = 0x12345678 written$", r.stdout, re.M), r.stdout
+    assert re.search(r"^probe lt: scratch \+0x100 0x12345678$", r.stdout, re.M), r.stdout
+
+
+def test_probe_rejects_a_bad_file(tmp_path):
+    odd = tmp_path / "odd.bin"
+    odd.write_bytes(b"\0" * 12)
+    r = run("--mock", "probe", str(odd))
+    assert r.returncode == 1
+    assert "odd.bin" in r.stderr
+    r = run("--mock", "probe", str(tmp_path / "missing.bin"))
+    assert r.returncode == 1
+
+
+def test_probe_reports_a_surface_left_untouched(tmp_path):
+    # A probe whose job completes without writing a pixel leaves the surface's 0xdeadbeef
+    # sentinel (on the mock: a program colouring with it).
+    f = assemble(tmp_path, "nopix", PHAS + "mov.skipinv.end o0, #0xDEADBEEF\n")
+    r = run("--mock", "probe", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^probe nopix: failed: no pixel written$", r.stdout, re.M), r.stdout
+
+
+def test_probe_reports_a_failed_job(tmp_path):
+    # A probe that faults or hangs is recovered and its job fails, which the wait reports
+    # (on the mock a fill shader that is not a limm mov is an unknown program: a hang that
+    # loses the context, its job's fence failing with -EIO).
+    f = assemble(tmp_path, "hang", PHAS + "nop.end\n")
+    g = assemble(tmp_path, "good", PHAS + "mov.skipinv.end o0, #0x0000000A\n")
+    r = run("--mock", "probe", str(f), str(g))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^probe hang: failed: job faulted, context lost \(Input/output error\)$",
+                     r.stdout, re.M), r.stdout
+    assert re.search(r"^probe hang: scratch unchanged$", r.stdout, re.M), r.stdout
+    # The next probe runs in a context of its own.
+    assert re.search(r"^probe good: o0 0x0000000a ", r.stdout, re.M), r.stdout
+
+
+def test_regaccess_reports_failed_jobs():
+    # On the mock the regaccess programs other than fills are unknown programs, so their jobs
+    # fail and the file is banned after three; each probe says so.
+    r = run("--mock", "regaccess")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^ldr-core-id: job failed: job faulted, context lost "
+                     r"\(Input/output error\)$", r.stdout, re.M), r.stdout
+    assert re.search(r"^kick-code-base-15: failed: Operation canceled$", r.stdout, re.M), \
+        r.stdout
+
+
+def test_tri_reports_a_failed_render():
+    # --fault unmaps the scene's stream page before the render: the job faults and the
+    # wait reports it.
+    r = run("--mock", "tri", "--fault")
+    assert r.returncode == 1, r.stdout + r.stderr
+    assert "sgxfive-test: render: job faulted, context lost (Input/output error)" in r.stderr

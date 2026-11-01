@@ -1,0 +1,9 @@
+title = "script table render/client-jobs"
+repo = "data"
+paths = ["render/client-jobs/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 3
+size = 16308
+sha256 = "489ee65a0cf3ecf29587255d5ebe4b359a588632a20b28cb052bddde10538cbc"
+recipe = "probes/render/client-jobs.toml"

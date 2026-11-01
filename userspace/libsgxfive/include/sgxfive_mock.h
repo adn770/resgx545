@@ -1,0 +1,50 @@
+/* SPDX-License-Identifier: MIT */
+/*
+ * An in-process mock of the sgxfive render node, behind struct
+ * sgxfive_backend: render-node discovery, DEV_QUERY, GEM BOs with mmap, VM
+ * contexts with per-mapping permissions, transfer and render contexts, DRM
+ * syncobjs and SUBMIT_JOBS with the kernel's validation rules (those
+ * include/uapi/sgxfive_drm.h states). Render jobs run on a small interpreter of our triangle scenes (VDM
+ * state and index lists, vertex PDS, fill colours, the EOT's PBE state). Transfers run
+ * synchronously on a tiny interpreter that follows the job's own pointers
+ * through its VM (pixel-event PDS -> EOT -> PBE state, background object ->
+ * PDS primary -> shader and texture words) and writes the pixels, so a job
+ * that placed something wrong produces wrong pixels or a GPU fault. A fault
+ * writes nothing and loses the context, as on hardware with recovery. A
+ * render whose scene overflows its context's parameter buffer (a model of
+ * the pages it needs, see mock.c) fails with -ENOSPC and keeps its context.
+ */
+#ifndef SGXFIVE_MOCK_H
+#define SGXFIVE_MOCK_H
+
+#include "sgxfive.h"
+
+enum sgxfive_mock_layout {
+	SGXFIVE_MOCK_LAYOUT_REV1 = 0,	/* our silicon: host bridge rev 3 */
+	SGXFIVE_MOCK_LAYOUT_HARNESS,	/* the kernel's debugfs test addresses */
+};
+
+struct sgxfive_mock_config {
+	enum sgxfive_mock_layout layout;
+	const char *other_driver;	/* if set, renderD128 is this driver, sgxfive 129 */
+	bool no_sgxfive;		/* no sgxfive node at all */
+	const char *sgxfive_name;	/* driver name of the sgxfive node; NULL: "sgxfive" */
+	uint32_t render_pb_pages;	/* render contexts' PB, 0x23-0x422; 0: 0x422 */
+};
+
+struct sgxfive_mock_stats {
+	uint32_t bos, vms, ctxs, syncobjs;	/* live objects */
+	uint32_t sync_files;			/* open sync_file fds */
+	uint32_t mappings;
+	uint32_t jobs_run, dummies_run, renders_run, faults;
+	uint64_t last_fault_addr;
+};
+
+struct sgxfive_mock;
+
+struct sgxfive_mock *sgxfive_mock_create(const struct sgxfive_mock_config *cfg);
+void sgxfive_mock_destroy(struct sgxfive_mock *m);
+const struct sgxfive_backend *sgxfive_mock_backend(struct sgxfive_mock *m);
+void sgxfive_mock_get_stats(const struct sgxfive_mock *m, struct sgxfive_mock_stats *s);
+
+#endif
