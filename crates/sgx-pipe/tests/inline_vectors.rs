@@ -57,9 +57,7 @@ fn ta_object_vectors_compare_the_layout_and_predict_the_recorded_failures() {
 
 #[test]
 fn the_other_planned_kinds_refuse_naming_their_questions() {
-    for (task, q) in
-        [("zls-load", "Q107"), ("pbe-emit", "Q012"), ("vdm-stream", "Q047"), ("bif-walk", "Q076")]
-    {
+    for (task, q) in [("pbe-emit", "Q012"), ("vdm-stream", "Q047"), ("bif-walk", "Q076")] {
         let v = format!(r#"{{"id": "x", "init": {{"task": "{task}"}}, "expect": {{"refuse": ["{q}"]}}}}"#);
         assert!(matches!(verdict(&v), Verdict::Unsupported(_)), "{task}: all its questions must be listed");
     }
@@ -68,6 +66,8 @@ fn the_other_planned_kinds_refuse_naming_their_questions() {
                   "expect": {"refuse": ["Q012", "Q040", "Q044", "Q046", "Q074", "Q054", "Q183"]}}"#;
     assert!(matches!(verdict(all), Verdict::Refused(_)));
     assert!(replay(&parse(r#"{"id": "x", "init": {"task": "no-such-kind"}}"#), &ctx()).is_err());
+    // zls-load models the load (12.4): a vector without a control word is malformed, not refused
+    assert!(replay(&parse(r#"{"id": "x", "init": {"task": "zls-load"}}"#), &ctx()).is_err());
 }
 
 #[test]

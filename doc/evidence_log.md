@@ -4564,6 +4564,71 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   against a CPU reference with a one-pixel undecided band around every edge, the hash is an exact
   image.
   *isp; HW; data: `render-target-sizes`, `render-client-jobs`, `dpm-parameter-buffer`.*
+- `E663` A model of the ZLS store written for the pipeline simulator (sgx-pipe zls.rs store,
+  encode_depth) rebuilds the 22 depth dumps of E490's store-format run (11 buffers of 1024 x 768 at
+  G = 33, a ramp across x and one across y each) dword for dword where a record decodes the format:
+  the float (format 0, within E490's 1e-5 of the geometry's depth: 1572864 dwords), the 24-bit
+  integer round(z * 0xffffff) (1572864), the 16-bit integer round(z * 0xffffff) >> 8 packed two rows
+  to a dword in 256-dword tiles with the dword index x0 y1 x1 y2 x2 y3 x3 x4 and the half y0
+  (786432) and bit 19 on each of the three (1572864 + 1572864 + 786432), the integer ones over the
+  float that the format-0 run stored at the same pixel, 7864320 dwords in 6 vectors, 0 dwords
+  different and 0 left the fill that the model did not store; formats 4 and 7 without a stencil
+  buffer (stated in the vector) store nothing (E490's 0 dwords: 2 vectors that compare no item, so
+  the report counts them empty, not matched); formats 3, 5 and 6 are refused by question (Q120: 3
+  vectors, 965120 + 965120, 96580 + 84480 and 86084 + 73760 dwords not modelled); every one of the 6
+  stores rests on E465's fitted address rule, and the integer ones on the value rules E466 states as
+  fitted, so all 6 are reported fitted and none matched; the model refuses what no run measured, by
+  input alone: a 16-bit store at a pitch other than G = 33, overlapping tiles (a pitch under the
+  tiles of a row), and an integer format over any depth but the ramp's 0.25 to 0.4166 and 1.0
+  (Q242), a target with edge tiles or an odd height (Q122), bit 19 with an integer format over any
+  depth but the ramp's (Q101), bit 0 with any control but 0x0017100c (Q244).
+  *zls; HW, infer; data: `zls-store-format-dumps`, `unit-vectors-12-4`.*
+- `E664` A model of the ZLS load and the pass over it (sgx-pipe zls.rs pass, load_word, Ctl)
+  reproduces the 30 cases of E467's load run (a flat triangle at z 0.5 over the whole 256 x 128
+  target, G = 33, depth test never or less) with 0 differences in 983040 counted stored dwords
+  (counts, not dwords: no stored dump exists for this run, so what was compared is the run's class
+  counts and value histograms; 8 x (32768 depth + 8192 stencil) in the ten controls' copy cases, 12
+  x 32768 in the less cases and 8 x 32768 in the sign cases), as 30 vectors of the kind zls-load:
+  with bit 1 and bit 14 the pass starts from the loaded depth with its sign bit cleared (0xbe800000
+  stored as 0x3e800000, 0xdeadbeef as 0x5eadbeef, 0xffffffff as 0x7fffffff, 0x80000000 as 0),
+  without them from the clear value 1.0 (every control without both bits stores 1.0 at 32768
+  dwords); the depth test less against a depth loaded 0.25f and 0.75f by bit K of the dword index (K
+  = 0, 3, 9) draws 16384 of 32768 pixels and stores 0.25f at 16384 and 0.5 at 16384, and against the
+  clear value draws 32768; bit 13 with bit 1 copies each stencil dword of the load buffer to the
+  same index of the store, per 128-dword tile slot (8191 loaded dwords and the dword 0 that is 0
+  either way), without them the stencil store holds 0; the load-only controls store nothing; the
+  counts are the same under any bijection of the dword indices, so the vectors do not test the
+  address rule (the unit tests now pin the depth address to the store rule and the stencil slot to
+  128 * (ty * (G + 1) + tx), the stencil slot resting on the identity copy alone, Q121); every
+  vector goes through E465's fitted address rule (the load is read at the address the store writes),
+  so all 30 are reported fitted and none matched; refused by input alone: a compare closer than 3
+  units of 2^-23 (Q200, 12.3's rule), a compare against a loaded NaN or infinity and an integer
+  format (Q243), a target with edge tiles (Q122), overlapping tiles and a triangle depth other than
+  0.5 and the ramp's 0.25 to 0.4166 (Q242), bit 19 with a load (Q101), bit 0 (Q244).
+  *zls; HW, infer; data: `zls-load-copy`, `unit-vectors-12-4`.*
+- `E665` The fields of CR_ISP_ZLSCTL that the records read (the pitch G in bits 11:3, bit 1 the load
+  with bit 14 loading the depth and bit 13 the stencil, bit 2 with bit 18 the depth store and with
+  bit 17 the stencil store, bit 19 the negation, bits 26:24 the depth format, bit 0 the colour image
+  off) decode, in 47 vectors of the kind zls-ctl, as the records state them, with 0 differences: 15
+  matched (bit readings that use no address, pitch or format and no inferred load: bit 2 cleared,
+  the five values the closed driver writes, nine of E467's ten controls), 23 fitted and 9 refused;
+  the 32 single-bit flips of E411's 0x0017100c (bits 1, 12 to 16, 20 to 23 and 27 to 31 change no
+  field, bit 2 clears both stores, bits 3 and 4 change G, 17 and 18 clear the stencil's and the
+  depth's store, 19 negates, 24 selects the format 1) compare the pages of the 16-page scratch
+  buffer that each flip stored in both runs of E411 (page 4 and 5 for the stencil, 12 to 15 for the
+  depth) with the dwords the model's store writes (sums of 640 to 5120 dwords a flip, 0 pages
+  different), so every flip that stores anything is fitted through E465's address rule, and a flip's
+  pitch, a format or a load by bit 1 alone ([infer]: E411 part B saw no effect of bit 1 alone) makes
+  a vector fitted as well; bit 0 stores what the control stores (the same pages in both runs: page 4
+  and pages 12 to 15, 5120 dwords, the same first values) and writes no colour pixel (4096 of 4096
+  pixels keep the sentinel), modelled for that one control, 0x0017100d, and refused (Q244) for any
+  other control with bit 0 set, which nothing ran; the refused nine are the seven flips of bits 5 to
+  11, whose jobs faulted (the pitch running out of the scratch buffer, [infer]: Q242, refused in
+  that arrangement and nowhere else), bit 25 (the 16-bit format at G = 1: its layout was derived at
+  G = 33, Q242) and bit 26 (format 4, Q120); the bits set in no value and flipped in no run (bits 15
+  and 21 to 23 set together with others, any combination of the ignored bits) are not claimed, only
+  the single flips.
+  *zls; CAP, HW, infer; data: `zls-control-bits`, `unit-vectors-12-4`.*
 - `E680` Over 590 random triangles with vertices on the 1/256 pixel grid (small, medium, large -9%
   to +124% of the target except at 4096 x 4096 where no x is negative, vertices at pixel centres, 75
   quads cut into two triangles) on 10 targets that E606 did not run or only partly ran (96 x 64, 130
@@ -4902,4 +4967,4 @@ E413, E414, E427, E440, E545, E546, E700, E701, E702, E703.
 ### zls
 
 Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467, E489, E490, E615, E628, E629,
-E730.
+E663, E664, E665, E730.

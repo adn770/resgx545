@@ -230,7 +230,9 @@ VECTORS` replays a set that is not landed yet.
 | `te-region` | ta | size, the primitives' pixel vertices | tiles listed, counts | built |
 | `ta-object` | ta | N, the size word, the format word | stored, masks, outcome | built |
 | `isp-tile` | isp | MSAA mode, CR_TE_AA, two position dumps | counts | built |
-| `zls-load` | zls | buffer, control | depth and stencil per pixel | stub |
+| `zls-format` | zls | size, control, stencil, two depth dumps or ramps | dwords stored | built (12.4) |
+| `zls-load` | zls | size, control, test, depth, load patterns | depth and stencil stored, drawn | built (12.4) |
+| `zls-ctl` | zls | a control word, optionally the E411 scratch arrangement | fields, pages | built (12.4) |
 | `pbe-emit` | pbe | sideband, reg 0400, colours | value stored each | built |
 | `vdm-stream` | vdm | the stream words | tasks, state, hang or cull | stub |
 | `bif-walk` | bif | directories, lists, banks, an access | address or fault fields | stub |
@@ -310,6 +312,45 @@ triangle: modes 0 to 3 (ARGB8888, ABGR8888, BGRA8888, RGB565) store the values t
 (matched), and the other 60 refuse by question (`Q012` for modes 22 and 34, `Q044` for the rest;
 the vector keeps the recorded `mixed` counts). Ten more are mode 0 over the ten colours of
 `pbe/pack-colours` (the colour stored unchanged). Measured rules: no vector is fitted.
+
+**The sixth to eighth, built in 12.4** (`tools/usse-asm/zls_vectors.py`, offline, no new run; 88
+vectors in `unit-vectors/zls-store-format/`, `unit-vectors/zls-load/` and `unit-vectors/zls-ctl/`,
+directories of their own so that the digest of the 12.0 dataset, which holds `unit-vectors/zls/`,
+does not change; dataset `datasets/unit-vectors-12-4.toml`). The expectations are the records'
+own numbers (the dump counts of E490, the lines of E467's output, the per-page counts of the
+control-bit runs, the bit tables of E337 and E411), made by the script; a field of a flipped
+control word comes from the bit arithmetic of the records' reading, so it is a reading and not a
+measurement. A key of `expect` that the kind does not read is a mismatch (a misspelled key would
+otherwise compare nothing and pass). A vector that matched but compared no item is counted
+`empty`, not matched.
+
+- `zls-format` (E466, E490), 11 vectors, one per buffer of the format runs. `init`: `w`, `h`,
+  `ctl` (the control word), `stencil` (a stencil buffer was bound), `x` and `y` (the dumps of the
+  x and y ramp: path, sha256, `g`) and `depth_x` and `depth_y` (`{"ramp": size}`, the geometry's
+  depth 0.25 + 0.5 (p + 0.5) / (3 size) along the axis, compared within E490's 1e-5, or a dump of
+  the sibling float-format run whose float is the depth the tile pass left). `expect.stored`: the
+  dwords that left the 0xdeadbeef fill. The float, the 24-bit and the 16-bit stores answer at
+  E465's address rule (the 16-bit one at G = 33, two rows to a dword), the integer formats only
+  over the ramp's 0.25 to 0.4166 and at 1.0, where the fitted rounding and its fourth candidate
+  agree (Q242): 6 fitted, 2 empty (formats 4 and 7 store nothing without a stencil buffer) and 3
+  refused (formats 3, 5 and 6, Q120).
+- `zls-load` (E467), 30 vectors, one per case. `init`: `w`, `h`, `ctl`, `test` (`never` or
+  `less`), `z` and `clear` (the triangle's depth and the clear, as float bits), `depth_fill` and
+  `stencil_fill` (the load buffers' pattern, `index` by default). `expect`: `depth` and `stencil`
+  (`stored` and the dwords by `classes` of E467's script or by `values`) and `drawn` (pixels the
+  triangle drew). The loaded depth loses its sign bit, feeds the depth test, and the stencil is
+  copied by dword. 30 fitted (983040 counted dwords: no stored dump exists, so the vectors test
+  the counts and not the address rule).
+- `zls-ctl` (E337, E411, E467), 47 vectors: the fields of one control word, each compared with
+  the reading when the vector gives it (`expect.g`, `fmt`, `load`, `load_depth`, `load_stencil`,
+  `store_depth`, `store_stencil`, `negate`, `writes_pixels`), and with `init.arrangement =
+  "e411-scratch"` the pages of the 16-page scratch buffer E411 stored (`expect.pages`, a 64 x 64
+  target with the stencil buffer). What a field rests on decides the outcome (D6): the pitch
+  (E465), the format (E466), a load by bit 1 alone ([infer], E411 part B saw no effect) and every
+  stored page make the vector fitted, and one that compares only the store enables, the negation,
+  the loads by bits 13 and 14 and whether the image is written stays matched. 15 matched, 23
+  fitted, 9 refused (bits 5 to 11, which faulted the job, and bit 25: Q242; bit 26: Q120). Bit 0 is
+  the colour image off and stores the control's pages, modelled for 0x0017100d only (Q244).
 
 ## 6. Scene vectors
 

@@ -95,6 +95,8 @@ pub struct Counts {
     pub refused_vectors: u64,
     pub unsupported: u64,
     pub mismatch: u64,
+    /// matched vectors that compared no item: counted here, never as matched
+    pub empty: u64,
 }
 
 impl Counts {
@@ -126,6 +128,7 @@ impl Counts {
             + self.fitted
             + self.unsupported
             + self.mismatch
+            + self.empty
             + self.refused_vectors
     }
 }

@@ -25,7 +25,18 @@ pub struct Report {
 
 impl Report {
     pub fn add(&mut self, r: &Replayed) {
-        self.units.entry(r.unit.clone()).or_default().add(&r.verdict);
+        let c = self.units.entry(r.unit.clone()).or_default();
+        // a vector that matched with no item compared (a store that wrote nothing, an expectation
+        // that names nothing the model checks) is not a match: it is counted empty
+        if r.verdict == Verdict::Matched
+            && r.seen.matched == 0
+            && r.seen.weak == 0
+            && r.seen.refused.is_empty()
+        {
+            c.empty += 1;
+        } else {
+            c.add(&r.verdict);
+        }
         *self.items_weak.entry(r.unit.clone()).or_default() += r.seen.weak;
         let col = if r.verdict == Verdict::Fitted { &mut self.items_fitted } else { &mut self.items_matched };
         *col.entry(r.unit.clone()).or_default() += r.seen.matched;
@@ -65,6 +76,9 @@ impl Report {
                 c.mismatch,
                 refused.join(",")
             );
+            if c.empty > 0 {
+                s += &format!("      empty, not compared {}\n", c.empty);
+            }
             if let Some(n) = self.items_weak.get(u).filter(|n| **n > 0) {
                 s += &format!("      of which by presence only {n}\n");
             }
@@ -113,7 +127,9 @@ mod tests {
         let mut r = Report::default();
         r.add(&rep("zls", Verdict::Fitted));
         r.add(&rep("zls", Verdict::Fitted));
-        r.add(&rep("ta", Verdict::Matched));
+        let mut m = rep("ta", Verdict::Matched);
+        m.seen.matched = 2; // a matched vector compared items (none: counted empty, below)
+        r.add(&m);
         r.add(&rep("ta", Verdict::PredictedHang));
         r.add(&rep("ta", Verdict::Refused(vec!["Q165".into()])));
         assert_eq!((r.units["zls"].matched, r.units["zls"].fitted), (0, 2));
@@ -136,6 +152,23 @@ mod tests {
         assert_eq!(r.items_fitted["zls"], 100);
         let t = r.render();
         assert!(t.contains("items matched 7") && t.contains("items fitted 100"), "{t}");
+    }
+
+    #[test]
+    fn a_matched_vector_that_compared_no_item_is_counted_empty_never_matched() {
+        let mut r = Report::default();
+        r.add(&rep("zls", Verdict::Matched));
+        let mut m = rep("zls", Verdict::Matched);
+        m.seen.matched = 3;
+        r.add(&m);
+        let c = &r.units["zls"];
+        assert_eq!((c.matched, c.empty, c.total()), (1, 1, 2));
+        assert_eq!(r.items_matched["zls"], 3);
+        let t = r.render();
+        assert!(t.contains("empty, not compared 1"), "{t}");
+        // a refused vector or a predicted hang compares no item and is not empty
+        r.add(&rep("ta", Verdict::PredictedHang));
+        assert_eq!((r.units["ta"].hang, r.units["ta"].empty), (1, 0));
     }
 
     #[test]

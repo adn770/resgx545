@@ -161,7 +161,9 @@ pub fn model(task: &str, v: &Json, ctx: &Ctx) -> Result<Modelled, String> {
         "te-region" => kind_te_region(v),
         "ta-object" => Ok(kind_ta_object(v)),
         "isp-tile" => kind_isp_tile(v, ctx),
-        "zls-load" => Ok(Modelled::refusing(zls::refuse())),
+        "zls-load" => kind_zls_load(v),
+        "zls-format" => kind_zls_format(v, ctx),
+        "zls-ctl" => Ok(kind_zls_ctl(v)),
         "pbe-emit" => Ok(kind_pbe_emit(v)),
         "vdm-stream" => Ok(Modelled::refusing(vdm::refuse())),
         "bif-walk" => Ok(Modelled::refusing(bif::refuse())),
@@ -212,6 +214,328 @@ fn kind_zls_store(v: &Json, ctx: &Ctx) -> Result<Modelled, String> {
         bad("the pixel-to-address walk differs");
     }
     Ok(Modelled { outcome: zls::STORE_STATUS.outcome(), seen })
+}
+
+/// The rule status of a store through `ctl`: the address rule of E465 always (nothing is written
+/// without it), the integer formats' value rule of E466 with them; a store that writes nothing
+/// uses neither.
+fn store_outcome(c: &zls::Ctl, wrote: bool) -> Outcome {
+    match (wrote, c.format_code()) {
+        (false, _) => Outcome::Ok,
+        (true, 1 | 2) => Outcome::Fitted { record: "E465, E466".into() },
+        (true, _) => zls::STORE_STATUS.outcome(),
+    }
+}
+
+/// zls-format (E466, E490, 12.4): the depth buffers of the format runs, rebuilt from the control
+/// word and the depth the tile pass left. `init.depth_x` and `depth_y` are `{"ramp": size}` (the
+/// geometry's depth 0.25 + 0.5 (p + 0.5) / (3 size) along the ramp's axis, compared within E490's
+/// 1e-5) or a dump of the same target `{path, sha256, g}` whose float is the depth the pass left
+/// (the sibling run of the float format: a measured input, not an output of this model).
+fn kind_zls_format(v: &Json, ctx: &Ctx) -> Result<Modelled, String> {
+    let i = v.get("init");
+    if let Some(m) = unknown_keys(v.get("expect"), &["stored"]) {
+        return Ok(m);
+    }
+    let (w, h) = (u(i.get("w")), u(i.get("h")));
+    let word = i.get("ctl").hex().ok_or("no ctl")? as u32;
+    let stencil = matches!(i.get("stencil"), Json::Bool(true));
+    let c = match zls::Ctl::decode(word) {
+        Ok(c) => c,
+        Err(o) => return Ok(Modelled::refusing(o)),
+    };
+    let mut seen = Seen::default();
+    let (mut stored_total, mut wrote) = (0u64, false);
+    for (axis, dumpkey, depthkey) in [(0, "x", "depth_x"), (1, "y", "depth_y")] {
+        let dump = crate::data::dwords(&file(ctx, i.get(dumpkey))?);
+        let d = i.get(depthkey);
+        let reference = match d.get("path").str() {
+            Some(_) => Some((crate::data::dwords(&file(ctx, d)?), u(d.get("g")))),
+            None => None,
+        };
+        let size = if axis == 0 { w } else { h };
+        let ramp_size = d.get("ramp").num().unwrap_or(size as f64) as f32;
+        let depth = |x: u32, y: u32| -> f32 {
+            match &reference {
+                Some((r, g)) => {
+                    f32::from_bits(r.get(zls::store_dword(x, y, *g) as usize).copied().unwrap_or(0))
+                }
+                None => 0.25 + 0.5 * (if axis == 0 { x } else { y } as f32 + 0.5) / (3.0 * ramp_size),
+            }
+        };
+        let st = match zls::store(&c, w, h, stencil, &depth) {
+            Ok(s) => s,
+            Err(o) => return Ok(Modelled::refusing(o)),
+        };
+        wrote |= !st.words.is_empty();
+        stored_total += dump.iter().filter(|&&x| x != zls::FILL).count() as u64;
+        let geometry = reference.is_none();
+        if geometry && c.format_code() != 0 {
+            return Err("a geometric depth is only checked for the float format".into());
+        }
+        for (&a, &want) in &st.words {
+            let got = dump.get(a as usize).copied().unwrap_or(zls::FILL);
+            let same = if geometry {
+                (f32::from_bits(got) - f32::from_bits(want)).abs() <= 1e-5
+            } else {
+                got == want
+            };
+            if same {
+                seen.matched += 1;
+            } else {
+                seen.mismatched += 1;
+                if seen.notes.len() < 3 {
+                    seen.notes.push(format!("dword {a}: stored {got:#x}, model {want:#x}"));
+                }
+            }
+        }
+        let un = zls::unexplained(&dump, &st);
+        if un > 0 {
+            seen.mismatched += un;
+            seen.notes.push(format!("{un} dwords left the fill that the model did not store"));
+        }
+    }
+    if let Some(n) = v.get("expect").get("stored").num()
+        && n as u64 != stored_total
+    {
+        seen.mismatched += 1;
+        seen.notes.push(format!("dwords stored {stored_total}, the vector has {}", n as u64));
+    }
+    Ok(Modelled { outcome: store_outcome(&c, wrote), seen })
+}
+
+/// The fill of a load buffer: the dword's index, 0.25f or 0.75f by bit K of it, or one value.
+fn fill_of(spec: &str) -> Result<Box<dyn Fn(u32) -> u32>, String> {
+    if spec == "index" {
+        Ok(Box::new(|i| i))
+    } else if let Some(k) = spec.strip_prefix("bit:") {
+        let k: u32 = k.parse().map_err(|_| format!("fill {spec}"))?;
+        Ok(Box::new(move |i| if i >> k & 1 == 0 { 0.25f32.to_bits() } else { 0.75f32.to_bits() }))
+    } else {
+        let n = u32::from_str_radix(spec.trim_start_matches("0x"), 16).map_err(|_| format!("fill {spec}"))?;
+        Ok(Box::new(move |_| n))
+    }
+}
+
+/// The classes of E467's reduction script over the dwords a store changed.
+fn classes(words: &std::collections::BTreeMap<u32, u32>, indexed: bool) -> BTreeMap<String, u64> {
+    let mut c = BTreeMap::new();
+    for (&i, &v) in words {
+        let k = if v == 0 {
+            "zero"
+        } else if indexed && v == i {
+            "loaded"
+        } else if v == 0x3f80_0000 {
+            "clear"
+        } else {
+            "other"
+        };
+        *c.entry(k.to_string()).or_default() += 1;
+    }
+    c
+}
+
+fn counts_of(j: &Json) -> BTreeMap<String, u64> {
+    j.obj().iter().map(|(k, n)| (k.clone(), n.num().unwrap_or(0.0) as u64)).collect()
+}
+
+/// zls-load (E467, 12.4): a flat triangle over a whole target, depth test never or less, with
+/// load buffers of a pattern: what the depth and stencil stores hold (counted by the classes of
+/// E467's script, or by value) and how many pixels the triangle drew.
+fn kind_zls_load(v: &Json) -> Result<Modelled, String> {
+    let (i, e) = (v.get("init"), v.get("expect"));
+    if let Some(m) = unknown_keys(e, &["depth", "stencil", "drawn"]) {
+        return Ok(m);
+    }
+    let (w, h) = (u(i.get("w")), u(i.get("h")));
+    let c = match zls::Ctl::decode(i.get("ctl").hex().ok_or("no ctl")? as u32) {
+        Ok(c) => c,
+        Err(o) => return Ok(Modelled::refusing(o)),
+    };
+    let test = match i.get("test").str() {
+        Some("never") => zls::Test::Never,
+        Some("less") => zls::Test::Less,
+        t => return Err(format!("test {t:?}")),
+    };
+    let z = f32::from_bits(i.get("z").hex().ok_or("no z")? as u32);
+    let clear = f32::from_bits(i.get("clear").hex().ok_or("no clear")? as u32);
+    let (dfill, sfill) =
+        (i.get("depth_fill").str().unwrap_or("index"), i.get("stencil_fill").str().unwrap_or("index"));
+    let (df, sf) = (fill_of(dfill)?, fill_of(sfill)?);
+    let p = match zls::pass(&c, w, h, clear, z, test, &|_, _| true, &*df, &*sf) {
+        Ok(p) => p,
+        Err(o) => return Ok(Modelled::refusing(o)),
+    };
+    let mut seen = Seen::default();
+    let mut check = |what: &str, got: BTreeMap<String, u64>, want: &Json, n: usize| {
+        if want.obj().is_empty() && want.num().is_none() {
+            return;
+        }
+        let by = if want.get("classes").obj().is_empty() { want.get("values") } else { want.get("classes") };
+        let ok = counts_of(by) == got && want.get("stored").num().map(|s| s as usize) == Some(n);
+        if ok {
+            seen.matched += n as u64;
+        } else {
+            seen.mismatched += 1;
+            seen.notes.push(format!("{what}: stored {n} {got:?}"));
+        }
+    };
+    let hist = |m: &std::collections::BTreeMap<u32, u32>| {
+        let mut c = BTreeMap::new();
+        for &x in m.values() {
+            *c.entry(format!("{x:08x}")).or_default() += 1u64;
+        }
+        c
+    };
+    let (d, s) = (e.get("depth"), e.get("stencil"));
+    let dcls =
+        if d.get("values").obj().is_empty() { classes(&p.depth, dfill == "index") } else { hist(&p.depth) };
+    check("depth", dcls, d, p.depth.len());
+    check("stencil", classes(&p.stencil, sfill == "index"), s, p.stencil.len());
+    if let Some(n) = e.get("drawn").num()
+        && n as u64 != p.drawn
+    {
+        seen.mismatched += 1;
+        seen.notes.push(format!("drawn {}, the vector has {}", p.drawn, n as u64));
+    }
+    Ok(Modelled { outcome: zls::STORE_STATUS.outcome(), seen })
+}
+
+/// The keys every kind's `expect` may carry for [`judge`]; the kind adds its own.
+const JUDGED_KEYS: [&str; 4] = ["matched", "refused", "refuse", "outcome"];
+
+/// A vector whose `expect` names a key the kind does not read: a misspelled key would otherwise
+/// compare nothing and pass. A mismatch, said by the kind.
+fn unknown_keys(expect: &Json, own: &[&str]) -> Option<Modelled> {
+    let bad: Vec<&str> = expect
+        .obj()
+        .iter()
+        .map(|(k, _)| k.as_str())
+        .filter(|k| !own.contains(k) && !JUDGED_KEYS.contains(k))
+        .collect();
+    (!bad.is_empty()).then(|| {
+        let mut seen = Seen::default();
+        seen.mismatched += 1;
+        seen.notes.push(format!("expect names keys the kind does not read: {}", bad.join(", ")));
+        Modelled { outcome: Outcome::Ok, seen }
+    })
+}
+
+/// The scratch pages E411 read back: the stencil buffer from page 4, the depth buffer from page
+/// 12, of a 16-page buffer; a dword the model puts past it was not seen.
+fn scratch_pages(
+    depth: &std::collections::BTreeSet<u32>,
+    stencil: &std::collections::BTreeSet<u32>,
+) -> BTreeMap<String, u64> {
+    let mut pages = BTreeMap::new();
+    for (set, base) in [(depth, 12u32), (stencil, 4)] {
+        for &i in set {
+            if base + i / 1024 < 16 {
+                *pages.entry((base + i / 1024).to_string()).or_default() += 1u64;
+            }
+        }
+    }
+    pages
+}
+
+/// zls-ctl (E337, E411, E467, 12.4): the fields of a control word, each compared with the
+/// reading when the vector gives it, and with `init.arrangement = "e411-scratch"` the pages of
+/// the 16-page scratch buffer E411 stored, compared with the dwords the model's store writes (64
+/// x 64 target, the stencil buffer present). What a field rests on decides the outcome (D6): the
+/// pitch (E465), the format (E466), a load by bit 1 alone ([infer], E411 part B saw no effect) and
+/// every stored page (E465's address rule) make the vector fitted; a vector that compares only the
+/// store enables, the negation, the loads by bits 13 and 14 and whether the image is written reads
+/// bits and stays matched.
+fn kind_zls_ctl(v: &Json) -> Modelled {
+    let (i, e) = (v.get("init"), v.get("expect"));
+    const FIELDS: [&str; 9] = [
+        "g",
+        "fmt",
+        "load",
+        "load_depth",
+        "load_stencil",
+        "store_depth",
+        "store_stencil",
+        "negate",
+        "writes_pixels",
+    ];
+    if let Some(m) = unknown_keys(e, &[&FIELDS[..], &["pages"]].concat()) {
+        return m;
+    }
+    let c = match zls::Ctl::decode(i.get("ctl").hex().unwrap_or(0) as u32) {
+        Ok(c) => c,
+        Err(o) => return Modelled::refusing(o),
+    };
+    let scratch = i.get("arrangement").str() == Some("e411-scratch");
+    if scratch && let Err(o) = zls::check_scratch_pitch(&c) {
+        return Modelled::refusing(o);
+    }
+    let mut seen = Seen::default();
+    let mut records: Vec<&str> = vec![];
+    let got_of = |k: &str| -> u64 {
+        match k {
+            "g" => c.g() as u64,
+            "fmt" => c.format_code() as u64,
+            "load" => c.load() as u64,
+            "load_depth" => c.load_depth() as u64,
+            "load_stencil" => c.load_stencil() as u64,
+            "store_depth" => c.store_depth() as u64,
+            "store_stencil" => c.store_stencil() as u64,
+            "negate" => c.negate() as u64,
+            _ => c.writes_pixels() as u64,
+        }
+    };
+    for k in FIELDS {
+        let want = match e.get(k) {
+            Json::Bool(b) => Some(*b as u64),
+            j => j.num().map(|n| n as u64),
+        };
+        let Some(w) = want else { continue };
+        match k {
+            "g" => records.push("E465"),
+            "fmt" => records.push("E466"),
+            "load" if c.load() && !c.load_depth() && !c.load_stencil() => records.push("E411 [infer]"),
+            _ => {}
+        }
+        let got = got_of(k);
+        if w == got {
+            seen.matched += 1;
+        } else {
+            seen.mismatched += 1;
+            seen.notes.push(format!("{k}: {got}, the record has {w}"));
+        }
+    }
+    if let Json::Obj(want) = e.get("pages") {
+        let stencil = match i.get("stencil") {
+            Json::Bool(b) => *b,
+            _ => c.store_stencil(),
+        };
+        let (w, h) = (i.get("w").num().map_or(64, |n| n as u32), i.get("h").num().map_or(64, |n| n as u32));
+        let (d, st) = match zls::dword_sets(&c, w, h, stencil) {
+            Ok(x) => x,
+            Err(o) => return Modelled::refusing(o),
+        };
+        let got = scratch_pages(&d, &st);
+        let want: BTreeMap<String, u64> =
+            want.iter().map(|(k, n)| (k.clone(), n.num().unwrap_or(0.0) as u64)).collect();
+        if got == want {
+            seen.matched += got.values().sum::<u64>();
+        } else {
+            seen.mismatched += 1;
+            seen.notes.push(format!("pages {got:?}, the run has {want:?}"));
+        }
+        if !d.is_empty() || !st.is_empty() {
+            records.push("E465");
+            if matches!(c.format_code(), 1 | 2) {
+                records.push("E466");
+            }
+        }
+    }
+    records.sort();
+    records.dedup();
+    let outcome =
+        if records.is_empty() { Outcome::Ok } else { Outcome::Fitted { record: records.join(", ") } };
+    Modelled { outcome, seen }
 }
 
 /// te-region: the E542 region test over a job's primitives and the tiles the TA listed.
@@ -336,7 +660,7 @@ fn kind_isp_tile(v: &Json, ctx: &Ctx) -> Result<Modelled, String> {
 
 pub fn unit_of(task: &str) -> &str {
     match task {
-        "zls-store" | "zls-load" => "zls",
+        "zls-store" | "zls-load" | "zls-format" | "zls-ctl" => "zls",
         "te-region" | "ta-object" => "ta",
         "isp-tile" => "isp",
         "pbe-emit" => "pbe",

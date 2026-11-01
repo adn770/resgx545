@@ -56,3 +56,12 @@ and the store as in E411 (here the load and the store bases point at four differ
 tile read at the index it is written); whether the load reads 31 bits as a mask or the float's
 absolute value (0xbe800000 to 0x3e800000 and 0x80000000 to 0 do not tell [infer]); the partial
 render's reload (Q038, E468).
+
+**Correction, 2026-11-09 (12.4).** The measurements above are unchanged. The label "load only,
+bits 1, 13, 14 (0x11710a + 0x6000)" on the control 0x0011d10a is wrong: 0x11710a already has bits
+12, 13 and 14 set, and adding 0x6000 carries (0x7000 + 0x6000 = 0xd000), giving 0x0011d10a with
+bits 1, 12, 14 and 15 set and bit 13 clear. The run is a load with bits 1 and 14 and no stencil
+load bit, not bits 1, 13 and 14. What it measured, that a load-only control (bit 2 clear) stores
+nothing, holds for it and for 0x0011710a; which bits load in 0x0011d10a is what the bits say
+(bit 1 with bit 14: the depth), not what the label says. Found in the review r124 of 12.4; E665
+carries the observation and its vectors state only the store enables for these two controls.

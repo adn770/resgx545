@@ -307,7 +307,28 @@ pub struct Listed<'a> {
 /// cannot be decided from the plane's tolerance refuses (Q200): two depths closer than the sum of
 /// their tolerances, or a compare against a plane of gradient 0.03 or more.
 pub fn resolve_tile(tile: (u32, u32), bg_depth: f32, objs: &[Listed]) -> Result<Vec<Pixel>, Outcome> {
-    let mut px = vec![Pixel { tag: None, depth: bg_depth as f64, tol: Some(0) }; 512];
+    resolve_tile_from(tile, &[bg_depth; 512], objs)
+}
+
+/// [`resolve_tile`] over a tile whose depth starts as `start` (the 512 pixels in raster order of
+/// the tile): the clear value, or a depth the ZLS loaded (12.4, E467; exact, sign already cleared).
+/// Synthetic tests only: no hardware run of a load with two objects exists, and the single-object
+/// images over a loaded depth of E411 part B are counts and hashes (no dump), with the background
+/// object and the stencil in them, so they do not check this function. A start depth that is NaN,
+/// infinite or negative refuses (Q243).
+pub fn resolve_tile_from(
+    tile: (u32, u32),
+    start: &[f32; 512],
+    objs: &[Listed],
+) -> Result<Vec<Pixel>, Outcome> {
+    if let Some(d) = start.iter().find(|d| !d.is_finite() || **d < 0.0) {
+        return Err(open(
+            format!("a tile that starts from the depth {d}: a loaded depth is not run"),
+            "Q243",
+        ));
+    }
+    let mut px: Vec<Pixel> =
+        start.iter().map(|&d| Pixel { tag: None, depth: d as f64, tol: Some(0) }).collect();
     for (o, obj) in objs.iter().enumerate() {
         if obj.mode.removed {
             continue;
@@ -1010,5 +1031,75 @@ mod tests {
         let off = Tri { v: [(100 * 256, 0), (120 * 256, 0), (100 * 256, 20 * 256)], z: [-1.0; 3] };
         let o = [Listed { mode: mode(Cmp::Less, true), prims: &[off], left: 1, right: 1 }];
         assert!(resolve_tile((0, 0), 0.5, &o).is_ok(), "no covered pixel in this tile");
+    }
+
+    // ---- 12.4: a tile that starts from a loaded depth, several objects ----
+
+    fn loaded(first_half: f32, second_half: f32) -> [f32; 512] {
+        let mut s = [0.0f32; 512];
+        for (k, d) in s.iter_mut().enumerate() {
+            *d = if k % 32 < 16 { first_half } else { second_half };
+        }
+        s
+    }
+
+    #[test]
+    fn resolve_from_the_clear_value_is_resolve_tile() {
+        let t = [flat(0, 0.5)];
+        let o = [Listed { mode: mode(Cmp::Less, true), prims: &t, left: 1, right: 1 }];
+        assert_eq!(
+            resolve_tile_from((0, 0), &[1.0; 512], &o).unwrap(),
+            resolve_tile((0, 0), 1.0, &o).unwrap()
+        );
+    }
+
+    #[test]
+    fn a_loaded_depth_decides_each_pixel_for_every_object_in_list_order() {
+        // two objects over a depth loaded 0.25 on the left half and 0.75 on the right: the first
+        // (z 0.5) loses on the left and wins on the right; the second (z 0.625, written depth
+        // 0.5 by the first) loses on the right where the first stands
+        let (a, b) = ([flat(0, 0.5)], [flat(0, 0.625)]);
+        let o = [
+            Listed { mode: mode(Cmp::Less, true), prims: &a, left: 1, right: 1 },
+            Listed { mode: mode(Cmp::Less, true), prims: &b, left: 1, right: 1 },
+        ];
+        let px = resolve_tile_from((0, 0), &loaded(0.25, 0.75), &o).unwrap();
+        assert_eq!((px[0].tag, px[0].depth), (None, 0.25));
+        // the 20-pixel triangle covers x < 20 - y: pixel (17, 0) is on the right half
+        assert_eq!((px[17].tag, px[17].depth), (Some((0, 0)), 0.5));
+    }
+
+    #[test]
+    fn the_second_object_wins_where_it_is_nearer_than_the_first() {
+        let (a, b) = ([flat(0, 0.5)], [flat(0, 0.375)]);
+        let o = [
+            Listed { mode: mode(Cmp::Less, true), prims: &a, left: 1, right: 1 },
+            Listed { mode: mode(Cmp::Less, true), prims: &b, left: 1, right: 1 },
+        ];
+        let px = resolve_tile_from((0, 0), &[1.0; 512], &o).unwrap();
+        assert_eq!((px[0].tag, px[0].depth), (Some((1, 0)), 0.375));
+    }
+
+    #[test]
+    fn a_start_depth_that_is_nan_infinite_or_negative_refuses_q243() {
+        let t = [flat(0, 0.5)];
+        let o = [Listed { mode: mode(Cmp::Less, true), prims: &t, left: 1, right: 1 }];
+        for v in [f32::NAN, f32::INFINITY, -0.25] {
+            let mut start = [1.0f32; 512];
+            start[300] = v; // a pixel the triangle does not cover: refused by the input alone
+            let Err(Outcome::Unsupported { ids, .. }) = resolve_tile_from((0, 0), &start, &o) else {
+                panic!("{v}")
+            };
+            assert_eq!(ids, ["Q243"], "{v}");
+        }
+    }
+
+    #[test]
+    fn a_loaded_depth_within_the_planes_tolerance_refuses_q200() {
+        let t = [flat(0, 0.5)];
+        let o = [Listed { mode: mode(Cmp::Less, true), prims: &t, left: 1, right: 1 }];
+        let start = [(0.5 + DEPTH_UNIT) as f32; 512];
+        let Err(Outcome::Unsupported { ids, .. }) = resolve_tile_from((0, 0), &start, &o) else { panic!() };
+        assert_eq!(ids, ["Q200"]);
     }
 }

@@ -107,3 +107,13 @@ format 2 (round(z * 0xffffff) >> 8, fitted after the first run's twin and told a
 checked against a formula. Not decoded: formats 3, 5 and 6, the stencil dumps (not kept), and bit 19
 with a negative depth for formats 1 and 2: with the positive ramp bit 19 changes no dword of formats
 1 and 2 (the dumps are byte-identical to the dumps without it, E490).
+
+**Correction, 2026-11-09 (12.4).** The measurements above are unchanged. The sentence "they agree on
+0.25 to 0.75" in the paragraph on the 16-bit order gives the wrong range: the ramp is z = 0.25 + x /
+6144 at the pixel's x (the run's 0.25 + 0.5 x / (3W) with W = 1024) and z = 0.25 + y / 4608 at its y
+(H = 768), so over the 1024 x 768 target the depth runs from 0.25 to 0.4166 (0.41659 at the last
+column, 0.41656 at the last row), not to 0.75: 0.75 is the depth at the triangle's vertex (3W, 0) or
+(0, 3H), outside the target. The rounded and the floor forms of the 16-bit value agree over 0.25 to
+0.4166 as stated, and that is all the ramp shows: the integer formats were measured over that range
+and at the clear value 1.0 (E411), not over 0.4166 to 1.0. Found in the review r124 of 12.4; the
+12.4 store model answers the integer formats only there (Q242).

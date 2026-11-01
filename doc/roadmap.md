@@ -811,11 +811,11 @@ vertex task's capacity and forced rows were probed (E702, E703), a 1500-vertex s
 does not move with the page count (E704), the page need of one triangle depends on its position
 (E705), the kernel's hang recovery ends a long partial-render sequence (E706), and an end-of-tile
 store is not reproduced (E707 to E709, Q270 to Q278). The sampler's bilinear result is the two-stage
-form of E720, and the simulator `sgx-sim` takes it, tests first, with 8 new vectors (E733); the
-gradient footprint, the T3 address chain, sRGB, ETC1, the texture types and the cube are findings
-the simulator keeps refused (E721 to E726, Q280 to Q284), and the multisample, TE bit, Q140, ZLS
-band and depth plane results are E727 to E731 (Q285 to Q288), E732 the accounting. Four questions
-are folded into Q163, Q197 and Q152, Q045 is split (Q277 for the firmware) and Q103's kernel part is
+form of E720, and the simulator `sgx-sim` takes it, tests first, with 8 new vectors; the gradient
+footprint, the T3 address chain, sRGB, ETC1, the texture types and the cube are findings the
+simulator keeps refused (E721 to E726, Q280 to Q284), and the multisample, TE bit, Q140, ZLS band
+and depth plane results are E727 to E731 (Q285 to Q288), E732 the accounting. Four questions are
+folded into Q163, Q197 and Q152, Q045 is split (Q277 for the firmware) and Q103's kernel part is
 Q278; no question is answered. The roadmap counts the questions from the built
 `doc/open_questions.md`: 184 open (Q001 to Q288), 165 hw (high 20, medium 76, low 69), 12 fw and 7
 kernel; isp 20, usse 39, texture 19, pds 17, edm 15, ta 15, dpm 12, vdm 11.
@@ -876,3 +876,19 @@ on the fitted coverage rule, so none is matched. Q240 (random triangles on other
 (ISP words and depth compares no probe separated) are new. The simulator `sgx-sim` is unchanged. The
 roadmap counts the questions from the built `doc/open_questions.md`: 191 open (Q001 to Q288), 172 hw
 (high 21, medium 80, low 71), 12 fw and 7 kernel; isp 23.
+
+Sub-phase 12.4 is the ZLS's store and load of the depth, a tooling sub-phase with no laptop run and
+no kernel change: `sgx-pipe` decodes CR_ISP_ZLSCTL as the records read it, stores the depth in the
+float, 24-bit and 16-bit formats at E465's address rule where the integer formats were measured (the
+ramp's 0.25 to 0.4166 and the clear value 1.0), counts the dwords a store writes, clears the sign of
+a loaded depth and runs a flat triangle over a loaded depth under the depth test never or less (E663
+to E665). 88 unit vectors (`zls-format` 11, `zls-load` 30 and `zls-ctl` 47) replay with no mismatch:
+15 matched, 59 fitted, 12 refused by question and 2 empty (formats 4 and 7 store nothing without a
+stencil buffer); every result by a fitted rule is fitted. What no run measured stays refused:
+formats 3, 5 and 6 (Q120), other 16-bit pitches and depths off the ramp (Q242), a load of an integer
+format at another address and a loaded NaN under a compare (Q243) and the control bits no run
+separated, with bit 0 modelled for one control (Q244); several objects over a loaded depth are not
+modelled (no data). E466 and E467 are carried forward with dated corrections (the ramp runs 0.25 to
+0.4166, not to 0.75; the label of the control 0x0011d10a). Q242 to Q244 are new. The simulator
+`sgx-sim` is unchanged. The roadmap counts the questions from the built `doc/open_questions.md`: 194
+open (Q001 to Q288), 175 hw (high 21, medium 80, low 74), 12 fw and 7 kernel; zls 10.

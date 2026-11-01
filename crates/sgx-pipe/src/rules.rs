@@ -37,6 +37,12 @@ pub const ISP_VERTEX_GRID: Status = Status::Fitted("E607");
 /// The depth store's layout, when a job stores depth and the model reports it (E465, fitted):
 /// the `depth` of a scene result rests on it.
 pub const ISP_DEPTH_STORE: Status = Status::Fitted("E465");
+/// The integer depth formats' value rules: round(z * 0xffffff) and its >> 8 for the 16-bit
+/// format, fitted on the dumps of the run (E466 states the 16-bit one is in-sample; floor(z *
+/// 2^24) clamped is a fourth candidate no dump separates from the 24-bit one, E663), answered
+/// only over the ramp's 0.25 to 0.4166 and 1.0, and the 16-bit layout derived at G = 33 only
+/// (12.4; E466, E490)
+pub const ZLS_INT_FORMATS: Status = Status::Fitted("E466");
 /// The 1/w the TA stores: kept above the minimum, the clamp value otherwise (E197, [infer])
 pub const MTE_RHW: Status = Status::Fitted("E197");
 

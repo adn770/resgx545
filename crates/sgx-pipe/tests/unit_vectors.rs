@@ -51,11 +51,16 @@ fn unit_vectors_replay_with_no_mismatch() {
 #[test]
 fn fitted_rules_are_never_reported_matched() {
     let Some(rep) = replay_all() else { return };
-    for unit in ["zls", "ta", "isp"] {
+    for unit in ["ta", "isp"] {
         let c = &rep.units[unit];
         assert_eq!(c.matched, 0, "{unit}: a fitted rule reported matched");
         assert!(c.fitted > 0, "{unit}");
     }
+    // zls (12.4): the control words that read as the records state with no address, format or
+    // inferred load match (15); the two empty stores compare nothing and are counted empty, not
+    // matched; every vector that stores through E465 is fitted (tests/zls_vectors.rs)
+    let z = &rep.units["zls"];
+    assert_eq!((z.matched, z.empty, z.fitted), (15, 2, 18 + 6 + 30 + 23));
     let ta = &rep.units["ta"];
     assert_eq!((ta.hang, ta.fault), (0, 0), "no hang or fault is predicted: E541's three are recalled");
     assert_eq!(ta.refused["Q165"], 3);
@@ -82,18 +87,21 @@ fn the_pack_modes_of_e031_replay_matched_and_the_rest_are_refused_by_question() 
 fn the_counts_of_the_records_hold() {
     let Some(rep) = replay_all() else { return };
     // E489 (18 cases), E542 (35 jobs) and E541 (56 completed + 3 failed), E503 (48 runs)
-    assert_eq!(rep.units["zls"].fitted, 18);
+    // 18 layouts, 6 format buffers (f0, f1, f2, b19_0 to b19_2) and 30 loads (12.4)
+    assert_eq!(rep.units["zls"].fitted, 18 + 6 + 30 + 23);
     assert_eq!(rep.units["ta"].fitted, 35 + 56);
     assert_eq!(rep.units["isp"].fitted, 48);
     // D6: every item rests on a fitted rule, so none is "matched"
-    for u in ["zls", "ta", "isp"] {
+    for u in ["ta", "isp"] {
         assert_eq!(rep.items_matched.get(u).copied().unwrap_or(0), 0, "{u}");
     }
-    assert_eq!(
-        rep.items_fitted["zls"], 3_225_000,
-        "3279132 at the rule, less 54132 for pixels past the target"
-    );
+    // 3279132 at the rule, less 54132 for pixels past the target; the format buffers' 7864320
+    // dwords and the loads' 983040 (8 x 40960 + 20 x 32768)
+    // and the 23 fitted control vectors' items: E411's stored pages in dwords and the fields read
+    // (103709, counted by the replay, checked by hand for flip 3: 3200 + 6)
+    assert_eq!(rep.items_fitted["zls"], 3_225_000 + 7_864_320 + 983_040 + 103_709);
     assert_eq!(rep.items_refused["zls"]["Q107"], 128_640 + 6_656);
+    assert_eq!((rep.units["zls"].refused["Q242"], rep.units["zls"].refused["Q120"]), (8, 3 + 1));
     assert_eq!(rep.items_refused["zls"]["Q122"], 54_132 + 1_124);
     assert_eq!(rep.items_fitted["isp"], 773);
     assert_eq!(rep.items_refused["isp"]["Q141"], 13);
