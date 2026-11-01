@@ -137,3 +137,21 @@ fn runs_the_pds_vectors() {
     assert!(o.status.success(), "{o:?}");
     assert!(out(&o).contains("101 match, 2 unsupported, 0 mismatch, 0 skipped"), "{}", out(&o));
 }
+
+#[test]
+fn a_preset_predicate_or_pclink_counts_as_set() {
+    // 11.28: p0-p3 and pclink read before the program sets them stop it (they are left over from
+    // the job before), so a host preset must mark them set
+    let o = sim(&["--set", "p0=1", "-"], "p0 mov.end o0, #5\n");
+    assert!(out(&o).contains("o0 = 0x00000005"), "{} {}", out(&o), String::from_utf8_lossy(&o.stderr));
+    let o = sim(&["--set", "pclink=7", "-"], "mov r1, pclink\nmov.end o0, r1\n");
+    assert!(out(&o).contains("o0 = 0x00000007"), "{} {}", out(&o), String::from_utf8_lossy(&o.stderr));
+}
+
+#[test]
+fn a_vcull_phas_runs_only_as_a_vertex_task() {
+    let src = "phas #2, #8, pixel, vcull, parallel\nmov.end o0, #5\nmov.end o0, #7\n";
+    assert_eq!(sim(&["-"], src).status.code(), Some(1));
+    let o = sim(&["--task", "vertex", "-"], src);
+    assert!(out(&o).contains("o0 = 0x00000005"), "{}", out(&o));
+}

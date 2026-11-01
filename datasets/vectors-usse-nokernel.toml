@@ -1,0 +1,9 @@
+title = "instruction vectors from the usse probe runs of 11.23 to 11.27"
+repo = "data"
+paths = ["vectors/nokernel/usse/"]
+method = "tools/usse-asm/convert_extra.py on the raw readbacks and saved programs of the 74 usse tables of the no-kernel batches of 11.23, 11.24, 11.25 and 11.27, one file per run, with the probe tables of the tree"
+date = "2026-11-08"
+files = 338
+size = 24244165
+sha256 = "836ab2b90291cc6e23a2d548474294033466cb46cfa55354dc08b2182636db2f"
+recipe = "tools/usse-asm/convert_extra.py"

@@ -4,7 +4,7 @@
 //! it wrote, or run corpus vectors against their hardware readbacks.
 //!
 //!   sgx-sim [--core 540|545] [--set REG=VALUE]... [--temps N] [--max N]
-//!           [--near] [--trace | --quad X,Y] <program.s | program.bin | ->
+//!           [--near] [--task pixel|vertex] [--trace | --quad X,Y] <program.s | program.bin | ->
 //!   sgx-sim --pds [--data N] [--set REG=VALUE]... [--max N] [--trace]
 //!           <program.s | program.bin | ->
 //!   sgx-sim --vectors FILE.vec.json [--id ID]
@@ -14,7 +14,7 @@
 //! 2x2 quad holding pixel (X, Y) with pa0 = (y << 16) | x in each instance.
 //! Memory is the probe harness's scratch buffer: 64 KiB at 0x3e003000 filled
 //! with 0xd0000000 | i, and a limm of 0x5cafnnnn loads its address + nnnn.
-//! REG is rN, iN, paN, saN, oN or pN; VALUE is decimal or 0x-hex. The emits
+//! REG is rN, iN, paN, saN, oN, pN or pclink; VALUE is decimal or 0x-hex. The emits
 //! (emitpix, emitvcbvtx, ...) are listed with their three source values. With
 //! --near, the float functions the hardware gives only to a bound (frcp, fsin,
 //! ...) give their nearest value, printed with "~ <bound>"; without it they
@@ -35,7 +35,7 @@ use std::process::ExitCode;
 use usse_isa::{Core, decode, encode_with};
 
 const USAGE: &str = "usage: sgx-sim [--core 540|545] [--set REG=VALUE]... [--temps N] [--max N]
-               [--near] [--trace | --quad X,Y] <program.s | program.bin | ->
+               [--near] [--task pixel|vertex] [--trace | --quad X,Y] <program.s | program.bin | ->
        sgx-sim --pds [--data N] [--set REG=VALUE]... [--max N] [--trace] <program.s | program.bin | ->
        sgx-sim --vectors FILE.vec.json [--id ID]";
 
@@ -62,6 +62,10 @@ fn num(s: &str) -> Option<u32> {
 
 /// Preset a register (and mark it written): rN, iN, paN, saN, oN or pN.
 fn set(m: &mut Machine, reg: &str, v: u32) -> Option<()> {
+    if reg == "pclink" {
+        m.set_link(v);
+        return Some(());
+    }
     let split = reg.find(|c: char| c.is_ascii_digit())?;
     let (bank, n) = (&reg[..split], reg[split..].parse::<usize>().ok()?);
     match bank {
@@ -70,7 +74,7 @@ fn set(m: &mut Machine, reg: &str, v: u32) -> Option<()> {
         "pa" if n < 128 => (m.pa[n], m.written.pa) = (v, m.written.pa | 1 << n),
         "sa" if n < 128 => (m.sa[n], m.written.sa) = (v, m.written.sa | 1 << n),
         "o" if n < 128 => (m.o[n], m.written.o) = (v, m.written.o | 1 << n),
-        "p" if n < 4 => m.p[n] = v != 0,
+        "p" if n < 4 => m.set_pred(n, v != 0).then_some(())?,
         _ => return None,
     }
     Some(())
@@ -367,7 +371,7 @@ fn main() -> ExitCode {
     let argv: Vec<String> = std::env::args().skip(1).collect();
     let (mut core, mut sets, mut temps, mut max) = (Core::Sgx545, Vec::new(), 124, 100_000);
     let (mut trace, mut quad, mut input, mut vecs, mut id) = (false, None, None, None, None);
-    let (mut near, mut pds, mut data) = (false, false, None);
+    let (mut near, mut pds, mut data, mut vertex) = (false, false, None, false);
     let mut i = 0;
     let usage = || {
         eprintln!("{USAGE}");
@@ -395,6 +399,11 @@ fn main() -> ExitCode {
             },
             "--trace" => trace = true,
             "--near" => near = true,
+            "--task" => match arg().as_deref() {
+                Some("vertex") => vertex = true,
+                Some("pixel") => vertex = false,
+                _ => return usage(),
+            },
             "--pds" => pds = true,
             "--data" => match arg().and_then(|s| s.parse().ok()) {
                 Some(n) => data = Some(n),
@@ -438,7 +447,7 @@ fn main() -> ExitCode {
     };
     let prog = Program::new(&words, core);
     let new = || -> Option<Machine> {
-        let mut m = Machine { core, temps, near, ..Machine::default() };
+        let mut m = Machine { core, temps, near, vertex_task: vertex, ..Machine::default() };
         for (r, v) in &sets {
             set(&mut m, r, *v)?;
         }

@@ -15,16 +15,29 @@ converter (`tools/usse-asm/vectors.py`) describe and make them.
 <data repository>/vectors/knowledge/<unit>/<feature>/<probe>.vec.json
 <data repository>/vectors/semantics/<unit>/<feature>/<probe>.vec.json
 <data repository>/vectors/jobs/<unit>/<feature>/<probe>.job.json
+<data repository>/vectors/nokernel/<unit>/<feature>/<probe>.vec.json
 ```
 
 One directory per probe table (`probes/<unit>/<feature>.toml`), one file per run of one probe
 of it (`<unit>/<feature>/<probe>/raw.txt`, and the same under `followup/` for the follow-up
-round; `knowledge/` holds the runs of the 11.x sub-phases to 11.7, `semantics/` those of 11.13
-(a directory of its own, so that the earlier manifest's digest stays), `jobs/` the jobs of the
+round; `knowledge/` holds the runs of the 11.x sub-phases to 11.7, `semantics/` those of 11.13 and
+`nokernel/` those of 11.23 to 11.27 (directories of their own, so that the earlier manifests'
+digests stay), `jobs/` the jobs of the
 files converted before vectors carried them). Every table whose probes carry a program has one; a
 probe run that read back no case of its table gives no file.
 Each unit's vectors are a dataset (`datasets/vectors-<unit>.toml`,
 `vectors-<unit>-followup.toml`) that names the converter as its recipe.
+
+The usse runs of the phases 11.23 to 11.27 are converted by `tools/usse-asm/convert_extra.py`, the
+converter above on the recorded `bins/` with the tree's probe tables, into
+`vectors/nokernel/usse/<feature>/<run>.vec.json` (a directory of its own, so that the digest of
+`datasets/vectors-usse.toml` stays; `datasets/vectors-usse-nokernel.toml` is its manifest). A run
+of a program placed in the code heap (`--place OFFSET=FILE`) converts with `init.placed`
+(`{"offset": heap offset, "words": [...]}`, the placed program from the run's `bins/`): that program
+is the one that ran, from the code base the placement gives (`Machine::code_index`, the offset
+modulo 0x80000 bytes in instructions, E476 and E492), and `program.words` is the fill's stub.
+`--example replay` lists the outcome of every vector, one line each (`excluded` with its reason for
+those it leaves out).
 
 The simulator's tests (`crates/sgx-sim/tests/vectors.rs`) look for the data repository as
 `$RESGX545_DATA`, else the `resgx545-data` checkout beside this tree (as
@@ -114,6 +127,8 @@ secondary wrote, and compares the scratch. Registers the program reads before wr
 are undefined: the simulator stops on such a read as unsupported rather than guess. A vector
 whose run the simulator cannot reproduce (instances that share a dword they store, a loop
 past the step limit, a job that ran after a faulted one) is on its skip list with the reason
-(`crates/sgx-sim/src/vectors.rs`, `SKIP`). The test reports pass, unsupported and mismatch
-counts; a mismatch fails it. `doc/isa/sim-coverage.json` records, per form, which probes have a
-passing vector (`RESGX545_WRITE_COVERAGE=1 cargo test --release -p sgx-sim` writes it).
+(`crates/sgx-sim/src/vectors.rs`, `SKIP`). A job that hung is not replayed, but `--example
+replay` says whether the simulator stops on a phas request that hangs (E519). The test reports
+pass, unsupported and mismatch counts; a mismatch fails it. `doc/isa/sim-coverage.json` records,
+per form, which probes have a passing vector
+(`RESGX545_WRITE_COVERAGE=1 cargo test --release -p sgx-sim` writes it).

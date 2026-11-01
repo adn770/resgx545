@@ -85,14 +85,25 @@ pub fn run_scalar(v: &Json) -> Result<Outcome, String> {
 
 /// run_scalar with the instance set up further first (state a vector does not record).
 pub fn run_scalar_with(v: &Json, setup: impl FnOnce(&mut Machine)) -> Result<Outcome, String> {
-    let words: Vec<u64> =
-        v.get("program").get("words").arr().iter().map(|w| patch_scratch(w.hex().unwrap())).collect();
+    // a program placed in the code heap (init.placed, which tools/usse-asm/convert_extra.py adds)
+    // is the one that ran, from the code base the placement gives (Machine::code_index)
+    let placed = v.get("init").get("placed");
+    let (words, code_index): (Vec<u64>, u32) = match placed.get("offset").num() {
+        Some(off) => (
+            placed.get("words").arr().iter().map(|w| patch_scratch(w.hex().unwrap())).collect(),
+            (off as u32) % 0x80000 / 8,
+        ),
+        None => {
+            (v.get("program").get("words").arr().iter().map(|w| patch_scratch(w.hex().unwrap())).collect(), 0)
+        }
+    };
     let prog = Program::new(&words, Core::Sgx545);
     let mut mem =
         Memory { base: SCRATCH_BASE, words: (0..SCRATCH_DWORDS as u32).map(|i| 0xD000_0000 | i).collect() };
     let temps = v.get("init").get("temps").num().map_or(124, |t| t as usize);
     // a fill whose readback is one o0: every instance alike
-    let mut m = Machine { temps, near: true, uniform: true, coeffs: job_coeffs(v), ..Machine::default() };
+    let mut m =
+        Machine { temps, near: true, uniform: true, coeffs: job_coeffs(v), code_index, ..Machine::default() };
     setup(&mut m);
     match m.run(&prog, &mut mem, 10_000) {
         Ok(()) => {}
@@ -404,6 +415,34 @@ pub const SKIP: &[(&str, &str, &str)] = &[
     ("", "pds-memory-mem6__2", "ran after a faulted job"),
     ("", "pds-memory-mem6__6", "ran after a faulted job"),
     ("", "pds-memory-mem6__10", "ran after a faulted job"),
+    // an instance reads another instance's unfenced store: what it sees is a matter of timing and
+    // of the order of the tiles (E514, Q143), which the simulator does not model
+    (
+        "usse/store-own2/",
+        "usse-store-own2-cross__5",
+        "another instance's unfenced store: timing and tile order (E514)",
+    ),
+    (
+        "usse/store-own2/",
+        "usse-store-own2-cross__6",
+        "another instance's unfenced store: timing and tile order (E514)",
+    ),
+    (
+        "usse/store-own2/",
+        "usse-store-own2-cross__7",
+        "another instance's unfenced store: timing and tile order (E514)",
+    ),
+    (
+        "usse/store-own3/",
+        "usse-store-own3-cross",
+        "another instance's unfenced store: timing and tile order (E514)",
+    ),
+    // the fill's PDS program runs to its end and the job faults or hangs in the task the USSE
+    // program starts with `emitpds` (E488, E520), which the simulator does not model: the PDS
+    // vectors of these runs (63 of 65; the two jobs that ran are in the runs too) are left out
+    ("usse/emit-addend/", "", "the job faulted or hung in the task an emitpds started (E488, E520)"),
+    ("usse/emit-addend2/", "", "the job faulted or hung in the task an emitpds started (E488, E520)"),
+    ("usse/emitpds/", "", "the job faulted or hung in the task an emitpds started (E488, E520)"),
 ];
 
 /// The fill's width: instances are in raster order, 64 x 32.
@@ -959,5 +998,18 @@ mod tests {
                 "provenance": {"options": ["--temps", "32"]}}"#,
         );
         assert_eq!(super::kind(&fill), super::Kind::Scalar);
+    }
+
+    #[test]
+    fn the_skip_rows_of_the_unfenced_store_probes_apply() {
+        assert!(
+            super::skipped("usse/store-own2/x/raw.txt", "usse-store-own2-cross", "usse-store-own2-cross__5")
+                .is_some()
+        );
+        // the other cases of the probe are replayed
+        assert!(
+            super::skipped("usse/store-own2/x/raw.txt", "usse-store-own2-cross", "usse-store-own2-cross__4")
+                .is_none()
+        );
     }
 }

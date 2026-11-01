@@ -3526,6 +3526,20 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   in the second table; every emitting job faulted (37 of 39) or hung (2 of 39, the addend 0x2000 in
   each table), in a client pixel task.
   *usse; HW, infer; data: `usse-emit-addend`, `usse-emit-addend2`.*
+- `E521` iaddu32 writes the low 16 bits of source 1, zero-extended, plus source 2, mod 2^32: its
+  source 1 is zero-extended in the value it writes, in 16 distinct pairs of two datasets run before
+  11.28, seven of which a sign extension would write otherwise (bit 15 of the low half of r1 set):
+  (r1, r2) = (0x8000, 0x8000) writes 0x10000 (a sign extension writes 0), (0xffff, 1) 0x10000,
+  (0xffffffff, 1) 0x10000, (0x7fffffff, 1) 0x10000, (0xffffffff, 2) 0x10001, (0x7c23a2bd,
+  0x47b003f0) 0x47b0a6ad and (0xb99ede85, 0x87261f80) 0x8726fe05, and the nine others agree with
+  both; the zero extension fits 16 of 16 and the sign extension the nine with bit 15 of the low half
+  clear.
+  *usse; HW; data: `usse-decoder-vectors`, `usse-integer`.*
+- `E522` The simulator of 11.28 matches 5406 of the 5750 USSE vectors of the usse runs of 11.23 to
+  11.27, stops on 135, skips 9, leaves 156 out of the replay and differs on none (the model of 11.27
+  matched 3148, differed on 218 and stopped on 2100), and over all 34510 USSE vectors 30260 match,
+  1112 are fitted, 908 stop and none differs.
+  *usse; HW; data: `vectors-usse-nokernel`.*
 - `E525` ima32.u r10, iK, r1, r2, r3 writes bits 63:32 of the exact 64-bit a * b + c to iK and bits
   31:0 to r10 on generic 32-bit register operands: 282 of 282 jobs (42 corner triples and 200 random
   triples with K = 0, then K = 1 and K = 2 over 20 of the random triples each), the other two i
@@ -3663,7 +3677,7 @@ E244, E245, E255, E292, E293, E294, E295, E296, E297, E298, E350, E351, E366, E3
 E370, E371, E372, E373, E374, E375, E376, E377, E378, E380, E406, E423, E452, E469, E470, E471,
 E472, E473, E474, E475, E476, E477, E478, E479, E480, E481, E482, E483, E484, E485, E486, E487,
 E488, E491, E492, E493, E494, E495, E496, E497, E498, E499, E500, E501, E512, E513, E514, E515,
-E516, E517, E518, E519, E520, E525, E526, E527, E528, E529, E530.
+E516, E517, E518, E519, E520, E521, E522, E525, E526, E527, E528, E529, E530.
 
 ### vdm
 

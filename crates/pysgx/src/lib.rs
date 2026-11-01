@@ -298,8 +298,7 @@ impl Machine {
     }
 
     fn set_pred(&mut self, n: usize, value: bool) -> PyResult<()> {
-        *self.m.p.get_mut(n).ok_or_else(|| PyValueError::new_err("p0-p3"))? = value;
-        Ok(())
+        if self.m.set_pred(n, value) { Ok(()) } else { Err(PyValueError::new_err("p0-p3")) }
     }
 
     #[getter]

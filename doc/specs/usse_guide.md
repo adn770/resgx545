@@ -427,7 +427,8 @@ The waits and modes on the hardware (E101) **[HW]**:
   its code base, so its `#<next>` is the local index.
 - Each wait belongs to one kind of task. `vcull` hangs a pixel shader. `pt` hangs a vertex
   shader, and in a pixel shader with no punch-through feedback the next phase never writes
-  its pixels.
+  its pixels. The simulator refuses `pt` and `vcull` in a pixel task, and runs a vertex task's
+  first phase only (`sgx-sim --task vertex`).
 - The vertex shader draws the same triangle with `none` as with `vcull`. **`vcull` waits for
   the MTE's cull decision and skips the next phase for a culled triangle [HW]** (E121); with
   `none` the phase runs anyway and the MTE drops the triangle.
@@ -793,8 +794,10 @@ only:
   back; any decodable word round-trips through the two.
 - **`sgx-sim`** runs a program on the simulator, as one instance or as the 2x2 quad of a pixel
   (`--quad X,Y`), and prints every register it wrote and every scratch dword it changed;
-  `--trace` shows each instruction with its writes, `--set REG=VALUE` presets registers,
-  `--near` lets the float functions give their near values and `--vectors FILE` runs hardware
+  `--trace` shows each instruction with its writes, `--set REG=VALUE` presets registers (and
+  `pclink`; a preset predicate counts as written), `--task vertex` runs a vertex task (the
+  default is a pixel task), `--near` lets the float functions give their near values and
+  `--vectors FILE` runs hardware
   vectors (the data repository's `vectors/`). It stops, with the reason, at the first instruction
   whose behaviour
   is not established.
@@ -1429,8 +1432,16 @@ Mnemonics: `mov`.
 Modifiers: `.end`, `.nosched`, `.repeatN`, `.skipinv`, `.syncs`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 7 of 7 forms have semantics. The
-probe vectors that test them: 577 match the hardware, 114 stop unsupported, 0 mismatch
-(`usse-alpha-test-pcoeff-depthf` 1/0/0, `usse-branch-bexc-none` 1/0/0,
+probe vectors that test them: 2547 match the hardware, 116 stop unsupported, 0 mismatch
+(`usse-alpha-test-pcoeff-depthf` 1/0/0, `usse-branch-bexc-none` 1/0/0, `usse-callfalse-chain` 3/0/0,
+`usse-callfalse-link` 36/0/0, `usse-callfalse2-chain` 3/0/0, `usse-callfalse2-link` 36/0/0,
+`usse-compare32-iadd32-testnat-src1` 10/0/0, `usse-compare32-iadd32-testnat-src2` 8/0/0,
+`usse-compare32-iadd32-testpat-src2` 8/0/0, `usse-compare32-iadd32-testtanz-src2` 8/0/0,
+`usse-compare32-iadd32-testtaz-src1` 10/0/0, `usse-compare32-iadd32-testtaz-src2` 8/0/0,
+`usse-compare32-iaddu32-testnat-src2` 8/0/0, `usse-compare32-iaddu32-testtanz-src2` 8/0/0,
+`usse-compare32-other-imm` 48/0/0, `usse-compare32-shr-imm` 80/0/0, `usse-compare32-xor-imm` 18/0/0,
+`usse-compare32x-iadd32-ovf-testnat` 12/0/0, `usse-compare32x-iadd32-ovf-testpat` 12/0/0,
+`usse-compare32x-iadd32-ovf-testtaz` 12/0/0, `usse-compare32x-iaddu32-carry-testtanz` 8/0/0,
 `usse-constant-banks-gbank-write` 0/10/0, `usse-decoder-vectors-and-taz` 14/0/0,
 `usse-decoder-vectors-iadd16-taz` 14/0/0, `usse-decoder-vectors-iadd16-taz-chan1` 14/0/0,
 `usse-decoder-vectors-iadd16-taz-chan2` 14/0/0, `usse-decoder-vectors-iadd16-taz-chan3` 14/0/0,
@@ -1445,19 +1456,35 @@ probe vectors that test them: 577 match the hardware, 114 stop unsupported, 0 mi
 `usse-encoding-gaps-end-flips-class22` 0/3/0, `usse-encoding-gaps-end-words` 1/9/0,
 `usse-flags-other` 1/0/0, `usse-form-coverage-form2-test-e50` 9/1/0,
 `usse-form-coverage-lapc-pclink` 4/0/0, `usse-form-coverage-test-fn` 5/0/0, `usse-g19-read-paths`
-0/2/0, `usse-indexing-index-high` 0/12/0, `usse-indexing-index-store` 4/0/0,
-`usse-indexing-index-unit` 7/0/0, `usse-indexing-index-width` 3/0/0, `usse-indexing-index-width2`
-7/0/0, `usse-indexing-index-width3` 6/0/0, `usse-instance-masking-setm` 1/0/0,
+0/2/0, `usse-iaddu32-pairs-iadd32-testnat` 16/0/0, `usse-iaddu32-pairs-iadd32-testpat` 16/0/0,
+`usse-iaddu32-pairs-iadd32-testtanz` 16/0/0, `usse-iaddu32-pairs-iadd32-testtaz` 16/0/0,
+`usse-iaddu32-pairs-iaddu32-testnat` 16/0/0, `usse-iaddu32-pairs-iaddu32-testpat` 16/0/0,
+`usse-iaddu32-pairs-iaddu32-testtanz` 16/0/0, `usse-iaddu32-pairs-iaddu32-testtaz` 16/0/0,
+`usse-indexing-index-high` 0/12/0, `usse-indexing-index-store` 4/0/0, `usse-indexing-index-unit`
+7/0/0, `usse-indexing-index-width` 3/0/0, `usse-indexing-index-width2` 7/0/0,
+`usse-indexing-index-width3` 6/0/0, `usse-instance-masking-setm` 1/0/0,
 `usse-instance-masking-skipinv-inst` 3/0/0, `usse-internal-registers-across-tasks` 4/4/0,
 `usse-internal-registers-bank7` 57/0/0, `usse-internal-registers-ireg-index` 4/4/0,
 `usse-internal-registers-mov-and-tasks` 0/8/0, `usse-internal-registers-per-pixel` 12/0/0,
-`usse-lane-integer-rogue-int` 11/0/0, `usse-memory-mem-forms` 2/0/0, `usse-moe-moest-load` 6/0/0,
-`usse-moe-state-next-job` 6/0/0, `usse-numbered-modifiers-family-repeat` 32/0/0,
-`usse-phases-filladdr` 2/0/0, `usse-predicates-predicate-pn` 6/0/0, `usse-repeat-order` 3/0/0,
-`usse-repeat-pred` 4/0/0, `usse-test-channels-lanes-other` 74/0/0, `usse-unorm8-add-sub-mul` 12/0/0,
-`usse-unorm8-mul` 12/0/0, `usse-write-masks-wmask-mov` 16/0/0); unsupported mostly for reads paN
-before the program writes it (40); reads saN before the program writes it (21); rN is past the
-task's N temporaries (12).
+`usse-lane-integer-rogue-int` 11/0/0, `usse-link-ba-savelink-read` 10/0/0, `usse-link-lapc-gap`
+19/0/0, `usse-link-pclink-leftover` 10/0/0, `usse-link-pclink-roundtrip` 38/0/0,
+`usse-memory-mem-forms` 2/0/0, `usse-moe-moest-load` 6/0/0, `usse-moe-state-next-job` 6/0/0,
+`usse-numbered-modifiers-family-repeat` 32/0/0, `usse-pa-dest-persist` 0/2/0, `usse-pclink-pixels`
+10/0/0, `usse-pclink-repeat-a` 10/0/0, `usse-pclink-repeat-b` 10/0/0, `usse-pclink-repeat-c` 10/0/0,
+`usse-pflow-flow` 12/0/0, `usse-phases-filladdr` 2/0/0, `usse-predicates-predicate-pn` 6/0/0,
+`usse-raw25-test-bit43` 96/0/0, `usse-raw25-test-plain` 96/0/0, `usse-rawchan-1-and` 36/0/0,
+`usse-rawchan-2-and` 36/0/0, `usse-rawchan-3-and` 36/0/0, `usse-rawchan-4-and` 36/0/0,
+`usse-rawchan-5-and` 36/0/0, `usse-rawchan-6-and` 36/0/0, `usse-rawchan-7-and` 36/0/0,
+`usse-rawcond-and-codes` 90/0/0, `usse-rawcond2-and-imm` 90/0/0, `usse-rawcond2-or-reg` 90/0/0,
+`usse-rawcond2-rol-reg` 90/0/0, `usse-rawcond2-xor-imm` 90/0/0, `usse-rawcond2-xor-reg` 90/0/0,
+`usse-rawjoin-o-and` 90/0/0, `usse-rawjoin-o2-and7-fields` 90/0/0, `usse-rawjoin-o2-or-fields`
+90/0/0, `usse-rawjoin-o2-xor-fields` 90/0/0, `usse-repeat-order` 3/0/0, `usse-repeat-pred` 4/0/0,
+`usse-risky-lapc-backward` 6/0/0, `usse-risky-lapc-computed` 8/0/0, `usse-risky-lapc-direct` 8/0/0,
+`usse-risky-lapc-high-bits` 4/0/0, `usse-risky-link-ba-return` 3/0/0, `usse-risky-link-nested`
+2/0/0, `usse-store-own-one` 1/0/0, `usse-store-own2-quad` 1/0/0, `usse-test-channels-lanes-other`
+74/0/0, `usse-unorm8-add-sub-mul` 12/0/0, `usse-unorm8-mul` 12/0/0, `usse-write-masks-wmask-mov`
+16/0/0); unsupported mostly for reads paN before the program writes it (41); reads saN before the
+program writes it (22); rN is past the task's N temporaries (12).
 
 Confirmed on the hardware (a passing vector): #0, #1, #2, #3, #4, #126, #127.
 
@@ -1572,26 +1599,32 @@ Mnemonics: `and`, `asr`, `or`, `rol`, `shl`, `shr`, `xor`.
 Modifiers: `.end`, `.nosched`, `.partial`, `.repeatN`, `.skipinv`, `.syncs`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 8 of 8 forms have semantics. The
-probe vectors that test them: 441 match the hardware, 16 stop unsupported, 0 mismatch
-(`usse-branch-br-offset` 5/0/0, `usse-branch-divergent` 6/2/0, `usse-decoder-vectors-and` 16/0/0,
-`usse-decoder-vectors-andn` 16/0/0, `usse-decoder-vectors-asr` 30/0/0, `usse-decoder-vectors-br1`
-2/0/0, `usse-decoder-vectors-br2` 2/0/0, `usse-decoder-vectors-br3` 2/0/0,
-`usse-decoder-vectors-br4` 2/0/0, `usse-decoder-vectors-br5` 2/0/0, `usse-decoder-vectors-brn1`
-2/0/0, `usse-decoder-vectors-brn2` 2/0/0, `usse-decoder-vectors-brn3` 2/0/0,
-`usse-decoder-vectors-brn4` 2/0/0, `usse-decoder-vectors-brn5` 2/0/0, `usse-decoder-vectors-or`
-16/0/0, `usse-decoder-vectors-rol` 30/0/0, `usse-decoder-vectors-shl` 30/0/0,
-`usse-decoder-vectors-shr` 30/0/0, `usse-decoder-vectors-xor` 16/0/0, `usse-dot-products-fdpc`
-6/0/0, `usse-dot-products-fdpc-clip` 16/0/0, `usse-encoding-bits-and` 15/0/0,
-`usse-encoding-bits-and-repeat` 15/0/0, `usse-encoding-bits-shl` 15/0/0,
-`usse-encoding-bits-shr-repeat` 15/0/0, `usse-flags-other` 2/0/0,
-`usse-form-coverage-bitwise-repeat` 9/0/0, `usse-g19-read-paths` 0/8/0,
-`usse-instance-masking-skipinv-inst` 1/0/0, `usse-integer-asr-reg` 7/0/0, `usse-integer-rol-reg`
-7/0/0, `usse-integer-shift-immediates` 25/0/0, `usse-integer-shl-reg` 7/0/0, `usse-integer-shr-reg`
-7/0/0, `usse-memory-mem-forms` 3/0/0, `usse-moe-setfc-branch` 10/0/0, `usse-moe-smbo-operands`
-2/4/0, `usse-numbered-modifiers-family-repeat` 30/2/0, `usse-phases-phasbr-fill-parallel` 1/0/0,
-`usse-phases-phasbr-fill-perinstance` 1/0/0, `usse-write-masks-wmask-and-imm` 16/0/0,
-`usse-write-masks-wmask-or` 16/0/0); unsupported mostly for gN (per-instance values, not modelled)
-(8); reads rN before the program writes it (4); branch flag .syncent (2).
+probe vectors that test them: 857 match the hardware, 41 stop unsupported, 0 mismatch
+(`usse-branch-br-offset` 5/0/0, `usse-branch-divergent` 6/2/0, `usse-compare32-pad-slt-padded`
+16/0/0, `usse-compare32-pad-slt-padded1` 16/0/0, `usse-compare32-pad-slt-padded6` 16/0/0,
+`usse-compare32-slt` 64/0/0, `usse-compare32-ult` 64/0/0, `usse-compare32-ult-padded` 16/0/0,
+`usse-decoder-vectors-and` 16/0/0, `usse-decoder-vectors-andn` 16/0/0, `usse-decoder-vectors-asr`
+30/0/0, `usse-decoder-vectors-br1` 2/0/0, `usse-decoder-vectors-br2` 2/0/0,
+`usse-decoder-vectors-br3` 2/0/0, `usse-decoder-vectors-br4` 2/0/0, `usse-decoder-vectors-br5`
+2/0/0, `usse-decoder-vectors-brn1` 2/0/0, `usse-decoder-vectors-brn2` 2/0/0,
+`usse-decoder-vectors-brn3` 2/0/0, `usse-decoder-vectors-brn4` 2/0/0, `usse-decoder-vectors-brn5`
+2/0/0, `usse-decoder-vectors-or` 16/0/0, `usse-decoder-vectors-rol` 30/0/0,
+`usse-decoder-vectors-shl` 30/0/0, `usse-decoder-vectors-shr` 30/0/0, `usse-decoder-vectors-xor`
+16/0/0, `usse-dot-products-fdpc` 6/0/0, `usse-dot-products-fdpc-clip` 16/0/0,
+`usse-encoding-bits-and` 15/0/0, `usse-encoding-bits-and-repeat` 15/0/0, `usse-encoding-bits-shl`
+15/0/0, `usse-encoding-bits-shr-repeat` 15/0/0, `usse-flags-other` 2/0/0,
+`usse-form-coverage-bitwise-repeat` 9/0/0, `usse-g19-read-paths` 0/8/0, `usse-ima32-forms-banks`
+15/25/0, `usse-ima32-forms-nosched` 16/0/0, `usse-instance-masking-skipinv-inst` 1/0/0,
+`usse-integer-asr-reg` 7/0/0, `usse-integer-rol-reg` 7/0/0, `usse-integer-shift-immediates` 25/0/0,
+`usse-integer-shl-reg` 7/0/0, `usse-integer-shr-reg` 7/0/0, `usse-memory-mem-forms` 3/0/0,
+`usse-moe-setfc-branch` 10/0/0, `usse-moe-smbo-operands` 2/4/0,
+`usse-numbered-modifiers-family-repeat` 30/2/0, `usse-pflow-leftover` 20/0/0,
+`usse-phases-phasbr-fill-parallel` 1/0/0, `usse-phases-phasbr-fill-perinstance` 1/0/0,
+`usse-risky-lapc-high-bits` 4/0/0, `usse-rot-imm-field-1234` 32/0/0, `usse-rot-imm-field-8001`
+32/0/0, `usse-rot-imm-field-ffff` 32/0/0, `usse-rot-imm-invert` 19/0/0, `usse-rot-imm-shifts`
+36/0/0, `usse-rot-imm-text` 18/0/0, `usse-write-masks-wmask-and-imm` 16/0/0,
+`usse-write-masks-wmask-or` 16/0/0); unsupported mostly for reads paN before the program writes it
+(9); reads saN before the program writes it (9); gN (per-instance values, not modelled) (8).
 
 Confirmed on the hardware (a passing vector): #16, #17, #18, #19, #20, #21, #22, #23.
 
@@ -1625,7 +1658,8 @@ The test is `.test<S><J><Z>.<chan>`, from `enc[43:36]`:
   (`shl.testnat`); our state and vertex programs rely on `and.testtanz` of 0 and 0 leaving
   the predicate false (*Predicates*).
 - **The 32-bit adds [HW]** are not full 32-bit adds: `iadd32`/`iaddu32` add source 1's low 16 bits,
-  sign- or zero-extended (`iadd32` sign-extends: E498; `iaddu32`'s extension is **[open]**, Q126),
+  sign- or zero-extended (`iadd32` sign-extends: E498; `iaddu32` zero-extends in the value it
+  writes: E521),
   to the 32-bit source 2, and a test of some of them applies to the true 33-bit sum, not the wrapped
   one (E472, E498; the probe table's model tested the wrapped sum): `iadd32`'s `n` and `p` read the
   sign of the true sum sext16(r1) + r2 (r1 = 0x7fff with r2 = 0x7fffffff leaves `n` clear; 12 pairs
@@ -1638,9 +1672,11 @@ The test is `.test<S><J><Z>.<chan>`, from `enc[43:36]`:
   the sum with its carry out of bit 31 is zero for no other pair of the 16 under either extension of
   r1 (nor is 'both operands zero': the 16 pairs do not separate the two), so 1 + 0xffffffff is
   nonzero, and the wrapped sum reads zero for pairs that are nonzero (E498 lists the 16 pairs).
-  Whether `iaddu32` extends source 1 by zero or by sign is **[open]** (Q126): no test tells it. With
-  source 1 = `#0` the test reads source 2's 32 bits exactly: `n`, `p`, `z` and `nz` (8 of 8 values
-  each) (*The 32-bit adds `iadd32` and `iaddu32`*).
+  The value `iaddu32` writes is the low 16 bits of source 1, zero-extended, plus source 2 **[HW]**
+  (E521: 16 pairs, seven of which a sign extension writes otherwise, such as 0x8000 + 0x8000 =
+  0x10000); which extension its test reads is **[open]** (Q126): no test of the 16 pairs of E498
+  tells it. With source 1 = `#0` the test reads source 2's 32 bits exactly: `n`, `p`, `z` and `nz`
+  (8 of 8 values each) (*The 32-bit adds `iadd32` and `iaddu32`*).
 - **The test field is two parts, ANDed under the `a` join and ORed under the `o` join [HW]** (E499,
   E529): `enc[43:40]` holds taz = bit 40, tanz = bit 41, nat = bit 42 and pat = bit 43 (the
   assembler's `.test<S><J><Z>` writes the sign and zero conditions together: `.testpanz` is the
@@ -1775,26 +1811,44 @@ Modifiers: `.and02`, `.andall`, `.bmsk`, `.chan0`, `.chan1`, `.chan2`, `.chan3`,
 `.testtoz`, `.wmsk`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 18 of 18 forms have semantics. The
-probe vectors that test them: 843 match the hardware, 16 stop unsupported, 0 mismatch
-(`usse-alpha-test-pcoeff-depthf` 1/0/0, `usse-decoder-vectors-and-taz` 14/0/0,
-`usse-decoder-vectors-iadd16-taz` 14/0/0, `usse-decoder-vectors-iadd16-taz-chan1` 14/0/0,
-`usse-decoder-vectors-iadd16-taz-chan2` 14/0/0, `usse-decoder-vectors-iadd16-taz-chan3` 14/0/0,
-`usse-decoder-vectors-iadd32-nat` 14/0/0, `usse-decoder-vectors-iadd32-pat` 14/0/0,
-`usse-decoder-vectors-iadd32-tanz` 14/0/0, `usse-decoder-vectors-iadd32-taz` 14/0/0,
-`usse-decoder-vectors-iaddu32-taz` 14/0/0, `usse-decoder-vectors-isub16-taz` 14/0/0,
-`usse-decoder-vectors-shl-pat` 14/0/0, `usse-decoder-vectors-uadd16-taz` 14/0/0,
-`usse-decoder-vectors-usub16-taz` 14/0/0, `usse-decoder-vectors-xor-nat` 14/0/0,
-`usse-encoding-bits-test-mask-fadd` 4/0/0, `usse-encoding-bits-test-mask-frcp` 0/14/0,
-`usse-encoding-bits-test-mask-iadd8` 4/0/0, `usse-encoding-bits-test-mask-xor` 4/0/0,
-`usse-form-coverage-form2-test-e50` 9/1/0, `usse-form-coverage-form2-test-mask` 12/1/0,
-`usse-form-coverage-test-fn` 5/0/0, `usse-integer-iadd32-n` 4/0/0, `usse-integer-iadd32-p` 3/0/0,
-`usse-integer-iadd32-src1-imm` 2/0/0, `usse-integer-iadd32-value` 4/0/0, `usse-integer-iadd32-z`
-5/0/0, `usse-integer-iaddu32-imm` 4/0/0, `usse-integer-iaddu32-np` 3/0/0,
-`usse-integer-iaddu32-tests` 6/0/0, `usse-integer-iaddu32-value` 4/0/0, `usse-integer-isub16-reg`
-3/0/0, `usse-integer-isub16-sign-n` 4/0/0, `usse-integer-isub16-sign-p` 4/0/0,
-`usse-integer-isub16-value` 6/0/0, `usse-integer-isub16-zero` 6/0/0, `usse-integer-shl-test-reg`
-4/0/0, `usse-integer-usub16-value` 3/0/0, `usse-integer-usub16-zero` 3/0/0,
-`usse-lane-integer-rogue-int` 11/0/0, `usse-predicates-predicate-pn` 6/0/0,
+probe vectors that test them: 2165 match the hardware, 16 stop unsupported, 0 mismatch
+(`usse-alpha-test-pcoeff-depthf` 1/0/0, `usse-compare32-iadd32-testnat-src1` 10/0/0,
+`usse-compare32-iadd32-testnat-src2` 8/0/0, `usse-compare32-iadd32-testpat-src2` 8/0/0,
+`usse-compare32-iadd32-testtanz-src2` 8/0/0, `usse-compare32-iadd32-testtaz-src1` 10/0/0,
+`usse-compare32-iadd32-testtaz-src2` 8/0/0, `usse-compare32-iaddu32-testnat-src2` 8/0/0,
+`usse-compare32-iaddu32-testtanz-src2` 8/0/0, `usse-compare32-other-imm` 48/0/0,
+`usse-compare32-shr-imm` 80/0/0, `usse-compare32-xor-imm` 18/0/0,
+`usse-compare32x-iadd32-ovf-testnat` 12/0/0, `usse-compare32x-iadd32-ovf-testpat` 12/0/0,
+`usse-compare32x-iadd32-ovf-testtaz` 12/0/0, `usse-compare32x-iaddu32-carry-testtanz` 8/0/0,
+`usse-decoder-vectors-and-taz` 14/0/0, `usse-decoder-vectors-iadd16-taz` 14/0/0,
+`usse-decoder-vectors-iadd16-taz-chan1` 14/0/0, `usse-decoder-vectors-iadd16-taz-chan2` 14/0/0,
+`usse-decoder-vectors-iadd16-taz-chan3` 14/0/0, `usse-decoder-vectors-iadd32-nat` 14/0/0,
+`usse-decoder-vectors-iadd32-pat` 14/0/0, `usse-decoder-vectors-iadd32-tanz` 14/0/0,
+`usse-decoder-vectors-iadd32-taz` 14/0/0, `usse-decoder-vectors-iaddu32-taz` 14/0/0,
+`usse-decoder-vectors-isub16-taz` 14/0/0, `usse-decoder-vectors-shl-pat` 14/0/0,
+`usse-decoder-vectors-uadd16-taz` 14/0/0, `usse-decoder-vectors-usub16-taz` 14/0/0,
+`usse-decoder-vectors-xor-nat` 14/0/0, `usse-encoding-bits-test-mask-fadd` 4/0/0,
+`usse-encoding-bits-test-mask-frcp` 0/14/0, `usse-encoding-bits-test-mask-iadd8` 4/0/0,
+`usse-encoding-bits-test-mask-xor` 4/0/0, `usse-form-coverage-form2-test-e50` 9/1/0,
+`usse-form-coverage-form2-test-mask` 12/1/0, `usse-form-coverage-test-fn` 5/0/0,
+`usse-iaddu32-pairs-iadd32-testnat` 16/0/0, `usse-iaddu32-pairs-iadd32-testpat` 16/0/0,
+`usse-iaddu32-pairs-iadd32-testtanz` 16/0/0, `usse-iaddu32-pairs-iadd32-testtaz` 16/0/0,
+`usse-iaddu32-pairs-iaddu32-testnat` 16/0/0, `usse-iaddu32-pairs-iaddu32-testpat` 16/0/0,
+`usse-iaddu32-pairs-iaddu32-testtanz` 16/0/0, `usse-iaddu32-pairs-iaddu32-testtaz` 16/0/0,
+`usse-integer-iadd32-n` 4/0/0, `usse-integer-iadd32-p` 3/0/0, `usse-integer-iadd32-src1-imm` 2/0/0,
+`usse-integer-iadd32-value` 4/0/0, `usse-integer-iadd32-z` 5/0/0, `usse-integer-iaddu32-imm` 4/0/0,
+`usse-integer-iaddu32-np` 3/0/0, `usse-integer-iaddu32-tests` 6/0/0, `usse-integer-iaddu32-value`
+4/0/0, `usse-integer-isub16-reg` 3/0/0, `usse-integer-isub16-sign-n` 4/0/0,
+`usse-integer-isub16-sign-p` 4/0/0, `usse-integer-isub16-value` 6/0/0, `usse-integer-isub16-zero`
+6/0/0, `usse-integer-shl-test-reg` 4/0/0, `usse-integer-usub16-value` 3/0/0,
+`usse-integer-usub16-zero` 3/0/0, `usse-lane-integer-rogue-int` 11/0/0, `usse-pflow-flow` 12/0/0,
+`usse-predicates-predicate-pn` 6/0/0, `usse-raw25-test-bit43` 96/0/0, `usse-raw25-test-plain`
+96/0/0, `usse-rawchan-1-and` 36/0/0, `usse-rawchan-2-and` 36/0/0, `usse-rawchan-3-and` 36/0/0,
+`usse-rawchan-4-and` 36/0/0, `usse-rawchan-5-and` 36/0/0, `usse-rawchan-6-and` 36/0/0,
+`usse-rawchan-7-and` 36/0/0, `usse-rawcond-and-codes` 48/0/0, `usse-rawcond2-and-imm` 48/0/0,
+`usse-rawcond2-or-reg` 48/0/0, `usse-rawcond2-rol-reg` 48/0/0, `usse-rawcond2-xor-imm` 48/0/0,
+`usse-rawcond2-xor-reg` 48/0/0, `usse-rawjoin-o-and` 48/0/0, `usse-rawjoin-o2-and7-fields` 48/0/0,
+`usse-rawjoin-o2-or-fields` 48/0/0, `usse-rawjoin-o2-xor-fields` 48/0/0,
 `usse-test-channels-chan-and` 12/0/0, `usse-test-channels-chan-isub16` 5/0/0,
 `usse-test-channels-chan-preds` 8/0/0, `usse-test-channels-chan-tests` 360/0/0,
 `usse-test-channels-lanes-other` 74/0/0, `usse-tests-join-t-not` 3/0/0, `usse-tests-join-t-tonz`
@@ -1942,18 +1996,48 @@ Mnemonics: `idiv`, `ima16`, `ima32`, `ima8`, `imae`.
 Modifiers: `.end`, `.nosched`, `.repeatN`, `.rsN`, `.s`, `.sat`, `.skipinv`, `.ssat`, `.u`, `.usat`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 12 of 12 forms have semantics. The
-probe vectors that test them: 220 match the hardware, 10 stop unsupported, 0 mismatch
-(`usse-decoder-vectors-idiv` 17/0/0, `usse-decoder-vectors-ima16s` 16/0/0,
-`usse-decoder-vectors-ima16u` 16/0/0, `usse-decoder-vectors-ima32s` 16/0/0,
-`usse-decoder-vectors-ima32u` 16/0/0, `usse-encoding-bits-idiv` 19/1/0, `usse-encoding-bits-ima16`
-2/0/0, `usse-encoding-bits-ima16-8bit` 3/0/0, `usse-encoding-bits-ima16-s8` 3/0/0,
-`usse-encoding-bits-ima16-u8u8` 2/0/0, `usse-encoding-bits-ima32` 4/0/0, `usse-encoding-bits-imae`
-2/0/0, `usse-form-coverage-ima16-ignored` 3/0/0, `usse-idiv-enc47-grid` 5/9/0,
-`usse-idiv-enc47-repeat-sets` 16/0/0, `usse-integer-idiv` 7/0/0, `usse-integer-ima16` 4/0/0,
-`usse-integer-ima16-8bit` 8/0/0, `usse-integer-ima16-imm-c` 2/0/0, `usse-integer-ima16-plain` 3/0/0,
-`usse-integer-ima16-reg-b` 2/0/0, `usse-integer-ima8` 8/0/0, `usse-integer-imae-modes` 14/0/0,
-`usse-numbered-modifiers-family-rs` 32/0/0); unsupported mostly for reads R(N) before its DRC result
-lands (wdf) (9); reads rN before the program writes it (1).
+probe vectors that test them: 3119 match the hardware, 56 stop unsupported, 0 mismatch
+(`usse-compare32-pad-slt-padded` 16/0/0, `usse-compare32-pad-slt-padded1` 16/0/0,
+`usse-compare32-pad-slt-padded6` 16/0/0, `usse-compare32-slt` 64/0/0, `usse-compare32-ult` 64/0/0,
+`usse-compare32-ult-padded` 16/0/0, `usse-decoder-vectors-idiv` 17/0/0,
+`usse-decoder-vectors-ima16s` 16/0/0, `usse-decoder-vectors-ima16u` 16/0/0,
+`usse-decoder-vectors-ima32s` 16/0/0, `usse-decoder-vectors-ima32u` 16/0/0,
+`usse-encoding-bits-idiv` 19/1/0, `usse-encoding-bits-ima16` 2/0/0, `usse-encoding-bits-ima16-8bit`
+3/0/0, `usse-encoding-bits-ima16-s8` 3/0/0, `usse-encoding-bits-ima16-u8u8` 2/0/0,
+`usse-encoding-bits-ima32` 4/0/0, `usse-encoding-bits-imae` 2/0/0,
+`usse-form-coverage-ima16-ignored` 3/0/0, `usse-idiv-enc47-grid` 5/9/0,
+`usse-idiv-enc47-repeat-sets` 16/0/0, `usse-ima32-forms-banks` 15/25/0, `usse-ima32-forms-cie-in`
+24/0/0, `usse-ima32-forms-dest` 30/3/0, `usse-ima32-forms-extra-i` 15/0/0,
+`usse-ima32-forms-imae-cie-in` 8/0/0, `usse-ima32-forms-imae-coe-in` 8/0/0,
+`usse-ima32-forms-imm-range` 68/0/0, `usse-ima32-forms-nosched` 48/0/0, `usse-ima32-forms-s-neg`
+80/0/0, `usse-ima32-full-bimm0` 14/0/0, `usse-ima32-full-bimm1` 49/0/0, `usse-ima32-full-bimm1-s`
+14/0/0, `usse-ima32-full-bimm127` 14/0/0, `usse-ima32-full-bimm2` 14/0/0, `usse-ima32-full-bimm3`
+14/0/0, `usse-ima32-full-bothimm` 21/0/0, `usse-ima32-full-c0-mul` 49/0/0, `usse-ima32-full-c0-src2`
+10/0/0, `usse-ima32-full-c13-src2` 10/0/0, `usse-ima32-full-c13-src3` 8/0/0,
+`usse-ima32-full-c3-src2` 10/0/0, `usse-ima32-full-c3-src3` 8/0/0, `usse-ima32-full-c45-src3` 8/0/0,
+`usse-ima32-full-c56-src3` 8/0/0, `usse-ima32-full-c60-src2` 10/0/0, `usse-ima32-full-c60-src3`
+8/0/0, `usse-ima32-full-carry` 22/0/0, `usse-ima32-full-cimm0` 8/0/0, `usse-ima32-full-cimm1`
+21/0/0, `usse-ima32-full-cimm127` 8/0/0, `usse-ima32-full-cimm2` 8/0/0, `usse-ima32-full-s-cube`
+147/0/0, `usse-ima32-full-u-cube` 343/0/0, `usse-ima32-neg-c56-src3` 8/0/0, `usse-ima32-neg-chain`
+10/0/0, `usse-ima32-neg-cie-width` 10/0/0, `usse-ima32-neg-ima32-s-r10-r1-r2-neg-r3` 10/0/0,
+`usse-ima32-neg-ima32-s-r10-r1-r2-r3-neg` 10/0/0, `usse-ima32-neg-ima32-u-r10-r1-1-r3-neg` 10/0/0,
+`usse-ima32-neg-ima32-u-r10-r1-c56-neg-r3` 10/0/0, `usse-ima32-neg-ima32-u-r10-r1-r2-1-neg` 10/0/0,
+`usse-ima32-neg-ima32-u-r10-r1-r2-c56-neg` 10/0/0, `usse-ima32-neg-ima32-u-r10-r1-r2-neg-r3` 10/0/0,
+`usse-ima32-neg-ima32-u-r10-r1-r2-neg-r3-neg` 10/0/0, `usse-ima32-neg-ima32-u-r10-r1-r2-r3-neg`
+10/0/0, `usse-ima32-neg-sub-c56` 80/0/0, `usse-ima32-neg-sub-c57u` 6/0/0, `usse-ima32-neg-sub-c58u`
+6/0/0, `usse-ima32-neg-sub-c59s` 6/0/0, `usse-ima32-neg-sub-c59u` 6/0/0, `usse-ima32-neg-sub-reg`
+8/0/0, `usse-ima32hi-generic-u` 282/0/0, `usse-ima32hi-signed-s` 282/0/0, `usse-ima32hi-sub-high`
+75/0/0, `usse-imae-neg-chain64` 10/0/0, `usse-imae-neg-cie-width` 10/0/0, `usse-imae-neg-coe`
+14/0/0, `usse-imae-neg-coe-cie` 14/0/0, `usse-imae-neg-coe-signed` 6/0/0, `usse-integer-idiv` 7/0/0,
+`usse-integer-ima16` 4/0/0, `usse-integer-ima16-8bit` 8/0/0, `usse-integer-ima16-imm-c` 2/0/0,
+`usse-integer-ima16-plain` 3/0/0, `usse-integer-ima16-reg-b` 2/0/0, `usse-integer-ima8` 8/0/0,
+`usse-integer-imae-modes` 14/0/0, `usse-link-filler-control` 3/0/0, `usse-load-readers-alu` 0/6/0,
+`usse-numbered-modifiers-family-rs` 32/0/0, `usse-pa-dest-persist` 1/0/0, `usse-raw25-ima32-bits`
+3/9/0, `usse-raw25-ima32-x` 9/3/0, `usse-risky-lapc-backward` 6/0/0, `usse-risky-lapc-computed`
+8/0/0, `usse-risky-lapc-direct` 8/0/0, `usse-scmp-ima32s` 164/0/0, `usse-ucmp2-pad-0` 48/0/0,
+`usse-ucmp2-pad-1` 48/0/0, `usse-ucmp2-pad-3` 48/0/0, `usse-ucmp2-random-pairs` 252/0/0,
+`usse-ucmp2-two-instructions` 64/0/0); unsupported mostly for reads R(N) before its DRC result lands
+(wdf) (15); reads paN before the program writes it (12); flag .repeatN (9).
 
 Confirmed on the hardware (a passing vector): #27, #28, #29, #172, #173, #174, #175, #176, #177,
 #178, #179, #180.
@@ -2698,7 +2782,7 @@ Modifiers: `.bpcache`, `.bypassl1`, `.fcfill`, `.fetchN`, `.noread`, `.nosched`,
 `.repeatN`, `.skipinv`, `.syncs`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 7 of 7 forms have semantics. The
-probe vectors that test them: 397 match the hardware, 86 stop unsupported, 0 mismatch
+probe vectors that test them: 685 match the hardware, 113 stop unsupported, 0 mismatch
 (`texture-mipmaps-mip-bias` 5/0/0, `texture-mipmaps-mip-grad` 8/0/0, `texture-mipmaps-mip-level`
 13/0/0, `texture-mipmaps-mip-minfilter` 15/0/0, `texture-mipmaps-mip-mipfilter` 24/0/0,
 `texture-mipmaps-mip-t0-field` 12/0/0, `texture-sampler-cache-texcache-cold` 2/0/0,
@@ -2714,15 +2798,35 @@ probe vectors that test them: 397 match the hardware, 86 stop unsupported, 0 mis
 `usse-decoder-vectors-stad-imm2` 2/0/0, `usse-decoder-vectors-stad-imm3` 2/0/0,
 `usse-decoder-vectors-stad-imm63` 2/0/0, `usse-decoder-vectors-stad-imm7` 2/0/0,
 `usse-decoder-vectors-stad-postinc` 6/0/0, `usse-decoder-vectors-stad-reg` 10/0/0,
-`usse-form-coverage-ld-pre` 4/0/0, `usse-form-coverage-st-pre` 6/0/0,
-`usse-internal-registers-ireg-ldad` 0/20/0, `usse-memory-ldad-reg-off` 16/0/0,
+`usse-fence-batching-counters` 1/6/0, `usse-fence-batching-empty-wdf` 2/0/0,
+`usse-fence-batching-mixed` 5/0/0, `usse-fence-batching-no-wait` 0/9/0,
+`usse-fence-batching-one-wdf` 5/0/0, `usse-fence-batching-store-then-load` 22/0/0,
+`usse-fence-batching-store-then-load-recorded` 12/0/0, `usse-fence-growth-fetch16` 5/0/0,
+`usse-fence-growth-ldad-drc0` 6/0/0, `usse-fence-growth-ldad-drc1` 3/0/0,
+`usse-fence-growth-ldad-reuse` 3/0/0, `usse-form-coverage-ld-pre` 4/0/0, `usse-form-coverage-st-pre`
+6/0/0, `usse-internal-registers-ireg-ldad` 0/20/0, `usse-load-readers-alu` 0/6/0,
+`usse-load-readers-slots` 0/5/0, `usse-load-readers-waw` 5/0/0, `usse-memory-ldad-reg-off` 16/0/0,
 `usse-memory-ldad-reg-off-fetch` 2/0/0, `usse-memory-ldad-reg-off-neg` 4/0/0,
 `usse-memory-mem-forms` 3/0/0, `usse-memory-stad-reg-off` 6/0/0,
 `usse-memory-stad-reg-off-unaligned` 3/0/0, `usse-moe-setfc` 10/0/0, `usse-moe-setfc-fetch` 10/0/0,
 `usse-numbered-modifiers-family-fetch` 32/0/0, `usse-numbered-modifiers-family-fetch-dst` 8/0/0,
-`usse-numbered-modifiers-family-fetch-edge` 6/0/0); unsupported mostly for gN (per-instance values,
-not modelled) (54); fetch past the temporaries (16); eld with bit N set in its index, offset or
-limit (not measured) (12).
+`usse-numbered-modifiers-family-fetch-edge` 6/0/0, `usse-reload-growth-n104-drc0` 1/0/0,
+`usse-reload-growth-n112-drc0` 1/0/0, `usse-reload-growth-n128-drc0` 1/0/0,
+`usse-reload-growth-n128-drc1` 1/0/0, `usse-reload-growth-n160-drc0` 1/0/0,
+`usse-reload-growth-n192-drc0` 1/0/0, `usse-reload-growth-n192-drc1` 1/0/0,
+`usse-repeat-ptrs-fetch-offset` 8/0/0, `usse-repeat-ptrs-fetch-post` 4/0/0,
+`usse-repeat-ptrs-fetch-pre` 3/0/0, `usse-repeat-ptrs-ldad-plain` 11/0/0,
+`usse-repeat-ptrs-ldad-post` 10/0/0, `usse-repeat-ptrs-stad-plain` 10/0/0,
+`usse-repeat-ptrs-stad-post` 15/0/0, `usse-repeat-ptrs-stad-pre` 4/0/0, `usse-store-own-cross`
+9/0/0, `usse-store-own-load` 20/0/0, `usse-store-own-one` 12/0/0, `usse-store-own2-cross` 14/0/0,
+`usse-store-own2-load` 20/0/0, `usse-store-own2-quad` 14/0/0, `usse-store-repeat-copy16` 4/0/0,
+`usse-store-repeat-fetch-spelling` 7/0/0, `usse-store-repeat-plain` 1/1/0,
+`usse-store-repeat-postinc` 2/0/0, `usse-store-repeat-preinc` 1/0/0, `usse-store-repeat-regs-copy16`
+2/0/0, `usse-store-repeat-regs-ldad-repeat` 7/0/0, `usse-store-repeat-regs-plain` 5/0/0,
+`usse-store-repeat-regs-postinc` 5/0/0, `usse-store-repeat-regs-preinc` 3/0/0,
+`usse-store-repeat-regs-smlsi` 12/0/0, `usse-store-repeat-regs2-ldad-repeat` 7/0/0,
+`usse-store-repeat-smlsi` 2/0/0); unsupported mostly for gN (per-instance values, not modelled)
+(54); reads R(N) before its DRC result lands (wdf) (26); fetch past the temporaries (16).
 
 Confirmed on the hardware (a passing vector): #30, #31, #32, #33, #34, #35, #124.
 
@@ -2837,11 +2941,12 @@ Mnemonics: `ldr`, `str`.
 Modifiers: `.nosched`, `.skipinv`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 8 of 8 forms have semantics. The
-probe vectors that test them: 4 match the hardware, 67 stop unsupported, 0 mismatch
+probe vectors that test them: 8 match the hardware, 69 stop unsupported, 0 mismatch
 (`usse-encoding-bits-load-ldr` 0/31/0, `usse-encoding-bits-load-ldr-imm` 0/24/0,
+`usse-fence-batching-counters` 1/2/0, `usse-fence-batching-mixed` 3/0/0,
 `usse-indexing-ldr-index-mask` 1/4/0, `usse-internal-registers-ireg-ldr` 2/8/0,
 `usse-memory-mem-forms` 1/0/0); unsupported mostly for no SGX registers on this bus (59); rN is past
-the task's N temporaries (8).
+the task's N temporaries (8); reads R(N) before its DRC result lands (wdf) (2).
 
 Confirmed on the hardware (a passing vector): #36, #37; not yet confirmed (as decoded; no passing
 vector yet): #38, #39, #145, #146, #147, #148.
@@ -2912,18 +3017,24 @@ Mnemonics: `ba`, `bexception`, `br`, `lapc`.
 Modifiers: `.mon`, `.nosched`, `.rel`, `.savelink`, `.synce`, `.syncent`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 5 of 5 forms have semantics. The
-probe vectors that test them: 51 match the hardware, 32 stop unsupported, 0 mismatch
+probe vectors that test them: 209 match the hardware, 32 stop unsupported, 0 mismatch
 (`usse-branch-bexc2-ba10` 0/1/0, `usse-branch-bexc2-ba2` 0/1/0, `usse-branch-bexc2-br5` 0/1/0,
 `usse-branch-bexc2-np0-t10` 0/1/0, `usse-branch-bexc2-p0-t10` 0/1/0, `usse-branch-bexc2-rel5` 0/1/0,
 `usse-branch-bexc2-t10` 0/1/0, `usse-branch-bexc2-t2` 0/1/0, `usse-branch-br-offset` 5/0/0,
-`usse-branch-divergent` 6/2/0, `usse-cache-control-cross` 0/22/0, `usse-decoder-vectors-br1` 2/0/0,
-`usse-decoder-vectors-br2` 2/0/0, `usse-decoder-vectors-br3` 2/0/0, `usse-decoder-vectors-br4`
-2/0/0, `usse-decoder-vectors-br5` 2/0/0, `usse-decoder-vectors-brn1` 2/0/0,
-`usse-decoder-vectors-brn2` 2/0/0, `usse-decoder-vectors-brn3` 2/0/0, `usse-decoder-vectors-brn4`
-2/0/0, `usse-decoder-vectors-brn5` 2/0/0, `usse-form-coverage-lapc-pclink` 6/0/0,
-`usse-moe-setfc-branch` 10/0/0, `usse-phases-filladdr` 2/0/0, `usse-phases-phasbr-fill-parallel`
-1/0/0, `usse-phases-phasbr-fill-perinstance` 1/0/0); unsupported mostly for gN (per-instance values,
-not modelled) (22); rN is past the task's N temporaries (8); branch flag .syncent (2).
+`usse-branch-divergent` 6/2/0, `usse-cache-control-cross` 0/22/0, `usse-callfalse-chain` 3/0/0,
+`usse-callfalse-link` 8/0/0, `usse-callfalse2-chain` 3/0/0, `usse-callfalse2-link` 8/0/0,
+`usse-decoder-vectors-br1` 2/0/0, `usse-decoder-vectors-br2` 2/0/0, `usse-decoder-vectors-br3`
+2/0/0, `usse-decoder-vectors-br4` 2/0/0, `usse-decoder-vectors-br5` 2/0/0,
+`usse-decoder-vectors-brn1` 2/0/0, `usse-decoder-vectors-brn2` 2/0/0, `usse-decoder-vectors-brn3`
+2/0/0, `usse-decoder-vectors-brn4` 2/0/0, `usse-decoder-vectors-brn5` 2/0/0,
+`usse-form-coverage-lapc-pclink` 6/0/0, `usse-link-ba-savelink-read` 1/0/0, `usse-link-control-e091`
+2/0/0, `usse-link-lapc-gap` 38/0/0, `usse-moe-setfc-branch` 10/0/0, `usse-pflow-flow` 24/0/0,
+`usse-phases-filladdr` 2/0/0, `usse-phases-phasbr-fill-parallel` 1/0/0,
+`usse-phases-phasbr-fill-perinstance` 1/0/0, `usse-risky-lapc-backward` 12/0/0,
+`usse-risky-lapc-computed` 16/0/0, `usse-risky-lapc-direct` 16/0/0, `usse-risky-lapc-high-bits`
+4/0/0, `usse-risky-link-ba-return` 4/0/0, `usse-risky-link-nested` 3/0/0, `usse-risky-pflow-call`
+16/0/0); unsupported mostly for gN (per-instance values, not modelled) (22); rN is past the task's N
+temporaries (8); branch flag .syncent (2).
 
 Confirmed on the hardware (a passing vector): #13, #125; not yet confirmed (as decoded; no passing
 vector yet): #12, #14, #15.
@@ -2985,7 +3096,7 @@ Mnemonics: `idf`, `lock`, `nop`, `release`, `setm`, `wdf`, `wop`.
 Modifiers: `.end`, `.nosched`, `.syncs`, `.tog`, `.trigger`, `.twopart`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 8 of 9 forms have semantics (not
-yet: #143). The probe vectors that test them: 346 match the hardware, 12 stop unsupported, 0
+yet: #143). The probe vectors that test them: 365 match the hardware, 12 stop unsupported, 0
 mismatch (`texture-mipmaps-mip-bias` 5/0/0, `texture-mipmaps-mip-grad` 8/0/0,
 `texture-mipmaps-mip-level` 13/0/0, `texture-mipmaps-mip-minfilter` 15/0/0,
 `texture-mipmaps-mip-mipfilter` 24/0/0, `texture-mipmaps-mip-t0-field` 12/0/0,
@@ -2999,13 +3110,16 @@ mismatch (`texture-mipmaps-mip-bias` 5/0/0, `texture-mipmaps-mip-grad` 8/0/0,
 `usse-encoding-bits-state-nop` 37/0/0, `usse-encoding-bits-state-setm` 50/0/0,
 `usse-encoding-gaps-class2` 1/0/0, `usse-encoding-gaps-class22` 1/0/0, `usse-encoding-gaps-class26`
 1/0/0, `usse-encoding-gaps-class31` 1/0/0, `usse-encoding-gaps-end-words` 1/0/0,
+`usse-fence-batching-store-then-load` 2/0/0, `usse-fence-batching-store-then-load-recorded` 4/0/0,
 `usse-form-coverage-ld-pre` 2/0/0, `usse-form-coverage-st-pre` 2/0/0, `usse-instance-masking-setm`
-22/0/0, `usse-internal-registers-ireg-ldad` 0/10/0, `usse-memory-mem-forms` 1/0/0); unsupported
-mostly for fetch past the temporaries (8); gN (per-instance values, not modelled) (2); rN is past
-the task's N temporaries (2).
+22/0/0, `usse-internal-registers-ireg-ldad` 0/10/0, `usse-link-ba-savelink-read` 4/0/0,
+`usse-memory-mem-forms` 1/0/0, `usse-store-own-cross` 2/0/0, `usse-store-own-load` 1/0/0,
+`usse-store-own-one` 1/0/0, `usse-store-own2-cross` 3/0/0, `usse-store-own2-load` 1/0/0,
+`usse-store-own2-quad` 1/0/0); unsupported mostly for fetch past the temporaries (8); gN
+(per-instance values, not modelled) (2); rN is past the task's N temporaries (2).
 
-Confirmed on the hardware (a passing vector): #5, #6, #142; not yet confirmed (as decoded; no
-passing vector yet): #7, #128, #140, #141, #143, #144.
+Confirmed on the hardware (a passing vector): #5, #6, #140, #142; not yet confirmed (as decoded; no
+passing vector yet): #7, #128, #141, #143, #144.
 
 ### 7.24 MOE control: `smoa`, `smr`, `smlsi`, `smbo`, `imo`, `setfc`, `moest`
 
@@ -3069,7 +3183,7 @@ Mnemonics: `imo`, `moest`, `setfc`, `smbo`, `smlsi`, `smoa`, `smr`.
 Modifiers: `.nosched`, `.skipinv`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 6 of 11 forms have semantics (not
-yet: #129, #130, #131, #132, #137). The probe vectors that test them: 749 match the hardware, 261
+yet: #129, #130, #131, #132, #137). The probe vectors that test them: 752 match the hardware, 261
 stop unsupported, 0 mismatch (`usse-encoding-bits-state-imo` 0/5/0, `usse-encoding-bits-state-moest`
 39/0/0, `usse-encoding-bits-state-setfc` 51/0/0, `usse-encoding-bits-state-smbo-imm` 5/0/0,
 `usse-encoding-bits-state-smlsi-imm` 5/0/0, `usse-encoding-bits-state-smoa-imm` 5/0/0,
@@ -3081,9 +3195,10 @@ stop unsupported, 0 mismatch (`usse-encoding-bits-state-imo` 0/5/0, `usse-encodi
 `usse-moe-smoa-all-src` 20/28/0, `usse-moe-smoa-hi-clamp` 56/0/0, `usse-moe-smoa-hi-mirror` 12/44/0,
 `usse-moe-smoa-hi-none` 36/0/0, `usse-moe-smoa-hi-pred` 48/0/0, `usse-moe-smoa-hi-repeat` 36/0/0,
 `usse-moe-smoa-hi-src` 20/28/0, `usse-moe-smr-smoa` 6/12/0, `usse-moe-state-next-job` 3/0/0,
-`usse-moe-swizzle` 8/2/0, `usse-moe-window` 12/8/0, `usse-moe-window-reset` 56/16/0); unsupported
-mostly for smoa takes dst to r-N (not modelled) (128); smlsi with non-zero limits (58); smoa takes
-srcN to r-N (not modelled) (32).
+`usse-moe-swizzle` 8/2/0, `usse-moe-window` 12/8/0, `usse-moe-window-reset` 56/16/0,
+`usse-store-repeat-regs-copy16` 1/0/0, `usse-store-repeat-smlsi` 2/0/0); unsupported mostly for smoa
+takes dst to r-N (not modelled) (128); smlsi with non-zero limits (58); smoa takes srcN to r-N (not
+modelled) (32).
 
 Confirmed on the hardware (a passing vector): #133, #134, #135, #136, #138, #139; not yet confirmed
 (as decoded; no passing vector yet): #129, #130, #131, #132, #137.
@@ -3715,10 +3830,14 @@ its `n` never (16 of 16 pairs each). The probe table's model tested the wrapped 
 `#0` a test through source 2 reads that register's 32 bits exactly: `n`, `p`, `z` and `nz` of
 `iadd32` (8 of 8 values each), `nz` of `iaddu32` (8 of 8) and its `n`, never true (8 of 8).
 
-**Undecided:** whether `iaddu32` zero- or sign-extends a source 1 above 0x7fff: the sums that would
-tell it are nonzero under both readings, so no test settles it, and the value `iaddu32` writes with
-such an r1 would (Q126); the `chan` fields other than `chan0`, and the combined conditions of the
-test field on these adds (Q137).
+The value `iaddu32` writes zero-extends source 1 **[HW]** (E521, from the readbacks of two earlier
+probes, `usse-decoder-vectors-iaddu32-taz` and `usse-integer-iaddu32-value`: 16 distinct pairs,
+seven that a sign extension writes otherwise, such as (0x8000, 0x8000) giving 0x10000).
+
+**Undecided:** which extension the test of `iaddu32` reads for a source 1 above 0x7fff: the sums
+that would tell it are nonzero under both readings, so no test of those pairs settles it, and the
+value `iaddu32` writes with an immediate, a constant or a repeat was not run (Q126); the `chan`
+fields other than `chan0`, and the combined conditions of the test field on these adds (Q137).
 
 ### 8.4 Test channels
 
@@ -4783,13 +4902,14 @@ open driver:
    and a jump across a 65536-word step of the code base (Q123; the step of 0x80000 is shown by ten
    placements: E492); `p0`-`p3` and `pclink` at the start of a firmware task, which no program of
    ours has run (Q124); what leaves 0xeb3 and 0x98 in them across jobs (Q125: four runs of the
-   readers show 64 pixels of 0xeb3 in 29 of 40 jobs and quads that repeat in part, E500); how
-   `iaddu32` extends a source 1 above 0x7fff, which no test tells (Q126); `ima32`'s dual-issue form,
-   `cie`, `.neg` and immediates with the extra operand, its selector 3 and what bit 46 does (Q135),
-   and `imae`'s repeats, `u16`/`z16` sources and `.rsN` shifts with the carries, with the operand
-   values and immediates not run (Q127); the rule of the test field on the shifts, the lane
-   operations and the other classes, with the `o` join (Q137, Q151) and the chan field (Q150); how
-   long an `sa0` written by `ima32` lasts and why a write to `pa0` is lost (Q136).
+   readers show 64 pixels of 0xeb3 in 29 of 40 jobs and quads that repeat in part, E500); which
+   extension the test of `iaddu32` reads for a source 1 above 0x7fff, which no test tells, and the
+   value it writes with a repeat, an immediate or a constant in source 2 (Q126); `ima32`'s
+   dual-issue form, `cie`, `.neg` and immediates with the extra operand, its selector 3 and what bit
+   46 does (Q135), and `imae`'s repeats, `u16`/`z16` sources and `.rsN` shifts with the carries,
+   with the operand values and immediates not run (Q127); the rule of the test field on the shifts,
+   the lane operations and the other classes, with the `o` join (Q137, Q151) and the chan field
+   (Q150); how long an `sa0` written by `ima32` lasts and why a write to `pa0` is lost (Q136).
 10. **Fences, repeats, registers and persistence for a firmware compiler**: why a `wdf` waits
    for another counter's loads in some runs and not in others (Q130); whether a firmware (EDM)
    task behaves as a fill for `wdf`, unfenced stores and two tasks at once (Q131, firmware);
@@ -4800,8 +4920,8 @@ open driver:
     (Q132); what bounds a `phas` request and what a request above 256 allocates (Q133, Q144). The
     overlap of two firmware tasks and `str` then `ldr` are not answered (Q131, Q134).
 
-The simulator (`crates/sgx-sim`) reproduces 24711 probe vectors (15526 of them with near values:
-float functions within their measured bound) and 143 pixel vectors; it stops on 1885 rather than
+The simulator (`crates/sgx-sim`) reproduces 30067 probe vectors (15526 of them with near values:
+float functions within their measured bound) and 193 pixel vectors; it stops on 2020 rather than
 guess, most often because (vectors, from `doc/isa/sim-coverage.json`):
 
 - firh's fixed bank 1 or 2, whose taps are fitted to these vectors (in-sample, not a hardware check)
@@ -4809,11 +4929,11 @@ guess, most often because (vectors, from `doc/isa/sim-coverage.json`):
 - bytes of the firh latch the task did not write (read in rN) (285)
 - smoa takes dst to r-N (not modelled) (64)
 - no SGX registers on this bus (59)
-- gN (per-instance values, not modelled) (50)
-- rN is past the task's N temporaries (26)
+- rN is past the task's N temporaries (56)
+- gN (per-instance values, not modelled) (48)
+- reads saN before the program writes it (36)
+- reads R(N) before its DRC result lands (wdf) (35)
+- reads paN before the program writes it (35)
 - the firh latch, which a later firh may reach first (read in rN) (24)
-- reads paN before the program writes it (22)
 - undecoded (22)
-- four texels fix no decoder (20)
-- smlsi with non-zero limits (20)
-- smoa takes srcN to r-N (not modelled) (16)
+- reads iN before the program writes it (21)

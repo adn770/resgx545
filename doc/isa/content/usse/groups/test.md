@@ -30,7 +30,8 @@ The test is `.test<S><J><Z>.<chan>`, from `enc[43:36]`:
   (`shl.testnat`); our state and vertex programs rely on `and.testtanz` of 0 and 0 leaving
   the predicate false (*Predicates*).
 - **The 32-bit adds [HW]** are not full 32-bit adds: `iadd32`/`iaddu32` add source 1's low 16 bits,
-  sign- or zero-extended (`iadd32` sign-extends: E498; `iaddu32`'s extension is **[open]**, Q126),
+  sign- or zero-extended (`iadd32` sign-extends: E498; `iaddu32` zero-extends in the value it
+  writes: E521),
   to the 32-bit source 2, and a test of some of them applies to the true 33-bit sum, not the wrapped
   one (E472, E498; the probe table's model tested the wrapped sum): `iadd32`'s `n` and `p` read the
   sign of the true sum sext16(r1) + r2 (r1 = 0x7fff with r2 = 0x7fffffff leaves `n` clear; 12 pairs
@@ -43,9 +44,11 @@ The test is `.test<S><J><Z>.<chan>`, from `enc[43:36]`:
   the sum with its carry out of bit 31 is zero for no other pair of the 16 under either extension of
   r1 (nor is 'both operands zero': the 16 pairs do not separate the two), so 1 + 0xffffffff is
   nonzero, and the wrapped sum reads zero for pairs that are nonzero (E498 lists the 16 pairs).
-  Whether `iaddu32` extends source 1 by zero or by sign is **[open]** (Q126): no test tells it. With
-  source 1 = `#0` the test reads source 2's 32 bits exactly: `n`, `p`, `z` and `nz` (8 of 8 values
-  each) (*The 32-bit adds `iadd32` and `iaddu32`*).
+  The value `iaddu32` writes is the low 16 bits of source 1, zero-extended, plus source 2 **[HW]**
+  (E521: 16 pairs, seven of which a sign extension writes otherwise, such as 0x8000 + 0x8000 =
+  0x10000); which extension its test reads is **[open]** (Q126): no test of the 16 pairs of E498
+  tells it. With source 1 = `#0` the test reads source 2's 32 bits exactly: `n`, `p`, `z` and `nz`
+  (8 of 8 values each) (*The 32-bit adds `iadd32` and `iaddu32`*).
 - **The test field is two parts, ANDed under the `a` join and ORed under the `o` join [HW]** (E499,
   E529): `enc[43:40]` holds taz = bit 40, tanz = bit 41, nat = bit 42 and pat = bit 43 (the
   assembler's `.test<S><J><Z>` writes the sign and zero conditions together: `.testpanz` is the

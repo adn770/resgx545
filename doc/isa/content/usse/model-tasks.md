@@ -39,7 +39,8 @@ The waits and modes on the hardware (E101) **[HW]**:
   its code base, so its `#<next>` is the local index.
 - Each wait belongs to one kind of task. `vcull` hangs a pixel shader. `pt` hangs a vertex
   shader, and in a pixel shader with no punch-through feedback the next phase never writes
-  its pixels.
+  its pixels. The simulator refuses `pt` and `vcull` in a pixel task, and runs a vertex task's
+  first phase only (`sgx-sim --task vertex`).
 - The vertex shader draws the same triangle with `none` as with `vcull`. **`vcull` waits for
   the MTE's cull decision and skips the next phase for a culled triangle [HW]** (E121); with
   `none` the phase runs anyway and the MTE drops the triangle.

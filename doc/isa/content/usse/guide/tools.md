@@ -13,8 +13,10 @@ only:
   back; any decodable word round-trips through the two.
 - **`sgx-sim`** runs a program on the simulator, as one instance or as the 2x2 quad of a pixel
   (`--quad X,Y`), and prints every register it wrote and every scratch dword it changed;
-  `--trace` shows each instruction with its writes, `--set REG=VALUE` presets registers,
-  `--near` lets the float functions give their near values and `--vectors FILE` runs hardware
+  `--trace` shows each instruction with its writes, `--set REG=VALUE` presets registers (and
+  `pclink`; a preset predicate counts as written), `--task vertex` runs a vertex task (the
+  default is a pixel task), `--near` lets the float functions give their near values and
+  `--vectors FILE` runs hardware
   vectors (the data repository's `vectors/`). It stops, with the reason, at the first instruction
   whose behaviour
   is not established.

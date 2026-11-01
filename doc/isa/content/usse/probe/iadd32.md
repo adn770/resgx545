@@ -32,7 +32,11 @@ its `n` never (16 of 16 pairs each). The probe table's model tested the wrapped 
 `#0` a test through source 2 reads that register's 32 bits exactly: `n`, `p`, `z` and `nz` of
 `iadd32` (8 of 8 values each), `nz` of `iaddu32` (8 of 8) and its `n`, never true (8 of 8).
 
-**Undecided:** whether `iaddu32` zero- or sign-extends a source 1 above 0x7fff: the sums that would
-tell it are nonzero under both readings, so no test settles it, and the value `iaddu32` writes with
-such an r1 would (Q126); the `chan` fields other than `chan0`, and the combined conditions of the
-test field on these adds (Q137).
+The value `iaddu32` writes zero-extends source 1 **[HW]** (E521, from the readbacks of two earlier
+probes, `usse-decoder-vectors-iaddu32-taz` and `usse-integer-iaddu32-value`: 16 distinct pairs,
+seven that a sign extension writes otherwise, such as (0x8000, 0x8000) giving 0x10000).
+
+**Undecided:** which extension the test of `iaddu32` reads for a source 1 above 0x7fff: the sums
+that would tell it are nonzero under both readings, so no test of those pairs settles it, and the
+value `iaddu32` writes with an immediate, a constant or a repeat was not run (Q126); the `chan`
+fields other than `chan0`, and the combined conditions of the test field on these adds (Q137).

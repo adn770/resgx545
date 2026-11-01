@@ -22,7 +22,8 @@ task, the second waiting for `vcull`:
   repeat advances every register operand by one per iteration (*Repeats* in the guide).
 - **`emitvcbvtx`** ends phase 0; phase 1 is `emitmtevtx` with `.end`.
 
-The simulator runs a task from its first instruction to the first `.end`, so here phase 0:
-with a vertex in `pa0`-`pa3`, it ends at the vertex cache emit:
+Run as a vertex task (`--task vertex`; a pixel task hangs on `vcull`, and the simulator refuses
+it), the simulator runs the first phase only and does not model the cull decision that starts the
+second. With a vertex in `pa0`-`pa3` it ends at the vertex cache emit:
 
-<!-- @sim --set pa0=1 --set pa1=2 --set pa2=3 --set pa3=4 prog=use_vtx.s -->
+<!-- @sim --task vertex --set pa0=1 --set pa1=2 --set pa2=3 --set pa3=4 prog=use_vtx.s -->

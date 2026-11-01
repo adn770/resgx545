@@ -177,14 +177,14 @@ probe and sweep tables that the units above cover.
 
 ### 4.1 Open questions
 
-`doc/open_questions.md` lists every open question, generated from `questions/`: Q001 to Q151, 127
-open (the three ids between Q146 and Q150 are reserved, unused). Each has a kind. The work is
-hardware knowledge, for a simulator and then our own firmware, so the 113 `hw` questions are the
-work queue, each with a value (high 13, medium 59, low 41); the 10 `fw` questions (the closed
+`doc/open_questions.md` lists every open question, generated from `questions/`: Q001 to Q151, 128
+open (the two ids between Q147 and Q150 are reserved, unused). Each has a kind. The work is
+hardware knowledge, for a simulator and then our own firmware, so the 114 `hw` questions are the
+work queue, each with a value (high 13, medium 60, low 41); the 10 `fw` questions (the closed
 firmware's and driver's own behaviour: Q004, Q029, Q034, Q049, Q084, Q088, Q118, Q119, Q124, Q131)
 and the 4 `kernel` ones (the design of our kernel driver: Q005, Q037, Q095, Q140) stay open, parked.
 By unit: bif 4, dpm 5, edm 6, isp 10, mte 3, pbe 5, pds 16, platform 4, render 9, ta 9, texture 7,
-transfer 3, usse 32, vdm 8, zls 6. A question is removed when a record answers it; one that mixed a
+transfer 3, usse 33, vdm 8, zls 6. A question is removed when a record answers it; one that mixed a
 hardware part with a firmware or kernel part was narrowed to the hardware part or folded into the
 hardware question that holds it (six so far: the control block's per-VM copy and the render context
 count bound into Q076, the recovery's reset steps into Q003, the settle routine and the two faults
@@ -512,3 +512,32 @@ which rules were read after the data and which were predicted. Records E512-E520
 forward with dated corrections where 11.27 answers what they listed as not run. Q051, Q052, Q128,
 Q133, Q134, Q135 and Q137 are narrowed, none retired; Q143 to Q146, Q150 and Q151 are new (all hw,
 Q143 medium, the others low).
+
+Sub-phase 11.28 made no run and no kernel change, and the data repository's raw readbacks are the
+ones 11.27 left. It brings the USSE model of `crates/sgx-sim` up to what 11.15 to 11.27 found and
+checks it against every usse run that had no vectors: 338 vector files (5815 vectors, 5750 of the
+USSE and 65 of the PDS) of 74 tables of 11.23 to 11.27, converted by
+`tools/usse-asm/convert_extra.py` from the recorded `bins/` and the tree's own probe tables, into x.
+Over the 34510 USSE vectors the replay gave before the change 28002 matches, 218 mismatches (all in
+the new files) and 2873 stops; it gives 30260 matches, 1112 fitted, 908 stops and 0 mismatches, 175
+skipped, 1925 left out of the replay (the triangle host's readback, mixed pixels, a failed job) and
+130 jobs that hung, 48 of which the simulator now predicts by stopping on the `phas` request that
+hangs (E519). Of the new files' 5750 USSE vectors 5406 match, 135 stop, 9 are skipped (another
+instance's unfenced store, E514), 156 are left out and 44 jobs hung (42 predicted); the data
+repository's own 28760 are unchanged. One vector went from a match to a stop on purpose
+(`usse-ima32-forms-dest__20`: a write to a `pa` is lost in a fill, E496, so the read back of it
+stops). The 65 PDS vectors of the `emit-addend` and `emitpds` runs are skipped: the job faulted or
+hung in the task an `emitpds` started (E488, E520), which the simulator does not model. The model
+gains: the integer forms `ima32` and `imae` with `cie`, `.neg` and the high word (unsigned and
+signed), the `o` join of the test field, `iadd32` and `iaddu32` tests on the true and the carried
+sum, `pclink` of 18 bits and the unset predicates and `pclink` of a task, `phas` with the wait
+`none` and the request modulo 256, `stad` and `ldad` repeats and fetch stores, a program placed in
+the code heap with its code base, and refusals for what no run covered (the `vcull` and `pt` waits
+in a pixel task, a write to `pa1`-`pa4`, a `.neg` on an immediate, and others). `sgx-sim` takes
+`--task vertex` and `--set pclink=N`, and `examples/replay` lists the outcome of every vector. E522
+records the replay (the simulator against the vectors, offline); E521, found in it, shows that the
+value `iaddu32` writes zero-extends source 1 (16 pairs in two datasets run before, seven of which a
+sign extension writes otherwise): Q126 is narrowed to the extension its test reads and to the forms
+not run, none retired; Q147 is new (hw, medium: where a write past a task's allocation goes, which
+E486 and E519 do not settle together, 30 vectors stop on it). The two ids between Q147 and Q150 stay
+reserved. The ZLS and the multisampling are not in the model: they stay for phase 12.

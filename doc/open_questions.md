@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-127 open: 113 hw (high 13, medium 59, low 41, unrated 0), 10 fw, 4 kernel.
+128 open: 114 hw (high 13, medium 60, low 41, unrated 0), 10 fw, 4 kernel.
 
 ## Work queue: hardware
 
@@ -130,7 +130,7 @@
 - `Q098` (phase 11, hw, medium): why do pa_n and sa_n read one value in a fill's pixel task, a mov to pa_n being lost, and why does an unwritten one read the job's pixel colour? (E366, E380, E484, E496)
 - `Q123` (phase 11, hw, medium): does lapc reach instruction indices past the first 65536 words of a code base and the 18th bit of the program counter, and every index from 256 to 8191 in a fill? (E475, E476, E492)
 - `Q125` (phase 11, hw, low): which code leaves 0xeb3 and 0x98 in pclink and 1101, 0101, 0001 or 1111 in p0-p3 of the instances that do not read the last job's value, and why do they come in aligned 2 x 2 quads of pixels? (E475, E477, E484, E500)
-- `Q126` (phase 11, hw, low): how does iaddu32 extend a source 1 above 0x7fff? (E472, E498)
+- `Q126` (phase 11, hw, low): which extension of a source 1 above 0x7fff does the test of iaddu32 read, and does the value it writes zero-extend source 1 with a repeat, an immediate or a constant in source 2, or with other destinations (E472, E498, E521)
 - `Q127` (phase 11, hw, low): what do the extra i register of ima32, ima32 as a dual-issue secondary, and imae with a repeat, a u16 or z16 source or a .rsN shift do with the carry flags and with the 32-bit result? (E469, E470, E471, E493, E494, E495, E496, E501, E525, E526, E527, E528)
 - `Q128` (phase 11, hw, medium): why does a client emitpds fault the job at page 0xd2000 or hang it, what do the s0, s1 and s2 operands of the started PDS program become (it saw ir0.0 2 or 3 whatever s2 was), and what in the control word's addend the PDS uses (0xFFF to 0x2000 left the fill's own value, 0x100 did not) (E488, E513, E520)
 - `Q129` (phase 11, hw, low): why do 12 pixels (4 each of three values) of every fill that writes sa1, sa5 and sa7 show those sa values as their output, and how long does an sa written by one job stay readable (one job, or until the next job that writes it) (E484)
@@ -145,6 +145,7 @@
 - `Q144` (phase 11, hw, low): how many registers does a phase get from a phas request above 256 (a request runs when it is 4 to 192 modulo 256 and hangs the job when it is 0 or 196 to 252), and what bounds it (E519)
 - `Q145` (phase 11, hw, low): why does the control word's addend of an emitpds, from 0xFFF to 0x2000, leave the fill's own dword 0x403 where 0x100 gives 3 or 2, and what 0x800 does (E520)
 - `Q146` (phase 11, hw, low): when does a load that is not waited for land, why did a load not waited for hold the loaded value after 40, 100 and 128 `nop` but not after 48 and 64, and in what order two loads and a `mov` to one register land (E517)
+- `Q147` (phase 11, hw, medium): does a write to a register past the task's allocation land in the register whose index is the register's modulo the allocation, or is it dropped, and do E486 and E519 disagree (E486, E519)
 - `Q150` (phase 11, hw, low): do the raw test words with the chan field enc[38:36] = 1 to 7 on 8-bit and 16-bit lane operations, on the fields other than the six run and with the o join read as the rule of the Test channels page says (E530, E499)
 - `Q151` (phase 11, hw, low): does the o join rule of E529 (enc[39] = 0: the two parts of the test field ORed, an absent part true) hold for the shifts, the 8-bit and 16-bit lane operations and the other classes' tests, and with a chan other than chan0, and does any compiler output need it? (E529, E499)
 

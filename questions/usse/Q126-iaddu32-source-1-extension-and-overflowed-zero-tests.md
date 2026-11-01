@@ -1,11 +1,11 @@
 +++
 id = "Q126"
-question = "how does iaddu32 extend a source 1 above 0x7fff?"
+question = "which extension of a source 1 above 0x7fff does the test of iaddu32 read, and does the value it writes zero-extend source 1 with a repeat, an immediate or a constant in source 2, or with other destinations"
 unit = "usse"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E472", "E498"]
+evidence = ["E472", "E498", "E521"]
 terms = ["Universal Scalable Shader Engine (USSE)"]
 +++
 
@@ -20,10 +20,14 @@ is true for (0, 0) only, which the sum with its carry fits under either extensio
 wrapped sum under neither (so does 'zero if both operands are zero', which the 16 pairs do not
 separate from it).
 
-What is open: the extension of source 1 in `iaddu32` (sign or zero for a source 1 above 0x7fff). No
-zero test tells it, since the carry-counted sum is zero for no pair under either extension but (0,
-0), and the sign tests read nothing of an `iaddu32` sum. To settle it: read the value `iaddu32`
-writes to a register (a test form that keeps its result, since the assembler refuses `iaddu32` with
-no test: E469) with r1 of 0x8000 to 0xffff and a small r2, which the tests of 11.23 to 11.25 did not
-do (whether the 2026-10-22 value probes of `iaddu32` reached such an r1 was not checked here), and
-the chan fields other than chan0.
+E521 answers what the question first asked: the value `iaddu32` writes zero-extends source 1 (16
+distinct pairs in two datasets run before, seven of which a sign extension writes otherwise, such as
+(0x8000, 0x8000) giving 0x10000), where `iadd32` sign-extends. It came from readbacks that were
+already in the data, found when the simulator was replayed on the vectors, not from a table for it.
+
+What is open is smaller. Which extension the test reads is not told by a test: the carry-counted sum
+is zero for no pair under either extension but (0, 0), and the sign tests read nothing of an
+`iaddu32` sum (E498). The value was seen with `chan0` and two destinations (a register, `o0` or
+scratch dword 0) only: with a repeat, an immediate or a constant in source 2 or other destinations
+it was not run (the `chan` fields other than `chan0` are Q150). To settle it: the same pairs with
+r1 of 0x8000 to 0xffff in those forms, the value read back.

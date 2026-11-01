@@ -148,6 +148,25 @@ impl Insn {
     }
 }
 
+/// The word of a class 9 test whose test field enc[43:40] the table has no text for, with the
+/// field that means the same. Hardware (E499, usse-rawcond, usse-rawcond2: 540 of 540 cases on
+/// `and`, `or`, `xor` and `rol`, with the join `a` (enc[39]) and chan0, enc[50] clear; the join `o`: E529, 360 of 360): the
+/// field is two parts ANDed, a zero part (tanz if bit 41, else taz if bit 40) and a sign part (pat
+/// if bit 43, else nat if bit 42), so that field 3 reads as 2, 7 as 6, 0xb as 0xa, 0xc as 8, 0xd
+/// as 9 and 0xe and 0xf as 0xa. Any other word is returned as it is.
+pub fn canonical_test_word(w: u64) -> u64 {
+    let field = (w >> 40 & 0xf) as u32;
+    // class 9, enc[50] clear, chan0, either join (E529: with the join `o` the parts are ORed and an
+    // absent part is true, which the text forms' test_one gives for the canonical field)
+    if w >> 59 != 9 || w >> 50 & 1 != 0 || w >> 36 & 7 != 0 {
+        return w;
+    }
+    let zero = if field & 2 != 0 { 2 } else { field & 1 };
+    let sign = if field & 8 != 0 { 2 } else { field >> 2 & 1 };
+    let canon = (sign << 2 | zero) as u64;
+    w & !(0xf << 40) | canon << 40
+}
+
 /// A program, decoded once.
 pub struct Program {
     insns: Vec<Result<Insn, String>>,
@@ -164,7 +183,20 @@ impl Program {
                         let form = video_form(&usse_isa::table().forms[f.form]);
                         Ok(Insn { form, v: f.v, word: w, text, firh_later: false })
                     }
-                    None => Err(text),
+                    // a test field the table has no text for (E499), read as the field that
+                    // carries the same two parts
+                    None => match decode_fields(canonical_test_word(w), core) {
+                        Some(f) if canonical_test_word(w) != w => {
+                            let form = video_form(&usse_isa::table().forms[f.form]);
+                            let i =
+                                Insn { form, v: f.v, word: canonical_test_word(w), text, firh_later: false };
+                            match i.name("op", core).as_deref() {
+                                Some("and" | "or" | "xor" | "rol") => Ok(i),
+                                _ => Err(i.text),
+                            }
+                        }
+                        _ => Err(text),
+                    },
                 }
             })
             .collect();
@@ -289,8 +321,14 @@ pub struct Machine {
     pub pa: [u32; 128],
     pub sa: [u32; 128],
     pub p: [bool; 4],
+    /// The predicates the task has set (a bit each): p0-p3 are not reset between jobs, so one the
+    /// task reads before it sets it holds what the job before left (E477, E484) and stops it.
+    pub p_set: u8,
     pub pc: usize,
     pub link: u32,
+    /// Whether the task has written pclink (a call, taken or not, or a move into it): it is not
+    /// reset between jobs, so a read before that is the job before's value and stops (E475).
+    pub link_set: bool,
     pub steps: usize,
     /// What the task has written, per bank (a bit per register): a read of
     /// anything else is the environment's (stale or set up by the job), not the
@@ -355,6 +393,17 @@ pub struct Machine {
     /// The registers holding a value the hardware may not have (bank, number), with why:
     /// reading one stops the program.
     pub unknown: BTreeMap<(&'static str, usize), &'static str>,
+    /// The phase a `phas` with the wait `none` named: its first instruction and the temporaries
+    /// it asks for. It starts where the phase that is running ends (E487, E519).
+    pub phase: Option<(usize, usize)>,
+    /// Whether the task is a vertex task (sgx-sim --task vertex): the wait `vcull` of its phas
+    /// then names a phase that the MTE's cull decision starts, which is not modelled.
+    pub vertex_task: bool,
+    /// The instruction index of the program's first word inside its code base, for a program
+    /// placed in the code heap: the code base is the placement rounded down to 0x80000 bytes, so
+    /// this is (offset mod 0x80000) / 8 (E476, E492: 10 of 10 placements fit; [infer] as a rule).
+    /// pclink and the absolute `ba` count from the code base, `br` from the instruction.
+    pub code_index: u32,
 }
 
 /// What the current operation read and writes, for Machine::bounds.
@@ -681,8 +730,10 @@ impl Default for Machine {
             pa: [0; 128],
             sa: [0; 128],
             p: [false; 4],
+            p_set: 0,
             pc: 0,
             link: 0,
+            link_set: false,
             steps: 0,
             written: Written::default(),
             pending: Vec::new(),
@@ -705,9 +756,15 @@ impl Default for Machine {
             fitted: false,
             coeffs: None,
             unknown: BTreeMap::new(),
+            phase: None,
+            vertex_task: false,
+            code_index: 0,
         }
     }
 }
+
+/// The bits pclink holds (E475): a move into it keeps bits 17:0.
+const PCLINK_MASK: u32 = 0x3ffff;
 
 /// What an instruction asks the loop to do next.
 #[derive(PartialEq, Eq)]
@@ -718,6 +775,20 @@ enum Next {
 }
 
 impl Machine {
+    /// A host preset of predicate `n` (0-3): the task has set it, as a test would.
+    pub fn set_pred(&mut self, n: usize, v: bool) -> bool {
+        let Some(p) = self.p.get_mut(n) else { return false };
+        *p = v;
+        self.p_set |= 1 << n;
+        true
+    }
+
+    /// A host preset of pclink (18 bits): the task has written it.
+    pub fn set_link(&mut self, v: u32) {
+        self.link = v & PCLINK_MASK;
+        self.link_set = true;
+    }
+
     /// Run from `pc` until an instruction with `.end` retires.
     pub fn run(&mut self, prog: &Program, bus: &mut dyn Bus, max_steps: usize) -> Result<(), Error> {
         loop {
@@ -745,7 +816,29 @@ impl Machine {
         })? {
             Next::Step => self.pc += 1,
             Next::Jump(t) => self.pc = t,
-            Next::End => return Ok(true),
+            Next::End => match self.phase.take() {
+                None => return Ok(true),
+                Some((next, request)) => {
+                    // hardware (E487, E519): the next phase has the allocation its phas asked
+                    // for, the request modulo 256; a request whose remainder is 0 or 196 to 252
+                    // hung the job (27 of 27 run); the registers the first phase wrote are not
+                    // the second's (E119: carried in most instances only)
+                    // [infer] the allocation is the request modulo 256 (E519): no record states it,
+                    // it is the rule that fits the runs of 4 to 192 and the hangs of 0 and 196 to 252
+                    let alloc = request % 256;
+                    if !(4..=192).contains(&alloc) {
+                        return Err(unsupported(
+                            pc,
+                            &insn.text,
+                            &format!("phas request {request} hangs the job (E519)"),
+                        ));
+                    }
+                    self.temps = alloc;
+                    self.written.r = 0;
+                    self.pending.retain(|p| !matches!(p.1, Reg::R(_)));
+                    self.pc = next;
+                }
+            },
         }
         Ok(false)
     }
@@ -760,6 +853,13 @@ impl Machine {
 
     fn pred(&self, insn: &Insn) -> Result<bool, Error> {
         let Some(p) = insn.name("pred", self.core) else { return Ok(true) };
+        if let Some(n) = p.trim().trim_start_matches('!').strip_prefix('p').and_then(|n| n.parse::<u8>().ok())
+            && self.p_set >> n & 1 == 0
+        {
+            return Err(why(format!(
+                "reads p{n} before the program sets it (left over from the job before, E477)"
+            )));
+        }
         Ok(match p.trim() {
             "" => true,
             "p0" => self.p[0],
@@ -827,6 +927,19 @@ impl Machine {
             }
         }
         if !self.pred(insn)? {
+            // hardware (E491: 16 + 3 not-taken calls of usse-callfalse2 and 10 placed jobs of
+            // usse-place-more, 29 of 29): a call that is not taken still
+            // writes pclink, the index after it; whether it does for lapc, a repeat or the
+            // predicate Pn was not run
+            if matches!(op, "br" | "ba")
+                && insn.name("flags", self.core).is_some_and(|f| f.split('.').any(|t| t == "savelink"))
+            {
+                if insn.name("pred", self.core).is_some_and(|p| p.trim() == "Pn") {
+                    return Err(why("a call under Pn (not measured)"));
+                }
+                self.link = (self.pc as u32 + 1 + self.code_index) & PCLINK_MASK;
+                self.link_set = true;
+            }
             if op == "firh" {
                 // whether a firh that does not run leaves the latch alone is not measured
                 let k = insn.get("k").unwrap() as usize;
@@ -2032,7 +2145,11 @@ impl Machine {
     fn op(&mut self, insn: &Insn, bus: &mut dyn Bus) -> Result<Option<usize>, Error> {
         let op = insn.form.op;
         Ok(match op {
-            "nop" | "idf" | "phas" => None,
+            "nop" | "idf" => None,
+            "phas" => {
+                self.phas(insn)?;
+                None
+            }
             // what a fill shows of them: nothing; their effect is on the ISP's feedback, the MOE
             // state a context switch keeps, and the sample mask. pcoeff and depthf (E083, on r1-r3
             // only; depthf with nfb, fb and optdwd), setfc (E097, E109), setm (E099); moest
@@ -2087,12 +2204,17 @@ impl Machine {
                         "nosched" => {}
                         // the return address, as an instruction index: the
                         // firmware only saves and restores it (not measured)
-                        "savelink" => self.link = self.pc as u32 + 1,
+                        "savelink" => {
+                            self.link = (self.pc as u32 + 1 + self.code_index) & PCLINK_MASK;
+                            self.link_set = true;
+                        }
                         _ => return Err(why(format!("branch flag .{f}"))),
                     }
                 }
                 Some(if op == "ba" {
-                    t as usize
+                    (t as usize)
+                        .checked_sub(self.code_index as usize)
+                        .ok_or_else(|| why("a ba to an index before the program in its code base"))?
                 } else {
                     let off = ((t << 14) as i32 >> 14) as isize;
                     (self.pc as isize + off) as usize
@@ -2121,24 +2243,11 @@ impl Machine {
                 self.imae_carry(insn)?;
                 None
             }
-            "ima32" if insn.form.role("cie").is_some() => {
-                // hardware (usse-integer-imae-modes): cie, iN adds iN; the extra operand
-                // and the source negations are not measured
-                if insn.get("x").unwrap() & 1 != 0 {
-                    return Err(why("ima32 with an extra operand"));
-                }
-                let (bv, cv) = (insn.get("src1x").unwrap(), insn.get("src2x").unwrap());
-                if (bv | cv) >> 10 != 0 {
-                    return Err(why("ima32 with a negated source"));
-                }
-                let a = self.src0(insn.get("src0").unwrap())?;
-                let (b, c) = (self.src(bv, 6)?, self.src(cv, 6)?);
-                let cie = insn.get("cie").unwrap();
-                let cin = if cie == 0 { 0 } else { self.internal(cie as usize - 1)? };
-                self.write(insn, a.wrapping_mul(b).wrapping_add(c).wrapping_add(cin))?;
+            "ima32" => {
+                self.ima32(insn)?;
                 None
             }
-            "ima16" | "ima32" => {
+            "ima16" => {
                 if let Some(t) = insn.name("sign", self.core)
                     && t != "u"
                     && t != "s"
@@ -2146,7 +2255,7 @@ impl Machine {
                     return Err(why(format!("{op}.{t}")));
                 }
                 // hardware (ima16): .neg on source 2 subtracts it, per lane
-                let neg = op == "ima16" && insn.name("neg", self.core).is_some_and(|t| !t.is_empty());
+                let neg = insn.name("neg", self.core).is_some_and(|t| !t.is_empty());
                 for r in ["rs", "abs", "neg", "neg1", "neg2"] {
                     if let Some(t) = insn.name(r, self.core)
                         && !t.is_empty()
@@ -2158,24 +2267,16 @@ impl Machine {
                 let a = self.src0(insn.get("src0").unwrap())?;
                 let (bv, cv) = (insn.get("src1").unwrap(), insn.get("src2").unwrap());
                 let (mut b, mut c) = (self.src(bv, 6)?, self.src(cv, 6)?);
-                if op == "ima16" {
-                    (b, c) = (lane_imm(bv, b), lane_imm(cv, c));
-                    if neg {
-                        // two's complement per lane
-                        c = (0x1_0000 - (c & 0xffff)) & 0xffff | ((0x1_0000 - (c >> 16)) & 0xffff) << 16;
-                    }
+                (b, c) = (lane_imm(bv, b), lane_imm(cv, c));
+                if neg {
+                    // two's complement per lane
+                    c = (0x1_0000 - (c & 0xffff)) & 0xffff | ((0x1_0000 - (c >> 16)) & 0xffff) << 16;
                 }
-                let v = if op == "ima32" {
-                    a.wrapping_mul(b).wrapping_add(c)
-                } else {
-                    // Hardware: a multiply-add per 16-bit lane, mod 2^16
-                    // (0x80000000 * 0xffffffff + 0x5a5a5a5a = 0xda5a5a5a).
-                    let lane = |s: u32| {
-                        (a >> s & 0xffff).wrapping_mul(b >> s & 0xffff).wrapping_add(c >> s) & 0xffff
-                    };
-                    lane(0) | lane(16) << 16
-                };
-                self.write(insn, v)?;
+                // Hardware: a multiply-add per 16-bit lane, mod 2^16
+                // (0x80000000 * 0xffffffff + 0x5a5a5a5a = 0xda5a5a5a).
+                let lane =
+                    |s: u32| (a >> s & 0xffff).wrapping_mul(b >> s & 0xffff).wrapping_add(c >> s) & 0xffff;
+                self.write(insn, lane(0) | lane(16) << 16)?;
                 None
             }
             "imae" => {
@@ -2268,15 +2369,23 @@ impl Machine {
                 if !flags.is_empty() && flags != ".nosched" {
                     return Err(why(format!("lapc flags {flags}")));
                 }
-                Some(self.link as usize)
+                self.link_known()?;
+                Some(
+                    (self.link as usize)
+                        .checked_sub(self.code_index as usize)
+                        .ok_or_else(|| why("a lapc to an index before the program in its code base"))?,
+                )
             }
             "mov_to_link" => {
                 let v = insn.get("src").unwrap();
-                self.link =
-                    if self.width(insn, "src") == 7 { self.temp(v as usize)? } else { self.src(v, 6)? };
+                let x = if self.width(insn, "src") == 7 { self.temp(v as usize)? } else { self.src(v, 6)? };
+                // hardware (E475, usse-link-pclink-roundtrip, 19 of 19): pclink holds 18 bits
+                self.link = x & PCLINK_MASK;
+                self.link_set = true;
                 None
             }
             "mov_from_link" => {
+                self.link_known()?;
                 let link = self.link;
                 if self.width(insn, "dst") == 7 {
                     let r = insn.get("dst").unwrap() as usize;
@@ -2420,6 +2529,11 @@ impl Machine {
                 let n = insn.get("p").unwrap() as usize % 4;
                 let s = self.src(insn.get("src1").unwrap(), 6)?;
                 self.decide()?;
+                if self.p_set >> n & 1 == 0 {
+                    return Err(why(format!(
+                        "reads p{n} before the program sets it (left over from the job before, E477)"
+                    )));
+                }
                 self.write(insn, s << 1 | self.p[n] as u32)?;
                 self.p[n] = s >> 31 != 0;
                 None
@@ -2600,6 +2714,7 @@ impl Machine {
             self.write(insn, a)?;
         }
         self.p[insn.get("p").unwrap() as usize] = pass;
+        self.p_set |= 1 << insn.get("p").unwrap();
         Ok(())
     }
 
@@ -2918,11 +3033,164 @@ impl Machine {
         self.write(insn, v)
     }
 
+    /// pclink as the task wrote it: it is hardware state, not reset between jobs, so a read of it
+    /// before any write is what an earlier job left, for most instances (E475, E500).
+    fn link_known(&self) -> Result<(), Error> {
+        if self.link_set {
+            Ok(())
+        } else {
+            Err(why("reads pclink before the program writes it (left over from the job before, E475)"))
+        }
+    }
+
+    /// phas #next, #temps, rate, wait, mode (the form with immediates). Hardware: `end` closes
+    /// the program (the usual first and last instruction of a one-phase program, no effect here);
+    /// `none` makes the instruction index `next` the start of a second phase that runs at once
+    /// when the first ends (`.end`), with `temps` temporaries (E487, E519). Not run in a fill, so
+    /// refused: the rates `selective` and `sample` and the mode `perinstance` with a next phase, the
+    /// register form, and a phas that names a phase while one is named. The wait `vcull` hangs a pixel
+    /// task (refused); in a vertex task (`vertex_task`) it names no phase here, the program stopping
+    /// where its first phase ends. `pt` is refused.
+    fn phas(&mut self, insn: &Insn) -> Result<(), Error> {
+        let text = insn.text.as_str();
+        let args: Vec<&str> = text.split_once(' ').map_or(vec![], |(_, a)| a.split(", ").collect());
+        let num = |s: &str| s.strip_prefix('#').and_then(|n| n.trim().parse::<usize>().ok());
+        let [next, request, rate, wait, mode] = args[..] else {
+            return Err(why("phas with registers (not measured)"));
+        };
+        let (Some(next), Some(request)) = (num(next), num(request)) else {
+            return Err(why("phas with registers (not measured)"));
+        };
+        match wait {
+            "end" => Ok(()),
+            "none" if rate != "pixel" || mode != "parallel" => {
+                Err(why(format!("phas {rate}, {mode} with a next phase (not measured)")))
+            }
+            "none" if self.phase.is_none() => {
+                self.phase = Some((next, request));
+                Ok(())
+            }
+            // hardware: vcull hangs a pixel task (usse-phases-phas-pix-vcull-*, 4 jobs, E121) and pt
+            // hangs a vertex task (usse-phases-phas-vtx-pt-parallel); in a pixel task the pt phase
+            // never writes its pixels. In a vertex task vcull starts its phase once the MTE has
+            // culled, which is not modelled: the program stops where its first phase ends
+            "vcull" if self.vertex_task => Ok(()),
+            "vcull" => Err(why("phas wait vcull in a pixel task hangs the job (E121)")),
+            "pt" => Err(why("phas wait pt hangs a vertex task and never writes a pixel task's pixels")),
+            "none" => Err(why("a phas that names a phase while one is named (not measured)")),
+            _ => Ok(()),
+        }
+    }
+
+    /// ima32: the low 32 bits of a * b + c, on full 32-bit operands (E469, 826 of 826). Hardware:
+    /// `.neg` on source 2 or 3 negates it in two's complement, `.u` and `.s` alike (E470, E495);
+    /// `cie, iN` adds bit 0 of iN (E494, 24 of 24, with E470); the extra operand `iK` (enc[38],
+    /// enc[37:36]) receives the high 32 bits of the product with the addend (E493, 15 of 15;
+    /// E501, 75 of 75; `.s`: E526). Not run, so refused: the extra operand with `cie`, with a
+    /// negated source, with an immediate or a constant other than c56 (the subtract of E501) in
+    /// a source, with a source or a destination that is not an r-bank temporary or an iK that is
+    /// also a source, with K = 3 (an i3 reads another instance), and a negated source with `cie`.
+    fn ima32(&mut self, insn: &Insn) -> Result<(), Error> {
+        let sign = insn.name("sign", self.core).unwrap();
+        if sign != "u" && sign != "s" {
+            return Err(why(format!("ima32.{sign}")));
+        }
+        for r in ["rs", "abs", "neg"] {
+            if insn.name(r, self.core).is_some_and(|t| !t.is_empty()) {
+                return Err(why(format!("ima32 modifier {r}")));
+            }
+        }
+        // the source operands, with their negation bits: the plain form carries them as neg1
+        // and neg2 (enc[40], enc[39]), the form with the carry and the extra operand in the
+        // operands' bit 10
+        let (bv, cv, nb, nc, cie, x) = if insn.form.role("cie").is_some() {
+            let (b, c) = (insn.get("src1x").unwrap(), insn.get("src2x").unwrap());
+            (
+                b & 0x3ff,
+                c & 0x3ff,
+                b >> 10 & 1 != 0,
+                c >> 10 & 1 != 0,
+                insn.get("cie").unwrap(),
+                insn.get("x").unwrap(),
+            )
+        } else {
+            let neg = |r: &str| insn.name(r, self.core).is_some_and(|t| !t.is_empty());
+            (insn.get("src1").unwrap(), insn.get("src2").unwrap(), neg("neg1"), neg("neg2"), 0, 0)
+        };
+        // a negated register of the r bank ran in every combination (E470, 90 of 90); a negated
+        // immediate or constant only in the ones E470 and E495 ran: .s with #1 and #5, c3 and c56
+        // in source 2 and #1, #127 and c56 in source 3; .u with #5, #127 and c56 in source 2 and
+        // #1, #127 and c56 in source 3
+        let ran = |neg: bool, v: u32, third: bool| {
+            !neg || v >> 7 == 0 && (v & 0x7f) < 124 || {
+                let (imm, c) = (v >> 7 == 6, v >> 7 == 5);
+                let n = v & 0x7f;
+                match (sign.as_str(), third) {
+                    ("s", false) => imm && matches!(n, 1 | 5) || c && matches!(n, 3 | 56),
+                    ("s", true) => imm && matches!(n, 1 | 127) || c && n == 56,
+                    (_, false) => imm && matches!(n, 5 | 127) || c && n == 56,
+                    (_, true) => imm && matches!(n, 1 | 127) || c && n == 56,
+                }
+            }
+        };
+        if !ran(nb, bv, false) || !ran(nc, cv, true) {
+            return Err(why("ima32 negating an operand that was not run (E470, E495)"));
+        }
+        let av = insn.get("src0").unwrap();
+        let (extra, k) = (x & 1 != 0, (x >> 1) as usize);
+        if extra {
+            let d = insn.get("dst").unwrap();
+            let temp = |v: u32| v >> 7 == 0 && (v & 0x7f) < 124;
+            // c56 is the constant bank's number 56 (bank 5)
+            let reg_or_c56 = |v: u32| temp(v) || v == 5 << 7 | 56;
+            let why_not = if cie != 0 {
+                Some("ima32 with the extra operand and cie")
+            } else if nb || nc {
+                Some("ima32 with the extra operand and a negated source")
+            } else if k == 3 {
+                Some("ima32 with the extra operand i3")
+            } else if !temp(av) || !temp(cv) || !reg_or_c56(bv) || !temp(d) {
+                Some("ima32 with the extra operand on a source or destination other than the r bank or c56")
+            } else {
+                None
+            };
+            if let Some(w) = why_not {
+                return Err(why(format!("{w} (not measured)")));
+            }
+        } else if (nb || nc) && cie != 0 {
+            return Err(why("ima32 with a negated source and cie (not measured)"));
+        }
+        let a = self.src0(av)?;
+        let (mut b, mut c) = (self.src(bv, 6)?, self.src(cv, 6)?);
+        if nb {
+            b = b.wrapping_neg();
+        }
+        if nc {
+            c = c.wrapping_neg();
+        }
+        let cin = if cie == 0 { 0 } else { self.internal(cie as usize - 1)? & 1 };
+        let p = (a as u64) * (b as u64) + c as u64 + cin as u64;
+        // hardware (E526, usse-ima32hi-signed, 282 of 282): .s gives bits 63:32 of the signed 64-bit
+        // sext(a) * sext(b) + sext(c); the low word is the same as .u's
+        let hi = if sign == "s" {
+            ((a as i32 as i64 * b as i32 as i64 + c as i32 as i64) >> 32) as u32
+        } else {
+            (p >> 32) as u32
+        };
+        self.write(insn, p as u32)?;
+        if extra {
+            self.set_i(k, hi)?;
+        }
+        Ok(())
+    }
+
     /// imae with its source-2 type and carries (carry: type [1:0] z16, u16,
     /// u32 | coe | cie | register): the selected halves multiplied, source 2
     /// added (a u16 half sign-extended, z16 zero-extended), cie adding iN,
     /// .rsN shifting, saturating or wrapping as plain imae; coe writes the
     /// carry out to iN. Hardware (usse-integer-imae-modes).
+    /// The carries (E471, E494): cie adds bit 0 of iN, coe writes the carry of the 32-bit add
+    /// (0 or 1; a signed product taken as the number it wraps to), and both name one iN.
     fn imae_carry(&mut self, insn: &Insn) -> Result<(), Error> {
         let sign = insn.name("sign", self.core).unwrap();
         let rs: u32 =
@@ -2946,10 +3214,10 @@ impl Machine {
         };
         let reg = (carry >> 4 & 1) as usize;
         let (coe, cie) = (carry & 4 != 0, carry & 8 != 0);
-        if coe && cie {
-            return Err(why("imae with both carries"));
-        }
-        let cin = if cie { self.internal(reg)? as i64 } else { 0 };
+        // hardware (E471, usse-imae-neg-coe-cie, 14 of 14): coe and cie together name one iN (the
+        // assembler takes no two): the sum includes bit 0 of the iN read and its carry goes back
+        // hardware (E471, E494): the carry in is bit 0 of iN
+        let cin = if cie { (self.internal(reg)? & 1) as i64 } else { 0 };
         let signed = sign.starts_with('s');
         let c = if signed && insn.get("src2").is_some() { c as u32 as i32 as i64 } else { c };
         let prod = if signed { sext16(a) * sext16(b) } else { a as i64 * b as i64 };
@@ -2962,7 +3230,15 @@ impl Machine {
         };
         self.write(insn, v)?;
         if coe {
-            self.set_i(reg, (sum >> 32) as u32)?;
+            // hardware (E471, E494; usse-imae-neg-coe-signed, 6 of 6 for .s): the carry out of the
+            // 32-bit add, 0 or 1, the signed product taken as the 32-bit number it wraps to
+            // and c as an unsigned one
+            let carry = if signed {
+                ((prod as u32 as u64) + (c as u32 as u64) + cin as u64) >> 32
+            } else {
+                (sum >> 32) as u64
+            };
+            self.set_i(reg, carry as u32)?;
         }
         Ok(())
     }
@@ -3037,6 +3313,15 @@ impl Machine {
                 }
             }
         };
+        // hardware (E529): the join `o` ran on and, or and xor only (not on rol, the shifts or the
+        // other classes)
+        if test.strip_prefix("test").and_then(|t| t.chars().nth(1)) == Some('o')
+            && !test.contains("all")
+            && !test.contains("02")
+            && !matches!(name.as_str(), "and" | "or" | "xor")
+        {
+            return Err(why(format!("test {name} with the join o (not run, E529)")));
+        }
         let write = insn.name("write", self.core).as_deref() != Some("!");
         if let Some(kind) =
             test.strip_suffix(".bmsk").or(test.strip_suffix(".wmsk")).or(test.strip_suffix(".dmsk"))
@@ -3060,6 +3345,7 @@ impl Machine {
             self.write(insn, v)?;
         }
         self.p[insn.get("p").unwrap() as usize] = p;
+        self.p_set |= 1 << insn.get("p").unwrap();
         Ok(())
     }
 
@@ -3134,13 +3420,26 @@ impl Machine {
 
     /// ld/st: [base, +/-offset] with the offset in units of the data size; the
     /// .pre/.post forms write the moved base back before/after the access.
+    ///
+    /// Hardware, a repeat of N (E483, E515: stad N = 2 to 16, ldad N = 2 to 16, plain and
+    /// post-increment forms, pre-increment for a store): iteration i is the access with the pointer
+    /// register r(b + i * s1) and the data register r(d + i * s3), where s1 and s3 are the second and
+    /// fourth smlsi increments (1 before any smlsi), each iteration reading its own pointer and
+    /// moving it by the form's increment (after the access for `[rb,#k++]`, before for
+    /// `[rb,++#k]`, not at all for `[rb,+#k]`); with a second increment of 0 the one pointer
+    /// series of E483 stores N registers to N consecutive dwords. Hardware, a fetch store of N
+    /// (E482, E516): N consecutive registers to N consecutive dwords, from b + k + 1 for `[rb,+#k]`
+    /// and `[rb,++#k]`, from b + k for `[rb,#k++]`, and the two increment forms move rb by N,
+    /// whatever k. Not run, so refused: a repeat with a fetch, with a register other than r, with
+    /// a swizzled smlsi, with `.pre` on a load, a fetch store after smlsi, with a negative offset,
+    /// or with a pa, sa or o pointer.
     fn load_store(&mut self, insn: &Insn, op: &str, bus: &mut dyn Bus) -> Result<(), Error> {
         let amdt = insn.name("amdt", self.core).unwrap();
         if amdt != "ad" {
             return Err(why(format!("access {amdt}")));
         }
         let flags = insn.name("flags", self.core).unwrap();
-        let (mut count, mut dst_inc) = (1u32, 1i32);
+        let (mut count, mut dst_inc, mut repeat) = (1u32, 1i32, 1u32);
         for f in flags.split('.').filter(|f| !f.is_empty()) {
             match f {
                 "skipinv" | "syncs" | "nosched" | "bpcache" | "fcfill" | "bypassl1" => {}
@@ -3153,13 +3452,73 @@ impl Machine {
                     count = f[5..].parse().unwrap();
                     dst_inc = self.moe_inc.map_or(1, |inc| inc[3]);
                 }
-                _ if f.starts_with("fetch") => return Err(why(format!("flag .{f} on a store"))),
+                _ if f.starts_with("fetch") => {
+                    count = f[5..].parse().unwrap();
+                    if self.moe_inc.is_some() {
+                        return Err(why("a fetch store after smlsi (not measured)"));
+                    }
+                }
+                _ if f.starts_with("repeat") => repeat = f[6..].parse().unwrap(),
                 _ => return Err(why(format!("flag .{f}"))),
             }
         }
         if insn.get("range").is_some_and(|r| r >> 10 != 0) {
             return Err(why("load range"));
         }
+        if repeat == 1 {
+            return self.ls_access(insn, op, bus, count, dst_inc);
+        }
+        if count > 1 {
+            return Err(why("a repeat with a fetch (not measured)"));
+        }
+        if op == "ld.pre" {
+            return Err(why("a pre-increment load with a repeat (not measured)"));
+        }
+        if self.moe_swizzle.iter().any(|s| s.is_some()) {
+            return Err(why("a repeat of a load or store after a swizzled smlsi (not measured)"));
+        }
+        let store = op.starts_with("st");
+        if !store && self.moe_inc.is_some() {
+            return Err(why("an ldad repeat after smlsi (not measured: E483 ran it for stores)"));
+        }
+        let (bi, di) =
+            (insn.form.role("base").unwrap(), insn.form.role(if store { "src" } else { "dst" }).unwrap());
+        let (b, d) = (insn.v[bi], insn.v[di]);
+        if b >> 7 != 0 || d >> 7 != 0 {
+            return Err(why("a repeat of a load or store through a register other than r (not measured)"));
+        }
+        let (bstep, dstep) = self.moe_inc.map_or((1, 1), |inc| (inc[1], inc[3]));
+        for it in 0..repeat as i32 {
+            let (rb, rd) = (b as i32 + it * bstep, d as i32 + it * dstep);
+            if !(0..124).contains(&rb) || !(0..124).contains(&rd) {
+                return Err(why("a repeat past the temporaries"));
+            }
+            let mut one = insn.clone();
+            (one.v[bi], one.v[di]) = (rb as u32, rd as u32);
+            // a pointer register of the repeat that holds no address: the hardware's store to
+            // 0xB1B1B1B1 did not fault in one case and the job faulted in 27 of 43 in another
+            // (E483), so no fault is predicted
+            match self.ls_access(&one, op, bus, 1, 1) {
+                Err(Error::Fault(a)) => {
+                    return Err(why(format!(
+                        "a repeat through a pointer that is no address (0x{a:08X}): the fault is not predictable (E483)"
+                    )));
+                }
+                r => r?,
+            }
+        }
+        Ok(())
+    }
+
+    /// One access of load_store: `count` dwords (a fetch), the destination stepping by `dst_inc`.
+    fn ls_access(
+        &mut self,
+        insn: &Insn,
+        op: &str,
+        bus: &mut dyn Bus,
+        count: u32,
+        dst_inc: i32,
+    ) -> Result<(), Error> {
         let neg = insn.name("sign", self.core).is_some_and(|s| s.starts_with('-'));
         // An immediate offset counts data-size units; a register one holds a
         // stride and an index, (high 16 bits) * (low 16 bits) bytes (hardware:
@@ -3170,27 +3529,49 @@ impl Machine {
         let base_v = insn.get("base").unwrap();
         let base = self.src0(base_v)?;
         let moved = if neg { base.wrapping_sub(off) } else { base.wrapping_add(off) };
+        let fetch_store = op.starts_with("st") && count > 1;
+        if fetch_store && (neg || ov >> 7 != 6) {
+            return Err(why("a fetch store with a negative or register offset (not measured)"));
+        }
         let addr = match op {
             // hardware (usse-numbered-modifiers-family-fetch, N 2-16, usse-numbered-modifiers-family-fetch-dst, usse-memory-ldad-reg-off-fetch): a
             // fetch by base plus offset, immediate or register, starts one dword after it
             "ld" if count > 1 => moved.wrapping_add(4),
+            // a fetch store (E482, E516): one dword after for the plain and the pre-increment
+            // form, at the offset for the post-increment one
+            "st" | "st.pre" if count > 1 => moved.wrapping_add(4),
+            "st.post" if count > 1 => moved,
             "ld" | "st" => moved,
             o if o.ends_with(".pre") => moved,
             _ => base,
         };
-        if op.contains('.') {
+        if fetch_store {
+            // the increment forms move rb by the fetch's N dwords, whatever the offset
+            if op.contains('.') {
+                self.write_src0(base_v, base.wrapping_add(4 * count))?;
+            }
+        } else if op.contains('.') {
             self.write_src0(base_v, moved)?;
         }
         if self.now.read.get().is_some() {
             return Err(why("an address from a near value"));
         }
         if op.starts_with("st") {
-            let v = self.src(insn.get("src").unwrap(), 6)?;
-            match self.now.read.get() {
-                Some(b) => self.near_mem.insert(addr, b),
-                None => self.near_mem.remove(&addr),
-            };
-            return bus.store32(addr, v);
+            let sv = insn.get("src").unwrap();
+            // E516 ran the registers of a fetch up to r33
+            if fetch_store && (sv >> 7 != 0 || (sv & 0x7f) + count > 34) {
+                return Err(why("a fetch store of registers other than r or above r33 (not measured, E516)"));
+            }
+            for k in 0..count {
+                let v = self.src(sv + k, 6)?;
+                let at = addr.wrapping_add(4 * k);
+                match self.now.read.get() {
+                    Some(b) => self.near_mem.insert(at, b),
+                    None => self.near_mem.remove(&at),
+                };
+                bus.store32(at, v)?;
+            }
+            return Ok(());
         }
         let d = insn.get("dst").unwrap();
         // hardware (usse-numbered-modifiers-family-fetch-edge): a fetch whose registers would run past the
@@ -3295,6 +3676,10 @@ impl Machine {
 
     /// Whether the instruction ends the program (its flags print .end).
     fn ends(&self, insn: &Insn) -> bool {
+        // phas.end: the form names no field for enc[51], which is its .end
+        if insn.form.op == "phas" && insn.word >> 51 & 1 != 0 {
+            return true;
+        }
         ["end", "flags", "op"].iter().any(|r| insn.name(r, self.core).is_some_and(|t| t.contains(".end")))
     }
 
@@ -3540,7 +3925,15 @@ impl Machine {
                 (self.o[r], self.written.o) = (v, self.written.o | 1 << r);
                 self.mark("o", r);
             }
-            2 => self.set_pa(r, v),
+            // hardware (E496, Q098; usse-pa-dest, 3 of 3 jobs, and E380): in a fill a write to
+            // pa0 by ima32 or mov is lost, pa0 reading what it read before; pa1 to pa4 were not
+            // run
+            2 if r == 0 => {}
+            2 => {
+                return Err(why(format!(
+                    "a write to pa{r} (lost in a fill for pa0 only, E496; pa1 to pa4 not run)"
+                )));
+            }
             4 => {
                 (self.sa[r], self.written.sa) = (v, self.written.sa | 1 << r);
                 self.mark("sa", r);
@@ -4005,14 +4398,23 @@ fn alu_test_value(op: &str, a: u32, b: u32) -> Result<(u32, Tested), Error> {
         "usub8" => bytes(|x, y| x - y, false),
         "umul8" => bytes(|x, y| x * y, false),
         "usub16" => lanes(|x, y| x - y, false),
-        // Hardware: iadd32 adds the sign-extended low half of source 1 to
-        // source 2 (0x337a70a2 + 0xb01b9c1d = 0xb01c0cbf).
-        "iadd32" => word((sext16(a) as u32).wrapping_add(b)),
-        // unsigned: the test sees the unsigned sum (a sum with bit 31 set is
-        // not negative)
+        // Hardware: iadd32 adds the sign-extended low half of source 1 to source 2 (0x337a70a2 +
+        // 0xb01b9c1d = 0xb01c0cbf). Its n and p tests read the sign of the true sum with source 2
+        // signed, which is not the wrapped sum's when the add overflows, and its z and nz the
+        // zero of the sum with source 1 sign-extended (E472, E498: 16 of 16 pairs; the true and
+        // the wrapped sum never differ in zero-ness, a 16-bit and a 32-bit value not reaching 2^32).
+        "iadd32" => {
+            let r = (sext16(a) as u32).wrapping_add(b);
+            (r, Tested([Some(sext16(a) + b as i32 as i64), None, None, None]))
+        }
+        // unsigned: the sign tests read nothing of the sum (p is always true, n never) and the
+        // zero test counts the carry out of bit 31, so only 0 + 0 is zero (E498, 16 of 16 pairs).
+        // The value written zero-extends source 1: 0x8000 + 0x8000 writes 0x10000 and 0xffff + 1
+        // 0x10000 (usse-decoder-vectors-iaddu32-taz, usse-integer-iaddu32-value), which a sign
+        // extension would not give; no test of the sum tells the two apart (E498).
         "iaddu32" => {
             let r = (a & 0xffff).wrapping_add(b);
-            (r, Tested([Some(r as i64), None, None, None]))
+            (r, Tested([Some((a & 0xffff) as i64 + b as i64), None, None, None]))
         }
         "and" | "or" | "xor" | "shl" | "shr" | "asr" | "rol" => word(bitwise(op, a, b)?),
         // hardware (usse-form-coverage-form2-test-e50 9, usse-form-coverage-form2-test-mask 11): four unsigned
@@ -4275,14 +4677,20 @@ mod tests {
             "mov.end o0, #0x0000000D",
         ]);
         assert_eq!((r, m.o[0]), (Ok(()), 0x0d));
-        // p0 false (as a machine starts): falls through
+        // p0 false (set by a test, as the hardware's p0 must be): falls through
         let (m, r) = run(&[
-            "p0 bexception #0x00000003",
+            "mov r7, #0",
+            "and.testtanz.chan0 !c0, p0, r7, r7",
+            "p0 bexception #0x00000005",
             "mov r1, #0x0000000B",
             "mov.end o0, r1",
             "mov.end o0, #0x0000000D",
         ]);
         assert_eq!((r, m.o[0]), (Ok(()), 0x0b));
+        // p0 not set by the program: its value is the job before's, so the program stops (E477)
+        let (_, r) =
+            run(&["p0 bexception #0x00000003", "mov.end o0, #0x0000000B", "mov.end o0, #0x0000000D"]);
+        assert!(matches!(r, Err(Error::Unsupported { .. })), "{r:?}");
     }
 
     #[test]
@@ -4998,7 +5406,11 @@ mod tests {
 
     #[test]
     fn rlp_rotates_through_a_predicate() {
-        let clear = ["mov r7, #0x00000000", "and.testtanz.chan0 !c0, p0, r7, r7"];
+        let clear = [
+            "mov r7, #0x00000000",
+            "and.testtanz.chan0 !c0, p0, r7, r7",
+            "and.testtanz.chan0 !c0, p1, r7, r7",
+        ];
         // hardware (rlp): d = s << 1 | pN, then pN = bit 31 of s
         let (m, r) = run_after(&[&clear[..], &["mov r1, #0x80000001"]].concat(), &["rlp r10, r1, p0"]);
         assert_eq!((r, m.r[10], m.p[0]), (Ok(()), 2, true));
@@ -5444,6 +5856,7 @@ mod tests {
             "mov r1, #0x00000040",
             "mov r2, #0",
             "mov r3, #0",
+            "and.testtanz.chan0 !c0, p0, r3, r3",
             "p0 firh r10, r1, r2, r3, u8, rep, fcs3, #0, #0",
             "firh r11, r1, r2, r3, u8, rep, fcs3, #0, #1",
             "mov o0, r11",
@@ -5701,7 +6114,8 @@ mod tests {
     fn a_repeated_idiv_into_pa_stops() {
         // E367 ran the repeats into temporaries only: a pa destination repeated is not shown;
         // a single idiv into pa (the 11.7 case) still runs
-        let init = ["mov r1, #0x00000064", "mov r2, #0x00000007", "mov r3, #0x00000009", "mov r4, #0x00000003"];
+        let init =
+            ["mov r1, #0x00000064", "mov r2, #0x00000007", "mov r3, #0x00000009", "mov r4, #0x00000003"];
         let (m, r) = run_after(&init, &["idiv pa4, r1, r2, drc0", "wdf drc0"]);
         assert_eq!((r, m.pa[4], m.pa[5]), (Ok(()), 14, 2));
         let (_, r) = run_after(&init, &["idiv.repeat2 pa4, r1, r2, drc0", "wdf drc0"]);
@@ -6246,10 +6660,14 @@ mod tests {
         let (pa, pb) = (format!("mov r1, #{a:#010x}"), format!("mov r2, #{b:#010x}"));
         let p = if op.contains(", p1,") || op == "0x480414840155C082" { "p1" } else { "p0" };
         let (set, clear) = (format!("{p} mov r16, #0x00000001"), format!("!{p} mov r17, #0x00000001"));
-        let r = run_mixed(
-            &mut m,
-            &[&pa, &pb, "mov r16, #0x00000000", "mov r17, #0x00000000", op, &set, &clear, "nop.end"],
-        );
+        // the mask forms (class 15) write no predicate, so nothing reads one after them
+        let mask = op.contains("msk") || op.starts_with("0x78");
+        let (pre, post): (&[&str], &[&str]) = if mask {
+            (&[&pa, &pb, "mov r16, #0x00000000", "mov r17, #0x00000000", op], &["nop.end"])
+        } else {
+            (&[&pa, &pb, "mov r16, #0x00000000", "mov r17, #0x00000000", op], &[&set, &clear, "nop.end"])
+        };
+        let r = run_mixed(&mut m, &[pre, post].concat());
         (m, r)
     }
 
@@ -6732,5 +7150,620 @@ mod half {
             return Ok(sign | 0x7c00);
         }
         Ok(sign | ((lg + 15) as u16) << 10 | (n - 1024) as u16)
+    }
+}
+
+/// The USSE model after the hardware findings of phases 11.15 to 11.27 (the records are cited in
+/// each test; the cases are the ones the hardware ran).
+#[cfg(test)]
+mod after_11_27 {
+    use super::*;
+
+    fn run(src: &[&str]) -> (Machine, Result<(), Error>) {
+        let words: Vec<u64> =
+            src.iter().map(|t| usse_isa::encode(t, Core::Sgx545).unwrap_or_else(|| panic!("{t}"))).collect();
+        let mut m = Machine::default();
+        let mut mem = Memory { base: 0x1000, words: vec![0; 64] };
+        let r = m.run(&Program::new(&words, Core::Sgx545), &mut mem, 1000);
+        (m, r)
+    }
+
+    fn run_after(init: &[&str], src: &[&str]) -> (Machine, Result<(), Error>) {
+        run(&[init, src, &["nop.end"]].concat())
+    }
+
+    fn refused(r: &Result<(), Error>) -> bool {
+        matches!(r, Err(Error::Unsupported { .. }))
+    }
+
+    fn set(r1: u32, r2: u32, r3: u32) -> [String; 3] {
+        [format!("mov r1, #0x{r1:08x}"), format!("mov r2, #0x{r2:08x}"), format!("mov r3, #0x{r3:08x}")]
+    }
+
+    fn with(init: &[String], src: &[&str]) -> (Machine, Result<(), Error>) {
+        let init: Vec<&str> = init.iter().map(|s| s.as_str()).collect();
+        run_after(&init, src)
+    }
+
+    #[test]
+    fn the_carry_in_adds_bit_0_of_in() {
+        // E494 (usse-ima32-forms-cie-in): 3 * 7 + 100 = 121; iK of 0x10000 or 0x80000000 adds nothing,
+        // 0x10001, 0x80000001 and 0xaaaaaaab add 1, for i0, i1 and i2
+        for (k, text) in ["cie, i0", "cie, i1", "cie, i2"].iter().enumerate() {
+            for (v, want) in [(0x10000u32, 121u32), (0x8000_0000, 121), (0x10001, 122), (0xaaaa_aaab, 122)] {
+                let mut init = set(3, 7, 100).to_vec();
+                init.extend((0..3).map(|n| format!("mov i{n}, #0x{:08x}", if n == k { v } else { 1 })));
+                let (m, r) = with(&init, &[&format!("ima32.u r10, r1, r2, r3, {text}")]);
+                assert_eq!((r, m.r[10]), (Ok(()), want), "{text} {v:#x}");
+            }
+        }
+        // the same for imae (E494 imae-cie-in), i0 and i1
+        for (k, text) in ["cie, i0", "cie, i1"].iter().enumerate() {
+            for (v, want) in [(0x10000u32, 121u32), (0x8000_0000, 121), (0x10001, 122), (1, 122)] {
+                let mut init = set(3, 7, 100).to_vec();
+                init.extend((0..2).map(|n| format!("mov i{n}, #0x{:08x}", if n == k { v } else { 1 })));
+                let (m, r) = with(&init, &[&format!("imae.u r10, r1.low, r2.low, r3, u32, {text}")]);
+                assert_eq!((r, m.r[10]), (Ok(()), want), "imae {text} {v:#x}");
+            }
+        }
+    }
+
+    #[test]
+    fn pclink_keeps_18_bits() {
+        // E475 (usse-link-pclink-roundtrip): 0x40000 reads back 0, 0x7fffffff 0x3ffff, 0x80000000 0,
+        // 0xa5a5a5a5 0x1a5a5, 0x5a5a5a5a 0x25a5a
+        for (v, want) in [
+            (0x40000u32, 0u32),
+            (0x3ffff, 0x3ffff),
+            (0x7fff_ffff, 0x3ffff),
+            (0x8000_0000, 0),
+            (0xa5a5_a5a5, 0x1a5a5),
+            (0x5a5a_5a5a, 0x25a5a),
+        ] {
+            let (m, r) = run_after(&[&format!("mov r5, #0x{v:08x}"), "mov pclink, r5"], &["mov r6, pclink"]);
+            assert_eq!((r, m.r[6]), (Ok(()), want), "{v:#x}");
+        }
+    }
+
+    #[test]
+    fn the_extra_operand_of_ima32_gets_the_high_word() {
+        // E493 (usse-ima32-forms-extra-i): r10 the low 32 bits, iK the high ones, the other i
+        // registers as they were (presets 0x55, 0x66, 0x77)
+        let triples = [
+            ((3u32, 7u32, 100u32), (0x79u32, 0u32)),
+            ((0xffff_ffff, 1, 1), (0, 1)),
+            ((0xffff_ffff, 0xffff_ffff, 0xffff_ffff), (0, 0xffff_ffff)),
+            ((0x10000, 0x10000, 0), (0, 1)),
+            ((0x8000_0000, 2, 0xffff_ffff), (0xffff_ffff, 1)),
+        ];
+        for k in 0..3 {
+            for &((a, b, c), (lo, hi)) in &triples {
+                let mut init = set(a, b, c).to_vec();
+                init.extend(["mov i0, #0x55", "mov i1, #0x66", "mov i2, #0x77"].map(String::from));
+                let (m, r) = with(&init, &[&format!("ima32.u r10, i{k}, r1, r2, r3")]);
+                assert_eq!(r, Ok(()), "{a:#x} {b:#x} {c:#x}");
+                assert_eq!(m.r[10], if (a, b, c) == (3, 7, 100) { 0x79 } else { lo }, "{a:#x} {b:#x} {c:#x}");
+                let mut want = [0x55, 0x66, 0x77];
+                want[k] = hi;
+                assert_eq!(m.i, [want[0], want[1], want[2], 0], "K = {k} {a:#x} {b:#x} {c:#x}");
+            }
+        }
+        // E501 (ima32hi): ima32.u r10, iK, r2, c56, r1 leaves a - b in r10 and b - [a < b] in iK
+        for (a, b) in [(1u32, 0u32), (0, 1), (5, 5), (0x7fff_ffff, 0x8000_0000), (0xffff_ffff, 0x8000_0001)] {
+            let (m, r) = with(&set(a, b, 0), &["mov i0, #0x55", "ima32.u r10, i0, r2, c56, r1"]);
+            assert_eq!(
+                (r, m.r[10], m.i[0]),
+                (Ok(()), a.wrapping_sub(b), b - (a < b) as u32),
+                "{a:#x} {b:#x}"
+            );
+        }
+    }
+
+    #[test]
+    fn the_extra_operand_stops_where_it_was_not_run() {
+        let init = set(3, 7, 100);
+        for t in [
+            "ima32.u r10, i0, r1, r2, r3, cie, i1", // with cie not run
+            "ima32.u r10, i0, r1, r2.neg, r3",      // with .neg not run
+            "ima32.u r10, i0, r1, #5, r3",          // an immediate: not run
+            "ima32.u r10, i0, r1, r2, i0",          // an iK that is also a source: not run
+        ] {
+            assert!(refused(&with(&init, &[t]).1), "{t}");
+        }
+    }
+
+    #[test]
+    fn ima32_negates_sources_2_and_3() {
+        // E470 and E495: .neg is a two's-complement negation of the source, .u and .s alike
+        let (a, b, c) = (0x1234_5678u32, 0x9abc_def0u32, 0xdead_beefu32);
+        for ty in ["u", "s"] {
+            let init = set(a, b, c);
+            let (m, r) = with(&init, &[&format!("ima32.{ty} r10, r1, r2.neg, r3")]);
+            assert_eq!((r, m.r[10]), (Ok(()), a.wrapping_mul(b.wrapping_neg()).wrapping_add(c)));
+            let (m, r) = with(&init, &[&format!("ima32.{ty} r10, r1, r2, r3.neg")]);
+            assert_eq!((r, m.r[10]), (Ok(()), a.wrapping_mul(b).wrapping_sub(c)));
+            let (m, r) = with(&init, &[&format!("ima32.{ty} r10, r1, r2.neg, r3.neg")]);
+            assert_eq!((r, m.r[10]), (Ok(()), a.wrapping_mul(b.wrapping_neg()).wrapping_sub(c)));
+        }
+        // the subtract lowering of E470: ima32.u d, b, c56, a is a - b
+        let (m, r) = with(&set(5, 7, 0), &["ima32.u r10, r2, c56, r1"]);
+        assert_eq!((r, m.r[10]), (Ok(()), 0xffff_fffe));
+        // an immediate or a constant negated, .s (E495): #1.neg and #127.neg, c56.neg
+        let (m, r) = with(&set(a, b, c), &["ima32.s r10, r1, #1.neg, r3"]);
+        assert_eq!((r, m.r[10]), (Ok(()), c.wrapping_sub(a)));
+        let (m, r) = with(&set(a, b, c), &["ima32.s r10, r1, r2, #127.neg"]);
+        assert_eq!((r, m.r[10]), (Ok(()), a.wrapping_mul(b).wrapping_sub(127)));
+        let (m, r) = with(&set(a, b, c), &["ima32.s r10, r1, c56.neg, r3"]);
+        assert_eq!((r, m.r[10]), (Ok(()), a.wrapping_add(c)));
+        // and with the carry in, which was not run: stops
+        let mut init = set(a, b, c).to_vec();
+        init.push("mov i0, #1".into());
+        assert!(refused(&with(&init, &["ima32.u r10, r1, r2.neg, r3, cie, i0"]).1));
+    }
+
+    #[test]
+    fn a_call_not_taken_still_writes_the_link() {
+        // E491 (usse-callfalse2-link): pclink holds the index after the call whatever the predicate
+        for pred in ["p0", "p1", "p2", "p3", "!p0", "!p1"] {
+            let set_p = |t: &str| format!("and.testtanz.chan0 !c0, {t}, r1, r1");
+            let (init, p) = match pred {
+                "!p0" | "!p1" => (vec!["mov r1, #1".to_string(), set_p("p0"), set_p("p1")], pred),
+                _ => {
+                    (vec!["mov r1, #0".to_string(), set_p("p0"), set_p("p1"), set_p("p2"), set_p("p3")], pred)
+                }
+            };
+            for call in ["ba.savelink #0x00000020", "br.savelink #4"] {
+                let mut src: Vec<&str> = init.iter().map(|s| s.as_str()).collect();
+                src.push("mov pclink, r1");
+                let text = format!("{p} {call}");
+                src.push(&text);
+                src.push("mov r11, #2");
+                src.push("mov r15, pclink");
+                src.push("nop.end");
+                let n = src.len();
+                let (m, r) = run(&src);
+                assert_eq!(r, Ok(()), "{text}");
+                // the call is at index n - 4 and its link the next instruction
+                assert_eq!((m.r[15], m.r[11]), ((n - 3) as u32, 2), "{text}");
+            }
+        }
+        // a call that is taken writes the same link (E491, 2 of 2)
+        let (m, r) = run(&["ba.savelink #0x00000002", "mov r11, #2", "mov r15, pclink", "nop.end"]);
+        assert_eq!((r, m.r[15]), (Ok(()), 1));
+    }
+
+    #[test]
+    fn the_sum_tests_read_the_sum_as_the_hardware_does() {
+        // E498 (usse-iaddu32-pairs, usse-compare32x): the 16 pairs (r1, r2)
+        let pairs: [(u32, u32); 16] = [
+            (0x8000, 0x8000),
+            (0xffff, 1),
+            (0x8000, 0xffff_8000),
+            (0x8001, 0xffff_7fff),
+            (0xffff, 0xffff_ffff),
+            (0x9000, 0xffff_7000),
+            (1, 0xffff_ffff),
+            (0x7fff, 0xffff_8001),
+            (0, 0),
+            (0, 0xffff_ffff),
+            (0x8000, 0),
+            (0xffff, 0),
+            (0x8000, 0x7fff_0000),
+            (0xffff, 0x8000_0000),
+            (5, 0xffff_fffb),
+            (0x8000, 0x7fff_8000),
+        ];
+        let nat = [0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0];
+        let taz = [1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0];
+        let flag = |op: &str, (a, b): (u32, u32)| {
+            let (m, r) = with(
+                &set(a, b, 0),
+                &[&format!("{op}.chan0 !c0, p0, r1, r2"), "mov r10, #0", "p0 mov r10, #1"],
+            );
+            assert_eq!(r, Ok(()), "{op} {a:#x} {b:#x}");
+            m.r[10]
+        };
+        for (n, &pr) in pairs.iter().enumerate() {
+            // iadd32: n and p read the sign of the true sum sext16(r1) + r2 (r2 signed); z and nz
+            // the zero of the sum with r1 sign-extended
+            assert_eq!(flag("iadd32.testnat", pr), nat[n], "nat {pr:x?}");
+            assert_eq!(flag("iadd32.testpat", pr), 1 - nat[n], "pat {pr:x?}");
+            assert_eq!(flag("iadd32.testtaz", pr), taz[n], "taz {pr:x?}");
+            assert_eq!(flag("iadd32.testtanz", pr), 1 - taz[n], "tanz {pr:x?}");
+            // iaddu32: p always true, n never, the zero test counts the carry: true for (0, 0) only
+            assert_eq!(flag("iaddu32.testpat", pr), 1, "upat {pr:x?}");
+            assert_eq!(flag("iaddu32.testnat", pr), 0, "unat {pr:x?}");
+            assert_eq!(flag("iaddu32.testtaz", pr), (pr == (0, 0)) as u32, "utaz {pr:x?}");
+            assert_eq!(flag("iaddu32.testtanz", pr), (pr != (0, 0)) as u32, "utanz {pr:x?}");
+        }
+        // the value iaddu32 writes zero-extends r1 (usse-decoder-vectors-iaddu32-taz __5, usse-integer-iaddu32-value __0)
+        for (a, b, want) in
+            [(0x8000u32, 0x8000u32, 0x10000u32), (0xffff, 1, 0x10000), (0xffff_ffff, 2, 0x10001)]
+        {
+            let (m, r) = with(&set(a, b, 0), &["iaddu32.testtaz.chan0 r10, p0, r1, r2"]);
+            assert_eq!((r, m.r[10]), (Ok(()), want));
+        }
+    }
+
+    #[test]
+    fn a_test_field_reads_as_its_two_parts() {
+        // E499 (usse-rawcond, usse-rawcond2): the zero part is tanz if bit 41, else taz if bit 40,
+        // the sign part pat if bit 43, else nat if bit 42; p0 is the AND of the parts present. The
+        // words are `and.testtaz.chan0 !c0, p0, r1, r2` (0x48081181000C0082) with the field set
+        let base = 0x4808_1181_000C_0082u64 & !(0xf << 40);
+        let inputs: [(u32, u32); 6] = [
+            (0, 0),
+            (1, 1),
+            (5, 3),
+            (0x7fff_ffff, 0xffff_ffff),
+            (0x8000_0000, 0x8000_0000),
+            (0xffff_ffff, 0xffff_ffff),
+        ];
+        for field in 1..16u64 {
+            for &(a, b) in &inputs {
+                let word = base | field << 40;
+                let src =
+                    [format!("mov r1, #0x{a:08x}"), format!("mov r2, #0x{b:08x}"), "mov r10, #0".to_string()];
+                let mut words: Vec<u64> =
+                    src.iter().map(|t| usse_isa::encode(t, Core::Sgx545).unwrap()).collect();
+                words.extend([
+                    word,
+                    usse_isa::encode("p0 mov r10, #1", Core::Sgx545).unwrap(),
+                    usse_isa::encode("nop.end", Core::Sgx545).unwrap(),
+                ]);
+                let (mut m, mut mem) = (Machine::default(), Memory { base: 0x1000, words: vec![0; 4] });
+                let r = m.run(&Program::new(&words, Core::Sgx545), &mut mem, 100);
+                let v = (a & b) as i32;
+                let zero = if field & 2 != 0 {
+                    Some(v != 0)
+                } else if field & 1 != 0 {
+                    Some(v == 0)
+                } else {
+                    None
+                };
+                let sign = if field & 8 != 0 {
+                    Some(v >= 0)
+                } else if field & 4 != 0 {
+                    Some(v < 0)
+                } else {
+                    None
+                };
+                let want = zero.unwrap_or(true) && sign.unwrap_or(true);
+                assert_eq!((r, m.r[10]), (Ok(()), want as u32), "field {field:#x} on {a:#x} & {b:#x}");
+            }
+        }
+    }
+
+    #[test]
+    fn a_pa_destination_is_not_written() {
+        // E496 (usse-pa-dest, usse-ima32-forms-dest): ima32.u pa0 and mov pa0 leave pa0 as it
+        // was, so a read of it after the write is the job's, not the instruction's result
+        let (_, r) = with(&set(3, 7, 100), &["ima32.u pa0, r1, r2, r3", "mov r10, pa0"]);
+        assert!(refused(&r), "{r:?}");
+        let (_, r) = with(&set(3, 7, 100), &["mov pa0, r1", "mov r10, pa0"]);
+        assert!(refused(&r), "{r:?}");
+        // pa1 to pa4 were not run: a write stops
+        let (_, r) = with(&set(3, 7, 100), &["mov pa1, r1"]);
+        assert!(refused(&r), "{r:?}");
+        // the other destinations of E496 are written: r0, sa0, o0, i1 and i2
+        for d in ["r9", "r30", "sa0", "i1", "i2"] {
+            let (m, r) =
+                with(&set(3, 7, 100), &[&format!("ima32.u {d}, r1, r2, r3"), &format!("mov r10, {d}")]);
+            assert_eq!((r, m.r[10]), (Ok(()), 0x79), "{d}");
+        }
+    }
+
+    /// A machine with `n` pointer registers from `first` holding the dword addresses of a memory
+    /// that starts at 0x1000 and whose dword i holds 0xd000_0000 | i, and r2 up holding 0x100 + k.
+    fn memory_run(first: usize, pointers: &[u32], src: &[&str]) -> (Machine, Memory, Result<(), Error>) {
+        let mut init: Vec<String> = pointers
+            .iter()
+            .enumerate()
+            .map(|(k, p)| format!("mov r{}, #0x{:08x}", first + k, 0x1000 + 4 * p))
+            .collect();
+        init.extend((0..16).map(|k| format!("mov r{}, #0x{:08x}", 2 + k, 0x100 + k)));
+        let mut words: Vec<u64> = init.iter().map(|t| usse_isa::encode(t, Core::Sgx545).unwrap()).collect();
+        words.extend(src.iter().map(|t| usse_isa::encode(t, Core::Sgx545).unwrap_or_else(|| panic!("{t}"))));
+        words.push(usse_isa::encode("nop.end", Core::Sgx545).unwrap());
+        let mut m = Machine { temps: 124, ..Machine::default() };
+        let mut mem = Memory { base: 0x1000, words: (0..64).map(|i| 0xd000_0000 | i).collect() };
+        let r = m.run(&Program::new(&words, Core::Sgx545), &mut mem, 1000);
+        (m, mem, r)
+    }
+
+    #[test]
+    fn a_store_repeat_steps_the_pointer_and_the_data_register() {
+        // E483, E515 (usse-store-repeat, usse-repeat-ptrs): iteration i stores r(2 + i) at the
+        // address in r(40 + i); the post-increment form moves each of those pointers by k
+        let ptrs: Vec<u32> = (0..16).map(|k| 8 + 2 * k).collect();
+        for n in [2u32, 5, 9, 16] {
+            let (m, mem, r) = memory_run(40, &ptrs, &[&format!("stad.repeat{n} [r40,+#0], r2")]);
+            assert_eq!(r, Ok(()), "plain {n}");
+            for k in 0..16usize {
+                let want = if (k as u32) < n { 0x100 + k as u32 } else { 0xd000_0000 | (8 + 2 * k as u32) };
+                assert_eq!(mem.words[8 + 2 * k], want, "plain {n} iteration {k}");
+                assert_eq!(m.r[40 + k], 0x1000 + 4 * (8 + 2 * k as u32), "plain {n}: the pointers stay");
+            }
+            let (m, mem, r) = memory_run(40, &ptrs, &[&format!("stad.repeat{n} [r40,#2++], r2")]);
+            assert_eq!(r, Ok(()), "post {n}");
+            for k in 0..16usize {
+                let moved = if (k as u32) < n { 2 } else { 0 };
+                assert_eq!(m.r[40 + k], 0x1000 + 4 * (8 + 2 * k as u32 + moved), "post {n} pointer {k}");
+                assert_eq!(mem.words[8 + 2 * k] == 0x100 + k as u32, (k as u32) < n, "post {n} store {k}");
+            }
+        }
+        // the pre-increment form stores at the moved address and moves the pointer (E515, N = 8)
+        let (m, mem, r) = memory_run(40, &ptrs, &["stad.repeat8 [r40,++#1], r2"]);
+        assert_eq!(r, Ok(()));
+        assert_eq!((mem.words[9], mem.words[8 + 2 * 7 + 1], m.r[47]), (0x100, 0x107, 0x1000 + 4 * 23));
+        // a pointer that holds no address: no fault is predicted (the hardware's was not predictable)
+        let (_, _, r) = memory_run(40, &ptrs[..2], &["stad.repeat4 [r40,+#0], r2"]);
+        assert!(refused(&r), "{r:?}");
+    }
+
+    #[test]
+    fn a_load_repeat_and_a_smlsi_series() {
+        // E483, E515: ldad.repeatN loads from r(56 + i) into r(10 + i), the post-increment form
+        // moving each pointer; the load lands at its wdf
+        let ptrs: Vec<u32> = (0..16).map(|k| 3 * k).collect();
+        let (m, _, r) = memory_run(56, &ptrs, &["ldad.repeat6 r10, [r56,#1++], drc0", "wdf drc0"]);
+        assert_eq!(r, Ok(()));
+        for k in 0..6 {
+            assert_eq!(
+                (m.r[10 + k], m.r[56 + k]),
+                (0xd000_0000 | (3 * k as u32), 0x1000 + 4 * (3 * k as u32 + 1)),
+                "{k}"
+            );
+        }
+        // E483 (usse-store-repeat-regs smlsi): the second increment 0 and the fourth 1 make one
+        // pointer series: r2 to r17 go to 16 consecutive dwords and r40 moves by 16
+        let (m, mem, r) = memory_run(
+            40,
+            &[4],
+            &[
+                "smlsi #0, #0, #0, #1, incrementmode, incrementmode, incrementmode, incrementmode, #0, #0, #0",
+                "stad.repeat16 [r40,#1++], r2",
+            ],
+        );
+        assert_eq!(r, Ok(()));
+        assert_eq!(
+            (0..16).map(|k| mem.words[4 + k]).collect::<Vec<_>>(),
+            (0..16).map(|k| 0x100 + k).collect::<Vec<u32>>()
+        );
+        assert_eq!(m.r[40], 0x1000 + 4 * 20);
+        // not run: an ldad repeat after smlsi
+        let (_, _, r) = memory_run(
+            56,
+            &ptrs,
+            &[
+                "smlsi #1, #1, #1, #1, incrementmode, incrementmode, incrementmode, incrementmode, #0, #0, #0",
+                "ldad.repeat4 r10, [r56,+#0], drc0",
+            ],
+        );
+        assert!(refused(&r), "{r:?}");
+        // not run: a pre-increment load with a repeat, a repeat with a fetch
+        let (_, _, r) = memory_run(56, &ptrs, &["ldad.repeat4 r10, [r56,++#1], drc0"]);
+        assert!(refused(&r), "{r:?}");
+    }
+
+    #[test]
+    fn a_store_fetch_writes_consecutive_dwords_from_the_shifted_start() {
+        // E482, E516 (usse-repeat-ptrs fetch-*): rb at dword b = 8; the plain and pre forms start
+        // at b + k + 1, the post-increment form at b + k and moves rb by N whatever k
+        let at = |text: &str| {
+            let (m, mem, r) = memory_run(40, &[8], &[text]);
+            assert_eq!(r, Ok(()), "{text}");
+            let written: Vec<usize> = (0..40).filter(|&i| mem.words[i] != 0xd000_0000 | i as u32).collect();
+            (written, m.r[40])
+        };
+        assert_eq!(at("stad.fetch4 [r40,+#2], r2"), ((11..15).collect(), 0x1000 + 32));
+        assert_eq!(at("stad.fetch8 [r40,+#3], r2"), ((12..20).collect(), 0x1000 + 32));
+        assert_eq!(at("stad.fetch4 [r40,#2++], r2"), ((10..14).collect(), 0x1000 + 4 * 12));
+        assert_eq!(at("stad.fetch2 [r40,#4++], r2"), ((12..14).collect(), 0x1000 + 4 * 10));
+        assert_eq!(at("stad.fetch4 [r40,++#1], r2"), ((10..14).collect(), 0x1000 + 4 * 12));
+        // the data: r2, r3 ... to consecutive dwords
+        let (_, mem, _) = memory_run(40, &[8], &["stad.fetch4 [r40,+#0], r2"]);
+        assert_eq!(&mem.words[9..13], &[0x100, 0x101, 0x102, 0x103]);
+    }
+
+    #[test]
+    fn a_phase_gets_the_allocation_its_phas_asked_for() {
+        // E487, E519: the second phase has the request modulo 256, 4 to 192; the others hung
+        let phased = |request: u32| {
+            run(&[
+                &format!("phas #2, #{request}, pixel, none, parallel"),
+                "nop.end",
+                "mov r7, #0x7e57007b",
+                "mov.end o0, r7",
+            ])
+        };
+        let (m, r) = phased(132);
+        assert_eq!((r, m.o[0], m.temps), (Ok(()), 0x7e57007b, 132));
+        for request in [196, 228, 252, 256, 452, 504] {
+            let (_, r) = phased(request);
+            assert!(refused(&r), "{request}: {r:?}");
+        }
+        assert_eq!(phased(260).0.temps, 4);
+        // a register past the allocation is not modelled (E486: most pixels read it modulo the
+        // allocation and a write is dropped, E519: the marker of r123 read back)
+        assert!(refused(&run(&["phas #2, #260, pixel, none, parallel", "nop.end", "mov.end r123, #1"]).1));
+        // the temporaries of the first phase are not the second's (E119)
+        assert!(refused(
+            &run(&["phas #3, #8, pixel, none, parallel", "mov r1, #5", "nop.end", "mov.end o0, r1"]).1
+        ));
+        // vcull hangs a pixel task (usse-phases-phas-pix-vcull-*, E121) and pt hangs a vertex task
+        // (usse-phases-phas-vtx-pt-parallel): refused. In a vertex task vcull waits for the MTE's cull
+        // decision, which is not modelled: the program stops where its first phase ends
+        for w in ["vcull", "pt"] {
+            let t = format!("phas #2, #8, pixel, {w}, parallel");
+            assert!(refused(&run(&[&t, "mov.end o0, #5", "mov.end o0, #7"]).1), "{w}");
+        }
+        let prog = ["phas #2, #8, pixel, vcull, parallel", "mov.end o0, #5", "mov.end o0, #7"];
+        let words: Vec<u64> = prog.iter().map(|t| usse_isa::encode(t, Core::Sgx545).unwrap()).collect();
+        let mut m = Machine { vertex_task: true, ..Machine::default() };
+        let mut mem = Memory { base: 0x1000, words: vec![0; 4] };
+        assert_eq!((m.run(&Program::new(&words, Core::Sgx545), &mut mem, 100), m.o[0]), (Ok(()), 5));
+        let words: Vec<u64> = ["phas #2, #8, pixel, pt, parallel", "mov.end o0, #5"]
+            .iter()
+            .map(|t| usse_isa::encode(t, Core::Sgx545).unwrap())
+            .collect();
+        let mut m = Machine { vertex_task: true, ..Machine::default() };
+        assert!(refused(&m.run(&Program::new(&words, Core::Sgx545), &mut mem, 100)));
+        // a rate or mode not run, with a next phase
+        assert!(refused(&run(&["phas #2, #8, pixel, none, perinstance", "nop.end", "nop.end"]).1));
+    }
+
+    #[test]
+    fn imae_carries_the_signed_add_and_both_carries() {
+        // E471 (usse-imae-neg-coe-signed): imae.s multiplies the signed halves and adds c as an
+        // unsigned number; coe writes that add's carry, 0 or 1
+        let carry = |a: u32, b: u32, c: u32| {
+            let (m, r) =
+                with(&set(a, b, c), &["imae.s r10, r1.low, r2.low, r3, u32, coe, i0", "mov r11, i0"]);
+            assert_eq!(r, Ok(()));
+            (m.r[10], m.r[11])
+        };
+        assert_eq!(carry(0xffff, 0xffff, 0xffff_fff0), (0xffff_fff1, 0));
+        assert_eq!(carry(0x8000, 0x8000, 0xffff_ffff), (0x3fff_ffff, 1));
+        assert_eq!(carry(0x7fff, 0x7fff, 0x8000_0000), (0xbfff_0001, 0));
+        assert_eq!(carry(1, 1, 0xffff_ffff), (0, 1));
+        assert_eq!(carry(0xffff, 1, 0), (0xffff_ffff, 0));
+        // E471 (usse-imae-neg-coe-cie): coe and cie on one iN: the sum includes bit 0 of iN and the
+        // carry of the whole goes back to iN
+        let mut init = set(2, 3, 0xffff_fffe).to_vec();
+        init.push("mov i0, #1".into());
+        let (m, r) = with(&init, &["imae.u r10, r1.low, r2.low, r3, u32, coe, cie, i0", "mov r11, i0"]);
+        assert_eq!((r, m.r[10], m.r[11]), (Ok(()), 5, 1));
+    }
+
+    #[test]
+    fn what_the_job_before_left_is_not_read() {
+        // E477, E484, E475: p0-p3 and pclink are not reset between jobs, so a read before the
+        // program sets them stops it
+        assert!(refused(&run_after(&[], &["p0 mov r1, #1"]).1));
+        assert!(refused(&run_after(&[], &["mov r1, pclink"]).1));
+        assert!(refused(&run_after(&[], &["lapc"]).1));
+        // set by a test, or by a call that is not taken, they are known
+        assert_eq!(
+            run_after(&["mov r5, #0", "and.testtanz.chan0 !c0, p0, r5, r5"], &["p0 mov r1, #1"]).1,
+            Ok(())
+        );
+        assert_eq!(
+            run_after(
+                &["mov r5, #0", "and.testtanz.chan0 !c0, p0, r5, r5", "p0 br.savelink #1"],
+                &["mov r1, pclink"]
+            )
+            .1,
+            Ok(())
+        );
+    }
+
+    #[test]
+    fn the_signed_high_word_and_the_o_join() {
+        // E526 (usse-ima32hi-signed): ima32.s iK = bits 63:32 of sext(a) * sext(b) + sext(c)
+        for (a, b, c) in [
+            (0xffff_ffffu32, 0xffff_ffffu32, 0xffff_ffffu32),
+            (0x8000_0000, 2, 0xffff_ffff),
+            (3, 7, 100),
+            (0x7fff_ffff, 0x7fff_ffff, 0x8000_0000),
+        ] {
+            let (m, r) = with(&set(a, b, c), &["ima32.s r10, i0, r1, r2, r3"].map(|t| t));
+            let want = (a as i32 as i64 * b as i32 as i64 + c as i32 as i64) as u64;
+            assert_eq!((r, m.r[10], m.i[0]), (Ok(()), want as u32, (want >> 32) as u32), "{a:x} {b:x} {c:x}");
+        }
+        // E528: the signed compare, ima32.s r11, i0, r2, c56, r1 then i0 nonzero when a < b
+        for (a, b) in [(1u32, 2u32), (0xffff_ffff, 0), (0x8000_0000, 0x7fff_ffff), (5, 5)] {
+            let (m, _) = with(&set(a, b, 0), &["ima32.s r11, i0, r2, c56, r1"]);
+            assert_eq!(m.i[0] != 0, (a as i32) < b as i32, "{a:x} {b:x}");
+        }
+        // with cie, a negated source, and i3 the extra operand still stops
+        assert!(refused(&with(&set(1, 2, 3), &["ima32.s r10, i3, r1, r2, r3"]).1));
+        assert!(refused(&with(&set(1, 2, 3), &["ima32.s r10, i0, r1, r2.neg, r3"]).1));
+        // E529: the o join (enc[39] clear) ORs the parts, an absent part true: a field of one part is
+        // always true; field 0xd (taz, pat) is taz OR pat
+        let base = 0x4808_1181_000C_0082u64 & !(0xf << 40) & !(1 << 39);
+        for (field, a, want) in [(3u64, 5u32, 1u32), (0xc, 5, 1), (0xd, 5, 1), (0x5, 5, 0), (0x5, 0, 1)] {
+            let mut words: Vec<u64> =
+                [format!("mov r1, #0x{a:08x}"), format!("mov r2, #0x{a:08x}"), "mov r10, #0".to_string()]
+                    .iter()
+                    .map(|t| usse_isa::encode(t, Core::Sgx545).unwrap())
+                    .collect();
+            words.extend([
+                base | field << 40,
+                usse_isa::encode("p0 mov r10, #1", Core::Sgx545).unwrap(),
+                usse_isa::encode("nop.end", Core::Sgx545).unwrap(),
+            ]);
+            let (mut m, mut mem) = (Machine::default(), Memory { base: 0x1000, words: vec![0; 4] });
+            let r = m.run(&Program::new(&words, Core::Sgx545), &mut mem, 100);
+            assert_eq!((r, m.r[10]), (Ok(()), want), "o join field {field:#x} on {a}");
+        }
+    }
+
+    #[test]
+    fn only_the_negations_that_ran_are_taken() {
+        let init = set(5, 7, 100);
+        // E495 and E470: refused, not run
+        for t in [
+            "ima32.s r10, r1, #127.neg, r3",
+            "ima32.s r10, r1, r2, #5.neg",
+            "ima32.s r10, r1, r2, c3.neg",
+            "ima32.u r10, r1, #1.neg, r3",
+            "ima32.u r10, r1, c3.neg, r3",
+            "ima32.u r10, r1, r2, c3.neg",
+        ] {
+            assert!(refused(&with(&init, &[t]).1), "{t}");
+        }
+        // run: taken
+        for t in
+            ["ima32.s r10, r1, #5.neg, r3", "ima32.u r10, r1, #127.neg, r3", "ima32.u r10, r1, r2, c56.neg"]
+        {
+            assert_eq!(with(&init, &[t]).1, Ok(()), "{t}");
+        }
+    }
+
+    #[test]
+    fn what_was_not_run_stays_refused() {
+        // E516: the registers of a fetch ran up to r33; E529: the join o ran on and, or and xor
+        let (_, _, r) = memory_run(40, &[8], &["stad.fetch4 [r40,+#0], r32"]);
+        assert!(matches!(&r, Err(Error::Unsupported { why, .. }) if why.contains("E516")), "{r:?}");
+        let (_, _, r) = memory_run(40, &[8], &["stad.fetch4 [r40,+#0], r14"]);
+        assert_eq!(r, Ok(()));
+        // rol.testtanz.chan0 !c0, p0, r1, r2 with enc[39] clear (the join o), and the same for and
+        for (word, ok) in
+            [(0x4808_1281_000D_4082u64 & !(1 << 39), false), (0x4808_1281_000C_0082u64 & !(1 << 39), true)]
+        {
+            let mut words: Vec<u64> = ["mov r1, #5", "mov r2, #5"]
+                .iter()
+                .map(|t| usse_isa::encode(t, Core::Sgx545).unwrap())
+                .collect();
+            words.extend([word, usse_isa::encode("nop.end", Core::Sgx545).unwrap()]);
+            let mut m = Machine::default();
+            let mut mem = Memory { base: 0x1000, words: vec![0; 4] };
+            let r = m.run(&Program::new(&words, Core::Sgx545), &mut mem, 100);
+            assert_eq!(r == Ok(()), ok, "{word:#x}: {r:?}");
+        }
+    }
+
+    #[test]
+    fn a_placed_program_counts_from_its_code_base() {
+        // E476, E492: the link of a br.savelink in a program placed at heap offset X reads
+        // (X mod 0x80000) / 8 + the index after the call (the vectors have a phas first: one more); a ba counts from the code base too
+        let prog = ["br.savelink #1", "mov r10, pclink", "mov.end o0, r10"];
+        for (offset, want) in [(0x1a0000u32, 0x4001u32), (0x2ff000, 0xfe01), (0x300008, 2), (0x10000, 0x2001)]
+        {
+            let words: Vec<u64> = prog.iter().map(|t| usse_isa::encode(t, Core::Sgx545).unwrap()).collect();
+            let mut m = Machine { code_index: offset % 0x80000 / 8, ..Machine::default() };
+            let mut mem = Memory { base: 0x1000, words: vec![0; 4] };
+            assert_eq!((m.run(&Program::new(&words, Core::Sgx545), &mut mem, 100), m.o[0]), (Ok(()), want));
+        }
+        // a lapc to the link plus 8 lands the same 8 words on, and a ba to a code-base index
+        let words: Vec<u64> =
+            ["br.savelink #1", "mov r10, pclink", "ba #8196", "mov.end o0, #0xBAD", "mov.end o0, #0x600D"]
+                .iter()
+                .map(|t| usse_isa::encode(t, Core::Sgx545).unwrap())
+                .collect();
+        let mut m = Machine { code_index: 8192, ..Machine::default() };
+        let mut mem = Memory { base: 0x1000, words: vec![0; 4] };
+        assert_eq!((m.run(&Program::new(&words, Core::Sgx545), &mut mem, 100), m.o[0]), (Ok(()), 0x600d));
     }
 }
