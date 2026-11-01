@@ -1,0 +1,10 @@
+title = "script table dpm/ctx-table-flag-order"
+repo = "data"
+paths = ["dpm/ctx-table-flag-order/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 4
+size = 136125
+sha256 = "d355f4b233f448c3a7c203340048c18671d812d1628232e4c0d1a44c0be0daf6"
+recipe = "probes/dpm/ctx-table-flag-order.toml"
+needs = ["render", "kpoke", "alias_ctx_rw", "regs", "reset"]

@@ -1,0 +1,10 @@
+title = "script and probe table usse/madd-length"
+repo = "data"
+paths = ["usse/madd-length/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 16
+size = 177068
+sha256 = "8000013f6af1dce7d5e8e6bde481806c1d4a3e80458e2484984babcb7ba3001b"
+recipe = "probes/usse/madd-length.toml"
+needs = ["render", "kregnow", "regs", "reset"]

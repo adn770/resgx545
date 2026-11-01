@@ -696,3 +696,128 @@ def test_tri_scratch_at_maps_the_pages_where_asked():
     r = run("--mock", "tri", "--scratch", "1", "--scratch-at", "0x2e001")      # not page-aligned
     assert r.returncode != 0, r.stdout + r.stderr
     assert "--scratch-at" in run().stderr
+
+
+def test_tri_scratch_file_fills_the_scratch_pages_from_a_file(tmp_path):
+    # --scratch-file FILE: the first dwords of the --scratch pages are the file's (a table the host
+    # built), the rest --scratch-fill; the report counts the dwords a render changed against that
+    f = tmp_path / "table.bin"
+    f.write_bytes(bytes.fromhex("11111111" "22222222"))
+    r = run("--mock", "tri", "--scratch", "1", "--scratch-fill", "0x5a5a5a5a", "--scratch-file",
+            str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^scratch: 0x[0-9a-f]{8} 1 pages, fill 0x5a5a5a5a, file 2 dwords$", r.stdout,
+                     re.M), r.stdout
+    assert re.search(r"^scratch: 0 dwords changed$", r.stdout, re.M), r.stdout
+
+
+@pytest.mark.parametrize("size", [3, 4098 * 2, 0])
+def test_tri_scratch_file_is_checked(tmp_path, size):
+    # a multiple of 4 bytes, not empty, no longer than the scratch pages
+    f = tmp_path / "bad.bin"
+    f.write_bytes(bytes(size))
+    r = run("--mock", "tri", "--scratch", "1", "--scratch-file", str(f))
+    assert r.returncode == 2, r.stdout + r.stderr
+    assert "--scratch-file" in r.stderr
+
+
+def test_tri_scratch_file_needs_scratch_pages_and_a_readable_file(tmp_path):
+    f = tmp_path / "t.bin"
+    f.write_bytes(bytes(8))
+    assert run("--mock", "tri", "--scratch-file", str(f)).returncode == 2
+    r = run("--mock", "tri", "--scratch", "1", "--scratch-file", str(tmp_path / "none.bin"))
+    assert r.returncode == 2
+    assert "--scratch-file" in r.stderr
+
+
+def test_tri_close_first_closes_the_first_context_before_the_second(tmp_path, monkeypatch):
+    # --close-first: the first context (the donor, with --share-pb) is closed before the second;
+    # the default closes the second first
+    (tmp_path / "render_share_pb").write_text("N\n")
+    monkeypatch.setenv("SGXFIVE_DEBUGFS", str(tmp_path))
+    r = run("--mock", "tri", "-n", "1", "--ctx2", "--share-pb", "--close-first")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^tri: closing the first context before the second$", r.stdout, re.M)
+    r = run("--mock", "tri", "-n", "1", "--ctx2", "--share-pb")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^tri: closing the second context before the first$", r.stdout, re.M)
+
+
+def test_tri_close_first_needs_the_second_context():
+    assert run("--mock", "tri", "--close-first").returncode == 2
+    assert run("--mock", "fill", "--ctx2", "--close-first").returncode == 2
+
+
+def test_tri_close_trace_prints_the_kernel_trace_after_each_close(tmp_path, monkeypatch):
+    # --close-trace: after each context is closed, the debugfs render_cleanup lines and dwords 32,
+    # 46 and 47 of the TA/3D control block (debugfs buf09), so that the cleanup of each is seen
+    (tmp_path / "render_share_pb").write_text("N\n")
+    (tmp_path / "render_cleanup").write_text("rtds 0x1 ctx 0x2 pbdesc 0x3 flags 0x0 ret 0\n"
+                                             "pb ta 0x00000000 3d 0x00000000\n")
+    words = [0] * 64
+    words[32], words[46], words[47] = 0x32411380, 0x11, 0x22
+    (tmp_path / "buf09").write_bytes(b"".join(w.to_bytes(4, "little") for w in words))
+    monkeypatch.setenv("SGXFIVE_DEBUGFS", str(tmp_path))
+    for first, second in (("second", "first"), ("first", "second")):
+        args = ["--close-first"] if first == "first" else []
+        r = run("--mock", "tri", "-n", "1", "--ctx2", "--share-pb", "--close-trace", *args)
+        assert r.returncode == 0, r.stdout + r.stderr
+        for which in (first, second):
+            assert (f"cleanup after closing the {which} context: "
+                    "rtds 0x1 ctx 0x2 pbdesc 0x3 flags 0x0 ret 0") in r.stdout
+            assert (f"cleanup after closing the {which} context: "
+                    "pb ta 0x00000000 3d 0x00000000") in r.stdout
+            assert (f"ta3dctl after closing the {which} context: dword 32 0x32411380, "
+                    "dword 46 0x00000011, dword 47 0x00000022") in r.stdout
+        # and again 500 ms after both are closed (a deferred release may run the donor's cleanup)
+        assert ("cleanup 500 ms after both are closed: "
+                "rtds 0x1 ctx 0x2 pbdesc 0x3 flags 0x0 ret 0") in r.stdout
+        assert ("ta3dctl 500 ms after both are closed: dword 32 0x32411380, "
+                "dword 46 0x00000011, dword 47 0x00000022") in r.stdout
+        assert r.stdout.index(f"closing the {first} context") < r.stdout.index(
+            f"cleanup after closing the {first} context")
+        assert r.stdout.index(f"cleanup after closing the {first} context") < r.stdout.index(
+            f"cleanup after closing the {second} context")
+
+
+def test_tri_close_trace_needs_the_second_context():
+    assert run("--mock", "tri", "--close-trace").returncode == 2
+    assert run("--mock", "fill", "--ctx2", "--close-trace").returncode == 2
+
+
+def test_tri_wait_second_waits_for_the_second_job_first():
+    # --wait-second (with --overlap): the second context's job is waited for before the first's,
+    # so that a first job that never ends does not hide whether the second ran
+    r = run("--mock", "tri", "-n", "2", "--ctx2", "--overlap", "--wait-second")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert r.stdout.count("tri: waiting for the second context's job first") == 2
+    assert r.stdout.count("job: ok") == 4
+    assert "tri: 2 renders ok" in r.stdout
+    assert re.search(r"^tri2 64x64 #2: .*wrong 0 inside, 0 outside, 0 at edges; .*guard 0$",
+                     r.stdout, re.M), r.stdout
+
+
+def test_tri_wait_second_needs_overlap():
+    assert run("--mock", "tri", "--ctx2", "--wait-second").returncode == 2
+    assert run("--mock", "tri", "--wait-second").returncode == 2
+    assert run("--mock", "fill", "--ctx2", "--overlap", "--wait-second").returncode == 2
+
+
+def test_probe_stamp_prints_the_jobs_wall_clock_window(tmp_path):
+    # probe --stamp: the job's start and end in CLOCK_REALTIME ns (the time of the submission and of
+    # the wait's return), to place a write from another process inside the job
+    import time
+    f = assemble(tmp_path, "stm", PHAS + "mov.skipinv.end o0, #0x1\n")
+    before = time.time_ns()
+    r = run("--mock", "probe", "--stamp", str(f))
+    after = time.time_ns()
+    assert r.returncode == 0, r.stdout + r.stderr
+    m = re.search(r"^probe stm: job window (\d+) (\d+) ns$", r.stdout, re.M)
+    assert m, r.stdout
+    start, end = int(m.group(1)), int(m.group(2))
+    assert before <= start <= end <= after
+    assert "job window" not in run("--mock", "probe", str(f)).stdout
+
+
+def test_probe_stamp_is_a_flag_of_probe_only(tmp_path):
+    assert run("--mock", "tri", "--stamp").returncode == 2

@@ -1,0 +1,10 @@
+title = "script table render/kept-owner-two-contexts"
+repo = "data"
+paths = ["render/kept-owner-two-contexts/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 4
+size = 82115
+sha256 = "9b6967bcbab992431162ae033c90d4768bf9bd44534beffff869fdb94e82ad12"
+recipe = "probes/render/kept-owner-two-contexts.toml"
+needs = ["render", "kpoke", "buf09", "reset"]

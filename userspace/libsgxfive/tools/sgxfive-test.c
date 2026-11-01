@@ -14,7 +14,7 @@
  *         [JOB OPTIONS]
  *   isolation                     VM separation, faults, lost contexts, read-only maps
  *   tri   [--width W --height H -n N] [--max-width W --max-height H] [--fault]
- *         [--scratch N [--scratch-fill V] [--scratch-at ADDR]] [--kpoke-render N:SPEC]... [--move N:DX,DY]...
+ *         [--scratch N [--scratch-fill V] [--scratch-at ADDR] [--scratch-file FILE]] [--kpoke-render N:SPEC]... [--move N:DX,DY]...
  *         [--geometry N]... [--keep-going] [--dump-render DIR] [--words DIR]
  *         [--wait-ms MS] [--ctx2 [--share-pb] [--overlap]] [JOB OPTIONS]
  *                                 the first triangle on a render context, N times,
@@ -25,7 +25,10 @@
  *                                 --scratch maps N more pages (their address printed)
  *                                 for a kernel poke to point a unit at, filled with V
  *                                 (default 0.25f) before each render, the dwords it
- *                                 changed reported page by page; --scratch-at ADDR maps
+ *                                 changed reported page by page; --scratch-file FILE: the
+ *                                 first dwords of the pages are the file's (a table the
+ *                                 host built) and the report counts against them;
+ *                                 --scratch-at ADDR maps
  *                                 them at ADDR (a heap's page, say, that a unit fetches
  *                                 from) instead of in the general heap; --kpoke-render writes
  *                                 SPEC to debugfs kpoke just before render N (each
@@ -52,6 +55,12 @@
  *                                 --overlap: its job is submitted before the first's is
  *                                 waited for (whether both were in the firmware at once
  *                                 is not checked);
+ *                                 --close-first: the first context is closed before the
+ *                                 second (the default closes the second first);
+ *                                 --wait-second (with --overlap): the second context's job is
+ *                                 waited for before the first's;
+ *                                 --close-trace: after each close, the lines of debugfs
+ *                                 render_cleanup and TA3DCtl dwords 32, 46 and 47;
  *                                 --kpoke-render2 N:SPEC: as --kpoke-render, before the
  *                                 second context's render N (with --overlap, 30 ms
  *                                 after the first context's job is submitted, so that
@@ -63,7 +72,7 @@
  *   regaccess                     client fill shaders that read and write SGX
  *                                 registers, read temporaries they did not write
  *                                 and kick code base 15
- *   probe [--temps N] [--coords] [--pixels] [--scratch-pages N] [--pds N --use USE]
+ *   probe [--stamp] [--temps N] [--coords] [--pixels] [--scratch-pages N] [--pds N --use USE]
  *         [--place OFFSET=FILE --place-form cbase|exe18]
  *         [--scratch-heap texture] [--poke xfer:N=V|bg:N=V]... [--low ADDR] [--late R:K=V] FILE...
  *                                 each FILE (tools/usse-asm output) as the fill
@@ -227,6 +236,8 @@ struct opts {
 	uint32_t scratch;		/* tri: pages of a scratch buffer for kernel pokes */
 	uint32_t scratch_fill;		/* tri: the scratch buffer's dwords before a render */
 	uint32_t scratch_at;		/* tri: where the scratch buffer is mapped (0: allocated) */
+	uint32_t *scratch_data;		/* tri: --scratch-file's dwords, the buffer's first ones */
+	uint32_t scratch_words;
 	/* tri: kernel pokes written to debugfs kpoke just before render n (--kpoke-render) */
 	struct { uint32_t n; const char *spec; bool second; } kpr[KPR_MAX];
 	unsigned int nkpr;
@@ -236,6 +247,9 @@ struct opts {
 	uint32_t wait_ms;		/* tri: each render's wait; 0: WAIT_NS */
 	bool keep_going;		/* tri: go on after a render that does not check */
 	bool ctx2;			/* tri: a second render context in the VM, rendering too */
+	bool close_first;		/* tri --ctx2: close the first context before the second */
+	bool close_trace;		/* tri --ctx2: the kernel's cleanup trace after each close */
+	bool wait_second;		/* tri --overlap: wait for the second job before the first */
 	bool share_pb;			/* tri: ... on the first's parameter buffer (kernel debugfs) */
 	bool overlap;			/* tri: ... its job submitted before the first's is waited for */
 	/* tri: render n's triangle moved by dx, dy pixels (--move) */
@@ -274,14 +288,16 @@ static int usage(void)
 		"                       [--ramp-base V] --print-addrs --page-before],\n"
 		"                 tri [--width W --height H -n N --max-width W --max-height H\n"
 		"                      --fault --scratch N --scratch-fill V --scratch-at ADDR\n"
+		"                      --scratch-file FILE\n"
 		"                      --kpoke-render N:SPEC --move N:DX,DY --geometry N\n"
 		"                      --keep-going --dump-render DIR --words DIR\n"
-		"                      --wait-ms MS --ctx2 [--share-pb] [--overlap]\n"
+		"                      --wait-ms MS --ctx2 [--share-pb] [--overlap] [--close-first]\n"
+		"                      [--close-trace] [--wait-second]\n"
 		"                      [--kpoke-render2 N:SPEC]],\n"
 		"                 fill, copy and tri also take [--poke SPACE:INDEX=VALUE]...\n"
 		"                      [--poke SPACE:INDEX^=VALUE]... [--pixels] [--regs LO-HI],\n"
 		"                 contexts [--width W --height H -n N],\n"
-		"                 probe [--temps N] [--coords] [--pixels] [--pds N --use USE]\n"
+		"                 probe [--stamp] [--temps N] [--coords] [--pixels] [--pds N --use USE]\n"
 		"                       [--place OFFSET=FILE --place-form cbase|exe18]\n"
 		"                       [--scratch-heap texture] [--scratch-pages N]\n"
 		"                       [--poke xfer:N=V|bg:N=V]... [--low ADDR] [--late R:K=V] FILE...,\n"
@@ -614,13 +630,28 @@ static int xfer_job(struct side *s, int submit_err, long long t0)
 	return submit_err ? submit_err : wait_err;
 }
 
-/* A probe's wait, its time (from t0) printed when the job completed. */
+static bool probe_stamp;	/* probe --stamp: the job's window in CLOCK_REALTIME ns too */
+
+/*
+ * A probe's wait, its time (from t0) printed when the job completed; with --stamp the window
+ * (from t0 to the wait's return) in wall-clock ns, to place a write from another process in it.
+ */
 static int probe_wait(struct sgxfive_xfer *x, const char *name, long long t0)
 {
 	const int ret = sgxfive_xfer_wait(x, WAIT_NS);
 
-	if (!ret)
-		printf("probe %s: job time: %lld us\n", name, (now_ns() - t0) / 1000);
+	if (!ret) {
+		const long long dt = now_ns() - t0;
+		struct timespec ts;
+
+		printf("probe %s: job time: %lld us\n", name, dt / 1000);
+		if (probe_stamp) {
+			clock_gettime(CLOCK_REALTIME, &ts);
+			const long long end = ts.tv_sec * 1000000000LL + ts.tv_nsec;
+
+			printf("probe %s: job window %lld %lld ns\n", name, end - dt, end);
+		}
+	}
 	return ret;
 }
 
@@ -1989,13 +2020,14 @@ static int scratch_create(struct tool *t, struct sgxfive_vm *vm, uint32_t pages,
 	return 0;
 }
 
-static void scratch_fill(const struct scratch *s, uint32_t v)
+/* every dword v, the first nd of them those of d (a table the host built) */
+static void scratch_fill(const struct scratch *s, uint32_t v, const uint32_t *d, uint32_t nd)
 {
 	for (uint64_t i = 0; i < s->size / 4; i++)
-		s->map[i] = v;
+		s->map[i] = i < nd ? d[i] : v;
 }
 
-static void scratch_report(const struct scratch *s, uint32_t v)
+static void scratch_report(const struct scratch *s, uint32_t v, const uint32_t *d, uint32_t nd)
 {
 	const uint32_t per_page = SGXFIVE_PAGE_SIZE / 4;
 	uint32_t total = 0;
@@ -2004,9 +2036,12 @@ static void scratch_report(const struct scratch *s, uint32_t v)
 		const uint32_t *w = s->map + pg * per_page;
 		uint32_t n = 0, first = 0;
 
-		for (uint32_t i = 0; i < per_page; i++)
-			if (w[i] != v && !n++)
+		for (uint32_t i = 0; i < per_page; i++) {
+			const uint64_t k = pg * per_page + i;
+
+			if (w[i] != (k < nd ? d[k] : v) && !n++)
 				first = i;
+		}
 		if (n)
 			printf("scratch page %llu: %u changed, first +0x%x 0x%08x\n",
 			       (unsigned long long)pg, n, first * 4, w[first]);
@@ -2102,6 +2137,40 @@ static int debugfs_copy(const char *name, const char *path, long long *size)
 }
 
 /*
+ * --close-trace: what the kernel keeps of the cleanup that just ran (debugfs render_cleanup,
+ * the last render context's) and dwords 32, 46 and 47 of the TA/3D control block (buf09: the
+ * PB descriptor it holds and the loaded PB's two slots), after the event named (which: "after closing the second context").
+ */
+static void close_trace(const char *which)
+{
+	const char *dbg = getenv("SGXFIVE_DEBUGFS");
+	char path[4096], line[256];
+	uint32_t w[48];
+	FILE *f;
+
+	snprintf(path, sizeof(path), "%s/render_cleanup", dbg ? dbg : "/sys/kernel/debug/dri/0/sgx");
+	f = fopen(path, "r");
+	if (!f) {
+		printf("cleanup %s: unreadable\n", which);
+	} else {
+		while (fgets(line, sizeof(line), f)) {
+			line[strcspn(line, "\n")] = 0;
+			printf("cleanup %s: %s\n", which, line);
+		}
+		fclose(f);
+	}
+	snprintf(path, sizeof(path), "%s/buf09", dbg ? dbg : "/sys/kernel/debug/dri/0/sgx");
+	f = fopen(path, "rb");
+	if (f && fread(w, 4, 48, f) == 48)
+		printf("ta3dctl %s: dword 32 0x%08x, dword 46 0x%08x, "
+		       "dword 47 0x%08x\n", which, w[32], w[46], w[47]);
+	else
+		printf("ta3dctl %s: unreadable\n", which);
+	if (f)
+		fclose(f);
+}
+
+/*
  * --words DIR: the newest render context's words (debugfs render_words: its HW context,
  * RT data set, PB descriptor, kernel words and render details, a kpoke line each) and the
  * EDM's TA/3D control block (debugfs buf09) to DIR/words.N.txt and DIR/ta3d.N.bin.
@@ -2191,8 +2260,11 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 			fail("scratch buffer", ret);
 			goto out;
 		}
-		printf("scratch: 0x%08llx %u pages, fill 0x%08x\n", (unsigned long long)sc.addr,
+		printf("scratch: 0x%08llx %u pages, fill 0x%08x", (unsigned long long)sc.addr,
 		       o->scratch, o->scratch_fill);
+		if (o->scratch_words)
+			printf(", file %u dwords", o->scratch_words);
+		printf("\n");
 	}
 	if (o->fault) {
 		struct sgxfive_tri_layout l;
@@ -2235,6 +2307,7 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		struct sgxfive_tri_counts n;
 		struct sgxfive_tri_params p2;
 		int ret2 = 0, wait2 = 0;
+		bool early2;
 		bool geometry;
 		long long t0 = now_ns();
 		uint32_t guard;
@@ -2264,20 +2337,28 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 			printf("tri: kpoke before render %u: %s\n", i + 1, o->kpr[k].spec);
 		}
 		if (sc.bo)
-			scratch_fill(&sc, o->scratch_fill);
+			scratch_fill(&sc, o->scratch_fill, o->scratch_data, o->scratch_words);
 		geometry = o->geometry >> i & 1;
 		ret = sgxfive_render_tri_flags(r, &p, 0, 0,
 					       geometry ? DRM_SGXFIVE_SUBMIT_JOB_RENDER_GEOMETRY : 0);
 		if (r2 && !ret && o->overlap)
 			ret2 = tri2_submit(r2, o, i, &p2);
+		early2 = r2 && !ret && !ret2 && o->overlap && o->wait_second;
+		if (early2) {		/* the second's job first: the first's may never end */
+			printf("tri: waiting for the second context's job first\n");
+			wait2 = sgxfive_render_wait(r2, wait_ns);
+			print_job(ret2, wait2);
+		}
 		if (!ret)
 			wait_err = sgxfive_render_wait(r, wait_ns);
 		print_job(ret, wait_err);
 		if (r2 && !ret && !wait_err) {
 			if (!o->overlap)
 				ret2 = tri2_submit(r2, o, i, &p2);
-			wait2 = ret2 ? 0 : sgxfive_render_wait(r2, wait_ns);
-			print_job(ret2, wait2);
+			if (!early2) {
+				wait2 = ret2 ? 0 : sgxfive_render_wait(r2, wait_ns);
+				print_job(ret2, wait2);
+			}
 			if (!ret2 && !wait2) {
 				struct sgxfive_tri_counts n2;
 
@@ -2316,7 +2397,7 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		}
 		print_regs(t, o);
 		if (sc.bo)
-			scratch_report(&sc, o->scratch_fill);
+			scratch_report(&sc, o->scratch_fill, o->scratch_data, o->scratch_words);
 		if (sgxfive_render_fb(r)) {	/* none before the first scene is built */
 			struct sgxfive_tri_layout l;
 
@@ -2371,14 +2452,34 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		printf("tri: FAILED after %u renders\n", ok);
 	}
 out:
-	/* the second context first: it may run on the first's parameter buffer */
+	/*
+	 * the second context first: it may run on the first's parameter buffer; --close-first
+	 * closes the first (the donor of a shared one) before it, the kernel's reference on the
+	 * donor keeping the buffer until the second goes. The kernel's contexts are the ones
+	 * closed in that order (ctx, ctx2); the render objects only unmap the client's pages.
+	 */
 	sgxfive_render_destroy(r2);
-	if (ctx2)
-		sgxfive_ctx_destroy(t->dev, ctx2);
 	sgxfive_render_destroy(r);
 	scratch_destroy(vm, &sc);
-	if (ctx)
+	if (r2)
+		printf("tri: closing the %s context before the %s\n", o->close_first ? "first" :
+		       "second", o->close_first ? "second" : "first");
+	if (o->close_first && ctx)
 		sgxfive_ctx_destroy(t->dev, ctx);
+	if (r2 && o->close_first && o->close_trace)
+		close_trace("after closing the first context");
+	if (ctx2)
+		sgxfive_ctx_destroy(t->dev, ctx2);
+	if (r2 && !o->close_first && o->close_trace)
+		close_trace("after closing the second context");
+	if (!o->close_first && ctx)
+		sgxfive_ctx_destroy(t->dev, ctx);
+	if (r2 && o->close_trace) {
+		close_trace(o->close_first ? "after closing the second context" :
+			    "after closing the first context");
+		usleep(500000);	/* a deferred release may run the donor's cleanup */
+		close_trace("500 ms after both are closed");
+	}
 	sgxfive_vm_destroy(vm);
 	return ret ? 1 : 0;
 }
@@ -2509,11 +2610,48 @@ static int parse_opts(int argc, char **argv, struct opts *o)
 			i--;		/* a flag: no value */
 			continue;
 		}
+		if (!strcmp(argv[i], "--wait-second")) {
+			o->wait_second = true;
+			i--;		/* a flag: no value */
+			continue;
+		}
+		if (!strcmp(argv[i], "--close-first") || !strcmp(argv[i], "--close-trace")) {
+			*(argv[i][8] == 'f' ? &o->close_first : &o->close_trace) = true;
+			i--;		/* a flag: no value */
+			continue;
+		}
 		if (!strcmp(argv[i], "--ctx2") || !strcmp(argv[i], "--share-pb") ||
 		    !strcmp(argv[i], "--overlap")) {
 			*(argv[i][2] == 'c' ? &o->ctx2 : argv[i][2] == 's' ? &o->share_pb :
 			  &o->overlap) = true;
 			i--;		/* a flag: no value */
+			continue;
+		}
+		if (!strcmp(argv[i], "--scratch-file") && i + 1 < argc) {
+			/* FILE: dwords for the scratch buffer's start (checked against --scratch later) */
+			FILE *f = fopen(argv[i + 1], "rb");
+			long len = -1;
+
+			if (f && !fseek(f, 0, SEEK_END))
+				len = ftell(f);
+			if (!f || len <= 0 || len % 4 || fseek(f, 0, SEEK_SET)) {
+				fprintf(stderr, "sgxfive-test: bad --scratch-file %s (a readable file of "
+					"4 to 4n bytes)\n", argv[i + 1]);
+				if (f)
+					fclose(f);
+				return -1;
+			}
+			free(o->scratch_data);
+			o->scratch_data = malloc((size_t)len);
+			if (!o->scratch_data || fread(o->scratch_data, 4, (size_t)len / 4, f) !=
+			    (size_t)len / 4) {
+				fprintf(stderr, "sgxfive-test: --scratch-file %s: read failed\n",
+					argv[i + 1]);
+				fclose(f);
+				return -1;
+			}
+			fclose(f);
+			o->scratch_words = (uint32_t)len / 4;
 			continue;
 		}
 		if (!strcmp(argv[i], "--print-addrs") || !strcmp(argv[i], "--page-before")) {
@@ -2790,6 +2928,10 @@ int main(int argc, char **argv)
 				popts.poke_args[popts.npokes++] = argv[++i];
 				continue;
 			}
+			if (!strcmp(argv[i], "--stamp")) {
+				probe_stamp = true;
+				continue;
+			}
 			if (!strcmp(argv[i], "--tri") && i + 1 < argc) {
 				if (probe_tri_slot(argv[++i], &popts.tri.slot, &popts.tri.data))
 					return usage();
@@ -3060,16 +3202,28 @@ int main(int argc, char **argv)
 			"and tri\n");
 		return 2;
 	}
+	if (o.scratch_words && (strcmp(cmd, "tri") || !o.scratch ||
+				o.scratch_words > o.scratch * (SGXFIVE_PAGE_SIZE / 4))) {
+		fprintf(stderr, "sgxfive-test: --scratch-file is for tri with --scratch N, and "
+			"must fit in N pages\n");
+		return 2;
+	}
 	if (o.dump_dir && strcmp(cmd, "tri")) {
 		fprintf(stderr, "sgxfive-test: --dump-render is for tri (probe takes its own)\n");
 		return 2;
 	}
-	if ((o.ctx2 || o.share_pb || o.overlap) && strcmp(cmd, "tri")) {
-		fprintf(stderr, "sgxfive-test: --ctx2, --share-pb and --overlap are for tri\n");
+	if ((o.ctx2 || o.share_pb || o.overlap || o.close_first || o.close_trace) && strcmp(cmd, "tri")) {
+		fprintf(stderr, "sgxfive-test: --ctx2, --share-pb, --overlap, --close-first and --close-trace "
+			"are for tri\n");
 		return 2;
 	}
-	if ((o.share_pb || o.overlap) && !o.ctx2) {
-		fprintf(stderr, "sgxfive-test: --share-pb and --overlap need --ctx2\n");
+	if (o.wait_second && (strcmp(cmd, "tri") || !o.overlap)) {
+		fprintf(stderr, "sgxfive-test: --wait-second is for tri with --ctx2 --overlap\n");
+		return 2;
+	}
+	if ((o.share_pb || o.overlap || o.close_first || o.close_trace) && !o.ctx2) {
+		fprintf(stderr, "sgxfive-test: --share-pb, --overlap, --close-first and --close-trace need "
+			"--ctx2\n");
 		return 2;
 	}
 	if (o.ctx2 && o.geometry) {

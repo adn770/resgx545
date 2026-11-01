@@ -268,13 +268,15 @@ isolation                      kernel-heap-unmappable, same-address-separate-vms
                                queued-innocent-job-reruns, read-only-faults,
                                faulting-file-banned
 tri [--width W --height H -n N] [--max-width W --max-height H] [--fault]
-    [--scratch N [--scratch-fill V] [--scratch-at ADDR]] [--kpoke-render N:SPEC]...
+    [--scratch N [--scratch-fill V] [--scratch-at ADDR] [--scratch-file FILE]]
+    [--kpoke-render N:SPEC]...
     [--move N:DX,DY]...
     [--geometry N]... [--keep-going] [--dump-render DIR] [--words DIR] [--wait-ms MS]
-    [--ctx2 [--share-pb] [--overlap] [--kpoke-render2 N:SPEC]...] [JOB OPTIONS]
+    [--ctx2 [--share-pb] [--overlap] [--close-first] [--close-trace] [--wait-second]
+          [--kpoke-render2 N:SPEC]...] [JOB OPTIONS]
 contexts [--width W --height H -n N]
 regaccess
-probe [--temps N] [--coords] [--pixels] [--scratch-pages N] [--pds N --use USE]
+probe [--stamp] [--temps N] [--coords] [--pixels] [--scratch-pages N] [--pds N --use USE]
       [--place OFFSET=FILE --place-form cbase|exe18] [--scratch-heap texture]
       [--poke xfer:N=V]... [--low ADDR] [--late R:K=V] FILE...
 probe --tri SLOT[:N] [--slot SLOT=FILE[:N]]... [--width W --height H]
@@ -298,8 +300,9 @@ context takes targets up to `--max-width` x `--max-height` (default: the target'
 `--scratch N` maps N more pages (their address printed) for a kernel poke to point a unit
 at, filled with V (default 0.25f) before each render; the dwords that changed are reported
 page by page. `--scratch-at ADDR` maps them at ADDR (a heap's page, say, that a unit fetches
-from) instead of in the general heap. `--kpoke-render N:SPEC` writes SPEC to the kernel's debugfs `kpoke` just before
-render N. `--move N:DX,DY` draws render N's triangle DX, DY pixels away. `--geometry N`
+from) instead of in the general heap. `--kpoke-render N:SPEC` writes SPEC to the kernel's
+debugfs `kpoke` just before render N. `--move N:DX,DY` draws render N's triangle DX, DY pixels
+away. `--geometry N`
 submits render N as geometry only (the scene left open for the next render, nothing drawn).
 `--keep-going` reports every render, checked or not. `--dump-render DIR` copies the kernel's
 debugfs `render_param` and `render_tadata` to `DIR/tri.param.bin` and `DIR/tri.tadata.bin`
@@ -318,6 +321,16 @@ created, so that it runs on the first's parameter buffer (the linux fork's debug
 the firmware at once is not checked. `--kpoke-render2 N:SPEC` is `--kpoke-render` for the second
 context's render N (with `--overlap`, written 30 ms after the first context's job is submitted, so
 that the kernel's kick of the first has taken what was armed before it).
+`--close-first` closes the first context (the donor of a shared parameter buffer) before the
+second; `--close-trace` prints, after each close and 500 ms after both, the lines of the
+kernel's debugfs `render_cleanup` and dwords 32, 46 and 47 of `buf09`, and `--wait-second`
+(with `--overlap`) waits for the second context's job before the first's, so that a first job
+that never ends does not hide whether the second ran. `--scratch-file FILE` fills the first
+dwords of the `--scratch` pages from FILE (a table the host built) before each render and
+counts the dwords the render changed against that content.
+
+`probe --stamp` prints each finished job's start and end in CLOCK_REALTIME ns (`job window`),
+to place a write from another process (a debugfs `kregnow` write, say) inside the job.
 
 `contexts` creates N render contexts (default 32) for targets up to W x H (default 64 x 64)
 in one VM, and prints the memory they take: MemFree and LowFree of `/proc/meminfo`, before

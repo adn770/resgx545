@@ -1,0 +1,10 @@
+title = "script table render/cleanup-two-contexts"
+repo = "data"
+paths = ["render/cleanup-two-contexts/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 4
+size = 65571
+sha256 = "a9ffecef431daa62ad227ca738283b9e935cfd24559c228556ca19c564e2e074"
+recipe = "probes/render/cleanup-two-contexts.toml"
+needs = ["render", "render_cleanup", "render_share_pb", "buf09", "reset"]

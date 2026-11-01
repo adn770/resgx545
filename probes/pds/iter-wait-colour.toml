@@ -1,0 +1,159 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# pds iter wait colour: 0 sweeps, 10 probes.
+# Q093: textured primaries that iterate the vertex colour (DOUTI0 source 32) or several attribute
+# registers before the fetch: shape P the colour alone, shape Q the colour then a two-component
+# coordinate set, shape R a three-component coordinate set; the last iteration with and without
+# the completion bit, DOUTU1 with and without bits 24 and 25 (bit 24 only with the completion
+# bit, which it needs), pa0 to pa3 read, three runs each.
+needs = ["render"]
+
+[[probe]]
+name = "pds-iter-wait-colour-p-pa0"
+question = "pa0 of a textured primary that iterates the vertex colour (source 32), U1 with and without bits 24 and 25"
+source = "pds_tex_col.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_color.s" }
+vtx_coords = 4
+blk = { 13 = 0x83800, 16 = 5 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27C10000, 0x46012201, 0x3000004], [0x27C10000, 0x46012201, 0x2000004], [0x27C10000, 0x46012201, 0x1000004], [0x27C10000, 0x46012201, 0x4], [0x7C10000, 0x46012201, 0x2000004], [0x7C10000, 0x46012201, 0x4], [0x27C10000, 0x46012201, 0x3000004], [0x27C10000, 0x46012201, 0x2000004], [0x27C10000, 0x46012201, 0x1000004], [0x27C10000, 0x46012201, 0x4], [0x7C10000, 0x46012201, 0x2000004], [0x7C10000, 0x46012201, 0x4], [0x27C10000, 0x46012201, 0x3000004], [0x27C10000, 0x46012201, 0x2000004], [0x27C10000, 0x46012201, 0x1000004], [0x27C10000, 0x46012201, 0x4], [0x7C10000, 0x46012201, 0x2000004], [0x7C10000, 0x46012201, 0x4]]
+labels = ["with completion bit, U1 bits 24 and 25, run 1", "with completion bit, U1 bit 25 only, run 1", "with completion bit, U1 bit 24 only, run 1", "with completion bit, U1 neither, run 1", "no completion bit, U1 bit 25 only, run 1", "no completion bit, U1 neither, run 1", "with completion bit, U1 bits 24 and 25, run 2", "with completion bit, U1 bit 25 only, run 2", "with completion bit, U1 bit 24 only, run 2", "with completion bit, U1 neither, run 2", "no completion bit, U1 bit 25 only, run 2", "no completion bit, U1 neither, run 2", "with completion bit, U1 bits 24 and 25, run 3", "with completion bit, U1 bit 25 only, run 3", "with completion bit, U1 bit 24 only, run 3", "with completion bit, U1 neither, run 3", "no completion bit, U1 bit 25 only, run 3", "no completion bit, U1 neither, run 3"]
+
+[[probe]]
+name = "pds-iter-wait-colour-p-pa1"
+question = "pa1 of a textured primary that iterates the vertex colour (source 32), U1 with and without bits 24 and 25"
+source = "pds_tex_col.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_color.s" }
+vtx_coords = 4
+blk = { 13 = 0x83800, 16 = 5 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27C10000, 0x46012201, 0x3000004], [0x27C10000, 0x46012201, 0x2000004], [0x27C10000, 0x46012201, 0x1000004], [0x27C10000, 0x46012201, 0x4], [0x7C10000, 0x46012201, 0x2000004], [0x7C10000, 0x46012201, 0x4], [0x27C10000, 0x46012201, 0x3000004], [0x27C10000, 0x46012201, 0x2000004], [0x27C10000, 0x46012201, 0x1000004], [0x27C10000, 0x46012201, 0x4], [0x7C10000, 0x46012201, 0x2000004], [0x7C10000, 0x46012201, 0x4], [0x27C10000, 0x46012201, 0x3000004], [0x27C10000, 0x46012201, 0x2000004], [0x27C10000, 0x46012201, 0x1000004], [0x27C10000, 0x46012201, 0x4], [0x7C10000, 0x46012201, 0x2000004], [0x7C10000, 0x46012201, 0x4]]
+labels = ["with completion bit, U1 bits 24 and 25, run 1", "with completion bit, U1 bit 25 only, run 1", "with completion bit, U1 bit 24 only, run 1", "with completion bit, U1 neither, run 1", "no completion bit, U1 bit 25 only, run 1", "no completion bit, U1 neither, run 1", "with completion bit, U1 bits 24 and 25, run 2", "with completion bit, U1 bit 25 only, run 2", "with completion bit, U1 bit 24 only, run 2", "with completion bit, U1 neither, run 2", "no completion bit, U1 bit 25 only, run 2", "no completion bit, U1 neither, run 2", "with completion bit, U1 bits 24 and 25, run 3", "with completion bit, U1 bit 25 only, run 3", "with completion bit, U1 bit 24 only, run 3", "with completion bit, U1 neither, run 3", "no completion bit, U1 bit 25 only, run 3", "no completion bit, U1 neither, run 3"]
+
+[[probe]]
+name = "pds-iter-wait-colour-q-pa0"
+question = "pa0 of a textured primary that iterates the vertex colour then a two-component coordinate set, U1 with and without bits 24 and 25"
+source = "pds_tex_col2.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_color.s" }
+vtx_coords = 4
+blk = { 13 = 0x83800, 16 = 5 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "A2", "B", "U"]
+cases = [[0x7C10000, 0x20400800, 0x46012201, 0x3000004], [0x7C10000, 0x20400800, 0x46012201, 0x2000004], [0x7C10000, 0x20400800, 0x46012201, 0x1000004], [0x7C10000, 0x20400800, 0x46012201, 0x4], [0x7C10000, 0x400800, 0x46012201, 0x2000004], [0x7C10000, 0x400800, 0x46012201, 0x4], [0x7C10000, 0x20400800, 0x46012201, 0x3000004], [0x7C10000, 0x20400800, 0x46012201, 0x2000004], [0x7C10000, 0x20400800, 0x46012201, 0x1000004], [0x7C10000, 0x20400800, 0x46012201, 0x4], [0x7C10000, 0x400800, 0x46012201, 0x2000004], [0x7C10000, 0x400800, 0x46012201, 0x4], [0x7C10000, 0x20400800, 0x46012201, 0x3000004], [0x7C10000, 0x20400800, 0x46012201, 0x2000004], [0x7C10000, 0x20400800, 0x46012201, 0x1000004], [0x7C10000, 0x20400800, 0x46012201, 0x4], [0x7C10000, 0x400800, 0x46012201, 0x2000004], [0x7C10000, 0x400800, 0x46012201, 0x4]]
+labels = ["with completion bit, U1 bits 24 and 25, run 1", "with completion bit, U1 bit 25 only, run 1", "with completion bit, U1 bit 24 only, run 1", "with completion bit, U1 neither, run 1", "no completion bit, U1 bit 25 only, run 1", "no completion bit, U1 neither, run 1", "with completion bit, U1 bits 24 and 25, run 2", "with completion bit, U1 bit 25 only, run 2", "with completion bit, U1 bit 24 only, run 2", "with completion bit, U1 neither, run 2", "no completion bit, U1 bit 25 only, run 2", "no completion bit, U1 neither, run 2", "with completion bit, U1 bits 24 and 25, run 3", "with completion bit, U1 bit 25 only, run 3", "with completion bit, U1 bit 24 only, run 3", "with completion bit, U1 neither, run 3", "no completion bit, U1 bit 25 only, run 3", "no completion bit, U1 neither, run 3"]
+
+[[probe]]
+name = "pds-iter-wait-colour-q-pa1"
+question = "pa1 of a textured primary that iterates the vertex colour then a two-component coordinate set, U1 with and without bits 24 and 25"
+source = "pds_tex_col2.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_color.s" }
+vtx_coords = 4
+blk = { 13 = 0x83800, 16 = 5 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "A2", "B", "U"]
+cases = [[0x7C10000, 0x20400800, 0x46012201, 0x3000004], [0x7C10000, 0x20400800, 0x46012201, 0x2000004], [0x7C10000, 0x20400800, 0x46012201, 0x1000004], [0x7C10000, 0x20400800, 0x46012201, 0x4], [0x7C10000, 0x400800, 0x46012201, 0x2000004], [0x7C10000, 0x400800, 0x46012201, 0x4], [0x7C10000, 0x20400800, 0x46012201, 0x3000004], [0x7C10000, 0x20400800, 0x46012201, 0x2000004], [0x7C10000, 0x20400800, 0x46012201, 0x1000004], [0x7C10000, 0x20400800, 0x46012201, 0x4], [0x7C10000, 0x400800, 0x46012201, 0x2000004], [0x7C10000, 0x400800, 0x46012201, 0x4], [0x7C10000, 0x20400800, 0x46012201, 0x3000004], [0x7C10000, 0x20400800, 0x46012201, 0x2000004], [0x7C10000, 0x20400800, 0x46012201, 0x1000004], [0x7C10000, 0x20400800, 0x46012201, 0x4], [0x7C10000, 0x400800, 0x46012201, 0x2000004], [0x7C10000, 0x400800, 0x46012201, 0x4]]
+labels = ["with completion bit, U1 bits 24 and 25, run 1", "with completion bit, U1 bit 25 only, run 1", "with completion bit, U1 bit 24 only, run 1", "with completion bit, U1 neither, run 1", "no completion bit, U1 bit 25 only, run 1", "no completion bit, U1 neither, run 1", "with completion bit, U1 bits 24 and 25, run 2", "with completion bit, U1 bit 25 only, run 2", "with completion bit, U1 bit 24 only, run 2", "with completion bit, U1 neither, run 2", "no completion bit, U1 bit 25 only, run 2", "no completion bit, U1 neither, run 2", "with completion bit, U1 bits 24 and 25, run 3", "with completion bit, U1 bit 25 only, run 3", "with completion bit, U1 bit 24 only, run 3", "with completion bit, U1 neither, run 3", "no completion bit, U1 bit 25 only, run 3", "no completion bit, U1 neither, run 3"]
+
+[[probe]]
+name = "pds-iter-wait-colour-q-pa2"
+question = "pa2 of a textured primary that iterates the vertex colour then a two-component coordinate set, U1 with and without bits 24 and 25"
+source = "pds_tex_col2.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_color.s" }
+vtx_coords = 4
+blk = { 13 = 0x83800, 16 = 5 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "A2", "B", "U"]
+cases = [[0x7C10000, 0x20400800, 0x46012201, 0x3000004], [0x7C10000, 0x20400800, 0x46012201, 0x2000004], [0x7C10000, 0x20400800, 0x46012201, 0x1000004], [0x7C10000, 0x20400800, 0x46012201, 0x4], [0x7C10000, 0x400800, 0x46012201, 0x2000004], [0x7C10000, 0x400800, 0x46012201, 0x4], [0x7C10000, 0x20400800, 0x46012201, 0x3000004], [0x7C10000, 0x20400800, 0x46012201, 0x2000004], [0x7C10000, 0x20400800, 0x46012201, 0x1000004], [0x7C10000, 0x20400800, 0x46012201, 0x4], [0x7C10000, 0x400800, 0x46012201, 0x2000004], [0x7C10000, 0x400800, 0x46012201, 0x4], [0x7C10000, 0x20400800, 0x46012201, 0x3000004], [0x7C10000, 0x20400800, 0x46012201, 0x2000004], [0x7C10000, 0x20400800, 0x46012201, 0x1000004], [0x7C10000, 0x20400800, 0x46012201, 0x4], [0x7C10000, 0x400800, 0x46012201, 0x2000004], [0x7C10000, 0x400800, 0x46012201, 0x4]]
+labels = ["with completion bit, U1 bits 24 and 25, run 1", "with completion bit, U1 bit 25 only, run 1", "with completion bit, U1 bit 24 only, run 1", "with completion bit, U1 neither, run 1", "no completion bit, U1 bit 25 only, run 1", "no completion bit, U1 neither, run 1", "with completion bit, U1 bits 24 and 25, run 2", "with completion bit, U1 bit 25 only, run 2", "with completion bit, U1 bit 24 only, run 2", "with completion bit, U1 neither, run 2", "no completion bit, U1 bit 25 only, run 2", "no completion bit, U1 neither, run 2", "with completion bit, U1 bits 24 and 25, run 3", "with completion bit, U1 bit 25 only, run 3", "with completion bit, U1 bit 24 only, run 3", "with completion bit, U1 neither, run 3", "no completion bit, U1 bit 25 only, run 3", "no completion bit, U1 neither, run 3"]
+
+[[probe]]
+name = "pds-iter-wait-colour-q-pa3"
+question = "pa3 of a textured primary that iterates the vertex colour then a two-component coordinate set, U1 with and without bits 24 and 25"
+source = "pds_tex_col2.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa3.s", vtxuse = "vtx_color.s" }
+vtx_coords = 4
+blk = { 13 = 0x83800, 16 = 5 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "A2", "B", "U"]
+cases = [[0x7C10000, 0x20400800, 0x46012201, 0x3000004], [0x7C10000, 0x20400800, 0x46012201, 0x2000004], [0x7C10000, 0x20400800, 0x46012201, 0x1000004], [0x7C10000, 0x20400800, 0x46012201, 0x4], [0x7C10000, 0x400800, 0x46012201, 0x2000004], [0x7C10000, 0x400800, 0x46012201, 0x4], [0x7C10000, 0x20400800, 0x46012201, 0x3000004], [0x7C10000, 0x20400800, 0x46012201, 0x2000004], [0x7C10000, 0x20400800, 0x46012201, 0x1000004], [0x7C10000, 0x20400800, 0x46012201, 0x4], [0x7C10000, 0x400800, 0x46012201, 0x2000004], [0x7C10000, 0x400800, 0x46012201, 0x4], [0x7C10000, 0x20400800, 0x46012201, 0x3000004], [0x7C10000, 0x20400800, 0x46012201, 0x2000004], [0x7C10000, 0x20400800, 0x46012201, 0x1000004], [0x7C10000, 0x20400800, 0x46012201, 0x4], [0x7C10000, 0x400800, 0x46012201, 0x2000004], [0x7C10000, 0x400800, 0x46012201, 0x4]]
+labels = ["with completion bit, U1 bits 24 and 25, run 1", "with completion bit, U1 bit 25 only, run 1", "with completion bit, U1 bit 24 only, run 1", "with completion bit, U1 neither, run 1", "no completion bit, U1 bit 25 only, run 1", "no completion bit, U1 neither, run 1", "with completion bit, U1 bits 24 and 25, run 2", "with completion bit, U1 bit 25 only, run 2", "with completion bit, U1 bit 24 only, run 2", "with completion bit, U1 neither, run 2", "no completion bit, U1 bit 25 only, run 2", "no completion bit, U1 neither, run 2", "with completion bit, U1 bits 24 and 25, run 3", "with completion bit, U1 bit 25 only, run 3", "with completion bit, U1 bit 24 only, run 3", "with completion bit, U1 neither, run 3", "no completion bit, U1 bit 25 only, run 3", "no completion bit, U1 neither, run 3"]
+
+[[probe]]
+name = "pds-iter-wait-colour-r-pa0"
+question = "pa0 of a textured primary that iterates a three-component coordinate set, U1 with and without bits 24 and 25"
+source = "pds_tex_col.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_color.s" }
+vtx_coords = 4
+blk = { 13 = 0x83800, 16 = 5 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x20800800, 0x46012201, 0x3000004], [0x20800800, 0x46012201, 0x2000004], [0x20800800, 0x46012201, 0x1000004], [0x20800800, 0x46012201, 0x4], [0x800800, 0x46012201, 0x2000004], [0x800800, 0x46012201, 0x4], [0x20800800, 0x46012201, 0x3000004], [0x20800800, 0x46012201, 0x2000004], [0x20800800, 0x46012201, 0x1000004], [0x20800800, 0x46012201, 0x4], [0x800800, 0x46012201, 0x2000004], [0x800800, 0x46012201, 0x4], [0x20800800, 0x46012201, 0x3000004], [0x20800800, 0x46012201, 0x2000004], [0x20800800, 0x46012201, 0x1000004], [0x20800800, 0x46012201, 0x4], [0x800800, 0x46012201, 0x2000004], [0x800800, 0x46012201, 0x4]]
+labels = ["with completion bit, U1 bits 24 and 25, run 1", "with completion bit, U1 bit 25 only, run 1", "with completion bit, U1 bit 24 only, run 1", "with completion bit, U1 neither, run 1", "no completion bit, U1 bit 25 only, run 1", "no completion bit, U1 neither, run 1", "with completion bit, U1 bits 24 and 25, run 2", "with completion bit, U1 bit 25 only, run 2", "with completion bit, U1 bit 24 only, run 2", "with completion bit, U1 neither, run 2", "no completion bit, U1 bit 25 only, run 2", "no completion bit, U1 neither, run 2", "with completion bit, U1 bits 24 and 25, run 3", "with completion bit, U1 bit 25 only, run 3", "with completion bit, U1 bit 24 only, run 3", "with completion bit, U1 neither, run 3", "no completion bit, U1 bit 25 only, run 3", "no completion bit, U1 neither, run 3"]
+
+[[probe]]
+name = "pds-iter-wait-colour-r-pa1"
+question = "pa1 of a textured primary that iterates a three-component coordinate set, U1 with and without bits 24 and 25"
+source = "pds_tex_col.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_color.s" }
+vtx_coords = 4
+blk = { 13 = 0x83800, 16 = 5 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x20800800, 0x46012201, 0x3000004], [0x20800800, 0x46012201, 0x2000004], [0x20800800, 0x46012201, 0x1000004], [0x20800800, 0x46012201, 0x4], [0x800800, 0x46012201, 0x2000004], [0x800800, 0x46012201, 0x4], [0x20800800, 0x46012201, 0x3000004], [0x20800800, 0x46012201, 0x2000004], [0x20800800, 0x46012201, 0x1000004], [0x20800800, 0x46012201, 0x4], [0x800800, 0x46012201, 0x2000004], [0x800800, 0x46012201, 0x4], [0x20800800, 0x46012201, 0x3000004], [0x20800800, 0x46012201, 0x2000004], [0x20800800, 0x46012201, 0x1000004], [0x20800800, 0x46012201, 0x4], [0x800800, 0x46012201, 0x2000004], [0x800800, 0x46012201, 0x4]]
+labels = ["with completion bit, U1 bits 24 and 25, run 1", "with completion bit, U1 bit 25 only, run 1", "with completion bit, U1 bit 24 only, run 1", "with completion bit, U1 neither, run 1", "no completion bit, U1 bit 25 only, run 1", "no completion bit, U1 neither, run 1", "with completion bit, U1 bits 24 and 25, run 2", "with completion bit, U1 bit 25 only, run 2", "with completion bit, U1 bit 24 only, run 2", "with completion bit, U1 neither, run 2", "no completion bit, U1 bit 25 only, run 2", "no completion bit, U1 neither, run 2", "with completion bit, U1 bits 24 and 25, run 3", "with completion bit, U1 bit 25 only, run 3", "with completion bit, U1 bit 24 only, run 3", "with completion bit, U1 neither, run 3", "no completion bit, U1 bit 25 only, run 3", "no completion bit, U1 neither, run 3"]
+
+[[probe]]
+name = "pds-iter-wait-colour-r-pa2"
+question = "pa2 of a textured primary that iterates a three-component coordinate set, U1 with and without bits 24 and 25"
+source = "pds_tex_col.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_color.s" }
+vtx_coords = 4
+blk = { 13 = 0x83800, 16 = 5 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x20800800, 0x46012201, 0x3000004], [0x20800800, 0x46012201, 0x2000004], [0x20800800, 0x46012201, 0x1000004], [0x20800800, 0x46012201, 0x4], [0x800800, 0x46012201, 0x2000004], [0x800800, 0x46012201, 0x4], [0x20800800, 0x46012201, 0x3000004], [0x20800800, 0x46012201, 0x2000004], [0x20800800, 0x46012201, 0x1000004], [0x20800800, 0x46012201, 0x4], [0x800800, 0x46012201, 0x2000004], [0x800800, 0x46012201, 0x4], [0x20800800, 0x46012201, 0x3000004], [0x20800800, 0x46012201, 0x2000004], [0x20800800, 0x46012201, 0x1000004], [0x20800800, 0x46012201, 0x4], [0x800800, 0x46012201, 0x2000004], [0x800800, 0x46012201, 0x4]]
+labels = ["with completion bit, U1 bits 24 and 25, run 1", "with completion bit, U1 bit 25 only, run 1", "with completion bit, U1 bit 24 only, run 1", "with completion bit, U1 neither, run 1", "no completion bit, U1 bit 25 only, run 1", "no completion bit, U1 neither, run 1", "with completion bit, U1 bits 24 and 25, run 2", "with completion bit, U1 bit 25 only, run 2", "with completion bit, U1 bit 24 only, run 2", "with completion bit, U1 neither, run 2", "no completion bit, U1 bit 25 only, run 2", "no completion bit, U1 neither, run 2", "with completion bit, U1 bits 24 and 25, run 3", "with completion bit, U1 bit 25 only, run 3", "with completion bit, U1 bit 24 only, run 3", "with completion bit, U1 neither, run 3", "no completion bit, U1 bit 25 only, run 3", "no completion bit, U1 neither, run 3"]
+
+[[probe]]
+name = "pds-iter-wait-colour-r-pa3"
+question = "pa3 of a textured primary that iterates a three-component coordinate set, U1 with and without bits 24 and 25"
+source = "pds_tex_col.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa3.s", vtxuse = "vtx_color.s" }
+vtx_coords = 4
+blk = { 13 = 0x83800, 16 = 5 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x20800800, 0x46012201, 0x3000004], [0x20800800, 0x46012201, 0x2000004], [0x20800800, 0x46012201, 0x1000004], [0x20800800, 0x46012201, 0x4], [0x800800, 0x46012201, 0x2000004], [0x800800, 0x46012201, 0x4], [0x20800800, 0x46012201, 0x3000004], [0x20800800, 0x46012201, 0x2000004], [0x20800800, 0x46012201, 0x1000004], [0x20800800, 0x46012201, 0x4], [0x800800, 0x46012201, 0x2000004], [0x800800, 0x46012201, 0x4], [0x20800800, 0x46012201, 0x3000004], [0x20800800, 0x46012201, 0x2000004], [0x20800800, 0x46012201, 0x1000004], [0x20800800, 0x46012201, 0x4], [0x800800, 0x46012201, 0x2000004], [0x800800, 0x46012201, 0x4]]
+labels = ["with completion bit, U1 bits 24 and 25, run 1", "with completion bit, U1 bit 25 only, run 1", "with completion bit, U1 bit 24 only, run 1", "with completion bit, U1 neither, run 1", "no completion bit, U1 bit 25 only, run 1", "no completion bit, U1 neither, run 1", "with completion bit, U1 bits 24 and 25, run 2", "with completion bit, U1 bit 25 only, run 2", "with completion bit, U1 bit 24 only, run 2", "with completion bit, U1 neither, run 2", "no completion bit, U1 bit 25 only, run 2", "no completion bit, U1 neither, run 2", "with completion bit, U1 bits 24 and 25, run 3", "with completion bit, U1 bit 25 only, run 3", "with completion bit, U1 bit 24 only, run 3", "with completion bit, U1 neither, run 3", "no completion bit, U1 bit 25 only, run 3", "no completion bit, U1 neither, run 3"]

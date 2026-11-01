@@ -1,0 +1,10 @@
+title = "script and probe table usse/madd-write"
+repo = "data"
+paths = ["usse/madd-write/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 12
+size = 233937
+sha256 = "60cbd79fa061a65df9f98b6eef83ad3ca644a69268fcd1026460d3e714cfebff"
+recipe = "probes/usse/madd-write.toml"
+needs = ["render", "kregnow", "regs", "reset"]

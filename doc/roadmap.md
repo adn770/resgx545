@@ -208,7 +208,8 @@ reading and records.
   transfer command words that load it: bit 25 inverts byte 3 of every pixel (E029), the other bits
   are Q044.
 - **Render flags.** Bit 10's only test in the firmware adds one to the RT data set's executed count
-  (E164, E166), and no image changes with it (E051, E052); bit 2 is Q041.
+  (E164, E166), and no image changes with it (E051, E052); bit 2 keeps its owner through a
+  later live context's job (E451); through a gone context it is Q041.
 - **Words read from the firmware alone.** The per-render-target strides of the TA command, the
   render details and the RT data (E158, E163) and a PB block's first page (E200, E201) rest on what
   the kicks and the page-table builder do with them.
@@ -335,10 +336,12 @@ address for a replacement program (`0x5CB0nnnn`), the target's colours after an 
 dwords. Eight tables ran (`pds/iter-wait-textured.toml`, `dpm/partial-reload-pos.toml`,
 `partial-wide.toml`, `partial-wide-timelines.toml` and `partial-reload.toml`, `isp/msaa-pbe.toml`,
 `vdm/state2-consts.toml` and `texture/mip8-fields.toml`). In a textured primary the fetch wait
-delivers the iterated coordinate set and the texel and `DOUTU1` bit 24 adds nothing (E436; the
-question narrows to other program shapes), a `douti` of source 0 with two components is the pixel's
-x and y (E437), scenes of 100 to 500 triangles leave STATUS2's high halves at 0 and set `TA3DCtl`
-dword 36 but hang small parameter buffers (E438, E443, a new question), the 4x render through our
+delivers the iterated coordinate set and the texel and `DOUTU1` bit 24 adds nothing (E436;
+E454 found the same with the vertex colour iterated, but its coordinate registers read 0 and one
+job in 30 with both bits hung, so the coordinate shapes stay open, Q093), a `douti` of source 0
+with two components is the pixel's x and y (E437), scenes of 100 to 500 triangles leave STATUS2's
+high halves at 0 and set `TA3DCtl` dword 36 but hang small parameter buffers (E438, E443, a new
+question), the 4x render through our
 end-of-tile task with the closed driver's PBE words stores plain samples and does not resolve
 (E439), a second state block's constant load reaches few pixels (E440), T0's maximum 15 reads level
 0 while 8 to 14 clamp at the last level and MIPFILTER blends two levels byte for byte (E441: the

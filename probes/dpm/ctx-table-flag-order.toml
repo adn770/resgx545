@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# dpm ctx table flag order: 0 probes (a shell script run on the laptop by the campaign).
+# Q067: the flag-set cases of dpm/ctx-table-host-filled with the two kernel pokes (the base pb:4 and
+# the flag pb:0 = 0x1) in either order, over a zero-filled scratch and over the kernel's pre-job table.
+needs = [
+    "render", "kpoke", "alias_ctx_rw", "regs", "reset",
+]
+name = "dpm-ctx-table-flag-order"
+script = "ctx-table-flag-order.sh"

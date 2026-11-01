@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# render cleanup two contexts: 0 probes (a shell script run on the laptop by the campaign).
+# Q029: the cleanups of two render contexts on one parameter buffer (sgxfive-test tri --ctx2
+# --share-pb --close-trace [--close-first], debugfs render_cleanup, TA3DCtl dwords 32, 46, 47),
+# closed in both orders.
+needs = [
+    "render", "render_cleanup", "render_share_pb", "buf09", "reset",
+]
+name = "render-cleanup-two-contexts"
+script = "cleanup-two-contexts.sh"

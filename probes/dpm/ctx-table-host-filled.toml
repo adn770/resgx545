@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# dpm ctx table host filled: 0 probes (a shell script run on the laptop by the campaign).
+# Q067: a render with the PB descriptor's page-table base at scratch pages the host filled with a
+# table (sgxfive-test tri --scratch-file, debugfs alias_ctx_rw, kernel poke pb:4), the flag word
+# left as the kernel sets it (bit 0 clear): does it fault, and does it change the scratch?
+needs = [
+    "render", "kpoke", "alias_ctx_rw", "regs", "reset",
+]
+name = "dpm-ctx-table-host-filled"
+script = "ctx-table-host-filled.sh"

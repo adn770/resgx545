@@ -3,7 +3,7 @@ id = "Q048"
 question = "do the MADD0 and MADD1 clock gates follow the USSE pipes' floating-point arithmetic, or their cache and texture traffic?"
 unit = "usse"
 phase = 11
-evidence = ["E006", "E008", "E011", "E365", "E445"]
+evidence = ["E006", "E008", "E011", "E365", "E445", "E452"]
 terms = ["MADD", "CR_CLKGATECTL2", "CR_CLKGATESTATUS"]
 +++
 
@@ -29,13 +29,21 @@ the floating-point loop in 3 of 3 runs and a plain run, the integer loop in 2 of
 finished in 434 ms), so the hang is not shown to come from the write, and the write-while-busy
 half is untested.
 
-What is open: what the status's bits and the MADD fields gate, since no field tried while idle
-shows in the status or in the speed of the jobs run; what a write during a loop that finishes does,
-and why a loop of 12500000 iterations hangs by itself; the fields at bits 3:2 to 11:4 (a first run
-over those fields froze the laptop until its watchdog reset it, and its output was lost); a job
-that loads the main cache or the arithmetic units harder than these.
+Narrowed by E452 (the MADD fields written alone, with the write issued in loops that finish): the
+floating-point and the integer loop of 2500000 iterations finish in 87 ms in 12 of 12 runs with no
+write; with both MADD fields written to 0, 1 or 3 in the loop, or each at 0 alone, all 30 finish in
+87.1 to 88.1 ms and the register reads the value written; at 5000000 iterations 7 of 9 writes
+finished (174 ms) and the controls hang about as often (the floating-point loop finished in 3 of 3
+and then 1 of 3 runs). The write call returned after the 87 ms loops ended, inside the 174 ms ones,
+so the 2500000 runs do not show a value in place during the loop. 7500000 iterations finished in 3
+of 6 runs and 10000000 in 0 of 6.
 
-To settle it: the MADD fields written during a loop that finishes (between 1250000 and 12500000
-iterations, the length at which the loop starts to hang found first), the remaining fields, one
-machine reset at a time, with the jobs of E445, and a job whose time depends on the cache (a
-texture copy of a large image, repeated).
+What is open: what the status's bits and the MADD fields gate, since no field tried shows in the
+status or in the speed of the jobs run; the fields at bits 3:2 to 11:4 (a first run over those
+fields froze the laptop until its watchdog reset it, and its output was lost; not tried again); a
+job that loads the main cache or the arithmetic units harder than these; why loops of 5000000
+iterations and more hang.
+
+To settle it: the remaining fields, one machine reset at a time, with the loops of E452 (2500000
+iterations) and a write timed to land in the middle of a 5000000-iteration loop that finishes, and a
+job whose time depends on the cache (a texture copy of a large image, repeated).

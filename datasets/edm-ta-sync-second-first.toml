@@ -1,0 +1,10 @@
+title = "script table edm/ta-sync-second-first"
+repo = "data"
+paths = ["edm/ta-sync-second-first/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 4
+size = 276408
+sha256 = "8503187ae4952a5972bfa823e6db756b71a64597a04c5d7767723119450e994d"
+recipe = "probes/edm/ta-sync-second-first.toml"
+needs = ["render", "kpoke", "reset"]

@@ -2814,6 +2814,52 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   after the second render.
   *render; HW, infer; data: `render-two-contexts-one-pb`.*
 
+### 2026-11-08
+
+- `E449` On two render contexts sharing one parameter buffer, the sharing context's cleanup sends
+  the RT data and context steps and no PB step and leaves the loaded-PB slots (TA3DCtl dwords 46 and
+  47) at the donor's descriptor, and the donor's cleanup, whose PB step clears them, runs after the
+  sharing context has been released whichever of the two is closed first, in 8 of 8 closes of the
+  sharing context and 8 of 8 of the donor; all 24 renders exact.
+  *render; HW, infer; data: `render-cleanup-two-contexts`.*
+- `E450` With two render contexts in a VM, a TA command with an incomplete transfer-queue sync
+  (dword 25 set, dwords 26 and 28 naming a zero word) or an incomplete source sync does not complete
+  (job hung, context lost after 4 s) in 3 of 3 runs of every case, whichever context holds it, while
+  the other context's job completes in the cases where only one is held; the second context's
+  command with such a sync is held also when the first context's job has finished (3 of 3 runs
+  each); the destination sync was not tried.
+  *edm; HW, infer; data: `edm-ta-sync-two-contexts`, `edm-ta-sync-second-first`.*
+- `E451` After a first-context render that keeps the DPM owner with render flag bit 2 (TA3DCtl dword
+  20 = its RT data set + 0x18, dword 25 clear), a second context's render with the bits clear leaves
+  dword 20 as it was in 2 of 2 runs; with bit 3 or bits 3 and 2 kept the words read 0 after the pair
+  in 2 of 2 runs each; the second context's own kept words take dword 20 and 25 when only it keeps
+  (2 of 2) and replace the first's when both keep with 0xc (2 of 2), or dword 21 when both keep with
+  0x4 (2 of 2); all 56 renders exact.
+  *render; HW, infer; data: `render-kept-owner-two-contexts`.*
+- `E452` A write of the MADD fields of CR_CLKGATECTL2 alone (bits 13:12 and 21:20, both at 0, 1 or
+  3, or each at 0 alone), issued 17 to 27 ms into a loop that finishes and returning after it (loops
+  of 2500000 iterations) or inside it (5000000), leaves 18 of 18 loops of 2500000 iterations
+  (floating-point and integer) and 12 of 12 single-field writes finishing in 87.1 to 88.1 ms, as the
+  6 of 6 loops with no write do (87.2 to 87.7 ms), and the register reads the value written; the
+  floating-point loop of 5000000 iterations hung in 2 of 9 writes and in 2 of 3 controls.
+  *usse; HW, infer; data: `usse-madd-length`, `usse-madd-write`.*
+- `E453` With the PB descriptor's page-table base at 16 scratch pages that the host filled with the
+  table the kernel builds before a job and its flag bit 0 clear, a 64x64 render comes out exact in 6
+  of 6 runs and changes 4 scratch dwords, not 1058, and with flag bit 0 set over that table it comes
+  out exact in 6 of 6 runs and changes the same 4; a table of the values a finished job leaves
+  faults the render in 3 of 3 runs, and a zero table faults it in 4 of 4 unflagged runs; the plain
+  health triangle after the last faulted run faulted too.
+  *dpm; HW, infer; data: `dpm-ctx-table-host-filled`, `dpm-ctx-table-flag-order`.*
+- `E454` In a textured primary whose program iterates the vertex colour (source 32) alone, the
+  colour then a two-component coordinate set, or a three-component coordinate set before the fetch,
+  pa0 to pa3 and the image are the same (the coordinate registers reading 0 in every pixel
+  throughout) in every run that completed (29 of 29 with bits 24 and 25, 30 of 30 with bit 25 alone,
+  30 of 30 with bit 25 alone and no completion bit) with the fetch wait (DOUTU1 bit 25) set, whether
+  DOUTU1 bit 24 is set or clear, and change from run to run without bit 25 (in 9 of 10 probes with
+  bit 24 alone, in 10 of 10 with neither bit); 1 of 30 jobs with bits 24 and 25 hung (0 of 30 with
+  bit 25 alone).
+  *pds; HW, infer; data: `pds-iter-wait-colour`.*
+
 ## By unit
 
 ### bif
@@ -2823,12 +2869,13 @@ Records: E151.
 ### dpm
 
 Records: E199, E200, E201, E202, E204, E205, E206, E203, E253, E256, E309, E310, E311, E312, E313,
-E327, E358, E362, E438, E442, E443, E446, E447.
+E327, E358, E362, E438, E442, E443, E446, E447, E453.
 
 ### edm
 
 Records: E009, E014, E017, E084, E146, E152, E153, E154, E155, E156, E157, E158, E159, E160, E161,
-E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321, E353, E402, E431, E444.
+E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321, E353, E402, E431, E444,
+E450.
 
 ### firmware
 
@@ -2856,7 +2903,7 @@ E383, E385, E386, E387, E429.
 Records: E043, E044, E045, E046, E047, E048, E125, E126, E127, E128, E129, E130, E131, E132, E133,
 E134, E135, E136, E137, E138, E139, E140, E141, E142, E143, E144, E145, E259, E260, E261, E262,
 E263, E264, E343, E344, E345, E364, E379, E381, E384, E388, E389, E390, E391, E392, E393, E394,
-E395, E396, E400, E420, E421, E428, E430, E436, E437.
+E395, E396, E400, E420, E421, E428, E430, E436, E437, E454.
 
 ### platform
 
@@ -2867,7 +2914,7 @@ E404, E405, E434, E445.
 
 Records: E023, E049, E050, E051, E052, E053, E148, E169, E252, E301, E302, E303, E304, E314, E315,
 E316, E323, E324, E325, E326, E354, E355, E356, E360, E361, E363, E408, E412, E422, E433, E435,
-E448.
+E448, E449, E451.
 
 ### ta
 
@@ -2893,7 +2940,7 @@ Records: E075, E076, E077, E078, E079, E080, E081, E082, E083, E085, E086, E087,
 E091, E092, E093, E094, E095, E096, E097, E098, E099, E100, E101, E102, E103, E104, E105, E106,
 E107, E108, E109, E110, E111, E112, E113, E115, E117, E118, E119, E120, E121, E123, E124, E147,
 E244, E245, E255, E292, E293, E294, E295, E296, E297, E298, E350, E351, E366, E367, E368, E369,
-E370, E371, E372, E373, E374, E375, E376, E377, E378, E380, E406, E423.
+E370, E371, E372, E373, E374, E375, E376, E377, E378, E380, E406, E423, E452.
 
 ### vdm
 

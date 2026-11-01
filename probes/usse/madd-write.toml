@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse madd write: 4 probes, a script (madd-write.sh).
+# Q048: the MADD fields of CR_CLKGATECTL2 (bits 13:12 and 21:20, no other bit) written through
+# debugfs kregnow while a loop that finishes runs: the floating-point and the integer loop at
+# 2500000 and 5000000 iterations.
+needs = ["render", "kregnow", "regs", "reset"]
+name = "usse-madd-write"
+script = "madd-write.sh"
+
+[[probe]]
+name = "usse-madd-write-fmad"
+question = "the floating-point loop (six fmads in each loop of eight instructions) at two lengths"
+source = "fmad_loop.s"
+inputs = ["ITER"]
+labels = ["2500000 iterations", "5000000 iterations"]
+cases = [[0x2625A0], [0x4C4B40]]
+
+[[probe]]
+name = "usse-madd-write-int"
+question = "the integer multiply-add loop at the same two lengths"
+source = "int_loop.s"
+inputs = ["ITER"]
+labels = ["2500000 iterations", "5000000 iterations"]
+cases = [[0x2625A0], [0x4C4B40]]

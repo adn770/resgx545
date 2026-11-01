@@ -1,0 +1,10 @@
+title = "script table edm/ta-sync-two-contexts"
+repo = "data"
+paths = ["edm/ta-sync-two-contexts/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 4
+size = 210600
+sha256 = "8975654e78bed8789a4eab5fdec080f3df4f5efa871208f38f6884adf8956825"
+recipe = "probes/edm/ta-sync-two-contexts.toml"
+needs = ["render", "kpoke", "reset"]

@@ -1,0 +1,10 @@
+title = "probe table pds/iter-wait-colour"
+repo = "data"
+paths = ["pds/iter-wait-colour/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 222
+size = 7258441
+sha256 = "08197a3cc87fbcf8cf4dea6ae18f6addd8ac72133bac2306a3d88354326b33bd"
+recipe = "probes/pds/iter-wait-colour.toml"
+needs = ["render"]

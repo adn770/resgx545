@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# render kept owner two contexts: 0 probes (a shell script run on the laptop by the campaign).
+# Q041: the DPM slot words (TA3DCtl dwords 20, 21, 25) kept by render flag bits 2 and 3 in one
+# context, and a render on a second context in the VM (sgxfive-test tri --ctx2 --words, the
+# render flags flipped through the kernel poke ta:7 in either or both).
+needs = [
+    "render", "kpoke", "buf09", "reset",
+]
+name = "render-kept-owner-two-contexts"
+script = "kept-owner-two-contexts.sh"

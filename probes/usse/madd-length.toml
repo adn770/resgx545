@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse madd length: 8 probes, a script (madd-length.sh).
+# Q048: the length of the floating-point and the integer loop at which a job still finishes: each
+# loop at 2500000, 5000000, 7500000 and 10000000 iterations (88 ms to 352 ms), three runs each
+# with no debugfs write, the CR_CLKGATESTATUS and CR_CLKGATECTL2 registers sampled around it.
+needs = ["render", "kregnow", "regs", "reset"]
+name = "usse-madd-length"
+script = "madd-length.sh"
+
+[[probe]]
+name = "usse-madd-length-fmad"
+question = "the floating-point loop (six fmads in each loop of eight instructions) at four lengths"
+source = "fmad_loop.s"
+inputs = ["ITER"]
+labels = ["2500000 iterations", "5000000 iterations", "7500000 iterations", "10000000 iterations"]
+cases = [[0x2625A0], [0x4C4B40], [0x7270E0], [0x989680]]
+
+[[probe]]
+name = "usse-madd-length-int"
+question = "the integer multiply-add loop at the same four lengths"
+source = "int_loop.s"
+inputs = ["ITER"]
+labels = ["2500000 iterations", "5000000 iterations", "7500000 iterations", "10000000 iterations"]
+cases = [[0x2625A0], [0x4C4B40], [0x7270E0], [0x989680]]

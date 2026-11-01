@@ -1,0 +1,10 @@
+title = "script table dpm/ctx-table-host-filled"
+repo = "data"
+paths = ["dpm/ctx-table-host-filled/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 4
+size = 78591
+sha256 = "c3d3f173b624da86ae10dce4ad04e8332ab3975372063a6aabd2d69d4d5aef02"
+recipe = "probes/dpm/ctx-table-host-filled.toml"
+needs = ["render", "kpoke", "alias_ctx_rw", "regs", "reset"]
