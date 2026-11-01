@@ -182,12 +182,14 @@ through that context's page directory. The alias is created with the VM's first 
 and goes with its last; a VM with only transfer contexts has none. All of it is read-only except
 the TA/3D control block, which the firmware writes in that window and which every render context
 of the device shares. `VM_MAP` cannot reach these addresses, but the client's GPU programs can
-(section 11). Whether the block can be spared the writable mapping is Q006.
+(section 11). The block cannot be mapped read-only: with it so (the debug switch
+`alias_ta3d_ro`) the first kick faults on its page before the parameter buffer load writes it,
+and the job stalls (E319, one run). Whether a per-VM copy would do is Q006.
 
 Transfers are different: a fill aimed at a page the context's directory maps read-only writes
 nothing and faults (E021).
 
-Evidence: E021, E023, E148; Q006.
+Evidence: E021, E023, E148, E319; Q006.
 
 ## 6. Buffer objects and VM contexts
 
@@ -395,7 +397,20 @@ Measured on the hardware (kernel pokes of the kick and render flag words, in a d
   bits 1 and 4 complete it with no pixel, and bits 5, 9 and 0xffffffff fault. The kernel builds
   both words, and no client field reaches them.
 
-Evidence: E049 to E053.
+**The scene's counts.** The kernel keeps a pending count for the context's RT data set and the
+firmware an executed count in the set; the firmware cleans the set up, when the context is
+destroyed, only once the two are equal. The firmware adds one when a kick that is not the scene's
+last finishes, and one when a render with render flag `0x400` completes; the kernel raises its
+count by the same at every kick it makes (a geometry job one, a render one, as the kernel always
+sets `0x400`). Read on the hardware the two are equal after every job of scenes of one to four
+kicks and every cleanup completes; one off either way, the cleanup times out and the kernel
+resets the GPU (E314, E315, one run each). The kernel's earlier rule, one per scene, failed the
+cleanup of every scene of several kicks (E303, E304). A recovery reset sets the count to the
+number of jobs it runs again, one each: that agrees with the per-kick rule only while every
+render it runs again carries `0x400`, which holds because the kernel always sets it; a render
+whose `0x400` a debug poke cleared would leave the count one above (section 13).
+
+Evidence: E049 to E053, E303, E304, E314, E315.
 
 ### 8.6 Out-fences and errors
 
@@ -495,10 +510,37 @@ return `-ECANCELED`.
 **Error state.** A recovery that resets captures an error state (registers, control blocks and
 the unfinished jobs of every context) and emits it as a devcoredump.
 
+**Debug views** (`CONFIG_DRM_GMA500_SGXFIVE_DEBUG`, debugfs `dri/N/sgx/`, root only). `kpoke`
+arms one-shot changes of the next job's words: `ta:N` and `rd:N` (the render's TA command and
+render details) and `tq:N` (a transfer command) at its submit; `ctx:N`, `rtds:N`, `pb:N` and
+`kw:N` (the render context's HW context, RT data set and PB descriptor, and the kernel's own words
+for it: the access word, the pending count, the render target's status and the background update
+list) at the next render's kick, after the kernel's own writes. `render_words` shows every word
+of those structures and of the render details of the newest render context, a line each as the
+poke that would set it. `hold_recovery` makes both detectors leave a hung job in the firmware,
+its memory as the GPU left it, until `reset` is written; the kernel warns once that recovery is
+held, while the detectors keep logging the hang at every round (E317). A reset asked for
+(`reset`, a failed cleanup) is never held. `reset` blames no job, so every unfinished job runs
+again after it, the held one included, which then faults or hangs again and is recovered with
+blame: a hold costs two recoveries (E317, E318, one run each; section 13). `rtds_keep` makes
+renders leave the RT data set's size words and out-of-memory counters as the previous job left
+them.
+
+Held on the laptop, a render that faulted on its unmapped stream page stops the firmware, not
+only its job: the firmware answers no kernel command (the kernel's 500 ms wait for GETMISCINFO
+ends the query, about 0.65 s from the shell), another context's fill does not run, the
+firmware's tick no longer advances, and the bus interface keeps the fault until the reset; a job
+given up by its client stays queued and runs after the reset (E317, one run). Jobs hung without
+a fault and a fault of the firmware's own write leave the firmware's commands unanswered too
+(E318, E319, one run each; the tick was read for the fault only). A job hung in its pixel task
+has finished its TA: before recovery its render memory holds the object and the control streams,
+and the recovery zeroes the TA data and keeps the parameter buffer (E318, one run; the pixel
+task's hang held twice).
+
 E024 does not show the timeout path, other kinds of fault or the core's behaviour without
 recovery; every fault in its run was recovered.
 
-Evidence: E021, E024; Q003, Q028.
+Evidence: E021, E024, E317, E318, E319; Q003, Q028.
 
 ## 11. Security model
 
@@ -538,11 +580,12 @@ What it does not hold, and the reason the gate exists:
   client programs, so the device's state is the client's to read;
 - a render client's VM maps the firmware read-only, so its programs read the firmware's code
   and data, and writes the TA/3D control block, which all render contexts share. A client can
-  corrupt that block, stalling or misdirecting other clients' renders (Q006);
+  corrupt that block, stalling or misdirecting other clients' renders; the block cannot simply be
+  mapped read-only, since the firmware writes it through the client's directory (E319, Q006);
 - a client's programs can write their own parameter buffer and page table (section 5.2);
 - one client can hold the GPU for about a second before the timeout ends it (section 10).
 
-Evidence: E021, E024, E049, E050, E090; Q006.
+Evidence: E021, E024, E049, E050, E090, E319; Q006.
 
 ## 12. UAPI header
 
@@ -555,13 +598,33 @@ checks of sections 2, 6 and 8.
 
 ## 13. Open questions
 
-- Q028: what a faulting job leaves wedged when the kernel does not recover, and which reset
-  steps the recovery needs (section 10);
-- Q029: whether clearing bit 8 of `isp_ipfmisc` skips untouched tiles above 64 x 64, and what the
-  EDM's render target and render context cleanups wait for (section 8.4; evidence E148);
-- Q003: which event a bus-interface fault raises, and what the interrupt status bit means;
+- Q028: which of the recovery's reset steps a later job needs, now that a held fault is seen to
+  stop the firmware (section 10);
+- Q029: what the render context's own cleanup waits for once its RT data set is cleaned up,
+  which cleanup releases the parameter buffer, and why a held job's cleanup fails after its
+  recovery (sections 8.5 and 10);
+- Q003: which event a bus-interface fault raises, and which requester each fault bit of the
+  interrupt status names;
 - Q004: what a transfer context's flag bits 1 and 4 and a priority above 0 do (the interface
   accepts only priority 0);
 - Q005: whether the kernel should ask the firmware for its identity at every boot, so
   `DEV_QUERY` reports it without the debug option;
-- Q006: whether a render client's VM can do without a writable mapping of the control block.
+- Q006: whether a render client's VM can carry its own copy of the control block instead of a
+  writable mapping of the device's (section 5.3).
+
+Kernel follow-ups for a later commit of the linux fork (the 11.10 runs all used fork commit
+66dc1fda6ae8, which stays as it is):
+
+- a `reset` written while a recovery is held should recover with the held job as its suspect,
+  so the held job fails once instead of running again and being recovered with blame (E317,
+  E318; section 10); or the debug view should say that it runs again;
+- a recovery reset should set the RT data set's pending count by the per-kick rule, the sum of
+  what each job it runs again adds (`sgx_render_executed`), not one per job, with a KUnit case
+  for a render without `0x400` run again (section 8.5); or the commit message should say that the
+  rule holds because the kernel always sets `0x400`;
+- while recovery is held the fault watchdog and the job timeout should not log their
+  "recovering" lines at every round (205 lines in E317's 22 s), only the one warning; the commit
+  message and the code comment saying the detectors report once should match;
+- the KUnit case for `rtds_keep` checks only the switch's accessor: the kept words in a built
+  render, `sgxfive_render_words` and the order of the kernel pokes after the kernel's own writes
+  in a render's run are untested.

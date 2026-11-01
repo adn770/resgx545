@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# render pending rd54: 0 probes (written by tools/usse-asm/render_words.py).
+# Q029: render details word 54 moved by 0x8, the counts read
+needs = ["render", "kpoke", "render_words", "render_cleanup", "buf09"]
+name = "render-pending-rd54"
+script = "pending-rd54.sh"

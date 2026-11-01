@@ -199,11 +199,13 @@ RTDATA = [
 ]
 
 # The RT data set; size 0x50, the microkernel's: a 0x18-byte header and the RT data (glossary
-# misc_info_struct_sizes.sizeof_hw_rt_data_set). Dword 1 the executed count (E156, E166);
-# 3 and 4 the out-of-memory and partial-render counts (E160).
+# misc_info_struct_sizes.sizeof_hw_rt_data_set). Dword 0 the address of the host's pending
+# count, which the set's cleanup waits for the executed count to equal (E315); dword 1 the
+# executed count (E156, E166, E314); 3 and 4 the out-of-memory and partial-render counts (E160).
 RTDATASET = [
-    ("pad_0x00", 1), ("executed_count", 1), ("pad_0x08", 1), ("num_out_of_mem_signals", 1),
-    ("num_spm_renders", 1), ("pad_0x14", 1), ("hw_rt_data", RTDATA, 1),
+    ("pending_count_dev_vaddr", 1), ("executed_count", 1), ("pad_0x08", 1),
+    ("num_out_of_mem_signals", 1), ("num_spm_renders", 1), ("pad_0x14", 1),
+    ("hw_rt_data", RTDATA, 1),
 ]
 
 # The HW render context; size 0x44, the microkernel's. Dword 0 the flags (CONTEXT_FLAGS: E159,

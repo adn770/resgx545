@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# render kick objects again: 0 probes (written by tools/usse-asm/render_words.py).
+# 11.6's scenes of one to three kicks again, the kernel counting each kick (E288)
+needs = ["render", "render_param", "render_tadata", "render_cleanup"]
+name = "render-kick-objects-again"
+script = "kick-objects-again.sh"

@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# render slot words: 0 probes (written by tools/usse-asm/render_words.py).
+# Q041: the DPM slot words, the access word and rtds_keep
+needs = ["render", "kpoke", "render_words", "render_cleanup", "buf09", "rtds_keep", "regs"]
+name = "render-slot-words"
+script = "slot-words.sh"

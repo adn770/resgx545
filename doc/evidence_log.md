@@ -1779,6 +1779,74 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   word renders the triangle exactly, with no fault and nothing written to the TA data's DPM pages.
   *dpm; HW, infer; data: `dpm-state-base`.*
 
+### 2026-11-03
+
+- `E314` Read while the context lives, the RT data set's executed count (word 1) and the kernel's
+  pending count rise together by one at every kick, the geometry kicks included, and are equal after
+  every job of scenes of one to four kicks; a render without render flag bit 10 adds to neither, so
+  its cleanup completes; every cleanup of the table completes and no case resets the GPU, where
+  one-count-per-scene cleanups of two kicks had failed; one run.
+  *render; HW, DDK; data: `render-pending-counts`.*
+- `E315` The RT data set's cleanup completes only when its executed count equals the word the set's
+  word 0 points at: one render whose pending count is poked to 2 or to 0 (executed 1) fails its
+  cleanup, and with the count at 2 but word 0 pointed at the executed count itself it completes;
+  render details word 54 moved by 0x8 puts the count in the set's word 3, so one render leaves
+  executed 0 against pending 1 and a scene of two kicks executed 1 against pending 2, and both
+  cleanups fail; one run each.
+  *render; HW; data: `render-pending-kw`, `render-pending-rd54`.*
+- `E316` Read while the context lives, a render with render flag bit 2 leaves the TA/3D control
+  block's dword 20 (the first DPM slot's RT data) set and dword 25 clear, one with bit 3 or both
+  leaves both set; a later render on the context with the bits clear clears both; a new context at
+  the same addresses starts with them set and its first render draws the control's image and clears
+  them; the access word render details word 52 points at stays 0 in every case; with debugfs
+  rtds_keep set the kernel leaves the RT data set's words as the previous job left them (an
+  out-of-memory count poked to 5 stays 5) and nothing else of the set's words changes, the kept
+  dwords cleared by the second render as without it; one run.
+  *render; HW; data: `render-slot-words`.*
+- `E317` With recovery held after a render faults reading its unmapped stream page, the EDM does not
+  answer GETMISCINFO (the kernel's 500 ms wait ends the query, about 0.65 s from the shell), a fill
+  on another context does not run, CR_BIF_INT_STAT reads 0x90008 and CR_BIF_FAULT 0x3e00000a the
+  whole time, CR_EVENT_STATUS2 0x480, the interrupt counters do not move, the EDM tick count in
+  CR_USE0_SERV_EVENT stays still between two reads 19 s apart, and the render memory holds no object
+  and an all-zero TA data; the TA kick had taken the DPM slot and loaded the PB; a debugfs reset
+  (halt, firmware buffers rebuilt, boot in place) recovers, the kernel log showing three more resets
+  within 0.91 s: the fault watchdog's recovery of the faulted job, a failed render-context cleanup
+  and the fault of a job left queued; one run.
+  *edm; HW, DDK, infer; data: `render-hold-fault`.*
+- `E318` Saved before the kernel recovers (recovery held), the job hung in its pixel task holds its
+  object in the parameter buffer and the TA data a finished TA leaves (byte for byte the one-kick
+  triangle's of E288), in both held runs; saved after the recovery, the same job holds the same
+  object but an all-zero TA data; the job with VDM state word 1 bits 15:13 = 0 holds neither, held:
+  the TA wrote nothing before it stopped; while either is held GETMISCINFO is not answered; one run
+  of each, the pixel control held twice.
+  *vdm; HW; data: `render-hold-hang`, `render-kick-objects`.*
+- `E319` With the TA/3D control block mapped read-only in the render client's VM (debugfs
+  alias_ta3d_ro) the first kick faults on the block's page, CR_BIF_INT_STAT 0x80400 and CR_BIF_FAULT
+  0x32004005, before the PB load writes dword 46 and before the DPM slot is taken (dwords 46, 20 and
+  25 stay 0), after the render-context count (dword 49) has moved; the job stalls, GETMISCINFO is
+  not answered while recovery is held, and the job fails with a fault once recovered; one run.
+  *edm; HW, infer; data: `render-ta3d-ro`.*
+- `E320` On a lone render context the EDM starts a TA command whose one source sync is incomplete
+  (read and write pending values 0x5a5a5a5a against a word that reads 0): the geometry kick
+  completes, the render details take the sync (words 90 to 94), the closing render draws the
+  control's image and the cleanup completes; the same kick with its transfer-queue sync set (word 25
+  = 0x5a5a5a5a, word 26 that word) never starts and the EDM faults reading page 0 through its own
+  directory list, 15 (bus status 0xd0400), the read of the sync's second pointer, word 28, left 0;
+  one run.
+  *edm; HW, RE, infer; data: `edm-ta-syncs`.*
+- `E321` After each of three debugfs resets (about 0.27 s each from the shell) the EDM answers
+  GETMISCINFO within 169 to 175 µs, on the first and the second query alike, and 168 µs after a
+  render; while a faulted or hung job is held the query is not answered and the kernel's 500 ms wait
+  ends it, about 0.65 s from the shell; one run.
+  *edm; HW, DDK; data: `edm-miscinfo-reset`, `render-hold-fault`, `render-hold-hang`,
+  `render-ta3d-ro`.*
+- `E322` 11.6's scenes of one, two and three TA kicks run again on the kernel that counts each kick:
+  every context cleanup completes and the table's kernel log holds no reset, where the 11.6 run had
+  reset the GPU for the scenes of several kicks; the parameter buffers and TA data dumped after the
+  closing renders are byte for byte those of the 11.6 runs, and the images the same (1062, 1730 and
+  2026 triangle pixels); one run.
+  *ta; HW; data: `render-kick-objects-again`, `render-kick-objects`.*
+
 ## By unit
 
 ### bif
@@ -1792,7 +1860,7 @@ Records: E199, E200, E201, E202, E204, E205, E206, E203, E253, E256, E309, E310,
 ### edm
 
 Records: E009, E014, E017, E084, E146, E152, E153, E154, E155, E156, E157, E158, E159, E160, E161,
-E162, E163, E164, E165, E166, E167, E013, E168.
+E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321.
 
 ### firmware
 
@@ -1824,12 +1892,13 @@ Records: E006, E007, E008, E025, E026, E122, E150, E149, E246, E258.
 
 ### render
 
-Records: E023, E049, E050, E051, E052, E053, E148, E169, E252, E301, E302, E303, E304.
+Records: E023, E049, E050, E051, E052, E053, E148, E169, E252, E301, E302, E303, E304, E314, E315,
+E316.
 
 ### ta
 
 Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180, E181, E247, E257,
-E288, E305, E306, E307, E308.
+E288, E305, E306, E307, E308, E322.
 
 ### texture
 
@@ -1853,7 +1922,7 @@ E244, E245, E255, E292, E293, E294, E295, E296, E297, E298.
 
 ### vdm
 
-Records: E059, E060, E184, E185, E186, E187, E189, E190, E191, E188, E299, E300.
+Records: E059, E060, E184, E185, E186, E187, E189, E190, E191, E188, E299, E300, E318.
 
 ### zls
 

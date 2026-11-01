@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# render ta3d ro: 0 probes (written by tools/usse-asm/render_words.py).
+# Q006: renders with the TA/3D control block read-only in the client VM
+needs = ["render", "alias_ta3d_ro", "hold_recovery", "reset", "regs", "render_words"]
+name = "render-ta3d-ro"
+script = "ta3d-ro.sh"

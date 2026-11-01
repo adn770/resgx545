@@ -12,7 +12,7 @@ tier = "1"
 source = "sgx545-ce"
 citation = "C0330"
 licence = "GPL-2.0"
-evidence = "same name/type as SGXMKIF_HWDEVICE_SYNC_LIST.sAccessDevAddr"
+evidence = "same name/type as SGXMKIF_HWDEVICE_SYNC_LIST.sAccessDevAddr; [HW] E314, E316 (render-pending-counts, render-slot-words, one run each): our kernel points it at a word of its own, which reads 0 before and after every render, kept or not"
 
 [[term]]
 id = "G0682"
@@ -60,7 +60,7 @@ tier = "ours"
 source = "resgx545"
 citation = "probes/render/rtds-words.toml"
 licence = "MIT"
-evidence = "[HW] the RT data set probes (render-rtds-words, one run): moved by 0xc the kernel reports a parameter buffer overflow after a render and after a geometry kick, a count landing in the set's partial-render word; moved by 0x8 one render's cleanup fails and a two-kick scene's completes; [RE] the EDM's dataflow reads it four times as an untyped pointer, and the TA finish of a kick that is not the scene's last and the render's completion add one to the executed count of the set it names; [infer] where the 0x8 move puts the count is not observed, and no case read the counts; the name is ours, and typing it as a pointer in the dataflow waits for a rerun of the dataflow table"
+evidence = "[HW] the RT data set probes (render-rtds-words, one run): moved by 0xc the kernel reports a parameter buffer overflow after a render and after a geometry kick, a count landing in the set's partial-render word; moved by 0x8 one render's cleanup fails and a two-kick scene's completes; [RE] the EDM's dataflow reads it four times as an untyped pointer, and the TA finish of a kick that is not the scene's last and the render's completion add one to the executed count of the set it names; [HW] E315 (render-pending-rd54, one run): moved by 0x8 the count of a render and of a geometry kick are read in the set's word 3 after the job, and both cleanups fail (a two-kick scene's too, once the kernel counts each kick); [infer] the name is ours, and typing it as a pointer in the dataflow waits for a rerun of the dataflow table"
 
 [[term]]
 id = "G0683"

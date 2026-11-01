@@ -1,23 +1,26 @@
 +++
 id = "Q034"
-question = "does the EDM start a TA command whose destination or source sync is incomplete when its context is the only one in the TA queue?"
+question = "does the EDM hold back a TA command whose source or destination sync is incomplete when another context is queued, as E161 reads the pick to do only then?"
 unit = "edm"
 phase = 10
-evidence = ["E161", "E154"]
-terms = ["ta3d_ctl"]
+evidence = ["E161", "E154", "E320"]
+terms = ["ta3d_ctl", "cmd_ta.shared"]
 +++
 
-The EDM's TA pick takes a context's next TA command only when a list of conditions holds: a
-counted kick and no suspend, the READY bit, a complete transfer-queue sync, a free RT data set
-for a first kick, and complete destination and source syncs (E161). As read from the firmware,
-the last two checks (instructions `0x760` to `0x78e`) run only when the TA queue holds a context
-other than the picked one; with a single context queued they are skipped [as read]. A command
-whose syncs are not complete would then start whenever it is alone in the queue, which defeats
-the syncs for the one-client case. Why the checks depend on a second context is not shown, and
-nothing in E161 runs the firmware.
+The EDM's TA pick takes a context's next TA command only when a list of conditions holds; as read
+from the firmware, the checks of the destination and source syncs (instructions `0x760` to `0x78e`)
+run only when the TA queue holds a context other than the picked one (E161) [as read].
 
-To settle it: two render contexts on the laptop. Submit to context B a TA command whose source
-sync names a sync object with a pending count that no job will reach yet, first with context A
-idle and then with a command queued on A. Record with the debugfs files whether B's TA starts
-(its TA status words and the request bits of E154) before the sync object is completed from the
-host. Repeat with the destination sync instead of a source sync.
+The one-context half is shown (E320, one run): a lone context's geometry kick whose one source sync
+is incomplete (read and write pending values 0x5a5a5a5a against a word that reads 0) starts and
+completes, and the scene renders. As a control, the same kick with its transfer-queue sync set
+never starts: the pick reads the sync's second pointer, and with it left at 0 the EDM faults.
+
+Open: the two-context half, that the checks hold a command back when another context is queued,
+and why they depend on a second context; the destination sync, not tried.
+
+To settle it: two render contexts with commands queued at once (a mode of sgxfive-test that
+submits on a second context without waiting): context A's command held back by its transfer-queue
+sync (dword 26 and dword 28 both pointing at words that hold what dword 27 and not dword 25), so
+it stays queued without a fault; then on context B a command with an incomplete source sync
+(expected to stay queued) and one without (expected to run). Repeat with the destination sync.

@@ -268,7 +268,8 @@ isolation                      kernel-heap-unmappable, same-address-separate-vms
                                faulting-file-banned
 tri [--width W --height H -n N] [--max-width W --max-height H] [--fault]
     [--scratch N [--scratch-fill V]] [--kpoke-render N:SPEC]... [--move N:DX,DY]...
-    [--geometry N]... [--keep-going] [--dump-render DIR] [JOB OPTIONS]
+    [--geometry N]... [--keep-going] [--dump-render DIR] [--words DIR] [--wait-ms MS]
+    [JOB OPTIONS]
 contexts [--width W --height H -n N]
 regaccess
 probe [--temps N] [--coords] [--pixels] [--pds N --use USE] [--poke xfer:N=V]...
@@ -294,7 +295,12 @@ render N. `--move N:DX,DY` draws render N's triangle DX, DY pixels away. `--geom
 submits render N as geometry only (the scene left open for the next render, nothing drawn).
 `--keep-going` reports every render, checked or not. `--dump-render DIR` copies the kernel's
 debugfs `render_param` and `render_tadata` to `DIR/tri.param.bin` and `DIR/tri.tadata.bin`
-after the renders.
+after the renders. `--words DIR` copies the kernel's debugfs `render_words` (the render
+context's words, a kpoke line each) and `buf09` (the TA/3D control block) to `DIR/words.N.txt`
+and `DIR/ta3d.N.bin` before the first render (N = 0) and after each render N, failed or not,
+while the context lives (`tools/usse-asm/render_words.py` reads them). `--wait-ms MS` waits MS
+milliseconds for each render (default 5000), so a script can read the kernel's state while a
+held hang lasts.
 
 `contexts` creates N render contexts (default 32) for targets up to W x H (default 64 x 64)
 in one VM, and prints the memory they take: MemFree and LowFree of `/proc/meminfo`, before

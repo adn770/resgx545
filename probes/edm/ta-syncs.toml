@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# edm ta syncs: 0 probes (written by tools/usse-asm/render_words.py).
+# Q034: one context's TA command with an incomplete sync
+needs = ["render", "kpoke", "render_words", "buf09"]
+name = "edm-ta-syncs"
+script = "ta-syncs.sh"

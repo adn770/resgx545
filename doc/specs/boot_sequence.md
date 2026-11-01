@@ -374,6 +374,17 @@ count as a lockup: `HostDetectedLockups++`, then `HWRecoveryResetSGX`. A live ED
 these counters at least every 150 ms; on the laptop the EDM tick advances `USE0_SERV_EVENT`
 about once a millisecond (E009). This also makes a cheap liveness check right after boot.
 
+**On the hardware, faults and hangs.** A bus-interface fault asserts no host interrupt: held
+without recovery (our kernel's debug switch), a render's fault leaves the interrupt and
+`SW_EVENT` counts where they were while `BIF_INT_STAT` and `BIF_FAULT` keep the fault (E317,
+E319, one run each), so a host learns of it only by polling. The EDM stops with it: it answers no
+kernel command and `USE0_SERV_EVENT` stands still, which the DDK's watchdog above would take for
+a lockup [infer] (E317, one run; the count read twice, for the fault only). `EVENT_STATUS2`,
+which the DDK's handler never reads, reads `0x480` after the stream-read fault and the VDM hang,
+`0x440` for the pixel-task hang and `0x400`, as when idle, for the control-block write fault
+(E317 to E319, one run each; Q082). After a boot in place the EDM answers GETMISCINFO within 169
+to 175 µs (E321, one run).
+
 **Mainline gma500 (`psb_irq.c`).** `gma_irq_handler` reads `EVENT_STATUS` and
 `EVENT_STATUS2` **unmasked** whenever bit 18 is set, and `gma_sgx_interrupt` then:
 
@@ -392,7 +403,7 @@ three. §5 lists the required changes.
 
 *Based on sgx545-ce `src/services4/srvkm/devices/sgx/sgxinit.c`,
 `src/services4/system/unified/sysconfig.c:1022`; Linux v7.3
-`drivers/gpu/drm/gma500/psb_irq.c`; E006, E008, E009, E010, E011.*
+`drivers/gpu/drm/gma500/psb_irq.c`; E006, E008, E009, E010, E011, E317, E318, E319, E321.*
 
 ## 4. `FIX_HW_BRN_SAMPLE_CACHE` and the heap layout
 

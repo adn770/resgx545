@@ -427,7 +427,7 @@ evidence records its rows, its fields' rows and its measured width cite.
 - `0x0a94` `CR_USE_COEFFS1_B`: width 32 bits (31:0, E255); no field rows. Records: E078, E255.
 - `0x0a98` `CR_USE_COEFFS1_BIAS`: width 20 bits (19:0, E255); no field rows. Records: E078, E255.
 - `0x0a9c` `CR_USE_COEFFS_MODE`: width 2 bits (1:0, E255); 1 field: MODE [1:0]; uncovered - (0
-  bits). Records: E078, E079, E255.
+  bits). Records: E078, E079, E255, E292, E293, E298.
 - `0x0aa0` `CR_USE_REG_0AA0`: width 32 bits (31:0, E054, E255); no field rows. Records: E030, E054,
   E056, E071, E072, E159, E182, E183, E255.
 - `0x0aa4` `CR_USE0_DM_SLOT`: width 32 bits assumed; no field rows.

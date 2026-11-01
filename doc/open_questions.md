@@ -18,10 +18,11 @@
 ## edm
 
 - `Q002` (phase 3): is the 399.0 MHz reference that times the EDM tick and TIMER the clock the USSE runs from? (E009, E084, E124)
-- `Q005` (phase 6): should the kernel ask the firmware for its identity on every boot, so DEV_QUERY reports it without the debug option? (E017, E022)
-- `Q006` (phase 6): can a render client's VM do without a writable mapping of the device-wide TA/3D control block? (E023)
+- `Q005` (phase 6): should the kernel ask the firmware for its identity on every boot, so DEV_QUERY reports it without the debug option? (E017, E022, E321)
+- `Q006` (phase 6): can a render client's VM carry its own copy of the TA/3D control block at the shared address, which the kernel keeps in step, instead of a writable mapping of the device's? (E023, E319)
 - `Q033` (phase 10): does the event word PDS #13 hands the EDM as pa1 carry CR_EVENT_STATUS bits in reverse order, and which events set its bits 8 and 19, that no handler acknowledges? (E155, E146, E154)
-- `Q034` (phase 10): does the EDM start a TA command whose destination or source sync is incomplete when its context is the only one in the TA queue? (E161, E154)
+- `Q034` (phase 10): does the EDM hold back a TA command whose source or destination sync is incomplete when another context is queued, as E161 reads the pick to do only then? (E161, E154, E320)
+- `Q082` (phase 11): what do CR_EVENT_STATUS2 bits 6 and 7 mean, bit 6 set while a job hangs in its pixel task and bit 7 while a TA job hangs or faults? (E317, E318, E319)
 
 ## isp
 
@@ -75,11 +76,12 @@
 ## render
 
 - `Q014` (phase 6): why does a background object whose first PDS word has a high bit wrong render part or all of the first 32x16 tile before the job faults? (E029, E301)
-- `Q029` (phase 9): what does the EDM's render context cleanup wait for, and which cleanup releases the parameter buffer in the TA/3D control block? (E148, E023, E156, E164, E289, E303, E304)
-- `Q041` (phase 11): what does a later job do with the DPM slot word that FRAG_FLAGS.BIT2 or NO_DEALLOCATE leaves set after a render, when no image changes with either bit? (E164, E158, E051, E052, E053, E303)
+- `Q029` (phase 9): what does the render context's own cleanup wait for once its RT data set is cleaned up, and which cleanup releases the parameter buffer in the TA/3D control block? (E148, E023, E156, E164, E289, E303, E304, E314, E315, E318)
+- `Q041` (phase 11): what does a later job on a context at another address do with the DPM slot word that FRAG_FLAGS.BIT2 or NO_DEALLOCATE leaves set after a render? (E164, E158, E051, E052, E053, E303, E316)
 - `Q043` (phase 11): what does bit 0 of CR_REG_0148, which the firmware loads for every render, partial render and transfer, change, when no bit of the word changes a triangle, five copies, a fill or a copy? (E056, E163, E160, E015, E028, E252, E302)
 - `Q049` (phase 11): does the firmware or the hardware ever read dword 7 (offset 0x01c) of the render context, which the EDM dataflow reaches on no path? (E013, E021, E156, E165)
 - `Q065` (phase 11): why does render flag bit 0 hang a kernel-built triangle job when the firmware completes a NO_RENDER render without rendering, and does one command with FIRST_KICK and LAST_KICK act as two? (E050, E156, E164, E165, E184, E303, E304)
+- `Q083` (phase 11): what bounds TA/3D control block dword 49 at 15 values, and is it a count of render contexts or an index the EDM gives each one? (E303, E314, E315, E316, E319)
 
 ## ta
 
@@ -98,10 +100,10 @@
 
 ## transfer
 
-- `Q003` (phase 4): why does a transfer render that faults on a read-only page raise no BIF-fault interrupt the host sees, and how does a host recover the EDM in place afterwards? (E021)
+- `Q003` (phase 4): which event (if any) does a bus-interface fault raise, and what do the fault-request bits of CR_BIF_INT_STAT name? (E021, E317, E319, E320)
 - `Q004` (phase 4): what do a transfer context's flag bits 1 and 4 and a priority other than 0 do on the hardware? (E015)
 - `Q011` (phase 6): why does a copy whose background-object tag (transfer word 0) is wrong read one texel, the source's last, for every pixel, and what stores the samples of CR_ISP_MSAA mode 2 in a copy? (E028, E272)
-- `Q028` (phase 9): what does a faulting job leave wedged when the kernel does not recover, and which reset steps does the recovery need? (E024)
+- `Q028` (phase 9): which of the recovery's reset steps does a later job need after a fault, now that a held fault is seen to stop the EDM's command processing? (E024, E317, E318, E319)
 
 ## usse
 
@@ -123,6 +125,6 @@
 
 - `Q015` (phase 6): what makes VDM state word 1 with bits 11:9 = 7 hang some runs of a job and complete others? (E060, E185, E299, E300)
 - `Q036` (phase 10): what do the high half of the DPM STATUS2 registers (0x0710, 0x071c) and the DPM's other status words (0x0748 bit by bit, CR_DPM_3D_PAGE_COUNTS' high half) hold, now that STATUS1 and STATUS2's low half are the free list's tail, head and page before the tail? (E160, E184, E256, E309, E310, E312)
-- `Q037` (phase 10): does a hung job's saved render memory show how far the TA got, when the control hung in its pixel task leaves its object in one run and none in the next? (E186)
+- `Q037` (phase 10): why did one of E186's runs find no object after the job hung in its pixel task, when a dump taken before recovery always holds it? (E186, E318)
 - `Q042` (phase 11): what do bits 27:24 of the index list's first trailing word (VDM_INDEX2) do, when its low bits move the list's first index and 0x0f000000 drops two of five triangles? (E188, E300, E307, E308)
 - `Q047` (phase 11): what do VDM_STATE1 bit 8, bits 11:9 and bits 15:13 select for a state task, when on the one-triangle job bit 8 changes nothing, bits 11:9 at 0 stop the triangle before tiling and bits 15:13 at 0, 5 or 6 hang it? (E060, E185, E186, E187, E299)

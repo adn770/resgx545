@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# render hold hang: 0 probes (written by tools/usse-asm/render_words.py).
+# Q037, Q028: hung jobs' render memory saved while recovery is held
+needs = [
+    "render", "render_param", "render_tadata", "hold_recovery", "reset", "regs", "kreg",
+    "miscinfo",
+]
+name = "render-hold-hang"
+script = "hold-hang.sh"
+stage = ["vdm/state1"]

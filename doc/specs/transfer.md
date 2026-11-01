@@ -192,7 +192,12 @@ status values are written, the client CCB's read offset has advanced by the size
 context's count is 0, for renders and dummies alike (E018, E019). **[infer]** One transfer
 renders at a time (E015).
 
-Evidence: E013, E015, E018, E021.
+Nothing completes while the EDM is stopped by a fault the kernel has not recovered: a fill
+submitted while a render's fault is held never starts, its target untouched, and the EDM answers
+no kernel command; the fill stays queued and runs after the reset, where it faults if its client
+has gone and its memory with it (E317, one run; one such job).
+
+Evidence: E013, E015, E018, E021, E317.
 
 ## 4. Transfers on the hardware
 
@@ -324,7 +329,10 @@ Evidence: E011, E012, E017.
 ## 6. Open questions
 
 - Q003: the faulting transfer of E021 brought no interrupt to the host (whose enable mask is
-  `0x4000`, SW_EVENT only), and recovering without a reload is phase 9's.
+  `0x4000`, SW_EVENT only), and neither do render faults held without recovery (E317, E319, one
+  run each); which event a fault raises, and which requester each fault bit of `BIF_INT_STAT`
+  names (bit 5 for E021's write, bit 3 and bit 10 for the render's), are open. A debugfs reset
+  (halt, the firmware's buffers rebuilt, boot in place) recovers without a reload of the module.
 - Q004: context flag bits 1 and 4 and priorities other than 0 are not run on the hardware.
 - Q007: where the copy's buffers lie, which T2 bits 12 and 14 read.
 - Q008: the rounding at the luma key's low cut.

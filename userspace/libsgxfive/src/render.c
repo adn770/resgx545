@@ -289,8 +289,11 @@ static uint32_t ndc(int32_t px16, uint32_t size)
 /*
  * n = 4 macrotiles across and down from 640 x 480 pixels on, else 2;
  * a macrotile spans the 32 x 16-pixel tiles over n, rounded up to a multiple
- * of 4; its size in 4-tile blocks in 31:24, the second and third boundaries
- * in tiles in 19:12 and 11:0 (both the size when n = 2); TE_MTILE1 bit 31 for
+ * of 4. TE_MTILE1's fields are 29:22, 19:12 and 7:0, TE_MTILE2's 30:22,
+ * 20:12 and 8:0 (the bits that take a write, E247): the first holds the
+ * macrotile's size in tiles (written as its 4-tile blocks << 24, the same
+ * bits for a multiple of 4), the second and third the second and third
+ * boundaries in tiles (both the size when n = 2); TE_MTILE1 bit 31 for
  * n = 4; TE_MTILE 16 per 4 x 4-tile block of a macrotile.
  */
 static uint32_t mtile(uint32_t m, uint32_t n)

@@ -152,12 +152,14 @@ sits, the reading, and the evidence records it rests on.
 
 - `G0232` `FRAG_FLAGS.BIT10` (render flags bit10 (0x400)): count this render in its RT data set: at
   the render's completion the EDM adds one to the executed count of the set render details word 54
-  points at; without it the render is drawn and the set's cleanup never completes; set by the client
-  on the scene's last kick [infer]. Evidence: E051, E052, E164, E166.
+  points at; without it the render is drawn and adds nothing, so the set's cleanup completes only if
+  the host's pending count leaves the render out too (the kernel's does since it counts each kick);
+  set by the client on the scene's last kick [infer]. Evidence: E051, E052, E164, E166, E314, E315.
 - `G0233` `FRAG_FLAGS.BIT2` (render flags bit2 (0x4)): Bit 2 of the render flags word: when each job
   ends with its render, set or clear it changed no image; after the render it keeps TA3DCtl dword
-  20, the DPM slot's RT data, as NO_DEALLOCATE does; what a later job does with that is not shown.
-  Evidence: E051, E052, E053.
+  20, the DPM slot's RT data, as NO_DEALLOCATE does; a later render with it clear clears the word,
+  and a new context at the same addresses renders exactly and clears it; a context at another
+  address is not tried. Evidence: E051, E052, E053, E316.
 
 ## structs: GEOM_FLAGS
 
@@ -274,9 +276,10 @@ sits, the reading, and the evidence records it rests on.
 - `G0732` `ta3d_ctl.kick_marks` (TA3D_CTL+0x0d8): kick marks: bit 0 set by the TA kick and the
   TA-finished handler, bit 1 by the 3D kick; what reads them is not shown [infer]. Evidence: E156,
   E158, E163.
-- `G1076` `ta3d_ctl.render_context_count` (TA3D_CTL+0x0c4): TA3DCtl dword 49: one more for each
-  render context, whatever its renders, from the firmware's boot; whether a context's first kick or
-  its cleanup adds it is not shown [infer].
+- `G1076` `ta3d_ctl.render_context_count` (TA3D_CTL+0x0c4): TA3DCtl dword 49: a per-context count or
+  index from the firmware's boot, modulo 15 (0 to 0xe, then 0 again): a context's first kick
+  advances it by one, whatever its renders, before the kick's PB load; what bounds it at 15 is not
+  known [infer]. Evidence: E314, E316, E319.
 - `G0735` `ta3d_ctl.saved_ta_global_list` (TA3D_CTL+0x084): CR_DPM_TA_GLOBAL_LIST as the
   out-of-memory path saves it before it grows the TA's global list; the global kind of out-of-memory
   writes it back [infer]. Evidence: E160.

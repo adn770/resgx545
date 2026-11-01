@@ -225,6 +225,7 @@ def test_rt_data_words_by_record():
 
 def test_rt_data_set_words_and_its_embedded_rt_data():
     s = "hw_rt_data_set"
+    assert dword(s, "pending_count_dev_vaddr") == 0               # E315
     assert dword(s, "executed_count") == 1                        # E156, E166
     assert dword(s, "num_out_of_mem_signals") == 3                # E160
     assert dword(s, "num_spm_renders") == 4

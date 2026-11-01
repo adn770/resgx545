@@ -3,7 +3,7 @@ id = "Q005"
 question = "should the kernel ask the firmware for its identity on every boot, so DEV_QUERY reports it without the debug option?"
 unit = "edm"
 phase = 6
-evidence = ["E017", "E022"]
+evidence = ["E017", "E022", "E321"]
 terms = ["misc_info", "misc_info_features"]
 +++
 
@@ -18,13 +18,14 @@ version only after that file has been read in a debug build. Until then
 The values the kernel reads from the firmware file (`ddk_build`, `build_options`) are
 reported in every build, but only once the firmware is loaded, which happens at the first
 context creation (`sgxfive_ioctl_create_ctx` loads the firmware; no other ioctl does). Before
-that, the firmware query gives zeros. The query on a fresh boot of the laptop
-shows this, in a debug build with the file not yet read (E022, which sees only that the
-firmware is running by the first completed job):
-`ddk 0.0.0 build 0 options 0x0`, `fw_state 0`.
+that, the firmware query gives zeros (E022).
 
-Open: whether to send GETMISCINFO after every boot. On the laptop the answer came within
-173 to 175 µs of a boot, and within 2 to 2127 µs on repeated reads, all upper bounds (E017).
-Sending it would let a build without the debug option report the identity and catch a
-firmware built for another core. Meanwhile userspace takes the firmware file's values and
-treats `SW_VALID` as optional.
+What a query at boot costs is measured (E321, one run): after each of three resets (about
+0.27 s each) the EDM answers within 169 to 175 µs, first query and second alike, and a firmware
+that has stopped serving commands leaves the query to the kernel's wait, 500 ms (sgxfive_debug.c;
+about 0.65 s from the shell). Sending it
+would let a build without the debug option report the identity and catch a firmware built for
+another core, for well under a millisecond per boot.
+
+Open: the decision. Meanwhile userspace takes the firmware file's values and treats `SW_VALID`
+as optional.

@@ -1,26 +1,23 @@
 +++
 id = "Q037"
-question = "does a hung job's saved render memory show how far the TA got, when the control hung in its pixel task leaves its object in one run and none in the next?"
+question = "why did one of E186's runs find no object after the job hung in its pixel task, when a dump taken before recovery always holds it?"
 unit = "vdm"
 phase = 10
-evidence = ["E186"]
+evidence = ["E186", "E318"]
 terms = ["VDM_STATE1.BITS15_13", "Parameter Buffer (PB)"]
 +++
 
-After the jobs with VDM state word 1 bits 15:13 at 0, 5 or 6 hang, and after the three-index lines
-job, the saved parameter buffer holds no object and no control-stream page, in both runs (E186).
-That would read as the TA stopping before it writes the object, if the control showed that a
-job hung later keeps its object. In the first run it does: the job hung in its pixel task leaves
-the object and the stream page. In the follow-up run it leaves neither, like the other hangs. The
-lines job also differs between runs: its TA data is all zero in the first and equal to the drawn
-triangle's in the second.
+The main part is answered (E318, one run; the pixel-task control held twice and not held once).
+Saved before the kernel recovers (debugfs `hold_recovery`), the job hung in its pixel task holds
+its object in the parameter buffer and the region headers and control streams a finished TA
+leaves, byte for byte those of the one-kick triangle (E288), in both held runs. Saved after the
+recovery, the same job holds the same object and an all-zero TA data: the recovery zeroes the TA
+data and keeps the parameter buffer's pages. The job with VDM state word 1 bits 15:13 = 0 holds
+neither object nor control stream before any recovery, so its TA stopped before writing them.
 
-So what a hung job leaves in the saved memory is not reproducible, and a missing object cannot be
-read as never written. The save happens after the kernel reports the hang; what the recovery does
-to the memory in between is not read.
+What is open: E186's run in which the pixel-task control left no object is not reproduced here;
+whether it came from the kernel of that run (its recovery, its page table) or from the hang
+itself is not shown.
 
-To settle it: run the pixel-hang control ten times, alternating with the bits 15:13 cases and on
-fresh boots, saving the parameter buffer and TA data each time, to see how often the object is
-there and what decides it. Then save the render memory before the kernel recovers (a debug switch
-that holds recovery until the dump is done), so that the dump is the hung job's and not the state
-after recovery.
+To settle it: the pixel-task control held on fresh boots, a few times, with the parameter
+buffer's page table read before the job.

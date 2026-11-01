@@ -15,7 +15,8 @@
  *   isolation                     VM separation, faults, lost contexts, read-only maps
  *   tri   [--width W --height H -n N] [--max-width W --max-height H] [--fault]
  *         [--scratch N [--scratch-fill V]] [--kpoke-render N:SPEC]... [--move N:DX,DY]...
- *         [--geometry N]... [--keep-going] [--dump-render DIR] [JOB OPTIONS]
+ *         [--geometry N]... [--keep-going] [--dump-render DIR] [--words DIR]
+ *         [--wait-ms MS] [JOB OPTIONS]
  *                                 the first triangle on a render context, N times,
  *                                 every pixel against the CPU reference; the context
  *                                 takes targets up to --max-width x --max-height
@@ -33,7 +34,13 @@
  *                                 --keep-going reports every render, checked or not
  *                                 --dump-render DIR: after the renders, the kernel's
  *                                 debugfs render_param and render_tadata copied to
- *                                 DIR/tri.param.bin and DIR/tri.tadata.bin
+ *                                 DIR/tri.param.bin and DIR/tri.tadata.bin;
+ *                                 --words DIR: the kernel's debugfs render_words and
+ *                                 buf09 (the TA/3D control block) copied to
+ *                                 DIR/words.N.txt and DIR/ta3d.N.bin before the first
+ *                                 render (N = 0) and after each render N, failed or
+ *                                 not, while the context lives; --wait-ms MS: how long
+ *                                 each render is waited for (default 5000)
  *   contexts [--width W --height H -n N]  N render contexts for targets up to W x H
  *                                 in one VM, and the memory they take (MemFree and
  *                                 LowFree of /proc/meminfo, before and after)
@@ -177,6 +184,8 @@ struct opts {
 	unsigned int nkpr;
 	uint32_t geometry;		/* tri: renders submitted geometry only (bit n - 1) */
 	const char *dump_dir;		/* tri: the scene's memory there after the renders */
+	const char *words_dir;		/* tri: the context's words there around each render */
+	uint32_t wait_ms;		/* tri: each render's wait; 0: WAIT_NS */
 	bool keep_going;		/* tri: go on after a render that does not check */
 	/* tri: render n's triangle moved by dx, dy pixels (--move) */
 	struct { uint32_t n; int32_t dx, dy; } moves[KPR_MAX];
@@ -209,7 +218,8 @@ static int usage(void)
 		"                 tri [--width W --height H -n N --max-width W --max-height H\n"
 		"                      --fault --scratch N --scratch-fill V\n"
 		"                      --kpoke-render N:SPEC --move N:DX,DY --geometry N\n"
-		"                      --keep-going --dump-render DIR],\n"
+		"                      --keep-going --dump-render DIR --words DIR\n"
+		"                      --wait-ms MS],\n"
 		"                 fill, copy and tri also take [--poke SPACE:INDEX=VALUE]...\n"
 		"                      [--poke SPACE:INDEX^=VALUE]... [--pixels] [--regs LO-HI],\n"
 		"                 contexts [--width W --height H -n N],\n"
@@ -1815,6 +1825,65 @@ static int kpoke_write(const char *spec)
 }
 
 /*
+ * One debugfs file (SGXFIVE_DEBUGFS overrides the directory, for the tests) copied to
+ * path; its size in *size. Returns 0 or -errno.
+ */
+static int debugfs_copy(const char *name, const char *path, long long *size)
+{
+	const char *dbg = getenv("SGXFIVE_DEBUGFS");
+	static char buf[65536];
+	char src[4096];
+	ssize_t n;
+	int in, out, ret = 0;
+
+	*size = 0;
+	snprintf(src, sizeof(src), "%s/%s", dbg ? dbg : "/sys/kernel/debug/dri/0/sgx", name);
+	in = open(src, O_RDONLY);
+	if (in < 0)
+		return -errno;
+	out = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+	if (out < 0) {
+		ret = -errno;
+		close(in);
+		return ret;
+	}
+	while ((n = read(in, buf, sizeof(buf))) > 0) {
+		if (write(out, buf, (size_t)n) != n) {
+			ret = errno ? -errno : -EIO;
+			break;
+		}
+		*size += n;
+	}
+	if (n < 0 && !ret)
+		ret = -errno;
+	close(out);
+	close(in);
+	return ret;
+}
+
+/*
+ * --words DIR: the newest render context's words (debugfs render_words: its HW context,
+ * RT data set, PB descriptor, kernel words and render details, a kpoke line each) and the
+ * EDM's TA/3D control block (debugfs buf09) to DIR/words.N.txt and DIR/ta3d.N.bin.
+ */
+static int save_words(const char *dir, uint32_t n)
+{
+	char words[4096], ta3d[4096];
+	long long ws, ts;
+	int ret;
+
+	snprintf(words, sizeof(words), "%s/words.%u.txt", dir, n);
+	snprintf(ta3d, sizeof(ta3d), "%s/ta3d.%u.bin", dir, n);
+	ret = debugfs_copy("render_words", words, &ws);
+	if (!ret)
+		ret = debugfs_copy("buf09", ta3d, &ts);
+	if (!ret)
+		printf("tri: words %u to %s (%lld bytes), %s (%lld bytes)\n", n, words, ws, ta3d,
+		       ts);
+	return ret;
+}
+
+/*
  * The first triangle from userspace: a render
  * context, our programs and scene in the VM, n renders with alternating
  * colours, every pixel against the CPU reference and the guard area intact.
@@ -1832,6 +1901,7 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 	int bad = 0;
 	const uint32_t max_w = o->max_width == UINT32_MAX ? o->width : o->max_width;
 	const uint32_t max_h = o->max_height == UINT32_MAX ? o->height : o->max_height;
+	const long long wait_ns = o->wait_ms ? o->wait_ms * 1000000LL : WAIT_NS;
 	struct scratch sc = { 0 };
 	int ret;
 
@@ -1865,6 +1935,14 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		}
 	}
 	sgxfive_render_set_hook(r, sgxfive_poke_hook, &pokes);	/* none: no change */
+	if (o->words_dir) {
+		ret = save_words(o->words_dir, 0);
+		if (ret) {
+			fail("--words", ret);
+			printf("tri: --words: %s\n", strerror(-ret));
+			goto out;
+		}
+	}
 	for (uint32_t i = 0; i < o->n; i++) {
 		struct sgxfive_tri_counts n;
 		bool geometry;
@@ -1901,8 +1979,17 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		ret = sgxfive_render_tri_flags(r, &p, 0, 0,
 					       geometry ? DRM_SGXFIVE_SUBMIT_JOB_RENDER_GEOMETRY : 0);
 		if (!ret)
-			wait_err = sgxfive_render_wait(r, WAIT_NS);
+			wait_err = sgxfive_render_wait(r, wait_ns);
 		print_job(ret, wait_err);
+		if (o->words_dir) {
+			int wr = save_words(o->words_dir, i + 1);
+
+			if (wr) {
+				fail("--words", wr);
+				ret = wr;
+				break;
+			}
+		}
 		if (geometry && !ret && !wait_err) {
 			printf("tri %ux%u #%u: geometry only, the scene left open\n", p.width,
 			       p.height, i + 1);
@@ -2139,7 +2226,20 @@ static int parse_opts(int argc, char **argv, struct opts *o)
 			continue;
 		}
 		if (!strcmp(argv[i], "--dump-render") && i + 1 < argc) {
-			o->dump_dir = argv[++i];
+			o->dump_dir = argv[i + 1];	/* i += 2 below */
+			continue;
+		}
+		if (!strcmp(argv[i], "--words") && i + 1 < argc) {
+			o->words_dir = argv[i + 1];
+			continue;
+		}
+		if (!strcmp(argv[i], "--wait-ms") && i + 1 < argc) {
+			if (!parse_u32(argv[i + 1], &o->wait_ms) || !o->wait_ms ||
+			    o->wait_ms > 600000) {
+				fprintf(stderr, "sgxfive-test: bad --wait-ms %s (1 to 600000)\n",
+					argv[i + 1]);
+				return -1;
+			}
 			continue;
 		}
 		if (!strcmp(argv[i], "--move") && i + 1 < argc) {
@@ -2536,6 +2636,10 @@ int main(int argc, char **argv)
 	}
 	if (o.dump_dir && strcmp(cmd, "tri")) {
 		fprintf(stderr, "sgxfive-test: --dump-render is for tri (probe takes its own)\n");
+		return 2;
+	}
+	if ((o.words_dir || o.wait_ms) && strcmp(cmd, "tri")) {
+		fprintf(stderr, "sgxfive-test: --words and --wait-ms are for tri\n");
 		return 2;
 	}
 	if (o.geometry && (strcmp(cmd, "tri") || o.geometry >> (o.n - 1))) {

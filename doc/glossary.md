@@ -1981,11 +1981,15 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   `hw_rt_data.rt_status_dev_vaddr` (ours, resgx545).
 - `hw_rt_data.state` G0553 (HWRTDATA+0x034): RT data state (0x10 = no render outstanding). From
   `state` (3, linux-imagination).
+- `hw_rt_data_set.pending_count_dev_vaddr` G1092 (HWRTDATASET+0x000): the address of the host's
+  pending count: the set's cleanup completes only when the word it points at equals the set's
+  executed_count. From `hw_rt_data_set.pending_count_dev_vaddr` (ours, resgx545).
 - `hw_rt_data_set.executed_count` G0554 (HWRTDATASET+0x004): count the EDM increments at each TA end
   that is not the scene's last and at each scene render with FRAG_FLAGS.BIT10, in the set render
-  details word 54 points at, a count there following that word on the hardware; that the set's
-  cleanup completes only when it equals the host's pending count fits every outcome, the counts not
-  read [infer]. From `hw_rt_data_set.executed_count` (ours, resgx545).
+  details word 54 points at, a count there following that word on the hardware; the set's cleanup
+  completes only when it equals the word the set's word 0 points at
+  (hw_rt_data_set.pending_count_dev_vaddr), the host's pending count. From
+  `hw_rt_data_set.executed_count` (ours, resgx545).
 - `hw_rt_data_set.num_out_of_mem_signals` G0555 (HWRTDATASET+0x00c): TA out-of-memory count. From
   `ui32NumOutOfMemSignals` (1, sgx545-ce).
 - `hw_rt_data_set.num_spm_renders` G0556 (HWRTDATASET+0x010): partial renders run. From
@@ -2131,9 +2135,10 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `ta3d_ctl.signature_3d_dev_vaddr` G0737 (TA3D_CTL+0x0b4): the 3D signature buffer's address,
   copied into sa45 [infer]. From `ta3d_ctl.signature_3d_dev_vaddr` (ours, resgx545).
 - `ta3d_ctl.render_context_count` G1076 (TA3D_CTL+0x0c4): inferred reading (unconfirmed): TA3DCtl
-  dword 49: one more for each render context, whatever its renders, from the firmware's boot;
-  whether a context's first kick or its cleanup adds it is not shown [infer]. From
-  `ta3d_ctl.render_context_count` (ours, resgx545).
+  dword 49: a per-context count or index from the firmware's boot, modulo 15 (0 to 0xe, then 0
+  again): a context's first kick advances it by one, whatever its renders, before the kick's PB
+  load; what bounds it at 15 is not known [infer]. From `ta3d_ctl.render_context_count` (ours,
+  resgx545).
 - `ta3d_ctl.pid_ta` G0605 (TA3D_CTL+0x0c8): the PID of the TA's render context, recorded by the TA
   kick [infer]. From `ta3d_ctl.pid_ta` (ours, resgx545).
 - `ta3d_ctl.pid_3d` G0604 (TA3D_CTL+0x0cc): the PID of the 3D's render context, recorded by the 3D
@@ -2416,13 +2421,15 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   [infer]. From `FRAG_FLAGS.ABORT` (ours, resgx545).
 - `FRAG_FLAGS.BIT10` G0232 (render flags bit10 (0x400)): inferred reading (unconfirmed): count this
   render in its RT data set: at the render's completion the EDM adds one to the executed count of
-  the set render details word 54 points at; without it the render is drawn and the set's cleanup
-  never completes; set by the client on the scene's last kick [infer]. From `FRAG_FLAGS.BIT10`
-  (ours, resgx545).
+  the set render details word 54 points at; without it the render is drawn and adds nothing, so the
+  set's cleanup completes only if the host's pending count leaves the render out too (the kernel's
+  does since it counts each kick); set by the client on the scene's last kick [infer]. From
+  `FRAG_FLAGS.BIT10` (ours, resgx545).
 - `FRAG_FLAGS.BIT2` G0233 (render flags bit2 (0x4)): inferred reading (unconfirmed): Bit 2 of the
   render flags word: when each job ends with its render, set or clear it changed no image; after the
-  render it keeps TA3DCtl dword 20, the DPM slot's RT data, as NO_DEALLOCATE does; what a later job
-  does with that is not shown. From `FRAG_FLAGS.BIT2` (ours, resgx545).
+  render it keeps TA3DCtl dword 20, the DPM slot's RT data, as NO_DEALLOCATE does; a later render
+  with it clear clears the word, and a new context at the same addresses renders exactly and clears
+  it; a context at another address is not tried. From `FRAG_FLAGS.BIT2` (ours, resgx545).
 - `FRAG_FLAGS.NO_DEALLOCATE` G0236 (render flags bit3 (0x8)): do not deallocate the scene's pages
   during the render (CR_DPM_3D_DEALLOCATE = 0); the scene continues [infer]. From
   `FRAG_FLAGS.NO_DEALLOCATE` (ours, resgx545).

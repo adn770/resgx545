@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# edm miscinfo reset: 0 probes (written by tools/usse-asm/render_words.py).
+# Q005: GETMISCINFO's answer after a reset, timed
+needs = ["render", "reset", "miscinfo"]
+name = "edm-miscinfo-reset"
+script = "miscinfo-reset.sh"

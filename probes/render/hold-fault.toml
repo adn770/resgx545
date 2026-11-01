@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# render hold fault: 0 probes (written by tools/usse-asm/render_words.py).
+# Q028, Q003: a faulting render held, the state read, another context's job
+needs = [
+    "render", "render_words", "render_param", "render_tadata", "hold_recovery", "reset", "regs",
+    "kreg", "miscinfo", "status",
+]
+name = "render-hold-fault"
+script = "hold-fault.sh"

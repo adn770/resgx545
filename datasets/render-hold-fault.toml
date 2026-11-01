@@ -1,0 +1,10 @@
+title = "script table render/hold-fault"
+repo = "data"
+paths = ["render/hold-fault/"]
+method = "campaign runner on the laptop target (tools/campaign); the scripts ran ~/sgxfive-test-1110 (sha256 54cee43b72b0f044353522a00d83ae981802a6c47daa38d4a1f1ddb6eec06806, the output's tool line), not the default tool whose hash env.toml's tool_sha256 holds (6a69f2e1...), and the committed env.toml stays as the runner wrote it"
+date = "2026-11-03"
+files = 4
+size = 90107
+sha256 = "df6af6fd0ee198af33b912c5f143826f5e5a962cb318a37a64349af9910652ce"
+recipe = "probes/render/hold-fault.toml"
+needs = ["render", "render_words", "render_param", "render_tadata", "hold_recovery", "reset", "regs", "kreg", "miscinfo", "status"]

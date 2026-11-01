@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# render pending kw: 0 probes (written by tools/usse-asm/render_words.py).
+# Q029: the pending count poked one off, and the set's pointer to it moved
+needs = ["render", "kpoke", "render_words", "render_cleanup", "buf09"]
+name = "render-pending-kw"
+script = "pending-kw.sh"

@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# render pending counts: 0 probes (written by tools/usse-asm/render_words.py).
+# Q029: the pending and executed counts of one to four kicks, read while the context lives
+needs = ["render", "kpoke", "render_words", "render_cleanup", "buf09"]
+name = "render-pending-counts"
+script = "pending-counts.sh"
