@@ -1,0 +1,15 @@
+[[term]]
+id = "G0378"
+name = "CR_DPM_REG_074C"
+status = "inferred"
+
+[[term.source]]
+term = "CR_DPM_REG_074C"
+kind = "register"
+sgx545 = "0x074c"
+meaning = "the enable (bit 8) and setup of a DPM structure that follows the TA data (a second list, as a partial-render or context-switch arrangement would need), off in every client. Measured: TA command word; 0 in captures [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E159"
+licence = "MIT"
+evidence = "written by the EDM's TA kick from the TA command in structure order (RE); [HW] E030, E071, E072, E056: an address into the job's scratch in six forms writes nothing; 0x700 (bit 8) faults; [infer] E206, an analogy of ours (no citation record): an address with an enable bit (AGX 'lsb to enable' registers), refuted; [HW] E203: bit 8 with each of the other bits tried faults at 0x20006011 (0x20006013 once, bit 8 alone, the run's first case, so value and run order are not separated), the page past the context's 0x6000 bytes of RT data: a DPM structure beyond the TA data, not an address; [infer] the reading is ours (E206)"

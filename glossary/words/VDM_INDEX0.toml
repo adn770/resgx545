@@ -1,0 +1,31 @@
+[[term]]
+id = "G0496"
+name = "VDM_INDEX0.PRIMITIVE_TOPOLOGY"
+status = "named"
+
+[[term.source]]
+term = "primitive_topology"
+kind = "field"
+sgx545 = "index-list header [29:26]"
+meaning = "primitive type of the index list"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0317"
+licence = "MIT"
+evidence = "same function (0 tri, 1 line, 2 point, 3 strip, 4 fan); encodings differ"
+
+[[term]]
+id = "G0497"
+name = "VDM_INDEX0.WORDS_PRESENT"
+status = "named"
+
+[[term.source]]
+term = "VDM_INDEX0.WORDS_PRESENT"
+kind = "flag"
+sgx545 = "index-list header bits 22/23"
+meaning = "the index list's two trailing words are present (bit 22 and bit 23, one word each, read in order after the index base) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E188"
+licence = "MIT"
+evidence = "never varied, so the presence reading is not shown; Rogue index_addr_present is a name only; [HW] E060: clearing either faults the job; Rogue indirect_addr/split_count_present); [HW] E188: the second trailing word acts on the indices; AGX's index-list present bits 22/23 name the same shape (another lineage, context only); [infer] the rest of its reading rests on records still to come"

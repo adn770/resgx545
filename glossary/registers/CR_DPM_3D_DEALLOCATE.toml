@@ -1,0 +1,15 @@
+[[term]]
+id = "G0366"
+name = "CR_DPM_3D_DEALLOCATE"
+status = "named"
+
+[[term.source]]
+term = "PSB_CR_DPM_3D_DEALLOCATE"
+kind = "register"
+sgx545 = "0x063c"
+meaning = "start DPM 3D page deallocation"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0254"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"

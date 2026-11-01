@@ -1,0 +1,10 @@
+title = "script table isp/background-layers"
+repo = "data"
+paths = ["isp/background-layers/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 4
+size = 25006
+sha256 = "971076d993a816c4300f721dd61fb27e111d8594f32101c7ee90b6172ed7e162"
+recipe = "probes/isp/background-layers.toml"
+needs = ["render"]

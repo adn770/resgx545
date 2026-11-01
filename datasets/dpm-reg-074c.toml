@@ -1,0 +1,10 @@
+title = "script table dpm/reg-074c"
+repo = "data"
+paths = ["dpm/reg-074c/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 4
+size = 32647
+sha256 = "95b5cd9b52879d5b5039bd77269285868f1a75d217c0a72a3a8b4c66bc5506dc"
+recipe = "probes/dpm/reg-074c.toml"
+needs = ["render"]

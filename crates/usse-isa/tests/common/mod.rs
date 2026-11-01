@@ -11,6 +11,16 @@ pub fn repo() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
+/// The closed-binary goldens, kept in the private data repository (never published):
+/// $RESGX545_DATA_PRIVATE or a sibling ../resgx545-data-private. None when absent: the
+/// tests that need it skip.
+pub fn corpus() -> Option<PathBuf> {
+    let p = std::env::var_os("RESGX545_DATA_PRIVATE")
+        .map(PathBuf::from)
+        .unwrap_or(repo().join("../resgx545-data-private"));
+    p.is_dir().then_some(p)
+}
+
 /// The C decoder (tools/usse-dis, `make -C tools/usse-dis`): $USSE_DIS_C or
 /// its build output. Without it the cross-checks fail, unless
 /// SKIP_C_CROSSCHECK=1 asks to skip them (None).

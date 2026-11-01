@@ -1,4 +1,52 @@
 [[term]]
+id = "G0500"
+name = "VDM_STATE1.BIT12"
+status = "named"
+
+[[term.source]]
+term = "VDM_STATE1.BIT12"
+kind = "bitfield"
+sgx545 = "VDM_STATE1 bit 12"
+meaning = "set: the TA writes no object for the state's primitives and leaves the regions empty, as with bits 11:9 at 0 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E191"
+licence = "MIT"
+evidence = "[HW] E191: render dumps of the TA's output"
+
+[[term]]
+id = "G0501"
+name = "VDM_STATE1.BIT18"
+status = "unset"
+
+[[term.source]]
+term = "VDM_STATE1.BIT18"
+kind = "bitfield"
+sgx545 = "VDM_STATE1 bit 18"
+meaning = "set: the job hangs; what it does is not established [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E191"
+licence = "MIT"
+evidence = "[HW] E191: render dumps of the TA's output"
+
+[[term]]
+id = "G0502"
+name = "VDM_STATE1.BIT25"
+status = "unset"
+
+[[term.source]]
+term = "VDM_STATE1.BIT25"
+kind = "bitfield"
+sgx545 = "VDM_STATE1 bit 25"
+meaning = "clearing it changes neither the TA's output nor the image of one triangle; what it does is not established [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E191"
+licence = "MIT"
+evidence = "[HW] E191: render dumps of the TA's output"
+
+[[term]]
 id = "G0291"
 name = "VDM_STATE1.BIT8"
 status = "inferred"
@@ -7,12 +55,12 @@ status = "inferred"
 term = "VDM_STATE1.BIT8"
 kind = "flag"
 sgx545 = "VDM_STATE1 bit 8"
-meaning = "marks the constant or no-op state blocks. Measured: set on the captured state blocks whose PDS program our current term a constant block or starts a no-op USE task, clear on the MTE-state and vertex blocks [infer]"
+meaning = "marks the constant or no-op state blocks. Measured: set on the captured state blocks whose PDS program loads a constant block or starts a no-op USE task, clear on the MTE-state and vertex blocks [infer]"
 tier = "ours"
 source = "resgx545"
-citation = "E060"
+citation = "E060, E187"
 licence = "MIT"
-evidence = "never varied by us; [HW] E060: set on the triangle's state word, nothing changes"
+evidence = "never varied by us; [HW] E060: set on the triangle's state word, nothing changes; [HW] E187: set, the TA's output is the same word for word; [infer] the rest of its reading rests on records still to come"
 
 [[term]]
 id = "G0292"

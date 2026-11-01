@@ -1,0 +1,15 @@
+[[term]]
+id = "G0417"
+name = "CR_HWPERF_PULSE"
+status = "named"
+
+[[term.source]]
+term = "CR_HWPERF_REG_0E80"
+kind = "register"
+sgx545 = "0x0e80"
+meaning = "HWPerf word the EDM pulses: 1 then 0 on consecutive instructions right after it writes CR_HWPERF_CTRL = 0x1ff, in the general event path; no other access; the SETHWPERFSTATUS handler reaches it through the same routine (E150); what it does is not measured [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E152"
+licence = "MIT"
+evidence = "[RE] complete EDM dataflow: the only two writes, 0x1 then 0x0, at 0x1ee/0x1ef in routine 0x1c4-0x599, after CR_HWPERF_CTRL; [RE] E150: the SETHWPERFSTATUS handler pulses it when bit 0 of its data is set"

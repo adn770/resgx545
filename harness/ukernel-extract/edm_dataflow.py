@@ -59,7 +59,7 @@ USSE_DIS = ROOT / "tools" / "usse-dis" / "usse-dis"
 FW_MAGIC = b"SGX545FW"     # the .fw container's first word (tools/sgx_fw), not an image
 LABELS = (HERE / "sgx545_labels.r2", HERE / "sgx545_ukernel.r2")
 DATA = pathlib.Path(os.environ.get("RESGX545_DATA") or ROOT.parent / "resgx545-data")
-TSV = DATA / "firmware" / "edm-dataflow" / "edm_dataflow.tsv"
+TSV = DATA / "firmware" / "edm-dataflow-3d" / "edm_dataflow.tsv"
 DOC = ROOT / "doc" / "specs" / "edm_dataflow.md"
 
 IMM = edmtrace.IMM
@@ -75,13 +75,26 @@ SA_SEEDS = {0: "TA3D_CTL", 1: "HOST_CTL", 2: "CCB_CTL", 22: "KCCB", 43: "HWPERF_
 
 # Pointer words -> the structure they point at, where a record establishes the word: TA3DCtl's
 # kernel CCB and HWPerf buffer words (E002), the transfer context's client CCB and its control
-# block (doc/specs/transfer.md §2.2: E018, E021) and its queue links (E015). Every other
-# pointer word is typed by what the firmware stores in it (see analyze()).
+# block (doc/specs/transfer.md §2.2: E018, E021) and its queue links (E015); the render
+# context's client CCB and its control (E161), its PB descriptor (E159, E167), its pending and
+# ready render lists (E156, E165) and its TA and 3D queue links (E157, E165); the RT data's
+# render details (E159); the TA command's PB descriptor (E156), render details (E159),
+# destination sync list (E161, E164) and RT data (E158, E161); the PB descriptor's first block
+# (E200, E201). Every other pointer word is typed by what the firmware stores in it (see
+# analyze()).
 GLOSSARY_POINTERS = {
     ("TA3D_CTL", 0x058): "KCCB", ("TA3D_CTL", 0x0ac): "HWPERF_CB",
     ("HWTRANSFERCONTEXT", 0x00c): "CCB_TQ", ("HWTRANSFERCONTEXT", 0x010): "CCB_CTL",
     ("HWTRANSFERCONTEXT", 0x0ac): "HWTRANSFERCONTEXT",
     ("HWTRANSFERCONTEXT", 0x0b0): "HWTRANSFERCONTEXT",
+    ("HWRENDERCONTEXT", 0x00c): "CCB_TA", ("HWRENDERCONTEXT", 0x010): "CCB_CTL",
+    ("HWRENDERCONTEXT", 0x018): "HWPBDESC",
+    **{("HWRENDERCONTEXT", o): "HWRENDERDETAILS" for o in (0x020, 0x024, 0x028, 0x02c)},
+    **{("HWRENDERCONTEXT", o): "HWRENDERCONTEXT" for o in (0x030, 0x034, 0x038, 0x03c)},
+    ("HWRTDATA", 0x004): "HWRENDERDETAILS",
+    ("CMDTA", 0x024): "HWPBDESC", ("CMDTA", 0x038): "HWRENDERDETAILS",
+    ("CMDTA", 0x03c): "HWDEVICE_SYNC_LIST", ("CMDTA", 0x044): "HWRTDATA",
+    ("HWPBDESC", 0x038): "PB_BLOCK",
 }
 # A base of an array plus a non-constant index is an element of it.
 ARRAYS = {"KCCB": "COMMAND", "CCB_TA": "CMDTA", "CCB_TQ": "TRANSFERCMD"}
@@ -913,7 +926,7 @@ def render(rows: list[dict], glossary: edmtrace.Glossary | None = None) -> str:
     out = ["<!-- SPDX-" "License-Identifier: MIT -->",
            "<!-- SPDX-FileCopyrightText: 2026 Josep Torra -->",
            "# SGX545 EDM dataflow: every structure word and register", "",
-           "*Generated from `firmware/edm-dataflow/edm_dataflow.tsv` (resgx545-data) by",
+           "*Generated from `firmware/edm-dataflow-3d/edm_dataflow.tsv` (resgx545-data) by",
            "`harness/ukernel-extract/edm_dataflow.py`; do not edit.*", ""]
     out += _para(
         "A complete forward dataflow analysis of the EDM microkernel (the image is "
@@ -936,7 +949,7 @@ def render(rows: list[dict], glossary: edmtrace.Glossary | None = None) -> str:
         "\"branches\" gives the condition that takes the branch, its target and, for a short "
         "forward skip, what the other path runs. `?` is a value the analysis could not "
         "follow; such accesses are counted in §6, not guessed.")
-    out += _para(f"Evidence: {EVIDENCE} (the dataflow record; dataset firmware-edm-dataflow).")
+    out += _para(f"Evidence: {EVIDENCE} (the dataflow record; dataset firmware-edm-dataflow-3d).")
     out += ["## 1. Coverage", ""]
     unres = Counter(r["use"] for r in rows if r["kind"] == "unresolved")
     out += [f"- instructions: {meta.get('insns')}, all analysed ({meta.get('reached')} "
@@ -952,7 +965,9 @@ def render(rows: list[dict], glossary: edmtrace.Glossary | None = None) -> str:
     out += ["## 2. Pointer typing", ""]
     out += _para(
         "Given: a pointer word a record establishes (E002, E015, `doc/specs/transfer.md` "
-        "§2.2), and the pointer words of kick3d.py's kernel-side layouts; the list repeats the "
+        "§2.2; E156-E161, E164, E165, E167, E200, E201 for the render context, the TA "
+        "command, the RT data and the PB descriptor), and the pointer words of kick3d.py's "
+        "kernel-side layouts; the list repeats the "
         "inferred structure words, which each later round takes as given. Inferred: a slot the "
         "firmware itself only ever fills with pointers to one structure.")
     typing = [r for r in rows if r["kind"] == "typing"]

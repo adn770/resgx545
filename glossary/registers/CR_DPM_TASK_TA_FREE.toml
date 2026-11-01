@@ -1,0 +1,15 @@
+[[term]]
+id = "G0386"
+name = "CR_DPM_TASK_TA_FREE"
+status = "named"
+
+[[term.source]]
+term = "PSB_CR_DPM_TASK_TA_FREE"
+kind = "register"
+sgx545 = "0x0684"
+meaning = "DPM task: load the TA free list"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0267"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"

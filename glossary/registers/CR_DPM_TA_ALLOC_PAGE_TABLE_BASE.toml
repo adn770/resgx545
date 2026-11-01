@@ -1,0 +1,15 @@
+[[term]]
+id = "G0389"
+name = "CR_DPM_TA_ALLOC_PAGE_TABLE_BASE"
+status = "named"
+
+[[term.source]]
+term = "PSB_CR_DPM_TA_ALLOC_PAGE_TABLE_BASE"
+kind = "register"
+sgx545 = "0x0618"
+meaning = "base of the DPM TA allocation page table"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0270"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"

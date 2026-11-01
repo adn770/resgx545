@@ -1,0 +1,26 @@
+[[term]]
+id = "G0557"
+name = "macro tile"
+status = "named"
+
+[[term.source]]
+term = "macro tile"
+kind = "concept"
+sgx545 = "-"
+meaning = "group of tiles sharing parameter memory"
+tier = "4"
+source = "patent-US7978199"
+citation = "C0334"
+licence = "patent"
+evidence = "OCR text"
+
+[[term.source]]
+term = "macrotile_array"
+kind = "concept"
+sgx545 = "-"
+meaning = "Rogue firmware array of macro tiles (analogue)"
+tier = "3"
+source = "linux-imagination"
+citation = "C0335"
+licence = "GPL-2.0-only OR MIT"
+evidence = "same concept"

@@ -1,0 +1,15 @@
+[[term]]
+id = "G0441"
+name = "CR_TA_REG_02B4"
+status = "inferred"
+
+[[term.source]]
+term = "CR_TA_REG_02B4"
+kind = "register"
+sgx545 = "0x02b4"
+meaning = "TA context status: reads 0xff after any job, a valid or done mask of the stored state. Measured: TA command word; 0 in captures [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E159"
+licence = "MIT"
+evidence = "written by the EDM's TA kick from the TA command in structure order (RE); [HW] E030, E071, E072, E056: an address into the job's scratch in six forms writes nothing and changes no pixel; [infer] E183, an analogy of ours (no citation record): context store/resume state, 0 when a TA is never interrupted (Rogue VDM/TA_CONTEXT_*; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; [HW] E182: 0x02b4 implements reads 0xff after any job; at ~0 a culled or off-screen triangle stays unwritten; [infer] the reading is ours (E183)"

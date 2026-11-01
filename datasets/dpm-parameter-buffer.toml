@@ -1,0 +1,10 @@
+title = "sweep table dpm/parameter-buffer"
+repo = "data"
+paths = ["dpm/parameter-buffer/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 6
+size = 75607186
+sha256 = "c68fece46ff15aa6eaa20709a21f25368e2d2d7a182f2671f54a2398aba0b830"
+recipe = "probes/dpm/parameter-buffer.toml"
+needs = ["render", "render_pb_pages"]

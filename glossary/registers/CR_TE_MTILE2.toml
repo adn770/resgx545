@@ -1,0 +1,15 @@
+[[term]]
+id = "G0449"
+name = "CR_TE_MTILE2"
+status = "named"
+
+[[term.source]]
+term = "configuration registers defining the macro-tile boundaries"
+kind = "register"
+sgx545 = "0x020c"
+meaning = "macro-tile boundaries (four or sixteen macro-tiles)"
+tier = "4"
+source = "patent-US8669987"
+citation = "C0300"
+licence = "patent"
+evidence = "OCR text"

@@ -1,0 +1,8 @@
+title = "Lenovo K900 GPL kernel, Clover Trail+ SGX544MP2, DDK 1.11"
+tier = "1"
+kind = "tree"
+licences = ["GPL-2.0 OR MIT"]
+root = "linux/modules/intel_media/graphics/sgx/ in the upstream repository at pin"
+upstream = "https://github.com/xxx-man/android_kernel_lenovo_redhookbay"
+pin = "41a61d5ffcbee9e185a2aeeb980e69de9274adf6"
+locator = "path:line relative to the upstream repository root at pin"

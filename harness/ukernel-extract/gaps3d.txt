@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+#
+# Differential 3D captures aimed at the render-details registers no earlier capture changed
+# (the depth bias, multisample, ZLS, colour-space and filter registers). Each line exercises the GL feature that should reach one group:
+# polygon offset (depth bias), multisampled render to texture (multisample control, sample
+# positions), a depth buffer a later render must reload (ZLS). diff3d.py against base/fbo.
+base
+polyoff_f1       polyoffset=1,0
+polyoff_u1       polyoffset=0,1
+polyoff_f2u4     polyoffset=2,4
+polyoff_neg      polyoffset=-1,-1
+polyoff_depth    depth=less polyoffset=1,1
+depth_flush      depth=less draws=2 flush
+depth_frames     depth=less frames=2 clearonce
+fbo              fbo=64x64
+fbo_ms2          fbo=64x64 fbosamples=2
+fbo_ms4          fbo=64x64 fbosamples=4
+fbo_depth        fbo=64x64 fbodepth depth=less
+fbo_depth_flush  fbo=64x64 fbodepth depth=less draws=2 flush
+fbo_depth_frames fbo=64x64 fbodepth depth=less frames=2 clearonce
+fbo_ms4_depth    fbo=64x64 fbosamples=4 fbodepth depth=less

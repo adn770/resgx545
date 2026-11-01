@@ -1,0 +1,186 @@
+[[term]]
+id = "G0527"
+name = "hw_render_context.hw_pb_desc_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "sHWPBDescDevVAddr"
+kind = "field"
+sgx545 = "HWRENDERCONTEXT+0x018"
+meaning = "PB descriptor of the context"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0329"
+licence = "GPL-2.0"
+evidence = "same name"
+
+[[term]]
+id = "G0528"
+name = "hw_render_context.pending_renders_head"
+status = "named"
+
+[[term.source]]
+term = "hw_render_context.pending_renders_head"
+kind = "field"
+sgx545 = "HWRENDERCONTEXT+0x020"
+meaning = "first render details waiting for their scene's TA to finish (pending list) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E156"
+licence = "MIT"
+evidence = "[RE] the TA end of a first kick appends the render details here; the scene's last TA end moves them to the ready list (E156); EDM-owned, the client leaves it 0"
+
+[[term]]
+id = "G0529"
+name = "hw_render_context.pending_renders_tail"
+status = "named"
+
+[[term.source]]
+term = "hw_render_context.pending_renders_tail"
+kind = "field"
+sgx545 = "HWRENDERCONTEXT+0x024"
+meaning = "last render details of the pending list [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E156"
+licence = "MIT"
+evidence = "[RE] the TA end of a first kick appends the render details here; the scene's last TA end moves them to the ready list (E156); EDM-owned, the client leaves it 0"
+
+[[term]]
+id = "G0530"
+name = "hw_render_context.priority"
+status = "named"
+
+[[term.source]]
+term = "priority"
+kind = "field"
+sgx545 = "HWRENDERCONTEXT+0x004"
+meaning = "scheduling priority"
+tier = "3"
+source = "linux-imagination"
+citation = "C0157"
+licence = "GPL-2.0 OR MIT"
+evidence = "rogue_fwif_fwcommoncontext"
+
+[[term.source]]
+term = "ui32OffsetOfPriorityField"
+kind = "field"
+sgx545 = "HWRENDERCONTEXT+0x004"
+meaning = "scheduling priority"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0158"
+licence = "GPL-2.0"
+evidence = "SET_RENDER_CONTEXT_PRIORITY writes ui32Priority here"
+
+[[term]]
+id = "G0531"
+name = "hw_render_context.ready_renders_head"
+status = "named"
+
+[[term.source]]
+term = "hw_render_context.ready_renders_head"
+kind = "field"
+sgx545 = "HWRENDERCONTEXT+0x028"
+meaning = "first render details ready for the 3D (ready list) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E156"
+licence = "MIT"
+evidence = "[RE] the scene's last TA end queues the render details here and the 3D pick takes the first of them (E156, E165); EDM-owned, the client leaves it 0"
+
+[[term]]
+id = "G0532"
+name = "hw_render_context.ready_renders_tail"
+status = "named"
+
+[[term.source]]
+term = "hw_render_context.ready_renders_tail"
+kind = "field"
+sgx545 = "HWRENDERCONTEXT+0x02c"
+meaning = "last render details of the ready list [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E156"
+licence = "MIT"
+evidence = "[RE] the scene's last TA end queues the render details here and the 3D pick takes the first of them (E156, E165); EDM-owned, the client leaves it 0"
+
+[[term]]
+id = "G0533"
+name = "hw_render_context.run_node_next_3d"
+status = "named"
+
+[[term.source]]
+term = "hw_render_context.run_node_next_3d"
+kind = "field"
+sgx545 = "HWRENDERCONTEXT+0x03c"
+meaning = "next context in the EDM's 3D queue [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E156"
+licence = "MIT"
+evidence = "[RE] E165: the EDM's 3D queue links, context dwords 14 and 15; same naming as the transfer context's run_node_prev/next (Rogue run_node)"
+
+[[term]]
+id = "G0534"
+name = "hw_render_context.run_node_next_ta"
+status = "named"
+
+[[term.source]]
+term = "hw_render_context.run_node_next_ta"
+kind = "field"
+sgx545 = "HWRENDERCONTEXT+0x034"
+meaning = "next context in the EDM's TA queue [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E157"
+licence = "MIT"
+evidence = "[RE] E157: the EDM's TA queue links, context dwords 12 and 13; same naming as the transfer context's run_node_prev/next (Rogue run_node)"
+
+[[term]]
+id = "G0535"
+name = "hw_render_context.run_node_prev_3d"
+status = "named"
+
+[[term.source]]
+term = "hw_render_context.run_node_prev_3d"
+kind = "field"
+sgx545 = "HWRENDERCONTEXT+0x038"
+meaning = "previous context in the EDM's 3D queue [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E156"
+licence = "MIT"
+evidence = "[RE] E165: the EDM's 3D queue links, context dwords 14 and 15; same naming as the transfer context's run_node_prev/next (Rogue run_node)"
+
+[[term]]
+id = "G0536"
+name = "hw_render_context.run_node_prev_ta"
+status = "named"
+
+[[term.source]]
+term = "hw_render_context.run_node_prev_ta"
+kind = "field"
+sgx545 = "HWRENDERCONTEXT+0x030"
+meaning = "previous context in the EDM's TA queue [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E157"
+licence = "MIT"
+evidence = "[RE] E157: the EDM's TA queue links, context dwords 12 and 13; same naming as the transfer context's run_node_prev/next (Rogue run_node)"
+
+[[term]]
+id = "G0537"
+name = "hw_render_context.submitted_commands"
+status = "named"
+
+[[term.source]]
+term = "submitted_commands"
+kind = "field"
+sgx545 = "HWRENDERCONTEXT+0x014"
+meaning = "TA commands queued in the context's CCB: the CCB handler increments it, the TA end decrements it"
+tier = "3"
+source = "linux-imagination"
+citation = "C0159"
+licence = "GPL-2.0 OR MIT"
+evidence = "same function as the Rogue cleanup counter (analogue); [RE] the CCB handler increments it, the TA end decrements it (E157)"

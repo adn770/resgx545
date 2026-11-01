@@ -1,0 +1,516 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ta regions: 0 sweeps, 37 probes.
+needs = ["render", "render_param", "render_tadata"]
+
+[[probe]]
+name = "ta-regions-scene-two"
+question = "the TA's regions and streams for two copies of our triangle"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 6
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-scene-five"
+question = "the TA's regions and streams for five copies of our triangle"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 15
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-scene-128"
+question = "the TA's regions and streams for our triangle on 128 x 128"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [128, 128]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-scene-64x32"
+question = "the TA's regions and streams for our triangle on 64 x 32"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 32]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-scene-32x64"
+question = "the TA's regions and streams for our triangle on 32 x 64"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [32, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-scene-256x256"
+question = "the TA's regions and streams for our triangle on 256 x 256"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [256, 256]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-scene-192x64"
+question = "the TA's regions and streams for our triangle on 192 x 64"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [192, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-scene-64x192"
+question = "the TA's regions and streams for our triangle on 64 x 192"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 192]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-vp-xscale96"
+question = "the regions and streams on 128 x 128 with the viewport x scale 96 (64 x 1.5)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [128, 128]
+blk = { 7 = 0x42c00000 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-sweep-x00"
+question = "the regions and streams on 128 x 128, the triangle 0 pixels on in x"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [128, 128]
+blk = { 6 = 0x42800000 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-sweep-x02"
+question = "the regions and streams on 128 x 128, the triangle 2 pixels on in x"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [128, 128]
+blk = { 6 = 0x42840000 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-sweep-x04"
+question = "the regions and streams on 128 x 128, the triangle 4 pixels on in x"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [128, 128]
+blk = { 6 = 0x42880000 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-sweep-x06"
+question = "the regions and streams on 128 x 128, the triangle 6 pixels on in x"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [128, 128]
+blk = { 6 = 0x428c0000 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-sweep-x08"
+question = "the regions and streams on 128 x 128, the triangle 8 pixels on in x"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [128, 128]
+blk = { 6 = 0x42900000 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-sweep-x10"
+question = "the regions and streams on 128 x 128, the triangle 10 pixels on in x"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [128, 128]
+blk = { 6 = 0x42940000 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-sweep-x12"
+question = "the regions and streams on 128 x 128, the triangle 12 pixels on in x"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [128, 128]
+blk = { 6 = 0x42980000 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-sweep-x14"
+question = "the regions and streams on 128 x 128, the triangle 14 pixels on in x"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [128, 128]
+blk = { 6 = 0x429c0000 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-sweep-x16"
+question = "the regions and streams on 128 x 128, the triangle 16 pixels on in x"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [128, 128]
+blk = { 6 = 0x42a00000 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-sweep-x18"
+question = "the regions and streams on 128 x 128, the triangle 18 pixels on in x"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [128, 128]
+blk = { 6 = 0x42a40000 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-sweep-x20"
+question = "the regions and streams on 128 x 128, the triangle 20 pixels on in x"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [128, 128]
+blk = { 6 = 0x42a80000 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-sweep-x22"
+question = "the regions and streams on 128 x 128, the triangle 22 pixels on in x"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [128, 128]
+blk = { 6 = 0x42ac0000 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-sweep-x24"
+question = "the regions and streams on 128 x 128, the triangle 24 pixels on in x"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [128, 128]
+blk = { 6 = 0x42b00000 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-sweep-x26"
+question = "the regions and streams on 128 x 128, the triangle 26 pixels on in x"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [128, 128]
+blk = { 6 = 0x42b40000 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-sweep-x28"
+question = "the regions and streams on 128 x 128, the triangle 28 pixels on in x"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [128, 128]
+blk = { 6 = 0x42b80000 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-sweep-x30"
+question = "the regions and streams on 128 x 128, the triangle 30 pixels on in x"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [128, 128]
+blk = { 6 = 0x42bc0000 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-sweep-x32"
+question = "the regions and streams on 128 x 128, the triangle 32 pixels on in x"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [128, 128]
+blk = { 6 = 0x42c00000 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-sweep-y00"
+question = "the regions and streams on 128 x 128, the triangle 0 pixels on in y"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [128, 128]
+blk = { 8 = 0x42800000 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-sweep-y02"
+question = "the regions and streams on 128 x 128, the triangle 2 pixels on in y"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [128, 128]
+blk = { 8 = 0x42840000 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-sweep-y04"
+question = "the regions and streams on 128 x 128, the triangle 4 pixels on in y"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [128, 128]
+blk = { 8 = 0x42880000 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-sweep-y06"
+question = "the regions and streams on 128 x 128, the triangle 6 pixels on in y"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [128, 128]
+blk = { 8 = 0x428c0000 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-sweep-y08"
+question = "the regions and streams on 128 x 128, the triangle 8 pixels on in y"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [128, 128]
+blk = { 8 = 0x42900000 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-sweep-y10"
+question = "the regions and streams on 128 x 128, the triangle 10 pixels on in y"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [128, 128]
+blk = { 8 = 0x42940000 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-sweep-y12"
+question = "the regions and streams on 128 x 128, the triangle 12 pixels on in y"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [128, 128]
+blk = { 8 = 0x42980000 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-sweep-y14"
+question = "the regions and streams on 128 x 128, the triangle 14 pixels on in y"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [128, 128]
+blk = { 8 = 0x429c0000 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-sweep-y16"
+question = "the regions and streams on 128 x 128, the triangle 16 pixels on in y"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [128, 128]
+blk = { 8 = 0x42a00000 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-scene-three"
+question = "the TA's object for three copies of our triangle"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+vertices = 9
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-regions-scene-four"
+question = "the TA's object for four copies of our triangle"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+vertices = 12
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true

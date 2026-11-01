@@ -1,0 +1,106 @@
+[[term]]
+id = "G0483"
+name = "PB_OBJ.ISP_WORDS"
+status = "named"
+
+[[term.source]]
+term = "PB_OBJ.ISP_WORDS"
+kind = "field"
+sgx545 = "TA object, the two dwords after the TSP data"
+meaning = "ISP words 0 and 1 as the state block gives them [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E178"
+licence = "MIT"
+evidence = "[HW] E178: every pass type, depth test, line width, polygon offset, visibility test and stencil reference tried lands unchanged"
+
+[[term]]
+id = "G0484"
+name = "PB_OBJ.LINE_WIDTHS"
+status = "named"
+
+[[term.source]]
+term = "PB_OBJ.LINE_WIDTHS"
+kind = "field"
+sgx545 = "TA object, the dword after the primitive list"
+meaning = "ISP1.LINE_WIDTH in both bytes (bits 15:8 and 7:0) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E178"
+licence = "MIT"
+evidence = "[HW] E178: 0x1010, 0x2020, 0x3535 and 0 for widths 0x10, 0x20, 0x35 and 0"
+
+[[term]]
+id = "G0485"
+name = "PB_OBJ.PDS_WORDS"
+status = "named"
+
+[[term.source]]
+term = "PB_OBJ.PDS_WORDS"
+kind = "field"
+sgx545 = "TA object dwords 0-2"
+meaning = "the state block's pixel-program words as given: secondary pointer, size word, primary pointer [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E178"
+licence = "MIT"
+evidence = "[HW] E178: 0x04000004, 0x00030001, 0x04000000 for ours; 0x00030004, 0x0c000080 with a 12-dword primary at 0x80"
+
+[[term]]
+id = "G0486"
+name = "PB_OBJ.PRIM_LIST"
+status = "named"
+
+[[term.source]]
+term = "PB_OBJ.PRIM_LIST"
+kind = "field"
+sgx545 = "TA object, after ISP word 1: 16 bits per primitive, two to a dword"
+meaning = "the object's primitives: per primitive three 5-bit vertex numbers (bits 4:0, 9:5, 14:10), the object's vertices numbered from 16; the last entry repeated to fill an odd count [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E181"
+licence = "MIT"
+evidence = "[HW] E181: 0x4a30 0x4a30 for one triangle, 4a30 5693 / 62f6 6f59 for four, 4210 4631 / 4a52 4a52 for three points; E178, E181 saw the one-triangle value under every state; 0x4630 = (16, 17, 17) for a line, its second vertex repeated"
+
+[[term]]
+id = "G0487"
+name = "PB_OBJ.RHW"
+status = "inferred"
+
+[[term.source]]
+term = "PB_OBJ.RHW"
+kind = "field"
+sgx545 = "TA object TSP data, first dword of each vertex"
+meaning = "1/w of the vertex, before its outputs, which are stored undivided [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E176"
+licence = "MIT"
+evidence = "[HW] E176: 0.8, 0.3636, 0.6154 for w = 1.25, 2.75, 1.625; 1.0 at w 1"
+
+[[term.source]]
+term = "PB_OBJ.RHW"
+kind = "field"
+sgx545 = "TA object vertex data"
+meaning = "A per-vertex dword of the TA's object that holds the vertex's w term; with MTECTL bit 6 it reads 1.0 at w 1 and 2.0 at w 2; these runs do not read it at w 2 without the bit (without it the word holds 1/w, E176)"
+tier = "ours"
+source = "resgx545"
+citation = "E196"
+licence = "MIT"
+evidence = "[HW] E196: the object's three w dwords read 1.0 at w 1 and 2.0 at w 2 with MTECTL bit 6 set; [infer] the name is ours"
+
+[[term]]
+id = "G0488"
+name = "PB_OBJ.SET_MASKS"
+status = "named"
+
+[[term.source]]
+term = "PB_OBJ.SET_MASKS"
+kind = "field"
+sgx545 = "TA object, the four dwords after the format word"
+meaning = "bit i for coordinate set i (from 1): sets stored at half precision, sets of one component, sets with z, sets with w [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E176"
+licence = "MIT"
+evidence = "[HW] E176: 2, 0, 2, 2 for one four-dword set at half precision; 6 for two half-precision sets; by coordsize 1-5 on one set"

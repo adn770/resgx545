@@ -1,0 +1,15 @@
+[[term]]
+id = "G0371"
+name = "CR_DPM_ABORT_STATUS_MTILE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_DPM_ABORT_STATUS_MTILE"
+kind = "register"
+sgx545 = "0x0720"
+meaning = "DPM macrotile abort status"
+tier = "1"
+source = "intel-ctp-santos10"
+citation = "C0257"
+licence = "GPL-2.0 OR MIT"
+evidence = "DDK debug-dump name table (RESTRICTED_REGISTERS block); no offset in any GPL source, offset 0x0720 is our binding via name DPM_ABORT_STATUS_MTILE"

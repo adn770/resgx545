@@ -12,7 +12,23 @@ tier = "3"
 source = "mesa-csbgen"
 citation = "C0193"
 licence = "MIT"
-evidence = "same function (S.3)"
+evidence = "same function"
+
+[[term]]
+id = "G0471"
+name = "ISP0.OBJ_TYPE"
+status = "named"
+
+[[term.source]]
+term = "objtype"
+kind = "field"
+sgx545 = "isp0 [17:15]"
+meaning = "object type"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0309"
+licence = "MIT"
+evidence = "same function; Rogue TRIANGLE 0, LINE 1, SPRITE_UV 3 match SGX 0/1/3"
 
 [[term]]
 id = "G0245"
@@ -28,4 +44,4 @@ tier = "3"
 source = "mesa-csbgen"
 citation = "C0194"
 licence = "MIT"
-evidence = "same function; OPAQUE 0 and TRANSLUCENT 1 match S.3; [HW] E065: in a triangle, 2, 4 and 5 render as 0 and make CR_ISP_VISIBILITY_COUNT7 count, 3 and 7 remove the triangle, 1 and 6 change nothing; [HW] E068: with five overlapping copies, pass 1 (translucent) less resolves as opaque less, pass 4 (punch-through) less as depth always; [HW] E077: in pass 1 the pixel shader finds the pixel's current colour in o0 (the destination it blends with), in pass 0 it does not; no feedback kills the pixel and the object behind shows"
+evidence = "same function; OPAQUE 0 and TRANSLUCENT 1 are SGX's 0 and 1; [HW] E065: in a triangle, 1, 2, 4, 5 and 6 render as 0 and 3 and 7 remove the triangle; the visibility counters stay at 0 under every pass type, ISP1's test-enable bit being clear; [HW] E068: with five overlapping copies, pass 1 (translucent) less resolves as opaque less, pass 4 (punch-through) less as depth always; [HW] E077: in pass 1 the pixel shader finds the pixel's current colour in o0 (the destination it blends with), in pass 0 it does not; [HW] E217: pass 4 objects draw when their pt phase ends in atst8 with fb, a passing alpha test and control word 0xe001; nfb or no feedback keeps no pixel, and a failing alpha test shows the copy behind; [HW] E244: pass 5 draws as pass 4 with depthf feedback, src0 the pixel's depth"

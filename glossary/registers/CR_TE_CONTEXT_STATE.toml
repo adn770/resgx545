@@ -1,0 +1,15 @@
+[[term]]
+id = "G0444"
+name = "CR_TE_CONTEXT_STATE"
+status = "named"
+
+[[term.source]]
+term = "CR_TE_CONTEXT_STATE"
+kind = "register"
+sgx545 = "0x0274"
+meaning = "tiling-engine state saved into the render details at a TA end and restored at the next kick of the scene [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158"
+licence = "MIT"
+evidence = "EDM reads it at the TA end into the render details and writes it back at the next TA kick (RE)"

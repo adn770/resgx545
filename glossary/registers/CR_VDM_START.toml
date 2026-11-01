@@ -1,0 +1,15 @@
+[[term]]
+id = "G0459"
+name = "CR_VDM_START"
+status = "named"
+
+[[term.source]]
+term = "PSB_CR_VDM_START"
+kind = "register"
+sgx545 = "0x0200"
+meaning = "starts the VDM (TA) pass"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0307"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"

@@ -35,3 +35,30 @@ source = "linux-imagination"
 citation = "C0084"
 licence = "GPL-2.0-only OR MIT"
 evidence = "same name as our SOFT_RESET; Rogue offset 0x0100; analogy, function to be confirmed"
+
+[[term]]
+id = "G0439"
+name = "CR_SOFT_RESET.TA_RESET"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_SOFT_RESET_TA_RESET"
+kind = "bitfield"
+sgx545 = "0x0080[2]"
+meaning = "hold the TA in reset"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0112"
+licence = "GPL-2.0"
+evidence = "mask 0x00000004"
+
+[[term.source]]
+term = "_PSB_CS_RESET_TA_RESET"
+kind = "flag"
+sgx545 = "0x0080[2]"
+meaning = "hold the TA in reset"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0297"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs"

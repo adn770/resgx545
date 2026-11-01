@@ -1,0 +1,15 @@
+[[term]]
+id = "G0437"
+name = "CR_SETTLE_POLL0"
+status = "named"
+
+[[term.source]]
+term = "CR_REG_0308"
+kind = "register"
+sgx545 = "0x0308"
+meaning = "first of two words the EDM reads twice and compares, looping until they agree, in the wait after CR_DMS_CTRL |= 0x7 that does the same with the PPP, TE and ISP signature registers; its function inside the core is not shown [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E153"
+licence = "MIT"
+evidence = "[RE] complete EDM dataflow: read 2x in routine 0x15bc-0x1664, compared, branch back until stable; no write"

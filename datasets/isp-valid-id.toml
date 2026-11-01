@@ -1,0 +1,10 @@
+title = "probe table isp/valid-id"
+repo = "data"
+paths = ["isp/valid-id/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 554
+size = 7414529
+sha256 = "e8a909353ee5b88292c4481cac61e42ad8dde4d9759cb55476b5c195979fb043"
+recipe = "probes/isp/valid-id.toml"
+needs = ["render"]

@@ -1,0 +1,15 @@
+[[term]]
+id = "G0505"
+name = "ZLSThreshold"
+status = "named"
+
+[[term.source]]
+term = "ZLSThreshold"
+kind = "concept"
+sgx545 = "CR_DPM_ZLS_PAGE_THRESHOLD"
+meaning = "config key (libsrv_um): ZLS page threshold of the parameter buffer"
+tier = "2"
+source = "cdv-libsrv_um"
+citation = "C0320"
+licence = "Intel-binary (ours)"
+evidence = "-"

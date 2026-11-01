@@ -1,0 +1,10 @@
+title = "script table edm/context-flags"
+repo = "data"
+paths = ["edm/context-flags/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 4
+size = 5298
+sha256 = "28aca6edaf7874214a0355dca0aad6f825b493c763f1354cddf88c1069f552bf"
+recipe = "probes/edm/context-flags.toml"
+needs = ["render", "render_ctx_flags", "render_cleanup"]

@@ -1,0 +1,15 @@
+[[term]]
+id = "G0431"
+name = "CR_PPP_SIGNATURE"
+status = "named"
+
+[[term.source]]
+term = "ROGUE_CR_PPP_SIGNATURE"
+kind = "register"
+sgx545 = "0x026c"
+meaning = "running signature of the primitive pipeline's output; the EDM waits for it to stop changing (Rogue analogue)"
+tier = "3"
+source = "linux-imagination"
+citation = "C0296"
+licence = "GPL-2.0-only OR MIT"
+evidence = "same function: the EDM's drain wait reads it twice 1000 polls apart until it is stable (RE); offset in the MTE block whose Rogue successor is the PPP (cf. CR_PPP_SCREEN)"

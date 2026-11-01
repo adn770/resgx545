@@ -12,7 +12,7 @@ tier = "ours"
 source = "resgx545"
 citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x4c08)"
 licence = "MIT"
-evidence = "[HW] E054: bit 8 and ~0 fault the render, no other flip changes the triangle"
+evidence = "[RE] the TA kick writes the TA register block in structure order, one fixed store per word; [HW] E054: bit 8 and ~0 fault the render, no other flip changes the triangle; [infer] E206, an analogy of ours (no citation record): carries CR_DPM_REG_074C (an address with an enable bit, refuted); [HW] E203: bit 8 with each of the other bits tried faults at 0x20006011 (0x20006013 once, bit 8 alone, the run's first case, so value and run order are not separated), the page past the context's 0x6000 bytes of RT data: a DPM structure beyond the TA data, not an address; [infer] the reading is ours (E206)"
 
 [[term]]
 id = "G0303"
@@ -31,6 +31,65 @@ licence = "GPL-2.0 OR MIT"
 evidence = "rogue_fwif_cmd_frag.flags; DEPTHBUFFER/STENCILBUFFER/GET_VIS_RESULTS bits coincide"
 
 [[term]]
+id = "G0506"
+name = "cmd_ta.global_threshold"
+status = "named"
+
+[[term.source]]
+term = "GlobalThreshold"
+kind = "field"
+sgx545 = "CMDTA+0x030"
+meaning = "new global threshold"
+tier = "2"
+source = "cdv-libsrv_um"
+citation = "C0308"
+licence = "Intel-binary (ours)"
+evidence = "string only; likely an app-hint/config key [infer]"
+
+[[term.source]]
+term = "cmd_ta.global_threshold"
+kind = "field"
+sgx545 = "CMDTA+0x030"
+meaning = "new global-list page threshold; copied into the PB descriptor's global threshold word like the others [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E161"
+licence = "MIT"
+evidence = "[RE] E161: the TA pick's threshold update copies it from this position; the name is cdv-libsrv_um's GlobalThreshold"
+
+[[term]]
+id = "G0507"
+name = "cmd_ta.hw_render_details_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "cmd_ta.hw_render_details_dev_vaddr"
+kind = "field"
+sgx545 = "CMDTA+0x038"
+meaning = "render details of the kick; the EDM records it and writes it into the RT data's hw_render_details_dev_vaddr [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E159"
+licence = "MIT"
+evidence = "[RE] E159: the TA kick reads CMDTA dw14 as the render details and records it in the RT data; the render details' structure term + _dev_vaddr"
+
+[[term]]
+id = "G0508"
+name = "cmd_ta.hw_rt_data_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "sHWRTDataDevAddr"
+kind = "field"
+sgx545 = "CMDTA+0x044"
+meaning = "RT data used by this kick"
+tier = "1"
+source = "intel-ctp-k900"
+citation = "C0321"
+licence = "GPL-2.0 OR MIT"
+evidence = "kick-side copy (1.11+)"
+
+[[term]]
 id = "G0304"
 name = "cmd_ta.mte_rhw_clamp"
 status = "named"
@@ -42,9 +101,9 @@ sgx545 = "CMDTA+0x264"
 meaning = "the TA command's word the EDM loads into CR_MTE_RHW_CLAMP (0x0244) [infer]"
 tier = "ours"
 source = "resgx545"
-citation = "E054, E063"
+citation = "E197"
 licence = "MIT"
-evidence = "[HW] E054: no bit, 0 or ~0 of the render command word changes the triangle, whose w is 1; [HW] E063: 0 to the largest single change no image of a triangle crossing w = 0 or reaching far outside the viewport"
+evidence = "[RE] the TA kick writes the TA register block in structure order, one fixed store per word; [HW] E054: no bit, 0 or ~0 of the render command word changes the triangle, whose w is 1; [HW] E194: at 1e-8, 1e-4 or 0 it changes nothing for vertices with w from 1e-3 down to 5e-7 (WCLAMP governs those); [HW] E063: 0 to the largest single change no image of a triangle crossing w = 0 or reaching far outside the viewport; [HW] E197: the stored 1/w of a vertex at or below CR_MTE_RHW_MIN's magnitude becomes this value (0.25 when set to 0.25, 1e-6 as the closed driver writes)"
 
 [[term]]
 id = "G0305"
@@ -58,14 +117,89 @@ sgx545 = "CMDTA+0x260"
 meaning = "the TA command's word the EDM loads into CR_MTE_RHW_MIN (0x0240) [infer]"
 tier = "ours"
 source = "resgx545"
-citation = "E054, E063"
+citation = "E197"
 licence = "MIT"
-evidence = "[HW] E054: no bit, 0 or ~0 of the render command word changes the triangle, whose w is 1; [HW] E063: 0 to the largest single change no image of a triangle crossing w = 0 or reaching far outside the viewport; 1.0 replaced at 1, -1, 2, NaN, kept at 0.5, -0.0)"
+evidence = "[RE] the TA kick writes the TA register block in structure order, one fixed store per word; [HW] E054: no bit, 0 or ~0 of the render command word changes the triangle, whose w is 1; [HW] E194: at 1e-8, 1e-4 or 0 it changes nothing for vertices with w from 1e-3 down to 5e-7 (WCLAMP governs those); [HW] E063: 0 to the largest single change no image of a triangle crossing w = 0 or reaching far outside the viewport; [HW] E197: per vertex, the TA stores 1/w only above the value's magnitude (1/w 0.364 replaced at 0.5, 0.615 too at 0.7, 0.8 kept; 1.0 replaced at 1, -1, 2, NaN, kept at 0.5, -0.0)"
+
+[[term]]
+id = "G0509"
+name = "cmd_ta.num_patches_3d"
+status = "named"
+
+[[term.source]]
+term = "cmd_ta.num_patches_3d"
+kind = "field"
+sgx545 = "CMDTA+0x054"
+meaning = "count of {address, value} pairs in the TA command's patches_3d [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158"
+licence = "MIT"
+evidence = "[RE] the EDM loops this many times over the pairs at CMDTA dw170 (E158)"
+
+[[term]]
+id = "G0510"
+name = "cmd_ta.num_vertex_partitions"
+status = "named"
+
+[[term.source]]
+term = "NumVertexPartitions"
+kind = "field"
+sgx545 = "CMDTA+0x014"
+meaning = "DMS_CTRL vertex partitions, pre-shifted"
+tier = "2"
+source = "cdv-libsrv_um"
+citation = "C0322"
+licence = "Intel-binary (ours)"
+evidence = "string only; likely an app-hint/config key [infer]"
+
+[[term]]
+id = "G0511"
+name = "cmd_ta.patches_3d"
+status = "named"
+
+[[term.source]]
+term = "cmd_ta.patches_3d"
+kind = "field"
+sgx545 = "CMDTA+0x2a8"
+meaning = "{address, value} memory writes the EDM applies at the TA kick, *address = value: patches to the render details (depth/stencil bases, ZLS control) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158"
+licence = "MIT"
+evidence = "[RE] E158: the TA kick's copy step (memory writes, not register writes)"
+
+[[term]]
+id = "G0512"
+name = "cmd_ta.pds_bgnd"
+status = "named"
+
+[[term.source]]
+term = "pds_bgnd"
+kind = "field"
+sgx545 = "CMDTA+0x008"
+meaning = "background object words [3]: dwords 0-2 of the background object, the first a pixel PDS reference; copied to the render details' pds_bgnd at the TA kick"
+tier = "3"
+source = "linux-imagination"
+citation = "C0323"
+licence = "GPL-2.0 OR MIT"
+evidence = "same function as Rogue's three PDS background-object words (analogue); [RE] the EDM writes words 0-1 into the background object at the 3D kick (E162)"
 
 [[term]]
 id = "G0306"
 name = "cmd_ta.reg_0324"
 status = "inferred"
+
+[[term.source]]
+term = "cmd_ta.reg_0324"
+kind = "field"
+sgx545 = "CMDTA+0x288"
+meaning = "as CR_REG_0324's: context store/resume state of an interrupted TA: a state base (16-byte aligned, E182), unused while the TA runs to the end. Measured: value the EDM copies verbatim into CR_REG_0324 (0x0324); 0 in every capture [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x4bd0)"
+licence = "MIT"
+evidence = "[RE] the TA kick writes the TA register block in structure order, one fixed store per word; [HW] E054: no bit, 0 or ~0 changes the triangle; [infer] E183, an analogy of ours (no citation record): context store/resume state, 0 when a TA is never interrupted (Rogue VDM/TA_CONTEXT_*; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; [HW] E182: 0x0324 implements 0xfffffff0 (a 16-byte address); at ~0 a culled or off-screen triangle stays unwritten; [infer] the reading is ours (E183)"
 
 [[term.source]]
 term = "cmd_ta.reg_0324"
@@ -92,7 +226,7 @@ tier = "ours"
 source = "resgx545"
 citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x4be0)"
 licence = "MIT"
-evidence = "[HW] E054: no bit, 0 or ~0 changes the triangle; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; at ~0 a culled or off-screen triangle stays unwritten"
+evidence = "[RE] the TA kick writes the TA register block in structure order, one fixed store per word; [HW] E054: no bit, 0 or ~0 changes the triangle; [infer] E183, an analogy of ours (no citation record): context store/resume state, 0 when a TA is never interrupted (Rogue VDM/TA_CONTEXT_*; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; [HW] E182: 0x0364 implements all 32 bits; at ~0 a culled or off-screen triangle stays unwritten; [infer] the reading is ours (E183)"
 
 [[term]]
 id = "G0308"
@@ -108,7 +242,7 @@ tier = "ours"
 source = "resgx545"
 citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x4bd8)"
 licence = "MIT"
-evidence = "[HW] E054: no bit, 0 or ~0 changes the triangle; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; at ~0 a culled or off-screen triangle stays unwritten"
+evidence = "[RE] the TA kick writes the TA register block in structure order, one fixed store per word; [HW] E054: no bit, 0 or ~0 changes the triangle; [infer] E183, an analogy of ours (no citation record): context store/resume state, 0 when a TA is never interrupted (Rogue VDM/TA_CONTEXT_*; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; [HW] E182: 0x0368 implements bits 14:0; at ~0 a culled or off-screen triangle stays unwritten; [infer] the reading is ours (E183)"
 
 [[term]]
 id = "G0309"
@@ -124,7 +258,7 @@ tier = "ours"
 source = "resgx545"
 citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x4be8)"
 licence = "MIT"
-evidence = "[HW] E054: no bit, 0 or ~0 changes the triangle; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; at ~0 a culled or off-screen triangle stays unwritten"
+evidence = "[RE] the TA kick writes the TA register block in structure order, one fixed store per word; [HW] E054: no bit, 0 or ~0 changes the triangle; [infer] E183, an analogy of ours (no citation record): context store/resume state, 0 when a TA is never interrupted (Rogue VDM/TA_CONTEXT_*; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; [HW] E182: 0x0370 implements all 32 bits; at ~0 a culled or off-screen triangle stays unwritten; [infer] the reading is ours (E183)"
 
 [[term]]
 id = "G0310"
@@ -140,7 +274,23 @@ tier = "ours"
 source = "resgx545"
 citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x4bf0)"
 licence = "MIT"
-evidence = "[HW] E054: no bit, 0 or ~0 changes the triangle; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; at ~0 a culled or off-screen triangle stays unwritten"
+evidence = "[RE] the TA kick writes the TA register block in structure order, one fixed store per word; [HW] E054: no bit, 0 or ~0 changes the triangle; [infer] E183, an analogy of ours (no citation record): context store/resume state, 0 when a TA is never interrupted (Rogue VDM/TA_CONTEXT_*; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; [HW] E182: 0x0374 implements all 32 bits; at ~0 a culled or off-screen triangle stays unwritten; [infer] the reading is ours (E183)"
+
+[[term]]
+id = "G0513"
+name = "cmd_ta.shared"
+status = "named"
+
+[[term.source]]
+term = "ui32CCBOffset"
+kind = "field"
+sgx545 = "CMDTA+0x058"
+meaning = "embedded cmd_ta_shared block; the kick passes its client-CCB offset in ccb_kick.ccb_offset"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0324"
+licence = "GPL-2.0"
+evidence = "SGX_DOKICK passes the CCB offset of this block (= cmd +0x58)"
 
 [[term]]
 id = "G0311"
@@ -156,7 +306,7 @@ tier = "ours"
 source = "resgx545"
 citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x4bb0)"
 licence = "MIT"
-evidence = "[HW] E054: no bit, 0 or ~0 changes the triangle; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; at ~0 a culled or off-screen triangle stays unwritten"
+evidence = "[RE] the TA kick writes the TA register block in structure order, one fixed store per word; [HW] E054: no bit, 0 or ~0 changes the triangle; [infer] E183, an analogy of ours (no citation record): context store/resume state, 0 when a TA is never interrupted (Rogue VDM/TA_CONTEXT_*; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; [HW] E182: 0x02b0 implements bits 31:24; at ~0 a culled or off-screen triangle stays unwritten; [infer] the reading is ours (E183)"
 
 [[term]]
 id = "G0312"
@@ -172,7 +322,7 @@ tier = "ours"
 source = "resgx545"
 citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x4bc8)"
 licence = "MIT"
-evidence = "[HW] E054: no bit, 0 or ~0 changes the triangle; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; at ~0 a culled or off-screen triangle stays unwritten"
+evidence = "[RE] the TA kick writes the TA register block in structure order, one fixed store per word; [HW] E054: no bit, 0 or ~0 changes the triangle; [infer] E183, an analogy of ours (no citation record): context store/resume state, 0 when a TA is never interrupted (Rogue VDM/TA_CONTEXT_*; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; [HW] E182: 0x02b4 implements reads 0xff after any job; at ~0 a culled or off-screen triangle stays unwritten; [infer] the reading is ours (E183)"
 
 [[term]]
 id = "G0313"
@@ -188,7 +338,7 @@ tier = "ours"
 source = "resgx545"
 citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x4bc0)"
 licence = "MIT"
-evidence = "[HW] E054: no bit, 0 or ~0 changes the triangle; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; at ~0 a culled or off-screen triangle stays unwritten"
+evidence = "[RE] the TA kick writes the TA register block in structure order, one fixed store per word; [HW] E054: no bit, 0 or ~0 changes the triangle; [infer] E183, an analogy of ours (no citation record): context store/resume state, 0 when a TA is never interrupted (Rogue VDM/TA_CONTEXT_*; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; [HW] E182: 0x02d0 implements 0xfffffffc (a dword address); at ~0 a culled or off-screen triangle stays unwritten; [infer] the reading is ours (E183)"
 
 [[term]]
 id = "G0314"
@@ -204,7 +354,50 @@ tier = "ours"
 source = "resgx545"
 citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x4bb8)"
 licence = "MIT"
-evidence = "[HW] E054: no bit, 0 or ~0 changes the triangle; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; at ~0 a culled or off-screen triangle stays unwritten"
+evidence = "[RE] the TA kick writes the TA register block in structure order, one fixed store per word; [HW] E054: no bit, 0 or ~0 changes the triangle; [infer] E183, an analogy of ours (no citation record): context store/resume state, 0 when a TA is never interrupted (Rogue VDM/TA_CONTEXT_*; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; [HW] E182: 0x02d4 implements bits 25:0; at ~0 a culled or off-screen triangle stays unwritten; [infer] the reading is ours (E183)"
+
+[[term]]
+id = "G0514"
+name = "cmd_ta.ta_threshold"
+status = "named"
+
+[[term.source]]
+term = "TAThreshold"
+kind = "field"
+sgx545 = "CMDTA+0x028"
+meaning = "new TA threshold"
+tier = "2"
+source = "cdv-libsrv_um"
+citation = "C0316"
+licence = "Intel-binary (ours)"
+evidence = "string only; likely an app-hint/config key [infer]"
+
+[[term.source]]
+term = "cmd_ta.ta_threshold"
+kind = "field"
+sgx545 = "CMDTA+0x028"
+meaning = "new TA page threshold; with GEOM_FLAGS.PB_THRESHOLD_UPDATE the EDM copies it into the PB descriptor's ta_threshold [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E161"
+licence = "MIT"
+evidence = "[RE] E161: the TA pick's threshold update copies CMDTA dw10-13, this word among them; the name is cdv-libsrv_um's TAThreshold"
+
+[[term]]
+id = "G0515"
+name = "cmd_ta.te_aa"
+status = "named"
+
+[[term.source]]
+term = "cmd_ta.te_aa"
+kind = "field"
+sgx545 = "CMDTA+0x238"
+meaning = "value the EDM loads into CR_TE_AA (0x0204): 0x20000000, bits 31 and 30 more with 4x multisampling [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E159"
+licence = "MIT"
+evidence = "[RE] E159; Rogue's te_aa is a name only here; named after the register it loads"
 
 [[term]]
 id = "G0315"
@@ -220,7 +413,7 @@ tier = "ours"
 source = "resgx545"
 citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x4c10)"
 licence = "MIT"
-evidence = "[HW] E054: no bit, 0 or ~0 changes the triangle; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; at ~0 a culled or off-screen triangle stays unwritten"
+evidence = "[RE] the TA kick writes the TA register block in structure order, one fixed store per word; [HW] E054: no bit, 0 or ~0 changes the triangle; [infer] E183, an analogy of ours (no citation record): context store/resume state, 0 when a TA is never interrupted (Rogue VDM/TA_CONTEXT_*; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; [HW] E182: 0x02a8 implements bits 19:12; at ~0 a culled or off-screen triangle stays unwritten; [infer] the reading is ours (E183)"
 
 [[term]]
 id = "G0316"
@@ -252,7 +445,7 @@ tier = "ours"
 source = "resgx545"
 citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x4b88)"
 licence = "MIT"
-evidence = "[HW] E054: no bit, 0 or ~0 changes the triangle; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; at ~0 a culled or off-screen triangle stays unwritten"
+evidence = "[RE] the TA kick writes the TA register block in structure order, one fixed store per word; [HW] E054: no bit, 0 or ~0 changes the triangle; [infer] E183, an analogy of ours (no citation record): context store/resume state, 0 when a TA is never interrupted (Rogue VDM/TA_CONTEXT_*; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; [HW] E182: 0x0a04 implements 0xfffffff0 (a 16-byte address); at ~0 a culled or off-screen triangle stays unwritten; [infer] the reading is ours (E183)"
 
 [[term]]
 id = "G0318"
@@ -268,4 +461,4 @@ tier = "ours"
 source = "resgx545"
 citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x4b90)"
 licence = "MIT"
-evidence = "[HW] E054: no bit, 0 or ~0 changes the triangle; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; at ~0 a culled or off-screen triangle stays unwritten"
+evidence = "[RE] the TA kick writes the TA register block in structure order, one fixed store per word; [HW] E054: no bit, 0 or ~0 changes the triangle; [infer] E183, an analogy of ours (no citation record): context store/resume state, 0 when a TA is never interrupted (Rogue VDM/TA_CONTEXT_*; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; [HW] E182: 0x0aa0 implements all 32 bits; at ~0 a culled or off-screen triangle stays unwritten; [infer] the reading is ours (E183)"

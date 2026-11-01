@@ -1,0 +1,419 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ta objects: 0 sweeps, 28 probes.
+needs = ["render", "render_param", "render_tadata"]
+
+[[probe]]
+name = "ta-objects-fbf-opaque"
+question = "the TA's object for the position only (tri-fbf-opaque)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-objects-tex-fetch"
+question = "the TA's object for one two-component set (tri-tex-fetch)"
+source = "pds_tex.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A"]
+cases = [[0x46012201]]
+labels = ["DOUTI0 0x46012201"]
+dump_render = true
+
+[[probe]]
+name = "ta-objects-csize-1-pa0"
+question = "the TA's object for a four-dword set, coordsize 1 (tri-csize-1-pa0)"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 1 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27000800, 0, 0x1000004]]
+labels = ["one component"]
+dump_render = true
+
+[[probe]]
+name = "ta-objects-csize-2-pa0"
+question = "the TA's object for a four-dword set, coordsize 2 (tri-csize-2-pa0)"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 2 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27000800, 0, 0x1000004]]
+labels = ["one component"]
+dump_render = true
+
+[[probe]]
+name = "ta-objects-csize-3-pa0"
+question = "the TA's object for a four-dword set, coordsize 3 (tri-csize-3-pa0)"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 3 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27000800, 0, 0x1000004]]
+labels = ["one component"]
+dump_render = true
+
+[[probe]]
+name = "ta-objects-csize-4-pa0"
+question = "the TA's object for a four-dword set, coordsize 4 (tri-csize-4-pa0)"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 4 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27000800, 0, 0x1000004]]
+labels = ["one component"]
+dump_render = true
+
+[[probe]]
+name = "ta-objects-csize-5-pa0"
+question = "the TA's object for a four-dword set, coordsize 5 (tri-csize-5-pa0)"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 5 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27000800, 0, 0x1000004]]
+labels = ["one component"]
+dump_render = true
+
+[[probe]]
+name = "ta-objects-csets-12-pa0"
+question = "the TA's object for two sets of two (tri-csets-12-pa0)"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 18 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27800800, 0, 0x1000004]]
+labels = ["source 1, three components"]
+dump_render = true
+
+[[probe]]
+name = "ta-objects-cfmt-05-1-pa0"
+question = "the TA's object for a four-dword set at half precision (tri-cfmt-05-1-pa0)"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coord4p.s" }
+vtx_coords = 4
+blk = { 16 = 5, 17 = 1 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27c00800, 0, 0x1000004]]
+labels = ["source 1, four components"]
+dump_render = true
+
+[[probe]]
+name = "ta-objects-cfmt-12-3-pa0"
+question = "the TA's object for two sets of two at half precision (tri-cfmt-12-3-pa0)"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coord4p.s" }
+vtx_coords = 4
+blk = { 16 = 18, 17 = 3 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27c00800, 0, 0x1000004]]
+labels = ["source 1, four components"]
+dump_render = true
+
+[[probe]]
+name = "ta-objects-color-closed"
+question = "the TA's object for the vertex colour (tri-color-closed)"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_color.s" }
+vtx_coords = 4
+blk = { 13 = 0x83800, 16 = 5 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x21c10000, 0, 0x1000004]]
+labels = ["source 32, 26:25 = 0"]
+dump_render = true
+
+[[probe]]
+name = "ta-objects-persp-bits"
+question = "the TA's object for one set at w = x + 2 (tri-persp-bits)"
+source = "pds_tex_iter.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_persp.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x40000801, 0, 0x2000004]]
+labels = ["base: source 1, the fetch from set 1"]
+dump_render = true
+
+[[probe]]
+name = "ta-objects-isp-always"
+question = "the TA's object with ISP word 0 0x01d00200 (depth always, written (ours))"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+blk = { 1 = 0x1d00200 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-objects-isp-less"
+question = "the TA's object with ISP word 0 0x00400200 (depth less, written)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+blk = { 1 = 0x400200 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-objects-isp-translucent"
+question = "the TA's object with ISP word 0 0x02400200 (translucent, depth less)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+blk = { 1 = 0x2400200 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-objects-isp-translucent-nowrite"
+question = "the TA's object with ISP word 0 0x03d00200 (translucent, always, no depth write)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+blk = { 1 = 0x3d00200 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-objects-isp-punch"
+question = "the TA's object with ISP word 0 0x08400200 (punch-through, depth less)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+blk = { 1 = 0x8400200 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-objects-isp1-polyoffset"
+question = "the TA's object with ISP word 1 with the polygon offset (bit 23)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+blk = { 2 = 0x8010f0 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-objects-isp1-bit12-clear"
+question = "the TA's object with ISP word 1 without bit 12"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+blk = { 2 = 240 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-objects-isp1-visibility"
+question = "the TA's object with ISP word 1 with the visibility test"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+blk = { 2 = 0x10f8 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-objects-isp0-stencilref"
+question = "the TA's object with ISP word 0 with stencil reference 0x55"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+blk = { 1 = 0x1d00255 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-objects-isp1-width20"
+question = "the TA's object with ISP1.LINE_WIDTH 0x20"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+blk = { 2 = 0x20f0 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-objects-isp1-width35"
+question = "the TA's object with ISP1.LINE_WIDTH 0x35"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+blk = { 2 = 0x35f0 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-objects-lines"
+question = "the TA's object for one line (index list type 1, two indices, ISP0 object type 1)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+blk = { 1 = 0x1d08200 }
+vdm = { 2 = 0x84c00002 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-objects-points"
+question = "the TA's object for points (index list type 2, ISP0 object type 3)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+blk = { 1 = 0x1d18200 }
+vdm = { 2 = 0x88c00003 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-objects-wclamp"
+question = "the TA's object with the w clamp at 1e-3"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+blk = { 14 = 0x3a83126f }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-objects-vpz"
+question = "the TA's object with the viewport z offset 0.75, scale 0.25"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+blk = { 10 = 0x3f400000, 11 = 0x3e800000 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true
+
+[[probe]]
+name = "ta-objects-lines2"
+question = "the TA's object for two lines (four indices over the copies' vertices)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+vertices = 6
+blk = { 1 = 0x1d08200 }
+vdm = { 2 = 0x84c00004 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+dump_render = true

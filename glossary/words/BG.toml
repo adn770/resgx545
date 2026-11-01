@@ -1,0 +1,31 @@
+[[term]]
+id = "G0352"
+name = "BG.TSP_DWORDS"
+status = "named"
+
+[[term.source]]
+term = "BG.TSP_DWORDS"
+kind = "field"
+sgx545 = "bg object word after the TSP coordinates (dword 4 with no layer) [15:8]"
+meaning = "the dwords of TSP data each vertex has as iterated (f16 pairs counted unpacked); equal to BG.TSP_STORED_DWORDS without half-precision sets [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E176"
+licence = "MIT"
+evidence = "the closed transfer code writes layers << 9 [RE]; never varied apart from BG.BITS7_0; [HW] E069: every value 0-255 of the byte leaves a one-layer copy unchanged; [HW] E209: a two-layer object (vertex-major coordinates, the tag's TSPDATASIZE 4) copies right with the word at 0x404, 0x202, 0, 0xff, 0xff00, 0xffff, 0x808, 0x101: not read for the background object; [HW] E176: the same word in the TA's own objects in the parameter buffer: 0x101 position only, 0x303 one (u, v) set, 0x505 four dwords, 0x503 four dwords at half precision, 0x202 the packed colour"
+
+[[term]]
+id = "G0353"
+name = "BG.TSP_STORED_DWORDS"
+status = "named"
+
+[[term.source]]
+term = "BG.TSP_STORED_DWORDS"
+kind = "field"
+sgx545 = "bg object word after the TSP coordinates (dword 4 with no layer) [7:0]"
+meaning = "the dwords of TSP data each vertex takes in the object as stored (2 per (u, v) layer in the background object; in the TA's own objects 1/w and the outputs, f16 pairs packed) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E176"
+licence = "MIT"
+evidence = "the closed transfer code writes layers << 1 [RE]; fill 0 and copy 2 both work [HW], never varied apart from BG.BITS15_8; [HW] E069: every value 0-255 of the byte leaves a one-layer copy unchanged; [HW] E209: a two-layer object (vertex-major coordinates, the tag's TSPDATASIZE 4) copies right with the word at 0x404, 0x202, 0, 0xff, 0xff00, 0xffff, 0x808, 0x101: not read for the background object; [HW] E176: the same word in the TA's own objects in the parameter buffer: 0x101 position only, 0x303 one (u, v) set, 0x505 four dwords, 0x503 four dwords at half precision, 0x202 the packed colour"

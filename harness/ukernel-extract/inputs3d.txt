@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+#
+# Uniform values and vertex attribute layouts (tri.c uniform=, uniformi=, uniformm=,
+# attrfmt=, attrnorm, attrsize=, stride=, vbo): where the closed driver puts uniform
+# values (each uni_* run is a shaders3d.txt shader with values set; diff it against that
+# capture, or uni_*_none) and how its vertex PDS programs fetch each attribute layout
+# (diff the attr_* runs against base). capture3d.sh runs it.
+base
+uni_mad_none       vsfile=shaders/common.vert fsfile=shaders/mad.frag
+uni_mad_u0         vsfile=shaders/common.vert fsfile=shaders/mad.frag uniform=u0:1,2,3,4
+uni_mad_u0_u1      vsfile=shaders/common.vert fsfile=shaders/mad.frag uniform=u0:1,2,3,4 uniform=u1:0.5,0.25,0.125,2
+uni_mad_u0_b       vsfile=shaders/common.vert fsfile=shaders/mad.frag uniform=u0:5,6,7,8
+uni_scalar         vsfile=shaders/common.vert fsfile=shaders/scalar_mul.frag uniform=uf:0.75
+uni_int            vsfile=shaders/common.vert fsfile=shaders/int_ops.frag uniformi=ui:7
+uni_mat4           vsfile=shaders/common.vert fsfile=shaders/mat4.frag uniformm=m4:4
+uni_mat3           vsfile=shaders/common.vert fsfile=shaders/mat3.frag uniformm=m3:3
+uni_mat2           vsfile=shaders/common.vert fsfile=shaders/mat2.frag uniformm=m2:2
+uni_vs_mvp         vsfile=shaders/vs_matrix.vert fsfile=shaders/plain.frag uniformm=mvp:4
+uni_vs_u0          vsfile=shaders/vs_ops.vert fsfile=shaders/plain.frag uniform=u0:1,2,3,4
+uni_loop_ui        vsfile=shaders/common.vert fsfile=shaders/loop_uniform.frag uniformi=ui:5
+attr_float3        attrsize=3
+attr_float2        attrsize=2
+attr_stride32      stride=32
+attr_vbo           vbo
+attr_vbo_stride32  vbo stride=32
+attr_byte_norm     attrfmt=byte attrnorm
+attr_byte          attrfmt=byte
+attr_ubyte_norm    attrfmt=ubyte attrnorm
+attr_short_norm    attrfmt=short attrnorm
+attr_short2_norm   attrfmt=short attrnorm attrsize=2
+attr_short         attrfmt=short
+attr_ushort_norm   attrfmt=ushort attrnorm
+attr_byte_vbo      attrfmt=byte attrnorm vbo
+attr_byte3_stride8 attrfmt=byte attrnorm attrsize=3 stride=8

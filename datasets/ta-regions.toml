@@ -1,0 +1,10 @@
+title = "probe table ta/regions"
+repo = "data"
+paths = ["ta/regions/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 187
+size = 176587825
+sha256 = "93d2e096ecdd58da136c3b4460b4efdf34ac1f943afe5894471b5bed2cdec967"
+recipe = "probes/ta/regions.toml"
+needs = ["render", "render_param", "render_tadata"]

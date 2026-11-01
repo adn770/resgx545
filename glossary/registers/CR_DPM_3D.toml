@@ -1,0 +1,15 @@
+[[term]]
+id = "G0365"
+name = "CR_DPM_3D"
+status = "named"
+
+[[term.source]]
+term = "PSB_CR_DPM_3D"
+kind = "register"
+sgx545 = "0x064c"
+meaning = "DPM 3D state (previous free-list entry)"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0253"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"

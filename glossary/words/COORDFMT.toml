@@ -1,0 +1,15 @@
+[[term]]
+id = "G0360"
+name = "COORDFMT.SET_F16"
+status = "named"
+
+[[term.source]]
+term = "COORDFMT.SET_F16"
+kind = "field"
+sgx545 = "coordfmt word, bit i for coordinate set i"
+meaning = "carry coordinate set i at half precision: its values reach the iterator cut to 10 mantissa bits, towards zero [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E237"
+licence = "MIT"
+evidence = "[HW] E237: 0.1, 1/3 and 0.7 as 0x3dccc000, 0x3eaaa000, 0x3f332000 under bit 0 on one set of four, bits 0 and 1 apart on two sets; [HW] E176: the TA stores a marked set as f16 pairs in its objects (0x2e66ba00 = 0.1, -0.75) and counts it so in the object's format word (0x503)"

@@ -1,0 +1,15 @@
+[[term]]
+id = "G0503"
+name = "VDM_TASK1.OUTPUT_SIZE"
+status = "named"
+
+[[term.source]]
+term = "vs_output_size"
+kind = "field"
+sgx545 = "vertex-task word 1 [31:24]"
+meaning = "output vertex size"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0318"
+licence = "MIT"
+evidence = "same function ('output vertex size, 4-dword units'); [HW] E192: the vertex output in rows of four dwords: 1 for the position, 2 with a two-component coordinate set; left at 1 the triangle loses pixels"

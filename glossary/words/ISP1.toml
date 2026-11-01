@@ -15,6 +15,22 @@ licence = "MIT"
 evidence = "[HW] E117: all 13 cases setting ISP word 1 bits 13 to 25 gave the control's image (1248 samples in 324 blocks, one value per block), none hung and no visibility counter counted; [infer] the reading is ours, from these runs"
 
 [[term]]
+id = "G0472"
+name = "ISP1.LINE_WIDTH"
+status = "inferred"
+
+[[term.source]]
+term = "ISP1.LINE_WIDTH"
+kind = "field"
+sgx545 = "ISP1 [15:8]"
+meaning = "A line width: the TA copies ISP word 1's bits 15:8 into both bytes of the object's line-width dword; the unit is not shown by the object [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E178"
+licence = "MIT"
+evidence = "[HW] E178: ISP word 1 with bits 15:8 at 0x10, 0x20, 0x35 and 0 gives the object's dword 0x1010, 0x2020, 0x3535 and 0; [infer] the reading as a width is ours"
+
+[[term]]
 id = "G0247"
 name = "ISP1.POLY_OFFSET"
 status = "named"
@@ -31,6 +47,22 @@ licence = "MIT"
 evidence = "[HW] E071: without it, units 4096 add nothing"
 
 [[term]]
+id = "G0473"
+name = "ISP1.VALID_ID"
+status = "named"
+
+[[term.source]]
+term = "ISP1.VALID_ID"
+kind = "field"
+sgx545 = "ISP1 [31:26]"
+meaning = "the object's validation ID: an opaque or translucent object is drawn only when it is at least CR_ISP_CTL.VALID_ID"
+tier = "ours"
+source = "resgx545"
+citation = "E233"
+licence = "MIT"
+evidence = "[HW] E233: each of bits 26-31 alone restores the triangle under CR_ISP_CTL.VALID_ID 1; drawn exactly when the field >= CR_ISP_CTL.VALID_ID; the name follows the register field it is compared with [infer]"
+
+[[term]]
 id = "G0248"
 name = "ISP1.VISREG"
 status = "named"
@@ -44,7 +76,7 @@ tier = "3"
 source = "mesa-csbgen"
 citation = "C0195"
 licence = "MIT"
-evidence = "same function, Rogue's ISP word B bits 13:0; [HW] E070: 0, 1, 2, 3, 4, 7 count into 0x0498, 0x049c, 0x04a0, 0x04a4, 0x04a8, 0x04b4 (CR_ISP_VISIBILITY_COUNT0-7), low 16 bits"
+evidence = "same function, Rogue's ISP word B bits 13:0; [HW] E070: 0 counts into 0x0498 (CR_ISP_VISIBILITY_COUNT0) and 7 into 0x04b4 (CR_ISP_VISIBILITY_COUNT7); 1 to 4 were not exercised"
 
 [[term]]
 id = "G0249"
@@ -60,4 +92,4 @@ tier = "3"
 source = "mesa-csbgen"
 citation = "C0196"
 licence = "MIT"
-evidence = "same function, Rogue's ISP word B bit 15; [HW] E070: set, a triangle counts its 1062 pixels into CR_ISP_VISIBILITY_COUNTn; clear, nothing counts; pass types 0, 1, 3, 6 count (3 without drawing), 2, 4, 5 (drawn as opaque) and 7 count 0: the pixels the ISP passes, not those written"
+evidence = "same function, Rogue's ISP word B bit 15; [HW] E070: set, a triangle counts its 1062 pixels into CR_ISP_VISIBILITY_COUNTn; clear, nothing counts; counts by pass type are not tested (E065: no pass type counts without the bit)"

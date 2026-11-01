@@ -1,0 +1,2578 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# isp valid id: 0 sweeps, 184 probes.
+needs = ["render"]
+
+[[probe]]
+name = "isp-valid-id-upass-p0-c0"
+question = "the plain triangle with ISP0 pass type 0 (0x01d00200) and CR_ISP_CTL 0x000f0100: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x1d00200 }
+cmd = { 12 = 0xf0100 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p0-c1"
+question = "the plain triangle with ISP0 pass type 0 (0x01d00200) and CR_ISP_CTL 0x000f0101: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x1d00200 }
+cmd = { 12 = 0xf0101 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p0-c2"
+question = "the plain triangle with ISP0 pass type 0 (0x01d00200) and CR_ISP_CTL 0x000f0102: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x1d00200 }
+cmd = { 12 = 0xf0102 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p0-c3"
+question = "the plain triangle with ISP0 pass type 0 (0x01d00200) and CR_ISP_CTL 0x000f0103: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x1d00200 }
+cmd = { 12 = 0xf0103 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p0-c4"
+question = "the plain triangle with ISP0 pass type 0 (0x01d00200) and CR_ISP_CTL 0x000f0104: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x1d00200 }
+cmd = { 12 = 0xf0104 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p0-c5"
+question = "the plain triangle with ISP0 pass type 0 (0x01d00200) and CR_ISP_CTL 0x000f0105: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x1d00200 }
+cmd = { 12 = 0xf0105 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p0-c6"
+question = "the plain triangle with ISP0 pass type 0 (0x01d00200) and CR_ISP_CTL 0x000f0106: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x1d00200 }
+cmd = { 12 = 0xf0106 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p0-c7"
+question = "the plain triangle with ISP0 pass type 0 (0x01d00200) and CR_ISP_CTL 0x000f0107: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x1d00200 }
+cmd = { 12 = 0xf0107 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p0-c8"
+question = "the plain triangle with ISP0 pass type 0 (0x01d00200) and CR_ISP_CTL 0x000f0108: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x1d00200 }
+cmd = { 12 = 0xf0108 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p0-c16"
+question = "the plain triangle with ISP0 pass type 0 (0x01d00200) and CR_ISP_CTL 0x000f0110: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x1d00200 }
+cmd = { 12 = 0xf0110 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p0-c32"
+question = "the plain triangle with ISP0 pass type 0 (0x01d00200) and CR_ISP_CTL 0x000f0120: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x1d00200 }
+cmd = { 12 = 0xf0120 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p0-c63"
+question = "the plain triangle with ISP0 pass type 0 (0x01d00200) and CR_ISP_CTL 0x000f013f: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x1d00200 }
+cmd = { 12 = 0xf013f }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p1-c0"
+question = "the plain triangle with ISP0 pass type 1 (0x03d00200) and CR_ISP_CTL 0x000f0100: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x3d00200 }
+cmd = { 12 = 0xf0100 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p1-c1"
+question = "the plain triangle with ISP0 pass type 1 (0x03d00200) and CR_ISP_CTL 0x000f0101: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x3d00200 }
+cmd = { 12 = 0xf0101 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p1-c2"
+question = "the plain triangle with ISP0 pass type 1 (0x03d00200) and CR_ISP_CTL 0x000f0102: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x3d00200 }
+cmd = { 12 = 0xf0102 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p1-c3"
+question = "the plain triangle with ISP0 pass type 1 (0x03d00200) and CR_ISP_CTL 0x000f0103: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x3d00200 }
+cmd = { 12 = 0xf0103 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p1-c4"
+question = "the plain triangle with ISP0 pass type 1 (0x03d00200) and CR_ISP_CTL 0x000f0104: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x3d00200 }
+cmd = { 12 = 0xf0104 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p1-c5"
+question = "the plain triangle with ISP0 pass type 1 (0x03d00200) and CR_ISP_CTL 0x000f0105: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x3d00200 }
+cmd = { 12 = 0xf0105 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p1-c6"
+question = "the plain triangle with ISP0 pass type 1 (0x03d00200) and CR_ISP_CTL 0x000f0106: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x3d00200 }
+cmd = { 12 = 0xf0106 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p1-c7"
+question = "the plain triangle with ISP0 pass type 1 (0x03d00200) and CR_ISP_CTL 0x000f0107: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x3d00200 }
+cmd = { 12 = 0xf0107 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p1-c8"
+question = "the plain triangle with ISP0 pass type 1 (0x03d00200) and CR_ISP_CTL 0x000f0108: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x3d00200 }
+cmd = { 12 = 0xf0108 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p1-c16"
+question = "the plain triangle with ISP0 pass type 1 (0x03d00200) and CR_ISP_CTL 0x000f0110: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x3d00200 }
+cmd = { 12 = 0xf0110 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p1-c32"
+question = "the plain triangle with ISP0 pass type 1 (0x03d00200) and CR_ISP_CTL 0x000f0120: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x3d00200 }
+cmd = { 12 = 0xf0120 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p1-c63"
+question = "the plain triangle with ISP0 pass type 1 (0x03d00200) and CR_ISP_CTL 0x000f013f: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x3d00200 }
+cmd = { 12 = 0xf013f }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p2-c0"
+question = "the plain triangle with ISP0 pass type 2 (0x05d00200) and CR_ISP_CTL 0x000f0100: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x5d00200 }
+cmd = { 12 = 0xf0100 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p2-c1"
+question = "the plain triangle with ISP0 pass type 2 (0x05d00200) and CR_ISP_CTL 0x000f0101: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x5d00200 }
+cmd = { 12 = 0xf0101 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p2-c2"
+question = "the plain triangle with ISP0 pass type 2 (0x05d00200) and CR_ISP_CTL 0x000f0102: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x5d00200 }
+cmd = { 12 = 0xf0102 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p2-c3"
+question = "the plain triangle with ISP0 pass type 2 (0x05d00200) and CR_ISP_CTL 0x000f0103: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x5d00200 }
+cmd = { 12 = 0xf0103 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p2-c4"
+question = "the plain triangle with ISP0 pass type 2 (0x05d00200) and CR_ISP_CTL 0x000f0104: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x5d00200 }
+cmd = { 12 = 0xf0104 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p2-c5"
+question = "the plain triangle with ISP0 pass type 2 (0x05d00200) and CR_ISP_CTL 0x000f0105: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x5d00200 }
+cmd = { 12 = 0xf0105 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p2-c6"
+question = "the plain triangle with ISP0 pass type 2 (0x05d00200) and CR_ISP_CTL 0x000f0106: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x5d00200 }
+cmd = { 12 = 0xf0106 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p2-c7"
+question = "the plain triangle with ISP0 pass type 2 (0x05d00200) and CR_ISP_CTL 0x000f0107: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x5d00200 }
+cmd = { 12 = 0xf0107 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p2-c8"
+question = "the plain triangle with ISP0 pass type 2 (0x05d00200) and CR_ISP_CTL 0x000f0108: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x5d00200 }
+cmd = { 12 = 0xf0108 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p2-c16"
+question = "the plain triangle with ISP0 pass type 2 (0x05d00200) and CR_ISP_CTL 0x000f0110: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x5d00200 }
+cmd = { 12 = 0xf0110 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p2-c32"
+question = "the plain triangle with ISP0 pass type 2 (0x05d00200) and CR_ISP_CTL 0x000f0120: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x5d00200 }
+cmd = { 12 = 0xf0120 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p2-c63"
+question = "the plain triangle with ISP0 pass type 2 (0x05d00200) and CR_ISP_CTL 0x000f013f: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x5d00200 }
+cmd = { 12 = 0xf013f }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p4-c0"
+question = "the plain triangle with ISP0 pass type 4 (0x09d00200) and CR_ISP_CTL 0x000f0100: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x9d00200 }
+cmd = { 12 = 0xf0100 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p4-c1"
+question = "the plain triangle with ISP0 pass type 4 (0x09d00200) and CR_ISP_CTL 0x000f0101: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x9d00200 }
+cmd = { 12 = 0xf0101 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p4-c2"
+question = "the plain triangle with ISP0 pass type 4 (0x09d00200) and CR_ISP_CTL 0x000f0102: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x9d00200 }
+cmd = { 12 = 0xf0102 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p4-c3"
+question = "the plain triangle with ISP0 pass type 4 (0x09d00200) and CR_ISP_CTL 0x000f0103: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x9d00200 }
+cmd = { 12 = 0xf0103 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p4-c4"
+question = "the plain triangle with ISP0 pass type 4 (0x09d00200) and CR_ISP_CTL 0x000f0104: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x9d00200 }
+cmd = { 12 = 0xf0104 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p4-c5"
+question = "the plain triangle with ISP0 pass type 4 (0x09d00200) and CR_ISP_CTL 0x000f0105: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x9d00200 }
+cmd = { 12 = 0xf0105 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p4-c6"
+question = "the plain triangle with ISP0 pass type 4 (0x09d00200) and CR_ISP_CTL 0x000f0106: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x9d00200 }
+cmd = { 12 = 0xf0106 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p4-c7"
+question = "the plain triangle with ISP0 pass type 4 (0x09d00200) and CR_ISP_CTL 0x000f0107: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x9d00200 }
+cmd = { 12 = 0xf0107 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p4-c8"
+question = "the plain triangle with ISP0 pass type 4 (0x09d00200) and CR_ISP_CTL 0x000f0108: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x9d00200 }
+cmd = { 12 = 0xf0108 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p4-c16"
+question = "the plain triangle with ISP0 pass type 4 (0x09d00200) and CR_ISP_CTL 0x000f0110: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x9d00200 }
+cmd = { 12 = 0xf0110 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p4-c32"
+question = "the plain triangle with ISP0 pass type 4 (0x09d00200) and CR_ISP_CTL 0x000f0120: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x9d00200 }
+cmd = { 12 = 0xf0120 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p4-c63"
+question = "the plain triangle with ISP0 pass type 4 (0x09d00200) and CR_ISP_CTL 0x000f013f: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x9d00200 }
+cmd = { 12 = 0xf013f }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p5-c0"
+question = "the plain triangle with ISP0 pass type 5 (0x0bd00200) and CR_ISP_CTL 0x000f0100: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0xbd00200 }
+cmd = { 12 = 0xf0100 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p5-c1"
+question = "the plain triangle with ISP0 pass type 5 (0x0bd00200) and CR_ISP_CTL 0x000f0101: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0xbd00200 }
+cmd = { 12 = 0xf0101 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p5-c2"
+question = "the plain triangle with ISP0 pass type 5 (0x0bd00200) and CR_ISP_CTL 0x000f0102: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0xbd00200 }
+cmd = { 12 = 0xf0102 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p5-c3"
+question = "the plain triangle with ISP0 pass type 5 (0x0bd00200) and CR_ISP_CTL 0x000f0103: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0xbd00200 }
+cmd = { 12 = 0xf0103 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p5-c4"
+question = "the plain triangle with ISP0 pass type 5 (0x0bd00200) and CR_ISP_CTL 0x000f0104: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0xbd00200 }
+cmd = { 12 = 0xf0104 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p5-c5"
+question = "the plain triangle with ISP0 pass type 5 (0x0bd00200) and CR_ISP_CTL 0x000f0105: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0xbd00200 }
+cmd = { 12 = 0xf0105 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p5-c6"
+question = "the plain triangle with ISP0 pass type 5 (0x0bd00200) and CR_ISP_CTL 0x000f0106: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0xbd00200 }
+cmd = { 12 = 0xf0106 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p5-c7"
+question = "the plain triangle with ISP0 pass type 5 (0x0bd00200) and CR_ISP_CTL 0x000f0107: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0xbd00200 }
+cmd = { 12 = 0xf0107 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p5-c8"
+question = "the plain triangle with ISP0 pass type 5 (0x0bd00200) and CR_ISP_CTL 0x000f0108: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0xbd00200 }
+cmd = { 12 = 0xf0108 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p5-c16"
+question = "the plain triangle with ISP0 pass type 5 (0x0bd00200) and CR_ISP_CTL 0x000f0110: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0xbd00200 }
+cmd = { 12 = 0xf0110 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p5-c32"
+question = "the plain triangle with ISP0 pass type 5 (0x0bd00200) and CR_ISP_CTL 0x000f0120: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0xbd00200 }
+cmd = { 12 = 0xf0120 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p5-c63"
+question = "the plain triangle with ISP0 pass type 5 (0x0bd00200) and CR_ISP_CTL 0x000f013f: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0xbd00200 }
+cmd = { 12 = 0xf013f }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p6-c0"
+question = "the plain triangle with ISP0 pass type 6 (0x0dd00200) and CR_ISP_CTL 0x000f0100: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0xdd00200 }
+cmd = { 12 = 0xf0100 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p6-c1"
+question = "the plain triangle with ISP0 pass type 6 (0x0dd00200) and CR_ISP_CTL 0x000f0101: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0xdd00200 }
+cmd = { 12 = 0xf0101 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p6-c2"
+question = "the plain triangle with ISP0 pass type 6 (0x0dd00200) and CR_ISP_CTL 0x000f0102: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0xdd00200 }
+cmd = { 12 = 0xf0102 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p6-c3"
+question = "the plain triangle with ISP0 pass type 6 (0x0dd00200) and CR_ISP_CTL 0x000f0103: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0xdd00200 }
+cmd = { 12 = 0xf0103 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p6-c4"
+question = "the plain triangle with ISP0 pass type 6 (0x0dd00200) and CR_ISP_CTL 0x000f0104: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0xdd00200 }
+cmd = { 12 = 0xf0104 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p6-c5"
+question = "the plain triangle with ISP0 pass type 6 (0x0dd00200) and CR_ISP_CTL 0x000f0105: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0xdd00200 }
+cmd = { 12 = 0xf0105 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p6-c6"
+question = "the plain triangle with ISP0 pass type 6 (0x0dd00200) and CR_ISP_CTL 0x000f0106: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0xdd00200 }
+cmd = { 12 = 0xf0106 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p6-c7"
+question = "the plain triangle with ISP0 pass type 6 (0x0dd00200) and CR_ISP_CTL 0x000f0107: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0xdd00200 }
+cmd = { 12 = 0xf0107 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p6-c8"
+question = "the plain triangle with ISP0 pass type 6 (0x0dd00200) and CR_ISP_CTL 0x000f0108: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0xdd00200 }
+cmd = { 12 = 0xf0108 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p6-c16"
+question = "the plain triangle with ISP0 pass type 6 (0x0dd00200) and CR_ISP_CTL 0x000f0110: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0xdd00200 }
+cmd = { 12 = 0xf0110 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p6-c32"
+question = "the plain triangle with ISP0 pass type 6 (0x0dd00200) and CR_ISP_CTL 0x000f0120: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0xdd00200 }
+cmd = { 12 = 0xf0120 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-upass-p6-c63"
+question = "the plain triangle with ISP0 pass type 6 (0x0dd00200) and CR_ISP_CTL 0x000f013f: is it drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0xdd00200 }
+cmd = { 12 = 0xf013f }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-ctl0"
+question = "control: CR_ISP_CTL 0x000f0100, the triangle as drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0100 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-ctl1"
+question = "control: CR_ISP_CTL 0x000f0101, the triangle removed"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-presence-b16"
+question = "CR_ISP_CTL 0x000f0101 and state word 0 (presence) = 0x0001df43 (bit 16 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 0 = 0x1df43 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-presence-b17"
+question = "CR_ISP_CTL 0x000f0101 and state word 0 (presence) = 0x0002df43 (bit 17 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 0 = 0x2df43 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-presence-b18"
+question = "CR_ISP_CTL 0x000f0101 and state word 0 (presence) = 0x0004df43 (bit 18 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 0 = 0x4df43 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-presence-b19"
+question = "CR_ISP_CTL 0x000f0101 and state word 0 (presence) = 0x0008df43 (bit 19 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 0 = 0x8df43 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-presence-b20"
+question = "CR_ISP_CTL 0x000f0101 and state word 0 (presence) = 0x0010df43 (bit 20 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 0 = 0x10df43 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-presence-b21"
+question = "CR_ISP_CTL 0x000f0101 and state word 0 (presence) = 0x0020df43 (bit 21 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 0 = 0x20df43 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-presence-b22"
+question = "CR_ISP_CTL 0x000f0101 and state word 0 (presence) = 0x0040df43 (bit 22 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 0 = 0x40df43 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-presence-b23"
+question = "CR_ISP_CTL 0x000f0101 and state word 0 (presence) = 0x0080df43 (bit 23 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 0 = 0x80df43 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-presence-b24"
+question = "CR_ISP_CTL 0x000f0101 and state word 0 (presence) = 0x0100df43 (bit 24 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 0 = 0x100df43 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-presence-b25"
+question = "CR_ISP_CTL 0x000f0101 and state word 0 (presence) = 0x0200df43 (bit 25 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 0 = 0x200df43 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-presence-b26"
+question = "CR_ISP_CTL 0x000f0101 and state word 0 (presence) = 0x0400df43 (bit 26 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 0 = 0x400df43 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-presence-b27"
+question = "CR_ISP_CTL 0x000f0101 and state word 0 (presence) = 0x0800df43 (bit 27 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 0 = 0x800df43 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-presence-b28"
+question = "CR_ISP_CTL 0x000f0101 and state word 0 (presence) = 0x1000df43 (bit 28 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 0 = 0x1000df43 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-presence-b29"
+question = "CR_ISP_CTL 0x000f0101 and state word 0 (presence) = 0x2000df43 (bit 29 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 0 = 0x2000df43 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-presence-b30"
+question = "CR_ISP_CTL 0x000f0101 and state word 0 (presence) = 0x4000df43 (bit 30 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 0 = 0x4000df43 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-presence-b31"
+question = "CR_ISP_CTL 0x000f0101 and state word 0 (presence) = 0x8000df43 (bit 31 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 0 = 0x8000df43 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-isp0-b10"
+question = "CR_ISP_CTL 0x000f0101 and state word 1 (isp0) = 0x01d00600 (bit 10 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 1 = 0x1d00600 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-isp0-b12"
+question = "CR_ISP_CTL 0x000f0101 and state word 1 (isp0) = 0x01d01200 (bit 12 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 1 = 0x1d01200 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-isp0-b13"
+question = "CR_ISP_CTL 0x000f0101 and state word 1 (isp0) = 0x01d02200 (bit 13 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 1 = 0x1d02200 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-isp0-b14"
+question = "CR_ISP_CTL 0x000f0101 and state word 1 (isp0) = 0x01d04200 (bit 14 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 1 = 0x1d04200 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-isp0-b19"
+question = "CR_ISP_CTL 0x000f0101 and state word 1 (isp0) = 0x01d80200 (bit 19 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 1 = 0x1d80200 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-isp0-b28"
+question = "CR_ISP_CTL 0x000f0101 and state word 1 (isp0) = 0x11d00200 (bit 28 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 1 = 0x11d00200 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-isp0-b29"
+question = "CR_ISP_CTL 0x000f0101 and state word 1 (isp0) = 0x21d00200 (bit 29 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 1 = 0x21d00200 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-isp0-b30"
+question = "CR_ISP_CTL 0x000f0101 and state word 1 (isp0) = 0x41d00200 (bit 30 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 1 = 0x41d00200 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-isp0-b31"
+question = "CR_ISP_CTL 0x000f0101 and state word 1 (isp0) = 0x81d00200 (bit 31 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 1 = 0x81d00200 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-isp1-b13"
+question = "CR_ISP_CTL 0x000f0101 and state word 2 (isp1) = 0x000030f0 (bit 13 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 2 = 0x30f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-isp1-b14"
+question = "CR_ISP_CTL 0x000f0101 and state word 2 (isp1) = 0x000050f0 (bit 14 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 2 = 0x50f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-isp1-b15"
+question = "CR_ISP_CTL 0x000f0101 and state word 2 (isp1) = 0x000090f0 (bit 15 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 2 = 0x90f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-isp1-b16"
+question = "CR_ISP_CTL 0x000f0101 and state word 2 (isp1) = 0x000110f0 (bit 16 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 2 = 0x110f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-isp1-b17"
+question = "CR_ISP_CTL 0x000f0101 and state word 2 (isp1) = 0x000210f0 (bit 17 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 2 = 0x210f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-isp1-b18"
+question = "CR_ISP_CTL 0x000f0101 and state word 2 (isp1) = 0x000410f0 (bit 18 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 2 = 0x410f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-isp1-b19"
+question = "CR_ISP_CTL 0x000f0101 and state word 2 (isp1) = 0x000810f0 (bit 19 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 2 = 0x810f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-isp1-b20"
+question = "CR_ISP_CTL 0x000f0101 and state word 2 (isp1) = 0x001010f0 (bit 20 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 2 = 0x1010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-isp1-b21"
+question = "CR_ISP_CTL 0x000f0101 and state word 2 (isp1) = 0x002010f0 (bit 21 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 2 = 0x2010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-isp1-b22"
+question = "CR_ISP_CTL 0x000f0101 and state word 2 (isp1) = 0x004010f0 (bit 22 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 2 = 0x4010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-isp1-b23"
+question = "CR_ISP_CTL 0x000f0101 and state word 2 (isp1) = 0x008010f0 (bit 23 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 2 = 0x8010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-isp1-b24"
+question = "CR_ISP_CTL 0x000f0101 and state word 2 (isp1) = 0x010010f0 (bit 24 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 2 = 0x10010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-isp1-b25"
+question = "CR_ISP_CTL 0x000f0101 and state word 2 (isp1) = 0x020010f0 (bit 25 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 2 = 0x20010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-isp1-b26"
+question = "CR_ISP_CTL 0x000f0101 and state word 2 (isp1) = 0x040010f0 (bit 26 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 2 = 0x40010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-isp1-b27"
+question = "CR_ISP_CTL 0x000f0101 and state word 2 (isp1) = 0x080010f0 (bit 27 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 2 = 0x80010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-isp1-b28"
+question = "CR_ISP_CTL 0x000f0101 and state word 2 (isp1) = 0x100010f0 (bit 28 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 2 = 0x100010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-isp1-b29"
+question = "CR_ISP_CTL 0x000f0101 and state word 2 (isp1) = 0x200010f0 (bit 29 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 2 = 0x200010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-isp1-b30"
+question = "CR_ISP_CTL 0x000f0101 and state word 2 (isp1) = 0x400010f0 (bit 30 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 2 = 0x400010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-isp1-b31"
+question = "CR_ISP_CTL 0x000f0101 and state word 2 (isp1) = 0x800010f0 (bit 31 flipped): is the triangle drawn again"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 2 = 0x800010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c0-i0"
+question = "CR_ISP_CTL low bits 0 and ISP word 1 [31:26] = 0: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0100 }
+blk = { 2 = 0x10f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c0-i1"
+question = "CR_ISP_CTL low bits 0 and ISP word 1 [31:26] = 1: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0100 }
+blk = { 2 = 0x40010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c0-i2"
+question = "CR_ISP_CTL low bits 0 and ISP word 1 [31:26] = 2: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0100 }
+blk = { 2 = 0x80010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c0-i3"
+question = "CR_ISP_CTL low bits 0 and ISP word 1 [31:26] = 3: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0100 }
+blk = { 2 = 0xc0010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c0-i5"
+question = "CR_ISP_CTL low bits 0 and ISP word 1 [31:26] = 5: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0100 }
+blk = { 2 = 0x140010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c0-i32"
+question = "CR_ISP_CTL low bits 0 and ISP word 1 [31:26] = 32: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0100 }
+blk = { 2 = 0x800010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c0-i63"
+question = "CR_ISP_CTL low bits 0 and ISP word 1 [31:26] = 63: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0100 }
+blk = { 2 = 0xfc0010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c1-i0"
+question = "CR_ISP_CTL low bits 1 and ISP word 1 [31:26] = 0: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 2 = 0x10f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c1-i3"
+question = "CR_ISP_CTL low bits 1 and ISP word 1 [31:26] = 3: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 2 = 0xc0010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c1-i5"
+question = "CR_ISP_CTL low bits 1 and ISP word 1 [31:26] = 5: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 2 = 0x140010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c1-i63"
+question = "CR_ISP_CTL low bits 1 and ISP word 1 [31:26] = 63: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0101 }
+blk = { 2 = 0xfc0010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c2-i0"
+question = "CR_ISP_CTL low bits 2 and ISP word 1 [31:26] = 0: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0102 }
+blk = { 2 = 0x10f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c2-i1"
+question = "CR_ISP_CTL low bits 2 and ISP word 1 [31:26] = 1: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0102 }
+blk = { 2 = 0x40010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c2-i2"
+question = "CR_ISP_CTL low bits 2 and ISP word 1 [31:26] = 2: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0102 }
+blk = { 2 = 0x80010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c2-i3"
+question = "CR_ISP_CTL low bits 2 and ISP word 1 [31:26] = 3: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0102 }
+blk = { 2 = 0xc0010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c2-i5"
+question = "CR_ISP_CTL low bits 2 and ISP word 1 [31:26] = 5: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0102 }
+blk = { 2 = 0x140010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c2-i32"
+question = "CR_ISP_CTL low bits 2 and ISP word 1 [31:26] = 32: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0102 }
+blk = { 2 = 0x800010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c2-i63"
+question = "CR_ISP_CTL low bits 2 and ISP word 1 [31:26] = 63: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0102 }
+blk = { 2 = 0xfc0010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c3-i0"
+question = "CR_ISP_CTL low bits 3 and ISP word 1 [31:26] = 0: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0103 }
+blk = { 2 = 0x10f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c3-i1"
+question = "CR_ISP_CTL low bits 3 and ISP word 1 [31:26] = 1: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0103 }
+blk = { 2 = 0x40010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c3-i2"
+question = "CR_ISP_CTL low bits 3 and ISP word 1 [31:26] = 2: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0103 }
+blk = { 2 = 0x80010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c3-i3"
+question = "CR_ISP_CTL low bits 3 and ISP word 1 [31:26] = 3: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0103 }
+blk = { 2 = 0xc0010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c3-i5"
+question = "CR_ISP_CTL low bits 3 and ISP word 1 [31:26] = 5: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0103 }
+blk = { 2 = 0x140010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c3-i32"
+question = "CR_ISP_CTL low bits 3 and ISP word 1 [31:26] = 32: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0103 }
+blk = { 2 = 0x800010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c3-i63"
+question = "CR_ISP_CTL low bits 3 and ISP word 1 [31:26] = 63: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0103 }
+blk = { 2 = 0xfc0010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c5-i0"
+question = "CR_ISP_CTL low bits 5 and ISP word 1 [31:26] = 0: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0105 }
+blk = { 2 = 0x10f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c5-i1"
+question = "CR_ISP_CTL low bits 5 and ISP word 1 [31:26] = 1: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0105 }
+blk = { 2 = 0x40010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c5-i2"
+question = "CR_ISP_CTL low bits 5 and ISP word 1 [31:26] = 2: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0105 }
+blk = { 2 = 0x80010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c5-i3"
+question = "CR_ISP_CTL low bits 5 and ISP word 1 [31:26] = 3: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0105 }
+blk = { 2 = 0xc0010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c5-i5"
+question = "CR_ISP_CTL low bits 5 and ISP word 1 [31:26] = 5: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0105 }
+blk = { 2 = 0x140010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c5-i32"
+question = "CR_ISP_CTL low bits 5 and ISP word 1 [31:26] = 32: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0105 }
+blk = { 2 = 0x800010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c5-i63"
+question = "CR_ISP_CTL low bits 5 and ISP word 1 [31:26] = 63: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0105 }
+blk = { 2 = 0xfc0010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c32-i0"
+question = "CR_ISP_CTL low bits 32 and ISP word 1 [31:26] = 0: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0120 }
+blk = { 2 = 0x10f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c32-i1"
+question = "CR_ISP_CTL low bits 32 and ISP word 1 [31:26] = 1: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0120 }
+blk = { 2 = 0x40010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c32-i2"
+question = "CR_ISP_CTL low bits 32 and ISP word 1 [31:26] = 2: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0120 }
+blk = { 2 = 0x80010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c32-i3"
+question = "CR_ISP_CTL low bits 32 and ISP word 1 [31:26] = 3: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0120 }
+blk = { 2 = 0xc0010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c32-i5"
+question = "CR_ISP_CTL low bits 32 and ISP word 1 [31:26] = 5: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0120 }
+blk = { 2 = 0x140010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c32-i32"
+question = "CR_ISP_CTL low bits 32 and ISP word 1 [31:26] = 32: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0120 }
+blk = { 2 = 0x800010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c32-i63"
+question = "CR_ISP_CTL low bits 32 and ISP word 1 [31:26] = 63: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0120 }
+blk = { 2 = 0xfc0010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c63-i0"
+question = "CR_ISP_CTL low bits 63 and ISP word 1 [31:26] = 0: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf013f }
+blk = { 2 = 0x10f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c63-i1"
+question = "CR_ISP_CTL low bits 63 and ISP word 1 [31:26] = 1: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf013f }
+blk = { 2 = 0x40010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c63-i2"
+question = "CR_ISP_CTL low bits 63 and ISP word 1 [31:26] = 2: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf013f }
+blk = { 2 = 0x80010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c63-i3"
+question = "CR_ISP_CTL low bits 63 and ISP word 1 [31:26] = 3: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf013f }
+blk = { 2 = 0xc0010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c63-i5"
+question = "CR_ISP_CTL low bits 63 and ISP word 1 [31:26] = 5: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf013f }
+blk = { 2 = 0x140010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c63-i32"
+question = "CR_ISP_CTL low bits 63 and ISP word 1 [31:26] = 32: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf013f }
+blk = { 2 = 0x800010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vid-c63-i63"
+question = "CR_ISP_CTL low bits 63 and ISP word 1 [31:26] = 63: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf013f }
+blk = { 2 = 0xfc0010f0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vidpass-p0-c1-i0"
+question = "pass type 0, CR_ISP_CTL VALID_ID 1, ISP1 VALID_ID 0: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x1d00200, 2 = 0x10f0 }
+cmd = { 12 = 0xf0101 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vidpass-p0-c1-i63"
+question = "pass type 0, CR_ISP_CTL VALID_ID 1, ISP1 VALID_ID 63: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x1d00200, 2 = 0xfc0010f0 }
+cmd = { 12 = 0xf0101 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vidpass-p0-c63-i0"
+question = "pass type 0, CR_ISP_CTL VALID_ID 63, ISP1 VALID_ID 0: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x1d00200, 2 = 0x10f0 }
+cmd = { 12 = 0xf013f }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vidpass-p0-c63-i63"
+question = "pass type 0, CR_ISP_CTL VALID_ID 63, ISP1 VALID_ID 63: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x1d00200, 2 = 0xfc0010f0 }
+cmd = { 12 = 0xf013f }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vidpass-p2-c1-i0"
+question = "pass type 2, CR_ISP_CTL VALID_ID 1, ISP1 VALID_ID 0: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x5d00200, 2 = 0x10f0 }
+cmd = { 12 = 0xf0101 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vidpass-p2-c1-i63"
+question = "pass type 2, CR_ISP_CTL VALID_ID 1, ISP1 VALID_ID 63: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x5d00200, 2 = 0xfc0010f0 }
+cmd = { 12 = 0xf0101 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vidpass-p2-c63-i0"
+question = "pass type 2, CR_ISP_CTL VALID_ID 63, ISP1 VALID_ID 0: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x5d00200, 2 = 0x10f0 }
+cmd = { 12 = 0xf013f }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vidpass-p2-c63-i63"
+question = "pass type 2, CR_ISP_CTL VALID_ID 63, ISP1 VALID_ID 63: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x5d00200, 2 = 0xfc0010f0 }
+cmd = { 12 = 0xf013f }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vidpass-p4-c1-i0"
+question = "pass type 4, CR_ISP_CTL VALID_ID 1, ISP1 VALID_ID 0: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x9d00200, 2 = 0x10f0 }
+cmd = { 12 = 0xf0101 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vidpass-p4-c1-i63"
+question = "pass type 4, CR_ISP_CTL VALID_ID 1, ISP1 VALID_ID 63: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x9d00200, 2 = 0xfc0010f0 }
+cmd = { 12 = 0xf0101 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vidpass-p4-c63-i0"
+question = "pass type 4, CR_ISP_CTL VALID_ID 63, ISP1 VALID_ID 0: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x9d00200, 2 = 0x10f0 }
+cmd = { 12 = 0xf013f }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vidpass-p4-c63-i63"
+question = "pass type 4, CR_ISP_CTL VALID_ID 63, ISP1 VALID_ID 63: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0x9d00200, 2 = 0xfc0010f0 }
+cmd = { 12 = 0xf013f }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vidpass-p5-c1-i0"
+question = "pass type 5, CR_ISP_CTL VALID_ID 1, ISP1 VALID_ID 0: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0xbd00200, 2 = 0x10f0 }
+cmd = { 12 = 0xf0101 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vidpass-p5-c1-i63"
+question = "pass type 5, CR_ISP_CTL VALID_ID 1, ISP1 VALID_ID 63: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0xbd00200, 2 = 0xfc0010f0 }
+cmd = { 12 = 0xf0101 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vidpass-p5-c63-i0"
+question = "pass type 5, CR_ISP_CTL VALID_ID 63, ISP1 VALID_ID 0: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0xbd00200, 2 = 0x10f0 }
+cmd = { 12 = 0xf013f }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vidpass-p5-c63-i63"
+question = "pass type 5, CR_ISP_CTL VALID_ID 63, ISP1 VALID_ID 63: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0xbd00200, 2 = 0xfc0010f0 }
+cmd = { 12 = 0xf013f }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vidpass-p6-c1-i0"
+question = "pass type 6, CR_ISP_CTL VALID_ID 1, ISP1 VALID_ID 0: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0xdd00200, 2 = 0x10f0 }
+cmd = { 12 = 0xf0101 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vidpass-p6-c1-i63"
+question = "pass type 6, CR_ISP_CTL VALID_ID 1, ISP1 VALID_ID 63: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0xdd00200, 2 = 0xfc0010f0 }
+cmd = { 12 = 0xf0101 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vidpass-p6-c63-i0"
+question = "pass type 6, CR_ISP_CTL VALID_ID 63, ISP1 VALID_ID 0: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0xdd00200, 2 = 0x10f0 }
+cmd = { 12 = 0xf013f }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-valid-id-vidpass-p6-c63-i63"
+question = "pass type 6, CR_ISP_CTL VALID_ID 63, ISP1 VALID_ID 63: is the triangle drawn"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+blk = { 1 = 0xdd00200, 2 = 0xfc0010f0 }
+cmd = { 12 = 0xf013f }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]

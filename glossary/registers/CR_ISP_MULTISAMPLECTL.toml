@@ -12,7 +12,7 @@ tier = "3"
 source = "mesa-csbgen"
 citation = "C0174"
 licence = "MIT"
-evidence = "Rogue ISP_AA (an AA on/off mode) is not linked to it; [HW] E064: in the triangle the low nibble moves pixels of the steep edge only, the high nibble those of the shallow edge; values near 0x88 change nothing; [HW] E064; Apple's AGX packs its sample positions the same way, 0x88 for one sample and 0xeaa26e26 for four (Mesa src/asahi, MIT; another lineage, context only)"
+evidence = "Rogue ISP_AA (an AA on/off mode) is not linked to it; [HW] E064: in the triangle the low nibble moves pixels of the steep edge only, the high nibble those of the shallow edge; values near 0x88 change nothing; [HW] E064; Apple's AGX packs its sample positions the same way, 0x88 for one sample and 0xeaa26e26 for four (Mesa src/asahi, MIT; another lineage, context only); [HW] E215: with ISP0 bit 28 set, varying it changes a single-sampled object's coverage as the union of its four samples and CR_ISP_SAMPLE_POS's four predicts (counts, not pixels); a rule without it fits E214's images at its default value, which rule holds being open"
 
 [[term]]
 id = "G0125"

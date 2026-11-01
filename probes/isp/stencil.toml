@@ -1,0 +1,815 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# isp stencil: 0 sweeps, 55 probes.
+needs = ["render", "kpoke"]
+
+[[probe]]
+name = "isp-stencil-blkadd-clip-full"
+question = "grown block: region clip of the whole 64x64 surface"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-blkadd-clip-full"]
+blk_add = { 7 = [0x80000001, 3] }
+
+[[probe]]
+name = "isp-stencil-blkadd-clip-tile"
+question = "grown block: region clip of tile column 0, rows 0-1"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-blkadd-clip-tile"]
+blk_add = { 7 = [0x80000000, 1] }
+
+[[probe]]
+name = "isp-stencil-st-front-never"
+question = "front face, stencil never"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-st-front-never"]
+isp2 = 255
+
+[[probe]]
+name = "isp-stencil-st-front-always"
+question = "front face, stencil always"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-st-front-always"]
+isp2 = 0xe0000ff
+
+[[probe]]
+name = "isp-stencil-st-back-never"
+question = "back face, stencil never"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-st-back-never"]
+isp2 = 255
+blk = { 10 = 0xc2000000 }
+
+[[probe]]
+name = "isp-stencil-st-back-b5"
+question = "back face, stencil never, bit 5 always"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-st-back-b5"]
+isp2 = 255
+blk_add = { 5 = 0xe0000ff }
+blk = { 11 = 0xc2000000 }
+
+[[probe]]
+name = "isp-stencil-st-back-b3"
+question = "back face, stencil never, bit 3 always"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-st-back-b3"]
+isp2 = 255
+blk_add = { 3 = 0xe0000ff }
+blk = { 11 = 0xc2000000 }
+
+[[probe]]
+name = "isp-stencil-st-back-b345"
+question = "back face, stencil never, bits 3-5 isp0, isp1, always"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-st-back-b345"]
+isp2 = 255
+blk_add = { 3 = 0x1d00300, 4 = 4336, 5 = 0xe0000ff }
+blk = { 13 = 0xc2000000 }
+
+[[probe]]
+name = "isp-stencil-st-front-b5"
+question = "front face, stencil never, bit 5 always"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-st-front-b5"]
+isp2 = 255
+blk_add = { 5 = 0xe0000ff }
+
+[[probe]]
+name = "isp-stencil-st-back-b5-isp0b10"
+question = "back face, stencil never, b5 always, ISP0 bit 10"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-st-back-b5-isp0b10"]
+isp2 = 255
+blk_add = { 5 = 0xe0000ff }
+blk = { 1 = 0x1d00700, 11 = 0xc2000000 }
+
+[[probe]]
+name = "isp-stencil-st-back-b345-isp0b10"
+question = "back face, stencil never, b345 always, ISP0 bit 10"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-st-back-b345-isp0b10"]
+isp2 = 255
+blk_add = { 3 = 0x1d00300, 4 = 4336, 5 = 0xe0000ff }
+blk = { 1 = 0x1d00700, 13 = 0xc2000000 }
+
+[[probe]]
+name = "isp-stencil-st-back-b5-isp0b11"
+question = "back face, stencil never, b5 always, ISP0 bit 11"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-st-back-b5-isp0b11"]
+isp2 = 255
+blk_add = { 5 = 0xe0000ff }
+blk = { 1 = 0x1d00b00, 11 = 0xc2000000 }
+
+[[probe]]
+name = "isp-stencil-st-back-b345-isp0b11"
+question = "back face, stencil never, b345 always, ISP0 bit 11"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-st-back-b345-isp0b11"]
+isp2 = 255
+blk_add = { 3 = 0x1d00300, 4 = 4336, 5 = 0xe0000ff }
+blk = { 1 = 0x1d00b00, 13 = 0xc2000000 }
+
+[[probe]]
+name = "isp-stencil-st-back-b5-isp0b12"
+question = "back face, stencil never, b5 always, ISP0 bit 12"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-st-back-b5-isp0b12"]
+isp2 = 255
+blk_add = { 5 = 0xe0000ff }
+blk = { 1 = 0x1d01300, 11 = 0xc2000000 }
+
+[[probe]]
+name = "isp-stencil-st-back-b345-isp0b12"
+question = "back face, stencil never, b345 always, ISP0 bit 12"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-st-back-b345-isp0b12"]
+isp2 = 255
+blk_add = { 3 = 0x1d00300, 4 = 4336, 5 = 0xe0000ff }
+blk = { 1 = 0x1d01300, 13 = 0xc2000000 }
+
+[[probe]]
+name = "isp-stencil-st-back-b5-isp0b13"
+question = "back face, stencil never, b5 always, ISP0 bit 13"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-st-back-b5-isp0b13"]
+isp2 = 255
+blk_add = { 5 = 0xe0000ff }
+blk = { 1 = 0x1d02300, 11 = 0xc2000000 }
+
+[[probe]]
+name = "isp-stencil-st-back-b345-isp0b13"
+question = "back face, stencil never, b345 always, ISP0 bit 13"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-st-back-b345-isp0b13"]
+isp2 = 255
+blk_add = { 3 = 0x1d00300, 4 = 4336, 5 = 0xe0000ff }
+blk = { 1 = 0x1d02300, 13 = 0xc2000000 }
+
+[[probe]]
+name = "isp-stencil-st-back-b5-isp0b14"
+question = "back face, stencil never, b5 always, ISP0 bit 14"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-st-back-b5-isp0b14"]
+isp2 = 255
+blk_add = { 5 = 0xe0000ff }
+blk = { 1 = 0x1d04300, 11 = 0xc2000000 }
+
+[[probe]]
+name = "isp-stencil-st-back-b345-isp0b14"
+question = "back face, stencil never, b345 always, ISP0 bit 14"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-st-back-b345-isp0b14"]
+isp2 = 255
+blk_add = { 3 = 0x1d00300, 4 = 4336, 5 = 0xe0000ff }
+blk = { 1 = 0x1d04300, 13 = 0xc2000000 }
+
+[[probe]]
+name = "isp-stencil-st-back-b5-isp0b18"
+question = "back face, stencil never, b5 always, ISP0 bit 18"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-st-back-b5-isp0b18"]
+isp2 = 255
+blk_add = { 5 = 0xe0000ff }
+blk = { 1 = 0x1d40300, 11 = 0xc2000000 }
+
+[[probe]]
+name = "isp-stencil-st-back-b345-isp0b18"
+question = "back face, stencil never, b345 always, ISP0 bit 18"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-st-back-b345-isp0b18"]
+isp2 = 255
+blk_add = { 3 = 0x1d00300, 4 = 4336, 5 = 0xe0000ff }
+blk = { 1 = 0x1d40300, 13 = 0xc2000000 }
+
+[[probe]]
+name = "isp-stencil-st-back-b5-isp0b19"
+question = "back face, stencil never, b5 always, ISP0 bit 19"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-st-back-b5-isp0b19"]
+isp2 = 255
+blk_add = { 5 = 0xe0000ff }
+blk = { 1 = 0x1d80300, 11 = 0xc2000000 }
+
+[[probe]]
+name = "isp-stencil-st-back-b345-isp0b19"
+question = "back face, stencil never, b345 always, ISP0 bit 19"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-st-back-b345-isp0b19"]
+isp2 = 255
+blk_add = { 3 = 0x1d00300, 4 = 4336, 5 = 0xe0000ff }
+blk = { 1 = 0x1d80300, 13 = 0xc2000000 }
+
+[[probe]]
+name = "isp-stencil-st-back-b5-isp0b28"
+question = "back face, stencil never, b5 always, ISP0 bit 28"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-st-back-b5-isp0b28"]
+isp2 = 255
+blk_add = { 5 = 0xe0000ff }
+blk = { 1 = 0x11d00300, 11 = 0xc2000000 }
+
+[[probe]]
+name = "isp-stencil-st-back-b345-isp0b28"
+question = "back face, stencil never, b345 always, ISP0 bit 28"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-st-back-b345-isp0b28"]
+isp2 = 255
+blk_add = { 3 = 0x1d00300, 4 = 4336, 5 = 0xe0000ff }
+blk = { 1 = 0x11d00300, 13 = 0xc2000000 }
+
+[[probe]]
+name = "isp-stencil-st-back-b5-isp0b29"
+question = "back face, stencil never, b5 always, ISP0 bit 29"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-st-back-b5-isp0b29"]
+isp2 = 255
+blk_add = { 5 = 0xe0000ff }
+blk = { 1 = 0x21d00300, 11 = 0xc2000000 }
+
+[[probe]]
+name = "isp-stencil-st-back-b345-isp0b29"
+question = "back face, stencil never, b345 always, ISP0 bit 29"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-st-back-b345-isp0b29"]
+isp2 = 255
+blk_add = { 3 = 0x1d00300, 4 = 4336, 5 = 0xe0000ff }
+blk = { 1 = 0x21d00300, 13 = 0xc2000000 }
+
+[[probe]]
+name = "isp-stencil-st-back-b5-isp0b30"
+question = "back face, stencil never, b5 always, ISP0 bit 30"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-st-back-b5-isp0b30"]
+isp2 = 255
+blk_add = { 5 = 0xe0000ff }
+blk = { 1 = 0x41d00300, 11 = 0xc2000000 }
+
+[[probe]]
+name = "isp-stencil-st-back-b345-isp0b30"
+question = "back face, stencil never, b345 always, ISP0 bit 30"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-st-back-b345-isp0b30"]
+isp2 = 255
+blk_add = { 3 = 0x1d00300, 4 = 4336, 5 = 0xe0000ff }
+blk = { 1 = 0x41d00300, 13 = 0xc2000000 }
+
+[[probe]]
+name = "isp-stencil-st-back-b5-isp0b31"
+question = "back face, stencil never, b5 always, ISP0 bit 31"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-st-back-b5-isp0b31"]
+isp2 = 255
+blk_add = { 5 = 0xe0000ff }
+blk = { 1 = 0x81d00300, 11 = 0xc2000000 }
+
+[[probe]]
+name = "isp-stencil-st-back-b345-isp0b31"
+question = "back face, stencil never, b345 always, ISP0 bit 31"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-st-back-b345-isp0b31"]
+isp2 = 255
+blk_add = { 3 = 0x1d00300, 4 = 4336, 5 = 0xe0000ff }
+blk = { 1 = 0x81d00300, 13 = 0xc2000000 }
+
+[[probe]]
+name = "isp-stencil-ts-front"
+question = "two-sided: front face, front never, back always"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-ts-front"]
+isp2 = 255
+blk_add = { 3 = 0x1d00300, 4 = 4336, 5 = 0xe0000ff }
+blk = { 1 = 0x1d00b00 }
+
+[[probe]]
+name = "isp-stencil-ts-back-swap"
+question = "two-sided: back face, front always, back never"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-ts-back-swap"]
+isp2 = 0xe0000ff
+blk_add = { 3 = 0x1d00300, 4 = 4336, 5 = 255 }
+blk = { 1 = 0x1d00b00, 13 = 0xc2000000 }
+
+[[probe]]
+name = "isp-stencil-ts-front-swap"
+question = "two-sided: front face, front always, back never"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-ts-front-swap"]
+isp2 = 0xe0000ff
+blk_add = { 3 = 0x1d00300, 4 = 4336, 5 = 255 }
+blk = { 1 = 0x1d00b00 }
+
+[[probe]]
+name = "isp-stencil-ts-back-b35"
+question = "two-sided: back face, front never, bits 3 and 5 only"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-ts-back-b35"]
+isp2 = 255
+blk_add = { 3 = 0x1d00300, 5 = 0xe0000ff }
+blk = { 1 = 0x1d00b00, 12 = 0xc2000000 }
+
+[[probe]]
+name = "isp-stencil-ts-back-b34"
+question = "two-sided: back face, front never, bits 3 and 4 only"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-ts-back-b34"]
+isp2 = 255
+blk_add = { 3 = 0x1d00300, 4 = 4336 }
+blk = { 1 = 0x1d00b00, 12 = 0xc2000000 }
+
+[[probe]]
+name = "isp-stencil-ts-back-b3-nostencil"
+question = "two-sided: back face, front never, back ISP0 without its ISP2-present bit, bits 3-5"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["x-ts-back-b3-nostencil"]
+isp2 = 255
+blk_add = { 3 = 0x1d00200, 4 = 4336, 5 = 0xe0000ff }
+blk = { 1 = 0x1d00b00, 13 = 0xc2000000 }
+
+[[probe]]
+name = "isp-stencil-always"
+question = "stencil ISP2 0x0e00ff00 ref 0: drawn?"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+isp2 = 0xe00ff00
+blk = { 1 = 0x1d00300 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["always"]
+
+[[probe]]
+name = "isp-stencil-never"
+question = "stencil ISP2 0x0000ff00 ref 0: drawn?"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+isp2 = 65280
+blk = { 1 = 0x1d00300 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["never"]
+
+[[probe]]
+name = "isp-stencil-eq0"
+question = "stencil ISP2 0x0400ff00 ref 0: drawn?"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+isp2 = 0x400ff00
+blk = { 1 = 0x1d00300 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["eq0"]
+
+[[probe]]
+name = "isp-stencil-eq1"
+question = "stencil ISP2 0x0400ff00 ref 1: drawn?"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+isp2 = 0x400ff00
+blk = { 1 = 0x1d00301 }
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["eq1"]
+
+[[probe]]
+name = "isp-stencil-eq1-bg1"
+question = "stencil ISP2 0x0400ff00 ref 1, BGOBJVALS 0x301 (rd:17): drawn?"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+isp2 = 0x400ff00
+blk = { 1 = 0x1d00301 }
+kpoke = ["rd:17=0x301"]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["eq1-bg1"]
+
+[[probe]]
+name = "isp-stencil-eq0-bg1"
+question = "stencil ISP2 0x0400ff00 ref 0, BGOBJVALS 0x301 (rd:17): drawn?"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+isp2 = 0x400ff00
+blk = { 1 = 0x1d00300 }
+kpoke = ["rd:17=0x301"]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["eq0-bg1"]
+
+[[probe]]
+name = "isp-stencil-eq0-04e8-0"
+question = "stencil ISP2 0x0400ff00 ref 0, 0x04e8 = 0x0: drawn?"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+isp2 = 0x400ff00
+blk = { 1 = 0x1d00300 }
+kpoke = ["rd:51=0x0"]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["eq0-04e8-0"]
+
+[[probe]]
+name = "isp-stencil-eq1-04e8-0"
+question = "stencil ISP2 0x0400ff00 ref 1, 0x04e8 = 0x0: drawn?"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+isp2 = 0x400ff00
+blk = { 1 = 0x1d00301 }
+kpoke = ["rd:51=0x0"]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["eq1-04e8-0"]
+
+[[probe]]
+name = "isp-stencil-eq0-04e8-1"
+question = "stencil ISP2 0x0400ff00 ref 0, 0x04e8 = 0x1: drawn?"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+isp2 = 0x400ff00
+blk = { 1 = 0x1d00300 }
+kpoke = ["rd:51=0x1"]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["eq0-04e8-1"]
+
+[[probe]]
+name = "isp-stencil-eq1-04e8-1"
+question = "stencil ISP2 0x0400ff00 ref 1, 0x04e8 = 0x1: drawn?"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+isp2 = 0x400ff00
+blk = { 1 = 0x1d00301 }
+kpoke = ["rd:51=0x1"]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["eq1-04e8-1"]
+
+[[probe]]
+name = "isp-stencil-eq0-04e8-101"
+question = "stencil ISP2 0x0400ff00 ref 0, 0x04e8 = 0x101: drawn?"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+isp2 = 0x400ff00
+blk = { 1 = 0x1d00300 }
+kpoke = ["rd:51=0x101"]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["eq0-04e8-101"]
+
+[[probe]]
+name = "isp-stencil-eq1-04e8-101"
+question = "stencil ISP2 0x0400ff00 ref 1, 0x04e8 = 0x101: drawn?"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+isp2 = 0x400ff00
+blk = { 1 = 0x1d00301 }
+kpoke = ["rd:51=0x101"]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["eq1-04e8-101"]
+
+[[probe]]
+name = "isp-stencil-eq1-bg201"
+question = "stencil equal ref 1, rd:17=0x201: drawn?"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+isp2 = 0x400ff00
+blk = { 1 = 0x1d00301 }
+kpoke = ["rd:17=0x201"]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["eq1-bg201"]
+
+[[probe]]
+name = "isp-stencil-eq1-bg101"
+question = "stencil equal ref 1, rd:17=0x101: drawn?"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+isp2 = 0x400ff00
+blk = { 1 = 0x1d00301 }
+kpoke = ["rd:17=0x101"]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["eq1-bg101"]
+
+[[probe]]
+name = "isp-stencil-eq1-bg001"
+question = "stencil equal ref 1, rd:17=0x1: drawn?"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+isp2 = 0x400ff00
+blk = { 1 = 0x1d00301 }
+kpoke = ["rd:17=0x1"]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["eq1-bg001"]
+
+[[probe]]
+name = "isp-stencil-eq1-bg1-04e8-0"
+question = "stencil equal ref 1, rd:17=0x301 rd:51=0x0: drawn?"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+isp2 = 0x400ff00
+blk = { 1 = 0x1d00301 }
+kpoke = ["rd:17=0x301", "rd:51=0x0"]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["eq1-bg1-04e8-0"]
+
+[[probe]]
+name = "isp-stencil-eq1-bg1-04e8-1"
+question = "stencil equal ref 1, rd:17=0x301 rd:51=0x1: drawn?"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+isp2 = 0x400ff00
+blk = { 1 = 0x1d00301 }
+kpoke = ["rd:17=0x301", "rd:51=0x1"]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["eq1-bg1-04e8-1"]
+
+[[probe]]
+name = "isp-stencil-eq0-bg1-04e8-1"
+question = "stencil equal ref 0, rd:17=0x301 rd:51=0x1: drawn?"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+isp2 = 0x400ff00
+blk = { 1 = 0x1d00300 }
+kpoke = ["rd:17=0x301", "rd:51=0x1"]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["eq0-bg1-04e8-1"]

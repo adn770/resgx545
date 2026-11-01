@@ -1,0 +1,109 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# vdm index list: 0 sweeps, 7 probes.
+needs = ["render", "render_param", "render_tadata"]
+
+[[probe]]
+name = "vdm-index-list-idx-w4-0"
+question = "five copies with the index list's word 4 = 0x0"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 15
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+vdm = { 4 = 0 }
+dump_render = true
+
+[[probe]]
+name = "vdm-index-list-idx-w4-1"
+question = "five copies with the index list's word 4 = 0x10000000"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 15
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+vdm = { 4 = 0x10000000 }
+dump_render = true
+
+[[probe]]
+name = "vdm-index-list-idx-w4-7"
+question = "five copies with the index list's word 4 = 0x70000000"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 15
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+vdm = { 4 = 0x70000000 }
+dump_render = true
+
+[[probe]]
+name = "vdm-index-list-idx-w5-0"
+question = "five copies with the index list's word 5 = 0x0"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 15
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+vdm = { 5 = 0 }
+dump_render = true
+
+[[probe]]
+name = "vdm-index-list-idx-w5-1"
+question = "five copies with the index list's word 5 = 0x1"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 15
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+vdm = { 5 = 1 }
+dump_render = true
+
+[[probe]]
+name = "vdm-index-list-idx-w5-5"
+question = "five copies with the index list's word 5 = 0x5"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 15
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+vdm = { 5 = 5 }
+dump_render = true
+
+[[probe]]
+name = "vdm-index-list-idx-w5-8"
+question = "five copies with the index list's word 5 = 0x8"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 15
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"]]
+labels = ["o0 = o0"]
+vdm = { 5 = 8 }
+dump_render = true

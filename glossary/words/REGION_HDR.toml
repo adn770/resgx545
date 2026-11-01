@@ -1,0 +1,47 @@
+[[term]]
+id = "G0492"
+name = "REGION_HDR.FLAGS"
+status = "named"
+
+[[term.source]]
+term = "REGION_HDR.FLAGS"
+kind = "field"
+sgx545 = "region header word 0 [31:24]"
+meaning = "bit 25 a region outside the target, 26 the first region of a macrotile, 27 an empty region inside it, 28 the last region of a macrotile, 31 the last of the scene [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E178"
+licence = "MIT"
+evidence = "[HW] E177: as listed on 64 x 64, 128 x 128, 64 x 32, 32 x 64; [HW] E178: the same on 192 x 64, 64 x 192 and 256 x 256, every header listed"
+
+[[term]]
+id = "G0493"
+name = "REGION_HDR.POS"
+status = "named"
+
+[[term.source]]
+term = "REGION_HDR.POS"
+kind = "field"
+sgx545 = "region header word 0 [23:16], [15:0]"
+meaning = "the region's place: bits 23:16 step 2 per 32-pixel column, the low bits 2 per 16-pixel row, bits 15:12 the macrotile; a region is 32 x 16 pixels, and every region of the target's macrotiles has a header [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E177"
+licence = "MIT"
+evidence = "[HW] E177: 64 x 64, 128 x 128, 64 x 32 and 32 x 64 targets; [HW] E178: 64 headers on 64 x 64 to 192 x 64, 128 on 256 x 256, the macrotile in bits 15:12"
+
+[[term]]
+id = "G0494"
+name = "REGION_HDR.STREAM"
+status = "named"
+
+[[term.source]]
+term = "REGION_HDR.STREAM"
+kind = "field"
+sgx545 = "region header word 1"
+meaning = "the region's control-stream block, relative to the parameter slot; 0 for an empty region [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E177"
+licence = "MIT"
+evidence = "[HW] E177: 0x2000 on in 128-byte steps, one block per region the triangle covers"

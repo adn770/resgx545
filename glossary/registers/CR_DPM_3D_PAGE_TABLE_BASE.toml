@@ -1,0 +1,15 @@
+[[term]]
+id = "G0369"
+name = "CR_DPM_3D_PAGE_TABLE_BASE"
+status = "named"
+
+[[term.source]]
+term = "PSB_CR_DPM_3D_PAGE_TABLE_BASE"
+kind = "register"
+sgx545 = "0x0600"
+meaning = "base of the DPM 3D page table"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0256"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"

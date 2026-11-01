@@ -1,11 +1,11 @@
 +++
 id = "E013"
-claim = "A forward dataflow over the whole EDM microkernel reaches all 6637 instructions in 70 routines from 13 entry points and 21 further roots, and records every structure word (170) it reaches through a typed pointer, register (191) and secondary attribute (20) it touches; 299 branches, 554 memory accesses, 14 register addresses and 204 sources it cannot resolve are counted, not guessed"
+claim = "A forward dataflow over the whole EDM microkernel reaches all 6637 instructions in 70 routines from 13 entry points and 21 further roots, and records every structure word (342) it reaches through a typed pointer, register (191) and secondary attribute (20) it touches; 248 branches, 392 memory accesses, 14 register addresses and 113 sources it cannot resolve are counted, not guessed"
 unit = "edm"
-method = "harness/ukernel-extract/edm_dataflow.py run as the table probes/firmware/edm-dataflow.toml on the microkernel cut from the user's firmware (dataset firmware-images), with the handler labels make_r2.sh derives from the captured boot payload; our disassembly of the firmware, for interoperability; facts only, no code"
+method = "harness/ukernel-extract/edm_dataflow.py run as the table probes/firmware/edm-dataflow-3d.toml on the microkernel cut from the user's firmware (dataset firmware-images), with the handler labels make_r2.sh derives from the captured boot payload; our disassembly of the firmware, for interoperability; facts only, no code"
 tiers = ["RE", "CAP"]
-date = "2026-10-31"
-data = ["firmware-edm-dataflow", "firmware-images", "firmware-init-payload"]
+date = "2026-11-02"
+data = ["firmware-edm-dataflow-3d", "firmware-images", "firmware-init-payload"]
 terms = ["host_ctl", "kernel_ccb"]
 +++
 
@@ -16,18 +16,23 @@ Values are constants, pointers typed by structure, values that came from a struc
 a register or a secondary attribute (with the transforms applied since), or unknown; where
 paths join and disagree the value becomes unknown. A pointer is typed where a record
 establishes the word (TA3DCtl's kernel CCB and HWPerf words, E002; the transfer context's
-client CCB, CCB control and queue links, doc/specs/transfer.md §2.2 and E015), by the
-kernel-side layouts of the GPL kernel module, or by what the firmware itself stores in a slot.
-The structures only the client builds (the TA command and what it points at) have no layout
-here, so the words reached through them count as unresolved accesses. The result is a table
+client CCB, CCB control and queue links, doc/specs/transfer.md §2.2 and E015; the render
+context's client CCB, CCB control, PB descriptor, render lists and queue links, E156, E157,
+E159, E161, E165, E167; the TA command's PB descriptor, render details, destination sync list
+and RT data, E156, E158, E159, E161, E164; the RT data's render details, E159; the PB
+descriptor's first block, E200, E201), by the kernel-side layouts of the GPL kernel module, or
+by what the firmware itself stores in a slot. A pointer word of the client structures that no
+record establishes (the TA command's dword 16 and the RT data's dword 0, among others) is
+not given, so the words reached through it count as unresolved accesses. The result is a table
 of indices, offsets, masks and register numbers (resgx545-data
-`firmware/edm-dataflow/edm_dataflow.tsv`); doc/specs/edm_dataflow.md renders it with the
+`firmware/edm-dataflow-3d/edm_dataflow.tsv`; the earlier run without these TA/3D pointer words,
+`firmware/edm-dataflow/`, stays as it was); doc/specs/edm_dataflow.md renders it with the
 glossary's names.
 
 **Coverage.** 6637 of 6637 instructions reached, 70 of 70 routines, 13 entry points plus 21
-roots for code no path reaches; 170 structure words, 191 registers (as many as E010's register
-reach finds) and 20 secondary attributes. Unresolved: 299 branches, 554 memory
-accesses through a base of unknown origin, 14 register-supplied register addresses, 204
+roots for code no path reaches; 342 structure words, 191 registers (as many as E010's register
+reach finds) and 20 secondary attributes. Unresolved: 248 branches, 392 memory
+accesses through a base of unknown origin, 14 register-supplied register addresses, 113
 sources.
 
 **What it shows and what it does not.** Which words and registers the firmware reads and

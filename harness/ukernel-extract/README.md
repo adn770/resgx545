@@ -172,5 +172,72 @@ LD_LIBRARY_PATH=$SGX_UK_DIR/lib LD_PRELOAD=./fakedrm.so \
 ls $SGX_UK_DIR/dump3d      # xfer00_in.bin xfer00/ ...
 ```
 
-The same shim drives the closed GLES stack; those tools and their section arrive with the 3D
-unit.
+## 3D capture
+
+The same shim drives the closed GLES stacks: each TA and 3D kick a program submits is dumped
+with a snapshot of every live device object, so the state the closed driver writes for one
+piece of GL state can be read word by word. Two programs make the kicks:
+
+- `tri.c` → `tri`: draws one constant-colour triangle with EGL and GLES2 into a 64x64 pbuffer
+  and calls `glFinish`. Its `key=value` options (`triopts.h`) change one piece of state each:
+  size, pixel format, colours, depth, stencil, blending, culling, colour mask, scissor,
+  viewport, primitive type, vertex positions, a varying colour, textures and render to texture,
+  uniform values and attribute layouts, and shaders loaded from files (`vsfile=`, `fsfile=`).
+- `tri1.c` → `tri1`: the same for GLES1, through the closed fixed-function library, so a
+  capture holds the USSE and PDS programs the driver generates for the fixed-function state
+  its options (`tri1opts.h`) set.
+
+Both load the closed libraries with `dlopen` from `$SGX_UK_DIR/lib` and declare the few
+Khronos constants and prototypes they use, so they build without closed headers. They need the
+window-system module and the init info of the transfer captures above.
+
+```sh
+gcc -m32 -shared -fPIC fakedrm.c -o fakedrm.so -ldl
+gcc -m32 -shared -fPIC fakewsegl.c -o $SGX_UK_DIR/lib/libpvrFAKEWSEGL.so
+gcc -m32 tri.c -o tri -ldl
+gcc -m32 tri1.c -o tri1 -ldl
+cp $SGX_UK_DIR/dump/devinitpart2_in.bin $SGX_UK_DIR/devinit.bin     # after ./loader
+printf '[default]\nWindowSystem=libpvrFAKEWSEGL.so\n' > $SGX_UK_DIR/powervr.ini
+LD_LIBRARY_PATH=$SGX_UK_DIR/lib LD_PRELOAD=./fakedrm.so ./tri
+ls $SGX_UK_DIR/dump3d      # kickNN_in.bin, kickNN/ (objects.txt, objNNN_<dva>.bin)
+```
+
+### Differential captures
+
+A list file holds one run per line, `name option...`, each changing one piece of state against
+a base run of the same list. `capture3d.sh` runs a list, each run in its own directory
+`$SGX_UK_DIR/var/<name>/` that links `lib/` (or `$SGX_UK_LIB`), `devinit.bin` and
+`powervr.ini`; a word `ini:Key=Value` is appended to that run's copy of `powervr.ini` (a closed
+driver app hint), and `prog:tri1` runs `tri1` instead of `tri`. Run names repeat across lists
+(`base` is in most of them), so give each list its own `SGX_UK_DIR`, or move `var/` away before
+the next list.
+
+The lists:
+
+- `variations3d.txt`: one piece of GL state each;
+- `sizes3d.txt`: the render-target size, 1x1 to 4096x4096;
+- `textures3d.txt`, `samplers3d.txt`, `formats3d.txt`: textures, render to texture, filters
+  and wraps, texture formats;
+- `shaders3d.txt`: one shader per feature, written with `shaders/` by `gen_shaders3d.py`;
+- `inputs3d.txt`: uniform values and vertex attribute layouts;
+- `gles1_3d.txt`: GLES1 fixed-function state, with `prog:tri1`;
+- `isp3d.txt`, `gaps3d.txt`, `lines3d.txt`, `streams3d.txt`: render-details registers the
+  other lists leave alone, line widths, YUV texture streams;
+- `track3d.txt`: several draws, flushes and frames, depth and stencil buffers kept in memory,
+  small parameter buffers.
+
+```sh
+SGX_UK_DIR=~/resgx545-uk3d ./capture3d.sh variations3d.txt          # or: ... list name...
+../../.venv/bin/python state3d.py ~/resgx545-uk3d/var/base          # every state word
+../../.venv/bin/python diff3d.py --all ~/resgx545-uk3d/var          # each run against base
+../../.venv/bin/python tiling3d.py ~/resgx545-uk3d/var              # the size rule, per run
+```
+
+`kickwalk.py` decodes a kick's VDM control stream and follows its pointers to give every
+object a role, with the structure layouts of `kick3d.py`; `summary3d.py` lists one kick's
+objects with their roles and cross references and disassembles the PDS and USSE programs they
+reach (with `tools/usse-dis`); `state3d.py` names every state-carrying word of both kicks under
+a stable path; `diff3d.py` compares two captures word by word, hiding the words that differ
+only because the object they point into moved; `tiling3d.py` holds the render-target layout
+rule the size captures show and checks it against every capture. The captures themselves are
+closed-driver output and are kept in resgx545-data-private, not in this repository.

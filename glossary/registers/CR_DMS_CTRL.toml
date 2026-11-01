@@ -13,3 +13,35 @@ source = "emgd-psb_regs"
 citation = "C0062"
 licence = "MIT"
 evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"
+
+[[term]]
+id = "G0363"
+name = "CR_DMS_CTRL.MAX_NUM_PIXEL_PARTITIONS"
+status = "named"
+
+[[term.source]]
+term = "_PSB_CD_CTRL_MAX_NUM_PIXEL_PARTITIONS_MASK"
+kind = "bitfield"
+sgx545 = "SGX535: 0x0a74[24:22]; SGX545 position unconfirmed"
+meaning = "maximum pixel partitions"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0251"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs"
+
+[[term]]
+id = "G0364"
+name = "CR_DMS_CTRL.MAX_NUM_VERTEX_PARTITIONS"
+status = "named"
+
+[[term.source]]
+term = "_PSB_CD_CTRL_MAX_NUM_VERTEX_PARTITIONS_MASK"
+kind = "bitfield"
+sgx545 = "SGX535: 0x0a74[27:25]; SGX545 position unconfirmed"
+meaning = "maximum vertex partitions"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0252"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs"

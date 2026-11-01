@@ -1,0 +1,15 @@
+[[term]]
+id = "G0446"
+name = "CR_TE_DIAG5"
+status = "named"
+
+[[term.source]]
+term = "PSB_CR_TE_DIAG5"
+kind = "register"
+sgx545 = "0x0290"
+meaning = "TE diagnostic: PSG control-dword count"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0299"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"

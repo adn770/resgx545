@@ -12,7 +12,7 @@ tier = "3"
 source = "mesa-csbgen"
 citation = "C0206"
 licence = "MIT"
-evidence = "[HW] E030: clear, the end-of-tile emit hangs the job; with two emits per tile the first stores the tile, and the second spills into the next job, the queue staying one behind only when it has bit 9"
+evidence = "[HW] E030: clear, the end-of-tile emit hangs the job; hypothesis of this row's Rogue source (tier 3), tested in E240: PBE tile-relative addressing (Rogue tilerelative, below dither), refuted; [HW] E239: clear on a one-tile target hangs, so not tile-relative; with two emits per tile the first stores the tile, and the second spills into the next job, the queue staying one behind only when it has bit 9; [infer] the reading is ours (E240)"
 
 [[term]]
 id = "G0262"
@@ -28,7 +28,7 @@ tier = "ours"
 source = "resgx545"
 citation = "E030, E031"
 licence = "MIT"
-evidence = "never varied; Rogue source_pos (mesa pbestate.xml:360, tier 3) has a different word layout; [HW] E030: each of 1-7 changes no pixel of an ARGB8888 triangle; [HW] E031: nor with RGB565 (pack mode 3)"
+evidence = "never varied; Rogue source_pos (mesa pbestate.xml:360, tier 3) has a different word layout; [HW] E030: each of 1-7 changes no pixel of an ARGB8888 triangle; [HW] E031: nor with RGB565 (pack mode 3); [infer] the rest of its reading rests on records still to come"
 
 [[term]]
 id = "G0263"

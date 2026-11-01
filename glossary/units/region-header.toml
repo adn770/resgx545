@@ -1,0 +1,37 @@
+[[term]]
+id = "G0562"
+name = "region header"
+status = "named"
+
+[[term.source]]
+term = "Region Header"
+kind = "concept"
+sgx545 = "-"
+meaning = "header word of a tile region in the control stream"
+tier = "4"
+source = "patent-US9384584"
+citation = "C0340"
+licence = "patent"
+evidence = "OCR text"
+
+[[term.source]]
+term = "region header"
+kind = "concept"
+sgx545 = "-"
+meaning = "per-tile region headers written by geometry (Rogue analogue)"
+tier = "3"
+source = "linux-imagination"
+citation = "C0341"
+licence = "GPL-2.0-only OR MIT"
+evidence = "same concept"
+
+[[term.source]]
+term = "region header"
+kind = "concept"
+sgx545 = "-"
+meaning = "per-tile header pointing to the tile's object list"
+tier = "4"
+source = "patent-US9105131"
+citation = "C0342"
+licence = "patent"
+evidence = "OCR text"

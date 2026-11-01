@@ -64,12 +64,6 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   SETHWPERFSTATUS) and none for 2D, DATABREAKPOINT and FLUSHPDCACHE; the same at both captured
   layouts.
   *firmware; CAP, DDK; data: `firmware-init-payload`.*
-- `E013` A forward dataflow over the whole EDM microkernel reaches all 6637 instructions in 70
-  routines from 13 entry points and 21 further roots, and records every structure word (170) it
-  reaches through a typed pointer, register (191) and secondary attribute (20) it touches; 299
-  branches, 554 memory accesses, 14 register addresses and 204 sources it cannot resolve are
-  counted, not guessed.
-  *edm; RE, CAP; data: `firmware-edm-dataflow`, `firmware-images`, `firmware-init-payload`.*
 - `E014` The EDM writes HostCtl dword 14 (assert_fail) only with constants: 0xad002600 at
   instruction 1, on the instruction-0 path that no normal boot takes, and 0xad001a07 at instruction
   0x55c of the event routine, taken when the kernel CCB's write and read offsets differ; it never
@@ -860,12 +854,497 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   the render context's isp_ipfmisc word set) and no BIF fault; what clearing that bit does above
   64x64 and what the EDM's cleanups wait for are not shown by any run.
   *render; HW; data: `render-target-sizes`, `render-client-jobs`.*
+- `E150` The kernel CCB command 9 (SET_HWPERF_STATUS) handler at 0x157 writes 0xffffffff to dword 2
+  of the HWPerf buffer, stores command data dword 0 with bit 0 cleared as the HWPerf status word,
+  and, only if bit 0 of the data was set, writes CR_HWPERF_CTRL = 0x1ff and pulses CR_HWPERF_PULSE;
+  when the status is not zero it then writes HostCtl's group, shifted left 9 and masked with 0x1e00,
+  to CR_HWPERF_CTRL.
+  *platform; RE; data: `firmware-images`.*
+- `E151` With a transfer context naming a client page directory that alone maps the fill's
+  destination and an update target, the fill lands exactly and the update word holds its value,
+  whether the EDM's own buffers are aliased in that directory read-write, read-only, or (for the
+  fill alone) not at all; a fill aimed at a read-only alias of a kernel buffer writes nothing and
+  leaves CR_BIF_FAULT naming that page and list 1.
+  *bif; HW; data: `transfer-isolation`.*
+- `E152` The EDM's only access to register 0x0e80 (CR_HWPERF_PULSE) is a write of 1 then a write of
+  0 in the routine at 0x1ea, which also writes CR_HWPERF_CTRL; it is reached from the boot path at
+  0x1c4 and from the SET_HWPERF_STATUS handler, never read, and no instruction that takes its
+  register number from a register can name it.
+  *edm; RE; data: `firmware-images`.*
+- `E153` The routine at 0x15bc-0x1664 waits for a running TA or 3D to go quiet before a parameter
+  buffer is swapped or a render is kicked: when told to settle the 3D it reads CR_SETTLE_POLL0 and
+  CR_SETTLE_POLL1 (0x0308, 0x030c) together after the four ISP signature registers, then waits 1000
+  loop counts and reads each set again, and loops until the xor of each set is the same on both
+  reads; when told to settle the TA it does the same with CR_PPP_SIGNATURE and the two TE diagnostic
+  registers instead and does not read 0x0308 or 0x030c; nothing in the firmware writes any of them.
+  *edm; RE; data: `firmware-images`, `firmware-edm-dataflow`.*
+- `E154` The request word TA3DCtl dword 31 has nine request bits in use, each posted by one pa1 bit
+  of the event task or by a named routine and each handled by one of PDS #14's three tasks (0x1,
+  0x2, 0x8 and 0x40000 by the task at 0xe74, 0x80 and 0x20000 by 0x5d4, 0x10, 0x20, 0x40 and 0x80000
+  by 0xae8), and the EDM keeps the TA's state in sa8 and the 3D's in sa9 so that one TA job and one
+  3D job are in flight at a time.
+  *edm; RE; data: `firmware-images`.*
+- `E155` In every handler of the EDM event tasks that acknowledges an event, the pa1 bit it tests
+  and the CR_EVENT_HOST_CLEAR value it writes are related by acknowledged status bit = 22 minus the
+  pa1 bit, for the seven pa1 bits 22, 21, 20, 10, 9, 7 and 4; pa1 bit 8 (the kernel CCB) writes no
+  acknowledgement, and the timer tick arrives in pa0 bit 1; the reading that pa1 is CR_EVENT_STATUS
+  bits 22-0 in reverse order fits all of these.
+  *edm; RE, infer; data: `firmware-images`.*
+- `E156` At TA_FINISHED (request 0x80, handler at 0x606) the EDM completes the TA command's sync and
+  status words, raises SW_EVENT, and, when the kick carries LAST_KICK, flushes the tail pointer
+  cache (unless render flag 0x8 is set) and queues the render details on the context's ready list
+  and the 3D queue; a kick without LAST_KICK instead saves the tiling engine state and counts itself
+  in the RT data set.
+  *edm; RE; data: `firmware-images`.*
+- `E157` The EDM's TA kernel-CCB handler (kick address 0x11d, instructions 0x11d-0x139) reads only
+  the render context named in command data dword 1: it counts the kick in the context's
+  submitted-commands word, queues the context on the TA queue if it was idle and had no pending
+  render, and ends in the shared tail that posts the 3D and TA scheduler requests; the command's own
+  address is never passed.
+  *edm; RE; data: `firmware-images`.*
+- `E158` The second half of the EDM's TA kick (0x9b7-0xacc) picks a DPM context slot for the RT
+  data, clears (first kick, or flag 0x8) or reloads (slot held another RT data) its DPM state,
+  control and OTPM, restores the tiling engine state, sets two TE_PSG bits, zeroes the RT status
+  words on a first kick or flag 0x4, marks the TA running, copies the command into the render
+  details, and starts the TA with a write of 1 to CR_VDM_START.
+  *edm; RE, infer; data: `firmware-images`.*
+- `E159` The first half of the EDM's TA kick (0x8e9-0x9b6) records the job in TA3DCtl, resets the TA
+  on a FIRST_KICK, loads the context's parameter buffer unless it is already loaded (or applies a
+  pending threshold update), writes the command's 28 TA register dwords, one str each in structure
+  order, then the vertex partition count, maps the context's address space and invalidates caches as
+  the TA flags ask.
+  *edm; RE; data: `firmware-images`.*
+- `E160` On a DPM out-of-memory (request 0x30, handler at 0xb50) the EDM waits for a render that can
+  free memory, or grows the TA's global-list share once, or raises the ZLS page threshold, or aborts
+  the macrotile; after an abort the TA stops (TA_TERMINATE, handler at 0xc23) and the EDM starts a
+  partial render of what was tiled, using the render-details register block and the partial-region
+  base, and its completion (request 0x80000, handler at 0xdbf) marks the macrotile's RT status word
+  and restarts the TA.
+  *edm; RE, infer; data: `firmware-images`.*
+- `E161` The EDM's TA pick (0x6f5-0x7b0) takes a context's next TA command from its CCB only when
+  the context has a counted kick and is not suspended, the command's READY bit is set, its
+  transfer-queue sync is complete, its RT data is free when the kick is a first kick or has flag
+  0x4, and (when another context is queued) its destination and source syncs are complete; it
+  applies a PB threshold update on the way and starts the kick only when no TA is running.
+  *edm; RE; data: `firmware-images`.*
+- `E162` At each 3D kick the EDM writes dwords 0, 1 and 2 of the RT data's background object, in the
+  3D's address space, from render details dwords 76 and 77 and from the word of the
+  render-target-indexed list that render details dword 69 points at (list base plus 4 times the RT
+  index); the TA kick has copied render details dwords 76 to 78 from command dwords 2 to 4.
+  *edm; RE; data: `firmware-images`.*
+- `E163` The EDM's 3D kick (0x112b-0x12db) records the job in TA3DCtl, picks a DPM slot for the RT
+  data and loads its context unless it is resident, loads the 3D's parameter buffer unless it is
+  loaded, sets the deallocation mode from render flag 0x8, writes the 52 dwords of the render
+  details to 52 registers in structure order with no change except for the render-target index, flag
+  0x10 and the depth and stencil flags, invalidates the caches, writes the background object (E162)
+  and starts the render with a write of 1 to CR_ISP_START_RENDER; it does not write
+  CR_PDS_EXEC_BASE.
+  *edm; RE; data: `firmware-images`.*
+- `E164` A render completes only when both the end of render (request 0x2, handler at 0xebb) and the
+  3D deallocation (request 0x1, handler at 0xeb4) have arrived, in either order; the completion
+  (0xfd1) then writes the RT index's destination sync, steps to the next render target or, on the
+  last, completes the TA to 3D dependency, the 3D transfer-queue sync, the source syncs and the 3D
+  status pairs, marks the RT data free and raises SW_EVENT; a partial render instead posts request
+  0x80000.
+  *edm; RE; data: `firmware-images`.*
+- `E165` There is no 3D command: the kernel CCB's kick table (E012) has no render handler, the
+  render details reach the 3D queue only through the render-queue routine (called from the
+  TA-finished handler on a last kick, the abort path of the TA pick and two cleanup sites), and the
+  3D schedule (request 0x40000, routine 0x1035) tries the transfer queue first and then the 3D
+  queue, checks the ready render details' syncs before kicking, and returns to its caller after the
+  first kick.
+  *edm; RE; data: `firmware-images`.*
+- `E166` In the firmware the render is queued at TA_FINISHED by a TA command with flag 0x2 (command
+  dword 1, bit 1: the last kick), not by render flag 0x400, which the only code that tests it uses
+  for a completion count; and a command that carries both the first-kick flag 0x1 and flag 0x2 runs
+  the first-kick actions at its TA kick and the last-kick actions at its TA finished through the
+  same code as two commands would.
+  *edm; RE, infer; data: `firmware-images`.*
+- `E167` The EDM tests bit 5 of a render context's flags word (dword 0) only in the render-context
+  cleanup: with the bit set the cleanup clears the TA and 3D loaded-PB slots (TA3DCtl dwords 46 and
+  47) that hold the context's own PB; with it clear it leaves them to the PB cleanup, which clears
+  them whenever they hold that PB.
+  *edm; RE; data: `firmware-images`.*
+- `E169` Bit 4 of the render flags word the TA kick copies into the render details (render details
+  dword 53) makes both of the firmware's code paths that start a render, the 3D kick and the
+  partial-render restart, set bit 0 of CR_ISP_ZLSCTL; with the bit clear they skip that write.
+  *render; HW, RE, infer; data: `firmware-images`, `firmware-edm-dataflow`.*
+- `E172` The EDM tests dword 1 of the TA command with mask 0x5 at four places and mask 0x9 at three:
+  at two of the 0x5 tests a non-zero result keeps the list-insertion stores that link the render
+  details into the context, and a zero 0x9 result runs the cache, bank and DPM-context calls of the
+  TA kick that a non-zero result skips.
+  *ta; RE, infer; data: `firmware-images`.*
+- `E174` The library's render contexts, sized for their target by its own rule, draw the first
+  triangle exactly on 16 target sizes from 64x64 to 4096x4096 (two renders of each, 0 wrong pixels
+  in every one), and a context sized for 256x256 draws a 64x64 target exactly; that the same buffers
+  serve every smaller target is shown for that one pair.
+  *ta; HW; data: `render-target-sizes`, `render-client-jobs`, `dpm-parameter-buffer`.*
+- `E175` Between a 64x64 and a 256x256 triangle render the debugfs register file shows four tiling
+  registers change as the target grows (0x020c, 0x0210, 0x0214 and 0x0248, whose values are the tile
+  counts and pixel size minus one) and 0x0208 stay unchanged; the render is exact.
+  *ta; HW; data: `platform-register-snapshots`.*
+- `E182` With each of the TA command's twelve zero register words loaded with ~0, the culled
+  triangle and the off-target triangle leave byte-for-byte the baseline's render memory (no object
+  written), and the registers keep three words as aligned addresses (low 4, 4 and 2 bits clear) and
+  four as full 32-bit values.
+  *ta; HW, infer; data: `ta-zero-words`.*
+- `E183` The TA command's twelve zero register words read best as state a TA saves and resumes when
+  it is interrupted: the measurements fit it (every word zero in the job, three address-shaped, none
+  a cull disable, none used as an address by a TA that runs to its end), but no run interrupts a TA,
+  so the reading is untested.
+  *ta; infer, HW; data: `ta-zero-words`.*
+- `E184` After a one-render triangle job TA3DCtl dword 24 reads 0x32400000 and after a two-render
+  job 0x324002c0, so it moves 0x2c0 for the second render; the DPM free-list status registers
+  0x0700, 0x070c, 0x0710 and 0x071c change together on every render; VDM_CTRL_STREAM_BASE is not in
+  the register file and is not shown.
+  *vdm; HW; data: `platform-register-snapshots`.*
+- `E185` With the triangle's VDM state word 1 bits 11:9 at 0 the TA writes no object and every
+  region header is empty, byte for byte the render memory of the culled triangle; at 1, 6 and 7 the
+  render memory is byte for byte the drawn triangle's, in both runs.
+  *vdm; HW; data: `vdm-state1`, `vdm-state1-followup`, `ta-zero-words`.*
+- `E186` After the jobs with VDM state word 1 bits 15:13 at 0, 5 or 6 hang, the saved render memory
+  holds no object in either run, as does the three-index lines job; but a job hung in its pixel task
+  leaves its object in the first run and none in the follow-up run, so a missing object does not
+  show that the TA stopped before writing it.
+  *vdm; HW; data: `vdm-state1`, `vdm-state1-followup`.*
+- `E187` VDM_TASK0 bits 31:28 at 7, 1 and 0 and VDM_STATE1 bit 8 set leave the saved render memory
+  (parameter buffer and TA data) byte for byte the same as the plain triangle's, in the runs that
+  have them; neither field reaches what the TA writes for this triangle.
+  *vdm; HW; data: `vdm-vertex-tasks`, `vdm-state1`, `vdm-state1-followup`.*
+- `E189` VDM_TASK0 bits 31:28 set how many vertices one vertex task takes: with 126 vertices, values
+  1, 2, 5 and 6 give tasks of 2, 3, 6 and 7 vertices in index order, each ending early when its last
+  quad is short of vertices, values 3, 7 and 15 fill every quad of four, and 0 gives single-vertex
+  tasks for 18 vertices and then hangs the job.
+  *vdm; HW; data: `vdm-vertex-tasks`.*
+- `E190` VDM_TASK0 bits 31:28 are the number of vertices per vertex task less one, a reading that
+  fits the values 0, 1, 2, 5 and 6 and is not told apart from a cap on a task's quads at 3, 7 and
+  15.
+  *vdm; HW, infer; data: `vdm-vertex-tasks`.*
+- `E191` In the triangle's VDM state word 1, setting bit 12 makes the TA write no object and leave
+  all 64 regions empty, setting bit 18 hangs the job, and clearing bit 25 changes neither the TA's
+  output (byte for byte) nor the image, in both runs of the sweep.
+  *vdm; HW; data: `vdm-stream-words`, `vdm-stream-words-followup`, `vdm-state1`,
+  `vdm-state1-followup`.*
+- `E192` A coordinate set on the vertices needs three words changed together, which the probe tool's
+  vertex-coordinates option does: OUTSEL's vertex size (blk:13 bits 19:16) 4 to 6 dwords, the
+  coordsize word (blk:16) 0 to 2 and the vertex task's output size (vdm:7 bits 31:24) 1 to 2 rows;
+  with the size alone at 5 or 6 the triangle keeps 490 of its 1062 pixels, and the output size alone
+  at 0, 3, 5 or 9 removes it.
+  *mte; HW; data: `pds-iteration-sources`, `vdm-stream-words`, `vdm-stream-words-followup`.*
+- `E193` With the viewport's z offset at 0.75 and a vertex program that sets z to the clip x, the
+  64x64 triangle draws 1026 of its 1062 pixels, those whose clip x is below 0.5 (the last at
+  0.484375), so the depth is the z offset plus 0.5 times z against the background depth of 1.0, and
+  vp5 (blk:11) is the viewport's z scale.
+  *mte; HW, infer; data: `isp-depth-test`.*
+- `E194` The triangle's size goes as 1/w (261 pixels at w 2, 3212 at w 0.5, the whole target from w
+  1e-3 to 1e-5) and below w 1e-5 it shrinks away (395 pixels at 2e-6, 100 at 1e-6, 16 at 5e-7, 1 at
+  1e-7, none at 0 or below); the state block's WCLAMP word (blk:14) holds 1e-5 in the job and, set
+  to 1e-3, removes the triangle at w 1e-5 and below, set to 1e-7 or 0 keeps it whole down to 5e-7;
+  the TA command's two 1e-6 floats change none of it.
+  *mte; HW, infer; data: `mte-clipping`.*
+- `E195` MTECTL (blk:15) bits 8:7 choose which vertex's values the clipper gives the vertices it
+  makes (0 interpolated values, 1, 2, 3 vertex 0's, 1's, 2's) and the 2-bit fields from bit 10 say
+  per attribute whether that choice is dropped for interpolation again; on a triangle that is not
+  clipped no tried value changes the image, and bit 9 and bit 26 of the index list's third word
+  change nothing clipped or not.
+  *mte; HW; data: `mte-mtectl`.*
+- `E196` With MTECTL bit 6 the MTE takes the vertex outputs x and y as window coordinates in pixels,
+  as the shader wrote them, with no division by w and no viewport: the scaled triangle draws a
+  3-pixel corner at scale 8 and a 66-pixel corner at scale 32 whatever w is (1 or 2), and the
+  object's third group of three dwords holds w itself.
+  *mte; HW, infer; data: `mte-mtectl`, `vdm-state1`, `vdm-state1-followup`.*
+- `E198` OUTSEL bits 7:0 enable user clip planes: with bit 0 and a 5-dword vertex the triangle is
+  drawn when the fifth dword (o4) is +1.0 and removed when it is -1.0, with bits 1:0 and a 6-dword
+  vertex only when o4 and o5 are both positive, a plane crossing the triangle removes it whole
+  instead of cutting it, and fdpc's value serves as the distance like fdp's; with a 4-dword vertex
+  any of bits 7:0 set removes the triangle or faults the job.
+  *mte; HW, infer; data: `mte-user-clip-planes`, `vdm-stream-words`, `vdm-stream-words-followup`.*
+- `E199` The microkernel writes register 0x065c only with 1 and 0, four times, in the partial-render
+  routine (0xc23-0xdbe) and its resume (0xdbf-0xe09), and register 0x0658 three times, 1 in the
+  partial-render routine and 0 in the resume and in the 3D kick routine (0x112b-0x12db); it reads
+  neither, and the writes of 1 are skipped under bits of one secondary attribute.
+  *dpm; RE; data: `firmware-edm-dataflow`, `firmware-images`.*
+- `E200` The EDM loads a parameter-buffer descriptor into the TA-side or the 3D-side DPM registers
+  (0x0618-0x0668 and 0x0600-0x0664), stores the free-list status registers back into it, reloads the
+  thresholds when the descriptor's flags have bit 1 set, and rebuilds the page table from the
+  descriptor's block list when they have bit 0 set, one 32-bit entry per page holding the previous
+  page in the high half and the next in the low half.
+  *dpm; RE, HW; data: `firmware-edm-dataflow`, `firmware-images`, `dpm-parameter-buffer`.*
+- `E201` The descriptor the host gives the EDM holds a flags dword, the initial and current
+  free-list head/tail and previous-page words, a page-table base address, the local and global page
+  counts, four thresholds (TA, ZLS, global, PDS), and a pointer to a list of blocks; with the host's
+  values (0x422 pages) the DPM registers read back a free list from page 1 to the last page, a
+  previous-page word one before it, thresholds of pages + 0x10, pages - 0x22, the same with bit 16
+  set, and pages - 0x122, and the same fields at every smaller size.
+  *dpm; RE, HW; data: `firmware-edm-dataflow`, `firmware-images`, `dpm-parameter-buffer`.*
+- `E202` A scene larger than its parameter buffer is reported by the kernel as an overflow with the
+  context kept, no fault or hang; at 4096x4096 it draws only part of the image from 0x100 pages
+  down, at 1024x768 from 0x30 to 0x24 pages, while at 0x23 pages and 1024x768 the job still reports
+  an overflow but the image is exact; the image is the same in both repeats of every size, and the
+  amount missing does not follow the buffer size.
+  *dpm; HW, infer; data: `dpm-parameter-buffer`.*
+- `E204` Register 0x0658 reads 1 in jobs that overflow their parameter buffer and never in jobs that
+  do not (40 timelines): one stretch per partial render, 1 to 10 of them as the buffer shrinks at
+  4096x4096 and one at 1024x768, each stretch 26.8 to 28.9 ms long at 4096x4096 and 1.0 to 1.2 ms at
+  1024x768; register 0x065c was never seen at 1.
+  *dpm; HW, RE; data: `dpm-parameter-buffer`, `firmware-edm-dataflow`.*
+- `E205` CR_DPM_PARTIAL_RENDER (0x0658) is 1 while a partial render runs and 0 otherwise; in our
+  data the firmware sets and clears it, so it reads as a status the EDM keeps, and that it is also
+  an enable is not shown.
+  *dpm; HW, RE, infer; data: `dpm-parameter-buffer`, `firmware-edm-dataflow`.*
+- `E206` The TA command word the EDM copies into CR_DPM_REG_074C (ta:167) faults the job when bit 8
+  is set in every value tried (0x100, 0x700, 0xffffffff) and never when bit 8 is clear (31 other
+  single bits, 0 and five address-like values), so the data fit an enable at bit 8 and do not fit an
+  address field.
+  *dpm; HW, infer; data: `render-kernel-words`, `render-kernel-words-followup`, `ta-zero-words`.*
+- `E210` With the multisample positions in place, 0x042c bits 1:0 at 0, 1 and 2 give three different
+  images of the 64x64 triangle (1086, 868 and 896 triangle pixels; 916, 1260 and 1248 with the TE
+  anti-aliasing bits) and 3 hangs the job in both settings; which sample count each value selects is
+  not shown, so reading 1 as two samples and 2 as four is an inference of ours.
+  *isp; HW, infer; data: `isp-msaa`.*
+- `E211` With 0x042c bits 1:0 at 2, bit 31 set draws the 64x64 triangle (896 pixels, 1248 with the
+  TE bits and the macrotile words) and bit 31 clear draws none of it (4096 background pixels), in
+  both settings; with the whole word at 0 the unpoked 1062-pixel image comes back; that bit 31 acts
+  after tiling is not shown, because the render-memory dumps are not in the data.
+  *isp; HW; data: `isp-msaa`.*
+- `E213` With 0x04dc at 2 and at 3, every case of the first punch-through scene (a one-phase shader
+  waiting for a fetchless iteration; four endings, nop.end among them) hangs the job, in two runs;
+  at 0 the same four cases draw nothing, so whether bit 1 moves the depth test cannot be seen in
+  this scene.
+  *isp; HW; data: `isp-punch-through`, `isp-punch-through-followup`.*
+- `E214` With ISP word 0 bit 28 set, 55 values of 0x0520 give 6 distinct images of the 64x64
+  triangle, each reproduced pixel for pixel by one rule: a pixel is covered when the pixel centre,
+  the pixel's top-left corner or any of four samples placed by the value's bytes (x in bits 3:0, y
+  in bits 7:4 of each byte, sixteenths of a pixel) is inside the triangle; a second rule fits the
+  same images, and no value removes a pixel.
+  *isp; HW; data: `isp-sample-positions`.*
+- `E215` With ISP word 0 bit 28 set, the single-sampled triangle's coverage depends on 0x04c8 as
+  well as 0x0520 (1122, 1134 and 1098 pixels for 0x04c8 at 0x88, 0xffffffff and 0 with 0x0520 at
+  0x0c0c0c0c, against 1098 with 0x0520 at 0), which the union of eight samples (0x04c8's four bytes
+  and 0x0520's four) predicts in all four cases; a 4x render gives one image for three values of
+  0x0520, bit 28 under 4x hangs the job, and mode 3 hangs in every setting tried.
+  *isp; HW; data: `isp-sample-positions`.*
+- `E216` The triangle's stencil test (ISP word 2 compare, reference in ISP word 0 bits 7:0) tests
+  against a stencil value held in register 0x04bc bits 7:0: with the job's value equal-0 draws the
+  triangle and equal-1 does not, with 0x301 it is the other way round, and bit 8 clear (0x201) stops
+  the value being used; bit 9 clear (0x101, 0x1) leaves the target with old pixels; register 0x04e8
+  at 0, 1 and 0x101 changes none of 9 runs' outcomes.
+  *isp; HW; data: `isp-stencil`.*
+- `E217` In the five-copy punch-through pass a pixel is kept only when the pt phase ends in atst8
+  with fb, a passing alpha test and 0xe001 in src1 (~0 keeps it too, with the depth always winning):
+  nfb, nop.end and ten other src1 words keep none, and a failing test shows the copy behind; the
+  depth result (1062 pixels of the nearest copy, 36 of the next) is the same without pcoeff, without
+  the source-34 iteration and without both, and moves between runs only when pcoeff runs with that
+  iteration missing, or with a source register unset.
+  *isp; HW; data: `isp-punch-through`, `isp-punch-through-followup`.*
+- `E218` In the full punch-through shader the feedback's control word (src1 of atst8 with fb) keeps
+  a pixel only with both bit 0 and bit 14 set: of the 32 single-bit flips of 0xe001 only those two
+  lose the image, and flipping bit 2 or bit 3 makes the last copy win (1074 pixels of depth 1/4, 24
+  of 1/8); 15 words with bits 15:13 and the low bits varied agree, and pcoeff's third source (12
+  values) changes nothing, in two runs.
+  *isp; HW; data: `isp-punch-through`, `isp-punch-through-followup`.*
+- `E219` Reading 0x042c bit 31 as the enable of the multisampled ISP path is consistent with the
+  data (bits 1:0 at 2: bit 31 clear draws nothing, in two multisample setups) but rests on one mode
+  and two setups; that clear bit 31 still tiles the triangle is not shown.
+  *isp; HW, infer; data: `isp-msaa`.*
+- `E220` Naming 0x042c bits 1:0 the multisample mode (1 two samples, 2 four, 3 eight) agrees with
+  three different images for 0, 1 and 2 and a hang at 3, but the sample counts are not measured.
+  *isp; HW, infer; data: `isp-msaa`.*
+- `E222` In the punch-through scene that draws (pcoeff and the source-34 iteration, 1062 pixels of
+  the nearest copy and 36 of the next), 0x04dc at 0, 1 and 4 give the same image and 2 and 7 hang
+  every case, atst8 with fb or nfb, depthf and nop.end alike, in two runs; whether bit 1 is the
+  up-front depth test of other GPUs is not shown.
+  *isp; HW, infer; data: `isp-punch-through`, `isp-punch-through-followup`.*
+- `E224` 0x0520 is read as four sample positions by ISP word 0 bit 28 and is not the base of a table
+  the ISP reads or writes: pointed at the scratch buffer it changes no scratch dword, no ISP word 0
+  or word 1 bit tried changes a pixel with it except bit 28 (more pixels) and bit 18 (a fault that
+  0x0520 at 0 gives too), and the 55 values of the bit-28 sweep are fitted by sample positions.
+  *isp; HW, infer; data: `isp-sample-positions`.*
+- `E225` Writing 0, 1, 2, 4, 8, 0x10, 0x20 or 0x3f into bits 5:0 of 0x0800 (which holds 0x30 = 48
+  outside a render) does not change the time the ISP is clocked for a 1024x1024 render whose pixel
+  shader runs 150 dependent fmads on 276192 pixels (28646 to 28776 us over 50 jobs), so a pixel-task
+  maximum of 48 is not what the field holds; that it limits other work is a reading, not tested.
+  *isp; HW, infer; data: `pds-task-limits`.*
+- `E226` In the working punch-through scene atst8 ending in fb, optdwd, twosided with fb and
+  twosided with optdwd all keep the same pixels (1062 of depth 0, 36 of 1/16, 2998 background, one
+  identical image), in two runs; nfb keeps none (E217); what optdwd adds over fb, and what twosided
+  does on front faces, is not shown.
+  *isp; HW; data: `isp-punch-through`, `isp-punch-through-followup`.*
+- `E227` In E226's scene atst8 in fb, optdwd, twosided fb and twosided optdwd keep the same pixels
+  with ISP word 0 bit 20 set, on the scene mirrored in y to back faces, and with both (12 cases,
+  1062 pixels of depth 0 and 36 of 1/16 each, the mirrored images being exact y-mirrors of the front
+  one), in two runs; with later copies winning when the depth test is always (E218), a
+  depth-write-off bit that the feedback obeyed would be expected to change the image, and it did
+  not.
+  *isp; HW, infer; data: `isp-punch-through`, `isp-punch-through-followup`.*
+- `E228` ISP word 0 bit 11 turns on a two-sided stencil: with it set a back-facing triangle is drawn
+  or not by the stencil word of presence bit 5 and needs the back ISP word 0 of presence bit 3,
+  while a front-facing one keeps the front words; presence bit 4 is optional and the back word 0's
+  own ISP-word-2-present bit is not needed; without bit 11 no back-face case draws; ISP word 0 bit
+  18 hangs the render.
+  *isp; HW; data: `isp-stencil`.*
+- `E229` In the 64x64 punch-through scene turned to back faces with ISP word 0 bit 11 set and a
+  second pair of state words added, the stencil words (front never and back always, or front always
+  and back never) change nothing in atst8's fb and optdwd modes or in their twosided forms: all 8
+  cases drew the copy at z 0 on 1062 pixels and the copy at z 1/16 on 36, in both runs.
+  *isp; HW; data: `isp-punch-through`, `isp-punch-through-followup`.*
+- `E230` With ISP word 2 at stencil compare never, no single bit of atst8's control word among bits
+  1, 4-12 and 16-31 makes the punch-through pass obey the stencil: all 29 cases drew the copy at z 0
+  on 1062 pixels and the copy at z 1/16 on 36, in both runs.
+  *isp; HW; data: `isp-punch-through`, `isp-punch-through-followup`.*
+- `E239` On a target of one tile (32x16) bit 9 clear still hangs the job, and an end-of-tile program
+  that emits the tile twice stores the first emit's tile and leaves the next job's image wrong at
+  1977, 2107, 2164 or 2165 of 4096 places according to the second sideband (the probe's colour, or
+  RGB565 words when the second sideband has pack mode 3), in both runs; that the second emit is
+  carried out during the next job, and that bit 9 is therefore not tile-relative addressing, are
+  readings.
+  *pbe; HW, infer; data: `pbe-sideband`, `pbe-sideband-followup`.*
+- `E240` A public Rogue PBE state description names a one-bit field tilerelative, which suggests bit
+  9 of our sideband word is tile-relative addressing; on a one-tile target our bit 9 clear still
+  hangs the job, so we read bit 9 as marking an emit that counts against a PBE tile, which is a
+  reading of E239's measurements and not a name.
+  *pbe; infer, HW; data: `pbe-sideband`, `pbe-sideband-followup`.*
+- `E242` T3 bits 26:23 do not change what a single fetch writes (pa0 in all 21 cases, and pa0 to pa3
+  for f32 channels), and with two fetches in one primary program the second fetch's texel lands in
+  the primary attribute numbered by the first fetch's field for the values 0, 1, 2, 3, 4 and 6,
+  after the first fetch's own dwords (over them at 0).
+  *texture; HW, infer; data: `texture-fetch`.*
+- `E244` At the end of a punch-through pixel phase, depthf's src0 replaces the pixel's depth in the
+  depth test, in ISP0 pass type 4 as in pass type 5: with 1.0 nothing is drawn, with 0, 0.5 or the
+  copy's own depth the copy at z 0 keeps 1062 pixels and the copy at z 1/16 keeps 36, and with 0.5 -
+  z the last copies win (1074 and 24 pixels); the same in both runs.
+  *usse; HW, infer; data: `isp-punch-through`, `isp-punch-through-followup`.*
+- `E245` The microkernel writes the TA command's context store and resume registers (0x0a04, 0x0aa0,
+  0x02b0, 0x02b4, 0x02d0, 0x02d4, 0x0324, 0x0364, 0x0368, 0x0370, 0x0374) at one site each, in one
+  run of straight-line code that fetches the values from memory and stores them without computing on
+  them, reads none of them at a statically named site, and its 6637 instructions use none of the
+  instructions moest, setfc, bexception, setm, smoa and smbo and no mon or synce modifier.
+  *usse; RE; data: `firmware-images`.*
+
+### 2026-11-02
+
+- `E013` A forward dataflow over the whole EDM microkernel reaches all 6637 instructions in 70
+  routines from 13 entry points and 21 further roots, and records every structure word (342) it
+  reaches through a typed pointer, register (191) and secondary attribute (20) it touches; 248
+  branches, 392 memory accesses, 14 register addresses and 113 sources it cannot resolve are
+  counted, not guessed.
+  *edm; RE, CAP; data: `firmware-edm-dataflow-3d`, `firmware-images`, `firmware-init-payload`.*
+- `E149` The firmware's HWPerf routine (from instruction 0x1979) appends a 100-byte record to the
+  HWPerf circular buffer, in which it stores the nine registers 0x0044-0x0064 (CR_HWPERF_COUNTER0 to
+  8) and then the eight registers 0x0e84, 0x0e88, 0x0e8c, 0x0e90, 0x0eb8, 0x0eb4, 0x0ebc and 0x0ec0,
+  once each per record, after a header that holds CR_TIMER; the reads do not depend on the record
+  type, and each of its 33 callers first tests a bit of the HWPerf status word; read from a shader,
+  in one run, 0x0044-0x0064 read 0 twice, 0x0e84, 0x0e88 and 0x0e8c were unchanged over the 24
+  fmads, and 0x0e90, 0x0eb4, 0x0eb8, 0x0ebc and 0x0ec0 rose.
+  *platform; RE, HW; data: `firmware-images`, `platform-hwperf`.*
+- `E168` With render-context flag bit 5 set, the render-context cleanup unloads the context's own PB
+  from the TA and 3D loaded-PB slots; with it clear the slots keep the PB until the PB cleanup; and
+  with the flag set a context whose PB is not loaded leaves the slots alone.
+  *edm; HW; data: `edm-context-flags`.*
+- `E176` The TA's object, at the start of the parameter buffer, is three header words (read as the
+  pixel program's words, which is not tested), one 1/w per vertex followed by that vertex's iterated
+  outputs, the ISP words, the primitive list and line widths, a format word whose bytes count the
+  stored and iterated dwords per vertex, four per-set masks, and the packed vertices; 13 probes give
+  the format words and masks listed.
+  *ta; HW, infer; data: `ta-objects`.*
+- `E177` The TA writes for the triangle one region header per 32x16-pixel region of the target's
+  macrotiles and, for the regions it bins the triangle into, a 128-byte-step control-stream block of
+  a primitive word and an object word (a third dword with more than 6 vertices of the object)
+  pointing at the object; 64x64 gives 7 streams, 128x128 19 against 17 regions with a pixel centre
+  covered.
+  *ta; HW, infer; data: `ta-regions`, `ta-objects`.*
+- `E178` The TA's object carries ISP words 0 and 1 exactly as the job gives them (11 values tried),
+  then the primitive list and the line width in both bytes of one dword; the region headers list
+  every 32x16 region of the macrotiles, the ones outside the target included, with flags for
+  outside, first of a macrotile, empty inside the target, last of a macrotile and last of the scene.
+  *ta; HW; data: `ta-objects`, `ta-regions`.*
+- `E180` The primitive word's bits 23:16 say which of a 32x16 region's two 16x16 tiles the triangle
+  meets: 0x80 the left tile only, 0x98 the right only, 0x90 both; over 26 viewport offsets and 472
+  streamed regions all three forms occur (74, 106 and 292 regions) and a bounding-box and edge test
+  against the tiles reproduces every region's form.
+  *ta; HW, infer; data: `ta-regions`.*
+- `E181` The TA object holds a primitive list of 16-bit entries of three 5-bit vertex numbers
+  counted from 16, two entries to a dword with the last repeated for an odd count, and the primitive
+  word's bits 30:29 are 2 for triangles and lines and 3 for points; the object word's bits 31:26 fit
+  twice the primitives less one in these dumps.
+  *ta; HW, infer; data: `ta-objects`, `ta-regions`.*
+- `E188` Setting the index list's word 4 to 0, 0x10000000 or 0x70000000 leaves the TA's output of
+  five copies of the triangle byte for byte the same; word 5 at 0 does too, at 1 the TA writes no
+  object, at 5 it writes five primitives over 10 vertices whose list entries fit the indices taken
+  modulo 5 (a reading), and at 8 the job hangs.
+  *vdm; HW, infer; data: `vdm-index-list`, `ta-regions`.*
+- `E197` With 0x0240 (ta:152) at 0.3, 0.5 and 0.7 and 0x0244 (ta:153) at 0.25, the TA keeps a
+  vertex's stored 1/w when it is above 0x0240 and stores 0.25 in its place otherwise: of the 1/w
+  values 0.8, 0.364 and 0.615, none is replaced at 0.3, the 0.364 at 0.5, and the 0.364 and 0.615 at
+  0.7.
+  *mte; HW, infer; data: `mte-rhw`.*
+- `E203` With bit 8 of ta:167 (the word loaded into CR_DPM_REG_074C) set, the job faults at the same
+  BIF address, 0x20006011, whatever the other bits (0x1100, 0x10100, 0x100100, 0x1000100,
+  0x10000100, 0x80000100 and 0x101: seven of the eight values), and at 0x20006013 once, with bit 8
+  alone, which was also the first case of the run, so value and run order are not separated.
+  *dpm; HW, infer; data: `dpm-reg-074c`.*
+- `E209` In a two-layer background object the coordinate dwords are read vertex by vertex, layer A's
+  (u, v) then layer B's, when the tag's size field is raised from 2 to 4: coordinate set 1 then
+  copies the 8x4 source and set 2 mirrors it, for the format word at 0, 0x202 and 0x404, and set 2
+  gives one image for eight format words (0 to 0xffff); with the dwords laid out layer by layer the
+  two sets give other images; with the size field left at 2 both sets give one texel; the format
+  word 0xffffffff breaks the copy.
+  *isp; HW; data: `isp-background-layers`.*
+- `E231` No render-level ISP word we can set makes a punch-through pass obey the ISP stencil: with
+  the stencil compare at never and at always alike, every bit of render command words 12, 21 and 22
+  and the kernel pokes of 0x04dc bits 0 and 2 and 0x04e8 bits 0 and 8 leave the punch-through image
+  at 1062 and 36 pixels in all 202 probes, while command word 12 with any of bits 1 to 5 set, and
+  with all bits set, removes a plain opaque triangle.
+  *isp; HW; data: `isp-punch-through-stencil`.*
+- `E232` Any of CR_ISP_CTL bits 5:0 set (the values 1 to 8, 16, 32 and 63) removes a triangle of
+  ISP0 pass type 0 or 1 (opaque and translucent) and leaves pass types 2, 4, 5 and 6 drawn exactly,
+  in all 72 cases of one run; the value 0 draws all six.
+  *isp; HW, infer; data: `isp-valid-id`.*
+- `E233` CR_ISP_CTL bits 5:0 act as a threshold that the opaque triangle's ISP word 1 bits 31:26 are
+  compared with: over the 49 pairs of the thresholds 0, 1, 2, 3, 5, 32, 63 against the values 0, 1,
+  2, 3, 5, 32, 63 (46 run as pairs, the other 3 by the free-bit probes of ISP1 bits 26, 27 and 31)
+  the triangle is drawn exactly when the ISP1 value is at least the threshold; and with the
+  threshold at 1, setting any one of ISP1 bits 26 to 31 draws it again, while none of the other free
+  bits of the presence word, ISP word 0 or ISP word 1 tried does (the presence word's bit 27 hangs
+  the job).
+  *isp; HW, infer; data: `isp-valid-id`.*
+- `E234` A punch-through pass writes no stencil: with a second, opaque object that draws only where
+  the stencil equals 0x55, it draws nowhere after a punch-through object whose depth-pass stencil op
+  is replace, under atst8 fb, optdwd and each with twosided, though it draws over the whole of an
+  opaque object with that op; the punch-through object draws alike under all eight stencil compares,
+  and atst8 right after pcoeff draws nothing while one nop between them lets it draw.
+  *isp; HW, infer; data: `isp-punch-through-stencil`.*
+- `E235` CR_ISP_CTL's threshold applies to the plain triangle of pass type 0 only among the pass
+  types run here: with the object's ISP1 value at 0 or 63 and the threshold at 1 or 63, pass types
+  2, 4, 5 and 6 draw in all 16 cases, while pass type 0 draws only with the value at 63.
+  *isp; HW; data: `isp-valid-id`.*
+- `E236` Under coordinate-set size words 1 to 5 a coordinate set iterated with four components
+  reads, from the vertex's dwords x, y, 0.25 and 0.5, as x 0 0 1.0 (size 1), x y 0 1.0 (2), x y 0.25
+  1.0 (3), x y 0 0.25 (4) and x y 0.25 0.5 (5), with 6 and 7 reading as 2; and read as two sets, the
+  sizes 0x12, 0x19, 0x0b and 0x0a split the four dwords into x y | 0.25 0.5, x | y 0.25 0.5, x y
+  0.25 | 0.5 and x y | 0.25, with 0x00 and 0x02 reading as 0x12; one run.
+  *tsp; HW, infer; data: `tsp-coordinate-sets`.*
+- `E237` On values a half float does not hold, bit i of the coordinate-format word makes coordinate
+  set i arrive cut to 10 mantissa bits towards zero: 0.1, 1/3 and 0.7 arrive as 0x3dccc000,
+  0x3eaaa000 and 0x3f332000 with bit i set, where with the word at 0 they arrive as 0x3dcccccc (or d
+  or b), 0x3eaaaaa9 (or a) and 0x3f333331 (or 2); bit 0 acts on one set of four, bit 1 does nothing
+  on it, and with two sets bit 0 cuts set 1 and bit 1 cuts set 2; one run.
+  *tsp; HW, infer; data: `tsp-coordinate-sets`.*
 
 ## By unit
 
+### bif
+
+Records: E151.
+
+### dpm
+
+Records: E199, E200, E201, E202, E204, E205, E206, E203.
+
 ### edm
 
-Records: E009, E013, E014, E017, E084, E146.
+Records: E009, E014, E017, E084, E146, E152, E153, E154, E155, E156, E157, E158, E159, E160, E161,
+E162, E163, E164, E165, E166, E167, E013, E168.
 
 ### firmware
 
@@ -873,15 +1352,17 @@ Records: E001, E002, E003, E004, E005, E010, E011, E012.
 
 ### isp
 
-Records: E064, E065, E066, E067, E068, E069, E070, E071, E072, E073, E074.
+Records: E064, E065, E066, E067, E068, E069, E070, E071, E072, E073, E074, E210, E211, E213, E214,
+E215, E216, E217, E218, E219, E220, E222, E224, E225, E226, E227, E228, E229, E230, E209, E231,
+E232, E233, E234, E235.
 
 ### mte
 
-Records: E061, E062, E063.
+Records: E061, E062, E063, E192, E193, E194, E195, E196, E198, E197.
 
 ### pbe
 
-Records: E029, E030, E031, E032.
+Records: E029, E030, E031, E032, E239, E240.
 
 ### pds
 
@@ -890,33 +1371,38 @@ E134, E135, E136, E137, E138, E139, E140, E141, E142, E143, E144, E145.
 
 ### platform
 
-Records: E006, E007, E008, E025, E026, E122.
+Records: E006, E007, E008, E025, E026, E122, E150, E149.
 
 ### render
 
-Records: E023, E049, E050, E051, E052, E053, E148.
+Records: E023, E049, E050, E051, E052, E053, E148, E169.
 
 ### ta
 
-Records: E054, E055, E056.
+Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180, E181.
 
 ### texture
 
-Records: E033, E034, E035, E036, E037, E038, E039, E040, E041, E042, E114, E116.
+Records: E033, E034, E035, E036, E037, E038, E039, E040, E041, E042, E114, E116, E242.
 
 ### transfer
 
 Records: E015, E016, E018, E019, E020, E021, E022, E024, E027, E028.
 
+### tsp
+
+Records: E236, E237.
+
 ### usse
 
 Records: E075, E076, E077, E078, E079, E080, E081, E082, E083, E085, E086, E087, E088, E089, E090,
 E091, E092, E093, E094, E095, E096, E097, E098, E099, E100, E101, E102, E103, E104, E105, E106,
-E107, E108, E109, E110, E111, E112, E113, E115, E117, E118, E119, E120, E121, E123, E124, E147.
+E107, E108, E109, E110, E111, E112, E113, E115, E117, E118, E119, E120, E121, E123, E124, E147,
+E244, E245.
 
 ### vdm
 
-Records: E059, E060.
+Records: E059, E060, E184, E185, E186, E187, E189, E190, E191, E188.
 
 ### zls
 

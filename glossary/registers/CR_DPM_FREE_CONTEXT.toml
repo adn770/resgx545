@@ -1,0 +1,15 @@
+[[term]]
+id = "G0373"
+name = "CR_DPM_FREE_CONTEXT"
+status = "named"
+
+[[term.source]]
+term = "PSB_CR_DPM_FREE_CONTEXT"
+kind = "register"
+sgx545 = "0x06a0"
+meaning = "free the DPM context now"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0258"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"

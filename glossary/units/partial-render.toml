@@ -1,0 +1,37 @@
+[[term]]
+id = "G0558"
+name = "partial render"
+status = "named"
+
+[[term.source]]
+term = "Partial render"
+kind = "concept"
+sgx545 = "-"
+meaning = "render of part of the scene when memory runs out"
+tier = "4"
+source = "patent-US8723860"
+citation = "C0336"
+licence = "patent"
+evidence = "OCR text"
+
+[[term.source]]
+term = "partial render"
+kind = "concept"
+sgx545 = "-"
+meaning = "render of the binned part of a scene, forced when the parameter buffer runs out"
+tier = "4"
+source = "imgtec-performance-recommendations"
+citation = "C0337"
+licence = "public-doc"
+evidence = "-"
+
+[[term.source]]
+term = "partial render"
+kind = "concept"
+sgx545 = "-"
+meaning = "Rogue fragment job run when the PM runs out of memory (analogue)"
+tier = "3"
+source = "linux-imagination"
+citation = "C0338"
+licence = "GPL-2.0-only OR MIT"
+evidence = "same concept (our partial renders, E160)"

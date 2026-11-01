@@ -1,0 +1,52 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# mte rhw: 0 sweeps, 3 probes.
+needs = ["render", "kpoke", "render_param", "render_tadata"]
+
+[[probe]]
+name = "mte-rhw-03"
+question = "the stored 1/w at w = x + 2 with 0x0240 = 0.3 and 0x0244 = 0.25"
+source = "pds_tex_iter.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_persp.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x40000801, 0, 0x2000004]]
+labels = ["base: source 1, the fetch from set 1"]
+dump_render = true
+kpoke = ["ta:152=0x3e99999a", "ta:153=0x3e800000"]
+
+[[probe]]
+name = "mte-rhw-05"
+question = "the stored 1/w at w = x + 2 with 0x0240 = 0.5 and 0x0244 = 0.25"
+source = "pds_tex_iter.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_persp.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x40000801, 0, 0x2000004]]
+labels = ["base: source 1, the fetch from set 1"]
+dump_render = true
+kpoke = ["ta:152=0x3f000000", "ta:153=0x3e800000"]
+
+[[probe]]
+name = "mte-rhw-07"
+question = "the stored 1/w at w = x + 2 with 0x0240 = 0.7 and 0x0244 = 0.25"
+source = "pds_tex_iter.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_persp.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x40000801, 0, 0x2000004]]
+labels = ["base: source 1, the fetch from set 1"]
+dump_render = true
+kpoke = ["ta:152=0x3f333333", "ta:153=0x3e800000"]

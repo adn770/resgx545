@@ -1,0 +1,15 @@
+[[term]]
+id = "G0421"
+name = "CR_ISP_SIGNATURE0"
+status = "named"
+
+[[term.source]]
+term = "CR_ISP_SIGNATURE0"
+kind = "register"
+sgx545 = "0x04d4"
+meaning = "ISP output signature (first block, first word); the EDM waits for it to stop changing [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "harness/ukernel-extract/sgx545_labels.r2:100"
+licence = "MIT"
+evidence = "EDM's drain wait reads it twice 1000 polls apart until stable (RE); Rogue's equivalents are ISP_PDS_CHECKSUM and ISP_TPF_CHECKSUM (pvr_rogue_cr_defs.h:4343)"

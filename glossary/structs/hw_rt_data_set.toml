@@ -1,0 +1,47 @@
+[[term]]
+id = "G0554"
+name = "hw_rt_data_set.executed_count"
+status = "named"
+
+[[term.source]]
+term = "hw_rt_data_set.executed_count"
+kind = "field"
+sgx545 = "HWRTDATASET+0x004"
+meaning = "count the EDM increments at each TA end that is not the scene's last and at each scene render with FRAG_FLAGS.RENDER_SCENE [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E156"
+licence = "MIT"
+evidence = "[RE] the TA-finished handler (E156) and scene-done (E164); analogue: Rogue's cleanup counters"
+
+[[term]]
+id = "G0555"
+name = "hw_rt_data_set.num_out_of_mem_signals"
+status = "named"
+
+[[term.source]]
+term = "ui32NumOutOfMemSignals"
+kind = "field"
+sgx545 = "HWRTDATASET+0x00c"
+meaning = "TA out-of-memory count"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0332"
+licence = "GPL-2.0"
+evidence = "SPM misc-info request reads it per hRTDataSet"
+
+[[term]]
+id = "G0556"
+name = "hw_rt_data_set.num_spm_renders"
+status = "named"
+
+[[term.source]]
+term = "ui32NumSPMRenders"
+kind = "field"
+sgx545 = "HWRTDATASET+0x010"
+meaning = "partial renders run"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0333"
+licence = "GPL-2.0"
+evidence = "SPM misc-info request reads it per hRTDataSet"

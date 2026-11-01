@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+#
+# Differential 3D captures of the line width: glLineWidth at 1, 2, 3, 8 and 15 on lines and
+# points (whose state word ISP1 carried 4 in bits 15:12 for a width of 4).
+base
+lines_w1         prim=lines linewidth=1
+lines_w2         prim=lines linewidth=2
+lines_w3         prim=lines linewidth=3
+lines_w8         prim=lines linewidth=8
+lines_w15        prim=lines linewidth=15
+lines_w1_5       prim=lines linewidth=1.5
+points_w8        prim=points linewidth=8

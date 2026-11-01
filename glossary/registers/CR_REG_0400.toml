@@ -12,7 +12,7 @@ tier = "ours"
 source = "resgx545"
 citation = "E029, E028"
 licence = "MIT"
-evidence = "unit not established; [HW] E029: bit 25 inverts bits 31:24 of every pixel written (fill, copy, triangle); no other bit changes a pixel in these jobs; [HW] E028: over an every-value copy no other bit applies a function of the pixel's value"
+evidence = "unit not established; [HW] E029: bit 25 inverts bits 31:24 of every pixel written (fill, copy, triangle); no other bit changes a pixel in these jobs; [HW] E028: over an every-value copy no other bit applies a function of the pixel's value; [infer] the rest of its reading rests on records still to come"
 
 [[term]]
 id = "G0153"

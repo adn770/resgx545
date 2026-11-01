@@ -1,0 +1,1114 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# tsp coordinate sets: 0 sweeps, 74 probes.
+needs = ["render"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csize-1-pa0"
+question = "pa0 of a four-component coordinate set iterated under coordsize 1"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 1 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27000800, 0, 0x1000004], [0x27400800, 0, 0x1000004], [0x27800800, 0, 0x1000004], [0x27c00800, 0, 0x1000004]]
+labels = ["one component", "two", "three", "four"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csize-1-pa1"
+question = "pa1 of a four-component coordinate set iterated under coordsize 1"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 1 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27000800, 0, 0x1000004], [0x27400800, 0, 0x1000004], [0x27800800, 0, 0x1000004], [0x27c00800, 0, 0x1000004]]
+labels = ["one component", "two", "three", "four"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csize-1-pa2"
+question = "pa2 of a four-component coordinate set iterated under coordsize 1"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 1 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27000800, 0, 0x1000004], [0x27400800, 0, 0x1000004], [0x27800800, 0, 0x1000004], [0x27c00800, 0, 0x1000004]]
+labels = ["one component", "two", "three", "four"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csize-1-pa3"
+question = "pa3 of a four-component coordinate set iterated under coordsize 1"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa3.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 1 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27000800, 0, 0x1000004], [0x27400800, 0, 0x1000004], [0x27800800, 0, 0x1000004], [0x27c00800, 0, 0x1000004]]
+labels = ["one component", "two", "three", "four"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csize-2-pa0"
+question = "pa0 of a four-component coordinate set iterated under coordsize 2"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 2 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27000800, 0, 0x1000004], [0x27400800, 0, 0x1000004], [0x27800800, 0, 0x1000004], [0x27c00800, 0, 0x1000004]]
+labels = ["one component", "two", "three", "four"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csize-2-pa1"
+question = "pa1 of a four-component coordinate set iterated under coordsize 2"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 2 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27000800, 0, 0x1000004], [0x27400800, 0, 0x1000004], [0x27800800, 0, 0x1000004], [0x27c00800, 0, 0x1000004]]
+labels = ["one component", "two", "three", "four"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csize-2-pa2"
+question = "pa2 of a four-component coordinate set iterated under coordsize 2"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 2 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27000800, 0, 0x1000004], [0x27400800, 0, 0x1000004], [0x27800800, 0, 0x1000004], [0x27c00800, 0, 0x1000004]]
+labels = ["one component", "two", "three", "four"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csize-2-pa3"
+question = "pa3 of a four-component coordinate set iterated under coordsize 2"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa3.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 2 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27000800, 0, 0x1000004], [0x27400800, 0, 0x1000004], [0x27800800, 0, 0x1000004], [0x27c00800, 0, 0x1000004]]
+labels = ["one component", "two", "three", "four"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csize-3-pa0"
+question = "pa0 of a four-component coordinate set iterated under coordsize 3"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 3 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27000800, 0, 0x1000004], [0x27400800, 0, 0x1000004], [0x27800800, 0, 0x1000004], [0x27c00800, 0, 0x1000004]]
+labels = ["one component", "two", "three", "four"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csize-3-pa1"
+question = "pa1 of a four-component coordinate set iterated under coordsize 3"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 3 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27000800, 0, 0x1000004], [0x27400800, 0, 0x1000004], [0x27800800, 0, 0x1000004], [0x27c00800, 0, 0x1000004]]
+labels = ["one component", "two", "three", "four"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csize-3-pa2"
+question = "pa2 of a four-component coordinate set iterated under coordsize 3"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 3 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27000800, 0, 0x1000004], [0x27400800, 0, 0x1000004], [0x27800800, 0, 0x1000004], [0x27c00800, 0, 0x1000004]]
+labels = ["one component", "two", "three", "four"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csize-3-pa3"
+question = "pa3 of a four-component coordinate set iterated under coordsize 3"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa3.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 3 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27000800, 0, 0x1000004], [0x27400800, 0, 0x1000004], [0x27800800, 0, 0x1000004], [0x27c00800, 0, 0x1000004]]
+labels = ["one component", "two", "three", "four"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csize-4-pa0"
+question = "pa0 of a four-component coordinate set iterated under coordsize 4"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 4 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27000800, 0, 0x1000004], [0x27400800, 0, 0x1000004], [0x27800800, 0, 0x1000004], [0x27c00800, 0, 0x1000004]]
+labels = ["one component", "two", "three", "four"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csize-4-pa1"
+question = "pa1 of a four-component coordinate set iterated under coordsize 4"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 4 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27000800, 0, 0x1000004], [0x27400800, 0, 0x1000004], [0x27800800, 0, 0x1000004], [0x27c00800, 0, 0x1000004]]
+labels = ["one component", "two", "three", "four"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csize-4-pa2"
+question = "pa2 of a four-component coordinate set iterated under coordsize 4"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 4 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27000800, 0, 0x1000004], [0x27400800, 0, 0x1000004], [0x27800800, 0, 0x1000004], [0x27c00800, 0, 0x1000004]]
+labels = ["one component", "two", "three", "four"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csize-4-pa3"
+question = "pa3 of a four-component coordinate set iterated under coordsize 4"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa3.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 4 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27000800, 0, 0x1000004], [0x27400800, 0, 0x1000004], [0x27800800, 0, 0x1000004], [0x27c00800, 0, 0x1000004]]
+labels = ["one component", "two", "three", "four"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csize-5-pa0"
+question = "pa0 of a four-component coordinate set iterated under coordsize 5"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 5 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27000800, 0, 0x1000004], [0x27400800, 0, 0x1000004], [0x27800800, 0, 0x1000004], [0x27c00800, 0, 0x1000004]]
+labels = ["one component", "two", "three", "four"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csize-5-pa1"
+question = "pa1 of a four-component coordinate set iterated under coordsize 5"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 5 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27000800, 0, 0x1000004], [0x27400800, 0, 0x1000004], [0x27800800, 0, 0x1000004], [0x27c00800, 0, 0x1000004]]
+labels = ["one component", "two", "three", "four"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csize-5-pa2"
+question = "pa2 of a four-component coordinate set iterated under coordsize 5"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 5 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27000800, 0, 0x1000004], [0x27400800, 0, 0x1000004], [0x27800800, 0, 0x1000004], [0x27c00800, 0, 0x1000004]]
+labels = ["one component", "two", "three", "four"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csize-5-pa3"
+question = "pa3 of a four-component coordinate set iterated under coordsize 5"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa3.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 5 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27000800, 0, 0x1000004], [0x27400800, 0, 0x1000004], [0x27800800, 0, 0x1000004], [0x27c00800, 0, 0x1000004]]
+labels = ["one component", "two", "three", "four"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csize-6-pa0"
+question = "pa0 of a four-component coordinate set iterated under coordsize 6"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 6 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27000800, 0, 0x1000004], [0x27400800, 0, 0x1000004], [0x27800800, 0, 0x1000004], [0x27c00800, 0, 0x1000004]]
+labels = ["one component", "two", "three", "four"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csize-6-pa1"
+question = "pa1 of a four-component coordinate set iterated under coordsize 6"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 6 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27000800, 0, 0x1000004], [0x27400800, 0, 0x1000004], [0x27800800, 0, 0x1000004], [0x27c00800, 0, 0x1000004]]
+labels = ["one component", "two", "three", "four"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csize-6-pa2"
+question = "pa2 of a four-component coordinate set iterated under coordsize 6"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 6 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27000800, 0, 0x1000004], [0x27400800, 0, 0x1000004], [0x27800800, 0, 0x1000004], [0x27c00800, 0, 0x1000004]]
+labels = ["one component", "two", "three", "four"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csize-6-pa3"
+question = "pa3 of a four-component coordinate set iterated under coordsize 6"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa3.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 6 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27000800, 0, 0x1000004], [0x27400800, 0, 0x1000004], [0x27800800, 0, 0x1000004], [0x27c00800, 0, 0x1000004]]
+labels = ["one component", "two", "three", "four"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csize-7-pa0"
+question = "pa0 of a four-component coordinate set iterated under coordsize 7"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 7 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27000800, 0, 0x1000004], [0x27400800, 0, 0x1000004], [0x27800800, 0, 0x1000004], [0x27c00800, 0, 0x1000004]]
+labels = ["one component", "two", "three", "four"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csize-7-pa1"
+question = "pa1 of a four-component coordinate set iterated under coordsize 7"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 7 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27000800, 0, 0x1000004], [0x27400800, 0, 0x1000004], [0x27800800, 0, 0x1000004], [0x27c00800, 0, 0x1000004]]
+labels = ["one component", "two", "three", "four"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csize-7-pa2"
+question = "pa2 of a four-component coordinate set iterated under coordsize 7"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 7 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27000800, 0, 0x1000004], [0x27400800, 0, 0x1000004], [0x27800800, 0, 0x1000004], [0x27c00800, 0, 0x1000004]]
+labels = ["one component", "two", "three", "four"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csize-7-pa3"
+question = "pa3 of a four-component coordinate set iterated under coordsize 7"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa3.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 7 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27000800, 0, 0x1000004], [0x27400800, 0, 0x1000004], [0x27800800, 0, 0x1000004], [0x27c00800, 0, 0x1000004]]
+labels = ["one component", "two", "three", "four"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csets-12-pa0"
+question = "pa0 of coordinate sets 1 and 2 under coordsize 0x12"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 18 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27800800, 0, 0x1000004], [0x27801000, 0, 0x1000004]]
+labels = ["source 1, three components", "source 2, three components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csets-12-pa1"
+question = "pa1 of coordinate sets 1 and 2 under coordsize 0x12"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 18 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27800800, 0, 0x1000004], [0x27801000, 0, 0x1000004]]
+labels = ["source 1, three components", "source 2, three components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csets-12-pa2"
+question = "pa2 of coordinate sets 1 and 2 under coordsize 0x12"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 18 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27800800, 0, 0x1000004], [0x27801000, 0, 0x1000004]]
+labels = ["source 1, three components", "source 2, three components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csets-19-pa0"
+question = "pa0 of coordinate sets 1 and 2 under coordsize 0x19"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 25 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27800800, 0, 0x1000004], [0x27801000, 0, 0x1000004]]
+labels = ["source 1, three components", "source 2, three components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csets-19-pa1"
+question = "pa1 of coordinate sets 1 and 2 under coordsize 0x19"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 25 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27800800, 0, 0x1000004], [0x27801000, 0, 0x1000004]]
+labels = ["source 1, three components", "source 2, three components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csets-19-pa2"
+question = "pa2 of coordinate sets 1 and 2 under coordsize 0x19"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 25 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27800800, 0, 0x1000004], [0x27801000, 0, 0x1000004]]
+labels = ["source 1, three components", "source 2, three components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csets-0b-pa0"
+question = "pa0 of coordinate sets 1 and 2 under coordsize 0x0b"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 11 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27800800, 0, 0x1000004], [0x27801000, 0, 0x1000004]]
+labels = ["source 1, three components", "source 2, three components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csets-0b-pa1"
+question = "pa1 of coordinate sets 1 and 2 under coordsize 0x0b"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 11 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27800800, 0, 0x1000004], [0x27801000, 0, 0x1000004]]
+labels = ["source 1, three components", "source 2, three components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csets-0b-pa2"
+question = "pa2 of coordinate sets 1 and 2 under coordsize 0x0b"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 11 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27800800, 0, 0x1000004], [0x27801000, 0, 0x1000004]]
+labels = ["source 1, three components", "source 2, three components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csets-02-pa0"
+question = "pa0 of coordinate sets 1 and 2 under coordsize 0x02"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 2 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27800800, 0, 0x1000004], [0x27801000, 0, 0x1000004]]
+labels = ["source 1, three components", "source 2, three components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csets-02-pa1"
+question = "pa1 of coordinate sets 1 and 2 under coordsize 0x02"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 2 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27800800, 0, 0x1000004], [0x27801000, 0, 0x1000004]]
+labels = ["source 1, three components", "source 2, three components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csets-02-pa2"
+question = "pa2 of coordinate sets 1 and 2 under coordsize 0x02"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 2 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27800800, 0, 0x1000004], [0x27801000, 0, 0x1000004]]
+labels = ["source 1, three components", "source 2, three components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csets-00-pa0"
+question = "pa0 of coordinate sets 1 and 2 under coordsize 0x00"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 0 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27800800, 0, 0x1000004], [0x27801000, 0, 0x1000004]]
+labels = ["source 1, three components", "source 2, three components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csets-00-pa1"
+question = "pa1 of coordinate sets 1 and 2 under coordsize 0x00"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 0 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27800800, 0, 0x1000004], [0x27801000, 0, 0x1000004]]
+labels = ["source 1, three components", "source 2, three components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csets-00-pa2"
+question = "pa2 of coordinate sets 1 and 2 under coordsize 0x00"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 0 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27800800, 0, 0x1000004], [0x27801000, 0, 0x1000004]]
+labels = ["source 1, three components", "source 2, three components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csets-0a-pa0"
+question = "pa0 of coordinate sets 1 and 2 under coordsize 0x0a"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 10 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27800800, 0, 0x1000004], [0x27801000, 0, 0x1000004]]
+labels = ["source 1, three components", "source 2, three components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csets-0a-pa1"
+question = "pa1 of coordinate sets 1 and 2 under coordsize 0x0a"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 10 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27800800, 0, 0x1000004], [0x27801000, 0, 0x1000004]]
+labels = ["source 1, three components", "source 2, three components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-csets-0a-pa2"
+question = "pa2 of coordinate sets 1 and 2 under coordsize 0x0a"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_coord4.s" }
+vtx_coords = 4
+blk = { 16 = 10 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27800800, 0, 0x1000004], [0x27801000, 0, 0x1000004]]
+labels = ["source 1, three components", "source 2, three components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-cfmt-05-0-pa0"
+question = "pa0 of the coordinate sets under coordsize 0x05, coordfmt 0"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coord4p.s" }
+vtx_coords = 4
+blk = { 16 = 5, 17 = 0 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27c00800, 0, 0x1000004], [0x27401000, 0, 0x1000004]]
+labels = ["source 1, four components", "source 2, two components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-cfmt-05-0-pa1"
+question = "pa1 of the coordinate sets under coordsize 0x05, coordfmt 0"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_coord4p.s" }
+vtx_coords = 4
+blk = { 16 = 5, 17 = 0 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27c00800, 0, 0x1000004], [0x27401000, 0, 0x1000004]]
+labels = ["source 1, four components", "source 2, two components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-cfmt-05-0-pa2"
+question = "pa2 of the coordinate sets under coordsize 0x05, coordfmt 0"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_coord4p.s" }
+vtx_coords = 4
+blk = { 16 = 5, 17 = 0 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27c00800, 0, 0x1000004], [0x27401000, 0, 0x1000004]]
+labels = ["source 1, four components", "source 2, two components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-cfmt-05-0-pa3"
+question = "pa3 of the coordinate sets under coordsize 0x05, coordfmt 0"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa3.s", vtxuse = "vtx_coord4p.s" }
+vtx_coords = 4
+blk = { 16 = 5, 17 = 0 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27c00800, 0, 0x1000004], [0x27401000, 0, 0x1000004]]
+labels = ["source 1, four components", "source 2, two components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-cfmt-05-1-pa0"
+question = "pa0 of the coordinate sets under coordsize 0x05, coordfmt 1"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coord4p.s" }
+vtx_coords = 4
+blk = { 16 = 5, 17 = 1 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27c00800, 0, 0x1000004], [0x27401000, 0, 0x1000004]]
+labels = ["source 1, four components", "source 2, two components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-cfmt-05-1-pa1"
+question = "pa1 of the coordinate sets under coordsize 0x05, coordfmt 1"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_coord4p.s" }
+vtx_coords = 4
+blk = { 16 = 5, 17 = 1 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27c00800, 0, 0x1000004], [0x27401000, 0, 0x1000004]]
+labels = ["source 1, four components", "source 2, two components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-cfmt-05-1-pa2"
+question = "pa2 of the coordinate sets under coordsize 0x05, coordfmt 1"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_coord4p.s" }
+vtx_coords = 4
+blk = { 16 = 5, 17 = 1 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27c00800, 0, 0x1000004], [0x27401000, 0, 0x1000004]]
+labels = ["source 1, four components", "source 2, two components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-cfmt-05-1-pa3"
+question = "pa3 of the coordinate sets under coordsize 0x05, coordfmt 1"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa3.s", vtxuse = "vtx_coord4p.s" }
+vtx_coords = 4
+blk = { 16 = 5, 17 = 1 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27c00800, 0, 0x1000004], [0x27401000, 0, 0x1000004]]
+labels = ["source 1, four components", "source 2, two components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-cfmt-05-2-pa0"
+question = "pa0 of the coordinate sets under coordsize 0x05, coordfmt 2"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coord4p.s" }
+vtx_coords = 4
+blk = { 16 = 5, 17 = 2 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27c00800, 0, 0x1000004], [0x27401000, 0, 0x1000004]]
+labels = ["source 1, four components", "source 2, two components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-cfmt-05-2-pa1"
+question = "pa1 of the coordinate sets under coordsize 0x05, coordfmt 2"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_coord4p.s" }
+vtx_coords = 4
+blk = { 16 = 5, 17 = 2 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27c00800, 0, 0x1000004], [0x27401000, 0, 0x1000004]]
+labels = ["source 1, four components", "source 2, two components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-cfmt-05-2-pa2"
+question = "pa2 of the coordinate sets under coordsize 0x05, coordfmt 2"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_coord4p.s" }
+vtx_coords = 4
+blk = { 16 = 5, 17 = 2 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27c00800, 0, 0x1000004], [0x27401000, 0, 0x1000004]]
+labels = ["source 1, four components", "source 2, two components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-cfmt-05-2-pa3"
+question = "pa3 of the coordinate sets under coordsize 0x05, coordfmt 2"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa3.s", vtxuse = "vtx_coord4p.s" }
+vtx_coords = 4
+blk = { 16 = 5, 17 = 2 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27c00800, 0, 0x1000004], [0x27401000, 0, 0x1000004]]
+labels = ["source 1, four components", "source 2, two components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-cfmt-12-0-pa0"
+question = "pa0 of the coordinate sets under coordsize 0x12, coordfmt 0"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coord4p.s" }
+vtx_coords = 4
+blk = { 16 = 18, 17 = 0 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27c00800, 0, 0x1000004], [0x27401000, 0, 0x1000004]]
+labels = ["source 1, four components", "source 2, two components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-cfmt-12-0-pa1"
+question = "pa1 of the coordinate sets under coordsize 0x12, coordfmt 0"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_coord4p.s" }
+vtx_coords = 4
+blk = { 16 = 18, 17 = 0 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27c00800, 0, 0x1000004], [0x27401000, 0, 0x1000004]]
+labels = ["source 1, four components", "source 2, two components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-cfmt-12-0-pa2"
+question = "pa2 of the coordinate sets under coordsize 0x12, coordfmt 0"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_coord4p.s" }
+vtx_coords = 4
+blk = { 16 = 18, 17 = 0 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27c00800, 0, 0x1000004], [0x27401000, 0, 0x1000004]]
+labels = ["source 1, four components", "source 2, two components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-cfmt-12-0-pa3"
+question = "pa3 of the coordinate sets under coordsize 0x12, coordfmt 0"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa3.s", vtxuse = "vtx_coord4p.s" }
+vtx_coords = 4
+blk = { 16 = 18, 17 = 0 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27c00800, 0, 0x1000004], [0x27401000, 0, 0x1000004]]
+labels = ["source 1, four components", "source 2, two components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-cfmt-12-1-pa0"
+question = "pa0 of the coordinate sets under coordsize 0x12, coordfmt 1"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coord4p.s" }
+vtx_coords = 4
+blk = { 16 = 18, 17 = 1 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27c00800, 0, 0x1000004], [0x27401000, 0, 0x1000004]]
+labels = ["source 1, four components", "source 2, two components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-cfmt-12-1-pa1"
+question = "pa1 of the coordinate sets under coordsize 0x12, coordfmt 1"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_coord4p.s" }
+vtx_coords = 4
+blk = { 16 = 18, 17 = 1 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27c00800, 0, 0x1000004], [0x27401000, 0, 0x1000004]]
+labels = ["source 1, four components", "source 2, two components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-cfmt-12-1-pa2"
+question = "pa2 of the coordinate sets under coordsize 0x12, coordfmt 1"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_coord4p.s" }
+vtx_coords = 4
+blk = { 16 = 18, 17 = 1 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27c00800, 0, 0x1000004], [0x27401000, 0, 0x1000004]]
+labels = ["source 1, four components", "source 2, two components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-cfmt-12-1-pa3"
+question = "pa3 of the coordinate sets under coordsize 0x12, coordfmt 1"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa3.s", vtxuse = "vtx_coord4p.s" }
+vtx_coords = 4
+blk = { 16 = 18, 17 = 1 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27c00800, 0, 0x1000004], [0x27401000, 0, 0x1000004]]
+labels = ["source 1, four components", "source 2, two components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-cfmt-12-2-pa0"
+question = "pa0 of the coordinate sets under coordsize 0x12, coordfmt 2"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coord4p.s" }
+vtx_coords = 4
+blk = { 16 = 18, 17 = 2 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27c00800, 0, 0x1000004], [0x27401000, 0, 0x1000004]]
+labels = ["source 1, four components", "source 2, two components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-cfmt-12-2-pa1"
+question = "pa1 of the coordinate sets under coordsize 0x12, coordfmt 2"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_coord4p.s" }
+vtx_coords = 4
+blk = { 16 = 18, 17 = 2 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27c00800, 0, 0x1000004], [0x27401000, 0, 0x1000004]]
+labels = ["source 1, four components", "source 2, two components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-cfmt-12-2-pa2"
+question = "pa2 of the coordinate sets under coordsize 0x12, coordfmt 2"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_coord4p.s" }
+vtx_coords = 4
+blk = { 16 = 18, 17 = 2 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27c00800, 0, 0x1000004], [0x27401000, 0, 0x1000004]]
+labels = ["source 1, four components", "source 2, two components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-cfmt-12-2-pa3"
+question = "pa3 of the coordinate sets under coordsize 0x12, coordfmt 2"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa3.s", vtxuse = "vtx_coord4p.s" }
+vtx_coords = 4
+blk = { 16 = 18, 17 = 2 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27c00800, 0, 0x1000004], [0x27401000, 0, 0x1000004]]
+labels = ["source 1, four components", "source 2, two components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-cfmt-12-3-pa0"
+question = "pa0 of the coordinate sets under coordsize 0x12, coordfmt 3"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coord4p.s" }
+vtx_coords = 4
+blk = { 16 = 18, 17 = 3 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27c00800, 0, 0x1000004], [0x27401000, 0, 0x1000004]]
+labels = ["source 1, four components", "source 2, two components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-cfmt-12-3-pa1"
+question = "pa1 of the coordinate sets under coordsize 0x12, coordfmt 3"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_coord4p.s" }
+vtx_coords = 4
+blk = { 16 = 18, 17 = 3 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27c00800, 0, 0x1000004], [0x27401000, 0, 0x1000004]]
+labels = ["source 1, four components", "source 2, two components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-cfmt-12-3-pa2"
+question = "pa2 of the coordinate sets under coordsize 0x12, coordfmt 3"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_coord4p.s" }
+vtx_coords = 4
+blk = { 16 = 18, 17 = 3 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27c00800, 0, 0x1000004], [0x27401000, 0, 0x1000004]]
+labels = ["source 1, four components", "source 2, two components"]
+
+[[probe]]
+name = "tsp-coordinate-sets-cfmt-12-3-pa3"
+question = "pa3 of the coordinate sets under coordsize 0x12, coordfmt 3"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa3.s", vtxuse = "vtx_coord4p.s" }
+vtx_coords = 4
+blk = { 16 = 18, 17 = 3 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x27c00800, 0, 0x1000004], [0x27401000, 0, 0x1000004]]
+labels = ["source 1, four components", "source 2, two components"]

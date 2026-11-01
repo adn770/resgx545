@@ -1,0 +1,15 @@
+[[term]]
+id = "G0489"
+name = "PDSThreshold"
+status = "named"
+
+[[term.source]]
+term = "PDSThreshold"
+kind = "concept"
+sgx545 = "-"
+meaning = "config key (libsrv_um): PDS page threshold of the parameter buffer; register binding unconfirmed"
+tier = "2"
+source = "cdv-libsrv_um"
+citation = "C0313"
+licence = "Intel-binary (ours)"
+evidence = "-"

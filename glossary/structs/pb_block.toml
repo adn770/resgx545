@@ -1,0 +1,47 @@
+[[term]]
+id = "G0559"
+name = "pb_block"
+status = "named"
+
+[[term.source]]
+term = "psHWBlockKernelMemInfo"
+kind = "struct"
+sgx545 = "pb_block (0x10)"
+meaning = "GPL name of the HW PB block allocation"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0339"
+licence = "GPL-2.0"
+evidence = "names the block concept only"
+
+[[term]]
+id = "G0560"
+name = "pb_block.next_block_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "pb_block.next_block_dev_vaddr"
+kind = "field"
+sgx545 = "-"
+meaning = "next block of the descriptor's block list (0 = last) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E200"
+licence = "MIT"
+evidence = "[RE] E200: the EDM's page-table builder follows it; structure named by us (pb_block, the descriptor's block list at the PB descriptor's hw_block_dev_vaddr), as no open source names its layout"
+
+[[term]]
+id = "G0561"
+name = "pb_block.page_count"
+status = "named"
+
+[[term.source]]
+term = "pb_block.page_count"
+kind = "field"
+sgx545 = "-"
+meaning = "pages in this PB block [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E200"
+licence = "MIT"
+evidence = "[RE] E200: the EDM's page-table builder walks the block list; structure named by us (pb_block, the descriptor's block list at the PB descriptor's hw_block_dev_vaddr), as no open source names its layout"

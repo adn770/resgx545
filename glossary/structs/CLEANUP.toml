@@ -1,0 +1,42 @@
+[[term]]
+id = "G0354"
+name = "CLEANUP.PB"
+status = "named"
+
+[[term.source]]
+term = "PVRSRV_CLEANUPCMD_PB"
+kind = "enum"
+sgx545 = "COMMAND+0x08 ui32Data[0] = 5"
+meaning = "clean up a PB descriptor"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0245"
+licence = "GPL-2.0"
+evidence = "-"
+
+[[term.source]]
+term = "ROGUE_FWIF_CLEANUP_FREELIST"
+kind = "enum"
+sgx545 = "~ COMMAND ui32Data[0]"
+meaning = "cleanup of a free list (~ PVRSRV_CLEANUPCMD_PB)"
+tier = "3"
+source = "linux-imagination"
+citation = "C0246"
+licence = "GPL-2.0 OR MIT"
+evidence = "same cleanup command family"
+
+[[term]]
+id = "G0355"
+name = "CLEANUP.RENDER_CONTEXT"
+status = "named"
+
+[[term.source]]
+term = "PVRSRV_CLEANUPCMD_RC"
+kind = "enum"
+sgx545 = "COMMAND+0x08 ui32Data[0] = 2"
+meaning = "clean up a HW render context"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0247"
+licence = "GPL-2.0"
+evidence = "-"

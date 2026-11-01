@@ -1,0 +1,15 @@
+[[term]]
+id = "G0367"
+name = "CR_DPM_3D_FREE_LIST"
+status = "named"
+
+[[term.source]]
+term = "PSB_CR_DPM_3D_FREE_LIST"
+kind = "register"
+sgx545 = "0x0604"
+meaning = "DPM 3D free list: head and tail"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0255"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"

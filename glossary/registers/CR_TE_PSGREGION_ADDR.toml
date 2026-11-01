@@ -1,0 +1,15 @@
+[[term]]
+id = "G0451"
+name = "CR_TE_PSGREGION_ADDR"
+status = "named"
+
+[[term.source]]
+term = "ROGUE_CR_TE_PSGREGION_ADDR"
+kind = "register"
+sgx545 = "0x021c"
+meaning = "base address of the region headers the TA writes (Rogue analogue)"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0302"
+licence = "MIT"
+evidence = "same role as Rogue"

@@ -1,0 +1,15 @@
+[[term]]
+id = "G0516"
+name = "control stream"
+status = "named"
+
+[[term.source]]
+term = "control stream"
+kind = "concept"
+sgx545 = "-"
+meaning = "per-tile control stream data written by the TA"
+tier = "4"
+source = "patent-US8669987"
+citation = "C0325"
+licence = "patent"
+evidence = "OCR text"

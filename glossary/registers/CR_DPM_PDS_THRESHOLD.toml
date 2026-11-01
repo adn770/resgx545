@@ -1,0 +1,15 @@
+[[term]]
+id = "G0377"
+name = "CR_DPM_PDS_THRESHOLD"
+status = "named"
+
+[[term.source]]
+term = "CR_DPM_PDS_THRESHOLD"
+kind = "register"
+sgx545 = "0x0668"
+meaning = "PDS page threshold of the parameter buffer, from the PB descriptor [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E200"
+licence = "MIT"
+evidence = "EDM writes a PB descriptor threshold here beside CR_DPM_TA_PAGE_THRESHOLD and CR_DPM_ZLS_PAGE_THRESHOLD, the fourth threshold going to CR_DPM_TA_GLOBAL_LIST (RE); our package names four PB thresholds (TAThreshold, ZLSThreshold, GlobalThreshold, PDSThreshold, cdv-libsrv_um), so this is the PDS one by elimination"

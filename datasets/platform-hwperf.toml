@@ -1,0 +1,10 @@
+title = "probe table platform/hwperf"
+repo = "data"
+paths = ["platform/hwperf/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 7
+size = 7965
+sha256 = "5758b5af3f806d3fac7cb05e49736fe8ef86d82da0d3bfe9a1ef439ff8115e9b"
+recipe = "probes/platform/hwperf.toml"
+needs = ["render"]

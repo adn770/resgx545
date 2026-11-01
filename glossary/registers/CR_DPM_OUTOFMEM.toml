@@ -1,0 +1,15 @@
+[[term]]
+id = "G0374"
+name = "CR_DPM_OUTOFMEM"
+status = "named"
+
+[[term.source]]
+term = "PSB_CR_DPM_OUTOFMEM"
+kind = "register"
+sgx545 = "0x069c"
+meaning = "DPM out-of-memory response: restart, abort, abort all"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0259"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"

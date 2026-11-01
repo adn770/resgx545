@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+#
+# Differential 3D captures of YUV texture streaming (IMG_texture_stream2) through
+# fakedrm.c's buffer-class device (bufclass.h): the colour-space and luma registers no
+# earlier capture changed. tex_8888 is the RGB texture to diff the stream runs against; the
+# packed formats run under each of the GPL enum's codes, to see which the driver accepts.
+base
+tex_8888         tex=64x64
+stream_nv12      stream=nv12
+stream_nv12_32   stream=nv12,32x16
+stream_uyvy      stream=uyvy
+stream_yuyv      stream=yuyv
+stream_fuyvy     stream=fuyvy
+stream_fyuyv     stream=fyuyv
+stream_c0uyvy    stream=c0uyvy
+stream_c0yuyv    stream=c0yuyv
+stream_c1uyvy    stream=c1uyvy
+stream_c1yuyv    stream=c1yuyv

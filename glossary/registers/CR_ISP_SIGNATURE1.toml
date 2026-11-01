@@ -1,0 +1,15 @@
+[[term]]
+id = "G0422"
+name = "CR_ISP_SIGNATURE1"
+status = "named"
+
+[[term.source]]
+term = "CR_ISP_SIGNATURE1"
+kind = "register"
+sgx545 = "0x04d8"
+meaning = "ISP output signature (first block, second word); the EDM waits for it to stop changing [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "harness/ukernel-extract/sgx545_labels.r2:100"
+licence = "MIT"
+evidence = "EDM's drain wait reads it twice 1000 polls apart until stable (RE)"

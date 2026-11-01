@@ -1,0 +1,10 @@
+title = "probe table tsp/coordinate-sets"
+repo = "data"
+paths = ["tsp/coordinate-sets/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 502
+size = 8352166
+sha256 = "3b8bd2ca4ab9bbe5184a212120dd1b30a8939d6eaaa0711231b37aa1afebc3d6"
+recipe = "probes/tsp/coordinate-sets.toml"
+needs = ["render"]

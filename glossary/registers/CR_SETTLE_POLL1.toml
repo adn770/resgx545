@@ -1,0 +1,15 @@
+[[term]]
+id = "G0438"
+name = "CR_SETTLE_POLL1"
+status = "named"
+
+[[term.source]]
+term = "CR_REG_030C"
+kind = "register"
+sgx545 = "0x030c"
+meaning = "second of the two words of CR_SETTLE_POLL0's settle wait, read twice and compared in the same loop; its function inside the core is not shown [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E153"
+licence = "MIT"
+evidence = "[RE] complete EDM dataflow: read 2x in routine 0x15bc-0x1664, compared with its previous read in the settle loop; no write"

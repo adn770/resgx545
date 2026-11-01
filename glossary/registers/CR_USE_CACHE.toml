@@ -1,0 +1,15 @@
+[[term]]
+id = "G0455"
+name = "CR_USE_CACHE"
+status = "named"
+
+[[term.source]]
+term = "PSB_CR_USE_CACHE"
+kind = "register"
+sgx545 = "0x0a08"
+meaning = "USSE instruction cache invalidate"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0305"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"

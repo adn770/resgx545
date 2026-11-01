@@ -1,0 +1,15 @@
+[[term]]
+id = "G0379"
+name = "CR_DPM_SPM_SWITCH"
+status = "named"
+
+[[term.source]]
+term = "CR_DPM_REG_065C"
+kind = "register"
+sgx545 = "0x065c"
+meaning = "DPM word the EDM writes only in the partial-render routine and its resume: 1 just before it switches CR_DPM_STATE_BASE0/1 and flips CR_DPM_STATE_CONTEXT_ID, 0 just after; 1 around CR_DPM_TASK_CONTROL = 2 on the resume; its function inside the DPM is not shown [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E199"
+licence = "MIT"
+evidence = "[RE] complete EDM dataflow: only writes are 0x1/0x0 in routines 0xc23-0xdbe and 0xdbf-0xe09, bracketing the DPM state switch"

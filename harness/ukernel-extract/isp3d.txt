@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+#
+# Differential 3D captures aimed at the ISP and TSP registers no earlier capture changed
+# (0x0418, 0x04dc, 0x04e8, 0x0520, 0x0800, 0x0400's low bits, 0x042c): translucency over a
+# depth test, discard with depth, many overlapping draws, alpha-to-coverage and sample
+# coverage under 4x multisampling, wide lines and hints.
+base
+blend_depth      depth=less blend=srcalpha,oneminussrcalpha color=1,0,0,0.5
+blend_depth_ro   depth=less depthmask=0 blend=srcalpha,oneminussrcalpha color=1,0,0,0.5
+blend_depth_4    depth=less blend=srcalpha,oneminussrcalpha color=1,0,0,0.5 draws=4
+discard_depth    depth=less fsfile=shaders/discard_alpha.frag vsfile=shaders/common.vert
+draws64_depth    depth=less draws=64
+stencil_depth    depth=less stencil=always,1
+fbo_ms4          fbo=64x64 fbosamples=4
+fbo_ms4_a2c      fbo=64x64 fbosamples=4 a2c
+fbo_ms4_cov      fbo=64x64 fbosamples=4 samplecov=0.5
+fbo_ms4_covinv   fbo=64x64 fbosamples=4 samplecov=0.5,inv
+lines_w4         prim=lines linewidth=4
+hint_deriv       hint=deriv,nicest
+hint_mipmap      tex=16x16 texfilter=mipmap hint=mipmap,nicest

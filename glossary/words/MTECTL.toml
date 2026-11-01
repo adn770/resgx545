@@ -1,4 +1,20 @@
 [[term]]
+id = "G0474"
+name = "MTECTL.ATTR_SMOOTH"
+status = "named"
+
+[[term.source]]
+term = "MTECTL.ATTR_SMOOTH"
+kind = "field"
+sgx545 = "mtectl [29:10], 2 bits per attribute"
+meaning = "one field per vertex output attribute after the position (attribute i at 11:10 + 2i): non-zero, the vertices the MTE makes when it clips interpolate that attribute even under MTECTL.FLAT_VERTEX; 0, they copy the vertex it names [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E195"
+licence = "MIT"
+evidence = "[HW] E195: with 8:7 = 3 the first field at 1, 2 or 3 interpolates the colour and a coordinate set again, the second field changes nothing on a one-attribute vertex; with 8:7 = 0 no field changes an image"
+
+[[term]]
 id = "G0251"
 name = "MTECTL.CULL_MODE"
 status = "named"
@@ -12,4 +28,36 @@ tier = "3"
 source = "mesa-csbgen"
 citation = "C0198"
 licence = "MIT"
-evidence = "same function (S.4); Rogue 1 = cull CW, 2 = CCW; SGX observed 1 = CCW, 2 = CW in window coordinates (y not flipped): check convention; [HW] E062: 1 culls one winding (our triangle's), 2 the other, 0 and 3 neither, every value of bits 7:0 both ways round"
+evidence = "same function; Rogue 1 = cull CW, 2 = CCW; SGX observed 1 = CCW, 2 = CW in window coordinates (y not flipped): check convention; [HW] E062: 1 culls one winding (our triangle's), 2 the other, 0 and 3 neither, every value of bits 7:0 both ways round"
+
+[[term]]
+id = "G0475"
+name = "MTECTL.FLAT_VERTEX"
+status = "named"
+
+[[term.source]]
+term = "MTECTL.FLAT_VERTEX"
+kind = "field"
+sgx545 = "mtectl [8:7]"
+meaning = "flat shading's provoking vertex for clipping: 0 the vertices the MTE makes interpolate their attributes, 1-3 they take vertex 0's, 1's, 2's values (also a vertex clipped away), for the attributes MTECTL.ATTR_SMOOTH leaves flat; it also changes how the clipped polygon is cut into triangles [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E195"
+licence = "MIT"
+evidence = "[HW] E195: a triangle clipped at w = 0 at its second and at its first vertex, every value, the colour and a coordinate set; no effect without clipping"
+
+[[term]]
+id = "G0476"
+name = "MTECTL.NO_TRANSFORM"
+status = "named"
+
+[[term.source]]
+term = "MTECTL.NO_TRANSFORM"
+kind = "field"
+sgx545 = "mtectl bit 6"
+meaning = "take the vertex positions as window coordinates: no division by w (the object's 1/w slot gets w) and no viewport transform; our triangle, in clip space, then covers no pixel [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E196"
+licence = "MIT"
+evidence = "[HW] E062: set, the triangle is removed as drawn and mirrored; [HW] E196: the TA's object holds the clip-space x, y as pixels; scaled by 32 the triangle draws at the origin, the same at w 1 and 2"

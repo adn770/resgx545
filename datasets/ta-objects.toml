@@ -1,0 +1,10 @@
+title = "probe table ta/objects"
+repo = "data"
+paths = ["ta/objects/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 164
+size = 130731998
+sha256 = "c213b6e8985d44a634c61765f305257816d9144e64b206abab4630934ee60538"
+recipe = "probes/ta/objects.toml"
+needs = ["render", "render_param", "render_tadata"]

@@ -1,0 +1,31 @@
+[[term]]
+id = "G0415"
+name = "CR_HWPERF_CTRL"
+status = "named"
+
+[[term.source]]
+term = "CR_HWPERF_CTRL"
+kind = "register"
+sgx545 = "0x0040"
+meaning = "performance-counter control: 0x1ff (no group, the counters read 0) with HWPerf status 0; with a non-zero status, the group in bits 12:9 and bits 8:0 clear, and the counters count [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E150"
+licence = "MIT"
+evidence = "[RE] the EDM writes 0x1ff, then (host control dword 15 << 9) & 0x1e00 only when the HWPerf status is non-zero; [RE] E150: the SETHWPERFSTATUS handler makes these writes; [HW] E149: the counters read 0 with no group selected; the register is not read back here"
+
+[[term]]
+id = "G0416"
+name = "CR_HWPERF_CTRL.GROUP"
+status = "named"
+
+[[term.source]]
+term = "CR_HWPERF_CTRL.GROUP"
+kind = "bitfield"
+sgx545 = "0x0040[12:9]"
+meaning = "counter group the EDM selects from host control dword 15 when HWPerf is on; what each group counts is not measured here (PVRTune's groups: 0 overview, 1 triangles and vertices, 2 tiling, 3 ISP, 4 TSP, 5 USSE, 6 texturing) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E150"
+licence = "MIT"
+evidence = "[RE] EDM shifts host control dword 15 left by 9 and masks 0x1e00 before the write; [RE] E150: the SETHWPERFSTATUS handler writes the group"

@@ -1,0 +1,15 @@
+[[term]]
+id = "G0385"
+name = "CR_DPM_TASK_STATE"
+status = "named"
+
+[[term.source]]
+term = "PSB_CR_DPM_TASK_STATE"
+kind = "register"
+sgx545 = "0x0694"
+meaning = "DPM task: store, clear or load the state"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0266"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"

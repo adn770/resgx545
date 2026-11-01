@@ -4,11 +4,27 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
+## dpm
+
+- `Q038` (phase 10): when a scene overflows its parameter buffer, are the missing pixels geometry the partial render discards or pixels a later background object paints over, and why does the amount drawn not follow the buffer size? (E202, E204, E160)
+
 ## edm
 
 - `Q002` (phase 3): is the 399.0 MHz reference that times the EDM tick and TIMER the clock the USSE runs from? (E009, E084, E124)
 - `Q005` (phase 6): should the kernel ask the firmware for its identity on every boot, so DEV_QUERY reports it without the debug option? (E017, E022)
 - `Q006` (phase 6): can a render client's VM do without a writable mapping of the device-wide TA/3D control block? (E023)
+- `Q033` (phase 10): does the event word PDS #13 hands the EDM as pa1 carry CR_EVENT_STATUS bits in reverse order, and which events set its bits 8 and 19, that no handler acknowledges? (E155, E146, E154)
+- `Q034` (phase 10): does the EDM start a TA command whose destination or source sync is incomplete when its context is the only one in the TA queue? (E161, E154)
+
+## isp
+
+- `Q030` (phase 10): what does each value of CR_ISP_MSAA.MODE store in the target, and does a clear bit 31 still tile the triangle? (E210, E220, E211, E219)
+- `Q031` (phase 10): with ISP word 0 bit 28 set, is a pixel covered by any of eight samples placed by 0x04c8 and 0x0520, or by the four samples of 0x0520 plus the pixel centre? (E214, E215)
+- `Q032` (phase 10): what does pcoeff hand the ISP in the punch-through pass, when the kept pixels' depth is the same without it and moves between runs only when it runs without the iteration it reads? (E217)
+
+## mte
+
+- `Q039` (phase 10): which vertex dword does user clip plane 1 read as its distance when it is enabled without plane 0? (E198)
 
 ## pbe
 
@@ -36,6 +52,10 @@
 - `Q014` (phase 6): why does render command word 23 bit 27 (cmd:23^=0x8000000) fault with the same 3936 pixels differing in both runs, while bit 28 gives 4000 and then 3968? (E029)
 - `Q029` (phase 9): does clearing bit 8 of the render context's isp_ipfmisc word skip untouched tiles above 64x64, and what do the EDM's render target and render context cleanups wait for? (E148, E023)
 
+## ta
+
+- `Q035` (phase 10): which tiling words does the macrotile rule set at target sizes other than the sixteen tried, and does register 0x0208 ever change with the size? (E174, E175)
+
 ## texture
 
 - `Q007` (phase 6): what does bit 12 of the copy's texture address word read, and why does bit 14 complete with nothing written while bit 15 faults? (E036, E041)
@@ -59,3 +79,5 @@
 ## vdm
 
 - `Q015` (phase 6): why does VDM state word 1 with bits 11:9 = 7 hang the triangle sweep but render in the probe job that sets the same word? (E060)
+- `Q036` (phase 10): what do the DPM status registers 0x0700, 0x070c, 0x0710 and 0x071c count, when they change on every render but not as a running page count? (E184)
+- `Q037` (phase 10): does a hung job's saved render memory show how far the TA got, when the control hung in its pixel task leaves its object in one run and none in the next? (E186)

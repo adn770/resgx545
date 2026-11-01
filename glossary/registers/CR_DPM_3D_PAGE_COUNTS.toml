@@ -1,0 +1,15 @@
+[[term]]
+id = "G0368"
+name = "CR_DPM_3D_PAGE_COUNTS"
+status = "named"
+
+[[term.source]]
+term = "CR_DPM_3D_PAGE_COUNTS"
+kind = "register"
+sgx545 = "0x0660"
+meaning = "pages the 3D's PB already holds when it is loaded: local count in bits 15:0, global in 31:16 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E200"
+licence = "MIT"
+evidence = "EDM writes the PB descriptor's word 8 | word 9 << 16 in the 3D PB load (RE); the 3D PB store fills those words back from CR_DPM_PAGE and CR_DPM_3D_GLOBAL_COUNT bits 15:0 (RE, usse-dis)"

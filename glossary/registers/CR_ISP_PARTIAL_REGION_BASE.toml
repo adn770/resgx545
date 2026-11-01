@@ -1,0 +1,15 @@
+[[term]]
+id = "G0419"
+name = "CR_ISP_PARTIAL_REGION_BASE"
+status = "named"
+
+[[term.source]]
+term = "CR_ISP_PARTIAL_REGION_BASE"
+kind = "register"
+sgx545 = "0x050c"
+meaning = "region-header address written per render; the partial render points it at the macrotile it renders [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E160"
+licence = "MIT"
+evidence = "written per render from the render details; on a partial render the EDM points it at the current macrotile's region headers (RE)"

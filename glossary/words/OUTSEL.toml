@@ -1,7 +1,50 @@
 [[term]]
+id = "G0477"
+name = "OUTSEL"
+status = "named"
+
+[[term.source]]
+term = "OUTPUT_SEL"
+kind = "struct"
+sgx545 = "outsel"
+meaning = "output selects of the vertex"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0310"
+licence = "MIT"
+evidence = "same function"
+
+[[term]]
+id = "G0478"
+name = "OUTSEL.COLOUR_PRES"
+status = "named"
+
+[[term.source]]
+term = "OUTSEL.COLOUR_PRES"
+kind = "flag"
+sgx545 = "outsel bit 11"
+meaning = "the four dwords after the vertex position are its colour (R, G, B, A), iterated by DOUTI0.ATTR_SOURCE 32 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E133"
+licence = "MIT"
+evidence = "[HW] E133: with it source 32 delivers our o4-o7, without it 0xff000000; with coordsize 4 the job faults; [HW] E176: the TA stores the colour packed as ARGB8888, one dword a vertex, format word 0xc0202"
+
+[[term]]
 id = "G0252"
 name = "OUTSEL.PLANES"
 status = "inferred"
+
+[[term.source]]
+term = "OUTSEL.PLANES"
+kind = "bitfield"
+sgx545 = "outsel [7:0]"
+meaning = "user clip-plane enables, bit N plane N: each enabled plane reads a clip distance from the vertex outputs after the position (plane 0 the first; planes 0 and 1 together the first two), and a triangle with a negative distance at any vertex is removed whole [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E198"
+licence = "MIT"
+evidence = "[HW] E198: bit 0 with a fifth vertex dword, o4 = +1 draws and -1 removes, crossing planes remove the whole triangle; bits 0 and 1 read o4 and o5; plane 1 alone open; Rogue's OUTPUT_SEL plane0-plane7 (Mesa csbgen rogue/ppp.xml) has the same bits"
 
 [[term.source]]
 term = "OUTSEL.PLANES"
@@ -13,3 +56,19 @@ source = "resgx545"
 citation = "E096"
 licence = "MIT"
 evidence = "[HW] E096: with 0x53001, fdpc cp0 outside removed the triangle even with o4 at +1 and fdpc cp0 inside drew it with o4 at -1; fdpc cp1 outside drew (plane 1 off); with 0x63003 both fdpc cp0 and cp1 outside removed the triangle; [infer] the reading is ours, from these runs"
+
+[[term]]
+id = "G0479"
+name = "OUTSEL.VTX_SIZE"
+status = "named"
+
+[[term.source]]
+term = "vtxsize"
+kind = "field"
+sgx545 = "outsel [19:16]"
+meaning = "vertex size in dwords"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0311"
+licence = "MIT"
+evidence = "by function: SGX 19:16 equals the dwords emitted per vertex; [HW] E192: 4 to 6 dwords with a two-component coordinate set on our triangle, with coordsize and VDM_TASK1.OUTPUT_SIZE"

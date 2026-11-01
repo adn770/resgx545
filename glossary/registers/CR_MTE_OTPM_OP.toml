@@ -1,0 +1,15 @@
+[[term]]
+id = "G0428"
+name = "CR_MTE_OTPM_OP"
+status = "named"
+
+[[term.source]]
+term = "PSB_CR_MTE_OTPM_OP"
+kind = "register"
+sgx545 = "0x024c"
+meaning = "OTPM (object pointer cache) operation"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0293"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"

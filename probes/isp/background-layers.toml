@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# A two-layer background object on an 8x4 copy, by pokes: the copy's object rewritten with
+# layer A's identity coordinates and layer B's mirrored in u, laid out vertex-major or
+# layer-major, the format word at a value, the tag's TSPDATASIZE 2 -> 4 (or left), the fetch
+# from coordinate set 1 or 2. The script is written by gen_background_layers.py.
+name = "isp-background-layers"
+needs = ["render"]
+script = "background-layers.sh"

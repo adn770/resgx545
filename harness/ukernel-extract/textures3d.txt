@@ -1,0 +1,57 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+#
+# Texture and render-to-texture captures (tri.c tex=, fbo=): the TSP's texture state words,
+# the sampler setup in the pixel PDS and USSE programs, the texture's layout in memory as the
+# driver uploads it (each texel's bytes are its own x, y), mipmap chains, and a frame with two
+# renders (fbo). capture3d.sh runs them like variations3d.txt; diff3d.py compares each with
+# base (or a tex_* run with tex_base).
+base
+tex_base         tex=16x16
+tex_base2        tex=16x16
+tex_8x8          tex=8x8
+tex_32x32        tex=32x32
+tex_64x64        tex=64x64
+tex_256x256      tex=256x256
+tex_1024x1024    tex=1024x1024
+tex_64x16        tex=64x16
+tex_16x64        tex=16x64
+tex_npot_12x12   tex=12x12 texwrap=clamp
+tex_npot_100x60  tex=100x60 texwrap=clamp
+tex_1x1          tex=1x1
+fmt_888          tex=16x16 texfmt=888
+fmt_565          tex=16x16 texfmt=565
+fmt_4444         tex=16x16 texfmt=4444
+fmt_5551         tex=16x16 texfmt=5551
+fmt_l8           tex=16x16 texfmt=l8
+fmt_a8           tex=16x16 texfmt=a8
+fmt_la88         tex=16x16 texfmt=la88
+filter_linear    tex=16x16 texfilter=linear
+filter_mipmap    tex=16x16 texfilter=mipmap
+filter_mip_64    tex=64x64 texfilter=mipmap
+filter_mip_256   tex=256x256 texfilter=mipmap
+wrap_clamp       tex=16x16 texwrap=clamp
+wrap_mirror      tex=16x16 texwrap=mirror
+tex_8888_target  tex=16x16 format=8888
+tex_frames2      tex=16x16 frames=2
+tex_draws2       tex=16x16 draws=2
+fbo_64x64        fbo=64x64
+fbo_32x32        fbo=32x32
+fbo_128x64       fbo=128x64
+fbo_256x256      fbo=256x256
+fbo_frames2      fbo=64x64 frames=2
+fbo_8888_target  fbo=64x64 format=8888
+# readback, copies and updates: how pixels and texels travel (transfer queue or CPU)
+readback         readback
+readback_8888    readback format=8888
+readback_256x64  readback size=256x64
+copytex          copytex
+copytex_8888     copytex format=8888
+texsub           tex=16x16 texsub frames=2
+texsub_64        tex=64x64 texsub frames=2
+# several texture units and cube maps (multisampling needs a multisample configuration from
+# fakewsegl.c, which it does not offer yet: eglChooseConfig finds none)
+tex2             tex=16x16 tex2
+tex2_mip         tex=64x64 tex2 texfilter=mipmap
+cube_16          tex=16x16 cube
+cube_64_mip      tex=64x64 cube texfilter=mipmap

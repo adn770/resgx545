@@ -1,0 +1,181 @@
+[[term]]
+id = "G0517"
+name = "hw_pb_desc"
+status = "named"
+
+[[term.source]]
+term = "rogue_fwif_freelist"
+kind = "struct"
+sgx545 = "~ HWPBDESC"
+meaning = "Rogue FW free list = parameter-buffer pages"
+tier = "3"
+source = "linux-imagination"
+citation = "C0326"
+licence = "GPL-2.0 OR MIT"
+evidence = "same role: PB page list handed to the DPM/PM (E200)"
+
+[[term]]
+id = "G0518"
+name = "hw_pb_desc.allocated_page_count"
+status = "named"
+
+[[term.source]]
+term = "allocated_page_count"
+kind = "field"
+sgx545 = "HWPBDESC+0x014"
+meaning = "pages allocated"
+tier = "3"
+source = "linux-imagination"
+citation = "C0327"
+licence = "GPL-2.0 OR MIT"
+evidence = "rogue_fwif_freelist"
+
+[[term]]
+id = "G0519"
+name = "hw_pb_desc.current_stack_top"
+status = "named"
+
+[[term.source]]
+term = "current_stack_top"
+kind = "field"
+sgx545 = "HWPBDESC+0x018"
+meaning = "current free list head/tail"
+tier = "3"
+source = "linux-imagination"
+citation = "C0328"
+licence = "GPL-2.0 OR MIT"
+evidence = "rogue_fwif_freelist"
+
+[[term]]
+id = "G0520"
+name = "hw_pb_desc.dpm_ta_alloc"
+status = "named"
+
+[[term.source]]
+term = "hw_pb_desc.dpm_ta_alloc"
+kind = "field"
+sgx545 = "HWPBDESC+0x01c"
+meaning = "current allocation word: the EDM loads it into CR_DPM_TA_ALLOC (the 3D's matching register for the 3D) and stores the status back [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E200"
+licence = "MIT"
+evidence = "[RE] E200: the TA PB load, the 3D PB load and the store; named after the register"
+
+[[term]]
+id = "G0521"
+name = "hw_pb_desc.global_threshold"
+status = "named"
+
+[[term.source]]
+term = "GlobalThreshold"
+kind = "field"
+sgx545 = "HWPBDESC+0x030"
+meaning = "global page threshold"
+tier = "2"
+source = "cdv-libsrv_um"
+citation = "C0308"
+licence = "Intel-binary (ours)"
+evidence = "string only; likely an app-hint/config key [infer]"
+
+[[term.source]]
+term = "hw_pb_desc.global_threshold"
+kind = "field"
+sgx545 = "HWPBDESC+0x030"
+meaning = "global-list page threshold; the EDM loads (value & 0xffff) | 0x10000 into CR_DPM_TA_GLOBAL_LIST [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E200"
+licence = "MIT"
+evidence = "[RE] E200: the TA PB load reads it at this position; the name is cdv-libsrv_um's GlobalThreshold"
+
+[[term]]
+id = "G0522"
+name = "hw_pb_desc.initial_dpm_ta_alloc"
+status = "named"
+
+[[term.source]]
+term = "hw_pb_desc.initial_dpm_ta_alloc"
+kind = "field"
+sgx545 = "HWPBDESC+0x00c"
+meaning = "initial value of the PB descriptor's dpm_ta_alloc (the page before the tail << 16) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E201"
+licence = "MIT"
+evidence = "[RE] E201: the host recipe and the page-table builder"
+
+[[term]]
+id = "G0523"
+name = "hw_pb_desc.initial_stack_top"
+status = "named"
+
+[[term.source]]
+term = "hw_pb_desc.initial_stack_top"
+kind = "field"
+sgx545 = "HWPBDESC+0x008"
+meaning = "initial free-list head/tail (tail << 16 | head); PB_FLAGS.INIT_PAGE_TABLE resets the PB descriptor's current_stack_top from it [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E200"
+licence = "MIT"
+evidence = "[RE] E200: the page-table builder resets the PB descriptor's current_stack_top from it"
+
+[[term]]
+id = "G0524"
+name = "hw_pb_desc.pds_threshold"
+status = "named"
+
+[[term.source]]
+term = "PDSThreshold"
+kind = "field"
+sgx545 = "HWPBDESC+0x034"
+meaning = "PDS page threshold"
+tier = "2"
+source = "cdv-libsrv_um"
+citation = "C0313"
+licence = "Intel-binary (ours)"
+evidence = "string only; likely an app-hint/config key [infer]"
+
+[[term]]
+id = "G0525"
+name = "hw_pb_desc.ta_threshold"
+status = "named"
+
+[[term.source]]
+term = "TAThreshold"
+kind = "field"
+sgx545 = "HWPBDESC+0x028"
+meaning = "TA page threshold"
+tier = "2"
+source = "cdv-libsrv_um"
+citation = "C0316"
+licence = "Intel-binary (ours)"
+evidence = "string only; likely an app-hint/config key [infer]"
+
+[[term.source]]
+term = "hw_pb_desc.ta_threshold"
+kind = "field"
+sgx545 = "HWPBDESC+0x028"
+meaning = "TA page threshold; the EDM loads it into CR_DPM_TA_PAGE_THRESHOLD [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E200"
+licence = "MIT"
+evidence = "[RE] E200: the TA PB load reads it at this position; the name is cdv-libsrv_um's TAThreshold"
+
+[[term]]
+id = "G0526"
+name = "hw_pb_desc.zls_threshold"
+status = "named"
+
+[[term.source]]
+term = "ZLSThreshold"
+kind = "field"
+sgx545 = "HWPBDESC+0x02c"
+meaning = "ZLS page threshold"
+tier = "2"
+source = "cdv-libsrv_um"
+citation = "C0320"
+licence = "Intel-binary (ours)"
+evidence = "string only; likely an app-hint/config key [infer]"

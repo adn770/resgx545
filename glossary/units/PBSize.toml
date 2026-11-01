@@ -1,0 +1,15 @@
+[[term]]
+id = "G0480"
+name = "PBSize"
+status = "named"
+
+[[term.source]]
+term = "PBSize"
+kind = "concept"
+sgx545 = "-"
+meaning = "config key (libsrv_um): parameter buffer size, in DPM pages"
+tier = "2"
+source = "cdv-libsrv_um"
+citation = "C0312"
+licence = "Intel-binary (ours)"
+evidence = "-"

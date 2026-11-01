@@ -1,0 +1,15 @@
+[[term]]
+id = "G0426"
+name = "CR_MTE_CTRL"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_MTE_CTRL"
+kind = "register"
+sgx545 = "0x023c"
+meaning = "macro tiling engine control"
+tier = "1"
+source = "intel-ctp-santos10"
+citation = "C0292"
+licence = "GPL-2.0 OR MIT"
+evidence = "DDK debug-dump name table (RESTRICTED_REGISTERS block); no offset in any GPL source, offset 0x023c is our binding via name MTE_CTRL"

@@ -1,0 +1,10 @@
+title = "probe table mte/rhw"
+repo = "data"
+paths = ["mte/rhw/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 23
+size = 14006221
+sha256 = "c1f65424ce2c904e44dc82f03d933e380b8b138f674a0e51372ff7c0ef850360"
+recipe = "probes/mte/rhw.toml"
+needs = ["render", "kpoke", "render_param", "render_tadata"]

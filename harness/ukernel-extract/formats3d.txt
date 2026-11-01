@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+#
+# Differential 3D captures of the texture formats the closed driver's extensions offer and no
+# earlier capture used: BGRA, float and half-float, depth, PVRTC and ETC1 (Khronos enums), each
+# a 16x16 texture against tex_base: the texture words' TEXFORMAT and TEXTYPE for each.
+base
+tex_base         tex=16x16
+fmt_bgra8888     tex=16x16 texfmt=bgra8888
+fmt_f32          tex=16x16 texfmt=f32
+fmt_f16          tex=16x16 texfmt=f16
+fmt_lf32         tex=16x16 texfmt=lf32
+fmt_lf16         tex=16x16 texfmt=lf16
+fmt_depth16      tex=16x16 texfmt=depth16
+fmt_depth32      tex=16x16 texfmt=depth32
+fmt_pvrtc4       tex=16x16 texfmt=pvrtc4
+fmt_pvrtc2       tex=16x16 texfmt=pvrtc2
+fmt_pvrtc4rgb    tex=16x16 texfmt=pvrtc4rgb
+fmt_pvrtc2rgb    tex=16x16 texfmt=pvrtc2rgb
+fmt_etc1         tex=16x16 texfmt=etc1

@@ -1,0 +1,15 @@
+[[term]]
+id = "G0430"
+name = "CR_PPP_SCREEN"
+status = "named"
+
+[[term.source]]
+term = "ROGUE_CR_PPP_SCREEN"
+kind = "register"
+sgx545 = "0x0248"
+meaning = "screen size in pixels: width - 1 (15:0), height - 1 (31:16) (Rogue analogue); the square targets measured do not tell which half is the width [infer]"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0295"
+licence = "MIT"
+evidence = "[HW] E175; same layout as Rogue PPP_SCREEN (pixel max X low, Y from bit 16)"

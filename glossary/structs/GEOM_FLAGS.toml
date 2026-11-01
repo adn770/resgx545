@@ -15,6 +15,54 @@ licence = "GPL-2.0 OR MIT"
 evidence = "[HW] E051: clear on a second render of a context, that render draws its own geometry only; [HW] E052: clear on the kick after one without LAST_KICK, its geometry joins the open scene"
 
 [[term]]
+id = "G0465"
+name = "GEOM_FLAGS.INVALIDATE_DATA_CACHE"
+status = "named"
+
+[[term.source]]
+term = "GEOM_FLAGS.INVALIDATE_DATA_CACHE"
+kind = "flag"
+sgx545 = "CMDTA+0x004 bit6 (0x40)"
+meaning = "invalidate the data cache before the TA (CR_CACHE_CTRL bit 28) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E159"
+licence = "MIT"
+evidence = "[RE] E159: the TA kick writes the matching open-sourced invalidate register (CR_USE_CACHE, CR_PDS_INV0 / CR_PDS_INV_CSC, CR_CACHE_CTRL bit 28)"
+
+[[term]]
+id = "G0466"
+name = "GEOM_FLAGS.INVALIDATE_PDS_CACHE"
+status = "named"
+
+[[term.source]]
+term = "GEOM_FLAGS.INVALIDATE_PDS_CACHE"
+kind = "flag"
+sgx545 = "CMDTA+0x004 bit5 (0x20)"
+meaning = "invalidate the PDS caches before the TA [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E159"
+licence = "MIT"
+evidence = "[RE] E159: the TA kick writes the matching open-sourced invalidate register (CR_USE_CACHE, CR_PDS_INV0 / CR_PDS_INV_CSC, CR_CACHE_CTRL bit 28)"
+
+[[term]]
+id = "G0467"
+name = "GEOM_FLAGS.INVALIDATE_USE_CACHE"
+status = "named"
+
+[[term.source]]
+term = "GEOM_FLAGS.INVALIDATE_USE_CACHE"
+kind = "flag"
+sgx545 = "CMDTA+0x004 bit4 (0x10)"
+meaning = "invalidate the USE cache before the TA [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E159"
+licence = "MIT"
+evidence = "[RE] E159: the TA kick writes the matching open-sourced invalidate register (CR_USE_CACHE, CR_PDS_INV0 / CR_PDS_INV_CSC, CR_CACHE_CTRL bit 28)"
+
+[[term]]
 id = "G0242"
 name = "GEOM_FLAGS.LAST_KICK"
 status = "named"
@@ -28,7 +76,7 @@ tier = "3"
 source = "linux-imagination"
 citation = "C0192"
 licence = "GPL-2.0 OR MIT"
-evidence = "[HW] E051: clear on a render, the job hangs: its render waits for a last kick; [HW] E052: clear (and te_psg's end-of-scene bit), the scene stays open for the next kick; the TA status word is written at the TA's end; the next kick with it renders every kick's geometry"
+evidence = "same bit and meaning as the captured SGX545 flag (E156, E166); [HW] E051: clear on a render, the job hangs: its render waits for a last kick; [HW] E052: clear (and te_psg's end-of-scene bit), the scene stays open for the next kick; the TA status word is written at the TA's end; the next kick with it renders every kick's geometry"
 
 [[term]]
 id = "G0243"
@@ -42,6 +90,38 @@ sgx545 = "CMDTA+0x004 bit3 (0x8)"
 meaning = "tested together with GEOM_FLAGS.FIRST_KICK (mask 0x9): when either is set the TA kick skips the calls that invalidate the caches, set the BIF bank and reload the RT data's stored DPM context (CR_DPM_STATE_BASE0/1, CR_DPM_CONTROL_BASE, CR_MTE_OTPM_BASE from hw_rt_data, DPM state task) [infer]"
 tier = "ours"
 source = "resgx545"
-citation = "E053"
+citation = "E172"
 licence = "MIT"
-evidence = "routine 0x17be loads the DPM state/control/OTPM bases from hw_rt_data; [HW] E053: with FIRST_KICK clear on a kick after a closed scene (BIT2, both or neither on the close), the scene renders empty"
+evidence = "[RE] complete EDM dataflow: cmd_ta.flags & 0x9 == 0 runs calls 0x17ec, 0x184c, 0x17be in the TA kick (0x8e9-0xacd); routine 0x17be loads the DPM state/control/OTPM bases from hw_rt_data; [HW] E053: with FIRST_KICK clear on a kick after a closed scene (BIT2, both or neither on the close), the scene renders empty"
+
+[[term]]
+id = "G0468"
+name = "GEOM_FLAGS.PB_THRESHOLD_UPDATE"
+status = "named"
+
+[[term.source]]
+term = "GEOM_FLAGS.PB_THRESHOLD_UPDATE"
+kind = "flag"
+sgx545 = "CMDTA+0x004 bit13 (0x2000)"
+meaning = "copy the command's four thresholds into the PB descriptor and set PB_FLAGS.THRESHOLD_UPDATE [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E161"
+licence = "MIT"
+evidence = "[RE] E161: the TA pick copies the thresholds and sets PB_FLAGS.THRESHOLD_UPDATE only with this bit"
+
+[[term]]
+id = "G0469"
+name = "GEOM_FLAGS.TA3D_DEPENDENCY"
+status = "named"
+
+[[term.source]]
+term = "GEOM_FLAGS.TA3D_DEPENDENCY"
+kind = "flag"
+sgx545 = "CMDTA+0x004 bit10 (0x400)"
+meaning = "wait for the TA->3D dependency sync (the shared block's ta3d_dependency) before the kick [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E161"
+licence = "MIT"
+evidence = "[RE] E161: the TA pick waits on the shared block's ta3d_dependency only with this bit"

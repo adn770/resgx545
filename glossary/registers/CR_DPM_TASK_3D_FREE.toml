@@ -1,0 +1,15 @@
+[[term]]
+id = "G0383"
+name = "CR_DPM_TASK_3D_FREE"
+status = "named"
+
+[[term.source]]
+term = "PSB_CR_DPM_TASK_3D_FREE"
+kind = "register"
+sgx545 = "0x0680"
+meaning = "DPM task: load the 3D free list"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0264"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"

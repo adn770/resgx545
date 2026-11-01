@@ -1,31 +1,59 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: 2026 Josep Torra
-"""Tests for kick3d.py — the layouts of the kernel-side structures of the TA/3D kick.
+"""Tests for kick3d.py: the layouts of the structures of the TA/3D kick.
 
-The tests use word-index buffers (word i holds i) to pin every field position.
+The kernel-side layouts are the GPL kernel's (sgx545-ce). The client structures carry our own
+names, each at the offset an evidence record or a glossary row gives; the tests pin those
+offsets record by record, check every glossary row of the structures against the layouts, and
+use word-index buffers (word i holds i) to pin decode().
 """
+import pathlib
+import re
 import struct
+import tomllib
 
 import pytest
 
 import kick3d
+
+GLOSSARY = pathlib.Path(__file__).resolve().parents[2] / "glossary" / "structs"
 
 
 def index_words(n: int) -> bytes:
     return struct.pack(f"<{n}I", *range(n))
 
 
-def test_only_the_kernel_side_structures_have_layouts():
-    # the layouts the GPL kernel defines (sgx545-ce); nothing else is laid out here
-    assert set(kick3d.STRUCTS) == {"PVRSRV_BRIDGE_IN_DOKICK", "SGX_CCB_KICK",
-                                   "SGXMKIF_CMDTA_SHARED", "SGXMKIF_HWDEVICE_SYNC_LIST"}
+def dword(name: str, field: str) -> int:
+    return kick3d.offset(name, field) // 4
+
+
+KERNEL_SIDE = {"PVRSRV_BRIDGE_IN_DOKICK", "SGX_CCB_KICK", "SGXMKIF_CMDTA_SHARED",
+               "SGXMKIF_HWDEVICE_SYNC_LIST"}
+CLIENT = {"cmd_ta", "ta_registers", "registers_3d", "hw_render_details", "hw_rt_data",
+          "hw_rt_data_set", "hw_render_context", "hw_pb_desc", "pb_block"}
+
+
+def test_the_layouts_are_the_kernel_side_ones_and_the_client_structures():
+    assert set(kick3d.STRUCTS) == KERNEL_SIDE | CLIENT
 
 
 # --- structure sizes ---------------------------------------------------------------
 
-def test_shared_ta_block_size_matches_what_the_microkernel_reports():
-    # SGX_MISCINFO_STRUCT_SIZES from the captured init info (initinfo.py)
+def test_sizes_are_the_ones_the_microkernel_reports():
+    # SGX_MISCINFO_STRUCT_SIZES (E001; glossary misc_info_struct_sizes.*)
+    assert kick3d.size("cmd_ta") == 0x2B0
     assert kick3d.size("SGXMKIF_CMDTA_SHARED") == 0x1E0
+    assert kick3d.size("registers_3d") == 0xD0
+    assert kick3d.size("hw_render_details") == 0x1EC
+    assert kick3d.size("hw_rt_data") == 0x38
+    assert kick3d.size("hw_rt_data_set") == 0x50
+    assert kick3d.size("hw_render_context") == 0x44
+    assert kick3d.size("hw_pb_desc") == 0x3C
+
+
+def test_register_block_and_pb_block_sizes_are_what_the_records_show():
+    assert kick3d.size("ta_registers") == 28 * 4          # E159: command dwords 142 to 169
+    assert kick3d.size("pb_block") == 0x10                # E201: four dwords read
 
 
 def test_kick_bridge_in_is_564_bytes():
@@ -34,7 +62,294 @@ def test_kick_bridge_in_is_564_bytes():
     assert kick3d.size("SGX_CCB_KICK") == 556
 
 
-# --- field positions -----------------------------------------------------------------
+# --- the TA command ------------------------------------------------------------------
+
+def test_ta_command_words_by_record():
+    assert dword("cmd_ta", "size") == 0                            # E156
+    assert dword("cmd_ta", "geom_flags") == 1                      # E159, E172
+    assert dword("cmd_ta", "pds_bgnd") == 2                        # E158, E162
+    assert dword("cmd_ta", "num_vertex_partitions") == 5           # E159
+    assert dword("cmd_ta", "frag_flags") == 7                      # E158, E169
+    assert dword("cmd_ta", "frame_num") == 8                       # E158
+    assert dword("cmd_ta", "hw_pb_desc_dev_vaddr") == 9            # E156
+    assert [dword("cmd_ta", f) for f in ("ta_threshold", "zls_threshold", "global_threshold",
+                                         "pds_threshold")] == [10, 11, 12, 13]   # E161
+    assert dword("cmd_ta", "hw_render_details_dev_vaddr") == 14    # E159
+    assert dword("cmd_ta", "dst_sync_list_dev_vaddr") == 15        # E161
+    assert dword("cmd_ta", "hw_rt_data_dev_vaddr") == 17           # E158, E161
+    assert dword("cmd_ta", "z_rt_stride") == 19                    # E158, E163
+    assert dword("cmd_ta", "stencil_rt_stride") == 20
+    assert dword("cmd_ta", "num_patches_3d") == 21                 # E158
+    assert dword("cmd_ta", "shared") == 22                         # sgx545-ce SGX_DOKICK
+    assert dword("cmd_ta", "ta_registers") == 142                  # E159
+    assert dword("cmd_ta", "patches_3d") == 170                    # E158
+
+
+def test_ta_command_shared_block_is_the_kernels():
+    assert kick3d.offset("cmd_ta", "shared.ui32CtrlFlags") == 0x58
+    # E161: the transfer-queue sync is command dwords 25 to 28; E158: the source syncs from 34
+    assert dword("cmd_ta", "shared.ui32TATQSyncWriteOpsPendingVal") == 25
+    assert dword("cmd_ta", "shared.ui32NumSrcSyncs") == 33
+    assert dword("cmd_ta", "shared.asSrcSyncs") == 34
+    assert dword("cmd_ta", "shared.sTA3DDependency") == 66       # E161: dwords 68 and 69
+    assert dword("cmd_ta", "shared.sCtlTAStatusInfo") == 70      # E156
+    assert dword("cmd_ta", "shared.sCtl3DStatusInfo") == 134     # E158
+
+
+def test_ta_registers_follow_the_kick_store_order():
+    # E159: command dwords 142 to 169 go to these registers, one str each, in order
+    assert [a for a, _ in kick3d.TA_REGISTER_WRITES] == [
+        0x0204, 0x0208, 0x020C, 0x0210, 0x0214, 0x0218, 0x0238, 0x023C, 0x021C, 0x0220,
+        0x0240, 0x0244, 0x0248, 0x0A04, 0x0AA0, 0x0C90, 0x02B0, 0x02D4, 0x02D0, 0x02B4,
+        0x0324, 0x0368, 0x0364, 0x0370, 0x0374, 0x074C, 0x02A8, 0x0230]
+    assert kick3d.offset("cmd_ta", "ta_registers.te_aa") == 0x238
+    assert kick3d.offset("cmd_ta", "ta_registers.vdm_ctrl_stream_base") == 0x250
+    assert kick3d.offset("cmd_ta", "ta_registers.ppp_screen") == 0x268
+    assert kick3d.offset("cmd_ta", "ta_registers.dpm_reg_074c") == 0x29C
+    assert kick3d.offset("cmd_ta", "ta_registers.mte_multisamplectl") == 0x2A4
+
+
+def test_ta_command_gaps_stay_unnamed():
+    names = [path for path, *_ in kick3d._layout(kick3d.STRUCTS["cmd_ta"])]
+    assert {"pad_0x18", "pad_0x40", "pad_0x48"} <= set(names)
+
+
+def test_ta_command_decode():
+    c = kick3d.decode("cmd_ta", index_words(172))
+    assert c["geom_flags"] == 1 and c["pds_bgnd"] == [2, 3, 4]
+    assert c["shared.ui32CtrlFlags"] == 22
+    assert c["ta_registers.te_aa"] == 142 and c["ta_registers.mte_multisamplectl"] == 169
+    assert c["patches_3d"] == [[170, 171]]
+
+
+# --- the render details -----------------------------------------------------------
+
+def test_3d_registers_follow_the_kick_store_order():
+    # E163: render details dwords 0 to 51 go to these registers, one str each, in order
+    assert [a for a, _ in kick3d.REGISTER_3D_WRITES] == [
+        0x0CAC, 0x0CB0, 0x0400, 0x0414, 0x042C, 0x041C, 0x0420, 0x0424,
+        0x0408, 0x0148, 0x050C,
+        0x0480, 0x0484, 0x0488, 0x048C, 0x0490,
+        0x04B8, 0x04BC, 0x04C4, 0x0520,
+        0x04C8, 0x04DC, 0x0800, 0x0A5C, 0x0A60, 0x0A64,
+        0x0418, 0x0A84, 0x0A88,
+        0x0A8C, 0x0A90, 0x0A94, 0x0A98, 0x0B24, 0x0B28, 0x0B2C, 0x0A9C,
+        0x0820, 0x0824, 0x0828, 0x082C, 0x0834, 0x0838, 0x083C, 0x0840,
+        0x0830, 0x0844, 0x0848,
+        0x0860, 0x0864, 0x0868, 0x04E8]
+    assert kick3d.offset("hw_render_details", "registers_3d") == 0
+    assert kick3d.offset("hw_render_details", "registers_3d.isp_zlsctl") == 0x2C
+    assert kick3d.offset("hw_render_details", "registers_3d.event_pixel_pds_code") == 0x5C
+
+
+def test_render_details_words_by_record():
+    rd = "hw_render_details"
+    assert dword(rd, "access_dev_vaddr") == 52                    # E164
+    assert dword(rd, "frag_flags") == 53                          # E163, E169
+    assert dword(rd, "hw_rt_data_dev_vaddr") == 55                # E163
+    assert dword(rd, "dst_sync_list_dev_vaddr") == 56             # E164, E165
+    assert dword(rd, "tq_3d_write_pending") == 57                 # E158, E165
+    assert dword(rd, "tq_3d_read_complete_dev_vaddr") == 60       # E164
+    assert dword(rd, "ta3d_dep_write_pending") == 63              # E158, E164
+    assert dword(rd, "ta3d_dep_write_complete_dev_vaddr") == 64
+    assert dword(rd, "num_rts") == 65                             # E164
+    assert dword(rd, "rt_index") == 66                            # E163
+    assert dword(rd, "rt_patch_dev_vaddr") == 67                  # E163
+    assert dword(rd, "rt_patch_list_dev_vaddr") == 68
+    assert dword(rd, "pds_bgnd_list_dev_vaddr") == 69             # E162
+    assert dword(rd, "z_rt_stride") == 70                         # E163
+    assert dword(rd, "stencil_rt_stride") == 71
+    assert dword(rd, "te_context_state") == 73                    # E156, E158
+    assert dword(rd, "render_list_prev_dev_vaddr") == 74          # E156
+    assert dword(rd, "render_list_next_dev_vaddr") == 75
+    assert dword(rd, "pds_bgnd") == 76                            # E158, E162
+    assert dword(rd, "num_pixel_partitions") == 79                # E163
+    assert dword(rd, "frame_num") == 80                           # E158, E163
+    assert dword(rd, "num_status_3d") == 81                       # E158, E164
+    assert dword(rd, "status_3d") == 82
+    assert dword(rd, "num_src_syncs") == 90                       # E158, E165
+    assert dword(rd, "src_syncs") == 91
+
+
+# E158: the TA kick's copy routine, command dword -> render details dword
+COPIED = [("frag_flags", "frag_flags", 7, 53), ("frame_num", "frame_num", 8, 80),
+          ("shared.ui323DTQSyncWriteOpsPendingVal", "tq_3d_write_pending", 29, 57),
+          ("shared.s3DTQSyncReadOpsCompleteDevVAddr", "tq_3d_read_complete_dev_vaddr", 32, 60),
+          ("dst_sync_list_dev_vaddr", "dst_sync_list_dev_vaddr", 15, 56),
+          ("shared.ui32NumSrcSyncs", "num_src_syncs", 33, 90),
+          ("shared.asSrcSyncs", "src_syncs", 34, 91),
+          ("z_rt_stride", "z_rt_stride", 19, 70),
+          ("stencil_rt_stride", "stencil_rt_stride", 20, 71),
+          ("pds_bgnd", "pds_bgnd", 2, 76), ("shared.ui32Num3DStatusVals", "num_status_3d", 24, 81),
+          ("shared.sCtl3DStatusInfo", "status_3d", 134, 82)]
+
+
+@pytest.mark.parametrize("cmd_field,rd_field,cmd_dw,rd_dw", COPIED)
+def test_the_copy_routine_moves_command_words_to_render_details_words(cmd_field, rd_field,
+                                                                         cmd_dw, rd_dw):
+    assert dword("cmd_ta", cmd_field) == cmd_dw
+    assert dword("hw_render_details", rd_field) == rd_dw
+
+
+def test_render_details_decode():
+    d = kick3d.decode("hw_render_details", index_words(123))
+    assert d["registers_3d.bif_3d_req_base"] == 0 and d["registers_3d.isp_reg_04e8"] == 51
+    assert d["frag_flags"] == 53 and d["pds_bgnd"] == [76, 77, 78]
+    assert d["status_3d"][3] == [88, 89]
+    assert d["src_syncs"][7] == [119, 120, 121, 122]
+
+
+# --- RT data, RT data set, render context, PB descriptor and block ------------------
+
+def test_rt_data_words_by_record():
+    rt = "hw_rt_data"
+    assert dword(rt, "hw_render_details_dev_vaddr") == 1          # E159
+    assert dword(rt, "bgobj_dev_vaddr") == 4                      # E162
+    assert dword(rt, "dpm_state_dev_vaddr") == 5                  # E158
+    assert dword(rt, "dpm_control_dev_vaddr") == 6
+    assert dword(rt, "otpm_dev_vaddr") == 7
+    assert dword(rt, "num_rts") == 10
+    assert dword(rt, "region_header_rt_stride") == 11             # E163
+    assert dword(rt, "rt_status_dev_vaddr") == 12                 # E158, E164
+    assert dword(rt, "state") == 13                               # E156, E158
+
+
+def test_rt_data_set_words_and_its_embedded_rt_data():
+    s = "hw_rt_data_set"
+    assert dword(s, "executed_count") == 1                        # E156, E166
+    assert dword(s, "num_out_of_mem_signals") == 3                # E160
+    assert dword(s, "num_spm_renders") == 4
+    # misc-info's size row: a 0x18-byte header, then the RT data
+    assert kick3d.offset(s, "hw_rt_data") == 0x18
+    assert kick3d.offset(s, "hw_rt_data.state") == 0x18 + 0x34
+    d = kick3d.decode(s, index_words(20))
+    assert d["hw_rt_data.hw_render_details_dev_vaddr"] == 7
+
+
+def test_render_context_words_by_record():
+    c = "hw_render_context"
+    assert dword(c, "context_flags") == 0                         # E159, E161, E167
+    assert dword(c, "priority") == 1                              # E157
+    assert dword(c, "ccb_base_dev_vaddr") == 3                    # E161
+    assert dword(c, "ccb_ctl_dev_vaddr") == 4
+    assert dword(c, "submitted_commands") == 5                    # E157
+    assert dword(c, "hw_pb_desc_dev_vaddr") == 6                  # E159, E167
+    assert [dword(c, f) for f in ("pending_renders_head", "pending_renders_tail",
+                                  "ready_renders_head", "ready_renders_tail")] == [8, 9, 10, 11]
+    assert [dword(c, f) for f in ("run_node_prev_ta", "run_node_next_ta", "run_node_prev_3d",
+                                  "run_node_next_3d")] == [12, 13, 14, 15]   # E157, E165
+    assert dword(c, "pid") == 16                                  # E159, E163
+
+
+def test_pb_descriptor_words_by_record():
+    p = "hw_pb_desc"
+    assert dword(p, "pb_flags") == 0                              # E201
+    assert dword(p, "initial_stack_top") == 2
+    assert dword(p, "initial_dpm_ta_alloc") == 3
+    assert dword(p, "page_table_base") == 4
+    assert dword(p, "allocated_page_count") == 5                  # E156
+    assert dword(p, "current_stack_top") == 6
+    assert dword(p, "dpm_ta_alloc") == 7
+    assert dword(p, "local_page_count") == 8
+    assert dword(p, "global_page_count") == 9
+    assert [dword(p, f) for f in ("ta_threshold", "zls_threshold", "global_threshold",
+                                  "pds_threshold")] == [10, 11, 12, 13]
+    assert dword(p, "first_block_dev_vaddr") == 14
+
+
+def test_pb_block_words_by_record():
+    # E201: the page count in the first dword, a first-page field in the third, the next block
+    # in the fourth
+    b = kick3d.decode("pb_block", index_words(4))
+    assert (b["page_count"], b["first_page"], b["next_block_dev_vaddr"]) == (0, 2, 3)
+
+
+# --- the glossary agrees with the layouts --------------------------------------------
+
+PREFIXES = {"cmd_ta": "CMDTA", "hw_render_details": "HWRENDERDETAILS",
+            "hw_rt_data": "HWRTDATA", "hw_rt_data_set": "HWRTDATASET",
+            "hw_render_context": "HWRENDERCONTEXT", "hw_pb_desc": "HWPBDESC"}
+FIELD_LOC = re.compile(r"^([A-Z_0-9]+)\+0x([0-9a-fA-F]+)$")
+FLAG_LOC = re.compile(r"^(?:([A-Z_0-9/]+)\+0x([0-9a-fA-F]+)|render flags) bit(\d+) ")
+
+
+def glossary_rows(stem: str) -> list[tuple[str, str]]:
+    path = GLOSSARY / f"{stem}.toml"
+    rows = []
+    for t in tomllib.loads(path.read_text())["term"]:
+        for s in t.get("source", []):
+            rows.append((t["name"], s.get("sgx545", "").strip()))
+    return rows
+
+
+@pytest.mark.skipif(not GLOSSARY.is_dir(), reason="no glossary next to the harness")
+@pytest.mark.parametrize("name", sorted(PREFIXES))
+def test_every_glossary_field_is_named_at_its_offset(name):
+    # a glossary field is a top-level field (a nested block's offset is its first word's) or
+    # a word of a register block, named by its leaf
+    at = {}
+    for path, off, *_ in kick3d._layout(kick3d.STRUCTS[name]):
+        parts = path.split(".")
+        at.setdefault(parts[-1], set()).add(4 * off)
+        at.setdefault(parts[0], set()).add(kick3d.offset(name, parts[0]))
+    n = 0
+    for term, loc in glossary_rows(name):
+        m = FIELD_LOC.match(loc)
+        if not m or "." not in term:
+            continue
+        assert m.group(1) == PREFIXES[name], (term, loc)
+        field = term.split(".", 1)[1]
+        assert int(m.group(2), 16) in at.get(field, ()), (term, loc)
+        n += 1
+    assert n
+
+
+FLAG_WORD_OF = {"GEOM_FLAGS": ("cmd_ta", "geom_flags"), "FRAG_FLAGS": None,
+                "CONTEXT_FLAGS": ("hw_render_context", "context_flags"),
+                "PB_FLAGS": ("hw_pb_desc", "pb_flags")}
+
+
+@pytest.mark.skipif(not GLOSSARY.is_dir(), reason="no glossary next to the harness")
+@pytest.mark.parametrize("kind", sorted(FLAG_WORD_OF))
+def test_flag_tables_are_the_glossary_rows(kind):
+    want = {}
+    for term, loc in glossary_rows(kind):
+        m = FLAG_LOC.match(loc)
+        assert m, (term, loc)
+        if FLAG_WORD_OF[kind]:
+            struct_name, field = FLAG_WORD_OF[kind]
+            assert PREFIXES[struct_name] in m.group(1).split("/")
+            assert int(m.group(2), 16) == kick3d.offset(struct_name, field)
+        want[1 << int(m.group(3))] = term.split(".", 1)[1]
+    assert kick3d.FLAGS[kind] == want
+
+
+# --- flags ---------------------------------------------------------------------------
+
+def test_flag_names():
+    assert kick3d.flag_names("GEOM_FLAGS", 0x3) == ["FIRST_KICK", "LAST_KICK"]
+    assert kick3d.flag_names("GEOM_FLAGS", 0x71) == [
+        "FIRST_KICK", "INVALIDATE_USE_CACHE", "INVALIDATE_PDS_CACHE", "INVALIDATE_DATA_CACHE"]
+    assert kick3d.flag_names("FRAG_FLAGS", 0x180) == ["DEPTH_BUFFER", "STENCIL_BUFFER"]
+    assert kick3d.flag_names("CONTEXT_FLAGS", 0x21) == ["NEW", "OWN_PB"]
+    assert kick3d.flag_names("PB_FLAGS", 0x3) == ["INIT_PAGE_TABLE", "THRESHOLD_UPDATE"]
+
+
+def test_bits_no_record_names_print_as_hex():
+    assert kick3d.flag_names("GEOM_FLAGS", 0x1004) == ["0x1004"]
+    assert kick3d.flag_names("FRAG_FLAGS", 0x80000040) == ["0x80000040"]
+    assert kick3d.flag_names("CONTEXT_FLAGS", 0x23) == ["NEW", "OWN_PB", "0x2"]
+
+
+def test_flag_words_name_the_flag_table_of_each_flags_field():
+    assert kick3d.FLAG_WORDS == {
+        "cmd_ta": {"geom_flags": "GEOM_FLAGS", "frag_flags": "FRAG_FLAGS"},
+        "hw_render_details": {"frag_flags": "FRAG_FLAGS"},
+        "hw_render_context": {"context_flags": "CONTEXT_FLAGS"},
+        "hw_pb_desc": {"pb_flags": "PB_FLAGS"}}
+
+
+# --- the kernel-side layouts (sgx545-ce) ---------------------------------------------
 
 def test_ccb_kick_fields():
     k = kick3d.decode("PVRSRV_BRIDGE_IN_DOKICK", index_words(141))
@@ -78,3 +393,5 @@ def test_offset_of_a_nested_field():
 def test_decode_rejects_short_buffers():
     with pytest.raises(ValueError):
         kick3d.decode("SGXMKIF_HWDEVICE_SYNC_LIST", index_words(5))
+    with pytest.raises(ValueError):
+        kick3d.decode("hw_pb_desc", index_words(14))

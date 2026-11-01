@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+#
+# Differential 3D captures of the texture sampler state: one filter or one axis's wrap at a
+# time against tex_base, to place the fields of the texture word T0 the closed driver writes
+# (textures3d.txt set both filters and both axes together).
+base
+tex_base         tex=16x16
+min_linear       tex=16x16 texmin=linear
+mag_linear       tex=16x16 texmag=linear
+min_nmn          tex=16x16 texmin=nmn
+min_lmn          tex=16x16 texmin=lmn
+min_nml          tex=16x16 texmin=nml
+min_lml          tex=16x16 texmin=lml
+min_lml_mag_lin  tex=16x16 texmin=lml texmag=linear
+min_nmn_64       tex=64x64 texmin=nmn
+wraps_clamp      tex=16x16 texwraps=clamp texwrapt=repeat
+wrapt_clamp      tex=16x16 texwraps=repeat texwrapt=clamp
+wraps_mirror     tex=16x16 texwraps=mirror texwrapt=repeat
+wrapt_mirror     tex=16x16 texwraps=repeat texwrapt=mirror

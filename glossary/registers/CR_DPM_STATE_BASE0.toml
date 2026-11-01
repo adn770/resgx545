@@ -1,0 +1,15 @@
+[[term]]
+id = "G0380"
+name = "CR_DPM_STATE_BASE0"
+status = "named"
+
+[[term.source]]
+term = "CR_DPM_STATE_BASE0"
+kind = "register"
+sgx545 = "0x062c"
+meaning = "DPM context state table address (first register of two); the EDM loads it from the RT data on a first kick and on context store/load [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158"
+licence = "MIT"
+evidence = "EDM writes the RT data's context state address to it and to CR_DPM_STATE_BASE1 before DPM state tasks (RE)"

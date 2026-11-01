@@ -1,0 +1,15 @@
+[[term]]
+id = "G0450"
+name = "CR_TE_PSG"
+status = "named"
+
+[[term.source]]
+term = "ROGUE_CR_TE_PSG"
+kind = "register"
+sgx545 = "0x0218"
+meaning = "tiling-engine control word: bit 22 set on the kick that ends the scene, bit 25 with a depth/stencil buffer (Rogue analogue)"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0301"
+licence = "MIT"
+evidence = "[RE] the EDM ORs bits 24 and 21 in (E158); role analogue: Rogue's PSG control also has a complete-on-terminate bit (other position)"

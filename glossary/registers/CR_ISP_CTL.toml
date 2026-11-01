@@ -12,4 +12,20 @@ tier = "3"
 source = "linux-imagination"
 citation = "C0173"
 licence = "GPL-2.0-only OR MIT"
-evidence = "same function: per-render ISP control from the render details; bit positions differ; no bit lets the stencil act on a punch-through pass"
+evidence = "same function: per-render ISP control from the render details; the EDM ORs 0x100 in on the partial-render path, the role of Rogue's PROCESS_EMPTY_TILES (RE); bit positions differ; [HW] E231: bits 5:0 each remove an opaque triangle and leave punch-through objects drawn; no bit lets the stencil act on a punch-through pass; [HW] E232: any of bits 5:0 removes ISP0 pass types 0 and 1 and leaves 2, 4, 5 and 6 drawn, whatever the value"
+
+[[term]]
+id = "G0418"
+name = "CR_ISP_CTL.VALID_ID"
+status = "named"
+
+[[term.source]]
+term = "ROGUE_CR_ISP_CTL_VALID_ID"
+kind = "bitfield"
+sgx545 = "0x0414[5:0]"
+meaning = "validation threshold: opaque and translucent objects whose ISP1.VALID_ID is below it are not drawn (Rogue analogue)"
+tier = "3"
+source = "linux-imagination"
+citation = "C0290"
+licence = "GPL-2.0-only OR MIT"
+evidence = "same width (6 bits; Rogue at 9:4) and role by name (a triangle validation value); [HW] E232: any non-zero value removes pass types 0 and 1 with ID 0; [HW] E233: drawn exactly when ISP1 [31:26] >= this field, over all 49 pairs of 0, 1, 2, 3, 5, 32, 63"

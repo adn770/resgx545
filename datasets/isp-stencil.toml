@@ -1,0 +1,10 @@
+title = "probe table isp/stencil"
+repo = "data"
+paths = ["isp/stencil/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 167
+size = 2158891
+sha256 = "e71695e3c15f4b132a4d739d83be6930726efab2d9445893f01763fc0eedfe12"
+recipe = "probes/isp/stencil.toml"
+needs = ["render", "kpoke"]

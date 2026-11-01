@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# The dataflow of the EDM microkernel, every structure word and register, with the pointer words
+# of the TA/3D structures that phase 10's records establish (the render context, the TA command,
+# the RT data and the PB descriptor). The same script and analysis as firmware/edm-dataflow,
+# whose table stays as the earlier phases built their document from it. Runs on this machine
+# (campaign.py --target local); $RESGX545_UKERNEL names the image and $RESGX545_DATA_PRIVATE the
+# captured init info. The result is a table of indices, offsets and names of structures and
+# registers, not the firmware.
+kind = "script"
+name = "firmware-edm-dataflow-3d"
+script = "edm-dataflow.sh"
+baseline = "none"

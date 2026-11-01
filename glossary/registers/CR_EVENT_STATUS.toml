@@ -48,6 +48,38 @@ licence = "GPL-2.0-only OR MIT"
 evidence = "same name as our EVENT_STATUS; Rogue offset 0x0130; analogy, function to be confirmed"
 
 [[term]]
+id = "G0397"
+name = "CR_EVENT_STATUS.BREAKPOINT"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_STATUS_BREAKPOINT"
+kind = "bitfield"
+sgx545 = "0x012c[15]"
+meaning = "status: breakpoint hit"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0279"
+licence = "GPL-2.0"
+evidence = "mask 0x00008000"
+
+[[term]]
+id = "G0398"
+name = "CR_EVENT_STATUS.DPM_3D_MEM_FREE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_STATUS_DPM_3D_MEM_FREE"
+kind = "bitfield"
+sgx545 = "0x012c[0]"
+meaning = "status: DPM finished freeing 3D pages"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0280"
+licence = "GPL-2.0"
+evidence = "mask 0x00000001"
+
+[[term]]
 id = "G0344"
 name = "CR_EVENT_STATUS.DPM_CONTROL_CLEAR"
 status = "named"
@@ -112,6 +144,54 @@ licence = "GPL-2.0"
 evidence = "mask 0x00400000"
 
 [[term]]
+id = "G0399"
+name = "CR_EVENT_STATUS.DPM_OUT_OF_MEMORY_GBL"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_STATUS_DPM_OUT_OF_MEMORY_GBL"
+kind = "bitfield"
+sgx545 = "0x012c[2]"
+meaning = "status: DPM out of memory (global list)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0281"
+licence = "GPL-2.0"
+evidence = "mask 0x00000004"
+
+[[term]]
+id = "G0400"
+name = "CR_EVENT_STATUS.DPM_OUT_OF_MEMORY_MT"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_STATUS_DPM_OUT_OF_MEMORY_MT"
+kind = "bitfield"
+sgx545 = "0x012c[1]"
+meaning = "status: DPM out of memory (macrotile)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0282"
+licence = "GPL-2.0"
+evidence = "mask 0x00000002"
+
+[[term]]
+id = "G0401"
+name = "CR_EVENT_STATUS.DPM_REACHED_MEM_THRESH"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_STATUS_DPM_REACHED_MEM_THRESH"
+kind = "bitfield"
+sgx545 = "0x012c[3]"
+meaning = "status: DPM page use reached the threshold"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0283"
+licence = "GPL-2.0"
+evidence = "mask 0x00000008"
+
+[[term]]
 id = "G0348"
 name = "CR_EVENT_STATUS.DPM_STATE_STORE"
 status = "named"
@@ -160,6 +240,33 @@ licence = "GPL-2.0"
 evidence = "mask 0x00100000"
 
 [[term]]
+id = "G0402"
+name = "CR_EVENT_STATUS.PIXELBE_END_RENDER"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_STATUS_PIXELBE_END_RENDER"
+kind = "bitfield"
+sgx545 = "0x012c[18]"
+meaning = "status: pixel back end finished the render"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0107"
+licence = "GPL-2.0"
+evidence = "mask 0x00040000"
+
+[[term.source]]
+term = "ROGUE_CR_EVENT_STATUS_PIXELBE_END_RENDER"
+kind = "flag"
+sgx545 = "0x012c[18]"
+meaning = "status: pixel back end finished the render (Rogue analogue)"
+tier = "3"
+source = "linux-imagination"
+citation = "C0284"
+licence = "GPL-2.0-only OR MIT"
+evidence = "analogy to SGX EVENT_STATUS bit PIXELBE_END_RENDER; bit positions differ, name only"
+
+[[term]]
 id = "G0092"
 name = "CR_EVENT_STATUS.SW_EVENT"
 status = "named"
@@ -174,6 +281,76 @@ source = "sgx545-ce"
 citation = "C0139"
 licence = "GPL-2.0"
 evidence = "mask 0x00004000"
+
+[[term]]
+id = "G0403"
+name = "CR_EVENT_STATUS.TA_FINISHED"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_STATUS_TA_FINISHED"
+kind = "bitfield"
+sgx545 = "0x012c[13]"
+meaning = "status: TA pass finished"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0285"
+licence = "GPL-2.0"
+evidence = "mask 0x00002000"
+
+[[term.source]]
+term = "ROGUE_CR_EVENT_STATUS_TA_FINISHED"
+kind = "flag"
+sgx545 = "0x012c[13]"
+meaning = "status: TA pass finished (Rogue analogue)"
+tier = "3"
+source = "linux-imagination"
+citation = "C0286"
+licence = "GPL-2.0-only OR MIT"
+evidence = "analogy to SGX EVENT_STATUS bit TA_FINISHED; bit positions differ, name only"
+
+[[term]]
+id = "G0404"
+name = "CR_EVENT_STATUS.TA_TERMINATE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_STATUS_TA_TERMINATE"
+kind = "bitfield"
+sgx545 = "0x012c[12]"
+meaning = "status: TA terminate done"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0287"
+licence = "GPL-2.0"
+evidence = "mask 0x00001000"
+
+[[term.source]]
+term = "ROGUE_CR_EVENT_STATUS_TA_TERMINATE"
+kind = "flag"
+sgx545 = "0x012c[12]"
+meaning = "status: TA terminate done (Rogue analogue)"
+tier = "3"
+source = "linux-imagination"
+citation = "C0288"
+licence = "GPL-2.0-only OR MIT"
+evidence = "analogy to SGX EVENT_STATUS bit TA_TERMINATE; bit positions differ, name only"
+
+[[term]]
+id = "G0405"
+name = "CR_EVENT_STATUS.TIMER"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_STATUS_TIMER"
+kind = "bitfield"
+sgx545 = "0x012c[29]"
+meaning = "status: event timer expired (CR_EVENT_TIMER)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0289"
+licence = "GPL-2.0"
+evidence = "mask 0x20000000"
 
 [[term]]
 id = "G0351"

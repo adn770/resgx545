@@ -1,0 +1,15 @@
+[[term]]
+id = "G0498"
+name = "VDM_INDEX2.WORD"
+status = "inferred"
+
+[[term.source]]
+term = "VDM_INDEX2.WORD"
+kind = "field"
+sgx545 = "index list, the first trailing word"
+meaning = "the index list's first trailing word: an instance count or split whose 0xf0000000 means none. Measured: 0xf0000000 in every capture [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E188"
+licence = "MIT"
+evidence = "[HW] E188: at 0, 0x10000000, 0x70000000 the TA's object is unchanged; [infer] the rest of its reading rests on records still to come"

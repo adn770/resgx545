@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+#
+# GLES1 fixed-function captures (tri1.c, the closed libGLES_CM): the USSE and PDS programs
+# the closed driver generates for each piece of fixed-function state. Each line changes one
+# piece against gles1_base; capture3d.sh runs them with prog:tri1.
+gles1_base         prog:tri1
+gles1_base2        prog:tri1
+color_red          prog:tri1 color=1,0,0,1
+format8888         prog:tri1 format=8888
+vcolor             prog:tri1 vcolor
+vcolor_flat        prog:tri1 vcolor shade=flat
+tex_modulate       prog:tri1 tex=16x16
+tex_replace        prog:tri1 tex=16x16 texenv=replace
+tex_decal          prog:tri1 tex=16x16 texenv=decal
+tex_blend          prog:tri1 tex=16x16 texenv=blend
+tex_add            prog:tri1 tex=16x16 texenv=add
+tex_vcolor         prog:tri1 tex=16x16 vcolor
+combine_replace    prog:tri1 tex=16x16 combine=replace
+combine_modulate   prog:tri1 tex=16x16 combine=modulate
+combine_add        prog:tri1 tex=16x16 combine=add
+combine_addsigned  prog:tri1 tex=16x16 combine=addsigned
+combine_interp     prog:tri1 tex=16x16 combine=interpolate
+combine_subtract   prog:tri1 tex=16x16 combine=subtract
+combine_dot3       prog:tri1 tex=16x16 combine=dot3
+tex2_modulate      prog:tri1 tex=16x16 tex2
+tex2_add           prog:tri1 tex=16x16 tex2 texenv2=add
+fog_linear         prog:tri1 fog=linear
+fog_exp            prog:tri1 fog=exp
+fog_exp2           prog:tri1 fog=exp2
+fog_tex            prog:tri1 fog=linear tex=16x16
+light              prog:tri1 light
+light_vcolor       prog:tri1 light vcolor
+light_tex          prog:tri1 light tex=16x16
+alpha_greater      prog:tri1 alphatest=greater,0.5
+alpha_less         prog:tri1 alphatest=less,0.25
+rotate30           prog:tri1 rotate=30
+points             prog:tri1 prim=points pointsize=8
+lines              prog:tri1 prim=lines
+clip               prog:tri1 clip

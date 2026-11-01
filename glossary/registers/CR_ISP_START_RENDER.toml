@@ -1,0 +1,15 @@
+[[term]]
+id = "G0425"
+name = "CR_ISP_START_RENDER"
+status = "named"
+
+[[term.source]]
+term = "PSB_CR_ISP_START_RENDER"
+kind = "register"
+sgx545 = "0x0428"
+meaning = "starts the 3D render"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0291"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"

@@ -1,0 +1,15 @@
+[[term]]
+id = "G0420"
+name = "CR_ISP_REGION_HEADER_BASE"
+status = "named"
+
+[[term.source]]
+term = "CR_ISP_REGION_HEADER_BASE"
+kind = "register"
+sgx545 = "0x0408"
+meaning = "address of the region headers (or fast-2D stream) the ISP renders, relative to CR_BIF_3D_REQ_BASE [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "EDM adds RT index x region stride for later RTs, and writes the break position back on a visibility breakpoint (RE)"

@@ -1,0 +1,111 @@
+[[term]]
+id = "G0547"
+name = "hw_rt_data.bgobj_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "hw_rt_data.bgobj_dev_vaddr"
+kind = "field"
+sgx545 = "HWRTDATA+0x010"
+meaning = "background object of the RT data; the 3D kick writes its dwords 0-2 through the 3D's address space [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E162"
+licence = "MIT"
+evidence = "[RE] E162: the 3D kick's background-object words; captured 0xc0464000, shared by both RT data"
+
+[[term]]
+id = "G0548"
+name = "hw_rt_data.dpm_control_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "hw_rt_data.dpm_control_dev_vaddr"
+kind = "field"
+sgx545 = "HWRTDATA+0x018"
+meaning = "DPM context control table; the EDM loads it into CR_DPM_CONTROL_BASE and clears it on a first kick [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158"
+licence = "MIT"
+evidence = "[RE] E158: the TA kick's clear step; shared by both RT data in the capture"
+
+[[term]]
+id = "G0549"
+name = "hw_rt_data.dpm_state_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "hw_rt_data.dpm_state_dev_vaddr"
+kind = "field"
+sgx545 = "HWRTDATA+0x014"
+meaning = "DPM context state of this RT data; the EDM loads it into CR_DPM_STATE_BASE0/1 and clears it on a first kick [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158"
+licence = "MIT"
+evidence = "[RE] E158: the TA kick's clear step; one per RT data in the capture"
+
+[[term]]
+id = "G0550"
+name = "hw_rt_data.hw_render_details_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "hw_rt_data.hw_render_details_dev_vaddr"
+kind = "field"
+sgx545 = "HWRTDATA+0x004"
+meaning = "render details of the scene in flight on this RT data; written by the EDM at the TA kick, cleared when the scene is done (the client leaves it 0) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E159"
+licence = "MIT"
+evidence = "[RE] the TA kick (E159) and scene-done (E164)"
+
+[[term]]
+id = "G0551"
+name = "hw_rt_data.otpm_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "hw_rt_data.otpm_dev_vaddr"
+kind = "field"
+sgx545 = "HWRTDATA+0x01c"
+meaning = "OTPM context memory; the EDM loads it into CR_MTE_OTPM_BASE and clears it with CR_MTE_OTPM_OP = 9 on a first kick [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158"
+licence = "MIT"
+evidence = "[RE] E158: the TA kick's clear step and the DPM context load; OTPM is the glossary's term"
+
+[[term]]
+id = "G0552"
+name = "hw_rt_data.rt_status_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "hw_rt_data.rt_status_dev_vaddr"
+kind = "field"
+sgx545 = "HWRTDATA+0x030"
+meaning = "one status word per render target: zeroed on a first kick, bit 1 set by the partial-render resume, bit 0 set when the RT is rendered; the 3D kick adjusts depth/stencil load and store from bit 1 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158"
+licence = "MIT"
+evidence = "[RE] the TA kick (E158), the partial-render resume (E160), the 3D kick (E163) and 3D completion (E164)"
+
+[[term]]
+id = "G0553"
+name = "hw_rt_data.state"
+status = "named"
+
+[[term.source]]
+term = "state"
+kind = "field"
+sgx545 = "HWRTDATA+0x034"
+meaning = "RT data state (0x10 = no render outstanding)"
+tier = "3"
+source = "linux-imagination"
+citation = "C0331"
+licence = "GPL-2.0 OR MIT"
+evidence = "rogue_fwif_hwrtdata state word"

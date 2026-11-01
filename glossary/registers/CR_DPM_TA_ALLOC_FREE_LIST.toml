@@ -1,0 +1,15 @@
+[[term]]
+id = "G0388"
+name = "CR_DPM_TA_ALLOC_FREE_LIST"
+status = "named"
+
+[[term.source]]
+term = "PSB_CR_DPM_TA_ALLOC_FREE_LIST"
+kind = "register"
+sgx545 = "0x061c"
+meaning = "DPM TA allocation free list: head and tail"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0269"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"

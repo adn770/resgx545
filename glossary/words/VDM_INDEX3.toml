@@ -1,0 +1,15 @@
+[[term]]
+id = "G0499"
+name = "VDM_INDEX3.INDEX_WRAP"
+status = "named"
+
+[[term.source]]
+term = "VDM_INDEX3.INDEX_WRAP"
+kind = "field"
+sgx545 = "index list, the second trailing word"
+meaning = "the vertex range the indices wrap at: 0 leaves them, 5 takes them modulo 5, 1 removes every triangle (as degenerate, a reading) and 8 hangs; only these four values were tried [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E188"
+licence = "MIT"
+evidence = "[HW] E188: five copies (indices 0-14) at 0 unchanged, at 5 indices modulo 5 (10 vertices in the object, a fit to the list entries), at 1 no object, at 8 a hang; only 0, 1, 5 and 8 tried"

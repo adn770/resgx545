@@ -1,0 +1,15 @@
+[[term]]
+id = "G0504"
+name = "WCLAMP"
+status = "named"
+
+[[term.source]]
+term = "WCLAMP"
+kind = "struct"
+sgx545 = "wclamp"
+meaning = "W clamp value (float) [infer]"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0319"
+licence = "MIT"
+evidence = "a small positive float fits Rogue's one-word W clamp, function inferred from that; [HW] E194: the small-w threshold: vertices whose w is below it do not draw as 1/w would (at 1e-3 a triangle at w 1e-5 vanishes; at 0 or 1e-7 every w down to 5e-7 draws)"

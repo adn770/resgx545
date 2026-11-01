@@ -1,0 +1,8 @@
+title = "Imagination's PowerVR Performance Recommendations (2018)"
+tier = "4"
+kind = "document"
+licences = ["public-doc"]
+root = "the PDF, as the Wayback Machine captured it"
+upstream = "https://web.archive.org/web/20180128id_/http://cdn.imgtec.com/sdk-documentation/PowerVR.Performance+Recommendations.pdf"
+pin = "capture 2018-01-28, PDF sha256 bceba7a82deacc7a6c1c96c6c1ce3558d53f7d6d3eaf77108879a111c6dcca8c"
+locator = "page N of the PDF"

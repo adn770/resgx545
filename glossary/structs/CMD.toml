@@ -1,0 +1,15 @@
+[[term]]
+id = "G0356"
+name = "CMD.SET_HWPERF_STATUS"
+status = "named"
+
+[[term.source]]
+term = "SGXMKIF_CMD_SETHWPERFSTATUS"
+kind = "enum"
+sgx545 = "aui32HostKickAddr[9]"
+meaning = "kernel CCB command 9: set the HWPerf status"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0248"
+licence = "GPL-2.0"
+evidence = "-"

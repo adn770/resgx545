@@ -1,4 +1,20 @@
 [[term]]
+id = "G0538"
+name = "hw_render_details.access_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "sAccessDevAddr"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x0d0"
+meaning = "access/lock word (SYNCINFO)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0330"
+licence = "GPL-2.0"
+evidence = "same name/type as SGXMKIF_HWDEVICE_SYNC_LIST.sAccessDevAddr"
+
+[[term]]
 id = "G0319"
 name = "hw_render_details.bif_zls_req_base"
 status = "named"
@@ -26,9 +42,9 @@ sgx545 = "HWRENDERDETAILS+0x010"
 meaning = "the render details' word the EDM loads into CR_ISP_MSAA (0x80000000 single-sampled, 0x80000002 at 4x) [infer]"
 tier = "ours"
 source = "resgx545"
-citation = "E074"
+citation = "E210"
 licence = "MIT"
-evidence = "Rogue's isp_aa is a name only here; [HW] E074"
+evidence = "[RE] E163; Rogue's isp_aa is a name only here; [HW] E074; [infer] E220, an analogy of ours (no citation record): carries the multisample mode of CR_ISP_MSAA (Rogue CR_ISP_AA.mode); [HW] E210: bits 1:0 at 0, 1 and 2 give three different images and 3 hangs; no sample layout was fitted, so the sample count of each value is not measured"
 
 [[term]]
 id = "G0321"
@@ -47,9 +63,36 @@ licence = "MIT"
 evidence = "[HW] E120: 22 bits of render-details word 20 changed the 4x triangle's image (1240 to 1256 covered samples in 320 to 328 pixels against 1248) and gave the same image as the same bit of command word 16 in all 32 cases; [HW] E064: byte 0 of the render command's word 16 (0x88 in the job) moved the 64x64 triangle's edges: 10 of 256 values gave the baseline image, the other 246 gave 26 images of 1074, 1086 or 1098 pixels against 1062; [infer] E120: the changed images are read as sample-position shifts from coverage counts; the positions themselves were not read"
 
 [[term]]
+id = "G0539"
+name = "hw_render_details.isp_partial_region_base"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.isp_partial_region_base"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x028"
+meaning = "value the EDM copies verbatim into CR_ISP_PARTIAL_REGION_BASE (0x050c); a partial render points that register at the macrotile it renders [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x8ea0)"
+licence = "MIT"
+evidence = "[RE] the 3D kick writes the 3D register block in structure order, one fixed store per word; partial-render path (E160)"
+
+[[term]]
 id = "G0322"
 name = "hw_render_details.isp_sample_pos"
 status = "inferred"
+
+[[term.source]]
+term = "hw_render_details.isp_sample_pos"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x04c"
+meaning = "value the EDM copies verbatim into CR_ISP_SAMPLE_POS (0x0520): the four sample positions (0 in the capture) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x8f08)"
+licence = "MIT"
+evidence = "[RE] the 3D kick writes the 3D register block in structure order, one fixed store per word; [infer] E224: not the ISP table base an analogy of ours (no citation record) with Rogue's ISP_*_BASE suggested; [HW] E214"
 
 [[term.source]]
 term = "hw_render_details.isp_sample_pos"
@@ -93,6 +136,38 @@ source = "cdv-libsrv_um"
 citation = "C0231"
 licence = "Intel-binary (ours)"
 evidence = "string only; likely an app-hint/config key [infer]; [HW] E049: bits 1 and 2 or ~0 hang the job, the other bits and 0 change nothing"
+
+[[term]]
+id = "G0540"
+name = "hw_render_details.pds_bgnd"
+status = "named"
+
+[[term.source]]
+term = "pds_bgnd"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x130"
+meaning = "background object words [3], copied from the TA command's pds_bgnd at the TA kick; the 3D kick writes words 0 and 1 into the background object"
+tier = "3"
+source = "linux-imagination"
+citation = "C0323"
+licence = "GPL-2.0 OR MIT"
+evidence = "same function as Rogue's PDS background-object words (analogue); [RE] the 3D kick writes words 0-1 into the background object (E162)"
+
+[[term]]
+id = "G0541"
+name = "hw_render_details.pds_bgnd_list_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.pds_bgnd_list_dev_vaddr"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x114"
+meaning = "per-RT list of background object word 2 (4 bytes per render-target index); the 3D kick writes the entry for the current index after pds_bgnd[0..1] [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E162"
+licence = "MIT"
+evidence = "[RE] E162: the 3D kick's background-object words"
 
 [[term]]
 id = "G0325"
@@ -159,6 +234,70 @@ licence = "MIT"
 evidence = "[HW] E029: flipping bit 25 of word 11 of the render command changed all 4096 pixels of the 64x64 triangle (first pixel 0xff203040 to 0x00203040, hash 0x25e3b1ba58ea2cc5 against 0x99385a04ee01c585); no other bit changed a pixel; [infer] the reading is ours, from these runs"
 
 [[term]]
+id = "G0542"
+name = "hw_render_details.render_list_next_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.render_list_next_dev_vaddr"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x12c"
+meaning = "next render details in the context's pending or ready render list [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E156"
+licence = "MIT"
+evidence = "[RE] the EDM links render details through rd dw74/75 (E156)"
+
+[[term]]
+id = "G0543"
+name = "hw_render_details.render_list_prev_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.render_list_prev_dev_vaddr"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x128"
+meaning = "previous render details in the context's pending or ready render list [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E156"
+licence = "MIT"
+evidence = "[RE] the EDM links render details through rd dw74/75 (E156)"
+
+[[term]]
+id = "G0544"
+name = "hw_render_details.rt_patch_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.rt_patch_dev_vaddr"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x10c"
+meaning = "address the 3D kick writes the current render target's two-dword entry of rt_patch_list_dev_vaddr to, through the 3D's address space; 0 = no write [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick; named after what the EDM does (a per-render-target patch), not after the program it patches"
+
+[[term]]
+id = "G0545"
+name = "hw_render_details.rt_patch_list_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.rt_patch_list_dev_vaddr"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x110"
+meaning = "per-RT list of two-dword values for rt_patch_dev_vaddr, 8 bytes per render-target index [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick"
+
+[[term]]
 id = "G0329"
 name = "hw_render_details.stencil_load_base"
 status = "named"
@@ -172,7 +311,7 @@ tier = "ours"
 source = "resgx545"
 citation = "E058"
 licence = "MIT"
-evidence = "[infer] E058; Rogue keeps one stencil load/store base: name only"
+evidence = "[HW] E058: the stencil store never lands at it; [infer] the load base of the stencil pair; [RE] E163; Rogue keeps one stencil load/store base: name only"
 
 [[term]]
 id = "G0330"
@@ -188,7 +327,23 @@ tier = "ours"
 source = "resgx545"
 citation = "E058"
 licence = "MIT"
-evidence = "[HW] E058; Rogue keeps one stencil load/store base: name only"
+evidence = "[HW] E058; [RE] E163; Rogue keeps one stencil load/store base: name only"
+
+[[term]]
+id = "G0546"
+name = "hw_render_details.te_context_state"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.te_context_state"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x124"
+meaning = "tiling-engine state: loaded into CR_TE_CONTEXT_STATE (0x0274) at each TA kick, stored back at a TA end that is not the last of the scene, so the next kick resumes tiling [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158"
+licence = "MIT"
+evidence = "[RE] the TA kick (E158) and the TA-finished handler (E156); named after the register"
 
 [[term]]
 id = "G0331"
@@ -204,7 +359,7 @@ tier = "ours"
 source = "resgx545"
 citation = "E058"
 licence = "MIT"
-evidence = "[HW] E058; Rogue keeps one depth load/store base: name only"
+evidence = "[HW] E058; [RE] E163; Rogue keeps one depth load/store base: name only"
 
 [[term]]
 id = "G0332"
@@ -220,4 +375,4 @@ tier = "ours"
 source = "resgx545"
 citation = "E058"
 licence = "MIT"
-evidence = "[HW] E058; Rogue keeps one depth load/store base: name only"
+evidence = "[HW] E058; [RE] E163; Rogue keeps one depth load/store base: name only"

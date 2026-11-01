@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: 2026 Josep Torra
-"""Tests for edm_dataflow.py — the whole-firmware dataflow of the EDM.
+"""Tests for edm_dataflow.py: the whole-firmware dataflow of the EDM.
 
 Synthetic listings only: the encodings are zeros and the instructions are text we wrote, in
 the format usse-dis prints. The analysis names its subjects with neutral tokens ({R:0x012c} a
@@ -128,13 +128,42 @@ def test_paths_that_disagree_leave_the_value_unresolved():
 
 def test_given_pointer_words_rest_on_records():
     # TA3DCtl's kernel CCB and HWPerf words (E002); the transfer context's client CCB and its
-    # control block (transfer §2.2: E018, E021) and its queue links (E015). Every other
-    # pointer word is typed by what the firmware stores in it.
+    # control block (transfer §2.2: E018, E021) and its queue links (E015); the render
+    # context's client CCB and its control (E161), PB descriptor (E159, E167), pending and
+    # ready render lists (E156, E165) and TA and 3D queue links (E157, E165); the RT data's
+    # render details (E159); the TA command's PB descriptor (E156), render details (E159),
+    # destination sync list (E161, E164) and RT data (E158, E161); the PB descriptor's first
+    # block (E200, E201). Every other pointer word is typed by what the firmware stores in it.
     assert df.GLOSSARY_POINTERS == {
         ("TA3D_CTL", 0x058): "KCCB", ("TA3D_CTL", 0x0ac): "HWPERF_CB",
         ("HWTRANSFERCONTEXT", 0x00c): "CCB_TQ", ("HWTRANSFERCONTEXT", 0x010): "CCB_CTL",
         ("HWTRANSFERCONTEXT", 0x0ac): "HWTRANSFERCONTEXT",
-        ("HWTRANSFERCONTEXT", 0x0b0): "HWTRANSFERCONTEXT"}
+        ("HWTRANSFERCONTEXT", 0x0b0): "HWTRANSFERCONTEXT",
+        ("HWRENDERCONTEXT", 0x00c): "CCB_TA", ("HWRENDERCONTEXT", 0x010): "CCB_CTL",
+        ("HWRENDERCONTEXT", 0x018): "HWPBDESC",
+        **{("HWRENDERCONTEXT", o): "HWRENDERDETAILS" for o in (0x020, 0x024, 0x028, 0x02c)},
+        **{("HWRENDERCONTEXT", o): "HWRENDERCONTEXT" for o in (0x030, 0x034, 0x038, 0x03c)},
+        ("HWRTDATA", 0x004): "HWRENDERDETAILS",
+        ("CMDTA", 0x024): "HWPBDESC", ("CMDTA", 0x038): "HWRENDERDETAILS",
+        ("CMDTA", 0x03c): "HWDEVICE_SYNC_LIST", ("CMDTA", 0x044): "HWRTDATA",
+        ("HWPBDESC", 0x038): "PB_BLOCK"}
+
+
+def test_given_pointer_words_agree_with_kick3d_names():
+    # every given word of a client structure is a pointer kick3d.py names at that offset
+    names = {"CMDTA": "cmd_ta", "HWRENDERCONTEXT": "hw_render_context",
+             "HWRTDATA": "hw_rt_data", "HWPBDESC": "hw_pb_desc"}
+    for (prefix, off), _target in df.GLOSSARY_POINTERS.items():
+        if prefix not in names:
+            continue
+        layout = df.kick3d.STRUCTS[names[prefix]]
+        path = next(p for p, o, *_ in df.kick3d._layout(layout) if 4 * o == off)
+        assert not path.startswith("pad_"), (prefix, off)
+
+
+def test_no_pointer_word_is_typed_from_a_client_layout_name():
+    # the client layouts carry our names, which type nothing: only records give pointer words
+    assert df._layout_pointers() == {}
 
 
 def test_pointers_of_one_type_from_different_words_keep_their_type_at_a_join(monkeypatch):
@@ -344,7 +373,8 @@ def test_the_document_says_where_given_pointers_come_from(tmp_path):
     df.write_tsv(run("lapc"), p)
     doc = " ".join(df.render(df.read_tsv(p), G).split())
     assert "Given: a pointer word a record establishes (E002, E015, `doc/specs/transfer.md` " \
-        "§2.2)" in doc
+        "§2.2; E156-E161, E164, E165, E167, E200, E201 for the render context, the TA " \
+        "command, the RT data and the PB descriptor)" in doc
     assert "glossary meaning" not in doc and "TA/3D layouts" not in doc
 
 
@@ -383,3 +413,9 @@ def test_the_usage_names_every_form(tmp_path, capsys):
     assert df.main(["--bogus"]) == 2
     err = capsys.readouterr().err
     assert "--ukernel" in err and "--check" in err and "--render" in err
+
+
+def test_the_table_is_phase_10s_own_dataset():
+    # the earlier phases render their document from firmware/edm-dataflow; this analysis, with
+    # the TA/3D pointer words, keeps its table beside it
+    assert df.TSV.parent.name == "edm-dataflow-3d" and df.TSV.name == "edm_dataflow.tsv"

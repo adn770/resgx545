@@ -1,0 +1,15 @@
+[[term]]
+id = "G0454"
+name = "CR_TE_TPC_ADDR"
+status = "named"
+
+[[term.source]]
+term = "ROGUE_CR_TE_TPC_ADDR"
+kind = "register"
+sgx545 = "0x0220"
+meaning = "base address of the tail-pointer cache memory (Rogue analogue)"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0304"
+licence = "MIT"
+evidence = "[RE] the EDM's TA kick loads it from TA command dword 151 (E159); same role as Rogue"

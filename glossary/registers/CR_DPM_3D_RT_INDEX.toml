@@ -1,0 +1,15 @@
+[[term]]
+id = "G0370"
+name = "CR_DPM_3D_RT_INDEX"
+status = "named"
+
+[[term.source]]
+term = "CR_DPM_3D_RT_INDEX"
+kind = "register"
+sgx545 = "0x073c"
+meaning = "render target index of the render, for render-target arrays [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "EDM writes the RT index at the 3D kick and the partial render (RE)"

@@ -1,0 +1,15 @@
+[[term]]
+id = "G0392"
+name = "CR_DPM_TA_PAGE_THRESHOLD"
+status = "named"
+
+[[term.source]]
+term = "PSB_CR_DPM_TA_PAGE_THRESHOLD"
+kind = "register"
+sgx545 = "0x0620"
+meaning = "TA page threshold of the DPM"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0273"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"

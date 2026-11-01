@@ -1,0 +1,15 @@
+[[term]]
+id = "G0495"
+name = "TAThreshold"
+status = "named"
+
+[[term.source]]
+term = "TAThreshold"
+kind = "concept"
+sgx545 = "CR_DPM_TA_PAGE_THRESHOLD"
+meaning = "config key (libsrv_um): TA page threshold of the parameter buffer"
+tier = "2"
+source = "cdv-libsrv_um"
+citation = "C0316"
+licence = "Intel-binary (ours)"
+evidence = "app-hint setting the TA page threshold; names the value of DPM_TA_PAGE_THRESHOLD, not the register"

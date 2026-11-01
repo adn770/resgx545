@@ -1,0 +1,15 @@
+[[term]]
+id = "G0372"
+name = "CR_DPM_CONTROL_BASE"
+status = "named"
+
+[[term.source]]
+term = "CR_DPM_CONTROL_BASE"
+kind = "register"
+sgx545 = "0x0634"
+meaning = "DPM context control table address, from the RT data [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158"
+licence = "MIT"
+evidence = "EDM writes the RT data's context control address before DPM control tasks (RE)"

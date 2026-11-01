@@ -1,0 +1,31 @@
+[[term]]
+id = "G0490"
+name = "PRESENCE.COORD"
+status = "named"
+
+[[term.source]]
+term = "pres_varying_word0"
+kind = "flag"
+sgx545 = "presence bits 14/15 (coordsize, coordfmt) [infer]"
+meaning = "varying format word present"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0314"
+licence = "MIT"
+evidence = "by function only; SGX words still open; [HW] E192: coordsize 2 carries a two-component coordinate set on our triangle"
+
+[[term]]
+id = "G0491"
+name = "PRESENCE.WCLAMP"
+status = "named"
+
+[[term.source]]
+term = "pres_wclamp"
+kind = "flag"
+sgx545 = "presence bit 11 (wclamp)"
+meaning = "W clamp word present"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0315"
+licence = "MIT"
+evidence = "same function; SGX value 1e-5"

@@ -13,3 +13,35 @@ source = "emgd-linux"
 citation = "C0030"
 licence = "GPL-2.0 OR MIT"
 evidence = "core SGX535 (EMGD), so tier 1c; named in a comment: holds sTAHWPBDesc/s3DHWPBDesc"
+
+[[term]]
+id = "G0563"
+name = "ta3d_ctl.hw_pb_desc_3d"
+status = "named"
+
+[[term.source]]
+term = "s3DHWPBDesc"
+kind = "field"
+sgx545 = "-"
+meaning = "PB descriptor loaded in the 3D"
+tier = "1c"
+source = "emgd-linux"
+citation = "C0030"
+licence = "GPL-2.0 OR MIT"
+evidence = "core SGX535 (EMGD), so tier 1c; as sTAHWPBDesc"
+
+[[term]]
+id = "G0564"
+name = "ta3d_ctl.hw_pb_desc_ta"
+status = "named"
+
+[[term.source]]
+term = "sTAHWPBDesc"
+kind = "field"
+sgx545 = "-"
+meaning = "PB descriptor loaded in the TA"
+tier = "1c"
+source = "emgd-linux"
+citation = "C0030"
+licence = "GPL-2.0 OR MIT"
+evidence = "core SGX535 (EMGD), so tier 1c; comment: EDM clears sTAHWPBDesc/s3DHWPBDesc on PB cleanup; matches dw46/47 (E200)"

@@ -1,0 +1,15 @@
+[[term]]
+id = "G0458"
+name = "CR_VDM_CTRL_STREAM_BASE"
+status = "named"
+
+[[term.source]]
+term = "ROGUE_CR_VDM_CTRL_STREAM_BASE"
+kind = "register"
+sgx545 = "0x0238"
+meaning = "base address of the VDM input control stream (Rogue analogue)"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0306"
+licence = "MIT"
+evidence = "[HW] reads the end of the stream walked (E184); same role as Rogue"

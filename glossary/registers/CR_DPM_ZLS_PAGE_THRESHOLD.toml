@@ -1,0 +1,26 @@
+[[term]]
+id = "G0393"
+name = "CR_DPM_ZLS_PAGE_THRESHOLD"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_DPM_ZLS_PAGE_THRESHOLD"
+kind = "register"
+sgx545 = "0x0624"
+meaning = "ZLS page threshold of the DPM"
+tier = "1"
+source = "intel-ctp-santos10"
+citation = "C0274"
+licence = "GPL-2.0 OR MIT"
+evidence = "DDK debug-dump name table (RESTRICTED_REGISTERS block); no offset in any GPL source, offset 0x0624 is our binding via name DPM_ZLS_PAGE_THRESHOLD"
+
+[[term.source]]
+term = "PSB_CR_DPM_ZLS_PAGE_THRESHOLD"
+kind = "register"
+sgx545 = "0x0624"
+meaning = "ZLS page threshold of the DPM"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0275"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches our name EUR_CR_DPM_ZLS_PAGE_THRESHOLD"

@@ -1,0 +1,15 @@
+[[term]]
+id = "G0408"
+name = "CR_HWPERF_COUNTER2"
+status = "named"
+
+[[term.source]]
+term = "CR_HWPERF_COUNTER2"
+kind = "register"
+sgx545 = "0x004c"
+meaning = "HWPerf counter 2: counts the event the selected counter group (CR_HWPERF_CTRL.GROUP) routes to it; zero while no group is selected [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E150"
+licence = "MIT"
+evidence = "[RE] E150: SETHWPERFSTATUS selects the counter group in CR_HWPERF_CTRL; [HW] E149: 0 with no group selected; what each group counts is not measured here; [RE] E149: the firmware's HWPerf routine copies 0x0044-0x0064 to its buffer"

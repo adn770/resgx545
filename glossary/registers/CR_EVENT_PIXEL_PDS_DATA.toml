@@ -1,0 +1,15 @@
+[[term]]
+id = "G0395"
+name = "CR_EVENT_PIXEL_PDS_DATA"
+status = "named"
+
+[[term.source]]
+term = "ROGUE_CR_EVENT_PIXEL_PDS_DATA"
+kind = "register"
+sgx545 = "0x0a60"
+meaning = "data size of the pixel-event PDS program in 16-byte rows (Rogue: its data address)"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0277"
+licence = "MIT"
+evidence = "-"

@@ -1,0 +1,15 @@
+[[term]]
+id = "G0427"
+name = "CR_MTE_OTPM_BASE"
+status = "named"
+
+[[term.source]]
+term = "CR_MTE_OTPM_BASE"
+kind = "register"
+sgx545 = "0x0234"
+meaning = "address of the RT data's OTPM memory, loaded before CR_MTE_OTPM_OP on a first kick and on DPM context store/load [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158"
+licence = "MIT"
+evidence = "EDM writes the RT data's OTPM address here, then CR_MTE_OTPM_OP = 9, on a first kick; also in the DPM context store/load (RE)"

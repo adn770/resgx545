@@ -1,0 +1,79 @@
+[[term]]
+id = "G0460"
+name = "CSTREAM.OBJ_ISP_ADDR"
+status = "named"
+
+[[term.source]]
+term = "CSTREAM.OBJ_ISP_ADDR"
+kind = "field"
+sgx545 = "control-stream object word, low bits (below 26)"
+meaning = "the slot address of the object's ISP words, in dwords; the region's stream holds one primitive word and object word per object [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E177"
+licence = "MIT"
+evidence = "E177: 6, 9, 18 above 0x400 for objects at 0x1000"
+
+[[term]]
+id = "G0461"
+name = "CSTREAM.OBJ_PRIMS"
+status = "named"
+
+[[term.source]]
+term = "CSTREAM.OBJ_PRIMS"
+kind = "field"
+sgx545 = "control-stream object word [31:26]"
+meaning = "twice the object's primitives less one [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E181"
+licence = "MIT"
+evidence = "[HW] E181: 1, 3, 5, 7, 9 for 1-5 triangles, 5 for three points, 1 and 3 for one and two lines"
+
+[[term]]
+id = "G0462"
+name = "CSTREAM.PRIM_POINTS"
+status = "named"
+
+[[term.source]]
+term = "CSTREAM.PRIM_POINTS"
+kind = "flag"
+sgx545 = "control-stream primitive word bit 29 (bit 30 set in every word seen)"
+meaning = "the object's primitives are points; clear for triangles and lines, which ISP word 0's object type tells apart [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E181"
+licence = "MIT"
+evidence = "[HW] E181: 0x44..., 0x4a..., 0x50..., 0x56..., 0x5c... for 1-5 triangles, 0x64800101 for three points; [HW] E181: 0x4290ffff for one line, 0x4688000f for two"
+
+[[term]]
+id = "G0463"
+name = "CSTREAM.PRIM_TILES"
+status = "named"
+
+[[term.source]]
+term = "CSTREAM.PRIM_TILES"
+kind = "field"
+sgx545 = "control-stream primitive word [23:16]"
+meaning = "which of the region's two 16 x 16 tiles the object meets, and the masks' layout: 0x90 both (no masks, bits 15:0 0xffff); one tile with masks in bits 15:0, 0x80 the left, 0x98 the right; with masks too wide for the word (the primitive mask in a further dword), 0x8a the left, 0x8c the right; bit 23 is set in every word seen [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E180"
+licence = "MIT"
+evidence = "[HW] E177: 0x4490ffff, 0x44800701, 0x4a803f03, 0x5c8a7fff + 0x1f; [HW] E180: every one of 472 regions over 26 shifts of our triangle (74 left, 106 right, 292 both), and the two- and five-copy scenes"
+
+[[term]]
+id = "G0464"
+name = "CSTREAM.PRIM_VERTICES"
+status = "named"
+
+[[term.source]]
+term = "CSTREAM.PRIM_VERTICES"
+kind = "field"
+sgx545 = "control-stream primitive word [28:25]"
+meaning = "the object's vertices less one [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E177"
+licence = "MIT"
+evidence = "[HW] E177: 2, 5, 14 for 3, 6, 15 vertices; [HW] E181: 8 and 11 for 9 and 12 vertices, 2 for three points"

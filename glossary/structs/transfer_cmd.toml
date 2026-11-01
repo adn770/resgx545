@@ -181,6 +181,22 @@ licence = "Intel-binary (ours)"
 evidence = "string only; likely an app-hint/config key [infer]; [HW] E049: bits 1 and 2 or ~0 hang the job, the other bits and 0 change nothing"
 
 [[term]]
+id = "G0565"
+name = "transfer_cmd.patches"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.patches"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x1a0"
+meaning = "{address, value} memory writes the EDM applies through the context's address space before the render, to the end of the command [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E015"
+licence = "MIT"
+evidence = "[RE] the EDM's transfer kick and dummy path (E015); same mechanism as the TA command's patches_3d"
+
+[[term]]
 id = "G0027"
 name = "transfer_cmd.pds_exec_base"
 status = "named"

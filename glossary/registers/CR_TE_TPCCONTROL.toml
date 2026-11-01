@@ -1,0 +1,15 @@
+[[term]]
+id = "G0453"
+name = "CR_TE_TPCCONTROL"
+status = "named"
+
+[[term.source]]
+term = "PSB_CR_TE_TPCCONTROL"
+kind = "register"
+sgx545 = "0x0224"
+meaning = "tail-pointer cache control (clear/flush)"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0303"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"

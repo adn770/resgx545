@@ -1,0 +1,47 @@
+[[term]]
+id = "G0357"
+name = "CONTEXT_FLAGS.NEW"
+status = "named"
+
+[[term.source]]
+term = "CONTEXT_FLAGS.NEW"
+kind = "flag"
+sgx545 = "HWRENDERCONTEXT/HWTRANSFERCONTEXT+0x000 bit0 (0x1)"
+meaning = "new context: at its first mapping the EDM clears the bit and invalidates the caches [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E159"
+licence = "MIT"
+evidence = "[RE] E159: the TA kick's address-space mapping clears it and invalidates the caches at the first mapping, by the routine the transfer path uses"
+
+[[term]]
+id = "G0358"
+name = "CONTEXT_FLAGS.OWN_PB"
+status = "named"
+
+[[term.source]]
+term = "CONTEXT_FLAGS.OWN_PB"
+kind = "flag"
+sgx545 = "HWRENDERCONTEXT/HWTRANSFERCONTEXT+0x000 bit5 (0x20)"
+meaning = "set: the render-context cleanup unloads the context's own PB from the TA and 3D loaded-PB slots (a context that owns its PB); clear: the slots stay until the PB cleanup [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E168"
+licence = "MIT"
+evidence = "[HW] E168: contexts made with the bit clear and set, the loaded-PB slots read around each cleanup step; [RE] E167: the EDM tests bit 5 only in the render-context cleanup (0x39d)"
+
+[[term]]
+id = "G0359"
+name = "CONTEXT_FLAGS.SUSPEND"
+status = "named"
+
+[[term.source]]
+term = "CONTEXT_FLAGS.SUSPEND"
+kind = "flag"
+sgx545 = "HWRENDERCONTEXT/HWTRANSFERCONTEXT+0x000 bit4 (0x10)"
+meaning = "suspended: the EDM's picks skip the context [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E161"
+licence = "MIT"
+evidence = "-"

@@ -1,0 +1,26 @@
+[[term]]
+id = "G0362"
+name = "CR_BIF_TA_REQ_BASE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_TA_REQ_BASE"
+kind = "register"
+sgx545 = "0x0c90"
+meaning = "TA requestor base address (heap window)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0249"
+licence = "GPL-2.0"
+evidence = "SGX545 defs; same in 17 other trees"
+
+[[term.source]]
+term = "PSB_CR_BIF_TA_REQ_BASE"
+kind = "register"
+sgx545 = "0x0c90"
+meaning = "TA requestor base address (heap window)"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0250"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches our name EUR_CR_BIF_TA_REQ_BASE"

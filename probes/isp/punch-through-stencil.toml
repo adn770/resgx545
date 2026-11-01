@@ -1,0 +1,4426 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# isp punch through stencil: 0 sweeps, 224 probes.
+needs = ["render", "kpoke"]
+open = ["isp-punch-through-stencil-ptst-always", "isp-punch-through-stencil-ptst-always-cmd12-b0", "isp-punch-through-stencil-ptst-always-cmd12-b1", "isp-punch-through-stencil-ptst-always-cmd12-b2", "isp-punch-through-stencil-ptst-always-cmd12-b3", "isp-punch-through-stencil-ptst-always-cmd12-b4", "isp-punch-through-stencil-ptst-always-cmd12-b5", "isp-punch-through-stencil-ptst-always-cmd12-b6", "isp-punch-through-stencil-ptst-always-cmd12-b7", "isp-punch-through-stencil-ptst-always-cmd12-b8", "isp-punch-through-stencil-ptst-always-cmd12-b9", "isp-punch-through-stencil-ptst-always-cmd12-b10", "isp-punch-through-stencil-ptst-always-cmd12-b11", "isp-punch-through-stencil-ptst-always-cmd12-b12", "isp-punch-through-stencil-ptst-always-cmd12-b13", "isp-punch-through-stencil-ptst-always-cmd12-b14", "isp-punch-through-stencil-ptst-always-cmd12-b15", "isp-punch-through-stencil-ptst-always-cmd12-b16", "isp-punch-through-stencil-ptst-always-cmd12-b17", "isp-punch-through-stencil-ptst-always-cmd12-b18", "isp-punch-through-stencil-ptst-always-cmd12-b19", "isp-punch-through-stencil-ptst-always-cmd12-b20", "isp-punch-through-stencil-ptst-always-cmd12-b21", "isp-punch-through-stencil-ptst-always-cmd12-b22", "isp-punch-through-stencil-ptst-always-cmd12-b23", "isp-punch-through-stencil-ptst-always-cmd12-b24", "isp-punch-through-stencil-ptst-always-cmd12-b25", "isp-punch-through-stencil-ptst-always-cmd12-b26", "isp-punch-through-stencil-ptst-always-cmd12-b27", "isp-punch-through-stencil-ptst-always-cmd12-b28", "isp-punch-through-stencil-ptst-always-cmd12-b29", "isp-punch-through-stencil-ptst-always-cmd12-b30", "isp-punch-through-stencil-ptst-always-cmd12-b31", "isp-punch-through-stencil-ptst-always-cmd21-b0", "isp-punch-through-stencil-ptst-always-cmd21-b1", "isp-punch-through-stencil-ptst-always-cmd21-b2", "isp-punch-through-stencil-ptst-always-cmd21-b3", "isp-punch-through-stencil-ptst-always-cmd21-b4", "isp-punch-through-stencil-ptst-always-cmd21-b5", "isp-punch-through-stencil-ptst-always-cmd21-b6", "isp-punch-through-stencil-ptst-always-cmd21-b7", "isp-punch-through-stencil-ptst-always-cmd21-b8", "isp-punch-through-stencil-ptst-always-cmd21-b9", "isp-punch-through-stencil-ptst-always-cmd21-b10", "isp-punch-through-stencil-ptst-always-cmd21-b11", "isp-punch-through-stencil-ptst-always-cmd21-b12", "isp-punch-through-stencil-ptst-always-cmd21-b13", "isp-punch-through-stencil-ptst-always-cmd21-b14", "isp-punch-through-stencil-ptst-always-cmd21-b15", "isp-punch-through-stencil-ptst-always-cmd21-b16", "isp-punch-through-stencil-ptst-always-cmd21-b17", "isp-punch-through-stencil-ptst-always-cmd21-b18", "isp-punch-through-stencil-ptst-always-cmd21-b19", "isp-punch-through-stencil-ptst-always-cmd21-b20", "isp-punch-through-stencil-ptst-always-cmd21-b21", "isp-punch-through-stencil-ptst-always-cmd21-b22", "isp-punch-through-stencil-ptst-always-cmd21-b23", "isp-punch-through-stencil-ptst-always-cmd21-b24", "isp-punch-through-stencil-ptst-always-cmd21-b25", "isp-punch-through-stencil-ptst-always-cmd21-b26", "isp-punch-through-stencil-ptst-always-cmd21-b27", "isp-punch-through-stencil-ptst-always-cmd21-b28", "isp-punch-through-stencil-ptst-always-cmd21-b29", "isp-punch-through-stencil-ptst-always-cmd21-b30", "isp-punch-through-stencil-ptst-always-cmd21-b31", "isp-punch-through-stencil-ptst-always-cmd22-b0", "isp-punch-through-stencil-ptst-always-cmd22-b1", "isp-punch-through-stencil-ptst-always-cmd22-b2", "isp-punch-through-stencil-ptst-always-cmd22-b3", "isp-punch-through-stencil-ptst-always-cmd22-b4", "isp-punch-through-stencil-ptst-always-cmd22-b5", "isp-punch-through-stencil-ptst-always-cmd22-b6", "isp-punch-through-stencil-ptst-always-cmd22-b7", "isp-punch-through-stencil-ptst-always-cmd22-b8", "isp-punch-through-stencil-ptst-always-cmd22-b9", "isp-punch-through-stencil-ptst-always-cmd22-b10", "isp-punch-through-stencil-ptst-always-cmd22-b11", "isp-punch-through-stencil-ptst-always-cmd22-b12", "isp-punch-through-stencil-ptst-always-cmd22-b13", "isp-punch-through-stencil-ptst-always-cmd22-b14", "isp-punch-through-stencil-ptst-always-cmd22-b15", "isp-punch-through-stencil-ptst-always-cmd22-b16", "isp-punch-through-stencil-ptst-always-cmd22-b17", "isp-punch-through-stencil-ptst-always-cmd22-b18", "isp-punch-through-stencil-ptst-always-cmd22-b19", "isp-punch-through-stencil-ptst-always-cmd22-b20", "isp-punch-through-stencil-ptst-always-cmd22-b21", "isp-punch-through-stencil-ptst-always-cmd22-b22", "isp-punch-through-stencil-ptst-always-cmd22-b23", "isp-punch-through-stencil-ptst-always-cmd22-b24", "isp-punch-through-stencil-ptst-always-cmd22-b25", "isp-punch-through-stencil-ptst-always-cmd22-b26", "isp-punch-through-stencil-ptst-always-cmd22-b27", "isp-punch-through-stencil-ptst-always-cmd22-b28", "isp-punch-through-stencil-ptst-always-cmd22-b29", "isp-punch-through-stencil-ptst-always-cmd22-b30", "isp-punch-through-stencil-ptst-always-cmd22-b31", "isp-punch-through-stencil-ptst-always-rd21-b0", "isp-punch-through-stencil-ptst-always-rd21-b2", "isp-punch-through-stencil-ptst-always-rd51-b0", "isp-punch-through-stencil-ptst-always-rd51-b8"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptread-op-replace"
+question = "control: the first object opaque, stencil op replace: where does the second object (stencil equal 0x55) draw"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 6
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x400355 }
+isp2 = 0xe02ffff
+obj2 = { first = 3, blk = { 1 = 0x1d00355, 3 = 0x400ff00 }, pixel = "pix_blue.s" }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["control: the first object opaque, stencil op replace"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptread-op-keep"
+question = "control: the first object opaque, stencil op keep: where does the second object (stencil equal 0x55) draw"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 6
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x400355 }
+isp2 = 0xe00ffff
+obj2 = { first = 3, blk = { 1 = 0x1d00355, 3 = 0x400ff00 }, pixel = "pix_blue.s" }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["control: the first object opaque, stencil op keep"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptread-pt-fb"
+question = "the first object punch-through, atst8 fb, stencil op replace: where does the second object (stencil equal 0x55) draw"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 6
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400355 }
+isp2 = 0xe02ffff
+obj2 = { first = 3, blk = { 1 = 0x1d00355, 3 = 0x400ff00 }, pixel = "pix_blue.s" }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["the first object punch-through, atst8 fb, stencil op replace"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptread-pt-optdwd"
+question = "the first object punch-through, atst8 optdwd, stencil op replace: where does the second object (stencil equal 0x55) draw"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 6
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400355 }
+isp2 = 0xe02ffff
+obj2 = { first = 3, blk = { 1 = 0x1d00355, 3 = 0x400ff00 }, pixel = "pix_blue.s" }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, optdwd"]]
+labels = ["the first object punch-through, atst8 optdwd, stencil op replace"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptread-pt-twosided-fb"
+question = "the first object punch-through, atst8 twosided, fb, stencil op replace: where does the second object (stencil equal 0x55) draw"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 6
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400355 }
+isp2 = 0xe02ffff
+obj2 = { first = 3, blk = { 1 = 0x1d00355, 3 = 0x400ff00 }, pixel = "pix_blue.s" }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, twosided, fb"]]
+labels = ["the first object punch-through, atst8 twosided, fb, stencil op replace"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptread-pt-twosided-optdwd"
+question = "the first object punch-through, atst8 twosided, optdwd, stencil op replace: where does the second object (stencil equal 0x55) draw"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 6
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400355 }
+isp2 = 0xe02ffff
+obj2 = { first = 3, blk = { 1 = 0x1d00355, 3 = 0x400ff00 }, pixel = "pix_blue.s" }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, twosided, optdwd"]]
+labels = ["the first object punch-through, atst8 twosided, optdwd, stencil op replace"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptread-pt-fb-keep"
+question = "the first object punch-through, atst8 fb, stencil op keep: where does the second object (stencil equal 0x55) draw"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 6
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400355 }
+isp2 = 0xe00ffff
+obj2 = { first = 3, blk = { 1 = 0x1d00355, 3 = 0x400ff00 }, pixel = "pix_blue.s" }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["the first object punch-through, atst8 fb, stencil op keep"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptread-alone-cmp1"
+question = "the punch-through object alone, ISP2 stencil compare 1 (0x020000ff): is it drawn"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0x20000ff
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptread-alone-cmp2"
+question = "the punch-through object alone, ISP2 stencil compare 2 (0x040000ff): is it drawn"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0x40000ff
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptread-alone-cmp3"
+question = "the punch-through object alone, ISP2 stencil compare 3 (0x060000ff): is it drawn"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0x60000ff
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptread-alone-cmp4"
+question = "the punch-through object alone, ISP2 stencil compare 4 (0x080000ff): is it drawn"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0x80000ff
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptread-alone-cmp5"
+question = "the punch-through object alone, ISP2 stencil compare 5 (0x0a0000ff): is it drawn"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xa0000ff
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptread-alone-cmp6"
+question = "the punch-through object alone, ISP2 stencil compare 6 (0x0c0000ff): is it drawn"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xc0000ff
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptread-gap-none"
+question = "atst8 after pcoeff with none between: is the object drawn"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cases = [["atst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["none between"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptread-gap-nop"
+question = "atst8 after pcoeff with nop between: is the object drawn"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cases = [["nop\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["nop between"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never"
+question = "the scene with the stencil at never, no word changed"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd12-b0"
+question = "stencil never, render command word 12 = 0x000f0101 (bit 0 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 12 = 0xf0101 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd12-b1"
+question = "stencil never, render command word 12 = 0x000f0102 (bit 1 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 12 = 0xf0102 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd12-b2"
+question = "stencil never, render command word 12 = 0x000f0104 (bit 2 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 12 = 0xf0104 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd12-b3"
+question = "stencil never, render command word 12 = 0x000f0108 (bit 3 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 12 = 0xf0108 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd12-b4"
+question = "stencil never, render command word 12 = 0x000f0110 (bit 4 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 12 = 0xf0110 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd12-b5"
+question = "stencil never, render command word 12 = 0x000f0120 (bit 5 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 12 = 0xf0120 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd12-b6"
+question = "stencil never, render command word 12 = 0x000f0140 (bit 6 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 12 = 0xf0140 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd12-b7"
+question = "stencil never, render command word 12 = 0x000f0180 (bit 7 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 12 = 0xf0180 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd12-b8"
+question = "stencil never, render command word 12 = 0x000f0000 (bit 8 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 12 = 0xf0000 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd12-b9"
+question = "stencil never, render command word 12 = 0x000f0300 (bit 9 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 12 = 0xf0300 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd12-b10"
+question = "stencil never, render command word 12 = 0x000f0500 (bit 10 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 12 = 0xf0500 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd12-b11"
+question = "stencil never, render command word 12 = 0x000f0900 (bit 11 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 12 = 0xf0900 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd12-b12"
+question = "stencil never, render command word 12 = 0x000f1100 (bit 12 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 12 = 0xf1100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd12-b13"
+question = "stencil never, render command word 12 = 0x000f2100 (bit 13 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 12 = 0xf2100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd12-b14"
+question = "stencil never, render command word 12 = 0x000f4100 (bit 14 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 12 = 0xf4100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd12-b15"
+question = "stencil never, render command word 12 = 0x000f8100 (bit 15 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 12 = 0xf8100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd12-b16"
+question = "stencil never, render command word 12 = 0x000e0100 (bit 16 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 12 = 0xe0100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd12-b17"
+question = "stencil never, render command word 12 = 0x000d0100 (bit 17 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 12 = 0xd0100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd12-b18"
+question = "stencil never, render command word 12 = 0x000b0100 (bit 18 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 12 = 0xb0100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd12-b19"
+question = "stencil never, render command word 12 = 0x00070100 (bit 19 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 12 = 0x70100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd12-b20"
+question = "stencil never, render command word 12 = 0x001f0100 (bit 20 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 12 = 0x1f0100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd12-b21"
+question = "stencil never, render command word 12 = 0x002f0100 (bit 21 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 12 = 0x2f0100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd12-b22"
+question = "stencil never, render command word 12 = 0x004f0100 (bit 22 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 12 = 0x4f0100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd12-b23"
+question = "stencil never, render command word 12 = 0x008f0100 (bit 23 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 12 = 0x8f0100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd12-b24"
+question = "stencil never, render command word 12 = 0x010f0100 (bit 24 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 12 = 0x10f0100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd12-b25"
+question = "stencil never, render command word 12 = 0x020f0100 (bit 25 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 12 = 0x20f0100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd12-b26"
+question = "stencil never, render command word 12 = 0x040f0100 (bit 26 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 12 = 0x40f0100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd12-b27"
+question = "stencil never, render command word 12 = 0x080f0100 (bit 27 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 12 = 0x80f0100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd12-b28"
+question = "stencil never, render command word 12 = 0x100f0100 (bit 28 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 12 = 0x100f0100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd12-b29"
+question = "stencil never, render command word 12 = 0x200f0100 (bit 29 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 12 = 0x200f0100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd12-b30"
+question = "stencil never, render command word 12 = 0x400f0100 (bit 30 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 12 = 0x400f0100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd12-b31"
+question = "stencil never, render command word 12 = 0x800f0100 (bit 31 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 12 = 0x800f0100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd21-b0"
+question = "stencil never, render command word 21 = 0x00000000 (bit 0 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 21 = 0 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd21-b1"
+question = "stencil never, render command word 21 = 0x00000003 (bit 1 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 21 = 3 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd21-b2"
+question = "stencil never, render command word 21 = 0x00000005 (bit 2 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 21 = 5 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd21-b3"
+question = "stencil never, render command word 21 = 0x00000009 (bit 3 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 21 = 9 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd21-b4"
+question = "stencil never, render command word 21 = 0x00000011 (bit 4 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 21 = 17 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd21-b5"
+question = "stencil never, render command word 21 = 0x00000021 (bit 5 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 21 = 33 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd21-b6"
+question = "stencil never, render command word 21 = 0x00000041 (bit 6 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 21 = 65 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd21-b7"
+question = "stencil never, render command word 21 = 0x00000081 (bit 7 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 21 = 129 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd21-b8"
+question = "stencil never, render command word 21 = 0x00000101 (bit 8 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 21 = 0x101 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd21-b9"
+question = "stencil never, render command word 21 = 0x00000201 (bit 9 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 21 = 0x201 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd21-b10"
+question = "stencil never, render command word 21 = 0x00000401 (bit 10 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 21 = 0x401 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd21-b11"
+question = "stencil never, render command word 21 = 0x00000801 (bit 11 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 21 = 0x801 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd21-b12"
+question = "stencil never, render command word 21 = 0x00001001 (bit 12 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 21 = 0x1001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd21-b13"
+question = "stencil never, render command word 21 = 0x00002001 (bit 13 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 21 = 0x2001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd21-b14"
+question = "stencil never, render command word 21 = 0x00004001 (bit 14 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 21 = 0x4001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd21-b15"
+question = "stencil never, render command word 21 = 0x00008001 (bit 15 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 21 = 0x8001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd21-b16"
+question = "stencil never, render command word 21 = 0x00010001 (bit 16 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 21 = 0x10001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd21-b17"
+question = "stencil never, render command word 21 = 0x00020001 (bit 17 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 21 = 0x20001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd21-b18"
+question = "stencil never, render command word 21 = 0x00040001 (bit 18 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 21 = 0x40001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd21-b19"
+question = "stencil never, render command word 21 = 0x00080001 (bit 19 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 21 = 0x80001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd21-b20"
+question = "stencil never, render command word 21 = 0x00100001 (bit 20 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 21 = 0x100001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd21-b21"
+question = "stencil never, render command word 21 = 0x00200001 (bit 21 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 21 = 0x200001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd21-b22"
+question = "stencil never, render command word 21 = 0x00400001 (bit 22 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 21 = 0x400001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd21-b23"
+question = "stencil never, render command word 21 = 0x00800001 (bit 23 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 21 = 0x800001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd21-b24"
+question = "stencil never, render command word 21 = 0x01000001 (bit 24 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 21 = 0x1000001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd21-b25"
+question = "stencil never, render command word 21 = 0x02000001 (bit 25 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 21 = 0x2000001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd21-b26"
+question = "stencil never, render command word 21 = 0x04000001 (bit 26 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 21 = 0x4000001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd21-b27"
+question = "stencil never, render command word 21 = 0x08000001 (bit 27 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 21 = 0x8000001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd21-b28"
+question = "stencil never, render command word 21 = 0x10000001 (bit 28 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 21 = 0x10000001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd21-b29"
+question = "stencil never, render command word 21 = 0x20000001 (bit 29 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 21 = 0x20000001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd21-b30"
+question = "stencil never, render command word 21 = 0x40000001 (bit 30 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 21 = 0x40000001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd21-b31"
+question = "stencil never, render command word 21 = 0x80000001 (bit 31 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 21 = 0x80000001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd22-b0"
+question = "stencil never, render command word 22 = 0x00000101 (bit 0 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 22 = 0x101 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd22-b1"
+question = "stencil never, render command word 22 = 0x00000102 (bit 1 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 22 = 0x102 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd22-b2"
+question = "stencil never, render command word 22 = 0x00000104 (bit 2 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 22 = 0x104 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd22-b3"
+question = "stencil never, render command word 22 = 0x00000108 (bit 3 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 22 = 0x108 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd22-b4"
+question = "stencil never, render command word 22 = 0x00000110 (bit 4 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 22 = 0x110 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd22-b5"
+question = "stencil never, render command word 22 = 0x00000120 (bit 5 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 22 = 0x120 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd22-b6"
+question = "stencil never, render command word 22 = 0x00000140 (bit 6 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 22 = 0x140 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd22-b7"
+question = "stencil never, render command word 22 = 0x00000180 (bit 7 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 22 = 0x180 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd22-b8"
+question = "stencil never, render command word 22 = 0x00000000 (bit 8 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 22 = 0 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd22-b9"
+question = "stencil never, render command word 22 = 0x00000300 (bit 9 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 22 = 0x300 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd22-b10"
+question = "stencil never, render command word 22 = 0x00000500 (bit 10 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 22 = 0x500 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd22-b11"
+question = "stencil never, render command word 22 = 0x00000900 (bit 11 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 22 = 0x900 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd22-b12"
+question = "stencil never, render command word 22 = 0x00001100 (bit 12 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 22 = 0x1100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd22-b13"
+question = "stencil never, render command word 22 = 0x00002100 (bit 13 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 22 = 0x2100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd22-b14"
+question = "stencil never, render command word 22 = 0x00004100 (bit 14 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 22 = 0x4100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd22-b15"
+question = "stencil never, render command word 22 = 0x00008100 (bit 15 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 22 = 0x8100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd22-b16"
+question = "stencil never, render command word 22 = 0x00010100 (bit 16 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 22 = 0x10100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd22-b17"
+question = "stencil never, render command word 22 = 0x00020100 (bit 17 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 22 = 0x20100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd22-b18"
+question = "stencil never, render command word 22 = 0x00040100 (bit 18 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 22 = 0x40100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd22-b19"
+question = "stencil never, render command word 22 = 0x00080100 (bit 19 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 22 = 0x80100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd22-b20"
+question = "stencil never, render command word 22 = 0x00100100 (bit 20 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 22 = 0x100100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd22-b21"
+question = "stencil never, render command word 22 = 0x00200100 (bit 21 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 22 = 0x200100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd22-b22"
+question = "stencil never, render command word 22 = 0x00400100 (bit 22 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 22 = 0x400100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd22-b23"
+question = "stencil never, render command word 22 = 0x00800100 (bit 23 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 22 = 0x800100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd22-b24"
+question = "stencil never, render command word 22 = 0x01000100 (bit 24 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 22 = 0x1000100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd22-b25"
+question = "stencil never, render command word 22 = 0x02000100 (bit 25 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 22 = 0x2000100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd22-b26"
+question = "stencil never, render command word 22 = 0x04000100 (bit 26 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 22 = 0x4000100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd22-b27"
+question = "stencil never, render command word 22 = 0x08000100 (bit 27 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 22 = 0x8000100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd22-b28"
+question = "stencil never, render command word 22 = 0x10000100 (bit 28 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 22 = 0x10000100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd22-b29"
+question = "stencil never, render command word 22 = 0x20000100 (bit 29 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 22 = 0x20000100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd22-b30"
+question = "stencil never, render command word 22 = 0x40000100 (bit 30 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 22 = 0x40000100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-cmd22-b31"
+question = "stencil never, render command word 22 = 0x80000100 (bit 31 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+cmd = { 22 = 0x80000100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-rd21-b0"
+question = "stencil never, render details word 21 bit 0 set"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+kpoke = ["rd:21^=0x1"]
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-rd21-b2"
+question = "stencil never, render details word 21 bit 2 set"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+kpoke = ["rd:21^=0x4"]
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-rd51-b0"
+question = "stencil never, render details word 51 bit 0 set"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+kpoke = ["rd:51^=0x1"]
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-never-rd51-b8"
+question = "stencil never, render details word 51 bit 8 set"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 255
+kpoke = ["rd:51^=0x100"]
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always"
+question = "the scene with the stencil at always, no word changed"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd12-b0"
+question = "stencil always, render command word 12 = 0x000f0101 (bit 0 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 12 = 0xf0101 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd12-b1"
+question = "stencil always, render command word 12 = 0x000f0102 (bit 1 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 12 = 0xf0102 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd12-b2"
+question = "stencil always, render command word 12 = 0x000f0104 (bit 2 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 12 = 0xf0104 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd12-b3"
+question = "stencil always, render command word 12 = 0x000f0108 (bit 3 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 12 = 0xf0108 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd12-b4"
+question = "stencil always, render command word 12 = 0x000f0110 (bit 4 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 12 = 0xf0110 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd12-b5"
+question = "stencil always, render command word 12 = 0x000f0120 (bit 5 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 12 = 0xf0120 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd12-b6"
+question = "stencil always, render command word 12 = 0x000f0140 (bit 6 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 12 = 0xf0140 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd12-b7"
+question = "stencil always, render command word 12 = 0x000f0180 (bit 7 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 12 = 0xf0180 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd12-b8"
+question = "stencil always, render command word 12 = 0x000f0000 (bit 8 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 12 = 0xf0000 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd12-b9"
+question = "stencil always, render command word 12 = 0x000f0300 (bit 9 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 12 = 0xf0300 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd12-b10"
+question = "stencil always, render command word 12 = 0x000f0500 (bit 10 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 12 = 0xf0500 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd12-b11"
+question = "stencil always, render command word 12 = 0x000f0900 (bit 11 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 12 = 0xf0900 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd12-b12"
+question = "stencil always, render command word 12 = 0x000f1100 (bit 12 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 12 = 0xf1100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd12-b13"
+question = "stencil always, render command word 12 = 0x000f2100 (bit 13 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 12 = 0xf2100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd12-b14"
+question = "stencil always, render command word 12 = 0x000f4100 (bit 14 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 12 = 0xf4100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd12-b15"
+question = "stencil always, render command word 12 = 0x000f8100 (bit 15 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 12 = 0xf8100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd12-b16"
+question = "stencil always, render command word 12 = 0x000e0100 (bit 16 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 12 = 0xe0100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd12-b17"
+question = "stencil always, render command word 12 = 0x000d0100 (bit 17 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 12 = 0xd0100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd12-b18"
+question = "stencil always, render command word 12 = 0x000b0100 (bit 18 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 12 = 0xb0100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd12-b19"
+question = "stencil always, render command word 12 = 0x00070100 (bit 19 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 12 = 0x70100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd12-b20"
+question = "stencil always, render command word 12 = 0x001f0100 (bit 20 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 12 = 0x1f0100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd12-b21"
+question = "stencil always, render command word 12 = 0x002f0100 (bit 21 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 12 = 0x2f0100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd12-b22"
+question = "stencil always, render command word 12 = 0x004f0100 (bit 22 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 12 = 0x4f0100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd12-b23"
+question = "stencil always, render command word 12 = 0x008f0100 (bit 23 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 12 = 0x8f0100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd12-b24"
+question = "stencil always, render command word 12 = 0x010f0100 (bit 24 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 12 = 0x10f0100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd12-b25"
+question = "stencil always, render command word 12 = 0x020f0100 (bit 25 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 12 = 0x20f0100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd12-b26"
+question = "stencil always, render command word 12 = 0x040f0100 (bit 26 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 12 = 0x40f0100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd12-b27"
+question = "stencil always, render command word 12 = 0x080f0100 (bit 27 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 12 = 0x80f0100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd12-b28"
+question = "stencil always, render command word 12 = 0x100f0100 (bit 28 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 12 = 0x100f0100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd12-b29"
+question = "stencil always, render command word 12 = 0x200f0100 (bit 29 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 12 = 0x200f0100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd12-b30"
+question = "stencil always, render command word 12 = 0x400f0100 (bit 30 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 12 = 0x400f0100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd12-b31"
+question = "stencil always, render command word 12 = 0x800f0100 (bit 31 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 12 = 0x800f0100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd21-b0"
+question = "stencil always, render command word 21 = 0x00000000 (bit 0 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 21 = 0 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd21-b1"
+question = "stencil always, render command word 21 = 0x00000003 (bit 1 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 21 = 3 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd21-b2"
+question = "stencil always, render command word 21 = 0x00000005 (bit 2 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 21 = 5 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd21-b3"
+question = "stencil always, render command word 21 = 0x00000009 (bit 3 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 21 = 9 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd21-b4"
+question = "stencil always, render command word 21 = 0x00000011 (bit 4 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 21 = 17 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd21-b5"
+question = "stencil always, render command word 21 = 0x00000021 (bit 5 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 21 = 33 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd21-b6"
+question = "stencil always, render command word 21 = 0x00000041 (bit 6 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 21 = 65 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd21-b7"
+question = "stencil always, render command word 21 = 0x00000081 (bit 7 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 21 = 129 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd21-b8"
+question = "stencil always, render command word 21 = 0x00000101 (bit 8 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 21 = 0x101 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd21-b9"
+question = "stencil always, render command word 21 = 0x00000201 (bit 9 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 21 = 0x201 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd21-b10"
+question = "stencil always, render command word 21 = 0x00000401 (bit 10 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 21 = 0x401 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd21-b11"
+question = "stencil always, render command word 21 = 0x00000801 (bit 11 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 21 = 0x801 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd21-b12"
+question = "stencil always, render command word 21 = 0x00001001 (bit 12 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 21 = 0x1001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd21-b13"
+question = "stencil always, render command word 21 = 0x00002001 (bit 13 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 21 = 0x2001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd21-b14"
+question = "stencil always, render command word 21 = 0x00004001 (bit 14 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 21 = 0x4001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd21-b15"
+question = "stencil always, render command word 21 = 0x00008001 (bit 15 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 21 = 0x8001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd21-b16"
+question = "stencil always, render command word 21 = 0x00010001 (bit 16 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 21 = 0x10001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd21-b17"
+question = "stencil always, render command word 21 = 0x00020001 (bit 17 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 21 = 0x20001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd21-b18"
+question = "stencil always, render command word 21 = 0x00040001 (bit 18 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 21 = 0x40001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd21-b19"
+question = "stencil always, render command word 21 = 0x00080001 (bit 19 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 21 = 0x80001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd21-b20"
+question = "stencil always, render command word 21 = 0x00100001 (bit 20 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 21 = 0x100001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd21-b21"
+question = "stencil always, render command word 21 = 0x00200001 (bit 21 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 21 = 0x200001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd21-b22"
+question = "stencil always, render command word 21 = 0x00400001 (bit 22 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 21 = 0x400001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd21-b23"
+question = "stencil always, render command word 21 = 0x00800001 (bit 23 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 21 = 0x800001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd21-b24"
+question = "stencil always, render command word 21 = 0x01000001 (bit 24 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 21 = 0x1000001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd21-b25"
+question = "stencil always, render command word 21 = 0x02000001 (bit 25 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 21 = 0x2000001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd21-b26"
+question = "stencil always, render command word 21 = 0x04000001 (bit 26 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 21 = 0x4000001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd21-b27"
+question = "stencil always, render command word 21 = 0x08000001 (bit 27 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 21 = 0x8000001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd21-b28"
+question = "stencil always, render command word 21 = 0x10000001 (bit 28 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 21 = 0x10000001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd21-b29"
+question = "stencil always, render command word 21 = 0x20000001 (bit 29 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 21 = 0x20000001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd21-b30"
+question = "stencil always, render command word 21 = 0x40000001 (bit 30 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 21 = 0x40000001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd21-b31"
+question = "stencil always, render command word 21 = 0x80000001 (bit 31 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 21 = 0x80000001 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd22-b0"
+question = "stencil always, render command word 22 = 0x00000101 (bit 0 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 22 = 0x101 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd22-b1"
+question = "stencil always, render command word 22 = 0x00000102 (bit 1 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 22 = 0x102 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd22-b2"
+question = "stencil always, render command word 22 = 0x00000104 (bit 2 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 22 = 0x104 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd22-b3"
+question = "stencil always, render command word 22 = 0x00000108 (bit 3 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 22 = 0x108 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd22-b4"
+question = "stencil always, render command word 22 = 0x00000110 (bit 4 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 22 = 0x110 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd22-b5"
+question = "stencil always, render command word 22 = 0x00000120 (bit 5 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 22 = 0x120 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd22-b6"
+question = "stencil always, render command word 22 = 0x00000140 (bit 6 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 22 = 0x140 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd22-b7"
+question = "stencil always, render command word 22 = 0x00000180 (bit 7 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 22 = 0x180 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd22-b8"
+question = "stencil always, render command word 22 = 0x00000000 (bit 8 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 22 = 0 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd22-b9"
+question = "stencil always, render command word 22 = 0x00000300 (bit 9 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 22 = 0x300 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd22-b10"
+question = "stencil always, render command word 22 = 0x00000500 (bit 10 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 22 = 0x500 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd22-b11"
+question = "stencil always, render command word 22 = 0x00000900 (bit 11 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 22 = 0x900 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd22-b12"
+question = "stencil always, render command word 22 = 0x00001100 (bit 12 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 22 = 0x1100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd22-b13"
+question = "stencil always, render command word 22 = 0x00002100 (bit 13 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 22 = 0x2100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd22-b14"
+question = "stencil always, render command word 22 = 0x00004100 (bit 14 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 22 = 0x4100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd22-b15"
+question = "stencil always, render command word 22 = 0x00008100 (bit 15 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 22 = 0x8100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd22-b16"
+question = "stencil always, render command word 22 = 0x00010100 (bit 16 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 22 = 0x10100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd22-b17"
+question = "stencil always, render command word 22 = 0x00020100 (bit 17 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 22 = 0x20100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd22-b18"
+question = "stencil always, render command word 22 = 0x00040100 (bit 18 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 22 = 0x40100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd22-b19"
+question = "stencil always, render command word 22 = 0x00080100 (bit 19 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 22 = 0x80100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd22-b20"
+question = "stencil always, render command word 22 = 0x00100100 (bit 20 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 22 = 0x100100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd22-b21"
+question = "stencil always, render command word 22 = 0x00200100 (bit 21 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 22 = 0x200100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd22-b22"
+question = "stencil always, render command word 22 = 0x00400100 (bit 22 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 22 = 0x400100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd22-b23"
+question = "stencil always, render command word 22 = 0x00800100 (bit 23 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 22 = 0x800100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd22-b24"
+question = "stencil always, render command word 22 = 0x01000100 (bit 24 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 22 = 0x1000100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd22-b25"
+question = "stencil always, render command word 22 = 0x02000100 (bit 25 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 22 = 0x2000100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd22-b26"
+question = "stencil always, render command word 22 = 0x04000100 (bit 26 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 22 = 0x4000100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd22-b27"
+question = "stencil always, render command word 22 = 0x08000100 (bit 27 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 22 = 0x8000100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd22-b28"
+question = "stencil always, render command word 22 = 0x10000100 (bit 28 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 22 = 0x10000100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd22-b29"
+question = "stencil always, render command word 22 = 0x20000100 (bit 29 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 22 = 0x20000100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd22-b30"
+question = "stencil always, render command word 22 = 0x40000100 (bit 30 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 22 = 0x40000100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-cmd22-b31"
+question = "stencil always, render command word 22 = 0x80000100 (bit 31 flipped)"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+cmd = { 22 = 0x80000100 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-rd21-b0"
+question = "stencil always, render details word 21 bit 0 set"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+kpoke = ["rd:21^=0x1"]
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-rd21-b2"
+question = "stencil always, render details word 21 bit 2 set"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+kpoke = ["rd:21^=0x4"]
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-rd51-b0"
+question = "stencil always, render details word 51 bit 0 set"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+kpoke = ["rd:51^=0x1"]
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-always-rd51-b8"
+question = "stencil always, render details word 51 bit 8 set"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400300 }
+isp2 = 0xe0000ff
+kpoke = ["rd:51^=0x100"]
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["fb"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-opaque-cmd12-000f0102"
+question = "the plain triangle with render command word 12 = 0x000f0102"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0102 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-opaque-cmd12-000f0104"
+question = "the plain triangle with render command word 12 = 0x000f0104"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0104 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-opaque-cmd12-000f0108"
+question = "the plain triangle with render command word 12 = 0x000f0108"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0108 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-opaque-cmd12-000f0110"
+question = "the plain triangle with render command word 12 = 0x000f0110"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0110 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-opaque-cmd12-000f0120"
+question = "the plain triangle with render command word 12 = 0x000f0120"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xf0120 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-opaque-cmd12-00000000"
+question = "the plain triangle with render command word 12 = 0x00000000"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0 }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
+
+[[probe]]
+name = "isp-punch-through-stencil-ptst-opaque-cmd12-ffffffff"
+question = "the plain triangle with render command word 12 = 0xffffffff"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cmd = { 12 = 0xffffffff }
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["o0 green"]
