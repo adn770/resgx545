@@ -13,18 +13,21 @@ needs. It is not a promise of 3D acceleration.
 
 ## Status
 
-Published so far: the record formats and their checkers, and the firmware container: the
-cutter and reference loader (`tools/fwcutter`), the C loader (`tools/sgx_fw`), the extraction
-harness (`harness/ukernel-extract`), the firmware capture tables (`captures/firmware`) and the
-first evidence records. The remaining specs, records and tools arrive unit by unit, in the order
-of the roadmap below.
+Published so far: the record formats and their checkers; the firmware container and its
+cutter and loaders; the USSE and PDS instruction sets with their disassemblers, assemblers and
+radare2 plugin; the platform and its firmware boot; the host-to-firmware protocol and the
+transfer queue; the client library and the render node's interface; the probe tables, their
+runner and what their runs on the laptop show; the PDS; the simulator of the USSE, the PDS and
+the texture unit; the render path; the 3D state of a render; and the open questions with the
+runs that would settle them. What remains is the pipeline simulator, the roadmap's last phase,
+and the open work it lists unit by unit.
 
 ## How the repository is organised
 
-The work is published unit by unit, in the order of a roadmap (`doc/roadmap.md` once it
-lands): foundations, the firmware container, disassembly, firmware boot, the transfer queue, the
-assembler, the probes, the PDS (the programmable data sequencer), the simulator, the render
-path, 3D, and the open questions. Once published, every claim can be traced:
+The work is published unit by unit, in the order of a roadmap (`doc/roadmap.md`): foundations,
+the firmware container, disassembly, firmware boot, the transfer queue, the assembler, the
+probes, the PDS (the programmable data sequencer), the simulator, the render path, 3D, the open
+questions, and the pipeline simulator still to come. Once published, every claim can be traced:
 
 - **specs** (`doc/specs/`) cite **evidence records** (`evidence/<unit>/E<nnn>-<slug>.md`), one
   finding per file;

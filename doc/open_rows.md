@@ -238,6 +238,12 @@ sits, the reading, and the evidence records it rests on.
   changed a pixel; over the every-value source exactly the 128 values of bits 31:24 with bit 25 set
   changed the image. Evidence: E029.
 
+## units
+
+- `G0607` `MADD` (0x0004[13:12] (MADD0)): per the SGX540's technical reference manual, the wrapper
+  of the main cache: arbitrates the PDS, USSE and texture requests, caches them at level 0 and
+  decompresses textures; one of two readings (Q048) [infer].
+
 ## words: FEEDBACK_CTL
 
 - `G0228` `FEEDBACK_CTL.DEPTH_ALWAYS` (atst8/depthf src1 [3:2]): either bit set makes the kept

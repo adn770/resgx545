@@ -127,15 +127,21 @@ def test_paths_that_disagree_leave_the_value_unresolved():
 
 
 def test_given_pointer_words_rest_on_records():
-    # TA3DCtl's kernel CCB and HWPerf words (E002); the transfer context's client CCB and its
-    # control block (transfer §2.2: E018, E021) and its queue links (E015); the render
+    # TA3DCtl's own address, kernel CCB and HWPerf words (E002); the transfer context's client
+    # CCB and its control block (transfer §2.2: E018, E021) and its queue links (E015); the render
     # context's client CCB and its control (E161), PB descriptor (E159, E167), pending and
     # ready render lists (E156, E165) and TA and 3D queue links (E157, E165); the RT data's
     # render details (E159); the TA command's PB descriptor (E156), render details (E159),
     # destination sync list (E161, E164) and RT data (E158, E161); the PB descriptor's first
-    # block (E200, E201). Every other pointer word is typed by what the firmware stores in it.
+    # block (E200, E201); the render details' RT data (E163) and destination sync list (E164,
+    # E165); a PB block's next block (E200, E201); the TA/3D control block's job words: the RT
+    # data owning each DPM context slot (E158), the TA's command, RT data, render details and
+    # context (E158, E159), the 3D's RT data and render details (E163) and the PB descriptor
+    # loaded in each pipe (E200). Every other pointer word is typed by what the firmware stores
+    # in it.
     assert df.GLOSSARY_POINTERS == {
-        ("TA3D_CTL", 0x058): "KCCB", ("TA3D_CTL", 0x0ac): "HWPERF_CB",
+        ("TA3D_CTL", 0x000): "TA3D_CTL", ("TA3D_CTL", 0x058): "KCCB",
+        ("TA3D_CTL", 0x0ac): "HWPERF_CB",
         ("HWTRANSFERCONTEXT", 0x00c): "CCB_TQ", ("HWTRANSFERCONTEXT", 0x010): "CCB_CTL",
         ("HWTRANSFERCONTEXT", 0x0ac): "HWTRANSFERCONTEXT",
         ("HWTRANSFERCONTEXT", 0x0b0): "HWTRANSFERCONTEXT",
@@ -146,13 +152,23 @@ def test_given_pointer_words_rest_on_records():
         ("HWRTDATA", 0x004): "HWRENDERDETAILS",
         ("CMDTA", 0x024): "HWPBDESC", ("CMDTA", 0x038): "HWRENDERDETAILS",
         ("CMDTA", 0x03c): "HWDEVICE_SYNC_LIST", ("CMDTA", 0x044): "HWRTDATA",
-        ("HWPBDESC", 0x038): "PB_BLOCK"}
+        ("HWPBDESC", 0x038): "PB_BLOCK",
+        ("HWRENDERDETAILS", 0x0dc): "HWRTDATA", ("HWRENDERDETAILS", 0x0e0): "HWDEVICE_SYNC_LIST",
+        ("PB_BLOCK", 0x00c): "PB_BLOCK",
+        **{("TA3D_CTL", o): "HWRTDATA" for o in (0x050, 0x054, 0x064, 0x070)},
+        ("TA3D_CTL", 0x060): "CMDTA",
+        **{("TA3D_CTL", o): "HWRENDERDETAILS" for o in (0x068, 0x074)},
+        ("TA3D_CTL", 0x06c): "HWRENDERCONTEXT",
+        **{("TA3D_CTL", o): "HWPBDESC" for o in (0x0b8, 0x0bc)}}
 
 
 def test_given_pointer_words_agree_with_kick3d_names():
-    # every given word of a client structure is a pointer kick3d.py names at that offset
+    # every given word of a client structure is a pointer kick3d.py names at that offset, the
+    # TA/3D control block's E002 words among them
     names = {"CMDTA": "cmd_ta", "HWRENDERCONTEXT": "hw_render_context",
-             "HWRTDATA": "hw_rt_data", "HWPBDESC": "hw_pb_desc"}
+             "HWRTDATA": "hw_rt_data", "HWPBDESC": "hw_pb_desc",
+             "HWRENDERDETAILS": "hw_render_details", "PB_BLOCK": "pb_block",
+             "TA3D_CTL": "ta3d_ctl"}
     for (prefix, off), _target in df.GLOSSARY_POINTERS.items():
         if prefix not in names:
             continue
@@ -165,13 +181,14 @@ def test_the_kernel_side_layouts_give_no_pointer_word():
     assert df._layout_pointers() == {}
 
 
-def test_the_client_layouts_pointer_words_agree_with_the_given_ones():
-    # edmtrace types the client layouts' pointer words (kick3d.py's names); the dataflow keeps
-    # to the given words, which hold the same, and lists the ones a rerun takes up
+def test_every_client_layout_pointer_word_is_given():
+    # edmtrace types the client layouts' pointer words (kick3d.py's names); the dataflow gives
+    # every one of them, each resting on a record, so every word edmtrace types, the dataflow
+    # types the same way (a pointer word a later layout adds waits for a rerun of the dataflow
+    # table)
     every = df._layout_pointers(set(df.kick3d.STRUCTS))
     for word, target in every.items():
-        assert df.GLOSSARY_POINTERS.get(word, df.LAYOUT_ONLY.get(word)) == target, word
-    assert set(every) - set(df.GLOSSARY_POINTERS) == set(df.LAYOUT_ONLY)
+        assert df.GLOSSARY_POINTERS.get(word) == target, word
 
 
 def test_pointers_of_one_type_from_different_words_keep_their_type_at_a_join(monkeypatch):
@@ -381,8 +398,9 @@ def test_the_document_says_where_given_pointers_come_from(tmp_path):
     df.write_tsv(run("lapc"), p)
     doc = " ".join(df.render(df.read_tsv(p), G).split())
     assert "Given: a pointer word a record establishes (E002, E015, `doc/specs/transfer.md` " \
-        "§2.2; E156-E161, E164, E165, E167, E200, E201 for the render context, the TA " \
-        "command, the RT data and the PB descriptor)" in doc
+        "§2.2; E156-E161, E163-E165, E167, E200, E201 for the render context, the TA " \
+        "command, the render details, the RT data, the PB descriptor and block and the TA/3D " \
+        "control block)" in doc
     assert "glossary meaning" not in doc and "TA/3D layouts" not in doc
 
 
@@ -423,7 +441,13 @@ def test_the_usage_names_every_form(tmp_path, capsys):
     assert "--ukernel" in err and "--check" in err and "--render" in err
 
 
-def test_the_table_is_phase_10s_own_dataset():
-    # the earlier phases render their document from firmware/edm-dataflow; this analysis, with
-    # the TA/3D pointer words, keeps its table beside it
-    assert df.TSV.parent.name == "edm-dataflow-3d" and df.TSV.name == "edm_dataflow.tsv"
+def test_the_table_is_phase_11s_own_dataset(tmp_path):
+    # the earlier phases render their document from firmware/edm-dataflow and
+    # firmware/edm-dataflow-3d; this analysis, with every layout pointer word given, keeps its
+    # table beside them, and the document names it
+    assert df.TSV.parent.name == "edm-dataflow-11" and df.TSV.name == "edm_dataflow.tsv"
+    p = tmp_path / "df.tsv"
+    df.write_tsv(run("lapc"), p)
+    doc = " ".join(df.render(df.read_tsv(p), G).split())
+    assert "*Generated from `firmware/edm-dataflow-11/edm_dataflow.tsv` (resgx545-data)" in doc
+    assert "dataset firmware-edm-dataflow-11" in doc and "dataflow-3d" not in doc

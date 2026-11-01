@@ -100,10 +100,14 @@ repository: make it from your own firmware with
 RESGX545_UKERNEL=.../00_ukernel.bin ./make_r2.sh      # needs usse-dis (disassembly unit)
 ```
 
-The init info defaults to the `layout_base` capture in resgx545-data-private. That repository
-also keeps a copy made from the Cedarview build, `firmware/r2/sgx545_ukernel.r2`, SHA-256
-`ca9d1d48a6e2271d0fc690cee15a564b381d946c53ea4c4f15c3d4a50becb286`; your output should equal
-it.
+The init info defaults to the `layout_base` capture in resgx545-data-private, and the register
+names come from the GPL DDK's `sgx545defs.h` named by `$RESGX545_REGDEFS`. That repository
+also keeps a copy made from the Cedarview build with this `sgx545_labels.r2`,
+`firmware/r2-11/sgx545_ukernel.r2`, SHA-256
+`4ab49f4a365d11ee995352340446c8b911821e23e02cbd0df0405e90d3861a7e`; your output should equal
+it. The labels' comments name structure words by the glossary's and `kick3d.py`'s names
+(`test_labels_r2.py` checks them). The copy made with the earlier labels,
+`firmware/r2/sgx545_ukernel.r2`, stays as it was.
 
 `edmtrace.py` (tested: `test_edmtrace.py`) traces what a range of EDM code reads and writes.
 Given seeds for the registers that point at known structures when the range starts (a

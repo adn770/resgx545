@@ -93,6 +93,10 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   imgtec-sgx-arch-guide-1.0.8).
 - `Z Load Store (ZLS)` G0301 (CR_BIF_ZLS_REQ_BASE): ZLS memory requester (its BIF requestor base).
   From `ZLS` (1, sgx545-ce); `Z load store` (4, imgtec-pvrtune-counters).
+- `MADD` G0607 (0x0004[13:12] (MADD0)): inferred reading (unconfirmed): per the SGX540's technical
+  reference manual, the wrapper of the main cache: arbitrates the PDS, USSE and texture requests,
+  caches them at level 0 and decompresses textures; one of two readings (Q048) [infer]. From
+  `mux/arbiter/demux/decompression unit (MADD)` (4, ti-omap4430-trm).
 
 ## 2. Registers and their fields
 

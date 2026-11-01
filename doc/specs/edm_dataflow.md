@@ -2,7 +2,7 @@
 <!-- SPDX-FileCopyrightText: 2026 Josep Torra -->
 # SGX545 EDM dataflow: every structure word and register
 
-*Generated from `firmware/edm-dataflow-3d/edm_dataflow.tsv` (resgx545-data) by
+*Generated from `firmware/edm-dataflow-11/edm_dataflow.tsv` (resgx545-data) by
 `harness/ukernel-extract/edm_dataflow.py`; do not edit.*
 
 A complete forward dataflow analysis of the EDM microkernel (the image is `$RESGX545_UKERNEL`): our
@@ -23,29 +23,27 @@ are instruction indices (byte address / 8). Each use gives its count and up to t
 the other path runs. `?` is a value the analysis could not follow; such accesses are counted in §6,
 not guessed.
 
-Evidence: E013 (the dataflow record; dataset firmware-edm-dataflow-3d).
+Evidence: E013 (the dataflow record; dataset firmware-edm-dataflow-11).
 
 ## 1. Coverage
 
 - instructions: 6637, all analysed (6637 reached)
 - routines (label ranges): 70, 70 with analysed code
 - entry points: 13 (plus 21 for code no entry reaches)
-- structure words seen: 342; registers: 191; secondary attributes: 20
-- unresolved: branch 248, mem 392, regaddr 14, src 113
+- structure words seen: 346; registers: 191; secondary attributes: 20
+- unresolved: branch 249, mem 379, regaddr 14, src 109
 
 ## 2. Pointer typing
 
 Given: a pointer word a record establishes (E002, E015, `doc/specs/transfer.md` §2.2; E156-E161,
-E164, E165, E167, E200, E201 for the render context, the TA command, the RT data and the PB
-descriptor), and the pointer words of kick3d.py's kernel-side layouts; the list repeats the inferred
-structure words, which each later round takes as given. Inferred: a slot the firmware itself only
-ever fills with pointers to one structure.
+E163-E165, E167, E200, E201 for the render context, the TA command, the render details, the RT data,
+the PB descriptor and block and the TA/3D control block), and the pointer words of kick3d.py's
+kernel-side layouts; the list repeats the inferred structure words, which each later round takes as
+given. Inferred: a slot the firmware itself only ever fills with pointers to one structure.
 
-Inferred: `HWRENDERDETAILS+0x0e0` → HWDEVICE_SYNC_LIST; `HWRENDERDETAILS+0x128` → HWRENDERDETAILS;
-`HWRENDERDETAILS+0x12c` → HWRENDERDETAILS; `TA3D_CTL+0x050` → HWRTDATA; `TA3D_CTL+0x054` → HWRTDATA;
-`TA3D_CTL+0x060` → CMDTA; `TA3D_CTL+0x064` → HWRTDATA; `TA3D_CTL+0x068` → HWRENDERDETAILS;
-`TA3D_CTL+0x06c` → HWRENDERCONTEXT; `TA3D_CTL+0x070` → HWRTDATA; `sa13` → HWTRANSFERCONTEXT; `sa14`
-→ HWTRANSFERCONTEXT; `sa15` → HWRENDERCONTEXT; `sa16` → HWRENDERCONTEXT; `sa3` → TRANSFERCMD.
+Inferred: `HWRENDERDETAILS+0x128` → HWRENDERDETAILS; `HWRENDERDETAILS+0x12c` → HWRENDERDETAILS;
+`sa13` → HWTRANSFERCONTEXT; `sa14` → HWTRANSFERCONTEXT; `sa15` → HWRENDERCONTEXT; `sa16` →
+HWRENDERCONTEXT; `sa3` → TRANSFERCMD.
 
 Given: `CMDTA+0x024` → HWPBDESC; `CMDTA+0x038` → HWRENDERDETAILS; `CMDTA+0x03c` →
 HWDEVICE_SYNC_LIST; `CMDTA+0x044` → HWRTDATA; `HWPBDESC+0x038` → PB_BLOCK; `HWRENDERCONTEXT+0x00c` →
@@ -54,13 +52,15 @@ CCB_TA; `HWRENDERCONTEXT+0x010` → CCB_CTL; `HWRENDERCONTEXT+0x018` → HWPBDES
 `HWRENDERCONTEXT+0x028` → HWRENDERDETAILS; `HWRENDERCONTEXT+0x02c` → HWRENDERDETAILS;
 `HWRENDERCONTEXT+0x030` → HWRENDERCONTEXT; `HWRENDERCONTEXT+0x034` → HWRENDERCONTEXT;
 `HWRENDERCONTEXT+0x038` → HWRENDERCONTEXT; `HWRENDERCONTEXT+0x03c` → HWRENDERCONTEXT;
-`HWRENDERDETAILS+0x0e0` → HWDEVICE_SYNC_LIST; `HWRENDERDETAILS+0x128` → HWRENDERDETAILS;
-`HWRENDERDETAILS+0x12c` → HWRENDERDETAILS; `HWRTDATA+0x004` → HWRENDERDETAILS;
-`HWTRANSFERCONTEXT+0x00c` → CCB_TQ; `HWTRANSFERCONTEXT+0x010` → CCB_CTL; `HWTRANSFERCONTEXT+0x0ac` →
-HWTRANSFERCONTEXT; `HWTRANSFERCONTEXT+0x0b0` → HWTRANSFERCONTEXT; `TA3D_CTL+0x050` → HWRTDATA;
-`TA3D_CTL+0x054` → HWRTDATA; `TA3D_CTL+0x058` → KCCB; `TA3D_CTL+0x060` → CMDTA; `TA3D_CTL+0x064` →
-HWRTDATA; `TA3D_CTL+0x068` → HWRENDERDETAILS; `TA3D_CTL+0x06c` → HWRENDERCONTEXT; `TA3D_CTL+0x070` →
-HWRTDATA; `TA3D_CTL+0x0ac` → HWPERF_CB.
+`HWRENDERDETAILS+0x0dc` → HWRTDATA; `HWRENDERDETAILS+0x0e0` → HWDEVICE_SYNC_LIST;
+`HWRENDERDETAILS+0x128` → HWRENDERDETAILS; `HWRENDERDETAILS+0x12c` → HWRENDERDETAILS;
+`HWRTDATA+0x004` → HWRENDERDETAILS; `HWTRANSFERCONTEXT+0x00c` → CCB_TQ; `HWTRANSFERCONTEXT+0x010` →
+CCB_CTL; `HWTRANSFERCONTEXT+0x0ac` → HWTRANSFERCONTEXT; `HWTRANSFERCONTEXT+0x0b0` →
+HWTRANSFERCONTEXT; `PB_BLOCK+0x00c` → PB_BLOCK; `TA3D_CTL+0x000` → TA3D_CTL; `TA3D_CTL+0x050` →
+HWRTDATA; `TA3D_CTL+0x054` → HWRTDATA; `TA3D_CTL+0x058` → KCCB; `TA3D_CTL+0x060` → CMDTA;
+`TA3D_CTL+0x064` → HWRTDATA; `TA3D_CTL+0x068` → HWRENDERDETAILS; `TA3D_CTL+0x06c` → HWRENDERCONTEXT;
+`TA3D_CTL+0x070` → HWRTDATA; `TA3D_CTL+0x074` → HWRENDERDETAILS; `TA3D_CTL+0x0ac` → HWPERF_CB;
+`TA3D_CTL+0x0b8` → HWPBDESC; `TA3D_CTL+0x0bc` → HWPBDESC.
 
 ## 3. Structure words
 
@@ -323,19 +323,32 @@ HWRTDATA; `TA3D_CTL+0x0ac` → HWPERF_CB.
 
 ### HWPBDESC
 
-- `HWPBDESC+0x000`: read 3× (0x1c4-0x599, 0x6f5-0x7b0, 0x8e9-0xacd). written 2× from HWPBDESC+0x000
-  | 0x1 (1×, 0x1c4-0x599); HWPBDESC+0x000 | 0x2 (1×, 0x6f5-0x7b0). stored to HWPBDESC+0x000 as | 0x1
-  (1×, 0x1c4-0x599); HWPBDESC+0x000 as | 0x2 (1×, 0x6f5-0x7b0). tested: bit 1
-  (PB_FLAGS.THRESHOLD_UPDATE) (1×, 0x8e9-0xacd). branches: bit 1 (PB_FLAGS.THRESHOLD_UPDATE) clear:
-  to 0x95a; set: runs call 0x1665 (1×, 0x8e9-0xacd). arithmetic: | 0x1 (1×, 0x1c4-0x599); | 0x2 (1×,
-  0x6f5-0x7b0).
+- `HWPBDESC+0x000`: read 4× (0x1c4-0x599, 0x6f5-0x7b0, 0x8e9-0xacd +1). written 3× from
+  HWPBDESC+0x000 & 0xfffffffc (1×, 0x1665-0x1675); HWPBDESC+0x000 | 0x1 (1×, 0x1c4-0x599);
+  HWPBDESC+0x000 | 0x2 (1×, 0x6f5-0x7b0). stored to HWPBDESC+0x000 as & 0xfffffffc (1×,
+  0x1665-0x1675); HWPBDESC+0x000 as | 0x1 (1×, 0x1c4-0x599); HWPBDESC+0x000 as | 0x2 (1×,
+  0x6f5-0x7b0). tested: bit 1 (PB_FLAGS.THRESHOLD_UPDATE) (1×, 0x8e9-0xacd). branches: bit 1
+  (PB_FLAGS.THRESHOLD_UPDATE) clear: to 0x95a; set: runs call 0x1665 (1×, 0x8e9-0xacd). arithmetic:
+  & 0xfffffffc (1×, 0x1665-0x1675); | 0x1 (1×, 0x1c4-0x599); | 0x2 (1×, 0x6f5-0x7b0).
 - `HWPBDESC+0x014` `hw_pb_desc.allocated_page_count`: written 1× from CR_DPM_PAGE_STATUS &
   0xffff0000 >> 0x10 (1×, 0x643-0x6f4).
-- `HWPBDESC+0x028` `hw_pb_desc.ta_threshold`: written 1× from cmd_ta.ta_threshold (1×, 0x6f5-0x7b0).
-- `HWPBDESC+0x02c` `hw_pb_desc.zls_threshold`: written 1× from CMDTA+0x02c (1×, 0x6f5-0x7b0).
-- `HWPBDESC+0x030` `hw_pb_desc.global_threshold`: written 1× from cmd_ta.global_threshold (1×,
-  0x6f5-0x7b0).
-- `HWPBDESC+0x034` `hw_pb_desc.pds_threshold`: written 1× from CMDTA+0x034 (1×, 0x6f5-0x7b0).
+- `HWPBDESC+0x018` `hw_pb_desc.current_stack_top`: written 2× from 0x0700 (1×, 0x168d-0x16a1);
+  0x070c (1×, 0x16d4-0x16e8).
+- `HWPBDESC+0x01c` `hw_pb_desc.dpm_ta_alloc`: written 2× from 0x0710 << 0x10 (1×, 0x168d-0x16a1);
+  0x071c << 0x10 (1×, 0x16d4-0x16e8).
+- `HWPBDESC+0x020` `hw_pb_desc.local_page_count`: written 2× from 0x0728 & 0xffff >> 0x0 (1×,
+  0x16d4-0x16e8); CR_DPM_PAGE_STATUS & 0xffff0000 >> 0x10 (1×, 0x168d-0x16a1).
+- `HWPBDESC+0x024` `hw_pb_desc.global_page_count`: written 2× from 0x072c & 0xffff0000 >> 0x10 (1×,
+  0x168d-0x16a1); 0x0730 & 0xffff >> 0x0 (1×, 0x16d4-0x16e8).
+- `HWPBDESC+0x028` `hw_pb_desc.ta_threshold`: read 1× (0x1665-0x1675). written 1× from
+  cmd_ta.ta_threshold (1×, 0x6f5-0x7b0). written to CR_DPM_TA_PAGE_THRESHOLD (1×, 0x1665-0x1675).
+- `HWPBDESC+0x02c` `hw_pb_desc.zls_threshold`: read 1× (0x1665-0x1675). written 1× from CMDTA+0x02c
+  (1×, 0x6f5-0x7b0). written to CR_DPM_ZLS_PAGE_THRESHOLD (1×, 0x1665-0x1675).
+- `HWPBDESC+0x030` `hw_pb_desc.global_threshold`: read 1× (0x1665-0x1675). written 1× from
+  cmd_ta.global_threshold (1×, 0x6f5-0x7b0). written to CR_DPM_TA_GLOBAL_LIST as & 0xffff | 0x10000
+  (1×, 0x1665-0x1675). arithmetic: & 0xffff (1×, 0x1665-0x1675); | 0x10000 (1×, 0x1665-0x1675).
+- `HWPBDESC+0x034` `hw_pb_desc.pds_threshold`: read 1× (0x1665-0x1675). written 1× from CMDTA+0x034
+  (1×, 0x6f5-0x7b0). written to CR_DPM_PDS_THRESHOLD (1×, 0x1665-0x1675).
 
 ### HWPERF_CB
 
@@ -380,8 +393,8 @@ HWRTDATA; `TA3D_CTL+0x0ac` → HWPERF_CB.
   (when hw_render_context.pending_renders_head == 0) (1×, 0x643-0x6f4). tested: == 0 (3×,
   0x1c4-0x599, 0x643-0x6f4, 0x80c-0x8e8); != 0 (1×, 0x11d-0x139). branches: != 0: to 0x137; == 0:
   runs sa15 =, sa16 =, st hw_render_context.run_node_prev_ta, st hw_render_context.run_node_next_ta
-  (1×, 0x11d-0x139); == 0: to 0x26c (1×, 0x1c4-0x599). guards: != 0: st
-  hw_render_details.render_list_prev_dev_vaddr <- hw_render_context.pending_renders_tail (2×,
+  (1×, 0x11d-0x139); == 0: to 0x26c; != 0: runs st hw_rt_data.state (1×, 0x1c4-0x599). guards: != 0:
+  st hw_render_details.render_list_prev_dev_vaddr <- hw_render_context.pending_renders_tail (2×,
   0x643-0x6f4, 0x80c-0x8e8); != 0: st hw_render_details.render_list_next_dev_vaddr <-
   cmd_ta.hw_render_details_dev_vaddr (1×, 0x80c-0x8e8); != 0: st
   hw_render_details.render_list_next_dev_vaddr <- ta3d_ctl.hw_render_details_ta (1×, 0x643-0x6f4);
@@ -510,7 +523,7 @@ HWRTDATA; `TA3D_CTL+0x0ac` → HWPERF_CB.
   clear: to 0xd56 (1×, 0xc23-0xdbe).
 - `HWRENDERDETAILS+0x0d8`: read 4× (0x643-0x6f4, 0x80c-0x8e8, 0xb50-0xc22 +1). used as a pointer:
   untyped (8×, 0x643-0x6f4, 0x80c-0x8e8, 0xb50-0xc22 +1).
-- `HWRENDERDETAILS+0x0dc`: read 2× (0x1c4-0x599, 0x105d-0x112a). used as a pointer: untyped (2×,
+- `HWRENDERDETAILS+0x0dc`: read 2× (0x1c4-0x599, 0x105d-0x112a). used as a pointer: to HWRTDATA (2×,
   0x1c4-0x599).
 - `HWRENDERDETAILS+0x0e0`: written 1× from CMDTA+0x03c (1×, 0x7b1-0x7fb).
 - `HWRENDERDETAILS+0x0e4` `hw_render_details.tq_3d_write_pending`: written 1× from CMDTA+0x074 (1×,
@@ -581,20 +594,21 @@ HWRTDATA; `TA3D_CTL+0x0ac` → HWPERF_CB.
 - `HWRTDATA+0x030` `hw_rt_data.rt_status_dev_vaddr`: read 4× (0x80c-0x8e8, 0x8e9-0xacd, 0xc23-0xdbe
   +1). used as a pointer: untyped (1×, 0x8e9-0xacd). arithmetic: imae (2×, 0xc23-0xdbe,
   0xdbf-0xe09).
-- `HWRTDATA+0x034` `hw_rt_data.state`: read 11× (0x606-0x642, 0x643-0x6f4, 0x6f5-0x7b0 +5). written
-  6× from ? (when CMDTA+0x004 bit 1 (GEOM_FLAGS.LAST_KICK) set) (2×, 0x643-0x6f4, 0x80c-0x8e8); 0x50
+- `HWRTDATA+0x034` `hw_rt_data.state`: read 12× (0x1c4-0x599, 0x606-0x642, 0x643-0x6f4 +6). written
+  7× from ? (when CMDTA+0x004 bit 1 (GEOM_FLAGS.LAST_KICK) set) (2×, 0x643-0x6f4, 0x80c-0x8e8); 0x50
   (1×, 0x1c4-0x599); ? (1×, 0x606-0x642); hw_rt_data.state & 0xfffff00f (1×, 0x8e9-0xacd);
-  hw_rt_data.state | 0x80 (1×, 0xb50-0xc22). stored to hw_rt_data.state as & 0xfffff00f (1×,
-  0x8e9-0xacd); hw_rt_data.state as | 0x80 (1×, 0xb50-0xc22). tested: bit 5 (2×, 0x112b-0x12db,
-  0x17be-0x17eb); bit 4 (1×, 0x6f5-0x7b0); bit 6 (1×, 0x80c-0x8e8); bit 8 (1×, 0x8e9-0xacd); |
-  cmd_ta.frag_flags & 0x2 (1×, 0x6f5-0x7b0). branches: bit 4 set: to 0x75e; clear: runs nothing,
-  then to 0x705 (1×, 0x6f5-0x7b0); bit 5 clear: to 0x1175; set: runs call 0x17ec, call 0x184c, call
-  0x1778 (1×, 0x112b-0x12db); bit 5 set: to 0x17eb; clear: runs W CR_DPM_CONTROL_BASE, W
-  CR_DPM_TASK_CONTROL, W CR_MTE_OTPM_BASE, W CR_MTE_OTPM_OP, W CR_EVENT_HOST_CLEAR (1×,
-  0x17be-0x17eb); bit 6 set: to 0x828; clear: runs call 0x187c (1×, 0x80c-0x8e8); |
-  cmd_ta.frag_flags & 0x2 != 0: to 0x80c (1×, 0x6f5-0x7b0). arithmetic: & 0x40 (2×, 0x6f5-0x7b0,
-  0x80c-0x8e8); & 0xfffff00f (1×, 0x8e9-0xacd); | 0x100 (1×, 0x606-0x642); | 0x20 (1×, 0x643-0x6f4);
-  | 0x80 (1×, 0xb50-0xc22).
+  hw_rt_data.state | 0x40 (1×, 0x1c4-0x599); hw_rt_data.state | 0x80 (1×, 0xb50-0xc22). stored to
+  hw_rt_data.state as & 0xfffff00f (1×, 0x8e9-0xacd); hw_rt_data.state as | 0x40 (1×, 0x1c4-0x599);
+  hw_rt_data.state as | 0x80 (1×, 0xb50-0xc22). tested: bit 5 (2×, 0x112b-0x12db, 0x17be-0x17eb);
+  bit 4 (1×, 0x6f5-0x7b0); bit 6 (1×, 0x80c-0x8e8); bit 8 (1×, 0x8e9-0xacd); | cmd_ta.frag_flags &
+  0x2 (1×, 0x6f5-0x7b0). branches: bit 4 set: to 0x75e; clear: runs nothing, then to 0x705 (1×,
+  0x6f5-0x7b0); bit 5 clear: to 0x1175; set: runs call 0x17ec, call 0x184c, call 0x1778 (1×,
+  0x112b-0x12db); bit 5 set: to 0x17eb; clear: runs W CR_DPM_CONTROL_BASE, W CR_DPM_TASK_CONTROL, W
+  CR_MTE_OTPM_BASE, W CR_MTE_OTPM_OP, W CR_EVENT_HOST_CLEAR (1×, 0x17be-0x17eb); bit 6 set: to
+  0x828; clear: runs call 0x187c (1×, 0x80c-0x8e8); | cmd_ta.frag_flags & 0x2 != 0: to 0x80c (1×,
+  0x6f5-0x7b0). arithmetic: & 0x40 (2×, 0x6f5-0x7b0, 0x80c-0x8e8); & 0xfffff00f (1×, 0x8e9-0xacd); |
+  0x100 (1×, 0x606-0x642); | 0x20 (1×, 0x643-0x6f4); | 0x40 (1×, 0x1c4-0x599); | 0x80 (1×,
+  0xb50-0xc22).
 
 ### HWTRANSFERCONTEXT
 
@@ -741,8 +755,8 @@ HWRTDATA; `TA3D_CTL+0x0ac` → HWPERF_CB.
 - `TA3D_CTL+0x074` `ta3d_ctl.hw_render_details_3d`: read 4× (0xecd-0xf44, 0xfd1-0x1034). written 2×
   from 0x0 (1×, 0x1c4-0x599); ? (1×, 0x112b-0x12db).
 - `TA3D_CTL+0x078` `ta3d_ctl.rt_index_3d`: read 1× (0xf45-0xf9c). written 1× from ? (1×,
-  0x112b-0x12db). tested: != ? (1×, 0xf45-0xf9c). branches: != ?: to 0xf8a (1×, 0xf45-0xf9c).
-  arithmetic: imae (2×, 0xf45-0xf9c); + 0x1 (1×, 0xf45-0xf9c).
+  0x112b-0x12db). tested: != ? (1×, 0xf45-0xf9c). arithmetic: imae (2×, 0xf45-0xf9c); + 0x1 (1×,
+  0xf45-0xf9c).
 - `TA3D_CTL+0x07c`: read 4× (0x5d4-0x605, 0xae8-0xb4f, 0xe74-0xeb3 +1). written 6× from
   TA3D_CTL+0x07c & ? (3×, 0x5d4-0x605, 0xae8-0xb4f, 0xe74-0xeb3); 0x0 (2×, 0x1c4-0x599);
   TA3D_CTL+0x07c | ? (1×, 0x1756-0x1764). stored to TA3D_CTL+0x07c as & ? (3×, 0x5d4-0x605,
@@ -796,8 +810,8 @@ HWRTDATA; `TA3D_CTL+0x0ac` → HWPERF_CB.
   ?: to 0x191b; != ?: runs call 0x168d, call 0x1864, call 0x170d, call 0x16a2, call 0x1864, then to
   0x191e (1×, 0x187c-0x1941); == ?: to 0x1924 (compound test) (1×, 0x187c-0x1941); ==
   hw_render_context.hw_pb_desc_dev_vaddr: to 0x955 (1×, 0x8e9-0xacd); 3 more. guards: == ?: st
-  ta3d_ctl.hw_pb_desc_ta <- 0x0 (1×, 0x1c4-0x599). used as a pointer: untyped (7×, 0x1665-0x1675,
-  0x168d-0x16a1).
+  ta3d_ctl.hw_pb_desc_ta <- 0x0 (1×, 0x1c4-0x599). used as a pointer: to HWPBDESC (7×,
+  0x1665-0x1675, 0x168d-0x16a1).
 - `TA3D_CTL+0x0bc` `ta3d_ctl.hw_pb_desc_3d`: read 10× (0x1c4-0x599, 0x8e9-0xacd, 0xc23-0xdbe +5).
   written 5× from 0x0 (2×, 0x1c4-0x599); 0x0 (when TA3D_CTL+0x080 == ta3d_ctl.hw_pb_desc_3d) (1×,
   0x1c4-0x599); 0x0 (when ta3d_ctl.hw_pb_desc_3d == ?) (1×, 0x1c4-0x599); ? (1×, 0x16e9-0x170c).
@@ -810,8 +824,8 @@ HWRTDATA; `TA3D_CTL+0x0ac` → HWPERF_CB.
   0x15ad (1×, 0x187c-0x1941); == ?: to 0x11ae; != ?: runs call 0x16d4, call 0x15bc, call 0x168d,
   call 0x16e9, call 0x15ad (1×, 0x112b-0x12db); == ?: to 0x1924; != ?: runs call 0x16e9 (1×,
   0x187c-0x1941); == ?: to 0x193c; != ?: runs call 0x16d4, call 0x16e9 (1×, 0x187c-0x1941); 3 more.
-  guards: == ?: st ta3d_ctl.hw_pb_desc_3d <- 0x0 (1×, 0x1c4-0x599). used as a pointer: untyped (4×,
-  0x16d4-0x16e8).
+  guards: == ?: st ta3d_ctl.hw_pb_desc_3d <- 0x0 (1×, 0x1c4-0x599). used as a pointer: to HWPBDESC
+  (4×, 0x16d4-0x16e8).
 - `TA3D_CTL+0x0c0`: read 2× (0x16a2-0x16d3, 0x16e9-0x170c).
 - `TA3D_CTL+0x0c4`: read 1× (0x17ec-0x184b). written 1× from ? (1×, 0x17ec-0x184b).
 - `TA3D_CTL+0x0c8` `ta3d_ctl.pid_ta`: written 1× from hw_render_context.pid (1×, 0x8e9-0xacd).
@@ -1160,17 +1174,19 @@ HWRTDATA; `TA3D_CTL+0x0ac` → HWPERF_CB.
 - `0x0618` `CR_DPM_TA_ALLOC_PAGE_TABLE_BASE`: written 1× from ? (1×, 0x16a2-0x16d3).
 - `0x061c` `CR_DPM_TA_ALLOC_FREE_LIST`: written 2× from 0x0700 (1×, 0x1676-0x168c); ? (1×,
   0x16a2-0x16d3).
-- `0x0620` `CR_DPM_TA_PAGE_THRESHOLD`: written 2× from ? (2×, 0x1665-0x1675, 0x16a2-0x16d3).
-- `0x0624` `CR_DPM_ZLS_PAGE_THRESHOLD`: read 2× (0x606-0x642, 0xb50-0xc22). written 4× from ? (3×,
-  0x606-0x642, 0x1665-0x1675, 0x16a2-0x16d3); CR_DPM_ZLS_PAGE_THRESHOLD + 0x20 (1×, 0xb50-0xc22).
-  written to CR_DPM_ZLS_PAGE_THRESHOLD as + 0x20 (1×, 0xb50-0xc22). arithmetic: + 0x20 (1×,
-  0xb50-0xc22); ima16 (1×, 0x606-0x642).
-- `0x0628` `CR_DPM_TA_GLOBAL_LIST`: read 2× (0xb50-0xc22). written 6× from ? (2×, 0x1665-0x1675,
-  0x16a2-0x16d3); 0x072c >> 0x10 | 0x10000 (1×, 0xb50-0xc22); CR_DPM_TA_GLOBAL_LIST & 0xffff + 0x10
-  | 0x10000 (1×, 0xb50-0xc22); TA3D_CTL+0x084 | 0x10000 (1×, 0xb50-0xc22); TA3D_CTL+0x094 | 0x10000
-  (1×, 0x606-0x642). written to CR_DPM_TA_GLOBAL_LIST as & 0xffff + 0x10 | 0x10000 (1×,
-  0xb50-0xc22). stored to TA3D_CTL+0x084 (1×, 0xb50-0xc22); TA3D_CTL+0x094 (1×, 0xb50-0xc22).
-  arithmetic: & 0xffff (1×, 0xb50-0xc22); + 0x10 (1×, 0xb50-0xc22); | 0x10000 (1×, 0xb50-0xc22).
+- `0x0620` `CR_DPM_TA_PAGE_THRESHOLD`: written 2× from ? (1×, 0x16a2-0x16d3);
+  hw_pb_desc.ta_threshold (1×, 0x1665-0x1675).
+- `0x0624` `CR_DPM_ZLS_PAGE_THRESHOLD`: read 2× (0x606-0x642, 0xb50-0xc22). written 4× from ? (2×,
+  0x606-0x642, 0x16a2-0x16d3); CR_DPM_ZLS_PAGE_THRESHOLD + 0x20 (1×, 0xb50-0xc22);
+  hw_pb_desc.zls_threshold (1×, 0x1665-0x1675). written to CR_DPM_ZLS_PAGE_THRESHOLD as + 0x20 (1×,
+  0xb50-0xc22). arithmetic: + 0x20 (1×, 0xb50-0xc22); ima16 (1×, 0x606-0x642).
+- `0x0628` `CR_DPM_TA_GLOBAL_LIST`: read 2× (0xb50-0xc22). written 6× from 0x072c >> 0x10 | 0x10000
+  (1×, 0xb50-0xc22); ? (1×, 0x16a2-0x16d3); CR_DPM_TA_GLOBAL_LIST & 0xffff + 0x10 | 0x10000 (1×,
+  0xb50-0xc22); TA3D_CTL+0x084 | 0x10000 (1×, 0xb50-0xc22); TA3D_CTL+0x094 | 0x10000 (1×,
+  0x606-0x642); hw_pb_desc.global_threshold & 0xffff | 0x10000 (1×, 0x1665-0x1675). written to
+  CR_DPM_TA_GLOBAL_LIST as & 0xffff + 0x10 | 0x10000 (1×, 0xb50-0xc22). stored to TA3D_CTL+0x084
+  (1×, 0xb50-0xc22); TA3D_CTL+0x094 (1×, 0xb50-0xc22). arithmetic: & 0xffff (1×, 0xb50-0xc22); +
+  0x10 (1×, 0xb50-0xc22); | 0x10000 (1×, 0xb50-0xc22).
 - `0x062c` `CR_DPM_STATE_BASE0`: read 1× (0xc23-0xdbe). written 6× from ? (3×, 0xc23-0xdbe,
   0x1778-0x17bd, 0x187c-0x1941); hw_rt_data.dpm_state_dev_vaddr (3×, 0x8e9-0xacd, 0xc23-0xdbe,
   0x17be-0x17eb).
@@ -1206,7 +1222,8 @@ HWRTDATA; `TA3D_CTL+0x0ac` → HWPERF_CB.
   0xc23-0xdbe, 0xdbf-0xe09).
 - `0x0660` `CR_DPM_3D_PAGE_COUNTS`: written 1× from ? (1×, 0x16e9-0x170c).
 - `0x0664`: written 2× from ? (2×, 0x16a2-0x16d3, 0x16e9-0x170c).
-- `0x0668` `CR_DPM_PDS_THRESHOLD`: written 2× from ? (2×, 0x1665-0x1675, 0x16a2-0x16d3).
+- `0x0668` `CR_DPM_PDS_THRESHOLD`: written 2× from ? (1×, 0x16a2-0x16d3); hw_pb_desc.pds_threshold
+  (1×, 0x1665-0x1675).
 - `0x0674` `CR_DPM_STATE_BASE1`: read 1× (0xc23-0xdbe). written 6× from ? (3×, 0xc23-0xdbe,
   0x1778-0x17bd, 0x187c-0x1941); hw_rt_data.dpm_state_dev_vaddr (3×, 0x8e9-0xacd, 0xc23-0xdbe,
   0x17be-0x17eb).
@@ -1220,29 +1237,35 @@ HWRTDATA; `TA3D_CTL+0x0ac` → HWPERF_CB.
   0x4 (1×, 0xb50-0xc22).
 - `0x06a0` `CR_DPM_FREE_CONTEXT`: written 1× from 0x1 (1×, 0x187c-0x1941).
 - `0x0700`: read 4× (0x1676-0x168c, 0x168d-0x16a1, 0x1765-0x1772). written to
-  CR_DPM_TA_ALLOC_FREE_LIST (1×, 0x1676-0x168c). tested: != 0x0700 (1×, 0x1765-0x1772). branches: !=
-  0x0700: to 0x1769 (loop) (1×, 0x1765-0x1772).
-- `0x070c`: read 1× (0x16d4-0x16e8).
+  CR_DPM_TA_ALLOC_FREE_LIST (1×, 0x1676-0x168c). stored to hw_pb_desc.current_stack_top (1×,
+  0x168d-0x16a1). tested: != 0x0700 (1×, 0x1765-0x1772). branches: != 0x0700: to 0x1769 (loop) (1×,
+  0x1765-0x1772).
+- `0x070c`: read 1× (0x16d4-0x16e8). stored to hw_pb_desc.current_stack_top (1×, 0x16d4-0x16e8).
 - `0x0710`: read 2× (0x1676-0x168c, 0x168d-0x16a1). written to CR_DPM_TA_ALLOC as << 0x10 (1×,
-  0x1676-0x168c). arithmetic: << 0x10 (2×, 0x1676-0x168c, 0x168d-0x16a1).
-- `0x071c`: read 1× (0x16d4-0x16e8). arithmetic: << 0x10 (1×, 0x16d4-0x16e8).
+  0x1676-0x168c). stored to hw_pb_desc.dpm_ta_alloc as << 0x10 (1×, 0x168d-0x16a1). arithmetic: <<
+  0x10 (2×, 0x1676-0x168c, 0x168d-0x16a1).
+- `0x071c`: read 1× (0x16d4-0x16e8). stored to hw_pb_desc.dpm_ta_alloc as << 0x10 (1×,
+  0x16d4-0x16e8). arithmetic: << 0x10 (1×, 0x16d4-0x16e8).
 - `0x0720` `CR_DPM_ABORT_STATUS_MTILE`: read 2× (0xae8-0xb4f, 0xb50-0xc22). stored to TA3D_CTL+0x09c
   (1×, 0xb50-0xc22); TA3D_CTL+0x0a0 as & 0x3fe0 >> 0x5 (1×, 0xb50-0xc22). arithmetic: & 0x3fe0 (2×,
   0xae8-0xb4f, 0xb50-0xc22); >> 0x5 (2×, 0xae8-0xb4f, 0xb50-0xc22); imae (1×, 0xae8-0xb4f).
 - `0x0724` `CR_DPM_PAGE_STATUS`: read 9× (0x6-0x97, 0x59a-0x5d3, 0x643-0x6f4 +5). written to
   CR_DPM_TA_PAGE_COUNTS as & 0xffff0000 >> 0x10 | ? (1×, 0x1676-0x168c). stored to
-  hw_pb_desc.allocated_page_count as & 0xffff0000 >> 0x10 (1×, 0x643-0x6f4). arithmetic: &
-  0xffff0000 (9×, 0x6-0x97, 0x59a-0x5d3, 0x643-0x6f4 +5); >> 0x10 (9×, 0x6-0x97, 0x59a-0x5d3,
-  0x643-0x6f4 +5); ima16 (1×, 0xb50-0xc22); | ? (1×, 0x1676-0x168c).
-- `0x0728`: read 5× (0x6-0x97, 0xc23-0xdbe, 0xe0a-0xe73 +2). arithmetic: & 0xffff (5×, 0x6-0x97,
-  0xc23-0xdbe, 0xe0a-0xe73 +2); >> 0x0 (5×, 0x6-0x97, 0xc23-0xdbe, 0xe0a-0xe73 +2).
+  hw_pb_desc.allocated_page_count as & 0xffff0000 >> 0x10 (1×, 0x643-0x6f4);
+  hw_pb_desc.local_page_count as & 0xffff0000 >> 0x10 (1×, 0x168d-0x16a1). arithmetic: & 0xffff0000
+  (9×, 0x6-0x97, 0x59a-0x5d3, 0x643-0x6f4 +5); >> 0x10 (9×, 0x6-0x97, 0x59a-0x5d3, 0x643-0x6f4 +5);
+  ima16 (1×, 0xb50-0xc22); | ? (1×, 0x1676-0x168c).
+- `0x0728`: read 5× (0x6-0x97, 0xc23-0xdbe, 0xe0a-0xe73 +2). stored to hw_pb_desc.local_page_count
+  as & 0xffff >> 0x0 (1×, 0x16d4-0x16e8). arithmetic: & 0xffff (5×, 0x6-0x97, 0xc23-0xdbe,
+  0xe0a-0xe73 +2); >> 0x0 (5×, 0x6-0x97, 0xc23-0xdbe, 0xe0a-0xe73 +2).
 - `0x072c`: read 6× (0xb50-0xc22, 0xdbf-0xe09, 0x1676-0x168c +1). written to CR_DPM_TA_GLOBAL_LIST
-  as >> 0x10 | 0x10000 (1×, 0xb50-0xc22). tested: - 0x2 (1×, 0xb50-0xc22). arithmetic: >> 0x10 (6×,
-  0xb50-0xc22, 0xdbf-0xe09, 0x1676-0x168c +1); & 0xffff0000 (5×, 0xb50-0xc22, 0xdbf-0xe09,
-  0x1676-0x168c +1); & 0xffff (1×, 0xb50-0xc22); << 0x10 (1×, 0x1676-0x168c); or (1×,
-  0x1676-0x168c); | 0x10000 (1×, 0xb50-0xc22).
-- `0x0730`: read 1× (0x16d4-0x16e8). arithmetic: & 0xffff (1×, 0x16d4-0x16e8); >> 0x0 (1×,
-  0x16d4-0x16e8).
+  as >> 0x10 | 0x10000 (1×, 0xb50-0xc22). stored to hw_pb_desc.global_page_count as & 0xffff0000 >>
+  0x10 (1×, 0x168d-0x16a1). tested: - 0x2 (1×, 0xb50-0xc22). arithmetic: >> 0x10 (6×, 0xb50-0xc22,
+  0xdbf-0xe09, 0x1676-0x168c +1); & 0xffff0000 (5×, 0xb50-0xc22, 0xdbf-0xe09, 0x1676-0x168c +1); &
+  0xffff (1×, 0xb50-0xc22); << 0x10 (1×, 0x1676-0x168c); or (1×, 0x1676-0x168c); | 0x10000 (1×,
+  0xb50-0xc22).
+- `0x0730`: read 1× (0x16d4-0x16e8). stored to hw_pb_desc.global_page_count as & 0xffff >> 0x0 (1×,
+  0x16d4-0x16e8). arithmetic: & 0xffff (1×, 0x16d4-0x16e8); >> 0x0 (1×, 0x16d4-0x16e8).
 - `0x0734`: read 1× (0xb50-0xc22). tested: bit 0 (1×, 0xb50-0xc22). branches: bit 0 set: to 0xbbf
   (1×, 0xb50-0xc22). arithmetic: & 0x3 (1×, 0xb50-0xc22).
 - `0x073c` `CR_DPM_3D_RT_INDEX`: written 2× from ? (1×, 0x112b-0x12db); TA3D_CTL+0x0a0 (1×,
@@ -1495,9 +1518,9 @@ On-chip copies of TA3D_CTL loaded at boot (hardware spec §11.1); the EDM also k
   (1×, 0x643-0x6f4). stored to hw_render_context.run_node_next_ta (1×, 0x8e9-0xacd). tested: != 0
   (2×, 0x8e9-0xacd, 0x1592-0x159d); == 0 (2×, 0x1c4-0x599); != ? (1×, 0x1c4-0x599). branches: != 0:
   to 0x1756 (1×, 0x1592-0x159d); != 0: to 0xaa9; == 0: runs sa16 = (1×, 0x8e9-0xacd); != ?: to
-  0x470; == ?: runs sa15 =, sa16 = (1×, 0x1c4-0x599); == 0: to 0x270; != 0: runs st HWPBDESC+0x000
-  (1×, 0x1c4-0x599). guards: != 0: st hw_render_context.run_node_prev_ta <- &HWRENDERCONTEXT+0x000
-  (1×, 0x8e9-0xacd). used as a pointer: to HWRENDERCONTEXT (1×, 0x8e9-0xacd).
+  0x470; == ?: runs sa15 =, sa16 = (1×, 0x1c4-0x599); == 0: to 0x270; != 0: runs st HWPBDESC+0x000,
+  st hw_rt_data.state (1×, 0x1c4-0x599). guards: != 0: st hw_render_context.run_node_prev_ta <-
+  &HWRENDERCONTEXT+0x000 (1×, 0x8e9-0xacd). used as a pointer: to HWRENDERCONTEXT (1×, 0x8e9-0xacd).
 - `sa16`: read 4× (0x11d-0x139, 0x1c4-0x599, 0x643-0x6f4 +1). written 10× from
   &HWRENDERCONTEXT+0x000 (indexed) (2×, 0x80c-0x8e8, 0x8e9-0xacd); ? (indexed) (2×, 0x1c4-0x599);
   COMMAND+0x00c (indexed) (2×, 0x11d-0x139, 0x1c4-0x599); hw_render_context.run_node_prev_ta
@@ -1538,7 +1561,7 @@ On-chip copies of TA3D_CTL loaded at boot (hardware spec §11.1); the EDM also k
 - `0xeb-0x102`: base of unknown structure 3
 - `0x1ac-0x1bd`: base of unknown structure 2
 - `0x1be-0x1c3`: base of unknown structure 1
-- `0x1c4-0x599`: base of unknown structure 66; branch on a predicate of unknown origin 42; register-
+- `0x1c4-0x599`: base of unknown structure 64; branch on a predicate of unknown origin 42; register-
   indexed memory operand 1; register-supplied register address 1
 - `0x59a-0x5d3`: branch on a predicate of unknown origin 1
 - `0x5d4-0x605`: branch on a predicate of unknown origin 2
@@ -1562,7 +1585,7 @@ On-chip copies of TA3D_CTL loaded at boot (hardware spec §11.1); the EDM also k
 - `0xe0a-0xe73`: branch on a predicate of unknown origin 3
 - `0xe74-0xeb3`: branch on a predicate of unknown origin 4
 - `0xecd-0xf44`: base of unknown structure 11; branch on a predicate of unknown origin 3
-- `0xf45-0xf9c`: base of unknown structure 22; branch on a predicate of unknown origin 8
+- `0xf45-0xf9c`: base of unknown structure 22; branch on a predicate of unknown origin 9
 - `0xf9d-0xfd0`: base of unknown structure 13; branch on a predicate of unknown origin 4
 - `0xfd1-0x1034`: base of unknown structure 13; branch on a predicate of unknown origin 5
 - `0x1035-0x105c`: branch on a predicate of unknown origin 3
@@ -1593,16 +1616,11 @@ On-chip copies of TA3D_CTL loaded at boot (hardware spec §11.1); the EDM also k
 - `0x1592-0x159d`: branch on a predicate of unknown origin 1
 - `0x159e-0x15ac`: branch on a predicate of unknown origin 1
 - `0x15bc-0x1664`: branch on a predicate of unknown origin 17
-- `0x1665-0x1675`: base of unknown structure 3; source of CR_DPM_PDS_THRESHOLD 1; source of
-  CR_DPM_TA_GLOBAL_LIST 1; source of CR_DPM_TA_PAGE_THRESHOLD 1; source of CR_DPM_ZLS_PAGE_THRESHOLD
-  1
-- `0x168d-0x16a1`: base of unknown structure 4
 - `0x16a2-0x16d3`: base of unknown structure 9; source of 0x0664 1; source of CR_DPM_PDS_THRESHOLD
   1; source of CR_DPM_TA_ALLOC 1; source of CR_DPM_TA_ALLOC_FREE_LIST 1; source of
   CR_DPM_TA_ALLOC_PAGE_TABLE_BASE 1; source of CR_DPM_TA_GLOBAL_LIST 1; source of
   CR_DPM_TA_PAGE_COUNTS 1; source of CR_DPM_TA_PAGE_THRESHOLD 1; source of CR_DPM_ZLS_PAGE_THRESHOLD
   1
-- `0x16d4-0x16e8`: base of unknown structure 4
 - `0x16e9-0x170c`: base of unknown structure 5; source of 0x0664 1; source of CR_DPM_3D 1; source of
   CR_DPM_3D_FREE_LIST 1; source of CR_DPM_3D_PAGE_COUNTS 1; source of CR_DPM_3D_PAGE_TABLE_BASE 1
 - `0x170d-0x173e`: 16-bit load 2; base of unknown structure 10; branch on a predicate of unknown

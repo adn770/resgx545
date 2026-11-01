@@ -1,0 +1,15 @@
+[[term]]
+id = "G0607"
+name = "MADD"
+status = "inferred"
+
+[[term.source]]
+term = "mux/arbiter/demux/decompression unit (MADD)"
+kind = "unit"
+sgx545 = "0x0004[13:12] (MADD0)"
+meaning = "per the SGX540's technical reference manual, the wrapper of the main cache: arbitrates the PDS, USSE and texture requests, caches them at level 0 and decompresses textures; one of two readings (Q048) [infer]"
+tier = "4"
+source = "ti-omap4430-trm"
+citation = "C0348"
+licence = "public-doc"
+evidence = "OCR text; describes the SGX540, the same Series5 architecture"

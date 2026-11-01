@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# The dataflow of the EDM microkernel, every structure word and register, with every pointer word
+# of kick3d.py's client layouts given: phase 10's record-backed words and those of the render
+# details, a PB block and the TA/3D control block's own address and job words. The same script
+# and analysis as firmware/edm-dataflow and firmware/edm-dataflow-3d, whose tables stay as the
+# earlier phases built their documents from them. Runs on this machine (campaign.py --target local);
+# $RESGX545_UKERNEL names the image and $RESGX545_DATA_PRIVATE the captured init info. The result
+# is a table of indices, offsets and names of structures and registers, not the firmware.
+kind = "script"
+name = "firmware-edm-dataflow-11"
+script = "edm-dataflow.sh"
+baseline = "none"

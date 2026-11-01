@@ -1224,11 +1224,12 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
 ### 2026-11-02
 
 - `E013` A forward dataflow over the whole EDM microkernel reaches all 6637 instructions in 70
-  routines from 13 entry points and 21 further roots, and records every structure word (342) it
-  reaches through a typed pointer, register (191) and secondary attribute (20) it touches; 248
-  branches, 392 memory accesses, 14 register addresses and 113 sources it cannot resolve are
+  routines from 13 entry points and 21 further roots, and records every structure word (346) it
+  reaches through a typed pointer, register (191) and secondary attribute (20) it touches; 249
+  branches, 379 memory accesses, 14 register addresses and 109 sources it cannot resolve are
   counted, not guessed.
-  *edm; RE, CAP; data: `firmware-edm-dataflow-3d`, `firmware-images`, `firmware-init-payload`.*
+  *edm; RE, CAP; data: `firmware-edm-dataflow-11`, `firmware-edm-dataflow-3d`, `firmware-images`,
+  `firmware-init-payload`.*
 - `E149` The firmware's HWPerf routine (from instruction 0x1979) appends a 100-byte record to the
   HWPerf circular buffer, in which it stores the nine registers 0x0044-0x0064 (CR_HWPERF_COUNTER0 to
   8) and then the eight registers 0x0e84, 0x0e88, 0x0e8c, 0x0e90, 0x0eb8, 0x0eb4, 0x0ebc and 0x0ec0,

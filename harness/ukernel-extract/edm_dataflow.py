@@ -24,10 +24,11 @@ ui32Data[1] (r7) typed where the kernel or the captures say what it holds (doc/s
 §5).
 Pointer words are typed where a record establishes them (GLOSSARY_POINTERS), by the pointer
 words of kick3d.py's kernel-side layouts and, iteratively, by what the firmware itself stores in
-a slot: a slot that only ever receives pointers to one structure holds that structure. The
-client layouts' pointer words (edmtrace.POINTS_AT) agree with the given ones; those the given
-words do not hold yet (LAYOUT_ONLY) wait for a rerun of the dataflow table, so the table this
-tool reproduces stays the one probes/firmware/edm-dataflow-3d.toml made.
+a slot: a slot that only ever receives pointers to one structure holds that structure. Every
+pointer word of the client layouts (edmtrace.POINTS_AT) is a given one, so every word edmtrace.py
+types, this tool types the same way (it types more: the given words no layout types and the
+inferred slots); the table this tool reproduces is the one probes/firmware/edm-dataflow-11.toml
+made.
 
 The analysis names nothing from the glossary, so its TSV is the same whatever the glossary
 says: subjects are offsets (0x0abc, CMDTA+0x0f8) and the details carry tokens, {R:0x012c} for a
@@ -62,7 +63,7 @@ USSE_DIS = ROOT / "tools" / "usse-dis" / "usse-dis"
 FW_MAGIC = b"SGX545FW"     # the .fw container's first word (tools/sgx_fw), not an image
 LABELS = (HERE / "sgx545_labels.r2", HERE / "sgx545_ukernel.r2")
 DATA = pathlib.Path(os.environ.get("RESGX545_DATA") or ROOT.parent / "resgx545-data")
-TSV = DATA / "firmware" / "edm-dataflow-3d" / "edm_dataflow.tsv"
+TSV = DATA / "firmware" / "edm-dataflow-11" / "edm_dataflow.tsv"
 DOC = ROOT / "doc" / "specs" / "edm_dataflow.md"
 
 IMM = edmtrace.IMM
@@ -77,16 +78,20 @@ SKIP_MAX = 32            # a forward branch over at most this many instructions 
 SA_SEEDS = {0: "TA3D_CTL", 1: "HOST_CTL", 2: "CCB_CTL", 22: "KCCB", 43: "HWPERF_CB"}
 
 # Pointer words -> the structure they point at, where a record establishes the word: TA3DCtl's
-# kernel CCB and HWPerf buffer words (E002), the transfer context's client CCB and its control
-# block (doc/specs/transfer.md §2.2: E018, E021) and its queue links (E015); the render
+# own address, kernel CCB and HWPerf buffer words (E002), the transfer context's client CCB and
+# its control block (doc/specs/transfer.md §2.2: E018, E021) and its queue links (E015); the render
 # context's client CCB and its control (E161), its PB descriptor (E159, E167), its pending and
 # ready render lists (E156, E165) and its TA and 3D queue links (E157, E165); the RT data's
 # render details (E159); the TA command's PB descriptor (E156), render details (E159),
 # destination sync list (E161, E164) and RT data (E158, E161); the PB descriptor's first block
-# (E200, E201). Every other pointer word is typed by what the firmware stores in it (see
-# analyze()).
+# (E200, E201); the render details' RT data (E163) and destination sync list (E164, E165); a PB
+# block's next block (E200, E201); the TA/3D control block's job words: the RT data owning each
+# DPM context slot (E158), the TA's command, RT data, render details and context (E158, E159),
+# the 3D's RT data and render details (E163) and the PB descriptor loaded in each pipe (E200).
+# Every other pointer word is typed by what the firmware stores in it (see analyze()).
 GLOSSARY_POINTERS = {
-    ("TA3D_CTL", 0x058): "KCCB", ("TA3D_CTL", 0x0ac): "HWPERF_CB",
+    ("TA3D_CTL", 0x000): "TA3D_CTL", ("TA3D_CTL", 0x058): "KCCB",
+    ("TA3D_CTL", 0x0ac): "HWPERF_CB",
     ("HWTRANSFERCONTEXT", 0x00c): "CCB_TQ", ("HWTRANSFERCONTEXT", 0x010): "CCB_CTL",
     ("HWTRANSFERCONTEXT", 0x0ac): "HWTRANSFERCONTEXT",
     ("HWTRANSFERCONTEXT", 0x0b0): "HWTRANSFERCONTEXT",
@@ -98,6 +103,13 @@ GLOSSARY_POINTERS = {
     ("CMDTA", 0x024): "HWPBDESC", ("CMDTA", 0x038): "HWRENDERDETAILS",
     ("CMDTA", 0x03c): "HWDEVICE_SYNC_LIST", ("CMDTA", 0x044): "HWRTDATA",
     ("HWPBDESC", 0x038): "PB_BLOCK",
+    ("HWRENDERDETAILS", 0x0dc): "HWRTDATA", ("HWRENDERDETAILS", 0x0e0): "HWDEVICE_SYNC_LIST",
+    ("PB_BLOCK", 0x00c): "PB_BLOCK",
+    **{("TA3D_CTL", o): "HWRTDATA" for o in (0x050, 0x054, 0x064, 0x070)},
+    ("TA3D_CTL", 0x060): "CMDTA",
+    **{("TA3D_CTL", o): "HWRENDERDETAILS" for o in (0x068, 0x074)},
+    ("TA3D_CTL", 0x06c): "HWRENDERCONTEXT",
+    **{("TA3D_CTL", o): "HWPBDESC" for o in (0x0b8, 0x0bc)},
 }
 # A base of an array plus a non-constant index is an element of it.
 ARRAYS = {"KCCB": "COMMAND", "CCB_TA": "CMDTA", "CCB_TQ": "TRANSFERCMD"}
@@ -113,18 +125,6 @@ HANDLERS = {0x0D4: ("POWER", None), 0x0EB: ("CONTEXTSUSPEND", None),
 # named by us over the records' offsets.
 KERNEL_SIDE = {"PVRSRV_BRIDGE_IN_DOKICK", "SGX_CCB_KICK", "SGXMKIF_CMDTA_SHARED",
                "SGXMKIF_HWDEVICE_SYNC_LIST"}
-# The client layouts' pointer words the given ones do not hold: the render details' RT data
-# (E163) and destination sync list (E164), a PB block's next block (E200, E201) and the TA/3D
-# control block's own address (E002) and job words (E158, E159, E163, E200). The dataflow infers
-# most of them from the firmware's stores; a rerun of the dataflow table takes them up as given.
-LAYOUT_ONLY = {("HWRENDERDETAILS", 0x0dc): "HWRTDATA",
-               ("HWRENDERDETAILS", 0x0e0): "HWDEVICE_SYNC_LIST",
-               ("PB_BLOCK", 0x00c): "PB_BLOCK", ("TA3D_CTL", 0x000): "TA3D_CTL",
-               **{("TA3D_CTL", o): "HWRTDATA" for o in (0x050, 0x054, 0x064, 0x070)},
-               ("TA3D_CTL", 0x060): "CMDTA",
-               **{("TA3D_CTL", o): "HWRENDERDETAILS" for o in (0x068, 0x074)},
-               ("TA3D_CTL", 0x06c): "HWRENDERCONTEXT",
-               **{("TA3D_CTL", o): "HWPBDESC" for o in (0x0b8, 0x0bc)}}
 
 
 def _layout_pointers(layouts=KERNEL_SIDE) -> dict[tuple[str, int], str]:
@@ -948,7 +948,7 @@ def render(rows: list[dict], glossary: edmtrace.Glossary | None = None) -> str:
     out = ["<!-- SPDX-" "License-Identifier: MIT -->",
            "<!-- SPDX-FileCopyrightText: 2026 Josep Torra -->",
            "# SGX545 EDM dataflow: every structure word and register", "",
-           "*Generated from `firmware/edm-dataflow-3d/edm_dataflow.tsv` (resgx545-data) by",
+           "*Generated from `firmware/edm-dataflow-11/edm_dataflow.tsv` (resgx545-data) by",
            "`harness/ukernel-extract/edm_dataflow.py`; do not edit.*", ""]
     out += _para(
         "A complete forward dataflow analysis of the EDM microkernel (the image is "
@@ -971,7 +971,7 @@ def render(rows: list[dict], glossary: edmtrace.Glossary | None = None) -> str:
         "\"branches\" gives the condition that takes the branch, its target and, for a short "
         "forward skip, what the other path runs. `?` is a value the analysis could not "
         "follow; such accesses are counted in §6, not guessed.")
-    out += _para(f"Evidence: {EVIDENCE} (the dataflow record; dataset firmware-edm-dataflow-3d).")
+    out += _para(f"Evidence: {EVIDENCE} (the dataflow record; dataset firmware-edm-dataflow-11).")
     out += ["## 1. Coverage", ""]
     unres = Counter(r["use"] for r in rows if r["kind"] == "unresolved")
     out += [f"- instructions: {meta.get('insns')}, all analysed ({meta.get('reached')} "
@@ -987,8 +987,9 @@ def render(rows: list[dict], glossary: edmtrace.Glossary | None = None) -> str:
     out += ["## 2. Pointer typing", ""]
     out += _para(
         "Given: a pointer word a record establishes (E002, E015, `doc/specs/transfer.md` "
-        "§2.2; E156-E161, E164, E165, E167, E200, E201 for the render context, the TA "
-        "command, the RT data and the PB descriptor), and the pointer words of kick3d.py's "
+        "§2.2; E156-E161, E163-E165, E167, E200, E201 for the render context, the TA "
+        "command, the render details, the RT data, the PB descriptor and block and the TA/3D "
+        "control block), and the pointer words of kick3d.py's "
         "kernel-side layouts; the list repeats the "
         "inferred structure words, which each later round takes as given. Inferred: a slot the "
         "firmware itself only ever fills with pointers to one structure.")
