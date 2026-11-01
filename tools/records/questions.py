@@ -9,6 +9,8 @@ A question is Markdown with TOML front matter between `+++` lines:
     id = "Q001"
     question = "what does the example bit do?"   # one line
     unit = "isp"
+    kind = "hw"                         # hw, fw or kernel (see below)
+    value = "medium"                    # hw only, optional: high, medium or low
     phase = 10                          # the roadmap phase it arose in
     evidence = ["E001"]                 # the records that bear on it so far
     terms = ["CR_X"]                    # glossary terms waiting on it
@@ -16,13 +18,25 @@ A question is Markdown with TOML front matter between `+++` lines:
 
     Prose: what is known, what was tried, and what experiment would settle it.
 
+The kind says whose behaviour the open part asks about. The work is hardware knowledge, so
+only an hw question is in the work queue: what the SGX545 does, read from registers, memory and
+images. An fw question asks about the closed firmware's or the closed driver's own behaviour,
+a kernel question about the design of our kernel driver; both stay open, parked. A question
+that mixes them is narrowed to its hardware part, or folded into the hardware question that
+holds it. The value (high, medium, low) says how much a simulator of the hardware loses
+without the answer; only an hw question has one.
+
 When a question is answered, its file is removed in the commit that adds the evidence record
 answering it, and its id is retired in RETIRED ("answered by E<nnn>"), never to be given
-again. Specs, evidence records and glossary terms cite a question as Q<nnn>; a retired one may
-not be cited, its answer is. doc/open_questions.md is generated from the files.
+again. A question folded into another (its hardware open part moved into that question's text,
+its evidence into that question's list) is retired as "folded into Q<nnn>": a fold is not an
+answer. Specs, evidence records and glossary terms cite a question as Q<nnn>; a retired one may
+not be cited, its answer or the question it was folded into is. doc/open_questions.md is
+generated from the files: the work queue (hw), then the parked fw and kernel questions.
 
     python3 tools/records/questions.py [--check]
-        check every question and write (--check: compare) doc/open_questions.md
+        check every question, the retirements (a fold needs an open target) and the Q<nnn>
+        citations of evidence, glossary and doc, and write (--check: compare) doc/open_questions.md
 """
 from __future__ import annotations
 
@@ -36,12 +50,18 @@ import evidence
 ROOT = evidence.ROOT
 DIR = ROOT / "questions"
 DOC = ROOT / "doc" / "open_questions.md"
-KEYS = ["id", "question", "unit", "phase", "evidence", "terms"]
-RETIRED: dict[str, str] = {     # id -> "answered by E<nnn>"
+KEYS = ["id", "question", "unit", "kind", "phase", "evidence", "terms"]
+KEYS_HW = KEYS[:4] + ["value"] + KEYS[4:]       # an hw question may carry a value
+KINDS = ("hw", "fw", "kernel")
+VALUES = ("high", "medium", "low")
+PARKED = {"fw": "closed firmware", "kernel": "kernel"}
+RETIRED: dict[str, str] = {     # id -> "answered by E<nnn>" or "folded into Q<nnn>"
     "Q015": "answered by E413", "Q018": "answered by E373", "Q022": "answered by E392",
     "Q035": "answered by E407", "Q056": "answered by E366", "Q077": "answered by E379",
     "Q079": "answered by E367", "Q097": "answered by E380", "Q007": "answered by E425",
     "Q061": "answered by E428", "Q009": "answered by E441", "Q041": "answered by E458",
+    "Q006": "folded into Q076", "Q083": "folded into Q076", "Q028": "folded into Q003",
+    "Q067": "folded into Q036", "Q105": "folded into Q036", "Q106": "folded into Q036",
 }
 NAME = re.compile(r"Q\d{3}-[a-z0-9]+(-[a-z0-9]+)*\.md")
 REF = re.compile(r"\bQ\d{3}\b")
@@ -77,14 +97,22 @@ def problems(path: pathlib.Path, evidence_ids: set[str], terms: set[str]) -> lis
         fm, body = evidence.parse(path)
     except (ValueError, tomllib.TOMLDecodeError) as e:
         return out + [str(e)]
-    if list(fm) != KEYS:
-        return out + [f"keys {list(fm)} != {KEYS}"]
+    if "kind" not in fm:
+        return out + ["kind is missing (hw, fw or kernel)"]
+    if list(fm) not in (KEYS, KEYS_HW):
+        return out + [f"keys {list(fm)} != {KEYS} (hw: {KEYS_HW})"]
     for k in ("id", "question", "unit"):
         if not isinstance(fm[k], str) or not fm[k].strip():
             out.append(f"{k} is not a string")
     for k in ("evidence", "terms"):
         if not isinstance(fm[k], list) or not all(isinstance(x, str) for x in fm[k]):
             out.append(f"{k} is not a list of strings")
+    if fm["kind"] not in KINDS:
+        out.append(f"kind {fm['kind']!r} is not one of {', '.join(KINDS)}")
+    elif "value" in fm and fm["kind"] != "hw":
+        out.append(f"value on a {fm['kind']} question: only an hw question has a value")
+    elif "value" in fm and fm["value"] not in VALUES:
+        out.append(f"value {fm['value']!r} is not one of {', '.join(VALUES)}")
     if not isinstance(fm["phase"], int) or isinstance(fm["phase"], bool) \
             or not 0 <= fm["phase"] <= 12:
         out.append(f"phase {fm['phase']!r} is not a roadmap phase (0-12)")
@@ -106,35 +134,63 @@ def problems(path: pathlib.Path, evidence_ids: set[str], terms: set[str]) -> lis
 
 
 def check_retired(retired: dict[str, str]) -> None:
-    """A retired question names the record that answered it."""
+    """A retired question names the record that answered it or the question it folded into."""
     for q, why in retired.items():
-        if not re.fullmatch(r"Q\d{3}", q) or not re.fullmatch(r"answered by E\d{3}", why):
-            raise ValueError(f"{q}: retired as {why!r}, not 'answered by E<nnn>'")
+        if not re.fullmatch(r"Q\d{3}", q) or not re.fullmatch(
+                r"answered by E\d{3}|folded into Q\d{3}", why):
+            raise ValueError(f"{q}: retired as {why!r}, not 'answered by E<nnn>' or "
+                             "'folded into Q<nnn>'")
+
+
+def fold_problems(retired: dict[str, str], open_ids: set[str]) -> list[str]:
+    """The folds whose target is not an open question."""
+    return [f"{q} {why}, which is not an open question" for q, why in retired.items()
+            if why.startswith("folded into ") and why[-4:] not in open_ids]
 
 
 def reference_problems(text: str, open_ids: set[str]) -> list[str]:
     """The Q<nnn> references of a text that do not name an open question."""
     out = []
     for q in dict.fromkeys(REF.findall(text)):
-        if q in RETIRED:
+        if q in RETIRED and RETIRED[q].startswith("folded into "):
+            out.append(f"{q} was {RETIRED[q]}: cite {RETIRED[q][-4:]}")
+        elif q in RETIRED:
             out.append(f"{q} is answered ({RETIRED[q]}): cite the answer")
         elif q not in open_ids:
             out.append(f"{q}: no such question")
     return out
 
 
+def line(q: dict) -> str:
+    tag = ", ".join([f"phase {q['phase']}"] + ([q["kind"], q["value"]] if q["kind"] == "hw"
+                                                  and "value" in q else [q["kind"]]))
+    refs = ", ".join(q["evidence"])
+    return f"- `{q['id']}` ({tag}): {q['question']}" + (f" ({refs})" if refs else "")
+
+
 def render(qs: list[dict]) -> str:
+    hw = [q for q in qs if q["kind"] == "hw"]
+    by = {v: sum(q.get("value") == v for q in hw) for v in VALUES}
     out = ["<!-- SPDX-" "License-Identifier: MIT -->",
            "<!-- SPDX-FileCopyrightText: 2026 Josep Torra -->",
            "# Open questions", "",
-           "*Generated from `questions/` by `tools/records/questions.py`; do not edit.*", ""]
-    for unit in sorted({q["unit"] for q in qs}):
-        out += [f"## {unit}", ""]
-        for q in sorted((q for q in qs if q["unit"] == unit), key=lambda q: q["id"]):
-            refs = ", ".join(q["evidence"])
-            out.append(f"- `{q['id']}` (phase {q['phase']}): {q['question']}"
-                       + (f" ({refs})" if refs else ""))
-        out.append("")
+           "*Generated from `questions/` by `tools/records/questions.py`; do not edit.*", "",
+           f"{len(qs)} open: {len(hw)} hw (high {by['high']}, medium {by['medium']}, "
+           f"low {by['low']}, unrated {sum('value' not in q for q in hw)}), "
+           + ", ".join(f"{sum(q['kind'] == k for q in qs)} {k}" for k in PARKED) + ".", "",
+           "## Work queue: hardware", ""]
+    for unit in sorted({q["unit"] for q in hw}):
+        out += [f"### {unit}", ""]
+        out += [line(q) for q in sorted((q for q in hw if q["unit"] == unit),
+                                        key=lambda q: q["id"])] + [""]
+    out += ["## Parked: not hardware knowledge", ""]
+    for kind, name in PARKED.items():
+        rows = [q for q in qs if q["kind"] == kind]
+        out += [f"### {name}", ""]
+        for unit in sorted({q["unit"] for q in rows}):
+            out += [f"#### {unit}", ""]
+            out += [line(q) for q in sorted((q for q in rows if q["unit"] == unit),
+                                            key=lambda q: q["id"])] + [""]
     return "\n".join(out).rstrip() + "\n"
 
 
@@ -149,6 +205,21 @@ def main(argv: list[str] | None = None) -> int:
     for p in misplaced():
         print(f"{p.relative_to(ROOT)}: not questions/<unit>/<name>.md")
         bad += 1
+    try:
+        check_retired(RETIRED)
+    except ValueError as e:
+        print(f"RETIRED: {e}")
+        bad += 1
+    open_ids = {p.name[:4] for p in files()}
+    for msg in fold_problems(RETIRED, open_ids):
+        print(f"RETIRED: {msg}")
+        bad += 1
+    for d, pat in (("evidence", "*/*.md"), ("glossary", "*/*.toml"), ("doc", "**/*.md")):
+        for p in sorted((ROOT / d).glob(pat)):
+            if p != DOC:
+                for msg in reference_problems(p.read_text(), open_ids):
+                    print(f"{p.relative_to(ROOT)}: {msg}")
+                    bad += 1
     text = render([parse(p) for p in files()])
     if "--check" in a:
         return 1 if bad or not DOC.exists() or DOC.read_text() != text else 0

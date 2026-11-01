@@ -2,6 +2,8 @@
 id = "Q017"
 question = "why does g19 read 0x1a as a store's source but 0 through a mov and as the pixel?"
 unit = "usse"
+kind = "hw"
+value = "low"
 phase = 6
 evidence = ["E085", "E086", "E372"]
 terms = ["REGTYPE.FPCONSTANT", "USE.NUM_HW_SPECIAL_CONSTS"]

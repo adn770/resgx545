@@ -2,6 +2,8 @@
 id = "Q010"
 question = "what clears the colour-space words between jobs, given that a copy that does not load set 0 converts with the last loaded words, and the first job of a session after hung jobs converts with zeros?"
 unit = "texture"
+kind = "hw"
+value = "low"
 phase = 6
 evidence = ["E037", "E039", "E046", "E271", "E399"]
 terms = ["transfer_cmd.load_yuv_csc", "TEXFORMAT", "T1.TEXFORMAT"]

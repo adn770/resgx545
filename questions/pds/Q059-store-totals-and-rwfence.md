@@ -2,6 +2,8 @@
 id = "Q059"
 question = "why do PDS stores totalling 2, 3 or 4 dwords fault the job, and why does an rwfence after a store, or after a faulted job, touch page 0?"
 unit = "pds"
+kind = "hw"
+value = "low"
 phase = 11
 evidence = ["E143", "E144", "E145", "E395"]
 terms = ["CR_BIF_FAULT"]

@@ -66,7 +66,7 @@ exactly right after base-then-flag-zero-2, whose recovery had failed.
   after the last faulted run too [HW], so the effect is probably not specific to the flagged build
   over zeros [infer]; whether the failed recoveries are part of it is not shown.
 
-**What it does not show.** Whether the settle routine waits for the other pipe to go idle (Q067's
+**What it does not show.** Whether the settle routine waits for the other pipe to go idle (Q036's
 second half, with the timelines of E448 still unread for it); why a flagged build over zeros faults
 after a faulted run.
 

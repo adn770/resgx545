@@ -1,9 +1,11 @@
 +++
 id = "Q045"
-question = "what sets the fields of register 0x0740 that the TA kick turns into DPM store and load tasks (a host write reads back 0: E456), and does a load task read back the macrotile lists a partial render stores in the RT data's state page?"
+question = "what sets the fields of register 0x0740 that the TA kick turns into DPM store and load tasks (a host write reads back 0: E456), does a load task read back the macrotile lists a partial render stores in the RT data's state page, and what accesses the state page (0x20003000 for a context of up to 64x64) when a render follows a kept owner's gone context?"
 unit = "dpm"
+kind = "hw"
+value = "high"
 phase = 11
-evidence = ["E158", "E256", "E310", "E312", "E456", "E464"]
+evidence = ["E158", "E256", "E310", "E312", "E456", "E458", "E462", "E464"]
 terms = ["CR_DPM_TASK_STATE", "CR_DPM_TASK_CONTROL", "CR_DPM_STATE_CONTEXT_ID"]
 +++
 
@@ -43,3 +45,16 @@ To settle it: sample 0x0740 with regtimeline during the TA of a render that over
 on the same context kicked again with command flag 0x8; poke the state page between the partial
 render and the final render (a kernel switch that fills a page at the final render's kick) and
 compare the image; read what the 18 dwords count.
+
+Folded in 11.21 from Q106 (retired into Q036 and this question; a fold is not an answer). A render
+on a second context faults at page 0x20003000 (BIF fault status `0x90004` at `0x200030c1` through
+list 1, 6 of 6 runs) after the first context, which kept the DPM owner with render flag bit 3, is
+closed, and is exact with both contexts alive (E458, E462); the close leaves the kept words in place
+(TA3DCtl dwords 20 and 25 both the first context's RT data + 0x18). For a context of up to 64x64
+that page is the TA data's DPM state page (E310), the page this question's store and load tasks use.
+Open: what accesses page 0x20003000 (the slot step storing the kept owner's state through the second
+context's directory, or reading the first's), and whether the fault needs the closed context's
+memory to be freed or only the context to be gone. To settle it: the same case with the first
+context's memory kept (a kernel switch that does not free it, or a third context holding the VM),
+and the second context's state page poked or filled before the render. The owner words themselves
+are in Q036.

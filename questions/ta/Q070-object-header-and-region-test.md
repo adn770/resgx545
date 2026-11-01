@@ -2,6 +2,8 @@
 id = "Q070"
 question = "what do the TA object's format word bits 15:8 and above and its set masks select beyond the settings seen, and does the fitted region test hold for lines and points?"
 unit = "ta"
+kind = "hw"
+value = "high"
 phase = 11
 evidence = ["E176", "E177", "E180", "E181", "E185", "E306", "E307", "E308", "E414"]
 terms = ["PB_OBJ.PDS_WORDS", "PB_OBJ.SET_MASKS", "PB_OBJ.FORMAT", "CSTREAM.PRIM_TILES",

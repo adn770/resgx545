@@ -2,6 +2,8 @@
 id = "Q081"
 question = "what does CR_DPM_REG_074C bit 8 make the DPM read or write near offset 0x6010 of the context's TA-data space, and what fixes that place?"
 unit = "dpm"
+kind = "hw"
+value = "medium"
 phase = 11
 evidence = ["E203", "E206", "E313", "E362", "E447"]
 terms = ["CR_DPM_REG_074C", "cmd_ta.dpm_reg_074c"]

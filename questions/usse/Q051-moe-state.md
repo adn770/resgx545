@@ -2,6 +2,8 @@
 id = "Q051"
 question = "what state do smoa, smbo, smr, imo and setfc set in the MOE, and what does moest return, beyond the smlsi increments the probes pinned?"
 unit = "usse"
+kind = "hw"
+value = "medium"
 phase = 11
 evidence = ["E087", "E097", "E105", "E109", "E294", "E296", "E369", "E370"]
 terms = []

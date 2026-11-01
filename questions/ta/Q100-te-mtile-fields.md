@@ -2,6 +2,8 @@
 id = "Q100"
 question = "what do the fields of CR_TE_MTILE1 and CR_TE_MTILE2 mean, given that flips of their bits change the image or fault the job at 256x256 and 1024x768?"
 unit = "ta"
+kind = "hw"
+value = "high"
 phase = 11
 evidence = ["E247", "E257", "E407"]
 terms = ["CR_TE_MTILE1", "CR_TE_MTILE2", "cmd_ta.te_mtile1", "cmd_ta.te_mtile2"]

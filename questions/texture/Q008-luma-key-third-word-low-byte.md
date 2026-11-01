@@ -2,6 +2,8 @@
 id = "Q008"
 question = "how is the luma compared at the luma key's high cut, where five colours with the weighted sum 1000 to 1016 above the cut are outside the band while others up to 1016 above are inside, and what do bits 31:16 of the alpha word and the offset's precision do?"
 unit = "texture"
+kind = "hw"
+value = "low"
 phase = 6
 evidence = ["E039", "E275", "E426"]
 terms = ["CR_TPU_LUMA_KEY_RG", "CR_TPU_LUMA_KEY_B_OFFSET", "CR_TPU_LUMA_KEY_ALPHA", "T0.ALPHA_FROM_LUMA_KEY", "transfer_cmd.load_tpu_luma_key"]

@@ -2,6 +2,8 @@
 id = "Q016"
 question = "which part of the smoa, smbo and smr sequences that fault the job makes it fault: the moest selectors, the changed state or the mirror mode?"
 unit = "usse"
+kind = "hw"
+value = "medium"
 phase = 6
 evidence = ["E087", "E369", "E370"]
 terms = []

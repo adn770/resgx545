@@ -51,7 +51,7 @@ E323), is replaced by the poke and stays through the next render.
 **What it does not show.** The dataflow's 379 accesses through a base of unknown origin; a context
 switch in the middle of a TA (no run interrupts a TA, Q068's route); contexts of different VMs (the
 sharing needs one directory); a PB swap while the first context still has its renders to do; the
-DPM timelines kept in the data were not analysed for the settle routine's wait (Q067's second half).
+DPM timelines kept in the data were not analysed for the settle routine's wait (Q036's second half).
 
 **Provenance.** The campaign read the srcversion of the installed module file (modinfo), not of
 the loaded module. The run printed E431D4FEB0F36E3C337AD50 for the installed file; that it was

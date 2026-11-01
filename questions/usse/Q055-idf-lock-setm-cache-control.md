@@ -2,6 +2,8 @@
 id = "Q055"
 question = "what do idf's modes other than bif, lock and release, setm and the cache-control operands do?"
 unit = "usse"
+kind = "hw"
+value = "medium"
 phase = 11
 evidence = ["E088", "E098", "E099", "E103", "E107", "E110", "E117", "E375"]
 terms = []

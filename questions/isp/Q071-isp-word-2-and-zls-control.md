@@ -2,6 +2,8 @@
 id = "Q071"
 question = "how does the ISP use the ZLS control word's bits in a render with depth or stencil buffers?"
 unit = "isp"
+kind = "hw"
+value = "high"
 phase = 11
 evidence = ["E057", "E169", "E216", "E228", "E284", "E411"]
 terms = ["CR_ISP_ZLSCTL", "CR_ISP_BGOBJVALS.STENCIL", "ISP2"]

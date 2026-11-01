@@ -2,6 +2,8 @@
 id = "Q099"
 question = "what do bits 25, 8 and 19:12 of 0x04c4 (render details dword 18) hold, which move with a texture target and the parameter buffer's size in the closed driver's frames?"
 unit = "render"
+kind = "hw"
+value = "low"
 phase = 11
 evidence = ["E326", "E408"]
 terms = ["CR_ISP_CTL"]

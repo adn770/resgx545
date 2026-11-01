@@ -2,6 +2,8 @@
 id = "Q068"
 question = "do the twelve TA register words that are zero in our jobs save and resume the state of an interrupted TA?"
 unit = "ta"
+kind = "hw"
+value = "medium"
 phase = 11
 evidence = ["E054", "E056", "E182", "E183", "E245"]
 terms = ["CR_REG_0324", "CR_TE_REG_02A8"]

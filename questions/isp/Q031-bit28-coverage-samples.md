@@ -2,6 +2,8 @@
 id = "Q031"
 question = "why does ISP word 0 bit 28 hang a multisampled render, when single-sampled it widens coverage to the union of eight samples?"
 unit = "isp"
+kind = "hw"
+value = "medium"
 phase = 10
 evidence = ["E214", "E215", "E278", "E416"]
 terms = ["CR_ISP_SAMPLE_POS", "CR_ISP_MULTISAMPLECTL", "programmable sample positions", "ISP0"]

@@ -2,6 +2,8 @@
 id = "Q072"
 question = "what does bit 1 of CR_ISP_REG_04DC do to a punch-through pass, when it hangs every one tried and changes no opaque or translucent pass?"
 unit = "isp"
+kind = "hw"
+value = "low"
 phase = 11
 evidence = ["E068", "E073", "E213", "E222", "E290", "E416"]
 terms = ["CR_ISP_REG_04DC"]

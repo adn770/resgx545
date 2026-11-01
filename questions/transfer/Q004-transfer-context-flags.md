@@ -2,6 +2,7 @@
 id = "Q004"
 question = "can a transfer context whose flag bit 4 is set be released, which agent but the host sets flag bits 1 and 4, and which priorities above 0 have queue slots of their own (a priority 1 or 2 hangs a job and 3 faults it: E455)?"
 unit = "transfer"
+kind = "fw"
 phase = 4
 evidence = ["E015", "E455"]
 terms = ["hw_transfer_context.fw_com_ctx_flags", "hw_transfer_context.priority"]

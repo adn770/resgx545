@@ -58,11 +58,11 @@ renders: 24 of 24 exact (0 wrong inside, outside and at the edges, guard 0). No 
 - With the first context gone, the same second render faults at page 0x20003000 (6 of 6) and the
   close does not clear the words. That page is, for a context of up to 64x64, its TA data's DPM
   state page (E310); that the slot step stores the kept owner of a context whose memory is gone to
-  that page is [infer] (Q106).
+  that page is [infer] (Q045).
 
-**What it does not show.** Why the render faults (Q106), a third context, a first context closed
+**What it does not show.** Why the render faults (Q045), a third context, a first context closed
 with its render still queued, and the DPM registers beside the words (read after the second render
-only, and not compared; Q106).
+only, and not compared; Q036).
 
 **Provenance.** linux fork commit ea5482bc59a6 with the debug option on, module srcversion
 9A7BCDC4FC2A2166A409EEA (the loaded module, read from /sys/module, equal to the installed file's

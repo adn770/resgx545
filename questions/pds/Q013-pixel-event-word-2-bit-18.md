@@ -2,6 +2,8 @@
 id = "Q013"
 question = "what does bit 18 of the copy's pixel-event data word 2 do, when it leaves the copy unchanged and changes a few pixels of the fill and the triangle?"
 unit = "pds"
+kind = "hw"
+value = "low"
 phase = 6
 evidence = ["E043", "E046", "E388"]
 terms = ["PIXEL_EVENT.END_OF_TILE"]

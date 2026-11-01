@@ -2,6 +2,8 @@
 id = "Q080"
 question = "what do the USSE words no form decodes (classes 2, 22 and 26) do: which stop the stores after them, and which write registers?"
 unit = "usse"
+kind = "hw"
+value = "low"
 phase = 11
 evidence = ["E297", "E368"]
 terms = []

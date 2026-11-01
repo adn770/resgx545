@@ -2,6 +2,8 @@
 id = "Q104"
 question = "do T0's maximum level, LOD bias and MIPFILTER read a non-square chain (32x16) as they read the square ones, and how many levels does such a chain have?"
 unit = "texture"
+kind = "hw"
+value = "medium"
 phase = 11
 evidence = ["E276", "E441"]
 terms = ["T0.MAX_LEVEL", "T0.BITS26_21", "T0.MIPFILTER"]

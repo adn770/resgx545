@@ -2,6 +2,7 @@
 id = "Q029"
 question = "what does the render context's own cleanup wait for once its RT data set is cleaned up (the PB is released by the PB step of the donor's cleanup: E449)?"
 unit = "render"
+kind = "fw"
 phase = 9
 evidence = [
     "E148", "E023", "E156", "E164", "E289", "E303", "E304", "E314", "E315", "E318", "E354",

@@ -2,6 +2,7 @@
 id = "Q084"
 question = "how does the closed driver turn its PBSize app hint into the parameter buffer's page count and thresholds, given 1 MiB and 8 MiB both give 98 pages and 768 KiB fails?"
 unit = "dpm"
+kind = "fw"
 phase = 11
 evidence = ["E327"]
 terms = ["hw_pb_desc.ta_threshold", "hw_pb_desc.zls_threshold", "hw_pb_desc.global_threshold", "hw_pb_desc.pds_threshold", "pb_block.page_count"]

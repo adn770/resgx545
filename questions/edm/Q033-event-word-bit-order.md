@@ -1,7 +1,9 @@
 +++
 id = "Q033"
-question = "does the event word PDS #13 hands the EDM as pa1 carry CR_EVENT_STATUS bits in reverse order, and which events set its bits 8 and 19, that no handler acknowledges?"
+question = "does the event input the hardware hands a PDS event program (ir1, seen as pa1 by the event task) carry CR_EVENT_STATUS bits in reverse order, and which hardware events set its bits 8 and 19?"
 unit = "edm"
+kind = "hw"
+value = "medium"
 phase = 10
 evidence = ["E155", "E146", "E154"]
 terms = ["CR_EVENT_STATUS", "CR_EVENT_HOST_CLEAR", "CR_EVENT_STATUS.DPM_INIT_END", "CR_EVENT_STATUS.DPM_STATE_STORE", "CR_EVENT_STATUS.DPM_CONTROL_LOAD", "CR_EVENT_STATUS.SW_EVENT", "CR_EVENT_KICK"]
@@ -29,3 +31,11 @@ dword, then read that dword through the debugfs files after single events: a hos
 buffer. A kick that reads as bit 8 and a TA finish as bit 9 confirm the reversed order; bits 14
 and 13 confirm E146's. Sample `CR_EVENT_STATUS` around the same events to name the status bits
 that set `pa1` bits 8 and 19, and whether bit 19's status bit stays set without an acknowledgement.
+
+Narrowed in 11.21 to the hardware part. Which events the closed firmware's handlers acknowledge, and
+what they do with bits 8 and 19, are the firmware's own behaviour and not the target; they stay
+above as what is known. Open: the order and positions of the status bits in the word the hardware
+passes to the PDS as its event input (the handlers' acknowledgements fit status bit 22 minus the
+`pa1` bit [infer], and no run has fed the hardware an event while reading the word), and which
+hardware events set input bits 8 and 19. Settling it needs a firmware build that stores the word
+(the first step of the run above); the status bits as the host sees them, event by event, are Q111.

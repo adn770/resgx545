@@ -2,6 +2,8 @@
 id = "Q012"
 question = "what float formats are pack modes 22 and 34, given that both read o0 as an IEEE single (sign, NaN and exponent) and store it at some of the triangle's dwords while the rest change with the job before?"
 unit = "pbe"
+kind = "hw"
+value = "medium"
 phase = 6
 evidence = ["E032", "E270", "E387", "E406", "E429"]
 terms = ["SIDEBAND.PACKMODE", "PACKMODE"]

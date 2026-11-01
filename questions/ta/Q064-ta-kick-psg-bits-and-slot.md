@@ -2,6 +2,8 @@
 id = "Q064"
 question = "what does the region header mark that CR_TE_PSG bit 21 makes the TA write mean to the 3D, and is bit 1 of CR_DPM_STATE_CONTEXT_ID the 3D's DPM slot as bit 2 is the TA's?"
 unit = "ta"
+kind = "hw"
+value = "medium"
 phase = 11
 evidence = ["E158", "E172", "E305", "E409", "E424"]
 terms = ["CR_TE_PSG", "CR_DPM_STATE_CONTEXT_ID", "REGION_HDR.FLAGS"]

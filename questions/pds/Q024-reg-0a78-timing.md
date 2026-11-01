@@ -2,6 +2,8 @@
 id = "Q024"
 question = "does CR_PDS_REG_0A78 change timing, when two of its values were slower in one timing run?"
 unit = "pds"
+kind = "hw"
+value = "low"
 phase = 7
 evidence = ["E141", "E045", "E396"]
 terms = ["CR_PDS_REG_0A78"]

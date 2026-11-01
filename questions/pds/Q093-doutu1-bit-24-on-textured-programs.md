@@ -2,6 +2,8 @@
 id = "Q093"
 question = "does DOUTU1 bit 24 (wait for iterations) hang a job under the fetch wait, as it did in 4 of 126 jobs with both bits in colour and coordinate shapes, and why does the closed driver set it with bit 25?"
 unit = "pds"
+kind = "hw"
+value = "medium"
 phase = 11
 evidence = ["E345", "E364", "E436", "E454", "E459", "E460"]
 terms = ["DOUTU1.WAIT_ITER", "DOUTU1.WAIT_FETCH"]

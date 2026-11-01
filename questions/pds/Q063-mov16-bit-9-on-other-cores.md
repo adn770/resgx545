@@ -2,6 +2,8 @@
 id = "Q063"
 question = "what does bit 9 of a mov16 or mov32 special source select on the rest of the SGX family, when on SGX545 it only makes mov16 read 0?"
 unit = "pds"
+kind = "hw"
+value = "low"
 phase = 11
 evidence = ["E128"]
 terms = []

@@ -192,12 +192,13 @@ the TA/3D control block, which the firmware writes in that window and which ever
 of the device shares. `VM_MAP` cannot reach these addresses, but the client's GPU programs can
 (section 11). The block cannot be mapped read-only: with it so (the debug switch
 `alias_ta3d_ro`) the first kick faults on its page before the parameter buffer load writes it,
-and the job stalls (E319, one run). Whether a per-VM copy would do is Q006.
+and the job stalls (E319, one run). Whether a per-VM copy would do is the kernel's design, not
+hardware knowledge; the hardware part, which directory the writer translates through, is Q076.
 
 Transfers are different: a fill aimed at a page the context's directory maps read-only writes
 nothing and faults (E021).
 
-Evidence: E021, E023, E148, E319; Q006.
+Evidence: E021, E023, E148, E319; Q076.
 
 ## 6. Buffer objects and VM contexts
 
@@ -586,7 +587,7 @@ reads the directory back from it (E360).
 E024 does not show the timeout path, other kinds of fault or the core's behaviour without
 recovery; every fault in its run was recovered.
 
-Evidence: E021, E024, E317, E318, E319, E354, E355, E356, E360; Q003, Q028.
+Evidence: E021, E024, E317, E318, E319, E354, E355, E356, E360; Q003.
 
 ## 11. Security model
 
@@ -627,11 +628,11 @@ What it does not hold, and the reason the gate exists:
 - a render client's VM maps the firmware read-only, so its programs read the firmware's code
   and data, and writes the TA/3D control block, which all render contexts share. A client can
   corrupt that block, stalling or misdirecting other clients' renders; the block cannot simply be
-  mapped read-only, since the firmware writes it through the client's directory (E319, Q006);
+  mapped read-only, since the firmware writes it through the client's directory (E319, Q076);
 - a client's programs can write their own parameter buffer and page table (section 5.2);
 - one client can hold the GPU for about a second before the timeout ends it (section 10).
 
-Evidence: E021, E024, E049, E050, E090, E319; Q006.
+Evidence: E021, E024, E049, E050, E090, E319; Q076.
 
 ## 12. UAPI header
 
@@ -644,17 +645,18 @@ checks of sections 2, 6 and 8.
 
 ## 13. Open questions
 
-- Q028: which of the recovery's reset steps a later job needs, now that a held fault is seen to
-  stop the firmware (section 10);
 - Q029: what the render context's own cleanup waits for once its RT data set is cleaned up,
   and which cleanup releases the parameter buffer (sections 8.5 and 10; a held job's cleanup now
   completes after the reset that blames it, E355);
-- Q003: which event a bus-interface fault raises, and which requester each fault bit of the
-  interrupt status names;
+- Q003: which event a bus-interface fault raises, which requester each fault bit of the
+  interrupt status names, and what clears a latched fault while leaving the bus usable (the part
+  of the recovery's reset steps that is hardware; which steps the kernel takes is its design,
+  section 10);
 - Q004: how a transfer context with flag bit 4 set is released, who sets bits 1 and 4, and what the
   queue slots behind a priority above 0 are (the interface accepts only priority 0);
-- Q006: whether a render client's VM can carry its own copy of the control block instead of a
-  writable mapping of the device's (section 5.3).
+- Q076: which pages each bus-interface requestor of a render needs in the directory it
+  translates through, and which of the 16 directory lists each uses (section 5.3). Whether a
+  render client's VM can carry its own copy of the control block is the kernel's design.
 
 The kernel follow-ups the 11.10 runs listed are done in linux fork commits 30 and 31 (b5a86838ae59,
 the laptop's module since 11.12) and checked on the laptop:

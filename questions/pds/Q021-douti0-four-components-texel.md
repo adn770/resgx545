@@ -2,6 +2,8 @@
 id = "Q021"
 question = "with 4 components (DOUTI0 bits 23:22 = 3) where does the texel land, given pa3 reads 1.0 on most pixels?"
 unit = "pds"
+kind = "hw"
+value = "medium"
 phase = 7
 evidence = ["E132", "E420"]
 terms = ["DOUTI0.ATTR_SOURCE", "DOUTU1.WAIT_FETCH"]

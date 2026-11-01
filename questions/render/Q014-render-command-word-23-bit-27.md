@@ -2,6 +2,8 @@
 id = "Q014"
 question = "why does a background object whose first PDS word has a high bit wrong render part or all of the first 32x16 tile before the job faults?"
 unit = "render"
+kind = "hw"
+value = "low"
 phase = 6
 evidence = ["E029", "E301", "E363", "E433"]
 terms = ["cmd_ta.pds_bgnd"]

@@ -2,6 +2,8 @@
 id = "Q052"
 question = "what do .skipinv, .syncs, .nosched and the other scheduling flags change, and how many instructions after a write can a dependent instruction read the result, with or without an interlock?"
 unit = "usse"
+kind = "hw"
+value = "medium"
 phase = 11
 evidence = ["E100", "E104", "E111", "E113", "E124", "E371"]
 terms = []

@@ -79,7 +79,8 @@ templates bit for bit, and `doc/specs/usse_tutorial.md` walks through them.
 Userspace places its own programs in its own GPU address space and submits jobs to the render node:
 `include/uapi/sgxfive_drm.h` (pinned to the linux fork's header), `userspace/libsgxfive` with
 `sgxfive-test`, and the first triangle's programs. Evidence E022 to E024 (fills, copies, the first
-triangle and fault recovery on the laptop); questions Q005 and Q006. Sub-phase 6.1 brings the probe
+triangle and fault recovery on the laptop); questions Q005 and, on the control block's mapping in
+a client's VM, Q076. Sub-phase 6.1 brings the probe
 tables by unit (`probes/<unit>/<feature>.toml`), the campaign runner that runs them on a clean GPU
 and records the environment, the sweep runner with the ISP visibility counters around every case,
 and what the runs show: evidence E025 to E124 on the platform, the EDM, the transfer, PBE, texture,
@@ -107,7 +108,7 @@ tutorial are generated from the form tables and runs of the simulator.
 node and its gate, the ioctls, the GPU address space, buffers, VMs and contexts, job submission and
 its checks, scheduling, faults, recovery and the security model. The first triangle renders exactly
 on targets from 64x64 to 256x256 (E148); IGT's copy of the library is checked against ours.
-Questions Q028 and Q029.
+Questions Q003, on what a fault leaves, and Q029.
 
 ### 2.10 Phase 10: the 3D state
 
@@ -176,9 +177,20 @@ probe and sweep tables that the units above cover.
 
 ### 4.1 Open questions
 
-`doc/open_questions.md` lists every open question by unit, generated from `questions/`: Q001 to
-Q049, 49 in all. By unit: dpm 2, edm 5, isp 3, mte 1, pbe 4, pds 10, platform 1, render 5, ta 1,
-texture 4, transfer 4, usse 4, vdm 5. A question is removed when a record answers it.
+`doc/open_questions.md` lists every open question, generated from `questions/`: Q001 to Q119, 98
+open. Each has a kind. The work is hardware knowledge, for a simulator and then our own firmware, so
+the 88 `hw` questions are the work queue, each with a value (high 18, medium 47, low 23); the 7 `fw`
+questions (the closed firmware's and driver's own behaviour: Q004, Q029, Q034, Q049, Q084, Q118,
+Q119) and the 3 `kernel` ones (the design of our kernel driver: Q005, Q037, Q095) stay open, parked.
+By unit: bif 4, dpm 5, edm 6, isp 8, mte 3, pbe 5, pds 16, platform 4, render 9, ta 6, texture 7,
+transfer 3, usse 11, vdm 8, zls 3. A question is removed when a record answers it; one that mixed a
+hardware part with a firmware or kernel part was narrowed to the hardware part or folded into the
+hardware question that holds it (six so far: the control block's per-VM copy and the render context
+count bound into Q076, the recovery's reset steps into Q003, the settle routine and the two faults
+after a base-only fault or a kept owner into Q036 and Q045), and a fold is not an answer. What a
+fold or a narrowing left of the closed firmware's own behaviour is a new parked question: how a kick
+tells its directory is in no list (Q118, from the render context count) and whether a command with
+both kick flags acts as two (Q119, from Q065).
 
 ### 4.2 Inferred glossary rows
 
@@ -210,7 +222,7 @@ reading and records.
 - **Render flags.** Bit 10's only test in the firmware adds one to the RT data set's executed count
   (E164, E166), and no image changes with it (E051, E052); bit 2 keeps its owner through a
   later live context's job (E451); through a gone context bit 2 alone keeps it and the next
-  render is exact, while after bit 3 a later render faults (E458, E462, Q106).
+  render is exact, while after bit 3 a later render faults (E458, E462, Q036, Q045).
 - **Words read from the firmware alone.** The per-render-target strides of the TA command, the
   render details and the RT data (E158, E163) and a PB block's first page (E200, E201) rest on what
   the kicks and the page-table builder do with them.
@@ -349,3 +361,13 @@ end-of-tile task with the closed driver's PBE words stores plain samples and doe
 question on the maximum level is answered, non-square chains are a new one), and a background object
 that reads the target back gives an overflowing scene's triangle its full pixel count (E442; the
 depth readback stays open).
+
+Sub-phase 11.21 made no run and no kernel change. It sorted the open questions by what they ask:
+hardware (the work queue), the closed firmware's own behaviour, or the kernel's design, with a
+value (high, medium, low) for each hardware question, and shows the two groups apart in the
+generated view. Six mixed questions were folded into hardware questions, three narrowed to their
+hardware part (Q033, Q094, Q096), Q065 was narrowed to the 3D's wait, two parked firmware questions
+were split off (Q118, Q119), and ten new hardware questions open the gaps the specs left:
+the page table flags and page sizes and the bus interface's tiled ranges (Q108 to Q110), which
+event sets which status bit (Q111), the index list's width bits (Q112), cube and volume textures
+and anisotropy (Q113 to Q115), the region clip as a scissor (Q116) and points (Q117).

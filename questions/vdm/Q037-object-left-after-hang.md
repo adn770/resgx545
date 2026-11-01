@@ -2,6 +2,7 @@
 id = "Q037"
 question = "why did one of E186's runs find no object after the job hung in its pixel task, when a dump taken before recovery always holds it?"
 unit = "vdm"
+kind = "kernel"
 phase = 10
 evidence = ["E186", "E318", "E422"]
 terms = ["VDM_STATE1.BITS15_13", "Parameter Buffer (PB)"]

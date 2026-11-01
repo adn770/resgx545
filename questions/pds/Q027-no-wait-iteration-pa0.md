@@ -2,6 +2,8 @@
 id = "Q027"
 question = "where do the values of a no-wait iteration go, given that pa0 never holds the iterated value and holds 0, 2, 6 and a few other values instead?"
 unit = "pds"
+kind = "hw"
+value = "medium"
 phase = 7
 evidence = ["E131", "E048", "E393", "E430"]
 terms = ["DOUTI0.ATTR_SOURCE", "DOUTU1.WAIT_FETCH"]

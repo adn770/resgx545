@@ -2,6 +2,8 @@
 id = "Q044"
 question = "what do bits 11:0 of CR_REG_0400 (0x80 as built) do, when no value of them changes a stored pixel in pack modes 0 to 3, and does bit 25 act on the other pack modes?"
 unit = "pbe"
+kind = "hw"
+value = "low"
 phase = 11
 evidence = ["E029", "E028", "E031", "E251", "E268", "E385"]
 terms = ["CR_REG_0400", "CR_REG_0400.INVERT_BYTE3", "SIDEBAND.PACKMODE"]

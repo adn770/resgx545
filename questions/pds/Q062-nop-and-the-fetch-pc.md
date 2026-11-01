@@ -2,6 +2,8 @@
 id = "Q062"
 question = "what makes the PDS fetch pc read one or two below the reading instruction's index plus 3, at instructions 26-27 back to back (the end of a 64-dword block) in most runs?"
 unit = "pds"
+kind = "hw"
+value = "low"
 phase = 11
 evidence = ["E128", "E142", "E143", "E260", "E261", "E384"]
 terms = []

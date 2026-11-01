@@ -2,6 +2,8 @@
 id = "Q088"
 question = "which of CR_ISP_ZLSCTL bits 1, 13 and 14, which the closed driver adds when a render loads a kept depth and stencil buffer, loads depth and which stencil, and what reads the render details' unpatched ZLS word the driver writes between frames?"
 unit = "zls"
+kind = "hw"
+value = "high"
 phase = 11
 evidence = ["E335", "E336", "E337", "E411"]
 terms = ["CR_ISP_ZLSCTL", "hw_render_details.isp_zlsctl"]

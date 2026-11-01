@@ -2,6 +2,8 @@
 id = "Q019"
 question = "what does the secondary attribute size (bits 24:18 of dword 1 of the background object) limit, given that all sixteen douta words reach sa0 to sa15 with 0, 1 and 4 rows, or does the task take its size from elsewhere?"
 unit = "pds"
+kind = "hw"
+value = "medium"
 phase = 7
 evidence = ["E125", "E391"]
 terms = []

@@ -2,6 +2,8 @@
 id = "Q011"
 question = "why does a copy whose background-object tag (transfer word 0) is wrong read one texel, the source's last, for every pixel, and what stores the samples of CR_ISP_MSAA mode 2 in a copy?"
 unit = "transfer"
+kind = "hw"
+value = "medium"
 phase = 6
 evidence = ["E028", "E272", "E398"]
 terms = ["transfer_cmd", "transfer_cmd.isp_background_tag", "transfer_cmd.isp_msaa"]

@@ -2,6 +2,7 @@
 id = "Q095"
 question = "does giving the EDM a page directory of its own, rather than gma500's default one, change anything beyond the coupling of their teardowns?"
 unit = "platform"
+kind = "kernel"
 phase = 11
 evidence = ["E008", "E018", "E021"]
 terms = ["CR_BIF_DIR_LIST_BASE15", "CR_BIF_DIR_LIST_BASE0"]

@@ -2,6 +2,8 @@
 id = "Q023"
 question = "what do PDS_SIZE bits 17:16 do, given that they move where the output registers o1 to o3 land?"
 unit = "pds"
+kind = "hw"
+value = "high"
 phase = 7
 evidence = ["E139", "E081", "E406"]
 terms = ["PDS_SIZE.BITS17_16"]

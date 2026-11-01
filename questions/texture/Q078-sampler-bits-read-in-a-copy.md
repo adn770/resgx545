@@ -2,6 +2,8 @@
 id = "Q078"
 question = "what do T3 bits 10, 14, 18-19 and 27-28 and T0 bit 27 select, given a copy that reads one texel, a sheared read, coordinates scaled by 2 and 4, smaller images after the source, and values of no texel?"
 unit = "texture"
+kind = "hw"
+value = "high"
 phase = 11
 evidence = ["E274", "E397"]
 terms = ["T3.BIT10", "T3.BIT14", "T3.BITS19_18", "T3.BITS28_27", "T0.BIT27", "T3.BITS7_0"]

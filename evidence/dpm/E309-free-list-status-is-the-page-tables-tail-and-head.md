@@ -60,4 +60,4 @@ descriptor holds shifted into its high half (E200's store).
 
 **Not shown.** The EDM's own page-table builder (PB_FLAGS.INIT_PAGE_TABLE) is not run: our kernel
 never sets the flag and no poke reaches the PB descriptor, so the builder's stride stays
-unmeasured (Q067). STATUS2's high half is 0 in every sample.
+unmeasured (Q036). STATUS2's high half is 0 in every sample.

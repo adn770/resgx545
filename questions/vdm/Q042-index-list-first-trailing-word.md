@@ -2,6 +2,8 @@
 id = "Q042"
 question = "what do bits 27:24 of the index list's first trailing word (VDM_INDEX2) do, when its low bits move the list's first index and 0x0f000000 drops two of five triangles?"
 unit = "vdm"
+kind = "hw"
+value = "medium"
 phase = 11
 evidence = ["E188", "E300", "E307", "E308", "E414"]
 terms = ["VDM_INDEX2.WORD", "VDM_INDEX0.WORDS_PRESENT", "VDM_INDEX3.INDEX_WRAP"]

@@ -2,6 +2,8 @@
 id = "Q030"
 question = "where do a multisampled render's tiles past the first land in the target, and what do the TE anti-aliasing bits change?"
 unit = "isp"
+kind = "hw"
+value = "high"
 phase = 10
 evidence = ["E210", "E211", "E219", "E220", "E281", "E415"]
 terms = ["CR_ISP_MSAA", "CR_ISP_MSAA.MODE", "CR_ISP_MSAA.ENABLE", "CR_ISP_MULTISAMPLECTL", "CR_TE_AA", "programmable sample positions"]

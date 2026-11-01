@@ -2,6 +2,8 @@
 id = "Q107"
 question = "what is the window of the depth buffer that a ZLS store writes (64512 dwords at 1024x768, 326656 at 4096x4096), and what are the 15104 (80640) leading zero dwords and the sign bit set on the rest in a job that overflows?"
 unit = "zls"
+kind = "hw"
+value = "high"
 phase = 11
 evidence = ["E461", "E058", "E411"]
 terms = ["CR_ISP_ZLSCTL", "CR_ISP_ZSTORE_BASE"]

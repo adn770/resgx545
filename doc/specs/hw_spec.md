@@ -135,14 +135,16 @@ Key registers:
   (`SGX_MMU_PD_SHIFT` 10, mask `0xFFC00000`), page table index (`SGX_MMU_PT_SHIFT` 10, mask
   `0x003FF000`), page offset (`SGX_MMU_PAGE_SHIFT` 12).
 - **PDE** (`sgxmmu.h:45-52`): bit 0 `VALID`; bits 1-3 the page size (4K, 16K, 64K, 256K, 1M,
-  4M); address mask `0xFFFFF000`. The 36-bit layout does not apply (§2).
+  4M); address mask `0xFFFFF000`. The 36-bit layout does not apply (§2). No record shows a run
+  with a size other than the smallest (Q109).
 - **PTE** (`sgxmmu.h:65-69`): `VALID` `0x1`, `WRITEONLY` `0x2`, `READONLY` `0x4`,
-  `CACHECONSISTENT` `0x8`, `EDMPROTECT` `0x10`; address mask `0xFFFFF000`.
+  `CACHECONSISTENT` `0x8`, `EDMPROTECT` `0x10`; address mask `0xFFFFF000`. Only `READONLY` is
+  run in a record (a write to a read-only page faults, E021, E319); what the other flags do is Q108.
 - **BIF.** The bus interface is the MMU's front end. With 16 directory lists and multiple
   memory contexts, `BIF_DIR_LIST_BASE0..15` hold up to 16 page directories at once, and
   `BIF_BANK0` says which list each requestor translates through (§5.5).
 - **Tiling.** `BIF_TILE0..n` describe tiled address ranges (start, end, stride); the DDK
-  programs them in `sgxinit.c:1476-1529`.
+  programs them in `sgxinit.c:1476-1529`. No record touches them (Q110).
 
 *Based on sgx545-ce `src/services4/srvkm/hwdefs/sgxmmu.h`, `sgx545defs.h`,
 `src/services4/srvkm/devices/sgx/sgxinit.c`.*
@@ -294,7 +296,8 @@ value, is `doc/specs/boot_sequence.md`.
 `DPM_REACHED_MEM_THRESH` 3, `DPM_OUT_OF_MEMORY_GBL` 2, `DPM_OUT_OF_MEMORY_MT` 1,
 `DPM_3D_MEM_FREE` 0 (`sgx545defs.h:367-451`; the debug dump decodes them, `sgxinit.c:907`).
 `TA_*` is the geometry and tiling front end, `ISP` the hidden-surface stage, `PIXELBE` the tile
-write-out, `DPM` the parameter memory manager.
+write-out, `DPM` the parameter memory manager. Which event sets which bit in an ordinary job, and
+for how long, is open (Q111).
 
 `EVENT_STATUS2` (`0x0118`) reads 0x400 (`DCU_INVAL_COMPLETE`) when the core is idle. Its
 `TRIG_TA` (bit 7) and `TRIG_3D` (bit 6) latch on the laptop: bit 7 within 0.2 ms of the PB load of

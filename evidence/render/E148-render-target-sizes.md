@@ -31,5 +31,5 @@ poke render state (E055, E056, E073) all run 64x64 targets.
 no geometry touches are skipped without it above 64x64 is not seen (Q029). No run reads the EDM's
 cleanup of the render target data set or of the render context, or what each waits for (Q029). That
 the EDM writes the TA/3D control block through the render context's page directory, and what a
-read-only mapping of that page faults, is not run either (Q006). The sizes are those listed, one run
+read-only mapping of that page faults, is not run either (Q076). The sizes are those listed, one run
 each.

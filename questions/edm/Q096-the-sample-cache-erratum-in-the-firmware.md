@@ -1,7 +1,9 @@
 +++
 id = "Q096"
-question = "does the firmware itself do anything for the sample-cache erratum, beyond the heap layout the host chooses?"
+question = "does the sampler cache erratum of host bridge revisions below 4 show when a texture and other data have addresses that differ only above bit 28?"
 unit = "edm"
+kind = "hw"
+value = "low"
 phase = 11
 evidence = ["E002", "E011", "E013", "E033", "E035", "E041", "E114", "E432"]
 terms = []
@@ -30,3 +32,9 @@ with the texture in the texture heap (0xf0000000) give the same results as in th
 3 of 3 runs, 24 of 24 cases. No erratum shows on this bridge in that half; a texture and other
 data at addresses that differ only above bit 28 at once is not run. Status: narrowed, not
 answered.
+
+Narrowed in 11.21 to the hardware part. Whether the firmware does anything for the erratum is not
+the target; the records show only that it is the same code at every layout and is not told the
+layout (E002, E011, E013). Open: the erratum itself, which no run shows on this
+bridge (revision 3) in the general heap or the texture heap (E432), with a texture and other data at
+addresses that differ only above bit 28 at once, as the last paragraph of the run above names.

@@ -2,6 +2,8 @@
 id = "Q085"
 question = "does our tri job's image or time change with the closed driver's two other 3D register values, CR_ISP_CTL bit 8 clear and 0x04c4 bit 25 set?"
 unit = "render"
+kind = "hw"
+value = "low"
 phase = 11
 evidence = ["E326", "E408"]
 terms = ["CR_ISP_CTL.PROCESS_EMPTY_TILES", "CR_ISP_CTL"]

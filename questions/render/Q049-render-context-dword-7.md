@@ -2,6 +2,7 @@
 id = "Q049"
 question = "does the firmware or the hardware ever read dword 7 (offset 0x01c) of the render context, which the EDM dataflow reaches on no path?"
 unit = "render"
+kind = "fw"
 phase = 11
 evidence = ["E013", "E021", "E156", "E165", "E361", "E448"]
 terms = ["hw_render_context.ready_renders_tail", "hw_render_context.run_node_prev_3d", "hw_render_context.run_node_next_3d", "hw_transfer_context.pd_dev_paddr"]

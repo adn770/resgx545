@@ -2,6 +2,8 @@
 id = "Q089"
 question = "where does the closed driver's 4x multisampled render become a 64x64 image, when its PBE words are those of a single-sampled 64x64 target and the hardware stores 4x samples as 2x2 blocks; and do alpha to coverage and sample coverage reach the hardware at all?"
 unit = "isp"
+kind = "hw"
+value = "high"
 phase = 11
 evidence = ["E333", "E339", "E439"]
 terms = ["CR_ISP_MSAA.MODE", "CR_TE_MTILE1", "CR_TE_MACROTILE_STRIDE", "EMIT1.MAXCLIP_X"]

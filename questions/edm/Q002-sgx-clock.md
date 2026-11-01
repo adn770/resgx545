@@ -2,6 +2,8 @@
 id = "Q002"
 question = "is the 399.0 MHz reference that times the EDM tick and TIMER the clock the USSE runs from?"
 unit = "edm"
+kind = "hw"
+value = "low"
 phase = 3
 evidence = ["E009", "E084", "E124", "E377"]
 terms = ["CR_TIMER", "host_ctl.edm_ticks"]

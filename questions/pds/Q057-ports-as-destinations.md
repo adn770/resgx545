@@ -2,6 +2,8 @@
 id = "Q057"
 question = "what do doutc, douts, slc, mr and ir0 do as move destinations, and movsa on ports other than doutd, and does an enabled small count in tim hang the job, and why?"
 unit = "pds"
+kind = "hw"
+value = "medium"
 phase = 11
 evidence = ["E127", "E128", "E264", "E421"]
 terms = ["PORT.DOUTC"]

@@ -60,7 +60,7 @@ unflagged job leaves in its own table [HW].
 each page, not each dword: the match with the kernel's table is byte for byte only on the kernel's
 own table); whether the builder's result depends on the block list (the PB's block was the
 kernel's); a descriptor with other counts; the settle routine's wait, which this does not touch
-(Q067's second half). What the 2 scratch dwords of the control (first +0x0 0xffff0000, in 3 of 6
+(Q036's second half). What the 2 scratch dwords of the control (first +0x0 0xffff0000, in 3 of 6
 runs) are, and whether a render that does not fault with the table at the scratch and flag bit 0
 clear exists (a table filled by the host first would give one).
 

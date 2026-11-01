@@ -2,6 +2,8 @@
 id = "Q053"
 question = "what do the global registers g18 to g20 and g39 to g43 hold in a triangle's pixel task, a vertex task and the end-of-tile task?"
 unit = "usse"
+kind = "hw"
+value = "high"
 phase = 11
 evidence = ["E085", "E086", "E372", "E374"]
 terms = []

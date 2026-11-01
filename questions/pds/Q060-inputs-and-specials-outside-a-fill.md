@@ -2,6 +2,8 @@
 id = "Q060"
 question = "what do mr01, mr23, ir1 and the .h specials read in the vertex-side programs?"
 unit = "pds"
+kind = "hw"
+value = "medium"
 phase = 11
 evidence = ["E128", "E130", "E262", "E263", "E390"]
 terms = []

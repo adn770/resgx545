@@ -2,6 +2,8 @@
 id = "Q073"
 question = "what does o0 hold at the start of an opaque pass's pixel shader?"
 unit = "isp"
+kind = "hw"
+value = "medium"
 phase = 11
 evidence = ["E077", "E283", "E417"]
 terms = ["ISP0.PASS_TYPE"]

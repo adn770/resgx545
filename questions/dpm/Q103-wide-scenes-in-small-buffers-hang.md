@@ -2,6 +2,8 @@
 id = "Q103"
 question = "why does a scene of 100 to 500 triangles hang where the one-triangle scene overflows the parameter buffer and recovers, at 4096x4096 in 0x40 or 0x23 pages from 300 vertices and in 0x100 pages from 900?"
 unit = "dpm"
+kind = "hw"
+value = "medium"
 phase = 11
 evidence = ["E438", "E310", "E312"]
 terms = ["Dynamic Parameter Management (DPM)", "Parameter Buffer (PB)"]

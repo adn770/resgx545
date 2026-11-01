@@ -2,6 +2,8 @@
 id = "Q038"
 question = "what does the final render read back of a partial render's depth (a depth buffer stored by ZLS, the 3D kick's RT status bit 1), now that a background object that reloads the target's colour gives an overflowing scene's whole image?"
 unit = "dpm"
+kind = "hw"
+value = "high"
 phase = 10
 evidence = ["E202", "E204", "E160", "E310", "E311", "E312", "E442", "E461"]
 terms = ["Parameter Buffer (PB)", "Dynamic Parameter Management (DPM)"]

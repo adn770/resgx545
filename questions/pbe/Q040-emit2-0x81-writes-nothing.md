@@ -2,6 +2,8 @@
 id = "Q040"
 question = "what do EMIT2 bits 15:8 count, given that 4v pixels of each tile are stored for an even v up to 0x80, odd values hang and values above 0x80 change the image, and what do EMIT2 bits 6:0 select?"
 unit = "pbe"
+kind = "hw"
+value = "medium"
 phase = 11
 evidence = ["E046", "E265", "E266", "E267", "E382"]
 terms = ["EMIT2.BITS15_8", "EMIT2.BIT28", "EMIT2.BIT29", "EMIT2.BIT30"]

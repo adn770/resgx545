@@ -2,6 +2,8 @@
 id = "Q101"
 question = "what do bits 3, 4, 19, 24, 25 and 26 of CR_ISP_ZLSCTL do beyond what a store writes, given that they change the stored depth's format and the stored region?"
 unit = "zls"
+kind = "hw"
+value = "high"
 phase = 11
 evidence = ["E057", "E284", "E411"]
 terms = ["CR_ISP_ZLSCTL"]

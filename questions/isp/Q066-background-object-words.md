@@ -2,6 +2,8 @@
 id = "Q066"
 question = "what do the three background-object words the 3D kick writes mean to the ISP, and what are the other words of a render's background object?"
 unit = "isp"
+kind = "hw"
+value = "high"
 phase = 11
 evidence = ["E069", "E162", "E209", "E216", "E410"]
 terms = ["CR_ISP_BGOBJVALS", "hw_render_details.pds_bgnd"]

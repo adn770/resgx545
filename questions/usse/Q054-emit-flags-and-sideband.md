@@ -2,6 +2,8 @@
 id = "Q054"
 question = "what do #incp, .cut and .tasks/.taske do on the emits, and what do sideband bits 11 and 12 select, beyond the pack mode, bits 8:6, 9, 10 and 13 that the end-of-tile emit reads?"
 unit = "usse"
+kind = "hw"
+value = "medium"
 phase = 11
 evidence = ["E030", "E102", "E106", "E239", "E269", "E376"]
 terms = ["SIDEBAND.PACKMODE", "SIDEBAND.BIT9", "SIDEBAND.BITS8_6", "SIDEBAND.DITHER"]

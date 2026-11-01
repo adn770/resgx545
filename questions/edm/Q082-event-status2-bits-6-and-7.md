@@ -2,6 +2,8 @@
 id = "Q082"
 question = "what do CR_EVENT_STATUS2 bits 6 and 7 mean, bit 6 set while a job hangs in its pixel task and bit 7 while a TA job hangs or faults?"
 unit = "edm"
+kind = "hw"
+value = "medium"
 phase = 11
 evidence = ["E317", "E318", "E319", "E357", "E431"]
 terms = ["CR_EVENT_STATUS2"]

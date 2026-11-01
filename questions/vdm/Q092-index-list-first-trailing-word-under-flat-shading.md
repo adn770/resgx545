@@ -2,6 +2,8 @@
 id = "Q092"
 question = "what do bits 31:28 of the index list's first trailing word count, which the closed driver writes as 0xf on 1886 captured lists and 0xd on a draw of eight vertex attributes?"
 unit = "vdm"
+kind = "hw"
+value = "medium"
 phase = 11
 evidence = ["E346", "E348", "E414"]
 terms = ["VDM_INDEX2.WORD", "MTECTL.FLAT_VERTEX"]

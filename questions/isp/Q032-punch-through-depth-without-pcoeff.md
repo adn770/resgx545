@@ -2,6 +2,8 @@
 id = "Q032"
 question = "what does pcoeff hand the ISP in the punch-through pass, when the kept pixels' depth is the same without it and moves between runs only when it runs without the iteration it reads?"
 unit = "isp"
+kind = "hw"
+value = "medium"
 phase = 10
 evidence = ["E217", "E416"]
 terms = ["FEEDBACK_CTL.ENABLE", "FEEDBACK_CTL.KEEP", "ISP0.PASS_TYPE"]

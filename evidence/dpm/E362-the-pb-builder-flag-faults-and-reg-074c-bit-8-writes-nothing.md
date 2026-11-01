@@ -23,7 +23,7 @@ terms = ["hw_pb_desc.pb_flags", "CR_DPM_REG_074C", "cmd_ta.dpm_reg_074c", "CR_BI
 
 - The EDM's page-table builder, asked for by the flag, writes into the kernel's context page
   through the client's directory before anything else of the job, so with our kernel's read-only
-  mapping it cannot run; its stride is still not measured (Q067) [HW] [infer: the builder is what
+  mapping it cannot run; its stride is still not measured (Q036) [HW] [infer: the builder is what
   the flag starts, E200].
 - Whatever bit 8 makes the DPM access near TA data offset 0x6010 on a context whose TA data covers
   it, it leaves the TA data as it was: a read, or a write of the value already there (Q081) [HW].

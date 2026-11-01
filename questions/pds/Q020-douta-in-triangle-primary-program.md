@@ -2,6 +2,8 @@
 id = "Q020"
 question = "what does a douta in the triangle's primary pixel program do, when its markers never reach the USE task and the readback is the memory table's inputs for markers A in both runs, and other values for markers B in the first?"
 unit = "pds"
+kind = "hw"
+value = "medium"
 phase = 7
 evidence = ["E125", "E381"]
 terms = []

@@ -2,6 +2,8 @@
 id = "Q039"
 question = "where is a user clip plane's state held between jobs, what resets it, and when do the vertex's distance dwords decide a plane?"
 unit = "mte"
+kind = "hw"
+value = "medium"
 phase = 10
 evidence = ["E198", "E280", "E418"]
 terms = ["OUTSEL.PLANES"]

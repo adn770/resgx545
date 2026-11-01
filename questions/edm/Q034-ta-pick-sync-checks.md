@@ -2,6 +2,7 @@
 id = "Q034"
 question = "does the EDM hold back a TA command whose destination sync is incomplete when another context is queued (source and transfer-queue syncs: E450)?"
 unit = "edm"
+kind = "fw"
 phase = 10
 evidence = ["E161", "E154", "E320", "E450"]
 terms = ["ta3d_ctl", "cmd_ta.shared"]

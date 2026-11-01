@@ -2,6 +2,8 @@
 id = "Q050"
 question = "what do the visibility group's instructions do, and how do smp's mipmaps and LOD values, the border address modes, the compressed and YUV formats and firh's edge modes past the line and fixed banks 1 and 2 behave?"
 unit = "usse"
+kind = "hw"
+value = "high"
 phase = 11
 evidence = ["E083", "E091", "E123", "E147", "E292", "E293", "E294", "E298"]
 terms = []

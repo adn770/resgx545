@@ -2,6 +2,8 @@
 id = "Q046"
 question = "do SIDEBAND bits 8:6 select the channel only in pack mode 8, or in the other one-channel modes too (24, 25 and those that store G8B8), and what do sideband bits 11 and 12 do?"
 unit = "pbe"
+kind = "hw"
+value = "medium"
 phase = 11
 evidence = ["E030", "E031", "E210", "E269", "E383"]
 terms = ["SIDEBAND.BITS8_6", "SIDEBAND.PACKMODE", "CR_ISP_MSAA"]

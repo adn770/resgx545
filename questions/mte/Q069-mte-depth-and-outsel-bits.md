@@ -2,6 +2,8 @@
 id = "Q069"
 question = "what do OUTSEL bit 13 and the state block's presence bits 16-31 select?"
 unit = "mte"
+kind = "hw"
+value = "medium"
 phase = 11
 evidence = ["E061", "E066", "E192", "E193", "E198", "E286", "E287", "E419"]
 terms = ["OUTSEL", "VIEWPORT.Z_OFFSET", "VIEWPORT.Z_SCALE", "PRESENCE"]

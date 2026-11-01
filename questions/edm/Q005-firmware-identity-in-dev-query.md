@@ -2,6 +2,7 @@
 id = "Q005"
 question = "should the kernel ask the firmware for its identity on every boot, so DEV_QUERY reports it without the debug option?"
 unit = "edm"
+kind = "kernel"
 phase = 6
 evidence = ["E017", "E022", "E321", "E402"]
 terms = ["misc_info", "misc_info_features"]

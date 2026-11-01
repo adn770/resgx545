@@ -2,6 +2,8 @@
 id = "Q048"
 question = "do the MADD0 and MADD1 clock gates follow the USSE pipes' floating-point arithmetic, or their cache and texture traffic?"
 unit = "usse"
+kind = "hw"
+value = "low"
 phase = 11
 evidence = ["E006", "E008", "E011", "E365", "E445", "E452"]
 terms = ["MADD", "CR_CLKGATECTL2", "CR_CLKGATESTATUS"]

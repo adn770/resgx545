@@ -2,6 +2,8 @@
 id = "Q043"
 question = "what does bit 0 of CR_REG_0148, which the firmware loads for every render, partial render and transfer, change, when no bit of the word changes a triangle, five copies, a fill or a copy?"
 unit = "render"
+kind = "hw"
+value = "medium"
 phase = 11
 evidence = ["E056", "E163", "E160", "E015", "E028", "E252", "E302", "E412", "E406"]
 terms = ["CR_REG_0148"]

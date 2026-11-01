@@ -2,6 +2,8 @@
 id = "Q098"
 question = "why do pa_n and sa_n read one value in a fill's pixel task, a mov to pa_n being lost, and why does an unwritten one read the job's pixel colour?"
 unit = "usse"
+kind = "hw"
+value = "medium"
 phase = 11
 evidence = ["E366", "E380"]
 terms = []

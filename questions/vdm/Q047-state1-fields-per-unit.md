@@ -2,6 +2,8 @@
 id = "Q047"
 question = "what do VDM_STATE1 bit 8, bits 11:9 and bits 15:13 select for a state task, when on the one-triangle job bit 8 changes nothing, bits 11:9 at 0 stop the triangle before tiling and bits 15:13 at 0, 5 or 6 hang it?"
 unit = "vdm"
+kind = "hw"
+value = "high"
 phase = 11
 evidence = ["E060", "E185", "E186", "E187", "E299", "E414", "E427", "E440"]
 terms = ["VDM_STATE1.BIT8", "VDM_STATE1.BITS11_9", "VDM_STATE1.BITS15_13"]

@@ -91,12 +91,21 @@ An id is assigned once. A record that turns out wrong is removed and its id reti
 ## Open questions
 
 What is not settled is a question, one per file, `questions/<unit>/Q<nnn>-<slug>.md`
-(`tools/records/questions.py`): TOML front matter (id, question, unit, phase, evidence, terms,
-in that order), then prose on what is known, what was tried and what experiment would settle
-it. Specs, evidence records and glossary terms cite it as Q<nnn>. When it is answered, the
-commit that adds the answering evidence record removes the question and retires its id
-(`RETIRED`: "answered by E<nnn>"); from then on the answer is cited, not the question.
-`doc/open_questions.md` is generated from the files.
+(`tools/records/questions.py`): TOML front matter (id, question, unit, kind, an optional value for
+a hardware question, phase, evidence, terms, in that order), then prose on what is known, what was
+tried and what experiment would settle it. The kind says whose behaviour the open part asks about:
+`hw` (what the SGX545 does, the target of knowledge recovery), `fw` (the closed firmware's or
+driver's own behaviour) or `kernel` (the design of our kernel driver); the `fw` and `kernel` ones
+stay open, parked. A hardware question has a value, `high`, `medium` or `low`, for how much a
+simulator loses without the answer. A question that mixes a hardware part with another is narrowed
+to the hardware part, with the rest split off as its own parked question, or folded into the
+hardware question that holds it. Specs, evidence records and glossary terms cite it as Q<nnn>.
+When it is answered, the commit that adds the answering evidence record removes the question and
+retires its id (`RETIRED`: "answered by E<nnn>"); from then on the answer is cited, not the
+question. A question folded into another (its hardware open part and its evidence moved there) is
+retired as "folded into Q<nnn>"; the target has to be open, a citation of the folded id is refused
+with the target named, and a fold is not an answer. `doc/open_questions.md` is generated from the
+files: the hardware work queue by unit, then the parked `fw` and `kernel` questions.
 
 ## Dataset manifests
 

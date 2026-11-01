@@ -2,6 +2,8 @@
 id = "Q074"
 question = "why does a second end-of-tile emit in a tile leave the next job's image wrong, and does SIDEBAND bit 9 mark an emit that counts against a PBE tile?"
 unit = "pbe"
+kind = "hw"
+value = "medium"
 phase = 11
 evidence = ["E030", "E130", "E239", "E240", "E386"]
 terms = ["SIDEBAND.BIT9", "PIXEL_EVENT.END_OF_TILE"]

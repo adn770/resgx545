@@ -2,6 +2,8 @@
 id = "Q058"
 question = "what sets the input flags if0 and if1 outside a vertex program, since neither tests true in any primary pixel or pixel-event task tried?"
 unit = "pds"
+kind = "hw"
+value = "medium"
 phase = 11
 evidence = ["E128", "E130", "E262", "E263", "E389"]
 terms = []

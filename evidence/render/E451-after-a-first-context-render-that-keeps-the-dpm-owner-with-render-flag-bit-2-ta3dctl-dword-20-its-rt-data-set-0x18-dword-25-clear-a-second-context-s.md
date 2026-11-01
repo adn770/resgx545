@@ -48,7 +48,7 @@ cleared is seen as 0.
   [HW]; that the stored DPM state of a kept owner was used is not shown.
 
 **What it does not show.** A kept owner of a context that is gone (the contexts here were alive
-when the words were read); a third context; the DPM registers beside the words (E458, Q106).
+when the words were read); a third context; the DPM registers beside the words (E458, Q036).
 
 **Provenance.** The sgxfive-test binary of these runs is the one whose sha256 each env.toml names
 (7de509d3...); it was built from source not yet committed, which was later committed in f63c7d19.

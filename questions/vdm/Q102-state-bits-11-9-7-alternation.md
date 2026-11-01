@@ -2,6 +2,8 @@
 id = "Q102"
 question = "what state does a completed job with VDM state word 1 bits 11:9 = 7 leave that makes the next such job hang, and why does the reset after a hang clear it?"
 unit = "vdm"
+kind = "hw"
+value = "medium"
 phase = 11
 evidence = ["E060", "E185", "E299", "E413"]
 terms = ["VDM_STATE1.BITS11_9"]

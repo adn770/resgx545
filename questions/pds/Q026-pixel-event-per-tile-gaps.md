@@ -2,6 +2,8 @@
 id = "Q026"
 question = "why do the per-tile stores of the grid pixel-event probes leave empty slots and mixed copies, different ones per run?"
 unit = "pds"
+kind = "hw"
+value = "medium"
 phase = 7
 evidence = ["E130", "E394"]
 terms = ["PIXEL_EVENT.END_OF_TILE"]

@@ -2,6 +2,8 @@
 id = "Q025"
 question = "what does the SB field of CR_BIF_FAULT encode in the PDS faults, and why did a store of one dword fault in the follow-up run only, and a store of two dwords then eight in the first run only?"
 unit = "pds"
+kind = "hw"
+value = "medium"
 phase = 7
 evidence = ["E143", "E144", "E145", "E395"]
 terms = ["CR_BIF_FAULT", "CR_BIF_FAULT.CID", "CR_BIF_FAULT.SB"]
