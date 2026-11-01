@@ -12,12 +12,16 @@ converter (`tools/usse-asm/vectors.py`) describe and make them.
 ```
 <data repository>/vectors/<unit>/<feature>/<probe>.vec.json
 <data repository>/vectors/followup/<unit>/<feature>/<probe>.vec.json
+<data repository>/vectors/knowledge/<unit>/<feature>/<probe>.vec.json
+<data repository>/vectors/jobs/<unit>/<feature>/<probe>.job.json
 ```
 
 One directory per probe table (`probes/<unit>/<feature>.toml`), one file per run of one probe
 of it (`<unit>/<feature>/<probe>/raw.txt`, and the same under `followup/` for the follow-up
-round). Every table whose probes carry a program has one; a probe run that read back no case of
-its table gives no file. Each unit's vectors are a dataset (`datasets/vectors-<unit>.toml`,
+round; `knowledge/` holds the runs of the 11.x sub-phases, `jobs/` the jobs of the files
+converted before vectors carried them). Every table whose probes carry a program has one; a
+probe run that read back no case of its table gives no file.
+Each unit's vectors are a dataset (`datasets/vectors-<unit>.toml`,
 `vectors-<unit>-followup.toml`) that names the converter as its recipe.
 
 The simulator's tests (`crates/sgx-sim/tests/vectors.rs`) look for the data repository as
@@ -67,6 +71,7 @@ Each vector:
 | `init.regs` | what the program's leading `mov`s preset, `{"r1": "0x..."}`; informative only |
 | `init.attrs` | PDS only: the secondary attributes its `douta` may write (16: `sa0` to `sa15`) |
 | `init.use` | PDS only: the fill shader that reads them and stores them to scratch dwords 0-15 |
+| `init.job` | a fill's job: `pokes`, the transfer-command pokes the run printed, and `use_coeffs`, the USE filter coefficients they load: `{"load": false}`, or `load` true with `mode` (`CR_USE_COEFFS_MODE`) and `words`, the nine coefficient words (E078) |
 | `readback.failed` | null, or the failure text |
 | `readback.o0` | the uniform `o0`, or null |
 | `readback.mixed` | `[[value, count], ...]` when the pixels differ |
@@ -80,6 +85,16 @@ closed-library bytes; an unknown `version` is rejected (`vectors.py check` valid
 `orphans` lists readback labels whose probe or case is no longer in the tables, so nothing is
 silently lost. A probe on the triangle host (`--tri` in `provenance.options`) reads back what
 the scene drew, which is not the shader's output alone: a simulator test does not compare it.
+
+**The job.** A fill runs in a transfer job whose command the probe may poke (`--poke
+xfer:N=V`), per probe and per case (`case_set`); `firh` reads the filter coefficients the job
+loads. Vectors converted before the converter carried `init.job` (all of `vectors/usse/` and
+`vectors/followup/usse/`) have it in a sidecar, `vectors/jobs/<the same path>.job.json`
+(`vectors.py jobs`, from the pokes each run printed): `{"format": "sgx545-vector-jobs",
+"version": 1, "run": {...}, "jobs": {"<id>": <init.job>}}`. The simulator's loader
+(`vectors::load`) gives each vector its sidecar job where it has none. Before 11.7 the
+`provenance.options` of a probe with `case_set` named the probe's pokes only, not the case's;
+the job (and `options` in files converted since) are the case's own.
 
 **Recorded and rebuilt programs.** A run that saved its assembled cases converts as
 `recorded`: the words are the bytes the hardware ran. Without them the converter assembles the

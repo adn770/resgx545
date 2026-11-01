@@ -235,3 +235,98 @@ def test_converts_a_pds_probe_whose_table_sits_beside_the_run(tmp_path):
     raw = "probe pds-alu-readback__0: o0 0x0da7a000 (2048 of 2048)\n"
     v = vectors.convert(raw, t, raw_name="r", dirs=[tmp_path, *vectors.template_dirs()])["vectors"][0]
     assert v["program"]["data"] == 36
+
+
+# ---- the job a fill ran in: its transfer command's pokes and the USE coefficients (11.7) ----
+
+def filter_table():
+    """A fill probe that loads the filter block (xfer:17 bit 2) with mode 3, each case its own
+    first coefficient word (case_set), as probes/usse/filter-taps.toml does."""
+    d = {"name": "t-firh", "question": "q", "source": "t.s", "params": {"OP": "nop"},
+         "inputs": ["A"], "cases": [[1], [2]], "pokes": ["xfer:17^=0x4", "xfer:32=0x3"],
+         "case_set": [{"pokes": ["xfer:33=0x4"]}, {"pokes": ["xfer:33=0x8", "xfer:41=0x10"]}]}
+    return [probe._probe(d, "t.toml")]
+
+
+FILTER_RAW = """probe t-firh__0: scratch at 0x3e003000 (64 KiB)
+probe t-firh__0: pokes xfer:17^=0x4 xfer:32=0x3 xfer:33=0x4
+probe t-firh__0: o0 0x00000002 (2048 of 2048)
+probe t-firh__1: scratch at 0x3e003000 (64 KiB)
+probe t-firh__1: pokes xfer:17^=0x4 xfer:32=0x3 xfer:33=0x8 xfer:41=0x10
+probe t-firh__1: o0 0x00000003 (2048 of 2048)
+"""
+
+
+def test_use_coeffs_follow_the_transfer_words():
+    """The transfer command starts zeroed (sgxfive_transfer_cmd); the firmware loads the filter
+    block only with load_flags bit 2 (transfer.md 3.2), then 0x0a9c from word 32 and the
+    three groups from words 33-41."""
+    assert vectors.use_coeffs([]) == {"load": False}
+    got = vectors.use_coeffs(["xfer:17^=0x4", "xfer:32=0x3", "xfer:33=0x4", "xfer:41=16"])
+    assert got == {"load": True, "mode": "0x00000003",
+                   "words": ["0x00000004"] + ["0x00000000"] * 7 + ["0x00000010"]}
+    # a flip twice is no load; other words do not matter
+    assert vectors.use_coeffs(["xfer:17^=0x4", "xfer:17^=0x4", "bg:3=1"]) == {"load": False}
+
+
+def test_a_case_set_s_pokes_reach_the_options_and_the_job():
+    """The options are the case's own (the probe's pokes, then its case_set's): the first
+    conversion recorded the probe's only, so a case's coefficient words were lost."""
+    batch = vectors.convert(FILTER_RAW, filter_table(), templates={"t.s": TEMPLATE},
+                            words_for=lambda p, i, t: [0], raw_name="r")
+    v0, v1 = batch["vectors"]
+    assert v0["provenance"]["options"] == ["--temps", "32", "--poke", "xfer:17^=0x4",
+                                           "--poke", "xfer:32=0x3", "--poke", "xfer:33=0x4"]
+    assert v1["init"]["job"]["pokes"] == ["xfer:17^=0x4", "xfer:32=0x3", "xfer:33=0x8",
+                                          "xfer:41=0x10"]
+    assert v1["init"]["job"]["use_coeffs"]["words"][0] == "0x00000008"
+    assert v1["init"]["job"]["use_coeffs"]["words"][8] == "0x00000010"
+
+
+def test_a_fill_without_pokes_loads_no_coefficients():
+    v = convert()["vectors"][0]
+    assert v["init"]["job"] == {"pokes": [], "use_coeffs": {"load": False}}
+
+
+def test_a_case_whose_run_printed_no_pokes_carries_no_job():
+    """As jobs(): a case whose table has pokes but whose run printed none ran with pokes not
+    known, so its vector carries no job (not the table's pokes)."""
+    no_lines = "\n".join(x for x in FILTER_RAW.splitlines() if ": pokes" not in x) + "\n"
+    batch = vectors.convert(no_lines, filter_table(), templates={"t.s": TEMPLATE},
+                            words_for=lambda p, i, t: [0], raw_name="r")
+    assert [("job" in v["init"]) for v in batch["vectors"]] == [False, False]
+    assert vectors.jobs(no_lines, filter_table()) == {}
+
+
+def test_jobs_come_from_the_run_s_pokes_lines():
+    """jobs(): the job of each case as the run printed it; a case whose table has pokes but
+    whose run printed none is left out (not known)."""
+    j = vectors.jobs(FILTER_RAW, filter_table())
+    assert j["t-firh__1"]["use_coeffs"]["mode"] == "0x00000003"
+    assert j["t-firh__0"]["pokes"] == ["xfer:17^=0x4", "xfer:32=0x3", "xfer:33=0x4"]
+    no_lines = "\n".join(x for x in FILTER_RAW.splitlines() if ": pokes" not in x) + "\n"
+    assert vectors.jobs(no_lines, filter_table()) == {}
+    # a probe without pokes: none printed, none needed
+    assert vectors.jobs(RAW, table())["t-add__0"] == {"pokes": [], "use_coeffs": {"load": False}}
+    # the run's line wins over the table (what ran)
+    other = FILTER_RAW.replace("xfer:33=0x4\n", "xfer:33=0x5\n")
+    assert vectors.jobs(other, filter_table())["t-firh__0"]["pokes"][-1] == "xfer:33=0x5"
+
+
+def test_the_jobs_command_writes_a_sidecar(tmp_path):
+    """jobs VEC...: the jobs of existing vector files, beside them under the data repository's
+    vectors/jobs/ (the vector files themselves stay as converted)."""
+    data = tmp_path / "data"
+    run = data / "usse" / "t" / "t-firh"
+    run.mkdir(parents=True)
+    (run / "raw.txt").write_text(FILTER_RAW)
+    vec = data / "vectors" / "usse" / "t" / "t-firh.vec.json"
+    vec.parent.mkdir(parents=True)
+    vec.write_text(json.dumps({"format": "sgx545-vectors", "version": 1,
+                               "run": {"raw": "usse/t/t-firh/raw.txt"}, "vectors": []}))
+    out = vectors.write_jobs(vec, data, filter_table())
+    assert out == data / "vectors" / "jobs" / "usse" / "t" / "t-firh.job.json"
+    side = json.loads(out.read_text())
+    assert side["format"] == "sgx545-vector-jobs" and "vectors" not in side
+    assert side["run"]["raw"] == "usse/t/t-firh/raw.txt"
+    assert sorted(side["jobs"]) == ["t-firh__0", "t-firh__1"]

@@ -1,0 +1,10 @@
+title = "probe table usse/encoding-bits-dual"
+repo = "data"
+paths = ["usse/encoding-bits-dual/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 103
+size = 186485
+sha256 = "f0ed29f17c82d1014f861bcb35542ba46d9f2aa410b2078ed70d4178eb6f9e33"
+recipe = "probes/usse/encoding-bits-dual.toml"
+needs = ["render"]

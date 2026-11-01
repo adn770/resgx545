@@ -1,0 +1,9 @@
+title = "the jobs of the usse instruction vectors converted before vectors carried them"
+repo = "data"
+paths = ["vectors/jobs/"]
+method = "vectors.py jobs on the vector files of vectors/usse/ and vectors/followup/usse/: the transfer-command pokes of each fill vector, from the pokes line its run printed, and the USE coefficients they load"
+date = "2026-11-02"
+files = 1125
+size = 7200020
+sha256 = "034553102967a85a7189d2da14c3cba9ed26c0f04954934f49ea95af7a2de15f"
+recipe = "tools/usse-asm/vectors.py"

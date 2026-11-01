@@ -4,6 +4,8 @@
 # ima32: enc[38] adds the operand i<enc[37:36]> after the destination,
 # enc[43:42] the carry in (i0-i2). idiv (enc[52]): destination r or pa
 # (enc[39]), sources 1 and 2, drc enc[32].
+# Unmapped bits flipped on the hardware (E295): idiv's enc[47] is read (every
+# destination r10-r17 changes, Q079), its other 18 change nothing.
 [[form]]
 order = 1790
 pat = "{0}ima32{1}.{2} {3}{4}, {5}, {6}, {7}{8}"

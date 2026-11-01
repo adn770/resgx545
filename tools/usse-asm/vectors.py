@@ -11,6 +11,11 @@ them; a campaign run of one (DATA/<unit>/<feature>/<probe>/raw.txt) finds its ow
 
     vectors.py convert RAW... -o OUTDIR [--root DIR] [--bins DIR]
     vectors.py check FILE...
+    vectors.py jobs VEC... --data DIR
+
+A fill's vector carries the job it ran in (init.job): the transfer command's pokes as the run
+printed them, and the USE filter coefficients they load (use_coeffs). `jobs` writes the same for
+vector files converted before vectors carried it, as a sidecar under DIR/vectors/jobs/.
 
 convert writes OUTDIR/<run>.vec.json per raw file; <run> is the raw file's directory relative
 to --root (default: the current directory), with "/" turned into "_".
@@ -41,6 +46,9 @@ _SCRATCH_AT = re.compile(r"^probe (\S+): scratch at (0x[0-9a-f]+)")
 _SCRATCH_LOW = re.compile(r"^probe (\S+): scratch also at (0x[0-9a-f]+)")
 _PRESET = re.compile(r"^mov(?:\.\w+)*\s+(r\d+),\s+#(0x[0-9A-Fa-f]+|\d+)\s*$")
 _HEX = re.compile(r"^0x[0-9a-f]+$")
+_POKES = re.compile(r"^probe (\S+): pokes (.*)$")
+_POKE = re.compile(r"^(xfer|bg):(\d+)(\^?)=(0x[0-9a-fA-F]+|\d+)$")
+JOBS_FORMAT = "sgx545-vector-jobs"
 _ISA_DIGITS = {"usse": 16, "pds": 8}
 
 
@@ -141,11 +149,79 @@ def _readback(o: probe.Obs) -> dict:
             "pixels": None if o.pixels is None else [_h32(v) for v in o.pixels]}
 
 
+def use_coeffs(pokes: list) -> dict:
+    """The USE filter coefficients a fill's job loads (E078): the transfer command starts
+    zeroed (sgxfive_transfer_cmd) and the pokes set (=) or flip (^=) its words; the firmware
+    loads CR_USE_COEFFS_MODE from word 32 and the three groups from words 33-41 only when
+    load_flags (word 17) has bit 2 (transfer.md 3.2). Without it nothing is loaded."""
+    xfer = [0] * probe.POKE_WORDS["xfer"]
+    for k in pokes:
+        m = _POKE.match(k)
+        if m and m.group(1) == "xfer":
+            i, v = int(m.group(2)), int(m.group(4), 0)
+            xfer[i] = xfer[i] ^ v if m.group(3) else v
+    if not xfer[17] & 4:
+        return {"load": False}
+    return {"load": True, "mode": _h32(xfer[32]), "words": [_h32(w) for w in xfer[33:42]]}
+
+
+def job(pokes: list) -> dict:
+    """init.job: the pokes a fill ran with and the coefficients they load."""
+    return {"pokes": list(pokes), "use_coeffs": use_coeffs(pokes)}
+
+
+def case_probe(p: probe.Probe, i: int) -> probe.Probe:
+    """Case i as it ran: with its case_set (pokes added, words replaced) where it has one."""
+    return probe._view(p, i) if p.case_set else p
+
+
+def _printed_pokes(raw: str) -> dict:
+    return {m.group(1): m.group(2).split() for m in map(_POKES.match, raw.splitlines()) if m}
+
+
+def jobs(raw: str, table: list) -> dict:
+    """The job of every fill case of a run (label -> init.job): the pokes the run printed, or
+    none where its table has none for the case. A case whose table has pokes but whose run
+    printed none is left out: what it ran with is not known."""
+    printed, obs, out = _printed_pokes(raw), probe.parse(raw), {}
+    for p in table:
+        if p.host != "fill":
+            continue
+        for i in range(len(p.cases)):
+            label = f"{p.name}__{i}"
+            if label in printed:
+                out[label] = job(printed[label])
+            elif label in obs and not case_probe(p, i).pokes:
+                out[label] = job([])
+    return out
+
+
+def write_jobs(vec: pathlib.Path, data: pathlib.Path, table: list) -> pathlib.Path:
+    """The sidecar of a vector file of the data repository `data`: its vectors/jobs/<the same
+    path>.job.json, the jobs of its run (jobs()), found through the run's raw file."""
+    batch = json.loads(pathlib.Path(vec).read_text())
+    raw_rel = batch["run"]["raw"]
+    raw_path = pathlib.Path(data) / raw_rel
+    raw = raw_path.read_text()
+    tbl, _ = tables_for(raw_path, table)
+    rel = pathlib.Path(vec).resolve().relative_to((pathlib.Path(data) / "vectors").resolve())
+    out = pathlib.Path(data) / "vectors" / "jobs" / rel.parent / \
+        (rel.name.removesuffix(".vec.json") + ".job.json")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    side = {"format": JOBS_FORMAT, "version": VERSION,
+            "run": {"raw": raw_rel, "raw_sha256": _sha(raw.encode()),
+                    "tool": f"vectors.py {VERSION}"},
+            "jobs": jobs(raw, tbl)}
+    out.write_text(json.dumps(side, indent=1, sort_keys=True) + "\n")
+    return out
+
+
 def convert(raw: str, table: list, *, raw_name: str, templates: dict | None = None,
             words_for=assemble_words, bins: pathlib.Path | None = None,
             dirs: list | None = None) -> dict:
     """One batch from the text of a probe run: a vector per known case, in table order."""
     obs = probe.parse(raw)
+    printed = _printed_pokes(raw)
     scratch_at = {m.group(1): m.group(2) for m in map(_SCRATCH_AT.match, raw.splitlines()) if m}
     scratch_low = {m.group(1): m.group(2) for m in map(_SCRATCH_LOW.match, raw.splitlines()) if m}
     by_label = {}
@@ -177,6 +253,11 @@ def convert(raw: str, table: list, *, raw_name: str, templates: dict | None = No
                     "regs": presets(text)}
             if label in scratch_low:
                 init["scratch"]["low"] = scratch_low[label]
+            cp = case_probe(p, i)
+            # as jobs(): the pokes the run printed, none where the table has none; a case whose
+            # table has pokes but whose run printed none carries no job (not known)
+            if p.host == "fill" and (label in printed or not cp.pokes):
+                init["job"] = job(printed.get(label, []))
             if p.isa == "pds":
                 # the fill's PDS secondary: douta into sa0-sa15, which the fill's USE program
                 # stores to scratch dwords 0-15; U0-U2 (data dwords 0-2) kick the secondary's
@@ -194,7 +275,8 @@ def convert(raw: str, table: list, *, raw_name: str, templates: dict | None = No
                                "template": p.source, "template_sha256": _sha(tmpl.encode()),
                                "inputs": {k: probe._fmt(v).lower() if isinstance(v, int)
                                           else v for k, v in zip(p.inputs, case)},
-                               "params": dict(p.params), "options": probe.tool_args(p, src_dir=_found(p, dirs)),
+                               "params": dict(p.params),
+                               "options": probe.tool_args(cp, src_dir=_found(p, dirs)),
                                "question": p.question},
             })
     orphans = [k for k in obs if k not in by_label]
@@ -261,7 +343,16 @@ def main(argv=None) -> int:
     c.add_argument("--bins", default=None)
     k = sub.add_parser("check")
     k.add_argument("files", nargs="+")
+    j = sub.add_parser("jobs")
+    j.add_argument("files", nargs="+")
+    j.add_argument("--data", required=True)
     a = ap.parse_args(argv)
+    if a.cmd == "jobs":
+        table = probe.load()
+        for f in a.files:
+            out = write_jobs(pathlib.Path(f), pathlib.Path(a.data), table)
+            print(f"{out}: {len(json.loads(out.read_text())['jobs'])} jobs")
+        return 0
     if a.cmd == "check":
         for f in a.files:
             b = load(pathlib.Path(f))

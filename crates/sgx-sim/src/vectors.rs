@@ -58,14 +58,22 @@ pub enum Outcome {
     /// timer a program did not load), reached the readback: that dword is not checked
     /// beyond its width. Near, and counted apart from the bounded near values.
     AnyValue,
+    /// The readback agrees with a result of firh's fixed bank 1 or 2 (Machine::fitted), whose
+    /// tap families were fitted to these same vectors (FIXED_BANKS, E292): consistent with the
+    /// fit, not a hardware check. Counted apart, with the vectors that stop (coverage_json).
+    Fitted,
 }
 
 impl Outcome {
     /// Whether the match rests on near values (Near or AnyValue).
     pub fn is_near(self) -> bool {
-        self != Outcome::Exact
+        matches!(self, Outcome::Near | Outcome::AnyValue)
     }
 }
+
+/// The reason coverage_json gives the vectors that match only as fitted (Outcome::Fitted).
+pub const FITTED: &str = "firh's fixed bank 1 or 2, whose taps are fitted to these vectors (in-sample, \
+                          not a hardware check)";
 
 /// Run one vector: how it matches, else why not ("unsupported: ..." for
 /// what the simulator does not model yet). A near value that differs from the
@@ -75,8 +83,7 @@ pub fn run_scalar(v: &Json) -> Result<Outcome, String> {
     run_scalar_with(v, |_| {})
 }
 
-/// run_scalar with the instance set up further first (state a vector does not record, such
-/// as Machine::filter_bank).
+/// run_scalar with the instance set up further first (state a vector does not record).
 pub fn run_scalar_with(v: &Json, setup: impl FnOnce(&mut Machine)) -> Result<Outcome, String> {
     let words: Vec<u64> =
         v.get("program").get("words").arr().iter().map(|w| patch_scratch(w.hex().unwrap())).collect();
@@ -85,7 +92,7 @@ pub fn run_scalar_with(v: &Json, setup: impl FnOnce(&mut Machine)) -> Result<Out
         Memory { base: SCRATCH_BASE, words: (0..SCRATCH_DWORDS as u32).map(|i| 0xD000_0000 | i).collect() };
     let temps = v.get("init").get("temps").num().map_or(124, |t| t as usize);
     // a fill whose readback is one o0: every instance alike
-    let mut m = Machine { temps, near: true, uniform: true, ..Machine::default() };
+    let mut m = Machine { temps, near: true, uniform: true, coeffs: job_coeffs(v), ..Machine::default() };
     setup(&mut m);
     match m.run(&prog, &mut mem, 10_000) {
         Ok(()) => {}
@@ -93,6 +100,61 @@ pub fn run_scalar_with(v: &Json, setup: impl FnOnce(&mut Machine)) -> Result<Out
         Err(e) => return Err(format!("error: {e}")),
     }
     compare(v, &m, &mem)
+}
+
+/// The USE filter coefficients of the job a vector ran in (init.job.use_coeffs, written by
+/// vectors.py): None where the vector does not carry its job.
+pub fn job_coeffs(v: &Json) -> Option<crate::usse::FilterBlock> {
+    let c = v.get("init").get("job").get("use_coeffs");
+    match c.get("load") {
+        Json::Bool(false) => Some(crate::usse::FilterBlock::default()),
+        Json::Bool(true) => {
+            let w: Vec<u32> = c.get("words").arr().iter().filter_map(|w| w.hex()).map(|w| w as u32).collect();
+            Some(crate::usse::FilterBlock {
+                mode: c.get("mode").hex()? as u32,
+                groups: Some(w.try_into().ok()?),
+            })
+        }
+        _ => None,
+    }
+}
+
+/// A vector file, each vector given its job (init.job) from the file's sidecar where it does
+/// not carry one: `vectors.py jobs` writes vectors/jobs/<the file's path under vectors/>,
+/// `.job.json` for `.vec.json`, for the files converted before vectors carried their job.
+pub fn load(path: &std::path::Path) -> Json {
+    let mut d = crate::json::parse(&std::fs::read_to_string(path).unwrap());
+    let Some(side) = sidecar(path).and_then(|p| std::fs::read_to_string(p).ok()) else { return d };
+    let side = crate::json::parse(&side);
+    let jobs = side.get("jobs");
+    if let Json::Obj(top) = &mut d
+        && let Some((_, Json::Arr(vs))) = top.iter_mut().find(|(k, _)| k == "vectors")
+    {
+        for v in vs {
+            let id = v.get("id").str().unwrap_or("").to_string();
+            let job = jobs.get(&id);
+            if let (Json::Obj(fields), false) = (v, matches!(job, Json::Null))
+                && let Some((_, Json::Obj(init))) = fields.iter_mut().find(|(k, _)| k == "init")
+                && !init.iter().any(|(k, _)| k == "job")
+            {
+                init.push(("job".to_string(), job.clone()));
+            }
+        }
+    }
+    d
+}
+
+/// The sidecar of a vector file (load): the nearest `vectors` directory above it, then
+/// jobs/ and the same path.
+fn sidecar(path: &std::path::Path) -> Option<PathBuf> {
+    let name = path.file_name()?.to_str()?.strip_suffix(".vec.json")?;
+    let mut rel = vec![format!("{name}.job.json")];
+    let mut dir = path.parent()?;
+    while dir.file_name()? != "vectors" {
+        rel.push(dir.file_name()?.to_str()?.to_string());
+        dir = dir.parent()?;
+    }
+    Some(rel.iter().rev().fold(dir.join("jobs"), |p, c| p.join(c)))
 }
 
 /// The scratch dwords and o0 a run left, against the vector's readback.
@@ -106,7 +168,7 @@ fn compare(v: &Json, m: &Machine, mem: &Memory) -> Result<Outcome, String> {
     let (mut diffs, mut near, mut any) = (Vec::new(), false, false);
     let mut check = |what: String, got: u32, want: u32, bound: Option<&Bound>| -> Result<(), String> {
         near |= bound.is_some();
-        any |= matches!(bound, Some(Bound::Bits(_)));
+        any |= matches!(bound, Some(Bound::Bits(_) | Bound::Mask(_)));
         match bound {
             _ if got == want => {}
             Some(Bound::Derived) => return Err(format!("unsupported: {what} is computed from a near value")),
@@ -135,7 +197,9 @@ fn compare(v: &Json, m: &Machine, mem: &Memory) -> Result<Outcome, String> {
     if !diffs.is_empty() {
         return Err(diffs[..diffs.len().min(4)].join("; "));
     }
-    Ok(if any {
+    Ok(if m.fitted {
+        Outcome::Fitted
+    } else if any {
         Outcome::AnyValue
     } else if near {
         Outcome::Near
@@ -286,7 +350,7 @@ fn run_pds_tile(v: &Json, mut pds: Pds) -> Result<Outcome, String> {
     let prog = Program::new(&words, Core::Sgx545);
     let mut mem = Memory { base: SCRATCH_BASE, words: std::mem::take(&mut bus.scratch) };
     let temps = init.get("temps").num().map_or(124, |t| t as usize);
-    let mut m = Machine { temps, near: true, sa: bus.sa, ..Machine::default() };
+    let mut m = Machine { temps, near: true, sa: bus.sa, coeffs: job_coeffs(v), ..Machine::default() };
     m.written.sa = bus.written;
     // an attribute written last from a near value (the fetch pc) keeps its bound
     let mut sa_near = BTreeMap::new();
@@ -323,7 +387,11 @@ pub const SKIP: &[(&str, &str, &str)] = &[
     // timing probes: a loop of up to 1e7 iterations, past the simulator's step limit
     ("usse/loop-timing/", "", "the loop runs more steps than the simulator's limit"),
     // the fill's one pixel (38, 6) reads another i127 than its neighbours' rule gives (first round only)
-    ("usse/internal-registers/", "usse-internal-registers-bank7__16", "one pixel of 2048 reads an unexplained i127"),
+    (
+        "usse/internal-registers/",
+        "usse-internal-registers-bank7__16",
+        "one pixel of 2048 reads an unexplained i127",
+    ),
     // a store job's outcome depends on the jobs before it, or differs between two runs of
     // the same program (a fault after a fault, a total-1 store that faults in one run only)
     ("", "pds-memory-mem2__0", "faults in one run only"),
@@ -351,12 +419,14 @@ pub fn run_pixels(v: &Json) -> Result<Outcome, String> {
     let pixels: Vec<u32> =
         v.get("readback").get("pixels").arr().iter().map(|p| p.hex().unwrap() as u32).collect();
     let height = pixels.len() / WIDTH;
+    let mut fitted = false;
     for y0 in (0..height).step_by(2) {
         for x0 in (0..WIDTH).step_by(2) {
             let at = [(x0, y0), (x0 + 1, y0), (x0, y0 + 1), (x0 + 1, y0 + 1)];
             let mut quad: [Machine; 4] = Default::default();
             for (m, &(x, y)) in quad.iter_mut().zip(&at) {
                 m.temps = temps;
+                m.coeffs = job_coeffs(v);
                 m.pa[0] = (y as u32) << 16 | x as u32;
                 m.pixel = Some((x as u32, y as u32));
                 m.written.pa |= 1;
@@ -371,6 +441,7 @@ pub fn run_pixels(v: &Json) -> Result<Outcome, String> {
                 Err(e) => return Err(format!("error: {e}")),
             }
             for (m, &(x, y)) in quad.iter().zip(&at) {
+                fitted |= m.fitted;
                 let want = pixels[y * WIDTH + x];
                 if m.o[0] != want {
                     return Err(format!("pixel ({x}, {y}) o0 got 0x{:08x} want 0x{want:08x}", m.o[0]));
@@ -378,14 +449,12 @@ pub fn run_pixels(v: &Json) -> Result<Outcome, String> {
             }
         }
     }
-    Ok(Outcome::Exact)
+    Ok(if fitted { Outcome::Fitted } else { Outcome::Exact })
 }
 
 /// Whether a probe's run is on the skip list, and why.
 pub fn skipped(raw: &str, probe: &str, id: &str) -> Option<&'static str> {
-    SKIP.iter()
-        .find(|(r, p, _)| (p.is_empty() || *p == probe || *p == id) && raw.starts_with(r))
-        .map(|s| s.2)
+    SKIP.iter().find(|(r, p, _)| (p.is_empty() || *p == probe || *p == id) && raw.starts_with(r)).map(|s| s.2)
 }
 
 /// What a vector needs: one instance (the uniform o0 and the scratch), every
@@ -502,14 +571,14 @@ fn pds_under_test(op: &str) -> Vec<usize> {
 }
 
 /// The vector files under `dir` (data()): every `*.vec.json` of its subdirectories, in path
-/// order.
+/// order (the jobs/ sidecars are not vector files).
 pub fn probe_files(dir: &std::path::Path) -> Vec<PathBuf> {
     fn walk(d: &std::path::Path, out: &mut Vec<PathBuf>) {
         for e in std::fs::read_dir(d).into_iter().flatten().flatten() {
             let p = e.path();
             if p.is_dir() {
                 walk(&p, out);
-            } else if p.extension().is_some_and(|x| x == "json") {
+            } else if p.file_name().and_then(|n| n.to_str()).is_some_and(|n| n.ends_with(".vec.json")) {
                 out.push(p);
             }
         }
@@ -550,14 +619,17 @@ fn esc(s: &str) -> String {
     s.replace('\\', "\\\\").replace('"', "\\\"")
 }
 
-/// The simulator's coverage of the vectors in `dir` (data(); the report is `doc/isa/sim-coverage.json`,
-/// which `cargo run --release -p sgx-sim --example coverage` writes): for
-/// each form of the USSE table, its op and, by the probes whose instructions
-/// under test use it, how many vectors match, stop unsupported or mismatch,
-/// with the unsupported reasons. "near" counts, by probe, the matches that rest on near
-/// values; for the PDS forms "any" counts the part of those that rest on a value read as any
-/// value of its width (Outcome::AnyValue), and the totals give "pds_near", "pds_any" and the
-/// tiles the PDS matches ran on ("pds_tiles", run_pds_tile_match).
+/// The simulator's coverage of the vectors in `dir` (data(); the report is
+/// `doc/isa/sim-coverage.json`, which `cargo run --release -p sgx-sim --example coverage`
+/// writes): for each form of the USSE table, its op and, by the probes whose instructions under
+/// test use it, how many vectors match, stop unsupported or mismatch, with the unsupported
+/// reasons. A vector that agrees only with a fitted result (Outcome::Fitted) counts with the
+/// stops, its reason FITTED, and the totals' "fitted" says how many. "near" counts, by probe,
+/// the matches that rest on near values, and the totals' "any" the USSE ones of them that rest
+/// on a value read as any value (Outcome::AnyValue: the firh latch's unwritten bytes); for the
+/// PDS forms "any" counts the part of those that rest on a value read as any value of its
+/// width (Outcome::AnyValue), and the totals give "pds_near", "pds_any" and the tiles the PDS
+/// matches ran on ("pds_tiles", run_pds_tile_match).
 pub fn coverage_json(dir: &std::path::Path) -> String {
     type Counts = [usize; 3];
     let table = usse_isa::table();
@@ -566,7 +638,7 @@ pub fn coverage_json(dir: &std::path::Path) -> String {
     let mut totals: BTreeMap<&str, Counts> = BTreeMap::new();
     let mut all_whys: BTreeMap<String, usize> = BTreeMap::new();
     let mut nears: Vec<BTreeMap<String, usize>> = vec![BTreeMap::new(); table.forms.len()];
-    let mut all_near = 0;
+    let (mut all_near, mut all_any, mut all_fitted) = (0, 0, 0);
     let npds = pds_isa::forms().count();
     let mut pds_probes: Vec<BTreeMap<String, Counts>> = vec![BTreeMap::new(); npds];
     let mut pds_whys: Vec<BTreeMap<String, usize>> = vec![BTreeMap::new(); npds];
@@ -576,7 +648,7 @@ pub fn coverage_json(dir: &std::path::Path) -> String {
     let (mut pds_near, mut pds_any) = (0, 0);
     let mut pds_tiles: BTreeMap<(u32, u32), usize> = BTreeMap::new();
     for path in probe_files(dir) {
-        let d = crate::json::parse(&std::fs::read_to_string(&path).unwrap());
+        let d = load(&path);
         let raw = d.get("run").get("raw").str().unwrap_or("").to_string();
         for v in d.get("vectors").arr() {
             let probe = v.get("provenance").get("probe").str().unwrap_or("").to_string();
@@ -621,26 +693,31 @@ pub fn coverage_json(dir: &std::path::Path) -> String {
             let Some(r) = run(v) else { continue };
             let near = r.as_ref().is_ok_and(|o| o.is_near());
             all_near += near as usize;
+            all_any += (r == Ok(Outcome::AnyValue)) as usize;
+            all_fitted += (r == Ok(Outcome::Fitted)) as usize;
+            // a fitted match is not a hardware check: it counts with the stops, its reason FITTED
             let slot = match &r {
+                Ok(Outcome::Fitted) => 1,
                 Ok(_) => 0,
                 Err(e) if e.starts_with("unsupported") => 1,
                 Err(_) => 2,
             };
             totals.entry(if k == Kind::Pixels { "pixels" } else { "scalar" }).or_default()[slot] += 1;
-            if let Err(e) = &r
-                && slot == 1
-            {
-                *all_whys.entry(reason(e)).or_default() += 1;
+            let why = match &r {
+                Ok(Outcome::Fitted) => Some(FITTED.to_string()),
+                Err(e) if slot == 1 => Some(reason(e)),
+                _ => None,
+            };
+            if let Some(w) = &why {
+                *all_whys.entry(w.clone()).or_default() += 1;
             }
             for f in under_test(v) {
                 probes[f].entry(probe.clone()).or_default()[slot] += 1;
                 if near {
                     *nears[f].entry(probe.clone()).or_default() += 1;
                 }
-                if let Err(e) = &r
-                    && slot == 1
-                {
-                    *whys[f].entry(reason(e)).or_default() += 1;
+                if let Some(w) = &why {
+                    *whys[f].entry(w.clone()).or_default() += 1;
                 }
             }
         }
@@ -648,7 +725,10 @@ pub fn coverage_json(dir: &std::path::Path) -> String {
     let mut o = String::from("{\n  \"format\": \"sgx-sim-coverage\",\n  \"version\": 1,\n");
     o += "  \"generated\": \"cargo run --release -p sgx-sim --example coverage\",\n  \"totals\": {";
     o += &totals.iter().map(|(k, c)| format!("\"{k}\": {c:?}")).collect::<Vec<_>>().join(", ");
-    o += &format!(", \"near\": {all_near}, \"pds_near\": {pds_near}, \"pds_any\": {pds_any}");
+    o += &format!(
+        ", \"near\": {all_near}, \"any\": {all_any}, \"fitted\": {all_fitted}, \"pds_near\": {pds_near}, \
+         \"pds_any\": {pds_any}"
+    );
     o += ", \"pds_tiles\": {";
     o += &pds_tiles.iter().map(|((x, y), n)| format!("\"{x},{y}\": {n}")).collect::<Vec<_>>().join(", ");
     o += "}},\n  \"unsupported\": {";
@@ -682,7 +762,8 @@ pub fn coverage_json(dir: &std::path::Path) -> String {
         .enumerate()
         .map(|(i, f)| {
             let op = if f.op.is_empty() { "null".to_string() } else { format!("\"{}\"", f.op) };
-            let pr: Vec<String> = pds_probes[i].iter().map(|(p, c)| format!("\"{}\": {c:?}", esc(p))).collect();
+            let pr: Vec<String> =
+                pds_probes[i].iter().map(|(p, c)| format!("\"{}\": {c:?}", esc(p))).collect();
             let wh: Vec<String> = pds_whys[i].iter().map(|(w, n)| format!("\"{}\": {n}", esc(w))).collect();
             let ne: Vec<String> = pds_nears[i].iter().map(|(p, n)| format!("\"{}\": {n}", esc(p))).collect();
             let an: Vec<String> = pds_anys[i].iter().map(|(p, n)| format!("\"{}\": {n}", esc(p))).collect();
@@ -717,14 +798,27 @@ mod tests {
     /// The same, the job's failure given (JSON: null or a string).
     fn pds_vector_failed(first: &str, got: u32, failed: &str) -> crate::json::Json {
         let enc = |t: &str| format!("\"0x{:08x}\"", pds_isa::encode(t).unwrap());
-        let code: Vec<&str> = first.lines().chain(["movs douta, ds0[48], ds1[0], ds0[48], ds0[48]",
-                    "movs doutu, ds0[0], ds0[1], ds1[0], ds0[0]", "halt"]).collect();
-        let words: Vec<String> =
-            ["\"0x0\"".into(), "\"0x0\"".into(), "\"0x0\"".into(), "\"0x0\"".into()]
-                .into_iter().chain(code.iter().map(|t| enc(t))).collect();
+        let code: Vec<&str> = first
+            .lines()
+            .chain([
+                "movs douta, ds0[48], ds1[0], ds0[48], ds0[48]",
+                "movs doutu, ds0[0], ds0[1], ds1[0], ds0[0]",
+                "halt",
+            ])
+            .collect();
+        let words: Vec<String> = ["\"0x0\"".into(), "\"0x0\"".into(), "\"0x0\"".into(), "\"0x0\"".into()]
+            .into_iter()
+            .chain(code.iter().map(|t| enc(t)))
+            .collect();
         // sa_dump.s cut to sa0: phas, the scratch address, stad sa0, idf, wdf, end
-        let usew = ["0xfa44070000000000", "0xfca1705003af0000", "0xf0220000b0074000",
-                    "0xf820000000000000", "0xf920000000000000", "0xfca430d10007a000"];
+        let usew = [
+            "0xfa44070000000000",
+            "0xfca1705003af0000",
+            "0xf0220000b0074000",
+            "0xf820000000000000",
+            "0xf920000000000000",
+            "0xfca430d10007a000",
+        ];
         let usew: Vec<String> = usew.iter().map(|w| format!("\"{w}\"")).collect();
         crate::json::parse(&format!(
             r#"{{"program": {{"isa": "pds", "data": 4, "words": [{}]}},
@@ -733,7 +827,58 @@ mod tests {
                 "readback": {{"failed": {failed}, "o0": null,
                               "scratch": {{"0x000": "0x{got:08x}"}}}},
                 "provenance": {{"options": ["--pds", "4"]}}}}"#,
-            words.join(", "), usew.join(", ")))
+            words.join(", "),
+            usew.join(", ")
+        ))
+    }
+
+    #[test]
+    fn a_vector_s_job_gives_the_coefficients() {
+        use crate::usse::FilterBlock;
+        let v = |job: &str| crate::json::parse(&format!(r#"{{"init": {{"job": {job}}}}}"#));
+        let words: Vec<String> = (1..=9).map(|i| format!("\"0x{i:08x}\"")).collect();
+        let loaded = format!(
+            r#"{{"pokes": [], "use_coeffs": {{"load": true, "mode": "0x00000007", "words": [{}]}}}}"#,
+            words.join(", ")
+        );
+        assert_eq!(
+            super::job_coeffs(&v(&loaded)),
+            Some(FilterBlock { mode: 7, groups: Some([1, 2, 3, 4, 5, 6, 7, 8, 9]) })
+        );
+        let none = r#"{"pokes": [], "use_coeffs": {"load": false}}"#;
+        assert_eq!(super::job_coeffs(&v(none)), Some(FilterBlock::default()));
+        // a vector without its job: not known
+        assert_eq!(super::job_coeffs(&crate::json::parse(r#"{"init": {}}"#)), None);
+    }
+
+    #[test]
+    fn a_vector_file_takes_its_jobs_from_the_sidecar() {
+        // vectors.py jobs: vectors/jobs/<path>.job.json beside the files converted before
+        // vectors carried their job; the vector files themselves are left as they were
+        let d = std::env::temp_dir().join(format!("sgx-sim-jobs-{}", std::process::id()));
+        let (vd, jd) = (d.join("vectors/usse/x"), d.join("vectors/jobs/usse/x"));
+        std::fs::create_dir_all(&vd).unwrap();
+        std::fs::create_dir_all(&jd).unwrap();
+        std::fs::write(
+            vd.join("t.vec.json"),
+            r#"{"vectors": [{"id": "t__0", "init": {"temps": 8}}, {"id": "t__1", "init": {}}]}"#,
+        )
+        .unwrap();
+        std::fs::write(
+            jd.join("t.job.json"),
+            r#"{"format": "sgx545-vector-jobs", "jobs": {"t__0": {"pokes": [],
+                "use_coeffs": {"load": false}}}}"#,
+        )
+        .unwrap();
+        let b = super::load(&vd.join("t.vec.json"));
+        let vs = b.get("vectors").arr();
+        assert_eq!(super::job_coeffs(&vs[0]), Some(crate::usse::FilterBlock::default()));
+        assert_eq!(vs[0].get("init").get("temps").num(), Some(8.0));
+        assert_eq!(super::job_coeffs(&vs[1]), None);
+        // the sidecars are not vector files
+        let files = super::probe_files(&d.join("vectors"));
+        assert_eq!(files, vec![vd.join("t.vec.json")]);
+        std::fs::remove_dir_all(&d).unwrap();
     }
 
     #[test]

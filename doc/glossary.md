@@ -571,9 +571,9 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `CR_USE_CODE_BASE_0.DM` G0007 (0x0a0c[26:25]): data master that owns a USE code base. From
   `EUR_CR_USE_CODE_BASE_DM_00` (1, sgx545-ce); `_PSB_CUC_BASE_DM_MASK` (1c, emgd-psb_regs).
 - `CR_USE_COEFFS_MODE.MODE` G0204 (0x0a9c[1:0]): 0: a fixed bank of H.264 and MPEG-4 interpolation
-  filters for sets 2-5; 1: VC-1's bicubic filters; 2: smoothing filters; 3: set 2 loaded, sets 3-5
-  zero (the closed driver's value for NV12) [infer]. From `CR_USE_COEFFS_MODE.MODE` (ours,
-  resgx545).
+  filters for sets 2-5; 1: VC-1's bicubic filters; 2: smoothing filters (sets 4, 5) and zero-sum
+  difference filters (sets 2, 3); 3: set 2 loaded, sets 3-5 zero [infer]. From
+  `CR_USE_COEFFS_MODE.MODE` (ours, resgx545).
 - `CR_PDS_EXEC_BASE.ADDR` G0952 (0x0ab8[31:20]): PDS program base, top 12 bits (1 MB aligned). From
   `EUR_CR_PDS_EXEC_BASE_ADDR` (1, sgx545-ce).
 - `CR_PDS_REG_0ABC.BITS4_1` G0150 (0x0abc[4:1]): inferred reading (unconfirmed): the number of PDS

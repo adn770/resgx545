@@ -1,0 +1,10 @@
+title = "probe table usse/encoding-gaps"
+repo = "data"
+paths = ["usse/encoding-gaps/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 26
+size = 27990
+sha256 = "55bf8aa60587c8c40fefc17569d52e0e146bce5361124fef87342b13447e37b6"
+recipe = "probes/usse/encoding-gaps.toml"
+needs = ["render"]

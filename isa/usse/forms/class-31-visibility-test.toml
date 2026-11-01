@@ -6,6 +6,9 @@
 # a predicate p<enc[40:39]> (enc[38] clear prints "!"), with c10 at enc[54].
 # Both test source 0, 1 and 2 with twosided enc[37] and the feedback mode
 # enc[36:35] (fb, nfb, optdwd twice).
+# Unmapped bits flipped on the hardware (E296): enc[44] set on depthf hangs
+# the job; every other unmapped bit of depthf, pcoeff and atst8 changes
+# nothing a fill shows.
 [[form]]
 order = 1540
 pat = "pcoeff{0}{1} {2}, {3}, {4}"

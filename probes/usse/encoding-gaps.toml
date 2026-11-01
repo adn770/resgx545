@@ -1,0 +1,41 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse encoding gaps: 0 sweeps, 4 probes (written by tools/usse-asm/usse_bits.py).
+# Each probe runs one word no form decodes per case; case 0 is a nop.
+needs = ["render"]
+
+[[probe]]
+name = "usse-encoding-gaps-class2"
+question = "what a word of class 2 that no form decodes does in a fill: nothing, a change, or a hang or fault"
+source = "dump.s"
+params = { OUT = "r10" }
+inputs = ["OP", "A", "B", "C", "D", "E", "F", "G", "H"]
+labels = ["base", "0x16FD0F56289DA082", "0x174767201E0A5FA1", "0x14BEA76C90F608E3"]
+cases = [["nop", "0x3FC01234", "0x40105678", "0x8001C003", "0x00FF7F80", "0x3F800001", "0xC0400002", "0x12345678", "0x7F7F0101"], [".long 0x16FD0F56289DA082 ; class 2 word", "0x3FC01234", "0x40105678", "0x8001C003", "0x00FF7F80", "0x3F800001", "0xC0400002", "0x12345678", "0x7F7F0101"], [".long 0x174767201E0A5FA1 ; class 2 word", "0x3FC01234", "0x40105678", "0x8001C003", "0x00FF7F80", "0x3F800001", "0xC0400002", "0x12345678", "0x7F7F0101"], [".long 0x14BEA76C90F608E3 ; class 2 word", "0x3FC01234", "0x40105678", "0x8001C003", "0x00FF7F80", "0x3F800001", "0xC0400002", "0x12345678", "0x7F7F0101"]]
+
+[[probe]]
+name = "usse-encoding-gaps-class22"
+question = "what a word of class 22 that no form decodes does in a fill: nothing, a change, or a hang or fault"
+source = "dump.s"
+params = { OUT = "r10" }
+inputs = ["OP", "A", "B", "C", "D", "E", "F", "G", "H"]
+labels = ["base", "0xB7ECF778F9B27E62", "0xB21880B46C3C406D", "0xB5D2715A97A5103A"]
+cases = [["nop", "0x3FC01234", "0x40105678", "0x8001C003", "0x00FF7F80", "0x3F800001", "0xC0400002", "0x12345678", "0x7F7F0101"], [".long 0xB7ECF778F9B27E62 ; class 22 word", "0x3FC01234", "0x40105678", "0x8001C003", "0x00FF7F80", "0x3F800001", "0xC0400002", "0x12345678", "0x7F7F0101"], [".long 0xB21880B46C3C406D ; class 22 word", "0x3FC01234", "0x40105678", "0x8001C003", "0x00FF7F80", "0x3F800001", "0xC0400002", "0x12345678", "0x7F7F0101"], [".long 0xB5D2715A97A5103A ; class 22 word", "0x3FC01234", "0x40105678", "0x8001C003", "0x00FF7F80", "0x3F800001", "0xC0400002", "0x12345678", "0x7F7F0101"]]
+
+[[probe]]
+name = "usse-encoding-gaps-class26"
+question = "what a word of class 26 that no form decodes does in a fill: nothing, a change, or a hang or fault"
+source = "dump.s"
+params = { OUT = "r10" }
+inputs = ["OP", "A", "B", "C", "D", "E", "F", "G", "H"]
+labels = ["base", "0xD4616B86E7DA59C9", "0xD12855E58CE5D732", "0xD36FCF73F0E8CF91"]
+cases = [["nop", "0x3FC01234", "0x40105678", "0x8001C003", "0x00FF7F80", "0x3F800001", "0xC0400002", "0x12345678", "0x7F7F0101"], [".long 0xD4616B86E7DA59C9 ; class 26 word", "0x3FC01234", "0x40105678", "0x8001C003", "0x00FF7F80", "0x3F800001", "0xC0400002", "0x12345678", "0x7F7F0101"], [".long 0xD12855E58CE5D732 ; class 26 word", "0x3FC01234", "0x40105678", "0x8001C003", "0x00FF7F80", "0x3F800001", "0xC0400002", "0x12345678", "0x7F7F0101"], [".long 0xD36FCF73F0E8CF91 ; class 26 word", "0x3FC01234", "0x40105678", "0x8001C003", "0x00FF7F80", "0x3F800001", "0xC0400002", "0x12345678", "0x7F7F0101"]]
+
+[[probe]]
+name = "usse-encoding-gaps-class31"
+question = "what a word of class 31 that no form decodes does in a fill: nothing, a change, or a hang or fault"
+source = "dump.s"
+params = { OUT = "r10" }
+inputs = ["OP", "A", "B", "C", "D", "E", "F", "G", "H"]
+labels = ["base", "0xFF14652B9F5E11E9", "0xFF321261689C40C4", "0xFDA82CD6975E1BA1"]
+cases = [["nop", "0x3FC01234", "0x40105678", "0x8001C003", "0x00FF7F80", "0x3F800001", "0xC0400002", "0x12345678", "0x7F7F0101"], [".long 0xFF14652B9F5E11E9 ; class 31 word", "0x3FC01234", "0x40105678", "0x8001C003", "0x00FF7F80", "0x3F800001", "0xC0400002", "0x12345678", "0x7F7F0101"], [".long 0xFF321261689C40C4 ; class 31 word", "0x3FC01234", "0x40105678", "0x8001C003", "0x00FF7F80", "0x3F800001", "0xC0400002", "0x12345678", "0x7F7F0101"], [".long 0xFDA82CD6975E1BA1 ; class 31 word", "0x3FC01234", "0x40105678", "0x8001C003", "0x00FF7F80", "0x3F800001", "0xC0400002", "0x12345678", "0x7F7F0101"]]

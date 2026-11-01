@@ -1246,7 +1246,7 @@ Mnemonics: `mov`.
 Modifiers: `.end`, `.nosched`, `.repeatN`, `.skipinv`, `.syncs`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 7 of 7 forms have semantics. The
-probe vectors that test them: 519 match the hardware, 39 stop unsupported, 0 mismatch
+probe vectors that test them: 551 match the hardware, 39 stop unsupported, 0 mismatch
 (`usse-alpha-test-pcoeff-depthf` 1/0/0, `usse-branch-bexc-none` 1/0/0,
 `usse-constant-banks-gbank-write` 0/10/0, `usse-decoder-vectors-and-taz` 14/0/0,
 `usse-decoder-vectors-iadd16-taz` 14/0/0, `usse-decoder-vectors-iadd16-taz-chan1` 14/0/0,
@@ -1255,8 +1255,9 @@ probe vectors that test them: 519 match the hardware, 39 stop unsupported, 0 mis
 `usse-decoder-vectors-iadd32-tanz` 14/0/0, `usse-decoder-vectors-iadd32-taz` 14/0/0,
 `usse-decoder-vectors-iaddu32-taz` 14/0/0, `usse-decoder-vectors-isub16-taz` 14/0/0,
 `usse-decoder-vectors-shl-pat` 14/0/0, `usse-decoder-vectors-uadd16-taz` 14/0/0,
-`usse-decoder-vectors-usub16-taz` 14/0/0, `usse-decoder-vectors-xor-nat` 14/0/0, `usse-flags-other`
-1/0/0, `usse-form-coverage-form2-test-e50` 9/1/0, `usse-form-coverage-lapc-pclink` 4/0/0,
+`usse-decoder-vectors-usub16-taz` 14/0/0, `usse-decoder-vectors-xor-nat` 14/0/0,
+`usse-encoding-bits-mov` 25/0/0, `usse-encoding-bits-mov-imm` 7/0/0, `usse-flags-other` 1/0/0,
+`usse-form-coverage-form2-test-e50` 9/1/0, `usse-form-coverage-lapc-pclink` 4/0/0,
 `usse-form-coverage-test-fn` 5/0/0, `usse-indexing-index-high` 0/12/0, `usse-indexing-index-store`
 4/0/0, `usse-indexing-index-unit` 7/0/0, `usse-indexing-index-width` 3/0/0,
 `usse-indexing-index-width2` 7/0/0, `usse-indexing-index-width3` 6/0/0, `usse-instance-masking-setm`
@@ -1310,8 +1311,12 @@ Modifiers: `.end`, `.flt`, `.flt16`, `.i10`, `.i16`, `.i32`, `.i8`, `.mask`, `.n
 `.skipinv`, `.smsk`, `.syncs`, `.tn`, `.tnz`, `.tp|z`, `.tz`, `.u8`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 11 of 11 forms have semantics. The
-probe vectors that test them: 84 match the hardware, 0 stop unsupported, 0 mismatch
-(`usse-form-coverage-movc-movmsk-repeat` 11/0/0, `usse-movc-flt` 8/0/0, `usse-movc-i10` 8/0/0,
+probe vectors that test them: 138 match the hardware, 0 stop unsupported, 0 mismatch
+(`usse-encoding-bits-movc` 5/0/0, `usse-encoding-bits-movc-i8` 5/0/0,
+`usse-encoding-bits-movc-repeat` 5/0/0, `usse-encoding-bits-movmsk` 11/0/0,
+`usse-encoding-bits-movmsk-repeat` 11/0/0, `usse-encoding-bits-movmsk-smsk` 3/0/0,
+`usse-encoding-bits-movmsk-smsk-u8` 3/0/0, `usse-encoding-bits-movmsk-u8` 11/0/0,
+`usse-form-coverage-movc-movmsk-repeat` 11/0/0, `usse-movc-flt` 8/0/0, `usse-movc-i10` 8/0/0,
 `usse-movc-i16` 8/0/0, `usse-movc-i32` 8/0/0, `usse-movc-i8` 8/0/0, `usse-movc-movmsk-flt` 2/0/0,
 `usse-movc-movmsk-flt16` 4/0/0, `usse-movc-movmsk-mask` 4/0/0, `usse-movc-movmsk-smsk` 2/0/0,
 `usse-movc-movmsk-smsk2` 16/0/0, `usse-movc-movmsk-u8` 4/0/0, `usse-write-masks-wmask-other` 1/0/0).
@@ -1379,7 +1384,7 @@ Mnemonics: `and`, `asr`, `or`, `rol`, `shl`, `shr`, `xor`.
 Modifiers: `.end`, `.nosched`, `.partial`, `.repeatN`, `.skipinv`, `.syncs`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 8 of 8 forms have semantics. The
-probe vectors that test them: 373 match the hardware, 16 stop unsupported, 0 mismatch
+probe vectors that test them: 441 match the hardware, 8 stop unsupported, 0 mismatch
 (`usse-branch-br-offset` 5/0/0, `usse-branch-divergent` 6/2/0, `usse-decoder-vectors-and` 16/0/0,
 `usse-decoder-vectors-andn` 16/0/0, `usse-decoder-vectors-asr` 30/0/0, `usse-decoder-vectors-br1`
 2/0/0, `usse-decoder-vectors-br2` 2/0/0, `usse-decoder-vectors-br3` 2/0/0,
@@ -1388,15 +1393,17 @@ probe vectors that test them: 373 match the hardware, 16 stop unsupported, 0 mis
 `usse-decoder-vectors-brn4` 2/0/0, `usse-decoder-vectors-brn5` 2/0/0, `usse-decoder-vectors-or`
 16/0/0, `usse-decoder-vectors-rol` 30/0/0, `usse-decoder-vectors-shl` 30/0/0,
 `usse-decoder-vectors-shr` 30/0/0, `usse-decoder-vectors-xor` 16/0/0, `usse-dot-products-fdpc`
-6/0/0, `usse-dot-products-fdpc-clip` 16/0/0, `usse-flags-other` 2/0/0,
+6/0/0, `usse-dot-products-fdpc-clip` 16/0/0, `usse-encoding-bits-and` 15/0/0,
+`usse-encoding-bits-and-repeat` 15/0/0, `usse-encoding-bits-shl` 15/0/0,
+`usse-encoding-bits-shr-repeat` 15/0/0, `usse-flags-other` 2/0/0,
 `usse-form-coverage-bitwise-repeat` 9/0/0, `usse-instance-masking-skipinv-inst` 1/0/0,
 `usse-integer-asr-reg` 7/0/0, `usse-integer-rol-reg` 7/0/0, `usse-integer-shift-immediates` 25/0/0,
 `usse-integer-shl-reg` 7/0/0, `usse-integer-shr-reg` 7/0/0, `usse-memory-mem-forms` 3/0/0,
-`usse-moe-setfc-branch` 2/8/0, `usse-moe-smbo-operands` 2/4/0,
+`usse-moe-setfc-branch` 10/0/0, `usse-moe-smbo-operands` 2/4/0,
 `usse-numbered-modifiers-family-repeat` 30/2/0, `usse-phases-phasbr-fill-parallel` 1/0/0,
 `usse-phases-phasbr-fill-perinstance` 1/0/0, `usse-write-masks-wmask-and-imm` 16/0/0,
-`usse-write-masks-wmask-or` 16/0/0); unsupported mostly for no semantics yet: setfc (8); reads rN
-before the program writes it (4); branch flag .syncent (2).
+`usse-write-masks-wmask-or` 16/0/0); unsupported mostly for reads rN before the program writes it
+(4); branch flag .syncent (2); smbo source-N offset (not measured) (2).
 
 Confirmed on the hardware (a passing vector): #16, #17, #18, #19, #20, #21, #22, #23.
 
@@ -1502,7 +1509,7 @@ Modifiers: `.and02`, `.andall`, `.bmsk`, `.chan0`, `.chan1`, `.chan2`, `.chan3`,
 `.testtoz`, `.wmsk`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 18 of 18 forms have semantics. The
-probe vectors that test them: 831 match the hardware, 2 stop unsupported, 0 mismatch
+probe vectors that test them: 843 match the hardware, 16 stop unsupported, 0 mismatch
 (`usse-alpha-test-pcoeff-depthf` 1/0/0, `usse-decoder-vectors-and-taz` 14/0/0,
 `usse-decoder-vectors-iadd16-taz` 14/0/0, `usse-decoder-vectors-iadd16-taz-chan1` 14/0/0,
 `usse-decoder-vectors-iadd16-taz-chan2` 14/0/0, `usse-decoder-vectors-iadd16-taz-chan3` 14/0/0,
@@ -1511,6 +1518,8 @@ probe vectors that test them: 831 match the hardware, 2 stop unsupported, 0 mism
 `usse-decoder-vectors-iaddu32-taz` 14/0/0, `usse-decoder-vectors-isub16-taz` 14/0/0,
 `usse-decoder-vectors-shl-pat` 14/0/0, `usse-decoder-vectors-uadd16-taz` 14/0/0,
 `usse-decoder-vectors-usub16-taz` 14/0/0, `usse-decoder-vectors-xor-nat` 14/0/0,
+`usse-encoding-bits-test-mask-fadd` 4/0/0, `usse-encoding-bits-test-mask-frcp` 0/14/0,
+`usse-encoding-bits-test-mask-iadd8` 4/0/0, `usse-encoding-bits-test-mask-xor` 4/0/0,
 `usse-form-coverage-form2-test-e50` 9/1/0, `usse-form-coverage-form2-test-mask` 12/1/0,
 `usse-form-coverage-test-fn` 5/0/0, `usse-integer-iadd32-n` 4/0/0, `usse-integer-iadd32-p` 3/0/0,
 `usse-integer-iadd32-src1-imm` 2/0/0, `usse-integer-iadd32-value` 4/0/0, `usse-integer-iadd32-z`
@@ -1525,8 +1534,9 @@ probe vectors that test them: 831 match the hardware, 2 stop unsupported, 0 mism
 `usse-test-channels-lanes-other` 74/0/0, `usse-tests-join-t-not` 3/0/0, `usse-tests-join-t-tonz`
 2/0/0, `usse-tests-join-t-toz` 2/0/0, `usse-tests-sign-n-iadd32` 4/0/0, `usse-tests-sign-n-iaddu32`
 4/0/0, `usse-tests-sign-p-and` 3/0/0, `usse-tests-sign-p-shl` 4/0/0, `usse-tests-zero-z-iadd32`
-4/0/0, `usse-unorm8-add-sub-mul` 12/0/0, `usse-unorm8-mul` 12/0/0); unsupported mostly for test
-fpmulN with enc[N] (not measured) (1); test isubN.sat with enc[N] (not measured) (1).
+4/0/0, `usse-unorm8-add-sub-mul` 12/0/0, `usse-unorm8-mul` 12/0/0); unsupported mostly for frcp test
+of a near value (14); test fpmulN with enc[N] (not measured) (1); test isubN.sat with enc[N] (not
+measured) (1).
 
 Confirmed on the hardware (a passing vector): #24, #25, #26, #199, #200, #201, #202, #203, #204,
 #205, #206, #207, #208, #209, #210, #211, #212, #213.
@@ -1595,13 +1605,17 @@ Mnemonics: `idiv`, `ima16`, `ima32`, `ima8`, `imae`.
 Modifiers: `.end`, `.nosched`, `.repeatN`, `.rsN`, `.s`, `.sat`, `.skipinv`, `.ssat`, `.u`, `.usat`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 12 of 12 forms have semantics. The
-probe vectors that test them: 164 match the hardware, 0 stop unsupported, 0 mismatch
+probe vectors that test them: 199 match the hardware, 1 stop unsupported, 0 mismatch
 (`usse-decoder-vectors-idiv` 17/0/0, `usse-decoder-vectors-ima16s` 16/0/0,
 `usse-decoder-vectors-ima16u` 16/0/0, `usse-decoder-vectors-ima32s` 16/0/0,
-`usse-decoder-vectors-ima32u` 16/0/0, `usse-form-coverage-ima16-ignored` 3/0/0, `usse-integer-idiv`
-7/0/0, `usse-integer-ima16` 4/0/0, `usse-integer-ima16-8bit` 8/0/0, `usse-integer-ima16-imm-c`
-2/0/0, `usse-integer-ima16-plain` 3/0/0, `usse-integer-ima16-reg-b` 2/0/0, `usse-integer-ima8`
-8/0/0, `usse-integer-imae-modes` 14/0/0, `usse-numbered-modifiers-family-rs` 32/0/0).
+`usse-decoder-vectors-ima32u` 16/0/0, `usse-encoding-bits-idiv` 19/1/0, `usse-encoding-bits-ima16`
+2/0/0, `usse-encoding-bits-ima16-8bit` 3/0/0, `usse-encoding-bits-ima16-s8` 3/0/0,
+`usse-encoding-bits-ima16-u8u8` 2/0/0, `usse-encoding-bits-ima32` 4/0/0, `usse-encoding-bits-imae`
+2/0/0, `usse-form-coverage-ima16-ignored` 3/0/0, `usse-integer-idiv` 7/0/0, `usse-integer-ima16`
+4/0/0, `usse-integer-ima16-8bit` 8/0/0, `usse-integer-ima16-imm-c` 2/0/0, `usse-integer-ima16-plain`
+3/0/0, `usse-integer-ima16-reg-b` 2/0/0, `usse-integer-ima8` 8/0/0, `usse-integer-imae-modes`
+14/0/0, `usse-numbered-modifiers-family-rs` 32/0/0); unsupported mostly for idiv with enc[N] set, a
+bit the hardware reads (open, QN) (1).
 
 Confirmed on the hardware (a passing vector): #27, #28, #29, #172, #173, #174, #175, #176, #177,
 #178, #179, #180.
@@ -1648,12 +1662,12 @@ Mnemonics: `+alrp`, `+arsop`, `+asop`, `+asop2`, `lrp`, `sop2`, `sop2wm`, `sop3`
 Modifiers: `.end`, `.nosched`, `.repeatN`, `.skipinv`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 7 of 7 forms have semantics. The
-probe vectors that test them: 398 match the hardware, 0 stop unsupported, 0 mismatch
+probe vectors that test them: 407 match the hardware, 0 stop unsupported, 0 mismatch
 (`usse-colour-ops-c10` 16/0/0, `usse-colour-ops-c10-other` 9/0/0, `usse-colour-ops-dot-repeats`
 6/0/0, `usse-colour-ops-sop2-ops` 42/0/0, `usse-colour-ops-sop2-random` 24/0/0,
 `usse-colour-ops-sop2-selectors` 88/0/0, `usse-colour-ops-sop2wm` 40/0/0,
 `usse-colour-ops-sop2wm-bytemask` 5/0/0, `usse-colour-ops-sop3-lrp` 152/0/0,
-`usse-colour-ops-sop3-random` 16/0/0).
+`usse-colour-ops-sop3-random` 16/0/0, `usse-encoding-bits-sop2wm` 9/0/0).
 
 Confirmed on the hardware (a passing vector): #165, #166, #167, #168, #169, #170, #171.
 
@@ -1678,8 +1692,10 @@ Mnemonics: `+aadd`, `+alrp`, `+alrpc`, `+asub`, `u16dot3`, `u16dot3off`, `u16dot
 Modifiers: `.end`, `.nosched`, `.repeatN`, `.skipinv`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 5 of 5 forms have semantics. The
-probe vectors that test them: 113 match the hardware, 0 stop unsupported, 0 mismatch
-(`usse-colour-ops-dot-repeats` 9/0/0, `usse-integer-dot-intdot-alpha` 32/0/0,
+probe vectors that test them: 152 match the hardware, 0 stop unsupported, 0 mismatch
+(`usse-colour-ops-dot-repeats` 9/0/0, `usse-encoding-bits-u16dot3` 12/0/0,
+`usse-encoding-bits-u8dot3` 10/0/0, `usse-encoding-bits-u8dot3-aadd` 5/0/0,
+`usse-encoding-bits-u8dot4` 12/0/0, `usse-integer-dot-intdot-alpha` 32/0/0,
 `usse-integer-dot-intdot-lanes` 72/0/0).
 
 Confirmed on the hardware (a passing vector): #181, #182, #183, #184, #185.
@@ -1711,8 +1727,9 @@ Mnemonics: `rlp`.
 Modifiers: `.end`, `.nosched`, `.partial`, `.repeatN`, `.skipinv`, `.syncs`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 2 of 2 forms have semantics. The
-probe vectors that test them: 37 match the hardware, 0 stop unsupported, 0 mismatch
-(`usse-form-coverage-rlp-repeat` 2/0/0, `usse-rlp-high-predicates` 3/0/0,
+probe vectors that test them: 77 match the hardware, 0 stop unsupported, 0 mismatch
+(`usse-encoding-bits-followup-rlp-p0` 20/0/0, `usse-encoding-bits-followup-rlp-repeat-p0` 20/0/0,
+`usse-form-coverage-rlp-repeat` 2/0/0, `usse-rlp-high-predicates` 3/0/0,
 `usse-rlp-result-and-predicate` 32/0/0).
 
 Confirmed on the hardware (a passing vector): #186, #187.
@@ -1857,8 +1874,9 @@ Mnemonics: `fadm`, `fmad`, `fmsa`, `fsubflr`.
 Modifiers: `.end`, `.incsXYZ`, `.nosched`, `.repeatN`, `.skipinv`, `.syncs`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 4 of 4 forms have semantics. The
-probe vectors that test them: 132 match the hardware, 0 stop unsupported, 0 mismatch
-(`usse-float-functions-sweep-fmad` 48/0/0, `usse-float-misc-fadm-fmsa-fsubflr` 27/0/0,
+probe vectors that test them: 152 match the hardware, 0 stop unsupported, 0 mismatch
+(`usse-encoding-bits-fsubflr` 10/0/0, `usse-encoding-bits-fsubflr-f16` 10/0/0,
+`usse-float-functions-sweep-fmad` 48/0/0, `usse-float-misc-fadm-fmsa-fsubflr` 27/0/0,
 `usse-float-misc-fadm-fmsa-fsubflr-specials` 3/0/0, `usse-fmad-denormal` 3/0/0, `usse-fmad-fused`
 1/0/0, `usse-fmad-move` 14/0/0, `usse-fmad-round` 3/0/0, `usse-fmad-zero-sign` 6/0/0,
 `usse-form-coverage-form2-flt16` 4/0/0, `usse-moe-smlsi-three-sources` 14/0/0,
@@ -1912,15 +1930,16 @@ Mnemonics: `fcos`, `fexp`, `flog`, `frcp`, `frsq`, `fsin`, `fsqrt`.
 Modifiers: `.end`, `.nosched`, `.repeatN`, `.skipinv`, `.syncs`, `.tpres`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 2 of 2 forms have semantics. The
-probe vectors that test them: 238 match the hardware (206 with near values, each within the bound
-the hardware was measured to), 0 stop unsupported, 0 mismatch (`usse-flags-other` 3/0/0,
-`usse-float-functions-frcp` 6/0/0, `usse-float-functions-frsq` 5/0/0,
-`usse-float-functions-fsingle-base` 4/0/0, `usse-float-functions-fsingle-specials` 4/0/0,
-`usse-float-functions-fsqrt` 5/0/0, `usse-float-functions-sweep-fcos` 12/0/0,
-`usse-float-functions-sweep-fexp` 12/0/0, `usse-float-functions-sweep-flog` 12/0/0,
-`usse-float-functions-sweep-frcp` 48/0/0, `usse-float-functions-sweep-frsq` 48/0/0,
-`usse-float-functions-sweep-fsin` 12/0/0, `usse-float-functions-sweep-fsqrt` 48/0/0,
-`usse-form-coverage-fsc-repeat` 3/0/0, `usse-write-masks-wmask-frcp` 16/0/0).
+probe vectors that test them: 274 match the hardware (242 with near values, each within the bound
+the hardware was measured to), 0 stop unsupported, 0 mismatch (`usse-encoding-bits-frcp` 18/0/0,
+`usse-encoding-bits-frcp-repeat` 18/0/0, `usse-flags-other` 3/0/0, `usse-float-functions-frcp`
+6/0/0, `usse-float-functions-frsq` 5/0/0, `usse-float-functions-fsingle-base` 4/0/0,
+`usse-float-functions-fsingle-specials` 4/0/0, `usse-float-functions-fsqrt` 5/0/0,
+`usse-float-functions-sweep-fcos` 12/0/0, `usse-float-functions-sweep-fexp` 12/0/0,
+`usse-float-functions-sweep-flog` 12/0/0, `usse-float-functions-sweep-frcp` 48/0/0,
+`usse-float-functions-sweep-frsq` 48/0/0, `usse-float-functions-sweep-fsin` 12/0/0,
+`usse-float-functions-sweep-fsqrt` 48/0/0, `usse-form-coverage-fsc-repeat` 3/0/0,
+`usse-write-masks-wmask-frcp` 16/0/0).
 
 Confirmed on the hardware (a passing vector): #44, #45.
 
@@ -1961,11 +1980,14 @@ Mnemonics: `fddp`, `fddpc`, `fdp`, `fdpc`.
 Modifiers: `.end`, `.incsXYZ`, `.nosched`, `.repeatN`, `.skipinv`, `.syncs`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 8 of 8 forms have semantics. The
-probe vectors that test them: 104 match the hardware, 0 stop unsupported, 0 mismatch
+probe vectors that test them: 128 match the hardware, 10 stop unsupported, 0 mismatch
 (`usse-dot-products-fddp` 6/0/0, `usse-dot-products-fddpc` 3/0/0, `usse-dot-products-fdp-count`
 4/0/0, `usse-dot-products-fdp-incs` 9/0/0, `usse-dot-products-fdp-rounding` 48/0/0,
 `usse-dot-products-fdp-specials` 8/0/0, `usse-dot-products-fdpc` 6/0/0,
-`usse-dot-products-fdpc-clip` 16/0/0, `usse-form-coverage-form2-flt16` 4/0/0).
+`usse-dot-products-fdpc-clip` 16/0/0, `usse-encoding-bits-fddpc` 0/4/0, `usse-encoding-bits-fdp`
+9/0/0, `usse-encoding-bits-fdp-f16` 9/0/0, `usse-encoding-bits-fdpc` 0/6/0,
+`usse-encoding-bits-fdpc-f16` 6/0/0, `usse-form-coverage-form2-flt16` 4/0/0); unsupported mostly for
+fdpc rounding (not measured) (6); fddpc rounding (not measured) (4).
 
 Confirmed on the hardware (a passing vector): #46, #47, #48, #49, #50, #51, #52, #53.
 
@@ -2036,8 +2058,9 @@ Mnemonics: `fdsx`, `fdsy`.
 Modifiers: `.end`, `.incsXYZ`, `.nosched`, `.repeatN`, `.skipinv`, `.syncs`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 2 of 2 forms have semantics. The
-probe vectors that test them: 24 match the hardware, 0 stop unsupported, 0 mismatch
-(`usse-form-coverage-form2-flt16` 2/0/0, `usse-gradients-fds-incs` 12/0/0, `usse-gradients-fds-quad`
+probe vectors that test them: 44 match the hardware, 0 stop unsupported, 0 mismatch
+(`usse-encoding-bits-fdsx` 10/0/0, `usse-encoding-bits-fdsx-f16` 10/0/0,
+`usse-form-coverage-form2-flt16` 2/0/0, `usse-gradients-fds-incs` 12/0/0, `usse-gradients-fds-quad`
 6/0/0, `usse-instance-masking-skipinv-grad` 4/0/0).
 
 Confirmed on the hardware (a passing vector): #56, #57.
@@ -2189,17 +2212,23 @@ Mnemonics: `+fadd`, `+fcos`, `+fexp`, `+flog`, `+fmad`, `+fmad16`, `+fmaxmin`, `
 Modifiers: `.nosched`, `.repeatN`, `.skipinv`, `.syncs`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 59 of 59 forms have semantics. The
-probe vectors that test them: 152 match the hardware (3 with near values, each within the bound the
-hardware was measured to), 0 stop unsupported, 0 mismatch (`usse-dual-issue-conflicts` 12/0/0,
+probe vectors that test them: 226 match the hardware (39 with near values, each within the bound the
+hardware was measured to), 5 stop unsupported, 0 mismatch (`usse-dual-issue-conflicts` 12/0/0,
 `usse-dual-issue-ima32` 34/0/0, `usse-dual-issue-pairs` 23/0/0, `usse-dual-issue-predicates` 12/0/0,
-`usse-dual-issue-shared` 14/0/0, `usse-form-coverage-dual` 19/0/0,
-`usse-form-coverage-form2-dual-flt16` 38/0/0).
+`usse-dual-issue-shared` 14/0/0, `usse-encoding-bits-dual-dual-fddp-frcp` 0/3/0,
+`usse-encoding-bits-dual-dual-fddp-mov` 0/2/0, `usse-encoding-bits-dual-dual-fmad-frcp` 3/0/0,
+`usse-encoding-bits-dual-dual-fmad-mov` 2/0/0, `usse-encoding-bits-dual-dual-fssq-fadd` 9/0/0,
+`usse-encoding-bits-dual-dual-fssq-frcp` 11/0/0, `usse-encoding-bits-dual-dual-fssq-mov` 2/0/0,
+`usse-encoding-bits-dual-dual-mov-fadd` 10/0/0, `usse-encoding-bits-dual-dual-mov-fmad` 2/0/0,
+`usse-encoding-bits-dual-dual-mov-frcp` 22/0/0, `usse-encoding-bits-dual-dual-mov-mov` 13/0/0,
+`usse-form-coverage-dual` 19/0/0, `usse-form-coverage-form2-dual-flt16` 38/0/0); unsupported mostly
+for fddp rounding (not measured) (5).
 
-Confirmed on the hardware (a passing vector): #61, #62, #63, #67, #71, #72, #73, #74, #75, #76, #77,
-#78, #79, #80, #83, #84, #85, #86, #87, #88, #89, #90, #91, #92, #93, #94, #95, #96, #97, #98, #99,
-#100, #101, #102, #103, #104, #105, #106, #107, #108, #109, #110, #111, #112, #113, #114, #115,
-#116, #117, #118, #119; not yet confirmed (as decoded; no passing vector yet): #64, #65, #66, #68,
-#69, #70, #81, #82.
+Confirmed on the hardware (a passing vector): #61, #62, #63, #65, #67, #68, #69, #70, #71, #72, #73,
+#74, #75, #76, #77, #78, #79, #80, #81, #82, #83, #84, #85, #86, #87, #88, #89, #90, #91, #92, #93,
+#94, #95, #96, #97, #98, #99, #100, #101, #102, #103, #104, #105, #106, #107, #108, #109, #110,
+#111, #112, #113, #114, #115, #116, #117, #118, #119; not yet confirmed (as decoded; no passing
+vector yet): #64, #66.
 
 ### 7.19 Loads and stores: `ld*`, `st*`, `eldd`, `eldq`
 
@@ -2297,7 +2326,7 @@ Modifiers: `.bpcache`, `.bypassl1`, `.fcfill`, `.fetchN`, `.noread`, `.nosched`,
 `.repeatN`, `.skipinv`, `.syncs`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 7 of 7 forms have semantics. The
-probe vectors that test them: 381 match the hardware, 102 stop unsupported, 0 mismatch
+probe vectors that test them: 397 match the hardware, 86 stop unsupported, 0 mismatch
 (`texture-mipmaps-mip-bias` 5/0/0, `texture-mipmaps-mip-grad` 8/0/0, `texture-mipmaps-mip-level`
 13/0/0, `texture-mipmaps-mip-minfilter` 15/0/0, `texture-mipmaps-mip-mipfilter` 24/0/0,
 `texture-mipmaps-mip-t0-field` 12/0/0, `texture-sampler-cache-texcache-cold` 2/0/0,
@@ -2317,10 +2346,11 @@ probe vectors that test them: 381 match the hardware, 102 stop unsupported, 0 mi
 `usse-internal-registers-ireg-ldad` 0/20/0, `usse-memory-ldad-reg-off` 16/0/0,
 `usse-memory-ldad-reg-off-fetch` 2/0/0, `usse-memory-ldad-reg-off-neg` 4/0/0,
 `usse-memory-mem-forms` 3/0/0, `usse-memory-stad-reg-off` 6/0/0,
-`usse-memory-stad-reg-off-unaligned` 3/0/0, `usse-moe-setfc` 2/8/0, `usse-moe-setfc-fetch` 2/8/0,
+`usse-memory-stad-reg-off-unaligned` 3/0/0, `usse-moe-setfc` 10/0/0, `usse-moe-setfc-fetch` 10/0/0,
 `usse-numbered-modifiers-family-fetch` 32/0/0, `usse-numbered-modifiers-family-fetch-dst` 8/0/0,
 `usse-numbered-modifiers-family-fetch-edge` 6/0/0); unsupported mostly for gN (per-instance values,
-not modelled) (54); fetch past the temporaries (16); no semantics yet: setfc (16).
+not modelled) (54); fetch past the temporaries (16); eld with bit N set in its index, offset or
+limit (not measured) (12).
 
 Confirmed on the hardware (a passing vector): #30, #31, #32, #33, #34, #35, #124.
 
@@ -2431,10 +2461,11 @@ Mnemonics: `ldr`, `str`.
 Modifiers: `.nosched`, `.skipinv`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 8 of 8 forms have semantics. The
-probe vectors that test them: 4 match the hardware, 12 stop unsupported, 0 mismatch
-(`usse-indexing-ldr-index-mask` 1/4/0, `usse-internal-registers-ireg-ldr` 2/8/0,
-`usse-memory-mem-forms` 1/0/0); unsupported mostly for rN is past the task's N temporaries (8); no
-SGX registers on this bus (4).
+probe vectors that test them: 4 match the hardware, 67 stop unsupported, 0 mismatch
+(`usse-encoding-bits-load-ldr` 0/31/0, `usse-encoding-bits-load-ldr-imm` 0/24/0,
+`usse-indexing-ldr-index-mask` 1/4/0, `usse-internal-registers-ireg-ldr` 2/8/0,
+`usse-memory-mem-forms` 1/0/0); unsupported mostly for no SGX registers on this bus (59); rN is past
+the task's N temporaries (8).
 
 Confirmed on the hardware (a passing vector): #36, #37; not yet confirmed (as decoded; no passing
 vector yet): #38, #39, #145, #146, #147, #148.
@@ -2504,7 +2535,7 @@ Mnemonics: `ba`, `bexception`, `br`, `lapc`.
 Modifiers: `.mon`, `.nosched`, `.rel`, `.savelink`, `.synce`, `.syncent`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 5 of 5 forms have semantics. The
-probe vectors that test them: 43 match the hardware, 40 stop unsupported, 0 mismatch
+probe vectors that test them: 51 match the hardware, 32 stop unsupported, 0 mismatch
 (`usse-branch-bexc2-ba10` 0/1/0, `usse-branch-bexc2-ba2` 0/1/0, `usse-branch-bexc2-br5` 0/1/0,
 `usse-branch-bexc2-np0-t10` 0/1/0, `usse-branch-bexc2-p0-t10` 0/1/0, `usse-branch-bexc2-rel5` 0/1/0,
 `usse-branch-bexc2-t10` 0/1/0, `usse-branch-bexc2-t2` 0/1/0, `usse-branch-br-offset` 5/0/0,
@@ -2513,9 +2544,9 @@ probe vectors that test them: 43 match the hardware, 40 stop unsupported, 0 mism
 2/0/0, `usse-decoder-vectors-br5` 2/0/0, `usse-decoder-vectors-brn1` 2/0/0,
 `usse-decoder-vectors-brn2` 2/0/0, `usse-decoder-vectors-brn3` 2/0/0, `usse-decoder-vectors-brn4`
 2/0/0, `usse-decoder-vectors-brn5` 2/0/0, `usse-form-coverage-lapc-pclink` 6/0/0,
-`usse-moe-setfc-branch` 2/8/0, `usse-phases-filladdr` 2/0/0, `usse-phases-phasbr-fill-parallel`
+`usse-moe-setfc-branch` 10/0/0, `usse-phases-filladdr` 2/0/0, `usse-phases-phasbr-fill-parallel`
 1/0/0, `usse-phases-phasbr-fill-perinstance` 1/0/0); unsupported mostly for gN (per-instance values,
-not modelled) (22); no semantics yet: setfc (8); rN is past the task's N temporaries (8).
+not modelled) (22); rN is past the task's N temporaries (8); branch flag .syncent (2).
 
 Confirmed on the hardware (a passing vector): #13, #125; not yet confirmed (as decoded; no passing
 vector yet): #12, #14, #15.
@@ -2574,8 +2605,8 @@ Mnemonics: `idf`, `lock`, `nop`, `release`, `setm`, `wdf`, `wop`.
 
 Modifiers: `.end`, `.nosched`, `.syncs`, `.tog`, `.trigger`, `.twopart`.
 
-Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 7 of 9 forms have semantics (not
-yet: #142, #143). The probe vectors that test them: 232 match the hardware, 34 stop unsupported, 0
+Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 8 of 9 forms have semantics (not
+yet: #143). The probe vectors that test them: 345 match the hardware, 12 stop unsupported, 0
 mismatch (`texture-mipmaps-mip-bias` 5/0/0, `texture-mipmaps-mip-grad` 8/0/0,
 `texture-mipmaps-mip-level` 13/0/0, `texture-mipmaps-mip-minfilter` 15/0/0,
 `texture-mipmaps-mip-mipfilter` 24/0/0, `texture-mipmaps-mip-t0-field` 12/0/0,
@@ -2586,13 +2617,16 @@ mismatch (`texture-mipmaps-mip-bias` 5/0/0, `texture-mipmaps-mip-grad` 8/0/0,
 `usse-decoder-vectors-stad-imm2` 1/0/0, `usse-decoder-vectors-stad-imm3` 1/0/0,
 `usse-decoder-vectors-stad-imm63` 1/0/0, `usse-decoder-vectors-stad-imm7` 1/0/0,
 `usse-decoder-vectors-stad-postinc` 3/0/0, `usse-decoder-vectors-stad-reg` 5/0/0,
-`usse-form-coverage-ld-pre` 2/0/0, `usse-form-coverage-st-pre` 2/0/0, `usse-instance-masking-setm`
-0/22/0, `usse-internal-registers-ireg-ldad` 0/10/0, `usse-memory-mem-forms` 1/0/0); unsupported
-mostly for no semantics yet: setm (22); fetch past the temporaries (8); gN (per-instance values, not
-modelled) (2).
+`usse-encoding-bits-state-nop` 37/0/0, `usse-encoding-bits-state-setm` 50/0/0,
+`usse-encoding-gaps-class2` 1/0/0, `usse-encoding-gaps-class22` 1/0/0, `usse-encoding-gaps-class26`
+1/0/0, `usse-encoding-gaps-class31` 1/0/0, `usse-form-coverage-ld-pre` 2/0/0,
+`usse-form-coverage-st-pre` 2/0/0, `usse-instance-masking-setm` 22/0/0,
+`usse-internal-registers-ireg-ldad` 0/10/0, `usse-memory-mem-forms` 1/0/0); unsupported mostly for
+fetch past the temporaries (8); gN (per-instance values, not modelled) (2); rN is past the task's N
+temporaries (2).
 
-Confirmed on the hardware (a passing vector): #5, #6; not yet confirmed (as decoded; no passing
-vector yet): #7, #128, #140, #141, #142, #143, #144.
+Confirmed on the hardware (a passing vector): #5, #6, #142; not yet confirmed (as decoded; no
+passing vector yet): #7, #128, #140, #141, #143, #144.
 
 ### 7.24 MOE control: `smoa`, `smr`, `smlsi`, `smbo`, `imo`, `setfc`, `moest`
 
@@ -2655,21 +2689,25 @@ Mnemonics: `imo`, `moest`, `setfc`, `smbo`, `smlsi`, `smoa`, `smr`.
 
 Modifiers: `.nosched`, `.skipinv`.
 
-Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 4 of 11 forms have semantics (not
-yet: #129, #130, #131, #132, #137, #138, #139). The probe vectors that test them: 518 match the
-hardware, 374 stop unsupported, 0 mismatch (`usse-moe-moest-dest` 0/30/0, `usse-moe-moest-load`
-0/54/0, `usse-moe-moest-state` 0/20/0, `usse-moe-moest-store` 0/58/0, `usse-moe-setfc` 0/8/0,
-`usse-moe-setfc-fetch` 0/8/0, `usse-moe-smbo-operands` 6/14/0, `usse-moe-smlsi-three-sources`
+Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 6 of 11 forms have semantics (not
+yet: #129, #130, #131, #132, #137). The probe vectors that test them: 746 match the hardware, 261
+stop unsupported, 0 mismatch (`usse-encoding-bits-state-imo` 0/5/0, `usse-encoding-bits-state-moest`
+39/0/0, `usse-encoding-bits-state-setfc` 51/0/0, `usse-encoding-bits-state-smbo-imm` 5/0/0,
+`usse-encoding-bits-state-smlsi-imm` 5/0/0, `usse-encoding-bits-state-smoa-imm` 5/0/0,
+`usse-encoding-bits-state-smr-imm` 5/0/0, `usse-moe-moest-dest` 30/0/0, `usse-moe-moest-load`
+54/0/0, `usse-moe-moest-state` 14/6/0, `usse-moe-moest-store` 4/54/0, `usse-moe-setfc` 8/0/0,
+`usse-moe-setfc-fetch` 8/0/0, `usse-moe-smbo-operands` 6/14/0, `usse-moe-smlsi-three-sources`
 14/0/0, `usse-moe-smoa-all-clamp` 56/0/0, `usse-moe-smoa-all-mirror` 12/44/0,
 `usse-moe-smoa-all-none` 36/0/0, `usse-moe-smoa-all-pred` 48/0/0, `usse-moe-smoa-all-repeat` 36/0/0,
 `usse-moe-smoa-all-src` 20/28/0, `usse-moe-smoa-hi-clamp` 56/0/0, `usse-moe-smoa-hi-mirror` 12/44/0,
 `usse-moe-smoa-hi-none` 36/0/0, `usse-moe-smoa-hi-pred` 48/0/0, `usse-moe-smoa-hi-repeat` 36/0/0,
 `usse-moe-smoa-hi-src` 20/28/0, `usse-moe-smr-smoa` 6/12/0, `usse-moe-swizzle` 8/2/0,
 `usse-moe-window` 12/8/0, `usse-moe-window-reset` 56/16/0); unsupported mostly for smoa takes dst to
-r-N (not modelled) (128); no semantics yet: moest (104); smlsi with non-zero limits (58).
+r-N (not modelled) (128); smlsi with non-zero limits (58); smoa takes srcN to r-N (not modelled)
+(32).
 
-Confirmed on the hardware (a passing vector): #133, #134, #135, #136; not yet confirmed (as decoded;
-no passing vector yet): #129, #130, #131, #132, #137, #138, #139.
+Confirmed on the hardware (a passing vector): #133, #134, #135, #136, #138, #139; not yet confirmed
+(as decoded; no passing vector yet): #129, #130, #131, #132, #137.
 
 ### 7.25 Phases: `phas`
 
@@ -2836,15 +2874,17 @@ Mnemonics: `atst8`, `depthf`, `pcoeff`, `ptoff`.
 
 Modifiers: `.c10`, `.end`, `.nosched`, `.syncs`.
 
-Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 1 of 4 forms have semantics (not
-yet: #154, #156, #157). The probe vectors that test them: 0 match the hardware, 692 stop
-unsupported, 0 mismatch (`usse-alpha-test-atst8-bytes` 0/12/0, `usse-alpha-test-atst8-fb` 0/9/0,
-`usse-alpha-test-atst8-func` 0/24/0, `usse-alpha-test-atst8-modes` 0/16/0,
-`usse-alpha-test-atst8-nfb` 0/585/0, `usse-alpha-test-atst8-optdwd` 0/9/0,
-`usse-alpha-test-atst8-src2-bits` 0/32/0, `usse-alpha-test-pcoeff-depthf` 0/5/0); unsupported mostly
-for no semantics yet: atst8 (687); no semantics yet: depthf (4); no semantics yet: pcoeff (1).
+Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 4 of 4 forms have semantics. The
+probe vectors that test them: 737 match the hardware, 0 stop unsupported, 0 mismatch
+(`usse-alpha-test-atst8-bytes` 12/0/0, `usse-alpha-test-atst8-fb` 9/0/0,
+`usse-alpha-test-atst8-func` 24/0/0, `usse-alpha-test-atst8-modes` 16/0/0,
+`usse-alpha-test-atst8-nfb` 585/0/0, `usse-alpha-test-atst8-optdwd` 9/0/0,
+`usse-alpha-test-atst8-src2-bits` 32/0/0, `usse-alpha-test-pcoeff-depthf` 5/0/0,
+`usse-encoding-bits-state-atst8` 5/0/0, `usse-encoding-bits-state-depthf` 17/0/0,
+`usse-encoding-bits-state-pcoeff` 23/0/0).
 
-Not yet confirmed (as decoded; no passing vector yet): #154, #155, #156, #157.
+Confirmed on the hardware (a passing vector): #154, #156, #157; not yet confirmed (as decoded; no
+passing vector yet): #155.
 
 ### 7.28 Cache control: `ci`, `cf`, `cfi`
 
@@ -2915,188 +2955,194 @@ Mnemonics: `adif`, `adifsum`, `bilin`, `firh`, `firv`.
 Modifiers: `.end`, `.nosched`, `.repeatN`, `.skipinv`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 5 of 5 forms have semantics. The
-probe vectors that test them: 1751 match the hardware, 19834 stop unsupported, 0 mismatch
-(`usse-filter-banks-bank0-fcs2-mdc-c0` 0/13/0, `usse-filter-banks-bank0-fcs2-mdc-c2` 0/13/0,
-`usse-filter-banks-bank0-fcs2-mdc-c4` 0/13/0, `usse-filter-banks-bank0-fcs2-msc-c0` 0/13/0,
-`usse-filter-banks-bank0-fcs2-msc-c2` 0/13/0, `usse-filter-banks-bank0-fcs2-msc-c4` 0/13/0,
-`usse-filter-banks-bank0-fcs2-rep-c0` 0/13/0, `usse-filter-banks-bank0-fcs2-rep-c2` 0/13/0,
-`usse-filter-banks-bank0-fcs2-rep-c4` 0/13/0, `usse-filter-banks-bank0-fcs3-mdc-c0` 0/13/0,
-`usse-filter-banks-bank0-fcs3-mdc-c2` 0/13/0, `usse-filter-banks-bank0-fcs3-mdc-c4` 0/13/0,
-`usse-filter-banks-bank0-fcs3-msc-c0` 0/13/0, `usse-filter-banks-bank0-fcs3-msc-c2` 0/13/0,
-`usse-filter-banks-bank0-fcs3-msc-c4` 0/13/0, `usse-filter-banks-bank0-fcs3-rep-c0` 0/13/0,
-`usse-filter-banks-bank0-fcs3-rep-c2` 0/13/0, `usse-filter-banks-bank0-fcs3-rep-c4` 0/13/0,
-`usse-filter-banks-bank0-fcs4-mdc-c0` 0/13/0, `usse-filter-banks-bank0-fcs4-mdc-c2` 0/13/0,
-`usse-filter-banks-bank0-fcs4-mdc-c4` 0/13/0, `usse-filter-banks-bank0-fcs4-msc-c0` 0/13/0,
-`usse-filter-banks-bank0-fcs4-msc-c2` 0/13/0, `usse-filter-banks-bank0-fcs4-msc-c4` 0/13/0,
-`usse-filter-banks-bank0-fcs4-rep-c0` 0/13/0, `usse-filter-banks-bank0-fcs4-rep-c2` 0/13/0,
-`usse-filter-banks-bank0-fcs4-rep-c4` 0/13/0, `usse-filter-banks-bank0-fcs5-mdc-c0` 0/13/0,
-`usse-filter-banks-bank0-fcs5-mdc-c2` 0/13/0, `usse-filter-banks-bank0-fcs5-mdc-c4` 0/13/0,
-`usse-filter-banks-bank0-fcs5-msc-c0` 0/13/0, `usse-filter-banks-bank0-fcs5-msc-c2` 0/13/0,
-`usse-filter-banks-bank0-fcs5-msc-c4` 0/13/0, `usse-filter-banks-bank0-fcs5-rep-c0` 0/13/0,
-`usse-filter-banks-bank0-fcs5-rep-c2` 0/13/0, `usse-filter-banks-bank0-fcs5-rep-c4` 0/13/0,
-`usse-filter-banks-bank1-fcs2-mdc-c0` 0/13/0, `usse-filter-banks-bank1-fcs2-mdc-c2` 0/13/0,
-`usse-filter-banks-bank1-fcs2-mdc-c4` 0/13/0, `usse-filter-banks-bank1-fcs2-msc-c0` 0/13/0,
-`usse-filter-banks-bank1-fcs2-msc-c2` 0/13/0, `usse-filter-banks-bank1-fcs2-msc-c4` 0/13/0,
-`usse-filter-banks-bank1-fcs2-rep-c0` 0/13/0, `usse-filter-banks-bank1-fcs2-rep-c2` 0/13/0,
-`usse-filter-banks-bank1-fcs2-rep-c4` 0/13/0, `usse-filter-banks-bank1-fcs3-mdc-c0` 0/13/0,
-`usse-filter-banks-bank1-fcs3-mdc-c2` 0/13/0, `usse-filter-banks-bank1-fcs3-mdc-c4` 0/13/0,
-`usse-filter-banks-bank1-fcs3-msc-c0` 0/13/0, `usse-filter-banks-bank1-fcs3-msc-c2` 0/13/0,
-`usse-filter-banks-bank1-fcs3-msc-c4` 0/13/0, `usse-filter-banks-bank1-fcs3-rep-c0` 0/13/0,
-`usse-filter-banks-bank1-fcs3-rep-c2` 0/13/0, `usse-filter-banks-bank1-fcs3-rep-c4` 0/13/0,
-`usse-filter-banks-bank1-fcs4-mdc-c0` 0/13/0, `usse-filter-banks-bank1-fcs4-mdc-c2` 0/13/0,
-`usse-filter-banks-bank1-fcs4-mdc-c4` 0/13/0, `usse-filter-banks-bank1-fcs4-msc-c0` 0/13/0,
-`usse-filter-banks-bank1-fcs4-msc-c2` 0/13/0, `usse-filter-banks-bank1-fcs4-msc-c4` 0/13/0,
-`usse-filter-banks-bank1-fcs4-rep-c0` 0/13/0, `usse-filter-banks-bank1-fcs4-rep-c2` 0/13/0,
-`usse-filter-banks-bank1-fcs4-rep-c4` 0/13/0, `usse-filter-banks-bank1-fcs5-mdc-c0` 0/13/0,
-`usse-filter-banks-bank1-fcs5-mdc-c2` 0/13/0, `usse-filter-banks-bank1-fcs5-mdc-c4` 0/13/0,
-`usse-filter-banks-bank1-fcs5-msc-c0` 0/13/0, `usse-filter-banks-bank1-fcs5-msc-c2` 0/13/0,
-`usse-filter-banks-bank1-fcs5-msc-c4` 0/13/0, `usse-filter-banks-bank1-fcs5-rep-c0` 0/13/0,
-`usse-filter-banks-bank1-fcs5-rep-c2` 0/13/0, `usse-filter-banks-bank1-fcs5-rep-c4` 0/13/0,
-`usse-filter-banks-bank2-fcs2-mdc-c0` 0/13/0, `usse-filter-banks-bank2-fcs2-mdc-c2` 0/13/0,
-`usse-filter-banks-bank2-fcs2-mdc-c4` 0/13/0, `usse-filter-banks-bank2-fcs2-msc-c0` 0/13/0,
-`usse-filter-banks-bank2-fcs2-msc-c2` 0/13/0, `usse-filter-banks-bank2-fcs2-msc-c4` 0/13/0,
-`usse-filter-banks-bank2-fcs2-rep-c0` 0/13/0, `usse-filter-banks-bank2-fcs2-rep-c2` 0/13/0,
-`usse-filter-banks-bank2-fcs2-rep-c4` 0/13/0, `usse-filter-banks-bank2-fcs2-rep-c4-low` 0/13/0,
-`usse-filter-banks-bank2-fcs3-mdc-c0` 0/13/0, `usse-filter-banks-bank2-fcs3-mdc-c2` 0/13/0,
-`usse-filter-banks-bank2-fcs3-mdc-c4` 0/13/0, `usse-filter-banks-bank2-fcs3-msc-c0` 0/13/0,
-`usse-filter-banks-bank2-fcs3-msc-c2` 0/13/0, `usse-filter-banks-bank2-fcs3-msc-c4` 0/13/0,
-`usse-filter-banks-bank2-fcs3-rep-c0` 0/13/0, `usse-filter-banks-bank2-fcs3-rep-c2` 0/13/0,
-`usse-filter-banks-bank2-fcs3-rep-c4` 0/13/0, `usse-filter-banks-bank2-fcs3-rep-c4-low` 0/13/0,
-`usse-filter-banks-bank2-fcs4-mdc-c0` 0/13/0, `usse-filter-banks-bank2-fcs4-mdc-c2` 0/13/0,
-`usse-filter-banks-bank2-fcs4-mdc-c4` 0/13/0, `usse-filter-banks-bank2-fcs4-msc-c0` 0/13/0,
-`usse-filter-banks-bank2-fcs4-msc-c2` 0/13/0, `usse-filter-banks-bank2-fcs4-msc-c4` 0/13/0,
-`usse-filter-banks-bank2-fcs4-rep-c0` 0/13/0, `usse-filter-banks-bank2-fcs4-rep-c2` 0/13/0,
-`usse-filter-banks-bank2-fcs4-rep-c4` 0/13/0, `usse-filter-banks-bank2-fcs5-mdc-c0` 0/13/0,
-`usse-filter-banks-bank2-fcs5-mdc-c2` 0/13/0, `usse-filter-banks-bank2-fcs5-mdc-c4` 0/13/0,
-`usse-filter-banks-bank2-fcs5-msc-c0` 0/13/0, `usse-filter-banks-bank2-fcs5-msc-c2` 0/13/0,
-`usse-filter-banks-bank2-fcs5-msc-c4` 0/13/0, `usse-filter-banks-bank2-fcs5-rep-c0` 0/13/0,
-`usse-filter-banks-bank2-fcs5-rep-c2` 0/13/0, `usse-filter-banks-bank2-fcs5-rep-c4` 0/13/0,
-`usse-filter-control-firh-fcs0-c0x0` 0/13/0, `usse-filter-control-firh-fcs0-c0x1` 0/13/0,
-`usse-filter-control-firh-fcs0-c0x10` 0/13/0, `usse-filter-control-firh-fcs0-c0x100` 0/13/0,
-`usse-filter-control-firh-fcs0-c0x2` 0/13/0, `usse-filter-control-firh-fcs0-c0x4` 0/13/0,
-`usse-filter-control-firh-fcs0-c0x8` 0/13/0, `usse-filter-control-firh-fcs0-c0xffffffff` 0/13/0,
-`usse-filter-control-firh-fcs1-c0x0` 0/13/0, `usse-filter-control-firh-fcs1-c0x1` 0/13/0,
-`usse-filter-control-firh-fcs1-c0x10` 0/13/0, `usse-filter-control-firh-fcs1-c0x100` 0/13/0,
-`usse-filter-control-firh-fcs1-c0x2` 0/13/0, `usse-filter-control-firh-fcs1-c0x4` 0/13/0,
-`usse-filter-control-firh-fcs1-c0x8` 0/13/0, `usse-filter-control-firh-fcs1-c0xffffffff` 0/13/0,
-`usse-filter-control-firh-fcs2-c0x0` 0/13/0, `usse-filter-control-firh-fcs2-c0x1` 0/13/0,
-`usse-filter-control-firh-fcs2-c0x10` 0/13/0, `usse-filter-control-firh-fcs2-c0x100` 0/13/0,
-`usse-filter-control-firh-fcs2-c0x2` 0/13/0, `usse-filter-control-firh-fcs2-c0x4` 0/13/0,
-`usse-filter-control-firh-fcs2-c0x8` 0/13/0, `usse-filter-control-firh-fcs2-c0xffffffff` 0/13/0,
-`usse-filter-control-firh-fcs3-c0x0` 0/13/0, `usse-filter-control-firh-fcs3-c0x1` 0/13/0,
-`usse-filter-control-firh-fcs3-c0x10` 0/13/0, `usse-filter-control-firh-fcs3-c0x100` 0/13/0,
-`usse-filter-control-firh-fcs3-c0x2` 0/13/0, `usse-filter-control-firh-fcs3-c0x4` 0/13/0,
-`usse-filter-control-firh-fcs3-c0x8` 0/13/0, `usse-filter-control-firh-fcs3-c0xffffffff` 0/13/0,
-`usse-filter-control-firh-fcs4-c0x0` 0/13/0, `usse-filter-control-firh-fcs4-c0x1` 0/13/0,
-`usse-filter-control-firh-fcs4-c0x10` 0/13/0, `usse-filter-control-firh-fcs4-c0x100` 0/13/0,
-`usse-filter-control-firh-fcs4-c0x2` 0/13/0, `usse-filter-control-firh-fcs4-c0x4` 0/13/0,
-`usse-filter-control-firh-fcs4-c0x8` 0/13/0, `usse-filter-control-firh-fcs4-c0xffffffff` 0/13/0,
-`usse-filter-control-firh-fcs5-c0x0` 0/13/0, `usse-filter-control-firh-fcs5-c0x1` 0/13/0,
-`usse-filter-control-firh-fcs5-c0x10` 0/13/0, `usse-filter-control-firh-fcs5-c0x100` 0/13/0,
-`usse-filter-control-firh-fcs5-c0x2` 0/13/0, `usse-filter-control-firh-fcs5-c0x4` 0/13/0,
-`usse-filter-control-firh-fcs5-c0x8` 0/13/0, `usse-filter-control-firh-fcs5-c0xffffffff` 0/13/0,
-`usse-filter-gain-firh-fcs0-w0b0-v01` 0/17/0, `usse-filter-gain-firh-fcs0-w0b0-v02` 0/17/0,
-`usse-filter-gain-firh-fcs0-w0b0-v80` 0/17/0, `usse-filter-gain-firh-fcs0-w0b0-vff` 0/17/0,
-`usse-filter-gain-firh-fcs0-w0b1-v01` 0/17/0, `usse-filter-gain-firh-fcs0-w0b1-v02` 0/17/0,
-`usse-filter-gain-firh-fcs0-w0b1-v80` 0/17/0, `usse-filter-gain-firh-fcs0-w0b1-vff` 0/17/0,
-`usse-filter-gain-firh-fcs0-w0b2-v01` 0/17/0, `usse-filter-gain-firh-fcs0-w0b2-v02` 0/17/0,
-`usse-filter-gain-firh-fcs0-w0b2-v80` 0/17/0, `usse-filter-gain-firh-fcs0-w0b2-vff` 0/17/0,
-`usse-filter-gain-firh-fcs0-w0b3-v01` 0/17/0, `usse-filter-gain-firh-fcs0-w0b3-v02` 0/17/0,
-`usse-filter-gain-firh-fcs0-w0b3-v80` 0/17/0, `usse-filter-gain-firh-fcs0-w0b3-vff` 0/17/0,
-`usse-filter-gain-firh-fcs0-w1b0-v01` 0/17/0, `usse-filter-gain-firh-fcs0-w1b0-v02` 0/17/0,
-`usse-filter-gain-firh-fcs0-w1b0-v80` 0/17/0, `usse-filter-gain-firh-fcs0-w1b0-vff` 0/17/0,
-`usse-filter-gain-firh-fcs0-w1b1-v01` 0/17/0, `usse-filter-gain-firh-fcs0-w1b1-v02` 0/17/0,
-`usse-filter-gain-firh-fcs0-w1b1-v80` 0/17/0, `usse-filter-gain-firh-fcs0-w1b1-vff` 0/17/0,
-`usse-filter-gain-firh-fcs0-w1b2-v01` 0/17/0, `usse-filter-gain-firh-fcs0-w1b2-v02` 0/17/0,
-`usse-filter-gain-firh-fcs0-w1b2-v80` 0/17/0, `usse-filter-gain-firh-fcs0-w1b2-vff` 0/17/0,
-`usse-filter-gain-firh-fcs0-w1b3-v01` 0/17/0, `usse-filter-gain-firh-fcs0-w1b3-v02` 0/17/0,
-`usse-filter-gain-firh-fcs0-w1b3-v80` 0/17/0, `usse-filter-gain-firh-fcs0-w1b3-vff` 0/17/0,
-`usse-filter-gain-firh-fcs0-w2b0-v01` 0/17/0, `usse-filter-gain-firh-fcs0-w2b0-v02` 0/17/0,
-`usse-filter-gain-firh-fcs0-w2b0-v80` 0/17/0, `usse-filter-gain-firh-fcs0-w2b0-vff` 0/17/0,
-`usse-filter-gain-firh-fcs0-w2b1-v01` 0/17/0, `usse-filter-gain-firh-fcs0-w2b1-v02` 0/17/0,
-`usse-filter-gain-firh-fcs0-w2b1-v80` 0/17/0, `usse-filter-gain-firh-fcs0-w2b1-vff` 0/17/0,
-`usse-filter-gain-firh-fcs0-w2b2-v01` 0/17/0, `usse-filter-gain-firh-fcs0-w2b2-v80` 0/17/0,
-`usse-filter-gain-firh-fcs0-w2b3-v01` 0/17/0, `usse-filter-gain-firh-fcs0-w2b3-v80` 0/17/0,
-`usse-filter-gain-firh-fcs1-w0b0-v01` 0/17/0, `usse-filter-gain-firh-fcs1-w0b0-v02` 0/17/0,
-`usse-filter-gain-firh-fcs1-w0b0-v80` 0/17/0, `usse-filter-gain-firh-fcs1-w0b0-vff` 0/17/0,
-`usse-filter-gain-firh-fcs1-w0b1-v01` 0/17/0, `usse-filter-gain-firh-fcs1-w0b1-v02` 0/17/0,
-`usse-filter-gain-firh-fcs1-w0b1-v80` 0/17/0, `usse-filter-gain-firh-fcs1-w0b1-vff` 0/17/0,
-`usse-filter-gain-firh-fcs1-w0b2-v01` 0/17/0, `usse-filter-gain-firh-fcs1-w0b2-v02` 0/17/0,
-`usse-filter-gain-firh-fcs1-w0b2-v80` 0/17/0, `usse-filter-gain-firh-fcs1-w0b2-vff` 0/17/0,
-`usse-filter-gain-firh-fcs1-w0b3-v01` 0/17/0, `usse-filter-gain-firh-fcs1-w0b3-v02` 0/17/0,
-`usse-filter-gain-firh-fcs1-w0b3-v80` 0/17/0, `usse-filter-gain-firh-fcs1-w0b3-vff` 0/17/0,
-`usse-filter-gain-firh-fcs1-w1b0-v01` 0/17/0, `usse-filter-gain-firh-fcs1-w1b0-v02` 0/17/0,
-`usse-filter-gain-firh-fcs1-w1b0-v80` 0/17/0, `usse-filter-gain-firh-fcs1-w1b0-vff` 0/17/0,
-`usse-filter-gain-firh-fcs1-w1b1-v01` 0/17/0, `usse-filter-gain-firh-fcs1-w1b1-v02` 0/17/0,
-`usse-filter-gain-firh-fcs1-w1b1-v80` 0/17/0, `usse-filter-gain-firh-fcs1-w1b1-vff` 0/17/0,
-`usse-filter-gain-firh-fcs1-w1b2-v01` 0/17/0, `usse-filter-gain-firh-fcs1-w1b2-v02` 0/17/0,
-`usse-filter-gain-firh-fcs1-w1b2-v80` 0/17/0, `usse-filter-gain-firh-fcs1-w1b2-vff` 0/17/0,
-`usse-filter-gain-firh-fcs1-w1b3-v01` 0/17/0, `usse-filter-gain-firh-fcs1-w1b3-v02` 0/17/0,
-`usse-filter-gain-firh-fcs1-w1b3-v80` 0/17/0, `usse-filter-gain-firh-fcs1-w1b3-vff` 0/17/0,
-`usse-filter-gain-firh-fcs1-w2b0-v01` 0/17/0, `usse-filter-gain-firh-fcs1-w2b0-v02` 0/17/0,
-`usse-filter-gain-firh-fcs1-w2b0-v80` 0/17/0, `usse-filter-gain-firh-fcs1-w2b0-vff` 0/17/0,
-`usse-filter-gain-firh-fcs1-w2b1-v01` 0/17/0, `usse-filter-gain-firh-fcs1-w2b1-v02` 0/17/0,
-`usse-filter-gain-firh-fcs1-w2b1-v80` 0/17/0, `usse-filter-gain-firh-fcs1-w2b1-vff` 0/17/0,
-`usse-filter-gain-firh-fcs1-w2b2-v01` 0/17/0, `usse-filter-gain-firh-fcs1-w2b2-v80` 0/17/0,
-`usse-filter-gain-firh-fcs1-w2b3-v01` 0/17/0, `usse-filter-gain-firh-fcs1-w2b3-v80` 0/17/0,
-`usse-filter-gain-firh-fcs2-w0b0-v01` 0/17/0, `usse-filter-gain-firh-fcs2-w0b0-v02` 0/17/0,
-`usse-filter-gain-firh-fcs2-w0b0-v80` 0/17/0, `usse-filter-gain-firh-fcs2-w0b0-vff` 0/17/0,
-`usse-filter-gain-firh-fcs2-w0b1-v01` 0/17/0, `usse-filter-gain-firh-fcs2-w0b1-v02` 0/17/0,
-`usse-filter-gain-firh-fcs2-w0b1-v80` 0/17/0, `usse-filter-gain-firh-fcs2-w0b1-vff` 0/17/0,
-`usse-filter-gain-firh-fcs2-w0b2-v01` 0/17/0, `usse-filter-gain-firh-fcs2-w0b2-v02` 0/17/0,
-`usse-filter-gain-firh-fcs2-w0b2-v80` 0/17/0, `usse-filter-gain-firh-fcs2-w0b2-vff` 0/17/0,
-`usse-filter-gain-firh-fcs2-w0b3-v01` 0/17/0, `usse-filter-gain-firh-fcs2-w0b3-v02` 0/17/0,
-`usse-filter-gain-firh-fcs2-w0b3-v80` 0/17/0, `usse-filter-gain-firh-fcs2-w0b3-vff` 0/17/0,
-`usse-filter-gain-firh-fcs2-w1b0-v01` 0/17/0, `usse-filter-gain-firh-fcs2-w1b0-v02` 0/17/0,
-`usse-filter-gain-firh-fcs2-w1b0-v80` 0/17/0, `usse-filter-gain-firh-fcs2-w1b0-vff` 0/17/0,
-`usse-filter-gain-firh-fcs2-w1b1-v01` 0/17/0, `usse-filter-gain-firh-fcs2-w1b1-v02` 0/17/0,
-`usse-filter-gain-firh-fcs2-w1b1-v80` 0/17/0, `usse-filter-gain-firh-fcs2-w1b1-vff` 0/17/0,
-`usse-filter-gain-firh-fcs2-w1b2-v01` 0/17/0, `usse-filter-gain-firh-fcs2-w1b2-v02` 0/17/0,
-`usse-filter-gain-firh-fcs2-w1b2-v80` 0/17/0, `usse-filter-gain-firh-fcs2-w1b2-vff` 0/17/0,
-`usse-filter-gain-firh-fcs2-w1b3-v01` 0/17/0, `usse-filter-gain-firh-fcs2-w1b3-v02` 0/17/0,
-`usse-filter-gain-firh-fcs2-w1b3-v80` 0/17/0, `usse-filter-gain-firh-fcs2-w1b3-vff` 0/17/0,
-`usse-filter-gain-firh-fcs2-w2b0-v01` 0/17/0, `usse-filter-gain-firh-fcs2-w2b0-v02` 0/17/0,
-`usse-filter-gain-firh-fcs2-w2b0-v80` 0/17/0, `usse-filter-gain-firh-fcs2-w2b0-vff` 0/17/0,
-`usse-filter-gain-firh-fcs2-w2b1-v01` 0/17/0, `usse-filter-gain-firh-fcs2-w2b1-v02` 0/17/0,
-`usse-filter-gain-firh-fcs2-w2b1-v80` 0/17/0, `usse-filter-gain-firh-fcs2-w2b1-vff` 0/17/0,
-`usse-filter-gain-firh-fcs2-w2b2-v01` 0/17/0, `usse-filter-gain-firh-fcs2-w2b2-v80` 0/17/0,
-`usse-filter-gain-firh-fcs2-w2b3-v01` 0/17/0, `usse-filter-gain-firh-fcs2-w2b3-v80` 0/17/0,
-`usse-filter-sets-firh-fcs0-load0` 0/17/0, `usse-filter-sets-firh-fcs0-nv12` 0/17/0,
-`usse-filter-sets-firh-fcs0-ramp` 0/17/0, `usse-filter-sets-firh-fcs1-load0` 0/17/0,
-`usse-filter-sets-firh-fcs1-nv12` 0/17/0, `usse-filter-sets-firh-fcs1-ramp` 0/17/0,
-`usse-filter-sets-firh-fcs2-load0` 0/17/0, `usse-filter-sets-firh-fcs2-nv12` 0/17/0,
-`usse-filter-sets-firh-fcs2-ramp` 0/17/0, `usse-filter-sets-firh-fcs3-load0` 0/17/0,
-`usse-filter-sets-firh-fcs3-nv12` 0/17/0, `usse-filter-sets-firh-fcs3-ramp` 0/17/0,
-`usse-filter-sets-firh-fcs4-load0` 0/17/0, `usse-filter-sets-firh-fcs4-nv12` 0/17/0,
-`usse-filter-sets-firh-fcs4-ramp` 0/17/0, `usse-filter-sets-firh-fcs5-load0` 0/17/0,
-`usse-filter-sets-firh-fcs5-nv12` 0/17/0, `usse-filter-sets-firh-fcs5-ramp` 0/17/0,
-`usse-filter-sets-firh-fcs6-load0` 0/17/0, `usse-filter-sets-firh-fcs6-nv12` 0/17/0,
-`usse-filter-sets-firh-fcs6-ramp` 0/17/0, `usse-filter-sets-firh-fcs7-load0` 0/17/0,
-`usse-filter-sets-firh-fcs7-nv12` 0/17/0, `usse-filter-sets-firh-fcs7-ramp` 0/17/0,
-`usse-filter-sets-firh-s4-fcs0-w0b0` 0/13/0, `usse-filter-sets-firh-s4-fcs0-w0b1` 0/13/0,
-`usse-filter-sets-firh-s4-fcs0-w0b2` 0/13/0, `usse-filter-sets-firh-s4-fcs0-w0b3` 0/13/0,
-`usse-filter-sets-firh-s4-fcs0-w1b0` 0/13/0, `usse-filter-sets-firh-s4-fcs0-w1b1` 0/13/0,
-`usse-filter-sets-firh-s4-fcs0-w1b2` 0/13/0, `usse-filter-sets-firh-s4-fcs0-w1b3` 0/13/0,
-`usse-filter-sets-firh-s4-fcs1-w0b0` 0/13/0, `usse-filter-sets-firh-s4-fcs1-w0b1` 0/13/0,
-`usse-filter-sets-firh-s4-fcs1-w0b2` 0/13/0, `usse-filter-sets-firh-s4-fcs1-w0b3` 0/13/0,
-`usse-filter-sets-firh-s4-fcs1-w1b0` 0/13/0, `usse-filter-sets-firh-s4-fcs1-w1b1` 0/13/0,
-`usse-filter-sets-firh-s4-fcs1-w1b2` 0/13/0, `usse-filter-sets-firh-s4-fcs1-w1b3` 0/13/0,
-`usse-filter-sets-firh-s4-fcs2-w0b0` 0/13/0, `usse-filter-sets-firh-s4-fcs2-w0b1` 0/13/0,
-`usse-filter-sets-firh-s4-fcs2-w0b2` 0/13/0, `usse-filter-sets-firh-s4-fcs2-w0b3` 0/13/0,
-`usse-filter-sets-firh-s4-fcs2-w1b0` 0/13/0, `usse-filter-sets-firh-s4-fcs2-w1b1` 0/13/0,
-`usse-filter-sets-firh-s4-fcs2-w1b2` 0/13/0, `usse-filter-sets-firh-s4-fcs2-w1b3` 0/13/0,
-`usse-filter-taps-firh-fcs0-e3` 0/468/0, `usse-filter-taps-firh-fcs0-e7` 0/468/0,
-`usse-filter-taps-firh-fcs1` 0/468/0, `usse-filter-taps-firh-fcs1-e3` 0/468/0,
-`usse-filter-taps-firh-fcs1-e7` 0/468/0, `usse-filter-taps-firh-fcs2` 0/468/0,
-`usse-filter-taps-firh-fcs2-e3` 0/468/0, `usse-filter-taps-firh-fcs2-e7` 0/468/0,
-`usse-filter-taps-firh-fcs3` 0/468/0, `usse-filter-taps-firh-fcs4` 0/468/0,
-`usse-filter-taps-firh-fcs5` 0/468/0, `usse-video-filters-amp-l00-firv-base` 0/196/0,
-`usse-video-filters-amp-l00-firv-latch` 0/196/0, `usse-video-filters-amp-l00-firv-o8` 0/196/0,
-`usse-video-filters-amp-l00-firv-s8` 0/196/0, `usse-video-filters-amp-l00-firv-scale` 0/196/0,
-`usse-video-filters-amp-l00-firv-src2` 0/196/0, `usse-video-filters-amp-l40-firv-base` 0/196/0,
-`usse-video-filters-amp-l40-firv-latch` 0/196/0, `usse-video-filters-amp-l40-firv-o8` 0/196/0,
-`usse-video-filters-amp-l40-firv-s8` 0/196/0, `usse-video-filters-amp-l40-firv-scale` 0/196/0,
-`usse-video-filters-amp-l40-firv-src2` 0/196/0, `usse-video-filters-bilin-base` 34/0/0,
+probe vectors that test them: 20342 match the hardware (15153 with near values, each within the
+bound the hardware was measured to), 1435 stop unsupported, 0 mismatch (`usse-encoding-bits-adif`
+19/0/0, `usse-encoding-bits-adifsum` 10/0/0, `usse-encoding-bits-bilin` 6/0/0,
+`usse-encoding-bits-firh` 2/0/0, `usse-encoding-bits-firv` 7/0/0, `usse-filter-bank2-fcs2` 0/23/0,
+`usse-filter-bank2-fcs3` 0/23/0, `usse-filter-banks-bank0-fcs2-mdc-c0` 13/0/0,
+`usse-filter-banks-bank0-fcs2-mdc-c2` 13/0/0, `usse-filter-banks-bank0-fcs2-mdc-c4` 13/0/0,
+`usse-filter-banks-bank0-fcs2-msc-c0` 13/0/0, `usse-filter-banks-bank0-fcs2-msc-c2` 13/0/0,
+`usse-filter-banks-bank0-fcs2-msc-c4` 13/0/0, `usse-filter-banks-bank0-fcs2-rep-c0` 13/0/0,
+`usse-filter-banks-bank0-fcs2-rep-c2` 13/0/0, `usse-filter-banks-bank0-fcs2-rep-c4` 13/0/0,
+`usse-filter-banks-bank0-fcs3-mdc-c0` 13/0/0, `usse-filter-banks-bank0-fcs3-mdc-c2` 13/0/0,
+`usse-filter-banks-bank0-fcs3-mdc-c4` 13/0/0, `usse-filter-banks-bank0-fcs3-msc-c0` 13/0/0,
+`usse-filter-banks-bank0-fcs3-msc-c2` 13/0/0, `usse-filter-banks-bank0-fcs3-msc-c4` 13/0/0,
+`usse-filter-banks-bank0-fcs3-rep-c0` 13/0/0, `usse-filter-banks-bank0-fcs3-rep-c2` 13/0/0,
+`usse-filter-banks-bank0-fcs3-rep-c4` 13/0/0, `usse-filter-banks-bank0-fcs4-mdc-c0` 13/0/0,
+`usse-filter-banks-bank0-fcs4-mdc-c2` 13/0/0, `usse-filter-banks-bank0-fcs4-mdc-c4` 13/0/0,
+`usse-filter-banks-bank0-fcs4-msc-c0` 13/0/0, `usse-filter-banks-bank0-fcs4-msc-c2` 13/0/0,
+`usse-filter-banks-bank0-fcs4-msc-c4` 13/0/0, `usse-filter-banks-bank0-fcs4-rep-c0` 13/0/0,
+`usse-filter-banks-bank0-fcs4-rep-c2` 13/0/0, `usse-filter-banks-bank0-fcs4-rep-c4` 13/0/0,
+`usse-filter-banks-bank0-fcs5-mdc-c0` 13/0/0, `usse-filter-banks-bank0-fcs5-mdc-c2` 13/0/0,
+`usse-filter-banks-bank0-fcs5-mdc-c4` 13/0/0, `usse-filter-banks-bank0-fcs5-msc-c0` 13/0/0,
+`usse-filter-banks-bank0-fcs5-msc-c2` 13/0/0, `usse-filter-banks-bank0-fcs5-msc-c4` 13/0/0,
+`usse-filter-banks-bank0-fcs5-rep-c0` 13/0/0, `usse-filter-banks-bank0-fcs5-rep-c2` 13/0/0,
+`usse-filter-banks-bank0-fcs5-rep-c4` 13/0/0, `usse-filter-banks-bank1-fcs2-mdc-c0` 0/13/0,
+`usse-filter-banks-bank1-fcs2-mdc-c2` 0/13/0, `usse-filter-banks-bank1-fcs2-mdc-c4` 0/13/0,
+`usse-filter-banks-bank1-fcs2-msc-c0` 0/13/0, `usse-filter-banks-bank1-fcs2-msc-c2` 0/13/0,
+`usse-filter-banks-bank1-fcs2-msc-c4` 0/13/0, `usse-filter-banks-bank1-fcs2-rep-c0` 0/13/0,
+`usse-filter-banks-bank1-fcs2-rep-c2` 0/13/0, `usse-filter-banks-bank1-fcs2-rep-c4` 0/13/0,
+`usse-filter-banks-bank1-fcs3-mdc-c0` 0/13/0, `usse-filter-banks-bank1-fcs3-mdc-c2` 0/13/0,
+`usse-filter-banks-bank1-fcs3-mdc-c4` 0/13/0, `usse-filter-banks-bank1-fcs3-msc-c0` 0/13/0,
+`usse-filter-banks-bank1-fcs3-msc-c2` 0/13/0, `usse-filter-banks-bank1-fcs3-msc-c4` 0/13/0,
+`usse-filter-banks-bank1-fcs3-rep-c0` 0/13/0, `usse-filter-banks-bank1-fcs3-rep-c2` 0/13/0,
+`usse-filter-banks-bank1-fcs3-rep-c4` 0/13/0, `usse-filter-banks-bank1-fcs4-mdc-c0` 0/13/0,
+`usse-filter-banks-bank1-fcs4-mdc-c2` 0/13/0, `usse-filter-banks-bank1-fcs4-mdc-c4` 0/13/0,
+`usse-filter-banks-bank1-fcs4-msc-c0` 0/13/0, `usse-filter-banks-bank1-fcs4-msc-c2` 0/13/0,
+`usse-filter-banks-bank1-fcs4-msc-c4` 0/13/0, `usse-filter-banks-bank1-fcs4-rep-c0` 0/13/0,
+`usse-filter-banks-bank1-fcs4-rep-c2` 0/13/0, `usse-filter-banks-bank1-fcs4-rep-c4` 0/13/0,
+`usse-filter-banks-bank1-fcs5-mdc-c0` 0/13/0, `usse-filter-banks-bank1-fcs5-mdc-c2` 0/13/0,
+`usse-filter-banks-bank1-fcs5-mdc-c4` 0/13/0, `usse-filter-banks-bank1-fcs5-msc-c0` 0/13/0,
+`usse-filter-banks-bank1-fcs5-msc-c2` 0/13/0, `usse-filter-banks-bank1-fcs5-msc-c4` 0/13/0,
+`usse-filter-banks-bank1-fcs5-rep-c0` 0/13/0, `usse-filter-banks-bank1-fcs5-rep-c2` 0/13/0,
+`usse-filter-banks-bank1-fcs5-rep-c4` 0/13/0, `usse-filter-banks-bank2-fcs2-mdc-c0` 0/13/0,
+`usse-filter-banks-bank2-fcs2-mdc-c2` 0/13/0, `usse-filter-banks-bank2-fcs2-mdc-c4` 0/13/0,
+`usse-filter-banks-bank2-fcs2-msc-c0` 0/13/0, `usse-filter-banks-bank2-fcs2-msc-c2` 0/13/0,
+`usse-filter-banks-bank2-fcs2-msc-c4` 0/13/0, `usse-filter-banks-bank2-fcs2-rep-c0` 0/13/0,
+`usse-filter-banks-bank2-fcs2-rep-c2` 0/13/0, `usse-filter-banks-bank2-fcs2-rep-c4` 0/13/0,
+`usse-filter-banks-bank2-fcs2-rep-c4-low` 0/13/0, `usse-filter-banks-bank2-fcs3-mdc-c0` 0/13/0,
+`usse-filter-banks-bank2-fcs3-mdc-c2` 0/13/0, `usse-filter-banks-bank2-fcs3-mdc-c4` 0/13/0,
+`usse-filter-banks-bank2-fcs3-msc-c0` 0/13/0, `usse-filter-banks-bank2-fcs3-msc-c2` 0/13/0,
+`usse-filter-banks-bank2-fcs3-msc-c4` 0/13/0, `usse-filter-banks-bank2-fcs3-rep-c0` 0/13/0,
+`usse-filter-banks-bank2-fcs3-rep-c2` 0/13/0, `usse-filter-banks-bank2-fcs3-rep-c4` 0/13/0,
+`usse-filter-banks-bank2-fcs3-rep-c4-low` 0/13/0, `usse-filter-banks-bank2-fcs4-mdc-c0` 0/13/0,
+`usse-filter-banks-bank2-fcs4-mdc-c2` 0/13/0, `usse-filter-banks-bank2-fcs4-mdc-c4` 0/13/0,
+`usse-filter-banks-bank2-fcs4-msc-c0` 0/13/0, `usse-filter-banks-bank2-fcs4-msc-c2` 0/13/0,
+`usse-filter-banks-bank2-fcs4-msc-c4` 0/13/0, `usse-filter-banks-bank2-fcs4-rep-c0` 0/13/0,
+`usse-filter-banks-bank2-fcs4-rep-c2` 0/13/0, `usse-filter-banks-bank2-fcs4-rep-c4` 0/13/0,
+`usse-filter-banks-bank2-fcs5-mdc-c0` 0/13/0, `usse-filter-banks-bank2-fcs5-mdc-c2` 0/13/0,
+`usse-filter-banks-bank2-fcs5-mdc-c4` 0/13/0, `usse-filter-banks-bank2-fcs5-msc-c0` 0/13/0,
+`usse-filter-banks-bank2-fcs5-msc-c2` 0/13/0, `usse-filter-banks-bank2-fcs5-msc-c4` 0/13/0,
+`usse-filter-banks-bank2-fcs5-rep-c0` 0/13/0, `usse-filter-banks-bank2-fcs5-rep-c2` 0/13/0,
+`usse-filter-banks-bank2-fcs5-rep-c4` 0/13/0, `usse-filter-control-firh-fcs0-c0x0` 13/0/0,
+`usse-filter-control-firh-fcs0-c0x1` 13/0/0, `usse-filter-control-firh-fcs0-c0x10` 13/0/0,
+`usse-filter-control-firh-fcs0-c0x100` 13/0/0, `usse-filter-control-firh-fcs0-c0x2` 13/0/0,
+`usse-filter-control-firh-fcs0-c0x4` 13/0/0, `usse-filter-control-firh-fcs0-c0x8` 13/0/0,
+`usse-filter-control-firh-fcs0-c0xffffffff` 13/0/0, `usse-filter-control-firh-fcs1-c0x0` 13/0/0,
+`usse-filter-control-firh-fcs1-c0x1` 13/0/0, `usse-filter-control-firh-fcs1-c0x10` 13/0/0,
+`usse-filter-control-firh-fcs1-c0x100` 13/0/0, `usse-filter-control-firh-fcs1-c0x2` 13/0/0,
+`usse-filter-control-firh-fcs1-c0x4` 13/0/0, `usse-filter-control-firh-fcs1-c0x8` 13/0/0,
+`usse-filter-control-firh-fcs1-c0xffffffff` 13/0/0, `usse-filter-control-firh-fcs2-c0x0` 13/0/0,
+`usse-filter-control-firh-fcs2-c0x1` 0/13/0, `usse-filter-control-firh-fcs2-c0x10` 13/0/0,
+`usse-filter-control-firh-fcs2-c0x100` 13/0/0, `usse-filter-control-firh-fcs2-c0x2` 0/13/0,
+`usse-filter-control-firh-fcs2-c0x4` 13/0/0, `usse-filter-control-firh-fcs2-c0x8` 13/0/0,
+`usse-filter-control-firh-fcs2-c0xffffffff` 13/0/0, `usse-filter-control-firh-fcs3-c0x0` 13/0/0,
+`usse-filter-control-firh-fcs3-c0x1` 0/13/0, `usse-filter-control-firh-fcs3-c0x10` 13/0/0,
+`usse-filter-control-firh-fcs3-c0x100` 13/0/0, `usse-filter-control-firh-fcs3-c0x2` 0/13/0,
+`usse-filter-control-firh-fcs3-c0x4` 13/0/0, `usse-filter-control-firh-fcs3-c0x8` 13/0/0,
+`usse-filter-control-firh-fcs3-c0xffffffff` 13/0/0, `usse-filter-control-firh-fcs4-c0x0` 13/0/0,
+`usse-filter-control-firh-fcs4-c0x1` 0/13/0, `usse-filter-control-firh-fcs4-c0x10` 13/0/0,
+`usse-filter-control-firh-fcs4-c0x100` 13/0/0, `usse-filter-control-firh-fcs4-c0x2` 0/13/0,
+`usse-filter-control-firh-fcs4-c0x4` 13/0/0, `usse-filter-control-firh-fcs4-c0x8` 13/0/0,
+`usse-filter-control-firh-fcs4-c0xffffffff` 13/0/0, `usse-filter-control-firh-fcs5-c0x0` 13/0/0,
+`usse-filter-control-firh-fcs5-c0x1` 0/13/0, `usse-filter-control-firh-fcs5-c0x10` 13/0/0,
+`usse-filter-control-firh-fcs5-c0x100` 13/0/0, `usse-filter-control-firh-fcs5-c0x2` 0/13/0,
+`usse-filter-control-firh-fcs5-c0x4` 13/0/0, `usse-filter-control-firh-fcs5-c0x8` 13/0/0,
+`usse-filter-control-firh-fcs5-c0xffffffff` 13/0/0, `usse-filter-edges-fcs67-mode0` 2/0/0,
+`usse-filter-edges-fcs67-mode1` 0/2/0, `usse-filter-edges-fcs67-mode2` 0/2/0,
+`usse-filter-edges-mdc` 32/0/0, `usse-filter-edges-msc` 32/0/0, `usse-filter-edges-rep` 32/0/0,
+`usse-filter-gain-firh-fcs0-w0b0-v01` 17/0/0, `usse-filter-gain-firh-fcs0-w0b0-v02` 17/0/0,
+`usse-filter-gain-firh-fcs0-w0b0-v80` 17/0/0, `usse-filter-gain-firh-fcs0-w0b0-vff` 17/0/0,
+`usse-filter-gain-firh-fcs0-w0b1-v01` 17/0/0, `usse-filter-gain-firh-fcs0-w0b1-v02` 17/0/0,
+`usse-filter-gain-firh-fcs0-w0b1-v80` 17/0/0, `usse-filter-gain-firh-fcs0-w0b1-vff` 17/0/0,
+`usse-filter-gain-firh-fcs0-w0b2-v01` 17/0/0, `usse-filter-gain-firh-fcs0-w0b2-v02` 17/0/0,
+`usse-filter-gain-firh-fcs0-w0b2-v80` 17/0/0, `usse-filter-gain-firh-fcs0-w0b2-vff` 17/0/0,
+`usse-filter-gain-firh-fcs0-w0b3-v01` 17/0/0, `usse-filter-gain-firh-fcs0-w0b3-v02` 17/0/0,
+`usse-filter-gain-firh-fcs0-w0b3-v80` 17/0/0, `usse-filter-gain-firh-fcs0-w0b3-vff` 17/0/0,
+`usse-filter-gain-firh-fcs0-w1b0-v01` 17/0/0, `usse-filter-gain-firh-fcs0-w1b0-v02` 17/0/0,
+`usse-filter-gain-firh-fcs0-w1b0-v80` 17/0/0, `usse-filter-gain-firh-fcs0-w1b0-vff` 17/0/0,
+`usse-filter-gain-firh-fcs0-w1b1-v01` 17/0/0, `usse-filter-gain-firh-fcs0-w1b1-v02` 17/0/0,
+`usse-filter-gain-firh-fcs0-w1b1-v80` 17/0/0, `usse-filter-gain-firh-fcs0-w1b1-vff` 17/0/0,
+`usse-filter-gain-firh-fcs0-w1b2-v01` 17/0/0, `usse-filter-gain-firh-fcs0-w1b2-v02` 17/0/0,
+`usse-filter-gain-firh-fcs0-w1b2-v80` 17/0/0, `usse-filter-gain-firh-fcs0-w1b2-vff` 17/0/0,
+`usse-filter-gain-firh-fcs0-w1b3-v01` 17/0/0, `usse-filter-gain-firh-fcs0-w1b3-v02` 17/0/0,
+`usse-filter-gain-firh-fcs0-w1b3-v80` 17/0/0, `usse-filter-gain-firh-fcs0-w1b3-vff` 17/0/0,
+`usse-filter-gain-firh-fcs0-w2b0-v01` 17/0/0, `usse-filter-gain-firh-fcs0-w2b0-v02` 17/0/0,
+`usse-filter-gain-firh-fcs0-w2b0-v80` 17/0/0, `usse-filter-gain-firh-fcs0-w2b0-vff` 17/0/0,
+`usse-filter-gain-firh-fcs0-w2b1-v01` 17/0/0, `usse-filter-gain-firh-fcs0-w2b1-v02` 17/0/0,
+`usse-filter-gain-firh-fcs0-w2b1-v80` 17/0/0, `usse-filter-gain-firh-fcs0-w2b1-vff` 17/0/0,
+`usse-filter-gain-firh-fcs0-w2b2-v01` 17/0/0, `usse-filter-gain-firh-fcs0-w2b2-v80` 17/0/0,
+`usse-filter-gain-firh-fcs0-w2b3-v01` 17/0/0, `usse-filter-gain-firh-fcs0-w2b3-v80` 17/0/0,
+`usse-filter-gain-firh-fcs1-w0b0-v01` 17/0/0, `usse-filter-gain-firh-fcs1-w0b0-v02` 17/0/0,
+`usse-filter-gain-firh-fcs1-w0b0-v80` 17/0/0, `usse-filter-gain-firh-fcs1-w0b0-vff` 17/0/0,
+`usse-filter-gain-firh-fcs1-w0b1-v01` 17/0/0, `usse-filter-gain-firh-fcs1-w0b1-v02` 17/0/0,
+`usse-filter-gain-firh-fcs1-w0b1-v80` 17/0/0, `usse-filter-gain-firh-fcs1-w0b1-vff` 17/0/0,
+`usse-filter-gain-firh-fcs1-w0b2-v01` 17/0/0, `usse-filter-gain-firh-fcs1-w0b2-v02` 17/0/0,
+`usse-filter-gain-firh-fcs1-w0b2-v80` 17/0/0, `usse-filter-gain-firh-fcs1-w0b2-vff` 17/0/0,
+`usse-filter-gain-firh-fcs1-w0b3-v01` 17/0/0, `usse-filter-gain-firh-fcs1-w0b3-v02` 17/0/0,
+`usse-filter-gain-firh-fcs1-w0b3-v80` 17/0/0, `usse-filter-gain-firh-fcs1-w0b3-vff` 17/0/0,
+`usse-filter-gain-firh-fcs1-w1b0-v01` 17/0/0, `usse-filter-gain-firh-fcs1-w1b0-v02` 17/0/0,
+`usse-filter-gain-firh-fcs1-w1b0-v80` 17/0/0, `usse-filter-gain-firh-fcs1-w1b0-vff` 17/0/0,
+`usse-filter-gain-firh-fcs1-w1b1-v01` 17/0/0, `usse-filter-gain-firh-fcs1-w1b1-v02` 17/0/0,
+`usse-filter-gain-firh-fcs1-w1b1-v80` 17/0/0, `usse-filter-gain-firh-fcs1-w1b1-vff` 17/0/0,
+`usse-filter-gain-firh-fcs1-w1b2-v01` 17/0/0, `usse-filter-gain-firh-fcs1-w1b2-v02` 17/0/0,
+`usse-filter-gain-firh-fcs1-w1b2-v80` 17/0/0, `usse-filter-gain-firh-fcs1-w1b2-vff` 17/0/0,
+`usse-filter-gain-firh-fcs1-w1b3-v01` 17/0/0, `usse-filter-gain-firh-fcs1-w1b3-v02` 17/0/0,
+`usse-filter-gain-firh-fcs1-w1b3-v80` 17/0/0, `usse-filter-gain-firh-fcs1-w1b3-vff` 17/0/0,
+`usse-filter-gain-firh-fcs1-w2b0-v01` 17/0/0, `usse-filter-gain-firh-fcs1-w2b0-v02` 17/0/0,
+`usse-filter-gain-firh-fcs1-w2b0-v80` 17/0/0, `usse-filter-gain-firh-fcs1-w2b0-vff` 17/0/0,
+`usse-filter-gain-firh-fcs1-w2b1-v01` 17/0/0, `usse-filter-gain-firh-fcs1-w2b1-v02` 17/0/0,
+`usse-filter-gain-firh-fcs1-w2b1-v80` 17/0/0, `usse-filter-gain-firh-fcs1-w2b1-vff` 17/0/0,
+`usse-filter-gain-firh-fcs1-w2b2-v01` 17/0/0, `usse-filter-gain-firh-fcs1-w2b2-v80` 17/0/0,
+`usse-filter-gain-firh-fcs1-w2b3-v01` 17/0/0, `usse-filter-gain-firh-fcs1-w2b3-v80` 17/0/0,
+`usse-filter-gain-firh-fcs2-w0b0-v01` 17/0/0, `usse-filter-gain-firh-fcs2-w0b0-v02` 17/0/0,
+`usse-filter-gain-firh-fcs2-w0b0-v80` 17/0/0, `usse-filter-gain-firh-fcs2-w0b0-vff` 17/0/0,
+`usse-filter-gain-firh-fcs2-w0b1-v01` 17/0/0, `usse-filter-gain-firh-fcs2-w0b1-v02` 17/0/0,
+`usse-filter-gain-firh-fcs2-w0b1-v80` 17/0/0, `usse-filter-gain-firh-fcs2-w0b1-vff` 17/0/0,
+`usse-filter-gain-firh-fcs2-w0b2-v01` 17/0/0, `usse-filter-gain-firh-fcs2-w0b2-v02` 17/0/0,
+`usse-filter-gain-firh-fcs2-w0b2-v80` 17/0/0, `usse-filter-gain-firh-fcs2-w0b2-vff` 17/0/0,
+`usse-filter-gain-firh-fcs2-w0b3-v01` 17/0/0, `usse-filter-gain-firh-fcs2-w0b3-v02` 17/0/0,
+`usse-filter-gain-firh-fcs2-w0b3-v80` 17/0/0, `usse-filter-gain-firh-fcs2-w0b3-vff` 17/0/0,
+`usse-filter-gain-firh-fcs2-w1b0-v01` 17/0/0, `usse-filter-gain-firh-fcs2-w1b0-v02` 17/0/0,
+`usse-filter-gain-firh-fcs2-w1b0-v80` 17/0/0, `usse-filter-gain-firh-fcs2-w1b0-vff` 17/0/0,
+`usse-filter-gain-firh-fcs2-w1b1-v01` 17/0/0, `usse-filter-gain-firh-fcs2-w1b1-v02` 17/0/0,
+`usse-filter-gain-firh-fcs2-w1b1-v80` 17/0/0, `usse-filter-gain-firh-fcs2-w1b1-vff` 17/0/0,
+`usse-filter-gain-firh-fcs2-w1b2-v01` 17/0/0, `usse-filter-gain-firh-fcs2-w1b2-v02` 17/0/0,
+`usse-filter-gain-firh-fcs2-w1b2-v80` 17/0/0, `usse-filter-gain-firh-fcs2-w1b2-vff` 17/0/0,
+`usse-filter-gain-firh-fcs2-w1b3-v01` 17/0/0, `usse-filter-gain-firh-fcs2-w1b3-v02` 17/0/0,
+`usse-filter-gain-firh-fcs2-w1b3-v80` 17/0/0, `usse-filter-gain-firh-fcs2-w1b3-vff` 17/0/0,
+`usse-filter-gain-firh-fcs2-w2b0-v01` 17/0/0, `usse-filter-gain-firh-fcs2-w2b0-v02` 17/0/0,
+`usse-filter-gain-firh-fcs2-w2b0-v80` 17/0/0, `usse-filter-gain-firh-fcs2-w2b0-vff` 17/0/0,
+`usse-filter-gain-firh-fcs2-w2b1-v01` 17/0/0, `usse-filter-gain-firh-fcs2-w2b1-v02` 17/0/0,
+`usse-filter-gain-firh-fcs2-w2b1-v80` 17/0/0, `usse-filter-gain-firh-fcs2-w2b1-vff` 17/0/0,
+`usse-filter-gain-firh-fcs2-w2b2-v01` 17/0/0, `usse-filter-gain-firh-fcs2-w2b2-v80` 17/0/0,
+`usse-filter-gain-firh-fcs2-w2b3-v01` 17/0/0, `usse-filter-gain-firh-fcs2-w2b3-v80` 17/0/0,
+`usse-filter-sets-firh-fcs0-load0` 17/0/0, `usse-filter-sets-firh-fcs0-nv12` 17/0/0,
+`usse-filter-sets-firh-fcs0-ramp` 17/0/0, `usse-filter-sets-firh-fcs1-load0` 17/0/0,
+`usse-filter-sets-firh-fcs1-nv12` 17/0/0, `usse-filter-sets-firh-fcs1-ramp` 17/0/0,
+`usse-filter-sets-firh-fcs2-load0` 17/0/0, `usse-filter-sets-firh-fcs2-nv12` 17/0/0,
+`usse-filter-sets-firh-fcs2-ramp` 17/0/0, `usse-filter-sets-firh-fcs3-load0` 17/0/0,
+`usse-filter-sets-firh-fcs3-nv12` 17/0/0, `usse-filter-sets-firh-fcs3-ramp` 17/0/0,
+`usse-filter-sets-firh-fcs4-load0` 17/0/0, `usse-filter-sets-firh-fcs4-nv12` 17/0/0,
+`usse-filter-sets-firh-fcs4-ramp` 17/0/0, `usse-filter-sets-firh-fcs5-load0` 17/0/0,
+`usse-filter-sets-firh-fcs5-nv12` 17/0/0, `usse-filter-sets-firh-fcs5-ramp` 17/0/0,
+`usse-filter-sets-firh-fcs6-load0` 17/0/0, `usse-filter-sets-firh-fcs6-nv12` 17/0/0,
+`usse-filter-sets-firh-fcs6-ramp` 17/0/0, `usse-filter-sets-firh-fcs7-load0` 17/0/0,
+`usse-filter-sets-firh-fcs7-nv12` 17/0/0, `usse-filter-sets-firh-fcs7-ramp` 17/0/0,
+`usse-filter-sets-firh-s4-fcs0-w0b0` 13/0/0, `usse-filter-sets-firh-s4-fcs0-w0b1` 13/0/0,
+`usse-filter-sets-firh-s4-fcs0-w0b2` 13/0/0, `usse-filter-sets-firh-s4-fcs0-w0b3` 13/0/0,
+`usse-filter-sets-firh-s4-fcs0-w1b0` 13/0/0, `usse-filter-sets-firh-s4-fcs0-w1b1` 13/0/0,
+`usse-filter-sets-firh-s4-fcs0-w1b2` 13/0/0, `usse-filter-sets-firh-s4-fcs0-w1b3` 13/0/0,
+`usse-filter-sets-firh-s4-fcs1-w0b0` 13/0/0, `usse-filter-sets-firh-s4-fcs1-w0b1` 13/0/0,
+`usse-filter-sets-firh-s4-fcs1-w0b2` 13/0/0, `usse-filter-sets-firh-s4-fcs1-w0b3` 13/0/0,
+`usse-filter-sets-firh-s4-fcs1-w1b0` 13/0/0, `usse-filter-sets-firh-s4-fcs1-w1b1` 13/0/0,
+`usse-filter-sets-firh-s4-fcs1-w1b2` 13/0/0, `usse-filter-sets-firh-s4-fcs1-w1b3` 13/0/0,
+`usse-filter-sets-firh-s4-fcs2-w0b0` 13/0/0, `usse-filter-sets-firh-s4-fcs2-w0b1` 13/0/0,
+`usse-filter-sets-firh-s4-fcs2-w0b2` 13/0/0, `usse-filter-sets-firh-s4-fcs2-w0b3` 13/0/0,
+`usse-filter-sets-firh-s4-fcs2-w1b0` 13/0/0, `usse-filter-sets-firh-s4-fcs2-w1b1` 13/0/0,
+`usse-filter-sets-firh-s4-fcs2-w1b2` 13/0/0, `usse-filter-sets-firh-s4-fcs2-w1b3` 13/0/0,
+`usse-filter-taps-firh-fcs0-e3` 468/0/0, `usse-filter-taps-firh-fcs0-e7` 468/0/0,
+`usse-filter-taps-firh-fcs1` 468/0/0, `usse-filter-taps-firh-fcs1-e3` 468/0/0,
+`usse-filter-taps-firh-fcs1-e7` 468/0/0, `usse-filter-taps-firh-fcs2` 468/0/0,
+`usse-filter-taps-firh-fcs2-e3` 468/0/0, `usse-filter-taps-firh-fcs2-e7` 468/0/0,
+`usse-filter-taps-firh-fcs3` 468/0/0, `usse-filter-taps-firh-fcs4` 468/0/0,
+`usse-filter-taps-firh-fcs5` 468/0/0, `usse-video-filters-amp-l00-firv-base` 196/0/0,
+`usse-video-filters-amp-l00-firv-latch` 196/0/0, `usse-video-filters-amp-l00-firv-o8` 196/0/0,
+`usse-video-filters-amp-l00-firv-s8` 196/0/0, `usse-video-filters-amp-l00-firv-scale` 196/0/0,
+`usse-video-filters-amp-l00-firv-src2` 196/0/0, `usse-video-filters-amp-l40-firv-base` 196/0/0,
+`usse-video-filters-amp-l40-firv-latch` 196/0/0, `usse-video-filters-amp-l40-firv-o8` 196/0/0,
+`usse-video-filters-amp-l40-firv-s8` 196/0/0, `usse-video-filters-amp-l40-firv-scale` 196/0/0,
+`usse-video-filters-amp-l40-firv-src2` 196/0/0, `usse-video-filters-bilin-base` 34/0/0,
 `usse-video-filters-bilin-d-base-apart` 40/0/0, `usse-video-filters-bilin-d-base-r1` 40/0/0,
 `usse-video-filters-bilin-d-base-r2` 40/0/0, `usse-video-filters-bilin-d-base-same` 40/0/0,
 `usse-video-filters-bilin-d-interleaved-apart` 40/0/0, `usse-video-filters-bilin-d-interleaved-r1`
@@ -3108,63 +3154,62 @@ probe vectors that test them: 1751 match the hardware, 19834 stop unsupported, 0
 `usse-video-filters-bilin-w-base` 20/0/0, `usse-video-filters-bilin-w-interleaved` 20/0/0,
 `usse-video-filters-bilin-w-o8` 20/0/0, `usse-video-filters-bilin-w-rnd` 20/0/0,
 `usse-video-filters-bilin-w-s8` 20/0/0, `usse-video-filters-bilin-w-src01-dst23` 20/0/0,
-`usse-video-filters-c10-firh-fcs3-s5neg-ped` 0/648/0, `usse-video-filters-c11-latch-fill5a` 0/2/0,
+`usse-video-filters-c10-firh-fcs3-s5neg-ped` 648/0/0, `usse-video-filters-c11-latch-fill5a` 2/0/0,
 `usse-video-filters-c11-latch-merge` 0/18/0, `usse-video-filters-c11-latch-pixel` 0/8/0,
-`usse-video-filters-c11-latch-read` 0/2/0, `usse-video-filters-c11-latch-writers` 0/14/0,
+`usse-video-filters-c11-latch-read` 2/0/0, `usse-video-filters-c11-latch-writers` 2/12/0,
 `usse-video-filters-c7-bilin-round-o8` 80/0/0, `usse-video-filters-c7-bilin-round-o8-rnd` 80/0/0,
 `usse-video-filters-c7-bilin-round-s8` 80/0/0, `usse-video-filters-c7-bilin-round-s8-rnd` 80/0/0,
 `usse-video-filters-c7-bilin-round-u8` 80/0/0, `usse-video-filters-c7-bilin-round-u8-rnd` 80/0/0,
 `usse-video-filters-c7-bilin-src23-base` 40/0/0, `usse-video-filters-c7-bilin-src23-interleaved`
-40/0/0, `usse-video-filters-c7-firh-fcs0-taps` 0/124/0, `usse-video-filters-c7-firh-fcs1-taps`
-0/124/0, `usse-video-filters-c7-firh-fcs2-o8` 0/54/0, `usse-video-filters-c7-firh-fcs2-s5` 0/64/0,
-`usse-video-filters-c7-firh-fcs2-s8` 0/54/0, `usse-video-filters-c7-firh-fcs2-taps` 0/124/0,
-`usse-video-filters-c7-firh-fcs3-s5` 0/64/0, `usse-video-filters-c7-firh-fcs3-taps` 0/124/0,
-`usse-video-filters-c7-firh-fcs4-taps` 0/124/0, `usse-video-filters-c7-firh-fcs5-taps` 0/124/0,
-`usse-video-filters-c7-firh-fcs6-taps` 0/124/0, `usse-video-filters-c7-firh-fcs7-taps` 0/124/0,
-`usse-video-filters-c8-firh-fcs5-small` 0/50/0, `usse-video-filters-c9-firh-fcs2-round` 0/512/0,
-`usse-video-filters-c9-firh-fcs2-s5neg` 0/144/0, `usse-video-filters-c9-firh-fcs3-round` 0/512/0,
-`usse-video-filters-c9-firh-fcs3-s5neg` 0/144/0, `usse-video-filters-c9-firh-fcs4-round` 0/512/0,
-`usse-video-filters-cross-firv-base` 0/260/0, `usse-video-filters-cross-firv-s8` 0/260/0,
-`usse-video-filters-cross-firv-scale` 0/260/0, `usse-video-filters-cross-firv-src2` 0/260/0,
-`usse-video-filters-firh-base-izero` 0/34/0, `usse-video-filters-firh-base-pix` 0/34/0,
-`usse-video-filters-firh-fcs2-izero` 0/34/0, `usse-video-filters-firh-k1` 0/34/0,
-`usse-video-filters-firh-k1-izero` 0/34/0, `usse-video-filters-firh-k2` 0/34/0,
-`usse-video-filters-firh-k2-izero` 0/34/0, `usse-video-filters-firh-k3` 0/34/0,
-`usse-video-filters-firh-mdc` 0/34/0, `usse-video-filters-firh-msc` 0/34/0,
-`usse-video-filters-firh-o8` 0/34/0, `usse-video-filters-firh-s5-1` 0/34/0,
-`usse-video-filters-firh-s5-15` 0/34/0, `usse-video-filters-firh-s5-4` 0/34/0,
-`usse-video-filters-firh-s5-m1` 0/34/0, `usse-video-filters-firh-s5-m16` 0/34/0,
-`usse-video-filters-firh-s8` 0/34/0, `usse-video-filters-firv-all` 0/34/0,
+40/0/0, `usse-video-filters-c7-firh-fcs0-taps` 124/0/0, `usse-video-filters-c7-firh-fcs1-taps`
+124/0/0, `usse-video-filters-c7-firh-fcs2-o8` 54/0/0, `usse-video-filters-c7-firh-fcs2-s5` 64/0/0,
+`usse-video-filters-c7-firh-fcs2-s8` 54/0/0, `usse-video-filters-c7-firh-fcs2-taps` 124/0/0,
+`usse-video-filters-c7-firh-fcs3-s5` 64/0/0, `usse-video-filters-c7-firh-fcs3-taps` 124/0/0,
+`usse-video-filters-c7-firh-fcs4-taps` 124/0/0, `usse-video-filters-c7-firh-fcs5-taps` 124/0/0,
+`usse-video-filters-c7-firh-fcs6-taps` 124/0/0, `usse-video-filters-c7-firh-fcs7-taps` 124/0/0,
+`usse-video-filters-c8-firh-fcs5-small` 50/0/0, `usse-video-filters-c9-firh-fcs2-round` 512/0/0,
+`usse-video-filters-c9-firh-fcs2-s5neg` 144/0/0, `usse-video-filters-c9-firh-fcs3-round` 512/0/0,
+`usse-video-filters-c9-firh-fcs3-s5neg` 144/0/0, `usse-video-filters-c9-firh-fcs4-round` 512/0/0,
+`usse-video-filters-cross-firv-base` 260/0/0, `usse-video-filters-cross-firv-s8` 260/0/0,
+`usse-video-filters-cross-firv-scale` 260/0/0, `usse-video-filters-cross-firv-src2` 260/0/0,
+`usse-video-filters-firh-base-izero` 34/0/0, `usse-video-filters-firh-base-pix` 34/0/0,
+`usse-video-filters-firh-fcs2-izero` 34/0/0, `usse-video-filters-firh-k1` 34/0/0,
+`usse-video-filters-firh-k1-izero` 34/0/0, `usse-video-filters-firh-k2` 34/0/0,
+`usse-video-filters-firh-k2-izero` 34/0/0, `usse-video-filters-firh-k3` 34/0/0,
+`usse-video-filters-firh-mdc` 34/0/0, `usse-video-filters-firh-msc` 34/0/0,
+`usse-video-filters-firh-o8` 34/0/0, `usse-video-filters-firh-s5-1` 34/0/0,
+`usse-video-filters-firh-s5-15` 34/0/0, `usse-video-filters-firh-s5-4` 34/0/0,
+`usse-video-filters-firh-s5-m1` 34/0/0, `usse-video-filters-firh-s5-m16` 34/0/0,
+`usse-video-filters-firh-s8` 34/0/0, `usse-video-filters-firv-all` 0/34/0,
 `usse-video-filters-firv-all-izero` 0/34/0, `usse-video-filters-firv-base` 34/0/0,
 `usse-video-filters-firv-latch` 0/34/0, `usse-video-filters-firv-latch-izero` 0/34/0,
 `usse-video-filters-firv-latch-pix` 0/34/0, `usse-video-filters-firv-o8` 34/0/0,
 `usse-video-filters-firv-s8` 34/0/0, `usse-video-filters-firv-scale` 34/0/0,
-`usse-video-filters-firv-src2` 34/0/0, `usse-video-filters-ped-firh-base` 0/54/0,
-`usse-video-filters-ped-firh-fcs1` 0/54/0, `usse-video-filters-ped-firh-fcs2` 0/54/0,
-`usse-video-filters-ped-firh-fcs2-k1` 0/54/0, `usse-video-filters-ped-firh-fcs2-k2` 0/54/0,
-`usse-video-filters-ped-firh-fcs2-k3` 0/54/0, `usse-video-filters-ped-firh-fcs2-mdc` 0/54/0,
-`usse-video-filters-ped-firh-fcs2-msc` 0/54/0, `usse-video-filters-ped-firh-fcs2-s5-1` 0/54/0,
-`usse-video-filters-ped-firh-fcs2-s5-15` 0/54/0, `usse-video-filters-ped-firh-fcs2-s5-4` 0/54/0,
-`usse-video-filters-ped-firh-fcs2-s5-m1` 0/54/0, `usse-video-filters-ped-firh-fcs2-s5-m16` 0/54/0,
-`usse-video-filters-ped-firh-fcs3` 0/54/0, `usse-video-filters-ped-firh-fcs4` 0/54/0,
-`usse-video-filters-ped-firh-fcs5` 0/54/0, `usse-video-filters-ped-firh-fcs6` 0/54/0,
-`usse-video-filters-ped-firh-fcs7` 0/54/0, `usse-video-filters-ped-firh-k1` 0/54/0,
-`usse-video-filters-ped-firh-k2` 0/54/0, `usse-video-filters-ped-firh-k3` 0/54/0,
-`usse-video-filters-ped-firh-mdc` 0/54/0, `usse-video-filters-ped-firh-msc` 0/54/0,
-`usse-video-filters-ped-firh-o8` 0/54/0, `usse-video-filters-ped-firh-s5-1` 0/54/0,
-`usse-video-filters-ped-firh-s5-15` 0/54/0, `usse-video-filters-ped-firh-s5-4` 0/54/0,
-`usse-video-filters-ped-firh-s5-m1` 0/54/0, `usse-video-filters-ped-firh-s5-m16` 0/54/0,
-`usse-video-filters-ped-firh-s8` 0/54/0, `usse-video-filters-ped-firv-all` 0/54/0,
+`usse-video-filters-firv-src2` 34/0/0, `usse-video-filters-ped-firh-base` 54/0/0,
+`usse-video-filters-ped-firh-fcs1` 54/0/0, `usse-video-filters-ped-firh-fcs2` 54/0/0,
+`usse-video-filters-ped-firh-fcs2-k1` 54/0/0, `usse-video-filters-ped-firh-fcs2-k2` 54/0/0,
+`usse-video-filters-ped-firh-fcs2-k3` 54/0/0, `usse-video-filters-ped-firh-fcs2-mdc` 54/0/0,
+`usse-video-filters-ped-firh-fcs2-msc` 54/0/0, `usse-video-filters-ped-firh-fcs2-s5-1` 54/0/0,
+`usse-video-filters-ped-firh-fcs2-s5-15` 54/0/0, `usse-video-filters-ped-firh-fcs2-s5-4` 54/0/0,
+`usse-video-filters-ped-firh-fcs2-s5-m1` 54/0/0, `usse-video-filters-ped-firh-fcs2-s5-m16` 54/0/0,
+`usse-video-filters-ped-firh-fcs3` 54/0/0, `usse-video-filters-ped-firh-fcs4` 54/0/0,
+`usse-video-filters-ped-firh-fcs5` 54/0/0, `usse-video-filters-ped-firh-fcs6` 54/0/0,
+`usse-video-filters-ped-firh-fcs7` 54/0/0, `usse-video-filters-ped-firh-k1` 54/0/0,
+`usse-video-filters-ped-firh-k2` 54/0/0, `usse-video-filters-ped-firh-k3` 54/0/0,
+`usse-video-filters-ped-firh-mdc` 54/0/0, `usse-video-filters-ped-firh-msc` 54/0/0,
+`usse-video-filters-ped-firh-o8` 54/0/0, `usse-video-filters-ped-firh-s5-1` 54/0/0,
+`usse-video-filters-ped-firh-s5-15` 54/0/0, `usse-video-filters-ped-firh-s5-4` 54/0/0,
+`usse-video-filters-ped-firh-s5-m1` 54/0/0, `usse-video-filters-ped-firh-s5-m16` 54/0/0,
+`usse-video-filters-ped-firh-s8` 54/0/0, `usse-video-filters-ped-firv-all` 0/54/0,
 `usse-video-filters-ped-firv-base` 54/0/0, `usse-video-filters-ped-firv-latch` 0/54/0,
 `usse-video-filters-ped-firv-o8` 54/0/0, `usse-video-filters-ped-firv-s8` 54/0/0,
 `usse-video-filters-ped-firv-scale` 54/0/0, `usse-video-filters-ped-firv-src2` 54/0/0,
-`usse-video-ops-adif` 24/0/0, `usse-video-ops-filters` 15/6/0); unsupported mostly for firh's
-result, from the job's coefficients (CR_USE_COEFFS_MODE, load), unknown to the run (read in rN)
-(18035); firh centred below #-N (open) (1126); bytes of the firh latch the task did not write (read
-in rN) (673).
+`usse-video-ops-adif` 24/0/0, `usse-video-ops-filters` 18/3/0); unsupported mostly for firh's fixed
+bank 1 or 2, whose taps are fitted to these vectors (in-sample, not a hardware check) (1112); bytes
+of the firh latch the task did not write (read in rN) (285); the firh latch, which a later firh may
+reach first (read in rN) (30).
 
-Confirmed on the hardware (a passing vector): #214, #215, #216, #217; not yet confirmed (as decoded;
-no passing vector yet): #218.
+Confirmed on the hardware (a passing vector): #214, #215, #216, #217, #218.
 
 ## 8. Hardware probe results
 
@@ -3216,7 +3261,8 @@ with what stays undecided and what would settle it, or *Not probed yet*:
 - §7.8 `rlp` **[HW]**
 - §8.39 Cache control `ci`, `cf`, `cfi` **[HW]**
 - §8.40 Video `adif`, `adifsum`, `bilin`, `firv`, `firh` **[HW]**
-- §8.41 `.tpres`, `.partial`, `.nosched`, `.syncs` **[HW]**
+- §8.41 Encoding bits no field maps **[HW]**
+- §8.42 `.tpres`, `.partial`, `.nosched`, `.syncs` **[HW]**
 
 ### 8.1 The test sign `p`
 
@@ -4098,25 +4144,54 @@ two taps signed bytes; `+src2.2` adds `c.b2`, `scale` shifts the sum right by `c
 was not measured.
 
 **`firh d, a, b, c, fmt, edge, fcsN, #s, #k` is a horizontal FIR filter along one 12-byte
-line** **[HW]** (1711 cases): the line is `a.b0`-`a.b3`, `b.b0`-`b.b3`, `c.b0`-`c.b3`, the
-kernel of set `fcsN` is centred on position `s`, and the result, Σ tap · sample plus a
-bias, shifted right by 7 and saturated, is written to byte `k`. The sets are fixed at boot
-(we know of no way to load them):
+line** **[HW]** (1711 cases, then every `firh` vector with its job, E292): the line is
+`a.b0`-`a.b3`, `b.b0`-`b.b3`, `c.b0`-`c.b3`, the kernel of set `fcsN` is centred on position
+`s`, and the result, Σ tap · sample plus a bias, shifted right and saturated, is written to byte
+`k`. The sets come from the USE filter block, which the job loads or not (E078): a transfer
+command with load flag bit 2 loads `CR_USE_COEFFS_MODE` and three groups of three words, one
+per set 0, 1 and 2; a group's first word holds the signed taps at −3..0 (bytes 3..0), its
+second +1..+4, its third the shift (bits 3:0) and a signed 16-bit bias (bits 19:4).
+`CR_USE_COEFFS_MODE` bits 1:0 pick what sets 2-5 are:
 
-| set | taps, centre at `s` | sum | bias |
-|-----|---------------------|-----|------|
-| `fcs2` | [4 −20 80 80 −20 4] from `s` − 2: [1 −5 20 20 −5 1]/32, H.264 | 128 | 64-79 |
-| `fcs3` | [32 64 32] from `s` − 1: [1 2 1]/4 | 128 | 64-95 |
-| `fcs4` | [−4 12 −24 80 80 −24 12 −4] from `s` − 3 | 128 | 48-63 |
-| `fcs5` | [1 −5 20 20 −5 1] from `s` − 2, not normalised (no shift) | 32 | 0 |
-| `fcs0`, `fcs1`, `fcs6`, `fcs7` | all zero | 0 | |
+| mode | `fcs0`, `fcs1` | `fcs2` | `fcs3`-`fcs5` | `fcs6`, `fcs7` |
+|---|---|---|---|---|
+| 0 | the loaded groups 0, 1 | fixed bank 0 | fixed bank 0 | 0 |
+| 1, 2 | the loaded groups 0, 1 | fixed bank 1, 2 | fixed bank 1, 2 | not 0, taps open (E298) |
+| 3 | the loaded groups 0, 1 | group 2, taps −3, 0 and +3 only | 0 | 0 |
+
+A job that loads nothing runs with mode 0 and every group zero, whatever the job before it
+loaded (`usse-filter-sets` load0 cases after loaded ones). The fixed banks, in 128ths, shift 7
+(bank 0 E079; banks 1 and 2 E079, E080, E293):
+
+| bank / set | taps from `s` − | taps | bias |
+|---|---|---|---|
+| 0 / `fcs2` | 2 | [4 −20 80 80 −20 4]: [1 −5 20 20 −5 1]/32, H.264 | 64-79 |
+| 0 / `fcs3` | 1 | [32 64 32]: [1 2 1]/4 | 64-95 |
+| 0 / `fcs4` | 3 | [−4 12 −24 80 80 −24 12 −4] | 48-63 |
+| 0 / `fcs5` | 2 | [1 −5 20 20 −5 1], no shift | 0 |
+| 1 / `fcs2`, `fcs3` | 1 | about [−8 72 72 −8]: [−1 9 9 −1]/16 | |
+| 1 / `fcs4` | 1 | about [−9 106 36 −5] | |
+| 1 / `fcs5` | 1 | about [−6 105 37 −7] | |
+| 2 / `fcs2` | 1 | about [16 −64 64 −16]: [1 −4 4 −1]/8 | |
+| 2 / `fcs3` | 2 | about [128 −256 64 64]: [1 −2 ½ ½] | |
+| 2 / `fcs4` | 2 | about [16 32 32 32 16]: [1 2 2 2 1]/8 | |
+| 2 / `fcs5` | 2 | about [32 32 32 32]: [1 1 1 1]/4 | |
+
+The bias column of bank 0 is the range that fits every case; `fcs4`'s is below a half
+**[HW]**, so it does not simply round. Banks 1 and 2 are known to a fitted family
+**[infer]**: every tap vector within 5 per tap of E079's changes times 4 (E293's taps for bank
+2's `fcs2` and `fcs3`), with its own bias range, that fits all their cases (`usse-filter-banks`,
+`usse-filter-control`, `usse-filter-bank2`; `tools/usse-asm/firh_banks.py`). The simulator gives
+a result only where the whole family agrees, and counts it as fitted, not as a hardware check:
+the families come from the same vectors (E292).
 
 Positions off the line follow `edge`: `rep` repeats the end sample, `msc` mirrors without
-repeating it (−1 reads 1), `mdc` mirrors with it (−1 reads 0). **The bias column** is the
-range that fits every case; `fcs4`'s is below a half **[HW]**, so it does not simply round.
-`s` from −4 to 15 behaves so; **below −4 only `c.b3` ever counts** (all three `fcs3` taps at
-−16 and −15, 96/128 at −14, 32/128 at −13, nothing from −12 to −5) and no rule per tap fits
-**[open]**; `r4`-`r8` are never read (probes `x-c9-*`, `x-c10-*`).
+repeating it (−1 reads 1, 12 reads 10), `mdc` mirrors with it (−1 reads 0, 12 reads 11), up to
+position 18; **from position 19 every mode reads 0** **[HW]** (a loaded identity filter on a ramp
+line, every centre, E298). **The centre is −4 to 27**: the field's values written `#−16` to
+`#−5` are centres 16 to 27 **[HW]**, which gives every case below `#−4`: all three `fcs3` taps at
+`#−16` and `#−15` (centres 16, 17), 96/128 at `#−14`, 32/128 at `#−13`, nothing from `#−12`
+(probes `x-c9-*`, `x-c10-*`; 1126 vectors). `r4`-`r8` are never read.
 
 **The firh latch.** `firh` writes all four bytes of `d`: byte `k` is its result, the other
 three come from a hidden 32-bit latch that every `firh` updates at byte `k` **[HW]**. So four
@@ -4130,13 +4205,49 @@ pixel 0x00 or 0xff bytes until `firh` probes with `#k` 1-3 had written them. Wit
 instructions between `firh`s, a destination can catch a later `firh`'s byte, which fits a latch
 shared by instances interleaved on one slot **[infer]** (probe
 `usse-video-filters-c11-latch-merge`). A program
-that relies on the latch should write all four bytes first.
+that relies on the latch should write all four bytes first. The bytes a task did not write
+read what the slot's last task left (for example 0xffffff, 0, 0x5a5a5a or 0x80803e in the
+runs): the simulator checks the byte `firh` wrote and takes the others as any value, and stops
+on a byte the task wrote but it could not compute (E292).
 
-**Undecided:** `firh` below `#−4`; the exact biases; how the coefficient sets are loaded, and
-whether `fcs0`, `fcs1`, `fcs6` and `fcs7` are only empty; the timing of the latch under
-interleaving.
+**Undecided:** `fcs6` and `fcs7` under banks 1 and 2; the exact taps of banks 1 and 2 within
+their families, and whether the families hold on lines outside the fit; the timing of the latch
+under interleaving.
 
-### 8.41 `.tpres`, `.partial`, `.nosched`, `.syncs`
+### 8.41 Encoding bits no field maps
+
+*Measured on the hardware (2026-11-02; `probes/usse/encoding-bits*.toml` and
+`encoding-gaps.toml`, written by `tools/usse-asm/usse_bits.py`, recorded runs).* The 219 forms
+leave 2,161 bits neither identifying nor in a field. Each probe runs one form's base instruction
+as a raw word in a fill's pixel program (`dump.s`) and flips one such bit per case; a bit is read
+if the readback differs from the base's, or the job fails **[HW]**. 761 bits of 73 forms ran:
+
+- **Read: 4 bits.** `idiv`'s enc[47] changes every destination from r10 to r17, not only the
+  quotient and the remainder (E295; what it selects: Q079). enc[51] on `setfc` and on `imo` (the
+  bit that selects the register forms of `smoa`, `smr`, `smlsi` and `smbo`) and enc[44] on
+  `depthf` hang the job (E296).
+- **Ignored: the other 757.** The moves, the bitwise group, integer multiply-add, `fsubflr`,
+  `frcp`, the dot products and `fdsx` (f32 and f16 sources), `sop2wm`, the colour and integer
+  dot products, `rlp` (with `p0` set first), `movc`, `movmsk`, the masked tests, `adif`,
+  `adifsum`, `bilin`, `firv`, `firh`, `idiv`'s other 18, eleven dual-issue pairs, both `ldr`
+  forms (E295); `nop`, `setfc`, `moest`, `setm`, `imo`, the immediate `smoa`, `smr`, `smbo`
+  and `smlsi`, `pcoeff`, `depthf` and `atst8` (E296), each but the bits above.
+
+The other 1,400 unmapped bits belong to forms with no base yet: the register forms of the MOE
+group, `wop`, `lock`, `phas`, the emits, `str`, `ba`, `br`, `bexception`, `lapc`, the `pclink`
+moves, the other dual-issue pairs and the forms whose words an earlier form decodes first.
+
+**Words no form decodes.** About 4 percent of random words match no form's mask and value, all
+of classes 2, 22, 26 and 31; the decoder rejects about a quarter, counting words that match a
+mask but hold a reserved field value. Three words of each class that the decoder rejects ran in
+place of an instruction: none hung or faulted; class 31's changed nothing, but three of class 2,
+one of class 26 and one of class 22 (bilin's word with format 3, a reserved value rather than a
+gap) left the program's later stores unwritten, and two of class 22 changed some pixels (E297,
+Q080). The five that lost the stores are those of classes 2, 22 and 26 with enc[50] set, the
+`.end` bit of mov, nop, fmad and bilin **[infer]**. The simulator stops on a word no form
+decodes, and on a word with one of the four read bits set.
+
+### 8.42 `.tpres`, `.partial`, `.nosched`, `.syncs`
 
 *Measured on the hardware (2026-10-22).* In a fill, **`.tpres` (`frcp`, `frsq`, `fsqrt`),
 `.partial` (`and`, `or`) and `.nosched` change nothing a pixel sees, while `.syncs` (on `mov`
@@ -4152,8 +4263,10 @@ open driver:
 1. **The behaviour of the groups no program of ours has run**: the visibility group. Of the
    probed groups, mipmaps and the LOD values of `smp`, the border address modes and the
    compressed and YUV formats, `fdpc`'s clip-plane result (likely a vertex-task output), and
-   of the video filters `firh` below `#−4`, its rounding biases and how its coefficient sets
-   are loaded remain (Q050).
+   of the video filters `firh`'s sets 6 and 7 under fixed banks 1 and 2 and the exact taps of
+   those banks within their families remain; how the coefficient sets are loaded, what the
+   centres below `#−4` and the positions past the line read are settled (E292, E293, E298)
+   (Q050).
 2. **The MOE state as a whole**: `smoa`, `smbo`, `smr`, `imo`, `setfc` and what `moest`
    returns, beyond the `smlsi` increments the probes pinned (Q051).
 3. **`.skipinv`, `.syncs`, `.nosched`** and the other scheduling flags: what changes when they
@@ -4170,21 +4283,25 @@ open driver:
 7. **Instruction timing and hazards**: how many instructions a result takes to be readable,
    whether the hardware interlocks, and what `.nosched` has to do with it (Q052).
 8. **The destination bank 6 value 0** (`i.`) (Q056).
+9. **Encoding bits**: of the 2,161 bits no field maps, 761 were flipped on the hardware; four
+   are read: `idiv`'s enc[47] changes what it writes (Q079), and enc[51] on `setfc` and `imo`
+   and enc[44] on `depthf` hang the job (E295, E296). Words no form decodes are not all inert
+   (Q080).
 
-The simulator (`crates/sgx-sim`) reproduces 6028 probe vectors (209 of them with near values: float
-functions within their measured bound) and 135 pixel vectors; it stops on 19243 rather than guess,
-most often because (vectors, from `doc/isa/sim-coverage.json`):
+The simulator (`crates/sgx-sim`) reproduces 24440 probe vectors (15434 of them with near values:
+float functions within their measured bound) and 143 pixel vectors; it stops on 1816 rather than
+guess, most often because (vectors, from `doc/isa/sim-coverage.json`):
 
-- firh's result, from the job's coefficients (CR_USE_COEFFS_MODE, load), unknown to the run (read in
-  rN) (16529)
-- firh centred below #-N (open) (1126)
-- no semantics yet: atst8 (687)
-- bytes of the firh latch the task did not write (read in rN) (477)
-- no semantics yet: moest (87)
+- firh's fixed bank 1 or 2, whose taps are fitted to these vectors (in-sample, not a hardware check)
+  (1112)
+- bytes of the firh latch the task did not write (read in rN) (285)
 - smoa takes dst to r-N (not modelled) (64)
+- no SGX registers on this bus (59)
 - gN (per-instance values, not modelled) (36)
 - rN is past the task's N temporaries (26)
-- no semantics yet: setfc (24)
-- no semantics yet: setm (22)
+- the firh latch, which a later firh may reach first (read in rN) (24)
 - four texels fix no decoder (20)
 - smlsi with non-zero limits (20)
+- smoa takes srcN to r-N (not modelled) (16)
+- frcp test of a near value (14)
+- eld with bit N set in its index, offset or limit (not measured) (12)

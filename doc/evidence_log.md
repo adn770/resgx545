@@ -1616,6 +1616,52 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   the triangle, identically with 0x0418 at 1 and at 0, in two runs; the factor acts on a sloped
   depth.
   *isp; HW, infer; data: `isp-line-bias`.*
+- `E292` Given the coefficients its job loaded, every firh vector of the earlier probe rounds runs
+  in the simulator with no mismatch: of 17,851, 16,753 match (15,053 of them with the latch bytes
+  the task did not write taken as any value), 1,066 under fixed banks 1 and 2 agree with tap
+  families fitted to those same vectors and count as fitted, not as matches, and 32 stop; the loaded
+  sets read as E078 gives them, a job that loads nothing has mode 0 and zero groups, the centre
+  field's values written #-16 to #-5 are centres 16 to 27, and positions from 19 read 0.
+  *usse; HW, infer; data: `vectors-usse`, `vectors-usse-followup`, `vectors-usse-jobs`,
+  `vectors-usse-knowledge`, `usse-filter-banks`, `usse-filter-bank2`, `usse-filter-edges`.*
+- `E293` With 0x0a9c at 2, firh's fixed sets 2 and 3 are zero-sum difference filters: set 2 is [1 -4
+  4 -1]/8 at -1 to +2 and set 3 is [1 -2 1/2 1/2] at -2 to +1, seen on a line lifted above 0 so that
+  the negative taps show.
+  *usse; HW; data: `usse-filter-bank2`.*
+- `E294` After 11.7 the simulator matches 23,597 of the 25,245 scalar USSE vectors of the earlier
+  probe rounds (6,028 before), 143 of the 161 pixel vectors (135 before), and stops on 582 (19,217
+  before) and 18; 1,066 more agree with firh's fixed-bank families, which were fitted to them, and
+  count as fitted, not as matches; none differs. The 15,262 near matches are 209 within a measured
+  bound and 15,053 with a value taken as any value. atst8, pcoeff, depthf, setfc, moest and setm
+  gain semantics; with the 11.7 runs' 1,038 vectors, 24,440 scalar vectors match, 1,112 are fitted,
+  686 stop and none differs.
+  *usse; HW; data: `vectors-usse`, `vectors-usse-followup`, `vectors-usse-jobs`,
+  `vectors-usse-knowledge`, `usse-alpha-test`, `usse-moe`, `usse-moe-followup`,
+  `usse-instance-masking`.*
+- `E295` Of the 2,161 bits the 219 USSE forms leave neither identifying nor in a field, the 523 of
+  61 data forms (the moves, the bitwise group, integer multiply-add, the single and dot-product
+  float forms, the colour and integer dot products, rlp, movc, movmsk, the masked tests, the video
+  operations, idiv, eleven dual-issue pairs and both ldr forms) were flipped one at a time: each
+  left the readback as the unflipped word did, except idiv's enc[47], which changed every
+  destination r10 to r17.
+  *usse; HW; data: `usse-encoding-bits`, `usse-encoding-bits-dual`, `usse-encoding-bits-load`,
+  `usse-encoding-bits-followup`.*
+- `E296` Of the 238 unmapped bits of nop, setfc, moest, setm, imo, the immediate smoa, smr, smbo and
+  smlsi, pcoeff, depthf and atst8, flipped one at a time in a fill, 235 change nothing and three
+  hang the job: enc[51] on setfc, enc[51] on imo and enc[44] on depthf.
+  *usse; HW, infer; data: `usse-encoding-bits-state`.*
+- `E297` Of twelve words the decoder rejects, three each of classes 2, 22, 26 and 31, run in place
+  of an instruction in a fill, none hangs or faults the job; eleven match no form's mask and one of
+  class 22 is bilin's word with a reserved format value; the three of class 31 change nothing; the
+  three of class 2, the bilin word and one of class 26 leave the program's sixteen stores unwritten,
+  exactly the five with enc[50] set among classes 2, 22 and 26, and two of class 22 change some
+  pixels.
+  *usse; HW, infer; data: `usse-encoding-gaps`.*
+- `E298` firh reads line position p (0 to 11) at centre p; at centres -4 to -1 rep reads byte 0, msc
+  byte -p and mdc byte -1-p; at 12 to 18 rep reads byte 11, msc byte 22-p and mdc byte 23-p; from 19
+  to 27 every mode reads 0. With a load, sets 6 and 7 give 0 at 0x0a9c = 0, and are not 0 at 1 and
+  2: bank 1's two sets and bank 2's set 6 give values no loaded group gives.
+  *usse; HW; data: `usse-filter-edges`.*
 
 ## By unit
 
@@ -1687,7 +1733,7 @@ Records: E236, E237.
 Records: E075, E076, E077, E078, E079, E080, E081, E082, E083, E085, E086, E087, E088, E089, E090,
 E091, E092, E093, E094, E095, E096, E097, E098, E099, E100, E101, E102, E103, E104, E105, E106,
 E107, E108, E109, E110, E111, E112, E113, E115, E117, E118, E119, E120, E121, E123, E124, E147,
-E244, E245, E255.
+E244, E245, E255, E292, E293, E294, E295, E296, E297, E298.
 
 ### vdm
 

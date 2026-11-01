@@ -1,0 +1,9 @@
+title = "instruction vectors from the 11.7 usse probe runs"
+repo = "data"
+paths = ["vectors/knowledge/usse/"]
+method = "vectors.py convert on the raw readbacks and saved programs of the 11.7 runs (encoding bits, encoding gaps, filter bank 2, filter edges), one file per probe, each vector with its job"
+date = "2026-11-02"
+files = 87
+size = 3473713
+sha256 = "d2d331ecd8ede4c5db0ca1e2d48398104907fdc94a8374d2f1fca02f2c833d56"
+recipe = "tools/usse-asm/vectors.py"

@@ -1,0 +1,10 @@
+title = "probe table usse/encoding-bits-load"
+repo = "data"
+paths = ["usse/encoding-bits-load/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 61
+size = 117669
+sha256 = "fe837416f0672b8c7f5cf8a57772113182b0422459661d28c6623c515c39f188"
+recipe = "probes/usse/encoding-bits-load.toml"
+needs = ["render"]

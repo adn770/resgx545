@@ -20,4 +20,4 @@ mod usse;
 pub mod vectors;
 
 pub use func::Bound;
-pub use usse::{Bus, Error, Machine, Memory, Now, Program, QuadView, run_quad, sim_op};
+pub use usse::{Bus, Error, FilterBlock, Machine, Memory, Now, Program, QuadView, run_quad, sim_op};

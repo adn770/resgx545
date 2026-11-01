@@ -1,9 +1,9 @@
 +++
 id = "Q050"
-question = "what do the visibility group's instructions do, and how do smp's mipmaps and LOD values, the border address modes, the compressed and YUV formats and firh's rounding biases and coefficient loads behave?"
+question = "what do the visibility group's instructions do, and how do smp's mipmaps and LOD values, the border address modes, the compressed and YUV formats and firh's edge modes past the line and fixed banks 1 and 2 behave?"
 unit = "usse"
 phase = 11
-evidence = ["E083", "E091", "E123", "E147"]
+evidence = ["E083", "E091", "E123", "E147", "E292", "E293", "E294", "E298"]
 terms = []
 +++
 
@@ -11,15 +11,29 @@ The probes ran a case for each of 16 groups of forms that had no hardware readba
 atst8 as an alpha test of src0's top byte against src2's under the function in src2 bits 15:13
 (E083), and fitted bilin, firv and firh models to every video-filter case they were fitted to
 (E123). Run through the simulator, the vectors show no mismatch, but it stops on 19,243 USSE
-vectors rather than guess: 16,521 of them firh vectors whose coefficients come from the job, and
-1,126 more firh centred below byte 0 (E147).
+vectors rather than guess (E147): 16,529 of them firh vectors whose coefficients come from the
+job, 1,126 more firh centred below byte 0 and 196 firh that read latch bytes the task did not
+write (E292's count; E147 gave 16,521, and its 477 latch reads were firv's).
+
+11.7 carried each fill's job into the vectors (the transfer command's pokes, and the
+coefficients they load): with the loaded sets read as E078 gives them, the fixed banks 1 and 2
+as the families of taps their cases allow, centres 16 to 27 for the field's values below `#-4`
+(positions 12 to 18 fold by the edge mode, from 19 read 0: E298) and the latch bytes a task did not
+write taken as any value, the firh vectors run with no mismatch (E292). Bank 2's sets 2 and 3
+are [1 -4 4 -1]/8 and [1 -2 1/2 1/2] (E293). The matches of banks 1 and 2 are consistent with
+the fit, not a check: their families come from the same vectors (E292). atst8 runs in the
+simulator as E083 gives it, and pcoeff, depthf, setfc, moest and setm as changing nothing a fill
+shows (E294).
 
 What is open (usse_isa.md §8, item 1): the rest of the visibility group, which no program of ours
-has run; smp with mipmaps and LOD values; the border address modes; the compressed and YUV texture
-formats; fdpc's clip-plane result outside the TA state our kernel sets; and firh below #-4, its
-rounding biases and how its coefficient sets are loaded.
+has run outside a fill and a punch-through pass; smp with mipmaps and LOD values; the border
+address modes; the compressed and YUV texture formats; fdpc's clip-plane result outside the TA
+state our kernel sets; firh's sets 6 and 7 under fixed banks 1 and 2 (bank 1's two and bank 2's
+set 6 give values no loaded group gives; bank 2's set 7 gave group 0's value: E298), and the
+exact taps of banks 1 and 2, which only vectors outside the fit can check.
 
-To settle it: a probe table per group on the laptop with the campaign runner: the visibility group's
-forms each with a known test value and the visibility counters read back; smp over level-tagged mip
-chains and border colours (with Q009's texture words); firh with the job's CR_USE_COEFFS words set
-to known taps, so its vectors carry their coefficients.
+To settle it: on the laptop, a probe table per group with the campaign runner: the visibility
+group's forms each with a known test value and the visibility counters read back; smp over
+level-tagged mip chains and border colours (with Q009's texture words); firh's fcs6 and fcs7
+at modes 1 and 2 on impulses and pedestals, as E079 measured sets 2 to 5; and sets 2 to 5 of
+banks 1 and 2 on lines no fitted case used, to test the families out of sample.

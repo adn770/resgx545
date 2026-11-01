@@ -101,6 +101,7 @@ usse/probe/sampler-state.md
 usse/probe/rlp.md
 usse/probe/cache-control.md
 usse/probe/video.md
+usse/probe/encoding-bits.md
 usse/probe/other-flag-ops.md
 
 usse/open.md

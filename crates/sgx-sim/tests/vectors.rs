@@ -6,9 +6,9 @@
 //! instance, the scratch dwords and o0 equal to the readback; a vector that
 //! reports every pixel runs as the fill's 2x2 quads, every pixel's o0 equal.
 
-use sgx_sim::json;
 use sgx_sim::vectors::{
-    Kind, SKIP, data, kind, probe_files, reason, run_pds, run_pixels, run_scalar as run, skipped,
+    Kind, Outcome, SKIP, data, kind, load, probe_files, reason, run_pds, run_pixels, run_scalar as run,
+    skipped,
 };
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -33,12 +33,12 @@ fn probe_vectors_match_where_modelled() {
     let Some(dir) = vectors() else { return };
     let rd = probe_files(&dir);
     assert!(!rd.is_empty(), "no vectors in {}", dir.display());
-    let (mut pass, mut unsup, mut fail) = (0, 0, Vec::new());
+    let (mut pass, mut fitted, mut unsup, mut fail) = (0, 0, 0, Vec::new());
     let mut whys = BTreeMap::<String, usize>::new();
     // SGX_SIM_SHOW=<text>: list the unsupported cases whose reason contains it
     let show = std::env::var("SGX_SIM_SHOW").ok();
     for e in rd {
-        let d = json::parse(&std::fs::read_to_string(e).unwrap());
+        let d = load(&e);
         for v in d.get("vectors").arr() {
             let rb = v.get("readback");
             if rb.get("failed").str().is_some() || v.get("program").get("isa").str() != Some("usse") {
@@ -55,6 +55,8 @@ fn probe_vectors_match_where_modelled() {
                 continue;
             }
             match run(v) {
+                // agrees with firh's fitted fixed banks: not a hardware check (E292)
+                Ok(Outcome::Fitted) => fitted += 1,
                 Ok(_) => pass += 1,
                 Err(e) if e.starts_with("unsupported") => {
                     unsup += 1;
@@ -86,7 +88,7 @@ fn probe_vectors_match_where_modelled() {
             }
         }
     }
-    eprintln!("probes: {pass} pass, {unsup} unsupported, {} fail", fail.len());
+    eprintln!("probes: {pass} pass, {fitted} fitted, {unsup} unsupported, {} fail", fail.len());
     // a regression that turns the passes into unsupported vectors must not stay green
     assert!(pass > 5000, "only {pass} probe vectors pass");
     let mut top: Vec<_> = whys.into_iter().collect();
@@ -104,7 +106,7 @@ fn pds_vectors_match_the_hardware() {
     let Some(dir) = vectors() else { return };
     let (mut pass, mut unsup, mut fail) = (0, BTreeMap::<String, usize>::new(), Vec::new());
     for path in probe_files(&dir) {
-        let d = json::parse(&std::fs::read_to_string(&path).unwrap());
+        let d = load(&path);
         for v in d.get("vectors").arr() {
             if kind(v) != Kind::Pds {
                 continue;
@@ -142,7 +144,7 @@ fn pixel_vectors_match_where_modelled() {
     let (mut pass, mut unsup, mut fail) = (0, 0, Vec::new());
     let mut whys = BTreeMap::<String, usize>::new();
     for e in probe_files(&dir) {
-        let d = json::parse(&std::fs::read_to_string(e).unwrap());
+        let d = load(&e);
         let raw = d.get("run").get("raw").str().unwrap_or("").to_string();
         for v in d.get("vectors").arr() {
             let rb = v.get("readback");
@@ -186,7 +188,7 @@ fn every_skip_row_matches_a_vector() {
     let Some(dir) = vectors() else { return };
     let mut hits = vec![0usize; SKIP.len()];
     for path in probe_files(&dir) {
-        let d = json::parse(&std::fs::read_to_string(&path).unwrap());
+        let d = load(&path);
         let raw = d.get("run").get("raw").str().unwrap_or("");
         for v in d.get("vectors").arr() {
             let probe = v.get("provenance").get("probe").str().unwrap_or("");

@@ -125,6 +125,8 @@ impl fmt::Display for Error {
 struct Insn {
     form: &'static Form,
     v: [u32; 10],
+    /// The word, for the bits outside every field (READ_BITS).
+    word: u64,
     text: String,
     /// A firh runs after this one with two or more instructions before it since this one or
     /// the firh before (or anywhere, in a program that branches): the firh latch this
@@ -160,7 +162,7 @@ impl Program {
                 match decode_fields(w, core) {
                     Some(f) => {
                         let form = video_form(&usse_isa::table().forms[f.form]);
-                        Ok(Insn { form, v: f.v, text, firh_later: false })
+                        Ok(Insn { form, v: f.v, word: w, text, firh_later: false })
                     }
                     None => Err(text),
                 }
@@ -191,9 +193,39 @@ impl Program {
     }
 }
 
-/// The roles of the video filters' fields, by position, for the forms the ISA table leaves
-/// without them (isa/usse/forms/classes-22-and-23-adif-adifsum-bilin-firv-firh.toml).
-const VIDEO_ROLES: [(&str, &str, &[&str]); 3] = [
+/// Bits outside every field that the hardware was seen to read (usse_bits.py, the encoding-bit
+/// probes), by mnemonic (read_bit): a word with one set stops the run, as their meaning is open,
+/// whether or not the form has semantics.
+const READ_BITS: &[(&str, u32, &str)] = &[
+    // usse-encoding-bits-idiv (E295): every destination r10-r17 changed
+    ("idiv", 47, "open, Q079"),
+    // usse-encoding-bits-state (E296): the job hangs
+    ("setfc", 51, "the job hangs, E296"),
+    ("imo", 51, "the job hangs, E296"),
+    ("depthf", 44, "the job hangs, E296"),
+];
+
+/// The bit of READ_BITS a word sets: the form's mnemonic, the bit and why.
+fn read_bit(form: &Form, word: u64) -> Option<(&'static str, u32, &'static str)> {
+    let name = mnemonic(form)?;
+    READ_BITS.iter().find(|(o, b, _)| *o == name && word >> b & 1 != 0).map(|&(o, b, q)| (o, b, q))
+}
+
+/// A form's op, or where it has none (imo) the mnemonic its pattern starts with, after the
+/// predicate's placeholder.
+fn mnemonic(form: &Form) -> Option<&'static str> {
+    if !form.op.is_empty() {
+        return Some(form.op);
+    }
+    let pat = form.pat?;
+    pat.strip_prefix("{0}").unwrap_or(pat).split('{').next().filter(|m| !m.is_empty())
+}
+
+/// The operations and field roles, by position, of the forms the ISA table leaves without
+/// them: the video filters (isa/usse/forms/classes-22-and-23-adif-adifsum-bilin-firv-firh.toml),
+/// the visibility tests (class-31-visibility-test.toml) and the MOE state and mask forms
+/// (class-31-moe-group.toml, class-31-other-group.toml) whose effect in a fill is measured.
+const VIDEO_ROLES: [(&str, &str, &[&str]); 9] = [
     (
         "{0}bilin{1}",
         "bilin",
@@ -201,6 +233,16 @@ const VIDEO_ROLES: [(&str, &str, &[&str]); 3] = [
     ),
     ("{0}firv{1}", "firv", &["pred", "flags", "write", "dst", "pair", "src2", "fmt", "firv"]),
     ("{0}firh{1}", "firh", &["pred", "flags", "dst", "pair", "src2", "fmt", "firh", "s", "k"]),
+    (
+        "{0}atst8{1}",
+        "atst8",
+        &["pred", "flags", "dst", "pwrite", "p", "src0", "src1", "src2", "twosided", "vismode"],
+    ),
+    ("{0}depthf{1}", "depthf", &["pred", "flags", "src0", "src1", "src2", "twosided", "vismode"]),
+    ("pcoeff{0}{1}", "pcoeff", &["nosched", "end", "src0", "src1", "src2"]),
+    ("setfc{0}", "setfc", &["nosched", "fc0", "fc1"]),
+    ("moest{0}{1}", "moest", &["skipinv", "nosched", "dst", "sel"]),
+    ("setm{0}", "setm", &["nosched", "samples"]),
 ];
 
 /// What a form does to the simulator: its operation, "" if none.
@@ -301,12 +343,17 @@ pub struct Machine {
     pub now: Now,
     /// The firh latch (probes/usse/video-filters.toml), a byte at a time: None where the
     /// task has not written it (it belongs to the instance slot and holds what the slot's
-    /// last task left, garbage at power-up).
+    /// last task left, garbage at power-up) or where it wrote a value the run cannot compute.
     pub firh_latch: [Option<u8>; 4],
-    /// The fixed bank firh's sets 2-5 come from (CR_USE_COEFFS_MODE bits 1:0, E078) in a
-    /// job that loads no coefficients (sets 0 and 1 then zero); None where the run does not
-    /// know the job's coefficient state. Bank 0 alone is modelled.
-    pub filter_bank: Option<u32>,
+    /// The latch bytes the task wrote (or a firh it skipped may have): only those not written
+    /// are taken as any value; a written byte the run could not compute is not known.
+    pub firh_written: [bool; 4],
+    /// Set once a firh result comes from fixed bank 1 or 2, whose tap families are fitted to
+    /// the vectors (FIXED_BANKS): a match is then Outcome::Fitted, not a hardware check.
+    pub fitted: bool,
+    /// The job's USE filter coefficients (E078), which firh reads; None where the run does
+    /// not know them.
+    pub coeffs: Option<FilterBlock>,
     /// The registers holding a value the hardware may not have (bank, number), with why:
     /// reading one stops the program.
     pub unknown: BTreeMap<(&'static str, usize), &'static str>,
@@ -436,6 +483,153 @@ pub fn run_quad(
     }
 }
 
+/// The USE filter coefficients of a job (E078, transfer.md 3.2): CR_USE_COEFFS_MODE (only
+/// bits 1:0 count) and the three loaded groups of three words (sets 0, 1 and 2), None where
+/// the job loads none. A job that loads none runs with mode 0 and every group zero, as a
+/// load-free job after a loading one shows (usse-filter-sets load0).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub struct FilterBlock {
+    pub mode: u32,
+    pub groups: Option<[u32; 9]>,
+}
+
+/// firh's fixed sets in banks 1 and 2 (CR_USE_COEFFS_MODE 1 and 2, E079, and bank 2's sets 2
+/// and 3 on a lifted line, E293): (bank, set, first tap's position, shift, the tap vectors with
+/// the bias range each allows). tools/usse-asm/firh_banks.py writes the table: every tap vector
+/// within 5 per tap (in 128ths, [infer] choice) of E079's changes times 4 or E293's taps that
+/// some bias fits on all of the set's cases in usse-filter-banks, usse-filter-control and
+/// usse-filter-bank2. A result counts only where all agree, and as fitted (Machine::fitted), not
+/// as a hardware check: the families come from the vectors they are compared with. Taps outside
+/// the window are zero, as the impulse cases show no change there.
+type Family = (u32, u32, i32, u32, &'static [(&'static [i64], i64, i64)]);
+// firh_banks.py: begin
+#[rustfmt::skip]
+const FIXED_BANKS: &[Family] = &[
+    // bank 1 set 2: 130 cases, 18 members
+    (1, 2, -1, 7, &[
+        (&[-10, 73, 72, -7], 64, 95),
+        (&[-9, 72, 72, -7], 64, 95),
+        (&[-9, 73, 71, -7], 64, 95),
+        (&[-9, 73, 72, -8], 32, 95),
+        (&[-9, 73, 73, -9], 32, 63),
+        (&[-9, 74, 72, -9], 32, 63),
+        (&[-8, 71, 72, -7], 64, 95),
+        (&[-8, 72, 71, -7], 64, 95),
+        (&[-8, 72, 72, -8], 0, 127),
+        (&[-8, 72, 73, -9], 32, 63),
+        (&[-8, 73, 72, -9], 32, 63),
+        (&[-8, 73, 73, -9], -64, -33),
+        (&[-7, 70, 72, -7], 64, 95),
+        (&[-7, 71, 71, -7], 64, 95),
+        (&[-7, 71, 72, -8], 32, 95),
+        (&[-7, 71, 73, -9], 32, 63),
+        (&[-7, 72, 72, -9], 32, 63),
+        (&[-6, 71, 72, -9], 32, 63),
+    ]),
+    // bank 1 set 3: 130 cases, 18 members
+    (1, 3, -1, 7, &[
+        (&[-10, 73, 72, -7], 64, 95),
+        (&[-9, 72, 72, -7], 64, 95),
+        (&[-9, 73, 71, -7], 64, 95),
+        (&[-9, 73, 72, -8], 32, 95),
+        (&[-9, 73, 73, -9], 32, 63),
+        (&[-9, 74, 72, -9], 32, 63),
+        (&[-8, 71, 72, -7], 64, 95),
+        (&[-8, 72, 71, -7], 64, 95),
+        (&[-8, 72, 72, -8], 0, 127),
+        (&[-8, 72, 73, -9], 32, 63),
+        (&[-8, 73, 72, -9], 32, 63),
+        (&[-8, 73, 73, -9], -64, -33),
+        (&[-7, 70, 72, -7], 64, 95),
+        (&[-7, 71, 71, -7], 64, 95),
+        (&[-7, 71, 72, -8], 32, 95),
+        (&[-7, 71, 73, -9], 32, 63),
+        (&[-7, 72, 72, -9], 32, 63),
+        (&[-6, 71, 72, -9], 32, 63),
+    ]),
+    // bank 1 set 4: 130 cases, 13 members
+    (1, 4, -1, 7, &[
+        (&[-11, 108, 36, -5], 96, 127),
+        (&[-10, 107, 35, -4], 96, 127),
+        (&[-10, 107, 36, -5], 96, 127),
+        (&[-10, 108, 35, -5], 96, 127),
+        (&[-10, 108, 36, -6], 64, 127),
+        (&[-9, 106, 35, -4], 96, 127),
+        (&[-9, 106, 36, -5], 96, 127),
+        (&[-9, 107, 35, -5], 64, 127),
+        (&[-9, 107, 36, -6], 64, 127),
+        (&[-8, 105, 35, -4], 96, 127),
+        (&[-8, 105, 36, -5], 96, 127),
+        (&[-8, 106, 35, -5], 64, 127),
+        (&[-8, 106, 36, -6], 64, 127),
+    ]),
+    // bank 1 set 5: 130 cases, 13 members
+    (1, 5, -1, 7, &[
+        (&[-8, 106, 36, -6], 0, 63),
+        (&[-8, 106, 37, -7], 0, 63),
+        (&[-8, 107, 36, -7], 0, 31),
+        (&[-8, 107, 37, -8], 0, 31),
+        (&[-7, 105, 36, -6], 0, 63),
+        (&[-7, 105, 37, -7], 0, 63),
+        (&[-7, 106, 36, -7], 0, 31),
+        (&[-7, 106, 37, -8], 0, 31),
+        (&[-6, 104, 36, -6], 0, 63),
+        (&[-6, 104, 37, -7], 0, 31),
+        (&[-6, 105, 36, -7], 0, 31),
+        (&[-6, 105, 37, -8], 0, 31),
+        (&[-5, 104, 36, -7], 0, 31),
+    ]),
+    // bank 2 set 2: 166 cases, 7 members
+    (2, 2, -1, 7, &[
+        (&[15, -64, 64, -15], 32, 95),
+        (&[15, -63, 64, -16], 32, 95),
+        (&[16, -65, 64, -15], 32, 95),
+        (&[16, -64, 64, -16], 0, 127),
+        (&[16, -63, 64, -17], 32, 95),
+        (&[17, -65, 64, -16], 32, 95),
+        (&[17, -64, 64, -17], 32, 95),
+    ]),
+    // bank 2 set 3: 166 cases, 7 members
+    (2, 3, -2, 7, &[
+        (&[128, -257, 64, 65], 32, 63),
+        (&[128, -257, 65, 64], 32, 95),
+        (&[128, -256, 63, 65], 32, 63),
+        (&[128, -256, 64, 64], 0, 127),
+        (&[128, -256, 65, 63], 64, 95),
+        (&[128, -255, 63, 64], 32, 95),
+        (&[128, -255, 64, 63], 64, 95),
+    ]),
+    // bank 2 set 4: 130 cases, 11 members
+    (2, 4, -2, 7, &[
+        (&[15, 31, 34, 32, 16], 32, 63),
+        (&[15, 32, 33, 32, 16], 32, 95),
+        (&[15, 33, 32, 32, 16], 32, 95),
+        (&[15, 34, 31, 32, 16], 32, 63),
+        (&[16, 31, 33, 32, 16], 32, 95),
+        (&[16, 32, 32, 32, 16], 0, 127),
+        (&[16, 33, 31, 32, 16], 32, 95),
+        (&[17, 30, 33, 32, 16], 64, 95),
+        (&[17, 31, 32, 32, 16], 32, 95),
+        (&[17, 32, 31, 32, 16], 32, 95),
+        (&[17, 33, 30, 32, 16], 64, 95),
+    ]),
+    // bank 2 set 5: 130 cases, 11 members
+    (2, 5, -2, 7, &[
+        (&[31, 31, 34, 32], 32, 63),
+        (&[31, 32, 33, 32], 32, 95),
+        (&[31, 33, 32, 32], 32, 95),
+        (&[31, 34, 31, 32], 32, 63),
+        (&[32, 31, 33, 32], 32, 95),
+        (&[32, 32, 32, 32], 0, 127),
+        (&[32, 33, 31, 32], 32, 95),
+        (&[33, 30, 33, 32], 64, 95),
+        (&[33, 31, 32, 32], 32, 95),
+        (&[33, 32, 31, 32], 32, 95),
+        (&[33, 33, 30, 32], 64, 95),
+    ]),
+];
+// firh_banks.py: end
+
 /// The constant bank, c0-c63 (source bank 5, numbers below 64), as the hardware
 /// reads it (the constant-bank vectors, probe usse-constant-banks-cbank: the same through a store's and a
 /// mov's source). Rogue's special constants in the same order up to c39: 0, 1.0,
@@ -509,7 +703,9 @@ impl Default for Machine {
             near_mem: BTreeMap::new(),
             now: Now::default(),
             firh_latch: [None; 4],
-            filter_bank: None,
+            firh_written: [false; 4],
+            fitted: false,
+            coeffs: None,
             unknown: BTreeMap::new(),
         }
     }
@@ -604,6 +800,9 @@ impl Machine {
             insn
         };
         let op = insn.form.op;
+        if let Some((name, b, q)) = read_bit(insn.form, insn.word) {
+            return Err(why(format!("{name} with enc[{b}] set, a bit the hardware reads ({q})")));
+        }
         if op.is_empty() {
             return Err(why("no semantics for this form yet"));
         }
@@ -632,7 +831,9 @@ impl Machine {
         if !self.pred(insn)? {
             if op == "firh" {
                 // whether a firh that does not run leaves the latch alone is not measured
-                self.firh_latch[insn.get("k").unwrap() as usize] = None;
+                let k = insn.get("k").unwrap() as usize;
+                self.firh_latch[k] = None;
+                self.firh_written[k] = true;
             }
             return Ok(if end { Next::End } else { Next::Step });
         }
@@ -1818,6 +2019,22 @@ impl Machine {
         let op = insn.form.op;
         Ok(match op {
             "nop" | "idf" | "phas" => None,
+            // what a fill shows of them: nothing; their effect is on the ISP's feedback, the MOE
+            // state a context switch keeps, and the sample mask. pcoeff and depthf (E083, on r1-r3
+            // only; depthf with nfb, fb and optdwd), setfc (E097, E109), setm (E099); moest
+            // leaves its destination and every register (E087's moest-state, selectors 0-15,
+            // and moest-dest; E097's moest-store; E109's moest-load, selectors 0-8; E296)
+            "pcoeff" | "setfc" | "setm" | "moest" => None,
+            "depthf" => {
+                if insn.get("twosided") == Some(1) {
+                    return Err(why("depthf twosided (not measured)"));
+                }
+                None
+            }
+            "atst8" => {
+                self.atst8(insn)?;
+                None
+            }
             "wdf" => {
                 let drc = insn.get("drc").unwrap();
                 let (land, keep): (Vec<_>, Vec<_>) = self.pending.drain(..).partition(|p| p.0 == drc);
@@ -2339,9 +2556,44 @@ impl Machine {
         self.write(insn, r)
     }
 
+    /// atst8 d, pN, a, b, c, mode: hardware (E083, usse-alpha-test, 687 fill cases): alpha
+    /// a.b3 against the reference c.b3 by the function in c bits 15:13 (never, less, equal,
+    /// lequal, greater, notequal, gequal, always); a pass writes a to d and sets pN, a fail
+    /// leaves d and clears pN. b, c's other bits, twosided and the feedback mode change nothing
+    /// a fill shows; "!pN" (enc[38] clear) is not measured.
+    fn atst8(&mut self, insn: &Insn) -> Result<(), Error> {
+        if insn.get("pwrite") == Some(0) {
+            return Err(why("atst8 with !pN (not measured)"));
+        }
+        let a = self.src0(insn.get("src0").unwrap())?;
+        let c = self.src(insn.get("src2").unwrap(), 6)?;
+        let (alpha, reference) = (a >> 24, c >> 24);
+        let pass = match c >> 13 & 7 {
+            0 => false,
+            1 => alpha < reference,
+            2 => alpha == reference,
+            3 => alpha <= reference,
+            4 => alpha > reference,
+            5 => alpha != reference,
+            6 => alpha >= reference,
+            _ => true,
+        };
+        if self.now.read.get().is_some() {
+            return Err(why("atst8 of a near value"));
+        }
+        if pass {
+            self.now.out = Out::Move;
+            self.write(insn, a)?;
+        }
+        self.p[insn.get("p").unwrap() as usize] = pass;
+        Ok(())
+    }
+
     /// Why the firh latch, as this instruction reads it, is not known (None if it is).
     fn latch_unknown(&self, insn: &Insn) -> Option<&'static str> {
-        if self.firh_latch.contains(&None) {
+        if (0..4).any(|j| self.firh_written[j] && self.firh_latch[j].is_none()) {
+            Some("a byte of the firh latch the task wrote but the run could not compute")
+        } else if self.firh_latch.contains(&None) {
             Some("bytes of the firh latch the task did not write")
         } else if insn.firh_later {
             Some("the firh latch, which a later firh may reach first")
@@ -2368,15 +2620,17 @@ impl Machine {
         if edge == 3 {
             return Err(why("firh edge mode 3"));
         }
-        if s < -4 {
-            // x-c10-*, x-c9-*: only c.b3 counts and no rule per tap fits
-            return Err(why("firh centred below #-4 (open)"));
-        }
+        // the centre field's values 16-27 (written #-16 to #-5) are centres 16 to 27, past the
+        // line (usse-video-filters-c9-*, c10-*): -4 to 27
+        let s = if s < -4 { s + 32 } else { s };
         let line: Vec<i64> =
             [a, b, c].iter().flat_map(|&x| (0..4).map(move |j| video_byte(x, j, fmt))).collect();
-        let at = |i: i32| -> i64 {
+        // a position off the line by the edge mode, to 18; from 19 every mode reads 0
+        // (c9-*, c10-*, usse-filter-edges)
+        let at = |i: i32| -> Option<i64> {
             let i = match (edge, i) {
                 (_, 0..=11) => i,
+                (_, 19..) => return Some(0),
                 (0, ..0) => 0,
                 (0, _) => 11,
                 (1, ..0) => -i,
@@ -2384,36 +2638,35 @@ impl Machine {
                 (_, ..0) => -1 - i,
                 (_, _) => 23 - i,
             };
-            line[i as usize]
+            Some(line[i as usize])
         };
-        let byte = match self.filter_bank {
+        let byte = match self.coeffs {
             None => Err(
                 "firh's result, from the job's coefficients (CR_USE_COEFFS_MODE, load), unknown to the run",
             ),
-            Some(0) => {
-                // bank 0 (E079): taps from the first position, bias range, shift.
-                // fcs3's bias: 64 to 95 (video-clean x-firh-fcs3 case 14, 12192 -> 95)
-                let (taps, from, bias, shift): (&[i64], i32, (i64, i64), u32) = match set {
-                    2 => (&[4, -20, 80, 80, -20, 4], -2, (64, 79), 7),
-                    3 => (&[32, 64, 32], -1, (64, 95), 7),
-                    4 => (&[-4, 12, -24, 80, 80, -24, 12, -4], -3, (48, 63), 7),
-                    5 => (&[1, -5, 20, 20, -5, 1], -2, (0, 0), 0),
-                    _ => (&[], 0, (0, 0), 0),
-                };
-                let sum: i64 = taps.iter().enumerate().map(|(n, t)| t * at(s + from + n as i32)).sum();
-                let (lo, hi) = (sat_u8((sum + bias.0) >> shift), sat_u8((sum + bias.1) >> shift));
-                if lo == hi {
-                    Ok(lo as u8)
-                } else {
-                    Err("firh's result, which its bias (known to a range) decides")
-                }
-            }
-            Some(_) => {
-                Err("firh's result, from a fixed coefficient bank other than bank zero (not modelled)")
-            }
+            Some(c) => firh_byte(c, set, s, &at),
         };
         self.firh_latch[k] = byte.ok();
-        self.now.unknown = byte.err().or_else(|| self.latch_unknown(insn));
+        self.firh_written[k] = true;
+        if byte.is_ok() && matches!(self.coeffs.map(|c| c.mode & 3), Some(1 | 2)) && (2..=5).contains(&set) {
+            self.fitted = true;
+        }
+        // bytes of the latch the task did not write hold what the slot's last task left: any
+        // value, the rest exact (Bound::Mask); a byte it wrote but the run could not compute,
+        // a later firh or other instances are not known
+        let gap = (0..4).filter(|&j| !self.firh_written[j]).fold(0, |m, j| m | 0xff << (8 * j));
+        let lost = (0..4).any(|j| self.firh_written[j] && self.firh_latch[j].is_none());
+        let other = if lost {
+            Some("a byte of the firh latch the task wrote but the run could not compute")
+        } else if insn.firh_later || !self.uniform {
+            self.latch_unknown(insn)
+        } else {
+            None
+        };
+        self.now.unknown = byte.err().or(other);
+        if self.now.unknown.is_none() && gap != 0 {
+            self.now.out = Out::Fn(Some(Bound::Mask(gap)));
+        }
         let d = (0..4).fold(0, |d, j| d | (self.firh_latch[j].unwrap_or(0) as u32) << (8 * j));
         self.write(insn, d)
     }
@@ -3547,6 +3800,77 @@ fn half_f32(h: u32) -> Result<u32, Error> {
     Ok(if h >> 15 != 0 { -mag } else { mag }.to_bits())
 }
 
+/// One firh result byte from the job's coefficients (E078, E079, E080): set N's kernel centred
+/// on position s of the line, `at` reading a position with the edge mode applied.
+fn firh_byte(c: FilterBlock, set: u32, s: i32, at: &dyn Fn(i32) -> Option<i64>) -> Result<u8, &'static str> {
+    let mode = c.mode & 3;
+    let filter = |taps: &[i64], from: i32, bias: (i64, i64), shift: u32| {
+        let mut sum = 0;
+        for (n, t) in taps.iter().enumerate() {
+            let x = at(s + from + n as i32).ok_or("firh's msc or mdc past the line's end (not measured)")?;
+            sum += t * x;
+        }
+        Ok((sat_u8((sum + bias.0) >> shift), sat_u8((sum + bias.1) >> shift)))
+    };
+    // a loaded group: taps at -3..+4 in its first two words (highest byte first), the shift in
+    // bits 3:0 and a signed 16-bit bias in bits 19:4 of its third
+    let loaded = |g: usize, only: Option<[usize; 3]>| {
+        let w = c.groups.map_or([0; 3], |gs| [gs[3 * g], gs[3 * g + 1], gs[3 * g + 2]]);
+        let taps: Vec<i64> = (0..8)
+            .map(|n| {
+                let t = (w[n / 4] >> (8 * (3 - n % 4))) as u8 as i8 as i64;
+                if only.is_none_or(|o| o.contains(&n)) { t } else { 0 }
+            })
+            .collect();
+        let bias = (w[2] >> 4) as u16 as i16 as i64;
+        Ok(filter(&taps, -3, (bias, bias), w[2] & 15)?.0 as u8)
+    };
+    match (set, mode) {
+        (0 | 1, _) => loaded(set as usize, None),
+        // set 2 of the loaded block reads three taps: -3, 0 and +3 (E078)
+        (2, 3) => loaded(2, Some([0, 3, 6])),
+        (3..=7, 3) => Ok(0),
+        // bank 0's sets 6 and 7 give 0, with a load or not; banks 1 and 2 give values whose
+        // taps are not measured (usse-filter-edges-fcs67-*)
+        (6 | 7, 0) => Ok(0),
+        (6 | 7, _) => Err("firh's set 6 or 7 under fixed bank 1 or 2 (not measured)"),
+        (_, 0) => {
+            // bank 0 (E079): taps from the first position, bias range, shift.
+            // fcs3's bias: 64 to 95 (video-clean x-firh-fcs3 case 14, 12192 -> 95)
+            let (taps, from, bias, shift): (&[i64], i32, (i64, i64), u32) = match set {
+                2 => (&[4, -20, 80, 80, -20, 4], -2, (64, 79), 7),
+                3 => (&[32, 64, 32], -1, (64, 95), 7),
+                4 => (&[-4, 12, -24, 80, 80, -24, 12, -4], -3, (48, 63), 7),
+                _ => (&[1, -5, 20, 20, -5, 1], -2, (0, 0), 0),
+            };
+            match filter(taps, from, bias, shift)? {
+                (lo, hi) if lo == hi => Ok(lo as u8),
+                _ => Err("firh's result, which its bias (known to a range) decides"),
+            }
+        }
+        (_, bank) => {
+            let Some(&(_, _, from, shift, fam)) = FIXED_BANKS.iter().find(|f| f.0 == bank && f.1 == set)
+            else {
+                return Err("firh's fixed set (not measured)");
+            };
+            let mut got = None;
+            for &(taps, lo, hi) in fam {
+                let (a, z) = filter(taps, from, (lo, hi), shift)?;
+                for b in [a, z] {
+                    match got {
+                        None => got = Some(b),
+                        Some(g) if g == b => {}
+                        Some(_) => {
+                            return Err("firh's result, which its taps and bias (known to a range) decide");
+                        }
+                    }
+                }
+            }
+            Ok(got.unwrap() as u8)
+        }
+    }
+}
+
 /// Byte k of a video filter's data word, read as u8 (0), s8 (1) or o8 (2, the byte minus 0x80).
 fn video_byte(x: u32, k: u32, fmt: u32) -> i64 {
     let b = x >> (8 * k) & 0xff;
@@ -3917,15 +4241,27 @@ mod tests {
     fn bexception_branches_as_ba_and_br() {
         // hardware (bexc2, E108): its target jumps to that instruction, with bit 38 by
         // that offset, under the predicate; 0: target 3; 1-2: fall-through; 3: the target
-        let (m, r) = run(&["bexception #0x00000003", "mov r1, #0x0000000B", "mov.end o0, r1",
-                           "mov.end o0, #0x0000000D"]);
+        let (m, r) = run(&[
+            "bexception #0x00000003",
+            "mov r1, #0x0000000B",
+            "mov.end o0, r1",
+            "mov.end o0, #0x0000000D",
+        ]);
         assert_eq!((r, m.o[0]), (Ok(()), 0x0d));
-        let (m, r) = run(&["bexception.rel #0x00000003", "mov r1, #0x0000000B", "mov.end o0, r1",
-                           "mov.end o0, #0x0000000D"]);
+        let (m, r) = run(&[
+            "bexception.rel #0x00000003",
+            "mov r1, #0x0000000B",
+            "mov.end o0, r1",
+            "mov.end o0, #0x0000000D",
+        ]);
         assert_eq!((r, m.o[0]), (Ok(()), 0x0d));
         // p0 false (as a machine starts): falls through
-        let (m, r) = run(&["p0 bexception #0x00000003", "mov r1, #0x0000000B", "mov.end o0, r1",
-                           "mov.end o0, #0x0000000D"]);
+        let (m, r) = run(&[
+            "p0 bexception #0x00000003",
+            "mov r1, #0x0000000B",
+            "mov.end o0, r1",
+            "mov.end o0, #0x0000000D",
+        ]);
         assert_eq!((r, m.o[0]), (Ok(()), 0x0b));
     }
 
@@ -4749,9 +5085,9 @@ mod tests {
         assert_eq!((r, m.r[10], m.r[11]), (Ok(()), 0x20002038, 0x20 + 0x20 + 0x38 + 5));
     }
 
-    /// A uniform fill's instance with firh's coefficient bank (None: not known).
-    fn run_video(bank: Option<u32>, src: &[&str]) -> (Machine, Result<(), Error>) {
-        let mut m = Machine { uniform: true, filter_bank: bank, ..Machine::default() };
+    /// A uniform fill's instance with the job's filter coefficients (None: not known).
+    fn run_video(coeffs: Option<FilterBlock>, src: &[&str]) -> (Machine, Result<(), Error>) {
+        let mut m = Machine { uniform: true, coeffs, ..Machine::default() };
         let mut mem = Memory { base: 0x1000, words: vec![0; 64] };
         let r = m.run(&prog(&[src, &["nop.end"]].concat()), &mut mem, 1000);
         (m, r)
@@ -4828,7 +5164,7 @@ mod tests {
         // hardware (usse-video-filters-amp-l40-firv-latch case 1): four firh fill the latch with 0x40s,
         // latch adds them to 1 * 1 + 1 * 1
         let (m, r) = run_video(
-            Some(0),
+            bank(0),
             &[
                 "mov r20, #0x40404040",
                 "mov r21, #0x40404040",
@@ -4865,7 +5201,7 @@ mod tests {
         // result is sat((sum(tap * sample) + bias) >> 7), the line r1, r2, r3
         let ped = |op: &str, a: u32| {
             let (m, r) = run_video(
-                Some(0),
+                bank(0),
                 &[&format!("mov r1, #0x{a:08x}"), "mov r2, #0x80808080", "mov r3, #0x80808080", op],
             );
             assert_eq!(r, Ok(()), "{op}");
@@ -4873,7 +5209,7 @@ mod tests {
         };
         let zero = |op: &str, a: u32| {
             let (m, r) =
-                run_video(Some(0), &[&format!("mov r1, #0x{a:08x}"), "mov r2, #0", "mov r3, #0", op]);
+                run_video(bank(0), &[&format!("mov r1, #0x{a:08x}"), "mov r2, #0", "mov r3, #0", op]);
             assert_eq!(r, Ok(()), "{op}");
             m.firh_latch[0]
         };
@@ -4895,7 +5231,7 @@ mod tests {
         // hardware (video-c11-merge3 usse-video-filters-c11-latch-merge case 0): with the latch cleared,
         // each destination holds the bytes merged so far
         let (m, r) = run_video(
-            Some(0),
+            bank(0),
             &[
                 "mov r27, #0",
                 "firh r15, r27, r27, r27, u8, rep, fcs3, #4, #0",
@@ -4922,7 +5258,7 @@ mod tests {
         // same run, four instructions between firhs: a destination read 0x44332211), so they
         // are not known
         let (_, r) = run_video(
-            Some(0),
+            bank(0),
             &[
                 "mov r27, #0",
                 "firh r15, r27, r27, r27, u8, rep, fcs3, #4, #0",
@@ -4943,23 +5279,344 @@ mod tests {
     #[test]
     fn firh_without_its_state_stops() {
         let line = ["mov r1, #0x00000040", "mov r2, #0", "mov r3, #0"];
-        // a latch byte the task did not write
-        let (_, r) = run_video(
-            Some(0),
+        // a latch byte the task did not write: any value (Bound::Mask), not a stop
+        let (m, r) = run_video(
+            bank(0),
             &[&line[..], &["firh r10, r1, r2, r3, u8, rep, fcs2, #0, #0", "mov o0, r10"]].concat(),
         );
-        assert!(stops_on(&r, "firh latch"), "{r:?}");
+        assert_eq!((r, m.bounds.get(&("o", 0))), (Ok(()), Some(&Bound::Mask(0xffff_ff00))));
         // coefficient sets the run does not know (CR_USE_COEFFS_MODE and the job's load, E078)
         let (m, r) = run_video(None, &[&line[..], &["firh r10, r1, r2, r3, u8, rep, fcs2, #0, #0"]].concat());
         assert_eq!((r, m.firh_latch[0]), (Ok(()), None));
-        // only bank 0 is modelled
-        let (m, r) =
-            run_video(Some(1), &[&line[..], &["firh r10, r1, r2, r3, u8, rep, fcs2, #0, #0"]].concat());
+        // a set 6 or 7 with a load under a fixed bank
+        let c = Some(FilterBlock { mode: 2, groups: Some([0; 9]) });
+        let (m, r) = run_video(c, &[&line[..], &["firh r10, r1, r2, r3, u8, rep, fcs7, #0, #0"]].concat());
         assert_eq!((r, m.firh_latch[0]), (Ok(()), None));
-        // below #-4 no rule fits (x-c10-*)
+        // sets 6 and 7 under fixed bank 1 or 2: not measured
+        let (m, r) =
+            run_video(bank(1), &[&line[..], &["firh r10, r1, r2, r3, u8, msc, fcs6, #4, #0"]].concat());
+        assert_eq!((r, m.firh_latch[0]), (Ok(()), None));
+    }
+
+    /// A job that loads no coefficients with 0x0a9c at `mode` (E078's load0: the reset state).
+    fn bank(mode: u32) -> Option<FilterBlock> {
+        Some(FilterBlock { mode, groups: None })
+    }
+
+    /// One firh on the line r1-r3 (byte 0 of r1 first) with the job's coefficients: byte k.
+    fn firh_on(c: Option<FilterBlock>, line: [u32; 3], op: &str) -> (Option<u8>, Result<(), Error>) {
+        let set = [
+            format!("mov r1, #0x{:08x}", line[0]),
+            format!("mov r2, #0x{:08x}", line[1]),
+            format!("mov r3, #0x{:08x}", line[2]),
+        ];
+        let src: Vec<&str> = set.iter().map(String::as_str).chain([op]).collect();
+        let (m, r) = run_video(c, &src);
+        (m.firh_latch[0], r)
+    }
+
+    #[test]
+    fn firh_reads_a_loaded_set() {
+        // E078 (usse-filter-taps, usse-filter-gain): a group's first word holds the taps at
+        // -3..0 (bytes 3..0), its second +1..+4, its third the shift (3:0) and a signed 16-bit
+        // bias (19:4); sat((sum + bias) >> shift)
+        let mut g = [0u32; 9];
+        g[0] = 0x0000_0040; // tap 64 at the centre
+        g[2] = 6; // shift 6, bias 0
+        let loaded = Some(FilterBlock { mode: 3, groups: Some(g) });
+        let op = "firh r10, r1, r2, r3, u8, rep, fcs0, #0, #0";
+        assert_eq!(firh_on(loaded, [0x40, 0, 0], op), (Some(0x40), Ok(())));
+        // the bias, signed: -32 << 4 in bits 19:4
+        g[2] = 6 | (0xffe0 << 4);
+        let loaded = Some(FilterBlock { mode: 3, groups: Some(g) });
+        assert_eq!(firh_on(loaded, [0x40, 0, 0], op), (Some(0x3f), Ok(())));
+        // set 1 reads the second group; mode 0-2 keeps sets 0 and 1 loaded
+        let mut g = [0u32; 9];
+        g[4] = 0x0100_0000; // tap 1 at +1
+        let op1 = "firh r10, r1, r2, r3, u8, rep, fcs1, #0, #0";
+        for mode in [0, 1, 3] {
+            let c = Some(FilterBlock { mode, groups: Some(g) });
+            assert_eq!(firh_on(c, [0x7700, 0, 0], op1), (Some(0x77), Ok(())), "{mode}");
+        }
+        // with 0x0a9c at 3, set 2 is the third group but reads only the taps at -3, 0 and +3
+        let mut g = [0u32; 9];
+        g[6] = 0x0102_0304;
+        g[7] = 0x0506_0708;
+        let c = Some(FilterBlock { mode: 3, groups: Some(g) });
+        let op2 = "firh r10, r1, r2, r3, u8, rep, fcs2, #4, #0";
+        // line bytes 1..12 at positions 0..11: the taps at -3 (1), 0 (4) and +3 (7)
+        let line = [0x0403_0201, 0x0807_0605, 0x0c0b_0a09];
+        assert_eq!(firh_on(c, line, op2), (Some(2 + 4 * 5 + 7 * 8), Ok(())));
+        // and sets 3 to 7 give 0
+        for set in 3..8 {
+            let op = format!("firh r10, r1, r2, r3, u8, rep, fcs{set}, #4, #0");
+            assert_eq!(firh_on(c, line, &op), (Some(0), Ok(())), "{set}");
+        }
+    }
+
+    #[test]
+    fn firh_without_a_load_has_the_fixed_sets_only() {
+        // E078 (usse-filter-sets load0): sets 0, 1, 6 and 7 give 0, sets 2 to 5 bank 0's
+        for set in [0, 1, 6, 7] {
+            let op = format!("firh r10, r1, r2, r3, u8, rep, fcs{set}, #4, #0");
+            assert_eq!(firh_on(bank(0), [0x8080_8080; 3], &op), (Some(0), Ok(())), "{set}");
+        }
+        let op = "firh r10, r1, r2, r3, u8, rep, fcs3, #4, #0";
+        assert_eq!(firh_on(bank(0), [0x8080_8080; 3], op), (Some(0x80), Ok(())));
+        // with a load at 0x0a9c = 0 too (usse-filter-edges-fcs67-mode0); bank 1's are not
+        // measured
+        let op = "firh r10, r1, r2, r3, u8, rep, fcs6, #4, #0";
+        let c = Some(FilterBlock { mode: 0, groups: Some([1; 9]) });
+        assert_eq!(firh_on(c, [0x8080_8080; 3], op), (Some(0), Ok(())));
+        let c = Some(FilterBlock { mode: 1, groups: Some([0; 9]) });
+        assert_eq!(firh_on(c, [0x8080_8080; 3], op), (None, Ok(())));
+    }
+
+    #[test]
+    fn firh_s_unwritten_latch_bytes_are_any_value() {
+        // the latch belongs to the instance slot: bytes the task did not write read what an
+        // earlier task left (0xffffff and 0 in the probe runs), so a result's other bytes are
+        // any value and its own byte is exact (Bound::Mask, counted apart as any value)
+        let (m, r) = run_video(
+            bank(0),
+            &[
+                "mov r1, #0x00000040",
+                "mov r2, #0",
+                "mov r3, #0",
+                "firh r10, r1, r2, r3, u8, rep, fcs3, #0, #1",
+                "mov o0, r10",
+            ],
+        );
+        assert_eq!(r, Ok(()));
+        assert_eq!(m.o[0] & 0xff00, 0x3000); // fcs3 of 0x40, 0x40, 0: 48
+        assert_eq!(m.bounds.get(&("o", 0)), Some(&Bound::Mask(0xffff_00ff)));
+        // computed on, the value is not known
+        let (_, r) = run_video(
+            bank(0),
+            &[
+                "mov r1, #0x00000040",
+                "mov r2, #0",
+                "mov r3, #0",
+                "firh r10, r1, r2, r3, u8, rep, fcs3, #0, #0",
+                "firv r11, r10, r10, r10, u8, latch",
+                "mov o0, r11",
+            ],
+        );
+        assert!(stops_on(&r, "firh latch"), "{r:?}");
+    }
+
+    #[test]
+    fn a_latch_byte_written_but_not_computed_is_not_any_value() {
+        // fcs6 under bank 1 writes byte 0 with a value the run cannot compute: a later firh's
+        // destination holds it, so the result is not known (not masked as any value)
+        let src = [
+            "mov r1, #0x00000040",
+            "mov r2, #0",
+            "mov r3, #0",
+            "firh r10, r1, r2, r3, u8, rep, fcs6, #0, #0",
+            "firh r11, r1, r2, r3, u8, rep, fcs0, #0, #1",
+            "mov o0, r11",
+        ];
+        let (_, r) = run_video(bank(1), &src);
+        assert!(stops_on(&r, "the task wrote but the run could not compute"), "{r:?}");
+        // a firh a false predicate skips may have written its byte too
+        let src = [
+            "mov r1, #0x00000040",
+            "mov r2, #0",
+            "mov r3, #0",
+            "p0 firh r10, r1, r2, r3, u8, rep, fcs3, #0, #0",
+            "firh r11, r1, r2, r3, u8, rep, fcs3, #0, #1",
+            "mov o0, r11",
+        ];
+        let (_, r) = run_video(bank(0), &src);
+        assert!(stops_on(&r, "the task wrote but the run could not compute"), "{r:?}");
+    }
+
+    #[test]
+    fn fixed_banks_one_and_two_are_fitted_not_checked() {
+        let op = |set: u32| format!("firh r10, r1, r2, r3, u8, rep, fcs{set}, #4, #0");
+        let line = ["mov r1, #0x80808080", "mov r2, #0x80808080", "mov r3, #0x80808080"];
+        for (c, set, fitted) in
+            [(bank(1), 2, true), (bank(2), 5, true), (bank(0), 2, false), (bank(1), 0, false)]
+        {
+            let (m, r) = run_video(c, &[&line[..], &[op(set).as_str()]].concat());
+            assert_eq!((r, m.fitted), (Ok(()), fitted), "{c:?} {set}");
+        }
+    }
+
+    #[test]
+    fn firh_folds_the_line_by_its_edge_mode() {
+        // usse-filter-edges: a loaded identity filter (the centre tap 1) on a ramp line reads,
+        // at centres -4 to 18, rep: the end byte; msc: mirrored about the end byte; mdc:
+        // mirrored with it doubled; from 19 every mode reads 0
+        let line = [0x4030_2010, 0x8070_6050, 0xc0b0_a090];
+        let mut g = [0u32; 9];
+        g[0] = 1;
+        let c = Some(FilterBlock { mode: 3, groups: Some(g) });
+        let read = |edge: &str, centre: i32| {
+            let s = if centre >= 16 { centre - 32 } else { centre };
+            let op = format!("firh r10, r1, r2, r3, u8, {edge}, fcs0, #{s}, #0");
+            firh_on(c, line, &op).0.map(|b| b / 16)
+        };
+        for (edge, want) in
+            [("rep", [1, 1, 12, 12, 0, 0]), ("msc", [5, 2, 11, 5, 0, 0]), ("mdc", [4, 1, 12, 6, 0, 0])]
+        {
+            let got: Vec<u8> = [-4, -1, 12, 18, 19, 27].iter().map(|&c| read(edge, c).unwrap()).collect();
+            assert_eq!(got, want, "{edge}");
+        }
+    }
+
+    #[test]
+    fn firh_centres_from_minus_4_to_27() {
+        // hardware (usse-video-filters-c10-firh-fcs3-s5neg-ped, c9-*, c10-*): the centre field's
+        // values below #-4 (16-27) are centres 16 to 27; under rep positions 12-18 read byte 11
+        // and positions from 19 read 0. fcs3 ([1 2 1]/4) on a pedestal of 0x80, byte 11 0xc0:
+        let line = [0x8080_8080, 0x8080_8080, 0xc080_8080];
+        let op = |s: i32| format!("firh r10, r1, r2, r3, u8, rep, fcs3, #{s}, #0");
+        assert_eq!(firh_on(bank(0), line, &op(-16)), (Some(0xc0), Ok(()))); // 15, 16, 17
+        assert_eq!(firh_on(bank(0), line, &op(-14)), (Some(0x90), Ok(()))); // 17, 18 (19 is 0)
+        assert_eq!(firh_on(bank(0), line, &op(-13)), (Some(0x30), Ok(()))); // 18 only
+        assert_eq!(firh_on(bank(0), line, &op(-12)), (Some(0), Ok(())));
+        assert_eq!(firh_on(bank(0), line, &op(-5)), (Some(0), Ok(())));
+        // -4 to -1 stay below the line's start, repeating byte 0
+        assert_eq!(firh_on(bank(0), [0x40, 0, 0], &op(-1)), (Some(0x40), Ok(())));
+    }
+
+    #[test]
+    fn firh_reads_fixed_banks_one_and_two() {
+        // E079 (usse-filter-banks): on a pedestal of 0x80 centred at byte 4, bank 1 set 2 is
+        // about [-1 9 9 -1]/16 (a byte at +1 raised by 0x20 adds 18), bank 2 set 4 [1 2 2 2 1]/8
+        // (+8 at the centre), bank 2 set 5 [1 1 1 1]/4 (+8 at -2)
+        let ped = [0x8080_8080u32; 3];
+        let raise = |byte: usize| {
+            let mut l = ped;
+            l[byte / 4] += 0x20 << (8 * (byte % 4));
+            l
+        };
+        let op = |set: u32| format!("firh r10, r1, r2, r3, u8, rep, fcs{set}, #4, #0");
+        assert_eq!(firh_on(bank(1), ped, &op(2)), (Some(128), Ok(())));
+        assert_eq!(firh_on(bank(1), raise(5), &op(2)), (Some(146), Ok(())));
+        assert_eq!(firh_on(bank(1), raise(5), &op(3)), (Some(146), Ok(())));
+        assert_eq!(firh_on(bank(2), raise(4), &op(4)), (Some(136), Ok(())));
+        assert_eq!(firh_on(bank(2), raise(2), &op(5)), (Some(136), Ok(())));
+        // bank 2 sets 2 and 3 on a line of 0x40 lifted to 0xc0 at the positive tap's byte
+        // (usse-filter-bank2): [1 -4 4 -1]/8 at -1..+2 and [1 -2 1/2 1/2] at -2..+1
+        let lift = |byte: usize| {
+            let mut l = [0x4040_4040u32; 3];
+            l[byte / 4] += 0x80 << (8 * (byte % 4));
+            l
+        };
+        assert_eq!(firh_on(bank(2), lift(5), &op(2)), (Some(64), Ok(())));
+        let mut l = lift(5);
+        l[1] += 0x20; // byte 4, the centre: -4/8
+        assert_eq!(firh_on(bank(2), l, &op(2)), (Some(48), Ok(())));
+        assert_eq!(firh_on(bank(2), lift(2), &op(3)), (Some(128), Ok(())));
+        let mut l = lift(2);
+        l[0] += 0x20 << 24; // byte 3, at -1: -2
+        assert_eq!(firh_on(bank(2), l, &op(3)), (Some(64), Ok(())));
+    }
+
+    #[test]
+    fn atst8_tests_alpha_against_the_reference() {
+        // E083 (usse-alpha-test, 687 fill cases): src0 bits 31:24 against src2 bits 31:24 by
+        // src2 bits 15:13 (never, less, equal, lequal, greater, notequal, gequal, always); a pass
+        // writes src0 and sets the predicate, a fail leaves the destination and clears it
+        let run_one = |a: u32, func: u32| {
+            let src2 = 0x8000_0000 | func << 13;
+            run_after(
+                &[
+                    &format!("mov r1, #0x{a:08x}"),
+                    "mov r2, #0",
+                    &format!("mov r3, #0x{src2:08x}"),
+                    "mov r10, #0xa0a1a2a3",
+                    "mov r20, #0",
+                ],
+                &["and.skipinv.testtanz.chan0 !r0, p0, #0x00000001, #1", "atst8 r10, p0, r1, r2, r3, nfb"],
+            )
+        };
+        let want = [
+            [false; 3],
+            [true, false, false],
+            [false, true, false],
+            [true, true, false],
+            [false, false, true],
+            [true, false, true],
+            [false, true, true],
+            [true; 3],
+        ];
+        for (func, w) in want.iter().enumerate() {
+            for (n, a) in [0x7f00_0001u32, 0x8000_0002, 0x8100_0003].into_iter().enumerate() {
+                let (m, r) = run_one(a, func as u32);
+                assert_eq!(r, Ok(()));
+                let pass = w[n];
+                assert_eq!((m.p[0], m.r[10]), (pass, if pass { a } else { 0xa0a1_a2a3 }), "{func} {a:x}");
+            }
+        }
+        // its .c10 sources are not measured
         let (_, r) =
-            run_video(Some(0), &[&line[..], &["firh r10, r1, r2, r3, u8, rep, fcs3, #-5, #0"]].concat());
-        assert!(stops_on(&r, "#-4"), "{r:?}");
+            run_after(&["mov r1, #0", "mov r2, #0", "mov r3, #0"], &["atst8.c10 r10, p0, r1, r2, r3, fb"]);
+        assert!(stops_on(&r, "c10"), "{r:?}");
+    }
+
+    #[test]
+    fn the_fill_s_unseen_state_changes_nothing() {
+        // in a fill: pcoeff and depthf (E083), moest (E087, E109) and setfc (E109) and setm
+        // (E099) leave the registers and predicates as a nop does
+        let init =
+            ["mov r1, #0x3f800000", "mov r2, #0x11223344", "mov r3, #0x00000001", "mov r17, #0x01010101"];
+        let (base, _) = run_after(&init, &["nop"]);
+        for op in [
+            "pcoeff r1, r2, r3",
+            "depthf r1, r2, r3, nfb",
+            "depthf r1, r2, r3, fb",
+            "depthf r1, r2, r3, optdwd",
+            "moest r17, #2",
+            "moest r17, #12",
+            "setfc #1, #0",
+            "setm #15",
+        ] {
+            let (m, r) = run_after(&init, &[op]);
+            assert_eq!(r, Ok(()), "{op}");
+            assert_eq!((m.r, m.p), (base.r, base.p), "{op}");
+        }
+        // depthf twosided did not run (E083 ran nfb, fb and optdwd)
+        let (_, r) = run_after(&init, &["depthf r1, r2, r3, twosided, optdwd"]);
+        assert!(stops_on(&r, "depthf twosided"), "{r:?}");
+    }
+
+    #[test]
+    fn an_unmapped_bit_the_hardware_reads_stops_the_run() {
+        // usse-encoding-bits-idiv (E295): idiv's enc[47], outside every field, changes what it
+        // writes; the simulator stops rather than give the plain idiv
+        let end = usse_isa::encode("nop.end", Core::Sgx545).unwrap();
+        let wdf = usse_isa::encode("wdf drc0", Core::Sgx545).unwrap();
+        let run_word = |w: u64| {
+            let mut m = Machine { uniform: true, ..Machine::default() };
+            let mut mem = Memory { base: 0x1000, words: vec![0; 64] };
+            (m.r[1], m.r[2], m.written.r) = (7, 2, 0b110);
+            let r = m.run(&Program::new(&[w, wdf, end], Core::Sgx545), &mut mem, 100);
+            (m, r)
+        };
+        // the base word, idiv r10, r1, r2, drc0: 3 rem 1
+        let (m, r) = run_word(0xD010_0000_0140_0082);
+        assert_eq!((r, m.r[10], m.r[11]), (Ok(()), 3, 1));
+        let (_, r) = run_word(0xD010_8000_0140_0082);
+        assert!(stops_on(&r, "enc[47]"), "{r:?}");
+        // usse-encoding-bits-state (E296): enc[51] on setfc and imo and enc[44] on depthf hang
+        // the job; imo has no semantics, and stops on the bit as on any read bit
+        for (text, bit, ok) in [
+            ("setfc #1, #0", 51, true),
+            ("imo #1, #2, #3, #4", 51, false),
+            ("depthf r1, r2, r3, nfb", 44, true),
+        ] {
+            let w = usse_isa::encode(text, Core::Sgx545).unwrap();
+            assert_eq!(w >> bit & 1, 0, "{text}");
+            let (_, r) = run_word(w);
+            assert_eq!(r.is_ok(), ok, "{text}: {r:?}");
+            let name = text.split(' ').next().unwrap();
+            let (_, r) = run_word(w | 1 << bit);
+            assert!(stops_on(&r, &format!("{name} with enc[{bit}] set")), "{text}: {r:?}");
+        }
     }
 
     #[test]
@@ -5646,7 +6303,13 @@ mod tests {
             ("#12, #12, #12, #12", "#0, #0, #0, #0, repeat, none, none, none", "mov.repeat8 r20, r30", 8, 30),
             ("#24, #24, #24, #24", "#0, #0, #0, #0, clamp, none, none, none", "mov.repeat8 r20, r30", 20, 30),
             ("#16, #16, #16, #16", "#3, #0, #0, #0, mirror, none, none, none", "mov.repeat8 r20, r30", 7, 30),
-            ("#10, #10, #10, #10", "#3, #0, #0, #0, repeat, none, none, none", "mov.repeat8 r20, r30", 13, 30),
+            (
+                "#10, #10, #10, #10",
+                "#3, #0, #0, #0, repeat, none, none, none",
+                "mov.repeat8 r20, r30",
+                13,
+                30,
+            ),
             ("#4, #4, #4, #4", "#0, #0, #0, #0, none, none, clamp, none", "mov.repeat8 r40, r20", 40, 3),
             ("#4, #4, #4, #4", "#0, #0, #0, #0, none, none, repeat, none", "mov.repeat8 r40, r20", 40, 16),
             ("#0, #0, #4, #0", "#0, #0, #0, #0, none, none, clamp, none", "mov.repeat8 r40, r20", 40, 3),
@@ -5660,8 +6323,10 @@ mod tests {
             assert_eq!(m.r[dst as usize..(dst + n) as usize].to_vec(), want, "{smr} {smoa} {op}");
         }
         // a first register below r0 is not modelled (writes there vanish, reads are stale)
-        let (_, r) = run_after(&i, &["smr #8, #8, #8, #8", "smoa #0, #0, #0, #0, mirror, none, none, none",
-                                     "mov.repeat8 r20, r30"]);
+        let (_, r) = run_after(
+            &i,
+            &["smr #8, #8, #8, #8", "smoa #0, #0, #0, #0, mirror, none, none, none", "mov.repeat8 r20, r30"],
+        );
         assert!(matches!(r, Err(Error::Unsupported { .. })));
     }
 
@@ -5718,7 +6383,11 @@ mod tests {
             (10, b16, c16, "imul16", 0xfffe0000),
         ] {
             let (m, r) = tested(a, b, &format!("{op}.testtaz.chan0 r10, p0, r1, r2"));
-            assert_eq!((r, m.r[10], m.r[16], m.r[17]), (Ok(()), v, 0, 1), "usse-lane-integer-rogue-int {case}");
+            assert_eq!(
+                (r, m.r[10], m.r[16], m.r[17]),
+                (Ok(()), v, 0, 1),
+                "usse-lane-integer-rogue-int {case}"
+            );
         }
     }
 

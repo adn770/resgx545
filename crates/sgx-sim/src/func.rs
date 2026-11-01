@@ -29,6 +29,12 @@ pub enum Bound {
     /// it admits every value of that width, so it checks only that the high bits are clear,
     /// and a vector that relies on it is counted apart (vectors::Outcome::AnyValue).
     Bits(u32),
+    /// Any value in the bits of the mask, the others exact: the bytes of the firh latch a
+    /// task did not write, which hold what the instance slot's last task left (for example
+    /// 0xffffff, 0, 0x5a5a5a or 0x80803e in the probe runs, usse-filter-taps,
+    /// usse-video-filters, E292). Not a measured bound, counted apart like Bits
+    /// (vectors::Outcome::AnyValue).
+    Mask(u32),
 }
 
 impl Bound {
@@ -46,6 +52,7 @@ impl Bound {
             Bound::Derived => false,
             Bound::Lag(n) => got >= want && got - want <= n,
             Bound::Bits(n) => n >= 32 || want >> n == 0,
+            Bound::Mask(m) => (got ^ want) & !m == 0,
         }
     }
 }
@@ -60,6 +67,7 @@ impl std::fmt::Display for Bound {
             Bound::Derived => write!(f, "computed from a near value"),
             Bound::Lag(n) => write!(f, "up to {n} below"),
             Bound::Bits(n) => write!(f, "any {n}-bit value"),
+            Bound::Mask(m) => write!(f, "any value in bits 0x{m:08x}"),
         }
     }
 }
@@ -191,6 +199,16 @@ fn nearest(t: f64, b: Bound) -> (u32, Option<Bound>) {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn a_mask_admits_any_value_in_its_bits_only() {
+        // the firh latch's bytes a task did not write (usse-filter-taps: 0xffffff in some runs,
+        // 0 in others): any value there, the written byte exact
+        let b = super::Bound::Mask(0xffff_ff00);
+        assert!(b.admits(0x0000_0040, 0xffff_ff40) && b.admits(0x1234_5640, 0x0000_0040));
+        assert!(!b.admits(0x0000_0040, 0xffff_ff41));
+        assert_eq!(b.to_string(), "any value in bits 0xffffff00");
+    }
+
     #[test]
     fn a_lag_admits_up_to_n_below() {
         // the PDS fetch pc: the simulated index + 3, the hardware's up to 2 below (pds_isa 8.11)

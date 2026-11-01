@@ -6,8 +6,11 @@
 # smoa four signed 10-bit offsets and four 2-bit address modes, smr and
 # smbo four 12-bit values, smlsi four 8-bit operands (an increment or a
 # swizzle, by the mode bits enc[35:32]) and three 4-bit values times 4.
-# imo (enc[51] ignored) takes four 12-bit immediates, setfc two bits,
-# moest a destination and a 4-bit selector printed by name.
+# imo (enc[51] outside its fields) takes four 12-bit immediates, setfc
+# two bits, moest a destination and a 4-bit selector printed by name.
+# Unmapped bits flipped on the hardware (E296): enc[51] set on setfc and on
+# imo hangs the job; every other unmapped bit of setfc, moest, imo and the
+# immediate smoa, smr, smbo and smlsi changes nothing.
 [[form]]
 order = 1290
 pat = "smoa{0} {1}, {2}"

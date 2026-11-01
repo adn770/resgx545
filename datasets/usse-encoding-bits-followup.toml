@@ -1,0 +1,10 @@
+title = "probe table usse/encoding-bits-followup"
+repo = "data"
+paths = ["usse/encoding-bits-followup/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 46
+size = 92307
+sha256 = "a7185a8e0e5083fdbe27352d046e05c07a6affde3f0696970a02d8fe7f8dcaa2"
+recipe = "probes/usse/encoding-bits-followup.toml"
+needs = ["render"]

@@ -1,0 +1,10 @@
+title = "probe table usse/filter-edges"
+repo = "data"
+paths = ["usse/filter-edges/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 116
+size = 219242
+sha256 = "70d9e8ef9d04b1f4b1d435a0b21a09e4b2cc0abb5feed539618abcfbeccb04cb"
+recipe = "probes/usse/filter-edges.toml"
+needs = ["render"]
