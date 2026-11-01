@@ -5,7 +5,7 @@ unit = "vdm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E060", "E185", "E186", "E187", "E299", "E414", "E427", "E440"]
+evidence = ["E060", "E185", "E186", "E187", "E299", "E414", "E427", "E440", "E545"]
 terms = ["VDM_STATE1.BIT8", "VDM_STATE1.BITS11_9", "VDM_STATE1.BITS15_13"]
 +++
 
@@ -57,3 +57,17 @@ second block (3 of 3), bits 11:9 at 4 in one of three runs of each block. So the
 not separate units. Status: narrowed, not answered; missing: a constant load that reaches every
 pixel (E381 found a douta in a primary program reaching sa in one job of thirteen; Q020 asks of
 it).
+
+Narrowed in 11.31 (E545, 133 jobs, the two-block stream built in 11.16 with all three marks,
+viewport x, ISP word 1 in the object and the block's own pixel shader): each field flipped in either
+block's state word (bit 8, bits 11:9, bits 15:13, bit 17, bit 25, the closed driver's two word
+forms, and in the grids bits 7:0) moves all the block's marks together or none (86 completed jobs:
+77 all marks, 8 the object absent, 1 other); bit 8, bit 25 and bits 15:13 = 2, 3, 4 change nothing,
+bits 11:9 = 0 remove the block's object, bits 15:13 = 0, 5, 6, 7, bit 17 and the closed driver's
+state-word forms hang. The marks are one object's own state, so what the data show is that they move
+together under every field flipped; bits 0 to 7 outside the grid, 12, 16, 18 to 24 and 26 to 31 were
+never flipped. The hangs of bits 11:9 = 1, 6 (7 of the 14 jobs at 6 hung) and 7 (and singly 4 and 5)
+are not a function of the word: the word 0x0a022205 hung twice and completed once; two readings of
+the dependence on the attribute rows (bits 7:0) were wrong (4 of 10 and 5 of 10). That hang question
+is Q163. Open: a block that loads pixel-side constants reaching every pixel (Q020), and what each
+field selects. Status: narrowed, not answered.

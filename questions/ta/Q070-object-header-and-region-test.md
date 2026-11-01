@@ -5,7 +5,7 @@ unit = "ta"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E176", "E177", "E180", "E181", "E185", "E306", "E307", "E308", "E414"]
+evidence = ["E176", "E177", "E180", "E181", "E185", "E306", "E307", "E308", "E414", "E541", "E542", "E543", "E544"]
 terms = ["PB_OBJ.PDS_WORDS", "PB_OBJ.SET_MASKS", "PB_OBJ.FORMAT", "CSTREAM.PRIM_TILES",
          "REGION_HDR.POS"]
 +++
@@ -46,3 +46,16 @@ with 3 and with 15 vertices: 3 (strip) and 4 (fan) give the triangles of a strip
 completes with no object and every pixel the background, so lines and points cannot be run through
 this stream and the region test's line and point rules (the second part) stay untested; the format
 word's other bits and the vtx_coords 4 to 11 dumps were not run. Status: narrowed, not answered.
+
+Narrowed in 11.31 (E541 to E544, 291 jobs of nine script tables; E542 closes the triangle test, E543
+and E544 open lines and points): the object's format word and set masks are answered for what the
+coordinate size and format words change (the vertex's stored dwords, the iterated byte 1 + N and the
+four masks, E541); the fitted region test of the triangles holds at every tile boundary tried (a
+bounding box with high sides open, low sides closed, and a closed edge test, 14656 primitive-tile
+pairs, 0 wrong, E542) and its stream is decoded in full (form 0x88 is both tiles, one mask each);
+lines run (ISP word 0 + 0x8000, topology 1) and their regions are a thickened segment (E543); points
+are those of the old points question, whose size and footprint E544 answers for our program
+and whose closed-driver clause is Q161. What is open of this question: the format word's bits
+other than 18 (none changed in 56 completed jobs; OUTSEL bit 12 clears the word, E544), the line
+region rule (Q159) and several lines (Q160), and that the ISP walks the headers [infer].
+Status: narrowed; the line rule moved to Q159 and Q160.

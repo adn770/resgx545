@@ -177,21 +177,21 @@ probe and sweep tables that the units above cover.
 
 ### 4.1 Open questions
 
-`doc/open_questions.md` lists every open question, generated from `questions/`: Q001 to Q167, 136
+`doc/open_questions.md` lists every open question, generated from `questions/`: Q001 to Q167, 143
 open (the two ids between Q147 and Q150 are reserved, unused). Each has a kind. The work is hardware
-knowledge, for a simulator and then our own firmware, so the 121 `hw` questions are the work queue,
-each with a value (high 13, medium 64, low 44); the 10 `fw` questions (the closed firmware's and
-driver's own behaviour: Q004, Q029, Q034, Q049, Q084, Q088, Q118, Q119, Q124, Q131) and the 5
-`kernel` ones (the design of our kernel driver: Q005, Q037, Q095, Q140, Q167) stay open, parked. By
-unit: bif 4, dpm 5, edm 12, isp 10, mte 3, pbe 5, pds 16, platform 4, render 9, ta 9, texture 7,
-transfer 3, usse 35, vdm 8, zls 6. A question is removed when a record answers it; one that mixed a
-hardware part with a firmware or kernel part was narrowed to the hardware part or folded into the
-hardware question that holds it (six so far: the control block's per-VM copy and the render context
-count bound into Q076, the recovery's reset steps into Q003, the settle routine and the two faults
-after a base-only fault or a kept owner into Q036 and Q045), and a fold is not an answer. What a
-fold or a narrowing left of the closed firmware's own behaviour is a new parked question: how a kick
-tells its directory is in no list (Q118, from the render context count) and whether a command with
-both kick flags acts as two (Q119, from Q065).
+knowledge, for a simulator and then our own firmware, so the 127 `hw` questions are the work queue,
+each with a value (high 13, medium 65, low 49); the 10 `fw` questions (the closed firmware's and
+driver's own behaviour: Q004, Q029, Q034, Q049, Q084, Q088, Q118, Q119, Q124, Q131) and the 6
+`kernel` ones (the design of our kernel driver: Q005, Q037, Q095, Q140, Q166, Q167) stay open,
+parked. By unit: bif 4, dpm 5, edm 12, isp 10, mte 3, pbe 5, pds 16, platform 5, render 9, ta 14,
+texture 7, transfer 3, usse 35, vdm 9, zls 6. A question is removed when a record answers it; one
+that mixed a hardware part with a firmware or kernel part was narrowed to the hardware part or
+folded into the hardware question that holds it (seven so far: the control block's per-VM copy and
+the render context count bound into Q076, the recovery's reset steps into Q003, the settle routine
+and the two faults after a base-only fault or a kept owner into Q036 and Q045, the points question
+into Q161), and a fold is not an answer. What a fold or a narrowing left of the closed firmware's
+own behaviour is a new parked question: how a kick tells its directory is in no list (Q118, from the
+render context count) and whether a command with both kick flags acts as two (Q119, from Q065).
 
 ### 4.2 Inferred glossary rows
 
@@ -371,7 +371,8 @@ hardware part (Q033, Q094, Q096), Q065 was narrowed to the 3D's wait, two parked
 were split off (Q118, Q119), and ten new hardware questions open the gaps the specs left:
 the page table flags and page sizes and the bus interface's tiled ranges (Q108 to Q110), which
 event sets which status bit (Q111), the index list's width bits (Q112), cube and volume textures
-and anisotropy (Q113 to Q115), the region clip as a scissor (Q116) and points (Q117).
+and anisotropy (Q113 to Q115), the region clip as a scissor (Q116) and points (folded into Q161 in
+11.31; E544 answers its size and footprint).
 
 Sub-phase 11.22 ran three tables on the laptop with no kernel change, about the depth and stencil
 load and store (ZLS): `zls/store-layout.toml`, `store-format.toml` and `load-copy.toml`. The tool's
@@ -622,3 +623,25 @@ from the modulo rule); the replay of the other vectors is unchanged (30081 scala
 matches, 1112 fitted, 918 stops, 175 skipped, 1937 left out, with 0 mismatches). Records E535-E540;
 Q124, Q131, Q133, Q144, Q147, Q152, Q153 and Q033 are narrowed and none retired; Q155 to Q158 are
 new (hw: medium, medium, low, low).
+
+Sub-phase 11.31 ran seven script tables on the laptop with no kernel change, all in the 11.26 tool
+(sgxfive-test-1126): the TA's object format and its vertex dwords (`ta/object-format`), the region
+test of triangles at tile boundaries (`ta/tri-region`), lines (`ta/line-point`), points and OUTSEL
+(`ta/points`), the vertex task's capacity (`vdm/vtask-capacity`), VDM_STATE1 in a two-block stream
+(`vdm/state-units`) and the event bits of ordinary jobs (`platform/event-bits`): 732 jobs in all.
+Eight evidence records (E541 to E548): the vertex dwords and masks follow the coordinate size and
+format words (E541); the triangle region test holds at every tile boundary tried (E542); lines run
+and their region list is a thickened segment (E543); a point's size is the vertex's first coordinate
+output under OUTSEL bit 8 and the 3D covers a square of it (E544); the VDM_STATE1 fields flipped
+move the marks of a block together and a job's completion is not a function of its state word
+(E545); a vertex task keeps its vertices when R * V <= 32 and loses or repeats some at 36 or more,
+at 33 by program (E546); the short pulses of the event bits are 4.2 to 6.1 microseconds, held by the
+firmware's acknowledgement [infer], and seven of them raised a host interrupt of their own in a
+triangle (E547, E548). The points question is folded into Q161 and retired (E544 answers its size
+and footprint for our program; the closed driver's row is Q161); Q070, Q047, Q092, Q094 and Q111 are
+narrowed; eight questions open (Q159 to Q166; hw: medium, low, low, low, medium, low, low for Q159
+to Q165, and Q166 kernel, parked: it needs a kernel change). The TA and VDM models of the simulator
+(region test, object format, points, vertex-task capacity) wait for phase 12; nothing here touches
+the USSE, PDS or texture models, so sgx-sim is unchanged and the vectors are the same. The roadmap
+counts the questions from the built `doc/open_questions.md`: 143 open (Q001 to Q167), 127 hw (high
+13, medium 65, low 49), 10 fw and 6 kernel; ta 14, vdm 9, platform 5.

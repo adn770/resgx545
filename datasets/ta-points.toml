@@ -1,0 +1,10 @@
+title = "script tables ta-points, ta-points-vertex, ta-risky"
+repo = "data"
+paths = ["ta/points/"]
+method = "script tables ta-points, ta-points-vertex, ta-risky, run by hand over ssh on the laptop with the 11.26 tool (not by the campaign runner), so this manifest was written by hand with the landed digest; the whole raw output of every job (gzip, dumps/<script>/), the case table, output.txt, kernel.log (from journalctl -k, complete), the recompute and analysis scripts of this phase with their output (analysis/), the declared files (analysis/declared*.tsv, predictions*.tsv, plan.md) and the run scripts (scripts/) The size of each point case rests on its case name (the programs are not in the data); the program table is probes/ta/p1131-progs.toml. output.txt prints rc 0 for every job, also for a job that hung or faulted (the tool returns 0 on a failed job), and prints a health result only when it failed: whether a job failed is read from the failed line of its kept txt."
+date = "2026-11-08"
+files = 343
+size = 1242860
+sha256 = "23e5c5a72d66e4f4b9fe0877f53924eaea141f830d3fe2b311d636a8200fff15"
+recipe = "probes/ta/points.toml"
+needs = ["render", "kpoke", "reset"]

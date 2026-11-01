@@ -66,7 +66,7 @@ tier = "ours"
 source = "resgx545"
 citation = "E178"
 licence = "MIT"
-evidence = "[HW] E178: ISP word 1 with bits 15:8 at 0x10, 0x20, 0x35 and 0 gives the object's dword 0x1010, 0x2020, 0x3535 and 0; [HW] E279: an x-major line of 48 columns covers 12, 24, 48, 72, 96, 192, 384 and 768 pixels at 0x04, 0x08, 0x10, 0x18, 0x20, 0x40, 0x80 and 0xff, and none at 0, each image predicted; [CAP] E340 (isp-line-width): the closed driver writes glLineWidth x 16 here, 0x10 to 0xf0 and 0x18 for 1.5, on lines and points pixel for pixel by the line model, one run"
+evidence = "[HW] E178: ISP word 1 with bits 15:8 at 0x10, 0x20, 0x35 and 0 gives the object's dword 0x1010, 0x2020, 0x3535 and 0; [HW] E279: an x-major line of 48 columns covers 12, 24, 48, 72, 96, 192, 384 and 768 pixels at 0x04, 0x08, 0x10, 0x18, 0x20, 0x40, 0x80 and 0xff, and none at 0, each image predicted; [CAP] E340 (isp-line-width): the closed driver writes glLineWidth x 16 here, 0x10 to 0xf0 and 0x18 for 1.5, on lines and points pixel for pixel by the line model, one run; [HW] E543: the regions of a one-line object reach 0.5 pixel from the segment at width 0x10 and, for a near-vertical line, up to 1.497 pixel at 0x40, 3.493 at 0x80 and 6.487 at 0xf0 and not to 2.0, 4.0 and 8.0 (w / 32 fits; no width under 0x10 and no near-horizontal line at the wide widths was run)"
 
 [[term]]
 id = "G0247"

@@ -5,7 +5,7 @@ unit = "platform"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E006", "E154", "E155", "E357", "E431", "E435", "E444"]
+evidence = ["E006", "E154", "E155", "E357", "E431", "E435", "E444", "E547", "E548"]
 terms = ["CR_EVENT_STATUS", "CR_EVENT_STATUS2", "CR_EVENT_HOST_CLEAR", "CR_EVENT_HOST_ENABLE"]
 +++
 
@@ -25,7 +25,8 @@ Open: which hardware event sets each of the other bits in a job that runs to its
 the 3D's tiles and render, the DPM's page and state tasks, an out-of-memory overflow, a transfer),
 whether a bit is a pulse or a level, for how long it stays when nothing acknowledges it, in which
 order the bits of one job set, and what a write to CR_EVENT_HOST_CLEAR clears (the bits written, or
-others). The firmware takes its work from these bits, so a simulator that runs it needs them.
+others). [infer] The firmware takes its work from these bits, so a simulator that runs it needs
+them.
 
 To settle it: sample CR_EVENT_STATUS and CR_EVENT_STATUS2 at the finest sampling (`--regs` with
 regtimeline as in E435) through a fill, a copy, a triangle, a partial render and an overflowing
@@ -33,3 +34,22 @@ scene, and count the host interrupts per enabled bit with the enable written thr
 one bit per run (the method of E444); the firmware acknowledges the bits it handles, so a sample can
 miss one, and the order of the bits needs a firmware build that stores each status word it reads
 (the run Q033 names).
+
+Narrowed in 11.31 (E547, 66 timeline jobs; E548, 160 jobs of the host-interrupt matrix and its
+repeats), with the existing debugfs (`regs` for the registers, `kregnow` for the two host enables;
+`kreg` not used): in ordinary jobs the short pulses of PIXELBE_END_RENDER, DPM_3D_MEM_FREE and
+TA_FINISHED in the 64 x 64, 256-pixel and partial jobs are 4.2 to 6.1 microseconds, at most a few
+samples wide (sampling intervals averaging 1.06 to 5.58 microseconds a job), [infer] the time to the
+firmware's acknowledgement (longer pulses, to 136 microseconds, are in E547); the bits a 64 x 64
+triangle, a fill, a copy, a 256-pixel triple, a depth store and a partial render show are tabled in
+E547 (PIXELBE_END_RENDER, DPM_3D_MEM_FREE and MADD_CACHE_INVALCOMPLETE in the triangle, TA_FINISHED,
+TPC_FLUSH and the DPM state and control bits in the larger jobs, OTPM_MEM_CLEARED and
+DPM_TA_FREE_LOAD of STATUS2 in some), SW_EVENT always with MASTER_INTERRUPT; armed one at a time, 7
+bits raised a host interrupt of their own in a triangle and 1 in a fill and the answer reproduces
+(21 of 24 case-runs of the bits that raise one, 30 of 30 of those that do not); which armed bit
+raised it is inferred from the enable written, not read, and a no is only that the host saw no extra
+interrupt (E548). Open: the order of the bits within a job (the firmware-task work of p1130 and a
+stored status word), the events whose pulses are under a sample (bits 6, 9, 20 of a triangle), the
+events of a transfer other than the fill's, an out-of-memory overflow with the DPM bits in the
+larger jobs, and what a write to CR_EVENT_HOST_CLEAR clears (moved to Q166: it needs a kernel
+change). Status: narrowed.

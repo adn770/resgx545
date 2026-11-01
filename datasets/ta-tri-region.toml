@@ -1,0 +1,10 @@
+title = "script tables ta-tri-boundary, ta-tri-corner"
+repo = "data"
+paths = ["ta/tri-region/"]
+method = "script tables ta-tri-boundary, ta-tri-corner, run by hand over ssh on the laptop with the 11.26 tool (not by the campaign runner), so this manifest was written by hand with the landed digest; the whole raw output of every job (gzip, dumps/<script>/), the case table, output.txt, kernel.log (from journalctl -k, complete), the recompute and analysis scripts of this phase with their output (analysis/), the declared files (analysis/declared*.tsv, predictions*.tsv, plan.md) and the run scripts (scripts/) output.txt prints rc 0 for every job, also for a job that hung or faulted (the tool returns 0 on a failed job), and prints a health result only when it failed: whether a job failed is read from the failed line of its kept txt."
+date = "2026-11-08"
+files = 189
+size = 683491
+sha256 = "43e7f662e456f680ef42fbec190ebe5abb20ac44cf02376053bd09b21f76923d"
+recipe = "probes/ta/tri-region.toml"
+needs = ["render", "kpoke", "reset"]

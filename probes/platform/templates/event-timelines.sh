@@ -1,80 +1,82 @@
+#!/bin/bash
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: 2026 Josep Torra
-# Q082, Q003, Q036, Q048: a few registers sampled fast (regtimeline, SGXFIVE_REGTIMELINE,
-# default ~/regtimeline; the first sample and every change) through each job:
-# CR_CLKGATESTATUS (0x0008), CR_EVENT_STATUS2 (0x0118), CR_EVENT_STATUS (0x012c),
-# CR_BIF_INT_STAT (0x0c04), CR_BIF_FAULT (0x0c08), and the DPM's 0x0658, 0x0660, 0x0700,
-# 0x070c, 0x0710, 0x071c, 0x072c and 0x0748. Twice each: the triangle at 64x64 and 256x256 with
-# one, two and three renders on its context, at 128x128 with three, at 1024x768 with two
-# renders in a 0x30-page parameter buffer (partial renders in each; the TA/3D control block
-# after it), a fill, a copy, and fills running the table's two loops (1e7 instructions,
-# floating-point and integer), staged as $SGXFIVE_PROBE_BINS. Then with debugfs hold_recovery
-# set, once each, sampled for 3 s from 50 ms before the kick: vdm/state1's job hung in its pixel
-# task, its job hung in the TA (VDM state word 1 bits 15:13 = 0), and a render faulting on its
-# unmapped stream page; debugfs reset is written with the hold set, then it goes back to N.
-# Nothing else is written but render_pb_pages, which is put back. Root through sudo -n.
-set -u
-T=${SGXFIVE_TEST:-$HOME/sgxfive-test-1110}
-RT=${SGXFIVE_REGTIMELINE:-$HOME/regtimeline}
-B=${SGXFIVE_PROBE_BINS:-$HOME/sgxprobes-stage}
-D=$(sudo -n sh -c 'ls -d /sys/kernel/debug/dri/*/sgx' | head -n 1)
-[ -x "$T" ] || { echo "no $T: build userspace/libsgxfive (11.10) for the laptop first"; exit 1; }
+# 11.31 event-timelines (draft phase): Q111, which job sets which bit of CR_EVENT_STATUS and
+# CR_EVENT_STATUS2, as a timeline.
+# Raw outputs are KEPT: every tool output, whole, gzip (mtime 0) in $KEEP/NAME.txt.gz, the render's
+# dumps beside it (NAME.param.bin.gz, NAME.tadata.bin.gz), the raw size and sha256 printed ("kept
+# ..."), the case table in $KEEP/cases.tsv (with the exact tool arguments of every job) and the
+# kernel log of the run (journalctl -k, as the short ring buffer loses it) in $KEEP/kernel.log.
+# Recompute with recompute/recompute_p1131.py. After a failed job the GPU is reset (3 s), a plain
+# 64x64 triangle must draw exactly (retry after 5 s waits); three failed recoveries stop the script.
+# No clock-gate register is written (see lib1131.sh). Root through sudo -n.
+
+SCRIPT_NAME=event-timelines
+. "$(dirname "$0")/lib1131.sh"
 [ -x "$RT" ] || { echo "no $RT: build tools/sweep/regtimeline.c on the laptop first"; exit 1; }
-for f in vdm-state1-hang-pixel__0 vdm-state1-vdm-state-15-13-0__0 \
-	platform-event-timelines-fmad__0 platform-event-timelines-int__0; do
-	[ -f "$B/$f.bin" ] || { echo "no $B/$f.bin: stage the table"; exit 1; }
-done
-echo "## uname"; uname -r
-echo "## firmware"; sha256sum /lib/firmware/sgx545_ukernel.fw
-echo "## module"; modinfo -F srcversion gma500_gfx 2>/dev/null
-echo "## tool"; sha256sum "$T"
-W=$(mktemp -d)
-R="0x0008,0x0118,0x012c,0x0c04,0x0c08,0x0658,0x0660,0x0700,0x070c,0x0710,0x071c,0x072c,0x0748"
-KEEP="^(job|diff|tri|probe|fill|copy|timeline|tl )|failed"
-rt() {
-	name=$1 total=$2; shift 2
-	echo "== $name: regtimeline $total 0.05 -- $*"
-	sudo -n "$RT" "$total" 0.05 "$R" -- "$@" 2>&1 | grep -E "$KEEP" | grep -v "render context"
-}
-hold() { echo "$1" | sudo -n tee "$D/hold_recovery" >/dev/null; echo "hold_recovery: $1"; }
-reset_gpu() {
-	echo 1 | sudo -n tee "$D/reset" >/dev/null
-	echo "reset: ret $?"
-}
-ta3d() { echo "ta3d after: $(sudo -n od -An -tx4 -v -w4 "$D/buf09" | tr -d ' ' | tr '\n' ' ')"; }
-trap 'hold N' EXIT
-PB=$(sudo -n cat "$D/render_pb_pages")
-for run in 1 2; do
-	for s in 64 256; do
-		for n in 1 2 3; do
-			rt "tri-${s}-n$n-$run" 0 "$T" tri --width $s --height $s -n $n
-		done
-	done
-	rt "tri-128-n3-$run" 0 "$T" tri --width 128 --height 128 -n 3
-	echo 0x30 | sudo -n tee "$D/render_pb_pages" >/dev/null
-	rt "partial-1024x768-n2-$run" 0 "$T" tri --width 1024 --height 768 -n 2
-	ta3d
-	echo "$PB" | sudo -n tee "$D/render_pb_pages" >/dev/null
-	rt "fill-$run" 0 "$T" fill
-	rt "copy-$run" 0 "$T" copy
-	rt "fmad-loop-$run" 0 "$T" probe "$B/platform-event-timelines-fmad__0.bin"
-	rt "int-loop-$run" 0 "$T" probe "$B/platform-event-timelines-int__0.bin"
-done
-echo "## render_pb_pages back to $(sudo -n cat "$D/render_pb_pages")"
-PIX="--tri pixpds:12 --width 64 --height 64 --vtx-coords 2 --slot pixel=$B/pix_pa0.bin"
-PIX="$PIX --slot vtxuse=$B/vtx_coords.bin $B/vdm-state1-hang-pixel__0.bin"
-VDM="--tri pixel --width 64 --height 64 --vdm 1=0x0a020405 $B/vdm-state1-vdm-state-15-13-0__0.bin"
-held() {
-	name=$1; shift
-	hold Y
-	# the job in the background, so the timeline runs its 3 s while it stays held
-	rt "$name" 3 sh -c "$* > $W/$name.out 2>&1 &"
+PB_RESTORE=$(sudo -n cat "$D/render_pb_pages")
+begin
+# The two event registers alone (CR_EVENT_STATUS2 0x0118, CR_EVENT_STATUS 0x012c) at the finest
+# sampling regtimeline gives, and the same with five registers of the units (0x0218 the TA's dip,
+# 0x0700, 0x0710, 0x0724, 0x0748 the DPM's), through each kind of job after a reset, in turn; the
+# idle control is `sleep`. Read-only (/dev/mem), nothing is written but the reset, render_pb_pages
+# (0x30 for the partial render, put back at exit) and kpoke clears.
+R2="0x0118,0x012c"
+R7="0x0118,0x012c,0x0218,0x0700,0x0710,0x0724,0x0748"
+TLPY=$(cat <<'PYEOF'
+import re, sys
+regs, rows, hdr = [], [], ""
+for line in sys.stdin:
+    if line.startswith("timeline:"):
+        hdr = line.split()
+        regs = [t for t in hdr if t.startswith("0x")]
+    elif line.startswith("tl "):
+        rows.append(line.split()[1:])
+if not rows:
+    print("  no timeline"); sys.exit(0)
+smp = int(hdr[hdr.index("samples") + 1]) if "samples" in hdr else 0
+try:
+    span = (int(hdr[hdr.index("end") + 1]) - int(hdr[hdr.index("start") + 1])) / 1000.0
+    print("  %d changes, %s samples in %.0f us (%.2f us a sample)" % (len(rows), smp, span, span / max(smp, 1)))
+except ValueError:
+    print("  %d changes" % len(rows))
+for i, r in enumerate(regs):
+    vals = sorted({row[1 + i] for row in rows if len(row) > 1 + i})
+    orv = 0
+    for v in vals:
+        orv |= int(v, 16)
+    print("  %s: %d values %s ... or %#x" % (r, len(vals), " ".join(vals[:6]), orv))
+PYEOF
+)
+rt_job() { # NAME KIND REGS: reset, then regtimeline 0 0.05 REGS -- the job
+	name=$1 kind=$2 regs=$3
+	case $kind in
+	fill) cmd="fill" ;; copy) cmd="copy" ;;
+	tri64) cmd="tri --width 64 --height 64" ;;
+	tri256n3) cmd="tri --width 256 --height 256 -n 3" ;;
+	zstore) cmd="tri --width 64 --height 64 --depth --depth-store" ;;
+	partial) cmd="tri --width 1024 --height 768 -n 2 --keep-overflow --wait-ms 20000" ;;
+	idle) cmd="sleep 0.3" ;;
+	esac
 	reset_gpu
-	hold N
-	sleep 2
-	echo "## tool $name"; grep -E "$KEEP" "$W/$name.out" | grep -v "render context"
+	if [ "$kind" = partial ]; then set_knob render_pb_pages 0x30; else set_knob render_pb_pages "$PB_RESTORE"; fi
+	[ "$kind" = idle ] && prog="" || prog="$T"
+	printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$name" "$SCRIPT_NAME" "$kind" "0" "0" "regtimeline 0 0.05 $regs -- $prog $cmd" >> "$KEEP/cases.tsv"
+	echo "== $name kind=$kind regs=$regs"
+	mark "$name"
+	sudo -n timeout 120 "$RT" 0 0.05 "$regs" -- $prog $cmd > "$W/$name.out" 2>&1 </dev/null
+	echo "  rc $?"
+	python3 -c "$TLPY" < "$W/$name.out"
+	keep "$name" "$W/$name.out"
+	if grep -qE "failed|faulted|hung" "$W/$name.out"; then reset_gpu; health </dev/null || true; fi
+	rm -f "${W:?}/${name:?}.out"
 }
-held held-pixel-hang "$T" probe --temps 32 $PIX
-held held-ta-hang "$T" probe --temps 32 $VDM
-held held-fault "$T" tri --fault --wait-ms 30000
-sudo -n rm -rf "$W"
+for i in 1 2 3; do rt_job "tl-idle-r2-$i" idle "$R2"; rt_job "tl-idle-r7-$i" idle "$R7"; done
+for run in 1 2 3 4 5; do
+	for kind in tri64 fill tri256n3 copy zstore partial; do rt_job "tl-$kind-r2-$run" "$kind" "$R2"; done
+done
+for run in 1 2 3 4 5; do
+	for kind in tri64 fill tri256n3 copy zstore partial; do rt_job "tl-$kind-r7-$run" "$kind" "$R7"; done
+done
+health </dev/null || true
+echo "## end"

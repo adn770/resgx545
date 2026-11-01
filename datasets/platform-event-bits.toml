@@ -1,0 +1,10 @@
+title = "script tables event-timelines, event-irq-matrix, event-irq-repeat1, event-irq-repeat2, event-irq-repeat3"
+repo = "data"
+paths = ["platform/event-bits/"]
+method = "script tables event-timelines, event-irq-matrix, event-irq-repeat1, event-irq-repeat2, event-irq-repeat3, run by hand over ssh on the laptop with the 11.26 tool (not by the campaign runner), so this manifest was written by hand with the landed digest; the whole raw output of every job (gzip, dumps/<script>/), the case table, output.txt, kernel.log (from journalctl -k, complete), the recompute and analysis scripts of this phase with their output (analysis/), the declared files (analysis/declared*.tsv, predictions*.tsv, plan.md) and the run scripts (scripts/) output.txt prints rc 0 for every job, also for a job that hung or faulted (the tool returns 0 on a failed job), and prints a health result only when it failed: whether a job failed is read from the failed line of its kept txt."
+date = "2026-11-08"
+files = 310
+size = 1587193
+sha256 = "3d1303e4f0e18bfbad0c7210794e34ce331a012889b382411be0a24f3b25d3b0"
+recipe = "probes/platform/event-bits.toml"
+needs = ["render", "kpoke", "reset"]

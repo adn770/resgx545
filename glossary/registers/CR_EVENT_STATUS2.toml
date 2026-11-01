@@ -136,7 +136,7 @@ tier = "1"
 source = "sgx545-ce"
 citation = "C0638"
 licence = "GPL-2.0"
-evidence = "mask 0x00000001"
+evidence = "mask 0x00000001; [HW] E547: seen in some depth-store, 256-pixel and partial jobs"
 
 [[term.source]]
 term = "_PSB_CE_DPM_TA_FREE_LOAD"
@@ -227,7 +227,7 @@ tier = "1"
 source = "sgx545-ce"
 citation = "C0644"
 licence = "GPL-2.0"
-evidence = "mask 0x00001000"
+evidence = "mask 0x00001000; [HW] E547: seen in some depth-store, 256-pixel and partial jobs"
 
 [[term]]
 id = "G0944"

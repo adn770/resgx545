@@ -303,10 +303,24 @@ value, is `doc/specs/boot_sequence.md`.
 `DPM_REACHED_MEM_THRESH` 3, `DPM_OUT_OF_MEMORY_GBL` 2, `DPM_OUT_OF_MEMORY_MT` 1,
 `DPM_3D_MEM_FREE` 0 (`sgx545defs.h:367-451`; the debug dump decodes them, `sgxinit.c:907`).
 `TA_*` is the geometry and tiling front end, `ISP` the hidden-surface stage, `PIXELBE` the tile
-write-out, `DPM` the parameter memory manager. Which event sets which bit in an ordinary job, and
-for how long, is open (Q111).
+write-out, `DPM` the parameter memory manager. Which event sets which bit in an ordinary job is
+partly known, and for how long a bit is set is open (Q111, Q166). Seen on the hardware (E547, E548):
+PIXELBE_END_RENDER, DPM_3D_MEM_FREE and MADD_CACHE_INVALCOMPLETE show in a triangle, TA_FINISHED,
+TPC_FLUSH and the DPM state and control bits in the 256-pixel and partial jobs, a fill shows
+PIXELBE_END_RENDER and a copy only SW_EVENT, which comes with MASTER_INTERRUPT (41 of 41 jobs);
+armed one at a time through the host enables, bits 0, 6, 9, 18, 20 and 26 of CR_EVENT_STATUS and bit
+1 of CR_EVENT_STATUS2 raised an extra host interrupt in a 64 x 64 triangle, bit 26 in a fill, and
+for TA_FINISHED and TA_TERMINATE the host saw none, which does not show that they cannot. What
+depends on the firmware or on a race with it is [infer]: the short pulses of PIXELBE_END_RENDER,
+DPM_3D_MEM_FREE and TA_FINISHED are 4.2 to 6.1 microseconds, at most a few samples wide (sampling
+intervals averaging 1.06 to 5.58 microseconds), the time to the firmware's acknowledgement; SW_EVENT
+is the firmware's own event and its pulse (4.3 to 87.5 microseconds) the host's handling of it; and
+which armed bit raised an interrupt is read from the enable written, not from the status the handler
+saw.
 
-`EVENT_STATUS2` (`0x0118`) reads 0x400 (`DCU_INVAL_COMPLETE`) when the core is idle. Its
+`EVENT_STATUS2` (`0x0118`) reads 0x400 (`DCU_INVAL_COMPLETE`) when the core is idle;
+OTPM_MEM_CLEARED (bit 12) and DPM_TA_FREE_LOAD (bit 0) pulse in some depth-store, 256-pixel and
+partial jobs (E547). Its
 `TRIG_TA` (bit 7) and `TRIG_3D` (bit 6) latch on the laptop: bit 7 within 0.2 ms of the PB load of
 a TA that hangs or faults, bit 6 about 0.1 ms into a fill whose pixel program loops 128 times or
 more; neither sets in the renders, fills and copies of our stack, and each stays set until the

@@ -421,13 +421,14 @@ sits, the reading, and the evidence records it rests on.
   nothing seen. Measured: 0xf0000000 in every capture. Evidence: E188.
 - `G0291` `VDM_STATE1.BIT8` (VDM_STATE1 bit 8): marks the constant or no-op state blocks. Measured:
   set on the captured state blocks whose PDS program loads a constant block or starts a no-op USE
-  task, clear on the MTE-state and vertex blocks [infer]. Evidence: E060, E187, E349.
+  task, clear on the MTE-state and vertex blocks [infer]. Evidence: E060, E187, E349, E545.
 - `G0292` `VDM_STATE1.BITS11_9` (VDM_STATE1 [11:9]): Bits 11:9 of the state task's second word: 0
   removes the 64x64 triangle (4096 background pixels), 1, 3, 4, 5 and 6 give the baseline image, and
   7 hangs some runs of either job and completes others, tiling as 2 when it completes; the job
-  writes 2. Evidence: E060.
+  writes 2. Evidence: E060, E545.
 - `G0293` `VDM_STATE1.BITS15_13` (VDM_STATE1 [15:13]): Bits 15:13 of the state task's second word:
-  0, 5 and 6 hang the job, 2, 3, 4 and 7 give the baseline image; the job writes 1. Evidence: E060.
+  0, 5 and 6 hang the job, 2, 3, 4 and 7 give the baseline image; the job writes 1. Evidence: E060,
+  E545.
 
 ## words: texture words T0-T3
 
@@ -457,7 +458,9 @@ sits, the reading, and the evidence records it rests on.
 ## words: the TA's parameter buffer and TA data
 
 - `G1073` `PB_OBJ.FORMAT` (TA object, the dword after the line widths): the object's format word:
-  bits 7:0 the dwords a vertex takes in the object, bits 15:8 the dwords it iterates; bit 18 with
-  the 1/w output select, bit 19 with the vertex colour; the other bits are not shown [infer].
+  bits 7:0 the dwords a vertex takes as stored (1 + N, less for each flagged coordinate set c -
+  ceil(c / 2) of its c components), bits 15:8 as iterated (1 + N, 56 of 56 jobs), bit 18 set while
+  OUTSEL bit 12 puts the 1/w in the object (clear: the word reads 0x00000000), bits 31:19 and 17:16
+  clear in 56 jobs; bit 19 with the vertex colour is not shown [infer]. Evidence: E541, E544.
 - `G0487` `PB_OBJ.RHW` (TA object TSP data, first dword of each vertex): 1/w of the vertex, before
   its outputs, which are stored undivided [infer]. Evidence: E176, E196.

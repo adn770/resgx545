@@ -1,0 +1,199 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# p1131 progs: the program files of the 11.31 scripts (stage-p1131.sh builds and stages them; the
+# scripts give the render options themselves, one process per case). Written by
+# gen/gen_templates.py.
+needs = ["render"]
+
+[[probe]]
+name = "p1131-green"
+question = "the plain green pixel shader"
+source = "pix_green.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = []
+labels = ["one"]
+cases = [[]]
+
+[[probe]]
+name = "p1131-blue"
+question = "a plain blue pixel shader (the first object's of the two-object streams)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+labels = ["one"]
+cases = [["mov.skipinv.end o0, #0xFF0000FF"]]
+
+[[probe]]
+name = "p1131-fmt-1"
+question = "the pixel PDS program of E437 with the pa0 shader and the vertex program of 1 outputs"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_c1.s" }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+labels = ["source 0"]
+cases = [[0x27000800, 0x0, 0x1000004]]
+
+[[probe]]
+name = "p1131-fmt-2"
+question = "the pixel PDS program of E437 with the pa0 shader and the vertex program of 2 outputs"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_c2.s" }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+labels = ["source 0"]
+cases = [[0x27000800, 0x0, 0x1000004]]
+
+[[probe]]
+name = "p1131-fmt-3"
+question = "the pixel PDS program of E437 with the pa0 shader and the vertex program of 3 outputs"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_c3.s" }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+labels = ["source 0"]
+cases = [[0x27000800, 0x0, 0x1000004]]
+
+[[probe]]
+name = "p1131-fmt-4"
+question = "the pixel PDS program of E437 with the pa0 shader and the vertex program of 4 outputs"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_c4.s" }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+labels = ["source 0"]
+cases = [[0x27000800, 0x0, 0x1000004]]
+
+[[probe]]
+name = "p1131-fmt-5"
+question = "the pixel PDS program of E437 with the pa0 shader and the vertex program of 5 outputs"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_c5.s" }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+labels = ["source 0"]
+cases = [[0x27000800, 0x0, 0x1000004]]
+
+[[probe]]
+name = "p1131-fmt-6"
+question = "the pixel PDS program of E437 with the pa0 shader and the vertex program of 6 outputs"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_c6.s" }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+labels = ["source 0"]
+cases = [[0x27000800, 0x0, 0x1000004]]
+
+[[probe]]
+name = "p1131-fmt-8"
+question = "the pixel PDS program of E437 with the pa0 shader and the vertex program of 8 outputs"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_c8.s" }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+labels = ["source 0"]
+cases = [[0x27000800, 0x0, 0x1000004]]
+
+[[probe]]
+name = "p1131-fmt-9"
+question = "the pixel PDS program of E437 with the pa0 shader and the vertex program of 9 outputs"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_c9.s" }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+labels = ["source 0"]
+cases = [[0x27000800, 0x0, 0x1000004]]
+
+[[probe]]
+name = "p1131-fmt-11"
+question = "the pixel PDS program of E437 with the pa0 shader and the vertex program of 11 outputs"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_c11.s" }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+labels = ["source 0"]
+cases = [[0x27000800, 0x0, 0x1000004]]
+
+[[probe]]
+name = "p1131-psize"
+question = "a vertex shader writing the case's size to the one coordinate output (as a float)"
+source = "vtx_psize.s"
+host = "tri"
+slot = "vtxuse"
+slots = { pixel = "pix_green.s" }
+size = [64, 64]
+pixels = true
+inputs = ["V"]
+labels = ["size 1.0", "size 8.0"]
+cases = [[0x3F800000], [0x41000000]]
+
+[[probe]]
+name = "p1131-psizes"
+question = "a vertex shader writing the case's size to the one coordinate output (as a float), 28 sizes"
+source = "vtx_psize.s"
+host = "tri"
+slot = "vtxuse"
+slots = { pixel = "pix_green.s" }
+size = [64, 64]
+pixels = true
+inputs = ["V"]
+labels = ["0.5", "1", "1.5", "2", "2.5", "3", "4", "5", "6", "7", "8", "9", "11", "12", "16", "20", "24", "32", "48", "63", "64", "100", "255", "256", "0.0625", "0.03125", "0", "-4"]
+cases = [[0x3F000000], [0x3F800000], [0x3FC00000], [0x40000000], [0x40200000], [0x40400000], [0x40800000], [0x40A00000], [0x40C00000], [0x40E00000], [0x41000000], [0x41100000], [0x41300000], [0x41400000], [0x41800000], [0x41A00000], [0x41C00000], [0x42000000], [0x42400000], [0x427C0000], [0x42800000], [0x42C80000], [0x437F0000], [0x43800000], [0x3D800000], [0x3D000000], [0x00000000], [0xC0800000]]
+
+[[probe]]
+name = "p1131-psize2"
+question = "a vertex shader writing A to o4 and B to o5 (two coordinate outputs)"
+source = "vtx_psize2.s"
+host = "tri"
+slot = "vtxuse"
+slots = { pixel = "pix_green.s" }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B"]
+labels = ["2/6", "6/2"]
+cases = [[0x40000000, 0x40C00000], [0x40C00000, 0x40000000]]
+
+[[probe]]
+name = "p1131-psizev"
+question = "a vertex shader writing 16 * C + 20 to the one coordinate output, C = clip x (pa0) or clip y (pa1)"
+source = "vtx_psizev.s"
+host = "tri"
+slot = "vtxuse"
+slots = { pixel = "pix_green.s" }
+size = [64, 64]
+pixels = true
+inputs = ["C"]
+labels = ["by x", "by y"]
+cases = [["pa0"], ["pa1"]]

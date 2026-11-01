@@ -2772,14 +2772,18 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   vertices numbered from 16; the last entry repeated to fill an odd count [infer]. From
   `PB_OBJ.PRIM_LIST` (ours, resgx545).
 - `PB_OBJ.FORMAT` G1073 (TA object, the dword after the line widths): inferred reading
-  (unconfirmed): the object's format word: bits 7:0 the dwords a vertex takes in the object, bits
-  15:8 the dwords it iterates; bit 18 with the 1/w output select, bit 19 with the vertex colour; the
-  other bits are not shown [infer]. From `PB_OBJ.FORMAT` (ours, resgx545).
+  (unconfirmed): the object's format word: bits 7:0 the dwords a vertex takes as stored (1 + N, less
+  for each flagged coordinate set c - ceil(c / 2) of its c components), bits 15:8 as iterated (1 +
+  N, 56 of 56 jobs), bit 18 set while OUTSEL bit 12 puts the 1/w in the object (clear: the word
+  reads 0x00000000), bits 31:19 and 17:16 clear in 56 jobs; bit 19 with the vertex colour is not
+  shown [infer]. From `PB_OBJ.FORMAT` (ours, resgx545).
 - `PB_OBJ.LINE_WIDTHS` G0484 (TA object, the dword after the primitive list): ISP1.LINE_WIDTH in
   both bytes (bits 15:8 and 7:0) [infer]. From `PB_OBJ.LINE_WIDTHS` (ours, resgx545).
 - `PB_OBJ.SET_MASKS` G0488 (TA object, the four dwords after the format word): bit i for coordinate
-  set i (from 1): sets stored at half precision, sets of one component, sets with z, sets with w
-  [infer]. From `PB_OBJ.SET_MASKS` (ours, resgx545).
+  set i (from 1): mask 0 has bit i + 1 for each set i whose format bit is set, mask 1 for size code
+  1, mask 2 for codes 3 and 5, mask 3 for codes 4 and 5; the components of the size codes 1 to 5 are
+  1, 2, 3, 3, 4 (by stored dwords) and their naming (x; xy; xyz; xyw; xyzw) is [infer]. From
+  `PB_OBJ.SET_MASKS` (ours, resgx545).
 - `PB_OBJ.ISP_WORDS` G0483 (TA object, the two dwords after the TSP data): ISP words 0 and 1 as the
   state block gives them [infer]. From `PB_OBJ.ISP_WORDS` (ours, resgx545).
 - `VDM_STATE1.BITS11_9` G0292 (VDM_STATE1 [11:9]): inferred reading (unconfirmed): Bits 11:9 of the
@@ -2807,9 +2811,11 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `CSTREAM.PRIM_TILES` G0463 (control-stream primitive word [23:16]): which of the region's two 16 x
   16 tiles the object meets, and the masks' layout: 0x90 both (no masks, bits 15:0 0xffff); one tile
   with masks in bits 15:0, 0x80 the left, 0x98 the right; with masks too wide for the word (the
-  primitive mask in a further dword), 0x8a the left, 0x8c the right; 0x88 in the two-lines scene,
-  also with a further dword in the block (which tiles 0x88 means is not shown); bit 23 is set in
-  every word seen [infer]. From `CSTREAM.PRIM_TILES` (ours, resgx545).
+  primitive mask in a further dword), 0x8a the left, 0x8c the right; 0x88 both tiles with a mask
+  each in a further dword (low half the left, high half the right); bit 21 adds a dword after the
+  object word (0xa0 to 0xbf, Q164); in 0x80 and 0x98 bits 7:0 are the tile's primitive mask and bits
+  15:8 the low byte of the vertex mask (3 bits per listed primitive); bit 23 is set in every word
+  seen [infer]. From `CSTREAM.PRIM_TILES` (ours, resgx545).
 - `CSTREAM.PRIM_VERTICES` G0464 (control-stream primitive word [28:25]): the object's vertices less
   one [infer]. From `CSTREAM.PRIM_VERTICES` (ours, resgx545).
 - `COORDFMT.SET_F16` G0360 (coordfmt word, bit i for coordinate set i): carry coordinate set i at

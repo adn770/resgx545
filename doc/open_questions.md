@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-136 open: 121 hw (high 13, medium 64, low 44, unrated 0), 10 fw, 5 kernel.
+143 open: 127 hw (high 13, medium 65, low 49, unrated 0), 10 fw, 6 kernel.
 
 ## Work queue: hardware
 
@@ -85,7 +85,7 @@
 
 - `Q001` (phase 3, hw, medium): what do 0x0810, 0x0814 and 0x0818, set once by the init script to 0x1, 0xffff and 0x7ff, control? (E006, E010, E122, E401, E403, E404, E405)
 - `Q075` (phase 11, hw, low): what does each HWPerf counter the firmware records (0x0044-0x0064, 0x0e84-0x0e90 and 0x0eb4-0x0ec0) count, and how does the group in CR_HWPERF_CTRL select them? (E149, E150, E152, E359, E434)
-- `Q111` (phase 11, hw, high): which hardware event sets which bit of CR_EVENT_STATUS and CR_EVENT_STATUS2 in an ordinary TA, 3D, DPM or transfer job, how long does each stay set, and what does a write to CR_EVENT_HOST_CLEAR do to it? (E006, E154, E155, E357, E431, E435, E444)
+- `Q111` (phase 11, hw, high): which hardware event sets which bit of CR_EVENT_STATUS and CR_EVENT_STATUS2 in an ordinary TA, 3D, DPM or transfer job, how long does each stay set, and what does a write to CR_EVENT_HOST_CLEAR do to it? (E006, E154, E155, E357, E431, E435, E444, E547, E548)
 
 ### render
 
@@ -99,12 +99,17 @@
 
 - `Q064` (phase 11, hw, medium): what does the region header mark that CR_TE_PSG bit 21 makes the TA write mean to the 3D, and is bit 1 of CR_DPM_STATE_CONTEXT_ID the 3D's DPM slot as bit 2 is the TA's? (E158, E172, E305, E409, E424)
 - `Q068` (phase 11, hw, medium): do the twelve TA register words that are zero in our jobs save and resume the state of an interrupted TA? (E054, E056, E182, E183, E245)
-- `Q070` (phase 11, hw, high): what do the TA object's format word bits 15:8 and above and its set masks select beyond the settings seen, and does the fitted region test hold for lines and points? (E176, E177, E180, E181, E185, E306, E307, E308, E414)
+- `Q070` (phase 11, hw, high): what do the TA object's format word bits 15:8 and above and its set masks select beyond the settings seen, and does the fitted region test hold for lines and points? (E176, E177, E180, E181, E185, E306, E307, E308, E414, E541, E542, E543, E544)
 - `Q086` (phase 11, hw, medium): what rule gives CR_TE_MTILE1, CR_TE_MTILE2 and CR_TE_MACROTILE_STRIDE for a 4x multisampled target, whose 64x64 words are 0x802002, 0x802002 and 0x4 against the single-sampled rule's 0x1004004, 0x1004004 and 0x10? (E331, E329, E507, E511)
 - `Q100` (phase 11, hw, medium): what do the fields of CR_TE_MTILE1 and CR_TE_MTILE2 mean, given that flips of their bits change the image or fault the job at 256x256 and 1024x768? (E247, E257, E407, E505, E506, E509)
-- `Q117` (phase 11, hw, medium): where does a point's size come from, what footprint does the 3D cover for a point object (E181 shows the TA writes one), and does the closed driver's extra output row carry the size? (E181, E340, E346, E414)
 - `Q139` (phase 11, hw, medium): what does a macrotile row's boundary do beyond the first, second and third fields of the macrotile words: what is bit 31, what is the stride's relation to the RT data, why is B2 at or past B3 exact in CR_TE_MTILE2 at 640 x 480, and what do the wrong images show per macrotile (E505, E506, E509, E407)
 - `Q142` (phase 11, hw, medium): what do the 76 parameter-buffer and 132 TA-data dwords that change with CR_TE_AA bits 30 and 31 hold, and why do 0x60000000 and 0xa0000000 change the same number of dwords by different values (E504)
+- `Q159` (phase 11, hw, medium): what rule lists the 32 x 16 regions of a one-line object: at ISP word 1 width 0x10 the list reaches a near-vertical segment at 0.4375 pixel and not at 0.5, a near-horizontal one at 0.5 and 0.625 pixel at two regions of one job, and at the widths 0x20 to 0xf0 a near-vertical one up to 0 (the own regions), 1.497, 3.493 and 6.487 pixel and not at 1.0, 2.0, 4.0 and 8.0 (E543)
+- `Q160` (phase 11, hw, low): how does the TA split an index list of several lines into objects and regions: two lines at 128 x 128 give two objects of 2 vertices (the second the segment from vertex 2 to vertex 0) or, in the shifted job, one of 4, three lines give 2 and 4 vertices, and at 64 x 64 one object of 4 or 6, with four regions more than its segment in the first object (E543)
+- `Q161` (phase 11, hw, low): what does a point do at the edges of its size field: sizes under 1/16 pixel (1/32 draws one pixel), zero (tiles listed, no pixel), negative (the square from v - S/2 to the far edge of the target), 63, 64 and 100 (three points written as two objects), and does the closed driver's extra output row of its point-size shader hold the size the way our o4 does (E544, E346)
+- `Q162` (phase 11, hw, low): what do OUTSEL bits 10, 11 and 15 select, which fault (bits 8 without a size row, 10, 11, 15 on the plain triangle) or hang (10 and 15 with the size program) the job, and why does a two-output size program hang the points job with and without bit 8 (E544)
+- `Q164` (phase 11, hw, low): what does bit 21 of the control-stream primitive word mean, which puts one dword (0x00000400 in 336 cases and 0x00001000 in 30) after the object word in the forms 0xa0 to 0xbf, and what do the bits of the word's 15:8 beyond the low byte of the vertex mask hold (E542, E546)
+- `Q165` (phase 11, hw, low): why does a coordinate size and format word that describes sets the vertex program does not write (size code 5 over two or three outputs, a format bit for an absent set) fault or hang at N = 2, 3 and 8 outputs and complete at N = 5, 6, 9 and 11 (E541)
 
 ### texture
 
@@ -160,11 +165,12 @@
 
 - `Q036` (phase 10, hw, medium): what do the DPM's status words hold (the high half of the STATUS2 registers 0x0710 and 0x071c, 0x0748 bit by bit, CR_DPM_3D_PAGE_COUNTS' high half, and the owner words 0x0700 to 0x0728 a kept owner changes), what do CR_DMS_CTRL bits 2:0 and the signature and settle registers report about the two pipes, and what DPM or page-table-builder state does a base-only builder fault leave that a core reset does not clear? (E153, E160, E184, E200, E201, E256, E309, E310, E312, E316, E358, E362, E438, E443, E446, E448, E451, E453, E458, E462, E463)
 - `Q042` (phase 11, hw, medium): what do bits 27:24 of the index list's first trailing word (VDM_INDEX2) do, when its low bits move the list's first index and 0x0f000000 drops two of five triangles? (E188, E300, E307, E308, E414)
-- `Q047` (phase 11, hw, high): what do VDM_STATE1 bit 8, bits 11:9 and bits 15:13 select for a state task, when on the one-triangle job bit 8 changes nothing, bits 11:9 at 0 stop the triangle before tiling and bits 15:13 at 0, 5 or 6 hang it? (E060, E185, E186, E187, E299, E414, E427, E440)
-- `Q092` (phase 11, hw, medium): what do bits 31:28 of the index list's first trailing word count, which the closed driver writes as 0xf on 1886 captured lists and 0xd on a draw of eight vertex attributes? (E346, E348, E414)
-- `Q094` (phase 11, hw, medium): what hardware capacity bounds VDM_TASK0.MAX_VERTICES as a function of the task's output rows and attribute rows (the captures have 15, 13, 9, 7 or 2), and what does a vertex task do when the field is above it? (E346)
+- `Q047` (phase 11, hw, high): what do VDM_STATE1 bit 8, bits 11:9 and bits 15:13 select for a state task, when on the one-triangle job bit 8 changes nothing, bits 11:9 at 0 stop the triangle before tiling and bits 15:13 at 0, 5 or 6 hang it? (E060, E185, E186, E187, E299, E414, E427, E440, E545)
+- `Q092` (phase 11, hw, medium): what do bits 31:28 of the index list's first trailing word count, which the closed driver writes as 0xf on 1886 captured lists and 0xd on a draw of eight vertex attributes? (E346, E348, E414, E546)
+- `Q094` (phase 11, hw, medium): what hardware capacity bounds VDM_TASK0.MAX_VERTICES as a function of the task's output rows and attribute rows (the captures have 15, 13, 9, 7 or 2), and what does a vertex task do when the field is above it? (E346, E546)
 - `Q102` (phase 11, hw, medium): what state does a completed job with VDM state word 1 bits 11:9 = 7 leave that makes the next such job hang, and why does the reset after a hang clear it? (E060, E185, E299, E413)
 - `Q112` (phase 11, hw, medium): what do bits 25:24 of the index list header do, which are clear in all 1888 captured lists, and does the TA take indices wider than the 16 bits the captured lists use? (E188, E346, E414)
+- `Q163` (phase 11, hw, medium): what decides whether a job completes when VDM_STATE1 bits 11:9 are 1, 6 or 7 (and sometimes 4 or 5), when the same word 0x0a022205 hung twice in one script and completed in another (E545, E413)
 
 ### zls
 
@@ -215,6 +221,7 @@
 #### platform
 
 - `Q095` (phase 11, kernel): does giving the EDM a page directory of its own, rather than gma500's default one, change anything beyond the coupling of their teardowns? (E008, E018, E021)
+- `Q166` (phase 11, kernel): what does a write to CR_EVENT_HOST_CLEAR or CR_EVENT_HOST_CLEAR2 clear, the bits written or others, and does it clear the bits that stay set until an acknowledge (the timeline of a SW_EVENT lasts 4 to 136 microseconds) (E547, E548)
 
 #### ta
 

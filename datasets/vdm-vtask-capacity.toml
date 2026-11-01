@@ -1,0 +1,10 @@
+title = "script tables vdm-vtask, vdm-vtask2, vdm-vtask3, vdm-vtask4, vdm-vtask5, vdm-vtask-risky"
+repo = "data"
+paths = ["vdm/vtask-capacity/"]
+method = "script tables vdm-vtask, vdm-vtask2, vdm-vtask3, vdm-vtask4, vdm-vtask5, vdm-vtask-risky, run by hand over ssh on the laptop with the 11.26 tool (not by the campaign runner), so this manifest was written by hand with the landed digest; the whole raw output of every job (gzip, dumps/<script>/), the case table, output.txt, kernel.log (from journalctl -k, complete), the recompute and analysis scripts of this phase with their output (analysis/), the declared files (analysis/declared*.tsv, predictions*.tsv, plan.md) and the run scripts (scripts/) output.txt prints rc 0 for every job, also for a job that hung or faulted (the tool returns 0 on a failed job), and prints a health result only when it failed: whether a job failed is read from the failed line of its kept txt."
+date = "2026-11-08"
+files = 336
+size = 1246463
+sha256 = "3d2a93abfd9a5b7fc0234f267b3fbd7b88257638deef58496dee64bafab3aa3d"
+recipe = "probes/vdm/vtask-capacity.toml"
+needs = ["render", "kpoke", "reset"]

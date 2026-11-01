@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# state-units: 3 shell scripts run on the laptop by hand (phase 11.31). Q047: VDM_STATE1 fields in a two-block stream.
+# The scripts, in the order they ran: vdm-state-units, vdm-state-risky, vdm-state-grid.
+needs = ["render", "kpoke", "reset"]
+name = "vdm-state-units"
+script = "vdm-state-units.sh"

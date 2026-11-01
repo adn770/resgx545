@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# event-bits: 2 shell scripts run on the laptop by hand (phase 11.31). Q111: the event bits of ordinary jobs and the host interrupts they raise.
+# The scripts, in the order they ran: event-timelines, event-irq-matrix.
+needs = ["render", "kpoke", "reset"]
+name = "platform-event-bits"
+script = "event-timelines.sh"

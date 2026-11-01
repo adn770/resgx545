@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# vtask-capacity: 6 shell scripts run on the laptop by hand (phase 11.31). Q094, Q092: the vertices of a vertex task.
+# The scripts, in the order they ran: vdm-vtask, vdm-vtask2, vdm-vtask3, vdm-vtask4, vdm-vtask5, vdm-vtask-risky.
+needs = ["render", "kpoke", "reset"]
+name = "vdm-vtask-capacity"
+script = "vdm-vtask.sh"

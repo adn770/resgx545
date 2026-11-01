@@ -62,6 +62,7 @@ RETIRED: dict[str, str] = {     # id -> "answered by E<nnn>" or "folded into Q<n
     "Q061": "answered by E428", "Q009": "answered by E441", "Q041": "answered by E458",
     "Q006": "folded into Q076", "Q083": "folded into Q076", "Q028": "folded into Q003",
     "Q067": "folded into Q036", "Q105": "folded into Q036", "Q106": "folded into Q036",
+    "Q117": "folded into Q161",
 }
 NAME = re.compile(r"Q\d{3}-[a-z0-9]+(-[a-z0-9]+)*\.md")
 REF = re.compile(r"\bQ\d{3}\b")

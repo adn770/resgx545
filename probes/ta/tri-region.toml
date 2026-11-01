@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# tri-region: 2 shell scripts run on the laptop by hand (phase 11.31). Q070: the region test of triangles at tile boundaries.
+# The scripts, in the order they ran: ta-tri-boundary, ta-tri-corner.
+needs = ["render", "kpoke", "reset"]
+name = "ta-tri-region"
+script = "ta-tri-boundary.sh"

@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# line-point: 3 shell scripts run on the laptop by hand (phase 11.31). Q070: the region test of lines.
+# The scripts, in the order they ran: ta-line-point, ta-line-bisect, ta-line-width.
+needs = ["render", "kpoke", "reset"]
+name = "ta-line-point"
+script = "ta-line-point.sh"

@@ -1,0 +1,10 @@
+title = "script tables vdm-state-units, vdm-state-risky, vdm-state-grid"
+repo = "data"
+paths = ["vdm/state-units/"]
+method = "script tables vdm-state-units, vdm-state-risky, vdm-state-grid, run by hand over ssh on the laptop with the 11.26 tool (not by the campaign runner), so this manifest was written by hand with the landed digest; the whole raw output of every job (gzip, dumps/<script>/), the case table, output.txt, kernel.log (from journalctl -k, complete), the recompute and analysis scripts of this phase with their output (analysis/), the declared files (analysis/declared*.tsv, predictions*.tsv, plan.md) and the run scripts (scripts/) output.txt prints rc 0 for every job, also for a job that hung or faulted (the tool returns 0 on a failed job), and prints a health result only when it failed: whether a job failed is read from the failed line of its kept txt."
+date = "2026-11-08"
+files = 484
+size = 1984078
+sha256 = "13ca6b49fb7187f32215dcffa6af9491ee30defa3821e6c7ba97ab237029fffe"
+recipe = "probes/vdm/state-units.toml"
+needs = ["render", "kpoke", "reset"]

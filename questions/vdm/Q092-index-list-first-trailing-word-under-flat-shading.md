@@ -5,7 +5,7 @@ unit = "vdm"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E346", "E348", "E414"]
+evidence = ["E346", "E348", "E414", "E546"]
 terms = ["VDM_INDEX2.WORD", "MTECTL.FLAT_VERTEX"]
 +++
 
@@ -34,3 +34,10 @@ Narrowed in 11.15 (E414, one run each): on our job the top nibble of the first t
 nibble is not tied to the vertex task's maximum in anything our job shows. The attribute count was
 not varied (the tool has no option for it), and the GLES1 flat-shading capture was not made. Status:
 narrowed, not answered.
+
+Narrowed in 11.31 (E546, 9 jobs): with five copies of the triangle the first trailing word's top
+nibble at 0xf, 0xd and 0x7 and the task's attribute rows (VDM_TASK1 bits 14:7) at 1, 2 and 4 leave
+the object's PDS words, first vertex, format word and primitive list equal to the control's in 9 of
+9 jobs, so the nibble is neither the task's maximum (E414) nor the attribute count in anything our
+jobs show. Open: what bits 31:28 count. Status: narrowed, not answered; the flat-shading capture
+(bits 27:24) belongs to Q042.

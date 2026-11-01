@@ -44,7 +44,7 @@ tier = "ours"
 source = "resgx545"
 citation = "E191"
 licence = "MIT"
-evidence = "[HW] E191: render dumps of the TA's output"
+evidence = "[HW] E191: render dumps of the TA's output; [HW] E545: flipping it moves all the marks of its block together or none"
 
 [[term]]
 id = "G0291"
@@ -60,7 +60,7 @@ tier = "ours"
 source = "resgx545"
 citation = "E349"
 licence = "MIT"
-evidence = "never varied by us; [HW] E060: set on the triangle's state word, nothing changes; [HW] E187: set, the TA's output is the same word for word; [infer] the rest of its reading rests on records still to come"
+evidence = "never varied by us; [HW] E060: set on the triangle's state word, nothing changes; [HW] E187: set, the TA's output is the same word for word; [HW] E545: flipping it moves all the marks of its block together or none; [infer] the rest of its reading rests on records still to come"
 
 [[term]]
 id = "G0292"
@@ -76,7 +76,7 @@ tier = "ours"
 source = "resgx545"
 citation = "E060"
 licence = "MIT"
-evidence = "[HW] E060: sweep: 0 completed with no triangle pixel (hash 0xfc5ff15e0434a325), 7 hung (context lost), the others gave the baseline; the probe job with 0 gave a uniform background and the probe with 7 completed and drew a triangle; [HW] the split probes (vdm-state1-split, one run each): with 7 three of six jobs hung, in that run exactly the three with every pixel read back, the three without completing, the library job's render memory that of 2; [infer] the earlier probes completed with the readback, so it does not decide the hang from run to run; [infer] the reading is ours, from these runs"
+evidence = "[HW] E060: sweep: 0 completed with no triangle pixel (hash 0xfc5ff15e0434a325), 7 hung (context lost), the others gave the baseline; the probe job with 0 gave a uniform background and the probe with 7 completed and drew a triangle; [HW] the split probes (vdm-state1-split, one run each): with 7 three of six jobs hung, in that run exactly the three with every pixel read back, the three without completing, the library job's render memory that of 2; [infer] the earlier probes completed with the readback, so it does not decide the hang from run to run; [HW] E545: flipping it moves all the marks of its block together or none, and whether a job with 1, 6 or 7 completes is not a function of its state word (Q163); [infer] the reading is ours, from these runs"
 
 [[term]]
 id = "G0293"
@@ -92,4 +92,4 @@ tier = "ours"
 source = "resgx545"
 citation = "E060"
 licence = "MIT"
-evidence = "[HW] E060: sweep: 0, 5 and 6 hung the job and 2, 3, 4 and 7 gave the baseline image; probe jobs setting 0, 5 and 6 hung as well; [infer] the reading is ours, from these runs"
+evidence = "[HW] E060: sweep: 0, 5 and 6 hung the job and 2, 3, 4 and 7 gave the baseline image; probe jobs setting 0, 5 and 6 hung as well; [HW] E545: flipping it moves all the marks of its block together or none; [infer] the reading is ours, from these runs"

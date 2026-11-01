@@ -3704,6 +3704,76 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   which the tool as it ran gave only from 49), and arming with the hazard word was not made.
   *edm; HW, infer; data: `firmware-tasks-trc-ladder`, `firmware-tasks-final-stock-check`,
   `vectors-usse-fwtask-p1130`.*
+- `E541` The TA's object holds a vertex as 1 + N dwords less, for each coordinate set whose format
+  bit is set, the components its size code names minus half of them rounded up (1, 2, 3, 3 and 4
+  components for codes 1 to 5): that rule gives the stored dwords of 12 of 12 held-out jobs, the
+  format word's bits 15:8 are 1 + N and the four set masks follow the size and format words in 56 of
+  56 completed jobs; in the `alt` pattern 3 of 7 jobs did not complete (N = 2 faulted, N = 3 and 8
+  hung), and a set described past the outputs the vertex program writes does not decide it.
+  *ta; HW, infer; data: `ta-object-format`.*
+- `E542` The region test of triangles holds at every tile boundary tried: over 35 jobs (27 with a
+  vertex on a 16-pixel line at 64, 128 and 256 pixels, copy 2's exactly on it in 24 five-copy jobs,
+  the first triangle's in the 3 single-triangle fit jobs, and 8 with an edge exactly through a tile
+  corner), 14656 (primitive, tile) pairs, a 16 x 16 tile is met iff the bounding box meets it (high
+  sides open, low sides closed) and no edge has the four corners strictly outside: 0 mismatches,
+  where the landed fit (half-open only between a region's tiles) is wrong in 11 of 23 held-out jobs
+  and in 4 of 4 fit jobs, by listing tiles the TA does not list (27 pairs, none the other way).
+  *ta; HW, infer; data: `ta-tri-region`.*
+- `E543` Lines run through the TA with ISP word 0 + 0x8000 and index list topology 1 (26 of 26 jobs
+  complete: the 20 one-line jobs write one object of 2 vertices, the 6 multi-line jobs one or two
+  objects of 2, 4 or 6 vertices): a one-line object's regions are those a thickened segment meets,
+  not those the exact segment meets (right in 4 of 23 held-out jobs), the reach being 0.5 pixel at
+  ISP word 1 width 0x10 (near-vertical: listed at 0.4375, not at 0.5), and at the widths 0x20 to
+  0xf0 (28 near-vertical jobs) between 0 and 1.0 pixel at 0x20, 1.497 and 2.0 at 0x40, 3.493 and 4.0
+  at 0x80, 6.487 and 8.0 at 0xf0 (listed up to the first, not at the second; w / 32 fits, as does
+  any reach inside those brackets), but not by one distance at width 0x10 (near-vertical and
+  near-horizontal lines differ by about 0.12 pixel); the multi-line objects are not predicted.
+  *ta; HW, infer; data: `ta-line-point`.*
+- `E544` A point's size is the first coordinate output of its own vertex, read when OUTSEL bit 8 is
+  set, in pixels: the point covers the pixels whose centre is in [v - S/2, v + S/2) in x and y, in
+  40 of 42 sized jobs (sizes 0.5 to 256, pixel-centre, corner and fractional vertices) and in 4 of 4
+  jobs with a different size a vertex; without bit 8 a point draws no pixel (16 of 16 jobs with the
+  pixels read), and its tile list is that of a footprint of at most one pixel.
+  *ta; HW, infer; data: `ta-points`, `ta-line-point`.*
+- `E545` In a two-object stream, of the fields of one block's VDM_STATE1 flipped (bit 8, bits 11:9,
+  bits 15:13, bit 17, bit 25 and the closed driver's two word forms; the grid set bits 11:9 and
+  7:0), each moves all that block's marks (viewport x, ISP word 1 in the object, own pixel shader)
+  together or none: of 86 completed jobs 77 show all the control's marks, 8 the marked block's
+  object absent (bits 11:9 = 0) and 1 neither (sg-v6-r0, the other block's object absent); bit 8,
+  bit 25 and bits 15:13 = 2, 3, 4 change nothing (20 of 20), and the one word 0x0a022205 hung in 2
+  of 2 runs and completed in 1 of 1, so the marks of a block move together under every field flipped
+  and a hang is not a function of the word.
+  *vdm; HW, infer; data: `vdm-state-units`.*
+- `E546` With 126 vertices and a vertex program of R output rows, a vertex task of V = MAX_VERTICES
+  + 1 vertices keeps every vertex in the TA's objects when R * V <= 32 (31 of 31 jobs, regular
+  objects of 15 vertices) and breaks the regular objects when R * V >= 36 (21 of 21 jobs, no fault,
+  no hang; vertices lost or repeated [infer]), at 33 depending on the program (5 regular, 4
+  irregular; at the same R = 3 and V = 11, N = 6 splits and N = 5 and 8 do not, so R * V is not a
+  sufficient statistic); the splitting is the same on every repeat (13 of 13) and the task's
+  attribute rows (VDM_TASK1 bits 14:7) enter it: at R * V = 33 rows 8 splits objects that rows 2 and
+  4 keep regular (4 of 12 jobs differ from the default rows); the top nibble of the index list's
+  first trailing word changes no object in 9 of 9 jobs.
+  *vdm; HW, infer; data: `vdm-vtask-capacity`.*
+- `E547` In ordinary jobs CR_EVENT_STATUS shows PIXELBE_END_RENDER, DPM_3D_MEM_FREE and
+  MADD_CACHE_INVALCOMPLETE in triangle jobs, TA_FINISHED, TPC_FLUSH and the DPM state and control
+  bits only in the 256-pixel and partial jobs, a fill only PIXELBE_END_RENDER and a copy neither,
+  and SW_EVENT with MASTER_INTERRUPT in 41 of 41 jobs in which one appears, and CR_EVENT_STATUS2
+  shows OTPM_MEM_CLEARED in 5 of 20 depth-store and partial jobs and DPM_TA_FREE_LOAD in 1 of 10
+  256-pixel jobs; the short pulses of PIXELBE_END_RENDER, DPM_3D_MEM_FREE and TA_FINISHED are 4.2 to
+  6.0 microseconds at an average sampling interval of 1.06 to 3.68 and 5.7 to 6.1 at 2.36 to 5.58,
+  at most a few samples wide, and what holds them that long is the firmware's acknowledgement
+  [infer].
+  *platform; HW, infer; data: `platform-event-bits`.*
+- `E548` Armed one at a time through the host event enables, 7 of 41 bits raised a host interrupt of
+  their own in a 64 x 64 triangle (CR_EVENT_STATUS bits 0 DPM_3D_MEM_FREE, 6 DPM_STATE_CLEAR, 9
+  DPM_CONTROL_CLEAR, 18 PIXELBE_END_RENDER, 20 OTPM_INV, 26 MADD_CACHE_INVALCOMPLETE and
+  CR_EVENT_STATUS2 bit 1 DPM_3D_FREE_LOAD) and 1 of 41 in a fill (bit 26); with TA_FINISHED and
+  TA_TERMINATE the host saw none; three repeats give the first run's answer in 51 of 54 case-runs
+  (21 of 24 for the 8 cases with an interrupt, 30 of 30 for the 10 without; the three misses are bit
+  9 and STATUS2 bit 1 of the triangle and bit 26 of the fill), and the 24 unarmed controls raise
+  none; that the armed bit is what raised the interrupt is inferred, the handler having read only
+  TIMER and MASTER_INTERRUPT in all 82 armed jobs [infer].
+  *platform; HW, infer; data: `platform-event-bits`.*
 
 ### 2026-11-09
 
@@ -3766,7 +3836,7 @@ E395, E396, E400, E420, E421, E428, E430, E436, E437, E454, E459, E460.
 ### platform
 
 Records: E006, E007, E008, E025, E026, E122, E150, E149, E246, E258, E357, E359, E365, E401, E403,
-E404, E405, E434, E445.
+E404, E405, E434, E445, E547, E548.
 
 ### render
 
@@ -3778,7 +3848,7 @@ E448, E449, E451, E458, E462.
 
 Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180, E181, E247, E257,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
-E511.
+E511, E541, E542, E543, E544.
 
 ### texture
 
@@ -3807,7 +3877,7 @@ E516, E517, E518, E519, E520, E521, E522, E525, E526, E527, E528, E529, E530, E5
 ### vdm
 
 Records: E059, E060, E184, E185, E186, E187, E189, E190, E191, E188, E299, E300, E318, E346, E349,
-E413, E414, E427, E440.
+E413, E414, E427, E440, E545, E546.
 
 ### zls
 

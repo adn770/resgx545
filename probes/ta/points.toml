@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# points: 3 shell scripts run on the laptop by hand (phase 11.31). Q070 and the old points question: points, their size and OUTSEL.
+# The scripts, in the order they ran: ta-points, ta-points-vertex, ta-risky.
+needs = ["render", "kpoke", "reset"]
+name = "ta-points"
+script = "ta-points.sh"

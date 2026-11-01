@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# object-format: 2 shell scripts run on the laptop by hand (phase 11.31). Q070: the object's format word, set masks and stored dwords.
+# The scripts, in the order they ran: ta-object-format, ta-object-format2.
+needs = ["render", "kpoke", "reset"]
+name = "ta-object-format"
+script = "ta-object-format.sh"

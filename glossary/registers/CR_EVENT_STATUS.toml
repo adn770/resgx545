@@ -77,7 +77,7 @@ tier = "1"
 source = "sgx545-ce"
 citation = "C0280"
 licence = "GPL-2.0"
-evidence = "mask 0x00000001"
+evidence = "mask 0x00000001; [HW] E547: seen in ordinary jobs; the short pulses are 4.2 to 6.1 microseconds, at most a few samples wide, and what holds them is the firmware's acknowledgement [infer] (E547)"
 
 [[term]]
 id = "G0344"
@@ -93,7 +93,7 @@ tier = "1"
 source = "sgx545-ce"
 citation = "C0237"
 licence = "GPL-2.0"
-evidence = "mask 0x00000200"
+evidence = "mask 0x00000200; [HW] E547: seen in ordinary jobs"
 
 [[term]]
 id = "G0345"
@@ -173,7 +173,7 @@ tier = "1"
 source = "sgx545-ce"
 citation = "C0282"
 licence = "GPL-2.0"
-evidence = "mask 0x00000002"
+evidence = "mask 0x00000002; [HW] E547: seen in ordinary jobs"
 
 [[term]]
 id = "G0922"
@@ -221,7 +221,7 @@ tier = "1"
 source = "sgx545-ce"
 citation = "C0619"
 licence = "GPL-2.0"
-evidence = "mask 0x00000040"
+evidence = "mask 0x00000040; [HW] E547: seen in ordinary jobs"
 
 [[term]]
 id = "G0924"
@@ -237,7 +237,7 @@ tier = "1"
 source = "sgx545-ce"
 citation = "C0620"
 licence = "GPL-2.0"
-evidence = "mask 0x00000020"
+evidence = "mask 0x00000020; [HW] E547: seen in ordinary jobs"
 
 [[term]]
 id = "G0348"
@@ -333,7 +333,7 @@ tier = "1"
 source = "sgx545-ce"
 citation = "C0624"
 licence = "GPL-2.0"
-evidence = "mask 0x04000000"
+evidence = "mask 0x04000000; [HW] E547: seen in ordinary jobs"
 
 [[term]]
 id = "G0929"
@@ -349,7 +349,7 @@ tier = "1"
 source = "sgx545-ce"
 citation = "C0625"
 licence = "GPL-2.0"
-evidence = "mask 0x80000000"
+evidence = "mask 0x80000000; [HW] E547, E548: rises and falls together with SW_EVENT in 41 of 41 jobs"
 
 [[term]]
 id = "G0930"
@@ -397,7 +397,7 @@ tier = "1"
 source = "sgx545-ce"
 citation = "C0107"
 licence = "GPL-2.0"
-evidence = "mask 0x00040000"
+evidence = "mask 0x00040000; [HW] E547: seen in ordinary jobs; the short pulses are 4.2 to 6.1 microseconds, at most a few samples wide, and what holds them is the firmware's acknowledgement [infer] (E547)"
 
 [[term.source]]
 term = "ROGUE_CR_EVENT_STATUS_PIXELBE_END_RENDER"
@@ -424,7 +424,7 @@ tier = "1"
 source = "sgx545-ce"
 citation = "C0139"
 licence = "GPL-2.0"
-evidence = "mask 0x00004000"
+evidence = "mask 0x00004000; [HW] E547, E548: rises and falls together with MASTER_INTERRUPT in 41 of 41 jobs; its width is the host's handling of the firmware's own event [infer]"
 
 [[term]]
 id = "G0931"
@@ -456,7 +456,7 @@ tier = "1"
 source = "sgx545-ce"
 citation = "C0285"
 licence = "GPL-2.0"
-evidence = "mask 0x00002000"
+evidence = "mask 0x00002000; [HW] E547: seen in ordinary jobs; the short pulses are 4.2 to 6.1 microseconds, at most a few samples wide, and what holds them is the firmware's acknowledgement [infer] (E547)"
 
 [[term.source]]
 term = "ROGUE_CR_EVENT_STATUS_TA_FINISHED"
@@ -483,7 +483,7 @@ tier = "1"
 source = "sgx545-ce"
 citation = "C0287"
 licence = "GPL-2.0"
-evidence = "mask 0x00001000"
+evidence = "mask 0x00001000; [HW] E547: seen in ordinary jobs"
 
 [[term.source]]
 term = "ROGUE_CR_EVENT_STATUS_TA_TERMINATE"
@@ -542,4 +542,4 @@ tier = "1"
 source = "sgx545-ce"
 citation = "C0244"
 licence = "GPL-2.0"
-evidence = "mask 0x00000400"
+evidence = "mask 0x00000400; [HW] E547: seen in ordinary jobs"
