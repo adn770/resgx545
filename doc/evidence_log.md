@@ -4285,6 +4285,26 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   clipping rule.
   *platform; HW, infer; data: `vectors-usse`, `mte-clipping`, `mte-depth-range`,
   `mte-depth-range2`.*
+- `E620` A model of the transfer job written for the pipeline simulator (sgx-pipe xfer: the render
+  box's 32x16 tiles, the pixel-event PDS program run per tile through sgx-sim with ir0 in the
+  16-pixel units of E130 and ir1 = 6 on the last tile, the end-of-tile and end-of-render tasks, the
+  pixel shader per pixel, a copy's texel through tex::sample, the PBE's rectangle and pack modes 0
+  to 3) replays 13679 scenes (4398 fills, 9281 copies) rebuilt from 39 sweep files of fills and
+  copies (command words, background object, PDS data and texture words poked one at a time): 5079
+  match the recorded image hash and the dwords written outside the target, 8600 are refused under
+  questions, none mismatches and none is refused under a question its vector does not list; of the
+  5079, 45 are unpoked jobs, 172 poke words to the value they had, 2429 poke only words the model
+  never reads (their match says the hardware ignored those words for the values tried) and 2433 poke
+  at least one word the model reads, and 518 are 158 distinct images the pokes changed, 130 of them
+  the one image of the alpha inversion (E268); the pixel-event program's tile_x mask (data dword 9,
+  0xff8) with bit 4 cleared leaves the second column of 32-pixel tiles unwritten in the 64x32 fill
+  (1024 pixels, the first at (32, 0)) and writes the second column's tile at the first column in the
+  copy, so the end-of-tile task's x field is 2 for that column and not 1.
+  *transfer; HW, infer; data: `transfer-command-words`, `isp-background-object`,
+  `isp-render-only-registers`, `platform-untouched-registers`, `pds-end-of-tile`,
+  `pds-pixel-event-word2`, `pds-data-words`, `pds-douti-fields`, `pbe-emit-words`,
+  `pbe-emit-words-followup`, `texture-sampler-bits`, `texture-state-words`, `texture-tpu-csc`,
+  `scene-vectors-12-1`, `unit-vectors-12-1`.*
 - `E625` A one-triangle scene overflows the parameter buffer exactly when the first abort's page
   status P - 0x22 is below the scene's whole-buffer page need, measured at the boundary as 19 pages
   at 1024x768 and 287 at 4096x4096 (E310's 0x13 and 0x11f): 1024x768 overflows at 0x33 and 0x34
@@ -4746,7 +4766,7 @@ E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E7
 
 ### transfer
 
-Records: E015, E016, E018, E019, E020, E021, E022, E024, E027, E028, E272, E398, E455.
+Records: E015, E016, E018, E019, E020, E021, E022, E024, E027, E028, E272, E398, E455, E620.
 
 ### tsp
 

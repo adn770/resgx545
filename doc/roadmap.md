@@ -835,3 +835,16 @@ render dump, and 197 dump directories sorted by what each waits for. The simulat
 unchanged. Q205 (the arithmetic of coverage, depth and iteration for an arbitrary triangle) is new.
 The roadmap counts the questions from the built `doc/open_questions.md`: 185 open (Q001 to Q288),
 166 hw (high 21, medium 76, low 69), 12 fw and 7 kernel; isp 21.
+
+Sub-phase 12.1 is the first whole job of the pipeline simulator, the transfer (a fill or a copy), a
+tooling sub-phase with no laptop run and no kernel change: `sgxfive-test fill` and `copy` write the
+words they build (`--emit-scene`), and `sgx-pipe` runs the pixel-event program of each tile, the
+end-of-tile task and the PBE through `sgx-sim` from them. 13679 scenes of the transfer sweeps,
+rebuilt and not captured, give 5079 matches and 8600 refusals by question (63 percent refused), none
+mismatching and none fitted; the matches are a development set whose first version's 143 mismatches
+became refusals (E620), and they show the hardware agreeing with the model on 45 unpoked jobs and on
+poked words, 2433 of which the model reads. 74 unit vectors of the PBE's pack modes give 14 matches
+and 60 refusals. Q206 (transfer words with no record) and Q207 (PDS programs and inputs no record
+measured) are new. The simulator `sgx-sim` is unchanged. The roadmap counts the questions from the
+built `doc/open_questions.md`: 187 open (Q001 to Q288), 168 hw (high 21, medium 78, low 69), 12 fw
+and 7 kernel; pds 18, transfer 4.

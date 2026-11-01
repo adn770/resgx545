@@ -61,6 +61,23 @@ fn fitted_rules_are_never_reported_matched() {
     assert_eq!(ta.refused["Q165"], 3);
 }
 
+/// E031, E268: pack modes 0 to 3 store the two colours of the triangle jobs as the dumps show
+/// (4 modes, 2 colours) and mode 0 the ten shader colours unchanged; the other 60 modes refuse.
+/// Measured rules: nothing here is fitted.
+#[test]
+fn the_pack_modes_of_e031_replay_matched_and_the_rest_are_refused_by_question() {
+    let Some(rep) = replay_all() else { return };
+    let Some(c) = rep.units.get("pbe") else {
+        // the pack-mode vectors are not landed in this data revision
+        eprintln!("SKIPPED: no pbe vectors in the set");
+        return;
+    };
+    assert_eq!((c.matched, c.fitted, c.mismatch), (14, 0, 0));
+    assert_eq!(rep.items_matched["pbe"], 4 * 2 + 10);
+    assert_eq!((c.refused["Q012"], c.refused["Q044"]), (2, 58));
+    assert_eq!(c.refused_vectors, 60);
+}
+
 #[test]
 fn the_counts_of_the_records_hold() {
     let Some(rep) = replay_all() else { return };

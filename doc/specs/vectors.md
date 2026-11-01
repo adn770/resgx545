@@ -231,7 +231,7 @@ VECTORS` replays a set that is not landed yet.
 | `ta-object` | ta | N, the size word, the format word | stored, masks, outcome | built |
 | `isp-tile` | isp | MSAA mode, CR_TE_AA, two position dumps | counts | built |
 | `zls-load` | zls | buffer, control | depth and stencil per pixel | stub |
-| `pbe-emit` | pbe | EMIT words, sideband, a tile's colours | stored dwords | stub |
+| `pbe-emit` | pbe | sideband, reg 0400, colours | value stored each | built |
 | `vdm-stream` | vdm | the stream words | tasks, state, hang or cull | stub |
 | `bif-walk` | bif | directories, lists, banks, an access | address or fault fields | stub |
 
@@ -301,6 +301,16 @@ what the model computes.
   `an_ident_rule.txt`: 786 tiles, all equal to the window rule, 773 decodable in all 512 pixels
   (matched) and 13 with background pixels (refused, Q141).
 
+**The fifth, built in 12.1** (`unit_vectors.py`, `pbe_emit`): `pbe-emit` (E031, E268), 74 vectors.
+`init` is `sideband` (the emit's, pack mode in bits 5:0), `reg0400` (the word that loads
+CR_REG_0400, default 0x80) and `colours` (the shader's o0 values), `expect.stored` the value the
+hardware stored for each (a 16-bit pixel as its 16 bits). 64 vectors are the pack modes of
+`pbe/pack-modes`, with the background 0xff203040 and the shader colour 0x80ff8040 of the 64 x 64
+triangle: modes 0 to 3 (ARGB8888, ABGR8888, BGRA8888, RGB565) store the values the dumps hold
+(matched), and the other 60 refuse by question (`Q012` for modes 22 and 34, `Q044` for the rest;
+the vector keeps the recorded `mixed` counts). Ten more are mode 0 over the ten colours of
+`pbe/pack-colours` (the colour stored unchanged). Measured rules: no vector is fitted.
+
 ## 6. Scene vectors
 
 A scene vector is a whole job as the hardware ran it, for the pipeline simulator's `Edm`
@@ -322,6 +332,16 @@ scene = { "id", "kind": "render" | "transfer",
                   "questions", "rebuilt" } }
 ```
 
+A file may also be compact (what `tools/usse-asm/transfer_scenes.py` writes for a sweep of one
+job): `"bases": [{"kind": "fill" | "copy", "target", "xfer", "layout", "memory"}]` and per scene
+`{"id", "base", "delta", "expect", "provenance"}`; `delta` is `{"xfer": {"index": value},
+"memory": [{"base", "at": {"index": value}}]}`, the words the pokes changed, and `Scene::load_file`
+expands it (a segment's trailing zero dwords are not stored; a poked index past them extends
+with zeros). A transfer scene adds `xfer` (the command's words from the register block, in
+command order: word i is at command offset 4 i), `layout` (`pds_page`, `use_page`, `bg`: where
+the builder put the programs and the background object) and the target's `stride` (bytes) and
+`pages` (those the target's buffer holds; the harness fills them with 0xdeadbeef before the job).
+
 A `file` is relative to the data repository and checked against its `sha256`. A segment with
 neither `dwords` nor `file` is an error. `source` is `recorded` when the run itself captured the
 words and `rebuilt` otherwise (6.3).
@@ -329,8 +349,10 @@ words and `rebuilt` otherwise (6.3).
 ### 6.2 `expect`
 
 - `image`: `{"pixels": [...]}` (every pixel, raster order), `{"mixed": [[value, count], ...]}`,
-  or `{"o0": value}` (every pixel equal); `"near": n` allows n on each 8-bit channel and a
-  result that needed it is `near`.
+  `{"o0": value}` (every pixel equal) or `{"hash": "0x..."}` (FNV-1a 64 over the little-endian
+  bytes of the target's pixels, the `hash` the sweeps print), alone or together, each checked;
+  `"near": n` allows n on each 8-bit channel and a result that needed it is `near`. `outside`
+  is the number of dwords of the target's buffer outside its rectangle that the job changed.
 - `buffers`: `{name: {"sparse": {"0xaddr": "0xvalue"}} | {"dwords": [...]}}` for the parameter
   buffer (`param`), TA data (`tadata`), depth and stencil, compared by byte address.
 - `regs`: the registers the host reads back (status, DPM); `counters`: the visibility counters.
@@ -373,10 +395,24 @@ words and `rebuilt` otherwise (6.3).
 
 `sgx_pipe::job::run` loads `memory` into the device address space (`mem`, flat until 12.5),
 applies `regs` through the register file (`regs`: an unlisted register or a value wider than its
-measured width refuses), and runs the units in the order of the data dependencies. In 12.0 no
-unit is modelled, so every scene replays as `unsupported`, naming the open questions of the units
-it would pass (`job::blockers`). A model that returns a result must say which fitted rules it
-used.
+measured width refuses), and runs the units in the order of the data dependencies. A render is not
+modelled yet (12.2, 12.3) and replays as `unsupported`, naming the open questions of the units it
+would pass (`job::blockers`). A transfer (fill or copy) runs through `sgx_pipe::xfer` (12.1): the
+17 register words, the render box in 32 x 16 tiles, the pixel-event PDS program of each tile
+through `sgx-sim` with ir1 = 6 on the last tile, the end-of-tile task and its emit to the PBE (pack
+modes 0 to 3), the pixel shader per pixel of every tile of the box and a copy's texel through
+`tex::sample`. A command word or a task no record explains refuses (`Q206`, the words of a
+transfer with no record), a PDS program or input no record measured (a program that is not a
+template the records ran included) under `Q207`; `Q074` is which tile an end-of-tile task names;
+`Q011` a copy's tag; `Q021` the iterator word; `Q066` the background object; `Q205` a copy's
+iterated coordinates; `Q078` the sampler words; `Q076` and `Q003` an access outside the scene's
+memory, and `Q003` also a job whose completion the words leave unknown. A refusal depends on the
+scene's words only, never on the recorded result. The scene vector lists the questions its poked
+words are open under in `expect.refuse`. The model uses no fitted rule, so a result is `matched`,
+never `fitted`; the PBE predicts the hangs its records state (E266 and E267) and none of the
+replay's scenes reaches them, so no hang or fault is predicted in a replay. The PDS inputs
+`alu_specials_in_movs`, `ifs` and `ir2` are assumptions confined to the template programs. A model
+that returns a result must say which fitted rules it used.
 
 ### 6.5 Not yet (scope of the format)
 

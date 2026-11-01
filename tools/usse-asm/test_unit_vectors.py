@@ -67,3 +67,29 @@ def test_written_files_are_the_vector_container_and_deterministic(tmp_path):
         assert (a / p).read_bytes() == (b / p).read_bytes()
         d = json.loads((a / p).read_text())
         assert d["format"] == "sgx545-vectors" and d["version"] == 1 and d["vectors"]
+
+
+def test_pbe_emit_has_the_64_pack_modes_and_the_ten_colours_of_mode_0():
+    vs = vectors(uv.pbe_emit)
+    by = {v["id"]: v for v in vs}
+    modes = [v for v in vs if v["id"].startswith("pbe-emit__packmode-")]
+    assert len(modes) == 64
+    # modes 0 to 3 carry the stored values, 22 and 34 are refused under Q012, the rest under Q044
+    for m, stored in [(0, ["0xff203040", "0x80ff8040"]), (1, ["0xff403020", "0x804080ff"]),
+                      (2, ["0x403020ff", "0x4080ff80"]), (3, ["0x2188", "0xfc08"])]:
+        v = by["pbe-emit__packmode-%02d" % m]
+        assert v["expect"]["stored"] == stored and "refuse" not in v["expect"]
+        assert v["init"]["sideband"] == "0x%x" % (0x200 | m)
+    assert by["pbe-emit__packmode-22"]["expect"]["refuse"] == ["Q012"]
+    assert by["pbe-emit__packmode-34"]["expect"]["refuse"] == ["Q012"]
+    assert by["pbe-emit__packmode-14"]["expect"]["refuse"] == ["Q044"]
+    colours = [v for v in vs if v["id"].startswith("pbe-emit__colours-mode0-")]
+    assert len(colours) == 10
+    for v in colours:  # pack mode 0 stores the colour unchanged
+        assert v["expect"]["stored"] == v["init"]["colours"]
+
+
+def test_pack_values_reads_the_two_colours_of_a_mixed_line():
+    assert uv.pack_values(["0xff203040x3034", "0x80ff8040x1062"], 4) == ["0xff203040", "0x80ff8040"]
+    sixteen = ["0xdeadbeefx2048", "0x21882188x1496", "0xfc08fc08x510", "0xfc082188x24"]
+    assert uv.pack_values(sixteen, 2) == ["0x2188", "0xfc08"]

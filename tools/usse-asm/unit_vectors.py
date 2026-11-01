@@ -275,11 +275,73 @@ def isp_tile(data):
     return out
 
 
+# ---------------------------------------------------------------------------------- pbe-emit
+PM = "pbe/pack-modes"
+PC = "pbe/pack-colours"
+SENTINEL = "0xdeadbeef"
+BG = "0xff203040"  # the triangle jobs' background colour
+
+
+def pack_values(items, size):
+    """The values stored for the background and the shader colour, from a report's `mixed` items
+    ("0xVALUExCOUNT"): the two most common words that are not the sentinel, the background first
+    (it covers more pixels); two-byte pixels are the halves of the words that hold the same one
+    twice."""
+    cs = [(int(c), v) for v, c in (i.rsplit("x", 1) for i in items) if v != SENTINEL]
+    cs.sort(reverse=True)
+    if size == 4:
+        return [v for _, v in cs[:2]]
+    return ["0x%x" % (int(v, 16) & 0xFFFF) for _, v in cs if int(v, 16) >> 16 == int(v, 16) & 0xFFFF][:2]
+
+
+def mixed(report, tag):
+    """The `mixed` items of the report line for `tag`; none for a mode whose job faulted."""
+    for line in report.splitlines():
+        if tag in line and "mixed" in line:
+            return line.split("mixed", 1)[1].split()
+    return []
+
+
+def pbe_emit(data):
+    """E031: per pack mode of pbe/pack-modes, the values the end-of-tile emit stored for the
+    background 0xff203040 and the shader colour 0x80ff8040 of the 64 x 64 triangle (modes 0 to 3,
+    which the model packs; the other 60 are refused, 22 and 34 under Q012 and the rest under
+    Q044), and E268's mode 0 over the ten shader colours of pbe/pack-colours."""
+    out = []
+    for m in range(64):
+        r = (data / PM / ("pbe-pack-modes-packmode-%02d" % m) / "report.txt").read_text()
+        v = {"id": "pbe-emit__packmode-%02d" % m,
+             "init": {"task": "pbe-emit", "sideband": "0x%x" % (0x200 | m), "reg0400": "0x80",
+                      "colours": [BG, "0x80ff8040"]},
+             "provenance": {"records": ["E031", "E030"], "questions": ["Q012", "Q044"], "table": PM,
+                            "case": "packmode-%02d" % m, "rebuilt": False}}
+        if m < 4:
+            v["expect"] = {"stored": pack_values(mixed(r, "pack mode %d" % m), 2 if m == 3 else 4)}
+        else:
+            v["expect"] = {"refuse": ["Q012"] if m in (22, 34) else ["Q044"],
+                           "mixed": mixed(r, "pack mode %d" % m)}
+        out.append(v)
+    r = (data / PC / "pbe-pack-colours-mode0/report.txt").read_text()
+    for line in r.splitlines():
+        mm = re.match(r"\s+\[(\d+)\] o0 (0x[0-9a-f]+): mixed (.*)", line)
+        if not mm:
+            continue
+        k, o0, items = int(mm[1]), mm[2], mm[3].split()
+        stored = pack_values(items, 4)
+        out.append({"id": "pbe-emit__colours-mode0-%d" % k,
+                    "init": {"task": "pbe-emit", "sideband": "0x200", "reg0400": "0x80", "colours": [o0]},
+                    "expect": {"stored": [stored[0] if len(stored) == 1 else [s for s in stored if s != BG][0]]},
+                    "provenance": {"records": ["E031"], "questions": [], "table": PC,
+                                   "case": "mode0-%d" % k, "rebuilt": False}})
+    return out
+
+
 # ---------------------------------------------------------------------------------- files
 FILES = [("zls/store-layout/zls-store-layout-dumps.vec.json", zls_store, Z + "/output.txt"),
          ("ta/te-region/ta-tri-region.vec.json", te_region, T + "/output.txt"),
          ("ta/object-format/ta-object-format.vec.json", ta_object, F + "/output.txt"),
-         ("isp/msaa-window/isp-msaa-ident.vec.json", isp_tile, M + "/output.txt")]
+         ("isp/msaa-window/isp-msaa-ident.vec.json", isp_tile, M + "/output.txt"),
+         ("pbe/pack-modes/pbe-pack-modes.vec.json", pbe_emit, PM + "/pbe-pack-modes-packmode-00/report.txt")]
 
 
 def write_all(data, out):

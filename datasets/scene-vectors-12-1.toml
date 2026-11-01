@@ -1,0 +1,9 @@
+title = "scene vectors of the pipeline simulator, 12.1: the fills and copies of the transfer sweeps"
+repo = "data"
+paths = ["scene-vectors/transfer/"]
+method = "tools/usse-asm/transfer_scenes.py on the landed sweeps of transfer, isp, pds, pbe, texture and platform (offline, no new run): each case's words rebuilt by sgxfive-test --mock --emit-scene (a base per distinct unpoked job, a delta per poke) with the recorded outcome and the questions the poked word is open under; the kernel-register cases (put kreg) are listed as excluded, as the cases the kernel rejected; the digest is the one of tools/records/datasets.py, the sha256 of the `sha256  path` lines of the files in path order"
+date = "2026-11-09"
+files = 39
+size = 5946895
+sha256 = "7392e9d8b0d5d5787f8e3bfda3d5b216bdb29d8a3b260d764d6d33d9013f51fc"
+recipe = "tools/usse-asm/transfer_scenes.py"

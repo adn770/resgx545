@@ -32,6 +32,7 @@ pub mod sha256;
 pub mod ta;
 pub mod unitvec;
 pub mod vdm;
+pub mod xfer;
 pub mod zls;
 
 pub use outcome::{Outcome, Verdict};

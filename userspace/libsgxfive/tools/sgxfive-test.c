@@ -203,6 +203,10 @@
  *                                 it is submitted (include/sgxfive_poke.h: cmd, xfer,
  *                                 vdm, eos, blk, pds:SLOT, tex, bg)
  *   --pixels                      every pixel of the target, a row a line
+ *   --emit-scene FILE             fill, copy: write the job's words (the transfer command,
+ *                                 the programs' pages, the background object, the source),
+ *                                 after any pokes, as JSON for the pipeline simulator; the
+ *                                 job still runs (against the mock, no GPU is needed)
  *   --regs LO-HI                  the SGX registers LO to HI after the job, read-only
  *                                 through /dev/mem (hardware only)
  *   --ramp CH=START [--ramp-base V]
@@ -365,6 +369,7 @@ struct opts {
 	const char *poke_args[SGXFIVE_POKE_MAX];
 	unsigned int npokes;
 	bool pixels;			/* print every pixel of the target */
+	const char *emit_scene;		/* fill, copy: write the built job's words there (--emit-scene) */
 	bool regs;			/* print the registers regs_lo..regs_hi after the job */
 	uint32_t regs_lo, regs_hi;
 };
@@ -386,6 +391,7 @@ static int usage(void)
 		"                 copy [--width W --height H --sx X --sy Y --src-stride S\n"
 		"                       --dx X --dy Y --dst-stride S --every-value | --ramp CH=START\n"
 		"                       [--ramp-base V] --print-addrs --page-before],\n"
+		"                 (fill, copy) [--emit-scene FILE]\n"
 		"                 tri [--width W --height H -n N --max-width W --max-height H\n"
 		"                      --fault --scratch N --scratch-fill V --scratch-at ADDR\n"
 		"                      --scratch-file FILE\n"
@@ -644,6 +650,78 @@ static void side_fini(struct tool *t, struct side *s)
 	sgxfive_vm_destroy(s->vm);
 }
 
+/*
+ * --emit-scene: the words of a built fill or copy, written right before the job is submitted
+ * (after the pokes), for sgx_pipe's scene vectors (doc/specs/vectors.md section 6). The
+ * words are what this builder produces, not a capture of a run: the memory segments are
+ * `rebuilt`.
+ */
+struct emit {
+	struct sgxfive_poke_set pk;	/* the pokes, applied first */
+	const char *path;
+	const struct sgxfive_xfer *x;
+	bool copy;
+	uint32_t w, h;			/* the target window the hash covers */
+	uint64_t daddr;			/* the target's address, its stride in bytes and pages */
+	uint32_t dstride, dpages;
+	uint64_t saddr;			/* copy: the source's address, stride, words (mapped page) */
+	const uint32_t *src;
+	uint32_t src_words;
+};
+
+static void emit_words(FILE *f, const uint32_t *p, uint32_t n)
+{
+	fputc('[', f);
+	for (uint32_t i = 0; i < n; i++)
+		fprintf(f, "%s\"0x%x\"", i ? "," : "", p[i]);
+	fputc(']', f);
+}
+
+static void emit_segment(FILE *f, bool first, uint64_t base, const uint32_t *p, uint32_t n)
+{
+	fprintf(f, "%s\n    {\"base\": \"0x%llx\", \"source\": \"rebuilt\", \"dwords\": ",
+		first ? "" : ",", (unsigned long long)base);
+	emit_words(f, p, n);
+	fputc('}', f);
+}
+
+static int emit_hook(void *priv, const struct sgxfive_poke_view *v, unsigned int n)
+{
+	struct emit *e = priv;
+	struct sgxfive_xfer_layout l;
+	FILE *f;
+	int ret = sgxfive_poke_hook(&e->pk, v, n);
+	const uint32_t page = SGXFIVE_PAGE_SIZE / 4;
+
+	if (ret)
+		return ret;
+	f = fopen(e->path, "w");
+	if (!f)
+		return -errno;
+	sgxfive_xfer_get_layout(e->x, &l);
+	fprintf(f, "{\"kind\": \"%s\", \"target\": {\"w\": %u, \"h\": %u, \"base\": \"0x%llx\", "
+		"\"stride\": %u, \"pages\": %u},\n", e->copy ? "copy" : "fill", e->w, e->h,
+		(unsigned long long)e->daddr, e->dstride, e->dpages);
+	fprintf(f, " \"xfer\": ");
+	emit_words(f, (const uint32_t *)sgxfive_xfer_last_cmd(e->x),
+		   sizeof(struct drm_sgxfive_transfer_cmd) / 4);
+	fprintf(f, ",\n \"layout\": {\"pds_page\": \"0x%llx\", \"use_page\": \"0x%llx\", "
+		"\"stream_page\": \"0x%llx\", \"bg\": \"0x%llx\"},\n \"memory\": [",
+		(unsigned long long)l.pds_page, (unsigned long long)l.use_page,
+		(unsigned long long)l.stream_page, (unsigned long long)l.bg);
+	emit_segment(f, true, l.pds_page, sgxfive_xfer_page(e->x, DRM_SGXFIVE_HEAP_PDS_PIXEL), page);
+	emit_segment(f, false, l.use_page, sgxfive_xfer_page(e->x, DRM_SGXFIVE_HEAP_USSE_PIXEL),
+		     page);
+	emit_segment(f, false, l.stream_page, sgxfive_xfer_page(e->x, DRM_SGXFIVE_HEAP_GENERAL),
+		     page);
+	if (e->copy)
+		emit_segment(f, false, e->saddr, e->src, e->src_words);
+	fprintf(f, "\n ]}\n");
+	ret = ferror(f) ? -EIO : 0;
+	fclose(f);
+	return ret;
+}
+
 /* A CPU-visible BO of `pages` pages at addr (0: allocate in GENERAL), set to SENTINEL. */
 static int surface(struct tool *t, struct sgxfive_vm *vm, uint32_t pages, uint32_t flags,
 		   uint64_t *addr, struct sgxfive_bo **bo, uint32_t **map)
@@ -812,8 +890,16 @@ static int cmd_fill(struct tool *t, const struct opts *o)
 		ret = surface(t, s.vm, pages, 0, &addr, &bo, &p);
 	dst = (struct sgxfive_surface){ addr, o->stride / 4, rows, o->stride };
 	if (!ret) {
-		sgxfive_xfer_set_hook(s.x, sgxfive_poke_hook,
-				      &(struct sgxfive_poke_set){ o->pokes, o->npokes });
+		struct emit em = {
+			.pk = { o->pokes, o->npokes }, .path = o->emit_scene, .x = s.x,
+			.w = o->width, .h = o->height, .daddr = addr, .dstride = o->stride,
+			.dpages = pages,
+		};
+
+		if (o->emit_scene)
+			sgxfive_xfer_set_hook(s.x, emit_hook, &em);
+		else
+			sgxfive_xfer_set_hook(s.x, sgxfive_poke_hook, &em.pk);
 		for (unsigned int k = 0; !ret && k < o->nkpr; k++) {
 			if (!o->kpr[k].job)
 				continue;
@@ -917,8 +1003,19 @@ static int cmd_copy(struct tool *t, const struct opts *o)
 	src = (struct sgxfive_surface){ saddr, sw, srows, o->src_stride };
 	dst = (struct sgxfive_surface){ daddr, dw, drows, o->dst_stride };
 	if (!ret) {
-		sgxfive_xfer_set_hook(sd.x, sgxfive_poke_hook,
-				      &(struct sgxfive_poke_set){ o->pokes, o->npokes });
+		struct emit em = {
+			.pk = { o->pokes, o->npokes }, .path = o->emit_scene, .x = sd.x, .copy = true,
+			.w = o->width, .h = o->height, .daddr = daddr, .dstride = o->dst_stride,
+			.dpages = dpages,
+			/* the source's buffer from its first page, the counting one included */
+			.saddr = saddr - before * (uint64_t)SGXFIVE_PAGE_SIZE,
+			.src = s - before * 1024, .src_words = (before + spages) * 1024,
+		};
+
+		if (o->emit_scene)
+			sgxfive_xfer_set_hook(sd.x, emit_hook, &em);
+		else
+			sgxfive_xfer_set_hook(sd.x, sgxfive_poke_hook, &em.pk);
 		t0 = now_ns();
 		ret = xfer_job(&sd, sgxfive_xfer_copy(sd.x, &src, o->sx, o->sy, &dst, &r, 0), t0);
 		print_regs(t, o);
@@ -3486,6 +3583,10 @@ bad_move:
 			fprintf(stderr, "sgxfive-test: bad --move %s (N:DX,DY)\n", argv[i + 1]);
 			return -1;
 		}
+		if (!strcmp(argv[i], "--emit-scene") && i + 1 < argc) {
+			o->emit_scene = argv[i + 1];
+			continue;
+		}
 		if (!strcmp(argv[i], "--regs") && i + 1 < argc) {
 			if (!parse_regs(argv[i + 1], o)) {
 				fprintf(stderr, "sgxfive-test: bad register range %s (LO-HI, "
@@ -4095,6 +4196,10 @@ int main(int argc, char **argv)
 	if ((o.ramp || o.ramp_base || o.print_addrs || o.page_before) && strcmp(cmd, "copy")) {
 		fprintf(stderr, "sgxfive-test: --ramp, --ramp-base, --print-addrs and --page-before "
 			"are for copy\n");
+		return 2;
+	}
+	if (o.emit_scene && strcmp(cmd, "fill") && strcmp(cmd, "copy")) {
+		fprintf(stderr, "sgxfive-test: --emit-scene is for fill and copy\n");
 		return 2;
 	}
 	if ((o.ramp && o.every_value) || (o.ramp_base && !o.ramp)) {

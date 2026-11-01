@@ -162,7 +162,7 @@ pub fn model(task: &str, v: &Json, ctx: &Ctx) -> Result<Modelled, String> {
         "ta-object" => Ok(kind_ta_object(v)),
         "isp-tile" => kind_isp_tile(v, ctx),
         "zls-load" => Ok(Modelled::refusing(zls::refuse())),
-        "pbe-emit" => Ok(Modelled::refusing(pbe::refuse())),
+        "pbe-emit" => Ok(kind_pbe_emit(v)),
         "vdm-stream" => Ok(Modelled::refusing(vdm::refuse())),
         "bif-walk" => Ok(Modelled::refusing(bif::refuse())),
         _ => Err(format!("unknown unit kind {task}")),
@@ -285,6 +285,34 @@ fn kind_ta_object(v: &Json) -> Modelled {
             Modelled { outcome: crate::rules::TA_OBJECT_FORMAT.outcome(), seen }
         }
     }
+}
+
+/// pbe-emit (E031, E268): the value the end-of-tile emit stores for each shader colour in a pack
+/// mode of 0 to 3. A vector without a sideband is the stub's (the whole unit refuses).
+fn kind_pbe_emit(v: &Json) -> Modelled {
+    let (i, e) = (v.get("init"), v.get("expect"));
+    let Some(sb) = i.get("sideband").hex() else { return Modelled::refusing(pbe::refuse()) };
+    let reg = i.get("reg0400").hex().unwrap_or(0x80) as u32;
+    let pack = match pbe::pack_of(sb as u32) {
+        Ok(p) => p,
+        Err(o) => return Modelled::refusing(o),
+    };
+    let mut seen = Seen::default();
+    let want: Vec<Option<u64>> = e.get("stored").arr().iter().map(|j| j.hex()).collect();
+    for (k, c) in i.get("colours").arr().iter().enumerate() {
+        let o0 = c.hex().unwrap_or(0) as u32;
+        if pack == pbe::Pack::Rgb565 && !pbe::rgb565_known(o0) {
+            return Modelled::refusing(pbe::rgb565_unknown());
+        }
+        let got = pbe::pack_pixel(pack, o0, reg >> 25 & 1 != 0) as u64;
+        if want.get(k).copied().flatten() == Some(got) {
+            seen.matched += 1;
+        } else {
+            seen.mismatched += 1;
+            seen.notes.push(format!("colour {k} stored {got:#x}"));
+        }
+    }
+    Modelled { outcome: crate::Outcome::Ok, seen }
 }
 
 /// isp-tile (the multisample window, E503): tiles of a pair of position dumps against the rule.

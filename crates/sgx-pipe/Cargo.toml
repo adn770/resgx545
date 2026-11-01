@@ -10,3 +10,4 @@ authors.workspace = true
 
 [dependencies]
 sgx-sim = { path = "../sgx-sim" }
+usse-isa = { path = "../usse-isa" }

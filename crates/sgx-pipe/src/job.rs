@@ -2,8 +2,8 @@
 // SPDX-FileCopyrightText: 2026 Josep Torra
 //! The job loader and sequencer: a scene's memory into the device address space, its register
 //! writes through the register file, then the units in the order of the data dependencies
-//! (plan 3.2). In 12.0 no fixed-function model exists, so a job is refused, naming the open
-//! questions of the units it would go through.
+//! (plan 3.2). A transfer runs through `xfer` (12.1); a render is refused, naming the open
+//! questions of the units it would go through, until 12.2 and 12.3 build them.
 
 use crate::scene::{Kind, Scene, SceneResult};
 use crate::{Outcome, bif, dpm, isp, iter, mte, pbe, ta, vdm, zls};
@@ -36,11 +36,46 @@ pub fn blockers(kind: Kind) -> Vec<&'static str> {
     ids
 }
 
+/// Run a scene: a transfer through the model of 12.1 (`xfer`); a render is refused naming the
+/// questions of the units it would go through (12.2 and 12.3 build them).
 pub fn run(scene: &Scene) -> SceneResult {
-    SceneResult::refusing(Outcome::unsupported(
-        &format!("{}: no fixed-function unit is modelled yet (12.1 transfer, 12.2-12.3 render)", scene.id),
-        &blockers(scene.kind),
-    ))
+    match scene.kind {
+        Kind::Transfer => crate::xfer::run(scene),
+        Kind::Render => SceneResult::refusing(Outcome::unsupported(
+            &format!("{}: a render is not modelled yet (12.2 vertex side, 12.3 ISP)", scene.id),
+            &blockers(scene.kind),
+        )),
+    }
+}
+
+/// Replay the scenes of one scene-vector file (`Scene::load_file`): each is run by the `Edm` and
+/// compared with its `expect`. A scene that does not load is a skip with its reason.
+pub fn replay_file(
+    file: &sgx_sim::json::Json,
+    unit: &str,
+) -> Vec<Result<crate::unitvec::Replayed, (String, String)>> {
+    use crate::edm::{Edm, ModelledEdm};
+    let ids: Vec<String> =
+        file.get("scenes").arr().iter().map(|s| s.get("id").str().unwrap_or("?").to_string()).collect();
+    let mut edm = ModelledEdm;
+    Scene::load_file(file)
+        .into_iter()
+        .zip(file.get("scenes").arr())
+        .zip(ids)
+        .map(|((sc, j), id)| match sc {
+            Err(e) => Err((id, e)),
+            Ok(sc) => {
+                let r = edm.run(&sc);
+                Ok(crate::unitvec::Replayed {
+                    id: sc.id.clone(),
+                    unit: unit.to_string(),
+                    task: "scene".to_string(),
+                    verdict: crate::scene::compare(j.get("expect"), &r),
+                    seen: Default::default(),
+                })
+            }
+        })
+        .collect()
 }
 
 #[cfg(test)]
@@ -93,6 +128,7 @@ mod tests {
             ta::OPEN,
             vdm::OPEN,
             zls::OPEN,
+            crate::xfer::OPEN,
         ]
         .concat();
         assert!(all.len() > 40);

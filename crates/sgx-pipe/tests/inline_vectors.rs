@@ -69,3 +69,32 @@ fn the_other_planned_kinds_refuse_naming_their_questions() {
     assert!(matches!(verdict(all), Verdict::Refused(_)));
     assert!(replay(&parse(r#"{"id": "x", "init": {"task": "no-such-kind"}}"#), &ctx()).is_err());
 }
+
+#[test]
+fn pbe_emit_vectors_check_the_value_stored_for_each_colour() {
+    let v = |sb: &str, reg: &str, stored: &str, extra: &str| {
+        format!(
+            r#"{{"id": "p", "init": {{"task": "pbe-emit", "sideband": "{sb}", "reg0400": "{reg}",
+                 "colours": ["0xff203040", "0x80ff8040"]}}, "expect": {{"stored": {stored}{extra}}}}}"#
+        )
+    };
+    // E031: modes 0 to 3 as the pack-modes dumps stored the background and the shader colour
+    assert_eq!(verdict(&v("0x200", "0x80", r#"["0xff203040", "0x80ff8040"]"#, "")), Verdict::Matched);
+    assert_eq!(verdict(&v("0x201", "0x80", r#"["0xff403020", "0x804080ff"]"#, "")), Verdict::Matched);
+    assert_eq!(verdict(&v("0x202", "0x80", r#"["0x403020ff", "0x4080ff80"]"#, "")), Verdict::Matched);
+    assert_eq!(verdict(&v("0x203", "0x80", r#"["0x2188", "0xfc08"]"#, "")), Verdict::Matched);
+    // E268: bit 25 of the word that loads CR_REG_0400 inverts the alpha, not in RGB565
+    assert_eq!(verdict(&v("0x200", "0x2000080", r#"["0x00203040", "0x7fff8040"]"#, "")), Verdict::Matched);
+    assert_eq!(verdict(&v("0x203", "0x2000080", r#"["0x2188", "0xfc08"]"#, "")), Verdict::Matched);
+    // a value the hardware did not store is a mismatch, one colour each
+    assert!(matches!(verdict(&v("0x203", "0x80", r#"["0x2188", "0xfc09"]"#, "")), Verdict::Mismatch(_)));
+    // modes the records do not give are refused under their questions, and 22 and 34 under Q012
+    assert_eq!(
+        verdict(&v("0x216", "0x80", r#"["0x0", "0x0"]"#, r#", "refuse": ["Q012"]"#)),
+        Verdict::Refused(vec!["Q012".into()])
+    );
+    assert_eq!(
+        verdict(&v("0x204", "0x80", r#"["0x0", "0x0"]"#, r#", "refuse": ["Q044"]"#)),
+        Verdict::Refused(vec!["Q044".into()])
+    );
+}

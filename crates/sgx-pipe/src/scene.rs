@@ -26,6 +26,9 @@ pub struct Target {
     pub h: u32,
     pub format: String,
     pub base: u32,
+    /// bytes between rows of the buffer (0: unstated), and the pages the run allocated for it
+    pub stride: u32,
+    pub pages: u32,
 }
 
 /// A run of device memory the job reads.
@@ -48,6 +51,10 @@ pub struct Scene {
     /// the host's register writes in order, where order matters
     pub regs_log: Vec<(u32, u32)>,
     pub memory: Vec<Segment>,
+    /// a transfer's command words (the register block the kick loads), in command order
+    pub xfer: Vec<u32>,
+    /// where the builder placed the programs and the background object (name, address)
+    pub layout: Vec<(String, u32)>,
     pub expect: Json,
     pub provenance: Json,
 }
@@ -59,7 +66,8 @@ fn hex(j: &Json) -> Option<u32> {
 impl Scene {
     pub fn parse(s: &Json) -> Result<Scene, String> {
         let id = s.get("id").str().ok_or("scene without id")?.to_string();
-        const KEYS: &[&str] = &["id", "kind", "target", "regs", "regs_log", "memory", "expect", "provenance"];
+        const KEYS: &[&str] =
+            &["id", "kind", "target", "regs", "regs_log", "memory", "xfer", "layout", "expect", "provenance"];
         for (k, _) in s.obj() {
             if k == "vm" {
                 return Err(format!("{id}: a `vm` is not modelled before 12.5 (memory is flat): refused"));
@@ -69,7 +77,7 @@ impl Scene {
             }
         }
         for (k, _) in s.get("target").obj() {
-            if !["w", "h", "format", "base"].contains(&k.as_str()) {
+            if !["w", "h", "format", "base", "stride", "pages"].contains(&k.as_str()) {
                 return Err(format!("{id}: unknown target key `{k}`"));
             }
         }
@@ -84,6 +92,8 @@ impl Scene {
             h: t.get("h").num().ok_or(format!("{id}: no target.h"))? as u32,
             format: t.get("format").str().unwrap_or("").to_string(),
             base: hex(t.get("base")).unwrap_or(0),
+            stride: t.get("stride").num().unwrap_or(0.0) as u32,
+            pages: t.get("pages").num().unwrap_or(0.0) as u32,
         };
         let mut regs = vec![];
         for (k, v) in s.get("regs").obj() {
@@ -114,6 +124,18 @@ impl Scene {
             let source = m.get("source").str().unwrap_or("rebuilt").to_string();
             memory.push(Segment { base, dwords, file, source });
         }
+        let xfer = s
+            .get("xfer")
+            .arr()
+            .iter()
+            .map(|w| hex(w).ok_or(format!("{id}: xfer word")))
+            .collect::<Result<_, _>>()?;
+        let layout = s
+            .get("layout")
+            .obj()
+            .iter()
+            .map(|(k, v)| hex(v).map(|a| (k.clone(), a)).ok_or(format!("{id}: layout {k}")))
+            .collect::<Result<_, _>>()?;
         Ok(Scene {
             id,
             kind,
@@ -121,10 +143,79 @@ impl Scene {
             regs,
             regs_log,
             memory,
+            xfer,
+            layout,
             expect: s.get("expect").clone(),
             provenance: s.get("provenance").clone(),
         })
     }
+}
+
+impl Scene {
+    /// The scenes of a scene-vector file: the compact form (`bases`, and per scene a `base` index
+    /// and a `delta` of the words it changed) and full scenes without a `base`. A scene that does
+    /// not load is an error of its own, the others still load.
+    pub fn load_file(j: &Json) -> Vec<Result<Scene, String>> {
+        j.get("scenes").arr().iter().map(|s| Scene::expand(j, s)).collect()
+    }
+
+    fn expand(file: &Json, s: &Json) -> Result<Scene, String> {
+        let id = s.get("id").str().ok_or("scene without id")?.to_string();
+        let Some(bi) = s.get("base").num() else { return Scene::parse(s) };
+        let b = file.get("bases").arr().get(bi as usize).ok_or(format!("{id}: no base {bi}"))?;
+        let kind = match b.get("kind").str() {
+            Some("fill" | "copy" | "transfer") => Kind::Transfer,
+            k => return Err(format!("{id}: base kind {k:?}")),
+        };
+        // the base as a full scene, then the delta on its words
+        let full = Json::Obj(vec![
+            ("id".into(), Json::Str(id.clone())),
+            ("kind".into(), Json::Str(if kind == Kind::Transfer { "transfer" } else { "render" }.into())),
+            ("target".into(), b.get("target").clone()),
+            ("memory".into(), b.get("memory").clone()),
+            ("xfer".into(), b.get("xfer").clone()),
+            ("layout".into(), b.get("layout").clone()),
+            ("expect".into(), s.get("expect").clone()),
+            ("provenance".into(), s.get("provenance").clone()),
+        ]);
+        let mut sc = Scene::parse(&full)?;
+        let d = s.get("delta");
+        for (k, v) in d.get("xfer").obj() {
+            let i: usize = k.parse().map_err(|_| format!("{id}: xfer index {k}"))?;
+            let n = sc.xfer.len();
+            *sc.xfer.get_mut(i).ok_or(format!("{id}: xfer word {i} is past the {n} of the command"))? =
+                hex(v).ok_or(format!("{id}: xfer value"))?;
+        }
+        for m in d.get("memory").arr() {
+            let base = hex(m.get("base")).ok_or(format!("{id}: memory delta without base"))?;
+            let seg = sc
+                .memory
+                .iter_mut()
+                .find(|g| g.base == base)
+                .ok_or(format!("{id}: memory delta at {base:#x} names no segment"))?;
+            let w = seg.dwords.as_mut().ok_or(format!("{id}: memory delta on a file segment"))?;
+            for (k, v) in m.get("at").obj() {
+                let i: usize = k.parse().map_err(|_| format!("{id}: memory index {k}"))?;
+                if i >= w.len() {
+                    w.resize(i + 1, 0);
+                }
+                w[i] = hex(v).ok_or(format!("{id}: memory value"))?;
+            }
+        }
+        Ok(sc)
+    }
+}
+
+/// FNV-1a 64 over the little-endian bytes of the dwords: the hash the sweeps' raw output prints
+/// for a target (`target: WxH hash 0x...`).
+pub fn fnv64(words: &[u32]) -> u64 {
+    let mut h: u64 = 0xcbf2_9ce4_8422_2325;
+    for w in words {
+        for b in w.to_le_bytes() {
+            h = (h ^ b as u64).wrapping_mul(0x0000_0100_0000_01b3);
+        }
+    }
+    h
 }
 
 /// What a simulated job produced, in the shape of `expect`.
@@ -136,6 +227,8 @@ pub struct SceneResult {
     pub buffers: BTreeMap<String, BTreeMap<u32, u32>>,
     pub regs: BTreeMap<u32, u32>,
     pub counters: BTreeMap<String, Vec<u32>>,
+    /// dwords of the target's buffer outside the rectangle that the job changed
+    pub outside: Option<u64>,
     /// the fitted rules (records) the result rests on: a result with any is never matched
     pub fitted: Vec<String>,
 }
@@ -154,6 +247,7 @@ impl SceneResult {
 
     pub fn refusing(o: Outcome) -> SceneResult {
         SceneResult {
+            outside: None,
             outcome: o,
             image: None,
             buffers: BTreeMap::new(),
@@ -178,43 +272,55 @@ fn seen(expect: &Json, r: &SceneResult, near_used: &mut Option<u32>) -> Seen {
     let img = expect.get("image");
     if !matches!(img, Json::Null) {
         let near = img.get("near").num().map(|n| n as u32);
-        match (&r.image, img.get("pixels"), img.get("mixed"), img.get("o0")) {
-            (None, _, _, _) => item(false, "no image".into()),
-            (Some(got), Json::Arr(px), _, _) => {
-                for (i, e) in px.iter().enumerate() {
-                    let e = e.hex().unwrap_or(0) as u32;
-                    let g = got.get(i).copied();
-                    let ok = g == Some(e);
-                    let within = !ok
-                        && near.is_some_and(|n| {
-                            g.is_some_and(|g| {
-                                (0..4).all(|c| ((g >> (8 * c)) & 255).abs_diff((e >> (8 * c)) & 255) <= n)
-                            })
-                        });
-                    if within {
-                        *near_used = near;
+        let (pixels, mixed, o0, hash) = (img.get("pixels"), img.get("mixed"), img.get("o0"), img.get("hash"));
+        let known = matches!(pixels, Json::Arr(_))
+            || matches!(mixed, Json::Arr(_))
+            || o0.hex().is_some()
+            || hash.hex().is_some();
+        match &r.image {
+            _ if !known => item(false, "image expectation not understood".into()),
+            None => item(false, "no image".into()),
+            Some(got) => {
+                if let Json::Arr(px) = pixels {
+                    for (i, e) in px.iter().enumerate() {
+                        let e = e.hex().unwrap_or(0) as u32;
+                        let g = got.get(i).copied();
+                        let ok = g == Some(e);
+                        let within = !ok
+                            && near.is_some_and(|n| {
+                                g.is_some_and(|g| {
+                                    (0..4).all(|c| ((g >> (8 * c)) & 255).abs_diff((e >> (8 * c)) & 255) <= n)
+                                })
+                            });
+                        if within {
+                            *near_used = near;
+                        }
+                        item(ok || within, format!("pixel {i}"));
                     }
-                    item(ok || within, format!("pixel {i}"));
+                    item(got.len() == px.len(), "image size".into());
                 }
-                item(got.len() == px.len(), "image size".into());
-            }
-            (Some(got), _, Json::Arr(m), _) => {
-                let mut have = BTreeMap::<u32, u64>::new();
-                for &p in got {
-                    *have.entry(p).or_default() += 1;
+                if let Json::Arr(m) = mixed {
+                    let mut have = BTreeMap::<u32, u64>::new();
+                    for &p in got {
+                        *have.entry(p).or_default() += 1;
+                    }
+                    let want: BTreeMap<u32, u64> = m
+                        .iter()
+                        .map(|c| (hex(&c.arr()[0]).unwrap_or(0), c.arr()[1].num().unwrap_or(0.0) as u64))
+                        .collect();
+                    item(have == want, "pixel value counts".into());
                 }
-                let want: BTreeMap<u32, u64> = m
-                    .iter()
-                    .map(|c| (hex(&c.arr()[0]).unwrap_or(0), c.arr()[1].num().unwrap_or(0.0) as u64))
-                    .collect();
-                item(have == want, "pixel value counts".into());
+                if let Some(e) = o0.hex() {
+                    item(!got.is_empty() && got.iter().all(|&p| p == e as u32), "uniform o0".into());
+                }
+                if let Some(h) = hash.hex() {
+                    item(fnv64(got) == h, "image hash".into());
+                }
             }
-            (Some(got), _, _, o0) if o0.hex().is_some() => {
-                let e = o0.hex().unwrap() as u32;
-                item(!got.is_empty() && got.iter().all(|&p| p == e), "uniform o0".into());
-            }
-            _ => item(false, "image expectation not understood".into()),
         }
+    }
+    if let Some(n) = expect.get("outside").num() {
+        item(r.outside == Some(n as u64), format!("outside dwords {:?}, recorded {n}", r.outside));
     }
     for (name, b) in expect.get("buffers").obj() {
         let have = r.buffers.get(name);
@@ -299,6 +405,73 @@ pub fn compare(expect: &Json, r: &SceneResult) -> Verdict {
 mod tests {
     use super::*;
     use sgx_sim::json::parse;
+
+    const FILE: &str = r#"{"format": "sgx545-scene-vectors", "version": 1,
+        "bases": [{"kind": "fill", "target": {"w": 8, "h": 2, "base": "0x1000", "stride": 32, "pages": 1},
+                   "xfer": ["0x0", "0x200", "0x3"], "layout": {"bg": "0x3e000000"},
+                   "memory": [{"base": "0x2000", "source": "rebuilt", "dwords": ["0x1", "0x2"]}]}],
+        "scenes": [
+          {"id": "f:a", "base": 0, "delta": {}, "expect": {"image": {"o0": "0x1"}}},
+          {"id": "f:b", "base": 0, "delta": {"xfer": {"1": "0x201"},
+                                             "memory": [{"base": "0x2000", "at": {"1": "0x9", "5": "0x7"}}]},
+           "expect": {"outcome": "hang"}},
+          {"id": "f:c", "kind": "render", "target": {"w": 1, "h": 1}, "expect": {"outcome": "fault"}}]}"#;
+
+    #[test]
+    fn a_compact_file_expands_its_base_and_each_scenes_delta() {
+        let l = Scene::load_file(&parse(FILE));
+        assert_eq!(l.len(), 3);
+        let a = l[0].as_ref().unwrap();
+        assert_eq!(
+            (a.id.as_str(), a.kind, a.target.w, a.target.stride, a.target.pages),
+            ("f:a", Kind::Transfer, 8, 32, 1)
+        );
+        assert_eq!(a.xfer, [0, 0x200, 3]);
+        assert_eq!(a.layout, [("bg".to_string(), 0x3e00_0000)]);
+        assert_eq!(a.memory[0].dwords, Some(vec![1, 2]));
+        let b = l[1].as_ref().unwrap();
+        assert_eq!(b.xfer, [0, 0x201, 3], "the delta changes one word and the base is not touched");
+        // a poked index past the stored words (the base drops trailing zeros) extends with zeros
+        assert_eq!(b.memory[0].dwords, Some(vec![1, 9, 0, 0, 0, 7]));
+        assert_eq!(l[0].as_ref().unwrap().memory[0].dwords, Some(vec![1, 2]));
+        // a scene without a base is a full scene
+        assert_eq!(l[2].as_ref().unwrap().kind, Kind::Render);
+    }
+
+    #[test]
+    fn a_bad_delta_or_base_is_an_error_for_that_scene_only() {
+        let j = parse(
+            r#"{"bases": [{"kind": "fill", "target": {"w": 1, "h": 1}, "xfer": ["0x0"], "memory": []}],
+                "scenes": [{"id": "x", "base": 3, "expect": {}},
+                           {"id": "y", "base": 0, "delta": {"xfer": {"9": "0x1"}}, "expect": {}},
+                           {"id": "z", "base": 0, "delta": {"memory": [{"base": "0x40", "at": {"0": "0x1"}}]}, "expect": {}},
+                           {"id": "w", "base": 0, "delta": {}, "expect": {}}]}"#,
+        );
+        let l = Scene::load_file(&j);
+        assert_eq!(l.len(), 4);
+        for (i, why) in [(0, "base"), (1, "xfer"), (2, "memory")] {
+            assert!(l[i].as_ref().unwrap_err().contains(why), "{:?}", l[i]);
+        }
+        assert!(l[3].is_ok());
+    }
+
+    #[test]
+    fn an_image_hash_and_the_outside_count_are_compared() {
+        let img = vec![1, 2, 3, 4];
+        let h = format!("{:#018x}", fnv64(&img));
+        let e = parse(&format!(r#"{{"image": {{"hash": "{h}"}}, "outside": 0}}"#));
+        let mut r = ok(img.clone());
+        r.outside = Some(0);
+        assert_eq!(compare(&e, &r), Verdict::Matched);
+        r.outside = Some(3);
+        assert!(matches!(compare(&e, &r), Verdict::Mismatch(_)));
+        r.outside = Some(0);
+        r.image = Some(vec![1, 2, 3, 5]);
+        assert!(matches!(compare(&e, &r), Verdict::Mismatch(_)));
+        // a hash beside o0: both are checked
+        let e = parse(&format!(r#"{{"image": {{"hash": "{h}", "o0": "0x1"}}}}"#));
+        assert!(matches!(compare(&e, &ok(img)), Verdict::Mismatch(_)), "not uniform");
+    }
 
     fn ok(image: Vec<u32>) -> SceneResult {
         let mut r = SceneResult::refusing(Outcome::Ok);
