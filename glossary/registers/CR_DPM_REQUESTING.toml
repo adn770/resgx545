@@ -1,0 +1,15 @@
+[[term]]
+id = "G0830"
+name = "CR_DPM_REQUESTING"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_DPM_REQUESTING"
+kind = "register"
+sgx545 = "0x0734"
+meaning = "DPM requests pending"
+tier = "1"
+source = "intel-ctp-santos10"
+citation = "C0498"
+licence = "GPL-2.0 OR MIT"
+evidence = "DDK debug-dump name table (RESTRICTED_REGISTERS block); no offset in any GPL source, offset 0x0734 is our binding via name EUR_CR_DPM_REQUESTING"

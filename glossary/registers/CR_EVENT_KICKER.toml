@@ -13,3 +13,19 @@ source = "sgx545-ce"
 citation = "C0072"
 licence = "GPL-2.0"
 evidence = "SGX545 defs; same in 17 other trees"
+
+[[term]]
+id = "G0921"
+name = "CR_EVENT_KICKER.ADDRESS"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_KICKER_ADDRESS"
+kind = "bitfield"
+sgx545 = "0x0ac4[31:4]"
+meaning = "address the event kicker reads (16-byte aligned)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0617"
+licence = "GPL-2.0"
+evidence = "mask 0xfffffff0"

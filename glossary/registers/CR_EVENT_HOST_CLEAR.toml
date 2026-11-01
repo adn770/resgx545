@@ -35,3 +35,775 @@ source = "linux-imagination"
 citation = "C0065"
 licence = "GPL-2.0-only OR MIT"
 evidence = "analogy to our EVENT_HOST_CLEAR; event clear; Rogue drops HOST_; Rogue offset 0x0138"
+
+[[term]]
+id = "G0833"
+name = "CR_EVENT_HOST_CLEAR.BREAKPOINT"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_CLEAR_BREAKPOINT"
+kind = "bitfield"
+sgx545 = "0x0134[15]"
+meaning = "clear: breakpoint hit"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0501"
+licence = "GPL-2.0"
+evidence = "mask 0x00008000"
+
+[[term.source]]
+term = "_PSB_CE_BREAKPOINT"
+kind = "flag"
+sgx545 = "0x0134[15]"
+meaning = "clear: breakpoint hit"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0502"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs; event bits shared by STATUS/ENABLE/CLEAR"
+
+[[term]]
+id = "G0834"
+name = "CR_EVENT_HOST_CLEAR.DPM_3D_MEM_FREE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_CLEAR_DPM_3D_MEM_FREE"
+kind = "bitfield"
+sgx545 = "0x0134[0]"
+meaning = "clear: DPM finished freeing 3D pages"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0503"
+licence = "GPL-2.0"
+evidence = "mask 0x00000001"
+
+[[term.source]]
+term = "_PSB_CE_DPM_3D_MEM_FREE"
+kind = "flag"
+sgx545 = "0x0134[0]"
+meaning = "clear: DPM finished freeing 3D pages"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0504"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs; event bits shared by STATUS/ENABLE/CLEAR"
+
+[[term]]
+id = "G0835"
+name = "CR_EVENT_HOST_CLEAR.DPM_CONTROL_CLEAR"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_CLEAR_DPM_CONTROL_CLEAR"
+kind = "bitfield"
+sgx545 = "0x0134[9]"
+meaning = "clear: DPM control clear done"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0505"
+licence = "GPL-2.0"
+evidence = "mask 0x00000200"
+
+[[term.source]]
+term = "_PSB_CE_DPM_CONTROL_CLEAR"
+kind = "flag"
+sgx545 = "0x0134[9]"
+meaning = "clear: DPM control clear done"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0506"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs; event bits shared by STATUS/ENABLE/CLEAR"
+
+[[term]]
+id = "G0836"
+name = "CR_EVENT_HOST_CLEAR.DPM_CONTROL_LOAD"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_CLEAR_DPM_CONTROL_LOAD"
+kind = "bitfield"
+sgx545 = "0x0134[8]"
+meaning = "clear: DPM control load done"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0507"
+licence = "GPL-2.0"
+evidence = "mask 0x00000100"
+
+[[term.source]]
+term = "_PSB_CE_DPM_CONTROL_LOAD"
+kind = "flag"
+sgx545 = "0x0134[8]"
+meaning = "clear: DPM control load done"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0508"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs; event bits shared by STATUS/ENABLE/CLEAR"
+
+[[term]]
+id = "G0837"
+name = "CR_EVENT_HOST_CLEAR.DPM_CONTROL_STORE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_CLEAR_DPM_CONTROL_STORE"
+kind = "bitfield"
+sgx545 = "0x0134[7]"
+meaning = "clear: DPM control store done"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0509"
+licence = "GPL-2.0"
+evidence = "mask 0x00000080"
+
+[[term.source]]
+term = "_PSB_CE_DPM_CONTROL_STORE"
+kind = "flag"
+sgx545 = "0x0134[7]"
+meaning = "clear: DPM control store done"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0510"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs; event bits shared by STATUS/ENABLE/CLEAR"
+
+[[term]]
+id = "G0838"
+name = "CR_EVENT_HOST_CLEAR.DPM_INIT_END"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_CLEAR_DPM_INITEND"
+kind = "bitfield"
+sgx545 = "0x0134[22]"
+meaning = "clear: DPM initialisation finished"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0511"
+licence = "GPL-2.0"
+evidence = "mask 0x00400000"
+
+[[term.source]]
+term = "_PSB_CE_DPM_INITEND"
+kind = "flag"
+sgx545 = "0x0134[22]"
+meaning = "clear: DPM initialisation finished"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0512"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs; event bits shared by STATUS/ENABLE/CLEAR"
+
+[[term]]
+id = "G0839"
+name = "CR_EVENT_HOST_CLEAR.DPM_OUT_OF_MEMORY_GBL"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_CLEAR_DPM_OUT_OF_MEMORY_GBL"
+kind = "bitfield"
+sgx545 = "0x0134[2]"
+meaning = "clear: DPM out of memory (global list)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0513"
+licence = "GPL-2.0"
+evidence = "mask 0x00000004"
+
+[[term.source]]
+term = "_PSB_CE_DPM_OUT_OF_MEMORY_GBL"
+kind = "flag"
+sgx545 = "0x0134[2]"
+meaning = "clear: DPM out of memory (global list)"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0514"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs; event bits shared by STATUS/ENABLE/CLEAR"
+
+[[term]]
+id = "G0840"
+name = "CR_EVENT_HOST_CLEAR.DPM_OUT_OF_MEMORY_MT"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_CLEAR_DPM_OUT_OF_MEMORY_MT"
+kind = "bitfield"
+sgx545 = "0x0134[1]"
+meaning = "clear: DPM out of memory (macrotile)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0515"
+licence = "GPL-2.0"
+evidence = "mask 0x00000002"
+
+[[term.source]]
+term = "_PSB_CE_DPM_OUT_OF_MEMORY_MT"
+kind = "flag"
+sgx545 = "0x0134[1]"
+meaning = "clear: DPM out of memory (macrotile)"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0516"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs; event bits shared by STATUS/ENABLE/CLEAR"
+
+[[term]]
+id = "G0841"
+name = "CR_EVENT_HOST_CLEAR.DPM_OUT_OF_MEMORY_ZLS"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_CLEAR_DPM_OUT_OF_MEMORY_ZLS"
+kind = "bitfield"
+sgx545 = "0x0134[25]"
+meaning = "clear: DPM out of memory (ZLS)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0517"
+licence = "GPL-2.0"
+evidence = "mask 0x02000000"
+
+[[term.source]]
+term = "_PSB_CE_DPM_OUT_OF_MEMORY_ZLS"
+kind = "flag"
+sgx545 = "0x0134[25]"
+meaning = "clear: DPM out of memory (ZLS)"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0518"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs; event bits shared by STATUS/ENABLE/CLEAR"
+
+[[term]]
+id = "G0842"
+name = "CR_EVENT_HOST_CLEAR.DPM_REACHED_MEM_THRESH"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_CLEAR_DPM_REACHED_MEM_THRESH"
+kind = "bitfield"
+sgx545 = "0x0134[3]"
+meaning = "clear: DPM page use reached the threshold"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0519"
+licence = "GPL-2.0"
+evidence = "mask 0x00000008"
+
+[[term.source]]
+term = "_PSB_CE_DPM_REACHED_MEM_THRESH"
+kind = "flag"
+sgx545 = "0x0134[3]"
+meaning = "clear: DPM page use reached the threshold"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0520"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs; event bits shared by STATUS/ENABLE/CLEAR"
+
+[[term]]
+id = "G0843"
+name = "CR_EVENT_HOST_CLEAR.DPM_STATE_CLEAR"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_CLEAR_DPM_STATE_CLEAR"
+kind = "bitfield"
+sgx545 = "0x0134[6]"
+meaning = "clear: DPM state clear done"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0521"
+licence = "GPL-2.0"
+evidence = "mask 0x00000040"
+
+[[term.source]]
+term = "_PSB_CE_DPM_STATE_CLEAR"
+kind = "flag"
+sgx545 = "0x0134[6]"
+meaning = "clear: DPM state clear done"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0522"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs; event bits shared by STATUS/ENABLE/CLEAR"
+
+[[term]]
+id = "G0844"
+name = "CR_EVENT_HOST_CLEAR.DPM_STATE_LOAD"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_CLEAR_DPM_STATE_LOAD"
+kind = "bitfield"
+sgx545 = "0x0134[5]"
+meaning = "clear: DPM state load done"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0523"
+licence = "GPL-2.0"
+evidence = "mask 0x00000020"
+
+[[term.source]]
+term = "_PSB_CE_DPM_STATE_LOAD"
+kind = "flag"
+sgx545 = "0x0134[5]"
+meaning = "clear: DPM state load done"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0524"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs; event bits shared by STATUS/ENABLE/CLEAR"
+
+[[term]]
+id = "G0845"
+name = "CR_EVENT_HOST_CLEAR.DPM_STATE_STORE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_CLEAR_DPM_STATE_STORE"
+kind = "bitfield"
+sgx545 = "0x0134[4]"
+meaning = "clear: DPM state store done"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0525"
+licence = "GPL-2.0"
+evidence = "mask 0x00000010"
+
+[[term.source]]
+term = "_PSB_CE_DPM_STATE_STORE"
+kind = "flag"
+sgx545 = "0x0134[4]"
+meaning = "clear: DPM state store done"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0526"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs; event bits shared by STATUS/ENABLE/CLEAR"
+
+[[term]]
+id = "G0846"
+name = "CR_EVENT_HOST_CLEAR.DPM_TA_MEM_FREE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_CLEAR_DPM_TA_MEM_FREE"
+kind = "bitfield"
+sgx545 = "0x0134[24]"
+meaning = "clear: DPM finished freeing TA pages"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0527"
+licence = "GPL-2.0"
+evidence = "mask 0x01000000"
+
+[[term.source]]
+term = "_PSB_CE_DPM_TA_MEM_FREE"
+kind = "flag"
+sgx545 = "0x0134[24]"
+meaning = "clear: DPM finished freeing TA pages"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0528"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs; event bits shared by STATUS/ENABLE/CLEAR"
+
+[[term]]
+id = "G0847"
+name = "CR_EVENT_HOST_CLEAR.ISP2_ZLS_CSW_FINISHED"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_CLEAR_ISP2_ZLS_CSW_FINISHED"
+kind = "bitfield"
+sgx545 = "0x0134[21]"
+meaning = "clear: second ISP finished a ZLS context switch"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0529"
+licence = "GPL-2.0"
+evidence = "mask 0x00200000"
+
+[[term]]
+id = "G0848"
+name = "CR_EVENT_HOST_CLEAR.ISP_END_TILE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_CLEAR_ISP_END_TILE"
+kind = "bitfield"
+sgx545 = "0x0134[23]"
+meaning = "clear: ISP finished a tile"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0530"
+licence = "GPL-2.0"
+evidence = "mask 0x00800000"
+
+[[term.source]]
+term = "_PSB_CE_ISP_END_TILE"
+kind = "flag"
+sgx545 = "0x0134[23]"
+meaning = "clear: ISP finished a tile"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0531"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs; event bits shared by STATUS/ENABLE/CLEAR"
+
+[[term]]
+id = "G0849"
+name = "CR_EVENT_HOST_CLEAR.ISP_VISIBILITY_FAIL"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_CLEAR_ISP_VISIBILITY_FAIL"
+kind = "bitfield"
+sgx545 = "0x0134[16]"
+meaning = "clear: ISP visibility-test fail"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0532"
+licence = "GPL-2.0"
+evidence = "mask 0x00010000"
+
+[[term.source]]
+term = "_PSB_CE_ISP_VISIBILITY_FAIL"
+kind = "flag"
+sgx545 = "0x0134[16]"
+meaning = "clear: ISP visibility-test fail"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0533"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs; event bits shared by STATUS/ENABLE/CLEAR"
+
+[[term]]
+id = "G0850"
+name = "CR_EVENT_HOST_CLEAR.MADD_CACHE_INVAL_COMPLETE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_CLEAR_MADD_CACHE_INVALCOMPLETE"
+kind = "bitfield"
+sgx545 = "0x0134[26]"
+meaning = "clear: MADD cache invalidate complete"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0534"
+licence = "GPL-2.0"
+evidence = "mask 0x04000000"
+
+[[term.source]]
+term = "_PSB_CE_MADD_CACHE_INVALCOMPLETE"
+kind = "flag"
+sgx545 = "0x0134[26]"
+meaning = "clear: MADD cache invalidate complete"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0535"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs; event bits shared by STATUS/ENABLE/CLEAR"
+
+[[term]]
+id = "G0851"
+name = "CR_EVENT_HOST_CLEAR.MASTER_INTERRUPT"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_CLEAR_MASTER_INTERRUPT"
+kind = "bitfield"
+sgx545 = "0x0134[31]"
+meaning = "clear: summary: some enabled event is pending"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0536"
+licence = "GPL-2.0"
+evidence = "mask 0x80000000"
+
+[[term.source]]
+term = "_PSB_CE_MASTER_INTERRUPT"
+kind = "flag"
+sgx545 = "0x0134[31]"
+meaning = "clear: summary: some enabled event is pending"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0537"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs; event bits shared by STATUS/ENABLE/CLEAR"
+
+[[term]]
+id = "G0852"
+name = "CR_EVENT_HOST_CLEAR.OTPM_FLUSHED"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_CLEAR_OTPM_FLUSHED"
+kind = "bitfield"
+sgx545 = "0x0134[19]"
+meaning = "clear: OTPM flushed"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0538"
+licence = "GPL-2.0"
+evidence = "mask 0x00080000"
+
+[[term.source]]
+term = "_PSB_CE_OTPM_FLUSHED"
+kind = "flag"
+sgx545 = "0x0134[19]"
+meaning = "clear: OTPM flushed"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0539"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs; event bits shared by STATUS/ENABLE/CLEAR"
+
+[[term]]
+id = "G0853"
+name = "CR_EVENT_HOST_CLEAR.OTPM_INV"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_CLEAR_OTPM_INV"
+kind = "bitfield"
+sgx545 = "0x0134[20]"
+meaning = "clear: OTPM invalidated"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0540"
+licence = "GPL-2.0"
+evidence = "mask 0x00100000"
+
+[[term.source]]
+term = "_PSB_CE_OTPM_INV"
+kind = "flag"
+sgx545 = "0x0134[20]"
+meaning = "clear: OTPM invalidated"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0541"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs; event bits shared by STATUS/ENABLE/CLEAR"
+
+[[term]]
+id = "G0854"
+name = "CR_EVENT_HOST_CLEAR.PIXELBE_END_RENDER"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_CLEAR_PIXELBE_END_RENDER"
+kind = "bitfield"
+sgx545 = "0x0134[18]"
+meaning = "clear: pixel back end finished the render"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0542"
+licence = "GPL-2.0"
+evidence = "mask 0x00040000"
+
+[[term.source]]
+term = "_PSB_CE_PIXELBE_END_RENDER"
+kind = "flag"
+sgx545 = "0x0134[18]"
+meaning = "clear: pixel back end finished the render"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0543"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs; event bits shared by STATUS/ENABLE/CLEAR"
+
+[[term]]
+id = "G0855"
+name = "CR_EVENT_HOST_CLEAR.SW_EVENT"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_CLEAR_SW_EVENT"
+kind = "bitfield"
+sgx545 = "0x0134[14]"
+meaning = "clear: software event"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0544"
+licence = "GPL-2.0"
+evidence = "mask 0x00004000"
+
+[[term.source]]
+term = "_PSB_CE_SW_EVENT"
+kind = "flag"
+sgx545 = "0x0134[14]"
+meaning = "clear: software event"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0545"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs; event bits shared by STATUS/ENABLE/CLEAR"
+
+[[term]]
+id = "G0856"
+name = "CR_EVENT_HOST_CLEAR.TA_DPM_FAULT"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_CLEAR_TA_DPM_FAULT"
+kind = "bitfield"
+sgx545 = "0x0134[28]"
+meaning = "clear: TA hit a DPM fault"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0546"
+licence = "GPL-2.0"
+evidence = "mask 0x10000000"
+
+[[term.source]]
+term = "_PSB_CE_TA_DPM_FAULT"
+kind = "flag"
+sgx545 = "0x0134[28]"
+meaning = "clear: TA hit a DPM fault"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0547"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs; event bits shared by STATUS/ENABLE/CLEAR"
+
+[[term]]
+id = "G0857"
+name = "CR_EVENT_HOST_CLEAR.TA_FINISHED"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_CLEAR_TA_FINISHED"
+kind = "bitfield"
+sgx545 = "0x0134[13]"
+meaning = "clear: TA pass finished"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0548"
+licence = "GPL-2.0"
+evidence = "mask 0x00002000"
+
+[[term.source]]
+term = "_PSB_CE_TA_FINISHED"
+kind = "flag"
+sgx545 = "0x0134[13]"
+meaning = "clear: TA pass finished"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0549"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs; event bits shared by STATUS/ENABLE/CLEAR"
+
+[[term]]
+id = "G0858"
+name = "CR_EVENT_HOST_CLEAR.TA_TERMINATE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_CLEAR_TA_TERMINATE"
+kind = "bitfield"
+sgx545 = "0x0134[12]"
+meaning = "clear: TA terminate done"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0550"
+licence = "GPL-2.0"
+evidence = "mask 0x00001000"
+
+[[term.source]]
+term = "_PSB_CE_TA_TERMINATE"
+kind = "flag"
+sgx545 = "0x0134[12]"
+meaning = "clear: TA terminate done"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0551"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs; event bits shared by STATUS/ENABLE/CLEAR"
+
+[[term]]
+id = "G0859"
+name = "CR_EVENT_HOST_CLEAR.TIMER"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_CLEAR_TIMER"
+kind = "bitfield"
+sgx545 = "0x0134[29]"
+meaning = "clear: event timer expired (CR_EVENT_TIMER)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0552"
+licence = "GPL-2.0"
+evidence = "mask 0x20000000"
+
+[[term.source]]
+term = "_PSB_CE_TIMER"
+kind = "flag"
+sgx545 = "0x0134[29]"
+meaning = "clear: event timer expired (CR_EVENT_TIMER)"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0553"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs; event bits shared by STATUS/ENABLE/CLEAR"
+
+[[term]]
+id = "G0860"
+name = "CR_EVENT_HOST_CLEAR.TPC_CLEAR"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_CLEAR_TPC_CLEAR"
+kind = "bitfield"
+sgx545 = "0x0134[11]"
+meaning = "clear: tail-pointer cache clear done"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0554"
+licence = "GPL-2.0"
+evidence = "mask 0x00000800"
+
+[[term.source]]
+term = "_PSB_CE_TPC_CLEAR"
+kind = "flag"
+sgx545 = "0x0134[11]"
+meaning = "clear: tail-pointer cache clear done"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0555"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs; event bits shared by STATUS/ENABLE/CLEAR"
+
+[[term]]
+id = "G0861"
+name = "CR_EVENT_HOST_CLEAR.TPC_FLUSH"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_CLEAR_TPC_FLUSH"
+kind = "bitfield"
+sgx545 = "0x0134[10]"
+meaning = "clear: tail-pointer cache flush done"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0556"
+licence = "GPL-2.0"
+evidence = "mask 0x00000400"
+
+[[term.source]]
+term = "_PSB_CE_TPC_FLUSH"
+kind = "flag"
+sgx545 = "0x0134[10]"
+meaning = "clear: tail-pointer cache flush done"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0557"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs; event bits shared by STATUS/ENABLE/CLEAR"

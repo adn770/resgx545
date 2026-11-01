@@ -1,0 +1,239 @@
+[[term]]
+id = "G1015"
+name = "transfer_cmd_shared"
+status = "named"
+
+[[term.source]]
+term = "SGXMKIF_TRANSFERCMD_SHARED"
+kind = "struct"
+sgx545 = "0xdc at TRANSFERCMD+0x0ac"
+meaning = "kernel-written sync/status block of the transfer command"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0691"
+licence = "GPL-2.0"
+evidence = "-"
+
+[[term]]
+id = "G1016"
+name = "transfer_cmd_shared.ctl_status_info"
+status = "named"
+
+[[term.source]]
+term = "sCtlStatusInfo"
+kind = "field"
+sgx545 = "TRANSFERCMD_SHARED+0xbc (TRANSFERCMD+0x168)"
+meaning = "status updates [4] incl. the fence"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0692"
+licence = "GPL-2.0"
+evidence = "offsets from the field order of the header; [CAP] E016: the closed stack's commands hold the status count at TRANSFERCMD+0x164 and the first status value at +0x16c"
+
+[[term]]
+id = "G1017"
+name = "transfer_cmd_shared.dst_syncs"
+status = "named"
+
+[[term.source]]
+term = "asDstSyncs"
+kind = "field"
+sgx545 = "TRANSFERCMD_SHARED+0x88 (TRANSFERCMD+0x134)"
+meaning = "destination sync [1]"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0693"
+licence = "GPL-2.0"
+evidence = "offsets from the field order of the header; [CAP] E016: the closed stack's commands hold the status count at TRANSFERCMD+0x164 and the first status value at +0x16c"
+
+[[term]]
+id = "G1018"
+name = "transfer_cmd_shared.num_dst_syncs"
+status = "named"
+
+[[term.source]]
+term = "ui32NumDstSyncs"
+kind = "field"
+sgx545 = "TRANSFERCMD_SHARED+0x84 (TRANSFERCMD+0x130)"
+meaning = "destination sync count"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0694"
+licence = "GPL-2.0"
+evidence = "offsets from the field order of the header; [CAP] E016: the closed stack's commands hold the status count at TRANSFERCMD+0x164 and the first status value at +0x16c"
+
+[[term]]
+id = "G1019"
+name = "transfer_cmd_shared.num_src_syncs"
+status = "named"
+
+[[term.source]]
+term = "ui32NumSrcSyncs"
+kind = "field"
+sgx545 = "TRANSFERCMD_SHARED+0x00 (TRANSFERCMD+0x0ac)"
+meaning = "source sync count"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0695"
+licence = "GPL-2.0"
+evidence = "offsets from the field order of the header; [CAP] E016: the closed stack's commands hold the status count at TRANSFERCMD+0x164 and the first status value at +0x16c"
+
+[[term]]
+id = "G1020"
+name = "transfer_cmd_shared.num_status_vals"
+status = "named"
+
+[[term.source]]
+term = "ui32NumStatusVals"
+kind = "field"
+sgx545 = "TRANSFERCMD_SHARED+0xb8 (TRANSFERCMD+0x164)"
+meaning = "status update count"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0696"
+licence = "GPL-2.0"
+evidence = "offsets from the field order of the header; [CAP] E016: the closed stack's commands hold the status count at TRANSFERCMD+0x164 and the first status value at +0x16c"
+
+[[term]]
+id = "G1021"
+name = "transfer_cmd_shared.src_syncs"
+status = "named"
+
+[[term.source]]
+term = "asSrcSyncs"
+kind = "field"
+sgx545 = "TRANSFERCMD_SHARED+0x04 (TRANSFERCMD+0x0b0)"
+meaning = "source syncs [8]"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0697"
+licence = "GPL-2.0"
+evidence = "offsets from the field order of the header; [CAP] E016: the closed stack's commands hold the status count at TRANSFERCMD+0x164 and the first status value at +0x16c"
+
+[[term]]
+id = "G1022"
+name = "transfer_cmd_shared.sync_3d_read_ops_complete_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "s3DSyncReadOpsCompleteDevVAddr"
+kind = "field"
+sgx545 = "TRANSFERCMD_SHARED+0xb4 (TRANSFERCMD+0x160)"
+meaning = "3D sync read-complete addr"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0698"
+licence = "GPL-2.0"
+evidence = "offsets from the field order of the header; [CAP] E016: the closed stack's commands hold the status count at TRANSFERCMD+0x164 and the first status value at +0x16c"
+
+[[term]]
+id = "G1023"
+name = "transfer_cmd_shared.sync_3d_read_ops_pending_val"
+status = "named"
+
+[[term.source]]
+term = "ui323DSyncReadOpsPendingVal"
+kind = "field"
+sgx545 = "TRANSFERCMD_SHARED+0xb0 (TRANSFERCMD+0x15c)"
+meaning = "3D sync read pending"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0699"
+licence = "GPL-2.0"
+evidence = "offsets from the field order of the header; [CAP] E016: the closed stack's commands hold the status count at TRANSFERCMD+0x164 and the first status value at +0x16c"
+
+[[term]]
+id = "G1024"
+name = "transfer_cmd_shared.sync_3d_write_ops_complete_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "s3DSyncWriteOpsCompleteDevVAddr"
+kind = "field"
+sgx545 = "TRANSFERCMD_SHARED+0xac (TRANSFERCMD+0x158)"
+meaning = "3D sync write-complete addr"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0700"
+licence = "GPL-2.0"
+evidence = "offsets from the field order of the header; [CAP] E016: the closed stack's commands hold the status count at TRANSFERCMD+0x164 and the first status value at +0x16c"
+
+[[term]]
+id = "G1025"
+name = "transfer_cmd_shared.sync_3d_write_ops_pending_val"
+status = "named"
+
+[[term.source]]
+term = "ui323DSyncWriteOpsPendingVal"
+kind = "field"
+sgx545 = "TRANSFERCMD_SHARED+0xa8 (TRANSFERCMD+0x154)"
+meaning = "3D sync write pending"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0701"
+licence = "GPL-2.0"
+evidence = "offsets from the field order of the header; [CAP] E016: the closed stack's commands hold the status count at TRANSFERCMD+0x164 and the first status value at +0x16c"
+
+[[term]]
+id = "G1026"
+name = "transfer_cmd_shared.sync_ta_read_ops_complete_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "sTASyncReadOpsCompleteDevVAddr"
+kind = "field"
+sgx545 = "TRANSFERCMD_SHARED+0xa4 (TRANSFERCMD+0x150)"
+meaning = "TA sync read-complete addr"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0702"
+licence = "GPL-2.0"
+evidence = "offsets from the field order of the header; [CAP] E016: the closed stack's commands hold the status count at TRANSFERCMD+0x164 and the first status value at +0x16c"
+
+[[term]]
+id = "G1027"
+name = "transfer_cmd_shared.sync_ta_read_ops_pending_val"
+status = "named"
+
+[[term.source]]
+term = "ui32TASyncReadOpsPendingVal"
+kind = "field"
+sgx545 = "TRANSFERCMD_SHARED+0xa0 (TRANSFERCMD+0x14c)"
+meaning = "TA sync read pending"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0703"
+licence = "GPL-2.0"
+evidence = "offsets from the field order of the header; [CAP] E016: the closed stack's commands hold the status count at TRANSFERCMD+0x164 and the first status value at +0x16c"
+
+[[term]]
+id = "G1028"
+name = "transfer_cmd_shared.sync_ta_write_ops_complete_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "sTASyncWriteOpsCompleteDevVAddr"
+kind = "field"
+sgx545 = "TRANSFERCMD_SHARED+0x9c (TRANSFERCMD+0x148)"
+meaning = "TA sync write-complete addr"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0704"
+licence = "GPL-2.0"
+evidence = "offsets from the field order of the header; [CAP] E016: the closed stack's commands hold the status count at TRANSFERCMD+0x164 and the first status value at +0x16c"
+
+[[term]]
+id = "G1029"
+name = "transfer_cmd_shared.sync_ta_write_ops_pending_val"
+status = "named"
+
+[[term.source]]
+term = "ui32TASyncWriteOpsPendingVal"
+kind = "field"
+sgx545 = "TRANSFERCMD_SHARED+0x98 (TRANSFERCMD+0x144)"
+meaning = "TA sync write pending"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0705"
+licence = "GPL-2.0"
+evidence = "offsets from the field order of the header; [CAP] E016: the closed stack's commands hold the status count at TRANSFERCMD+0x164 and the first status value at +0x16c"

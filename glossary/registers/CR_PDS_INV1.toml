@@ -1,0 +1,42 @@
+[[term]]
+id = "G0955"
+name = "CR_PDS_INV1"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_PDS_INV1"
+kind = "register"
+sgx545 = "0x0ad4"
+meaning = "invalidate PDS data cache 1"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0662"
+licence = "GPL-2.0"
+evidence = "SGX545 defs; same in 17 other trees"
+
+[[term.source]]
+term = "PSB_CR_PDS_INV1"
+kind = "register"
+sgx545 = "0x0ad4"
+meaning = "invalidate PDS data cache 1"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0663"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches our name EUR_CR_PDS_INV1"
+
+[[term]]
+id = "G0956"
+name = "CR_PDS_INV1.DSC"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_PDS_INV1_DSC"
+kind = "bitfield"
+sgx545 = "0x0ad4[0]"
+meaning = "invalidate this PDS data cache"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0664"
+licence = "GPL-2.0"
+evidence = "mask 0x00000001"

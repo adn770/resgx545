@@ -35,3 +35,180 @@ source = "linux-imagination"
 citation = "C0049"
 licence = "GPL-2.0-only OR MIT"
 evidence = "analogy to our CLKGATECTL; clock-gating control; CLKGATE->CLK rename; Rogue offset 0x0000"
+
+[[term]]
+id = "G0778"
+name = "CR_CLKGATECTL.AUTO_MAN_REG"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATECTL_AUTO_MAN_REG"
+kind = "bitfield"
+sgx545 = "0x0000[24]"
+meaning = "register-block clock gating: automatic or manual"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0433"
+licence = "GPL-2.0"
+evidence = "mask 0x01000000"
+
+[[term]]
+id = "G0779"
+name = "CR_CLKGATECTL.DPM_CLKG"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATECTL_DPM_CLKG"
+kind = "bitfield"
+sgx545 = "0x0000[11:10]"
+meaning = "clock-gating mode of the DPM (0 on, 1 off, 2 auto per psb_regs.h)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0099"
+licence = "GPL-2.0"
+evidence = "mask 0x00000c00"
+
+[[term.source]]
+term = "_PSB_C_CLKGATECTL_DPM_CLKG_MASK"
+kind = "bitfield"
+sgx545 = "0x0000[11:10]"
+meaning = "clock-gating mode of the DPM (0 on, 1 off, 2 auto per psb_regs.h)"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0434"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; SGX535 at bits 17:16; SGX545 bits per the tier-1 row"
+
+[[term]]
+id = "G0780"
+name = "CR_CLKGATECTL.ISP2_CLKG"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATECTL_ISP2_CLKG"
+kind = "bitfield"
+sgx545 = "0x0000[3:2]"
+meaning = "clock-gating mode of the second ISP (0 on, 1 off, 2 auto per psb_regs.h)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0435"
+licence = "GPL-2.0"
+evidence = "mask 0x0000000c"
+
+[[term]]
+id = "G0781"
+name = "CR_CLKGATECTL.ISP_CLKG"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATECTL_ISP_CLKG"
+kind = "bitfield"
+sgx545 = "0x0000[1:0]"
+meaning = "clock-gating mode of the ISP (0 on, 1 off, 2 auto per psb_regs.h)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0102"
+licence = "GPL-2.0"
+evidence = "mask 0x00000003"
+
+[[term.source]]
+term = "_PSB_C_CLKGATECTL_ISP_CLKG_MASK"
+kind = "bitfield"
+sgx545 = "0x0000[1:0]"
+meaning = "clock-gating mode of the ISP (0 on, 1 off, 2 auto per psb_regs.h)"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0436"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; SGX535 at bits 5:4; SGX545 bits per the tier-1 row"
+
+[[term]]
+id = "G0782"
+name = "CR_CLKGATECTL.MTE_CLKG"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATECTL_MTE_CLKG"
+kind = "bitfield"
+sgx545 = "0x0000[9:8]"
+meaning = "clock-gating mode of the MTE (0 on, 1 off, 2 auto per psb_regs.h)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0437"
+licence = "GPL-2.0"
+evidence = "mask 0x00000300"
+
+[[term]]
+id = "G0783"
+name = "CR_CLKGATECTL.PDS0_CLKG"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATECTL_PDS0_CLKG"
+kind = "bitfield"
+sgx545 = "0x0000[15:14]"
+meaning = "clock-gating mode of the PDS 0 (0 on, 1 off, 2 auto per psb_regs.h)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0438"
+licence = "GPL-2.0"
+evidence = "mask 0x0000c000"
+
+[[term]]
+id = "G0784"
+name = "CR_CLKGATECTL.TE_CLKG"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATECTL_TE_CLKG"
+kind = "bitfield"
+sgx545 = "0x0000[7:6]"
+meaning = "clock-gating mode of the TE (0 on, 1 off, 2 auto per psb_regs.h)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0439"
+licence = "GPL-2.0"
+evidence = "mask 0x000000c0"
+
+[[term]]
+id = "G0785"
+name = "CR_CLKGATECTL.TSP_CLKG"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATECTL_TSP_CLKG"
+kind = "bitfield"
+sgx545 = "0x0000[5:4]"
+meaning = "clock-gating mode of the TSP (0 on, 1 off, 2 auto per psb_regs.h)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0109"
+licence = "GPL-2.0"
+evidence = "mask 0x00000030"
+
+[[term.source]]
+term = "_PSB_C_CLKGATECTL_TSP_CLKG_MASK"
+kind = "bitfield"
+sgx545 = "0x0000[5:4]"
+meaning = "clock-gating mode of the TSP (0 on, 1 off, 2 auto per psb_regs.h)"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0440"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; SGX535 at bits 9:8; SGX545 bits per the tier-1 row"
+
+[[term]]
+id = "G0786"
+name = "CR_CLKGATECTL.VDM_CLKG"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATECTL_VDM_CLKG"
+kind = "bitfield"
+sgx545 = "0x0000[13:12]"
+meaning = "clock-gating mode of the VDM (0 on, 1 off, 2 auto per psb_regs.h)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0441"
+licence = "GPL-2.0"
+evidence = "mask 0x00003000"

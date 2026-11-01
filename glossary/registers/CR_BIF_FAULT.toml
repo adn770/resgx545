@@ -26,6 +26,22 @@ licence = "MIT"
 evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"
 
 [[term]]
+id = "G0771"
+name = "CR_BIF_FAULT.ADDR"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_FAULT_ADDR"
+kind = "bitfield"
+sgx545 = "0x0c08[31:12]"
+meaning = "faulting page address"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0427"
+licence = "GPL-2.0"
+evidence = "mask 0xfffff000"
+
+[[term]]
 id = "G0342"
 name = "CR_BIF_FAULT.CID"
 status = "named"

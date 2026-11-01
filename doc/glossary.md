@@ -107,16 +107,219 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 
 ### bitfield
 
+- `CR_CLKGATECTL.DPM_CLKG` G0779 (0x0000[11:10]): clock-gating mode of the DPM (0 on, 1 off, 2 auto
+  per psb_regs.h). From `EUR_CR_CLKGATECTL_DPM_CLKG` (1, sgx545-ce);
+  `_PSB_C_CLKGATECTL_DPM_CLKG_MASK` (1c, emgd-psb_regs).
+- `CR_CLKGATECTL.VDM_CLKG` G0786 (0x0000[13:12]): clock-gating mode of the VDM (0 on, 1 off, 2 auto
+  per psb_regs.h). From `EUR_CR_CLKGATECTL_VDM_CLKG` (1, sgx545-ce).
+- `CR_CLKGATECTL.PDS0_CLKG` G0783 (0x0000[15:14]): clock-gating mode of the PDS 0 (0 on, 1 off, 2
+  auto per psb_regs.h). From `EUR_CR_CLKGATECTL_PDS0_CLKG` (1, sgx545-ce).
+- `CR_CLKGATECTL.ISP_CLKG` G0781 (0x0000[1:0]): clock-gating mode of the ISP (0 on, 1 off, 2 auto
+  per psb_regs.h). From `EUR_CR_CLKGATECTL_ISP_CLKG` (1, sgx545-ce);
+  `_PSB_C_CLKGATECTL_ISP_CLKG_MASK` (1c, emgd-psb_regs).
+- `CR_CLKGATECTL.AUTO_MAN_REG` G0778 (0x0000[24]): register-block clock gating: automatic or manual.
+  From `EUR_CR_CLKGATECTL_AUTO_MAN_REG` (1, sgx545-ce).
+- `CR_CLKGATECTL.ISP2_CLKG` G0780 (0x0000[3:2]): clock-gating mode of the second ISP (0 on, 1 off, 2
+  auto per psb_regs.h). From `EUR_CR_CLKGATECTL_ISP2_CLKG` (1, sgx545-ce).
+- `CR_CLKGATECTL.TSP_CLKG` G0785 (0x0000[5:4]): clock-gating mode of the TSP (0 on, 1 off, 2 auto
+  per psb_regs.h). From `EUR_CR_CLKGATECTL_TSP_CLKG` (1, sgx545-ce);
+  `_PSB_C_CLKGATECTL_TSP_CLKG_MASK` (1c, emgd-psb_regs).
+- `CR_CLKGATECTL.TE_CLKG` G0784 (0x0000[7:6]): clock-gating mode of the TE (0 on, 1 off, 2 auto per
+  psb_regs.h). From `EUR_CR_CLKGATECTL_TE_CLKG` (1, sgx545-ce).
+- `CR_CLKGATECTL.MTE_CLKG` G0782 (0x0000[9:8]): clock-gating mode of the MTE (0 on, 1 off, 2 auto
+  per psb_regs.h). From `EUR_CR_CLKGATECTL_MTE_CLKG` (1, sgx545-ce).
+- `CR_CLKGATECTL2.TEX0_CLKG` G0794 (0x0004[11:10]): clock-gating mode of the texture unit 0 (0 on, 1
+  off, 2 auto per psb_regs.h). From `EUR_CR_CLKGATECTL2_TEX0_CLKG` (1, sgx545-ce).
+- `CR_CLKGATECTL2.MADD0_CLKG` G0790 (0x0004[13:12]): clock-gating mode of the MADD 0 (0 on, 1 off, 2
+  auto per psb_regs.h). From `EUR_CR_CLKGATECTL2_MADD0_CLKG` (1, sgx545-ce).
+- `CR_CLKGATECTL2.USE1_CLKG` G0798 (0x0004[15:14]): clock-gating mode of the USSE 1 (0 on, 1 off, 2
+  auto per psb_regs.h). From `EUR_CR_CLKGATECTL2_USE1_CLKG` (1, sgx545-ce).
+- `CR_CLKGATECTL2.ITR1_CLKG` G0789 (0x0004[17:16]): clock-gating mode of the iterator 1 (0 on, 1
+  off, 2 auto per psb_regs.h). From `EUR_CR_CLKGATECTL2_ITR1_CLKG` (1, sgx545-ce).
+- `CR_CLKGATECTL2.TEX1_CLKG` G0795 (0x0004[19:18]): clock-gating mode of the texture unit 1 (0 on, 1
+  off, 2 auto per psb_regs.h). From `EUR_CR_CLKGATECTL2_TEX1_CLKG` (1, sgx545-ce).
+- `CR_CLKGATECTL2.PBE_CLKG` G0792 (0x0004[1:0]): clock-gating mode of the PBE (0 on, 1 off, 2 auto
+  per psb_regs.h). From `EUR_CR_CLKGATECTL2_PBE_CLKG` (1, sgx545-ce).
+- `CR_CLKGATECTL2.MADD1_CLKG` G0791 (0x0004[21:20]): clock-gating mode of the MADD 1 (0 on, 1 off, 2
+  auto per psb_regs.h). From `EUR_CR_CLKGATECTL2_MADD1_CLKG` (1, sgx545-ce).
+- `CR_CLKGATECTL2.PDS1_CLKG` G0793 (0x0004[23:22]): clock-gating mode of the PDS 1 (0 on, 1 off, 2
+  auto per psb_regs.h). From `EUR_CR_CLKGATECTL2_PDS1_CLKG` (1, sgx545-ce).
+- `CR_CLKGATECTL2.CACHEL2_CLKG` G0787 (0x0004[3:2]): clock-gating mode of the L2 cache (0 on, 1 off,
+  2 auto per psb_regs.h). From `EUR_CR_CLKGATECTL2_CACHEL2_CLKG` (1, sgx545-ce).
+- `CR_CLKGATECTL2.UCACHEL2_CLKG` G0796 (0x0004[5:4]): clock-gating mode of the USSE L2 cache (0 on,
+  1 off, 2 auto per psb_regs.h). From `EUR_CR_CLKGATECTL2_UCACHEL2_CLKG` (1, sgx545-ce).
+- `CR_CLKGATECTL2.USE0_CLKG` G0797 (0x0004[7:6]): clock-gating mode of the USSE 0 (0 on, 1 off, 2
+  auto per psb_regs.h). From `EUR_CR_CLKGATECTL2_USE0_CLKG` (1, sgx545-ce).
+- `CR_CLKGATECTL2.ITR0_CLKG` G0788 (0x0004[9:8]): clock-gating mode of the iterator 0 (0 on, 1 off,
+  2 auto per psb_regs.h). From `EUR_CR_CLKGATECTL2_ITR0_CLKG` (1, sgx545-ce).
+- `CR_CLKGATESTATUS.ISP_CLKS` G0802 (0x0008[0]): clock state of the ISP. From
+  `EUR_CR_CLKGATESTATUS_ISP_CLKS` (1, sgx545-ce).
+- `CR_CLKGATESTATUS.UCACHEL2_CLKS` G0815 (0x0008[10]): clock state of the USSE L2 cache. From
+  `EUR_CR_CLKGATESTATUS_UCACHEL2_CLKS` (1, sgx545-ce).
+- `CR_CLKGATESTATUS.USE0_CLKS` G0816 (0x0008[11]): clock state of the USSE 0. From
+  `EUR_CR_CLKGATESTATUS_USE0_CLKS` (1, sgx545-ce).
+- `CR_CLKGATESTATUS.ITR0_CLKS` G0803 (0x0008[12]): clock state of the iterator 0. From
+  `EUR_CR_CLKGATESTATUS_ITR0_CLKS` (1, sgx545-ce).
+- `CR_CLKGATESTATUS.TEX0_CLKS` G0811 (0x0008[13]): clock state of the texture unit 0. From
+  `EUR_CR_CLKGATESTATUS_TEX0_CLKS` (1, sgx545-ce).
+- `CR_CLKGATESTATUS.MADD0_CLKS` G0805 (0x0008[14]): clock state of the MADD 0. From
+  `EUR_CR_CLKGATESTATUS_MADD0_CLKS` (1, sgx545-ce).
+- `CR_CLKGATESTATUS.USE1_CLKS` G0817 (0x0008[15]): clock state of the USSE 1. From
+  `EUR_CR_CLKGATESTATUS_USE1_CLKS` (1, sgx545-ce).
+- `CR_CLKGATESTATUS.ITR1_CLKS` G0804 (0x0008[16]): clock state of the iterator 1. From
+  `EUR_CR_CLKGATESTATUS_ITR1_CLKS` (1, sgx545-ce).
+- `CR_CLKGATESTATUS.TEX1_CLKS` G0812 (0x0008[17]): clock state of the texture unit 1. From
+  `EUR_CR_CLKGATESTATUS_TEX1_CLKS` (1, sgx545-ce).
+- `CR_CLKGATESTATUS.MADD1_CLKS` G0806 (0x0008[18]): clock state of the MADD 1. From
+  `EUR_CR_CLKGATESTATUS_MADD1_CLKS` (1, sgx545-ce).
+- `CR_CLKGATESTATUS.PDS1_CLKS` G0810 (0x0008[19]): clock state of the PDS 1. From
+  `EUR_CR_CLKGATESTATUS_PDS1_CLKS` (1, sgx545-ce).
+- `CR_CLKGATESTATUS.ISP2_CLKS` G0801 (0x0008[1]): clock state of the second ISP. From
+  `EUR_CR_CLKGATESTATUS_ISP2_CLKS` (1, sgx545-ce).
+- `CR_CLKGATESTATUS.TSP_CLKS` G0814 (0x0008[2]): clock state of the TSP. From
+  `EUR_CR_CLKGATESTATUS_TSP_CLKS` (1, sgx545-ce).
+- `CR_CLKGATESTATUS.TE_CLKS` G0813 (0x0008[3]): clock state of the TE. From
+  `EUR_CR_CLKGATESTATUS_TE_CLKS` (1, sgx545-ce).
+- `CR_CLKGATESTATUS.MTE_CLKS` G0807 (0x0008[4]): clock state of the MTE. From
+  `EUR_CR_CLKGATESTATUS_MTE_CLKS` (1, sgx545-ce).
+- `CR_CLKGATESTATUS.DPM_CLKS` G0800 (0x0008[5]): clock state of the DPM. From
+  `EUR_CR_CLKGATESTATUS_DPM_CLKS` (1, sgx545-ce).
+- `CR_CLKGATESTATUS.VDM_CLKS` G0818 (0x0008[6]): clock state of the VDM. From
+  `EUR_CR_CLKGATESTATUS_VDM_CLKS` (1, sgx545-ce).
+- `CR_CLKGATESTATUS.PDS0_CLKS` G0809 (0x0008[7]): clock state of the PDS 0. From
+  `EUR_CR_CLKGATESTATUS_PDS0_CLKS` (1, sgx545-ce).
+- `CR_CLKGATESTATUS.PBE_CLKS` G0808 (0x0008[8]): clock state of the PBE. From
+  `EUR_CR_CLKGATESTATUS_PBE_CLKS` (1, sgx545-ce).
+- `CR_CLKGATESTATUS.CACHEL2_CLKS` G0799 (0x0008[9]): clock state of the L2 cache. From
+  `EUR_CR_CLKGATESTATUS_CACHEL2_CLKS` (1, sgx545-ce).
+- `CR_CORE_ID.CONFIG` G0819 (0x001c[15:0]): core configuration. From `EUR_CR_CORE_ID_CONFIG` (1,
+  sgx545-ce); `_PSB_CC_ID_CONFIG_MASK` (1c, emgd-psb_regs); `EUR_CR_CORE_ID_CONFIG` (1c, sgx545-ce).
+- `CR_CORE_ID.ID` G0820 (0x001c[31:16]): core identifier. From `EUR_CR_CORE_ID_ID` (1, sgx545-ce);
+  `_PSB_CC_ID_ID_MASK` (1c, emgd-psb_regs); `EUR_CR_CORE_ID_ID` (1c, sgx545-ce).
+- `CR_CORE_REVISION.MINOR` G0824 (0x0020[15:8]): minor revision. From `EUR_CR_CORE_REVISION_MINOR`
+  (1, sgx545-ce); `_PSB_CC_REVISION_MINOR_MASK` (1c, emgd-psb_regs); `EUR_CR_CORE_REVISION_MINOR`
+  (1c, sgx545-ce).
+- `CR_CORE_REVISION.MAJOR` G0823 (0x0020[23:16]): major revision. From `EUR_CR_CORE_REVISION_MAJOR`
+  (1, sgx545-ce); `_PSB_CC_REVISION_MAJOR_MASK` (1c, emgd-psb_regs); `EUR_CR_CORE_REVISION_MAJOR`
+  (1c, sgx545-ce).
+- `CR_CORE_REVISION.DESIGNER` G0821 (0x0020[31:24]): designer revision. From
+  `EUR_CR_CORE_REVISION_DESIGNER` (1, sgx545-ce); `_PSB_CC_REVISION_DESIGNER_MASK` (1c,
+  emgd-psb_regs); `EUR_CR_CORE_REVISION_DESIGNER` (1c, sgx545-ce).
+- `CR_CORE_REVISION.MAINTENANCE` G0822 (0x0020[7:0]): maintenance revision. From
+  `EUR_CR_CORE_REVISION_MAINTENANCE` (1, sgx545-ce); `_PSB_CC_REVISION_MAINTENANCE_MASK` (1c,
+  emgd-psb_regs); `EUR_CR_CORE_REVISION_MAINTENANCE` (1c, sgx545-ce).
 - `CR_HWPERF_CTRL.GROUP` G0416 (0x0040[12:9]): counter group the EDM selects from host control dword
   15 when HWPerf is on; what each group counts is not measured here (PVRTune's groups: 0 overview, 1
   triangles and vertices, 2 tiling, 3 ISP, 4 TSP, 5 USSE, 6 texturing) [infer]. From
   `CR_HWPERF_CTRL.GROUP` (ours, resgx545).
+- `CR_SOFT_RESET.BIF_RESET` G0959 (0x0080[0]): hold the BIF (MMU) in reset. From
+  `EUR_CR_SOFT_RESET_BIF_RESET` (1, sgx545-ce).
+- `CR_SOFT_RESET.DPM_RESET` G0960 (0x0080[1]): hold the DPM in reset. From
+  `EUR_CR_SOFT_RESET_DPM_RESET` (1, sgx545-ce).
 - `CR_SOFT_RESET.TA_RESET` G0439 (0x0080[2]): hold the TA in reset. From
   `EUR_CR_SOFT_RESET_TA_RESET` (1, sgx545-ce).
+- `CR_SOFT_RESET.USE_RESET` G0963 (0x0080[3]): hold the USSE in reset. From
+  `EUR_CR_SOFT_RESET_USE_RESET` (1, sgx545-ce).
+- `CR_SOFT_RESET.ISP_RESET` G0961 (0x0080[4]): hold the ISP in reset. From
+  `EUR_CR_SOFT_RESET_ISP_RESET` (1, sgx545-ce).
+- `CR_SOFT_RESET.TSP_RESET` G0962 (0x0080[5]): hold the TSP in reset. From
+  `EUR_CR_SOFT_RESET_TSP_RESET` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE2.DPM_TA_FREE_LOAD` G0910 (0x0110[0]): send to host: DPM TA free-list load
+  done. From `EUR_CR_EVENT_HOST_ENABLE2_DPM_TA_FREE_LOAD` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE2.DCU_INVAL_COMPLETE` G0906 (0x0110[10]): send to host: data cache invalidate
+  complete. From `EUR_CR_EVENT_HOST_ENABLE2_DCU_INVALCOMPLETE` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE2.OTPM_FLUSHED_INV` G0914 (0x0110[11]): send to host: OTPM flush and
+  invalidate done. From `EUR_CR_EVENT_HOST_ENABLE2_OTPM_FLUSHED_INV` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE2.OTPM_MEM_CLEARED` G0915 (0x0110[12]): send to host: OTPM memory cleared.
+  From `EUR_CR_EVENT_HOST_ENABLE2_OTPM_MEM_CLEARED` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE2.VDM_TASK_KICKED` G0920 (0x0110[13]): send to host: VDM task kicked. From
+  `EUR_CR_EVENT_HOST_ENABLE2_VDM_TASK_KICKED` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE2.VDM_CONTEXT_LOAD` G0919 (0x0110[14]): send to host: VDM context load done.
+  From `EUR_CR_EVENT_HOST_ENABLE2_VDM_CONTEXT_LOAD` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE2.MTE_STATE_FLUSHED` G0913 (0x0110[15]): send to host: MTE state flushed.
+  From `EUR_CR_EVENT_HOST_ENABLE2_MTE_STATE_FLUSHED` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE2.DPM_3D_FREE_LOAD` G0907 (0x0110[1]): send to host: DPM 3D free-list load
+  done. From `EUR_CR_EVENT_HOST_ENABLE2_DPM_3D_FREE_LOAD` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE2.DPM_HOST_FREE_LOAD` G0909 (0x0110[2]): send to host: DPM host free-list
+  load done. From `EUR_CR_EVENT_HOST_ENABLE2_DPM_HOST_FREE_LOAD` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE2.DPM_DHOST_FREE_LOAD` G0908 (0x0110[3]): send to host: DPM host-deallocation
+  free-list load done. From `EUR_CR_EVENT_HOST_ENABLE2_DPM_DHOST_FREE_LOAD` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE2.TRIG_DL` G0917 (0x0110[5]): send to host: DL trigger. From
+  `EUR_CR_EVENT_HOST_ENABLE2_TRIG_DL` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE2.TRIG_3D` G0916 (0x0110[6]): send to host: 3D trigger. From
+  `EUR_CR_EVENT_HOST_ENABLE2_TRIG_3D` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE2.TRIG_TA` G0918 (0x0110[7]): send to host: TA trigger. From
+  `EUR_CR_EVENT_HOST_ENABLE2_TRIG_TA` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE2.GSG_LOADED` G0912 (0x0110[8]): send to host: GSG state loaded. From
+  `EUR_CR_EVENT_HOST_ENABLE2_GSG_LOADED` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE2.GSG_FLUSHED` G0911 (0x0110[9]): send to host: GSG state flushed. From
+  `EUR_CR_EVENT_HOST_ENABLE2_GSG_FLUSHED` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR2.DPM_TA_FREE_LOAD` G0866 (0x0114[0]): clear: DPM TA free-list load done. From
+  `EUR_CR_EVENT_HOST_CLEAR2_DPM_TA_FREE_LOAD` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR2.DCU_INVAL_COMPLETE` G0862 (0x0114[10]): clear: data cache invalidate
+  complete. From `EUR_CR_EVENT_HOST_CLEAR2_DCU_INVALCOMPLETE` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR2.OTPM_FLUSHED_INV` G0870 (0x0114[11]): clear: OTPM flush and invalidate done.
+  From `EUR_CR_EVENT_HOST_CLEAR2_OTPM_FLUSHED_INV` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR2.OTPM_MEM_CLEARED` G0871 (0x0114[12]): clear: OTPM memory cleared. From
+  `EUR_CR_EVENT_HOST_CLEAR2_OTPM_MEM_CLEARED` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR2.VDM_TASK_KICKED` G0876 (0x0114[13]): clear: VDM task kicked. From
+  `EUR_CR_EVENT_HOST_CLEAR2_VDM_TASK_KICKED` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR2.VDM_CONTEXT_LOAD` G0875 (0x0114[14]): clear: VDM context load done. From
+  `EUR_CR_EVENT_HOST_CLEAR2_VDM_CONTEXT_LOAD` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR2.MTE_STATE_FLUSHED` G0869 (0x0114[15]): clear: MTE state flushed. From
+  `EUR_CR_EVENT_HOST_CLEAR2_MTE_STATE_FLUSHED` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR2.DPM_3D_FREE_LOAD` G0863 (0x0114[1]): clear: DPM 3D free-list load done. From
+  `EUR_CR_EVENT_HOST_CLEAR2_DPM_3D_FREE_LOAD` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR2.DPM_HOST_FREE_LOAD` G0865 (0x0114[2]): clear: DPM host free-list load done.
+  From `EUR_CR_EVENT_HOST_CLEAR2_DPM_HOST_FREE_LOAD` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR2.DPM_DHOST_FREE_LOAD` G0864 (0x0114[3]): clear: DPM host-deallocation
+  free-list load done. From `EUR_CR_EVENT_HOST_CLEAR2_DPM_DHOST_FREE_LOAD` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR2.TRIG_DL` G0873 (0x0114[5]): clear: DL trigger. From
+  `EUR_CR_EVENT_HOST_CLEAR2_TRIG_DL` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR2.TRIG_3D` G0872 (0x0114[6]): clear: 3D trigger. From
+  `EUR_CR_EVENT_HOST_CLEAR2_TRIG_3D` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR2.TRIG_TA` G0874 (0x0114[7]): clear: TA trigger. From
+  `EUR_CR_EVENT_HOST_CLEAR2_TRIG_TA` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR2.GSG_LOADED` G0868 (0x0114[8]): clear: GSG state loaded. From
+  `EUR_CR_EVENT_HOST_CLEAR2_GSG_LOADED` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR2.GSG_FLUSHED` G0867 (0x0114[9]): clear: GSG state flushed. From
+  `EUR_CR_EVENT_HOST_CLEAR2_GSG_FLUSHED` (1, sgx545-ce).
+- `CR_EVENT_STATUS2.DPM_TA_FREE_LOAD` G0938 (0x0118[0]): status: DPM TA free-list load done. From
+  `EUR_CR_EVENT_STATUS2_DPM_TA_FREE_LOAD` (1, sgx545-ce).
+- `CR_EVENT_STATUS2.DCU_INVAL_COMPLETE` G0934 (0x0118[10]): status: data cache invalidate complete.
+  From `EUR_CR_EVENT_STATUS2_DCU_INVALCOMPLETE` (1, sgx545-ce).
+- `CR_EVENT_STATUS2.OTPM_FLUSHED_INV` G0942 (0x0118[11]): status: OTPM flush and invalidate done.
+  From `EUR_CR_EVENT_STATUS2_OTPM_FLUSHED_INV` (1, sgx545-ce).
+- `CR_EVENT_STATUS2.OTPM_MEM_CLEARED` G0943 (0x0118[12]): status: OTPM memory cleared. From
+  `EUR_CR_EVENT_STATUS2_OTPM_MEM_CLEARED` (1, sgx545-ce).
+- `CR_EVENT_STATUS2.VDM_TASK_KICKED` G0948 (0x0118[13]): status: VDM task kicked. From
+  `EUR_CR_EVENT_STATUS2_VDM_TASK_KICKED` (1, sgx545-ce).
+- `CR_EVENT_STATUS2.VDM_CONTEXT_LOAD` G0947 (0x0118[14]): status: VDM context load done. From
+  `EUR_CR_EVENT_STATUS2_VDM_CONTEXT_LOAD` (1, sgx545-ce).
+- `CR_EVENT_STATUS2.MTE_STATE_FLUSHED` G0941 (0x0118[15]): status: MTE state flushed. From
+  `EUR_CR_EVENT_STATUS2_MTE_STATE_FLUSHED` (1, sgx545-ce).
+- `CR_EVENT_STATUS2.DPM_3D_FREE_LOAD` G0935 (0x0118[1]): status: DPM 3D free-list load done. From
+  `EUR_CR_EVENT_STATUS2_DPM_3D_FREE_LOAD` (1, sgx545-ce).
+- `CR_EVENT_STATUS2.DPM_HOST_FREE_LOAD` G0937 (0x0118[2]): status: DPM host free-list load done.
+  From `EUR_CR_EVENT_STATUS2_DPM_HOST_FREE_LOAD` (1, sgx545-ce).
+- `CR_EVENT_STATUS2.DPM_DHOST_FREE_LOAD` G0936 (0x0118[3]): status: DPM host-deallocation free-list
+  load done. From `EUR_CR_EVENT_STATUS2_DPM_DHOST_FREE_LOAD` (1, sgx545-ce).
+- `CR_EVENT_STATUS2.TRIG_DL` G0945 (0x0118[5]): status: DL trigger. From
+  `EUR_CR_EVENT_STATUS2_TRIG_DL` (1, sgx545-ce).
+- `CR_EVENT_STATUS2.TRIG_3D` G0944 (0x0118[6]): status: 3D trigger. From
+  `EUR_CR_EVENT_STATUS2_TRIG_3D` (1, sgx545-ce).
+- `CR_EVENT_STATUS2.TRIG_TA` G0946 (0x0118[7]): status: TA trigger. From
+  `EUR_CR_EVENT_STATUS2_TRIG_TA` (1, sgx545-ce).
+- `CR_EVENT_STATUS2.GSG_LOADED` G0940 (0x0118[8]): status: GSG state loaded. From
+  `EUR_CR_EVENT_STATUS2_GSG_LOADED` (1, sgx545-ce).
+- `CR_EVENT_STATUS2.GSG_FLUSHED` G0939 (0x0118[9]): status: GSG state flushed. From
+  `EUR_CR_EVENT_STATUS2_GSG_FLUSHED` (1, sgx545-ce).
 - `CR_EVENT_STATUS.DPM_3D_MEM_FREE` G0398 (0x012c[0]): status: DPM finished freeing 3D pages. From
   `EUR_CR_EVENT_STATUS_DPM_3D_MEM_FREE` (1, sgx545-ce).
 - `CR_EVENT_STATUS.TPC_FLUSH` G0351 (0x012c[10]): status: tail-pointer cache flush done. From
   `EUR_CR_EVENT_STATUS_TPC_FLUSH` (1, sgx545-ce).
+- `CR_EVENT_STATUS.TPC_CLEAR` G0932 (0x012c[11]): status: tail-pointer cache clear done. From
+  `EUR_CR_EVENT_STATUS_TPC_CLEAR` (1, sgx545-ce).
 - `CR_EVENT_STATUS.TA_TERMINATE` G0404 (0x012c[12]): status: TA terminate done. From
   `EUR_CR_EVENT_STATUS_TA_TERMINATE` (1, sgx545-ce).
 - `CR_EVENT_STATUS.TA_FINISHED` G0403 (0x012c[13]): status: TA pass finished. From
@@ -125,8 +328,12 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   `EUR_CR_EVENT_STATUS_SW_EVENT` (1, sgx545-ce).
 - `CR_EVENT_STATUS.BREAKPOINT` G0397 (0x012c[15]): status: breakpoint hit. From
   `EUR_CR_EVENT_STATUS_BREAKPOINT` (1, sgx545-ce).
+- `CR_EVENT_STATUS.ISP_VISIBILITY_FAIL` G0927 (0x012c[16]): status: ISP visibility-test fail. From
+  `EUR_CR_EVENT_STATUS_ISP_VISIBILITY_FAIL` (1, sgx545-ce).
 - `CR_EVENT_STATUS.PIXELBE_END_RENDER` G0402 (0x012c[18]): status: pixel back end finished the
   render. From `EUR_CR_EVENT_STATUS_PIXELBE_END_RENDER` (1, sgx545-ce).
+- `CR_EVENT_STATUS.OTPM_FLUSHED` G0930 (0x012c[19]): status: OTPM flushed. From
+  `EUR_CR_EVENT_STATUS_OTPM_FLUSHED` (1, sgx545-ce).
 - `CR_EVENT_STATUS.DPM_OUT_OF_MEMORY_MT` G0400 (0x012c[1]): status: DPM out of memory (macrotile).
   From `EUR_CR_EVENT_STATUS_DPM_OUT_OF_MEMORY_MT` (1, sgx545-ce).
 - `CR_EVENT_STATUS.OTPM_INV` G0350 (0x012c[20]): status: OTPM invalidated. From
@@ -135,20 +342,154 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   context switch. From `EUR_CR_EVENT_STATUS_ISP2_ZLS_CSW_FINISHED` (1, sgx545-ce).
 - `CR_EVENT_STATUS.DPM_INIT_END` G0347 (0x012c[22]): status: DPM initialisation finished. From
   `EUR_CR_EVENT_STATUS_DPM_INITEND` (1, sgx545-ce).
+- `CR_EVENT_STATUS.ISP_END_TILE` G0926 (0x012c[23]): status: ISP finished a tile. From
+  `EUR_CR_EVENT_STATUS_ISP_END_TILE` (1, sgx545-ce).
+- `CR_EVENT_STATUS.DPM_TA_MEM_FREE` G0925 (0x012c[24]): status: DPM finished freeing TA pages. From
+  `EUR_CR_EVENT_STATUS_DPM_TA_MEM_FREE` (1, sgx545-ce).
+- `CR_EVENT_STATUS.DPM_OUT_OF_MEMORY_ZLS` G0922 (0x012c[25]): status: DPM out of memory (ZLS). From
+  `EUR_CR_EVENT_STATUS_DPM_OUT_OF_MEMORY_ZLS` (1, sgx545-ce).
+- `CR_EVENT_STATUS.MADD_CACHE_INVAL_COMPLETE` G0928 (0x012c[26]): status: MADD cache invalidate
+  complete. From `EUR_CR_EVENT_STATUS_MADD_CACHE_INVALCOMPLETE` (1, sgx545-ce).
+- `CR_EVENT_STATUS.TA_DPM_FAULT` G0931 (0x012c[28]): status: TA hit a DPM fault. From
+  `EUR_CR_EVENT_STATUS_TA_DPM_FAULT` (1, sgx545-ce).
 - `CR_EVENT_STATUS.TIMER` G0405 (0x012c[29]): status: event timer expired (CR_EVENT_TIMER). From
   `EUR_CR_EVENT_STATUS_TIMER` (1, sgx545-ce).
 - `CR_EVENT_STATUS.DPM_OUT_OF_MEMORY_GBL` G0399 (0x012c[2]): status: DPM out of memory (global
   list). From `EUR_CR_EVENT_STATUS_DPM_OUT_OF_MEMORY_GBL` (1, sgx545-ce).
+- `CR_EVENT_STATUS.MASTER_INTERRUPT` G0929 (0x012c[31]): status: summary: some enabled event is
+  pending. From `EUR_CR_EVENT_STATUS_MASTER_INTERRUPT` (1, sgx545-ce).
 - `CR_EVENT_STATUS.DPM_REACHED_MEM_THRESH` G0401 (0x012c[3]): status: DPM page use reached the
   threshold. From `EUR_CR_EVENT_STATUS_DPM_REACHED_MEM_THRESH` (1, sgx545-ce).
 - `CR_EVENT_STATUS.DPM_STATE_STORE` G0348 (0x012c[4]): status: DPM state store done. From
   `EUR_CR_EVENT_STATUS_DPM_STATE_STORE` (1, sgx545-ce).
+- `CR_EVENT_STATUS.DPM_STATE_LOAD` G0924 (0x012c[5]): status: DPM state load done. From
+  `EUR_CR_EVENT_STATUS_DPM_STATE_LOAD` (1, sgx545-ce).
+- `CR_EVENT_STATUS.DPM_STATE_CLEAR` G0923 (0x012c[6]): status: DPM state clear done. From
+  `EUR_CR_EVENT_STATUS_DPM_STATE_CLEAR` (1, sgx545-ce).
 - `CR_EVENT_STATUS.DPM_CONTROL_STORE` G0346 (0x012c[7]): status: DPM control store done. From
   `EUR_CR_EVENT_STATUS_DPM_CONTROL_STORE` (1, sgx545-ce).
 - `CR_EVENT_STATUS.DPM_CONTROL_LOAD` G0345 (0x012c[8]): status: DPM control load done. From
   `EUR_CR_EVENT_STATUS_DPM_CONTROL_LOAD` (1, sgx545-ce).
 - `CR_EVENT_STATUS.DPM_CONTROL_CLEAR` G0344 (0x012c[9]): status: DPM control clear done. From
   `EUR_CR_EVENT_STATUS_DPM_CONTROL_CLEAR` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE.DPM_3D_MEM_FREE` G0878 (0x0130[0]): send to host: DPM finished freeing 3D
+  pages. From `EUR_CR_EVENT_HOST_ENABLE_DPM_3D_MEM_FREE` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE.TPC_FLUSH` G0905 (0x0130[10]): send to host: tail-pointer cache flush done.
+  From `EUR_CR_EVENT_HOST_ENABLE_TPC_FLUSH` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE.TPC_CLEAR` G0904 (0x0130[11]): send to host: tail-pointer cache clear done.
+  From `EUR_CR_EVENT_HOST_ENABLE_TPC_CLEAR` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE.TA_TERMINATE` G0902 (0x0130[12]): send to host: TA terminate done. From
+  `EUR_CR_EVENT_HOST_ENABLE_TA_TERMINATE` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE.TA_FINISHED` G0901 (0x0130[13]): send to host: TA pass finished. From
+  `EUR_CR_EVENT_HOST_ENABLE_TA_FINISHED` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE.SW_EVENT` G0899 (0x0130[14]): send to host: software event. From
+  `EUR_CR_EVENT_HOST_ENABLE_SW_EVENT` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE.BREAKPOINT` G0877 (0x0130[15]): send to host: breakpoint hit. From
+  `EUR_CR_EVENT_HOST_ENABLE_BREAKPOINT` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE.ISP_VISIBILITY_FAIL` G0893 (0x0130[16]): send to host: ISP visibility-test
+  fail. From `EUR_CR_EVENT_HOST_ENABLE_ISP_VISIBILITY_FAIL` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE.PIXELBE_END_RENDER` G0898 (0x0130[18]): send to host: pixel back end
+  finished the render. From `EUR_CR_EVENT_HOST_ENABLE_PIXELBE_END_RENDER` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE.OTPM_FLUSHED` G0896 (0x0130[19]): send to host: OTPM flushed. From
+  `EUR_CR_EVENT_HOST_ENABLE_OTPM_FLUSHED` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE.DPM_OUT_OF_MEMORY_MT` G0884 (0x0130[1]): send to host: DPM out of memory
+  (macrotile). From `EUR_CR_EVENT_HOST_ENABLE_DPM_OUT_OF_MEMORY_MT` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE.OTPM_INV` G0897 (0x0130[20]): send to host: OTPM invalidated. From
+  `EUR_CR_EVENT_HOST_ENABLE_OTPM_INV` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE.ISP2_ZLS_CSW_FINISHED` G0891 (0x0130[21]): send to host: second ISP finished
+  a ZLS context switch. From `EUR_CR_EVENT_HOST_ENABLE_ISP2_ZLS_CSW_FINISHED` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE.DPM_INIT_END` G0882 (0x0130[22]): send to host: DPM initialisation finished.
+  From `EUR_CR_EVENT_HOST_ENABLE_DPM_INITEND` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE.ISP_END_TILE` G0892 (0x0130[23]): send to host: ISP finished a tile. From
+  `EUR_CR_EVENT_HOST_ENABLE_ISP_END_TILE` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE.DPM_TA_MEM_FREE` G0890 (0x0130[24]): send to host: DPM finished freeing TA
+  pages. From `EUR_CR_EVENT_HOST_ENABLE_DPM_TA_MEM_FREE` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE.DPM_OUT_OF_MEMORY_ZLS` G0885 (0x0130[25]): send to host: DPM out of memory
+  (ZLS). From `EUR_CR_EVENT_HOST_ENABLE_DPM_OUT_OF_MEMORY_ZLS` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE.MADD_CACHE_INVAL_COMPLETE` G0894 (0x0130[26]): send to host: MADD cache
+  invalidate complete. From `EUR_CR_EVENT_HOST_ENABLE_MADD_CACHE_INVALCOMPLETE` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE.TA_DPM_FAULT` G0900 (0x0130[28]): send to host: TA hit a DPM fault. From
+  `EUR_CR_EVENT_HOST_ENABLE_TA_DPM_FAULT` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE.TIMER` G0903 (0x0130[29]): send to host: event timer expired
+  (CR_EVENT_TIMER). From `EUR_CR_EVENT_HOST_ENABLE_TIMER` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE.DPM_OUT_OF_MEMORY_GBL` G0883 (0x0130[2]): send to host: DPM out of memory
+  (global list). From `EUR_CR_EVENT_HOST_ENABLE_DPM_OUT_OF_MEMORY_GBL` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE.MASTER_INTERRUPT` G0895 (0x0130[31]): send to host: summary: some enabled
+  event is pending. From `EUR_CR_EVENT_HOST_ENABLE_MASTER_INTERRUPT` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE.DPM_REACHED_MEM_THRESH` G0886 (0x0130[3]): send to host: DPM page use
+  reached the threshold. From `EUR_CR_EVENT_HOST_ENABLE_DPM_REACHED_MEM_THRESH` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE.DPM_STATE_STORE` G0889 (0x0130[4]): send to host: DPM state store done. From
+  `EUR_CR_EVENT_HOST_ENABLE_DPM_STATE_STORE` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE.DPM_STATE_LOAD` G0888 (0x0130[5]): send to host: DPM state load done. From
+  `EUR_CR_EVENT_HOST_ENABLE_DPM_STATE_LOAD` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE.DPM_STATE_CLEAR` G0887 (0x0130[6]): send to host: DPM state clear done. From
+  `EUR_CR_EVENT_HOST_ENABLE_DPM_STATE_CLEAR` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE.DPM_CONTROL_STORE` G0881 (0x0130[7]): send to host: DPM control store done.
+  From `EUR_CR_EVENT_HOST_ENABLE_DPM_CONTROL_STORE` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE.DPM_CONTROL_LOAD` G0880 (0x0130[8]): send to host: DPM control load done.
+  From `EUR_CR_EVENT_HOST_ENABLE_DPM_CONTROL_LOAD` (1, sgx545-ce).
+- `CR_EVENT_HOST_ENABLE.DPM_CONTROL_CLEAR` G0879 (0x0130[9]): send to host: DPM control clear done.
+  From `EUR_CR_EVENT_HOST_ENABLE_DPM_CONTROL_CLEAR` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR.DPM_3D_MEM_FREE` G0834 (0x0134[0]): clear: DPM finished freeing 3D pages.
+  From `EUR_CR_EVENT_HOST_CLEAR_DPM_3D_MEM_FREE` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR.TPC_FLUSH` G0861 (0x0134[10]): clear: tail-pointer cache flush done. From
+  `EUR_CR_EVENT_HOST_CLEAR_TPC_FLUSH` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR.TPC_CLEAR` G0860 (0x0134[11]): clear: tail-pointer cache clear done. From
+  `EUR_CR_EVENT_HOST_CLEAR_TPC_CLEAR` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR.TA_TERMINATE` G0858 (0x0134[12]): clear: TA terminate done. From
+  `EUR_CR_EVENT_HOST_CLEAR_TA_TERMINATE` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR.TA_FINISHED` G0857 (0x0134[13]): clear: TA pass finished. From
+  `EUR_CR_EVENT_HOST_CLEAR_TA_FINISHED` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR.SW_EVENT` G0855 (0x0134[14]): clear: software event. From
+  `EUR_CR_EVENT_HOST_CLEAR_SW_EVENT` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR.BREAKPOINT` G0833 (0x0134[15]): clear: breakpoint hit. From
+  `EUR_CR_EVENT_HOST_CLEAR_BREAKPOINT` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR.ISP_VISIBILITY_FAIL` G0849 (0x0134[16]): clear: ISP visibility-test fail.
+  From `EUR_CR_EVENT_HOST_CLEAR_ISP_VISIBILITY_FAIL` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR.PIXELBE_END_RENDER` G0854 (0x0134[18]): clear: pixel back end finished the
+  render. From `EUR_CR_EVENT_HOST_CLEAR_PIXELBE_END_RENDER` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR.OTPM_FLUSHED` G0852 (0x0134[19]): clear: OTPM flushed. From
+  `EUR_CR_EVENT_HOST_CLEAR_OTPM_FLUSHED` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR.DPM_OUT_OF_MEMORY_MT` G0840 (0x0134[1]): clear: DPM out of memory
+  (macrotile). From `EUR_CR_EVENT_HOST_CLEAR_DPM_OUT_OF_MEMORY_MT` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR.OTPM_INV` G0853 (0x0134[20]): clear: OTPM invalidated. From
+  `EUR_CR_EVENT_HOST_CLEAR_OTPM_INV` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR.ISP2_ZLS_CSW_FINISHED` G0847 (0x0134[21]): clear: second ISP finished a ZLS
+  context switch. From `EUR_CR_EVENT_HOST_CLEAR_ISP2_ZLS_CSW_FINISHED` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR.DPM_INIT_END` G0838 (0x0134[22]): clear: DPM initialisation finished. From
+  `EUR_CR_EVENT_HOST_CLEAR_DPM_INITEND` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR.ISP_END_TILE` G0848 (0x0134[23]): clear: ISP finished a tile. From
+  `EUR_CR_EVENT_HOST_CLEAR_ISP_END_TILE` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR.DPM_TA_MEM_FREE` G0846 (0x0134[24]): clear: DPM finished freeing TA pages.
+  From `EUR_CR_EVENT_HOST_CLEAR_DPM_TA_MEM_FREE` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR.DPM_OUT_OF_MEMORY_ZLS` G0841 (0x0134[25]): clear: DPM out of memory (ZLS).
+  From `EUR_CR_EVENT_HOST_CLEAR_DPM_OUT_OF_MEMORY_ZLS` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR.MADD_CACHE_INVAL_COMPLETE` G0850 (0x0134[26]): clear: MADD cache invalidate
+  complete. From `EUR_CR_EVENT_HOST_CLEAR_MADD_CACHE_INVALCOMPLETE` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR.TA_DPM_FAULT` G0856 (0x0134[28]): clear: TA hit a DPM fault. From
+  `EUR_CR_EVENT_HOST_CLEAR_TA_DPM_FAULT` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR.TIMER` G0859 (0x0134[29]): clear: event timer expired (CR_EVENT_TIMER). From
+  `EUR_CR_EVENT_HOST_CLEAR_TIMER` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR.DPM_OUT_OF_MEMORY_GBL` G0839 (0x0134[2]): clear: DPM out of memory (global
+  list). From `EUR_CR_EVENT_HOST_CLEAR_DPM_OUT_OF_MEMORY_GBL` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR.MASTER_INTERRUPT` G0851 (0x0134[31]): clear: summary: some enabled event is
+  pending. From `EUR_CR_EVENT_HOST_CLEAR_MASTER_INTERRUPT` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR.DPM_REACHED_MEM_THRESH` G0842 (0x0134[3]): clear: DPM page use reached the
+  threshold. From `EUR_CR_EVENT_HOST_CLEAR_DPM_REACHED_MEM_THRESH` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR.DPM_STATE_STORE` G0845 (0x0134[4]): clear: DPM state store done. From
+  `EUR_CR_EVENT_HOST_CLEAR_DPM_STATE_STORE` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR.DPM_STATE_LOAD` G0844 (0x0134[5]): clear: DPM state load done. From
+  `EUR_CR_EVENT_HOST_CLEAR_DPM_STATE_LOAD` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR.DPM_STATE_CLEAR` G0843 (0x0134[6]): clear: DPM state clear done. From
+  `EUR_CR_EVENT_HOST_CLEAR_DPM_STATE_CLEAR` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR.DPM_CONTROL_STORE` G0837 (0x0134[7]): clear: DPM control store done. From
+  `EUR_CR_EVENT_HOST_CLEAR_DPM_CONTROL_STORE` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR.DPM_CONTROL_LOAD` G0836 (0x0134[8]): clear: DPM control load done. From
+  `EUR_CR_EVENT_HOST_CLEAR_DPM_CONTROL_LOAD` (1, sgx545-ce).
+- `CR_EVENT_HOST_CLEAR.DPM_CONTROL_CLEAR` G0835 (0x0134[9]): clear: DPM control clear done. From
+  `EUR_CR_EVENT_HOST_CLEAR_DPM_CONTROL_CLEAR` (1, sgx545-ce).
+- `CR_TIMER.VALUE` G0964 (0x0144[31:0]): current timer count. From `EUR_CR_TIMER_VALUE` (1,
+  sgx545-ce).
 - `CR_TE_SCREEN.LAST_TILE_X` G0160 (0x0210 from bit 0 (width open)): x of the screen's last tile, in
   tiles from 0 [infer]. From `CR_TE_SCREEN.LAST_TILE_X` (ours, resgx545).
 - `CR_TE_SCREEN.LAST_TILE_Y` G0161 (0x0210 from bit 12 (width open)): y of the screen's last tile,
@@ -189,12 +530,27 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   filters for sets 2-5; 1: VC-1's bicubic filters; 2: smoothing filters; 3: set 2 loaded, sets 3-5
   zero (the closed driver's value for NV12) [infer]. From `CR_USE_COEFFS_MODE.MODE` (ours,
   resgx545).
+- `CR_PDS_EXEC_BASE.ADDR` G0952 (0x0ab8[31:20]): PDS program base, top 12 bits (1 MB aligned). From
+  `EUR_CR_PDS_EXEC_BASE_ADDR` (1, sgx545-ce).
 - `CR_PDS_REG_0ABC.BITS4_1` G0150 (0x0abc[4:1]): inferred reading (unconfirmed): the number of PDS
   task slots shared by every data master (E140): 0 leaves none, so every job hangs. Measured: 7 from
   the init script; 0 hangs the next job, any other value changes nothing seen [infer]. From
   `CR_PDS_REG_0ABC.BITS4_1` (ours, resgx545).
+- `CR_EVENT_KICKER.ADDRESS` G0921 (0x0ac4[31:4]): address the event kicker reads (16-byte aligned).
+  From `EUR_CR_EVENT_KICKER_ADDRESS` (1, sgx545-ce).
 - `CR_EVENT_KICK.NOW` G0091 (0x0ac8[0]): write 1 to trigger. From `EUR_CR_EVENT_KICK_NOW` (1,
   sgx545-ce).
+- `CR_EVENT_TIMER.VALUE` G0950 (0x0acc[23:0]): timer period when written; read back, the count,
+  which moves while the timer runs. From `EUR_CR_EVENT_TIMER_VALUE` (1, sgx545-ce);
+  `_PSB_CE_TIMER_VALUE_MASK` (1c, emgd-psb_regs).
+- `CR_EVENT_TIMER.ENABLE` G0949 (0x0acc[24]): enable the event timer. From
+  `EUR_CR_EVENT_TIMER_ENABLE` (1, sgx545-ce).
+- `CR_PDS_INV0.DSC` G0954 (0x0ad0[0]): invalidate this PDS data cache. From `EUR_CR_PDS_INV0_DSC`
+  (1, sgx545-ce).
+- `CR_PDS_INV1.DSC` G0956 (0x0ad4[0]): invalidate this PDS data cache. From `EUR_CR_PDS_INV1_DSC`
+  (1, sgx545-ce).
+- `CR_PDS_INV_CSC.KICK` G0958 (0x0ae0[0]): invalidate the PDS code cache. From
+  `EUR_CR_PDS_INV_CSC_KICK` (1, sgx545-ce).
 - `CR_USE2_SERV_PIXEL.TASK_COUNT` G0184 (0x0b88[15:0]): tasks served, wrapping [infer]. From
   `CR_USE2_SERV_PIXEL.TASK_COUNT` (ours, resgx545).
 - `CR_USE2_SERV_PIXEL.EMPTY` G0183 (0x0b88[16]): queue empty [infer]. From
@@ -211,12 +567,78 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   `CR_USE3_SERV_VERTEX.TASK_COUNT` (ours, resgx545).
 - `CR_USE3_SERV_VERTEX.EMPTY` G0192 (0x0b98[16]): queue empty [infer]. From
   `CR_USE3_SERV_VERTEX.EMPTY` (ours, resgx545).
+- `CR_BIF_CTRL.NO_REORDER` G0766 (0x0c00[0]): disable memory request reordering. From
+  `EUR_CR_BIF_CTRL_NOREORDER` (1, sgx545-ce).
+- `CR_BIF_CTRL.MMU_BYPASS_TE` G0762 (0x0c00[10]): bypass MMU translation for TE requests. From
+  `EUR_CR_BIF_CTRL_MMU_BYPASS_TE` (1, sgx545-ce).
+- `CR_BIF_CTRL.MMU_BYPASS_PBE` G0761 (0x0c00[11]): bypass MMU translation for PBE requests. From
+  `EUR_CR_BIF_CTRL_MMU_BYPASS_PBE` (1, sgx545-ce).
+- `CR_BIF_CTRL.MMU_BYPASS_TSPP` G0763 (0x0c00[12]): bypass MMU translation for TSP parameter fetch
+  requests. From `EUR_CR_BIF_CTRL_MMU_BYPASS_TSPP` (1, sgx545-ce).
+- `CR_BIF_CTRL.MMU_BYPASS_ISP` G0760 (0x0c00[13]): bypass MMU translation for ISP requests. From
+  `EUR_CR_BIF_CTRL_MMU_BYPASS_ISP` (1, sgx545-ce).
+- `CR_BIF_CTRL.MMU_BYPASS_USE` G0764 (0x0c00[14]): bypass MMU translation for USSE requests. From
+  `EUR_CR_BIF_CTRL_MMU_BYPASS_USE` (1, sgx545-ce).
+- `CR_BIF_CTRL.MMU_BYPASS_HOST` G0759 (0x0c00[15]): bypass MMU translation for host requests. From
+  `EUR_CR_BIF_CTRL_MMU_BYPASS_HOST` (1, sgx545-ce).
+- `CR_BIF_CTRL.PAUSE` G0767 (0x0c00[1]): pause MMU requests. From `EUR_CR_BIF_CTRL_PAUSE` (1,
+  sgx545-ce).
+- `CR_BIF_CTRL.FLUSH` G0756 (0x0c00[2]): flush the MMU caches. From `EUR_CR_BIF_CTRL_FLUSH` (1,
+  sgx545-ce).
+- `CR_BIF_CTRL.INVAL_DC` G0757 (0x0c00[3]): invalidate the MMU directory cache. From
+  `EUR_CR_BIF_CTRL_INVALDC` (1, sgx545-ce).
+- `CR_BIF_CTRL.CLEAR_FAULT` G0755 (0x0c00[4]): clear the latched MMU fault. From
+  `EUR_CR_BIF_CTRL_CLEAR_FAULT` (1, sgx545-ce).
+- `CR_BIF_CTRL.MMU_BYPASS_CACHE` G0758 (0x0c00[8]): bypass MMU translation for cache requests. From
+  `EUR_CR_BIF_CTRL_MMU_BYPASS_CACHE` (1, sgx545-ce).
+- `CR_BIF_CTRL.MMU_BYPASS_VDM` G0765 (0x0c00[9]): bypass MMU translation for VDM requests. From
+  `EUR_CR_BIF_CTRL_MMU_BYPASS_VDM` (1, sgx545-ce).
+- `CR_BIF_INT_STAT.FAULT_REQ` G0772 (0x0c04[15:0]): requestors that faulted. From
+  `EUR_CR_BIF_INT_STAT_FAULT_REQ` (1, sgx545-ce).
+- `CR_BIF_INT_STAT.FAULT_TYPE` G0773 (0x0c04[18:16]): fault type. From
+  `EUR_CR_BIF_INT_STAT_FAULT_TYPE` (1, sgx545-ce).
+- `CR_BIF_INT_STAT.FLUSH_COMPLETE` G0774 (0x0c04[19]): MMU flush complete. From
+  `EUR_CR_BIF_INT_STAT_FLUSH_COMPLETE` (1, sgx545-ce).
+- `CR_BIF_FAULT.ADDR` G0771 (0x0c08[31:12]): faulting page address. From `EUR_CR_BIF_FAULT_ADDR` (1,
+  sgx545-ce).
 - `CR_BIF_FAULT.CID` G0342 (0x0c08[3:0]): directory-list index (context) of the fault. From
   `EUR_CR_BIF_FAULT_CID` (1, sgx545-ce).
 - `CR_BIF_FAULT.SB` G0343 (0x0c08[8:4]): SB bits of the fault (meaning open). From
   `EUR_CR_BIF_FAULT_SB` (1, sgx545-ce).
+- `CR_BIF_DIR_LIST_BASE1.ADDR` G0769 (0x0c38[31:8]): page-directory address. From
+  `EUR_CR_BIF_DIR_LIST_BASE1_ADDR` (1, sgx545-ce).
+- `CR_BIF_DIR_LIST_BASE15.ADDR` G0770 (0x0c70[31:8]): page-directory address. From
+  `EUR_CR_BIF_DIR_LIST_BASE15_ADDR` (1, sgx545-ce).
+- `CR_BIF_BANK_SET.SELECT_2D` G0749 (0x0c74[0]): bank register used by 2D core requests. From
+  `EUR_CR_BIF_BANK_SET_SELECT_2D` (1, sgx545-ce).
+- `CR_BIF_BANK_SET.SELECT_3D` G0750 (0x0c74[3:2]): bank register used by 3D requests. From
+  `EUR_CR_BIF_BANK_SET_SELECT_3D` (1, sgx545-ce).
+- `CR_BIF_BANK_SET.SELECT_HOST` G0753 (0x0c74[4]): bank register used by host requests. From
+  `EUR_CR_BIF_BANK_SET_SELECT_HOST` (1, sgx545-ce).
+- `CR_BIF_BANK_SET.SELECT_TA` G0754 (0x0c74[7:6]): bank register used by TA requests. From
+  `EUR_CR_BIF_BANK_SET_SELECT_TA` (1, sgx545-ce).
+- `CR_BIF_BANK_SET.SELECT_EDM` G0752 (0x0c74[8]): bank register used by EDM requests. From
+  `EUR_CR_BIF_BANK_SET_SELECT_EDM` (1, sgx545-ce).
+- `CR_BIF_BANK_SET.SELECT_DPM_LSS` G0751 (0x0c74[9]): bank register used by DPM load/store requests.
+  From `EUR_CR_BIF_BANK_SET_SELECT_DPM_LSS` (1, sgx545-ce).
+- `CR_BIF_BANK0.INDEX_HOST` G0747 (0x0c78[11:8]): directory-list index for host requests. From
+  `EUR_CR_BIF_BANK0_INDEX_HOST` (1, sgx545-ce).
 - `CR_BIF_BANK0.INDEX_3D` G0088 (0x0c78[15:12]): directory-list index for 3D requests. From
   `EUR_CR_BIF_BANK0_INDEX_3D` (1, sgx545-ce).
+- `CR_BIF_BANK0.INDEX_2D` G0745 (0x0c78[19:16]): directory-list index for 2D core requests. From
+  `EUR_CR_BIF_BANK0_INDEX_2D` (1, sgx545-ce).
+- `CR_BIF_BANK0.INDEX_EDM` G0746 (0x0c78[3:0]): directory-list index for EDM requests. From
+  `EUR_CR_BIF_BANK0_INDEX_EDM` (1, sgx545-ce).
+- `CR_BIF_BANK0.INDEX_TA` G0748 (0x0c78[7:4]): directory-list index for TA requests. From
+  `EUR_CR_BIF_BANK0_INDEX_TA` (1, sgx545-ce).
+- `CR_BIF_DIR_LIST_BASE0.ADDR` G0768 (0x0c84[31:8]): page-directory address. From
+  `EUR_CR_BIF_DIR_LIST_BASE0_ADDR` (1, sgx545-ce).
+- `CR_BIF_TA_REQ_BASE.ADDR` G0775 (0x0c90[31:20]): heap base for these requests (top 12 bits). From
+  `EUR_CR_BIF_TA_REQ_BASE_ADDR` (1, sgx545-ce).
+- `CR_BIF_3D_REQ_BASE.ADDR` G0744 (0x0cac[31:20]): heap base for these requests (top 12 bits). From
+  `EUR_CR_BIF_3D_REQ_BASE_ADDR` (1, sgx545-ce).
+- `CR_BIF_ZLS_REQ_BASE.ADDR` G0777 (0x0cb0[31:20]): heap base for these requests (top 12 bits). From
+  `EUR_CR_BIF_ZLS_REQ_BASE_ADDR` (1, sgx545-ce).
 - `CR_DMS_CTRL.MAX_NUM_PIXEL_PARTITIONS` G0363 (SGX535: 0x0a74[24:22]; SGX545 position unconfirmed):
   maximum pixel partitions. From `_PSB_CD_CTRL_MAX_NUM_PIXEL_PARTITIONS_MASK` (1c, emgd-psb_regs).
 - `CR_DMS_CTRL.MAX_NUM_VERTEX_PARTITIONS` G0364 (SGX535: 0x0a74[27:25]; SGX545 position
@@ -232,14 +654,94 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 
 ### flag
 
+- `CR_SOFT_RESET.BIF_RESET` G0959 (0x0080[0]): hold the BIF (MMU) in reset. From
+  `_PSB_CS_RESET_BIF_RESET` (1c, emgd-psb_regs).
+- `CR_SOFT_RESET.DPM_RESET` G0960 (0x0080[1]): hold the DPM in reset. From `_PSB_CS_RESET_DPM_RESET`
+  (1c, emgd-psb_regs).
 - `CR_SOFT_RESET.TA_RESET` G0439 (0x0080[2]): hold the TA in reset. From `_PSB_CS_RESET_TA_RESET`
   (1c, emgd-psb_regs).
+- `CR_SOFT_RESET.USE_RESET` G0963 (0x0080[3]): hold the USSE in reset. From
+  `_PSB_CS_RESET_USE_RESET` (1c, emgd-psb_regs).
+- `CR_SOFT_RESET.ISP_RESET` G0961 (0x0080[4]): hold the ISP in reset. From `_PSB_CS_RESET_ISP_RESET`
+  (1c, emgd-psb_regs).
+- `CR_SOFT_RESET.TSP_RESET` G0962 (0x0080[5]): hold the TSP in reset. From `_PSB_CS_RESET_TSP_RESET`
+  (1c, emgd-psb_regs).
+- `CR_EVENT_STATUS2.DPM_TA_FREE_LOAD` G0938 (0x0118[0]): status: DPM TA free-list load done. From
+  `_PSB_CE_DPM_TA_FREE_LOAD` (1c, emgd-psb_regs).
+- `CR_EVENT_STATUS2.DPM_3D_FREE_LOAD` G0935 (0x0118[1]): status: DPM 3D free-list load done. From
+  `_PSB_CE_DPM_3D_FREE_LOAD` (1c, emgd-psb_regs).
+- `CR_EVENT_STATUS2.DPM_HOST_FREE_LOAD` G0937 (0x0118[2]): status: DPM host free-list load done.
+  From `_PSB_CE_DPM_HOST_FREE_LOAD` (1c, emgd-psb_regs).
+- `CR_EVENT_STATUS2.DPM_DHOST_FREE_LOAD` G0936 (0x0118[3]): status: DPM host-deallocation free-list
+  load done. From `_PSB_CE_DPM_DHOST_FREE_LOAD` (1c, emgd-psb_regs).
+- `CR_EVENT_STATUS2.TRIG_DL` G0945 (0x0118[5]): status: DL trigger. From `PSB_TRIG_DL` (1c,
+  emgd-psb_regs).
+- `CR_EVENT_STATUS2.TRIG_3D` G0944 (0x0118[6]): status: 3D trigger. From `PSB_TRIG_3D` (1c,
+  emgd-psb_regs).
+- `CR_EVENT_STATUS2.TRIG_TA` G0946 (0x0118[7]): status: TA trigger. From `PSB_TRIG_TA` (1c,
+  emgd-psb_regs).
 - `CR_EVENT_STATUS.TA_TERMINATE` G0404 (0x012c[12]): status: TA terminate done (Rogue analogue).
   From `ROGUE_CR_EVENT_STATUS_TA_TERMINATE` (3, linux-imagination).
 - `CR_EVENT_STATUS.TA_FINISHED` G0403 (0x012c[13]): status: TA pass finished (Rogue analogue). From
   `ROGUE_CR_EVENT_STATUS_TA_FINISHED` (3, linux-imagination).
 - `CR_EVENT_STATUS.PIXELBE_END_RENDER` G0402 (0x012c[18]): status: pixel back end finished the
   render (Rogue analogue). From `ROGUE_CR_EVENT_STATUS_PIXELBE_END_RENDER` (3, linux-imagination).
+- `CR_EVENT_HOST_CLEAR.DPM_3D_MEM_FREE` G0834 (0x0134[0]): clear: DPM finished freeing 3D pages.
+  From `_PSB_CE_DPM_3D_MEM_FREE` (1c, emgd-psb_regs).
+- `CR_EVENT_HOST_CLEAR.TPC_FLUSH` G0861 (0x0134[10]): clear: tail-pointer cache flush done. From
+  `_PSB_CE_TPC_FLUSH` (1c, emgd-psb_regs).
+- `CR_EVENT_HOST_CLEAR.TPC_CLEAR` G0860 (0x0134[11]): clear: tail-pointer cache clear done. From
+  `_PSB_CE_TPC_CLEAR` (1c, emgd-psb_regs).
+- `CR_EVENT_HOST_CLEAR.TA_TERMINATE` G0858 (0x0134[12]): clear: TA terminate done. From
+  `_PSB_CE_TA_TERMINATE` (1c, emgd-psb_regs).
+- `CR_EVENT_HOST_CLEAR.TA_FINISHED` G0857 (0x0134[13]): clear: TA pass finished. From
+  `_PSB_CE_TA_FINISHED` (1c, emgd-psb_regs).
+- `CR_EVENT_HOST_CLEAR.SW_EVENT` G0855 (0x0134[14]): clear: software event. From `_PSB_CE_SW_EVENT`
+  (1c, emgd-psb_regs).
+- `CR_EVENT_HOST_CLEAR.BREAKPOINT` G0833 (0x0134[15]): clear: breakpoint hit. From
+  `_PSB_CE_BREAKPOINT` (1c, emgd-psb_regs).
+- `CR_EVENT_HOST_CLEAR.ISP_VISIBILITY_FAIL` G0849 (0x0134[16]): clear: ISP visibility-test fail.
+  From `_PSB_CE_ISP_VISIBILITY_FAIL` (1c, emgd-psb_regs).
+- `CR_EVENT_HOST_CLEAR.PIXELBE_END_RENDER` G0854 (0x0134[18]): clear: pixel back end finished the
+  render. From `_PSB_CE_PIXELBE_END_RENDER` (1c, emgd-psb_regs).
+- `CR_EVENT_HOST_CLEAR.OTPM_FLUSHED` G0852 (0x0134[19]): clear: OTPM flushed. From
+  `_PSB_CE_OTPM_FLUSHED` (1c, emgd-psb_regs).
+- `CR_EVENT_HOST_CLEAR.DPM_OUT_OF_MEMORY_MT` G0840 (0x0134[1]): clear: DPM out of memory
+  (macrotile). From `_PSB_CE_DPM_OUT_OF_MEMORY_MT` (1c, emgd-psb_regs).
+- `CR_EVENT_HOST_CLEAR.OTPM_INV` G0853 (0x0134[20]): clear: OTPM invalidated. From
+  `_PSB_CE_OTPM_INV` (1c, emgd-psb_regs).
+- `CR_EVENT_HOST_CLEAR.DPM_INIT_END` G0838 (0x0134[22]): clear: DPM initialisation finished. From
+  `_PSB_CE_DPM_INITEND` (1c, emgd-psb_regs).
+- `CR_EVENT_HOST_CLEAR.ISP_END_TILE` G0848 (0x0134[23]): clear: ISP finished a tile. From
+  `_PSB_CE_ISP_END_TILE` (1c, emgd-psb_regs).
+- `CR_EVENT_HOST_CLEAR.DPM_TA_MEM_FREE` G0846 (0x0134[24]): clear: DPM finished freeing TA pages.
+  From `_PSB_CE_DPM_TA_MEM_FREE` (1c, emgd-psb_regs).
+- `CR_EVENT_HOST_CLEAR.DPM_OUT_OF_MEMORY_ZLS` G0841 (0x0134[25]): clear: DPM out of memory (ZLS).
+  From `_PSB_CE_DPM_OUT_OF_MEMORY_ZLS` (1c, emgd-psb_regs).
+- `CR_EVENT_HOST_CLEAR.MADD_CACHE_INVAL_COMPLETE` G0850 (0x0134[26]): clear: MADD cache invalidate
+  complete. From `_PSB_CE_MADD_CACHE_INVALCOMPLETE` (1c, emgd-psb_regs).
+- `CR_EVENT_HOST_CLEAR.TA_DPM_FAULT` G0856 (0x0134[28]): clear: TA hit a DPM fault. From
+  `_PSB_CE_TA_DPM_FAULT` (1c, emgd-psb_regs).
+- `CR_EVENT_HOST_CLEAR.TIMER` G0859 (0x0134[29]): clear: event timer expired (CR_EVENT_TIMER). From
+  `_PSB_CE_TIMER` (1c, emgd-psb_regs).
+- `CR_EVENT_HOST_CLEAR.DPM_OUT_OF_MEMORY_GBL` G0839 (0x0134[2]): clear: DPM out of memory (global
+  list). From `_PSB_CE_DPM_OUT_OF_MEMORY_GBL` (1c, emgd-psb_regs).
+- `CR_EVENT_HOST_CLEAR.MASTER_INTERRUPT` G0851 (0x0134[31]): clear: summary: some enabled event is
+  pending. From `_PSB_CE_MASTER_INTERRUPT` (1c, emgd-psb_regs).
+- `CR_EVENT_HOST_CLEAR.DPM_REACHED_MEM_THRESH` G0842 (0x0134[3]): clear: DPM page use reached the
+  threshold. From `_PSB_CE_DPM_REACHED_MEM_THRESH` (1c, emgd-psb_regs).
+- `CR_EVENT_HOST_CLEAR.DPM_STATE_STORE` G0845 (0x0134[4]): clear: DPM state store done. From
+  `_PSB_CE_DPM_STATE_STORE` (1c, emgd-psb_regs).
+- `CR_EVENT_HOST_CLEAR.DPM_STATE_LOAD` G0844 (0x0134[5]): clear: DPM state load done. From
+  `_PSB_CE_DPM_STATE_LOAD` (1c, emgd-psb_regs).
+- `CR_EVENT_HOST_CLEAR.DPM_STATE_CLEAR` G0843 (0x0134[6]): clear: DPM state clear done. From
+  `_PSB_CE_DPM_STATE_CLEAR` (1c, emgd-psb_regs).
+- `CR_EVENT_HOST_CLEAR.DPM_CONTROL_STORE` G0837 (0x0134[7]): clear: DPM control store done. From
+  `_PSB_CE_DPM_CONTROL_STORE` (1c, emgd-psb_regs).
+- `CR_EVENT_HOST_CLEAR.DPM_CONTROL_LOAD` G0836 (0x0134[8]): clear: DPM control load done. From
+  `_PSB_CE_DPM_CONTROL_LOAD` (1c, emgd-psb_regs).
+- `CR_EVENT_HOST_CLEAR.DPM_CONTROL_CLEAR` G0835 (0x0134[9]): clear: DPM control clear done. From
+  `_PSB_CE_DPM_CONTROL_CLEAR` (1c, emgd-psb_regs).
 - `CR_ISP_BGOBJVALS.BGTAG_ENABLE` G0622 (0x04bc[9]): draw the background object (its tag on every
   pixel); clear, the target keeps its old pixels [infer]. From `CR_ISP_BGOBJVALS.BGTAG_ENABLE`
   (ours, resgx545).
@@ -247,6 +749,16 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   [infer]. From `CR_TPU_YUV_CSC_INPUT.Y_NO_OFFSET` (ours, resgx545).
 - `CR_TPU_YUV_CSC_INPUT.UV_SIGNED` G0176 (0x0848[2]): U and V taken as signed bytes instead of
   offset by 128 [infer]. From `CR_TPU_YUV_CSC_INPUT.UV_SIGNED` (ours, resgx545).
+- `CR_EVENT_TIMER.ENABLE` G0949 (0x0acc[24]): enable the event timer. From `_PSB_CE_TIMER_ENABLE`
+  (1c, emgd-psb_regs).
+- `CR_PDS_INV_CSC.KICK` G0958 (0x0ae0[0]): invalidate the PDS code cache. From `_PSB_CPI_CSC_KICK`
+  (1c, emgd-psb_regs).
+- `CR_BIF_CTRL.FLUSH` G0756 (0x0c00[2]): flush the MMU caches. From `_PSB_CB_CTRL_FLUSH` (1c,
+  emgd-psb_regs).
+- `CR_BIF_CTRL.INVAL_DC` G0757 (0x0c00[3]): invalidate the MMU directory cache. From
+  `_PSB_CB_CTRL_INVALDC` (1c, emgd-psb_regs).
+- `CR_BIF_CTRL.CLEAR_FAULT` G0755 (0x0c00[4]): clear the latched MMU fault. From
+  `_PSB_CB_CTRL_CLEAR_FAULT` (1c, emgd-psb_regs).
 
 ### register
 
@@ -298,6 +810,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   `EUR_CR_EVENT_HOST_ENABLE2` (1, sgx545-ce); `PSB_CR_EVENT_HOST_ENABLE2` (1c, emgd-psb_regs).
 - `CR_EVENT_HOST_CLEAR2` G0043 (0x0114): write-1-to-clear events, bank 2. From
   `EUR_CR_EVENT_HOST_CLEAR2` (1, sgx545-ce); `PSB_CR_EVENT_HOST_CLEAR2` (1c, emgd-psb_regs).
+- `CR_EVENT_STATUS2` G0933 (0x0118): event status, bank 2. From `EUR_CR_EVENT_STATUS2` (1,
+  sgx545-ce); `PSB_CR_EVENT_STATUS2` (1c, emgd-psb_regs).
 - `CR_EVENT_STATUS` G0049 (0x012c): event (interrupt) status, bank 1. From `EUR_CR_EVENT_STATUS` (1,
   sgx545-ce); `PSB_CR_EVENT_STATUS` (1c, emgd-psb_regs); `PSB_EUR_CR_EVENT_STATUS` (1c,
   emgd-psb_regs); `ROGUE_CR_EVENT_STATUS` (3, linux-imagination).
@@ -306,6 +820,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `CR_EVENT_HOST_CLEAR` G0042 (0x0134): write-1-to-clear events, bank 1. From
   `EUR_CR_EVENT_HOST_CLEAR` (1, sgx545-ce); `PSB_CR_EVENT_HOST_CLEAR` (1c, emgd-psb_regs);
   `ROGUE_CR_EVENT_CLEAR` (3, linux-imagination).
+- `CR_PDS_CACHE_STATUS` G0951 (0x0138): PDS cache invalidate status. From `PSB_CR_PDS_CACHE_STATUS`
+  (1c, emgd-psb_regs).
 - `CR_PDS_CACHE_HOST_ENABLE` G0051 (0x013c): PDS cache event host enable. From
   `PSB_CR_PDS_CACHE_HOST_ENABLE` (1c, emgd-psb_regs).
 - `CR_PDS_CACHE_HOST_CLEAR` G0429 (0x0140): clear PDS cache invalidate status. From
@@ -434,6 +950,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `CR_ISP_MSAA` G0121 (0x042c): ISP multisample control: bits 1:0 the mode (CR_ISP_MSAA.MODE), bit
   31 the multisample path's enable (CR_ISP_MSAA.ENABLE) [infer]. From `CR_ISP_MSAA` (ours,
   resgx545).
+- `CR_TSP_PARAMETER_CACHE` G0965 (0x043c): TSP parameter cache invalidate. From
+  `PSB_CR_TSP_PARAMETER_CACHE` (1c, emgd-psb_regs).
 - `CR_ISP_ZLSCTL` G0143 (0x0480): depth/stencil load-store (ZLS) control (Rogue analogue). From
   `ROGUE_CR_ISP_ZLSCTL` (3, mesa-csbgen).
 - `CR_ISP_ZLOAD_BASE` G0142 (0x0484): depth load base: where ZLS loads the depth buffer from, an
@@ -547,6 +1065,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   shown [infer]. From `CR_DPM_REG_065C` (ours, resgx545).
 - `CR_DPM_3D_PAGE_COUNTS` G0368 (0x0660): pages the 3D's PB already holds when it is loaded: local
   count in bits 15:0, global in 31:16 [infer]. From `CR_DPM_3D_PAGE_COUNTS` (ours, resgx545).
+- `CR_DPM_CONTEXT_PB_BASE` G0827 (0x0664): parameter-buffer base of the DPM context. From
+  `EUR_CR_DPM_CONTEXT_PB_BASE` (1, intel-ctp-santos10).
 - `CR_DPM_PDS_THRESHOLD` G0377 (0x0668): PDS page threshold of the parameter buffer, from the PB
   descriptor [infer]. From `CR_DPM_PDS_THRESHOLD` (ours, resgx545).
 - `CR_DPM_STATE_BASE1` G0381 (0x0674): DPM context state table address (second register of two),
@@ -563,10 +1083,25 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   `PSB_CR_DPM_OUTOFMEM` (1c, emgd-psb_regs).
 - `CR_DPM_FREE_CONTEXT` G0373 (0x06a0): free the DPM context now. From `PSB_CR_DPM_FREE_CONTEXT`
   (1c, emgd-psb_regs).
+- `CR_DPM_TA_ALLOC_FREE_LIST_STATUS1` G0831 (0x0700): DPM TA allocation free-list status, word 1.
+  From `EUR_CR_DPM_TA_ALLOC_FREE_LIST_STATUS1` (1, intel-ctp-santos10).
+- `CR_DPM_3D_FREE_LIST_STATUS1` G0825 (0x070c): DPM 3D free-list status, word 1. From
+  `EUR_CR_DPM_3D_FREE_LIST_STATUS1` (1, intel-ctp-santos10).
+- `CR_DPM_TA_ALLOC_FREE_LIST_STATUS2` G0832 (0x0710): DPM TA allocation free-list status, word 2.
+  From `EUR_CR_DPM_TA_ALLOC_FREE_LIST_STATUS2` (1, intel-ctp-santos10).
+- `CR_DPM_3D_FREE_LIST_STATUS2` G0826 (0x071c): DPM 3D free-list status, word 2. From
+  `EUR_CR_DPM_3D_FREE_LIST_STATUS2` (1, intel-ctp-santos10).
 - `CR_DPM_ABORT_STATUS_MTILE` G0371 (0x0720): DPM macrotile abort status. From
   `EUR_CR_DPM_ABORT_STATUS_MTILE` (1, intel-ctp-santos10).
 - `CR_DPM_PAGE_STATUS` G0375 (0x0724): DPM pages in use: total and TA. From `EUR_CR_DPM_PAGE_STATUS`
   (1, intel-ctp-santos10); `PSB_CR_DPM_PAGE_STATUS` (1c, emgd-psb_regs).
+- `CR_DPM_PAGE` G0829 (0x0728): DPM page register (purpose open). From `EUR_CR_DPM_PAGE` (1,
+  intel-ctp-santos10).
+- `CR_DPM_GLOBAL_PAGE_STATUS` G0828 (0x072c): DPM global-list pages: total and TA. From
+  `EUR_CR_DPM_GLOBAL_PAGE_STATUS` (1, intel-ctp-santos10); `PSB_CR_DPM_GLOBAL_PAGE_STATUS` (1c,
+  emgd-psb_regs).
+- `CR_DPM_REQUESTING` G0830 (0x0734): DPM requests pending. From `EUR_CR_DPM_REQUESTING` (1,
+  intel-ctp-santos10).
 - `CR_DPM_3D_RT_INDEX` G0370 (0x073c): render target index of the render, for render-target arrays
   [infer]. From `CR_DPM_3D_RT_INDEX` (ours, resgx545).
 - `CR_DPM_REG_074C` G0378 (0x074c): inferred reading (unconfirmed): the enable (bit 8) and setup of
@@ -699,6 +1234,10 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `CR_USE_REG_0AA0` G0457 (0x0aa0): inferred reading (unconfirmed): a USSE resume task word for an
   interrupted TA's vertex tasks. Measured: USSE word from the TA command; 0 in captures [infer].
   From `CR_USE_REG_0AA0` (ours, resgx545).
+- `CR_USE0_DM_SLOT` G0966 (0x0aa4): USSE 0 data-master slot allocation. From `PSB_CR_USE0_DM_SLOT`
+  (1c, emgd-psb_regs).
+- `CR_USE1_DM_SLOT` G0967 (0x0aa8): USSE 1 data-master slot allocation. From `PSB_CR_USE1_DM_SLOT`
+  (1c, emgd-psb_regs).
 - `CR_USE_TMPREG` G0061 (0x0aac): USSE temporary registers: size and initial value. From
   `PSB_CR_USE_TMPREG` (1c, emgd-psb_regs).
 - `CR_PDS_EXEC_BASE` G0004 (0x0ab8): base address of PDS program fetches. From
@@ -712,6 +1251,12 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   (1, sgx545-ce).
 - `CR_EVENT_TIMER` G0050 (0x0acc): EDM periodic timer: period and enable. From `EUR_CR_EVENT_TIMER`
   (1, sgx545-ce); `PSB_CR_EVENT_TIMER` (1c, emgd-psb_regs).
+- `CR_PDS_INV0` G0953 (0x0ad0): invalidate PDS data cache 0. From `EUR_CR_PDS_INV0` (1, sgx545-ce);
+  `PSB_CR_PDS_INV0` (1c, emgd-psb_regs).
+- `CR_PDS_INV1` G0955 (0x0ad4): invalidate PDS data cache 1. From `EUR_CR_PDS_INV1` (1, sgx545-ce);
+  `PSB_CR_PDS_INV1` (1c, emgd-psb_regs).
+- `CR_PDS_INV_CSC` G0957 (0x0ae0): invalidate PDS code cache. From `EUR_CR_PDS_INV_CSC` (1,
+  sgx545-ce); `PSB_CR_PDS_INV_CSC` (1c, emgd-psb_regs).
 - `CR_USE0_SERV_PIXEL` G0178 (0x0b0c): USSE 0 pixel service-queue status (SGX535 0x0b08). From
   `PSB_CR_USE0_SERV_PIXEL` (1c, emgd-psb_regs).
 - `CR_USE0_SERV_VERTEX` G0179 (0x0b10): USSE 0 vertex service-queue status (SGX535 0x0b0c). From
@@ -761,6 +1306,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   `EUR_CR_BIF_TA_REQ_BASE` (1, sgx545-ce); `PSB_CR_BIF_TA_REQ_BASE` (1c, emgd-psb_regs).
 - `CR_BIF_3D_REQ_BASE` G0001 (0x0cac): 3D requestor base address. From `EUR_CR_BIF_3D_REQ_BASE` (1,
   sgx545-ce); `PSB_CR_BIF_3D_REQ_BASE` (1c, emgd-psb_regs).
+- `CR_BIF_ZLS_REQ_BASE` G0776 (0x0cb0): ZLS requestor base address. From `EUR_CR_BIF_ZLS_REQ_BASE`
+  (1, sgx545-ce).
 - `CR_HWPERF_PULSE` G0417 (0x0e80): HWPerf word the EDM pulses: 1 then 0 on consecutive instructions
   right after it writes CR_HWPERF_CTRL = 0x1ff, in the general event path; no other access; the
   SETHWPERFSTATUS handler reaches it through the same routine (E150); what it does is not measured
@@ -1363,6 +1910,20 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   From `PVRSRV_SGX_CCB_CTL` (1, sgx545-ce); `ccbctl_fw_addr` (3, linux-imagination).
 - `hw_transfer_context.submitted_commands` G0108 (HWTRANSFERCONTEXT+0x014): commands queued. From
   `submitted_commands` (3, linux-imagination).
+- `hw_transfer_context.dst_sync_write_ops_pending_val` G0974 (HWTRANSFERCONTEXT+0x0a0): HW transfer
+  context word 40, which the EDM copies over the command's destination sync write-pending value
+  (TRANSFERCMD+0x13c) when the command has a destination sync [infer]. From
+  `hw_transfer_context.dst_sync_write_ops_pending_val` (ours, resgx545).
+- `hw_transfer_context.dst_sync_write_ops_complete_dev_vaddr` G0973 (HWTRANSFERCONTEXT+0x0a4): HW
+  transfer context word 41, which the EDM copies over the command's destination sync write-complete
+  address (TRANSFERCMD+0x140) when the command has a destination sync [infer]. From
+  `hw_transfer_context.dst_sync_write_ops_complete_dev_vaddr` (ours, resgx545).
+- `hw_transfer_context.pid` G0975 (HWTRANSFERCONTEXT+0x0a8): owning process. From `pid` (3,
+  linux-imagination).
+- `hw_transfer_context.run_node_prev` G0977 (HWTRANSFERCONTEXT+0x0ac): previous context in EDM list.
+  From `run_node` (3, linux-imagination).
+- `hw_transfer_context.run_node_next` G0976 (HWTRANSFERCONTEXT+0x0b0): next context in EDM list.
+  From `run_node` (3, linux-imagination).
 - `misc_info.flags` G0111 (MISC+0x00): MISC_INFO_FLAGS.* request/ready bits. From
   `ui32MiscInfoFlags` (1, sgx545-ce).
 - `misc_info.struct_sizes` G0112 (MISC+0x20): structure sizes block. From `sSGXStructSizes` (1,
@@ -1489,26 +2050,153 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   From `ta3d_ctl.kick_clear_ta` (ours, resgx545).
 - `ta3d_ctl.kick_clear_3d` G0730 (TA3D_CTL+0x0e4): inferred reading (unconfirmed): a word the 3D
   kick clears; what sets it is not shown [infer]. From `ta3d_ctl.kick_clear_3d` (ours, resgx545).
+- `transfer_cmd.isp_background_tag` G0980 (TRANSFERCMD+0x000): transfer command word 0, which the
+  EDM loads into register 0x04c4 before it starts the render: bits 23:0 locate the background object
+  above transfer_cmd.bif_3d_req_base in 16-byte units, and bits 30:25 count its texture layers (0
+  for a fill, 1 for a copy) [infer]. From `transfer_cmd.isp_background_tag` (ours, resgx545).
+- `transfer_cmd.isp_bgobjvals` G0982 (TRANSFERCMD+0x004): background object control. From
+  `isp_bgobjvals` (3, linux-imagination).
+- `transfer_cmd.isp_bgobjdepth` G0981 (TRANSFERCMD+0x008): background depth. From `isp_bgobjdepth`
+  (3, linux-imagination).
 - `transfer_cmd.isp_render` G0117 (TRANSFERCMD+0x00c): ISP render type/scan. From `isp_render` (3,
   linux-imagination).
+- `transfer_cmd.isp_region` G0985 (TRANSFERCMD+0x010): region base. From `isp_rgn` (3,
+  linux-imagination).
+- `transfer_cmd.isp_ctl` G0983 (TRANSFERCMD+0x014): transfer command word 5, which the EDM loads
+  into CR_ISP_CTL (0x0414) before it starts the render; 0x100 in every captured and template-built
+  command [infer]. From `transfer_cmd.isp_ctl` (ours, resgx545).
 - `transfer_cmd.bif_3d_req_base` G0025 (TRANSFERCMD+0x018): 3D requestor base. From
   `EUR_CR_BIF_3D_REQ_BASE` (1, sgx545-ce).
 - `transfer_cmd.isp_msaa` G0743 (TRANSFERCMD+0x01c): the transfer command's word the EDM loads into
   CR_ISP_MSAA (0x80000000) [infer]. From `transfer_cmd.isp_msaa` (ours, resgx545).
+- `transfer_cmd.isp_multisamplectl` G0984 (TRANSFERCMD+0x020): transfer command word 8, which the
+  EDM loads into CR_ISP_MULTISAMPLECTL (0x04c8) before it starts the render; 0x88 in every captured
+  and template-built command [infer]. From `transfer_cmd.isp_multisamplectl` (ours, resgx545).
 - `transfer_cmd.event_pixel_pds_code` G0026 (TRANSFERCMD+0x024): end-of-tile PDS program. From
   `event_pixel_pds_code` (3, linux-imagination).
+- `transfer_cmd.event_pixel_pds_data` G0978 (TRANSFERCMD+0x028): its data size. From
+  `event_pixel_pds_data` (3, linux-imagination).
 - `transfer_cmd.event_pixel_pds_info` G0742 (TRANSFERCMD+0x02c): its info. From
   `event_pixel_pds_info` (3, linux-imagination).
+- `transfer_cmd.isp_render_origin` G0987 (TRANSFERCMD+0x030): top-left tile of the render: y0 / 16 |
+  (x0 / 32) << 16, 32 x 16 tiles; the EDM copies it into register 0x040c. From `isp_render_origin`
+  (3, linux-imagination).
+- `transfer_cmd.isp_render_end` G0986 (TRANSFERCMD+0x034): transfer command word 13, which the EDM
+  loads into register 0x0410 before it starts the render: the last tile of the render, inclusive, in
+  the form of transfer_cmd.isp_render_origin (y / 16 in the low half, x / 32 << 16, 32 x 16 tiles)
+  [infer]. From `transfer_cmd.isp_render_end` (ours, resgx545).
 - `transfer_cmd.reg_0400` G0340 (TRANSFERCMD+0x038): inferred reading (unconfirmed): Transfer
   command word 14, which loads register 0x0400: bit 25 inverts bits 31:24 of every pixel a fill or
   copy writes, and no other bit changed a pixel; over the every-value source exactly the 128 values
   of bits 31:24 with bit 25 set changed the image. From `transfer_cmd.reg_0400` (ours, resgx545).
 - `transfer_cmd.pds_exec_base` G0027 (TRANSFERCMD+0x03c): PDS execution base. From
   `EUR_CR_PDS_EXEC_BASE` (1, sgx545-ce).
+- `transfer_cmd.reg_0148` G0989 (TRANSFERCMD+0x040): transfer command word 16, which the EDM loads
+  into CR_REG_0148 (0x0148) before it starts the render [infer]. From `transfer_cmd.reg_0148` (ours,
+  resgx545).
+- `transfer_cmd.tpu_yuv_csc0_0` G0994 (TRANSFERCMD+0x044): transfer command word 17, which the EDM
+  loads into CR_TPU_YUV_CSC0_0 (0x0820) only when transfer_cmd.load_yuv_csc (+0x188) is not 0; 0 in
+  every captured command, which leaves the load word 0 [infer]. From `transfer_cmd.tpu_yuv_csc0_0`
+  (ours, resgx545).
+- `transfer_cmd.tpu_yuv_csc0_1` G0995 (TRANSFERCMD+0x048): transfer command word 18, which the EDM
+  loads into CR_TPU_YUV_CSC0_1 (0x0824) only when transfer_cmd.load_yuv_csc (+0x188) is not 0; 0 in
+  every captured command, which leaves the load word 0 [infer]. From `transfer_cmd.tpu_yuv_csc0_1`
+  (ours, resgx545).
+- `transfer_cmd.tpu_yuv_csc0_2` G0996 (TRANSFERCMD+0x04c): transfer command word 19, which the EDM
+  loads into CR_TPU_YUV_CSC0_2 (0x0828) only when transfer_cmd.load_yuv_csc (+0x188) is not 0; 0 in
+  every captured command, which leaves the load word 0 [infer]. From `transfer_cmd.tpu_yuv_csc0_2`
+  (ours, resgx545).
+- `transfer_cmd.tpu_yuv_csc0_3` G0997 (TRANSFERCMD+0x050): transfer command word 20, which the EDM
+  loads into CR_TPU_YUV_CSC0_3 (0x082c) only when transfer_cmd.load_yuv_csc (+0x188) is not 0; 0 in
+  every captured command, which leaves the load word 0 [infer]. From `transfer_cmd.tpu_yuv_csc0_3`
+  (ours, resgx545).
+- `transfer_cmd.tpu_yuv_csc0_4` G0998 (TRANSFERCMD+0x054): transfer command word 21, which the EDM
+  loads into CR_TPU_YUV_CSC0_4 (0x0830) only when transfer_cmd.load_yuv_csc (+0x188) is not 0; 0 in
+  every captured command, which leaves the load word 0 [infer]. From `transfer_cmd.tpu_yuv_csc0_4`
+  (ours, resgx545).
+- `transfer_cmd.tpu_yuv_csc1_0` G0999 (TRANSFERCMD+0x058): transfer command word 22, which the EDM
+  loads into CR_TPU_YUV_CSC1_0 (0x0834) only when transfer_cmd.load_yuv_csc (+0x188) is not 0; 0 in
+  every captured command, which leaves the load word 0 [infer]. From `transfer_cmd.tpu_yuv_csc1_0`
+  (ours, resgx545).
+- `transfer_cmd.tpu_yuv_csc1_1` G1000 (TRANSFERCMD+0x05c): transfer command word 23, which the EDM
+  loads into CR_TPU_YUV_CSC1_1 (0x0838) only when transfer_cmd.load_yuv_csc (+0x188) is not 0; 0 in
+  every captured command, which leaves the load word 0 [infer]. From `transfer_cmd.tpu_yuv_csc1_1`
+  (ours, resgx545).
+- `transfer_cmd.tpu_yuv_csc1_2` G1001 (TRANSFERCMD+0x060): transfer command word 24, which the EDM
+  loads into CR_TPU_YUV_CSC1_2 (0x083c) only when transfer_cmd.load_yuv_csc (+0x188) is not 0; 0 in
+  every captured command, which leaves the load word 0 [infer]. From `transfer_cmd.tpu_yuv_csc1_2`
+  (ours, resgx545).
+- `transfer_cmd.tpu_yuv_csc1_3` G1002 (TRANSFERCMD+0x064): transfer command word 25, which the EDM
+  loads into CR_TPU_YUV_CSC1_3 (0x0840) only when transfer_cmd.load_yuv_csc (+0x188) is not 0; 0 in
+  every captured command, which leaves the load word 0 [infer]. From `transfer_cmd.tpu_yuv_csc1_3`
+  (ours, resgx545).
+- `transfer_cmd.tpu_yuv_csc1_4` G1003 (TRANSFERCMD+0x068): transfer command word 26, which the EDM
+  loads into CR_TPU_YUV_CSC1_4 (0x0844) only when transfer_cmd.load_yuv_csc (+0x188) is not 0; 0 in
+  every captured command, which leaves the load word 0 [infer]. From `transfer_cmd.tpu_yuv_csc1_4`
+  (ours, resgx545).
+- `transfer_cmd.tpu_yuv_csc_input` G1004 (TRANSFERCMD+0x06c): transfer command word 27, which the
+  EDM loads into CR_TPU_YUV_CSC_INPUT (0x0848) only when transfer_cmd.load_yuv_csc (+0x188) is not
+  0; 0 in every captured command, which leaves the load word 0 [infer]. From
+  `transfer_cmd.tpu_yuv_csc_input` (ours, resgx545).
+- `transfer_cmd.tpu_luma_key_rg` G0993 (TRANSFERCMD+0x070): transfer command word 28, which the EDM
+  loads into CR_TPU_LUMA_KEY_RG (0x0860) only when transfer_cmd.load_tpu_luma_key (+0x18c) is not 0;
+  0 in every captured command, which leaves the load word 0 [infer]. From
+  `transfer_cmd.tpu_luma_key_rg` (ours, resgx545).
+- `transfer_cmd.tpu_luma_key_b_offset` G0992 (TRANSFERCMD+0x074): transfer command word 29, which
+  the EDM loads into CR_TPU_LUMA_KEY_B_OFFSET (0x0864) only when transfer_cmd.load_tpu_luma_key
+  (+0x18c) is not 0; 0 in every captured command, which leaves the load word 0 [infer]. From
+  `transfer_cmd.tpu_luma_key_b_offset` (ours, resgx545).
+- `transfer_cmd.tpu_luma_key_alpha` G0991 (TRANSFERCMD+0x078): transfer command word 30, which the
+  EDM loads into CR_TPU_LUMA_KEY_ALPHA (0x0868) only when transfer_cmd.load_tpu_luma_key (+0x18c) is
+  not 0; 0 in every captured command, which leaves the load word 0 [infer]. From
+  `transfer_cmd.tpu_luma_key_alpha` (ours, resgx545).
+- `transfer_cmd.use_coeffs_mode` G1014 (TRANSFERCMD+0x07c): transfer command word 31, which the EDM
+  loads into CR_USE_COEFFS_MODE (0x0a9c) only when transfer_cmd.load_use_coeffs (+0x190) is not 0; 0
+  in every captured command, which leaves the load word 0 [infer]. From
+  `transfer_cmd.use_coeffs_mode` (ours, resgx545).
+- `transfer_cmd.use_coeffs0_a` G1005 (TRANSFERCMD+0x080): transfer command word 32, which the EDM
+  loads into CR_USE_COEFFS0_A (0x0a84) only when transfer_cmd.load_use_coeffs (+0x190) is not 0; 0
+  in every captured command, which leaves the load word 0 [infer]. From `transfer_cmd.use_coeffs0_a`
+  (ours, resgx545).
+- `transfer_cmd.use_coeffs0_b` G1006 (TRANSFERCMD+0x084): transfer command word 33, which the EDM
+  loads into CR_USE_COEFFS0_B (0x0a88) only when transfer_cmd.load_use_coeffs (+0x190) is not 0; 0
+  in every captured command, which leaves the load word 0 [infer]. From `transfer_cmd.use_coeffs0_b`
+  (ours, resgx545).
+- `transfer_cmd.use_coeffs0_bias` G1007 (TRANSFERCMD+0x088): transfer command word 34, which the EDM
+  loads into CR_USE_COEFFS0_BIAS (0x0a8c) only when transfer_cmd.load_use_coeffs (+0x190) is not 0;
+  0 in every captured command, which leaves the load word 0 [infer]. From
+  `transfer_cmd.use_coeffs0_bias` (ours, resgx545).
+- `transfer_cmd.use_coeffs1_a` G1008 (TRANSFERCMD+0x08c): transfer command word 35, which the EDM
+  loads into CR_USE_COEFFS1_A (0x0a90) only when transfer_cmd.load_use_coeffs (+0x190) is not 0; 0
+  in every captured command, which leaves the load word 0 [infer]. From `transfer_cmd.use_coeffs1_a`
+  (ours, resgx545).
+- `transfer_cmd.use_coeffs1_b` G1009 (TRANSFERCMD+0x090): transfer command word 36, which the EDM
+  loads into CR_USE_COEFFS1_B (0x0a94) only when transfer_cmd.load_use_coeffs (+0x190) is not 0; 0
+  in every captured command, which leaves the load word 0 [infer]. From `transfer_cmd.use_coeffs1_b`
+  (ours, resgx545).
+- `transfer_cmd.use_coeffs1_bias` G1010 (TRANSFERCMD+0x094): transfer command word 37, which the EDM
+  loads into CR_USE_COEFFS1_BIAS (0x0a98) only when transfer_cmd.load_use_coeffs (+0x190) is not 0;
+  0 in every captured command, which leaves the load word 0 [infer]. From
+  `transfer_cmd.use_coeffs1_bias` (ours, resgx545).
+- `transfer_cmd.use_coeffs2_a` G1011 (TRANSFERCMD+0x098): transfer command word 38, which the EDM
+  loads into CR_USE_COEFFS2_A (0x0b24) only when transfer_cmd.load_use_coeffs (+0x190) is not 0; 0
+  in every captured command, which leaves the load word 0 [infer]. From `transfer_cmd.use_coeffs2_a`
+  (ours, resgx545).
+- `transfer_cmd.use_coeffs2_b` G1012 (TRANSFERCMD+0x09c): transfer command word 39, which the EDM
+  loads into CR_USE_COEFFS2_B (0x0b28) only when transfer_cmd.load_use_coeffs (+0x190) is not 0; 0
+  in every captured command, which leaves the load word 0 [infer]. From `transfer_cmd.use_coeffs2_b`
+  (ours, resgx545).
+- `transfer_cmd.use_coeffs2_bias` G1013 (TRANSFERCMD+0x0a0): transfer command word 40, which the EDM
+  loads into CR_USE_COEFFS2_BIAS (0x0b2c) only when transfer_cmd.load_use_coeffs (+0x190) is not 0;
+  0 in every captured command, which leaves the load word 0 [infer]. From
+  `transfer_cmd.use_coeffs2_bias` (ours, resgx545).
 - `transfer_cmd.cmd_size` G0115 (TRANSFERCMD+0x0a4): command size, 64-byte multiple. From `cmd_size`
   (3, linux-imagination).
 - `transfer_cmd.flags` G0116 (TRANSFERCMD+0x0a8): TQ_FLAGS.* of the transfer. From `ui32Flags` (1,
   sgx545-ce); `flags` (3, linux-imagination).
+- `transfer_cmd.shared` G0990 (TRANSFERCMD+0x0ac): embedded transfer_cmd_shared block; the kick
+  passes its client-CCB offset in transfer_kick.shared_cmd_ccb_offset. From `ui32SharedCmdCCBOffset`
+  (1, sgx545-ce).
 - `transfer_cmd.load_yuv_csc` G0338 (TRANSFERCMD+0x188): boolean: when set the EDM loads
   CR_TPU_YUV_CSC0_0 .. CR_TPU_YUV_CSC1_4 and CR_TPU_YUV_CSC_INPUT (0x0820-0x0848) from the command's
   words [infer]. From `transfer_cmd.load_yuv_csc` (ours, resgx545).
@@ -1521,9 +2209,47 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   resgx545).
 - `transfer_cmd.num_pixel_partitions` G0339 (TRANSFERCMD+0x194): DMS_CTRL pixel partitions (31 <<
   22). From `NumPixelPartitions` (2, cdv-libsrv_um).
+- `transfer_cmd.fence_id` G0979 (TRANSFERCMD+0x198): transfer command word 102, the command's
+  running number in its context, counted from 0; the closed stack's status value is this word plus
+  one, and the EDM reads it with no use [infer]. From `transfer_cmd.fence_id` (ours, resgx545).
+- `transfer_cmd.num_patches` G0988 (TRANSFERCMD+0x19c): transfer command word 103, the count of
+  {address, value} updates in transfer_cmd.patches that the EDM applies through the context's page
+  directory; 0 in every captured command [infer]. From `transfer_cmd.num_patches` (ours, resgx545).
 - `transfer_cmd.patches` G0565 (TRANSFERCMD+0x1a0): {address, value} memory writes the EDM applies
   through the context's address space before the render, to the end of the command [infer]. From
   `transfer_cmd.patches` (ours, resgx545).
+- `transfer_cmd_shared.num_src_syncs` G1019 (TRANSFERCMD_SHARED+0x00 (TRANSFERCMD+0x0ac)): source
+  sync count. From `ui32NumSrcSyncs` (1, sgx545-ce).
+- `transfer_cmd_shared.src_syncs` G1021 (TRANSFERCMD_SHARED+0x04 (TRANSFERCMD+0x0b0)): source syncs
+  [8]. From `asSrcSyncs` (1, sgx545-ce).
+- `transfer_cmd_shared.num_dst_syncs` G1018 (TRANSFERCMD_SHARED+0x84 (TRANSFERCMD+0x130)):
+  destination sync count. From `ui32NumDstSyncs` (1, sgx545-ce).
+- `transfer_cmd_shared.dst_syncs` G1017 (TRANSFERCMD_SHARED+0x88 (TRANSFERCMD+0x134)): destination
+  sync [1]. From `asDstSyncs` (1, sgx545-ce).
+- `transfer_cmd_shared.sync_ta_write_ops_pending_val` G1029 (TRANSFERCMD_SHARED+0x98
+  (TRANSFERCMD+0x144)): TA sync write pending. From `ui32TASyncWriteOpsPendingVal` (1, sgx545-ce).
+- `transfer_cmd_shared.sync_ta_write_ops_complete_dev_vaddr` G1028 (TRANSFERCMD_SHARED+0x9c
+  (TRANSFERCMD+0x148)): TA sync write-complete addr. From `sTASyncWriteOpsCompleteDevVAddr` (1,
+  sgx545-ce).
+- `transfer_cmd_shared.sync_ta_read_ops_pending_val` G1027 (TRANSFERCMD_SHARED+0xa0
+  (TRANSFERCMD+0x14c)): TA sync read pending. From `ui32TASyncReadOpsPendingVal` (1, sgx545-ce).
+- `transfer_cmd_shared.sync_ta_read_ops_complete_dev_vaddr` G1026 (TRANSFERCMD_SHARED+0xa4
+  (TRANSFERCMD+0x150)): TA sync read-complete addr. From `sTASyncReadOpsCompleteDevVAddr` (1,
+  sgx545-ce).
+- `transfer_cmd_shared.sync_3d_write_ops_pending_val` G1025 (TRANSFERCMD_SHARED+0xa8
+  (TRANSFERCMD+0x154)): 3D sync write pending. From `ui323DSyncWriteOpsPendingVal` (1, sgx545-ce).
+- `transfer_cmd_shared.sync_3d_write_ops_complete_dev_vaddr` G1024 (TRANSFERCMD_SHARED+0xac
+  (TRANSFERCMD+0x158)): 3D sync write-complete addr. From `s3DSyncWriteOpsCompleteDevVAddr` (1,
+  sgx545-ce).
+- `transfer_cmd_shared.sync_3d_read_ops_pending_val` G1023 (TRANSFERCMD_SHARED+0xb0
+  (TRANSFERCMD+0x15c)): 3D sync read pending. From `ui323DSyncReadOpsPendingVal` (1, sgx545-ce).
+- `transfer_cmd_shared.sync_3d_read_ops_complete_dev_vaddr` G1022 (TRANSFERCMD_SHARED+0xb4
+  (TRANSFERCMD+0x160)): 3D sync read-complete addr. From `s3DSyncReadOpsCompleteDevVAddr` (1,
+  sgx545-ce).
+- `transfer_cmd_shared.num_status_vals` G1020 (TRANSFERCMD_SHARED+0xb8 (TRANSFERCMD+0x164)): status
+  update count. From `ui32NumStatusVals` (1, sgx545-ce).
+- `transfer_cmd_shared.ctl_status_info` G1016 (TRANSFERCMD_SHARED+0xbc (TRANSFERCMD+0x168)): status
+  updates [4] incl. the fence. From `sCtlStatusInfo` (1, sgx545-ce).
 
 ### flag
 
@@ -1574,6 +2300,16 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   `PVRSRV_USSE_MISCINFO_READY` (1, sgx545-ce).
 - `MISC_INFO_FLAGS.GET_STRUCT_SIZES` G0093 (MISC+0x00 bit1): request struct sizes (0x2). From
   `PVRSRV_USSE_MISCINFO_GET_STRUCT_SIZES` (1, sgx545-ce).
+- `TQ_FLAGS.NO_SYNC_UPDATE` G0971 (TRANSFERCMD+0x0a8 bit0): do not update src/dst syncs (0x1). From
+  `SGXMKIF_TQFLAGS_NOSYNCUPDATE` (1, sgx545-ce).
+- `TQ_FLAGS.KEEP_PENDING` G0970 (TRANSFERCMD+0x0a8 bit1): kernel does not bump pending counts (0x2).
+  From `SGXMKIF_TQFLAGS_KEEPPENDING` (1, sgx545-ce).
+- `TQ_FLAGS.TA_TQ_SYNC` G0972 (TRANSFERCMD+0x0a8 bit2): update the TA-side TQ sync
+  (transfer_cmd_shared.sync_ta_*) (0x4). From `SGXMKIF_TQFLAGS_TATQ_SYNC` (1, sgx545-ce).
+- `TQ_FLAGS.3D_TQ_SYNC` G0968 (TRANSFERCMD+0x0a8 bit3): update the 3D-side TQ sync
+  (transfer_cmd_shared.sync_3d_*) (0x8). From `SGXMKIF_TQFLAGS_3DTQ_SYNC` (1, sgx545-ce).
+- `TQ_FLAGS.DUMMY_TRANSFER` G0969 (TRANSFERCMD+0x0a8 bit5): no render, sync/status only (0x20). From
+  `SGXMKIF_TQFLAGS_DUMMYTRANSFER` (1, sgx545-ce).
 - `FRAG_FLAGS.NO_RENDER` G0237 (render flags bit0 (0x1)): skips the render: the scene's memory is
   freed at its last TA end and the render details complete without a render [infer]. From
   `FRAG_FLAGS.NO_RENDER` (ours, resgx545).
@@ -1624,6 +2360,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `hw_transfer_context` G0102 (0xb4, ~ HWTRANSFERCONTEXT): HW transfer context. From
   `SGXMKIF_HWTRANSFERCONTEXT` (1, intel-ctp-santos10); `rogue_fwif_fwtransfercontext` (3,
   linux-imagination).
+- `transfer_cmd_shared` G1015 (0xdc at TRANSFERCMD+0x0ac): kernel-written sync/status block of the
+  transfer command. From `SGXMKIF_TRANSFERCMD_SHARED` (1, sgx545-ce).
 - `ta3d_ctl` G0024 (0xec (hKernelSGXTA3DCtlMemInfo)): TA/3D control block of the EDM. From
   `sTA3DCtl` (1c, emgd-linux).
 - `pb_block` G0559 (pb_block (0x10)): GPL name of the HW PB block allocation. From

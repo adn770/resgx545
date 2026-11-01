@@ -68,8 +68,9 @@ printed (`movs tim, a, b, c, d`: `a`) loads it and the others do nothing; it kee
 bits 24-0 (`pds-timer-tim-words`; the 25-bit reading was fitted to its first run and confirmed by a
 case added for it) **[HW]**. Bit 24 is a run bit: a value with it set counts down from the
 value less one, one with it clear stays where it was put; the counter that resets and power-on
-leave has it set (`0x0102_0000`-`0x0105_0000`) **[HW]**. An enabled count that reaches 0 hangs
-the job: loads of `0x0100_0002`, `0x0100_0020` and `0x0100_0040` each lost their job to the
-driver's recovery **[HW]**. The counter is the microkernel's tick timer, `EVENT_TIMER`
+leave has it set (`0x0102_0000`-`0x0105_0000`) **[HW]**. In runs by hand that no table or record
+holds, an enabled count that reaches 0 hung the job: loads of `0x0100_0002`, `0x0100_0020` and
+`0x0100_0040` each lost their job to the driver's recovery (Q057 asks for the recorded run). The
+counter is the microkernel's tick timer, `EVENT_TIMER`
 (GPL DDK, *Input and special registers*), so a probe that writes it stops or speeds up the
 firmware's tick. It is not a PDS watchdog.

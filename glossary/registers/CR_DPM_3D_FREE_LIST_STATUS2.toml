@@ -1,0 +1,15 @@
+[[term]]
+id = "G0826"
+name = "CR_DPM_3D_FREE_LIST_STATUS2"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_DPM_3D_FREE_LIST_STATUS2"
+kind = "register"
+sgx545 = "0x071c"
+meaning = "DPM 3D free-list status, word 2"
+tier = "1"
+source = "intel-ctp-santos10"
+citation = "C0493"
+licence = "GPL-2.0 OR MIT"
+evidence = "DDK debug-dump name table (RESTRICTED_REGISTERS block); no offset in any GPL source, offset 0x071c is our binding via name EUR_CR_DPM_3D_FREE_LIST_STATUS2"

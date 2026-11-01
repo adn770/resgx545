@@ -46,3 +46,155 @@ source = "linux-imagination"
 citation = "C0061"
 licence = "GPL-2.0-only OR MIT"
 evidence = "same name as our CORE_REVISION; Rogue offset 0x0020; analogy, function to be confirmed"
+
+[[term]]
+id = "G0821"
+name = "CR_CORE_REVISION.DESIGNER"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CORE_REVISION_DESIGNER"
+kind = "bitfield"
+sgx545 = "0x0020[31:24]"
+meaning = "designer revision"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0480"
+licence = "GPL-2.0"
+evidence = "mask 0xff000000"
+
+[[term.source]]
+term = "EUR_CR_CORE_REVISION_DESIGNER"
+kind = "bitfield"
+sgx545 = "0x0020[31:24]"
+meaning = "designer revision"
+tier = "1c"
+source = "sgx545-ce"
+citation = "C0481"
+licence = "GPL-2.0"
+evidence = "core SGX535; mask 0xff000000; register same name, OFFSET MISMATCH: 0x0014 on SGX520/SGX530/SGX535 vs ours 0x0020"
+
+[[term.source]]
+term = "_PSB_CC_REVISION_DESIGNER_MASK"
+kind = "bitfield"
+sgx545 = "0x0020[31:24]"
+meaning = "designer revision"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0482"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs"
+
+[[term]]
+id = "G0822"
+name = "CR_CORE_REVISION.MAINTENANCE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CORE_REVISION_MAINTENANCE"
+kind = "bitfield"
+sgx545 = "0x0020[7:0]"
+meaning = "maintenance revision"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0483"
+licence = "GPL-2.0"
+evidence = "mask 0x000000ff"
+
+[[term.source]]
+term = "EUR_CR_CORE_REVISION_MAINTENANCE"
+kind = "bitfield"
+sgx545 = "0x0020[7:0]"
+meaning = "maintenance revision"
+tier = "1c"
+source = "sgx545-ce"
+citation = "C0484"
+licence = "GPL-2.0"
+evidence = "core SGX535; mask 0x000000ff; register same name, OFFSET MISMATCH: 0x0014 on SGX520/SGX530/SGX535 vs ours 0x0020"
+
+[[term.source]]
+term = "_PSB_CC_REVISION_MAINTENANCE_MASK"
+kind = "bitfield"
+sgx545 = "0x0020[7:0]"
+meaning = "maintenance revision"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0485"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs"
+
+[[term]]
+id = "G0823"
+name = "CR_CORE_REVISION.MAJOR"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CORE_REVISION_MAJOR"
+kind = "bitfield"
+sgx545 = "0x0020[23:16]"
+meaning = "major revision"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0486"
+licence = "GPL-2.0"
+evidence = "mask 0x00ff0000"
+
+[[term.source]]
+term = "EUR_CR_CORE_REVISION_MAJOR"
+kind = "bitfield"
+sgx545 = "0x0020[23:16]"
+meaning = "major revision"
+tier = "1c"
+source = "sgx545-ce"
+citation = "C0487"
+licence = "GPL-2.0"
+evidence = "core SGX535; mask 0x00ff0000; register same name, OFFSET MISMATCH: 0x0014 on SGX520/SGX530/SGX535 vs ours 0x0020"
+
+[[term.source]]
+term = "_PSB_CC_REVISION_MAJOR_MASK"
+kind = "bitfield"
+sgx545 = "0x0020[23:16]"
+meaning = "major revision"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0488"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs"
+
+[[term]]
+id = "G0824"
+name = "CR_CORE_REVISION.MINOR"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CORE_REVISION_MINOR"
+kind = "bitfield"
+sgx545 = "0x0020[15:8]"
+meaning = "minor revision"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0489"
+licence = "GPL-2.0"
+evidence = "mask 0x0000ff00"
+
+[[term.source]]
+term = "EUR_CR_CORE_REVISION_MINOR"
+kind = "bitfield"
+sgx545 = "0x0020[15:8]"
+meaning = "minor revision"
+tier = "1c"
+source = "sgx545-ce"
+citation = "C0490"
+licence = "GPL-2.0"
+evidence = "core SGX535; mask 0x0000ff00; register same name, OFFSET MISMATCH: 0x0014 on SGX520/SGX530/SGX535 vs ours 0x0020"
+
+[[term.source]]
+term = "_PSB_CC_REVISION_MINOR_MASK"
+kind = "bitfield"
+sgx545 = "0x0020[15:8]"
+meaning = "minor revision"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0491"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs"

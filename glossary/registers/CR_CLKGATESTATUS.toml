@@ -24,3 +24,323 @@ source = "linux-imagination"
 citation = "C0053"
 licence = "GPL-2.0-only OR MIT"
 evidence = "analogy to our CLKGATESTATUS; clock-gating status; rename; Rogue offset 0x0008"
+
+[[term]]
+id = "G0799"
+name = "CR_CLKGATESTATUS.CACHEL2_CLKS"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATESTATUS_CACHEL2_CLKS"
+kind = "bitfield"
+sgx545 = "0x0008[9]"
+meaning = "clock state of the L2 cache"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0454"
+licence = "GPL-2.0"
+evidence = "mask 0x00000200"
+
+[[term]]
+id = "G0800"
+name = "CR_CLKGATESTATUS.DPM_CLKS"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATESTATUS_DPM_CLKS"
+kind = "bitfield"
+sgx545 = "0x0008[5]"
+meaning = "clock state of the DPM"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0455"
+licence = "GPL-2.0"
+evidence = "mask 0x00000020"
+
+[[term]]
+id = "G0801"
+name = "CR_CLKGATESTATUS.ISP2_CLKS"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATESTATUS_ISP2_CLKS"
+kind = "bitfield"
+sgx545 = "0x0008[1]"
+meaning = "clock state of the second ISP"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0456"
+licence = "GPL-2.0"
+evidence = "mask 0x00000002"
+
+[[term]]
+id = "G0802"
+name = "CR_CLKGATESTATUS.ISP_CLKS"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATESTATUS_ISP_CLKS"
+kind = "bitfield"
+sgx545 = "0x0008[0]"
+meaning = "clock state of the ISP"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0457"
+licence = "GPL-2.0"
+evidence = "mask 0x00000001"
+
+[[term]]
+id = "G0803"
+name = "CR_CLKGATESTATUS.ITR0_CLKS"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATESTATUS_ITR0_CLKS"
+kind = "bitfield"
+sgx545 = "0x0008[12]"
+meaning = "clock state of the iterator 0"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0458"
+licence = "GPL-2.0"
+evidence = "mask 0x00001000"
+
+[[term]]
+id = "G0804"
+name = "CR_CLKGATESTATUS.ITR1_CLKS"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATESTATUS_ITR1_CLKS"
+kind = "bitfield"
+sgx545 = "0x0008[16]"
+meaning = "clock state of the iterator 1"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0459"
+licence = "GPL-2.0"
+evidence = "mask 0x00010000"
+
+[[term]]
+id = "G0805"
+name = "CR_CLKGATESTATUS.MADD0_CLKS"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATESTATUS_MADD0_CLKS"
+kind = "bitfield"
+sgx545 = "0x0008[14]"
+meaning = "clock state of the MADD 0"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0460"
+licence = "GPL-2.0"
+evidence = "mask 0x00004000"
+
+[[term]]
+id = "G0806"
+name = "CR_CLKGATESTATUS.MADD1_CLKS"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATESTATUS_MADD1_CLKS"
+kind = "bitfield"
+sgx545 = "0x0008[18]"
+meaning = "clock state of the MADD 1"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0461"
+licence = "GPL-2.0"
+evidence = "mask 0x00040000"
+
+[[term]]
+id = "G0807"
+name = "CR_CLKGATESTATUS.MTE_CLKS"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATESTATUS_MTE_CLKS"
+kind = "bitfield"
+sgx545 = "0x0008[4]"
+meaning = "clock state of the MTE"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0462"
+licence = "GPL-2.0"
+evidence = "mask 0x00000010"
+
+[[term]]
+id = "G0808"
+name = "CR_CLKGATESTATUS.PBE_CLKS"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATESTATUS_PBE_CLKS"
+kind = "bitfield"
+sgx545 = "0x0008[8]"
+meaning = "clock state of the PBE"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0463"
+licence = "GPL-2.0"
+evidence = "mask 0x00000100"
+
+[[term]]
+id = "G0809"
+name = "CR_CLKGATESTATUS.PDS0_CLKS"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATESTATUS_PDS0_CLKS"
+kind = "bitfield"
+sgx545 = "0x0008[7]"
+meaning = "clock state of the PDS 0"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0464"
+licence = "GPL-2.0"
+evidence = "mask 0x00000080"
+
+[[term]]
+id = "G0810"
+name = "CR_CLKGATESTATUS.PDS1_CLKS"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATESTATUS_PDS1_CLKS"
+kind = "bitfield"
+sgx545 = "0x0008[19]"
+meaning = "clock state of the PDS 1"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0465"
+licence = "GPL-2.0"
+evidence = "mask 0x00080000"
+
+[[term]]
+id = "G0813"
+name = "CR_CLKGATESTATUS.TE_CLKS"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATESTATUS_TE_CLKS"
+kind = "bitfield"
+sgx545 = "0x0008[3]"
+meaning = "clock state of the TE"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0468"
+licence = "GPL-2.0"
+evidence = "mask 0x00000008"
+
+[[term]]
+id = "G0811"
+name = "CR_CLKGATESTATUS.TEX0_CLKS"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATESTATUS_TEX0_CLKS"
+kind = "bitfield"
+sgx545 = "0x0008[13]"
+meaning = "clock state of the texture unit 0"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0466"
+licence = "GPL-2.0"
+evidence = "mask 0x00002000"
+
+[[term]]
+id = "G0812"
+name = "CR_CLKGATESTATUS.TEX1_CLKS"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATESTATUS_TEX1_CLKS"
+kind = "bitfield"
+sgx545 = "0x0008[17]"
+meaning = "clock state of the texture unit 1"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0467"
+licence = "GPL-2.0"
+evidence = "mask 0x00020000"
+
+[[term]]
+id = "G0814"
+name = "CR_CLKGATESTATUS.TSP_CLKS"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATESTATUS_TSP_CLKS"
+kind = "bitfield"
+sgx545 = "0x0008[2]"
+meaning = "clock state of the TSP"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0469"
+licence = "GPL-2.0"
+evidence = "mask 0x00000004"
+
+[[term]]
+id = "G0815"
+name = "CR_CLKGATESTATUS.UCACHEL2_CLKS"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATESTATUS_UCACHEL2_CLKS"
+kind = "bitfield"
+sgx545 = "0x0008[10]"
+meaning = "clock state of the USSE L2 cache"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0470"
+licence = "GPL-2.0"
+evidence = "mask 0x00000400"
+
+[[term]]
+id = "G0816"
+name = "CR_CLKGATESTATUS.USE0_CLKS"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATESTATUS_USE0_CLKS"
+kind = "bitfield"
+sgx545 = "0x0008[11]"
+meaning = "clock state of the USSE 0"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0471"
+licence = "GPL-2.0"
+evidence = "mask 0x00000800"
+
+[[term]]
+id = "G0817"
+name = "CR_CLKGATESTATUS.USE1_CLKS"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATESTATUS_USE1_CLKS"
+kind = "bitfield"
+sgx545 = "0x0008[15]"
+meaning = "clock state of the USSE 1"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0472"
+licence = "GPL-2.0"
+evidence = "mask 0x00008000"
+
+[[term]]
+id = "G0818"
+name = "CR_CLKGATESTATUS.VDM_CLKS"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATESTATUS_VDM_CLKS"
+kind = "bitfield"
+sgx545 = "0x0008[6]"
+meaning = "clock state of the VDM"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0473"
+licence = "GPL-2.0"
+evidence = "mask 0x00000040"

@@ -46,3 +46,79 @@ source = "linux-imagination"
 citation = "C0057"
 licence = "GPL-2.0-only OR MIT"
 evidence = "same name as our CORE_ID; Rogue offset 0x0018; analogy, function to be confirmed"
+
+[[term]]
+id = "G0819"
+name = "CR_CORE_ID.CONFIG"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CORE_ID_CONFIG"
+kind = "bitfield"
+sgx545 = "0x001c[15:0]"
+meaning = "core configuration"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0474"
+licence = "GPL-2.0"
+evidence = "mask 0x0000ffff"
+
+[[term.source]]
+term = "EUR_CR_CORE_ID_CONFIG"
+kind = "bitfield"
+sgx545 = "0x001c[15:0]"
+meaning = "core configuration"
+tier = "1c"
+source = "sgx545-ce"
+citation = "C0475"
+licence = "GPL-2.0"
+evidence = "core SGX535; mask 0x0000ffff; register same name, OFFSET MISMATCH: 0x0010 on SGX520/SGX530/SGX535 vs ours 0x001c"
+
+[[term.source]]
+term = "_PSB_CC_ID_CONFIG_MASK"
+kind = "bitfield"
+sgx545 = "0x001c[15:0]"
+meaning = "core configuration"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0476"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs"
+
+[[term]]
+id = "G0820"
+name = "CR_CORE_ID.ID"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CORE_ID_ID"
+kind = "bitfield"
+sgx545 = "0x001c[31:16]"
+meaning = "core identifier"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0477"
+licence = "GPL-2.0"
+evidence = "mask 0xffff0000"
+
+[[term.source]]
+term = "EUR_CR_CORE_ID_ID"
+kind = "bitfield"
+sgx545 = "0x001c[31:16]"
+meaning = "core identifier"
+tier = "1c"
+source = "sgx545-ce"
+citation = "C0478"
+licence = "GPL-2.0"
+evidence = "core SGX535; mask 0xffff0000; register same name, OFFSET MISMATCH: 0x0010 on SGX520/SGX530/SGX535 vs ours 0x001c"
+
+[[term.source]]
+term = "_PSB_CC_ID_ID_MASK"
+kind = "bitfield"
+sgx545 = "0x001c[31:16]"
+meaning = "core identifier"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0479"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs"

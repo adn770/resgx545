@@ -1,0 +1,15 @@
+[[term]]
+id = "G0827"
+name = "CR_DPM_CONTEXT_PB_BASE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_DPM_CONTEXT_PB_BASE"
+kind = "register"
+sgx545 = "0x0664"
+meaning = "parameter-buffer base of the DPM context"
+tier = "1"
+source = "intel-ctp-santos10"
+citation = "C0494"
+licence = "GPL-2.0 OR MIT"
+evidence = "DDK debug-dump name table (RESTRICTED_REGISTERS block); no offset in any GPL source, offset 0x0664 is our binding via name DPM_CONTEXT_PB_BASE"

@@ -223,6 +223,15 @@ def test_every_kick3d_structure_has_a_prefix_or_lies_in_one_that_has():
     assert all(edmtrace.KICK3D[p] == s for s, p in edmtrace.PREFIX.items())
 
 
+def test_the_transfer_structures_take_the_dataflows_prefixes():
+    # edm_dataflow.py types the transfer context and its commands as HWTRANSFERCONTEXT and
+    # TRANSFERCMD; the glossary locates the shared block's words at TRANSFERCMD_SHARED too
+    assert edmtrace.PREFIX["transfer_cmd"] == "TRANSFERCMD"
+    assert edmtrace.PREFIX["hw_transfer_context"] == "HWTRANSFERCONTEXT"
+    assert edmtrace.PREFIX["SGXMKIF_TRANSFERCMD_SHARED"] == "TRANSFERCMD_SHARED"
+    assert edmtrace.KICK3D["TRANSFERCMD"] == "transfer_cmd"
+
+
 def test_prefixes_are_the_glossarys():
     # a structure's words are located in the glossary as PREFIX+0xOFF (the sgx545 column)
     rows = edmtrace.glossary.load(edmtrace.GLOSSARY)

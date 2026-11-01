@@ -24,3 +24,19 @@ source = "emgd-psb_regs"
 citation = "C0002"
 licence = "MIT"
 evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches our name EUR_CR_BIF_3D_REQ_BASE"
+
+[[term]]
+id = "G0744"
+name = "CR_BIF_3D_REQ_BASE.ADDR"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_3D_REQ_BASE_ADDR"
+kind = "bitfield"
+sgx545 = "0x0cac[31:20]"
+meaning = "heap base for these requests (top 12 bits)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0397"
+licence = "GPL-2.0"
+evidence = "mask 0xfff00000"

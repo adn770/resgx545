@@ -1,0 +1,31 @@
+[[term]]
+id = "G0776"
+name = "CR_BIF_ZLS_REQ_BASE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_ZLS_REQ_BASE"
+kind = "register"
+sgx545 = "0x0cb0"
+meaning = "ZLS requestor base address"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0228"
+licence = "GPL-2.0"
+evidence = "SGX545 defs; same in 17 other trees"
+
+[[term]]
+id = "G0777"
+name = "CR_BIF_ZLS_REQ_BASE.ADDR"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_ZLS_REQ_BASE_ADDR"
+kind = "bitfield"
+sgx545 = "0x0cb0[31:20]"
+meaning = "heap base for these requests (top 12 bits)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0432"
+licence = "GPL-2.0"
+evidence = "mask 0xfff00000"

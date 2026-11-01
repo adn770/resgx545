@@ -24,3 +24,57 @@ source = "emgd-psb_regs"
 citation = "C0080"
 licence = "MIT"
 evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches our name EUR_CR_EVENT_TIMER"
+
+[[term]]
+id = "G0949"
+name = "CR_EVENT_TIMER.ENABLE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_TIMER_ENABLE"
+kind = "bitfield"
+sgx545 = "0x0acc[24]"
+meaning = "enable the event timer"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0653"
+licence = "GPL-2.0"
+evidence = "mask 0x01000000"
+
+[[term.source]]
+term = "_PSB_CE_TIMER_ENABLE"
+kind = "flag"
+sgx545 = "0x0acc[24]"
+meaning = "enable the event timer"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0654"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs"
+
+[[term]]
+id = "G0950"
+name = "CR_EVENT_TIMER.VALUE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_TIMER_VALUE"
+kind = "bitfield"
+sgx545 = "0x0acc[23:0]"
+meaning = "timer period when written; read back, the count, which moves while the timer runs"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0655"
+licence = "GPL-2.0"
+evidence = "mask 0x00ffffff"
+
+[[term.source]]
+term = "_PSB_CE_TIMER_VALUE_MASK"
+kind = "bitfield"
+sgx545 = "0x0acc[23:0]"
+meaning = "timer period when written; read back, the count, which moves while the timer runs"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0656"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs"

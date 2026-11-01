@@ -26,6 +26,22 @@ licence = "MIT"
 evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches our name EUR_CR_BIF_BANK0"
 
 [[term]]
+id = "G0745"
+name = "CR_BIF_BANK0.INDEX_2D"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_BANK0_INDEX_2D"
+kind = "bitfield"
+sgx545 = "0x0c78[19:16]"
+meaning = "directory-list index for 2D core requests"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0398"
+licence = "GPL-2.0"
+evidence = "mask 0x000f0000"
+
+[[term]]
 id = "G0088"
 name = "CR_BIF_BANK0.INDEX_3D"
 status = "named"
@@ -40,3 +56,51 @@ source = "sgx545-ce"
 citation = "C0134"
 licence = "GPL-2.0"
 evidence = "mask 0x0000f000"
+
+[[term]]
+id = "G0746"
+name = "CR_BIF_BANK0.INDEX_EDM"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_BANK0_INDEX_EDM"
+kind = "bitfield"
+sgx545 = "0x0c78[3:0]"
+meaning = "directory-list index for EDM requests"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0399"
+licence = "GPL-2.0"
+evidence = "mask 0x0000000f"
+
+[[term]]
+id = "G0747"
+name = "CR_BIF_BANK0.INDEX_HOST"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_BANK0_INDEX_HOST"
+kind = "bitfield"
+sgx545 = "0x0c78[11:8]"
+meaning = "directory-list index for host requests"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0400"
+licence = "GPL-2.0"
+evidence = "mask 0x00000f00"
+
+[[term]]
+id = "G0748"
+name = "CR_BIF_BANK0.INDEX_TA"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_BANK0_INDEX_TA"
+kind = "bitfield"
+sgx545 = "0x0c78[7:4]"
+meaning = "directory-list index for TA requests"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0401"
+licence = "GPL-2.0"
+evidence = "mask 0x000000f0"

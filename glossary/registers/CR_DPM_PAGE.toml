@@ -1,0 +1,15 @@
+[[term]]
+id = "G0829"
+name = "CR_DPM_PAGE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_DPM_PAGE"
+kind = "register"
+sgx545 = "0x0728"
+meaning = "DPM page register (purpose open)"
+tier = "1"
+source = "intel-ctp-santos10"
+citation = "C0497"
+licence = "GPL-2.0 OR MIT"
+evidence = "DDK debug-dump name table (RESTRICTED_REGISTERS block); no offset in any GPL source, offset 0x0728 is our binding via name EUR_CR_DPM_PAGE"

@@ -1,0 +1,15 @@
+[[term]]
+id = "G0831"
+name = "CR_DPM_TA_ALLOC_FREE_LIST_STATUS1"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_DPM_TA_ALLOC_FREE_LIST_STATUS1"
+kind = "register"
+sgx545 = "0x0700"
+meaning = "DPM TA allocation free-list status, word 1"
+tier = "1"
+source = "intel-ctp-santos10"
+citation = "C0499"
+licence = "GPL-2.0 OR MIT"
+evidence = "DDK debug-dump name table (RESTRICTED_REGISTERS block); no offset in any GPL source, offset 0x0700 is our binding via name EUR_CR_DPM_TA_ALLOC_FREE_LIST_STATUS1"

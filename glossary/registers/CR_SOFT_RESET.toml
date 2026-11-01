@@ -37,6 +37,87 @@ licence = "GPL-2.0-only OR MIT"
 evidence = "same name as our SOFT_RESET; Rogue offset 0x0100; analogy, function to be confirmed"
 
 [[term]]
+id = "G0959"
+name = "CR_SOFT_RESET.BIF_RESET"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_SOFT_RESET_BIF_RESET"
+kind = "bitfield"
+sgx545 = "0x0080[0]"
+meaning = "hold the BIF (MMU) in reset"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0669"
+licence = "GPL-2.0"
+evidence = "mask 0x00000001"
+
+[[term.source]]
+term = "_PSB_CS_RESET_BIF_RESET"
+kind = "flag"
+sgx545 = "0x0080[0]"
+meaning = "hold the BIF (MMU) in reset"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0670"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs"
+
+[[term]]
+id = "G0960"
+name = "CR_SOFT_RESET.DPM_RESET"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_SOFT_RESET_DPM_RESET"
+kind = "bitfield"
+sgx545 = "0x0080[1]"
+meaning = "hold the DPM in reset"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0671"
+licence = "GPL-2.0"
+evidence = "mask 0x00000002"
+
+[[term.source]]
+term = "_PSB_CS_RESET_DPM_RESET"
+kind = "flag"
+sgx545 = "0x0080[1]"
+meaning = "hold the DPM in reset"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0672"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; SGX535 at bit 2; SGX545 bit per the tier-1 row"
+
+[[term]]
+id = "G0961"
+name = "CR_SOFT_RESET.ISP_RESET"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_SOFT_RESET_ISP_RESET"
+kind = "bitfield"
+sgx545 = "0x0080[4]"
+meaning = "hold the ISP in reset"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0673"
+licence = "GPL-2.0"
+evidence = "mask 0x00000010"
+
+[[term.source]]
+term = "_PSB_CS_RESET_ISP_RESET"
+kind = "flag"
+sgx545 = "0x0080[4]"
+meaning = "hold the ISP in reset"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0674"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; SGX535 at bit 5; SGX545 bit per the tier-1 row"
+
+[[term]]
 id = "G0439"
 name = "CR_SOFT_RESET.TA_RESET"
 status = "named"
@@ -61,4 +142,58 @@ tier = "1c"
 source = "emgd-psb_regs"
 citation = "C0297"
 licence = "MIT"
-evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs"
+evidence = "core SGX535 (Poulsbo); field of the register above; SGX535 at bit 3; SGX545 bit per the tier-1 row"
+
+[[term]]
+id = "G0962"
+name = "CR_SOFT_RESET.TSP_RESET"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_SOFT_RESET_TSP_RESET"
+kind = "bitfield"
+sgx545 = "0x0080[5]"
+meaning = "hold the TSP in reset"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0675"
+licence = "GPL-2.0"
+evidence = "mask 0x00000020"
+
+[[term.source]]
+term = "_PSB_CS_RESET_TSP_RESET"
+kind = "flag"
+sgx545 = "0x0080[5]"
+meaning = "hold the TSP in reset"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0676"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; SGX535 at bit 6; SGX545 bit per the tier-1 row"
+
+[[term]]
+id = "G0963"
+name = "CR_SOFT_RESET.USE_RESET"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_SOFT_RESET_USE_RESET"
+kind = "bitfield"
+sgx545 = "0x0080[3]"
+meaning = "hold the USSE in reset"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0115"
+licence = "GPL-2.0"
+evidence = "mask 0x00000008"
+
+[[term.source]]
+term = "_PSB_CS_RESET_USE_RESET"
+kind = "flag"
+sgx545 = "0x0080[3]"
+meaning = "hold the USSE in reset"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0677"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; SGX535 at bit 4; SGX545 bit per the tier-1 row"

@@ -1,0 +1,15 @@
+[[term]]
+id = "G0951"
+name = "CR_PDS_CACHE_STATUS"
+status = "named"
+
+[[term.source]]
+term = "PSB_CR_PDS_CACHE_STATUS"
+kind = "register"
+sgx545 = "0x0138"
+meaning = "PDS cache invalidate status"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0657"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"

@@ -24,3 +24,195 @@ source = "linux-imagination"
 citation = "C0051"
 licence = "GPL-2.0-only OR MIT"
 evidence = "analogy to our CLKGATECTL2; second clock-gating control; rename; Rogue offset 0xd200"
+
+[[term]]
+id = "G0787"
+name = "CR_CLKGATECTL2.CACHEL2_CLKG"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATECTL2_CACHEL2_CLKG"
+kind = "bitfield"
+sgx545 = "0x0004[3:2]"
+meaning = "clock-gating mode of the L2 cache (0 on, 1 off, 2 auto per psb_regs.h)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0442"
+licence = "GPL-2.0"
+evidence = "mask 0x0000000c"
+
+[[term]]
+id = "G0788"
+name = "CR_CLKGATECTL2.ITR0_CLKG"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATECTL2_ITR0_CLKG"
+kind = "bitfield"
+sgx545 = "0x0004[9:8]"
+meaning = "clock-gating mode of the iterator 0 (0 on, 1 off, 2 auto per psb_regs.h)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0443"
+licence = "GPL-2.0"
+evidence = "mask 0x00000300"
+
+[[term]]
+id = "G0789"
+name = "CR_CLKGATECTL2.ITR1_CLKG"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATECTL2_ITR1_CLKG"
+kind = "bitfield"
+sgx545 = "0x0004[17:16]"
+meaning = "clock-gating mode of the iterator 1 (0 on, 1 off, 2 auto per psb_regs.h)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0444"
+licence = "GPL-2.0"
+evidence = "mask 0x00030000"
+
+[[term]]
+id = "G0790"
+name = "CR_CLKGATECTL2.MADD0_CLKG"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATECTL2_MADD0_CLKG"
+kind = "bitfield"
+sgx545 = "0x0004[13:12]"
+meaning = "clock-gating mode of the MADD 0 (0 on, 1 off, 2 auto per psb_regs.h)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0445"
+licence = "GPL-2.0"
+evidence = "mask 0x00003000"
+
+[[term]]
+id = "G0791"
+name = "CR_CLKGATECTL2.MADD1_CLKG"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATECTL2_MADD1_CLKG"
+kind = "bitfield"
+sgx545 = "0x0004[21:20]"
+meaning = "clock-gating mode of the MADD 1 (0 on, 1 off, 2 auto per psb_regs.h)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0446"
+licence = "GPL-2.0"
+evidence = "mask 0x00300000"
+
+[[term]]
+id = "G0792"
+name = "CR_CLKGATECTL2.PBE_CLKG"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATECTL2_PBE_CLKG"
+kind = "bitfield"
+sgx545 = "0x0004[1:0]"
+meaning = "clock-gating mode of the PBE (0 on, 1 off, 2 auto per psb_regs.h)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0447"
+licence = "GPL-2.0"
+evidence = "mask 0x00000003"
+
+[[term]]
+id = "G0793"
+name = "CR_CLKGATECTL2.PDS1_CLKG"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATECTL2_PDS1_CLKG"
+kind = "bitfield"
+sgx545 = "0x0004[23:22]"
+meaning = "clock-gating mode of the PDS 1 (0 on, 1 off, 2 auto per psb_regs.h)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0448"
+licence = "GPL-2.0"
+evidence = "mask 0x00c00000"
+
+[[term]]
+id = "G0794"
+name = "CR_CLKGATECTL2.TEX0_CLKG"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATECTL2_TEX0_CLKG"
+kind = "bitfield"
+sgx545 = "0x0004[11:10]"
+meaning = "clock-gating mode of the texture unit 0 (0 on, 1 off, 2 auto per psb_regs.h)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0449"
+licence = "GPL-2.0"
+evidence = "mask 0x00000c00"
+
+[[term]]
+id = "G0795"
+name = "CR_CLKGATECTL2.TEX1_CLKG"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATECTL2_TEX1_CLKG"
+kind = "bitfield"
+sgx545 = "0x0004[19:18]"
+meaning = "clock-gating mode of the texture unit 1 (0 on, 1 off, 2 auto per psb_regs.h)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0450"
+licence = "GPL-2.0"
+evidence = "mask 0x000c0000"
+
+[[term]]
+id = "G0796"
+name = "CR_CLKGATECTL2.UCACHEL2_CLKG"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATECTL2_UCACHEL2_CLKG"
+kind = "bitfield"
+sgx545 = "0x0004[5:4]"
+meaning = "clock-gating mode of the USSE L2 cache (0 on, 1 off, 2 auto per psb_regs.h)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0451"
+licence = "GPL-2.0"
+evidence = "mask 0x00000030"
+
+[[term]]
+id = "G0797"
+name = "CR_CLKGATECTL2.USE0_CLKG"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATECTL2_USE0_CLKG"
+kind = "bitfield"
+sgx545 = "0x0004[7:6]"
+meaning = "clock-gating mode of the USSE 0 (0 on, 1 off, 2 auto per psb_regs.h)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0452"
+licence = "GPL-2.0"
+evidence = "mask 0x000000c0"
+
+[[term]]
+id = "G0798"
+name = "CR_CLKGATECTL2.USE1_CLKG"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CLKGATECTL2_USE1_CLKG"
+kind = "bitfield"
+sgx545 = "0x0004[15:14]"
+meaning = "clock-gating mode of the USSE 1 (0 on, 1 off, 2 auto per psb_regs.h)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0453"
+licence = "GPL-2.0"
+evidence = "mask 0x0000c000"

@@ -74,6 +74,22 @@ licence = "GPL-2.0 OR MIT"
 evidence = "rogue_fwif_transfer_regs"
 
 [[term]]
+id = "G0978"
+name = "transfer_cmd.event_pixel_pds_data"
+status = "named"
+
+[[term.source]]
+term = "event_pixel_pds_data"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x028"
+meaning = "its data size"
+tier = "3"
+source = "linux-imagination"
+citation = "C0393"
+licence = "GPL-2.0 OR MIT"
+evidence = "rogue_fwif_transfer_regs"
+
+[[term]]
 id = "G0742"
 name = "transfer_cmd.event_pixel_pds_info"
 status = "named"
@@ -88,6 +104,22 @@ source = "linux-imagination"
 citation = "C0394"
 licence = "GPL-2.0 OR MIT"
 evidence = "rogue_fwif_transfer_regs; [HW] E129: with the info word at 0 the pixel-event program's sixteen douta words reach sa0-sa15 of the task it starts; what a bit of 5:0 changes is not shown"
+
+[[term]]
+id = "G0979"
+name = "transfer_cmd.fence_id"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.fence_id"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x198"
+meaning = "transfer command word 102, the command's running number in its context, counted from 0; the closed stack's status value is this word plus one, and the EDM reads it with no use [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E016, E015"
+licence = "MIT"
+evidence = "[CAP] E016: in the 67 captured commands the word is the command's index in its run and the status value the word plus one; [RE] E015: the transfer path reads it and uses it for nothing"
 
 [[term]]
 id = "G0116"
@@ -117,6 +149,70 @@ licence = "GPL-2.0"
 evidence = "kick-side copy carries the same SGXMKIF_TQFLAGS_* word"
 
 [[term]]
+id = "G0980"
+name = "transfer_cmd.isp_background_tag"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.isp_background_tag"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x000"
+meaning = "transfer command word 0, which the EDM loads into register 0x04c4 before it starts the render: bits 23:0 locate the background object above transfer_cmd.bif_3d_req_base in 16-byte units, and bits 30:25 count its texture layers (0 for a fill, 1 for a copy) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E015, E004"
+licence = "MIT"
+evidence = "[RE] E015: the transfer path writes word 0 to register 0x04c4, the first of the command's 17 register words; [CAP] E004: in the 67 captured commands bits 23:0 locate the background object above the request base in 16-byte units and bits 30:25 count its layers"
+
+[[term]]
+id = "G0981"
+name = "transfer_cmd.isp_bgobjdepth"
+status = "named"
+
+[[term.source]]
+term = "isp_bgobjdepth"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x008"
+meaning = "background depth"
+tier = "3"
+source = "linux-imagination"
+citation = "C0395"
+licence = "GPL-2.0 OR MIT"
+evidence = "rogue_fwif_frag_regs"
+
+[[term]]
+id = "G0982"
+name = "transfer_cmd.isp_bgobjvals"
+status = "named"
+
+[[term.source]]
+term = "isp_bgobjvals"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x004"
+meaning = "background object control"
+tier = "3"
+source = "linux-imagination"
+citation = "C0396"
+licence = "GPL-2.0 OR MIT"
+evidence = "rogue_fwif_transfer_regs"
+
+[[term]]
+id = "G0983"
+name = "transfer_cmd.isp_ctl"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.isp_ctl"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x014"
+meaning = "transfer command word 5, which the EDM loads into CR_ISP_CTL (0x0414) before it starts the render; 0x100 in every captured and template-built command [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E015, E004"
+licence = "MIT"
+evidence = "[RE] E015: the transfer path writes word 5 to CR_ISP_CTL (0x0414), the sixth of the command's 17 register words; [CAP] E004: the firmware file's fixed command words hold 0x100 here, as every captured command does"
+
+[[term]]
 id = "G0743"
 name = "transfer_cmd.isp_msaa"
 status = "named"
@@ -133,6 +229,38 @@ licence = "MIT"
 evidence = "[RE] E015: the transfer path loads the command's word 7 into 0x042c; Rogue's isp_aa is a name only here; [infer] E220, an analogy of ours (no citation record): carries CR_ISP_REG_042C: the multisample mode (Rogue CR_ISP_AA.mode); [HW] E210: bits 1:0 at 0, 1 and 2 give three different images and 3 hangs; the sample count of each value is not measured"
 
 [[term]]
+id = "G0984"
+name = "transfer_cmd.isp_multisamplectl"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.isp_multisamplectl"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x020"
+meaning = "transfer command word 8, which the EDM loads into CR_ISP_MULTISAMPLECTL (0x04c8) before it starts the render; 0x88 in every captured and template-built command [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E015, E004"
+licence = "MIT"
+evidence = "[RE] E015: the transfer path writes word 8 to CR_ISP_MULTISAMPLECTL (0x04c8), the ninth of the command's 17 register words; [CAP] E004: the firmware file's fixed command words hold 0x88 here, as every captured command does"
+
+[[term]]
+id = "G0985"
+name = "transfer_cmd.isp_region"
+status = "named"
+
+[[term.source]]
+term = "isp_rgn"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x010"
+meaning = "region base"
+tier = "3"
+source = "linux-imagination"
+citation = "C0688"
+licence = "GPL-2.0 OR MIT"
+evidence = "rogue_fwif_transfer_regs"
+
+[[term]]
 id = "G0117"
 name = "transfer_cmd.isp_render"
 status = "named"
@@ -147,6 +275,38 @@ source = "linux-imagination"
 citation = "C0170"
 licence = "GPL-2.0 OR MIT"
 evidence = "rogue_fwif_transfer_regs"
+
+[[term]]
+id = "G0986"
+name = "transfer_cmd.isp_render_end"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.isp_render_end"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x034"
+meaning = "transfer command word 13, which the EDM loads into register 0x0410 before it starts the render: the last tile of the render, inclusive, in the form of transfer_cmd.isp_render_origin (y / 16 in the low half, x / 32 << 16, 32 x 16 tiles) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E015, E019, E020"
+licence = "MIT"
+evidence = "[RE] E015: the transfer path writes word 13 to register 0x0410, the fourteenth of the command's 17 register words; [HW] E019, E020: fills and copies whose command gives their rectangle's last tile here render exactly that rectangle"
+
+[[term]]
+id = "G0987"
+name = "transfer_cmd.isp_render_origin"
+status = "named"
+
+[[term.source]]
+term = "isp_render_origin"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x030"
+meaning = "top-left tile of the render: y0 / 16 | (x0 / 32) << 16, 32 x 16 tiles; the EDM copies it into register 0x040c"
+tier = "3"
+source = "linux-imagination"
+citation = "C0689"
+licence = "GPL-2.0 OR MIT"
+evidence = "same function as Rogue's ISP_RENDER_ORIGIN (analogue); [HW] E019, E020: fills and copies whose command gives their rectangle's first tile here, y0 / 16 | (x0 / 32) << 16, render exactly that rectangle"
 
 [[term]]
 id = "G0336"
@@ -197,6 +357,22 @@ licence = "MIT"
 evidence = "YUV register terms kept on hardware evidence; [HW] E037: set (xfer:17 bit 0), our copy's YUV texture is converted with the command's set 0"
 
 [[term]]
+id = "G0988"
+name = "transfer_cmd.num_patches"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.num_patches"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x19c"
+meaning = "transfer command word 103, the count of {address, value} updates in transfer_cmd.patches that the EDM applies through the context's page directory; 0 in every captured command [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E015, E018"
+licence = "MIT"
+evidence = "[RE] E015: a count other than 0 runs an update loop over +0x1a0 on, on the render path and on the dummy path; [HW] E018: a dummy with one update writes its value; [CAP] E016: 0 in all 67 captured commands"
+
+[[term]]
 id = "G0339"
 name = "transfer_cmd.num_pixel_partitions"
 status = "named"
@@ -245,6 +421,22 @@ licence = "GPL-2.0"
 evidence = "register loaded"
 
 [[term]]
+id = "G0989"
+name = "transfer_cmd.reg_0148"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.reg_0148"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x040"
+meaning = "transfer command word 16, which the EDM loads into CR_REG_0148 (0x0148) before it starts the render [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E015"
+licence = "MIT"
+evidence = "[RE] E015: the transfer path writes word 16 to CR_REG_0148 (0x0148), the seventeenth and last of the command's 17 register words"
+
+[[term]]
 id = "G0340"
 name = "transfer_cmd.reg_0400"
 status = "inferred"
@@ -259,3 +451,403 @@ source = "resgx545"
 citation = "E029"
 licence = "MIT"
 evidence = "[HW] E029: flipping bit 25 of word 14 changed all 2048 pixels of the fill (0xff336699 to 0x00336699) and of the copy (0xa5000000 to 0x5a000000); 0xffffffff gave the same hash; no other bit changed a pixel; the 128 values of bits 31:24 with bit 25 set gave one hash and the other 127 the baseline; [infer] the reading is ours, from these runs"
+
+[[term]]
+id = "G0990"
+name = "transfer_cmd.shared"
+status = "named"
+
+[[term.source]]
+term = "ui32SharedCmdCCBOffset"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x0ac"
+meaning = "embedded transfer_cmd_shared block; the kick passes its client-CCB offset in transfer_kick.shared_cmd_ccb_offset"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0690"
+licence = "GPL-2.0"
+evidence = "kick passes the CCB offset of this block (= cmd +0xac)"
+
+[[term]]
+id = "G0991"
+name = "transfer_cmd.tpu_luma_key_alpha"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.tpu_luma_key_alpha"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x078"
+meaning = "transfer command word 30, which the EDM loads into CR_TPU_LUMA_KEY_ALPHA (0x0868) only when transfer_cmd.load_tpu_luma_key (+0x18c) is not 0; 0 in every captured command, which leaves the load word 0 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E015, E016"
+licence = "MIT"
+evidence = "[RE] E015: with the load word at +0x18c not 0 the transfer path writes words +0x070 to +0x078 to the luma-key registers, word 30 to CR_TPU_LUMA_KEY_ALPHA; [CAP] E016: the load words are 0 in all 67 captured commands"
+
+[[term]]
+id = "G0992"
+name = "transfer_cmd.tpu_luma_key_b_offset"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.tpu_luma_key_b_offset"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x074"
+meaning = "transfer command word 29, which the EDM loads into CR_TPU_LUMA_KEY_B_OFFSET (0x0864) only when transfer_cmd.load_tpu_luma_key (+0x18c) is not 0; 0 in every captured command, which leaves the load word 0 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E015, E016"
+licence = "MIT"
+evidence = "[RE] E015: with the load word at +0x18c not 0 the transfer path writes words +0x070 to +0x078 to the luma-key registers, word 29 to CR_TPU_LUMA_KEY_B_OFFSET; [CAP] E016: the load words are 0 in all 67 captured commands"
+
+[[term]]
+id = "G0993"
+name = "transfer_cmd.tpu_luma_key_rg"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.tpu_luma_key_rg"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x070"
+meaning = "transfer command word 28, which the EDM loads into CR_TPU_LUMA_KEY_RG (0x0860) only when transfer_cmd.load_tpu_luma_key (+0x18c) is not 0; 0 in every captured command, which leaves the load word 0 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E015, E016"
+licence = "MIT"
+evidence = "[RE] E015: with the load word at +0x18c not 0 the transfer path writes words +0x070 to +0x078 to the luma-key registers, word 28 to CR_TPU_LUMA_KEY_RG; [CAP] E016: the load words are 0 in all 67 captured commands"
+
+[[term]]
+id = "G0994"
+name = "transfer_cmd.tpu_yuv_csc0_0"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.tpu_yuv_csc0_0"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x044"
+meaning = "transfer command word 17, which the EDM loads into CR_TPU_YUV_CSC0_0 (0x0820) only when transfer_cmd.load_yuv_csc (+0x188) is not 0; 0 in every captured command, which leaves the load word 0 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E015, E016"
+licence = "MIT"
+evidence = "[RE] E015: with the load word at +0x188 not 0 the transfer path writes words +0x044 to +0x06c to the colour-space registers, word 17 to CR_TPU_YUV_CSC0_0; [CAP] E016: the load words are 0 in all 67 captured commands"
+
+[[term]]
+id = "G0995"
+name = "transfer_cmd.tpu_yuv_csc0_1"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.tpu_yuv_csc0_1"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x048"
+meaning = "transfer command word 18, which the EDM loads into CR_TPU_YUV_CSC0_1 (0x0824) only when transfer_cmd.load_yuv_csc (+0x188) is not 0; 0 in every captured command, which leaves the load word 0 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E015, E016"
+licence = "MIT"
+evidence = "[RE] E015: with the load word at +0x188 not 0 the transfer path writes words +0x044 to +0x06c to the colour-space registers, word 18 to CR_TPU_YUV_CSC0_1; [CAP] E016: the load words are 0 in all 67 captured commands"
+
+[[term]]
+id = "G0996"
+name = "transfer_cmd.tpu_yuv_csc0_2"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.tpu_yuv_csc0_2"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x04c"
+meaning = "transfer command word 19, which the EDM loads into CR_TPU_YUV_CSC0_2 (0x0828) only when transfer_cmd.load_yuv_csc (+0x188) is not 0; 0 in every captured command, which leaves the load word 0 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E015, E016"
+licence = "MIT"
+evidence = "[RE] E015: with the load word at +0x188 not 0 the transfer path writes words +0x044 to +0x06c to the colour-space registers, word 19 to CR_TPU_YUV_CSC0_2; [CAP] E016: the load words are 0 in all 67 captured commands"
+
+[[term]]
+id = "G0997"
+name = "transfer_cmd.tpu_yuv_csc0_3"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.tpu_yuv_csc0_3"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x050"
+meaning = "transfer command word 20, which the EDM loads into CR_TPU_YUV_CSC0_3 (0x082c) only when transfer_cmd.load_yuv_csc (+0x188) is not 0; 0 in every captured command, which leaves the load word 0 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E015, E016"
+licence = "MIT"
+evidence = "[RE] E015: with the load word at +0x188 not 0 the transfer path writes words +0x044 to +0x06c to the colour-space registers, word 20 to CR_TPU_YUV_CSC0_3; [CAP] E016: the load words are 0 in all 67 captured commands"
+
+[[term]]
+id = "G0998"
+name = "transfer_cmd.tpu_yuv_csc0_4"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.tpu_yuv_csc0_4"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x054"
+meaning = "transfer command word 21, which the EDM loads into CR_TPU_YUV_CSC0_4 (0x0830) only when transfer_cmd.load_yuv_csc (+0x188) is not 0; 0 in every captured command, which leaves the load word 0 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E015, E016"
+licence = "MIT"
+evidence = "[RE] E015: with the load word at +0x188 not 0 the transfer path writes words +0x044 to +0x06c to the colour-space registers, word 21 to CR_TPU_YUV_CSC0_4; [CAP] E016: the load words are 0 in all 67 captured commands"
+
+[[term]]
+id = "G0999"
+name = "transfer_cmd.tpu_yuv_csc1_0"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.tpu_yuv_csc1_0"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x058"
+meaning = "transfer command word 22, which the EDM loads into CR_TPU_YUV_CSC1_0 (0x0834) only when transfer_cmd.load_yuv_csc (+0x188) is not 0; 0 in every captured command, which leaves the load word 0 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E015, E016"
+licence = "MIT"
+evidence = "[RE] E015: with the load word at +0x188 not 0 the transfer path writes words +0x044 to +0x06c to the colour-space registers, word 22 to CR_TPU_YUV_CSC1_0; [CAP] E016: the load words are 0 in all 67 captured commands"
+
+[[term]]
+id = "G1000"
+name = "transfer_cmd.tpu_yuv_csc1_1"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.tpu_yuv_csc1_1"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x05c"
+meaning = "transfer command word 23, which the EDM loads into CR_TPU_YUV_CSC1_1 (0x0838) only when transfer_cmd.load_yuv_csc (+0x188) is not 0; 0 in every captured command, which leaves the load word 0 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E015, E016"
+licence = "MIT"
+evidence = "[RE] E015: with the load word at +0x188 not 0 the transfer path writes words +0x044 to +0x06c to the colour-space registers, word 23 to CR_TPU_YUV_CSC1_1; [CAP] E016: the load words are 0 in all 67 captured commands"
+
+[[term]]
+id = "G1001"
+name = "transfer_cmd.tpu_yuv_csc1_2"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.tpu_yuv_csc1_2"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x060"
+meaning = "transfer command word 24, which the EDM loads into CR_TPU_YUV_CSC1_2 (0x083c) only when transfer_cmd.load_yuv_csc (+0x188) is not 0; 0 in every captured command, which leaves the load word 0 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E015, E016"
+licence = "MIT"
+evidence = "[RE] E015: with the load word at +0x188 not 0 the transfer path writes words +0x044 to +0x06c to the colour-space registers, word 24 to CR_TPU_YUV_CSC1_2; [CAP] E016: the load words are 0 in all 67 captured commands"
+
+[[term]]
+id = "G1002"
+name = "transfer_cmd.tpu_yuv_csc1_3"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.tpu_yuv_csc1_3"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x064"
+meaning = "transfer command word 25, which the EDM loads into CR_TPU_YUV_CSC1_3 (0x0840) only when transfer_cmd.load_yuv_csc (+0x188) is not 0; 0 in every captured command, which leaves the load word 0 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E015, E016"
+licence = "MIT"
+evidence = "[RE] E015: with the load word at +0x188 not 0 the transfer path writes words +0x044 to +0x06c to the colour-space registers, word 25 to CR_TPU_YUV_CSC1_3; [CAP] E016: the load words are 0 in all 67 captured commands"
+
+[[term]]
+id = "G1003"
+name = "transfer_cmd.tpu_yuv_csc1_4"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.tpu_yuv_csc1_4"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x068"
+meaning = "transfer command word 26, which the EDM loads into CR_TPU_YUV_CSC1_4 (0x0844) only when transfer_cmd.load_yuv_csc (+0x188) is not 0; 0 in every captured command, which leaves the load word 0 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E015, E016"
+licence = "MIT"
+evidence = "[RE] E015: with the load word at +0x188 not 0 the transfer path writes words +0x044 to +0x06c to the colour-space registers, word 26 to CR_TPU_YUV_CSC1_4; [CAP] E016: the load words are 0 in all 67 captured commands"
+
+[[term]]
+id = "G1004"
+name = "transfer_cmd.tpu_yuv_csc_input"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.tpu_yuv_csc_input"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x06c"
+meaning = "transfer command word 27, which the EDM loads into CR_TPU_YUV_CSC_INPUT (0x0848) only when transfer_cmd.load_yuv_csc (+0x188) is not 0; 0 in every captured command, which leaves the load word 0 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E015, E016"
+licence = "MIT"
+evidence = "[RE] E015: with the load word at +0x188 not 0 the transfer path writes words +0x044 to +0x06c to the colour-space registers, word 27 to CR_TPU_YUV_CSC_INPUT; [CAP] E016: the load words are 0 in all 67 captured commands"
+
+[[term]]
+id = "G1005"
+name = "transfer_cmd.use_coeffs0_a"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.use_coeffs0_a"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x080"
+meaning = "transfer command word 32, which the EDM loads into CR_USE_COEFFS0_A (0x0a84) only when transfer_cmd.load_use_coeffs (+0x190) is not 0; 0 in every captured command, which leaves the load word 0 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E015, E016"
+licence = "MIT"
+evidence = "[RE] E015: with the load word at +0x190 not 0 the transfer path writes words +0x07c to +0x0a0 to the USE coefficient registers, word 32 to CR_USE_COEFFS0_A; [CAP] E016: the load words are 0 in all 67 captured commands"
+
+[[term]]
+id = "G1006"
+name = "transfer_cmd.use_coeffs0_b"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.use_coeffs0_b"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x084"
+meaning = "transfer command word 33, which the EDM loads into CR_USE_COEFFS0_B (0x0a88) only when transfer_cmd.load_use_coeffs (+0x190) is not 0; 0 in every captured command, which leaves the load word 0 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E015, E016"
+licence = "MIT"
+evidence = "[RE] E015: with the load word at +0x190 not 0 the transfer path writes words +0x07c to +0x0a0 to the USE coefficient registers, word 33 to CR_USE_COEFFS0_B; [CAP] E016: the load words are 0 in all 67 captured commands"
+
+[[term]]
+id = "G1007"
+name = "transfer_cmd.use_coeffs0_bias"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.use_coeffs0_bias"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x088"
+meaning = "transfer command word 34, which the EDM loads into CR_USE_COEFFS0_BIAS (0x0a8c) only when transfer_cmd.load_use_coeffs (+0x190) is not 0; 0 in every captured command, which leaves the load word 0 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E015, E016"
+licence = "MIT"
+evidence = "[RE] E015: with the load word at +0x190 not 0 the transfer path writes words +0x07c to +0x0a0 to the USE coefficient registers, word 34 to CR_USE_COEFFS0_BIAS; [CAP] E016: the load words are 0 in all 67 captured commands"
+
+[[term]]
+id = "G1008"
+name = "transfer_cmd.use_coeffs1_a"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.use_coeffs1_a"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x08c"
+meaning = "transfer command word 35, which the EDM loads into CR_USE_COEFFS1_A (0x0a90) only when transfer_cmd.load_use_coeffs (+0x190) is not 0; 0 in every captured command, which leaves the load word 0 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E015, E016"
+licence = "MIT"
+evidence = "[RE] E015: with the load word at +0x190 not 0 the transfer path writes words +0x07c to +0x0a0 to the USE coefficient registers, word 35 to CR_USE_COEFFS1_A; [CAP] E016: the load words are 0 in all 67 captured commands"
+
+[[term]]
+id = "G1009"
+name = "transfer_cmd.use_coeffs1_b"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.use_coeffs1_b"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x090"
+meaning = "transfer command word 36, which the EDM loads into CR_USE_COEFFS1_B (0x0a94) only when transfer_cmd.load_use_coeffs (+0x190) is not 0; 0 in every captured command, which leaves the load word 0 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E015, E016"
+licence = "MIT"
+evidence = "[RE] E015: with the load word at +0x190 not 0 the transfer path writes words +0x07c to +0x0a0 to the USE coefficient registers, word 36 to CR_USE_COEFFS1_B; [CAP] E016: the load words are 0 in all 67 captured commands"
+
+[[term]]
+id = "G1010"
+name = "transfer_cmd.use_coeffs1_bias"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.use_coeffs1_bias"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x094"
+meaning = "transfer command word 37, which the EDM loads into CR_USE_COEFFS1_BIAS (0x0a98) only when transfer_cmd.load_use_coeffs (+0x190) is not 0; 0 in every captured command, which leaves the load word 0 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E015, E016"
+licence = "MIT"
+evidence = "[RE] E015: with the load word at +0x190 not 0 the transfer path writes words +0x07c to +0x0a0 to the USE coefficient registers, word 37 to CR_USE_COEFFS1_BIAS; [CAP] E016: the load words are 0 in all 67 captured commands"
+
+[[term]]
+id = "G1011"
+name = "transfer_cmd.use_coeffs2_a"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.use_coeffs2_a"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x098"
+meaning = "transfer command word 38, which the EDM loads into CR_USE_COEFFS2_A (0x0b24) only when transfer_cmd.load_use_coeffs (+0x190) is not 0; 0 in every captured command, which leaves the load word 0 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E015, E016"
+licence = "MIT"
+evidence = "[RE] E015: with the load word at +0x190 not 0 the transfer path writes words +0x07c to +0x0a0 to the USE coefficient registers, word 38 to CR_USE_COEFFS2_A; [CAP] E016: the load words are 0 in all 67 captured commands"
+
+[[term]]
+id = "G1012"
+name = "transfer_cmd.use_coeffs2_b"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.use_coeffs2_b"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x09c"
+meaning = "transfer command word 39, which the EDM loads into CR_USE_COEFFS2_B (0x0b28) only when transfer_cmd.load_use_coeffs (+0x190) is not 0; 0 in every captured command, which leaves the load word 0 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E015, E016"
+licence = "MIT"
+evidence = "[RE] E015: with the load word at +0x190 not 0 the transfer path writes words +0x07c to +0x0a0 to the USE coefficient registers, word 39 to CR_USE_COEFFS2_B; [CAP] E016: the load words are 0 in all 67 captured commands"
+
+[[term]]
+id = "G1013"
+name = "transfer_cmd.use_coeffs2_bias"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.use_coeffs2_bias"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x0a0"
+meaning = "transfer command word 40, which the EDM loads into CR_USE_COEFFS2_BIAS (0x0b2c) only when transfer_cmd.load_use_coeffs (+0x190) is not 0; 0 in every captured command, which leaves the load word 0 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E015, E016"
+licence = "MIT"
+evidence = "[RE] E015: with the load word at +0x190 not 0 the transfer path writes words +0x07c to +0x0a0 to the USE coefficient registers, word 40 to CR_USE_COEFFS2_BIAS; [CAP] E016: the load words are 0 in all 67 captured commands"
+
+[[term]]
+id = "G1014"
+name = "transfer_cmd.use_coeffs_mode"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.use_coeffs_mode"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x07c"
+meaning = "transfer command word 31, which the EDM loads into CR_USE_COEFFS_MODE (0x0a9c) only when transfer_cmd.load_use_coeffs (+0x190) is not 0; 0 in every captured command, which leaves the load word 0 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E015, E016"
+licence = "MIT"
+evidence = "[RE] E015: with the load word at +0x190 not 0 the transfer path writes words +0x07c to +0x0a0 to the USE coefficient registers, word 31 to CR_USE_COEFFS_MODE; [CAP] E016: the load words are 0 in all 67 captured commands"

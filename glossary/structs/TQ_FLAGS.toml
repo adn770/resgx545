@@ -1,0 +1,79 @@
+[[term]]
+id = "G0968"
+name = "TQ_FLAGS.3D_TQ_SYNC"
+status = "named"
+
+[[term.source]]
+term = "SGXMKIF_TQFLAGS_3DTQ_SYNC"
+kind = "flag"
+sgx545 = "TRANSFERCMD+0x0a8 bit3"
+meaning = "update the 3D-side TQ sync (transfer_cmd_shared.sync_3d_*) (0x8)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0682"
+licence = "GPL-2.0"
+evidence = "-"
+
+[[term]]
+id = "G0969"
+name = "TQ_FLAGS.DUMMY_TRANSFER"
+status = "named"
+
+[[term.source]]
+term = "SGXMKIF_TQFLAGS_DUMMYTRANSFER"
+kind = "flag"
+sgx545 = "TRANSFERCMD+0x0a8 bit5"
+meaning = "no render, sync/status only (0x20)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0683"
+licence = "GPL-2.0"
+evidence = "-; [HW] E018: transfers with flags 0x20 complete with no render, apply their update, write their status word and raise SW_EVENT"
+
+[[term]]
+id = "G0970"
+name = "TQ_FLAGS.KEEP_PENDING"
+status = "named"
+
+[[term.source]]
+term = "SGXMKIF_TQFLAGS_KEEPPENDING"
+kind = "flag"
+sgx545 = "TRANSFERCMD+0x0a8 bit1"
+meaning = "kernel does not bump pending counts (0x2)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0684"
+licence = "GPL-2.0"
+evidence = "-"
+
+[[term]]
+id = "G0971"
+name = "TQ_FLAGS.NO_SYNC_UPDATE"
+status = "named"
+
+[[term.source]]
+term = "SGXMKIF_TQFLAGS_NOSYNCUPDATE"
+kind = "flag"
+sgx545 = "TRANSFERCMD+0x0a8 bit0"
+meaning = "do not update src/dst syncs (0x1)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0685"
+licence = "GPL-2.0"
+evidence = "-"
+
+[[term]]
+id = "G0972"
+name = "TQ_FLAGS.TA_TQ_SYNC"
+status = "named"
+
+[[term.source]]
+term = "SGXMKIF_TQFLAGS_TATQ_SYNC"
+kind = "flag"
+sgx545 = "TRANSFERCMD+0x0a8 bit2"
+meaning = "update the TA-side TQ sync (transfer_cmd_shared.sync_ta_*) (0x4)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0686"
+licence = "GPL-2.0"
+evidence = "-"

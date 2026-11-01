@@ -1,0 +1,15 @@
+[[term]]
+id = "G0966"
+name = "CR_USE0_DM_SLOT"
+status = "named"
+
+[[term.source]]
+term = "PSB_CR_USE0_DM_SLOT"
+kind = "register"
+sgx545 = "0x0aa4"
+meaning = "USSE 0 data-master slot allocation"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0680"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"

@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: 2026 Josep Torra
-"""The layouts of the structures of the TA/3D kick.
+"""The layouts of the structures of the TA/3D kick and of the transfer.
 
 This module names the fields of the structures a kick involves. kickwalk.py, part of the 3D
 capture tooling, decodes a captured kick and walks its pointers with them; edmtrace.py and
 edm_dataflow.py use the layouts for offsets and pointer typing; a structure with no layout
-here is traced by offset.
+here is traced by offset. The transfer command and the HW transfer context live here too, so
+that the tracers, which take their layouts from STRUCTS, need no second table.
 
 Two kinds of layout, all 32-bit:
 
@@ -17,11 +18,13 @@ Two kinds of layout, all 32-bit:
   8 source syncs). They keep the kernel's names.
 - The client structures, which no lawful tree defines: the TA command, its TA register block,
   the render details with their 3D register block, the RT data and RT data set, the HW render
-  context, the PB descriptor and a PB block; and the EDM's TA/3D control block, where the kicks
-  record the job each pipe runs. Every field has our own name, at the offset an evidence record
-  or a glossary row gives (the comment of each structure names them); a word no record reaches
-  is unnamed padding (pad_0x<offset>). A structure's size is the one the microkernel reports
-  (SGX_MISCINFO_STRUCT_SIZES, E001), or what a record shows (the control block's 0xec, E002).
+  context, the PB descriptor and a PB block; the EDM's TA/3D control block, where the kicks
+  record the job each pipe runs; and the transfer command and the HW transfer context
+  (doc/specs/transfer.md §2), whose shared block is the kernel's. Every field has our own name,
+  at the offset an evidence record or a glossary row gives (the comment of each structure
+  names them); a word no record reaches is unnamed padding (pad_0x<offset>). A structure's
+  size is the one the microkernel reports (SGX_MISCINFO_STRUCT_SIZES, E001), or what a record
+  shows (the control block's 0xec, E002).
 
 The flag tables (FLAGS) name only the bits a record or a glossary row names; flag_names()
 prints any other bit as hex.
@@ -70,6 +73,18 @@ CMDTA_SHARED = [
     ("ui323DTQSyncReadOpsPendingVal", 1), ("s3DTQSyncReadOpsCompleteDevVAddr", 1),
     ("ui32NumSrcSyncs", 1), ("asSrcSyncs", DEVSYNC, 8), ("sTA3DDependency", DEVSYNC, 1),
     ("sCtlTAStatusInfo", CTL_STATUS, 32), ("sCtl3DStatusInfo", CTL_STATUS, 4),
+]
+
+# SGXMKIF_TRANSFERCMD_SHARED (sgx545-ce `src/services4/include/sgx_mkif_km.h`:168-192, laid out
+# in doc/specs/transfer.md §2.1); its size, 0xdc, is the one the microkernel reports
+TRANSFERCMD_SHARED = [
+    ("ui32NumSrcSyncs", 1), ("asSrcSyncs", DEVSYNC, 8), ("ui32NumDstSyncs", 1),
+    ("asDstSyncs", DEVSYNC, 1),
+    ("ui32TASyncWriteOpsPendingVal", 1), ("sTASyncWriteOpsCompleteDevVAddr", 1),
+    ("ui32TASyncReadOpsPendingVal", 1), ("sTASyncReadOpsCompleteDevVAddr", 1),
+    ("ui323DSyncWriteOpsPendingVal", 1), ("s3DSyncWriteOpsCompleteDevVAddr", 1),
+    ("ui323DSyncReadOpsPendingVal", 1), ("s3DSyncReadOpsCompleteDevVAddr", 1),
+    ("ui32NumStatusVals", 1), ("sCtlStatusInfo", CTL_STATUS, 4),
 ]
 
 # SGXMKIF_HWDEVICE_SYNC_LIST (sgx545-ce `src/services4/include/sgx_mkif_km.h`:213-219)
@@ -237,6 +252,9 @@ PBBLOCK = [("page_count", 1), ("pad_0x04", 1), ("first_page", 1), ("next_block_d
 # - 54 the kick marks, bit 0 set by the TA kick and the TA-finished handler (E158, E156), bit 1
 #   by the 3D kick (E163); 55 the word the TA kick, the TA-finished handler and the out-of-memory
 #   path clear (E158, E156, E160); 57 the word the 3D kick clears (E163).
+# Dwords 3-19 stay padding: they are 0 at boot (E002) and no instruction reads or writes them
+# in memory (E013); only their secondary attribute copies are used, as the EDM's working state
+# (sa13 and sa14 indexed by a transfer context's priority: E015), not as words of the block.
 TA3DCTL = [
     ("ta3d_ctl_dev_vaddr", 1), ("host_ctl_dev_vaddr", 1), ("ccb_ctl_dev_vaddr", 1),
     ("pad_0x0c", 1, 17), ("dpm_slot0_rt_data_dev_vaddr", 1), ("dpm_slot1_rt_data_dev_vaddr", 1),
@@ -251,6 +269,67 @@ TA3DCTL = [
     ("hw_pb_desc_ta", 1), ("hw_pb_desc_3d", 1), ("pad_0xc0", 1, 2), ("pid_ta", 1),
     ("pid_3d", 1), ("settle_count", 1), ("pad_0xd4", 1), ("kick_marks", 1),
     ("kick_clear_ta", 1), ("pad_0xe0", 1), ("kick_clear_3d", 1), ("pad_0xe8", 1),
+]
+
+# The transfer command's register block: the transfer path loads command words 0 to 16 into
+# these registers, in this order of words (E015). A word is named as the glossary's
+# transfer_cmd.* row at its offset: the GPL DDK's register name where the word names one
+# (bif_3d_req_base, pds_exec_base: E004, fw_format.md §9.5), the render details' name for
+# the same register (isp_*, event_pixel_pds_*), else after the register (reg_0400, reg_0148).
+TRANSFER_REGISTER_WRITES = [
+    (0x04C4, "isp_background_tag"), (0x04BC, "isp_bgobjvals"), (0x04B8, "isp_bgobjdepth"),
+    (0x0404, "isp_render"), (0x0408, "isp_region"), (0x0414, "isp_ctl"),
+    (0x0CAC, "bif_3d_req_base"), (0x042C, "isp_msaa"), (0x04C8, "isp_multisamplectl"),
+    (0x0A5C, "event_pixel_pds_code"), (0x0A60, "event_pixel_pds_data"),
+    (0x0A64, "event_pixel_pds_info"), (0x040C, "isp_render_origin"),
+    (0x0410, "isp_render_end"), (0x0400, "reg_0400"), (0x0AB8, "pds_exec_base"),
+    (0x0148, "reg_0148"),
+]
+
+# The coefficient groups after it, each loaded only when its load word is not 0 (E015): the
+# colour-space words to 0x0820-0x0848, the luma key to 0x0860-0x0868 and the USE filter
+# coefficients to 0x0a9c, 0x0a84-0x0a98 and 0x0b24-0x0b2c, named after their registers.
+TRANSFER_LOAD_GROUPS = [
+    ("load_yuv_csc", [
+        (0x0820, "tpu_yuv_csc0_0"), (0x0824, "tpu_yuv_csc0_1"), (0x0828, "tpu_yuv_csc0_2"),
+        (0x082C, "tpu_yuv_csc0_3"), (0x0830, "tpu_yuv_csc0_4"), (0x0834, "tpu_yuv_csc1_0"),
+        (0x0838, "tpu_yuv_csc1_1"), (0x083C, "tpu_yuv_csc1_2"), (0x0840, "tpu_yuv_csc1_3"),
+        (0x0844, "tpu_yuv_csc1_4"), (0x0848, "tpu_yuv_csc_input")]),
+    ("load_tpu_luma_key", [
+        (0x0860, "tpu_luma_key_rg"), (0x0864, "tpu_luma_key_b_offset"),
+        (0x0868, "tpu_luma_key_alpha")]),
+    ("load_use_coeffs", [
+        (0x0A9C, "use_coeffs_mode"), (0x0A84, "use_coeffs0_a"), (0x0A88, "use_coeffs0_b"),
+        (0x0A8C, "use_coeffs0_bias"), (0x0A90, "use_coeffs1_a"), (0x0A94, "use_coeffs1_b"),
+        (0x0A98, "use_coeffs1_bias"), (0x0B24, "use_coeffs2_a"), (0x0B28, "use_coeffs2_b"),
+        (0x0B2C, "use_coeffs2_bias")]),
+]
+
+# The transfer command, as the EDM reads it from the context's CCB (E015); size 0x4c8, the
+# microkernel's (E001). Words 0-16 the register block and 17-40 the coefficient groups (E015);
+# 41 the size and 42 the flags (TQ_FLAGS: E015, E016, E027); 43 on the shared block, the
+# kernel's, at the offset the kick passes (E016); 98-100 the three load words (E015); 101 the
+# pixel partitions ORed into a register value (E015; fw_format.md §9.5); 102 the fence word,
+# the command's index in its context (E016); 103 the update count and 104 on the {address,
+# value} updates the EDM applies through the context's directory (E015, E018).
+TRANSFERCMD = (
+    [(name, 1) for _addr, name in TRANSFER_REGISTER_WRITES]
+    + [(name, 1) for _load, words in TRANSFER_LOAD_GROUPS for _addr, name in words]
+    + [("cmd_size", 1), ("flags", 1), ("shared", TRANSFERCMD_SHARED, 1)]
+    + [(load, 1) for load, _words in TRANSFER_LOAD_GROUPS]
+    + [("num_pixel_partitions", 1), ("fence_id", 1), ("num_patches", 1), ("patches", 2, 101)]
+)
+
+# The HW transfer context; size 0xb4, the microkernel's (E001). Dwords 0-5 the words a host
+# sets (doc/specs/transfer.md §2.2: E018, E021), the flags (CONTEXT_FLAGS, shared with the
+# render context: E015) and the count the EDM keeps; 40 and 41 the destination sync's write
+# pending value and complete address, which the pick copies into the command (E015, E013); 42
+# the PID, copied to TA3DCtl dword 51 (E013); 43 and 44 the queue links (E015).
+HWTRANSFERCONTEXT = [
+    ("fw_com_ctx_flags", 1), ("priority", 1), ("pd_dev_paddr", 1), ("ccb_dev_vaddr", 1),
+    ("ccb_ctl_dev_vaddr", 1), ("submitted_commands", 1), ("pad_0x18", 1, 34),
+    ("dst_sync_write_ops_pending_val", 1), ("dst_sync_write_ops_complete_dev_vaddr", 1),
+    ("pid", 1), ("run_node_prev", 1), ("run_node_next", 1),
 ]
 
 STRUCTS = {
@@ -270,6 +349,9 @@ STRUCTS = {
     "hw_pb_desc": PBDESC,
     "pb_block": PBBLOCK,
     "ta3d_ctl": TA3DCTL,
+    "SGXMKIF_TRANSFERCMD_SHARED": TRANSFERCMD_SHARED,
+    "transfer_cmd": TRANSFERCMD,
+    "hw_transfer_context": HWTRANSFERCONTEXT,
 }
 
 # Flag bits by the glossary's names, only where a record or a glossary row names the bit.
@@ -292,6 +374,10 @@ FLAGS = {
     "CONTEXT_FLAGS": {0x1: "NEW", 0x2: "DUMMY_TRANSFER", 0x10: "SUSPEND", 0x20: "OWN_PB"},
     # the PB descriptor's dword 0: E200, E201
     "PB_FLAGS": {0x1: "INIT_PAGE_TABLE", 0x2: "THRESHOLD_UPDATE"},
+    # the transfer command's word 42: the GPL kernel's SGXMKIF_TQFLAGS_* (sgx545-ce
+    # sgx_mkif_km.h:159-166; transfer.md §2.1), 0x20 the dummy transfer (E018, E027)
+    "TQ_FLAGS": {0x1: "NO_SYNC_UPDATE", 0x2: "KEEP_PENDING", 0x4: "TA_TQ_SYNC",
+                 0x8: "3D_TQ_SYNC", 0x20: "DUMMY_TRANSFER"},
 }
 
 # The flag words of each structure and the table that names their bits.
@@ -300,6 +386,8 @@ FLAG_WORDS = {
     "hw_render_details": {"frag_flags": "FRAG_FLAGS"},
     "hw_render_context": {"context_flags": "CONTEXT_FLAGS"},
     "hw_pb_desc": {"pb_flags": "PB_FLAGS"},
+    "transfer_cmd": {"flags": "TQ_FLAGS"},
+    "hw_transfer_context": {"fw_com_ctx_flags": "CONTEXT_FLAGS"},
 }
 
 

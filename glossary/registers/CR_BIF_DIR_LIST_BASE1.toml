@@ -24,3 +24,19 @@ source = "emgd-psb_regs"
 citation = "C0136"
 licence = "MIT"
 evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"
+
+[[term]]
+id = "G0769"
+name = "CR_BIF_DIR_LIST_BASE1.ADDR"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_DIR_LIST_BASE1_ADDR"
+kind = "bitfield"
+sgx545 = "0x0c38[31:8]"
+meaning = "page-directory address"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0425"
+licence = "GPL-2.0"
+evidence = "mask 0xffffff00"

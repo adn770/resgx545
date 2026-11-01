@@ -28,9 +28,10 @@ def dword(name: str, field: str) -> int:
 
 
 KERNEL_SIDE = {"PVRSRV_BRIDGE_IN_DOKICK", "SGX_CCB_KICK", "SGXMKIF_CMDTA_SHARED",
-               "SGXMKIF_HWDEVICE_SYNC_LIST"}
+               "SGXMKIF_HWDEVICE_SYNC_LIST", "SGXMKIF_TRANSFERCMD_SHARED"}
 CLIENT = {"cmd_ta", "ta_registers", "registers_3d", "hw_render_details", "hw_rt_data",
-          "hw_rt_data_set", "hw_render_context", "hw_pb_desc", "pb_block", "ta3d_ctl"}
+          "hw_rt_data_set", "hw_render_context", "hw_pb_desc", "pb_block", "ta3d_ctl",
+          "transfer_cmd", "hw_transfer_context"}
 
 
 def test_the_layouts_are_the_kernel_side_ones_and_the_client_structures():
@@ -49,6 +50,9 @@ def test_sizes_are_the_ones_the_microkernel_reports():
     assert kick3d.size("hw_rt_data_set") == 0x50
     assert kick3d.size("hw_render_context") == 0x44
     assert kick3d.size("hw_pb_desc") == 0x3C
+    assert kick3d.size("transfer_cmd") == 0x4C8
+    assert kick3d.size("SGXMKIF_TRANSFERCMD_SHARED") == 0xDC
+    assert kick3d.size("hw_transfer_context") == 0xB4
 
 
 def test_register_block_and_pb_block_sizes_are_what_the_records_show():
@@ -306,14 +310,102 @@ def test_ta3d_ctl_gaps_stay_unnamed():
     assert pads == {*range(3, 20), 32, 34, 48, 49, 53, 56, 58}
 
 
+# --- the transfer command and the HW transfer context --------------------------------
+
+def test_transfer_registers_follow_the_load_order():
+    # E015: command words 0 to 16 go to these registers, in this order of words
+    assert [a for a, _ in kick3d.TRANSFER_REGISTER_WRITES] == [
+        0x04C4, 0x04BC, 0x04B8, 0x0404, 0x0408, 0x0414, 0x0CAC, 0x042C, 0x04C8, 0x0A5C,
+        0x0A60, 0x0A64, 0x040C, 0x0410, 0x0400, 0x0AB8, 0x0148]
+    assert [kick3d.offset("transfer_cmd", n) for _a, n in kick3d.TRANSFER_REGISTER_WRITES] \
+        == list(range(0, 0x44, 4))
+
+
+def test_transfer_register_words_carry_the_register_and_glossary_names():
+    names = dict(kick3d.TRANSFER_REGISTER_WRITES)
+    # the GPL DDK's register names (E004, fw_format.md §9.5) and the 3D block's
+    assert names[0x0CAC] == "bif_3d_req_base" and names[0x0AB8] == "pds_exec_base"
+    assert names[0x0A5C] == "event_pixel_pds_code" and names[0x0404] == "isp_render"
+    assert names[0x04C4] == "isp_background_tag" and names[0x0410] == "isp_render_end"
+    assert names[0x040C] == "isp_render_origin" and names[0x0400] == "reg_0400"
+
+
+def test_transfer_coefficient_groups_go_to_their_registers():
+    # E015: +0x044-+0x06c to 0x0820-0x0848 with the load word at +0x188, +0x070-+0x078 to
+    # 0x0860-0x0868 with +0x18c, +0x07c-+0x0a0 to 0x0a9c, 0x0a84-0x0a98, 0x0b24-0x0b2c with +0x190
+    groups = kick3d.TRANSFER_LOAD_GROUPS
+    assert [(load, kick3d.offset("transfer_cmd", words[0][1])) for load, words in groups] == [
+        ("load_yuv_csc", 0x044), ("load_tpu_luma_key", 0x070), ("load_use_coeffs", 0x07C)]
+    assert [a for a, _ in groups[0][1]] == list(range(0x0820, 0x084C, 4))
+    assert [a for a, _ in groups[1][1]] == [0x0860, 0x0864, 0x0868]
+    assert [a for a, _ in groups[2][1]] == [0x0A9C, *range(0x0A84, 0x0A9C, 4),
+                                            0x0B24, 0x0B28, 0x0B2C]
+    assert [kick3d.offset("transfer_cmd", load) for load, _w in groups] == [0x188, 0x18C, 0x190]
+    words = [n for _l, ws in groups for _a, n in ws]
+    assert [kick3d.offset("transfer_cmd", n) for n in words] == list(range(0x044, 0x0A4, 4))
+
+
+def test_transfer_command_words_by_record():
+    off = lambda f: kick3d.offset("transfer_cmd", f)
+    assert off("cmd_size") == 0x0A4 and off("flags") == 0x0A8          # E015, E016
+    assert off("shared") == 0x0AC                                      # E016, transfer.md §2.1
+    assert off("num_pixel_partitions") == 0x194                        # E015, fw_format.md §9.5
+    assert off("fence_id") == 0x198 and off("num_patches") == 0x19C    # E016, E015
+    assert off("patches") == 0x1A0                                     # E015, E018
+
+
+def test_transfer_shared_block_is_the_kernels():
+    # sgx545-ce sgx_mkif_km.h:168-192, as transfer.md §2.1 lays it out; E016 places the
+    # status count at command offset 0x164 and its first value at 0x16c
+    off = lambda f: kick3d.offset("transfer_cmd", "shared." + f)
+    assert off("ui32NumSrcSyncs") == 0x0AC and off("asSrcSyncs") == 0x0B0
+    assert off("ui32NumDstSyncs") == 0x130 and off("asDstSyncs") == 0x134
+    assert off("ui32TASyncWriteOpsPendingVal") == 0x144
+    assert off("sTASyncReadOpsCompleteDevVAddr") == 0x150
+    assert off("ui323DSyncWriteOpsPendingVal") == 0x154
+    assert off("s3DSyncReadOpsCompleteDevVAddr") == 0x160
+    assert off("ui32NumStatusVals") == 0x164 and off("sCtlStatusInfo") == 0x168
+    assert kick3d.offset("transfer_cmd", "load_yuv_csc") == 0x0AC + 0xDC
+
+
+def test_hw_transfer_context_words_by_record():
+    off = lambda f: kick3d.offset("hw_transfer_context", f)
+    # transfer.md §2.2 (E018, E021): flags, priority, directory, CCB, its control, count
+    assert [off(f) for f in ("fw_com_ctx_flags", "priority", "pd_dev_paddr", "ccb_dev_vaddr",
+                             "ccb_ctl_dev_vaddr", "submitted_commands")] == list(range(0, 24, 4))
+    # E015: +0xa0 and +0xa4 copied into the command's destination sync, +0xa8 into TA3DCtl
+    # dword 51, the queue links +0xac and +0xb0
+    assert off("dst_sync_write_ops_pending_val") == 0xA0
+    assert off("dst_sync_write_ops_complete_dev_vaddr") == 0xA4
+    assert off("pid") == 0xA8 and off("run_node_prev") == 0xAC and off("run_node_next") == 0xB0
+
+
+def test_hw_transfer_context_gap_stays_unnamed():
+    pads = {o + k for p, o, _w, c, _a in kick3d._layout(kick3d.STRUCTS["hw_transfer_context"])
+            if p.startswith("pad_") for k in range(c)}
+    assert pads == set(range(6, 40))
+
+
+def test_transfer_decode():
+    c = kick3d.decode("transfer_cmd", index_words(0x4C8 // 4))
+    assert c["isp_background_tag"] == 0 and c["reg_0148"] == 16
+    assert c["tpu_yuv_csc0_0"] == 17 and c["use_coeffs2_bias"] == 40
+    assert c["shared.asDstSyncs"] == [[77, 78, 79, 80]]
+    assert c["shared.sCtlStatusInfo"][0] == [90, 91]
+    assert c["fence_id"] == 102 and c["patches"][100] == [304, 305]
+    h = kick3d.decode("hw_transfer_context", index_words(0xB4 // 4))
+    assert h["submitted_commands"] == 5 and h["run_node_next"] == 44
+
+
 # --- the glossary agrees with the layouts --------------------------------------------
 
 PREFIXES = {"cmd_ta": "CMDTA", "hw_render_details": "HWRENDERDETAILS",
             "hw_rt_data": "HWRTDATA", "hw_rt_data_set": "HWRTDATASET",
             "hw_render_context": "HWRENDERCONTEXT", "hw_pb_desc": "HWPBDESC",
-            "ta3d_ctl": "TA3D_CTL"}
+            "ta3d_ctl": "TA3D_CTL", "transfer_cmd": "TRANSFERCMD",
+            "hw_transfer_context": "HWTRANSFERCONTEXT"}
 FIELD_LOC = re.compile(r"^([A-Z_0-9]+)\+0x([0-9a-fA-F]+)$")
-FLAG_LOC = re.compile(r"^(?:([A-Z_0-9/]+)\+0x([0-9a-fA-F]+)|render flags) bit(\d+) ")
+FLAG_LOC = re.compile(r"^(?:([A-Z_0-9/]+)\+0x([0-9a-fA-F]+)|render flags) bit(\d+)\b")
 
 
 def glossary_rows(stem: str) -> list[tuple[str, str]]:
@@ -349,7 +441,7 @@ def test_every_glossary_field_is_named_at_its_offset(name):
 
 FLAG_WORD_OF = {"GEOM_FLAGS": ("cmd_ta", "geom_flags"), "FRAG_FLAGS": None,
                 "CONTEXT_FLAGS": ("hw_render_context", "context_flags"),
-                "PB_FLAGS": ("hw_pb_desc", "pb_flags")}
+                "PB_FLAGS": ("hw_pb_desc", "pb_flags"), "TQ_FLAGS": ("transfer_cmd", "flags")}
 
 
 @pytest.mark.skipif(not GLOSSARY.is_dir(), reason="no glossary next to the harness")
@@ -372,7 +464,8 @@ def test_flag_tables_are_the_glossary_rows(kind):
 # prefix), named <layout>.<field> for our layouts and spelled as the kernel spells the field
 # for the kernel's (the shared blocks); a word with no row at any of its offsets by name
 # (pb_block.page_count); and the register rows by offset.
-LAYOUT_PREFIX = {**PREFIXES, "pb_block": "PB_BLOCK", "SGXMKIF_CMDTA_SHARED": "CMDTA_SHARED"}
+LAYOUT_PREFIX = {**PREFIXES, "pb_block": "PB_BLOCK", "SGXMKIF_CMDTA_SHARED": "CMDTA_SHARED",
+                 "SGXMKIF_TRANSFERCMD_SHARED": "TRANSFERCMD_SHARED"}
 REGISTER_BLOCKS = {"ta_registers": kick3d.TA_REGISTER_WRITES,
                    "registers_3d": kick3d.REGISTER_3D_WRITES}
 ANY_LOC = re.compile(r"([A-Z][A-Z0-9_/]*)\+0x([0-9a-fA-F]+)")
@@ -478,6 +571,7 @@ def test_flag_names():
     assert kick3d.flag_names("FRAG_FLAGS", 0x180) == ["DEPTH_BUFFER", "STENCIL_BUFFER"]
     assert kick3d.flag_names("CONTEXT_FLAGS", 0x21) == ["NEW", "OWN_PB"]
     assert kick3d.flag_names("PB_FLAGS", 0x3) == ["INIT_PAGE_TABLE", "THRESHOLD_UPDATE"]
+    assert kick3d.flag_names("TQ_FLAGS", 0x28) == ["3D_TQ_SYNC", "DUMMY_TRANSFER"]
 
 
 def test_bits_no_record_names_print_as_hex():
@@ -492,7 +586,9 @@ def test_flag_words_name_the_flag_table_of_each_flags_field():
         "cmd_ta": {"geom_flags": "GEOM_FLAGS", "frag_flags": "FRAG_FLAGS"},
         "hw_render_details": {"frag_flags": "FRAG_FLAGS"},
         "hw_render_context": {"context_flags": "CONTEXT_FLAGS"},
-        "hw_pb_desc": {"pb_flags": "PB_FLAGS"}}
+        "hw_pb_desc": {"pb_flags": "PB_FLAGS"},
+        "transfer_cmd": {"flags": "TQ_FLAGS"},
+        "hw_transfer_context": {"fw_com_ctx_flags": "CONTEXT_FLAGS"}}
 
 
 # --- the kernel-side layouts (sgx545-ce) ---------------------------------------------

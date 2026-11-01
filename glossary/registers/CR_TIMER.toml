@@ -24,3 +24,19 @@ source = "linux-imagination"
 citation = "C0086"
 licence = "GPL-2.0-only OR MIT"
 evidence = "same name as our EUR_CR_TIMER; Rogue offset 0x0160; analogy, function to be confirmed"
+
+[[term]]
+id = "G0964"
+name = "CR_TIMER.VALUE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_TIMER_VALUE"
+kind = "bitfield"
+sgx545 = "0x0144[31:0]"
+meaning = "current timer count"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0678"
+licence = "GPL-2.0"
+evidence = "mask 0xffffffff"

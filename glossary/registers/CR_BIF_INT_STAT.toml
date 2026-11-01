@@ -24,3 +24,51 @@ source = "emgd-psb_regs"
 citation = "C0045"
 licence = "MIT"
 evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"
+
+[[term]]
+id = "G0772"
+name = "CR_BIF_INT_STAT.FAULT_REQ"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_INT_STAT_FAULT_REQ"
+kind = "bitfield"
+sgx545 = "0x0c04[15:0]"
+meaning = "requestors that faulted"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0428"
+licence = "GPL-2.0"
+evidence = "mask 0x0000ffff"
+
+[[term]]
+id = "G0773"
+name = "CR_BIF_INT_STAT.FAULT_TYPE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_INT_STAT_FAULT_TYPE"
+kind = "bitfield"
+sgx545 = "0x0c04[18:16]"
+meaning = "fault type"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0429"
+licence = "GPL-2.0"
+evidence = "mask 0x00070000"
+
+[[term]]
+id = "G0774"
+name = "CR_BIF_INT_STAT.FLUSH_COMPLETE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_INT_STAT_FLUSH_COMPLETE"
+kind = "bitfield"
+sgx545 = "0x0c04[19]"
+meaning = "MMU flush complete"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0430"
+licence = "GPL-2.0"
+evidence = "mask 0x00080000"

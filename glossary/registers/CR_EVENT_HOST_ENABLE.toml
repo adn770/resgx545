@@ -24,3 +24,467 @@ source = "emgd-psb_regs"
 citation = "C0069"
 licence = "MIT"
 evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"
+
+[[term]]
+id = "G0877"
+name = "CR_EVENT_HOST_ENABLE.BREAKPOINT"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_ENABLE_BREAKPOINT"
+kind = "bitfield"
+sgx545 = "0x0130[15]"
+meaning = "send to host: breakpoint hit"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0573"
+licence = "GPL-2.0"
+evidence = "mask 0x00008000"
+
+[[term]]
+id = "G0878"
+name = "CR_EVENT_HOST_ENABLE.DPM_3D_MEM_FREE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_ENABLE_DPM_3D_MEM_FREE"
+kind = "bitfield"
+sgx545 = "0x0130[0]"
+meaning = "send to host: DPM finished freeing 3D pages"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0574"
+licence = "GPL-2.0"
+evidence = "mask 0x00000001"
+
+[[term]]
+id = "G0879"
+name = "CR_EVENT_HOST_ENABLE.DPM_CONTROL_CLEAR"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_ENABLE_DPM_CONTROL_CLEAR"
+kind = "bitfield"
+sgx545 = "0x0130[9]"
+meaning = "send to host: DPM control clear done"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0575"
+licence = "GPL-2.0"
+evidence = "mask 0x00000200"
+
+[[term]]
+id = "G0880"
+name = "CR_EVENT_HOST_ENABLE.DPM_CONTROL_LOAD"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_ENABLE_DPM_CONTROL_LOAD"
+kind = "bitfield"
+sgx545 = "0x0130[8]"
+meaning = "send to host: DPM control load done"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0576"
+licence = "GPL-2.0"
+evidence = "mask 0x00000100"
+
+[[term]]
+id = "G0881"
+name = "CR_EVENT_HOST_ENABLE.DPM_CONTROL_STORE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_ENABLE_DPM_CONTROL_STORE"
+kind = "bitfield"
+sgx545 = "0x0130[7]"
+meaning = "send to host: DPM control store done"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0577"
+licence = "GPL-2.0"
+evidence = "mask 0x00000080"
+
+[[term]]
+id = "G0882"
+name = "CR_EVENT_HOST_ENABLE.DPM_INIT_END"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_ENABLE_DPM_INITEND"
+kind = "bitfield"
+sgx545 = "0x0130[22]"
+meaning = "send to host: DPM initialisation finished"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0578"
+licence = "GPL-2.0"
+evidence = "mask 0x00400000"
+
+[[term]]
+id = "G0883"
+name = "CR_EVENT_HOST_ENABLE.DPM_OUT_OF_MEMORY_GBL"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_ENABLE_DPM_OUT_OF_MEMORY_GBL"
+kind = "bitfield"
+sgx545 = "0x0130[2]"
+meaning = "send to host: DPM out of memory (global list)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0579"
+licence = "GPL-2.0"
+evidence = "mask 0x00000004"
+
+[[term]]
+id = "G0884"
+name = "CR_EVENT_HOST_ENABLE.DPM_OUT_OF_MEMORY_MT"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_ENABLE_DPM_OUT_OF_MEMORY_MT"
+kind = "bitfield"
+sgx545 = "0x0130[1]"
+meaning = "send to host: DPM out of memory (macrotile)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0580"
+licence = "GPL-2.0"
+evidence = "mask 0x00000002"
+
+[[term]]
+id = "G0885"
+name = "CR_EVENT_HOST_ENABLE.DPM_OUT_OF_MEMORY_ZLS"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_ENABLE_DPM_OUT_OF_MEMORY_ZLS"
+kind = "bitfield"
+sgx545 = "0x0130[25]"
+meaning = "send to host: DPM out of memory (ZLS)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0581"
+licence = "GPL-2.0"
+evidence = "mask 0x02000000"
+
+[[term]]
+id = "G0886"
+name = "CR_EVENT_HOST_ENABLE.DPM_REACHED_MEM_THRESH"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_ENABLE_DPM_REACHED_MEM_THRESH"
+kind = "bitfield"
+sgx545 = "0x0130[3]"
+meaning = "send to host: DPM page use reached the threshold"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0582"
+licence = "GPL-2.0"
+evidence = "mask 0x00000008"
+
+[[term]]
+id = "G0887"
+name = "CR_EVENT_HOST_ENABLE.DPM_STATE_CLEAR"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_ENABLE_DPM_STATE_CLEAR"
+kind = "bitfield"
+sgx545 = "0x0130[6]"
+meaning = "send to host: DPM state clear done"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0583"
+licence = "GPL-2.0"
+evidence = "mask 0x00000040"
+
+[[term]]
+id = "G0888"
+name = "CR_EVENT_HOST_ENABLE.DPM_STATE_LOAD"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_ENABLE_DPM_STATE_LOAD"
+kind = "bitfield"
+sgx545 = "0x0130[5]"
+meaning = "send to host: DPM state load done"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0584"
+licence = "GPL-2.0"
+evidence = "mask 0x00000020"
+
+[[term]]
+id = "G0889"
+name = "CR_EVENT_HOST_ENABLE.DPM_STATE_STORE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_ENABLE_DPM_STATE_STORE"
+kind = "bitfield"
+sgx545 = "0x0130[4]"
+meaning = "send to host: DPM state store done"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0585"
+licence = "GPL-2.0"
+evidence = "mask 0x00000010"
+
+[[term]]
+id = "G0890"
+name = "CR_EVENT_HOST_ENABLE.DPM_TA_MEM_FREE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_ENABLE_DPM_TA_MEM_FREE"
+kind = "bitfield"
+sgx545 = "0x0130[24]"
+meaning = "send to host: DPM finished freeing TA pages"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0586"
+licence = "GPL-2.0"
+evidence = "mask 0x01000000"
+
+[[term]]
+id = "G0891"
+name = "CR_EVENT_HOST_ENABLE.ISP2_ZLS_CSW_FINISHED"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_ENABLE_ISP2_ZLS_CSW_FINISHED"
+kind = "bitfield"
+sgx545 = "0x0130[21]"
+meaning = "send to host: second ISP finished a ZLS context switch"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0587"
+licence = "GPL-2.0"
+evidence = "mask 0x00200000"
+
+[[term]]
+id = "G0892"
+name = "CR_EVENT_HOST_ENABLE.ISP_END_TILE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_ENABLE_ISP_END_TILE"
+kind = "bitfield"
+sgx545 = "0x0130[23]"
+meaning = "send to host: ISP finished a tile"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0588"
+licence = "GPL-2.0"
+evidence = "mask 0x00800000"
+
+[[term]]
+id = "G0893"
+name = "CR_EVENT_HOST_ENABLE.ISP_VISIBILITY_FAIL"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_ENABLE_ISP_VISIBILITY_FAIL"
+kind = "bitfield"
+sgx545 = "0x0130[16]"
+meaning = "send to host: ISP visibility-test fail"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0589"
+licence = "GPL-2.0"
+evidence = "mask 0x00010000"
+
+[[term]]
+id = "G0894"
+name = "CR_EVENT_HOST_ENABLE.MADD_CACHE_INVAL_COMPLETE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_ENABLE_MADD_CACHE_INVALCOMPLETE"
+kind = "bitfield"
+sgx545 = "0x0130[26]"
+meaning = "send to host: MADD cache invalidate complete"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0590"
+licence = "GPL-2.0"
+evidence = "mask 0x04000000"
+
+[[term]]
+id = "G0895"
+name = "CR_EVENT_HOST_ENABLE.MASTER_INTERRUPT"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_ENABLE_MASTER_INTERRUPT"
+kind = "bitfield"
+sgx545 = "0x0130[31]"
+meaning = "send to host: summary: some enabled event is pending"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0591"
+licence = "GPL-2.0"
+evidence = "mask 0x80000000"
+
+[[term]]
+id = "G0896"
+name = "CR_EVENT_HOST_ENABLE.OTPM_FLUSHED"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_ENABLE_OTPM_FLUSHED"
+kind = "bitfield"
+sgx545 = "0x0130[19]"
+meaning = "send to host: OTPM flushed"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0592"
+licence = "GPL-2.0"
+evidence = "mask 0x00080000"
+
+[[term]]
+id = "G0897"
+name = "CR_EVENT_HOST_ENABLE.OTPM_INV"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_ENABLE_OTPM_INV"
+kind = "bitfield"
+sgx545 = "0x0130[20]"
+meaning = "send to host: OTPM invalidated"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0593"
+licence = "GPL-2.0"
+evidence = "mask 0x00100000"
+
+[[term]]
+id = "G0898"
+name = "CR_EVENT_HOST_ENABLE.PIXELBE_END_RENDER"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_ENABLE_PIXELBE_END_RENDER"
+kind = "bitfield"
+sgx545 = "0x0130[18]"
+meaning = "send to host: pixel back end finished the render"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0594"
+licence = "GPL-2.0"
+evidence = "mask 0x00040000"
+
+[[term]]
+id = "G0899"
+name = "CR_EVENT_HOST_ENABLE.SW_EVENT"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_ENABLE_SW_EVENT"
+kind = "bitfield"
+sgx545 = "0x0130[14]"
+meaning = "send to host: software event"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0595"
+licence = "GPL-2.0"
+evidence = "mask 0x00004000"
+
+[[term]]
+id = "G0900"
+name = "CR_EVENT_HOST_ENABLE.TA_DPM_FAULT"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_ENABLE_TA_DPM_FAULT"
+kind = "bitfield"
+sgx545 = "0x0130[28]"
+meaning = "send to host: TA hit a DPM fault"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0596"
+licence = "GPL-2.0"
+evidence = "mask 0x10000000"
+
+[[term]]
+id = "G0901"
+name = "CR_EVENT_HOST_ENABLE.TA_FINISHED"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_ENABLE_TA_FINISHED"
+kind = "bitfield"
+sgx545 = "0x0130[13]"
+meaning = "send to host: TA pass finished"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0597"
+licence = "GPL-2.0"
+evidence = "mask 0x00002000"
+
+[[term]]
+id = "G0902"
+name = "CR_EVENT_HOST_ENABLE.TA_TERMINATE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_ENABLE_TA_TERMINATE"
+kind = "bitfield"
+sgx545 = "0x0130[12]"
+meaning = "send to host: TA terminate done"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0598"
+licence = "GPL-2.0"
+evidence = "mask 0x00001000"
+
+[[term]]
+id = "G0903"
+name = "CR_EVENT_HOST_ENABLE.TIMER"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_ENABLE_TIMER"
+kind = "bitfield"
+sgx545 = "0x0130[29]"
+meaning = "send to host: event timer expired (CR_EVENT_TIMER)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0599"
+licence = "GPL-2.0"
+evidence = "mask 0x20000000"
+
+[[term]]
+id = "G0904"
+name = "CR_EVENT_HOST_ENABLE.TPC_CLEAR"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_ENABLE_TPC_CLEAR"
+kind = "bitfield"
+sgx545 = "0x0130[11]"
+meaning = "send to host: tail-pointer cache clear done"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0600"
+licence = "GPL-2.0"
+evidence = "mask 0x00000800"
+
+[[term]]
+id = "G0905"
+name = "CR_EVENT_HOST_ENABLE.TPC_FLUSH"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_ENABLE_TPC_FLUSH"
+kind = "bitfield"
+sgx545 = "0x0130[10]"
+meaning = "send to host: tail-pointer cache flush done"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0601"
+licence = "GPL-2.0"
+evidence = "mask 0x00000400"

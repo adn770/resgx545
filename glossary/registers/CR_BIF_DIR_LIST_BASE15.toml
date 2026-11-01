@@ -13,3 +13,19 @@ source = "sgx545-ce"
 citation = "C0041"
 licence = "GPL-2.0"
 evidence = "SGX545 defs; same in 17 other trees"
+
+[[term]]
+id = "G0770"
+name = "CR_BIF_DIR_LIST_BASE15.ADDR"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_DIR_LIST_BASE15_ADDR"
+kind = "bitfield"
+sgx545 = "0x0c70[31:8]"
+meaning = "page-directory address"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0426"
+licence = "GPL-2.0"
+evidence = "mask 0xffffff00"

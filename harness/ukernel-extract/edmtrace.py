@@ -73,6 +73,8 @@ PREFIX = {
     "hw_pb_desc": "HWPBDESC", "pb_block": "PB_BLOCK",
     "SGXMKIF_HWDEVICE_SYNC_LIST": "HWDEVICE_SYNC_LIST", "SGX_CCB_KICK": "SGX_CCB_KICK",
     "PVRSRV_BRIDGE_IN_DOKICK": "DOKICK", "ta3d_ctl": "TA3D_CTL",
+    "transfer_cmd": "TRANSFERCMD", "SGXMKIF_TRANSFERCMD_SHARED": "TRANSFERCMD_SHARED",
+    "hw_transfer_context": "HWTRANSFERCONTEXT",
 }
 KICK3D = {v: k for k, v in PREFIX.items()}   # prefix -> layout, for seeds
 

@@ -35,3 +35,244 @@ source = "linux-imagination"
 citation = "C0038"
 licence = "GPL-2.0-only OR MIT"
 evidence = "same name as our BIF_CTRL; Rogue offset 0x12a8; analogy, function to be confirmed"
+
+[[term]]
+id = "G0755"
+name = "CR_BIF_CTRL.CLEAR_FAULT"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_CTRL_CLEAR_FAULT"
+kind = "bitfield"
+sgx545 = "0x0c00[4]"
+meaning = "clear the latched MMU fault"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0408"
+licence = "GPL-2.0"
+evidence = "mask 0x00000010"
+
+[[term.source]]
+term = "_PSB_CB_CTRL_CLEAR_FAULT"
+kind = "flag"
+sgx545 = "0x0c00[4]"
+meaning = "clear the latched MMU fault"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0409"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs"
+
+[[term]]
+id = "G0756"
+name = "CR_BIF_CTRL.FLUSH"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_CTRL_FLUSH"
+kind = "bitfield"
+sgx545 = "0x0c00[2]"
+meaning = "flush the MMU caches"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0410"
+licence = "GPL-2.0"
+evidence = "mask 0x00000004"
+
+[[term.source]]
+term = "_PSB_CB_CTRL_FLUSH"
+kind = "flag"
+sgx545 = "0x0c00[2]"
+meaning = "flush the MMU caches"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0411"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs"
+
+[[term]]
+id = "G0757"
+name = "CR_BIF_CTRL.INVAL_DC"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_CTRL_INVALDC"
+kind = "bitfield"
+sgx545 = "0x0c00[3]"
+meaning = "invalidate the MMU directory cache"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0412"
+licence = "GPL-2.0"
+evidence = "mask 0x00000008"
+
+[[term.source]]
+term = "_PSB_CB_CTRL_INVALDC"
+kind = "flag"
+sgx545 = "0x0c00[3]"
+meaning = "invalidate the MMU directory cache"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0413"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); field of the register above; bit position is SGX535's, check SGX545 defs"
+
+[[term]]
+id = "G0758"
+name = "CR_BIF_CTRL.MMU_BYPASS_CACHE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_CTRL_MMU_BYPASS_CACHE"
+kind = "bitfield"
+sgx545 = "0x0c00[8]"
+meaning = "bypass MMU translation for cache requests"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0414"
+licence = "GPL-2.0"
+evidence = "mask 0x00000100"
+
+[[term]]
+id = "G0759"
+name = "CR_BIF_CTRL.MMU_BYPASS_HOST"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_CTRL_MMU_BYPASS_HOST"
+kind = "bitfield"
+sgx545 = "0x0c00[15]"
+meaning = "bypass MMU translation for host requests"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0415"
+licence = "GPL-2.0"
+evidence = "mask 0x00008000"
+
+[[term]]
+id = "G0760"
+name = "CR_BIF_CTRL.MMU_BYPASS_ISP"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_CTRL_MMU_BYPASS_ISP"
+kind = "bitfield"
+sgx545 = "0x0c00[13]"
+meaning = "bypass MMU translation for ISP requests"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0416"
+licence = "GPL-2.0"
+evidence = "mask 0x00002000"
+
+[[term]]
+id = "G0761"
+name = "CR_BIF_CTRL.MMU_BYPASS_PBE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_CTRL_MMU_BYPASS_PBE"
+kind = "bitfield"
+sgx545 = "0x0c00[11]"
+meaning = "bypass MMU translation for PBE requests"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0417"
+licence = "GPL-2.0"
+evidence = "mask 0x00000800"
+
+[[term]]
+id = "G0762"
+name = "CR_BIF_CTRL.MMU_BYPASS_TE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_CTRL_MMU_BYPASS_TE"
+kind = "bitfield"
+sgx545 = "0x0c00[10]"
+meaning = "bypass MMU translation for TE requests"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0418"
+licence = "GPL-2.0"
+evidence = "mask 0x00000400"
+
+[[term]]
+id = "G0763"
+name = "CR_BIF_CTRL.MMU_BYPASS_TSPP"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_CTRL_MMU_BYPASS_TSPP"
+kind = "bitfield"
+sgx545 = "0x0c00[12]"
+meaning = "bypass MMU translation for TSP parameter fetch requests"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0419"
+licence = "GPL-2.0"
+evidence = "mask 0x00001000"
+
+[[term]]
+id = "G0764"
+name = "CR_BIF_CTRL.MMU_BYPASS_USE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_CTRL_MMU_BYPASS_USE"
+kind = "bitfield"
+sgx545 = "0x0c00[14]"
+meaning = "bypass MMU translation for USSE requests"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0420"
+licence = "GPL-2.0"
+evidence = "mask 0x00004000"
+
+[[term]]
+id = "G0765"
+name = "CR_BIF_CTRL.MMU_BYPASS_VDM"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_CTRL_MMU_BYPASS_VDM"
+kind = "bitfield"
+sgx545 = "0x0c00[9]"
+meaning = "bypass MMU translation for VDM requests"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0421"
+licence = "GPL-2.0"
+evidence = "mask 0x00000200"
+
+[[term]]
+id = "G0766"
+name = "CR_BIF_CTRL.NO_REORDER"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_CTRL_NOREORDER"
+kind = "bitfield"
+sgx545 = "0x0c00[0]"
+meaning = "disable memory request reordering"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0422"
+licence = "GPL-2.0"
+evidence = "mask 0x00000001"
+
+[[term]]
+id = "G0767"
+name = "CR_BIF_CTRL.PAUSE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_CTRL_PAUSE"
+kind = "bitfield"
+sgx545 = "0x0c00[1]"
+meaning = "pause MMU requests"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0423"
+licence = "GPL-2.0"
+evidence = "mask 0x00000002"

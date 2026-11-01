@@ -80,6 +80,38 @@ licence = "GPL-2.0"
 evidence = "kick-side handle of the same CCB"
 
 [[term]]
+id = "G0973"
+name = "hw_transfer_context.dst_sync_write_ops_complete_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "hw_transfer_context.dst_sync_write_ops_complete_dev_vaddr"
+kind = "field"
+sgx545 = "HWTRANSFERCONTEXT+0x0a4"
+meaning = "HW transfer context word 41, which the EDM copies over the command's destination sync write-complete address (TRANSFERCMD+0x140) when the command has a destination sync [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E013, E015"
+licence = "MIT"
+evidence = "[RE] E013: read once in the pick routine and stored to TRANSFERCMD+0x140, on the path taken when the destination sync count is not 0; [RE] E015: the context's words +0xa0 and +0xa4 are copied into the command at +0x13c and +0x140"
+
+[[term]]
+id = "G0974"
+name = "hw_transfer_context.dst_sync_write_ops_pending_val"
+status = "named"
+
+[[term.source]]
+term = "hw_transfer_context.dst_sync_write_ops_pending_val"
+kind = "field"
+sgx545 = "HWTRANSFERCONTEXT+0x0a0"
+meaning = "HW transfer context word 40, which the EDM copies over the command's destination sync write-pending value (TRANSFERCMD+0x13c) when the command has a destination sync [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E013, E015"
+licence = "MIT"
+evidence = "[RE] E013: read once in the pick routine and stored to TRANSFERCMD+0x13c, on the path taken when the destination sync count is not 0; [RE] E015: the context's words +0xa0 and +0xa4 are copied into the command at +0x13c and +0x140"
+
+[[term]]
 id = "G0105"
 name = "hw_transfer_context.fw_com_ctx_flags"
 status = "named"
@@ -112,6 +144,22 @@ licence = "GPL-2.0"
 evidence = "kernel writes the PD address at this offset (0x8)"
 
 [[term]]
+id = "G0975"
+name = "hw_transfer_context.pid"
+status = "named"
+
+[[term.source]]
+term = "pid"
+kind = "field"
+sgx545 = "HWTRANSFERCONTEXT+0x0a8"
+meaning = "owning process"
+tier = "3"
+source = "linux-imagination"
+citation = "C0345"
+licence = "GPL-2.0 OR MIT"
+evidence = "rogue_fwif_fwcommoncontext"
+
+[[term]]
 id = "G0107"
 name = "hw_transfer_context.priority"
 status = "named"
@@ -137,6 +185,38 @@ source = "sgx545-ce"
 citation = "C0158"
 licence = "GPL-2.0"
 evidence = "the kernel's set-priority call writes here"
+
+[[term]]
+id = "G0976"
+name = "hw_transfer_context.run_node_next"
+status = "named"
+
+[[term.source]]
+term = "run_node"
+kind = "field"
+sgx545 = "HWTRANSFERCONTEXT+0x0b0"
+meaning = "next context in EDM list"
+tier = "3"
+source = "linux-imagination"
+citation = "C0687"
+licence = "GPL-2.0 OR MIT"
+evidence = "rogue_fwif_fwcommoncontext list node"
+
+[[term]]
+id = "G0977"
+name = "hw_transfer_context.run_node_prev"
+status = "named"
+
+[[term.source]]
+term = "run_node"
+kind = "field"
+sgx545 = "HWTRANSFERCONTEXT+0x0ac"
+meaning = "previous context in EDM list"
+tier = "3"
+source = "linux-imagination"
+citation = "C0687"
+licence = "GPL-2.0 OR MIT"
+evidence = "rogue_fwif_fwcommoncontext list node"
 
 [[term]]
 id = "G0108"

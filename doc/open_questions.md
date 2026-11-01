@@ -4,10 +4,15 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
+## bif
+
+- `Q076` (phase 11): which page directory do a render's TA and 3D requestors translate through, and do read-only aliases of the EDM's buffers suffice there as they do for the transfer path? (E021, E023, E151)
+
 ## dpm
 
 - `Q038` (phase 10): when a scene overflows its parameter buffer, are the missing pixels geometry the partial render discards or pixels a later background object paints over, and why does the amount drawn not follow the buffer size? (E202, E204, E160)
 - `Q045` (phase 11): what do the DPM store and load tasks that the TA kick issues from the fields of register 0x0740 move, and what sets those fields? (E158)
+- `Q067` (phase 11): how does the PB store offset scale with the page count, how must a host lay out a page table it builds itself, and does the settle routine wait for the other pipe to go idle? (E153, E200, E201)
 
 ## edm
 
@@ -22,10 +27,15 @@
 - `Q030` (phase 10): what does each value of CR_ISP_MSAA.MODE store in the target, and does a clear bit 31 still tile the triangle? (E210, E220, E211, E219)
 - `Q031` (phase 10): with ISP word 0 bit 28 set, is a pixel covered by any of eight samples placed by 0x04c8 and 0x0520, or by the four samples of 0x0520 plus the pixel centre? (E214, E215)
 - `Q032` (phase 10): what does pcoeff hand the ISP in the punch-through pass, when the kept pixels' depth is the same without it and moves between runs only when it runs without the iteration it reads? (E217)
+- `Q066` (phase 11): what do the three background-object words the 3D kick writes mean to the ISP, and what are the other words of a render's background object? (E069, E162, E209, E216)
+- `Q071` (phase 11): what do the rest of ISP word 2 and the ZLS control word's bits do in a render with depth or stencil buffers? (E057, E169, E216, E228)
+- `Q072` (phase 11): is bit 1 of CR_ISP_REG_04DC an up-front depth test, given that it hangs every punch-through pass tried? (E068, E073, E213, E222)
+- `Q073` (phase 11): is blending only a shader that combines its colour with o0 in a translucent pass, or does a unit after the shader blend as well? (E077)
 
 ## mte
 
 - `Q039` (phase 10): which vertex dword does user clip plane 1 read as its distance when it is enabled without plane 0? (E198)
+- `Q069` (phase 11): is a depth outside [0, 1] clipped, and what do OUTSEL bits 12 and 13 and the rest of the state block's presence word select? (E061, E066, E192, E193, E198)
 
 ## pbe
 
@@ -33,6 +43,7 @@
 - `Q040` (phase 11): why does the end-of-tile emit write no pixel with EMIT2 bits 15:8 at 0x81 alone, when the other 255 values, those with bit 7 clear among them, write what 0x80 writes? (E046)
 - `Q044` (phase 11): does CR_REG_0400 bit 25 invert the stored pixel's byte 3 or its alpha, and do the register's other bits act in pack modes other than ARGB8888? (E029, E028, E031)
 - `Q046` (phase 11): do SIDEBAND bits 8:6 change what the end-of-tile emit stores under multisampling or in the pack modes that store part of a colour, when at 1 to 7 they change no pixel of an ARGB8888 or RGB565 triangle? (E030, E031, E210)
+- `Q074` (phase 11): why does a second end-of-tile emit in a tile leave the next job's image wrong, and does SIDEBAND bit 9 mark an emit that counts against a PBE tile? (E030, E130, E239, E240)
 
 ## pds
 
@@ -46,10 +57,18 @@
 - `Q025` (phase 7): what does the SB field of CR_BIF_FAULT encode in the PDS faults, and why did a store of one dword fault in the follow-up run only, and a store of two dwords then eight in the first run only? (E143, E144, E145)
 - `Q026` (phase 7): why do the per-tile stores of the grid pixel-event probes leave empty slots and mixed copies, different ones per run? (E130)
 - `Q027` (phase 7): what does the no-wait iteration deliver to pa0: stale values in the first run, and the pixel's own clip x on 60 to 115 pixels per case in the follow-up run? (E131, E048)
+- `Q057` (phase 11): what do doutc, douts, slc, mr and ir0 do as move destinations, and movsa on ports other than doutd, and why does an enabled small count in tim hang the job? (E127, E128)
+- `Q058` (phase 11): what do the input flags if0 and if1 read in a primary pixel program: the first and last task of a tile, or the end of a tile and of a render? (E128, E130)
+- `Q059` (phase 11): why do PDS stores totalling 2, 3 or 4 dwords fault the job, and why does an rwfence after a store, or after a faulted job, touch page 0? (E143, E144, E145)
+- `Q060` (phase 11): what do mr01, mr23 and ir1 hold outside a fill, and do the .h specials read 0 in every task and the per-tile inputs follow the tile in a multi-tile render? (E128, E130)
+- `Q061` (phase 11): does a DOUTU word's EXE field stop at bit 19, leaving CBASE in bits 3:0, or do the 18 program-counter bits reach bit 21? (E004)
+- `Q062` (phase 11): does a PDS nop do anything beyond taking an instruction slot, and why does pc.0 read the instruction index plus 1 or 2, not 3, at some places? (E128, E142, E143)
+- `Q063` (phase 11): what does bit 9 of a mov16 or mov32 special source select on the rest of the SGX family, when on SGX545 it only makes mov16 read 0? (E128)
 
 ## platform
 
 - `Q001` (phase 3): what do 0x0810, 0x0814 and 0x0818, set once by the init script to 0x1, 0xffff and 0x7ff, control? (E006, E010, E122)
+- `Q075` (phase 11): what does each HWPerf counter the firmware records (0x0044-0x0064, 0x0e84-0x0e90 and 0x0eb4-0x0ec0) count, and how does the group in CR_HWPERF_CTRL select them? (E149, E150, E152)
 
 ## render
 
@@ -58,10 +77,14 @@
 - `Q041` (phase 11): what does FRAG_FLAGS.BIT2 keep after a render, when the completion leaves the access word and the DPM context slot alone under the mask 0xc but no image changes with the bit? (E164, E158, E051, E052, E053)
 - `Q043` (phase 11): does CR_REG_0148, which the firmware loads for every render, partial render and transfer, change anything a job does, when six address forms of it in the triangle job write nothing and change no pixel? (E056, E163, E160, E015, E028)
 - `Q049` (phase 11): does the firmware or the hardware ever read dword 7 (offset 0x01c) of the render context, which the EDM dataflow reaches on no path? (E013, E021, E156, E165)
+- `Q065` (phase 11): why does render flag bit 0 hang a kernel-built triangle job when the firmware completes a NO_RENDER render without rendering, and does one command with FIRST_KICK and LAST_KICK act as two? (E050, E156, E164, E165, E184)
 
 ## ta
 
 - `Q035` (phase 10): which tiling words does the macrotile rule set at target sizes other than the sixteen tried, and does register 0x0208 ever change with the size? (E174, E175)
+- `Q064` (phase 11): what do the CR_TE_PSG bits 24 and 21 the TA kick ORs in do, and is bit 1 of CR_DPM_STATE_CONTEXT_ID the 3D's DPM slot as bit 2 is the TA's? (E158, E172)
+- `Q068` (phase 11): do the twelve TA register words that are zero in our jobs save and resume the state of an interrupted TA? (E054, E056, E182, E183, E245)
+- `Q070` (phase 11): what are the TA object's three header words made from, do its set masks mean half precision, one component, has z and has w, and does the fitted region test hold beyond the triangles it was fitted to? (E176, E177, E180, E181, E185)
 
 ## texture
 
@@ -83,11 +106,18 @@
 - `Q017` (phase 6): why does g19 read 0x1a as a store's source but 0 through a mov and as the pixel? (E085, E086)
 - `Q018` (phase 6): where does the 0xff00ff00 colour left in the opaque pass and the punch-through phase scene come from, and why does its pixel count vary from run to run? (E077, E082)
 - `Q048` (phase 11): do the MADD0 and MADD1 clock gates follow the USSE pipes' floating-point arithmetic, or their cache and texture traffic? (E006, E008, E011)
+- `Q050` (phase 11): what do the visibility group's instructions do, and how do smp's mipmaps and LOD values, the border address modes, the compressed and YUV formats and firh's rounding biases and coefficient loads behave? (E083, E091, E123, E147)
+- `Q051` (phase 11): what state do smoa, smbo, smr, imo and setfc set in the MOE, and what does moest return, beyond the smlsi increments the probes pinned? (E087, E097, E105, E109)
+- `Q052` (phase 11): what do .skipinv, .syncs, .nosched and the other scheduling flags change, and how many instructions after a write can a dependent instruction read the result, with or without an interlock? (E100, E104, E111, E113, E124)
+- `Q053` (phase 11): what do the global registers g18 to g20 and g39 to g43 hold in a triangle's pixel task, a vertex task and the end-of-tile task? (E085, E086)
+- `Q054` (phase 11): what do #incp, .cut and .tasks/.taske do on the emits, and which sideband bits beyond the pack mode and bit 9 does the end-of-tile emit read? (E030, E102, E106, E239)
+- `Q055` (phase 11): what do idf's modes other than bif, lock and release, setm and the cache-control operands do? (E088, E098, E099, E103, E107, E110, E117)
+- `Q056` (phase 11): where does a write to destination bank 6 with value 0 (printed i.) land? (E091, E147)
 
 ## vdm
 
 - `Q015` (phase 6): why does VDM state word 1 with bits 11:9 = 7 hang the triangle sweep but render in the probe job that sets the same word? (E060)
-- `Q036` (phase 10): what do the DPM status registers 0x0700, 0x070c, 0x0710 and 0x071c count, when they change on every render but not as a running page count? (E184)
+- `Q036` (phase 10): what do the DPM free-list status registers CR_DPM_TA_ALLOC_FREE_LIST_STATUS1 and _STATUS2 and CR_DPM_3D_FREE_LIST_STATUS1 and _STATUS2 (0x0700, 0x0710, 0x070c and 0x071c) count, when they change on every render but not as a running page count? (E184)
 - `Q037` (phase 10): does a hung job's saved render memory show how far the TA got, when the control hung in its pixel task leaves its object in one run and none in the next? (E186)
 - `Q042` (phase 11): what does the index list's first trailing word (VDM_INDEX2) do, when 0, 0x10000000 and 0x70000000 leave what the TA writes byte for byte the same? (E188)
 - `Q047` (phase 11): what do VDM_STATE1 bit 8, bits 11:9 and bits 15:13 select for a state task, when on the one-triangle job bit 8 changes nothing, bits 11:9 at 0 stop the triangle before tiling and bits 15:13 at 0, 5 or 6 hang it? (E060, E185, E186, E187)

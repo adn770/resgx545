@@ -24,3 +24,99 @@ source = "emgd-psb_regs"
 citation = "C0035"
 licence = "MIT"
 evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches our name EUR_CR_BIF_BANK_SET"
+
+[[term]]
+id = "G0749"
+name = "CR_BIF_BANK_SET.SELECT_2D"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_BANK_SET_SELECT_2D"
+kind = "bitfield"
+sgx545 = "0x0c74[0]"
+meaning = "bank register used by 2D core requests"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0402"
+licence = "GPL-2.0"
+evidence = "mask 0x00000001"
+
+[[term]]
+id = "G0750"
+name = "CR_BIF_BANK_SET.SELECT_3D"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_BANK_SET_SELECT_3D"
+kind = "bitfield"
+sgx545 = "0x0c74[3:2]"
+meaning = "bank register used by 3D requests"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0403"
+licence = "GPL-2.0"
+evidence = "mask 0x0000000c"
+
+[[term]]
+id = "G0751"
+name = "CR_BIF_BANK_SET.SELECT_DPM_LSS"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_BANK_SET_SELECT_DPM_LSS"
+kind = "bitfield"
+sgx545 = "0x0c74[9]"
+meaning = "bank register used by DPM load/store requests"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0404"
+licence = "GPL-2.0"
+evidence = "mask 0x00000200"
+
+[[term]]
+id = "G0752"
+name = "CR_BIF_BANK_SET.SELECT_EDM"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_BANK_SET_SELECT_EDM"
+kind = "bitfield"
+sgx545 = "0x0c74[8]"
+meaning = "bank register used by EDM requests"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0405"
+licence = "GPL-2.0"
+evidence = "mask 0x00000100"
+
+[[term]]
+id = "G0753"
+name = "CR_BIF_BANK_SET.SELECT_HOST"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_BANK_SET_SELECT_HOST"
+kind = "bitfield"
+sgx545 = "0x0c74[4]"
+meaning = "bank register used by host requests"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0406"
+licence = "GPL-2.0"
+evidence = "mask 0x00000010"
+
+[[term]]
+id = "G0754"
+name = "CR_BIF_BANK_SET.SELECT_TA"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_BANK_SET_SELECT_TA"
+kind = "bitfield"
+sgx545 = "0x0c74[7:6]"
+meaning = "bank register used by TA requests"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0407"
+licence = "GPL-2.0"
+evidence = "mask 0x000000c0"
