@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-187 open: 168 hw (high 21, medium 78, low 69, unrated 0), 12 fw, 7 kernel.
+189 open: 170 hw (high 21, medium 79, low 70, unrated 0), 12 fw, 7 kernel.
 
 ## Work queue: hardware
 
@@ -129,6 +129,8 @@
 - `Q162` (phase 11, hw, low): what do OUTSEL bits 10, 11 and 15 select, which fault (bits 8 without a size row, 10, 11, 15 on the plain triangle) or hang (10 and 15 with the size program) the job, and why does a two-output size program hang the points job with and without bit 8 (E544)
 - `Q164` (phase 11, hw, low): what does bit 21 of the control-stream primitive word mean, which puts one dword (0x00000400 in 336 cases and 0x00001000 in 30) after the object word in the forms 0xa0 to 0xbf, and what do the bits of the word's 15:8 beyond the low byte of the vertex mask hold (E542, E546, E702)
 - `Q165` (phase 11, hw, low): why does a coordinate size and format word that describes sets the vertex program does not write (size code 5 over two or three outputs, a format bit for an absent set) fault or hang at N = 2, 3 and 8 outputs and complete at N = 5, 6, 9 and 11 (E541)
+- `Q230` (phase 12, hw, medium): what does the TA write when the MTE removes a triangle wholly beyond z = -w or z = w or cuts one at it, when a triangle is not listed by any target region (the hardware wrote no object for one 1000 pixels off a 64 x 64 target: where is the limit between that and a triangle partly on the target), and how are window coordinates with more than 8 fraction bits, and the depth and 1/w of a vertex with w other than 1, rounded and stored in the object? (E063, E182, E194, E287, E307, E651, E650)
+- `Q231` (phase 12, hw, low): what do the words of a render job that the vertex side and the TA read or ignore and no record explains do: the command's CR_MTE_CTRL (0xa2) and MTE screen words, the command words 10 to 25, the MTE state block's WCLAMP, the attribute rows of a VDM state block (VDM_STATE1 bits 7:0), the end-of-scene block's two terminate halves (E059 only shows that clearing a half leaves part of the target unwritten), and the stream's forms of a region (the primitive word and the further dword) for an object of more than five triangles? (E059, E060, E177, E180, E650, E652)
 - `Q286` (phase 11, hw, medium): is the number f of region-header arrays the TA writes at CR_TE_AA 0xe0000000 4 or 5, what must the kernel's render layout allocate, and why do the health triangles after a 4x fault fault again (E729, E507, E504)
 
 ### texture

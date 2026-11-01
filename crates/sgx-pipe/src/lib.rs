@@ -25,6 +25,7 @@ pub mod mte;
 pub mod outcome;
 pub mod pbe;
 pub mod regs;
+pub mod render;
 pub mod report;
 pub mod rules;
 pub mod scene;
@@ -32,6 +33,7 @@ pub mod sha256;
 pub mod ta;
 pub mod unitvec;
 pub mod vdm;
+pub mod vtx;
 pub mod xfer;
 pub mod zls;
 

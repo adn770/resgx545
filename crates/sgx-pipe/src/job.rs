@@ -6,7 +6,7 @@
 //! questions of the units it would go through, until 12.2 and 12.3 build them.
 
 use crate::scene::{Kind, Scene, SceneResult};
-use crate::{Outcome, bif, dpm, isp, iter, mte, pbe, ta, vdm, zls};
+use crate::{bif, dpm, isp, iter, mte, pbe, ta, vdm, vtx, zls};
 
 /// The questions that block each unit a scene of this kind goes through, in order.
 pub fn blockers(kind: Kind) -> Vec<&'static str> {
@@ -17,6 +17,7 @@ pub fn blockers(kind: Kind) -> Vec<&'static str> {
         Kind::Render => &[
             bif::OPEN,
             vdm::OPEN,
+            vtx::OPEN,
             mte::OPEN,
             ta::OPEN,
             dpm::OPEN,
@@ -36,15 +37,16 @@ pub fn blockers(kind: Kind) -> Vec<&'static str> {
     ids
 }
 
-/// Run a scene: a transfer through the model of 12.1 (`xfer`); a render is refused naming the
-/// questions of the units it would go through (12.2 and 12.3 build them).
+/// Run a scene: a transfer through the model of 12.1 (`xfer`); a render through the vertex side and
+/// the TA (12.2: it gives the parameter buffer and TA data and no image; the ISP is 12.3, so a scene
+/// that expects an image is a mismatch of "no image" and not a silent pass).
 pub fn run(scene: &Scene) -> SceneResult {
     match scene.kind {
         Kind::Transfer => crate::xfer::run(scene),
-        Kind::Render => SceneResult::refusing(Outcome::unsupported(
-            &format!("{}: a render is not modelled yet (12.2 vertex side, 12.3 ISP)", scene.id),
-            &blockers(scene.kind),
-        )),
+        Kind::Render => match crate::render::run(scene) {
+            Ok(r) => r,
+            Err(o) => SceneResult::refusing(o),
+        },
     }
 }
 
@@ -81,6 +83,7 @@ pub fn replay_file(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Outcome;
     use sgx_sim::json::parse;
 
     fn scene(kind: &str) -> Scene {
@@ -127,6 +130,7 @@ mod tests {
             pbe::OPEN,
             ta::OPEN,
             vdm::OPEN,
+            vtx::OPEN,
             zls::OPEN,
             crate::xfer::OPEN,
         ]
@@ -142,11 +146,11 @@ mod tests {
     }
 
     #[test]
-    fn running_a_scene_refuses_and_says_which_scene() {
+    fn running_a_render_scene_without_command_words_refuses_and_says_which_scene() {
         match run(&scene("render")).outcome {
             Outcome::Unsupported { why, ids } => {
                 assert!(why.starts_with("j:"));
-                assert!(ids.contains(&"Q076".to_string()));
+                assert_eq!(ids, ["Q206"]);
             }
             o => panic!("{o:?}"),
         }

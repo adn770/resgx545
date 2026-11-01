@@ -4454,6 +4454,47 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   lists over the page's first 34 dwords, so a load of the lists themselves is not separated, and the
   other 990 of the 1024 ramp dwords stay after the render with no effect on it.
   *dpm; HW, infer; data: `dpm-partial-model-batch`.*
+- `E650` A model of the vertex side and the TA written for the pipeline simulator (sgx-pipe vdm,
+  vtx, mte, ta, render: the VDM stream parsed, each state block and each vertex of a vertex task run
+  through its PDS program and USSE task on sgx-sim unchanged, the clip position through the
+  viewport, then the object, the region headers and the control streams written) reproduces the
+  parameter buffer pages 0x1000 to 0x6000 and the TA data headers of 89 of 89 dumped one- to
+  five-triangle jobs on 64 x 64 to 256 x 256 targets with no differing dword (21229 non-zero dwords
+  compared, 79 distinct expected buffer sets), every one by a fitted rule so none is reported
+  matched; of 266 more built scenes the model refuses all, each naming what blocks it (lines Q159
+  and Q160 81, points Q161 26, a state word nobody flipped in a two-object stream Q047 and Q112 104,
+  Q163 with Q047 and Q112 12, Q163 with Q112 5, Q112 alone 9, Q162 20, Q094 4, Q042 3, Q069 1, Q230
+  1) and none mismatches; the 89 are 25 percent of the 355 built scenes and 15 percent of the 599
+  dumped jobs, every one a job that keeps the library's pass-through vertex program, and the 130
+  two-object jobs of vdm-state-units contribute none; the jobs no earlier record described are 3
+  (ta-object-words 1, vdm-vtask-capacity 2), and the stream forms 0x88, 0x8a and 0x8c, the page
+  order and the four non-square targets were read from no record before the replay.
+  *ta; HW, infer; data: `ta-tri-region`, `ta-regions`, `ta-objects`, `ta-object-words`,
+  `ta-line-point`, `ta-points`, `ta-zero-words`, `vdm-state-units`, `vdm-vtask-capacity`,
+  `scene-vectors-12-2`.*
+- `E651` The object's packed vertex block (E176's 8 dwords for 3 vertices) is a bit stream, least
+  significant bit first, of 80 bits for each vertex: the window y as a 24-bit field of (y + 4096) *
+  256, the window x the same way, then the 32-bit depth float; E176's 8 dwords for the plain probe
+  decode to (8, 8), (56, 20), (20, 56) at depth 0.5, and 89 of 89 dumped jobs (up to 15 vertices, 38
+  packed dwords) hold the packed block this rule writes from the vertices the vertex program gave
+  and the viewport, with every window coordinate a multiple of 1/16 pixel.
+  *ta; HW, infer; data: `ta-objects`, `ta-tri-region`, `ta-regions`, `scene-vectors-12-2`.*
+- `E652` The TA's headers and streams of E177 and E180 follow these rules in 89 of 89 dumped jobs: a
+  header's flags are 0x02 outside the target, 0x08 for a target region with no stream, 0x04 on the
+  first and 0x10 on the last header of a macrotile with target regions and 0x80 on the last such
+  header of the last such macrotile (headers in macrotile order, macrotile m = column * n + row of
+  macrotiles, regions in raster order, 2 macrotiles in a row up to 256 x 256); a macrotile's streams
+  share one page, the pages go 0x2000, 0x3000, ... to the macrotiles that have streams in raster
+  order of the macrotiles (rows outer), and a stream block of 128 bytes goes to each region in the
+  order of 64 x 64 pixel blocks (two regions across and four down, in raster order, regions in
+  raster order within one); the forms of the primitive word are 0x90 with 0xffff when both tiles
+  list every primitive, otherwise for one tile 0x80 (left) or 0x98 (right) with the primitive mask
+  in bits 7:0 and the vertex mask (3 bits a primitive) in bits 15:8 while that mask fits a byte,
+  else 0x8a or 0x8c with the vertex mask in bits 15:0 and the primitive mask in a further dword, and
+  for both tiles with different masks 0x88 with the vertex mask of the union and a further dword of
+  the right mask in bits 31:16 and the left in 15:0.
+  *ta; HW, infer; data: `ta-tri-region`, `ta-regions`, `ta-objects`, `ta-object-words`,
+  `vdm-vtask-capacity`, `scene-vectors-12-2`.*
 - `E680` Over 590 random triangles with vertices on the 1/256 pixel grid (small, medium, large -9%
   to +124% of the target except at 4096 x 4096 where no x is negative, vertices at pixel centres, 75
   quads cut into two triangles) on 10 targets that E606 did not run or only partly ran (96 x 64, 130
@@ -4756,7 +4797,7 @@ E448, E449, E451, E458, E462, E732.
 
 Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180, E181, E247, E257,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
-E511, E541, E542, E543, E544, E616, E617, E729.
+E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729.
 
 ### texture
 

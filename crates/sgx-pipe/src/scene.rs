@@ -40,6 +40,8 @@ pub struct Segment {
     pub file: Option<(String, String)>,
     /// `recorded` (captured at submission by the run itself) or `rebuilt` (D4: offline)
     pub source: String,
+    /// what the builder put there (`pdsv`, `usev`, `pdsp`, `usep`, `gen`), or empty
+    pub role: String,
 }
 
 #[derive(Debug, Clone)]
@@ -53,6 +55,10 @@ pub struct Scene {
     pub memory: Vec<Segment>,
     /// a transfer's command words (the register block the kick loads), in command order
     pub xfer: Vec<u32>,
+    /// a render's command words (`drm_sgxfive_render_cmd`, in field order) and the vertices of
+    /// the probe's triangle scene
+    pub cmd: Vec<u32>,
+    pub vertices: u32,
     /// where the builder placed the programs and the background object (name, address)
     pub layout: Vec<(String, u32)>,
     pub expect: Json,
@@ -66,8 +72,20 @@ fn hex(j: &Json) -> Option<u32> {
 impl Scene {
     pub fn parse(s: &Json) -> Result<Scene, String> {
         let id = s.get("id").str().ok_or("scene without id")?.to_string();
-        const KEYS: &[&str] =
-            &["id", "kind", "target", "regs", "regs_log", "memory", "xfer", "layout", "expect", "provenance"];
+        const KEYS: &[&str] = &[
+            "id",
+            "kind",
+            "target",
+            "regs",
+            "regs_log",
+            "memory",
+            "xfer",
+            "cmd",
+            "vertices",
+            "layout",
+            "expect",
+            "provenance",
+        ];
         for (k, _) in s.obj() {
             if k == "vm" {
                 return Err(format!("{id}: a `vm` is not modelled before 12.5 (memory is flat): refused"));
@@ -122,13 +140,20 @@ impl Scene {
                 return Err(format!("{id}: memory at {base:#x} has neither dwords nor file"));
             }
             let source = m.get("source").str().unwrap_or("rebuilt").to_string();
-            memory.push(Segment { base, dwords, file, source });
+            let role = m.get("role").str().unwrap_or("").to_string();
+            memory.push(Segment { base, dwords, file, source, role });
         }
         let xfer = s
             .get("xfer")
             .arr()
             .iter()
             .map(|w| hex(w).ok_or(format!("{id}: xfer word")))
+            .collect::<Result<_, _>>()?;
+        let cmd = s
+            .get("cmd")
+            .arr()
+            .iter()
+            .map(|w| hex(w).ok_or(format!("{id}: cmd word")))
             .collect::<Result<_, _>>()?;
         let layout = s
             .get("layout")
@@ -144,6 +169,8 @@ impl Scene {
             regs_log,
             memory,
             xfer,
+            cmd,
+            vertices: s.get("vertices").num().unwrap_or(0.0) as u32,
             layout,
             expect: s.get("expect").clone(),
             provenance: s.get("provenance").clone(),
@@ -152,6 +179,33 @@ impl Scene {
 }
 
 impl Scene {
+    /// The scene's memory segments loaded into a flat device address space. A segment held as a
+    /// file is refused (the data repository's files are read by the callers that have the data).
+    pub fn load_mem(&self) -> Result<crate::mem::Mem, Outcome> {
+        let mut mem = crate::mem::Mem::new();
+        for s in &self.memory {
+            let w = s.dwords.as_ref().ok_or_else(|| {
+                Outcome::unsupported(
+                    &format!("{}: a memory segment held as a file is not loaded", self.id),
+                    &["Q206"],
+                )
+            })?;
+            mem.load(s.base, w)?;
+        }
+        Ok(mem)
+    }
+
+    /// The scene of the given vector in a fixture file, for tests.
+    #[cfg(test)]
+    pub fn from_fixture(text: &str, id_suffix: &str) -> Scene {
+        let j = sgx_sim::json::parse(text);
+        Scene::load_file(&j)
+            .into_iter()
+            .map(|s| s.unwrap())
+            .find(|s| s.id.ends_with(id_suffix))
+            .unwrap_or_else(|| panic!("no scene {id_suffix}"))
+    }
+
     /// The scenes of a scene-vector file: the compact form (`bases`, and per scene a `base` index
     /// and a `delta` of the words it changed) and full scenes without a `base`. A scene that does
     /// not load is an error of its own, the others still load.
@@ -333,6 +387,33 @@ fn seen(expect: &Json, r: &SceneResult, near_used: &mut Option<u32>) -> Seen {
         }
         for (i, d) in b.get("dwords").arr().iter().enumerate() {
             want.insert(4 * i as u32, hex(d).unwrap_or(0));
+        }
+        // `window`: byte ranges [lo, hi) in which the buffer must hold exactly the expected
+        // non-zero dwords and nothing else: a dword the model wrote that the hardware left zero is a
+        // mismatch too. Only dwords that are non-zero on either side are items (a zero both sides
+        // is the baseline and says nothing).
+        let windows: Vec<(u32, u32)> = b
+            .get("window")
+            .arr()
+            .iter()
+            .filter_map(|w| Some((hex(w.arr().first()?)?, hex(w.arr().get(1)?)?)))
+            .collect();
+        if let (Some(h), false) = (have, windows.is_empty()) {
+            for (&a, &v) in h {
+                if v != 0 && !want.contains_key(&a) {
+                    let inside = windows.iter().any(|&(lo, hi)| (lo..hi).contains(&a));
+                    item(
+                        false,
+                        if inside {
+                            format!("{name}[{a:#x}] = {v:#x} written, the hardware left it 0")
+                        } else {
+                            format!(
+                                "{name}[{a:#x}] = {v:#x} written outside every window: not compared with the dump"
+                            )
+                        },
+                    );
+                }
+            }
         }
         for (a, v) in want {
             item(have.and_then(|h| h.get(&a)) == Some(&v), format!("{name}[{a:#x}]"));
@@ -550,6 +631,41 @@ mod tests {
         assert_eq!(compare(&e, &ok(vec![0x10213040])), Verdict::Near);
         assert!(matches!(compare(&e, &ok(vec![0x10223040])), Verdict::Mismatch(_)));
         assert_eq!(compare(&e, &ok(vec![0x10203040])), Verdict::Matched);
+    }
+
+    #[test]
+    fn a_window_makes_a_dword_the_model_wrote_and_the_hardware_left_zero_a_mismatch() {
+        let e = parse(
+            r#"{"buffers": {"param": {"sparse": {"0x1000": "0x5"}, "window": [["0x1000", "0x1010"]]}}}"#,
+        );
+        let mut r = SceneResult::refusing(Outcome::Ok);
+        r.buffers.insert("param".into(), BTreeMap::from([(0x1000, 5)]));
+        assert_eq!(compare(&e, &r), Verdict::Matched);
+        // one more non-zero dword inside the window: wrong; the same one outside every window is
+        // wrong too (the dump does not say what the hardware wrote there)
+        r.buffers.get_mut("param").unwrap().insert(0x1008, 7);
+        assert!(matches!(compare(&e, &r), Verdict::Mismatch(m) if m.contains("0x1008")));
+        r.buffers.get_mut("param").unwrap().remove(&0x1008);
+        r.buffers.get_mut("param").unwrap().insert(0x1010, 7);
+        assert!(matches!(compare(&e, &r), Verdict::Mismatch(m) if m.contains("outside every window")));
+        // a zero dword outside is nothing
+        r.buffers.get_mut("param").unwrap().insert(0x1010, 0);
+        assert_eq!(compare(&e, &r), Verdict::Matched);
+        // without a window the sparse words alone are checked (the older behaviour)
+        let e = parse(r#"{"buffers": {"param": {"sparse": {"0x1000": "0x5"}}}}"#);
+        r.buffers.get_mut("param").unwrap().insert(0x1008, 7);
+        assert_eq!(compare(&e, &r), Verdict::Matched);
+    }
+
+    #[test]
+    fn a_render_scene_keeps_its_command_words_roles_and_vertices() {
+        let s = parse(
+            r#"{"id": "r", "kind": "render", "target": {"w": 8, "h": 8}, "cmd": ["0x1", "0x2"], "vertices": 15,
+                "memory": [{"role": "pdsv", "base": "0x1000", "dwords": ["0x7"]}]}"#,
+        );
+        let sc = Scene::parse(&s).unwrap();
+        assert_eq!((sc.cmd.clone(), sc.vertices), (vec![1, 2], 15));
+        assert_eq!(sc.memory[0].role, "pdsv");
     }
 
     #[test]

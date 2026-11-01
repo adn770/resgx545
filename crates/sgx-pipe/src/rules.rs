@@ -21,6 +21,13 @@ pub const ZLS_ADDRESS: Status = Status::Fitted("E465");
 pub const TA_REGION_TEST: Status = Status::Fitted("E542");
 pub const TA_OBJECT_FORMAT: Status = Status::Fitted("E541");
 pub const ISP_MSAA_WINDOW: Status = Status::Fitted("E503");
+/// The object's packed vertex block: 24-bit Y then X as (v + 4096) * 256, then the depth float
+/// (12.2; E651, decoded from the dumps and held out)
+pub const TA_PACKED_VERTICES: Status = Status::Fitted("E651");
+/// Region headers' flags, the stream forms and where each stream block lands (12.2; E652)
+pub const TA_STREAMS: Status = Status::Fitted("E652");
+/// The 1/w the TA stores: kept above the minimum, the clamp value otherwise (E197, [infer])
+pub const MTE_RHW: Status = Status::Fitted("E197");
 
 impl Status {
     /// The model outcome of a computation made with this rule.

@@ -82,3 +82,44 @@ def test_the_job_still_runs_and_the_option_is_refused_on_other_commands(tmp_path
     assert "job: ok" in r.stdout and "fill: ok" in r.stdout
     r = run("query", "--emit-scene", str(tmp_path / "t.json"))
     assert r.returncode != 0
+
+
+def probe_scene(tmp_path, *extra: str) -> dict:
+    """`probe --tri pixel` (the pixel program a placeholder: it is not part of the TA's input)."""
+    prog = tmp_path / "pix.bin"
+    prog.write_bytes(bytes(8))
+    out = tmp_path / "tri.json"
+    r = run("probe", "--tri", "pixel", "--width", "128", "--height", "128", *extra,
+            "--emit-scene", str(out), str(prog))
+    assert r.returncode == 0, r.stdout + r.stderr
+    return json.loads(out.read_text())
+
+
+def test_a_triangle_probe_emits_the_pages_the_vdm_reads(tmp_path):
+    s = probe_scene(tmp_path, "--vertices", "15")
+    assert s["kind"] == "render" and s["target"]["w"] == 128 and s["target"]["h"] == 128
+    assert [m["role"] for m in s["memory"]] == ["pdsv", "usev", "pdsp", "usep", "gen"]
+    assert all(m["source"] == "rebuilt" for m in s["memory"])
+    assert all(len(m["dwords"]) == 1024 for m in s["memory"][:4])
+    assert len(s["memory"][4]["dwords"]) % 1024 == 0     # the gen region: one or more pages
+    lay = s["layout"]
+    assert [m["base"] for m in s["memory"]] == [lay[k] for k in ("pdsv", "usev", "pdsp", "usep", "gen")]
+    assert len(s["cmd"]) == 26                       # the render command's words, version 1
+    vdm = words(s["memory"][4])[:11]
+    assert vdm[2] >> 30 == 2 and vdm[10] >> 30 == 3  # triangles; terminate
+    assert vdm[4] == 0xF0000000 and vdm[5] == 0x3FFFFF
+
+
+def test_the_triangle_probe_words_follow_the_pokes(tmp_path):
+    base = probe_scene(tmp_path)
+    s = probe_scene(tmp_path, "--blk", "6=0x427f8000", "--vdm", "4=0x0")
+    blk = lambda sc: words(sc["memory"][0])[0x100 // 4:0x100 // 4 + 18]
+    assert blk(s)[6] == 0x427F8000 and blk(base)[6] != 0x427F8000
+    assert words(s["memory"][4])[4] == 0 and words(base["memory"][4])[4] == 0xF0000000
+
+
+def test_emit_scene_on_a_probe_without_a_triangle_is_refused(tmp_path):
+    prog = tmp_path / "p.bin"
+    prog.write_bytes(bytes(8))
+    r = run("probe", str(prog), "--emit-scene", str(tmp_path / "x.json"))
+    assert r.returncode != 0

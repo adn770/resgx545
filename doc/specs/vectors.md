@@ -395,9 +395,9 @@ words and `rebuilt` otherwise (6.3).
 
 `sgx_pipe::job::run` loads `memory` into the device address space (`mem`, flat until 12.5),
 applies `regs` through the register file (`regs`: an unlisted register or a value wider than its
-measured width refuses), and runs the units in the order of the data dependencies. A render is not
-modelled yet (12.2, 12.3) and replays as `unsupported`, naming the open questions of the units it
-would pass (`job::blockers`). A transfer (fill or copy) runs through `sgx_pipe::xfer` (12.1): the
+measured width refuses), and runs the units in the order of the data dependencies. A render runs
+the vertex side and the TA only (6.6; the ISP is 12.3) and gives the parameter buffer and the TA
+data, not an image. A transfer (fill or copy) runs through `sgx_pipe::xfer` (12.1): the
 17 register words, the render box in 32 x 16 tiles, the pixel-event PDS program of each tile
 through `sgx-sim` with ir1 = 6 on the last tile, the end-of-tile task and its emit to the PBE (pack
 modes 0 to 3), the pixel shader per pixel of every tile of the box and a copy's texel through
@@ -428,3 +428,35 @@ that returns a result must say which fitted rules it used.
   `pixels` or a hash.
 - An `either` lists two or more alternatives that each check something, and a scene or vector whose
   `expect` compares nothing is a mismatch, not a match.
+
+### 6.6 Render scenes: the vertex side and the TA (12.2)
+
+A `render` scene built by `tools/usse-asm/ta_scenes.py` is one `--tri` probe of a `ta` or `vdm`
+table: `sgxfive-test --mock probe --tri ... --emit-scene` writes the render command's words
+(`cmd`, `drm_sgxfive_render_cmd` order), `vertices`, the `layout` (`pdsv`, `usev`, `pdsp`, `usep`,
+`gen`, `fb`, the three code and PDS bases) and the five program and stream pages, each segment
+with its `role`. The words are rebuilt; the probe's pixel program is a placeholder, which the TA
+does not read, so a job that replaced the vertex program or a PDS program (`--slot`) is listed in
+`run.excluded`, not built. The rebuilt state block's three pixel PDS words must equal the dump's
+first three object dwords (E306); a case that differs is excluded and listed, and a dump with no
+object (a culled job) has nothing to check and says `header_checked: false`.
+
+`expect.buffers.param` and `.tadata` hold the non-zero dwords of the saved dump inside a `window`
+(`param` 0x1000 to 0x6000 by slot address, the TA data's headers 0x4000 to 0x5000 by dump offset),
+and the comparer takes a window to mean the whole range: a dword the model writes that the
+hardware left 0 is a mismatch, and only dwords non-zero on either side count as items. What the
+dump holds outside the windows (the DPM state, `provenance.outside_window_nonzero`) is not modelled
+before 12.7.
+
+`sgx_pipe::render::run` parses the VDM stream (`vdm`), runs each state block and each vertex of a
+task through its PDS program and USSE task on `sgx-sim` unchanged (`vtx`: the `doutd` copy is the
+pipe's, the task runs until it hands its outputs to the vertex cache), puts the clip positions
+through the viewport (`mte`) and writes the object, the region headers and the streams (`ta`). The
+TA's rules (E541, E542, E651, E652) and the 1/w replacement (E197) are fitted, so every result is
+`fitted`, never `matched`. Refused by question: stream words and state words nobody flipped (Q047,
+Q042, Q094, Q112; the history-dependent values Q163), lines and points (Q159, Q160, Q161),
+other output selects and state blocks (Q069, Q162), TE words other than the library's tiling (Q100,
+Q139, Q086, Q142), a triangle the clip removes or cuts or no target region lists (Q230), command
+words 10 to 25, the state's WCLAMP and the end-of-scene word that no record reads or that no dump
+varied (Q231). A stream the parser refuses names the stream's shape (Q112) with its words, so a
+two-object stream lists what blocks it.

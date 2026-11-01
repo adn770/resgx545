@@ -3,27 +3,453 @@
 //! VDM: the stream parser and vertex task forming (12.2).
 
 use crate::Outcome;
+use crate::mem::Mem;
 
 /// Open questions that block the unit.
-pub const OPEN: &[&str] = &["Q047", "Q042", "Q092", "Q094", "Q112", "Q163"];
+pub const OPEN: &[&str] = &["Q047", "Q042", "Q092", "Q094", "Q112", "Q163", "Q231"];
 
-/// A refusing stub until the unit's sub-phase lands: the model never guesses.
+/// A state block of the stream: the PDS program that fetches the MTE state, and whether it is the
+/// stream's last (the end of scene).
+#[derive(Debug, Clone, PartialEq)]
+pub struct State {
+    pub pds: u32,
+    pub data_dwords: u32,
+    pub last: bool,
+    /// VDM_STATE1 bits 11:9 and 12 say the TA writes no object (E185, E191)
+    pub no_object: bool,
+}
+
+/// The vertex task of an index list: the PDS program run for each vertex, and the vertices a task
+/// holds at most (VDM_TASK0 bits 31:28 + 1).
+#[derive(Debug, Clone, PartialEq)]
+pub struct Task {
+    pub pds: u32,
+    pub data_dwords: u32,
+    pub per_task: u32,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct IndexList {
+    pub indices: Vec<u16>,
+    pub task: Task,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Block {
+    State(State),
+    Index(IndexList),
+    Terminate,
+}
+
+/// The unit as a whole, for a vector kind the replay has no inputs for (`vdm-stream`).
 pub fn refuse() -> Outcome {
-    Outcome::unsupported("the VDM stream is not modelled (12.2)", OPEN)
+    Outcome::unsupported("the VDM stream is only parsed for the library's block shapes", OPEN)
+}
+
+fn refuse_ids(why: impl AsRef<str>, ids: &[&str]) -> Outcome {
+    Outcome::unsupported(why.as_ref(), ids)
+}
+
+/// VDM_STATE1 of the library's blocks: data rows in 31:26, bits 25, 17 and 13 set, the attribute
+/// rows in 7:0, and the fields the records flipped in 12:9 (bit 12 and the field 11:9).
+const STATE1_FIXED: u32 = 1 << 25 | 1 << 17 | 1 << 13;
+const STATE1_FREE: u32 = 0xfc00_0000 | 0x1e00 | 0xff;
+/// VDM_INDEX2 values that left the TA's output byte for byte the same (E414, five copies).
+const INDEX2_SAME: [u32; 5] = [0, 0x1000_0000, 0x7000_0000, 0x8000_0000, 0xf000_0000];
+const INDEX3_LIBRARY: u32 = 0x003f_ffff;
+
+fn read_state(w0: u32, w1: u32) -> Result<State, Outcome> {
+    if w0 >> 28 & 1 != 0 {
+        return Err(refuse_ids(
+            format!("state block word 0 {w0:#010x}: bit 28 is not the library's"),
+            &["Q047"],
+        ));
+    }
+    // the attribute rows (7:0) are read by nothing: the library writes 5 for a draw, 1 for the end of scene
+    let rows = if w0 >> 29 & 1 != 0 { 1 } else { 5 };
+    if w1 & 0xff != rows || w1 & !STATE1_FREE != STATE1_FIXED {
+        return Err(refuse_ids(
+            format!("VDM_STATE1 {w1:#010x} has bits set or clear that no record flipped (E185, E191, E545)"),
+            &["Q047"],
+        ));
+    }
+    let (field, bit12) = (w1 >> 9 & 7, w1 >> 12 & 1 != 0);
+    // 2 is the library's value: the object is written. 0 and bit 12 remove it (E185, E191). 1, 6
+    // and 7 left the output the same but complete or hang by history (E413, E545, Q163): the
+    // model gives one answer only where the hardware does
+    let no_object = match field {
+        _ if bit12 => true,
+        0 => true,
+        2 => false,
+        1 | 6 => {
+            return Err(refuse_ids(
+                format!(
+                    "VDM_STATE1 bits 11:9 = {field}: whether the job completes is not a function of the word (E545)"
+                ),
+                &["Q163", "Q047"],
+            ));
+        }
+        7 => {
+            return Err(refuse_ids("VDM_STATE1 bits 11:9 = 7 hangs every second job (E413)", &["Q163"]));
+        }
+        f => {
+            return Err(refuse_ids(
+                format!("VDM_STATE1 bits 11:9 = {f} was not run in a state block alone"),
+                &["Q047"],
+            ));
+        }
+    };
+    Ok(State {
+        pds: (w0 & 0x0fff_ffff) << 4,
+        data_dwords: (w1 >> 26) * 4,
+        last: w0 >> 29 & 1 != 0,
+        no_object,
+    })
+}
+
+fn read_index(mem: &Mem, w: &[u32; 6]) -> Result<IndexList, Outcome> {
+    // bits 27:26 of the header are the topology: 1 lines (E543), 2 points (E544); the TA's rules for
+    // their regions are Q159, Q160 and Q161
+    if w[0] >> 22 == 0x213 || w[0] >> 22 == 0x223 {
+        let (kind, ids): (_, &[&str]) =
+            if w[0] >> 26 & 3 == 1 { ("lines", &["Q159", "Q160"]) } else { ("points", &["Q161"]) };
+        return Err(refuse_ids(
+            format!(
+                "index list header {:#010x}: {kind}: the regions of their objects are open (E543, E544)",
+                w[0]
+            ),
+            ids,
+        ));
+    }
+    if w[0] >> 22 != 0x203 {
+        return Err(refuse_ids(
+            format!(
+                "index list header {:#010x}: only 'triangles, two trailing words and a task' was seen (E346)",
+                w[0]
+            ),
+            &["Q112"],
+        ));
+    }
+    let count = w[0] & 0x3f_ffff;
+    if !INDEX2_SAME.contains(&w[2]) {
+        return Err(refuse_ids(
+            format!("VDM_INDEX2 {:#010x}: its low bits are an offset in indices (E414)", w[2]),
+            &["Q042"],
+        ));
+    }
+    if w[3] != INDEX3_LIBRARY {
+        return Err(refuse_ids(
+            format!("VDM_INDEX3 {:#010x}: other values wrap, remove or hang (E188)", w[3]),
+            &["Q042", "Q092"],
+        ));
+    }
+    // task word 1: output size 1 row (31:24), vertex size 4 (23:22 = 3), bit 7, the data rows
+    if w[5] & 0xffff_ff80 != 0x01c0_0080 {
+        return Err(refuse_ids(
+            format!(
+                "vertex task word 1 {:#010x}: the output size and vertex size are the library's only (E189, E346)",
+                w[5]
+            ),
+            &["Q094"],
+        ));
+    }
+    let mut indices = Vec::with_capacity(count as usize);
+    for i in 0..count {
+        let word = mem.read32(w[1] + (i / 2) * 4)?;
+        indices.push((word >> (16 * (i % 2))) as u16);
+    }
+    Ok(IndexList {
+        indices,
+        task: Task {
+            pds: (w[4] & 0x0fff_ffff) << 4,
+            data_dwords: (w[5] & 0x7f) * 4,
+            per_task: (w[4] >> 28) + 1,
+        },
+    })
+}
+
+/// Parse the stream at `base`: state blocks, index lists and the terminate, in order. A block type
+/// or a word with no record refuses (the library's shapes only: E346, E349). The whole stream is
+/// walked before a refusal is returned: the words that block it and, when the blocks are not state,
+/// index list, state, terminate (a stream of two objects), the shape (Q112) are all named, so a
+/// refusal does not hide the question that blocks the stream whatever its words are.
+pub fn parse(mem: &Mem, base: u32) -> Result<Vec<Block>, Outcome> {
+    fn keep(r: Result<Block, Outcome>, out: &mut Vec<Block>, errs: &mut Vec<Outcome>) {
+        match r {
+            Ok(b) => out.push(b),
+            Err(e) => errs.push(e),
+        }
+    }
+    let (mut at, mut out, mut errs) = (base, vec![], vec![]);
+    // the kinds of block in order: 1 state, 2 index list, 3 terminate, 0 a type nobody saw
+    let mut shape = vec![];
+    while shape.len() < 64 {
+        let w0 = mem.read32(at)?;
+        match w0 >> 30 {
+            1 => {
+                shape.push(1);
+                keep(read_state(w0, mem.read32(at + 4)?).map(Block::State), &mut out, &mut errs);
+                at += 8;
+            }
+            2 => {
+                // the header, the index base, VDM_INDEX2, VDM_INDEX3, then the task's two words
+                let mut w = [w0; 6];
+                for (i, v) in w.iter_mut().enumerate().skip(1) {
+                    *v = mem.read32(at + 4 * i as u32)?;
+                }
+                shape.push(2);
+                keep(read_index(mem, &w).map(Block::Index), &mut out, &mut errs);
+                at += 24;
+            }
+            3 if w0 & 0x3fff_ffff == 0 => {
+                shape.push(3);
+                out.push(Block::Terminate);
+                break;
+            }
+            t => {
+                shape.push(0);
+                errs.push(refuse_ids(
+                    format!("VDM block type {t} (word {w0:#010x}) was not seen (E349)"),
+                    &["Q112"],
+                ));
+                break;
+            }
+        }
+    }
+    if shape != [1, 2, 1, 3] && (!errs.is_empty() || shape.last() != Some(&3)) {
+        errs.push(refuse_ids(
+            format!(
+                "a stream of {} blocks, not state, index list, end of scene, terminate: one object only",
+                shape.len()
+            ),
+            &["Q112"],
+        ));
+    }
+    if errs.is_empty() { Ok(out) } else { Err(merge(errs)) }
+}
+
+/// One refusal naming every reason and every question of the refusals given (each question once,
+/// in order of first appearance).
+fn merge(errs: Vec<Outcome>) -> Outcome {
+    let (mut why, mut ids): (Vec<String>, Vec<String>) = (vec![], vec![]);
+    for e in errs {
+        if let Outcome::Unsupported { why: w, ids: i } = e {
+            why.push(w);
+            for q in i {
+                if !ids.contains(&q) {
+                    ids.push(q);
+                }
+            }
+        }
+    }
+    Outcome::Unsupported { why: why.join("; "), ids }
+}
+
+/// The vertex numbers of each vertex task of an index list, `output_rows` rows of four dwords
+/// each vertex writes (E546: R * V <= 32 keeps every vertex in the TA's objects; the model refuses
+/// from 33, where some are lost or repeated by a rule no record states).
+pub fn tasks(l: &IndexList, output_rows: u32) -> Result<Vec<Vec<u32>>, Outcome> {
+    let per = l.task.per_task;
+    if output_rows * per > 32 {
+        return Err(refuse_ids(
+            format!(
+                "a vertex task of {per} vertices of {output_rows} output rows: more than 32 words of rows (E546)"
+            ),
+            &["Q094"],
+        ));
+    }
+    if l.indices.iter().enumerate().any(|(i, &v)| v as usize != i) {
+        return Err(refuse_ids(
+            "an index list that is not 0, 1, 2, ...: shared vertices were not measured",
+            &["Q112"],
+        ));
+    }
+    Ok(l.indices.chunks(per as usize).map(|c| c.iter().map(|&v| v as u32).collect()).collect())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::scene::Scene;
+
+    const FIXTURE: &str = include_str!("../tests/fixtures/tri-baselines.scene.json");
+
+    fn stream(id: &str) -> (Scene, Mem, u32) {
+        let sc = Scene::from_fixture(FIXTURE, id);
+        let mem = sc.load_mem().unwrap();
+        let base = sc.cmd[0];
+        (sc, mem, base)
+    }
+
+    fn refused(r: Result<Vec<Block>, Outcome>, id: &str) {
+        match r {
+            Err(Outcome::Unsupported { ids, .. }) => {
+                assert!(ids.iter().any(|i| i == id), "{ids:?} lacks {id}")
+            }
+            r => panic!("not refused under {id}: {r:?}"),
+        }
+    }
+
+    /// The fixture's stream with the word `k` of it set to `v`, parsed.
+    fn poked(k: u32, v: u32) -> Result<Vec<Block>, Outcome> {
+        let (_, mut mem, base) = stream("tb-w128-k0-16-16");
+        mem.write32(base + 4 * k, v).unwrap();
+        parse(&mem, base)
+    }
 
     #[test]
-    fn the_stub_refuses_and_names_its_questions() {
-        match refuse() {
-            Outcome::Unsupported { ids, why } => {
-                assert!(!ids.is_empty() && !why.is_empty());
-                assert_eq!(ids, OPEN);
+    fn the_librarys_stream_is_a_state_an_index_list_the_end_of_scene_and_a_terminate() {
+        let (_, mem, base) = stream("tb-w128-k0-16-16");
+        let b = parse(&mem, base).unwrap();
+        assert_eq!(b.len(), 4, "{b:?}");
+        let Block::State(s0) = &b[0] else { panic!("{b:?}") };
+        assert_eq!((s0.pds, s0.data_dwords, s0.last, s0.no_object), (0x3040_0000 + 0x40, 8, false, false));
+        let Block::Index(l) = &b[1] else { panic!("{b:?}") };
+        assert_eq!(l.indices, (0..15).collect::<Vec<u16>>());
+        assert_eq!((l.task.pds, l.task.data_dwords, l.task.per_task), (0x3040_0000, 8, 16));
+        let Block::State(s1) = &b[2] else { panic!("{b:?}") };
+        assert!(s1.last && s1.pds == 0x3040_0080);
+        assert_eq!(b[3], Block::Terminate);
+    }
+
+    #[test]
+    fn a_task_holds_at_most_the_fields_vertices_and_the_tasks_follow_the_index_list() {
+        let task = Task { pds: 0, data_dwords: 8, per_task: 16 };
+        let l = |n: u16| IndexList { indices: (0..n).collect(), task: task.clone() };
+        assert_eq!(tasks(&l(15), 1).unwrap(), vec![(0..15).collect::<Vec<u32>>()]);
+        let t = tasks(&l(40), 1).unwrap();
+        assert_eq!(t.iter().map(Vec::len).collect::<Vec<_>>(), [16, 16, 8]);
+        assert_eq!(t[2][0], 32);
+    }
+
+    #[test]
+    fn a_task_of_too_many_output_words_is_refused_not_split_the_way_the_hardware_does() {
+        // E546: with R output rows and V vertices a task keeps every vertex when R * V <= 32 and
+        // loses or repeats some from 36 up (33 depends on the program): refuse from 33
+        let task = Task { pds: 0, data_dwords: 8, per_task: 16 };
+        let l = IndexList { indices: (0..40).collect(), task };
+        assert!(tasks(&l, 2).is_ok());
+        // 33 words (R = 3, V = 11) depends on the program in the record: refused too
+        let at33 =
+            IndexList { indices: (0..40).collect(), task: Task { pds: 0, data_dwords: 8, per_task: 11 } };
+        assert!(matches!(tasks(&at33, 3), Err(Outcome::Unsupported { .. })));
+        assert!(
+            tasks(&IndexList { task: Task { per_task: 10, ..at33.task.clone() }, ..at33.clone() }, 3).is_ok()
+        );
+        match tasks(&l, 3) {
+            Err(Outcome::Unsupported { ids, .. }) => assert!(ids.iter().any(|i| i == "Q094")),
+            r => panic!("{r:?}"),
+        }
+    }
+
+    #[test]
+    fn the_state_words_bits_11_to_9_and_12_say_no_object_and_other_values_are_refused() {
+        // word 1 of the first state block: 0x0a022405; bit 12 set, or bits 11:9 = 0: no object (E185, E191)
+        for w in [0x0a02_3405, 0x0a02_2005] {
+            let Block::State(s) = &poked(1, w).unwrap()[0] else { panic!() };
+            assert!(s.no_object, "{w:#x}");
+        }
+        let Block::State(s) = &poked(1, 0x0a02_2405).unwrap()[0] else { panic!() };
+        assert!(!s.no_object);
+        // 1 and 6 left the output the same but complete or hang by history (E545, Q163)
+        for w in [0x0a02_2205, 0x0a02_2c05] {
+            refused(poked(1, w), "Q163");
+        }
+        refused(poked(1, 0x0a02_2e05), "Q163");
+        for w in [0x0a02_2605, 0x0a02_2805, 0x0a02_2a05] {
+            refused(poked(1, w), "Q047");
+        }
+        // a bit nobody flipped (bit 20) is not the library's word
+        refused(poked(1, 0x0a12_2405), "Q047");
+    }
+
+    #[test]
+    fn the_attribute_rows_of_a_state_block_are_the_librarys_5_for_the_draw_and_1_for_the_end_of_scene() {
+        // bits 7:0 are read by nothing in the model: a changed value refuses (Q047)
+        for w in [0x0a02_2404, 0x0a02_2406, 0x0a02_2401, 0x0a02_2485] {
+            refused(poked(1, w), "Q047");
+        }
+        let (_, mem, base) = stream("tb-w128-k0-16-16");
+        let eos = mem.read32(base + 4 * 9).unwrap();
+        assert_eq!(eos & 0xff, 1, "{eos:#x}");
+        assert!(poked(9, eos).is_ok());
+        for v in [0, 2, 5] {
+            refused(poked(9, eos & !0xff | v), "Q047");
+        }
+        // a draw's rows on the end of scene block, and the reverse, are not the library's either
+        refused(poked(1, 0x0a02_2401), "Q047");
+    }
+
+    /// The fixture's stream with a second draw (a state block, an index list) written before the end
+    /// of scene: two objects, six blocks. The words of the second draw are `state1`.
+    fn two_objects(state1: u32) -> Result<Vec<Block>, Outcome> {
+        let (_, mut mem, base) = stream("tb-w128-k0-16-16");
+        let w: Vec<u32> = (0..11).map(|k| mem.read32(base + 4 * k).unwrap()).collect();
+        let mut out = w[..8].to_vec(); // the draw and the index list
+        out.extend([w[0], state1]);
+        out.extend(&w[2..8]);
+        out.extend(&w[8..]); // the end of scene and the terminate
+        for (k, v) in out.iter().enumerate() {
+            mem.write32(base + 4 * k as u32, *v).unwrap();
+        }
+        parse(&mem, base)
+    }
+
+    #[test]
+    fn a_stream_of_two_objects_is_refused_by_its_shape_and_by_each_word_that_also_blocks_it() {
+        let (_, mem, base) = stream("tb-w128-k0-16-16");
+        let lib = mem.read32(base + 4).unwrap();
+        // a clean second draw: only the stream's shape blocks it (the render checks the shape)
+        let b = two_objects(lib).unwrap();
+        assert_eq!(b.len(), 6, "{b:?}");
+        // a state word of the second draw nobody flipped: both questions are named
+        match two_objects(lib | 1 << 20) {
+            Err(Outcome::Unsupported { ids, why }) => {
+                assert_eq!(ids, ["Q047", "Q112"], "{why}");
+                assert!(why.contains("VDM_STATE1") && why.contains("6 blocks"), "{why}");
             }
-            o => panic!("{o:?}"),
+            r => panic!("{r:?}"),
+        }
+        // the one-object stream keeps its single question
+        match poked(1, 0x0a12_2405) {
+            Err(Outcome::Unsupported { ids, .. }) => assert_eq!(ids, ["Q047"]),
+            r => panic!("{r:?}"),
+        }
+    }
+
+    #[test]
+    fn index_list_words_no_record_explains_are_refused_by_question() {
+        refused(poked(2, 0x8040_000f), "Q112"); // the header: a trailing-word bit missing
+        refused(poked(0, 0x0), "Q112"); // a block type nobody saw
+        refused(poked(4, 0xf000_0003), "Q042"); // VDM_INDEX2 low bits: an offset in indices (E414)
+        refused(poked(5, 0x1), "Q042"); // VDM_INDEX3 other than 0x003fffff
+        refused(poked(7, 0x01c0_0100 | 2), "Q094"); // the vertex task's output size and data
+        // VDM_INDEX2 values that left the TA's output byte for byte the same (E414) are accepted
+        for w in [0, 0x1000_0000, 0x7000_0000, 0x8000_0000, 0xf000_0000] {
+            assert!(poked(4, w).is_ok(), "{w:#x}");
+        }
+    }
+
+    #[test]
+    fn a_lines_or_points_header_is_refused_under_the_questions_of_their_regions() {
+        // E543: topology 1 runs lines; E544: points
+        for (hdr, ids) in [(0x84c0_0002u32, vec!["Q159", "Q160"]), (0x88c0_0003, vec!["Q161"])] {
+            match poked(2, hdr) {
+                Err(Outcome::Unsupported { ids: got, .. }) => assert_eq!(got, ids, "{hdr:#x}"),
+                r => panic!("{r:?}"),
+            }
+        }
+    }
+
+    #[test]
+    fn a_repeated_or_reordered_index_is_refused_the_model_knows_identity_lists_only() {
+        let (_, mut mem, base) = stream("tb-w128-k0-16-16");
+        let idx = mem.read32(base + 12).unwrap(); // index base
+        mem.write32(idx, 0x0000_0000).unwrap(); // indices 0, 0
+        let Block::Index(l) = &parse(&mem, base).unwrap()[1] else { panic!() };
+        match tasks(l, 1) {
+            Err(Outcome::Unsupported { ids, .. }) => assert_eq!(ids, ["Q112"]),
+            r => panic!("{r:?}"),
         }
     }
 }

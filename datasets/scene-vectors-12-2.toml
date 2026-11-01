@@ -1,0 +1,9 @@
+title = "scene vectors of the pipeline simulator, 12.2: the dumped triangle jobs of the ta and vdm tables"
+repo = "data"
+paths = ["scene-vectors/ta/"]
+method = "tools/usse-asm/ta_scenes.py on the landed tables ta-tri-region, ta-regions, ta-objects, ta-object-words, ta-line-point, ta-points, ta-zero-words, vdm-state-units and vdm-vtask-capacity (offline, no new run): each case's words rebuilt by sgxfive-test --mock probe --tri --emit-scene and paired with the saved parameter buffer and TA data (the non-zero dwords in a window); a case whose rebuilt state block differs from the dump's object header, or that replaced a vertex or PDS program, is excluded and listed in run.excluded; the digest is the one of tools/records/datasets.py, the sha256 of the `sha256  path` lines of the files in path order"
+date = "2026-11-09"
+files = 9
+size = 6996450
+sha256 = "c9a1465d03a2f422bc38b37bb51ff31923d960398da83ce00e20251b692674c1"
+recipe = "tools/usse-asm/ta_scenes.py"

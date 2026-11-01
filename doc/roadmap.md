@@ -848,3 +848,16 @@ and 60 refusals. Q206 (transfer words with no record) and Q207 (PDS programs and
 measured) are new. The simulator `sgx-sim` is unchanged. The roadmap counts the questions from the
 built `doc/open_questions.md`: 187 open (Q001 to Q288), 168 hw (high 21, medium 78, low 69), 12 fw
 and 7 kernel; pds 18, transfer 4.
+
+Sub-phase 12.2 is a render job's vertex side and the TA's output, a tooling sub-phase with no laptop
+run and no kernel change: `sgxfive-test probe --tri --emit-scene` writes the words of a triangle
+job, and `sgx-pipe` runs the VDM stream, the vertex tasks on `sgx-sim`, the MTE and the TA over
+them. Of 355 jobs built from 599 dumped (244 replace a vertex or PDS program, a limit of the
+builder), 89 reproduce the saved parameter buffer and TA data byte for byte and are fitted, none
+matched, because the TA's rules are fitted; 266 (75 percent) are refused by question and none
+mismatches (E650 to E652: the object's vertex block, the region headers and the order of the
+streams). All 89 are the library's pass-through vertex program. Q230 (a triangle the clip cuts or
+the packed block cannot hold) and Q231 (the VDM and command words no record reads) are new. The
+simulator `sgx-sim` is unchanged. The roadmap counts the questions from the built
+`doc/open_questions.md`: 189 open (Q001 to Q288), 170 hw (high 21, medium 79, low 70), 12 fw and 7
+kernel; ta 17.

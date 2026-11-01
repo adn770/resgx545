@@ -10,7 +10,7 @@ Everything here builds and tests offline on Linux and macOS.
 | `usse-isa` | USSE decoder and encoder: the form engine, operand kinds, the SGX545 form table |
 | `pds-isa` | PDS decoder and encoder: its code kinds and form table, on `usse-isa`'s engine |
 | `sgx-sim` | USSE and PDS simulators over `decode_fields`, held to the hardware vectors |
-| `sgx-pipe` | the pipeline simulator over `sgx-sim` (phase 12): one module per fixed-function unit, unit and scene vectors, the `Edm` seam; 12.0 has refusing stubs and four checked rules; 12.1 runs a fill or a copy |
+| `sgx-pipe` | the pipeline simulator over `sgx-sim` (phase 12): one module per fixed-function unit, unit and scene vectors, the `Edm` seam; 12.0 has refusing stubs and four checked rules; 12.1 runs a fill or a copy; 12.2 a render's vertex side and the TA's output |
 | `sgx-tools` | CLIs: `usse-dis`, `pds-dis`, `usse-asm`, `pds-asm` (each as its C twin), `sgx-asm` (sections + patch map), `sgx-sim` |
 | `pysgx` | the Python module: decode/encode, `sgx-asm` in-process, the simulator with a Python bus |
 

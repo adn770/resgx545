@@ -135,13 +135,19 @@ fn replay_all() -> Option<Report> {
     };
     let mut rep = Report::default();
     for f in files(&dir, ".scene.json") {
-        // 12.1 models the transfer: the scenes of the later sub-phases lie beside them
-        if !f.strip_prefix(&dir).is_ok_and(|p| p.starts_with("transfer")) {
-            continue;
-        }
         let d = parse(&std::fs::read_to_string(&f).unwrap());
         assert_eq!(d.get("format").str(), Some("sgx545-scene-vectors"), "{}", f.display());
-        for r in replay_file(&d, "transfer") {
+        // the unit is the directory the file is in (`transfer/`, `ta/`)
+        let unit = f
+            .strip_prefix(&dir)
+            .ok()
+            .and_then(|p| p.components().next())
+            .map_or("transfer".to_string(), |c| c.as_os_str().to_string_lossy().to_string());
+        // 12.2 models the transfer and the TA's output: the scenes of the ISP are not run yet
+        if !["transfer", "ta"].contains(&unit.as_str()) {
+            continue;
+        }
+        for r in replay_file(&d, &unit) {
             match r {
                 Ok(r) => rep.add(&r),
                 Err((id, why)) => rep.skip(&id, &why),

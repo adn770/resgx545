@@ -203,7 +203,8 @@
  *                                 it is submitted (include/sgxfive_poke.h: cmd, xfer,
  *                                 vdm, eos, blk, pds:SLOT, tex, bg)
  *   --pixels                      every pixel of the target, a row a line
- *   --emit-scene FILE             fill, copy: write the job's words (the transfer command,
+ *   --emit-scene FILE             fill, copy (and probe --tri: the render's command words
+ *                                 and five pages with their roles): write the job's words (the transfer command,
  *                                 the programs' pages, the background object, the source),
  *                                 after any pokes, as JSON for the pipeline simulator; the
  *                                 job still runs (against the mock, no GPU is needed)
@@ -237,6 +238,7 @@
  */
 #define EXIT_JOB_FAILED	3
 
+#include <ctype.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <fcntl.h>
@@ -1572,6 +1574,7 @@ struct probe_opts {
 		uint32_t coords;	/* --vtx-coords: more output dwords per vertex */
 		bool copy_depth;	/* --copy-depth: the copies at z = c / 16 */
 		bool full;		/* --tri-full: the triangle covers the target */
+		const char *emit_scene;	/* --emit-scene FILE: the built job's words */
 		bool v_set;		/* --tri-v: the vertices, in 1/2^unit pixel */
 		int32_t v256[3][2];
 		uint32_t unit;		/* --tri-unit: 0, or the shift (4 to 20) */
@@ -2065,6 +2068,61 @@ static int dump_render(const char *dir, const char *name, bool failed)
 	return ret;
 }
 
+/* print s in lower case (the scene format's spelling of a pixel format's name) */
+static void emit_lower(FILE *f, const char *s)
+{
+	for (; *s; s++)
+		fputc(tolower((unsigned char)*s), f);
+}
+
+/*
+ * --emit-scene of a --tri probe: the words of the built render, written once the scene is
+ * built and before it is submitted (the pokes applied), for sgx_pipe's scene vectors
+ * (doc/specs/vectors.md section 6): the render command's words, the layout and the five
+ * program and stream pages, each with its role. REBUILT words, not a capture: the pixel
+ * program of the probe's slot is the file the caller gave.
+ */
+static int emit_tri_scene(const char *path, const struct sgxfive_tri_rig *g,
+			  const struct probe_tri *pt)
+{
+	const struct sgxfive_tri_layout *l = &g->layout;
+	const struct sgxfive_tri_cpu *c = &g->cpu;
+	const uint32_t page = SGXFIVE_PAGE_SIZE / 4;
+	const struct { const char *role; const uint32_t *p; uint32_t n; uint32_t base; } seg[] = {
+		{ "pdsv", c->pdsv, page, l->pdsv }, { "usev", c->usev, page, l->usev },
+		{ "pdsp", c->pdsp, page, l->pdsp }, { "usep", c->usep, page, l->usep },
+		{ "gen", c->gen, c->gen_size ? c->gen_size / 4 : page, l->gen },
+	};
+	FILE *f = fopen(path, "w");
+
+	if (!f)
+		return -errno;
+	fprintf(f, "{\"kind\": \"render\", \"target\": {\"w\": %u, \"h\": %u, \"base\": \"0x%llx\", "
+		"\"format\": \"", g->params.width, g->params.height, (unsigned long long)g->fb_addr);
+	emit_lower(f, "ARGB8888");	/* the scene format spells the pixel format in lower case */
+	fprintf(f, "\", \"stride\": %u},\n", 4 * g->params.width);
+	fprintf(f, " \"cmd\": ");
+	emit_words(f, (const uint32_t *)&g->cmd, sizeof(g->cmd) / 4);
+	fprintf(f, ",\n \"vertices\": %u,\n", pt->vertices);
+	fprintf(f, " \"layout\": {\"pdsv\": \"0x%x\", \"usev\": \"0x%x\", \"pdsp\": \"0x%x\", "
+		"\"usep\": \"0x%x\", \"gen\": \"0x%x\", \"fb\": \"0x%x\", \"pds_exec_base\": \"0x%x\", "
+		"\"usep_base\": \"0x%x\", \"usev_base\": \"0x%x\"},\n \"memory\": [",
+		l->pdsv, l->usev, l->pdsp, l->usep, l->gen, l->fb, l->pds_exec_base, l->usep_base,
+		l->usev_base);
+	for (unsigned int i = 0; i < 5; i++) {
+		fprintf(f, "%s\n    {\"role\": \"%s\", \"base\": \"0x%x\", \"source\": \"rebuilt\", "
+			"\"dwords\": ", i ? "," : "", seg[i].role, seg[i].base);
+		emit_words(f, seg[i].p, seg[i].n);
+		fputc('}', f);
+	}
+	fprintf(f, "\n ]}\n");
+	if (ferror(f)) {
+		fclose(f);
+		return -EIO;
+	}
+	return fclose(f) ? -errno : 0;
+}
+
 /*
  * One --tri probe: the first triangle's W x H render (sgxfive_tri_probe.h) with the
  * file's program in its slot and the --slot programs in theirs, every USE replacement
@@ -2242,6 +2300,8 @@ static void probe_tri_one(struct tool *t, const struct probe_file *f,
 		}
 		if (!ret)
 			ret = sgxfive_tri_rig_build(g, &p, &pr);
+		if (!ret && pt->emit_scene)
+			ret = emit_tri_scene(pt->emit_scene, g, pt);
 		if (!ret)
 			ret = sgxfive_tri_rig_submit(g);
 		submitted = !ret;
@@ -3785,6 +3845,10 @@ int main(int argc, char **argv)
 			}
 			if (!strcmp(argv[i], "--dump-render") && i + 1 < argc) {
 				popts.tri.dump_dir = argv[++i];
+				continue;
+			}
+			if (!strcmp(argv[i], "--emit-scene") && i + 1 < argc) {
+				popts.tri.emit_scene = argv[++i];
 				continue;
 			}
 			if (!strcmp(argv[i], "--kpoke") && i + 1 < argc) {
