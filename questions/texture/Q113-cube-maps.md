@@ -5,7 +5,7 @@ unit = "texture"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E342", "E345", "E364", "E567"]
+evidence = ["E342", "E345", "E364", "E567", "E725", "E726"]
 terms = ["TEXTYPE", "TEXFORMAT"]
 +++
 
@@ -27,3 +27,10 @@ twiddled and stride textures (8 of 8 jobs and 3 sweeps), and TEXTYPE 7 read the 
 cube reading was identified. TEXTYPE 2 gives three different images under smp2d, smp3d at 0.5 and
 smp3d at 1.5, the only type of eight on which the third coordinate acts: a candidate, with no cube
 face read yet (Q178 carries the observations). The six cube directions of the plan were not run.
+
+Run in 11.39 (E725, E726): types 3 and 1 read a raster of w dwords per row (8 jobs held out,
+8 x 8 to 32 x 32); E567's "fixed 16" was the 16 x 16 case. Type 4 reads 32 dwords per row at 8,
+16 and 32 wide [fitted, Q283]. TEXTYPE 2 with smp3d is a cube: six faces of 256 dwords (a 16 x 16
+face), face = +x, -x, +y, -y, +z, -z along the dominant axis (exploratory: the plan predicted only
+faces 1, 3, 5 for the negative axes; the mapping and the dominant-axis rule are post hoc [infer],
+checked on cu-w02). Open: the faces' (s, t), the edges, other sizes (Q284); type 5 not run.

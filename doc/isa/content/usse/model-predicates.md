@@ -38,7 +38,7 @@ The integer multiply-add, colour, dot-product and video groups have only a two-b
   a test before it reads them; across firmware tasks, p1 at the next entry was the writer's 0 and p0
   was not after a writer that called the closed task **[HW]** (E536, 3 of 3 rounds; p2 and p3
   equalled the flags but also move between readings with no writer, so they show nothing), and the
-  rest is **[open]** (Q124, Q155). A second table agrees: `p0` and `p1` after a setter read the kept
+  rest is **[open]** (Q124, Q152). A second table agrees: `p0` and `p1` after a setter read the kept
   value in 96.3 to 100 percent of the pixels in 10 of 10 reader jobs (E484).
 
 **In the firmware [RE].** The microkernel's predicates guard branches above all: 591 of its

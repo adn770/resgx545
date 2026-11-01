@@ -4386,6 +4386,245 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   lists over the page's first 34 dwords, so a load of the lists themselves is not separated, and the
   other 990 of the 1024 ramp dwords stay after the render with no effect on it.
   *dpm; HW, infer; data: `dpm-partial-model-batch`.*
+- `E680` Over 590 random triangles with vertices on the 1/256 pixel grid (small, medium, large -9%
+  to +124% of the target except at 4096 x 4096 where no x is negative, vertices at pixel centres, 75
+  quads cut into two triangles) on 10 targets that E606 did not run or only partly ran (96 x 64, 130
+  x 66, 200 x 120, 512 x 256, 512 x 512, 640 x 480, 1000 x 600, 1024 x 768, 2048 x 1024, 4096 x
+  4096; 6 of them with a half-size that is not a power of two, 7 of them taller than 128), the ISP
+  covers pixel (x, y) iff its centre is inside the triangle by the exact integer test with left and
+  top edges owning ties, E606's rule without a change: 0 of 1092224240 pixels (whole images) differ,
+  no tolerance, no clamp; the 75 shared edges leave 0 pixels drawn twice and 0 undrawn; the pixels
+  that test the rule are the 603728 next to a triangle boundary, not the 1092224240 counted.
+  *isp; HW, infer; data: `isp-coverage-envelope-1140`.*
+- `E681` With an edge moved across the half-grid tie in steps of 1/4096 pixel (1/1024 pixel from
+  2048 wide) at a positive coordinate, on 7 targets (96 x 64, 200 x 120, 512 x 256, 640 x 480, 1024
+  x 768, 2048 x 1024, 4096 x 4096), the ISP's image equals E607's rule (vertex rounded half up to
+  1/256 pixel, then the exact centre test) in all 588 cases, taking the nominal window coordinate of
+  the vertex: 0 mismatching pixels, every flip of every sweep at the step the rule gives; round half
+  down would mispredict 42 of the cases, flooring 204, no rounding 236.
+  *isp; HW, infer; data: `isp-coverage-envelope-1140`.*
+- `E682` For a long edge (the generator's bounds are 64 to 270 pixels on 512 x 512, 128 to 540 on
+  1024 x 1024, 256 to 1090 on 2048 x 2048, 512 to 2170 on 4096 x 4096; the edge nearest the target
+  centre measures 105 to 238, 218 to 442, 453 to 1064 and 961 to 2052 pixels; vertices on the 1/256
+  grid) that passes the pixel centre (W/2, H/2) at a cross product of +1 or -1 in 1/65536 pixel
+  squared (a distance of 1e-8 to 1e-7 pixel), the ISP draws that pixel iff the exact integer edge
+  function says so, in 160 of 160 cases (40 on each of 512 x 512, 1024 x 1024, 2048 x 2048, 4096 x
+  4096, half with the pixel just inside, half just outside), 0 wrong pixels in the whole images; an
+  edge function in float32 from pixel-unit coordinates would be wrong in 42 of them (9, 13, 11 and
+  9); only the target-centre pixel tests the edge; the prediction that the 4096 x 4096 cases would
+  not be exact (P8b) failed.
+  *isp; HW, infer; data: `isp-coverage-envelope-1140`.*
+- `E683` With vertices at negative window coordinates (one to three negative coordinates per
+  triangle, from -1/256 pixel down to -843 pixels, in x, in y or in both) with fractions of 1/4096
+  pixel and an edge aimed at a pixel centre, E607's rule (every coordinate rounded half up to 1/256
+  pixel, then the exact centre test) is wrong: 76 pixels in 51 of 80 fit cases and 212 pixels in 98
+  of 160 held-out cases (criteria P5 and P6 failed), on 64 x 64, 96 x 64, 130 x 66, 512 x 256, 640 x
+  480 and 1024 x 768; none of seven other rounding variants reproduces them (half away from zero: 23
+  pixels in 16 fit cases and 78 in 51 held-out cases, the best; half down 33 and 109, half to even
+  62 and 147, no rounding 84 and 240, floor 142 and 358, ceil 157 and 491, toward zero 153 and 379),
+  and post hoc, the exact ties at a negative coordinate go away from zero in 82 of 99 decided cases
+  (a coordinate of x -3.5/256 pixel goes to -4/256, not -3/256).
+  *isp; HW, infer; data: `isp-coverage-envelope-1140`.*
+- `E684` With one vertex at +-2^k pixels (k = 9 to 21, up to 2^29 units of 1/256, in x, in y or
+  both, 8 directions) and the other two vertices inside a 64 x 64 or a 512 x 512 target (one far
+  vertex only, on the 1/256 grid in all 208 cases: no sub-grid fraction; no 4096 target), 208 jobs,
+  none flagged and none needing a GPU reset, the ISP's coverage equals the exact rule of E606/E607
+  in 194 of 208 cases and differs by 1 or 2 pixels (16 pixels in all) in 14 (2 of 104 on 64 x 64, 12
+  of 104 on 512 x 512), each of those pixels within 5.6e-4 pixel of an edge line of the triangle
+  (median 1.2e-4, nearest 3.5e-5) and on edges from 1008 to 262551 pixels long; no case of any k
+  shows a clamp or a wrap of the vertex range: every clamp to 2^20 pixels or less and every wrap
+  into 2^21 pixels or less is excluded by the cases on which it would differ; criteria P9 (all cases
+  with |v| <= 2^15 pixels exact: 9 mismatch) and P10 (first mismatch at k = 16: it is at 10 on 64 x
+  64 and 9 on 512 x 512) failed.
+  *isp; HW, infer; data: `isp-coverage-envelope-1140`.*
+- `E700` In 52 jobs of five series of E545's two-block VDM stream (12 vertices, VDM_STATE1 bits 11:9
+  set to v1 in block 1 and v2 in block 2), predicted before the run by one counter rule (c is 0
+  after a GPU reset or a hang, which in these jobs are one observation, the harness resetting the
+  GPU after every hang; a job adds the sum of v - 2 over its blocks and hangs iff c + add > 8; a
+  completed job keeps c), 52 of 52 outcomes follow the rule (15 hangs), among them 16 of 16 (7
+  hangs) on a seeded random walk (seed 1141, v from 2 to 7 in both blocks), the only series not
+  built from the rule's own boundaries; a GPU reset clears c in the one job that could show it (c
+  would have been 6).
+  *vdm; HW, infer; data: `vdm-verification-1141ta`.*
+- `E701` In 28 jobs of six series with VDM_STATE1 bits 11:9 below 2 (frozen predictions of three
+  models, 22 of 28, 24 of 28 and 26 of 28 right), block-2 v = 1 at c = 0 hangs (4 of 4), block-2 v =
+  1 at c = 8 completes and counts as -1 (the next v = 3 job completes, the one after hangs), v = 0
+  at c = 8 in block 1 and in block 2 leaves c at 8 (the next v = 3 job hangs, 2 of 2 sequences: the
+  model in which v = 0 resets c is refuted twice), and block-1 v = 1 at c = 0 completes (3 of 3); a
+  post hoc variant of the counter of E700 fits all 80 jobs of the two tables.
+  *vdm; HW, infer; data: `vdm-verification-1141ta`.*
+- `E702` At R*V = 33 (N = 8 coordinate outputs, 3 output rows, 11 vertices a task) and 32 (N = 11, 4
+  rows, 8 vertices; N = 2, 2 rows, 16 vertices), attribute rows from 1 to 24 (VDM_TASK1 bits 14:7)
+  left the render unchanged in 13 of the 15 jobs that completed (the tool's o0 histogram equal to
+  that of the other jobs of the same N); two jobs at N = 8 changed it, a = 7 (3 pixels differ; ids
+  55, 66 and 77 hold one constant row) and a = 12 (260 pixels differ, though the decoder finds every
+  vertex identity, in an irregular split of the objects), and the one job of E546 that lost a vertex
+  at 33 with 8 rows was not seen again in the two a = 8 jobs here (another module and tool): the
+  three are treated alike, each one an event not yet repeated, pending a repeat, and no limit at 33
+  is concluded; by the vertex count the model in which attribute rows add to the budget (33 plus the
+  rows over 8) was wrong in 10 of 15 jobs and the model in which they do not count wrong in 1 (14 of
+  15 scored, 14 of 16 counting the job that hung); 32 attribute rows at N = 2 hung the job.
+  *vdm; HW, infer; data: `vdm-verification-1141ta`.*
+- `E703` With the output rows of VDM_TASK1 (bits 31:24) forced to a value other than the natural (4
+  + N + 3) / 4 by a xor on VDM word 7, the hardware accepts rows 4 to 7 (10 of 10 jobs completed, no
+  hang or fault) and the render of every one of the 8 forced jobs differs from that of the natural
+  jobs (the tool's o0 histogram: 418 to 1320 background pixels in 4 jobs and none among the listed
+  values in 4, against 2288 and 2821 in the two natural jobs), at R*V of 30 and 32 as at 35, 36 and
+  40; the decoder reads 76 to 95 of the 126 vertices as lost in them (a reading under a layout
+  assumption), none in the two natural jobs (R*V 32 and 33); no job with the forced field equal to
+  the natural one exists (a xor cannot make it), so the forcing itself is not separated from wrong
+  rows and the forced-rows route does not measure the capacity limit.
+  *vdm; HW, infer; data: `vdm-verification-1141ta`.*
+- `E704` At 4096x4096 with 1500 vertices (E630's wd-glist-1500 scene, the exception to E625's raise
+  rule), the render_pb_pages value P = 0x422, 0x424, 0x430, 0x440, 0x442, 0x460 and 0x500 and a
+  repeat of 0x422 (8 jobs) all give the same result: an overflow (-ENOSPC, context kept) after 2
+  partial renders, the first at status 0x400, identical status peaks (0x400, 0x400, 0x11c) and
+  identical control block dwords 34 to 40 (dword 35 0x3fe, 36 = 3, 37 = 0, 38 = 0, 39 = 6), no
+  raise; but P above 0x422 did not reach the TA (its threshold register 0x0624 reads 0x400 at the
+  first sample of every job, where P - 0x22 would be 0x4de at P = 0x500, and the parameter-buffer
+  dumps are byte-identical), so the 8 jobs are one condition and 7 repeats if the debugfs knob or
+  the page buffer clamps P at 0x422, which this table cannot exclude, and the threshold is held at
+  0x3fe only for P in 0x422 to 0x500; of the frozen models HA (a non-zero dword 36 blocks the raise)
+  was right in 8 of 8 on that condition and its repeats, and HP (the raise needs the pages) is
+  untested above 0x422, not refuted; the jobs at 1400 and 1300 vertices did not run.
+  *dpm; HW, infer; data: `vdm-verification-1141ta`.*
+- `E705` The tool's -n 4 runs four renders one after the other, one triangle each, so the frozen
+  'four stacked' and 'four apart' cases are not four-triangle scenes, and their two predictions
+  (disj4 against stack4: HG, HT) are void, not right or wrong; the page need of one triangle at
+  1024x768 depends on its position: moved by 0, 192, 384 and 576 pixels it reaches status 0x13,
+  0x14, 0x11 and 0xc (19, 20, 17 and 12 pages) in 0x422 pages, four renders of the unmoved one 0x13
+  four times; E625's overflow rule (overflow iff P - 0x22 is below the need) gives the outcome of
+  all 8 distinct conditions (the 4 positions at each of P = 0x28 and 0x30; the 22 renders include 14
+  repeats of an input already rendered, all with the same outcome) (post hoc), the raise of the
+  threshold (dwords 37 and 38) being in all 4 conditions at 0x28 and in none of the 4 at 0x30.
+  *dpm; HW, infer; data: `vdm-verification-1141ta`.*
+- `E706` Without hold_recovery the 300-vertex scene at 4096x4096 in 0x40 pages logs `*ERROR*
+  sgxfive: job N hung, recovering` and ends as `job hung, context lost` (rc 3, ETIMEDOUT, registers
+  0 after the reset) after 35 partial renders in 2 of 2 jobs (a run and its repeat), the same job
+  with hold_recovery logs the line and `recovery held` and ends as an overflow (-ENOSPC) after 47
+  partial renders in 2 of 2, and 450 vertices in 0x100 pages overflow after 16 partial renders with
+  no hung line with and without the hold (2 of 2): the line does not need hold_recovery, and E438's
+  hang is a driver-side recovery that the hold does not cause, not a hardware stop; what triggers
+  the recovery (a time, a count, no progress) was not read; the frozen model in which the line needs
+  hold_recovery was wrong in the no-hold condition (2 jobs, a run and its repeat).
+  *dpm; HW, infer; data: `vdm-verification-1141ta`.*
+- `E707` A program equal to E572's eotst-e1 but for the address immediate (a `mov.skipinv r1` and
+  one `stad [r1,+#0], r2` between the two emits, 32 temporaries) completed here, the store landed,
+  where E572's run of it faulted (at 0x340042 or 0x340043): E572's fault was not reproduced; of 10
+  variants of the form (mov flag, store before or between the emits, 32 or 8 temporaries, one
+  store), 8 completed and 2 faulted, the two with `mov.skipinv` and 8 temporaries (BIF fault 0xd0400
+  at 0x1, not E572's 0x340042; the value landed first in both), and none of the three frozen models
+  (8 of 10, 6 of 10 and 4 of 10 right) predicted the control to complete; what differs from E572's
+  run is listed in the record and none of it was tested.
+  *usse; HW, infer; data: `vdm-verification-1141ta`.*
+- `E708` The end-of-tile task's per-tile store of the global registers, with the E130 form (a
+  register-offset store to r4 + a tile slot from sa15, 128x128 and 256x128, 5 jobs), completes in 5
+  of 5 (no fault line, one job the sa-only control), and 32 tile slots hold their own g16 to g31 and
+  g39 to g43 plus sa0 to sa10 in 16 dwords each (all 32 tiles at 128x128, 32 of the 64 at 256x128):
+  g19 = 0x1a, g25 = 3, g16 and g26 to g31 = 0, g43 = 0xff000000, g17 in 0 to 3, g23 in {1, 0x11},
+  g24 in {1, 9}, g18 and g21 changing from tile to tile, but g20, g41 and g42 read 0 where E572 read
+  1, 1 and 1.0.
+  *usse; HW, infer; data: `vdm-verification-1141ta`.*
+- `E709` With the o4 write predicated on a test of g25 (`xor.testtaz.chan0 !c0, p1, g25, #1` and o4
+  under p1, k = 0, 1, 2 and 3) or unconditional (5 configurations, each an x job and a y job, none
+  repeated), the o4 writes (tag 5) are found at the same destination pixels in the x and the y job
+  in 24, 25, 25, 17 and 29 pairs, 120 in all, every one from an even source x and an even source y:
+  pairs exist for every k, so the predicate has no visible effect on whether o4 is written; the
+  number of pairs (17 at k = 3 against 24 to 29) and of tag-5 pixels (25 to 48 a job) varies between
+  configurations and no repeat says whether that is noise; the frozen lane-0-only model was right in
+  4 of 10 jobs (two configurations) and the any-lane model in 10 of 10 only by predicting nothing
+  the predicate could change; no job with a predicate that cannot hold was run, so the table does
+  not say what g25 selects.
+  *pds; HW, infer; data: `vdm-verification-1141ta`.*
+- `E720` On 8 held-out bilinear jobs (random 8 x 8 texels, 6 strided and 2 twiddled, every fraction
+  0 to 63) the sampler's bilinear result is the two-stage form, each 8-bit channel lerped in x then
+  in y, with +32 and a 6-bit shift at each stage (weights on the 1/64 grid of these jobs; weight
+  precision is not tested here): 8 of 8 jobs exact over their 2048 pixels (16384 of 16384), against
+  0 of 8 for the joint (sum + 2048) >> 12 form, the y-then-x order and the rounded-down variant (and
+  0 of 8 for stage roundings +32/+0, +0/+32, +31, +33 and mixed).
+  *texture; HW, infer; data: `texture-isp-msaa-verification-1141`.*
+- `E721` On 8 held-out gradient jobs with independent operands the footprint of E563's smp2dgrad is,
+  to within 0.1% and fitted with a residual, the larger of the two Euclidean lengths of the vectors
+  (op0, op2) and (op1, op3) scaled by the level size (the best of six declared footprints): it has
+  the highest count on 8 of 8 jobs with 1992 to 2048 of 2048 pixels (4 jobs exact, residuals 19 to
+  56 pixels on the others, whole columns or rows) against at most 256 for the five other footprints,
+  and the LOD fraction is truncated to 1/64: 2016 to 2048 of 2048 on 8 of 8 ladders against 1160 to
+  1840 for rounding.
+  *texture; HW, infer; data: `texture-isp-msaa-verification-1141`.*
+- `E722` On 13 of 16 held-out T3 address jobs the model of T3 bits 28:27 (level), 19:18 (address
+  scale) and 10 (single texel) with the offset chain of the level sizes and the index scaled after
+  the sum is exact over 2048 pixels (13 of 13 that completed), against 12 of 13 for the strided
+  chain by stride x height and 10 of 13 for the scale applied to the index only; the 3 jobs with the
+  largest address extent (86016, 87040 and 174080 bytes against at most 65536 for the 13 that ran)
+  faulted the job with a BIF fault.
+  *texture; HW, infer; data: `texture-isp-msaa-verification-1141`.*
+- `E723` With T0 bit 27 set a point-sampled texel byte is decoded sRGB to half float: 4 of 4
+  held-out fills exact over 2048 pixels (strided 8 x 4, twiddled 8 x 8 twice, twiddled 32 x 32); on
+  2 held-out bilinear fills neither frozen order fits, filter then decode 0 and 0 of 2048 pixels and
+  decode then filter 1147 and 876.
+  *texture; HW, infer; data: `texture-isp-msaa-verification-1141`.*
+- `E724` Format 27 is ETC1 with the 4 x 4 blocks of the texture in Morton order with y in the low
+  bit: 6 of 6 held-out fills of random valid blocks exact over 2048 pixels (16 x 16 twice, 32 x 16,
+  16 x 32, 8 x 16, 8 x 8), against 0 of 6 for raster block order and 0 of 6 for Morton with x low.
+  *texture; HW; data: `texture-isp-msaa-verification-1141`.*
+- `E725` Textures of type 3 and type 1 are read with a stride of the texture's width and the window
+  wrapping at its size (8 of 8 held-out fills exact over 2048 pixels, 8 x 8 to 32 x 32), not the
+  fixed 16 of E567's reading (0 of 8); type 4 is read with a fixed stride of 32 (4 of 4 sizes exact
+  after the fact), which none of the three frozen hypotheses gives.
+  *texture; HW, infer; data: `texture-isp-msaa-verification-1141`.*
+- `E726` Exploratory (no rule was declared; the plan's prediction was only that faces 1, 3 and 5
+  appear for the negative axes, which they do): with TEXTYPE 2 the 6 axis directions read one face
+  each over 2048 of 2048 pixels, faces 0 to 5 for +x, -x, +y, -y, +z, -z in blocks of 256 dwords
+  (the mapping and the dominant-axis rule are post hoc [infer]), and a w sweep moves the read from
+  +x to +z.
+  *texture; HW, infer; data: `texture-isp-msaa-verification-1141`.*
+- `E727` In 4x multisampled renders of a 12 x 6 triangle placed in each region of tile (0, 0), the
+  stored image is the one the region model predicts in 17 of 17 jobs (0 pixels off, 11 of 17 images
+  empty), and the visibility counter 0x0498 is non-zero in the 7 non-control jobs whose stored image
+  is empty (6 distinct jobs and a repeat, TE 0xe0, 0xa0, 0x60) but reads 0 with the same empty image
+  in the 4 controls at TE 0x20, so the counter does not show that every region is walked [infer].
+  *isp; HW, infer; data: `texture-isp-msaa-verification-1141`.*
+- `E728` CR_TE_AA with bit 29 clear and bit 30, 31 or both set (0x40, 0x80, 0xc0) leaves the TA data
+  identical to the same job with bit 29 set (0 of 6144 dwords differ in 6 of 6 comparable jobs) and
+  the parameter buffer identical except a one-dword shift of the 16 dwords 11 to 26 (13 dwords
+  differ in 6 of 6), and stores an empty image in 9 of 9 jobs; the same words differ from TE 0x00 in
+  89 to 818 parameter and 132 to 367 TA dwords.
+  *isp; HW, infer; data: `texture-isp-msaa-verification-1141`.*
+- `E729` At CR_TE_AA 0xe0000000 mode 2, 256 x 160 and 320 x 128 complete and 288 x 144, 256 x 288
+  and 384 x 384 fault the job at pages 0x20006, 0x20006 and 0x20008; with E507's 12 sizes this
+  leaves the number f of region-header arrays the TA writes at 4 or 5 (f = 3 refuted; f >= 6 refuted
+  post hoc; both under the layout formula as transcribed and integer f).
+  *ta; HW, infer; data: `texture-isp-msaa-verification-1141`.*
+- `E730` Re-scored post hoc, not a held-out confirmation (the frozen recompute scored 0 of 12 and
+  favoured the alternative "whole tile area stored", 12 of 12, because its observable counted every
+  dword not 0xdeadbeef): with E465's observable the set of stored non-background dwords of the ZLS
+  store is the set x < 1.25 W and y < 1.25 H on 12 of 12 jobs (6 sizes, ramp in x and in y; the
+  centre rule x + 0.5 < 1.25 W is inference, as the sets are the same for the edge forms), 924 on
+  the 34 x 18 control as in E465, 484 at 18 x 18, 1984 at 50 x 26, 3444 at 66 x 34, 7564 at 98 x 50
+  and 2604 at 34 x 50, with 0 mismatching pixels.
+  *zls; HW, infer; data: `texture-isp-msaa-verification-1141`.*
+- `E731` Under the premise that the stored word is trunc(T + A (x + 0.5) + B (y + 0.5)) with a
+  tile-corner value T, the three frozen candidates for T (RN of the plane at the corner, its
+  truncation, a walk fl(T(i) + RN(32 A))) fit, by direction and binade: for a dyadic gradient all
+  three fit 378 of 384 tiles (a control that does not discriminate, and fails in binade 2: 3 tiles
+  each in dp-ax-b2 and dp-ay-b2); for a non-dyadic gradient in y, truncation and the walk fit 63 of
+  63 consistent tiles in b0 and 64 of 64 in b1 (RN 63 and 56); in x, 0 of 58 consistent tiles in b0
+  and 34, 40, 38 of 43 in b1; in b2 no tile admits a single T, so the premise fails there; class c
+  232, 200 and 64 of 384 in total; Q200 is not settled.
+  *isp; HW, infer; data: `texture-isp-msaa-verification-1141`.*
+- `E732` Of the 140 jobs of the 11.39 texture, ISP and multisampling batch, 108 returned rc 0, 26 rc
+  1 with only the tool's image check failing (17 msaa-a-vis, 9 msaa-b-te29), 3 rc 1 and 3 rc 3 with
+  a faulted job (q140: 3, tex-c-addr: 3), none a usage error and none void; the kernel lines naming
+  sgxfive in isp-a-guard (60) and isp-b-depth (105) are the 5 kpoke acknowledgements of each job, no
+  fault.
+  *render; HW; data: `texture-isp-msaa-verification-1141`.*
+- `E733` The simulator's bilinear sample in the two-stage form of E720 (each 8-bit channel lerped in
+  x on both rows and then in y, each stage (a (64 - f) + b f + 32) >> 6, the weights truncated to
+  1/64 as before) replays the 8 vectors made from E720's held-out jobs 8 of 8 over 2048 pixels,
+  where the joint form it replaces, (sum + 2048) >> 12, differed on all 8; the outcome of every
+  other vector of the data repository is unchanged (31727 match, of which the 8 new ones, 1112
+  fitted, 1103 stop, 175 skipped, 1950 left out, 48 of 130 hung jobs predicted, none differs).
+  *texture; HW; data: `texture-p1141-recomp`, `vectors-texture-p1141`.*
 
 ## By unit
 
@@ -4397,7 +4636,7 @@ Records: E151, E457, E573, E592.
 
 Records: E199, E200, E201, E202, E204, E205, E206, E203, E253, E256, E309, E310, E311, E312, E313,
 E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E468, E574, E591,
-E625, E626, E627, E630, E631.
+E625, E626, E627, E630, E631, E704, E705, E706.
 
 ### edm
 
@@ -4415,7 +4654,7 @@ Records: E064, E065, E066, E067, E068, E069, E070, E071, E072, E073, E074, E210,
 E215, E216, E217, E218, E219, E220, E222, E224, E225, E226, E227, E228, E229, E230, E209, E231,
 E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E290, E291, E330,
 E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E508, E510, E590,
-E606, E607.
+E606, E607, E680, E681, E682, E683, E684, E727, E728, E731.
 
 ### mte
 
@@ -4432,7 +4671,7 @@ E383, E385, E386, E387, E429.
 Records: E043, E044, E045, E046, E047, E048, E125, E126, E127, E128, E129, E130, E131, E132, E133,
 E134, E135, E136, E137, E138, E139, E140, E141, E142, E143, E144, E145, E259, E260, E261, E262,
 E263, E264, E343, E344, E345, E364, E379, E381, E384, E388, E389, E390, E391, E392, E393, E394,
-E395, E396, E400, E420, E421, E428, E430, E436, E437, E454, E459, E460.
+E395, E396, E400, E420, E421, E428, E430, E436, E437, E454, E459, E460, E709.
 
 ### platform
 
@@ -4443,19 +4682,19 @@ E404, E405, E434, E445, E547, E548.
 
 Records: E023, E049, E050, E051, E052, E053, E148, E169, E252, E301, E302, E303, E304, E314, E315,
 E316, E323, E324, E325, E326, E354, E355, E356, E360, E361, E363, E408, E412, E422, E433, E435,
-E448, E449, E451, E458, E462.
+E448, E449, E451, E458, E462, E732.
 
 ### ta
 
 Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180, E181, E247, E257,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
-E511, E541, E542, E543, E544.
+E511, E541, E542, E543, E544, E729.
 
 ### texture
 
 Records: E033, E034, E035, E036, E037, E038, E039, E040, E041, E042, E114, E116, E242, E254, E271,
 E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441, E560, E561, E562,
-E563, E564, E565, E566, E567, E568, E569.
+E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E726, E733.
 
 ### transfer
 
@@ -4475,13 +4714,13 @@ E370, E371, E372, E373, E374, E375, E376, E377, E378, E380, E406, E423, E452, E4
 E472, E473, E474, E475, E476, E477, E478, E479, E480, E481, E482, E483, E484, E485, E486, E487,
 E488, E491, E492, E493, E494, E495, E496, E497, E498, E499, E500, E501, E512, E513, E514, E515,
 E516, E517, E518, E519, E520, E521, E522, E525, E526, E527, E528, E529, E530, E534, E535, E549,
-E570, E571, E572, E593, E594, E595, E596, E597, E598, E599.
+E570, E571, E572, E593, E594, E595, E596, E597, E598, E599, E707, E708.
 
 ### vdm
 
 Records: E059, E060, E184, E185, E186, E187, E189, E190, E191, E188, E299, E300, E318, E346, E349,
-E413, E414, E427, E440, E545, E546.
+E413, E414, E427, E440, E545, E546, E700, E701, E702, E703.
 
 ### zls
 
-Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467, E489, E490, E628, E629.
+Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467, E489, E490, E628, E629, E730.

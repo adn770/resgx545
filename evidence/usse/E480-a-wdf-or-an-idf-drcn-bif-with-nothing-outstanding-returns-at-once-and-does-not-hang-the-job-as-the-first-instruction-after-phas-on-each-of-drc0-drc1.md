@@ -30,7 +30,7 @@ unfenced store lost at the end would be hidden by the other 2047: the cases show
 not the fate of one instance's store.
 
 **What it does not show.** Whether the same holds for an EDM (firmware) task, whose end the
-microkernel handles itself (Q131); that one instance's unfenced store reaches the host (all 2048
+microkernel handles itself (Q197); that one instance's unfenced store reaches the host (all 2048
 instances store the same value to the same dword; a per-instance address, or one instance selected
 by a test of pa0 as the emitpds probe does, was not run; Q134); visibility of an unfenced store to
 another instance or to the host while the job still runs.
@@ -43,4 +43,4 @@ counted), so an unfenced `stad` changes the dword the host reads in a client pix
 instance of the fill (2048 changed dwords, 32 values read), and in E513 for the four lanes of a quad
 (4 of 4 in each of the 5 jobs that stored). 'One instance' in the sentence above was a quad of four
 lanes where the instance was selected by a test of `pa0` (E513). Not run: the host reading during
-the job and an EDM task (Q143, Q131).
+the job and an EDM task (Q143, Q197).

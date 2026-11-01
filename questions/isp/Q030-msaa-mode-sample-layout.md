@@ -5,7 +5,7 @@ unit = "isp"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E210", "E211", "E219", "E220", "E281", "E415", "E502", "E503", "E504"]
+evidence = ["E210", "E211", "E219", "E220", "E281", "E415", "E502", "E503", "E504", "E728"]
 terms = ["CR_ISP_MSAA", "CR_ISP_MSAA.MODE", "CR_ISP_MSAA.ENABLE", "CR_ISP_MULTISAMPLECTL", "CR_TE_AA", "programmable sample positions"]
 +++
 
@@ -47,3 +47,13 @@ tile columns.
 
 Narrowed in 11.26 (E502 to E504; the tile placement and the window of each TE bit are answered, not
 the clear-bit-29 case or the per-tile sample layout). Status: narrowed, not answered.
+
+Run in 11.39 (E728): with bit 29 clear, bits 31 and 30 do act in the TA's output: TE 0x40, 0x80 and
+0xc0 differ from TE 0x00 in 89 to 818 parameter and 132 to 367 TA data dwords (0 of 9 equal), and
+equal the bit-29-set job in the TA data (6 of 6); the parameter buffer differs from it in 13 dwords,
+a one-dword displacement of dwords 11 to 26 (Q285). The image is empty without bit 29 in 9 of 9
+jobs. Point 1 ("what bits 31 and 30 do when bit 29 is clear, where the triangle is gone") is only
+partly answered: bits 31 and 30 act in the TA output the same as with bit 29 set, but "where the
+triangle is gone" is not answered. Landed te 0x20 equals te 0x00 (0 dwords differ in the parameter
+buffer and the TA data), so bit 29 alone changes nothing and acts only with bit 30 or 31 set. "What
+bit 29 gates" stays open (Q285).

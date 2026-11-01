@@ -1,11 +1,11 @@
 +++
 id = "Q210"
-question = "what makes the DPM raise the first abort's threshold by 0x20 (TA3DCtl dwords 37 = 1 << 16 | P - 0x22 and 38 = 0x20) when twice the abort's status is below the scene's page need plus a constant k (2 or 3 at 1024x768, 2 to 13 at 4096x4096)?"
+question = "what exception to the raise rule of E625 and R2 is wd-glist-1500 (no raise at dword 36 = 3, at every P tried from 0x422 to 0x500), and what makes the DPM raise the first abort's threshold by 0x20 otherwise"
 unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E310", "E312", "E464", "E625", "E627", "E629"]
+evidence = ["E310", "E312", "E464", "E625", "E627", "E629", "E704"]
 terms = ["Dynamic Parameter Management (DPM)", "CR_DPM_STATE_BASE0", "ta3d_ctl"]
 +++
 
@@ -30,3 +30,21 @@ To settle it: a scene of a second shape (two triangles, a wider one) whose need 
 its whole-buffer page count, run over P across the predicted boundary, the cells declared before
 the runs; a regtimeline of the state page's base and of 0x0658 through a raised job and an
 unraised one, sampled while the TA runs.
+
+Narrowed in 11.39 (E704). wd-glist-1500 (1500 vertices at 4096x4096, dword 36 = 3, no raise
+although the rule R2 predicts one: the run after the first partial render reaches the status of
+the first, R2 formed after reading tg-1024-n-0x28, so fitted, 109 of 110 timeline jobs of the
+partial-model batch and 64 of 64 in E625's own scenes) repeated at P = 0x422, 0x424, 0x430,
+0x440, 0x442, 0x460 and 0x500 and again at 0x422: the same timeline (status 0x400 at the first
+partial render, peaks 0x400, 0x400, 0x11c) and the same control block words in 8 of 8 jobs, no
+raise (dwords 37 and 38 zero). P above 0x422 changed nothing the TA does: its threshold register
+read 0x400 at the first sample of every job and dword 35 was 0x3fe for every P from 0x422 to
+0x500, the parameter-buffer dumps are byte-identical, so the 8 jobs are one condition and 7
+repeats if the knob or the page buffer clamps P at 0x422. Two readings are open [infer]: a
+ceiling of the threshold at status 0x400, or a P clamped at 0x422. The page-supply model (the
+raise needs the pages) is untested above 0x422, not refuted: its 3 misses at P = 0x442 to 0x500
+may not have had those pages. The threshold is held at 0x3fe only for P in 0x422 to 0x500; nothing
+was run below. The controls below the step of dword 36 (1400 and 1300 vertices) did not run: the
+tool refuses vertex counts that are not multiples of 3. Open: whether the knob takes effect, the
+ceiling reading (P below 0x420, Q273), the part of dword 36, the exact step between 1350 and
+1500.

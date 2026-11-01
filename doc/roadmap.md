@@ -183,17 +183,17 @@ Q183, and the six between Q183 and Q190; the ids between Q168 and Q175 belong to
 tree). Each has a kind. The work is hardware knowledge, for a simulator and then our own firmware,
 so the 139 `hw` questions are the work queue, each with a value (high 13, medium 68, low 58); the 10
 `fw` questions (the closed firmware's and driver's own behaviour: Q004, Q029, Q034, Q049, Q084,
-Q088, Q118, Q119, Q124, Q131) and the 6 `kernel` ones (the design of our kernel driver: Q005, Q037,
-Q095, Q140, Q166, Q167) stay open, parked. By unit: bif 4, dpm 7, edm 13, isp 11, mte 3, pbe 5, pds
-16, platform 5, render 9, ta 14, texture 14, transfer 3, usse 36, vdm 9, zls 6. A question is
-removed when a record answers it; one that mixed a hardware part with a firmware or kernel part was
-narrowed to the hardware part or folded into the hardware question that holds it (seven so far: the
-control block's per-VM copy and the render context count bound into Q076, the recovery's reset steps
-into Q003, the settle routine and the two faults after a base-only fault or a kept owner into Q036
-and Q045, the points question into Q161), and a fold is not an answer. What a fold or a narrowing
-left of the closed firmware's own behaviour is a new parked question: how a kick tells its directory
-is in no list (Q118, from the render context count) and whether a command with both kick flags acts
-as two (Q119, from Q065).
+Q088, Q118, Q119, Q124, and the one on two EDM tasks, now Q197) and the 6 `kernel` ones (the design
+of our kernel driver: Q005, Q037, Q095, Q140, Q166, Q167) stay open, parked. By unit: bif 4, dpm 7,
+edm 13, isp 11, mte 3, pbe 5, pds 16, platform 5, render 9, ta 14, texture 14, transfer 3, usse 36,
+vdm 9, zls 6. A question is removed when a record answers it; one that mixed a hardware part with a
+firmware or kernel part was narrowed to the hardware part or folded into the hardware question that
+holds it (seven so far: the control block's per-VM copy and the render context count bound into
+Q076, the recovery's reset steps into Q003, the settle routine and the two faults after a base-only
+fault or a kept owner into Q036 and Q045, the points question into Q161), and a fold is not an
+answer. What a fold or a narrowing left of the closed firmware's own behaviour is a new parked
+question: how a kick tells its directory is in no list (Q118, from the render context count) and
+whether a command with both kick flags acts as two (Q119, from Q065).
 
 ### 4.2 Inferred glossary rows
 
@@ -237,7 +237,7 @@ reading and records.
   program's input bit 3 (E083), the scheduler's slot and task ids (E086), the sampler's `T3` bits
   26:23 (E034, E242), an object vertex's 1/w (E176, E196), the TPU's luma-key words and
   colour-space set 1 (E038, E039, E040), and the TE's macrotile stride (E159, E175).
-- **VDM words.** The state word's open fields (Q037, Q047, Q102; E413 has the alternation of bits
+- **VDM words.** The state word's open fields (Q037, Q047, Q163; E413 has the alternation of bits
   11:9 = 7) and the index list's first trailing word (Q042).
 - **Units.** `MADD`, the unit beside each USSE pipe's iterator and texture unit, has two readings
   (Q048).
@@ -430,10 +430,10 @@ fills the
 temporaries, `i0`-`i2`, `p0`, `p1` and for one job an `sa` are what the job before left (E484). An
 `emitpds` in a client fill starts the PDS program it names and ends the job in a fault or a hang
 in all 24 cases (E488). These are fills, proxies for what firmware tasks do, and two requests are
-not answered: two EDM tasks at once (Q131) and `str` then `ldr` (Q134). E489 and E490 recompute
+not answered: two EDM tasks at once (Q197) and `str` then `ldr` (Q134). E489 and E490 recompute
 E465 and E466 from the raw dumps, and E465 and E466 are carried forward with a dated note.
 Records E478-E490; Q051, Q052, Q054, Q098, Q101, Q107, Q120, Q124 and Q125 are narrowed, none
-retired; Q128 to Q134 are new, Q131 for the firmware (`fw`).
+retired; Q128 to Q134 are new, the one on two EDM tasks (now Q197) for the firmware (`fw`).
 
 Sub-phase 11.25 ran 13 probe tables on the laptop (1526 cases, one campaign run each, the false-call
 table twice) with no kernel change and no tool change (the sgxfive-test of 11.24), for the open
@@ -573,10 +573,10 @@ had bypasses, found afterwards by a review of the fork commits and fixed in late
 that ran contained none of the forms, so the runs stand. The recheck on the rebuilt module
 (srcversion 5AD04F33F6BCDA7B880E238, tip 3d9b8bdefe94) is done: the tasks passed the fixed verifier,
 the code page read-only in the EDM's page directory was fetched from, and the 9b repeat read the
-same, 34 of 34 (E549; the module-load KUnit failures on the laptop are Q167). Records E531-E534
-and E549; Q134 and Q131 are narrowed (Q134's client `str` and `idf` parts, Q131's overlap) and
-none retired; Q124 and Q033 gain their evidence and stay open; Q152 to Q154 are new (hw: medium,
-low, medium), and Q167 (kernel).
+same, 34 of 34 (E549; the module-load KUnit failures on the laptop are Q167). Records E531-E534 and
+E549; Q134 and the one on two EDM tasks (now Q197) are narrowed (Q134's client `str` and `idf`
+parts, the overlap) and none retired; Q124 and Q033 gain their evidence and stay open; Q152 to Q154
+are new (hw: medium, low, medium), and Q167 (kernel).
 
 Sub-phase 11.30 ran more firmware (EDM) tasks of ours, and the client rerun of Q147, on the laptop
 with the module and fork tip of 11.29 before the verifier fix (module 7ED723C2, tip d614af574cc6;
@@ -602,7 +602,7 @@ advanced 6 in that window and then did not move; the stage stopped at its first 
 other writers of its plan did not run). Together they narrow E533's stop only this far: the `sa`,
 `r`, `i` and `p` writes alone do not stop the tick when the closed task follows, and a task that
 calls the closed task can stop it too; E533's arbitrary `pclink` write, its p values (1, 0, 1, 0)
-and the missing closed task are still not separated (Q152, Q156). A host kick reached the general
+and the missing closed task are still not separated (Q152). A host kick reached the general
 slot only, with `pa1` = 0x03000000 (E538: 3 of 3 runs; the frozen prediction 0x100 failed) and 50 ms
 of ticks logged nothing with bit 25 masked. A slow task of up to 6.9 ms was never found busy by a
 second pass that started after its busy store (E539: 10 of 10, a tick-only stream in one slot). TRC
@@ -623,8 +623,9 @@ writers' readback lists only p1 of the predicates) and so do 14 of the 36 vector
 left out for their mixed pixels and 10 stop on `r123` past the allocation, which the simulator takes
 from the modulo rule); the replay of the other vectors is unchanged (30081 scalar and 193 pixel
 matches, 1112 fitted, 918 stops, 175 skipped, 1937 left out, with 0 mismatches). Records E535-E540;
-Q124, Q131, Q133, Q144, Q147, Q152, Q153 and Q033 are narrowed and none retired; Q155 to Q158 are
-new (hw: medium, medium, low, low).
+Q124, the one on two EDM tasks (now Q197), Q133, Q144, Q147, Q152, Q153 and Q033 are narrowed and
+none retired; Q157 and Q158 are new (hw: low, low), and two more new hw questions (medium, medium)
+are now part of Q152.
 
 Sub-phase 11.31 ran seven script tables on the laptop with no kernel change, all in the 11.26 tool
 (sgxfive-test-1126): the TA's object format and its vertex dwords (`ta/object-format`), the region
@@ -791,3 +792,23 @@ partial owner's state page is zero after the second context's run, cause not sep
 narrowed, not retired). The simulator is unchanged. The roadmap counts the questions from the
 built `doc/open_questions.md`: 167 open (Q001 to Q211), 149 hw (high 17, medium 69, low 63), 12 fw
 and 6 kernel; usse 38, edm 17, isp 15, dpm 9.
+
+Sub-phase 11.39 is a records sub-phase with three laptop batches (the coverage envelope sweep, 1822
+jobs; a vertex side, DPM, EDM and USSE verification batch, 157 jobs; a texture, ISP and
+multisampling batch, 140 jobs) and no kernel change. The ISP's coverage rule holds on ten more
+targets up to 4096 x 4096 and its half-up rounding at the tie on seven, the edge function is exact
+for edges up to 2052 pixels and a far vertex to 2^21 pixels is drawn exact within 6e-4 pixel of an
+edge line, while negative vertices with a sub-grid fraction are not rounded half up (E680 to E684,
+Q260 to Q262). A counter predicts which VDM_STATE1 job hangs, for one job shape (E700, E701), a
+vertex task's capacity and forced rows were probed (E702, E703), a 1500-vertex scene's threshold
+does not move with the page count (E704), the page need of one triangle depends on its position
+(E705), the kernel's hang recovery ends a long partial-render sequence (E706), and an end-of-tile
+store is not reproduced (E707 to E709, Q270 to Q278). The sampler's bilinear result is the two-stage
+form of E720, and the simulator `sgx-sim` takes it, tests first, with 8 new vectors (E733); the
+gradient footprint, the T3 address chain, sRGB, ETC1, the texture types and the cube are findings
+the simulator keeps refused (E721 to E726, Q280 to Q284), and the multisample, TE bit, Q140, ZLS
+band and depth plane results are E727 to E731 (Q285 to Q288), E732 the accounting. Four questions
+are folded into Q163, Q197 and Q152, Q045 is split (Q277 for the firmware) and Q103's kernel part is
+Q278; no question is answered. The roadmap counts the questions from the built
+`doc/open_questions.md`: 184 open (Q001 to Q288), 165 hw (high 20, medium 76, low 69), 12 fw and 7
+kernel; isp 20, usse 39, texture 19, pds 17, edm 15, ta 15, dpm 12, vdm 11.

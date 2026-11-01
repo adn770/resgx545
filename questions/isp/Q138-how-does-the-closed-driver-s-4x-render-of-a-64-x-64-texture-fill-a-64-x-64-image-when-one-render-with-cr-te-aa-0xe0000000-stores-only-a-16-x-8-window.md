@@ -5,7 +5,7 @@ unit = "isp"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E503", "E508", "E510", "E339", "E439"]
+evidence = ["E503", "E508", "E510", "E339", "E439", "E727"]
 terms = ["CR_TE_AA", "CR_ISP_MSAA"]
 +++
 
@@ -26,3 +26,10 @@ windows of one render can be combined with the targets' addresses. To settle it:
 the closed driver's frame that counts the renders of a 4x frame and the CR_TE_AA word of each (E339
 compared one render only), and on the laptop a mode 2 frame rendered four times with the four
 values into the same target, checking that the stored windows do not overwrite one another.
+
+Note from 11.39 (E727): the stored image equals the region model's in 17 of 17 jobs. A 12 x 6
+triangle in a region other than the last visited reads a non-zero visibility counter 0x0498 (144
+in 0xe0 jobs) with an empty image in 7 of 7 jobs (6 distinct jobs and a repeat), but the same
+empty image reads counter 0 at TE 0x20 (4 controls), so the counter does not show that every
+region is walked [infer]; it may count stored samples (144 = 4 x 36). This does not resolve a 4x
+render and does not remove "the region is skipped"; the question stays open.

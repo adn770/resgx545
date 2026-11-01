@@ -1,11 +1,11 @@
 +++
 id = "Q023"
-question = "what do PDS_SIZE bits 17:16 do, given that they move where the output registers o1 to o3 land?"
+question = "how many output dwords does a pixel task get per setup, and what do the data rows limit (E406)"
 unit = "pds"
 kind = "hw"
 value = "high"
 phase = 7
-evidence = ["E139", "E081", "E406", "E570"]
+evidence = ["E139", "E081", "E406", "E570", "E709"]
 terms = ["PDS_SIZE.BITS17_16"]
 +++
 
@@ -53,3 +53,16 @@ pair. o2 and o3 land one to three positions back with no setting that fixes it (
 91 three of 2094 for o2); the same table run twice gives different counts. Not shown: what decides
 the offset of o2 and o3, the part of the size field, o4 to o7, and why some writes land two tiles
 back. Status: narrowed, not answered.
+
+Reworded in 11.39: the question line asked what PDS_SIZE bits 17:16 do; it now asks what the
+setup and the data rows give a pixel task, and the lane reading of o4 to o7 (which pixels write,
+and which lane an output comes from) moves to Q276. The value stays high for both.
+
+Narrowed in 11.39 (E709, 5 configurations, an x and a y job each, none repeated). With o4 guarded
+by a test of g25 against k = 0 to 3 or no guard, o4 writes pairs (120 in all, 24, 25, 25, 17 and
+29) for every k, all from even-even source pixels (as the 2007 pairs of tags 5 to 7 in E570's
+tables by this session's pairing; plan.md's 2393 is the Opus report's pairing): the lane-0-only
+model was right in 4 of 10 jobs and wrong in 6, and the predicate shows no visible effect on
+whether o4 is written; the pair counts differ between configurations (17 at k = 3) and no repeat
+says whether that is noise. Nothing here says what g25 selects (no guard that cannot hold was
+run, Q276). Plain-job spills of o1 to o3 stay a refusal in the simulator.

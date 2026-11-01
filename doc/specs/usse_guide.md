@@ -94,7 +94,7 @@ marked.
   task left there, firmware data included (measured from a client pixel shader on our render node);
   `r40` and `r47` written by one fill were read by the next in 7 of 7 reader jobs (2048 of 2048
   pixels each), and by one two fills later, after a fill that wrote no temporary, in 2 of 2 (E484: a
-  pair of fills, not EDM tasks; Q124, Q131). In firmware (EDM) tasks of ours `r20` and `r21` written
+  pair of fills, not EDM tasks; Q124, Q197). In firmware (EDM) tasks of ours `r20` and `r21` written
   by one task were read by the next at the next event and after 1200 ms (6 of 6) and replaced by a
   client fill (0 of 6 kept), and `i0` and `i1` also after a fill (6 of 6) **[HW]** (E536). The
   registers sampled up to `r123` are separate storage in a fill started with up to 128 temporaries
@@ -225,7 +225,7 @@ The integer multiply-add, colour, dot-product and video groups have only a two-b
   a test before it reads them; across firmware tasks, p1 at the next entry was the writer's 0 and p0
   was not after a writer that called the closed task **[HW]** (E536, 3 of 3 rounds; p2 and p3
   equalled the flags but also move between readings with no writer, so they show nothing), and the
-  rest is **[open]** (Q124, Q155). A second table agrees: `p0` and `p1` after a setter read the kept
+  rest is **[open]** (Q124, Q152). A second table agrees: `p0` and `p1` after a setter read the kept
   value in 96.3 to 100 percent of the pixels in 10 of 10 reader jobs (E484).
 
 **In the firmware [RE].** The microkernel's predicates guard branches above all: 591 of its
@@ -301,7 +301,7 @@ flag into `p0` without writing a register and branches on it.
   (Q125). A task writes `pclink` before it reads it; across firmware tasks, after a writer that
   called the closed task p1 at the next entry was the writer's, `pclink` was 6 (the value of the
   writer's own tail triple **[infer]**) and p0 was not **[HW]** (E536); the rest is **[open]**
-  (Q124, Q155).
+  (Q124, Q152).
 - **Branch flags [open].** `.nosched`, `.synce`/`.syncent` and `.mon` decode on `ba`, `br`
   and `lapc`; their effect is not established, and the firmware uses none of them.
 - **`bexception` [HW].** Hangs a fill's pixel task, with or without `.nosched`: it neither
@@ -518,9 +518,9 @@ The waits and modes on the hardware (E101) **[HW]**:
   and `r21`; `sa64` did not take the write (it read 2); at the next event p1 was the writer's 0 (3
   of 3, 1 in the other readings) and `pclink` was 6, the value of the writer's own tail triple
   [infer], not the 0x98 of the other readings, p0 was not the writer's, and p2 and p3 move between
-  readings with no writer (Q155). The same writer kept the tick, a task that also wrote `sa63` and
+  readings with no writer (Q152). The same writer kept the tick, a task that also wrote `sa63` and
   `sa65` and called the closed task was not followed by its armed reader within 100 ms (E537, one
-  run: Q156). No second pass of the wrapper was found busy while a slow task ran, up to 6.9 ms (10
+  run: Q152). No second pass of the wrapper was found busy while a slow task ran, up to 6.9 ms (10
   of 10 runs, E539; ticks only, slot 0, no job). The simulator runs these tasks only through
   `sgx_sim::fwtask`, and models `ldr` and `str` only there: `str` to 0x0814 and 0x0a78 (values
   inside their 17 and 6 bits, the immediate index only) and `ldr` of those two and of `CORE_ID`,
@@ -577,7 +577,7 @@ same form our programs use (immediate operands zero, `pixel`, `end`, `parallel`)
   measured in client pixel tasks; the EDM task of ours of E534 shows the same for a result `stad`
   followed by a load, a `wdf` and two more stores and then the flag the host reads with no `idf`
   (18 of 18) and for a `wdf` with no load outstanding between a `str` and an `ldr` (18 of 18, 15 of
-  which could show a change, and none did), and no more (Q131). The firmware almost always follows
+  which could show a change, and none did), and no more (Q197). The firmware almost always follows
   its loads with a `wdf` before using the data (711 `wdf drc0`, 96 `wdf drc1`), and our programs
   wait with `wdf drc0` for the attribute DMA the PDS started.
 - **`idf drcN, bif`** appears 124 times in the firmware, mostly right before a `wdf` on the same
@@ -4756,9 +4756,12 @@ scratch buffer whose dwords count up, so every result names the texels it came f
 - **Filtering (T0 bits 13:12, probes `texture-sampler-smp-bilinear`,
   `texture-sampler-smp-filter-modes`).** 1 and 2 are
   bilinear, 0 and 3 point. **Bilinear weights are truncated to 1/64 and each 8-bit channel is
-  rounded to nearest, halves up**, before any conversion: between texels 255 and 15 at
-  `v + k/256` the f32 result steps every four `k`. The minification field does not act while
-  magnifying (every case magnifies: the LOD forms never left level 0).
+  filtered in two stages, x on both rows and then y, each stage `(a (64 - f) + b f + 32) >> 6`**
+  (E720: 8 of 8 held-out jobs on the 1/64 grid, the joint sum rounded to nearest with halves up
+  0 of 8; the 21 `smp-bilinear` vectors give the same words under both forms), before any
+  conversion: between texels 255 and 15 at `v + k/256` the f32 result steps every four `k`. The
+  minification field does not act while magnifying (every case magnifies: the LOD forms never left
+  level 0).
 - **Addressing (T0 bits 8:6 U, 5:3 V; `texture-sampler-smp-address`).** A stride texture (T1 type 6,
   our copy
   sources) clamps to the edge whatever the modes say. On a twiddled texture (type 0) **0
@@ -5046,7 +5049,7 @@ open driver:
 9. **Calls, the program counter, the integer forms and the tests**: indices of 256 to 8191 in a fill
    and a jump across a 65536-word step of the code base (Q123; the step of 0x80000 is shown by ten
    placements: E492); `p0`-`p3` and `pclink` at the start of a firmware task, beyond one writer's p1
-   and `pclink` at the next entry (Q124, Q155); what leaves 0xeb3 and 0x98 in them across jobs
+   and `pclink` at the next entry (Q124, Q152); what leaves 0xeb3 and 0x98 in them across jobs
    (Q125: four runs of the readers show 64 pixels of 0xeb3 in 29 of 40 jobs and quads that repeat in
    part, E500); which extension the test of `iaddu32` reads for a source 1 above 0x7fff, which no
    test tells, and the value it writes with a repeat, an immediate or a constant in source 2 (Q126);
@@ -5057,7 +5060,7 @@ open driver:
    field (Q150); how long an `sa0` written by `ima32` lasts and why a write to `pa0` is lost (Q136).
 10. **Fences, repeats, registers and persistence for a firmware compiler**: why a `wdf` waits for
    another counter's loads in some runs and not in others (Q130); whether a firmware (EDM) task runs
-   two at once (Q131, firmware: no second pass was seen in 10 of 10 runs of a slow task, ticks only
+   two at once (Q197, firmware: no second pass was seen in 10 of 10 runs of a slow task, ticks only
    in one slot, E539, and what happens to an event that arrives meanwhile is open; a `wdf` with
    nothing outstanding and an unfenced store at the end of a task act as in a fill, E534); what a
    client `str` changes and what an `idf` is needed for beyond an instance's own store (Q134; `str`
@@ -5068,11 +5071,11 @@ open driver:
    `sa` (Q129); where a write past the allocation goes (Q132, Q147); what bounds a `phas` request
    and what a request above 256 allocates, which is [infer] at least 124 for 260 to 376, T = 101 to
    123 not run (Q133, Q144). What survives from one firmware task to the next beyond one writer's
-   `sa`, `r`, `i` and p1 (Q124, Q152, Q155, Q158), what stops the tick after a task (Q152, Q156) and
+   `sa`, `r`, `i` and p1 (Q124, Q152, Q158), what stops the tick after a task (Q152) and
    the allocation of a firmware task above TRC 31 are not measured.
 
 The simulator (`crates/sgx-sim`) reproduces 30815 probe vectors (15526 of them with near values:
-float functions within their measured bound) and 434 pixel vectors; it stops on 2215 rather than
+float functions within their measured bound) and 442 pixel vectors; it stops on 2215 rather than
 guess, most often because (vectors, from `doc/isa/sim-coverage.json`):
 
 - firh's fixed bank 1 or 2, whose taps are fitted to these vectors (in-sample, not a hardware check)

@@ -5,7 +5,7 @@ unit = "isp"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E606", "E607"]
+evidence = ["E606", "E607", "E683", "E684"]
 terms = []
 +++
 E606 and E607 put vertices between -9% and +124% of targets up to 256 pixels wide and fitted a
@@ -21,3 +21,11 @@ and +2048, +8192, +65536 pixels from a sample (a long edge, 1 and 2 of its verti
 on a 64 x 64 and a 4096 x 4096 target, tool unit 4096 to 1/256; plus a vertex exactly on a tie
 (n + 0.5 in 1/256 units) at a negative coordinate; and the ISP's use of the 1/256 vertex in the
 plane equations at the far vertex (a depth that depends on a vertex 5000 pixels away).
+
+Narrowed in 11.39 (E684, E683). For one vertex on the 1/256 grid at +-2^k pixels up to k = 21 from a
+64 x 64 or a 512 x 512 target the ISP draws the exact coverage except for 16 pixels in 14 of 208
+cases, all within 6e-4 pixel of an edge line: no clamp of the vertex range to 2^20 pixels or less
+and no wrap into 2^21 pixels or less (E684). What would settle the rest is not answered: a 4096
+target, a far vertex on a tie and one with a sub-grid fraction, two or three far vertices, and the
+saturation at 2^22 pixels or more (Q261). Negative vertices with a sub-grid fraction are not
+rounded half up (E683, Q260).

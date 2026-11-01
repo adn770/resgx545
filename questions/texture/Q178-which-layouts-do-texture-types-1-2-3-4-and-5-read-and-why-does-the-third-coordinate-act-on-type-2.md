@@ -5,7 +5,7 @@ unit = "texture"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E567", "E342"]
+evidence = ["E567", "E342", "E725", "E726"]
 terms = ["TEXTYPE"]
 +++
 
@@ -15,3 +15,10 @@ cube and volume layouts that type 2 may be. The next step is the plan's follow-u
 --follow) on TEXTYPE 2: six cube directions (the major axis +-1) and two slice sweeps, the faces'
 dword offsets read from the names. Types 1, 2, 4 and 5 are each at 16x16 only; other sizes would
 say whether they are layouts or formats.
+
+Run in 11.39 (E725, E726): types 3 and 1 read a raster of w dwords per row (8 jobs held out,
+8 x 8 to 32 x 32); E567's "fixed 16" was the 16 x 16 case. Type 4 reads 32 dwords per row at 8,
+16 and 32 wide [fitted, Q283]. TEXTYPE 2 with smp3d is a cube: six faces of 256 dwords (a 16 x 16
+face), face = +x, -x, +y, -y, +z, -z along the dominant axis (exploratory: the plan predicted only
+faces 1, 3, 5 for the negative axes; the mapping and the dominant-axis rule are post hoc [infer],
+checked on cu-w02). Open: the faces' (s, t), the edges, other sizes (Q284); type 5 not run.

@@ -5,7 +5,7 @@ unit = "texture"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E274", "E397", "E566", "E564"]
+evidence = ["E274", "E397", "E566", "E564", "E722"]
 terms = ["T3.BIT10", "T3.BIT14", "T3.BITS19_18", "T3.BITS28_27", "T0.BIT27", "T3.BITS7_0"]
 +++
 
@@ -39,3 +39,10 @@ with the pixel position (a transform of (x, y), not a constant offset), and T3 b
 job again; they are carried by Q176 with bits 11 and 12. T0 bit 27 on the strided texture reads
 values that are no name of the buffer. What stays open is the transform of bits 10, 14, 18, 27 and
 28 (Q176), what bits 11 and 12 select, and T0 bit 27's format.
+
+Run in 11.39 (E722, 16 held-out jobs): the model "offset = sum of the level sizes below L,
+address = (offset + index) << e" for bits 28:27 and 19:18 and bit 10 is exact on 13 of 13 jobs
+that completed; "scale on the index only" fits 10 of 13, "strided chain by stride x height"
+12 of 13. 3 jobs with the largest address extent (86016 to 174080 bytes) faulted; the largest
+job that completed reads 65536 bytes (Q281; the 64 KiB cause, the probe's scratch size, is
+[infer]). Only a 32-bit format and widths up to 128 were run. T3 bits 11, 12 and 14 were not run.

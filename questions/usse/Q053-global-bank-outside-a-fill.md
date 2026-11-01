@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E085", "E086", "E372", "E374", "E571", "E572"]
+evidence = ["E085", "E086", "E372", "E374", "E571", "E572", "E708"]
 terms = []
 +++
 
@@ -32,3 +32,11 @@ last tile's value because each tile's store lands in the same dword and a store 
 To settle it: a vertex program that writes g18 and g21 with a counter that fixes the task number
 and one that stores a second register per vertex; an end-of-tile program that stores to an address
 built from g17 or g18 once a store that does not fault is found (Q183).
+
+Narrowed in 11.39 (E708, 5 jobs). The per-tile values of the end-of-tile task are readable
+without a fault with E130's form (a register-offset store to r4 + a slot from sa15): 32 tiles
+at 128x128 (and 32 of 64 at 256x128): g16 0, g19 0x1a, g25 3, g26 to g31 0, g43 0xff000000,
+g17 in 0 to 3, g18 in 0xa to 0x16, g21 in 0x3 to 0x1f, g22 in {0, 1}, g23 in {1, 0x11}, g24 in
+{1, 9}, g39 0; the frozen prediction that the form completes held (5 of 5). g20, g41 and g42
+read 0 where E572 read 1, 1 and 1.0 (Q275). Open: the rule for g18 and g21 in a vertex task and
+per tile, and the vertex-task program that counts tasks (not run).

@@ -675,7 +675,7 @@ not separated, Q152). A task of ours that wrote `sa`, `r`, `i` and `p` and then 
 task left the tick running (E536, 3 of 3 rounds, 911 to 1005 Hz), and a second one that also wrote
 `sa63` and `sa65` and called it was not followed by its armed reader within 100 ms (E537, 1 run;
 HostCtl dword 12 advanced 6 in that window and then read 0x9db in both dumps taken seconds later,
-and `USE0_SERV_EVENT` 0x9e0 in both, against E533's three reads 20 ms apart; Q156). The closed task
+and `USE0_SERV_EVENT` 0x9e0 in both, against E533's three reads 20 ms apart; Q152). The closed task
 does not by itself keep the tick, then, whatever E533's cause was.
 
 *Based on sgx545-ce `src/services4/system/unified/sysconfig.c`,

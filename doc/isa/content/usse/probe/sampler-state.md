@@ -10,9 +10,12 @@ scratch buffer whose dwords count up, so every result names the texels it came f
 - **Filtering (T0 bits 13:12, probes `texture-sampler-smp-bilinear`,
   `texture-sampler-smp-filter-modes`).** 1 and 2 are
   bilinear, 0 and 3 point. **Bilinear weights are truncated to 1/64 and each 8-bit channel is
-  rounded to nearest, halves up**, before any conversion: between texels 255 and 15 at
-  `v + k/256` the f32 result steps every four `k`. The minification field does not act while
-  magnifying (every case magnifies: the LOD forms never left level 0).
+  filtered in two stages, x on both rows and then y, each stage `(a (64 - f) + b f + 32) >> 6`**
+  (E720: 8 of 8 held-out jobs on the 1/64 grid, the joint sum rounded to nearest with halves up
+  0 of 8; the 21 `smp-bilinear` vectors give the same words under both forms), before any
+  conversion: between texels 255 and 15 at `v + k/256` the f32 result steps every four `k`. The
+  minification field does not act while magnifying (every case magnifies: the LOD forms never left
+  level 0).
 - **Addressing (T0 bits 8:6 U, 5:3 V; `texture-sampler-smp-address`).** A stride texture (T1 type 6,
   our copy
   sources) clamps to the edge whatever the modes say. On a twiddled texture (type 0) **0

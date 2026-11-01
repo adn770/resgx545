@@ -514,14 +514,20 @@ impl Texture {
         if one_d { 0 } else { (v * self.h as f64).floor() as i64 }
     }
 
-    /// The four texels of a bilinear sample and their weights in 1/4096,
-    /// truncated to 1/64 per axis (texture-sampler-smp-bilinear).
-    fn quad(&self, u: f64, v: f64, one_d: bool, load: &mut Load) -> Result<([u32; 4], [u32; 4]), Fail> {
+    /// The corner texel of a bilinear sample and the fractions of a texel past it in 1/64,
+    /// truncated per axis (texture-sampler-smp-bilinear: finer weights miss the landed vectors).
+    fn corner(&self, u: f64, v: f64, one_d: bool) -> ((i64, i64), (u32, u32)) {
         let (x, y) = (u * self.w as f64 - 0.5, v * self.h as f64 - 0.5);
         let (x0, y0) = (x.floor(), y.floor());
         let fx = ((x - x0) * 64.0).floor() as u32;
         let fy = if one_d { 0 } else { ((y - y0) * 64.0).floor() as u32 };
-        let (x0, y0) = (x0 as i64, if one_d { 0 } else { y0 as i64 });
+        ((x0 as i64, if one_d { 0 } else { y0 as i64 }), (fx, fy))
+    }
+
+    /// The four texels of a bilinear sample and their weights in 1/4096 (the products of the
+    /// fractions of `corner`), as `.pcf` weighs them.
+    fn quad(&self, u: f64, v: f64, one_d: bool, load: &mut Load) -> Result<([u32; 4], [u32; 4]), Fail> {
+        let ((x0, y0), (fx, fy)) = self.corner(u, v, one_d);
         let mut t = [0u32; 4];
         for (k, (dx, dy)) in [(0, 0), (1, 0), (0, 1), (1, 1)].into_iter().enumerate() {
             t[k] = self.fetch(x0 + dx, y0 + dy, load)?;
@@ -545,17 +551,25 @@ impl Texture {
         if !self.colour() {
             return open(format!("bilinear filtering of format {}", self.format));
         }
-        let (raw, w) = self.quad(u, v, one_d, load)?;
+        let ((x0, y0), (fx, fy)) = self.corner(u, v, one_d);
         let mut t = [0u32; 4];
-        for k in 0..4 {
-            t[k] = self.colour_texel(raw[k])?;
+        for (k, (dx, dy)) in [(0, 0), (1, 0), (0, 1), (1, 1)].into_iter().enumerate() {
+            t[k] = self.colour_texel(self.fetch(x0 + dx, y0 + dy, load)?)?;
         }
+        // E720 (8 of 8 held-out jobs, the joint form 0 of 8): each 8-bit channel is filtered in
+        // two stages, x on both rows and then y, each (a (64 - f) + b f + 32) >> 6. The jobs'
+        // fractions were on the 1/64 grid; that the weights truncate to it rests on the landed
+        // vectors (finer weights miss 8 of 21) and the 11.32 jobs, not on E720.
+        let stage = |a: u32, b: u32, f: u32| (a * (64 - f) + b * f + 32) >> 6;
         let (mut out, mut exact) = (0, true);
         for c in 0..4 {
-            let sum: u32 = (0..4).map(|k| (t[k] >> (8 * c) & 0xff) * w[k]).sum();
-            // each 8-bit channel rounds to nearest, halves up
-            out |= (sum + 2048) >> 12 << (8 * c);
-            exact &= sum.is_multiple_of(4096);
+            let at = |k: usize| t[k] >> (8 * c) & 0xff;
+            let (top, bottom) = (stage(at(0), at(1), fx), stage(at(2), at(3), fx));
+            out |= stage(top, bottom, fy) << (8 * c);
+            // a stage that rounds is the hardware's own: the exact value is not what it gives
+            exact &= (at(0) * (64 - fx) + at(1) * fx) % 64 == 0
+                && (at(2) * (64 - fx) + at(3) * fx) % 64 == 0
+                && (top * (64 - fy) + bottom * fy) % 64 == 0;
         }
         Ok((out, exact))
     }
@@ -880,6 +894,50 @@ mod tests {
         assert_eq!(y(3.0), Ok(vec![251]));
         // fy = 2/64: (0xff * 62 + 0x0f * 2) * 64 / 4096 = 247.5, halves up
         assert_eq!(y(4.0), Ok(vec![248]));
+    }
+
+    /// A bilinear sample of a 2 x 2 stride texture, the four texels' byte 0 given by `texel`,
+    /// at the coordinates that give the fractions (fx, fy), in 1/64 of a texel, from texel 0.
+    fn bilinear_at(texel: [u32; 4], fx: f32, fy: f32) -> Result<Vec<u32>, Fail> {
+        let st = state(6, 12, 2, 2, 2, 1 << 12, 0);
+        let mut mem = |a: u32| Ok(texel[((a - 0x1000) / 4) as usize]);
+        sample(
+            &Sample {
+                state: st,
+                u: 0.25 + fx / 128.0,
+                v: 0.25 + fy / 128.0,
+                one_d: false,
+                srd: Srd::None,
+                pcf: None,
+                lod: Lod::Flat,
+            },
+            &mut mem,
+        )
+    }
+
+    #[test]
+    fn bilinear_is_two_stage_xy_with_32_added_at_each_stage() {
+        // E720: per channel (a (64 - fx) + b fx + 32) >> 6 in x on each row, then the same in y,
+        // 8 of 8 held-out jobs against 0 of 8 for the joint (sum + 2048) >> 12.
+        // One texel of 1 at fx = fy = 32: the joint form gives (1024 + 2048) >> 12 = 0, the
+        // stages (32 + 32) >> 6 = 1 and (1 * 32 + 0 + 32) >> 6 = 1.
+        assert_eq!(bilinear_at([1, 0, 0, 0], 32.0, 32.0), Ok(vec![1]));
+        // texels 1 2 3 4 at fx 17, fy 45: rows (1 * 47 + 2 * 17 + 32) >> 6 = 1 and (3 * 47 +
+        // 4 * 17 + 32) >> 6 = 3, then (1 * 19 + 3 * 45 + 32) >> 6 = 2; the joint form gives 3.
+        assert_eq!(bilinear_at([1, 2, 3, 4], 17.0, 45.0), Ok(vec![2]));
+        // where the forms agree they still do (landed smp-bilinear vectors, plan 1.3)
+        assert_eq!(bilinear_at([255, 0, 0, 0], 1.0, 32.0), Ok(vec![126]));
+        assert_eq!(bilinear_at([0, 255, 255, 0], 32.0, 32.0), Ok(vec![128]));
+    }
+
+    #[test]
+    fn bilinear_weights_still_truncate_to_1_64() {
+        // E720's jobs have fractions on the 1/64 grid only, so the weights' precision is not
+        // theirs: it is the landed vectors' and the 11.32 jobs' (trunc (64 frac), finer fails).
+        // fx = 63.9 / 64 weighs as 63: (255 * 63 + 32) >> 6 = 251, not 255 as 64 would give.
+        assert_eq!(bilinear_at([0, 255, 0, 0], 63.9, 0.0), Ok(vec![251]));
+        assert_eq!(bilinear_at([0, 255, 0, 0], 63.0, 0.0), Ok(vec![251]));
+        assert_eq!(bilinear_at([0, 255, 0, 0], 0.9, 0.0), Ok(vec![0]), "0.9 / 64 weighs as 0");
     }
 
     #[test]

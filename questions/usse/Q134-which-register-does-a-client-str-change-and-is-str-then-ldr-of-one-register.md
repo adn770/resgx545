@@ -36,7 +36,7 @@ After 11.27 what stayed open was `str` then `ldr` (answered below for a firmware
 the instance's own store, when an `idf drcN, bif` after a `stad` is required for a reader other than
 a load of the same fill: the `idf` in the storing instance, the host reading during the job, a
 texture fetch of the stored data and an EDM task; the order in which instances run is Q143, and the
-EDM task is Q131.
+EDM task is Q197.
 
 Narrowed in 11.29 (not retired). A firmware (EDM) task of ours, which the question named as the way
 to settle it, ran `str` then `ldr` of one register: for 0x0814 and 0x0a78 the `ldr` read the stored
@@ -55,5 +55,5 @@ What stays open here: which register a *client* `str` changes (the ordering for 
 follows only once one is known), and when an `idf drcN, bif` after a `stad` is required for a reader
 other than a load of the same fill: the `idf` in the storing instance, the host reading during the
 job, a texture fetch of the stored data and an EDM task other than the one measured (the order in
-which instances run is Q143, a task's overlap Q131). The question is not retired because those parts
+which instances run is Q143, a task's overlap Q197). The question is not retired because those parts
 have no record.

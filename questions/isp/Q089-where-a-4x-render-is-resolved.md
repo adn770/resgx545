@@ -5,7 +5,7 @@ unit = "isp"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E333", "E339", "E439", "E502", "E503", "E508", "E510"]
+evidence = ["E333", "E339", "E439", "E502", "E503", "E508", "E510", "E727"]
 terms = ["CR_ISP_MSAA.MODE", "CR_TE_MTILE1", "CR_TE_MACROTILE_STRIDE", "EMIT1.MAXCLIP_X"]
 +++
 
@@ -55,3 +55,10 @@ colours (the control image has 24 aligned 2 x 2 blocks that mix them): no single
 emit resolves; combinations of bits and the closed driver's own sideband are not excluded. The
 coverage words are still open. Status: narrowed, not answered; missing: Q138 (the later pass of the
 closed driver [infer]) and the coverage words.
+
+Note from 11.39 (E727): the stored image equals the region model's in 17 of 17 jobs. A 12 x 6
+triangle in a region other than the last visited reads a non-zero visibility counter 0x0498 (144
+in 0xe0 jobs) with an empty image in 7 of 7 jobs (6 distinct jobs and a repeat), but the same
+empty image reads counter 0 at TE 0x20 (4 controls), so the counter does not show that every
+region is walked [infer]; it may count stored samples (144 = 4 x 36). This does not resolve a 4x
+render and does not remove "the region is skipped"; the question stays open.

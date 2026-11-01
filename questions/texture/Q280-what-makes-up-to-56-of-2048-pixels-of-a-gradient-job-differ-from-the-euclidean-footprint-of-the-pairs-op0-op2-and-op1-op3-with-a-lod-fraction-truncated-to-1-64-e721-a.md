@@ -1,0 +1,20 @@
++++
+id = "Q280"
+question = "what makes up to 56 of 2048 pixels of a gradient job differ from the Euclidean footprint of the pairs (op0, op2) and (op1, op3) with a LOD fraction truncated to 1/64 (E721), a rounding of the length, of the logarithm or of the operands, or a footprint that is not exactly Euclidean"
+unit = "texture"
+kind = "hw"
+value = "low"
+phase = 11
+evidence = ["E721", "E563"]
+terms = ["T0.MIPFILTER"]
++++
+E721: the footprint P is the best of six on 8 of 8 held-out jobs and exact on 4, but the other 4
+jobs miss by 19 to 56 pixels (whole columns or rows: a boundary shift of one column or row where the
+LOD fraction crosses a 1/64 step; the rule holds to better than 0.1%) and 7 of the 8 ladders miss by
+8 to 32 pixels (in sample the miss was 8 to 65). The misses are what Q175's rounding and the shape
+of the log2 leave. To settle it: for the 4 jobs with a residual (lg-sq1, lg-sq2, lg-ns1, lg-ns2)
+list the missing pixels with the level and fraction the pixel gives, and fit the length to the
+(level, fraction) that the misses imply, then predict a fifth set before running it; ladders at
+1/512 of a fraction step around the misses.
+
+Status: open. Narrows Q175 (the footprint and the truncation are held-out confirmed).

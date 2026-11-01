@@ -5,7 +5,7 @@ unit = "zls"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E465"]
+evidence = ["E465", "E730"]
 terms = ["CR_ISP_ZLSCTL"]
 +++
 
@@ -19,3 +19,11 @@ not show.
 What is open: that rule, and whether it matters to a depth buffer that a later render loads (it
 does if the buffer is read back outside the target). To settle it: the ramp stores of E465 at sizes
 that end inside a block (a width of 34, 50, 66, 18) and their outside dwords counted.
+
+Run in 11.39 (E730), re-scored post hoc (the frozen recompute scored 0 of 12 and favoured "whole
+tile area stored", 12 of 12; plan.md is not hashed and was edited after the manifest): the stored
+triangle depth in a tile is the set x < 1.25 W and y < 1.25 H on 12 of 12 jobs (the centre rule x +
+0.5 < 1.25 W is [infer], the edge forms give identical sets) at 6 sizes (34 x 18 control 924 as in
+E465; 18 x 18 484, 50 x 26 1984, 66 x 34 3444, 98 x 50 7564, 34 x 50 2604); the rest of the tile
+holds the background depth. Answers the open rule at these alignments, on a post hoc re-score; other
+alignments are Q287.

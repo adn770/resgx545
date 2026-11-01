@@ -58,7 +58,7 @@ closed task follows (3 of 3 rounds). State written by a firmware task of ours ou
 task that runs after it and 1200 ticks of it: sa100, sa127, sa20, sa24, r20, r21, i0, i1; a client
 fill replaces only r20 and r21. sa64 did not take the writer's marker [infer: the closed code
 writes it, or it is not an ordinary sa; it reads 2 in every reading, controls included]. **[infer,
-open: Q155]** At the next event p1 holds the 0 the writer set and pclink 6, while
+open: Q152]** At the next event p1 holds the 0 the writer set and pclink 6, while
 after an ordinary tick they hold 1 and 0x98. Every pass of the wrapper, ours in command 0 included,
 writes pclink in its tail triple (`mov r30, #cont0; mov pclink, r30; lapc`), and 6 is the value of
 that triple [infer], so after a normal tick the closed task rewrites pclink (0x98 at the next
@@ -73,7 +73,7 @@ pass makes), the closed task is called, the p values (0, 0, 1, 1 against 1, 0, 1
 and the stored command. It therefore shows that the sa, r, i and p writes of this list, with the
 closed task after them, do not stop the tick; it does not separate skipping the closed task from the
 arbitrary pclink write, nor from the p values, as E533's cause, and E537 shows that a task that
-calls the closed task can stop the tick as well (Q152, Q156).
+calls the closed task can stop the tick as well (Q152).
 
 **Not shown.** What the closed task does when the writer's p, sa or r differ (E537 has one writer
 that stops it), more than one instance or a second task slot, the effect of a reset on i and sa in

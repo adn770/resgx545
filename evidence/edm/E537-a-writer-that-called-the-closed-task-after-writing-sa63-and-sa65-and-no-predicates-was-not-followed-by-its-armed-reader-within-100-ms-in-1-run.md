@@ -41,6 +41,6 @@ E536 plus the closed task keeps the tick (3 of 3); a writer with sa63, sa65 and 
 closed task does not (1 of 1). The pclink write of E533 (an arbitrary value; E536's writer wrote
 only the tail triple's pclink) is not tested by either.
 
-**Not shown.** Which of the differences stops the tick (Q156), whether the closed task or the
+**Not shown.** Which of the differences stops the tick (Q152), whether the closed task or the
 event path stops it, what the closed task did on the tick before the stop, and whether the stop
 repeats (one run).

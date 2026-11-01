@@ -26,7 +26,7 @@ where 6 is the value of the writer's own tail triple, which every pass of the wr
 and p3 differ between readings with no writer (controls 0, 0; after 1200 ms 1, 1; after a fill 0,
 1). So a task of ours does not start with p0 to p3 and pclink clear or as an ordinary tick leaves
 them: at the next entry p1 was as our writer left it and pclink was the writer's own triple value,
-p0 was not, and Q155 asks why. The pclink write that the question first named cannot be run: the
+p0 was not, and Q152 asks why. The pclink write that the question first named cannot be run: the
 earlier task (E533) wrote it, the fixed verifier of the fork refuses `mov pclink` outside the
 patched triple, and the prediction that was frozen for it (11.29's Q124_pred: p0 to p3 survive as 1,
 0, 1, 0 and pclink keeps bits 17:0 of 0x2a5a5) was written for that task and was never evaluated
@@ -35,5 +35,5 @@ own write, which every pass of the wrapper makes).
 
 What is open: p0, p2 and p3 (a writer whose flags differ from the control's in each of them), a
 writer that leaves pclink as a call does (E475, a taken or untaken call writes it), and whether the
-closed task's path is what keeps p1 and pclink (Q155). Until then a task must set p0-p3 by a test
+closed task's path is what keeps p1 and pclink (Q152). Until then a task must set p0-p3 by a test
 and write pclink before reading either, as a fill must (E477).

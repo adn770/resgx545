@@ -33,4 +33,4 @@ in the window (a flag per tick, not a counter) is the follow-up.
 
 **Not shown.** A pass that starts before the busy store, overlap of tasks of different slots, or of
 a tick with a TA or 3D event (no job ran), whether events that arrive meanwhile are queued or
-dropped (Q131), and any task longer than 7 ms.
+dropped (Q197), and any task longer than 7 ms.

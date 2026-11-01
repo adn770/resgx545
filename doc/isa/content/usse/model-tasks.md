@@ -121,9 +121,9 @@ The waits and modes on the hardware (E101) **[HW]**:
   and `r21`; `sa64` did not take the write (it read 2); at the next event p1 was the writer's 0 (3
   of 3, 1 in the other readings) and `pclink` was 6, the value of the writer's own tail triple
   [infer], not the 0x98 of the other readings, p0 was not the writer's, and p2 and p3 move between
-  readings with no writer (Q155). The same writer kept the tick, a task that also wrote `sa63` and
+  readings with no writer (Q152). The same writer kept the tick, a task that also wrote `sa63` and
   `sa65` and called the closed task was not followed by its armed reader within 100 ms (E537, one
-  run: Q156). No second pass of the wrapper was found busy while a slow task ran, up to 6.9 ms (10
+  run: Q152). No second pass of the wrapper was found busy while a slow task ran, up to 6.9 ms (10
   of 10 runs, E539; ticks only, slot 0, no job). The simulator runs these tasks only through
   `sgx_sim::fwtask`, and models `ldr` and `str` only there: `str` to 0x0814 and 0x0a78 (values
   inside their 17 and 6 bits, the immediate index only) and `ldr` of those two and of `CORE_ID`,

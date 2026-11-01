@@ -52,7 +52,7 @@ open driver:
 9. **Calls, the program counter, the integer forms and the tests**: indices of 256 to 8191 in a fill
    and a jump across a 65536-word step of the code base (Q123; the step of 0x80000 is shown by ten
    placements: E492); `p0`-`p3` and `pclink` at the start of a firmware task, beyond one writer's p1
-   and `pclink` at the next entry (Q124, Q155); what leaves 0xeb3 and 0x98 in them across jobs
+   and `pclink` at the next entry (Q124, Q152); what leaves 0xeb3 and 0x98 in them across jobs
    (Q125: four runs of the readers show 64 pixels of 0xeb3 in 29 of 40 jobs and quads that repeat in
    part, E500); which extension the test of `iaddu32` reads for a source 1 above 0x7fff, which no
    test tells, and the value it writes with a repeat, an immediate or a constant in source 2 (Q126);
@@ -63,7 +63,7 @@ open driver:
    field (Q150); how long an `sa0` written by `ima32` lasts and why a write to `pa0` is lost (Q136).
 10. **Fences, repeats, registers and persistence for a firmware compiler**: why a `wdf` waits for
    another counter's loads in some runs and not in others (Q130); whether a firmware (EDM) task runs
-   two at once (Q131, firmware: no second pass was seen in 10 of 10 runs of a slow task, ticks only
+   two at once (Q197, firmware: no second pass was seen in 10 of 10 runs of a slow task, ticks only
    in one slot, E539, and what happens to an event that arrives meanwhile is open; a `wdf` with
    nothing outstanding and an unfenced store at the end of a task act as in a fill, E534); what a
    client `str` changes and what an `idf` is needed for beyond an instance's own store (Q134; `str`
@@ -74,7 +74,7 @@ open driver:
    `sa` (Q129); where a write past the allocation goes (Q132, Q147); what bounds a `phas` request
    and what a request above 256 allocates, which is [infer] at least 124 for 260 to 376, T = 101 to
    123 not run (Q133, Q144). What survives from one firmware task to the next beyond one writer's
-   `sa`, `r`, `i` and p1 (Q124, Q152, Q155, Q158), what stops the tick after a task (Q152, Q156) and
+   `sa`, `r`, `i` and p1 (Q124, Q152, Q158), what stops the tick after a task (Q152) and
    the allocation of a firmware task above TRC 31 are not measured.
 
 <!-- @simopen 12 -->

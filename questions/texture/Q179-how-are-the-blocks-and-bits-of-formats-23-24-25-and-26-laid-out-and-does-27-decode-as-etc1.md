@@ -5,7 +5,7 @@ unit = "texture"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E568", "E342"]
+evidence = ["E568", "E342", "E724"]
 terms = ["TEXFORMAT"]
 +++
 
@@ -15,3 +15,7 @@ change one pixel, in the map bit i to (i div 4, i mod 4). To settle it: PVRTC da
 known decode written by the program, compared with the reads (the capture of the plan's section 7
 gives the closed driver's own data); the colour-space load for YUV, by a transfer command the fill
 accepts.
+
+Run in 11.39 (E724): format 27 decodes as ETC1, blocks in Morton order with y in the low bit,
+6 of 6 held-out jobs exact (16 x 16 twice, 32 x 16, 16 x 32, 8 x 16, 8 x 8). Formats 23 to 26
+(PVRTC) were not run: still open, 27's part is answered.

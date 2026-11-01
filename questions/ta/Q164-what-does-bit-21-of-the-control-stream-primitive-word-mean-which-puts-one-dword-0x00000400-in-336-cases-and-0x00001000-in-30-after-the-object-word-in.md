@@ -5,7 +5,7 @@ unit = "ta"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E542", "E546"]
+evidence = ["E542", "E546", "E702"]
 terms = ["CSTREAM.PRIM_TILES", "CSTREAM.OBJ_ISP_ADDR"]
 +++
 
@@ -24,3 +24,14 @@ the mask's layout for objects of more than 8 vertices.
 To settle it: objects placed on the second and third parameter pages (the heap offsets of E288) and
 the dword compared with the object's page; objects of 9 to 16 vertices in single-tile forms. No
 kernel change.
+
+Stated in 11.39 (E702, E703; merge 14). The head of an object with bit 21 is on page (extra >> 10) -
+1 of the parameter buffer, the
+tail being the bytes before the object word: 45 of 49 objects on E546's 61 jobs (fitted there;
+4 of 49 with the page before the tail), 12 of 13 objects in E702 (the one miss holds a
+constant-row vertex, Q272) and 2 of 2 in E703's natural jobs, the page before the tail
+identifying 0 of 25 in these; the 10 bit-21 objects of E703's forced jobs fail the claim (2 of
+12 in that table), which is not a test of it, since those jobs are broken (Q271); all analysed
+after the run and not frozen. The extra words seen are 0x400, 0x800, 0xc00
+and 0x1000; the five 0x1000 objects and the form 0x81 are not explained; the decoders that assume
+a contiguous object (first_object, all_objects) are to be fixed.

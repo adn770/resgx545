@@ -17,7 +17,7 @@ leaves does not show how far it got (E186). Bit 8 set leaves the TA's output byt
 (E187).
 
 Bits 11:9 = 7 hang every second job and complete the others, tiling as 2 when they complete (E299,
-E413; Q102 asks what state a completed job leaves), and Q037 asks what a hung job's memory shows.
+E413; Q163 asks what state a completed job leaves), and Q037 asks what a hung job's memory shows.
 Neither asks what the fields select. The glossary reads bit 8 as marking a state block that loads
 constants or does nothing, a hypothesis; for bits 11:9 and 15:13 it holds only the measurements.
 This question's own hypotheses are that bits 11:9 give the size or kind of the work the state task

@@ -1,0 +1,9 @@
+title = "texture batch 11.39, the 8 bilinear jobs in the form the vector converter reads (raw.txt and bins)"
+repo = "data"
+paths = ["texture/p1141-recomp/"]
+method = "make_raw.py on the kept outputs of texture/p1141 (script tex-b-bilin, 8 jobs bl-st11-lo to bl-tw15-lo, rc 0 each, held out): each job's output behind a `probe-case NAME` line in cases.tsv order, the programs the jobs ran (the batch's stage-bins) in bins/, the probe table and the template beside them; the vectors of vectors-texture-p1141 are converted from this raw.txt (sha256 bbd293f4f43c0ebb114f189dbb757db4f0f16638438a596c8766537df94c89dc)"
+date = "2026-11-09"
+files = 12
+size = 212718
+sha256 = "89b6db7b2d8bf3176194f4b4b33cadc78537b66a56db199cc9fd8e35b7b60319"
+recipe = "make_raw.py"

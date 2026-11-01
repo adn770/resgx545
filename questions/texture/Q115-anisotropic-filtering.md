@@ -5,7 +5,7 @@ unit = "texture"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E041", "E342", "E564"]
+evidence = ["E041", "E342", "E564", "E720", "E723"]
 terms = ["TEXFORMAT"]
 +++
 
@@ -30,3 +30,10 @@ enable of this image; four change every pixel (T3 bit 11 cleared, T3 bit 12 set,
 and read other state: names of level 0, one constant, and values that are no name of the buffer. No
 anisotropic filtering was identified, and the failed control means none was ruled out. What is open:
 whether the hardware has it, and a baseline the control can pass first.
+
+Run in 11.39 (E720): the bilinear form of the baseline is two-stage xy (x then y, +32 and a 6-bit
+shift at each stage), 8 of 8 held-out jobs exact against 0 of 8 for the joint form. This lifts
+the "fit by a search on 6 jobs" caveat for the form and the rounding, not for the weight
+precision: the 8 jobs have weights on the 1/64 grid (precision 64, 128 and 256 give identical
+images), so the truncation to 1/64 rests on the landed vectors and the 11.32 jobs. Anisotropy is
+unchanged and open. With the sRGB bit the bilinear order is not known (E723, Q282).

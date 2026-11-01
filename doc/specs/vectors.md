@@ -43,6 +43,14 @@ command but whose run printed no pokes carries no `init.job`; the simulator take
 formats (28 and 29) as opaque black only where `init.job.pokes` is recorded and leaves the
 colour-space load flag (`xfer:17` bit 0) clear (`Machine::csc_unloaded`), so the colour-space jobs
 of that batch and the landed formats-other vectors stop on them.
+The 8 vectors of the 11.39 bilinear jobs (`datasets/vectors-texture-p1141.toml`, one file in
+`vectors/nokernel/usse/texture-p1141/`, converted by `vectors.py convert` from
+`texture/p1141-recomp/raw/p1141-bilin/raw.txt`, which `texture/p1141-recomp/make_raw.py` makes from
+the kept outputs of `texture/p1141`) are fills of 2048 pixels like the 11.32 ones. They are E720's
+held-out jobs, every fraction from 0 to 63 on the 1/64 grid: the joint bilinear form of the
+simulator mismatched all 8, and the two-stage form (x then y, +32 and a 6-bit shift at each stage)
+replays all 8, with no other vector changed. The 21 landed `smp-bilinear` vectors give the same
+words under both forms, so they could not have told them apart.
 `--example replay` lists the outcome of every vector, one line each (`excluded` with its reason for
 those it leaves out).
 
@@ -89,7 +97,7 @@ read, so "349 replay exactly" says nothing of persistence. Two contents are not 
 run: the tick vectors of `fwtask-events` take `pa` from E532 (E538 masked the tick's `pa1`, its
 expected log of 0 comes from the quiet window), and the writers' state is what the next reader read,
 not what the writer's own task read back. Not modelled: the closed task, the event queue, ticks, the
-p0 and `pclink` values at the next entry (Q155), the stop of E537, TRC above 31 and a write past the
+p0 and `pclink` values at the next entry (Q152), the stop of E537, TRC above 31 and a write past the
 allocation (the T = 8 to 24 runs of E540 also read the register past the allocation, which the
 simulator stops on, so only T = 31 is a vector).
 

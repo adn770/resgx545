@@ -1,6 +1,6 @@
 +++
 id = "Q045"
-question = "what sets the fields of register 0x0740 that the TA kick turns into DPM store and load tasks (a host write reads back 0: E456), does a load task read back the macrotile lists a partial render stores in the RT data's state page, and what accesses the state page (0x20003000 for a context of up to 64x64) when a render follows a kept owner's gone context?"
+question = "what does the DPM store in the state page, does a load task read back the macrotile lists a partial render stores in the RT data's state page, and what accesses the state page (0x20003000 for a context of up to 64x64) when a render follows a kept owner's gone context?"
 unit = "dpm"
 kind = "hw"
 value = "high"
@@ -98,3 +98,13 @@ reads after the jobs. Open: what sets the fields of 0x0740, whether a load task 
 job whose final render does not itself overflow, which this tool's geometry kick cannot make), and
 when the second set of lists is stored in a raised job (the TA's end, the final render's start, a
 later abort), which the dumps after the job cannot show.
+
+Split in 11.39 (merge 6). (a) What sets the fields of register 0x0740 that the TA kick turns into
+DPM store and load tasks is the firmware's route, a question about the closed firmware: it is Q277
+(fw, parked), with the 0x0740 evidence (0 in every snapshot, E456); there is no instruction to stop
+sampling the register. (b) What the DPM stores in the state page stays here and stays open: the
+sum of the 16 macrotile list counts equals the last run's peak status minus 1 in 48 of 48 raised
+jobs of the 11.38 batch (a statistic of the existing dumps, recomputed with dpm_raise.py of the
+11.39 batch, no model fitted; no evidence record holds it, so it is not an answer, and the timing
+of the second set of lists is part (c)). (c) The slot step's store into a kept owner joins Q191 and
+Q192 and waits for the kept-copy runs of the K1 tool option (none in 11.39).
