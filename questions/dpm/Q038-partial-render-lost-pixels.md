@@ -5,7 +5,7 @@ unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 10
-evidence = ["E202", "E204", "E160", "E310", "E311", "E312", "E442", "E461", "E465", "E467", "E468"]
+evidence = ["E160", "E202", "E204", "E310", "E311", "E312", "E442", "E461", "E465", "E467", "E468", "E625", "E628", "E629"]
 terms = ["Parameter Buffer (PB)", "Dynamic Parameter Management (DPM)"]
 +++
 What the missing pixels are is answered (E311): with `CR_ISP_CTL.PROCESS_EMPTY_TILES` clear every
@@ -65,3 +65,25 @@ of the stored buffer is known since E465).
 
 Status: narrowed to the depth readback of the final render and the depth test across partial
 renders.
+
+Narrowed in 11.38 (E628, E629; 74 `depth` jobs and 10 of follow-up a). The final render's depth
+after partial renders: in 8 of 8 overflowing jobs with a load buffer of ascending indices (z = 0.5
+and ramp scenes, 0x28 and 0x30 pages) the store holds the load buffer's dword at every address
+outside the first row of macrotiles, with the load bits 1 and 14 in the control (0x0017510e) and
+without (0x0017110c) alike, while the same job in 0x422 pages stores the scene's depth without the
+bits (0 of 2) and the loaded buffer with them (2 of 2): the loaded buffer reaches the store of a
+job that overflows whatever the control says [infer: what loads is the partial-render path, not
+the host's bits]. The load buffer itself comes back from those 8 jobs with 195583 dwords changed
+to zero, all in tile rows 0 to 11 and none elsewhere, and unchanged from the 4 jobs that complete:
+a store reaches the load address, so either a partial render stores zeros at the load base or the
+load buffer is cleared as it is read [infer], and the zero region of the store is that region
+(E628). The depth test across the partial render: two overlapping triangles, the first in a
+geometry kick and the second in the final render with the overflow while the second is tiled (0x38
+pages, 4 jobs), store the nearer triangle at 142323 and 141579 overlap pixels outside the zero
+region (13510 more lie in it and are not seen), 0 mixed, with the bits and without (the cases at
+0x3c to 0x48 completed, 12 jobs, and test the minimum only). So the depth the partial renders keep
+is loaded by the final render and the test runs against it [infer]. The sign that E461 and E468
+disagreed on is the raise of E625 (E629). Open: which of the two readings of the zeroed load
+buffer holds, the colour reload with a depth buffer (the probe's depth scratch, a tool change of
+the batch's plan, was not implemented), what the load reads when its base differs from the
+store's, and the tile order of the store (Q107).

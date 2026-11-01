@@ -5,7 +5,7 @@ unit = "vdm"
 kind = "hw"
 value = "medium"
 phase = 10
-evidence = ["E153", "E160", "E184", "E200", "E201", "E256", "E309", "E310", "E312", "E316", "E358", "E362", "E438", "E443", "E446", "E448", "E451", "E453", "E458", "E462", "E463", "E574"]
+evidence = ["E153", "E160", "E184", "E200", "E201", "E256", "E309", "E310", "E312", "E316", "E358", "E362", "E438", "E443", "E446", "E448", "E451", "E453", "E458", "E462", "E463", "E574", "E626", "E630", "E631"]
 terms = ["Dynamic Parameter Management (DPM)", "Parameter Buffer (PB)", "ta3d_ctl", "hw_pb_desc.page_table_base", "CR_DMS_CTRL", "hw_pb_desc.pb_flags", "FRAG_FLAGS.BIT2", "FRAG_FLAGS.NO_DEALLOCATE"]
 +++
 
@@ -122,3 +122,16 @@ it saw 1 of 3. Across the two batches the clearing is not a function of the vert
 alone; 29 of the 36 jobs here ran after a reset, which may be a second variable. A short pulse the
 sampling catches by chance [infer] fits it. 450 and 600 vertices in 0x100 pages overflow without a
 hang (6 of 6). Status: narrowed, not answered.
+
+Narrowed in 11.38 (E626, E630, E631). TA3DCtl dword 36 is 2 at 900, 1050, 1200 and 1350 vertices
+(4 pages in the global list) and 3 at 1500 (5 pages), so the step lies between 1350 and 1500
+vertices; "the pages less 2" is a two-point fit that fails at E438's one-page list (dword 36 = 1)
+and its one or two pages with 0, so it is not a rule. STATUS2's high halves read 0 in every line
+of 65 more timelines (21 of 21 scores). 0x0748 bit 2 clears in a line of 23 of those 65 jobs, 66
+lines in all, one reading (about 29 us) each, and in 10 of 16 runs of two cells at 0x100 pages (4
+of 8 after a reset, 6 of 8 without); the jobs with many partial renders have the most lines (300
+vertices in 0x23 pages, 92 partial renders: 18 lines), but job length is the same variable, and
+the jobs the kernel watchdog saw (E630), so a rate that rises with the number of partial renders
+is [infer] and not separated from the length. The pool is a FIFO and the walk covers every page
+after every render (E626). Open: what the pulse is, the global list above 5 pages, the owner
+words' meaning (E631: 0x04000417 does not follow the buffer's size).

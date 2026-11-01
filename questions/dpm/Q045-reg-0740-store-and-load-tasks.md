@@ -5,7 +5,7 @@ unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E158", "E256", "E310", "E312", "E456", "E458", "E462", "E464", "E574", "E591"]
+evidence = ["E158", "E256", "E310", "E312", "E456", "E458", "E462", "E464", "E574", "E591", "E625", "E627", "E631"]
 terms = ["CR_DPM_TASK_STATE", "CR_DPM_TASK_CONTROL", "CR_DPM_STATE_CONTEXT_ID"]
 +++
 
@@ -80,3 +80,21 @@ first context that rendered 1024x768 in partial renders holds 18 non-zero dwords
 render, so a second context's store over that page was not run (Q192). Still open: the first part
 (what sets the fields of 0x0740), what the stored words are and at which kick (Q191), and whether a
 load task reads a partial render's lists back.
+
+Narrowed in 11.38 (E627, E631). The state page holds the abort's lists when the first abort's
+threshold was not raised (sum thr0 - 1 in 28 of 28 jobs) and, approximately, the lists the TA
+built after the last partial render when it was (38 jobs, within 2 pages in 35): E464's page at
+0x28 and E310's at 0x30 are the two regimes. Junk written into the page (zeros, the 0xa5000000
+ramp; 1024x768 at 0x30 and 0x28) between a geometry kick that overflows and the next render
+changed neither the pool's walk nor the image (4 of 4): the next render stores the lists again
+over the page's first 34 dwords, so a load of the lists themselves is not separated, and the other
+990 of 1024 ramp dwords (not stored over) had no effect when left in place. With a kept partial
+owner (1024x768, 0x28 pages), the state page is zero after the second context's run (2 runs each
+of flags 0xc and 0x4, read after the tool exits; the creation, the render and the close of the
+second context are not separated, a kept copy before the close exists only for the 64x64 owner);
+when the first context was closed without keep, the second context's render faulted (BIF fault
+0x90400 at 0x3241100f, 2 of 2). 0x0740 read 0 in 607 register snapshots of 171 jobs and in 225
+reads after the jobs. Open: what sets the fields of 0x0740, whether a load task reads the lists (a
+job whose final render does not itself overflow, which this tool's geometry kick cannot make), and
+when the second set of lists is stored in a raised job (the TA's end, the final render's start, a
+later abort), which the dumps after the job cannot show.

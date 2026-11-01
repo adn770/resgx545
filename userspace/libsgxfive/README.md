@@ -280,8 +280,9 @@ tri [--width W --height H -n N] [--max-width W --max-height H] [--fault]
            [--depth-pages N] [--depth-dump DIR] [--depth-store [--depth-store-fill F]]
            [--stencil [--stencil-fill F] [--stencil-store [--stencil-store-fill F]]]]
     [--ctx2 [--share-pb] [--overlap] [--close-first] [--close-first-early] [--words-between]
-          [--close-trace] [--wait-second] [--kpoke-render2 N:SPEC]...
+          [--close-trace] [--wait-second] [--kept-copy DIR] [--kpoke-render2 N:SPEC]...
           [--kreg-render2 N:OFFSET=VALUE]...]
+    [--tadata-fill-render N:PAGE:VALUE[:ramp]]
     [JOB OPTIONS]
 contexts [--width W --height H -n N]
 regaccess
@@ -375,6 +376,12 @@ the second context's: the kernel's cleanup of the first runs, `--words DIR` save
 `ta3d.(200 + N).bin` after it, and `--close-trace` prints the cleanup's trace.
 `--words-between` (with `--words`) saves the same snapshot `(100 + N)` before every second-context
 render, with the first context open.
+`--keep-overflow` with `--ctx2` goes on to the second context after a first render that overflowed
+the parameter buffer, and counts an overflowed second render. `--kept-copy DIR` (with `--ctx2`)
+copies the kernel's debugfs `render_kept` to `DIR/kept.N.bin` after the second context's render N
+and before any close. `--tadata-fill-render N:PAGE:VALUE[:ramp]` writes the kernel's debugfs
+`tadata_fill` just before render N (page PAGE of the TA data filled with VALUE, or with VALUE + i
+with `ramp`), so that a page changes between a geometry kick and the final render.
 `dummy --kpoke-job N:SPEC` and `fill --kpoke-job 1:SPEC` write a kernel poke (`th:W=V`, a word of
 the transfer context's HW context, is applied to that submission) just before job N;
 `dummy --wait-ms MS` sets how long the chain is waited for, and a job that does not complete is

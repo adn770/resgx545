@@ -5,7 +5,7 @@ unit = "zls"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E461", "E058", "E411", "E465", "E468", "E489"]
+evidence = ["E058", "E411", "E461", "E465", "E468", "E489", "E628", "E629"]
 terms = ["CR_ISP_ZLSCTL", "CR_ISP_ZSTORE_BASE"]
 +++
 
@@ -36,3 +36,21 @@ and the extra stored dwords in the two slots each tile row has beyond its tiles.
 same ramp job at a pitch with no overlap and three controls, with and without bits 1 and 14 (the
 final render's load) and bit 19 (E466), and a scene whose first macrotile row holds geometry after
 the last partial render.
+
+Narrowed in 11.38 (E628, E629). The first row of macrotiles stores zeros, and the load buffer's
+own dump is zeroed in the same region (E628). At 1024x768 with no overlap (G = 33; 34 slots a tile
+row for 32 tiles) the 195584 zero dwords are 336 whole target tiles and 48 half-zero tiles (360
+tile-equivalents of the 384 in tile rows 0 to 11, so the first row is 24 tile-equivalents, 6.25
+percent, short; the half-zero tiles sit at tx 6, 14, 23 and 31 of every row) and 22 zero slots of
+the padding at tx 32 and 33 (11264 dwords); 184320 in a job that loads. At 4096x4096 (G = 127, no
+padding) the 4193152 zero dwords are a prefix of 8189.75 of the first row's 8192 tile slots, 2.25
+tiles short (the band of a first row hit 2 of 2 and that of a first macrotile missed 2 of 2). The
+zero rows are not one rule across the sizes. The sign bit is set in exactly the 26 of 44
+overflowing jobs whose first abort's threshold was raised (E625), not by P, the pitch (5 of 5
+cells identical at G = 1 and 33) or the number of partial renders; within the z = 0.5 scene the
+raise is the same as P below 0x2d, and the one pair that separates them is E461's z = 0.5 job at
+0x30 (positive, not raised) against E468's ramp job (signed, raised, its page need being larger)
+[infer: the ramp's need]. The loaded-buffer jobs do not test the sign (their store is the index
+buffer). Open: the tile order of the store, the shortfall of the first row at both sizes, what the
+11264 extra zero dwords at 1024x768 are, and what negates (the partial render's store or the final
+render's load).

@@ -313,11 +313,12 @@ struct opts {
 	 * register writes to debugfs kregnow (--kreg-render, reg); dummy: pokes before job n
 	 * (--kpoke-job, job)
 	 */
-	struct { uint32_t n; const char *spec; bool second, reg, job; } kpr[KPR_MAX];
+	struct { uint32_t n; const char *spec; bool second, reg, job, fill; } kpr[KPR_MAX];
 	unsigned int nkpr;
 	uint32_t geometry;		/* tri: renders submitted geometry only (bit n - 1) */
 	const char *dump_dir;		/* tri: the scene's memory there after the renders */
 	const char *words_dir;		/* tri: the context's words there around each render */
+	const char *kept_dir;		/* tri --ctx2: debugfs render_kept after each second render */
 	uint32_t wait_ms;		/* tri: each render's wait; 0: WAIT_NS */
 	bool keep_going;		/* tri: go on after a render that does not check */
 	bool keep_overflow;		/* tri: an overflowed render is counted and the run goes on */
@@ -400,7 +401,8 @@ static int usage(void)
 		"                      [--close-first-early] [--words-between]\n"
 		"                      [--kreg-render N:OFFSET=VALUE]\n"
 		"                      [--kreg-render2 N:OFFSET=VALUE]\n"
-		"                      [--close-trace] [--wait-second]\n"
+		"                      [--close-trace] [--wait-second] [--kept-copy DIR]\n"
+		"                      [--tadata-fill-render N:PAGE:VALUE[:ramp]]\n"
 		"                      [--kpoke-render2 N:SPEC]],\n"
 		"                 fill, copy and tri also take [--poke SPACE:INDEX=VALUE]...\n"
 		"                      [--poke SPACE:INDEX^=VALUE]... [--pixels] [--regs LO-HI],\n"
@@ -679,17 +681,17 @@ static int kpoke_write(const char *spec);	/* below, with the tri command's */
 static int debugfs_set(const char *name, const char *value);
 
 /* A kernel poke (debugfs kpoke) or, with reg, a register write (debugfs kregnow). */
-static int kpr_write(bool reg, const char *spec)
+static int kpr_write(bool reg, bool fill, const char *spec)
 {
 	char line[128];
 	int n;
 
-	if (!reg)
+	if (!reg && !fill)
 		return kpoke_write(spec);
 	n = snprintf(line, sizeof(line), "%s\n", spec);
 	if (n < 0 || (size_t)n >= sizeof(line))
 		return -EINVAL;
-	return debugfs_set("kregnow", line);
+	return debugfs_set(fill ? "tadata_fill" : "kregnow", line);
 }
 
 static int cmd_dummy(struct tool *t, const struct opts *o)
@@ -2592,7 +2594,7 @@ static int tri2_submit(struct sgxfive_render *r2, const struct opts *o, uint32_t
 		 */
 		if (o->overlap)
 			usleep(30000);
-		ret = kpr_write(o->kpr[k].reg, o->kpr[k].spec);
+		ret = kpr_write(o->kpr[k].reg, o->kpr[k].fill, o->kpr[k].spec);
 		if (ret)
 			return ret;
 		printf("tri: %s before second-context render %u: %s\n",
@@ -2731,7 +2733,7 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		long long t0 = now_ns();
 		uint32_t guard;
 		int wait_err = 0;
-		bool over;
+		bool over, ovf_ok, ovf2 = false;
 
 		sgxfive_tri_default(&p, o->width, o->height);
 		p.colour = colours[i % 2][0];
@@ -2789,13 +2791,14 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		for (unsigned int k = 0; k < o->nkpr; k++) {
 			if (o->kpr[k].n != i + 1 || o->kpr[k].second)
 				continue;
-			ret = kpr_write(o->kpr[k].reg, o->kpr[k].spec);
+			ret = kpr_write(o->kpr[k].reg, o->kpr[k].fill, o->kpr[k].spec);
 			if (ret) {
-				fail(o->kpr[k].reg ? "kregnow" : "kpoke", ret);
+				fail(o->kpr[k].fill ? "tadata_fill" : o->kpr[k].reg ? "kregnow" : "kpoke",
+				     ret);
 				goto out;
 			}
-			printf("tri: %s before render %u: %s\n", o->kpr[k].reg ? "kregnow" : "kpoke",
-			       i + 1, o->kpr[k].spec);
+			printf("tri: %s before render %u: %s\n", o->kpr[k].fill ? "tadata_fill" :
+			       o->kpr[k].reg ? "kregnow" : "kpoke", i + 1, o->kpr[k].spec);
 		}
 		if (sc.bo)
 			scratch_fill(&sc, o->scratch_fill, o->scratch_data, o->scratch_words);
@@ -2813,8 +2816,10 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		if (!ret)
 			wait_err = sgxfive_render_wait(r, wait_ns);
 		print_job(ret, wait_err);
-		if (r2 && !ret && !wait_err && (o->words_between ||
-						(o->close_early && i + 1 == o->n))) {
+		/* --keep-overflow: an overflowed render is not a failure, the second context goes on */
+		ovf_ok = o->keep_overflow && wait_err == -ENOSPC;
+		if (r2 && !ret && (!wait_err || ovf_ok) && (o->words_between ||
+							    (o->close_early && i + 1 == o->n))) {
 			int wr = o->words_dir ? save_words(t, o, o->words_dir, 100 + i + 1) : 0;
 
 			if (!wr && o->close_early && i + 1 == o->n) {
@@ -2834,14 +2839,20 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 				break;
 			}
 		}
-		if (r2 && !ret && !wait_err) {
+		if (r2 && !ret && (!wait_err || ovf_ok)) {
 			if (!o->overlap)
 				ret2 = tri2_submit(r2, o, i, &p2);
 			if (!early2) {
 				wait2 = ret2 ? 0 : sgxfive_render_wait(r2, wait_ns);
 				print_job(ret2, wait2);
 			}
-			if (!ret2 && !wait2) {
+			if (!ret2 && wait2 == -ENOSPC && o->keep_overflow) {
+				/* the second context's scene overflowed too: counted, not checked */
+				printf("tri2 %ux%u #%u: overflowed\n", p2.width, p2.height, i + 1);
+				wait2 = 0;
+				ovf2 = true;
+			}
+			if (!ret2 && !wait2 && !ovf2) {
 				struct sgxfive_tri_counts n2;
 
 				ret2 = sgxfive_tri_check(&p2, sgxfive_render_fb(r2), &n2);
@@ -2852,6 +2863,16 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 				       sgxfive_render_guard_dirty(r2, &p2));
 				if (!ret2 && sgxfive_render_guard_dirty(r2, &p2))
 					ret2 = -EIO;
+			}
+			if (!ret2 && !wait2 && o->kept_dir) {
+				char path[4096];
+				long long ks;
+				int kr;
+
+				snprintf(path, sizeof(path), "%s/kept.%u.bin", o->kept_dir, i + 1);
+				kr = debugfs_copy("render_kept", path, &ks);
+				printf("tri: render_kept after the second context's render %u: %s (%lld bytes)\n",
+				       i + 1, kr ? strerror(-kr) : path, kr ? 0 : ks);
 			}
 			if (ret2 || wait2) {
 				if (ret2 && ret2 != -EIO && !wait2)
@@ -3396,6 +3417,23 @@ static int parse_opts(int argc, char **argv, struct opts *o)
 			o->kpr[o->nkpr++].spec = end + 1;
 			continue;
 		}
+		if (!strcmp(argv[i], "--tadata-fill-render") && i + 1 < argc) {
+			char *end;
+			unsigned long n = strtoul(argv[i + 1], &end, 0);
+
+			if (o->nkpr == KPR_MAX || end == argv[i + 1] || *end != ':' || !end[1]) {
+				fprintf(stderr, "sgxfive-test: bad --tadata-fill-render %s "
+					"(N:PAGE:VALUE[:ramp])\n", argv[i + 1]);
+				return -1;
+			}
+			for (char *c = end + 1; *c; c++)	/* debugfs tadata_fill: PAGE VALUE [ramp] */
+				if (*c == ':')
+					*c = ' ';
+			o->kpr[o->nkpr].n = (uint32_t)n;
+			o->kpr[o->nkpr].fill = true;
+			o->kpr[o->nkpr++].spec = end + 1;
+			continue;
+		}
 		if (!strcmp(argv[i], "--geometry") && i + 1 < argc) {
 			uint32_t n;
 
@@ -3412,6 +3450,10 @@ static int parse_opts(int argc, char **argv, struct opts *o)
 		}
 		if (!strcmp(argv[i], "--words") && i + 1 < argc) {
 			o->words_dir = argv[i + 1];
+			continue;
+		}
+		if (!strcmp(argv[i], "--kept-copy") && i + 1 < argc) {
+			o->kept_dir = argv[i + 1];
 			continue;
 		}
 		if (!strcmp(argv[i], "--wait-ms") && i + 1 < argc) {
@@ -4010,6 +4052,10 @@ int main(int argc, char **argv)
 	if (o.close_early && (strcmp(cmd, "tri") || !o.ctx2 || o.close_first || o.overlap)) {
 		fprintf(stderr, "sgxfive-test: --close-first-early is for tri --ctx2, without "
 			"--close-first and --overlap\n");
+		return 2;
+	}
+	if (o.kept_dir && (strcmp(cmd, "tri") || !o.ctx2)) {
+		fprintf(stderr, "sgxfive-test: --kept-copy is for tri --ctx2\n");
 		return 2;
 	}
 	if (o.words_between && (strcmp(cmd, "tri") || !o.ctx2 || !o.words_dir || o.overlap)) {

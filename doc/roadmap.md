@@ -773,3 +773,21 @@ rounds every window coordinate (x >= 0) to the nearest 1/256 pixel, ties up, bef
 centres (E607). The simulator is unchanged. The roadmap counts the questions from the built
 `doc/open_questions.md`: 165 open (Q001 to Q202), 147 hw (high 15, medium 69, low 63), 12 fw and 6
 kernel; usse 38, edm 17, isp 15.
+
+Sub-phase 11.38 is a records sub-phase with one laptop batch (225 jobs over the direct cable) and
+no kernel change, on the dynamic parameter management and the partial renders. A one-triangle
+scene overflows exactly when the first abort's status is below its whole-buffer page need (19
+pages at 1024x768, 287 at 4096x4096, measured), the partial-render count fits that need plus a
+constant k of 2 to 13, and the threshold raise by 0x20 follows a rule read after the runs (E625);
+the pool's page table walks to all pages after every render and a render writes the head pages of
+the previous walk (E626); the state page holds the abort's lists when the threshold is not raised
+and, approximately, the lists built after the last partial render when it is (E627). In a job that
+overflows the depth store holds the load buffer whatever the control, the load buffer comes back
+zero in the first row of macrotiles, the zero rows are not one rule across sizes and the depth
+test runs across the partial render (E628); the stored depth's sign follows the raise, a
+correlation with P and the scene (E629). Two of E438's three hang cases log the kernel's hung line
+with the recovery held and end as overflows (E630, the watchdog reading an inference), and a kept
+partial owner's state page is zero after the second context's run, cause not separated (E631, Q192
+narrowed, not retired). The simulator is unchanged. The roadmap counts the questions from the
+built `doc/open_questions.md`: 167 open (Q001 to Q211), 149 hw (high 17, medium 69, low 63), 12 fw
+and 6 kernel; usse 38, edm 17, isp 15, dpm 9.

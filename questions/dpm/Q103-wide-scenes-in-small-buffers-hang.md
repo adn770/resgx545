@@ -5,7 +5,7 @@ unit = "dpm"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E438", "E310", "E312"]
+evidence = ["E310", "E312", "E438", "E630"]
 terms = ["Dynamic Parameter Management (DPM)", "Parameter Buffer (PB)"]
 +++
  E438 ran the triangle and copies of it (3 to 1500 vertices) on a 4096x4096 and a 1024x768 target
@@ -22,3 +22,18 @@ that a hung job's memory does not show how far it got.
 To settle it: the render memory of the hung jobs against the overflowing ones (the runs' dumps are
 in the dpm-partial-wide data), the free list's head and tail registers through a hung job with a
 timeline (regtimeline), and the hang with the TA's page threshold raised (kpoke pb).
+
+Narrowed in 11.38 (E630). With `hold_recovery` armed, 2 of the 3 cases that E438 saw hang (300
+vertices at 4096x4096 in 0x40 and 0x23 pages; 900 vertices in 0x100 pages was the third) logged
+`*ERROR* job hung, recovering` and `recovery held (debugfs hold_recovery)` in the kernel journal
+about 2 s after the case began, and ended as overflows with the context kept (-ENOSPC) after 47
+and 92 partial renders; the 900-vertex case (33 partial renders, last register change at 1.85 s)
+logged nothing and no other wide-scene job of the 28 logged a hung, fault or reset line. So E438's
+hang is reproduced in 2 of 3 cases, and with the recovery held the job ran on, with very many
+partial renders, to its -ENOSPC. E438's hang is read as the kernel watchdog's recovery, a reset,
+after which the registers read 0 [infer; not run: the same cases without `hold_recovery`]. What
+differs from E438's batch is the module (F156823E there, B21FDA82 here), the tool, regtimeline
+polling during the job, and the hold. Open: is it the watchdog (settle it with no `hold_recovery`,
+one run, the same three cases, and the watchdog's period in the kernel), why the 900-vertex case
+did not log the line while E438 saw it hang, and the partial-render count at which the watchdog
+fires.

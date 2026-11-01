@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-165 open: 147 hw (high 15, medium 69, low 63, unrated 0), 12 fw, 6 kernel.
+167 open: 149 hw (high 17, medium 69, low 63, unrated 0), 12 fw, 6 kernel.
 
 ## Work queue: hardware
 
@@ -17,12 +17,14 @@
 
 ### dpm
 
-- `Q038` (phase 10, hw, high): what does the final render read back of a partial render's depth (a depth buffer stored by ZLS, the 3D kick's RT status bit 1), now that a background object that reloads the target's colour gives an overflowing scene's whole image? (E202, E204, E160, E310, E311, E312, E442, E461, E465, E467, E468)
-- `Q045` (phase 11, hw, high): what sets the fields of register 0x0740 that the TA kick turns into DPM store and load tasks (a host write reads back 0: E456), does a load task read back the macrotile lists a partial render stores in the RT data's state page, and what accesses the state page (0x20003000 for a context of up to 64x64) when a render follows a kept owner's gone context? (E158, E256, E310, E312, E456, E458, E462, E464, E574, E591)
+- `Q038` (phase 10, hw, high): what does the final render read back of a partial render's depth (a depth buffer stored by ZLS, the 3D kick's RT status bit 1), now that a background object that reloads the target's colour gives an overflowing scene's whole image? (E160, E202, E204, E310, E311, E312, E442, E461, E465, E467, E468, E625, E628, E629)
+- `Q045` (phase 11, hw, high): what sets the fields of register 0x0740 that the TA kick turns into DPM store and load tasks (a host write reads back 0: E456), does a load task read back the macrotile lists a partial render stores in the RT data's state page, and what accesses the state page (0x20003000 for a context of up to 64x64) when a render follows a kept owner's gone context? (E158, E256, E310, E312, E456, E458, E462, E464, E574, E591, E625, E627, E631)
 - `Q081` (phase 11, hw, medium): what does CR_DPM_REG_074C bit 8 make the DPM read or write near offset 0x6010 of the context's TA-data space, and what fixes that place? (E203, E206, E313, E362, E447)
-- `Q103` (phase 11, hw, medium): why does a scene of 100 to 500 triangles hang where the one-triangle scene overflows the parameter buffer and recovers, at 4096x4096 in 0x40 or 0x23 pages from 300 vertices and in 0x100 pages from 900? (E438, E310, E312)
-- `Q191` (phase 11, hw, high): what are the words that land in a kept owner's control page (0x00200047), OTPM page (0x04000417) and state page (0x00020001, 2) after the next context's render, what stores them and at which kick of that context, and does any task read them back? (E310, E458, E462, E591)
-- `Q192` (phase 11, hw, medium): does the store that follows the next context's render replace the state page a partial-render owner left (18 non-zero dwords after its partial renders, E591), and what does it write there? (E310, E464, E591)
+- `Q103` (phase 11, hw, medium): why does a scene of 100 to 500 triangles hang where the one-triangle scene overflows the parameter buffer and recovers, at 4096x4096 in 0x40 or 0x23 pages from 300 vertices and in 0x100 pages from 900? (E310, E312, E438, E630)
+- `Q191` (phase 11, hw, high): what are the words that land in a kept owner's control page (0x00200047), OTPM page (0x04000417) and state page (0x00020001, 2) after the next context's render, what stores them and at which kick of that context, and does any task read them back? (E310, E458, E462, E591, E631)
+- `Q192` (phase 11, hw, medium): does the store that follows the next context's render replace the state page a partial-render owner left (18 non-zero dwords after its partial renders, E591), and what does it write there? (E310, E464, E591, E631)
+- `Q210` (phase 11, hw, high): what makes the DPM raise the first abort's threshold by 0x20 (TA3DCtl dwords 37 = 1 << 16 | P - 0x22 and 38 = 0x20) when twice the abort's status is below the scene's page need plus a constant k (2 or 3 at 1024x768, 2 to 13 at 4096x4096)? (E310, E312, E464, E625, E627, E629)
+- `Q211` (phase 11, hw, high): what is the page need U of a scene at a macrotile grid (19 pages for the default triangle at 1024x768, 287 at 4096x4096, and for the wide scenes 9.2 to 9.8 pages a vertex by a model that does not close) and what is the constant k, 2 to 13, that the partial-render count adds to it? (E310, E625, E630)
 
 ### edm
 
@@ -183,7 +185,7 @@
 
 ### vdm
 
-- `Q036` (phase 10, hw, medium): what do the DPM's status words hold (the high half of the STATUS2 registers 0x0710 and 0x071c, 0x0748 bit by bit, CR_DPM_3D_PAGE_COUNTS' high half, and the owner words 0x0700 to 0x0728 a kept owner changes), what do CR_DMS_CTRL bits 2:0 and the signature and settle registers report about the two pipes, and what DPM or page-table-builder state does a base-only builder fault leave that a core reset does not clear? (E153, E160, E184, E200, E201, E256, E309, E310, E312, E316, E358, E362, E438, E443, E446, E448, E451, E453, E458, E462, E463, E574)
+- `Q036` (phase 10, hw, medium): what do the DPM's status words hold (the high half of the STATUS2 registers 0x0710 and 0x071c, 0x0748 bit by bit, CR_DPM_3D_PAGE_COUNTS' high half, and the owner words 0x0700 to 0x0728 a kept owner changes), what do CR_DMS_CTRL bits 2:0 and the signature and settle registers report about the two pipes, and what DPM or page-table-builder state does a base-only builder fault leave that a core reset does not clear? (E153, E160, E184, E200, E201, E256, E309, E310, E312, E316, E358, E362, E438, E443, E446, E448, E451, E453, E458, E462, E463, E574, E626, E630, E631)
 - `Q042` (phase 11, hw, medium): what do bits 27:24 of the index list's first trailing word (VDM_INDEX2) do, when its low bits move the list's first index and 0x0f000000 drops two of five triangles? (E188, E300, E307, E308, E414)
 - `Q047` (phase 11, hw, high): what do VDM_STATE1 bit 8, bits 11:9 and bits 15:13 select for a state task, when on the one-triangle job bit 8 changes nothing, bits 11:9 at 0 stop the triangle before tiling and bits 15:13 at 0, 5 or 6 hang it? (E060, E185, E186, E187, E299, E414, E427, E440, E545)
 - `Q092` (phase 11, hw, medium): what do bits 31:28 of the index list's first trailing word count, which the closed driver writes as 0xf on 1886 captured lists and 0xd on a draw of eight vertex attributes? (E346, E348, E414, E546)
@@ -195,7 +197,7 @@
 ### zls
 
 - `Q101` (phase 11, hw, low): what does bit 19 (the negated float) do with the integer stored formats (CR_ISP_ZLSCTL bits 26:24 = 1 and 2)? (E057, E284, E411, E465, E466, E490)
-- `Q107` (phase 11, hw, medium): why does the final render of a job that overflows store zeros for the first row of macrotiles and the depth with its sign bit set for the rest, and in what order are the tiles stored? (E461, E058, E411, E465, E468, E489)
+- `Q107` (phase 11, hw, medium): why does the final render of a job that overflows store zeros for the first row of macrotiles and the depth with its sign bit set for the rest, and in what order are the tiles stored? (E058, E411, E461, E465, E468, E489, E628, E629)
 - `Q120` (phase 11, hw, medium): what do the stored depth formats 3 to 7 (CR_ISP_ZLSCTL bits 26:24) hold and how are they laid out, given that they store depth and stencil packed or nothing? (E466, E490)
 - `Q121` (phase 11, hw, medium): what is the in-tile order of the stencil store (one byte a pixel, 128 dwords a 32 x 16 tile) and what does the stencil test do against a loaded stencil? (E466, E467)
 - `Q122` (phase 11, hw, low): what does the ZLS store write for the pixels of an edge tile that lie outside the target, and for the 16 x 16 blocks outside it? (E465)

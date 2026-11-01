@@ -4237,6 +4237,155 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   misses at most 0.05% and a 1/256 snap more than 50 pixels) and PF3 failed: the vertex grid exists
   and is 1/256.
   *isp; HW, infer; data: `isp-arith-1138`.*
+- `E625` A one-triangle scene overflows the parameter buffer exactly when the first abort's page
+  status P - 0x22 is below the scene's whole-buffer page need, measured at the boundary as 19 pages
+  at 1024x768 and 287 at 4096x4096 (E310's 0x13 and 0x11f): 1024x768 overflows at 0x33 and 0x34
+  pages and completes at 0x35 to 0x38, 4096x4096 overflows at 0x13e to 0x140 and completes at 0x141
+  to 0x144 (13 of 13 boundary jobs, one run each; the declared need of 21 and 289, an assumption 2
+  pages above the measure, missed 5 of the 13, those at 0x35, 0x36 twice, 0x141 and 0x142); the
+  partial renders counted by the 0x0658 stretches are 1 at 1024x768 for every overflowing P from
+  0x23 to 0x34 (29 jobs of the default triangle, with and without a depth buffer) and at 4096x4096
+  10, 5, 3, 2, 2, 2, 1, 1, 1, 1 at 0x23, 0x40, 0x60, 0x80, 0x90, 0xa0, 0xb0, 0xb8, 0xc0 and 0x100,
+  which fit 1 + floor((287 + k - thr0) / (thr0 + 0x1f)), thr0 = P - 0x22, for every k from 2 to 13
+  (the thr0 = 1 cell, 10 partial renders, sets k >= 2 and the 1024x768 0x23 cell, count 1, sets k <=
+  13; the spacing is not pinned either, 0x1e fits the 4096x4096 counts as well) and in 4 more cells
+  of a poked descriptor; TA3DCtl dword 35 is the last abort's status less 2 (thr0 - 2 for one
+  partial render, thr0 + 0x1e for more, 0 for a completing job) in all 59 jobs of the scene; dwords
+  37 and 38 read (1 << 16 | P - 0x22) and 0x20, read as the threshold's raise by 0x20 (HW for the
+  dwords, infer for the raise at 1024x768, where every count is 1 and the dwords are the only sign),
+  in the 41 overflowed jobs for which 2 * thr0 < U + k and 0 and 0 in the other 29 (70 of 70 jobs of
+  the selection below, with k = 2 or 3 at 1024x768 and 2 to 13 at 4096x4096; a rule read after the
+  runs, no job held out); a kernel poke of the descriptor's dword 11 (the ZLS threshold) in a
+  0x422-page buffer makes the 4096x4096 scene overflow with 5, 3, 2 and 1 partial renders for 0x20,
+  0x40, 0x80 and 0x100 and not at the default 0x400 (5 of 5).
+  *dpm; HW, infer; data: `dpm-partial-model-batch`.*
+- `E626` In 26 jobs (8 whole-buffer jobs at 6 sizes from 64x64 to 1024x768 and 2 repeats of them, 3
+  renders each; 12 jobs at 1024x768 in 0x23 to 0x38 pages, 10 sizes of the buffer and 2 repeats, 2
+  renders each; 6 jobs at 4096x4096, 1 render each) the page table at 0x423000 of the slot (0x422000
+  in the dump, which starts at slot offset 0x1000) walks to all P pages after every render (26 of 26
+  jobs, every dump), the pages that changed between two consecutive dumps are, as a set, the first
+  pages of the list the previous walk left (H-head, 28 of 28 predictions, fit 8, held out 14,
+  controls 6; the order within a render is not visible in the dumps; one control statement missed),
+  the first render on a fresh table takes pages 1 to 2, 1 to 3, 1 to 5, 1 to 5, 1 to 8 and 1 to 0x13
+  at 64x64, 128x128, 192x128, 256x256, 512x384 and 1024x768 (H-first predicted three rows, 64x64,
+  256x256 and the 64x64 repeat, 3 of 3; the other three sizes are observed, not predicted), and the
+  list heads that a partial render stores appear in the walk in ascending macrotile order at its
+  tail (H-free-O, 8 of 8 overflowing 1024x768 jobs, 0x23 to 0x34 pages); the same job after a reset
+  and without one writes the same pages and holds the same lists (2 of 2).
+  *dpm; HW, infer; data: `dpm-partial-model-batch`.*
+- `E627` The TA data's state page after a job's partial renders holds two different things, split by
+  whether the first abort's threshold was raised (E625; TA3DCtl dwords 37 and 38 non-zero): in 28 of
+  28 jobs (8 distinct cells) that were not raised (1024x768 in 0x2d to 0x34 pages, 4096x4096 in
+  0xb8, 0xc0 and 0x100, among them the 0x30 job after a reset, without one and in the other tables)
+  the sum of the 16 macrotile lists' counts is exactly thr0 - 1 (the pages taken at the abort less
+  one: E310's 13 and 221) and the macrotiles missing from the page are the last ones the TA tiled (7
+  and 10 at 0x30 for the default triangle); in 38 raised jobs (about 12 distinct cells) the sum is,
+  approximately, the pages the TA took after the last partial render, (U + k - thr0) - (n - 1) *
+  (thr0 + 0x1f) with n the count of E625 and k = 2, differing by -2 to +2 in 35 jobs and by +4 in
+  the 3 jobs at 4096x4096 in 0x23 pages (a loose fit, not an exact law), and the macrotiles missing
+  are the earliest ones (0, 4, 8 at 0x28), so E464's 18 dwords at 0x28 (9 lists, pages 9 to 0x14)
+  and E310's 0x30 and 0x100 rows are two regimes of one page, not a disagreement; entry 16 (the
+  global list) is one page, page 1, in 9 of 9 scored jobs; the lists' end pages are distinct in 9 of
+  9; in 24 of 26 jobs that held lists the lists name only macrotiles the triangle covers on the 4 x
+  4 grid by an 8 x 8 sampling of each macrotile (the author's test, not in a declared file; the 2
+  others, the triangle moved by (-128, 96), list macrotile 13, which that sampling does not cover,
+  were not checked at a finer grid); the macrotile set follows a move of the triangle (0x30: 9, 9,
+  9, 7 lists for the moves (0,0), (256,0), (0,192), (-128,96); the (384,288) move completes at 0x30
+  with no list and has 3 lists at 0x28).
+  *dpm; HW, infer; data: `dpm-partial-model-batch`.*
+- `E628` In a job that overflows the parameter buffer the ZLS store holds, at every dword outside
+  the zero region, the dword of the load buffer at that address (a load buffer of ascending indices,
+  559104 of 559104 dwords outside tile rows 0 to 11 at 1024x768 in 8 of 8 jobs, at 0x28 and 0x30
+  pages, scenes z = 0.5 and full-screen ramp) whether the control has the load bits 1 and 14
+  (0x0017510e) or not (0x0017110c): the same job in 0x422 pages stores the scene's depth without the
+  load bits (0 of 2) and the loaded buffer with them (2 of 2, E467); the load buffer itself comes
+  back from those 8 jobs with 195583 dwords changed to zero, all in tile rows 0 to 11 and none
+  elsewhere, and from the 4 jobs that complete untouched (0 changed), so a store reaches the load
+  address; the zero region of the store at 1024x768 with no overlap between tiles (G = 33, 34 slots
+  a tile row for 32 tiles) is 195584 dwords: 336 whole target tiles and 48 half-zero tiles, 360
+  tile-equivalents of the 384 in tile rows 0 to 11 (24 tile-equivalents, 6.25 percent, short; the
+  half-zero tiles sit at tx 6, 14, 23 and 31 of every row), and 22 zero slots of the 24 padding
+  slots at tx 32 and 33 (11264 dwords) that are not target tiles (184320 = 360 tiles when the buffer
+  is loaded), while at 4096x4096 with no padding (G = 127) it is 4193152 dwords, a prefix of 8189.75
+  of the first macrotile row's 8192 tile slots (2.25 tiles short, not a whole number of tiles; the
+  band of a first row, 4.0 to 4.2 million, hit 2 of 2 and that of a first macrotile, 0.9 to 1.1
+  million, missed 2 of 2), so the zero rows are not one rule across the two sizes; with overlapping
+  tiles the zeros are 15104 dwords at 1024x768 in all 26 overflowing jobs at G = 1 and 80640 and
+  48000 at 4096x4096 at G = 1 and 0 (E465's counts, 4 of 4), and the store's window is E465's rule
+  at every size (64512, 326656, 196096, 16777216 dwords; 755712 for the whole buffer at 1024x768
+  with G = 33, 766976 in the overflowing jobs); two overlapping triangles whose depth decides the
+  order (the first in a geometry kick, the second in the final render, the overflow coming while the
+  second is tiled at 0x38 pages, 4 jobs) store the nearer one at 142323 and 141579 of 155833 overlap
+  pixels (the 13510 others lie in the zero region, where the test sees nothing), A where the second
+  is farther and B where it is nearer, 0 mixed, with the load bits and without (4 of 4), the store
+  of each 0x38 job being equal to the 0x422 job's at all 571392 non-zero dwords; 12 more jobs at
+  0x3c to 0x48 pages complete and store the same minimum at all 155833 pixels.
+  *zls; HW, infer; data: `dpm-partial-model-batch`.*
+- `E629` The depth a job that overflows stores has its sign bit set (every non-zero dword of the
+  window: 49408 of 49408 at 1024x768 with G = 1, 571392 of 571392 with G = 33) in exactly the jobs
+  whose first abort's threshold was raised (TA3DCtl dwords 37 and 38 read 1 << 16 | P - 0x22 and
+  0x20, E625) and in none of the others: 44 of 44 overflowing depth jobs (the z = 0.5 triangle at G
+  = 1 in 0x23, 0x24, 0x26, 0x28, 0x2a, 0x2c pages signed and in 0x2d, 0x2e, 0x2f, 0x30 and 0x34
+  pages positive, 2 runs each; at G = 33 signed in 0x23 and 0x28 and positive in 0x30; the
+  full-screen ramp signed in 0x23, 0x28 and 0x30 at G = 33 and in 0x28 and 0x30 at G = 1; the 6 jobs
+  of 4096x4096 in 0x2000 pages positive, 246016, 148096 and 12584064 non-zero dwords, none raised),
+  the pitch does not decide it (G = 1 and G = 33 agree in 5 of 5 cells), the number of partial
+  renders does not (1 in the signed z = 0.5 cells and in the positive 0x30 one, 2 in the signed ramp
+  cells in 0x23 and 0x28, 1 at 0x30), and the scene does only through its page need (the z = 0.5
+  triangle is raised below 0x2d pages, the ramp at 0x30 as well); within the z = 0.5 scene a raise
+  is the same as P below 0x2d, so the sign follows a scene-dependent P boundary that the raise
+  follows too, and the one pair that tells them apart is the 0x30 z = 0.5 job (positive, not raised)
+  against the ramp (signed, raised); the sign of a job is repeatable (2 of 2 runs identical in all
+  22 cells: the table's 19 and 3 of 4096x4096).
+  *zls; HW, infer; data: `dpm-partial-model-batch`.*
+- `E630` Of the 3 wide-scene cases that E438 saw hang (300 vertices at 4096x4096 in 0x40 and 0x23
+  pages, 900 in 0x100 pages) the 2 of 300 vertices logged, about 2 s after the case start in the
+  kernel journal, `*ERROR* sgxfive: job hung, recovering` and `recovery held (debugfs
+  hold_recovery)`, and still ended as overflows with the context kept (-ENOSPC) after 47 and 92
+  partial renders counted by the 0x0658 stretches (the 900-vertex case, 33 partial renders, ended
+  its timeline at 1.85 s and logged nothing): E438's hang is reproduced in 2 of 3 cases and the held
+  recovery let the job run on, so that reading it as a hardware stop is not supported (infer: a
+  kernel watchdog on a long job with many partial renders, delayed here by hold_recovery); the other
+  25 jobs of the 28 (among them 600, 750, 801 and 849 vertices at 0x100 pages, with 22 to 32 partial
+  renders) logged no hung, fault or reset line; the global list is 4 pages (list entry 16: count 4,
+  head 1, tail 0x35c) and TA3DCtl dword 36 is 2 at 900, 1050, 1200 and 1350 vertices in 0x422 pages
+  (1 partial render) and 5 pages and 3 at 1500 (2 partial renders): a step between 1350 and 1500
+  vertices, E438's two cells fitting and no rule for dword 36 (E438 read 1 with a one-page list and
+  0 with one or two pages elsewhere); the high halves of STATUS2 (0x0710, 0x071c) read 0 in every
+  line of the 65 timelines that kept 0x0748 and the STATUS2 registers (21 of 21 scores); 0x0748 bit
+  2 clear (the values 0xb and 0x1b) in a line of 23 of those 65 jobs, 66 lines in all, each of one
+  reading, and in 10 of the 16 `wd-bit2` runs (300 vertices 5 of 8, 450 vertices 5 of 8; after a
+  reset 4 of 8, without one 6 of 8).
+  *dpm; HW, infer; data: `dpm-partial-model-batch`.*
+- `E631` In one case, a kept partial-render owner of 1024x768 in 0x28 pages, the state page the
+  owner left is zero after the second context's run, by an event of that run not separated (the
+  1024x768 context in 0x28 pages: 18 non-zero dwords in page 6 alone and with the render flag poked
+  0xc or 0x4 and no second context, 3 of 3 runs identical; read after the tool exits, page 6 holds 0
+  non-zero dwords after the second context's run with flag 0xc and with flag 0x4, 2 runs of each, 4
+  of 4, the cause (the creation, the render or the close of the second context) not separated for
+  this owner, whose pages were not copied before the close; pages 1 to 3 (the control, OTPM and
+  state pages) hold no owner word at all with either flag, so the owner words of the 64x64 owner are
+  not seen here) and with flag 0x4 alone 5 dwords (0x200057, 0x2000ad, 0x20007e, 0x2000c0, 0x200087)
+  are written into page 4, 2 of 2 (nothing in page 4 with flag 0xc); closing the partial owner
+  without keeping it makes the second context's render fault (BIF fault status 0x90400 at
+  0x3241100f, `job faulted, context lost`, recovered by a reset, flags 0xc and 0x4, 2 of 2, the
+  address one page below the ctx word 0x32412000 of the job's words, so the second context's render
+  reaches memory next to the closed first context's, a read or a store not shown); for a 64x64 owner
+  the kept words land by the end of the second context's render, not at the close (a copy of
+  render_kept made after that render and before the close equals the copy made after the tool exits:
+  75 non-zero dwords, words 0x00200047, 0x04000417, 0x00020001 and 2 in pages 1 to 3, flag 0xc; with
+  flag 0x4 alone the pages 1 to 3 are 0 in both copies, 71 non-zero dwords elsewhere, 2 of 2 runs
+  each); the words do not follow the buffer: 0x04000417 at P = 0x422, 0x300, 0x200 and 0x100 (4 of
+  4), 0 in page 2's word 0 when the first context rendered 2 or 3 times (0x00200047 and 0x00020001,
+  2 stay; 2 of 2 each, repeated), and the first word follows the target size (0x00200047 at 64x64,
+  0x00200044 at 64x32, 0x00200042 at 32x32); the state page's first words are (count << 16 | head)
+  and tail of the owner's 2 pages in all 8 first-context jobs; junk written into the state page
+  (page 6 of a 1024x768 context) between a geometry kick that overflows and the next render (zeros,
+  and the ramp 0xa5000000 + i, at 0x30 and 0x28 pages, 4 jobs) leaves the page table walk and the
+  image identical to a control without it (4 of 4); the next render's own partial render stores the
+  lists over the page's first 34 dwords, so a load of the lists themselves is not separated, and the
+  other 990 of the 1024 ramp dwords stay after the render with no effect on it.
+  *dpm; HW, infer; data: `dpm-partial-model-batch`.*
 
 ## By unit
 
@@ -4247,7 +4396,8 @@ Records: E151, E457, E573, E592.
 ### dpm
 
 Records: E199, E200, E201, E202, E204, E205, E206, E203, E253, E256, E309, E310, E311, E312, E313,
-E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E468, E574, E591.
+E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E468, E574, E591,
+E625, E626, E627, E630, E631.
 
 ### edm
 
@@ -4334,4 +4484,4 @@ E413, E414, E427, E440, E545, E546.
 
 ### zls
 
-Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467, E489, E490.
+Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467, E489, E490, E628, E629.
