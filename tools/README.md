@@ -14,3 +14,10 @@ machine with Python 3.11+ (pytest for the tests).
   glossary's references to them.
 - `clean-room/`: the glossary tooling: `glossary.py` loads the glossary terms under
   `glossary/` and renders `doc/glossary.md`; `glossary_coverage.py` counts them per unit.
+- `fwcutter/`: cuts the firmware container from the user's own copy of the closed libraries
+  (`fwcutter.py`, `get-firmware.sh`), reads and writes the container (`fwformat.py`) and holds
+  the reference loader (`fwload.py`); the format is `doc/specs/fw_format.md`.
+- `sgx_fw/`: the same loader in C, in kernel coding style, for the driver.
+
+The extraction harness that produces the loader's captures is in `harness/ukernel-extract/`,
+beside `tools/`.

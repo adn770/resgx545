@@ -1,0 +1,8 @@
+title = "Intel's GPL DDK 1.7 kernel module for Cedarview, our core"
+tier = "1"
+kind = "tree"
+licences = ["GPL-2.0"]
+root = "the upstream repository root at pin"
+upstream = "https://github.com/The1TrueJoe/sgx545-ce"
+pin = "1c3ecae090ad7b5801a351cf1341bbcd56e03440"
+locator = "path:line relative to the upstream repository root at pin"

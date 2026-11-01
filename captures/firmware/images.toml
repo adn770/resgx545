@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# The firmware cut from the user's copy of the closed Cedarview package and its buffer images,
+# loaded at the harness's base address layout (the layout capture's "layout_base").
+kind = "capture"
+name = "firmware-images"
+host = "local"
+script = "images.sh"
+files = ["tools/fwcutter/fwcutter.py", "tools/fwcutter/facts.py", "tools/fwcutter/fwformat.py",
+         "tools/fwcutter/fwload.py", "tools/fwcutter/ours.py",
+         "captures/firmware/templates/layout_base.json"]

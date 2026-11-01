@@ -1,0 +1,9 @@
+title = "capture table firmware/images"
+repo = "data-private"
+paths = ["firmware/images/"]
+method = "campaign runner on the local target (tools/campaign)"
+date = "2026-10-30"
+files = 27
+size = 211128
+sha256 = "fd0b9066140b2240c2f99fe287f83b4cf08db59d778c961431d6057fa5c5fe56"
+recipe = "captures/firmware/images.toml"

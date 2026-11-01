@@ -7,9 +7,12 @@ lives in `README.md`.
 
 - **Clean-room discipline.** Architectural understanding comes from published patents,
   Imagination's public documents and open source code; behaviour is measured on our own
-  hardware. Closed user-space libraries are run or probed only as black boxes. The closed
-  firmware is disassembled only to learn the interface our driver must meet: facts about that
-  interface may be recorded (tier RE below), its code and bytes never.
+  hardware. Closed user-space libraries are run or probed only as black boxes, with one
+  exception: srvinit's x86 code was disassembled only to locate the firmware and the values it
+  patches, for interoperability (below); only those facts are recorded, and black-box captures
+  back them wherever they reach. The closed firmware is disassembled only to learn the
+  interface our driver must meet: facts about that interface may be recorded (tier RE below),
+  its code and bytes never.
 - **Interoperability.** The project is developed in the EU. Where it decompiles, it relies on
   the interoperability exception of Directive 2009/24/EC Art. 6, as transposed into national
   law: only the parts indispensable to make an independently created driver work with the
@@ -77,7 +80,8 @@ The provenance tags (`tiers` in the front matter) say where a claim comes from:
 
 - **HW**: measured on our hardware;
 - **CAP**: captured from the closed user-space stack, run as a black box;
-- **RE**: our disassembly of the firmware, for interoperability; facts only, no code;
+- **RE**: our disassembly of the firmware (and of srvinit's firmware loading), for
+  interoperability; facts only, no code;
 - **DDK**: the GPL kernel sources;
 - **infer**: an inference; verify before relying on it.
 

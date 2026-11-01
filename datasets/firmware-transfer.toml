@@ -1,0 +1,9 @@
+title = "capture table firmware/transfer"
+repo = "data-private"
+paths = ["firmware/transfer/"]
+method = "campaign runner on the build target (tools/campaign)"
+date = "2026-10-30"
+files = 558
+size = 5271299
+sha256 = "50a6fae6c6cbd7646db3dbcff61bf0e69c875af94c2be465aad89b17087742ca"
+recipe = "captures/firmware/transfer.toml"

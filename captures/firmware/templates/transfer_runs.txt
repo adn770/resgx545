@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# The runs of captures/firmware/transfer.toml, one per line: a name, then the harness's
+# MOCK_* variables (fakedrm.c) if any, then xfer.c's steps. Creating an image fills it; a
+# fill or copy that is small or narrow (16 x 16, 20 x 24) does not reach the transfer
+# queue, and neither does creating an image 24 pixels wide. Each run stays
+# short enough that no ring of the transfer context wraps.
+fill_base       img=a:8888:64x64 fill=a:0xff336699:3,5,40,30
+fill_colours    img=a:8888:64x64 fill=a:0x12345678:0,0,32,32 fill=a:0xedcba987:0,0,32,32 fill=a:0x00000000:0,0,32,32 fill=a:0xffffffff:0,0,32,32 fill=a:0x80000001:0,0,32,32 fill=a:0x7f00ff00:0,0,32,32
+fill_rects      img=a:8888:128x64 fill=a:0xff0000ff:1,2,100,40 fill=a:0xff00ff00:17,0,111,64 fill=a:0xffff0000:0,33,64,31 fill=a:0xff123456:96,48,32,16 fill=a:0xff654321:5,9,99,51
+fill_wide       img=a:8888:1024x40 img=b:8888:2048x32 fill=a:0xff0f0f0f:990,3,34,30 fill=a:0xfff0f0f0:513,1,500,39 fill=b:0xff0f0f0f:2000,3,40,20
+fill_tall       img=a:8888:64x1024 fill=a:0xff0f0f0f:3,990,40,34 fill=a:0xfff0f0f0:1,513,63,500
+fill_strides    img=a:8888:72x40 img=b:8888:200x20 img=c:8888:34x34 img=d:8888:520x8 fill=a:0xff111111:7,3,60,30 fill=b:0xff222222:0,0,200,20 fill=c:0xff333333:1,1,33,33 fill=d:0xff444444:8,0,512,8
+fill_formats    img=a:x888:64x64 img=b:565:64x64 fill=a:0xff5a5a5a:2,2,40,40 fill=b:0xff5a5a5a:2,2,40,40
+fill_moved      MOCK_HEAP_START=0x5000 MOCK_HEAP_BASE_0=0x08100000 MOCK_HEAP_BASE_4=0xF4100000 MOCK_HEAP_BASE_6=0xE4100000 img=a:8888:64x64 img=b:8888:96x32 fill=a:0xff336699:3,5,40,30 fill=b:0x01020304:10,1,80,30
+copy_base       img=a:8888:64x64 img=b:8888:64x64 copy=b:0,0:a:0,0,64,64
+copy_rects      img=a:8888:128x64 img=b:8888:96x80 copy=b:3,5:a:2,1,17,9 copy=b:40,30:a:100,50,28,14 copy=b:0,79:a:0,0,96,1 copy=b:95,0:a:127,0,1,64 copy=b:10,20:a:30,40,4,4
+copy_strides    img=a:8888:200x30 img=b:8888:72x72 img=c:8888:520x8 img=d:8888:34x34 copy=b:1,2:a:150,3,40,25 copy=c:500,0:b:0,64,20,8 copy=d:0,0:c:7,0,34,8 copy=a:0,0:d:0,0,34,30
+copy_large      img=a:8888:1024x40 img=b:8888:600x40 copy=b:0,0:a:400,0,600,40 copy=a:1,1:b:3,2,500,30
+copy_moved      MOCK_HEAP_START=0x5000 MOCK_HEAP_BASE_0=0x08100000 MOCK_HEAP_BASE_4=0xF4100000 MOCK_HEAP_BASE_6=0xE4100000 img=a:8888:64x64 img=b:8888:80x48 copy=b:3,5:a:2,1,17,9 copy=a:0,0:b:10,10,60,30
+mixed           img=a:8888:64x64 img=b:8888:64x64 fill=a:0xff010203:0,0,64,64 copy=b:0,0:a:0,0,64,64 fill=b:0xfe040506:20,20,30,30 copy=a:5,5:b:15,15,40,40 fill=a:0xfd070809:1,1,62,62 copy=b:2,2:a:4,4,50,50

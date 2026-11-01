@@ -1,0 +1,47 @@
+[[term]]
+id = "G0025"
+name = "transfer_cmd.bif_3d_req_base"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_3D_REQ_BASE"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x018"
+meaning = "3D requestor base"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0001"
+licence = "GPL-2.0"
+evidence = "register loaded"
+
+[[term]]
+id = "G0026"
+name = "transfer_cmd.event_pixel_pds_code"
+status = "named"
+
+[[term.source]]
+term = "event_pixel_pds_code"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x024"
+meaning = "end-of-tile PDS program"
+tier = "3"
+source = "linux-imagination"
+citation = "C0031"
+licence = "GPL-2.0 OR MIT"
+evidence = "rogue_fwif_transfer_regs"
+
+[[term]]
+id = "G0027"
+name = "transfer_cmd.pds_exec_base"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_PDS_EXEC_BASE"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x03c"
+meaning = "PDS execution base"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0005"
+licence = "GPL-2.0"
+evidence = "register loaded"

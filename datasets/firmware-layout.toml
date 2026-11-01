@@ -1,0 +1,9 @@
+title = "capture table firmware/layout"
+repo = "data-private"
+paths = ["firmware/layout/"]
+method = "campaign runner on the build target (tools/campaign)"
+date = "2026-10-30"
+files = 39
+size = 336434
+sha256 = "d0fc7d8104e0bd486a3839dd8c6648cb8177e50cbd69b1bd74e6fb3fbe470acc"
+recipe = "captures/firmware/layout.toml"

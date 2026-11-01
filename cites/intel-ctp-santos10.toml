@@ -1,0 +1,8 @@
+title = "Samsung's GPL kernel for its santos10 device (Intel Clover Trail+, SGX544MP2), DDK 1.9"
+tier = "1"
+kind = "tree"
+licences = ["GPL-2.0 OR MIT"]
+root = "drivers/staging/mrst/pvr/ in the upstream repository at pin"
+upstream = "https://github.com/trevd/android_kernel_samsung_santos10"
+pin = "09fd129b1eb122f11ff12441c65dca778d9602bb"
+locator = "path:line relative to the upstream repository root at pin"

@@ -1,0 +1,207 @@
+[[term]]
+id = "G0011"
+name = "misc_info_struct_sizes.sizeof_3d_registers"
+status = "named"
+
+[[term.source]]
+term = "ui32Sizeof_3DREGISTERS"
+kind = "field"
+sgx545 = "MISCINFO_STRUCT_SIZES+0x10 (=MISC+0x30); value 0xd0"
+meaning = "size of 3DREGISTERS the EDM was built for: 3D register block at the start of the render details"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0017"
+licence = "GPL-2.0"
+evidence = "E001, the srvinit boot payload"
+
+[[term]]
+id = "G0012"
+name = "misc_info_struct_sizes.sizeof_cmd_ta"
+status = "named"
+
+[[term.source]]
+term = "ui32Sizeof_CMDTA"
+kind = "field"
+sgx545 = "MISCINFO_STRUCT_SIZES+0x00 (=MISC+0x20); value 0x2b0"
+meaning = "size of CMDTA the EDM was built for: TA command (client CCB entry for TA/3D work)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0018"
+licence = "GPL-2.0"
+evidence = "E001, the srvinit boot payload"
+
+[[term]]
+id = "G0013"
+name = "misc_info_struct_sizes.sizeof_cmd_ta_shared"
+status = "named"
+
+[[term.source]]
+term = "ui32Sizeof_CMDTA_SHARED"
+kind = "field"
+sgx545 = "MISCINFO_STRUCT_SIZES+0x04 (=MISC+0x24); value 0x1e0"
+meaning = "size of CMDTA_SHARED the EDM was built for: kernel-written part of the TA command"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0019"
+licence = "GPL-2.0"
+evidence = "E001, the srvinit boot payload"
+
+[[term]]
+id = "G0014"
+name = "misc_info_struct_sizes.sizeof_command"
+status = "named"
+
+[[term.source]]
+term = "ui32Sizeof_COMMAND"
+kind = "field"
+sgx545 = "MISCINFO_STRUCT_SIZES+0x30 (=MISC+0x50); value 0x20"
+meaning = "size of COMMAND the EDM was built for: kernel CCB command"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0020"
+licence = "GPL-2.0"
+evidence = "E001, the srvinit boot payload"
+
+[[term]]
+id = "G0015"
+name = "misc_info_struct_sizes.sizeof_host_ctl"
+status = "named"
+
+[[term.source]]
+term = "ui32Sizeof_HOST_CTL"
+kind = "field"
+sgx545 = "MISCINFO_STRUCT_SIZES+0x2c (=MISC+0x4c); value 0x44"
+meaning = "size of HOST_CTL the EDM was built for: host control block"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0021"
+licence = "GPL-2.0"
+evidence = "E001, the srvinit boot payload"
+
+[[term]]
+id = "G0016"
+name = "misc_info_struct_sizes.sizeof_hw_pb_desc"
+status = "named"
+
+[[term.source]]
+term = "ui32Sizeof_HWPBDESC"
+kind = "field"
+sgx545 = "MISCINFO_STRUCT_SIZES+0x14 (=MISC+0x34); value 0x3c"
+meaning = "size of HWPBDESC the EDM was built for: parameter-buffer descriptor"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0022"
+licence = "GPL-2.0"
+evidence = "E001, the srvinit boot payload"
+
+[[term]]
+id = "G0017"
+name = "misc_info_struct_sizes.sizeof_hw_render_context"
+status = "named"
+
+[[term.source]]
+term = "ui32Sizeof_HWRENDERCONTEXT"
+kind = "field"
+sgx545 = "MISCINFO_STRUCT_SIZES+0x18 (=MISC+0x38); value 0x44"
+meaning = "size of HWRENDERCONTEXT the EDM was built for: HW render context"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0023"
+licence = "GPL-2.0"
+evidence = "E001, the srvinit boot payload"
+
+[[term]]
+id = "G0018"
+name = "misc_info_struct_sizes.sizeof_hw_render_details"
+status = "named"
+
+[[term.source]]
+term = "ui32Sizeof_HWRENDERDETAILS"
+kind = "field"
+sgx545 = "MISCINFO_STRUCT_SIZES+0x1c (=MISC+0x3c); value 0x1ec"
+meaning = "size of HWRENDERDETAILS the EDM was built for: render details (3D registers + 3D-side state)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0024"
+licence = "GPL-2.0"
+evidence = "E001, the srvinit boot payload"
+
+[[term]]
+id = "G0019"
+name = "misc_info_struct_sizes.sizeof_hw_rt_data"
+status = "named"
+
+[[term.source]]
+term = "ui32Sizeof_HWRTDATA"
+kind = "field"
+sgx545 = "MISCINFO_STRUCT_SIZES+0x20 (=MISC+0x40); value 0x38"
+meaning = "size of HWRTDATA the EDM was built for: render-target data, one per TA/3D overlap slot"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0025"
+licence = "GPL-2.0"
+evidence = "E001, the srvinit boot payload"
+
+[[term]]
+id = "G0020"
+name = "misc_info_struct_sizes.sizeof_hw_rt_data_set"
+status = "named"
+
+[[term.source]]
+term = "ui32Sizeof_HWRTDATASET"
+kind = "field"
+sgx545 = "MISCINFO_STRUCT_SIZES+0x24 (=MISC+0x44); value 0x50"
+meaning = "size of HWRTDATASET the EDM was built for: render-target data set (header 0x18 + RT data)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0026"
+licence = "GPL-2.0"
+evidence = "E001, the srvinit boot payload"
+
+[[term]]
+id = "G0021"
+name = "misc_info_struct_sizes.sizeof_hw_transfer_context"
+status = "named"
+
+[[term.source]]
+term = "ui32Sizeof_HWTRANSFERCONTEXT"
+kind = "field"
+sgx545 = "MISCINFO_STRUCT_SIZES+0x28 (=MISC+0x48); value 0xb4"
+meaning = "size of HWTRANSFERCONTEXT the EDM was built for: HW transfer context"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0027"
+licence = "GPL-2.0"
+evidence = "E001, the srvinit boot payload"
+
+[[term]]
+id = "G0022"
+name = "misc_info_struct_sizes.sizeof_transfer_cmd"
+status = "named"
+
+[[term.source]]
+term = "ui32Sizeof_TRANSFERCMD"
+kind = "field"
+sgx545 = "MISCINFO_STRUCT_SIZES+0x08 (=MISC+0x28); value 0x4c8"
+meaning = "size of TRANSFERCMD the EDM was built for: transfer-queue command"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0028"
+licence = "GPL-2.0"
+evidence = "E001, the srvinit boot payload"
+
+[[term]]
+id = "G0023"
+name = "misc_info_struct_sizes.sizeof_transfer_cmd_shared"
+status = "named"
+
+[[term.source]]
+term = "ui32Sizeof_TRANSFERCMD_SHARED"
+kind = "field"
+sgx545 = "MISCINFO_STRUCT_SIZES+0x0c (=MISC+0x2c); value 0xdc"
+meaning = "size of TRANSFERCMD_SHARED the EDM was built for: kernel-written part of the transfer command"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0029"
+licence = "GPL-2.0"
+evidence = "E001, the srvinit boot payload"

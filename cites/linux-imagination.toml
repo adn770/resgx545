@@ -1,0 +1,8 @@
+title = "Imagination's Rogue kernel driver, drivers/gpu/drm/imagination"
+tier = "3"
+kind = "tree"
+licences = ["GPL-2.0 OR MIT", "GPL-2.0-only OR MIT"]
+root = "drivers/gpu/drm/imagination/ in the upstream repository at pin"
+upstream = "https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git"
+pin = "c03c1a14507dfaf8b856c2608f9ac216021fc222"
+locator = "path:line relative to the upstream repository root at pin"

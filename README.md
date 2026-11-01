@@ -13,9 +13,11 @@ needs. It is not a promise of 3D acceleration.
 
 ## Status
 
-This is the first published unit: the licences, the record formats (evidence records, dataset
-manifests, glossary terms, source citations) and their checkers. The specs, records and tools
-arrive unit by unit, in the order of the roadmap below.
+Published so far: the record formats and their checkers, and the firmware container: the
+cutter and reference loader (`tools/fwcutter`), the C loader (`tools/sgx_fw`), the extraction
+harness (`harness/ukernel-extract`), the firmware capture tables (`captures/firmware`) and the
+first evidence records. The remaining specs, records and tools arrive unit by unit, in the order
+of the roadmap below.
 
 ## How the repository is organised
 
@@ -51,7 +53,10 @@ header.
   as an analogue, published patents and patent applications, Imagination's and TI's public
   documents, and measurements on our own laptop.
 - Closed user-space libraries are run or probed only as black boxes: their strings and
-  exported symbols, and captures of the closed stack running. The closed firmware is
+  exported symbols, and captures of the closed stack running. The one exception: srvinit's
+  x86 code was disassembled only to locate the firmware and the values it patches, for
+  interoperability under Art. 6 of Directive 2009/24/EC (`HACKING.md`); only those facts are
+  recorded, and black-box captures back them wherever they reach. The closed firmware is
   disassembled only to learn the interface our driver must meet; none of its code or bytes
   enters this tree, and what it shows never names anything.
 - Every name for a register, field or structure comes from the glossary, with its source.

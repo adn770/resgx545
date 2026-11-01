@@ -1,0 +1,8 @@
+title = "Intel EMGD for Linux, SGX535 kernel side"
+tier = "1"
+kind = "tree"
+licences = ["GPL-2.0 OR MIT"]
+root = "drm/pvr/ in the upstream repository at pin"
+upstream = "https://github.com/EMGD-Community/intel-binaries-linux"
+pin = "e6884ec2eaaf1afe88d5ff9dd44d70403525be5b"
+locator = "path:line relative to the upstream repository root at pin"

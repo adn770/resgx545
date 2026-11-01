@@ -1,0 +1,15 @@
+[[term]]
+id = "G0008"
+name = "DOUTU0.TEMPS"
+status = "named"
+
+[[term.source]]
+term = "PVR_ROGUE_PDSINST_DOUT_FIELDS_DOUTU_SRC0_TEMPS"
+kind = "field"
+sgx545 = "doutu U0 [31:24]"
+meaning = "temporaries to allocate, in units of 4"
+tier = "3"
+source = "mesa-pds-defs"
+citation = "C0014"
+licence = "MIT"
+evidence = "same function and 4-register granularity (4.2.4 'temporaries in fours')"

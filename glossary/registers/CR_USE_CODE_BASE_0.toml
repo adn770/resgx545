@@ -1,0 +1,91 @@
+[[term]]
+id = "G0005"
+name = "CR_USE_CODE_BASE_0"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_USE_CODE_BASE(X)"
+kind = "register"
+sgx545 = "0x0a0c"
+meaning = "USSE code base 0: address and data master"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0007"
+licence = "GPL-2.0"
+evidence = "in sgx545defs.h as a parametrised macro"
+
+[[term.source]]
+term = "EUR_CR_USE_CODE_BASE_0"
+kind = "register"
+sgx545 = "0x0a0c"
+meaning = "USSE code base 0: address and data master"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0008"
+licence = "GPL-2.0"
+evidence = "in sgx545defs.h"
+
+[[term.source]]
+term = "PSB_CR_USE_CODE_BASE(i)"
+kind = "register"
+sgx545 = "0x0a0c"
+meaning = "USSE code base 0: address and data master"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0009"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h), so tier 1c; same offset as sgx545defs.h; parametrised macro"
+
+[[term.source]]
+term = "PSB_CR_USE_CODE_BASE0"
+kind = "register"
+sgx545 = "0x0a0c"
+meaning = "USSE code base 0: address and data master"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0010"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h), so tier 1c; same offset as sgx545defs.h"
+
+[[term]]
+id = "G0006"
+name = "CR_USE_CODE_BASE_0.ADDR"
+status = "named"
+
+[[term.source]]
+term = "_PSB_CUC_BASE_ADDR_MASK"
+kind = "bitfield"
+sgx545 = "0x0a0c[24:0]"
+meaning = "code base address"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0011"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo), so tier 1c; field of the register above; the bit position is SGX535's, the SGX545 mask is in sgx545defs.h"
+
+[[term]]
+id = "G0007"
+name = "CR_USE_CODE_BASE_0.DM"
+status = "named"
+
+[[term.source]]
+term = "_PSB_CUC_BASE_DM_MASK"
+kind = "bitfield"
+sgx545 = "0x0a0c[26:25]"
+meaning = "data master using this base (vertex, pixel, reserved, event)"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0012"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo), so tier 1c; field of the register above; the bit position is SGX535's, the SGX545 mask is in sgx545defs.h"
+
+[[term.source]]
+term = "EUR_CR_USE_CODE_BASE_DM_00"
+kind = "bitfield"
+sgx545 = "0x0a0c[26:25]"
+meaning = "data master that owns a USE code base"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0013"
+licence = "GPL-2.0"
+evidence = "SGX545 register field"

@@ -1,0 +1,8 @@
+title = "Mesa src/imagination/vulkan/pds: Rogue PDS instructions (MIT)"
+tier = "3"
+kind = "tree"
+licences = ["MIT"]
+root = "src/imagination/vulkan/pds/ in the upstream repository at pin"
+upstream = "https://gitlab.freedesktop.org/mesa/mesa"
+pin = "ab2374a4a18ba0ae4c11d499ac35607dd7bbb571"
+locator = "path:line relative to the upstream repository root at pin"

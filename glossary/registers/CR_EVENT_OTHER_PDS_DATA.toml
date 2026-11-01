@@ -1,0 +1,15 @@
+[[term]]
+id = "G0002"
+name = "CR_EVENT_OTHER_PDS_DATA"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_OTHER_PDS_DATA"
+kind = "register"
+sgx545 = "0x0a6c"
+meaning = "PDS data address of the other-event task"
+tier = "1c"
+source = "intel-ctp-santos10"
+citation = "C0003"
+licence = "GPL-2.0 OR MIT"
+evidence = "SGX544MP2 kernel (santos10), so tier 1c: the register name appears in its debug-dump name table (RESTRICTED_REGISTERS block) with no offset; no open source gives the offset; offset 0x0a6c is bound to the name by E002 (the loader writes PDS #13 data size to EVENT_OTHER_PDS_DATA at patch site 0xe50)"

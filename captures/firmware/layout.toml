@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# The closed srvinit run under the harness (fakedrm + loader) at two address layouts: the
+# defaults and every heap moved. The reference loader must reproduce both from the cut file.
+kind = "capture"
+name = "firmware-layout"
+host = "build"
+script = "layout.sh"
+files = ["harness/ukernel-extract/fakedrm.c", "harness/ukernel-extract/loader.c",
+         "harness/ukernel-extract/ukdir.h", "harness/ukernel-extract/bridgecmd.h",
+         "harness/ukernel-extract/devmem.h", "harness/ukernel-extract/bufclass.h"]

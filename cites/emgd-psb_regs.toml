@@ -1,0 +1,8 @@
+title = "Intel's psb_regs.h in EMGD: the SGX535 (Poulsbo) register list (MIT)"
+tier = "1"
+kind = "tree"
+licences = ["MIT"]
+root = "drm/emgd/include/ in the upstream repository at pin"
+upstream = "https://github.com/EMGD-Community/intel-binaries-linux"
+pin = "e6884ec2eaaf1afe88d5ff9dd44d70403525be5b"
+locator = "path:line relative to the upstream repository root at pin"

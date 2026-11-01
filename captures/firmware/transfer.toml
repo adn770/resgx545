@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# The closed OpenVG stack under the harness (fakedrm + fakewsegl + xfer) through
+# transfer-queue fills and copies with varied colours, rectangles, surfaces, formats and heap
+# bases: the programs the GPU would receive, for the black-box reading of fw_format.md §9-§10.
+kind = "capture"
+name = "firmware-transfer"
+host = "build"
+script = "transfer.sh"
+files = ["harness/ukernel-extract/fakedrm.c", "harness/ukernel-extract/loader.c",
+         "harness/ukernel-extract/fakewsegl.c", "harness/ukernel-extract/xfer.c",
+         "harness/ukernel-extract/ukdir.h", "harness/ukernel-extract/bridgecmd.h",
+         "harness/ukernel-extract/devmem.h", "harness/ukernel-extract/bufclass.h",
+         "tools/fwcutter/tqcapture.py", "captures/firmware/templates/transfer_runs.txt"]

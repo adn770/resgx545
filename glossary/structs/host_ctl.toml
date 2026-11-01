@@ -1,0 +1,15 @@
+[[term]]
+id = "G0010"
+name = "host_ctl"
+status = "named"
+
+[[term.source]]
+term = "SGXMKIF_HOST_CTL"
+kind = "struct"
+sgx545 = "0x44"
+meaning = "host control block (init/power/cleanup status, timers)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0016"
+licence = "GPL-2.0"
+evidence = "size 0x44 from the srvinit boot payload, E001"

@@ -1,0 +1,15 @@
+[[term]]
+id = "G0024"
+name = "ta3d_ctl"
+status = "named"
+
+[[term.source]]
+term = "sTA3DCtl"
+kind = "struct"
+sgx545 = "0xec (hKernelSGXTA3DCtlMemInfo)"
+meaning = "TA/3D control block of the EDM"
+tier = "1c"
+source = "emgd-linux"
+citation = "C0030"
+licence = "GPL-2.0 OR MIT"
+evidence = "core SGX535 (EMGD), so tier 1c; named in a comment: holds sTAHWPBDesc/s3DHWPBDesc"

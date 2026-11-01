@@ -1,0 +1,15 @@
+[[term]]
+id = "G0009"
+name = "PORT.DOUTU"
+status = "named"
+
+[[term.source]]
+term = "PVR_ROGUE_PDSINST_DOUT_DST_DOUTU"
+kind = "enum"
+sgx545 = "doutu port"
+meaning = "start a USC task"
+tier = "3"
+source = "mesa-pds-defs"
+citation = "C0015"
+licence = "MIT"
+evidence = "same name and function (ports.md)"
