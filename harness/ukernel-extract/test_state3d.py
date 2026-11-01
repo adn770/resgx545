@@ -216,3 +216,19 @@ def test_capture_pixel_pds_pointers_reach_whole_programs():
                 n += 1
                 assert code and code[-1] == 0xAF000000, (cap.name, k)
     assert n > 100
+
+
+def test_a_stream_cut_by_the_read_keeps_the_words_it_has():
+    # a long stream (256 draws) can end the read inside a block: its missing words are left
+    # out, not an IndexError, and the walker asks for a long enough read
+    w = state3d._Walker(None, {})
+    asked = []
+
+    def read(dva, n):
+        asked.append(n)
+        return [2 << 30 | 3, 0x1000]          # an index list of 3, cut after its base
+    w.read = read
+    w.vdm(0x1000)
+    words = {k: v for k, v in w.out.items() if ".w" in k}
+    assert words == {"vdm.b0.w0": 2 << 30 | 3, "vdm.b0.w1": 0x1000}
+    assert asked[0] >= 0x10000

@@ -1,0 +1,9 @@
+title = "capture table render/state-variations"
+repo = "data-private"
+paths = ["render/state-variations/"]
+method = "campaign runner on the build target (tools/campaign)"
+date = "2026-11-03"
+files = 69
+size = 1437157
+sha256 = "3178c543a69957749208cc54116023246624e021a5247b8f25a608cf12fc1b0a"
+recipe = "captures/render/state-variations.toml"

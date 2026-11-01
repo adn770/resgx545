@@ -31,6 +31,22 @@ licence = "GPL-2.0"
 evidence = "SPM misc-info request reads it per hRTDataSet"
 
 [[term]]
+id = "G1112"
+name = "hw_rt_data_set.num_rt_data"
+status = "named"
+
+[[term.source]]
+term = "hw_rt_data_set.num_rt_data"
+kind = "field"
+sgx545 = "HWRTDATASET+0x014"
+meaning = "the number of RT data that follow the set's header, used in turn one per scene"
+tier = "ours"
+source = "resgx545"
+citation = "captures/render/state-variations.toml"
+licence = "MIT"
+evidence = "[CAP] E325 (render-state-variations, render-draws-frames-pb): 2 in every closed set, whose two RT data alternate by scene; [HW] E325 (render-closed-compare): 1 in ours, which has one; [infer] the name is ours"
+
+[[term]]
 id = "G0556"
 name = "hw_rt_data_set.num_spm_renders"
 status = "named"
@@ -61,3 +77,19 @@ source = "resgx545"
 citation = "probes/render/pending-kw.toml"
 licence = "MIT"
 evidence = "[HW] E315 (render-pending-kw, one run): with the kernel's pending count poked one above or one below the executed count the set's cleanup fails, and with the count one above but this word pointed at the executed count itself it completes; [DDK] our kernel puts its pending count's address here (linux fork, sgx_render_rtds); [infer] the name is ours"
+
+[[term]]
+id = "G1113"
+name = "hw_rt_data_set.tiles_across"
+status = "inferred"
+
+[[term.source]]
+term = "hw_rt_data_set.tiles_across"
+kind = "field"
+sgx545 = "HWRTDATASET+0x008"
+meaning = "the number of macrotiles across times the macrotile's width in tiles, as the size rule of the TA words gives it [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "captures/ta/target-sizes.toml"
+licence = "MIT"
+evidence = "[CAP] E331 (ta-target-sizes): equal to the rule's value at all 222 target sizes; [HW] E325 (render-closed-compare): 8 at 64x64 in ours as in the closed set; [infer] the name is ours"

@@ -4,7 +4,7 @@ source = "sgx545-ce"
 locator = "src/services4/include/sgx_bridge.h:520"
 link = "https://github.com/The1TrueJoe/sgx545-ce/blob/1c3ecae090ad7b5801a351cf1341bbcd56e03440/src/services4/include/sgx_bridge.h#L520"
 quote = "IMG_UINT32       ui32OffsetToPDDevPAddr;"
-terms = ["hw_transfer_context.pd_dev_paddr"]
+terms = ["hw_render_context.pd_dev_paddr", "hw_transfer_context.pd_dev_paddr"]
 +++
 
 Line 520 of `sgx_bridge.h` in Intel's GPL DDK 1.7 kernel module for Cedarview declares

@@ -1,0 +1,9 @@
+title = "capture table usse/inputs"
+repo = "data-private"
+paths = ["usse/inputs/"]
+method = "campaign runner on the build target (tools/campaign)"
+date = "2026-11-03"
+files = 32
+size = 607765
+sha256 = "2c2839464135183595ebaea387e7d06027e168540aafa5565922300e94abb5e9"
+recipe = "captures/usse/inputs.toml"

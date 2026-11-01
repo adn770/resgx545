@@ -12,7 +12,7 @@ tier = "3"
 source = "mesa-csbgen"
 citation = "C0214"
 licence = "MIT"
-evidence = "Rogue name only; on SGX545 the wrap fields are measured: [HW] E033: on a twiddled texture U in T0 [8:6] and V in [5:3], 0 repeats, 1 mirrors, 2 clamps, 3 mirrors once"
+evidence = "Rogue name only; on SGX545 the wrap fields are measured: [HW] E033: on a twiddled texture U in T0 [8:6] and V in [5:3], 0 repeats, 1 mirrors, 2 clamps, 3 mirrors once; [CAP] E342: the closed driver's captures, one axis at a time"
 
 [[term]]
 id = "G0271"
@@ -28,7 +28,7 @@ tier = "3"
 source = "mesa-csbgen"
 citation = "C0215"
 licence = "MIT"
-evidence = "Rogue name only; on SGX545 the wrap fields are measured: [HW] E033: on a twiddled texture U in T0 [8:6] and V in [5:3], 0 repeats, 1 mirrors, 2 clamps, 3 mirrors once"
+evidence = "Rogue name only; on SGX545 the wrap fields are measured: [HW] E033: on a twiddled texture U in T0 [8:6] and V in [5:3], 0 repeats, 1 mirrors, 2 clamps, 3 mirrors once; [CAP] E342: the closed driver's captures, one axis at a time"
 
 [[term]]
 id = "G0272"
@@ -124,7 +124,7 @@ tier = "3"
 source = "mesa-csbgen"
 citation = "C0216"
 licence = "MIT"
-evidence = "-"
+evidence = "[CAP] E342: the closed driver's linear filtering sets bit 12"
 
 [[term]]
 id = "G1046"
@@ -156,7 +156,7 @@ tier = "3"
 source = "mesa-csbgen"
 citation = "C0217"
 licence = "MIT"
-evidence = "[HW] E041: probe x-mip-minfilter sets T0 bits 11:10 to 0-3 on a mip level"
+evidence = "[HW] E041: probe x-mip-minfilter sets T0 bits 11:10 to 0-3 on a mip level; [CAP] E342: the closed driver's linear minification sets bit 10"
 
 [[term]]
 id = "G0277"
@@ -172,7 +172,7 @@ tier = "3"
 source = "mesa-csbgen"
 citation = "C0218"
 licence = "MIT"
-evidence = "[HW] E041: probe x-mip-mipfilter at fractional LODs"
+evidence = "[HW] E041: probe x-mip-mipfilter at fractional LODs; [CAP] E342: the closed driver's linear mip filtering sets bit 9"
 
 [[term]]
 id = "G0278"

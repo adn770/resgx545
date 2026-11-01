@@ -206,6 +206,7 @@ def test_given_pointer_words_rest_on_records():
         **{("HWRENDERCONTEXT", o): "HWRENDERDETAILS" for o in (0x020, 0x024, 0x028, 0x02c)},
         **{("HWRENDERCONTEXT", o): "HWRENDERCONTEXT" for o in (0x030, 0x034, 0x038, 0x03c)},
         ("HWRTDATA", 0x004): "HWRENDERDETAILS",
+        ("CMDTA", 0x040): "HWRTDATASET", ("HWRTDATA", 0x000): "HWRENDERCONTEXT",
         ("CMDTA", 0x024): "HWPBDESC", ("CMDTA", 0x038): "HWRENDERDETAILS",
         ("CMDTA", 0x03c): "HWDEVICE_SYNC_LIST", ("CMDTA", 0x044): "HWRTDATA",
         ("HWPBDESC", 0x038): "PB_BLOCK",

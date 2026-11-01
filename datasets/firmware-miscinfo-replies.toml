@@ -1,0 +1,9 @@
+title = "capture table firmware/miscinfo-replies"
+repo = "data-private"
+paths = ["firmware/miscinfo-replies/"]
+method = "campaign runner on the build target (tools/campaign)"
+date = "2026-11-03"
+files = 98
+size = 862520
+sha256 = "5ceb2e683d61c8d53b39e6845e5b5ef159141f461cdd2e284c9c451517e81336"
+recipe = "captures/firmware/miscinfo-replies.toml"

@@ -58,7 +58,7 @@ sgx545 = "VDM_STATE1 bit 8"
 meaning = "marks the constant or no-op state blocks. Measured: set on the captured state blocks whose PDS program loads a constant block or starts a no-op USE task, clear on the MTE-state and vertex blocks [infer]"
 tier = "ours"
 source = "resgx545"
-citation = "E060, E187"
+citation = "E349"
 licence = "MIT"
 evidence = "never varied by us; [HW] E060: set on the triangle's state word, nothing changes; [HW] E187: set, the TA's output is the same word for word; [infer] the rest of its reading rests on records still to come"
 

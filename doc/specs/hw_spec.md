@@ -471,6 +471,13 @@ address becomes TA3DCtl dword 23 (Evidence: E002); a capture with only that addr
 differs in that dword and nowhere else (Evidence: E011). On the hardware it is
 the physical address of the page directory the host builds for the EDM.
 
+srvinit also asks `SGX_GETMISCINFO` once for the driver's revision (`DRIVER_SGXREV`). The DDK
+version, build and build options in the answer change nothing: answered with the struct
+untouched, all zeros, the DDK's own values or build options that disagree with srvinit's
+`0x60218` in every bit, srvinit makes the same 57 bridge calls, succeeds, and leaves a
+byte-identical init info and buffers at the `REV1` layout (Evidence: E352). The core revision
+and core id words were 0 in every run.
+
 ### 9.6 Other EDM values
 
 - **EDM task registers:** `USE0_SERV_EVENT` and `USE1_SERV_EVENT` (`0xb14`, `0xb20`).
@@ -481,7 +488,7 @@ the physical address of the page directory the host builds for the EDM.
 
 (Evidence: E011.)
 
-*Based on E001, E002, E003, E005, E006, E008, E011; `doc/specs/fw_format.md`; sgx545-ce
+*Based on E001, E002, E003, E005, E006, E008, E011, E352; `doc/specs/fw_format.md`; sgx545-ce
 `src/services4/srvkm/devices/sgx/sgxinit.c`, `src/services4/srvkm/hwdefs/sgx545defs.h`.*
 
 ## 10. The registers the microkernel reaches
@@ -606,9 +613,9 @@ queue's `EMPTY` flag and bits 15:0 its served-event `COUNT`, which fits (emgd-ps
 ## 13. Open questions
 
 - **The rest of `asInitDevData`.** Entries outside [8..13] are unexplained.
-- **Whether any payload value depends on the core revision or DDK version** the kernel reports
-  to srvinit. The extraction harness answers those requests with fixed values; a capture with
-  different answers would settle it.
+- **Whether any payload value depends on the core revision or core id** the kernel reports to
+  srvinit. The DDK version, build and build options do not (E352); the core words were 0 in
+  every run, so a capture with nonzero ones would settle it.
 - **What `0x0810`, `0x0814` and `0x0818` control** (Q001).
 - **The SGX clock**: 399.0 MHz, or a tick and a `TIMER` fed from another reference (Q002).
 

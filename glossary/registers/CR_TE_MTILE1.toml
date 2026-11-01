@@ -4,6 +4,17 @@ name = "CR_TE_MTILE1"
 status = "named"
 
 [[term.source]]
+term = "ROGUE_CR_TE_MTILE1"
+kind = "register"
+sgx545 = "0x0208"
+meaning = "macrotile boundaries in X (Rogue analogue)"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0727"
+licence = "MIT"
+evidence = "[CAP/HW] follows the macrotile rule in X at 225 sizes and renders on the hardware (E331); same role as Rogue TE_MTILE1"
+
+[[term.source]]
 term = "configuration registers defining the macro-tile boundaries"
 kind = "register"
 sgx545 = "0x0208"

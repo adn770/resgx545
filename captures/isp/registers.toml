@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# Written by harness/ukernel-extract/cap3d_tables.py from isp3d.txt; do not edit.
+# The closed GLES stacks under the harness, isp3d.txt: translucency over depth, discard,
+# overlapping draws, alpha to coverage and sample coverage under 4x multisampling, wide lines and
+# hints.
+kind = "capture"
+name = "isp-registers"
+host = "build"
+script = "registers.sh"
+files = ["harness/ukernel-extract/fakedrm.c", "harness/ukernel-extract/loader.c",
+         "harness/ukernel-extract/fakewsegl.c", "harness/ukernel-extract/tri.c",
+         "harness/ukernel-extract/tri1.c", "harness/ukernel-extract/triopts.h",
+         "harness/ukernel-extract/tri1opts.h", "harness/ukernel-extract/ukdir.h",
+         "harness/ukernel-extract/bridgecmd.h", "harness/ukernel-extract/devmem.h",
+         "harness/ukernel-extract/bufclass.h", "harness/ukernel-extract/capture3d.sh",
+         "harness/ukernel-extract/capture3d_host.sh", "harness/ukernel-extract/isp3d.txt",
+         "harness/ukernel-extract/gen_shaders3d.py"]

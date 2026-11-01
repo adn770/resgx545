@@ -203,6 +203,44 @@ licence = "GPL-2.0 OR MIT"
 evidence = "kick-side copy (1.11+)"
 
 [[term]]
+id = "G1101"
+name = "cmd_ta.hw_rt_data_set_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "hwrt_data_fw_addr"
+kind = "field"
+sgx545 = "CMDTA+0x040"
+meaning = "RT data set"
+tier = "3"
+source = "linux-imagination"
+citation = "C0729"
+licence = "GPL-2.0 OR MIT"
+evidence = "rogue_fwif_cmd_geom_frag_shared"
+
+[[term.source]]
+term = "sHWRTDataSetDevAddr"
+kind = "field"
+sgx545 = "CMDTA+0x040"
+meaning = "RT data set"
+tier = "1"
+source = "intel-ctp-k900"
+citation = "C0730"
+licence = "GPL-2.0 OR MIT"
+evidence = "kick-side copy (1.11+)"
+
+[[term.source]]
+term = "cmd_ta.hw_rt_data_set_dev_vaddr"
+kind = "field"
+sgx545 = "CMDTA+0x040"
+meaning = "the address of the RT data set the kick renders with"
+tier = "ours"
+source = "resgx545"
+citation = "captures/render/state-variations.toml"
+licence = "MIT"
+evidence = "[CAP] E325, E328 (render-state-variations): the closed client puts its set's address here in every kick, as our kernel does; [infer] the name is ours"
+
+[[term]]
 id = "G0650"
 name = "cmd_ta.mte_ctrl"
 status = "named"
@@ -222,6 +260,17 @@ evidence = "the DDK 1.9 kernel of other SGX cores names the register in its debu
 id = "G0651"
 name = "cmd_ta.mte_multisamplectl"
 status = "named"
+
+[[term.source]]
+term = "cmd_ta.mte_multisamplectl"
+kind = "field"
+sgx545 = "CMDTA+0x2a4"
+meaning = "value the EDM copies verbatim into CR_MTE_MULTISAMPLECTL (0x0230): the sample positions on the TA side, the same value as CR_ISP_MULTISAMPLECTL (0x88, 0xeaa26e26 with 4x multisampling) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x4c28)"
+licence = "MIT"
+evidence = "[RE] the TA kick writes the TA register block in structure order, one fixed store per word; [CAP] 0x88 in all 66 runs (E329); register term follows the tier-3 audit (no longer the Rogue analogue)"
 
 [[term.source]]
 term = "cmd_ta.mte_multisamplectl"
@@ -280,7 +329,7 @@ tier = "ours"
 source = "resgx545"
 citation = "E158"
 licence = "MIT"
-evidence = "[RE] the EDM loops this many times over the pairs at CMDTA dw170 (E158)"
+evidence = "[RE] the EDM loops this many times over the pairs at CMDTA dw170 (E158); [CAP] 6 with a depth buffer, 0 without (E329)"
 
 [[term]]
 id = "G0510"
@@ -312,7 +361,7 @@ tier = "ours"
 source = "resgx545"
 citation = "E158"
 licence = "MIT"
-evidence = "[RE] E158: the TA kick's copy step (memory writes, not register writes)"
+evidence = "[RE] E158: the TA kick's copy step (memory writes, not register writes); [CAP] captures with a depth buffer carry six such pairs addressing render-details words (E329)"
 
 [[term]]
 id = "G0512"
@@ -328,7 +377,7 @@ tier = "3"
 source = "linux-imagination"
 citation = "C0323"
 licence = "GPL-2.0 OR MIT"
-evidence = "same function as Rogue's three PDS background-object words (analogue); [RE] the EDM writes words 0-1 into the background object at the 3D kick (E162)"
+evidence = "same function as Rogue's three PDS background-object words (analogue); [RE] the EDM writes words 0-1 into the background object at the 3D kick (E162); [CAP] the first word is a pixel PDS reference in all 66 captures (E343)"
 
 [[term]]
 id = "G0652"
@@ -361,6 +410,17 @@ evidence = "[RE] E161: with command flag 0x2000 the TA pick copies command dword
 id = "G0653"
 name = "cmd_ta.ppp_screen"
 status = "named"
+
+[[term.source]]
+term = "ROGUE_CR_PPP_SCREEN"
+kind = "field"
+sgx545 = "CMDTA+0x268"
+meaning = "screen size in pixels minus one (x 15:0, y 31:16); the EDM copies it into CR_PPP_SCREEN"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0295"
+licence = "MIT"
+evidence = "same register (0x0248) and layout as Rogue's PPP_SCREEN (analogue); [CAP] varies with the target size as width - 1 (15:0), height - 1 (31:16) (E329, size=*); [RE] EDM store at ukernel 0x4b80 (make_r2.sh's register comments)"
 
 [[term.source]]
 term = "cmd_ta.ppp_screen"

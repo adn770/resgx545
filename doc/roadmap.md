@@ -230,28 +230,41 @@ at any value (E054).
 
 ### 4.3 Work that needs a capture host
 
-These topics rest on black-box captures of the closed GLES stacks running under the extraction
-harness. Their data belongs in resgx545-data-private and they wait for a host that runs that stack;
-the hardware runs above already cover part of each.
+Sub-phase 11.11 ran it. The laptop's Arch Linux 32 runs the closed GLES stacks natively under the
+extraction harness, so it serves as the capture host: the 13 capture tables
+(`captures/<unit>/<feature>.toml`, written from the harness's variation lists by
+`cap3d_tables.py`, run by the campaign runner with `--target build`) hold 604 runs in
+resgx545-data-private, the 28 `track3d` variations no earlier capture recorded among them. Each
+topic below now has a record (E323-E351, tier CAP, with a run of our own stack on the laptop
+beside the closed job where one word can be compared, `probes/render/closed-compare.toml`), and
+what the captures leave open is a question:
 
-- **texture:** streaming a YUV buffer into a texture (the colour-space set and formats chosen); the
-  texture words of one filter, wrap or format change at a time.
-- **pds:** the pixel PDS pointer and size words; the USSE code-address word and the code bases of
-  the vertex-side programs; the pixel-side state programs the MTE state blocks reference.
-- **render:** the captured HW render context, the two TA kicks of a frame, the RT data set, and a
-  minimal one-triangle job checked against a captured one.
-- **vdm:** the index-list and vertex-task words over many state variations; the block types of the
-  captured streams.
-- **mte:** the state block's presence word and doutd's second word; region clip, viewport and cull
-  words.
-- **isp:** the ISP words under depth, stencil and colour-mask states; the render details' 3D
-  register values; the background object reloading the previous colour; depth bias; 4x
-  multisampling's sample positions and the registers it moves; pass types and line width; the line
-  sample position.
-- **dpm:** the captured PB descriptor.
-- **ta:** the TA command's header and register words; the TA and 3D registers that move across state
-  variations; the macrotile rule over many target sizes.
-- **pbe:** the end-of-tile PBE words across size, format and dither.
-- **zls:** depth kept across frames; the depth buffer's register update list; the ZLS control word's
-  load bits.
-- **usse:** where the compiler uses the instruction names still open, across every captured program.
+- **texture:** YUV streams through colour-space set 0 or the USE coefficients (E341); the texture
+  words per filter, wrap, format and size (E342).
+- **pds:** the pixel PDS pointer and size words (E343; Q093); code-address words and bases of the
+  vertex-side programs (E344); the pixel-side programs the MTE state names (E345).
+- **render:** the render context (E323), the closing kick of each frame (E324), the RT data set
+  (E325), a one-triangle job against ours (E326; Q085).
+- **vdm:** index lists and vertex tasks (E346; Q092, Q094); block types (E349).
+- **mte:** the presence word and `DOUTD1` (E347); region clip, viewport and cull (E348).
+- **isp:** ISP words under depth, stencil and colour mask (E332); the background object (E334);
+  the render details' 3D registers (E330); polygon offset (E338); 4x multisampling (E339; Q089);
+  pass types and line widths (E340).
+- **dpm:** the PB descriptor and block (E327; Q084).
+- **ta:** the TA command (E328); the registers that move (E329); the macrotile rule over 222
+  sizes (E331; Q086).
+- **pbe:** the end-of-tile words (E333).
+- **zls:** depth kept across frames (E335); the update list (E336); the control values (E337;
+  Q088).
+- **usse:** of the 46 open instruction forms the closed compilers use 14 (E350,
+  `harness/ukernel-extract/opscan3d.py`); every vertex program opens with a load predicated
+  never to run and a wait on it (E351, `opscan3d.py --guard`).
+
+Three spec claims the ledger named without a topic are settled too: srvinit makes the same calls
+and the same boot payload whatever `SGX_GETMISCINFO` answers (E352,
+`captures/firmware/miscinfo-replies.toml`, srvinit under the harness on the laptop); the EDM
+clears the interrupt flags itself (E353, from the EDM dataflow); and whether the EDM's own page
+directory or the firmware's part in the sample-cache erratum matter is open (Q095, Q096).
+
+What is still closed-stack only: the closed transfer and copy programs' words and the
+pixel-event program the earlier phases left (no 11.11 table runs the OpenVG stack).

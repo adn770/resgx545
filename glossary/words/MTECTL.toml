@@ -28,7 +28,7 @@ tier = "3"
 source = "mesa-csbgen"
 citation = "C0198"
 licence = "MIT"
-evidence = "same function; Rogue 1 = cull CW, 2 = CCW; SGX observed 1 = CCW, 2 = CW in window coordinates (y not flipped): check convention; [HW] E062: 1 culls one winding (our triangle's), 2 the other, 0 and 3 neither, every value of bits 7:0 both ways round"
+evidence = "same function; Rogue 1 = cull CW, 2 = CCW; SGX observed 1 = CCW, 2 = CW in window coordinates (y not flipped): check convention; [HW] E062: 1 culls one winding (our triangle's), 2 the other, 0 and 3 neither, every value of bits 7:0 both ways round; [CAP] E348 (render-state-variations): the closed driver writes 2 for GL back-face culling and 1 for front-face culling"
 
 [[term]]
 id = "G0475"

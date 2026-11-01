@@ -28,7 +28,7 @@ tier = "ours"
 source = "resgx545"
 citation = "E164"
 licence = "MIT"
-evidence = "the render itself is triggered by the last-kick bit (E166); [HW] E051: clear (our kernel sets it on every render), the render is unchanged; [HW] E052: clear on the closing render of a scene over two kicks, both kicks' geometry is rendered; [HW] E314 (render-pending-counts, one run): cleared on one render and on a scene's closing render, the executed count does not move for that render and, the kernel's pending count not raised for it either, the cleanup completes; with it set the count rises by one at the render; [HW] E315 (render-pending-kw, one run): the cleanup waits for the executed count to equal the host's pending count, so the count this bit adds is what it waits for; [infer] the rest of its reading rests on records still to come"
+evidence = "[CAP] the client sets it on the kick that ends the scene (E324); the render itself is triggered by the last-kick bit (E166); [HW] E051: clear (our kernel sets it on every render), the render is unchanged; [HW] E052: clear on the closing render of a scene over two kicks, both kicks' geometry is rendered; [HW] E314 (render-pending-counts, one run): cleared on one render and on a scene's closing render, the executed count does not move for that render and, the kernel's pending count not raised for it either, the cleanup completes; with it set the count rises by one at the render; [HW] E315 (render-pending-kw, one run): the cleanup waits for the executed count to equal the host's pending count, so the count this bit adds is what it waits for; [infer] the rest of its reading rests on records still to come"
 
 [[term]]
 id = "G0233"
@@ -60,7 +60,7 @@ tier = "3"
 source = "linux-imagination"
 citation = "C0188"
 licence = "GPL-2.0 OR MIT"
-evidence = "[HW] E058: ZLS loads and stores depth only with this bit set"
+evidence = "same bit and meaning as the captured SGX545 flag (E163, E329); [CAP] E336: bit 7 set with a depth test; [HW] E058: ZLS loads and stores depth only with this bit set"
 
 [[term]]
 id = "G0235"
@@ -140,7 +140,7 @@ tier = "3"
 source = "linux-imagination"
 citation = "C0190"
 licence = "GPL-2.0 OR MIT"
-evidence = "[HW] E058: ZLS stores the stencil only with this bit set as well"
+evidence = "same bit and meaning as the captured SGX545 flag (E163, E329); [CAP] E336: bit 8 set with a depth test on a surface with a stencil buffer; [HW] E058: ZLS stores the stencil only with this bit set as well"
 
 [[term]]
 id = "G0240"

@@ -44,12 +44,13 @@ STATE_W2_FLAGS = ((25, "SD"), (24, "debug"), (18, "fence"), (17, "MTE emit"), (1
 
 
 def decode_vertex_pds(w1: int, w2: int) -> dict:
-    """The vertex task words that close an index list block [CAP]: the partition size
-    (31:28) and the PDS program address >> 4 (27:0); then the output vertex size in
-    4-dword units (31:24: 1 for a position, 2 with a varying or a point size), bits 23:22
-    (3 in every capture), the USE attribute size in 16-byte rows (14:7: one row per
-    vertex attribute) and the PDS data size in 16-byte rows (6:0)."""
-    return {"pds_base": (w1 & 0x0FFFFFFF) << 4, "partitions": w1 >> 28, "word2": w2,
+    """The vertex task words that close an index list block [CAP, E346]: the vertices per
+    task (VDM_TASK0.MAX_VERTICES, 31:28) and the PDS program address >> 4 (27:0); then the
+    output vertex size in 4-dword units (31:24: 1 for a position, 2 with a varying or a
+    point size), bits 23:22 (3 in all captures but one, which has 2 with nine output
+    rows), the USE attribute size in 16-byte rows (14:7: one row per vertex attribute) and
+    the PDS data size in 16-byte rows (6:0)."""
+    return {"pds_base": (w1 & 0x0FFFFFFF) << 4, "max_vertices": w1 >> 28, "word2": w2,
             "vertex_dwords": 4 * (w2 >> 24), "advance": (w2 >> 22) & 3,
             "use_attr_bytes": 16 * ((w2 >> 7) & 0xFF), "data_bytes": 16 * (w2 & 0x7F)}
 
@@ -330,7 +331,7 @@ def _fmt_block(b: dict) -> str:
               f"extra={_fmt(b['extra'])}")
         if b.get("vertex"):
             v = b["vertex"]
-            s += (f" vertex: pds={v['pds_base']:#010x} partitions={v['partitions']} "
+            s += (f" vertex: pds={v['pds_base']:#010x} max_vertices={v['max_vertices']} "
                   f"data={v['data_bytes']}B attr={v['use_attr_bytes']}B "
                   f"out={v['vertex_dwords']} dwords")
     return s

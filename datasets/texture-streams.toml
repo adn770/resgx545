@@ -1,0 +1,9 @@
+title = "capture table texture/streams"
+repo = "data-private"
+paths = ["texture/streams/"]
+method = "campaign runner on the build target (tools/campaign)"
+date = "2026-11-03"
+files = 17
+size = 296762
+sha256 = "9b1388601ea2f994816ac74859039c36314272ead34f41b6af781e0cadd45af8"
+recipe = "captures/texture/streams.toml"

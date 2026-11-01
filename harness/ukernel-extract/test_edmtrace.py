@@ -246,6 +246,8 @@ def test_pointer_fields_are_kick3ds():
     assert edmtrace.POINTS_AT == {
         "hw_render_details_dev_vaddr": "hw_render_details",
         "hw_rt_data_dev_vaddr": "hw_rt_data",
+        "hw_rt_data_set_dev_vaddr": "hw_rt_data_set",
+        "hw_render_context_dev_vaddr": "hw_render_context",
         "hw_pb_desc_dev_vaddr": "hw_pb_desc",
         "dst_sync_list_dev_vaddr": "SGXMKIF_HWDEVICE_SYNC_LIST",
         "first_block_dev_vaddr": "pb_block",

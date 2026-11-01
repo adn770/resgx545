@@ -53,7 +53,7 @@ def test_vdm_index_list_carries_the_vertex_pds_program():
     i = kickwalk.decode_vdm([0x80C00003, 0x080F5000, 0xF0000000, 0x003FFFFF,
                            0xFEC01E00, 0x02C00103, 0xC0000000])[0]
     v = i["vertex"]
-    assert v["pds_base"] == 0xEC01E000 and v["partitions"] == 0xF
+    assert v["pds_base"] == 0xEC01E000 and v["max_vertices"] == 0xF
     assert v["vertex_dwords"] == 8 and v["advance"] == 3
     assert v["use_attr_bytes"] == 32 and v["data_bytes"] == 48
     assert v["word2"] == 0x02C00103
@@ -62,7 +62,7 @@ def test_vdm_index_list_carries_the_vertex_pds_program():
 def test_vdm_index_list_word_count_follows_present_bits():
     blocks = kickwalk.decode_vdm([0x80000006, 0x1000, 0x70000000, 0x01000082, 0xC0000000])
     assert blocks[0]["words"] == 4 and blocks[0]["count"] == 6
-    assert blocks[0]["vertex"]["partitions"] == 7
+    assert blocks[0]["vertex"]["max_vertices"] == 7
     assert blocks[1]["type"] == "TERMINATE"
 
 

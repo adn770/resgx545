@@ -148,6 +148,13 @@ MOCK_HEAP_BASE_6=0xE4100000 LD_LIBRARY_PATH=$SGX_UK_DIR/lib LD_PRELOAD=./fakedrm
 `tools/fwcutter/test_fwload.py` replays both layouts through the reference loader and checks
 the result against these dumps, byte for byte.
 
+`MISC_REPLY` picks the answer to srvinit's `SGX_GETMISCINFO` request for the driver's revision:
+`plausible` (the default: DDK 1.7.17, build 862890, build options `0x60218`), `mismatched` (the
+same with every build option flipped), `zero` (every feature word 0) or `untouched` (the struct
+as srvinit passed it; `MISC_ZERO=1` is the older spelling). `MISC_<FIELD>` variables then
+override single fields. The capture table `captures/firmware/miscinfo-replies.toml` runs srvinit
+once per answer; srvinit's calls, init info and buffers do not change (E352).
+
 ## Transfer captures (for the transfer templates)
 
 The same shim runs the closed OpenVG stack, whose fills and copies go through the transfer
@@ -203,8 +210,8 @@ window-system module and the init info of the transfer captures above.
 ```sh
 gcc -m32 -shared -fPIC fakedrm.c -o fakedrm.so -ldl
 gcc -m32 -shared -fPIC fakewsegl.c -o $SGX_UK_DIR/lib/libpvrFAKEWSEGL.so
-gcc -m32 tri.c -o tri -ldl
-gcc -m32 tri1.c -o tri1 -ldl
+gcc -m32 tri.c -o tri -ldl -lm      # tri.c rounds with lroundf
+gcc -m32 tri1.c -o tri1 -ldl -lm
 cp $SGX_UK_DIR/dump/devinitpart2_in.bin $SGX_UK_DIR/devinit.bin     # after ./loader
 printf '[default]\nWindowSystem=libpvrFAKEWSEGL.so\n' > $SGX_UK_DIR/powervr.ini
 LD_LIBRARY_PATH=$SGX_UK_DIR/lib LD_PRELOAD=./fakedrm.so ./tri
@@ -250,3 +257,43 @@ a stable path; `diff3d.py` compares two captures word by word, hiding the words 
 only because the object they point into moved; `tiling3d.py` holds the render-target layout
 rule the size captures show and checks it against every capture. The captures themselves are
 closed-driver output and are kept in resgx545-data-private, not in this repository.
+
+### Capture tables
+
+Each list has a capture table, `captures/<unit>/<feature>.toml`, written from the list by
+`cap3d_tables.py` (`--check` tells a stale one); the campaign runner runs it on a capture host
+(`tools/campaign/campaign.py --target build --repo data-private`, with
+`$RESGX545_BUILD_HOST`, `$RESGX545_BUILD_SSH_OPTS` and the closed `usr/lib/`'s path there in
+`$RESGX545_BUILD_CDV_LIBS`). The table's template calls `capture3d_host.sh` with the list:
+it builds the harness on the host, stages the libraries so that every name of a library opens
+the one file (a copy that turned the package's links into files would load a library twice,
+and the second copy has no current context), runs srvinit once for `devinit.bin`, then the
+list one run at a time, each kept as `<run>.tar.xz` (`tri.out`, `powervr.ini`, `drm.log`,
+`dump3d/`) with `runs.txt` listing each run's status and kick count. The i686 laptop serves as
+the host: the closed libraries run natively there, and nothing touches its GPU.
+
+| table | list |
+|---|---|
+| `captures/render/state-variations.toml` | `variations3d.txt` |
+| `captures/render/register-gaps.toml` | `gaps3d.txt` |
+| `captures/render/draws-frames-pb.toml` | `track3d.txt` |
+| `captures/isp/registers.toml` | `isp3d.txt` |
+| `captures/isp/line-width.toml` | `lines3d.txt` |
+| `captures/ta/target-sizes.toml` | `sizes3d.txt` |
+| `captures/texture/textures.toml` | `textures3d.txt` |
+| `captures/texture/samplers.toml` | `samplers3d.txt` |
+| `captures/texture/formats.toml` | `formats3d.txt` |
+| `captures/texture/streams.toml` | `streams3d.txt` |
+| `captures/usse/shaders.toml` | `shaders3d.txt` |
+| `captures/usse/inputs.toml` | `inputs3d.txt` |
+| `captures/usse/gles1-programs.toml` | `gles1_3d.txt` |
+
+`cap3d.py unpack DATA DEST` unpacks a table's data (`resgx545-data-private/<unit>/<feature>/`)
+into the `var/` layout above, for `diff3d.py`, `state3d.py`, `tiling3d.py` and `kickwalk.py`.
+`opscan3d.py DEST...` disassembles every USSE program the unpacked runs hold and reports, for
+each instruction form whose meaning is still open (no passing simulator vector in
+`doc/isa/sim-coverage.json`, or no semantics in the simulator), how many distinct programs use
+it and in which tables: names and counts only, never a program's words. `opscan3d.py --guard
+DEST...` counts instead, by the kind of program (vertex, state copy, secondary, primary, end of
+tile, end of render), the programs that open with the closed compiler's never-taken load and its
+wait (`and.testtanz` into `p0`, `p0 ldad ... drc0`, `wdf drc0`; E351).

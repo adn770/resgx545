@@ -1,0 +1,10 @@
+title = "script table render/closed-compare"
+repo = "data"
+paths = ["render/closed-compare/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-03"
+files = 4
+size = 37211
+sha256 = "3b3c9776df2fda9f16179ce972e681a7e3191e3fb162d3cefb8f04cc1a838969"
+recipe = "probes/render/closed-compare.toml"
+needs = ["render", "render_words", "render_cleanup", "buf09", "regs"]

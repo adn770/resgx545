@@ -8,4 +8,5 @@ terms = ["EMIT2.LINE_STRIDE"]
 +++
 
 Line 412 of `pbestate.xml` in Mesa's Rogue csbgen names `linestride`. It backs the glossary field
-`EMIT2.LINE_STRIDE`: surface line stride.
+`EMIT2.LINE_STRIDE`: surface line stride, in pairs of pixels less one: the row pitch in pixels / 2 -
+1, in RGB565 and ARGB8888 alike.

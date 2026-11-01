@@ -1846,6 +1846,329 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   closing renders are byte for byte those of the 11.6 runs, and the images the same (1062, 1730 and
   2026 triangle pixels); one run.
   *ta; HW; data: `render-kick-objects-again`, `render-kick-objects`.*
+- `E323` The closed GLES1 and GLES2 stacks registers a 0x44-byte HW render context image whose dword
+  2 it names as the page directory's physical address (the registration's offset 8, which the kernel
+  patches); in every capture the context holds CONTEXT_FLAGS 0x21 (NEW and OWN_PB), priority 0, the
+  client CCB and its control, no submitted command, its PB descriptor, in dword 7 the address of a
+  0x40-byte parameter-heap object at the DPM page table's base plus 0x40000, empty render lists and
+  queue links, and the process's PID; only the PID and, with the PB size, dword 7 change between
+  runs, and our kernel's context differs only in OWN_PB, the page directory and the PID.
+  *render; CAP, HW; data: `render-state-variations`, `render-draws-frames-pb`,
+  `render-register-gaps`, `isp-registers`, `isp-line-width`, `texture-textures`, `texture-samplers`,
+  `texture-formats`, `texture-streams`, `usse-inputs`, `usse-gles1-programs`, `usse-shaders`,
+  `render-pending-counts`, `render-closed-compare`.*
+- `E324` The closed GLES2 stack submits every frame as at least two TA kicks on one client CCB: a
+  first kick (GEOM_FLAGS 0x71 on a context's first frame, 0x61 after; FRAG_FLAGS 0) whose control
+  stream holds the frame's draws and is not the scene's last, then a closing kick (GEOM_FLAGS 0x62,
+  FRAG_FLAGS.BIT10, CR_TE_PSG bit 22) whose stream is only the end-of-scene state blocks and the
+  terminate; a glFlush adds a middle kick (0x60) holding the draws since the last kick; the stream
+  base advances by each kick's stream length, the TA status update 0 carries that offset and update
+  6 the kicks so far; with FlushBehaviour=2 the flush ends the scene itself (0x73 and
+  FRAG_FLAGS.BIT10) and the next render of the frame carries FRAG_FLAGS bit 14 and frame number 1.
+  *render; CAP; data: `render-draws-frames-pb`, `render-state-variations`, `render-register-gaps`,
+  `isp-registers`, `isp-line-width`, `texture-textures`, `texture-samplers`, `texture-formats`,
+  `texture-streams`, `usse-inputs`, `usse-gles1-programs`, `usse-shaders`, `ta-target-sizes`.*
+- `E325` The closed GLES1 and GLES2 stacks' RT data set is a 0x88-byte KERNEL_DATA object: the
+  0x18-byte header (the pending count's address, executed count 0, dword 2 = 8, no out-of-memory
+  signal or partial render, dword 5 = 2) and two 0x38-byte RT data, which the client uses scene by
+  scene in turn with two render details; each RT data holds the HW render context's address in dword
+  0, render details 0, dwords 2 and 3 = 1 and 0xc0, the shared background object, a DPM state of its
+  own, the shared DPM control and OTPM, the TE tail pointer cache and its size 0x100 in dwords 8 and
+  9, one render target, a region-header stride of 0, a status word of its own and state 0x10; our
+  kernel's set has the same header but dword 5 = 1 and one RT data whose words follow the same
+  rules.
+  *render; CAP, HW; data: `render-state-variations`, `render-draws-frames-pb`,
+  `render-register-gaps`, `isp-registers`, `isp-line-width`, `texture-textures`, `texture-samplers`,
+  `texture-formats`, `texture-streams`, `usse-inputs`, `usse-gles1-programs`, `usse-shaders`,
+  `ta-target-sizes`, `render-pending-counts`, `render-closed-compare`.*
+- `E326` The closed GLES2 stack's one-triangle frame and our tri job are built from the same objects
+  (render context, client CCB and control, TA commands, render details with their 3D register block,
+  an RT data set, PB descriptor and block, parameter buffer and 0x40000-byte page table, TA data:
+  tail pointer cache, DPM control, OTPM, DPM state and region headers, background object and its
+  primary-program word list, control stream, PDS and USSE programs, status and sync words); against
+  the closed frame ours differs in using one kick for the scene, the background object for the
+  clear, one RT data, no OWN_PB, CR_ISP_CTL bit 8 set and 0x04c4 bit 25 clear, and in words the
+  firmware or the kernel fills; every other TA register and render-details word compared holds the
+  closed driver's value.
+  *render; CAP, HW; data: `render-state-variations`, `render-pending-counts`,
+  `render-closed-compare`.*
+- `E327` The closed GLES1 and GLES2 stacks' PB descriptor at the default size holds no flags, 0x422
+  pages in dword 1, the free list (pages << 16 | 1) and the TA allocation word ((pages - 1) << 16)
+  both initial and current, the page table's base, zero allocated, local and global counts,
+  thresholds TA 0x432 (pages + 16), ZLS 0x400, global 0x400 and PDS 0x300, and its one PB block,
+  which holds the page count, the free-list word, the descriptor's own address and no next block;
+  PBSize=1048576 and 8388608 give 98 pages (TA threshold 114, ZLS and global 64, PDS 0), smaller
+  PBSize values fail eglInitialize, MaxParamBufferSize changes nothing and ZLSThreshold=0 zeroes the
+  ZLS threshold; our kernel's descriptor before its first render is the default one word for word
+  but for the addresses.
+  *dpm; CAP, HW; data: `render-state-variations`, `render-draws-frames-pb`, `render-register-gaps`,
+  `isp-registers`, `isp-line-width`, `texture-textures`, `texture-samplers`, `texture-formats`,
+  `texture-streams`, `usse-inputs`, `usse-gles1-programs`, `usse-shaders`, `render-pending-counts`,
+  `render-closed-compare`.*
+- `E328` In every TA command of the closed GLES1 and GLES2 stacks the size word is 0x2a8 plus 8 per
+  3D patch rounded up to 64 bytes (0x2c0 for none or one, 0x300 for six) and the commands lie back
+  to back in the client CCB; dwords 5 and 6 both hold 0x50000000, the four threshold words are 0,
+  dword 16 holds the RT data set and dword 18 0; the shared block names seven TA and three 3D status
+  updates and, on the closing kick only, the 3D transfer-queue sync; and of the TA register block's
+  28 words the zero-word registers are 0 in every run, and the rest hold, for a single-sampled
+  target, the values our tri job writes: CR_TE_AA 0x20000000, CR_MTE_CTRL 0xa2, the 1/w floats
+  0x358637bd, CR_MTE_MULTISAMPLECTL 0x88, the tiling words by the size rule, CR_PPP_SCREEN (w - 1) |
+  (h - 1) << 16, the region header base the render details also name and the TE tail pointer cache.
+  *ta; CAP; data: `render-state-variations`, `render-draws-frames-pb`, `render-register-gaps`,
+  `isp-registers`, `isp-line-width`, `texture-textures`, `texture-samplers`, `texture-formats`,
+  `texture-streams`, `usse-inputs`, `usse-gles1-programs`, `usse-shaders`.*
+- `E329` Across the closed GLES1 and GLES2 stacks' 3D captures (819 kicks of 12 capture tables, and
+  the target sizes) the TA register block moves in eight registers and three address words only:
+  CR_TE_SCREEN, CR_PPP_SCREEN, CR_TE_MTILE1, CR_TE_MTILE2 and CR_TE_MACROTILE_STRIDE with the
+  target's size and with 4x multisampling, CR_TE_AA and CR_MTE_MULTISAMPLECTL with 4x multisampling,
+  CR_TE_PSG with the scene's close and a depth or stencil buffer, and the three address words
+  (control stream, region headers, tail pointer cache) with the kick and the scene; the 3D side
+  moves as E330 lists; GEOM_FLAGS and FRAG_FLAGS move with the kick's place in the scene, a depth or
+  stencil buffer and a render to a texture.
+  *ta; CAP; data: `render-state-variations`, `render-draws-frames-pb`, `render-register-gaps`,
+  `isp-registers`, `isp-line-width`, `texture-textures`, `texture-samplers`, `texture-formats`,
+  `texture-streams`, `usse-inputs`, `usse-gles1-programs`, `usse-shaders`, `ta-target-sizes`.*
+- `E330` Over every closing kick of the closed GLES2 stack's 3D captures the render details' 52-word
+  3D register block holds the same value in 24 words whatever the state, size or program (among them
+  CR_ISP_CTL 0xf0000, CR_REG_0400 0x80, CR_REG_0800 0x30, CR_ISP_BGOBJDEPTH 1.0 and CR_ISP_BGOBJVALS
+  0x300 even with a clear depth of 0.5, CR_ISP_SAMPLE_POS 0 even under 4x multisampling, 0x04e8
+  0x100, 0x04dc 0, 0x0148 0 and the second colour-space set and luma key 0), and the other 28 move
+  only with an address, the scene's buffers, a depth or stencil buffer (the ZLS words, also by 3D
+  patches), the polygon offset (its factor and units as given), 4x multisampling (CR_ISP_MSAA
+  0x80000002, CR_ISP_MULTISAMPLECTL 0xeaa26e26), a YUV stream (the first colour-space set, or the
+  USSE coefficients for NV12), a render to a texture (0x04c4 bit 8) or the parameter buffer's size
+  (0x04c4 bits 19:12).
+  *isp; CAP, HW; data: `render-state-variations`, `render-draws-frames-pb`, `render-register-gaps`,
+  `isp-registers`, `isp-line-width`, `texture-textures`, `texture-samplers`, `texture-formats`,
+  `texture-streams`, `usse-inputs`, `usse-gles1-programs`, `usse-shaders`, `ta-target-sizes`,
+  `render-closed-compare`.*
+- `E331` Over 222 render-target sizes from 1x1 to 4096x4096 the closed GLES2 stack's tiling words
+  and size words all follow one rule: 32x16-pixel tiles; n = 4 macrotiles across and down from w x h
+  >= 640 x 480 pixels (640x475 still 2, 640x480 and 4096x75 already 4), else 2; a macrotile spans
+  the tiles over n rounded up to whole 4-tile blocks; CR_TE_SCREEN, CR_TE_MTILE1 (bit 31 for n = 4),
+  CR_TE_MTILE2 and CR_TE_MACROTILE_STRIDE (16 per 4x4-tile block) as tiling3d.py gives them; and in
+  the RT data set the tiles across all macrotiles (header dword 2), the blocks per macrotile (RT
+  data dword 2), a macrotile's region headers (0xc0 per block, dword 3), the tail pointer cache (4
+  bytes over the square of the power of two that covers the larger macrotile span, dword 9 and the
+  cache object's size) and the region-header buffer (0xc0 per block per macrotile); widths or
+  heights above 4096 fail eglCreatePbufferSurface.
+  *ta; CAP; data: `ta-target-sizes`, `render-register-gaps`, `isp-registers`.*
+- `E332` Under the harness the closed GLES2 driver writes ISP word 0's depth compare as the GL
+  function's order (never 0, less 1, equal 2, less or equal 3, greater 4, not equal 5, greater or
+  equal 6, always 7), sets bit 20 when depth is off or its writes masked and bit 21 with a colour
+  mask of 0000, sets ISP word 2 (presence bit 2, ISP word 0 bit 8, the reference in bits 7:0) with
+  GL's stencil function, masks and the three operations in the codes of ISP2's fields, and puts
+  glColorMask in ISP word 1 bits 7:4 (red bit 7, green 6, blue 5, alpha 4); blending gives pass type
+  1, and bit 9 is set in every clear object and triangle (the pass-type-3 objects have it clear).
+  *isp; CAP; data: `render-state-variations`, `isp-registers`.*
+- `E333` The closed driver's end-of-tile task hands the PBE EMIT0 = 0, EMIT1 = (height - 1) << 16 |
+  (width - 1), EMIT2 = 0x80 << 8 with bits 27:16 the row pitch in pixels / 2 - 1 (the same field for
+  RGB565 and ARGB8888, the pitch a whole number of 8 pixels: 104 for a width of 100), EMIT3 the
+  surface address, and a sideband of pack mode 3 (RGB565) or 0 (ARGB8888) with bit 9, bit 10 while
+  GL dithering is on (also in ARGB8888) and bit 13 only for a render to a texture; 4x multisampling
+  leaves the words as they are.
+  *pbe; CAP; data: `render-state-variations`, `render-register-gaps`, `isp-registers`.*
+- `E334` In every render the closed driver submits, the background object's primary PDS program
+  (cmd_ta.pds_bgnd word 2) holds in its data segment texture words describing the render target
+  itself, in every run of the two tables captured: T1 a strided texture (TEXTYPE 6) of the target's
+  format and size, T0 a clamped stride of the target's pitch in dwords minus one, T2 the target's
+  address, T3 0x00800000 (that the program samples them is [infer]); the words are the same with a
+  clear, without one and on a frame that does not clear, and CR_ISP_BGOBJVALS stays 0x300 and
+  CR_ISP_BGOBJDEPTH 1.0 whatever the clear depth.
+  *isp; CAP; data: `render-state-variations`, `render-draws-frames-pb`.*
+- `E335` With depth or stencil on, the closed driver gives the window surface one GENERAL allocation
+  of 0x5000 bytes, depth at its start (64 x 64 four-byte values) and stencil 0x4000 on, loaded and
+  stored at the same addresses in every frame: the render flags carry 0x180 (DEPTH_BUFFER and
+  STENCIL_BUFFER) whichever of the two GL uses, the first render of the surface names the buffer,
+  and a later frame's render loads what the earlier stored; with ExternalZBufferMode=2 the buffer is
+  set up with the context and loaded from the first render, and ExternalZBufferMode=1 and
+  ZLSThreshold=0 change no word.
+  *zls; CAP; data: `render-draws-frames-pb`, `render-register-gaps`.*
+- `E336` The closed driver names a window surface's depth buffer through the TA command's 3D
+  patches, not its render details: the surface's first render with the ZLS flags carries six
+  {address, value} pairs, in this order CR_ISP_ZLSCTL (0x0017100c), CR_BIF_ZLS_REQ_BASE
+  (0x08000000), CR_ISP_ZLOAD_BASE and CR_ISP_ZSTORE_BASE (both the depth offset),
+  CR_ISP_STENCIL_LOAD_BASE and CR_ISP_STENCIL_STORE_BASE (both the stencil offset with bit 31), each
+  address a render details register word; every later render of the surface carries one pair,
+  CR_ISP_ZLSCTL 0x0017700e; renders without the flags carry none.
+  *zls; CAP; data: `render-draws-frames-pb`, `render-register-gaps`, `isp-registers`.*
+- `E337` The closed driver's CR_ISP_ZLSCTL values are 0x0017100c for a window surface's first render
+  (bits 2, 3, 12, 16-18, 20), 0x0017700e for every later one (bits 1, 13 and 14 added), 0x0017300e
+  set with the context under ExternalZBufferMode=2 (bits 1 and 13 added, 14 not), 0x0011700a written
+  between frames (bits 2, 17 and 18 cleared from 0x0017700e) and 0x00140008 for a texture's depth
+  attachment (bits 3, 18, 20; depth flag only); so bits 1, 13 and 14 are what a render that loads
+  the kept buffer adds, and bits 2, 12, 16 and 17 are absent with the depth flag alone.
+  *zls; CAP; data: `render-draws-frames-pb`, `render-register-gaps`, `isp-registers`.*
+- `E338` With glPolygonOffset enabled the closed driver sets ISP word 1 bit 23 on the triangle (not
+  on the clear object) and writes the render details' polygon offset registers:
+  CR_ISP_POLY_OFFSET_FACTOR the GL factor as an IEEE single (1.0 0x3f800000, 2.0 0x40000000, -1.0
+  0xbf800000, 0 at 0), CR_ISP_POLY_OFFSET_UNITS the GL units as a 32-bit integer (1, 4, -1 as
+  0xffffffff), CR_ISP_POLY_OFFSET_CLAMP 0; the same with depth off and with depth less.
+  *isp; CAP; data: `render-register-gaps`.*
+- `E339` A multisampled texture render of the closed driver, asked for 2 or 4 samples, moves seven
+  register words, and bit 48 of one instruction of the end-of-render program's second task, against
+  the same render single-sampled: CR_ISP_MSAA mode 2 (0x80000002), CR_ISP_MULTISAMPLECTL and the
+  TA's CR_MTE_MULTISAMPLECTL 0xeaa26e26 (samples at (6, 2), (14, 6), (2, 10), (10, 14) sixteenths),
+  CR_TE_AA 0xe0000000 (bits 31:29), CR_TE_MTILE1 and CR_TE_MTILE2 0x00802002 (0x01004004
+  single-sampled) and CR_TE_MACROTILE_STRIDE 4 (0x10); CR_ISP_SAMPLE_POS stays 0, and alpha to
+  coverage and sample coverage move no word; a multisampled texture with a depth attachment is
+  refused (incomplete) and renders single-sampled.
+  *isp; CAP; data: `render-register-gaps`, `isp-registers`.*
+- `E340` Over every captured run the closed driver uses four ISP pass types: 0 for opaque objects
+  and the clear, 1 for every blended object and for the GLES1 alpha test, 4 for a GLSL shader that
+  discards (with or without a depth test), and 3 for the two objects a scissor or a viewport smaller
+  than the target adds (ISP word 0 0x07e00100, no ISP word 1, no pixel program); it writes
+  glLineWidth x 16 into ISP word 1 bits 15:8 (1 0x10, 1.5 0x18, 2 0x20, 3 0x30, 4 0x40, 8 0x80, 15
+  0xf0) for lines and points alike and 0x10 for triangles, 0 for the clear object, the object type
+  in ISP word 0 bits 17:15 (triangle 0, line 1, point 3), and CR_ISP_LINE_SAMPLE_POS 1 in every
+  render.
+  *isp; CAP; data: `render-state-variations`, `render-register-gaps`, `render-draws-frames-pb`,
+  `isp-registers`, `isp-line-width`, `texture-textures`, `texture-samplers`, `texture-formats`,
+  `texture-streams`, `usse-inputs`, `usse-gles1-programs`, `usse-shaders`.*
+- `E341` Streaming a YUV buffer through IMG_texture_stream2, the closed driver samples a packed UYVY
+  or YUYV buffer (pixel formats 73 and 74) in one fetch, TEXTYPE 3 with TEXFORMAT 29 or 28, and
+  loads colour-space set 0 in the render details as 0x00950095, 0x00000095, 0x010203ce, 0x039800cc
+  and 0 with set 1, the input word and the USE coefficients at 0; it samples NV12 (format 64) as two
+  fetches, the luma plane as TEXFORMAT 26 and the half-size chroma plane after it as TEXFORMAT 27,
+  both with T0 bit 30, and loads the USE coefficient registers instead (CR_USE_COEFFS_MODE 3, three
+  groups of taps and biases) with the colour-space sets at 0; the formats 69, 71, 195, 196, 199 and
+  200 are refused at the bind and the draw samples a 1x1 RGBA8888 texture; one capture each.
+  *texture; CAP; data: `texture-streams`.*
+- `E342` The closed driver's texture words T0 and T1, one GL sampler or format change at a time:
+  GL_LINEAR minification sets T0 bits 11:10 to 1 and magnification bits 13:12 to 1, a linear mip
+  filter sets bit 9, any mipmapped minification sets bits 20:17 to 13 instead of 15, bits 26:21 stay
+  0x3f; S wrap is bits 8:6 and T wrap bits 5:3 (0 repeat, 1 mirror, 2 clamp); T1 holds TEXTYPE
+  (31:29: 0 power of two, 3 NPOT and streams, 6 depth), TEXFORMAT (28:24) and width and height less
+  one (23:12, 11:0); RGBA4444 2, RGBA5551 4, RGB565 5, BGRA8888 12, RGB and RGBA8888 13, RGBA half
+  float 17, float 18, PVRTC 2 bpp 23, PVRTC 4 bpp 24, ETC1 27, and with T0 bit 30 alpha 25,
+  luminance 26, luminance-alpha 27 and luminance half float 30; a float RGBA texture is four
+  one-channel fetches and a half-float one two; depth textures are TEXTYPE 6 float 18 with a
+  32-dword stride; T3 is 0x00800800 in every texture but the luminance half-float one (0x01000800);
+  one capture each.
+  *texture; CAP; data: `texture-samplers`, `texture-formats`, `texture-textures`.*
+- `E343` Every pixel PDS pointer the closed driver writes (an MTE state block's secondary and
+  primary words, the TA command's special object words 0 and 2) holds the program's offset from
+  PDS_EXEC_BASE in 16-byte units in bits 23:0 and its data size in 16-byte rows in bits 31:26, bits
+  25:24 clear; each resolves into a PDSPIXEL_CODEDATA object holding the whole data, and the highest
+  data dword the program's dout operands read lies in the last row the pointer counts in 4978 of the
+  4990 programs (the other 12, all GLES1, also read registers above their data); of the size word
+  between them, bits 17:16 are 3 in every block, bits 24:18 at least the secondary's constant dwords
+  in rows of four (0 to 6), bits 6:0 1 except with three or more iterated sets (2 and 4), and bits
+  31:25 0 on the clear's blocks and otherwise 12, or 11 when bits 24:18 are not 0, divided by bits
+  6:0 and rounded down; the special object's size word is 0x00030001 in all 1263 kicks.
+  *pds; CAP; data: `render-state-variations`, `render-register-gaps`, `render-draws-frames-pb`,
+  `isp-registers`, `isp-line-width`, `texture-textures`, `texture-samplers`, `texture-formats`,
+  `texture-streams`, `usse-inputs`, `usse-gles1-programs`, `usse-shaders`, `ta-target-sizes`.*
+- `E344` In the closed driver's captured kicks every USSE code-address word a PDS program hands to
+  doutu holds a code-base index in bits 3:0 and an instruction index in bits 23:4: the pixel-side
+  programs (special object, MTE pixel programs, end of render) use base 0 and the vertex-side ones
+  (VDM state-block programs, vertex tasks) base 10, and with base 0 at 0xf4000000 and base 10 at
+  0xfc000000 all 15071 land on an instruction inside an object of the PIXELSHADER or the
+  VERTEXSHADER heap, as the side says; a vertex task's PDS program fetches each attribute with one
+  doutd whose second word gives the attribute's dwords less one in bits 3:0 and its offset in the
+  vertex's attribute rows in bits 19:8, from a data word holding the stream address and one holding
+  the stride in bytes, and starts its USSE program with a base-10 doutu.
+  *pds; CAP; data: `render-state-variations`, `render-register-gaps`, `render-draws-frames-pb`,
+  `isp-registers`, `isp-line-width`, `texture-textures`, `texture-samplers`, `texture-formats`,
+  `texture-streams`, `usse-inputs`, `usse-gles1-programs`, `usse-shaders`, `ta-target-sizes`.*
+- `E345` The secondary pixel program an MTE state block names is a lone doutu (no constants), one or
+  two doutd of 10 to 18 constant dwords then a doutu, or in GLES1 a doutu then three or four douta,
+  with DOUTU1 0 or 0x4; the primary is a doutu followed by one douti per iterated set and one doutt
+  per texture fetch, each fetch after the douti of its coordinates, with DOUTU1 0x4 when it iterates
+  nothing, 0x01000004 when it iterates without fetching (0x01000006 in three branching shaders),
+  0x02000004 in most textured programs and 0x03000004 in every textured GLES1 program but
+  GL_REPLACE's and in five GLES2 ones (texture times colour, two textures, a half-float luminance
+  texture); the special object's programs are a lone doutu and a doutu, douti and doutt with
+  0x02000004.
+  *pds; CAP; data: `render-state-variations`, `render-register-gaps`, `render-draws-frames-pb`,
+  `isp-registers`, `isp-line-width`, `texture-textures`, `texture-samplers`, `texture-formats`,
+  `texture-streams`, `usse-inputs`, `usse-gles1-programs`, `usse-shaders`, `ta-target-sizes`.*
+- `E346` Every one of the 1888 index lists in the closed driver's captured VDM streams is six words:
+  a header with bits 31:30 = 2, the topology in 29:26 (0 triangles, 1 lines, 2 points, 3 strip, 4
+  fan, a line strip arriving as lines), bits 25:24 clear, both trailing-word bits 23:22 set and the
+  index count in 21:0; the index base in the GENERAL heap; the trailing words 0xf0000000 and
+  0x003fffff (0xf4000000 once under GLES1 flat shading, 0xd0000000 once with eight vertex
+  attributes); then the vertex task, whose word 0 holds VDM_TASK0.MAX_VERTICES (15 for most GLES2
+  draws, 9 for GLES1's and a point-size shader's, 7 for the screen-space draws, 13 with eight
+  attributes, 2 with nine output rows) and the vertex PDS program's address >> 4 in 27:0
+  (PDSVERTEX_CODEDATA), and whose word 1 holds the output rows in 31:24 (1 to 4, and 9), 3 in 23:22
+  (2 once, with nine output rows), one attribute row per vertex attribute in 14:7 and the PDS data
+  rows in 6:0.
+  *vdm; CAP; data: `render-state-variations`, `render-register-gaps`, `render-draws-frames-pb`,
+  `isp-registers`, `isp-line-width`, `texture-textures`, `texture-samplers`, `texture-formats`,
+  `texture-streams`, `usse-inputs`, `usse-gles1-programs`, `usse-shaders`, `ta-target-sizes`.*
+- `E347` The closed driver's MTE state blocks take eight presence words, 0x2000 (2 dwords), 0xd485
+  (9), 0xd4c3 (12), 0xd4c7 (13), 0xdf43 (18), 0xdf47 (19), 0xdfc3 (20) and 0xdfc7 (21), each block
+  exactly the presence word plus the words its set bits add in bit order (isp0, isp1, isp2 one each,
+  the pixel programs three, the region clip two, the viewport six, then one each for bits 9 to 15);
+  the VDM state block's PDS program copies it with doutd, whose second word gives the dwords of a
+  line less one in bits 3:0, the lines less one in 7:4, the destination dword offset in 19:8 and the
+  line stride less one in 29:22, equal to the line length in every copy, a block over 16 dwords
+  going as two or three lines (18 as 2 x 9, 20 as 2 x 10, 21 as 3 x 7) or as a 16-dword line and a
+  second doutd of 3 dwords at offset 16; the end-of-scene block is written by douta instead; the VDM
+  state word's bits 7:0 are at least the block's dwords in rows of four.
+  *mte; CAP; data: `render-state-variations`, `render-register-gaps`, `render-draws-frames-pb`,
+  `isp-registers`, `isp-line-width`, `texture-textures`, `texture-samplers`, `texture-formats`,
+  `texture-streams`, `usse-inputs`, `usse-gles1-programs`, `usse-shaders`, `ta-target-sizes`.*
+- `E348` In the closed driver's MTE state, the region clip word 0 holds an enable in bit 31 and the
+  first and last 32-pixel tile columns in 30:16 and 15:0, word 1 the first and last 16-pixel tile
+  rows in 31:16 and 15:0, counted from the bottom of the target in GL's window coordinates; a clear
+  or mask fill's block always carries it, a draw's block only when its viewport does not cover the
+  target; the viewport words are x + w/2, w/2, y + h/2, h/2 (y up, a positive scale), (n + f)/2 and
+  (f - n)/2 of glViewport and glDepthRange; the end-of-scene term word holds the last 32-pixel
+  column and row; MTECTL is 0x01555620 on every GLES2 draw (0x15555620 GLES1), plus 2 for cull back
+  and 1 for cull front or cull back with clockwise front faces, 0x40 on the screen-space clear
+  blocks, 0x3a0 on a flat-shaded GLES1 draw; GL_FRONT_AND_BACK drops the draw from the stream.
+  *mte; CAP; data: `render-state-variations`, `render-register-gaps`, `render-draws-frames-pb`,
+  `isp-registers`, `isp-line-width`, `texture-textures`, `texture-samplers`, `texture-formats`,
+  `texture-streams`, `usse-inputs`, `usse-gles1-programs`, `usse-shaders`, `ta-target-sizes`.*
+- `E349` The closed driver's 1263 captured VDM streams use three block types only, state (bits 31:30
+  = 1), index list (2) and terminate (3), and no link (0), each stream one GENERAL object from
+  CR_VDM_CTRL_STREAM_BASE to a lone terminate word 0xc0000000; every stream ends with a state block
+  whose second word is 0x0400e100, the end-of-scene state block (first word bit 29 set, second word
+  0x0e022401) and the terminate; a draw adds its MTE state block (second word 0x0e0224nn, bits 25
+  and 17 set) and, before its index list, a block that loads the vertex program's constants
+  (0x0800e1nn or 0x0c00e1nn, bit 8 set) when its state changed, and only an index list when nothing
+  changed; state blocks' first words point into PDSVERTEX_CODEDATA, bit 28 is never set.
+  *vdm; CAP; data: `render-state-variations`, `render-register-gaps`, `render-draws-frames-pb`,
+  `isp-registers`, `isp-line-width`, `texture-textures`, `texture-samplers`, `texture-formats`,
+  `texture-streams`, `usse-inputs`, `usse-gles1-programs`, `usse-shaders`, `ta-target-sizes`.*
+- `E350` Of the 46 USSE forms still open (no passing simulator vector, or no semantics in the
+  simulator), the closed GLES compilers and the closed driver's fixed programs use 14 across the 425
+  distinct USSE programs of 595 captured runs: phas (form 8) in every program, emitpix1 in 223 and
+  emitpix2 in 224 end-of-tile programs, the four vertex emits (emitmtest, emitmtevtx, emitvcbst,
+  emitvcbvtx) in every vertex program, wdf in 93 programs, wop in 8, ptoff in one program every run
+  holds, smlsi in 24 programs of the shader, input and GLES1 runs, atst8 and pcoeff only where a
+  fragment is discarded or alpha-tested (atst8 also under the GLES1 alpha test), and the dual-issue
+  form 64 only under GLES1 lighting; the other 32 open forms (among them smoa, smr, smbo, imo,
+  setfc, moest, setm, depthf, ldr, str, idf, nop, emitpds, ba and the second phas forms) appear in
+  no captured program.
+  *usse; CAP; data: `render-state-variations`, `render-register-gaps`, `render-draws-frames-pb`,
+  `isp-registers`, `isp-line-width`, `ta-target-sizes`, `texture-textures`, `texture-samplers`,
+  `texture-formats`, `texture-streams`, `usse-shaders`, `usse-inputs`, `usse-gles1-programs`.*
+- `E351` Every one of the 47 distinct vertex programs the closed GLES compilers emitted in the 595
+  captured runs opens, past its leading phas and nop, with and.testtanz of two zero immediates into
+  p0, then p0 ldad ... drc0 (a load that never runs), then wdf drc0; so do 27 of the 28 secondary
+  programs and 11 of the 12 state-copy programs, and none of the 114 primary pixel programs or the
+  225 end-of-render programs; the 93 programs with wdf are these 85 and 8 primary programs that wait
+  after a texture sample, and the one vertex program with a second wdf (vs_texture) waits after its
+  own texture sample.
+  *usse; CAP; data: `render-state-variations`, `render-register-gaps`, `render-draws-frames-pb`,
+  `isp-registers`, `isp-line-width`, `ta-target-sizes`, `texture-textures`, `texture-samplers`,
+  `texture-formats`, `texture-streams`, `usse-shaders`, `usse-inputs`, `usse-gles1-programs`.*
+- `E352` srvinit asks SGX_GETMISCINFO once, for the driver's revision (eRequest 2), before its init
+  connection; whether the answer is left as srvinit passed the struct, all zeros, a plausible one
+  (DDK 1.7.17, build 862890, build options 0x60218) or one with every build option flipped, srvinit
+  makes the same 57 bridge calls in the same order with the same sizes, returns 0, and its init info
+  (2068 bytes) and all 15 buffers are byte-identical.
+  *firmware; CAP; data: `firmware-miscinfo-replies`.*
+- `E353` The EDM itself clears InterruptFlags and InterruptClearFlags: its POWER handler clears bit
+  1 of both, and the routine at instructions 0x1c4-0x599, which tests InterruptClearFlags bit 0,
+  clears bit 0 of both after zeroing its TA/3D control words and setting the kernel CCB's read
+  offset to the write offset; the same routine sets InterruptFlags bit 0 after counting a lockup and
+  bit 1 when the active-power countdown reaches zero, each followed by a SW_EVENT write; no other
+  resolved EDM access writes either word.
+  *edm; RE; data: `firmware-edm-dataflow-11`.*
 
 ## By unit
 
@@ -1855,36 +2178,39 @@ Records: E151.
 
 ### dpm
 
-Records: E199, E200, E201, E202, E204, E205, E206, E203, E253, E256, E309, E310, E311, E312, E313.
+Records: E199, E200, E201, E202, E204, E205, E206, E203, E253, E256, E309, E310, E311, E312, E313,
+E327.
 
 ### edm
 
 Records: E009, E014, E017, E084, E146, E152, E153, E154, E155, E156, E157, E158, E159, E160, E161,
-E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321.
+E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321, E353.
 
 ### firmware
 
-Records: E001, E002, E003, E004, E005, E010, E011, E012.
+Records: E001, E002, E003, E004, E005, E010, E011, E012, E352.
 
 ### isp
 
 Records: E064, E065, E066, E067, E068, E069, E070, E071, E072, E073, E074, E210, E211, E213, E214,
 E215, E216, E217, E218, E219, E220, E222, E224, E225, E226, E227, E228, E229, E230, E209, E231,
-E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E290, E291.
+E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E290, E291, E330,
+E332, E334, E338, E339, E340.
 
 ### mte
 
-Records: E061, E062, E063, E192, E193, E194, E195, E196, E198, E197, E248, E280, E286, E287.
+Records: E061, E062, E063, E192, E193, E194, E195, E196, E198, E197, E248, E280, E286, E287, E347,
+E348.
 
 ### pbe
 
-Records: E029, E030, E031, E032, E239, E240, E251, E265, E266, E267, E268, E269, E270.
+Records: E029, E030, E031, E032, E239, E240, E251, E265, E266, E267, E268, E269, E270, E333.
 
 ### pds
 
 Records: E043, E044, E045, E046, E047, E048, E125, E126, E127, E128, E129, E130, E131, E132, E133,
 E134, E135, E136, E137, E138, E139, E140, E141, E142, E143, E144, E145, E259, E260, E261, E262,
-E263, E264.
+E263, E264, E343, E344, E345.
 
 ### platform
 
@@ -1893,17 +2219,17 @@ Records: E006, E007, E008, E025, E026, E122, E150, E149, E246, E258.
 ### render
 
 Records: E023, E049, E050, E051, E052, E053, E148, E169, E252, E301, E302, E303, E304, E314, E315,
-E316.
+E316, E323, E324, E325, E326.
 
 ### ta
 
 Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180, E181, E247, E257,
-E288, E305, E306, E307, E308, E322.
+E288, E305, E306, E307, E308, E322, E328, E329, E331.
 
 ### texture
 
 Records: E033, E034, E035, E036, E037, E038, E039, E040, E041, E042, E114, E116, E242, E254, E271,
-E273, E274, E275, E276, E277.
+E273, E274, E275, E276, E277, E341, E342.
 
 ### transfer
 
@@ -1918,12 +2244,12 @@ Records: E236, E237.
 Records: E075, E076, E077, E078, E079, E080, E081, E082, E083, E085, E086, E087, E088, E089, E090,
 E091, E092, E093, E094, E095, E096, E097, E098, E099, E100, E101, E102, E103, E104, E105, E106,
 E107, E108, E109, E110, E111, E112, E113, E115, E117, E118, E119, E120, E121, E123, E124, E147,
-E244, E245, E255, E292, E293, E294, E295, E296, E297, E298.
+E244, E245, E255, E292, E293, E294, E295, E296, E297, E298, E350, E351.
 
 ### vdm
 
-Records: E059, E060, E184, E185, E186, E187, E189, E190, E191, E188, E299, E300, E318.
+Records: E059, E060, E184, E185, E186, E187, E189, E190, E191, E188, E299, E300, E318, E346, E349.
 
 ### zls
 
-Records: E057, E058, E250.
+Records: E057, E058, E250, E335, E336, E337.

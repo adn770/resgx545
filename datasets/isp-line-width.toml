@@ -1,0 +1,9 @@
+title = "capture table isp/line-width"
+repo = "data-private"
+paths = ["isp/line-width/"]
+method = "campaign runner on the build target (tools/campaign)"
+date = "2026-11-03"
+files = 13
+size = 179636
+sha256 = "61c77d3755ba0249d3ea2796e246fee7958340b56b17f1b114e9b54fb8290fb9"
+recipe = "captures/isp/line-width.toml"

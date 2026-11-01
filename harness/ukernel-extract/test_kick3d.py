@@ -115,7 +115,20 @@ def test_ta_registers_follow_the_kick_store_order():
 
 def test_ta_command_gaps_stay_unnamed():
     names = [path for path, *_ in kick3d._layout(kick3d.STRUCTS["cmd_ta"])]
-    assert {"pad_0x18", "pad_0x40", "pad_0x48"} <= set(names)
+    assert {"pad_0x18", "pad_0x48"} <= set(names)
+
+
+def test_the_capture_backed_words_are_named():
+    # 11.11: the closed client's captured words (E323, E325, E327, E328, E331)
+    named = {s: {p for p, *_ in kick3d._layout(kick3d.STRUCTS[s])} for s in kick3d.STRUCTS}
+    assert "hw_rt_data_set_dev_vaddr" in named["cmd_ta"]
+    assert {"pd_dev_paddr", "param_obj_dev_vaddr"} <= named["hw_render_context"]
+    assert {"tiles_across", "num_rt_data"} <= named["hw_rt_data_set"]
+    assert {"hw_render_context_dev_vaddr", "blocks_per_mtile", "mtile_region_bytes",
+            "te_tpc_dev_vaddr", "te_tpc_bytes"} <= named["hw_rt_data"]
+    assert "page_count" in named["hw_pb_desc"] and "stack_top" in named["pb_block"]
+    for s in ("hw_rt_data", "hw_rt_data_set", "hw_render_context", "hw_pb_desc", "pb_block"):
+        assert not any(p.startswith("pad_") for p in named[s]), s
 
 
 def test_ta_command_decode():

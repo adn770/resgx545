@@ -66,6 +66,7 @@ PRESENCE = [
     (13, "term", 1), (14, "coordsize", 1), (15, "coordfmt", 1),
 ]
 PDS_WORDS = ("pds_sec", "pds_size", "pds_pri")
+VDM_READ = 0x10000      # bytes of a VDM control stream read from its base
 
 
 def bits(v: int, hi: int, lo: int) -> int:
@@ -391,10 +392,11 @@ class _Walker:
             self.pixel(f"{prefix}.pri", names["pds_pri"])
 
     def vdm(self, dva: int):
-        words = self.read(dva, 0x1000) or []
+        # a stream of many draws runs past 4 KiB; a block the read cuts keeps what it has
+        words = self.read(dva, VDM_READ) or []
         for i, b in enumerate(kickwalk.decode_vdm(words)):
             p = f"vdm.b{i}"
-            for j in range(b["words"]):
+            for j in range(min(b["words"], len(words) - b["offset"])):
                 self.out[f"{p}.w{j}"] = words[b["offset"] + j]
             if "pds_base" in b:
                 n = b["data_bytes"] // 4 if b["data_bytes"] is not None else 8

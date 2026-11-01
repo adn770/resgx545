@@ -47,3 +47,14 @@ def test_fault_handler_uses_only_write():
         assert banned not in fn
     assert "put(" in fn and "_exit" in fn
     assert "write(2" in body(LOADER, "static void put(")
+
+
+def test_getmiscinfo_reply_is_selected_by_one_knob():
+    fn = body(FAKEDRM, "static void miscinfo_fill")
+    assert 'getenv("MISC_REPLY")' in fn
+    for reply in ('"zero"', '"plausible"', '"mismatched"', '"untouched"'):
+        assert reply in fn
+    assert 'getenv("MISC_ZERO")' in fn               # the older spelling of untouched
+    assert "memset(&mi[2], 0" in fn                   # zero: every feature word written 0
+    assert "~0x60218u" in fn                         # mismatched: every build option flipped
+    assert re.search(r"unknown MISC_REPLY", fn)       # a typo is reported, not ignored

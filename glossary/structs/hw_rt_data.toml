@@ -15,6 +15,22 @@ licence = "MIT"
 evidence = "[RE] E162: the 3D kick's background-object words; captured 0xc0464000, shared by both RT data"
 
 [[term]]
+id = "G1106"
+name = "hw_rt_data.blocks_per_mtile"
+status = "inferred"
+
+[[term.source]]
+term = "hw_rt_data.blocks_per_mtile"
+kind = "field"
+sgx545 = "HWRTDATA+0x008"
+meaning = "a size word of the RT data that follows the macrotile rule: the blocks of one macrotile [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "captures/ta/target-sizes.toml"
+licence = "MIT"
+evidence = "[CAP] E331 (ta-target-sizes): equal to the rule's value at all 222 target sizes, 1 at 64x64; [infer] the name is ours"
+
+[[term]]
 id = "G0548"
 name = "hw_rt_data.dpm_control_dev_vaddr"
 status = "named"
@@ -47,6 +63,33 @@ licence = "MIT"
 evidence = "[RE] E158: the TA kick's clear step; one per RT data in the capture"
 
 [[term]]
+id = "G1108"
+name = "hw_rt_data.hw_render_context_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "sHWRenderContextDevVAddr"
+kind = "field"
+sgx545 = "HWRTDATA+0x000"
+meaning = "owning HW render context"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0731"
+licence = "GPL-2.0"
+evidence = "device address returned by REGISTER_HW_RENDER_CONTEXT"
+
+[[term.source]]
+term = "hw_rt_data.hw_render_context_dev_vaddr"
+kind = "field"
+sgx545 = "HWRTDATA+0x000"
+meaning = "the address of the HW render context the RT data belongs to"
+tier = "ours"
+source = "resgx545"
+citation = "captures/render/state-variations.toml"
+licence = "MIT"
+evidence = "[CAP] E325 (render-state-variations): the context's address in every closed RT data; [HW] E325 (render-closed-compare): our context's address, the one our cleanup names; [infer] the name is ours"
+
+[[term]]
 id = "G0550"
 name = "hw_rt_data.hw_render_details_dev_vaddr"
 status = "named"
@@ -61,6 +104,22 @@ source = "resgx545"
 citation = "E159"
 licence = "MIT"
 evidence = "[RE] the TA kick (E159) and scene-done (E164)"
+
+[[term]]
+id = "G1109"
+name = "hw_rt_data.mtile_region_bytes"
+status = "inferred"
+
+[[term.source]]
+term = "hw_rt_data.mtile_region_bytes"
+kind = "field"
+sgx545 = "HWRTDATA+0x00c"
+meaning = "a size word of the RT data: 0xc0 bytes per block of hw_rt_data.blocks_per_mtile [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "captures/ta/target-sizes.toml"
+licence = "MIT"
+evidence = "[CAP] E331 (ta-target-sizes): 0xc0 times the block count at all 222 target sizes; [infer] the name is ours"
 
 [[term]]
 id = "G0591"
@@ -141,3 +200,35 @@ source = "linux-imagination"
 citation = "C0331"
 licence = "GPL-2.0 OR MIT"
 evidence = "rogue_fwif_hwrtdata state word"
+
+[[term]]
+id = "G1110"
+name = "hw_rt_data.te_tpc_bytes"
+status = "named"
+
+[[term.source]]
+term = "hw_rt_data.te_tpc_bytes"
+kind = "field"
+sgx545 = "HWRTDATA+0x024"
+meaning = "the size in bytes of the TE's tail pointer cache"
+tier = "ours"
+source = "resgx545"
+citation = "captures/ta/target-sizes.toml"
+licence = "MIT"
+evidence = "[CAP] E325, E331 (ta-target-sizes): equal to the tail pointer cache object's size at every target size; [HW] E325 (render-closed-compare): 0x100 in ours at 64x64; [infer] the name is ours"
+
+[[term]]
+id = "G1111"
+name = "hw_rt_data.te_tpc_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "hw_rt_data.te_tpc_dev_vaddr"
+kind = "field"
+sgx545 = "HWRTDATA+0x020"
+meaning = "the address of the TE's tail pointer cache, the value CR_TE_TPC_ADDR takes"
+tier = "ours"
+source = "resgx545"
+citation = "captures/render/state-variations.toml"
+licence = "MIT"
+evidence = "[CAP] E325 (render-state-variations): equal to the TA command's tail pointer cache address in every closed kick; [infer] the name is ours"

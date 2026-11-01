@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# Written by harness/ukernel-extract/cap3d_tables.py from track3d.txt; do not edit.
+# The closed GLES stacks under the harness, track3d.txt: several draws, flushes and frames, depth
+# and stencil kept in memory, parameter buffer sizes.
+kind = "capture"
+name = "render-draws-frames-pb"
+host = "build"
+script = "draws-frames-pb.sh"
+files = ["harness/ukernel-extract/fakedrm.c", "harness/ukernel-extract/loader.c",
+         "harness/ukernel-extract/fakewsegl.c", "harness/ukernel-extract/tri.c",
+         "harness/ukernel-extract/tri1.c", "harness/ukernel-extract/triopts.h",
+         "harness/ukernel-extract/tri1opts.h", "harness/ukernel-extract/ukdir.h",
+         "harness/ukernel-extract/bridgecmd.h", "harness/ukernel-extract/devmem.h",
+         "harness/ukernel-extract/bufclass.h", "harness/ukernel-extract/capture3d.sh",
+         "harness/ukernel-extract/capture3d_host.sh",
+         "harness/ukernel-extract/track3d.txt"]
+# the runs no earlier capture recorded
+open = ["draws2", "draws4", "draws64", "draws2_flush", "draws4_flush", "draws2_flushb1",
+        "draws2_flushb2", "frames2", "frames2_once", "depth_f2", "depth_f2_once",
+        "depth_ext1", "depth_ext2", "stencil_ext1", "dstencil_ext1", "depth_ext1_zls0",
+        "pb_default_many", "pb_1m_many", "pb_768k_many", "pb_512k_many", "pb_384k_many",
+        "pb_256k_many", "pb_64k_many", "pb_64k", "pb_8m", "pbmax_2m", "pbmax_1m",
+        "pbmax_512k"]

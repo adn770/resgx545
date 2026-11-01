@@ -1,0 +1,9 @@
+title = "capture table texture/textures"
+repo = "data-private"
+paths = ["texture/textures/"]
+method = "campaign runner on the build target (tools/campaign)"
+date = "2026-11-03"
+files = 51
+size = 2798465
+sha256 = "1ebe33f564a8d7363d92952087d5ea64a27b7faca493e7171a38c8587f8049f4"
+recipe = "captures/texture/textures.toml"

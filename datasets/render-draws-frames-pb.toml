@@ -1,0 +1,10 @@
+title = "capture table render/draws-frames-pb"
+repo = "data-private"
+paths = ["render/draws-frames-pb/"]
+method = "campaign runner on the build target (tools/campaign)"
+date = "2026-11-03"
+files = 34
+size = 657912
+sha256 = "18f890638615b3ac4775f2a7f313d5a58227d6844bde2de4135c846350866d14"
+recipe = "captures/render/draws-frames-pb.toml"
+open = ["draws2", "draws4", "draws64", "draws2_flush", "draws4_flush", "draws2_flushb1", "draws2_flushb2", "frames2", "frames2_once", "depth_f2", "depth_f2_once", "depth_ext1", "depth_ext2", "stencil_ext1", "dstencil_ext1", "depth_ext1_zls0", "pb_default_many", "pb_1m_many", "pb_768k_many", "pb_512k_many", "pb_384k_many", "pb_256k_many", "pb_64k_many", "pb_64k", "pb_8m", "pbmax_2m", "pbmax_1m", "pbmax_512k"]

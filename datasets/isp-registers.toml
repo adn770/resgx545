@@ -1,0 +1,9 @@
+title = "capture table isp/registers"
+repo = "data-private"
+paths = ["isp/registers/"]
+method = "campaign runner on the build target (tools/campaign)"
+date = "2026-11-03"
+files = 19
+size = 395606
+sha256 = "42c4aeb0933e999c8063ca1c13cfab4fc313f7c967ec5e5a6d9b586aef26a9c8"
+recipe = "captures/isp/registers.toml"

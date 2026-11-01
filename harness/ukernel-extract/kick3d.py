@@ -149,12 +149,14 @@ REGISTERS_3D = [(name, 1) for _addr, name in REGISTER_3D_WRITES]
 # strides (E158 copies them to render details dwords 70 and 71, E163); 21 and 170 the 3D patch
 # count and pairs (E158); 22 the shared block (the CCB offset SGX_DOKICK passes points at it,
 # glossary cmd_ta.shared); 142-169 the TA register block (E159). Dword 16, where our kernel puts
-# the RT data set, stays padding: moved within the set it changes nothing (E304).
+# the RT data set, is hw_rt_data_set_dev_vaddr: the closed client puts its set there too (E325,
+# E328), though moved within the set it changes nothing (E304).
 CMDTA = [
     ("size", 1), ("geom_flags", 1), ("pds_bgnd", 1, 3), ("num_vertex_partitions", 1),
     ("pad_0x18", 1), ("frag_flags", 1), ("frame_num", 1), ("hw_pb_desc_dev_vaddr", 1),
     ("ta_threshold", 1), ("zls_threshold", 1), ("global_threshold", 1), ("pds_threshold", 1),
-    ("hw_render_details_dev_vaddr", 1), ("dst_sync_list_dev_vaddr", 1), ("pad_0x40", 1),
+    ("hw_render_details_dev_vaddr", 1), ("dst_sync_list_dev_vaddr", 1),
+    ("hw_rt_data_set_dev_vaddr", 1),
     ("hw_rt_data_dev_vaddr", 1), ("pad_0x48", 1), ("z_rt_stride", 1), ("stencil_rt_stride", 1),
     ("num_patches_3d", 1), ("shared", CMDTA_SHARED, 1), ("ta_registers", TA_REGISTERS, 1),
     ("patches_3d", 2, 1),
@@ -190,21 +192,25 @@ RENDERDETAILS = [
 # The RT data; size 0x38, the microkernel's. Dword 1 the render details (E159, E164); 4 the
 # background object (E162); 5-7 the DPM state, DPM control and OTPM (E158); 10 the
 # render-target count (E158); 11 the region-header stride per render target (E163); 12 the RT
-# status words (E158, E164); 13 the state word (E156, E158, E164).
+# status words (E158, E164); 13 the state word (E156, E158, E164); 0 the render context, 2 and 3
+# size words of the macrotile rule, 8 and 9 the tail pointer cache and its size (E325, E331).
 RTDATA = [
-    ("pad_0x00", 1), ("hw_render_details_dev_vaddr", 1), ("pad_0x08", 1, 2),
+    ("hw_render_context_dev_vaddr", 1), ("hw_render_details_dev_vaddr", 1),
+    ("blocks_per_mtile", 1), ("mtile_region_bytes", 1),
     ("bgobj_dev_vaddr", 1), ("dpm_state_dev_vaddr", 1), ("dpm_control_dev_vaddr", 1),
-    ("otpm_dev_vaddr", 1), ("pad_0x20", 1, 2), ("num_rts", 1), ("region_header_rt_stride", 1),
+    ("otpm_dev_vaddr", 1), ("te_tpc_dev_vaddr", 1), ("te_tpc_bytes", 1), ("num_rts", 1),
+    ("region_header_rt_stride", 1),
     ("rt_status_dev_vaddr", 1), ("state", 1),
 ]
 
 # The RT data set; size 0x50, the microkernel's: a 0x18-byte header and the RT data (glossary
 # misc_info_struct_sizes.sizeof_hw_rt_data_set). Dword 0 the address of the host's pending
 # count, which the set's cleanup waits for the executed count to equal (E315); dword 1 the
-# executed count (E156, E166, E314); 3 and 4 the out-of-memory and partial-render counts (E160).
+# executed count (E156, E166, E314); 3 and 4 the out-of-memory and partial-render counts (E160);
+# 2 and 5 the size rule's tiles across and the number of RT data that follow (E325, E331).
 RTDATASET = [
-    ("pending_count_dev_vaddr", 1), ("executed_count", 1), ("pad_0x08", 1),
-    ("num_out_of_mem_signals", 1), ("num_spm_renders", 1), ("pad_0x14", 1),
+    ("pending_count_dev_vaddr", 1), ("executed_count", 1), ("tiles_across", 1),
+    ("num_out_of_mem_signals", 1), ("num_spm_renders", 1), ("num_rt_data", 1),
     ("hw_rt_data", RTDATA, 1),
 ]
 
@@ -212,11 +218,12 @@ RTDATASET = [
 # E161, E167); 1 the priority (E157; glossary hw_render_context.priority); 3 and 4 the client
 # CCB and its control (E161); 5 the submitted commands (E157); 6 the PB descriptor (E159, E167);
 # 8-11 the pending and ready render lists (E156, E157, E165); 12-15 the TA and 3D queue links
-# (E157, E165); 16 the PID (E159, E163).
+# (E157, E165); 16 the PID (E159, E163); 2 the page directory's physical address and 7 a
+# parameter-heap object at the page table + 0x40000 (E323, closed captures and ours).
 RENDERCONTEXT = [
-    ("context_flags", 1), ("priority", 1), ("pad_0x08", 1), ("ccb_base_dev_vaddr", 1),
+    ("context_flags", 1), ("priority", 1), ("pd_dev_paddr", 1), ("ccb_base_dev_vaddr", 1),
     ("ccb_ctl_dev_vaddr", 1), ("submitted_commands", 1), ("hw_pb_desc_dev_vaddr", 1),
-    ("pad_0x1c", 1), ("pending_renders_head", 1), ("pending_renders_tail", 1),
+    ("param_obj_dev_vaddr", 1), ("pending_renders_head", 1), ("pending_renders_tail", 1),
     ("ready_renders_head", 1), ("ready_renders_tail", 1), ("run_node_prev_ta", 1),
     ("run_node_next_ta", 1), ("run_node_prev_3d", 1), ("run_node_next_3d", 1), ("pid", 1),
 ]
@@ -224,9 +231,9 @@ RENDERCONTEXT = [
 # The PB descriptor; size 0x3c, the microkernel's. Dword 0 the flags (PB_FLAGS); 2 and 3 the
 # initial free list; 4 the page-table base; 6 and 7 the current free list; 8 and 9 the local and
 # global page counts; 10-13 the thresholds; 14 the first block (E200, E201); 5 the allocated
-# page count (E156).
+# page count (E156); 1 the page count (E327).
 PBDESC = [
-    ("pb_flags", 1), ("pad_0x04", 1), ("initial_stack_top", 1), ("initial_dpm_ta_alloc", 1),
+    ("pb_flags", 1), ("page_count", 1), ("initial_stack_top", 1), ("initial_dpm_ta_alloc", 1),
     ("page_table_base", 1), ("allocated_page_count", 1), ("current_stack_top", 1),
     ("dpm_ta_alloc", 1), ("local_page_count", 1), ("global_page_count", 1),
     ("ta_threshold", 1), ("zls_threshold", 1), ("global_threshold", 1), ("pds_threshold", 1),
@@ -234,8 +241,9 @@ PBDESC = [
 ]
 
 # A PB block, as the page-table builder reads it: the page count in its first dword, a
-# first-page field in its third and the next block in its fourth (E201, E200).
-PBBLOCK = [("page_count", 1), ("pad_0x04", 1), ("first_page", 1), ("next_block_dev_vaddr", 1)]
+# first-page field in its third and the next block in its fourth (E201, E200); the closed client
+# holds the initial stack top in its second (E327).
+PBBLOCK = [("page_count", 1), ("stack_top", 1), ("first_page", 1), ("next_block_dev_vaddr", 1)]
 
 # The EDM's TA/3D control block (glossary ta3d_ctl), its 0xec bytes (E002). PDS #11 copies it
 # into the secondary attributes, so sa<k> is dword k (E002, E003). The glossary's ta3d_ctl.*

@@ -365,7 +365,12 @@ Running `harness/ukernel-extract/make_r2.sh` on the reader's own firmware lists 
    objects).
 
 The host only ever sets bits in `InterruptClearFlags`. No host code clears
-`InterruptFlags` or `InterruptClearFlags`; who does is an open question (§6).
+`InterruptFlags` or `InterruptClearFlags`: the EDM does. Its `POWER` handler clears bit 1 of
+both, and the routine that tests `InterruptClearFlags` bit 0 clears bit 0 of both on a path that
+also zeroes the TA/3D control words and sets the kernel CCB's read offset to its write offset;
+the same routine sets `InterruptFlags` bit 0 on a lockup it
+counts and bit 1 when its active-power countdown runs out, each with a `SW_EVENT` (E353, from
+the firmware's code; not yet seen on the hardware).
 
 **Host watchdog: `SGXOSTimer`, every 50 ms while powered.** It reads `USE0_SERV_EVENT`
 (`0xb14`) XOR `USE1_SERV_EVENT` (`0xb20`), the EDM task registers named by the init info
@@ -403,7 +408,8 @@ three. §5 lists the required changes.
 
 *Based on sgx545-ce `src/services4/srvkm/devices/sgx/sgxinit.c`,
 `src/services4/system/unified/sysconfig.c:1022`; Linux v7.3
-`drivers/gpu/drm/gma500/psb_irq.c`; E006, E008, E009, E010, E011, E317, E318, E319, E321.*
+`drivers/gpu/drm/gma500/psb_irq.c`; E006, E008, E009, E010, E011, E317, E318, E319, E321,
+E353.*
 
 ## 4. `FIX_HW_BRN_SAMPLE_CACHE` and the heap layout
 
@@ -542,16 +548,15 @@ firmware on the laptop and leaves the registers of §1.4 (E008).
 ## 6. Open questions
 
 1. **Does a private PD versus gma500's default PD change anything** beyond the teardown
-   coupling? The `BIF_CTRL` race of §5 item 6 exists either way.
-2. **Who clears `InterruptFlags`/`InterruptClearFlags`?** No host code does. Observing it
-   needs a hardware recovery.
-3. **Does the ukernel itself do anything for the sample-cache erratum?** No such code is
-   known; heap placement is the only visible part of the workaround.
-4. **The SGX clock.** The laptop's EDM tick puts it at 399.0 MHz, not the DDK's 400 MHz, if a
+   coupling? The `BIF_CTRL` race of §5 item 6 exists either way (Q095).
+2. **Does the ukernel itself do anything for the sample-cache erratum?** No such code is
+   known; heap placement is the only visible part of the workaround (Q096).
+3. **The SGX clock.** The laptop's EDM tick puts it at 399.0 MHz, not the DDK's 400 MHz, if a
    tick is dword 6 core clocks (§2.1; Q002).
 
 The runs on the laptop answer four earlier questions: the boot raises no `SW_EVENT` (§3), the
 `REV1` layout boots (§4), gma500 takes its fallback aperture there (§5), and the first boot
-sees no BIF fault (§1.3).
+sees no BIF fault (§1.3). The firmware's code answers a fifth: the EDM clears `InterruptFlags`
+and `InterruptClearFlags` itself (§3, E353).
 
-*Based on §1-§5; E007, E008, E009.*
+*Based on §1-§5; E007, E008, E009, E353; Q095, Q096.*

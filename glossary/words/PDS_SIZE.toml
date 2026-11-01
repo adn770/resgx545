@@ -10,7 +10,7 @@ sgx545 = "PDS_SIZE [17:16]"
 meaning = "a size or count of output register banks: at 0, 1 and 2 the triangle's o1-o3 land elsewhere while o0 does not change, 3 the plain value [infer]"
 tier = "ours"
 source = "resgx545"
-citation = "E046, E139"
+citation = "E343"
 licence = "MIT"
 evidence = "never varied; [HW] E046: cleared, alone or with the whole word, nothing changes on the triangle; inference (E139)"
 

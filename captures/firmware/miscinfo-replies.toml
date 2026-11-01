@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# srvinit under the harness at the DDK's REV1 layout, five runs with four answers to its
+# SGX_GETMISCINFO request for the driver's revision (DRIVER_SGXREV): the struct left as srvinit
+# passed it; all zeros; a plausible one (DDK 1.7.17, build 862890, build options 0x60218),
+# run twice; and the plausible one with every build option flipped. Each run keeps its bridge
+# log, its init info and every buffer.
+kind = "capture"
+name = "firmware-miscinfo-replies"
+host = "build"
+script = "miscinfo-replies.sh"
+files = ["harness/ukernel-extract/fakedrm.c", "harness/ukernel-extract/loader.c",
+         "harness/ukernel-extract/ukdir.h", "harness/ukernel-extract/bridgecmd.h",
+         "harness/ukernel-extract/devmem.h", "harness/ukernel-extract/bufclass.h",
+         "harness/ukernel-extract/initinfo.py"]

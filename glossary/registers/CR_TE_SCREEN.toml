@@ -12,7 +12,7 @@ tier = "3"
 source = "linux-imagination"
 citation = "C0179"
 licence = "GPL-2.0-only OR MIT"
-evidence = "same layout as Rogue TE_SCREEN (ymax from bit 12); [HW] E055: the word holds the last tile's x (from bit 0) and y (from bit 12), in 32x16 tiles counted from 0"
+evidence = "[CAP size=*] tiles across - 1 (11:0), down - 1 (23:12) (E329); same layout as Rogue TE_SCREEN (ymax from bit 12); [HW] E055: the word holds the last tile's x (from bit 0) and y (from bit 12), in 32x16 tiles counted from 0"
 
 [[term.source]]
 term = "ROGUE_CR_TE_SCREEN"
@@ -23,7 +23,7 @@ tier = "3"
 source = "mesa-csbgen"
 citation = "C0180"
 licence = "MIT"
-evidence = "same layout as Rogue TE_SCREEN (ymax from bit 12)"
+evidence = "[CAP size=*] tiles across - 1 (11:0), down - 1 (23:12) (E329); same layout as Rogue TE_SCREEN (ymax from bit 12)"
 
 [[term]]
 id = "G0160"

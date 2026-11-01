@@ -8,4 +8,4 @@ terms = ["TERM.CLIP_RIGHT"]
 +++
 
 Line 436 of `ppp.xml` in Mesa's Rogue csbgen names `clip_right`. It backs the glossary field
-`TERM.CLIP_RIGHT`: last block column; in 32-pixel columns on SGX545 [infer].
+`TERM.CLIP_RIGHT`: last block column, in 32-pixel columns: (width - 1) / 32.

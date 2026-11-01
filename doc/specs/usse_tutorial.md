@@ -285,9 +285,11 @@ From `asm/tri/use_vtx.s`:
 - **`phas #7, ...`** names the next phase's first instruction, index 7 here. The index counts
   from the code base the task runs from, so the driver adds where it places the program.
 - **The predicated load and `wdf`.** `and.testtanz` with two zero immediates sets `p0` false;
-  `p0 ldad` therefore never loads, but it gives `wdf drc0` an access to wait for, which is the
-  shape the closed compiler uses so that the task does not read `pa0`-`pa3` before the PDS's
-  attribute DMA has landed.
+  `p0 ldad` therefore never loads, but it gives `wdf drc0` an access to wait for. The closed
+  compilers open every vertex program this way, right after `phas` and `nop`, and every
+  secondary and state-copy program but one; no primary or end-of-render program (E351). That
+  the wait keeps the task from reading `pa0`-`pa3` before the PDS's attribute DMA has landed is
+  the reading this source follows **[infer]**.
 - **`mov.repeat4 o0, pa0`** is four moves in one instruction, `o0 = pa0` to `o3 = pa3`: a
   repeat advances every register operand by one per iteration (*Repeats* in the guide).
 - **`emitvcbvtx`** ends phase 0; phase 1 is `emitmtevtx` with `.end`.

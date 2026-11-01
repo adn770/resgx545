@@ -12,7 +12,7 @@ tier = "3"
 source = "mesa-csbgen"
 citation = "C0174"
 licence = "MIT"
-evidence = "Rogue ISP_AA (an AA on/off mode) is not linked to it; [HW] E064: in the triangle the low nibble moves pixels of the steep edge only, the high nibble those of the shallow edge; values near 0x88 change nothing; [HW] E064; Apple's AGX packs its sample positions the same way, 0x88 for one sample and 0xeaa26e26 for four (Mesa src/asahi, MIT; another lineage, context only); [HW] E215: with ISP0 bit 28 set, varying it changes a single-sampled object's coverage as the union of its four samples and CR_ISP_SAMPLE_POS's four predicts (counts, not pixels); without it byte 0 alone samples (one run); [infer] mode 1's probes set both words alike, so its source is read from mode 2"
+evidence = "Rogue ISP_AA (an AA on/off mode) is not linked to it; [HW] E064: in the triangle the low nibble moves pixels of the steep edge only, the high nibble those of the shallow edge; values near 0x88 change nothing; [CAP] E339: 0x88 (one sample at the centre) becomes 0xeaa26e26 with 4x multisampling: four samples, a byte each, x in bits 3:0, y in bits 7:4, a rotated grid; [HW] E064; Apple's AGX packs its sample positions the same way, 0x88 for one sample and 0xeaa26e26 for four (Mesa src/asahi, MIT; another lineage, context only); [HW] E215: with ISP0 bit 28 set, varying it changes a single-sampled object's coverage as the union of its four samples and CR_ISP_SAMPLE_POS's four predicts (counts, not pixels); without it byte 0 alone samples (one run); [infer] mode 1's probes set both words alike, so its source is read from mode 2"
 
 [[term]]
 id = "G0125"
@@ -28,7 +28,7 @@ tier = "ours"
 source = "resgx545"
 citation = "E064"
 licence = "MIT"
-evidence = "[HW] E064: every value in a triangle: the edge pixels that move grow with the distance from 8, along x"
+evidence = "[HW] E064: every value in a triangle: the edge pixels that move grow with the distance from 8, along x; [CAP] E339: 6/2 for sample 0 with 4x multisampling"
 
 [[term]]
 id = "G0126"
@@ -44,12 +44,23 @@ tier = "ours"
 source = "resgx545"
 citation = "E064"
 licence = "MIT"
-evidence = "[HW] E064: every value in a triangle: the edge pixels that move grow with the distance from 8, along y"
+evidence = "[HW] E064: every value in a triangle: the edge pixels that move grow with the distance from 8, along y; [CAP] E339: 6/2 for sample 0 with 4x multisampling"
 
 [[term]]
 id = "G1053"
 name = "CR_ISP_MULTISAMPLECTL.SAMPLE1_X"
 status = "named"
+
+[[term.source]]
+term = "CR_ISP_MULTISAMPLECTL.SAMPLE1_X"
+kind = "bitfield"
+sgx545 = "0x04c8[11:8]"
+meaning = "x of sample 1's position in the pixel, in sixteenths of a pixel [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E339"
+licence = "MIT"
+evidence = "[CAP] E339: 14 with 4x multisampling, 0 with one sample"
 
 [[term.source]]
 term = "CR_ISP_MULTISAMPLECTL.SAMPLE1_X"
@@ -71,6 +82,17 @@ status = "named"
 term = "CR_ISP_MULTISAMPLECTL.SAMPLE1_Y"
 kind = "bitfield"
 sgx545 = "0x04c8[15:12]"
+meaning = "y of sample 1's position in the pixel, in sixteenths of a pixel [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E339"
+licence = "MIT"
+evidence = "[CAP] E339: 6 with 4x multisampling, 0 with one sample"
+
+[[term.source]]
+term = "CR_ISP_MULTISAMPLECTL.SAMPLE1_Y"
+kind = "bitfield"
+sgx545 = "0x04c8[15:12]"
 meaning = "y of sample 1's position in the pixel, in sixteenths of a pixel from its top-left corner, laid out as sample 0's: one of the eight samples of ISP0.SAMPLE_COVERAGE, and sample 1 of a multisampled pixel under CR_ISP_MSAA mode 2 and, read from mode 2, mode 1 [infer]"
 tier = "ours"
 source = "resgx545"
@@ -82,6 +104,17 @@ evidence = "[HW] the coverage-sample probes (isp-coverage-samples, isp-coverage-
 id = "G1055"
 name = "CR_ISP_MULTISAMPLECTL.SAMPLE2_X"
 status = "named"
+
+[[term.source]]
+term = "CR_ISP_MULTISAMPLECTL.SAMPLE2_X"
+kind = "bitfield"
+sgx545 = "0x04c8[19:16]"
+meaning = "x of sample 2's position in the pixel, in sixteenths of a pixel [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E339"
+licence = "MIT"
+evidence = "[CAP] E339: 2 with 4x multisampling, 0 with one sample"
 
 [[term.source]]
 term = "CR_ISP_MULTISAMPLECTL.SAMPLE2_X"
@@ -103,6 +136,17 @@ status = "named"
 term = "CR_ISP_MULTISAMPLECTL.SAMPLE2_Y"
 kind = "bitfield"
 sgx545 = "0x04c8[23:20]"
+meaning = "y of sample 2's position in the pixel, in sixteenths of a pixel [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E339"
+licence = "MIT"
+evidence = "[CAP] E339: 10 with 4x multisampling, 0 with one sample"
+
+[[term.source]]
+term = "CR_ISP_MULTISAMPLECTL.SAMPLE2_Y"
+kind = "bitfield"
+sgx545 = "0x04c8[23:20]"
 meaning = "y of sample 2's position in the pixel, in sixteenths of a pixel from its top-left corner, laid out as sample 0's: one of the eight samples of ISP0.SAMPLE_COVERAGE, and sample 2 of a multisampled pixel under CR_ISP_MSAA mode 2"
 tier = "ours"
 source = "resgx545"
@@ -119,6 +163,17 @@ status = "named"
 term = "CR_ISP_MULTISAMPLECTL.SAMPLE3_X"
 kind = "bitfield"
 sgx545 = "0x04c8[27:24]"
+meaning = "x of sample 3's position in the pixel, in sixteenths of a pixel [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E339"
+licence = "MIT"
+evidence = "[CAP] E339: 10 with 4x multisampling, 0 with one sample"
+
+[[term.source]]
+term = "CR_ISP_MULTISAMPLECTL.SAMPLE3_X"
+kind = "bitfield"
+sgx545 = "0x04c8[27:24]"
 meaning = "x of sample 3's position in the pixel, in sixteenths of a pixel from its top-left corner, laid out as sample 0's: one of the eight samples of ISP0.SAMPLE_COVERAGE, and sample 3 of a multisampled pixel under CR_ISP_MSAA mode 2"
 tier = "ours"
 source = "resgx545"
@@ -130,6 +185,17 @@ evidence = "[HW] the coverage-sample probes (isp-coverage-samples, isp-coverage-
 id = "G1058"
 name = "CR_ISP_MULTISAMPLECTL.SAMPLE3_Y"
 status = "named"
+
+[[term.source]]
+term = "CR_ISP_MULTISAMPLECTL.SAMPLE3_Y"
+kind = "bitfield"
+sgx545 = "0x04c8[31:28]"
+meaning = "y of sample 3's position in the pixel, in sixteenths of a pixel [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E339"
+licence = "MIT"
+evidence = "[CAP] E339: 14 with 4x multisampling, 0 with one sample"
 
 [[term.source]]
 term = "CR_ISP_MULTISAMPLECTL.SAMPLE3_Y"

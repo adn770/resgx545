@@ -1,0 +1,9 @@
+title = "capture table usse/shaders"
+repo = "data-private"
+paths = ["usse/shaders/"]
+method = "campaign runner on the build target (tools/campaign)"
+date = "2026-11-03"
+files = 107
+size = 2294396
+sha256 = "07b69ab08a0e0777af47926cd73afda2f40dee7bb5026adad685f11719e688c9"
+recipe = "captures/usse/shaders.toml"

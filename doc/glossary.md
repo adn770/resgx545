@@ -520,29 +520,17 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   stencil test compares against (with bit 8 set) [infer]. From `CR_ISP_BGOBJVALS.STENCIL` (ours,
   resgx545).
 - `CR_ISP_MULTISAMPLECTL.SAMPLE1_X` G1053 (0x04c8[11:8]): x of sample 1's position in the pixel, in
-  sixteenths of a pixel from its top-left corner, laid out as sample 0's: one of the eight samples
-  of ISP0.SAMPLE_COVERAGE, and sample 1 of a multisampled pixel under CR_ISP_MSAA mode 2 and, read
-  from mode 2, mode 1 [infer]. From `CR_ISP_MULTISAMPLECTL.SAMPLE1_X` (ours, resgx545).
+  sixteenths of a pixel [infer]. From `CR_ISP_MULTISAMPLECTL.SAMPLE1_X` (ours, resgx545).
 - `CR_ISP_MULTISAMPLECTL.SAMPLE1_Y` G1054 (0x04c8[15:12]): y of sample 1's position in the pixel, in
-  sixteenths of a pixel from its top-left corner, laid out as sample 0's: one of the eight samples
-  of ISP0.SAMPLE_COVERAGE, and sample 1 of a multisampled pixel under CR_ISP_MSAA mode 2 and, read
-  from mode 2, mode 1 [infer]. From `CR_ISP_MULTISAMPLECTL.SAMPLE1_Y` (ours, resgx545).
+  sixteenths of a pixel [infer]. From `CR_ISP_MULTISAMPLECTL.SAMPLE1_Y` (ours, resgx545).
 - `CR_ISP_MULTISAMPLECTL.SAMPLE2_X` G1055 (0x04c8[19:16]): x of sample 2's position in the pixel, in
-  sixteenths of a pixel from its top-left corner, laid out as sample 0's: one of the eight samples
-  of ISP0.SAMPLE_COVERAGE, and sample 2 of a multisampled pixel under CR_ISP_MSAA mode 2. From
-  `CR_ISP_MULTISAMPLECTL.SAMPLE2_X` (ours, resgx545).
+  sixteenths of a pixel [infer]. From `CR_ISP_MULTISAMPLECTL.SAMPLE2_X` (ours, resgx545).
 - `CR_ISP_MULTISAMPLECTL.SAMPLE2_Y` G1056 (0x04c8[23:20]): y of sample 2's position in the pixel, in
-  sixteenths of a pixel from its top-left corner, laid out as sample 0's: one of the eight samples
-  of ISP0.SAMPLE_COVERAGE, and sample 2 of a multisampled pixel under CR_ISP_MSAA mode 2. From
-  `CR_ISP_MULTISAMPLECTL.SAMPLE2_Y` (ours, resgx545).
+  sixteenths of a pixel [infer]. From `CR_ISP_MULTISAMPLECTL.SAMPLE2_Y` (ours, resgx545).
 - `CR_ISP_MULTISAMPLECTL.SAMPLE3_X` G1057 (0x04c8[27:24]): x of sample 3's position in the pixel, in
-  sixteenths of a pixel from its top-left corner, laid out as sample 0's: one of the eight samples
-  of ISP0.SAMPLE_COVERAGE, and sample 3 of a multisampled pixel under CR_ISP_MSAA mode 2. From
-  `CR_ISP_MULTISAMPLECTL.SAMPLE3_X` (ours, resgx545).
+  sixteenths of a pixel [infer]. From `CR_ISP_MULTISAMPLECTL.SAMPLE3_X` (ours, resgx545).
 - `CR_ISP_MULTISAMPLECTL.SAMPLE3_Y` G1058 (0x04c8[31:28]): y of sample 3's position in the pixel, in
-  sixteenths of a pixel from its top-left corner, laid out as sample 0's: one of the eight samples
-  of ISP0.SAMPLE_COVERAGE, and sample 3 of a multisampled pixel under CR_ISP_MSAA mode 2. From
-  `CR_ISP_MULTISAMPLECTL.SAMPLE3_Y` (ours, resgx545).
+  sixteenths of a pixel [infer]. From `CR_ISP_MULTISAMPLECTL.SAMPLE3_Y` (ours, resgx545).
 - `CR_ISP_MULTISAMPLECTL.SAMPLE0_X` G0125 (0x04c8[3:0]): x of sample 0's position in the pixel, in
   sixteenths of a pixel, 8 the centre [infer]. From `CR_ISP_MULTISAMPLECTL.SAMPLE0_X` (ours,
   resgx545).
@@ -899,15 +887,17 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `CR_TE_AA` G0158 (0x0204): tiling-engine anti-aliasing word: 0x20000000 in every single-sample
   capture, bits 31 and 30 more (0xe0000000) with 4x multisampling [infer]. From `ROGUE_CR_TE_AA` (3,
   linux-imagination); `ROGUE_CR_TE_AA` (3, mesa-csbgen).
-- `CR_TE_MTILE1` G0448 (0x0208): macro-tile boundaries (four or sixteen macro-tiles). From
-  `configuration registers defining the macro-tile boundaries` (4, patent-US8669987).
-- `CR_TE_MTILE2` G0449 (0x020c): macro-tile boundaries (four or sixteen macro-tiles). From
-  `configuration registers defining the macro-tile boundaries` (4, patent-US8669987).
+- `CR_TE_MTILE1` G0448 (0x0208): macrotile boundaries in X (Rogue analogue). From
+  `ROGUE_CR_TE_MTILE1` (3, mesa-csbgen); `configuration registers defining the macro-tile
+  boundaries` (4, patent-US8669987).
+- `CR_TE_MTILE2` G0449 (0x020c): macrotile boundaries in Y (Rogue analogue). From
+  `ROGUE_CR_TE_MTILE2` (3, mesa-csbgen); `configuration registers defining the macro-tile
+  boundaries` (4, patent-US8669987).
 - `CR_TE_SCREEN` G0159 (0x0210): screen size in tiles for the tiling engine (Rogue analogue). From
   `ROGUE_CR_TE_SCREEN` (3, linux-imagination); `ROGUE_CR_TE_SCREEN` (3, mesa-csbgen).
-- `CR_TE_MACROTILE_STRIDE` G0447 (0x0214): inferred reading (unconfirmed): Tiling-engine register
-  loaded by the TA kick from the TA command; it reads 0x10 for a 64x64 target and 0x20 for a 256x256
-  one, read as a macrotile stride. From `CR_TE_MACROTILE_STRIDE` (ours, resgx545).
+- `CR_TE_MACROTILE_STRIDE` G0447 (0x0214): inferred reading (unconfirmed): macrotile stride of the
+  tiling engine, from the TA command (0x10 for 64x64) [infer]. From `CR_TE_MACROTILE_STRIDE` (ours,
+  resgx545).
 - `CR_TE_PSG` G0450 (0x0218): tiling-engine control word: bit 22 set on the kick that ends the scene
   (with the word at 0 the job faults), bit 21 makes the TA mark every target region header
   (REGION_HDR.FLAGS bit 29), bit 25 with a depth/stencil buffer (Rogue analogue). From
@@ -1003,11 +993,9 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   (ours, resgx545).
 - `CR_ISP_POLY_OFFSET_UNITS` G0129 (0x041c): the polygon offset's units, as an integer
   (glPolygonOffset units) [infer]. From `CR_ISP_POLY_OFFSET_UNITS` (ours, resgx545).
-- `CR_ISP_POLY_OFFSET_FACTOR` G0128 (0x0420): inferred reading (unconfirmed): Register 0x0420,
-  loaded from render-details word 6: set to 4.0 with the offset in word 5 at 0 it left the flat
-  triangle's stored depth unchanged, and on a triangle whose depth slopes across it 4.0 moves the
-  depth test's boundary as far as 0x100000 units do and 64.0 pushes the whole triangle behind: it
-  scales the offset by the depth's slope [infer]. From `CR_ISP_POLY_OFFSET_FACTOR` (ours, resgx545).
+- `CR_ISP_POLY_OFFSET_FACTOR` G0128 (0x0420): inferred reading (unconfirmed): the polygon offset's
+  factor, an IEEE single (glPolygonOffset factor) [infer]. From `CR_ISP_POLY_OFFSET_FACTOR` (ours,
+  resgx545).
 - `CR_ISP_POLY_OFFSET_CLAMP` G0127 (0x0424): the polygon offset's clamp, an IEEE single: the offset
   is capped at it, 0 no cap, a negative one leaving positive offsets alone [infer]. From
   `CR_ISP_POLY_OFFSET_CLAMP` (ours, resgx545).
@@ -1420,13 +1408,15 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 
 ### field
 
-- `pb_block.first_page` G0593: inferred reading (unconfirmed): a PB block's third word, its first
-  page: the page-table builder fills the table block by block from it [infer]. From
-  `pb_block.first_page` (ours, resgx545).
+- `pb_block.first_page` G0593: inferred reading (unconfirmed): a PB block's third word: the closed
+  client and our kernel both hold the PB descriptor's own address there; how the page-table builder
+  uses it is a reading [infer]. From `pb_block.first_page` (ours, resgx545).
 - `pb_block.next_block_dev_vaddr` G0560: next block of the descriptor's block list (0 = last)
   [infer]. From `pb_block.next_block_dev_vaddr` (ours, resgx545).
 - `pb_block.page_count` G0561: pages in this PB block [infer]. From `pb_block.page_count` (ours,
   resgx545).
+- `pb_block.stack_top` G1115: inferred reading (unconfirmed): head (15:0) and tail (31:16) page of
+  this PB block [infer]. From `pb_block.stack_top` (ours, resgx545).
 - `ta3d_ctl.hw_pb_desc_3d` G0563: PB descriptor loaded in the 3D. From `s3DHWPBDesc` (1c,
   emgd-linux).
 - `ta3d_ctl.hw_pb_desc_ta` G0564: PB descriptor loaded in the TA. From `sTAHWPBDesc` (1c,
@@ -1465,6 +1455,9 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `cmd_ta.dst_sync_list_dev_vaddr` G0647 (CMDTA+0x03c): TA command word 15, the destination sync
   list: the TA pick tests it complete and the TA kick copies it to render details word 56 [infer].
   From `cmd_ta.dst_sync_list_dev_vaddr` (ours, resgx545).
+- `cmd_ta.hw_rt_data_set_dev_vaddr` G1101 (CMDTA+0x040): RT data set. From `sHWRTDataSetDevAddr` (1,
+  intel-ctp-k900); `hwrt_data_fw_addr` (3, linux-imagination); `cmd_ta.hw_rt_data_set_dev_vaddr`
+  (ours, resgx545).
 - `cmd_ta.hw_rt_data_dev_vaddr` G0508 (CMDTA+0x044): RT data used by this kick. From
   `sHWRTDataDevAddr` (1, intel-ctp-k900).
 - `cmd_ta.z_rt_stride` G0568 (CMDTA+0x04c): inferred reading (unconfirmed): TA command word 19,
@@ -1502,8 +1495,9 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   (0x0240) [infer]. From `cmd_ta.mte_rhw_min` (ours, resgx545).
 - `cmd_ta.mte_rhw_clamp` G0304 (CMDTA+0x264): the TA command's word the EDM loads into
   CR_MTE_RHW_CLAMP (0x0244) [infer]. From `cmd_ta.mte_rhw_clamp` (ours, resgx545).
-- `cmd_ta.ppp_screen` G0653 (CMDTA+0x268): TA command word 154, which the TA kick writes to
-  CR_PPP_SCREEN (0x0248) [infer]. From `cmd_ta.ppp_screen` (ours, resgx545).
+- `cmd_ta.ppp_screen` G0653 (CMDTA+0x268): screen size in pixels minus one (x 15:0, y 31:16); the
+  EDM copies it into CR_PPP_SCREEN. From `ROGUE_CR_PPP_SCREEN` (3, mesa-csbgen); `cmd_ta.ppp_screen`
+  (ours, resgx545).
 - `cmd_ta.use_reg_0a04` G0317 (CMDTA+0x26c): inferred reading (unconfirmed): as CR_USE_REG_0A04's:
   the USSE's context store/resume state base (a 16-byte address) for an interrupted TA's vertex
   tasks. Measured: value the EDM copies verbatim into CR_USE_REG_0A04 (0x0a04); 0 in every capture
@@ -1559,8 +1553,10 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   tiling engine's resume position after an interrupted TA: an 8-bit field in 19:12. Measured: value
   the EDM copies verbatim into CR_TE_REG_02A8 (0x02a8); 0 in every capture [infer]. From
   `cmd_ta.te_reg_02a8` (ours, resgx545).
-- `cmd_ta.mte_multisamplectl` G0651 (CMDTA+0x2a4): TA command word 169, which the TA kick writes to
-  CR_MTE_MULTISAMPLECTL (0x0230) [infer]. From `cmd_ta.mte_multisamplectl` (ours, resgx545).
+- `cmd_ta.mte_multisamplectl` G0651 (CMDTA+0x2a4): value the EDM copies verbatim into
+  CR_MTE_MULTISAMPLECTL (0x0230): the sample positions on the TA side, the same value as
+  CR_ISP_MULTISAMPLECTL (0x88, 0xeaa26e26 with 4x multisampling) [infer]. From
+  `cmd_ta.mte_multisamplectl` (ours, resgx545).
 - `cmd_ta.patches_3d` G0511 (CMDTA+0x2a8): {address, value} memory writes the EDM applies at the TA
   kick, *address = value: patches to the render details (depth/stencil bases, ZLS control) [infer].
   From `cmd_ta.patches_3d` (ours, resgx545).
@@ -1645,6 +1641,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `hw_pb_desc.pb_flags` G0680 (HWPBDESC+0x000): PB descriptor word 0, its flags (PB_FLAGS.*): bit 0
   asks for the page table to be rebuilt and bit 1 for the thresholds to be reloaded; the routines
   clear both [infer]. From `hw_pb_desc.pb_flags` (ours, resgx545).
+- `hw_pb_desc.page_count` G1102 (HWPBDESC+0x004): the number of pages of the parameter buffer. From
+  `hw_pb_desc.page_count` (ours, resgx545).
 - `hw_pb_desc.initial_stack_top` G0523 (HWPBDESC+0x008): initial free-list head/tail (tail << 16 |
   head); PB_FLAGS.INIT_PAGE_TABLE resets the PB descriptor's current_stack_top from it [infer]. From
   `hw_pb_desc.initial_stack_top` (ours, resgx545).
@@ -1684,6 +1682,9 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   resgx545).
 - `hw_render_context.priority` G0530 (HWRENDERCONTEXT+0x004): scheduling priority. From
   `ui32OffsetOfPriorityField` (1, sgx545-ce); `priority` (3, linux-imagination).
+- `hw_render_context.pd_dev_paddr` G1105 (HWRENDERCONTEXT+0x008): page-directory physical address
+  (kernel writes). From `ui32OffsetToPDDevPAddr` (1, sgx545-ce); `hw_render_context.pd_dev_paddr`
+  (ours, resgx545).
 - `hw_render_context.ccb_base_dev_vaddr` G0573 (HWRENDERCONTEXT+0x00c): render context word 3, the
   base of the context's client CCB: the TA pick finds the next TA command at it plus the CCB's read
   offset [infer]. From `hw_render_context.ccb_base_dev_vaddr` (ours, resgx545).
@@ -1695,6 +1696,10 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   (3, linux-imagination).
 - `hw_render_context.hw_pb_desc_dev_vaddr` G0527 (HWRENDERCONTEXT+0x018): PB descriptor of the
   context. From `sHWPBDescDevVAddr` (1, sgx545-ce).
+- `hw_render_context.param_obj_dev_vaddr` G1103 (HWRENDERCONTEXT+0x01c): inferred reading
+  (unconfirmed): the address of a 0x40-byte object in the parameter heap, at the DPM page table's
+  base plus 0x40000 in both stacks; what the firmware keeps there is open (Q049) [infer]. From
+  `hw_render_context.param_obj_dev_vaddr` (ours, resgx545).
 - `hw_render_context.pending_renders_head` G0528 (HWRENDERCONTEXT+0x020): first render details
   waiting for their scene's TA to finish (pending list) [infer]. From
   `hw_render_context.pending_renders_head` (ours, resgx545).
@@ -1728,13 +1733,10 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `hw_render_details.isp_msaa` G0320 (HWRENDERDETAILS+0x010): the render details' word the EDM loads
   into CR_ISP_MSAA (0x80000000 single-sampled, 0x80000002 at 4x) [infer]. From
   `hw_render_details.isp_msaa` (ours, resgx545).
-- `hw_render_details.poly_offset_units` G0327 (HWRENDERDETAILS+0x014): Render-details word 5, loaded
-  into register 0x041c: the polygon offset in units of one ulp of the stored depth, added to the
-  triangle's depth only when ISP word 1 bit 23 is set. From `hw_render_details.poly_offset_units`
-  (ours, resgx545).
+- `hw_render_details.poly_offset_units` G0327 (HWRENDERDETAILS+0x014): value the EDM copies into
+  CR_ISP_POLY_OFFSET_UNITS [infer]. From `hw_render_details.poly_offset_units` (ours, resgx545).
 - `hw_render_details.poly_offset_factor` G0326 (HWRENDERDETAILS+0x018): inferred reading
-  (unconfirmed): Render-details word 6, loaded into register 0x0420: set to 4.0 with the units word
-  at 0 it left the flat triangle's stored depth unchanged; what it multiplies is not shown. From
+  (unconfirmed): value the EDM copies into CR_ISP_POLY_OFFSET_FACTOR [infer]. From
   `hw_render_details.poly_offset_factor` (ours, resgx545).
 - `hw_render_details.poly_offset_clamp` G0325 (HWRENDERDETAILS+0x01c): value the EDM copies into
   CR_ISP_POLY_OFFSET_CLAMP [infer]. From `hw_render_details.poly_offset_clamp` (ours, resgx545).
@@ -1768,11 +1770,9 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `hw_render_details.isp_sample_pos` G0322 (HWRENDERDETAILS+0x04c): inferred reading (unconfirmed):
   value the EDM copies verbatim into CR_ISP_SAMPLE_POS (0x0520): the four sample positions (0 in the
   capture) [infer]. From `hw_render_details.isp_sample_pos` (ours, resgx545).
-- `hw_render_details.isp_multisamplectl` G0321 (HWRENDERDETAILS+0x050): Render-details word 20: the
-  value loaded into register 0x04c8, the same register the render command's word 16 loads (identical
-  images bit for bit), holding the sample positions; 22 of its 32 bits moved the samples of a 4x
-  triangle by a few samples and the rest changed nothing. From
-  `hw_render_details.isp_multisamplectl` (ours, resgx545).
+- `hw_render_details.isp_multisamplectl` G0321 (HWRENDERDETAILS+0x050): value the EDM loads into
+  CR_ISP_MULTISAMPLECTL (0x04c8): the pixel's sample positions; 0x88 in every single-sample capture
+  [infer]. From `hw_render_details.isp_multisamplectl` (ours, resgx545).
 - `hw_render_details.isp_reg_04dc` G0693 (HWRENDERDETAILS+0x054): inferred reading (unconfirmed): as
   CR_ISP_REG_04DC's: a punch-through mode word (bit 1 hangs every punch-through pass, E222).
   Measured: value the EDM copies verbatim into CR_ISP_REG_04DC (0x04dc) [infer]. From
@@ -1953,9 +1953,18 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   `ui32NumSrcSyncs` (1, sgx545-ce); `hw_render_details.num_src_syncs` (ours, resgx545).
 - `hw_render_details.src_syncs` G0581 (HWRENDERDETAILS+0x16c): source syncs [8]. From `asSrcSyncs`
   (1, sgx545-ce); `hw_render_details.src_syncs` (ours, resgx545).
+- `hw_rt_data.hw_render_context_dev_vaddr` G1108 (HWRTDATA+0x000): owning HW render context. From
+  `sHWRenderContextDevVAddr` (1, sgx545-ce); `hw_rt_data.hw_render_context_dev_vaddr` (ours,
+  resgx545).
 - `hw_rt_data.hw_render_details_dev_vaddr` G0550 (HWRTDATA+0x004): render details of the scene in
   flight on this RT data; written by the EDM at the TA kick, cleared when the scene is done (the
   client leaves it 0) [infer]. From `hw_rt_data.hw_render_details_dev_vaddr` (ours, resgx545).
+- `hw_rt_data.blocks_per_mtile` G1106 (HWRTDATA+0x008): inferred reading (unconfirmed): a size word
+  of the RT data that follows the macrotile rule: the blocks of one macrotile [infer]. From
+  `hw_rt_data.blocks_per_mtile` (ours, resgx545).
+- `hw_rt_data.mtile_region_bytes` G1109 (HWRTDATA+0x00c): inferred reading (unconfirmed): a size
+  word of the RT data: 0xc0 bytes per block of hw_rt_data.blocks_per_mtile [infer]. From
+  `hw_rt_data.mtile_region_bytes` (ours, resgx545).
 - `hw_rt_data.bgobj_dev_vaddr` G0547 (HWRTDATA+0x010): background object of the RT data; the 3D kick
   writes its dwords 0-2 through the 3D's address space [infer]. From `hw_rt_data.bgobj_dev_vaddr`
   (ours, resgx545).
@@ -1968,6 +1977,10 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `hw_rt_data.otpm_dev_vaddr` G0551 (HWRTDATA+0x01c): OTPM context memory; the EDM loads it into
   CR_MTE_OTPM_BASE and clears it with CR_MTE_OTPM_OP = 9 on a first kick [infer]. From
   `hw_rt_data.otpm_dev_vaddr` (ours, resgx545).
+- `hw_rt_data.te_tpc_dev_vaddr` G1111 (HWRTDATA+0x020): the address of the TE's tail pointer cache,
+  the value CR_TE_TPC_ADDR takes. From `hw_rt_data.te_tpc_dev_vaddr` (ours, resgx545).
+- `hw_rt_data.te_tpc_bytes` G1110 (HWRTDATA+0x024): the size in bytes of the TE's tail pointer
+  cache. From `hw_rt_data.te_tpc_bytes` (ours, resgx545).
 - `hw_rt_data.num_rts` G0591 (HWRTDATA+0x028): RT data word 10, the number of render targets: a
   first TA kick clears the DPM state once per render target it counts [infer]. From
   `hw_rt_data.num_rts` (ours, resgx545).
@@ -1990,10 +2003,15 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   completes only when it equals the word the set's word 0 points at
   (hw_rt_data_set.pending_count_dev_vaddr), the host's pending count. From
   `hw_rt_data_set.executed_count` (ours, resgx545).
+- `hw_rt_data_set.tiles_across` G1113 (HWRTDATASET+0x008): inferred reading (unconfirmed): the
+  number of macrotiles across times the macrotile's width in tiles, as the size rule of the TA words
+  gives it [infer]. From `hw_rt_data_set.tiles_across` (ours, resgx545).
 - `hw_rt_data_set.num_out_of_mem_signals` G0555 (HWRTDATASET+0x00c): TA out-of-memory count. From
   `ui32NumOutOfMemSignals` (1, sgx545-ce).
 - `hw_rt_data_set.num_spm_renders` G0556 (HWRTDATASET+0x010): partial renders run. From
   `ui32NumSPMRenders` (1, sgx545-ce).
+- `hw_rt_data_set.num_rt_data` G1112 (HWRTDATASET+0x014): the number of RT data that follow the
+  set's header, used in turn one per scene. From `hw_rt_data_set.num_rt_data` (ours, resgx545).
 - `hw_transfer_context.fw_com_ctx_flags` G0105 (HWTRANSFERCONTEXT+0x000): context flags. From
   `fw_com_ctx_flags` (3, linux-imagination).
 - `hw_transfer_context.priority` G0107 (HWTRANSFERCONTEXT+0x004): priority. From
@@ -2587,6 +2605,13 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 
 - `DOUTI.SHADEMODEL` G0206: (Rogue) iteration shade model; placed on SGX545 as DOUTI0.SHADEMODEL.
   From `PVR_ROGUE_PDSINST_DOUT_FIELDS_DOUTI_SRC_SHADEMODEL` (3, mesa-pds-defs).
+- `DOUTD1.OFFSET` G1096 (DOUTD1 [19:8]): the destination attribute dword. From `DOUTD1.OFFSET`
+  (ours, resgx545).
+- `DOUTD1.STRIDE` G1098 (DOUTD1 [29:22], doutd word 1 [29:22]): inferred reading (unconfirmed):
+  distance between burst lines - 1 [infer]. From `DOUTD1.STRIDE` (ours, resgx545).
+- `DOUTD1.BURST` G1094 (DOUTD1 [3:0]): dwords per line, less one. From `DOUTD1.BURST` (ours,
+  resgx545).
+- `DOUTD1.LINES` G1095 (DOUTD1 [7:4]): lines, less one. From `DOUTD1.LINES` (ours, resgx545).
 - `DPM_STATE_LIST.HEAD` G1086 (DPM_STATE_LIST word 0 [15:0]): the list's first page; a list of one
   page has its head and tail equal. From `DPM_STATE_LIST.HEAD` (ours, resgx545).
 - `DPM_STATE_LIST.PAGE_COUNT` G1087 (DPM_STATE_LIST word 0 [31:16]): the pages in the list. From
@@ -2602,15 +2627,14 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   From `EMIT2.BITS15_8` (ours, resgx545).
 - `EMIT3.ADDRESS` G1043 (EMIT3 (emit2 src1) [31:2]): surface address >> 2 (the surface base; the PBE
   adds the tile offset). From `address_low` (3, mesa-csbgen).
-- `ISP1.LINE_WIDTH` G0472 (ISP1 [15:8]): A line width: the TA copies ISP word 1's bits 15:8 into
-  both bytes of the object's line-width dword; the width in sixteenths of a pixel across the line's
-  minor axis, the rows whose centres lie within half of it of the line: 0x10 one pixel, 0x08 half,
-  0x20 two; 0 draws nothing, measured on one x-major line, one run [infer]. From `ISP1.LINE_WIDTH`
-  (ours, resgx545).
+- `ISP1.LINE_WIDTH` G0472 (ISP1 [15:8]): line width in pixels, unsigned 4.4 fixed point [infer].
+  From `ISP1.LINE_WIDTH` (ours, resgx545).
 - `ISP1.VISREG` G0248 (ISP1 [2:0]): index of the visibility counter the object counts into (with
   ISP1.VISTEST). From `visreg` (3, mesa-csbgen).
 - `ISP1.VALID_ID` G0473 (ISP1 [31:26]): the object's validation ID: an opaque or translucent object
   is drawn only when it is at least CR_ISP_CTL.VALID_ID. From `ISP1.VALID_ID` (ours, resgx545).
+- `ISP1.CMASK` G1099 (ISP1 [7:4]): the colour write mask: bit 7 red, 6 green, 5 blue, 4 alpha, from
+  glColorMask. From `ISP1.CMASK` (ours, resgx545).
 - `PDS_SIZE.BITS17_16` G0254 (PDS_SIZE [17:16]): inferred reading (unconfirmed): a size or count of
   output register banks: at 0, 1 and 2 the triangle's o1-o3 land elsewhere while o0 does not change,
   3 the plain value [infer]. From `PDS_SIZE.BITS17_16` (ours, resgx545).
@@ -2752,8 +2776,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   (3, mesa-csbgen).
 - `EMIT1.MAXCLIP_Y` G1038 (emit1 src1 [28:16]): clip rectangle max y (inclusive). From `maxclip_y`
   (3, mesa-csbgen).
-- `EMIT2.LINE_STRIDE` G1042 (emit2 src0 [27:16]): surface line stride. From `linestride` (3,
-  mesa-csbgen).
+- `EMIT2.LINE_STRIDE` G1042 (emit2 src0 [27:16]): surface line stride, in pairs of pixels less one:
+  the row pitch in pixels / 2 - 1, in RGB565 and ARGB8888 alike. From `linestride` (3, mesa-csbgen).
 - `VDM_INDEX2.WORD` G0498 (index list, the first trailing word): inferred reading (unconfirmed): the
   index list's first trailing word: an offset of the list's first index in its low bits [infer: 1,
   2, 3, 5 and 0xff fit; 0x0f000000 drops two of five triangles, which such an offset does not
@@ -2820,7 +2844,7 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   transform, an IEEE single [infer]. From `VIEWPORT.Z_SCALE` (ours, resgx545).
 - `TERM.CLIP_BOTTOM` G0643 (term [15:0]): last block row; unit open on SGX545: 1 -> 0 drops only the
   bottom 16 rows of a 64x64 target [HW]. From `clip_bottom` (3, mesa-csbgen).
-- `TERM.CLIP_RIGHT` G0644 (term [31:16]): last block column; in 32-pixel columns on SGX545 [infer].
+- `TERM.CLIP_RIGHT` G0644 (term [31:16]): last block column, in 32-pixel columns: (width - 1) / 32.
   From `clip_right` (3, mesa-csbgen).
 - `VDM_TASK0.MAX_VERTICES` G0294 (vertex-task word 0 [31:28]): the vertices one vertex task takes,
   less one (in index order); 7 for the closed driver's screen-space draws, 15 for compiled shaders;
@@ -2836,7 +2860,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `PRESENCE.ISP_BACK` G0638 (presence bits 3 (back isp0), 4 (back isp1, by its place), 5 (back
   isp2)): (Rogue) back-face ISP word A present. From `pres_ispctl_ba` (3, mesa-csbgen);
   `PRESENCE.ISP_BACK` (ours, resgx545).
-- `ISP1.POLY_OFFSET` G0247 (ISP1 [23]): the object takes the polygon offset [infer]. From
+- `ISP1.POLY_OFFSET` G0247 (ISP1 [23]): the object takes the polygon offset; the closed driver sets
+  it on every object it draws with GL_POLYGON_OFFSET_FILL and on no other [infer]. From
   `ISP1.POLY_OFFSET` (ours, resgx545).
 - `ISP1.VISTEST` G0249 (ISP1 [3]): visibility test: the object's covered pixels count into the
   counter ISP1.VISREG names. From `vistest` (3, mesa-csbgen).
@@ -2902,10 +2927,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   CR_ISP_MULTISAMPLECTL's samples, takes no part, while a centre sample under the top-left rule
   added to the eight is not excluded; of the top-left tie rule only the long edge's exclusion is
   seen, on a triangle with no horizontal edge [infer]. From `ISP0.SAMPLE_COVERAGE` (ours, resgx545).
-- `ISP0.ISP2_PRESENT` G1062 (isp0 bit 8): inferred reading (unconfirmed): set with ISP word 2 (the
-  stencil word) in the state block, where the object takes the stencil test of ISP2; that it
-  announces the word is not probed apart from the word [infer]. From `ISP0.ISP2_PRESENT` (ours,
-  resgx545).
+- `ISP0.ISP2_PRESENT` G1062 (isp0 bit 8): inferred reading (unconfirmed): ISP word 2 follows
+  [infer]. From `ISP0.ISP2_PRESENT` (ours, resgx545).
 - `ISP0.BIT9` G1059 (isp0 bit 9): inferred reading (unconfirmed): set in every ISP word 0 the
   library builds; clearing it changes no image of five overlapping copies, so what it selects is not
   shown, and the block's layout does not move with it [infer]. From `ISP0.BIT9` (ours, resgx545).
@@ -2937,12 +2960,13 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 
 - `ISP0` G0244 (ISP word 0 (isp0)): ISP state word A: depth, pass, object type. From `STATE_ISPA`
   (3, mesa-csbgen).
-- `ISP1` G0246 (ISP word 1): inferred reading (unconfirmed): The second word of the render's ISP
-  state; bits 13 to 25 set one at a time left a 4x triangle at the sample rate unchanged, so those
-  bits do not turn per-sample shading on. From `ISP1` (ours, resgx545).
+- `ISP1` G0246 (ISP word 1): inferred reading (unconfirmed): ISP colour-mask and line-width word of
+  the MTE state [infer]. From `ISP1` (ours, resgx545).
 - `ISP2` G1065 (ISP word 2 (isp2)): ISP stencil word. From `STATE_ISPB` (3, mesa-csbgen).
 - `PRESENCE` G1072 (MTE state block presence word (S.2)): presence word: each set bit adds its state
   words. From `STATE_HEADER` (3, mesa-csbgen).
+- `DOUTD1` G1093 (doutd word 1): the second word of a PDS doutd: a two-dimensional copy into the
+  USSE attributes. From `DOUTD1` (ours, resgx545).
 - `OUTSEL` G0477 (outsel): output selects of the vertex. From `OUTPUT_SEL` (3, mesa-csbgen).
 - `WCLAMP` G0504 (wclamp): W clamp value (float) [infer]. From `WCLAMP` (3, mesa-csbgen).
 

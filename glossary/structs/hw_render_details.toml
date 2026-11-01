@@ -296,12 +296,23 @@ tier = "ours"
 source = "resgx545"
 citation = "E210"
 licence = "MIT"
-evidence = "[RE] E163; Rogue's isp_aa is a name only here; [HW] E074; [infer] E220, an analogy of ours (no citation record): carries the multisample mode of CR_ISP_MSAA (Rogue CR_ISP_AA.mode); [HW] E210: bits 1:0 at 0, 1 and 2 give three different images and 3 hangs; no sample layout was fitted, so the sample count of each value is not measured"
+evidence = "[RE] E163; [CAP] E330; Rogue's isp_aa is a name only here; [HW] E074; [infer] E220, an analogy of ours (no citation record): carries the multisample mode of CR_ISP_MSAA (Rogue CR_ISP_AA.mode); [HW] E210: bits 1:0 at 0, 1 and 2 give three different images and 3 hangs; no sample layout was fitted, so the sample count of each value is not measured"
 
 [[term]]
 id = "G0321"
 name = "hw_render_details.isp_multisamplectl"
 status = "named"
+
+[[term.source]]
+term = "hw_render_details.isp_multisamplectl"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x050"
+meaning = "value the EDM loads into CR_ISP_MULTISAMPLECTL (0x04c8): the pixel's sample positions; 0x88 in every single-sample capture [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163; [CAP] E330; Rogue's multi_sample_ctl is a name only here; named after the register it loads"
 
 [[term.source]]
 term = "hw_render_details.isp_multisamplectl"
@@ -553,6 +564,17 @@ status = "inferred"
 term = "hw_render_details.poly_offset_factor"
 kind = "field"
 sgx545 = "HWRENDERDETAILS+0x018"
+meaning = "value the EDM copies into CR_ISP_POLY_OFFSET_FACTOR [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x8e50)"
+licence = "MIT"
+evidence = "[CAP] E338"
+
+[[term.source]]
+term = "hw_render_details.poly_offset_factor"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x018"
 meaning = "Render-details word 6, loaded into register 0x0420: set to 4.0 with the units word at 0 it left the flat triangle's stored depth unchanged; what it multiplies is not shown"
 tier = "ours"
 source = "resgx545"
@@ -564,6 +586,17 @@ evidence = "[HW] E071: rd:6 (0x0420) at 4.0 with rd:5 at 0 stored 0x3f000000, th
 id = "G0327"
 name = "hw_render_details.poly_offset_units"
 status = "named"
+
+[[term.source]]
+term = "hw_render_details.poly_offset_units"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x014"
+meaning = "value the EDM copies into CR_ISP_POLY_OFFSET_UNITS [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x8e48)"
+licence = "MIT"
+evidence = "[CAP] E338"
 
 [[term.source]]
 term = "hw_render_details.poly_offset_units"
@@ -761,7 +794,7 @@ tier = "ours"
 source = "resgx545"
 citation = "E058"
 licence = "MIT"
-evidence = "[HW] E058: the stencil store never lands at it; [infer] the load base of the stencil pair; [RE] E163; Rogue keeps one stencil load/store base: name only"
+evidence = "[HW] E058: the stencil store never lands at it; [infer] the load base of the stencil pair; [CAP] E329, E335; [RE] E163; Rogue keeps one stencil load/store base: name only"
 
 [[term]]
 id = "G0583"
@@ -793,7 +826,7 @@ tier = "ours"
 source = "resgx545"
 citation = "E058"
 licence = "MIT"
-evidence = "[HW] E058; [RE] E163; Rogue keeps one stencil load/store base: name only"
+evidence = "[HW] E058; [CAP] E329, E335; [RE] E163; Rogue keeps one stencil load/store base: name only"
 
 [[term]]
 id = "G0584"
@@ -1321,7 +1354,7 @@ tier = "ours"
 source = "resgx545"
 citation = "E058"
 licence = "MIT"
-evidence = "[HW] E058; [RE] E163; Rogue keeps one depth load/store base: name only"
+evidence = "[HW] E058; [CAP] E329, E335; [RE] E163; Rogue keeps one depth load/store base: name only"
 
 [[term]]
 id = "G0332"
@@ -1337,4 +1370,4 @@ tier = "ours"
 source = "resgx545"
 citation = "E058"
 licence = "MIT"
-evidence = "[HW] E058; [RE] E163; Rogue keeps one depth load/store base: name only"
+evidence = "[HW] E058; [CAP] E329, E335; [RE] E163; Rogue keeps one depth load/store base: name only"

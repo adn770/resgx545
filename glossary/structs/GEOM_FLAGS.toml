@@ -28,7 +28,7 @@ tier = "3"
 source = "linux-imagination"
 citation = "C0191"
 licence = "GPL-2.0 OR MIT"
-evidence = "[HW] E051: clear on a second render of a context, that render draws its own geometry only; [HW] E052: clear on the kick after one without LAST_KICK, its geometry joins the open scene"
+evidence = "same bit and meaning as the captured SGX545 flag (E159, E324); [HW] E051: clear on a second render of a context, that render draws its own geometry only; [HW] E052: clear on the kick after one without LAST_KICK, its geometry joins the open scene"
 
 [[term]]
 id = "G0465"

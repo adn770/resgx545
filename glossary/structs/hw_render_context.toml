@@ -85,6 +85,49 @@ licence = "GPL-2.0"
 evidence = "same name"
 
 [[term]]
+id = "G1103"
+name = "hw_render_context.param_obj_dev_vaddr"
+status = "inferred"
+
+[[term.source]]
+term = "hw_render_context.param_obj_dev_vaddr"
+kind = "field"
+sgx545 = "HWRENDERCONTEXT+0x01c"
+meaning = "the address of a 0x40-byte object in the parameter heap, at the DPM page table's base plus 0x40000 in both stacks; what the firmware keeps there is open (Q049) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "captures/render/state-variations.toml"
+licence = "MIT"
+evidence = "[CAP] E323 (render-state-variations): the closed client's word points at a 0x40-byte object at the page table base + 0x40000, and moves with the PB size; [HW] E323 (render-closed-compare): ours reads 0x10463000 with the page table at 0x10423000; [infer] the name is ours"
+
+[[term]]
+id = "G1105"
+name = "hw_render_context.pd_dev_paddr"
+status = "named"
+
+[[term.source]]
+term = "ui32OffsetToPDDevPAddr"
+kind = "field"
+sgx545 = "HWRENDERCONTEXT+0x008"
+meaning = "page-directory physical address (kernel writes)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0156"
+licence = "GPL-2.0"
+evidence = "kernel writes the PD address at this offset (0x8)"
+
+[[term.source]]
+term = "hw_render_context.pd_dev_paddr"
+kind = "field"
+sgx545 = "HWRENDERCONTEXT+0x008"
+meaning = "the physical address of the context's page directory: the client registers the context with this offset for the kernel to patch"
+tier = "ours"
+source = "resgx545"
+citation = "captures/render/state-variations.toml"
+licence = "MIT"
+evidence = "[CAP] E323 (render-state-variations): the closed client registers every render context with patch offset 0x8 and the word holds the harness's page directory address; [HW] E323 (render-closed-compare): our kernel's value is a page address; [infer] the name is ours"
+
+[[term]]
 id = "G0528"
 name = "hw_render_context.pending_renders_head"
 status = "named"

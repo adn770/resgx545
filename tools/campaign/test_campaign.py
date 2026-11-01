@@ -348,6 +348,38 @@ def test_the_build_host_takes_ssh_options(tmp_path, monkeypatch):
                for c in calls)
 
 
+def _build_capture_calls(tmp_path, monkeypatch, libs=None):
+    t = capture(tmp_path, CAPTURE.replace('"local"', '"build"'))
+    calls = []
+
+    def run(cmd, **kw):
+        calls.append(cmd)
+        out = "/tmp/w\n" if "mktemp" in " ".join(cmd) else "done\n"
+        return campaign.subprocess.CompletedProcess(cmd, 0, out, "")
+    monkeypatch.setattr(campaign.subprocess, "run", run)
+    if libs is None:
+        monkeypatch.delenv("RESGX545_BUILD_CDV_LIBS", raising=False)
+    else:
+        monkeypatch.setenv("RESGX545_BUILD_CDV_LIBS", libs)
+    campaign.run_table(t, campaign.BuildHost("me@laptop"), tmp_path / "d", tmp_path / "ds",
+                       repo="data-private", root=tmp_path)
+    # the remote command, as the build host's sh -c receives it
+    return [campaign.shlex.split(c[-1])[2] for c in calls
+            if c[0] == "ssh" and "sh -s" in c[-1]]
+
+
+def test_the_build_host_gets_the_closed_libraries_path(tmp_path, monkeypatch):
+    # the closed usr/lib on the capture host is named on this side: the capture script reads
+    # it as $RESGX545_CDV_LIBS there (an environment variable does not cross ssh)
+    run = _build_capture_calls(tmp_path, monkeypatch, "/home/me/uk3d lib")
+    assert len(run) == 1 and "RESGX545_CDV_LIBS='/home/me/uk3d lib'" in run[0]
+
+
+def test_without_the_libraries_path_the_script_keeps_its_default(tmp_path, monkeypatch):
+    run = _build_capture_calls(tmp_path, monkeypatch)
+    assert len(run) == 1 and "RESGX545_CDV_LIBS" not in run[0]
+
+
 # ---- tables of several kinds -------------------------------------------------------------
 
 MULTI = '''name = "transfer-words"

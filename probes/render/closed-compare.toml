@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# render closed compare: our own stack's job words beside the closed driver's captured ones.
+# E094, E096, E097, E113, E116: the render context, RT data set, PB descriptor and render
+# details our kernel writes for one triangle, a scene of two kicks and two renders, with the
+# 3D registers read after the render
+needs = ["render", "render_words", "render_cleanup", "buf09", "regs"]
+name = "render-closed-compare"
+script = "closed-compare.sh"

@@ -170,6 +170,22 @@ licence = "MIT"
 evidence = "[RE] E200: dwords 8 and 9 (the second shifted up 16 bits) go to 0x0638; [RE] E201: dwords 8 and 9 are the local and global page counts"
 
 [[term]]
+id = "G1102"
+name = "hw_pb_desc.page_count"
+status = "named"
+
+[[term.source]]
+term = "hw_pb_desc.page_count"
+kind = "field"
+sgx545 = "HWPBDESC+0x004"
+meaning = "the number of pages of the parameter buffer"
+tier = "ours"
+source = "resgx545"
+citation = "captures/render/draws-frames-pb.toml"
+licence = "MIT"
+evidence = "[CAP] E327 (render-draws-frames-pb): 0x422 with the default PB, 98 with PBSize 1 MiB and 8 MiB; [HW] E327 (render-closed-compare): 0x422 in ours; [infer] the name is ours"
+
+[[term]]
 id = "G0572"
 name = "hw_pb_desc.page_table_base"
 status = "named"

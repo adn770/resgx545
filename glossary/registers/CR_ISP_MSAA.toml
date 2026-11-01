@@ -12,7 +12,7 @@ tier = "ours"
 source = "resgx545"
 citation = "E210"
 licence = "MIT"
-evidence = "[HW] E074: bits 1:0 = 1 and 2 change the image, 3 hangs; whether the image holds each pixel's samples is not shown; bit 31 clear with bit 1 draws nothing, without it changes nothing; [infer] E219, E220, an analogy of ours (no citation record): the multisample mode in bits 1:0 (Rogue CR_ISP_AA.mode: 1 2x, 2 4x, 3 8x); [HW] E210: bits 1:0 at 0, 1 and 2 give three different images and 3 hangs; no sample layout was fitted, so the sample count of each value is not measured"
+evidence = "written verbatim by the EDM's 3D kick, partial render and transfer from the per-render register block (RE); [CAP] E338, E336, E339: bit 1 set with 4x multisampling (0x80000000 -> 0x80000002); [HW] E074: bits 1:0 = 1 and 2 change the image, 3 hangs; whether the image holds each pixel's samples is not shown; bit 31 clear with bit 1 draws nothing, without it changes nothing; [infer] E219, E220, an analogy of ours (no citation record): the multisample mode in bits 1:0 (Rogue CR_ISP_AA.mode: 1 2x, 2 4x, 3 8x); [HW] E210: bits 1:0 at 0, 1 and 2 give three different images and 3 hangs; no sample layout was fitted, so the sample count of each value is not measured"
 
 [[term]]
 id = "G0122"

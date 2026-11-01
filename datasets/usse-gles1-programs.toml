@@ -1,0 +1,9 @@
+title = "capture table usse/gles1-programs"
+repo = "data-private"
+paths = ["usse/gles1-programs/"]
+method = "campaign runner on the build target (tools/campaign)"
+date = "2026-11-03"
+files = 39
+size = 776055
+sha256 = "641d56237053dc153c978b6255827516eb4bbfc08a79f33fb08788134646b774"
+recipe = "captures/usse/gles1-programs.toml"

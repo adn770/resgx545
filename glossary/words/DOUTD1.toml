@@ -1,0 +1,90 @@
+[[term]]
+id = "G1093"
+name = "DOUTD1"
+status = "named"
+
+[[term.source]]
+term = "DOUTD1"
+kind = "struct"
+sgx545 = "doutd word 1"
+meaning = "the second word of a PDS doutd: a two-dimensional copy into the USSE attributes"
+tier = "ours"
+source = "resgx545"
+citation = "captures/render/state-variations.toml"
+licence = "MIT"
+evidence = "[CAP] E347 (render-state-variations and twelve more capture tables): its fields give each closed state copy exactly the words of the block it copies; [infer] the name is ours"
+
+[[term]]
+id = "G1094"
+name = "DOUTD1.BURST"
+status = "named"
+
+[[term.source]]
+term = "DOUTD1.BURST"
+kind = "field"
+sgx545 = "DOUTD1 [3:0]"
+meaning = "dwords per line, less one"
+tier = "ours"
+source = "resgx545"
+citation = "captures/render/state-variations.toml"
+licence = "MIT"
+evidence = "[CAP] E347: every closed state copy's length is (BURST + 1) x (LINES + 1) dwords; [infer] the name is ours"
+
+[[term]]
+id = "G1095"
+name = "DOUTD1.LINES"
+status = "named"
+
+[[term.source]]
+term = "DOUTD1.LINES"
+kind = "field"
+sgx545 = "DOUTD1 [7:4]"
+meaning = "lines, less one"
+tier = "ours"
+source = "resgx545"
+citation = "captures/render/state-variations.toml"
+licence = "MIT"
+evidence = "[CAP] E347: every closed state copy's length is (BURST + 1) x (LINES + 1) dwords; [infer] the name is ours"
+
+[[term]]
+id = "G1096"
+name = "DOUTD1.OFFSET"
+status = "named"
+
+[[term.source]]
+term = "DOUTD1.OFFSET"
+kind = "field"
+sgx545 = "DOUTD1 [19:8]"
+meaning = "the destination attribute dword"
+tier = "ours"
+source = "resgx545"
+citation = "captures/usse/inputs.toml"
+licence = "MIT"
+evidence = "[CAP] E347, E344 (usse-inputs): the second vertex attribute's fetch lands at 4, the first at 0; [infer] the name is ours"
+
+[[term]]
+id = "G1098"
+name = "DOUTD1.STRIDE"
+status = "inferred"
+
+[[term.source]]
+term = "DOUTD1.STRIDE"
+kind = "field"
+sgx545 = "doutd word 1 [29:22]"
+meaning = "distance between burst lines - 1 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E347"
+licence = "MIT"
+evidence = "MTE state copies: line count and stride fit the USE copy loops"
+
+[[term.source]]
+term = "DOUTD1.STRIDE"
+kind = "field"
+sgx545 = "DOUTD1 [29:22]"
+meaning = "the source line stride in dwords, less one [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "captures/render/state-variations.toml"
+licence = "MIT"
+evidence = "[CAP] E347: equal to BURST in every closed copy, so the stride's unit is not separated from it; [infer]"

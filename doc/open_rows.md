@@ -33,7 +33,7 @@ sits, the reading, and the evidence records it rests on.
 - `G0152` `CR_REG_0400` (0x0400): a pixel output conversion control: bit 25 inverts the alpha
   channel of every pixel stored, wherever the pack mode puts it (CR_REG_0400.INVERT_BYTE3); bits
   11:0 change no pixel, 0x80 the default of the other conversions. Measured: per-render word from
-  the render details or transfer command; 0x80 in captures [infer]. Evidence: E028, E029.
+  the render details or transfer command; 0x80 in captures [infer]. Evidence: E028, E029, E330.
 - `G1030` `CR_REG_0400.BITS11_0` (0x0400[11:0]): twelve bits the register takes (0x80 as the library
   and the closed stack write them) that change no stored pixel in pack modes 0 to 3; no job here
   varies the stored alpha, so a field that tests it would not show [infer].
@@ -68,11 +68,8 @@ sits, the reading, and the evidence records it rests on.
 
 ## registers: ISP
 
-- `G0128` `CR_ISP_POLY_OFFSET_FACTOR` (0x0420): Register 0x0420, loaded from render-details word 6:
-  set to 4.0 with the offset in word 5 at 0 it left the flat triangle's stored depth unchanged, and
-  on a triangle whose depth slopes across it 4.0 moves the depth test's boundary as far as 0x100000
-  units do and 64.0 pushes the whole triangle behind: it scales the offset by the depth's slope
-  [infer]. Evidence: E071, E291.
+- `G0128` `CR_ISP_POLY_OFFSET_FACTOR` (0x0420): the polygon offset's factor, an IEEE single
+  (glPolygonOffset factor) [infer]. Evidence: E071, E291, E330, E338.
 - `G0131` `CR_ISP_REG_04E8` (0x04e8): what it does is not shown: no value tried changes an image or
   a count in any scene; not the background's stencil or mask (E216); 0x100 from the init script and
   per render [infer]. Evidence: E006, E066, E067, E068, E073, E216, E285.
@@ -104,9 +101,8 @@ sits, the reading, and the evidence records it rests on.
 
 ## registers: TE
 
-- `G0447` `CR_TE_MACROTILE_STRIDE` (0x0214): Tiling-engine register loaded by the TA kick from the
-  TA command; it reads 0x10 for a 64x64 target and 0x20 for a 256x256 one, read as a macrotile
-  stride. Evidence: E159, E175.
+- `G0447` `CR_TE_MACROTILE_STRIDE` (0x0214): macrotile stride of the tiling engine, from the TA
+  command (0x10 for 64x64) [infer]. Evidence: E159, E175, E328.
 - `G0452` `CR_TE_REG_02A8` (0x02a8): the tiling engine's resume position after an interrupted TA: an
   8-bit field in 19:12. Measured: TA command word; 0 in captures [infer]. Evidence: E030, E056,
   E071, E072, E159, E182, E183.
@@ -154,7 +150,8 @@ sits, the reading, and the evidence records it rests on.
   the render's completion the EDM adds one to the executed count of the set render details word 54
   points at; without it the render is drawn and adds nothing, so the set's cleanup completes only if
   the host's pending count leaves the render out too (the kernel's does since it counts each kick);
-  set by the client on the scene's last kick [infer]. Evidence: E051, E052, E164, E166, E314, E315.
+  set by the client on the scene's last kick [infer]. Evidence: E051, E052, E164, E166, E314, E315,
+  E324.
 - `G0233` `FRAG_FLAGS.BIT2` (render flags bit2 (0x4)): Bit 2 of the render flags word: when each job
   ends with its render, set or clear it changed no image; after the render it keeps TA3DCtl dword
   20, the DPM slot's RT data, as NO_DEALLOCATE does; a later render with it clear clears the word,
@@ -219,6 +216,12 @@ sits, the reading, and the evidence records it rests on.
 - `G0568` `cmd_ta.z_rt_stride` (CMDTA+0x04c): TA command word 19, copied by the TA kick to render
   details word 70, the depth stride per render target [infer]. Evidence: E158, E163.
 
+## structs: hw_render_context
+
+- `G1103` `hw_render_context.param_obj_dev_vaddr` (HWRENDERCONTEXT+0x01c): the address of a
+  0x40-byte object in the parameter heap, at the DPM page table's base plus 0x40000 in both stacks;
+  what the firmware keeps there is open (Q049) [infer]. Evidence: E323.
+
 ## structs: hw_render_details
 
 - `G0693` `hw_render_details.isp_reg_04dc` (HWRENDERDETAILS+0x054): as CR_ISP_REG_04DC's: a
@@ -230,9 +233,8 @@ sits, the reading, and the evidence records it rests on.
 - `G0322` `hw_render_details.isp_sample_pos` (HWRENDERDETAILS+0x04c): value the EDM copies verbatim
   into CR_ISP_SAMPLE_POS (0x0520): the four sample positions (0 in the capture) [infer]. Evidence:
   E066, E067, E073, E120, E163, E214, E224.
-- `G0326` `hw_render_details.poly_offset_factor` (HWRENDERDETAILS+0x018): Render-details word 6,
-  loaded into register 0x0420: set to 4.0 with the units word at 0 it left the flat triangle's
-  stored depth unchanged; what it multiplies is not shown. Evidence: E071.
+- `G0326` `hw_render_details.poly_offset_factor` (HWRENDERDETAILS+0x018): value the EDM copies into
+  CR_ISP_POLY_OFFSET_FACTOR [infer]. Evidence: E071, E338.
 - `G0696` `hw_render_details.reg_0148` (HWRENDERDETAILS+0x024): render details word 9, which the 3D
   kick writes to CR_REG_0148 (0x0148); what it holds is not shown [infer]. Evidence: E163.
 - `G0328` `hw_render_details.reg_0400` (HWRENDERDETAILS+0x008): The render-side word that loads
@@ -252,14 +254,27 @@ sits, the reading, and the evidence records it rests on.
 
 ## structs: hw_rt_data
 
+- `G1106` `hw_rt_data.blocks_per_mtile` (HWRTDATA+0x008): a size word of the RT data that follows
+  the macrotile rule: the blocks of one macrotile [infer]. Evidence: E331.
+- `G1109` `hw_rt_data.mtile_region_bytes` (HWRTDATA+0x00c): a size word of the RT data: 0xc0 bytes
+  per block of hw_rt_data.blocks_per_mtile [infer]. Evidence: E331.
 - `G0592` `hw_rt_data.region_header_rt_stride` (HWRTDATA+0x02c): RT data word 11: for a render
   target other than the first the 3D kick adds its index times this word to the region header base
   (0x0408) [infer]. Evidence: E163.
 
+## structs: hw_rt_data_set
+
+- `G1113` `hw_rt_data_set.tiles_across` (HWRTDATASET+0x008): the number of macrotiles across times
+  the macrotile's width in tiles, as the size rule of the TA words gives it [infer]. Evidence: E325,
+  E331.
+
 ## structs: pb_block
 
-- `G0593` `pb_block.first_page`: a PB block's third word, its first page: the page-table builder
-  fills the table block by block from it [infer]. Evidence: E200, E201.
+- `G0593` `pb_block.first_page`: a PB block's third word: the closed client and our kernel both hold
+  the PB descriptor's own address there; how the page-table builder uses it is a reading [infer].
+  Evidence: E200, E201.
+- `G1115` `pb_block.stack_top`: head (15:0) and tail (31:16) page of this PB block [infer].
+  Evidence: E200, E327.
 
 ## structs: ta3d_ctl
 
@@ -315,12 +330,9 @@ sits, the reading, and the evidence records it rests on.
 - `G1059` `ISP0.BIT9` (isp0 bit 9): set in every ISP word 0 the library builds; clearing it changes
   no image of five overlapping copies, so what it selects is not shown, and the block's layout does
   not move with it [infer].
-- `G1062` `ISP0.ISP2_PRESENT` (isp0 bit 8): set with ISP word 2 (the stencil word) in the state
-  block, where the object takes the stencil test of ISP2; that it announces the word is not probed
-  apart from the word [infer].
-- `G0246` `ISP1` (ISP word 1): The second word of the render's ISP state; bits 13 to 25 set one at a
-  time left a 4x triangle at the sample rate unchanged, so those bits do not turn per-sample shading
-  on. Evidence: E117.
+- `G1062` `ISP0.ISP2_PRESENT` (isp0 bit 8): ISP word 2 follows [infer]. Evidence: E332.
+- `G0246` `ISP1` (ISP word 1): ISP colour-mask and line-width word of the MTE state [infer].
+  Evidence: E117, E332.
 
 ## words: MTE state block words
 
@@ -332,7 +344,7 @@ sits, the reading, and the evidence records it rests on.
 - `G0261` `SIDEBAND.BIT9` (sideband bit 9): marks the emit that completes the tile: the PBE counts
   the emits with it against its tiles. Measured: needed for an emit to complete its tile: with it
   clear the only emit hangs; an extra emit with it set leaves the PBE queue one emit behind, with it
-  clear for one job only; not tile-relative addressing [infer]. Evidence: E030, E239, E240.
+  clear for one job only; not tile-relative addressing [infer]. Evidence: E030, E239, E240, E333.
 - `G0262` `SIDEBAND.BITS8_6` (sideband [8:6] [infer]): the channel a one-channel pack mode stores:
   in mode 8, 0 alpha, 1 red, 2 green, 3 reads as blue and 4 to 7 give the same bytes (both colours
   run have blue 0x40, so blue is not told apart from another source of that byte); no effect seen in
@@ -341,6 +353,8 @@ sits, the reading, and the evidence records it rests on.
 
 ## words: PDS DOUT words
 
+- `G1098` `DOUTD1.STRIDE` (doutd word 1 [29:22]): distance between burst lines - 1 [infer].
+  Evidence: E347.
 - `G0219` `DOUTU1.BIT2` (doutu U1 [2]): a scheduling hint of pixel and secondary tasks: set or
   clear, no image changes, punch-through included (E137); the ISP visibility counter differs between
   the two punch-through runs and nothing is concluded from it (E137). Measured: set (U1 = 4) in the
@@ -364,7 +378,7 @@ sits, the reading, and the evidence records it rests on.
   it. Measured: 0x80 in every closed program and capture [infer]. Evidence: E046.
 - `G0254` `PDS_SIZE.BITS17_16` (PDS_SIZE [17:16]): a size or count of output register banks: at 0, 1
   and 2 the triangle's o1-o3 land elsewhere while o0 does not change, 3 the plain value [infer].
-  Evidence: E046, E139.
+  Evidence: E046, E139, E343.
 - `G0636` `PDS_SIZE.BITS24_18` (PDS_SIZE [24:18]): bits 24:18 of the PDS size word; at 4, 1 and 0 a
   fill's secondary program still passes all sixteen douta words, so what they size is not shown
   [infer]. Evidence: E125.
@@ -387,7 +401,7 @@ sits, the reading, and the evidence records it rests on.
   nothing seen. Measured: 0xf0000000 in every capture. Evidence: E188.
 - `G0291` `VDM_STATE1.BIT8` (VDM_STATE1 bit 8): marks the constant or no-op state blocks. Measured:
   set on the captured state blocks whose PDS program loads a constant block or starts a no-op USE
-  task, clear on the MTE-state and vertex blocks [infer]. Evidence: E060, E187.
+  task, clear on the MTE-state and vertex blocks [infer]. Evidence: E060, E187, E349.
 - `G0292` `VDM_STATE1.BITS11_9` (VDM_STATE1 [11:9]): Bits 11:9 of the state task's second word: 0
   removes the 64x64 triangle (4096 background pixels), 1, 3, 4, 5 and 6 give the baseline image, and
   7 hangs some runs of either job and completes others, tiling as 2 when it completes; the job

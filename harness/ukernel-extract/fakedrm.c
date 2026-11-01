@@ -260,22 +260,37 @@ static void log_words(const char *tag, const uint32_t *w, uint32_t bytes, unsign
 #define PVRSRV_MEM_NO_SYNCOBJ (1u << 3)
 
 /* SGX_MISC_INFO answer for SGX_GETMISCINFO, for differential captures. Each
- * MISC_<FIELD> environment variable, if set, is written to its field; with none
- * set the struct is left as the caller passed it in (a zero-mock). Layout per
+ * MISC_<FIELD> environment variable, if set, is written to its field after the
+ * MISC_REPLY answer below. Layout per
  * sgxapi_km.h with SUPPORT_SGX_EDM_MEMORY_DEBUG off: eRequest, padding, then the
- * uData union at dword 2 (ui32SGXClockSpeed, or PVRSRV_SGX_MISCINFO_FEATURES). */
+ * uData union at dword 2 (ui32SGXClockSpeed, or PVRSRV_SGX_MISCINFO_FEATURES).
+ *
+ * MISC_REPLY selects the REQUEST_DRIVER_SGXREV answer before the MISC_<FIELD>s:
+ * "plausible" (the default) is what SGXGetMiscInfoKM reports, the DDK version
+ * (MAJ << 16 | MIN << 8 | BRANCH = 1.7.17), build 862890 and the kernel build
+ * options, which the client may check against its own (srvinit's
+ * ui32ClientBuildOptions, 0x60218); "mismatched" is the same with every build
+ * option flipped; "zero" writes 0 to every feature word (dwords 2-8);
+ * "untouched" (or MISC_ZERO=1) leaves the struct as the caller passed it in. */
 static void miscinfo_fill(uint32_t *mi)
 {
     static const char *const FEAT[7] = { "MISC_COREREV", "MISC_COREID", "MISC_DDKVER",
         "MISC_DDKBUILD", "MISC_COREIDSW", "MISC_COREREVSW", "MISC_BUILDOPTS" };
+    const char *reply = getenv("MISC_REPLY");
     int n = 0;
-    if (mi[0] == 2 && !getenv("MISC_ZERO")) {
-        /* REQUEST_DRIVER_SGXREV: what SGXGetMiscInfoKM reports, the DDK version
-         * (MAJ << 16 | MIN << 8 | BRANCH = 1.7.17), build 862890, and the kernel
-         * build options, which the client checks against its own (srvinit's
-         * ui32ClientBuildOptions, 0x60218). MISC_ZERO=1 keeps the zero-mock. */
-        mi[4] = 0x010711u; mi[5] = 862890u; mi[8] = 0x60218u;
+    if (!reply) reply = getenv("MISC_ZERO") ? "untouched" : "plausible";
+    if (strcmp(reply, "zero") && strcmp(reply, "plausible") && strcmp(reply, "mismatched") &&
+        strcmp(reply, "untouched")) {
+        fprintf(lg, "   [miscinfo] unknown MISC_REPLY=%s, left untouched\n", reply);
+        reply = "untouched";
     }
+    if (mi[0] == 2 && !strcmp(reply, "zero"))
+        memset(&mi[2], 0, 7 * sizeof *mi);
+    else if (mi[0] == 2 && strcmp(reply, "untouched")) {
+        mi[4] = 0x010711u; mi[5] = 862890u;
+        mi[8] = strcmp(reply, "mismatched") ? 0x60218u : ~0x60218u;
+    }
+    if (mi[0] == 2) fprintf(lg, "   [miscinfo] reply %s\n", reply);
     if (mi[0] == 0)                                     /* REQUEST_CLOCKSPEED */
         n += env_u32("MISC_CLOCK", &mi[2]);
     else if (mi[0] == 1 || mi[0] == 2)                  /* REQUEST_(DRIVER_)SGXREV */

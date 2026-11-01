@@ -12,7 +12,7 @@ tier = "3"
 source = "mesa-csbgen"
 citation = "C0224"
 licence = "MIT"
-evidence = "Rogue's STRIDE type has the role of type 6 here; values differ; [HW] E035: TEXTYPE 0 is twiddled: texel (tx, ty) at dword index interleaving ty (even bits) and tx (odd bits), all 1062 pixels of a textured triangle"
+evidence = "Rogue's STRIDE type has the role of type 6 here; values differ; [CAP] E342; [HW] E035: TEXTYPE 0 is twiddled: texel (tx, ty) at dword index interleaving ty (even bits) and tx (odd bits), all 1062 pixels of a textured triangle"
 
 [[term]]
 id = "G0288"

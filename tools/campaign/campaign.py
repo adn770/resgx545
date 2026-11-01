@@ -253,12 +253,15 @@ class LocalHost:
 class BuildHost:
     """Runs a capture script on the build machine over ssh (x86-64 Linux with 32-bit
     userspace, or the i686 laptop, for the closed i386 libraries under the harness);
-    $RESGX545_BUILD_HOST, with $RESGX545_BUILD_SSH_OPTS (e.g. a host-key alias)."""
+    $RESGX545_BUILD_HOST, with $RESGX545_BUILD_SSH_OPTS (e.g. a host-key alias). The closed
+    usr/lib's path on that machine, $RESGX545_BUILD_CDV_LIBS, reaches the script as
+    $RESGX545_CDV_LIBS (unset, the script's own default)."""
     name = "build"
 
     def __init__(self, host: str | None = None):
         self.host = host or os.environ.get("RESGX545_BUILD_HOST", "")
         self.opts = shlex.split(os.environ.get("RESGX545_BUILD_SSH_OPTS", ""))
+        self.libs = os.environ.get("RESGX545_BUILD_CDV_LIBS", "")
         if not self.host:
             raise CampaignError("no build host: set RESGX545_BUILD_HOST")
 
@@ -285,8 +288,9 @@ class BuildHost:
             if files:
                 self._scp(["scp", *self.opts, "-q", *[str(root / f) for f in files],
                            f"{self.host}:{w}/"], "upload")
-            r = self._sh(f"cd {shlex.quote(w)} && mkdir -p out && OUT={shlex.quote(w)}/out sh -s",
-                         input=script)
+            libs = f"RESGX545_CDV_LIBS={shlex.quote(self.libs)} " if self.libs else ""
+            r = self._sh(f"cd {shlex.quote(w)} && mkdir -p out && "
+                         f"{libs}OUT={shlex.quote(w)}/out sh -s", input=script)
             if r.returncode:
                 raise CampaignError(f"capture failed on {self.host} (exit {r.returncode}): "
                                     f"{r.stderr.strip()}")

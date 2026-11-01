@@ -1,0 +1,9 @@
+title = "capture table ta/target-sizes"
+repo = "data-private"
+paths = ["ta/target-sizes/"]
+method = "campaign runner on the build target (tools/campaign)"
+date = "2026-11-03"
+files = 230
+size = 5294442
+sha256 = "569a24b2f984e50834189d4689f90bb5691373f1e30207e0dd3174e15ac3bafb"
+recipe = "captures/ta/target-sizes.toml"

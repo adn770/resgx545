@@ -10,9 +10,9 @@ sgx545 = "0x0a9c"
 meaning = "which coefficient sets the filter instructions use: bits 1:0 = 0, 1, 2 pick one of three fixed banks for sets 2-5, 3 makes set 2 the third loaded group (CR_USE_COEFFS2_*) and sets 3-5 zero; sets 0-1 are always CR_USE_COEFFS0/1_* [infer]"
 tier = "ours"
 source = "resgx545"
-citation = "E078, E079"
+citation = "E341, E078, E079"
 licence = "MIT"
-evidence = "which registers hold the firh coefficient sets is not shown by any probe (video probe: how the sets are loaded is open); [HW] E078: 3 and 7 give the same filter results; [HW] E078: the control probes, identity filters loaded, 0x0a9c at eight values; [HW] E079: banks 0-2 measured tap by tap"
+evidence = "which registers hold the firh coefficient sets is not shown by any probe (video probe: how the sets are loaded is open); [CAP] E341: non-zero only for an NV12 stream (values there); [HW] E078: 3 and 7 give the same filter results; [HW] E078: the control probes, identity filters loaded, 0x0a9c at eight values; [HW] E079: banks 0-2 measured tap by tap"
 
 [[term]]
 id = "G0204"
