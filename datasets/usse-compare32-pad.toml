@@ -1,0 +1,10 @@
+title = "probe table usse/compare32-pad"
+repo = "data"
+paths = ["usse/compare32-pad/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 56
+size = 112295
+sha256 = "db1091275ffc506f5aa5f08619163ad096bfd24d82553f1888fd3012eb090a25"
+recipe = "probes/usse/compare32-pad.toml"
+needs = ["render"]

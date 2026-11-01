@@ -177,13 +177,13 @@ probe and sweep tables that the units above cover.
 
 ### 4.1 Open questions
 
-`doc/open_questions.md` lists every open question, generated from `questions/`: Q001 to Q134, 113
+`doc/open_questions.md` lists every open question, generated from `questions/`: Q001 to Q137, 116
 open. Each has a kind. The work is hardware knowledge, for a simulator and then our own firmware, so
-the 100 `hw` questions are the work queue, each with a value (high 14, medium 54, low 32); the 10
+the 103 `hw` questions are the work queue, each with a value (high 14, medium 54, low 35); the 10
 `fw` questions (the closed firmware's and driver's own behaviour: Q004, Q029, Q034, Q049, Q084,
 Q088, Q118, Q119, Q124, Q131) and the 3 `kernel` ones (the design of our kernel driver: Q005, Q037,
 Q095) stay open, parked. By unit: bif 4, dpm 5, edm 6, isp 8, mte 3, pbe 5, pds 16, platform 4,
-render 9, ta 6, texture 7, transfer 3, usse 23, vdm 8, zls 6. A question is removed when a record
+render 9, ta 6, texture 7, transfer 3, usse 26, vdm 8, zls 6. A question is removed when a record
 answers it; one that mixed a hardware part with a firmware or kernel part was narrowed to the
 hardware part or folded into the hardware question that holds it (six so far: the control block's
 per-VM copy and the render context count bound into Q076, the recovery's reset steps into Q003, the
@@ -430,3 +430,29 @@ not answered: two EDM tasks at once (Q131) and `str` then `ldr` (Q134). E489 and
 E465 and E466 from the raw dumps, and E465 and E466 are carried forward with a dated note.
 Records E478-E490; Q051, Q052, Q054, Q098, Q101, Q107, Q120, Q124 and Q125 are narrowed, none
 retired; Q128 to Q134 are new, Q131 for the firmware (`fw`).
+
+Sub-phase 11.25 ran 13 probe tables on the laptop (1526 cases, one campaign run each, the false-call
+table twice) with no kernel change and no tool change (the sgxfive-test of 11.24), for the open
+cases of the 11.23 review (`probes/usse/callfalse.toml`, `callfalse2`, `place-more`, `ima32-forms`,
+`compare32-pad`, `iaddu32-pairs`, `pclink-repeat`, `pa-dest`, `raw25`, `rawcond`, `rawcond2`,
+`ima32hi` and `ucmp2`). A call that is not taken writes `pclink` (16 of 16 not-taken calls of a
+fill, 3 of 3 in a chain, 10 of 10 jobs of five placed programs: E491), where the model said it does
+not; the code base moves in steps of 0x80000 bytes at ten placements, seven of them not multiples of
+it (E492). `ima32.u d, iK, a, b, c` writes the high 32 bits of the product with the addend to `iK`
+(15 of 15 cases of five `.u` register triples), where the model kept the `i` registers, so a
+subtract gives its borrow in one `ima32` and an unsigned compare is two instructions on the 64 pairs
+of eight values run, unsigned and not padded (E493, E501); the raw words run for that field changed
+nothing seen except that bit 46 changed `r14` (3 of 3 jobs, open: Q135). `cie` adds bit 0 of `iN`
+for `i0` to `i2` and eight values (E494); 17 more immediates, `.neg` on `.s` immediates and
+constants and dependent readers up to 8 nops are exact (E495); `ima32` writes `sa0`, `o0`, `i1`,
+`i2` and the six r-bank destinations run (r0, r9, r18, r28, r30, r31) but not `pa0`, as `mov` does
+not, and its sa0 write persisting to the next job is not separated from the colour rule (E496); the
+signed compare is exact padded (E497); `iadd32`'s `n` and `p` read the true sum and `iaddu32` reads
+the carry (E498). Bit 43 of a class 9 test word is the `pat` bit of the test field, not an invert;
+the field's two parts are ANDed under the `a` join on chan0, the only join and channel in all 732
+raw words run (a rule read out of 90 cases and then predicted 450 of 450 on other forms; the `o`
+join was not run: E499). Four runs of the `pclink` readers show 64 pixels of 0xeb3 in 29 of 40 jobs
+and quads that repeat in part (E500). The records state the pairs and values that ran and count
+programs and jobs apart where one program ran twice. E469 to E473, E475 and E476 are carried forward
+with dated corrections where 11.25 answers what they listed as not run. Records E491-E501; Q052,
+Q098, Q123, Q125, Q126 and Q127 are narrowed, none retired; Q135 to Q137 are new.

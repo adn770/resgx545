@@ -36,3 +36,15 @@ by the assembler, also [infer]). To test `x & ~mask`, a compiler computes the in
 set in a test was run (a raw word of the E474 kind would settle it; not run), and `~` was not tried
 in `or`, `rol` or `xor ~r2` test forms. Tests with an immediate on 8-bit or 16-bit lane operations,
 and with `chan1` to `chan3`, are not run here.
+
+**Correction, 2026-11-08 (11.25).** The measurements above are unchanged. The encoding statement is
+now a hardware result for the forms run: E499 ran raw words of the sixteen class 9 test words
+(`and`, `or`, `xor` and `rol`, with r2 or #7, testtaz and testtanz) and the same words with bit 43
+set, the bit that `~` sets in `and r10, r1, ~r2`. Bit 43 of a test word is the pat bit of the test
+field enc[43:40] (taz 1, tanz 2, nat 4, pat 8, not enc[43:42] alone): with it set the test reads the
+plain condition ANDed with pat (96 of 96), and it does not invert source 2 (that fits 53 of 96). So
+the test words have no invert bit, and the assembler's refusal of `~` in a test fits that; 'no word
+with the invert bit set was run' no longer holds, and '`or`, `rol` and `xor ~r2` were not tried'
+holds for the text forms only: the raw words ran for all four operations, while the text forms `or`,
+`rol` and `xor` with `~` were still not tried. That no other bit of a test word inverts a source was
+not run, and the rule was read out of the data (E499 states which counts are predictions).

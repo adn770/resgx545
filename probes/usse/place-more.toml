@@ -1,0 +1,236 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# cases 1 and 2 of the 11.25 follow-up: placed programs at non-aligned offsets, false calls placed. Phase 11.25.
+# each probe's source is the placed program under templates/ (E428's --place, cbase form), run twice
+needs = ["render"]
+
+[[probe]]
+name = "usse-place-more-read-2ff000"
+question = "the link of a br.savelink in a program placed at heap offset 0x2ff000 (cbase), read as o0 (model: the code base is the placement rounded down to 0x80000 bytes, and the program starts at the offset inside the step: E476)"
+source = "place_base.s"
+place = { offset = 0x002ff000, source = "p25_link_read.s", form = "cbase" }
+temps = 0x00000020
+inputs = ["RUN"]
+labels = ["run 1", "run 2"]
+cases = [[0x00000001], [0x00000002]]
+[probe.hypotheses]
+"step of 0x80000 bytes (65536 instructions): the 11.23 reading" = [0x0000fe02, 0x0000fe02]
+"step of 0x100000 bytes" = [0x0001fe02, 0x0001fe02]
+"step of 0x40000 bytes" = [0x00007e02, 0x00007e02]
+
+[[probe]]
+name = "usse-place-more-jump-2ff000"
+question = "a lapc to link + 8 computed at run time in a program placed at heap offset 0x2ff000 (cbase): o0 = the link when it lands, 0xFA11 when it falls through (model: the code base is the placement rounded down to 0x80000 bytes, and the program starts at the offset inside the step: E476)"
+source = "place_base.s"
+place = { offset = 0x002ff000, source = "p25_link_jump.s", form = "cbase" }
+temps = 0x00000020
+inputs = ["RUN"]
+labels = ["run 1", "run 2"]
+cases = [[0x00000001], [0x00000002]]
+[probe.hypotheses]
+"step of 0x80000 bytes (65536 instructions): the 11.23 reading" = [0x0000fe02, 0x0000fe02]
+"step of 0x100000 bytes" = [0x0001fe02, 0x0001fe02]
+"step of 0x40000 bytes" = [0x00007e02, 0x00007e02]
+
+[[probe]]
+name = "usse-place-more-read-1a0000"
+question = "the link of a br.savelink in a program placed at heap offset 0x1a0000 (cbase), read as o0 (model: the code base is the placement rounded down to 0x80000 bytes, and the program starts at the offset inside the step: E476)"
+source = "place_base.s"
+place = { offset = 0x001a0000, source = "p25_link_read.s", form = "cbase" }
+temps = 0x00000020
+inputs = ["RUN"]
+labels = ["run 1", "run 2"]
+cases = [[0x00000001], [0x00000002]]
+[probe.hypotheses]
+"step of 0x80000 bytes (65536 instructions): the 11.23 reading" = [0x00004002, 0x00004002]
+"step of 0x100000 bytes" = [0x00014002, 0x00014002]
+"step of 0x40000 bytes" = [0x00004002, 0x00004002]
+
+[[probe]]
+name = "usse-place-more-jump-1a0000"
+question = "a lapc to link + 8 computed at run time in a program placed at heap offset 0x1a0000 (cbase): o0 = the link when it lands, 0xFA11 when it falls through (model: the code base is the placement rounded down to 0x80000 bytes, and the program starts at the offset inside the step: E476)"
+source = "place_base.s"
+place = { offset = 0x001a0000, source = "p25_link_jump.s", form = "cbase" }
+temps = 0x00000020
+inputs = ["RUN"]
+labels = ["run 1", "run 2"]
+cases = [[0x00000001], [0x00000002]]
+[probe.hypotheses]
+"step of 0x80000 bytes (65536 instructions): the 11.23 reading" = [0x00004002, 0x00004002]
+"step of 0x100000 bytes" = [0x00014002, 0x00014002]
+"step of 0x40000 bytes" = [0x00004002, 0x00004002]
+
+[[probe]]
+name = "usse-place-more-read-3a8000"
+question = "the link of a br.savelink in a program placed at heap offset 0x3a8000 (cbase), read as o0 (model: the code base is the placement rounded down to 0x80000 bytes, and the program starts at the offset inside the step: E476)"
+source = "place_base.s"
+place = { offset = 0x003a8000, source = "p25_link_read.s", form = "cbase" }
+temps = 0x00000020
+inputs = ["RUN"]
+labels = ["run 1", "run 2"]
+cases = [[0x00000001], [0x00000002]]
+[probe.hypotheses]
+"step of 0x80000 bytes (65536 instructions): the 11.23 reading" = [0x00005002, 0x00005002]
+"step of 0x100000 bytes" = [0x00015002, 0x00015002]
+"step of 0x40000 bytes" = [0x00005002, 0x00005002]
+
+[[probe]]
+name = "usse-place-more-jump-3a8000"
+question = "a lapc to link + 8 computed at run time in a program placed at heap offset 0x3a8000 (cbase): o0 = the link when it lands, 0xFA11 when it falls through (model: the code base is the placement rounded down to 0x80000 bytes, and the program starts at the offset inside the step: E476)"
+source = "place_base.s"
+place = { offset = 0x003a8000, source = "p25_link_jump.s", form = "cbase" }
+temps = 0x00000020
+inputs = ["RUN"]
+labels = ["run 1", "run 2"]
+cases = [[0x00000001], [0x00000002]]
+[probe.hypotheses]
+"step of 0x80000 bytes (65536 instructions): the 11.23 reading" = [0x00005002, 0x00005002]
+"step of 0x100000 bytes" = [0x00015002, 0x00015002]
+"step of 0x40000 bytes" = [0x00005002, 0x00005002]
+
+[[probe]]
+name = "usse-place-more-read-4ff000"
+question = "the link of a br.savelink in a program placed at heap offset 0x4ff000 (cbase), read as o0 (model: the code base is the placement rounded down to 0x80000 bytes, and the program starts at the offset inside the step: E476)"
+source = "place_base.s"
+place = { offset = 0x004ff000, source = "p25_link_read.s", form = "cbase" }
+temps = 0x00000020
+inputs = ["RUN"]
+labels = ["run 1", "run 2"]
+cases = [[0x00000001], [0x00000002]]
+[probe.hypotheses]
+"step of 0x80000 bytes (65536 instructions): the 11.23 reading" = [0x0000fe02, 0x0000fe02]
+"step of 0x100000 bytes" = [0x0001fe02, 0x0001fe02]
+"step of 0x40000 bytes" = [0x00007e02, 0x00007e02]
+
+[[probe]]
+name = "usse-place-more-jump-4ff000"
+question = "a lapc to link + 8 computed at run time in a program placed at heap offset 0x4ff000 (cbase): o0 = the link when it lands, 0xFA11 when it falls through (model: the code base is the placement rounded down to 0x80000 bytes, and the program starts at the offset inside the step: E476)"
+source = "place_base.s"
+place = { offset = 0x004ff000, source = "p25_link_jump.s", form = "cbase" }
+temps = 0x00000020
+inputs = ["RUN"]
+labels = ["run 1", "run 2"]
+cases = [[0x00000001], [0x00000002]]
+[probe.hypotheses]
+"step of 0x80000 bytes (65536 instructions): the 11.23 reading" = [0x0000fe02, 0x0000fe02]
+"step of 0x100000 bytes" = [0x0001fe02, 0x0001fe02]
+"step of 0x40000 bytes" = [0x00007e02, 0x00007e02]
+
+[[probe]]
+name = "usse-place-more-read-300008"
+question = "the link of a br.savelink in a program placed at heap offset 0x300008 (cbase), read as o0 (model: the code base is the placement rounded down to 0x80000 bytes, and the program starts at the offset inside the step: E476)"
+source = "place_base.s"
+place = { offset = 0x00300008, source = "p25_link_read.s", form = "cbase" }
+temps = 0x00000020
+inputs = ["RUN"]
+labels = ["run 1", "run 2"]
+cases = [[0x00000001], [0x00000002]]
+[probe.hypotheses]
+"step of 0x80000 bytes (65536 instructions): the 11.23 reading" = [0x00000003, 0x00000003]
+"step of 0x100000 bytes" = [0x00000003, 0x00000003]
+"step of 0x40000 bytes" = [0x00000003, 0x00000003]
+
+[[probe]]
+name = "usse-place-more-jump-300008"
+question = "a lapc to link + 8 computed at run time in a program placed at heap offset 0x300008 (cbase): o0 = the link when it lands, 0xFA11 when it falls through (model: the code base is the placement rounded down to 0x80000 bytes, and the program starts at the offset inside the step: E476)"
+source = "place_base.s"
+place = { offset = 0x00300008, source = "p25_link_jump.s", form = "cbase" }
+temps = 0x00000020
+inputs = ["RUN"]
+labels = ["run 1", "run 2"]
+cases = [[0x00000001], [0x00000002]]
+[probe.hypotheses]
+"step of 0x80000 bytes (65536 instructions): the 11.23 reading" = [0x00000003, 0x00000003]
+"step of 0x100000 bytes" = [0x00000003, 0x00000003]
+"step of 0x40000 bytes" = [0x00000003, 0x00000003]
+
+[[probe]]
+name = "usse-place-more-br-false-10000"
+question = "a predicated call that is not taken (p0 br.savelink #1, p0 = 0: the tag br-false) in a program placed at heap offset 0x10000; pclink preset 0x77; o0 = pclink read after it (the heap index of the word after the call, 0x2006, when the link is written; 0x77 when it is not)"
+source = "place_base.s"
+place = { offset = 0x00010000, source = "p25_false_br-false_0.s", form = "cbase" }
+temps = 0x00000020
+inputs = ["RUN"]
+labels = ["run 1", "run 2"]
+cases = [[0x00000001], [0x00000002]]
+[probe.hypotheses]
+"link written by the call whatever its predicate (the fill reading, E475)" = [0x00002006, 0x00002006]
+"model: a call that is not taken leaves pclink" = [0x00000077, 0x00000077]
+
+[[probe]]
+name = "usse-place-more-ba-false-10000"
+question = "a predicated call that is not taken (p0 ba.savelink #8198, p0 = 0: the tag ba-false) in a program placed at heap offset 0x10000; pclink preset 0x77; o0 = pclink read after it (the heap index of the word after the call, 0x2006, when the link is written; 0x77 when it is not)"
+source = "place_base.s"
+place = { offset = 0x00010000, source = "p25_false_ba-false_0.s", form = "cbase" }
+temps = 0x00000020
+inputs = ["RUN"]
+labels = ["run 1", "run 2"]
+cases = [[0x00000001], [0x00000002]]
+[probe.hypotheses]
+"link written by the call whatever its predicate (the fill reading, E475)" = [0x00002006, 0x00002006]
+"model: a call that is not taken leaves pclink" = [0x00000077, 0x00000077]
+
+[[probe]]
+name = "usse-place-more-br-true-10000"
+question = "a predicated call that is not taken (p0 br.savelink #1, p0 = 1: the tag br-true) in a program placed at heap offset 0x10000; pclink preset 0x77; o0 = pclink read after it (the heap index of the word after the call, 0x2006, when the link is written; 0x77 when it is not)"
+source = "place_base.s"
+place = { offset = 0x00010000, source = "p25_false_br-true_1.s", form = "cbase" }
+temps = 0x00000020
+inputs = ["RUN"]
+labels = ["run 1", "run 2"]
+cases = [[0x00000001], [0x00000002]]
+[probe.hypotheses]
+"link written by the call whatever its predicate (the fill reading, E475)" = [0x00002006, 0x00002006]
+"model: a call that is not taken leaves pclink" = [0x00002006, 0x00002006]
+
+[[probe]]
+name = "usse-place-more-brn-false-10000"
+question = "a predicated call that is not taken (!p0 br.savelink #1, p0 = 1: the tag brn-false) in a program placed at heap offset 0x10000; pclink preset 0x77; o0 = pclink read after it (the heap index of the word after the call, 0x2006, when the link is written; 0x77 when it is not)"
+source = "place_base.s"
+place = { offset = 0x00010000, source = "p25_false_brn-false_1.s", form = "cbase" }
+temps = 0x00000020
+inputs = ["RUN"]
+labels = ["run 1", "run 2"]
+cases = [[0x00000001], [0x00000002]]
+[probe.hypotheses]
+"link written by the call whatever its predicate (the fill reading, E475)" = [0x00002006, 0x00002006]
+"model: a call that is not taken leaves pclink" = [0x00000077, 0x00000077]
+
+[[probe]]
+name = "usse-place-more-br-false-1ff000"
+question = "a predicated call that is not taken (p0 br.savelink #1, p0 = 0: the tag br-false) in a program placed at heap offset 0x1ff000; pclink preset 0x77; o0 = pclink read after it (the heap index of the word after the call, 0xfe06, when the link is written; 0x77 when it is not)"
+source = "place_base.s"
+place = { offset = 0x001ff000, source = "p25_false_br-false_0.s", form = "cbase" }
+temps = 0x00000020
+inputs = ["RUN"]
+labels = ["run 1", "run 2"]
+cases = [[0x00000001], [0x00000002]]
+[probe.hypotheses]
+"link written by the call whatever its predicate (the fill reading, E475)" = [0x0000fe06, 0x0000fe06]
+"model: a call that is not taken leaves pclink" = [0x00000077, 0x00000077]
+
+[[probe]]
+name = "usse-place-more-br-true-1ff000"
+question = "a predicated call that is not taken (p0 br.savelink #1, p0 = 1: the tag br-true) in a program placed at heap offset 0x1ff000; pclink preset 0x77; o0 = pclink read after it (the heap index of the word after the call, 0xfe06, when the link is written; 0x77 when it is not)"
+source = "place_base.s"
+place = { offset = 0x001ff000, source = "p25_false_br-true_1.s", form = "cbase" }
+temps = 0x00000020
+inputs = ["RUN"]
+labels = ["run 1", "run 2"]
+cases = [[0x00000001], [0x00000002]]
+[probe.hypotheses]
+"link written by the call whatever its predicate (the fill reading, E475)" = [0x0000fe06, 0x0000fe06]
+"model: a call that is not taken leaves pclink" = [0x0000fe06, 0x0000fe06]
+
+[[probe]]
+name = "usse-place-more-brn-false-1ff000"
+question = "a predicated call that is not taken (!p0 br.savelink #1, p0 = 1: the tag brn-false) in a program placed at heap offset 0x1ff000; pclink preset 0x77; o0 = pclink read after it (the heap index of the word after the call, 0xfe06, when the link is written; 0x77 when it is not)"
+source = "place_base.s"
+place = { offset = 0x001ff000, source = "p25_false_brn-false_1.s", form = "cbase" }
+temps = 0x00000020
+inputs = ["RUN"]
+labels = ["run 1", "run 2"]
+cases = [[0x00000001], [0x00000002]]
+[probe.hypotheses]
+"link written by the call whatever its predicate (the fill reading, E475)" = [0x0000fe06, 0x0000fe06]
+"model: a call that is not taken leaves pclink" = [0x00000077, 0x00000077]

@@ -1,0 +1,10 @@
+title = "probe table usse/ima32hi"
+repo = "data"
+paths = ["usse/ima32hi/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 79
+size = 160187
+sha256 = "b5ee7f24d032e59fe380e56dd02b4bcf00dce1204c2a95e47c78f17b6c97a168"
+recipe = "probes/usse/ima32hi.toml"
+needs = ["render"]

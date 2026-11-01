@@ -1,0 +1,37 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# case 13 of the 11.25 follow-up: pclink readers repeated. Phase 11.25.
+needs = ["render"]
+
+[[probe]]
+name = "usse-pclink-repeat-a"
+question = "usse-pclink-pixels again, run a of three, the same fifteen jobs in the same order, every pixel kept: do the 2 x 2 quads that read another value than the writer's change from run to run (Q125)"
+source = "dump.s"
+pixels = true
+params = { OUT = "r10", B = 0x00000000, C = 0x00000000, D = 0x00000000, E = 0x00000000, F = 0x00000000, G = 0x00000000, H = 0x00000000 }
+inputs = ["OP", "A"]
+labels = ["writer 0x12345", "reader 1", "reader 2", "writer 0x2abcd", "reader 1", "reader 2", "writer 0x00155", "reader 1", "reader 2", "writer 0x3ffff", "reader 1", "reader 2", "writer 0x0abcd", "reader 1", "reader 2"]
+cases = [["mov pclink, r1\nmov r10, pclink", 0x00012345], ["mov r10, pclink", 0x00000000], ["mov r10, pclink", 0x00000000], ["mov pclink, r1\nmov r10, pclink", 0x0002abcd], ["mov r10, pclink", 0x00000000], ["mov r10, pclink", 0x00000000], ["mov pclink, r1\nmov r10, pclink", 0x00000155], ["mov r10, pclink", 0x00000000], ["mov r10, pclink", 0x00000000], ["mov pclink, r1\nmov r10, pclink", 0x0003ffff], ["mov r10, pclink", 0x00000000], ["mov r10, pclink", 0x00000000], ["mov pclink, r1\nmov r10, pclink", 0x0000abcd], ["mov r10, pclink", 0x00000000], ["mov r10, pclink", 0x00000000]]
+[probe.hypotheses]
+
+[[probe]]
+name = "usse-pclink-repeat-b"
+question = "usse-pclink-pixels again, run b of three, the same fifteen jobs in the same order, every pixel kept: do the 2 x 2 quads that read another value than the writer's change from run to run (Q125)"
+source = "dump.s"
+pixels = true
+params = { OUT = "r10", B = 0x00000000, C = 0x00000000, D = 0x00000000, E = 0x00000000, F = 0x00000000, G = 0x00000000, H = 0x00000000 }
+inputs = ["OP", "A"]
+labels = ["writer 0x12345", "reader 1", "reader 2", "writer 0x2abcd", "reader 1", "reader 2", "writer 0x00155", "reader 1", "reader 2", "writer 0x3ffff", "reader 1", "reader 2", "writer 0x0abcd", "reader 1", "reader 2"]
+cases = [["mov pclink, r1\nmov r10, pclink", 0x00012345], ["mov r10, pclink", 0x00000000], ["mov r10, pclink", 0x00000000], ["mov pclink, r1\nmov r10, pclink", 0x0002abcd], ["mov r10, pclink", 0x00000000], ["mov r10, pclink", 0x00000000], ["mov pclink, r1\nmov r10, pclink", 0x00000155], ["mov r10, pclink", 0x00000000], ["mov r10, pclink", 0x00000000], ["mov pclink, r1\nmov r10, pclink", 0x0003ffff], ["mov r10, pclink", 0x00000000], ["mov r10, pclink", 0x00000000], ["mov pclink, r1\nmov r10, pclink", 0x0000abcd], ["mov r10, pclink", 0x00000000], ["mov r10, pclink", 0x00000000]]
+[probe.hypotheses]
+
+[[probe]]
+name = "usse-pclink-repeat-c"
+question = "usse-pclink-pixels again, run c of three, the same fifteen jobs in the same order, every pixel kept: do the 2 x 2 quads that read another value than the writer's change from run to run (Q125)"
+source = "dump.s"
+pixels = true
+params = { OUT = "r10", B = 0x00000000, C = 0x00000000, D = 0x00000000, E = 0x00000000, F = 0x00000000, G = 0x00000000, H = 0x00000000 }
+inputs = ["OP", "A"]
+labels = ["writer 0x12345", "reader 1", "reader 2", "writer 0x2abcd", "reader 1", "reader 2", "writer 0x00155", "reader 1", "reader 2", "writer 0x3ffff", "reader 1", "reader 2", "writer 0x0abcd", "reader 1", "reader 2"]
+cases = [["mov pclink, r1\nmov r10, pclink", 0x00012345], ["mov r10, pclink", 0x00000000], ["mov r10, pclink", 0x00000000], ["mov pclink, r1\nmov r10, pclink", 0x0002abcd], ["mov r10, pclink", 0x00000000], ["mov r10, pclink", 0x00000000], ["mov pclink, r1\nmov r10, pclink", 0x00000155], ["mov r10, pclink", 0x00000000], ["mov r10, pclink", 0x00000000], ["mov pclink, r1\nmov r10, pclink", 0x0003ffff], ["mov r10, pclink", 0x00000000], ["mov r10, pclink", 0x00000000], ["mov pclink, r1\nmov r10, pclink", 0x0000abcd], ["mov r10, pclink", 0x00000000], ["mov r10, pclink", 0x00000000]]
+[probe.hypotheses]

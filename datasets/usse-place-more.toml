@@ -1,0 +1,10 @@
+title = "probe table usse/place-more"
+repo = "data"
+paths = ["usse/place-more/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 87
+size = 32616
+sha256 = "cceed87a3685ebf5656960ebe2ceba6769436696726f3f615db1b049dd4828f0"
+recipe = "probes/usse/place-more.toml"
+needs = ["render"]

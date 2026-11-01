@@ -1,0 +1,10 @@
+title = "probe table usse/ima32-forms"
+repo = "data"
+paths = ["usse/ima32-forms/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 344
+size = 692097
+sha256 = "c78c6dde8121ec8749aae71565a9e7f34cc08db80f3cd94421e3fe259534e241"
+recipe = "probes/usse/ima32-forms.toml"
+needs = ["render"]

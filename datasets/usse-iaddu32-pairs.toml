@@ -1,0 +1,10 @@
+title = "probe table usse/iaddu32-pairs"
+repo = "data"
+paths = ["usse/iaddu32-pairs/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 146
+size = 298354
+sha256 = "fc30bcd35286333cea6350ae6f668b21ba46335a08a57e77e75606f43931a5cb"
+recipe = "probes/usse/iaddu32-pairs.toml"
+needs = ["render"]

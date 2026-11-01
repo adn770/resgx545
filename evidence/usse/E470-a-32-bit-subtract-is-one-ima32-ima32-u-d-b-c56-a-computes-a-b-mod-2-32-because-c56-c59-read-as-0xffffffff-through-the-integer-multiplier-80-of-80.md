@@ -52,3 +52,19 @@ with bit 0 clear and a high bit set (0x10000, 0x80000000) and an iN other than i
 of these cases is yet a vector. [infer] From reading `crates/sgx-sim/src/usse.rs` at 8665d77
 (sgx-sim was not run): its `ima32` stops on a negated source and on the extra operand, and adds the
 whole of `iN` for `cie`.
+
+**Correction, 2026-11-08 (11.25).** The measurements above are unchanged; three of the statements
+under 'What it shows' and 'What it does not show' are corrected by 11.25 runs. (1) 'No carry out of
+it is known' and 'the borrow is the software one of E472': `ima32` has a second result, the high 32
+bits of a * b + c, through the extra operand (`ima32.u d, iK, a, b, c`, 15 of 15 cases of five
+register triples, E493), and `ima32.u r10, iK, r2, c56, r1` leaves a - b mod 2^32 in r10 and b - [a
+< b] in iK (75 of 75 cases over the pairs of the values 0, 1, 0xffff, 0x10000, 0x7fffffff,
+0x80000000 and 0xffffffff for i0, and 13 pairs for i1 and i2), so that an unsigned compare is two
+instructions on the 64 pairs of the eight values of E472 (E501); [infer] what the model called `coe`
+is this operand for `a * 1 + c`. The six-instruction formula of E472 stays exact for the signed
+compare. (2) '`.s` with `.neg` on an immediate or a constant was not run': E495 ran seven `.s` forms
+(#1.neg and #5.neg in source 2, #1.neg and #127.neg in source 3, c56.neg and c3.neg in source 2,
+c56.neg in source 3) and three `.u` ones, 80 of 80, each two's-complement negation. (3) 'iN with bit
+0 clear and a high bit set and an iN other than i0 were not run': E494 ran i0, i1 and i2 with the
+eight values 0x10000, 0x80000000, 0xfffffffe, 0x10001, 0x80000001, 2, 0x55555554 and 0xaaaaaaab (24
+of 24, bit 0 only). The immediates, banks and destinations of E469's list ran in E495 and E496.

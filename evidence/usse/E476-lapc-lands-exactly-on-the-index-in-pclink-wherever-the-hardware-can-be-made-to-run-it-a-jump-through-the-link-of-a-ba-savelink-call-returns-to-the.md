@@ -66,3 +66,13 @@ base rule for it is [infer]). Targets of 256 to 8191 in a fill (sgxfive-test ref
 over 256 words, fill or placed), index bits 16 and 17 of the PC (a jump that crosses a 65536-word
 step of the code base: the placed programs are one page, 512 words at most, and 256 by the tool;
 Q123), `lapc` with a repeat, `.synce` and `.mon` flags, any jump from a firmware task.
+
+**Correction, 2026-11-08 (11.25).** The measurements above are unchanged; the statements that the
+step of 0x80000 'rests on one non-aligned placement' and that a second was not run are replaced by
+E492: five more placements (0x2ff000, 0x1a0000, 0x3a8000, 0x4ff000 and 0x300008) read the links
+0xfe02, 0x4002, 0x5002, 0xfe02 and 0x3, and the lapc to the link plus 8 landed in each (20 of 20
+jobs: a read and a jump program at each offset, two jobs each). Of the ten placements seven are not
+multiples of 0x80000 (0x10000, 0x1ff000 and the five new ones), and among the powers of two from
+0x1000 to 0x1000000 only 0x80000 fits all ten links (0x40000 fits 7, 0x20000 and 0x100000 fit 5). A
+step that is not a power of two was not excluded by a fit, a task started by the firmware stays
+[infer], and the 65536-word crossing and the indices 256 to 8191 are still not run (Q123).

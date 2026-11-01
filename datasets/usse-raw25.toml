@@ -1,0 +1,10 @@
+title = "probe table usse/raw25"
+repo = "data"
+paths = ["usse/raw25/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 226
+size = 453546
+sha256 = "7483ad9e3c62f26b2eceac9cee0cbeb2a842d345dc798b5bd32e265fbdac361b"
+recipe = "probes/usse/raw25.toml"
+needs = ["render"]

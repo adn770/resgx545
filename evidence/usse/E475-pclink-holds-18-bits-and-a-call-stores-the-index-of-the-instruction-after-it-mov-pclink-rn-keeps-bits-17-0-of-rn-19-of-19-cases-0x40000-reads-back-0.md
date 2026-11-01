@@ -72,3 +72,17 @@ task must write pclink before it reads it.
 stored link read back). That the stale-link test is clean for `mov pclink, rN` after a `br.savelink`
 call (the lapc-gap cases follow a call whose link is stale, which is the case that matters). What
 wrote 0xeb3 and 0x98 (Q125). The value of pclink at the start of a firmware (EDM) task (Q124).
+
+**Correction, 2026-11-08 (11.25).** The measurements above are unchanged; the false-predicate
+statement is replaced by E491: a call that is not taken writes pclink in all 16 not-taken calls of a
+fill table (`ba.savelink` and `br.savelink` under p0, p1, p2 and p3, `!p0` and `!p1`, presets 0x77,
+0 and 0x3ffff, next instructions at indices 24, 48 and 84), in the 3 not-taken calls of a chain and
+in 10 jobs of five programs placed at 0x10000 and 0x1ff000, and the model's reading that it does not
+fits 0 of 29 cases; so 'one case of one form' no longer holds, though `!p2`, `!p3` (refused by the
+assembler), `lapc`, a repeat and firmware tasks were not run. E500 ran the 15 jobs of
+usse-pclink-pixels three more times: the deviant pixels are aligned 2 x 2 quads in every job of
+every run and the 0xeb3 count is 64 in 29 of 40 reader jobs, so 'the set of quads differs from job
+to job' holds literally (the sets are not identical) and the positions repeat in part from run to
+run, but two reader jobs of one run also share 1 to 16 quads (E500), so the positions are neither
+fixed nor independent across jobs or across runs, and no control compares jobs for dependence on the
+job before; 'pixels ran once' is replaced by four runs.

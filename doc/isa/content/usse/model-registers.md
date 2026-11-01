@@ -43,7 +43,13 @@ marked.
 - **Primary attributes [HW].** The PDS fills them per task: `doutd` DMAs memory into them
   (the vertex fetch of our triangle lands in `pa0`-`pa3`), `douti` has the iterator write
   them and `doutt` returns a texture fetch into them (our copy shader reads its texel from
-  `pa0`). Programs may also write them: our MTE state tasks load into `pa0` again.
+  `pa0`). Programs may also write them: our MTE state tasks load into `pa0` again. **In a fill's
+  pixel task a write to `pa0` by `mov` or by `ima32` is lost [HW]** (E496: `ima32.u pa0, ...` in 2
+  jobs and `mov pa0, r1` in 1, each read back in the same job as before, 3 of 3; the probe table's
+  model had every destination take the result, and `ima32.u` writes `sa0`, `o0`, `i1`, `i2` and the
+  six r-bank destinations run, r0, r9, r18, r28, r30 and r31): an unwritten `pa0` read 0xff00ff00 in
+  1536 pixels and 0xff203040 in 512 in the first seven jobs of that table, each job outputting the
+  colour it read (Q098, Q136).
 - **Secondary attributes [CAP/RE].** Shared by the instances of a task and written by a
   secondary PDS program. The firmware keeps its base pointers there (`sa0`-`sa2`, DMAed from
   the TA/3D control block at boot) and some of its state (`sa8`, `sa9`, `sa19`), and it does
@@ -52,7 +58,10 @@ marked.
   pixels each) but not by one two jobs on: after a job that wrote no `sa` the reader read that
   job's pixel colour (3 of 3), as it does for an `sa` nobody wrote (2 of 2) (E484, Q098); 12
   pixels (4 of each value) of each of the 18 jobs that wrote `sa1`, `sa5` and `sa7` show the `sa`
-  value as their colour (Q129).
+  value as their colour (Q129). Job 8 of a table read 0x79 in `sa0`, written by `ima32.u` in job 7,
+  which is also the colour job 7 output (2048 of 2048 pixels, E496), so one job's persistence of an
+  `sa0` written by `ima32` is not separated from the colour rule; the job after that read it in
+  `pa0`, which is also the colour the job before output (Q136).
   In an end-of-tile task `sa0`-`sa127` are the tile buffer the task's emit sends: one
   instance of the task covers 16 x 8 pixels, `sa(4q + i)` pixel `i` (top left, top right,
   bottom left, bottom right) of the block's 2 x 2 quad `q` in raster order, and what the task
@@ -89,8 +98,11 @@ marked.
   destination of a test that does not write its result (`!c0`, see the test group) **[RE]**.
 - **Internal registers [RE].** `i0`-`i3` print where a temporary number reaches past the
   temporaries (bank 0, numbers 124-127; in the half-float and c10 readings, earlier). They
-  are the accumulators of the dual-issue and `efo` groups and the carry registers of
-  `imae`/`ima32`. **[HW]** `i0`-`i2` are per instance, hold what `mov` or `fddp` writes and keep it
+  are the accumulators of the dual-issue and `efo` groups and the carry registers of `imae`/`ima32`,
+  and the extra operand `ima32.u d, iK, a, b, c` writes the high 32 bits of the product with the
+  addend to `iK`, K = 0 to 2 **[HW]** for the `.u` operands run (E493, E501; the probe table's model
+  had the `i` registers keep their values). **[HW]** `i0`-`i2` are per instance, hold what `mov` or
+  `fddp` writes and keep it
   from one task to the next, also another client's (9 of 9 reader jobs after a writer fill, E484);
   `i3` reads `i0` of the next instance of
   the 2x2 quad and drops writes, and `efo.gpiext` reaches across the quad (*Internal

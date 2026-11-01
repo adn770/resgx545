@@ -1,0 +1,10 @@
+title = "probe table usse/callfalse"
+repo = "data"
+paths = ["usse/callfalse/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 27
+size = 46764
+sha256 = "67305f32b3e3af0ee33a3df37a9bebe08d07d7463d107b6d6c387f7f5cea347d"
+recipe = "probes/usse/callfalse.toml"
+needs = ["render"]

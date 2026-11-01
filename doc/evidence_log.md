@@ -3232,6 +3232,136 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   of formats 1 and 2 (the dumps are byte-identical to the dumps without it, same sha256), where E466
   had shown it by three frequent dwords.
   *zls; HW; data: `zls-store-format-dumps`.*
+- `E491` A call that is not taken still writes pclink: with the predicate false, ba.savelink and
+  br.savelink left pclink at the index of the instruction after the call in all 16 not-taken calls
+  of the fill table (p0, p1, p2 and p3 false for each form, !p0 and !p1 with the predicate false, p0
+  with pclink preset 0 and 0x3ffff and with the next instruction at index 48 and 84), in all 3
+  not-taken calls of a chain of two calls, and in all 10 jobs of five placed programs (5 programs, 2
+  jobs each, at heap offsets 0x10000 and 0x1ff000); the reading that a call not taken leaves pclink
+  as it was fits none of them (0 of 16, 0 of 3, 0 of 10), and the taken calls write the same link (2
+  of 2 in the fill table, 4 of 4 placed jobs).
+  *usse; HW, infer; data: `usse-callfalse2`, `usse-callfalse`, `usse-place-more`.*
+- `E492` The code base of a placed program moves in steps of 0x80000 bytes (65536 instructions) at
+  five more placements: a br.savelink in a program placed at 0x2ff000 reads its link as 0xfe02, at
+  0x1a0000 as 0x4002, at 0x3a8000 as 0x5002, at 0x4ff000 as 0xfe02 and at 0x300008 as 0x3 (the
+  offset inside the step divided by 8, plus 2), and a lapc to the link plus 8 computed at run time
+  lands in each (5 offsets, a read and a jump program at each, 2 jobs of each program: 20 of 20
+  jobs, o0 = the link, never 0xFA11); with E476's five placements, 0x80000 is the only power of two
+  from 0x1000 to 0x1000000 that fits all ten links (0x40000 fits 7, 0x20000 and 0x100000 fit 5, the
+  others 4 or fewer), and seven of the ten placements are not multiples of it (0x10000, 0x1ff000 and
+  the five of this table).
+  *usse; HW, infer; data: `usse-place-more`.*
+- `E493` The extra i operand of ima32, ima32.u d, iK, a, b, c (enc[38] set, iK in enc[37:36]),
+  writes the high 32 bits of a * b + c to iK for the operands run: d = the low 32 bits and iK = bits
+  63:32 in 15 of 15 cases (K = 0, 1 and 2 over the five triples of unsigned `.u` register operands
+  (3, 7, 100), (0xffffffff, 1, 1), (0xffffffff, 0xffffffff, 0xffffffff), (0x10000, 0x10000, 0) and
+  (0x80000000, 2, 0xffffffff), the other two of i0, i1 and i2 keeping their presets 0x55, 0x66 and
+  0x77); the reading 'iK = the carry out of the 32-bit add' fits 6 of 15 and 'iK unchanged' 0 of 15;
+  and eight raw ima32.u words that differ from the plain word 0xD000000001404103 outside what the
+  assembler writes (enc[38] set with enc[37:36] = 3, enc[38] clear with enc[37:36] = 1, 2 and 3, and
+  one of the bits 46, 45, 44 and 35 set), each over three triples (24 jobs), gave the plain result
+  in r10 and left i0, i1 and i2 at their presets in 24 of 24, and in the 21 jobs of the words
+  without bit 46 no other dumped register changed, but with bit 46 set r14 read 0x2255 instead of
+  its preset 0xb0b1b2b3 in 3 of 3 jobs.
+  *usse; HW, infer; data: `usse-ima32-forms`, `usse-raw25`.*
+- `E494` The carry in of ima32 and imae adds bit 0 of iN for every iN and value that ran: ima32.u d,
+  a, b, c, cie, iK adds bit 0 of iK for K = 0, 1 and 2 and the eight values 0x10000, 0x80000000,
+  0xfffffffe, 0x10001, 0x80000001, 2, 0x55555554 and 0xaaaaaaab (24 of 24 cases, 3 * 7 + 100 with
+  the other two i registers holding 1; adding all of iK fits 0 of 24 and its low 16 bits 12 of 24),
+  imae.u cie, iK for K = 0 and 1 and the values 0x10000, 0x80000000, 0x10001 and 1 does the same (8
+  of 8), and imae coe, iK writes the carry of the sum to the iK named and leaves the other i
+  registers at their presets 0x55, 0x66 and 0x77 (8 of 8: for K = 0 and 1 and the four triples (2,
+  3, 0xfffffffe), (2, 3, 0xfffffff0), (0xffff, 0xffff, 2) and (1, 1, 1), of which only the first
+  carries, so 1 carry and 3 sums without for each K).
+  *usse; HW, infer; data: `usse-ima32-forms`.*
+- `E495` ima32 takes the seven-bit immediates 4, 5, 6, 7, 8, 15, 16, 17, 31, 32, 33, 63, 64, 65,
+  100, 125 and 126 (17 values; with E469's 0, 1, 2, 3 and 127, 22 of the 128 values have run in
+  source 2 and 21 in source 3, where 3 was not run) in source 2 and in source 3, giving a * imm + c
+  and a * b + imm (68 of 68 cases, two triples for each value and source), `.neg` negates in two's
+  complement on the ten forms run, `.s` with #1.neg and #5.neg in source 2, #1.neg and #127.neg in
+  source 3, c56.neg and c3.neg in source 2 and c56.neg in source 3, and `.u` with #5.neg and
+  #127.neg in source 2 and #127.neg in source 3 (80 of 80 cases, eight triples each; leaving the
+  `.neg` out fits 12 of the 80), and a dependent reader of an ima32 result sees it with and without
+  `.nosched` on the writer after 0, 1, 2, 3, 4, 5, 6 and 8 nops, for an ima32, a mov and an xor
+  reader (48 of 48 cases, one case per writer, distance and reader).
+  *usse; HW; data: `usse-ima32-forms`.*
+- `E496` ima32.u writes the six r-bank destinations run, r9, r18, r28, r30, r31 and r0 (the other
+  dumped registers untouched: 18 of 18 cases) and sa0, o0, i1 and i2 (read back in the same job: 12
+  of 12), but not pa0: in the jobs of pa-dest, `ima32.u pa0, ...` twice and `mov pa0, r1` once (3 of
+  3 jobs) left pa0 at the value it read before (0xff00ff00 in 1536 pixels and 0xff203040 in 512),
+  the pa0 destination jobs of the dest probe read 0x02dadf6f in all three (two of the three jobs
+  separate it from the result, 0x79 and 0 expected), and the persistence of an sa0 written by
+  ima32.u from one job to the next is not separated from the colour rule of E484 (job 8 reads 0x79
+  in sa0, 2048 of 2048 pixels, which is also the colour that job 7, the writer, output; job 9 reads
+  0x79 in pa0, also the colour job 8 output); ima32.u accepts the operands pa0, pa1, pa4, sa0, sa1,
+  sa4, o0, o1, o3, i0, i1 and i2 in source 1 and pa0, pa1, pa4, sa0, sa1, sa4, o0, o1, g0, g1, g7,
+  i0, i1 and i2 in sources 2 and 3 and reads 0 where mov reads 0 and the preset in i0 to i2 (40 of
+  40 cases: 31 of them read 0 by both routes, so a bank field that the instruction ignored would
+  pass there, and only the 9 cases of i0 to i2 show a nonzero value).
+  *usse; HW, infer; data: `usse-ima32-forms`, `usse-pa-dest`.*
+- `E497` The six-instruction signed 32-bit compare of E472 needs no gap after the ima32: with one,
+  three and six nops between ima32.u r11, r2, c56, r1 and the instruction that reads r11, a < b
+  signed over the 16 pairs (0, 1), (1, 0), (0, 0), (0xffffffff, 0), (0, 0xffffffff), (0x80000000,
+  1), (1, 0x80000000), (0x7fffffff, 0x80000000), (0x80000000, 0x7fffffff), (0xffff, 0x10000),
+  (0x10000, 0xffff), (0xffffffff, 0xffffffff), (0x80000001, 0x80000000), (0x7fffffff, 0xffffffff),
+  (0xffffffff, 0x7fffffff) and (5, 5) is right in 48 of 48 cases (16 each: the pixel r10, a - b in
+  r11, the word a xor t in r13 and r15 all as computed), where E472 ran the signed compare unpadded
+  (64 of 64) and the unsigned compare with three nops (16 of 16).
+  *usse; HW; data: `usse-compare32-pad`.*
+- `E498` On the 16 pairs (r1, r2) = (0x8000, 0x8000), (0xffff, 1), (0x8000, 0xffff8000), (0x8001,
+  0xffff7fff), (0xffff, 0xffffffff), (0x9000, 0xffff7000), (1, 0xffffffff), (0x7fff, 0xffff8001),
+  (0, 0), (0, 0xffffffff), (0x8000, 0), (0xffff, 0), (0x8000, 0x7fff0000), (0xffff, 0x80000000), (5,
+  0xfffffffb) and (0x8000, 0x7fff8000), the class 9 tests of a sum read it as follows: iadd32
+  testnat and testpat read the sign of the true signed sum sext16(r1) + r2 (16 of 16; the wrapped
+  32-bit sum fits 15, the one pair (0xffff, 0x80000000) separating the two readings), iadd32 testtaz
+  and testtanz read the zero of that sum with r1 sign-extended from 16 bits (16 of 16: the pairs
+  (0x8000, 0x8000) and (0xffff, 1) read zero, which a zero-extended r1 does not give, 11 of 16; the
+  true and the wrapped sum give the same zero test on every pair, 16 of 16), iaddu32 testpat is true
+  and testnat false for all 16 pairs, and iaddu32 testtaz is true for (0, 0) only (1 of 16) and
+  testtanz for the other 15, the five pairs whose sign-extended sum wraps to zero and the six whose
+  zero-extended sum wraps to zero (besides (0, 0)) included: the sum with its carry out of bit 31
+  fits 16 of 16 under either extension and the wrapped 32-bit sum under neither, and no pair
+  separates a zero-extended from a sign-extended source 1 for iaddu32.
+  *usse; HW, infer; data: `usse-iaddu32-pairs`.*
+- `E499` Bit 43 of a class 9 test word is the pat bit of the test field enc[43:40] (taz 1, tanz 2,
+  nat 4, pat 8), not an invert: the sixteen test words the assembler writes (and, or, xor and rol,
+  with r2 or #7, testtaz and testtanz), run as raw words, give the test of op(r1, source 2) (96 of
+  96), the same words with bit 43 set give the plain condition ANDed with pat (96 of 96: taz with
+  pat is taz, tanz with pat is nonzero and positive; the invert of source 2 fits 53 of 96, the
+  condition ORed with pat 48 and no effect 79); all 15 values 1 to 15 of the field on `and` r1, r2
+  over six input pairs (90 of 90 cases) give, with enc[39] = 1 (join `a`) and chan0 in all 732 raw
+  test words run, the AND of a zero part (tanz if bit 41, else taz if bit 40) and a sign part (pat
+  if bit 43, else nat if bit 42), a rule read out of those 90 cases (so a fit to them: the plain AND
+  of the set conditions fits 69 of 90 and the OR 57), and the same rule, written down before the
+  next table, predicted all 450 cases of a table run afterwards on other forms (all 15 values over
+  six input pairs for `or`, `xor` and `rol` with registers and for `and` and `xor` with #7: 5 forms,
+  90 cases each, join `a` and chan0 only: 450 of 450; the `o` join with a two-part field was not
+  run).
+  *usse; HW, infer; data: `usse-raw25`, `usse-rawcond`, `usse-rawcond2`.*
+- `E500` In three more runs of the 15 jobs of E475's usse-pclink-pixels (a, b and c: 30 reader jobs,
+  40 with E475's own run), the pixels that read another value than the writer's are 0xeb3 in 48 to
+  80 pixels of a job (exactly 64, 16 aligned 2 x 2 quads, in 29 of the 40 reader jobs: 6, 8, 7 and 8
+  in the four runs) and 0x98 in 16 to 64 pixels of 12 of the 40 jobs (2, 3, 2 and 5 in the four
+  runs), no other value in any job, and their positions repeat in part and not whole: the minority
+  pixels of one reader job in two of the four runs share 4 to 52 pixels over the six pairs of runs
+  (1 to 13 quads, 3 to 13 in the runs a and b, where two random sets of 16 of the 512 quads would
+  share about 0.5), and all four runs share 0 to 16 pixels of a job; two different reader jobs of
+  the same run also share quads, 1 to 12, 1 to 12, 2 to 13 and 1 to 16 over the 45 pairs of each of
+  the four runs.
+  *usse; HW, infer; data: `usse-pclink-repeat`, `usse-pclink`.*
+- `E501` The high word of the subtract form gives the borrow, and an exact unsigned compare is two
+  instructions on the pairs run: ima32.u r10, iK, r2, c56, r1 leaves a - b mod 2^32 in r10 and b -
+  [a < b] in iK (75 of 75 cases: K = 0 over the 49 pairs of the seven values 0, 1, 0xffff, 0x10000,
+  0x7fffffff, 0x80000000 and 0xffffffff, K = 1 and K = 2 over the same 13 pairs, the other two i
+  registers keeping their presets 0x55, 0x66 and 0x77; as E493's high word predicts, b * 0xffffffff
+  + a = (b - 1) * 2^32 + (2^32 - b + a) for a < b), so ima32.u r11, i0, r2, c56, r1 followed by
+  xor.testtanz.chan0 !c0, p0, r2, i0 sets p0 to a < b unsigned in 64 of 64 pairs (unsigned only, not
+  padded, with r11 as the destination and the sources r1 and r2 as a and b: all pairs of the eight
+  values 0, 1, 0xffff, 0x10000, 0x7fffffff, 0x80000000, 0x80000001 and 0xffffffff, 28 of them with a
+  < b, the equal pairs and the pairs across the sign boundary included), where E472's formula takes
+  six instructions and was run on the 64 pairs of those eight values; the high word was run for b *
+  0xffffffff + a only (its source 2 is c56 = 0xffffffff in all 75 cases).
+  *usse; HW, infer; data: `usse-ima32hi`, `usse-ucmp2`.*
 
 ## By unit
 
@@ -3315,7 +3445,7 @@ E107, E108, E109, E110, E111, E112, E113, E115, E117, E118, E119, E120, E121, E1
 E244, E245, E255, E292, E293, E294, E295, E296, E297, E298, E350, E351, E366, E367, E368, E369,
 E370, E371, E372, E373, E374, E375, E376, E377, E378, E380, E406, E423, E452, E469, E470, E471,
 E472, E473, E474, E475, E476, E477, E478, E479, E480, E481, E482, E483, E484, E485, E486, E487,
-E488.
+E488, E491, E492, E493, E494, E495, E496, E497, E498, E499, E500, E501.
 
 ### vdm
 

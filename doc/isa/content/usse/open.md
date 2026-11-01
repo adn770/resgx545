@@ -20,7 +20,9 @@ open driver:
 3. **`.syncs`** and the other scheduling flags beyond `.nosched`: a read 0 to 8 instructions after a
    `mov`, `or`, `fmad`, `frcp` or `fexp` sees its result with or without `.nosched` (E371); a load
    read by a `stad` after up to 32 `nop`s still holds the register's old value with no `wdf` (E478;
-   a read by an ALU instruction was not run); `.syncs` hangs a fill's task (Q052).
+   a read by an ALU instruction was not run); a dependent reader of an `ima32` result sees it after
+   0, 1, 2, 3, 4, 5, 6 and 8 `nop`s with or without `.nosched` on the writer (E495); `.syncs` hangs
+   a fill's task (Q052).
 4. **The global bank**: what `g18`-`g20` and `g39`-`g43` hold in a vertex task and the
    end-of-tile task; in a triangle's pixel task they read as in a fill (E374), and `g19` reads
    0 through `mov`, 0x11 through the bitwise group and 0x1a as a store's source (E372) (Q053).
@@ -39,12 +41,17 @@ open driver:
    and `idiv`'s enc[47] is its repeat count's high bit (E367). Words of classes 2, 22 and 26
    that no form decodes end the program when enc[50] is set (E368); what the others do to
    registers is open (Q080).
-9. **Calls, the program counter and the integer forms**: indices of 256 to 8191 in a fill and a jump
-   across a 65536-word step of the code base (Q123); `p0`-`p3` and `pclink` at the start of a
-   firmware task, which no program of ours has run (Q124); what leaves 0xeb3 and 0x98 in them across
-   jobs (Q125); how `iaddu32` extends a source 1 above 0x7fff and what a zero test of an overflowed
-   sum does (Q126); `ima32`'s extra `i` operand and dual-issue form and `imae`'s repeats,
-   `u16`/`z16` sources and `.rsN` shifts with the carries (Q127).
+9. **Calls, the program counter, the integer forms and the tests**: indices of 256 to 8191 in a fill
+   and a jump across a 65536-word step of the code base (Q123; the step of 0x80000 is shown by ten
+   placements: E492); `p0`-`p3` and `pclink` at the start of a firmware task, which no program of
+   ours has run (Q124); what leaves 0xeb3 and 0x98 in them across jobs (Q125: four runs of the
+   readers show 64 pixels of 0xeb3 in 29 of 40 jobs and quads that repeat in part, E500); how
+   `iaddu32` extends a source 1 above 0x7fff, which no test tells (Q126); `ima32`'s dual-issue form,
+   `.s` and `cie` with the extra operand, its selector 3 and what bit 46 does (Q135), and `imae`'s
+   repeats, `u16`/`z16` sources and `.rsN` shifts with the carries, with the operand values and
+   immediates not run (Q127); the rule of the test field on the shifts, the chan fields and the
+   other classes (Q137); how long an `sa0` written by `ima32` lasts and why a write to `pa0` is lost
+   (Q136).
 10. **Fences, repeats, registers and persistence for a firmware compiler**: why a `wdf` waits
    for another counter's loads in some runs and not in others (Q130); whether a firmware (EDM)
    task behaves as a fill for `wdf`, unfenced stores and two tasks at once (Q131, firmware);

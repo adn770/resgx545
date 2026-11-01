@@ -67,3 +67,20 @@ overflows has no separating pair (testtaz of `iadd32` fits both readings in all 
 0xffff8000) separate the readings only if r1 is zero-extended, so they depend on Q126. Only the
 twelve pairs listed were run for the overflow of `iadd32`, and only five of them separate the
 readings. A signed compare was not run with padding (`compare32-slt` ran unpadded only).
+
+**Correction, 2026-11-08 (11.25).** The measurements above are unchanged; the statements under 'What
+it shows' and 'What it does not show' are corrected as follows. (1) The compare: an unsigned compare
+of two 32-bit registers is two instructions on the pairs run, `ima32.u r11, i0, r2, c56, r1` and
+`xor.testtanz.chan0 !c0, p0, r2, i0` (64 of 64 pairs of the same eight values, E501), through the
+high word of E493; the signed compare is still the six-instruction formula, now run padded with 1, 3
+and 6 nops after the `ima32` (16 pairs each, 48 of 48, E497), so 'a signed compare was not run with
+padding' no longer holds, and 'ima32 itself is not testable' and 'no one-instruction 32-bit compare'
+stand. (2) The sum tests: E498 ran 16 pairs (five of them with r1 below 0x8000) for `iadd32` and
+`iaddu32` with the four tests: `iadd32` n and p read the true signed sum (16 of 16; the wrapped sum
+fits 15, one pair separating them here and five in the twelve above), z and nz read the zero of the
+sum with r1 sign-extended (16 of 16; zero-extended 11; the true and the wrapped sum cannot differ in
+zero-ness), `iaddu32` p is always true and n never (16 of 16 each) and its z is true for (0, 0)
+only: the sum with its carry fits 16 of 16 under either extension of r1 and the wrapped sum under
+neither. So 'z of `iadd32` and testpat and testtaz of `iaddu32` were not separated' no longer holds,
+and the `iaddu32` result no longer rests on one pair; whether `iaddu32` extends source 1 by zero or
+sign is still not told by a test (Q126).

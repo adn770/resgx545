@@ -1,0 +1,10 @@
+title = "probe table usse/pa-dest"
+repo = "data"
+paths = ["usse/pa-dest/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 14
+size = 21177
+sha256 = "f634d87e44aad000280c02d1141f6477e58f9a869bc4d325f3c51de0158c44ef"
+recipe = "probes/usse/pa-dest.toml"
+needs = ["render"]

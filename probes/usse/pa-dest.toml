@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# follow-up of usse-ima32-forms-dest (ima32.u pa0 not written). Phase 11.25.
+needs = ["render"]
+
+[[probe]]
+name = "usse-pa-dest-persist"
+question = "ima32.u pa0 and sa0 as destinations, read back with mov in the same job (E 11.25 ima32-forms: pa0 read back as 0x02dadf6f, not the result) and in the following jobs in order: does a pa write take, and does it persist to the next job"
+source = "dump.s"
+pixels = false
+params = { OUT = "r10", D = 0x00000000, E = 0x00000000, F = 0x00000000, G = 0x00000000, H = 0x00000000 }
+inputs = ["OP", "A", "B", "C"]
+labels = ["reader of pa0 first (no earlier writer in this table)", "ima32.u pa0, 3 * 7 + 100 (0x79), read back", "reader of pa0 after it", "ima32.u pa0, 5 * 5 + 5 (30), read back", "reader", "mov pa0, 0xabcd, read back", "reader", "ima32.u sa0, 3 * 7 + 100, read back", "reader of sa0 after it", "reader of pa0"]
+cases = [["mov r10, pa0", 0x00000000, 0x00000000, 0x00000000], ["ima32.u pa0, r1, r2, r3\nmov r10, pa0", 0x00000003, 0x00000007, 0x00000064], ["mov r10, pa0", 0x00000000, 0x00000000, 0x00000000], ["ima32.u pa0, r1, r2, r3\nmov r10, pa0", 0x00000005, 0x00000005, 0x00000005], ["mov r10, pa0", 0x00000000, 0x00000000, 0x00000000], ["mov pa0, r1\nmov r10, pa0", 0x0000abcd, 0x00000000, 0x00000000], ["mov r10, pa0", 0x00000000, 0x00000000, 0x00000000], ["ima32.u sa0, r1, r2, r3\nmov r10, sa0", 0x00000003, 0x00000007, 0x00000064], ["mov r10, sa0", 0x00000000, 0x00000000, 0x00000000], ["mov r10, pa0", 0x00000000, 0x00000000, 0x00000000]]
+[probe.hypotheses]

@@ -64,3 +64,20 @@ with `#128`; `and.testtanz` with `~#7` and with `~r2` and `xor.testtaz` with `~#
 `#0xffffffff`, `#0x00010001`, `#0x55555555` and `#0x12345678` and `and` with `~#0x00010001`;
 `ba.savelink.nosched`; `mov pclink, #5` and `mov r10, #pclink`; `iaddu32 r5, #3, r5`; and `br` to
 a label.
+
+**Correction, 2026-11-08 (11.25).** The measurements above are unchanged. Several of the forms
+listed under 'What it does not show' ran in 11.25 with the sgxfive-test of 11.24 (E495, E496, E493):
+the seven-bit immediates 4, 5, 6, 7, 8, 15, 16, 17, 31, 32, 33, 63, 64, 65, 100, 125 and 126 in
+source 2 and in source 3 (68 of 68), so that 22 of the 128 values have run in source 2 and 21 in
+source 3 (3 was not run there), and not 5; the operands pa0, pa1, pa4, sa0, sa1, sa4, o0, o1, o3,
+i0, i1 and i2 in source 1 and pa0, pa1, pa4, sa0, sa1, sa4, o0, o1, g0, g1, g7, i0, i1 and i2 in
+sources 2 and 3, accepted and read 0 where `mov` reads 0 (40 of 40, 31 of them reading 0 by both
+routes, so only i0 to i2 show a nonzero value); the destinations r0, r9, r18, r28, r30, r31 (the six
+r-bank destinations run), sa0, o0, i1 and i2 (written) and pa0 (not written); and the optional `i`
+register after the destination, `ima32.u d, iK, a, b, c`, which writes the high 32 bits of a * b + c
+to iK. So 'every 7-bit immediate reads as itself' is shown for 22 values and 'pa, sa, o, i and g
+operands and other destinations were not run' no longer holds. Of the refusals listed, `ima32 ...
+coe, i0` is still refused by the assembler, and the carry out that E470 looked for is the high word
+through the extra operand (E493, E501). A raw word was run for that field and for the bits 46, 45,
+44 and 35 of the ima32 word (E493), and for `~` in a test (E499, with E473's correction); no raw
+word was run for the other refusals listed, which stay the assembler's.

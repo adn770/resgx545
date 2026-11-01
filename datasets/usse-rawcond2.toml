@@ -1,0 +1,10 @@
+title = "probe table usse/rawcond2"
+repo = "data"
+paths = ["usse/rawcond2/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 462
+size = 945060
+sha256 = "1458f45063683c204f1036be8f464ca171a0c9ba1507ad64fed9a810c883b2b9"
+recipe = "probes/usse/rawcond2.toml"
+needs = ["render"]

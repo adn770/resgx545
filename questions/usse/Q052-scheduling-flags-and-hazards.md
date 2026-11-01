@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E100", "E104", "E111", "E113", "E124", "E371", "E470", "E472", "E475", "E478"]
+evidence = ["E100", "E104", "E111", "E113", "E124", "E371", "E470", "E472", "E475", "E478", "E495", "E497"]
 terms = []
 +++
 
@@ -24,7 +24,14 @@ before it in the next instruction, give the exact chain (10 of 10: E470), and th
 reads an `ima32`'s result two and three instructions later, with and without three `nop`s after it
 (64 of 64 pairs, and 16 of 16 for the unsigned compare with the `nop`s: E472). A `mov pclink, rN` is
 seen by a `lapc` in the very next instruction, with or without `.nosched` on either (19 of 19:
-E475). Not run for `ima32`: `.nosched` on the writer, and any distance beyond three.
+E475). Not run for `ima32` in 11.23: `.nosched` on the writer, and any distance beyond three.
+
+Narrowed in 11.25, for `ima32` as the writer: a dependent reader (an `ima32`, a `mov` and an `xor`,
+one case each) sees the result after 0, 1, 2, 3, 4, 5, 6 and 8 `nop`s, with and without `.nosched`
+on the writer (48 of 48 cases, E495), and the signed 32-bit compare formula is exact with 1, 3 and 6
+`nop`s after its `ima32` (48 of 48, E497). Not run: a reader 7 instructions on, `.nosched` on the
+reader, an `ima32` writer other than `ima32.u r11, r1, r2, r3`, the two-instruction compare of E501
+padded, and a dependent chain longer than four.
 
 Narrowed in 11.24, for loads read by a `stad`: the register of a `ldad` still holds its old value
 when a `stad` reads it with no `wdf` after 0, 1, 2, 4, 8, 16 or 32 `nop`s (one load) and after 0 or

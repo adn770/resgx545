@@ -47,3 +47,11 @@ the coe-cie probe): among the readings "adds iN & mask" only the mask 1 fits, bu
 clear and a high bit set (0x10000, 0x80000000) was not run. The `.s` formula was fitted after the
 six cases, so it is a fit to six cases and not a prediction that held. [infer] `imae` has no
 negated source: the assembler refuses it (tools/usse-asm at 8665d77), no raw word was run.
+
+**Correction, 2026-11-08 (11.25).** The measurements above are unchanged; two statements under 'What
+it does not show' are answered by E494: `imae cie, iN` ran with i0 and i1 and the values 0x10000,
+0x80000000, 0x10001 and 1 (8 of 8: bit 0 only, so an iN with bit 0 clear and a high bit set adds
+nothing), and `imae coe, iN` ran with i0 and i1 over four triples, one of which carries (8 of 8: the
+iN named gets the carry and the others keep their presets). `ima32 cie, iN` with iN other than i0
+and with the high-bit values also ran (24 of 24). The `i2` forms of `imae` are still refused by the
+assembler (no raw word run), and the `.s` formula is still a fit to six cases.
