@@ -84,6 +84,25 @@ The waits and modes on the hardware (E101) **[HW]**:
   a multiple of four. The 15 jobs of E487 that ran took 420 to 583 microseconds, with no cost seen
   in single samples. A register past a phase's request reads as `n mod T` in most instances
   (*Machine model*). The limit for a firmware task is **[open]** (Q133, Q144).
+- **A firmware (EDM) task of ours runs [HW]** (E531 to E534): one start dword of PDS #13 (the
+  general slot, which the 1 kHz tick and the host kick reach) pointed at a page of our code at the
+  kernel code heap + 0x20000 (instruction index 0x4000), set when the firmware is loaded and
+  undone by a reset. The wrapper reads a command dword of a results page the host shares, and when
+  it is zero jumps to the task the slot used to start (`mov pclink, rN`, `lapc`, the index a
+  record states, E146), which then runs as before (ticks at 964 to 999 Hz, `miscinfo` answered,
+  a fill and a triangle exact). The forms it uses: `mov rN, #imm32` (a `limm`, patched by the
+  kernel with the results address and the continue index), `ldad.bypassl1`, `stad`, `wdf drc0`,
+  `idf drc0, bif`, `and.testtanz.chan0 !c0, pN, rA, rB` and `xor.testtaz.chan0 !c0, pN, rA, #n` for
+  predicates, `pN br` with a numeric offset, and `ldr rD, #idx, drcN` and `str #idx, rS` with an
+  immediate index only. A tick hands the task `pa0` = 2, `pa1` = 0x02000000 and `pa2` =
+  0x01061a70 (E532, 2 of 2 runs). After a task that wrote `sa`, `r`, `i`, `p` and `pclink` state
+  and ended with `nop.end` instead of jumping to the closed one, every later event stopped until a
+  reset (E533, one run; skipping the closed task and the writes are not separated, Q152). The
+  simulator runs these tasks only through `sgx_sim::fwtask`, and models `ldr` and `str` only there:
+  `str` to 0x0814 and 0x0a78 (values inside their 17 and 6 bits, the immediate index only) and `ldr`
+  of those two and of `CORE_ID`, `CORE_REVISION` and `CR_TIMER`, which a vector seeds (the timer
+  never advances, and no vector reads the first two: unit tests alone cover them); everything else
+  stops the run.
 - **The register form** `phas srcA, srcB` hung or faulted with every source layout tried
   (absolute index, offset or `doutu` U0 layout, against the immediate's fields or high dword);
   none started the next phase (E118).

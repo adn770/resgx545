@@ -1,0 +1,9 @@
+title = "firmware task of our own: str then ldr of one register, 0x0814 and 0x0a78"
+repo = "data"
+paths = ["firmware-tasks/p1129-s5-x0x1-r1/", "firmware-tasks/p1129-s5b-x0x1-r1/", "firmware-tasks/p1129-s5c-x0x1-r1/", "firmware-tasks/p1129-s6r1/", "firmware-tasks/p1129-s6r1b/", "firmware-tasks/p1129-s6r2/"]
+method = "the stage of tools/fwtask/run_stage.py on the laptop (direct cable) with the linux fork tip d614af574cc6, module srcversion 7ED723C25D78D7FCB3C08C1, stages 5 and 6; p1129-s5-x0x1-r1 and p1129-s5b-x0x1-r1 are the attempts the tool failed in before a str ran (arm and kernel log only), kept"
+date = "2026-11-08"
+files = 30
+size = 427038
+sha256 = "03e3eacebf45130827cd62eb45bb76b74781ac65e890cad2908eeaf9a186be7d"
+recipe = "tools/fwtask/run_stage.py"

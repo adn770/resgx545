@@ -1,0 +1,9 @@
+title = "firmware task of our own: unarmed deploy and the wrapper that only tail-calls"
+repo = "data"
+paths = ["firmware-tasks/p1129-s1-unarmed/", "firmware-tasks/p1129-s1b-unarmed/", "firmware-tasks/p1129-s2-null/", "firmware-tasks/p1129-s2b-null/"]
+method = "the stage of tools/fwtask/run_stage.py on the laptop (direct cable) with the linux fork tip d614af574cc6, module srcversion 7ED723C25D78D7FCB3C08C1, stages 1 and 2; p1129-s1-unarmed (its gate returned no output) and p1129-s2-null (no verdict written) are the first attempts, kept beside their reruns"
+date = "2026-11-08"
+files = 14
+size = 16523
+sha256 = "08f0a435f242275de604af4acf797eb80cbe14aa106cd7cbe1666e14d1deb590"
+recipe = "tools/fwtask/run_stage.py"

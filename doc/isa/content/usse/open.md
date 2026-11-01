@@ -55,12 +55,16 @@ open driver:
    (Q150); how long an `sa0` written by `ima32` lasts and why a write to `pa0` is lost (Q136).
 10. **Fences, repeats, registers and persistence for a firmware compiler**: why a `wdf` waits
    for another counter's loads in some runs and not in others (Q130); whether a firmware (EDM)
-   task behaves as a fill for `wdf`, unfenced stores and two tasks at once (Q131, firmware);
-    what a client `str` changes and whether `str` then `ldr` is ordered (Q134); when another reader
+   task runs two at once (Q131, firmware; a `wdf` with nothing outstanding and an unfenced store
+    at the end of a task act as in a fill, E534);
+    what a client `str` changes and what an `idf` is needed for beyond an instance's own store
+    (Q134; `str` then `ldr` of 0x0814 and 0x0a78 is ordered in a firmware task, E534, and its other
+    registers and the register-index forms are Q154); when another reader
     sees an unfenced store and when a load not waited for lands (Q143, Q146); why a client `emitpds`
     faults the job and why its addend 0xFFF to 0x2000 leaves the fill's value (Q128, Q145); the 12
     pixels of an `sa` writer that show the `sa` (Q129); where a write past the allocation goes
     (Q132); what bounds a `phas` request and what a request above 256 allocates (Q133, Q144). The
-    overlap of two firmware tasks and `str` then `ldr` are not answered (Q131, Q134).
+    overlap of two firmware tasks, what survives from one firmware task to the next (Q124, Q152) and
+    the largest allocation of a firmware task are not measured.
 
 <!-- @simopen 12 -->

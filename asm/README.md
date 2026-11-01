@@ -9,6 +9,7 @@ put several of them into one image set with their patch records.
 | `transfer/` | the nine transfer-queue templates; `transfer.s` = all of them for `sgx-asm` |
 | `tri/` | the first triangle's vertex, state and PTOFF programs |
 | `tutorial/` | the USSE tutorial's own cases (`doc/specs/usse_tutorial.md`) |
+| `fwtask/` | firmware (EDM) tasks of ours (`tools/fwtask` syntax, not for `usse-asm` alone) |
 
 Their users:
 
@@ -16,6 +17,8 @@ Their users:
   `userspace/libsgxfive/tools/gen_progs.py`, `tools/gen_tri_progs.py`;
 - `tri/`: `tools/gen_tri_progs.py`;
 - `tutorial/`: `tools/usse-asm/test_tutorial.py`.
+- `fwtask/`: `tools/fwtask` (`gen_blobs.py` writes them, `fwtask.py` assembles, verifies and maps
+  them: `fwtask.map` has the sha256 of each; HACKING.md, "Firmware tasks of our own").
 
 Every `.s` here without `.section` is cross-checked between the C and Rust assemblers
 (`crates/sgx-tools/tests/asm_cli.rs`). After editing, regenerate what embeds them:

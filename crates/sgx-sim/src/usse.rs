@@ -24,6 +24,12 @@ pub trait Bus {
         Err(why(format!("str #{index}: no SGX registers on this bus")))
     }
 
+    /// Whether `ldr` and `str` may take their index from a register (`ldr rD, rI`, `str rI, rS`)
+    /// and not only as the 14-bit immediate. A bus that models only what ran says no.
+    fn register_index_forms(&self) -> bool {
+        true
+    }
+
     /// emitpds and its kin: the instruction and its three source values.
     fn emit(&mut self, text: &str, _srcs: [u32; 3]) -> Result<(), Error> {
         Err(why(format!("{text}: no task emission on this bus")))
@@ -2397,7 +2403,13 @@ impl Machine {
             }
             "ldr" | "str" => {
                 let iv = insn.get("index").unwrap();
-                let index = if self.width(insn, "index") == 14 { iv } else { self.src(iv, 6)? };
+                let index = if self.width(insn, "index") == 14 {
+                    iv
+                } else if bus.register_index_forms() {
+                    self.src(iv, 6)?
+                } else {
+                    return Err(why(format!("{op} with a register index: no run used the form")));
+                };
                 if op == "str" {
                     let v = self.src(insn.get("src").unwrap(), 6)?;
                     bus.reg_write(index, v)?;

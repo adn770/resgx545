@@ -579,6 +579,25 @@ The waits and modes on the hardware (E101) **[HW]**:
   a multiple of four. The 15 jobs of E487 that ran took 420 to 583 microseconds, with no cost seen
   in single samples. A register past a phase's request reads as `n mod T` in most instances
   (*Machine model*). The limit for a firmware task is **[open]** (Q133, Q144).
+- **A firmware (EDM) task of ours runs [HW]** (E531 to E534): one start dword of PDS #13 (the
+  general slot, which the 1 kHz tick and the host kick reach) pointed at a page of our code at the
+  kernel code heap + 0x20000 (instruction index 0x4000), set when the firmware is loaded and
+  undone by a reset. The wrapper reads a command dword of a results page the host shares, and when
+  it is zero jumps to the task the slot used to start (`mov pclink, rN`, `lapc`, the index a
+  record states, E146), which then runs as before (ticks at 964 to 999 Hz, `miscinfo` answered,
+  a fill and a triangle exact). The forms it uses: `mov rN, #imm32` (a `limm`, patched by the
+  kernel with the results address and the continue index), `ldad.bypassl1`, `stad`, `wdf drc0`,
+  `idf drc0, bif`, `and.testtanz.chan0 !c0, pN, rA, rB` and `xor.testtaz.chan0 !c0, pN, rA, #n` for
+  predicates, `pN br` with a numeric offset, and `ldr rD, #idx, drcN` and `str #idx, rS` with an
+  immediate index only. A tick hands the task `pa0` = 2, `pa1` = 0x02000000 and `pa2` =
+  0x01061a70 (E532, 2 of 2 runs). After a task that wrote `sa`, `r`, `i`, `p` and `pclink` state
+  and ended with `nop.end` instead of jumping to the closed one, every later event stopped until a
+  reset (E533, one run; skipping the closed task and the writes are not separated, Q152). The
+  simulator runs these tasks only through `sgx_sim::fwtask`, and models `ldr` and `str` only there:
+  `str` to 0x0814 and 0x0a78 (values inside their 17 and 6 bits, the immediate index only) and `ldr`
+  of those two and of `CORE_ID`, `CORE_REVISION` and `CR_TIMER`, which a vector seeds (the timer
+  never advances, and no vector reads the first two: unit tests alone cover them); everything else
+  stops the run.
 - **The register form** `phas srcA, srcB` hung or faulted with every source layout tried
   (absolute index, offset or `doutu` U0 layout, against the immediate's fields or high dword);
   none started the next phase (E118).
@@ -625,9 +644,12 @@ same form our programs use (immediate operands zero, `pixel`, `end`, `parallel`)
   landed depends on timing: each counter counts its own loads **[infer]**, and a program waits on
   every counter it used. The counts of ten runs are those of scratch runs recounted by the reviewer;
   the data hold one run of each case (2 of the 8 cases show the markers in it). All this was
-  measured in client pixel tasks, not in an EDM task (Q131). The firmware almost always follows its
-  loads with a `wdf` before using the data (711 `wdf drc0`, 96 `wdf drc1`), and our programs wait
-  with `wdf drc0` for the attribute DMA the PDS started.
+  measured in client pixel tasks; the EDM task of ours of E534 shows the same for a result `stad`
+  followed by a load, a `wdf` and two more stores and then the flag the host reads with no `idf`
+  (18 of 18) and for a `wdf` with no load outstanding between a `str` and an `ldr` (18 of 18, 15 of
+  which could show a change, and none did), and no more (Q131). The firmware almost always follows
+  its loads with a `wdf` before using the data (711 `wdf drc0`, 96 `wdf drc1`), and our programs
+  wait with `wdf drc0` for the attribute DMA the PDS started.
 - **`idf drcN, bif`** appears 124 times in the firmware, mostly right before a `wdf` on the same
   counter, after stores **[RE]**: it looks like a fence that makes earlier memory writes visible
   (through the BIF, the memory interface) and is counted on `drcN` **[infer]**. In a fill no
@@ -650,8 +672,9 @@ same form our programs use (immediate operands zero, `pixel`, `end`, `parallel`)
   1024 at no delay, 792 and 984 after 64 and 192 `nop`s for the next quad in x, none for 32 columns
   on): a rule of timing and of the order of the tiles, the left half first **[infer]** (E514), and
   no case needed an `idf`. The `idf` in the storing instance, the host reading during the job, a
-  texture fetch of the stored data and an EDM task are **[open]** (Q143, Q131); `str` then `ldr`
-  stays **[open]** (Q134). The `pixelbe` and reserved modes of `idf` are **[open]**.
+  texture fetch of the stored data are **[open]** (Q143, Q134); an EDM task's own store lands with
+  no `idf` before the flag the host reads (E534). `str` then `ldr` is ordered for two registers in
+  an EDM task of ours (E534, below). The `pixelbe` and reserved modes of `idf` are **[open]**.
 - **Addresses.** Loads and stores take a base register and an offset counted in elements of
   the access size (4 bytes for `d`, 2 for `w`, 1 for `b`) **[DDK/HW]**; the addressing modes
   and the fetch rule are in *Loads and stores*. Addresses are device virtual addresses of the
@@ -659,8 +682,13 @@ same form our programs use (immediate operands zero, `pixel`, `end`, `parallel`)
 - **The SGX register file** is not memory: `ldr rD, #idx` and `str #idx, src` read and write
   the SGX register at offset `idx × 4` **[RE/HW]**. A client pixel shader on our render node
   reads any register this way; a client store to the one register tried was dropped
-  (measured on our render node). Whether a `str` then an `ldr` of one register is ordered without
-  a fence is **[open]**: no client `str` was seen to change a register (Q134).
+  (measured on our render node). **In a firmware (EDM) task of ours a `str` to 0x0814 or 0x0a78 is
+  seen by the next `ldr` of that register and by the host, with no fence and at every distance
+  run [HW]** (E534: 318 of 318 runs, 0 to 16 instructions between and a second `ldr` 64 `nop`s
+  later, a `wdf`, an `idf`, both or neither, two `str`; an earlier `ldr` is not changed by a later
+  `str`; four fresh loads, and the replicates within a load are not independent). It is **[open]**
+  for a client `str` (no client `str` was seen to change a register, Q134), for a register whose
+  write has an effect, with a job running, and for the register-index forms (Q154).
 - **Caches.** `ci`, `cf` and `cfi` invalidate, flush, or flush and invalidate the levels their
   last operand names (L0 and L1, L2, or all three) **[infer]**, from the names the reference
   disassembler prints; the cache mode flags of loads and stores (`.bpcache`, `.fcfill`,
@@ -5998,11 +6026,27 @@ Class 31, other group, operation 6 **[RE]**. `ldr rD, #idx, drcN` reads SGX regi
 - **Semantics [HW].** `ldr r0, #7, drc0` returns `CORE_ID` (`0x01150000`) and `ldr r0, #801`
   returns `BIF_DIR_LIST_BASE0`, from a client pixel shader on our render node; a client
   `str #671` (`USE_G0`) changed nothing (measured on our render node). The firmware
-  programs the whole GPU with these two instructions.
-- **Ordering [open].** A `stad` and a later `ldad` of one dword return the stored value without an
-  `idf`, for an instance's own store too (*Memory, data fences and the register file*, E481, E512);
-  `str` then `ldr` of one register is not measured, as no client `str` was seen to change anything
-  (Q134).
+  programs the whole GPU with these two instructions. In a firmware (EDM) task of ours, `ldr r,
+  #7` and `#8` returned `CORE_ID` and `CORE_REVISION` as the host reads them (E533).
+- **Ordering of memory [HW].** A `stad` and a later `ldad` of one dword return the stored value
+  without an `idf`, for an instance's own store too (*Memory, data fences and the register file*,
+  E481, E512).
+- **Ordering of `str` then `ldr` [HW, firmware task of ours].** In a firmware (EDM) task, a `str`
+  to 0x0814 (17 bits) or 0x0a78 (6 bits) was seen by the next `ldr` of the same register and by
+  the host, with no fence and at every distance run: 318 of 318 runs in four fresh loads (E534),
+  of which 228 of the 306 of the matrix could tell a `str` that landed from one that did not (the
+  value finally stored differs from the one the register held; 138 on 0x0814, 90 on 0x0a78).
+  Between the two there were 0, 1, 2, 4 or 16 `nop`s, a `wdf` with no load outstanding, an `idf`
+  and a `wdf`, an `idf` alone, or a second `str` (the later one wins); a second `ldr` 64 `nop`s
+  later read the stored value too; an `ldr` of the other register kept that register's own value,
+  and a `str` after an `ldr` did not change what the `ldr` read. Scope: 0x0814 and 0x0a78 only,
+  while the EDM is idle and no job runs; the closed task's own writes of them are not excluded, and
+  the replicates within a load are not independent. **[infer]** That the two are plain storage, and
+  that a backend may emit `str` then `ldr` of 0x0814 or 0x0a78 with nothing between them. **[open]**
+  (Q154): a register whose write has an effect, a job running, a register another writer changes,
+  the register-index forms (never run), a `str` wider than the register (no run stored one) and the
+  time of a `str` (the pair read `CR_TIMER` 3 to 4 counts apart, an upper bound in a unit not
+  established). A client `str` is **[open]** (Q134).
 - **The index [HW].** `ldr rD, rI` masks a register index to 14 bits (*The 14-bit
   `ldr`/`str` index*); `str` with a register index is **[open]**.
 - The decoder holds two copies of these forms (an older one and the class-31 family's); the
@@ -9124,13 +9168,17 @@ open driver:
    (Q150); how long an `sa0` written by `ima32` lasts and why a write to `pa0` is lost (Q136).
 10. **Fences, repeats, registers and persistence for a firmware compiler**: why a `wdf` waits
    for another counter's loads in some runs and not in others (Q130); whether a firmware (EDM)
-   task behaves as a fill for `wdf`, unfenced stores and two tasks at once (Q131, firmware);
-    what a client `str` changes and whether `str` then `ldr` is ordered (Q134); when another reader
+   task runs two at once (Q131, firmware; a `wdf` with nothing outstanding and an unfenced store
+    at the end of a task act as in a fill, E534);
+    what a client `str` changes and what an `idf` is needed for beyond an instance's own store
+    (Q134; `str` then `ldr` of 0x0814 and 0x0a78 is ordered in a firmware task, E534, and its other
+    registers and the register-index forms are Q154); when another reader
     sees an unfenced store and when a load not waited for lands (Q143, Q146); why a client `emitpds`
     faults the job and why its addend 0xFFF to 0x2000 leaves the fill's value (Q128, Q145); the 12
     pixels of an `sa` writer that show the `sa` (Q129); where a write past the allocation goes
     (Q132); what bounds a `phas` request and what a request above 256 allocates (Q133, Q144). The
-    overlap of two firmware tasks and `str` then `ldr` are not answered (Q131, Q134).
+    overlap of two firmware tasks, what survives from one firmware task to the next (Q124, Q152) and
+    the largest allocation of a firmware task are not measured.
 
 The simulator (`crates/sgx-sim`) reproduces 30067 probe vectors (15526 of them with near values:
 float functions within their measured bound) and 193 pixel vectors; it stops on 2020 rather than

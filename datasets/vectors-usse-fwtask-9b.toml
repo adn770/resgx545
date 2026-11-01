@@ -1,0 +1,9 @@
+title = "instruction vectors of the 9b runs of a firmware task of our own"
+repo = "data"
+paths = ["vectors/nokernel/usse/fwtask-9b/"]
+method = "tools/fwtask/make_vectors.py on the raw jsonl of firmware-tasks-str-then-ldr, one file per run (318 vectors in four files), the wrapper as the kernel patched it"
+date = "2026-11-08"
+files = 4
+size = 3151830
+sha256 = "a97cd0683a49dc93f2eaa9f7be364f359abd51de42a6152093b17dcf5001c9ca"
+recipe = "tools/fwtask/make_vectors.py"

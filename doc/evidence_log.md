@@ -3592,6 +3592,58 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   the two tables).
   *usse; HW, infer; data: `usse-rawchan-1`, `usse-rawchan-2`, `usse-rawchan-3`, `usse-rawchan-4`,
   `usse-rawchan-5`, `usse-rawchan-6`, `usse-rawchan-7`.*
+- `E531` A firmware (EDM) task of our own runs: with the start dword of PDS #13's general slot
+  (instruction index 6, E146) retargeted at load to a page of our code at the kernel code heap +
+  0x20000 (index 0x4000), a 3-instruction wrapper that only jumps to the closed task the slot used
+  to start (mov pclink, limm; lapc, the index taken from the replaced CODE_WORD record) left the EDM
+  as it was in the one run that finished its evaluation (p1129-s2b-null: ticks at 998.0 Hz, miscinfo
+  answered, a 64x32 fill exact, 0 of 2048 pixels differing, a 64x64 triangle exact, 0 of 4096, no
+  BIF fault, EVENT_STATUS2 0x400) and in the gate of the earlier attempt (p1129-s2-null: the same
+  fill and triangle exact, 994.2 Hz).
+  *edm; HW; data: `firmware-tasks-null-wrapper`.*
+- `E532` A stad from a firmware task of our own lands, and the tick event hands the task pa0 = 0x2,
+  pa1 = 0x02000000 and pa2 = 0x01061a70 in 2 of 2 runs: a wrapper that reads a command dword of its
+  results page (ldad.bypassl1, wdf) and stores pa0, pa1, pa2 and a marker, then idf drc0,bif, wdf
+  drc0 and the state flag, finished within the tool's 100 ms of the command with all four dwords
+  stored in 2 of 2 runs; the prediction declared before the runs, that a tick has pa1 = 0, was
+  falsified (pa1 has bit 25 set).
+  *edm; HW, RE, infer; data: `firmware-tasks-memory-only`.*
+- `E533` ldr in a firmware task of our own reads the registers as the host does (CORE_ID 0x01150000
+  and CORE_REVISION 0x0001000d in 2 of 2 runs, and CR_TIMER a count that is not the initial fill
+  value 0xdeadc0de: 0xc782bb2b and 0xd5cd8747), and, after a general-slot task of ours that wrote
+  sa64, sa100, sa127, sa20, sa24, r20, r21, i0, i1, p0 to p3 and pclink and ended with nop.end,
+  without jumping to the closed task, the EDM's tick stopped: in the one run of item 12 (stage 8,
+  stopped on its own trigger) HostCtl dword 12 stayed at 1190 and USE0_SERV_EVENT at 1195 over three
+  reads 20 ms apart, the command the task had armed for the next event never ran (the task both
+  skipped the closed task and wrote many registers in that one run, so which of them stopped the
+  tick is not separated), and one debugfs reset rebuilt the stock firmware, which ticked at 967.1 Hz
+  after the reset and passed the stock gate (0 of 2048 and 0 of 4096 pixels differing, 971.6 Hz).
+  *edm; HW, infer; data: `firmware-tasks-ldr-and-persistence`.*
+- `E534` In a firmware (EDM) task of our own, a str to CR_REG_0814 (0x0814, 17 bits) or
+  CR_PDS_REG_0A78 (0x0a78, 6 bits) is seen by the next ldr of the same register and lands in the
+  register the host reads, with nothing between them and at every distance run: in 318 of 318 runs
+  the predicted (L, H) came out; 228 of the 306 matrix runs could tell a str that landed from one
+  that did not (the value finally stored differs from the one the register held), 138 on 0x0814 and
+  90 on 0x0a78, and those 228 are the ones that show it. Per case: str then ldr with 0, 1, 2, 4 and
+  16 nops between, with a wdf, with an idf and a wdf, with an idf alone, or with a second str read B
+  (or C) and left the host reading B (or C); an ldr of the other register read that register's own
+  value, which kept it (X8); an ldr before a str is not changed by it (X6, 30 of 30 that could
+  tell); a stad of the result, then a load of the run id, a wdf and two more stores, then the state
+  flag with no idf, landed in 18 of 18 (X9).
+  *usse; HW, infer; data: `firmware-tasks-str-then-ldr`, `vectors-usse-fwtask-9b`.*
+
+### 2026-11-09
+
+- `E549` On the module built from the reworked phase 11.29 series (tip 3d9b8bdefe94: the code page
+  read-only for the EDM, the stricter verifier, 6 of 6 series checks PASS, KUnit 106 debug off and
+  172 on), the firmware tasks of E531 to E534 behave as before: the null wrapper, which only
+  tail-calls the closed task from a page the EDM can now only read, is fetched and runs (ticks 994
+  Hz, fill and triangle exact, no fault), so the EDM fetches code from a read-only page; the
+  memory-only wrapper stores its marker (the tick's event words as in E532), ldr reads CORE_ID,
+  CORE_REVISION and CR_TIMER (the first two equal the host's), the same-value str (X0, X1) lands as
+  before, and one repeat of the 9b matrix on 0x0814 and on 0x0a78 (17 cases each, the discriminating
+  value pair) reads the same (L, H) per case as E534, 34 of 34 as predicted.
+  *usse; HW, infer; data: `firmware-tasks-recheck`.*
 
 ## By unit
 
@@ -3608,7 +3660,7 @@ E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E4
 
 Records: E009, E014, E017, E084, E146, E152, E153, E154, E155, E156, E157, E158, E159, E160, E161,
 E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321, E353, E402, E431, E444,
-E450.
+E450, E531, E532, E533.
 
 ### firmware
 
@@ -3677,7 +3729,7 @@ E244, E245, E255, E292, E293, E294, E295, E296, E297, E298, E350, E351, E366, E3
 E370, E371, E372, E373, E374, E375, E376, E377, E378, E380, E406, E423, E452, E469, E470, E471,
 E472, E473, E474, E475, E476, E477, E478, E479, E480, E481, E482, E483, E484, E485, E486, E487,
 E488, E491, E492, E493, E494, E495, E496, E497, E498, E499, E500, E501, E512, E513, E514, E515,
-E516, E517, E518, E519, E520, E521, E522, E525, E526, E527, E528, E529, E530.
+E516, E517, E518, E519, E520, E521, E522, E525, E526, E527, E528, E529, E530, E534, E549.
 
 ### vdm
 

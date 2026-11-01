@@ -21,8 +21,8 @@ converter (`tools/usse-asm/vectors.py`) describe and make them.
 One directory per probe table (`probes/<unit>/<feature>.toml`), one file per run of one probe
 of it (`<unit>/<feature>/<probe>/raw.txt`, and the same under `followup/` for the follow-up
 round; `knowledge/` holds the runs of the 11.x sub-phases to 11.7, `semantics/` those of 11.13 and
-`nokernel/` those of 11.23 to 11.27 (directories of their own, so that the earlier manifests'
-digests stay), `jobs/` the jobs of the
+`nokernel/` those of 11.23 to 11.27 and, in `nokernel/usse/fwtask-9b/`, of 11.29 (directories of
+their own, so that the earlier manifests' digests stay), `jobs/` the jobs of the
 files converted before vectors carried them). Every table whose probes carry a program has one; a
 probe run that read back no case of its table gives no file.
 Each unit's vectors are a dataset (`datasets/vectors-<unit>.toml`,
@@ -38,6 +38,28 @@ is the one that ran, from the code base the placement gives (`Machine::code_inde
 modulo 0x80000 bytes in instructions, E476 and E492), and `program.words` is the fill's stub.
 `--example replay` lists the outcome of every vector, one line each (`excluded` with its reason for
 those it leaves out).
+
+The 9b runs of phase 11.29 (a firmware task of ours, `str` then `ldr`) are converted by
+`tools/fwtask/make_vectors.py` into `vectors/nokernel/usse/fwtask-9b/<run>.vec.json` (4 files, 318
+vectors; `datasets/vectors-usse-fwtask-9b.toml` is their manifest, and `vectors-usse-nokernel.toml`
+names the other directories of `nokernel/usse/` one by one, so that its digest stays). They are kind
+`firmware` (`init.task = "firmware"`): `program.words` is our wrapper as the kernel patched it
+(results address 0x32140000, continue index 6), `init.page` the results page (`base`, `dwords`),
+`init.mem` the page dwords that went in, `init.regs` the SGX registers (byte offsets) before the
+task, `readback.mem` and `readback.regs` what the host read after. The replay runs the wrapper to
+its tail call (`lapc`; the closed task it jumps to is not run) over `sgx_sim::fwtask::FwBus`; a
+wrapper that does not reach it in 10000 steps stops as unsupported. In a firmware task `FwBus`
+allows `str` only to 0x0814 and 0x0a78, of a value inside the register's 17 or 6 bits, and sees the
+write at once, in every later `ldr` and for the host (the ordering measured, E534); it allows `ldr`
+of those two and of `CORE_ID`, `CORE_REVISION` and `CR_TIMER`, and stops on a register nobody
+seeded. Of these only the two registers and `CR_TIMER` have a vector (X11 seeds the timer and
+compares the first read only; it never advances in the model), and no vector reads `CORE_ID` or
+`CORE_REVISION`, so unit tests alone cover those two. The register-index forms of `ldr` and `str`
+(no run used them), an index of more than 14 bits and every other register, the clock-gate ones
+included, stop the run as unsupported. The client path (`Memory`) refuses `str`, and every `ldr` but
+the two identity registers, as before. Not modelled: latency, a job running, other writers, the
+closed task. The coverage report counts these vectors under `firmware`, apart from the scalar and
+pixel totals.
 
 The simulator's tests (`crates/sgx-sim/tests/vectors.rs`) look for the data repository as
 `$RESGX545_DATA`, else the `resgx545-data` checkout beside this tree (as

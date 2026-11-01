@@ -767,3 +767,17 @@ cut, and that its fill and copy builds equal the cut file's. `test_cloader.py` r
 port on a synthetic `tiny_v4()` and on the real v4 file (cut from `libsrv_init.so` alone)
 with the recipe layouts and random fills and copies, and requires `fwload.py`'s output,
 origins included.
+
+### 11.4 Firmware tasks of ours (no section yet)
+
+A section type for tasks of ours (an `FW_TASK`, `OURS`-origin like the templates) stays for later:
+phase 11.29 ran with the loader and the container unchanged. Its tasks (`asm/fwtask/`) are blobs
+the kernel's debug group loads (`own_code`) and places in the EDM's code heap at heap + 0x20000,
+index 0x4000; the only difference from the stock buffers is the start dword of each armed slot of
+PDS #13 (the `CODE_WORD` records of buffer 4, §4, E003), which the kernel evaluates again with
+`sgx_fw_patch_word()`: `addend | (index << 4)`, the addend 0x0800000f (CBASE 15, TRC 8), the index
+counting from the code base. A blob's `limm` patch sites take the results address and the
+instruction index of the task the replaced record started (a jump target the record states,
+E146); `tools/fwtask/test_overlay.py` checks on the real file that, unarmed, the 15 buffers are
+the loader's and, armed, only the start dwords of the armed slots differ (HACKING.md, "Firmware
+tasks of our own").

@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-128 open: 114 hw (high 13, medium 60, low 41, unrated 0), 10 fw, 4 kernel.
+132 open: 117 hw (high 13, medium 62, low 42, unrated 0), 10 fw, 5 kernel.
 
 ## Work queue: hardware
 
@@ -25,9 +25,11 @@
 ### edm
 
 - `Q002` (phase 3, hw, low): is the 399.0 MHz reference that times the EDM tick and TIMER the clock the USSE runs from? (E009, E084, E124, E377)
-- `Q033` (phase 10, hw, medium): does the event input the hardware hands a PDS event program (ir1, seen as pa1 by the event task) carry CR_EVENT_STATUS bits in reverse order, and which hardware events set its bits 8 and 19? (E155, E146, E154)
+- `Q033` (phase 10, hw, medium): does the event input the hardware hands a PDS event program (ir1, seen as pa1 by the event task) carry CR_EVENT_STATUS bits in reverse order, and which hardware events set its bits 8 and 19? (E155, E146, E154, E532)
 - `Q082` (phase 11, hw, medium): what do CR_EVENT_STATUS2 bits 6 and 7 mean, bit 6 set while a job hangs in its pixel task and bit 7 while a TA job hangs or faults? (E317, E318, E319, E357, E431)
 - `Q096` (phase 11, hw, low): does the sampler cache erratum of host bridge revisions below 4 show when a texture and other data have addresses that differ only above bit 28? (E002, E011, E013, E033, E035, E041, E114, E432)
+- `Q152` (phase 11, hw, medium): what stopped the 1 kHz tick after a firmware task of ours that wrote sa, r, i, p and pclink state and ended with nop.end for one tick (E533: every later event stopped until a reset), and can a firmware task of ours leave state for the next task (items 12 and Q124) in a way that keeps the tick, for example by jumping to the closed general task after its writes (E533, E155)
+- `Q153` (phase 11, hw, low): which state sets bit 25 of the event word pa1 that a 1 kHz tick hands the general task (E532: pa0 = 2, pa1 = 0x02000000, pa2 = 0x01061a70 in 2 of 2 runs), when PDS #13 looks only at ir1 bits 23:0 (E146) and E155 has the tick with nothing in ir1 (E532, E146, E155)
 
 ### isp
 
@@ -137,7 +139,7 @@
 - `Q130` (phase 11, hw, low): when does a load on one counter land while a wdf waits on another: why four ldad on drc0 issued after a wdf drc1 that waited for four ldad on drc1 landed in 8 of 10 runs, and four ldad on drc1 after two ldr on drc2 never did in 10 (E479)
 - `Q132` (phase 11, hw, low): where does a write to a temporary past the task's allocation go, and which instances' registers do the pixels that do not read the wrapped register read (E486)
 - `Q133` (phase 11, hw, low): what bounds a phas request (it runs when T mod 256 is 4 to 192 and hangs the job when it is 0 or 196 to 252, whatever the task was started with: E519) and is the limit the same for a firmware task (E487, E519)
-- `Q134` (phase 11, hw, medium): which register does a client str change, is str then ldr of one register ordered without a fence, and when is an idf drcN, bif required beyond an instance's own store (the host reading during the job, a texture fetch of the stored data) (E480, E481, E512, E513, E514)
+- `Q134` (phase 11, hw, medium): which register does a client str change, and when is an idf drcN, bif required beyond an instance's own store (the host reading during the job, a texture fetch of the stored data) (E480, E481, E512, E513, E514, E533, E534)
 - `Q135` (phase 11, hw, low): what does the high-word form of ima32, ima32 d, iK, a, b, c, do with immediates and constants other than c56, with cie on the same instruction, with .neg, in the dual-issue form and with the selector 3, and what does bit 46 of an ima32 word do to r14? (E493, E494, E495, E501, E525, E526, E528)
 - `Q136` (phase 11, hw, low): how long does a value written to sa0 last across jobs, why is pa0 not written by ima32 or mov, and is the 0xff00ff00 and 0xff203040 mixture that pa0 reads in the first jobs of a table the colour left by the job before it? (E496, E484)
 - `Q137` (phase 11, hw, low): do the rules of the test field of a class 9 test (zero part: bits 41 over 40; sign part: bits 43 over 42; the parts ANDed under join `a`, E499, ORed with an absent part true under join `o`, E529) hold for the shifts, the 8-bit and 16-bit lane operations, the other forms of the bitwise group and the other classes' tests, and is a word with several conditions, greater than zero among them, usable from compiler output? (E499, E498, E529, E530)
@@ -148,6 +150,7 @@
 - `Q147` (phase 11, hw, medium): does a write to a register past the task's allocation land in the register whose index is the register's modulo the allocation, or is it dropped, and do E486 and E519 disagree (E486, E519)
 - `Q150` (phase 11, hw, low): do the raw test words with the chan field enc[38:36] = 1 to 7 on 8-bit and 16-bit lane operations, on the fields other than the six run and with the o join read as the rule of the Test channels page says (E530, E499)
 - `Q151` (phase 11, hw, low): does the o join rule of E529 (enc[39] = 0: the two parts of the test field ORed, an absent part true) hold for the shifts, the 8-bit and 16-bit lane operations and the other classes' tests, and with a chan other than chan0, and does any compiler output need it? (E529, E499)
+- `Q154` (phase 11, hw, medium): does str then ldr of one register stay ordered for a register whose write starts work or that another writer changes, with a job running, and what does an indexed str (the register-index forms, never run) do (E534, E445)
 
 ### vdm
 
@@ -192,8 +195,8 @@
 
 #### usse
 
-- `Q124` (phase 11, fw): do p0-p3 and pclink survive from one firmware (EDM) task to the next, and does a task start with them clear, set or as the last task left them? (E475, E477, E484)
-- `Q131` (phase 11, fw): can the hardware run two firmware (EDM) tasks at once, and does a wdf with nothing outstanding or an unfenced store at the end of a task behave as it does in a fill (E478, E480)
+- `Q124` (phase 11, fw): do p0-p3 and pclink survive from one firmware (EDM) task to the next, and does a task start with them clear, set or as the last task left them? (E475, E477, E484, E533)
+- `Q131` (phase 11, fw): can the hardware run two firmware (EDM) tasks at once (E478, E480, E532, E534)
 
 #### zls
 
@@ -212,6 +215,10 @@
 #### ta
 
 - `Q140` (phase 11, kernel): why does our stack's 4x render fault the job (BIF fault at pages 0x20006, 0x20008, 0x2000a) at 320 x 160 and above while 256 x 128 and 192 x 96 complete, and what size does the kernel allocate for a multisampled target (E507)
+
+#### usse
+
+- `Q167` (phase 11, kernel): why did gma500_sgx_render (test_pb) and gma500_sgxfive_debug (test_pb_small) report "Expected pt != NULL" in the KUnit run at module load on the laptop, when the same suites pass under qemu (E549)
 
 #### vdm
 

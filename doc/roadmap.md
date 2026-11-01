@@ -177,14 +177,14 @@ probe and sweep tables that the units above cover.
 
 ### 4.1 Open questions
 
-`doc/open_questions.md` lists every open question, generated from `questions/`: Q001 to Q151, 128
+`doc/open_questions.md` lists every open question, generated from `questions/`: Q001 to Q154, 131
 open (the two ids between Q147 and Q150 are reserved, unused). Each has a kind. The work is
-hardware knowledge, for a simulator and then our own firmware, so the 114 `hw` questions are the
-work queue, each with a value (high 13, medium 60, low 41); the 10 `fw` questions (the closed
+hardware knowledge, for a simulator and then our own firmware, so the 117 `hw` questions are the
+work queue, each with a value (high 13, medium 62, low 42); the 10 `fw` questions (the closed
 firmware's and driver's own behaviour: Q004, Q029, Q034, Q049, Q084, Q088, Q118, Q119, Q124, Q131)
 and the 4 `kernel` ones (the design of our kernel driver: Q005, Q037, Q095, Q140) stay open, parked.
-By unit: bif 4, dpm 5, edm 6, isp 10, mte 3, pbe 5, pds 16, platform 4, render 9, ta 9, texture 7,
-transfer 3, usse 33, vdm 8, zls 6. A question is removed when a record answers it; one that mixed a
+By unit: bif 4, dpm 5, edm 8, isp 10, mte 3, pbe 5, pds 16, platform 4, render 9, ta 9, texture 7,
+transfer 3, usse 34, vdm 8, zls 6. A question is removed when a record answers it; one that mixed a
 hardware part with a firmware or kernel part was narrowed to the hardware part or folded into the
 hardware question that holds it (six so far: the control block's per-VM copy and the render context
 count bound into Q076, the recovery's reset steps into Q003, the settle routine and the two faults
@@ -541,3 +541,36 @@ sign extension writes otherwise): Q126 is narrowed to the extension its test rea
 not run, none retired; Q147 is new (hw, medium: where a write past a task's allocation goes, which
 E486 and E519 do not settle together, 30 vectors stop on it). The two ids between Q147 and Q150 stay
 reserved. The ZLS and the multisampling are not in the model: they stay for phase 12.
+
+Sub-phase 11.29 ran our own firmware (EDM) tasks on the laptop for the first time, over the cable,
+with the linux fork tip d614af574cc6 (three debug-only commits, 43 to 45, on 6ee9501832af, reworked
+since to tip 3d9b8bdefe94: series check 6 of 6, KUnit 106 of 106 with the debug option off at each
+commit and 157, 164 and 172 with it on), module srcversion 7ED723C25D78D7FCB3C08C1: 16 run
+directories in the data repository, a start dword of PDS #13 pointed at a page of our code at load
+time, the general slot only, 32 temporaries, two registers written (0x0814 and 0x0a78). They are
+firmware tasks, not client pixel tasks. The wrapper that only jumps to the closed general task left
+the EDM as it was (E531); a `stad` from a task lands, and the tick hands the task `pa0` = 2, `pa1` =
+0x02000000 and `pa2` = 0x01061a70 (2 of 2 runs; the prediction that `pa1` is 0 was falsified, kept
+apart from the stage's own criteria, E532); `ldr` reads `CORE_ID` and `CORE_REVISION` as the host
+does, and the tick stopped after a writer that wrote `sa`, `r`, `i`, `p` and `pclink` state and
+ended with `nop.end` instead of the closed task (1 run, the stage's trigger; one reset recovered;
+the skipped closed task and the writes are not separated; E533). The answer for the toolchain's 9b:
+for 0x0814 and 0x0a78, `str` then `ldr` was ordered with no fence in 318 of 318 runs, four fresh
+loads (228 of the 306 matrix runs could tell a landed `str`, 138 on 0x0814 and 90 on 0x0a78; E534).
+Not measured, because the stage for item 12 stopped on its trigger: persistence between tasks, Q124,
+task overlap, the largest allocation, and the event words of a kick and a job (Q033). The simulator
+models `ldr` and `str` for a firmware task only: `str` to those two registers (inside their 17 and 6
+bits, the immediate index only) and `ldr` of them and of `CORE_ID`, `CORE_REVISION` and `CR_TIMER`
+as a vector seeds them (the timer never advances; no vector of the 318 reads the first two, so unit
+tests alone cover those), and refuses the register-index forms and an index above 14 bits; it
+replays the 318 runs as vectors (`vectors/nokernel/usse/fwtask-9b`, tracked in the data repository
+from b5075fa3); its replay of the other vectors is unchanged. `tools/fwtask` and `asm/fwtask` are
+ours, with the clean-room checks of HACKING.md. The kernel's verifier in the module of these runs
+had bypasses, found afterwards by a review of the fork commits and fixed in later ones; the tasks
+that ran contained none of the forms, so the runs stand. The recheck on the rebuilt module
+(srcversion 5AD04F33F6BCDA7B880E238, tip 3d9b8bdefe94) is done: the tasks passed the fixed verifier,
+the code page read-only in the EDM's page directory was fetched from, and the 9b repeat read the
+same, 34 of 34 (E549; the module-load KUnit failures on the laptop are Q167). Records E531-E534
+and E549; Q134 and Q131 are narrowed (Q134's client `str` and `idf` parts, Q131's overlap) and
+none retired; Q124 and Q033 gain their evidence and stay open; Q152 to Q154 are new (hw: medium,
+low, medium), and Q167 (kernel).

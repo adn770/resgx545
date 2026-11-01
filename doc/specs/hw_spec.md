@@ -646,8 +646,18 @@ E009). On the SGX535, Intel's register list names bit 16 of the same register th
 queue's `EMPTY` flag and bits 15:0 its served-event `COUNT`, which fits (emgd-psb_regs,
 `psb_regs.h`).
 
+A firmware task of ours in the general slot (E531) sees the tick's event as `pa0` = 2, `pa1` =
+0x02000000 and `pa2` = 0x01061a70 (E532: 2 of 2 runs; `pa2` is 0x10 below the value the boot writes
+to the EDM timer, equal in two fresh boots, so it looks constant **[infer]**, the offset
+unexplained; the bit set in `pa1` is outside the 24 bits PDS #13 looks at, Q153). After a task that
+wrote `sa`, `r`, `i`, `p` and `pclink` state and ended with `nop.end` instead of jumping to the
+closed general task, the tick stopped: dword 12 and `USE0_SERV_EVENT` did not move over three reads
+20 ms apart, and one debugfs reset recovered it (E533, 1 run; that task both skipped the closed task
+and wrote the registers, so the cause is not separated, Q152).
+
 *Based on sgx545-ce `src/services4/system/unified/sysconfig.c`,
-`src/services4/srvkm/devices/sgx/sgxconfig.h`; emgd-psb_regs; E002, E006, E008, E009, E011.*
+`src/services4/srvkm/devices/sgx/sgxconfig.h`; emgd-psb_regs; E002, E006, E008, E009, E011, E531,
+E532, E533.*
 
 ## 13. Open questions
 

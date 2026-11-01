@@ -1,0 +1,160 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+#
+# The one table of which SGX registers a firmware task of ours may read (ldr) and write (str)
+# (phase 11.29). fwtask.py reads it, gen_verify.py writes sgx_own_regs.h from it for the kernel's
+# verifier, and the tests assert that both agree. The list is closed: an index that is not named
+# here is refused (default deny), whether or not a DENY row names it.
+#
+# Phase 11.29 decisions: str on 0x0814 and 0x0a78 only; ldr on those two and on CORE_ID,
+# CORE_REVISION and CR_TIMER; tier 2 (0x0520) and register 3 (0x0810) are NOT used in this phase,
+# so they are not in the list.
+
+# ---- clock gating: by name, refused for str AND ldr, checked before anything else ----------
+# E445 (11.17): the first run reached CR_CLKGATECTL2 bits 3:2 and its output was lost; the user
+# reported that writing CLKGATECTL2 bits 3:2 to 11:4 froze the laptop.
+[[clockgate]]
+name = "CR_CLKGATECTL"
+offset = 0x0000
+record = "E445"
+[[clockgate]]
+name = "CR_CLKGATECTL2"
+offset = 0x0004
+record = "E445"
+[[clockgate]]
+name = "CR_CLKGATESTATUS"
+offset = 0x0008
+record = "E445"
+[[clockgate]]
+name = "CR_CLKGATEOVERRIDE"
+offset = 0x000c
+record = "E445"
+
+# ---- allowed ---------------------------------------------------------------------------------
+[[allow]]
+name = "CR_REG_0814"
+offset = 0x0814
+use = "str+ldr"
+bits = "16:0"
+record = "E026, E246"
+[[allow]]
+name = "CR_PDS_REG_0A78"
+offset = 0x0a78
+use = "str+ldr"
+bits = "5:0"
+record = "E026, E246"
+[[allow]]
+name = "CORE_ID"
+offset = 0x001c
+use = "ldr"
+record = "E090"
+[[allow]]
+name = "CORE_REVISION"
+offset = 0x0020
+use = "ldr"
+record = "E090"
+[[allow]]
+name = "CR_TIMER"
+offset = 0x0144
+use = "ldr"
+record = "E246, E009"
+
+# ---- denied, by range (documentation and test; default deny already covers them) ------------
+# The tool imports tools/campaign/regwidth.py DENY and requires that every row below is in it
+# or is a clock-gate row; the test refuses every offset of every range for str.
+[[deny]]
+lo = 0x0080
+hi = 0x0080
+why = "soft reset"
+[[deny]]
+lo = 0x0110
+hi = 0x0144
+why = "event enable, clear, status, PDS cache events, timer (ldr of CR_TIMER 0x0144 is allowed)"
+[[deny]]
+lo = 0x0200
+hi = 0x0200
+why = "VDM start"
+[[deny]]
+lo = 0x0224
+hi = 0x0224
+why = "TE tail-pointer cache"
+[[deny]]
+lo = 0x024c
+hi = 0x024c
+why = "MTE OTPM operation"
+[[deny]]
+lo = 0x0428
+hi = 0x0428
+why = "ISP start render"
+[[deny]]
+lo = 0x0430
+hi = 0x0430
+why = "starts work"
+[[deny]]
+lo = 0x043c
+hi = 0x043c
+why = "TSP cache invalidate"
+[[deny]]
+lo = 0x0450
+hi = 0x0450
+why = "starts work"
+[[deny]]
+lo = 0x063c
+hi = 0x063c
+why = "DPM deallocate"
+[[deny]]
+lo = 0x0648
+hi = 0x064c
+why = "DPM allocate"
+[[deny]]
+lo = 0x0658
+hi = 0x0658
+why = "DPM partial render"
+[[deny]]
+lo = 0x0680
+hi = 0x06a0
+why = "DPM tasks"
+[[deny]]
+lo = 0x0804
+hi = 0x0804
+why = "cache control"
+[[deny]]
+lo = 0x0a08
+hi = 0x0a08
+why = "USSE instruction cache invalidate"
+[[deny]]
+lo = 0x0a0c
+hi = 0x0a48
+why = "USSE code bases, the EDM's own among them"
+[[deny]]
+lo = 0x0a58
+hi = 0x0a70
+why = "event to PDS, other-event PDS"
+[[deny]]
+lo = 0x0aa4
+hi = 0x0aa8
+why = "USSE slot allocation"
+[[deny]]
+lo = 0x0ab8
+hi = 0x0ab8
+why = "PDS execution base"
+[[deny]]
+lo = 0x0ac4
+hi = 0x0aec
+why = "kicker, kicks, EDM timer, PDS invalidates"
+[[deny]]
+lo = 0x0b0c
+hi = 0x0b20
+why = "service queues, EDM task registers"
+[[deny]]
+lo = 0x0b80
+hi = 0x0b98
+why = "slot allocation, service queues"
+[[deny]]
+lo = 0x0c00
+hi = 0x0cfc
+why = "the whole BIF"
+[[deny]]
+lo = 0x0e80
+hi = 0x0e80
+why = "HWPerf pulse"

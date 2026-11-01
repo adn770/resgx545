@@ -12,6 +12,7 @@
 //! with [`Error::Unsupported`] rather than being guessed.
 
 pub mod func;
+pub mod fwtask;
 pub mod json;
 pub mod pds;
 pub mod sgx;

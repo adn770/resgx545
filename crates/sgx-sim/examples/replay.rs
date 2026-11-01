@@ -4,7 +4,7 @@
 //! line per vector, `status` (pass, fitted, unsupported, mismatch or skipped; excluded with the
 //! reason the replay leaves the vector out; hang-predicted or hang-not-predicted for a job that
 //! hung on the hardware, where the simulator does or does not stop at a hanging phas request), the
-//! kind (scalar or pixels), the run's raw file, the vector's id and the reason or the mismatch.
+//! kind (scalar, pixels or firmware), the run's raw file, the vector's id and the reason or the mismatch.
 //! The counts before and after a change to the model show what it changed.
 //!
 //!     RESGX545_DATA=... cargo run --release -p sgx-sim --example replay > replay.tsv
@@ -56,7 +56,11 @@ fn main() {
                     Err(e) => ("mismatch", e),
                 },
             };
-            let kind = if k == Kind::Pixels { "pixels" } else { "scalar" };
+            let kind = match k {
+                Kind::Pixels => "pixels",
+                Kind::Firmware => "firmware",
+                _ => "scalar",
+            };
             println!("{status}\t{kind}\t{raw}\t{id}\t{why}");
         }
     }

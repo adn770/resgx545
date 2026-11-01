@@ -1,0 +1,9 @@
+title = "firmware task of our own: the wrapper that stores pa0 to pa2 and a marker"
+repo = "data"
+paths = ["firmware-tasks/p1129-s3-mem/", "firmware-tasks/p1129-s3b-mem/"]
+method = "the stage of tools/fwtask/run_stage.py on the laptop (direct cable) with the linux fork tip d614af574cc6, module srcversion 7ED723C25D78D7FCB3C08C1, stage 3, two runs of one command"
+date = "2026-11-08"
+files = 12
+size = 15832
+sha256 = "89d8d91d90b98b959c6f6742d2caf9146a0cfe671be7fd99ecb546e0725d3e58"
+recipe = "tools/fwtask/run_stage.py"

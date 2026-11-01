@@ -1,0 +1,280 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+#
+# Phase 11.29 predictions, frozen before the first str. classify.py reads only this file.
+# A: the start value the host wrote; B, C: the task's values; L: the ldr result; H: the
+# register as the host reads it after the task; A2, R2H: the other register (X8).
+# R1 = 0x0814: A 0x15a5a, B 0x0a5a5, C 0x0f0f0; R2 = 0x0a78: A 0x15, B 0x2a, C 0x0c.
+
+[[row]]
+id = "X0"
+stage = "9b"
+declared = "L = A and H = A (control: the register does not move by itself)"
+falsifier = "any other value: the register moves by itself, stop the table"
+expect = "L == A and H == A"
+
+[[row]]
+id = "X1"
+stage = "9b"
+declared = "L = A and H = A (the first str ever, the same value)"
+falsifier = "any change: the bit pattern was not what we thought, stop"
+expect = "L == A and H == A"
+
+[[row]]
+id = "X2_d0"
+stage = "9b"
+declared = "L = B and H = B at distance 0: a str is ordered before a later ldr of the same register with no fence"
+falsifier = "L = A (the ldr overtook) or H = A (the str did not land)"
+expect = "L == B and H == B"
+
+[[row]]
+id = "X2_d1"
+stage = "9b"
+declared = "L = B and H = B at distance 1: a str is ordered before a later ldr of the same register with no fence"
+falsifier = "L = A (the ldr overtook) or H = A (the str did not land)"
+expect = "L == B and H == B"
+
+[[row]]
+id = "X2_d2"
+stage = "9b"
+declared = "L = B and H = B at distance 2: a str is ordered before a later ldr of the same register with no fence"
+falsifier = "L = A (the ldr overtook) or H = A (the str did not land)"
+expect = "L == B and H == B"
+
+[[row]]
+id = "X2_d4"
+stage = "9b"
+declared = "L = B and H = B at distance 4: a str is ordered before a later ldr of the same register with no fence"
+falsifier = "L = A (the ldr overtook) or H = A (the str did not land)"
+expect = "L == B and H == B"
+
+[[row]]
+id = "X2_d16"
+stage = "9b"
+declared = "L = B and H = B at distance 16: a str is ordered before a later ldr of the same register with no fence"
+falsifier = "L = A (the ldr overtook) or H = A (the str did not land)"
+expect = "L == B and H == B"
+
+[[row]]
+id = "X3"
+stage = "9b"
+declared = "same as X2_d0 (a wdf with nothing outstanding between)"
+falsifier = "differs from X2_d0: a wdf matters"
+expect = "L == B and H == B"
+
+[[row]]
+id = "X4"
+stage = "9b"
+declared = "same as X2_d0 (idf then wdf between)"
+falsifier = "differs: idf matters"
+expect = "L == B and H == B"
+
+[[row]]
+id = "X5"
+stage = "9b"
+declared = "same as X2_d0 (idf between, no wdf)"
+falsifier = "differs"
+expect = "L == B and H == B"
+
+[[row]]
+id = "X6_d0"
+stage = "9b"
+declared = "L = A (an earlier ldr is not overtaken by a later str) and H = B"
+falsifier = "L = B: a str can pass an outstanding ldr"
+expect = "L == A and H == B"
+
+[[row]]
+id = "X6_d4"
+stage = "9b"
+declared = "L = A and H = B, four nops between"
+falsifier = "L = B"
+expect = "L == A and H == B"
+
+[[row]]
+id = "X7"
+stage = "9b"
+declared = "L = C and H = C (stores in order)"
+falsifier = "L or H = B"
+expect = "L == C and H == C"
+
+[[row]]
+id = "X8"
+stage = "9b"
+declared = "L = R2's own start value and R2 H unchanged (registers do not alias)"
+falsifier = "R2 changes: the registers alias"
+expect = "L == A2 and R2H == A2"
+
+[[row]]
+id = "X9"
+stage = "9b"
+declared = "every result read with done set although no idf came before state = done"
+falsifier = "a 0xdeadc0de result with done: an unfenced stad at the end of a task is not complete"
+expect = "landed and L == B and H == B"
+
+[[row]]
+id = "X10"
+stage = "9b"
+declared = "the second ldr after 64 nops reads B (and the first too)"
+falsifier = "A then: str dropped; B after an A first: a delay, not a loss"
+expect = "L == B and L2 == B and H == B"
+
+[[row]]
+id = "X11"
+stage = "9b"
+declared = "t1 - t0 (CR_TIMER counts, 25-bit) is at most 800 for str+ldr+wdf (2 microseconds at about 400 MHz [infer])"
+falsifier = "no meaning on its own: an upper bound"
+expect = "(t1 - t0) % (1 << 25) <= 800"
+
+[[row]]
+id = "S2_null"
+stage = "S2"
+declared = "HostCtl dword 12 advances at about 997 Hz, miscinfo is answered, fill and triangle diff 0, no fault, with the null wrapper armed"
+falsifier = "no tick, no answer, a fault or a diff: the retargeted word or the closed handler failed"
+expect = "ticks_per_s >= 900 and ticks_per_s <= 1100 and fill_diff == 0 and tri_diff == 0 and faults == 0"
+
+[[row]]
+id = "S3_mem"
+stage = "S3"
+declared = "the memory-only wrapper: state done within 100 ms, marker 0x5a5a1129 stored, pa1 = 0 (a tick), pa2 nonzero"
+falsifier = "no done: our code or the results page is not reached; a wrong marker: the page is not the one the task sees"
+expect = "done and marker == 0x5a5a1129 and pa1 == 0 and pa2 != 0"
+
+[[row]]
+id = "S4_ldr"
+stage = "S4"
+declared = "ldr returns CORE_ID, CORE_REVISION as the host reads them and CR_TIMER advancing"
+falsifier = "a different value: ldr in an EDM task does not read the register as the host does"
+expect = "core_id == host_core_id and core_rev == host_core_rev and timer_ok"
+
+[[row]]
+id = "S1_sa_high"
+stage = "S1"
+declared = "sa64, sa100 and sa127 are retained 3 of 3, in task 2 and after 1000 closed tasks"
+falsifier = "any reads 0 or another value"
+expect = "sa64 == 0xa5000040 and sa100 == 0xa5000064 and sa127 == 0xa500007f"
+
+[[row]]
+id = "S2_sa_low"
+stage = "S2"
+declared = "sa20 and sa24 retained as S1"
+falsifier = "any reads another value"
+expect = "sa20 == 0xa5000014 and sa24 == 0xa5000018"
+
+[[row]]
+id = "S3_regs"
+stage = "S3"
+declared = "r20, r21, i0, i1 retained in task 2"
+falsifier = "any reads another value"
+expect = "r20 == 0xb5000020 and r21 == 0xb5000021 and i0 == 0xb5000020 and i1 == 0xb5000021"
+
+[[row]]
+id = "S4_after_fill"
+stage = "S4"
+declared = "sa retained after a client fill ran between"
+falsifier = "sa changed: the EDM and the client data masters share sa"
+expect = "sa64 == 0xa5000040 and sa100 == 0xa5000064 and sa127 == 0xa500007f"
+
+[[row]]
+id = "Q124_pred"
+stage = "Q124"
+declared = "p0..p3 survive (1010) and pclink keeps bits 17:0 (0x2a5a5)"
+falsifier = "a pattern 0000, 1111 or the closed code's: the state is reset at task start"
+expect = "(p0, p1, p2, p3) == (1, 0, 1, 0) and pclink == 0x2a5a5"
+
+[[row]]
+id = "Q033_q1"
+stage = "Q033"
+declared = "one miscinfo reaches the general slot (0) with pa1 = 0x100 (reversed status bit 14)"
+falsifier = "pa1 = 0x4000 (E146's same-position reading) or a slot other than 0"
+expect = "hit_slots == [0] and pa1 == 0x100"
+
+[[row]]
+id = "Q033_q2"
+stage = "Q033"
+declared = "TA finished arrives in the bit-9 fast slot with pa1 = 0x200"
+falsifier = "the general slot with 0x2000"
+expect = "hit_slots == [1] and pa1 == 0x200"
+
+[[row]]
+id = "I11_overlap"
+stage = "I11"
+declared = "no overlap: overlap = 0 in 10 of 10 runs and no tick is lost"
+falsifier = "overlap = 1 in any run, or HostCtl dword 12 behind by the ticks of the window"
+expect = "overlap_runs == 0 and lost_ticks == 0"
+
+[[row]]
+id = "I13_T08"
+stage = "I13"
+declared = "TRC 8: r31 is real storage; the register past the allocation reads r(n mod 4T) or not at all"
+falsifier = "the marker is not read back: the EDM allocator differs"
+expect = "marker_back == 0x7a110008"
+
+[[row]]
+id = "I13_T09"
+stage = "I13"
+declared = "TRC 9: r35 is real storage; the register past the allocation reads r(n mod 4T) or not at all"
+falsifier = "the marker is not read back: the EDM allocator differs"
+expect = "marker_back == 0x7a110009"
+
+[[row]]
+id = "I13_T12"
+stage = "I13"
+declared = "TRC 12: r47 is real storage; the register past the allocation reads r(n mod 4T) or not at all"
+falsifier = "the marker is not read back: the EDM allocator differs"
+expect = "marker_back == 0x7a11000c"
+
+[[row]]
+id = "I13_T16"
+stage = "I13"
+declared = "TRC 16: r63 is real storage; the register past the allocation reads r(n mod 4T) or not at all"
+falsifier = "the marker is not read back: the EDM allocator differs"
+expect = "marker_back == 0x7a110010"
+
+[[row]]
+id = "I13_T24"
+stage = "I13"
+declared = "TRC 24: r95 is real storage; the register past the allocation reads r(n mod 4T) or not at all"
+falsifier = "the marker is not read back: the EDM allocator differs"
+expect = "marker_back == 0x7a110018"
+
+[[row]]
+id = "I13_T31"
+stage = "I13"
+declared = "TRC 31: r123 is real storage; the register past the allocation reads r(n mod 4T) or not at all"
+falsifier = "the marker is not read back: the EDM allocator differs"
+expect = "marker_back == 0x7a11001f"
+
+[[row]]
+id = "I13_T32"
+stage = "I13"
+declared = "TRC 32: runs; only r123 is usable"
+falsifier = "a hang"
+expect = "marker_back == 0x7a110020"
+
+[[row]]
+id = "I13_T40"
+stage = "I13"
+declared = "TRC 40: runs; only r123 is usable"
+falsifier = "a hang"
+expect = "marker_back == 0x7a110028"
+
+[[row]]
+id = "I13_T48"
+stage = "I13"
+declared = "TRC 48: runs; only r123 is usable"
+falsifier = "a hang"
+expect = "marker_back == 0x7a110030"
+
+[[row]]
+id = "I13_T49"
+stage = "I13"
+declared = "TRC 49: hangs the EDM (a client job hung at T mod 256 in 196 to 252 or 0)"
+falsifier = "it runs: the EDM allocator differs from the clients'"
+expect = "hang"
+
+[[row]]
+id = "I13_T64"
+stage = "I13"
+declared = "TRC 64: hangs the EDM (a client job hung at T mod 256 in 196 to 252 or 0)"
+falsifier = "it runs: the EDM allocator differs from the clients'"
+expect = "hang"

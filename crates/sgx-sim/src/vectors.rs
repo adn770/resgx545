@@ -113,6 +113,64 @@ pub fn run_scalar_with(v: &Json, setup: impl FnOnce(&mut Machine)) -> Result<Out
     compare(v, &m, &mem)
 }
 
+/// A firmware task vector (init.task "firmware"): the wrapper runs from its first instruction over
+/// the results page and the register file the vector gives, to its tail call (`lapc`: the closed
+/// task it jumps to is not modelled), and the page dwords and the registers the readback lists
+/// must equal what it left.
+pub fn run_firmware(v: &Json) -> Result<Outcome, String> {
+    use crate::fwtask::FwBus;
+    let words: Vec<u64> = v.get("program").get("words").arr().iter().map(|w| w.hex().unwrap()).collect();
+    let prog = Program::new(&words, Core::Sgx545);
+    let init = v.get("init");
+    let page = init.get("page");
+    let mut bus = FwBus::new(page.get("base").hex().unwrap() as u32, page.get("dwords").num().unwrap() as usize);
+    for (k, val) in init.get("mem").obj() {
+        bus.set_mem(usize::from_str_radix(k.trim_start_matches("0x"), 16).unwrap(), val.hex().unwrap() as u32);
+    }
+    for (k, val) in init.get("regs").obj() {
+        bus.seed_reg(u32::from_str_radix(k.trim_start_matches("0x"), 16).unwrap(), val.hex().unwrap() as u32);
+    }
+    let mut m = Machine { temps: 32, ..Machine::default() };
+    m.pc = v.get("program").get("entry").num().map_or(0, |e| e as usize);
+    let mut finished = false;
+    for _ in 0..10_000 {
+        // the wrapper ends in its tail call: the closed task after it is not part of the vector
+        if Machine::text(&prog, m.pc).is_some_and(|t| t.starts_with("lapc")) {
+            finished = true;
+            break;
+        }
+        match m.step(&prog, &mut bus) {
+            Ok(true) => {
+                finished = true;
+                break;
+            }
+            Ok(false) => {}
+            Err(e @ Error::Unsupported { .. }) => return Err(format!("unsupported: {e}")),
+            Err(e) => return Err(format!("error: {e}")),
+        }
+    }
+    if !finished {
+        // a wrapper that does not end is not compared on whatever state it had reached
+        return Err("unsupported: the wrapper did not reach its tail call in 10000 steps".into());
+    }
+    let rb = v.get("readback");
+    for (k, val) in rb.get("mem").obj() {
+        let i = usize::from_str_radix(k.trim_start_matches("0x"), 16).unwrap();
+        let want = val.hex().unwrap() as u32;
+        if bus.mem(i) != want {
+            return Err(format!("page dword {k}: want {want:#x}, got {:#x}", bus.mem(i)));
+        }
+    }
+    for (k, val) in rb.get("regs").obj() {
+        let off = u32::from_str_radix(k.trim_start_matches("0x"), 16).unwrap();
+        let want = val.hex().unwrap() as u32;
+        if bus.host_reg(off) != Some(want) {
+            return Err(format!("register {k}: want {want:#x}, got {:?}", bus.host_reg(off)));
+        }
+    }
+    Ok(Outcome::Exact)
+}
+
 /// The USE filter coefficients of the job a vector ran in (init.job.use_coeffs, written by
 /// vectors.py): None where the vector does not carry its job.
 pub fn job_coeffs(v: &Json) -> Option<crate::usse::FilterBlock> {
@@ -506,10 +564,15 @@ pub enum Kind {
     Scalar,
     Pixels,
     Pds,
+    /// A firmware (EDM) task of our own, run to its tail call over `fwtask::FwBus`.
+    Firmware,
     None,
 }
 
 pub fn kind(v: &Json) -> Kind {
+    if v.get("init").get("task").str() == Some("firmware") {
+        return Kind::Firmware;
+    }
     let tri = v.get("provenance").get("options").arr().iter().any(|o| o.str() == Some("--tri"));
     if v.get("program").get("isa").str() == Some("pds") {
         // on the triangle host the PDS program is the primary's, not the fill's secondary
@@ -534,6 +597,7 @@ pub fn run(v: &Json) -> Option<Result<Outcome, String>> {
         Kind::Scalar => Some(run_scalar(v)),
         Kind::Pixels => Some(run_pixels(v)),
         Kind::Pds => Some(run_pds(v)),
+        Kind::Firmware => Some(run_firmware(v)),
         Kind::None => None,
     }
 }
@@ -742,7 +806,12 @@ pub fn coverage_json(dir: &std::path::Path) -> String {
                 Err(e) if e.starts_with("unsupported") => 1,
                 Err(_) => 2,
             };
-            totals.entry(if k == Kind::Pixels { "pixels" } else { "scalar" }).or_default()[slot] += 1;
+            let class = match k {
+                Kind::Pixels => "pixels",
+                Kind::Firmware => "firmware",
+                _ => "scalar",
+            };
+            totals.entry(class).or_default()[slot] += 1;
             let why = match &r {
                 Ok(Outcome::Fitted) => Some(FITTED.to_string()),
                 Err(e) if slot == 1 => Some(reason(e)),
@@ -955,6 +1024,20 @@ mod tests {
         let exact = super::Outcome::Exact;
         assert_eq!(super::run_pds_tile_match(&ir0_vector(0x403)), Ok((exact, (3, 1))));
         assert_eq!(super::run_pds_tile_match(&ir0_vector(0)), Ok((exact, (0, 0))));
+    }
+
+    #[test]
+    fn a_firmware_task_that_runs_out_of_steps_is_a_stop() {
+        // a wrapper that never reaches its tail call must not be compared on a partial state
+        let w = format!("\"0x{:016x}\"", usse_isa::encode("br #0x00000000", usse_isa::Core::Sgx545).unwrap());
+        let v = crate::json::parse(&format!(
+            r#"{{"program": {{"isa": "usse", "words": [{w}]}},
+                "init": {{"task": "firmware", "page": {{"base": "0x32140000", "dwords": 8}},
+                          "mem": {{}}, "regs": {{}}}},
+                "readback": {{"mem": {{}}, "regs": {{}}}}}}"#
+        ));
+        let r = super::run_firmware(&v);
+        assert!(r.as_ref().is_err_and(|e| e.starts_with("unsupported")), "{r:?}");
     }
 
     #[test]

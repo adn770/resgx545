@@ -36,9 +36,12 @@
   landed depends on timing: each counter counts its own loads **[infer]**, and a program waits on
   every counter it used. The counts of ten runs are those of scratch runs recounted by the reviewer;
   the data hold one run of each case (2 of the 8 cases show the markers in it). All this was
-  measured in client pixel tasks, not in an EDM task (Q131). The firmware almost always follows its
-  loads with a `wdf` before using the data (711 `wdf drc0`, 96 `wdf drc1`), and our programs wait
-  with `wdf drc0` for the attribute DMA the PDS started.
+  measured in client pixel tasks; the EDM task of ours of E534 shows the same for a result `stad`
+  followed by a load, a `wdf` and two more stores and then the flag the host reads with no `idf`
+  (18 of 18) and for a `wdf` with no load outstanding between a `str` and an `ldr` (18 of 18, 15 of
+  which could show a change, and none did), and no more (Q131). The firmware almost always follows
+  its loads with a `wdf` before using the data (711 `wdf drc0`, 96 `wdf drc1`), and our programs
+  wait with `wdf drc0` for the attribute DMA the PDS started.
 - **`idf drcN, bif`** appears 124 times in the firmware, mostly right before a `wdf` on the same
   counter, after stores **[RE]**: it looks like a fence that makes earlier memory writes visible
   (through the BIF, the memory interface) and is counted on `drcN` **[infer]**. In a fill no
@@ -61,8 +64,9 @@
   1024 at no delay, 792 and 984 after 64 and 192 `nop`s for the next quad in x, none for 32 columns
   on): a rule of timing and of the order of the tiles, the left half first **[infer]** (E514), and
   no case needed an `idf`. The `idf` in the storing instance, the host reading during the job, a
-  texture fetch of the stored data and an EDM task are **[open]** (Q143, Q131); `str` then `ldr`
-  stays **[open]** (Q134). The `pixelbe` and reserved modes of `idf` are **[open]**.
+  texture fetch of the stored data are **[open]** (Q143, Q134); an EDM task's own store lands with
+  no `idf` before the flag the host reads (E534). `str` then `ldr` is ordered for two registers in
+  an EDM task of ours (E534, below). The `pixelbe` and reserved modes of `idf` are **[open]**.
 - **Addresses.** Loads and stores take a base register and an offset counted in elements of
   the access size (4 bytes for `d`, 2 for `w`, 1 for `b`) **[DDK/HW]**; the addressing modes
   and the fetch rule are in *Loads and stores*. Addresses are device virtual addresses of the
@@ -70,8 +74,13 @@
 - **The SGX register file** is not memory: `ldr rD, #idx` and `str #idx, src` read and write
   the SGX register at offset `idx × 4` **[RE/HW]**. A client pixel shader on our render node
   reads any register this way; a client store to the one register tried was dropped
-  (measured on our render node). Whether a `str` then an `ldr` of one register is ordered without
-  a fence is **[open]**: no client `str` was seen to change a register (Q134).
+  (measured on our render node). **In a firmware (EDM) task of ours a `str` to 0x0814 or 0x0a78 is
+  seen by the next `ldr` of that register and by the host, with no fence and at every distance
+  run [HW]** (E534: 318 of 318 runs, 0 to 16 instructions between and a second `ldr` 64 `nop`s
+  later, a `wdf`, an `idf`, both or neither, two `str`; an earlier `ldr` is not changed by a later
+  `str`; four fresh loads, and the replicates within a load are not independent). It is **[open]**
+  for a client `str` (no client `str` was seen to change a register, Q134), for a register whose
+  write has an effect, with a job running, and for the register-index forms (Q154).
 - **Caches.** `ci`, `cf` and `cfi` invalidate, flush, or flush and invalidate the levels their
   last operand names (L0 and L1, L2, or all three) **[infer]**, from the names the reference
   disassembler prints; the cache mode flags of loads and stores (`.bpcache`, `.fcfill`,

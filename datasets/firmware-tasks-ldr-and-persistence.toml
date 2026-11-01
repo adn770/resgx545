@@ -1,0 +1,9 @@
+title = "firmware task of our own: ldr, and the writer that ends without the closed task"
+repo = "data"
+paths = ["firmware-tasks/p1129-s4-ldr/", "firmware-tasks/p1129-s4b-ldr/", "firmware-tasks/p1129-s12/", "firmware-tasks/p1129-post-s12-stock/"]
+method = "the stage of tools/fwtask/run_stage.py on the laptop (direct cable) with the linux fork tip d614af574cc6, module srcversion 7ED723C25D78D7FCB3C08C1, stage 4 (two runs) and the stage 8 pair of item 12 that stopped on its trigger, with the stock check after its reset"
+date = "2026-11-08"
+files = 20
+size = 38394
+sha256 = "1f01afcc8bbc0bdfe979779a0078cc42814566e117abbbed7e39f91fb867a80f"
+recipe = "tools/fwtask/run_stage.py"

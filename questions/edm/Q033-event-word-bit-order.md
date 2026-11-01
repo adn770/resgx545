@@ -5,7 +5,7 @@ unit = "edm"
 kind = "hw"
 value = "medium"
 phase = 10
-evidence = ["E155", "E146", "E154"]
+evidence = ["E155", "E146", "E154", "E532"]
 terms = ["CR_EVENT_STATUS", "CR_EVENT_HOST_CLEAR", "CR_EVENT_STATUS.DPM_INIT_END", "CR_EVENT_STATUS.DPM_STATE_STORE", "CR_EVENT_STATUS.DPM_CONTROL_LOAD", "CR_EVENT_STATUS.SW_EVENT", "CR_EVENT_KICK"]
 +++
 
@@ -39,3 +39,14 @@ passes to the PDS as its event input (the handlers' acknowledgements fit status 
 `pa1` bit [infer], and no run has fed the hardware an event while reading the word), and which
 hardware events set input bits 8 and 19. Settling it needs a firmware build that stores the word
 (the first step of the run above); the status bits as the host sees them, event by event, are Q111.
+
+Narrowed again in 11.29 (not retired). The first step of the run above was made for one event: a
+firmware task of ours in the general slot stored `pa0`, `pa1` and `pa2` of the 1 kHz tick, 2 of 2
+runs, `pa0` = 2, `pa1` = 0x02000000 and `pa2` = 0x01061a70 (E532). The declared prediction, that a
+tick has nothing in `pa1`, was falsified; bit 25 is outside PDS #13's 24-bit mask (Q153; the
+reversed reading gives it no status bit, the same-position reading a status bit E146 does not
+list), and neither bit 8 nor bit 19 was set by a tick. The kick through
+`CR_EVENT_KICK`, the finishing TA job and the overflowing job were not run (the stage before them
+stopped, E533), so the open part is as before for them: the order and positions of the status bits
+in the word the hardware hands the PDS for a kick and for a job, and which events set bits 8 and 19.
+Their run needs a logging wrapper that keeps the tick (Q152).

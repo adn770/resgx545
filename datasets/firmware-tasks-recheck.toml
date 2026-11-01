@@ -1,0 +1,9 @@
+title = "firmware task of our own: the re-check of 11.29 on the module built from the reworked series"
+repo = "data"
+paths = ["firmware-tasks/p1129-recheck-s1-unarmed/", "firmware-tasks/p1129-recheck-s1b-unarmed/", "firmware-tasks/p1129-recheck-s2-null/", "firmware-tasks/p1129-recheck-s3-mem/", "firmware-tasks/p1129-recheck-s4-ldr/", "firmware-tasks/p1129-recheck-s5-x0x1-r1/", "firmware-tasks/p1129-recheck-s6r1/", "firmware-tasks/p1129-recheck-s6r2/", "firmware-tasks/p1129-recheck-s7-post-stock/"]
+method = "stages 1 to 6 of tools/fwtask/run_stage.py on the laptop (direct cable) with the linux fork tip 3d9b8bdefe94, module srcversion 5AD04F33F6BCDA7B880E238; the SGX was loaded and booted by hand after the module reload; the fork tip in the nine env.toml files was set by hand because the tool could not find the fork; p1129-recheck-s1-unarmed is the first attempt (stopped in the tool: KeyError in tick_rate, SGX not booted, no task ran; kernel log only), kept beside p1129-recheck-s1b-unarmed; s6r1 and s6r2 were run by a thin driver (drive9b.py, one repeat and one value pair per register) calling the tool's 9b stage; p1129-recheck-s7-post-stock is the unarmed gate after the stages"
+date = "2026-11-09"
+files = 44
+size = 123253
+sha256 = "5dd216f50e4efca115f1fff00a1c9a28c021f5021e6b19250b68b804486b23eb"
+recipe = "tools/fwtask/run_stage.py"
