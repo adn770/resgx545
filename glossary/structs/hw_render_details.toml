@@ -15,6 +15,22 @@ licence = "GPL-2.0"
 evidence = "same name/type as SGXMKIF_HWDEVICE_SYNC_LIST.sAccessDevAddr"
 
 [[term]]
+id = "G0682"
+name = "hw_render_details.bif_3d_req_base"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_3D_REQ_BASE"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x000"
+meaning = "3D requestor base"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0001"
+licence = "GPL-2.0"
+evidence = "the register this word is loaded into"
+
+[[term]]
 id = "G0319"
 name = "hw_render_details.bif_zls_req_base"
 status = "named"
@@ -29,6 +45,97 @@ source = "sgx545-ce"
 citation = "C0228"
 licence = "GPL-2.0"
 evidence = "the register this word is loaded into"
+
+[[term]]
+id = "G0683"
+name = "hw_render_details.dst_sync_list_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.dst_sync_list_dev_vaddr"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x0e0"
+meaning = "render details word 56, the destination sync list, copied from TA command word 15: the 3D scheduling tests the entry for the render-target index and the completion updates it [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158, E164, E165"
+licence = "MIT"
+evidence = "[RE] E158: the copy routine moves command dword 15 over render details dword 56; [RE] E164: the completion's sync routine takes the destination sync list from render details dword 56; [RE] E165: the scheduling tests the list's entry for the index, at the list plus 8 plus 16 times the index"
+
+[[term]]
+id = "G0684"
+name = "hw_render_details.event_pixel_pds_code"
+status = "named"
+
+[[term.source]]
+term = "event_pixel_pds_code"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x05c"
+meaning = "end-of-tile pixel PDS program"
+tier = "3"
+source = "linux-imagination"
+citation = "C0031"
+licence = "GPL-2.0 OR MIT"
+evidence = "rogue_fwif_transfer_regs"
+
+[[term]]
+id = "G0685"
+name = "hw_render_details.event_pixel_pds_data"
+status = "named"
+
+[[term.source]]
+term = "event_pixel_pds_data"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x060"
+meaning = "its data size"
+tier = "3"
+source = "linux-imagination"
+citation = "C0393"
+licence = "GPL-2.0 OR MIT"
+evidence = "rogue_fwif_frag_regs"
+
+[[term]]
+id = "G0686"
+name = "hw_render_details.event_pixel_pds_info"
+status = "named"
+
+[[term.source]]
+term = "event_pixel_pds_info"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x064"
+meaning = "its info word"
+tier = "3"
+source = "linux-imagination"
+citation = "C0394"
+licence = "GPL-2.0 OR MIT"
+evidence = "rogue_fwif_frag_regs; [HW] E129: with the info word at 0 the pixel-event program's sixteen douta words reach sa0-sa15 of the task it starts; what a bit of 5:0 changes is not shown"
+
+[[term]]
+id = "G0687"
+name = "hw_render_details.frag_flags"
+status = "named"
+
+[[term.source]]
+term = "flags"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x0d4"
+meaning = "fragment (3D) flags: depth/stencil buffer present, visibility results (FRAG_FLAGS.*)"
+tier = "3"
+source = "linux-imagination"
+citation = "C0168"
+licence = "GPL-2.0 OR MIT"
+evidence = "rogue_fwif_cmd_frag.flags"
+
+[[term.source]]
+term = "hw_render_details.frag_flags"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x0d4"
+meaning = "render details word 53, the render flags (FRAG_FLAGS.*): the TA kick copies them from TA command word 7, and the 3D kick and the 3D scheduling test them [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158, E163, E165"
+licence = "MIT"
+evidence = "[RE] E158: the copy routine moves command dword 7 (the render flags) to render details dword 53; [RE] E163: the 3D kick tests render flag 0x8 (render details dword 53) before it deallocates; [RE] E165: the scheduling skips the render with render flags 0x3 (dword 53)"
 
 [[term]]
 id = "G0576"
@@ -56,6 +163,97 @@ source = "resgx545"
 citation = "E158, E163"
 licence = "MIT"
 evidence = "[RE] E158: the copy routine moves command dword 8 to render details dword 80; [RE] E163: the 3D kick writes render details dword 80 to TA3DCtl dword 42"
+
+[[term]]
+id = "G0688"
+name = "hw_render_details.hw_rt_data_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "sHWRTDataDevAddr"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x0dc"
+meaning = "RT data"
+tier = "1"
+source = "intel-ctp-k900"
+citation = "C0321"
+licence = "GPL-2.0 OR MIT"
+evidence = "kick-side copy (1.11+)"
+
+[[term.source]]
+term = "hw_render_details.hw_rt_data_dev_vaddr"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x0dc"
+meaning = "render details word 55, the RT data the render belongs to, which the 3D kick and the 3D scheduling read [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163, E165"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick takes the RT data from render details dword 55; [RE] E165: the scheduling reads render details dword 55 and the render-target index, dword 66"
+
+[[term]]
+id = "G0689"
+name = "hw_render_details.isp_bgobjdepth"
+status = "named"
+
+[[term.source]]
+term = "isp_bgobjdepth"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x040"
+meaning = "background object depth (clear depth)"
+tier = "3"
+source = "linux-imagination"
+citation = "C0395"
+licence = "GPL-2.0 OR MIT"
+evidence = "rogue_fwif_frag_regs"
+
+[[term]]
+id = "G0690"
+name = "hw_render_details.isp_bgobjvals"
+status = "named"
+
+[[term.source]]
+term = "isp_bgobjvals"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x044"
+meaning = "background object control"
+tier = "3"
+source = "linux-imagination"
+citation = "C0396"
+licence = "GPL-2.0 OR MIT"
+evidence = "rogue_fwif_frag_regs"
+
+[[term]]
+id = "G0691"
+name = "hw_render_details.isp_ctl"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.isp_ctl"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x00c"
+meaning = "value the EDM copies verbatim into CR_ISP_CTL (0x0414) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes render details dword 3 to 0x0414; register term from Rogue's ISP_CTL (registers glossary)"
+
+[[term]]
+id = "G0692"
+name = "hw_render_details.isp_line_sample_pos"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.isp_line_sample_pos"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x068"
+meaning = "render details word 26, which the 3D kick writes to CR_ISP_LINE_SAMPLE_POS (0x0418) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes the render details' dwords 0 to 51 to the 3D registers, one store each, in structure order"
 
 [[term]]
 id = "G0320"
@@ -101,9 +299,57 @@ sgx545 = "HWRENDERDETAILS+0x028"
 meaning = "value the EDM copies verbatim into CR_ISP_PARTIAL_REGION_BASE (0x050c); a partial render points that register at the macrotile it renders [infer]"
 tier = "ours"
 source = "resgx545"
-citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x8ea0)"
+citation = "E163"
 licence = "MIT"
-evidence = "[RE] the 3D kick writes the 3D register block in structure order, one fixed store per word; partial-render path (E160)"
+evidence = "[RE] E163: the 3D kick writes render details dword 10 to 0x050c; partial-render path (E160)"
+
+[[term]]
+id = "G0693"
+name = "hw_render_details.isp_reg_04dc"
+status = "inferred"
+
+[[term.source]]
+term = "hw_render_details.isp_reg_04dc"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x054"
+meaning = "as CR_ISP_REG_04DC's: a punch-through mode word (bit 1 hangs every punch-through pass, E222). Measured: value the EDM copies verbatim into CR_ISP_REG_04DC (0x04dc) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes render details dword 21 to 0x04dc; [infer] E222, an analogy of ours (no citation record): bit 1 the punch-through up-front depth test (Rogue CR_ISP_CTL.pt_upfront_depth_disable); [HW] E213: bit 1 hangs every case of the first punch-through scene, nop.end included; [HW] E222: bit 1 hangs a working punch-through scene too (atst8 or depthf feedback), after 0x70 pixels counted; [infer] the reading is ours (E222)"
+
+[[term]]
+id = "G0694"
+name = "hw_render_details.isp_reg_04e8"
+status = "inferred"
+
+[[term.source]]
+term = "hw_render_details.isp_reg_04e8"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x0cc"
+meaning = "as CR_ISP_REG_04E8's: what it does is not shown; not the background's stencil or mask (E216). Measured: value the EDM copies verbatim into CR_ISP_REG_04E8 (0x04e8) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes render details dword 51 to 0x04e8; [HW] E216: 0, 1, 0x101 change no stencil test against the background (stencil 0 or 1), so not the background's stencil or mask; [infer] the reading is ours"
+
+[[term]]
+id = "G0695"
+name = "hw_render_details.isp_region_header_base"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.isp_region_header_base"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x020"
+meaning = "render details word 8, which the 3D kick writes to CR_ISP_REGION_HEADER_BASE (0x0408); a partial render offsets it by the render-target index [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes the render details' dwords 0 to 51 to the 3D registers, one store each, in structure order; [RE] E160: the partial render writes the region header base offset by the RT index times RT data dword 11"
 
 [[term]]
 id = "G0322"
@@ -117,9 +363,9 @@ sgx545 = "HWRENDERDETAILS+0x04c"
 meaning = "value the EDM copies verbatim into CR_ISP_SAMPLE_POS (0x0520): the four sample positions (0 in the capture) [infer]"
 tier = "ours"
 source = "resgx545"
-citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x8f08)"
+citation = "E163"
 licence = "MIT"
-evidence = "[RE] the 3D kick writes the 3D register block in structure order, one fixed store per word; [infer] E224: not the ISP table base an analogy of ours (no citation record) with Rogue's ISP_*_BASE suggested; [HW] E214"
+evidence = "[RE] E163: the 3D kick writes render details dword 19 to 0x0520; [infer] E224: not the ISP table base an analogy of ours (no citation record) with Rogue's ISP_*_BASE suggested; [HW] E214"
 
 [[term.source]]
 term = "hw_render_details.isp_sample_pos"
@@ -267,9 +513,9 @@ sgx545 = "HWRENDERDETAILS+0x01c"
 meaning = "value the EDM copies into CR_ISP_POLY_OFFSET_CLAMP [infer]"
 tier = "ours"
 source = "resgx545"
-citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x8e58)"
+citation = "E163"
 licence = "MIT"
-evidence = "[RE] the 3D kick writes the 3D register block in structure order, one fixed store per word; [HW] E071"
+evidence = "[RE] E163: the 3D kick writes render details dword 7 to 0x0424; [HW] E071"
 
 [[term]]
 id = "G0326"
@@ -304,6 +550,22 @@ licence = "MIT"
 evidence = "[HW] E071: the stored depth of the flat triangle was 0.5 plus exactly rd:5 ulps (1, 16, 4096 and 2^20 all matched), up to a cap set by rd:7; without the ISP1 bit 23 poke, rd:5 at 4096 stored 0x3f000000; [infer] the reading is ours, from these runs"
 
 [[term]]
+id = "G0696"
+name = "hw_render_details.reg_0148"
+status = "inferred"
+
+[[term.source]]
+term = "hw_render_details.reg_0148"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x024"
+meaning = "render details word 9, which the 3D kick writes to CR_REG_0148 (0x0148); what it holds is not shown [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes the render details' dwords 0 to 51 to the 3D registers, one store each, in structure order"
+
+[[term]]
 id = "G0328"
 name = "hw_render_details.reg_0400"
 status = "inferred"
@@ -318,6 +580,22 @@ source = "resgx545"
 citation = "E029"
 licence = "MIT"
 evidence = "[HW] E029: flipping bit 25 of word 11 of the render command changed all 4096 pixels of the 64x64 triangle (first pixel 0xff203040 to 0x00203040, hash 0x25e3b1ba58ea2cc5 against 0x99385a04ee01c585); no other bit changed a pixel; [infer] the reading is ours, from these runs"
+
+[[term]]
+id = "G0697"
+name = "hw_render_details.reg_0800"
+status = "inferred"
+
+[[term.source]]
+term = "hw_render_details.reg_0800"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x058"
+meaning = "as CR_REG_0800's: an on-chip resource limit (bits 5:0 = 48, bits 23:8) for work other than pixel tasks (vertex or state tasks, context switches); pixel-bound renders ignore it (E136). Measured: value the EDM copies verbatim into CR_REG_0800 (0x0800) (it holds 0x30 outside a render, E225) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes render details dword 22 to 0x0800; [infer] E225, an analogy of ours (no citation record): carries CR_REG_0800: a PDS task limit (Rogue PDS_CTRL); [infer] the reading is ours (E225)"
 
 [[term]]
 id = "G0542"
@@ -539,6 +817,230 @@ licence = "MIT"
 evidence = "[RE] the TA kick (E158) and the TA-finished handler (E156); named after the register"
 
 [[term]]
+id = "G0698"
+name = "hw_render_details.tpu_luma_key_alpha"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.tpu_luma_key_alpha"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x0c8"
+meaning = "the value the EDM copies verbatim into CR_TPU_LUMA_KEY_ALPHA [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes render details dword 50 to 0x0868"
+
+[[term]]
+id = "G0699"
+name = "hw_render_details.tpu_luma_key_b_offset"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.tpu_luma_key_b_offset"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x0c4"
+meaning = "the value the EDM copies verbatim into CR_TPU_LUMA_KEY_B_OFFSET [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes render details dword 49 to 0x0864"
+
+[[term]]
+id = "G0700"
+name = "hw_render_details.tpu_luma_key_rg"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.tpu_luma_key_rg"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x0c0"
+meaning = "the value the EDM copies verbatim into CR_TPU_LUMA_KEY_RG [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes render details dword 48 to 0x0860"
+
+[[term]]
+id = "G0701"
+name = "hw_render_details.tpu_yuv_csc0_0"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.tpu_yuv_csc0_0"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x094"
+meaning = "value the EDM copies verbatim into CR_TPU_YUV_CSC0_0 (0x0820) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes render details dword 37 to 0x0820; register term kept on hardware evidence (registers glossary)"
+
+[[term]]
+id = "G0702"
+name = "hw_render_details.tpu_yuv_csc0_1"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.tpu_yuv_csc0_1"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x098"
+meaning = "value the EDM copies verbatim into CR_TPU_YUV_CSC0_1 (0x0824) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes render details dword 38 to 0x0824; register term kept on hardware evidence (registers glossary)"
+
+[[term]]
+id = "G0703"
+name = "hw_render_details.tpu_yuv_csc0_2"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.tpu_yuv_csc0_2"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x09c"
+meaning = "value the EDM copies verbatim into CR_TPU_YUV_CSC0_2 (0x0828) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes render details dword 39 to 0x0828; register term kept on hardware evidence (registers glossary)"
+
+[[term]]
+id = "G0704"
+name = "hw_render_details.tpu_yuv_csc0_3"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.tpu_yuv_csc0_3"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x0a0"
+meaning = "value the EDM copies verbatim into CR_TPU_YUV_CSC0_3 (0x082c) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes render details dword 40 to 0x082c; register term kept on hardware evidence (registers glossary)"
+
+[[term]]
+id = "G0705"
+name = "hw_render_details.tpu_yuv_csc0_4"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.tpu_yuv_csc0_4"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x0b4"
+meaning = "value the EDM copies verbatim into CR_TPU_YUV_CSC0_4 (0x0830) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes render details dword 45 to 0x0830; register term kept on hardware evidence (registers glossary)"
+
+[[term]]
+id = "G0706"
+name = "hw_render_details.tpu_yuv_csc1_0"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.tpu_yuv_csc1_0"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x0a4"
+meaning = "value the EDM copies verbatim into CR_TPU_YUV_CSC1_0 (0x0834) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes render details dword 41 to 0x0834; register term kept on hardware evidence (registers glossary)"
+
+[[term]]
+id = "G0707"
+name = "hw_render_details.tpu_yuv_csc1_1"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.tpu_yuv_csc1_1"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x0a8"
+meaning = "value the EDM copies verbatim into CR_TPU_YUV_CSC1_1 (0x0838) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes render details dword 42 to 0x0838; register term kept on hardware evidence (registers glossary)"
+
+[[term]]
+id = "G0708"
+name = "hw_render_details.tpu_yuv_csc1_2"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.tpu_yuv_csc1_2"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x0ac"
+meaning = "value the EDM copies verbatim into CR_TPU_YUV_CSC1_2 (0x083c) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes render details dword 43 to 0x083c; register term kept on hardware evidence (registers glossary)"
+
+[[term]]
+id = "G0709"
+name = "hw_render_details.tpu_yuv_csc1_3"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.tpu_yuv_csc1_3"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x0b0"
+meaning = "value the EDM copies verbatim into CR_TPU_YUV_CSC1_3 (0x0840) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes render details dword 44 to 0x0840; register term kept on hardware evidence (registers glossary)"
+
+[[term]]
+id = "G0710"
+name = "hw_render_details.tpu_yuv_csc1_4"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.tpu_yuv_csc1_4"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x0b8"
+meaning = "value the EDM copies verbatim into CR_TPU_YUV_CSC1_4 (0x0844) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes render details dword 46 to 0x0844; register term kept on hardware evidence (registers glossary)"
+
+[[term]]
+id = "G0711"
+name = "hw_render_details.tpu_yuv_csc_input"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.tpu_yuv_csc_input"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x0bc"
+meaning = "the value the EDM copies verbatim into CR_TPU_YUV_CSC_INPUT [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes render details dword 47 to 0x0848"
+
+[[term]]
 id = "G0586"
 name = "hw_render_details.tq_3d_read_complete_dev_vaddr"
 status = "named"
@@ -601,6 +1103,166 @@ source = "resgx545"
 citation = "E158, E165"
 licence = "MIT"
 evidence = "[RE] E158: the copy routine moves command dwords 29-32 to render details dwords 57-60; [RE] E165: the 3D pick waits for the 3D transfer-queue sync (dwords 57 to 60) to be complete"
+
+[[term]]
+id = "G0712"
+name = "hw_render_details.use_coeffs0_a"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.use_coeffs0_a"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x06c"
+meaning = "value the EDM copies verbatim into CR_USE_COEFFS0_A (0x0a84): first tap word of coefficient set 0: signed byte taps at -3, -2, -1, 0 from the filter's centre in bytes 3, 2, 1, 0 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes render details dword 27 to 0x0a84"
+
+[[term]]
+id = "G0713"
+name = "hw_render_details.use_coeffs0_b"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.use_coeffs0_b"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x070"
+meaning = "value the EDM copies verbatim into CR_USE_COEFFS0_B (0x0a88): second tap word of coefficient set 0: signed byte taps at +1, +2, +3, +4 from the centre in bytes 3, 2, 1, 0 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes render details dword 28 to 0x0a88"
+
+[[term]]
+id = "G0714"
+name = "hw_render_details.use_coeffs0_bias"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.use_coeffs0_bias"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x074"
+meaning = "value the EDM copies verbatim into CR_USE_COEFFS0_BIAS (0x0a8c): shift and bias of coefficient set 0: bits 3:0 shift the tap sum right, the bits above a signed bias added before the shift; the result saturates to a byte [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes render details dword 29 to 0x0a8c"
+
+[[term]]
+id = "G0715"
+name = "hw_render_details.use_coeffs1_a"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.use_coeffs1_a"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x078"
+meaning = "value the EDM copies verbatim into CR_USE_COEFFS1_A (0x0a90): first tap word of coefficient set 1: signed byte taps at -3, -2, -1, 0 from the filter's centre in bytes 3, 2, 1, 0 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes render details dword 30 to 0x0a90"
+
+[[term]]
+id = "G0716"
+name = "hw_render_details.use_coeffs1_b"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.use_coeffs1_b"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x07c"
+meaning = "value the EDM copies verbatim into CR_USE_COEFFS1_B (0x0a94): second tap word of coefficient set 1: signed byte taps at +1, +2, +3, +4 from the centre in bytes 3, 2, 1, 0 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes render details dword 31 to 0x0a94"
+
+[[term]]
+id = "G0717"
+name = "hw_render_details.use_coeffs1_bias"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.use_coeffs1_bias"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x080"
+meaning = "value the EDM copies verbatim into CR_USE_COEFFS1_BIAS (0x0a98): shift and bias of coefficient set 1: bits 3:0 shift the tap sum right, the bits above a signed bias added before the shift; the result saturates to a byte [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes render details dword 32 to 0x0a98"
+
+[[term]]
+id = "G0718"
+name = "hw_render_details.use_coeffs2_a"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.use_coeffs2_a"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x084"
+meaning = "value the EDM copies verbatim into CR_USE_COEFFS2_A (0x0b24): first tap word of coefficient set 2: signed byte taps at -3, -2, -1, 0 from the filter's centre in bytes 3, 2, 1, 0; set 2 uses only -3 (byte 3) and 0 (byte 0) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes render details dword 33 to 0x0b24"
+
+[[term]]
+id = "G0719"
+name = "hw_render_details.use_coeffs2_b"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.use_coeffs2_b"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x088"
+meaning = "value the EDM copies verbatim into CR_USE_COEFFS2_B (0x0b28): second tap word of coefficient set 2: signed byte taps at +1, +2, +3, +4 from the centre in bytes 3, 2, 1, 0; set 2 uses only +3 (byte 1) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes render details dword 34 to 0x0b28"
+
+[[term]]
+id = "G0720"
+name = "hw_render_details.use_coeffs2_bias"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.use_coeffs2_bias"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x08c"
+meaning = "value the EDM copies verbatim into CR_USE_COEFFS2_BIAS (0x0b2c): shift and bias of coefficient set 2: bits 3:0 shift the tap sum right, the bits above a signed bias added before the shift; the result saturates to a byte [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes render details dword 35 to 0x0b2c"
+
+[[term]]
+id = "G0721"
+name = "hw_render_details.use_coeffs_mode"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.use_coeffs_mode"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x090"
+meaning = "value the EDM copies verbatim into CR_USE_COEFFS_MODE (0x0a9c): which coefficient sets the filter instructions use: bits 1:0 = 0, 1, 2 pick one of three fixed banks for sets 2-5, 3 makes set 2 the third loaded group (CR_USE_COEFFS2_*) and sets 3-5 zero; sets 0-1 are always CR_USE_COEFFS0/1_* [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes render details dword 36 to 0x0a9c"
 
 [[term]]
 id = "G0590"

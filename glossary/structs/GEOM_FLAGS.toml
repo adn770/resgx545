@@ -1,4 +1,20 @@
 [[term]]
+id = "G0630"
+name = "GEOM_FLAGS.BIT2"
+status = "inferred"
+
+[[term.source]]
+term = "GEOM_FLAGS.BIT2"
+kind = "flag"
+sgx545 = "CMDTA+0x004 bit2 (0x4)"
+meaning = "tested together with GEOM_FLAGS.FIRST_KICK (mask 0x5): when either is set the EDM keeps the stores that link the command's render details into the context; no run sets the bit alone [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E172"
+licence = "MIT"
+evidence = "[RE] E172: at two of the four mask-0x5 tests of the TA command's flags a non-zero result keeps the list-insertion stores that link the render details into the context"
+
+[[term]]
 id = "G0241"
 name = "GEOM_FLAGS.FIRST_KICK"
 status = "named"

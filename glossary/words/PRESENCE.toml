@@ -15,6 +15,33 @@ licence = "MIT"
 evidence = "by function only; SGX words still open; [HW] E192: coordsize 2 carries a two-component coordinate set on our triangle"
 
 [[term]]
+id = "G0638"
+name = "PRESENCE.ISP_BACK"
+status = "named"
+
+[[term.source]]
+term = "pres_ispctl_ba"
+kind = "flag"
+sgx545 = "-"
+meaning = "(Rogue) back-face ISP word A present"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0366"
+licence = "MIT"
+evidence = "Rogue name only"
+
+[[term.source]]
+term = "PRESENCE.ISP_BACK"
+kind = "flag"
+sgx545 = "presence bits 3 (back isp0), 4 (back isp1, by its place), 5 (back isp2)"
+meaning = "the back-face ISP words of two-sided stencil, used with ISP0.TWO_SIDED: bits 3 and 5 required, 4 optional [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E228"
+licence = "MIT"
+evidence = "[HW] E228: added to the block (--blk-add), a back face takes its stencil from bit 5's word once ISP0 bit 11 is set"
+
+[[term]]
 id = "G0491"
 name = "PRESENCE.WCLAMP"
 status = "named"

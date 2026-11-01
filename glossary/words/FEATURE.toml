@@ -1,0 +1,15 @@
+[[term]]
+id = "G0629"
+name = "FEATURE.SECONDARY_REQUIRES_USE_KICK"
+status = "named"
+
+[[term.source]]
+term = "SGX_FEATURE_SECONDARY_REQUIRES_USE_KICK"
+kind = "flag"
+sgx545 = "PDS secondary program, DOUTU"
+meaning = "a secondary PDS program must start a USE task"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0362"
+licence = "GPL-2.0"
+evidence = "SGX545 block; every PDS program of a transfer, the secondary too, starts with a DOUTU word that starts a USE program (E004)"

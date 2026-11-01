@@ -47,6 +47,22 @@ licence = "MIT"
 evidence = "[HW] E039: the only texture-word bit under which the key's words change the image"
 
 [[term]]
+id = "G0639"
+name = "T0.BIT30"
+status = "inferred"
+
+[[term.source]]
+term = "T0.BIT30"
+kind = "flag"
+sgx545 = "T0 [30]"
+meaning = "with it TEXFORMAT 26 reads one byte per texel, written as grey; without it TEXFORMAT 26 gives values that differ from run to run; no other format is tried with it [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E040"
+licence = "MIT"
+evidence = "[HW] E040: TEXFORMAT 26 reads one byte per texel only with it"
+
+[[term]]
 id = "G0273"
 name = "T0.BITS20_19"
 status = "named"

@@ -97,8 +97,8 @@ TA_REGISTERS = [(name, 1) for _addr, name in TA_REGISTER_WRITES]
 # The 3D register block, render details dwords 0 to 51: the 3D kick writes them to these
 # registers, one str each, in this order (E163; its size, 0xd0, is the microkernel's). A word
 # is named as the glossary's hw_render_details.* row at its offset where there is one, else
-# after the register it lands in (the register term without CR_, or reg_<address> for the two
-# registers the glossary has no row for).
+# after the register it lands in (the register term without CR_, or reg_<address> for 0x04c4,
+# the one register the glossary has no row for).
 REGISTER_3D_WRITES = [
     (0x0CAC, "bif_3d_req_base"), (0x0CB0, "bif_zls_req_base"), (0x0400, "reg_0400"),
     (0x0414, "isp_ctl"), (0x042C, "isp_msaa"), (0x041C, "poly_offset_units"),
@@ -107,7 +107,7 @@ REGISTER_3D_WRITES = [
     (0x050C, "isp_partial_region_base"),
     (0x0480, "isp_zlsctl"), (0x0484, "zload_base"), (0x0488, "zstore_base"),
     (0x048C, "stencil_load_base"), (0x0490, "stencil_store_base"),
-    (0x04B8, "isp_bgobjdepth"), (0x04BC, "reg_04bc"), (0x04C4, "reg_04c4"),
+    (0x04B8, "isp_bgobjdepth"), (0x04BC, "isp_bgobjvals"), (0x04C4, "reg_04c4"),
     (0x0520, "isp_sample_pos"),
     (0x04C8, "isp_multisamplectl"), (0x04DC, "isp_reg_04dc"), (0x0800, "reg_0800"),
     (0x0A5C, "event_pixel_pds_code"), (0x0A60, "event_pixel_pds_data"),
@@ -274,20 +274,22 @@ STRUCTS = {
 
 # Flag bits by the glossary's names, only where a record or a glossary row names the bit.
 FLAGS = {
-    # the TA command's dword 1: E172 (0x1, 0x8, the mask tests), E166 and E156 (0x2), E159
-    # (0x1 the reset; 0x10, 0x20, 0x40 the invalidations), E161 (0x400, 0x2000)
-    "GEOM_FLAGS": {0x1: "FIRST_KICK", 0x2: "LAST_KICK", 0x8: "NO_DPM_CONTEXT_LOAD",
-                   0x10: "INVALIDATE_USE_CACHE", 0x20: "INVALIDATE_PDS_CACHE",
-                   0x40: "INVALIDATE_DATA_CACHE", 0x400: "TA3D_DEPENDENCY",
-                   0x2000: "PB_THRESHOLD_UPDATE"},
+    # the TA command's dword 1: E172 (0x1, 0x8, the mask tests; 0x4, tested with 0x1), E166
+    # and E156 (0x2), E159 (0x1 the reset; 0x10, 0x20, 0x40 the invalidations), E161 (0x400,
+    # 0x2000)
+    "GEOM_FLAGS": {0x1: "FIRST_KICK", 0x2: "LAST_KICK", 0x4: "BIT2",
+                   0x8: "NO_DPM_CONTEXT_LOAD", 0x10: "INVALIDATE_USE_CACHE",
+                   0x20: "INVALIDATE_PDS_CACHE", 0x40: "INVALIDATE_DATA_CACHE",
+                   0x400: "TA3D_DEPENDENCY", 0x2000: "PB_THRESHOLD_UPDATE"},
     # the render flags, command dword 7 and render details dword 53: E156 (0x1), E161 (0x2),
     # E050-E053 (0x4), E163 and E156 (0x8), E169 (0x10), E164 (0x20, 0x200, 0x400), E163 and
     # E058 (0x80, 0x100), E165 (0x1 and 0x2 skip the render)
     "FRAG_FLAGS": {0x1: "NO_RENDER", 0x2: "ABORT", 0x4: "BIT2", 0x8: "NO_DEALLOCATE",
                    0x10: "SET_ZLSCTL_BIT0", 0x20: "GET_VIS_RESULTS", 0x80: "DEPTH_BUFFER",
                    0x100: "STENCIL_BUFFER", 0x200: "TA3D_DEPENDENCY", 0x400: "BIT10"},
-    # the HW render context's dword 0: E159 (0x1), E161 and E165 (0x10), E167 and E168 (0x20)
-    "CONTEXT_FLAGS": {0x1: "NEW", 0x10: "SUSPEND", 0x20: "OWN_PB"},
+    # the HW render context's dword 0: E159 (0x1), E161 and E165 (0x10), E167 and E168 (0x20);
+    # 0x2 in the transfer context's, which shares the word (E015)
+    "CONTEXT_FLAGS": {0x1: "NEW", 0x2: "DUMMY_TRANSFER", 0x10: "SUSPEND", 0x20: "OWN_PB"},
     # the PB descriptor's dword 0: E200, E201
     "PB_FLAGS": {0x1: "INIT_PAGE_TABLE", 0x2: "THRESHOLD_UPDATE"},
 }

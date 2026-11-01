@@ -1,4 +1,20 @@
 [[term]]
+id = "G0642"
+name = "T3.CMP_MODE"
+status = "named"
+
+[[term.source]]
+term = "cmp_mode"
+kind = "bitfield"
+sgx545 = "T3 [31:29]"
+meaning = "the comparison of smp.pcf/.pcff16 against the reference: 0 never, 1 less, 2 equal, 3 less or equal, 4 greater, 5 greater or equal, 6 not equal, 7 always"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0369"
+licence = "MIT"
+evidence = "[HW] E116: smp.pcff16 against an f32 texel holding 0.5 compares as equal, less and greater; the result is 1.0 when the compare holds, else 0"
+
+[[term]]
 id = "G0283"
 name = "T3.CONVERT"
 status = "named"

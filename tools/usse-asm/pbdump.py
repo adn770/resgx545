@@ -63,19 +63,21 @@ def obj_word(w: int) -> dict[str, int]:
     return {"OBJ_PRIMS": w >> 26, "OBJ_ISP_ADDR": w & 0x3ffffff}
 
 
-# CSTREAM.PRIM_TILES forms whose masks do not fit the primitive word: the object's block holds
-# one more dword after the object word, the mask (E177, E180; the glossary's PRIM_TILES row)
+# CSTREAM.PRIM_TILES forms whose block holds one more dword after the object word (the
+# glossary's PRIM_TILES row): the wide-mask forms, whose masks do not fit the primitive word
+# (0x8a, 0x8c; the mask, E177, E180), and the two-lines form (0x88, E181)
+THIRD_DWORD_TILES = (0x88, 0x8a, 0x8c)
 WIDE_MASK_TILES = (0x8a, 0x8c)
 
 
 def objects(words: list[int]) -> list[tuple[dict, dict | None, int | None]]:
-    """A region's stream as (primitive word, object word, mask dword) per object: 2 dwords, or
-    3 when PRIM_TILES is a wide-mask form (the mask after the object word); None for a dword
-    the stream does not hold or a block with no mask."""
+    """A region's stream as (primitive word, object word, third dword) per object: 2 dwords,
+    or 3 when PRIM_TILES is a form with a third dword (a mask after the object word, or the
+    lines' further dword); None for a dword the stream does not hold or a block without one."""
     out, i = [], 0
     while i < len(words):
         prim = prim_word(words[i])
-        wide = prim["PRIM_TILES"] in WIDE_MASK_TILES
+        wide = prim["PRIM_TILES"] in THIRD_DWORD_TILES
         ob = obj_word(words[i + 1]) if i + 1 < len(words) else None
         mask = words[i + 2] if wide and i + 2 < len(words) else None
         out.append((prim, ob, mask))
@@ -86,6 +88,12 @@ def objects(words: list[int]) -> list[tuple[dict, dict | None, int | None]]:
 def _fields(d: dict | None) -> str:
     return " ".join(f"{k} {v:#x}" if k in ("PRIM_TILES", "OBJ_ISP_ADDR") else f"{k} {v}"
                     for k, v in (d or {}).items())
+
+
+def _third(prim: dict) -> str:
+    """What a block's third dword is: the mask of a wide-mask form, else a dword no record
+    reads yet (the lines' form)."""
+    return "mask" if prim["PRIM_TILES"] in WIDE_MASK_TILES else "dword"
 
 
 def _words(buf: bytes, start: int, n: int) -> list[int]:
@@ -171,7 +179,7 @@ def report(d: pathlib.Path, name: str) -> str:
                          f"-> {r.stream:#x}: " + " ".join(f"{w:08x}" for w in words))
             lines.append("  REGION_HDR.FLAGS " + (", ".join(region_flags(r.flags)) or "0x00"))
             lines += [f"  CSTREAM {_fields(p)}" + (f", {_fields(ob)}" if ob else "")
-                      + (f", mask {m:#x}" if m is not None else "")
+                      + (f", {_third(p)} {m:#x}" if m is not None else "")
                       for p, ob, m in objects(words)]
     lines.append(f"{sum(not r.stream for r in rs)} empty regions")
     return "\n".join(lines) + "\n"

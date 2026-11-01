@@ -1,0 +1,47 @@
+[[term]]
+id = "G0621"
+name = "CR_ISP_BGOBJVALS"
+status = "named"
+
+[[term.source]]
+term = "ROGUE_CR_ISP_BGOBJVALS"
+kind = "register"
+sgx545 = "0x04bc"
+meaning = "background object values (Rogue: bit 9 background tag enable, bit 8 mask, 7:0 stencil); the 3D kick and the transfer path load it from their commands"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0357"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick loads it from render details word 17; [RE] E015: the transfer path loads it from the command's word 1; same layout as Rogue ISP_BGOBJVALS; [HW] E216: bits 7:0 are the background's stencil value a stencil test compares against (0x301: equal 1 passes, equal 0 fails); bit 8 clear removes it; bit 9 clear drops the background object"
+
+[[term]]
+id = "G0622"
+name = "CR_ISP_BGOBJVALS.BGTAG_ENABLE"
+status = "named"
+
+[[term.source]]
+term = "CR_ISP_BGOBJVALS.BGTAG_ENABLE"
+kind = "flag"
+sgx545 = "0x04bc[9]"
+meaning = "draw the background object (its tag on every pixel); clear, the target keeps its old pixels [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E216"
+licence = "MIT"
+evidence = "[HW] E216: 0x101 and 0x001 leave the previous contents where the triangle is not; hypothesis (tier 3): Rogue ISP_BGOBJVALS.enablebgtag"
+
+[[term]]
+id = "G0623"
+name = "CR_ISP_BGOBJVALS.STENCIL"
+status = "named"
+
+[[term.source]]
+term = "CR_ISP_BGOBJVALS.STENCIL"
+kind = "bitfield"
+sgx545 = "0x04bc[7:0]"
+meaning = "the background's stencil value, which an object's stencil test compares against (with bit 8 set) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E216"
+licence = "MIT"
+evidence = "[HW] E216: at 1 a test equal to 1 passes and equal to 0 fails; at 0 the reverse"

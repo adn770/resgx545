@@ -1,0 +1,15 @@
+[[term]]
+id = "G0634"
+name = "PDS_PRIMARY.USE_KICK"
+status = "named"
+
+[[term.source]]
+term = "PDS_PRIMARY.USE_KICK"
+kind = "enum"
+sgx545 = "PDS primary program"
+meaning = "the primary pixel PDS program of the transfer templates (PDS_PRIM): it starts the USE program its first dword, a DOUTU word, names [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E004"
+licence = "MIT"
+evidence = "[CAP] E004: the first dword of each captured PDS program of the templates is a DOUTU word, whose word 0 gives the USE program it starts; USE_KICK after the GPL FEATURE.SECONDARY_REQUIRES_USE_KICK"

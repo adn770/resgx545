@@ -1,4 +1,20 @@
 [[term]]
+id = "G0637"
+name = "PORT.DOUTC"
+status = "named"
+
+[[term.source]]
+term = "PVR_ROGUE_PDSINST_DOUT_DST_DOUTC"
+kind = "enum"
+sgx545 = "-"
+meaning = "(Rogue) compute data-out port; on SGX545 the port value it would name is open"
+tier = "3"
+source = "mesa-pds-defs"
+citation = "C0365"
+licence = "MIT"
+evidence = "Rogue name only; the SGX545 port's function is open (E127)"
+
+[[term]]
 id = "G0009"
 name = "PORT.DOUTU"
 status = "named"

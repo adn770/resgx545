@@ -1,0 +1,31 @@
+[[term]]
+id = "G0643"
+name = "TERM.CLIP_BOTTOM"
+status = "named"
+
+[[term.source]]
+term = "clip_bottom"
+kind = "field"
+sgx545 = "term [15:0]"
+meaning = "last block row; unit open on SGX545: 1 -> 0 drops only the bottom 16 rows of a 64x64 target [HW]"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0370"
+licence = "MIT"
+evidence = "same function; [HW] E059: in a 64x64 triangle 1 -> 0 leaves y 48-63 unwritten, not the 32-row block (3 of 3); other values change nothing"
+
+[[term]]
+id = "G0644"
+name = "TERM.CLIP_RIGHT"
+status = "named"
+
+[[term.source]]
+term = "clip_right"
+kind = "field"
+sgx545 = "term [31:16]"
+meaning = "last block column; in 32-pixel columns on SGX545 [infer]"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0371"
+licence = "MIT"
+evidence = "same function; [HW] E059: in a 64x64 triangle 1 -> 0 leaves x 32-63 unwritten (3 of 3); other values change nothing"

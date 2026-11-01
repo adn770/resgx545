@@ -1,0 +1,15 @@
+[[term]]
+id = "G0631"
+name = "HEAP.PIXELSHADER"
+status = "named"
+
+[[term.source]]
+term = "SGX_PIXELSHADER_HEAP_BASE"
+kind = "enum"
+sgx545 = "0xF4000000"
+meaning = "pixel USE code heap base (USE_CODE_BASE_0)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0363"
+licence = "GPL-2.0"
+evidence = "DOUTU EXE offsets are relative to it (E004: the USE programs sit in the PIXELSHADER heap and a DOUTU word's EXE is the program's offset from the heap base)"

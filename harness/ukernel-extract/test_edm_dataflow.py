@@ -75,6 +75,62 @@ def test_structure_words_are_named_by_the_glossary_or_by_offset():
     assert uses(res, "HOST_CTL+0x038", "read") == ["into r2"]
 
 
+# a glossary that names the first word of an array, of a wide field and of a nested layout
+NESTED = edmtrace.Glossary(
+    registers={},
+    fields={("CMDTA", 0x008): "cmd_ta.pds_bgnd", ("CMDTA", 0x2a8): "cmd_ta.patches_3d",
+            ("CMDTA_SHARED", 0x030): "cmd_ta_shared.src_syncs",
+            ("CMDTA_SHARED", 0x0b0): "cmd_ta_shared.ta3d_dependency"},
+    flags={})
+
+
+def test_a_word_inside_a_named_array_or_layout_takes_the_glossary_name():
+    # the words a kick3d layout holds are named as edmtrace names them: an array's element
+    # name[i], a word past the first of a wide field +k, a nested layout's word at its own
+    # prefix; a word no row reaches (padding, a structure with no layout) has none
+    assert df.word_term("CMDTA", 0x008, NESTED) == "cmd_ta.pds_bgnd"
+    assert df.word_term("CMDTA", 0x00c, NESTED) == "cmd_ta.pds_bgnd[1]"
+    assert df.word_term("CMDTA", 0x2ac, NESTED) == "cmd_ta.patches_3d+1"
+    assert df.word_term("CMDTA", 0x09c, NESTED) == "cmd_ta_shared.src_syncs[1]+1"
+    assert df.word_term("CMDTA", 0x110, NESTED) == "cmd_ta_shared.ta3d_dependency+2"
+    assert df.word_term("CMDTA", 0x048, NESTED) == ""
+    assert df.word_term("TRANSFERCMD", 0x004, NESTED) == ""
+    assert df.word_term("CMDTA", 0x00c, edmtrace.Glossary({}, {}, {})) == ""
+
+
+def test_the_document_prints_those_names(tmp_path):
+    res = run("ldad.bpcache r2, [sa0,+#24], drc0", "wdf drc0",
+              "ldad.bpcache r3, [r2,+#3], drc0", "wdf drc0", "str #75, r3", "lapc")
+    p = tmp_path / "df.tsv"
+    df.write_tsv(res, p)
+    doc = df.render(df.read_tsv(p), NESTED)
+    assert "`CMDTA+0x00c` `cmd_ta.pds_bgnd[1]`: read 1×" in doc
+    assert "`0x012c`: written 1× from cmd_ta.pds_bgnd[1]" in doc
+
+
+@pytest.mark.skipif(not (ROOT / "glossary").is_dir(), reason="no glossary in the tree")
+def test_every_word_kick3d_names_has_a_glossary_term():
+    # every word of kick3d.py's client layouts that is not padding: word_term gives it a
+    # glossary name, the one the document prints wherever the EDM reaches it (the document
+    # itself is checked against the TSV), but for a register-block word named reg_<offset> (a
+    # register the glossary has no row for)
+    import kick3d
+    g = edmtrace.load_glossary(ROOT / "glossary")
+    missing = []
+    for layout, prefix in edmtrace.PREFIX.items():
+        if layout in df.KERNEL_SIDE or layout not in kick3d.STRUCTS:
+            continue
+        for path, off, width, count, _a in kick3d._layout(kick3d.STRUCTS[layout]):
+            leaf = path.rsplit(".", 1)[-1]
+            if leaf.startswith("pad_") or (leaf.startswith("reg_") and
+                                           int(leaf[4:], 16) not in g.registers):
+                continue
+            for k in range(width * count):
+                if not df.word_term(prefix, 4 * (off + k), g):
+                    missing.append(f"{prefix}+{4 * (off + k):#05x} ({path})")
+    assert not missing
+
+
 def test_a_word_written_to_a_register_says_so_with_its_transform():
     res = run("ldad.bpcache r2, [sa1,+#7], drc0", "wdf drc0", "and r3, r2, #0x0000FFFF",
               "str #75, r3", "str #128, r2", "lapc")

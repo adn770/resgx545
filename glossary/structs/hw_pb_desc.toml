@@ -186,6 +186,22 @@ licence = "MIT"
 evidence = "[RE] E200: the TA load writes descriptor dword 4 with its low 4 bits cleared to 0x0618, the 3D load to 0x0600; [RE] E201: dword 4 is the page-table base"
 
 [[term]]
+id = "G0680"
+name = "hw_pb_desc.pb_flags"
+status = "named"
+
+[[term.source]]
+term = "hw_pb_desc.pb_flags"
+kind = "field"
+sgx545 = "HWPBDESC+0x000"
+meaning = "PB descriptor word 0, its flags (PB_FLAGS.*): bit 0 asks for the page table to be rebuilt and bit 1 for the thresholds to be reloaded; the routines clear both [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E201, E200"
+licence = "MIT"
+evidence = "[RE] E201: dword 0 holds the flags, bit 0 the page-table rebuild and bit 1 the threshold reload, and the routines clear both; [RE] E200: the threshold reload and the page-table builder run on those bits"
+
+[[term]]
 id = "G0524"
 name = "hw_pb_desc.pds_threshold"
 status = "named"

@@ -31,6 +31,22 @@ licence = "MIT"
 evidence = "[HW] E046: every value 0-63 on the copy"
 
 [[term]]
+id = "G0627"
+name = "DOUTI0.COMPONENTS"
+status = "named"
+
+[[term.source]]
+term = "DOUTI0.COMPONENTS"
+kind = "field"
+sgx545 = "douti word 0 [23:22]"
+meaning = "the iteration's components less one: 1 to 3 measured (x; x, y; x, y, 0), the fetch's texel in the dword after them; 4 open [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E132"
+licence = "MIT"
+evidence = "[HW] E132: every pixel of the textured triangle at 1-3 components"
+
+[[term]]
 id = "G0209"
 name = "DOUTI0.F16"
 status = "named"

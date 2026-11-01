@@ -1,0 +1,26 @@
+[[term]]
+id = "G0624"
+name = "CR_ISP_RENDER"
+status = "named"
+
+[[term.source]]
+term = "ROGUE_CR_ISP_RENDER"
+kind = "register"
+sgx545 = "0x0404"
+meaning = "render control: mode, direction, resume (Rogue analogue)"
+tier = "3"
+source = "linux-imagination"
+citation = "C0358"
+licence = "GPL-2.0-only OR MIT"
+evidence = "[RE] E015: the transfer path loads it from the command's word 3; [RE] E163: the 3D kick writes it 0; Rogue's ISP_RENDER is the analogue"
+
+[[term.source]]
+term = "ROGUE_CR_ISP_RENDER"
+kind = "register"
+sgx545 = "0x0404"
+meaning = "render control: mode, direction, resume (Rogue analogue)"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0359"
+licence = "MIT"
+evidence = "[RE] E015: the transfer path loads it from the command's word 3; [RE] E163: the 3D kick writes it 0; Rogue's ISP_RENDER is the analogue"

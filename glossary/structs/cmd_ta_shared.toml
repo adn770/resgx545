@@ -1,0 +1,271 @@
+[[term]]
+id = "G0663"
+name = "cmd_ta_shared"
+status = "named"
+
+[[term.source]]
+term = "SGXMKIF_CMDTA_SHARED"
+kind = "struct"
+sgx545 = "0x1e0 at CMDTA+0x058"
+meaning = "kernel-written sync/status block of the TA command"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0378"
+licence = "GPL-2.0"
+evidence = "-"
+
+[[term]]
+id = "G0664"
+name = "cmd_ta_shared.ctl_status_info_3d"
+status = "named"
+
+[[term.source]]
+term = "sCtl3DStatusInfo"
+kind = "field"
+sgx545 = "CMDTA_SHARED+0x1c0 (CMDTA+0x218)"
+meaning = "status updates at render end [4]"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0379"
+licence = "GPL-2.0"
+evidence = "offsets from the field order of the header, from CMDTA+0x058; [RE] E161: the TA pick tests bit 0 of command dword 22, the shared block's first word; [CAP] E001: the microkernel reports the shared block's size, 0x1e0"
+
+[[term]]
+id = "G0665"
+name = "cmd_ta_shared.ctl_status_info_ta"
+status = "named"
+
+[[term.source]]
+term = "sCtlTAStatusInfo"
+kind = "field"
+sgx545 = "CMDTA_SHARED+0x0c0 (CMDTA+0x118)"
+meaning = "status updates at TA end [32]"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0380"
+licence = "GPL-2.0"
+evidence = "offsets from the field order of the header, from CMDTA+0x058; [RE] E161: the TA pick tests bit 0 of command dword 22, the shared block's first word; [CAP] E001: the microkernel reports the shared block's size, 0x1e0"
+
+[[term]]
+id = "G0666"
+name = "cmd_ta_shared.ctrl_flags"
+status = "named"
+
+[[term.source]]
+term = "ui32CtrlFlags"
+kind = "field"
+sgx545 = "CMDTA_SHARED+0x000 (CMDTA+0x058)"
+meaning = "CMD_TA_CTRL_FLAGS.*; READY is set last by the kernel"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0381"
+licence = "GPL-2.0"
+evidence = "offsets from the field order of the header, from CMDTA+0x058; [RE] E161: the TA pick tests bit 0 of command dword 22, the shared block's first word; [CAP] E001: the microkernel reports the shared block's size, 0x1e0"
+
+[[term]]
+id = "G0667"
+name = "cmd_ta_shared.num_src_syncs"
+status = "named"
+
+[[term.source]]
+term = "ui32NumSrcSyncs"
+kind = "field"
+sgx545 = "CMDTA_SHARED+0x02c (CMDTA+0x084)"
+meaning = "source sync count"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0346"
+licence = "GPL-2.0"
+evidence = "offsets from the field order of the header, from CMDTA+0x058; [RE] E161: the TA pick tests bit 0 of command dword 22, the shared block's first word; [CAP] E001: the microkernel reports the shared block's size, 0x1e0"
+
+[[term]]
+id = "G0668"
+name = "cmd_ta_shared.num_status_vals_3d"
+status = "named"
+
+[[term.source]]
+term = "ui32Num3DStatusVals"
+kind = "field"
+sgx545 = "CMDTA_SHARED+0x008 (CMDTA+0x060)"
+meaning = "count of sCtl3DStatusInfo"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0382"
+licence = "GPL-2.0"
+evidence = "offsets from the field order of the header, from CMDTA+0x058; [RE] E161: the TA pick tests bit 0 of command dword 22, the shared block's first word; [CAP] E001: the microkernel reports the shared block's size, 0x1e0"
+
+[[term]]
+id = "G0669"
+name = "cmd_ta_shared.num_status_vals_ta"
+status = "named"
+
+[[term.source]]
+term = "ui32NumTAStatusVals"
+kind = "field"
+sgx545 = "CMDTA_SHARED+0x004 (CMDTA+0x05c)"
+meaning = "count of sCtlTAStatusInfo"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0383"
+licence = "GPL-2.0"
+evidence = "offsets from the field order of the header, from CMDTA+0x058; [RE] E161: the TA pick tests bit 0 of command dword 22, the shared block's first word; [CAP] E001: the microkernel reports the shared block's size, 0x1e0"
+
+[[term]]
+id = "G0670"
+name = "cmd_ta_shared.src_syncs"
+status = "named"
+
+[[term.source]]
+term = "asSrcSyncs"
+kind = "field"
+sgx545 = "CMDTA_SHARED+0x030 (CMDTA+0x088)"
+meaning = "source syncs [8]"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0347"
+licence = "GPL-2.0"
+evidence = "offsets from the field order of the header, from CMDTA+0x058; [RE] E161: the TA pick tests bit 0 of command dword 22, the shared block's first word; [CAP] E001: the microkernel reports the shared block's size, 0x1e0"
+
+[[term]]
+id = "G0671"
+name = "cmd_ta_shared.ta3d_dependency"
+status = "named"
+
+[[term.source]]
+term = "sTA3DDependency"
+kind = "field"
+sgx545 = "CMDTA_SHARED+0x0b0 (CMDTA+0x108)"
+meaning = "TA->3D dependency sync"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0384"
+licence = "GPL-2.0"
+evidence = "offsets from the field order of the header, from CMDTA+0x058; [RE] E161: the TA pick tests bit 0 of command dword 22, the shared block's first word; [CAP] E001: the microkernel reports the shared block's size, 0x1e0"
+
+[[term]]
+id = "G0672"
+name = "cmd_ta_shared.tq_sync_3d_read_ops_complete_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "s3DTQSyncReadOpsCompleteDevVAddr"
+kind = "field"
+sgx545 = "CMDTA_SHARED+0x028 (CMDTA+0x080)"
+meaning = "3D-side TQ sync: read-complete address"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0385"
+licence = "GPL-2.0"
+evidence = "offsets from the field order of the header, from CMDTA+0x058; [RE] E161: the TA pick tests bit 0 of command dword 22, the shared block's first word; [CAP] E001: the microkernel reports the shared block's size, 0x1e0"
+
+[[term]]
+id = "G0673"
+name = "cmd_ta_shared.tq_sync_3d_read_ops_pending_val"
+status = "named"
+
+[[term.source]]
+term = "ui323DTQSyncReadOpsPendingVal"
+kind = "field"
+sgx545 = "CMDTA_SHARED+0x024 (CMDTA+0x07c)"
+meaning = "3D-side TQ sync: read pending value"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0386"
+licence = "GPL-2.0"
+evidence = "offsets from the field order of the header, from CMDTA+0x058; [RE] E161: the TA pick tests bit 0 of command dword 22, the shared block's first word; [CAP] E001: the microkernel reports the shared block's size, 0x1e0"
+
+[[term]]
+id = "G0674"
+name = "cmd_ta_shared.tq_sync_3d_write_ops_complete_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "s3DTQSyncWriteOpsCompleteDevVAddr"
+kind = "field"
+sgx545 = "CMDTA_SHARED+0x020 (CMDTA+0x078)"
+meaning = "3D-side TQ sync: write-complete address"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0387"
+licence = "GPL-2.0"
+evidence = "offsets from the field order of the header, from CMDTA+0x058; [RE] E161: the TA pick tests bit 0 of command dword 22, the shared block's first word; [CAP] E001: the microkernel reports the shared block's size, 0x1e0"
+
+[[term]]
+id = "G0675"
+name = "cmd_ta_shared.tq_sync_3d_write_ops_pending_val"
+status = "named"
+
+[[term.source]]
+term = "ui323DTQSyncWriteOpsPendingVal"
+kind = "field"
+sgx545 = "CMDTA_SHARED+0x01c (CMDTA+0x074)"
+meaning = "3D-side TQ sync: write pending value"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0388"
+licence = "GPL-2.0"
+evidence = "offsets from the field order of the header, from CMDTA+0x058; [RE] E161: the TA pick tests bit 0 of command dword 22, the shared block's first word; [CAP] E001: the microkernel reports the shared block's size, 0x1e0"
+
+[[term]]
+id = "G0676"
+name = "cmd_ta_shared.tq_sync_ta_read_ops_complete_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "sTATQSyncReadOpsCompleteDevVAddr"
+kind = "field"
+sgx545 = "CMDTA_SHARED+0x018 (CMDTA+0x070)"
+meaning = "TA-side TQ sync: read-complete address"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0389"
+licence = "GPL-2.0"
+evidence = "offsets from the field order of the header, from CMDTA+0x058; [RE] E161: the TA pick tests bit 0 of command dword 22, the shared block's first word; [CAP] E001: the microkernel reports the shared block's size, 0x1e0"
+
+[[term]]
+id = "G0677"
+name = "cmd_ta_shared.tq_sync_ta_read_ops_pending_val"
+status = "named"
+
+[[term.source]]
+term = "ui32TATQSyncReadOpsPendingVal"
+kind = "field"
+sgx545 = "CMDTA_SHARED+0x014 (CMDTA+0x06c)"
+meaning = "TA-side TQ sync: read pending value"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0390"
+licence = "GPL-2.0"
+evidence = "offsets from the field order of the header, from CMDTA+0x058; [RE] E161: the TA pick tests bit 0 of command dword 22, the shared block's first word; [CAP] E001: the microkernel reports the shared block's size, 0x1e0"
+
+[[term]]
+id = "G0678"
+name = "cmd_ta_shared.tq_sync_ta_write_ops_complete_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "sTATQSyncWriteOpsCompleteDevVAddr"
+kind = "field"
+sgx545 = "CMDTA_SHARED+0x010 (CMDTA+0x068)"
+meaning = "TA-side TQ sync: write-complete address"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0391"
+licence = "GPL-2.0"
+evidence = "offsets from the field order of the header, from CMDTA+0x058; [RE] E161: the TA pick tests bit 0 of command dword 22, the shared block's first word; [CAP] E001: the microkernel reports the shared block's size, 0x1e0"
+
+[[term]]
+id = "G0679"
+name = "cmd_ta_shared.tq_sync_ta_write_ops_pending_val"
+status = "named"
+
+[[term.source]]
+term = "ui32TATQSyncWriteOpsPendingVal"
+kind = "field"
+sgx545 = "CMDTA_SHARED+0x00c (CMDTA+0x064)"
+meaning = "TA-side TQ sync: write pending value"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0392"
+licence = "GPL-2.0"
+evidence = "offsets from the field order of the header, from CMDTA+0x058; [RE] E161: the TA pick tests bit 0 of command dword 22, the shared block's first word; [CAP] E001: the microkernel reports the shared block's size, 0x1e0"

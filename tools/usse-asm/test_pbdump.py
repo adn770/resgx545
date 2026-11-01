@@ -3,11 +3,17 @@
 """pbdump.py: reading the render dumps (the parameter slot from its PB, the TA data)."""
 from __future__ import annotations
 
+import os
+import pathlib
 import struct
+
+import pytest
 
 import pbdump
 
 PAGE = 4096
+ROOT = pathlib.Path(__file__).resolve().parents[2]
+DATA = pathlib.Path(os.environ.get("RESGX545_DATA") or ROOT.parent / "resgx545-data")
 
 
 def dwords(n_pages: int, at: dict) -> bytes:
@@ -75,6 +81,35 @@ def test_a_wide_mask_form_takes_a_third_dword():
     assert len(pbdump.objects([0x5c90ffff, 0x24000412])) == 1
 
 
+def test_the_lines_form_takes_a_third_dword():
+    """PRIM_TILES 0x88 (two lines, E181: 0x4688000f): the block is the primitive word, the
+    object word and a further dword, as for the wide-mask forms."""
+    assert 0x88 in pbdump.THIRD_DWORD_TILES
+    assert pbdump.objects([0x4688000f, 0x0c000407, 0x00010003]) == [
+        (pbdump.prim_word(0x4688000f), pbdump.obj_word(0x0c000407), 0x00010003)]
+
+
+def _ta_dumps():
+    return sorted((DATA / "ta").glob("*/*/dumps/*.param.bin"))
+
+
+@pytest.mark.skipif(not _ta_dumps(), reason="needs the ta datasets (resgx545-data)")
+def test_every_stream_of_the_ta_dumps_splits_into_whole_blocks():
+    """Over the ta-objects, ta-regions and ta-zero-words dumps every region's stream reads as
+    whole blocks whose primitive word has bit 23 set (the PRIM_TILES forms 0x80 to 0x98): a
+    third dword read as a primitive word would not have it. The two-lines dump has 0x88."""
+    forms = set()
+    for p in _ta_dumps():
+        stem = p.name[:-len(".param.bin")]
+        param, td = p.read_bytes(), (p.parent / f"{stem}.tadata.bin").read_bytes()
+        for r in pbdump.regions(td):
+            for prim, _ob, _m in pbdump.objects(pbdump.stream(param, r.stream) if r.stream
+                                                 else []):
+                assert prim["PRIM_TILES"] & 0x80, (stem, r.index)
+                forms.add(prim["PRIM_TILES"])
+    assert {0x80, 0x88, 0x90, 0x98} <= forms
+
+
 def test_region_flags_by_their_glossary_bits():
     """REGION_HDR.FLAGS, word 0 [31:24]: bit 25 outside the target, 26 a macrotile's first
     region, 27 empty inside it, 28 a macrotile's last region, 31 the scene's last."""
@@ -110,6 +145,17 @@ def test_report_prints_the_mask_apart_from_the_object_word(tmp_path):
     text = pbdump.report(tmp_path, "t__0")
     assert ("  CSTREAM PRIM_TILES 0x8a PRIM_VERTICES 14 PRIM_POINTS 0, "
             "OBJ_PRIMS 9 OBJ_ISP_ADDR 0x412, mask 0x1f\n") in text
+
+
+def test_report_names_the_lines_third_dword_apart_from_a_mask(tmp_path):
+    (tmp_path / "t__0.param.bin").write_bytes(
+        dwords(3, {0: 0x04000004, PAGE: 0x4688000f, PAGE + 4: 0x0c000407, PAGE + 8: 0x00010003,
+                   PAGE + 12: 0xc0000000}))
+    (tmp_path / "t__0.tadata.bin").write_bytes(
+        dwords(5, {4 * PAGE: 0x04000000, 4 * PAGE + 4: 0x2000}))
+    text = pbdump.report(tmp_path, "t__0")
+    assert ("  CSTREAM PRIM_TILES 0x88 PRIM_VERTICES 3 PRIM_POINTS 0, "
+            "OBJ_PRIMS 3 OBJ_ISP_ADDR 0x407, dword 0x10003\n") in text
 
 
 def test_regions_read_past_64_headers():

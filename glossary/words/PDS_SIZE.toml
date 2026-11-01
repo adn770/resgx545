@@ -13,3 +13,19 @@ source = "resgx545"
 citation = "E046, E139"
 licence = "MIT"
 evidence = "never varied; [HW] E046: cleared, alone or with the whole word, nothing changes on the triangle; inference (E139)"
+
+[[term]]
+id = "G0636"
+name = "PDS_SIZE.BITS24_18"
+status = "inferred"
+
+[[term.source]]
+term = "PDS_SIZE.BITS24_18"
+kind = "field"
+sgx545 = "PDS_SIZE [24:18]"
+meaning = "bits 24:18 of the PDS size word; at 4, 1 and 0 a fill's secondary program still passes all sixteen douta words, so what they size is not shown [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E125"
+licence = "MIT"
+evidence = "[HW] E125: with the field at 4, 1 and 0 all sixteen douta words of a fill's secondary program reach sa0-sa15, so what it limits is not shown"

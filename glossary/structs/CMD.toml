@@ -1,4 +1,84 @@
 [[term]]
+id = "G0609"
+name = "CMD.2D"
+status = "named"
+
+[[term.source]]
+term = "SGXMKIF_CMD_2D"
+kind = "enum"
+sgx545 = "aui32HostKickAddr[2] = 0 (none)"
+meaning = "kernel CCB command 2: 2D blit (no handler in the SGX545 firmware)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0350"
+licence = "GPL-2.0"
+evidence = "[CAP] E012: the kick-address table"
+
+[[term]]
+id = "G0610"
+name = "CMD.CLEANUP"
+status = "named"
+
+[[term.source]]
+term = "SGXMKIF_CMD_CLEANUP"
+kind = "enum"
+sgx545 = "aui32HostKickAddr[5] = 0x13a"
+meaning = "kernel CCB command 5: release a firmware object (CLEANUP.*)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0351"
+licence = "GPL-2.0"
+evidence = "[CAP] E012: the kick-address table"
+
+[[term]]
+id = "G0611"
+name = "CMD.CONTEXT_SUSPEND"
+status = "named"
+
+[[term.source]]
+term = "SGXMKIF_CMD_CONTEXTSUSPEND"
+kind = "enum"
+sgx545 = "aui32HostKickAddr[4] = 0xeb"
+meaning = "kernel CCB command 4: suspend or resume a context (CONTEXT_SUSPEND.*)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0352"
+licence = "GPL-2.0"
+evidence = "[CAP] E012: the kick-address table"
+
+[[term]]
+id = "G0612"
+name = "CMD.GET_MISC_INFO"
+status = "named"
+
+[[term.source]]
+term = "SGXMKIF_CMD_GETMISCINFO"
+kind = "enum"
+sgx545 = "aui32HostKickAddr[6] = 0x173"
+meaning = "kernel CCB command 6: fill the misc-info buffer"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0353"
+licence = "GPL-2.0"
+evidence = "[CAP] E012: the kick-address table"
+
+[[term]]
+id = "G0613"
+name = "CMD.POWER"
+status = "named"
+
+[[term.source]]
+term = "SGXMKIF_CMD_POWER"
+kind = "enum"
+sgx545 = "aui32HostKickAddr[3] = 0xd4"
+meaning = "kernel CCB command 3: power request (POWER.*)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0354"
+licence = "GPL-2.0"
+evidence = "[CAP] E012: the kick-address table"
+
+[[term]]
 id = "G0356"
 name = "CMD.SET_HWPERF_STATUS"
 status = "named"
@@ -13,3 +93,35 @@ source = "sgx545-ce"
 citation = "C0248"
 licence = "GPL-2.0"
 evidence = "-"
+
+[[term]]
+id = "G0614"
+name = "CMD.TA"
+status = "named"
+
+[[term.source]]
+term = "SGXMKIF_CMD_TA"
+kind = "enum"
+sgx545 = "aui32HostKickAddr[0] = 0x11d"
+meaning = "kernel CCB command 0: kick a TA (and its 3D) from a render context"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0355"
+licence = "GPL-2.0"
+evidence = "[CAP] E012: the kick-address table"
+
+[[term]]
+id = "G0615"
+name = "CMD.TRANSFER"
+status = "named"
+
+[[term.source]]
+term = "SGXMKIF_CMD_TRANSFER"
+kind = "enum"
+sgx545 = "aui32HostKickAddr[1] = 0x103"
+meaning = "kernel CCB command 1: kick a transfer from a transfer context"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0356"
+licence = "GPL-2.0"
+evidence = "[CAP] E012: the kick-address table"

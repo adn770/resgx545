@@ -1,0 +1,26 @@
+[[term]]
+id = "G0628"
+name = "Event Data Master (EDM)"
+status = "named"
+
+[[term.source]]
+term = "EDM"
+kind = "unit"
+sgx545 = "-"
+meaning = "data master that services events on the USSE without interrupting the host"
+tier = "4"
+source = "patent-US8046761"
+citation = "C0360"
+licence = "patent"
+evidence = "OCR text"
+
+[[term.source]]
+term = "general-purpose data master"
+kind = "unit"
+sgx545 = "-"
+meaning = "responds to events (end of an ISP pass, end of a tile, end of a render, a parameter stream breakpoint) with a host interrupt or a PDS program"
+tier = "4"
+source = "ti-omap4430-trm"
+citation = "C0361"
+licence = "public-doc"
+evidence = "OCR text; describes the SGX540, the same Series5 architecture; [RE] E155: the EDM's event tasks acknowledge the end-of-render, breakpoint, TA and DPM events"

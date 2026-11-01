@@ -44,6 +44,9 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   (4, imgtec-sgx-arch-guide-1.0.13); `Parameter Buffer` (4, imgtec-sgx-arch-guide-1.0.8).
 - `Tile Based Deferred Rendering (TBDR)` G0068: bin the whole scene first, then render tile by tile,
   shading only visible pixels. From `TBDR` (4, imgtec-sgx-arch-guide-1.0.13).
+- `break point object` G0645: an object in the tile lists whose rasterisation halts the ISP and
+  calls the control processor, which may patch the tile list and resume. From `break point (BP)
+  object` (4, patent-US20090058848).
 - `control stream` G0516: per-tile control stream data written by the TA. From `control stream` (4,
   patent-US8669987).
 - `display list` G0070: per-tile display lists (macrotiles). From `display list` (4,
@@ -76,6 +79,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `Dynamic Parameter Management (DPM)` G0062 (CR_CLKGATECTL.DPM_CLKG): DPM block (its clock gate).
   From `DPM` (1, sgx545-ce); `Parameter Manager` (3, linux-imagination); `DPM` (4,
   patent-US8669987).
+- `Event Data Master (EDM)` G0628: data master that services events on the USSE without interrupting
+  the host. From `EDM` (4, patent-US8046761); `general-purpose data master` (4, ti-omap4430-trm).
 - `Image Synthesis Processor (ISP)` G0063 (CR_CLKGATECTL.ISP_CLKG): ISP block (its clock gate). From
   `ISP` (1, sgx545-ce); `ISP` (4, imgtec-sgx-arch-guide-1.0.13); `Hidden Surface Removal unit` (4,
   patent-US8743117).
@@ -159,12 +164,23 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   ISP path: with it clear and CR_ISP_MSAA.MODE at 2 no pixel of the triangle is written; whether the
   triangle is still tiled, and what it does at mode 1 or at mode 0 with other bits set, are not
   shown; set in every capture [infer]. From `CR_ISP_MSAA.ENABLE` (ours, resgx545).
+- `CR_ISP_BGOBJVALS.STENCIL` G0623 (0x04bc[7:0]): the background's stencil value, which an object's
+  stencil test compares against (with bit 8 set) [infer]. From `CR_ISP_BGOBJVALS.STENCIL` (ours,
+  resgx545).
 - `CR_ISP_MULTISAMPLECTL.SAMPLE0_X` G0125 (0x04c8[3:0]): x of sample 0's position in the pixel, in
   sixteenths of a pixel, 8 the centre [infer]. From `CR_ISP_MULTISAMPLECTL.SAMPLE0_X` (ours,
   resgx545).
 - `CR_ISP_MULTISAMPLECTL.SAMPLE0_Y` G0126 (0x04c8[7:4]): y of sample 0's position in the pixel, in
   sixteenths of a pixel, 8 the centre [infer]. From `CR_ISP_MULTISAMPLECTL.SAMPLE0_Y` (ours,
   resgx545).
+- `CR_DPM_TA_PAGE_COUNTS.LOCAL` G0620 (0x0638[15:0]): local pages of the TA's PB [infer]. From
+  `CR_DPM_TA_PAGE_COUNTS.LOCAL` (ours, resgx545).
+- `CR_DPM_TA_PAGE_COUNTS.GLOBAL` G0619 (0x0638[31:16]): global pages of the TA's PB [infer]. From
+  `CR_DPM_TA_PAGE_COUNTS.GLOBAL` (ours, resgx545).
+- `CR_DPM_3D_PAGE_COUNTS.LOCAL` G0618 (0x0660[15:0]): local pages of the 3D's PB [infer]. From
+  `CR_DPM_3D_PAGE_COUNTS.LOCAL` (ours, resgx545).
+- `CR_DPM_3D_PAGE_COUNTS.GLOBAL` G0617 (0x0660[31:16]): global pages of the 3D's PB [infer]. From
+  `CR_DPM_3D_PAGE_COUNTS.GLOBAL` (ours, resgx545).
 - `CR_USE_CODE_BASE_0.ADDR` G0006 (0x0a0c[24:0]): code base address. From `_PSB_CUC_BASE_ADDR_MASK`
   (1c, emgd-psb_regs).
 - `CR_USE_CODE_BASE_0.DM` G0007 (0x0a0c[26:25]): data master that owns a USE code base. From
@@ -224,6 +240,9 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   `ROGUE_CR_EVENT_STATUS_TA_FINISHED` (3, linux-imagination).
 - `CR_EVENT_STATUS.PIXELBE_END_RENDER` G0402 (0x012c[18]): status: pixel back end finished the
   render (Rogue analogue). From `ROGUE_CR_EVENT_STATUS_PIXELBE_END_RENDER` (3, linux-imagination).
+- `CR_ISP_BGOBJVALS.BGTAG_ENABLE` G0622 (0x04bc[9]): draw the background object (its tag on every
+  pixel); clear, the target keeps its old pixels [infer]. From `CR_ISP_BGOBJVALS.BGTAG_ENABLE`
+  (ours, resgx545).
 - `CR_TPU_YUV_CSC_INPUT.Y_NO_OFFSET` G0177 (0x0848[0]): the luma taken as is, without the -16 offset
   [infer]. From `CR_TPU_YUV_CSC_INPUT.Y_NO_OFFSET` (ours, resgx545).
 - `CR_TPU_YUV_CSC_INPUT.UV_SIGNED` G0176 (0x0848[2]): U and V taken as signed bytes instead of
@@ -391,6 +410,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   bit 25 inverts byte 3 of every pixel written (CR_REG_0400.INVERT_BYTE3), 0x80 the default of the
   other conversions. Measured: per-render word from the render details or transfer command; 0x80 in
   captures [infer]. From `CR_REG_0400` (ours, resgx545).
+- `CR_ISP_RENDER` G0624 (0x0404): render control: mode, direction, resume (Rogue analogue). From
+  `ROGUE_CR_ISP_RENDER` (3, linux-imagination); `ROGUE_CR_ISP_RENDER` (3, mesa-csbgen).
 - `CR_ISP_REGION_HEADER_BASE` G0420 (0x0408): address of the region headers (or fast-2D stream) the
   ISP renders, relative to CR_BIF_3D_REQ_BASE [infer]. From `CR_ISP_REGION_HEADER_BASE` (ours,
   resgx545).
@@ -425,8 +446,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `CR_ISP_STENCIL_STORE_BASE` G0134 (0x0490): stencil store base (bits 30:0, an offset from the ZLS
   requester base) and its enable (bit 31) [infer]. From `CR_ISP_STENCIL_STORE_BASE` (ours,
   resgx545).
-- `CR_ISP_VISIBILITY_CTRL` G0141 (0x0494): visibility-test control: the EDM writes 0xff before each
-  render and after it reads the counters [infer]. From `CR_ISP_VISIBILITY_CTRL` (ours, resgx545).
+- `CR_ISP_VISIBILITY_CTRL` G0141 (0x0494): visibility-test control: the 3D kick writes 0xff to it
+  before each render [infer]. From `CR_ISP_VISIBILITY_CTRL` (ours, resgx545).
 - `CR_ISP_VISIBILITY_COUNT0` G0135 (0x0498): visibility counters 0 and 1, one per 16-bit half,
   accumulated by the EDM into the visibility results [infer]. From `CR_ISP_VISIBILITY_COUNT0` (ours,
   resgx545).
@@ -442,11 +463,20 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `CR_ISP_VISIBILITY_COUNT4` G0139 (0x04a8): visibility counters 8 and 9, one per 16-bit half,
   accumulated by the EDM into the visibility results [infer]. From `CR_ISP_VISIBILITY_COUNT4` (ours,
   resgx545).
+- `CR_ISP_VISIBILITY_COUNT5` G0625 (0x04ac): visibility counters 10 and 11, one per 16-bit half,
+  accumulated by the EDM into the visibility results [infer]. From `CR_ISP_VISIBILITY_COUNT5` (ours,
+  resgx545).
+- `CR_ISP_VISIBILITY_COUNT6` G0626 (0x04b0): visibility counters 12 and 13, one per 16-bit half,
+  accumulated by the EDM into the visibility results [infer]. From `CR_ISP_VISIBILITY_COUNT6` (ours,
+  resgx545).
 - `CR_ISP_VISIBILITY_COUNT7` G0140 (0x04b4): visibility counters 14 and 15, one per 16-bit half,
   accumulated by the EDM into the visibility results [infer]. From `CR_ISP_VISIBILITY_COUNT7` (ours,
   resgx545).
 - `CR_ISP_BGOBJDEPTH` G0118 (0x04b8): background object depth (Rogue analogue). From
   `ROGUE_CR_ISP_BGOBJDEPTH` (3, mesa-csbgen).
+- `CR_ISP_BGOBJVALS` G0621 (0x04bc): background object values (Rogue: bit 9 background tag enable,
+  bit 8 mask, 7:0 stencil); the 3D kick and the transfer path load it from their commands. From
+  `ROGUE_CR_ISP_BGOBJVALS` (3, mesa-csbgen).
 - `CR_ISP_MULTISAMPLECTL` G0124 (0x04c8): the pixel's sample positions, a byte per sample (x in bits
   3:0, y in bits 7:4, sixteenths of a pixel): 0x88 one sample at the centre, 0xeaa26e26 four in a
   rotated grid with 4x multisampling (Rogue analogue: PPP_MULTISAMPLECTL). From `ROGUE_CR_ISP_AA`
@@ -630,9 +660,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   analogue). From `ROGUE_CR_EVENT_PIXEL_PDS_CODE` (3, mesa-csbgen).
 - `CR_EVENT_PIXEL_PDS_DATA` G0395 (0x0a60): data size of the pixel-event PDS program in 16-byte rows
   (Rogue: its data address). From `ROGUE_CR_EVENT_PIXEL_PDS_DATA` (3, mesa-csbgen).
-- `CR_EVENT_PIXEL_PDS_INFO` G0396 (0x0a64): size word of the pixel-event task, (attributes x 4 + 15)
-  >> 4 in the closed library (Rogue: shared-register and temp sizes). From
-  `ROGUE_CR_EVENT_PIXEL_PDS_INFO` (3, mesa-csbgen).
+- `CR_EVENT_PIXEL_PDS_INFO` G0396 (0x0a64): info word of the pixel-event task (Rogue:
+  shared-register and temp sizes). From `ROGUE_CR_EVENT_PIXEL_PDS_INFO` (3, mesa-csbgen).
 - `CR_EVENT_OTHER_PDS_EXEC` G0003 (0x0a68): PDS code address of the other-event task. From
   `EUR_CR_EVENT_OTHER_PDS_EXEC` (1c, intel-ctp-santos10).
 - `CR_EVENT_OTHER_PDS_DATA` G0002 (0x0a6c): PDS data address of the other-event task. From
@@ -746,6 +775,20 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `CLEANUP.PB` G0354 (COMMAND+0x08 ui32Data[0] = 5, ~ COMMAND ui32Data[0]): clean up a PB
   descriptor. From `PVRSRV_CLEANUPCMD_PB` (1, sgx545-ce); `ROGUE_FWIF_CLEANUP_FREELIST` (3,
   linux-imagination).
+- `CMD.TA` G0614 (aui32HostKickAddr[0] = 0x11d): kernel CCB command 0: kick a TA (and its 3D) from a
+  render context. From `SGXMKIF_CMD_TA` (1, sgx545-ce).
+- `CMD.TRANSFER` G0615 (aui32HostKickAddr[1] = 0x103): kernel CCB command 1: kick a transfer from a
+  transfer context. From `SGXMKIF_CMD_TRANSFER` (1, sgx545-ce).
+- `CMD.2D` G0609 (aui32HostKickAddr[2] = 0 (none)): kernel CCB command 2: 2D blit (no handler in the
+  SGX545 firmware). From `SGXMKIF_CMD_2D` (1, sgx545-ce).
+- `CMD.POWER` G0613 (aui32HostKickAddr[3] = 0xd4): kernel CCB command 3: power request (POWER.*).
+  From `SGXMKIF_CMD_POWER` (1, sgx545-ce).
+- `CMD.CONTEXT_SUSPEND` G0611 (aui32HostKickAddr[4] = 0xeb): kernel CCB command 4: suspend or resume
+  a context (CONTEXT_SUSPEND.*). From `SGXMKIF_CMD_CONTEXTSUSPEND` (1, sgx545-ce).
+- `CMD.CLEANUP` G0610 (aui32HostKickAddr[5] = 0x13a): kernel CCB command 5: release a firmware
+  object (CLEANUP.*). From `SGXMKIF_CMD_CLEANUP` (1, sgx545-ce).
+- `CMD.GET_MISC_INFO` G0612 (aui32HostKickAddr[6] = 0x173): kernel CCB command 6: fill the misc-info
+  buffer. From `SGXMKIF_CMD_GETMISCINFO` (1, sgx545-ce).
 - `CMD.SET_HWPERF_STATUS` G0356 (aui32HostKickAddr[9]): kernel CCB command 9: set the HWPerf status.
   From `SGXMKIF_CMD_SETHWPERFSTATUS` (1, sgx545-ce).
 
@@ -766,6 +809,11 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   (1, sgx545-ce).
 - `ccb_ctl.read_offset` G0096 (CCB_CTL+0x4): read offset (EDM advances). From `ui32ReadOffset` (1,
   sgx545-ce).
+- `cmd_ta.size` G0654 (CMDTA+0x000): TA command word 0, the command's size: when the kick is done
+  the TA queue step adds it to the context's CCB read offset [infer]. From `cmd_ta.size` (ours,
+  resgx545).
+- `cmd_ta.geom_flags` G0648 (CMDTA+0x004): TA command word 1, the TA's flags (GEOM_FLAGS.*), which
+  the TA pick and the TA kick test [infer]. From `cmd_ta.geom_flags` (ours, resgx545).
 - `cmd_ta.pds_bgnd` G0512 (CMDTA+0x008): background object words [3]: dwords 0-2 of the background
   object, the first a pixel PDS reference; copied to the render details' pds_bgnd at the TA kick.
   From `pds_bgnd` (3, linux-imagination).
@@ -775,13 +823,22 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   visibility results (FRAG_FLAGS.*). From `flags` (3, linux-imagination).
 - `cmd_ta.frame_num` G0566 (CMDTA+0x020): frame number. From `ui32FrameNum` (1, intel-ctp-k900);
   `frame_num` (3, linux-imagination); `cmd_ta.frame_num` (ours, resgx545).
+- `cmd_ta.hw_pb_desc_dev_vaddr` G0649 (CMDTA+0x024): PB descriptor of the kick. From
+  `sHWPBDescDevVAddr` (1, sgx545-ce); `cmd_ta.hw_pb_desc_dev_vaddr` (ours, resgx545).
 - `cmd_ta.ta_threshold` G0514 (CMDTA+0x028): new TA threshold. From `TAThreshold` (2,
   cdv-libsrv_um); `cmd_ta.ta_threshold` (ours, resgx545).
+- `cmd_ta.zls_threshold` G0662 (CMDTA+0x02c): new ZLS threshold. From `ZLSThreshold` (2,
+  cdv-libsrv_um); `cmd_ta.zls_threshold` (ours, resgx545).
 - `cmd_ta.global_threshold` G0506 (CMDTA+0x030): new global threshold. From `GlobalThreshold` (2,
   cdv-libsrv_um); `cmd_ta.global_threshold` (ours, resgx545).
+- `cmd_ta.pds_threshold` G0652 (CMDTA+0x034): new PDS threshold. From `PDSThreshold` (2,
+  cdv-libsrv_um); `cmd_ta.pds_threshold` (ours, resgx545).
 - `cmd_ta.hw_render_details_dev_vaddr` G0507 (CMDTA+0x038): render details of the kick; the EDM
   records it and writes it into the RT data's hw_render_details_dev_vaddr [infer]. From
   `cmd_ta.hw_render_details_dev_vaddr` (ours, resgx545).
+- `cmd_ta.dst_sync_list_dev_vaddr` G0647 (CMDTA+0x03c): TA command word 15, the destination sync
+  list: the TA pick tests it complete and the TA kick copies it to render details word 56 [infer].
+  From `cmd_ta.dst_sync_list_dev_vaddr` (ours, resgx545).
 - `cmd_ta.hw_rt_data_dev_vaddr` G0508 (CMDTA+0x044): RT data used by this kick. From
   `sHWRTDataDevAddr` (1, intel-ctp-k900).
 - `cmd_ta.z_rt_stride` G0568 (CMDTA+0x04c): inferred reading (unconfirmed): TA command word 19,
@@ -796,12 +853,31 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   offset in ccb_kick.ccb_offset. From `ui32CCBOffset` (1, sgx545-ce).
 - `cmd_ta.te_aa` G0515 (CMDTA+0x238): value the EDM loads into CR_TE_AA (0x0204): 0x20000000, bits
   31 and 30 more with 4x multisampling [infer]. From `cmd_ta.te_aa` (ours, resgx545).
+- `cmd_ta.te_mtile1` G0656 (CMDTA+0x23c): macrotile X boundaries. From `te_mtile1` (3,
+  linux-imagination).
+- `cmd_ta.te_mtile2` G0657 (CMDTA+0x240): macrotile Y boundaries. From `te_mtile2` (3,
+  linux-imagination).
 - `cmd_ta.te_screen` G0316 (CMDTA+0x244): screen size in tiles. From `te_screen` (3,
   linux-imagination).
+- `cmd_ta.te_macrotile_stride` G0655 (CMDTA+0x248): inferred reading (unconfirmed): TA command word
+  146, which the TA kick writes to CR_TE_MACROTILE_STRIDE (0x0214); its reading is the register's
+  [infer]. From `cmd_ta.te_macrotile_stride` (ours, resgx545).
+- `cmd_ta.te_psg` G0658 (CMDTA+0x24c): TE control word (Rogue: carries the end-of-scene bit). From
+  `te_psg` (3, linux-imagination).
+- `cmd_ta.vdm_ctrl_stream_base` G0661 (CMDTA+0x250): VDM control stream of the kick. From
+  `vdm_ctrl_stream_base` (3, linux-imagination).
+- `cmd_ta.mte_ctrl` G0650 (CMDTA+0x254): MTE control: the TA kick loads this word into CR_MTE_CTRL
+  (0x023c). From `EUR_CR_MTE_CTRL` (1c, openpvrsgx-1.9).
+- `cmd_ta.te_psgregion_addr` G0659 (CMDTA+0x258): TA command word 150, which the TA kick writes to
+  CR_TE_PSGREGION_ADDR (0x021c) [infer]. From `cmd_ta.te_psgregion_addr` (ours, resgx545).
+- `cmd_ta.te_tpc_addr` G0660 (CMDTA+0x25c): TA command word 151, which the TA kick writes to
+  CR_TE_TPC_ADDR (0x0220) [infer]. From `cmd_ta.te_tpc_addr` (ours, resgx545).
 - `cmd_ta.mte_rhw_min` G0305 (CMDTA+0x260): the TA command's word the EDM loads into CR_MTE_RHW_MIN
   (0x0240) [infer]. From `cmd_ta.mte_rhw_min` (ours, resgx545).
 - `cmd_ta.mte_rhw_clamp` G0304 (CMDTA+0x264): the TA command's word the EDM loads into
   CR_MTE_RHW_CLAMP (0x0244) [infer]. From `cmd_ta.mte_rhw_clamp` (ours, resgx545).
+- `cmd_ta.ppp_screen` G0653 (CMDTA+0x268): TA command word 154, which the TA kick writes to
+  CR_PPP_SCREEN (0x0248) [infer]. From `cmd_ta.ppp_screen` (ours, resgx545).
 - `cmd_ta.use_reg_0a04` G0317 (CMDTA+0x26c): inferred reading (unconfirmed): as CR_USE_REG_0A04's:
   the USSE's context store/resume state base (a 16-byte address) for an interrupted TA's vertex
   tasks. Measured: value the EDM copies verbatim into CR_USE_REG_0A04 (0x0a04); 0 in every capture
@@ -810,6 +886,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   USSE resume task word for an interrupted TA's vertex tasks. Measured: value the EDM copies
   verbatim into CR_USE_REG_0AA0 (0x0aa0); 0 in every capture [infer]. From `cmd_ta.use_reg_0aa0`
   (ours, resgx545).
+- `cmd_ta.bif_ta_req_base` G0646 (CMDTA+0x274): TA requestor base (parameter heap). From
+  `EUR_CR_BIF_TA_REQ_BASE` (1, sgx545-ce).
 - `cmd_ta.ta_reg_02b0` G0311 (CMDTA+0x278): inferred reading (unconfirmed): as CR_TA_REG_02B0's:
   context store/resume state of an interrupted TA: an 8-bit field in 31:24 (state flags). Measured:
   value the EDM copies verbatim into CR_TA_REG_02B0 (0x02b0); 0 in every capture [infer]. From
@@ -855,9 +933,43 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   tiling engine's resume position after an interrupted TA: an 8-bit field in 19:12. Measured: value
   the EDM copies verbatim into CR_TE_REG_02A8 (0x02a8); 0 in every capture [infer]. From
   `cmd_ta.te_reg_02a8` (ours, resgx545).
+- `cmd_ta.mte_multisamplectl` G0651 (CMDTA+0x2a4): TA command word 169, which the TA kick writes to
+  CR_MTE_MULTISAMPLECTL (0x0230) [infer]. From `cmd_ta.mte_multisamplectl` (ours, resgx545).
 - `cmd_ta.patches_3d` G0511 (CMDTA+0x2a8): {address, value} memory writes the EDM applies at the TA
   kick, *address = value: patches to the render details (depth/stencil bases, ZLS control) [infer].
   From `cmd_ta.patches_3d` (ours, resgx545).
+- `cmd_ta_shared.ctrl_flags` G0666 (CMDTA_SHARED+0x000 (CMDTA+0x058)): CMD_TA_CTRL_FLAGS.*; READY is
+  set last by the kernel. From `ui32CtrlFlags` (1, sgx545-ce).
+- `cmd_ta_shared.num_status_vals_ta` G0669 (CMDTA_SHARED+0x004 (CMDTA+0x05c)): count of
+  sCtlTAStatusInfo. From `ui32NumTAStatusVals` (1, sgx545-ce).
+- `cmd_ta_shared.num_status_vals_3d` G0668 (CMDTA_SHARED+0x008 (CMDTA+0x060)): count of
+  sCtl3DStatusInfo. From `ui32Num3DStatusVals` (1, sgx545-ce).
+- `cmd_ta_shared.tq_sync_ta_write_ops_pending_val` G0679 (CMDTA_SHARED+0x00c (CMDTA+0x064)): TA-side
+  TQ sync: write pending value. From `ui32TATQSyncWriteOpsPendingVal` (1, sgx545-ce).
+- `cmd_ta_shared.tq_sync_ta_write_ops_complete_dev_vaddr` G0678 (CMDTA_SHARED+0x010 (CMDTA+0x068)):
+  TA-side TQ sync: write-complete address. From `sTATQSyncWriteOpsCompleteDevVAddr` (1, sgx545-ce).
+- `cmd_ta_shared.tq_sync_ta_read_ops_pending_val` G0677 (CMDTA_SHARED+0x014 (CMDTA+0x06c)): TA-side
+  TQ sync: read pending value. From `ui32TATQSyncReadOpsPendingVal` (1, sgx545-ce).
+- `cmd_ta_shared.tq_sync_ta_read_ops_complete_dev_vaddr` G0676 (CMDTA_SHARED+0x018 (CMDTA+0x070)):
+  TA-side TQ sync: read-complete address. From `sTATQSyncReadOpsCompleteDevVAddr` (1, sgx545-ce).
+- `cmd_ta_shared.tq_sync_3d_write_ops_pending_val` G0675 (CMDTA_SHARED+0x01c (CMDTA+0x074)): 3D-side
+  TQ sync: write pending value. From `ui323DTQSyncWriteOpsPendingVal` (1, sgx545-ce).
+- `cmd_ta_shared.tq_sync_3d_write_ops_complete_dev_vaddr` G0674 (CMDTA_SHARED+0x020 (CMDTA+0x078)):
+  3D-side TQ sync: write-complete address. From `s3DTQSyncWriteOpsCompleteDevVAddr` (1, sgx545-ce).
+- `cmd_ta_shared.tq_sync_3d_read_ops_pending_val` G0673 (CMDTA_SHARED+0x024 (CMDTA+0x07c)): 3D-side
+  TQ sync: read pending value. From `ui323DTQSyncReadOpsPendingVal` (1, sgx545-ce).
+- `cmd_ta_shared.tq_sync_3d_read_ops_complete_dev_vaddr` G0672 (CMDTA_SHARED+0x028 (CMDTA+0x080)):
+  3D-side TQ sync: read-complete address. From `s3DTQSyncReadOpsCompleteDevVAddr` (1, sgx545-ce).
+- `cmd_ta_shared.num_src_syncs` G0667 (CMDTA_SHARED+0x02c (CMDTA+0x084)): source sync count. From
+  `ui32NumSrcSyncs` (1, sgx545-ce).
+- `cmd_ta_shared.src_syncs` G0670 (CMDTA_SHARED+0x030 (CMDTA+0x088)): source syncs [8]. From
+  `asSrcSyncs` (1, sgx545-ce).
+- `cmd_ta_shared.ta3d_dependency` G0671 (CMDTA_SHARED+0x0b0 (CMDTA+0x108)): TA->3D dependency sync.
+  From `sTA3DDependency` (1, sgx545-ce).
+- `cmd_ta_shared.ctl_status_info_ta` G0665 (CMDTA_SHARED+0x0c0 (CMDTA+0x118)): status updates at TA
+  end [32]. From `sCtlTAStatusInfo` (1, sgx545-ce).
+- `cmd_ta_shared.ctl_status_info_3d` G0664 (CMDTA_SHARED+0x1c0 (CMDTA+0x218)): status updates at
+  render end [4]. From `sCtl3DStatusInfo` (1, sgx545-ce).
 - `command.service_address` G0100 (COMMAND+0x00): EDM handler address (aui32HostKickAddr[type]).
   From `ui32ServiceAddress` (1, sgx545-ce).
 - `command.cache_control` G0098 (COMMAND+0x04): CACHE_CONTROL.* invalidations done before the
@@ -898,6 +1010,9 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   sgx545-ce).
 - `host_ctl.opencl_delay_count` G0083 (HOST_CTL+0x40): OpenCL task timeout counter. From
   `ui32OpenCLDelayCount` (1, sgx545-ce).
+- `hw_pb_desc.pb_flags` G0680 (HWPBDESC+0x000): PB descriptor word 0, its flags (PB_FLAGS.*): bit 0
+  asks for the page table to be rebuilt and bit 1 for the thresholds to be reloaded; the routines
+  clear both [infer]. From `hw_pb_desc.pb_flags` (ours, resgx545).
 - `hw_pb_desc.initial_stack_top` G0523 (HWPBDESC+0x008): initial free-list head/tail (tail << 16 |
   head); PB_FLAGS.INIT_PAGE_TABLE resets the PB descriptor's current_stack_top from it [infer]. From
   `hw_pb_desc.initial_stack_top` (ours, resgx545).
@@ -931,6 +1046,10 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `hw_pb_desc.first_block_dev_vaddr` G0569 (HWPBDESC+0x038): PB descriptor word 14, the address of
   the first PB block, whose list the page-table builder walks [infer]. From
   `hw_pb_desc.first_block_dev_vaddr` (ours, resgx545).
+- `hw_render_context.context_flags` G0681 (HWRENDERCONTEXT+0x000): render context word 0, its flags
+  (CONTEXT_FLAGS.*): the TA kick clears bit 0, the TA pick and the 3D scheduling skip a context with
+  bit 4, the context cleanup tests bit 5 [infer]. From `hw_render_context.context_flags` (ours,
+  resgx545).
 - `hw_render_context.priority` G0530 (HWRENDERCONTEXT+0x004): scheduling priority. From
   `ui32OffsetOfPriorityField` (1, sgx545-ce); `priority` (3, linux-imagination).
 - `hw_render_context.ccb_base_dev_vaddr` G0573 (HWRENDERCONTEXT+0x00c): render context word 3, the
@@ -963,6 +1082,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   queue [infer]. From `hw_render_context.run_node_next_3d` (ours, resgx545).
 - `hw_render_context.pid` G0575 (HWRENDERCONTEXT+0x040): owning process. From `pid` (3,
   linux-imagination); `hw_render_context.pid` (ours, resgx545).
+- `hw_render_details.bif_3d_req_base` G0682 (HWRENDERDETAILS+0x000): 3D requestor base. From
+  `EUR_CR_BIF_3D_REQ_BASE` (1, sgx545-ce).
 - `hw_render_details.bif_zls_req_base` G0319 (HWRENDERDETAILS+0x004): ZLS requestor base. From
   `EUR_CR_BIF_ZLS_REQ_BASE` (1, sgx545-ce).
 - `hw_render_details.reg_0400` G0328 (HWRENDERDETAILS+0x008): inferred reading (unconfirmed): The
@@ -970,6 +1091,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   writes, and no other bit changed a pixel; the data come from the render command's word 11, which
   loads the same register, not from the render-details word itself. From
   `hw_render_details.reg_0400` (ours, resgx545).
+- `hw_render_details.isp_ctl` G0691 (HWRENDERDETAILS+0x00c): value the EDM copies verbatim into
+  CR_ISP_CTL (0x0414) [infer]. From `hw_render_details.isp_ctl` (ours, resgx545).
 - `hw_render_details.isp_msaa` G0320 (HWRENDERDETAILS+0x010): the render details' word the EDM loads
   into CR_ISP_MSAA (0x80000000 single-sampled, 0x80000002 at 4x) [infer]. From
   `hw_render_details.isp_msaa` (ours, resgx545).
@@ -983,6 +1106,12 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   `hw_render_details.poly_offset_factor` (ours, resgx545).
 - `hw_render_details.poly_offset_clamp` G0325 (HWRENDERDETAILS+0x01c): value the EDM copies into
   CR_ISP_POLY_OFFSET_CLAMP [infer]. From `hw_render_details.poly_offset_clamp` (ours, resgx545).
+- `hw_render_details.isp_region_header_base` G0695 (HWRENDERDETAILS+0x020): render details word 8,
+  which the 3D kick writes to CR_ISP_REGION_HEADER_BASE (0x0408); a partial render offsets it by the
+  render-target index [infer]. From `hw_render_details.isp_region_header_base` (ours, resgx545).
+- `hw_render_details.reg_0148` G0696 (HWRENDERDETAILS+0x024): inferred reading (unconfirmed): render
+  details word 9, which the 3D kick writes to CR_REG_0148 (0x0148); what it holds is not shown
+  [infer]. From `hw_render_details.reg_0148` (ours, resgx545).
 - `hw_render_details.isp_partial_region_base` G0539 (HWRENDERDETAILS+0x028): value the EDM copies
   verbatim into CR_ISP_PARTIAL_REGION_BASE (0x050c); a partial render points that register at the
   macrotile it renders [infer]. From `hw_render_details.isp_partial_region_base` (ours, resgx545).
@@ -1000,6 +1129,10 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `hw_render_details.stencil_store_base` G0330 (HWRENDERDETAILS+0x03c): value the EDM loads into
   CR_ISP_STENCIL_STORE_BASE (0x0490): the stencil store base and its enable [infer]. From
   `hw_render_details.stencil_store_base` (ours, resgx545).
+- `hw_render_details.isp_bgobjdepth` G0689 (HWRENDERDETAILS+0x040): background object depth (clear
+  depth). From `isp_bgobjdepth` (3, linux-imagination).
+- `hw_render_details.isp_bgobjvals` G0690 (HWRENDERDETAILS+0x044): background object control. From
+  `isp_bgobjvals` (3, linux-imagination).
 - `hw_render_details.isp_sample_pos` G0322 (HWRENDERDETAILS+0x04c): inferred reading (unconfirmed):
   value the EDM copies verbatim into CR_ISP_SAMPLE_POS (0x0520): the four sample positions (0 in the
   capture) [infer]. From `hw_render_details.isp_sample_pos` (ours, resgx545).
@@ -1008,8 +1141,112 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   images bit for bit), holding the sample positions; 22 of its 32 bits moved the samples of a 4x
   triangle by a few samples and the rest changed nothing. From
   `hw_render_details.isp_multisamplectl` (ours, resgx545).
+- `hw_render_details.isp_reg_04dc` G0693 (HWRENDERDETAILS+0x054): inferred reading (unconfirmed): as
+  CR_ISP_REG_04DC's: a punch-through mode word (bit 1 hangs every punch-through pass, E222).
+  Measured: value the EDM copies verbatim into CR_ISP_REG_04DC (0x04dc) [infer]. From
+  `hw_render_details.isp_reg_04dc` (ours, resgx545).
+- `hw_render_details.reg_0800` G0697 (HWRENDERDETAILS+0x058): inferred reading (unconfirmed): as
+  CR_REG_0800's: an on-chip resource limit (bits 5:0 = 48, bits 23:8) for work other than pixel
+  tasks (vertex or state tasks, context switches); pixel-bound renders ignore it (E136). Measured:
+  value the EDM copies verbatim into CR_REG_0800 (0x0800) (it holds 0x30 outside a render, E225)
+  [infer]. From `hw_render_details.reg_0800` (ours, resgx545).
+- `hw_render_details.event_pixel_pds_code` G0684 (HWRENDERDETAILS+0x05c): end-of-tile pixel PDS
+  program. From `event_pixel_pds_code` (3, linux-imagination).
+- `hw_render_details.event_pixel_pds_data` G0685 (HWRENDERDETAILS+0x060): its data size. From
+  `event_pixel_pds_data` (3, linux-imagination).
+- `hw_render_details.event_pixel_pds_info` G0686 (HWRENDERDETAILS+0x064): its info word. From
+  `event_pixel_pds_info` (3, linux-imagination).
+- `hw_render_details.isp_line_sample_pos` G0692 (HWRENDERDETAILS+0x068): render details word 26,
+  which the 3D kick writes to CR_ISP_LINE_SAMPLE_POS (0x0418) [infer]. From
+  `hw_render_details.isp_line_sample_pos` (ours, resgx545).
+- `hw_render_details.use_coeffs0_a` G0712 (HWRENDERDETAILS+0x06c): value the EDM copies verbatim
+  into CR_USE_COEFFS0_A (0x0a84): first tap word of coefficient set 0: signed byte taps at -3, -2,
+  -1, 0 from the filter's centre in bytes 3, 2, 1, 0 [infer]. From `hw_render_details.use_coeffs0_a`
+  (ours, resgx545).
+- `hw_render_details.use_coeffs0_b` G0713 (HWRENDERDETAILS+0x070): value the EDM copies verbatim
+  into CR_USE_COEFFS0_B (0x0a88): second tap word of coefficient set 0: signed byte taps at +1, +2,
+  +3, +4 from the centre in bytes 3, 2, 1, 0 [infer]. From `hw_render_details.use_coeffs0_b` (ours,
+  resgx545).
+- `hw_render_details.use_coeffs0_bias` G0714 (HWRENDERDETAILS+0x074): value the EDM copies verbatim
+  into CR_USE_COEFFS0_BIAS (0x0a8c): shift and bias of coefficient set 0: bits 3:0 shift the tap sum
+  right, the bits above a signed bias added before the shift; the result saturates to a byte
+  [infer]. From `hw_render_details.use_coeffs0_bias` (ours, resgx545).
+- `hw_render_details.use_coeffs1_a` G0715 (HWRENDERDETAILS+0x078): value the EDM copies verbatim
+  into CR_USE_COEFFS1_A (0x0a90): first tap word of coefficient set 1: signed byte taps at -3, -2,
+  -1, 0 from the filter's centre in bytes 3, 2, 1, 0 [infer]. From `hw_render_details.use_coeffs1_a`
+  (ours, resgx545).
+- `hw_render_details.use_coeffs1_b` G0716 (HWRENDERDETAILS+0x07c): value the EDM copies verbatim
+  into CR_USE_COEFFS1_B (0x0a94): second tap word of coefficient set 1: signed byte taps at +1, +2,
+  +3, +4 from the centre in bytes 3, 2, 1, 0 [infer]. From `hw_render_details.use_coeffs1_b` (ours,
+  resgx545).
+- `hw_render_details.use_coeffs1_bias` G0717 (HWRENDERDETAILS+0x080): value the EDM copies verbatim
+  into CR_USE_COEFFS1_BIAS (0x0a98): shift and bias of coefficient set 1: bits 3:0 shift the tap sum
+  right, the bits above a signed bias added before the shift; the result saturates to a byte
+  [infer]. From `hw_render_details.use_coeffs1_bias` (ours, resgx545).
+- `hw_render_details.use_coeffs2_a` G0718 (HWRENDERDETAILS+0x084): value the EDM copies verbatim
+  into CR_USE_COEFFS2_A (0x0b24): first tap word of coefficient set 2: signed byte taps at -3, -2,
+  -1, 0 from the filter's centre in bytes 3, 2, 1, 0; set 2 uses only -3 (byte 3) and 0 (byte 0)
+  [infer]. From `hw_render_details.use_coeffs2_a` (ours, resgx545).
+- `hw_render_details.use_coeffs2_b` G0719 (HWRENDERDETAILS+0x088): value the EDM copies verbatim
+  into CR_USE_COEFFS2_B (0x0b28): second tap word of coefficient set 2: signed byte taps at +1, +2,
+  +3, +4 from the centre in bytes 3, 2, 1, 0; set 2 uses only +3 (byte 1) [infer]. From
+  `hw_render_details.use_coeffs2_b` (ours, resgx545).
+- `hw_render_details.use_coeffs2_bias` G0720 (HWRENDERDETAILS+0x08c): value the EDM copies verbatim
+  into CR_USE_COEFFS2_BIAS (0x0b2c): shift and bias of coefficient set 2: bits 3:0 shift the tap sum
+  right, the bits above a signed bias added before the shift; the result saturates to a byte
+  [infer]. From `hw_render_details.use_coeffs2_bias` (ours, resgx545).
+- `hw_render_details.use_coeffs_mode` G0721 (HWRENDERDETAILS+0x090): value the EDM copies verbatim
+  into CR_USE_COEFFS_MODE (0x0a9c): which coefficient sets the filter instructions use: bits 1:0 =
+  0, 1, 2 pick one of three fixed banks for sets 2-5, 3 makes set 2 the third loaded group
+  (CR_USE_COEFFS2_*) and sets 3-5 zero; sets 0-1 are always CR_USE_COEFFS0/1_* [infer]. From
+  `hw_render_details.use_coeffs_mode` (ours, resgx545).
+- `hw_render_details.tpu_yuv_csc0_0` G0701 (HWRENDERDETAILS+0x094): value the EDM copies verbatim
+  into CR_TPU_YUV_CSC0_0 (0x0820) [infer]. From `hw_render_details.tpu_yuv_csc0_0` (ours, resgx545).
+- `hw_render_details.tpu_yuv_csc0_1` G0702 (HWRENDERDETAILS+0x098): value the EDM copies verbatim
+  into CR_TPU_YUV_CSC0_1 (0x0824) [infer]. From `hw_render_details.tpu_yuv_csc0_1` (ours, resgx545).
+- `hw_render_details.tpu_yuv_csc0_2` G0703 (HWRENDERDETAILS+0x09c): value the EDM copies verbatim
+  into CR_TPU_YUV_CSC0_2 (0x0828) [infer]. From `hw_render_details.tpu_yuv_csc0_2` (ours, resgx545).
+- `hw_render_details.tpu_yuv_csc0_3` G0704 (HWRENDERDETAILS+0x0a0): value the EDM copies verbatim
+  into CR_TPU_YUV_CSC0_3 (0x082c) [infer]. From `hw_render_details.tpu_yuv_csc0_3` (ours, resgx545).
+- `hw_render_details.tpu_yuv_csc1_0` G0706 (HWRENDERDETAILS+0x0a4): value the EDM copies verbatim
+  into CR_TPU_YUV_CSC1_0 (0x0834) [infer]. From `hw_render_details.tpu_yuv_csc1_0` (ours, resgx545).
+- `hw_render_details.tpu_yuv_csc1_1` G0707 (HWRENDERDETAILS+0x0a8): value the EDM copies verbatim
+  into CR_TPU_YUV_CSC1_1 (0x0838) [infer]. From `hw_render_details.tpu_yuv_csc1_1` (ours, resgx545).
+- `hw_render_details.tpu_yuv_csc1_2` G0708 (HWRENDERDETAILS+0x0ac): value the EDM copies verbatim
+  into CR_TPU_YUV_CSC1_2 (0x083c) [infer]. From `hw_render_details.tpu_yuv_csc1_2` (ours, resgx545).
+- `hw_render_details.tpu_yuv_csc1_3` G0709 (HWRENDERDETAILS+0x0b0): value the EDM copies verbatim
+  into CR_TPU_YUV_CSC1_3 (0x0840) [infer]. From `hw_render_details.tpu_yuv_csc1_3` (ours, resgx545).
+- `hw_render_details.tpu_yuv_csc0_4` G0705 (HWRENDERDETAILS+0x0b4): value the EDM copies verbatim
+  into CR_TPU_YUV_CSC0_4 (0x0830) [infer]. From `hw_render_details.tpu_yuv_csc0_4` (ours, resgx545).
+- `hw_render_details.tpu_yuv_csc1_4` G0710 (HWRENDERDETAILS+0x0b8): value the EDM copies verbatim
+  into CR_TPU_YUV_CSC1_4 (0x0844) [infer]. From `hw_render_details.tpu_yuv_csc1_4` (ours, resgx545).
+- `hw_render_details.tpu_yuv_csc_input` G0711 (HWRENDERDETAILS+0x0bc): the value the EDM copies
+  verbatim into CR_TPU_YUV_CSC_INPUT [infer]. From `hw_render_details.tpu_yuv_csc_input` (ours,
+  resgx545).
+- `hw_render_details.tpu_luma_key_rg` G0700 (HWRENDERDETAILS+0x0c0): the value the EDM copies
+  verbatim into CR_TPU_LUMA_KEY_RG [infer]. From `hw_render_details.tpu_luma_key_rg` (ours,
+  resgx545).
+- `hw_render_details.tpu_luma_key_b_offset` G0699 (HWRENDERDETAILS+0x0c4): the value the EDM copies
+  verbatim into CR_TPU_LUMA_KEY_B_OFFSET [infer]. From `hw_render_details.tpu_luma_key_b_offset`
+  (ours, resgx545).
+- `hw_render_details.tpu_luma_key_alpha` G0698 (HWRENDERDETAILS+0x0c8): the value the EDM copies
+  verbatim into CR_TPU_LUMA_KEY_ALPHA [infer]. From `hw_render_details.tpu_luma_key_alpha` (ours,
+  resgx545).
+- `hw_render_details.isp_reg_04e8` G0694 (HWRENDERDETAILS+0x0cc): inferred reading (unconfirmed): as
+  CR_ISP_REG_04E8's: what it does is not shown; not the background's stencil or mask (E216).
+  Measured: value the EDM copies verbatim into CR_ISP_REG_04E8 (0x04e8) [infer]. From
+  `hw_render_details.isp_reg_04e8` (ours, resgx545).
 - `hw_render_details.access_dev_vaddr` G0538 (HWRENDERDETAILS+0x0d0): access/lock word (SYNCINFO).
   From `sAccessDevAddr` (1, sgx545-ce).
+- `hw_render_details.frag_flags` G0687 (HWRENDERDETAILS+0x0d4): fragment (3D) flags: depth/stencil
+  buffer present, visibility results (FRAG_FLAGS.*). From `flags` (3, linux-imagination);
+  `hw_render_details.frag_flags` (ours, resgx545).
+- `hw_render_details.hw_rt_data_dev_vaddr` G0688 (HWRENDERDETAILS+0x0dc): RT data. From
+  `sHWRTDataDevAddr` (1, intel-ctp-k900); `hw_render_details.hw_rt_data_dev_vaddr` (ours, resgx545).
+- `hw_render_details.dst_sync_list_dev_vaddr` G0683 (HWRENDERDETAILS+0x0e0): render details word 56,
+  the destination sync list, copied from TA command word 15: the 3D scheduling tests the entry for
+  the render-target index and the completion updates it [infer]. From
+  `hw_render_details.dst_sync_list_dev_vaddr` (ours, resgx545).
 - `hw_render_details.tq_3d_write_pending` G0589 (HWRENDERDETAILS+0x0e4): render details word 57: the
   write-ops pending value of the 3D transfer-queue sync, copied from the TA command's shared block
   [infer]. From `hw_render_details.tq_3d_write_pending` (ours, resgx545).
@@ -1169,11 +1406,24 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `misc_info_struct_sizes.sizeof_command` G0014 (MISCINFO_STRUCT_SIZES+0x30 (=MISC+0x50); value
   0x20): size of COMMAND the EDM was built for: kernel CCB command. From `ui32Sizeof_COMMAND` (1,
   sgx545-ce).
+- `ta3d_ctl.ta3d_ctl_dev_vaddr` G0739 (TA3D_CTL+0x000): the control block's own address, copied into
+  sa0, the base the EDM reads the block through [infer]. From `ta3d_ctl.ta3d_ctl_dev_vaddr` (ours,
+  resgx545).
+- `ta3d_ctl.host_ctl_dev_vaddr` G0727 (TA3D_CTL+0x004): the host control block's address, copied
+  into sa1 [infer]. From `ta3d_ctl.host_ctl_dev_vaddr` (ours, resgx545).
+- `ta3d_ctl.ccb_ctl_dev_vaddr` G0726 (TA3D_CTL+0x008): the kernel CCB control's address, copied into
+  sa2: its word 0 the write offset, word 1 the read offset [infer]. From
+  `ta3d_ctl.ccb_ctl_dev_vaddr` (ours, resgx545).
 - `ta3d_ctl.dpm_slot0_rt_data_dev_vaddr` G0595 (TA3D_CTL+0x050): the RT data that owns DPM context
   slot 0; the TA and the 3D kick take a slot that holds their RT data, else a free one [infer]. From
   `ta3d_ctl.dpm_slot0_rt_data_dev_vaddr` (ours, resgx545).
 - `ta3d_ctl.dpm_slot1_rt_data_dev_vaddr` G0596 (TA3D_CTL+0x054): the RT data that owns DPM context
   slot 1 [infer]. From `ta3d_ctl.dpm_slot1_rt_data_dev_vaddr` (ours, resgx545).
+- `ta3d_ctl.kernel_ccb_dev_vaddr` G0729 (TA3D_CTL+0x058): the kernel CCB's address, copied into sa22
+  [infer]. From `ta3d_ctl.kernel_ccb_dev_vaddr` (ours, resgx545).
+- `ta3d_ctl.page_dir_phys_addr` G0733 (TA3D_CTL+0x05c): the physical address of the EDM's page
+  directory, copied into sa23: a value, not a pointer [infer]. From `ta3d_ctl.page_dir_phys_addr`
+  (ours, resgx545).
 - `ta3d_ctl.cmd_ta_dev_vaddr` G0594 (TA3D_CTL+0x060): the TA command the TA runs, recorded by the TA
   kick [infer]. From `ta3d_ctl.cmd_ta_dev_vaddr` (ours, resgx545).
 - `ta3d_ctl.hw_rt_data_ta` G0603 (TA3D_CTL+0x064): the RT data of the TA's job, recorded by the TA
@@ -1189,20 +1439,66 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   recorded by the 3D kick [infer]. From `ta3d_ctl.hw_render_details_3d` (ours, resgx545).
 - `ta3d_ctl.rt_index_3d` G0606 (TA3D_CTL+0x078): the render-target index the 3D renders, recorded by
   the 3D kick [infer]. From `ta3d_ctl.rt_index_3d` (ours, resgx545).
+- `ta3d_ctl.requests` G0734 (TA3D_CTL+0x07c): the request word: a routine ORs its request bits in
+  and starts PDS program #14, whose three tasks each remove the bits they serve [infer]. From
+  `ta3d_ctl.requests` (ours, resgx545).
+- `ta3d_ctl.saved_ta_global_list` G0735 (TA3D_CTL+0x084): inferred reading (unconfirmed):
+  CR_DPM_TA_GLOBAL_LIST as the out-of-memory path saves it before it grows the TA's global list; the
+  global kind of out-of-memory writes it back [infer]. From `ta3d_ctl.saved_ta_global_list` (ours,
+  resgx545).
+- `ta3d_ctl.abort_page_count0` G0722 (TA3D_CTL+0x08c): inferred reading (unconfirmed): a page count
+  saved at a macrotile abort, from 0x0724 (CR_DPM_PAGE_STATUS) less 2, which a later out-of-memory
+  compares with the current one [infer]. From `ta3d_ctl.abort_page_count0` (ours, resgx545).
+- `ta3d_ctl.abort_page_count1` G0723 (TA3D_CTL+0x090): inferred reading (unconfirmed): a page count
+  saved at a macrotile abort, from 0x072c less 2, which a later out-of-memory compares with the
+  current one [infer]. From `ta3d_ctl.abort_page_count1` (ours, resgx545).
+- `ta3d_ctl.threshold_ta_global_list` G0740 (TA3D_CTL+0x094): inferred reading (unconfirmed): the TA
+  global list as the out-of-memory path saves it when it raises the ZLS page threshold [infer]. From
+  `ta3d_ctl.threshold_ta_global_list` (ours, resgx545).
+- `ta3d_ctl.zls_threshold_step` G0741 (TA3D_CTL+0x098): inferred reading (unconfirmed): the step
+  (0x20) the out-of-memory path adds to CR_DPM_ZLS_PAGE_THRESHOLD when it raises the threshold
+  [infer]. From `ta3d_ctl.zls_threshold_step` (ours, resgx545).
+- `ta3d_ctl.abort_status_mtile` G0725 (TA3D_CTL+0x09c): CR_DPM_ABORT_STATUS_MTILE as a macrotile
+  abort saves it; the partial render works out the partial-region base from it [infer]. From
+  `ta3d_ctl.abort_status_mtile` (ours, resgx545).
+- `ta3d_ctl.abort_rt_index` G0724 (TA3D_CTL+0x0a0): bits 13:5 of the aborted macrotile's status, its
+  render-target index, saved at a macrotile abort [infer]. From `ta3d_ctl.abort_rt_index` (ours,
+  resgx545).
 - `ta3d_ctl.frame_num_ta` G0598 (TA3D_CTL+0x0a4): the frame number of the TA's job, copied from the
   TA command by the TA kick [infer]. From `ta3d_ctl.frame_num_ta` (ours, resgx545).
 - `ta3d_ctl.frame_num_3d` G0597 (TA3D_CTL+0x0a8): the frame number of the 3D's job, copied from the
   render details by the 3D kick [infer]. From `ta3d_ctl.frame_num_3d` (ours, resgx545).
+- `ta3d_ctl.hwperf_buffer_dev_vaddr` G0728 (TA3D_CTL+0x0ac): the HWPerf circular buffer's address,
+  copied into sa43 [infer]. From `ta3d_ctl.hwperf_buffer_dev_vaddr` (ours, resgx545).
+- `ta3d_ctl.signature_ta_dev_vaddr` G0738 (TA3D_CTL+0x0b0): the TA signature buffer's address,
+  copied into sa44 [infer]. From `ta3d_ctl.signature_ta_dev_vaddr` (ours, resgx545).
+- `ta3d_ctl.signature_3d_dev_vaddr` G0737 (TA3D_CTL+0x0b4): the 3D signature buffer's address,
+  copied into sa45 [infer]. From `ta3d_ctl.signature_3d_dev_vaddr` (ours, resgx545).
 - `ta3d_ctl.pid_ta` G0605 (TA3D_CTL+0x0c8): the PID of the TA's render context, recorded by the TA
   kick [infer]. From `ta3d_ctl.pid_ta` (ours, resgx545).
 - `ta3d_ctl.pid_3d` G0604 (TA3D_CTL+0x0cc): the PID of the 3D's render context, recorded by the 3D
   kick [infer]. From `ta3d_ctl.pid_3d` (ours, resgx545).
+- `ta3d_ctl.settle_count` G0736 (TA3D_CTL+0x0d0): the nesting count of the settle loop: incremented
+  on entry, decremented at the release, which clears the CR_DMS_CTRL gate bits when it reaches 0
+  [infer]. From `ta3d_ctl.settle_count` (ours, resgx545).
+- `ta3d_ctl.kick_marks` G0732 (TA3D_CTL+0x0d8): inferred reading (unconfirmed): kick marks: bit 0
+  set by the TA kick and the TA-finished handler, bit 1 by the 3D kick; what reads them is not shown
+  [infer]. From `ta3d_ctl.kick_marks` (ours, resgx545).
+- `ta3d_ctl.kick_clear_ta` G0731 (TA3D_CTL+0x0dc): inferred reading (unconfirmed): a word the TA
+  kick, the TA-finished handler and the out-of-memory path clear; what sets it is not shown [infer].
+  From `ta3d_ctl.kick_clear_ta` (ours, resgx545).
+- `ta3d_ctl.kick_clear_3d` G0730 (TA3D_CTL+0x0e4): inferred reading (unconfirmed): a word the 3D
+  kick clears; what sets it is not shown [infer]. From `ta3d_ctl.kick_clear_3d` (ours, resgx545).
 - `transfer_cmd.isp_render` G0117 (TRANSFERCMD+0x00c): ISP render type/scan. From `isp_render` (3,
   linux-imagination).
 - `transfer_cmd.bif_3d_req_base` G0025 (TRANSFERCMD+0x018): 3D requestor base. From
   `EUR_CR_BIF_3D_REQ_BASE` (1, sgx545-ce).
+- `transfer_cmd.isp_msaa` G0743 (TRANSFERCMD+0x01c): the transfer command's word the EDM loads into
+  CR_ISP_MSAA (0x80000000) [infer]. From `transfer_cmd.isp_msaa` (ours, resgx545).
 - `transfer_cmd.event_pixel_pds_code` G0026 (TRANSFERCMD+0x024): end-of-tile PDS program. From
   `event_pixel_pds_code` (3, linux-imagination).
+- `transfer_cmd.event_pixel_pds_info` G0742 (TRANSFERCMD+0x02c): its info. From
+  `event_pixel_pds_info` (3, linux-imagination).
 - `transfer_cmd.reg_0400` G0340 (TRANSFERCMD+0x038): inferred reading (unconfirmed): Transfer
   command word 14, which loads register 0x0400: bit 25 inverts bits 31:24 of every pixel a fill or
   copy writes, and no other bit changed a pixel; over the every-value source exactly the 128 values
@@ -1241,6 +1537,10 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `GEOM_FLAGS.PB_THRESHOLD_UPDATE` G0468 (CMDTA+0x004 bit13 (0x2000)): copy the command's four
   thresholds into the PB descriptor and set PB_FLAGS.THRESHOLD_UPDATE [infer]. From
   `GEOM_FLAGS.PB_THRESHOLD_UPDATE` (ours, resgx545).
+- `GEOM_FLAGS.BIT2` G0630 (CMDTA+0x004 bit2 (0x4)): inferred reading (unconfirmed): tested together
+  with GEOM_FLAGS.FIRST_KICK (mask 0x5): when either is set the EDM keeps the stores that link the
+  command's render details into the context; no run sets the bit alone [infer]. From
+  `GEOM_FLAGS.BIT2` (ours, resgx545).
 - `GEOM_FLAGS.NO_DPM_CONTEXT_LOAD` G0243 (CMDTA+0x004 bit3 (0x8)): tested together with
   GEOM_FLAGS.FIRST_KICK (mask 0x9): when either is set the TA kick skips the calls that invalidate
   the caches, set the BIF bank and reload the RT data's stored DPM context (CR_DPM_STATE_BASE0/1,
@@ -1261,6 +1561,9 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `CONTEXT_FLAGS.NEW` G0357 (HWRENDERCONTEXT/HWTRANSFERCONTEXT+0x000 bit0 (0x1)): new context: at
   its first mapping the EDM clears the bit and invalidates the caches [infer]. From
   `CONTEXT_FLAGS.NEW` (ours, resgx545).
+- `CONTEXT_FLAGS.DUMMY_TRANSFER` G0616 (HWRENDERCONTEXT/HWTRANSFERCONTEXT+0x000 bit1 (0x2)):
+  transfer context: the EDM clears the bit and takes the dummy (no render) path once [infer]. From
+  `CONTEXT_FLAGS.DUMMY_TRANSFER` (ours, resgx545).
 - `CONTEXT_FLAGS.SUSPEND` G0359 (HWRENDERCONTEXT/HWTRANSFERCONTEXT+0x000 bit4 (0x10)): suspended:
   the EDM's picks skip the context [infer]. From `CONTEXT_FLAGS.SUSPEND` (ours, resgx545).
 - `CONTEXT_FLAGS.OWN_PB` G0358 (HWRENDERCONTEXT/HWTRANSFERCONTEXT+0x000 bit5 (0x20)): set: the
@@ -1304,6 +1607,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   `PVRSRV_DEVICE_SYNC_OBJECT` (1, sgx545-ce).
 - `misc_info_features` G0113 (0x1c at MISC+0x04): core/DDK identification returned by GETMISCINFO.
   From `PVRSRV_SGX_MISCINFO_FEATURES` (1, sgx545-ce).
+- `cmd_ta_shared` G0663 (0x1e0 at CMDTA+0x058): kernel-written sync/status block of the TA command.
+  From `SGXMKIF_CMDTA_SHARED` (1, sgx545-ce).
 - `kernel_ccb` G0109 (0x2000): kernel CCB: 256 commands. From `PVRSRV_SGX_KERNEL_CCB` (1,
   sgx545-ce).
 - `host_ctl` G0010 (0x44): host control block (init/power/cleanup status, timers). From
@@ -1330,6 +1635,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 
 ### bitfield
 
+- `ISP0.TWO_SIDED` G0633 (isp0 bit 11): (Rogue) two-sided stencil testing. From `two_sided` (3,
+  mesa-csbgen); `ISP0.TWO_SIDED` (ours, resgx545).
 - `T0.BITS20_19` G0273 (T0 [20:19] (twiddled textures)): with bit 18 clear, 0 keeps level 0 and 1-3
   let mip levels be read; what the value counts is not shown [infer]. From `T0.BITS20_19` (ours,
   resgx545).
@@ -1338,6 +1645,9 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   [infer]. From `T0.BITS26_21` (ours, resgx545).
 - `T0.NO_MIPMAPS` G0278 (T0 bit 18): set: only level 0 is read, whatever the LOD; the closed driver
   clears it for a mipmapped texture [infer]. From `T0.NO_MIPMAPS` (ours, resgx545).
+- `T3.CMP_MODE` G0642 (T3 [31:29]): the comparison of smp.pcf/.pcff16 against the reference: 0
+  never, 1 less, 2 equal, 3 less or equal, 4 greater, 5 greater or equal, 6 not equal, 7 always.
+  From `cmp_mode` (3, mesa-csbgen).
 - `VDM_STATE1.BIT12` G0500 (VDM_STATE1 bit 12): set: the TA writes no object for the state's
   primitives and leaves the regions empty, as with bits 11:9 at 0 [infer]. From `VDM_STATE1.BIT12`
   (ours, resgx545).
@@ -1353,13 +1663,25 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 
 ### enum
 
+- `ADDRMODE` G0608: (Rogue) texture address modes REPEAT, FLIP, CLAMP_TO_EDGE...; on SGX545 the T0
+  wrap fields: 0 repeat, 1 mirror, 2 clamp, 3 mirror once (T0.ADDRMODE_U, T0.ADDRMODE_V). From
+  `ADDRMODE` (3, mesa-csbgen).
+- `PORT.DOUTC` G0637: (Rogue) compute data-out port; on SGX545 the port value it would name is open.
+  From `PVR_ROGUE_PDSINST_DOUT_DST_DOUTC` (3, mesa-pds-defs).
+- `HEAP.PIXELSHADER` G0631 (0xF4000000): pixel USE code heap base (USE_CODE_BASE_0). From
+  `SGX_PIXELSHADER_HEAP_BASE` (1, sgx545-ce).
+- `PDS_PRIMARY.USE_KICK` G0634 (PDS primary program): the primary pixel PDS program of the transfer
+  templates (PDS_PRIM): it starts the USE program its first dword, a DOUTU word, names [infer]. From
+  `PDS_PRIMARY.USE_KICK` (ours, resgx545).
+- `PDS_SECONDARY.USE_KICK` G0635 (PDS secondary program): the secondary pixel PDS program of the
+  transfer templates (PDS_SEC): it starts the USE program its first dword, a DOUTU word, names
+  [infer]. From `PDS_SECONDARY.USE_KICK` (ours, resgx545).
 - `TEXTYPE.STRIDE` G0288 (T1 TEXTYPE 6): strided texture: rows a stride apart (T0.STRIDE), sampled
   clamped to the edge [infer]. From `TEXTYPE.STRIDE` (ours, resgx545).
 - `TEXFORMAT` G0286 (TEXFORMAT values): texel format enum: on SGX545 2 RGBA4444, 4 RGBA5551, 5
   RGB565, 12 BGRA8888 (ARGB8888 in memory), 13 RGBA8888, 17 RGBA half-float, 18 float32 (RGBA,
-  luminance, depth), 23 PVRTC 2 bpp, 24 PVRTC 4 bpp, 27 ETC1, 28 YUYV, 29 UYVY; with the alternate
-  format bit set 25 A8, 26 L8, 27 LA88, 30 luminance half-float (Rogue values differ). From `FORMAT`
-  (3, mesa-csbgen).
+  luminance, depth), 23 PVRTC 2 bpp, 24 PVRTC 4 bpp, 27 ETC1, 28 YUYV, 29 UYVY; with T0.BIT30 set 26
+  reads one byte per texel (Rogue values differ). From `FORMAT` (3, mesa-csbgen).
 - `TEXTYPE` G0287 (TEXTYPE values (2D, STRIDE...)): texture type enum (Rogue: 1D, 2D, 3D, CUBE,
   STRIDE...): on SGX545 0 a power-of-two 2D texture, 3 a non-power-of-two one and the YUV streams, 6
   strided (also depth textures). From `TEXTYPE` (3, mesa-csbgen).
@@ -1408,6 +1730,9 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `PDS_SIZE.BITS17_16` G0254 (PDS_SIZE [17:16]): inferred reading (unconfirmed): a size or count of
   output register banks: at 0, 1 and 2 the triangle's o1-o3 land elsewhere while o0 does not change,
   3 the plain value [infer]. From `PDS_SIZE.BITS17_16` (ours, resgx545).
+- `PDS_SIZE.BITS24_18` G0636 (PDS_SIZE [24:18]): inferred reading (unconfirmed): bits 24:18 of the
+  PDS size word; at 4, 1 and 0 a fill's secondary program still passes all sixteen douta words, so
+  what they size is not shown [infer]. From `PDS_SIZE.BITS24_18` (ours, resgx545).
 - `T0.MINFILTER` G0276 (T0 [11:10]): minification filter: 1 and 2 linear, 0 and 3 nearest. From
   `minfilter` (3, mesa-csbgen).
 - `T0.STRIDE` G0279 (T0 [11:9] + [26:17]): stride of a strided texture in dwords - 1: bits 2:0 in T0
@@ -1420,6 +1745,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   From `addrmode_u` (3, mesa-csbgen).
 - `T0.MIPFILTER` G0277 (T0 [9]): filter between mipmap levels: 0 the nearest level (a half rounds
   up), 1 a linear blend of the two levels. From `mipfilter` (3, mesa-csbgen).
+- `T1.HEIGHT` G0640 (T1 [11:0] (HEIGHT)): height - 1. From `height` (3, mesa-csbgen).
+- `T1.WIDTH` G0641 (T1 [23:12] (WIDTH)): width - 1. From `width` (3, mesa-csbgen).
 - `T1.TEXFORMAT` G0280 (T1 [28:24] (TEXFORMAT)): texel format. From `texformat` (3, mesa-csbgen).
 - `T1.TEXTYPE` G0281 (T1 [31:29] (TEXTYPE)): texture type. From `textype` (3, mesa-csbgen).
 - `T2.TEXADDR` G0282 (T2 [31:2] (TEXADDR)): texture address >> 2. From `texaddr` (3, mesa-csbgen).
@@ -1469,8 +1796,9 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `CSTREAM.PRIM_TILES` G0463 (control-stream primitive word [23:16]): which of the region's two 16 x
   16 tiles the object meets, and the masks' layout: 0x90 both (no masks, bits 15:0 0xffff); one tile
   with masks in bits 15:0, 0x80 the left, 0x98 the right; with masks too wide for the word (the
-  primitive mask in a further dword), 0x8a the left, 0x8c the right; bit 23 is set in every word
-  seen [infer]. From `CSTREAM.PRIM_TILES` (ours, resgx545).
+  primitive mask in a further dword), 0x8a the left, 0x8c the right; 0x88 in the two-lines scene,
+  also with a further dword in the block (which tiles 0x88 means is not shown); bit 23 is set in
+  every word seen [infer]. From `CSTREAM.PRIM_TILES` (ours, resgx545).
 - `CSTREAM.PRIM_VERTICES` G0464 (control-stream primitive word [28:25]): the object's vertices less
   one [infer]. From `CSTREAM.PRIM_VERTICES` (ours, resgx545).
 - `COORDFMT.SET_F16` G0360 (coordfmt word, bit i for coordinate set i): carry coordinate set i at
@@ -1496,6 +1824,9 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `DOUTI0.FLAT` G0211 (douti word 0 [21]): iterate flat: every pixel gets the value of the vertex
   DOUTI0.SHADEMODEL selects (0-2), or the smooth iteration with 3 [infer]. From `DOUTI0.FLAT` (ours,
   resgx545).
+- `DOUTI0.COMPONENTS` G0627 (douti word 0 [23:22]): the iteration's components less one: 1 to 3
+  measured (x; x, y; x, y, 0), the fetch's texel in the dword after them; 4 open [infer]. From
+  `DOUTI0.COMPONENTS` (ours, resgx545).
 - `DOUTI0.SHADEMODEL` G0215 (douti word 0 [26:25]): 0-2 the vertex whose value every pixel takes, 3
   smooth: on the vertex colour (source 32) by itself, on a coordinate set only with DOUTI0.FLAT
   [infer]. From `DOUTI0.SHADEMODEL` (ours, resgx545).
@@ -1563,6 +1894,10 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   transform, an IEEE single [infer]. From `VIEWPORT.Z_OFFSET` (ours, resgx545).
 - `VIEWPORT.Z_SCALE` G0300 (state block vp5 (with PRESENCE.VIEWPORT)): z scale of the viewport
   transform, an IEEE single [infer]. From `VIEWPORT.Z_SCALE` (ours, resgx545).
+- `TERM.CLIP_BOTTOM` G0643 (term [15:0]): last block row; unit open on SGX545: 1 -> 0 drops only the
+  bottom 16 rows of a 64x64 target [HW]. From `clip_bottom` (3, mesa-csbgen).
+- `TERM.CLIP_RIGHT` G0644 (term [31:16]): last block column; in 32-pixel columns on SGX545 [infer].
+  From `clip_right` (3, mesa-csbgen).
 - `VDM_TASK0.MAX_VERTICES` G0294 (vertex-task word 0 [31:28]): the vertices one vertex task takes,
   less one (in index order); 7 for the closed driver's screen-space draws, 15 for compiled shaders;
   0 hangs a larger draw [infer]. From `VDM_TASK0.MAX_VERTICES` (ours, resgx545).
@@ -1574,10 +1909,18 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `DOUTI.PERSPECTIVE` G0205: (Rogue) perspective-correct iteration; placed on SGX545 as
   DOUTI0.PERSPECTIVE. From `PVR_ROGUE_PDSINST_DOUT_FIELDS_DOUTI_SRC_PERSPECTIVE` (3, mesa-pds-defs).
 - `MIPMAPS_PRESENT` G0250: texture has mipmaps. From `mipmaps_present` (3, mesa-csbgen).
+- `PRESENCE.ISP_BACK` G0638 (presence bits 3 (back isp0), 4 (back isp1, by its place), 5 (back
+  isp2)): (Rogue) back-face ISP word A present. From `pres_ispctl_ba` (3, mesa-csbgen);
+  `PRESENCE.ISP_BACK` (ours, resgx545).
 - `ISP1.POLY_OFFSET` G0247 (ISP1 [23]): the object takes the polygon offset [infer]. From
   `ISP1.POLY_OFFSET` (ours, resgx545).
 - `ISP1.VISTEST` G0249 (ISP1 [3]): visibility test: the object's covered pixels count into the
   counter ISP1.VISREG names. From `vistest` (3, mesa-csbgen).
+- `FEATURE.SECONDARY_REQUIRES_USE_KICK` G0629 (PDS secondary program, DOUTU): a secondary PDS
+  program must start a USE task. From `SGX_FEATURE_SECONDARY_REQUIRES_USE_KICK` (1, sgx545-ce).
+- `T0.BIT30` G0639 (T0 [30]): inferred reading (unconfirmed): with it TEXFORMAT 26 reads one byte
+  per texel, written as grey; without it TEXFORMAT 26 gives values that differ from run to run; no
+  other format is tried with it [infer]. From `T0.BIT30` (ours, resgx545).
 - `T0.ALPHA_FROM_LUMA_KEY` G0272 (T0 [31]): the texture is read as RGB without alpha, the alpha
   coming from the luma key (CR_TPU_LUMA_KEY_*) [infer]. From `T0.ALPHA_FROM_LUMA_KEY` (ours,
   resgx545).
@@ -1625,6 +1968,9 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `VDM_INDEX0.WORDS_PRESENT` G0497 (index-list header bits 22/23): the index list's two trailing
   words are present (bit 22 and bit 23, one word each, read in order after the index base) [infer].
   From `VDM_INDEX0.WORDS_PRESENT` (ours, resgx545).
+- `ISP0.SAMPLE_COVERAGE` G0632 (isp0 bit 28): the object covers a pixel when any of eight samples is
+  inside: the four of CR_ISP_MULTISAMPLECTL and the four of CR_ISP_SAMPLE_POS; single-sampled only
+  (it hangs a 4x render) [infer]. From `ISP0.SAMPLE_COVERAGE` (ours, resgx545).
 - `OUTSEL.COLOUR_PRES` G0478 (outsel bit 11): the four dwords after the vertex position are its
   colour (R, G, B, A), iterated by DOUTI0.ATTR_SOURCE 32 [infer]. From `OUTSEL.COLOUR_PRES` (ours,
   resgx545).
@@ -1665,6 +2011,7 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `intel-ctp-k900` (tier 1): Lenovo K900 GPL kernel, Clover Trail+ SGX544MP2, DDK 1.11.
 - `intel-ctp-santos10` (tier 1): Samsung's GPL kernel for its santos10 device (Intel Clover Trail+,
   SGX544MP2), DDK 1.9.
+- `openpvrsgx-1.9` (tier 1): openpvrsgx archive, DDK 1.9 kernel side.
 - `sgx545-ce` (tier 1): Intel's GPL DDK 1.7 kernel module for Cedarview, our core.
 - `cdv-libsrv_um` (tier 2): strings and exports of libsrv_um.so in our Cedarview package.
 - `cdv-libusc` (tier 2): strings of libusc.so in our Cedarview package.
@@ -1681,6 +2028,7 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   guide for developers 1.0.8 (2011, public).
 - `imgtec-technology-overview-1.0.2e` (tier 4): Imagination's PowerVR Technology Overview 1.0.2e
   (2010).
+- `patent-US20090058848` (tier 4): published application US20090058848 (Imagination Technologies).
 - `patent-US7324115` (tier 4): patent US7324115 (Imagination Technologies).
 - `patent-US7978199` (tier 4): patent US7978199 (Imagination Technologies).
 - `patent-US8046761` (tier 4): patent US8046761 (Imagination Technologies).

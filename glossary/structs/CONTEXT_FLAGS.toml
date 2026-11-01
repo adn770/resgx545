@@ -1,4 +1,20 @@
 [[term]]
+id = "G0616"
+name = "CONTEXT_FLAGS.DUMMY_TRANSFER"
+status = "named"
+
+[[term.source]]
+term = "CONTEXT_FLAGS.DUMMY_TRANSFER"
+kind = "flag"
+sgx545 = "HWRENDERCONTEXT/HWTRANSFERCONTEXT+0x000 bit1 (0x2)"
+meaning = "transfer context: the EDM clears the bit and takes the dummy (no render) path once [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E015"
+licence = "MIT"
+evidence = "[RE] the EDM clears the bit and takes the same path as TQ_FLAGS.DUMMY_TRANSFER: completion writes only, no 3D register touched (E015)"
+
+[[term]]
 id = "G0357"
 name = "CONTEXT_FLAGS.NEW"
 status = "named"

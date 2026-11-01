@@ -35,7 +35,9 @@ says: subjects are offsets (0x0abc, CMDTA+0x0f8) and the details carry tokens, {
 register, {W:HOST_CTL+0x01c} for a structure word and {F:HWRENDERCONTEXT+0x000:4} for a flag bit
 (the structure word and the bit number). render() resolves them with the glossary
 (edmtrace.load_glossary): a term where it has one, else the offset; a flag bit with no term is
-just the bit. Addresses are instruction indices (byte address / 8).
+just the bit. A word of a kick3d layout is named as edmtrace names it: through the layouts nested
+in it, an array's element as name[i] and a later word of a wide field as name+k. Addresses are
+instruction indices (byte address / 8).
 
     usage: edm_dataflow.py [--ukernel <00_ukernel.bin>] [--tsv <out.tsv>] [--doc <out.md>]
            edm_dataflow.py --check     # the design document matches the TSV
@@ -893,15 +895,29 @@ def resolve(text: str, g: edmtrace.Glossary) -> str:
         if what == "R":
             return edmtrace.reg_name(int(arg, 16), g.registers)
         pre, off = arg.split("+")
-        return edmtrace.word_name(pre, int(off, 16), g.fields)
+        return word_term(pre, int(off, 16), g) or edmtrace.word_name(pre, int(off, 16), {})
     return _TOKEN.sub(name, _FLAG_NOTE.sub(flag, text))
+
+
+def word_term(prefix: str, off: int, g: edmtrace.Glossary) -> str:
+    """The glossary's name of a structure word, or '': its term; for a word of a kick3d layout,
+    the name edmtrace gives it, which reaches through the layouts nested in it (the TA
+    command's shared block, the RT data in the set) and names a word of an array or a wide
+    field after the field's first word (name[i], name+k)."""
+    if (prefix, off) in g.fields:
+        return g.fields[(prefix, off)]
+    layout = edmtrace.KICK3D.get(prefix)
+    if layout not in kick3d.STRUCTS or off % 4:
+        return ""
+    name = edmtrace._loc(layout, off // 4, g.fields)
+    return "" if name == edmtrace.word_name(prefix, off, {}) else name
 
 
 def term_of(row: dict, g: edmtrace.Glossary) -> str:
     """The glossary term of a data row's subject, or ''."""
     if row["kind"] == "word":
         pre, off = row["subject"].split("+")
-        return g.fields.get((pre, int(off, 16)), "")
+        return word_term(pre, int(off, 16), g)
     if row["kind"] == "reg":
         return g.registers.get(int(row["subject"], 16), "")
     return ""

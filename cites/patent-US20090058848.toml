@@ -1,0 +1,8 @@
+title = "published application US20090058848 (Imagination Technologies)"
+tier = "4"
+kind = "patent"
+licences = ["patent"]
+root = "the patent document as published: its USPTO PDF (scanned pages)"
+upstream = "https://patents.google.com/patent/US20090058848A1/en"
+pin = "US20090058848A1; USPTO PDF sha256 9f82bccd327bfbc8c363c49915c19598213a1ebe0d6d23cb0890615ca851cc11"
+locator = "[para NNNN] of the published application, else page N of the PDF"

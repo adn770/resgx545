@@ -12,4 +12,36 @@ tier = "ours"
 source = "resgx545"
 citation = "E200"
 licence = "MIT"
-evidence = "EDM writes the PB descriptor's word 8 | word 9 << 16 in the 3D PB load (RE); the 3D PB store fills those words back from CR_DPM_PAGE and CR_DPM_3D_GLOBAL_COUNT bits 15:0 (RE, usse-dis)"
+evidence = "[RE] E200: the 3D PB load writes descriptor dwords 8 and 9 to it as the TA load does to 0x0638; the 3D PB store fills dwords 8 and 9 back from the free-list status registers"
+
+[[term]]
+id = "G0617"
+name = "CR_DPM_3D_PAGE_COUNTS.GLOBAL"
+status = "named"
+
+[[term.source]]
+term = "CR_DPM_3D_PAGE_COUNTS.GLOBAL"
+kind = "bitfield"
+sgx545 = "0x0660[31:16]"
+meaning = "global pages of the 3D's PB [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E200"
+licence = "MIT"
+evidence = "[RE] E200: the same packing as the TA load"
+
+[[term]]
+id = "G0618"
+name = "CR_DPM_3D_PAGE_COUNTS.LOCAL"
+status = "named"
+
+[[term.source]]
+term = "CR_DPM_3D_PAGE_COUNTS.LOCAL"
+kind = "bitfield"
+sgx545 = "0x0660[15:0]"
+meaning = "local pages of the 3D's PB [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E200"
+licence = "MIT"
+evidence = "[RE] E200: the same packing as the TA load"

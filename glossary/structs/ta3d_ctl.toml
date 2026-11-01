@@ -15,6 +15,86 @@ licence = "GPL-2.0 OR MIT"
 evidence = "core SGX535 (EMGD), so tier 1c; named in a comment: holds sTAHWPBDesc/s3DHWPBDesc"
 
 [[term]]
+id = "G0722"
+name = "ta3d_ctl.abort_page_count0"
+status = "inferred"
+
+[[term.source]]
+term = "ta3d_ctl.abort_page_count0"
+kind = "field"
+sgx545 = "TA3D_CTL+0x08c"
+meaning = "a page count saved at a macrotile abort, from 0x0724 (CR_DPM_PAGE_STATUS) less 2, which a later out-of-memory compares with the current one [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E160"
+licence = "MIT"
+evidence = "[RE] E160: the abort writes TA3DCtl dwords 35 and 36 from the page counts of 0x0724 and 0x072c less 2; the decision compares dword 35 with the upper half of 0x0724"
+
+[[term]]
+id = "G0723"
+name = "ta3d_ctl.abort_page_count1"
+status = "inferred"
+
+[[term.source]]
+term = "ta3d_ctl.abort_page_count1"
+kind = "field"
+sgx545 = "TA3D_CTL+0x090"
+meaning = "a page count saved at a macrotile abort, from 0x072c less 2, which a later out-of-memory compares with the current one [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E160"
+licence = "MIT"
+evidence = "[RE] E160: the abort writes TA3DCtl dwords 35 and 36 from the page counts of 0x0724 and 0x072c less 2; with bit 8 of sa8 the decision compares dword 36 with that of 0x072c"
+
+[[term]]
+id = "G0724"
+name = "ta3d_ctl.abort_rt_index"
+status = "named"
+
+[[term.source]]
+term = "ta3d_ctl.abort_rt_index"
+kind = "field"
+sgx545 = "TA3D_CTL+0x0a0"
+meaning = "bits 13:5 of the aborted macrotile's status, its render-target index, saved at a macrotile abort [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E160"
+licence = "MIT"
+evidence = "[RE] E160: the abort saves bits 13:5 of CR_DPM_ABORT_STATUS_MTILE in TA3DCtl dword 40; the partial render offsets the region header base by this index and its completion marks the RT status word of this index"
+
+[[term]]
+id = "G0725"
+name = "ta3d_ctl.abort_status_mtile"
+status = "named"
+
+[[term.source]]
+term = "ta3d_ctl.abort_status_mtile"
+kind = "field"
+sgx545 = "TA3D_CTL+0x09c"
+meaning = "CR_DPM_ABORT_STATUS_MTILE as a macrotile abort saves it; the partial render works out the partial-region base from it [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E160"
+licence = "MIT"
+evidence = "[RE] E160: the abort saves CR_DPM_ABORT_STATUS_MTILE in TA3DCtl dword 39; the terminate handler offsets the partial-region base by what it works out from dword 39"
+
+[[term]]
+id = "G0726"
+name = "ta3d_ctl.ccb_ctl_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "ta3d_ctl.ccb_ctl_dev_vaddr"
+kind = "field"
+sgx545 = "TA3D_CTL+0x008"
+meaning = "the kernel CCB control's address, copied into sa2: its word 0 the write offset, word 1 the read offset [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E002"
+licence = "MIT"
+evidence = "[RE] E002: the captured block holds sa2 = a pointer to the kernel CCB control (+#0 the write offset, +#1 the read offset)"
+
+[[term]]
 id = "G0594"
 name = "ta3d_ctl.cmd_ta_dev_vaddr"
 status = "named"
@@ -93,6 +173,22 @@ source = "resgx545"
 citation = "E158"
 licence = "MIT"
 evidence = "[RE] E158: the copy routine writes command dword 8 (the frame number) to TA3DCtl dword 41"
+
+[[term]]
+id = "G0727"
+name = "ta3d_ctl.host_ctl_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "ta3d_ctl.host_ctl_dev_vaddr"
+kind = "field"
+sgx545 = "TA3D_CTL+0x004"
+meaning = "the host control block's address, copied into sa1 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E002"
+licence = "MIT"
+evidence = "[RE] E002: the captured block holds sa1 = a pointer to HostCtl"
 
 [[term]]
 id = "G0563"
@@ -207,6 +303,102 @@ licence = "MIT"
 evidence = "[RE] E158: the TA kick records its RT data in TA3DCtl dword 25; [RE] E159: a different RT data in dword 25 has its DPM state stored first"
 
 [[term]]
+id = "G0728"
+name = "ta3d_ctl.hwperf_buffer_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "ta3d_ctl.hwperf_buffer_dev_vaddr"
+kind = "field"
+sgx545 = "TA3D_CTL+0x0ac"
+meaning = "the HWPerf circular buffer's address, copied into sa43 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E002"
+licence = "MIT"
+evidence = "[RE] E002: the captured block holds sa43 = a pointer to the HWPerf circular buffer"
+
+[[term]]
+id = "G0729"
+name = "ta3d_ctl.kernel_ccb_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "ta3d_ctl.kernel_ccb_dev_vaddr"
+kind = "field"
+sgx545 = "TA3D_CTL+0x058"
+meaning = "the kernel CCB's address, copied into sa22 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E002"
+licence = "MIT"
+evidence = "[RE] E002: the captured block holds sa22 = a pointer to the kernel CCB"
+
+[[term]]
+id = "G0730"
+name = "ta3d_ctl.kick_clear_3d"
+status = "inferred"
+
+[[term.source]]
+term = "ta3d_ctl.kick_clear_3d"
+kind = "field"
+sgx545 = "TA3D_CTL+0x0e4"
+meaning = "a word the 3D kick clears; what sets it is not shown [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes TA3DCtl dword 57 = 0"
+
+[[term]]
+id = "G0731"
+name = "ta3d_ctl.kick_clear_ta"
+status = "inferred"
+
+[[term.source]]
+term = "ta3d_ctl.kick_clear_ta"
+kind = "field"
+sgx545 = "TA3D_CTL+0x0dc"
+meaning = "a word the TA kick, the TA-finished handler and the out-of-memory path clear; what sets it is not shown [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158, E156, E160"
+licence = "MIT"
+evidence = "[RE] E158: the TA kick clears TA3DCtl dword 55; [RE] E156: so does the TA-finished handler; [RE] E160: and the out-of-memory path"
+
+[[term]]
+id = "G0732"
+name = "ta3d_ctl.kick_marks"
+status = "inferred"
+
+[[term.source]]
+term = "ta3d_ctl.kick_marks"
+kind = "field"
+sgx545 = "TA3D_CTL+0x0d8"
+meaning = "kick marks: bit 0 set by the TA kick and the TA-finished handler, bit 1 by the 3D kick; what reads them is not shown [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158, E156, E163"
+licence = "MIT"
+evidence = "[RE] E158: the TA kick sets bit 0 of TA3DCtl dword 54; [RE] E156: so does the TA-finished handler; [RE] E163: the 3D kick sets bit 1 of dword 54"
+
+[[term]]
+id = "G0733"
+name = "ta3d_ctl.page_dir_phys_addr"
+status = "named"
+
+[[term.source]]
+term = "ta3d_ctl.page_dir_phys_addr"
+kind = "field"
+sgx545 = "TA3D_CTL+0x05c"
+meaning = "the physical address of the EDM's page directory, copied into sa23: a value, not a pointer [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E002"
+licence = "MIT"
+evidence = "[RE] E002: the captured block holds sa23 = the page directory's physical address (a value, not a pointer)"
+
+[[term]]
 id = "G0604"
 name = "ta3d_ctl.pid_3d"
 status = "named"
@@ -239,6 +431,22 @@ licence = "MIT"
 evidence = "[RE] E159: the TA kick writes TA3DCtl dword 50 = context dword 16 (the PID)"
 
 [[term]]
+id = "G0734"
+name = "ta3d_ctl.requests"
+status = "named"
+
+[[term.source]]
+term = "ta3d_ctl.requests"
+kind = "field"
+sgx545 = "TA3D_CTL+0x07c"
+meaning = "the request word: a routine ORs its request bits in and starts PDS program #14, whose three tasks each remove the bits they serve [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E154, E146"
+licence = "MIT"
+evidence = "[RE] E154: TA3DCtl dword 31 has nine request bits in use, each handled by one of PDS #14's three tasks, which remove the bits they were handed; [RE] E146: PDS #14 serves the requests posted through TA3DCtl dword 31"
+
+[[term]]
 id = "G0606"
 name = "ta3d_ctl.rt_index_3d"
 status = "named"
@@ -253,3 +461,115 @@ source = "resgx545"
 citation = "E163"
 licence = "MIT"
 evidence = "[RE] E163: the 3D kick writes the render-target index to TA3DCtl dword 30"
+
+[[term]]
+id = "G0735"
+name = "ta3d_ctl.saved_ta_global_list"
+status = "inferred"
+
+[[term.source]]
+term = "ta3d_ctl.saved_ta_global_list"
+kind = "field"
+sgx545 = "TA3D_CTL+0x084"
+meaning = "CR_DPM_TA_GLOBAL_LIST as the out-of-memory path saves it before it grows the TA's global list; the global kind of out-of-memory writes it back [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E160"
+licence = "MIT"
+evidence = "[RE] E160: the out-of-memory path saves CR_DPM_TA_GLOBAL_LIST in TA3DCtl dword 33 before writing it with the upper half of 0x072c, and writes the saved value back with bit 16 for the global kind"
+
+[[term]]
+id = "G0736"
+name = "ta3d_ctl.settle_count"
+status = "named"
+
+[[term.source]]
+term = "ta3d_ctl.settle_count"
+kind = "field"
+sgx545 = "TA3D_CTL+0x0d0"
+meaning = "the nesting count of the settle loop: incremented on entry, decremented at the release, which clears the CR_DMS_CTRL gate bits when it reaches 0 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E153"
+licence = "MIT"
+evidence = "[RE] E153: the settle routine increments TA3DCtl dword 52 (a nesting count) on entry; the release decrements it and, at 0, clears bits 3:0 of CR_DMS_CTRL"
+
+[[term]]
+id = "G0737"
+name = "ta3d_ctl.signature_3d_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "ta3d_ctl.signature_3d_dev_vaddr"
+kind = "field"
+sgx545 = "TA3D_CTL+0x0b4"
+meaning = "the 3D signature buffer's address, copied into sa45 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E002"
+licence = "MIT"
+evidence = "[RE] E002: the captured block holds sa45 = a pointer to the 3D signature buffer"
+
+[[term]]
+id = "G0738"
+name = "ta3d_ctl.signature_ta_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "ta3d_ctl.signature_ta_dev_vaddr"
+kind = "field"
+sgx545 = "TA3D_CTL+0x0b0"
+meaning = "the TA signature buffer's address, copied into sa44 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E002"
+licence = "MIT"
+evidence = "[RE] E002: the captured block holds sa44 = a pointer to the TA signature buffer"
+
+[[term]]
+id = "G0739"
+name = "ta3d_ctl.ta3d_ctl_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "ta3d_ctl.ta3d_ctl_dev_vaddr"
+kind = "field"
+sgx545 = "TA3D_CTL+0x000"
+meaning = "the control block's own address, copied into sa0, the base the EDM reads the block through [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E002"
+licence = "MIT"
+evidence = "[RE] E002: the captured block holds sa0 = a pointer to TA3DCtl itself, so [sa0, +#k] reads its dword k"
+
+[[term]]
+id = "G0740"
+name = "ta3d_ctl.threshold_ta_global_list"
+status = "inferred"
+
+[[term.source]]
+term = "ta3d_ctl.threshold_ta_global_list"
+kind = "field"
+sgx545 = "TA3D_CTL+0x094"
+meaning = "the TA global list as the out-of-memory path saves it when it raises the ZLS page threshold [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E160"
+licence = "MIT"
+evidence = "[RE] E160: raising the threshold saves the global list in TA3DCtl dword 37 and writes it back multiplied by 16 with bit 16"
+
+[[term]]
+id = "G0741"
+name = "ta3d_ctl.zls_threshold_step"
+status = "inferred"
+
+[[term.source]]
+term = "ta3d_ctl.zls_threshold_step"
+kind = "field"
+sgx545 = "TA3D_CTL+0x098"
+meaning = "the step (0x20) the out-of-memory path adds to CR_DPM_ZLS_PAGE_THRESHOLD when it raises the threshold [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E160"
+licence = "MIT"
+evidence = "[RE] E160: raising the threshold adds 0x20 to CR_DPM_ZLS_PAGE_THRESHOLD, saving the 0x20 in TA3DCtl dword 38"

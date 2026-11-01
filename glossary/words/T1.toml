@@ -1,4 +1,20 @@
 [[term]]
+id = "G0640"
+name = "T1.HEIGHT"
+status = "named"
+
+[[term.source]]
+term = "height"
+kind = "field"
+sgx545 = "T1 [11:0] (HEIGHT)"
+meaning = "height - 1"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0367"
+licence = "MIT"
+evidence = "[HW] copies exact (E020); Rogue role analogue"
+
+[[term]]
 id = "G0280"
 name = "T1.TEXFORMAT"
 status = "named"
@@ -29,3 +45,19 @@ source = "mesa-csbgen"
 citation = "C0221"
 licence = "MIT"
 evidence = "[HW] copies exact (E020); Rogue role analogue; [HW] E038: 1 or 2 makes an out-of-range copy repeat its texture instead of clamping"
+
+[[term]]
+id = "G0641"
+name = "T1.WIDTH"
+status = "named"
+
+[[term.source]]
+term = "width"
+kind = "field"
+sgx545 = "T1 [23:12] (WIDTH)"
+meaning = "width - 1"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0368"
+licence = "MIT"
+evidence = "[HW] copies exact (E020); Rogue role analogue"

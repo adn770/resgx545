@@ -1,0 +1,15 @@
+[[term]]
+id = "G0645"
+name = "break point object"
+status = "named"
+
+[[term.source]]
+term = "break point (BP) object"
+kind = "concept"
+sgx545 = "-"
+meaning = "an object in the tile lists whose rasterisation halts the ISP and calls the control processor, which may patch the tile list and resume"
+tier = "4"
+source = "patent-US20090058848"
+citation = "C0372"
+licence = "patent"
+evidence = "OCR text; [RE] E155: an EDM event task tests the breakpoint event (pa1 bit 7, at 0x57 and 0xe5a) and acknowledges CR_EVENT_STATUS.BREAKPOINT; what its handler does is not in the record"

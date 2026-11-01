@@ -74,6 +74,22 @@ licence = "GPL-2.0 OR MIT"
 evidence = "rogue_fwif_transfer_regs"
 
 [[term]]
+id = "G0742"
+name = "transfer_cmd.event_pixel_pds_info"
+status = "named"
+
+[[term.source]]
+term = "event_pixel_pds_info"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x02c"
+meaning = "its info"
+tier = "3"
+source = "linux-imagination"
+citation = "C0394"
+licence = "GPL-2.0 OR MIT"
+evidence = "rogue_fwif_transfer_regs; [HW] E129: with the info word at 0 the pixel-event program's sixteen douta words reach sa0-sa15 of the task it starts; what a bit of 5:0 changes is not shown"
+
+[[term]]
 id = "G0116"
 name = "transfer_cmd.flags"
 status = "named"
@@ -99,6 +115,22 @@ source = "sgx545-ce"
 citation = "C0169"
 licence = "GPL-2.0"
 evidence = "kick-side copy carries the same SGXMKIF_TQFLAGS_* word"
+
+[[term]]
+id = "G0743"
+name = "transfer_cmd.isp_msaa"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.isp_msaa"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x01c"
+meaning = "the transfer command's word the EDM loads into CR_ISP_MSAA (0x80000000) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E210"
+licence = "MIT"
+evidence = "[RE] E015: the transfer path loads the command's word 7 into 0x042c; Rogue's isp_aa is a name only here; [infer] E220, an analogy of ours (no citation record): carries CR_ISP_REG_042C: the multisample mode (Rogue CR_ISP_AA.mode); [HW] E210: bits 1:0 at 0, 1 and 2 give three different images and 3 hangs; the sample count of each value is not measured"
 
 [[term]]
 id = "G0117"

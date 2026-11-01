@@ -140,6 +140,10 @@ def test_3d_registers_follow_the_kick_store_order():
     assert kick3d.offset("hw_render_details", "registers_3d") == 0
     assert kick3d.offset("hw_render_details", "registers_3d.isp_zlsctl") == 0x2C
     assert kick3d.offset("hw_render_details", "registers_3d.event_pixel_pds_code") == 0x5C
+    # a word is named after the register it lands in once the glossary has its row: 0x04bc
+    # is CR_ISP_BGOBJVALS (E216); 0x04c4 has no row
+    assert kick3d.offset("hw_render_details", "registers_3d.isp_bgobjvals") == 0x44
+    assert kick3d.offset("hw_render_details", "registers_3d.reg_04c4") == 0x48
 
 
 def test_render_details_words_by_record():
@@ -363,6 +367,108 @@ def test_flag_tables_are_the_glossary_rows(kind):
     assert kick3d.FLAGS[kind] == want
 
 
+# Every word of the client layouts has a glossary row, and the row at its offset carries its
+# name: the structure rows by location (STRUCT+0xOFF, a nested layout's words also at its own
+# prefix), named <layout>.<field> for our layouts and spelled as the kernel spells the field
+# for the kernel's (the shared blocks); a word with no row at any of its offsets by name
+# (pb_block.page_count); and the register rows by offset.
+LAYOUT_PREFIX = {**PREFIXES, "pb_block": "PB_BLOCK", "SGXMKIF_CMDTA_SHARED": "CMDTA_SHARED"}
+REGISTER_BLOCKS = {"ta_registers": kick3d.TA_REGISTER_WRITES,
+                   "registers_3d": kick3d.REGISTER_3D_WRITES}
+ANY_LOC = re.compile(r"([A-Z][A-Z0-9_/]*)\+0x([0-9a-fA-F]+)")
+
+
+def glossary_index() -> tuple[set, dict, dict]:
+    """(term names, {(prefix, byte offset): {(term, spelling)}} of the structure rows,
+    {register offset: term})."""
+    names, at, regs = set(), {}, {}
+    for f in sorted(GLOSSARY.parent.glob("*/*.toml")):
+        for t in tomllib.loads(f.read_text())["term"]:
+            names.add(t["name"])
+            for s in t["source"]:
+                loc = s.get("sgx545", "").strip()
+                if s["kind"] == "register" and re.fullmatch(r"0x[0-9a-fA-F]+", loc):
+                    regs[int(loc, 16)] = t["name"]
+                elif s["kind"] == "field" and " bit" not in loc:
+                    for m in ANY_LOC.finditer(loc):
+                        for p in m.group(1).split("/"):
+                            at.setdefault((p, int(m.group(2), 16)), set()).add(
+                                (t["name"], s["term"]))
+    return names, at, regs
+
+
+def leaves(layout: str, base: int = 0, levels: tuple = ()):
+    """(field name, dword in the outer layout, ((layout, its first dword, its field that holds
+    the word), ...) outer first) for every scalar or array field, through the nested layouts."""
+    off = base
+    for f in kick3d.STRUCTS[layout]:
+        shape, count = f[1], f[2] if len(f) > 2 else 1
+        here = levels + ((layout, base, f[0]),)
+        if isinstance(shape, list):
+            inner = next(k for k, v in kick3d.STRUCTS.items() if v is shape)
+            yield from leaves(inner, off, here)
+            off += kick3d._dwords(shape) * count
+        else:
+            yield f[0], off, here
+            off += shape * count
+
+
+def named_at(levels: tuple, dword: int, at: dict) -> bool | None:
+    """Whether a row at one of the word's offsets carries its name (None: no row there). At a
+    level, the word's field there or a field of a level inside it names it (a nested layout's
+    words are named at the outer prefix too)."""
+    seen = False
+    for i, (lay, first, _field) in enumerate(levels):
+        if lay not in LAYOUT_PREFIX:
+            continue
+        rows = at.get((LAYOUT_PREFIX[lay], 4 * (dword - first)), set())
+        seen |= bool(rows)
+        inner = [f for _l, _o, f in levels[i:]]
+        if lay in KERNEL_SIDE:
+            if any(spelled in inner for _t, spelled in rows):
+                return True
+        elif any(term in {f"{lay}.{f}" for f in inner} for term, _s in rows):
+            return True
+    return False if seen else None
+
+
+@pytest.mark.skipif(not GLOSSARY.is_dir(), reason="no glossary next to the harness")
+@pytest.mark.parametrize("name", sorted(LAYOUT_PREFIX.keys() - KERNEL_SIDE))
+def test_every_word_of_the_client_layouts_has_a_glossary_row(name):
+    # a register block's word with no structure row has its register's row and is named
+    # after it (the term without CR_), or is reg_<offset> where the glossary has no such row
+    names, at, regs = glossary_index()
+    missing, misnamed = [], []
+    for leaf, dword, levels in leaves(name):
+        if leaf.startswith("pad_"):
+            continue
+        named = named_at(levels, dword, at)
+        if named is False:
+            misnamed.append(f"{leaf} ({LAYOUT_PREFIX[name]}+{4 * dword:#05x})")
+        if named is not None:
+            continue
+        if any(f"{lay}.{leaf}" in names for lay, _o, _f in levels if lay in LAYOUT_PREFIX):
+            continue
+        lay, first, _f = levels[-1]
+        if lay in REGISTER_BLOCKS:
+            reg = REGISTER_BLOCKS[lay][dword - first][0]
+            if leaf == (regs[reg][3:].lower() if reg in regs else f"reg_{reg:04x}"):
+                continue
+        missing.append(f"{leaf} ({LAYOUT_PREFIX[name]}+{4 * dword:#05x})")
+    assert not missing and not misnamed, (missing, misnamed)
+
+
+def test_a_word_named_otherwise_than_the_row_at_its_offset_is_caught():
+    at = {("CMDTA", 0x10): {("cmd_ta.size", "size")},
+          ("CMDTA_SHARED", 0x2c): {("cmd_ta_shared.num_src_syncs", "ui32NumSrcSyncs")}}
+    assert named_at((("cmd_ta", 0, "size"),), 4, at) is True
+    assert named_at((("cmd_ta", 0, "length"),), 4, at) is False
+    assert named_at((("cmd_ta", 0, "flags"),), 5, at) is None
+    shared = (("cmd_ta", 0, "shared"), ("SGXMKIF_CMDTA_SHARED", 22, "ui32NumSrcSyncs"))
+    assert named_at(shared, 33, at) is True
+    assert named_at((shared[0], (shared[1][0], 22, "num_src_syncs")), 33, at) is False
+
+
 # --- flags ---------------------------------------------------------------------------
 
 def test_flag_names():
@@ -375,9 +481,10 @@ def test_flag_names():
 
 
 def test_bits_no_record_names_print_as_hex():
-    assert kick3d.flag_names("GEOM_FLAGS", 0x1004) == ["0x1004"]
+    assert kick3d.flag_names("GEOM_FLAGS", 0x1000) == ["0x1000"]
+    assert kick3d.flag_names("GEOM_FLAGS", 0x1004) == ["BIT2", "0x1000"]
     assert kick3d.flag_names("FRAG_FLAGS", 0x80000040) == ["0x80000040"]
-    assert kick3d.flag_names("CONTEXT_FLAGS", 0x23) == ["NEW", "OWN_PB", "0x2"]
+    assert kick3d.flag_names("CONTEXT_FLAGS", 0x43) == ["NEW", "DUMMY_TRANSFER", "0x40"]
 
 
 def test_flag_words_name_the_flag_table_of_each_flags_field():

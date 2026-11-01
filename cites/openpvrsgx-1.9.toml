@@ -1,0 +1,8 @@
+title = "openpvrsgx archive, DDK 1.9 kernel side"
+tier = "1"
+kind = "tree"
+licences = ["GPL-2.0 OR MIT"]
+root = "drivers/gpu/drm/pvrsgx/1.9.2253347/ in the upstream repository at pin"
+upstream = "https://github.com/openpvrsgx-devgroup/linux_openpvrsgx"
+pin = "2342ce92fdde66ac5a7ed7548b47a3a0836c9e77"
+locator = "path:line relative to the upstream repository root at pin"

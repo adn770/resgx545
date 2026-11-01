@@ -12,4 +12,36 @@ tier = "ours"
 source = "resgx545"
 citation = "E200"
 licence = "MIT"
-evidence = "EDM writes the PB descriptor's word 8 | word 9 << 16 in the TA PB load (RE); the TA PB store fills those words back from CR_DPM_PAGE_STATUS and CR_DPM_GLOBAL_PAGE_STATUS bits 15:0 (RE, usse-dis)"
+evidence = "[RE] E200: the TA PB load writes descriptor dwords 8 and 9 (the second shifted up 16 bits) to it; the TA PB store fills dwords 8 and 9 back from the free-list status registers"
+
+[[term]]
+id = "G0619"
+name = "CR_DPM_TA_PAGE_COUNTS.GLOBAL"
+status = "named"
+
+[[term.source]]
+term = "CR_DPM_TA_PAGE_COUNTS.GLOBAL"
+kind = "bitfield"
+sgx545 = "0x0638[31:16]"
+meaning = "global pages of the TA's PB [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E200"
+licence = "MIT"
+evidence = "[RE] E200: descriptor dword 9, shifted up 16 bits"
+
+[[term]]
+id = "G0620"
+name = "CR_DPM_TA_PAGE_COUNTS.LOCAL"
+status = "named"
+
+[[term.source]]
+term = "CR_DPM_TA_PAGE_COUNTS.LOCAL"
+kind = "bitfield"
+sgx545 = "0x0638[15:0]"
+meaning = "local pages of the TA's PB [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E200"
+licence = "MIT"
+evidence = "[RE] E200: descriptor dword 8, in the low half"

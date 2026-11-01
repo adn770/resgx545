@@ -8,5 +8,5 @@ terms = ["CR_EVENT_PIXEL_PDS_INFO"]
 +++
 
 Line 497 of `cr.xml` in Mesa's Rogue csbgen names `ROGUE_CR_EVENT_PIXEL_PDS_INFO`. It backs the
-glossary register `CR_EVENT_PIXEL_PDS_INFO`: size word of the pixel-event task, (attributes x 4 +
-15) >> 4 in the closed library (Rogue: shared-register and temp sizes).
+glossary register `CR_EVENT_PIXEL_PDS_INFO`: info word of the pixel-event task (Rogue:
+shared-register and temp sizes).

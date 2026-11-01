@@ -1,0 +1,15 @@
+[[term]]
+id = "G0626"
+name = "CR_ISP_VISIBILITY_COUNT6"
+status = "named"
+
+[[term.source]]
+term = "CR_ISP_VISIBILITY_COUNT6"
+kind = "register"
+sgx545 = "0x04b0"
+meaning = "visibility counters 12 and 13, one per 16-bit half, accumulated by the EDM into the visibility results [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E070"
+licence = "MIT"
+evidence = "[RE] E164: the 3D completion accumulates the visibility counters for a render with render flag 0x20; which register it reads, and how, is not in the record; the ISP visibility test itself is public (CR_EVENT_HOST_CLEAR.ISP_VISIBILITY_FAIL); [HW] E070: it never counted; no run set ISP1.VISREG to a value other than 0 and 7 with ISP1.VISTEST"

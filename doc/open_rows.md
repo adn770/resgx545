@@ -151,68 +151,88 @@ sits, the reading, and the evidence records it rests on.
   ends with its render, set or clear it changed no image; what it keeps in a scene left open is not
   shown. Evidence: E051, E052, E053.
 
+## structs: GEOM_FLAGS
+
+- `G0630` `GEOM_FLAGS.BIT2` (CMDTA+0x004 bit2 (0x4)): tested together with GEOM_FLAGS.FIRST_KICK
+  (mask 0x5): when either is set the EDM keeps the stores that link the command's render details
+  into the context; no run sets the bit alone [infer]. Evidence: E172.
+
 ## structs: cmd_ta
 
 - `G0302` `cmd_ta.dpm_reg_074c` (CMDTA+0x29c): as CR_DPM_REG_074C's: the enable (bit 8) and setup of
   a DPM structure that follows the TA data (a second list, as a partial-render or context-switch
   arrangement would need), off in every client. Measured: value the EDM copies verbatim into
-  CR_DPM_REG_074C (0x074c); 0 in every capture [infer]. Evidence: E054, E203, E206.
+  CR_DPM_REG_074C (0x074c); 0 in every capture [infer]. Evidence: E054, E159, E203, E206.
 - `G0306` `cmd_ta.reg_0324` (CMDTA+0x288): as CR_REG_0324's: context store/resume state of an
   interrupted TA: a state base (16-byte aligned, E182), unused while the TA runs to the end.
   Measured: value the EDM copies verbatim into CR_REG_0324 (0x0324); 0 in every capture [infer].
-  Evidence: E054, E056, E182, E183.
+  Evidence: E054, E056, E159, E182, E183.
 - `G0307` `cmd_ta.reg_0364` (CMDTA+0x290): as CR_REG_0364's: context store/resume state of an
   interrupted TA: a 32-bit resume task word, unused while the TA runs to the end. Measured: value
   the EDM copies verbatim into CR_REG_0364 (0x0364); 0 in every capture [infer]. Evidence: E054,
-  E182, E183.
+  E159, E182, E183.
 - `G0308` `cmd_ta.reg_0368` (CMDTA+0x28c): as CR_REG_0368's: context store/resume state of an
   interrupted TA: a 15-bit size or count of the stored state. Measured: value the EDM copies
-  verbatim into CR_REG_0368 (0x0368); 0 in every capture [infer]. Evidence: E054, E182, E183.
+  verbatim into CR_REG_0368 (0x0368); 0 in every capture [infer]. Evidence: E054, E159, E182, E183.
 - `G0309` `cmd_ta.reg_0370` (CMDTA+0x294): as CR_REG_0370's: context store/resume state of an
   interrupted TA: a 32-bit resume task word. Measured: value the EDM copies verbatim into
-  CR_REG_0370 (0x0370); 0 in every capture [infer]. Evidence: E054, E182, E183.
+  CR_REG_0370 (0x0370); 0 in every capture [infer]. Evidence: E054, E159, E182, E183.
 - `G0310` `cmd_ta.reg_0374` (CMDTA+0x298): as CR_REG_0374's: context store/resume state of an
   interrupted TA: a 32-bit resume task word. Measured: value the EDM copies verbatim into
-  CR_REG_0374 (0x0374); 0 in every capture [infer]. Evidence: E054, E182, E183.
+  CR_REG_0374 (0x0374); 0 in every capture [infer]. Evidence: E054, E159, E182, E183.
 - `G0567` `cmd_ta.stencil_rt_stride` (CMDTA+0x050): TA command word 20, copied by the TA kick to
   render details word 71, the stencil stride per render target [infer]. Evidence: E158, E163.
 - `G0311` `cmd_ta.ta_reg_02b0` (CMDTA+0x278): as CR_TA_REG_02B0's: context store/resume state of an
   interrupted TA: an 8-bit field in 31:24 (state flags). Measured: value the EDM copies verbatim
-  into CR_TA_REG_02B0 (0x02b0); 0 in every capture [infer]. Evidence: E054, E182, E183.
+  into CR_TA_REG_02B0 (0x02b0); 0 in every capture [infer]. Evidence: E054, E159, E182, E183.
 - `G0312` `cmd_ta.ta_reg_02b4` (CMDTA+0x284): as CR_TA_REG_02B4's: TA context status: reads 0xff
   after any job, a valid or done mask of the stored state. Measured: value the EDM copies verbatim
-  into CR_TA_REG_02B4 (0x02b4); 0 in every capture [infer]. Evidence: E054, E182, E183.
+  into CR_TA_REG_02B4 (0x02b4); 0 in every capture [infer]. Evidence: E054, E159, E182, E183.
 - `G0313` `cmd_ta.ta_reg_02d0` (CMDTA+0x280): as CR_TA_REG_02D0's: the TA's context state base (a
   dword address), read only when an interrupted TA resumes. Measured: value the EDM copies verbatim
-  into CR_TA_REG_02D0 (0x02d0); 0 in every capture [infer]. Evidence: E054, E182, E183.
+  into CR_TA_REG_02D0 (0x02d0); 0 in every capture [infer]. Evidence: E054, E159, E182, E183.
 - `G0314` `cmd_ta.ta_reg_02d4` (CMDTA+0x27c): as CR_TA_REG_02D4's: context store/resume state of an
   interrupted TA: a 26-bit size or offset. Measured: value the EDM copies verbatim into
-  CR_TA_REG_02D4 (0x02d4); 0 in every capture [infer]. Evidence: E054, E182, E183.
+  CR_TA_REG_02D4 (0x02d4); 0 in every capture [infer]. Evidence: E054, E159, E182, E183.
+- `G0655` `cmd_ta.te_macrotile_stride` (CMDTA+0x248): TA command word 146, which the TA kick writes
+  to CR_TE_MACROTILE_STRIDE (0x0214); its reading is the register's [infer]. Evidence: E159.
 - `G0315` `cmd_ta.te_reg_02a8` (CMDTA+0x2a0): as CR_TE_REG_02A8's: the tiling engine's resume
   position after an interrupted TA: an 8-bit field in 19:12. Measured: value the EDM copies verbatim
-  into CR_TE_REG_02A8 (0x02a8); 0 in every capture [infer]. Evidence: E054, E182, E183.
+  into CR_TE_REG_02A8 (0x02a8); 0 in every capture [infer]. Evidence: E054, E159, E182, E183.
 - `G0317` `cmd_ta.use_reg_0a04` (CMDTA+0x26c): as CR_USE_REG_0A04's: the USSE's context store/resume
   state base (a 16-byte address) for an interrupted TA's vertex tasks. Measured: value the EDM
-  copies verbatim into CR_USE_REG_0A04 (0x0a04); 0 in every capture [infer]. Evidence: E054, E182,
-  E183.
+  copies verbatim into CR_USE_REG_0A04 (0x0a04); 0 in every capture [infer]. Evidence: E054, E159,
+  E182, E183.
 - `G0318` `cmd_ta.use_reg_0aa0` (CMDTA+0x270): as CR_USE_REG_0AA0's: a USSE resume task word for an
   interrupted TA's vertex tasks. Measured: value the EDM copies verbatim into CR_USE_REG_0AA0
-  (0x0aa0); 0 in every capture [infer]. Evidence: E054, E182, E183.
+  (0x0aa0); 0 in every capture [infer]. Evidence: E054, E159, E182, E183.
 - `G0568` `cmd_ta.z_rt_stride` (CMDTA+0x04c): TA command word 19, copied by the TA kick to render
   details word 70, the depth stride per render target [infer]. Evidence: E158, E163.
 
 ## structs: hw_render_details
 
+- `G0693` `hw_render_details.isp_reg_04dc` (HWRENDERDETAILS+0x054): as CR_ISP_REG_04DC's: a
+  punch-through mode word (bit 1 hangs every punch-through pass, E222). Measured: value the EDM
+  copies verbatim into CR_ISP_REG_04DC (0x04dc) [infer]. Evidence: E163, E213, E222.
+- `G0694` `hw_render_details.isp_reg_04e8` (HWRENDERDETAILS+0x0cc): as CR_ISP_REG_04E8's: what it
+  does is not shown; not the background's stencil or mask (E216). Measured: value the EDM copies
+  verbatim into CR_ISP_REG_04E8 (0x04e8) [infer]. Evidence: E163, E216.
 - `G0322` `hw_render_details.isp_sample_pos` (HWRENDERDETAILS+0x04c): value the EDM copies verbatim
   into CR_ISP_SAMPLE_POS (0x0520): the four sample positions (0 in the capture) [infer]. Evidence:
-  E066, E067, E073, E120, E214, E224.
+  E066, E067, E073, E120, E163, E214, E224.
 - `G0326` `hw_render_details.poly_offset_factor` (HWRENDERDETAILS+0x018): Render-details word 6,
   loaded into register 0x0420: set to 4.0 with the units word at 0 it left the flat triangle's
   stored depth unchanged; what it multiplies is not shown. Evidence: E071.
+- `G0696` `hw_render_details.reg_0148` (HWRENDERDETAILS+0x024): render details word 9, which the 3D
+  kick writes to CR_REG_0148 (0x0148); what it holds is not shown [infer]. Evidence: E163.
 - `G0328` `hw_render_details.reg_0400` (HWRENDERDETAILS+0x008): The render-side word that loads
   register 0x0400: bit 25 inverts bits 31:24 of every pixel the job writes, and no other bit changed
   a pixel; the data come from the render command's word 11, which loads the same register, not from
   the render-details word itself. Evidence: E029.
+- `G0697` `hw_render_details.reg_0800` (HWRENDERDETAILS+0x058): as CR_REG_0800's: an on-chip
+  resource limit (bits 5:0 = 48, bits 23:8) for work other than pixel tasks (vertex or state tasks,
+  context switches); pixel-bound renders ignore it (E136). Measured: value the EDM copies verbatim
+  into CR_REG_0800 (0x0800) (it holds 0x30 outside a render, E225) [infer]. Evidence: E163, E225.
 - `G0583` `hw_render_details.stencil_rt_stride` (HWRENDERDETAILS+0x11c): render details word 71: for
   a render target other than the first the 3D kick adds its index times this word to the stencil
   load and store bases (0x048c, 0x0490) [infer]. Evidence: E158, E163.
@@ -230,6 +250,29 @@ sits, the reading, and the evidence records it rests on.
 
 - `G0593` `pb_block.first_page`: a PB block's third word, its first page: the page-table builder
   fills the table block by block from it [infer]. Evidence: E200, E201.
+
+## structs: ta3d_ctl
+
+- `G0722` `ta3d_ctl.abort_page_count0` (TA3D_CTL+0x08c): a page count saved at a macrotile abort,
+  from 0x0724 (CR_DPM_PAGE_STATUS) less 2, which a later out-of-memory compares with the current one
+  [infer]. Evidence: E160.
+- `G0723` `ta3d_ctl.abort_page_count1` (TA3D_CTL+0x090): a page count saved at a macrotile abort,
+  from 0x072c less 2, which a later out-of-memory compares with the current one [infer]. Evidence:
+  E160.
+- `G0730` `ta3d_ctl.kick_clear_3d` (TA3D_CTL+0x0e4): a word the 3D kick clears; what sets it is not
+  shown [infer]. Evidence: E163.
+- `G0731` `ta3d_ctl.kick_clear_ta` (TA3D_CTL+0x0dc): a word the TA kick, the TA-finished handler and
+  the out-of-memory path clear; what sets it is not shown [infer]. Evidence: E156, E158, E160.
+- `G0732` `ta3d_ctl.kick_marks` (TA3D_CTL+0x0d8): kick marks: bit 0 set by the TA kick and the
+  TA-finished handler, bit 1 by the 3D kick; what reads them is not shown [infer]. Evidence: E156,
+  E158, E163.
+- `G0735` `ta3d_ctl.saved_ta_global_list` (TA3D_CTL+0x084): CR_DPM_TA_GLOBAL_LIST as the
+  out-of-memory path saves it before it grows the TA's global list; the global kind of out-of-memory
+  writes it back [infer]. Evidence: E160.
+- `G0740` `ta3d_ctl.threshold_ta_global_list` (TA3D_CTL+0x094): the TA global list as the
+  out-of-memory path saves it when it raises the ZLS page threshold [infer]. Evidence: E160.
+- `G0741` `ta3d_ctl.zls_threshold_step` (TA3D_CTL+0x098): the step (0x20) the out-of-memory path
+  adds to CR_DPM_ZLS_PAGE_THRESHOLD when it raises the threshold [infer]. Evidence: E160.
 
 ## structs: transfer_cmd
 
@@ -291,6 +334,9 @@ sits, the reading, and the evidence records it rests on.
 - `G0254` `PDS_SIZE.BITS17_16` (PDS_SIZE [17:16]): a size or count of output register banks: at 0, 1
   and 2 the triangle's o1-o3 land elsewhere while o0 does not change, 3 the plain value [infer].
   Evidence: E046, E139.
+- `G0636` `PDS_SIZE.BITS24_18` (PDS_SIZE [24:18]): bits 24:18 of the PDS size word; at 4, 1 and 0 a
+  fill's secondary program still passes all sixteen douta words, so what they size is not shown
+  [infer]. Evidence: E125.
 - `G0257` `PIXEL_EVENT.PT_OFF` (pixel event input ir1 bit 3): Input bit 3 of the pixel-event program
   is named in the punch-through probes but no probe used it, so the 6.1 data show nothing about it
   beyond its name. Evidence: E083.
@@ -319,6 +365,9 @@ sits, the reading, and the evidence records it rests on.
 
 ## words: texture words T0-T3
 
+- `G0639` `T0.BIT30` (T0 [30]): with it TEXFORMAT 26 reads one byte per texel, written as grey;
+  without it TEXFORMAT 26 gives values that differ from run to run; no other format is tried with it
+  [infer]. Evidence: E040.
 - `G0284` `T3.DATA_SIZE` (T3 [26:23]): Bits 26:23 of the fourth sampler word are named in the
   sampler sweep but that sweep varied only the conversion fields; the sampler data show nothing
   about this field beyond its name. Evidence: E034, E242.

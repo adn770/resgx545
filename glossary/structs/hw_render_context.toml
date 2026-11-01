@@ -53,6 +53,22 @@ licence = "MIT"
 evidence = "[RE] E161: the read offset is held in the CCB control (dword 4 points at it; offset in bytes)"
 
 [[term]]
+id = "G0681"
+name = "hw_render_context.context_flags"
+status = "named"
+
+[[term.source]]
+term = "hw_render_context.context_flags"
+kind = "field"
+sgx545 = "HWRENDERCONTEXT+0x000"
+meaning = "render context word 0, its flags (CONTEXT_FLAGS.*): the TA kick clears bit 0, the TA pick and the 3D scheduling skip a context with bit 4, the context cleanup tests bit 5 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E161, E159, E165, E167"
+licence = "MIT"
+evidence = "[RE] E159: with CONTEXT_FLAGS.NEW the TA kick clears the flag; [RE] E161: the pick skips a context whose flags (dword 0) have bit 4 set; [RE] E165: so does the 3D scheduling; [RE] E167: the render-context cleanup tests bit 5 of the flags word (dword 0)"
+
+[[term]]
 id = "G0527"
 name = "hw_render_context.hw_pb_desc_dev_vaddr"
 status = "named"

@@ -8,5 +8,6 @@ terms = ["MADD"]
 +++
 
 TI's OMAP4430 TRM (swpu231ap) uses `mux/arbiter/demux/decompression unit (MADD)` on page 2988. It
-backs the glossary unit `MADD`: wrapper of the main cache: arbitrates the PDS, USSE and texture
-requests, caches them at level 0 and decompresses textures.
+backs the glossary unit `MADD`: per the SGX540's technical reference manual, the wrapper of the main
+cache: arbitrates the PDS, USSE and texture requests, caches them at level 0 and decompresses
+textures; one of two readings (Q048) [infer].

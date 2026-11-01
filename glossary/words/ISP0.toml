@@ -45,3 +45,46 @@ source = "mesa-csbgen"
 citation = "C0194"
 licence = "MIT"
 evidence = "same function; OPAQUE 0 and TRANSLUCENT 1 are SGX's 0 and 1; [HW] E065: in a triangle, 1, 2, 4, 5 and 6 render as 0 and 3 and 7 remove the triangle; the visibility counters stay at 0 under every pass type, ISP1's test-enable bit being clear; [HW] E068: with five overlapping copies, pass 1 (translucent) less resolves as opaque less, pass 4 (punch-through) less as depth always; [HW] E077: in pass 1 the pixel shader finds the pixel's current colour in o0 (the destination it blends with), in pass 0 it does not; [HW] E217: pass 4 objects draw when their pt phase ends in atst8 with fb, a passing alpha test and control word 0xe001; nfb or no feedback keeps no pixel, and a failing alpha test shows the copy behind; [HW] E244: pass 5 draws as pass 4 with depthf feedback, src0 the pixel's depth"
+
+[[term]]
+id = "G0632"
+name = "ISP0.SAMPLE_COVERAGE"
+status = "named"
+
+[[term.source]]
+term = "ISP0.SAMPLE_COVERAGE"
+kind = "flag"
+sgx545 = "isp0 bit 28"
+meaning = "the object covers a pixel when any of eight samples is inside: the four of CR_ISP_MULTISAMPLECTL and the four of CR_ISP_SAMPLE_POS; single-sampled only (it hangs a 4x render) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E215"
+licence = "MIT"
+evidence = "[HW] E214: adds only edge pixels, as many as 0x0520 places samples outside the edge, each of the 55 values' images reproduced pixel for pixel; [HW] E214: ISP0 bit 18 beside it faults the job; [HW] E215: with 0x04c8 and 0x0520 varied the eight-sample union predicts the pixel count of each of the four single-sampled cases; hangs under 4x"
+
+[[term]]
+id = "G0633"
+name = "ISP0.TWO_SIDED"
+status = "named"
+
+[[term.source]]
+term = "two_sided"
+kind = "bitfield"
+sgx545 = "-"
+meaning = "(Rogue) two-sided stencil testing"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0364"
+licence = "MIT"
+evidence = "same function"
+
+[[term.source]]
+term = "ISP0.TWO_SIDED"
+kind = "bitfield"
+sgx545 = "isp0 bit 11"
+meaning = "two-sided stencil: back-facing triangles take ISP words 0 and 2 from the state block's back-face words (presence bits 3 and 5) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E228"
+licence = "MIT"
+evidence = "[HW] E228: with bit 11 and the back words a back face obeys the back stencil word and a front face the front one; without it the back words are ignored"
