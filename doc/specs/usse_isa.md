@@ -9197,9 +9197,16 @@ open driver:
    by an ALU instruction after up to 48, E517); a dependent reader of an `ima32` result sees it
    after 0, 1, 2, 3, 4, 5, 6 and 8 `nop`s with or without `.nosched` on the writer (E495); `.syncs`
    hangs a fill's task (Q052).
-4. **The global bank**: what `g18`-`g20` and `g39`-`g43` hold in a vertex task and the
-   end-of-tile task; in a triangle's pixel task they read as in a fill (E374), and `g19` reads
-   0 through `mov`, 0x11 through the bitwise group and 0x1a as a store's source (E372) (Q053).
+4. **The global bank**: what `g18` and `g21` hold in a vertex task (they follow the task, 0xe to
+   0x16 and 0x1a to 0x1f by the vertices a task holds, with no rule found, E571) and what the
+   end-of-tile task of each tile reads in `g17`, `g18`, `g21`-`g25` and `g39` (only the last tile's
+   store survives, and a store faults the job, E572, Q183). The others are read. In a vertex task
+   `g16`, `g19` (through `mov`), `g26`-`g31` and `g40` read 0, `g20` 1, `g42` 1.0, `g41` 0xf and
+   `g43` 0xdf000000 (0x3 and 0x20000000 in a last task of 2 vertices), and `g17`, `g22`-`g25`
+   and `g39` follow the vertex's task and lane (E571); in the end-of-tile task of the last tile
+   they read as in a pixel task (E572); in a triangle's pixel task as in a fill (E374), and `g19`
+   reads 0 through `mov`, 0x11 through the bitwise group and 0x1a as a store's source (E372)
+   (Q053).
 5. **Emits**: `.tasks`/`.taske` and `#incp` beyond the vertex emits (incp 1 to 3 on either
    changes nothing a triangle shows; `.cut` on `emitmtevtx` hangs the job, E376), `.twopart`
    on the state emits (needed on `emitvcbvtx`, E102; shows nothing on the state emits, E106);

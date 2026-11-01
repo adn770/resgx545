@@ -1,0 +1,10 @@
+title = "script tables q053-vtx, q053-vtx2, q053-eot (two forms), q053-eotcap, q053-eotst, q053-eot2"
+repo = "data"
+paths = ["usse/globals-vertex-eot/"]
+method = "script tables q053-vtx, q053-vtx2, q053-eot (two forms), q053-eotcap, q053-eotst and q053-eot2 run by hand over ssh on the laptop with the 11.26 tool (not by the campaign runner), so this manifest was written by hand with the landed digest: the whole raw output of every job (gzip, dumps/<script>/), the case table, output/<script>.out, kernel.log (journalctl -k), the recompute (analysis/recompute/) and its output (analysis/recompute-<script>.txt), the declared files (analysis/declared*.tsv, predictions*.tsv, hashes.txt, plan.md; they were hashed before the follow-ups ran, and the base tables before the last runs, not before the first), the analysis scripts and the run scripts (scripts/); every dataset of the batch carries the same analysis/ and scripts/. output prints rc 0 for every job, also for a failed one: a failed job is read from the failed line of its kept txt. The parameter buffer and TA data dumps of the 12 vertex jobs, the scratch lines of the end-of-tile jobs, and programs/<script>/*.bin: the 49 end-of-tile programs of the second form onward as staged on the machine that drove the laptop (the first form's were overwritten); the programs of the vertex jobs are the text of the generators in analysis/gen."
+date = "2026-11-09"
+files = 215
+size = 774145
+sha256 = "eeadb2ee7e7e02c2a594a40e87986c4c48aeb98f6e52ac572bae39722d9a9a0c"
+recipe = "probes/p1133/run_eot2.sh"
+needs = ["render", "kpoke", "reset"]

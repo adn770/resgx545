@@ -1,0 +1,10 @@
+title = "script tables bif-alias-safe, bif-alias-risky"
+repo = "data"
+paths = ["bif/alias-skip/"]
+method = "script tables bif-alias-safe and bif-alias-risky run by hand over ssh on the laptop with the 11.26 tool (not by the campaign runner), so this manifest was written by hand with the landed digest: the whole raw output of every job (gzip, dumps/<script>/), the case table, output/<script>.out, kernel.log (journalctl -k), the recompute (analysis/recompute/) and its output (analysis/recompute-<script>.txt), the declared files (analysis/declared*.tsv, predictions*.tsv, hashes.txt, plan.md; they were hashed before the follow-ups ran, and the base tables before the last runs, not before the first), the analysis scripts and the run scripts (scripts/); every dataset of the batch carries the same analysis/ and scripts/. output prints rc 0 for every job, also for a failed one: a failed job is read from the failed line of its kept txt. The regtimeline of the BIF registers 0x0c00-0x0c8c and the debugfs layout of every case."
+date = "2026-11-09"
+files = 121
+size = 363056
+sha256 = "8cf72964a0bc808f0e0af7b6631f88a4e74510c2177662b9a60ec51aa28b9603"
+recipe = "probes/p1133/run_bif.sh"
+needs = ["render", "kpoke", "reset"]

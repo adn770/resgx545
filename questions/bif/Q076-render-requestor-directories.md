@@ -5,7 +5,7 @@ unit = "bif"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E021", "E023", "E151", "E303", "E314", "E315", "E316", "E319", "E360", "E457"]
+evidence = ["E021", "E023", "E151", "E303", "E314", "E315", "E316", "E319", "E360", "E457", "E573"]
 terms = ["CR_BIF_DIR_LIST_BASE1", "CR_BIF_BANK0", "ta3d_ctl", "ta3d_ctl.render_context_count"]
 +++
 
@@ -51,3 +51,13 @@ tells that its directory is in no list (a firmware compare) is Q118, parked as a
 To settle it: read the client directory's physical address (the debugfs files of the VM) and
 compare it with CR_BIF_DIR_LIST_BASE1 during a render; rerun with masks of two and of five of the
 buffers 6, 7, 8, 10 and 11 and with the partial render of 1024x768 on 0x23 pages (`probe --tri`).
+
+Narrowed in 11.33 (E573, 30 case runs): the buffers 1, 2, 3, 4, 5, 12, 13 and 14 each left out of
+the client directory's alias alone leave the renders exact (2 of 2 runs each; the mask bit 15 names
+no buffer of the layout and is a control, 2 of 2), and so do the pairs 6+7, 8+10, 10+11 and the
+five 6, 7, 8, 10, 11 (2 of 2 each); buffer 0 (0x30000000) left out faults the first job (2 of 2,
+bus status 0x91000 at 0x3000b022), the kick having written list 2 with the page directory of the
+fault line. The debugfs layout's pd_phys is the EDM's own directory, CR_BIF_DIR_LIST_BASE15 (30 of
+30), and differs from BASE1, so the client's directory in list 1 or 2 is still not compared with the
+client's own. Not run: pairs of the buffers 1 to 5, larger scenes and a partial render under a
+mask, the lists given to another context while a job runs.

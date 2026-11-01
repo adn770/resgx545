@@ -4,13 +4,13 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-151 open: 135 hw (high 13, medium 64, low 58, unrated 0), 10 fw, 6 kernel.
+152 open: 136 hw (high 12, medium 66, low 58, unrated 0), 10 fw, 6 kernel.
 
 ## Work queue: hardware
 
 ### bif
 
-- `Q076` (phase 11, hw, high): which pages does each bus-interface requestor of a render (the TA, the 3D, the EDM's PB load) need in the directory of the list it translates through (TA3DCtl writable; each of the buffers 6, 7, 8, 10 and 11 alone is not needed: E457), which of the 16 directory lists does each use, and what does a job do whose list was given to another context while it ran? (E021, E023, E151, E303, E314, E315, E316, E319, E360, E457)
+- `Q076` (phase 11, hw, high): which pages does each bus-interface requestor of a render (the TA, the 3D, the EDM's PB load) need in the directory of the list it translates through (TA3DCtl writable; each of the buffers 6, 7, 8, 10 and 11 alone is not needed: E457), which of the 16 directory lists does each use, and what does a job do whose list was given to another context while it ran? (E021, E023, E151, E303, E314, E315, E316, E319, E360, E457, E573)
 - `Q108` (phase 11, hw, medium): what do the page table entry flags WRITEONLY, CACHECONSISTENT and EDMPROTECT do on the hardware, which of the bus interface's requestors do they stop, and what does the fault report? (E021, E151, E319)
 - `Q109` (phase 11, hw, low): do page directory entries whose page-size field (bits 3:1) names 16 KiB to 4 MiB translate on the hardware, and with which address mask and which table layout? (E021, E151)
 - `Q110` (phase 11, hw, low): what do the bus interface's tiled address ranges (BIF_TILE0 and up: start, end, stride) do to the addresses of a requestor whose accesses fall inside one? (E021, E151, E246)
@@ -18,7 +18,7 @@
 ### dpm
 
 - `Q038` (phase 10, hw, high): what does the final render read back of a partial render's depth (a depth buffer stored by ZLS, the 3D kick's RT status bit 1), now that a background object that reloads the target's colour gives an overflowing scene's whole image? (E202, E204, E160, E310, E311, E312, E442, E461, E465, E467, E468)
-- `Q045` (phase 11, hw, high): what sets the fields of register 0x0740 that the TA kick turns into DPM store and load tasks (a host write reads back 0: E456), does a load task read back the macrotile lists a partial render stores in the RT data's state page, and what accesses the state page (0x20003000 for a context of up to 64x64) when a render follows a kept owner's gone context? (E158, E256, E310, E312, E456, E458, E462, E464)
+- `Q045` (phase 11, hw, high): what sets the fields of register 0x0740 that the TA kick turns into DPM store and load tasks (a host write reads back 0: E456), does a load task read back the macrotile lists a partial render stores in the RT data's state page, and what accesses the state page (0x20003000 for a context of up to 64x64) when a render follows a kept owner's gone context? (E158, E256, E310, E312, E456, E458, E462, E464, E574)
 - `Q081` (phase 11, hw, medium): what does CR_DPM_REG_074C bit 8 make the DPM read or write near offset 0x6010 of the context's TA-data space, and what fixes that place? (E203, E206, E313, E362, E447)
 - `Q103` (phase 11, hw, medium): why does a scene of 100 to 500 triangles hang where the one-triangle scene overflows the parameter buffer and recovers, at 4096x4096 in 0x40 or 0x23 pages from 300 vertices and in 0x100 pages from 900? (E438, E310, E312)
 
@@ -69,7 +69,7 @@
 - `Q019` (phase 7, hw, medium): what does the secondary attribute size (bits 24:18 of dword 1 of the background object) limit, given that all sixteen douta words reach sa0 to sa15 with 0, 1 and 4 rows, or does the task take its size from elsewhere? (E125, E391)
 - `Q020` (phase 7, hw, medium): what does a douta in the triangle's primary pixel program do, when its markers never reach the USE task and the readback is the memory table's inputs for markers A in both runs, and other values for markers B in the first? (E125, E381)
 - `Q021` (phase 7, hw, medium): with 4 components (DOUTI0 bits 23:22 = 3) where does the texel land, given pa3 reads 1.0 on most pixels? (E132, E420, E569)
-- `Q023` (phase 7, hw, high): what do PDS_SIZE bits 17:16 do, given that they move where the output registers o1 to o3 land? (E139, E081, E406)
+- `Q023` (phase 7, hw, high): what do PDS_SIZE bits 17:16 do, given that they move where the output registers o1 to o3 land? (E139, E081, E406, E570)
 - `Q024` (phase 7, hw, low): does CR_PDS_REG_0A78 change timing, when two of its values were slower in one timing run? (E141, E045, E396)
 - `Q025` (phase 7, hw, medium): what does the SB field of CR_BIF_FAULT encode in the PDS faults, and why did a store of one dword fault in the follow-up run only, and a store of two dwords then eight in the first run only? (E143, E144, E145, E395)
 - `Q026` (phase 7, hw, medium): why do the per-tile stores of the grid pixel-event probes leave empty slots and mixed copies, different ones per run? (E130, E394)
@@ -142,7 +142,7 @@
 - `Q050` (phase 11, hw, high): what do the visibility group's instructions do, and how do smp's mipmaps and LOD values, the border address modes, the compressed and YUV formats and firh's edge modes past the line and fixed banks 1 and 2 behave? (E083, E091, E123, E147, E292, E293, E294, E298, E563, E565, E568)
 - `Q051` (phase 11, hw, medium): what state do smoa, smbo, smr, imo and setfc set in the MOE, and what does moest return, beyond the smlsi increments the probes pinned? (E087, E097, E105, E109, E294, E296, E369, E370, E483, E515, E516)
 - `Q052` (phase 11, hw, medium): what do .skipinv, .syncs, .nosched and the other scheduling flags change, and how many instructions after a write can a dependent instruction read the result, with or without an interlock? (E100, E104, E111, E113, E124, E371, E470, E472, E475, E478, E495, E497, E517)
-- `Q053` (phase 11, hw, high): what do the global registers g18 to g20 and g39 to g43 hold in a triangle's pixel task, a vertex task and the end-of-tile task? (E085, E086, E372, E374)
+- `Q053` (phase 11, hw, medium): what sets the global registers g18 and g21 in a vertex task, and what do g17, g18, g21 to g25 and g39 hold in the end-of-tile task of each tile (only the last tile's store survives)? (E085, E086, E372, E374, E571, E572)
 - `Q054` (phase 11, hw, medium): what do #incp, .cut and .tasks/.taske do on the emits, and what do sideband bits 11 and 12 select, beyond the pack mode, bits 8:6, 9, 10 and 13 that the end-of-tile emit reads? (E030, E102, E106, E239, E269, E376, E488)
 - `Q055` (phase 11, hw, medium): what do idf's modes other than bif, lock and release, setm and the cache-control operands do? (E088, E098, E099, E103, E107, E110, E117, E375)
 - `Q080` (phase 11, hw, low): what do the USSE words no form decodes (classes 2, 22 and 26) do: which stop the stores after them, and which write registers? (E297, E368)
@@ -168,10 +168,11 @@
 - `Q150` (phase 11, hw, low): do the raw test words with the chan field enc[38:36] = 1 to 7 on 8-bit and 16-bit lane operations, on the fields other than the six run and with the o join read as the rule of the Test channels page says (E530, E499)
 - `Q151` (phase 11, hw, low): does the o join rule of E529 (enc[39] = 0: the two parts of the test field ORed, an absent part true) hold for the shifts, the 8-bit and 16-bit lane operations and the other classes' tests, and with a chan other than chan0, and does any compiler output need it? (E529, E499)
 - `Q154` (phase 11, hw, medium): does str then ldr of one register stay ordered for a register whose write starts work or that another writer changes, with a job running, and what does an indexed str (the register-index forms, never run) do (E534, E445)
+- `Q183` (phase 11, hw, medium): why does the job fault after a stad in the end-of-tile task has landed its value (BIF fault 0xd0400 at 0x340042, 0x340043 or 0x740012), and what store form would not? (E572)
 
 ### vdm
 
-- `Q036` (phase 10, hw, medium): what do the DPM's status words hold (the high half of the STATUS2 registers 0x0710 and 0x071c, 0x0748 bit by bit, CR_DPM_3D_PAGE_COUNTS' high half, and the owner words 0x0700 to 0x0728 a kept owner changes), what do CR_DMS_CTRL bits 2:0 and the signature and settle registers report about the two pipes, and what DPM or page-table-builder state does a base-only builder fault leave that a core reset does not clear? (E153, E160, E184, E200, E201, E256, E309, E310, E312, E316, E358, E362, E438, E443, E446, E448, E451, E453, E458, E462, E463)
+- `Q036` (phase 10, hw, medium): what do the DPM's status words hold (the high half of the STATUS2 registers 0x0710 and 0x071c, 0x0748 bit by bit, CR_DPM_3D_PAGE_COUNTS' high half, and the owner words 0x0700 to 0x0728 a kept owner changes), what do CR_DMS_CTRL bits 2:0 and the signature and settle registers report about the two pipes, and what DPM or page-table-builder state does a base-only builder fault leave that a core reset does not clear? (E153, E160, E184, E200, E201, E256, E309, E310, E312, E316, E358, E362, E438, E443, E446, E448, E451, E453, E458, E462, E463, E574)
 - `Q042` (phase 11, hw, medium): what do bits 27:24 of the index list's first trailing word (VDM_INDEX2) do, when its low bits move the list's first index and 0x0f000000 drops two of five triangles? (E188, E300, E307, E308, E414)
 - `Q047` (phase 11, hw, high): what do VDM_STATE1 bit 8, bits 11:9 and bits 15:13 select for a state task, when on the one-triangle job bit 8 changes nothing, bits 11:9 at 0 stop the triangle before tiling and bits 15:13 at 0, 5 or 6 hang it? (E060, E185, E186, E187, E299, E414, E427, E440, E545)
 - `Q092` (phase 11, hw, medium): what do bits 31:28 of the index list's first trailing word count, which the closed driver writes as 0xf on 1886 captured lists and 0xd on a draw of eight vertex attributes? (E346, E348, E414, E546)

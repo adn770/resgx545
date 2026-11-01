@@ -1390,8 +1390,9 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   sgx545-ce); `PSB_CR_BIF_FAULT` (1c, emgd-psb_regs).
 - `CR_BIF_DIR_LIST_BASE1` G0089 (0x0c38): page-directory base, context 1. From
   `EUR_CR_BIF_DIR_LIST_BASE1` (1, sgx545-ce); `PSB_CR_BIF_DIR_LIST_BASE1` (1c, emgd-psb_regs).
-- `CR_BIF_DIR_LIST_BASE15` G0032 (0x0c70): page-directory base, context 15. From
-  `EUR_CR_BIF_DIR_LIST_BASE15` (1, sgx545-ce).
+- `CR_BIF_DIR_LIST_BASE15` G0032 (0x0c70): page-directory base, list 15: the EDM's own directory
+  (0x28b0c000 in 30 of 30 runs, the debugfs layout's pd_phys), not a list a kick gives a render
+  context's directory. From `EUR_CR_BIF_DIR_LIST_BASE15` (1, sgx545-ce).
 - `CR_BIF_BANK_SET` G0029 (0x0c74): selects which bank register each requestor uses. From
   `EUR_CR_BIF_BANK_SET` (1, sgx545-ce); `PSB_CR_BIF_BANK_SET` (1c, emgd-psb_regs).
 - `CR_BIF_BANK0` G0028 (0x0c78): directory-list index per requestor, bank 0. From `EUR_CR_BIF_BANK0`

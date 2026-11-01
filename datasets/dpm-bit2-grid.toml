@@ -1,0 +1,10 @@
+title = "script tables dpm-bit2-safe, dpm-bit2-risky"
+repo = "data"
+paths = ["dpm/bit2-grid/"]
+method = "script tables dpm-bit2-safe and dpm-bit2-risky run by hand over ssh on the laptop with the 11.26 tool (not by the campaign runner), so this manifest was written by hand with the landed digest: the whole raw output of every job (gzip, dumps/<script>/), the case table, output/<script>.out, kernel.log (journalctl -k), the recompute (analysis/recompute/) and its output (analysis/recompute-<script>.txt), the declared files (analysis/declared*.tsv, predictions*.tsv, hashes.txt, plan.md; they were hashed before the follow-ups ran, and the base tables before the last runs, not before the first), the analysis scripts and the run scripts (scripts/); every dataset of the batch carries the same analysis/ and scripts/. output prints rc 0 for every job, also for a failed one: a failed job is read from the failed line of its kept txt. The regtimeline of 0x0600-0x0750 of every job."
+date = "2026-11-09"
+files = 97
+size = 649382
+sha256 = "58531947c20eb9fc5bea78e7cdec8bac35ea13f0066ed556de24fece5382ba99"
+recipe = "probes/p1133/run_dpm.sh"
+needs = ["render", "kpoke", "reset"]

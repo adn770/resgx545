@@ -726,6 +726,41 @@ pub fn run(v: &Json) -> Option<Result<Outcome, String>> {
     }
 }
 
+/// A vertex task vector (init.task "vertex", phase 11.33): the program runs once per vertex of the draw
+/// (init.instances of them, init.per vertices a task), as Machine::vertex, and the outputs init.outputs of each equal
+/// readback.vertices; init.skip names vertices the hardware readback does not decode.
+pub fn run_vertex(v: &Json) -> Result<Outcome, String> {
+    let words: Vec<u64> = v.get("program").get("words").arr().iter().map(|w| w.hex().unwrap()).collect();
+    let prog = Program::new(&words, Core::Sgx545);
+    let init = v.get("init");
+    let n = init.get("instances").num().ok_or("no init.instances")? as u32;
+    let per = init.get("per").num().ok_or("no init.per")? as u32;
+    let temps = init.get("temps").num().map_or(124, |t| t as usize);
+    let skip: Vec<u32> = init.get("skip").arr().iter().filter_map(|x| x.num()).map(|x| x as u32).collect();
+    let outs: Vec<usize> =
+        init.get("outputs").arr().iter().filter_map(|o| o.str()?.strip_prefix('o')?.parse().ok()).collect();
+    let rows = v.get("readback").get("vertices").arr();
+    if rows.len() != n as usize {
+        return Err(format!("readback holds {} vertices, init.instances is {n}", rows.len()));
+    }
+    for i in (0..n).filter(|i| !skip.contains(i)) {
+        let mut mem = Memory { base: SCRATCH_BASE, words: vec![] };
+        let mut m = Machine { temps, vertex: Some((i, per, n)), ..Machine::default() };
+        match m.run(&prog, &mut mem, 10_000) {
+            Ok(()) => {}
+            Err(e @ Error::Unsupported { .. }) => return Err(format!("unsupported: {e}")),
+            Err(e) => return Err(format!("error: {e}")),
+        }
+        for (k, o) in outs.iter().enumerate() {
+            let want = rows[i as usize].arr()[k].hex().ok_or("a readback value")? as u32;
+            if m.o[*o] != want {
+                return Err(format!("vertex {i} o{o}: model {:#x}, hardware {want:#x}", m.o[*o]));
+            }
+        }
+    }
+    Ok(Outcome::Exact)
+}
+
 /// The forms a probe tests: its OP text (the provenance inputs, or the
 /// parameters with {NAME} replaced from the inputs), assembled line by line
 /// (a raw `.long 0x<word>` line as its word); lines that do not assemble on

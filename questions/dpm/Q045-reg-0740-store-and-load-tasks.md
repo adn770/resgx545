@@ -5,7 +5,7 @@ unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E158", "E256", "E310", "E312", "E456", "E458", "E462", "E464"]
+evidence = ["E158", "E256", "E310", "E312", "E456", "E458", "E462", "E464", "E574"]
 terms = ["CR_DPM_TASK_STATE", "CR_DPM_TASK_CONTROL", "CR_DPM_STATE_CONTEXT_ID"]
 +++
 
@@ -58,3 +58,8 @@ memory to be freed or only the context to be gone. To settle it: the same case w
 context's memory kept (a kernel switch that does not free it, or a third context holding the VM),
 and the second context's state page poked or filled before the render. The owner words themselves
 are in Q036.
+
+Narrowed in 11.33 (E574): 0x0740 read 0 in every line of 36 more jobs (triangles of 3 to 900
+vertices at 4096x4096 in 0x100 to 0x422 pages, 30 of them overflowing into partial renders). The
+state page's reader and the page 0x20003000 part are not run: they need a kernel switch (the first
+context's memory kept, a poke at the final render's kick).

@@ -1,0 +1,9 @@
+title = "vertex-task vectors of the q053-vtx and q053-vtx2 runs (the global registers of a vertex task, 12 jobs of 126 vertices)"
+repo = "data"
+paths = ["vectors/nokernel/usse/globals-vertex/"]
+method = "tools/usse-asm/make_vertex_vectors.py on the parameter buffer dumps of usse-globals-vertex-eot, one file a script (12 vectors in two files); each vector's program is the job's moves without g18, g19 and g21, its readback the vertex words of its parameter buffer, vertex 67 named in init.skip; the run names the 12 dumps and their sha256"
+date = "2026-11-09"
+files = 2
+size = 253958
+sha256 = "a54555b8704aa23906b3091d4f5df396b5435d5313e8409e6ab7500bbf5b7fb4"
+recipe = "tools/usse-asm/make_vertex_vectors.py"

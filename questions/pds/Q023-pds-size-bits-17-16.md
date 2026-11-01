@@ -5,7 +5,7 @@ unit = "pds"
 kind = "hw"
 value = "high"
 phase = 7
-evidence = ["E139", "E081", "E406"]
+evidence = ["E139", "E081", "E406", "E570"]
 terms = ["PDS_SIZE.BITS17_16"]
 +++
 
@@ -42,3 +42,14 @@ render details words gives the setup's pattern; ISP word 0 bit 26 or 27 and CR_R
 give the tags 1, 3, 5, 7 pattern. So the field takes part (size 3 is the one that gives tags 1 and
 5) but is not a size by itself [infer]; why the room needs one data row, and what bits 26 and 27 of
 ISP word 0 select, is open. Status: narrowed, not answered.
+
+Narrowed in 11.33 (E570, 68 jobs at 13 configurations of 7 shapes from 32x96 to 256x128, and 8
+more of 3 other shapes, PDS_SIZE 0 to 3, x and y runs): o1's writes land at the pixel's own place in
+the tile one position later in the raster order of the target's 32x16 tiles in 6362 of 6995 pairs
+(91 percent); the order of the TA data's region headers gives 6110 (87 percent) and 559 of 688 on
+the shapes it was not built from. The raster rule fails at 64x128 (300 of 402) and 256x128 (184 of
+362), the header order is the better one only at 256x128 and 192x96 size 0, and no rule fits every
+pair. o2 and o3 land one to three positions back with no setting that fixes it (743 one, 318 two,
+91 three of 2094 for o2); the same table run twice gives different counts. Not shown: what decides
+the offset of o2 and o3, the part of the size field, o4 to o7, and why some writes land two tiles
+back. Status: narrowed, not answered.

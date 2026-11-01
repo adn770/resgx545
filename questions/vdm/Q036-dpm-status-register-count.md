@@ -5,7 +5,7 @@ unit = "vdm"
 kind = "hw"
 value = "medium"
 phase = 10
-evidence = ["E153", "E160", "E184", "E200", "E201", "E256", "E309", "E310", "E312", "E316", "E358", "E362", "E438", "E443", "E446", "E448", "E451", "E453", "E458", "E462", "E463"]
+evidence = ["E153", "E160", "E184", "E200", "E201", "E256", "E309", "E310", "E312", "E316", "E358", "E362", "E438", "E443", "E446", "E448", "E451", "E453", "E458", "E462", "E463", "E574"]
 terms = ["Dynamic Parameter Management (DPM)", "Parameter Buffer (PB)", "ta3d_ctl", "hw_pb_desc.page_table_base", "CR_DMS_CTRL", "hw_pb_desc.pb_flags", "FRAG_FLAGS.BIT2", "FRAG_FLAGS.NO_DEALLOCATE"]
 +++
 
@@ -111,3 +111,14 @@ Open, from Q106: what the owner words 0x0700 to 0x0728 hold as owner state, and 
 render's DPM load uses them. What accesses page 0x20003000 is carried by Q045. To settle it: the
 same case with the first context's memory kept and the DPM registers read through the faulting
 render.
+
+Narrowed in 11.33 (E574, 36 jobs, three runs of 12 cells of vertices and PB pages at 4096x4096):
+the high halves of STATUS2 (0x0710, 0x071c) read 0 in every line again (30 to 1066 lines a job,
+readings about 29 us apart; no page count is read here, E438's global lists held up to five
+pages), and 0x0748 bit 2
+cleared in 5 of the 36 jobs, in one reading each, only at the 0x100-page cells (5 of 15 jobs; 0 of
+21 elsewhere), 1 of 3 runs at (300, 0x100) where E443 saw 3 of 3 and 0 of 3 at (900, 0x422) where
+it saw 1 of 3. Across the two batches the clearing is not a function of the vertices and pages
+alone; 29 of the 36 jobs here ran after a reset, which may be a second variable. A short pulse the
+sampling catches by chance [infer] fits it. 450 and 600 vertices in 0x100 pages overflow without a
+hang (6 of 6). Status: narrowed, not answered.

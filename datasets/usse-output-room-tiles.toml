@@ -1,0 +1,10 @@
+title = "script tables o23-tiles, o23-order, o23-size"
+repo = "data"
+paths = ["usse/output-room-tiles/"]
+method = "script tables o23-tiles, o23-order and o23-size run by hand over ssh on the laptop with the 11.26 tool (not by the campaign runner), so this manifest was written by hand with the landed digest: the whole raw output of every job (gzip, dumps/<script>/), the case table, output/<script>.out, kernel.log (journalctl -k), the recompute (analysis/recompute/) and its output (analysis/recompute-<script>.txt), the declared files (analysis/declared*.tsv, predictions*.tsv, hashes.txt, plan.md; they were hashed before the follow-ups ran, and the base tables before the last runs, not before the first), the analysis scripts and the run scripts (scripts/); every dataset of the batch carries the same analysis/ and scripts/. output prints rc 0 for every job, also for a failed one: a failed job is read from the failed line of its kept txt. The parameter buffer and TA data dumps of the o23-order and o23-size jobs."
+date = "2026-11-09"
+files = 217
+size = 771762
+sha256 = "5beaf40d608cb7eb516fe887a11d02ac4f1ea06f601be9d6d3802d35a8b0984c"
+recipe = "probes/p1133/run_o23.sh"
+needs = ["render", "kpoke", "reset"]

@@ -3951,17 +3951,75 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   component or 1.0 (Q021) has no result from this batch, and the two controls of 0x40800801 hung
   too, so the hang is not tied to the fourth component's source word.
   *texture; HW; data: `texture-p1132-tx-douti4`.*
+- `E570` In the triangle's pixel task, with the eight-register tagged shader at 13 target
+  configurations of 7 shapes (64x64 to 256x128; 10 shapes with the 8 configurations of the third
+  table) and PDS_SIZE bits 17:16 at 0 to 3, the destination pixels that carry o1's tag, 6995 pairs
+  read from the x and y runs at the same place in the tile, hold the value written from the tile one
+  position later: in the raster order of the target's 32x16 tiles (tile index ty * ceil(W / 32) +
+  tx) in 6362 of 6995 pairs (91 percent) and in the order of the TA data's region headers (regions
+  with a stream) in 6110 (87 percent); the raster rule fails at 64x128 (300 of 402 pairs) and
+  256x128 (184 of 362), the header order is the better of the two only at 256x128 (262 of 362) and
+  192x96 size 0 (54 against 52 of 84); the header order was built on 12 configurations (5551 of 6329
+  pairs there) and gives 559 of 688 on the 8 it was not built on; o2 and o3 land one, two or three
+  tiles back (o2: 743 one, 318 two, 91 three of 2094; o3: 268, 150, 24 of 532) with no setting tried
+  fixing the offset; the same table twice at 128x128 size 3 gives 705 and 463 pairs of tag 2.
+  *usse; HW, infer; data: `usse-output-room-tiles`.*
+- `E571` In the vertex task of the triangle job (126 vertices at 4, 6 and 8 vertices a task, 12
+  jobs), 125 of the 126 vertices of each job read in full (vertex 67 is cut by the 4 KiB boundary at
+  0x2000: its first nine dwords read 0 in all 12 jobs): g16, g19, g26-g31 and g40 read 0 and g20 1
+  on 125 of 125, g42 reads 0x3f800000, and g41 0xf and g43 0xdf000000 (where the pixel task has 1
+  and 0xff000000) on every vertex of a task of 4 or more, a last task of 2 vertices reading 0x3 and
+  0x20000000; g17, g22, g24, g25 and g39 follow the vertex's task and lane (g25 = lane mod 4, g22 =
+  lane div 4 mod 2, g39 = 4 * g22, g24 = 8 * (task mod 2), g17 = task mod 4) in 125 of 125 vertices
+  in each of the 12 jobs (24 of 24 job-register scores, 12 of them held out at 4 and 6 vertices a
+  task), and g23 = 0x10 * (task div 2 mod 2) in 125 of 125 in each of the 4 jobs that read it, a
+  rule read from the data after all 12 jobs were in.
+  *usse; HW, infer; data: `usse-globals-vertex-eot`, `vectors-usse-globals-vertex`.*
+- `E572` In the end-of-tile task of the triangle job a stad of a global register to the scratch
+  lands the register's value in 44 of 44 jobs that stored (37 of q053-eot2, the 4 of the second form
+  of q053-eot, 3 of q053-eotst) and the job then faults: BIF fault 0xd0400 at 0x340042 in 39 of the
+  44, at 0x340043 in 1 and at 0x740012 in 4 (the cases g23 at 64x64 and 128x128, g18 and g25 at
+  32x16: no pattern with the register or the size), the health triangle drew exactly after every
+  recovery (no health failure line in any of the 5 scripts); the 4 jobs of the first form (a store
+  through r8) faulted at 0x42; 5 programs of 7 to 10 instructions without a store complete 5 of 5;
+  and the registers read as in a pixel task (g16, g26-g31, g40 = 0, g20 and g41 = 1, g42 =
+  0x3f800000, g43 = 0xff000000; 12 of the 13 declared constants), with g19 reading 0x1a through a
+  store, as in E372; g17 reads 0, g18 0x16 at 32x16, 64x64 and 128x128, g21 0x12, 0x16, 0x15 and g23
+  0, 0x10, 0x10 by target size.
+  *usse; HW, infer; data: `usse-globals-vertex-eot`.*
+- `E573` With the read-only alias of the EDM's buffer left out of the client directory one buffer at
+  a time, the renders are exact for each of the buffers 1, 2, 3, 4, 5, 12, 13 and 14 (2 of 2 runs
+  each, 2 renders a run), for the mask bit 15, which names no buffer of the debugfs layout (ids 0 to
+  14), and for the pairs 6+7, 8+10, 10+11 and the five 6, 7, 8, 10, 11 together (2 of 2 each); with
+  buffer 0 (0x30000000) left out the first job faults (2 of 2: BIF fault status 0x91000 at
+  0x3000b022) and the context is lost; the directory the faulting kick used is list 2 (BASE2 equals
+  the page directory of the fault line, BASE1 holds the health triangle's), and the debugfs layout's
+  pd_phys, 0x28b0c000, equals CR_BIF_DIR_LIST_BASE15 (the EDM's own directory) and differs from
+  BASE1 in 30 of 30 runs.
+  *bif; HW, infer; data: `bif-alias-skip`.*
+- `E574` Through 36 jobs of triangles of 3 to 900 vertices at 4096x4096 in 0x100 to 0x422
+  parameter-buffer pages (3 runs of 12 cells; 6 completed and 30 overflowed into partial renders,
+  none hung or faulted), the high halves of STATUS2 (0x0710, 0x071c) and the register 0x0740 read 0
+  in every timeline line of all 36 jobs (30 to 1066 lines a job, the readings about 29 microseconds
+  apart); 0x0748 bit 2 cleared in 5 of the 36 jobs, in 6 lines of one reading each (300 vertices in
+  0x100 pages 1 of 3, 150 in 0x100 1 of 3, 450 in 0x100 1 of 3, 600 in 0x100 2 of 3, none of the
+  other cells; 5 of 15 jobs at 0x100 pages, 0 of 21 elsewhere), against 3 of 3 for 300 in 0x100 in
+  E443: across the two batches the clearing is not a function of the scene's vertices and pages
+  alone, and 29 of this batch's 36 jobs ran after a reset (a reset follows each failed job), which
+  E443's record does not say of its own; 450 and 600 vertices in 0x100 pages overflowed without a
+  hang (6 of 6).
+  *dpm; HW, infer; data: `dpm-bit2-grid`.*
 
 ## By unit
 
 ### bif
 
-Records: E151, E457.
+Records: E151, E457, E573.
 
 ### dpm
 
 Records: E199, E200, E201, E202, E204, E205, E206, E203, E253, E256, E309, E310, E311, E312, E313,
-E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E468.
+E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E468, E574.
 
 ### edm
 
@@ -4037,7 +4095,8 @@ E244, E245, E255, E292, E293, E294, E295, E296, E297, E298, E350, E351, E366, E3
 E370, E371, E372, E373, E374, E375, E376, E377, E378, E380, E406, E423, E452, E469, E470, E471,
 E472, E473, E474, E475, E476, E477, E478, E479, E480, E481, E482, E483, E484, E485, E486, E487,
 E488, E491, E492, E493, E494, E495, E496, E497, E498, E499, E500, E501, E512, E513, E514, E515,
-E516, E517, E518, E519, E520, E521, E522, E525, E526, E527, E528, E529, E530, E534, E535, E549.
+E516, E517, E518, E519, E520, E521, E522, E525, E526, E527, E528, E529, E530, E534, E535, E549,
+E570, E571, E572.
 
 ### vdm
 

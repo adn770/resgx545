@@ -321,6 +321,9 @@ pub struct Machine {
     /// The instance's pixel (x, y) in a fill, when the run knows it: the g bank's tile and
     /// quad registers depend on it (E086).
     pub pixel: Option<(u32, u32)>,
+    /// A vertex task's instance (11.33, q053-vtx): (the vertex's sequence number in the draw, the
+    /// vertices a task holds, the vertices of the draw); the g bank's per-vertex registers depend on it.
+    pub vertex: Option<(u32, u32, u32)>,
     pub r: [u32; 128],
     pub i: [u32; 4],
     pub o: [u32; 128],
@@ -734,6 +737,7 @@ impl Default for Machine {
         Machine {
             core: Core::Sgx545,
             pixel: None,
+            vertex: None,
             r: [0; 128],
             i: [0; 4],
             o: [0; 128],
@@ -3849,6 +3853,48 @@ impl Machine {
     /// the per-tile and scheduler-assigned ones (g18, g19, g21, g22) are not modelled.
     fn global(&self, g: usize) -> Result<u32, Error> {
         let unknown = || why(format!("g{g} (per-instance values, not modelled)"));
+        if let Some((v, per, total)) = self.vertex {
+            // A vertex task (11.33, q053-vtx and q053-vtx2): measured only in a draw of 126 vertices at 4, 6
+            // and 8 vertices a task, on g16, g17, g20, g22 to g31 and g39 to g43; every other register, and
+            // any other draw, is refused instead of answered.
+            if total != 126 || !matches!(per, 4 | 6 | 8) || v >= total {
+                return Err(why(format!(
+                    "g{g} in a vertex task (vertex {v} of {total} at {per} a task; \
+                     measured only for 126 vertices at 4, 6 and 8 a task)"
+                )));
+            }
+            let (task, lane) = (v / per, v % per);
+            // the vertices the task holds: the last of a draw may hold fewer (126 at 4 a task: 2; at 8: 6)
+            let held = per.min(total - task * per);
+            return Ok(match g {
+                // per task and lane: read from the q053-vtx jobs at 8 a task (the fit) and held on the
+                // jobs at 4 and 6; g23 was read from the data after all 12 jobs were in, so it is a fit too
+                17 => task % 4,
+                22 => lane / 4 % 2,
+                23 => 0x10 * (task / 2 % 2),
+                24 => 8 * (task % 2),
+                25 => lane % 4,
+                39 => 4 * (lane / 4 % 2),
+                // constant on every readable vertex of the 12 jobs
+                16 | 26..=31 | 40 => 0,
+                20 => 1,
+                42 => 0x3f80_0000,
+                // measured with 2 vertices held (a last task of 4 a task) and with 4, 6 and 8 held; 1, 3, 5
+                // and 7 held were not seen
+                41 | 43 => match (held, g) {
+                    (2, 41) => 3,
+                    (2, 43) => 0x2000_0000,
+                    (4 | 6 | 8, 41) => 0xf,
+                    (4 | 6 | 8, 43) => 0xdf00_0000,
+                    _ => {
+                        return Err(why(format!("g{g} with {held} vertices held (measured with 2, 4, 6 and 8)")));
+                    }
+                },
+                // g18 and g21 follow the task without a fitted rule; g19 reads by the instruction (E372) and
+                // was measured through a mov only; g0 to g15, g32 to g38 and g44 to g63 were not read
+                _ => return Err(unknown()),
+            });
+        }
         let pos = |f: fn(u32, u32) -> u32| self.pixel.map(|(x, y)| f(x, y)).ok_or_else(unknown);
         Ok(match g {
             17 => pos(|x, y| 2 * (x >> 4 & 1) + (y >> 3 & 1))?,
@@ -4570,6 +4616,67 @@ mod tests {
         // without a pixel position the position registers are unknown
         let (_, r) = run(&["mov r1, g23", "mov.end o0, r1"]);
         assert!(matches!(r, Err(Error::Unsupported { why, .. }) if why.contains("g23")));
+    }
+
+    /// Run `src` as vertex `v` of a draw of `total` at `per` a task; the temporaries r1.. or the refusal.
+    fn vertex_run(src: &[&str], v: u32, per: u32, total: u32) -> Result<Vec<u32>, Error> {
+        let p = prog(src);
+        let mut m = Machine { vertex: Some((v, per, total)), ..Machine::default() };
+        let mut mem = Memory { base: 0, words: vec![] };
+        m.run(&p, &mut mem, 100)?;
+        Ok(m.r[1..9].to_vec())
+    }
+
+    fn refused(r: Result<Vec<u32>, Error>, text: &str) -> bool {
+        matches!(r, Err(Error::Unsupported { why, .. }) if why.contains(text))
+    }
+
+    #[test]
+    fn the_global_bank_follows_the_vertex() {
+        // hardware (11.33 q053-vtx, 126 vertices at 8 a task): vertex 13 of the draw is lane 5 of task 1
+        let a = ["mov r1, g17", "mov r2, g22", "mov r3, g24", "mov r4, g25", "mov r5, g39", "mov r6, g41",
+            "mov r7, g43", "mov r8, g26", "nop.end"];
+        assert_eq!(vertex_run(&a, 13, 8, 126).unwrap(), [1, 1, 8, 1, 4, 0xf, 0xdf00_0000, 0]);
+        assert_eq!(vertex_run(&a, 0, 8, 126).unwrap()[..5], [0, 0, 0, 0, 0]);
+        // vertex 30: task 3, lane 6
+        assert_eq!(vertex_run(&a, 30, 8, 126).unwrap()[..5], [3, 1, 8, 2, 4]);
+        // the last task at 8 a task holds 6 (vertices 120 to 125): g41 and g43 as in a full one
+        assert_eq!(vertex_run(&a, 125, 8, 126).unwrap()[5..7], [0xf, 0xdf00_0000]);
+        // 4 a task (q053-vtx2, held out): vertex 37 is lane 1 of task 9
+        assert_eq!(vertex_run(&a, 37, 4, 126).unwrap()[..5], [1, 0, 8, 1, 0]);
+        // the last task of 126 vertices at 4 a task holds 2 (vertices 124 and 125): g41 0x3, g43 0x20000000
+        assert_eq!(vertex_run(&a, 125, 4, 126).unwrap()[5..7], [3, 0x2000_0000]);
+        assert_eq!(vertex_run(&a, 124, 4, 126).unwrap()[5..7], [3, 0x2000_0000]);
+        assert_eq!(vertex_run(&a, 123, 4, 126).unwrap()[5..7], [0xf, 0xdf00_0000]);
+        // 6 a task: vertex 70 is lane 4 of task 11
+        assert_eq!(vertex_run(&a, 70, 6, 126).unwrap()[..5], [3, 1, 8, 0, 4]);
+        // g23 = 0x10 * (task div 2 mod 2), read from the data after the fact
+        let g = ["mov r1, g23", "mov r2, g20", "mov r3, g42", "nop.end"];
+        assert_eq!(vertex_run(&g, 13, 8, 126).unwrap()[..3], [0, 1, 0x3f80_0000]);
+        assert_eq!(vertex_run(&g, 30, 8, 126).unwrap()[..3], [0x10, 1, 0x3f80_0000]);
+        assert_eq!(vertex_run(&g, 70, 6, 126).unwrap()[0], 0x10);
+        assert_eq!(vertex_run(&g, 37, 4, 126).unwrap()[0], 0);
+    }
+
+    #[test]
+    fn a_vertex_task_refuses_what_was_not_measured() {
+        // g18 and g21 follow the task without a rule; g19 reads by the instruction (E372); g0 to g15, g32 to
+        // g38 and g44 to g63 were not read in a vertex task
+        for g in [0, 5, 18, 19, 21, 32, 38, 44, 63] {
+            let src = [format!("mov r1, g{g}"), "nop.end".to_string()];
+            let src: Vec<&str> = src.iter().map(String::as_str).collect();
+            assert!(refused(vertex_run(&src, 3, 8, 126), &format!("g{g}")), "g{g}");
+        }
+        // 1, 3, 5 and 7 vertices held were not seen: a draw of 5 at 4 a task would be one, but a
+        // draw other than 126 vertices is refused whole
+        let g = ["mov r1, g41", "nop.end"];
+        assert!(refused(vertex_run(&g, 4, 4, 5), "measured only for 126"));
+        // a task of other than 4, 6 or 8 vertices, a vertex past the draw
+        assert!(refused(vertex_run(&g, 3, 5, 126), "at 5 a task"));
+        assert!(refused(vertex_run(&g, 3, 16, 126), "at 16 a task"));
+        assert!(refused(vertex_run(&g, 126, 8, 126), "vertex 126"));
+        // the pixel task's constants do not leak in: g41 is 0xf, not 1, in a full task
+        assert_eq!(vertex_run(&g, 3, 8, 126).unwrap()[0], 0xf);
     }
 
     #[test]

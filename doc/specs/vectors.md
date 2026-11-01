@@ -162,6 +162,17 @@ closed-library bytes; an unknown `version` is rejected (`vectors.py check` valid
 silently lost. A probe on the triangle host (`--tri` in `provenance.options`) reads back what
 the scene drew, which is not the shader's output alone: a simulator test does not compare it.
 
+**Vertex tasks** (`init.task = "vertex"`, phase 11.33, `vectors/nokernel/usse/globals-vertex/`): the
+program runs once per vertex of a triangle job's draw, as `Machine::vertex` (the vertex's number,
+the vertices a task holds, the vertices of the draw). `init.instances` is the draw's vertex count,
+`init.per` the vertices a task holds, `init.outputs` the output registers compared (`o6`...),
+`init.skip` the vertices the readback does not decode, and `readback.vertices` one row of values a
+vertex, in `init.outputs` order. `run.raw` is the list of the dumps the rows were read from
+(`usse/globals-vertex-eot/dumps/<script>/<job>.param.bin.gz`) with `run.raw_sha256` the list of
+their digests; `tools/usse-asm/make_vertex_vectors.py` writes them, and the replay test
+(`tests/vertex_vectors.rs`) skips, saying so, without them. The generic replay leaves them out (no
+`readback.o0`).
+
 **The job.** A fill runs in a transfer job whose command the probe may poke (`--poke
 xfer:N=V`), per probe and per case (`case_set`); `firh` reads the filter coefficients the job
 loads. Vectors converted before the converter carried `init.job` (all of `vectors/usse/` and

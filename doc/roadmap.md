@@ -177,22 +177,22 @@ probe and sweep tables that the units above cover.
 
 ### 4.1 Open questions
 
-`doc/open_questions.md` lists every open question, generated from `questions/`: Q001 to Q181, 151
-open (the two ids between Q147 and Q150 are reserved, unused, and the ids between Q168 and Q175
-belong to phases not in this tree). Each has a kind. The work is hardware knowledge, for a simulator
-and then our own firmware, so the 135 `hw` questions are the work queue, each with a value (high 13,
-medium 64, low 58); the 10 `fw` questions (the closed firmware's and driver's own behaviour: Q004,
-Q029, Q034, Q049, Q084, Q088, Q118, Q119, Q124, Q131) and the 6 `kernel` ones (the design of our
-kernel driver: Q005, Q037, Q095, Q140, Q166, Q167) stay open, parked. By unit: bif 4, dpm 5, edm 13,
-isp 10, mte 3, pbe 5, pds 16, platform 5, render 9, ta 14, texture 14, transfer 3, usse 35, vdm 9,
-zls 6. A question is removed when a record answers it; one that mixed a hardware part with a
-firmware or kernel part was narrowed to the hardware part or folded into the hardware question that
-holds it (seven so far: the control block's per-VM copy and the render context count bound into
-Q076, the recovery's reset steps into Q003, the settle routine and the two faults after a base-only
-fault or a kept owner into Q036 and Q045, the points question into Q161), and a fold is not an
-answer. What a fold or a narrowing left of the closed firmware's own behaviour is a new parked
-question: how a kick tells its directory is in no list (Q118, from the render context count) and
-whether a command with both kick flags acts as two (Q119, from Q065).
+`doc/open_questions.md` lists every open question, generated from `questions/`: Q001 to Q183, 152
+open (the two ids between Q147 and Q150 are reserved, unused, and so is the one between Q181 and
+Q183; the ids between Q168 and Q175 belong to phases not in this tree). Each has a kind. The work is
+hardware knowledge, for a simulator and then our own firmware, so the 136 `hw` questions are the
+work queue, each with a value (high 12, medium 66, low 58); the 10 `fw` questions (the closed
+firmware's and driver's own behaviour: Q004, Q029, Q034, Q049, Q084, Q088, Q118, Q119, Q124, Q131)
+and the 6 `kernel` ones (the design of our kernel driver: Q005, Q037, Q095, Q140, Q166, Q167) stay
+open, parked. By unit: bif 4, dpm 5, edm 13, isp 10, mte 3, pbe 5, pds 16, platform 5, render 9, ta
+14, texture 14, transfer 3, usse 36, vdm 9, zls 6. A question is removed when a record answers it;
+one that mixed a hardware part with a firmware or kernel part was narrowed to the hardware part or
+folded into the hardware question that holds it (seven so far: the control block's per-VM copy and
+the render context count bound into Q076, the recovery's reset steps into Q003, the settle routine
+and the two faults after a base-only fault or a kept owner into Q036 and Q045, the points question
+into Q161), and a fold is not an answer. What a fold or a narrowing left of the closed firmware's
+own behaviour is a new parked question: how a kick tells its directory is in no list (Q118, from the
+render context count) and whether a command with both kick flags acts as two (Q119, from Q065).
 
 ### 4.2 Inferred glossary rows
 
@@ -681,3 +681,24 @@ The roadmap counts the questions from the built `doc/open_questions.md`: 151 ope
 135 hw (high 13, medium 64, low 58), 10 fw and 6 kernel; edm 13, texture 14. The replay of the
 tree's data, with the 17 new vector files in the data repository: 30864 pass, 1112 fitted, 1102
 unsupported, 175 skipped, 1937 left out, 82 and 48 hung, 0 mismatches.
+
+Sub-phase 11.33 ran 14 script runs on the laptop with no kernel change and no tool change, all in
+the 11.26 tool (sgxfive-test-1126): where the output registers o1 to o3 of a pixel task land
+(`usse/output-room-tiles`, 68 jobs), the global registers of a vertex task and of the end-of-tile
+task (`usse/globals-vertex-eot`, 65 jobs), the buffers the client directory's alias needs
+(`bif/alias-skip`, 30 case runs) and the DPM status registers through overflowing scenes
+(`dpm/bit2-grid`, 36 jobs): 199 jobs in all. Five evidence records (E570 to E574): o1 lands at the
+pixel's own place in the tile one position later in the raster order of the target's tiles in 91
+percent of 6995 pairs, the order of the region headers in 87 percent, and neither is a rule at every
+shape (E570); a vertex task's global registers, 125 of 126 vertices read in full in each of 12 jobs,
+are constants, a mask pair and rules of the task and the lane (E571); a store of a global register
+in the end-of-tile task lands and the job then faults, at one of three addresses (E572); only buffer
+0 of the EDM's buffers faults the first job when left out of the client directory's alias (E573);
+STATUS2's high halves and register 0x0740 read 0 in 36 jobs and 0x0748 bit 2 clears in 5 of them,
+one reading each, about 29 microseconds apart (E574). Q053 is narrowed to what has no rule (a vertex
+task's g18 and g21, each tile's end-of-tile registers), Q183 is new (the fault after a store in the
+end-of-tile task); Q023, Q036, Q045 and Q076 are narrowed. Not run: Q066, the state page's reader
+and page 0x20003000 in Q045, the client directory against BASE1 in Q076. sgx-sim gains a vertex
+task's global registers (twelve hardware vectors; it refuses the registers and draws not measured);
+the fixed-function DPM and BIF models wait for phase 12. The roadmap counts the questions from the
+built `doc/open_questions.md`: 152 open, 136 hw (high 12, medium 66, low 58), 10 fw and 6 kernel.
