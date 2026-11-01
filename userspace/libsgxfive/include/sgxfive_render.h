@@ -38,7 +38,20 @@ struct sgxfive_tri_params {
 	uint32_t colour, bg_colour;	/* ARGB8888 */
 	int32_t v[3][2];		/* vertices in 1/16 pixel, window coordinates */
 	float zndc[3];			/* each vertex's clip z; 0: depth 0.5 (= 0.5 + 0.5 z) */
+	/*
+	 * fine: the vertices are v256, in 1/256 pixel (an exact clip coordinate for a target whose
+	 * half-size is a power of two); v then holds the nearest 1/16 for the CPU reference.
+	 */
+	bool fine;
+	uint32_t fine_shift;		/* the unit of v256 is 1/2^fine_shift pixel (8: 1/256) */
+	int32_t v256[3][2];
 };
+
+/* Set the triangle's vertices in 1/256 pixel (see sgxfive_tri_params.fine). */
+void sgxfive_tri_fine(struct sgxfive_tri_params *p, const int32_t v256[3][2]);
+/* The same in 1/2^shift pixel (shift 5 to 20): exact clip coordinates while the target's half-size times 2^shift
+ * stays below 2^24. */
+void sgxfive_tri_fine_unit(struct sgxfive_tri_params *p, const int32_t v[3][2], unsigned int shift);
 
 /* The first triangle's: (8, 8), (56, 20), (20, 56) in a 64 x 64 target, scaled. */
 void sgxfive_tri_default(struct sgxfive_tri_params *p, uint32_t width, uint32_t height);

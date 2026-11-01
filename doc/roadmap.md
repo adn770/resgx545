@@ -757,3 +757,19 @@ register offsets); by name in the coverage json (pass, unsupported, mismatch): s
 0, pixels 434, 202, 0, PDS 1305, 98, 0, firmware 470, 0, 0, 1112 fitted; on 11.34's basis 31719 pass
 (30920 at 11.35). The roadmap counts the questions from the built `doc/open_questions.md`: 159 open
 (Q001 to Q196), 143 hw (high 13, medium 68, low 62), 10 fw and 6 kernel; usse 38, edm 15.
+
+Sub-phase 11.37 is a records sub-phase with laptop runs and no kernel change: the last two stages of
+the firmware-task requests (f15, f14a) and a sweep of 1536 random sub-pixel triangles with vertices
+in 1/256 pixel (3112 jobs, plus a fine set of 874 and a second fine set of 422 for the vertex
+rounding). In a firmware task `str` then `ldr` of the two allow-list registers read back across the
+start of a client fill (E604, the overlap itself not measured) and the four-slot task with a held
+slot 0 gave no overlap flag and no pass in slots 1 to 3, with the pass-against-tick count not
+decided (E605). The ISP covers a pixel iff its centre is inside the triangle, the edge test exact
+and left and top edges owning a sample on them, 0 of 14368768 pixels wrong inside the envelope
+tested (E606: vertices about -9% to +124% of a target of power-of-two half-size up to 256 x 128, w =
+1, a single sample); the depth and the iterated coordinate set equal the exact plane at the pixel
+centre up to an absolute error in units of 2^-23, not bit-exact and systematically low; and the ISP
+rounds every window coordinate (x >= 0) to the nearest 1/256 pixel, ties up, before it tests the
+centres (E607). The simulator is unchanged. The roadmap counts the questions from the built
+`doc/open_questions.md`: 165 open (Q001 to Q202), 147 hw (high 15, medium 69, low 63), 12 fw and 6
+kernel; usse 38, edm 17, isp 15.

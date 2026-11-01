@@ -487,3 +487,32 @@ def test_tri_background_slots(tmp_path):
     assert re.search(r"^probe bgp: tri 64x64, bgpds bgpixel replaced$", r.stdout, re.M), r.stdout
     r = run("--mock", "probe", "--tri", "bgpds", str(p))               # no data dword count
     assert r.returncode == 2, r.stdout + r.stderr
+
+
+def test_tri_probe_vertices_in_256ths_and_depths(tmp_path):
+    # probe --tri takes --tri-v and --tri-z as tri does; the case's line says the triangle
+    pix = assemble(tmp_path, "pix", PHAS + "mov.skipinv.end o0, pa0\n")
+    r = run("--mock", "probe", "--tri", "pixel", "--tri-v", "2048,2048,12288,5120,5120,14336",
+            "--tri-z", "0.25,0.5,0.75", str(pix))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^probe pix: vertices256 2048 2048 12288 5120 5120 14336, depth 0.25 0.5 0.75$",
+                     r.stdout, re.M), r.stdout
+
+
+def test_tri_probe_v_is_checked(tmp_path):
+    pix = assemble(tmp_path, "pix", PHAS + "mov.skipinv.end o0, pa0\n")
+    for args in (["--tri-v", "1,2,3"], ["--tri-v", "0,0,256,0,0,256", "--tri-full"],
+                 ["--tri-v", "0,0,256,0,0,256", "--vertices", "6"], ["--tri-z", "0.1,0.2"]):
+        r = run("--mock", "probe", "--tri", "pixel", *args, str(pix))
+        assert r.returncode == 2, (args, r.stdout + r.stderr)
+    r = run("--mock", "probe", "--tri-v", "0,0,256,0,0,256", str(pix))
+    assert r.returncode == 2, r.stdout + r.stderr
+
+
+def test_tri_probe_unit(tmp_path):
+    pix = assemble(tmp_path, "pix", PHAS + "mov.skipinv.end o0, pa0\n")
+    r = run("--mock", "probe", "--tri", "pixel", "--tri-unit", "12", "--tri-v", "32768,32768,196608,81920,81920,229376", str(pix))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^probe pix: vertices4096 32768 32768 196608 81920 81920 229376$", r.stdout, re.M), r.stdout
+    r = run("--mock", "probe", "--tri", "pixel", "--tri-unit", "12", str(pix))
+    assert r.returncode == 2, r.stdout + r.stderr

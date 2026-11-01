@@ -335,6 +335,9 @@ struct opts {
 	bool depth_store, stencil, stencil_store;
 	bool zgiven;			/* a --depth-store, --stencil... option was given */
 	bool tri_full;			/* tri --tri-full: the triangle covers the target */
+	bool tri_v_given;		/* tri --tri-v: the vertices, in 1/2^tri_unit pixel (default 1/256) */
+	int32_t tri_v[3][2];
+	uint32_t tri_unit;		/* tri --tri-unit: 0 (8), or 4 to 20 */
 	bool tri_z_given;		/* tri --tri-z A,B,C: the screen depth at each vertex */
 	float tri_z[3];
 	uint32_t depth_pages;		/* UINT32_MAX: the target's and sixteen over */
@@ -1470,6 +1473,11 @@ struct probe_opts {
 		uint32_t coords;	/* --vtx-coords: more output dwords per vertex */
 		bool copy_depth;	/* --copy-depth: the copies at z = c / 16 */
 		bool full;		/* --tri-full: the triangle covers the target */
+		bool v_set;		/* --tri-v: the vertices, in 1/2^unit pixel */
+		int32_t v256[3][2];
+		uint32_t unit;		/* --tri-unit: 0, or the shift (4 to 20) */
+		bool z_set;		/* --tri-z: the vertices' screen depths */
+		float z[3];
 		bool isp2_set;		/* --isp2 V: ISP word 2 in the state block */
 		uint32_t isp2;
 		uint32_t blk_mask;	/* --blk N=V: state block words set */
@@ -1874,11 +1882,16 @@ static int probe_tri_check(struct probe_opts *po)
 	if (pt->slot < 0)
 		return fixed || pt->width || pt->height || pt->max_width || pt->max_height ||
 		       pt->vertices || pt->coords || pt->copy_depth || pt->isp2_set || pt->blk_mask ||
+		       pt->v_set || pt->z_set || pt->unit ||
 		       pt->add_mask || pt->blk_xor_mask || pt->cmd_xor_mask || pt->pbe_mask ||
 		       pt->cmd_mask || pt->vdm_mask || pt->vdm_xor_mask || pt->sideband_set || pt->dump_dir ||
 		       pt->nkpoke || pt->obj2 || pt->obj2_blk_mask || pt->obj2_pixel.n ||
 		       pt->obj2_pixpds.n ? -1 : 0;
 	if (pt->copy_depth && !pt->vertices)
+		return -1;
+	if (pt->v_set && (pt->full || pt->vertices))
+		return -1;
+	if (pt->unit && !pt->v_set)
 		return -1;
 	/* the second object: whole triangles among the copies, and its words only with it */
 	if (pt->obj2 && (pt->obj2 % 3 || pt->obj2 >= pt->vertices))
@@ -2111,6 +2124,22 @@ static void probe_tri_one(struct tool *t, const struct probe_file *f,
 			printf("probe %s: triangle (%d,%d) (%d,%d) (%d,%d)\n", f->name,
 			       p.v[0][0] / 16, p.v[0][1] / 16, p.v[1][0] / 16, p.v[1][1] / 16,
 			       p.v[2][0] / 16, p.v[2][1] / 16);
+		}
+		if (pt->v_set)
+			sgxfive_tri_fine_unit(&p, pt->v256, pt->unit ? pt->unit : 8);
+		if (pt->z_set)
+			for (int v = 0; v < 3; v++)
+				p.zndc[v] = 2 * pt->z[v] - 1;
+		if (pt->v_set || pt->z_set) {
+			printf("probe %s:", f->name);
+			if (pt->v_set)
+				printf(" vertices%u %d %d %d %d %d %d%s", 1u << (pt->unit ? pt->unit : 8),
+				       pt->v256[0][0], pt->v256[0][1],
+				       pt->v256[1][0], pt->v256[1][1], pt->v256[2][0], pt->v256[2][1],
+				       pt->z_set ? "," : "");
+			if (pt->z_set)
+				printf(" depth %g %g %g", pt->z[0], pt->z[1], pt->z[2]);
+			printf("\n");
 		}
 		if (!ret)
 			ret = sgxfive_tri_rig_build(g, &p, &pr);
@@ -2712,10 +2741,20 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 			p.v[1][0] = 3 * 16 * (int32_t)p.width;
 			p.v[2][1] = 3 * 16 * (int32_t)p.height;
 		}
+		if (o->tri_v_given)
+			sgxfive_tri_fine_unit(&p, o->tri_v, o->tri_unit ? o->tri_unit : 8);
 		if (o->tri_z_given)
 			for (int v = 0; v < 3; v++)
 				p.zndc[v] = 2 * o->tri_z[v] - 1;
-		if (o->tri_full || o->tri_z_given)
+		if (o->tri_v_given) {
+			printf("tri: vertices%u %d %d %d %d %d %d", 1u << (o->tri_unit ? o->tri_unit : 8),
+			       o->tri_v[0][0], o->tri_v[0][1],
+			       o->tri_v[1][0], o->tri_v[1][1], o->tri_v[2][0], o->tri_v[2][1]);
+			if (o->tri_z_given)
+				printf(", depth %g %g %g", (p.zndc[0] + 1) / 2, (p.zndc[1] + 1) / 2,
+				       (p.zndc[2] + 1) / 2);
+			printf("\n");
+		} else if (o->tri_full || o->tri_z_given)
 			printf("tri: triangle (%d,%d) (%d,%d) (%d,%d), depth %g %g %g\n",
 			       p.v[0][0] / 16, p.v[0][1] / 16, p.v[1][0] / 16, p.v[1][1] / 16,
 			       p.v[2][0] / 16, p.v[2][1] / 16, (p.zndc[0] + 1) / 2, (p.zndc[1] + 1) / 2,
@@ -3105,6 +3144,25 @@ static bool parse_tri_z(const char *s, float z[3])
 	return true;
 }
 
+/* --tri-v X0,Y0,X1,Y1,X2,Y2: six integers, window coordinates in 1/256 pixel (below 2^22) */
+static bool parse_tri_v(const char *s, int32_t v[3][2])
+{
+	char *end;
+
+	for (int i = 0; i < 6; i++) {
+		long long x;
+
+		errno = 0;
+		x = strtoll(s, &end, 10);
+		if (errno || end == s || x < -(1 << 30) || x >= (1 << 30) ||
+		    *end != (i < 5 ? ',' : 0))
+			return false;
+		v[i / 2][i % 2] = (int32_t)x;
+		s = end + 1;
+	}
+	return true;
+}
+
 static int parse_opts(int argc, char **argv, struct opts *o)
 {
 	static const char *const fills[] = {
@@ -3157,6 +3215,27 @@ static int parse_opts(int argc, char **argv, struct opts *o)
 			  !strcmp(argv[i], "--stencil-store") ? &o->stencil_store : &o->stencil) = true;
 			o->zgiven |= argv[i][2] != 't';
 			i--;		/* a flag: no value */
+			continue;
+		}
+		if (!strcmp(argv[i], "--tri-unit") && i + 1 < argc) {
+			char *end;
+			unsigned long k = strtoul(argv[i + 1], &end, 10);
+
+			if (!*argv[i + 1] || *end || k < 5 || k > 20) {
+				fprintf(stderr, "sgxfive-test: bad option --tri-unit (5 to 20: --tri-v is in "
+					"1/2^K pixel)\n");
+				return -1;
+			}
+			o->tri_unit = (uint32_t)k;
+			continue;
+		}
+		if (!strcmp(argv[i], "--tri-v") && i + 1 < argc) {
+			if (!parse_tri_v(argv[i + 1], o->tri_v)) {
+				fprintf(stderr, "sgxfive-test: bad option --tri-v (six integers, window "
+					"coordinates in 1/256 pixel, comma separated)\n");
+				return -1;
+			}
+			o->tri_v_given = true;
 			continue;
 		}
 		if (!strcmp(argv[i], "--tri-z") && i + 1 < argc) {
@@ -3631,6 +3710,36 @@ int main(int argc, char **argv)
 				popts.tri.full = true;
 				continue;
 			}
+			if (!strcmp(argv[i], "--tri-unit") && i + 1 < argc) {
+				char *end;
+				unsigned long k = strtoul(argv[++i], &end, 10);
+
+				if (!*argv[i] || *end || k < 5 || k > 20) {
+					fprintf(stderr, "sgxfive-test: bad option --tri-unit (5 to 20: --tri-v "
+						"is in 1/2^K pixel)\n");
+					return 2;
+				}
+				popts.tri.unit = (uint32_t)k;
+				continue;
+			}
+			if (!strcmp(argv[i], "--tri-v") && i + 1 < argc) {
+				if (!parse_tri_v(argv[++i], popts.tri.v256)) {
+					fprintf(stderr, "sgxfive-test: bad option --tri-v (six integers, "
+						"window coordinates in 1/256 pixel, comma separated)\n");
+					return 2;
+				}
+				popts.tri.v_set = true;
+				continue;
+			}
+			if (!strcmp(argv[i], "--tri-z") && i + 1 < argc) {
+				if (!parse_tri_z(argv[++i], popts.tri.z)) {
+					fprintf(stderr, "sgxfive-test: bad option --tri-z (three screen "
+						"depths, 0 to 1, comma separated)\n");
+					return 2;
+				}
+				popts.tri.z_set = true;
+				continue;
+			}
 			if ((!strcmp(argv[i], "--blk") || !strcmp(argv[i], "--cmd") ||
 			     !strcmp(argv[i], "--vdm")) && i + 1 < argc) {
 				/* N=V sets word N, N^=V flips the bits of V in it */
@@ -3845,8 +3954,20 @@ int main(int argc, char **argv)
 		fprintf(stderr, "sgxfive-test: --tri-full is for tri and probe --tri\n");
 		return 2;
 	}
-	if ((o.tri_full || o.tri_z_given) && strcmp(cmd, "tri")) {
-		fprintf(stderr, "sgxfive-test: --tri-full and --tri-z are for tri\n");
+	if ((o.tri_full || o.tri_z_given || o.tri_v_given) && strcmp(cmd, "tri")) {
+		fprintf(stderr, "sgxfive-test: --tri-full, --tri-z and --tri-v are for tri\n");
+		return 2;
+	}
+	if (o.tri_unit && !o.tri_v_given) {
+		fprintf(stderr, "sgxfive-test: --tri-unit needs --tri-v\n");
+		return 2;
+	}
+	if (o.tri_unit && strcmp(cmd, "tri")) {
+		fprintf(stderr, "sgxfive-test: --tri-unit is for tri and probe --tri, with --tri-v\n");
+		return 2;
+	}
+	if (o.tri_v_given && o.tri_full) {
+		fprintf(stderr, "sgxfive-test: --tri-v and --tri-full both place the triangle\n");
 		return 2;
 	}
 	if (o.depth && (o.ctx2 || (o.depth_ctl_next && o.n < 2) ||

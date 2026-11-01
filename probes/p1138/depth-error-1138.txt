@@ -1,0 +1,29 @@
+covered pixels of the fit and held-out depth jobs: 409950, triangles 1199
+absolute error in U = 2^-23: within 1 U 99.26%, within 3 U 99.94%, maximum 145.2 U
+true float32 ulps of the stored value: within 1 ulp 76.39%, maximum 290.5 ulp
+
+true-ulp table by stored value (error in U, in true ulps; the unit is absolute, so the same
+error in U is more true ulps for a small value)
+  value range   pixels  within 1 U  max U   within 1 true ulp  max true ulps  mean signed (2^-24)
+  0.000..0.125     4929     99.78%     3.8            77.99%           61.4                -0.05
+  0.125..0.250    30049     99.75%    31.0            69.23%          248.3                -0.13
+  0.250..0.500   156111     99.59%    64.9            72.38%          259.6                -0.27
+  0.500..0.750   185334     99.13%   145.2            80.87%          290.5                -0.53
+  0.750..1.000    33527     97.98%    23.6            76.51%           47.2                -0.51
+
+error by the gradient of the plane (|dz/dx| + |dz/dy|, depth per pixel), per triangle maximum
+  gradient        triangles  pixels  within 1 U  max U (any pixel)
+   0.00..0.03         529  330075     99.75%      1.9
+   0.03..0.10         405   74975     98.32%      4.4
+   0.10..0.30         114    4308     86.17%      6.3
+   0.30..1.00         102     485     48.25%     11.2
+   1.00..3.00          33      84     15.48%     49.9
+   3.00..99.99         16      23      8.70%    145.2
+
+sign of (stored - exact plane): below 322718 (78.72%), above 72638 (17.72%), exactly equal 14594 (3.56%); of the 395356 non-zero: below 81.63%
+mean signed error -0.39 of 2^-24 (all pixels)
+
+stored dword equal to the exact plane (rational) converted to float32, pixels of gradient below 0.03 (330075) and all (409950):
+  rounded to nearest: 44.15% and 42.67%
+  truncated toward zero: 60.99% and 58.78%
+  neither: 118608 pixels

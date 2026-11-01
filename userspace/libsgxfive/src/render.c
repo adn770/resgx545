@@ -286,6 +286,29 @@ static uint32_t ndc(int32_t px16, uint32_t size)
 	return sgxfive_f32((float)px16 / (8.0f * (float)size) - 1.0f);
 }
 
+/* The same for a vertex in 1/2^shift pixel: px / (2^(shift - 1) * size) - 1, computed in double. */
+static uint32_t ndc_unit(int32_t px, uint32_t size, unsigned int shift)
+{
+	return sgxfive_f32((float)((double)px / ((double)(1u << (shift - 1)) * (double)size) - 1.0));
+}
+
+void sgxfive_tri_fine_unit(struct sgxfive_tri_params *p, const int32_t v[3][2], unsigned int shift)
+{
+	p->fine = true;
+	p->fine_shift = shift;
+	for (unsigned int i = 0; i < 3; i++)
+		for (unsigned int k = 0; k < 2; k++) {
+			p->v256[i][k] = v[i][k];
+			/* the nearest 1/16 pixel, half up */
+			p->v[i][k] = (v[i][k] + (1 << (shift - 5))) >> (shift - 4);
+		}
+}
+
+void sgxfive_tri_fine(struct sgxfive_tri_params *p, const int32_t v256[3][2])
+{
+	sgxfive_tri_fine_unit(p, v256, 8);
+}
+
 /*
  * n = 4 macrotiles across and down from 640 x 480 pixels on, else 2;
  * a macrotile spans the 32 x 16-pixel tiles over n, rounded up to a multiple
@@ -381,8 +404,10 @@ int sgxfive_tri_scene(const struct sgxfive_tri_cpu *c, const struct sgxfive_tri_
 	put_pixel_programs(c, l, p);
 	sgxfive_tri_vdm(c->gen + SGXFIVE_TRI_G_VDM / 4, l);
 	for (unsigned int i = 0; i < 3; i++) {
-		v[4 * i] = ndc(p->v[i][0], p->width);
-		v[4 * i + 1] = ndc(p->v[i][1], p->height);
+		v[4 * i] = p->fine ? ndc_unit(p->v256[i][0], p->width, p->fine_shift) :
+			   ndc(p->v[i][0], p->width);
+		v[4 * i + 1] = p->fine ? ndc_unit(p->v256[i][1], p->height, p->fine_shift) :
+			       ndc(p->v[i][1], p->height);
 		v[4 * i + 2] = sgxfive_f32(p->zndc[i]);
 		v[4 * i + 3] = sgxfive_f32(1.0f);
 	}

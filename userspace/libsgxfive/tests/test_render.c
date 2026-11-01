@@ -113,6 +113,75 @@ static void test_vertex_z(void)
 	CHECK_EQ(v[3], 0x3f800000);	/* w stays 1.0 */
 }
 
+/* --tri-v: vertices in 1/256 pixel reach the vertex buffer as exact clip coordinates. */
+static void test_fine_vertices(void)
+{
+	struct sgxfive_tri_cpu c = {
+		calloc(1, 4096), calloc(1, 4096), calloc(1, 4096), calloc(1, 4096),
+		calloc(1, 4096), 0,
+	};
+	struct drm_sgxfive_render_cmd cmd;
+	struct sgxfive_tri_params p;
+	const uint32_t *v = c.gen + SGXFIVE_TRI_G_VTX / 4;
+	/* 64 x 64: ndc = px256 / 8192 - 1 */
+	const int32_t f[3][2] = { { 0, 8192 }, { 8193, 16384 }, { 40, 4095 } };
+
+	sgxfive_tri_default(&p, 64, 64);
+	CHECK_EQ(p.fine, 0);
+	sgxfive_tri_fine(&p, f);
+	CHECK_EQ(p.fine, 1);
+	/* the reference's 1/16 vertices are the nearest ones (half up) */
+	CHECK_EQ(p.v[0][0], 0);
+	CHECK_EQ(p.v[0][1], 512);
+	CHECK_EQ(p.v[1][0], 512);	/* 8193 / 16 = 512.06 */
+	CHECK_EQ(p.v[2][0], 3);		/* 40 / 16 = 2.5 */
+	CHECK_EQ(p.v[2][1], 256);	/* 4095 / 16 = 255.94 */
+	CHECK_EQ(sgxfive_tri_scene(&c, &L, &p, &cmd), 0);
+	CHECK_EQ(v[0], 0xbf800000);	/* -1.0 */
+	CHECK_EQ(v[1], 0);		/* 8192 / 8192 - 1 = 0 */
+	CHECK_EQ(v[4], 0x39000000);	/* 2^-13 */
+	CHECK_EQ(v[5], 0x3f800000);	/* 16384 / 8192 - 1 = 1.0 */
+	CHECK_EQ(v[8], 0xbf7ec000);	/* 40 / 8192 - 1 = -0.9951171875 */
+	CHECK_EQ(v[9], 0xbf000800);	/* 4095 / 8192 - 1 = -0.5001220703125 */
+	/* 128 wide: ndc = px256 / 16384 - 1 */
+	sgxfive_tri_default(&p, 128, 128);
+	sgxfive_tri_fine(&p, f);
+	CHECK_EQ(sgxfive_tri_scene(&c, &L, &p, &cmd), 0);
+	CHECK_EQ(v[4], 0xbefff800);	/* 8193 / 16384 - 1 = -0.49993896484375 */
+}
+
+/* a finer unit: vertices in 1/4096 pixel (shift 12) are still exact clip coordinates on a 64 wide target */
+static void test_fine_unit(void)
+{
+	struct sgxfive_tri_cpu c = {
+		calloc(1, 4096), calloc(1, 4096), calloc(1, 4096), calloc(1, 4096),
+		calloc(1, 4096), 0,
+	};
+	struct drm_sgxfive_render_cmd cmd;
+	struct sgxfive_tri_params p;
+	const uint32_t *v = c.gen + SGXFIVE_TRI_G_VTX / 4;
+	/* 64 x 64 at shift 12: ndc = px / 131072 - 1 */
+	const int32_t f[3][2] = { { 0, 131072 }, { 131073, 262144 }, { 700, 65535 } };
+
+	sgxfive_tri_default(&p, 64, 64);
+	sgxfive_tri_fine_unit(&p, f, 12);
+	CHECK_EQ(p.fine, 1);
+	CHECK_EQ(p.fine_shift, 12);
+	CHECK_EQ(p.v[1][0], 512);	/* 131073 / 256 = 512.004: nearest 1/16 */
+	CHECK_EQ(p.v[2][0], 3);		/* 700 / 256 = 2.73 */
+	CHECK_EQ(p.v[2][1], 256);	/* 65535 / 256 = 255.996 */
+	CHECK_EQ(sgxfive_tri_scene(&c, &L, &p, &cmd), 0);
+	CHECK_EQ(v[0], 0xbf800000);
+	CHECK_EQ(v[1], 0);
+	CHECK_EQ(v[4], 0x37000000);	/* 131073 / 131072 - 1 = 2^-17 */
+	CHECK_EQ(v[5], 0x3f800000);
+	CHECK_EQ(v[8], 0xbf7ea200);	/* 700 / 131072 - 1 = -0.99465942... */
+	/* the old call is the shift 8 */
+	sgxfive_tri_default(&p, 64, 64);
+	sgxfive_tri_fine(&p, f);
+	CHECK_EQ(p.fine_shift, 8);
+}
+
 static void test_vdm(void)
 {
 	static const uint32_t want[SGXFIVE_TRI_VDM_WORDS] = {
@@ -344,6 +413,8 @@ int main(void)
 	test_vdm();
 	test_scene();
 	test_vertex_z();
+	test_fine_vertices();
+	test_fine_unit();
 	test_tiling();
 	test_expect();
 	return tap_done();

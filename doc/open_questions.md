@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-159 open: 143 hw (high 13, medium 68, low 62, unrated 0), 10 fw, 6 kernel.
+165 open: 147 hw (high 15, medium 69, low 63, unrated 0), 12 fw, 6 kernel.
 
 ## Work queue: hardware
 
@@ -53,6 +53,10 @@
 - `Q138` (phase 11, hw, high): how does the closed driver's 4x render of a 64 x 64 texture fill a 64 x 64 image when one render with CR_TE_AA 0xe0000000 stores only a 16 x 8 window of each 32 x 16 tile (E503): are the four windows (0x20000000, 0x60000000, 0xa0000000, 0xe0000000) four renders of one frame, and what combines them (E503, E508, E510, E339, E439)
 - `Q141` (phase 11, hw, low): why does a handful of pixels in one tile stay background when the full triangle covers the target, with CR_TE_AA bits 30 or 31 set in mode 1 (64 pixels at 64 x 64, tile (1, 2)) or at 96 x 80 in modes 1 and 2 (9 to 39 pixels), and 136 pixels at (32, 32) in mode 0 with 0xe0000000 (E502, E503, E504)
 - `Q190` (phase 11, hw, medium): does a render's background object with texture layers (the 23-dword form of a transfer copy: the six words after the PDS words, the layer's coordinates, the format word) read its coordinate words vertex by vertex in a render as it does in a transfer's (E209), and which of the words 3 to 8 matter then, given that no word 3 to 16 of the layerless object is shown to (E590)? (E069, E209, E590)
+- `Q199` (phase 11, hw, high): what is the integer range and the behaviour at the limits (saturation, wrap, removal) of the ISP's 1/256-pixel vertex format (E607: window coordinates are rounded half up to 1/256 pixel), and does the rounding hold for negative and far-off-screen vertices (E606, E607)
+- `Q200` (phase 11, hw, medium): what is the ISP's float32 arithmetic for the depth plane (the stored depth is the exact plane at the pixel centre minus 0.39 of 2^-24 on average, bit-reproduced by none of the 18 variants of E606), and how large is its error as a function of the plane's gradient (E606, E072, E465)
+- `Q201` (phase 11, hw, low): why does the position source (E437, E502: x + 0.375, y + 0.125 in mode 0 and every multisampling mode tried) differ from the point at which coordinate-set attributes are evaluated (the pixel centre, E606, for the one iteration setup used), and does an attribute iterated with the position's source read the same way (E606, E437, E502)
+- `Q202` (phase 11, hw, high): do the coverage rule (centre sample, vertices on the 1/256 grid, top-left ties) and the attribute and depth planes of E606 hold with perspective (w other than 1), under multisampling (the 2x and 4x sample points), with ISP word 0 bit 28 widening, for lines and points, with vertices well outside the target (a guard band) and on targets whose half-size is not a power of two (the clip coordinate is then inexact in float32) (E606, E214, E215, E224, E281, E502)
 
 ### mte
 
@@ -207,6 +211,8 @@
 #### edm
 
 - `Q034` (phase 10, fw): does the EDM hold back a TA command whose destination sync is incomplete when another context is queued (source and transfer-queue syncs: E450)? (E161, E154, E320, E450)
+- `Q197` (phase 11, fw): what is the pass count of the tick-driven slot against the tick counter while the EDM is held by a task of 0.7 to 6.5 ms (and above), and is a tick that falls inside a long task lost, queued or delayed (E539, E605)
+- `Q198` (phase 11, fw): after E604 (0x0814 and 0x0a78 read back what a firmware task stored while a client fill was started), does the user want the firmware-task verifier's str allow list widened to a register whose write has an effect, or to a wider value, for a str-then-ldr test while a job runs, and which (E534, E604)
 
 #### render
 

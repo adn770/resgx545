@@ -1,0 +1,9 @@
+title = "firmware task of our own, phase 11.37: p1137-f14a"
+repo = "data"
+paths = ["firmware-tasks/p1137-f14a/"]
+method = "the stage f14a of probes/p1136/run_1137.py (through probes/p1136/run_1137_logged.py) on the laptop (direct cable), fork tip 1dd291a61499, module srcversion B21FDA82BD5E5CB5A627E3B, one run, with the remote command slowevent of probes/p1136/fwext1137.py; runner log, arm, reset and gate records, verdicts, the journalctl -k of the run (gzipped) and env.toml; the jobs' pages were not kept for the ticks-only and fill-trigger jobs (the verdicts hold the counters)"
+date = "2026-11-09"
+files = 8
+size = 9962
+sha256 = "0c49db029fd38b7d9f3a814cb22fa1f36800bf0da13e7f15817e1e9e8192367d"
+recipe = "tools/fwtask/run_stage.py"

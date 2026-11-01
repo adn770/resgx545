@@ -4164,6 +4164,79 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   every job and register, which extends E540's read of the top register r123 and E550's marker to
   every other register.
   *edm; HW, infer; data: `firmware-tasks-p1137-f11`, `vectors-firmware-tasks-p1137`.*
+- `E604` In a firmware (EDM) task of ours (stage f15, p1137_strjob, slots=0x1 entry=0, the landed
+  verifier unchanged), `str` then `ldr` of the two allow-list registers 0x0814 and 0x0a78 read back
+  the stored value in 3 of 3 jobs, each time both right after the `str` and again at the end of a
+  30000-iteration spin (about 2 ms): 12 of 12 reads equal the stored value (0x0814 stored 0x1d5de,
+  0x1b85d and 0x1a355 with bit 16 always set, 0x0a78 stored 0x21, 0x24 and 0x27). A client fill
+  (sgxfive-test fill) was started by the host 0.5 ms into the spin and drew exactly (diff 0 of 2048
+  pixels, 3 of 3); that the fill reached the engine while the task was still spinning was not
+  measured (the host process started 0.5 ms into a 2 ms spin and no job time was kept), so the run
+  shows the read-back across the start of a client job and does not show an overlap.
+  *edm; HW, infer; data: `firmware-tasks-p1137-f15`.*
+- `E605` In a firmware (EDM) task of ours (stage f14a, p1137_slow4, all four slots armed with
+  slots=0xf entry=0,1,2,3, ticks only, no job and no host event), with slot 0 held in the slow loop
+  for n = 10000 (2 jobs) and n = 100000 (3 jobs) iterations, the overlap flag of every slot stayed 0
+  and slots 1 to 3 counted 0 passes in 5 of 5 jobs, the task finished (done) inside the 400 ms
+  window each time, no fault and one reset only; these two clauses could not have failed in this run
+  (no event but the tick reaches slots 1 to 3, E538), so they show no more than that the tick
+  reaches slot 0 only. The count clause of the prediction is not decided: slot 0's pass counter read
+  17, 17 (n = 10000) and 20, 20, 21 (n = 100000) against 0.8 to 1.3 and 6.2 ticks expected from the
+  wall time of the job, and the tick counter's delta read 10, 10, 13, 12, 12; both carry an offset
+  of about 10 ticks that the instrument (the tick counter read through the `regs` debugfs dump
+  before the command and after the job, and the page after that) adds, and the difference between
+  the two n, 2.3 ticks and 3.3 passes against 5.2 expected, is about half the wall time, as the lag
+  of E539 (1.9 to 2.2 ticks behind) would give [infer].
+  *edm; HW, infer; data: `firmware-tasks-p1137-f14a`.*
+- `E606` Over 1536 triangles with random sub-pixel vertices (integers in 1/256 pixel, within about
+  -9% to +124% of the target) on 64 x 64, 128 x 128 and 256 x 128 targets (3112 jobs, none flagged),
+  the ISP covers pixel (x, y) iff the sample at its centre (x + 0.5, y + 0.5) is inside the triangle
+  whose vertices lie on the 1/256 pixel grid (the grid the ISP rounds every vertex to, E607;
+  rounding to a coarser grid, 1/128 pixel, already mispredicts 61 pixels), the edge test exact, and
+  a sample exactly on an edge belongs to the triangle iff the edge is a left or a top edge: 0 of
+  14368768 pixels of all main images mispredicted (0 of 413856 pixels of the bounding boxes of the
+  692 fit triangles, where the one cell of 15360 (snap x sample point in sixteenths of a pixel x ten
+  tie rules) was chosen, and the same cell 0 of 1064683 on the 814 held-out triangles of 128 x 128,
+  256 x 128 and a second seed batch at 64 x 64), 814 of 814 exact, edges through pixel centres,
+  shared edges (110 pairs: no pixel drawn twice, none lost inside a triangle, 87 centres exactly on
+  the shared edge each drawn once), zero-area and 1/256-wide slivers (0 pixels), 1/16-pixel needles
+  and triangles with vertices off screen included; the coverage is the same under three pixel
+  programs and with the depth store (1576 of 1576 images), and repeats byte-identical (30 of 30).
+  The depth stored through the E465 layout and the iterated clip z and x (coordinate set 0, source
+  1, two components, the program of E437) equal the plane through the vertices evaluated at the
+  pixel centre up to an absolute error: for depth 99.3% of 409950 covered pixels within 1 unit (the
+  unit is 2^-23 absolute, not a float32 ulp of the stored value), at most 1.9 units where the
+  plane's gradient |dz/dx| + |dz/dy| is below 0.03 (330075 pixels, 3 units as the tolerance), up to
+  145 units for gradients above 3; for the iterated clip z 3.7 units at most for triangles with a
+  value range per root area below 0.05 (4 units as the tolerance). The stored depth is below the
+  exact plane for 78.7% of the pixels, by 0.39 of 2^-24 on average, and no bit-exact model was
+  found. The position iterated by source 0 (E502: x + 0.375, y + 0.125) is not the point at which
+  these attributes are evaluated. The frozen primary prediction (snap to 1/16 pixel, R1 ties,
+  iteration at x + 0.375) failed; the landed CPU reference (one-pixel band) cannot fail by
+  construction.
+  *isp; HW, infer; data: `isp-arith-1138`.*
+- `E607` The ISP rounds every window-coordinate vertex at x >= 0 to the nearest 1/256 pixel, ties
+  up, before it tests the pixel centres and builds the planes: on 874 cases with vertices at 1/4096
+  and 1/65536 pixel (edge sweeps in single steps across the tie on 64 x 64 targets and at 1/65536 on
+  256 x 128, 100 small, 60 medium and 60 near-centre random triangles) the rule (round half up to
+  1/256, then the exact centre-sample test with the left/top tie rule of E606) mispredicts 0 pixels,
+  against 145 for half-down, 1156 for floor, 4572 for ceil, 577 for rounding to 1/512, 1157 to 1/128
+  and 4576 for no rounding; an edge moved in steps of 1/4096 pixel across a pixel centre changes the
+  covered pixel 8 steps after the tie (a left or top edge loses the centre then, a right or bottom
+  edge gains it), the depth stored through the rounded vertices is within 1 unit (2^-23 absolute)
+  for 98.8 to 100% of the covered pixels of the sweeps (maximum 1.7 units), and a held-out
+  confirmation, 422 further cases with 0 mismatching pixels in 342 of them, every sweep flip equal,
+  and 80 edges passing a pixel centre at a cross product of plus or minus 1 unit of 1/65536 pixel
+  squared all decided as the exact integer test does: the 40 at +1 are all drawn (the hardware does
+  not drop a centre that is 1 unit inside an edge; one-sided: the 40 at -1 are not drawn, but
+  another edge excludes their centre by 4.5e7 to 2.1e8 units squared, so they test nothing). The
+  depth of 75 cases with exactly one coordinate on an exact tie (even and odd integer parts, x and
+  y) fits the plane through the half-up rounded vertices (59 of 75 within 1 unit at the median, none
+  within 1 unit rounded down) and 3 cases at 127/256 of a grid unit round down: the threshold is in
+  (127/256, 1/2] of a grid unit. The frozen predictions PF1 (flips at the tie), PF2 (the exact model
+  misses at most 0.05% and a 1/256 snap more than 50 pixels) and PF3 failed: the vertex grid exists
+  and is 1/256.
+  *isp; HW, infer; data: `isp-arith-1138`.*
 
 ## By unit
 
@@ -4180,7 +4253,7 @@ E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E4
 
 Records: E009, E014, E017, E084, E146, E152, E153, E154, E155, E156, E157, E158, E159, E160, E161,
 E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321, E353, E402, E431, E444,
-E450, E531, E532, E533, E536, E537, E538, E539, E540, E550, E600, E601, E602, E603.
+E450, E531, E532, E533, E536, E537, E538, E539, E540, E550, E600, E601, E602, E603, E604, E605.
 
 ### firmware
 
@@ -4191,7 +4264,8 @@ Records: E001, E002, E003, E004, E005, E010, E011, E012, E352.
 Records: E064, E065, E066, E067, E068, E069, E070, E071, E072, E073, E074, E210, E211, E213, E214,
 E215, E216, E217, E218, E219, E220, E222, E224, E225, E226, E227, E228, E229, E230, E209, E231,
 E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E290, E291, E330,
-E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E508, E510, E590.
+E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E508, E510, E590,
+E606, E607.
 
 ### mte
 

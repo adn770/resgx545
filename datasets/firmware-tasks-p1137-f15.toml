@@ -1,0 +1,9 @@
+title = "firmware task of our own, phase 11.37: p1137-f15"
+repo = "data"
+paths = ["firmware-tasks/p1137-f15/"]
+method = "the stage f15 of probes/p1136/run_1137.py (through probes/p1136/run_1137_logged.py) on the laptop (direct cable), fork tip 1dd291a61499, module srcversion B21FDA82BD5E5CB5A627E3B, one run, with the remote command slowevent of probes/p1136/fwext1137.py; runner log, arm, reset and gate records, verdicts, the journalctl -k of the run (gzipped) and env.toml; the jobs' pages were not kept for the ticks-only and fill-trigger jobs (the verdicts hold the counters)"
+date = "2026-11-09"
+files = 8
+size = 7255
+sha256 = "dcd738d1bbf8f0d1bc98b6237d8ec6e218e283d92f057fe449e823d6b3f510bb"
+recipe = "tools/fwtask/run_stage.py"

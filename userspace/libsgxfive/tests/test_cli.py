@@ -1289,6 +1289,31 @@ def test_tri_full_and_z_are_for_tri():
         assert r.returncode == 2 and "are for tri" in r.stderr, (opt, r.stderr)
 
 
+def test_tri_v_sets_the_vertices_in_256ths():
+    # --tri-v X0,Y0,X1,Y1,X2,Y2: window coordinates in 1/256 pixel (integers), in place of the
+    # default triangle; the line printed says what was drawn
+    r = run("--mock", "tri", "--tri-v", "2048,2048,12288,5120,5120,14336", "--tri-z",
+            "0.25,0.5,0.75")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^tri: vertices256 2048 2048 12288 5120 5120 14336, depth 0.25 0.5 0.75$",
+                     r.stdout, re.M), r.stdout
+
+
+@pytest.mark.parametrize("v", ["1,2,3,4,5", "1,2,3,4,5,6,7", "a,b,c,d,e,f", "", "1,2,3,4,5,99999999999",
+                               "1,2,3,4,5,6,"])
+def test_tri_v_is_checked(v):
+    r = run("--mock", "tri", "--tri-v", v)
+    assert r.returncode == 2, (v, r.stdout + r.stderr)
+    assert "--tri-v" in r.stderr and "six integers" in r.stderr, r.stderr
+
+
+def test_tri_v_refuses_tri_full_and_other_commands():
+    r = run("--mock", "tri", "--tri-v", "0,0,256,0,0,256", "--tri-full")
+    assert r.returncode == 2 and "--tri-v" in r.stderr and "--tri-full" in r.stderr, r.stderr
+    r = run("--mock", "fill", "--tri-v", "0,0,256,0,0,256")
+    assert r.returncode == 2 and "are for tri" in r.stderr, r.stderr
+
+
 def test_tri_words_with_regs_reads_the_registers_at_every_snapshot(tmp_path, monkeypatch):
     # --words DIR with --regs LO-HI: each snapshot N (before the first render, after each one, and
     # the 100 + N and 200 + N of --ctx2) is followed by the register range, so the registers can
@@ -1352,3 +1377,21 @@ def test_probe_exits_3_on_a_failed_job(tmp_path):
 def test_probe_exit_status_is_the_check_failure_before_a_failed_job(tmp_path):
     # a usage or call error keeps its own status (1 and 2); 3 is only a failed job
     assert run("--mock", "probe").returncode == 2
+
+
+def test_tri_unit_sets_the_vertex_unit():
+    # --tri-unit K: --tri-v values are in 1/2^K pixel (K 5 to 20, default 8)
+    r = run("--mock", "tri", "--tri-unit", "12", "--tri-v", "32768,32768,196608,81920,81920,229376")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^tri: vertices4096 32768 32768 196608 81920 81920 229376$", r.stdout, re.M), r.stdout
+
+
+@pytest.mark.parametrize("k", ["3", "4", "21", "x", ""])
+def test_tri_unit_is_checked(k):
+    r = run("--mock", "tri", "--tri-unit", k, "--tri-v", "0,0,256,0,0,256")
+    assert r.returncode == 2 and "--tri-unit" in r.stderr, (k, r.stderr)
+
+
+def test_tri_unit_needs_tri_v():
+    r = run("--mock", "tri", "--tri-unit", "12")
+    assert r.returncode == 2 and "--tri-unit" in r.stderr and "--tri-v" in r.stderr, r.stderr

@@ -1,0 +1,11 @@
+cases with exactly one coordinate at an exact tie of the 1/256 grid: 75
+  class                  cases  median error half up (min..max)  half down (min..max), in 2^-23
+  (the 127/256 row: the columns are rounded down, the rule, and rounded up)
+  127/256  -     axis -      3      0.10 .. 0.34           3.63 .. 54.71
+  tie      even  axis x     22      0.04 .. 5.11           3.28 .. 4461.09
+  tie      even  axis y     31      0.05 .. 1.37           7.01 .. 8977.68
+  tie      odd   axis x      8      0.09 .. 3.52          68.47 .. 12382.24
+  tie      odd   axis y     14      0.05 .. 3.33          15.31 .. 5213.36
+tie cases: half up has the smaller median in 75 of 75
+tie cases with a median error of at most 1 U: half up 59, half down 0
+cases with one coordinate at 127/256 of a grid unit: 3; median error rounded down (the rule) 0.34, 0.10, 0.21, rounded up 54.71, 43.50, 3.63 (2^-23)
