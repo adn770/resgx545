@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# isp bg words: 0 probes (a script, bg-words.sh).
+# Q066: render details dwords 69, 76 and 77 bit by bit through the kernel poke.
+needs = ["render", "kpoke"]
+name = "isp-bg-words"
+script = "bg-words.sh"

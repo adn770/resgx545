@@ -456,7 +456,11 @@ they name: a heap base or a buffer's device address.
 | 37 | `0x0a70` | `EVENT_OTHER_PDS_INFO` | `0x00000006` |
 | 38 | `0x0a58` | `EVENT_PDS_ENABLE` | `0x2204b00f` |
 
-(Evidence: E006.) What `0x0810`-`0x0818` control is open (Q001).
+(Evidence: E006, E403, E404.) What `0x0810`-`0x0818` control is open (Q001), narrowed by E403 and
+E404: none changes a job's time or causes a fault at any load tried, and a reset (one tried) runs
+this part again;
+`0x0818` with bit 8 set and bit 10 clear makes a triangle draw wrong after another of a
+different size, the job reporting ok.
 
 **Deinit** (9 writes): clear `EVENT_PDS_ENABLE`, `EVENT_OTHER_PDS_EXEC`, `_DATA` and `_INFO`,
 `USE_CODE_BASE_15`, `EVENT_HOST_ENABLE` and `EVENT_HOST_ENABLE2`, then `CLKGATECTL = 0` and
@@ -629,7 +633,8 @@ queue's `EMPTY` flag and bits 15:0 its served-event `COUNT`, which fits (emgd-ps
 - **Whether any payload value depends on the core revision or core id** the kernel reports to
   srvinit. The DDK version, build and build options do not (E352); the core words were 0 in
   every run, so a capture with nonzero ones would settle it.
-- **What `0x0810`, `0x0814` and `0x0818` control** (Q001).
+- **What `0x0810`, `0x0814` and `0x0818` control** (Q001): `0x0818` bits 8 and 10 reach the
+  render path (E404); the rest is open.
 - **The SGX clock**: 399.0 MHz, or a tick and a `TIMER` fed from another reference (Q002).
 
 *Based on E001, E011; `doc/specs/fw_format.md`.*

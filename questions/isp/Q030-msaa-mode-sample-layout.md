@@ -3,7 +3,7 @@ id = "Q030"
 question = "where do a multisampled render's tiles past the first land in the target, and what do the TE anti-aliasing bits change?"
 unit = "isp"
 phase = 10
-evidence = ["E210", "E211", "E219", "E220", "E281"]
+evidence = ["E210", "E211", "E219", "E220", "E281", "E415"]
 terms = ["CR_ISP_MSAA", "CR_ISP_MSAA.MODE", "CR_ISP_MSAA.ENABLE", "CR_ISP_MULTISAMPLECTL", "CR_TE_AA", "programmable sample positions"]
 +++
 
@@ -25,3 +25,11 @@ To settle it: the small triangle moved tile by tile across a 64x64 target under 
 fitted per tile with isp_words.py layout --joint, to find each tile's place; the same with each
 combination of the TE bits, with the render memory dumped to see whether the TA's region headers
 change with them.
+
+Narrowed in 11.15 (E415, one run of four tables, three triangle phases and three rows each): a small
+triangle in each tile of a 64x64 target under modes 1 and 2 is drawn only in the first and third
+tile columns with the TE anti-aliasing bits clear and only in the middle column with them set; every
+drawn triangle lands at its tile's place plus a constant (4 pixels right, and mode 2 four pixels
+down), not at a displacement that grows with the tile. So the TE bits choose which tile columns a
+multisampled render writes [infer]. Still open: the sample layout per tile (the joint fit per tile),
+the rows (all drawn alike here) and what the unwritten columns hold. Status: narrowed, not answered.

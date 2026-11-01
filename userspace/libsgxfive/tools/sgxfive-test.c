@@ -533,15 +533,31 @@ static bool fill_ok(const void *ctx, uint32_t x, uint32_t y, uint32_t v, uint32_
 	return v == *want;
 }
 
-/* Wait for a fill or copy unless its submission failed; print the job line; the error. */
-static int xfer_job(struct side *s, int submit_err)
+/*
+ * Wait for a fill or copy unless its submission failed; print the job line and, for a job
+ * that was submitted, its time (from t0, taken before the submission, to the wait's return);
+ * the error.
+ */
+static int xfer_job(struct side *s, int submit_err, long long t0)
 {
 	int wait_err = 0;
 
 	if (!submit_err)
 		wait_err = sgxfive_xfer_wait(s->x, WAIT_NS);
 	print_job(submit_err, wait_err);
+	if (!submit_err)
+		printf("job time: %lld us\n", (now_ns() - t0) / 1000);
 	return submit_err ? submit_err : wait_err;
+}
+
+/* A probe's wait, its time (from t0) printed when the job completed. */
+static int probe_wait(struct sgxfive_xfer *x, const char *name, long long t0)
+{
+	const int ret = sgxfive_xfer_wait(x, WAIT_NS);
+
+	if (!ret)
+		printf("probe %s: job time: %lld us\n", name, (now_ns() - t0) / 1000);
+	return ret;
 }
 
 static int cmd_fill(struct tool *t, const struct opts *o)
@@ -552,6 +568,7 @@ static int cmd_fill(struct tool *t, const struct opts *o)
 	struct sgxfive_surface dst;
 	uint32_t *p = NULL, bad = 0;
 	uint64_t addr = 0;
+	long long t0;
 	struct side s;
 	int ret = side_init(t, &s);
 
@@ -561,7 +578,8 @@ static int cmd_fill(struct tool *t, const struct opts *o)
 	if (!ret) {
 		sgxfive_xfer_set_hook(s.x, sgxfive_poke_hook,
 				      &(struct sgxfive_poke_set){ o->pokes, o->npokes });
-		ret = xfer_job(&s, sgxfive_xfer_fill(s.x, &dst, &r, o->colour, 0));
+		t0 = now_ns();
+		ret = xfer_job(&s, sgxfive_xfer_fill(s.x, &dst, &r, o->colour, 0), t0);
 		print_regs(t, o);
 		print_target(&(struct target){ o->width, o->height, o->stride / 4,
 					       p + (uint64_t)o->y * (o->stride / 4) + o->x,
@@ -623,6 +641,7 @@ static int cmd_copy(struct tool *t, const struct opts *o)
 	uint32_t *s = NULL, *d = NULL, bad = 0;
 	const uint32_t sw = o->src_stride / 4, dw = o->dst_stride / 4;
 	uint64_t saddr = 0, daddr = 0;
+	long long t0;
 	struct side sd;
 	int ret = side_init(t, &sd);
 
@@ -637,7 +656,8 @@ static int cmd_copy(struct tool *t, const struct opts *o)
 	if (!ret) {
 		sgxfive_xfer_set_hook(sd.x, sgxfive_poke_hook,
 				      &(struct sgxfive_poke_set){ o->pokes, o->npokes });
-		ret = xfer_job(&sd, sgxfive_xfer_copy(sd.x, &src, o->sx, o->sy, &dst, &r, 0));
+		t0 = now_ns();
+		ret = xfer_job(&sd, sgxfive_xfer_copy(sd.x, &src, o->sx, o->sy, &dst, &r, 0), t0);
 		print_regs(t, o);
 		print_target(&(struct target){ o->width, o->height, dw,
 					       d + (uint64_t)o->y * dw + o->x, copy_ok, o },
@@ -1299,6 +1319,7 @@ static void probe_one(struct tool *t, const struct probe_file *f, const struct p
 	struct sgxfive_bo *bo = NULL, *sbo = NULL, *cbo = NULL;
 	uint32_t *p = NULL, *sp = NULL, *cp = NULL;
 	uint64_t addr = 0, saddr = 0, caddr = 0;
+	long long t0 = 0;
 	struct side s;
 	char why[96];
 	int ret;
@@ -1338,6 +1359,7 @@ static void probe_one(struct tool *t, const struct probe_file *f, const struct p
 			sgxfive_xfer_set_hook(s.x, sgxfive_poke_hook,
 					      &(struct sgxfive_poke_set){ po->pokes, po->npokes });
 		}
+		t0 = now_ns();
 		if (po->coords) {
 			const struct sgxfive_surface csrc = { caddr, 64, 32, 256 };
 
@@ -1350,7 +1372,7 @@ static void probe_one(struct tool *t, const struct probe_file *f, const struct p
 		probe_late(f->name, sp, po);
 	if (ret) {
 		printf("probe %s: failed: %s\n", f->name, strerror(-ret));
-	} else if ((ret = sgxfive_xfer_wait(s.x, WAIT_NS))) {
+	} else if ((ret = probe_wait(s.x, f->name, t0))) {
 		/* faulted or hung: recovered, the job failed and the context is lost */
 		printf("probe %s: failed: %s\n", f->name, job_error(ret, why, sizeof(why)));
 		probe_report_failed(f->name, sp, 32);

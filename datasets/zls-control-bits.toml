@@ -1,0 +1,10 @@
+title = "script table zls/control-bits"
+repo = "data"
+paths = ["zls/control-bits/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 4
+size = 185851
+sha256 = "ff11bf199b476c51dcb471935f6fe2a3ada9d7095681990c4c2e931c35ae672d"
+recipe = "probes/zls/control-bits.toml"
+needs = ["render", "kpoke"]

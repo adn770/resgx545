@@ -30,7 +30,8 @@ object at the first page of the parameter buffer and a control-stream page at 0x
   object and the stream page (81 non-zero dwords in the first two pages); in the follow-up run
   it holds neither, as for the other hangs. Its TA data is zero in both runs.
 - Bits 11:9 = 7: in the probe job it completes and its dump is the drawn triangle's in both runs
-  (E185); the sweep that hangs on the same value is E060's, and the difference is Q015.
+  (E185); the sweep that hangs on the same value is E060's, and E413's alternation is the
+  difference.
 
 **What this shows.** The first run fits "the job stops before the TA writes the object": the pixel
 hang leaves its object and the other four leave none. The follow-up run does not repeat that

@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# edm identity at boot: 0 probes (a shell script run on the laptop by hand, not by the campaign).
+# render_uapi.md section 4 and Q005: what DEV_QUERY reports of the firmware's identity before the
+# firmware runs, after its load and after a reset, in a build with and without the debug option
+needs = []
+name = "edm-identity-at-boot"
+script = "identity-at-boot.sh"

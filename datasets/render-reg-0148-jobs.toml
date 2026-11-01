@@ -1,0 +1,10 @@
+title = "script table render/reg-0148-jobs"
+repo = "data"
+paths = ["render/reg-0148-jobs/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 4
+size = 18929
+sha256 = "fff69e3e569da31932bb39b7e59c18e6444c43b0fd9033624dde8cb9ab6ce6c3"
+recipe = "probes/render/reg-0148-jobs.toml"
+needs = ["render", "kpoke"]

@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# platform register limits, scanned: 0 probes (a script, register-limits-scan.sh).
+# Q001: the triangle with 0x0818 = 0x3ff (register-limits) drew wrongly at 256x256 and more:
+# where, and for which values. The triangle at sizes 32 to 512 with 0x0818 at its init value
+# and at 0x3ff; every fourth value of 0x0818 (0 to 0x7ff) and every value with bit 8 set and bit 10 clear
+# around a 256x256 triangle (the full 2048 values wrapped the kernel ring); the single bits and
+# their complements of 0x0814 and 0x0810 around it; the failing values again at 128x128.
+needs = ["render", "kreg"]
+name = "platform-register-limits-scan"
+script = "register-limits-scan.sh"

@@ -3,7 +3,7 @@ id = "Q070"
 question = "what do the TA object's format word bits 15:8 and above and its set masks select beyond the settings seen, and does the fitted region test hold for lines and points?"
 unit = "ta"
 phase = 11
-evidence = ["E176", "E177", "E180", "E181", "E185", "E306", "E307", "E308"]
+evidence = ["E176", "E177", "E180", "E181", "E185", "E306", "E307", "E308", "E414"]
 terms = ["PB_OBJ.PDS_WORDS", "PB_OBJ.SET_MASKS", "PB_OBJ.FORMAT", "CSTREAM.PRIM_TILES",
          "REGION_HDR.POS"]
 +++
@@ -37,3 +37,10 @@ placed on the boundaries, a vertex or an edge exactly on the line between a regi
 tile's corner and on the region's edges, and triangles whose primitive mask needs the forms 0x8a and
 0x8c (several primitives of one object, as in the five-copy scene), to test the fitted boundary
 rules.
+
+Narrowed in 11.15 (E414): the index list's topology (bits 29:26 of its header) on our triangle job
+with 3 and with 15 vertices: 3 (strip) and 4 (fan) give the triangles of a strip (16, 17, 18), (17,
+19, 18), ... and a fan (16, 17, 18), (16, 18, 19), ...; 1 (line) hangs the job and 2 (point)
+completes with no object and every pixel the background, so lines and points cannot be run through
+this stream and the region test's line and point rules (the second part) stay untested; the format
+word's other bits and the vtx_coords 4 to 11 dumps were not run. Status: narrowed, not answered.

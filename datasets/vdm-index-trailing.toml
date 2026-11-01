@@ -1,0 +1,10 @@
+title = "probe table vdm/index-trailing"
+repo = "data"
+paths = ["vdm/index-trailing/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 229
+size = 331251896
+sha256 = "24be6f2ebead95d2dabb77f886e151962a0f4e9ee11ffc21ed89eeb7b89ddaf5"
+recipe = "probes/vdm/index-trailing.toml"
+needs = ["render", "render_param", "render_tadata"]

@@ -18,3 +18,7 @@ fractional LODs; the fields on a chain of other sizes and on non-square textures
 
 To settle it: a tagged chain of eight levels (128x128 down to 1x1) with 20:17 at 5 to 15, the
 bias at LOD 1.25, 1.5 and 1.75 with T0 bit 9 set, and the same on a 32x16 chain.
+
+Not run in 11.15: the settle plan needs a tagged chain of eight levels and a 32x16 chain; the tool's
+tagged chain has five levels and is square. Status: narrowed, not answered; missing: a texture
+option for the chain's depth and shape.

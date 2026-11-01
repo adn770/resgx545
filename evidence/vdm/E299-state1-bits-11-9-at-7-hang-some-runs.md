@@ -9,8 +9,8 @@ data = ["vdm-state1-split", "ta-te-psg"]
 terms = ["VDM_STATE1.BITS11_9"]
 +++
 
-**What runs.** The sweep case of Q015 (`vdm:1^=0xa00`, bits 11:9 from 2 to 7) split by what the
-sweep and the earlier probe did differently, one job each, after an unpoked control.
+**What runs.** The sweep case of E060 and E185 (`vdm:1^=0xa00`, bits 11:9 from 2 to 7) split by
+what the sweep and the earlier probe did differently, one job each, after an unpoked control.
 
 **Results.**
 

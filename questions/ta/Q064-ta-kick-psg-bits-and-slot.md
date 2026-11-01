@@ -3,7 +3,7 @@ id = "Q064"
 question = "what does the region header mark that CR_TE_PSG bit 21 makes the TA write mean to the 3D, and is bit 1 of CR_DPM_STATE_CONTEXT_ID the 3D's DPM slot as bit 2 is the TA's?"
 unit = "ta"
 phase = 11
-evidence = ["E158", "E172", "E305"]
+evidence = ["E158", "E172", "E305", "E409"]
 terms = ["CR_TE_PSG", "CR_DPM_STATE_CONTEXT_ID", "REGION_HDR.FLAGS"]
 +++
 
@@ -26,3 +26,11 @@ slot.
 To settle it: `regtimeline` snapshots of 0x0630 during two-render jobs (11.3's tool samples while
 the job runs); a render whose RT data state has bit 8 (a kernel debug switch, 11.10) against one
 with bit 21 set through the command, every pixel and the visibility counters read back.
+
+Narrowed in 11.15 (E409, 15 runs): CR_DPM_STATE_CONTEXT_ID reads 0 at every one of 2.96 million
+samples taken while one to three 1024x768 renders ran, so the slot's bit 1 cannot be read this way;
+CR_TE_PSG drops from 0x01400000 to 0x00400000 for 17 microseconds at each render's kick (bit 24
+cleared and set again), and with the command's bit 21 set it reads 0x01600000 before the first dip.
+The render whose RT data has state bit 8 set could not be made: no debug switch sets that bit (the
+render context flags of E168 are not it). Status: narrowed, not answered; the missing piece is a
+kernel poke for the RT data's state word.

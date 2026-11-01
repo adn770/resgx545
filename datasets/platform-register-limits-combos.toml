@@ -1,0 +1,10 @@
+title = "script table platform/register-limits-combos"
+repo = "data"
+paths = ["platform/register-limits-combos/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 4
+size = 41841
+sha256 = "36a7e1f7759b90ccdc0fde456d6d9c33eec46e98dbe14e5ec7954164b4c9e211"
+recipe = "probes/platform/register-limits-combos.toml"
+needs = ["render", "kreg"]

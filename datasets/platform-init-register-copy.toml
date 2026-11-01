@@ -1,0 +1,9 @@
+title = "sweep table platform/init-register-copy"
+repo = "data"
+paths = ["platform/init-register-copy/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 5
+size = 261276
+sha256 = "f61d8480628d15d344b26300be40173f7ba51b21f0ee7db66515cb0bb805d9f2"
+recipe = "probes/platform/init-register-copy.toml"

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: 2026 Josep Torra
-# usse leftover output: 0 sweeps, 1 probe (Q018).
+# usse leftover output: 0 sweeps, 1 probe (E373).
 needs = ["render"]
 
 [[probe]]

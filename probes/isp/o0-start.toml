@@ -1,0 +1,44 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# isp o0 start: 3 probes (written once for 11.15, not regenerated).
+# Q073: a pass-through shader after jobs that wrote a known colour, at three target sizes.
+needs = ["render", "kpoke"]
+
+[[probe]]
+name = "isp-o0-start-64"
+question = "o0 at the start of an opaque pass, target 64x64, after jobs that wrote a known colour"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [0x40, 0x40]
+max_size = [0x80, 0x80]
+pixels = true
+inputs = ["OP"]
+labels = ["A job", "P job", "P job", "B job", "P job", "A job", "P job", "P job", "B job", "P job", "P job"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, o0"], ["mov.skipinv.end o0, o0"], ["mov.skipinv.end o0, #0xFF112233"], ["mov.skipinv.end o0, o0"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, o0"], ["mov.skipinv.end o0, o0"], ["mov.skipinv.end o0, #0xFF112233"], ["mov.skipinv.end o0, o0"], ["mov.skipinv.end o0, o0"]]
+
+[[probe]]
+name = "isp-o0-start-96"
+question = "o0 at the start of an opaque pass, target 96x96, after jobs that wrote a known colour"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [0x60, 0x60]
+max_size = [0x80, 0x80]
+pixels = true
+inputs = ["OP"]
+labels = ["A job", "P job", "P job", "B job", "P job", "A job", "P job", "P job", "B job", "P job", "P job"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, o0"], ["mov.skipinv.end o0, o0"], ["mov.skipinv.end o0, #0xFF112233"], ["mov.skipinv.end o0, o0"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, o0"], ["mov.skipinv.end o0, o0"], ["mov.skipinv.end o0, #0xFF112233"], ["mov.skipinv.end o0, o0"], ["mov.skipinv.end o0, o0"]]
+
+[[probe]]
+name = "isp-o0-start-128"
+question = "o0 at the start of an opaque pass, target 128x128, after jobs that wrote a known colour"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [0x80, 0x80]
+max_size = [0x80, 0x80]
+pixels = true
+inputs = ["OP"]
+labels = ["A job", "P job", "P job", "B job", "P job", "A job", "P job", "P job", "B job", "P job", "P job"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, o0"], ["mov.skipinv.end o0, o0"], ["mov.skipinv.end o0, #0xFF112233"], ["mov.skipinv.end o0, o0"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, o0"], ["mov.skipinv.end o0, o0"], ["mov.skipinv.end o0, #0xFF112233"], ["mov.skipinv.end o0, o0"], ["mov.skipinv.end o0, o0"]]

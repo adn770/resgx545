@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# render reg 0148 jobs: 0 probes (a script, reg-0148-jobs.sh).
+# Q043: render details dword 9 bit 0 in depth, multisampled and large renders.
+needs = ["render", "kpoke"]
+name = "render-reg-0148-jobs"
+script = "reg-0148-jobs.sh"

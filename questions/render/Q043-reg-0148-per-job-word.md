@@ -3,7 +3,7 @@ id = "Q043"
 question = "what does bit 0 of CR_REG_0148, which the firmware loads for every render, partial render and transfer, change, when no bit of the word changes a triangle, five copies, a fill or a copy?"
 unit = "render"
 phase = 11
-evidence = ["E056", "E163", "E160", "E015", "E028", "E252", "E302"]
+evidence = ["E056", "E163", "E160", "E015", "E028", "E252", "E302", "E412", "E406"]
 terms = ["CR_REG_0148"]
 +++
 
@@ -22,3 +22,11 @@ To settle it: bit 0 set in jobs that use what the clients here leave off: a rend
 and stencil buffers loaded and stored, a multisampled render, a render that overflows into
 partial renders, a copy with filtering, each against its control, every pixel and the visibility
 counters read back.
+
+Narrowed in 11.15 (E412, three runs each): bit 0 of the word at 0 and at 1 gives the same image,
+stored pages and times in a render with depth and stencil stored, in 4x renders in modes 1 and 2, in
+a 1024x768 render and in one that overflows the parameter buffer (0x24 and 0x30 pages, the same
+wrong-pixel counts), all with shaders that write o0 only. With the tagged shader of E406 it is not
+inert: bit 0 set keeps o1 from landing on other pixels (tags 1, 3, 5, 7 where the plain job shows 1
+to 7, 3 of 3). Not run: a copy with filtering
+(no filtered copy in the transfer tool). Status: narrowed, not answered.

@@ -903,8 +903,10 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   `ROGUE_CR_TIMER` (3, linux-imagination).
 - `CR_REG_0148` G0151 (0x0148): inferred reading (unconfirmed): a one-bit (bit 0) per-job mode of
   the 3D and transfer paths for a feature these clients leave off: no value changes a triangle, five
-  copies, a fill or a copy. Measured: per-render word the host supplies with the 3D registers
-  (transfer command and render details); 0 in captures [infer]. From `CR_REG_0148` (ours, resgx545).
+  copies, a fill or a copy of a shader that writes o0 only (E037, E412); with a shader that writes
+  o1 to o3 as well, bit 0 changes where they land (E406). Measured: per-render word the host
+  supplies with the 3D registers (transfer command and render details); 0 in captures [infer]. From
+  `CR_REG_0148` (ours, resgx545).
 - `CR_VDM_START` G0459 (0x0200): starts the VDM (TA) pass. From `PSB_CR_VDM_START` (1c,
   emgd-psb_regs).
 - `CR_TE_AA` G0158 (0x0204): tiling-engine anti-aliasing word: 0x20000000 in every single-sample
@@ -1214,8 +1216,9 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   `CR_REG_0814` (ours, resgx545).
 - `CR_REG_0818` G0157 (0x0818): inferred reading (unconfirmed): an enable mask or upper limit left
   at its widest (11 bits all ones). Measured: set once by the init script to 0x7ff; implemented bits
-  10:0; no effect on a fill, copy or triangle in any value [infer]. From `CR_REG_0818` (ours,
-  resgx545).
+  10:0; no effect on a fill or copy, a job's time or a fault in any value; on a triangle none
+  either, but with bit 8 set and bit 10 clear the triangle drawn after a render of another size is
+  wrong (E404, E405) [infer]. From `CR_REG_0818` (ours, resgx545).
 - `CR_TPU_YUV_CSC0_0` G0165 (0x0820): Word 0 of colour-space set 0, the YUV-to-RGB coefficients a
   UYVY copy applies: Y to R in bits 9:0 and Y to G in bits 25:16, signed in 128ths; the
   limited-range BT.601 numbers are loaded as 0x00950095 (149 and 149). From `CR_TPU_YUV_CSC0_0`
@@ -1771,8 +1774,9 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   which the 3D kick writes to CR_ISP_REGION_HEADER_BASE (0x0408); a partial render offsets it by the
   render-target index [infer]. From `hw_render_details.isp_region_header_base` (ours, resgx545).
 - `hw_render_details.reg_0148` G0696 (HWRENDERDETAILS+0x024): inferred reading (unconfirmed): render
-  details word 9, which the 3D kick writes to CR_REG_0148 (0x0148); what it holds is not shown
-  [infer]. From `hw_render_details.reg_0148` (ours, resgx545).
+  details word 9, which the 3D kick writes to CR_REG_0148 (0x0148); its bit 0 changes where a
+  shader's o1 to o3 land under E406's setup and no other effect is shown (E412) [infer]. From
+  `hw_render_details.reg_0148` (ours, resgx545).
 - `hw_render_details.isp_partial_region_base` G0539 (HWRENDERDETAILS+0x028): value the EDM copies
   verbatim into CR_ISP_PARTIAL_REGION_BASE (0x050c); a partial render points that register at the
   macrotile it renders [infer]. From `hw_render_details.isp_partial_region_base` (ours, resgx545).

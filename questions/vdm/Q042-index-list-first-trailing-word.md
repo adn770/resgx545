@@ -3,7 +3,7 @@ id = "Q042"
 question = "what do bits 27:24 of the index list's first trailing word (VDM_INDEX2) do, when its low bits move the list's first index and 0x0f000000 drops two of five triangles?"
 unit = "vdm"
 phase = 11
-evidence = ["E188", "E300", "E307", "E308"]
+evidence = ["E188", "E300", "E307", "E308", "E414"]
 terms = ["VDM_INDEX2.WORD", "VDM_INDEX0.WORDS_PRESENT", "VDM_INDEX3.INDEX_WRAP"]
 +++
 
@@ -26,3 +26,15 @@ To settle it: the five-copy job with copies at distinct positions (`copy_depth` 
 so that the dropped triangles show in the image and the object, at the offsets 1 to 6, 0x10,
 0x100, 0x1000, and at each of bits 24 to 27 alone; with 16-bit and 32-bit indices if the header
 selects the size.
+
+Narrowed in 11.15 (E414, five copies at distinct depths, the object's primitive list read, two runs
+each): the low bits are an offset in indices. With 0xf0000000 | k the object keeps the leading
+floor((16 - k) / 3) of the five triangles for k = 0 to 6 (five, five, four, four, four, three,
+three) and none for k = 0x10, 0x100 and 0x1000, the same in both runs. Of bits 27:24 only bit 24
+acts: alone or with 0xf0000000 it keeps three triangles and sets bit 15 in the first two primitive-
+list entries (the drop of E300's 0x0f000000); bits 25, 26 (the closed driver's flat-shading bit) and
+27 change nothing. Bits 31:28 at 0xf, 0xd and 0x7 change nothing (see Q092).
+
+Still open: what bit 24 does besides the drop and the winding mark on two entries; the offset's
+width beyond 4096 and whether k counts indices (the fit says indices, one past the list counted);
+what decides which two entries get bit 15. Status: narrowed, not answered.

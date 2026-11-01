@@ -11,13 +11,22 @@ glossary review.
 | `sweep.py` | the runner: tables, cases, runs (mock, local or over ssh), raw.txt, report |
 | `kernel_masks.toml` | what the kernel does with each word userspace submits |
 | `regtimeline.c` | samples registers read-only through `/dev/mem` around one command |
+| `loadsummary.py` | a script table's runs under register values: job times, held runs (11.15) |
+| `casesummary.py` | a script table's `one()` cases: job, wrong pixels, hash, time (11.15) |
 | `counters.py` | the visibility counters around every case, and the scan of saved runs |
 | `gate.sh` | the health check between tables |
 | `test_sweep.py`, `test_sweep_tables.py`, `test_counters.py` | the tests |
+| `test_loadsummary.py`, `test_casesummary.py` | the tests of the two summaries (11.15) |
 
 The sweeps themselves are tables under `probes/<unit>/` (see "Tables"); `tools/campaign` runs
 them in order, one dataset each, and `probes/transfer/gen_kernel_words.py` writes the
 kernel-word tables.
+
+### Job times
+
+A case's report line set carries the jobs' times: `sgxfive-test` prints `job time: N us` for a
+fill, a copy and a probe (and the triangle's `tri WxH #1: N us`), and the report gives the
+baseline's time, the spread of the cases' and the cases over twice or under half the median.
 
 ### Pixels against the baseline
 

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: 2026 Josep Torra
 # pds shade order: 0 sweeps, 1 probe. The vertex-colour cases of E133 in the order 0, 1, 2, 2, 1, 0, then a
-# source 1 case, three times (Q022): whether the ~300 pixels keep the previous job's colour.
+# source 1 case, three times (E392): whether the ~300 pixels keep the previous job's colour.
 needs = ["render"]
 
 [[probe]]

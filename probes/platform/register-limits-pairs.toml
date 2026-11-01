@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# platform register limits, in pairs: 0 probes (a script, register-limits-pairs.sh).
+# Q001: with 0x0818 = 0x3ff a triangle drew wrongly depending on the job that ran before it
+# (register-limits, register-limits-scan): every pair of triangle sizes, the first job and the
+# second run with the register at 0x3ff and at its init value 0x7ff, twice, and with the register
+# written between the two jobs.
+needs = ["render", "kreg"]
+name = "platform-register-limits-pairs"
+script = "register-limits-pairs.sh"

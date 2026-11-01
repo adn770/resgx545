@@ -28,7 +28,8 @@ stayed at 0 in all runs.
   triangle like the control (the pixels it shows are the o0 leftovers of an unwritten register, 3827
   background and 269 other pixels against 3792 and 304 for the control, and 3911 and 185 against
   3640 and 456 in the follow-up run, so their count is not a fixed number). The sweep hangs and the
-  probe renders in both runs, so the difference between the two jobs repeats (Q015).
+  probe renders in both runs, so the difference between the two jobs repeats (E413 explains it as
+  an alternation).
 - Bits 15:13, sweep: 0 (`^=0x2000`), 5 (`^=0x8000`) and 6 (`^=0xe000`) hang the job; 2, 3, 4 and 7
   (`^=0x4000`, `0x6000`, `0xa000`, `0xc000`) give the baseline image. The three probe jobs setting
   0, 5 and 6 hang as well, in both runs.

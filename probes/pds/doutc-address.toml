@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# pds doutc address: 2 probes (written once for 11.15, not regenerated).
+# Q057: doutc with a mapped address in each of its words, in the primary pixel program.
+needs = ["render", "kpoke"]
+name = "pds-doutc-address"
+
+[[probe]]
+name = "pds-doutc-address-r1"
+question = "movs doutc with the scratch buffer's address as one of its four words"
+source = "pds_iter_if.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [0x40, 0x40]
+pixels = true
+params = { A = "0x20000800", C = "0x5CAF0000", U = "0x01000004", M = "0" }
+inputs = ["OP"]
+labels = ["control", "scratch address as word 0", "scratch address as word 1", "scratch address as word 2", "scratch address as word 3"]
+cases = [["nop"], ["movs doutc, ds0[4], ds0[5], ds1[4], ds1[5]"], ["movs doutc, ds0[5], ds0[4], ds1[4], ds1[5]"], ["movs doutc, ds0[5], ds1[4], ds0[4], ds1[5]"], ["movs doutc, ds0[5], ds1[4], ds1[5], ds0[4]"]]
+
+[[probe]]
+name = "pds-doutc-address-r2"
+question = "movs doutc with the scratch buffer's address as one of its four words"
+source = "pds_iter_if.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [0x40, 0x40]
+pixels = true
+params = { A = "0x20000800", C = "0x5CAF0000", U = "0x01000004", M = "0" }
+inputs = ["OP"]
+labels = ["control", "scratch address as word 0", "scratch address as word 1", "scratch address as word 2", "scratch address as word 3"]
+cases = [["nop"], ["movs doutc, ds0[4], ds0[5], ds1[4], ds1[5]"], ["movs doutc, ds0[5], ds0[4], ds1[4], ds1[5]"], ["movs doutc, ds0[5], ds1[4], ds0[4], ds1[5]"], ["movs doutc, ds0[5], ds1[4], ds1[5], ds0[4]"]]

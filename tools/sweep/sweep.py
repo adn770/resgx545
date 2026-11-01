@@ -563,6 +563,36 @@ def parse_result(out: str) -> Result:
                   scratch=(pages, int(dwords.group(1))) if dwords and pages else ())
 
 
+def job_time_us(out: str) -> int | None:
+    """The job's time in microseconds: the tool's "job time: N us" line (fill, copy), or
+    the triangle's "tri WxH #1: N us" (the first render); None without either."""
+    m = re.search(r"^(?:job time|tri \d+x\d+ #\d+): (\d+) us$", out, re.M)
+    return int(m[1]) if m else None
+
+
+def time_lines(s: "Sweep", cs: list, done: dict, base: Result | None) -> list:
+    """The report's lines on the jobs' times: the baseline's, the spread of the cases' (min,
+    median, max) and the cases that took more than twice the median or less than half of it."""
+    times = [(c.id, job_time_us(done[c.id].out)) for c in cs if c.id in done]
+    times = [(cid, t) for cid, t in times if t is not None]
+    if not times:
+        return []
+    ts = sorted(t for cid, t in times if cid != cs[0].id)
+    lines = []
+    b = job_time_us(done[cs[0].id].out) if cs[0].id in done else None
+    if b is not None:
+        lines.append(f"baseline time: {b} us")
+    if ts:
+        med = ts[len(ts) // 2]
+        lines.append(f"case times: {len(ts)} timed, min {ts[0]} us, median {med} us, "
+                     f"max {ts[-1]} us")
+        odd = [f"{cid} ({t} us)" for cid, t in times
+               if cid != cs[0].id and (t > 2 * med or 2 * t < med)]
+        if odd:
+            lines.append("odd times: " + "; ".join(odd))
+    return lines
+
+
 def _kpoke_key(text: str) -> tuple | None:
     """("ta", 3, True, 1) from "ta:3^=0x1" or the kernel's "ta:3^=0x00000001"."""
     m = re.fullmatch(r"(\w+):(0x[0-9a-fA-F]+|\d+)(\^?)=(0x[0-9a-fA-F]+|\d+)", text)
@@ -835,6 +865,7 @@ def report(s: Sweep, cs: list, done: dict, stopped: str | None = None,
         hot = [f"{cid} ({x})" for cid, x in sums if x]
         lines.append(f"counters: {sum(x is not None for _, x in sums)} recorded, "
                      f"{len(hot)} counted" + (": " + "; ".join(hot) if hot else ""))
+    lines += time_lines(s, cs, done, base)
     if stopped:
         lines.append(stopped)
     lines.append("")

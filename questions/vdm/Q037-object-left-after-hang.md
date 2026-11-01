@@ -3,7 +3,7 @@ id = "Q037"
 question = "why did one of E186's runs find no object after the job hung in its pixel task, when a dump taken before recovery always holds it?"
 unit = "vdm"
 phase = 10
-evidence = ["E186", "E318"]
+evidence = ["E186", "E318", "E422"]
 terms = ["VDM_STATE1.BITS15_13", "Parameter Buffer (PB)"]
 +++
 
@@ -21,3 +21,8 @@ itself is not shown.
 
 To settle it: the pixel-task control held on fresh boots, a few times, with the parameter
 buffer's page table read before the job.
+
+Narrowed in 11.15 (E422, seven hung pixel-task jobs, five held and two not held): the object is in
+the parameter buffer in all seven, and the TA data holds its 71 dwords in the five held dumps and
+none after a recovery; the missing object of E186 is not reproduced. The PB page table was not read
+(only the page count) and no fresh boot was made. Status: narrowed, not answered.

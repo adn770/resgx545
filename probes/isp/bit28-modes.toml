@@ -1,0 +1,213 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# isp bit28 modes: 14 probes (written once for 11.15, not regenerated).
+# Q031: ISP word 0 bit 28 under the multisample modes with 0x0520 clear and set, one case a probe.
+needs = ["render", "kpoke"]
+
+[[probe]]
+name = "isp-bit28-modes-m1-s0"
+question = "ISP word 0 bit 28 under mode 1 with 0x0520 at 0x0, one case"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+blk = { 1 = 0x11d00200 }
+cmd = { 10 = 0xeaa26e26, 13 = 0x80000001, 16 = 0xeaa26e26 }
+kpoke = ["rd:19=0x0"]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["mode 1, 0x0520 0x0"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-bit28-modes-m1-spos"
+question = "ISP word 0 bit 28 under mode 1 with 0x0520 at 0xeaa26e26, one case"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+blk = { 1 = 0x11d00200 }
+cmd = { 10 = 0xeaa26e26, 13 = 0x80000001, 16 = 0xeaa26e26 }
+kpoke = ["rd:19=0xeaa26e26"]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["mode 1, 0x0520 0xeaa26e26"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-bit28-modes-m2-s0"
+question = "ISP word 0 bit 28 under mode 2 with 0x0520 at 0x0, one case"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+blk = { 1 = 0x11d00200 }
+cmd = { 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+kpoke = ["rd:19=0x0"]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["mode 2, 0x0520 0x0"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-bit28-modes-m2-spos"
+question = "ISP word 0 bit 28 under mode 2 with 0x0520 at 0xeaa26e26, one case"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+blk = { 1 = 0x11d00200 }
+cmd = { 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+kpoke = ["rd:19=0xeaa26e26"]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["mode 2, 0x0520 0xeaa26e26"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-bit28-modes-m1-s0-r2"
+question = "ISP word 0 bit 28 under mode 1 with 0x0520 at 0x0, one case"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+blk = { 1 = 0x11d00200 }
+cmd = { 10 = 0xeaa26e26, 13 = 0x80000001, 16 = 0xeaa26e26 }
+kpoke = ["rd:19=0x0"]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["mode 1, 0x0520 0x0"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-bit28-modes-m1-spos-r2"
+question = "ISP word 0 bit 28 under mode 1 with 0x0520 at 0xeaa26e26, one case"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+blk = { 1 = 0x11d00200 }
+cmd = { 10 = 0xeaa26e26, 13 = 0x80000001, 16 = 0xeaa26e26 }
+kpoke = ["rd:19=0xeaa26e26"]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["mode 1, 0x0520 0xeaa26e26"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-bit28-modes-m2-s0-r2"
+question = "ISP word 0 bit 28 under mode 2 with 0x0520 at 0x0, one case"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+blk = { 1 = 0x11d00200 }
+cmd = { 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+kpoke = ["rd:19=0x0"]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["mode 2, 0x0520 0x0"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-bit28-modes-m2-spos-r2"
+question = "ISP word 0 bit 28 under mode 2 with 0x0520 at 0xeaa26e26, one case"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+blk = { 1 = 0x11d00200 }
+cmd = { 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+kpoke = ["rd:19=0xeaa26e26"]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["mode 2, 0x0520 0xeaa26e26"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-bit28-modes-m0-s0"
+question = "bit 28 single-sampled, 0x0520 0x0"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+blk = { 1 = 0x11d00200 }
+kpoke = ["rd:19=0x0"]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["mode 0, 0x0520 0x0"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-bit28-modes-m0-s88"
+question = "bit 28 single-sampled, 0x0520 0x88"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+blk = { 1 = 0x11d00200 }
+kpoke = ["rd:19=0x88"]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["mode 0, 0x0520 0x88"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-bit28-modes-m0-s0-r2"
+question = "bit 28 single-sampled, 0x0520 0x0"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+blk = { 1 = 0x11d00200 }
+kpoke = ["rd:19=0x0"]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["mode 0, 0x0520 0x0"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-bit28-modes-m0-s88-r2"
+question = "bit 28 single-sampled, 0x0520 0x88"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+blk = { 1 = 0x11d00200 }
+kpoke = ["rd:19=0x88"]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["mode 0, 0x0520 0x88"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-bit28-modes-edge-s0"
+question = "bit 28 on the right triangle with a horizontal edge, single-sampled, 0x0520 0x0"
+source = "vtx_affine.s"
+host = "tri"
+slot = "vtxuse"
+slots = { pixel = "pix_green.s" }
+temps = 8
+blk = { 1 = 0x11d00200 }
+kpoke = ["rd:19=0x0"]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "C", "D", "E", "F"]
+labels = ["k = 0", "k = 6", "k = 12"]
+cases = [["0x3E638E39", "0xBD638E39", "0xBF400000", "0xBD638E39", "0x3E638E39", "0xBF400000"], ["0x3E5B05B0", "0xBD5B05B0", "0xBF3E3333", "0xBD5B05B0", "0x3E5B05B0", "0xBF3E3333"], ["0x3E527D28", "0xBD527D28", "0xBF3C6666", "0xBD527D28", "0x3E527D28", "0xBF3C6666"]]
+
+[[probe]]
+name = "isp-bit28-modes-edge-s88"
+question = "bit 28 on the right triangle with a horizontal edge, single-sampled, 0x0520 0x88"
+source = "vtx_affine.s"
+host = "tri"
+slot = "vtxuse"
+slots = { pixel = "pix_green.s" }
+temps = 8
+blk = { 1 = 0x11d00200 }
+kpoke = ["rd:19=0x88"]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "C", "D", "E", "F"]
+labels = ["k = 0", "k = 6", "k = 12"]
+cases = [["0x3E638E39", "0xBD638E39", "0xBF400000", "0xBD638E39", "0x3E638E39", "0xBF400000"], ["0x3E5B05B0", "0xBD5B05B0", "0xBF3E3333", "0xBD5B05B0", "0x3E5B05B0", "0xBF3E3333"], ["0x3E527D28", "0xBD527D28", "0xBF3C6666", "0xBD527D28", "0x3E527D28", "0xBF3C6666"]]

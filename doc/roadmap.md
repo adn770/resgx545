@@ -83,7 +83,8 @@ triangle and fault recovery on the laptop); questions Q005 and Q006. Sub-phase 6
 tables by unit (`probes/<unit>/<feature>.toml`), the campaign runner that runs them on a clean GPU
 and records the environment, the sweep runner with the ISP visibility counters around every case,
 and what the runs show: evidence E025 to E124 on the platform, the EDM, the transfer, PBE, texture,
-PDS, render, TA, ZLS, VDM, MTE, ISP and USSE, and questions Q007 to Q018.
+PDS, render, TA, ZLS, VDM, MTE, ISP and USSE, and questions Q007 to Q017 (the colour left in an
+output register is E373's).
 
 ### 2.7 Phase 7: the PDS
 
@@ -219,8 +220,8 @@ reading and records.
   program's input bit 3 (E083), the scheduler's slot and task ids (E086), the sampler's `T3` bits
   26:23 (E034, E242), an object vertex's 1/w (E176, E196), the TPU's luma-key words and
   colour-space set 1 (E038, E039, E040), and the TE's macrotile stride (E159, E175).
-- **VDM words.** The state word's open fields (Q015, Q037, Q047) and the index list's first trailing
-  word (Q042).
+- **VDM words.** The state word's open fields (Q037, Q047, Q102; E413 has the alternation of bits
+  11:9 = 7) and the index list's first trailing word (Q042).
 - **Units.** `MADD`, the unit beside each USSE pipe's iterator and texture unit, has two readings
   (Q048).
 
@@ -284,16 +285,17 @@ Sub-phase 11.13 needed no capture host either: the USSE batch ran on the laptop 
 `encoding-gaps-end.toml`, `moe-faults.toml`, `moe-state.toml`, `hazards.toml`, `g19.toml`,
 `globals.toml`, `leftover-o0.toml`, `idf-modes.toml`, `emit-flags.toml` and `loop-short.toml`).
 The two words the simulator stopped on are settled: a bank 6 destination with no index bit
-writes nothing a fill reads (E366, Q056), and `idiv`'s enc[47] is its repeat count's high bit
-(E367, Q079), now a field the decoder prints and the simulator runs. A word no form decodes
+writes nothing a fill reads (E366), and `idiv`'s enc[47] is its repeat count's high bit
+(E367), now a field the decoder prints and the simulator runs. A word no form decodes
 ends the program when its enc[50] is set (E368, Q080); the MOE faults come from the template's
 stores (E369, Q016) and the MOE state ends with its job (E370, Q051); a result is readable by
 the next instruction with or without `.nosched` (E371, Q052); `g19` reads by the instruction
 that reads it (E372, Q017); an unwritten output register keeps the last job's value, the
-0xff00ff00 of Q018 being the baseline triangle's (E373); the global registers of a triangle's
-pixel task (E374, Q053), `idf`'s other modes (E375, Q055), the vertex emits' incp and `.cut`
-(E376, Q054) and a fill's instruction cost, 0.3203 us per 2048 instances (E377, Q002). The
-simulator matches 271 of the batch's 340 vectors and differs on none (E378). Q050 had no run.
+0xff00ff00 of the leftover-colour scene being the baseline triangle's (E373); the global registers
+of a triangle's pixel task (E374, Q053), `idf`'s other modes (E375, Q055), the vertex emits' incp
+and `.cut` (E376, Q054) and a fill's instruction cost, 0.3203 us per 2048 instances (E377,
+Q002). The simulator matches 271 of the batch's 340 vectors and differs on none (E378). Q050 had no
+run.
 
 Sub-phase 11.14 needed no capture host either: the PDS, PBE and texture batch ran on the laptop over
 the cable, 20 tables (`probes/pds/mov128-bit15.toml`, `douta-primary.toml`, `fetch-pc-pad.toml`,
@@ -303,8 +305,8 @@ the cable, 20 tables (`probes/pds/mov128-bit15.toml`, `douta-primary.toml`, `fet
 `reg-0400-alpha.toml`, `emit-twice.toml`, `pack-floats-channels.toml`, `pack-floats-ramps.toml`;
 `probes/usse/store-sources.toml`; `probes/texture/copy-followup.toml`). The PDS word the simulator
 stopped on is settled: `mov128`'s bit 15 writes the `ds0` pair the last `mov32` or `movs` read from
-a data row (E379, Q077), which the simulator now runs after the instructions measured (E400). A
-store takes `pa` and `sa` as its data source (E380, Q097; Q098 opened on a fill's shared `pa`/`sa`);
+a data row (E379), which the simulator now runs after the instructions measured (E400). A
+store takes `pa` and `sa` as its data source (E380; Q098 opened on a fill's shared `pa`/`sa`);
 EMIT2 bits 29:28 rotate the stored image and bit 31 scales it by two (E382); SIDEBAND bits 8:6 pick
 the channel in pack modes 7 and 8 only (E383); `CR_REG_0400`'s low byte is ARGB1555's alpha
 threshold (E385); a double emit hangs a job of several tiles and on one tile disturbs the later

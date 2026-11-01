@@ -27,3 +27,8 @@ kernel hook (11.10).
 To settle it: a background object whose pixel program reads the target (a texture fetch of the
 colour buffer at the pixel's position) for the overflowing 1024x768 and 4096x4096 scenes, the image
 compared with the whole-buffer one; then with a depth test and a depth buffer stored by ZLS.
+
+Not run in 11.15: the settle plan needs a background object whose pixel program fetches the target
+at the pixel's position, which no tool option builds (the background program is the library's), and
+a depth buffer stored by ZLS across partial renders. Status: narrowed, not answered; missing: a
+background-object program option.

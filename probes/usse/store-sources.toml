@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: 2026 Josep Torra
 # usse store sources: 0 sweeps, 3 probes. What a store (stad) stores from a pa or sa data source
-# (Q097): r0-r7, pa0-pa7, sa0-sa7 and o1-o3 each hold their own marker; scratch dwords 0-31 the
+# (E380): r0-r7, pa0-pa7, sa0-sa7 and o1-o3 each hold their own marker; scratch dwords 0-31 the
 # stores of S0-S31; r10-r13 the moves of pa0, pa1, sa0, sa1 (the controls); every case 3 times.
 # The second probe writes pa only, sa only, both in the other order, or neither; the third
 # writes neither, with r20 and the pixel at other values per case.

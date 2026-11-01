@@ -3,7 +3,7 @@ id = "Q092"
 question = "what do bits 31:28 of the index list's first trailing word count, which the closed driver writes as 0xf on 1886 captured lists and 0xd on a draw of eight vertex attributes?"
 unit = "vdm"
 phase = 11
-evidence = ["E346", "E348"]
+evidence = ["E346", "E348", "E414"]
 terms = ["VDM_INDEX2.WORD", "MTECTL.FLAT_VERTEX"]
 +++
 
@@ -25,3 +25,10 @@ word at 0xf0000000, 0xd0000000 and 0x70000000, with eight vertex attributes and 
 whether the object and the image change; the flat-shading question (bits 27:24) belongs with
 Q042: capture GLES1's glShadeModel(GL_FLAT) over lines, strips and fans (GLSL ES 1.00 has no flat
 varying, so GLES2 cannot ask for it).
+
+Narrowed in 11.15 (E414, one run each): on our job the top nibble of the first trailing word at 0xf,
+0xd and 0x7 against a vertex task of 16 and of 14 vertices (VDM_TASK0.MAX_VERTICES 15 and 13), with
+15 and with 12 vertices, gives the object and the image of the control in all 12 cases, so the
+nibble is not tied to the vertex task's maximum in anything our job shows. The attribute count was
+not varied (the tool has no option for it), and the GLES1 flat-shading capture was not made. Status:
+narrowed, not answered.

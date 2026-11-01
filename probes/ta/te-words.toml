@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ta te words: 0 probes (a script, te-words.sh).
+# E407, Q085, Q064: the TA command's tiling words bit by bit at 256x256 and 1024x768, the closed
+# driver's CR_ISP_CTL and 0x04c4 values at three sizes, and the TE state and DPM slot registers
+# sampled while two and three renders run.
+needs = ["render", "kpoke", "regs"]
+name = "ta-te-words"
+script = "te-words.sh"

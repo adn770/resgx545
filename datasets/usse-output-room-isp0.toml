@@ -1,0 +1,10 @@
+title = "probe table usse/output-room-isp0"
+repo = "data"
+paths = ["usse/output-room-isp0/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 110
+size = 3875806
+sha256 = "c6c4f21d4e04692f96231a43f61469cb55decad8f93e125fbe30f88fed21668a"
+recipe = "probes/usse/output-room-isp0.toml"
+needs = ["render", "kpoke"]

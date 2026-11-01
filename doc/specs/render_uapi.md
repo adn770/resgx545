@@ -96,8 +96,15 @@ Rules:
   bridge (PCI 00:00.0) is below revision 4, which is the Cedarview laptop's case: textures must
   then lie in the TEXTURE heap;
 - the firmware's own core id, revision and `ddk_version` are valid only when
-  `GPU_INFO_SW_VALID` is set. The kernel sends the misc-info request only from the debug group's
-  `miscinfo` file, so a kernel without the debug option never sets it. The values taken from the
+  `GPU_INFO_SW_VALID` is set. The kernel sends the misc-info request in every build, at the end of
+  each boot of the firmware: right after the load at the first `CREATE_CONTEXT` and after each
+  reset. An answer sets the flag; a reply that names another core or revision than the registers
+  do, or a firmware built for a core other than 545, is kept and logged as a warning. No answer
+  clears the flag and logs once until the firmware answers again; the boot does not fail for it.
+  The flag is also cleared when the firmware stops, so while a reset restarts it `GPU_INFO` shows
+  no firmware identity and `FW_INFO`'s `ddk_version` is 0, and a boot that fails leaves none of
+  the firmware that is gone.
+  Before the first boot the flag is clear and the three values are 0. The values taken from the
   firmware file (`ddk_build`, `build_options`, `fw_format`) are reported once the firmware is
   loaded, and the kernel loads the firmware at the first `CREATE_CONTEXT` of any type (the
   context needs kernel memory that only a loaded firmware provides; no other ioctl boots it):
@@ -107,8 +114,9 @@ Rules:
 
 The query on a fresh boot reads `ddk 0.0.0 build 0 options 0x0` and `fw_state 0`, and the first
 context creation starts the firmware, so it has happened by the time the first job
-completes (E022). Whether the kernel should ask the firmware for its identity at
-every boot is Q005.
+completes (E022); the same creation asks the firmware for its identity, so the next `GPU_INFO`
+has the firmware's own core and the `ddk_version` of `FW_INFO` (Q005, decided: the kernel asks in
+every build, linux fork commit 32).
 
 Evidence: E022, E017.
 
@@ -423,14 +431,16 @@ partial.
 |---|---|
 | `-EIO` | a GPU fault was blamed on the job |
 | `-ETIMEDOUT` | a hang without a fault was blamed on the job |
-| `-ECANCELED` | queued behind the blamed job on its context, or its context was already lost |
+| `-ECANCELED` | behind the blamed job, its context lost, or cancelled at a hold's end |
 | `-ENOSPC` | a render whose scene needs more than the context's parameter buffer |
 
 The last case completes, but the firmware had to run partial renders, which the kernel does not
 support: the image is undefined. Nothing is reset, the context is not lost and its later jobs are
 unaffected.
 
-Other contexts' unfinished jobs run again after a recovery and signal without an error (E024).
+Other contexts' unfinished jobs run again after a recovery and signal without an error (E024),
+except that the reset which ends a held recovery (a debug aid, section 10) does not run again the
+jobs of a context that was destroyed meanwhile: they fail with `-ECANCELED`.
 
 ### 8.7 Limits
 
@@ -531,7 +541,8 @@ Held on the laptop, a render that faulted on its unmapped stream page stops the 
 only its job: the firmware answers no kernel command (the kernel's 500 ms wait for GETMISCINFO
 ends the query, about 0.65 s from the shell), another context's fill does not run, the
 firmware's tick no longer advances, and the bus interface keeps the fault until the reset; a job
-given up by its client stays queued and runs after the reset (E317, one run). Jobs hung without
+given up by its client stayed queued and ran after the reset (E317, one run; since linux fork
+commit 35 the reset that ends the hold cancels it with `-ECANCELED`, see below). Jobs hung without
 a fault and a fault of the firmware's own write leave the firmware's commands unanswered too
 (E318, E319, one run each; the tick was read for the fault only). A job hung in its pixel task
 has finished its TA: before recovery its render memory holds the object and the control streams,
@@ -616,8 +627,6 @@ checks of sections 2, 6 and 8.
   interrupt status names;
 - Q004: what a transfer context's flag bits 1 and 4 and a priority above 0 do (the interface
   accepts only priority 0);
-- Q005: whether the kernel should ask the firmware for its identity at every boot, so
-  `DEV_QUERY` reports it without the debug option;
 - Q006: whether a render client's VM can carry its own copy of the control block instead of a
   writable mapping of the device's (section 5.3).
 
@@ -637,14 +646,34 @@ the laptop's module since 11.12) and checked on the laptop:
 - KUnit (commit 31) checks a render's words with the kernel pokes applied once on top of the
   kernel's own, the RT data set `rtds_keep` leaves as it was, and every line of `render_words`.
 
-Left open for the kernel: a hold still lets a client give up on a job it queued behind the held
-one, which then runs after the reset with its memory gone and faults (E317).
+Q005 is decided: the kernel asks the firmware for its identity (GETMISCINFO) in every build, at
+the end of each boot, so after the firmware load and after each reset, and `DEV_QUERY` reports it
+without the debug option (section 4; linux fork commit 32, which also logs the answer). KUnit, in
+builds with and without the debug option, checks an answer, a reply for another core, no answer,
+the clear when the firmware stops, and `GPU_INFO` and `FW_INFO`'s `ddk_version` before and after
+each.
 
-Follow-ups for a later fork commit, found while writing E355:
+The follow-ups found while writing E355 are done in linux fork commits 33 and 34: a failed render
+context cleanup logs "no reset while recovery is held" instead of "resetting" when the reset is
+dropped, decided under the device lock together with the reset (`__sgxfive_recover`, with KUnit
+for the outcome; the log line is not captured), and the hold check reads the field with
+`READ_ONCE` through `sgxfive_recovery_held()` at its three sites.
 
-- `sgxfive_render_fini` logs "render context cleanup failed, resetting" even when the reset is
-  dropped under a hold (E355 shows that line with no reset after it): log "resetting" only when
-  no recovery is held, or say the reset is deferred;
-- tidy the comment block of `sgxfive_render_fini` to say the same;
-- `sgxfive_recovery_hold` reads `sgx->recovery_held` plainly in its CLEANUP branch while the
-  field is written with `WRITE_ONCE`: use `READ_ONCE` or `sgxfive_recovery_held()`.
+Decided (2026-11-07): a hold still lets a client give up on a job it queued
+behind the held one, by destroying its context or closing its file, and the job's context stays
+on the device's list until the job's fence signals. There were three rules for what the reset does
+with such a job: run it again, as for any context's unfinished job (section 10); cancel it at
+every reset; or cancel it only at the reset that ends a hold. The kernel takes the third: at the
+reset that ends a held recovery the unfinished jobs of a closed context fail with `-ECANCELED`
+(linux fork commit 35, `sgxfive_fence_cancel_closed`) instead of running again over memory their
+client has gone from, where they faulted (E317). A reset with no hold keeps the old rule: they run
+again. The fence of a cancelled job can be a sync dependency of another client's job, which then
+fails with `-ECANCELED` where it would have waited; that follows from the rule and holds only for
+a context that was closed during a hold. KUnit checks the cancel on closed contexts with and
+without jobs and on an open one, the error an earlier blame gave being kept, and the debug reset
+reporting the hold it ends; the reset itself needs the hardware. On the laptop (one run before the
+commit, one after; a held fault, a fill on another context whose client is killed behind it, then
+`reset`): before, the closed context's job ran again and the second stop of the firmware saw 1
+event; after, the kernel logs "the hold ends: 1 job(s) of closed contexts cancelled", the second
+stop sees 0 events, no bus fault follows and the GPU runs a fill and a triangle exactly. No client
+reads the cancelled fence's status, so the `-ECANCELED` itself is KUnit's.

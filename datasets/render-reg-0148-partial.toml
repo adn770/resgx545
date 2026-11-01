@@ -1,0 +1,10 @@
+title = "script table render/reg-0148-partial"
+repo = "data"
+paths = ["render/reg-0148-partial/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 4
+size = 18960
+sha256 = "c6aa3dc94f4afdedaa40f2acefe7b5616e20d393fec898426799b41715dff6f3"
+recipe = "probes/render/reg-0148-partial.toml"
+needs = ["render", "kpoke", "render_pb_pages", "regs"]

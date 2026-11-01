@@ -1,0 +1,10 @@
+title = "script table platform/register-limits-pairs"
+repo = "data"
+paths = ["platform/register-limits-pairs/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 4
+size = 68716
+sha256 = "e1a859ef3c10287ebae615ea20a6ce11026e60f840b322981d3a3a74e8ae2173"
+recipe = "probes/platform/register-limits-pairs.toml"
+needs = ["render", "kreg"]

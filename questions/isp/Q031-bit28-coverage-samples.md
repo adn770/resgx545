@@ -3,7 +3,7 @@ id = "Q031"
 question = "why does ISP word 0 bit 28 hang a multisampled render, when single-sampled it widens coverage to the union of eight samples?"
 unit = "isp"
 phase = 10
-evidence = ["E214", "E215", "E278"]
+evidence = ["E214", "E215", "E278", "E416"]
 terms = ["CR_ISP_SAMPLE_POS", "CR_ISP_MULTISAMPLECTL", "programmable sample positions", "ISP0"]
 +++
 
@@ -22,3 +22,9 @@ To settle it: bit 28 under modes 1 and 2 with 0x0520 at 0 and at 0x04c8's value,
 that a hang stops one case, the kernel log kept; and the right triangle of the layout probes
 (isp_words.py affine_target) for a horizontal edge under the single-sampled rule; both words at 0,
 which parts the eight from the eight and the centre.
+
+Narrowed in 11.15 (E416): bit 28 hangs a render in modes 1 and 2 in 8 of 8 jobs, one case a probe,
+with 0x0520 at 0 and at 0xeaa26e26 alike; single-sampled, the right triangle with a horizontal edge
+gains 19 pixels with bit 28 at k = 6 (45 to 64) and none at k = 0 and 12, with the same counts at
+0x0520 = 0 and 0x88. So the single-sampled widening is a phase effect that 0x0520 does not move, and
+no setting lets bit 28 run multisampled. Status: narrowed, not answered.

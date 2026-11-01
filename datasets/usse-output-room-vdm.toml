@@ -1,0 +1,10 @@
+title = "probe table usse/output-room-vdm"
+repo = "data"
+paths = ["usse/output-room-vdm/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 398
+size = 8226988
+sha256 = "d07984fda41cf98825252221c8afb37bffcdc566383046651840f994b85708b6"
+recipe = "probes/usse/output-room-vdm.toml"
+needs = ["render", "kpoke"]

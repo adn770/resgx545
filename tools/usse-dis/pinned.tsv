@@ -183,7 +183,7 @@ usse	176	A5C946BD97B01842	p1 ima16.skipinv.nosched.repeat5.usat.rs3 c61.abs, pa6
 usse	177	AAA5BE92887EE267	p0 imae.skipinv.end.repeat4.ssat.rs2 pa67, r123.low, pa68.high, sa[il + #7], u32, cie, i1
 usse	178	AA79DF698585E5FB	p0 imae.nosched.repeat6.ssat.rs5 c44, r23.low, pa75.high, sa[ih + #11].high, u16, coe, cie, i1
 usse	179	D4446BE065BA7436	p3 ima32.nosched.end.repeat7.s r45, i2, r105, o104.neg, pa54.neg, cie, i1
-usse	180	D39130816E4037C8	p2 idiv.skipinv.repeat4 pa114, o111, #72, drc1
+usse	180	D4D5B00188E0101A	p3 idiv.skipinv.nosched.end.repeat12 r71, pa32, r[ih + #10], drc1
 usse	181	C57A51C151E12E71	p1 u16dot4off.nosched.repeat6 c15, Cx8, Ax2, g28, o49.c10
 usse	182	C4B3EF40DAC319BF	p1 u16dot3off.skipinv.repeat7 r22.c10, Cx4, Ax8, i51.comp, c63.comp
 usse	183	C47569C156002E4C	p1 u16dot3off.nosched.end.repeat7 o48, Cx8, o28.comp.c10, g12

@@ -1,0 +1,10 @@
+title = "script table platform/register-limits"
+repo = "data"
+paths = ["platform/register-limits/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 4
+size = 191349
+sha256 = "acb03217832bc735a4c864d980121fdf5a392adc19e574d51ee404de11d7abc1"
+recipe = "probes/platform/register-limits.toml"
+needs = ["render", "kreg", "reset"]

@@ -3,7 +3,7 @@ id = "Q032"
 question = "what does pcoeff hand the ISP in the punch-through pass, when the kept pixels' depth is the same without it and moves between runs only when it runs without the iteration it reads?"
 unit = "isp"
 phase = 10
-evidence = ["E217"]
+evidence = ["E217", "E416"]
 terms = ["FEEDBACK_CTL.ENABLE", "FEEDBACK_CTL.KEEP", "ISP0.PASS_TYPE"]
 +++
 
@@ -25,3 +25,9 @@ depths in reverse order) and hand it with pcoeff; if the kept copy follows the i
 pcoeff carries the depth, and if it does not, the depth comes from the geometry. Run the variant
 with pcoeff and no source-34 iteration five times, after a job that leaves a known value in the
 iteration state each time, to see whether the extra pixels follow that value.
+
+Narrowed in 11.15 (E416, five runs each): the punch pass with pcoeff and the source-34 iteration
+draws the same image five times; with pcoeff alone and with neither, the kept pixels differ from run
+to run (four and five outcomes in five runs), so the variation follows the missing iteration, not
+pcoeff. The iterated constant or reversed depths of the settle plan were not run, so whether pcoeff
+carries the depth is open. Status: narrowed, not answered.

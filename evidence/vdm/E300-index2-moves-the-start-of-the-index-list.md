@@ -37,4 +37,5 @@ past it and is dropped, by 5 the last two, by 0xff all. Bits 31:28 (0x8, 0xf) ch
 an offset in bits 7:0 alone does not explain; bit 15 of an entry marks one winding in the random
 triangles of E307 (E308), so a winding that 0x0f000000 flips would fit [infer]. The job's own value,
 with no word changed, hung in the first run: a hang of an unpoked job with every pixel read back
-(Q015). The earlier reading, an instance count or a split, fits none of these.
+(E413 explains the alternation). The earlier reading, an instance count or a split, fits none of
+these.

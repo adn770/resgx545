@@ -66,6 +66,22 @@ static int field_score(const usse_form *fm, uint64_t w) {
     return sc;
 }
 
+/*
+ * Bits a pinned word must have set, so that a field one bit narrower reads it differently:
+ * idiv's repeat count is the four bits 44..47 (three until 11.15), so its pinned word needs
+ * bit 47 set, a count of 8 or more.
+ */
+static const struct { const char *pat; uint64_t bit; } high_bits[] = {
+    { "idiv", 1ull << 47 },
+};
+
+static int high_bits_set(const usse_form *fm, uint64_t w) {
+    for (size_t i = 0; i < sizeof high_bits / sizeof *high_bits; i++)
+        if (fm->pat && strstr(fm->pat, high_bits[i].pat) && !(w & high_bits[i].bit))
+            return 0;
+    return 1;
+}
+
 /* the same on the numbers of the decoded text */
 static int text_score(const char *t) {
     unsigned long long v[64];
@@ -113,15 +129,17 @@ static int run(const usse_table *t, const char *tag, int width) {
                     break;
                 w = (fm->val | (rnd() & ~fm->mask)) & lim;
             }
-            if (usse_form_decode_in(t, w, txt, sizeof txt) != fm)
+            if (usse_form_decode_in(t, w, txt, sizeof txt) != fm || !high_bits_set(fm, w))
                 continue;
             ts = text_score(txt);
             if (5 * nf + ts + 100 <= bests)
                 continue;       /* cannot beat the best even re-encoded: skip the encoder */
             if (usse_form_encode_in(t, txt, &e2) &&
                 usse_form_decode_in(t, e2, t2, sizeof t2) == fm && !strcmp(t2, txt)) {
-                w = e2;
-                r = 1;
+                if (high_bits_set(fm, e2)) {
+                    w = e2;
+                    r = 1;
+                }
             }
             sc = field_score(fm, w) + ts + r * 100;
             if (sc > bests) {

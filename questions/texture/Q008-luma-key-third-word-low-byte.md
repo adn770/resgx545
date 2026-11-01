@@ -21,3 +21,8 @@ different roundings, or the sum has more terms, is not shown.
 
 To settle it: a source whose pixels place S on every value within ±16 of the cuts at 119, 120
 and 122 (a ramp in one channel with the other two fixed), at both the low and the high cut.
+
+Not run in 11.15: the settle plan needs a copy source whose pixels place the luma sum on every value
+within 16 of the cuts at 119, 120 and 122 (a ramp in one channel); the copy tool's sources are a
+fixed pattern and the every-value permutation, with no ramp. Status: narrowed, not answered;
+missing: a ramp source option.

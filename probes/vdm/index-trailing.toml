@@ -1,0 +1,116 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# vdm index trailing: 7 probes (written once for 11.15, not regenerated).
+# Q042, Q092, Q047, Q070: the index list's trailing word and header, and the state word, on the
+# five-copy job.
+needs = ["render", "render_param", "render_tadata"]
+name = "vdm-index-trailing"
+
+[[probe]]
+name = "vdm-index-trailing-offsets"
+question = "the five-copy job, copies at distinct depths, with the index list's first trailing word"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+case_set = [{ vdm = { 4 = 0xf0000000 } }, { vdm = { 4 = 0xf0000001 } }, { vdm = { 4 = 0xf0000002 } }, { vdm = { 4 = 0xf0000003 } }, { vdm = { 4 = 0xf0000004 } }, { vdm = { 4 = 0xf0000005 } }, { vdm = { 4 = 0xf0000006 } }, { vdm = { 4 = 0xf0000010 } }, { vdm = { 4 = 0xf0000100 } }, { vdm = { 4 = 0xf0001000 } }, { vdm = { 4 = 0x1000000 } }, { vdm = { 4 = 0x2000000 } }, { vdm = { 4 = 0x4000000 } }, { vdm = { 4 = 0x8000000 } }, { vdm = { 4 = 0xf1000000 } }, { vdm = { 4 = 0xf2000000 } }, { vdm = { 4 = 0xf4000000 } }, { vdm = { 4 = 0xf8000000 } }]
+vertices = 0xf
+copy_depth = true
+dump_render = true
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["vdm4=0xf0000000", "vdm4=0xf0000001", "vdm4=0xf0000002", "vdm4=0xf0000003", "vdm4=0xf0000004", "vdm4=0xf0000005", "vdm4=0xf0000006", "vdm4=0xf0000010", "vdm4=0xf0000100", "vdm4=0xf0001000", "vdm4=0x1000000", "vdm4=0x2000000", "vdm4=0x4000000", "vdm4=0x8000000", "vdm4=0xf1000000", "vdm4=0xf2000000", "vdm4=0xf4000000", "vdm4=0xf8000000"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "vdm-index-trailing-offsets-r2"
+question = "the five-copy job, copies at distinct depths, with the index list's first trailing word"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+case_set = [{ vdm = { 4 = 0xf0000000 } }, { vdm = { 4 = 0xf0000001 } }, { vdm = { 4 = 0xf0000002 } }, { vdm = { 4 = 0xf0000003 } }, { vdm = { 4 = 0xf0000004 } }, { vdm = { 4 = 0xf0000005 } }, { vdm = { 4 = 0xf0000006 } }, { vdm = { 4 = 0xf0000010 } }, { vdm = { 4 = 0xf0000100 } }, { vdm = { 4 = 0xf0001000 } }, { vdm = { 4 = 0x1000000 } }, { vdm = { 4 = 0x2000000 } }, { vdm = { 4 = 0x4000000 } }, { vdm = { 4 = 0x8000000 } }, { vdm = { 4 = 0xf1000000 } }, { vdm = { 4 = 0xf2000000 } }, { vdm = { 4 = 0xf4000000 } }, { vdm = { 4 = 0xf8000000 } }]
+vertices = 0xf
+copy_depth = true
+dump_render = true
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["vdm4=0xf0000000", "vdm4=0xf0000001", "vdm4=0xf0000002", "vdm4=0xf0000003", "vdm4=0xf0000004", "vdm4=0xf0000005", "vdm4=0xf0000006", "vdm4=0xf0000010", "vdm4=0xf0000100", "vdm4=0xf0001000", "vdm4=0x1000000", "vdm4=0x2000000", "vdm4=0x4000000", "vdm4=0x8000000", "vdm4=0xf1000000", "vdm4=0xf2000000", "vdm4=0xf4000000", "vdm4=0xf8000000"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "vdm-index-trailing-count-v15"
+question = "the index list's word 4 top nibble against the vertex task's maximum, 15 vertices"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+case_set = [{ vdm = { 4 = 0xf0000000 } }, { vdm = { 4 = 0xf0000000 }, vdm_xor = { 6 = 0x20000000 } }, { vdm = { 4 = 0xd0000000 } }, { vdm = { 4 = 0xd0000000 }, vdm_xor = { 6 = 0x20000000 } }, { vdm = { 4 = 0x70000000 } }, { vdm = { 4 = 0x70000000 }, vdm_xor = { 6 = 0x20000000 } }]
+vertices = 0xf
+copy_depth = true
+dump_render = true
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["word4 0xf0000000 task 15", "word4 0xf0000000 task 13", "word4 0xd0000000 task 15", "word4 0xd0000000 task 13", "word4 0x70000000 task 15", "word4 0x70000000 task 13"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "vdm-index-trailing-count-v12"
+question = "the index list's word 4 top nibble against the vertex task's maximum, 12 vertices"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+case_set = [{ vdm = { 4 = 0xf0000000 } }, { vdm = { 4 = 0xf0000000 }, vdm_xor = { 6 = 0x20000000 } }, { vdm = { 4 = 0xd0000000 } }, { vdm = { 4 = 0xd0000000 }, vdm_xor = { 6 = 0x20000000 } }, { vdm = { 4 = 0x70000000 } }, { vdm = { 4 = 0x70000000 }, vdm_xor = { 6 = 0x20000000 } }]
+vertices = 0xc
+copy_depth = true
+dump_render = true
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["word4 0xf0000000 task 15", "word4 0xf0000000 task 13", "word4 0xd0000000 task 15", "word4 0xd0000000 task 13", "word4 0x70000000 task 15", "word4 0x70000000 task 13"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "vdm-index-trailing-topology-v3"
+question = "the index list's topology (bits 29:26: line, point, strip, fan), 3 vertices"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+case_set = [{ vdm_xor = { 2 = 0x4000000 } }, { vdm_xor = { 2 = 0x8000000 } }, { vdm_xor = { 2 = 0xc000000 } }, { vdm_xor = { 2 = 0x10000000 } }]
+dump_render = true
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["topology 1", "topology 2", "topology 3", "topology 4"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "vdm-index-trailing-topology-v15"
+question = "the index list's topology (bits 29:26: line, point, strip, fan), 15 vertices"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+case_set = [{ vdm_xor = { 2 = 0x4000000 } }, { vdm_xor = { 2 = 0x8000000 } }, { vdm_xor = { 2 = 0xc000000 } }, { vdm_xor = { 2 = 0x10000000 } }]
+vertices = 0xf
+dump_render = true
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["topology 1", "topology 2", "topology 3", "topology 4"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "vdm-index-trailing-state1"
+question = "the VDM state word's fields on the five-copy job"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+case_set = [{ vdm_xor = { 1 = 0x100 } }, { vdm_xor = { 1 = 0x400 } }, { vdm_xor = { 1 = 0x600 } }, { vdm_xor = { 1 = 0x200 } }, { vdm_xor = { 1 = 0xc00 } }, { vdm_xor = { 1 = 0xe00 } }, { vdm_xor = { 1 = 0x800 } }, { vdm_xor = { 1 = 0xa00 } }, { vdm_xor = { 1 = 0x2000 } }, { vdm_xor = { 1 = 0x6000 } }, { vdm_xor = { 1 = 0x4000 } }, { vdm_xor = { 1 = 0xa000 } }, { vdm_xor = { 1 = 0x8000 } }, { vdm_xor = { 1 = 0xe000 } }, { vdm_xor = { 1 = 0xc000 } }]
+vertices = 0xf
+copy_depth = true
+dump_render = true
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["bit 8 flipped", "bits 11:9 = 0", "bits 11:9 = 1", "bits 11:9 = 3", "bits 11:9 = 4", "bits 11:9 = 5", "bits 11:9 = 6", "bits 11:9 = 7", "bits 15:13 = 0", "bits 15:13 = 2", "bits 15:13 = 3", "bits 15:13 = 4", "bits 15:13 = 5", "bits 15:13 = 6", "bits 15:13 = 7"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]

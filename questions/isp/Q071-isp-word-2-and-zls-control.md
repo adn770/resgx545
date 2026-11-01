@@ -3,7 +3,7 @@ id = "Q071"
 question = "how does the ISP use the ZLS control word's bits in a render with depth or stencil buffers?"
 unit = "isp"
 phase = 11
-evidence = ["E057", "E169", "E216", "E228", "E284"]
+evidence = ["E057", "E169", "E216", "E228", "E284", "E411"]
 terms = ["CR_ISP_ZLSCTL", "CR_ISP_BGOBJVALS.STENCIL", "ISP2"]
 +++
 
@@ -20,3 +20,13 @@ render, are not shown.
 To settle it: on the laptop, a render with depth and stencil buffers loaded and stored (the
 depth-test script's ZLS pokes), the ZLS control word flipped bit by bit from the store value
 0x17100c, the stored depth and stencil read back from the scratch buffer, two runs.
+
+Narrowed in 11.15 (E411, two runs, identical per flip): with the store setup of load-store.sh the
+control 0x17100c stores a stencil page and four depth pages. Clearing bit 2 stores nothing, clearing
+bit 17 drops the stencil, clearing bit 18 drops the depth; setting bit 19 stores the depth as -1.0,
+bit 24 as 0x00ffffff and bit 25 as 0xffffffff on two pages; bit 26 stores 640 dwords of 0x0000f000
+on two pages; bit 3 and bit 4 shrink the stored region; bits 5 to 11 set fault the job; bit 0 set
+leaves every pixel unwritten; the other bits change nothing seen. So the word's bits are store
+enables, a depth format and a region, not only the "job completes with no pixel" of bit 0. Still
+open: the meaning of bits 3, 4, 19, 24, 25, 26 beyond what they store, and the loads (Q088). Status:
+narrowed, not answered; the format and region fields are a new question, Q101.

@@ -151,10 +151,11 @@ def with_bins(text: str, rdir: str) -> str:
 class LaptopTarget:
     """The laptop over ssh (probe.py's target: SGX_TARGET_HOST, SGX_TARGET_SSH_OPTS)."""
     name = "laptop"
-    tool = "./sgxfive-test"
 
     def __init__(self):
         self.host, self.opts = probe.target()
+        # the laptop's own copy of the tool, as the sweeps run it (SGX_SWEEP_TOOL)
+        self.tool = os.environ.get("SGX_SWEEP_TOOL", "./sgxfive-test")
 
     def _ssh(self, cmd: str) -> str:
         return subprocess.run(["ssh", *self.opts, self.host, cmd], capture_output=True,
@@ -429,20 +430,25 @@ def _log_mark(target, what: str) -> str | None:
     return mark
 
 
+JOURNAL = "sudo -n journalctl -k -b -o short-monotonic --no-pager"
 _KEEP = re.compile(r"gma500|BUG|Oops|Call Trace|WARNING|resgx545 case ")
-_BODY = re.compile(r"^\[[^\]]*\] ?(.*)$")
+# the journal puts "host kernel:" (or "host unknown:", a mark) before the message
+_BODY = re.compile(r"^\[[^\]]*\] ?(?:\S+ (?:kernel|unknown): ?)?(.*)$")
 
 
 def _log_since(target, mark: str) -> str:
     """The mark line, then the driver and fault lines of the kernel log after it (gma500,
     BUG, Oops, WARNING, Call Trace and the indented trace lines that follow them) and the
     marks a script writes at each of its cases ("resgx545 case NAME ...").  A mark
-    that is not in the log (the ring wrapped) is a CampaignError, not an empty log."""
+    that is in neither the ring nor the journal is a CampaignError, not an empty log."""
     lines = target._ssh("sudo -n dmesg").splitlines()
     marks = [n for n, ln in enumerate(lines) if mark in ln]
+    if not marks:       # a long run wraps the ring (thousands of register writes): the journal
+        lines = target._ssh(JOURNAL).splitlines()      # keeps every line the ring lost
+        marks = [n for n, ln in enumerate(lines) if mark in ln]
     if not marks:
-        raise CampaignError(f"the kernel log mark {mark!r} is not in dmesg "
-                            "(the ring wrapped or the write failed)")
+        raise CampaignError(f"the kernel log mark {mark!r} is in neither dmesg nor the journal "
+                            "(the write failed)")
     i = marks[-1]
     kept, last = [lines[i]], False
     for ln in lines[i + 1:]:

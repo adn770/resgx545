@@ -43,7 +43,7 @@ Every job completed. The bases gave what the simulator gives for them (their vec
 (0x3fc01234). With enc[47] set the eight dwords r10 to r17 read 0, 0, 0x80, 0, 0, 0xa, 0,
 0x8923: every destination from r10 on is written. 0x80 is r3 divided by r4 (0x8001c003 /
 0x00ff7f80); the others fit no plain quotient or remainder of the inputs. What the bit selects
-is open (Q079); the simulator stops on it.
+is E367's finding (the repeat count's high bit).
 
 **rlp.** The first run's rlp bases read p0 before anything set it: the pixel was mixed
 (0x7f802468 on most pixels, 0x7f802469 on the rest), and the counts varied from case to case.

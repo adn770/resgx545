@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# zls control bits: 0 probes (a script, control-bits.sh).
+# Q071, Q088: the ZLS control word bit by bit and with the closed driver's added bits.
+needs = ["render", "kpoke"]
+name = "zls-control-bits"
+script = "control-bits.sh"

@@ -1,0 +1,10 @@
+title = "probe table isp/msaa-tiles"
+repo = "data"
+paths = ["isp/msaa-tiles/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 122
+size = 4337874
+sha256 = "126f04d24f3e502c0844b669cd5008c3f86473dfd19e8bf4ab9cf94acef681b9"
+recipe = "probes/isp/msaa-tiles.toml"
+needs = ["render", "kpoke"]

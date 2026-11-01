@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# render reg 0148 partial: 0 probes (a script, reg-0148-partial.sh).
+# Q043: render details dword 9 bit 0 in a render that overflows into partial renders.
+needs = ["render", "kpoke", "render_pb_pages", "regs"]
+name = "render-reg-0148-partial"
+script = "reg-0148-partial.sh"

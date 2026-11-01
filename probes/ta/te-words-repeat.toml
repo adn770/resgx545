@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ta te words repeat: 0 probes (a script, te-words-repeat.sh).
+# E407: the tiling word flips of te-words three times each, and the words of other sizes on a
+# 256x256 target.
+needs = ["render", "kpoke", "regs"]
+name = "ta-te-words-repeat"
+script = "te-words-repeat.sh"

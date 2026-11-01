@@ -1,0 +1,10 @@
+title = "probe table pds/doutc-address"
+repo = "data"
+paths = ["pds/doutc-address/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 20
+size = 114032
+sha256 = "e74f723559da4d7e565bc92345209dd485e93c76b8437b91c59ced0011fa3ddb"
+recipe = "probes/pds/doutc-address.toml"
+needs = ["render", "kpoke"]

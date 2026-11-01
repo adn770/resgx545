@@ -1,0 +1,10 @@
+title = "probe table isp/bit28-modes"
+repo = "data"
+paths = ["isp/bit28-modes/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 50
+size = 440262
+sha256 = "936b431a8626667ceadb75e631a735d222cc86662ec090af409b47340e833e54"
+recipe = "probes/isp/bit28-modes.toml"
+needs = ["render", "kpoke"]

@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# vdm state1 hang: 0 probes (a script, state1-hang.sh).
+# E413: bits 11:9 = 7 of the state word, with and without the readback, alternating.
+needs = ["render"]
+name = "vdm-state1-hang"
+script = "state1-hang.sh"

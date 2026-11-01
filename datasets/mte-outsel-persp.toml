@@ -1,0 +1,10 @@
+title = "probe table mte/outsel-persp"
+repo = "data"
+paths = ["mte/outsel-persp/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 34
+size = 37350004
+sha256 = "39e7dd4705f37e645fa84085988f6b24155217b606630eb4f3120e63429203e1"
+recipe = "probes/mte/outsel-persp.toml"
+needs = ["render"]

@@ -1,0 +1,9 @@
+title = "sweep table platform/init-register-tri"
+repo = "data"
+paths = ["platform/init-register-tri/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 5
+size = 283632
+sha256 = "b4b7364c724979fbc86b07c230152a85aa4ee90bb1a3b3999ab334b4e6572ea1"
+recipe = "probes/platform/init-register-tri.toml"

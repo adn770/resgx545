@@ -4,7 +4,7 @@
 # a debugfs fill and copy, the triangle, two renders in one context, two render contexts and a
 # partial render (the 1024x768 triangle in a 0x30-page parameter buffer, as
 # probes/dpm/parameter-buffer.toml), twice each, then the triangle at seven target sizes
-# (Q035). regtimeline samples the registers while each job runs and prints every change.
+# (E407). regtimeline samples the registers while each job runs and prints every change.
 kind = "script"
 name = "platform-register-timelines"
 needs = ["render", "regs", "render_pb_pages"]

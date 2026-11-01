@@ -1,0 +1,91 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# pds douti four: 6 probes (written once for 11.15, not regenerated).
+# Q021: a four-component DOUTI0 with the shader storing pa3, pa4 and pa5, five fresh contexts
+# each.
+needs = ["render"]
+name = "pds-douti-four"
+
+[[probe]]
+name = "pds-douti-four-pa3"
+question = "DOUTI0 bits 23:22 = 3: the pixel shader stores pa3, five times"
+source = "pds_tex_iter.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa3.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40400801, 0, 0x2000004], [0x40800801, 0, 0x2000004]]
+labels = ["bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 1 (control)", "bits 23:22 = 2 (control)"]
+
+[[probe]]
+name = "pds-douti-four-pa4"
+question = "DOUTI0 bits 23:22 = 3: the pixel shader stores pa4, five times"
+source = "pds_tex_iter.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa4.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40400801, 0, 0x2000004], [0x40800801, 0, 0x2000004]]
+labels = ["bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 1 (control)", "bits 23:22 = 2 (control)"]
+
+[[probe]]
+name = "pds-douti-four-pa5"
+question = "DOUTI0 bits 23:22 = 3: the pixel shader stores pa5, five times"
+source = "pds_tex_iter.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa5.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40400801, 0, 0x2000004], [0x40800801, 0, 0x2000004]]
+labels = ["bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 1 (control)", "bits 23:22 = 2 (control)"]
+
+[[probe]]
+name = "pds-douti-four-pa3-r2"
+question = "DOUTI0 bits 23:22 = 3: the pixel shader stores pa3, five times"
+source = "pds_tex_iter.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa3.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40400801, 0, 0x2000004], [0x40800801, 0, 0x2000004]]
+labels = ["bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 1 (control)", "bits 23:22 = 2 (control)"]
+
+[[probe]]
+name = "pds-douti-four-pa4-r2"
+question = "DOUTI0 bits 23:22 = 3: the pixel shader stores pa4, five times"
+source = "pds_tex_iter.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa4.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40400801, 0, 0x2000004], [0x40800801, 0, 0x2000004]]
+labels = ["bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 1 (control)", "bits 23:22 = 2 (control)"]
+
+[[probe]]
+name = "pds-douti-four-pa5-r2"
+question = "DOUTI0 bits 23:22 = 3: the pixel shader stores pa5, five times"
+source = "pds_tex_iter.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa5.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40400801, 0, 0x2000004], [0x40800801, 0, 0x2000004]]
+labels = ["bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 1 (control)", "bits 23:22 = 2 (control)"]

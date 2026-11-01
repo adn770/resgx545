@@ -1,0 +1,10 @@
+title = "script table render/hold-hang-repeat"
+repo = "data"
+paths = ["render/hold-hang-repeat/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 4
+size = 239427
+sha256 = "b9acb70d3298dd6b0fddd71d1cb5284fe8f848a078932c57142e850879e661c9"
+recipe = "probes/render/hold-hang-repeat.toml"
+needs = ["render", "render_pb_pages", "render_param", "render_tadata", "hold_recovery", "reset", "regs", "kreg", "miscinfo"]

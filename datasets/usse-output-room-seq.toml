@@ -1,0 +1,10 @@
+title = "probe table usse/output-room-seq"
+repo = "data"
+paths = ["usse/output-room-seq/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 107
+size = 1368387
+sha256 = "99c4aa0c7ad0219c97cf9441574b9d36f5d26a0d6977511e98c93e988a3a0a29"
+recipe = "probes/usse/output-room-seq.toml"
+needs = ["render", "kpoke"]

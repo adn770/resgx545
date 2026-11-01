@@ -3,7 +3,7 @@ id = "Q039"
 question = "where is a user clip plane's state held between jobs, what resets it, and when do the vertex's distance dwords decide a plane?"
 unit = "mte"
 phase = 10
-evidence = ["E198", "E280"]
+evidence = ["E198", "E280", "E418"]
 terms = ["OUTSEL.PLANES"]
 +++
 
@@ -22,3 +22,11 @@ remove plane 0's triangle between two jobs without fdpc.
 To settle it: plane 0 with o4 at -1 and +1 right after a GPU reset (a fenced hang), before any
 fdpc; then the state set by fdpc and each candidate reset tried in turn, a job reading the plane
 after each.
+
+Narrowed in 11.15 (E418, two runs of three sequences): a GPU reset after a hang does not clear plane
+0's held result. With the result outside the next jobs without fdpc stayed removed before and after
+a hang (2 of 2), with it inside they drew before and after it, the distance dwords at -1 and +1
+changing nothing (2 of 2), and an fdpc with the vertices inside cleared the outside result (2 of 2).
+After a boot and the day's many resets the first sequence found the result outside. Still open:
+where the state is held and what clears it besides an fdpc (a firmware reload, a power cycle), and
+planes 1 and 2. Status: narrowed, not answered.

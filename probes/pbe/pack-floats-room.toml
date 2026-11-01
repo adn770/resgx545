@@ -1,0 +1,511 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# pbe pack floats room: 30 probes (written once for 11.15, not regenerated).
+# Q012: the pack-floats probes of 11.14 with ISP word 0 bit 26 or 27 and render details dword 9
+# bit 0, the setup that gives room for four output dwords.
+needs = ["render", "kpoke"]
+name = "pbe-pack-floats-room"
+
+[[probe]]
+name = "pbe-pack-floats-room-channels-b26rd9-mode0"
+question = "what pack mode 0 stores for o0-o3 four singles, each alone, and the pixel's x and y (room setup b26rd9)"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x200
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+cases = [["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x3F800000\nmov.skipinv.end o3, #0x3F000000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x3F800000\nmov.skipinv.end o3, #0x3F000000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"]]
+labels = ["run 1: o0-o3 = 1.0, 2.0, 0.5, 0.25", "run 1: o0 = 1.0, o1-o3 = 0", "run 1: o1 = 2.0, o0, o2, o3 = 0", "run 1: o2 = 0.5, o0, o1, o3 = 0", "run 1: o3 = 0.25, o0-o2 = 0", "run 1: o0 = x + 0.5, o1 = y + 0.5, o2 = 1.0, o3 = 0.5", "run 1: o0 = x + 0.5, o1-o3 = 0", "run 1: o1 = y + 0.5, o0, o2, o3 = 0", "run 2: o0-o3 = 1.0, 2.0, 0.5, 0.25", "run 2: o0 = 1.0, o1-o3 = 0", "run 2: o1 = 2.0, o0, o2, o3 = 0", "run 2: o2 = 0.5, o0, o1, o3 = 0", "run 2: o3 = 0.25, o0-o2 = 0", "run 2: o0 = x + 0.5, o1 = y + 0.5, o2 = 1.0, o3 = 0.5", "run 2: o0 = x + 0.5, o1-o3 = 0", "run 2: o1 = y + 0.5, o0, o2, o3 = 0"]
+blk = { 1 = 0x5d00200 }
+kpoke = ["rd:9=1"]
+
+[[probe]]
+name = "pbe-pack-floats-room-channels-b27rd9-mode0"
+question = "what pack mode 0 stores for o0-o3 four singles, each alone, and the pixel's x and y (room setup b27rd9)"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x200
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+cases = [["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x3F800000\nmov.skipinv.end o3, #0x3F000000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x3F800000\nmov.skipinv.end o3, #0x3F000000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"]]
+labels = ["run 1: o0-o3 = 1.0, 2.0, 0.5, 0.25", "run 1: o0 = 1.0, o1-o3 = 0", "run 1: o1 = 2.0, o0, o2, o3 = 0", "run 1: o2 = 0.5, o0, o1, o3 = 0", "run 1: o3 = 0.25, o0-o2 = 0", "run 1: o0 = x + 0.5, o1 = y + 0.5, o2 = 1.0, o3 = 0.5", "run 1: o0 = x + 0.5, o1-o3 = 0", "run 1: o1 = y + 0.5, o0, o2, o3 = 0", "run 2: o0-o3 = 1.0, 2.0, 0.5, 0.25", "run 2: o0 = 1.0, o1-o3 = 0", "run 2: o1 = 2.0, o0, o2, o3 = 0", "run 2: o2 = 0.5, o0, o1, o3 = 0", "run 2: o3 = 0.25, o0-o2 = 0", "run 2: o0 = x + 0.5, o1 = y + 0.5, o2 = 1.0, o3 = 0.5", "run 2: o0 = x + 0.5, o1-o3 = 0", "run 2: o1 = y + 0.5, o0, o2, o3 = 0"]
+blk = { 1 = 0x9d00200 }
+kpoke = ["rd:9=1"]
+
+[[probe]]
+name = "pbe-pack-floats-room-channels-b26rd9rows1-mode0"
+question = "what pack mode 0 stores for o0-o3 four singles, each alone, and the pixel's x and y (room setup b26rd9rows1)"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x200
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+cases = [["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x3F800000\nmov.skipinv.end o3, #0x3F000000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x3F800000\nmov.skipinv.end o3, #0x3F000000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"]]
+labels = ["run 1: o0-o3 = 1.0, 2.0, 0.5, 0.25", "run 1: o0 = 1.0, o1-o3 = 0", "run 1: o1 = 2.0, o0, o2, o3 = 0", "run 1: o2 = 0.5, o0, o1, o3 = 0", "run 1: o3 = 0.25, o0-o2 = 0", "run 1: o0 = x + 0.5, o1 = y + 0.5, o2 = 1.0, o3 = 0.5", "run 1: o0 = x + 0.5, o1-o3 = 0", "run 1: o1 = y + 0.5, o0, o2, o3 = 0", "run 2: o0-o3 = 1.0, 2.0, 0.5, 0.25", "run 2: o0 = 1.0, o1-o3 = 0", "run 2: o1 = 2.0, o0, o2, o3 = 0", "run 2: o2 = 0.5, o0, o1, o3 = 0", "run 2: o3 = 0.25, o0-o2 = 0", "run 2: o0 = x + 0.5, o1 = y + 0.5, o2 = 1.0, o3 = 0.5", "run 2: o0 = x + 0.5, o1-o3 = 0", "run 2: o1 = y + 0.5, o0, o2, o3 = 0"]
+blk = { 1 = 0x5d00200, 4 = 0x30001 }
+kpoke = ["rd:9=1"]
+
+[[probe]]
+name = "pbe-pack-floats-room-channels-b27rd9rows1-mode0"
+question = "what pack mode 0 stores for o0-o3 four singles, each alone, and the pixel's x and y (room setup b27rd9rows1)"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x200
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+cases = [["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x3F800000\nmov.skipinv.end o3, #0x3F000000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x3F800000\nmov.skipinv.end o3, #0x3F000000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"]]
+labels = ["run 1: o0-o3 = 1.0, 2.0, 0.5, 0.25", "run 1: o0 = 1.0, o1-o3 = 0", "run 1: o1 = 2.0, o0, o2, o3 = 0", "run 1: o2 = 0.5, o0, o1, o3 = 0", "run 1: o3 = 0.25, o0-o2 = 0", "run 1: o0 = x + 0.5, o1 = y + 0.5, o2 = 1.0, o3 = 0.5", "run 1: o0 = x + 0.5, o1-o3 = 0", "run 1: o1 = y + 0.5, o0, o2, o3 = 0", "run 2: o0-o3 = 1.0, 2.0, 0.5, 0.25", "run 2: o0 = 1.0, o1-o3 = 0", "run 2: o1 = 2.0, o0, o2, o3 = 0", "run 2: o2 = 0.5, o0, o1, o3 = 0", "run 2: o3 = 0.25, o0-o2 = 0", "run 2: o0 = x + 0.5, o1 = y + 0.5, o2 = 1.0, o3 = 0.5", "run 2: o0 = x + 0.5, o1-o3 = 0", "run 2: o1 = y + 0.5, o0, o2, o3 = 0"]
+blk = { 1 = 0x9d00200, 4 = 0x30001 }
+kpoke = ["rd:9=1"]
+
+[[probe]]
+name = "pbe-pack-floats-room-channels-rd9-mode0"
+question = "what pack mode 0 stores for o0-o3 four singles, each alone, and the pixel's x and y (room setup rd9)"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x200
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+cases = [["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x3F800000\nmov.skipinv.end o3, #0x3F000000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x3F800000\nmov.skipinv.end o3, #0x3F000000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"]]
+labels = ["run 1: o0-o3 = 1.0, 2.0, 0.5, 0.25", "run 1: o0 = 1.0, o1-o3 = 0", "run 1: o1 = 2.0, o0, o2, o3 = 0", "run 1: o2 = 0.5, o0, o1, o3 = 0", "run 1: o3 = 0.25, o0-o2 = 0", "run 1: o0 = x + 0.5, o1 = y + 0.5, o2 = 1.0, o3 = 0.5", "run 1: o0 = x + 0.5, o1-o3 = 0", "run 1: o1 = y + 0.5, o0, o2, o3 = 0", "run 2: o0-o3 = 1.0, 2.0, 0.5, 0.25", "run 2: o0 = 1.0, o1-o3 = 0", "run 2: o1 = 2.0, o0, o2, o3 = 0", "run 2: o2 = 0.5, o0, o1, o3 = 0", "run 2: o3 = 0.25, o0-o2 = 0", "run 2: o0 = x + 0.5, o1 = y + 0.5, o2 = 1.0, o3 = 0.5", "run 2: o0 = x + 0.5, o1-o3 = 0", "run 2: o1 = y + 0.5, o0, o2, o3 = 0"]
+kpoke = ["rd:9=1"]
+
+[[probe]]
+name = "pbe-pack-floats-room-channels-b26rd9-mode22"
+question = "what pack mode 22 stores for o0-o3 four singles, each alone, and the pixel's x and y (room setup b26rd9)"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x216
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+cases = [["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x3F800000\nmov.skipinv.end o3, #0x3F000000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x3F800000\nmov.skipinv.end o3, #0x3F000000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"]]
+labels = ["run 1: o0-o3 = 1.0, 2.0, 0.5, 0.25", "run 1: o0 = 1.0, o1-o3 = 0", "run 1: o1 = 2.0, o0, o2, o3 = 0", "run 1: o2 = 0.5, o0, o1, o3 = 0", "run 1: o3 = 0.25, o0-o2 = 0", "run 1: o0 = x + 0.5, o1 = y + 0.5, o2 = 1.0, o3 = 0.5", "run 1: o0 = x + 0.5, o1-o3 = 0", "run 1: o1 = y + 0.5, o0, o2, o3 = 0", "run 2: o0-o3 = 1.0, 2.0, 0.5, 0.25", "run 2: o0 = 1.0, o1-o3 = 0", "run 2: o1 = 2.0, o0, o2, o3 = 0", "run 2: o2 = 0.5, o0, o1, o3 = 0", "run 2: o3 = 0.25, o0-o2 = 0", "run 2: o0 = x + 0.5, o1 = y + 0.5, o2 = 1.0, o3 = 0.5", "run 2: o0 = x + 0.5, o1-o3 = 0", "run 2: o1 = y + 0.5, o0, o2, o3 = 0"]
+blk = { 1 = 0x5d00200 }
+kpoke = ["rd:9=1"]
+
+[[probe]]
+name = "pbe-pack-floats-room-channels-b27rd9-mode22"
+question = "what pack mode 22 stores for o0-o3 four singles, each alone, and the pixel's x and y (room setup b27rd9)"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x216
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+cases = [["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x3F800000\nmov.skipinv.end o3, #0x3F000000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x3F800000\nmov.skipinv.end o3, #0x3F000000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"]]
+labels = ["run 1: o0-o3 = 1.0, 2.0, 0.5, 0.25", "run 1: o0 = 1.0, o1-o3 = 0", "run 1: o1 = 2.0, o0, o2, o3 = 0", "run 1: o2 = 0.5, o0, o1, o3 = 0", "run 1: o3 = 0.25, o0-o2 = 0", "run 1: o0 = x + 0.5, o1 = y + 0.5, o2 = 1.0, o3 = 0.5", "run 1: o0 = x + 0.5, o1-o3 = 0", "run 1: o1 = y + 0.5, o0, o2, o3 = 0", "run 2: o0-o3 = 1.0, 2.0, 0.5, 0.25", "run 2: o0 = 1.0, o1-o3 = 0", "run 2: o1 = 2.0, o0, o2, o3 = 0", "run 2: o2 = 0.5, o0, o1, o3 = 0", "run 2: o3 = 0.25, o0-o2 = 0", "run 2: o0 = x + 0.5, o1 = y + 0.5, o2 = 1.0, o3 = 0.5", "run 2: o0 = x + 0.5, o1-o3 = 0", "run 2: o1 = y + 0.5, o0, o2, o3 = 0"]
+blk = { 1 = 0x9d00200 }
+kpoke = ["rd:9=1"]
+
+[[probe]]
+name = "pbe-pack-floats-room-channels-b26rd9rows1-mode22"
+question = "what pack mode 22 stores for o0-o3 four singles, each alone, and the pixel's x and y (room setup b26rd9rows1)"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x216
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+cases = [["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x3F800000\nmov.skipinv.end o3, #0x3F000000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x3F800000\nmov.skipinv.end o3, #0x3F000000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"]]
+labels = ["run 1: o0-o3 = 1.0, 2.0, 0.5, 0.25", "run 1: o0 = 1.0, o1-o3 = 0", "run 1: o1 = 2.0, o0, o2, o3 = 0", "run 1: o2 = 0.5, o0, o1, o3 = 0", "run 1: o3 = 0.25, o0-o2 = 0", "run 1: o0 = x + 0.5, o1 = y + 0.5, o2 = 1.0, o3 = 0.5", "run 1: o0 = x + 0.5, o1-o3 = 0", "run 1: o1 = y + 0.5, o0, o2, o3 = 0", "run 2: o0-o3 = 1.0, 2.0, 0.5, 0.25", "run 2: o0 = 1.0, o1-o3 = 0", "run 2: o1 = 2.0, o0, o2, o3 = 0", "run 2: o2 = 0.5, o0, o1, o3 = 0", "run 2: o3 = 0.25, o0-o2 = 0", "run 2: o0 = x + 0.5, o1 = y + 0.5, o2 = 1.0, o3 = 0.5", "run 2: o0 = x + 0.5, o1-o3 = 0", "run 2: o1 = y + 0.5, o0, o2, o3 = 0"]
+blk = { 1 = 0x5d00200, 4 = 0x30001 }
+kpoke = ["rd:9=1"]
+
+[[probe]]
+name = "pbe-pack-floats-room-channels-b27rd9rows1-mode22"
+question = "what pack mode 22 stores for o0-o3 four singles, each alone, and the pixel's x and y (room setup b27rd9rows1)"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x216
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+cases = [["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x3F800000\nmov.skipinv.end o3, #0x3F000000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x3F800000\nmov.skipinv.end o3, #0x3F000000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"]]
+labels = ["run 1: o0-o3 = 1.0, 2.0, 0.5, 0.25", "run 1: o0 = 1.0, o1-o3 = 0", "run 1: o1 = 2.0, o0, o2, o3 = 0", "run 1: o2 = 0.5, o0, o1, o3 = 0", "run 1: o3 = 0.25, o0-o2 = 0", "run 1: o0 = x + 0.5, o1 = y + 0.5, o2 = 1.0, o3 = 0.5", "run 1: o0 = x + 0.5, o1-o3 = 0", "run 1: o1 = y + 0.5, o0, o2, o3 = 0", "run 2: o0-o3 = 1.0, 2.0, 0.5, 0.25", "run 2: o0 = 1.0, o1-o3 = 0", "run 2: o1 = 2.0, o0, o2, o3 = 0", "run 2: o2 = 0.5, o0, o1, o3 = 0", "run 2: o3 = 0.25, o0-o2 = 0", "run 2: o0 = x + 0.5, o1 = y + 0.5, o2 = 1.0, o3 = 0.5", "run 2: o0 = x + 0.5, o1-o3 = 0", "run 2: o1 = y + 0.5, o0, o2, o3 = 0"]
+blk = { 1 = 0x9d00200, 4 = 0x30001 }
+kpoke = ["rd:9=1"]
+
+[[probe]]
+name = "pbe-pack-floats-room-channels-rd9-mode22"
+question = "what pack mode 22 stores for o0-o3 four singles, each alone, and the pixel's x and y (room setup rd9)"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x216
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+cases = [["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x3F800000\nmov.skipinv.end o3, #0x3F000000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x3F800000\nmov.skipinv.end o3, #0x3F000000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"]]
+labels = ["run 1: o0-o3 = 1.0, 2.0, 0.5, 0.25", "run 1: o0 = 1.0, o1-o3 = 0", "run 1: o1 = 2.0, o0, o2, o3 = 0", "run 1: o2 = 0.5, o0, o1, o3 = 0", "run 1: o3 = 0.25, o0-o2 = 0", "run 1: o0 = x + 0.5, o1 = y + 0.5, o2 = 1.0, o3 = 0.5", "run 1: o0 = x + 0.5, o1-o3 = 0", "run 1: o1 = y + 0.5, o0, o2, o3 = 0", "run 2: o0-o3 = 1.0, 2.0, 0.5, 0.25", "run 2: o0 = 1.0, o1-o3 = 0", "run 2: o1 = 2.0, o0, o2, o3 = 0", "run 2: o2 = 0.5, o0, o1, o3 = 0", "run 2: o3 = 0.25, o0-o2 = 0", "run 2: o0 = x + 0.5, o1 = y + 0.5, o2 = 1.0, o3 = 0.5", "run 2: o0 = x + 0.5, o1-o3 = 0", "run 2: o1 = y + 0.5, o0, o2, o3 = 0"]
+kpoke = ["rd:9=1"]
+
+[[probe]]
+name = "pbe-pack-floats-room-channels-b26rd9-mode34"
+question = "what pack mode 34 stores for o0-o3 four singles, each alone, and the pixel's x and y (room setup b26rd9)"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x222
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+cases = [["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x3F800000\nmov.skipinv.end o3, #0x3F000000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x3F800000\nmov.skipinv.end o3, #0x3F000000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"]]
+labels = ["run 1: o0-o3 = 1.0, 2.0, 0.5, 0.25", "run 1: o0 = 1.0, o1-o3 = 0", "run 1: o1 = 2.0, o0, o2, o3 = 0", "run 1: o2 = 0.5, o0, o1, o3 = 0", "run 1: o3 = 0.25, o0-o2 = 0", "run 1: o0 = x + 0.5, o1 = y + 0.5, o2 = 1.0, o3 = 0.5", "run 1: o0 = x + 0.5, o1-o3 = 0", "run 1: o1 = y + 0.5, o0, o2, o3 = 0", "run 2: o0-o3 = 1.0, 2.0, 0.5, 0.25", "run 2: o0 = 1.0, o1-o3 = 0", "run 2: o1 = 2.0, o0, o2, o3 = 0", "run 2: o2 = 0.5, o0, o1, o3 = 0", "run 2: o3 = 0.25, o0-o2 = 0", "run 2: o0 = x + 0.5, o1 = y + 0.5, o2 = 1.0, o3 = 0.5", "run 2: o0 = x + 0.5, o1-o3 = 0", "run 2: o1 = y + 0.5, o0, o2, o3 = 0"]
+blk = { 1 = 0x5d00200 }
+kpoke = ["rd:9=1"]
+
+[[probe]]
+name = "pbe-pack-floats-room-channels-b27rd9-mode34"
+question = "what pack mode 34 stores for o0-o3 four singles, each alone, and the pixel's x and y (room setup b27rd9)"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x222
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+cases = [["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x3F800000\nmov.skipinv.end o3, #0x3F000000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x3F800000\nmov.skipinv.end o3, #0x3F000000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"]]
+labels = ["run 1: o0-o3 = 1.0, 2.0, 0.5, 0.25", "run 1: o0 = 1.0, o1-o3 = 0", "run 1: o1 = 2.0, o0, o2, o3 = 0", "run 1: o2 = 0.5, o0, o1, o3 = 0", "run 1: o3 = 0.25, o0-o2 = 0", "run 1: o0 = x + 0.5, o1 = y + 0.5, o2 = 1.0, o3 = 0.5", "run 1: o0 = x + 0.5, o1-o3 = 0", "run 1: o1 = y + 0.5, o0, o2, o3 = 0", "run 2: o0-o3 = 1.0, 2.0, 0.5, 0.25", "run 2: o0 = 1.0, o1-o3 = 0", "run 2: o1 = 2.0, o0, o2, o3 = 0", "run 2: o2 = 0.5, o0, o1, o3 = 0", "run 2: o3 = 0.25, o0-o2 = 0", "run 2: o0 = x + 0.5, o1 = y + 0.5, o2 = 1.0, o3 = 0.5", "run 2: o0 = x + 0.5, o1-o3 = 0", "run 2: o1 = y + 0.5, o0, o2, o3 = 0"]
+blk = { 1 = 0x9d00200 }
+kpoke = ["rd:9=1"]
+
+[[probe]]
+name = "pbe-pack-floats-room-channels-b26rd9rows1-mode34"
+question = "what pack mode 34 stores for o0-o3 four singles, each alone, and the pixel's x and y (room setup b26rd9rows1)"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x222
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+cases = [["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x3F800000\nmov.skipinv.end o3, #0x3F000000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x3F800000\nmov.skipinv.end o3, #0x3F000000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"]]
+labels = ["run 1: o0-o3 = 1.0, 2.0, 0.5, 0.25", "run 1: o0 = 1.0, o1-o3 = 0", "run 1: o1 = 2.0, o0, o2, o3 = 0", "run 1: o2 = 0.5, o0, o1, o3 = 0", "run 1: o3 = 0.25, o0-o2 = 0", "run 1: o0 = x + 0.5, o1 = y + 0.5, o2 = 1.0, o3 = 0.5", "run 1: o0 = x + 0.5, o1-o3 = 0", "run 1: o1 = y + 0.5, o0, o2, o3 = 0", "run 2: o0-o3 = 1.0, 2.0, 0.5, 0.25", "run 2: o0 = 1.0, o1-o3 = 0", "run 2: o1 = 2.0, o0, o2, o3 = 0", "run 2: o2 = 0.5, o0, o1, o3 = 0", "run 2: o3 = 0.25, o0-o2 = 0", "run 2: o0 = x + 0.5, o1 = y + 0.5, o2 = 1.0, o3 = 0.5", "run 2: o0 = x + 0.5, o1-o3 = 0", "run 2: o1 = y + 0.5, o0, o2, o3 = 0"]
+blk = { 1 = 0x5d00200, 4 = 0x30001 }
+kpoke = ["rd:9=1"]
+
+[[probe]]
+name = "pbe-pack-floats-room-channels-b27rd9rows1-mode34"
+question = "what pack mode 34 stores for o0-o3 four singles, each alone, and the pixel's x and y (room setup b27rd9rows1)"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x222
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+cases = [["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x3F800000\nmov.skipinv.end o3, #0x3F000000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x3F800000\nmov.skipinv.end o3, #0x3F000000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"]]
+labels = ["run 1: o0-o3 = 1.0, 2.0, 0.5, 0.25", "run 1: o0 = 1.0, o1-o3 = 0", "run 1: o1 = 2.0, o0, o2, o3 = 0", "run 1: o2 = 0.5, o0, o1, o3 = 0", "run 1: o3 = 0.25, o0-o2 = 0", "run 1: o0 = x + 0.5, o1 = y + 0.5, o2 = 1.0, o3 = 0.5", "run 1: o0 = x + 0.5, o1-o3 = 0", "run 1: o1 = y + 0.5, o0, o2, o3 = 0", "run 2: o0-o3 = 1.0, 2.0, 0.5, 0.25", "run 2: o0 = 1.0, o1-o3 = 0", "run 2: o1 = 2.0, o0, o2, o3 = 0", "run 2: o2 = 0.5, o0, o1, o3 = 0", "run 2: o3 = 0.25, o0-o2 = 0", "run 2: o0 = x + 0.5, o1 = y + 0.5, o2 = 1.0, o3 = 0.5", "run 2: o0 = x + 0.5, o1-o3 = 0", "run 2: o1 = y + 0.5, o0, o2, o3 = 0"]
+blk = { 1 = 0x9d00200, 4 = 0x30001 }
+kpoke = ["rd:9=1"]
+
+[[probe]]
+name = "pbe-pack-floats-room-channels-rd9-mode34"
+question = "what pack mode 34 stores for o0-o3 four singles, each alone, and the pixel's x and y (room setup rd9)"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x222
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+cases = [["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x3F800000\nmov.skipinv.end o3, #0x3F000000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, #0x3F800000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x40000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x3F000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x3E800000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x3F800000\nmov.skipinv.end o3, #0x3F000000"], ["mov.skipinv o0, pa0\nmov.skipinv o1, #0x00000000\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"], ["mov.skipinv o0, #0x00000000\nmov.skipinv o1, pa1\nmov.skipinv o2, #0x00000000\nmov.skipinv.end o3, #0x00000000"]]
+labels = ["run 1: o0-o3 = 1.0, 2.0, 0.5, 0.25", "run 1: o0 = 1.0, o1-o3 = 0", "run 1: o1 = 2.0, o0, o2, o3 = 0", "run 1: o2 = 0.5, o0, o1, o3 = 0", "run 1: o3 = 0.25, o0-o2 = 0", "run 1: o0 = x + 0.5, o1 = y + 0.5, o2 = 1.0, o3 = 0.5", "run 1: o0 = x + 0.5, o1-o3 = 0", "run 1: o1 = y + 0.5, o0, o2, o3 = 0", "run 2: o0-o3 = 1.0, 2.0, 0.5, 0.25", "run 2: o0 = 1.0, o1-o3 = 0", "run 2: o1 = 2.0, o0, o2, o3 = 0", "run 2: o2 = 0.5, o0, o1, o3 = 0", "run 2: o3 = 0.25, o0-o2 = 0", "run 2: o0 = x + 0.5, o1 = y + 0.5, o2 = 1.0, o3 = 0.5", "run 2: o0 = x + 0.5, o1-o3 = 0", "run 2: o1 = y + 0.5, o0, o2, o3 = 0"]
+kpoke = ["rd:9=1"]
+
+[[probe]]
+name = "pbe-pack-floats-room-ramps-b26rd9-mode0"
+question = "what pack mode 0 stores for o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9 and each ramp alone (room setup b26rd9)"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x200
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+cases = [["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nfmad.skipinv o0, pa0, r1, r2\nfmad.skipinv o1, pa1, r1, r3\nmov.skipinv o2, #0x3E99999A\nmov.skipinv.end o3, #0x3F666666"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o1, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o0, pa0, r1, r2"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o0, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o1, pa1, r1, r3"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nfmad.skipinv o0, pa0, r1, r2\nfmad.skipinv o1, pa1, r1, r3\nmov.skipinv o2, #0x3E99999A\nmov.skipinv.end o3, #0x3F666666"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o1, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o0, pa0, r1, r2"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o0, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o1, pa1, r1, r3"]]
+labels = ["run 1: o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9", "run 1: o0 = x/128, o1-o3 = 0", "run 1: o1 = 0.5 + y/128, o0, o2, o3 = 0", "run 2: o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9", "run 2: o0 = x/128, o1-o3 = 0", "run 2: o1 = 0.5 + y/128, o0, o2, o3 = 0"]
+blk = { 1 = 0x5d00200 }
+kpoke = ["rd:9=1"]
+
+[[probe]]
+name = "pbe-pack-floats-room-ramps-b27rd9-mode0"
+question = "what pack mode 0 stores for o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9 and each ramp alone (room setup b27rd9)"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x200
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+cases = [["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nfmad.skipinv o0, pa0, r1, r2\nfmad.skipinv o1, pa1, r1, r3\nmov.skipinv o2, #0x3E99999A\nmov.skipinv.end o3, #0x3F666666"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o1, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o0, pa0, r1, r2"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o0, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o1, pa1, r1, r3"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nfmad.skipinv o0, pa0, r1, r2\nfmad.skipinv o1, pa1, r1, r3\nmov.skipinv o2, #0x3E99999A\nmov.skipinv.end o3, #0x3F666666"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o1, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o0, pa0, r1, r2"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o0, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o1, pa1, r1, r3"]]
+labels = ["run 1: o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9", "run 1: o0 = x/128, o1-o3 = 0", "run 1: o1 = 0.5 + y/128, o0, o2, o3 = 0", "run 2: o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9", "run 2: o0 = x/128, o1-o3 = 0", "run 2: o1 = 0.5 + y/128, o0, o2, o3 = 0"]
+blk = { 1 = 0x9d00200 }
+kpoke = ["rd:9=1"]
+
+[[probe]]
+name = "pbe-pack-floats-room-ramps-b26rd9rows1-mode0"
+question = "what pack mode 0 stores for o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9 and each ramp alone (room setup b26rd9rows1)"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x200
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+cases = [["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nfmad.skipinv o0, pa0, r1, r2\nfmad.skipinv o1, pa1, r1, r3\nmov.skipinv o2, #0x3E99999A\nmov.skipinv.end o3, #0x3F666666"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o1, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o0, pa0, r1, r2"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o0, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o1, pa1, r1, r3"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nfmad.skipinv o0, pa0, r1, r2\nfmad.skipinv o1, pa1, r1, r3\nmov.skipinv o2, #0x3E99999A\nmov.skipinv.end o3, #0x3F666666"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o1, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o0, pa0, r1, r2"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o0, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o1, pa1, r1, r3"]]
+labels = ["run 1: o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9", "run 1: o0 = x/128, o1-o3 = 0", "run 1: o1 = 0.5 + y/128, o0, o2, o3 = 0", "run 2: o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9", "run 2: o0 = x/128, o1-o3 = 0", "run 2: o1 = 0.5 + y/128, o0, o2, o3 = 0"]
+blk = { 1 = 0x5d00200, 4 = 0x30001 }
+kpoke = ["rd:9=1"]
+
+[[probe]]
+name = "pbe-pack-floats-room-ramps-b27rd9rows1-mode0"
+question = "what pack mode 0 stores for o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9 and each ramp alone (room setup b27rd9rows1)"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x200
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+cases = [["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nfmad.skipinv o0, pa0, r1, r2\nfmad.skipinv o1, pa1, r1, r3\nmov.skipinv o2, #0x3E99999A\nmov.skipinv.end o3, #0x3F666666"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o1, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o0, pa0, r1, r2"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o0, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o1, pa1, r1, r3"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nfmad.skipinv o0, pa0, r1, r2\nfmad.skipinv o1, pa1, r1, r3\nmov.skipinv o2, #0x3E99999A\nmov.skipinv.end o3, #0x3F666666"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o1, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o0, pa0, r1, r2"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o0, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o1, pa1, r1, r3"]]
+labels = ["run 1: o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9", "run 1: o0 = x/128, o1-o3 = 0", "run 1: o1 = 0.5 + y/128, o0, o2, o3 = 0", "run 2: o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9", "run 2: o0 = x/128, o1-o3 = 0", "run 2: o1 = 0.5 + y/128, o0, o2, o3 = 0"]
+blk = { 1 = 0x9d00200, 4 = 0x30001 }
+kpoke = ["rd:9=1"]
+
+[[probe]]
+name = "pbe-pack-floats-room-ramps-rd9-mode0"
+question = "what pack mode 0 stores for o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9 and each ramp alone (room setup rd9)"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x200
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+cases = [["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nfmad.skipinv o0, pa0, r1, r2\nfmad.skipinv o1, pa1, r1, r3\nmov.skipinv o2, #0x3E99999A\nmov.skipinv.end o3, #0x3F666666"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o1, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o0, pa0, r1, r2"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o0, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o1, pa1, r1, r3"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nfmad.skipinv o0, pa0, r1, r2\nfmad.skipinv o1, pa1, r1, r3\nmov.skipinv o2, #0x3E99999A\nmov.skipinv.end o3, #0x3F666666"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o1, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o0, pa0, r1, r2"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o0, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o1, pa1, r1, r3"]]
+labels = ["run 1: o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9", "run 1: o0 = x/128, o1-o3 = 0", "run 1: o1 = 0.5 + y/128, o0, o2, o3 = 0", "run 2: o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9", "run 2: o0 = x/128, o1-o3 = 0", "run 2: o1 = 0.5 + y/128, o0, o2, o3 = 0"]
+kpoke = ["rd:9=1"]
+
+[[probe]]
+name = "pbe-pack-floats-room-ramps-b26rd9-mode22"
+question = "what pack mode 22 stores for o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9 and each ramp alone (room setup b26rd9)"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x216
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+cases = [["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nfmad.skipinv o0, pa0, r1, r2\nfmad.skipinv o1, pa1, r1, r3\nmov.skipinv o2, #0x3E99999A\nmov.skipinv.end o3, #0x3F666666"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o1, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o0, pa0, r1, r2"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o0, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o1, pa1, r1, r3"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nfmad.skipinv o0, pa0, r1, r2\nfmad.skipinv o1, pa1, r1, r3\nmov.skipinv o2, #0x3E99999A\nmov.skipinv.end o3, #0x3F666666"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o1, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o0, pa0, r1, r2"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o0, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o1, pa1, r1, r3"]]
+labels = ["run 1: o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9", "run 1: o0 = x/128, o1-o3 = 0", "run 1: o1 = 0.5 + y/128, o0, o2, o3 = 0", "run 2: o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9", "run 2: o0 = x/128, o1-o3 = 0", "run 2: o1 = 0.5 + y/128, o0, o2, o3 = 0"]
+blk = { 1 = 0x5d00200 }
+kpoke = ["rd:9=1"]
+
+[[probe]]
+name = "pbe-pack-floats-room-ramps-b27rd9-mode22"
+question = "what pack mode 22 stores for o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9 and each ramp alone (room setup b27rd9)"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x216
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+cases = [["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nfmad.skipinv o0, pa0, r1, r2\nfmad.skipinv o1, pa1, r1, r3\nmov.skipinv o2, #0x3E99999A\nmov.skipinv.end o3, #0x3F666666"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o1, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o0, pa0, r1, r2"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o0, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o1, pa1, r1, r3"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nfmad.skipinv o0, pa0, r1, r2\nfmad.skipinv o1, pa1, r1, r3\nmov.skipinv o2, #0x3E99999A\nmov.skipinv.end o3, #0x3F666666"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o1, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o0, pa0, r1, r2"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o0, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o1, pa1, r1, r3"]]
+labels = ["run 1: o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9", "run 1: o0 = x/128, o1-o3 = 0", "run 1: o1 = 0.5 + y/128, o0, o2, o3 = 0", "run 2: o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9", "run 2: o0 = x/128, o1-o3 = 0", "run 2: o1 = 0.5 + y/128, o0, o2, o3 = 0"]
+blk = { 1 = 0x9d00200 }
+kpoke = ["rd:9=1"]
+
+[[probe]]
+name = "pbe-pack-floats-room-ramps-b26rd9rows1-mode22"
+question = "what pack mode 22 stores for o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9 and each ramp alone (room setup b26rd9rows1)"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x216
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+cases = [["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nfmad.skipinv o0, pa0, r1, r2\nfmad.skipinv o1, pa1, r1, r3\nmov.skipinv o2, #0x3E99999A\nmov.skipinv.end o3, #0x3F666666"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o1, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o0, pa0, r1, r2"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o0, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o1, pa1, r1, r3"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nfmad.skipinv o0, pa0, r1, r2\nfmad.skipinv o1, pa1, r1, r3\nmov.skipinv o2, #0x3E99999A\nmov.skipinv.end o3, #0x3F666666"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o1, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o0, pa0, r1, r2"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o0, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o1, pa1, r1, r3"]]
+labels = ["run 1: o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9", "run 1: o0 = x/128, o1-o3 = 0", "run 1: o1 = 0.5 + y/128, o0, o2, o3 = 0", "run 2: o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9", "run 2: o0 = x/128, o1-o3 = 0", "run 2: o1 = 0.5 + y/128, o0, o2, o3 = 0"]
+blk = { 1 = 0x5d00200, 4 = 0x30001 }
+kpoke = ["rd:9=1"]
+
+[[probe]]
+name = "pbe-pack-floats-room-ramps-b27rd9rows1-mode22"
+question = "what pack mode 22 stores for o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9 and each ramp alone (room setup b27rd9rows1)"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x216
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+cases = [["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nfmad.skipinv o0, pa0, r1, r2\nfmad.skipinv o1, pa1, r1, r3\nmov.skipinv o2, #0x3E99999A\nmov.skipinv.end o3, #0x3F666666"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o1, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o0, pa0, r1, r2"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o0, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o1, pa1, r1, r3"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nfmad.skipinv o0, pa0, r1, r2\nfmad.skipinv o1, pa1, r1, r3\nmov.skipinv o2, #0x3E99999A\nmov.skipinv.end o3, #0x3F666666"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o1, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o0, pa0, r1, r2"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o0, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o1, pa1, r1, r3"]]
+labels = ["run 1: o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9", "run 1: o0 = x/128, o1-o3 = 0", "run 1: o1 = 0.5 + y/128, o0, o2, o3 = 0", "run 2: o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9", "run 2: o0 = x/128, o1-o3 = 0", "run 2: o1 = 0.5 + y/128, o0, o2, o3 = 0"]
+blk = { 1 = 0x9d00200, 4 = 0x30001 }
+kpoke = ["rd:9=1"]
+
+[[probe]]
+name = "pbe-pack-floats-room-ramps-rd9-mode22"
+question = "what pack mode 22 stores for o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9 and each ramp alone (room setup rd9)"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x216
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+cases = [["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nfmad.skipinv o0, pa0, r1, r2\nfmad.skipinv o1, pa1, r1, r3\nmov.skipinv o2, #0x3E99999A\nmov.skipinv.end o3, #0x3F666666"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o1, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o0, pa0, r1, r2"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o0, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o1, pa1, r1, r3"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nfmad.skipinv o0, pa0, r1, r2\nfmad.skipinv o1, pa1, r1, r3\nmov.skipinv o2, #0x3E99999A\nmov.skipinv.end o3, #0x3F666666"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o1, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o0, pa0, r1, r2"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o0, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o1, pa1, r1, r3"]]
+labels = ["run 1: o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9", "run 1: o0 = x/128, o1-o3 = 0", "run 1: o1 = 0.5 + y/128, o0, o2, o3 = 0", "run 2: o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9", "run 2: o0 = x/128, o1-o3 = 0", "run 2: o1 = 0.5 + y/128, o0, o2, o3 = 0"]
+kpoke = ["rd:9=1"]
+
+[[probe]]
+name = "pbe-pack-floats-room-ramps-b26rd9-mode34"
+question = "what pack mode 34 stores for o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9 and each ramp alone (room setup b26rd9)"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x222
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+cases = [["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nfmad.skipinv o0, pa0, r1, r2\nfmad.skipinv o1, pa1, r1, r3\nmov.skipinv o2, #0x3E99999A\nmov.skipinv.end o3, #0x3F666666"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o1, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o0, pa0, r1, r2"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o0, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o1, pa1, r1, r3"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nfmad.skipinv o0, pa0, r1, r2\nfmad.skipinv o1, pa1, r1, r3\nmov.skipinv o2, #0x3E99999A\nmov.skipinv.end o3, #0x3F666666"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o1, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o0, pa0, r1, r2"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o0, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o1, pa1, r1, r3"]]
+labels = ["run 1: o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9", "run 1: o0 = x/128, o1-o3 = 0", "run 1: o1 = 0.5 + y/128, o0, o2, o3 = 0", "run 2: o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9", "run 2: o0 = x/128, o1-o3 = 0", "run 2: o1 = 0.5 + y/128, o0, o2, o3 = 0"]
+blk = { 1 = 0x5d00200 }
+kpoke = ["rd:9=1"]
+
+[[probe]]
+name = "pbe-pack-floats-room-ramps-b27rd9-mode34"
+question = "what pack mode 34 stores for o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9 and each ramp alone (room setup b27rd9)"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x222
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+cases = [["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nfmad.skipinv o0, pa0, r1, r2\nfmad.skipinv o1, pa1, r1, r3\nmov.skipinv o2, #0x3E99999A\nmov.skipinv.end o3, #0x3F666666"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o1, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o0, pa0, r1, r2"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o0, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o1, pa1, r1, r3"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nfmad.skipinv o0, pa0, r1, r2\nfmad.skipinv o1, pa1, r1, r3\nmov.skipinv o2, #0x3E99999A\nmov.skipinv.end o3, #0x3F666666"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o1, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o0, pa0, r1, r2"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o0, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o1, pa1, r1, r3"]]
+labels = ["run 1: o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9", "run 1: o0 = x/128, o1-o3 = 0", "run 1: o1 = 0.5 + y/128, o0, o2, o3 = 0", "run 2: o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9", "run 2: o0 = x/128, o1-o3 = 0", "run 2: o1 = 0.5 + y/128, o0, o2, o3 = 0"]
+blk = { 1 = 0x9d00200 }
+kpoke = ["rd:9=1"]
+
+[[probe]]
+name = "pbe-pack-floats-room-ramps-b26rd9rows1-mode34"
+question = "what pack mode 34 stores for o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9 and each ramp alone (room setup b26rd9rows1)"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x222
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+cases = [["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nfmad.skipinv o0, pa0, r1, r2\nfmad.skipinv o1, pa1, r1, r3\nmov.skipinv o2, #0x3E99999A\nmov.skipinv.end o3, #0x3F666666"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o1, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o0, pa0, r1, r2"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o0, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o1, pa1, r1, r3"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nfmad.skipinv o0, pa0, r1, r2\nfmad.skipinv o1, pa1, r1, r3\nmov.skipinv o2, #0x3E99999A\nmov.skipinv.end o3, #0x3F666666"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o1, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o0, pa0, r1, r2"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o0, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o1, pa1, r1, r3"]]
+labels = ["run 1: o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9", "run 1: o0 = x/128, o1-o3 = 0", "run 1: o1 = 0.5 + y/128, o0, o2, o3 = 0", "run 2: o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9", "run 2: o0 = x/128, o1-o3 = 0", "run 2: o1 = 0.5 + y/128, o0, o2, o3 = 0"]
+blk = { 1 = 0x5d00200, 4 = 0x30001 }
+kpoke = ["rd:9=1"]
+
+[[probe]]
+name = "pbe-pack-floats-room-ramps-b27rd9rows1-mode34"
+question = "what pack mode 34 stores for o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9 and each ramp alone (room setup b27rd9rows1)"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x222
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+cases = [["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nfmad.skipinv o0, pa0, r1, r2\nfmad.skipinv o1, pa1, r1, r3\nmov.skipinv o2, #0x3E99999A\nmov.skipinv.end o3, #0x3F666666"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o1, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o0, pa0, r1, r2"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o0, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o1, pa1, r1, r3"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nfmad.skipinv o0, pa0, r1, r2\nfmad.skipinv o1, pa1, r1, r3\nmov.skipinv o2, #0x3E99999A\nmov.skipinv.end o3, #0x3F666666"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o1, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o0, pa0, r1, r2"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o0, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o1, pa1, r1, r3"]]
+labels = ["run 1: o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9", "run 1: o0 = x/128, o1-o3 = 0", "run 1: o1 = 0.5 + y/128, o0, o2, o3 = 0", "run 2: o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9", "run 2: o0 = x/128, o1-o3 = 0", "run 2: o1 = 0.5 + y/128, o0, o2, o3 = 0"]
+blk = { 1 = 0x9d00200, 4 = 0x30001 }
+kpoke = ["rd:9=1"]
+
+[[probe]]
+name = "pbe-pack-floats-room-ramps-rd9-mode34"
+question = "what pack mode 34 stores for o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9 and each ramp alone (room setup rd9)"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x222
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+cases = [["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nfmad.skipinv o0, pa0, r1, r2\nfmad.skipinv o1, pa1, r1, r3\nmov.skipinv o2, #0x3E99999A\nmov.skipinv.end o3, #0x3F666666"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o1, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o0, pa0, r1, r2"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o0, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o1, pa1, r1, r3"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nfmad.skipinv o0, pa0, r1, r2\nfmad.skipinv o1, pa1, r1, r3\nmov.skipinv o2, #0x3E99999A\nmov.skipinv.end o3, #0x3F666666"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o1, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o0, pa0, r1, r2"], ["mov.skipinv r1, #0x3C000000\nmov.skipinv r2, #0x00000000\nmov.skipinv r3, #0x3F000000\nmov.skipinv o0, #0\nmov.skipinv o2, #0\nmov.skipinv o3, #0\nfmad.skipinv.end o1, pa1, r1, r3"]]
+labels = ["run 1: o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9", "run 1: o0 = x/128, o1-o3 = 0", "run 1: o1 = 0.5 + y/128, o0, o2, o3 = 0", "run 2: o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9", "run 2: o0 = x/128, o1-o3 = 0", "run 2: o1 = 0.5 + y/128, o0, o2, o3 = 0"]
+kpoke = ["rd:9=1"]

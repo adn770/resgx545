@@ -1,0 +1,10 @@
+title = "script table ta/te-words"
+repo = "data"
+paths = ["ta/te-words/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 4
+size = 280435
+sha256 = "c89aeb324d6abcfbb175e75c2e9593d10d608811b320921c04b97bdfccf482ac"
+recipe = "probes/ta/te-words.toml"
+needs = ["render", "kpoke", "regs"]

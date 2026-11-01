@@ -1,0 +1,10 @@
+title = "probe table pbe/pack-floats-room"
+repo = "data"
+paths = ["pbe/pack-floats-room/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 482
+size = 13814445
+sha256 = "0683416bff5be3bfd2222f1d3e02b7186638be3d32e44d16a6f08a0b2bdfb03f"
+recipe = "probes/pbe/pack-floats-room.toml"
+needs = ["render", "kpoke"]

@@ -3,7 +3,7 @@ id = "Q005"
 question = "should the kernel ask the firmware for its identity on every boot, so DEV_QUERY reports it without the debug option?"
 unit = "edm"
 phase = 6
-evidence = ["E017", "E022", "E321"]
+evidence = ["E017", "E022", "E321", "E402"]
 terms = ["misc_info", "misc_info_features"]
 +++
 
@@ -20,12 +20,23 @@ reported in every build, but only once the firmware is loaded, which happens at 
 context creation (`sgxfive_ioctl_create_ctx` loads the firmware; no other ioctl does). Before
 that, the firmware query gives zeros (E022).
 
-What a query at boot costs is measured (E321, one run): after each of three resets (about
-0.27 s each) the EDM answers within 169 to 175 µs, first query and second alike, and a firmware
-that has stopped serving commands leaves the query to the kernel's wait, 500 ms (sgxfive_debug.c;
-about 0.65 s from the shell). Sending it
-would let a build without the debug option report the identity and catch a firmware built for
-another core, for well under a millisecond per boot.
+What a query at boot costs is measured (E321, one run): after each of three resets (about 0.27 s
+each) the EDM answers within 169 to 175 µs, first query and second alike, and a firmware that has
+stopped serving commands leaves the query to the kernel's wait, 500 ms.
 
-Open: the decision. Meanwhile userspace takes the firmware file's values and treats `SW_VALID`
-as optional.
+Decided (2026-11-07, the user): the kernel asks GETMISCINFO in every build, at the end of each boot
+of the firmware, so after the load and after each reset. An answer sets `SW_VALID`; a reply for
+another core or revision than the registers name, or a firmware built for another core than 545,
+is kept and warned about; no answer leaves `SW_VALID` clear and logs once until the firmware
+answers again, and the boot does not fail for it. Done in the linux fork's commit 32, with KUnit
+in builds with and without the debug option (the reply's core check, no answer, `GPU_INFO`).
+A review of the first version added, in the same commits: SW_VALID is cleared when the firmware
+stops (sgxfive_halt), so GPU_INFO shows no identity while a reset restarts the firmware and a
+failed boot leaves none, and FW_INFO's `ddk_version` is 0 while the flag is clear; the stored
+values are written with WRITE_ONCE before the flag is released and read with READ_ONCE after it
+is acquired. Checked on the laptop in both builds (E402): nothing before the load, then core 545
+and DDK 1.7.17 after the load and after a reset, the answer in 0.18 to 3.9 ms, and the flag clear
+for the length of a reset (GPU_INFO read in a loop during a debugfs reset).
+
+What is left: a mismatch and a missing answer have not been seen on hardware, since the EDM
+answered every request; only KUnit covers them.

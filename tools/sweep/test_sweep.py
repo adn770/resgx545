@@ -1008,3 +1008,39 @@ def test_the_kernel_default_pb_comes_back_when_a_run_dies(tmp_path):
         sweep.run(s, ex, tmp_path / "o", size_of)
     assert setups == [0x422, 0x23, sweep.DEFAULT_PB_PAGES]
     assert sweep.DEFAULT_PB_PAGES == 0x422
+
+
+# ---- the jobs' times (11.15) -------------------------------------------------------------
+
+@pytest.mark.parametrize("text,us", [
+    ("job: ok\njob time: 564 us\n", 564),
+    ("tri 64x64 #1: 1062 triangle\ntri 64x64 #1: 6189 us\ntri 64x64 #2: 7000 us\n", 6189),
+    ("job: ok\n", None),
+    ("probe x: job time: 5 us\n", None),
+])
+def test_job_time_us(text, us):
+    assert sweep.job_time_us(text) == us
+
+
+def test_report_gives_the_spread_of_the_jobs_times_and_the_odd_ones(tmp_path):
+    s = small(tmp_path)
+
+    def t(us):
+        return out() + f"job time: {us} us\n"
+    ex = FakeExec({"baseline": (0, t(500)), "xfer:0^=0x1": (0, t(510)),
+                   "xfer:0^=0x2": (0, t(490)), "xfer:0=0": (0, t(5000)),
+                   "xfer:1^=0x1": (0, t(520)), "xfer:1^=0x2": (0, t(100)),
+                   "xfer:1=0": (0, out())})
+    d = tmp_path / "o"
+    sweep.run(s, ex, d, size_of)
+    rep = (d / "report.txt").read_text()
+    assert "baseline time: 500 us\n" in rep
+    assert "case times: 5 timed, min 100 us, median 510 us, max 5000 us\n" in rep
+    assert "odd times: xfer:0=0 (5000 us); xfer:1^=0x2 (100 us)\n" in rep
+
+
+def test_report_without_times_has_no_time_lines(tmp_path):
+    s = small(tmp_path)
+    d = tmp_path / "o"
+    sweep.run(s, FakeExec(), d, size_of)
+    assert "time" not in (d / "report.txt").read_text()

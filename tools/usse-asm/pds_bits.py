@@ -18,10 +18,10 @@ writes them again, byte for byte (test_pds_bits.py).
 
     pds_bits.py table DIR [--before]   write the three tables into DIR (probes/pds/): GROUPS;
                                        --before with the fields of BEFORE, as committed
-    pds_bits.py table DIR --mov128     write mov128-bit15.toml (11.14, Q077) into DIR
+    pds_bits.py table DIR --mov128     write mov128-bit15.toml (11.14, E379) into DIR
     pds_bits.py eval TABLE RAW         each probe's cases against its base, from a saved run
 
-The mov128 follow-up (11.14, Q077) gives every input dword its own marker (MOV128_MARKS: ds0[n]
+The mov128 follow-up (11.14, E379) gives every input dword its own marker (MOV128_MARKS: ds0[n]
 0xA00000nn, ds1[n] 0xB00000nn), so that `locate` names the dword each value read back came from,
 and sets mov128's bit 15 with each of its other unmapped bits in turn (MOV128_CASES), every case
 MOV128_RUNS times; a second probe repeats a few cases with another set of markers.
@@ -68,7 +68,7 @@ class BitsError(Exception):
     pass
 
 
-# The mov128 follow-up (Q077): ds0[n] and ds1[n] of the inputs (n 2-9) each hold their own marker.
+# The mov128 follow-up (E379): ds0[n] and ds1[n] of the inputs (n 2-9) each hold their own marker.
 _PARAM_DWORDS = {"A": (0, 2), "B": (0, 3), "C": (0, 4), "D": (0, 5), "E": (0, 6), "F": (0, 7),
                  "G": (0, 8), "H": (0, 9), "I": (1, 2), "J": (1, 3), "K": (1, 4), "L": (1, 5),
                  "M": (1, 6), "N": (1, 7), "O": (1, 8), "P": (1, 9)}
@@ -150,7 +150,7 @@ def _mr_probe() -> dict:
 
 
 def mov128_probes() -> list[dict]:
-    """The mov128 bit 15 follow-up (Q077): its three probes."""
+    """The mov128 bit 15 follow-up (E379): its three probes."""
     return [
         _mov128_probe("pds-mov128-bit15-companions",
                       "mov128 with bit 15 and each other unmapped bit, every input dword its own "
@@ -390,14 +390,14 @@ def main(argv=None) -> int:
     t = sub.add_parser("table")
     t.add_argument("out")
     t.add_argument("--before", action="store_true", help="the fields of BEFORE, as committed")
-    t.add_argument("--mov128", action="store_true", help="the mov128 bit 15 follow-up (Q077)")
+    t.add_argument("--mov128", action="store_true", help="the mov128 bit 15 follow-up (E379)")
     e = sub.add_parser("eval")
     e.add_argument("table")
     e.add_argument("raw")
     a = ap.parse_args(argv)
     if a.cmd == "table" and a.mov128:
         (pathlib.Path(a.out) / "mov128-bit15.toml").write_text(
-            table_text(mov128_probes(), about="mov128 bit 15 (Q077)"))
+            table_text(mov128_probes(), about="mov128 bit 15 (E379)"))
     elif a.cmd == "table":
         for group, name in GROUPS.items():
             (pathlib.Path(a.out) / f"{name}.toml").write_text(

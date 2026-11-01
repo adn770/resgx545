@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# vdm state1 hang seq: 0 probes (a script, state1-hang-seq.sh).
+# E413: bits 11:9 = 7 in series of one kind of job, to tell the readback from the job before.
+needs = ["render"]
+name = "vdm-state1-hang-seq"
+script = "state1-hang-seq.sh"

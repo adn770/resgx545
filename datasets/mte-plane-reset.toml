@@ -1,0 +1,10 @@
+title = "probe table mte/plane-reset"
+repo = "data"
+paths = ["mte/plane-reset/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 48
+size = 1168985
+sha256 = "d23e1dbc1d7c8dad975b8c602ab84ce778eb2ad85eb82120849d99f82848abdb"
+recipe = "probes/mte/plane-reset.toml"
+needs = ["render"]

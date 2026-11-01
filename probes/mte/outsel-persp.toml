@@ -1,0 +1,37 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# mte outsel persp: 2 probes (written once for 11.15, not regenerated).
+# Q069: OUTSEL bits 13:12 on a perspective triangle with its iteration.
+needs = ["render"]
+
+[[probe]]
+name = "mte-outsel-persp-r1"
+question = "OUTSEL bits 13:12 with a perspective iteration through the pixel PDS"
+source = "pds_tex_iter.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_persp.s" }
+vtx_coords = 2
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+dump_render = true
+cases = [[0x40000801, 0, 0x2000004], [0x40000801, 0, 0x2000004], [0x40000801, 0, 0x2000004], [0x40000801, 0, 0x2000004]]
+labels = ["OUTSEL 0x63000", "OUTSEL 0x62000", "OUTSEL 0x61000", "OUTSEL 0x60000"]
+case_set = [{ blk = { 13 = 0x63000 } }, { blk = { 13 = 0x62000 } }, { blk = { 13 = 0x61000 } }, { blk = { 13 = 0x60000 } }]
+
+[[probe]]
+name = "mte-outsel-persp-r2"
+question = "OUTSEL bits 13:12 with a perspective iteration through the pixel PDS"
+source = "pds_tex_iter.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_persp.s" }
+vtx_coords = 2
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+dump_render = true
+cases = [[0x40000801, 0, 0x2000004], [0x40000801, 0, 0x2000004], [0x40000801, 0, 0x2000004], [0x40000801, 0, 0x2000004]]
+labels = ["OUTSEL 0x63000", "OUTSEL 0x62000", "OUTSEL 0x61000", "OUTSEL 0x60000"]
+case_set = [{ blk = { 13 = 0x63000 } }, { blk = { 13 = 0x62000 } }, { blk = { 13 = 0x61000 } }, { blk = { 13 = 0x60000 } }]

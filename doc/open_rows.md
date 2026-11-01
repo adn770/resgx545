@@ -12,9 +12,10 @@ sits, the reading, and the evidence records it rests on.
 ## registers: (no unit)
 
 - `G0151` `CR_REG_0148` (0x0148): a one-bit (bit 0) per-job mode of the 3D and transfer paths for a
-  feature these clients leave off: no value changes a triangle, five copies, a fill or a copy.
-  Measured: per-render word the host supplies with the 3D registers (transfer command and render
-  details); 0 in captures [infer]. Evidence: E056.
+  feature these clients leave off: no value changes a triangle, five copies, a fill or a copy of a
+  shader that writes o0 only (E037, E412); with a shader that writes o1 to o3 as well, bit 0 changes
+  where they land (E406). Measured: per-render word the host supplies with the 3D registers
+  (transfer command and render details); 0 in captures [infer]. Evidence: E056, E406, E412.
 - `G0432` `CR_REG_0324` (0x0324): context store/resume state of an interrupted TA: a state base
   (16-byte aligned, E182), unused while the TA runs to the end. Measured: TA command word; 0 in
   captures [infer]. Evidence: E030, E056, E071, E072, E159, E182, E183.
@@ -51,8 +52,10 @@ sits, the reading, and the evidence records it rests on.
   of 17 implemented bits). Measured: set once by the init script to 0xffff; implemented bits 16:0;
   no effect on a fill, copy or triangle in any value [infer]. Evidence: E006, E026.
 - `G0157` `CR_REG_0818` (0x0818): an enable mask or upper limit left at its widest (11 bits all
-  ones). Measured: set once by the init script to 0x7ff; implemented bits 10:0; no effect on a fill,
-  copy or triangle in any value [infer]. Evidence: E006, E026.
+  ones). Measured: set once by the init script to 0x7ff; implemented bits 10:0; no effect on a fill
+  or copy, a job's time or a fault in any value; on a triangle none either, but with bit 8 set and
+  bit 10 clear the triangle drawn after a render of another size is wrong (E404, E405) [infer].
+  Evidence: E006, E026, E403, E404, E405.
 
 ## registers: DPM
 
@@ -240,7 +243,8 @@ sits, the reading, and the evidence records it rests on.
 - `G0326` `hw_render_details.poly_offset_factor` (HWRENDERDETAILS+0x018): value the EDM copies into
   CR_ISP_POLY_OFFSET_FACTOR [infer]. Evidence: E071, E338.
 - `G0696` `hw_render_details.reg_0148` (HWRENDERDETAILS+0x024): render details word 9, which the 3D
-  kick writes to CR_REG_0148 (0x0148); what it holds is not shown [infer]. Evidence: E163.
+  kick writes to CR_REG_0148 (0x0148); its bit 0 changes where a shader's o1 to o3 land under E406's
+  setup and no other effect is shown (E412) [infer]. Evidence: E163, E406, E412.
 - `G0328` `hw_render_details.reg_0400` (HWRENDERDETAILS+0x008): The render-side word that loads
   register 0x0400: bit 25 inverts bits 31:24 of every pixel the job writes, and no other bit changed
   a pixel; the data come from the render command's word 11, which loads the same register, not from

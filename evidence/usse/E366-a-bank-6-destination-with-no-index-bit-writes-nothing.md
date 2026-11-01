@@ -37,7 +37,7 @@ would differ. Every job completed.
 
 The attributes probe (attr_dump.s, `stad` from pa0-pa15 and sa0-sa15) stored r1, the marker, in all
 32 dwords of all ten cases, the control included, so it reads nothing; pa and sa were read
-through moves (copy_dump.s) only for numbers 0, 4 and 64 (a store whose data is pa or sa is Q097).
+through moves (copy_dump.s) only for numbers 0, 4 and 64 (a store whose data is pa or sa is E380's).
 
 **Not shown.** Registers no form of ours reads (the global bank's write path, the MOE state);
 numbers other than these six; pa and sa for numbers other than 0, 4 and 64. [infer] The

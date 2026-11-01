@@ -242,7 +242,7 @@ def _green(n: int) -> list[list[str]]:
 
 
 def state1_split_probes() -> list[dict]:
-    """Q015: the sweep's word on the probe's triangle with its own colour, with o0 copied and
+    """E299: the sweep's word on the probe's triangle with its own colour, with o0 copied and
     no readback, and as the original probe."""
     word = 0x0a022e05
     ps = [
@@ -308,7 +308,7 @@ def object_probes() -> list[dict]:
 
 
 SCRIPTS = {
-    "vdm/state1-split": ("state1-split.sh", "Q015: the sweep's bits 11:9 = 7 split three ways",
+    "vdm/state1-split": ("state1-split.sh", "E299: the sweep's bits 11:9 = 7 split three ways",
                          ["render", "render_param", "render_tadata"], state1_split_probes),
     "vdm/index2": (None, "Q042: VDM_INDEX2 over the five-copy job",
                    ["render", "render_param", "render_tadata"], index2_probes),

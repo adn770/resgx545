@@ -21,3 +21,7 @@ print; and what the page before the source holds (0x04000004 at its first texel 
 To settle it: print the source, destination and scratch addresses with the job (a tool option),
 and fill the page before the source with a counting pattern, then repeat the bit-12 and bit-14
 flips.
+
+Not run in 11.15: the settle plan needs the copy tool to print the source, destination and scratch
+addresses and to fill the page before the source with a counting pattern; neither option exists, and
+no tool was built in this session. Status: narrowed, not answered; missing: the two copy options.

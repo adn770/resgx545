@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# render cancel closed at hold end: 0 probes (a shell script run on the laptop by hand, not by
+# the campaign). render_uapi.md section 10: a closed context's job at the reset that ends a hold
+needs = [
+    "render", "hold_recovery", "reset", "status",
+]
+name = "render-cancel-closed-at-hold-end"
+script = "cancel-closed-at-hold-end.sh"

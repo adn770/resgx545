@@ -19,3 +19,8 @@ To settle it: on the laptop, a 4x render of our own stack (mode 2 and the closed
 with the closed driver's PBE words, reading which pixels land and whether they are sample averages,
 then the same with that instruction bit flipped in our end-of-render task's equivalent; and a
 capture walk that also follows the pixel programs' secondary data for coverage words.
+
+Not run in 11.15: the settle plan needs the closed driver's PBE words and a capture walk of the
+pixel programs' secondary data; the poke indices for the PBE words (the closed driver's words are in
+a surface description, not in the render details) are not mapped, and no 4x render of our own stack
+with them was made. Status: narrowed, not answered; missing: a mapped poke for the PBE words.

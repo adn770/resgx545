@@ -15,10 +15,10 @@ of 0xff00ff00, all in whole 2x2 quads but 36, forming diagonal-edged pieces of a
 read 0x11223344 in all 2048 pixels, three rounds of three. In E366's output probe, o1-o7 read
 the same two colours and values of earlier jobs.
 
-**Reading [infer].** The colour 0xff00ff00 of Q018's jobs is the baseline triangle's, left in
-the output buffers: a job that does not write o0 reads the last job's o0 for the same instance
-slot, and its count depends on what ran before. E077's 348 pixels, E082's counts and the 269
-and 185 of Q015's state probe are of this kind where those jobs' o0 was not written by their
-own pass.
+**Reading [infer].** The colour 0xff00ff00 of the leftover-colour jobs (E082's scene) is the
+baseline triangle's, left in the output buffers: a job that does not write o0 reads the last job's
+o0 for the same instance slot, and its count depends on what ran before. E077's 348 pixels, E082's
+counts and the 269 and 185 of E060's and E185's state probes are of this kind where those jobs' o0
+was not written by their own pass.
 
 **Not shown.** Why o1 reads what o0 held; whether a job of another size maps the slots alike.

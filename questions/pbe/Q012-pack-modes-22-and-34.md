@@ -3,7 +3,7 @@ id = "Q012"
 question = "what float formats are pack modes 22 and 34, given that both read o0 as an IEEE single (sign, NaN and exponent) and store it at some of the triangle's dwords while the rest change with the job before?"
 unit = "pbe"
 phase = 6
-evidence = ["E032", "E270", "E387"]
+evidence = ["E032", "E270", "E387", "E406"]
 terms = ["SIDEBAND.PACKMODE", "PACKMODE"]
 +++
 
@@ -32,3 +32,19 @@ would explain it.
 To settle it: the shader writing o0 to o3 with four different singles (and each alone set), every
 pixel read back, both modes; a ramp of singles over x (o0 = x / 64) to place each dword's value by
 pixel.
+
+Narrowed in 11.15 (E406, the setup of ISP word 0 bit 26 or 27, CR_REG_0148 bit 0 and one data row,
+two runs): under it o1 to o3 stop landing on other pixels (room for four output dwords is the
+reading [infer]), and the pack-floats probes give one value per case on the triangle's pixels in 12
+of 16 mode 0 cases, where the plain job gave one value in four cases of 16, two in six and 32 in
+two (E387), so the varying rest of E387 was the shader's registers landing on other pixels. On the
+triangle's pixels pack mode 22 puts o0 in bits 31:30 and o1 in bits 19:10, but every value that set
+a field was saturated (o0 = 1.0 alone 0xc0000000, o1 = 2.0 alone 0x000ffc00, all four 0xc00ffc00,
+and x + 0.5, y + 0.5), so the fields are placed and what they encode is not shown [infer]; o2 and
+o3 at 0.5 and 0.25 give 0. Mode 34 stores bits 30:20 of o1's single in bits 21:11 (o1 = 2.0 alone
+0x00200000; a mid-range ramp fits on 1017 of 1062 pixels, the others lower by two to four in the
+field), and o0 = 1.0, o2 and o3 alone store 0. The constants 0x88 and 0x60800000 sit on pixels the
+triangle does not cover [infer]. Still open: why o2 and o3 feed nothing at the values tried (o2 at
+1.0, 0.5 and 0.3, o3 at 0.25, 0.5 and 0.9), what the mode 22 fields encode at unsaturated values,
+the 45 and 43 pixels at 0 in the mode 22 ramps, the 45 or so pixels of the mode 34 ramp that
+differ, and the fields at other values. Status: narrowed, not answered.

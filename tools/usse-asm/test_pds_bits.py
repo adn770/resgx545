@@ -118,7 +118,7 @@ def test_classify_without_a_base_reading_says_so():
 
 
 def test_the_mov128_follow_up_marks_every_input_dword():
-    """11.14 (Q077): each data dword holds its own marker, so a dword read back names its
+    """11.14 (E379): each data dword holds its own marker, so a dword read back names its
     source; bit 15 is set with each companion bit in turn, every case in RUNS runs."""
     ps = B.mov128_probes()
     assert [p["name"] for p in ps] == ["pds-mov128-bit15-companions", "pds-mov128-bit15-markers2",

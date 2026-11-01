@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# render hold hang repeat: 0 probes (a script, hold-hang-repeat.sh).
+# Q037: hung jobs' render memory saved while recovery is held, repeated
+needs = [
+    "render", "render_pb_pages", "render_param", "render_tadata", "hold_recovery", "reset", "regs", "kreg",
+    "miscinfo",
+]
+name = "render-hold-hang-repeat"
+script = "hold-hang-repeat.sh"
+stage = ["vdm/state1"]

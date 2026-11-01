@@ -1,0 +1,81 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse output room four: 5 probes (written once for 11.15, not regenerated).
+# Q023, Q012: the setup that gives room for four output dwords, five runs.
+needs = ["render", "kpoke"]
+name = "usse-output-room-four"
+
+[[probe]]
+name = "usse-output-room-four-r1"
+question = "the tagged shader with the four-output setup against the plain job"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["or.skipinv o0, pa0, #1\nor.skipinv o1, pa0, #2\nor.skipinv o2, pa0, #3\nor.skipinv o3, pa0, #4\nor.skipinv o4, pa0, #5\nor.skipinv o5, pa0, #6\nor.skipinv o6, pa0, #7\nor.skipinv.end o7, pa0, #8"], ["or.skipinv o0, pa1, #1\nor.skipinv o1, pa1, #2\nor.skipinv o2, pa1, #3\nor.skipinv o3, pa1, #4\nor.skipinv o4, pa1, #5\nor.skipinv o5, pa1, #6\nor.skipinv o6, pa1, #7\nor.skipinv.end o7, pa1, #8"], ["or.skipinv o0, pa0, #1\nor.skipinv o1, pa0, #2\nor.skipinv o2, pa0, #3\nor.skipinv o3, pa0, #4\nor.skipinv o4, pa0, #5\nor.skipinv o5, pa0, #6\nor.skipinv o6, pa0, #7\nor.skipinv.end o7, pa0, #8"], ["or.skipinv o0, pa1, #1\nor.skipinv o1, pa1, #2\nor.skipinv o2, pa1, #3\nor.skipinv o3, pa1, #4\nor.skipinv o4, pa1, #5\nor.skipinv o5, pa1, #6\nor.skipinv o6, pa1, #7\nor.skipinv.end o7, pa1, #8"], ["or.skipinv o0, pa0, #1\nor.skipinv o1, pa0, #2\nor.skipinv o2, pa0, #3\nor.skipinv o3, pa0, #4\nor.skipinv o4, pa0, #5\nor.skipinv o5, pa0, #6\nor.skipinv o6, pa0, #7\nor.skipinv.end o7, pa0, #8"], ["or.skipinv o0, pa1, #1\nor.skipinv o1, pa1, #2\nor.skipinv o2, pa1, #3\nor.skipinv o3, pa1, #4\nor.skipinv o4, pa1, #5\nor.skipinv o5, pa1, #6\nor.skipinv o6, pa1, #7\nor.skipinv.end o7, pa1, #8"]]
+labels = ["plain, size 3, tags from x", "plain, size 3, tags from y", "isp0 bit 26 and rd:9 = 1, size 3, tags from x", "isp0 bit 26 and rd:9 = 1, size 3, tags from y", "isp0 bit 27 and rd:9 = 1, size 3, tags from x", "isp0 bit 27 and rd:9 = 1, size 3, tags from y"]
+case_set = [{ blk = { 1 = 0x1d00200 }, kpoke = ["rd:9=0"] }, { blk = { 1 = 0x1d00200 }, kpoke = ["rd:9=0"] }, { blk = { 1 = 0x5d00200 }, kpoke = ["rd:9=1"] }, { blk = { 1 = 0x5d00200 }, kpoke = ["rd:9=1"] }, { blk = { 1 = 0x9d00200 }, kpoke = ["rd:9=1"] }, { blk = { 1 = 0x9d00200 }, kpoke = ["rd:9=1"] }]
+
+[[probe]]
+name = "usse-output-room-four-r2"
+question = "the tagged shader with the four-output setup against the plain job"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["or.skipinv o0, pa0, #1\nor.skipinv o1, pa0, #2\nor.skipinv o2, pa0, #3\nor.skipinv o3, pa0, #4\nor.skipinv o4, pa0, #5\nor.skipinv o5, pa0, #6\nor.skipinv o6, pa0, #7\nor.skipinv.end o7, pa0, #8"], ["or.skipinv o0, pa1, #1\nor.skipinv o1, pa1, #2\nor.skipinv o2, pa1, #3\nor.skipinv o3, pa1, #4\nor.skipinv o4, pa1, #5\nor.skipinv o5, pa1, #6\nor.skipinv o6, pa1, #7\nor.skipinv.end o7, pa1, #8"], ["or.skipinv o0, pa0, #1\nor.skipinv o1, pa0, #2\nor.skipinv o2, pa0, #3\nor.skipinv o3, pa0, #4\nor.skipinv o4, pa0, #5\nor.skipinv o5, pa0, #6\nor.skipinv o6, pa0, #7\nor.skipinv.end o7, pa0, #8"], ["or.skipinv o0, pa1, #1\nor.skipinv o1, pa1, #2\nor.skipinv o2, pa1, #3\nor.skipinv o3, pa1, #4\nor.skipinv o4, pa1, #5\nor.skipinv o5, pa1, #6\nor.skipinv o6, pa1, #7\nor.skipinv.end o7, pa1, #8"], ["or.skipinv o0, pa0, #1\nor.skipinv o1, pa0, #2\nor.skipinv o2, pa0, #3\nor.skipinv o3, pa0, #4\nor.skipinv o4, pa0, #5\nor.skipinv o5, pa0, #6\nor.skipinv o6, pa0, #7\nor.skipinv.end o7, pa0, #8"], ["or.skipinv o0, pa1, #1\nor.skipinv o1, pa1, #2\nor.skipinv o2, pa1, #3\nor.skipinv o3, pa1, #4\nor.skipinv o4, pa1, #5\nor.skipinv o5, pa1, #6\nor.skipinv o6, pa1, #7\nor.skipinv.end o7, pa1, #8"]]
+labels = ["plain, size 3, tags from x", "plain, size 3, tags from y", "isp0 bit 26 and rd:9 = 1, size 3, tags from x", "isp0 bit 26 and rd:9 = 1, size 3, tags from y", "isp0 bit 27 and rd:9 = 1, size 3, tags from x", "isp0 bit 27 and rd:9 = 1, size 3, tags from y"]
+case_set = [{ blk = { 1 = 0x1d00200 }, kpoke = ["rd:9=0"] }, { blk = { 1 = 0x1d00200 }, kpoke = ["rd:9=0"] }, { blk = { 1 = 0x5d00200 }, kpoke = ["rd:9=1"] }, { blk = { 1 = 0x5d00200 }, kpoke = ["rd:9=1"] }, { blk = { 1 = 0x9d00200 }, kpoke = ["rd:9=1"] }, { blk = { 1 = 0x9d00200 }, kpoke = ["rd:9=1"] }]
+
+[[probe]]
+name = "usse-output-room-four-r3"
+question = "the tagged shader with the four-output setup against the plain job"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["or.skipinv o0, pa0, #1\nor.skipinv o1, pa0, #2\nor.skipinv o2, pa0, #3\nor.skipinv o3, pa0, #4\nor.skipinv o4, pa0, #5\nor.skipinv o5, pa0, #6\nor.skipinv o6, pa0, #7\nor.skipinv.end o7, pa0, #8"], ["or.skipinv o0, pa1, #1\nor.skipinv o1, pa1, #2\nor.skipinv o2, pa1, #3\nor.skipinv o3, pa1, #4\nor.skipinv o4, pa1, #5\nor.skipinv o5, pa1, #6\nor.skipinv o6, pa1, #7\nor.skipinv.end o7, pa1, #8"], ["or.skipinv o0, pa0, #1\nor.skipinv o1, pa0, #2\nor.skipinv o2, pa0, #3\nor.skipinv o3, pa0, #4\nor.skipinv o4, pa0, #5\nor.skipinv o5, pa0, #6\nor.skipinv o6, pa0, #7\nor.skipinv.end o7, pa0, #8"], ["or.skipinv o0, pa1, #1\nor.skipinv o1, pa1, #2\nor.skipinv o2, pa1, #3\nor.skipinv o3, pa1, #4\nor.skipinv o4, pa1, #5\nor.skipinv o5, pa1, #6\nor.skipinv o6, pa1, #7\nor.skipinv.end o7, pa1, #8"], ["or.skipinv o0, pa0, #1\nor.skipinv o1, pa0, #2\nor.skipinv o2, pa0, #3\nor.skipinv o3, pa0, #4\nor.skipinv o4, pa0, #5\nor.skipinv o5, pa0, #6\nor.skipinv o6, pa0, #7\nor.skipinv.end o7, pa0, #8"], ["or.skipinv o0, pa1, #1\nor.skipinv o1, pa1, #2\nor.skipinv o2, pa1, #3\nor.skipinv o3, pa1, #4\nor.skipinv o4, pa1, #5\nor.skipinv o5, pa1, #6\nor.skipinv o6, pa1, #7\nor.skipinv.end o7, pa1, #8"]]
+labels = ["plain, size 3, tags from x", "plain, size 3, tags from y", "isp0 bit 26 and rd:9 = 1, size 3, tags from x", "isp0 bit 26 and rd:9 = 1, size 3, tags from y", "isp0 bit 27 and rd:9 = 1, size 3, tags from x", "isp0 bit 27 and rd:9 = 1, size 3, tags from y"]
+case_set = [{ blk = { 1 = 0x1d00200 }, kpoke = ["rd:9=0"] }, { blk = { 1 = 0x1d00200 }, kpoke = ["rd:9=0"] }, { blk = { 1 = 0x5d00200 }, kpoke = ["rd:9=1"] }, { blk = { 1 = 0x5d00200 }, kpoke = ["rd:9=1"] }, { blk = { 1 = 0x9d00200 }, kpoke = ["rd:9=1"] }, { blk = { 1 = 0x9d00200 }, kpoke = ["rd:9=1"] }]
+
+[[probe]]
+name = "usse-output-room-four-r4"
+question = "the tagged shader with the four-output setup against the plain job"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["or.skipinv o0, pa0, #1\nor.skipinv o1, pa0, #2\nor.skipinv o2, pa0, #3\nor.skipinv o3, pa0, #4\nor.skipinv o4, pa0, #5\nor.skipinv o5, pa0, #6\nor.skipinv o6, pa0, #7\nor.skipinv.end o7, pa0, #8"], ["or.skipinv o0, pa1, #1\nor.skipinv o1, pa1, #2\nor.skipinv o2, pa1, #3\nor.skipinv o3, pa1, #4\nor.skipinv o4, pa1, #5\nor.skipinv o5, pa1, #6\nor.skipinv o6, pa1, #7\nor.skipinv.end o7, pa1, #8"], ["or.skipinv o0, pa0, #1\nor.skipinv o1, pa0, #2\nor.skipinv o2, pa0, #3\nor.skipinv o3, pa0, #4\nor.skipinv o4, pa0, #5\nor.skipinv o5, pa0, #6\nor.skipinv o6, pa0, #7\nor.skipinv.end o7, pa0, #8"], ["or.skipinv o0, pa1, #1\nor.skipinv o1, pa1, #2\nor.skipinv o2, pa1, #3\nor.skipinv o3, pa1, #4\nor.skipinv o4, pa1, #5\nor.skipinv o5, pa1, #6\nor.skipinv o6, pa1, #7\nor.skipinv.end o7, pa1, #8"], ["or.skipinv o0, pa0, #1\nor.skipinv o1, pa0, #2\nor.skipinv o2, pa0, #3\nor.skipinv o3, pa0, #4\nor.skipinv o4, pa0, #5\nor.skipinv o5, pa0, #6\nor.skipinv o6, pa0, #7\nor.skipinv.end o7, pa0, #8"], ["or.skipinv o0, pa1, #1\nor.skipinv o1, pa1, #2\nor.skipinv o2, pa1, #3\nor.skipinv o3, pa1, #4\nor.skipinv o4, pa1, #5\nor.skipinv o5, pa1, #6\nor.skipinv o6, pa1, #7\nor.skipinv.end o7, pa1, #8"]]
+labels = ["plain, size 3, tags from x", "plain, size 3, tags from y", "isp0 bit 26 and rd:9 = 1, size 3, tags from x", "isp0 bit 26 and rd:9 = 1, size 3, tags from y", "isp0 bit 27 and rd:9 = 1, size 3, tags from x", "isp0 bit 27 and rd:9 = 1, size 3, tags from y"]
+case_set = [{ blk = { 1 = 0x1d00200 }, kpoke = ["rd:9=0"] }, { blk = { 1 = 0x1d00200 }, kpoke = ["rd:9=0"] }, { blk = { 1 = 0x5d00200 }, kpoke = ["rd:9=1"] }, { blk = { 1 = 0x5d00200 }, kpoke = ["rd:9=1"] }, { blk = { 1 = 0x9d00200 }, kpoke = ["rd:9=1"] }, { blk = { 1 = 0x9d00200 }, kpoke = ["rd:9=1"] }]
+
+[[probe]]
+name = "usse-output-room-four-r5"
+question = "the tagged shader with the four-output setup against the plain job"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["or.skipinv o0, pa0, #1\nor.skipinv o1, pa0, #2\nor.skipinv o2, pa0, #3\nor.skipinv o3, pa0, #4\nor.skipinv o4, pa0, #5\nor.skipinv o5, pa0, #6\nor.skipinv o6, pa0, #7\nor.skipinv.end o7, pa0, #8"], ["or.skipinv o0, pa1, #1\nor.skipinv o1, pa1, #2\nor.skipinv o2, pa1, #3\nor.skipinv o3, pa1, #4\nor.skipinv o4, pa1, #5\nor.skipinv o5, pa1, #6\nor.skipinv o6, pa1, #7\nor.skipinv.end o7, pa1, #8"], ["or.skipinv o0, pa0, #1\nor.skipinv o1, pa0, #2\nor.skipinv o2, pa0, #3\nor.skipinv o3, pa0, #4\nor.skipinv o4, pa0, #5\nor.skipinv o5, pa0, #6\nor.skipinv o6, pa0, #7\nor.skipinv.end o7, pa0, #8"], ["or.skipinv o0, pa1, #1\nor.skipinv o1, pa1, #2\nor.skipinv o2, pa1, #3\nor.skipinv o3, pa1, #4\nor.skipinv o4, pa1, #5\nor.skipinv o5, pa1, #6\nor.skipinv o6, pa1, #7\nor.skipinv.end o7, pa1, #8"], ["or.skipinv o0, pa0, #1\nor.skipinv o1, pa0, #2\nor.skipinv o2, pa0, #3\nor.skipinv o3, pa0, #4\nor.skipinv o4, pa0, #5\nor.skipinv o5, pa0, #6\nor.skipinv o6, pa0, #7\nor.skipinv.end o7, pa0, #8"], ["or.skipinv o0, pa1, #1\nor.skipinv o1, pa1, #2\nor.skipinv o2, pa1, #3\nor.skipinv o3, pa1, #4\nor.skipinv o4, pa1, #5\nor.skipinv o5, pa1, #6\nor.skipinv o6, pa1, #7\nor.skipinv.end o7, pa1, #8"]]
+labels = ["plain, size 3, tags from x", "plain, size 3, tags from y", "isp0 bit 26 and rd:9 = 1, size 3, tags from x", "isp0 bit 26 and rd:9 = 1, size 3, tags from y", "isp0 bit 27 and rd:9 = 1, size 3, tags from x", "isp0 bit 27 and rd:9 = 1, size 3, tags from y"]
+case_set = [{ blk = { 1 = 0x1d00200 }, kpoke = ["rd:9=0"] }, { blk = { 1 = 0x1d00200 }, kpoke = ["rd:9=0"] }, { blk = { 1 = 0x5d00200 }, kpoke = ["rd:9=1"] }, { blk = { 1 = 0x5d00200 }, kpoke = ["rd:9=1"] }, { blk = { 1 = 0x9d00200 }, kpoke = ["rd:9=1"] }, { blk = { 1 = 0x9d00200 }, kpoke = ["rd:9=1"] }]

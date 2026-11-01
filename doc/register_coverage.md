@@ -40,7 +40,8 @@ evidence records its rows, its fields' rows and its measured width cite.
 
 ## (no unit)
 
-- `0x0148` `CR_REG_0148`: width 1 bits (0, E252); no field rows. Records: E056, E252.
+- `0x0148` `CR_REG_0148`: width 1 bits (0, E252); no field rows. Records: E037, E056, E252, E406,
+  E412.
 - `0x0324` `CR_REG_0324`: width 28 bits (31:4, E054, E247); no field rows. Records: E030, E054,
   E056, E071, E072, E159, E182, E183, E247.
 - `0x0364` `CR_REG_0364`: width 32 bits (31:0, E054, E247); no field rows. Records: E030, E054,
@@ -57,7 +58,8 @@ evidence records its rows, its fields' rows and its measured width cite.
   E068, E073, E136, E225.
 - `0x0810` `CR_REG_0810`: width 1 bits (0, E026); no field rows. Records: E006, E026.
 - `0x0814` `CR_REG_0814`: width 17 bits (16:0, E026); no field rows. Records: E006, E026.
-- `0x0818` `CR_REG_0818`: width 11 bits (10:0, E026); no field rows. Records: E006, E026.
+- `0x0818` `CR_REG_0818`: width 11 bits (10:0, E026); no field rows. Records: E006, E026, E403,
+  E404, E405.
 
 ## BIF
 

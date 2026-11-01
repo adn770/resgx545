@@ -1,0 +1,10 @@
+title = "probe table usse/output-room-combos"
+repo = "data"
+paths = ["usse/output-room-combos/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 86
+size = 2928693
+sha256 = "4f8cd9810aec8ae20a59ede564cf1ff293c0ec31abdaec5b92dfe30f2ba4314d"
+recipe = "probes/usse/output-room-combos.toml"
+needs = ["render", "kpoke"]

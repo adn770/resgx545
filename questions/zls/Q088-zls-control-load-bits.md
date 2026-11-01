@@ -3,7 +3,7 @@ id = "Q088"
 question = "which of CR_ISP_ZLSCTL bits 1, 13 and 14, which the closed driver adds when a render loads a kept depth and stencil buffer, loads depth and which stencil, and what reads the render details' unpatched ZLS word the driver writes between frames?"
 unit = "zls"
 phase = 11
-evidence = ["E335", "E336", "E337"]
+evidence = ["E335", "E336", "E337", "E411"]
 terms = ["CR_ISP_ZLSCTL", "hw_render_details.isp_zlsctl"]
 +++
 
@@ -23,3 +23,13 @@ To settle it: on the laptop, a two-render job of our own stack with a depth and 
 added alone and in pairs, reading back the depth test's outcome against the first render's depth
 and a stencil test against its stencil; and a scene that runs out of parameter memory, with the
 render details' word poked to a marked value, to see whether the partial render's reload takes it.
+
+Narrowed in 11.15 (E411, two runs each): bits 13 and 14 act only with bit 1 set. In a store
+arrangement 0x17300e (bits 1 and 13 added to 0x17100c) stores the depth and no stencil, 0x17500e
+(bits 1 and 14) the stencil and a depth page of 0x5eadbeef (the loaded sentinel read as a depth),
+0x17700e the 0x5eadbeef depth and no stencil; without bit 1 the control's stores. In a load
+arrangement (depth 0.25f loaded, the triangle at z 0.5, depth test less) the load-only 0x11700a
+leaves 936 pixels wrong, 0x17300e 512 and 0x17500e and 0x17700e 1382, the control and the words
+without bit 1 none. So bit 1 turns the load on, bit 13 concerns the stencil and bit 14 the depth
+[infer]. Still open: the stencil load itself, and what reads the unpatched word the driver writes
+between frames (the partial render's reload was not run). Status: narrowed, not answered.

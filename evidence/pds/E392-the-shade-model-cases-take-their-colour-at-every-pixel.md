@@ -10,3 +10,6 @@ terms = []
 +++
 **Results.** Model 0 gave 0xff000040, model 1 0xffbf0040, model 2 0xff00bf40 at all 1062 pixels in
 every job; no pixel equalled the previous job's.
+
+**Not shown.** What made E133's two runs, on an earlier kernel, keep about 300 pixels of the
+previous case's colour: the stack of these runs does not show the group.

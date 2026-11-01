@@ -1,0 +1,101 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# mte plane reset: 6 probes (written once for 11.15, not regenerated).
+# Q039: plane 0's held clip result across a job that hangs and its reset.
+needs = ["render"]
+
+[[probe]]
+name = "mte-plane-reset-after-reset"
+question = "plane 0's state across a hang reset: after-reset"
+source = "vtx_fdpc10.s"
+host = "tri"
+slot = "vtxuse"
+temps = 0x10
+vtx_coords = 1
+blk = { 13 = 0x53001 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["hang", "o4 -1", "o4 +1", "o4 -1", "o4 +1"]
+cases = [["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0xBF800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0xBF800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"]]
+case_set = [{ vdm = { 1 = 0xa020405 } }, {  }, {  }, {  }, {  }]
+
+[[probe]]
+name = "mte-plane-reset-state-then-hang"
+question = "plane 0's state across a hang reset: state-then-hang"
+source = "vtx_fdpc10.s"
+host = "tri"
+slot = "vtxuse"
+temps = 0x10
+vtx_coords = 1
+blk = { 13 = 0x53001 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["fdpc -w", "no fdpc", "hang", "no fdpc", "fdpc +w", "o4 -1", "o4 +1"]
+cases = [["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        fdpc.skipinv.repeat4 r8, cp0, pa0, r4\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        fdpc.skipinv.repeat4 r8, cp0, pa0, r4\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0xBF800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"]]
+case_set = [{  }, {  }, { vdm = { 1 = 0xa020405 } }, {  }, {  }, {  }, {  }]
+
+[[probe]]
+name = "mte-plane-reset-plus-then-hang"
+question = "plane 0's state across a hang reset: plus-then-hang"
+source = "vtx_fdpc10.s"
+host = "tri"
+slot = "vtxuse"
+temps = 0x10
+vtx_coords = 1
+blk = { 13 = 0x53001 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["fdpc +w", "hang", "o4 -1", "o4 +1", "o4 -1"]
+cases = [["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        fdpc.skipinv.repeat4 r8, cp0, pa0, r4\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0xBF800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0xBF800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"]]
+case_set = [{  }, { vdm = { 1 = 0xa020405 } }, {  }, {  }, {  }]
+
+[[probe]]
+name = "mte-plane-reset-after-reset-r2"
+question = "plane 0's state across a hang reset: after-reset"
+source = "vtx_fdpc10.s"
+host = "tri"
+slot = "vtxuse"
+temps = 0x10
+vtx_coords = 1
+blk = { 13 = 0x53001 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["hang", "o4 -1", "o4 +1", "o4 -1", "o4 +1"]
+cases = [["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0xBF800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0xBF800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"]]
+case_set = [{ vdm = { 1 = 0xa020405 } }, {  }, {  }, {  }, {  }]
+
+[[probe]]
+name = "mte-plane-reset-state-then-hang-r2"
+question = "plane 0's state across a hang reset: state-then-hang"
+source = "vtx_fdpc10.s"
+host = "tri"
+slot = "vtxuse"
+temps = 0x10
+vtx_coords = 1
+blk = { 13 = 0x53001 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["fdpc -w", "no fdpc", "hang", "no fdpc", "fdpc +w", "o4 -1", "o4 +1"]
+cases = [["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        fdpc.skipinv.repeat4 r8, cp0, pa0, r4\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        fdpc.skipinv.repeat4 r8, cp0, pa0, r4\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0xBF800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"]]
+case_set = [{  }, {  }, { vdm = { 1 = 0xa020405 } }, {  }, {  }, {  }, {  }]
+
+[[probe]]
+name = "mte-plane-reset-plus-then-hang-r2"
+question = "plane 0's state across a hang reset: plus-then-hang"
+source = "vtx_fdpc10.s"
+host = "tri"
+slot = "vtxuse"
+temps = 0x10
+vtx_coords = 1
+blk = { 13 = 0x53001 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["fdpc +w", "hang", "o4 -1", "o4 +1", "o4 -1"]
+cases = [["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        fdpc.skipinv.repeat4 r8, cp0, pa0, r4\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0xBF800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0xBF800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"]]
+case_set = [{  }, { vdm = { 1 = 0xa020405 } }, {  }, {  }, {  }]

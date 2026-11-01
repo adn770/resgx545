@@ -22,3 +22,8 @@ bits 20:19 in word bits 21:20, every pixel read back. If the CBASE words draw th
 and the bits 21:20 words do not, EXE stops at bit 19 and CBASE extends the offset to 8 MiB. If the
 bits 21:20 word draws the program at 1 MiB and the CBASE words do not, the 18 program-counter bits
 reach bit 21, 2 MiB, and the program at 4 MiB is out of reach.
+
+Not run in 11.15: the settle plan needs a fill whose USE program sits 1 MiB and 4 MiB above the heap
+base, and the tool places programs only low in its heap (no option to move a program); the two DOUTU
+encodings are ready but not the placement. Status: narrowed, not answered; missing: a program
+placement option in the fill tool.

@@ -1,0 +1,10 @@
+title = "probe table isp/o0-start"
+repo = "data"
+paths = ["isp/o0-start/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 41
+size = 3067246
+sha256 = "773a9ef8d58ab97052b89f57bf950f0b4b575290836ae1adf2e274f50b7df86b"
+recipe = "probes/isp/o0-start.toml"
+needs = ["render", "kpoke"]

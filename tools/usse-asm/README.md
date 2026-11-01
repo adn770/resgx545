@@ -207,6 +207,14 @@ Our own GPU programs are in `asm/` at the repository root; `asm/README.md` lists
 
 ## Hardware probes
 
+A table entry with host = "tri" takes, besides its program words, per case (case_set) the words of
+the state block, the render command and the VDM stream as `blk`, `cmd` and `vdm` (replacing the
+probe's) and `vdm_xor` (flipped: `--vdm N^=V`, the only word space the tool flips), the kernel's
+render details and TA words as `kpoke = ["rd:N^=V"]`; the state block's and the render command's
+words are set by absolute values, as the tool flips neither.
+`output_room.py` reads the output-room probes (usse/output-room*.toml): which register of a
+tagged shader reached each pixel (11.15).
+
 `probe.py` runs our own short programs on the GPU to pin down what the instruction set does where
 the text alone does not say. A table is `probes/<unit>/<feature>.toml` (`--table FILE` picks
 one); per probe it names a template in the table's `templates/` directory, its parameters, the

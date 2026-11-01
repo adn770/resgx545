@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: 2026 Josep Torra
-# Q015 split: the sweep's case `vdm:1^=0xa00` (VDM state word 1 bits 11:9 = 7) on the
+# E299 split: the sweep's case `vdm:1^=0xa00` (VDM state word 1 bits 11:9 = 7) on the
 # library's triangle job (sgxfive-test tri), alone, with every pixel read back (--pixels) and
 # with the render memory dumped (--dump-render), after an unpoked control; the probe jobs of
 # the same table run the word on the probe's triangle. Each job's result lines are kept; the

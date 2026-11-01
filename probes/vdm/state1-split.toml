@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: 2026 Josep Torra
 # vdm state1 split: 3 probes (written by tools/usse-asm/ta_words.py).
-# Q015: the sweep's bits 11:9 = 7 split three ways
+# E299: the sweep's bits 11:9 = 7 split three ways
 needs = ["render", "render_param", "render_tadata"]
 name = "vdm-state1-split"
 script = "state1-split.sh"

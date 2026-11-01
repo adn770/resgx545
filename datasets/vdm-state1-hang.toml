@@ -1,0 +1,10 @@
+title = "script table vdm/state1-hang"
+repo = "data"
+paths = ["vdm/state1-hang/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 4
+size = 66413
+sha256 = "5e27650406920056695c3b85d28ed575dff4bebafa4701129aa2e0403a50ab81"
+recipe = "probes/vdm/state1-hang.toml"
+needs = ["render"]

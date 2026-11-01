@@ -1,0 +1,10 @@
+title = "probe table pds/douti-four"
+repo = "data"
+paths = ["pds/douti-four/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 68
+size = 1681770
+sha256 = "4358a33247ac1a177d2911798162f6f5681bcbf4e6ad838f7e156944e573215c"
+recipe = "probes/pds/douti-four.toml"
+needs = ["render"]

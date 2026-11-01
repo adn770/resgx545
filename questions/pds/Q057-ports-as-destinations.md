@@ -3,7 +3,7 @@ id = "Q057"
 question = "what do doutc, douts, slc, mr and ir0 do as move destinations, and movsa on ports other than doutd, and does an enabled small count in tim hang the job, and why?"
 unit = "pds"
 phase = 11
-evidence = ["E127", "E128", "E264"]
+evidence = ["E127", "E128", "E264", "E421"]
 terms = ["PORT.DOUTC"]
 +++
 
@@ -26,3 +26,10 @@ whether and why an enabled small count in tim hangs the job.
 To settle it: doutc with its four words varied (a mapped address in each in turn, the scratch at
 0x10000) in a fill, the faults and the scratch read back; the tim counts from 1 up, timed, ten runs
 each, kept for a session that may hang jobs.
+
+Narrowed in 11.15 (E421, two runs): a movs to doutc in the primary pixel program faults the job in 8
+of 8 with BIF status 0xd0400 at 0x1f031 (once 0x1f034), whichever of its four words holds the
+scratch placeholder 0x5CAF0000, so the address does not follow the placeholder (the placeholder's
+patch in this template is unconfirmed). Not run: the tim counts from 1 (they may hang the job and
+freeze the counter until a reset) and a fill's doutc with a patched address. Status: narrowed, not
+answered; missing: a PDS template whose data words are patched with the scratch address.

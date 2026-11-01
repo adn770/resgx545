@@ -34,5 +34,5 @@ the drawn group shows a triangle (E060). None of these jobs fails. Bit 12 set (w
 
 **Not shown.** Why bit 12 acts as it does: it was set in two probes only and not swept. The probe
 jobs set the whole word, so a bits 11:9 value is tested together with the rest of the word as
-given. The value 7 of bits 11:9 hangs in the sweep and renders in the probe (E060, Q015); here it
-renders.
+given. The value 7 of bits 11:9 hangs in the sweep and renders in the probe (E060; E413 explains
+the difference); here it renders.

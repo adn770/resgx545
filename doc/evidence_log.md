@@ -2486,6 +2486,149 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   0x0810, 0x0814 and 0x0818 to implement bit 0, bits 16:0 and bits 10:0 as separate 4-byte
   registers.
   *platform; DDK; data: none.*
+- `E402` With the kernel asking GETMISCINFO at the end of every boot of the firmware and clearing
+  the answer when the firmware stops, DEV_QUERY reports the firmware's core 545, revision 0x1000d
+  and DDK 1.7.17 build 862890 after the load and after a reset, in a build with the debug option and
+  in one without it, and nothing before the load; during a debugfs reset GPU_INFO has SW_VALID clear
+  from 1 ms after the reset is written until it returns (3619 of 3717 reads in the window); the EDM
+  answers in 0.18 to 3.9 ms at the load and in 0.18 to 1.8 ms after a reset; one run of each.
+  *edm; HW, DDK; data: none.*
+- `E403` With 0x0810, 0x0814 and 0x0818 each narrowed (down to 0), no job's median time falls
+  outside 0.81 to 1.21 of the init values' (inside the spread of the init runs), from a 64x32 fill
+  to a 2048x2048 triangle, eight back-to-back renders and pixel loops of 9.6 to 62 ms, and no job
+  faults or hangs (64 chained transfers all report ok; the tool prints no time for them); every
+  output holds but a triangle with 0x0818 = 0x3ff (E404); one reset restored all three to their init
+  values.
+  *platform; HW; data: `platform-register-limits`, `platform-init-register-copy`,
+  `platform-init-register-tri`.*
+- `E404` With 0x0818 holding bit 8 and not bit 10 (0x100, 0x1ff, 0x3ff), a triangle render draws
+  wrong pixels when the render before it ran under the same value with a target of another size,
+  deterministically, the job reporting ok; with the init value 0x7ff, with any other of 32 values
+  tried, with the register written between the two jobs, with one job after the write and with two
+  of the same size, it draws exactly.
+  *platform; HW; data: `platform-register-limits`, `platform-register-limits-scan`,
+  `platform-register-limits-pairs`, `platform-register-limits-values`.*
+- `E405` Of 24 values of 0x0818 (bits 10:8 in every combination, a low byte of 0x00, 0x7f or 0xff),
+  exactly the six with bit 8 set and bit 10 clear (bit 9 either) make the second of two triangles of
+  different sizes draw wrong, with the same count of wrong pixels in all three repeats (2439 of
+  16384 for 96 then 128, 2155 of 9216 for 128 then 96); the other 18 draw exactly.
+  *platform; HW; data: `platform-register-limits-combos`.*
+- `E406` With ISP word 0 bit 26 or 27 (0x05d00200 or 0x09d00200), CR_REG_0148 (render details dword
+  9) bit 0 and the state block's word 4 at 0x00030001 (PDS_SIZE 3, one data row), a shader writing
+  o0 to o7 with a tag in each leaves o0 on its own pixel and o4 on other pixels (tags 1 and 5) and
+  o1 to o3 (tags 2 to 4) on no pixel at all, in 27 of 27 jobs, where the plain job shows o1 to o3 on
+  447 to 600 other pixels; with the data rows at 2 to 4 the pattern is tags 1, 3, 5 and 7 and at 5
+  to 7 the job hangs; no single flip of 1797 jobs over PDS_SIZE, the VDM stream, the state block and
+  20 render details words gives the setup's pattern, three give the tags 1, 3, 5, 7 pattern.
+  *usse; HW; data: `usse-output-room`, `usse-output-room-vdm`, `usse-output-room-blk`,
+  `usse-output-room-rd`, `usse-output-room-bit15`, `usse-output-room-isp0`,
+  `usse-output-room-combos`, `usse-output-room-four`, `usse-output-room-seq`,
+  `usse-output-room-rows`, `pbe-pack-floats-room`.*
+- `E407` CR_TE_MTILE1 (0x0208) and CR_TE_MTILE2 (0x020c) take the TA command's te_mtile1 (ta:143)
+  and te_mtile2 (ta:144) as poked (but for te_mtile1 bits 8 and 20 at 256x256 and bits 8 to 10 at
+  1024x768, which do not take), and the render changes with them in three of three runs: at 256x256
+  flipping te_mtile1 bit 12, 15 or 16 leaves 6144 to 16384 pixels wrong and bit 13 or 31 faults the
+  job, while te_mtile1 bit 24 and te_mtile2 bit 0 draw the target exactly with a register value that
+  is not the rule's; at 1024x768 te_mtile1 bits 0, 1, 2 and 5 and te_mtile2 bits 0 and 1 leave
+  pixels wrong and te_mtile2 bits 2 and 8 fault the job.
+  *ta; HW; data: `ta-te-words`, `ta-te-words-repeat`.*
+- `E408` With CR_ISP_CTL (render details dword 3, rd:3) at the closed driver's 0xf0000 (bit 8 clear)
+  our triangle job leaves 36352 of 65536 pixels at 256x256 and 542720 of 786432 at 1024x768 as the
+  tool's sentinel, three runs each with the same count, and none at 64x64; 0x04c4 (rd:18) at the
+  closed driver's 0x2046400 changes neither the image nor the time at any of the three sizes; the
+  job time rises with the number of pokes, not with the value.
+  *render; HW; data: `ta-te-words`.*
+- `E409` CR_DPM_STATE_CONTEXT_ID (0x0630) reads 0 at every one of 2.96 million samples taken in 15
+  runs of one to three 1024x768 renders, so it cannot show the 3D's DPM slot; CR_TE_PSG (0x0218)
+  drops from 0x01400000 to 0x00400000 for 8 to 25 microseconds at each render's kick, and with the
+  command's bit 21 set it reads 0x01600000 before the first dip and shows one dip across two
+  renders.
+  *ta; HW; data: `ta-te-words`.*
+- `E410` On the one-triangle job, the render details dwords 76 and 77 (the background object's
+  second and third words) at every single-bit flip, 0 and 0xffffffff change nothing (68 of 68 runs,
+  the image of the control); dword 69 (its first word, 0x32411214) with 11 of its 32 bits flipped
+  draws the same wrong image (2860 of 4096 pixels), with the other 21 fails the job (19 faults and 2
+  hangs), and with 0 or 0xffffffff faults it.
+  *isp; HW; data: `isp-bg-words`.*
+- `E411` In a render with depth and stencil stored (CR_ISP_ZLSCTL 0x17100c), clearing bit 2 stores
+  nothing, clearing bit 17 stops the stencil store, clearing bit 18 stops the depth store, setting
+  bit 19 stores the depth as -1.0, bit 24 as 0x00ffffff and bit 25 as 0xffffffff on two pages, with
+  the same stored pages in both of two runs for all 32 flips; with bit 1 set, bit 13 drops the
+  stencil store and bit 14 stores the loaded depth, and neither does anything without bit 1, in two
+  runs each.
+  *zls; HW; data: `zls-control-bits`.*
+- `E412` CR_REG_0148 (render details dword 9) at 0 and at 1 gives the same image, the same stored
+  pages and a time within the spread in a render with depth and stencil stored, in 4x multisampled
+  renders in modes 1 and 2, in a 1024x768 render and in a 1024x768 render that overflows the
+  parameter buffer at 0x24 and 0x30 pages (the same wrong-pixel count each), three runs each.
+  *render; HW; data: `render-reg-0148-jobs`, `render-reg-0148-partial`.*
+- `E413` Jobs of the one-triangle library job with VDM state word 1 bits 11:9 = 7 hang exactly when
+  the previous such job completed and complete when it hung: 55 of 55 consecutive such jobs
+  alternate, with or without the pixel readback, with the unpoked control between them, in series of
+  ten and in mixed series; the control itself never hangs (0 of 35), bits 11:9 = 3 and 5 hang 3 of
+  20 and 5 of 20 jobs.
+  *vdm; HW; data: `vdm-state1-hang`, `vdm-state1-hang-seq`.*
+- `E414` With the index list's first trailing word at 0xf0000000 | k on the five-copy job (15
+  indices), the TA's object keeps floor((16 - k) / 3) of the five triangles, the leading ones, for k
+  = 0 to 6 and none for k = 16, 256 and 4096, in two runs each; bit 24 alone or with 0xf0000000
+  keeps three and sets bit 15 in the first two primitive-list entries; bits 25 to 27 alone or with
+  0xf0000000, and bits 31:28 at 0xf, 0xd and 0x7 with a vertex task of 16 and of 14 vertices, change
+  nothing; topology 1 (line) hangs the job and 2 (point) writes no object.
+  *vdm; HW; data: `vdm-index-trailing`.*
+- `E415` Under CR_ISP_MSAA modes 1 and 2 a 10-pixel triangle placed in each of the nine 16x16 tiles
+  of a 64x64 target is drawn only in the first and third tile columns with the TE anti-aliasing bits
+  clear and only in the middle column with them set (nine of nine cases each, three triangle phases
+  and three rows), each drawn tile with the TE bits clear landing 4 pixels right of its place (x)
+  and at its place (mode 1) or 4 pixels below (mode 2); with them set the middle triangle is wider
+  and lies left of its tile.
+  *isp; HW; data: `isp-msaa-tiles`.*
+- `E416` ISP word 0 bit 28 hangs a render in CR_ISP_MSAA mode 1 and mode 2 in 8 of 8 jobs whatever
+  0x0520 holds (0 or 0xeaa26e26), and single-sampled it widens a horizontal-edge right triangle only
+  at k = 6 (45 to 64 pixels, not at k = 0 and 12) with the same counts at 0x0520 = 0 and 0x88;
+  CR_ISP_REG_04DC with bit 1 set hangs the punch-through pass in 24 of 24 jobs, whether the shader
+  only discards, always fails, or uses pcoeff alone, and bit 1 clear completes all of them (12 of
+  12); the punch-through pass with pcoeff and the source-34 iteration draws the same five times, and
+  without that iteration its kept pixels differ from run to run (4 to 5 outcomes in 5 runs, with and
+  without pcoeff).
+  *isp; HW; data: `isp-bit28-modes`, `isp-punch-through-repeat`.*
+- `E417` In the triangle's opaque pass a shader that stores o0 unchanged gives the previous job's
+  colour on 390 to 450 of the triangle's 1062 pixels at 64x64 after a job of one constant colour and
+  on 0 to 336 of 2403 at 96x96 and 0 to 183 of 4284 at 128x128, the rest the background, and the
+  counts repeat (426 in four of seven pass-through jobs at 64x64); at 64x64 a pass-through job after
+  a pass-through job keeps the colour, at 96x96 and 128x128 it shows it on 0 to 183 pixels (none in
+  three of six).
+  *isp; HW; data: `isp-o0-start`.*
+- `E418` Plane 0's held clip result survives a job that hangs and the reset after it: with fdpc
+  having put every vertex outside (a job drew nothing) the next jobs without fdpc were removed
+  before the hang and after it (2 of 2 runs), and with fdpc having put them inside the next jobs
+  drew before and after the hang, with the distance dwords at -1 and +1 changing nothing (2 of 2
+  runs each); fdpc with the vertices inside cleared the held outside result (2 of 2).
+  *mte; HW; data: `mte-plane-reset`.*
+- `E419` With the vertex shader of the perspective probes (two coordinate sets, w = x + 2) and a
+  texture-and-iterate pixel program, OUTSEL 0x63000 and 0x61000 give one object (three dwords a
+  vertex with the 1/w, format 0x00040303) and 0x62000 and 0x60000 another (two dwords a vertex,
+  0x00000202), and all four give the same image, whose iterated value fits an affine interpolation
+  of the vertex values on all 1062 pixels (maximum error 1.7e-16) and not a perspective-correct one,
+  in two of two runs.
+  *mte; HW; data: `mte-outsel-persp`.*
+- `E420` With DOUTI0 bits 23:22 = 3 the pixel shader reads pa3 = 1.0 on 1038 to 1062 of the
+  triangle's 1062 pixels and a texel-valued dword (0xd0......) in pa4 on all 1062, in ten of ten
+  runs; the exceptions in pa3 (up to 24 pixels with other values) came in the first runs after a
+  baseline job.
+  *pds; HW; data: `pds-douti-four`.*
+- `E421` A movs to doutc in the triangle's primary pixel program faults the job in 8 of 8 jobs with
+  BIF status 0xd0400 at 0x1f031 (once 0x1f034) whichever of its four words holds the scratch
+  buffer's placeholder 0x5CAF0000, while the control completes.
+  *pds; HW; data: `pds-doutc-address`.*
+- `E422` In seven hung pixel-task jobs (five with recovery held, two without) the render memory dump
+  holds the object in the parameter buffer every time, and the TA data holds 71 non-zero dwords in
+  the five held dumps and none in the two unheld ones; the three held VDM state hangs have no object
+  at the start of the buffer; the object E186 found missing is not reproduced.
+  *render; HW; data: `render-hold-hang-repeat`.*
+- `E423` The simulator is unchanged by 11.15 and still matches every vector it models: over all the
+  vectors 24711 scalar vectors match, 1112 are fitted, 755 stop and none differs, 143 pixel vectors
+  match with 18 stopping and none differing, and the PDS vectors match, as after 11.14 (E400).
+  *usse; HW; data: none.*
 
 ## By unit
 
@@ -2501,7 +2644,7 @@ E327, E358, E362.
 ### edm
 
 Records: E009, E014, E017, E084, E146, E152, E153, E154, E155, E156, E157, E158, E159, E160, E161,
-E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321, E353.
+E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321, E353, E402.
 
 ### firmware
 
@@ -2512,12 +2655,12 @@ Records: E001, E002, E003, E004, E005, E010, E011, E012, E352.
 Records: E064, E065, E066, E067, E068, E069, E070, E071, E072, E073, E074, E210, E211, E213, E214,
 E215, E216, E217, E218, E219, E220, E222, E224, E225, E226, E227, E228, E229, E230, E209, E231,
 E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E290, E291, E330,
-E332, E334, E338, E339, E340.
+E332, E334, E338, E339, E340, E410, E415, E416, E417.
 
 ### mte
 
 Records: E061, E062, E063, E192, E193, E194, E195, E196, E198, E197, E248, E280, E286, E287, E347,
-E348.
+E348, E418, E419.
 
 ### pbe
 
@@ -2529,21 +2672,22 @@ E383, E385, E386, E387.
 Records: E043, E044, E045, E046, E047, E048, E125, E126, E127, E128, E129, E130, E131, E132, E133,
 E134, E135, E136, E137, E138, E139, E140, E141, E142, E143, E144, E145, E259, E260, E261, E262,
 E263, E264, E343, E344, E345, E364, E379, E381, E384, E388, E389, E390, E391, E392, E393, E394,
-E395, E396, E400.
+E395, E396, E400, E420, E421.
 
 ### platform
 
-Records: E006, E007, E008, E025, E026, E122, E150, E149, E246, E258, E357, E359, E365, E401.
+Records: E006, E007, E008, E025, E026, E122, E150, E149, E246, E258, E357, E359, E365, E401, E403,
+E404, E405.
 
 ### render
 
 Records: E023, E049, E050, E051, E052, E053, E148, E169, E252, E301, E302, E303, E304, E314, E315,
-E316, E323, E324, E325, E326, E354, E355, E356, E360, E361, E363.
+E316, E323, E324, E325, E326, E354, E355, E356, E360, E361, E363, E408, E412, E422.
 
 ### ta
 
 Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180, E181, E247, E257,
-E288, E305, E306, E307, E308, E322, E328, E329, E331.
+E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409.
 
 ### texture
 
@@ -2564,12 +2708,13 @@ Records: E075, E076, E077, E078, E079, E080, E081, E082, E083, E085, E086, E087,
 E091, E092, E093, E094, E095, E096, E097, E098, E099, E100, E101, E102, E103, E104, E105, E106,
 E107, E108, E109, E110, E111, E112, E113, E115, E117, E118, E119, E120, E121, E123, E124, E147,
 E244, E245, E255, E292, E293, E294, E295, E296, E297, E298, E350, E351, E366, E367, E368, E369,
-E370, E371, E372, E373, E374, E375, E376, E377, E378, E380.
+E370, E371, E372, E373, E374, E375, E376, E377, E378, E380, E406, E423.
 
 ### vdm
 
-Records: E059, E060, E184, E185, E186, E187, E189, E190, E191, E188, E299, E300, E318, E346, E349.
+Records: E059, E060, E184, E185, E186, E187, E189, E190, E191, E188, E299, E300, E318, E346, E349,
+E413, E414.
 
 ### zls
 
-Records: E057, E058, E250, E335, E336, E337.
+Records: E057, E058, E250, E335, E336, E337, E411.

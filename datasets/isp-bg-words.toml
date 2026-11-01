@@ -1,0 +1,10 @@
+title = "script table isp/bg-words"
+repo = "data"
+paths = ["isp/bg-words/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 4
+size = 123029
+sha256 = "ba3c59b6d14debb9a677d23b1626b1114dcc7660fec6d968e648318ee5db23de"
+recipe = "probes/isp/bg-words.toml"
+needs = ["render", "kpoke"]

@@ -332,6 +332,21 @@ def test_the_laptop_records_the_kernel_commit_firmware_and_debug_option(monkeypa
     assert any("sgx545_ukernel.fw" in c for c in seen)
 
 
+def test_the_laptop_runs_the_tool_the_sweeps_run(monkeypatch):
+    monkeypatch.setattr(campaign.probe, "target", lambda: ("me@laptop", []))
+    seen = []
+    monkeypatch.setattr(campaign.LaptopTarget, "_ssh",
+                        lambda self, cmd: seen.append(cmd) or "diff: 0 of 4096 pixels\n")
+    monkeypatch.delenv("SGX_SWEEP_TOOL", raising=False)
+    assert campaign.LaptopTarget().tool == "./sgxfive-test"
+    monkeypatch.setenv("SGX_SWEEP_TOOL", "./sgxfive-test-1115")
+    t = campaign.LaptopTarget()
+    t.baseline()
+    t.environment()
+    assert "sudo -n ./sgxfive-test-1115 tri" in seen[0]
+    assert any("sha256sum ./sgxfive-test-1115 " in c for c in seen)
+
+
 def test_the_build_host_takes_ssh_options(tmp_path, monkeypatch):
     # the laptop as the capture host: its host key goes by an alias
     t = capture(tmp_path, CAPTURE.replace('"local"', '"build"'))
@@ -967,6 +982,71 @@ def test_a_mark_that_is_not_in_the_log_is_a_campaign_error_with_no_manifest(tmp_
     with pytest.raises(campaign.CampaignError, match="mark"):
         run(t, tg, tmp_path)
     assert not (tmp_path / "ds" / "usse-demo.toml").exists()
+
+
+JOURNAL = "sudo -n journalctl -k -b -o short-monotonic --no-pager"
+
+
+def test_a_mark_the_ring_lost_is_read_from_the_journal(tmp_path):
+    # a long run (thousands of kreg writes) wraps the kernel ring: dmesg no longer holds the
+    # mark, the journal still does, and the table keeps the journal's lines, not an error
+    t = probe_table(tmp_path, ["a"], head='needs = ["render"]\n')
+    tg = LogFake(debugfs=(), dev=("card0", "renderD128"))
+    orig = tg._ssh
+
+    def ssh(cmd):
+        if cmd == "sudo -n dmesg":
+            return "[9.0] gma500 0000:00:02.0: [drm] sgxfive: late line only\n"
+        if cmd == JOURNAL:
+            return ("[1.0] cedar kernel: gma500 0000:00:02.0: [drm] sgxfive: earlier\n"
+                    f"[2.0] cedar kernel: {tg.mark()}\n"
+                    "[3.0] cedar kernel: gma500 0000:00:02.0: [drm] sgxfive: kreg 0x0818\n"
+                    "[3.1] cedar kernel: usb 1-1: unrelated\n")
+        return orig(cmd)
+    tg._ssh = ssh
+    run(t, tg, tmp_path)
+    log = kernel_log(tmp_path)
+    assert tg.mark() in log.splitlines()[0] and "kreg 0x0818" in log
+    assert "earlier" not in log and "unrelated" not in log and "late line only" not in log
+
+
+def test_the_journal_copy_keeps_the_continuation_lines_of_an_oops_trace(tmp_path):
+    # the journal prefixes each line of a trace with the host and "kernel:" and keeps the
+    # message's own leading blank: those lines follow their Call Trace, an unrelated line ends it
+    t = probe_table(tmp_path, ["a"], head='needs = ["render"]\n')
+    tg = LogFake(debugfs=(), dev=("card0", "renderD128"))
+    orig = tg._ssh
+
+    def ssh(cmd):
+        if cmd == "sudo -n dmesg":
+            return "[9.0] gma500 0000:00:02.0: [drm] sgxfive: late line only\n"
+        if cmd == JOURNAL:
+            return (f"[2.0] cedar unknown: {tg.mark()}\n"
+                    "[3.0] cedar kernel: Call Trace:\n"
+                    "[3.0] cedar kernel:  <TASK>\n"
+                    "[3.0] cedar kernel:  ? sgx_job_run+0x1c/0x40 [gma500_gfx]\n"
+                    "[3.0] cedar kernel:  </TASK>\n"
+                    "[3.1] cedar kernel: usb 1-1: unrelated\n"
+                    "[3.2] cedar kernel:  ? not part of the trace\n")
+        return orig(cmd)
+    tg._ssh = ssh
+    run(t, tg, tmp_path)
+    log = kernel_log(tmp_path)
+    assert "<TASK>" in log and "sgx_job_run+0x1c/0x40" in log and "</TASK>" in log
+    assert "unrelated" not in log and "not part of the trace" not in log
+
+
+def test_the_journal_is_read_for_the_current_boot_only():
+    assert " -b " in campaign.JOURNAL
+
+
+def test_a_mark_in_neither_the_ring_nor_the_journal_is_a_campaign_error(tmp_path):
+    t = probe_table(tmp_path, ["a"], head='needs = ["render"]\n')
+    tg = LogFake(debugfs=(), dev=("card0", "renderD128"))
+    orig = tg._ssh
+    tg._ssh = lambda cmd: ("[1.0] x\n" if cmd in ("sudo -n dmesg", JOURNAL) else orig(cmd))
+    with pytest.raises(campaign.CampaignError, match="journal"):
+        run(t, tg, tmp_path)
 
 
 def test_a_mark_write_that_fails_is_a_campaign_error(tmp_path):

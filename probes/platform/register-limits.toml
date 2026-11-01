@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# platform register limits: 0 probes (a script, register-limits.sh).
+# Q001: 0x0810, 0x0814 and 0x0818 (init values 0x1, 0xffff, 0x7ff) narrowed through kreg while
+# jobs of growing load run, each job's output and time recorded: a fill, a copy and a triangle at
+# the smallest and the largest targets the tool builds (up to 2048x2048: 4096 tiles), back to
+# back renders and transfers, and fills whose pixel program loops. Three repeats of every case.
+needs = ["render", "kreg", "reset"]
+name = "platform-register-limits"
+script = "register-limits.sh"

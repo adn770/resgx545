@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# platform register limits, by value: 0 probes (a script, register-limits-values.sh).
+# Q001: which values of 0x0818 draw the second of two triangles of different sizes wrongly
+# (register-limits-pairs: 0x3ff does, 0x7ff does not): the init value with each bit cleared,
+# each single bit and the masks 2^n - 1, the pair 96 then 128 and 128 then 96, twice.
+needs = ["render", "kreg"]
+name = "platform-register-limits-values"
+script = "register-limits-values.sh"
