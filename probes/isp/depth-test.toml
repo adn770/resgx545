@@ -1,0 +1,106 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# isp depth test: 0 sweeps, 6 probes, hand-run script.
+name = "isp-depth-test"
+needs = ["render", "kpoke"]
+script = "depth-test.sh"
+
+[[probe]]
+name = "isp-depth-test-always"
+question = "which of five overlapping copies wins each pixel: depth test always, no depth write (our triangle's ISP0)"
+source = "pds_tex.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0x1d00200 }
+size = [64, 64]
+pixels = true
+inputs = ["A"]
+cases = [[0x40000801]]
+labels = ["always"]
+
+[[probe]]
+name = "isp-depth-test-less"
+question = "which of five overlapping copies wins each pixel: depth test less, depth written"
+source = "pds_tex.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0x400200 }
+size = [64, 64]
+pixels = true
+inputs = ["A"]
+cases = [[0x40000801]]
+labels = ["less"]
+
+[[probe]]
+name = "isp-depth-test-translucent"
+question = "which of five overlapping copies wins each pixel: the same in a translucent pass (pass type 1)"
+source = "pds_tex.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0x2400200 }
+size = [64, 64]
+pixels = true
+inputs = ["A"]
+cases = [[0x40000801]]
+labels = ["translucent"]
+
+[[probe]]
+name = "isp-depth-test-translucent-nowrite"
+question = "which of five overlapping copies wins each pixel: translucent, depth test always, no depth write"
+source = "pds_tex.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0x3d00200 }
+size = [64, 64]
+pixels = true
+inputs = ["A"]
+cases = [[0x40000801]]
+labels = ["translucent-nowrite"]
+
+[[probe]]
+name = "isp-depth-test-punch"
+question = "which of five overlapping copies wins each pixel: less, written, in a punch-through pass (pass type 4)"
+source = "pds_tex.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0x8400200 }
+size = [64, 64]
+pixels = true
+inputs = ["A"]
+cases = [[0x40000801]]
+labels = ["punch"]
+
+[[probe]]
+name = "isp-depth-test-slope"
+question = "where a depth sloping with x passes the background's 1.0 (z offset 0.75)"
+source = "pds_tex.s"
+host = "tri"
+slot = "pixpds"
+vtx_coords = 2
+blk = { 1 = 0x400200, 10 = 0x3f400000 }
+size = [64, 64]
+pixels = true
+inputs = ["A"]
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_zx.s" }
+cases = [[0x40000801]]
+labels = ["source 1 (clip x)"]

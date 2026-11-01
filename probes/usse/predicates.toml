@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse predicates: 0 sweeps, 1 probes.
+needs = ["render"]
+
+[[probe]]
+name = "usse-predicates-predicate-pn"
+question = "the predicate value 7 (Pn) on a mov, for each state of p0-p3"
+source = "dump.s"
+params = { A = 0, B = 0, C = 0, D = 0, E = 0, F = 0, G = 0, H = 0, OUT = "r10" }
+inputs = ["OP", "A", "B", "C", "D", "E", "F", "G", "H"]
+labels = ["p0-p3 = (0, 0, 0, 0)", "p0-p3 = (1, 1, 1, 1)", "p0-p3 = (1, 0, 0, 0)", "p0-p3 = (0, 1, 0, 0)", "p0-p3 = (0, 0, 1, 0)", "p0-p3 = (0, 0, 0, 1)"]
+cases = [["and.testtanz.chan0 !c0, p0, r1, r6\nand.testtanz.chan0 !c0, p1, r2, r6\nand.testtanz.chan0 !c0, p2, r3, r6\nand.testtanz.chan0 !c0, p3, r4, r6\nPn mov r10, #7", 0, 0, 0, 0, 0, 0xffffffff, 0, 0], ["and.testtanz.chan0 !c0, p0, r1, r6\nand.testtanz.chan0 !c0, p1, r2, r6\nand.testtanz.chan0 !c0, p2, r3, r6\nand.testtanz.chan0 !c0, p3, r4, r6\nPn mov r10, #7", 1, 1, 1, 1, 0, 0xffffffff, 0, 0], ["and.testtanz.chan0 !c0, p0, r1, r6\nand.testtanz.chan0 !c0, p1, r2, r6\nand.testtanz.chan0 !c0, p2, r3, r6\nand.testtanz.chan0 !c0, p3, r4, r6\nPn mov r10, #7", 1, 0, 0, 0, 0, 0xffffffff, 0, 0], ["and.testtanz.chan0 !c0, p0, r1, r6\nand.testtanz.chan0 !c0, p1, r2, r6\nand.testtanz.chan0 !c0, p2, r3, r6\nand.testtanz.chan0 !c0, p3, r4, r6\nPn mov r10, #7", 0, 1, 0, 0, 0, 0xffffffff, 0, 0], ["and.testtanz.chan0 !c0, p0, r1, r6\nand.testtanz.chan0 !c0, p1, r2, r6\nand.testtanz.chan0 !c0, p2, r3, r6\nand.testtanz.chan0 !c0, p3, r4, r6\nPn mov r10, #7", 0, 0, 1, 0, 0, 0xffffffff, 0, 0], ["and.testtanz.chan0 !c0, p0, r1, r6\nand.testtanz.chan0 !c0, p1, r2, r6\nand.testtanz.chan0 !c0, p2, r3, r6\nand.testtanz.chan0 !c0, p3, r4, r6\nPn mov r10, #7", 0, 0, 0, 1, 0, 0xffffffff, 0, 0]]
+[probe.hypotheses]
+"never runs" = [[0xa0a1a2a3, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xa0a1a2a3, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xa0a1a2a3, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xa0a1a2a3, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xa0a1a2a3, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xa0a1a2a3, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf]]
+"always runs" = [[7, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [7, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [7, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [7, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [7, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [7, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf]]
+"runs when p3 is set" = [[0xa0a1a2a3, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [7, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xa0a1a2a3, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xa0a1a2a3, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xa0a1a2a3, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [7, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf]]

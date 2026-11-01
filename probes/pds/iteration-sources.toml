@@ -1,0 +1,220 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# pds iteration sources: 0 sweeps, 15 probes.
+needs = ["render"]
+
+[[probe]]
+name = "pds-iteration-sources-iter-sources"
+question = "what each iteration source puts in pa0 of the triangle's pixel shader, recorded"
+source = "pds_iter.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s" }
+size = [64, 64]
+pixels = true
+inputs = ["A"]
+cases = [[0x40000000], [0x40000800], [0x40001000], [0x40001800], [0x40002000], [0x40002800], [0x40003000], [0x40003800], [0x40004000], [0x40004800], [0x40005000], [0x40005800], [0x40006000], [0x40006800], [0x40007000], [0x40007800], [0x40008000], [0x40008800], [0x40009000], [0x40009800], [0x4000a000], [0x4000a800], [0x4000b000], [0x4000b800], [0x4000c000], [0x4000c800], [0x4000d000], [0x4000d800], [0x4000e000], [0x4000e800], [0x4000f000], [0x4000f800], [0x40010000], [0x40010800], [0x40011000], [0x40011800], [0x40012000], [0x40012800], [0x40013000], [0x40013800], [0x40014000], [0x40014800], [0x40015000], [0x40015800], [0x40016000], [0x40016800], [0x40017000], [0x40017800], [0x40018000], [0x40018800], [0x40019000], [0x40019800], [0x4001a000], [0x4001a800], [0x4001b000], [0x4001b800], [0x4001c000], [0x4001c800], [0x4001d000], [0x4001d800], [0x4001e000], [0x4001e800], [0x4001f000], [0x4001f800]]
+labels = ["source 0", "source 1", "source 2", "source 3", "source 4", "source 5", "source 6", "source 7", "source 8", "source 9", "source 10", "source 11", "source 12", "source 13", "source 14", "source 15", "source 16", "source 17", "source 18", "source 19", "source 20", "source 21", "source 22", "source 23", "source 24", "source 25", "source 26", "source 27", "source 28", "source 29", "source 30", "source 31", "source 32", "source 33", "source 34", "source 35", "source 36", "source 37", "source 38", "source 39", "source 40", "source 41", "source 42", "source 43", "source 44", "source 45", "source 46", "source 47", "source 48", "source 49", "source 50", "source 51", "source 52", "source 53", "source 54", "source 55", "source 56", "source 57", "source 58", "source 59", "source 60", "source 61", "source 62", "source 63"]
+
+[[probe]]
+name = "pds-iteration-sources-iter-coords"
+question = "what each iteration source puts in pa0 when the vertices carry a coordinate set"
+source = "pds_iter.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A"]
+cases = [[0x40000000], [0x40000800], [0x40001000], [0x40001800], [0x40002000], [0x40002800], [0x40003000], [0x40003800], [0x40004000], [0x40004800], [0x40005000], [0x40005800], [0x40006000], [0x40006800], [0x40007000], [0x40007800], [0x40008000], [0x40008800], [0x40009000], [0x40009800], [0x4000a000], [0x4000a800], [0x4000b000], [0x4000b800], [0x4000c000], [0x4000c800], [0x4000d000], [0x4000d800], [0x4000e000], [0x4000e800], [0x4000f000], [0x4000f800], [0x40010000], [0x40010800], [0x40011000], [0x40011800], [0x40012000], [0x40012800], [0x40013000], [0x40013800], [0x40014000], [0x40014800], [0x40015000], [0x40015800], [0x40016000], [0x40016800], [0x40017000], [0x40017800], [0x40018000], [0x40018800], [0x40019000], [0x40019800], [0x4001a000], [0x4001a800], [0x4001b000], [0x4001b800], [0x4001c000], [0x4001c800], [0x4001d000], [0x4001d800], [0x4001e000], [0x4001e800], [0x4001f000], [0x4001f800]]
+labels = ["source 0", "source 1", "source 2", "source 3", "source 4", "source 5", "source 6", "source 7", "source 8", "source 9", "source 10", "source 11", "source 12", "source 13", "source 14", "source 15", "source 16", "source 17", "source 18", "source 19", "source 20", "source 21", "source 22", "source 23", "source 24", "source 25", "source 26", "source 27", "source 28", "source 29", "source 30", "source 31", "source 32", "source 33", "source 34", "source 35", "source 36", "source 37", "source 38", "source 39", "source 40", "source 41", "source 42", "source 43", "source 44", "source 45", "source 46", "source 47", "source 48", "source 49", "source 50", "source 51", "source 52", "source 53", "source 54", "source 55", "source 56", "source 57", "source 58", "source 59", "source 60", "source 61", "source 62", "source 63"]
+
+[[probe]]
+name = "pds-iteration-sources-douti-bits"
+question = "what each of DOUTI0's bits 17-29 and 31 does to pa0 (source 1, with the fetch)"
+source = "pds_tex.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A"]
+cases = [[0x40000801], [0x40020801], [0x40040801], [0x40080801], [0x40100801], [0x40200801], [0x40400801], [0x40800801], [0x41000801], [0x42000801], [0x44000801], [0x48000801], [0x50000801], [0x60000801], [0xc0000801], [0x57c00801], [0x67800801]]
+labels = ["base: fetch from set 1, source 1", "bit 17", "bit 18", "bit 19", "bit 20", "bit 21", "bit 22", "bit 23", "bit 24", "bit 25", "bit 26", "bit 27", "bit 28", "bit 29", "bit 31", "| bits 22-26, 28 (the closed punch-through's first word)", "| bits 23-26, 29 (its second word)"]
+
+[[probe]]
+name = "pds-iteration-sources-douti-pa0"
+question = "pa0 under the bits that change the iteration's size (source 1, with the fetch)"
+source = "pds_tex.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A"]
+cases = [[0x40000801], [0x40400801], [0x40800801], [0x40c00801], [0x41000801], [0x40040801], [0x47c00801]]
+labels = ["base", "bit 22", "bit 23", "bits 22, 23", "bit 24", "bit 18", "bits 22-26"]
+
+[[probe]]
+name = "pds-iteration-sources-douti-pa1"
+question = "pa1 under the bits that change the iteration's size (source 1, with the fetch)"
+source = "pds_tex.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A"]
+cases = [[0x40000801], [0x40400801], [0x40800801], [0x40c00801], [0x41000801], [0x40040801], [0x47c00801]]
+labels = ["base", "bit 22", "bit 23", "bits 22, 23", "bit 24", "bit 18", "bits 22-26"]
+
+[[probe]]
+name = "pds-iteration-sources-douti-pa2"
+question = "pa2 under the bits that change the iteration's size (source 1, with the fetch)"
+source = "pds_tex.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A"]
+cases = [[0x40000801], [0x40400801], [0x40800801], [0x40c00801], [0x41000801], [0x40040801], [0x47c00801]]
+labels = ["base", "bit 22", "bit 23", "bits 22, 23", "bit 24", "bit 18", "bits 22-26"]
+
+[[probe]]
+name = "pds-iteration-sources-douti-pa3"
+question = "pa3 under the bits that change the iteration's size (source 1, with the fetch)"
+source = "pds_tex.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa3.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A"]
+cases = [[0x40000801], [0x40400801], [0x40800801], [0x40c00801], [0x41000801], [0x40040801], [0x47c00801]]
+labels = ["base", "bit 22", "bit 23", "bits 22, 23", "bit 24", "bit 18", "bits 22-26"]
+
+[[probe]]
+name = "pds-iteration-sources-src34-pa0"
+question = "pa0 from source 34 with three components on the sloped triangle"
+source = "pds_tex.s"
+host = "tri"
+slot = "pixpds"
+vtx_coords = 2
+blk = { 1 = 0x400200, 10 = 0x3f400000 }
+size = [64, 64]
+pixels = true
+inputs = ["A"]
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_zx.s" }
+cases = [[0x40811001]]
+labels = ["source 34, 3 components"]
+
+[[probe]]
+name = "pds-iteration-sources-src34-pa2"
+question = "pa2 from source 34 with three components on the sloped triangle"
+source = "pds_tex.s"
+host = "tri"
+slot = "pixpds"
+vtx_coords = 2
+blk = { 1 = 0x400200, 10 = 0x3f400000 }
+size = [64, 64]
+pixels = true
+inputs = ["A"]
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_zx.s" }
+cases = [[0x40811001]]
+labels = ["source 34, 3 components"]
+
+[[probe]]
+name = "pds-iteration-sources-color-closed"
+question = "what sources 32-35 and the shade model give with a vertex colour in o4-o7 (state word 13 = 0x83800, word 16 = 5)"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_color.s" }
+vtx_coords = 4
+blk = { 13 = 0x83800, 16 = 5 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x21c10000, 0, 0x1000004], [0x23c10000, 0, 0x1000004], [0x25c10000, 0, 0x1000004], [0x27c10000, 0, 0x1000004], [0x27c10800, 0, 0x1000004], [0x27c11000, 0, 0x1000004], [0x27c11800, 0, 0x1000004], [0x27c00800, 0, 0x1000004], [0x27c01000, 0, 0x1000004]]
+labels = ["source 32, 26:25 = 0", "source 32, 1", "source 32, 2 (flat)", "source 32, 3 (smooth)", "source 33", "source 34", "source 35", "source 1", "source 2"]
+
+[[probe]]
+name = "pds-iteration-sources-color-closed-pa1"
+question = "what sources 32-35 and the shade model give with a vertex colour in o4-o7 (the same state, read at pa1)"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_color.s" }
+vtx_coords = 4
+blk = { 13 = 0x83800, 16 = 5 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x21c10000, 0, 0x1000004], [0x23c10000, 0, 0x1000004], [0x25c10000, 0, 0x1000004], [0x27c10000, 0, 0x1000004], [0x27c10800, 0, 0x1000004], [0x27c11000, 0, 0x1000004], [0x27c11800, 0, 0x1000004], [0x27c00800, 0, 0x1000004], [0x27c01000, 0, 0x1000004]]
+labels = ["source 32, 26:25 = 0", "source 32, 1", "source 32, 2 (flat)", "source 32, 3 (smooth)", "source 33", "source 34", "source 35", "source 1", "source 2"]
+
+[[probe]]
+name = "pds-iteration-sources-color-ours"
+question = "what sources 32-35 and the shade model give with a vertex colour in o4-o7 (ours)"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_color.s" }
+vtx_coords = 4
+blk = { 16 = 4 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x21c10000, 0, 0x1000004], [0x23c10000, 0, 0x1000004], [0x25c10000, 0, 0x1000004], [0x27c10000, 0, 0x1000004], [0x27c10800, 0, 0x1000004], [0x27c11000, 0, 0x1000004], [0x27c11800, 0, 0x1000004], [0x27c00800, 0, 0x1000004], [0x27c01000, 0, 0x1000004]]
+labels = ["source 32, 26:25 = 0", "source 32, 1", "source 32, 2 (flat)", "source 32, 3 (smooth)", "source 33", "source 34", "source 35", "source 1", "source 2"]
+
+[[probe]]
+name = "pds-iteration-sources-color-outsel11"
+question = "source 32 and source 1 with state word 13 = 0x83800 (outsel11) and word 16 = 4"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_color.s" }
+vtx_coords = 4
+blk = { 13 = 0x83800, 16 = 4 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x21c10000, 0, 0x1000004], [0x27c10000, 0, 0x1000004], [0x27c00800, 0, 0x1000004], [0x27c01000, 0, 0x1000004]]
+labels = ["source 32, flat vertex 0", "source 32, smooth", "source 1", "source 2"]
+
+[[probe]]
+name = "pds-iteration-sources-color-coordsize5"
+question = "source 32 and source 1 with state word 16 = 5 (coordsize5)"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_color.s" }
+vtx_coords = 4
+blk = { 16 = 5 }
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x21c10000, 0, 0x1000004], [0x27c10000, 0, 0x1000004], [0x27c00800, 0, 0x1000004], [0x27c01000, 0, 0x1000004]]
+labels = ["source 32, flat vertex 0", "source 32, smooth", "source 1", "source 2"]
+
+[[probe]]
+name = "pds-iteration-sources-douti1-bit6"
+question = "whether DOUTI1 bit 6 is a flat mode that DOUTI0's shade model steers"
+source = "pds_tex_iter.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_persp.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x40000801, 0, 0x2000004], [0x42000801, 0, 0x2000004], [0x44000801, 0, 0x2000004], [0x46000801, 0, 0x2000004], [0x40000801, 64, 0x2000004], [0x42000801, 64, 0x2000004], [0x44000801, 64, 0x2000004], [0x46000801, 64, 0x2000004], [0x40000801, 96, 0x2000004], [0x40000801, 192, 0x2000004]]
+labels = ["DOUTI0 shade model 0, word 1 0", "DOUTI0 shade model 1, word 1 0", "DOUTI0 shade model 2, word 1 0", "DOUTI0 shade model 3, word 1 0", "DOUTI0 shade model 0, word 1 bit 6", "DOUTI0 shade model 1, word 1 bit 6", "DOUTI0 shade model 2, word 1 bit 6", "DOUTI0 shade model 3, word 1 bit 6", "word 1 0x60", "word 1 0xc0"]

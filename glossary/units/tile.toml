@@ -1,0 +1,15 @@
+[[term]]
+id = "G0335"
+name = "tile"
+status = "named"
+
+[[term.source]]
+term = "tile"
+kind = "concept"
+sgx545 = "-"
+meaning = "32x16 pixels, two adjacent 16x16 tiles, as the TE writes the control stream"
+tier = "4"
+source = "patent-US8723860"
+citation = "C0234"
+licence = "patent"
+evidence = "OCR text; [CAP/HW] 32x16 tiles throughout (E043, E055 sections 7, 11); one pipe works 16x16 (US8046761B2.txt:1207)"

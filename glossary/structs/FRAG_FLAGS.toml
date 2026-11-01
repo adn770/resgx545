@@ -1,0 +1,159 @@
+[[term]]
+id = "G0231"
+name = "FRAG_FLAGS.ABORT"
+status = "named"
+
+[[term.source]]
+term = "FRAG_FLAGS.ABORT"
+kind = "flag"
+sgx545 = "render flags bit1 (0x2)"
+meaning = "complete the command without running it [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E050"
+licence = "MIT"
+evidence = "[HW] E050: in a triangle the job completes and no pixel is written"
+
+[[term]]
+id = "G0232"
+name = "FRAG_FLAGS.BIT10"
+status = "inferred"
+
+[[term.source]]
+term = "FRAG_FLAGS.BIT10"
+kind = "flag"
+sgx545 = "render flags bit10 (0x400)"
+meaning = "count this render as the scene's completion (the scene's last kick). Measured: at scene-done the EDM increments the RT data set's executed_count; set by the client on the scene's last kick [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E051, E052"
+licence = "MIT"
+evidence = "[HW] E051: clear (our kernel sets it on every render), the render is unchanged; [HW] E052: clear on the closing render of a scene over two kicks, both kicks' geometry is rendered"
+
+[[term]]
+id = "G0233"
+name = "FRAG_FLAGS.BIT2"
+status = "inferred"
+
+[[term.source]]
+term = "FRAG_FLAGS.BIT2"
+kind = "flag"
+sgx545 = "render flags bit2 (0x4)"
+meaning = "Bit 2 of the render flags word: when each job ends with its render, set or clear it changed no image; what it keeps in a scene left open is not shown"
+tier = "ours"
+source = "resgx545"
+citation = "E051, E052, E053"
+licence = "MIT"
+evidence = "[HW] E051: flipping it on render 1 with FIRST_KICK cleared on render 2 left the second render's image as its own triangle only (1062 and 1046 pixels, 0 outside), same as the control, in both rounds; [HW] E052: a scene accumulating several kicks was rendered whole by the closing job and the next render was its own triangle only, whether the closing render carried BIT2 or not (seven cases); [HW] E053: a third render appending to the closed scene stored only the 4096 background pixels, whether the closing render carried BIT2, NO_DEALLOCATE or both; [infer] the reading is ours, from these runs"
+
+[[term]]
+id = "G0234"
+name = "FRAG_FLAGS.DEPTH_BUFFER"
+status = "named"
+
+[[term.source]]
+term = "ROGUE_FRAG_FLAGS_DEPTHBUFFER"
+kind = "flag"
+sgx545 = "render flags bit7 (0x80)"
+meaning = "depth buffer present"
+tier = "3"
+source = "linux-imagination"
+citation = "C0188"
+licence = "GPL-2.0 OR MIT"
+evidence = "[HW] E058: ZLS loads and stores depth only with this bit set"
+
+[[term]]
+id = "G0235"
+name = "FRAG_FLAGS.GET_VIS_RESULTS"
+status = "named"
+
+[[term.source]]
+term = "ROGUE_FRAG_FLAGS_GET_VIS_RESULTS"
+kind = "flag"
+sgx545 = "render flags bit5 (0x20)"
+meaning = "render produces visibility results"
+tier = "3"
+source = "linux-imagination"
+citation = "C0189"
+licence = "GPL-2.0 OR MIT"
+evidence = "[HW] E050: set in a triangle with no visibility buffer the job faults"
+
+[[term]]
+id = "G0236"
+name = "FRAG_FLAGS.NO_DEALLOCATE"
+status = "named"
+
+[[term.source]]
+term = "FRAG_FLAGS.NO_DEALLOCATE"
+kind = "flag"
+sgx545 = "render flags bit3 (0x8)"
+meaning = "do not deallocate the scene's pages during the render (CR_DPM_3D_DEALLOCATE = 0); the scene continues [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E051, E052, E053"
+licence = "MIT"
+evidence = "[HW] E051: set on a render, the next render of the context (FIRST_KICK clear) shows none of its geometry; [HW] E052: on a scene's closing render, the next render (a new scene, or FIRST_KICK clear) shows none of the closed scene's geometry; [HW] E053: nor does a kick adding no geometry to the closed scene render it again"
+
+[[term]]
+id = "G0237"
+name = "FRAG_FLAGS.NO_RENDER"
+status = "named"
+
+[[term.source]]
+term = "FRAG_FLAGS.NO_RENDER"
+kind = "flag"
+sgx545 = "render flags bit0 (0x1)"
+meaning = "skips the render: the scene's memory is freed at its last TA end and the render details complete without a render [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E050"
+licence = "MIT"
+evidence = "[HW] E050: set alone in a one-kick triangle the job hangs (the meaning above is the firmware's dataflow, not seen completing)"
+
+[[term]]
+id = "G0238"
+name = "FRAG_FLAGS.SET_ZLSCTL_BIT0"
+status = "named"
+
+[[term.source]]
+term = "FRAG_FLAGS.BIT4"
+kind = "flag"
+sgx545 = "render flags bit4 (0x10)"
+meaning = "when set, the EDM sets bit 0 of CR_ISP_ZLSCTL (writes CR_ISP_ZLSCTL | 0x1) before starting the render; when clear it skips that write; what ZLS control bit 0 does is not shown [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E050, E057"
+licence = "MIT"
+evidence = "[HW] E050: in a triangle the job completes and no pixel is written, as CR_ISP_ZLSCTL bit 0 set directly does (E057)"
+
+[[term]]
+id = "G0239"
+name = "FRAG_FLAGS.STENCIL_BUFFER"
+status = "named"
+
+[[term.source]]
+term = "ROGUE_FRAG_FLAGS_STENCILBUFFER"
+kind = "flag"
+sgx545 = "render flags bit8 (0x100)"
+meaning = "stencil buffer present"
+tier = "3"
+source = "linux-imagination"
+citation = "C0190"
+licence = "GPL-2.0 OR MIT"
+evidence = "[HW] E058: ZLS stores the stencil only with this bit set as well"
+
+[[term]]
+id = "G0240"
+name = "FRAG_FLAGS.TA3D_DEPENDENCY"
+status = "named"
+
+[[term.source]]
+term = "FRAG_FLAGS.TA3D_DEPENDENCY"
+kind = "flag"
+sgx545 = "render flags bit9 (0x200)"
+meaning = "signal the TA->3D dependency sync at the render end [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E050"
+licence = "MIT"
+evidence = "[HW] E050: set in a triangle with no dependency sync the job faults"

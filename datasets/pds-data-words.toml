@@ -1,0 +1,10 @@
+title = "sweep table pds/data-words"
+repo = "data"
+paths = ["pds/data-words/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 10
+size = 3168291
+sha256 = "18cef4b97f6a04f3771360c4cc58a234018f0edbbf67d6d8118a3b53d9a73327"
+recipe = "probes/pds/data-words.toml"
+needs = ["render"]

@@ -1,0 +1,15 @@
+[[term]]
+id = "G0180"
+name = "CR_USE1_SERV_PIXEL"
+status = "named"
+
+[[term.source]]
+term = "PSB_CR_USE1_SERV_PIXEL"
+kind = "register"
+sgx545 = "0x0b18"
+meaning = "USSE 1 pixel service-queue status (SGX535 0x0b14)"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0183"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; we used another name here"

@@ -1,0 +1,15 @@
+[[term]]
+id = "G0141"
+name = "CR_ISP_VISIBILITY_CTRL"
+status = "named"
+
+[[term.source]]
+term = "CR_ISP_VISIBILITY_CTRL"
+kind = "register"
+sgx545 = "0x0494"
+meaning = "visibility-test control: the EDM writes 0xff before each render and after it reads the counters [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x79b8)"
+licence = "MIT"
+evidence = "EDM writes 0xff at the 3D kick and again in the breakpoint handler after accumulating the counters (RE); the ISP visibility test itself is public (CR_EVENT_STATUS.ISP_VISIBILITY_FAIL, sgx545defs.h:403); [HW] E070: never counts, 0 throughout every job sampled"

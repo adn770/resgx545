@@ -1,0 +1,10 @@
+title = "sweep table pbe/emit"
+repo = "data"
+paths = ["pbe/emit/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 4
+size = 138985
+sha256 = "6a490ecb6bf97ed1417a08d91214ec8bb9c6796e799f499c4731a47028aae791"
+recipe = "probes/pbe/emit.toml"
+needs = ["render"]

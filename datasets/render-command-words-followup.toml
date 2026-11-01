@@ -1,0 +1,10 @@
+title = "follow-up run of the sweep table render/command-words"
+repo = "data"
+paths = ["followup/render/command-words/"]
+method = "campaign runner on the laptop target (tools/campaign), the follow-up round"
+date = "2026-11-01"
+files = 4
+size = 615120
+sha256 = "10f52f3f6cd8a09764fd09e82cfe07827538d517d90f5827d1e380af852622e6"
+recipe = "probes/render/command-words.toml"
+needs = ["render"]

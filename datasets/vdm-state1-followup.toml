@@ -1,0 +1,10 @@
+title = "follow-up run of the sweep and probe table vdm/state1"
+repo = "data"
+paths = ["followup/vdm/state1/"]
+method = "campaign runner on the laptop target (tools/campaign), the follow-up round"
+date = "2026-11-01"
+files = 88
+size = 74525546
+sha256 = "4cf4c1d51665b8b0a793a75e0d0e88e57b80b24c8eca4fdb8b5a1ba85f84345b"
+recipe = "probes/vdm/state1.toml"
+needs = ["render", "render_param", "render_tadata"]

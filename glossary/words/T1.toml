@@ -1,0 +1,31 @@
+[[term]]
+id = "G0280"
+name = "T1.TEXFORMAT"
+status = "named"
+
+[[term.source]]
+term = "texformat"
+kind = "field"
+sgx545 = "T1 [28:24] (TEXFORMAT)"
+meaning = "texel format"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0220"
+licence = "MIT"
+evidence = "[HW] copies exact (E020); Rogue role analogue; [HW] E037: 29 with TEXTYPE 3 reads two-byte UYVY texels on our own copy; [HW] E040, E080: 28 reads YUYV, 26 (with T0 bit 30) one luma byte per texel, unconverted"
+
+[[term]]
+id = "G0281"
+name = "T1.TEXTYPE"
+status = "named"
+
+[[term.source]]
+term = "textype"
+kind = "field"
+sgx545 = "T1 [31:29] (TEXTYPE)"
+meaning = "texture type"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0221"
+licence = "MIT"
+evidence = "[HW] copies exact (E020); Rogue role analogue; [HW] E038: 1 or 2 makes an out-of-range copy repeat its texture instead of clamping"

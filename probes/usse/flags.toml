@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse flags: 0 sweeps, 1 probes.
+needs = ["render"]
+
+[[probe]]
+name = "usse-flags-other"
+question = ".tpres, .partial, .nosched and .syncs in a fill"
+source = "dump.s"
+params = { A = 0, B = 0, C = 0, D = 0, E = 0, F = 0, G = 0, H = 0, OUT = "r10" }
+inputs = ["OP", "A", "B", "C", "D", "E", "F", "G", "H"]
+labels = ["frcp.tpres r10, r1", "frsq.tpres r10, r1", "fsqrt.tpres r10, r1", "and.partial r10, r1, r2", "or.partial r10, r1, r2", "mov.nosched r10, r1", "mov.syncs r10, r1"]
+cases = [["frcp.tpres r10, r1", 0x40400000, 0, 0, 0, 0, 0, 0, 0], ["frsq.tpres r10, r1", 0x40400000, 0, 0, 0, 0, 0, 0, 0], ["fsqrt.tpres r10, r1", 0x40400000, 0, 0, 0, 0, 0, 0, 0], ["and.partial r10, r1, r2", 0x40400000, 0xf0f0f0f0, 0, 0, 0, 0, 0, 0], ["or.partial r10, r1, r2", 0x40400000, 0xf0f0f0f0, 0, 0, 0, 0, 0, 0], ["mov.nosched r10, r1", 0x40400000, 0, 0, 0, 0, 0, 0, 0], ["mov.syncs r10, r1", 0x40400000, 0, 0, 0, 0, 0, 0, 0]]
+[probe.hypotheses]
+"no effect on the result, but .syncs hangs the task" = [[0x3eaaaaab, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x3f13cd3a, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x3fddb3d7, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x40400000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xf0f0f0f0, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x40400000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], "fail"]
+"no effect on the result at all" = [[0x3eaaaaab, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x3f13cd3a, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x3fddb3d7, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x40400000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xf0f0f0f0, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x40400000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x40400000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf]]

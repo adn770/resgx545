@@ -1,0 +1,157 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse output registers: 0 sweeps, 11 probes.
+needs = ["render"]
+
+[[probe]]
+name = "usse-output-registers-o-preload"
+question = "does a fill shader's o0 (o1, ...) start with the tile's colour (framebuffer fetch, a Series 5XT extension) or stale data: o read before any write, stored and as the pixel; the host paints the target 0xDEADBEEF first, so a preloaded o0 reads that"
+source = "dump.s"
+pixels = true
+params = { A = 0, B = 0, C = 0, D = 0, E = 0, F = 0, G = 0, H = 0, OUT = "r10" }
+inputs = ["OP"]
+labels = ["o0-o15 before any write (pixel = own o0)", "o16-o31 before any write (pixel = o16)", "control: o1 = 0x0E1E0000 first, then o0-o15 (scratch dword 1 = o1)"]
+cases = [["mov.skipinv r10, o0\nmov.skipinv r11, o1\nmov.skipinv r12, o2\nmov.skipinv r13, o3\nmov.skipinv r14, o4\nmov.skipinv r15, o5\nmov.skipinv r16, o6\nmov.skipinv r17, o7\nmov.skipinv r1, o8\nmov.skipinv r2, o9\nmov.skipinv r3, o10\nmov.skipinv r4, o11\nmov.skipinv r5, o12\nmov.skipinv r6, o13\nmov.skipinv r7, o14\nmov.skipinv r8, o15"], ["mov.skipinv r10, o16\nmov.skipinv r11, o17\nmov.skipinv r12, o18\nmov.skipinv r13, o19\nmov.skipinv r14, o20\nmov.skipinv r15, o21\nmov.skipinv r16, o22\nmov.skipinv r17, o23\nmov.skipinv r1, o24\nmov.skipinv r2, o25\nmov.skipinv r3, o26\nmov.skipinv r4, o27\nmov.skipinv r5, o28\nmov.skipinv r6, o29\nmov.skipinv r7, o30\nmov.skipinv r8, o31"], ["mov.skipinv o1, #0x0E1E0000\nmov.skipinv r10, o0\nmov.skipinv r11, o1\nmov.skipinv r12, o2\nmov.skipinv r13, o3\nmov.skipinv r14, o4\nmov.skipinv r15, o5\nmov.skipinv r16, o6\nmov.skipinv r17, o7\nmov.skipinv r1, o8\nmov.skipinv r2, o9\nmov.skipinv r3, o10\nmov.skipinv r4, o11\nmov.skipinv r5, o12\nmov.skipinv r6, o13\nmov.skipinv r7, o14\nmov.skipinv r8, o15"]]
+
+[[probe]]
+name = "usse-output-registers-fbf-opaque"
+question = "what o0 holds when the triangle's pixel shader starts"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"], ["mov.skipinv r1, #0x00ffffff\nxor.skipinv.end o0, o0, r1"], ["mov.skipinv.end o0, #0x0000000A"]]
+labels = ["o0 = o0", "o0 = o0 ^ 0xffffff", "o0 = 0xa (control)"]
+
+[[probe]]
+name = "usse-output-registers-fbf-translucent"
+question = "what o0 holds when the triangle's pixel shader starts"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+blk = { 1 = 0x3d00200 }
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, o0"], ["mov.skipinv r1, #0x00ffffff\nxor.skipinv.end o0, o0, r1"], ["mov.skipinv.end o0, #0x0000000A"]]
+labels = ["o0 = o0", "o0 = o0 ^ 0xffffff", "o0 = 0xa (control)"]
+
+[[probe]]
+name = "usse-output-registers-oreg-x"
+question = "where a pixel instance's oN lands in the tile (oN = the pixel's own x, nothing else written)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o1, pa0"], ["mov.skipinv.end o2, pa0"], ["mov.skipinv.end o3, pa0"], ["mov.skipinv.end o4, pa0"], ["mov.skipinv.end o5, pa0"], ["mov.skipinv.end o6, pa0"], ["mov.skipinv.end o7, pa0"]]
+labels = ["o0 = x", "o1 = x", "o2 = x", "o3 = x", "o4 = x", "o5 = x", "o6 = x", "o7 = x"]
+
+[[probe]]
+name = "usse-output-registers-oreg-y"
+question = "where a pixel instance's oN lands in the tile (oN = the pixel's own y, nothing else written)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, pa1"], ["mov.skipinv.end o1, pa1"], ["mov.skipinv.end o2, pa1"], ["mov.skipinv.end o3, pa1"], ["mov.skipinv.end o4, pa1"], ["mov.skipinv.end o5, pa1"], ["mov.skipinv.end o6, pa1"], ["mov.skipinv.end o7, pa1"]]
+labels = ["o0 = y", "o1 = y", "o2 = y", "o3 = y", "o4 = y", "o5 = y", "o6 = y", "o7 = y"]
+
+[[probe]]
+name = "usse-output-registers-oreg-size0-x"
+question = "where oN lands with PDS_SIZE bits 17:16 = 0 (oN = the pixel's own x)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+blk = { 4 = 1 }
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o1, pa0"], ["mov.skipinv.end o2, pa0"], ["mov.skipinv.end o3, pa0"]]
+labels = ["o0 = x", "o1 = x", "o2 = x", "o3 = x"]
+
+[[probe]]
+name = "usse-output-registers-oreg-size0-y"
+question = "where oN lands with PDS_SIZE bits 17:16 = 0 (oN = the pixel's own y)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+blk = { 4 = 1 }
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, pa1"], ["mov.skipinv.end o1, pa1"], ["mov.skipinv.end o2, pa1"], ["mov.skipinv.end o3, pa1"]]
+labels = ["o0 = y", "o1 = y", "o2 = y", "o3 = y"]
+
+[[probe]]
+name = "usse-output-registers-oreg-size1-x"
+question = "where oN lands with PDS_SIZE bits 17:16 = 1 (oN = the pixel's own x)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+blk = { 4 = 0x10001 }
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o1, pa0"], ["mov.skipinv.end o2, pa0"], ["mov.skipinv.end o3, pa0"]]
+labels = ["o0 = x", "o1 = x", "o2 = x", "o3 = x"]
+
+[[probe]]
+name = "usse-output-registers-oreg-size1-y"
+question = "where oN lands with PDS_SIZE bits 17:16 = 1 (oN = the pixel's own y)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+blk = { 4 = 0x10001 }
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, pa1"], ["mov.skipinv.end o1, pa1"], ["mov.skipinv.end o2, pa1"], ["mov.skipinv.end o3, pa1"]]
+labels = ["o0 = y", "o1 = y", "o2 = y", "o3 = y"]
+
+[[probe]]
+name = "usse-output-registers-oreg-size2-x"
+question = "where oN lands with PDS_SIZE bits 17:16 = 2 (oN = the pixel's own x)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+blk = { 4 = 0x20001 }
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o1, pa0"], ["mov.skipinv.end o2, pa0"], ["mov.skipinv.end o3, pa0"]]
+labels = ["o0 = x", "o1 = x", "o2 = x", "o3 = x"]
+
+[[probe]]
+name = "usse-output-registers-oreg-size2-y"
+question = "where oN lands with PDS_SIZE bits 17:16 = 2 (oN = the pixel's own y)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+blk = { 4 = 0x20001 }
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, pa1"], ["mov.skipinv.end o1, pa1"], ["mov.skipinv.end o2, pa1"], ["mov.skipinv.end o3, pa1"]]
+labels = ["o0 = y", "o1 = y", "o2 = y", "o3 = y"]

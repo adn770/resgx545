@@ -1,0 +1,8 @@
+title = "TI's public OMAP4430 TRM (swpu231ap), chapter 11 on its SGX540: Imagination's architecture in its own terms"
+tier = "4"
+kind = "document"
+licences = ["public-doc"]
+root = "the PDF"
+upstream = "https://www.ti.com/lit/ug/swpu231ap/swpu231ap.pdf"
+pin = "SWPU231AP (OMAP4430 TRM, Silicon Rev 2.x, Rev. AP, 2014-04); PDF sha256 f44725c9a42f64d2eee30876328de8f976ba8878b672181956a7ffe2933381e4"
+locator = "page N of the PDF"

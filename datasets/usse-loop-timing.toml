@@ -1,0 +1,9 @@
+title = "probe table usse/loop-timing"
+repo = "data"
+paths = ["usse/loop-timing/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 111
+size = 53934
+sha256 = "daf127cb741ba19f24d22eceaa06d8017701f4969b6ea5a67cc2153aa4b964fc"
+recipe = "probes/usse/loop-timing.toml"

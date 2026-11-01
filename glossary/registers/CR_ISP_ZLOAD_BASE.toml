@@ -1,0 +1,15 @@
+[[term]]
+id = "G0142"
+name = "CR_ISP_ZLOAD_BASE"
+status = "named"
+
+[[term.source]]
+term = "CR_ISP_ZLOAD_BASE"
+kind = "register"
+sgx545 = "0x0484"
+meaning = "depth load base: where ZLS loads the depth buffer from, an offset from the ZLS requester base [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E058"
+licence = "MIT"
+evidence = "[HW] E058: with 0x0484 at a buffer of 0.25f the depth test runs against 0.25, whatever 0x0488 holds; Rogue ISP_ZLOAD_BASE is a name only here"

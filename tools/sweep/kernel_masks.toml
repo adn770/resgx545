@@ -1,0 +1,450 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# What the kernel does with each word userspace submits, read from the kernel fork's code:
+# the transfer command (xfer:0-41, struct drm_sgxfive_transfer_cmd) and the render command
+# (cmd:0-25, struct drm_sgxfive_render_cmd). The sweep report (sweep.py) uses it to tell a
+# case that never reached the GPU from one that did.
+#
+#   action    pass      copied unchanged into the firmware command
+#             validate  checked: a value that breaks the rule fails the submission (-EINVAL),
+#                       nothing runs; a value that keeps it is copied unchanged
+#             mask      only the bits of `mask` reach the firmware command
+#             override  the kernel writes its own value; the word never reaches the GPU
+#   lands     where the word lands in the firmware command the kernel builds, as the
+#             kernel-poke spaces address it: tq:N (transfer command), ta:N (the TA command
+#             of a render), rd:N (its render details)
+#   ref       file:line in drivers/gpu/drm/gma500/sgxfive/ at the commit `fork` names
+#   mask      validate: the bits that pass the check; mask: the bits that survive
+#
+# No word is masked or overridden today: the kernel only rejects. Besides the per-word
+# checks, both commands are rejected when shorter than their version 1 size, longer than a
+# page, misaligned (8 bytes), or longer than the kernel knows with a non-zero tail
+# (sgxfive_submit.c:107, :141; the tail rule is copy_elem, :35).
+fork = "linux fork, branch resgx545 at 742a2fa86ce2"
+
+[[word]]
+word = "xfer:0"
+action = "pass"
+lands = ["tq:0"]
+ref = "sgxfive_cmd.c:70"
+
+[[word]]
+word = "xfer:1"
+action = "pass"
+lands = ["tq:1"]
+ref = "sgxfive_cmd.c:70"
+
+[[word]]
+word = "xfer:2"
+action = "pass"
+lands = ["tq:2"]
+ref = "sgxfive_cmd.c:70"
+
+[[word]]
+word = "xfer:3"
+action = "pass"
+lands = ["tq:3"]
+ref = "sgxfive_cmd.c:70"
+
+[[word]]
+word = "xfer:4"
+action = "validate"
+lands = ["tq:4"]
+ref = "sgxfive_cmd.c:114"
+note = "0, or an address whose page lies in a client heap"
+
+[[word]]
+word = "xfer:5"
+action = "pass"
+lands = ["tq:5"]
+ref = "sgxfive_cmd.c:70"
+
+[[word]]
+word = "xfer:6"
+action = "validate"
+lands = ["tq:6"]
+ref = "sgxfive_cmd.c:109"
+note = "1 MiB aligned and an address whose page lies in a client heap"
+
+[[word]]
+word = "xfer:7"
+action = "pass"
+lands = ["tq:7"]
+ref = "sgxfive_cmd.c:70"
+
+[[word]]
+word = "xfer:8"
+action = "pass"
+lands = ["tq:8"]
+ref = "sgxfive_cmd.c:70"
+
+[[word]]
+word = "xfer:9"
+action = "validate"
+lands = ["tq:9"]
+ref = "sgxfive_cmd.c:112"
+note = "an address whose page lies in a client heap (no alignment check)"
+
+[[word]]
+word = "xfer:10"
+action = "pass"
+lands = ["tq:10"]
+ref = "sgxfive_cmd.c:70"
+
+[[word]]
+word = "xfer:11"
+action = "pass"
+lands = ["tq:11"]
+ref = "sgxfive_cmd.c:70"
+
+[[word]]
+word = "xfer:12"
+action = "pass"
+lands = ["tq:12"]
+ref = "sgxfive_cmd.c:70"
+
+[[word]]
+word = "xfer:13"
+action = "pass"
+lands = ["tq:13"]
+ref = "sgxfive_cmd.c:70"
+
+[[word]]
+word = "xfer:14"
+action = "pass"
+lands = ["tq:14"]
+ref = "sgxfive_cmd.c:70"
+
+[[word]]
+word = "xfer:15"
+action = "validate"
+lands = ["tq:15"]
+ref = "sgxfive_cmd.c:111"
+note = "equal to the PDS_PIXEL heap base, 0x2e000000: any change is rejected"
+
+[[word]]
+word = "xfer:16"
+action = "validate"
+lands = ["tq:16"]
+ref = "sgxfive_cmd.c:107"
+note = "zero"
+
+[[word]]
+word = "xfer:17"
+action = "validate"
+lands = ["tq:98", "tq:99", "tq:100"]
+ref = "sgxfive_cmd.c:106"
+note = "bits 0-2 only; each bit becomes a whole word, 0 or 1"
+mask = 0x7
+
+[[word]]
+word = "xfer:18"
+action = "pass"
+lands = ["tq:17"]
+ref = "sgxfive_cmd.c:71"
+
+[[word]]
+word = "xfer:19"
+action = "pass"
+lands = ["tq:18"]
+ref = "sgxfive_cmd.c:71"
+
+[[word]]
+word = "xfer:20"
+action = "pass"
+lands = ["tq:19"]
+ref = "sgxfive_cmd.c:71"
+
+[[word]]
+word = "xfer:21"
+action = "pass"
+lands = ["tq:20"]
+ref = "sgxfive_cmd.c:71"
+
+[[word]]
+word = "xfer:22"
+action = "pass"
+lands = ["tq:21"]
+ref = "sgxfive_cmd.c:71"
+
+[[word]]
+word = "xfer:23"
+action = "pass"
+lands = ["tq:22"]
+ref = "sgxfive_cmd.c:71"
+
+[[word]]
+word = "xfer:24"
+action = "pass"
+lands = ["tq:23"]
+ref = "sgxfive_cmd.c:71"
+
+[[word]]
+word = "xfer:25"
+action = "pass"
+lands = ["tq:24"]
+ref = "sgxfive_cmd.c:71"
+
+[[word]]
+word = "xfer:26"
+action = "pass"
+lands = ["tq:25"]
+ref = "sgxfive_cmd.c:71"
+
+[[word]]
+word = "xfer:27"
+action = "pass"
+lands = ["tq:26"]
+ref = "sgxfive_cmd.c:71"
+
+[[word]]
+word = "xfer:28"
+action = "pass"
+lands = ["tq:27"]
+ref = "sgxfive_cmd.c:71"
+
+[[word]]
+word = "xfer:29"
+action = "pass"
+lands = ["tq:28"]
+ref = "sgxfive_cmd.c:71"
+
+[[word]]
+word = "xfer:30"
+action = "pass"
+lands = ["tq:29"]
+ref = "sgxfive_cmd.c:71"
+
+[[word]]
+word = "xfer:31"
+action = "pass"
+lands = ["tq:30"]
+ref = "sgxfive_cmd.c:71"
+
+[[word]]
+word = "xfer:32"
+action = "pass"
+lands = ["tq:31"]
+ref = "sgxfive_cmd.c:71"
+
+[[word]]
+word = "xfer:33"
+action = "pass"
+lands = ["tq:32"]
+ref = "sgxfive_cmd.c:71"
+
+[[word]]
+word = "xfer:34"
+action = "pass"
+lands = ["tq:33"]
+ref = "sgxfive_cmd.c:71"
+
+[[word]]
+word = "xfer:35"
+action = "pass"
+lands = ["tq:34"]
+ref = "sgxfive_cmd.c:71"
+
+[[word]]
+word = "xfer:36"
+action = "pass"
+lands = ["tq:35"]
+ref = "sgxfive_cmd.c:71"
+
+[[word]]
+word = "xfer:37"
+action = "pass"
+lands = ["tq:36"]
+ref = "sgxfive_cmd.c:71"
+
+[[word]]
+word = "xfer:38"
+action = "pass"
+lands = ["tq:37"]
+ref = "sgxfive_cmd.c:71"
+
+[[word]]
+word = "xfer:39"
+action = "pass"
+lands = ["tq:38"]
+ref = "sgxfive_cmd.c:71"
+
+[[word]]
+word = "xfer:40"
+action = "pass"
+lands = ["tq:39"]
+ref = "sgxfive_cmd.c:71"
+
+[[word]]
+word = "xfer:41"
+action = "pass"
+lands = ["tq:40"]
+ref = "sgxfive_cmd.c:71"
+
+[[word]]
+word = "cmd:0"
+action = "validate"
+lands = ["ta:148"]
+ref = "sgxfive_cmd.c:128"
+note = "4-byte aligned and an address whose page lies in a client heap"
+
+[[word]]
+word = "cmd:1"
+action = "pass"
+lands = ["ta:142"]
+ref = "sgx_render.c:291"
+
+[[word]]
+word = "cmd:2"
+action = "validate"
+lands = ["ta:143"]
+ref = "sgx_render.c:356"
+note = "equal to the tiling layout the kernel derives from the size in cmd:9"
+
+[[word]]
+word = "cmd:3"
+action = "validate"
+lands = ["ta:144"]
+ref = "sgx_render.c:357"
+note = "equal to the tiling layout the kernel derives from the size in cmd:9"
+
+[[word]]
+word = "cmd:4"
+action = "validate"
+lands = ["ta:145"]
+ref = "sgx_render.c:356"
+note = "equal to the tiling layout the kernel derives from the size in cmd:9"
+
+[[word]]
+word = "cmd:5"
+action = "validate"
+lands = ["ta:146"]
+ref = "sgx_render.c:357"
+note = "equal to the tiling layout the kernel derives from the size in cmd:9"
+
+[[word]]
+word = "cmd:6"
+action = "pass"
+lands = ["ta:149"]
+ref = "sgx_render.c:298"
+
+[[word]]
+word = "cmd:7"
+action = "pass"
+lands = ["ta:152"]
+ref = "sgx_render.c:301"
+
+[[word]]
+word = "cmd:8"
+action = "pass"
+lands = ["ta:153"]
+ref = "sgx_render.c:302"
+
+[[word]]
+word = "cmd:9"
+action = "validate"
+lands = ["ta:154"]
+ref = "sgx_render.c:353"
+note = "width - 1 (15:0) and height - 1 (31:16) within the context's maximum; also sizes the background object and the RT data words"
+
+[[word]]
+word = "cmd:10"
+action = "pass"
+lands = ["ta:169"]
+ref = "sgx_render.c:305"
+
+[[word]]
+word = "cmd:11"
+action = "pass"
+lands = ["rd:2"]
+ref = "sgx_render.c:230"
+
+[[word]]
+word = "cmd:12"
+action = "pass"
+lands = ["rd:3"]
+ref = "sgx_render.c:231"
+
+[[word]]
+word = "cmd:13"
+action = "pass"
+lands = ["rd:4"]
+ref = "sgx_render.c:232"
+
+[[word]]
+word = "cmd:14"
+action = "pass"
+lands = ["rd:16"]
+ref = "sgx_render.c:237"
+
+[[word]]
+word = "cmd:15"
+action = "validate"
+lands = ["rd:17"]
+ref = "sgx_render.c:359"
+note = "bits 8 and 9 only"
+mask = 0x300
+
+[[word]]
+word = "cmd:16"
+action = "pass"
+lands = ["rd:20"]
+ref = "sgx_render.c:241"
+
+[[word]]
+word = "cmd:17"
+action = "pass"
+lands = ["rd:22"]
+ref = "sgx_render.c:242"
+
+[[word]]
+word = "cmd:18"
+action = "validate"
+lands = ["rd:23"]
+ref = "sgxfive_cmd.c:129"
+note = "16-byte aligned and an address whose page lies in a client heap"
+
+[[word]]
+word = "cmd:19"
+action = "pass"
+lands = ["rd:24"]
+ref = "sgx_render.c:244"
+
+[[word]]
+word = "cmd:20"
+action = "pass"
+lands = ["rd:25"]
+ref = "sgx_render.c:245"
+
+[[word]]
+word = "cmd:21"
+action = "pass"
+lands = ["rd:26"]
+ref = "sgx_render.c:246"
+
+[[word]]
+word = "cmd:22"
+action = "pass"
+lands = ["rd:51"]
+ref = "sgx_render.c:247"
+
+[[word]]
+word = "cmd:23"
+action = "pass"
+lands = ["ta:2"]
+ref = "sgx_render.c:274"
+note = "also words 0-2 of the background object the kernel builds"
+
+[[word]]
+word = "cmd:24"
+action = "pass"
+lands = ["ta:3"]
+ref = "sgx_render.c:274"
+note = "also words 0-2 of the background object the kernel builds"
+
+[[word]]
+word = "cmd:25"
+action = "pass"
+lands = ["ta:4"]
+ref = "sgx_render.c:274"
+note = "also words 0-2 of the background object the kernel builds and the context's background primary word"

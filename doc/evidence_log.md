@@ -135,25 +135,633 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   on another context runs again, later jobs run exactly, and the third fault from a file within a
   minute bans the file.
   *transfer; HW; data: `render-client-jobs`.*
+- `E025` On the laptop the graphics device reports its stolen memory at 0x7f800000 and the table of
+  GTT pages at 0x7ffc0000, so stolen memory is 7932 KiB (7936 KiB up to the GTT, less one page) and
+  the GTT, if it runs to the end of that window, is 256 KiB; GMCH_CTRL reads 0x0030 and the host
+  bridge's words at 0x50 and 0x52 read 0.
+  *platform; HW, infer; data: `platform-memory-sizes`.*
+- `E026` Of five registers the firmware never writes (0x0810, 0x0814, 0x0818, 0x0a78 and 0x0abc),
+  the only one that changes a job is 0x0abc: a value with bits 4:1 all clear (0, 1, 0x20 or 0x21)
+  hangs the next fill, copy or triangle, and no other value or single-bit flip of any of the five
+  changes a pixel; the other four, and every other value of 0x0a78 and 0x0abc, change nothing.
+  *platform; HW; data: `platform-untouched-registers`.*
+- `E027` Bit 5 of the flags word of the kernel-built transfer command (word 42, byte offset 0xa8)
+  makes a fill or a copy complete without writing anything, the target keeping its sentinel; the
+  other 31 bits, singly, change nothing in either job; every transfer word userspace may set leaves
+  the flags alone.
+  *transfer; HW; data: `transfer-kernel-words`, `transfer-command-words`.*
+- `E028` Over a source holding every value of every channel, a copy answers every flip of the
+  transfer command's words in the same class as over the plain pattern (1429 of 1429 cases), and of
+  the 256 values of bits 31:24 of word 14 exactly the 128 with bit 25 set change the image; the data
+  does not show, for the few words whose changed pixel counts differ between the two sources (word 0
+  bits 24 to 30, word 7 bit 1), that they apply no function of the value.
+  *transfer; HW; data: `transfer-command-words`.*
+- `E029` Bit 25 of the word that loads 0x0400 changes every pixel a fill, a copy or a triangle
+  writes, the first pixel of each reading with bits 31:24 inverted (0xff336699 to 0x00336699,
+  0xa5000000 to 0x5a000000, 0xff203040 to 0x00203040); no other bit of the word changes a pixel, and
+  over the every-value source exactly the 128 values of bits 31:24 with bit 25 set change the image.
+  *pbe; HW; data: `transfer-command-words`, `render-command-words`,
+  `render-command-words-followup`.*
+- `E030` The end-of-tile emit's sideband with bit 9 clear hangs the triangle job, in all four sizes
+  tried and in both runs; with bit 9 set, bits 8:6 at each of 1 to 7 change no pixel of the ARGB8888
+  image and none of the RGB565 image; pack mode 3 stores RGB565; bit 13 stores the same colours at
+  1182 other places.
+  *pbe; HW, infer; data: `pbe-sideband`, `pbe-sideband-followup`.*
+- `E031` Of the 64 pack modes of the end-of-tile sideband, 41 store the shader's colour as ARGB8888
+  (mode 0 and 40 others), mode 1 as ABGR8888, mode 2 as BGRA8888 and mode 3 as RGB565; modes 4, 5,
+  6, 7, 8, 15, 18, 20, 24, 25, 27 and 28 store subsets in 16 or 8 bits, modes 9, 10, 12 and 13 store
+  whole 32-bit colours into part of the target, mode 14 faults, and modes 22, 26 and 34 store other
+  values; all but 22 and 34 repeat in two runs, and mode 14 faults in both.
+  *pbe; HW, infer; data: `pbe-pack-modes`, `pbe-sideband`, `pbe-pack-modes-followup`.*
+- `E032` Pack modes 22, 26 and 34 store one value per triangle pixel and none of the three is a pair
+  of luma and chroma: mode 26 stores R >> 3 in bits 4:0, G >> 3 in bits 9:5 and 0x10 in bits 14:10;
+  mode 22 stores 0x00000088 and mode 34 stores 0x60800000 in 727 of the triangle's 1062 pixels,
+  neither explained; the backgrounds of 22 and 34 take scattered values that change from run to run;
+  with o1 to o3 written, even mode 0 spills them into other pixels' places.
+  *pbe; HW, infer; data: `pbe-pack-modes`, `pbe-pack-modes-followup`.*
+- `E033` On a stride texture (T1 type 6) the sampler clamps to the edge for each address mode 1 to 7
+  tried; on a twiddled 16x16 texture the modes 0 to 3 act as repeat, mirror (period twice the size),
+  clamp to the edge and mirror once (the absolute coordinate, then clamped), at all seven positions
+  tried, and the low three bits of the mode field do not act on the u coordinate; modes 4 to 7 read
+  texels that none of 0 to 3 gives.
+  *texture; HW; data: `texture-sampler`.*
+- `E034` T3 bits 17:16 convert the fetched texel on the laptop (1 gives 10-bit fields, 2 half-float
+  pairs, 3 one single float per channel) and, with conversion 3, T3 bit 15 divides the converted
+  values by 255 (65535 for a 16-bit channel); the bit was not run with conversions 1 and 2.
+  *texture; HW; data: `texture-sampler`.*
+- `E035` With the state words T0 0x07fe0000, T1 0x0d00f00f (RGBA8888, a 16x16 power-of-two texture,
+  TEXTYPE 0) and T3 0x00800800, every one of the 1062 triangle pixels samples the texel (tx, ty) =
+  (((x + 32) / 2) mod 16, ((y + 32) / 2) mod 16), nearest and repeated; texel (tx, ty) is dword i of
+  the texture with ty's bits in the even bits of i and tx's in the odd bits (so the texture is
+  twiddled), and RGBA8888 holds R in byte 0.
+  *texture; HW, infer; data: `texture-fetch`.*
+- `E036` In the copy's texture word T2, bits 2 to 11 and 13 move the source address by 2^n bytes
+  (the first pixel written is the source texel that far in), bit 12 reads other data, bit 14
+  completes the job with nothing written, bits 15 to 31 and the values 0 and 0xffffffff fault; bits
+  1:0 are not address bits (they give colours that are no source texel); over the every-value
+  source, whose texels repeat every 1024 bytes, bits 10 and 11 change nothing.
+  *texture; HW; data: `texture-state-words`.*
+- `E037` A copy that reads its source as UYVY and loads colour-space set 0 with the limited-range
+  BT.601 words writes, at every one of 2048 pixels and in both runs, sat_u8((cY * (Y - 16) + cU * (U
+  - 128) + cV * (V - 128)) >> 7) in each channel, the arithmetic shift truncating; with the set
+  loaded as zeros, or not loaded, the copy writes opaque black.
+  *texture; HW; data: `texture-tpu-csc`, `texture-tpu-csc-followup`.*
+- `E038` In a UYVY copy through colour-space set 0, bit 0 of the transfer word that loads 0x0848
+  drops the luma offset and bit 2 reads U and V as signed bytes, the value 0xffffffff doing both;
+  its other bits change nothing, and neither the words that load 0x0860 to 0x0868 nor any bit of
+  colour-space set 1 changes a copy here; each model gives the target's hash.
+  *texture; HW; data: `texture-tpu-csc`.*
+- `E039` With T0 bit 31 set, a copy reads its texture as RGB, passes RGB through and takes alpha
+  from the three words that load 0x0860 to 0x0868: alpha_above if a weighted sum of R, G and B plus
+  an offset exceeds a threshold, else alpha_below; one model fits 74 of the 77 hand-run copies
+  exactly, in both runs, and the 3 others, with bits 7:0 of the third word at 64, 128 and 255, fit
+  none of its thresholds; T0 bit 31 is the only bit of T0, T1 and T3 whose effect depends on the
+  three words repeatably, in both runs (six other cases differ between the tables, not repeatably).
+  *texture; HW, infer; data: `texture-tpu-csc`, `texture-tpu-csc-followup`.*
+- `E040` No bit of T0, T1 or T3 (103 cases) and no bit of the colour-space set 1 words or of 0x0848
+  makes the UYVY copy follow the set 1 numbers (BT.709): every converting case keeps set 0;
+  TEXFORMAT 28 (TEXTYPE 3) reads YUYV, Y0 U Y1 V, converted by set 0 at all 2048 pixels, and
+  TEXFORMAT 26 with T0 bit 30 reads one byte per texel, rows of 64 bytes, written unconverted as
+  grey with alpha 0xff at all 2048 pixels, in both runs; TEXFORMAT 26 without T0 bit 30 gives values
+  that differ from run to run.
+  *texture; HW; data: `texture-tpu-csc`, `texture-tpu-csc-followup`.*
+- `E041` A twiddled 16x16 texture's mip levels follow level 0 back to back, largest first, each
+  twiddled at its own size (levels 1 to 4 start 0x100, 0x140, 0x150 and 0x154 dwords after level 0);
+  they are read when T0 bits 26:21 are 0x3f and bit 18 is clear and bits 20:17 are not all clear; T0
+  bits 11:10 are the minification filter (1 and 2 linear, 0 and 3 nearest) and bit 9 picks the
+  nearest level, a half rounding up (0), or blends the two levels around the LOD by its fraction
+  (1).
+  *texture; HW; data: `texture-mipmaps`.*
+- `E042` smp.sinf returns no texel: its first register is 0 and its second the level, and with the
+  mip filter linear the first holds the blend fraction between the two levels in bits 23:16 (0x41,
+  0x82 and 0xc3 for a quarter, a half and three quarters: a six-bit fraction with its top two bits
+  repeated below it) and the second the lower level; smp.rsd returns the same texel as the plain
+  sample under point filtering, and under linear filtering at LOD 1.5, where the plain sample
+  returns one blended word, eight registers: four texels of level 1 and four of level 2, the 2x2
+  footprint of each level, without filtering.
+  *texture; HW, infer; data: `texture-sampler`.*
+- `E043` In the end-of-tile task's DOUTU1 word, bits 4 to 11 and bits 13 to 21 each change what the
+  job writes when flipped alone, bits 3, 12 and 22 and the other bits below 23 and above bit 2
+  change nothing, and bits 1, 23, 24, 25, the value 0 and 0xffffffff hang the job; fill, copy (two
+  sources) and triangle agree, and a second run reproduces the cases.
+  *pds; HW; data: `pds-data-words`, `pds-data-words-followup`.*
+- `E044` Over every value of DOUTU1 bits 11:3 (x) and bits 21:12 (y) of the fill's end-of-tile task,
+  x or y = 1 changes nothing, x or y = 2 or 3 leaves 1024 of the 2048 pixels unwritten, and every x
+  or y from 4 up leaves the whole target unwritten.
+  *pds; HW; data: `pds-end-of-tile`.*
+- `E045` Writing every value 0 to 63 into register 0x0a78 before a triangle job changes nothing, and
+  the same into 0x0abc hangs the job exactly for the values whose bits 4:1 are all zero (0, 1, 0x20,
+  0x21); every other value of 0x0abc gives the baseline image, and every value read back as written.
+  *pds; HW; data: `platform-untouched-registers`.*
+- `E046` In a pixel task's DOUTU1, bit 25 set on a task with no fetch hangs the job and cleared on
+  the copy's task changes 1410 to 1492 pixels, bit 23 flipped on a pixel task or on the end-of-tile
+  task hangs it, bit 2 does nothing, and bit 22 does nothing on the end-of-tile task but its mask in
+  the pixel-event program hangs when cleared; in the copy's DOUTI0, bits 4:0 pick the fetch
+  coordinates (0 hangs, 2 to 31 give one image), bits 10:5 pick among five images (the baseline and
+  four others), and bits 16:11 pick what the iterator writes (values 37 to 63 give the baseline);
+  EMIT2's bits 15:8 write the same pixels at every value but 0x81.
+  *pds; HW; data: `pds-data-words`, `pds-douti-fields`, `pbe-emit`, `pds-pixel-event`,
+  `pds-data-words-followup`, `pds-douti-fields-followup`.*
+- `E047` With DOUTI0 bit 18 set, the iterated x of the textured triangle is the plane (13/45) x +
+  (8/45) y + 3/5 in clip coordinates (largest error 1e-7 over 1062 pixels), which takes 0.25, 0.75
+  and 0.625 at the three vertices, so each vertex's x was reduced to its fractional part before
+  iteration (an inference from the fit); with bit 27 set each pixel's value depends on its column
+  alone and, for 906 of the 1062 pixels, is x in fixed point with 28 fractional bits, the other 156
+  differing by 2^-8.
+  *pds; HW, infer; data: `pds-iteration-sources`.*
+- `E048` In the textured-triangle host with w = x + 2 at the vertices, DOUTI0 bit 24 makes every one
+  of the 1062 pixels hold the perspective-correct iteration of the vertices' x (largest error
+  1.2e-7, against 0.29 for the affine one), DOUTI word 1 bit 6 iterates flat, bits 26:25 pick vertex
+  0, 1, 2 or the smooth iteration only with bit 21 set, and DOUTI0 bits 29 and 30 signal the last
+  iteration and the last fetch that DOUTU1 bits 24 and 25 wait for: a wait with no matching signal
+  hangs the job, and a signal with no wait leaves the attribute holding leftovers of earlier tasks
+  (or hangs the job, with a fetch).
+  *pds; HW; data: `pds-iteration-waits`, `pds-iteration-sources`, `pds-iteration-waits-followup`.*
+- `E049` In the fill, the copy and the triangle alike, flipping bit 1 or bit 2 of the
+  pixel-partition word of the kernel-built command, or setting it to 0xffffffff, hangs the job; the
+  other 30 single-bit flips and the value 0 change nothing.
+  *render; HW; data: `transfer-kernel-words`, `render-kernel-words`,
+  `render-kernel-words-followup`.*
+- `E050` Of the kernel-built render flags word of the triangle job (ta:7), bit 0 hangs the job, bits
+  1 and 4 complete it with no pixel written, bits 5 and 9 and the value 0xffffffff fault, and the
+  other bits and the value 0 change nothing; the two fresh runs agree on every bit.
+  *render; HW; data: `render-kernel-words`, `render-kernel-words-followup`.*
+- `E051` A TA kick without LAST_KICK leaves its render waiting (the job hangs and the context is
+  lost); with one job per render, a cleared FIRST_KICK on the second render, FRAG_FLAGS.BIT2 or
+  NO_DEALLOCATE on the first, or both, leave the second render's image its own triangle only, and a
+  cleared BIT10 changes nothing; both runs agree.
+  *render; HW; data: `render-scenes`.*
+- `E052` A scene accumulates the geometry of several TA kicks that carry no end-of-scene: the first
+  job that ends the scene renders all of them (2 kicks: 1730 triangle pixels, 625 of them from the
+  first kick; 3 kicks: 1794, 695 more from the earlier two), and the next render is a scene of its
+  own triangle only whatever BIT2, NO_DEALLOCATE or BIT10 the closing render carried; both rounds
+  agree.
+  *render; HW; data: `render-scenes`.*
+- `E053` Rendering a scene empties it for the next kick: a third render whose triangle lies off the
+  target and that appends to the closed scene (FIRST_KICK clear) stores only the 4096 background
+  pixels, as the control does, whether the closing render carried BIT2, NO_DEALLOCATE or both and
+  whether the third kick sets NO_DPM_CONTEXT_LOAD; all eight cases agree in both rounds.
+  *render; HW; data: `render-scenes`.*
+- `E054` Of the kernel-built words of the triangle job's TA and render-details commands, changing a
+  layout word (ta:143, 144, 146, 147, rd:74, rd:75) faults the job for most bits, ta:5 hangs for
+  bits 0 and 2, 0 and 0xffffffff, ta:154 at 0 removes the triangle, and the 12 register words that
+  are zero in the job (ta:155, 156, 158 to 166, 168) change nothing at any value tried; ta:167
+  faults for bit 8 and for 0xffffffff; two cases (ta:147 bit 20, ta:154 bit 1) differ between the
+  two fresh runs.
+  *ta; HW; data: `render-kernel-words`, `ta-zero-words`, `render-kernel-words-followup`.*
+- `E055` The TA command's screen word (ta:145, CR_TE_SCREEN) holds the last tile's x from bit 0 and
+  its y from bit 12 in tiles of 32x16 pixels: clearing bit 0 leaves the right tile column of the
+  64x64 target unwritten (2048 pixels), clearing bit 12 the bottom row (1024), clearing bit 13 the
+  bottom two rows (2048), and 0 leaves all but the top left tile (3584); no other bit changes
+  anything; both fresh runs agree.
+  *ta; HW; data: `render-kernel-words`, `render-kernel-words-followup`.*
+- `E056` None of the TA words that are zero in the triangle job (ta:155, 156, 158 to 168) nor
+  render-detail words rd:9 and rd:19, set to a scratch-buffer page in six numberings, is used as an
+  address: no job writes the scratch buffer or changes a pixel, except ta:167 at 0x700, which
+  faults.
+  *ta; HW; data: `ta-zero-words`.*
+- `E057` Bit 0 of the render details' ZLS control word (rd:11, CR_ISP_ZLSCTL), and the value
+  0xffffffff, let the triangle job complete with no pixel written; the other 31 single-bit flips
+  change nothing; the outcome is the same image as the render flags' bit 4 (E050), and both fresh
+  runs agree.
+  *zls; HW; data: `render-kernel-words`, `render-kernel-words-followup`.*
+- `E058` With the render flags' depth-buffer bit set, the depth store (4096 floats, 4 pages) lands
+  where 0x0488 points and never where 0x0484 points, the depth load reads from 0x0484 whatever
+  0x0488 holds, and the stencil store (one page of bytes) lands where 0x0490 points only when its
+  bit 31 is set and the stencil flag is on, never where 0x048c points; all repeated cases agree.
+  *zls; HW; data: `zls-load-store`.*
+- `E059` Setting either half of the terminate word to 0 leaves part of the 64x64 target unwritten:
+  the high half 2048 pixels (x 32-63), the low half 1024 pixels (y 48-63); the other 28 values of
+  the two halves change nothing, and all three repeats agree.
+  *vdm; HW; data: `vdm-terminate`.*
+- `E060` In the triangle's VDM stream, state word 1 bits 11:9 at 0 remove the triangle and 15:13 at
+  0, 5 or 6 hang the job (sweep and probe agree); 11:9 at 7 hangs in the sweep but renders in a
+  probe job that sets the same word, in both runs, so that value stays unsettled; all 16 values of
+  the vertex task's bits 31:28 render the triangle alike.
+  *vdm; HW; data: `vdm-state1`, `vdm-state1-followup`, `vdm-vertex-tasks`.*
+- `E061` The state block's words vp0-vp3 are IEEE singles that scale and place the 64x64 triangle:
+  each pair acts alike on the two axes, the offset words (vp0, vp2) leave 348 triangle pixels at 0
+  and the scale words (vp1, vp3) leave none, and vp3 at -32.0 gives the triangle's mirror image;
+  which pair is x and which is y rests on that one mirror, and vp4, vp5 change nothing in the flat
+  triangle except that a NaN removes it.
+  *mte; HW; data: `vdm-stream-words`, `vdm-stream-words-followup`.*
+- `E062` Of the state block's MTECTL word (blk:15), bits 1:0 cull one winding (1 the triangle as
+  drawn, 2 the mirrored one) or neither (0, 3), and bit 6 removes the triangle whatever the winding;
+  bits 2-5 and 7 change nothing, in all 256 values of bits 7:0 on both windings.
+  *mte; HW; data: `mte-mtectl`.*
+- `E063` The two TA command floats at 0x0240 (ta:152) and 0x0244 (ta:153) act on no clipping scene:
+  in 11 scenes (a vertex at w 0.1, 0, -0.05 and -0.5, all three at w 2, -1, 1.25, and 8x, 64x and
+  1024x the triangle) each of 8 values of each float gives the scene's baseline image, 176 images
+  equal to their baselines; the state block's w clamp word (blk:14) does change the w-scan scenes
+  under the same tool.
+  *mte; HW; data: `mte-clipping`.*
+- `E064` Byte 0 of the render's cmd:16 word (0x88 in the job) moves the 64x64 triangle's edges: 10
+  of the 256 values (0x79, 0x88, 0x89, 0x97, 0x98, 0x99, 0x9a, 0xa8, 0xa9, 0xaa) leave the image as
+  it is, the others give 26 other images whose triangle covers 1074, 1086 or 1098 pixels (or 1062
+  again, in a different image), and 8 is the centre of each nibble's stair; the data are pixel
+  counts and hashes, so they do not say which nibble is x and which y.
+  *isp; HW; data: `isp-sample-positions`.*
+- `E065` ISP0 pass types 1, 2, 4, 5 and 6 draw the 64x64 triangle exactly as type 0 does and types 3
+  and 7 remove it (types 2, 4 and 5 also at 32x32, 128x128 and 256x256); the nine ISP visibility
+  registers (0x0494-0x04b4), among them the low half of 0x04b4, stayed at 0 in every job of these
+  tables and in the 956 jobs of the four ISP constant-register scenes, pass type 4 included.
+  *isp; HW; data: `isp-pass-counters`, `isp-constant-registers`.*
+- `E066` Under four depth scenes of the 64x64 triangle (less written, translucent, punch-through,
+  bit-exact equal) the only words of seven render words that change the image are cmd:11 bit 25 (and
+  ~0) and cmd:13 bits 0 and 1 (and ~0, a hang); every flip, 0 and ~0 of cmd:17, cmd:21, cmd:22,
+  rd:19 and rd:21 leaves it as it is, and the equal scene draws the triangle when vp4 and the
+  background depth are both 0.3, which fits vp4 being the triangle's depth (no case varies vp4 under
+  a depth test).
+  *isp; HW, infer; data: `isp-constant-registers`, `vdm-stream-words`.*
+- `E067` 0x0418, 0x04dc, 0x04e8, 0x0520 and 0x0800, held through a plain copy, the every-value copy,
+  a UYVY copy through colour-space set 0 and a fill, change no pixel: 34 values of each (every
+  implemented bit flipped, 0 and ~0) in each of the four jobs; on a textured 3D triangle 70 pokes of
+  the same registers, every implemented bit and 0 and ~0, give the unpoked image (up to five of them
+  may not have been applied).
+  *isp; HW; data: `isp-render-only-registers`.*
+- `E068` Among five scenes of five overlapping copies of the triangle (depth always, less,
+  translucent less, translucent always, punch-through less) only 0x04dc bit 1 acts: with it set
+  (values 2 and 7 tried) the punch-through scene hangs and the other four are unchanged; every other
+  implemented bit of 0x0418, 0x04dc, 0x04e8, 0x0520 and 0x0800, and 0 and ~0 of each, gives its
+  scene's baseline image in all five scenes (348 of 350 cases); why the punch-through scene hangs is
+  not shown.
+  *isp; HW; data: `isp-render-only-registers`, `isp-depth-test`.*
+- `E069` No value of either byte of the copy's background object word bg:10 changes a one-layer
+  copy: all 255 values of bits 7:0 and all 255 of bits 15:8 give the baseline image.
+  *isp; HW; data: `isp-background-object`.*
+- `E070` ISP word 1 (blk:2, 0x10f0 in the job) with bit 3 set makes the job count the triangle's
+  1062 pixels (0x426) into a visibility counter: bits 2:0 = 0 count into 0x0498 and bits 2:0 = 7
+  into 0x04b4, and with bit 3 clear nothing counts; the counters of 1, 2, 3 and 4 were not
+  exercised, so that bits 2:0 name the counter is shown for two of its eight values.
+  *isp; HW; data: `vdm-stream-words`, `isp-sample-positions`, `vdm-stream-words-followup`.*
+- `E071` 0x041c (rd:5) is the polygon offset in units of one ulp of the stored depth, 0x0424 (rd:7)
+  caps the offset at its value with 0 meaning no cap and a negative cap leaving a positive offset
+  alone, and the offset needs ISP1 bit 23; 0x0420 (rd:6) at 4.0 adds nothing to the flat triangle.
+  *isp; HW; data: `isp-depth-test`.*
+- `E072` Against a loaded depth of 0.5 plus n ulp (n from 0 to 512, eleven steps), depth test less,
+  the 64x64 triangle at depth 0.5 is removed at n = 0 and drawn from n = 1 up, with 0x0418 (rd:26)
+  at 0 and at 1: the compare is exact to the ulp and 0x0418 is not a depth precision mode in this
+  range.
+  *isp; HW; data: `isp-depth-test`.*
+- `E073` With 42 overlapping triangles per tile, opaque and with depth less, 0x0418, 0x04dc, 0x04e8,
+  0x0520 and 0x0800 at the 18 values tried leave the covered-pixel count at 1275 of 4096 in every
+  job; the check compares counts, not pixel positions.
+  *isp; HW; data: `isp-render-only-registers`.*
+- `E074` With the multisample positions set in cmd:16 and cmd:10, 0x042c (cmd:13) bits 1:0 = 1 and 2
+  each change the 64x64 triangle's image (868 and 896 triangle pixels against 1086 with the
+  positions alone), 3 hangs the job, TE anti-aliasing bits 31:30 change it again (1248 pixels), and
+  bit 48 of an emit does nothing, while bit 31 of 0x042c clear removes the triangle only when bit 1
+  is set; that the image holds each pixel's samples is not shown by these counts.
+  *isp; HW, infer; data: `isp-msaa`.*
+- `E075` Our own pixel programs measured on the hardware what USSE instructions do beyond their
+  text, in 16 tables (169 probes, 2199 cases): of the 169 probes, the table's own model fits every
+  case of 119, 2 do not fit (internal-register bank 7 and efo.gpiext on its own instance) and 48 are
+  recorded explorations; the settled ones cover tests, 16-bit lanes, shifts, index registers,
+  repeats, float rounding, dot products, internal registers, pack and unpack, colour operations,
+  dual issue and efo.
+  *usse; HW; data: `usse-branch`, `usse-colour-ops`, `usse-dot-products`, `usse-dual-issue`,
+  `usse-efo`, `usse-flags`, `usse-fmad`, `usse-fmad16`, `usse-gradients`, `usse-indexing`,
+  `usse-integer`, `usse-internal-registers`, `usse-moe`, `usse-pack`, `usse-predicates`,
+  `usse-test-channels`.*
+- `E076` The USEn_SERV_PIXEL and USEn_SERV_VERTEX registers (n = 0-3) read 0x00010000 after a
+  firmware load or stop and count tasks in bits 15:0 with bit 16 set: pixel tasks on all four pipes
+  (a 64x64 triangle 85, 86, 85, 85; the debugfs fill 130 and copy 120 and a client fill 40 on every
+  pipe), vertex tasks on pipe 0 only (3 for a triangle).
+  *usse; HW; data: `platform-register-snapshots`.*
+- `E077` In a translucent pass (render block word 1 = 0x03d00200, pass type 1) a pixel shader's o0
+  holds the pixel's current colour when it starts, for all 1062 pixels of the triangle; in the
+  opaque pass it holds either the same background colour (714 and 800 pixels in two cases) or a
+  leftover colour from elsewhere (348 and 262 pixels), different pixels in different cases.
+  *usse; HW; data: `usse-output-registers`.*
+- `E078` The USE filter block computes sat_u8((sum(tap * input) + bias) >> shift) on the byte it
+  writes: eight signed taps at -3 to +4 from the centre in the first two words of a set's group
+  (highest byte first), shift in bits 3:0 and a signed 16-bit bias in bits 19:4 of the third word;
+  set 2 reads only three of its eight taps; sets 3 to 7 give 0 when the block is loaded; 0x0a9c bits
+  1:0 choose the fixed banks and 3 selects the loaded block.
+  *usse; HW; data: `usse-filter-taps`, `usse-filter-gain`, `usse-filter-control`,
+  `usse-filter-sets`.*
+- `E079` With 0x0a9c bits 1:0 at 0, 1 or 2 the fixed sets 2 to 5 are interpolation filters: bank 0
+  gives the H.264 six-tap half-sample luma filter [1 -5 20 20 -5 1]/32 (set 2), [1 2 1]/4 (set 3),
+  the MPEG-4 Part 2 eight-tap [-1 3 -6 20 20 -6 3 -1]/32 (set 4) and the six taps unscaled (set 5);
+  bank 1 gives the VC-1 half-sample [-1 9 9 -1]/16 (sets 2, 3) and two roundings of about its
+  quarter-sample [-4 53 18 -3]/64 (sets 4, 5); bank 2 gives [1 2 2 2 1]/8 (set 4) and [1 1 1 1]/4
+  (set 5); taps that fall off the line fold by edge repeat, mirror about the edge sample or mirror
+  with the edge sample doubled.
+  *usse; HW, infer; data: `usse-filter-banks`, `usse-filter-control`.*
+- `E080` Fixed bank 2's sets 2 and 3 give 0 on a pedestal of 0x80 and of 0x20 and, with one byte
+  raised by 0x20, set 2 shows 4 at -1 and 16 at +1 (taps 1/8 and 4/8) and set 3 shows 32 at -2 and
+  16 at the centre and at +1 (taps 1, 1/2, 1/2); the results clamp at 0, so negative taps are not
+  seen, and the table has no lifted case, so [1 -4 4 -1]/8 for set 2 is consistent but not measured.
+  *usse; HW; data: `usse-filter-banks`.*
+- `E081` A pixel's o0 lands on its own pixel (all 1062 covered pixels, in all four tables); o1-o7
+  write fewer pixels (508, 604, 400, 348, 348, 348, 312) and where they land is the instance's own
+  pixel or one 16 or 32 rows and 0 or 32 columns away, a few at other offsets, for the plain table
+  and for PDS_SIZE bits 17:16 = 0, 1, 2.
+  *usse; HW, infer; data: `usse-output-registers`.*
+- `E082` With the iteration marked done (U1 bit 24, iteration source set) the colour phase after a
+  pt phase does not get the pt phase's writes or the iterated attributes: in the punch-through scene
+  (render block word 1 = 0x08400200) none of the 4 + 3 cases writes a pixel in either of two runs,
+  and in the depth-always scene (0x01d00200) they write 118 to 407 pixels of the colour 0xff00ff00,
+  never the 0x12345678 the pt phase wrote, the count differing from run to run.
+  *usse; HW; data: `isp-punch-through`, `isp-punch-through-followup`.*
+- `E083` atst8 is an alpha test of src0's top byte against src2's top byte by the function in src2
+  bits 15:13 (0 never, 1 less, 2 equal, 3 lequal, 4 greater, 5 notequal, 6 gequal, 7 always),
+  writing src0 and setting the predicate on a pass and leaving both on a fail, in all 687 fill
+  cases; in a fill the fb, nfb, optdwd and twosided modes, src1 and the other src2 bits change
+  nothing, and depthf and pcoeff change nothing; in a punch-through pass a pixel is kept by atst8
+  only with fb and a control word of 0xe001 or 0xffffffff in src1; ptoff is not measured.
+  *usse; HW; data: `usse-alpha-test`, `isp-punch-through`, `isp-punch-through-followup`.*
+- `E084` The EDM tick lasts HostCtl dword 6 cycles of a 399.0 MHz clock: with dword 6 at 200000,
+  400000 and 800000 the tick runs at 1995.00, 997.48 and 498.76 Hz, 399.00 MHz to within 0.01 MHz
+  each time, while TIMER counts 1/16 of that clock whatever dword 6 holds.
+  *edm; HW; data: `edm-tick-rate`.*
+- `E085` c0-c63 read the same fixed table in a fill shader, through a store's source and through a
+  mov alike (c0-c2 zero, c3 1.0, c4-c13 powers of two 2 to 1024, c14-c27 0.5 down to 2^-14, c28-c39
+  e, 1/e, sqrt 2, 1/sqrt 2, pi/4, pi/2, pi, 1/pi, 2/pi, 4/pi, 2 pi and 2^-16, c40-c44 small values
+  from 1.55e-6 to 2.08e-2, c45-c47 two f16 1.0s, c48-c51 zero, c52-c55 1.0, c56-c59 all ones,
+  c60-c63 0x7fff7fff); g0-g63 read small values only, most of them zero.
+  *usse; HW, infer; data: `usse-constant-banks`, `usse-constant-banks-followup`.*
+- `E086` In a 64x32 fill g23 is the pixel's x in its 32x16 tile, g24 its y, g25 its place in the 2x2
+  quad, g17 the tile quarter (2 * x bit 4 + y bit 3), g18 a per-tile number (0x16, 0x14, 0x12, 0x10
+  for the tiles (x bit 5, y bit 4) = (0,0), (1,0), (0,1), (1,1)) and g39 the quad's place in a 4x4
+  block (4 * x bit 1 + 8 * y bit 1); g21 is constant over 4x4 blocks with 27 values from 4 to 0x1f,
+  g22 constant over quads with 12 values from 0 to 0xb, and both differ between two runs (528 and
+  544 pixels); g20 and g41-g43 are constants.
+  *usse; HW, infer; data: `usse-constant-banks`, `usse-constant-banks-followup`.*
+- `E087` smbo's first value offsets the destination register number of the instructions after it (+1
+  writes r11, +2 r12, and a repeat moves every write), its third value offsets source 1 and its
+  fourth source 2 (a store's source register included), the second value changes nothing the probes
+  read; the offsets stay in force for the rest of the task; moest writes no register and no scratch
+  dword in any case that completes (smbo's own offsets move the dump in one); and smoa with non-zero
+  offsets does not fault by itself, but three cases fault the job in both runs (smoa #-1, #-2, #511,
+  #-512 followed by the sixteen moest selectors, and smoa mirror on all four operands in two smr
+  cases) and two in the first run only (smoa #1-#4 or smbo #1-#4 followed by the moest selectors).
+  *usse; HW; data: `usse-moe`, `usse-moe-followup`.*
+- `E088` .quadlead on an instruction runs it for the top-left instance of each 2x2 quad only (512
+  quads: the 512 top-left pixels stored the incremented value and the other 1536 stored the
+  unchanged one); lock #0 or #3 around a shared counter serialises quads, not instances (the counter
+  ends at 0xd0000200, 512 updates for 2048 pixels, each value in exactly the four pixels of one
+  quad); setm #0, #1, #2, #4, #8 and #15 change nothing of that.
+  *usse; HW; data: `usse-quad-lock`, `usse-quad-lock-followup`.*
+- `E089` A predicated br whose quad's instances disagree takes the whole quad where its top-left
+  instance (instance 0) goes: p0 set on the even-x instances gives 4 in all 2048 pixels, p0 set on
+  the odd-x instances or on instances 1-3 gives 7 in all 2048; when the quad agrees, each quad
+  follows its predicate (1024 pixels 4, 1024 pixels 7); br.syncent and br.nosched give the same
+  results as br, and br.synce and br.mon hang the job in the two predicates they were run on.
+  *usse; HW; data: `usse-branch`.*
+- `E090` ld/st with a post-increment access the base address and then advance it by the increment in
+  dwords (two loads of [r20,#1++] read dwords 64 and 65 and leave r20 8 bytes on; [r20,#2++] reads
+  dwords 64 and 66 and leaves it 16 bytes on; two stores of r1 and r2 land in dwords 64 and 65); ldr
+  #7 and #8 read 0x01150000 and 0x0001000d; a value moved to pclink reads back unchanged (0x123).
+  *usse; HW; data: `usse-memory`.*
+- `E091` A recorded case for each of 16 groups of USSE forms that had no hardware readback (140
+  cases): 136 complete and record their registers and pixel, the 4 smp repeat forms fail on the
+  hardware, and ima16 with word bit 37 or 47 set (form 172) gives the same 0x0025001c as the plain
+  form 27.
+  *usse; HW; data: `usse-form-coverage`.*
+- `E092` The test group's umul8, uadd8, usub8, uadd16 and umul16 work on each byte or 16-bit lane on
+  its own, unsigned and wrapping; .sat clamps the unsigned byte results to 255 (the Rogue
+  instruction set reference's UADD8, UMUL8, UADD16 and UMUL16 lane by lane); iadd8.sat writes the
+  wrapped bytes, not a signed clamp; imul8, iadd16 and imul16 give the unsigned results.
+  *usse; HW, infer; data: `usse-lane-integer`.*
+- `E093` The three numbered modifiers act uniformly over all their values in 71 cases: .repeatN runs
+  N times (1 to 16), mov and xor stepping every operand one register per iteration and touching no
+  register past the Nth; ldad .fetchN loads N consecutive dwords into N registers (1 to 16),
+  starting one element after the address with any fetch flag, by register offset too, and stepping
+  the destination one register before any smlsi; imae .rsN shifts the sum right by N (0 to 7),
+  arithmetically when signed; a fetch that would run past the task's temporaries (r29 or r30 with
+  fetch4 over 32 temporaries) writes nothing.
+  *usse; HW; data: `usse-numbered-modifiers`, `usse-numbered-modifiers-followup`.*
+- `E094` The test group's unorm8 operations clamp per byte: fpadd8 is x + y up to 255, fpsub8 x - y
+  down to 0, and fpmul8 round(x * y / 255) exactly rounded, in all 24 cases (96 byte pairs); the
+  zero test sees each byte's unclamped result: an fpsub8 whose byte 0 clamps to 0 without being 0
+  does not test as zero.
+  *usse; HW; data: `usse-unorm8`.*
+- `E095` fdpc's clip-plane result has no visible effect with the TA state our kernel sets by
+  default: a vertex shader that runs fdpc against a plane every vertex is outside of (cp0 and cp5,
+  the plane (0, 0, 0, -1)), inside of, or that splits the triangle by x still draws the control's
+  image, 1062 triangle pixels and 3034 background.
+  *usse; HW; data: `mte-user-clip-planes`.*
+- `E096` With a user clip plane enabled by the output-select word, fdpc's cpN value becomes plane
+  N's distance for the vertex, replacing the distance dword the vertex writes, and has no effect on
+  a disabled plane; fddpc gives its first product (s0 * s1) to cpA and its second (s0 * s2) to cpB.
+  *usse; HW; data: `mte-user-clip-planes`.*
+- `E097` smlsi's swizzle mode makes iteration k of a repeat use the swizzle's k-th component as its
+  register offset (source 1 under wzyx reads r4, r3, r2, r1, under xxxx r1 four times; a destination
+  under wzyx writes r23 down to r20); smoa's offsets shift an operand's register number on every
+  instruction (destination +1 writes r11, source 1 +1 or +2 shifts a repeat8 by that much), and with
+  an smr range R and mode repeat the destination index wraps once, to index - R (smr 2, 4, 8 put r20
+  at r18, r16, r12, and offset +2 moves each up two); moest writes no register and no scratch dword
+  and setfc changes nothing a load or a repeat shows.
+  *usse; HW; data: `usse-moe`.*
+- `E098` eldd and eldq load the dword or the four dwords of element index + offset from the base
+  when that element is below the limit (their last operand), and zeros otherwise; no cache mode
+  (ldad's, stad's, eld's .bypassl1) makes a reload miss a store: in one instance all 21 combinations
+  read the stored value on every pixel, and across instances the stored value is read except by 12
+  or 64 pixels of tile (0, 0) in 10 of 21 combinations.
+  *usse; HW; data: `usse-cache-control`, `usse-cache-control-followup`.*
+- `E099` setm #0 to #15 masks nothing a fill or a single-sample triangle shows: in a fill every one
+  of the 2048 pixels writes the marker in all 23 cases, with or without .skipinv on the mov and with
+  a second mov, and the triangle's pixel shader after setm #0, #1 or #15 keeps exactly the 1062
+  covered pixels, as without setm.
+  *usse; HW; data: `usse-instance-masking`.*
+- `E100` bexception between two marker writes, with or without .nosched, hangs a fill's pixel task
+  (the job times out and the context is lost), and the baseline triangle run before and after each
+  case is exact, so the kernel recovers the GPU; the same fill without bexception completes with
+  both markers.
+  *usse; HW; data: `usse-branch`.*
+- `E101` phas's wait none lets a pixel shader's next phase run at once, with the temporaries the
+  first phase wrote (1062 of 1062 pixels under parallel, 1060 under perinstance); perinstance does
+  not run instances one at a time (the unlocked counter ends at 16 under parallel and 48 under
+  perinstance, with 16 and 48 distinct values over 1062 pixels); a pixel shader hangs waiting on
+  vcull in both modes, and waiting on pt it writes no counter or temporary value; the vertex shader
+  draws alike waiting on vcull or none, in either mode, and hangs waiting on pt under parallel.
+  *usse; HW, infer; data: `usse-phases`.*
+- `E102` Bit 42 of the vertex emits (.twopart) is needed on emitvcbvtx and not on emitmtevtx:
+  without it on emitvcbvtx alone the job hangs, without it on emitmtevtx alone the triangle is exact
+  (1062 pixels), and without it on both the job completes with no triangle drawn.
+  *usse; HW, infer; data: `usse-emits`.*
+- `E103` setm #0 to #15 masks no sample of a 4x multisampled triangle, before an o0 write with or
+  without .skipinv: all 34 cases draw the same 1248 samples; and no pixel of a single-sample
+  triangle written without .skipinv is masked: all seven cases draw the 1062 covered pixels, 22 to
+  36 more than the triangle covers.
+  *usse; HW; data: `usse-instance-masking`.*
+- `E104` In a triangle's pixel shader an instruction with .skipinv reaches exactly the 1062 covered
+  pixels in all three repeats, and one without it also reaches 16 to 26 uncovered pixels of the
+  quads the triangle covers, whole quads at a time (6 to 10 of the 42 partly covered quads);
+  .skipinv skips the instances that cover no pixel.
+  *usse; HW; data: `usse-instance-masking`.*
+- `E105` smoa's address modes map an operand's first register once, and the iterations step on from
+  it: with i the register plus the operand's smoa offset and M its smr range less one, none gives i,
+  clamp min(i, M), mirror 2M - i and repeat i - (M + 1) when i is past M; this holds for the
+  destination and for source 1 in all 70 cases (14 starting below r0), smr's field 0 goes with the
+  destination and field 2 with source 1, and a first register below r0 drops writes and reads values
+  from outside r0-r46.
+  *usse; HW; data: `usse-moe`, `usse-moe-followup`.*
+- `E106` .twopart (bit 42) on the state task's emitvcbst or emitmtest, alone or on both, changes
+  nothing: the triangle is drawn exactly (1062 pixels) in all four cases.
+  *usse; HW; data: `usse-emits`.*
+- `E107` No load cache mode keeps an old dword when the host writes it while the job runs: with 1024
+  reloads, in two runs, ldad, ldad.bpcache, ldad.fcfill, eldd, eldd.bpcache, eldd.fcfill and
+  eldd.bypassl1 each show pixels that read the old value for at most 149 reloads and the host's
+  value on every later one, and no pixel ends on the old value; every ready store (stad,
+  stad.bpcache, stad.fcfill) reached memory, seen by the host 0 to 1935 microseconds after the
+  submit.
+  *usse; HW, infer; data: `usse-cache-control`, `usse-cache-control-followup`.*
+- `E108` bexception branches like ba and br through the fields its form leaves out: with the target
+  field n it jumps to instruction n, with bit 38 set it jumps by n from itself, and its predicate
+  field (58:56) gates it; with the fields at 0, as the assembler writes it, it jumps to instruction
+  0, which is how it hung a fill.
+  *usse; HW, infer; data: `usse-branch`.*
+- `E109` moest does not load the MOE state word its selector names from its register: after moest
+  r17, #0 to #8 with r17 = 0x00000001, 0x00001001 or 0x01010101, a mov and a mov.repeat4 land and
+  every dumped register reads as with no moest (28 of 28 cases identical); setfc #0-#1, #0-#1
+  changes neither how a quad whose instances disagree branches (2048 of 2048 pixels give the
+  control's value) nor what ldad.fetch4 loads (5 of 5 identical).
+  *usse; HW, infer; data: `usse-moe`, `usse-moe-followup`.*
+- `E110` In a triangle's two-phase pixel shader, parallel and perinstance give phase 1 the same view
+  of what other instances did in phase 0: a counter incremented under lock #0 ends at 291 (0x123) in
+  both and reads back with a similar spread (97 and 98 distinct values, smallest values 9 and 11
+  under parallel, 9 and 10 under perinstance), and quads that skip a long spin read the marker the
+  spinning quads store, in both modes.
+  *usse; HW; data: `usse-phases`.*
+- `E111` In a triangle's pixel shader every instance of every quad the triangle touches runs an
+  instruction without .skipinv in four of five runs (291 quads, 4 instances each, 1164 distinct
+  slots, for 1062 covered pixels; one run counted 1112 slots, 278 quads); what varies is whether an
+  uncovered instance's o0 lands, and it lands for a whole quad or not at all: 32 to 36 of the 42
+  partly covered quads here, 6 to 13 in the shorter shaders of E104 and E103.
+  *usse; HW; data: `usse-helper-instances`.*
+- `E112` phas's instance mode decides which instance a divergent quad's predicated branch follows:
+  under parallel the quad's first covered instance (24 pixels, the right columns of the 12 quads
+  whose left column is uncovered, branch as instance 1 does), under perinstance instance 0 even when
+  it covers no pixel (all 1062 pixels branch as instance 0); .skipinv skips the uncovered instances
+  under both modes.
+  *usse; HW; data: `usse-phases`.*
+- `E113` How many uncovered helper pixels' o0 lands is largest at 32 nops (71 of the triangle's 102
+  in all three runs), against 26 to 43 for 0 to 16 nops and 53 to 59 from 64 nops on; quads whose
+  instance 0 (top left) is covered land more often (17 of 18 at least once in nine runs from 32 nops
+  on) than those whose instance 0 is a helper (16 of 24).
+  *usse; HW, infer; data: `usse-helper-instances`.*
+- `E114` The texture sampler keeps what it fetched in a cache that USSE stores do not update: after
+  a pixel samples a texel, a store to it or to the texel beside it is not seen by the next sample,
+  with idf + wdf and with every ci, cf and cfi level and flag between (17 cases); a texel the
+  sampler has not fetched shows the store (the texel far away, and the cold cases); idf pixelbe and
+  smp.syncs hang a fill.
+  *texture; HW, infer; data: `texture-sampler-cache`.*
+- `E115` phas's sample and selective rates change nothing a triangle shows at 1x or 4x: the pixel
+  shader still runs once per pixel (all 324 pixels drawn at 4x hold one value over their four
+  samples, one instance's g23, g24 and g25), every image is identical to the pixel rate's, and setm
+  #1, #3, #5 and #15 mask nothing at any rate.
+  *usse; HW; data: `usse-sample-rate`.*
+- `E116` smp's .pcff16 takes its depth-compare reference as the f16 in the low half of the register
+  after the coordinates, at full f16 precision and signed, where .pcf takes the whole register as an
+  f32; the result is the same (1.0 for an f32 texture when the compare holds, else 0), over all
+  eight cases.
+  *texture; HW; data: `texture-sampler`.*
+- `E117` Nothing tried turns on per-sample shading: with the pixel shader's phas at the sample rate
+  on a 4x triangle, no unknown bit of the pixel task's U1 (bits 0, 1, 22, 23, 26 to 31), no bit of
+  its U2 (all 32), no bit of the render command's te_aa (word 1) or aa_mode_3d (word 13), and no
+  free bit of ISP words 0 and 1 makes a pixel's four samples differ; aa_mode_3d bit 1 cleared gives
+  a 916-pixel image without the 4x layout, bit 0 hangs and bit 31 draws nothing, te_aa bit 29 draws
+  nothing and bits 30 and 31 change the coverage (1312 and 832 pixels), and ISP word 0 bit 28 hangs
+  a 4x render.
+  *usse; HW; data: `usse-sample-rate`.*
+- `E118` A fill's shader starts at its code base (pclink read after a call at instruction 5 gives 6
+  in both runs); in a two-phase pixel program phase 1 closed by phas.end completes with every one of
+  the 1062 pixels written, with or without a call or a pclink move; phas's register form, phas srcA,
+  srcB, started no next phase from the next phase's absolute index, an offset or the doutu U0 layout
+  against the immediate form's fields or its whole high dword: six cases hung, one faulted and the
+  offset case completed with 166 pixels of neither phase's colour.
+  *usse; HW, infer; data: `usse-phases`.*
+- `E119` A phase boundary is a barrier under both instance modes: in a two-phase fill, the quads
+  that skip phase 0's 4096-iteration spin all read the marker their 4x4 block's spinning quads store
+  at the end of phase 0 (all 2048 pixels, in each of two runs, under parallel and under
+  perinstance), while the same code in one phase leaves 112 of the 128 skipping quads (448 pixels)
+  reading the slot's fill value.
+  *usse; HW; data: `usse-phases`.*
+- `E120` No bit of the render details' isp_sample_pos (word 19), reg_0800 (word 22),
+  isp_line_sample_pos (word 26) or frag_flags (word 53), nor of the render command's word 10, runs a
+  4x triangle's sample-rate pixel shader per sample; 22 bits of isp_multisamplectl (render details
+  word 20, the same register as command word 16, with identical images bit for bit) move the samples
+  and the coverage by a few samples (1240 to 1256 covered samples in 320 to 328 pixels against the
+  control's 1248), the rest change nothing.
+  *usse; HW, infer; data: `usse-sample-rate`.*
+- `E121` phas's vcull wait makes the next phase of a vertex shader wait for the MTE's cull decision
+  and skips it for a culled triangle: with MTE control's cull mode 1 culling the triangle, phase 1
+  runs under none (one increment of its counter) but not under vcull, and the triangle is not drawn
+  either way; with cull modes 0 and 2 the triangle (1062 pixels) is drawn and both phases run under
+  both waits.
+  *usse; HW; data: `usse-phases`.*
+- `E122` Of the three registers the init script sets once, 0x0810 implements bit 0 only, 0x0814 bits
+  16:0 and 0x0818 bits 10:0; a fill with any of them written to 0, to any single bit or with any one
+  of bits 0 to 15 of its init value flipped completes exactly as with the init values.
+  *platform; HW; data: `platform-init-registers`, `platform-init-register-jobs`.*
+- `E123` Three models, one each for bilin, firv and firh, fit every video-filter case they were
+  fitted to (bilin 636 of 636, firv 1068 of 1068 with a known latch, firh 2411 of 2411 with #s of -4
+  or more), while the 563 firh cases with #s below -4 are recorded only and the dumped registers
+  repeat in the follow-up run in 4835 of 4836 cases.
+  *usse; HW; data: `usse-video-filters`, `usse-video-filters-followup`.*
+- `E124` A fill whose shader runs a counted loop of 8 instructions takes a host-measured time linear
+  in the iteration count taken modulo 65536 (3.03 µs an iteration over the 64x32 fill, 100 ms at
+  zero, 0.95 ms rms), not in the count itself, although every run ends with the counter at 0.
+  *usse; HW; data: `usse-loop-timing`.*
 
 ## By unit
 
 ### edm
 
-Records: E009, E013, E014, E017.
+Records: E009, E013, E014, E017, E084.
 
 ### firmware
 
 Records: E001, E002, E003, E004, E005, E010, E011, E012.
 
+### isp
+
+Records: E064, E065, E066, E067, E068, E069, E070, E071, E072, E073, E074.
+
+### mte
+
+Records: E061, E062, E063.
+
+### pbe
+
+Records: E029, E030, E031, E032.
+
+### pds
+
+Records: E043, E044, E045, E046, E047, E048.
+
 ### platform
 
-Records: E006, E007, E008.
+Records: E006, E007, E008, E025, E026, E122.
 
 ### render
 
-Records: E023.
+Records: E023, E049, E050, E051, E052, E053.
+
+### ta
+
+Records: E054, E055, E056.
+
+### texture
+
+Records: E033, E034, E035, E036, E037, E038, E039, E040, E041, E042, E114, E116.
 
 ### transfer
 
-Records: E015, E016, E018, E019, E020, E021, E022, E024.
+Records: E015, E016, E018, E019, E020, E021, E022, E024, E027, E028.
+
+### usse
+
+Records: E075, E076, E077, E078, E079, E080, E081, E082, E083, E085, E086, E087, E088, E089, E090,
+E091, E092, E093, E094, E095, E096, E097, E098, E099, E100, E101, E102, E103, E104, E105, E106,
+E107, E108, E109, E110, E111, E112, E113, E115, E117, E118, E119, E120, E121, E123, E124.
+
+### vdm
+
+Records: E059, E060.
+
+### zls
+
+Records: E057, E058.

@@ -1,0 +1,10 @@
+title = "sweep table transfer/command-words"
+repo = "data"
+paths = ["transfer/command-words/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 10
+size = 2444375
+sha256 = "44e141c94097f2b40bd4054e81bb140b86ceedc2dee2e333e13d1ccd3d3e7535"
+recipe = "probes/transfer/command-words.toml"
+needs = ["render"]

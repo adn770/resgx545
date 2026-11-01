@@ -1,0 +1,15 @@
+[[term]]
+id = "G0133"
+name = "CR_ISP_STENCIL_LOAD_BASE"
+status = "named"
+
+[[term.source]]
+term = "CR_ISP_STENCIL_LOAD_BASE"
+kind = "register"
+sgx545 = "0x048c"
+meaning = "stencil load base, an offset from the ZLS requester base; bit 31 set with a stencil buffer [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E058"
+licence = "MIT"
+evidence = "[infer] E058: the first of the stencil pair, as 0x0484 is of the depth pair; the stencil load is not tested; Rogue ISP_STENCIL_LOAD_BASE is a name only here"

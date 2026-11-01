@@ -1,0 +1,31 @@
+[[term]]
+id = "G0205"
+name = "DOUTI.PERSPECTIVE"
+status = "named"
+
+[[term.source]]
+term = "PVR_ROGUE_PDSINST_DOUT_FIELDS_DOUTI_SRC_PERSPECTIVE"
+kind = "flag"
+sgx545 = "-"
+meaning = "(Rogue) perspective-correct iteration; placed on SGX545 as DOUTI0.PERSPECTIVE"
+tier = "3"
+source = "mesa-pds-defs"
+citation = "C0185"
+licence = "MIT"
+evidence = "Rogue name; the function measured at douti word 0 [24] (E048)"
+
+[[term]]
+id = "G0206"
+name = "DOUTI.SHADEMODEL"
+status = "named"
+
+[[term.source]]
+term = "PVR_ROGUE_PDSINST_DOUT_FIELDS_DOUTI_SRC_SHADEMODEL"
+kind = "field"
+sgx545 = "-"
+meaning = "(Rogue) iteration shade model; placed on SGX545 as DOUTI0.SHADEMODEL"
+tier = "3"
+source = "mesa-pds-defs"
+citation = "C0186"
+licence = "MIT"
+evidence = "Rogue name; the function measured at douti word 0 [26:25] with [21] (E048)"

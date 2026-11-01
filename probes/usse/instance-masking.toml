@@ -1,0 +1,107 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse instance masking: 0 sweeps, 8 probes.
+needs = ["render"]
+
+[[probe]]
+name = "usse-instance-masking-setm"
+question = "setm #n before a mov without .skipinv: which pixels it writes"
+source = "wide_dump.s"
+temps = 48
+pixels = true
+params = { OUT = "r20" }
+inputs = ["OP"]
+labels = ["no setm", "setm #0", "setm #1", "setm #2", "setm #3", "setm #4", "setm #5", "setm #6", "setm #7", "setm #8", "setm #9", "setm #10", "setm #11", "setm #12", "setm #13", "setm #14", "setm #15", "setm #0, .skipinv mov", "setm #5, .skipinv mov", "setm #15, .skipinv mov", "setm #1, two movs", "setm #2, two movs", "setm #3, two movs"]
+cases = [["mov r20, #0x0A0A0A0A"], ["setm #0\nmov r20, #0x0A0A0A0A"], ["setm #1\nmov r20, #0x0A0A0A0A"], ["setm #2\nmov r20, #0x0A0A0A0A"], ["setm #3\nmov r20, #0x0A0A0A0A"], ["setm #4\nmov r20, #0x0A0A0A0A"], ["setm #5\nmov r20, #0x0A0A0A0A"], ["setm #6\nmov r20, #0x0A0A0A0A"], ["setm #7\nmov r20, #0x0A0A0A0A"], ["setm #8\nmov r20, #0x0A0A0A0A"], ["setm #9\nmov r20, #0x0A0A0A0A"], ["setm #10\nmov r20, #0x0A0A0A0A"], ["setm #11\nmov r20, #0x0A0A0A0A"], ["setm #12\nmov r20, #0x0A0A0A0A"], ["setm #13\nmov r20, #0x0A0A0A0A"], ["setm #14\nmov r20, #0x0A0A0A0A"], ["setm #15\nmov r20, #0x0A0A0A0A"], ["setm #0\nmov.skipinv r20, #0x0A0A0A0A"], ["setm #5\nmov.skipinv r20, #0x0A0A0A0A"], ["setm #15\nmov.skipinv r20, #0x0A0A0A0A"], ["setm #1\nmov r21, #0x0B0B0B0B\nmov r20, #0x0A0A0A0A"], ["setm #2\nmov r21, #0x0B0B0B0B\nmov r20, #0x0A0A0A0A"], ["setm #3\nmov r21, #0x0B0B0B0B\nmov r20, #0x0A0A0A0A"]]
+
+[[probe]]
+name = "usse-instance-masking-setm-tri"
+question = "setm #n before the triangle's pixel shader writes o0: which pixels the triangle keeps"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+params = {  }
+inputs = ["OP"]
+labels = ["pixel shader, no setm", "pixel shader, setm #0", "pixel shader, setm #1", "pixel shader, setm #15"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["setm #0\nmov.skipinv.end o0, #0xFF00FF00"], ["setm #1\nmov.skipinv.end o0, #0xFF00FF00"], ["setm #15\nmov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "usse-instance-masking-setm-msaa-skipinv"
+question = "4x triangle, setm #k then mov.skipinv.end o0: which samples are written"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+cmd = { 1 = 0xe0000000, 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+params = {  }
+inputs = ["OP"]
+labels = ["no setm", "setm #0", "setm #1", "setm #2", "setm #3", "setm #4", "setm #5", "setm #6", "setm #7", "setm #8", "setm #9", "setm #10", "setm #11", "setm #12", "setm #13", "setm #14", "setm #15"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["setm #0\nmov.skipinv.end o0, #0xFF00FF00"], ["setm #1\nmov.skipinv.end o0, #0xFF00FF00"], ["setm #2\nmov.skipinv.end o0, #0xFF00FF00"], ["setm #3\nmov.skipinv.end o0, #0xFF00FF00"], ["setm #4\nmov.skipinv.end o0, #0xFF00FF00"], ["setm #5\nmov.skipinv.end o0, #0xFF00FF00"], ["setm #6\nmov.skipinv.end o0, #0xFF00FF00"], ["setm #7\nmov.skipinv.end o0, #0xFF00FF00"], ["setm #8\nmov.skipinv.end o0, #0xFF00FF00"], ["setm #9\nmov.skipinv.end o0, #0xFF00FF00"], ["setm #10\nmov.skipinv.end o0, #0xFF00FF00"], ["setm #11\nmov.skipinv.end o0, #0xFF00FF00"], ["setm #12\nmov.skipinv.end o0, #0xFF00FF00"], ["setm #13\nmov.skipinv.end o0, #0xFF00FF00"], ["setm #14\nmov.skipinv.end o0, #0xFF00FF00"], ["setm #15\nmov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "usse-instance-masking-setm-msaa-plain"
+question = "4x triangle, setm #k then mov.end o0: which samples are written"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+cmd = { 1 = 0xe0000000, 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+params = {  }
+inputs = ["OP"]
+labels = ["no setm", "setm #0", "setm #1", "setm #2", "setm #3", "setm #4", "setm #5", "setm #6", "setm #7", "setm #8", "setm #9", "setm #10", "setm #11", "setm #12", "setm #13", "setm #14", "setm #15"]
+cases = [["mov.end o0, #0xFF00FF00"], ["setm #0\nmov.end o0, #0xFF00FF00"], ["setm #1\nmov.end o0, #0xFF00FF00"], ["setm #2\nmov.end o0, #0xFF00FF00"], ["setm #3\nmov.end o0, #0xFF00FF00"], ["setm #4\nmov.end o0, #0xFF00FF00"], ["setm #5\nmov.end o0, #0xFF00FF00"], ["setm #6\nmov.end o0, #0xFF00FF00"], ["setm #7\nmov.end o0, #0xFF00FF00"], ["setm #8\nmov.end o0, #0xFF00FF00"], ["setm #9\nmov.end o0, #0xFF00FF00"], ["setm #10\nmov.end o0, #0xFF00FF00"], ["setm #11\nmov.end o0, #0xFF00FF00"], ["setm #12\nmov.end o0, #0xFF00FF00"], ["setm #13\nmov.end o0, #0xFF00FF00"], ["setm #14\nmov.end o0, #0xFF00FF00"], ["setm #15\nmov.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "usse-instance-masking-setm-tri-plain"
+question = "single-sample triangle, setm #k then mov.end o0 (no .skipinv): which pixels are written"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+params = {  }
+inputs = ["OP"]
+labels = ["no setm", "setm #0", "setm #1", "setm #2", "setm #4", "setm #8", "setm #15"]
+cases = [["mov.end o0, #0xFF00FF00"], ["setm #0\nmov.end o0, #0xFF00FF00"], ["setm #1\nmov.end o0, #0xFF00FF00"], ["setm #2\nmov.end o0, #0xFF00FF00"], ["setm #4\nmov.end o0, #0xFF00FF00"], ["setm #8\nmov.end o0, #0xFF00FF00"], ["setm #15\nmov.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "usse-instance-masking-skipinv-tri"
+question = "two o0 writes, one with .skipinv: which pixels each reaches"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+params = {  }
+inputs = ["OP"]
+labels = ["skipinv blue, then plain green (1)", "skipinv blue, then plain green (2)", "skipinv blue, then plain green (3)", "plain blue, then skipinv green (1)", "plain blue, then skipinv green (2)", "plain blue, then skipinv green (3)", "plain green only (1)", "plain green only (2)", "plain green only (3)", "skipinv green only (1)", "skipinv green only (2)", "skipinv green only (3)"]
+cases = [["mov.skipinv o0, #0xFF0000FF\nmov.end o0, #0xFF00FF00"], ["mov.skipinv o0, #0xFF0000FF\nmov.end o0, #0xFF00FF00"], ["mov.skipinv o0, #0xFF0000FF\nmov.end o0, #0xFF00FF00"], ["mov o0, #0xFF0000FF\nmov.skipinv.end o0, #0xFF00FF00"], ["mov o0, #0xFF0000FF\nmov.skipinv.end o0, #0xFF00FF00"], ["mov o0, #0xFF0000FF\nmov.skipinv.end o0, #0xFF00FF00"], ["mov.end o0, #0xFF00FF00"], ["mov.end o0, #0xFF00FF00"], ["mov.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "usse-instance-masking-skipinv-inst"
+question = "which instances of a fill run an instruction without .skipinv (Rogue: only enabled instances unless (ignorepe)); only o0 and temporaries written, no stores"
+source = "coords.s"
+coords = true
+pixels = true
+params = {  }
+inputs = ["PRE", "OP", "OUT"]
+labels = ["mov r10, r3 without .skipinv over r10 = 0x0BAD0000", "control: mov.skipinv r10, r3", "mov o0, r3 without .skipinv over o0 = 0x0BAD0000 (the final mov copies o0)", "or r10, r3, #0 without .skipinv over r10 = 0x0BAD0000"]
+cases = [["mov.skipinv r10, #0x0BAD0000", "mov r10, r3", "r10"], ["mov.skipinv r10, #0x0BAD0000", "mov.skipinv r10, r3", "r10"], ["mov.skipinv o0, #0x0BAD0000", "mov o0, r3", "o0"], ["mov.skipinv r10, #0x0BAD0000", "or r10, r3, #0", "r10"]]
+[probe.hypotheses]
+"every instance of the full 64x32 fill runs an instruction without .skipinv" = [{ quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }]
+"an instruction without .skipinv runs for no instance of a fill" = [0xbad0000, { quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, 0xbad0000, 0xbad0000]
+
+[[probe]]
+name = "usse-instance-masking-skipinv-grad"
+question = "do the quad gradients fdsx/fdsy differ with and without .skipinv (Rogue: the gradient sample needs (ignorepe) to see every quad instance); only o0 and temporaries written"
+source = "coords.s"
+coords = true
+pixels = true
+params = {  }
+inputs = ["PRE", "OP", "OUT"]
+labels = ["fdsx r10, r3, r3 over r10 = 0x0BAD0000", "fdsx.skipinv r10, r3, r3 over r10 = 0x0BAD0000", "fdsy r10, r3, r3 over r10 = 0x0BAD0000", "fdsy.skipinv r10, r3, r3 over r10 = 0x0BAD0000"]
+cases = [["mov.skipinv r10, #0x0BAD0000", "fdsx r10, r3, r3", "r10"], ["mov.skipinv r10, #0x0BAD0000", "fdsx.skipinv r10, r3, r3", "r10"], ["mov.skipinv r10, #0x0BAD0000", "fdsy r10, r3, r3", "r10"], ["mov.skipinv r10, #0x0BAD0000", "fdsy.skipinv r10, r3, r3", "r10"]]

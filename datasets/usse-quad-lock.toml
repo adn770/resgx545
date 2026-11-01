@@ -1,0 +1,10 @@
+title = "probe table usse/quad-lock"
+repo = "data"
+paths = ["usse/quad-lock/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 18
+size = 248830
+sha256 = "58b13043c8e228a173f0a5c85a74f13969e38f15e38b7dfdfafe5a627dcf3ce9"
+recipe = "probes/usse/quad-lock.toml"
+needs = ["render"]

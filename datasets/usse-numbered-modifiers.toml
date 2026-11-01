@@ -1,0 +1,10 @@
+title = "probe table usse/numbered-modifiers"
+repo = "data"
+paths = ["usse/numbered-modifiers/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 82
+size = 261404
+sha256 = "a7eada2a39ceea02e618829c7f224d8565b34c16fd67c338abe6bdbfe295b8d0"
+recipe = "probes/usse/numbered-modifiers.toml"
+needs = ["render"]

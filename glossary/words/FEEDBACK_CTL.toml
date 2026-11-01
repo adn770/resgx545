@@ -1,0 +1,47 @@
+[[term]]
+id = "G0228"
+name = "FEEDBACK_CTL.DEPTH_ALWAYS"
+status = "inferred"
+
+[[term.source]]
+term = "FEEDBACK_CTL.DEPTH_ALWAYS"
+kind = "field"
+sgx545 = "atst8/depthf src1 [3:2]"
+meaning = "Bits 3:2 of the control word the punch-through pass passes in src1: clear in 0xe001, which keeps the nearest copy's pixels (1062 and 36 pixels), and set in 0xffffffff, which keeps the last copy's (1074 and 24 pixels, the depth-always result)"
+tier = "ours"
+source = "resgx545"
+citation = "E083"
+licence = "MIT"
+evidence = "[HW] E083: in the punch-through pass of five triangle copies with atst8 always and fb, a src1 control word of 0xe001 drew 1062 pixels of 0x00000000 and 36 of 0x3d800000, 0xffffffff drew 1074 pixels of 0x3e800000 and 24 of 0x3e000000, and 0x0, 0x1, 0x2, 0x3, 0xf, 0xe000, 0xe002, 0x80000001 and 0x100 drew nothing; [infer] E083: bits 3:2 are linked to the changed image only by two whole words, 0xe001 and 0xffffffff, which differ in many bits"
+
+[[term]]
+id = "G0229"
+name = "FEEDBACK_CTL.ENABLE"
+status = "inferred"
+
+[[term.source]]
+term = "FEEDBACK_CTL.ENABLE"
+kind = "flag"
+sgx545 = "atst8/depthf src1 bit 14"
+meaning = "Bit 14 of the control word the punch-through pass passes in src1: set in both words that draw (0xe001, 0xffffffff), clear in seven of the nine words that draw nothing; set with bit 0 clear (0xe000, 0xe002) still draws nothing"
+tier = "ours"
+source = "resgx545"
+citation = "E083"
+licence = "MIT"
+evidence = "[HW] E083: in the punch-through pass of five triangle copies with atst8 always and fb, a src1 control word of 0xe001 drew 1062 pixels of 0x00000000 and 36 of 0x3d800000, 0xffffffff drew 1074 pixels of 0x3e800000 and 24 of 0x3e000000, and 0x0, 0x1, 0x2, 0x3, 0xf, 0xe000, 0xe002, 0x80000001 and 0x100 drew nothing; [infer] E083: bit 14's role is read from which whole words draw; no single bit was flipped"
+
+[[term]]
+id = "G0230"
+name = "FEEDBACK_CTL.KEEP"
+status = "inferred"
+
+[[term.source]]
+term = "FEEDBACK_CTL.KEEP"
+kind = "flag"
+sgx545 = "atst8/depthf src1 bit 0"
+meaning = "Bit 0 of the control word the punch-through pass passes in src1: set in both words that draw (0xe001, 0xffffffff) and clear in 0xe000 and 0xe002, which draw nothing; set alone (0x1, 0x3, 0xf, 0x80000001) it draws nothing either"
+tier = "ours"
+source = "resgx545"
+citation = "E083"
+licence = "MIT"
+evidence = "[HW] E083: in the punch-through pass of five triangle copies with atst8 always and fb, a src1 control word of 0xe001 drew 1062 pixels of 0x00000000 and 36 of 0x3d800000, 0xffffffff drew 1074 pixels of 0x3e800000 and 24 of 0x3e000000, and 0x0, 0x1, 0x2, 0x3, 0xf, 0xe000, 0xe002, 0x80000001 and 0x100 drew nothing; [infer] E083: bit 0's role is read from which whole words draw; no single bit was flipped"

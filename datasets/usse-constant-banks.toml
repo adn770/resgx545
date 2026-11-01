@@ -1,0 +1,10 @@
+title = "probe table usse/constant-banks"
+repo = "data"
+paths = ["usse/constant-banks/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 95
+size = 1476207
+sha256 = "a11f3dabafec0c4afbc9e88e8962efebe3ccff590e51035584ce53f4e3927657"
+recipe = "probes/usse/constant-banks.toml"
+needs = ["render"]

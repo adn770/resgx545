@@ -1,0 +1,10 @@
+title = "sweep and probe table vdm/state1"
+repo = "data"
+paths = ["vdm/state1/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 88
+size = 74525535
+sha256 = "da84a03e5ea847a98bde65d8d8baa84b18db85b4dd3aec942d4cbb41a5ccb71d"
+recipe = "probes/vdm/state1.toml"
+needs = ["render", "render_param", "render_tadata"]

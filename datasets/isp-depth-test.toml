@@ -1,0 +1,10 @@
+title = "script and probe table isp/depth-test"
+repo = "data"
+paths = ["isp/depth-test/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 33
+size = 277597
+sha256 = "ae6bbd718db98c4da7eaf37c8dd2d5d7746ae234eefecf820a99803056bcb2dd"
+recipe = "probes/isp/depth-test.toml"
+needs = ["render", "kpoke"]

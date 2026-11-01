@@ -1,0 +1,10 @@
+title = "follow-up run of the probe table usse/quad-lock"
+repo = "data"
+paths = ["followup/usse/quad-lock/"]
+method = "campaign runner on the laptop target (tools/campaign), the follow-up round"
+date = "2026-11-01"
+files = 18
+size = 248830
+sha256 = "239df22c5d6a9d8615bdb757ccde23cd5577d5e8cc9887726ccca84203e2c6d5"
+recipe = "probes/usse/quad-lock.toml"
+needs = ["render"]

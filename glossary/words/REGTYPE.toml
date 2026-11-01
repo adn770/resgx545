@@ -1,0 +1,69 @@
+[[term]]
+id = "G0258"
+name = "REGTYPE.FPCONSTANT"
+status = "named"
+
+[[term.source]]
+term = "USEASM_REGTYPE_FPCONSTANT"
+kind = "enum"
+sgx545 = "USSE special constant c"
+meaning = "hardware constant operand"
+tier = "2"
+source = "cdv-libusc"
+citation = "C0201"
+licence = "Intel-binary (ours)"
+evidence = "-"
+
+[[term.source]]
+term = "const"
+kind = "enum"
+sgx545 = "c"
+meaning = "special constant register class"
+tier = "3"
+source = "mesa-pco"
+citation = "C0202"
+licence = "MIT"
+evidence = "same concept"
+
+[[term]]
+id = "G0259"
+name = "REGTYPE.FPINTERNAL"
+status = "named"
+
+[[term.source]]
+term = "USEASM_REGTYPE_FPINTERNAL"
+kind = "enum"
+sgx545 = "USSE internal i0-i2"
+meaning = "internal (FP) register operand"
+tier = "2"
+source = "cdv-libusc"
+citation = "C0203"
+licence = "Intel-binary (ours)"
+evidence = "-"
+
+[[term.source]]
+term = "intern"
+kind = "enum"
+sgx545 = "i0-i2"
+meaning = "internal register class"
+tier = "3"
+source = "mesa-pco"
+citation = "C0204"
+licence = "MIT"
+evidence = "same concept"
+
+[[term]]
+id = "G0260"
+name = "REGTYPE.INDEX"
+status = "named"
+
+[[term.source]]
+term = "USEASM_REGTYPE_INDEX"
+kind = "enum"
+sgx545 = "USSE index register i"
+meaning = "index register operand"
+tier = "2"
+source = "cdv-libusc"
+citation = "C0205"
+licence = "Intel-binary (ours)"
+evidence = "-"

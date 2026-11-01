@@ -1,0 +1,10 @@
+title = "follow-up run of the probe table usse/constant-banks"
+repo = "data"
+paths = ["followup/usse/constant-banks/"]
+method = "campaign runner on the laptop target (tools/campaign), the follow-up round"
+date = "2026-11-01"
+files = 95
+size = 1476250
+sha256 = "4c09959a1f0f07afa6be1106e28ee51252f07fbf9258087dacd29104b1716e75"
+recipe = "probes/usse/constant-banks.toml"
+needs = ["render"]

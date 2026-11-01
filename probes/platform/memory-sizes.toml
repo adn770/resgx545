@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# The laptop's stolen memory and GTT sizes, from read-only reads: the graphics device's base
+# of stolen memory (00:02.0, offset 0x5c), its GMCH_CTRL and resources, the GTT's start in
+# PGETBL_CTL (MMIO 0x2020), the host bridge's words where other Intel parts keep the graphics
+# control, and what the gma500 driver logs about the device.
+kind = "script"
+name = "platform-memory-sizes"
+script = "memory-sizes.sh"
+baseline = "none"

@@ -1,0 +1,15 @@
+[[term]]
+id = "G0290"
+name = "VDM_BLOCK.TERMINATE"
+status = "named"
+
+[[term.source]]
+term = "STREAM_TERMINATE"
+kind = "enum"
+sgx545 = "VDM terminate block"
+meaning = "end of control stream"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0226"
+licence = "MIT"
+evidence = "same function (9.1, S.1)"

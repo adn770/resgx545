@@ -1,0 +1,26 @@
+[[term]]
+id = "G0301"
+name = "Z Load Store (ZLS)"
+status = "named"
+
+[[term.source]]
+term = "Z load store"
+kind = "unit"
+sgx545 = "-"
+meaning = "loads or stores depth/stencil data between tile and memory"
+tier = "4"
+source = "imgtec-pvrtune-counters"
+citation = "C0227"
+licence = "public-doc"
+evidence = "-"
+
+[[term.source]]
+term = "ZLS"
+kind = "unit"
+sgx545 = "CR_BIF_ZLS_REQ_BASE"
+meaning = "ZLS memory requester (its BIF requestor base)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0228"
+licence = "GPL-2.0"
+evidence = "-"

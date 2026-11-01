@@ -1,0 +1,10 @@
+title = "probe table pds/pixel-event"
+repo = "data"
+paths = ["pds/pixel-event/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 65
+size = 2513142
+sha256 = "c04ebd3e68c26e42d314787e9742baf7daa522ec8ffaf778da2f8167b265e085"
+recipe = "probes/pds/pixel-event.toml"
+needs = ["render"]

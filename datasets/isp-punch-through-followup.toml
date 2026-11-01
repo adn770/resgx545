@@ -1,0 +1,11 @@
+title = "follow-up run of the probe table isp/punch-through"
+repo = "data"
+paths = ["followup/isp/punch-through/"]
+method = "campaign runner on the laptop target (tools/campaign), the follow-up round"
+date = "2026-11-01"
+files = 344
+size = 7306837
+sha256 = "38b10b0536cc28536120df63ab24e056f0b8b61ce1e534c3247aec82b6e80bf6"
+recipe = "probes/isp/punch-through.toml"
+needs = ["render", "kpoke"]
+open = ["isp-punch-through-pt-punch-04dc-2"]

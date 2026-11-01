@@ -1,0 +1,10 @@
+title = "probe table usse/colour-ops"
+repo = "data"
+paths = ["usse/colour-ops/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 483
+size = 1215734
+sha256 = "0f9bad351cbf1b8da351500a8d6ead474892ee0e6e5b214968acec4add7fc469"
+recipe = "probes/usse/colour-ops.toml"
+needs = ["render"]

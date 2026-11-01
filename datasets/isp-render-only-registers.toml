@@ -1,0 +1,10 @@
+title = "sweep, script and probe table isp/render-only-registers"
+repo = "data"
+paths = ["isp/render-only-registers/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 18
+size = 1128248
+sha256 = "acb19f8aba94a3b09d972b308dd273a0720abe8f32c468eee99833ec87461886"
+recipe = "probes/isp/render-only-registers.toml"
+needs = ["render", "kreg", "kpoke"]

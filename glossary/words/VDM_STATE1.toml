@@ -1,0 +1,47 @@
+[[term]]
+id = "G0291"
+name = "VDM_STATE1.BIT8"
+status = "inferred"
+
+[[term.source]]
+term = "VDM_STATE1.BIT8"
+kind = "flag"
+sgx545 = "VDM_STATE1 bit 8"
+meaning = "marks the constant or no-op state blocks. Measured: set on the captured state blocks whose PDS program our current term a constant block or starts a no-op USE task, clear on the MTE-state and vertex blocks [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E060"
+licence = "MIT"
+evidence = "never varied by us; [HW] E060: set on the triangle's state word, nothing changes"
+
+[[term]]
+id = "G0292"
+name = "VDM_STATE1.BITS11_9"
+status = "inferred"
+
+[[term.source]]
+term = "VDM_STATE1.BITS11_9"
+kind = "field"
+sgx545 = "VDM_STATE1 [11:9]"
+meaning = "Bits 11:9 of the state task's second word: 0 removes the 64x64 triangle (4096 background pixels), 1, 3, 4, 5 and 6 give the baseline image, and 7 hangs the job in the sweep but renders in a probe job, so that value is unsettled; the job writes 2"
+tier = "ours"
+source = "resgx545"
+citation = "E060"
+licence = "MIT"
+evidence = "[HW] E060: sweep: 0 completed with no triangle pixel (hash 0xfc5ff15e0434a325), 7 hung (context lost), the others gave the baseline; the probe job with 0 gave a uniform background and the probe with 7 completed and drew a triangle; [infer] the reading is ours, from these runs"
+
+[[term]]
+id = "G0293"
+name = "VDM_STATE1.BITS15_13"
+status = "inferred"
+
+[[term.source]]
+term = "VDM_STATE1.BITS15_13"
+kind = "field"
+sgx545 = "VDM_STATE1 [15:13]"
+meaning = "Bits 15:13 of the state task's second word: 0, 5 and 6 hang the job, 2, 3, 4 and 7 give the baseline image; the job writes 1"
+tier = "ours"
+source = "resgx545"
+citation = "E060"
+licence = "MIT"
+evidence = "[HW] E060: sweep: 0, 5 and 6 hung the job and 2, 3, 4 and 7 gave the baseline image; probe jobs setting 0, 5 and 6 hung as well; [infer] the reading is ours, from these runs"

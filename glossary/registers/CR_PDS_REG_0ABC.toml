@@ -1,0 +1,31 @@
+[[term]]
+id = "G0149"
+name = "CR_PDS_REG_0ABC"
+status = "named"
+
+[[term.source]]
+term = "CR_PDS_REG_0ABC"
+kind = "register"
+sgx545 = "0x0abc"
+meaning = "set once by the init script to 0xe; not the SGX535 register at this offset; implemented bits 5:0; 0 hangs the next job, other values change nothing seen [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E006"
+licence = "MIT"
+evidence = "[HW] E026: bits 5:0 read back; =0 hangs the next fill, copy and triangle; every single-bit flip and ~0 leave them unchanged; [HW] E045: every value 0-63: exactly those with bits 4:1 zero hang"
+
+[[term]]
+id = "G0150"
+name = "CR_PDS_REG_0ABC.BITS4_1"
+status = "inferred"
+
+[[term.source]]
+term = "CR_PDS_REG_0ABC.BITS4_1"
+kind = "bitfield"
+sgx545 = "0x0abc[4:1]"
+meaning = "Bits 4:1 of register 0x0abc: a triangle job hangs exactly when all four are zero; any other value (bit 0 and bit 5 do not matter) gives the baseline image. The unwritten register holds 7 in these bits"
+tier = "ours"
+source = "resgx545"
+citation = "E045"
+licence = "MIT"
+evidence = "[HW] E045: all 64 values 0 to 0x3f written before a triangle job read back as written; 60 gave the baseline image and 0, 1, 0x20 and 0x21 hung the job (context lost); the register held 0xe before the writes; [infer] the reading is ours, from these runs"

@@ -1,0 +1,15 @@
+[[term]]
+id = "G0226"
+name = "EMIT2.BITS15_8"
+status = "inferred"
+
+[[term.source]]
+term = "EMIT2.BITS15_8"
+kind = "field"
+sgx545 = "EMIT2 (emit2 src0) [15:8]"
+meaning = "an emit control field: bit 7 valid, bit 0 with it (0x81) an emit that writes nothing (a mask or count of 0). Measured: 0x80 in every closed program and capture [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E046"
+licence = "MIT"
+evidence = "never varied; equals 32 x 16 / FEATURE.NUM_USE_PIPES (tier 1), a coincidence or the reason; [HW] E046: every value 0x00-0xff writes the fill's pixels as 0x80 does, except 0x81, which writes none"

@@ -1,0 +1,10 @@
+title = "probe table pbe/pack-modes"
+repo = "data"
+paths = ["pbe/pack-modes/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 293
+size = 3896452
+sha256 = "6590ffa36a6827b6ba54723675764870e3d518561401ae15d7f27abd95cbb8b6"
+recipe = "probes/pbe/pack-modes.toml"
+needs = ["render"]

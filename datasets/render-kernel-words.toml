@@ -1,0 +1,11 @@
+title = "sweep table render/kernel-words"
+repo = "data"
+paths = ["render/kernel-words/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 6
+size = 5521146
+sha256 = "1657d20a5080fe63b3add2b055abbb9dbdcfefa5487f8e3f6667e11fe38ab126"
+recipe = "probes/render/kernel-words.toml"
+needs = ["render", "kpoke"]
+open = ["render-kernel-words-tri-kernel-addr"]

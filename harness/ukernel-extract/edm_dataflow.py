@@ -35,6 +35,7 @@ just the bit. Addresses are instruction indices (byte address / 8).
 
     usage: edm_dataflow.py [--ukernel <00_ukernel.bin>] [--tsv <out.tsv>] [--doc <out.md>]
            edm_dataflow.py --check     # the design document matches the TSV
+           edm_dataflow.py --render    # rewrite the design document from the TSV
 """
 from __future__ import annotations
 
@@ -1010,9 +1011,7 @@ def load_labels(paths=LABELS) -> list[int]:
 
 def main(argv: list[str]) -> int:
     ukernel, tsv, doc = UKERNEL, TSV, DOC
-    rest = list(argv)
-    if "--check" in rest:
-        return 0 if DOC.read_text() == render(read_tsv(TSV)) else 1
+    rest, mode = list(argv), None
     while rest:
         flag = rest.pop(0)
         if flag == "--ukernel" and rest:
@@ -1021,9 +1020,16 @@ def main(argv: list[str]) -> int:
             tsv = pathlib.Path(rest.pop(0))
         elif flag == "--doc" and rest:
             doc = pathlib.Path(rest.pop(0))
+        elif flag in ("--check", "--render"):
+            mode = flag
         else:
-            print(__doc__.strip().splitlines()[-2].strip(), file=sys.stderr)
+            print(__doc__[__doc__.index("usage:"):].strip(), file=sys.stderr)
             return 2
+    if mode == "--check":
+        return 0 if doc.read_text() == render(read_tsv(tsv)) else 1
+    if mode == "--render":          # the glossary grew: the same TSV, names resolved again
+        doc.write_text(render(read_tsv(tsv)))
+        return 0
     with open(ukernel, "rb") as f:
         if f.read(8) == FW_MAGIC:
             print(f"{ukernel}: a .fw container; give the cut image (00_ukernel.bin)",

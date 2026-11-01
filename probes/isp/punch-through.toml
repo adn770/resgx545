@@ -1,0 +1,682 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# isp punch through: 0 sweeps, 37 probes.
+needs = ["render", "kpoke"]
+open = ["isp-punch-through-pt-punch-04dc-2"]
+
+[[probe]]
+name = "isp-punch-through-atst8-modes-feedback"
+question = "which copies a punch-through pass keeps with atst8 in mode optdwd and with twosided"
+source = "pix_pt2.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0x8400200 }
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+cases = [["atst8.end r3, !p0, pa0, r2, r1, fb"], ["atst8.end r3, !p0, pa0, r2, r1, optdwd"], ["atst8.end r3, !p0, pa0, r2, r1, twosided, fb"], ["atst8.end r3, !p0, pa0, r2, r1, twosided, optdwd"]]
+labels = ["fb (control)", "optdwd", "twosided, fb", "twosided, optdwd"]
+
+[[probe]]
+name = "isp-punch-through-atst8-dwoff"
+question = "atst8's feedback modes with ISP word 0 bit 20 (depth write off) set: which copies the punch-through pass keeps"
+source = "pix_pt2.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8500200 }
+cases = [["atst8.end r3, !p0, pa0, r2, r1, fb"], ["atst8.end r3, !p0, pa0, r2, r1, optdwd"], ["atst8.end r3, !p0, pa0, r2, r1, twosided, fb"], ["atst8.end r3, !p0, pa0, r2, r1, twosided, optdwd"]]
+labels = ["fb", "optdwd", "twosided, fb", "twosided, optdwd"]
+
+[[probe]]
+name = "isp-punch-through-atst8-back"
+question = "atst8's feedback modes on the scene mirrored in y (back-facing triangles, no culling): which copies the pass keeps"
+source = "pix_pt2.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8400200, 9 = 0xc2000000 }
+cases = [["atst8.end r3, !p0, pa0, r2, r1, fb"], ["atst8.end r3, !p0, pa0, r2, r1, optdwd"], ["atst8.end r3, !p0, pa0, r2, r1, twosided, fb"], ["atst8.end r3, !p0, pa0, r2, r1, twosided, optdwd"]]
+labels = ["fb", "optdwd", "twosided, fb", "twosided, optdwd"]
+
+[[probe]]
+name = "isp-punch-through-atst8-back-dwoff"
+question = "the mirrored scene with depth write off"
+source = "pix_pt2.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+blk = { 1 = 0x8500200, 9 = 0xc2000000 }
+cases = [["atst8.end r3, !p0, pa0, r2, r1, fb"], ["atst8.end r3, !p0, pa0, r2, r1, optdwd"], ["atst8.end r3, !p0, pa0, r2, r1, twosided, fb"], ["atst8.end r3, !p0, pa0, r2, r1, twosided, optdwd"]]
+labels = ["fb", "optdwd", "twosided, fb", "twosided, optdwd"]
+
+[[probe]]
+name = "isp-punch-through-atst8-ts-back"
+question = "back faces, two-sided stencil front never, back always: which copies each feedback mode keeps"
+source = "pix_pt2.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+isp2 = 255
+blk_add = { 3 = 0x8400300, 5 = 0xe0000ff }
+blk = { 1 = 0x8400b00, 12 = 0xc2000000 }
+cases = [["atst8.end r3, !p0, pa0, r2, r1, fb"], ["atst8.end r3, !p0, pa0, r2, r1, optdwd"], ["atst8.end r3, !p0, pa0, r2, r1, twosided, fb"], ["atst8.end r3, !p0, pa0, r2, r1, twosided, optdwd"]]
+labels = ["fb", "optdwd", "twosided, fb", "twosided, optdwd"]
+
+[[probe]]
+name = "isp-punch-through-atst8-ts-back-swap"
+question = "back faces, two-sided stencil front always, back never"
+source = "pix_pt2.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+isp2 = 0xe0000ff
+blk_add = { 3 = 0x8400300, 5 = 255 }
+blk = { 1 = 0x8400b00, 12 = 0xc2000000 }
+cases = [["atst8.end r3, !p0, pa0, r2, r1, fb"], ["atst8.end r3, !p0, pa0, r2, r1, optdwd"], ["atst8.end r3, !p0, pa0, r2, r1, twosided, fb"], ["atst8.end r3, !p0, pa0, r2, r1, twosided, optdwd"]]
+labels = ["fb", "optdwd", "twosided, fb", "twosided, optdwd"]
+
+[[probe]]
+name = "isp-punch-through-atst8-ctl-stencil"
+question = "each control-word bit found inert in the feedback tests, with the stencil at never: does one make the punch-through pass obey the stencil"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+isp2 = 255
+blk = { 1 = 0x8400300 }
+cases = [["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"], ["mov.skipinv r2, #0x0000E003\natst8.end r3, !p0, pa0, r2, r1, fb"], ["mov.skipinv r2, #0x0000E011\natst8.end r3, !p0, pa0, r2, r1, fb"], ["mov.skipinv r2, #0x0000E021\natst8.end r3, !p0, pa0, r2, r1, fb"], ["mov.skipinv r2, #0x0000E041\natst8.end r3, !p0, pa0, r2, r1, fb"], ["mov.skipinv r2, #0x0000E081\natst8.end r3, !p0, pa0, r2, r1, fb"], ["mov.skipinv r2, #0x0000E101\natst8.end r3, !p0, pa0, r2, r1, fb"], ["mov.skipinv r2, #0x0000E201\natst8.end r3, !p0, pa0, r2, r1, fb"], ["mov.skipinv r2, #0x0000E401\natst8.end r3, !p0, pa0, r2, r1, fb"], ["mov.skipinv r2, #0x0000E801\natst8.end r3, !p0, pa0, r2, r1, fb"], ["mov.skipinv r2, #0x0000F001\natst8.end r3, !p0, pa0, r2, r1, fb"], ["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"], ["mov.skipinv r2, #0x0000E001\natst8.end r3, !p0, pa0, r2, r1, fb"], ["mov.skipinv r2, #0x0001E001\natst8.end r3, !p0, pa0, r2, r1, fb"], ["mov.skipinv r2, #0x0002E001\natst8.end r3, !p0, pa0, r2, r1, fb"], ["mov.skipinv r2, #0x0004E001\natst8.end r3, !p0, pa0, r2, r1, fb"], ["mov.skipinv r2, #0x0008E001\natst8.end r3, !p0, pa0, r2, r1, fb"], ["mov.skipinv r2, #0x0010E001\natst8.end r3, !p0, pa0, r2, r1, fb"], ["mov.skipinv r2, #0x0020E001\natst8.end r3, !p0, pa0, r2, r1, fb"], ["mov.skipinv r2, #0x0040E001\natst8.end r3, !p0, pa0, r2, r1, fb"], ["mov.skipinv r2, #0x0080E001\natst8.end r3, !p0, pa0, r2, r1, fb"], ["mov.skipinv r2, #0x0100E001\natst8.end r3, !p0, pa0, r2, r1, fb"], ["mov.skipinv r2, #0x0200E001\natst8.end r3, !p0, pa0, r2, r1, fb"], ["mov.skipinv r2, #0x0400E001\natst8.end r3, !p0, pa0, r2, r1, fb"], ["mov.skipinv r2, #0x0800E001\natst8.end r3, !p0, pa0, r2, r1, fb"], ["mov.skipinv r2, #0x1000E001\natst8.end r3, !p0, pa0, r2, r1, fb"], ["mov.skipinv r2, #0x2000E001\natst8.end r3, !p0, pa0, r2, r1, fb"], ["mov.skipinv r2, #0x4000E001\natst8.end r3, !p0, pa0, r2, r1, fb"], ["mov.skipinv r2, #0x8000E001\natst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["ctl 0x0000e001", "ctl 0x0000e003", "ctl 0x0000e011", "ctl 0x0000e021", "ctl 0x0000e041", "ctl 0x0000e081", "ctl 0x0000e101", "ctl 0x0000e201", "ctl 0x0000e401", "ctl 0x0000e801", "ctl 0x0000f001", "ctl 0x0000e001", "ctl 0x0000e001", "ctl 0x0001e001", "ctl 0x0002e001", "ctl 0x0004e001", "ctl 0x0008e001", "ctl 0x0010e001", "ctl 0x0020e001", "ctl 0x0040e001", "ctl 0x0080e001", "ctl 0x0100e001", "ctl 0x0200e001", "ctl 0x0400e001", "ctl 0x0800e001", "ctl 0x1000e001", "ctl 0x2000e001", "ctl 0x4000e001", "ctl 0x8000e001"]
+
+[[probe]]
+name = "isp-punch-through-pt-punch"
+question = "which copies a pt-phase shader writes in the punch scene, iterating with U1 bit 24 and DOUTI0 bit 29"
+source = "pix_pt.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_done.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0x8400200 }
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+cases = [["mov.skipinv r1, #0x0000e000\natst8.end r2, !p0, pa0, r1, r1, fb"], ["mov.skipinv r1, #0x3e002000\natst8.end r2, !p0, pa0, r1, r1, fb"], ["mov.skipinv r1, #0x0000e000\natst8.end r2, !p0, pa0, r1, r1, nfb"], ["nop.end"]]
+labels = ["always fb", "less 0x3e fb", "always nfb", "nop.end"]
+
+[[probe]]
+name = "isp-punch-through-pt-always"
+question = "which copies a pt-phase shader writes in the always scene, iterating with U1 bit 24 and DOUTI0 bit 29"
+source = "pix_pt.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_done.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0x1d00200 }
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+cases = [["mov.skipinv r1, #0x0000e000\natst8.end r2, !p0, pa0, r1, r1, fb"], ["mov.skipinv r1, #0x3e002000\natst8.end r2, !p0, pa0, r1, r1, fb"], ["mov.skipinv r1, #0x0000e000\natst8.end r2, !p0, pa0, r1, r1, nfb"], ["nop.end"]]
+labels = ["always fb", "less 0x3e fb", "always nfb", "nop.end"]
+
+[[probe]]
+name = "isp-punch-through-pt-control"
+question = "the one-phase shader with the same primary (pds_iter_done.s): the copies' z in each scene"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x20000800, 0, 0x1000004], [0x40000800, 0, 0x2000004]]
+labels = ["the wait of bit 29 with U1 bit 24", "the old primary's words without the fetch (hangs)"]
+
+[[probe]]
+name = "isp-punch-through-pt-pa0-punch"
+question = "what the colour phase reads in pa0 after a pt phase that writes it (punch scene)"
+source = "pix_pt.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_done.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0x8400200 }
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+cases = [["mov.skipinv r1, #0x0000e000\natst8.end pa0, !p0, pa0, r1, r1, fb"], ["mov.skipinv r1, #0x0000e000\natst8.end pa0, !p0, pa0, r1, r1, nfb"], ["mov.skipinv pa0, #0x12345678\nnop.end"]]
+labels = ["always fb, into pa0", "always nfb, into pa0", "pa0 = 0x12345678, nop.end"]
+
+[[probe]]
+name = "isp-punch-through-pt-pa0-always"
+question = "what the colour phase reads in pa0 after a pt phase that writes it (always scene)"
+source = "pix_pt.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_done.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0x1d00200 }
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+cases = [["mov.skipinv r1, #0x0000e000\natst8.end pa0, !p0, pa0, r1, r1, fb"], ["mov.skipinv r1, #0x0000e000\natst8.end pa0, !p0, pa0, r1, r1, nfb"], ["mov.skipinv pa0, #0x12345678\nnop.end"]]
+labels = ["always fb, into pa0", "always nfb, into pa0", "pa0 = 0x12345678, nop.end"]
+
+[[probe]]
+name = "isp-punch-through-pt-punch-04dc-2"
+question = "the punch scene under the bit-29 wait (U1 bit 24) with 0x04dc = 2: which copies draw"
+source = "pix_pt.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_done.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0x8400200 }
+kpoke = ["rd:21=2"]
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+cases = [["mov.skipinv r1, #0x0000e000\natst8.end r2, !p0, pa0, r1, r1, fb"], ["mov.skipinv r1, #0x3e002000\natst8.end r2, !p0, pa0, r1, r1, fb"], ["mov.skipinv r1, #0x0000e000\natst8.end r2, !p0, pa0, r1, r1, nfb"], ["nop.end"]]
+labels = ["always fb", "less 0x3e fb", "always nfb", "nop.end"]
+
+[[probe]]
+name = "isp-punch-through-pt-punch-04dc-3"
+question = "the punch scene under the bit-29 wait (U1 bit 24) with 0x04dc = 3: which copies draw"
+source = "pix_pt.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_done.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0x8400200 }
+kpoke = ["rd:21=3"]
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+cases = [["mov.skipinv r1, #0x0000e000\natst8.end r2, !p0, pa0, r1, r1, fb"], ["mov.skipinv r1, #0x3e002000\natst8.end r2, !p0, pa0, r1, r1, fb"], ["mov.skipinv r1, #0x0000e000\natst8.end r2, !p0, pa0, r1, r1, nfb"], ["nop.end"]]
+labels = ["always fb", "less 0x3e fb", "always nfb", "nop.end"]
+
+[[probe]]
+name = "isp-punch-through-pt2-punch"
+question = "a pt phase with pcoeff and the source-34 iteration, punch scene: which copies draw"
+source = "pix_pt2.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0x8400200 }
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+cases = [["atst8.end r3, !p0, pa0, r2, r1, fb"], ["atst8.end r3, !p0, pa0, r2, r1, nfb"], ["nop.end"]]
+labels = ["always fb", "always nfb", "nop.end"]
+
+[[probe]]
+name = "isp-punch-through-pt2-always"
+question = "a pt phase with pcoeff and the source-34 iteration, always scene: which copies draw"
+source = "pix_pt2.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0x1d00200 }
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+cases = [["atst8.end r3, !p0, pa0, r2, r1, fb"], ["atst8.end r3, !p0, pa0, r2, r1, nfb"], ["nop.end"]]
+labels = ["always fb", "always nfb", "nop.end"]
+
+[[probe]]
+name = "isp-punch-through-pt2-punch-pcoeff-only"
+question = "the punch scene with pix_pt2.s and pds_iter_pt1.s: which copies draw"
+source = "pix_pt2.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt1.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0x8400200 }
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+cases = [["atst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["always fb"]
+
+[[probe]]
+name = "isp-punch-through-pt2-punch-src34-only"
+question = "the punch scene with pix_pt3.s and pds_iter_pt.s: which copies draw"
+source = "pix_pt3.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0x8400200 }
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+cases = [["atst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["always fb"]
+
+[[probe]]
+name = "isp-punch-through-pt2-punch-neither"
+question = "the punch scene with pix_pt3.s and pds_iter_pt1.s: which copies draw"
+source = "pix_pt3.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt1.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0x8400200 }
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+cases = [["atst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["always fb"]
+
+[[probe]]
+name = "isp-punch-through-pt2-punch-srcs"
+question = "the punch scene, pix_pt3.s with pds_iter_pt1.s: src1 = src2 = 0xee00, src1 = src2 = 0xe001, src1 = src2 = r4 (unset)"
+source = "pix_pt3.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt1.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0x8400200 }
+size = [64, 64]
+pixels = true
+temps = 8
+inputs = ["OP"]
+cases = [["atst8.end r3, !p0, pa0, r1, r1, fb"], ["atst8.end r3, !p0, pa0, r2, r2, fb"], ["atst8.end r3, !p0, pa0, r4, r4, fb"]]
+labels = ["src1 = src2 = 0xee00", "src1 = src2 = 0xe001", "src1 = src2 = r4 (unset)"]
+
+[[probe]]
+name = "isp-punch-through-pt2-punch-iter1"
+question = "the punch scene, pix_pt3.s with pds_iter_done.s: one-component iteration"
+source = "pix_pt3.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_done.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0x8400200 }
+size = [64, 64]
+pixels = true
+temps = 8
+inputs = ["OP"]
+cases = [["atst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["one-component iteration"]
+
+[[probe]]
+name = "isp-punch-through-pt2-punch-src1"
+question = "the punch scene: which atst8 src1 values make the feedback keep the pixels"
+source = "pix_pt4.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt1.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0x8400200 }
+size = [64, 64]
+pixels = true
+temps = 8
+inputs = ["OP"]
+cases = [["mov.skipinv r4, #0x00000000\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x00000001\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x00000002\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x00000003\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0000000F\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0000E000\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0000E001\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0000E002\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x80000001\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0xFFFFFFFF\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x00000100\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x00010001\natst8.end r3, !p0, pa0, r4, r1, fb"]]
+labels = ["src1 0x0", "src1 0x1", "src1 0x2", "src1 0x3", "src1 0xf", "src1 0xe000", "src1 0xe001", "src1 0xe002", "src1 0x80000001", "src1 0xffffffff", "src1 0x100", "src1 0x10001"]
+
+[[probe]]
+name = "isp-punch-through-pt2-punch-discard"
+question = "the punch scene: a failing alpha test discards the copy, the one behind shows"
+source = "pix_pt4.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt1.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0x8400200 }
+size = [64, 64]
+pixels = true
+temps = 8
+inputs = ["OP"]
+cases = [["mov.skipinv r4, #0x00008000\natst8.end r3, !p0, pa0, r2, r4, fb"], ["mov.skipinv r4, #0x3E002000\natst8.end r3, !p0, pa0, r2, r4, fb"], ["mov.skipinv r4, #0x00000000\natst8.end r3, !p0, pa0, r2, r4, fb"]]
+labels = ["greater 0x00: copy 0 fails", "less 0x3e: copies 2-4 fail", "never: all fail"]
+
+[[probe]]
+name = "isp-punch-through-pt2-punch-04dc-1"
+question = "the working punch scene with 0x04dc = 1: which copies draw"
+source = "pix_pt2.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0x8400200 }
+kpoke = ["rd:21=1"]
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+cases = [["atst8.end r3, !p0, pa0, r2, r1, fb"], ["atst8.end r3, !p0, pa0, r2, r1, nfb"], ["nop.end"]]
+labels = ["always fb", "always nfb", "nop.end"]
+
+[[probe]]
+name = "isp-punch-through-pt2-punch-04dc-2"
+question = "the working punch scene with 0x04dc = 2: which copies draw"
+source = "pix_pt2.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0x8400200 }
+kpoke = ["rd:21=2"]
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+cases = [["atst8.end r3, !p0, pa0, r2, r1, fb"], ["atst8.end r3, !p0, pa0, r2, r1, nfb"], ["nop.end"]]
+labels = ["always fb", "always nfb", "nop.end"]
+
+[[probe]]
+name = "isp-punch-through-pt2-punch-04dc-4"
+question = "the working punch scene with 0x04dc = 4: which copies draw"
+source = "pix_pt2.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0x8400200 }
+kpoke = ["rd:21=4"]
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+cases = [["atst8.end r3, !p0, pa0, r2, r1, fb"], ["atst8.end r3, !p0, pa0, r2, r1, nfb"], ["nop.end"]]
+labels = ["always fb", "always nfb", "nop.end"]
+
+[[probe]]
+name = "isp-punch-through-pt2-punch-04dc-7"
+question = "the working punch scene with 0x04dc = 7: which copies draw"
+source = "pix_pt2.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0x8400200 }
+kpoke = ["rd:21=7"]
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+cases = [["atst8.end r3, !p0, pa0, r2, r1, fb"], ["atst8.end r3, !p0, pa0, r2, r1, nfb"], ["nop.end"]]
+labels = ["always fb", "always nfb", "nop.end"]
+
+[[probe]]
+name = "isp-punch-through-pt2-depthf-04dc-0"
+question = "depthf feedback in the punch scene, 0x04dc = 0: which copies draw"
+source = "pix_pt2.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0x8400200 }
+kpoke = ["rd:21=0"]
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+cases = [["depthf.end pa0, r2, r1, fb"], ["depthf.end r2, pa0, r1, fb"], ["atst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["depthf z, 0xe001, 0xee00", "depthf 0xe001, z, 0xee00", "atst8 (control)"]
+
+[[probe]]
+name = "isp-punch-through-pt2-depthf-04dc-2"
+question = "depthf feedback in the punch scene, 0x04dc = 2: which copies draw"
+source = "pix_pt2.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0x8400200 }
+kpoke = ["rd:21=2"]
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+cases = [["depthf.end pa0, r2, r1, fb"], ["depthf.end r2, pa0, r1, fb"], ["atst8.end r3, !p0, pa0, r2, r1, fb"]]
+labels = ["depthf z, 0xe001, 0xee00", "depthf 0xe001, z, 0xee00", "atst8 (control)"]
+
+[[probe]]
+name = "isp-punch-through-pt-ctl-flip"
+question = "the punch scene with atst8 src1 = 0xe001 with one bit flipped"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0x8400200 }
+size = [64, 64]
+pixels = true
+temps = 8
+inputs = ["OP"]
+cases = [["mov.skipinv r4, #0x0000E000\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0000E003\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0000E005\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0000E009\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0000E011\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0000E021\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0000E041\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0000E081\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0000E101\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0000E201\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0000E401\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0000E801\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0000F001\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0000C001\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0000A001\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x00006001\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0001E001\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0002E001\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0004E001\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0008E001\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0010E001\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0020E001\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0040E001\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0080E001\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0100E001\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0200E001\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0400E001\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0800E001\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x1000E001\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x2000E001\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x4000E001\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x8000E001\natst8.end r3, !p0, pa0, r4, r1, fb"]]
+labels = ["bit 0", "bit 1", "bit 2", "bit 3", "bit 4", "bit 5", "bit 6", "bit 7", "bit 8", "bit 9", "bit 10", "bit 11", "bit 12", "bit 13", "bit 14", "bit 15", "bit 16", "bit 17", "bit 18", "bit 19", "bit 20", "bit 21", "bit 22", "bit 23", "bit 24", "bit 25", "bit 26", "bit 27", "bit 28", "bit 29", "bit 30", "bit 31"]
+
+[[probe]]
+name = "isp-punch-through-pt-ctl-func"
+question = "the punch scene with atst8 src1 bits 15:13 = 0-7 and bit 0, and more low bits"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0x8400200 }
+size = [64, 64]
+pixels = true
+temps = 8
+inputs = ["OP"]
+cases = [["mov.skipinv r4, #0x00000001\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x00002001\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x00004001\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x00006001\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x00008001\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0000A001\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0000C001\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0000E001\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0000E003\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0000E005\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0000E009\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0000E011\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0000E101\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0000F001\natst8.end r3, !p0, pa0, r4, r1, fb"], ["mov.skipinv r4, #0x0001E001\natst8.end r3, !p0, pa0, r4, r1, fb"]]
+labels = ["0x1", "0x2001", "0x4001", "0x6001", "0x8001", "0xa001", "0xc001", "0xe001", "0xe003", "0xe005", "0xe009", "0xe011", "0xe101", "0xf001", "0x1e001"]
+
+[[probe]]
+name = "isp-punch-through-pt-pcoeff-src2"
+question = "the punch scene with pcoeff pa2, pa3, V: the copies drawn"
+source = "pix_pt6.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0x8400200 }
+size = [64, 64]
+pixels = true
+temps = 8
+inputs = ["OP"]
+cases = [["mov.skipinv r1, #0x0000EE00"], ["mov.skipinv r1, #0x00000000"], ["mov.skipinv r1, #0xFFFFFFFF"], ["mov.skipinv r1, #0x0000E000"], ["mov.skipinv r1, #0x00000E00"], ["mov.skipinv r1, #0x00008000"], ["mov.skipinv r1, #0x00004000"], ["mov.skipinv r1, #0x00002000"], ["mov.skipinv r1, #0x00000800"], ["mov.skipinv r1, #0x00000400"], ["mov.skipinv r1, #0x00000200"], ["mov.skipinv r1, #0x000000FF"]]
+labels = ["0xee00", "0x0", "0xffffffff", "0xe000", "0xe00", "0x8000", "0x4000", "0x2000", "0x800", "0x400", "0x200", "0xff"]
+
+[[probe]]
+name = "isp-punch-through-pt2-punch-nob2"
+question = "the working punch scene with DOUTU1.BIT2 clear: which copies draw"
+source = "pix_pt2.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt_nob2.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0x8400200 }
+size = [64, 64]
+pixels = true
+temps = 4
+inputs = ["OP"]
+cases = [["atst8.end r3, !p0, pa0, r2, r1, fb"], ["atst8.end r3, !p0, pa0, r2, r1, nfb"], ["nop.end"]]
+labels = ["always fb", "always nfb", "nop.end"]
+
+[[probe]]
+name = "isp-punch-through-pt-depthf-p4"
+question = "depthf src0 as depth, pass 4: which copies draw"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0x8400200 }
+size = [64, 64]
+pixels = true
+temps = 8
+inputs = ["OP"]
+cases = [["mov.skipinv r4, #0x3F800000\ndepthf.end r4, r2, r1, fb"], ["mov.skipinv r4, #0x00000000\ndepthf.end r4, r2, r1, fb"], ["mov.skipinv r4, #0x3F000000\ndepthf.end r4, r2, r1, fb"], ["mov.skipinv r4, pa0\ndepthf.end r4, r2, r1, fb"]]
+labels = ["src0 1.0", "src0 0", "src0 0.5", "src0 the copy's z"]
+
+[[probe]]
+name = "isp-punch-through-pt-depthf-p5"
+question = "depthf src0 as depth, pass 5: which copies draw"
+source = "pix_pt5.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0xa400200 }
+size = [64, 64]
+pixels = true
+temps = 8
+inputs = ["OP"]
+cases = [["mov.skipinv r4, #0x3F800000\ndepthf.end r4, r2, r1, fb"], ["mov.skipinv r4, #0x00000000\ndepthf.end r4, r2, r1, fb"], ["mov.skipinv r4, #0x3F000000\ndepthf.end r4, r2, r1, fb"], ["mov.skipinv r4, pa0\ndepthf.end r4, r2, r1, fb"]]
+labels = ["src0 1.0", "src0 0", "src0 0.5", "src0 the copy's z"]
+
+[[probe]]
+name = "isp-punch-through-pt-depthf-rev-p4"
+question = "depthf src0 = 0.5 - z, pass 4: does the farthest copy win"
+source = "pix_pt7.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0x8400200 }
+size = [64, 64]
+pixels = true
+temps = 8
+inputs = ["OP"]
+cases = [["mov.skipinv r5, #0x3F000000\nmov.skipinv r6, #0xBF800000\nfmad.skipinv r4, pa0, r6, r5\ndepthf.end r4, r2, r1, fb"]]
+labels = ["src0 0.5 - z"]
+
+[[probe]]
+name = "isp-punch-through-pt-depthf-rev-p5"
+question = "depthf src0 = 0.5 - z, pass 5: does the farthest copy win"
+source = "pix_pt7.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_pt.s", vtxuse = "vtx_z.s" }
+vtx_coords = 2
+vertices = 15
+copy_depth = true
+blk = { 1 = 0xa400200 }
+size = [64, 64]
+pixels = true
+temps = 8
+inputs = ["OP"]
+cases = [["mov.skipinv r5, #0x3F000000\nmov.skipinv r6, #0xBF800000\nfmad.skipinv r4, pa0, r6, r5\ndepthf.end r4, r2, r1, fb"]]
+labels = ["src0 0.5 - z"]

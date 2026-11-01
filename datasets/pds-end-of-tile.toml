@@ -1,0 +1,10 @@
+title = "sweep table pds/end-of-tile"
+repo = "data"
+paths = ["pds/end-of-tile/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 6
+size = 970421
+sha256 = "3be3390b013ed7cbc8f3c91c863831d96ce65502c216838488e8115ab9361146"
+recipe = "probes/pds/end-of-tile.toml"
+needs = ["render"]

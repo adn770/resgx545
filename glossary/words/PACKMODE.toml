@@ -1,0 +1,15 @@
+[[term]]
+id = "G0253"
+name = "PACKMODE"
+status = "named"
+
+[[term.source]]
+term = "PACKMODE"
+kind = "enum"
+sgx545 = "sideband PACKMODE values"
+meaning = "PBE pack formats (Rogue values differ); on SGX545 0 is ARGB8888, 3 RGB565"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0199"
+licence = "MIT"
+evidence = "same concept; values differ (SGX 0 = A8R8G8B8, 3 = RGB565)"

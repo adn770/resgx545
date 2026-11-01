@@ -1,0 +1,10 @@
+title = "sweep table texture/state-words"
+repo = "data"
+paths = ["texture/state-words/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 6
+size = 1211685
+sha256 = "3879eba36874cf1cdb809f1b2f36b25aa77d1073532cf0e587c77922d2e321c6"
+recipe = "probes/texture/state-words.toml"
+needs = ["render"]

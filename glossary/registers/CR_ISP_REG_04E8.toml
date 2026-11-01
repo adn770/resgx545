@@ -1,0 +1,15 @@
+[[term]]
+id = "G0131"
+name = "CR_ISP_REG_04E8"
+status = "inferred"
+
+[[term.source]]
+term = "CR_ISP_REG_04E8"
+kind = "register"
+sgx545 = "0x04e8"
+meaning = "Register 0x04e8: held 0x100 outside a render, bits 0 and 8 take a write, and in every transfer, depth scene, overlapping-triangle scene and textured triangle tried no value of it changed an image; what it does is not shown"
+tier = "ours"
+source = "resgx545"
+citation = "E067, E066, E068, E073"
+licence = "MIT"
+evidence = "[HW] E067: held 0x00000100, bits that took a write 0x00000101; every implemented bit flipped, 0 and ~0, through a plain copy, the every-value copy, a UYVY copy and a fill left all four baseline images (34 values, 170 of 171 jobs a sweep); 70 pokes of it and four other registers around a textured triangle gave the unpoked image; [HW] E066: no flip, 0 or ~0 of the render-details word that loads it changed the image in four depth scenes of the 64x64 triangle; [HW] E068: bits 0 and 8 and 0 and ~0 gave the baseline image in all five overlapping-triangle depth scenes; [HW] E073: values 0, 1 and 0x101 under 42 overlapping triangles left the covered-pixel count at 1275 of 4096; [infer] the reading is ours, from these runs"

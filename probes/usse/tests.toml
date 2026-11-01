@@ -1,0 +1,94 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse tests: 0 sweeps, 8 probes.
+needs = ["render"]
+
+[[probe]]
+name = "usse-tests-sign-p-shl"
+question = "test sign p: > 0 or >= 0 (shl by 0, as the firmware's shl.testpat)"
+source = "pred.s"
+params = { OP = "shl.testpat.chan0 !c0, p0, r1, #0", P = "p0", B = 0, C = 0 }
+inputs = ["A"]
+cases = [[0], [1], [0x80000000], [0x7fffffff]]
+[probe.hypotheses]
+">= 0" = [1, 1, 0, 1]
+"> 0" = [0, 1, 0, 1]
+
+[[probe]]
+name = "usse-tests-sign-p-and"
+question = "test sign p on the bitwise group (and r1, r1)"
+source = "pred.s"
+params = { OP = "and.testpat.chan0 !c0, p0, r1, r1", P = "p0", B = 0, C = 0 }
+inputs = ["A"]
+cases = [[0], [1], [0x80000000]]
+[probe.hypotheses]
+">= 0" = [1, 1, 0]
+"> 0" = [0, 1, 0]
+
+[[probe]]
+name = "usse-tests-join-t-not"
+question = "t in an o join (testnot: n or t): t = true, or no term"
+source = "pred.s"
+params = { OP = "and.testnot.chan0 !c0, p0, r1, r1", P = "p0", B = 0, C = 0 }
+inputs = ["A"]
+cases = [[1], [0x80000000], [0]]
+[probe.hypotheses]
+"t is true" = [1, 1, 1]
+"t is no term" = [0, 1, 0]
+
+[[probe]]
+name = "usse-tests-join-t-toz"
+question = "t in an o join (testtoz: t or z)"
+source = "pred.s"
+params = { OP = "and.testtoz.chan0 !c0, p0, r1, r1", P = "p0", B = 0, C = 0 }
+inputs = ["A"]
+cases = [[1], [0]]
+[probe.hypotheses]
+"t is true" = [1, 1]
+"t is no term" = [0, 1]
+
+[[probe]]
+name = "usse-tests-join-t-tonz"
+question = "t in an o join (testtonz: t or nz)"
+source = "pred.s"
+params = { OP = "and.testtonz.chan0 !c0, p0, r1, r1", P = "p0", B = 0, C = 0 }
+inputs = ["A"]
+cases = [[0], [1]]
+[probe.hypotheses]
+"t is true" = [1, 1]
+"t is no term" = [0, 1]
+
+[[probe]]
+name = "usse-tests-sign-n-iadd32"
+question = "sign test n of iadd32: bit 31 of the result, the exact sign or the carry"
+source = "pred.s"
+params = { OP = "iadd32.testnat.chan0 !c0, p0, r1, r2", P = "p0", C = 0 }
+inputs = ["A", "B"]
+cases = [[0x7fffffff, 1], [0xffffffff, 1], [0x80000000, 0xffffffff], [0xfffffffe, 1]]
+[probe.hypotheses]
+"bit 31 of r1 + r2" = [1, 0, 0, 1]
+"bit 31 of sext16(r1) + r2" = [0, 0, 1, 1]
+"carry out" = [0, 1, 1, 0]
+
+[[probe]]
+name = "usse-tests-sign-n-iaddu32"
+question = "sign test n of iaddu32"
+source = "pred.s"
+params = { OP = "iaddu32.testnat.chan0 !c0, p0, r1, r2", P = "p0", C = 0 }
+inputs = ["A", "B"]
+cases = [[0x7fffffff, 1], [0xffffffff, 1], [0x80000000, 0xffffffff], [0xfffffffe, 1]]
+[probe.hypotheses]
+"bit 31 of r1 + r2" = [1, 0, 0, 1]
+"carry out" = [0, 1, 1, 0]
+"unsigned: n never" = [0, 0, 0, 0]
+
+[[probe]]
+name = "usse-tests-zero-z-iadd32"
+question = "zero test of iadd32 (control: modelled as the 32-bit result being 0)"
+source = "pred.s"
+params = { OP = "iadd32.testtaz.chan0 !c0, p0, r1, r2", P = "p0", C = 0 }
+inputs = ["A", "B"]
+cases = [[0xffffffff, 1], [0x10000, 0], [5, 0xfffffffb], [1, 1]]
+[probe.hypotheses]
+"r1 + r2 is 0" = [1, 0, 1, 0]
+"sext16(r1) + r2 is 0" = [1, 1, 1, 0]

@@ -1,0 +1,111 @@
+[[term]]
+id = "G0219"
+name = "DOUTU1.BIT2"
+status = "inferred"
+
+[[term.source]]
+term = "DOUTU1.BIT2"
+kind = "flag"
+sgx545 = "doutu U1 [2]"
+meaning = "Bit 2 of a pixel task's second USSE word; it is set (value 4) in the fill and triangle jobs' pixel tasks, and flipping it changed nothing on a pixel task or on the end-of-tile task"
+tier = "ours"
+source = "resgx545"
+citation = "E046"
+licence = "MIT"
+evidence = "[HW] E046: the pixel tasks' DOUTU1 is 4 in the fill and the triangle (0x02000004 in the copy); flipping bit 2 (^=0x4) gave no change on a pixel task or on the end-of-tile task; [infer] the reading is ours, from these runs"
+
+[[term]]
+id = "G0220"
+name = "DOUTU1.BITS11_3"
+status = "named"
+
+[[term.source]]
+term = "DOUTU1.BITS11_3"
+kind = "field"
+sgx545 = "doutu U1 [11:3]"
+meaning = "the closed pixel-event program ORs its ir0 [8:0] here for the end-of-tile task; it places the end-of-tile write on the target (x); in 32-pixel tile columns from bit 4; width open [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E043, E044"
+licence = "MIT"
+evidence = "[HW] E043: bit 4 moves the end-of-tile write one 32-pixel tile column, higher bits further; bit 3 changes nothing (fill, copy, triangle); [HW] E044: every value: 2-3 move the tile one 32-pixel column, 1 changes nothing"
+
+[[term]]
+id = "G0221"
+name = "DOUTU1.BITS21_12"
+status = "named"
+
+[[term.source]]
+term = "DOUTU1.BITS21_12"
+kind = "field"
+sgx545 = "doutu U1 [21:12]"
+meaning = "the closed pixel-event program ORs its ir0 [18:9] here for the end-of-tile task; it places the end-of-tile write on the target (y); in 16-pixel tile rows from bit 13; width open [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E043, E044"
+licence = "MIT"
+evidence = "[HW] E043: bit 13 moves the end-of-tile write one 16-pixel row, bit 14 two; bit 12 changes nothing (fill, copy, triangle); [HW] E044: every value: 2-3 move the tile one 16-pixel row, 1 changes nothing"
+
+[[term]]
+id = "G0222"
+name = "DOUTU1.EMITPIX_TASK"
+status = "named"
+
+[[term.source]]
+term = "DOUTU1.EMITPIX_TASK"
+kind = "flag"
+sgx545 = "doutu U1 [23]"
+meaning = "set on the tasks whose program ends in emitpix (end of tile, end of render) and only on them [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E004"
+licence = "MIT"
+evidence = "never cleared in a run of ours; [HW] E046: set on a pixel task the job hangs, cleared on the end-of-tile task the job hangs"
+
+[[term]]
+id = "G0223"
+name = "DOUTU1.LAST_TILE"
+status = "named"
+
+[[term.source]]
+term = "DOUTU1.LAST_TILE"
+kind = "flag"
+sgx545 = "doutu U1 [22]"
+meaning = "carried by the end-of-tile tasks of the render's last two 16x16 tiles: the render ends when they do; set on the other tiles' tasks it changes nothing seen [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E004"
+licence = "MIT"
+evidence = "[HW] E046: our pixel-event program copies PIXEL_EVENT.LAST_TILE into it; without that copy every job hangs; never varied on the hardware; [HW] E046: set on the end-of-tile task or the pixel tasks, nothing changes (one render per job)"
+
+[[term]]
+id = "G0224"
+name = "DOUTU1.WAIT_FETCH"
+status = "named"
+
+[[term.source]]
+term = "DOUTU1.WAIT_FETCH"
+kind = "flag"
+sgx545 = "doutu U1 [25]"
+meaning = "the task waits for its PDS program's texture fetch before it runs [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E046"
+licence = "MIT"
+evidence = "never cleared in a run of ours; [HW] E046: set on a task without a fetch the job hangs; cleared on the copy's, 1522 of 2048 pixels change; a wait with no fetch hangs"
+
+[[term]]
+id = "G0225"
+name = "DOUTU1.WAIT_ITER"
+status = "named"
+
+[[term.source]]
+term = "DOUTU1.WAIT_ITER"
+kind = "flag"
+sgx545 = "doutu U1 [24]"
+meaning = "the task waits for its PDS program's iterations (the one with DOUTI0.LAST_ITER) before it runs [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E048"
+licence = "MIT"
+evidence = "[HW] E048: with DOUTI0.LAST_ITER the iteration reaches pa0, without it the job hangs, cleared pa0 holds leftovers; E068: the hang of our tasks that lacked it"

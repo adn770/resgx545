@@ -1,0 +1,190 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# pds pixel event: 0 sweeps, 14 probes.
+needs = ["render"]
+
+[[probe]]
+name = "pds-pixel-event-readback"
+question = "the pixel-event program's douta reaches the sa0-sa15 of the plain task it starts"
+source = "pixev_dump.s"
+host = "tri"
+slot = "pixev"
+slots = { pixtask = "task_dump.s" }
+size = [32, 16]
+temps = 8
+params = { OP = "movs douta, ds0[10], ds1[10], ds0[10], ds0[10]\nmovs douta, ds0[11], ds1[11], ds0[11], ds0[11]\nmovs douta, ds0[12], ds1[12], ds0[12], ds0[12]\nmovs douta, ds0[13], ds1[13], ds0[13], ds0[13]\nmovs douta, ds0[14], ds1[14], ds0[14], ds0[14]\nmovs douta, ds0[15], ds1[15], ds0[15], ds0[15]\nmovs douta, ds0[16], ds1[16], ds0[16], ds0[16]\nmovs douta, ds0[17], ds1[17], ds0[17], ds0[17]\nmovs douta, ds0[18], ds1[18], ds0[18], ds0[18]\nmovs douta, ds0[19], ds1[19], ds0[19], ds0[19]\nmovs douta, ds0[20], ds1[20], ds0[20], ds0[20]\nmovs douta, ds0[21], ds1[21], ds0[21], ds0[21]\nmovs douta, ds0[22], ds1[22], ds0[22], ds0[22]\nmovs douta, ds0[23], ds1[23], ds0[23], ds0[23]\nmovs douta, ds0[24], ds1[24], ds0[24], ds0[24]\nmovs douta, ds0[25], ds1[25], ds0[25], ds0[25]\nmovs doutu, ds0[0], ds0[1], ds0[0], ds0[0]\n" }
+labels = ["32x16, one tile"]
+cases = [[]]
+[probe.hypotheses]
+"douta writes the sa0-sa15 of the task started next" = [[0x7e570000, 0x7e570001, 0x7e570002, 0x7e570003, 0x7e570004, 0x7e570005, 0x7e570006, 0x7e570007, 0x7e570008, 0x7e570009, 0x7e57000a, 0x7e57000b, 0x7e57000c, 0x7e57000d, 0x7e57000e, 0x7e57000f]]
+
+[[probe]]
+name = "pds-pixel-event-pixev-inputs"
+question = "ir0, ir1, tim in the pixel-event program of a one-tile render, recorded"
+source = "pixev_dump.s"
+host = "tri"
+slot = "pixev"
+slots = { eot = "eot_dump.s" }
+size = [32, 16]
+temps = 8
+params = { OP = "or ds0[49], ir0, ds1[28]\nor ds0[50], ir1, ds1[28]\nor ds0[51], tim, ds1[28]\nmov32 ds0[52], ir0.0\nmov32 ds0[53], ir0.1\nmov32 ds0[54], pc.0\nshl ds1[55], ir0, 3\nand ds0[55], ds0[7], ds1[55]\nmovs douta, ir0.l, ds1[10], ir0.l, ir0.l\nmovs douta, ir1.l, ds1[11], ir1.l, ir1.l\nmovs douta, tim.l, ds1[12], tim.l, tim.l\nmovs douta, ir0.h, ds1[13], ir0.h, ir0.h\nmovs douta, ir1.h, ds1[14], ir1.h, ir1.h\nmovs douta, tim.h, ds1[15], tim.h, tim.h\nmovs douta, ds0[49], ds1[16], ds0[49], ds0[49]\nmovs douta, ds0[50], ds1[17], ds0[50], ds0[50]\nmovs douta, ds0[51], ds1[18], ds0[51], ds0[51]\nmovs douta, ds0[52], ds1[19], ds0[52], ds0[52]\nmovs douta, ds0[53], ds1[20], ds0[53], ds0[53]\nmovs douta, ds0[54], ds1[21], ds0[54], ds0[54]\nmovs douta, tim.l, ds1[22], tim.l, tim.l\nmovs douta, ds0[55], ds1[23], ds0[55], ds0[55]\nmovs douta, ds0[24], ds1[24], ds0[24], ds0[24]\nmovs douta, ds0[63], ds1[25], ds0[63], ds0[63]\n" }
+labels = ["32x16, one tile"]
+cases = [[]]
+
+[[probe]]
+name = "pds-pixel-event-pixev-tall"
+question = "ir0, ir1, tim per tile of a 32x4096 render: .l past bit 16, recorded"
+source = "pixev_dump.s"
+host = "tri"
+slot = "pixev"
+slots = { eot = "eot_tile.s" }
+size = [32, 4096]
+temps = 8
+params = { OP = "or ds0[49], ir0, ds1[28]\nor ds0[50], ir1, ds1[28]\nor ds0[51], tim, ds1[28]\nmov32 ds0[52], ir0.0\nmov32 ds0[53], ir0.1\nmov32 ds0[54], pc.0\nshl ds1[55], ir0, 3\nand ds0[55], ds0[7], ds1[55]\nmovs douta, ir0.l, ds1[10], ir0.l, ir0.l\nmovs douta, ir1.l, ds1[11], ir1.l, ir1.l\nmovs douta, tim.l, ds1[12], tim.l, tim.l\nmovs douta, ir0.h, ds1[13], ir0.h, ir0.h\nmovs douta, ir1.h, ds1[14], ir1.h, ir1.h\nmovs douta, tim.h, ds1[15], tim.h, tim.h\nmovs douta, ds0[49], ds1[16], ds0[49], ds0[49]\nmovs douta, ds0[50], ds1[17], ds0[50], ds0[50]\nmovs douta, ds0[51], ds1[18], ds0[51], ds0[51]\nmovs douta, ds0[52], ds1[19], ds0[52], ds0[52]\nmovs douta, ds0[53], ds1[20], ds0[53], ds0[53]\nmovs douta, ds0[54], ds1[21], ds0[54], ds0[54]\nmovs douta, tim.l, ds1[22], tim.l, tim.l\nmovs douta, ds0[55], ds1[23], ds0[55], ds0[55]\nmovs douta, ds0[24], ds1[24], ds0[24], ds0[24]\nmovs douta, ds0[63], ds1[25], ds0[63], ds0[63]\n" }
+labels = ["32x4096, 256 tiles"]
+cases = [[]]
+
+[[probe]]
+name = "pds-pixel-event-pixev-grid"
+question = "ir0 per tile of a 128x128 render (4 x 8 tiles): the tile fields, recorded"
+source = "pixev_dump.s"
+host = "tri"
+slot = "pixev"
+slots = { eot = "eot_tile.s" }
+size = [128, 128]
+temps = 8
+params = { OP = "or ds0[49], ir0, ds1[28]\nor ds0[50], ir1, ds1[28]\nmovs douta, ir0.l, ds1[10], ir0.l, ir0.l\nmovs douta, ds0[49], ds1[11], ds0[49], ds0[49]\nmovs douta, ds0[50], ds1[12], ds0[50], ds0[50]\nmovs douta, ds0[63], ds1[25], ds0[63], ds0[63]\n" }
+labels = ["128x128, 32 tiles"]
+cases = [[]]
+
+[[probe]]
+name = "pds-pixel-event-pixev-event-bit2"
+question = "which tiles' end-of-tile events carry ir1 bit 2, 128x128 (32 tiles), recorded"
+source = "pixev_dump.s"
+host = "tri"
+slot = "pixev"
+size = [128, 128]
+pixels = true
+temps = 8
+params = { OP = "and ds1[56], ir1, ds1[4]\ntstz p0, ds1[56]\n(p0) bra keep_tile\nmovs doutu, ds0[2], ds0[3], ds0[2], ds0[2]\nhalt\nkeep_tile:\n" }
+labels = ["128x128, 32 tiles"]
+cases = [[]]
+
+[[probe]]
+name = "pds-pixel-event-pixev-event-bit2-64"
+question = "which tiles' end-of-tile events carry ir1 bit 2, 64x64 (8 tiles), recorded"
+source = "pixev_dump.s"
+host = "tri"
+slot = "pixev"
+size = [64, 64]
+pixels = true
+temps = 8
+params = { OP = "and ds1[56], ir1, ds1[4]\ntstz p0, ds1[56]\n(p0) bra keep_tile\nmovs doutu, ds0[2], ds0[3], ds0[2], ds0[2]\nhalt\nkeep_tile:\n" }
+labels = ["64x64, 8 tiles"]
+cases = [[]]
+
+[[probe]]
+name = "pds-pixel-event-pixev-event-bit3"
+question = "which tiles' end-of-tile events carry ir1 bit 3, 128x128 (32 tiles), recorded"
+source = "pixev_dump.s"
+host = "tri"
+slot = "pixev"
+size = [128, 128]
+pixels = true
+temps = 8
+params = { OP = "and ds1[56], ir1, ds1[2]\ntstz p0, ds1[56]\n(p0) bra keep_tile\nmovs doutu, ds0[2], ds0[3], ds0[2], ds0[2]\nhalt\nkeep_tile:\n" }
+labels = ["128x128, 32 tiles"]
+cases = [[]]
+
+[[probe]]
+name = "pds-pixel-event-pixev-event-bit8"
+question = "which tiles' end-of-tile events carry ir1 bit 8, 128x128 (32 tiles), recorded"
+source = "pixev_dump.s"
+host = "tri"
+slot = "pixev"
+size = [128, 128]
+pixels = true
+temps = 8
+params = { OP = "and ds1[56], ir1, ds1[11]\ntstz p0, ds1[56]\n(p0) bra keep_tile\nmovs doutu, ds0[2], ds0[3], ds0[2], ds0[2]\nhalt\nkeep_tile:\n" }
+labels = ["128x128, 32 tiles"]
+cases = [[]]
+
+[[probe]]
+name = "pds-pixel-event-pixev-event-bit9"
+question = "which tiles' end-of-tile events carry ir1 bit 9, 128x128 (32 tiles), recorded"
+source = "pixev_dump.s"
+host = "tri"
+slot = "pixev"
+size = [128, 128]
+pixels = true
+temps = 8
+params = { OP = "and ds1[56], ir1, ds1[12]\ntstz p0, ds1[56]\n(p0) bra keep_tile\nmovs doutu, ds0[2], ds0[3], ds0[2], ds0[2]\nhalt\nkeep_tile:\n" }
+labels = ["128x128, 32 tiles"]
+cases = [[]]
+
+[[probe]]
+name = "pds-pixel-event-pixev-event-bit10"
+question = "which tiles' end-of-tile events carry ir1 bit 10, 128x128 (32 tiles), recorded"
+source = "pixev_dump.s"
+host = "tri"
+slot = "pixev"
+size = [128, 128]
+pixels = true
+temps = 8
+params = { OP = "and ds1[56], ir1, ds1[14]\ntstz p0, ds1[56]\n(p0) bra keep_tile\nmovs doutu, ds0[2], ds0[3], ds0[2], ds0[2]\nhalt\nkeep_tile:\n" }
+labels = ["128x128, 32 tiles"]
+cases = [[]]
+
+[[probe]]
+name = "pds-pixel-event-pixev-event-bit11"
+question = "which tiles' end-of-tile events carry ir1 bit 11, 128x128 (32 tiles), recorded"
+source = "pixev_dump.s"
+host = "tri"
+slot = "pixev"
+size = [128, 128]
+pixels = true
+temps = 8
+params = { OP = "and ds1[56], ir1, ds1[18]\ntstz p0, ds1[56]\n(p0) bra keep_tile\nmovs doutu, ds0[2], ds0[3], ds0[2], ds0[2]\nhalt\nkeep_tile:\n" }
+labels = ["128x128, 32 tiles"]
+cases = [[]]
+
+[[probe]]
+name = "pds-pixel-event-pixev-grid16"
+question = "ir0 and ir1 per 16x16 tile of a 128x128 render (8 x 8 tiles), recorded"
+source = "pixev_dump.s"
+host = "tri"
+slot = "pixev"
+slots = { eot = "eot_tile.s" }
+size = [128, 128]
+temps = 8
+params = { OP = "shr ds0[57], ir0, 3\nshl ds1[57], ds0[57], 3\nsub ds0[56], ir0, ds1[57]\nshr ds0[58], ir0, 10\nshl ds1[58], ds0[58], 3\nor ds0[59], ds0[56], ds1[58]\nor ds0[63], ds0[59], ds1[26]\nor ds0[49], ir0, ds1[28]\nor ds0[50], ir1, ds1[28]\nmovs douta, ir0.l, ds1[10], ir0.l, ir0.l\nmovs douta, ds0[49], ds1[11], ds0[49], ds0[49]\nmovs douta, ds0[50], ds1[12], ds0[50], ds0[50]\nmovs douta, ds0[63], ds1[25], ds0[63], ds0[63]\n" }
+labels = ["128x128, 64 tiles of 16x16"]
+cases = [[]]
+
+[[probe]]
+name = "pds-pixel-event-eot-u1-tile-x-flip"
+question = "which tile the end-of-tile task writes when one bit of its U1 tile-x field is flipped, 128x128 (64 tiles of 16x16)"
+source = "pixev_u1_flip.s"
+host = "tri"
+slot = "pixev"
+size = [128, 128]
+pixels = true
+temps = 8
+params = { YMASK = "0x00000000" }
+inputs = ["XMASK"]
+labels = ["bit 3", "bit 4", "bit 5", "bit 6", "bit 7", "bit 8", "bit 9", "bit 10", "bit 11"]
+cases = [[8], [16], [32], [64], [128], [0x100], [0x200], [0x400], [0x800]]
+
+[[probe]]
+name = "pds-pixel-event-eot-u1-tile-y-flip"
+question = "which tile the end-of-tile task writes when one bit of its U1 tile-y field is flipped, 128x128 (64 tiles of 16x16)"
+source = "pixev_u1_flip.s"
+host = "tri"
+slot = "pixev"
+size = [128, 128]
+pixels = true
+temps = 8
+params = { XMASK = "0x00000000" }
+inputs = ["YMASK"]
+labels = ["bit 12", "bit 13", "bit 14", "bit 15", "bit 16", "bit 17", "bit 18", "bit 19", "bit 20", "bit 21"]
+cases = [[0x1000], [0x2000], [0x4000], [0x8000], [0x10000], [0x20000], [0x40000], [0x80000], [0x100000], [0x200000]]

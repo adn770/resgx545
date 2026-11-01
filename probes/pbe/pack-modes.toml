@@ -1,0 +1,1026 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# pbe pack modes: 0 sweeps, 73 probes.
+needs = ["render"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-00"
+question = "what sideband 0x200 stores (pack mode 0)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 512
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 0"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-01"
+question = "what sideband 0x201 stores (pack mode 1)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 513
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 1"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-02"
+question = "what sideband 0x202 stores (pack mode 2)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 514
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 2"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-03"
+question = "what sideband 0x203 stores (pack mode 3)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 515
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 3"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-04"
+question = "what sideband 0x204 stores (pack mode 4)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 516
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 4"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-05"
+question = "what sideband 0x205 stores (pack mode 5)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 517
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 5"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-06"
+question = "what sideband 0x206 stores (pack mode 6)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 518
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 6"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-07"
+question = "what sideband 0x207 stores (pack mode 7)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 519
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 7"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-08"
+question = "what sideband 0x208 stores (pack mode 8)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 520
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 8"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-09"
+question = "what sideband 0x209 stores (pack mode 9)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 521
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 9"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-10"
+question = "what sideband 0x20a stores (pack mode 10)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 522
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 10"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-11"
+question = "what sideband 0x20b stores (pack mode 11)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 523
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 11"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-12"
+question = "what sideband 0x20c stores (pack mode 12)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 524
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 12"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-13"
+question = "what sideband 0x20d stores (pack mode 13)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 525
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 13"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-14"
+question = "what sideband 0x20e stores (pack mode 14)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 526
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 14"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-15"
+question = "what sideband 0x20f stores (pack mode 15)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 527
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 15"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-16"
+question = "what sideband 0x210 stores (pack mode 16)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 528
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 16"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-17"
+question = "what sideband 0x211 stores (pack mode 17)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 529
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 17"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-18"
+question = "what sideband 0x212 stores (pack mode 18)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 530
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 18"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-19"
+question = "what sideband 0x213 stores (pack mode 19)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 531
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 19"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-20"
+question = "what sideband 0x214 stores (pack mode 20)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 532
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 20"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-21"
+question = "what sideband 0x215 stores (pack mode 21)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 533
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 21"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-22"
+question = "what sideband 0x216 stores (pack mode 22)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 534
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 22"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-23"
+question = "what sideband 0x217 stores (pack mode 23)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 535
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 23"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-24"
+question = "what sideband 0x218 stores (pack mode 24)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 536
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 24"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-25"
+question = "what sideband 0x219 stores (pack mode 25)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 537
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 25"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-26"
+question = "what sideband 0x21a stores (pack mode 26)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 538
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 26"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-27"
+question = "what sideband 0x21b stores (pack mode 27)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 539
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 27"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-28"
+question = "what sideband 0x21c stores (pack mode 28)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 540
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 28"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-29"
+question = "what sideband 0x21d stores (pack mode 29)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 541
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 29"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-30"
+question = "what sideband 0x21e stores (pack mode 30)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 542
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 30"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-31"
+question = "what sideband 0x21f stores (pack mode 31)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 543
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 31"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-32"
+question = "what sideband 0x220 stores (pack mode 32)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 544
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 32"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-33"
+question = "what sideband 0x221 stores (pack mode 33)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 545
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 33"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-34"
+question = "what sideband 0x222 stores (pack mode 34)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 546
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 34"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-35"
+question = "what sideband 0x223 stores (pack mode 35)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 547
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 35"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-36"
+question = "what sideband 0x224 stores (pack mode 36)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 548
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 36"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-37"
+question = "what sideband 0x225 stores (pack mode 37)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 549
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 37"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-38"
+question = "what sideband 0x226 stores (pack mode 38)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 550
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 38"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-39"
+question = "what sideband 0x227 stores (pack mode 39)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 551
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 39"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-40"
+question = "what sideband 0x228 stores (pack mode 40)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 552
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 40"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-41"
+question = "what sideband 0x229 stores (pack mode 41)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 553
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 41"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-42"
+question = "what sideband 0x22a stores (pack mode 42)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 554
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 42"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-43"
+question = "what sideband 0x22b stores (pack mode 43)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 555
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 43"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-44"
+question = "what sideband 0x22c stores (pack mode 44)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 556
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 44"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-45"
+question = "what sideband 0x22d stores (pack mode 45)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 557
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 45"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-46"
+question = "what sideband 0x22e stores (pack mode 46)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 558
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 46"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-47"
+question = "what sideband 0x22f stores (pack mode 47)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 559
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 47"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-48"
+question = "what sideband 0x230 stores (pack mode 48)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 560
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 48"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-49"
+question = "what sideband 0x231 stores (pack mode 49)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 561
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 49"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-50"
+question = "what sideband 0x232 stores (pack mode 50)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 562
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 50"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-51"
+question = "what sideband 0x233 stores (pack mode 51)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 563
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 51"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-52"
+question = "what sideband 0x234 stores (pack mode 52)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 564
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 52"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-53"
+question = "what sideband 0x235 stores (pack mode 53)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 565
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 53"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-54"
+question = "what sideband 0x236 stores (pack mode 54)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 566
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 54"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-55"
+question = "what sideband 0x237 stores (pack mode 55)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 567
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 55"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-56"
+question = "what sideband 0x238 stores (pack mode 56)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 568
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 56"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-57"
+question = "what sideband 0x239 stores (pack mode 57)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 569
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 57"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-58"
+question = "what sideband 0x23a stores (pack mode 58)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 570
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 58"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-59"
+question = "what sideband 0x23b stores (pack mode 59)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 571
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 59"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-60"
+question = "what sideband 0x23c stores (pack mode 60)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 572
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 60"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-61"
+question = "what sideband 0x23d stores (pack mode 61)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 573
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 61"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-62"
+question = "what sideband 0x23e stores (pack mode 62)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 574
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 62"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode-63"
+question = "what sideband 0x23f stores (pack mode 63)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 575
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 63"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode4-00"
+question = "what pack mode 0 stores from o0-o3"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 512
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv o1, #0x11223344\nmov.skipinv o2, #0x55667788\nmov.skipinv o3, #0x99AABBCC\nmov.skipinv.end o0, #0x80FF8040"]]
+labels = ["o0-o3 = 0x80FF8040, 0x11223344, 0x55667788, 0x99AABBCC"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode4-09"
+question = "what pack mode 9 stores from o0-o3"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 521
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv o1, #0x11223344\nmov.skipinv o2, #0x55667788\nmov.skipinv o3, #0x99AABBCC\nmov.skipinv.end o0, #0x80FF8040"]]
+labels = ["o0-o3 = 0x80FF8040, 0x11223344, 0x55667788, 0x99AABBCC"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode4-10"
+question = "what pack mode 10 stores from o0-o3"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 522
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv o1, #0x11223344\nmov.skipinv o2, #0x55667788\nmov.skipinv o3, #0x99AABBCC\nmov.skipinv.end o0, #0x80FF8040"]]
+labels = ["o0-o3 = 0x80FF8040, 0x11223344, 0x55667788, 0x99AABBCC"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode4-12"
+question = "what pack mode 12 stores from o0-o3"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 524
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv o1, #0x11223344\nmov.skipinv o2, #0x55667788\nmov.skipinv o3, #0x99AABBCC\nmov.skipinv.end o0, #0x80FF8040"]]
+labels = ["o0-o3 = 0x80FF8040, 0x11223344, 0x55667788, 0x99AABBCC"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode4-13"
+question = "what pack mode 13 stores from o0-o3"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 525
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv o1, #0x11223344\nmov.skipinv o2, #0x55667788\nmov.skipinv o3, #0x99AABBCC\nmov.skipinv.end o0, #0x80FF8040"]]
+labels = ["o0-o3 = 0x80FF8040, 0x11223344, 0x55667788, 0x99AABBCC"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode4-14"
+question = "what pack mode 14 stores from o0-o3"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 526
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv o1, #0x11223344\nmov.skipinv o2, #0x55667788\nmov.skipinv o3, #0x99AABBCC\nmov.skipinv.end o0, #0x80FF8040"]]
+labels = ["o0-o3 = 0x80FF8040, 0x11223344, 0x55667788, 0x99AABBCC"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode4-22"
+question = "what pack mode 22 stores from o0-o3"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 534
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv o1, #0x11223344\nmov.skipinv o2, #0x55667788\nmov.skipinv o3, #0x99AABBCC\nmov.skipinv.end o0, #0x80FF8040"]]
+labels = ["o0-o3 = 0x80FF8040, 0x11223344, 0x55667788, 0x99AABBCC"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode4-26"
+question = "what pack mode 26 stores from o0-o3"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 538
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv o1, #0x11223344\nmov.skipinv o2, #0x55667788\nmov.skipinv o3, #0x99AABBCC\nmov.skipinv.end o0, #0x80FF8040"]]
+labels = ["o0-o3 = 0x80FF8040, 0x11223344, 0x55667788, 0x99AABBCC"]
+
+[[probe]]
+name = "pbe-pack-modes-packmode4-34"
+question = "what pack mode 34 stores from o0-o3"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 546
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv o1, #0x11223344\nmov.skipinv o2, #0x55667788\nmov.skipinv o3, #0x99AABBCC\nmov.skipinv.end o0, #0x80FF8040"]]
+labels = ["o0-o3 = 0x80FF8040, 0x11223344, 0x55667788, 0x99AABBCC"]

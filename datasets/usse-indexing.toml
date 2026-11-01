@@ -1,0 +1,10 @@
+title = "probe table usse/indexing"
+repo = "data"
+paths = ["usse/indexing/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 77
+size = 48052
+sha256 = "2bd607962260aca4ae4726c79a816a671327d4138db8076908527cc0f02f6dd3"
+recipe = "probes/usse/indexing.toml"
+needs = ["render"]

@@ -1,0 +1,10 @@
+title = "probe table usse/alpha-test"
+repo = "data"
+paths = ["usse/alpha-test/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 710
+size = 1474713
+sha256 = "38f5b23caa586617e06203c6670a3ea8ebce6c603bc42874bb29cf2ca770481b"
+recipe = "probes/usse/alpha-test.toml"
+needs = ["render"]

@@ -1,0 +1,10 @@
+title = "probe table usse/sample-rate"
+repo = "data"
+paths = ["usse/sample-rate/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 428
+size = 15583465
+sha256 = "7c0fb84d0ecf2315b5b0c717962dcd01892693d3768a8f56623d6225a2a3b252"
+recipe = "probes/usse/sample-rate.toml"
+needs = ["render", "kpoke"]

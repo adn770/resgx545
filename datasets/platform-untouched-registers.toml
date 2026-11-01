@@ -1,0 +1,10 @@
+title = "sweep table platform/untouched-registers"
+repo = "data"
+paths = ["platform/untouched-registers/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 10
+size = 967501
+sha256 = "635583d91bf10d201cc13cd88b83a0ab8128e155ba0c444b2d24bd530e2f96d6"
+recipe = "probes/platform/untouched-registers.toml"
+needs = ["render", "kreg"]

@@ -1,0 +1,15 @@
+[[term]]
+id = "G0254"
+name = "PDS_SIZE.BITS17_16"
+status = "inferred"
+
+[[term.source]]
+term = "PDS_SIZE.BITS17_16"
+kind = "field"
+sgx545 = "PDS_SIZE [17:16]"
+meaning = "a size or count of attribute banks or layers the triangle does not use, 3 meaning all. Measured: set to 3 by the closed driver in every transfer and 3D capture [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E046"
+licence = "MIT"
+evidence = "never varied; [HW] E046: cleared, alone or with the whole word, nothing changes on the triangle"

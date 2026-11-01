@@ -1,0 +1,15 @@
+[[term]]
+id = "G0334"
+name = "terminate bounding box"
+status = "named"
+
+[[term.source]]
+term = "terminate bounding box"
+kind = "concept"
+sgx545 = "-"
+meaning = "the screen region outside which tiles are invalid: they are not processed at the end of the scene"
+tier = "4"
+source = "patent-US9384584"
+citation = "C0233"
+licence = "patent"
+evidence = "OCR text; a 2008 filing, the core it describes may be later than SGX545; the valid region ends with a terminate word (US8723860B2.txt:1551); [HW] E059: TERM.CLIP_RIGHT 1 -> 0 leaves the right 32-pixel column of a 64x64 target unwritten"

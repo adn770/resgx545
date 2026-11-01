@@ -1,0 +1,10 @@
+title = "sweep table isp/background-object"
+repo = "data"
+paths = ["isp/background-object/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 8
+size = 564668
+sha256 = "e0ee19a8bd4179615c1a709d918a3d96eda2b9f02ea9db4f0f1e7d79e9d4e4c0"
+recipe = "probes/isp/background-object.toml"
+needs = ["render"]

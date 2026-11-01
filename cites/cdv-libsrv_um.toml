@@ -1,0 +1,8 @@
+title = "strings and exports of libsrv_um.so in our Cedarview package"
+tier = "2"
+kind = "package"
+licences = ["Intel-binary (ours)"]
+root = "usr/lib/ of the cedarview-userspace-v1.0.3_bee package"
+upstream = "https://archive.org/details/PowerVR-Graphics-Media-Drivers-for-Linux-Intel-GMA3600-3650-GPU (cdv-gfx-drivers-1.0.3_bee.tar.bz2)"
+pin = "cdv-gfx-drivers-1.0.3_bee, DDK 1.7.862890; libsrv_um.so.1.7.862890 sha256 2b2c09866ca372c06b9e20472caeb43edf0d776a25fa63d30979121f11988a44"
+locator = "string@<lib> or export@<lib>; the citation record's quote is the string or symbol itself"

@@ -1,0 +1,368 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse integer: 0 sweeps, 30 probes.
+needs = ["render"]
+
+[[probe]]
+name = "usse-integer-shift-immediates"
+question = "shift immediates of 32 and over, and ~ on a shift amount or operand"
+source = "dump.s"
+params = { A = 0, B = 0, C = 0, D = 0, E = 0, F = 0, G = 0, H = 0, OUT = "r10" }
+inputs = ["OP", "A", "B", "C", "D", "E", "F", "G", "H"]
+labels = ["shl #32", "shl #33", "shl #40", "shl #127", "shr #32", "shr #33", "shr #40", "shr #127", "asr #32", "asr #33", "asr #40", "asr #127", "rol #32", "rol #33", "rol #40", "rol #127", "shl ~r2 (r2 = 0xfffffffc)", "shl ~#3", "shr ~r2 (r2 = 0xfffffffc)", "shr ~#3", "rol ~r2 (r2 = 0xfffffffc)", "rol ~#3", "and ~#3", "or ~#3", "xor ~#3"]
+cases = [["shl r10, r1, #32", 0x80000003, 0, 0, 0, 0, 0, 0, 0], ["shl r10, r1, #33", 0x80000003, 0, 0, 0, 0, 0, 0, 0], ["shl r10, r1, #40", 0x80000003, 0, 0, 0, 0, 0, 0, 0], ["shl r10, r1, #127", 0x80000003, 0, 0, 0, 0, 0, 0, 0], ["shr r10, r1, #32", 0x80000003, 0, 0, 0, 0, 0, 0, 0], ["shr r10, r1, #33", 0x80000003, 0, 0, 0, 0, 0, 0, 0], ["shr r10, r1, #40", 0x80000003, 0, 0, 0, 0, 0, 0, 0], ["shr r10, r1, #127", 0x80000003, 0, 0, 0, 0, 0, 0, 0], ["asr r10, r1, #32", 0x80000003, 0, 0, 0, 0, 0, 0, 0], ["asr r10, r1, #33", 0x80000003, 0, 0, 0, 0, 0, 0, 0], ["asr r10, r1, #40", 0x80000003, 0, 0, 0, 0, 0, 0, 0], ["asr r10, r1, #127", 0x80000003, 0, 0, 0, 0, 0, 0, 0], ["rol r10, r1, #32", 0x80000003, 0, 0, 0, 0, 0, 0, 0], ["rol r10, r1, #33", 0x80000003, 0, 0, 0, 0, 0, 0, 0], ["rol r10, r1, #40", 0x80000003, 0, 0, 0, 0, 0, 0, 0], ["rol r10, r1, #127", 0x80000003, 0, 0, 0, 0, 0, 0, 0], ["shl r10, r1, ~r2", 0x80000003, 0xfffffffc, 0, 0, 0, 0, 0, 0], ["shl r10, r1, ~#3", 0x80000003, 0, 0, 0, 0, 0, 0, 0], ["shr r10, r1, ~r2", 0x80000003, 0xfffffffc, 0, 0, 0, 0, 0, 0], ["shr r10, r1, ~#3", 0x80000003, 0, 0, 0, 0, 0, 0, 0], ["rol r10, r1, ~r2", 0x80000003, 0xfffffffc, 0, 0, 0, 0, 0, 0], ["rol r10, r1, ~#3", 0x80000003, 0, 0, 0, 0, 0, 0, 0], ["and r10, r1, ~#3", 0x80000003, 0, 0, 0, 0, 0, 0, 0], ["or r10, r1, ~#3", 0x80000003, 0, 0, 0, 0, 0, 0, 0], ["xor r10, r1, ~#3", 0x80000003, 0, 0, 0, 0, 0, 0, 0]]
+[probe.hypotheses]
+"as register amounts (shl/shr 0, asr the sign, rol mod 32); ~ complements the 32-bit amount or operand first" = [[0, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xffffffff, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xffffffff, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xffffffff, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xffffffff, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x80000003, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [7, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x380, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xc0000001, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [24, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x10000000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [28, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x38000000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x80000000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xffffffff, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x7fffffff, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf]]
+"immediate amounts taken mod 32" = [[0x80000003, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [6, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x300, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x80000000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x80000003, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x40000001, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x800000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [1, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x80000003, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xc0000001, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xff800000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xffffffff, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x80000003, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [7, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x380, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xc0000001, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [24, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x30000000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x10000000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [8, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [28, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x38000000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x80000000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xffffffff, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x7fffffff, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf]]
+
+[[probe]]
+name = "usse-integer-idiv"
+question = "idiv d, a, b, drcN then wdf: what it writes"
+source = "dump.s"
+params = { A = 0, B = 0, C = 0, D = 0, E = 0, F = 0, G = 0, H = 0, OUT = "r10" }
+inputs = ["OP", "A", "B", "C", "D", "E", "F", "G", "H"]
+labels = ["idiv 100 / 7", "idiv 4294967295 / 3", "idiv 7 / 0", "idiv 2147483648 / 2", "idiv 1000000 / 1000", "idiv 5 / 9", "idiv 4294967295 / 4294967295"]
+cases = [["idiv r10, r1, r2, drc0\nwdf drc0", 100, 7, 0, 0, 0, 0, 0, 0], ["idiv r10, r1, r2, drc0\nwdf drc0", 0xffffffff, 3, 0, 0, 0, 0, 0, 0], ["idiv r10, r1, r2, drc0\nwdf drc0", 7, 0, 0, 0, 0, 0, 0, 0], ["idiv r10, r1, r2, drc0\nwdf drc0", 0x80000000, 2, 0, 0, 0, 0, 0, 0], ["idiv r10, r1, r2, drc0\nwdf drc0", 0xf4240, 0x3e8, 0, 0, 0, 0, 0, 0], ["idiv r10, r1, r2, drc0\nwdf drc0", 5, 9, 0, 0, 0, 0, 0, 0], ["idiv r10, r1, r2, drc0\nwdf drc0", 0xffffffff, 0xffffffff, 0, 0, 0, 0, 0, 0]]
+[probe.hypotheses]
+"unsigned: the quotient to d, the remainder to d + 1; 0xffffffff to both for b = 0" = [[14, 2, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x55555555, 0, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xffffffff, 0xffffffff, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x40000000, 0, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x3e8, 0, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0, 5, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [1, 0, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf]]
+"the quotient alone" = [[14, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x55555555, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xffffffff, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x40000000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x3e8, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [1, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf]]
+
+[[probe]]
+name = "usse-integer-ima16-8bit"
+question = "ima16 with u8, s8 and o8 sources: which byte each lane reads"
+source = "dump.s"
+params = { A = 0, B = 0, C = 0, D = 0, E = 0, F = 0, G = 0, H = 0, OUT = "r10" }
+inputs = ["OP", "A", "B", "C", "D", "E", "F", "G", "H"]
+labels = ["ima16.u r10, r1, r2.low, r3.low, u8, u8", "ima16.u r10, r1, r2.high, r3.high, u8, u8", "ima16.u r10, r1, r2.low, r3.low, s8, s8", "ima16.u r10, r1, r2.high, r3.high, s8, s8", "ima16.u r10, r1, r2.low, r3.low, o8, o8", "ima16.u r10, r1, r2.high, r3.low, s8, o8", "ima16.u r10, r1, r2.low, r3, u8, u16", "ima16.u r10, r1, r2, r3.high, u16, s8"]
+cases = [["ima16.u r10, r1, r2.low, r3.low, u8, u8", 0x82ff0381, 0x7f05fe02, 0x100020, 0, 0, 0, 0, 0], ["ima16.u r10, r1, r2.high, r3.high, u8, u8", 0x82ff0381, 0x7f05fe02, 0x100020, 0, 0, 0, 0, 0], ["ima16.u r10, r1, r2.low, r3.low, s8, s8", 0x82ff0381, 0x7f05fe02, 0x100020, 0, 0, 0, 0, 0], ["ima16.u r10, r1, r2.high, r3.high, s8, s8", 0x82ff0381, 0x7f05fe02, 0x100020, 0, 0, 0, 0, 0], ["ima16.u r10, r1, r2.low, r3.low, o8, o8", 0x82ff0381, 0x7f05fe02, 0x100020, 0, 0, 0, 0, 0], ["ima16.u r10, r1, r2.high, r3.low, s8, o8", 0x82ff0381, 0x7f05fe02, 0x100020, 0, 0, 0, 0, 0], ["ima16.u r10, r1, r2.low, r3, u8, u16", 0x82ff0381, 0x7f05fe02, 0x100020, 0, 0, 0, 0, 0], ["ima16.u r10, r1, r2, r3.high, u16, s8", 0x82ff0381, 0x7f05fe02, 0x100020, 0, 0, 0, 0, 0]]
+[probe.hypotheses]
+"per 16-bit lane, the byte .low/.high of that lane's half: u8 unsigned, s8 signed, o8 minus 128" = [[0x8f0b0722, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xfc8179fe, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x8f0b0722, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xfc81f8fe, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xf0b4622, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xfc11f89e, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x8f0b0722, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xffb0502, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf]]
+"both lanes the byte of the low half" = [[0x61e0722, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xf90279fe, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x61e0722, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xfa02f8fe, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x861e4622, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xf9a2f89e, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x60e0722, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xffb0502, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf]]
+
+[[probe]]
+name = "usse-integer-ima8"
+question = "ima8 d, a, b, c, x, y, z, xa, ya, za: per byte (byte 3 by the alpha selectors)"
+source = "dump.s"
+params = { A = 0, B = 0, C = 0, D = 0, E = 0, F = 0, G = 0, H = 0, OUT = "r10" }
+inputs = ["OP", "A", "B", "C", "D", "E", "F", "G", "H"]
+labels = ["ima8 r10, r1, r2, r3, s0, s1, s2, s0a, s1a, s2a (40302010 04030201 01020304)", "ima8 r10, r1, r2, r3, s0, s1, s2, s0a, s1a, s2a (80ff10f0 10200302 10101080)", "ima8.sat r10, r1, r2, r3, s0, s1, s2, s0a, s1a, s2a (40302010 04030201 01020304)", "ima8.sat r10, r1, r2, r3, s0, s1, s2, s0a, s1a, s2a (80ff10f0 10200302 10101080)", "ima8 r10, r1, r2, r3, s1, s1, s2, s1a, s1a, s2a (40302010 04030201 01020304)", "ima8 r10, r1, r2, r3, s1, s1, s2, s1a, s1a, s2a (80ff10f0 10200302 10101080)", "ima8 r10, r1, r2, r3, s0.comp, s1, s2, s0a.comp, s1a, s2a (40302010 04030201 01020304)", "ima8 r10, r1, r2, r3, s0.comp, s1, s2, s0a.comp, s1a, s2a (80ff10f0 10200302 10101080)"]
+cases = [["ima8 r10, r1, r2, r3, s0, s1, s2, s0a, s1a, s2a", 0x40302010, 0x4030201, 0x1020304, 0, 0, 0, 0, 0], ["ima8 r10, r1, r2, r3, s0, s1, s2, s0a, s1a, s2a", 0x80ff10f0, 0x10200302, 0x10101080, 0, 0, 0, 0, 0], ["ima8.sat r10, r1, r2, r3, s0, s1, s2, s0a, s1a, s2a", 0x40302010, 0x4030201, 0x1020304, 0, 0, 0, 0, 0], ["ima8.sat r10, r1, r2, r3, s0, s1, s2, s0a, s1a, s2a", 0x80ff10f0, 0x10200302, 0x10101080, 0, 0, 0, 0, 0], ["ima8 r10, r1, r2, r3, s1, s1, s2, s1a, s1a, s2a", 0x40302010, 0x4030201, 0x1020304, 0, 0, 0, 0, 0], ["ima8 r10, r1, r2, r3, s1, s1, s2, s1a, s1a, s2a", 0x80ff10f0, 0x10200302, 0x10101080, 0, 0, 0, 0, 0], ["ima8 r10, r1, r2, r3, s0.comp, s1, s2, s0a.comp, s1a, s2a", 0x40302010, 0x4030201, 0x1020304, 0, 0, 0, 0, 0], ["ima8 r10, r1, r2, r3, s0.comp, s1, s2, s0a.comp, s1a, s2a", 0x80ff10f0, 0x10200302, 0x10101080, 0, 0, 0, 0, 0]]
+[probe.hypotheses]
+"x + y x z per byte, wrapping (.sat: saturating)" = [[0x44362614, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x80ff40f0, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x44362614, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xffff40ff, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x8090805, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x10203302, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xc3d5e5f3, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x7f001f0f, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf]]
+"x + y x z / 255 per byte" = [[0x40302010, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x810110f1, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x40302010, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x810110f1, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x4030201, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x11220303, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xbfcfdfef, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x8002ef10, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf]]
+"x + y x z saturating even without .sat" = [[0x44362614, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xffff40ff, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x44362614, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xffff40ff, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x8090805, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xffff33ff, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xc3d5e5f3, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xffffffff, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf]]
+
+[[probe]]
+name = "usse-integer-imae-modes"
+question = "imae/ima32: .usat/.ssat, .rsN, the u16/z16 source-2 types, the carries"
+source = "dump.s"
+params = { A = 0, B = 0, C = 0, D = 0, E = 0, F = 0, G = 0, H = 0, OUT = "r10" }
+inputs = ["OP", "A", "B", "C", "D", "E", "F", "G", "H"]
+labels = ["imae.u r10, r1.low, r2.low, r3, u32", "imae.u r10, r1.high, r2.low, r3, u32", "imae.s r10, r1.high, r2.low, r3, u32", "imae.usat r10, r1.high, r2.high, r3, u32", "imae.ssat r10, r1.high, r2.high, r3, u32", "imae.u.rs4 r10, r1.low, r2.low, r3, u32", "imae.u r10, r1.low, r2.low, r3.low, u16", "imae.u r10, r1.low, r2.low, r3.high, z16", "imae.u r10, r1.high, r2.high, r3, u32, coe, i0; mov r11, i0", "mov i0, r4; imae.u r10, r1.low, r2.low, r3, u32, cie, i0", "mov i1, r4; imae.u r10, r1.low, r2.low, r3, u32, cie, i1", "ima32.u r10, r1, r2, r3", "mov i0, r4; ima32.u r10, r1, r2, r3, cie, i0", "mov i2, r4; ima32.u r10, r1, r2, r3, cie, i2"]
+cases = [["imae.u r10, r1.low, r2.low, r3, u32", 0xffff0003, 0xffff0005, 0xfffffff0, 1, 0, 0, 0, 0], ["imae.u r10, r1.high, r2.low, r3, u32", 0xffff0003, 0xffff0005, 0xfffffff0, 1, 0, 0, 0, 0], ["imae.s r10, r1.high, r2.low, r3, u32", 0xffff0003, 0xffff0005, 0xfffffff0, 1, 0, 0, 0, 0], ["imae.usat r10, r1.high, r2.high, r3, u32", 0xffff0003, 0xffff0005, 0xfffffff0, 1, 0, 0, 0, 0], ["imae.ssat r10, r1.high, r2.high, r3, u32", 0xffff0003, 0xffff0005, 0xfffffff0, 1, 0, 0, 0, 0], ["imae.u.rs4 r10, r1.low, r2.low, r3, u32", 0xffff0003, 0xffff0005, 0xfffffff0, 1, 0, 0, 0, 0], ["imae.u r10, r1.low, r2.low, r3.low, u16", 0xffff0003, 0xffff0005, 0xfffffff0, 1, 0, 0, 0, 0], ["imae.u r10, r1.low, r2.low, r3.high, z16", 0xffff0003, 0xffff0005, 0xfffffff0, 1, 0, 0, 0, 0], ["imae.u r10, r1.high, r2.high, r3, u32, coe, i0\nmov r11, i0", 0xffff0003, 0xffff0005, 0xfffffff0, 1, 0, 0, 0, 0], ["mov i0, r4\nimae.u r10, r1.low, r2.low, r3, u32, cie, i0", 0xffff0003, 0xffff0005, 0xfffffff0, 1, 0, 0, 0, 0], ["mov i1, r4\nimae.u r10, r1.low, r2.low, r3, u32, cie, i1", 0xffff0003, 0xffff0005, 0xfffffff0, 1, 0, 0, 0, 0], ["ima32.u r10, r1, r2, r3", 0xfffffff0, 0xffff0005, 0xffffffff, 1, 0, 0, 0, 0], ["mov i0, r4\nima32.u r10, r1, r2, r3, cie, i0", 0xfffffff0, 0xffff0005, 0xffffffff, 1, 0, 0, 0, 0], ["mov i2, r4\nima32.u r10, r1, r2, r3, cie, i2", 0xfffffff0, 0xffff0005, 0xffffffff, 1, 0, 0, 0, 0]]
+[probe.hypotheses]
+"saturating, the sum shifted right, u16 sign-extends and z16 zero-extends the half, coe writes the carry out to iN, cie adds iN" = [[0xffffffff, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x4ffeb, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xffffffeb, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xffffffff, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xfffffff1, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xfffffff, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xffffffff, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x1000e, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xfffdfff1, 1, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xfffaf, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xfffb0, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xfffb0, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf]]
+"no saturation or shift, no carries, u16 zero-extends" = [[0xffffffff, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x4ffeb, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x4ffeb, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xfffdfff1, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xfffffff1, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xffffffff, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xffff, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x1000e, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xfffdfff1, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xffffffff, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xffffffff, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xfffaf, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xfffaf, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xfffaf, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf]]
+
+[[probe]]
+name = "usse-integer-isub16-value"
+question = "isub16 r4 = r1 - #1: lanes, upper half, saturation"
+source = "value.s"
+params = { OP = "isub16.testtaz.chan0 r4, p0, r1, #1", OUT = "r4", B = 0, C = 0, D = 0x5a5a5a5a }
+inputs = ["A"]
+cases = [[0x10001], [0], [0x18000], [0x20000], [0x12340005], [1]]
+[probe.hypotheses]
+"low lane wraps, upper kept" = [0x10000, 0xffff, 0x17fff, 0x2ffff, 0x12340004, 0]
+"low lane wraps, upper zeroed" = [0, 0xffff, 0x7fff, 0xffff, 4, 0]
+"low lane wraps, sign-extended" = [0, 0xffffffff, 0x7fff, 0xffffffff, 4, 0]
+"32-bit subtract" = [0x10000, 0xffffffff, 0x17fff, 0x1ffff, 0x12340004, 0]
+"low lane saturates, upper zeroed" = [0, 0xffff, 0x8000, 0xffff, 4, 0]
+"low lane saturates, sign-extended" = [0, 0xffffffff, 0xffff8000, 0xffffffff, 4, 0]
+"both lanes minus 1, wrapping" = [0, 0xffffffff, 0x7fff, 0x1ffff, 0x12330004, 0xffff0000]
+
+[[probe]]
+name = "usse-integer-isub16-zero"
+question = "isub16.testtaz: is z taken from 16 or 32 bits"
+source = "pred.s"
+params = { OP = "isub16.testtaz.chan0 r4, p0, r1, #1", P = "p0", B = 0, C = 0 }
+inputs = ["A"]
+cases = [[0x10001], [0], [0x18000], [0x20000], [0x12340005], [1]]
+[probe.hypotheses]
+"low 16 bits are 0" = [1, 0, 0, 0, 0, 1]
+"32-bit difference is 0" = [0, 0, 0, 0, 0, 1]
+
+[[probe]]
+name = "usse-integer-isub16-sign-n"
+question = "isub16 sign test n: bit 15 or bit 31"
+source = "pred.s"
+params = { OP = "isub16.testnat.chan0 !c0, p0, r1, #0", P = "p0", B = 0, C = 0 }
+inputs = ["A"]
+cases = [[0x8000], [0x80000000], [0x7fff], [0xffff0000]]
+[probe.hypotheses]
+"bit 15" = [1, 0, 0, 0]
+"bit 31" = [0, 1, 0, 1]
+
+[[probe]]
+name = "usse-integer-isub16-sign-p"
+question = "isub16 sign test p: > 0 or >= 0, on 16 or 32 bits"
+source = "pred.s"
+params = { OP = "isub16.testpat.chan0 !c0, p0, r1, #0", P = "p0", B = 0, C = 0 }
+inputs = ["A"]
+cases = [[0], [1], [0x8000], [0x10000]]
+[probe.hypotheses]
+">= 0 on 16 bits" = [1, 1, 0, 1]
+"> 0 on 16 bits" = [0, 1, 0, 0]
+">= 0 on 32 bits" = [1, 1, 1, 1]
+"> 0 on 32 bits" = [0, 1, 1, 1]
+
+[[probe]]
+name = "usse-integer-isub16-reg"
+question = "isub16 between registers (the firmware's isub16.testpat r8, r1): r4 = r1 - r2"
+source = "value.s"
+params = { OP = "isub16.testtaz.chan0 r4, p0, r1, r2", OUT = "r4", C = 0, D = 0x5a5a5a5a }
+inputs = ["A", "B"]
+cases = [[0x50007, 0x10002], [1, 2], [0x30000, 0x10000]]
+[probe.hypotheses]
+"low lane wraps, upper zeroed" = [5, 0xffff, 0]
+"low lane wraps, upper of r1 kept" = [0x50005, 0xffff, 0x30000]
+"32-bit subtract" = [0x40005, 0xffffffff, 0x20000]
+"both lanes" = [0x40005, 0xffff, 0x20000]
+"low lane wraps, sign-extended" = [5, 0xffffffff, 0]
+
+[[probe]]
+name = "usse-integer-usub16-value"
+question = "usub16 r4 = r1 - #1: wraps or saturates"
+source = "value.s"
+params = { OP = "usub16.testtaz.chan0 r4, p0, r1, #1", OUT = "r4", B = 0, C = 0, D = 0x5a5a5a5a }
+inputs = ["A"]
+cases = [[0], [0x10000], [5]]
+[probe.hypotheses]
+"wraps, upper zeroed" = [0xffff, 0xffff, 4]
+"saturates at 0, upper zeroed" = [0, 0, 4]
+"wraps, upper kept" = [0xffff, 0x1ffff, 4]
+"saturates at 0, upper kept" = [0, 0x10000, 4]
+"32-bit subtract" = [0xffffffff, 0xffff, 4]
+"both lanes minus 1, wrapping" = [0xffffffff, 0xffff, 0xffff0004]
+
+[[probe]]
+name = "usse-integer-usub16-zero"
+question = "usub16.testtaz predicate when 0 - 1 (saturation gives z)"
+source = "pred.s"
+params = { OP = "usub16.testtaz.chan0 r4, p0, r1, #1", P = "p0", B = 0, C = 0 }
+inputs = ["A"]
+cases = [[0], [1], [5]]
+[probe.hypotheses]
+"saturates (0 - 1 = 0)" = [1, 1, 0]
+wraps = [0, 1, 0]
+
+[[probe]]
+name = "usse-integer-ima16"
+question = "ima16.s r4, r1, #3, r2.neg, u16, u16: which halves, what .neg and u16 do"
+source = "value.s"
+params = { OP = "ima16.s r4, r1, #3, r2.neg, u16, u16", OUT = "r4", C = 0, D = 0x5a5a5a5a }
+inputs = ["A", "B"]
+cases = [[0x20005, 0x10007], [0x30004, 1], [0xffff, 0], [2, 16]]
+[probe.hypotheses]
+"low halves, a * b - c, 16 bits zero-extended" = [8, 11, 0xfffd, 0xfff6]
+"low halves, a * b - c, 32 bits" = [8, 11, 0xfffffffd, 0xfffffff6]
+"low halves, a * b + c, 16 bits" = [22, 13, 0xfffd, 22]
+"32-bit a * b - c" = [0x50008, 0x9000b, 0x2fffd, 0xfffffff6]
+"low halves, a * b - c, 32 bits, a unsigned" = [8, 11, 0x2fffd, 0xfffffff6]
+"each 16-bit lane a * b - c, wrapping" = [0x50008, 0x9000b, 0xfffd, 0xfff6]
+
+[[probe]]
+name = "usse-integer-ima16-plain"
+question = "ima16.s r4, r1, #3, r2, u16, u16 (no .neg)"
+source = "value.s"
+params = { OP = "ima16.s r4, r1, #3, r2, u16, u16", OUT = "r4", C = 0, D = 0x5a5a5a5a }
+inputs = ["A", "B"]
+cases = [[0x20005, 0x10007], [0xffff, 0], [0x8000, 0x8000]]
+[probe.hypotheses]
+"low halves, a * b + c, 32-bit signed" = [22, 0xfffffffd, 0xfffe8000]
+"low halves, a * b + c, 16 bits" = [22, 0xfffd, 0x8000]
+"32-bit a * b + c" = [0x70016, 0x2fffd, 0x20000]
+"each 16-bit lane a * b + c, wrapping" = [0x70016, 0xfffd, 0]
+
+[[probe]]
+name = "usse-integer-shl-reg"
+question = "shl by a register amount of 32 and over"
+source = "value.s"
+params = { OP = "shl r4, r1, r2", OUT = "r4", A = 0x80000001, C = 0, D = 0 }
+inputs = ["B"]
+cases = [[1], [31], [32], [33], [64], [0xffffffff], [0x100]]
+[probe.hypotheses]
+"amount mod 32" = [2, 0x80000000, 0x80000001, 2, 0x80000001, 0x80000000, 0x80000001]
+"amount mod 64, 32-63 give 0" = [2, 0x80000000, 0, 0, 0x80000001, 0, 0x80000001]
+"32 and over give 0" = [2, 0x80000000, 0, 0, 0, 0, 0]
+"low 8 bits, 32 and over give 0" = [2, 0x80000000, 0, 0, 0, 0, 0x80000001]
+
+[[probe]]
+name = "usse-integer-shr-reg"
+question = "shr by a register amount of 32 and over"
+source = "value.s"
+params = { OP = "shr r4, r1, r2", OUT = "r4", A = 0x80000001, C = 0, D = 0 }
+inputs = ["B"]
+cases = [[1], [31], [32], [33], [64], [0xffffffff], [0x100]]
+[probe.hypotheses]
+"amount mod 32" = [0x40000000, 1, 0x80000001, 0x40000000, 0x80000001, 1, 0x80000001]
+"amount mod 64, 32-63 give 0" = [0x40000000, 1, 0, 0, 0x80000001, 0, 0x80000001]
+"32 and over give 0" = [0x40000000, 1, 0, 0, 0, 0, 0]
+"low 8 bits, 32 and over give 0" = [0x40000000, 1, 0, 0, 0, 0, 0x80000001]
+
+[[probe]]
+name = "usse-integer-asr-reg"
+question = "asr by a register amount of 32 and over"
+source = "value.s"
+params = { OP = "asr r4, r1, r2", OUT = "r4", A = 0x80000001, C = 0, D = 0 }
+inputs = ["B"]
+cases = [[1], [31], [32], [33], [64], [0xffffffff], [0x100]]
+[probe.hypotheses]
+"amount mod 32" = [0xc0000000, 0xffffffff, 0x80000001, 0xc0000000, 0x80000001, 0xffffffff, 0x80000001]
+"amount mod 64, 32-63 fill the sign" = [0xc0000000, 0xffffffff, 0xffffffff, 0xffffffff, 0x80000001, 0xffffffff, 0x80000001]
+"32 and over fill the sign" = [0xc0000000, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff]
+"low 8 bits, 32 and over fill the sign" = [0xc0000000, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0x80000001]
+
+[[probe]]
+name = "usse-integer-rol-reg"
+question = "rol by a register amount of 32 and over"
+source = "value.s"
+params = { OP = "rol r4, r1, r2", OUT = "r4", A = 0x80000001, C = 0, D = 0 }
+inputs = ["B"]
+cases = [[1], [31], [32], [33], [64], [0xffffffff], [0x100]]
+[probe.hypotheses]
+"amount mod 32" = [3, 0xc0000000, 0x80000001, 3, 0x80000001, 0xc0000000, 0x80000001]
+
+[[probe]]
+name = "usse-integer-shl-test-reg"
+question = "shl.testnat by a register amount of 32 and over (the test group)"
+source = "value.s"
+params = { OP = "shl.testnat.chan0 r4, p0, r1, r2", OUT = "r4", A = 0x80000001, C = 0, D = 0 }
+inputs = ["B"]
+cases = [[1], [31], [32], [33]]
+[probe.hypotheses]
+"amount mod 32" = [2, 0x80000000, 0x80000001, 2]
+"32 and over give 0" = [2, 0x80000000, 0, 0]
+
+[[probe]]
+name = "usse-integer-iadd32-value"
+question = "iadd32 r4 = r1 + r2: a 32-bit sum or 16-bit lanes"
+source = "value.s"
+params = { OP = "iadd32.testtaz.chan0 r4, p0, r1, r2", OUT = "r4", C = 0, D = 0 }
+inputs = ["A", "B"]
+cases = [[0xffff, 1], [0x12345678, 0x11111111], [0xffffffff, 2], [0x7fffffff, 1]]
+[probe.hypotheses]
+"32-bit sum" = [0x10000, 0x23456789, 1, 0x80000000]
+"16-bit lanes" = [0, 0x23456789, 0xffff0001, 0x7fff0000]
+"sext16(r1) + r2" = [0, 0x11116789, 1, 0]
+
+[[probe]]
+name = "usse-integer-iaddu32-value"
+question = "iaddu32 r4 = r1 + r2: a 32-bit sum or 16-bit lanes"
+source = "value.s"
+params = { OP = "iaddu32.testtaz.chan0 r4, p0, r1, r2", OUT = "r4", C = 0, D = 0 }
+inputs = ["A", "B"]
+cases = [[0xffff, 1], [0x12345678, 0x11111111], [0xffffffff, 2], [0x7fffffff, 1]]
+[probe.hypotheses]
+"32-bit sum" = [0x10000, 0x23456789, 1, 0x80000000]
+"16-bit lanes" = [0, 0x23456789, 0xffff0001, 0x7fff0000]
+"32-bit sum, saturating" = [0x10000, 0x23456789, 0xffffffff, 0x80000000]
+"zext16(r1) + r2" = [0x10000, 0x11116789, 0x10001, 0x10000]
+
+[[probe]]
+name = "usse-integer-iaddu32-imm"
+question = "iaddu32 r4 = #1 + r1 (the firmware's increment)"
+source = "value.s"
+params = { OP = "iaddu32.testtaz.chan0 r4, p0, #1, r1", OUT = "r4", B = 0, C = 0, D = 0 }
+inputs = ["A"]
+cases = [[0xffff], [0xffffffff], [0x7fffffff], [5]]
+[probe.hypotheses]
+"32-bit sum" = [0x10000, 0, 0x80000000, 6]
+"32-bit sum, saturating" = [0x10000, 0xffffffff, 0x80000000, 6]
+
+[[probe]]
+name = "usse-integer-iadd32-z"
+question = "iadd32 zero test: 32-bit result or low 16 bits"
+source = "pred.s"
+params = { OP = "iadd32.testtaz.chan0 !c0, p0, r1, r2", P = "p0", C = 0 }
+inputs = ["A", "B"]
+cases = [[0x10000, 0], [0x8000, 0x8000], [0, 0], [0x10001, 0xffffffff], [1, 0]]
+[probe.hypotheses]
+"r1 + r2 is 0" = [0, 0, 1, 0, 0]
+"sext16(r1) + r2 is 0" = [1, 1, 1, 1, 0]
+
+[[probe]]
+name = "usse-integer-iadd32-n"
+question = "iadd32 sign test n: bit 31, bit 15 or the exact sign"
+source = "pred.s"
+params = { OP = "iadd32.testnat.chan0 !c0, p0, r1, r2", P = "p0", C = 0 }
+inputs = ["A", "B"]
+cases = [[0x8000, 0], [0x80000000, 0], [0x7fffffff, 1], [0x7fff, 1]]
+[probe.hypotheses]
+"bit 31" = [0, 1, 1, 0]
+"bit 15" = [1, 0, 0, 1]
+"exact sign" = [0, 1, 0, 0]
+"bit 31 of sext16(r1) + r2" = [1, 0, 0, 0]
+
+[[probe]]
+name = "usse-integer-iadd32-p"
+question = "iadd32 sign test p (>= 0): on bit 31 or bit 15"
+source = "pred.s"
+params = { OP = "iadd32.testpat.chan0 !c0, p0, r1, r2", P = "p0", C = 0 }
+inputs = ["A", "B"]
+cases = [[0x8000, 0], [0x80000000, 0], [0, 0]]
+[probe.hypotheses]
+">= 0 on bit 31 of r1 + r2" = [1, 0, 1]
+">= 0 on bit 31 of sext16(r1) + r2" = [0, 1, 1]
+
+[[probe]]
+name = "usse-integer-iaddu32-tests"
+question = "iaddu32 tests: z, n and p on 16 or 32 bits"
+source = "pred.s"
+params = { P = "p0", C = 0 }
+inputs = ["OP", "A", "B"]
+cases = [["iaddu32.testtaz.chan0 !c0, p0, r1, r2", 0x10000, 0], ["iaddu32.testtaz.chan0 !c0, p0, r1, r2", 0xffffffff, 1], ["iaddu32.testnat.chan0 !c0, p0, r1, r2", 0x8000, 0], ["iaddu32.testnat.chan0 !c0, p0, r1, r2", 0x80000000, 0], ["iaddu32.testpat.chan0 !c0, p0, r1, r2", 0x80000000, 0], ["iaddu32.testpat.chan0 !c0, p0, r1, r2", 0, 0]]
+labels = ["z 0x10000", "z 0xffffffff + 1", "n 0x8000", "n 0x80000000", "p 0x80000000", "p 0"]
+
+[[probe]]
+name = "usse-integer-ima16-imm-c"
+question = "ima16.s r4, r1, #1, #2.neg (the firmware's form): is the immediate c in both lanes"
+source = "value.s"
+params = { OP = "ima16.s r4, r1, #1, #2.neg, u16, u16", OUT = "r4", B = 0, C = 0, D = 0 }
+inputs = ["A"]
+cases = [[0x50007], [1]]
+[probe.hypotheses]
+"both lanes" = [0x30005, 0xfffeffff]
+"low lane only" = [0x50005, 0xffff]
+
+[[probe]]
+name = "usse-integer-ima16-reg-b"
+question = "ima16.s r4, r1, r2, r3: lanes of a register b and c"
+source = "value.s"
+params = { OP = "ima16.s r4, r1, r2, r3, u16, u16", OUT = "r4", D = 0 }
+inputs = ["A", "B", "C"]
+cases = [[0x20005, 0x30004, 0x10001], [0x10001, 0x20003, 0x50007]]
+[probe.hypotheses]
+"lane by lane" = [0x70015, 0x7000a]
+"b and c low lane in both" = [0x90015, 0x4000a]
+
+[[probe]]
+name = "usse-integer-iaddu32-np"
+question = "iaddu32 sign tests n and p when the 32-bit sum has bit 31 set"
+source = "pred.s"
+params = { P = "p0", C = 0 }
+inputs = ["OP", "A", "B"]
+labels = ["n, 0 + 0x80000000", "p, 0 + 0x80000000", "n, 0xffff + 0xffff0000"]
+cases = [["iaddu32.testnat.chan0 !c0, p0, r1, r2", 0, 0x80000000], ["iaddu32.testpat.chan0 !c0, p0, r1, r2", 0, 0x80000000], ["iaddu32.testnat.chan0 !c0, p0, r1, r2", 0xffff, 0xffff0000]]
+[probe.hypotheses]
+"bit 31 of the sum" = [1, 0, 1]
+"unsigned: n never, p always" = [0, 1, 0]
+
+[[probe]]
+name = "usse-integer-iadd32-src1-imm"
+question = "iadd32 r4 = #imm + r1 with a 16-bit immediate src1 (sign-extended?)"
+source = "value.s"
+params = { OP = "iadd32.testtaz.chan0 r4, p0, #1, r1", OUT = "r4", B = 0, C = 0, D = 0 }
+inputs = ["A"]
+cases = [[0xffffffff], [0x10000]]
+[probe.hypotheses]
+"1 + r1" = [0, 0x10001]

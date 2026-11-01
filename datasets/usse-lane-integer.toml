@@ -1,0 +1,10 @@
+title = "probe table usse/lane-integer"
+repo = "data"
+paths = ["usse/lane-integer/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 14
+size = 24852
+sha256 = "38c599e0f7f925c20e680f0ee9141e28631571c2a7c0bc468aac9456424b2718"
+recipe = "probes/usse/lane-integer.toml"
+needs = ["render"]

@@ -1,0 +1,10 @@
+title = "follow-up run of the probe table pbe/pack-modes"
+repo = "data"
+paths = ["followup/pbe/pack-modes/"]
+method = "campaign runner on the laptop target (tools/campaign), the follow-up round"
+date = "2026-11-01"
+files = 293
+size = 3896779
+sha256 = "cedc8d0247c6396ceb90feb54d0aa8ba8ae1be54e508489de0d0fafd8a3ee546"
+recipe = "probes/pbe/pack-modes.toml"
+needs = ["render"]

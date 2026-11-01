@@ -1,0 +1,15 @@
+[[term]]
+id = "G0143"
+name = "CR_ISP_ZLSCTL"
+status = "named"
+
+[[term.source]]
+term = "ROGUE_CR_ISP_ZLSCTL"
+kind = "register"
+sgx545 = "0x0480"
+meaning = "depth/stencil load-store (ZLS) control (Rogue analogue)"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0175"
+licence = "MIT"
+evidence = "[HW] E057: bit 0 set lets the render complete with no pixel written; no other bit changes the triangle; [HW] E058: 0x17100c stores depth and stencil, 0x11700a loads depth and stores nothing"

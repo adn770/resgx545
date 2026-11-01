@@ -1,0 +1,10 @@
+title = "probe table usse/cache-control"
+repo = "data"
+paths = ["usse/cache-control/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 151
+size = 2057468
+sha256 = "fe8c3bb91068d31951ba64331d928a5e16e3275355a43db8de56fb07b7bfd555"
+recipe = "probes/usse/cache-control.toml"
+needs = ["render"]

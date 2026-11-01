@@ -1,0 +1,15 @@
+[[term]]
+id = "G0167"
+name = "CR_TPU_YUV_CSC0_2"
+status = "named"
+
+[[term.source]]
+term = "CR_TPU_YUV_CSC0_2"
+kind = "register"
+sgx545 = "0x0828"
+meaning = "Word 2 of colour-space set 0, the YUV-to-RGB coefficients a UYVY copy applies: U to G in bits 9:0 and U to B in bits 25:16, signed in 128ths; the limited-range BT.601 numbers are loaded as 0x010203ce (-50 and 258)"
+tier = "ours"
+source = "resgx545"
+citation = "E037"
+licence = "MIT"
+evidence = "[HW] E037: a UYVY copy with set 0 loaded as 0x00950095, 0x00000095, 0x010203ce, 0x039800cc and 0 matched sat_u8((149 (Y - 16) + 204 (V - 128)) >> 7) and its G and B counterparts at all 2048 pixels in both runs; word 2 supplies U to G in bits 9:0 and U to B in bits 25:16; set loaded as zeros or not loaded gave opaque black (0xff000000) at all 2048 pixels; [infer] the reading is ours, from these runs"

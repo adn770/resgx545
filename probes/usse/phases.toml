@@ -1,0 +1,861 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse phases: 0 sweeps, 63 probes.
+needs = ["render"]
+
+[[probe]]
+name = "usse-phases-filladdr"
+question = "the fill shader's own absolute instruction index, from pclink after a call"
+source = "value.s"
+params = { A = 0, B = 0, C = 0, D = 0 }
+inputs = ["OP", "OUT"]
+labels = ["br.savelink #1, then mov r20, pclink", "the same again"]
+cases = [["br.savelink #0x00000001\nmov r20, pclink", "r20"], ["br.savelink #0x00000001\nmov r20, pclink", "r20"]]
+
+[[probe]]
+name = "usse-phases-fillbar-parallel"
+question = "a two-phase fill, first phas none, parallel: do quads that skip phase 0's spin read their block's marker"
+source = "fill_phas_bar.s"
+params = { MODE = "parallel" }
+pixels = true
+temps = 8
+inputs = ["X"]
+labels = ["run 1", "run 2"]
+cases = [["0"], ["1"]]
+
+[[probe]]
+name = "usse-phases-fillbar-perinstance"
+question = "a two-phase fill, first phas none, perinstance: do quads that skip phase 0's spin read their block's marker"
+source = "fill_phas_bar.s"
+params = { MODE = "perinstance" }
+pixels = true
+temps = 8
+inputs = ["X"]
+labels = ["run 1", "run 2"]
+cases = [["0"], ["1"]]
+
+[[probe]]
+name = "usse-phases-fillbar-onephase"
+question = "control: the same code in one phase: do the quads that skip the spin read their block's marker"
+source = "fill_one_phase.s"
+params = {  }
+pixels = true
+temps = 8
+inputs = ["X"]
+labels = ["run 1", "run 2"]
+cases = [["0"], ["1"]]
+
+[[probe]]
+name = "usse-phases-phas-pix-none-parallel-count"
+question = "two-phase pixel shader, first phas none, parallel: the pixel is phase 1's r2"
+source = "pix_phas2.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 8
+params = { OUT = "r2" }
+inputs = ["OP"]
+labels = ["none, parallel, o0 = r2"]
+cases = [["none, parallel"]]
+
+[[probe]]
+name = "usse-phases-phas-pix-none-parallel-temp"
+question = "two-phase pixel shader, first phas none, parallel: the pixel is phase 1's r6"
+source = "pix_phas2.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 8
+params = { OUT = "r6" }
+inputs = ["OP"]
+labels = ["none, parallel, o0 = r6"]
+cases = [["none, parallel"]]
+
+[[probe]]
+name = "usse-phases-phas-pix-none-perinstance-count"
+question = "two-phase pixel shader, first phas none, perinstance: the pixel is phase 1's r2"
+source = "pix_phas2.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 8
+params = { OUT = "r2" }
+inputs = ["OP"]
+labels = ["none, perinstance, o0 = r2"]
+cases = [["none, perinstance"]]
+
+[[probe]]
+name = "usse-phases-phas-pix-none-perinstance-temp"
+question = "two-phase pixel shader, first phas none, perinstance: the pixel is phase 1's r6"
+source = "pix_phas2.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 8
+params = { OUT = "r6" }
+inputs = ["OP"]
+labels = ["none, perinstance, o0 = r6"]
+cases = [["none, perinstance"]]
+
+[[probe]]
+name = "usse-phases-phas-pix-pt-parallel-count"
+question = "two-phase pixel shader, first phas pt, parallel: the pixel is phase 1's r2"
+source = "pix_phas2.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 8
+params = { OUT = "r2" }
+inputs = ["OP"]
+labels = ["pt, parallel, o0 = r2"]
+cases = [["pt, parallel"]]
+
+[[probe]]
+name = "usse-phases-phas-pix-pt-parallel-temp"
+question = "two-phase pixel shader, first phas pt, parallel: the pixel is phase 1's r6"
+source = "pix_phas2.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 8
+params = { OUT = "r6" }
+inputs = ["OP"]
+labels = ["pt, parallel, o0 = r6"]
+cases = [["pt, parallel"]]
+
+[[probe]]
+name = "usse-phases-phas-pix-pt-perinstance-count"
+question = "two-phase pixel shader, first phas pt, perinstance: the pixel is phase 1's r2"
+source = "pix_phas2.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 8
+params = { OUT = "r2" }
+inputs = ["OP"]
+labels = ["pt, perinstance, o0 = r2"]
+cases = [["pt, perinstance"]]
+
+[[probe]]
+name = "usse-phases-phas-pix-pt-perinstance-temp"
+question = "two-phase pixel shader, first phas pt, perinstance: the pixel is phase 1's r6"
+source = "pix_phas2.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 8
+params = { OUT = "r6" }
+inputs = ["OP"]
+labels = ["pt, perinstance, o0 = r6"]
+cases = [["pt, perinstance"]]
+
+[[probe]]
+name = "usse-phases-phas-pix-vcull-parallel-count"
+question = "two-phase pixel shader, first phas vcull, parallel: the pixel is phase 1's r2"
+source = "pix_phas2.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 8
+params = { OUT = "r2" }
+inputs = ["OP"]
+labels = ["vcull, parallel, o0 = r2"]
+cases = [["vcull, parallel"]]
+
+[[probe]]
+name = "usse-phases-phas-pix-vcull-parallel-temp"
+question = "two-phase pixel shader, first phas vcull, parallel: the pixel is phase 1's r6"
+source = "pix_phas2.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 8
+params = { OUT = "r6" }
+inputs = ["OP"]
+labels = ["vcull, parallel, o0 = r6"]
+cases = [["vcull, parallel"]]
+
+[[probe]]
+name = "usse-phases-phas-pix-vcull-perinstance-count"
+question = "two-phase pixel shader, first phas vcull, perinstance: the pixel is phase 1's r2"
+source = "pix_phas2.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 8
+params = { OUT = "r2" }
+inputs = ["OP"]
+labels = ["vcull, perinstance, o0 = r2"]
+cases = [["vcull, perinstance"]]
+
+[[probe]]
+name = "usse-phases-phas-pix-vcull-perinstance-temp"
+question = "two-phase pixel shader, first phas vcull, perinstance: the pixel is phase 1's r6"
+source = "pix_phas2.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 8
+params = { OUT = "r6" }
+inputs = ["OP"]
+labels = ["vcull, perinstance, o0 = r6"]
+cases = [["vcull, perinstance"]]
+
+[[probe]]
+name = "usse-phases-phas-bar-parallel"
+question = "the pixel shader's first phas none, parallel: does phase 1 read the lock-counted total only after its whole task's phase 0"
+source = "pix_phas_bar.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 8
+params = {  }
+inputs = ["OP"]
+labels = ["none, parallel"]
+cases = [["none, parallel"]]
+
+[[probe]]
+name = "usse-phases-phas-bar-perinstance"
+question = "the pixel shader's first phas none, perinstance: does phase 1 read the lock-counted total only after its whole task's phase 0"
+source = "pix_phas_bar.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 8
+params = {  }
+inputs = ["OP"]
+labels = ["none, perinstance"]
+cases = [["none, perinstance"]]
+
+[[probe]]
+name = "usse-phases-phas-bar2-parallel"
+question = "the pixel shader's first phas none, parallel: do the quads that skip phase 0's spin read the marker the spinning quads store"
+source = "pix_phas_bar2.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 8
+params = {  }
+inputs = ["OP"]
+labels = ["none, parallel"]
+cases = [["none, parallel"]]
+
+[[probe]]
+name = "usse-phases-phas-bar2-perinstance"
+question = "the pixel shader's first phas none, perinstance: do the quads that skip phase 0's spin read the marker the spinning quads store"
+source = "pix_phas_bar2.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 8
+params = {  }
+inputs = ["OP"]
+labels = ["none, perinstance"]
+cases = [["none, perinstance"]]
+
+[[probe]]
+name = "usse-phases-phas-vtx-vcull-parallel"
+question = "the vertex shader's first phas vcull, parallel: is the triangle drawn"
+source = "vtx_wait.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+params = {  }
+inputs = ["OP"]
+labels = ["vcull, parallel"]
+cases = [["vcull, parallel"]]
+
+[[probe]]
+name = "usse-phases-phas-vtx-none-parallel"
+question = "the vertex shader's first phas none, parallel: is the triangle drawn"
+source = "vtx_wait.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+params = {  }
+inputs = ["OP"]
+labels = ["none, parallel"]
+cases = [["none, parallel"]]
+
+[[probe]]
+name = "usse-phases-phas-vtx-vcull-perinstance"
+question = "the vertex shader's first phas vcull, perinstance: is the triangle drawn"
+source = "vtx_wait.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+params = {  }
+inputs = ["OP"]
+labels = ["vcull, perinstance"]
+cases = [["vcull, perinstance"]]
+
+[[probe]]
+name = "usse-phases-phas-vtx-none-perinstance"
+question = "the vertex shader's first phas none, perinstance: is the triangle drawn"
+source = "vtx_wait.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+params = {  }
+inputs = ["OP"]
+labels = ["none, perinstance"]
+cases = [["none, perinstance"]]
+
+[[probe]]
+name = "usse-phases-phas-vtx-pt-parallel"
+question = "the vertex shader's first phas pt, parallel: is the triangle drawn"
+source = "vtx_wait.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+params = {  }
+inputs = ["OP"]
+labels = ["pt, parallel"]
+cases = [["pt, parallel"]]
+
+[[probe]]
+name = "usse-phases-phasbr-tri-parallel"
+question = "phase 1 of the triangle's pixel shader under none, parallel: does a quad split by x parity branch per instance (4 and 7) or as its top-left instance (all 4)"
+source = "pix_phas_br.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 8
+params = {  }
+inputs = ["OP", "TEST"]
+labels = ["none, parallel"]
+cases = [["none, parallel", "testtaz"]]
+
+[[probe]]
+name = "usse-phases-phasbr-tri-parallel-odd"
+question = "phase 1 under none, parallel, p0 on odd x: which instance's predicate a quad follows when its top-left one is uncovered"
+source = "pix_phas_br.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 8
+params = {  }
+inputs = ["OP", "TEST"]
+labels = ["none, parallel, odd x"]
+cases = [["none, parallel", "testtanz"]]
+
+[[probe]]
+name = "usse-phases-phasbr-fill-parallel"
+question = "a fill whose phas is end, parallel: does a quad split by x parity branch per instance (4 and 7) or as its top-left instance (all 4)"
+source = "coords_mode.s"
+coords = true
+pixels = true
+params = { MODE = "parallel" }
+inputs = ["PRE", "OP", "OUT"]
+labels = ["end, parallel"]
+cases = [["mov.skipinv r10, #0\nmov.skipinv r9, #1\nand.skipinv.testtaz.chan0 !c0, p0, g25, r9", "p0 br #3\nor r10, r10, #1\nor r10, r10, #2\nor r10, r10, #4", "r10"]]
+
+[[probe]]
+name = "usse-phases-phasbr-tri-perinstance"
+question = "phase 1 of the triangle's pixel shader under none, perinstance: does a quad split by x parity branch per instance (4 and 7) or as its top-left instance (all 4)"
+source = "pix_phas_br.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 8
+params = {  }
+inputs = ["OP", "TEST"]
+labels = ["none, perinstance"]
+cases = [["none, perinstance", "testtaz"]]
+
+[[probe]]
+name = "usse-phases-phasbr-tri-perinstance-odd"
+question = "phase 1 under none, perinstance, p0 on odd x: which instance's predicate a quad follows when its top-left one is uncovered"
+source = "pix_phas_br.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 8
+params = {  }
+inputs = ["OP", "TEST"]
+labels = ["none, perinstance, odd x"]
+cases = [["none, perinstance", "testtanz"]]
+
+[[probe]]
+name = "usse-phases-phasbr-fill-perinstance"
+question = "a fill whose phas is end, perinstance: does a quad split by x parity branch per instance (4 and 7) or as its top-left instance (all 4)"
+source = "coords_mode.s"
+coords = true
+pixels = true
+params = { MODE = "perinstance" }
+inputs = ["PRE", "OP", "OUT"]
+labels = ["end, perinstance"]
+cases = [["mov.skipinv r10, #0\nmov.skipinv r9, #1\nand.skipinv.testtaz.chan0 !c0, p0, g25, r9", "p0 br #3\nor r10, r10, #1\nor r10, r10, #2\nor r10, r10, #4", "r10"]]
+
+[[probe]]
+name = "usse-phases-phasbr-out-parallel-mov-skipinv"
+question = "phase 1 under none, parallel writes o0 with mov.skipinv only: which pixels it reaches"
+source = "pix_phas_out.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 8
+params = {  }
+inputs = ["OP", "W"]
+labels = ["none, parallel, mov.skipinv"]
+cases = [["none, parallel", "mov.skipinv"]]
+
+[[probe]]
+name = "usse-phases-phasbr-out-parallel-mov"
+question = "phase 1 under none, parallel writes o0 with mov only: which pixels it reaches"
+source = "pix_phas_out.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 8
+params = {  }
+inputs = ["OP", "W"]
+labels = ["none, parallel, mov"]
+cases = [["none, parallel", "mov"]]
+
+[[probe]]
+name = "usse-phases-phasbr-out-perinstance-mov-skipinv"
+question = "phase 1 under none, perinstance writes o0 with mov.skipinv only: which pixels it reaches"
+source = "pix_phas_out.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 8
+params = {  }
+inputs = ["OP", "W"]
+labels = ["none, perinstance, mov.skipinv"]
+cases = [["none, perinstance", "mov.skipinv"]]
+
+[[probe]]
+name = "usse-phases-phasbr-out-perinstance-mov"
+question = "phase 1 under none, perinstance writes o0 with mov only: which pixels it reaches"
+source = "pix_phas_out.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 8
+params = {  }
+inputs = ["OP", "W"]
+labels = ["none, perinstance, mov"]
+cases = [["none, perinstance", "mov"]]
+
+[[probe]]
+name = "usse-phases-phasbr-task-parallel"
+question = "phase 1 under none, parallel reads its task's lock counter: does every pixel of a task read the final count"
+source = "pix_phas_task.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 8
+params = {  }
+inputs = ["OP"]
+labels = ["none, parallel"]
+cases = [["none, parallel"]]
+
+[[probe]]
+name = "usse-phases-phasbr-task22-parallel"
+question = "as the task-parallel phase-branch probe, the counter chosen by g22"
+source = "pix_phas_task22.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 8
+params = {  }
+inputs = ["OP"]
+labels = ["none, parallel"]
+cases = [["none, parallel"]]
+
+[[probe]]
+name = "usse-phases-phasbr-task-perinstance"
+question = "phase 1 under none, perinstance reads its task's lock counter: does every pixel of a task read the final count"
+source = "pix_phas_task.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 8
+params = {  }
+inputs = ["OP"]
+labels = ["none, perinstance"]
+cases = [["none, perinstance"]]
+
+[[probe]]
+name = "usse-phases-phasbr-task22-perinstance"
+question = "as the per-instance phase-branch probe, the counter chosen by g22"
+source = "pix_phas_task22.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 8
+params = {  }
+inputs = ["OP"]
+labels = ["none, perinstance"]
+cases = [["none, perinstance"]]
+
+[[probe]]
+name = "usse-phases-phasreg-0"
+question = "no phas at phase 1's start (control): does phase 2 run"
+source = "pix_phas_reg.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 12
+params = { CTRL = "0x00000002" }
+inputs = ["PHAS", "CALL", "LINK", "T1"]
+labels = ["no phas at phase 1's start (control)"]
+cases = [["nop", "br.savelink #0x00000001", "mov r5, pclink", "phas.end #0, #0, pixel, end, parallel"]]
+
+[[probe]]
+name = "usse-phases-phasreg-1"
+question = "phas r5, r7 (absolute index, fields): does phase 2 run"
+source = "pix_phas_reg.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 12
+params = { CTRL = "0x00000002" }
+inputs = ["PHAS", "CALL", "LINK", "T1"]
+labels = ["phas r5, r7 (absolute index, fields)"]
+cases = [["phas r5, r7", "br.savelink #0x00000001", "mov r5, pclink", "nop.end"]]
+
+[[probe]]
+name = "usse-phases-phasreg-2"
+question = "phas r7, r5 (fields, absolute index): does phase 2 run"
+source = "pix_phas_reg.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 12
+params = { CTRL = "0x00000002" }
+inputs = ["PHAS", "CALL", "LINK", "T1"]
+labels = ["phas r7, r5 (fields, absolute index)"]
+cases = [["phas r7, r5", "br.savelink #0x00000001", "mov r5, pclink", "nop.end"]]
+
+[[probe]]
+name = "usse-phases-phasreg-3"
+question = "phas r8, r7 (offset, fields): does phase 2 run"
+source = "pix_phas_reg.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 12
+params = { CTRL = "0x00000002" }
+inputs = ["PHAS", "CALL", "LINK", "T1"]
+labels = ["phas r8, r7 (offset, fields)"]
+cases = [["phas r8, r7", "br.savelink #0x00000001", "mov r5, pclink", "nop.end"]]
+
+[[probe]]
+name = "usse-phases-phasreg2-0"
+question = "phas r5, r9 (index, whole high dword): does phase 2 run"
+source = "pix_phas_reg.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 16
+params = { CTRL = "0x00000002" }
+inputs = ["PHAS", "CALL", "LINK", "T1"]
+labels = ["phas r5, r9 (index, whole high dword)"]
+cases = [["phas r5, r9", "br.savelink #0x00000001", "mov r5, pclink\nmov.skipinv r9, #0xFA440002\nmov.skipinv r10, #0\nmov.skipinv r12, #4\nshl r11, r5, r12\nmov.skipinv r12, #0x02000000\nor r11, r11, r12", "nop.end"]]
+
+[[probe]]
+name = "usse-phases-phasreg2-1"
+question = "phas r9, r5 (whole high dword, index): does phase 2 run"
+source = "pix_phas_reg.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 16
+params = { CTRL = "0x00000002" }
+inputs = ["PHAS", "CALL", "LINK", "T1"]
+labels = ["phas r9, r5 (whole high dword, index)"]
+cases = [["phas r9, r5", "br.savelink #0x00000001", "mov r5, pclink\nmov.skipinv r9, #0xFA440002\nmov.skipinv r10, #0\nmov.skipinv r12, #4\nshl r11, r5, r12\nmov.skipinv r12, #0x02000000\nor r11, r11, r12", "nop.end"]]
+
+[[probe]]
+name = "usse-phases-phasreg2-2"
+question = "phas r11, r10 (U0 layout, 0): does phase 2 run"
+source = "pix_phas_reg.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 16
+params = { CTRL = "0x00000002" }
+inputs = ["PHAS", "CALL", "LINK", "T1"]
+labels = ["phas r11, r10 (U0 layout, 0)"]
+cases = [["phas r11, r10", "br.savelink #0x00000001", "mov r5, pclink\nmov.skipinv r9, #0xFA440002\nmov.skipinv r10, #0\nmov.skipinv r12, #4\nshl r11, r5, r12\nmov.skipinv r12, #0x02000000\nor r11, r11, r12", "nop.end"]]
+
+[[probe]]
+name = "usse-phases-phasreg2-3"
+question = "phas r10, r11 (0, U0 layout): does phase 2 run"
+source = "pix_phas_reg.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 16
+params = { CTRL = "0x00000002" }
+inputs = ["PHAS", "CALL", "LINK", "T1"]
+labels = ["phas r10, r11 (0, U0 layout)"]
+cases = [["phas r10, r11", "br.savelink #0x00000001", "mov r5, pclink\nmov.skipinv r9, #0xFA440002\nmov.skipinv r10, #0\nmov.skipinv r12, #4\nshl r11, r5, r12\nmov.skipinv r12, #0x02000000\nor r11, r11, r12", "nop.end"]]
+
+[[probe]]
+name = "usse-phases-phasreg2-4"
+question = "phas r11, r7 (U0 layout, fields): does phase 2 run"
+source = "pix_phas_reg.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 16
+params = { CTRL = "0x00000002" }
+inputs = ["PHAS", "CALL", "LINK", "T1"]
+labels = ["phas r11, r7 (U0 layout, fields)"]
+cases = [["phas r11, r7", "br.savelink #0x00000001", "mov r5, pclink\nmov.skipinv r9, #0xFA440002\nmov.skipinv r10, #0\nmov.skipinv r12, #4\nshl r11, r5, r12\nmov.skipinv r12, #0x02000000\nor r11, r11, r12", "nop.end"]]
+
+[[probe]]
+name = "usse-phases-phasreg-diag-neither"
+question = "no register phas, phase 0 with neither: does the task end in phase 1 (red)"
+source = "pix_phas_reg.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 12
+params = { CTRL = "0x00000002" }
+inputs = ["PHAS", "CALL", "LINK", "T1"]
+labels = ["neither"]
+cases = [["nop", "nop", "mov.skipinv r5, #0", "phas.end #0, #0, pixel, end, parallel"]]
+
+[[probe]]
+name = "usse-phases-phasreg-diag-call"
+question = "no register phas, phase 0 with call: does the task end in phase 1 (red)"
+source = "pix_phas_reg.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 12
+params = { CTRL = "0x00000002" }
+inputs = ["PHAS", "CALL", "LINK", "T1"]
+labels = ["call"]
+cases = [["nop", "br.savelink #0x00000001", "nop", "phas.end #0, #0, pixel, end, parallel"]]
+
+[[probe]]
+name = "usse-phases-phasreg-diag-link"
+question = "no register phas, phase 0 with link: does the task end in phase 1 (red)"
+source = "pix_phas_reg.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+temps = 12
+params = { CTRL = "0x00000002" }
+inputs = ["PHAS", "CALL", "LINK", "T1"]
+labels = ["link"]
+cases = [["nop", "nop", "mov r5, pclink", "phas.end #0, #0, pixel, end, parallel"]]
+
+[[probe]]
+name = "usse-phases-vcull-c0-vcull"
+question = "cull mode 0, the vertex shader's first phas waiting vcull: is the triangle drawn"
+source = "vtx_wait.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+blk = { 15 = 0x1555620 }
+params = {  }
+inputs = ["OP"]
+labels = ["cull 0, vcull"]
+cases = [["vcull, parallel"]]
+
+[[probe]]
+name = "usse-phases-vcull-c0-none"
+question = "cull mode 0, the vertex shader's first phas waiting none: is the triangle drawn"
+source = "vtx_wait.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+blk = { 15 = 0x1555620 }
+params = {  }
+inputs = ["OP"]
+labels = ["cull 0, none"]
+cases = [["none, parallel"]]
+
+[[probe]]
+name = "usse-phases-vcull-c1-vcull"
+question = "cull mode 1, the vertex shader's first phas waiting vcull: is the triangle drawn"
+source = "vtx_wait.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+blk = { 15 = 0x1555621 }
+params = {  }
+inputs = ["OP"]
+labels = ["cull 1, vcull"]
+cases = [["vcull, parallel"]]
+
+[[probe]]
+name = "usse-phases-vcull-c1-none"
+question = "cull mode 1, the vertex shader's first phas waiting none: is the triangle drawn"
+source = "vtx_wait.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+blk = { 15 = 0x1555621 }
+params = {  }
+inputs = ["OP"]
+labels = ["cull 1, none"]
+cases = [["none, parallel"]]
+
+[[probe]]
+name = "usse-phases-vcull-c2-vcull"
+question = "cull mode 2, the vertex shader's first phas waiting vcull: is the triangle drawn"
+source = "vtx_wait.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+blk = { 15 = 0x1555622 }
+params = {  }
+inputs = ["OP"]
+labels = ["cull 2, vcull"]
+cases = [["vcull, parallel"]]
+
+[[probe]]
+name = "usse-phases-vcull-c2-none"
+question = "cull mode 2, the vertex shader's first phas waiting none: is the triangle drawn"
+source = "vtx_wait.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+blk = { 15 = 0x1555622 }
+params = {  }
+inputs = ["OP"]
+labels = ["cull 2, none"]
+cases = [["none, parallel"]]
+
+[[probe]]
+name = "usse-phases-vcull-count-c0-vcull"
+question = "cull mode 0, first phas waiting vcull: how many vertex instances run phase 0 (scratch dword 1) and phase 1 (dword 0)"
+source = "vtx_wait_count.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+blk = { 15 = 0x1555620 }
+params = {  }
+inputs = ["OP"]
+labels = ["cull 0, vcull"]
+cases = [["vcull, parallel"]]
+
+[[probe]]
+name = "usse-phases-vcull-count-c0-none"
+question = "cull mode 0, first phas waiting none: how many vertex instances run phase 0 (scratch dword 1) and phase 1 (dword 0)"
+source = "vtx_wait_count.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+blk = { 15 = 0x1555620 }
+params = {  }
+inputs = ["OP"]
+labels = ["cull 0, none"]
+cases = [["none, parallel"]]
+
+[[probe]]
+name = "usse-phases-vcull-count-c1-vcull"
+question = "cull mode 1, first phas waiting vcull: how many vertex instances run phase 0 (scratch dword 1) and phase 1 (dword 0)"
+source = "vtx_wait_count.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+blk = { 15 = 0x1555621 }
+params = {  }
+inputs = ["OP"]
+labels = ["cull 1, vcull"]
+cases = [["vcull, parallel"]]
+
+[[probe]]
+name = "usse-phases-vcull-count-c1-none"
+question = "cull mode 1, first phas waiting none: how many vertex instances run phase 0 (scratch dword 1) and phase 1 (dword 0)"
+source = "vtx_wait_count.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+blk = { 15 = 0x1555621 }
+params = {  }
+inputs = ["OP"]
+labels = ["cull 1, none"]
+cases = [["none, parallel"]]
+
+[[probe]]
+name = "usse-phases-vcull-count-c2-vcull"
+question = "cull mode 2, first phas waiting vcull: how many vertex instances run phase 0 (scratch dword 1) and phase 1 (dword 0)"
+source = "vtx_wait_count.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+blk = { 15 = 0x1555622 }
+params = {  }
+inputs = ["OP"]
+labels = ["cull 2, vcull"]
+cases = [["vcull, parallel"]]
+
+[[probe]]
+name = "usse-phases-vcull-count-c2-none"
+question = "cull mode 2, first phas waiting none: how many vertex instances run phase 0 (scratch dword 1) and phase 1 (dword 0)"
+source = "vtx_wait_count.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+blk = { 15 = 0x1555622 }
+params = {  }
+inputs = ["OP"]
+labels = ["cull 2, none"]
+cases = [["none, parallel"]]

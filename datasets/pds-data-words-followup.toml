@@ -1,0 +1,10 @@
+title = "follow-up run of the sweep table pds/data-words"
+repo = "data"
+paths = ["followup/pds/data-words/"]
+method = "campaign runner on the laptop target (tools/campaign), the follow-up round"
+date = "2026-11-01"
+files = 10
+size = 3168947
+sha256 = "d765503c512911e26d88a685211c19d5d2ba345b7b64396802c5ba46a1740cd1"
+recipe = "probes/pds/data-words.toml"
+needs = ["render"]

@@ -1,0 +1,26 @@
+[[term]]
+id = "G0158"
+name = "CR_TE_AA"
+status = "named"
+
+[[term.source]]
+term = "ROGUE_CR_TE_AA"
+kind = "register"
+sgx545 = "0x0204"
+meaning = "tiling-engine anti-aliasing word: 0x20000000 in every single-sample capture, bits 31 and 30 more (0xe0000000) with 4x multisampling [infer]"
+tier = "3"
+source = "linux-imagination"
+citation = "C0177"
+licence = "GPL-2.0-only OR MIT"
+evidence = "Rogue TE_AA sits at another offset with another layout: name only, not linked"
+
+[[term.source]]
+term = "ROGUE_CR_TE_AA"
+kind = "register"
+sgx545 = "0x0204"
+meaning = "tiling-engine anti-aliasing word: 0x20000000 in every single-sample capture, bits 31 and 30 more (0xe0000000) with 4x multisampling [infer]"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0178"
+licence = "MIT"
+evidence = "Rogue TE_AA sits at another offset with another layout: name only, not linked"

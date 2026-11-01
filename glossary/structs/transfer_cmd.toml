@@ -117,6 +117,70 @@ licence = "GPL-2.0 OR MIT"
 evidence = "rogue_fwif_transfer_regs"
 
 [[term]]
+id = "G0336"
+name = "transfer_cmd.load_tpu_luma_key"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.load_tpu_luma_key"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x18c"
+meaning = "boolean: when set the EDM loads the luma key's three words from the command [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E039"
+licence = "MIT"
+evidence = "named after the group it gates; [HW] E039: set (xfer:17 bit 1), the copy's texture alpha follows the key under T0 bit 31"
+
+[[term]]
+id = "G0337"
+name = "transfer_cmd.load_use_coeffs"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.load_use_coeffs"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x190"
+meaning = "boolean: when set the EDM loads the USE filter block (CR_USE_COEFFS0_A .. CR_USE_COEFFS1_BIAS, CR_USE_COEFFS_MODE, CR_USE_COEFFS2_A .. CR_USE_COEFFS2_BIAS) from the command's words [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E078"
+licence = "MIT"
+evidence = "named after the group it gates; [HW] E078: set (xfer:17 bit 2), the firmware loads the ten words and firh's sets 0-5 change for that job"
+
+[[term]]
+id = "G0338"
+name = "transfer_cmd.load_yuv_csc"
+status = "named"
+
+[[term.source]]
+term = "transfer_cmd.load_yuv_csc"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x188"
+meaning = "boolean: when set the EDM loads CR_TPU_YUV_CSC0_0 .. CR_TPU_YUV_CSC1_4 and CR_TPU_YUV_CSC_INPUT (0x0820-0x0848) from the command's words [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E037"
+licence = "MIT"
+evidence = "YUV register terms kept on hardware evidence; [HW] E037: set (xfer:17 bit 0), our copy's YUV texture is converted with the command's set 0"
+
+[[term]]
+id = "G0339"
+name = "transfer_cmd.num_pixel_partitions"
+status = "named"
+
+[[term.source]]
+term = "NumPixelPartitions"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x194"
+meaning = "DMS_CTRL pixel partitions (31 << 22)"
+tier = "2"
+source = "cdv-libsrv_um"
+citation = "C0231"
+licence = "Intel-binary (ours)"
+evidence = "string only; likely an app-hint/config key [infer]; [HW] E049: bits 1 and 2 or ~0 hang the job, the other bits and 0 change nothing"
+
+[[term]]
 id = "G0027"
 name = "transfer_cmd.pds_exec_base"
 status = "named"
@@ -131,3 +195,19 @@ source = "sgx545-ce"
 citation = "C0005"
 licence = "GPL-2.0"
 evidence = "register loaded"
+
+[[term]]
+id = "G0340"
+name = "transfer_cmd.reg_0400"
+status = "inferred"
+
+[[term.source]]
+term = "transfer_cmd.reg_0400"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x038"
+meaning = "Transfer command word 14, which loads register 0x0400: bit 25 inverts bits 31:24 of every pixel a fill or copy writes, and no other bit changed a pixel; over the every-value source exactly the 128 values of bits 31:24 with bit 25 set changed the image"
+tier = "ours"
+source = "resgx545"
+citation = "E029"
+licence = "MIT"
+evidence = "[HW] E029: flipping bit 25 of word 14 changed all 2048 pixels of the fill (0xff336699 to 0x00336699) and of the copy (0xa5000000 to 0x5a000000); 0xffffffff gave the same hash; no other bit changed a pixel; the 128 values of bits 31:24 with bit 25 set gave one hash and the other 127 the baseline; [infer] the reading is ours, from these runs"

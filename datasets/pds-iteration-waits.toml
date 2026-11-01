@@ -1,0 +1,10 @@
+title = "probe table pds/iteration-waits"
+repo = "data"
+paths = ["pds/iteration-waits/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 132
+size = 2744560
+sha256 = "928daeb4b877b92b382ab3bc8a4fab3559d552bcaab097d18f11e079ee16a889"
+recipe = "probes/pds/iteration-waits.toml"
+needs = ["render"]

@@ -1,0 +1,10 @@
+title = "script table edm/tick-rate"
+repo = "data"
+paths = ["edm/tick-rate/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 3
+size = 3937010
+sha256 = "5ba15f6f870b37daf111d1fe502b413ada299877d942b5cbb6cae3d326fbcdf1"
+recipe = "probes/edm/tick-rate.toml"
+needs = ["timer_clock", "regs"]

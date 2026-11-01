@@ -1,0 +1,292 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse sample rate: 0 sweeps, 20 probes.
+needs = ["render", "kpoke"]
+
+[[probe]]
+name = "usse-sample-rate-aarate-control"
+question = "the 4x triangle at the sample rate, the same words as the 4x triangle probes (one case per scanned bit)"
+source = "pix_rate.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+params = { RATE = "sample" }
+inputs = ["OP"]
+cmd = { 1 = 0xe0000000, 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+cases = [["nop"]]
+labels = ["main: sample rate"]
+
+[[probe]]
+name = "usse-sample-rate-aarate-cmd1"
+question = "render command word 1 bit ... flipped ... does the shader run per sample (one case per scanned bit)"
+source = "pix_rate.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+params = { RATE = "sample" }
+inputs = ["OP"]
+cmd = { 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+cases = [["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"]]
+labels = ["b0: sample rate", "b1: sample rate", "b2: sample rate", "b3: sample rate", "b4: sample rate", "b5: sample rate", "b6: sample rate", "b7: sample rate", "b8: sample rate", "b9: sample rate", "b10: sample rate", "b11: sample rate", "b12: sample rate", "b13: sample rate", "b14: sample rate", "b15: sample rate", "b16: sample rate", "b17: sample rate", "b18: sample rate", "b19: sample rate", "b20: sample rate", "b21: sample rate", "b22: sample rate", "b23: sample rate", "b24: sample rate", "b25: sample rate", "b26: sample rate", "b27: sample rate", "b28: sample rate", "b29: sample rate", "b30: sample rate", "b31: sample rate"]
+case_set = [{ cmd = { 1 = 0xe0000001 } }, { cmd = { 1 = 0xe0000002 } }, { cmd = { 1 = 0xe0000004 } }, { cmd = { 1 = 0xe0000008 } }, { cmd = { 1 = 0xe0000010 } }, { cmd = { 1 = 0xe0000020 } }, { cmd = { 1 = 0xe0000040 } }, { cmd = { 1 = 0xe0000080 } }, { cmd = { 1 = 0xe0000100 } }, { cmd = { 1 = 0xe0000200 } }, { cmd = { 1 = 0xe0000400 } }, { cmd = { 1 = 0xe0000800 } }, { cmd = { 1 = 0xe0001000 } }, { cmd = { 1 = 0xe0002000 } }, { cmd = { 1 = 0xe0004000 } }, { cmd = { 1 = 0xe0008000 } }, { cmd = { 1 = 0xe0010000 } }, { cmd = { 1 = 0xe0020000 } }, { cmd = { 1 = 0xe0040000 } }, { cmd = { 1 = 0xe0080000 } }, { cmd = { 1 = 0xe0100000 } }, { cmd = { 1 = 0xe0200000 } }, { cmd = { 1 = 0xe0400000 } }, { cmd = { 1 = 0xe0800000 } }, { cmd = { 1 = 0xe1000000 } }, { cmd = { 1 = 0xe2000000 } }, { cmd = { 1 = 0xe4000000 } }, { cmd = { 1 = 0xe8000000 } }, { cmd = { 1 = 0xf0000000 } }, { cmd = { 1 = 0xc0000000 } }, { cmd = { 1 = 0xa0000000 } }, { cmd = { 1 = 0x60000000 } }]
+
+[[probe]]
+name = "usse-sample-rate-aarate-cmd13"
+question = "render command word 13 bit ... flipped ... does the shader run per sample (one case per scanned bit)"
+source = "pix_rate.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+params = { RATE = "sample" }
+inputs = ["OP"]
+cmd = { 1 = 0xe0000000, 10 = 0xeaa26e26, 16 = 0xeaa26e26 }
+cases = [["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"]]
+labels = ["b0: sample rate", "b1: sample rate", "b2: sample rate", "b3: sample rate", "b4: sample rate", "b5: sample rate", "b6: sample rate", "b7: sample rate", "b8: sample rate", "b9: sample rate", "b10: sample rate", "b11: sample rate", "b12: sample rate", "b13: sample rate", "b14: sample rate", "b15: sample rate", "b16: sample rate", "b17: sample rate", "b18: sample rate", "b19: sample rate", "b20: sample rate", "b21: sample rate", "b22: sample rate", "b23: sample rate", "b24: sample rate", "b25: sample rate", "b26: sample rate", "b27: sample rate", "b28: sample rate", "b29: sample rate", "b30: sample rate", "b31: sample rate"]
+case_set = [{ cmd = { 13 = 0x80000003 } }, { cmd = { 13 = 0x80000000 } }, { cmd = { 13 = 0x80000006 } }, { cmd = { 13 = 0x8000000a } }, { cmd = { 13 = 0x80000012 } }, { cmd = { 13 = 0x80000022 } }, { cmd = { 13 = 0x80000042 } }, { cmd = { 13 = 0x80000082 } }, { cmd = { 13 = 0x80000102 } }, { cmd = { 13 = 0x80000202 } }, { cmd = { 13 = 0x80000402 } }, { cmd = { 13 = 0x80000802 } }, { cmd = { 13 = 0x80001002 } }, { cmd = { 13 = 0x80002002 } }, { cmd = { 13 = 0x80004002 } }, { cmd = { 13 = 0x80008002 } }, { cmd = { 13 = 0x80010002 } }, { cmd = { 13 = 0x80020002 } }, { cmd = { 13 = 0x80040002 } }, { cmd = { 13 = 0x80080002 } }, { cmd = { 13 = 0x80100002 } }, { cmd = { 13 = 0x80200002 } }, { cmd = { 13 = 0x80400002 } }, { cmd = { 13 = 0x80800002 } }, { cmd = { 13 = 0x81000002 } }, { cmd = { 13 = 0x82000002 } }, { cmd = { 13 = 0x84000002 } }, { cmd = { 13 = 0x88000002 } }, { cmd = { 13 = 0x90000002 } }, { cmd = { 13 = 0xa0000002 } }, { cmd = { 13 = 0xc0000002 } }, { cmd = { 13 = 2 } }]
+
+[[probe]]
+name = "usse-sample-rate-aarate-isp0"
+question = "ISP word 0 bit ... set ... does the shader run per sample (one case per scanned bit)"
+source = "pix_rate.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+params = { RATE = "sample" }
+inputs = ["OP"]
+cmd = { 1 = 0xe0000000, 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+cases = [["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"]]
+labels = ["b10: sample rate", "b12: sample rate", "b13: sample rate", "b14: sample rate", "b19: sample rate", "b28: sample rate", "b29: sample rate", "b30: sample rate", "b31: sample rate"]
+case_set = [{ blk = { 1 = 0x1d00600 } }, { blk = { 1 = 0x1d01200 } }, { blk = { 1 = 0x1d02200 } }, { blk = { 1 = 0x1d04200 } }, { blk = { 1 = 0x1d80200 } }, { blk = { 1 = 0x11d00200 } }, { blk = { 1 = 0x21d00200 } }, { blk = { 1 = 0x41d00200 } }, { blk = { 1 = 0x81d00200 } }]
+
+[[probe]]
+name = "usse-sample-rate-aarate-isp1"
+question = "ISP word 1 bit ... set ... does the shader run per sample (one case per scanned bit)"
+source = "pix_rate.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+params = { RATE = "sample" }
+inputs = ["OP"]
+cmd = { 1 = 0xe0000000, 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+cases = [["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"]]
+labels = ["b13: sample rate", "b14: sample rate", "b15: sample rate", "b16: sample rate", "b17: sample rate", "b18: sample rate", "b19: sample rate", "b20: sample rate", "b21: sample rate", "b22: sample rate", "b23: sample rate", "b24: sample rate", "b25: sample rate"]
+case_set = [{ blk = { 2 = 12528 } }, { blk = { 2 = 20720 } }, { blk = { 2 = 37104 } }, { blk = { 2 = 0x110f0 } }, { blk = { 2 = 0x210f0 } }, { blk = { 2 = 0x410f0 } }, { blk = { 2 = 0x810f0 } }, { blk = { 2 = 0x1010f0 } }, { blk = { 2 = 0x2010f0 } }, { blk = { 2 = 0x4010f0 } }, { blk = { 2 = 0x8010f0 } }, { blk = { 2 = 0x10010f0 } }, { blk = { 2 = 0x20010f0 } }]
+
+[[probe]]
+name = "usse-sample-rate-pixel-4x"
+question = "the triangle at 4x, the pixel shader's phas at rate pixel, setm #k, o0 the instance's place: which samples run and are written (one case per scanned bit)"
+source = "pix_rate.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+params = { RATE = "pixel" }
+inputs = ["OP"]
+cmd = { 1 = 0xe0000000, 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+cases = [["nop"], ["setm #1"], ["setm #3"], ["setm #5"], ["setm #15"]]
+labels = ["main: no setm", "main: setm #1", "main: setm #3", "main: setm #5", "main: setm #15"]
+
+[[probe]]
+name = "usse-sample-rate-pixel-1x"
+question = "the triangle at 1x, the pixel shader's phas at rate pixel, setm #k, o0 the instance's place: which samples run and are written (one case per scanned bit)"
+source = "pix_rate.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+params = { RATE = "pixel" }
+inputs = ["OP"]
+cases = [["nop"], ["setm #1"], ["setm #3"], ["setm #5"], ["setm #15"]]
+labels = ["main: no setm", "main: setm #1", "main: setm #3", "main: setm #5", "main: setm #15"]
+
+[[probe]]
+name = "usse-sample-rate-sample-4x"
+question = "the triangle at 4x, the pixel shader's phas at rate sample, setm #k, o0 the instance's place: which samples run and are written (one case per scanned bit)"
+source = "pix_rate.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+params = { RATE = "sample" }
+inputs = ["OP"]
+cmd = { 1 = 0xe0000000, 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+cases = [["nop"], ["setm #1"], ["setm #3"], ["setm #5"], ["setm #15"]]
+labels = ["main: no setm", "main: setm #1", "main: setm #3", "main: setm #5", "main: setm #15"]
+
+[[probe]]
+name = "usse-sample-rate-sample-1x"
+question = "the triangle at 1x, the pixel shader's phas at rate sample, setm #k, o0 the instance's place: which samples run and are written (one case per scanned bit)"
+source = "pix_rate.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+params = { RATE = "sample" }
+inputs = ["OP"]
+cases = [["nop"], ["setm #1"], ["setm #3"], ["setm #5"], ["setm #15"]]
+labels = ["main: no setm", "main: setm #1", "main: setm #3", "main: setm #5", "main: setm #15"]
+
+[[probe]]
+name = "usse-sample-rate-selective-4x"
+question = "the triangle at 4x, the pixel shader's phas at rate selective, setm #k, o0 the instance's place: which samples run and are written (one case per scanned bit)"
+source = "pix_rate.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+params = { RATE = "selective" }
+inputs = ["OP"]
+cmd = { 1 = 0xe0000000, 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+cases = [["nop"], ["setm #1"], ["setm #3"], ["setm #5"], ["setm #15"]]
+labels = ["main: no setm", "main: setm #1", "main: setm #3", "main: setm #5", "main: setm #15"]
+
+[[probe]]
+name = "usse-sample-rate-selective-1x"
+question = "the triangle at 1x, the pixel shader's phas at rate selective, setm #k, o0 the instance's place: which samples run and are written (one case per scanned bit)"
+source = "pix_rate.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+params = { RATE = "selective" }
+inputs = ["OP"]
+cases = [["nop"], ["setm #1"], ["setm #3"], ["setm #5"], ["setm #15"]]
+labels = ["main: no setm", "main: setm #1", "main: setm #3", "main: setm #5", "main: setm #15"]
+
+[[probe]]
+name = "usse-sample-rate-rdrate-rd19"
+question = "render details word 19 bit ... flipped: does the shader run per sample (one case per scanned bit)"
+source = "pix_rate.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+params = { RATE = "sample" }
+inputs = ["OP"]
+cmd = { 1 = 0xe0000000, 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+cases = [["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"]]
+labels = ["b0: sample rate", "b1: sample rate", "b2: sample rate", "b3: sample rate", "b4: sample rate", "b5: sample rate", "b6: sample rate", "b7: sample rate", "b8: sample rate", "b9: sample rate", "b10: sample rate", "b11: sample rate", "b12: sample rate", "b13: sample rate", "b14: sample rate", "b15: sample rate", "b16: sample rate", "b17: sample rate", "b18: sample rate", "b19: sample rate", "b20: sample rate", "b21: sample rate", "b22: sample rate", "b23: sample rate", "b24: sample rate", "b25: sample rate", "b26: sample rate", "b27: sample rate", "b28: sample rate", "b29: sample rate", "b30: sample rate", "b31: sample rate"]
+case_set = [{ kpoke = ["rd:19^=0x1"] }, { kpoke = ["rd:19^=0x2"] }, { kpoke = ["rd:19^=0x4"] }, { kpoke = ["rd:19^=0x8"] }, { kpoke = ["rd:19^=0x10"] }, { kpoke = ["rd:19^=0x20"] }, { kpoke = ["rd:19^=0x40"] }, { kpoke = ["rd:19^=0x80"] }, { kpoke = ["rd:19^=0x100"] }, { kpoke = ["rd:19^=0x200"] }, { kpoke = ["rd:19^=0x400"] }, { kpoke = ["rd:19^=0x800"] }, { kpoke = ["rd:19^=0x1000"] }, { kpoke = ["rd:19^=0x2000"] }, { kpoke = ["rd:19^=0x4000"] }, { kpoke = ["rd:19^=0x8000"] }, { kpoke = ["rd:19^=0x10000"] }, { kpoke = ["rd:19^=0x20000"] }, { kpoke = ["rd:19^=0x40000"] }, { kpoke = ["rd:19^=0x80000"] }, { kpoke = ["rd:19^=0x100000"] }, { kpoke = ["rd:19^=0x200000"] }, { kpoke = ["rd:19^=0x400000"] }, { kpoke = ["rd:19^=0x800000"] }, { kpoke = ["rd:19^=0x1000000"] }, { kpoke = ["rd:19^=0x2000000"] }, { kpoke = ["rd:19^=0x4000000"] }, { kpoke = ["rd:19^=0x8000000"] }, { kpoke = ["rd:19^=0x10000000"] }, { kpoke = ["rd:19^=0x20000000"] }, { kpoke = ["rd:19^=0x40000000"] }, { kpoke = ["rd:19^=0x80000000"] }]
+
+[[probe]]
+name = "usse-sample-rate-rdrate-rd20"
+question = "render details word 20 bit ... flipped: does the shader run per sample (one case per scanned bit)"
+source = "pix_rate.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+params = { RATE = "sample" }
+inputs = ["OP"]
+cmd = { 1 = 0xe0000000, 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+cases = [["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"]]
+labels = ["b0: sample rate", "b1: sample rate", "b2: sample rate", "b3: sample rate", "b4: sample rate", "b5: sample rate", "b6: sample rate", "b7: sample rate", "b8: sample rate", "b9: sample rate", "b10: sample rate", "b11: sample rate", "b12: sample rate", "b13: sample rate", "b14: sample rate", "b15: sample rate", "b16: sample rate", "b17: sample rate", "b18: sample rate", "b19: sample rate", "b20: sample rate", "b21: sample rate", "b22: sample rate", "b23: sample rate", "b24: sample rate", "b25: sample rate", "b26: sample rate", "b27: sample rate", "b28: sample rate", "b29: sample rate", "b30: sample rate", "b31: sample rate"]
+case_set = [{ kpoke = ["rd:20^=0x1"] }, { kpoke = ["rd:20^=0x2"] }, { kpoke = ["rd:20^=0x4"] }, { kpoke = ["rd:20^=0x8"] }, { kpoke = ["rd:20^=0x10"] }, { kpoke = ["rd:20^=0x20"] }, { kpoke = ["rd:20^=0x40"] }, { kpoke = ["rd:20^=0x80"] }, { kpoke = ["rd:20^=0x100"] }, { kpoke = ["rd:20^=0x200"] }, { kpoke = ["rd:20^=0x400"] }, { kpoke = ["rd:20^=0x800"] }, { kpoke = ["rd:20^=0x1000"] }, { kpoke = ["rd:20^=0x2000"] }, { kpoke = ["rd:20^=0x4000"] }, { kpoke = ["rd:20^=0x8000"] }, { kpoke = ["rd:20^=0x10000"] }, { kpoke = ["rd:20^=0x20000"] }, { kpoke = ["rd:20^=0x40000"] }, { kpoke = ["rd:20^=0x80000"] }, { kpoke = ["rd:20^=0x100000"] }, { kpoke = ["rd:20^=0x200000"] }, { kpoke = ["rd:20^=0x400000"] }, { kpoke = ["rd:20^=0x800000"] }, { kpoke = ["rd:20^=0x1000000"] }, { kpoke = ["rd:20^=0x2000000"] }, { kpoke = ["rd:20^=0x4000000"] }, { kpoke = ["rd:20^=0x8000000"] }, { kpoke = ["rd:20^=0x10000000"] }, { kpoke = ["rd:20^=0x20000000"] }, { kpoke = ["rd:20^=0x40000000"] }, { kpoke = ["rd:20^=0x80000000"] }]
+
+[[probe]]
+name = "usse-sample-rate-rdrate-rd26"
+question = "render details word 26 bit ... flipped: does the shader run per sample (one case per scanned bit)"
+source = "pix_rate.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+params = { RATE = "sample" }
+inputs = ["OP"]
+cmd = { 1 = 0xe0000000, 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+cases = [["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"]]
+labels = ["b0: sample rate", "b1: sample rate", "b2: sample rate", "b3: sample rate", "b4: sample rate", "b5: sample rate", "b6: sample rate", "b7: sample rate", "b8: sample rate", "b9: sample rate", "b10: sample rate", "b11: sample rate", "b12: sample rate", "b13: sample rate", "b14: sample rate", "b15: sample rate", "b16: sample rate", "b17: sample rate", "b18: sample rate", "b19: sample rate", "b20: sample rate", "b21: sample rate", "b22: sample rate", "b23: sample rate", "b24: sample rate", "b25: sample rate", "b26: sample rate", "b27: sample rate", "b28: sample rate", "b29: sample rate", "b30: sample rate", "b31: sample rate"]
+case_set = [{ kpoke = ["rd:26^=0x1"] }, { kpoke = ["rd:26^=0x2"] }, { kpoke = ["rd:26^=0x4"] }, { kpoke = ["rd:26^=0x8"] }, { kpoke = ["rd:26^=0x10"] }, { kpoke = ["rd:26^=0x20"] }, { kpoke = ["rd:26^=0x40"] }, { kpoke = ["rd:26^=0x80"] }, { kpoke = ["rd:26^=0x100"] }, { kpoke = ["rd:26^=0x200"] }, { kpoke = ["rd:26^=0x400"] }, { kpoke = ["rd:26^=0x800"] }, { kpoke = ["rd:26^=0x1000"] }, { kpoke = ["rd:26^=0x2000"] }, { kpoke = ["rd:26^=0x4000"] }, { kpoke = ["rd:26^=0x8000"] }, { kpoke = ["rd:26^=0x10000"] }, { kpoke = ["rd:26^=0x20000"] }, { kpoke = ["rd:26^=0x40000"] }, { kpoke = ["rd:26^=0x80000"] }, { kpoke = ["rd:26^=0x100000"] }, { kpoke = ["rd:26^=0x200000"] }, { kpoke = ["rd:26^=0x400000"] }, { kpoke = ["rd:26^=0x800000"] }, { kpoke = ["rd:26^=0x1000000"] }, { kpoke = ["rd:26^=0x2000000"] }, { kpoke = ["rd:26^=0x4000000"] }, { kpoke = ["rd:26^=0x8000000"] }, { kpoke = ["rd:26^=0x10000000"] }, { kpoke = ["rd:26^=0x20000000"] }, { kpoke = ["rd:26^=0x40000000"] }, { kpoke = ["rd:26^=0x80000000"] }]
+
+[[probe]]
+name = "usse-sample-rate-rdrate-rd22"
+question = "render details word 22 bit ... flipped: does the shader run per sample (one case per scanned bit)"
+source = "pix_rate.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+params = { RATE = "sample" }
+inputs = ["OP"]
+cmd = { 1 = 0xe0000000, 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+cases = [["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"]]
+labels = ["b0: sample rate", "b1: sample rate", "b2: sample rate", "b3: sample rate", "b4: sample rate", "b5: sample rate", "b6: sample rate", "b7: sample rate", "b8: sample rate", "b9: sample rate", "b10: sample rate", "b11: sample rate", "b12: sample rate", "b13: sample rate", "b14: sample rate", "b15: sample rate", "b16: sample rate", "b17: sample rate", "b18: sample rate", "b19: sample rate", "b20: sample rate", "b21: sample rate", "b22: sample rate", "b23: sample rate", "b24: sample rate", "b25: sample rate", "b26: sample rate", "b27: sample rate", "b28: sample rate", "b29: sample rate", "b30: sample rate", "b31: sample rate"]
+case_set = [{ kpoke = ["rd:22^=0x1"] }, { kpoke = ["rd:22^=0x2"] }, { kpoke = ["rd:22^=0x4"] }, { kpoke = ["rd:22^=0x8"] }, { kpoke = ["rd:22^=0x10"] }, { kpoke = ["rd:22^=0x20"] }, { kpoke = ["rd:22^=0x40"] }, { kpoke = ["rd:22^=0x80"] }, { kpoke = ["rd:22^=0x100"] }, { kpoke = ["rd:22^=0x200"] }, { kpoke = ["rd:22^=0x400"] }, { kpoke = ["rd:22^=0x800"] }, { kpoke = ["rd:22^=0x1000"] }, { kpoke = ["rd:22^=0x2000"] }, { kpoke = ["rd:22^=0x4000"] }, { kpoke = ["rd:22^=0x8000"] }, { kpoke = ["rd:22^=0x10000"] }, { kpoke = ["rd:22^=0x20000"] }, { kpoke = ["rd:22^=0x40000"] }, { kpoke = ["rd:22^=0x80000"] }, { kpoke = ["rd:22^=0x100000"] }, { kpoke = ["rd:22^=0x200000"] }, { kpoke = ["rd:22^=0x400000"] }, { kpoke = ["rd:22^=0x800000"] }, { kpoke = ["rd:22^=0x1000000"] }, { kpoke = ["rd:22^=0x2000000"] }, { kpoke = ["rd:22^=0x4000000"] }, { kpoke = ["rd:22^=0x8000000"] }, { kpoke = ["rd:22^=0x10000000"] }, { kpoke = ["rd:22^=0x20000000"] }, { kpoke = ["rd:22^=0x40000000"] }, { kpoke = ["rd:22^=0x80000000"] }]
+
+[[probe]]
+name = "usse-sample-rate-rdrate-rd53"
+question = "render details word 53 bit ... flipped: does the shader run per sample (one case per scanned bit)"
+source = "pix_rate.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+params = { RATE = "sample" }
+inputs = ["OP"]
+cmd = { 1 = 0xe0000000, 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+cases = [["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"]]
+labels = ["b0: sample rate", "b1: sample rate", "b2: sample rate", "b3: sample rate", "b4: sample rate", "b5: sample rate", "b6: sample rate", "b7: sample rate", "b8: sample rate", "b9: sample rate", "b10: sample rate", "b11: sample rate", "b12: sample rate", "b13: sample rate", "b14: sample rate", "b15: sample rate", "b16: sample rate", "b17: sample rate", "b18: sample rate", "b19: sample rate", "b20: sample rate", "b21: sample rate", "b22: sample rate", "b23: sample rate", "b24: sample rate", "b25: sample rate", "b26: sample rate", "b27: sample rate", "b28: sample rate", "b29: sample rate", "b30: sample rate", "b31: sample rate"]
+case_set = [{ kpoke = ["rd:53^=0x1"] }, { kpoke = ["rd:53^=0x2"] }, { kpoke = ["rd:53^=0x4"] }, { kpoke = ["rd:53^=0x8"] }, { kpoke = ["rd:53^=0x10"] }, { kpoke = ["rd:53^=0x20"] }, { kpoke = ["rd:53^=0x40"] }, { kpoke = ["rd:53^=0x80"] }, { kpoke = ["rd:53^=0x100"] }, { kpoke = ["rd:53^=0x200"] }, { kpoke = ["rd:53^=0x400"] }, { kpoke = ["rd:53^=0x800"] }, { kpoke = ["rd:53^=0x1000"] }, { kpoke = ["rd:53^=0x2000"] }, { kpoke = ["rd:53^=0x4000"] }, { kpoke = ["rd:53^=0x8000"] }, { kpoke = ["rd:53^=0x10000"] }, { kpoke = ["rd:53^=0x20000"] }, { kpoke = ["rd:53^=0x40000"] }, { kpoke = ["rd:53^=0x80000"] }, { kpoke = ["rd:53^=0x100000"] }, { kpoke = ["rd:53^=0x200000"] }, { kpoke = ["rd:53^=0x400000"] }, { kpoke = ["rd:53^=0x800000"] }, { kpoke = ["rd:53^=0x1000000"] }, { kpoke = ["rd:53^=0x2000000"] }, { kpoke = ["rd:53^=0x4000000"] }, { kpoke = ["rd:53^=0x8000000"] }, { kpoke = ["rd:53^=0x10000000"] }, { kpoke = ["rd:53^=0x20000000"] }, { kpoke = ["rd:53^=0x40000000"] }, { kpoke = ["rd:53^=0x80000000"] }]
+
+[[probe]]
+name = "usse-sample-rate-rdrate-cmd10"
+question = "render command word 10 bit ... flipped ... does the shader run per sample (one case per scanned bit)"
+source = "pix_rate.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+params = { RATE = "sample" }
+inputs = ["OP"]
+cmd = { 1 = 0xe0000000, 13 = 0x80000002, 16 = 0xeaa26e26 }
+cases = [["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"]]
+labels = ["b0: sample rate", "b1: sample rate", "b2: sample rate", "b3: sample rate", "b4: sample rate", "b5: sample rate", "b6: sample rate", "b7: sample rate", "b8: sample rate", "b9: sample rate", "b10: sample rate", "b11: sample rate", "b12: sample rate", "b13: sample rate", "b14: sample rate", "b15: sample rate", "b16: sample rate", "b17: sample rate", "b18: sample rate", "b19: sample rate", "b20: sample rate", "b21: sample rate", "b22: sample rate", "b23: sample rate", "b24: sample rate", "b25: sample rate", "b26: sample rate", "b27: sample rate", "b28: sample rate", "b29: sample rate", "b30: sample rate", "b31: sample rate"]
+case_set = [{ cmd = { 10 = 0xeaa26e27 } }, { cmd = { 10 = 0xeaa26e24 } }, { cmd = { 10 = 0xeaa26e22 } }, { cmd = { 10 = 0xeaa26e2e } }, { cmd = { 10 = 0xeaa26e36 } }, { cmd = { 10 = 0xeaa26e06 } }, { cmd = { 10 = 0xeaa26e66 } }, { cmd = { 10 = 0xeaa26ea6 } }, { cmd = { 10 = 0xeaa26f26 } }, { cmd = { 10 = 0xeaa26c26 } }, { cmd = { 10 = 0xeaa26a26 } }, { cmd = { 10 = 0xeaa26626 } }, { cmd = { 10 = 0xeaa27e26 } }, { cmd = { 10 = 0xeaa24e26 } }, { cmd = { 10 = 0xeaa22e26 } }, { cmd = { 10 = 0xeaa2ee26 } }, { cmd = { 10 = 0xeaa36e26 } }, { cmd = { 10 = 0xeaa06e26 } }, { cmd = { 10 = 0xeaa66e26 } }, { cmd = { 10 = 0xeaaa6e26 } }, { cmd = { 10 = 0xeab26e26 } }, { cmd = { 10 = 0xea826e26 } }, { cmd = { 10 = 0xeae26e26 } }, { cmd = { 10 = 0xea226e26 } }, { cmd = { 10 = 0xeba26e26 } }, { cmd = { 10 = 0xe8a26e26 } }, { cmd = { 10 = 0xeea26e26 } }, { cmd = { 10 = 0xe2a26e26 } }, { cmd = { 10 = 0xfaa26e26 } }, { cmd = { 10 = 0xcaa26e26 } }, { cmd = { 10 = 0xaaa26e26 } }, { cmd = { 10 = 0x6aa26e26 } }]
+
+[[probe]]
+name = "usse-sample-rate-rdrate-cmd16"
+question = "render command word 16 bit ... flipped ... does the shader run per sample (one case per scanned bit)"
+source = "pix_rate.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+params = { RATE = "sample" }
+inputs = ["OP"]
+cmd = { 1 = 0xe0000000, 10 = 0xeaa26e26, 13 = 0x80000002 }
+cases = [["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"]]
+labels = ["b0: sample rate", "b1: sample rate", "b2: sample rate", "b3: sample rate", "b4: sample rate", "b5: sample rate", "b6: sample rate", "b7: sample rate", "b8: sample rate", "b9: sample rate", "b10: sample rate", "b11: sample rate", "b12: sample rate", "b13: sample rate", "b14: sample rate", "b15: sample rate", "b16: sample rate", "b17: sample rate", "b18: sample rate", "b19: sample rate", "b20: sample rate", "b21: sample rate", "b22: sample rate", "b23: sample rate", "b24: sample rate", "b25: sample rate", "b26: sample rate", "b27: sample rate", "b28: sample rate", "b29: sample rate", "b30: sample rate", "b31: sample rate"]
+case_set = [{ cmd = { 16 = 0xeaa26e27 } }, { cmd = { 16 = 0xeaa26e24 } }, { cmd = { 16 = 0xeaa26e22 } }, { cmd = { 16 = 0xeaa26e2e } }, { cmd = { 16 = 0xeaa26e36 } }, { cmd = { 16 = 0xeaa26e06 } }, { cmd = { 16 = 0xeaa26e66 } }, { cmd = { 16 = 0xeaa26ea6 } }, { cmd = { 16 = 0xeaa26f26 } }, { cmd = { 16 = 0xeaa26c26 } }, { cmd = { 16 = 0xeaa26a26 } }, { cmd = { 16 = 0xeaa26626 } }, { cmd = { 16 = 0xeaa27e26 } }, { cmd = { 16 = 0xeaa24e26 } }, { cmd = { 16 = 0xeaa22e26 } }, { cmd = { 16 = 0xeaa2ee26 } }, { cmd = { 16 = 0xeaa36e26 } }, { cmd = { 16 = 0xeaa06e26 } }, { cmd = { 16 = 0xeaa66e26 } }, { cmd = { 16 = 0xeaaa6e26 } }, { cmd = { 16 = 0xeab26e26 } }, { cmd = { 16 = 0xea826e26 } }, { cmd = { 16 = 0xeae26e26 } }, { cmd = { 16 = 0xea226e26 } }, { cmd = { 16 = 0xeba26e26 } }, { cmd = { 16 = 0xe8a26e26 } }, { cmd = { 16 = 0xeea26e26 } }, { cmd = { 16 = 0xe2a26e26 } }, { cmd = { 16 = 0xfaa26e26 } }, { cmd = { 16 = 0xcaa26e26 } }, { cmd = { 16 = 0xaaa26e26 } }, { cmd = { 16 = 0x6aa26e26 } }]
+
+[[probe]]
+name = "usse-sample-rate-taskrate-u1"
+question = "the 4x triangle at the sample rate, one unknown bit of the pixel task's U1 set: does the shader run per sample (one case per scanned bit)"
+source = "pds_prim_u.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_rate_sample.s" }
+size = [64, 64]
+pixels = true
+inputs = ["U2", "MASK"]
+cmd = { 1 = 0xe0000000, 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+cases = [["0x00000000", "0x00000000"], ["0x00000000", "0x00000001"], ["0x00000000", "0x00000002"], ["0x00000000", "0x00400000"], ["0x00000000", "0x00800000"], ["0x00000000", "0x04000000"], ["0x00000000", "0x08000000"], ["0x00000000", "0x10000000"], ["0x00000000", "0x20000000"], ["0x00000000", "0x40000000"], ["0x00000000", "0x80000000"]]
+labels = ["main: U1 as the host's (control)", "main: U1 bit 0 set", "main: U1 bit 1 set", "main: U1 bit 22 set", "main: U1 bit 23 set", "main: U1 bit 26 set", "main: U1 bit 27 set", "main: U1 bit 28 set", "main: U1 bit 29 set", "main: U1 bit 30 set", "main: U1 bit 31 set"]
+
+[[probe]]
+name = "usse-sample-rate-taskrate-u2"
+question = "the 4x triangle at the sample rate, one bit of the pixel task's U2 set: does the shader run per sample (one case per scanned bit)"
+source = "pds_prim_u.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_rate_sample.s" }
+size = [64, 64]
+pixels = true
+inputs = ["U2", "MASK"]
+cmd = { 1 = 0xe0000000, 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+cases = [["0x00000000", "0x00000000"], ["0x00000001", "0x00000000"], ["0x00000002", "0x00000000"], ["0x00000004", "0x00000000"], ["0x00000008", "0x00000000"], ["0x00000010", "0x00000000"], ["0x00000020", "0x00000000"], ["0x00000040", "0x00000000"], ["0x00000080", "0x00000000"], ["0x00000100", "0x00000000"], ["0x00000200", "0x00000000"], ["0x00000400", "0x00000000"], ["0x00000800", "0x00000000"], ["0x00001000", "0x00000000"], ["0x00002000", "0x00000000"], ["0x00004000", "0x00000000"], ["0x00008000", "0x00000000"], ["0x00010000", "0x00000000"], ["0x00020000", "0x00000000"], ["0x00040000", "0x00000000"], ["0x00080000", "0x00000000"], ["0x00100000", "0x00000000"], ["0x00200000", "0x00000000"], ["0x00400000", "0x00000000"], ["0x00800000", "0x00000000"], ["0x01000000", "0x00000000"], ["0x02000000", "0x00000000"], ["0x04000000", "0x00000000"], ["0x08000000", "0x00000000"], ["0x10000000", "0x00000000"], ["0x20000000", "0x00000000"], ["0x40000000", "0x00000000"], ["0x80000000", "0x00000000"]]
+labels = ["main: U2 0 (control)", "main: U2 bit 0 set", "main: U2 bit 1 set", "main: U2 bit 2 set", "main: U2 bit 3 set", "main: U2 bit 4 set", "main: U2 bit 5 set", "main: U2 bit 6 set", "main: U2 bit 7 set", "main: U2 bit 8 set", "main: U2 bit 9 set", "main: U2 bit 10 set", "main: U2 bit 11 set", "main: U2 bit 12 set", "main: U2 bit 13 set", "main: U2 bit 14 set", "main: U2 bit 15 set", "main: U2 bit 16 set", "main: U2 bit 17 set", "main: U2 bit 18 set", "main: U2 bit 19 set", "main: U2 bit 20 set", "main: U2 bit 21 set", "main: U2 bit 22 set", "main: U2 bit 23 set", "main: U2 bit 24 set", "main: U2 bit 25 set", "main: U2 bit 26 set", "main: U2 bit 27 set", "main: U2 bit 28 set", "main: U2 bit 29 set", "main: U2 bit 30 set", "main: U2 bit 31 set"]

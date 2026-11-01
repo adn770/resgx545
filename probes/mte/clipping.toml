@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# mte clipping: 0 sweeps, 2 probes, hand-run script.
+name = "mte-clipping"
+needs = ["render", "kpoke"]
+script = "clipping.sh"
+
+[[probe]]
+name = "mte-clipping-w-scan"
+question = "the triangle's pixels as its vertices' w goes from 2 down to 0 and below"
+source = "vtx_w.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+inputs = ["W"]
+cases = [[0x3f800000], [0x40000000], [0x3f000000], [0x3a83126f], [0x3727c5ac], [0x360637bd], [0x358637bd], [0x350637bd], [0x33d6bf95], [0], [0xbf800000], [0xb3d6bf95]]
+labels = ["w 1", "w 2", "w 0.5", "w 0.001", "w 1e-05", "w 2e-06", "w 1e-06", "w 5e-07", "w 1e-07", "w 0", "w -1", "w -1e-07"]
+
+[[probe]]
+name = "mte-clipping-wclip"
+question = "the triangle's pixels as one vertex crosses w = 0 or the vertices leave the viewport"
+source = "vtx_wclip.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+inputs = ["S", "A", "B"]
+cases = [[0x3f800000, 0, 0x3f800000], [0x3f800000, 0xbf800000, 0x3f800000], [0x3f800000, 0xbf99999a, 0x3f800000], [0x3f800000, 0xbfaaaaab, 0x3f800000], [0x3f800000, 0xbfb33333, 0x3f800000], [0x3f800000, 0xc0000000, 0x3f800000], [0x3f800000, 0xc0000000, 0x3f000000], [0x41000000, 0, 0x3f800000], [0x42800000, 0, 0x3f800000], [0x44800000, 0, 0x3f800000], [0x41000000, 0xc0000000, 0x3f800000]]
+labels = ["no clipping (w 1)", "w 1.75, 0.25, 1.375 (perspective)", "second vertex w 0.1", "second vertex w 0", "second vertex w -0.05", "second vertex w -0.5", "w 2, -1, 1.25", "8x (guard band)", "64x", "1024x", "8x, second vertex w -0.5"]

@@ -1,0 +1,10 @@
+title = "probe table usse/video-filters"
+repo = "data"
+paths = ["usse/video-filters/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 5105
+size = 13988197
+sha256 = "0ede850e5ec983f3b92701d09970669504d60673c01d8f5609d50c837fb20c86"
+recipe = "probes/usse/video-filters.toml"
+needs = ["render"]

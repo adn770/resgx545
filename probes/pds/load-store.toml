@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# pds load store: 0 sweeps, 2 probes.
+needs = ["render"]
+
+[[probe]]
+name = "pds-load-store-addressing"
+question = "load/store: the address base, and whether a fence orders them (6.3, 6.10; recorded)"
+isa = "pds"
+source = "pds_dump.s"
+params = {  }
+inputs = ["OP", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P"]
+labels = ["load 0", "load 0x40", "load 0x1000", "load 0x10000", "store, rwfence, load", "store, load"]
+cases = [["load 0x00000000, ds0[48-51]\nmov32 ds0[48], ds0[48]\nmov32 ds0[49], ds0[49]\nmov32 ds0[50], ds0[50]\nmov32 ds0[51], ds0[51]", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x5eed0002], ["load 0x00000040, ds0[48-51]\nmov32 ds0[48], ds0[48]\nmov32 ds0[49], ds0[49]\nmov32 ds0[50], ds0[50]\nmov32 ds0[51], ds0[51]", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x5eed0002], ["load 0x00001000, ds0[48-51]\nmov32 ds0[48], ds0[48]\nmov32 ds0[49], ds0[49]\nmov32 ds0[50], ds0[50]\nmov32 ds0[51], ds0[51]", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x5eed0002], ["load 0x00010000, ds0[48-51]\nmov32 ds0[48], ds0[48]\nmov32 ds0[49], ds0[49]\nmov32 ds0[50], ds0[50]\nmov32 ds0[51], ds0[51]", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x5eed0002], ["mov32 ds1[48], ds1[55]\nstore 0x00000100, ds1[48]\nrwfence\nload 0x00000100, ds0[48]\nmov32 ds0[48], ds0[48]", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x5eed0002], ["mov32 ds1[48], ds1[55]\nstore 0x00000100, ds1[48]\nload 0x00000100, ds0[48]\nmov32 ds0[48], ds0[48]", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x5eed0002]]
+
+[[probe]]
+name = "pds-load-store-ports"
+question = "movs to mr, tim, ir0, slc, doutc, douts; movsa on douta (3.4; recorded)"
+isa = "pds"
+source = "pds_dump.s"
+params = {  }
+inputs = ["OP", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P"]
+labels = ["mr", "tim", "ir0", "slc", "doutc", "douts", "movsa douta"]
+cases = [["movs mr, ds0[48], ds0[49], ds1[48], ds1[49]\nmov64 ds0[50], mr01\nmov64 ds0[52], mr23", 0xc0ffee0, 0xc0ffee1, 0, 0, 0, 0, 0, 0, 0xc0ffee2, 0xc0ffee3, 0, 0, 0, 0, 0, 0], ["movs tim, ds0[48], ds0[48], ds0[48], ds0[48]\nmov32 ds0[49], ir1.1", 0xc0ffee0, 0xc0ffee1, 0, 0, 0, 0, 0, 0, 0xc0ffee2, 0xc0ffee3, 0, 0, 0, 0, 0, 0], ["movs ir0, ds0[48], ds0[48], ds0[48], ds0[48]\nmov32 ds0[49], ir0.0", 0xc0ffee0, 0xc0ffee1, 0, 0, 0, 0, 0, 0, 0xc0ffee2, 0xc0ffee3, 0, 0, 0, 0, 0, 0], ["movs slc, ds0[48], ds0[48], ds0[48], ds0[48]", 0xc0ffee0, 0xc0ffee1, 0, 0, 0, 0, 0, 0, 0xc0ffee2, 0xc0ffee3, 0, 0, 0, 0, 0, 0], ["movs doutc, ds0[48], ds0[48], ds0[48], ds0[48]", 0xc0ffee0, 0xc0ffee1, 0, 0, 0, 0, 0, 0, 0xc0ffee2, 0xc0ffee3, 0, 0, 0, 0, 0, 0], ["movs douts, ds0[48], ds0[48], ds0[48], ds0[48]", 0xc0ffee0, 0xc0ffee1, 0, 0, 0, 0, 0, 0, 0xc0ffee2, 0xc0ffee3, 0, 0, 0, 0, 0, 0], ["movsa douta, ds0[48], ds1[10], ds1[11], ds1[11]", 0xc0ffee0, 0xc0ffee1, 0, 0, 0, 0, 0, 0, 0xc0ffee2, 0xc0ffee3, 0, 0, 0, 0, 0, 0]]

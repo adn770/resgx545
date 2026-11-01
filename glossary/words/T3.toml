@@ -1,0 +1,47 @@
+[[term]]
+id = "G0283"
+name = "T3.CONVERT"
+status = "named"
+
+[[term.source]]
+term = "T3.CONVERT"
+kind = "field"
+sgx545 = "T3 [17:16]"
+meaning = "conversion of the fetched texel: 0 none, 1 c10, 2 f16 pairs, 3 f32 channels [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E034"
+licence = "MIT"
+evidence = "probe smp-convert [HW]"
+
+[[term]]
+id = "G0284"
+name = "T3.DATA_SIZE"
+status = "inferred"
+
+[[term.source]]
+term = "T3.DATA_SIZE"
+kind = "field"
+sgx545 = "T3 [26:23]"
+meaning = "Bits 26:23 of the fourth sampler word are named in the sampler sweep but that sweep varied only the conversion fields; the 6.1 data show nothing about this field beyond its name"
+tier = "ours"
+source = "resgx545"
+citation = "E034"
+licence = "MIT"
+evidence = "[HW] E034: the cases fixed the format, bits 17:16 and bit 15 of T3 and changed the texel; bits 26:23 were not varied; [infer] the reading is ours, from these runs"
+
+[[term]]
+id = "G0285"
+name = "T3.NORMALIZE"
+status = "named"
+
+[[term.source]]
+term = "T3.NORMALIZE"
+kind = "flag"
+sgx545 = "T3 bit 15"
+meaning = "divide converted channel values by 255 (65535 for u16) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E034"
+licence = "MIT"
+evidence = "probe smp-convert [HW]"

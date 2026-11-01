@@ -1,0 +1,10 @@
+title = "probe table usse/phases"
+repo = "data"
+paths = ["usse/phases/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 194
+size = 2061376
+sha256 = "aeb362a3db34613e4a3ab4173a19f2495ae53c9f19748fcae164f0e5dc3dbd87"
+recipe = "probes/usse/phases.toml"
+needs = ["render"]

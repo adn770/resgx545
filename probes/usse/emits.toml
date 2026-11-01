@@ -1,0 +1,108 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse emits: 0 sweeps, 8 probes.
+needs = ["render"]
+
+[[probe]]
+name = "usse-emits-emit-twopart-twopart"
+question = "the vertex shader's emitvcbvtx.twopart and emitmtevtx.twopart: is the triangle drawn"
+source = "vtx_emit.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+params = {  }
+inputs = ["OP", "M"]
+labels = ["vcb .twopart, mte .twopart"]
+cases = [[".twopart", ".twopart"]]
+
+[[probe]]
+name = "usse-emits-emit-none-twopart"
+question = "the vertex shader's emitvcbvtx and emitmtevtx.twopart: is the triangle drawn"
+source = "vtx_emit.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+params = {  }
+inputs = ["OP", "M"]
+labels = ["vcb (none), mte .twopart"]
+cases = [["", ".twopart"]]
+
+[[probe]]
+name = "usse-emits-emit-twopart-none"
+question = "the vertex shader's emitvcbvtx.twopart and emitmtevtx: is the triangle drawn"
+source = "vtx_emit.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+params = {  }
+inputs = ["OP", "M"]
+labels = ["vcb .twopart, mte (none)"]
+cases = [[".twopart", ""]]
+
+[[probe]]
+name = "usse-emits-emit-none-none"
+question = "the vertex shader's emitvcbvtx and emitmtevtx: is the triangle drawn"
+source = "vtx_emit.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+params = {  }
+inputs = ["OP", "M"]
+labels = ["vcb (none), mte (none)"]
+cases = [["", ""]]
+
+[[probe]]
+name = "usse-emits-stemit-none-none"
+question = "the state task's emitvcbst and emitmtest: is the triangle drawn"
+source = "state_emit.s"
+host = "tri"
+slot = "state"
+size = [64, 64]
+pixels = true
+params = {  }
+inputs = ["OP", "M"]
+labels = ["vcb (none), mte (none)"]
+cases = [["", ""]]
+
+[[probe]]
+name = "usse-emits-stemit-twopart-none"
+question = "the state task's emitvcbst.twopart and emitmtest: is the triangle drawn"
+source = "state_emit.s"
+host = "tri"
+slot = "state"
+size = [64, 64]
+pixels = true
+params = {  }
+inputs = ["OP", "M"]
+labels = ["vcb .twopart, mte (none)"]
+cases = [[".twopart", ""]]
+
+[[probe]]
+name = "usse-emits-stemit-none-twopart"
+question = "the state task's emitvcbst and emitmtest.twopart: is the triangle drawn"
+source = "state_emit.s"
+host = "tri"
+slot = "state"
+size = [64, 64]
+pixels = true
+params = {  }
+inputs = ["OP", "M"]
+labels = ["vcb (none), mte .twopart"]
+cases = [["", ".twopart"]]
+
+[[probe]]
+name = "usse-emits-stemit-twopart-twopart"
+question = "the state task's emitvcbst.twopart and emitmtest.twopart: is the triangle drawn"
+source = "state_emit.s"
+host = "tri"
+slot = "state"
+size = [64, 64]
+pixels = true
+params = {  }
+inputs = ["OP", "M"]
+labels = ["vcb .twopart, mte .twopart"]
+cases = [[".twopart", ".twopart"]]

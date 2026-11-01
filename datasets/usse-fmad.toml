@@ -1,0 +1,10 @@
+title = "probe table usse/fmad"
+repo = "data"
+paths = ["usse/fmad/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 38
+size = 33602
+sha256 = "6736f903abfb755f60dacfa2ed9a84a1b46559333ac1a15b350e2529e7c6e265"
+recipe = "probes/usse/fmad.toml"
+needs = ["render"]

@@ -1,0 +1,388 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+"""sgxfive-test probe --tri against the mock: probe programs in the first triangle's render
+(sgxfive_tri_probe.h). The mock draws the scene from the programs' first words and does not
+run them, so these check the plumbing: the options, the placement and patching the mock can
+see, and the output probe.py parses."""
+from __future__ import annotations
+
+import os
+import pathlib
+import re
+import subprocess
+import sys
+
+import pytest
+
+HERE = pathlib.Path(__file__).resolve().parent
+ROOT = HERE.parent.parent.parent
+TOOL = os.environ.get("SGXFIVE_TEST", str(HERE.parent / "build" / "sgxfive-test"))
+PROBES = ROOT / "probes" / "pds" / "templates"
+PHAS = "phas #0, #0, pixel, end, parallel\n"
+BG = 0xff203040                 # the first triangle's background (sgxfive_tri_default)
+
+
+def run(*args: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run([TOOL, *args], capture_output=True, text=True, timeout=60)
+
+
+@pytest.fixture(scope="module", autouse=True)
+def tool_exists():
+    if not pathlib.Path(TOOL).exists():
+        pytest.skip(f"{TOOL} not built (run make -C userspace/libsgxfive check)")
+
+
+def assemble(tmp_path: pathlib.Path, name: str, source: str, isa: str = "usse") -> pathlib.Path:
+    sys.path.insert(0, str(ROOT / "tools" / "fwcutter"))
+    import ours  # builds the assemblers on demand
+    out = tmp_path / f"{name}.bin"
+    subprocess.run([str(ours._tool(isa)), "-o", str(out), "-"], input=source.encode(),
+                   capture_output=True, check=True)
+    return out
+
+
+def pixev(tmp_path: pathlib.Path, name: str = "pixev") -> pathlib.Path:
+    """pixev_dump.s with sixteen markers passed on: 60 data dwords."""
+    op = "\n".join(f"movs douta, ds0[{10 + k}], ds1[{10 + k}], ds0[{10 + k}], ds0[{10 + k}]"
+                   for k in range(16))
+    return assemble(tmp_path, name, (PROBES / "pixev_dump.s").read_text().replace("{OP}", op),
+                    "pds")
+
+
+def summary(out: str, name: str) -> dict:
+    m = re.search(rf"^probe {name}: o0 mixed (.*)$", out, re.M)
+    assert m, out
+    return {int(v, 16): int(c) for v, c in re.findall(r"(0x[0-9a-f]+) x(\d+)", m.group(1))}
+
+
+def test_tri_pixel_shader_with_scratch_immediate(tmp_path):
+    # The mock colours the triangle with its pixel shader's second immediate: here the
+    # scratch buffer's address + 0x10.
+    f = assemble(tmp_path, "pix", PHAS + "mov.skipinv.end o0, #0x5CAF0010\n")
+    r = run("--mock", "probe", "--tri", "pixel", "--temps", "8", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    m = re.search(r"^probe pix: scratch at (0x\w+) \(64 KiB\)$", r.stdout, re.M)
+    assert m, r.stdout
+    assert re.search(r"^probe pix: tri 64x64, pixel replaced$", r.stdout, re.M), r.stdout
+    vals = summary(r.stdout, "pix")
+    assert vals.get(int(m.group(1), 16) + 0x10, 0) > 0, r.stdout
+    assert vals.get(BG, 0) > 0
+    assert sum(vals.values()) == 64 * 64
+
+
+def test_tri_pixel_event_and_end_of_tile(tmp_path):
+    # pixev_dump.s as the pixel-event program and eot_dump.s as the end-of-tile task: the
+    # mock finds the target's PBE words in the replacement, so the image is drawn.
+    p = pixev(tmp_path)
+    e = assemble(tmp_path, "eot", (PROBES / "eot_dump.s").read_text())
+    r = run("--mock", "probe", "--tri", "pixev:60", "--slot", f"eot={e}", "--temps", "8",
+            "--width", "32", "--height", "16", str(p))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^probe pixev: tri 32x16, pixev eot replaced$", r.stdout, re.M), r.stdout
+    assert "failed" not in r.stdout
+    vals = summary(r.stdout, "pixev")
+    assert vals.get(BG, 0) > 0 and sum(vals.values()) == 32 * 16
+
+
+def test_tri_every_file_runs_in_its_own_render(tmp_path):
+    a = pixev(tmp_path, "a")
+    b = pixev(tmp_path, "b")
+    e = assemble(tmp_path, "tile", (PROBES / "eot_tile.s").read_text())
+    r = run("--mock", "probe", "--tri", "pixev:60", "--slot", f"eot={e}", "--temps", "8",
+            "--width", "32", "--height", "4096", "--max-height", "4096", str(a), str(b))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.findall(r"^probe (\w+): tri 32x4096,", r.stdout, re.M) == ["a", "b"], r.stdout
+
+
+def test_tri_vertex_programs(tmp_path):
+    # Copies of the default vertex programs (pds_vtx.s, use_vtx.s) as replacements: the
+    # mock reads the vertex buffer through the replaced PDS program and faults on a vertex
+    # shader that is not mapped, so the triangle is drawn only if both are placed right.
+    vp = assemble(tmp_path, "vp", (ROOT / "asm" / "tri" / "pds_vtx.s").read_text(), "pds")
+    vu = assemble(tmp_path, "vu", (ROOT / "asm" / "tri" / "use_vtx.s").read_text())
+    r = run("--mock", "probe", "--tri", "vtxpds:8", "--slot", f"vtxuse={vu}", str(vp))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^probe vp: tri 64x64, vtxpds vtxuse replaced$", r.stdout, re.M)
+    vals = summary(r.stdout, "vp")
+    assert vals.get(0xff00ff00, 0) > 0 and vals.get(BG, 0) > 0, r.stdout
+
+
+def test_tri_pixels_prints_every_row(tmp_path):
+    f = assemble(tmp_path, "px", PHAS + "mov.skipinv.end o0, #0x12345678\n")
+    r = run("--mock", "probe", "--tri", "pixel", "--pixels", "--width", "32", "--height",
+            "16", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    rows = re.findall(r"^probe px: row (\d+): ([0-9a-f ]+)$", r.stdout, re.M)
+    assert [int(y) for y, _ in rows] == list(range(16))
+    assert all(len(v.split()) == 32 for _, v in rows)
+    flat = [int(v, 16) for _, vs in rows for v in vs.split()]
+    assert 0x12345678 in flat and BG in flat
+
+
+@pytest.mark.parametrize("args", [
+    ["--tri", "bogus"],
+    ["--tri", "pixev"],                         # a PDS slot needs its data dwords
+    ["--tri", "pixev:18"],                      # not whole rows
+    ["--tri", "eot:8"],                         # a USE slot has none
+    ["--tri", "pixel", "--coords"],
+    ["--tri", "pixel", "--pds", "8"],
+    ["--slot", "eot=x.bin"],                    # --slot needs --tri
+    ["--tri", "pixel", "--slot", "pixel=x.bin"],  # the case's own slot
+    ["--tri", "pixel", "--slot", "bogus=x.bin"],
+    ["--tri", "pixel", "--slot", "eot"],
+    ["--tri", "pixel", "--width", "33"],        # odd
+    ["--tri", "pixel", "--width", "64", "--max-width", "32"],
+    ["--width", "32"],                          # --width needs --tri
+])
+def test_tri_usage(tmp_path, args):
+    f = assemble(tmp_path, "x", PHAS + "mov.skipinv.end o0, #1\n")
+    args = [a.replace("x.bin", str(f)) for a in args]
+    r = run("--mock", "probe", *args, str(f))
+    assert r.returncode == 2, r.stdout + r.stderr
+
+
+def test_tri_rejects_bad_files(tmp_path):
+    f = assemble(tmp_path, "x", PHAS + "mov.skipinv.end o0, #1\n")
+    # a PDS case no longer than its data segment
+    short = tmp_path / "short.bin"
+    short.write_bytes(b"\0" * 4 * 20)
+    r = run("--mock", "probe", "--tri", "pixev:20", str(short))
+    assert r.returncode == 1
+    r = run("--mock", "probe", "--tri", "pixel", "--slot",
+            f"eot={tmp_path / 'missing.bin'}", str(f))
+    assert r.returncode == 1
+    assert "missing.bin" in r.stderr
+    # an end-of-tile program too short for the PBE words and the emit: the scene refuses it
+    r = run("--mock", "probe", "--tri", "eot", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^probe x: failed: Invalid argument$", r.stdout, re.M), r.stdout
+
+
+def test_tri_reports_a_failed_render(tmp_path):
+    # A render that fails is reported as the probe's failure (on the mock: a scene
+    # too large for a parameter buffer of 0x23 pages, -ENOSPC).
+    f = assemble(tmp_path, "pix", PHAS + "mov.skipinv.end o0, #1\n")
+    r = run("--mock", "--mock-pb-pages=0x23", "probe", "--tri", "pixel", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^probe pix: failed: scene overflowed the parameter buffer", r.stdout,
+                     re.M), r.stdout
+    # what the scratch holds is still reported: what ran before the failure stored there
+    # (on the mock nothing ran)
+    assert re.search(r"^probe pix: scratch unchanged$", r.stdout, re.M), r.stdout
+
+
+def test_tri_vertices(tmp_path):
+    # --vertices N: copies of the triangle after it (sgxfive_tri_probe.h), so that the vertex
+    # programs run for more vertices than one task's; the mock draws them all.
+    f = assemble(tmp_path, "pix", PHAS + "mov.skipinv.end o0, #0x0000000A\n")
+    r = run("--mock", "probe", "--tri", "pixel", "--vertices", "15", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^probe pix: tri 64x64 \(15 vertices\), pixel replaced$", r.stdout,
+                     re.M), r.stdout
+    assert summary(r.stdout, "pix").get(0xA, 0) > 0, r.stdout
+    # 126: the vertex buffer moved to the scene page's spare room, still drawn
+    r = run("--mock", "probe", "--tri", "pixel", "--vertices", "126", str(f))
+    assert r.returncode == 0 and summary(r.stdout, "pix").get(0xA, 0) > 0, r.stdout + r.stderr
+    # not whole triangles, more than the vertex buffer holds, or not a --tri probe
+    for args in (["--tri", "pixel", "--vertices", "4"], ["--tri", "pixel", "--vertices", "129"],
+                 ["--tri", "pixel", "--vertices", "x"], ["--vertices", "6"]):
+        r = run("--mock", "probe", *args, str(f))
+        assert r.returncode == 2, (args, r.stdout + r.stderr)   # usage
+
+
+def test_tri_vtx_coords(tmp_path):
+    # --vtx-coords N: N more output dwords per vertex, a texture coordinate set
+    # (sgxfive_tri_probe.h, coords), for a vtxuse program that writes o4 on
+    f = assemble(tmp_path, "pix", PHAS + "mov.skipinv.end o0, #0x0000000A\n")
+    r = run("--mock", "probe", "--tri", "pixel", "--vtx-coords", "2", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^probe pix: tri 64x64 \(2 coordinates\), pixel replaced$", r.stdout,
+                     re.M), r.stdout
+    # more than the vertex size holds, not a number, or not a --tri probe
+    for args in (["--tri", "pixel", "--vtx-coords", "12"], ["--tri", "pixel", "--vtx-coords",
+                 "x"], ["--vtx-coords", "2"]):
+        r = run("--mock", "probe", *args, str(f))
+        assert r.returncode == 2, (args, r.stdout + r.stderr)   # usage
+
+
+def test_tri_isp2(tmp_path):
+    # --isp2 V: the state block carries ISP word 2 (stencil) V in place of the wrap word
+    # (sgxfive_tri_probe.h, isp2); the mock still finds the viewport and draws the triangle
+    f = assemble(tmp_path, "pix", PHAS + "mov.skipinv.end o0, #0x0000000A\n")
+    r = run("--mock", "probe", "--tri", "pixel", "--pixels", "--isp2", "0x0e0200ff", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^probe pix: tri 64x64 \(isp2 0x0e0200ff\), pixel replaced$", r.stdout,
+                     re.M), r.stdout
+    assert summary(r.stdout, "pix").get(0xA, 0) > 0, r.stdout
+    # not a number, or not a --tri probe
+    for args in (["--tri", "pixel", "--isp2", "x"], ["--isp2", "0"]):
+        r = run("--mock", "probe", *args, str(f))
+        assert r.returncode == 2, (args, r.stdout + r.stderr)   # usage
+
+
+def test_tri_blk_add(tmp_path):
+    # --blk-add BIT=V[,V]: presence bit BIT added to the state block with its words, the block
+    # and its copy grown (sgxfive_tri_probe.h, add_mask); the mock still draws the triangle
+    f = assemble(tmp_path, "pix", PHAS + "mov.skipinv.end o0, #0x0000000A\n")
+    r = run("--mock", "probe", "--tri", "pixel", "--pixels", "--isp2", "0x0e0200ff",
+            "--blk-add", "3=0x0e0200ff", "--blk-add", "7=0x0000ffff,0x0000ffff", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^probe pix: tri 64x64 \(isp2 0x0e0200ff\) \(blk-add 0x88\), pixel "
+                     r"replaced$", r.stdout, re.M), r.stdout
+    assert summary(r.stdout, "pix").get(0xA, 0) > 0, r.stdout
+    # a bit it cannot add, a missing or extra word, not a number, not a --tri probe
+    for args in (["--tri", "pixel", "--blk-add", "0=1"], ["--tri", "pixel", "--blk-add", "7=1"],
+                 ["--tri", "pixel", "--blk-add", "3=1,2"], ["--tri", "pixel", "--blk-add", "3=x"],
+                 ["--blk-add", "3=1"]):
+        r = run("--mock", "probe", *args, str(f))
+        assert r.returncode == 2, (args, r.stdout + r.stderr)   # usage
+
+
+def test_tri_copy_depth_and_blk(tmp_path):
+    # --copy-depth: the copies at clip z = c / 16; --blk N=V: state block word N set to V
+    f = assemble(tmp_path, "pix", PHAS + "mov.skipinv.end o0, #0x0000000A\n")
+    r = run("--mock", "probe", "--tri", "pixel", "--vertices", "6", "--copy-depth",
+            "--blk", "1=0x00400200", "--blk", "10=0x3e99999a", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^probe pix: tri 64x64 \(6 vertices, at depths\) \(block words 1 10\), "
+                     r"pixel replaced$", r.stdout, re.M), r.stdout
+    for args in (["--tri", "pixel", "--blk", "18=1"], ["--tri", "pixel", "--blk", "x"],
+                 ["--tri", "pixel", "--blk", "1="], ["--tri", "pixel", "--copy-depth"],
+                 ["--blk", "1=2"]):
+        r = run("--mock", "probe", *args, str(f))
+        assert r.returncode == 2, (args, r.stdout + r.stderr)   # usage
+
+
+
+def test_tri_obj2(tmp_path):
+    # --obj2 FIRST: the copies from vertex FIRST on as a second object, with its own state
+    # block (--obj2-blk N=V words set in the first's) and pixel shader (--obj2-pixel FILE)
+    f = assemble(tmp_path, "pix", PHAS + "mov.skipinv.end o0, #0x0000000A\n")
+    g = assemble(tmp_path, "pix2", PHAS + "mov.skipinv.end o0, #0x0000000B\n")
+    r = run("--mock", "probe", "--tri", "pixel", "--vertices", "6", "--obj2", "3",
+            "--obj2-blk", "1=0x00400200", "--obj2-pixel", str(g), str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^probe pix: tri 64x64 \(6 vertices\) \(obj2 from 3: block words 1, "
+                     r"pixel\), pixel replaced$", r.stdout, re.M), r.stdout
+    for args in (["--tri", "pixel", "--obj2", "3"],                       # no copies
+                 ["--tri", "pixel", "--vertices", "6", "--obj2", "4"],    # not a triangle's
+                 ["--tri", "pixel", "--vertices", "6", "--obj2", "6"],    # past the copies
+                 ["--tri", "pixel", "--vertices", "6", "--obj2", "3", "--obj2-blk", "32=1"],
+                 ["--tri", "pixel", "--vertices", "6", "--obj2-blk", "1=1"],
+                 ["--tri", "pixel", "--vertices", "6", "--obj2-pixel", str(g)],
+                 ["--obj2", "3"]):
+        r = run("--mock", "probe", *args, str(f))
+        assert r.returncode == 2, (args, r.stdout + r.stderr)   # usage
+
+
+def test_tri_sideband(tmp_path):
+    # --sideband V: the replaced end-of-tile program's emitpix2 sideband; needs that slot
+    f = assemble(tmp_path, "pix", PHAS + "mov.skipinv.end o0, #0x0000000A\n")
+    eot = assemble(tmp_path, "eot", (PROBES / "eot_dump.s").read_text())
+    r = run("--mock", "probe", "--tri", "pixel", "--slot", f"eot={eot}", "--temps", "8",
+            "--sideband", "0x2240", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^probe pix: tri 64x64 \(sideband 0x00002240\), eot pixel replaced$",
+                     r.stdout, re.M), r.stdout
+    for args in (["--tri", "pixel", "--sideband", "0x200"], ["--tri", "pixel", "--slot",
+                 f"eot={eot}", "--sideband", "x"], ["--sideband", "0x200"]):
+        r = run("--mock", "probe", *args, str(f))
+        assert r.returncode == 2, (args, r.stdout + r.stderr)   # usage
+
+
+def test_tri_cmd_words(tmp_path):
+    # --cmd N=V: the render command's word N set to V (after the other options)
+    f = assemble(tmp_path, "pix", PHAS + "mov.skipinv.end o0, #0x0000000A\n")
+    r = run("--mock", "probe", "--tri", "pixel", "--cmd", "13=0x80000002", "--cmd",
+            "16=0xeaa26e26", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^probe pix: tri 64x64 \(command words 13 16\), pixel replaced$",
+                     r.stdout, re.M), r.stdout
+    for args in (["--tri", "pixel", "--cmd", "26=1"], ["--tri", "pixel", "--cmd", "x"],
+                 ["--cmd", "1=2"]):
+        r = run("--mock", "probe", *args, str(f))
+        assert r.returncode == 2, (args, r.stdout + r.stderr)
+
+
+def test_tri_vdm_words(tmp_path):
+    # --vdm N=V: the VDM stream's word N set to V (after the other options)
+    f = assemble(tmp_path, "pix", PHAS + "mov.skipinv.end o0, #0x0000000A\n")
+    r = run("--mock", "probe", "--tri", "pixel", "--vdm", "4=0xf4000000", "--vdm",
+            "7=0x01c00083", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^probe pix: tri 64x64 \(VDM words 4 7\), pixel replaced$",
+                     r.stdout, re.M), r.stdout
+    for args in (["--tri", "pixel", "--vdm", "11=1"], ["--tri", "pixel", "--vdm", "x"],
+                 ["--vdm", "1=2"]):
+        r = run("--mock", "probe", *args, str(f))
+        assert r.returncode == 2, (args, r.stdout + r.stderr)
+
+
+def test_tri_dump_render(tmp_path):
+    # --dump-render DIR: after the render, the kernel's debugfs render_param and
+    # render_tadata (SGXFIVE_DEBUGFS overrides their directory) copied to DIR/NAME.*.bin
+    f = assemble(tmp_path, "pix", PHAS + "mov.skipinv.end o0, #0x0000000A\n")
+    dbg = tmp_path / "debugfs"
+    dbg.mkdir()
+    param, tadata = bytes(range(256)) * 300, b"\x5a" * 5000
+    (dbg / "render_param").write_bytes(param)
+    (dbg / "render_tadata").write_bytes(tadata)
+    out = tmp_path / "out"
+    out.mkdir()
+    r = subprocess.run([TOOL, "--mock", "probe", "--tri", "pixel", "--dump-render", str(out),
+                        str(f)], capture_output=True, text=True, timeout=60,
+                       env={**os.environ, "SGXFIVE_DEBUGFS": str(dbg)})
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert (out / "pix.param.bin").read_bytes() == param
+    assert (out / "pix.tadata.bin").read_bytes() == tadata
+    assert re.search(rf"^probe pix: render memory to {re.escape(str(out))}/pix\.\{{param,tadata\}}"
+                     rf"\.bin \(76800, 5000 bytes\)$", r.stdout, re.M), r.stdout
+    r = run("--mock", "probe", "--dump-render", str(out), str(f))   # not a --tri probe
+    assert r.returncode == 2, r.stdout + r.stderr
+
+
+def test_tri_dump_render_after_a_failed_job(tmp_path):
+    # --dump-render also after a job that faulted or hung: recovery keeps the PB pages (the
+    # TA's objects and streams), so the dump shows how far the TA got; the job still fails
+    # (the mock faults on an index list that is not of triangles)
+    vp = assemble(tmp_path, "vp", PHAS + "mov.skipinv.end o0, #0x0000000A\n")
+    dbg = tmp_path / "debugfs"
+    dbg.mkdir()
+    (dbg / "render_param").write_bytes(b"\x33" * 4096)
+    (dbg / "render_tadata").write_bytes(b"\x44" * 4096)
+    out = tmp_path / "out"
+    out.mkdir()
+    r = subprocess.run([TOOL, "--mock", "probe", "--tri", "pixel", "--vdm", "2=0x88c00003",
+                        "--dump-render", str(out), str(vp)], capture_output=True, text=True,
+                       timeout=60, env={**os.environ, "SGXFIVE_DEBUGFS": str(dbg)})
+    assert re.search(r"^probe vp: failed: ", r.stdout, re.M), r.stdout
+    assert re.search(r"^probe vp: render memory to .*/vp\.\{param,tadata\}\.bin "
+                     r"\(4096, 4096 bytes\) after the failure$", r.stdout, re.M), r.stdout
+    assert (out / "vp.param.bin").read_bytes() == b"\x33" * 4096
+
+
+def test_tri_kpoke(tmp_path):
+    # --kpoke SPEC (repeatable): written to the kernel's debugfs kpoke (SGXFIVE_KPOKE overrides
+    # the path) before each case's render, in order, so a probe can set kernel-built words
+    f = assemble(tmp_path, "pix", PHAS + "mov.skipinv.end o0, #0x0000000A\n")
+    k = tmp_path / "kpoke"
+    k.write_text("")
+    r = subprocess.run([TOOL, "--mock", "probe", "--tri", "pixel", "--kpoke", "ta:152=0x40000000",
+                        "--kpoke", "ta:153=0x3e800000", str(f)], capture_output=True, text=True,
+                       timeout=60, env={**os.environ, "SGXFIVE_KPOKE": str(k)})
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert k.read_text() == "ta:152=0x40000000\nta:153=0x3e800000\n"
+    assert re.search(r"^probe pix: kpoke ta:152=0x40000000 ta:153=0x3e800000$", r.stdout, re.M)
+    r = run("--mock", "probe", "--kpoke", "ta:1=1", str(f))          # not a --tri probe
+    assert r.returncode == 2, r.stdout + r.stderr
+
+
+def test_tri_vdm_flip(tmp_path):
+    # --vdm N^=V: the VDM stream's word N flipped by V (the words hold addresses we do not set)
+    f = assemble(tmp_path, "pix", PHAS + "mov.skipinv.end o0, #0x0000000A\n")
+    r = run("--mock", "probe", "--tri", "pixel", "--vdm", "1^=0x100", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^probe pix: tri 64x64 \(VDM words \^1\), pixel replaced$", r.stdout,
+                     re.M), r.stdout
+    r = run("--mock", "probe", "--tri", "pixel", "--vdm", "11^=1", str(f))
+    assert r.returncode == 2, r.stdout + r.stderr

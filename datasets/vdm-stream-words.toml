@@ -1,0 +1,10 @@
+title = "sweep table vdm/stream-words"
+repo = "data"
+paths = ["vdm/stream-words/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 4
+size = 739941
+sha256 = "5cb19e3a9e220208f23373dae14d6cfab3315a843f8715499b4585ce52963f2b"
+recipe = "probes/vdm/stream-words.toml"
+needs = ["render"]

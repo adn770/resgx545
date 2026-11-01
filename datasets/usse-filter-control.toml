@@ -1,0 +1,10 @@
+title = "probe table usse/filter-control"
+repo = "data"
+paths = ["usse/filter-control/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 721
+size = 1590070
+sha256 = "29bebb5489026d2537ed0ab61de9bc63db5b22299246b8fbee0c296952ca8e73"
+recipe = "probes/usse/filter-control.toml"
+needs = ["render"]

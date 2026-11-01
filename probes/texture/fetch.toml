@@ -1,0 +1,200 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# texture fetch: 0 sweeps, 14 probes.
+needs = ["render"]
+
+[[probe]]
+name = "texture-fetch-tex-fetch"
+question = "which scratch texel each pixel of the textured triangle samples, recorded"
+source = "pds_tex.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A"]
+cases = [[0x46012201]]
+labels = ["DOUTI0 0x46012201"]
+
+[[probe]]
+name = "texture-fetch-tex-sources"
+question = "what each iteration source puts in pa0 of a textured triangle's pixel task"
+source = "pds_tex.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A"]
+cases = [[0x40000001], [0x40000801], [0x40001001], [0x40001801], [0x40002001], [0x40002801], [0x40003001], [0x40003801], [0x40004001], [0x40004801], [0x40005001], [0x40005801], [0x40006001], [0x40006801], [0x40007001], [0x40007801], [0x40008001], [0x40008801], [0x40009001], [0x40009801], [0x4000a001], [0x4000a801], [0x4000b001], [0x4000b801], [0x4000c001], [0x4000c801], [0x4000d001], [0x4000d801], [0x4000e001], [0x4000e801], [0x4000f001], [0x4000f801], [0x40010001], [0x40010801], [0x40011001], [0x40011801], [0x40012001], [0x40012801], [0x40013001], [0x40013801], [0x40014001], [0x40014801], [0x40015001], [0x40015801], [0x40016001], [0x40016801], [0x40017001], [0x40017801], [0x40018001], [0x40018801], [0x40019001], [0x40019801], [0x4001a001], [0x4001a801], [0x4001b001], [0x4001b801], [0x4001c001], [0x4001c801], [0x4001d001], [0x4001d801], [0x4001e001], [0x4001e801], [0x4001f001], [0x4001f801]]
+labels = ["source 0", "source 1", "source 2", "source 3", "source 4", "source 5", "source 6", "source 7", "source 8", "source 9", "source 10", "source 11", "source 12", "source 13", "source 14", "source 15", "source 16", "source 17", "source 18", "source 19", "source 20", "source 21", "source 22", "source 23", "source 24", "source 25", "source 26", "source 27", "source 28", "source 29", "source 30", "source 31", "source 32", "source 33", "source 34", "source 35", "source 36", "source 37", "source 38", "source 39", "source 40", "source 41", "source 42", "source 43", "source 44", "source 45", "source 46", "source 47", "source 48", "source 49", "source 50", "source 51", "source 52", "source 53", "source 54", "source 55", "source 56", "source 57", "source 58", "source 59", "source 60", "source 61", "source 62", "source 63"]
+
+[[probe]]
+name = "texture-fetch-t3size-pa0"
+question = "pa0 of the fetched texel under T3 26:23 and the conversion"
+source = "pds_tex_t3.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A", "T"]
+cases = [[0x46012201, 0x800], [0x46012201, 0x800800], [0x46012201, 0x1000800], [0x46012201, 0x1800800], [0x46012201, 0x2000800], [0x46012201, 0x4000800], [0x46012201, 0x7800800], [0x46012201, 0x20800], [0x46012201, 0x820800], [0x46012201, 0x1020800], [0x46012201, 0x1820800], [0x46012201, 0x2020800], [0x46012201, 0x4020800], [0x46012201, 0x7820800], [0x46012201, 0x30800], [0x46012201, 0x830800], [0x46012201, 0x1030800], [0x46012201, 0x1830800], [0x46012201, 0x2030800], [0x46012201, 0x4030800], [0x46012201, 0x7830800]]
+labels = ["no conversion, 26:23 = 0", "no conversion, 26:23 = 1", "no conversion, 26:23 = 2", "no conversion, 26:23 = 3", "no conversion, 26:23 = 4", "no conversion, 26:23 = 8", "no conversion, 26:23 = 15", "f16 pairs, 26:23 = 0", "f16 pairs, 26:23 = 1", "f16 pairs, 26:23 = 2", "f16 pairs, 26:23 = 3", "f16 pairs, 26:23 = 4", "f16 pairs, 26:23 = 8", "f16 pairs, 26:23 = 15", "f32 channels, 26:23 = 0", "f32 channels, 26:23 = 1", "f32 channels, 26:23 = 2", "f32 channels, 26:23 = 3", "f32 channels, 26:23 = 4", "f32 channels, 26:23 = 8", "f32 channels, 26:23 = 15"]
+
+[[probe]]
+name = "texture-fetch-t3size-pa1"
+question = "pa1 of the fetched texel under T3 26:23 and the conversion"
+source = "pds_tex_t3.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A", "T"]
+cases = [[0x46012201, 0x800], [0x46012201, 0x800800], [0x46012201, 0x1000800], [0x46012201, 0x1800800], [0x46012201, 0x2000800], [0x46012201, 0x4000800], [0x46012201, 0x7800800], [0x46012201, 0x20800], [0x46012201, 0x820800], [0x46012201, 0x1020800], [0x46012201, 0x1820800], [0x46012201, 0x2020800], [0x46012201, 0x4020800], [0x46012201, 0x7820800], [0x46012201, 0x30800], [0x46012201, 0x830800], [0x46012201, 0x1030800], [0x46012201, 0x1830800], [0x46012201, 0x2030800], [0x46012201, 0x4030800], [0x46012201, 0x7830800]]
+labels = ["no conversion, 26:23 = 0", "no conversion, 26:23 = 1", "no conversion, 26:23 = 2", "no conversion, 26:23 = 3", "no conversion, 26:23 = 4", "no conversion, 26:23 = 8", "no conversion, 26:23 = 15", "f16 pairs, 26:23 = 0", "f16 pairs, 26:23 = 1", "f16 pairs, 26:23 = 2", "f16 pairs, 26:23 = 3", "f16 pairs, 26:23 = 4", "f16 pairs, 26:23 = 8", "f16 pairs, 26:23 = 15", "f32 channels, 26:23 = 0", "f32 channels, 26:23 = 1", "f32 channels, 26:23 = 2", "f32 channels, 26:23 = 3", "f32 channels, 26:23 = 4", "f32 channels, 26:23 = 8", "f32 channels, 26:23 = 15"]
+
+[[probe]]
+name = "texture-fetch-t3size-pa2"
+question = "pa2 of the fetched texel under T3 26:23 and the conversion"
+source = "pds_tex_t3.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A", "T"]
+cases = [[0x46012201, 0x800], [0x46012201, 0x800800], [0x46012201, 0x1000800], [0x46012201, 0x1800800], [0x46012201, 0x2000800], [0x46012201, 0x4000800], [0x46012201, 0x7800800], [0x46012201, 0x20800], [0x46012201, 0x820800], [0x46012201, 0x1020800], [0x46012201, 0x1820800], [0x46012201, 0x2020800], [0x46012201, 0x4020800], [0x46012201, 0x7820800], [0x46012201, 0x30800], [0x46012201, 0x830800], [0x46012201, 0x1030800], [0x46012201, 0x1830800], [0x46012201, 0x2030800], [0x46012201, 0x4030800], [0x46012201, 0x7830800]]
+labels = ["no conversion, 26:23 = 0", "no conversion, 26:23 = 1", "no conversion, 26:23 = 2", "no conversion, 26:23 = 3", "no conversion, 26:23 = 4", "no conversion, 26:23 = 8", "no conversion, 26:23 = 15", "f16 pairs, 26:23 = 0", "f16 pairs, 26:23 = 1", "f16 pairs, 26:23 = 2", "f16 pairs, 26:23 = 3", "f16 pairs, 26:23 = 4", "f16 pairs, 26:23 = 8", "f16 pairs, 26:23 = 15", "f32 channels, 26:23 = 0", "f32 channels, 26:23 = 1", "f32 channels, 26:23 = 2", "f32 channels, 26:23 = 3", "f32 channels, 26:23 = 4", "f32 channels, 26:23 = 8", "f32 channels, 26:23 = 15"]
+
+[[probe]]
+name = "texture-fetch-t3size-pa3"
+question = "pa3 of the fetched texel under T3 26:23 and the conversion"
+source = "pds_tex_t3.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa3.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A", "T"]
+cases = [[0x46012201, 0x800], [0x46012201, 0x800800], [0x46012201, 0x1000800], [0x46012201, 0x1800800], [0x46012201, 0x2000800], [0x46012201, 0x4000800], [0x46012201, 0x7800800], [0x46012201, 0x20800], [0x46012201, 0x820800], [0x46012201, 0x1020800], [0x46012201, 0x1820800], [0x46012201, 0x2020800], [0x46012201, 0x4020800], [0x46012201, 0x7820800], [0x46012201, 0x30800], [0x46012201, 0x830800], [0x46012201, 0x1030800], [0x46012201, 0x1830800], [0x46012201, 0x2030800], [0x46012201, 0x4030800], [0x46012201, 0x7830800]]
+labels = ["no conversion, 26:23 = 0", "no conversion, 26:23 = 1", "no conversion, 26:23 = 2", "no conversion, 26:23 = 3", "no conversion, 26:23 = 4", "no conversion, 26:23 = 8", "no conversion, 26:23 = 15", "f16 pairs, 26:23 = 0", "f16 pairs, 26:23 = 1", "f16 pairs, 26:23 = 2", "f16 pairs, 26:23 = 3", "f16 pairs, 26:23 = 4", "f16 pairs, 26:23 = 8", "f16 pairs, 26:23 = 15", "f32 channels, 26:23 = 0", "f32 channels, 26:23 = 1", "f32 channels, 26:23 = 2", "f32 channels, 26:23 = 3", "f32 channels, 26:23 = 4", "f32 channels, 26:23 = 8", "f32 channels, 26:23 = 15"]
+
+[[probe]]
+name = "texture-fetch-tex2-pa0"
+question = "pa0 after two fetches, the first's T3 26:23 and conversion varied"
+source = "pds_tex2.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "T"]
+cases = [[0x6012201, 0x46012201, 0x800800], [0x6012201, 0x46012201, 0x830800], [0x6012201, 0x46012201, 0x1030800], [0x6012201, 0x46012201, 0x2030800], [0x6012201, 0x46012201, 0x3030800], [0x6012201, 0x46012201, 0x800], [0x6012201, 0x46012201, 0x1000800], [0x6012201, 0x46012201, 0x1800800]]
+labels = ["both RGBA8888 as fetched, sizes 1, 1", "first as f32 channels, 26:23 = 1", "first as f32 channels, 26:23 = 2", "first as f32 channels, 26:23 = 4", "first as f32 channels, 26:23 = 6", "first as fetched, 26:23 = 0", "first as fetched, 26:23 = 2", "first as fetched, 26:23 = 3"]
+
+[[probe]]
+name = "texture-fetch-tex2-pa1"
+question = "pa1 after two fetches, the first's T3 26:23 and conversion varied"
+source = "pds_tex2.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "T"]
+cases = [[0x6012201, 0x46012201, 0x800800], [0x6012201, 0x46012201, 0x830800], [0x6012201, 0x46012201, 0x1030800], [0x6012201, 0x46012201, 0x2030800], [0x6012201, 0x46012201, 0x3030800], [0x6012201, 0x46012201, 0x800], [0x6012201, 0x46012201, 0x1000800], [0x6012201, 0x46012201, 0x1800800]]
+labels = ["both RGBA8888 as fetched, sizes 1, 1", "first as f32 channels, 26:23 = 1", "first as f32 channels, 26:23 = 2", "first as f32 channels, 26:23 = 4", "first as f32 channels, 26:23 = 6", "first as fetched, 26:23 = 0", "first as fetched, 26:23 = 2", "first as fetched, 26:23 = 3"]
+
+[[probe]]
+name = "texture-fetch-tex2-pa2"
+question = "pa2 after two fetches, the first's T3 26:23 and conversion varied"
+source = "pds_tex2.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "T"]
+cases = [[0x6012201, 0x46012201, 0x800800], [0x6012201, 0x46012201, 0x830800], [0x6012201, 0x46012201, 0x1030800], [0x6012201, 0x46012201, 0x2030800], [0x6012201, 0x46012201, 0x3030800], [0x6012201, 0x46012201, 0x800], [0x6012201, 0x46012201, 0x1000800], [0x6012201, 0x46012201, 0x1800800]]
+labels = ["both RGBA8888 as fetched, sizes 1, 1", "first as f32 channels, 26:23 = 1", "first as f32 channels, 26:23 = 2", "first as f32 channels, 26:23 = 4", "first as f32 channels, 26:23 = 6", "first as fetched, 26:23 = 0", "first as fetched, 26:23 = 2", "first as fetched, 26:23 = 3"]
+
+[[probe]]
+name = "texture-fetch-tex2-pa3"
+question = "pa3 after two fetches, the first's T3 26:23 and conversion varied"
+source = "pds_tex2.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa3.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "T"]
+cases = [[0x6012201, 0x46012201, 0x800800], [0x6012201, 0x46012201, 0x830800], [0x6012201, 0x46012201, 0x1030800], [0x6012201, 0x46012201, 0x2030800], [0x6012201, 0x46012201, 0x3030800], [0x6012201, 0x46012201, 0x800], [0x6012201, 0x46012201, 0x1000800], [0x6012201, 0x46012201, 0x1800800]]
+labels = ["both RGBA8888 as fetched, sizes 1, 1", "first as f32 channels, 26:23 = 1", "first as f32 channels, 26:23 = 2", "first as f32 channels, 26:23 = 4", "first as f32 channels, 26:23 = 6", "first as fetched, 26:23 = 0", "first as fetched, 26:23 = 2", "first as fetched, 26:23 = 3"]
+
+[[probe]]
+name = "texture-fetch-tex2-pa4"
+question = "pa4 after two fetches, the first's T3 26:23 and conversion varied"
+source = "pds_tex2.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa4.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "T"]
+cases = [[0x6012201, 0x46012201, 0x800800], [0x6012201, 0x46012201, 0x830800], [0x6012201, 0x46012201, 0x1030800], [0x6012201, 0x46012201, 0x2030800], [0x6012201, 0x46012201, 0x3030800], [0x6012201, 0x46012201, 0x800], [0x6012201, 0x46012201, 0x1000800], [0x6012201, 0x46012201, 0x1800800]]
+labels = ["both RGBA8888 as fetched, sizes 1, 1", "first as f32 channels, 26:23 = 1", "first as f32 channels, 26:23 = 2", "first as f32 channels, 26:23 = 4", "first as f32 channels, 26:23 = 6", "first as fetched, 26:23 = 0", "first as fetched, 26:23 = 2", "first as fetched, 26:23 = 3"]
+
+[[probe]]
+name = "texture-fetch-tex2-pa5"
+question = "pa5 after two fetches, the first's T3 26:23 and conversion varied"
+source = "pds_tex2.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa5.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "T"]
+cases = [[0x6012201, 0x46012201, 0x800800], [0x6012201, 0x46012201, 0x830800], [0x6012201, 0x46012201, 0x1030800], [0x6012201, 0x46012201, 0x2030800], [0x6012201, 0x46012201, 0x3030800], [0x6012201, 0x46012201, 0x800], [0x6012201, 0x46012201, 0x1000800], [0x6012201, 0x46012201, 0x1800800]]
+labels = ["both RGBA8888 as fetched, sizes 1, 1", "first as f32 channels, 26:23 = 1", "first as f32 channels, 26:23 = 2", "first as f32 channels, 26:23 = 4", "first as f32 channels, 26:23 = 6", "first as fetched, 26:23 = 0", "first as fetched, 26:23 = 2", "first as fetched, 26:23 = 3"]
+
+[[probe]]
+name = "texture-fetch-tex2-pa6"
+question = "pa6 after two fetches, the first's T3 26:23 and conversion varied"
+source = "pds_tex2.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa6.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "T"]
+cases = [[0x6012201, 0x46012201, 0x800800], [0x6012201, 0x46012201, 0x830800], [0x6012201, 0x46012201, 0x1030800], [0x6012201, 0x46012201, 0x2030800], [0x6012201, 0x46012201, 0x3030800], [0x6012201, 0x46012201, 0x800], [0x6012201, 0x46012201, 0x1000800], [0x6012201, 0x46012201, 0x1800800]]
+labels = ["both RGBA8888 as fetched, sizes 1, 1", "first as f32 channels, 26:23 = 1", "first as f32 channels, 26:23 = 2", "first as f32 channels, 26:23 = 4", "first as f32 channels, 26:23 = 6", "first as fetched, 26:23 = 0", "first as fetched, 26:23 = 2", "first as fetched, 26:23 = 3"]
+
+[[probe]]
+name = "texture-fetch-tex2-pa7"
+question = "pa7 after two fetches, the first's T3 26:23 and conversion varied"
+source = "pds_tex2.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa7.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "T"]
+cases = [[0x6012201, 0x46012201, 0x800800], [0x6012201, 0x46012201, 0x830800], [0x6012201, 0x46012201, 0x1030800], [0x6012201, 0x46012201, 0x2030800], [0x6012201, 0x46012201, 0x3030800], [0x6012201, 0x46012201, 0x800], [0x6012201, 0x46012201, 0x1000800], [0x6012201, 0x46012201, 0x1800800]]
+labels = ["both RGBA8888 as fetched, sizes 1, 1", "first as f32 channels, 26:23 = 1", "first as f32 channels, 26:23 = 2", "first as f32 channels, 26:23 = 4", "first as f32 channels, 26:23 = 6", "first as fetched, 26:23 = 0", "first as fetched, 26:23 = 2", "first as fetched, 26:23 = 3"]

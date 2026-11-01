@@ -1,0 +1,10 @@
+title = "script table zls/load-store"
+repo = "data"
+paths = ["zls/load-store/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 3
+size = 15805
+sha256 = "3e36bea52070505114dbe0bbfabdad14474240a19c284d7e585272c16b96d611"
+recipe = "probes/zls/load-store.toml"
+needs = ["render", "kpoke"]

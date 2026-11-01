@@ -1,0 +1,15 @@
+[[term]]
+id = "G0252"
+name = "OUTSEL.PLANES"
+status = "inferred"
+
+[[term.source]]
+term = "OUTSEL.PLANES"
+kind = "bitfield"
+sgx545 = "outsel [7:0]"
+meaning = "Low bits of the output-select word that turn user clip planes on: 0x53001 has plane 0 on and 0x63003 has planes 0 and 1 on; for an enabled plane the clip-plane value from the fdpc instruction replaces the distance dword the vertex wrote, and a disabled plane ignores it"
+tier = "ours"
+source = "resgx545"
+citation = "E096"
+licence = "MIT"
+evidence = "[HW] E096: with 0x53001, fdpc cp0 outside removed the triangle even with o4 at +1 and fdpc cp0 inside drew it with o4 at -1; fdpc cp1 outside drew (plane 1 off); with 0x63003 both fdpc cp0 and cp1 outside removed the triangle; [infer] the reading is ours, from these runs"

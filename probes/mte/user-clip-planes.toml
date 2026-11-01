@@ -1,0 +1,302 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# mte user clip planes: 0 sweeps, 19 probes.
+needs = ["render"]
+
+[[probe]]
+name = "mte-user-clip-planes-fdpc-clip"
+question = "fdpc's clip-plane result in the vertex shader: is the triangle still drawn when every vertex (or half) is outside the plane"
+source = "vtx_fdpc.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+temps = 12
+params = {  }
+inputs = ["OP"]
+labels = ["control: no fdpc", "fdpc cp0, plane -w (all outside)", "fdpc cp0, plane +w (all inside)", "fdpc cp5, plane -w (all outside)", "fdpc cp0, plane x (half outside)"]
+cases = [["        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        nop\n        nop"], ["        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        fdpc.skipinv.repeat4 r8, cp0, pa0, r4\n        nop"], ["        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        fdpc.skipinv.repeat4 r8, cp0, pa0, r4\n        nop"], ["        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        fdpc.skipinv.repeat4 r8, cp5, pa0, r4\n        nop"], ["        mov.skipinv r4, #0x3F800000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x00000000\n        fdpc.skipinv.repeat4 r8, cp0, pa0, r4\n        nop"]]
+
+[[probe]]
+name = "mte-user-clip-planes-fdpc-outsel-ff"
+question = "fdpc's clip-plane result with OUTSEL bits 7:0 = 0xff (Rogue's user plane enables): which planes clip the triangle"
+source = "vtx_fdpc.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+temps = 12
+blk = { 13 = 0x430ff }
+params = {  }
+inputs = ["OP"]
+labels = ["control: no fdpc", "fdpc cp0, plane -w (all outside)", "fdpc cp0, plane +w (all inside)", "fdpc cp5, plane -w (all outside)", "fdpc cp0, plane x (half outside)"]
+cases = [["        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        nop\n        nop"], ["        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        fdpc.skipinv.repeat4 r8, cp0, pa0, r4\n        nop"], ["        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        fdpc.skipinv.repeat4 r8, cp0, pa0, r4\n        nop"], ["        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        fdpc.skipinv.repeat4 r8, cp5, pa0, r4\n        nop"], ["        mov.skipinv r4, #0x3F800000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x00000000\n        fdpc.skipinv.repeat4 r8, cp0, pa0, r4\n        nop"]]
+
+[[probe]]
+name = "mte-user-clip-planes-fdpc-outsel-01"
+question = "fdpc's clip-plane result with OUTSEL bits 7:0 = 0x01 (Rogue's user plane enables): which planes clip the triangle"
+source = "vtx_fdpc.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+temps = 12
+blk = { 13 = 0x43001 }
+params = {  }
+inputs = ["OP"]
+labels = ["control: no fdpc", "fdpc cp0, plane -w (all outside)", "fdpc cp0, plane +w (all inside)", "fdpc cp5, plane -w (all outside)", "fdpc cp0, plane x (half outside)"]
+cases = [["        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        nop\n        nop"], ["        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        fdpc.skipinv.repeat4 r8, cp0, pa0, r4\n        nop"], ["        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        fdpc.skipinv.repeat4 r8, cp0, pa0, r4\n        nop"], ["        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        fdpc.skipinv.repeat4 r8, cp5, pa0, r4\n        nop"], ["        mov.skipinv r4, #0x3F800000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x00000000\n        fdpc.skipinv.repeat4 r8, cp0, pa0, r4\n        nop"]]
+
+[[probe]]
+name = "mte-user-clip-planes-fdpc-outsel-02"
+question = "fdpc's clip-plane result with OUTSEL bits 7:0 = 0x02 (Rogue's user plane enables): which planes clip the triangle"
+source = "vtx_fdpc.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+temps = 12
+blk = { 13 = 0x43002 }
+params = {  }
+inputs = ["OP"]
+labels = ["control: no fdpc", "fdpc cp0, plane -w (all outside)", "fdpc cp0, plane +w (all inside)", "fdpc cp5, plane -w (all outside)", "fdpc cp0, plane x (half outside)"]
+cases = [["        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        nop\n        nop"], ["        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        fdpc.skipinv.repeat4 r8, cp0, pa0, r4\n        nop"], ["        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        fdpc.skipinv.repeat4 r8, cp0, pa0, r4\n        nop"], ["        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        fdpc.skipinv.repeat4 r8, cp5, pa0, r4\n        nop"], ["        mov.skipinv r4, #0x3F800000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x00000000\n        fdpc.skipinv.repeat4 r8, cp0, pa0, r4\n        nop"]]
+
+[[probe]]
+name = "mte-user-clip-planes-fdpc-outsel-20"
+question = "fdpc's clip-plane result with OUTSEL bits 7:0 = 0x20 (Rogue's user plane enables): which planes clip the triangle"
+source = "vtx_fdpc.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+temps = 12
+blk = { 13 = 0x43020 }
+params = {  }
+inputs = ["OP"]
+labels = ["control: no fdpc", "fdpc cp0, plane -w (all outside)", "fdpc cp0, plane +w (all inside)", "fdpc cp5, plane -w (all outside)", "fdpc cp0, plane x (half outside)"]
+cases = [["        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        nop\n        nop"], ["        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        fdpc.skipinv.repeat4 r8, cp0, pa0, r4\n        nop"], ["        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        fdpc.skipinv.repeat4 r8, cp0, pa0, r4\n        nop"], ["        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        fdpc.skipinv.repeat4 r8, cp5, pa0, r4\n        nop"], ["        mov.skipinv r4, #0x3F800000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x00000000\n        fdpc.skipinv.repeat4 r8, cp0, pa0, r4\n        nop"]]
+
+[[probe]]
+name = "mte-user-clip-planes-fdpc-o4-01"
+question = "a fifth vertex dword o4 with OUTSEL 0x53001 (plane 0 on): does o4 clip the triangle"
+source = "vtx_fdpc.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+temps = 12
+vtx_coords = 1
+blk = { 13 = 0x53001 }
+params = {  }
+inputs = ["OP"]
+labels = ["o4 = +1.0", "o4 = -1.0", "o4 = fdpc cp0 of +w", "o4 = fdpc cp0 of -w", "o4 = fdpc cp0 of x (half)", "o4 = fdp of x (half)"]
+cases = [["        mov.skipinv o4, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0xBF800000\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        fdpc.skipinv.repeat4 o4, cp0, pa0, r4\n        nop"], ["        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        fdpc.skipinv.repeat4 o4, cp0, pa0, r4\n        nop"], ["        mov.skipinv r4, #0x3F800000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x00000000\n        fdpc.skipinv.repeat4 o4, cp0, pa0, r4\n        nop"], ["        mov.skipinv r4, #0x3F800000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x00000000\n        fdp.skipinv.repeat4 o4, pa0, r4\n        nop"]]
+
+[[probe]]
+name = "mte-user-clip-planes-fdpc-o4-00"
+question = "a fifth vertex dword o4 with OUTSEL 0x53000 (plane 0 off): does o4 clip the triangle"
+source = "vtx_fdpc.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+temps = 12
+vtx_coords = 1
+blk = { 13 = 0x53000 }
+params = {  }
+inputs = ["OP"]
+labels = ["o4 = +1.0", "o4 = -1.0", "o4 = fdpc cp0 of +w", "o4 = fdpc cp0 of -w", "o4 = fdpc cp0 of x (half)", "o4 = fdp of x (half)"]
+cases = [["        mov.skipinv o4, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0xBF800000\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        fdpc.skipinv.repeat4 o4, cp0, pa0, r4\n        nop"], ["        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        fdpc.skipinv.repeat4 o4, cp0, pa0, r4\n        nop"], ["        mov.skipinv r4, #0x3F800000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x00000000\n        fdpc.skipinv.repeat4 o4, cp0, pa0, r4\n        nop"], ["        mov.skipinv r4, #0x3F800000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x00000000\n        fdp.skipinv.repeat4 o4, pa0, r4\n        nop"]]
+
+[[probe]]
+name = "mte-user-clip-planes-fdpc-cut"
+question = "user clip planes with OUTSEL 0x53001, a cut plane"
+source = "vtx_fdpc.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+temps = 12
+vtx_coords = 1
+blk = { 13 = 0x53001 }
+params = {  }
+inputs = ["OP"]
+labels = ["o4 = fdp x + 0.5 (one vertex out)", "o4 = fdp x - 0.5 (one vertex in)", "o4 = fdp y + 0.5"]
+cases = [["        mov.skipinv r4, #0x3F800000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F000000\n        fdp.skipinv.repeat4 o4, pa0, r4\n        nop"], ["        mov.skipinv r4, #0x3F800000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF000000\n        fdp.skipinv.repeat4 o4, pa0, r4\n        nop"], ["        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x3F800000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F000000\n        fdp.skipinv.repeat4 o4, pa0, r4\n        nop"]]
+
+[[probe]]
+name = "mte-user-clip-planes-fdpc-plane1"
+question = "user clip planes with OUTSEL 0x53002, plane 1"
+source = "vtx_fdpc.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+temps = 12
+vtx_coords = 1
+blk = { 13 = 0x53002 }
+params = {  }
+inputs = ["OP"]
+labels = ["o4 = -1.0", "o4 = +1.0"]
+cases = [["        mov.skipinv o4, #0xBF800000\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"]]
+
+[[probe]]
+name = "mte-user-clip-planes-fdpc-plane01"
+question = "user clip planes with OUTSEL 0x63003, planes 0 and 1"
+source = "vtx_fdpc.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+temps = 12
+vtx_coords = 2
+blk = { 13 = 0x63003 }
+params = {  }
+inputs = ["OP"]
+labels = ["o4 +1, o5 -1", "o4 -1, o5 +1", "o4 +1, o5 +1"]
+cases = [["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0xBF800000\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0xBF800000\n        mov.skipinv o5, #0x3F800000\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        nop\n        nop\n        nop\n        nop"]]
+
+[[probe]]
+name = "mte-user-clip-planes-fdpc-plane1-wide"
+question = "user plane 1 alone, 6-dword vertex: which dword it reads"
+source = "vtx_fdpc.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+temps = 12
+vtx_coords = 2
+blk = { 13 = 0x63002 }
+params = {  }
+inputs = ["OP"]
+labels = ["o4 -1, o5 +1", "o4 +1, o5 -1"]
+cases = [["        mov.skipinv o4, #0xBF800000\n        mov.skipinv o5, #0x3F800000\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0xBF800000\n        nop\n        nop\n        nop\n        nop"]]
+
+[[probe]]
+name = "mte-user-clip-planes-fdpc-mtectl-00"
+question = "plane 0 crossing the triangle with MTECTL 0x01555600: cut or rejected"
+source = "vtx_fdpc.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+temps = 12
+vtx_coords = 1
+blk = { 13 = 0x53001, 15 = 0x1555600 }
+params = {  }
+inputs = ["OP"]
+labels = ["o4 = fdp x + 0.5"]
+cases = [["        mov.skipinv r4, #0x3F800000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F000000\n        fdp.skipinv.repeat4 o4, pa0, r4\n        nop"]]
+
+[[probe]]
+name = "mte-user-clip-planes-fdpc-mtectl-24"
+question = "plane 0 crossing the triangle with MTECTL 0x01555624: cut or rejected"
+source = "vtx_fdpc.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+temps = 12
+vtx_coords = 1
+blk = { 13 = 0x53001, 15 = 0x1555624 }
+params = {  }
+inputs = ["OP"]
+labels = ["o4 = fdp x + 0.5"]
+cases = [["        mov.skipinv r4, #0x3F800000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F000000\n        fdp.skipinv.repeat4 o4, pa0, r4\n        nop"]]
+
+[[probe]]
+name = "mte-user-clip-planes-fdpc-mtectl-28"
+question = "plane 0 crossing the triangle with MTECTL 0x01555628: cut or rejected"
+source = "vtx_fdpc.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+temps = 12
+vtx_coords = 1
+blk = { 13 = 0x53001, 15 = 0x1555628 }
+params = {  }
+inputs = ["OP"]
+labels = ["o4 = fdp x + 0.5"]
+cases = [["        mov.skipinv r4, #0x3F800000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F000000\n        fdp.skipinv.repeat4 o4, pa0, r4\n        nop"]]
+
+[[probe]]
+name = "mte-user-clip-planes-fdpc-mtectl-30"
+question = "plane 0 crossing the triangle with MTECTL 0x01555630: cut or rejected"
+source = "vtx_fdpc.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+temps = 12
+vtx_coords = 1
+blk = { 13 = 0x53001, 15 = 0x1555630 }
+params = {  }
+inputs = ["OP"]
+labels = ["o4 = fdp x + 0.5"]
+cases = [["        mov.skipinv r4, #0x3F800000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F000000\n        fdp.skipinv.repeat4 o4, pa0, r4\n        nop"]]
+
+[[probe]]
+name = "mte-user-clip-planes-fdpc-mtectl-3c"
+question = "plane 0 crossing the triangle with MTECTL 0x0155563c: cut or rejected"
+source = "vtx_fdpc.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+temps = 12
+vtx_coords = 1
+blk = { 13 = 0x53001, 15 = 0x155563c }
+params = {  }
+inputs = ["OP"]
+labels = ["o4 = fdp x + 0.5"]
+cases = [["        mov.skipinv r4, #0x3F800000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F000000\n        fdp.skipinv.repeat4 o4, pa0, r4\n        nop"]]
+
+[[probe]]
+name = "mte-user-clip-planes-fdpc-cp"
+question = "fdpc's cpN with OUTSEL 0x53001, the distance written by a mov: does cpN feed the plane"
+source = "vtx_fdpc10.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+temps = 16
+vtx_coords = 1
+blk = { 13 = 0x53001 }
+params = {  }
+inputs = ["OP"]
+labels = ["o4 +1, no fdpc", "o4 +1, fdpc cp0 outside", "o4 +1, fdpc cp0 inside", "o4 +1, fdpc cp1 outside", "o4 -1, fdpc cp0 inside", "o4 +1, fddpc cp0 and cp1 both outside"]
+cases = [["        mov.skipinv o4, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        fdpc.skipinv.repeat4 r8, cp0, pa0, r4\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        fdpc.skipinv.repeat4 r8, cp0, pa0, r4\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        fdpc.skipinv.repeat4 r8, cp1, pa0, r4\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0xBF800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        fdpc.skipinv.repeat4 r8, cp0, pa0, r4\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        fddpc.skipinv r8, i0, cp0, cp1, pa0, r4, r4\n        nop\n        nop\n        nop\n        nop"]]
+
+[[probe]]
+name = "mte-user-clip-planes-fdpc-cp-p01"
+question = "fdpc's cpN with OUTSEL 0x63003, the distance written by a mov: does cpN feed the plane"
+source = "vtx_fdpc10.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+temps = 16
+vtx_coords = 2
+blk = { 13 = 0x63003 }
+params = {  }
+inputs = ["OP"]
+labels = ["o4 +1, o5 +1, no fdpc", "o4 +1, o5 +1, fdpc cp1 outside", "o4 +1, o5 +1, fdpc cp0 outside"]
+cases = [["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        fdpc.skipinv.repeat4 r8, cp1, pa0, r4\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        fdpc.skipinv.repeat4 r8, cp0, pa0, r4\n        nop\n        nop\n        nop"]]
+
+[[probe]]
+name = "mte-user-clip-planes-fddpc-cp"
+question = "fdpc's cpN with OUTSEL 0x53001, the distance written by a mov: does cpN feed the plane"
+source = "vtx_fdpc10.s"
+host = "tri"
+slot = "vtxuse"
+size = [64, 64]
+pixels = true
+temps = 16
+vtx_coords = 1
+blk = { 13 = 0x53001 }
+params = {  }
+inputs = ["OP"]
+labels = ["fddpc cp0 = w * -1, cp1 = w * +1", "fddpc cp1 = w * -1, cp0 = w * +1", "fddpc cp0 = w * +1, cp1 = w * -1", "fddpc cp1 = w * +1, cp0 = w * -1"]
+cases = [["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0xBF800000\n        mov.skipinv r12, #0x3F800000\n        fddpc.skipinv r8, i0, cp0, cp1, pa3, r4, r12\n        nop\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0xBF800000\n        mov.skipinv r12, #0x3F800000\n        fddpc.skipinv r8, i0, cp1, cp0, pa3, r4, r12\n        nop\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0xBF800000\n        mov.skipinv r12, #0x3F800000\n        fddpc.skipinv r8, i0, cp0, cp1, pa3, r12, r4\n        nop\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0xBF800000\n        mov.skipinv r12, #0x3F800000\n        fddpc.skipinv r8, i0, cp1, cp0, pa3, r12, r4\n        nop\n        nop\n        nop\n        nop\n        nop\n        nop"]]

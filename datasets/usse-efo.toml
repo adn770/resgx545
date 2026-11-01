@@ -1,0 +1,10 @@
+title = "probe table usse/efo"
+repo = "data"
+paths = ["usse/efo/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 76
+size = 161677
+sha256 = "f5a843b228a16e4229b037e00f63de8af1bcc0bb6977cd9399a2b844530682dd"
+recipe = "probes/usse/efo.toml"
+needs = ["render"]

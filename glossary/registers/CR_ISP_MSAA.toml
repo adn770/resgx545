@@ -1,0 +1,47 @@
+[[term]]
+id = "G0121"
+name = "CR_ISP_MSAA"
+status = "named"
+
+[[term.source]]
+term = "CR_ISP_MSAA"
+kind = "register"
+sgx545 = "0x042c"
+meaning = "ISP multisample control: bits 1:0 the mode (CR_ISP_MSAA.MODE), bit 31 the multisample path's enable (CR_ISP_MSAA.ENABLE) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E074"
+licence = "MIT"
+evidence = "[HW] E074: bit 1 stores each pixel's samples as pixels of its tile (no resolve); bit 31 clear with bit 1 draws nothing, without it changes nothing"
+
+[[term]]
+id = "G0122"
+name = "CR_ISP_MSAA.ENABLE"
+status = "named"
+
+[[term.source]]
+term = "CR_ISP_MSAA.ENABLE"
+kind = "bitfield"
+sgx545 = "0x042c[31]"
+meaning = "enables the multisampled ISP path: with it clear and CR_ISP_MSAA.MODE 1-2 the triangle is tiled but no sample is written; the single-sampled path ignores it; set in every capture [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E074"
+licence = "MIT"
+evidence = "[HW] E074: clear with bit 1, background only; clear without bit 1, no change"
+
+[[term]]
+id = "G0123"
+name = "CR_ISP_MSAA.MODE"
+status = "inferred"
+
+[[term.source]]
+term = "CR_ISP_MSAA.MODE"
+kind = "bitfield"
+sgx545 = "0x042c[1:0]"
+meaning = "Bits 1:0 of register 0x042c: 0 leaves the single-sample image, 1 and 2 each change the 64x64 triangle's image, and 3 hangs the job; the sample count each value selects is not shown by the pixel counts"
+tier = "ours"
+source = "resgx545"
+citation = "E074, E066"
+licence = "MIT"
+evidence = "[HW] E074: with bit 31 set and the sample positions in place, 0x042c = 0x80000001 gave 868 triangle pixels, 0x80000002 gave 896, 0x80000003 hung the job (context lost), and 0x042c at 0 alone gave the unpoked 1062; the data do not single out bit 1 as the 4x bit; [HW] E066: cmd:13 bit 0 gave 844 triangle pixels and bit 1 gave 876, and ~0 hung the job, in every one of the four depth scenes; [infer] the reading is ours, from these runs"

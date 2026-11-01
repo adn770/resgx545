@@ -1,0 +1,31 @@
+[[term]]
+id = "G0244"
+name = "ISP0"
+status = "named"
+
+[[term.source]]
+term = "STATE_ISPA"
+kind = "struct"
+sgx545 = "ISP word 0 (isp0)"
+meaning = "ISP state word A: depth, pass, object type"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0193"
+licence = "MIT"
+evidence = "same function (S.3)"
+
+[[term]]
+id = "G0245"
+name = "ISP0.PASS_TYPE"
+status = "named"
+
+[[term.source]]
+term = "passtype"
+kind = "field"
+sgx545 = "isp0 [27:25]"
+meaning = "pass type"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0194"
+licence = "MIT"
+evidence = "same function; OPAQUE 0 and TRANSLUCENT 1 match S.3; [HW] E065: in a triangle, 2, 4 and 5 render as 0 and make CR_ISP_VISIBILITY_COUNT7 count, 3 and 7 remove the triangle, 1 and 6 change nothing; [HW] E068: with five overlapping copies, pass 1 (translucent) less resolves as opaque less, pass 4 (punch-through) less as depth always; [HW] E077: in pass 1 the pixel shader finds the pixel's current colour in o0 (the destination it blends with), in pass 0 it does not; no feedback kills the pixel and the object behind shows"

@@ -1,0 +1,10 @@
+title = "script table platform/init-registers"
+repo = "data"
+paths = ["platform/init-registers/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 3
+size = 5495
+sha256 = "fbd6fdf67d89c6b7a86a0f8063bfb4e8f8fb6f231bf7c1094f9a4fcf75a9921f"
+recipe = "probes/platform/init-registers.toml"
+needs = ["kreg", "regs"]

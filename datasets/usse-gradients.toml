@@ -1,0 +1,10 @@
+title = "probe table usse/gradients"
+repo = "data"
+paths = ["usse/gradients/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 23
+size = 147439
+sha256 = "f6cd1cab0bbfc635bf293d954f473e79887446e5e9eba56137e764f123b0791e"
+recipe = "probes/usse/gradients.toml"
+needs = ["render"]

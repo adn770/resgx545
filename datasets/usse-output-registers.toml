@@ -1,0 +1,10 @@
+title = "probe table usse/output-registers"
+repo = "data"
+paths = ["usse/output-registers/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 88
+size = 1947905
+sha256 = "ce77a7280b16e9d13802de67eb41e094bcd6300c3fe6cf7a4b77bf6747bd11f0"
+recipe = "probes/usse/output-registers.toml"
+needs = ["render"]

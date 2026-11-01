@@ -1,0 +1,15 @@
+[[term]]
+id = "G0202"
+name = "CR_USE_COEFFS2_BIAS"
+status = "named"
+
+[[term.source]]
+term = "CR_USE_COEFFS2_BIAS"
+kind = "register"
+sgx545 = "0x0b2c"
+meaning = "shift and bias of coefficient set 2: bits 3:0 shift the tap sum right, the bits above a signed bias added before the shift; the result saturates to a byte [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E078"
+licence = "MIT"
+evidence = "which registers hold the firh coefficient sets is not shown by any probe (video probe: how the sets are loaded is open); [HW] E078: with the transfer's load flag, firh's set 2 answers to this word and no other set does; [HW] E078: one byte at small values; the shift-and-bias fit predicts the closed driver's NV12 results (0x87, 0, 0 for a zero input); context: Intel's MIT Poulsbo X driver (xserver-xorg-video-psb src/psb_video.c, 'we use taps 0,3 and 6') packs a YUV-to-RGB row per set as A = Y<<24 | U, B = V<<8, BIAS = const<<4 | shift, the layout and the -3/0/+3 taps measured here; psb_video's pvr2d.h calls them the FIRH instruction's coefficients"

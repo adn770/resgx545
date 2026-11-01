@@ -1,0 +1,10 @@
+title = "probe table texture/sampler-cache"
+repo = "data"
+paths = ["texture/sampler-cache/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 31
+size = 497453
+sha256 = "e9926051f22e3d73687361c753eb4d956f0225f9b0492c7e30c7286e79fae033"
+recipe = "probes/texture/sampler-cache.toml"
+needs = ["render"]

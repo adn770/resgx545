@@ -1,0 +1,68 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse fmad: 0 sweeps, 5 probes.
+needs = ["render"]
+
+[[probe]]
+name = "usse-fmad-move"
+question = "fmad x, 1, +-0: a move?"
+source = "dump.s"
+params = { A = 0, B = 0, C = 0, D = 0, E = 0, F = 0, G = 0, H = 0, OUT = "r10" }
+inputs = ["OP", "A", "B", "C", "D", "E", "F", "G", "H"]
+labels = ["0x40400000 x 1 + 0x00000000", "0x40400000 x 1 + 0x80000000", "0x00400000 x 1 + 0x00000000", "0x00400000 x 1 + 0x80000000", "0x80400000 x 1 + 0x00000000", "0x80400000 x 1 + 0x80000000", "0x80000000 x 1 + 0x00000000", "0x80000000 x 1 + 0x80000000", "0x7f800000 x 1 + 0x00000000", "0x7f800000 x 1 + 0x80000000", "0x7fc00001 x 1 + 0x00000000", "0x7fc00001 x 1 + 0x80000000", "0xffc12345 x 1 + 0x00000000", "0xffc12345 x 1 + 0x80000000"]
+cases = [["fmad r10, r1, r2, r3", 0x40400000, 0x3f800000, 0, 0, 0, 0, 0, 0], ["fmad r10, r1, r2, r3", 0x40400000, 0x3f800000, 0x80000000, 0, 0, 0, 0, 0], ["fmad r10, r1, r2, r3", 0x400000, 0x3f800000, 0, 0, 0, 0, 0, 0], ["fmad r10, r1, r2, r3", 0x400000, 0x3f800000, 0x80000000, 0, 0, 0, 0, 0], ["fmad r10, r1, r2, r3", 0x80400000, 0x3f800000, 0, 0, 0, 0, 0, 0], ["fmad r10, r1, r2, r3", 0x80400000, 0x3f800000, 0x80000000, 0, 0, 0, 0, 0], ["fmad r10, r1, r2, r3", 0x80000000, 0x3f800000, 0, 0, 0, 0, 0, 0], ["fmad r10, r1, r2, r3", 0x80000000, 0x3f800000, 0x80000000, 0, 0, 0, 0, 0], ["fmad r10, r1, r2, r3", 0x7f800000, 0x3f800000, 0, 0, 0, 0, 0, 0], ["fmad r10, r1, r2, r3", 0x7f800000, 0x3f800000, 0x80000000, 0, 0, 0, 0, 0], ["fmad r10, r1, r2, r3", 0x7fc00001, 0x3f800000, 0, 0, 0, 0, 0, 0], ["fmad r10, r1, r2, r3", 0x7fc00001, 0x3f800000, 0x80000000, 0, 0, 0, 0, 0], ["fmad r10, r1, r2, r3", 0xffc12345, 0x3f800000, 0, 0, 0, 0, 0, 0], ["fmad r10, r1, r2, r3", 0xffc12345, 0x3f800000, 0x80000000, 0, 0, 0, 0, 0]]
+[probe.hypotheses]
+"exact for normals, infinities and zeros with c = -0 (+0 gives +0 for -0); denormals flush to a zero of their sign; NaNs become 0x7fc00000" = [[0x40400000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x40400000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x80000000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x80000000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x7f800000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x7f800000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x7fc00000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x7fc00000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x7fc00000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x7fc00000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf]]
+"every input kept but denormals" = [[0x40400000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x40400000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x80000000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x80000000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x80000000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x7f800000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x7f800000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x7fc00001, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x7fc00001, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xffc12345, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0xffc12345, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf]]
+
+[[probe]]
+name = "usse-fmad-round"
+question = "fmad rounding: ties with even and odd last bit, positive and negative"
+source = "value.s"
+params = { OP = "fmad r4, r1, r2, r3", OUT = "r4", C = 0, D = 0 }
+inputs = ["A", "B"]
+labels = ["(1+2^-12)^2, tie to even", "(1+2^-12)(1+3*2^-12), tie, odd", "the same, negative"]
+cases = [[0x3f800800, 0x3f800800], [0x3f800800, 0x3f801800], [0xbf800800, 0x3f801800]]
+[probe.hypotheses]
+"to nearest, ties to even" = [0x3f801000, 0x3f802002, 0xbf802002]
+"toward zero" = [0x3f801000, 0x3f802001, 0xbf802001]
+"to nearest, ties away" = [0x3f801001, 0x3f802002, 0xbf802002]
+"toward -inf" = [0x3f801000, 0x3f802001, 0xbf802002]
+"toward +inf" = [0x3f801001, 0x3f802002, 0xbf802001]
+
+[[probe]]
+name = "usse-fmad-fused"
+question = "fmad a * b + c: one rounding (fused) or two"
+source = "value.s"
+params = { OP = "fmad r4, r1, r2, r3", OUT = "r4", D = 0 }
+inputs = ["A", "B", "C"]
+cases = [[0x3f800800, 0x3f800800, 0xbf801000]]
+[probe.hypotheses]
+"fused (one rounding)" = [0x33800000]
+"product rounded first" = [0]
+
+[[probe]]
+name = "usse-fmad-denormal"
+question = "fmad with a denormal result or input: kept or flushed to zero"
+source = "value.s"
+params = { OP = "fmad r4, r1, r2, r3", OUT = "r4", C = 0, D = 0 }
+inputs = ["A", "B"]
+labels = ["2^-70 * 2^-70 (2^-140)", "2^-140 (input) * 2^100", "-2^-70 * 2^-70"]
+cases = [[0x1c800000, 0x1c800000], [0x200, 0x71800000], [0x9c800000, 0x1c800000]]
+[probe.hypotheses]
+"denormals kept" = [0x200, 0x2b800000, 0x80000200]
+"flushed to zero (results and inputs)" = [0, 0, { o0_not = 0x80000200 }]
+"results flushed, inputs kept" = [0, 0x2b800000, { o0_not = 0x80000200 }]
+"inputs flushed, results kept" = [0x200, 0, 0x80000200]
+
+[[probe]]
+name = "usse-fmad-zero-sign"
+question = "fmad: signs of zero results and of flushed denormals"
+source = "value.s"
+params = { OP = "fmad r4, r1, r2, r3", OUT = "r4", D = 0 }
+inputs = ["A", "B", "C"]
+labels = ["-1 * 0 + -0", "-1 * 0 + 0", "1 * 1 + -1", "-2^-70 * 2^-70 + -0", "-denormal * 1 + -0", "-denormal * 1 + 0"]
+cases = [[0xbf800000, 0, 0x80000000], [0xbf800000, 0, 0], [0x3f800000, 0x3f800000, 0xbf800000], [0x9c800000, 0x1c800000, 0x80000000], [0x80000200, 0x3f800000, 0x80000000], [0x80000200, 0x3f800000, 0]]
+[probe.hypotheses]
+"IEEE zeros, denormals flushed keeping their sign" = [0x80000000, 0, 0, 0x80000000, 0x80000000, 0]
+"IEEE zeros, denormals flushed to +0" = [0x80000000, 0, 0, 0, 0, 0]

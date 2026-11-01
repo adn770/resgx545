@@ -1,0 +1,47 @@
+[[term]]
+id = "G0124"
+name = "CR_ISP_MULTISAMPLECTL"
+status = "named"
+
+[[term.source]]
+term = "ROGUE_CR_ISP_AA"
+kind = "register"
+sgx545 = "0x04c8"
+meaning = "the pixel's sample positions, a byte per sample (x in bits 3:0, y in bits 7:4, sixteenths of a pixel): 0x88 one sample at the centre, 0xeaa26e26 four in a rotated grid with 4x multisampling (Rogue analogue: PPP_MULTISAMPLECTL)"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0174"
+licence = "MIT"
+evidence = "Rogue ISP_AA (an AA on/off mode) is not linked to it; [HW] E064: in the triangle the low nibble moves pixels of the steep edge only, the high nibble those of the shallow edge; values near 0x88 change nothing; [HW] E064; Apple's AGX packs its sample positions the same way, 0x88 for one sample and 0xeaa26e26 for four (Mesa src/asahi, MIT; another lineage, context only)"
+
+[[term]]
+id = "G0125"
+name = "CR_ISP_MULTISAMPLECTL.SAMPLE0_X"
+status = "named"
+
+[[term.source]]
+term = "CR_ISP_MULTISAMPLECTL.SAMPLE0_X"
+kind = "bitfield"
+sgx545 = "0x04c8[3:0]"
+meaning = "x of sample 0's position in the pixel, in sixteenths of a pixel, 8 the centre [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E064"
+licence = "MIT"
+evidence = "[HW] E064: every value in a triangle: the edge pixels that move grow with the distance from 8, along x"
+
+[[term]]
+id = "G0126"
+name = "CR_ISP_MULTISAMPLECTL.SAMPLE0_Y"
+status = "named"
+
+[[term.source]]
+term = "CR_ISP_MULTISAMPLECTL.SAMPLE0_Y"
+kind = "bitfield"
+sgx545 = "0x04c8[7:4]"
+meaning = "y of sample 0's position in the pixel, in sixteenths of a pixel, 8 the centre [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E064"
+licence = "MIT"
+evidence = "[HW] E064: every value in a triangle: the edge pixels that move grow with the distance from 8, along y"

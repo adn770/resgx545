@@ -1,0 +1,11 @@
+title = "sweep table transfer/kernel-words"
+repo = "data"
+paths = ["transfer/kernel-words/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 10
+size = 6363092
+sha256 = "c07249fdbb162cde32e116409bac662a9d7a6db4dea5b86c2d8b8beebfa85a56"
+recipe = "probes/transfer/kernel-words.toml"
+needs = ["render", "kpoke"]
+open = ["transfer-kernel-words-copy-kernel-addr", "transfer-kernel-words-fill-kernel-addr"]

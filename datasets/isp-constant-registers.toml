@@ -1,0 +1,10 @@
+title = "sweep table isp/constant-registers"
+repo = "data"
+paths = ["isp/constant-registers/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 10
+size = 1108660
+sha256 = "9b9c0b41ced8b6d81198a5e9b90f2f3bd67e9f47996ca251e57c3f7273d7a18c"
+recipe = "probes/isp/constant-registers.toml"
+needs = ["render", "kpoke"]

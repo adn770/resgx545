@@ -1,0 +1,15 @@
+[[term]]
+id = "G0151"
+name = "CR_REG_0148"
+status = "inferred"
+
+[[term.source]]
+term = "CR_REG_0148"
+kind = "register"
+sgx545 = "0x0148"
+meaning = "a per-job base address or mode of the 3D and transfer paths for a feature these clients leave off. Measured: per-render word the host supplies with the 3D registers (transfer command and render details); 0 in captures [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E056"
+licence = "MIT"
+evidence = "unit not established; [HW] E056: an address into the job's scratch in six forms writes nothing and changes no pixel"

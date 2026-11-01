@@ -1,0 +1,95 @@
+[[term]]
+id = "G0295"
+name = "VIEWPORT.X_OFFSET"
+status = "named"
+
+[[term.source]]
+term = "VIEWPORT.X_OFFSET"
+kind = "field"
+sgx545 = "state block vp0 (with PRESENCE.VIEWPORT)"
+meaning = "x offset of the viewport transform, an IEEE single [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E061"
+licence = "MIT"
+evidence = "[HW] E061: the triangle's vp0 = 32.0; mantissa flips move its edges in proportion, other values move, scale or mirror it along x"
+
+[[term]]
+id = "G0296"
+name = "VIEWPORT.X_SCALE"
+status = "named"
+
+[[term.source]]
+term = "VIEWPORT.X_SCALE"
+kind = "field"
+sgx545 = "state block vp1 (with PRESENCE.VIEWPORT)"
+meaning = "x scale of the viewport transform, an IEEE single [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E061"
+licence = "MIT"
+evidence = "[HW] E061: the triangle's vp1 = 32.0; mantissa flips move its edges in proportion, other values move, scale or mirror it along x"
+
+[[term]]
+id = "G0297"
+name = "VIEWPORT.Y_OFFSET"
+status = "named"
+
+[[term.source]]
+term = "VIEWPORT.Y_OFFSET"
+kind = "field"
+sgx545 = "state block vp2 (with PRESENCE.VIEWPORT)"
+meaning = "y offset of the viewport transform, an IEEE single [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E061"
+licence = "MIT"
+evidence = "[HW] E061: the triangle's vp2 = 32.0; mantissa flips move its edges in proportion, other values move, scale or mirror it along y"
+
+[[term]]
+id = "G0298"
+name = "VIEWPORT.Y_SCALE"
+status = "named"
+
+[[term.source]]
+term = "VIEWPORT.Y_SCALE"
+kind = "field"
+sgx545 = "state block vp3 (with PRESENCE.VIEWPORT)"
+meaning = "y scale of the viewport transform, an IEEE single [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E061"
+licence = "MIT"
+evidence = "[HW] E061: the triangle's vp3 = 32.0; mantissa flips move its edges in proportion, other values move, scale or mirror it along y"
+
+[[term]]
+id = "G0299"
+name = "VIEWPORT.Z_OFFSET"
+status = "named"
+
+[[term.source]]
+term = "VIEWPORT.Z_OFFSET"
+kind = "field"
+sgx545 = "state block vp4 (with PRESENCE.VIEWPORT)"
+meaning = "z offset of the viewport transform, an IEEE single [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E066"
+licence = "MIT"
+evidence = "[HW] the triangle's vertices have z 0 and its depth is vp4 (blk:10) alone: with depth equal it passes against a background depth equal to vp4 and fails one ulp off"
+
+[[term]]
+id = "G0300"
+name = "VIEWPORT.Z_SCALE"
+status = "named"
+
+[[term.source]]
+term = "VIEWPORT.Z_SCALE"
+kind = "field"
+sgx545 = "state block vp5 (with PRESENCE.VIEWPORT)"
+meaning = "z scale of the viewport transform, an IEEE single [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E066"
+licence = "MIT"
+evidence = "the name follows vp0-vp4's offset, scale order, untested on a sloped z"

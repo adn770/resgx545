@@ -1,0 +1,15 @@
+[[term]]
+id = "G0144"
+name = "CR_ISP_ZSTORE_BASE"
+status = "named"
+
+[[term.source]]
+term = "CR_ISP_ZSTORE_BASE"
+kind = "register"
+sgx545 = "0x0488"
+meaning = "depth store base: where ZLS stores the depth buffer, IEEE singles, an offset from the ZLS requester base [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E058"
+licence = "MIT"
+evidence = "[HW] E058: the 64x64 depth buffer (16 KiB) lands where 0x0488 points, never at 0x0484's address; EDM adds RT index x depth stride to both (RE); analogue: Rogue loads and stores depth through one isp_zload_store_base (pvr_rogue_fwif_client.h:214); [HW] E058: the stored depth is 16x16 tiles in raster order, each twiddled as a power-of-two texture (y bits even), IEEE singles"

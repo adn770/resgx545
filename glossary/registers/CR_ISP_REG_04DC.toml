@@ -1,0 +1,15 @@
+[[term]]
+id = "G0130"
+name = "CR_ISP_REG_04DC"
+status = "named"
+
+[[term.source]]
+term = "CR_ISP_REG_04DC"
+kind = "register"
+sgx545 = "0x04dc"
+meaning = "ISP word from the render details; bits 2:0 implemented; bit 1 set hangs a render with punch-through objects, bits 0 and 2 change nothing seen; 0 from the closed driver's renders [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E066, E067, E068, E073"
+licence = "MIT"
+evidence = "[HW] E066: no bit, 0 or ~0 of its word changes a pixel or the visibility registers under a depth test, a translucent or punch-through pass or a bit-exact depth equal; [HW] E067: bits 2:0 implemented, 4 outside renders; no flip changes a copy or a fill; [HW] E067: no flip, 0 or ~0 changes a textured triangle of ours either; [HW] E068: values 2, 3, 6, 7 hang a punch-through pass of five overlapping copies, 0, 1, 4, 5 render it alike; no value changes depth-always, less or translucent scenes; [HW] E073: no change under 42 overlapping triangles per tile, opaque or depth less"

@@ -16,6 +16,8 @@ its manifest.
     size = 34567                        # bytes
     sha256 = "..."                      # 64 lower-case hex digits: see digest()
     recipe = "probes/usse/branch.toml"  # the table, or the script, that made it
+    needs = ["render"]                  # optional: what the table needed of its target
+    open = ["usse-branch-x"]            # optional: the table's probes kept open, run last
 
 Evidence names a dataset by id (`data = ["usse-branch"]`) or a part of one
 (`"usse-branch:usse-branch-quad/"`); tracked repository files are named by path.
@@ -39,6 +41,7 @@ import tomllib
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 DIR = ROOT / "datasets"
 KEYS = ["title", "repo", "paths", "method", "date", "files", "size", "sha256", "recipe"]
+OPTIONAL = ["needs", "open"]          # after the keys, in this order, when present
 REPOS = {"data": ("RESGX545_DATA", "resgx545-data"),
          "data-private": ("RESGX545_DATA_PRIVATE", "resgx545-data-private")}
 
@@ -128,26 +131,41 @@ def _form(d: dict) -> list[str]:
     return out
 
 
-def problems(ident: str, d: dict, present: dict[str, pathlib.Path]) -> list[str]:
-    """What is wrong with one record: its form always, its bytes when its repo is present."""
-    if list(d) != KEYS:
-        return [f"{ident}: keys {list(d)} != {KEYS}"]
-    bad = _form(d)
+def _recipe_problems(d: dict, root: pathlib.Path) -> list[str]:
+    """needs and open of a record against the recipe table's, when the table is there."""
+    recipe = root / d["recipe"]
+    if recipe.suffix != ".toml" or not recipe.is_file():
+        return []
+    spec = tomllib.loads(recipe.read_text())
+    return [f"{k} {d.get(k)!r} is not the recipe's {spec.get(k)!r}" for k in OPTIONAL
+            if d.get(k) != spec.get(k)]
+
+
+def problems(ident: str, d: dict, present: dict[str, pathlib.Path],
+             root: pathlib.Path = ROOT) -> list[str]:
+    """What is wrong with one record: its form always, its needs and open against its recipe
+    table (under root, when that is there), its bytes when its repo is present."""
+    extra = list(d)[len(KEYS):]
+    if list(d)[:len(KEYS)] != KEYS or extra != [k for k in OPTIONAL if k in extra]:
+        return [f"{ident}: keys {list(d)} != {KEYS} (+ {OPTIONAL})"]
+    bad = _form(d) + [f"{k} {d[k]!r} is not a list of names" for k in extra
+                      if not (isinstance(d[k], list) and all(isinstance(x, str) for x in d[k]))]
+    bad += _recipe_problems(d, root)
     if bad:
         return [f"{ident}: {m}" for m in bad]
-    root = present.get(d["repo"])
-    if root is None:
+    data = present.get(d["repo"])
+    if data is None:
         return []
-    if not all((root / p).exists() for p in d["paths"]):
+    if not all((data / p).exists() for p in d["paths"]):
         return [f"{ident}: missing from {d['repo']}"]
-    top = root.resolve()
-    outside = [p for p in d["paths"] if not (root / p).resolve().is_relative_to(top)]
+    top = data.resolve()
+    outside = [p for p in d["paths"] if not (data / p).resolve().is_relative_to(top)]
     if not outside:               # a path that leaves the repository is not walked
-        outside = [f.relative_to(root).as_posix() for f in files_of(d["paths"], root)
+        outside = [f.relative_to(data).as_posix() for f in files_of(d["paths"], data)
                    if not f.resolve().is_relative_to(top)]
     if outside:
         return [f"{ident}: {p} resolves outside the repository" for p in outside]
-    n, size, sha = digest(d["paths"], root)
+    n, size, sha = digest(d["paths"], data)
     if (n, size, sha) != (d["files"], d["size"], d["sha256"]):
         return [f"{ident}: contents changed ({n} files, {size} bytes)"]
     return []

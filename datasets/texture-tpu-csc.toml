@@ -1,0 +1,10 @@
+title = "sweep and script table texture/tpu-csc"
+repo = "data"
+paths = ["texture/tpu-csc/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 20
+size = 2615524
+sha256 = "ac2986ee7ab48d80fc1f6e489bad247af9a2372d7f672d873ba51945fb0274e7"
+recipe = "probes/texture/tpu-csc.toml"
+needs = ["render"]

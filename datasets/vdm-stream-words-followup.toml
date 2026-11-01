@@ -1,0 +1,10 @@
+title = "follow-up run of the sweep table vdm/stream-words"
+repo = "data"
+paths = ["followup/vdm/stream-words/"]
+method = "campaign runner on the laptop target (tools/campaign), the follow-up round"
+date = "2026-11-01"
+files = 4
+size = 740003
+sha256 = "9912e8fd9fcd907d602859f2923d67055e0b3269ee1383fc38299a707d23270e"
+recipe = "probes/vdm/stream-words.toml"
+needs = ["render"]

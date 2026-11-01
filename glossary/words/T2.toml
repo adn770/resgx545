@@ -1,0 +1,15 @@
+[[term]]
+id = "G0282"
+name = "T2.TEXADDR"
+status = "named"
+
+[[term.source]]
+term = "texaddr"
+kind = "field"
+sgx545 = "T2 [31:2] (TEXADDR)"
+meaning = "texture address >> 2"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0222"
+licence = "MIT"
+evidence = "[HW] copies exact (E020); same alignment as Rogue; [HW] E036: bit n of the word moves the source by 2^n bytes from bit 2 up; bits 1:0 are not address bits (bit 1 gives one colour)"

@@ -1,0 +1,15 @@
+[[term]]
+id = "G0132"
+name = "CR_ISP_SAMPLE_POS"
+status = "named"
+
+[[term.source]]
+term = "CR_ISP_SAMPLE_POS"
+kind = "register"
+sgx545 = "0x0520"
+meaning = "four more sample positions, laid out as CR_ISP_MULTISAMPLECTL (a byte per sample: x in bits 3:0, y in bits 7:4, sixteenths of a pixel): with ISP0.SAMPLE_COVERAGE an object covers a pixel where any of the eight is inside; 4x multisampling does not read it; 0 from the closed driver [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E066, E067, E068, E056, E073"
+licence = "MIT"
+evidence = "[HW] E066: no bit, 0 or ~0 of its word changes a pixel or the visibility registers under a depth test, a translucent or punch-through pass or a bit-exact depth equal; [HW] E067: all 32 bits implemented; no flip changes a copy or a fill; [HW] E067: no flip, 0 or ~0 changes a textured triangle of ours either; [HW] E068: no flip, 0 or ~0 changes five overlapping copies under depth always, less, translucent or punch-through; [HW] E056: an address into the job's scratch in six forms writes nothing and changes no pixel; [HW] E073: no change under 42 overlapping triangles per tile, opaque or depth less; with ISP0 bit 28, 42 values reproduced pixel for pixel by the four-sample rule; hypothesis (tier 3): AGX PPP_MULTISAMPLECTL packs sample positions alike; with 0x04c8 also varied the eight-sample union fits every image"

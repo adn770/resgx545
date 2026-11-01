@@ -1,0 +1,47 @@
+[[term]]
+id = "G0185"
+name = "CR_USE2_SERV_VERTEX"
+status = "named"
+
+[[term.source]]
+term = "CR_USE2_SERV_VERTEX"
+kind = "register"
+sgx545 = "0x0b8c"
+meaning = "USSE 2 vertex service-queue status, as CR_USE0_SERV_VERTEX [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E076"
+licence = "MIT"
+evidence = "counts vertex tasks per USSE pipeline in bits 15:0 with bit 16 set (HW); EDM's drain wait tests bit 16 for USSE 0-3 (RE)"
+
+[[term]]
+id = "G0186"
+name = "CR_USE2_SERV_VERTEX.EMPTY"
+status = "named"
+
+[[term.source]]
+term = "CR_USE2_SERV_VERTEX.EMPTY"
+kind = "bitfield"
+sgx545 = "0x0b8c[16]"
+meaning = "queue empty [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E076"
+licence = "MIT"
+evidence = "bit 16 set when idle (HW); the EDM waits for it before pausing (RE)"
+
+[[term]]
+id = "G0187"
+name = "CR_USE2_SERV_VERTEX.TASK_COUNT"
+status = "named"
+
+[[term.source]]
+term = "CR_USE2_SERV_VERTEX.TASK_COUNT"
+kind = "bitfield"
+sgx545 = "0x0b8c[15:0]"
+meaning = "tasks served, wrapping [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E076"
+licence = "MIT"
+evidence = "bits 15:0 count the tasks a render ran (HW)"

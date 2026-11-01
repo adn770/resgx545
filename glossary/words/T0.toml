@@ -1,0 +1,159 @@
+[[term]]
+id = "G0270"
+name = "T0.ADDRMODE_U"
+status = "named"
+
+[[term.source]]
+term = "addrmode_u"
+kind = "field"
+sgx545 = "T0 [8:6]"
+meaning = "S (U) wrap mode: 0 repeat, 1 mirror, 2 clamp, 3 mirror once"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0214"
+licence = "MIT"
+evidence = "Rogue name only; on SGX545 the wrap fields are measured: [HW] E033: on a twiddled texture U in T0 [8:6] and V in [5:3], 0 repeats, 1 mirrors, 2 clamps, 3 mirrors once"
+
+[[term]]
+id = "G0271"
+name = "T0.ADDRMODE_V"
+status = "named"
+
+[[term.source]]
+term = "addrmode_v"
+kind = "field"
+sgx545 = "T0 [5:3]"
+meaning = "T (V) wrap mode: 0 repeat, 1 mirror, 2 clamp, 3 mirror once"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0215"
+licence = "MIT"
+evidence = "Rogue name only; on SGX545 the wrap fields are measured: [HW] E033: on a twiddled texture U in T0 [8:6] and V in [5:3], 0 repeats, 1 mirrors, 2 clamps, 3 mirrors once"
+
+[[term]]
+id = "G0272"
+name = "T0.ALPHA_FROM_LUMA_KEY"
+status = "named"
+
+[[term.source]]
+term = "T0.ALPHA_FROM_LUMA_KEY"
+kind = "flag"
+sgx545 = "T0 [31]"
+meaning = "the texture is read as RGB without alpha, the alpha coming from the luma key (CR_TPU_LUMA_KEY_*) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E039"
+licence = "MIT"
+evidence = "[HW] E039: the only texture-word bit under which the key's words change the image"
+
+[[term]]
+id = "G0273"
+name = "T0.BITS20_19"
+status = "named"
+
+[[term.source]]
+term = "T0.BITS20_19"
+kind = "bitfield"
+sgx545 = "T0 [20:19] (twiddled textures)"
+meaning = "with bit 18 clear, 0 keeps level 0 and 1-3 let mip levels be read; what the value counts is not shown [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E041"
+licence = "MIT"
+evidence = "[HW] E041: probes x-mip-level and x-mip-t0-field"
+
+[[term]]
+id = "G0274"
+name = "T0.BITS26_21"
+status = "named"
+
+[[term.source]]
+term = "T0.BITS26_21"
+kind = "bitfield"
+sgx545 = "T0 [26:21] (twiddled textures)"
+meaning = "with 0x3f (the closed driver's value) mip levels above 0 are read; with 0-7 only level 0 (on stride textures these bits are T0.STRIDE) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E041"
+licence = "MIT"
+evidence = "[HW] E041: probes x-mip-level and x-mip-t0-field"
+
+[[term]]
+id = "G0275"
+name = "T0.MAGFILTER"
+status = "named"
+
+[[term.source]]
+term = "magfilter"
+kind = "field"
+sgx545 = "T0 [13:12]"
+meaning = "magnification filter: 1 and 2 linear, 0 and 3 nearest"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0216"
+licence = "MIT"
+evidence = "-"
+
+[[term]]
+id = "G0276"
+name = "T0.MINFILTER"
+status = "named"
+
+[[term.source]]
+term = "minfilter"
+kind = "field"
+sgx545 = "T0 [11:10]"
+meaning = "minification filter: 1 and 2 linear, 0 and 3 nearest"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0217"
+licence = "MIT"
+evidence = "[HW] E041: probe x-mip-minfilter sets T0 bits 11:10 to 0-3 on a mip level"
+
+[[term]]
+id = "G0277"
+name = "T0.MIPFILTER"
+status = "named"
+
+[[term.source]]
+term = "mipfilter"
+kind = "field"
+sgx545 = "T0 [9]"
+meaning = "filter between mipmap levels: 0 the nearest level (a half rounds up), 1 a linear blend of the two levels"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0218"
+licence = "MIT"
+evidence = "[HW] E041: probe x-mip-mipfilter at fractional LODs"
+
+[[term]]
+id = "G0278"
+name = "T0.NO_MIPMAPS"
+status = "named"
+
+[[term.source]]
+term = "T0.NO_MIPMAPS"
+kind = "bitfield"
+sgx545 = "T0 bit 18"
+meaning = "set: only level 0 is read, whatever the LOD; the closed driver clears it for a mipmapped texture [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E041"
+licence = "MIT"
+evidence = "[HW] E041: probes x-mip-level and x-mip-t0-field"
+
+[[term]]
+id = "G0279"
+name = "T0.STRIDE"
+status = "named"
+
+[[term.source]]
+term = "stride"
+kind = "field"
+sgx545 = "T0 [11:9] + [26:17]"
+meaning = "stride of a strided texture in dwords - 1: bits 2:0 in T0 [11:9], bits 12:3 in T0 [26:17]"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0219"
+licence = "MIT"
+evidence = "same function; stride textures sampled on the hardware with it (E033) [HW]; Rogue keeps one field"

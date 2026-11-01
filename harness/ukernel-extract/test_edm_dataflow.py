@@ -362,3 +362,24 @@ def test_a_firmware_container_is_refused(tmp_path, capsys):
     assert df.main(["--ukernel", str(fw), "--tsv", str(tsv), "--doc", str(doc)]) == 2
     assert "00_ukernel.bin" in capsys.readouterr().err
     assert not tsv.exists() and not doc.exists()
+
+
+def test_render_replaces_the_document_from_the_tsv_alone(tmp_path):
+    """The document names registers from the glossary, which grows phase by phase: --render
+    rewrites it from the TSV (no firmware needed), whatever the document held, and takes
+    --tsv and --doc like the full run."""
+    tsv, doc = tmp_path / "t.tsv", tmp_path / "d.md"
+    df.write_tsv(run("ldad.bpcache r2, [sa1,+#14], drc0", "wdf drc0", "lapc"), tsv)
+    doc.write_text("a stale document\n")
+    assert df.main(["--render", "--tsv", str(tsv), "--doc", str(doc)]) == 0
+    assert doc.read_text() == df.render(df.read_tsv(tsv)) != "a stale document\n"
+    # the flags may come in any order
+    doc.write_text("stale again\n")
+    assert df.main(["--tsv", str(tsv), "--doc", str(doc), "--render"]) == 0
+    assert doc.read_text() == df.render(df.read_tsv(tsv))
+
+
+def test_the_usage_names_every_form(tmp_path, capsys):
+    assert df.main(["--bogus"]) == 2
+    err = capsys.readouterr().err
+    assert "--ukernel" in err and "--check" in err and "--render" in err

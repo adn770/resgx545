@@ -1,0 +1,79 @@
+[[term]]
+id = "G0265"
+name = "SR.INST_NUM"
+status = "named"
+
+[[term.source]]
+term = "inst_num"
+kind = "enum"
+sgx545 = "g25 (source bank 5, number 89)"
+meaning = "the instance's place in its 2x2 quad (x[0] + 2*y[0])"
+tier = "3"
+source = "mesa-pco"
+citation = "C0209"
+licence = "MIT"
+evidence = "[HW] E086: measured on every pixel of a fill, twice; Rogue's special registers 47-51 in the order g21-g25 follow"
+
+[[term]]
+id = "G0266"
+name = "SR.SLOT_NUM"
+status = "inferred"
+
+[[term.source]]
+term = "slot_num"
+kind = "enum"
+sgx545 = "g22 (source bank 5, number 86)"
+meaning = "a per-slot id the scheduler assigns, constant over a quad"
+tier = "3"
+source = "mesa-pco"
+citation = "C0210"
+licence = "MIT"
+evidence = "[HW] E086: measured on every pixel of a fill, twice; Rogue's special registers 47-51 in the order g21-g25 follow"
+
+[[term]]
+id = "G0267"
+name = "SR.TASK_ID"
+status = "inferred"
+
+[[term.source]]
+term = "task_id"
+kind = "enum"
+sgx545 = "g21 (source bank 5, number 85)"
+meaning = "a per-task id the scheduler assigns, constant over a 4x4 block of a fill"
+tier = "3"
+source = "mesa-pco"
+citation = "C0211"
+licence = "MIT"
+evidence = "[HW] E086: measured on every pixel of a fill, twice; Rogue's special registers 47-51 in the order g21-g25 follow"
+
+[[term]]
+id = "G0268"
+name = "SR.TILE_X_PIX"
+status = "named"
+
+[[term.source]]
+term = "tile_x_pix"
+kind = "enum"
+sgx545 = "g23 (source bank 5, number 87)"
+meaning = "the pixel's x within its 32x16 tile"
+tier = "3"
+source = "mesa-pco"
+citation = "C0212"
+licence = "MIT"
+evidence = "[HW] E086: measured on every pixel of a fill, twice; Rogue's special registers 47-51 in the order g21-g25 follow"
+
+[[term]]
+id = "G0269"
+name = "SR.TILE_Y_PIX"
+status = "named"
+
+[[term.source]]
+term = "tile_y_pix"
+kind = "enum"
+sgx545 = "g24 (source bank 5, number 88)"
+meaning = "the pixel's y within its 32x16 tile"
+tier = "3"
+source = "mesa-pco"
+citation = "C0213"
+licence = "MIT"
+evidence = "[HW] E086: measured on every pixel of a fill, twice; Rogue's special registers 47-51 in the order g21-g25 follow"

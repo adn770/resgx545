@@ -1,0 +1,10 @@
+title = "probe table usse/predicates"
+repo = "data"
+paths = ["usse/predicates/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 9
+size = 13435
+sha256 = "1fbb6014d0626109859491930c3331e7bed911e1d9151b91802584d384940e4b"
+recipe = "probes/usse/predicates.toml"
+needs = ["render"]

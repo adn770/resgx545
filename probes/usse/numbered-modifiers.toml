@@ -1,0 +1,52 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse numbered modifiers: 0 sweeps, 5 probes.
+needs = ["render"]
+
+[[probe]]
+name = "usse-numbered-modifiers-family-repeat"
+question = "the repeat count N of .repeatN for every N (1-16), on mov and xor: which of r20-r39 are written, and from which sources (wide_dump.s: r20-r39, r1-r16)"
+source = "wide_dump.s"
+temps = 48
+params = { OUT = "r20" }
+inputs = ["OP"]
+labels = ["mov r20, r1", "mov.repeat2 r20, r1", "mov.repeat3 r20, r1", "mov.repeat4 r20, r1", "mov.repeat5 r20, r1", "mov.repeat6 r20, r1", "mov.repeat7 r20, r1", "mov.repeat8 r20, r1", "mov.repeat9 r20, r1", "mov.repeat10 r20, r1", "mov.repeat11 r20, r1", "mov.repeat12 r20, r1", "mov.repeat13 r20, r1", "mov.repeat14 r20, r1", "mov.repeat15 r20, r1", "mov.repeat16 r20, r1", "xor r20, r1, r2", "xor.repeat2 r20, r1, r2", "xor.repeat3 r20, r1, r2", "xor.repeat4 r20, r1, r2", "xor.repeat5 r20, r1, r2", "xor.repeat6 r20, r1, r2", "xor.repeat7 r20, r1, r2", "xor.repeat8 r20, r1, r2", "xor.repeat9 r20, r1, r2", "xor.repeat10 r20, r1, r2", "xor.repeat11 r20, r1, r2", "xor.repeat12 r20, r1, r2", "xor.repeat13 r20, r1, r2", "xor.repeat14 r20, r1, r2", "xor.repeat15 r20, r1, r2", "xor.repeat16 r20, r1, r2"]
+cases = [["mov r20, r1"], ["mov.repeat2 r20, r1"], ["mov.repeat3 r20, r1"], ["mov.repeat4 r20, r1"], ["mov.repeat5 r20, r1"], ["mov.repeat6 r20, r1"], ["mov.repeat7 r20, r1"], ["mov.repeat8 r20, r1"], ["mov.repeat9 r20, r1"], ["mov.repeat10 r20, r1"], ["mov.repeat11 r20, r1"], ["mov.repeat12 r20, r1"], ["mov.repeat13 r20, r1"], ["mov.repeat14 r20, r1"], ["mov.repeat15 r20, r1"], ["mov.repeat16 r20, r1"], ["xor r20, r1, r2"], ["xor.repeat2 r20, r1, r2"], ["xor.repeat3 r20, r1, r2"], ["xor.repeat4 r20, r1, r2"], ["xor.repeat5 r20, r1, r2"], ["xor.repeat6 r20, r1, r2"], ["xor.repeat7 r20, r1, r2"], ["xor.repeat8 r20, r1, r2"], ["xor.repeat9 r20, r1, r2"], ["xor.repeat10 r20, r1, r2"], ["xor.repeat11 r20, r1, r2"], ["xor.repeat12 r20, r1, r2"], ["xor.repeat13 r20, r1, r2"], ["xor.repeat14 r20, r1, r2"], ["xor.repeat15 r20, r1, r2"], ["xor.repeat16 r20, r1, r2"]]
+
+[[probe]]
+name = "usse-numbered-modifiers-family-fetch"
+question = "the fetch count N of ldad .fetchN for every N (1-16), from scratch dword 64: which of r20-r39 are loaded, and with which dwords (wide_dump.s)"
+source = "wide_dump.s"
+temps = 48
+params = { OUT = "r20" }
+inputs = ["OP"]
+labels = ["ldad r20, [r46,+#0], drc0; wdf drc0", "ldad.fetch2 r20, [r46,+#0], drc0; wdf drc0", "ldad.fetch3 r20, [r46,+#0], drc0; wdf drc0", "ldad.fetch4 r20, [r46,+#0], drc0; wdf drc0", "ldad.fetch5 r20, [r46,+#0], drc0; wdf drc0", "ldad.fetch6 r20, [r46,+#0], drc0; wdf drc0", "ldad.fetch7 r20, [r46,+#0], drc0; wdf drc0", "ldad.fetch8 r20, [r46,+#0], drc0; wdf drc0", "ldad.fetch9 r20, [r46,+#0], drc0; wdf drc0", "ldad.fetch10 r20, [r46,+#0], drc0; wdf drc0", "ldad.fetch11 r20, [r46,+#0], drc0; wdf drc0", "ldad.fetch12 r20, [r46,+#0], drc0; wdf drc0", "ldad.fetch13 r20, [r46,+#0], drc0; wdf drc0", "ldad.fetch14 r20, [r46,+#0], drc0; wdf drc0", "ldad.fetch15 r20, [r46,+#0], drc0; wdf drc0", "ldad.fetch16 r20, [r46,+#0], drc0; wdf drc0"]
+cases = [["ldad r20, [r46,+#0], drc0\nwdf drc0"], ["ldad.fetch2 r20, [r46,+#0], drc0\nwdf drc0"], ["ldad.fetch3 r20, [r46,+#0], drc0\nwdf drc0"], ["ldad.fetch4 r20, [r46,+#0], drc0\nwdf drc0"], ["ldad.fetch5 r20, [r46,+#0], drc0\nwdf drc0"], ["ldad.fetch6 r20, [r46,+#0], drc0\nwdf drc0"], ["ldad.fetch7 r20, [r46,+#0], drc0\nwdf drc0"], ["ldad.fetch8 r20, [r46,+#0], drc0\nwdf drc0"], ["ldad.fetch9 r20, [r46,+#0], drc0\nwdf drc0"], ["ldad.fetch10 r20, [r46,+#0], drc0\nwdf drc0"], ["ldad.fetch11 r20, [r46,+#0], drc0\nwdf drc0"], ["ldad.fetch12 r20, [r46,+#0], drc0\nwdf drc0"], ["ldad.fetch13 r20, [r46,+#0], drc0\nwdf drc0"], ["ldad.fetch14 r20, [r46,+#0], drc0\nwdf drc0"], ["ldad.fetch15 r20, [r46,+#0], drc0\nwdf drc0"], ["ldad.fetch16 r20, [r46,+#0], drc0\nwdf drc0"]]
+
+[[probe]]
+name = "usse-numbered-modifiers-family-rs"
+question = "the right shift N of imae .rsN for every N (0-7), unsigned and signed, on 0xff9c * 0x7b + 0x1234 (r10)"
+source = "dump.s"
+params = { OUT = "r10" }
+inputs = ["OP", "A", "B", "C", "D", "E", "F", "G", "H"]
+labels = ["imae.u r10, r1.low, r2.low, r3, u32", "imae.u.rs1 r10, r1.low, r2.low, r3, u32", "imae.u.rs2 r10, r1.low, r2.low, r3, u32", "imae.u.rs3 r10, r1.low, r2.low, r3, u32", "imae.u.rs4 r10, r1.low, r2.low, r3, u32", "imae.u.rs5 r10, r1.low, r2.low, r3, u32", "imae.u.rs6 r10, r1.low, r2.low, r3, u32", "imae.u.rs7 r10, r1.low, r2.low, r3, u32", "imae.s r10, r1.low, r2.low, r3, u32", "imae.s.rs1 r10, r1.low, r2.low, r3, u32", "imae.s.rs2 r10, r1.low, r2.low, r3, u32", "imae.s.rs3 r10, r1.low, r2.low, r3, u32", "imae.s.rs4 r10, r1.low, r2.low, r3, u32", "imae.s.rs5 r10, r1.low, r2.low, r3, u32", "imae.s.rs6 r10, r1.low, r2.low, r3, u32", "imae.s.rs7 r10, r1.low, r2.low, r3, u32"]
+cases = [["imae.u r10, r1.low, r2.low, r3, u32", "0x0000ff9c", "0x0000007b", "0x00001234", "0x00000000", "0x00000000", "0x00000000", "0x00000000", "0x00000000"], ["imae.u.rs1 r10, r1.low, r2.low, r3, u32", "0x0000ff9c", "0x0000007b", "0x00001234", "0x00000000", "0x00000000", "0x00000000", "0x00000000", "0x00000000"], ["imae.u.rs2 r10, r1.low, r2.low, r3, u32", "0x0000ff9c", "0x0000007b", "0x00001234", "0x00000000", "0x00000000", "0x00000000", "0x00000000", "0x00000000"], ["imae.u.rs3 r10, r1.low, r2.low, r3, u32", "0x0000ff9c", "0x0000007b", "0x00001234", "0x00000000", "0x00000000", "0x00000000", "0x00000000", "0x00000000"], ["imae.u.rs4 r10, r1.low, r2.low, r3, u32", "0x0000ff9c", "0x0000007b", "0x00001234", "0x00000000", "0x00000000", "0x00000000", "0x00000000", "0x00000000"], ["imae.u.rs5 r10, r1.low, r2.low, r3, u32", "0x0000ff9c", "0x0000007b", "0x00001234", "0x00000000", "0x00000000", "0x00000000", "0x00000000", "0x00000000"], ["imae.u.rs6 r10, r1.low, r2.low, r3, u32", "0x0000ff9c", "0x0000007b", "0x00001234", "0x00000000", "0x00000000", "0x00000000", "0x00000000", "0x00000000"], ["imae.u.rs7 r10, r1.low, r2.low, r3, u32", "0x0000ff9c", "0x0000007b", "0x00001234", "0x00000000", "0x00000000", "0x00000000", "0x00000000", "0x00000000"], ["imae.s r10, r1.low, r2.low, r3, u32", "0x0000ff9c", "0x0000007b", "0x00001234", "0x00000000", "0x00000000", "0x00000000", "0x00000000", "0x00000000"], ["imae.s.rs1 r10, r1.low, r2.low, r3, u32", "0x0000ff9c", "0x0000007b", "0x00001234", "0x00000000", "0x00000000", "0x00000000", "0x00000000", "0x00000000"], ["imae.s.rs2 r10, r1.low, r2.low, r3, u32", "0x0000ff9c", "0x0000007b", "0x00001234", "0x00000000", "0x00000000", "0x00000000", "0x00000000", "0x00000000"], ["imae.s.rs3 r10, r1.low, r2.low, r3, u32", "0x0000ff9c", "0x0000007b", "0x00001234", "0x00000000", "0x00000000", "0x00000000", "0x00000000", "0x00000000"], ["imae.s.rs4 r10, r1.low, r2.low, r3, u32", "0x0000ff9c", "0x0000007b", "0x00001234", "0x00000000", "0x00000000", "0x00000000", "0x00000000", "0x00000000"], ["imae.s.rs5 r10, r1.low, r2.low, r3, u32", "0x0000ff9c", "0x0000007b", "0x00001234", "0x00000000", "0x00000000", "0x00000000", "0x00000000", "0x00000000"], ["imae.s.rs6 r10, r1.low, r2.low, r3, u32", "0x0000ff9c", "0x0000007b", "0x00001234", "0x00000000", "0x00000000", "0x00000000", "0x00000000", "0x00000000"], ["imae.s.rs7 r10, r1.low, r2.low, r3, u32", "0x0000ff9c", "0x0000007b", "0x00001234", "0x00000000", "0x00000000", "0x00000000", "0x00000000", "0x00000000"]]
+
+[[probe]]
+name = "usse-numbered-modifiers-family-fetch-dst"
+question = "ldad.fetch4's destination step by immediate and by register offset, into r20 and into r30 (vec1's form left r31 unchanged): which of r20-r39 are loaded"
+source = "wide_dump.s"
+temps = 48
+params = { OUT = "r20" }
+inputs = ["OP"]
+labels = ["ldad.fetch4 r30, [r46,+#0], drc0; wdf drc0", "mov r45, #0; ldad.fetch4 r20, [r46,+r45], drc0; wdf drc0", "mov r45, #0; ldad.fetch4 r30, [r46,+r45], drc0; wdf drc0", "mov r45, #0x00040001; ldad.fetch4 r30, [r46,+r45], drc0; wdf drc0"]
+cases = [["ldad.fetch4 r30, [r46,+#0], drc0\nwdf drc0"], ["mov r45, #0\nldad.fetch4 r20, [r46,+r45], drc0\nwdf drc0"], ["mov r45, #0\nldad.fetch4 r30, [r46,+r45], drc0\nwdf drc0"], ["mov r45, #0x00040001\nldad.fetch4 r30, [r46,+r45], drc0\nwdf drc0"]]
+
+[[probe]]
+name = "usse-numbered-modifiers-family-fetch-edge"
+question = "ldad.fetch4 with 32 temporaries into r28 (ends at r31), r29 and r30 (past r31): what r28-r31 hold after (r10-r13)"
+source = "dump.s"
+params = { OUT = "r10" }
+inputs = ["OP", "A", "B", "C", "D", "E", "F", "G", "H"]
+labels = ["ldad.fetch4 r28, [r20,+#0], drc0", "ldad.fetch4 r29, [r20,+#0], drc0", "ldad.fetch4 r30, [r20,+#0], drc0"]
+cases = [["mov.skipinv r28, #0xE1E2E300\nmov.skipinv r29, #0xE1E2E301\nmov.skipinv r30, #0xE1E2E302\nmov.skipinv r31, #0xE1E2E303\nmov.skipinv r20, #0x5CAF0100\nldad.fetch4 r28, [r20,+#0], drc0\nwdf drc0\nmov.skipinv r10, r28\nmov.skipinv r11, r29\nmov.skipinv r12, r30\nmov.skipinv r13, r31", "0x00000000", "0x00000000", "0x00000000", "0x00000000", "0x00000000", "0x00000000", "0x00000000", "0x00000000"], ["mov.skipinv r28, #0xE1E2E300\nmov.skipinv r29, #0xE1E2E301\nmov.skipinv r30, #0xE1E2E302\nmov.skipinv r31, #0xE1E2E303\nmov.skipinv r20, #0x5CAF0100\nldad.fetch4 r29, [r20,+#0], drc0\nwdf drc0\nmov.skipinv r10, r28\nmov.skipinv r11, r29\nmov.skipinv r12, r30\nmov.skipinv r13, r31", "0x00000000", "0x00000000", "0x00000000", "0x00000000", "0x00000000", "0x00000000", "0x00000000", "0x00000000"], ["mov.skipinv r28, #0xE1E2E300\nmov.skipinv r29, #0xE1E2E301\nmov.skipinv r30, #0xE1E2E302\nmov.skipinv r31, #0xE1E2E303\nmov.skipinv r20, #0x5CAF0100\nldad.fetch4 r30, [r20,+#0], drc0\nwdf drc0\nmov.skipinv r10, r28\nmov.skipinv r11, r29\nmov.skipinv r12, r30\nmov.skipinv r13, r31", "0x00000000", "0x00000000", "0x00000000", "0x00000000", "0x00000000", "0x00000000", "0x00000000", "0x00000000"]]

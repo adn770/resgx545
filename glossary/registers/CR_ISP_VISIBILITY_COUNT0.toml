@@ -1,0 +1,15 @@
+[[term]]
+id = "G0135"
+name = "CR_ISP_VISIBILITY_COUNT0"
+status = "named"
+
+[[term.source]]
+term = "CR_ISP_VISIBILITY_COUNT0"
+kind = "register"
+sgx545 = "0x0498"
+meaning = "visibility counters 0 and 1, one per 16-bit half, accumulated by the EDM into the visibility results [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x7768)"
+licence = "MIT"
+evidence = "the ISP visibility test itself is public (CR_EVENT_STATUS.ISP_VISIBILITY_FAIL, sgx545defs.h:403); [HW] E070: an object with ISP1.VISTEST and ISP1.VISREG 0 counts its pixels into the low 16 bits; no count has reached the high half"

@@ -1,0 +1,10 @@
+title = "sweep table pds/douti-fields"
+repo = "data"
+paths = ["pds/douti-fields/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 8
+size = 100797
+sha256 = "dacecbe322e994aeebb7eae637ea996c451c4ab5af9896f0b660e229e42a0e53"
+recipe = "probes/pds/douti-fields.toml"
+needs = ["render"]

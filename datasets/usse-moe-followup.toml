@@ -1,0 +1,10 @@
+title = "follow-up run of the probe table usse/moe"
+repo = "data"
+paths = ["followup/usse/moe/"]
+method = "campaign runner on the laptop target (tools/campaign), the follow-up round"
+date = "2026-11-01"
+files = 323
+size = 1189546
+sha256 = "d657b7643817d8cf2a01730e6627981324f303b3146ccfb9918359f4cdf1a5b2"
+recipe = "probes/usse/moe.toml"
+needs = ["render"]

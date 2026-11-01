@@ -1,0 +1,10 @@
+title = "sweep, script and probe table ta/zero-words"
+repo = "data"
+paths = ["ta/zero-words/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 136
+size = 121541058
+sha256 = "cf1cd0cb529c449ad23ce51a00f24b79e83d5e9563e6982e3225cb186898bd5d"
+recipe = "probes/ta/zero-words.toml"
+needs = ["render", "kpoke", "render_param", "render_tadata"]

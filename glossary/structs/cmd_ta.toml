@@ -1,0 +1,271 @@
+[[term]]
+id = "G0302"
+name = "cmd_ta.dpm_reg_074c"
+status = "inferred"
+
+[[term.source]]
+term = "cmd_ta.dpm_reg_074c"
+kind = "field"
+sgx545 = "CMDTA+0x29c"
+meaning = "as CR_DPM_REG_074C's: the enable (bit 8) and setup of a DPM structure that follows the TA data (a second list, as a partial-render or context-switch arrangement would need), off in every client. Measured: value the EDM copies verbatim into CR_DPM_REG_074C (0x074c); 0 in every capture [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x4c08)"
+licence = "MIT"
+evidence = "[HW] E054: bit 8 and ~0 fault the render, no other flip changes the triangle"
+
+[[term]]
+id = "G0303"
+name = "cmd_ta.frag_flags"
+status = "named"
+
+[[term.source]]
+term = "flags"
+kind = "field"
+sgx545 = "CMDTA+0x01c"
+meaning = "fragment (3D) flags: depth/stencil buffer present, visibility results (FRAG_FLAGS.*)"
+tier = "3"
+source = "linux-imagination"
+citation = "C0168"
+licence = "GPL-2.0 OR MIT"
+evidence = "rogue_fwif_cmd_frag.flags; DEPTHBUFFER/STENCILBUFFER/GET_VIS_RESULTS bits coincide"
+
+[[term]]
+id = "G0304"
+name = "cmd_ta.mte_rhw_clamp"
+status = "named"
+
+[[term.source]]
+term = "cmd_ta.mte_rhw_clamp"
+kind = "field"
+sgx545 = "CMDTA+0x264"
+meaning = "the TA command's word the EDM loads into CR_MTE_RHW_CLAMP (0x0244) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E054, E063"
+licence = "MIT"
+evidence = "[HW] E054: no bit, 0 or ~0 of the render command word changes the triangle, whose w is 1; [HW] E063: 0 to the largest single change no image of a triangle crossing w = 0 or reaching far outside the viewport"
+
+[[term]]
+id = "G0305"
+name = "cmd_ta.mte_rhw_min"
+status = "named"
+
+[[term.source]]
+term = "cmd_ta.mte_rhw_min"
+kind = "field"
+sgx545 = "CMDTA+0x260"
+meaning = "the TA command's word the EDM loads into CR_MTE_RHW_MIN (0x0240) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E054, E063"
+licence = "MIT"
+evidence = "[HW] E054: no bit, 0 or ~0 of the render command word changes the triangle, whose w is 1; [HW] E063: 0 to the largest single change no image of a triangle crossing w = 0 or reaching far outside the viewport; 1.0 replaced at 1, -1, 2, NaN, kept at 0.5, -0.0)"
+
+[[term]]
+id = "G0306"
+name = "cmd_ta.reg_0324"
+status = "inferred"
+
+[[term.source]]
+term = "cmd_ta.reg_0324"
+kind = "field"
+sgx545 = "CMDTA+0x288"
+meaning = "TA command word 162, loaded into register 0x0324; the job leaves it at 0, no value changed the triangle's image, a page address in six numberings made no write, and a register readback after 0xffffffff shows only the implemented bits (0xfffffff0)"
+tier = "ours"
+source = "resgx545"
+citation = "E054, E056"
+licence = "MIT"
+evidence = "[HW] E054: ta word 162 at 34 values gave the baseline image in both runs; after a job with 0xffffffff register 0x0324 read 0xfffffff0 and read 0 after an ordinary job; [HW] E056: set to a scratch-buffer page address in six numberings it changed no pixel and wrote nothing to the buffer; [infer] the reading is ours, from these runs"
+
+[[term]]
+id = "G0307"
+name = "cmd_ta.reg_0364"
+status = "inferred"
+
+[[term.source]]
+term = "cmd_ta.reg_0364"
+kind = "field"
+sgx545 = "CMDTA+0x290"
+meaning = "as CR_REG_0364's: context store/resume state of an interrupted TA: a 32-bit resume task word, unused while the TA runs to the end. Measured: value the EDM copies verbatim into CR_REG_0364 (0x0364); 0 in every capture [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x4be0)"
+licence = "MIT"
+evidence = "[HW] E054: no bit, 0 or ~0 changes the triangle; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; at ~0 a culled or off-screen triangle stays unwritten"
+
+[[term]]
+id = "G0308"
+name = "cmd_ta.reg_0368"
+status = "inferred"
+
+[[term.source]]
+term = "cmd_ta.reg_0368"
+kind = "field"
+sgx545 = "CMDTA+0x28c"
+meaning = "as CR_REG_0368's: context store/resume state of an interrupted TA: a 15-bit size or count of the stored state. Measured: value the EDM copies verbatim into CR_REG_0368 (0x0368); 0 in every capture [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x4bd8)"
+licence = "MIT"
+evidence = "[HW] E054: no bit, 0 or ~0 changes the triangle; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; at ~0 a culled or off-screen triangle stays unwritten"
+
+[[term]]
+id = "G0309"
+name = "cmd_ta.reg_0370"
+status = "inferred"
+
+[[term.source]]
+term = "cmd_ta.reg_0370"
+kind = "field"
+sgx545 = "CMDTA+0x294"
+meaning = "as CR_REG_0370's: context store/resume state of an interrupted TA: a 32-bit resume task word. Measured: value the EDM copies verbatim into CR_REG_0370 (0x0370); 0 in every capture [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x4be8)"
+licence = "MIT"
+evidence = "[HW] E054: no bit, 0 or ~0 changes the triangle; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; at ~0 a culled or off-screen triangle stays unwritten"
+
+[[term]]
+id = "G0310"
+name = "cmd_ta.reg_0374"
+status = "inferred"
+
+[[term.source]]
+term = "cmd_ta.reg_0374"
+kind = "field"
+sgx545 = "CMDTA+0x298"
+meaning = "as CR_REG_0374's: context store/resume state of an interrupted TA: a 32-bit resume task word. Measured: value the EDM copies verbatim into CR_REG_0374 (0x0374); 0 in every capture [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x4bf0)"
+licence = "MIT"
+evidence = "[HW] E054: no bit, 0 or ~0 changes the triangle; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; at ~0 a culled or off-screen triangle stays unwritten"
+
+[[term]]
+id = "G0311"
+name = "cmd_ta.ta_reg_02b0"
+status = "inferred"
+
+[[term.source]]
+term = "cmd_ta.ta_reg_02b0"
+kind = "field"
+sgx545 = "CMDTA+0x278"
+meaning = "as CR_TA_REG_02B0's: context store/resume state of an interrupted TA: an 8-bit field in 31:24 (state flags). Measured: value the EDM copies verbatim into CR_TA_REG_02B0 (0x02b0); 0 in every capture [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x4bb0)"
+licence = "MIT"
+evidence = "[HW] E054: no bit, 0 or ~0 changes the triangle; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; at ~0 a culled or off-screen triangle stays unwritten"
+
+[[term]]
+id = "G0312"
+name = "cmd_ta.ta_reg_02b4"
+status = "inferred"
+
+[[term.source]]
+term = "cmd_ta.ta_reg_02b4"
+kind = "field"
+sgx545 = "CMDTA+0x284"
+meaning = "as CR_TA_REG_02B4's: TA context status: reads 0xff after any job, a valid or done mask of the stored state. Measured: value the EDM copies verbatim into CR_TA_REG_02B4 (0x02b4); 0 in every capture [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x4bc8)"
+licence = "MIT"
+evidence = "[HW] E054: no bit, 0 or ~0 changes the triangle; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; at ~0 a culled or off-screen triangle stays unwritten"
+
+[[term]]
+id = "G0313"
+name = "cmd_ta.ta_reg_02d0"
+status = "inferred"
+
+[[term.source]]
+term = "cmd_ta.ta_reg_02d0"
+kind = "field"
+sgx545 = "CMDTA+0x280"
+meaning = "as CR_TA_REG_02D0's: the TA's context state base (a dword address), read only when an interrupted TA resumes. Measured: value the EDM copies verbatim into CR_TA_REG_02D0 (0x02d0); 0 in every capture [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x4bc0)"
+licence = "MIT"
+evidence = "[HW] E054: no bit, 0 or ~0 changes the triangle; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; at ~0 a culled or off-screen triangle stays unwritten"
+
+[[term]]
+id = "G0314"
+name = "cmd_ta.ta_reg_02d4"
+status = "inferred"
+
+[[term.source]]
+term = "cmd_ta.ta_reg_02d4"
+kind = "field"
+sgx545 = "CMDTA+0x27c"
+meaning = "as CR_TA_REG_02D4's: context store/resume state of an interrupted TA: a 26-bit size or offset. Measured: value the EDM copies verbatim into CR_TA_REG_02D4 (0x02d4); 0 in every capture [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x4bb8)"
+licence = "MIT"
+evidence = "[HW] E054: no bit, 0 or ~0 changes the triangle; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; at ~0 a culled or off-screen triangle stays unwritten"
+
+[[term]]
+id = "G0315"
+name = "cmd_ta.te_reg_02a8"
+status = "inferred"
+
+[[term.source]]
+term = "cmd_ta.te_reg_02a8"
+kind = "field"
+sgx545 = "CMDTA+0x2a0"
+meaning = "as CR_TE_REG_02A8's: the tiling engine's resume position after an interrupted TA: an 8-bit field in 19:12. Measured: value the EDM copies verbatim into CR_TE_REG_02A8 (0x02a8); 0 in every capture [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x4c10)"
+licence = "MIT"
+evidence = "[HW] E054: no bit, 0 or ~0 changes the triangle; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; at ~0 a culled or off-screen triangle stays unwritten"
+
+[[term]]
+id = "G0316"
+name = "cmd_ta.te_screen"
+status = "named"
+
+[[term.source]]
+term = "te_screen"
+kind = "field"
+sgx545 = "CMDTA+0x244"
+meaning = "screen size in tiles"
+tier = "3"
+source = "linux-imagination"
+citation = "C0229"
+licence = "GPL-2.0 OR MIT"
+evidence = "rogue_fwif_hwrtdata_common"
+
+[[term]]
+id = "G0317"
+name = "cmd_ta.use_reg_0a04"
+status = "inferred"
+
+[[term.source]]
+term = "cmd_ta.use_reg_0a04"
+kind = "field"
+sgx545 = "CMDTA+0x26c"
+meaning = "as CR_USE_REG_0A04's: the USSE's context store/resume state base (a 16-byte address) for an interrupted TA's vertex tasks. Measured: value the EDM copies verbatim into CR_USE_REG_0A04 (0x0a04); 0 in every capture [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x4b88)"
+licence = "MIT"
+evidence = "[HW] E054: no bit, 0 or ~0 changes the triangle; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; at ~0 a culled or off-screen triangle stays unwritten"
+
+[[term]]
+id = "G0318"
+name = "cmd_ta.use_reg_0aa0"
+status = "inferred"
+
+[[term.source]]
+term = "cmd_ta.use_reg_0aa0"
+kind = "field"
+sgx545 = "CMDTA+0x270"
+meaning = "as CR_USE_REG_0AA0's: a USSE resume task word for an interrupted TA's vertex tasks. Measured: value the EDM copies verbatim into CR_USE_REG_0AA0 (0x0aa0); 0 in every capture [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x4b90)"
+licence = "MIT"
+evidence = "[HW] E054: no bit, 0 or ~0 changes the triangle; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; at ~0 a culled or off-screen triangle stays unwritten"

@@ -1,0 +1,10 @@
+title = "probe table usse/internal-registers"
+repo = "data"
+paths = ["usse/internal-registers/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 100
+size = 1107320
+sha256 = "79d09f0acc3ed7bb3460f7aac5a46026ad78542f4d4c3e94ecb469c25ce52ceb"
+recipe = "probes/usse/internal-registers.toml"
+needs = ["render"]

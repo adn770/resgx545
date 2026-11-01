@@ -1,0 +1,15 @@
+[[term]]
+id = "G0251"
+name = "MTECTL.CULL_MODE"
+status = "named"
+
+[[term.source]]
+term = "cullmode"
+kind = "field"
+sgx545 = "mtectl [1:0]"
+meaning = "cull mode"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0198"
+licence = "MIT"
+evidence = "same function (S.4); Rogue 1 = cull CW, 2 = CCW; SGX observed 1 = CCW, 2 = CW in window coordinates (y not flipped): check convention; [HW] E062: 1 culls one winding (our triangle's), 2 the other, 0 and 3 neither, every value of bits 7:0 both ways round"

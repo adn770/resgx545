@@ -1,0 +1,15 @@
+[[term]]
+id = "G0145"
+name = "CR_MTE_MULTISAMPLECTL"
+status = "named"
+
+[[term.source]]
+term = "ROGUE_CR_PPP_MULTISAMPLECTL"
+kind = "register"
+sgx545 = "0x0230"
+meaning = "the sample positions on the TA side: the TA command word that loads it carries CR_ISP_MULTISAMPLECTL's value in every capture, 0x88 with one sample, 0xeaa26e26 with 4x multisampling [infer]"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0176"
+licence = "MIT"
+evidence = "no multisample capture: Rogue's sample-position register is a name only here"

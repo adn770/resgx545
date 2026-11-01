@@ -1,0 +1,10 @@
+title = "follow-up run of the probe table usse/numbered-modifiers"
+repo = "data"
+paths = ["followup/usse/numbered-modifiers/"]
+method = "campaign runner on the laptop target (tools/campaign), the follow-up round"
+date = "2026-11-01"
+files = 82
+size = 261437
+sha256 = "372d380b0481d8d5115a0e6c886edf93dfe0b7c387196ec54dc9976c71c50545"
+recipe = "probes/usse/numbered-modifiers.toml"
+needs = ["render"]

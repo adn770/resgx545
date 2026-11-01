@@ -1,0 +1,10 @@
+title = "probe table usse/unorm8"
+repo = "data"
+paths = ["usse/unorm8/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 29
+size = 49814
+sha256 = "654f0a90d4d7589d3b55a3a6e340f373e316c6b3829dfd425d96e209b453e0f6"
+recipe = "probes/usse/unorm8.toml"
+needs = ["render"]

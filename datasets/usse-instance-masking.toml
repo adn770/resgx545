@@ -1,0 +1,10 @@
+title = "probe table usse/instance-masking"
+repo = "data"
+paths = ["usse/instance-masking/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 105
+size = 3051198
+sha256 = "aec67c60101f3b1e6e8b184462c0b59bb642398629c4a5595c5c2f58be1e89e5"
+recipe = "probes/usse/instance-masking.toml"
+needs = ["render"]

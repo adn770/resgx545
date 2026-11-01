@@ -1,0 +1,10 @@
+title = "follow-up run of the probe table pds/iteration-waits"
+repo = "data"
+paths = ["followup/pds/iteration-waits/"]
+method = "campaign runner on the laptop target (tools/campaign), the follow-up round"
+date = "2026-11-01"
+files = 132
+size = 2744518
+sha256 = "25a94d785081c40a3b53d952b68223cf7263de836e52f35556b82a809c4dade8"
+recipe = "probes/pds/iteration-waits.toml"
+needs = ["render"]

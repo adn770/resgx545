@@ -1,0 +1,10 @@
+title = "probe table texture/mipmaps"
+repo = "data"
+paths = ["texture/mipmaps/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 97
+size = 398694
+sha256 = "bfb040ca01fcb88322a89c71d3b161f9724eb06aff9fdf6a0bf9900002224de7"
+recipe = "probes/texture/mipmaps.toml"
+needs = ["render"]

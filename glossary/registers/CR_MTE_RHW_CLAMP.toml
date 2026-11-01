@@ -1,0 +1,15 @@
+[[term]]
+id = "G0146"
+name = "CR_MTE_RHW_CLAMP"
+status = "named"
+
+[[term.source]]
+term = "CR_MTE_RHW_CLAMP"
+kind = "register"
+sgx545 = "0x0244"
+meaning = "the 1/w the TA stores for a vertex at or below CR_MTE_RHW_MIN [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E063"
+licence = "MIT"
+evidence = "Rogue has one W clamp float (mesa ppp.xml:314) but our evidence cannot tell it apart from 0x0240; [HW] E063: 0 to the largest single change no image of a triangle crossing w = 0 or reaching far outside the viewport"

@@ -1,0 +1,10 @@
+title = "sweep and probe table mte/mtectl"
+repo = "data"
+paths = ["mte/mtectl/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 278
+size = 24174040
+sha256 = "349052bc3452adfcc4fc064d7fa14f8280fc8c75df4027a9500107b3984c85be"
+recipe = "probes/mte/mtectl.toml"
+needs = ["render", "render_param", "render_tadata"]

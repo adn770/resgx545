@@ -1,0 +1,15 @@
+[[term]]
+id = "G0227"
+name = "FDUAL.FDDP_IREG_DEST_NUM"
+status = "named"
+
+[[term.source]]
+term = "SGX545_USE_FDUAL_FDDP_IREG_DEST_NUM"
+kind = "enum"
+sgx545 = "dual-issue fddp"
+meaning = "dual-issue fddp writes this internal register"
+tier = "2"
+source = "cdv-libusc"
+citation = "C0187"
+licence = "Intel-binary (ours)"
+evidence = "SGX545-specific name"

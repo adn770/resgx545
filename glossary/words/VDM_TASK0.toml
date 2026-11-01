@@ -1,0 +1,15 @@
+[[term]]
+id = "G0294"
+name = "VDM_TASK0.MAX_VERTICES"
+status = "named"
+
+[[term.source]]
+term = "VDM_TASK0.MAX_VERTICES"
+kind = "field"
+sgx545 = "vertex-task word 0 [31:28]"
+meaning = "the vertices one vertex task takes, less one (in index order); 7 for the closed driver's screen-space draws, 15 for compiled shaders; 0 hangs a larger draw [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E060"
+licence = "MIT"
+evidence = "what the field does is not measured; [HW] E060: all 16 values render the triangle alike"

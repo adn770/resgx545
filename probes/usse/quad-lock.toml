@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse quad lock: 0 sweeps, 2 probes.
+needs = ["render"]
+
+[[probe]]
+name = "usse-quad-lock-counter"
+question = "a shared counter incremented by every pixel instance, with and without a mutex"
+source = "counter.s"
+pixels = true
+params = {  }
+inputs = ["OP"]
+labels = ["no lock", "lock #0", "lock #3", "lock #0, no release"]
+cases = [["ldad.skipinv r2, [r29,+#0], drc0\nwdf drc0\niadd32.skipinv.testtaz.chan0 r2, p0, r3, r2\nstad.skipinv [r29,+#0], r2\nidf drc0, bif\nwdf drc0"], ["lock #0\nldad.skipinv r2, [r29,+#0], drc0\nwdf drc0\niadd32.skipinv.testtaz.chan0 r2, p0, r3, r2\nstad.skipinv [r29,+#0], r2\nidf drc0, bif\nwdf drc0\nrelease #0"], ["lock #3\nldad.skipinv r2, [r29,+#0], drc0\nwdf drc0\niadd32.skipinv.testtaz.chan0 r2, p0, r3, r2\nstad.skipinv [r29,+#0], r2\nidf drc0, bif\nwdf drc0\nrelease #3"], ["lock #0\nldad.skipinv r2, [r29,+#0], drc0\nwdf drc0\niadd32.skipinv.testtaz.chan0 r2, p0, r3, r2\nstad.skipinv [r29,+#0], r2\nidf drc0, bif\nwdf drc0"]]
+
+[[probe]]
+name = "usse-quad-lock-quadlead-setm"
+question = "how many instances update a shared counter with .quadlead on the increment and after setm #n; the pixel is the value each instance stored"
+source = "counter.s"
+pixels = true
+params = {  }
+inputs = ["OP"]
+labels = ["lock #0 (control)", "lock #0, .quadlead on the increment", "no lock, .quadlead on the increment", "setm #0, lock #0", "setm #1, lock #0", "setm #2, lock #0", "setm #4, lock #0", "setm #8, lock #0", "setm #15, lock #0"]
+cases = [["lock #0\nldad.skipinv r2, [r29,+#0], drc0\nwdf drc0\niadd32.skipinv.testtaz.chan0 r2, p0, r3, r2\nstad.skipinv [r29,+#0], r2\nidf drc0, bif\nwdf drc0\nrelease #0"], ["lock #0\nldad.skipinv r2, [r29,+#0], drc0\nwdf drc0\niadd32.skipinv.quadlead.testtaz.chan0 r2, p0, r3, r2\nstad.skipinv [r29,+#0], r2\nidf drc0, bif\nwdf drc0\nrelease #0"], ["ldad.skipinv r2, [r29,+#0], drc0\nwdf drc0\niadd32.skipinv.quadlead.testtaz.chan0 r2, p0, r3, r2\nstad.skipinv [r29,+#0], r2\nidf drc0, bif\nwdf drc0"], ["setm #0\nlock #0\nldad.skipinv r2, [r29,+#0], drc0\nwdf drc0\niadd32.skipinv.testtaz.chan0 r2, p0, r3, r2\nstad.skipinv [r29,+#0], r2\nidf drc0, bif\nwdf drc0\nrelease #0"], ["setm #1\nlock #0\nldad.skipinv r2, [r29,+#0], drc0\nwdf drc0\niadd32.skipinv.testtaz.chan0 r2, p0, r3, r2\nstad.skipinv [r29,+#0], r2\nidf drc0, bif\nwdf drc0\nrelease #0"], ["setm #2\nlock #0\nldad.skipinv r2, [r29,+#0], drc0\nwdf drc0\niadd32.skipinv.testtaz.chan0 r2, p0, r3, r2\nstad.skipinv [r29,+#0], r2\nidf drc0, bif\nwdf drc0\nrelease #0"], ["setm #4\nlock #0\nldad.skipinv r2, [r29,+#0], drc0\nwdf drc0\niadd32.skipinv.testtaz.chan0 r2, p0, r3, r2\nstad.skipinv [r29,+#0], r2\nidf drc0, bif\nwdf drc0\nrelease #0"], ["setm #8\nlock #0\nldad.skipinv r2, [r29,+#0], drc0\nwdf drc0\niadd32.skipinv.testtaz.chan0 r2, p0, r3, r2\nstad.skipinv [r29,+#0], r2\nidf drc0, bif\nwdf drc0\nrelease #0"], ["setm #15\nlock #0\nldad.skipinv r2, [r29,+#0], drc0\nwdf drc0\niadd32.skipinv.testtaz.chan0 r2, p0, r3, r2\nstad.skipinv [r29,+#0], r2\nidf drc0, bif\nwdf drc0\nrelease #0"]]

@@ -1,0 +1,15 @@
+[[term]]
+id = "G0148"
+name = "CR_PDS_REG_0A78"
+status = "inferred"
+
+[[term.source]]
+term = "CR_PDS_REG_0A78"
+kind = "register"
+sgx545 = "0x0a78"
+meaning = "a PDS tuning value (6 bits, 0x2c) with no visible effect at our loads. Measured: set once by the init script to 0x2c; not the SGX535 register at this offset; implemented bits 5:0; no effect on a fill, copy or triangle in any value [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E006"
+licence = "MIT"
+evidence = "value independent of the reported core (spec section 13.5); [HW] E026: bits 5:0 read back, the rest read 0; every bit, 0 and ~0 leave the jobs unchanged; [HW] E045: every value 0-63 leaves a triangle unchanged"

@@ -1,0 +1,15 @@
+[[term]]
+id = "G0127"
+name = "CR_ISP_POLY_OFFSET_CLAMP"
+status = "named"
+
+[[term.source]]
+term = "CR_ISP_POLY_OFFSET_CLAMP"
+kind = "register"
+sgx545 = "0x0424"
+meaning = "the polygon offset's clamp, an IEEE single: the offset is capped at it, 0 no cap, a negative one leaving positive offsets alone [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E071"
+licence = "MIT"
+evidence = "Rogue's depth bias is a table base (ISP_DBIAS_BASE), not three words, so no matching analogue; hypothesis to test (Mesa src/asahi: AGX's depth-bias record is units, factor and clamp): the polygon offset clamp, which GLES 2 never sets; [HW] E071: 0.01 caps units 2^20 (+0.0625) at 0.51 exactly, a denormal caps every offset, 0 and -0.01 cap nothing"

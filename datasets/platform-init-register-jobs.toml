@@ -1,0 +1,9 @@
+title = "sweep table platform/init-register-jobs"
+repo = "data"
+paths = ["platform/init-register-jobs/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 4
+size = 213557
+sha256 = "b4206680fbfe229497a50e6f5881ad418fceb7496c8638ac0c5c610b080869f4"
+recipe = "probes/platform/init-register-jobs.toml"

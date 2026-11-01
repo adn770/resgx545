@@ -1,0 +1,15 @@
+[[term]]
+id = "G0129"
+name = "CR_ISP_POLY_OFFSET_UNITS"
+status = "named"
+
+[[term.source]]
+term = "CR_ISP_POLY_OFFSET_UNITS"
+kind = "register"
+sgx545 = "0x041c"
+meaning = "the polygon offset's units, as an integer (glPolygonOffset units) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E071"
+licence = "MIT"
+evidence = "0 without polygon offset; [HW] E071: units 1, 16, 4096, 2^20 add exactly that many IEEE ulps to the stored depth, only with ISP1.POLY_OFFSET"

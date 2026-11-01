@@ -1,0 +1,10 @@
+title = "follow-up run of the probe table usse/video-filters"
+repo = "data"
+paths = ["followup/usse/video-filters/"]
+method = "campaign runner on the laptop target (tools/campaign), the follow-up round"
+date = "2026-11-01"
+files = 5105
+size = 13990673
+sha256 = "b597580005a8b1088eb84d40a82be281563f6549c00d3ce1a6fa0e5a01490482"
+recipe = "probes/usse/video-filters.toml"
+needs = ["render"]

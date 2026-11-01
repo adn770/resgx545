@@ -1,0 +1,132 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse branch: 0 sweeps, 13 probes.
+needs = ["render"]
+
+[[probe]]
+name = "usse-branch-bexc-none"
+question = "no bexception (control): which markers land"
+source = "wide_dump.s"
+temps = 48
+pixels = true
+params = { OUT = "r20" }
+inputs = ["OP"]
+labels = ["no bexception (control)"]
+cases = [["mov r20, #0x0A0A0A0A\nmov r21, #0x0B0B0B0B"]]
+
+[[probe]]
+name = "usse-branch-bexc"
+question = "bexception between the markers: which markers land"
+source = "wide_dump.s"
+temps = 48
+pixels = true
+params = { OUT = "r20" }
+inputs = ["OP"]
+labels = ["bexception between the markers"]
+cases = [["mov r20, #0x0A0A0A0A\nbexception #0x00000000\nmov r21, #0x0B0B0B0B"]]
+
+[[probe]]
+name = "usse-branch-bexc-nosched"
+question = "bexception.nosched between the markers: which markers land"
+source = "wide_dump.s"
+temps = 48
+pixels = true
+params = { OUT = "r20" }
+inputs = ["OP"]
+labels = ["bexception.nosched between the markers"]
+cases = [["mov r20, #0x0A0A0A0A\nbexception.nosched #0x00000000\nmov r21, #0x0B0B0B0B"]]
+
+[[probe]]
+name = "usse-branch-bexc2-ba2"
+question = "ba #2 (control: back to instruction 2): fall through (0x0b0b0b0b), to instruction 10 (0x0d0d0d0d), back to 2 (0x0c0c0c0c) or hang"
+source = "bexc_path.s"
+params = {  }
+inputs = ["OP"]
+labels = ["ba #2 (control: back to instruction 2)"]
+cases = [["ba #0x00000002"]]
+
+[[probe]]
+name = "usse-branch-bexc2-br5"
+question = "br #5 (control: to instruction 10): fall through (0x0b0b0b0b), to instruction 10 (0x0d0d0d0d), back to 2 (0x0c0c0c0c) or hang"
+source = "bexc_path.s"
+params = {  }
+inputs = ["OP"]
+labels = ["br #5 (control: to instruction 10)"]
+cases = [["br #0x00000005"]]
+
+[[probe]]
+name = "usse-branch-bexc2-ba10"
+question = "ba #10 (control: to instruction 10): fall through (0x0b0b0b0b), to instruction 10 (0x0d0d0d0d), back to 2 (0x0c0c0c0c) or hang"
+source = "bexc_path.s"
+params = {  }
+inputs = ["OP"]
+labels = ["ba #10 (control: to instruction 10)"]
+cases = [["ba #0x0000000A"]]
+
+[[probe]]
+name = "usse-branch-bexc2-t2"
+question = "bexception, target field 2: fall through (0x0b0b0b0b), to instruction 10 (0x0d0d0d0d), back to 2 (0x0c0c0c0c) or hang"
+source = "bexc_path.s"
+params = {  }
+inputs = ["OP"]
+labels = ["bexception, target field 2"]
+cases = [[".long 0xF808000000000002 ; bexception, target 2"]]
+
+[[probe]]
+name = "usse-branch-bexc2-t10"
+question = "bexception, target field 10: fall through (0x0b0b0b0b), to instruction 10 (0x0d0d0d0d), back to 2 (0x0c0c0c0c) or hang"
+source = "bexc_path.s"
+params = {  }
+inputs = ["OP"]
+labels = ["bexception, target field 10"]
+cases = [[".long 0xF80800000000000A ; bexception, target 10"]]
+
+[[probe]]
+name = "usse-branch-bexc2-rel5"
+question = "bexception, bit 38 and target field 5: fall through (0x0b0b0b0b), to instruction 10 (0x0d0d0d0d), back to 2 (0x0c0c0c0c) or hang"
+source = "bexc_path.s"
+params = {  }
+inputs = ["OP"]
+labels = ["bexception, bit 38 and target field 5"]
+cases = [[".long 0xF808004000000005 ; bexception, bit 38, target 5"]]
+
+[[probe]]
+name = "usse-branch-bexc2-p0-t10"
+question = "bexception, predicate field p0 (false), target field 10: fall through (0x0b0b0b0b), to instruction 10 (0x0d0d0d0d), back to 2 (0x0c0c0c0c) or hang"
+source = "bexc_path.s"
+params = {  }
+inputs = ["OP"]
+labels = ["bexception, predicate field p0 (false), target field 10"]
+cases = [[".long 0xF90800000000000A ; p0 bexception, target 10"]]
+
+[[probe]]
+name = "usse-branch-bexc2-np0-t10"
+question = "bexception, predicate field !p0 (true), target field 10: fall through (0x0b0b0b0b), to instruction 10 (0x0d0d0d0d), back to 2 (0x0c0c0c0c) or hang"
+source = "bexc_path.s"
+params = {  }
+inputs = ["OP"]
+labels = ["bexception, predicate field !p0 (true), target field 10"]
+cases = [[".long 0xFD0800000000000A ; !p0 bexception, target 10"]]
+
+[[probe]]
+name = "usse-branch-divergent"
+question = "what a predicated br does when a quad's instances disagree (Rogue: .ALLINST/.ANYINST branch modes; .synce/.syncent/.mon are open): p0 instances should store 4, the others 7"
+source = "coords.s"
+coords = true
+pixels = true
+params = {  }
+inputs = ["PRE", "OP", "OUT"]
+labels = ["x parity within the quad (g25 & 1 == 0), p0 br #3", "x parity within the quad (g25 & 1 == 0), p0 br.synce #3", "x parity within the quad (g25 & 1 == 0), p0 br.syncent #3", "x parity within the quad (g25 & 1 == 0), p0 br.mon #3", "x parity within the quad (g25 & 1 == 0), p0 br.nosched #3", "tile row bit 3, uniform per quad (g24 & 8 == 0), p0 br #3", "tile row bit 3, uniform per quad (g24 & 8 == 0), p0 br.synce #3", "tile row bit 3, uniform per quad (g24 & 8 == 0), p0 br.syncent #3", "tile row bit 3, uniform per quad (g24 & 8 == 0), p0 br.mon #3", "tile row bit 3, uniform per quad (g24 & 8 == 0), p0 br.nosched #3", "x parity inverted: p0 on odd x (instance 0 clear), p0 br #3", "p0 on instances 1-3 of the quad (g25 & 3 != 0), p0 br #3"]
+cases = [["mov.skipinv r10, #0\nmov.skipinv r9, #1\nand.skipinv.testtaz.chan0 !c0, p0, g25, r9", "p0 br #3\nor r10, r10, #1\nor r10, r10, #2\nor r10, r10, #4", "r10"], ["mov.skipinv r10, #0\nmov.skipinv r9, #1\nand.skipinv.testtaz.chan0 !c0, p0, g25, r9", "p0 br.synce #3\nor r10, r10, #1\nor r10, r10, #2\nor r10, r10, #4", "r10"], ["mov.skipinv r10, #0\nmov.skipinv r9, #1\nand.skipinv.testtaz.chan0 !c0, p0, g25, r9", "p0 br.syncent #3\nor r10, r10, #1\nor r10, r10, #2\nor r10, r10, #4", "r10"], ["mov.skipinv r10, #0\nmov.skipinv r9, #1\nand.skipinv.testtaz.chan0 !c0, p0, g25, r9", "p0 br.mon #3\nor r10, r10, #1\nor r10, r10, #2\nor r10, r10, #4", "r10"], ["mov.skipinv r10, #0\nmov.skipinv r9, #1\nand.skipinv.testtaz.chan0 !c0, p0, g25, r9", "p0 br.nosched #3\nor r10, r10, #1\nor r10, r10, #2\nor r10, r10, #4", "r10"], ["mov.skipinv r10, #0\nmov.skipinv r9, #8\nand.skipinv.testtaz.chan0 !c0, p0, g24, r9", "p0 br #3\nor r10, r10, #1\nor r10, r10, #2\nor r10, r10, #4", "r10"], ["mov.skipinv r10, #0\nmov.skipinv r9, #8\nand.skipinv.testtaz.chan0 !c0, p0, g24, r9", "p0 br.synce #3\nor r10, r10, #1\nor r10, r10, #2\nor r10, r10, #4", "r10"], ["mov.skipinv r10, #0\nmov.skipinv r9, #8\nand.skipinv.testtaz.chan0 !c0, p0, g24, r9", "p0 br.syncent #3\nor r10, r10, #1\nor r10, r10, #2\nor r10, r10, #4", "r10"], ["mov.skipinv r10, #0\nmov.skipinv r9, #8\nand.skipinv.testtaz.chan0 !c0, p0, g24, r9", "p0 br.mon #3\nor r10, r10, #1\nor r10, r10, #2\nor r10, r10, #4", "r10"], ["mov.skipinv r10, #0\nmov.skipinv r9, #8\nand.skipinv.testtaz.chan0 !c0, p0, g24, r9", "p0 br.nosched #3\nor r10, r10, #1\nor r10, r10, #2\nor r10, r10, #4", "r10"], ["mov.skipinv r10, #0\nmov.skipinv r9, #1\nand.skipinv.testtanz.chan0 !c0, p0, g25, r9", "p0 br #3\nor r10, r10, #1\nor r10, r10, #2\nor r10, r10, #4", "r10"], ["mov.skipinv r10, #0\nmov.skipinv r9, #3\nand.skipinv.testtanz.chan0 !c0, p0, g25, r9", "p0 br #3\nor r10, r10, #1\nor r10, r10, #2\nor r10, r10, #4", "r10"]]
+
+[[probe]]
+name = "usse-branch-br-offset"
+question = "br #k: the instruction the offset counts from"
+source = "dump.s"
+params = { A = 0, B = 0, C = 0, D = 0, E = 0, F = 0, G = 0, H = 0, OUT = "r10" }
+inputs = ["OP", "A", "B", "C", "D", "E", "F", "G", "H"]
+labels = ["br #1 before five ors", "br #2 before five ors", "br #3 before five ors", "br #4 before five ors", "br #5 before five ors"]
+cases = [["and.testtaz.chan0 !c0, p3, r8, r8\nmov r10, #0\np3 br #1\nor r10, r10, #1\nor r10, r10, #2\nor r10, r10, #4\nor r10, r10, #8\nor r10, r10, #16", 0, 0, 0, 0, 0, 0, 0, 0], ["and.testtaz.chan0 !c0, p3, r8, r8\nmov r10, #0\np3 br #2\nor r10, r10, #1\nor r10, r10, #2\nor r10, r10, #4\nor r10, r10, #8\nor r10, r10, #16", 0, 0, 0, 0, 0, 0, 0, 0], ["and.testtaz.chan0 !c0, p3, r8, r8\nmov r10, #0\np3 br #3\nor r10, r10, #1\nor r10, r10, #2\nor r10, r10, #4\nor r10, r10, #8\nor r10, r10, #16", 0, 0, 0, 0, 0, 0, 0, 0], ["and.testtaz.chan0 !c0, p3, r8, r8\nmov r10, #0\np3 br #4\nor r10, r10, #1\nor r10, r10, #2\nor r10, r10, #4\nor r10, r10, #8\nor r10, r10, #16", 0, 0, 0, 0, 0, 0, 0, 0], ["and.testtaz.chan0 !c0, p3, r8, r8\nmov r10, #0\np3 br #5\nor r10, r10, #1\nor r10, r10, #2\nor r10, r10, #4\nor r10, r10, #8\nor r10, r10, #16", 0, 0, 0, 0, 0, 0, 0, 0]]
+[probe.hypotheses]
+"from the br itself (br #1 is the next instruction)" = [[31, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [30, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [28, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [24, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [16, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf]]
+"from the next instruction" = [[30, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [28, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [24, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [16, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf]]

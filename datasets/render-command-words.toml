@@ -1,0 +1,10 @@
+title = "sweep table render/command-words"
+repo = "data"
+paths = ["render/command-words/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 4
+size = 615049
+sha256 = "6952b79479ba306c4f98576e237e109f96a4b1d9097b5fb1005ed2e4d37084ee"
+recipe = "probes/render/command-words.toml"
+needs = ["render"]

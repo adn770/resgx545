@@ -1,0 +1,11 @@
+title = "sweep, script and probe table isp/sample-positions"
+repo = "data"
+paths = ["isp/sample-positions/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 261
+size = 3671234
+sha256 = "1005692faf6d0a992232202bb67f5a0ef9b69993fe2a9d25723f519b514bbf48"
+recipe = "probes/isp/sample-positions.toml"
+needs = ["render", "kpoke"]
+open = ["isp-sample-positions-0520-vistest", "isp-sample-positions-0520-isp0-b10", "isp-sample-positions-0520-isp0-b11", "isp-sample-positions-0520-isp0-b12", "isp-sample-positions-0520-isp0-b13", "isp-sample-positions-0520-isp0-b14", "isp-sample-positions-0520-isp0-b18", "isp-sample-positions-0520-isp0-b19", "isp-sample-positions-0520-isp0-b28", "isp-sample-positions-0520-isp0-b29", "isp-sample-positions-0520-isp0-b30", "isp-sample-positions-0520-isp0-b31", "isp-sample-positions-0520-isp1-b16", "isp-sample-positions-0520-isp1-b17", "isp-sample-positions-0520-isp1-b18", "isp-sample-positions-0520-isp1-b19", "isp-sample-positions-0520-isp1-b20", "isp-sample-positions-0520-isp1-b21", "isp-sample-positions-0520-isp1-b22", "isp-sample-positions-0520-isp1-b24", "isp-sample-positions-0520-isp1-b25", "isp-sample-positions-0520-isp1-b26", "isp-sample-positions-0520-isp1-b27", "isp-sample-positions-0520-isp1-b28", "isp-sample-positions-0520-isp1-b29", "isp-sample-positions-0520-isp1-b30", "isp-sample-positions-0520-isp1-b31", "isp-sample-positions-0520-isp0-b18-nopoke", "isp-sample-positions-isp0b28-0520-00000001", "isp-sample-positions-isp0b28-0520-00000002", "isp-sample-positions-isp0b28-0520-00000004", "isp-sample-positions-isp0b28-0520-00000010", "isp-sample-positions-isp0b28-0520-00000100", "isp-sample-positions-isp0b28-0520-00001000", "isp-sample-positions-isp0b28-0520-00010000", "isp-sample-positions-isp0b28-0520-00100000", "isp-sample-positions-isp0b28-0520-01000000", "isp-sample-positions-isp0b28-0520-10000000", "isp-sample-positions-isp0b28-0520-80000000", "isp-sample-positions-isp0b28-0520-ffffffff"]

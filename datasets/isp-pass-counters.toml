@@ -1,0 +1,10 @@
+title = "sweep table isp/pass-counters"
+repo = "data"
+paths = ["isp/pass-counters/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 12
+size = 112582
+sha256 = "dd3ff926ed217f79d9889d360244066ef6f3c2155dd8a97fe525d82176098a4e"
+recipe = "probes/isp/pass-counters.toml"
+needs = ["render"]

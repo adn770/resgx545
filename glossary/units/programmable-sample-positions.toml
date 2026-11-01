@@ -1,0 +1,15 @@
+[[term]]
+id = "G0333"
+name = "programmable sample positions"
+status = "named"
+
+[[term.source]]
+term = "programmable sample positions"
+kind = "concept"
+sgx545 = "-"
+meaning = "the samples' positions within the pixel are programmable (with 4x multisampling)"
+tier = "4"
+source = "ti-omap4430-trm"
+citation = "C0232"
+licence = "public-doc"
+evidence = "OCR text; describes the SGX540, the same Series5 architecture; [HW] CR_ISP_MULTISAMPLECTL.SAMPLE0_X and SAMPLE_Y place the pixel's sample in sixteenths of a pixel (E064)"

@@ -1,0 +1,8 @@
+title = "Imagination's PVRTune Counter List and Description (2017)"
+tier = "4"
+kind = "document"
+licences = ["public-doc"]
+root = "the PDF, as the Wayback Machine captured it"
+upstream = "https://web.archive.org/web/20170103id_/http://cdn.imgtec.com/sdk-documentation/PVRTune.Counter%20List%20and%20Description.pdf"
+pin = "capture 2017-01-03, PDF sha256 b6ec716942bbb019c45ed259f4565319f4cb6c16d95b03a2595660cc01138d53"
+locator = "page N of the PDF"

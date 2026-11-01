@@ -1,0 +1,9 @@
+title = "script table platform/memory-sizes"
+repo = "data"
+paths = ["platform/memory-sizes/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 3
+size = 11085
+sha256 = "d76d421fb74b00993fc42b43216793593907f0ff10feaec9e446fdd8e7884f61"
+recipe = "probes/platform/memory-sizes.toml"

@@ -1,0 +1,10 @@
+title = "probe table pds/iteration-sources"
+repo = "data"
+paths = ["pds/iteration-sources/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 280
+size = 8691626
+sha256 = "b960cc2850ebc14c71e9cb87d720ccb72dcadb27fad2d14eeb31e6398cd708f6"
+recipe = "probes/pds/iteration-sources.toml"
+needs = ["render"]

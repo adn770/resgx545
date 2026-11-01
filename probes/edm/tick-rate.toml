@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# The EDM tick with HostCtl dword 6 (the tick length in core clocks, the debug group's
+# timer_clock file, read at boot) at 400000, 200000 and 800000: the firmware reloaded and
+# booted with each, then 200 register snapshots over about 40 s, each read stamped with the
+# laptop's clock before and after, to see whether the rate of every moving register scales as
+# 1 / dword 6.
+kind = "script"
+name = "edm-tick-rate"
+script = "tick-rate.sh"
+baseline = "none"
+needs = ["timer_clock", "regs"]

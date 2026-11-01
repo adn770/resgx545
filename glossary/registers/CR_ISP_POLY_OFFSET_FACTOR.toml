@@ -1,0 +1,15 @@
+[[term]]
+id = "G0128"
+name = "CR_ISP_POLY_OFFSET_FACTOR"
+status = "inferred"
+
+[[term.source]]
+term = "CR_ISP_POLY_OFFSET_FACTOR"
+kind = "register"
+sgx545 = "0x0420"
+meaning = "Register 0x0420, loaded from render-details word 6: set to 4.0 with the offset in word 5 at 0 it left the flat triangle's stored depth unchanged, so what it multiplies is not shown by a triangle with no depth slope"
+tier = "ours"
+source = "resgx545"
+citation = "E071"
+licence = "MIT"
+evidence = "[HW] E071: rd:6 (0x0420) at 4.0 with rd:5 at 0 stored 0x3f000000 (no change) for the flat 64x64 triangle; the flat triangle has no slope for it to act on; [infer] the reading is ours, from these runs"

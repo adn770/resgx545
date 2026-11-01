@@ -1,0 +1,10 @@
+title = "probe table usse/filter-sets"
+repo = "data"
+paths = ["usse/filter-sets/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 817
+size = 1722590
+sha256 = "4e5a15c9de7b9a2a2f70949c75e7509fd9bf1df0f822c4c0d431dfe8b2d3fe73"
+recipe = "probes/usse/filter-sets.toml"
+needs = ["render"]

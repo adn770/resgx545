@@ -1,0 +1,15 @@
+[[term]]
+id = "G0286"
+name = "TEXFORMAT"
+status = "named"
+
+[[term.source]]
+term = "FORMAT"
+kind = "enum"
+sgx545 = "TEXFORMAT values"
+meaning = "texel format enum: on SGX545 2 RGBA4444, 4 RGBA5551, 5 RGB565, 12 BGRA8888 (ARGB8888 in memory), 13 RGBA8888, 17 RGBA half-float, 18 float32 (RGBA, luminance, depth), 23 PVRTC 2 bpp, 24 PVRTC 4 bpp, 27 ETC1, 28 YUYV, 29 UYVY; with the alternate format bit set 25 A8, 26 L8, 27 LA88, 30 luminance half-float (Rogue values differ)"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0223"
+licence = "MIT"
+evidence = "same concept; Rogue R5G6B5 = 5 as SGX RGB565 = 5, others differ; [HW] E040: 26 and 28 read as such on our own copy"

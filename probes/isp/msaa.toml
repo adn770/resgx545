@@ -1,0 +1,146 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# isp msaa: 0 sweeps, 10 probes, hand-run script.
+name = "isp-msaa"
+needs = ["render", "kpoke"]
+open = ["isp-msaa-bit48-1", "isp-msaa-bit48-1-4x", "isp-msaa-bit48-2", "isp-msaa-bit48-2-4x"]
+script = "msaa.sh"
+
+[[probe]]
+name = "isp-msaa-plain"
+question = "what the end-of-tile program eot_plain.s stores"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["eot_plain"]
+
+[[probe]]
+name = "isp-msaa-plain-4x"
+question = "what the end-of-tile program eot_plain.s stores from a 4x multisampled render"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+cmd = { 1 = 0xe0000000, 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["eot_plain, 4x"]
+
+[[probe]]
+name = "isp-msaa-bit48-1"
+question = "what the end-of-tile program eot_bit48_1.s stores"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_bit48_1.s" }
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["eot_bit48_1"]
+
+[[probe]]
+name = "isp-msaa-bit48-1-4x"
+question = "what the end-of-tile program eot_bit48_1.s stores from a 4x multisampled render"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_bit48_1.s" }
+cmd = { 1 = 0xe0000000, 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["eot_bit48_1, 4x"]
+
+[[probe]]
+name = "isp-msaa-bit48-2"
+question = "what the end-of-tile program eot_bit48_2.s stores"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_bit48_2.s" }
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["eot_bit48_2"]
+
+[[probe]]
+name = "isp-msaa-bit48-2-4x"
+question = "what the end-of-tile program eot_bit48_2.s stores from a 4x multisampled render"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_bit48_2.s" }
+cmd = { 1 = 0xe0000000, 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["eot_bit48_2, 4x"]
+
+[[probe]]
+name = "isp-msaa-pack9"
+question = "what pack mode 9 stores"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 521
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["pack mode 9"]
+
+[[probe]]
+name = "isp-msaa-pack9-4x"
+question = "what pack mode 9 stores from a 4x multisampled render"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 521
+cmd = { 1 = 0xe0000000, 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["pack mode 9, 4x"]
+
+[[probe]]
+name = "isp-msaa-pack10"
+question = "what pack mode 10 stores"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 522
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["pack mode 10"]
+
+[[probe]]
+name = "isp-msaa-pack10-4x"
+question = "what pack mode 10 stores from a 4x multisampled render"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 522
+cmd = { 1 = 0xe0000000, 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+labels = ["pack mode 10, 4x"]

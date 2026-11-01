@@ -1,0 +1,47 @@
+[[term]]
+id = "G0175"
+name = "CR_TPU_YUV_CSC_INPUT"
+status = "named"
+
+[[term.source]]
+term = "CR_TPU_YUV_CSC_INPUT"
+kind = "register"
+sgx545 = "0x0848"
+meaning = "Register 0x0848, loaded by one transfer word: in a UYVY copy through colour-space set 0, bit 0 drops the 16 luma offset and bit 2 reads U and V as signed bytes (U - 256 for 128 and above), and 0xffffffff does both; its other bits changed nothing"
+tier = "ours"
+source = "resgx545"
+citation = "E038, E040"
+licence = "MIT"
+evidence = "[HW] E038: flipping bit 0 changed all 2048 pixels to the model without the luma offset (hash 0xac992291af12e7fd), bit 2 to the model with signed U and V (0x5c401bf0949f20b5), 0xffffffff to both (0x9d328c00dee55005); every other single bit and 0 gave the baseline hash; [HW] E040: bit 1 of the word left the baseline hash and no bit of the word made the copy follow the set 1 numbers; [infer] the reading is ours, from these runs"
+
+[[term]]
+id = "G0176"
+name = "CR_TPU_YUV_CSC_INPUT.UV_SIGNED"
+status = "named"
+
+[[term.source]]
+term = "CR_TPU_YUV_CSC_INPUT.UV_SIGNED"
+kind = "flag"
+sgx545 = "0x0848[2]"
+meaning = "U and V taken as signed bytes instead of offset by 128 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E038"
+licence = "MIT"
+evidence = "[HW] E038: 2048 of 2048 pixels of a UYVY copy"
+
+[[term]]
+id = "G0177"
+name = "CR_TPU_YUV_CSC_INPUT.Y_NO_OFFSET"
+status = "named"
+
+[[term.source]]
+term = "CR_TPU_YUV_CSC_INPUT.Y_NO_OFFSET"
+kind = "flag"
+sgx545 = "0x0848[0]"
+meaning = "the luma taken as is, without the -16 offset [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E038"
+licence = "MIT"
+evidence = "[HW] E038: 2048 of 2048 pixels of a UYVY copy"

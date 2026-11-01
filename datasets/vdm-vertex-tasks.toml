@@ -1,0 +1,10 @@
+title = "sweep and probe table vdm/vertex-tasks"
+repo = "data"
+paths = ["vdm/vertex-tasks/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 43
+size = 14612243
+sha256 = "ca53f1d8d81c8f6c53ba82fd31185ddede5fd75e2f4baab4fa10a517365e9048"
+recipe = "probes/vdm/vertex-tasks.toml"
+needs = ["render", "render_param", "render_tadata"]

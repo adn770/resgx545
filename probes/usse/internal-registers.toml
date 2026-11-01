@@ -1,0 +1,133 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse internal registers: 0 sweeps, 11 probes.
+needs = ["render"]
+
+[[probe]]
+name = "usse-internal-registers-bank7"
+question = "what i4-i127 read and where a write to i4-i7 goes"
+source = "coords.s"
+coords = true
+pixels = true
+params = {  }
+inputs = ["PRE", "OP", "OUT"]
+labels = ["read i3", "read i4", "read i5", "read i6", "read i7", "read i8", "read i9", "read i10", "read i11", "read i12", "read i13", "read i14", "read i15", "read i16", "read i31", "read i63", "read i127", "write i4, read i0", "write i4, read i1", "write i4, read i2", "write i5, read i0", "write i5, read i1", "write i5, read i2", "write i6, read i0", "write i6, read i1", "write i6, read i2", "write i7, read i0", "write i7, read i1", "write i7, read i2"]
+cases = [["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov r10, i3", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov r10, i4", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov r10, i5", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov r10, i6", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov r10, i7", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov r10, i8", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov r10, i9", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov r10, i10", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov r10, i11", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov r10, i12", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov r10, i13", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov r10, i14", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov r10, i15", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov r10, i16", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov r10, i31", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov r10, i63", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov r10, i127", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov i4, r6\nmov r10, i0", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov i4, r6\nmov r10, i1", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov i4, r6\nmov r10, i2", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov i5, r6\nmov r10, i0", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov i5, r6\nmov r10, i1", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov i5, r6\nmov r10, i2", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov i6, r6\nmov r10, i0", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov i6, r6\nmov r10, i1", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov i6, r6\nmov r10, i2", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov i7, r6\nmov r10, i0", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov i7, r6\nmov r10, i1", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov i7, r6\nmov r10, i2", "r10"]]
+[probe.hypotheses]
+"number n mod 16 = 4m + j: register j (0-2) of the instance m on in the quad (TL, TR, BL, BR); j = 3 reads i0 of the next instance for m = 0 and i2 of instance m on otherwise; writes are dropped" = [{ quad = [[0, 1], [0, 2], [0, 3], [0, 0]] }, { quad = [[0, 1], [0, 2], [0, 3], [0, 0]] }, { quad = [[1, 1], [1, 2], [1, 3], [1, 0]] }, { quad = [[2, 1], [2, 2], [2, 3], [2, 0]] }, { quad = [[2, 1], [2, 2], [2, 3], [2, 0]] }, { quad = [[0, 2], [0, 3], [0, 0], [0, 1]] }, { quad = [[1, 2], [1, 3], [1, 0], [1, 1]] }, { quad = [[2, 2], [2, 3], [2, 0], [2, 1]] }, { quad = [[2, 2], [2, 3], [2, 0], [2, 1]] }, { quad = [[0, 3], [0, 0], [0, 1], [0, 2]] }, { quad = [[1, 3], [1, 0], [1, 1], [1, 2]] }, { quad = [[2, 3], [2, 0], [2, 1], [2, 2]] }, { quad = [[2, 3], [2, 0], [2, 1], [2, 2]] }, { quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[2, 3], [2, 0], [2, 1], [2, 2]] }, { quad = [[2, 3], [2, 0], [2, 1], [2, 2]] }, { quad = [[2, 3], [2, 0], [2, 1], [2, 2]] }, { quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[1, 0], [1, 1], [1, 2], [1, 3]] }, { quad = [[2, 0], [2, 1], [2, 2], [2, 3]] }, { quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[1, 0], [1, 1], [1, 2], [1, 3]] }, { quad = [[2, 0], [2, 1], [2, 2], [2, 3]] }, { quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[1, 0], [1, 1], [1, 2], [1, 3]] }, { quad = [[2, 0], [2, 1], [2, 2], [2, 3]] }, { quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[1, 0], [1, 1], [1, 2], [1, 3]] }, { quad = [[2, 0], [2, 1], [2, 2], [2, 3]] }]
+"j = 3 reads i0 of instance m + 1" = [{ quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[0, 1], [0, 2], [0, 3], [0, 0]] }, { quad = [[1, 1], [1, 2], [1, 3], [1, 0]] }, { quad = [[2, 1], [2, 2], [2, 3], [2, 0]] }, { quad = [[0, 1], [0, 2], [0, 3], [0, 0]] }, { quad = [[0, 2], [0, 3], [0, 0], [0, 1]] }, { quad = [[1, 2], [1, 3], [1, 0], [1, 1]] }, { quad = [[2, 2], [2, 3], [2, 0], [2, 1]] }, { quad = [[0, 2], [0, 3], [0, 0], [0, 1]] }, { quad = [[0, 3], [0, 0], [0, 1], [0, 2]] }, { quad = [[1, 3], [1, 0], [1, 1], [1, 2]] }, { quad = [[2, 3], [2, 0], [2, 1], [2, 2]] }, { quad = [[0, 3], [0, 0], [0, 1], [0, 2]] }, { quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[0, 3], [0, 0], [0, 1], [0, 2]] }, { quad = [[0, 3], [0, 0], [0, 1], [0, 2]] }, { quad = [[0, 3], [0, 0], [0, 1], [0, 2]] }, { quad = [[3, 0], [3, 1], [3, 2], [3, 3]] }, { quad = [[1, 0], [1, 1], [1, 2], [1, 3]] }, { quad = [[2, 0], [2, 1], [2, 2], [2, 3]] }, { quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[3, 0], [3, 1], [3, 2], [3, 3]] }, { quad = [[2, 0], [2, 1], [2, 2], [2, 3]] }, { quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[1, 0], [1, 1], [1, 2], [1, 3]] }, { quad = [[3, 0], [3, 1], [3, 2], [3, 3]] }, { quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[1, 0], [1, 1], [1, 2], [1, 3]] }, { quad = [[2, 0], [2, 1], [2, 2], [2, 3]] }]
+
+[[probe]]
+name = "usse-internal-registers-efo-gpiext"
+question = "efo.gpiext: which internal registers the multipliers and the writes use (the instance that stores the dump)"
+source = "dump.s"
+params = { A = 0, B = 0, C = 0, D = 0, E = 0, F = 0, G = 0, H = 0, OUT = "r10" }
+inputs = ["OP", "A", "B", "C", "D", "E", "F", "G", "H"]
+cases = [["mov i0, r4\nmov i1, r5\nmov i2, r6\nefo.gpiext r10= a0, i0 = a0, i1 = a1, a0=m0+m1, a1=i1+i0, m0=src0*src2, m1=src1*src2, r1, r2, r3\nmov r15, i2\nmov r16, i0\nmov r17, i1", 0x40400000, 0x40a00000, 0x40e00000, 0x41300000, 0x41500000, 0x41880000, 0, 0], ["mov i0, r4\nmov i1, r5\nmov i2, r6\nefo.gpiext r10= i1, i0 = a0, i1 = a1, a0=m0+m1, a1=i1+i0, m0=src1*i0, m1=src2*i1, r1, r2, r3\nmov r15, i2\nmov r16, i0\nmov r17, i1", 0x40400000, 0x40a00000, 0x40e00000, 0x41300000, 0x41500000, 0x41880000, 0, 0], ["mov i0, r4\nmov i1, r5\nmov i2, r6\nefo.gpiext r10= a1, !i0 = a0, !i1 = a1, a0=m0+m1, a1=i1+i0, m0=src0*src2, m1=src1*src2, r1, r2, r3\nmov r15, i2\nmov r16, i0\nmov r17, i1", 0x40400000, 0x40a00000, 0x40e00000, 0x41300000, 0x41500000, 0x41880000, 0, 0], ["mov i0, r4\nmov i1, r5\nmov i2, r6\nefo.gpiext r10= a0, i0 = a0, i1 = a1, a0=m0+m1, a1=i1+i0, m0=src0*src2, m1=src1*src2, r1, r2, r3\nefo.gpiext r11= a1, i0 = a0, i1 = a1, a0=m0+m1, a1=i1+i0, m0=src1*i0, m1=src2*i1, r1, r2, r3\nmov r15, i2\nmov r16, i0\nmov r17, i1", 0x40400000, 0x40a00000, 0x40e00000, 0x41300000, 0x41500000, 0x41880000, 0, 0]]
+[probe.hypotheses]
+"the multipliers read i2 and i3 (= i0) for i0 and i1, the writes go to i2 and i3 (dropped); the adders and d keep i0/i1" = [[0x42600000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0x42600000, 0x41300000, 0x41500000], [0x41500000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0x43220000, 0x41300000, 0x41500000], [0x41c00000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0x41880000, 0x41300000, 0x41500000], [0x42600000, 0x41c00000, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0x43b28000, 0x41300000, 0x41500000]]
+"the adders read i2 and i3 too" = [[0x42600000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0x42600000, 0x41300000, 0x41500000], [0x41500000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0x43220000, 0x41300000, 0x41500000], [0x41e00000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0x41880000, 0x41300000, 0x41500000], [0x42600000, 0x42860000, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0x43b28000, 0x41300000, 0x41500000]]
+".gpiext changes nothing" = [[0x42600000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0x41880000, 0x42600000, 0x41c00000], [0x41500000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0x41880000, 0x43120000, 0x41c00000], [0x41c00000, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0x41880000, 0x41300000, 0x41500000], [0x42600000, 0x42a00000, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0x41880000, 0x43e00000, 0x42a00000]]
+
+[[probe]]
+name = "usse-internal-registers-efo-gpiext-instances"
+question = "efo.gpiext reading i0/i1 through the multipliers or as d: one pixel in four gets another value (recorded)"
+source = "dump.s"
+params = { A = 0, B = 0, C = 0, D = 0, E = 0, F = 0, G = 0, H = 0, OUT = "r10" }
+inputs = ["OP", "A", "B", "C", "D", "E", "F", "G", "H"]
+cases = [["mov i0, r4\nmov i1, r5\nmov i2, r6\nefo.gpiext r10= a0, i0 = a0, i1 = a1, a0=m0+m1, a1=i1+i0, m0=src1*i0, m1=src2*i1, r1, r2, r3\nmov r15, i2\nmov r16, i0\nmov r17, i1", 0x40400000, 0x40a00000, 0x40e00000, 0x41300000, 0x41500000, 0x41880000, 0, 0], ["mov i0, r4\nmov i1, r5\nmov i2, r6\nefo.gpiext r10= i0, i0 = a0, i1 = a1, a0=m0+m1, a1=i1+i0, m0=src0*src2, m1=src1*src2, r1, r2, r3\nmov r15, i2\nmov r16, i0\nmov r17, i1", 0x40400000, 0x40a00000, 0x40e00000, 0x41300000, 0x41500000, 0x41880000, 0, 0]]
+
+[[probe]]
+name = "usse-internal-registers-ireg-ldad"
+question = "can ldad write an internal register: load destination numbers 124-127 (printed i0-i3) against i0-i2 read back (Rogue: internal registers are no DMA target); possibly faulting (past the 32 temporaries)"
+source = "dump.s"
+params = { A = 0, B = 0, C = 0, D = 0, E = 0, F = 0, G = 0, H = 0, OUT = "r10" }
+inputs = ["OP"]
+labels = ["control: ldad r12 (scratch dword 32 = 0x1C0AD000); i0-i2 in r10, r11, r13", "ldad r124 (the number i0 prints as); i0-i2 in r10, r11, r13", "ldad r125 (the number i1 prints as); i0-i2 in r10, r11, r13", "ldad r126 (the number i2 prints as); i0-i2 in r10, r11, r13", "ldad r127 (the number i3 prints as); i0-i2 in r10, r11, r13", "ldad r124; r10 = bank 7 number 0 (raw word), r11 = bank 0 number 124 (i0)", "ldad r123 (the last temporary number, past the 32 given); r12 = r123"]
+cases = [["mov.skipinv r21, #0x5CAF0000\nmov.skipinv r20, #0x1C0AD000\nstad [r21,+#32], r20\nidf drc0, bif\nwdf drc0\nmov.skipinv i0, #0x11110000\nmov.skipinv i1, #0x11110001\nmov.skipinv i2, #0x11110002\nldad r12, [r21,+#32], drc0\nwdf drc0\nmov.skipinv r10, i0\nmov.skipinv r11, i1\nmov.skipinv r13, i2"], ["mov.skipinv r21, #0x5CAF0000\nmov.skipinv r20, #0x1C0AD000\nstad [r21,+#32], r20\nidf drc0, bif\nwdf drc0\nmov.skipinv i0, #0x11110000\nmov.skipinv i1, #0x11110001\nmov.skipinv i2, #0x11110002\nldad r124, [r21,+#32], drc0\nwdf drc0\nmov.skipinv r10, i0\nmov.skipinv r11, i1\nmov.skipinv r13, i2"], ["mov.skipinv r21, #0x5CAF0000\nmov.skipinv r20, #0x1C0AD000\nstad [r21,+#32], r20\nidf drc0, bif\nwdf drc0\nmov.skipinv i0, #0x11110000\nmov.skipinv i1, #0x11110001\nmov.skipinv i2, #0x11110002\nldad r125, [r21,+#32], drc0\nwdf drc0\nmov.skipinv r10, i0\nmov.skipinv r11, i1\nmov.skipinv r13, i2"], ["mov.skipinv r21, #0x5CAF0000\nmov.skipinv r20, #0x1C0AD000\nstad [r21,+#32], r20\nidf drc0, bif\nwdf drc0\nmov.skipinv i0, #0x11110000\nmov.skipinv i1, #0x11110001\nmov.skipinv i2, #0x11110002\nldad r126, [r21,+#32], drc0\nwdf drc0\nmov.skipinv r10, i0\nmov.skipinv r11, i1\nmov.skipinv r13, i2"], ["mov.skipinv r21, #0x5CAF0000\nmov.skipinv r20, #0x1C0AD000\nstad [r21,+#32], r20\nidf drc0, bif\nwdf drc0\nmov.skipinv i0, #0x11110000\nmov.skipinv i1, #0x11110001\nmov.skipinv i2, #0x11110002\nldad r127, [r21,+#32], drc0\nwdf drc0\nmov.skipinv r10, i0\nmov.skipinv r11, i1\nmov.skipinv r13, i2"], ["mov.skipinv r21, #0x5CAF0000\nmov.skipinv r20, #0x1C0AD000\nstad [r21,+#32], r20\nidf drc0, bif\nwdf drc0\nmov.skipinv i0, #0x11110000\nmov.skipinv i1, #0x11110001\nmov.skipinv i2, #0x11110002\nldad r124, [r21,+#32], drc0\nwdf drc0\n.long 0x28831000E1400000\nmov.skipinv r11, i0"], ["mov.skipinv r21, #0x5CAF0000\nmov.skipinv r20, #0x1C0AD000\nstad [r21,+#32], r20\nidf drc0, bif\nwdf drc0\nmov.skipinv i0, #0x11110000\nmov.skipinv i1, #0x11110001\nmov.skipinv i2, #0x11110002\nldad r123, [r21,+#32], drc0\nwdf drc0\nmov.skipinv r12, r123\nmov.skipinv r10, i0\nmov.skipinv r11, i1\nmov.skipinv r13, i2"]]
+
+[[probe]]
+name = "usse-internal-registers-ireg-ldr"
+question = "can ldr write an internal register: destination numbers 124-127 (printed i0-i3) with CORE_ID; possibly faulting"
+source = "dump.s"
+params = { A = 0, B = 0, C = 0, D = 0, E = 0, F = 0, G = 0, H = 0, OUT = "r10" }
+inputs = ["OP"]
+labels = ["control: ldr r12, #7 (CORE_ID 0x01150000); i0-i2 in r10, r11, r13", "ldr r124, #7 (the number i0 prints as); i0-i2 in r10, r11, r13", "ldr r125, #7 (the number i1 prints as); i0-i2 in r10, r11, r13", "ldr r126, #7 (the number i2 prints as); i0-i2 in r10, r11, r13", "ldr r127, #7 (the number i3 prints as); i0-i2 in r10, r11, r13"]
+cases = [["mov.skipinv i0, #0x11110000\nmov.skipinv i1, #0x11110001\nmov.skipinv i2, #0x11110002\nldr r12, #7, drc0\nwdf drc0\nmov.skipinv r10, i0\nmov.skipinv r11, i1\nmov.skipinv r13, i2"], ["mov.skipinv i0, #0x11110000\nmov.skipinv i1, #0x11110001\nmov.skipinv i2, #0x11110002\nldr r124, #7, drc0\nwdf drc0\nmov.skipinv r10, i0\nmov.skipinv r11, i1\nmov.skipinv r13, i2"], ["mov.skipinv i0, #0x11110000\nmov.skipinv i1, #0x11110001\nmov.skipinv i2, #0x11110002\nldr r125, #7, drc0\nwdf drc0\nmov.skipinv r10, i0\nmov.skipinv r11, i1\nmov.skipinv r13, i2"], ["mov.skipinv i0, #0x11110000\nmov.skipinv i1, #0x11110001\nmov.skipinv i2, #0x11110002\nldr r126, #7, drc0\nwdf drc0\nmov.skipinv r10, i0\nmov.skipinv r11, i1\nmov.skipinv r13, i2"], ["mov.skipinv i0, #0x11110000\nmov.skipinv i1, #0x11110001\nmov.skipinv i2, #0x11110002\nldr r127, #7, drc0\nwdf drc0\nmov.skipinv r10, i0\nmov.skipinv r11, i1\nmov.skipinv r13, i2"]]
+
+[[probe]]
+name = "usse-internal-registers-ireg-index"
+question = "can an indexed operand r[il + #n] reach i0-i3 (numbers 124-127) for reads and writes (Rogue: internal registers cannot be indexed); bank 7 itself has no indexed form in the encoding (only r, o, pa, sa), so this is the closest legal form; possibly faulting"
+source = "dump.s"
+params = { A = 0, B = 0, C = 0, D = 0, E = 0, F = 0, G = 0, H = 0, OUT = "r10" }
+inputs = ["OP"]
+labels = ["control: i.l = 16, r10 = r[il + #0] (r16 = 0xB8B9BABB)", "i.l = 124: r10-r13 = r[il + #0..#3] (numbers 124-127, i0-i3?)", "i.l = 120: r10-r13 = r[il + #4..#7] (numbers 124-127 by the offset)", "i.h = 124: r10-r13 = r[ih + #0..#3]", "i.l = 124: write r[il + #0], r[il + #1]; i0-i2 in r10, r11, r13"]
+cases = [["mov.skipinv i.l, #16\nmov.skipinv r10, r[il + #0]"], ["mov.skipinv i0, #0x11110000\nmov.skipinv i1, #0x11110001\nmov.skipinv i2, #0x11110002\nmov.skipinv i.l, #124\nmov.skipinv r10, r[il + #0]\nmov.skipinv r11, r[il + #1]\nmov.skipinv r12, r[il + #2]\nmov.skipinv r13, r[il + #3]"], ["mov.skipinv i0, #0x11110000\nmov.skipinv i1, #0x11110001\nmov.skipinv i2, #0x11110002\nmov.skipinv i.l, #120\nmov.skipinv r10, r[il + #4]\nmov.skipinv r11, r[il + #5]\nmov.skipinv r12, r[il + #6]\nmov.skipinv r13, r[il + #7]"], ["mov.skipinv i0, #0x11110000\nmov.skipinv i1, #0x11110001\nmov.skipinv i2, #0x11110002\nmov.skipinv i.h, #124\nmov.skipinv r10, r[ih + #0]\nmov.skipinv r11, r[ih + #1]\nmov.skipinv r12, r[ih + #2]\nmov.skipinv r13, r[ih + #3]"], ["mov.skipinv i0, #0x11110000\nmov.skipinv i1, #0x11110001\nmov.skipinv i2, #0x11110002\nmov.skipinv i.l, #124\nmov.skipinv r[il + #0], #0x22220000\nmov.skipinv r[il + #1], #0x22220001\nmov.skipinv r10, i0\nmov.skipinv r11, i1\nmov.skipinv r13, i2"]]
+
+[[probe]]
+name = "usse-internal-registers-mov-and-tasks"
+question = "i0-i3: written by mov, read back, and kept from one task to the next case"
+source = "dump.s"
+params = { A = 0x11111111, B = 0x22222222, C = 0x33333333, D = 0x44444444, E = 0x55555555, F = 0x66666666, G = 0, H = 0, OUT = "r10" }
+inputs = ["OP"]
+cases = [["mov i0, r1\nmov i1, r2\nmov i2, r3\nmov i3, r4\nmov r10, i0\nmov r11, i1\nmov r12, i2\nmov r13, i3"], ["mov r10, i0\nmov r11, i1\nmov r12, i2\nmov r13, i3"], ["mov i0, r5\nmov r10, i0\nmov r11, i1\nmov r12, i2\nmov r13, i3"], ["mov i3, r6\nmov r10, i0\nmov r11, i1\nmov r12, i2\nmov r13, i3"]]
+[probe.hypotheses]
+"i0-i2 kept for the next task; i3 reads as i0, a write to i3 is dropped" = [[0x11111111, 0x22222222, 0x33333333, 0x11111111], [0x11111111, 0x22222222, 0x33333333, 0x11111111], [0x55555555, 0x22222222, 0x33333333, 0x55555555], [0x55555555, 0x22222222, 0x33333333, 0x55555555]]
+"i0-i3 four registers, kept for the next task" = [[0x11111111, 0x22222222, 0x33333333, 0x44444444], [0x11111111, 0x22222222, 0x33333333, 0x44444444], [0x55555555, 0x22222222, 0x33333333, 0x44444444], [0x55555555, 0x22222222, 0x33333333, 0x66666666]]
+"i0-i3 four registers, cleared between tasks" = [[0x11111111, 0x22222222, 0x33333333, 0x44444444], [0, 0, 0, 0], [0x55555555, 0, 0, 0], [0, 0, 0, 0x66666666]]
+"i0-i2 kept; i3 reads as i0, a write to i3 goes to i0" = [[0x44444444, 0x22222222, 0x33333333, 0x44444444], [0x44444444, 0x22222222, 0x33333333, 0x44444444], [0x55555555, 0x22222222, 0x33333333, 0x55555555], [0x66666666, 0x22222222, 0x33333333, 0x66666666]]
+
+[[probe]]
+name = "usse-internal-registers-per-pixel"
+question = "i0-i2 per pixel; which instance's register i3 reads; where a write to i3 goes"
+source = "coords.s"
+coords = true
+pixels = true
+params = {  }
+inputs = ["PRE", "OP", "OUT"]
+labels = ["read i0", "read i1", "read i2", "read i3", "write i3, read i0", "write i3, read i3"]
+cases = [["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov r10, i0", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov r10, i1", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov r10, i2", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov r10, i3", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov i3, r6\nmov r10, i0", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "mov i3, r6\nmov r10, i3", "r10"]]
+[probe.hypotheses]
+"per-instance i0-i2; i3 reads the next instance's i0 in the quad (TL, TR, BL, BR, TL); a write to i3 is dropped" = [{ quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[1, 0], [1, 1], [1, 2], [1, 3]] }, { quad = [[2, 0], [2, 1], [2, 2], [2, 3]] }, { quad = [[0, 1], [0, 2], [0, 3], [0, 0]] }, { quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[0, 1], [0, 2], [0, 3], [0, 0]] }]
+"i3 reads the previous instance's i0 in the quad; a write to i3 is dropped" = [{ quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[1, 0], [1, 1], [1, 2], [1, 3]] }, { quad = [[2, 0], [2, 1], [2, 2], [2, 3]] }, { quad = [[0, 3], [0, 0], [0, 1], [0, 2]] }, { quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[0, 3], [0, 0], [0, 1], [0, 2]] }]
+"i3 reads the instance's own i0; a write to i3 is dropped" = [{ quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[1, 0], [1, 1], [1, 2], [1, 3]] }, { quad = [[2, 0], [2, 1], [2, 2], [2, 3]] }, { quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }]
+"i3 reads the horizontal neighbour's i0 (x ^ 1); a write to i3 is dropped" = [{ quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[1, 0], [1, 1], [1, 2], [1, 3]] }, { quad = [[2, 0], [2, 1], [2, 2], [2, 3]] }, { quad = [[0, 1], [0, 0], [0, 3], [0, 2]] }, { quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[0, 1], [0, 0], [0, 3], [0, 2]] }]
+"i3 is the next instance's i0, also for writes" = [{ quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[1, 0], [1, 1], [1, 2], [1, 3]] }, { quad = [[2, 0], [2, 1], [2, 2], [2, 3]] }, { quad = [[0, 1], [0, 2], [0, 3], [0, 0]] }, { quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[3, 1], [3, 2], [3, 3], [3, 0]] }]
+
+[[probe]]
+name = "usse-internal-registers-efo-gpiext-quad"
+question = "efo.gpiext: whose internal registers each pixel reads and writes (2x2 quads)"
+source = "coords.s"
+coords = true
+pixels = true
+params = {  }
+inputs = ["PRE", "OP", "OUT"]
+labels = ["no write: m0 = 1.0 * i0", "no write: m1 = 1.0 * i1", "no write: d = i0", "no write: d = i1", "after writing i1 (k4): read i0", "after writing i1 (k4): read i1", "after writing i1 (k4): read i3", "after writing i0 (k3): read i2", "after writing i0 (k3): read i0"]
+cases = [["mov i0, r3\nmov i1, r4\nmov i2, r5", "efo.gpiext r10= a0, !i0 = a0, !i1 = a1, a0=m0+src0, a1=i1+i0, m0=src1*i0, m1=src2*i1, r7, r8, r8", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "efo.gpiext r10= a0, !i0 = a0, !i1 = a1, a0=m0+m1, a1=i1+i0, m0=src1*i0, m1=src2*i1, r7, r7, r8", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "efo.gpiext r10= i0, !i0 = a0, !i1 = a1, a0=m0+m1, a1=i1+i0, m0=src1*i0, m1=src2*i1, r7, r7, r8", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "efo.gpiext r10= i1, !i0 = a0, !i1 = a1, a0=m0+m1, a1=i1+i0, m0=src1*i0, m1=src2*i1, r7, r7, r8", "r10"], ["or.skipinv r9, r1, #0x5D000000\nmov i0, r3\nmov i1, r4\nmov i2, r5", "efo.gpiext r10= i1, !i0 = a0, i1 = m1, a0=m0+i0, a1=i1+m1, m0=src0*src2, m1=src1*src2, r7, r9, r8\nmov r10, i0", "r10"], ["or.skipinv r9, r1, #0x5D000000\nmov i0, r3\nmov i1, r4\nmov i2, r5", "efo.gpiext r10= i1, !i0 = a0, i1 = m1, a0=m0+i0, a1=i1+m1, m0=src0*src2, m1=src1*src2, r7, r9, r8\nmov r10, i1", "r10"], ["or.skipinv r9, r1, #0x5D000000\nmov i0, r3\nmov i1, r4\nmov i2, r5", "efo.gpiext r10= i1, !i0 = a0, i1 = m1, a0=m0+i0, a1=i1+m1, m0=src0*src2, m1=src1*src2, r7, r9, r8\nmov r10, i3", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "efo.gpiext r10= a1, i0 = a0, !i1 = a1, a0=src0+src2 a1=src1+src2, m0=src0*src2, m1=src1*src2, r6, r7, r7\nmov r10, i2", "r10"], ["mov i0, r3\nmov i1, r4\nmov i2, r5", "efo.gpiext r10= a1, i0 = a0, !i1 = a1, a0=src0+src2 a1=src1+src2, m0=src0*src2, m1=src1*src2, r6, r7, r7\nmov r10, i0", "r10"]]
+[probe.hypotheses]
+"multipliers read i2 for i0 and i0 for i1; writes of i0 go to i2; a quad's i1 writes end in TR's i0, BR's last" = [{ quad = [[2, 0], [2, 1], [2, 2], [2, 3]] }, { quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[1, 0], [1, 1], [1, 2], [1, 3]] }, { quad = [[0, 0], [4, 3], [0, 2], [0, 3]] }, { quad = [[1, 0], [1, 1], [1, 2], [1, 3]] }, { quad = [[4, 3], [0, 2], [0, 3], [0, 0]] }, { quad = [[3, 0], [3, 1], [3, 2], [3, 3]] }, { quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }]
+".gpiext changes nothing" = [{ quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[1, 0], [1, 1], [1, 2], [1, 3]] }, { quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[1, 0], [1, 1], [1, 2], [1, 3]] }, { quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[4, 0], [4, 1], [4, 2], [4, 3]] }, { quad = [[0, 1], [0, 2], [0, 3], [0, 0]] }, { quad = [[2, 0], [2, 1], [2, 2], [2, 3]] }, { quad = [[3, 0], [3, 1], [3, 2], [3, 3]] }]
+"multipliers read i2/i0, writes go to i2, the i1 write is dropped, registers private" = [{ quad = [[2, 0], [2, 1], [2, 2], [2, 3]] }, { quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[1, 0], [1, 1], [1, 2], [1, 3]] }, { quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[1, 0], [1, 1], [1, 2], [1, 3]] }, { quad = [[0, 1], [0, 2], [0, 3], [0, 0]] }, { quad = [[3, 0], [3, 1], [3, 2], [3, 3]] }, { quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }]
+"the i1 write goes to i3, the next instance's i0" = [{ quad = [[2, 0], [2, 1], [2, 2], [2, 3]] }, { quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }, { quad = [[1, 0], [1, 1], [1, 2], [1, 3]] }, { quad = [[4, 3], [4, 0], [4, 1], [4, 2]] }, { quad = [[1, 0], [1, 1], [1, 2], [1, 3]] }, { quad = [[4, 0], [4, 1], [4, 2], [4, 3]] }, { quad = [[3, 0], [3, 1], [3, 2], [3, 3]] }, { quad = [[0, 0], [0, 1], [0, 2], [0, 3]] }]
+
+[[probe]]
+name = "usse-internal-registers-efo-gpiext-race"
+question = "efo.gpiext writing i1: TR reads TL's i0, and now and then TL's i1 write (recorded)"
+source = "coords.s"
+coords = true
+pixels = true
+params = {  }
+inputs = ["PRE", "OP", "OUT"]
+labels = ["writing i1 (k4): d = i0", "writing i1 (k4): a0 = 0 + i0"]
+cases = [["or.skipinv r9, r1, #0x5D000000\nmov i0, r3\nmov i1, r4\nmov i2, r5", "efo.gpiext r10= i0, !i0 = a0, i1 = m1, a0=m0+i0, a1=i1+m1, m0=src0*src2, m1=src1*src2, r7, r9, r8", "r10"], ["or.skipinv r9, r1, #0x5D000000\nmov i0, r3\nmov i1, r4\nmov i2, r5", "efo.gpiext r10= a0, !i0 = a0, i1 = m1, a0=m0+i0, a1=i1+m1, m0=src0*src2, m1=src1*src2, r7, r9, r8", "r10"]]
+
+[[probe]]
+name = "usse-internal-registers-across-tasks"
+question = "which pixel's i0 the next task's pixels see (recorded: quads move whole, positions kept)"
+source = "coords.s"
+coords = true
+pixels = true
+params = {  }
+inputs = ["PRE", "OP", "OUT"]
+labels = ["task A sets i0-i2 (k3, k4, k0)", "task B reads i0 unwritten", "task A again", "task B reads i3 unwritten"]
+cases = [["or.skipinv r9, r1, #0x5D000000\nmov i0, r6\nmov i1, r9\nmov i2, r3", "mov r10, i0", "r10"], ["", "mov r10, i0", "r10"], ["or.skipinv r9, r1, #0x5D000000\nmov i0, r6\nmov i1, r9\nmov i2, r3", "mov r10, i0", "r10"], ["", "mov r10, i3", "r10"]]

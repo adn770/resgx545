@@ -1,0 +1,107 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse indexing: 0 sweeps, 10 probes.
+needs = ["render"]
+
+[[probe]]
+name = "usse-indexing-index-high"
+question = "i.h and r[ih + #n]; mov i.lh"
+source = "dump.s"
+params = { A = 0, B = 0, C = 0, D = 0, E = 0, F = 0, G = 0, H = 0, OUT = "r10" }
+inputs = ["OP", "A", "B", "C", "D", "E", "F", "G", "H"]
+labels = ["i.h = 30, r[ih]", "i.h = 31, r[ih]", "i.h = 28, r[ih + #2]", "i.h = 0x4001e", "i.lh = 0x001f001e", "store to r[ih + #1], i.h = 30"]
+cases = [["mov r30, #0x30\nmov r31, #0x31\nmov r32, #0x32\nmov r33, #0x33\nmov r34, #0x34\nmov r35, #0x35\nmov i.h, r1\nmov r10, r[ih + #0]", 30, 0, 0, 0, 0, 0, 0, 0], ["mov r30, #0x30\nmov r31, #0x31\nmov r32, #0x32\nmov r33, #0x33\nmov r34, #0x34\nmov r35, #0x35\nmov i.h, r1\nmov r10, r[ih + #0]", 31, 0, 0, 0, 0, 0, 0, 0], ["mov r30, #0x30\nmov r31, #0x31\nmov r32, #0x32\nmov r33, #0x33\nmov r34, #0x34\nmov r35, #0x35\nmov i.h, r1\nmov r10, r[ih + #2]", 28, 0, 0, 0, 0, 0, 0, 0], ["mov r30, #0x30\nmov r31, #0x31\nmov r32, #0x32\nmov r33, #0x33\nmov r34, #0x34\nmov r35, #0x35\nmov i.h, r1\nmov r10, r[ih + #0]", 0x4001e, 0, 0, 0, 0, 0, 0, 0], ["mov r30, #0x30\nmov r31, #0x31\nmov r32, #0x32\nmov r33, #0x33\nmov r34, #0x34\nmov r35, #0x35\nmov i.lh, r1\nmov r10, r[il + #0]\nmov r11, r[ih + #0]", 0x1f001e, 0, 0, 0, 0, 0, 0, 0], ["mov r30, #0x30\nmov r31, #0x31\nmov r32, #0x32\nmov r33, #0x33\nmov r34, #0x34\nmov r35, #0x35\nmov i.h, r1\nmov r[ih + #1], r2\nmov r10, r31", 30, 0x12345678, 0, 0, 0, 0, 0, 0]]
+[probe.hypotheses]
+"i.h as i.l (one register from r0, bits 10 and up ignored); i.lh takes i.l from the low half, i.h from the high" = [[48, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [49, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [48, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [48, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [48, 49, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x12345678, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf]]
+"i.lh takes i.l from the high half" = [[48, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [49, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [48, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [48, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [49, 48, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf], [0x12345678, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf, 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf]]
+
+[[probe]]
+name = "usse-indexing-index-unit"
+question = "r[il + #n]: the unit of i.l, its origin and the role of #n"
+source = "index.s"
+params = { OP = "mov r30, r[il + #{N}]", OUT = "r30" }
+inputs = ["K", "N"]
+cases = [[0, "0"], [1, "0"], [2, "0"], [3, "0"], [0, "1"], [1, "1"], [2, "3"]]
+[probe.hypotheses]
+"one register, from r0, + n" = [160, 161, 162, 163, 161, 162, 165]
+"pairs, from r0, + n" = [160, 162, 164, 166, 161, 163, 167]
+"four registers, from r0, + n" = [160, 164, 168, 172, 161, 165, 171]
+"bytes, from r0, + n" = [160, 160, 160, 160, 161, 161, 163]
+
+[[probe]]
+name = "usse-indexing-index-width"
+question = "which bits of i.l count: indexes past the instance's temporaries (mixed: the next instances' r1 = 0xa1)"
+source = "index.s"
+params = { OP = "mov r30, r[il + #0]", OUT = "r30" }
+inputs = ["K"]
+cases = [[0x40001], [0x10001], [0x101], [129], [65], [33], [0x80000001]]
+
+[[probe]]
+name = "usse-indexing-index-store"
+question = "mov r[il + #n], r21: does the store form mirror the load (read r1 back)"
+source = "index.s"
+params = { OP = "mov r[il + #{N}], r21", OUT = "r1" }
+inputs = ["K", "N"]
+cases = [[1, "0"], [0, "1"], [0x40001, "0"], [2, "0"]]
+[probe.hypotheses]
+"one register, from r0, + n; bit 18 ignored" = [0x5555aaaa, 0x5555aaaa, 0x5555aaaa, 161]
+"one register, from r0, + n; bit 18 counts" = [0x5555aaaa, 0x5555aaaa, 161, 161]
+
+[[probe]]
+name = "usse-indexing-sa-values"
+question = "what the fill's secondary attributes hold (control for index-sa)"
+source = "value.s"
+params = { OP = "nop", A = 0, B = 0, C = 0, D = 0 }
+inputs = ["OUT"]
+cases = [["sa0"], ["sa1"], ["sa2"], ["sa3"]]
+
+[[probe]]
+name = "usse-indexing-ldr-index-mask"
+question = "ldr rD, rI with rI of 0x4000 and over: is the index masked to 14 bits"
+source = "value.s"
+params = { OP = "ldr r4, r1, drc0\nwdf drc0", OUT = "r4", B = 0, C = 0, D = 0 }
+inputs = ["A"]
+cases = [[7], [0x4007], [0x8007], [0x10007], [0x40007]]
+[probe.hypotheses]
+"masked to 14 bits" = [0x1150000, 0x1150000, 0x1150000, 0x1150000, 0x1150000]
+"masked to 15 bits" = [0x1150000, { o0_not = 0x1150000 }, 0x1150000, 0x1150000, 0x1150000]
+"masked to 16 bits" = [0x1150000, { o0_not = 0x1150000 }, { o0_not = 0x1150000 }, 0x1150000, 0x1150000]
+"not masked below 18 bits" = [0x1150000, { o0_not = 0x1150000 }, { o0_not = 0x1150000 }, { o0_not = 0x1150000 }, 0x1150000]
+
+[[probe]]
+name = "usse-indexing-index-width2"
+question = "which bits of i.l count: 0x200 up to 0x8000 (uniform 0xa1 means ignored)"
+source = "index.s"
+params = { OP = "mov r30, r[il + #0]", OUT = "r30" }
+inputs = ["K"]
+cases = [[0x201], [0x401], [0x801], [0x1001], [0x2001], [0x4001], [0x8001], [0xffff0001]]
+
+[[probe]]
+name = "usse-indexing-index-sa-unit"
+question = "sa[il + #n] with sa0-sa7 written: unit, origin, #n"
+source = "index_sa2.s"
+params = { OP = "mov r30, sa[il + #{N}]", OUT = "r30" }
+inputs = ["K", "N"]
+cases = [[0, "0"], [1, "0"], [3, "0"], [0, "1"], [2, "3"], [0x40001, "0"]]
+[probe.hypotheses]
+"one register, from sa0, + n; bits 16 and over ignored" = [{ most = 176 }, { most = 177 }, { most = 179 }, { most = 177 }, { most = 181 }, { most = 177 }]
+
+[[probe]]
+name = "usse-indexing-index-sa-store"
+question = "mov sa[il + #n], r21: read back as sa1"
+source = "index_sa2.s"
+params = { OP = "mov sa[il + #{N}], r21", OUT = "sa1" }
+inputs = ["K", "N"]
+cases = [[1, "0"], [0, "1"], [2, "0"]]
+[probe.hypotheses]
+"one register, from sa0, + n" = [{ most = 0x5555aaaa }, { most = 0x5555aaaa }, { most = 177 }]
+
+[[probe]]
+name = "usse-indexing-index-width3"
+question = "i.l bits 0-9 count, bits 10 and up are ignored (0x3ff masks)"
+source = "index.s"
+params = { OP = "mov r30, r[il + #0]", OUT = "r30" }
+inputs = ["K"]
+cases = [[0x401], [0x801], [0x1001], [0x40001], [0xfffffc02], [0x403]]
+[probe.hypotheses]
+"bits 10 and up ignored" = [161, 161, 161, 161, 162, 163]

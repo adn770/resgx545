@@ -1,0 +1,425 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# pbe sideband: 0 sweeps, 30 probes.
+needs = ["render"]
+open = ["pbe-sideband-0200-32x16", "pbe-sideband-0000-32x32", "pbe-sideband-0000-64x16", "pbe-sideband-two-0000-0200", "pbe-sideband-two-0200-0200", "pbe-sideband-two-0200-0000", "pbe-sideband-two-0203-0200", "pbe-sideband-two-0203-0000", "pbe-sideband-two-0200-0003"]
+
+[[probe]]
+name = "pbe-sideband-0200"
+question = "what sideband 0x200 does to the stored image (the default: bit 9, ARGB8888)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 512
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["the default: bit 9, ARGB8888"]
+
+[[probe]]
+name = "pbe-sideband-0000"
+question = "what sideband 0x0 does to the stored image (bit 9 clear)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["bit 9 clear"]
+
+[[probe]]
+name = "pbe-sideband-0240"
+question = "what sideband 0x240 does to the stored image (bits 8:6 = 1)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 576
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["bits 8:6 = 1"]
+
+[[probe]]
+name = "pbe-sideband-0280"
+question = "what sideband 0x280 does to the stored image (bits 8:6 = 2)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 640
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["bits 8:6 = 2"]
+
+[[probe]]
+name = "pbe-sideband-02c0"
+question = "what sideband 0x2c0 does to the stored image (bits 8:6 = 3)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 704
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["bits 8:6 = 3"]
+
+[[probe]]
+name = "pbe-sideband-0300"
+question = "what sideband 0x300 does to the stored image (bits 8:6 = 4)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 768
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["bits 8:6 = 4"]
+
+[[probe]]
+name = "pbe-sideband-0340"
+question = "what sideband 0x340 does to the stored image (bits 8:6 = 5)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 832
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["bits 8:6 = 5"]
+
+[[probe]]
+name = "pbe-sideband-0380"
+question = "what sideband 0x380 does to the stored image (bits 8:6 = 6)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 896
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["bits 8:6 = 6"]
+
+[[probe]]
+name = "pbe-sideband-03c0"
+question = "what sideband 0x3c0 does to the stored image (bits 8:6 = 7)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 960
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["bits 8:6 = 7"]
+
+[[probe]]
+name = "pbe-sideband-0203"
+question = "what sideband 0x203 does to the stored image (control: pack mode 3 (RGB565))"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 515
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["control: pack mode 3 (RGB565)"]
+
+[[probe]]
+name = "pbe-sideband-2200"
+question = "what sideband 0x2200 does to the stored image (control: bit 13 (memory layout))"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 8704
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["control: bit 13 (memory layout)"]
+
+[[probe]]
+name = "pbe-sideband-sideband3-1"
+question = "what sideband 0x243 stores (pack mode 3, bits 8:6 = 1)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 579
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 3, bits 8:6 = 1"]
+
+[[probe]]
+name = "pbe-sideband-sideband3-2"
+question = "what sideband 0x283 stores (pack mode 3, bits 8:6 = 2)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 643
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 3, bits 8:6 = 2"]
+
+[[probe]]
+name = "pbe-sideband-sideband3-3"
+question = "what sideband 0x2c3 stores (pack mode 3, bits 8:6 = 3)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 707
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 3, bits 8:6 = 3"]
+
+[[probe]]
+name = "pbe-sideband-sideband3-4"
+question = "what sideband 0x303 stores (pack mode 3, bits 8:6 = 4)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 771
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 3, bits 8:6 = 4"]
+
+[[probe]]
+name = "pbe-sideband-sideband3-5"
+question = "what sideband 0x343 stores (pack mode 3, bits 8:6 = 5)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 835
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 3, bits 8:6 = 5"]
+
+[[probe]]
+name = "pbe-sideband-sideband3-6"
+question = "what sideband 0x383 stores (pack mode 3, bits 8:6 = 6)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 899
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 3, bits 8:6 = 6"]
+
+[[probe]]
+name = "pbe-sideband-sideband3-7"
+question = "what sideband 0x3c3 stores (pack mode 3, bits 8:6 = 7)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 963
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["pack mode 3, bits 8:6 = 7"]
+
+[[probe]]
+name = "pbe-sideband-0200-32x16"
+question = "what sideband 0x200 does on a 32x16 target (the default, one tile)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 512
+size = [32, 16]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["the default, one tile"]
+
+[[probe]]
+name = "pbe-sideband-0000-32x16"
+question = "what sideband 0x0 does on a 32x16 target (bit 9 clear, one tile)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0
+size = [32, 16]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["bit 9 clear, one tile"]
+
+[[probe]]
+name = "pbe-sideband-0000-32x32"
+question = "what sideband 0x0 does on a 32x32 target (bit 9 clear, two tile rows)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0
+size = [32, 32]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["bit 9 clear, two tile rows"]
+
+[[probe]]
+name = "pbe-sideband-0000-64x16"
+question = "what sideband 0x0 does on a 64x16 target (bit 9 clear, two tile columns)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0
+size = [64, 16]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["bit 9 clear, two tile columns"]
+
+[[probe]]
+name = "pbe-sideband-two-0000-0200"
+question = "two emits of the tile, sidebands 0x0 then 0x200: which completes the tile"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_two_0000.s" }
+sideband = 512
+size = [32, 16]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["first 0x0, last 0x200"]
+
+[[probe]]
+name = "pbe-sideband-two-0200-0200"
+question = "two emits of the tile, sidebands 0x200 then 0x200: which completes the tile"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_two_0200.s" }
+sideband = 512
+size = [32, 16]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["first 0x200, last 0x200"]
+
+[[probe]]
+name = "pbe-sideband-two-0200-0000"
+question = "two emits of the tile, sidebands 0x200 then 0x0: which completes the tile"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_two_0200.s" }
+sideband = 0
+size = [32, 16]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["first 0x200, last 0x0"]
+
+[[probe]]
+name = "pbe-sideband-two-0203-0200"
+question = "two emits of the tile, sidebands 0x203 then 0x200: whose pack mode is stored"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_two_0203.s" }
+sideband = 512
+size = [32, 16]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["first 0x203, last 0x200"]
+
+[[probe]]
+name = "pbe-sideband-two-0203-0000"
+question = "two emits of the tile, sidebands 0x203 then 0x0: whose pack mode is stored"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_two_0203.s" }
+sideband = 0
+size = [32, 16]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["first 0x203, last 0x0"]
+
+[[probe]]
+name = "pbe-sideband-two-0200-0003"
+question = "two emits of the tile, sidebands 0x200 then 0x3: whose pack mode is stored"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_two_0200.s" }
+sideband = 3
+size = [32, 16]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["first 0x200, last 0x3"]
+
+[[probe]]
+name = "pbe-sideband-two-0203-0003"
+question = "two emits of the tile, sidebands 0x203 then 0x3: whose pack mode is stored"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_two_0203.s" }
+sideband = 3
+size = [32, 16]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["first 0x203, last 0x3"]
+
+[[probe]]
+name = "pbe-sideband-two-0203-0203"
+question = "two emits of the tile, sidebands 0x203 then 0x203: whose pack mode is stored"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_two_0203.s" }
+sideband = 515
+size = [32, 16]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00FF8040"]]
+labels = ["first 0x203, last 0x203"]

@@ -1,0 +1,10 @@
+title = "probe table usse/filter-taps"
+repo = "data"
+paths = ["usse/filter-taps/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 5171
+size = 12412864
+sha256 = "06b41ec34a6d58a4bef79d30a1ec0e31c527ec9aa6744740194d2be76a729a91"
+recipe = "probes/usse/filter-taps.toml"
+needs = ["render"]

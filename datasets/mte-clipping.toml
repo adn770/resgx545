@@ -1,0 +1,10 @@
+title = "script and probe table mte/clipping"
+repo = "data"
+paths = ["mte/clipping/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 30
+size = 942029
+sha256 = "fd130ae914504ca97e0e4646124f8675221b6fc04229f689b516bb7a737c09eb"
+recipe = "probes/mte/clipping.toml"
+needs = ["render", "kpoke"]

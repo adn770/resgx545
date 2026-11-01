@@ -1,0 +1,15 @@
+[[term]]
+id = "G0120"
+name = "CR_ISP_LINE_SAMPLE_POS"
+status = "named"
+
+[[term.source]]
+term = "CR_ISP_LINE_SAMPLE_POS"
+kind = "register"
+sgx545 = "0x0418"
+meaning = "bit 0: where lines are sampled, 1 at the pixel centre, 0 at its far corner (x + 1, y + 1); triangles do not read it; 1 from the closed driver [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E066, E067, E068, E072, E073"
+licence = "MIT"
+evidence = "[HW] E066: no bit, 0 or ~0 of its word changes a pixel or the visibility registers under a depth test, a translucent or punch-through pass or a bit-exact depth equal; [HW] E067: bit 0 alone is implemented, 0 outside renders; no flip changes a copy or a fill; [HW] E067: no flip, 0 or ~0 changes a textured triangle of ours either; [HW] E068: no flip, 0 or ~0 changes five overlapping copies under depth always, less, translucent or punch-through; [HW] E072: at 0 and 1 the depth less compare against a loaded depth is exact to the ulp; [HW] E073: no change under 42 overlapping triangles per tile, opaque or depth less"

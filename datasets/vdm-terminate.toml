@@ -1,0 +1,10 @@
+title = "sweep table vdm/terminate"
+repo = "data"
+paths = ["vdm/terminate/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 4
+size = 64015
+sha256 = "7bd9e956714338431b4b6187f11c03a8693047d8978c7858467583f4d77a6fed"
+recipe = "probes/vdm/terminate.toml"
+needs = ["render"]

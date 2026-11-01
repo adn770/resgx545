@@ -1,0 +1,172 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# pds iteration waits: 0 sweeps, 12 probes.
+needs = ["render"]
+
+[[probe]]
+name = "pds-iteration-waits-persp-bits"
+question = "whether the iteration is perspective-correct, and which DOUTI0 bit changes it (w 1.25-2.75)"
+source = "pds_tex_iter.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_persp.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x40000801, 0, 0x2000004], [0x40020801, 0, 0x2000004], [0x40040801, 0, 0x2000004], [0x40080801, 0, 0x2000004], [0x40100801, 0, 0x2000004], [0x40200801, 0, 0x2000004], [0x41000801, 0, 0x2000004], [0x42000801, 0, 0x2000004], [0x44000801, 0, 0x2000004], [0x60000801, 0, 0x2000004], [0xc0000801, 0, 0x2000004]]
+labels = ["base: source 1, the fetch from set 1", "bit 17", "bit 18", "bit 19", "bit 20", "bit 21", "bit 24", "bit 25", "bit 26", "bit 29", "bit 31"]
+
+[[probe]]
+name = "pds-iteration-waits-persp-w1"
+question = "what each bit of DOUTI word 1 does to the iterated x (w 1.25-2.75, source 1, the fetch)"
+source = "pds_tex_iter.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_persp.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x40000801, 1, 0x2000004], [0x40000801, 2, 0x2000004], [0x40000801, 4, 0x2000004], [0x40000801, 8, 0x2000004], [0x40000801, 16, 0x2000004], [0x40000801, 32, 0x2000004], [0x40000801, 64, 0x2000004], [0x40000801, 128, 0x2000004], [0x40000801, 0x100, 0x2000004], [0x40000801, 0x200, 0x2000004], [0x40000801, 0x400, 0x2000004], [0x40000801, 0x800, 0x2000004], [0x40000801, 0x1000, 0x2000004], [0x40000801, 0x2000, 0x2000004], [0x40000801, 0x4000, 0x2000004], [0x40000801, 0x8000, 0x2000004], [0x40000801, 0x10000, 0x2000004], [0x40000801, 0x20000, 0x2000004], [0x40000801, 0x40000, 0x2000004], [0x40000801, 0x80000, 0x2000004], [0x40000801, 0x100000, 0x2000004], [0x40000801, 0x200000, 0x2000004], [0x40000801, 0x400000, 0x2000004], [0x40000801, 0x800000, 0x2000004], [0x40000801, 0x1000000, 0x2000004], [0x40000801, 0x2000000, 0x2000004], [0x40000801, 0x4000000, 0x2000004], [0x40000801, 0x8000000, 0x2000004], [0x40000801, 0x10000000, 0x2000004], [0x40000801, 0x20000000, 0x2000004], [0x40000801, 0x40000000, 0x2000004], [0x40000801, 0x80000000, 0x2000004]]
+labels = ["word 1 bit 0", "word 1 bit 1", "word 1 bit 2", "word 1 bit 3", "word 1 bit 4", "word 1 bit 5", "word 1 bit 6", "word 1 bit 7", "word 1 bit 8", "word 1 bit 9", "word 1 bit 10", "word 1 bit 11", "word 1 bit 12", "word 1 bit 13", "word 1 bit 14", "word 1 bit 15", "word 1 bit 16", "word 1 bit 17", "word 1 bit 18", "word 1 bit 19", "word 1 bit 20", "word 1 bit 21", "word 1 bit 22", "word 1 bit 23", "word 1 bit 24", "word 1 bit 25", "word 1 bit 26", "word 1 bit 27", "word 1 bit 28", "word 1 bit 29", "word 1 bit 30", "word 1 bit 31"]
+
+[[probe]]
+name = "pds-iteration-waits-iter-nofetch"
+question = "whether an iteration without a fetch reaches pa0 when bit 30 is clear (no doutt, no wait)"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x800, 0, 4], [0x40000800, 0, 4], [0x801, 0, 4], [0x40000801, 0, 4], [0x400800, 0, 4]]
+labels = ["bit 30 clear, no fetch source", "bit 30 set, no fetch source", "bit 30 clear, fetch source 1", "bit 30 set, fetch source 1", "bit 30 clear, two components"]
+
+[[probe]]
+name = "pds-iteration-waits-iter-bit30"
+question = "the fetch (doutt issued, source 1) with DOUTI0 bit 30 clear, and without the wait"
+source = "pds_tex_iter.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x40000801, 0, 0x2000004], [0x801, 0, 4], [0x40000801, 0, 4], [0x801, 0, 0x2000004]]
+labels = ["control: bit 30, the wait", "bit 30 clear, no wait", "bit 30 set, no wait", "bit 30 clear, the wait"]
+
+[[probe]]
+name = "pds-iteration-waits-iter-wait24"
+question = "whether U1 bit 24 waits for an iteration without a fetch (DOUTI0 bit 30 clear)"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x800, 0, 0x1000004], [0x400800, 0, 0x1000004], [0x17c00800, 0, 0x1000004], [0, 0, 0x1000004], [0x40000800, 0, 0x1000004]]
+labels = ["bit 30 clear, source 1", "bit 30 clear, two components", "DOUTI0 0x17c00800", "bit 30 clear, source 0", "bit 30 set, source 1"]
+
+[[probe]]
+name = "pds-iteration-waits-iter-wait24-pa1"
+question = "pa1 of an iteration without a fetch under U1 bit 24 (two components; DOUTI0 0x17c00800)"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x400800, 0, 0x1000004], [0x17c00800, 0, 0x1000004]]
+labels = ["bit 30 clear, two components", "DOUTI0 0x17c00800"]
+
+[[probe]]
+name = "pds-iteration-waits-iter-wait24-persp"
+question = "an iteration without a fetch under U1 bit 24, perspective or not (w 1.25-2.75)"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_persp.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x800, 0, 0x1000004], [0x1000800, 0, 0x1000004]]
+labels = ["affine", "bit 24"]
+
+[[probe]]
+name = "pds-iteration-waits-iter-wait24-fetch"
+question = "the fetch (bit 30, doutt) under U1 bit 24 alone and with the fetch wait"
+source = "pds_tex_iter.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x40000801, 0, 0x3000004], [0x40000801, 0, 0x1000004]]
+labels = ["both waits", "bit 24 alone"]
+
+[[probe]]
+name = "pds-iteration-waits-iter-done29"
+question = "whether DOUTI0 bit 29 ends the iterations U1 bit 24 waits for (no fetch)"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x20000800, 0, 0x1000004], [0x20400800, 0, 0x1000004], [0x37c00800, 0, 0x1000004], [0x20000000, 0, 0x1000004], [0x20000800, 0, 4], [0x20000800, 0, 0x2000004]]
+labels = ["bit 29, source 1", "bit 29, two components", "DOUTI0 0x37c00800", "bit 29, source 0", "bit 29, no wait", "bit 29, the fetch wait"]
+
+[[probe]]
+name = "pds-iteration-waits-iter-done29-pa1"
+question = "pa1 under bit 29 and U1 bit 24 (two components; DOUTI0 0x37c00800, four as half floats)"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x20400800, 0, 0x1000004], [0x37c00800, 0, 0x1000004]]
+labels = ["bit 29, two components", "DOUTI0 0x37c00800"]
+
+[[probe]]
+name = "pds-iteration-waits-iter-done29-fetch"
+question = "the fetch under both waits with bits 29 and 30, and with one bit for each wait"
+source = "pds_tex_iter.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x60000801, 0, 0x3000004], [0x60000801, 0, 0x2000004], [0x20000801, 0, 0x1000004], [0x40000801, 0, 0x3000004]]
+labels = ["bits 29, 30, both waits", "bits 29, 30, the fetch wait", "bit 29, the fetch, U1 bit 24", "bit 30 alone, both waits"]
+
+[[probe]]
+name = "pds-iteration-waits-iter-shade"
+question = "what DOUTI0 bits 26:25 do to an iterated coordinate (0-3; with bit 21)"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [64, 64]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x20000800, 0, 0x1000004], [0x22000800, 0, 0x1000004], [0x24000800, 0, 0x1000004], [0x26000800, 0, 0x1000004], [0x20200800, 0, 0x1000004], [0x22200800, 0, 0x1000004], [0x24200800, 0, 0x1000004], [0x26200800, 0, 0x1000004]]
+labels = ["26:25 = 0", "1", "2", "3", "flat, 0", "flat, 1", "flat, 2", "flat, 3"]

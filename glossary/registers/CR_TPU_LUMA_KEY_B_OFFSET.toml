@@ -1,0 +1,15 @@
+[[term]]
+id = "G0163"
+name = "CR_TPU_LUMA_KEY_B_OFFSET"
+status = "inferred"
+
+[[term.source]]
+term = "CR_TPU_LUMA_KEY_B_OFFSET"
+kind = "register"
+sgx545 = "0x0864"
+meaning = "Register 0x0864: with the copy's luma-key mode on, the B weight in bits 9:0 (1024ths) and an offset in bits 23:16 that enters the sum as 512 times its value; it starts at 0x00210064 (weight 100, offset 33)"
+tier = "ours"
+source = "resgx545"
+citation = "E039, E038"
+licence = "MIT"
+evidence = "[HW] E039: the second word's bits 9:0 as B weight and bits 23:16 as offset fit the alpha of every pixel in 74 of 77 copies in both runs; the starting value 0x00210064 gives the BT.601 B weight with a 16.5 offset; zeros gave alpha 0 everywhere; [HW] E038: the word that loads it changed no copy unless T0 bit 31 was set (102 of 102 cases left the target as the baseline); [infer] E039: the weighted-sum model is a fit to 74 of 77 copies, not a measurement of the circuit"

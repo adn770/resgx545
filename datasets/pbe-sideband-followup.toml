@@ -1,0 +1,11 @@
+title = "follow-up run of the probe table pbe/sideband"
+repo = "data"
+paths = ["followup/pbe/sideband/"]
+method = "campaign runner on the laptop target (tools/campaign), the follow-up round"
+date = "2026-11-01"
+files = 121
+size = 739555
+sha256 = "e78d364e064b28e7cd5bedce321dec1ec4afcea6a3b40cab606a438120e1c0ab"
+recipe = "probes/pbe/sideband.toml"
+needs = ["render"]
+open = ["pbe-sideband-0200-32x16", "pbe-sideband-0000-32x32", "pbe-sideband-0000-64x16", "pbe-sideband-two-0000-0200", "pbe-sideband-two-0200-0200", "pbe-sideband-two-0200-0000", "pbe-sideband-two-0203-0200", "pbe-sideband-two-0203-0000", "pbe-sideband-two-0200-0003"]

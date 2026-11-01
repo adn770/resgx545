@@ -1,0 +1,10 @@
+title = "probe table usse/filter-banks"
+repo = "data"
+paths = ["usse/filter-banks/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 1651
+size = 3389953
+sha256 = "2305a181bea9e01fed52a7a6ebc717a21ff7d0da8f3d033da8fb32b56e00c87f"
+recipe = "probes/usse/filter-banks.toml"
+needs = ["render"]

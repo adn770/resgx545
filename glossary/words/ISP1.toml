@@ -1,0 +1,63 @@
+[[term]]
+id = "G0246"
+name = "ISP1"
+status = "inferred"
+
+[[term.source]]
+term = "ISP1"
+kind = "struct"
+sgx545 = "ISP word 1"
+meaning = "The second word of the render's ISP state; bits 13 to 25 set one at a time left a 4x triangle at the sample rate unchanged, so those bits do not turn per-sample shading on"
+tier = "ours"
+source = "resgx545"
+citation = "E117"
+licence = "MIT"
+evidence = "[HW] E117: all 13 cases setting ISP word 1 bits 13 to 25 gave the control's image (1248 samples in 324 blocks, one value per block), none hung and no visibility counter counted; [infer] the reading is ours, from these runs"
+
+[[term]]
+id = "G0247"
+name = "ISP1.POLY_OFFSET"
+status = "named"
+
+[[term.source]]
+term = "ISP1.POLY_OFFSET"
+kind = "flag"
+sgx545 = "ISP1 [23]"
+meaning = "the object takes the polygon offset [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E071"
+licence = "MIT"
+evidence = "[HW] E071: without it, units 4096 add nothing"
+
+[[term]]
+id = "G0248"
+name = "ISP1.VISREG"
+status = "named"
+
+[[term.source]]
+term = "visreg"
+kind = "field"
+sgx545 = "ISP1 [2:0]"
+meaning = "index of the visibility counter the object counts into (with ISP1.VISTEST)"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0195"
+licence = "MIT"
+evidence = "same function, Rogue's ISP word B bits 13:0; [HW] E070: 0, 1, 2, 3, 4, 7 count into 0x0498, 0x049c, 0x04a0, 0x04a4, 0x04a8, 0x04b4 (CR_ISP_VISIBILITY_COUNT0-7), low 16 bits"
+
+[[term]]
+id = "G0249"
+name = "ISP1.VISTEST"
+status = "named"
+
+[[term.source]]
+term = "vistest"
+kind = "flag"
+sgx545 = "ISP1 [3]"
+meaning = "visibility test: the object's covered pixels count into the counter ISP1.VISREG names"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0196"
+licence = "MIT"
+evidence = "same function, Rogue's ISP word B bit 15; [HW] E070: set, a triangle counts its 1062 pixels into CR_ISP_VISIBILITY_COUNTn; clear, nothing counts; pass types 0, 1, 3, 6 count (3 without drawing), 2, 4, 5 (drawn as opaque) and 7 count 0: the pixels the ISP passes, not those written"

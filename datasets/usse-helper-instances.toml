@@ -1,0 +1,10 @@
+title = "probe table usse/helper-instances"
+repo = "data"
+paths = ["usse/helper-instances/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 34
+size = 1683831
+sha256 = "3577af311c6f8018fb293d898265aa38a168b1031c9ce2ec0b7b26037ced06f1"
+recipe = "probes/usse/helper-instances.toml"
+needs = ["render"]

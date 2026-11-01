@@ -1,0 +1,49 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse repeat: 0 sweeps, 3 probes.
+needs = ["render"]
+
+[[probe]]
+name = "usse-repeat-order"
+question = "mov.repeatN over overlapping ranges: iterations in turn, or sources read first"
+source = "repeat.s"
+params = { Z0 = 0, Z1 = 0 }
+inputs = ["OP"]
+cases = [["mov.repeat2 r2, r1"], ["mov.repeat3 r2, r1"], ["mov.repeat3 r1, r2"]]
+[probe.hypotheses]
+"one iteration after the other, ascending" = [0x44111111, 0x11111111, 0x44443322]
+"sources read first" = [0x44221111, 0x33221111, 0x44443322]
+"one iteration after the other, descending" = [0x44221111, 0x33221111, 0x44444444]
+
+[[probe]]
+name = "usse-repeat-pred"
+question = "p0 mov.repeat2 r1, r5: one predicate for the instance, or one per iteration"
+source = "repeat.s"
+params = { OP = "p0 mov.repeat2 r1, r5" }
+inputs = ["Z0", "Z1"]
+labels = ["p0=1 p1=0", "p0=0 p1=1", "p0=1 p1=1", "p0=0 p1=0"]
+cases = [[0, 1], [1, 0], [0, 0], [1, 1]]
+[probe.hypotheses]
+"one predicate (p0)" = [0x44336655, 0x44332211, 0x44336655, 0x44332211]
+"iteration i tests p(i)" = [0x44332255, 0x44336611, 0x44336655, 0x44332211]
+
+[[probe]]
+name = "usse-repeat-smlsi"
+question = "smlsi #I0..#I3 then mov.repeat2 r20, r10: which increment is the destination's and the source's"
+source = "moe.s"
+inputs = ["I0", "I1", "I2", "I3"]
+cases = [["1", "1", "1", "1"], ["2", "1", "1", "1"], ["1", "2", "1", "1"], ["1", "1", "2", "1"], ["1", "1", "1", "2"], ["0", "1", "1", "1"], ["1", "0", "1", "1"], ["1", "1", "0", "1"], ["1", "1", "1", "0"]]
+[probe.hypotheses]
+"dest I0, src I1" = [0x23221110, 0x23112110, 0x23221210, 0x23221110, 0x23221110, 0x23222111, 0x23221010, 0x23221110, 0x23221110]
+"dest I0, src I2" = [0x23221110, 0x23112110, 0x23221110, 0x23221210, 0x23221110, 0x23222111, 0x23221110, 0x23221010, 0x23221110]
+"dest I0, src I3" = [0x23221110, 0x23112110, 0x23221110, 0x23221110, 0x23221210, 0x23222111, 0x23221110, 0x23221110, 0x23221010]
+"dest I1, src I0" = [0x23221110, 0x23221210, 0x23112110, 0x23221110, 0x23221110, 0x23221010, 0x23222111, 0x23221110, 0x23221110]
+"dest I1, src I2" = [0x23221110, 0x23221110, 0x23112110, 0x23221210, 0x23221110, 0x23221110, 0x23222111, 0x23221010, 0x23221110]
+"dest I1, src I3" = [0x23221110, 0x23221110, 0x23112110, 0x23221110, 0x23221210, 0x23221110, 0x23222111, 0x23221110, 0x23221010]
+"dest I2, src I0" = [0x23221110, 0x23221210, 0x23221110, 0x23112110, 0x23221110, 0x23221010, 0x23221110, 0x23222111, 0x23221110]
+"dest I2, src I1" = [0x23221110, 0x23221110, 0x23221210, 0x23112110, 0x23221110, 0x23221110, 0x23221010, 0x23222111, 0x23221110]
+"dest I2, src I3" = [0x23221110, 0x23221110, 0x23221110, 0x23112110, 0x23221210, 0x23221110, 0x23221110, 0x23222111, 0x23221010]
+"dest I3, src I0" = [0x23221110, 0x23221210, 0x23221110, 0x23221110, 0x23112110, 0x23221010, 0x23221110, 0x23221110, 0x23222111]
+"dest I3, src I1" = [0x23221110, 0x23221110, 0x23221210, 0x23221110, 0x23112110, 0x23221110, 0x23221010, 0x23221110, 0x23222111]
+"dest I3, src I2" = [0x23221110, 0x23221110, 0x23221110, 0x23221210, 0x23112110, 0x23221110, 0x23221110, 0x23221010, 0x23222111]
+"no effect" = [0x23221110, 0x23221110, 0x23221110, 0x23221110, 0x23221110, 0x23221110, 0x23221110, 0x23221110, 0x23221110]

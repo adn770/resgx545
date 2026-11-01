@@ -1,0 +1,10 @@
+title = "script and probe table usse/memory"
+repo = "data"
+paths = ["usse/memory/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 90
+size = 135229
+sha256 = "0ed1f1bdb30d266fd6a38cb121bb47c50cdaba71be1eeab3689705d553d5cc64"
+recipe = "probes/usse/memory.toml"
+needs = ["render", "regs", "reset"]

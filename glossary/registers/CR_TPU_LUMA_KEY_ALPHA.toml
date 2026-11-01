@@ -1,0 +1,15 @@
+[[term]]
+id = "G0162"
+name = "CR_TPU_LUMA_KEY_ALPHA"
+status = "inferred"
+
+[[term.source]]
+term = "CR_TPU_LUMA_KEY_ALPHA"
+kind = "register"
+sgx545 = "0x0868"
+meaning = "Register 0x0868: with the copy's luma-key mode on, the threshold in bits 15:8, the alpha written at or below it in bits 23:16 and the alpha written above it in bits 31:24; it starts at 0xff008000 (alpha 0 below 128, 0xff above). Bits 7:0 are not explained: values 64, 128 and 255 fit no threshold"
+tier = "ours"
+source = "resgx545"
+citation = "E039, E038"
+licence = "MIT"
+evidence = "[HW] E039: threshold bits 15:8, alpha_below bits 23:16 and alpha_above bits 31:24 fit 74 of 77 copies in both runs; the 3 copies with bits 7:0 at 64, 128 and 255 fit none (at 128 and 255 alpha_above came at all 2048 pixels); bits 7:0 at 1 and 0x10 changed nothing; [HW] E038: the word that loads it changed no copy unless T0 bit 31 was set (102 of 102 cases left the target as the baseline); [infer] E039: the threshold and alpha fields are read from a fit, not measured directly"

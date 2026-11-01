@@ -1,0 +1,31 @@
+[[term]]
+id = "G0287"
+name = "TEXTYPE"
+status = "named"
+
+[[term.source]]
+term = "TEXTYPE"
+kind = "enum"
+sgx545 = "TEXTYPE values (2D, STRIDE...)"
+meaning = "texture type enum (Rogue: 1D, 2D, 3D, CUBE, STRIDE...): on SGX545 0 a power-of-two 2D texture, 3 a non-power-of-two one and the YUV streams, 6 strided (also depth textures)"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0224"
+licence = "MIT"
+evidence = "Rogue STRIDE is the role of SGX 6 our current term; values differ; [HW] E035: TEXTYPE 0 is twiddled: texel (tx, ty) at dword index interleaving ty (even bits) and tx (odd bits), all 1062 pixels of a textured triangle"
+
+[[term]]
+id = "G0288"
+name = "TEXTYPE.STRIDE"
+status = "named"
+
+[[term.source]]
+term = "TEXTYPE.STRIDE"
+kind = "enum"
+sgx545 = "T1 TEXTYPE 6"
+meaning = "strided texture: rows a stride apart (T0.STRIDE), sampled clamped to the edge [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E033"
+licence = "MIT"
+evidence = "Rogue texstate.xml TEXTYPE value STRIDE names the same layout (value 4 there); needs FEATURE.TEXTURESTRIDE_EXTENSION; sampled on the hardware (E033) [HW]"

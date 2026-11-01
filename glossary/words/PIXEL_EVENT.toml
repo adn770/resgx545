@@ -1,0 +1,47 @@
+[[term]]
+id = "G0255"
+name = "PIXEL_EVENT.END_OF_TILE"
+status = "named"
+
+[[term.source]]
+term = "tile is complete"
+kind = "flag"
+sgx545 = "pixel event input ir1 bit 1"
+meaning = "the signal that a tile is complete, on which the EDM generates the task emitting the tile"
+tier = "4"
+source = "patent-US8046761"
+citation = "C0200"
+licence = "patent"
+evidence = "OCR text; [HW] the end-of-tile task's DOUTU1 fields place the emitted tile (E043)"
+
+[[term]]
+id = "G0256"
+name = "PIXEL_EVENT.LAST_TILE"
+status = "named"
+
+[[term.source]]
+term = "PIXEL_EVENT.LAST_TILE"
+kind = "flag"
+sgx545 = "pixel event input ir1 bit 2"
+meaning = "set on the end-of-tile events of the render's last two 16x16 tiles (its bottom-right 32x16 pixels), and on no other; the pixel-event program copies it into the end-of-tile task's DOUTU1.LAST_TILE [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E046"
+licence = "MIT"
+evidence = "[HW] E046: an event with the bit, sent to the end-of-render task, leaves only the bottom-right 32x16 pixels unwritten (64x64, 128x128); read back per tile it is on tiles (6, 7) and (7, 7) of a 128x128 render; when the event arrives is not measured; hypothesis to test (ti-omap4430-trm ti-omap4430-docs/swpu231ap_ocr.txt:277078): the general-purpose data master's 'end of a pass of triangles from the ISP' event"
+
+[[term]]
+id = "G0257"
+name = "PIXEL_EVENT.PT_OFF"
+status = "inferred"
+
+[[term.source]]
+term = "PIXEL_EVENT.PT_OFF"
+kind = "flag"
+sgx545 = "pixel event input ir1 bit 3"
+meaning = "Input bit 3 of the pixel-event program is named in the punch-through probes but no probe used it, so the 6.1 data show nothing about it beyond its name"
+tier = "ours"
+source = "resgx545"
+citation = "E083"
+licence = "MIT"
+evidence = "[HW] E083: no probe or case used ptoff; its effect on a punch-through phase is not measured; [infer] the reading is ours, from these runs"

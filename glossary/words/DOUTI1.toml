@@ -1,0 +1,15 @@
+[[term]]
+id = "G0218"
+name = "DOUTI1.FLAT"
+status = "named"
+
+[[term.source]]
+term = "DOUTI1.FLAT"
+kind = "flag"
+sgx545 = "douti word 1 [6]"
+meaning = "Bit 6 of the second iterator word: the iteration is flat, every pixel taking one vertex's value (vertex 0's x, -0.75, in the case run) instead of the interpolated one"
+tier = "ours"
+source = "resgx545"
+citation = "E048"
+licence = "MIT"
+evidence = "[HW] E048: setting word 1 bit 6 gave every pixel -0.75, vertex 0's x, across the 1062 triangle pixels; the other 31 bits changed nothing; with DOUTI0 bit 21 set, bits 26:25 = 0, 1 and 2 gave vertex 0, 1 and 2's value and 3 the smooth x; [infer] the reading is ours, from these runs"

@@ -1,0 +1,10 @@
+title = "probe table usse/filter-gain"
+repo = "data"
+paths = ["usse/filter-gain/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 2509
+size = 5447245
+sha256 = "4fd14aa68d19095b6fc52ffeab49ba24653dafea34d901651d49d33b18027874"
+recipe = "probes/usse/filter-gain.toml"
+needs = ["render"]

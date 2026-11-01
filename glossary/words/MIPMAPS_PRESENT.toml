@@ -1,0 +1,15 @@
+[[term]]
+id = "G0250"
+name = "MIPMAPS_PRESENT"
+status = "named"
+
+[[term.source]]
+term = "mipmaps_present"
+kind = "flag"
+sgx545 = "-"
+meaning = "texture has mipmaps"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0197"
+licence = "MIT"
+evidence = "by function, inverted sense"

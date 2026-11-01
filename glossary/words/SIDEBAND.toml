@@ -1,0 +1,63 @@
+[[term]]
+id = "G0261"
+name = "SIDEBAND.BIT9"
+status = "inferred"
+
+[[term.source]]
+term = "tilerelative"
+kind = "flag"
+sgx545 = "sideband bit 9"
+meaning = "marks the emit that completes the tile: the PBE counts the emits with it against its tiles. Measured: needed for an emit to complete its tile: with it clear the only emit hangs; an extra emit with it set leaves the PBE queue one emit behind, with it clear for one job only; not tile-relative addressing [infer]"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0206"
+licence = "MIT"
+evidence = "[HW] E030: clear, the end-of-tile emit hangs the job; with two emits per tile the first stores the tile, and the second spills into the next job, the queue staying one behind only when it has bit 9"
+
+[[term]]
+id = "G0262"
+name = "SIDEBAND.BITS8_6"
+status = "inferred"
+
+[[term.source]]
+term = "SIDEBAND.BITS8_6"
+kind = "field"
+sgx545 = "sideband [8:6] [infer]"
+meaning = "a PBE sub-format, downscale or rotation field, 0 for plain output (Rogue downscale/source_pos, AGX rotate/flip). Measured: 0 in every closed program and capture [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E030, E031"
+licence = "MIT"
+evidence = "never varied; Rogue source_pos (mesa pbestate.xml:360, tier 3) has a different word layout; [HW] E030: each of 1-7 changes no pixel of an ARGB8888 triangle; [HW] E031: nor with RGB565 (pack mode 3)"
+
+[[term]]
+id = "G0263"
+name = "SIDEBAND.MEMLAYOUT"
+status = "named"
+
+[[term.source]]
+term = "memlayout"
+kind = "field"
+sgx545 = "sideband bit 13"
+meaning = "memory layout"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0207"
+licence = "MIT"
+evidence = "same name and role as Rogue"
+
+[[term]]
+id = "G0264"
+name = "SIDEBAND.PACKMODE"
+status = "named"
+
+[[term.source]]
+term = "packmode"
+kind = "field"
+sgx545 = "sideband [5:0]"
+meaning = "pixel pack format"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0208"
+licence = "MIT"
+evidence = "same role as Rogue; [HW] E031: every mode 0-63 stored: 1 ABGR8888, 2 BGRA8888, 3 RGB565, 4 ARGB1555, 5 ARGB4444, 6 A8+RGB332, 7 A8R8, 8 A8, 15/18/20/27/28 G8B8, 24/25 B8, most others as 0"

@@ -176,6 +176,13 @@ the decoder's form table, so a form added there assembles too.
   stored here.
 - `test_case.py`: every decoded instruction also assembles from its lowercase spelling, as
   radare2 hands it over.
+- `test_probe.py`: the probe host, `probe.py`: the tables under `probes/`, their programs,
+  the parser of `sgxfive-test probe` output and the verdicts (an end-to-end run goes through
+  `sgxfive-test --mock`).
+- `test_vectors.py`: `vectors.py`, the converter of probe readbacks into vector files.
+- `test_vec_tables.py`, `test_bank_probes.py`, `test_filter_probes.py`, `test_lock_probes.py`,
+  `test_arch_guides_probes.py`: the tables of `probes/usse/` that hold generated or
+  structured cases, as their cases and pokes (not their results).
 - `test_tutorial.py`: the listings in `doc/specs/usse_tutorial.md` are the sources in `asm/`
   and what the assembler makes of them.
 
@@ -195,9 +202,79 @@ Our own GPU programs are in `asm/` at the repository root; `asm/README.md` lists
   reads `sgx-asm`'s output of `asm/transfer/transfer.s`.
 - The radare2 fork's PDS plugin carries `pds_forms.c` and `pds_asm.h`
   (`../usse-dis/r2/sync-fork.sh` copies them with the decoders).
-- The user-space library and the first triangle's programs, which assemble their sources from
-  `asm/` too, arrive with the render path unit; the probe host, which assembles its probe
-  programs with these tools, arrives with the probes unit.
+- The user-space library and the first triangle's programs assemble their sources from `asm/`
+  too, and the probe host (below) assembles its probe programs with these tools.
+
+## Hardware probes
+
+`probe.py` runs our own short programs on the GPU to pin down what the instruction set does where
+the text alone does not say. A table is `probes/<unit>/<feature>.toml` (`--table FILE` picks
+one); per probe it names a template in the table's `templates/` directory, its parameters, the
+input cases and, per hypothesis, the readback every case should give. Each case is assembled into
+its own program, which `sgxfive-test probe` (`userspace/libsgxfive`) runs as the shader of a
+client fill on the render node; the host reads back `o0` and a 64 KiB scratch buffer. A probe is
+settled when exactly one hypothesis predicts every case. The campaign runner (`tools/campaign`)
+runs the tables probe by probe on a clean GPU and keeps each run with its programs.
+
+```sh
+../../.venv/bin/python probe.py --table ../../probes/usse/integer.toml list
+../../.venv/bin/python probe.py --table T build ../../debug/b 'usse-integer-isub16-*'
+../../.venv/bin/python probe.py --table T run --out ../../debug/probes/run 'usse-integer-*'
+../../.venv/bin/python probe.py --table T eval ../../debug/probes/run/raw.txt   # a saved run
+../../.venv/bin/python probe.py --table T local --mock  # the mock: only checks the plumbing
+../../.venv/bin/pytest -q test_probe.py
+```
+
+`run` needs the laptop booted with the render node on (`gma500_gfx.sgx_render=1`), its address
+in `SGX_TARGET_HOST` (or `kernel/scripts/local.env`) and an i686 `sgxfive-test` in its home
+directory (`SGX_PROBE_TOOL` overrides the path): build it with `make CC='cc -m32'` in
+`userspace/libsgxfive` on a Linux host, or on the laptop itself, and copy `build/sgxfive-test`
+there. `local` needs `make -C userspace/libsgxfive` first. A run's readbacks become vector files
+with `vectors.py convert`, which finds the run's table and templates under `probes/`.
+Every case runs in its own process, because a faulting probe gets its file banned after three
+faults; a fault shows as `failed`, with the scratch dwords changed before it (or `scratch
+unchanged`). A hypothesis expects a failure as `"fail"`, or as `{fail = true}` with a `dwords`
+list (the first scratch dwords, as a plain list gives them) and/or a `scratch` set: what ran
+before the job hung or faulted. A new probe is a table entry, plus a template when none of
+`pred.s` (a predicate as the pixel), `value.s` (a register), `dump.s` (sixteen registers to
+the scratch buffer), `index.s`, `index_sa.s`, `index_sa2.s`, `memoff.s`, `repeat.s`, `moe.s`,
+`pred4.s` or `coords.s` fits (they sit in the templates of the tables that use them).
+
+A table entry with `isa = "pds"` probes the PDS: its template (`pds_dump.s`) is assembled with
+`pds-asm` and runs as the fill's PDS secondary program (`sgxfive-test probe --pds N --use
+sa_dump.bin`, N its data dwords). It copies its inputs to the temporaries `ds0/ds1[48..55]` (the
+only writable registers) and passes its results with `douta` into `sa0`-`sa15`, which the fill's
+shader `sa_dump.s` stores to scratch dwords 0-15, so the hypotheses expect the same lists as
+`dump.s` ones. A table entry may name its USE program (`use = "sa_pixel.s"`: `sa0` as the pixel,
+with `pixels = true`).
+
+A table entry with `coords = true` runs as the shader of a copy whose source texel is the
+pixel's coordinates (`sgxfive-test probe --coords`), so that every pixel computes its own
+inputs (`coords.s` derives a value per pixel and register), and with `pixels = true` every
+pixel is read back. A hypothesis then expects `{pixels = [...]}`, all 2048 in raster order, or
+`{quad = [[k, n], ...]}`: per 2x2 quad position (top-left, top-right, bottom-left,
+bottom-right), the `coords.s` value `k` of the pixel at position `n` of the same quad.
+
+A table entry with `host = "tri"` runs inside the first triangle's render instead of a fill
+(`sgxfive-test probe --tri SLOT[:N] --slot SLOT=FILE[:N] --width W --height H`): its cases
+replace the program `slot` (`pixev` the pixel-event PDS program, `eot` the end-of-tile task,
+`vtxpds` and `vtxuse` the vertex programs, `pixel` the triangle's shader; a PDS slot makes the
+entry a PDS one), `slots = { eot = "eot_dump.s" }` names fixed helpers for other slots, and
+`size = [W, H]` (default 64 x 64) and `max_size` the target and its render context, and
+`vertices = N` (3 to 15, whole triangles) draws copies of the triangle after it, copy `c` moved
+`c`/16 pixel, so that the vertex programs run for more vertices than one task's. The host
+patches each replacement as it does the default (libsgxfive's `sgxfive_tri_probe.h` lists
+the rules: a `pixev` keeps `pds_pixevent.s`'s data dwords 0-5 and 12, an `eot` `use_eot.s`'s four
+PBE movs and final `emitpix2`). `pixev_dump.s` is the default pixel-event program with `{OP}` on
+the end-of-tile event, passing values with `douta` to the end-of-tile task's `sa0`-`sa15`,
+which `eot_dump.s` stores to scratch dwords 0-15 (one tile: the hypotheses are lists as for
+`dump.s`) or `eot_tile.s` to 16 dwords per tile.
+
+A tri entry also takes `vtx_coords`, `copy_depth`, `blk`, `cmd` and `vdm` (state block, render
+command and VDM stream words set by index), `sideband`, `kpoke` (words of the kernel-built
+firmware command, set through the kernel's debugfs) and `case_set` (more pokes or words per
+case). With `dump_render = true` the probe saves what the TA wrote (the kernel's debugfs
+`render_param` and `render_tadata`) after each case, to the run's `dumps/NAME.{param,tadata}.bin`.
 
 ## Next
 

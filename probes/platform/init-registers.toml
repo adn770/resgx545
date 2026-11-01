@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# Which bits of the three registers the init script sets once (0x0810 to 0x1, 0x0814 to 0xffff,
+# 0x0818 to 0x7ff) are implemented: each written with all ones and with zero through the
+# debug group's kreg and read back, then restored.
+kind = "script"
+name = "platform-init-registers"
+script = "init-registers.sh"
+baseline = "none"
+needs = ["kreg", "regs"]

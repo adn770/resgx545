@@ -1,0 +1,223 @@
+[[term]]
+id = "G0319"
+name = "hw_render_details.bif_zls_req_base"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_ZLS_REQ_BASE"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x004"
+meaning = "ZLS requestor base"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0228"
+licence = "GPL-2.0"
+evidence = "the register this word is loaded into"
+
+[[term]]
+id = "G0320"
+name = "hw_render_details.isp_msaa"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.isp_msaa"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x010"
+meaning = "the render details' word the EDM loads into CR_ISP_MSAA (0x80000000 single-sampled, 0x80000002 at 4x) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E074"
+licence = "MIT"
+evidence = "Rogue's isp_aa is a name only here; [HW] E074"
+
+[[term]]
+id = "G0321"
+name = "hw_render_details.isp_multisamplectl"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.isp_multisamplectl"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x050"
+meaning = "Render-details word 20: the value loaded into register 0x04c8, the same register the render command's word 16 loads (identical images bit for bit), holding the sample positions; 22 of its 32 bits moved the samples of a 4x triangle by a few samples and the rest changed nothing"
+tier = "ours"
+source = "resgx545"
+citation = "E120, E064"
+licence = "MIT"
+evidence = "[HW] E120: 22 bits of render-details word 20 changed the 4x triangle's image (1240 to 1256 covered samples in 320 to 328 pixels against 1248) and gave the same image as the same bit of command word 16 in all 32 cases; [HW] E064: byte 0 of the render command's word 16 (0x88 in the job) moved the 64x64 triangle's edges: 10 of 256 values gave the baseline image, the other 246 gave 26 images of 1074, 1086 or 1098 pixels against 1062; [infer] E120: the changed images are read as sample-position shifts from coverage counts; the positions themselves were not read"
+
+[[term]]
+id = "G0322"
+name = "hw_render_details.isp_sample_pos"
+status = "inferred"
+
+[[term.source]]
+term = "hw_render_details.isp_sample_pos"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x04c"
+meaning = "Render-details word 19, loaded into register 0x0520 (all 32 bits implemented, held 0 outside a render); no value of it changed any image tried, and no bit of it made a 4x triangle's pixel shader run per sample"
+tier = "ours"
+source = "resgx545"
+citation = "E120, E066, E067, E073"
+licence = "MIT"
+evidence = "[HW] E120: all 32 single-bit flips of render-details word 19 gave the control's 4x image; [HW] E066: no flip, 0 or ~0 of 0x0520 changed the image in four depth scenes; [HW] E067: held 0x00000000, every bit took a write; 34 values changed no pixel of a copy, a UYVY copy or a fill; [HW] E073: 0xffffffff under 42 overlapping triangles left the covered-pixel count at 1275 of 4096; [infer] the reading is ours, from these runs"
+
+[[term]]
+id = "G0323"
+name = "hw_render_details.isp_zlsctl"
+status = "named"
+
+[[term.source]]
+term = "isp_zlsctl"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x02c"
+meaning = "ZLS control"
+tier = "3"
+source = "linux-imagination"
+citation = "C0230"
+licence = "GPL-2.0 OR MIT"
+evidence = "rogue_fwif_frag_regs"
+
+[[term]]
+id = "G0324"
+name = "hw_render_details.num_pixel_partitions"
+status = "named"
+
+[[term.source]]
+term = "NumPixelPartitions"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x13c"
+meaning = "DMS_CTRL pixel partitions (31 << 22)"
+tier = "2"
+source = "cdv-libsrv_um"
+citation = "C0231"
+licence = "Intel-binary (ours)"
+evidence = "string only; likely an app-hint/config key [infer]; [HW] E049: bits 1 and 2 or ~0 hang the job, the other bits and 0 change nothing"
+
+[[term]]
+id = "G0325"
+name = "hw_render_details.poly_offset_clamp"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.poly_offset_clamp"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x01c"
+meaning = "value the EDM copies into CR_ISP_POLY_OFFSET_CLAMP [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x8e58)"
+licence = "MIT"
+evidence = "[RE] the 3D kick writes the 3D register block in structure order, one fixed store per word; [HW] E071"
+
+[[term]]
+id = "G0326"
+name = "hw_render_details.poly_offset_factor"
+status = "inferred"
+
+[[term.source]]
+term = "hw_render_details.poly_offset_factor"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x018"
+meaning = "Render-details word 6, loaded into register 0x0420: set to 4.0 with the units word at 0 it left the flat triangle's stored depth unchanged; what it multiplies is not shown"
+tier = "ours"
+source = "resgx545"
+citation = "E071"
+licence = "MIT"
+evidence = "[HW] E071: rd:6 (0x0420) at 4.0 with rd:5 at 0 stored 0x3f000000, the flat 64x64 triangle having no slope for it to act on; [infer] the reading is ours, from these runs"
+
+[[term]]
+id = "G0327"
+name = "hw_render_details.poly_offset_units"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.poly_offset_units"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x014"
+meaning = "Render-details word 5, loaded into register 0x041c: the polygon offset in units of one ulp of the stored depth, added to the triangle's depth only when ISP word 1 bit 23 is set"
+tier = "ours"
+source = "resgx545"
+citation = "E071"
+licence = "MIT"
+evidence = "[HW] E071: the stored depth of the flat triangle was 0.5 plus exactly rd:5 ulps (1, 16, 4096 and 2^20 all matched), up to a cap set by rd:7; without the ISP1 bit 23 poke, rd:5 at 4096 stored 0x3f000000; [infer] the reading is ours, from these runs"
+
+[[term]]
+id = "G0328"
+name = "hw_render_details.reg_0400"
+status = "inferred"
+
+[[term.source]]
+term = "hw_render_details.reg_0400"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x008"
+meaning = "The render-side word that loads register 0x0400: bit 25 inverts bits 31:24 of every pixel the job writes, and no other bit changed a pixel; the data come from the render command's word 11, which loads the same register, not from the render-details word itself"
+tier = "ours"
+source = "resgx545"
+citation = "E029"
+licence = "MIT"
+evidence = "[HW] E029: flipping bit 25 of word 11 of the render command changed all 4096 pixels of the 64x64 triangle (first pixel 0xff203040 to 0x00203040, hash 0x25e3b1ba58ea2cc5 against 0x99385a04ee01c585); no other bit changed a pixel; [infer] the reading is ours, from these runs"
+
+[[term]]
+id = "G0329"
+name = "hw_render_details.stencil_load_base"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.stencil_load_base"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x038"
+meaning = "value the EDM loads into CR_ISP_STENCIL_LOAD_BASE (0x048c): the stencil load base [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E058"
+licence = "MIT"
+evidence = "[infer] E058; Rogue keeps one stencil load/store base: name only"
+
+[[term]]
+id = "G0330"
+name = "hw_render_details.stencil_store_base"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.stencil_store_base"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x03c"
+meaning = "value the EDM loads into CR_ISP_STENCIL_STORE_BASE (0x0490): the stencil store base and its enable [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E058"
+licence = "MIT"
+evidence = "[HW] E058; Rogue keeps one stencil load/store base: name only"
+
+[[term]]
+id = "G0331"
+name = "hw_render_details.zload_base"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.zload_base"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x030"
+meaning = "value the EDM loads into CR_ISP_ZLOAD_BASE (0x0484): the depth load base [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E058"
+licence = "MIT"
+evidence = "[HW] E058; Rogue keeps one depth load/store base: name only"
+
+[[term]]
+id = "G0332"
+name = "hw_render_details.zstore_base"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.zstore_base"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x034"
+meaning = "value the EDM loads into CR_ISP_ZSTORE_BASE (0x0488): the depth store base [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E058"
+licence = "MIT"
+evidence = "[HW] E058; Rogue keeps one depth load/store base: name only"

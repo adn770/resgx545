@@ -1,0 +1,15 @@
+[[term]]
+id = "G0181"
+name = "CR_USE1_SERV_VERTEX"
+status = "named"
+
+[[term.source]]
+term = "PSB_CR_USE1_SERV_VERTEX"
+kind = "register"
+sgx545 = "0x0b1c"
+meaning = "USSE 1 vertex service-queue status (SGX535 0x0b18)"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0184"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; we used another name here"

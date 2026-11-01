@@ -1,0 +1,10 @@
+title = "probe table usse/flags"
+repo = "data"
+paths = ["usse/flags/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 10
+size = 13804
+sha256 = "dcf178d58cf0455f61c1c2776418b8895329fbe852e5431135acadebc894b208"
+recipe = "probes/usse/flags.toml"
+needs = ["render"]

@@ -1,0 +1,52 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# A USSE loop of a known number of instructions in a fill's shader: 8 instructions an
+# iteration (six nops, the counter decrement and the branch back), 12500 to 1250000
+# iterations, so 1e5 to 1e7 instructions, 20 identical runs of each. The host clock times each
+# run; the loop's own length is the cycle count to set against it. Every run ends with the
+# counter at 0 in o0.
+
+[[probe]]
+name = "usse-loop-timing-1e5"
+question = "the host-clock time of a USSE loop of 1e5 instructions (12500 iterations of 8), 20 runs"
+source = "loop_count.s"
+inputs = ["ITER"]
+labels = ["1e5 instructions"]
+cases = [[0x30D4], [0x30D4], [0x30D4], [0x30D4], [0x30D4], [0x30D4], [0x30D4], [0x30D4], [0x30D4], [0x30D4], [0x30D4], [0x30D4], [0x30D4], [0x30D4], [0x30D4], [0x30D4], [0x30D4], [0x30D4], [0x30D4], [0x30D4]]
+[probe.hypotheses]
+
+[[probe]]
+name = "usse-loop-timing-3e5"
+question = "the host-clock time of a USSE loop of 3e5 instructions (37500 iterations of 8), 20 runs"
+source = "loop_count.s"
+inputs = ["ITER"]
+labels = ["3e5 instructions"]
+cases = [[0x927C], [0x927C], [0x927C], [0x927C], [0x927C], [0x927C], [0x927C], [0x927C], [0x927C], [0x927C], [0x927C], [0x927C], [0x927C], [0x927C], [0x927C], [0x927C], [0x927C], [0x927C], [0x927C], [0x927C]]
+[probe.hypotheses]
+
+[[probe]]
+name = "usse-loop-timing-1e6"
+question = "the host-clock time of a USSE loop of 1e6 instructions (125000 iterations of 8), 20 runs"
+source = "loop_count.s"
+inputs = ["ITER"]
+labels = ["1e6 instructions"]
+cases = [[0x1E848], [0x1E848], [0x1E848], [0x1E848], [0x1E848], [0x1E848], [0x1E848], [0x1E848], [0x1E848], [0x1E848], [0x1E848], [0x1E848], [0x1E848], [0x1E848], [0x1E848], [0x1E848], [0x1E848], [0x1E848], [0x1E848], [0x1E848]]
+[probe.hypotheses]
+
+[[probe]]
+name = "usse-loop-timing-3e6"
+question = "the host-clock time of a USSE loop of 3e6 instructions (375000 iterations of 8), 20 runs"
+source = "loop_count.s"
+inputs = ["ITER"]
+labels = ["3e6 instructions"]
+cases = [[0x5B8D8], [0x5B8D8], [0x5B8D8], [0x5B8D8], [0x5B8D8], [0x5B8D8], [0x5B8D8], [0x5B8D8], [0x5B8D8], [0x5B8D8], [0x5B8D8], [0x5B8D8], [0x5B8D8], [0x5B8D8], [0x5B8D8], [0x5B8D8], [0x5B8D8], [0x5B8D8], [0x5B8D8], [0x5B8D8]]
+[probe.hypotheses]
+
+[[probe]]
+name = "usse-loop-timing-1e7"
+question = "the host-clock time of a USSE loop of 1e7 instructions (1250000 iterations of 8), 20 runs"
+source = "loop_count.s"
+inputs = ["ITER"]
+labels = ["1e7 instructions"]
+cases = [[0x1312D0], [0x1312D0], [0x1312D0], [0x1312D0], [0x1312D0], [0x1312D0], [0x1312D0], [0x1312D0], [0x1312D0], [0x1312D0], [0x1312D0], [0x1312D0], [0x1312D0], [0x1312D0], [0x1312D0], [0x1312D0], [0x1312D0], [0x1312D0], [0x1312D0], [0x1312D0]]
+[probe.hypotheses]

@@ -1,0 +1,10 @@
+title = "follow-up run of the sweep table pds/douti-fields"
+repo = "data"
+paths = ["followup/pds/douti-fields/"]
+method = "campaign runner on the laptop target (tools/campaign), the follow-up round"
+date = "2026-11-01"
+files = 8
+size = 100888
+sha256 = "85a3a691c8198026be05b4b4f556848ee44e9117344d1b77c295cbcfb558024f"
+recipe = "probes/pds/douti-fields.toml"
+needs = ["render"]

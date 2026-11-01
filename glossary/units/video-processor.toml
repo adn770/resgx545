@@ -1,0 +1,15 @@
+[[term]]
+id = "G0341"
+name = "video processor"
+status = "named"
+
+[[term.source]]
+term = "video processor"
+kind = "concept"
+sgx545 = "-"
+meaning = "the video-processing functions DirectX VA 2 and VA-API ask of a GPU, which SGX545 implements in its texture unit and its USE filter block: the YUV-to-RGB transfer matrix (CR_TPU_YUV_CSC0/1_*), the nominal range and chroma signedness (CR_TPU_YUV_CSC_INPUT), the luma key (CR_TPU_LUMA_KEY_*), codec interpolation, smoothing and difference filters (CR_USE_COEFFS*, CR_USE_COEFFS_MODE); ProcAmp folds into the matrix coefficients [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E078"
+licence = "MIT"
+evidence = "[HW] E037, E038, E039, E079; context, public API documentation: DXVA2 (dxva2api.h: DXVA2_VideoTransferMatrix BT.709/BT.601, DXVA2_NominalRange 0-255/16-235, DXVA2_DeinterlaceTech_* BOBVerticalStretch4Tap, EdgeFiltering, PixelAdaptive, the NoiseFilter and DetailFilter operations, DXVA2_ProcAmp_*), D3D12_VIDEO_PROCESS_LUMA_KEY (learn.microsoft.com), libva VA_BLEND_LUMA_KEY; the API structures do not map byte for byte onto the registers (a driver computes the coefficients, as the open psb_video does)"

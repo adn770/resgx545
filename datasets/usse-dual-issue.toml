@@ -1,0 +1,10 @@
+title = "probe table usse/dual-issue"
+repo = "data"
+paths = ["usse/dual-issue/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 106
+size = 197968
+sha256 = "fb148ac0520f24d7c33c34e088feb20c568067a9c715ed5825ec4db6c8d427a9"
+recipe = "probes/usse/dual-issue.toml"
+needs = ["render"]

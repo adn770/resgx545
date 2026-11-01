@@ -1,0 +1,10 @@
+title = "probe table usse/form-coverage"
+repo = "data"
+paths = ["usse/form-coverage/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 173
+size = 321414
+sha256 = "4e471c8a58cb4c7ee6dfbb6fa81c0de9d9b6cf2f0e1c9620a45079e451eff8a3"
+recipe = "probes/usse/form-coverage.toml"
+needs = ["render"]

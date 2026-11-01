@@ -1,0 +1,15 @@
+[[term]]
+id = "G0172"
+name = "CR_TPU_YUV_CSC1_2"
+status = "inferred"
+
+[[term.source]]
+term = "CR_TPU_YUV_CSC1_2"
+kind = "register"
+sgx545 = "0x083c"
+meaning = "Word 2 of colour-space set 1, loaded like set 0; in the UYVY copy tried no value or bit of it selected the set, so what it converts is not shown"
+tier = "ours"
+source = "resgx545"
+citation = "E040, E038"
+licence = "MIT"
+evidence = "[HW] E040: with set 1 loaded as limited-range BT.709 words the UYVY copy still gave the set 0 image (hash 0xb6067a95fa98de2d, 2048 of 2048 pixels) in both runs; no case of 103 selected set 1; [HW] E038: every bit flipped, 0 and ~0 of the set 1 words (34 cases each) left the target identical to the baseline; [infer] the reading is ours, from these runs"

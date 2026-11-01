@@ -55,6 +55,32 @@ def test_a_record_names_a_known_repo_and_its_keys_in_order(tmp_path):
     assert any("keys" in m for m in datasets.problems("x", d, {}))
 
 
+def test_a_record_may_end_with_the_tables_needs_and_open_probes():
+    # the campaign appends the table's needs and its open probes (campaign.run_table)
+    assert datasets.problems("x", record(needs=["render", "kpoke"]), {}) == []
+    assert datasets.problems("x", record(needs=["render"], open=["usse-x-a"]), {}) == []
+    assert datasets.problems("x", record(open=["usse-x-a"]), {}) == []
+    assert any("keys" in m for m in datasets.problems("x", record(other=1), {}))
+    d = record(needs=["render"])
+    assert any("needs" in m for m in datasets.problems("x", {**d, "needs": "render"}, {}))
+
+
+def test_needs_and_open_agree_with_the_recipe_when_it_is_there(tmp_path):
+    (tmp_path / "probes" / "usse").mkdir(parents=True)
+    recipe = tmp_path / "probes" / "usse" / "x.toml"
+    recipe.write_text('needs = ["render"]\nopen = ["usse-x-a"]\n')
+    ok = record(needs=["render"], open=["usse-x-a"])
+    assert datasets.problems("x", ok, {}, tmp_path) == []
+    bad = datasets.problems("x", record(needs=["kpoke"], open=["usse-x-a"]), {}, tmp_path)
+    assert len(bad) == 1 and "needs" in bad[0] and "recipe" in bad[0]
+    assert any("open" in m for m in datasets.problems("x", record(needs=["render"]), {},
+                                                         tmp_path))
+    recipe.write_text("")
+    assert any("needs" in m for m in datasets.problems("x", ok, {}, tmp_path))
+    assert datasets.problems("x", record(), {}, tmp_path) == []
+    assert datasets.problems("x", ok, {}, tmp_path / "elsewhere") == []     # no recipe, no check
+
+
 @pytest.mark.parametrize("paths", [["/usse/x/"], ["usse/../x"], [".."], ["../x"], [""], ["."],
                                    ["./"], [], "usse/x/", [3]])
 def test_paths_stay_inside_their_repository(paths):

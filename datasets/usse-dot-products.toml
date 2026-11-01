@@ -1,0 +1,10 @@
+title = "probe table usse/dot-products"
+repo = "data"
+paths = ["usse/dot-products/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 117
+size = 222454
+sha256 = "0b60e756272eda7cde9c93e74dec831be5f94b6595ae9d01e7e23346a4707acf"
+recipe = "probes/usse/dot-products.toml"
+needs = ["render"]

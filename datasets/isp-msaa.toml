@@ -1,0 +1,11 @@
+title = "script and probe table isp/msaa"
+repo = "data"
+paths = ["isp/msaa/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 43
+size = 771693
+sha256 = "ff039c640c34f79f98e16931e1a14dfc96f71a07e742dfe18453eeb354e80cad"
+recipe = "probes/isp/msaa.toml"
+needs = ["render", "kpoke"]
+open = ["isp-msaa-bit48-1", "isp-msaa-bit48-1-4x", "isp-msaa-bit48-2", "isp-msaa-bit48-2-4x"]

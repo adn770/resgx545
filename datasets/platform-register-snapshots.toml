@@ -1,0 +1,10 @@
+title = "script table platform/register-snapshots"
+repo = "data"
+paths = ["platform/register-snapshots/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 3
+size = 29071
+sha256 = "516330b4757734f91ee80eccad4c1a0660a4366ff927026765a00ea2533d7021"
+recipe = "probes/platform/register-snapshots.toml"
+needs = ["render", "regs"]

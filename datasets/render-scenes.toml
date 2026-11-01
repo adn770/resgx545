@@ -1,0 +1,10 @@
+title = "script table render/scenes"
+repo = "data"
+paths = ["render/scenes/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 3
+size = 28920
+sha256 = "72fe439a6671e12fc7297eda7240e7992d1c5c2f89b20a6fe3cc27c23da77425"
+recipe = "probes/render/scenes.toml"
+needs = ["render", "kpoke"]

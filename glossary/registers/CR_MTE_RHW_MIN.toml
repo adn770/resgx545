@@ -1,0 +1,15 @@
+[[term]]
+id = "G0147"
+name = "CR_MTE_RHW_MIN"
+status = "named"
+
+[[term.source]]
+term = "CR_MTE_RHW_MIN"
+kind = "register"
+sgx545 = "0x0240"
+meaning = "minimum 1/w: a vertex whose 1/w is not above this value's magnitude has 1/w stored as CR_MTE_RHW_CLAMP in the TA's object (1e-6 from the closed driver: w beyond 1e6) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E063"
+licence = "MIT"
+evidence = "which of 0x0240/0x0244 does what is not shown; [HW] E063: 0 to the largest single change no image of a triangle crossing w = 0 or reaching far outside the viewport; 1.0 replaced at 1, -1, 2, NaN, kept at 0.5, -0.0)"

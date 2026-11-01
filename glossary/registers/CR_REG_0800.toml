@@ -1,0 +1,15 @@
+[[term]]
+id = "G0154"
+name = "CR_REG_0800"
+status = "inferred"
+
+[[term.source]]
+term = "CR_REG_0800"
+kind = "register"
+sgx545 = "0x0800"
+meaning = "Register 0x0800: held 0x30 outside a render, 22 bits (0 to 5 and 8 to 23) take a write, and in every transfer, depth scene and overlapping-triangle scene tried no value of it changed an image; what it does is not shown"
+tier = "ours"
+source = "resgx545"
+citation = "E067, E066, E068, E073"
+licence = "MIT"
+evidence = "[HW] E067: held 0x00000030, bits that took a write 0x00ffff3f; every implemented bit flipped, 0 and ~0 changed no pixel of a plain copy, the every-value copy, a UYVY copy or a fill, and 70 pokes around a textured triangle gave the unpoked image; [HW] E066: no flip, 0 or ~0 of the render-details word that loads it changed the image in four depth scenes; [HW] E068: its 22 implemented bits and 0 and ~0 gave the baseline image in all five overlapping-triangle scenes; [HW] E073: values 0, 1, 2, 4, 8, 0x10, 0x20, 0x3f, 0x130 and 0xffff30 under 42 overlapping triangles left the covered-pixel count at 1275 of 4096; [infer] the reading is ours, from these runs"
