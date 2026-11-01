@@ -1,0 +1,10 @@
+title = "script table render/kept-owner-gone-context"
+repo = "data"
+paths = ["render/kept-owner-gone-context/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 4
+size = 171630
+sha256 = "9e418929d7ddb6f44c970942388f7eb63641b442d49b44cc207868fd1a362ed9"
+recipe = "probes/render/kept-owner-gone-context.toml"
+needs = ["render", "kpoke", "buf09", "render_words", "reset", "regs"]

@@ -1,0 +1,10 @@
+title = "script table bif/render-directories"
+repo = "data"
+paths = ["bif/render-directories/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 4
+size = 146474
+sha256 = "c1abc9fa32bdd0637142c569bd9e43e80f44561956fc3971288161e53d5a6504"
+recipe = "probes/bif/render-directories.toml"
+needs = ["render", "alias_skip", "alias_ta3d_ro", "reset", "regs"]

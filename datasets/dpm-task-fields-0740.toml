@@ -1,0 +1,10 @@
+title = "script table dpm/task-fields-0740"
+repo = "data"
+paths = ["dpm/task-fields-0740/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 4
+size = 286669
+sha256 = "2c24767c7ff114ccbfeab873b4a578ba8e4ea7410bcb8f9a4ea16f9ea1cc8647"
+recipe = "probes/dpm/task-fields-0740.toml"
+needs = ["render", "kregnow", "kpoke", "render_pb_pages", "render_tadata", "buf09", "reset"]

@@ -204,6 +204,12 @@ directory cache by writing `INVALDC` to `BIF_CTRL` and then 0 (`SGXResetInvalDC`
 So `CID` and `BIF_DIR_LIST_BASE<CID>` name the page directory, hence the address space, of a
 fault.
 
+During the renders of a context on a freshly reset GPU `BIF_BANK0` takes `INDEX_TA` = 1 and
+`INDEX_3D` = 1 (12 of 12 runs; `INDEX_EDM` = 1 as well in 5), and a fault of the first job names
+`CID` 1, so the render's TA and 3D reach memory through list 1 (E457). In the client directory the
+aliases of the EDM's buffers 6, 7, 8, 10 and 11 are not needed for a 64 x 64 render (each left out
+alone, 10 of 10 runs exact); TA3DCtl is, writable (Q076).
+
 On the laptop the EDM keeps its own directory in `BASE15` and gives each render context's
 directory one of lists 0 to 14 at its first kick, in turn after a reset (1, 2, ... 14, then 0),
 recording the last in TA/3D control block dword 49; our kernel reads a fault's directory back from

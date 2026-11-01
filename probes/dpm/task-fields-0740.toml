@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# dpm task fields 0740: 0 probes (a shell script run on the laptop by the campaign).
+# Q045: register 0x0740 written through debugfs kregnow before a first kick (the TA kick turns
+# its bits 17:9 into a DPM store task and a load task), with one context, with two alternating
+# (tri --ctx2, --kreg-render and --kreg-render2 between the kicks) and with partial renders.
+needs = [
+    "render", "kregnow", "kpoke", "render_pb_pages", "render_tadata", "buf09", "reset",
+]
+name = "dpm-task-fields-0740"
+script = "task-fields-0740.sh"

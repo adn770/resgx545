@@ -257,8 +257,10 @@ sgxfive-test [--mock[=rev1|harness|none]] [--mock-pb-pages=N] [--device PATH]
              [--programs=asm|fake] <command> [options]
 
 query                          GPU, firmware, job limits and heaps
-dummy [-n N]                   N dummy transfers chained through one syncobj
-fill  [--width W --height H --x X --y Y --stride S --colour C] [JOB OPTIONS]
+dummy [-n N] [--kpoke-job N:SPEC]... [--wait-ms MS]
+                               N dummy transfers chained through one syncobj
+fill  [--width W --height H --x X --y Y --stride S --colour C] [--kpoke-job 1:SPEC]...
+      [JOB OPTIONS]
 copy  [--width W --height H --sx X --sy Y --src-stride S --dx X --dy Y --dst-stride S]
       [--every-value | --ramp CH=START [--ramp-base V]] [--print-addrs] [--page-before]
       [JOB OPTIONS]
@@ -269,11 +271,13 @@ isolation                      kernel-heap-unmappable, same-address-separate-vms
                                faulting-file-banned
 tri [--width W --height H -n N] [--max-width W --max-height H] [--fault]
     [--scratch N [--scratch-fill V] [--scratch-at ADDR] [--scratch-file FILE]]
-    [--kpoke-render N:SPEC]...
+    [--kpoke-render N:SPEC]... [--kreg-render N:OFFSET=VALUE]...
     [--move N:DX,DY]...
     [--geometry N]... [--keep-going] [--dump-render DIR] [--words DIR] [--wait-ms MS]
-    [--ctx2 [--share-pb] [--overlap] [--close-first] [--close-trace] [--wait-second]
-          [--kpoke-render2 N:SPEC]...] [JOB OPTIONS]
+    [--ctx2 [--share-pb] [--overlap] [--close-first] [--close-first-early] [--words-between]
+          [--close-trace] [--wait-second] [--kpoke-render2 N:SPEC]...
+          [--kreg-render2 N:OFFSET=VALUE]...]
+    [JOB OPTIONS]
 contexts [--width W --height H -n N]
 regaccess
 probe [--stamp] [--temps N] [--coords] [--pixels] [--scratch-pages N] [--pds N --use USE]
@@ -328,6 +332,20 @@ kernel's debugfs `render_cleanup` and dwords 32, 46 and 47 of `buf09`, and `--wa
 that never ends does not hide whether the second ran. `--scratch-file FILE` fills the first
 dwords of the `--scratch` pages from FILE (a table the host built) before each render and
 counts the dwords the render changed against that content.
+
+`--kreg-render N:OFFSET=VALUE` (or `OFFSET^=VALUE`) writes a register to the kernel's debugfs
+`kregnow` just before render N, `--kreg-render2` before the second context's render N, so that a
+register the host does not usually write (register 0x0740 is one) holds a chosen value at that kick.
+`--close-first-early` closes the first context in the last iteration, after its render and before
+the second context's: the kernel's cleanup of the first runs, `--words DIR` saves a snapshot
+`words.(100 + N)` and `ta3d.(100 + N).bin` before the close and `words.(200 + N)` and
+`ta3d.(200 + N).bin` after it, and `--close-trace` prints the cleanup's trace.
+`--words-between` (with `--words`) saves the same snapshot `(100 + N)` before every second-context
+render, with the first context open.
+`dummy --kpoke-job N:SPEC` and `fill --kpoke-job 1:SPEC` write a kernel poke (`th:W=V`, a word of
+the transfer context's HW context, is applied to that submission) just before job N;
+`dummy --wait-ms MS` sets how long the chain is waited for, and a job that does not complete is
+reported as such.
 
 `probe --stamp` prints each finished job's start and end in CLOCK_REALTIME ns (`job window`),
 to place a write from another process (a debugfs `kregnow` write, say) inside the job.

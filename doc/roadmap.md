@@ -209,7 +209,8 @@ reading and records.
   are Q044.
 - **Render flags.** Bit 10's only test in the firmware adds one to the RT data set's executed count
   (E164, E166), and no image changes with it (E051, E052); bit 2 keeps its owner through a
-  later live context's job (E451); through a gone context it is Q041.
+  later live context's job (E451); through a gone context bit 2 alone keeps it and the next
+  render is exact, while after bit 3 a later render faults (E458, Q106).
 - **Words read from the firmware alone.** The per-render-target strides of the TA command, the
   render details and the RT data (E158, E163) and a PB block's first page (E200, E201) rest on what
   the kicks and the page-table builder do with them.

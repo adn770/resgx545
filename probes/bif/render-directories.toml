@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# bif render directories: 0 probes (a shell script run on the laptop by the campaign).
+# Q076: the client directory's read-only aliases of the EDM's buffers, each left out in turn
+# (debugfs alias_skip) before a render context's VM is made, with CR_BIF_BANK0 and the directory
+# list registers sampled by regtimeline around the renders.
+needs = [
+    "render", "alias_skip", "alias_ta3d_ro", "reset", "regs",
+]
+name = "bif-render-directories"
+script = "render-directories.sh"

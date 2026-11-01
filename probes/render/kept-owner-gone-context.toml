@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# render kept owner gone context: 0 probes (a shell script run on the laptop by the campaign).
+# Q041: the DPM slot words (TA3DCtl dwords 20, 21, 25) kept by render flag bits 2 and 3 in a
+# first context that is closed after its render (tri --ctx2 --close-first-early --words), read
+# before the close, after it and after a render on a second context in the same VM, with the DPM
+# registers beside them, and with the first context kept open (tri --ctx2 --words-between).
+needs = [
+    "render", "kpoke", "buf09", "render_words", "reset", "regs",
+]
+name = "render-kept-owner-gone-context"
+script = "kept-owner-gone-context.sh"

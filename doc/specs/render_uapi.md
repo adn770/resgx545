@@ -250,7 +250,8 @@ memory) bound to one VM context for its lifetime. Its jobs run in submission ord
 arbitrates between contexts.
 
 `CREATE_CONTEXT` takes a `type`, `flags` (none defined, zero), `priority`
-(`CTX_PRIORITY_NORMAL`, the only value; Q004 asks what others would do), the VM handle and,
+(`CTX_PRIORITY_NORMAL`, the only value; a priority of 1 or 2 hangs a transfer job and 3 faults it,
+E455; Q004), the VM handle and,
 for render contexts, `max_width` and `max_height`.
 
 - `CTX_TYPE_TRANSFER`: for transfer jobs (blit, fill, copy). `max_width` and `max_height` are
@@ -552,6 +553,16 @@ sharing context is destroyed first, and its cleanup leaves the PB to the other. 
 `tri --ctx2 [--share-pb] [--overlap]` runs a second render context in the VM, on a PB of its own
 or the first's.
 
+Three more came with linux fork commits 40 to 42 (11.19). The kernel poke space `th:N` writes word N
+of a transfer context's HW context (flags, priority, the page directory, the client CCB) when the
+next transfer job is submitted, a dummy too; E455 applied 22 pokes and could not read the word back.
+`kregnow` also writes the register at 0x0740, which the TA kick reads for its DPM store and load
+tasks; it reads back 0 after every write (E456). `alias_skip` is a mask of firmware buffer ids (0 to
+15) that the alias of the render VMs made from then on leaves out, until it is written again;
+TA3DCtl (9) left out faults the first job, the other CCB, kicker, HostCtl and misc buffers (6, 7, 8,
+10, 11) one at a time do not (E457). The tool's `dummy` and `fill` take `--kpoke-job`, and `tri`
+takes `--kreg-render`, `--close-first-early` and `--words-between`.
+
 Held on the laptop, a render that faulted on its unmapped stream page stops the firmware, not
 only its job: the firmware answers no kernel command (the kernel's 500 ms wait for GETMISCINFO
 ends the query, about 0.65 s from the shell), another context's fill does not run, the
@@ -640,8 +651,8 @@ checks of sections 2, 6 and 8.
   completes after the reset that blames it, E355);
 - Q003: which event a bus-interface fault raises, and which requester each fault bit of the
   interrupt status names;
-- Q004: what a transfer context's flag bits 1 and 4 and a priority above 0 do (the interface
-  accepts only priority 0);
+- Q004: how a transfer context with flag bit 4 set is released, who sets bits 1 and 4, and what the
+  queue slots behind a priority above 0 are (the interface accepts only priority 0);
 - Q006: whether a render client's VM can carry its own copy of the control block instead of a
   writable mapping of the device's (section 5.3).
 

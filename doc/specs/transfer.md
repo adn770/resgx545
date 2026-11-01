@@ -159,11 +159,14 @@ sees no effect of the command until the EDM's scheduler picks the context (E015)
 For each queued context the pick routine (`0x12dc`-`0x1460`):
 
 1. takes a queued context from the queue heads (secondary attribute 13 + priority; which
-   priorities it scans is Q004) and skips it if flag bit 4 is set;
+   priorities it scans is Q004) and skips it if flag bit 4 is set (on the hardware a job on a
+   context with bit 4 poked never completes: 6 of 6 jobs hung, and so did priorities 1 and 2, 6 of
+   6, while priority 3 faulted, 2 of 2: E455);
 2. reads the command at the client CCB's read offset; tests the command's sync flags and its
    sync objects (a command waits while a destination sync's counters are short: E018);
 3. takes the dummy path (into the completion routine) if context flag bit 1 is set (clearing
-   it) or command flag `0x20` is set: no 3D register is written;
+   it) or command flag `0x20` is set: no 3D register is written (a fill on a context with bit 1
+   poked completes and writes nothing, 2 of 2: E455; the clearing of the bit is not read back);
 4. otherwise, if the command has updates (`+0x19c`), runs an update loop that calls
    `0x1864` (which sets `BIF_BANK0`'s EDM index) before and after it; the completion routine
    has a second such loop, which the dummy path reaches. The updates land through the
@@ -335,7 +338,8 @@ Evidence: E011, E012, E017.
   run each); which event a fault raises, and which requester each fault bit of `BIF_INT_STAT`
   names (bit 5 for E021's write, bit 3 and bit 10 for the render's), are open. A debugfs reset
   (halt, the firmware's buffers rebuilt, boot in place) recovers without a reload of the module.
-- Q004: context flag bits 1 and 4 and priorities other than 0 are not run on the hardware.
+- Q004: whether a context with bit 4 set can be released, who sets bits 1 and 4, and the queue slots
+  behind priorities above 0 (E455 ran them: a hang for bit 4 and priorities 1 and 2, a fault for 3).
 - Q008: the rounding at the luma key's low cut.
 - Q010: what clears the colour-space words between jobs.
 - Q011: why a wrong background-object tag reads the source's last texel.

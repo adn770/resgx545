@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# transfer ctx flags: 0 probes (a shell script run on the laptop by the campaign).
+# Q004: a transfer job on a context whose HW context flags (words 0, bits 1 and 4) and priority
+# (word 1) the kernel poke th:N set before the job (sgxfive-test dummy and fill --kpoke-job).
+needs = [
+    "kpoke", "reset",
+]
+name = "transfer-ctx-flags"
+script = "ctx-flags.sh"

@@ -7,8 +7,15 @@
  *                [--programs=asm|fake] <command> [options]
  *
  *   query                         DEV_QUERY: GPU, firmware, job limits, heaps
- *   dummy [-n N]                  N dummy transfers chained through one syncobj
- *   fill  [--width W --height H --x X --y Y --stride S --colour C] [JOB OPTIONS]
+ *   dummy [-n N] [--kpoke-job N:SPEC]... [--wait-ms MS]
+ *                                 N dummy transfers chained through one syncobj;
+ *                                 --kpoke-job writes SPEC to debugfs kpoke just before
+ *                                 job N (th:W=V, a word of the transfer context's HW
+ *                                 context, is applied to that submission); --wait-ms MS:
+ *                                 how long the chain is waited for (default 5000), a
+ *                                 job that does not complete reported as such
+ *   fill  [--width W --height H --x X --y Y --stride S --colour C] [--kpoke-job 1:SPEC]
+ *         [JOB OPTIONS]
  *   copy  [--width W --height H --sx X --sy Y --src-stride S --dx X --dy Y --dst-stride S]
  *         [--every-value | --ramp CH=START [--ramp-base V]] [--print-addrs] [--page-before]
  *         [JOB OPTIONS]
@@ -16,7 +23,8 @@
  *   tri   [--width W --height H -n N] [--max-width W --max-height H] [--fault]
  *         [--scratch N [--scratch-fill V] [--scratch-at ADDR] [--scratch-file FILE]] [--kpoke-render N:SPEC]... [--move N:DX,DY]...
  *         [--geometry N]... [--keep-going] [--dump-render DIR] [--words DIR]
- *         [--wait-ms MS] [--ctx2 [--share-pb] [--overlap]] [JOB OPTIONS]
+ *         [--wait-ms MS] [--ctx2 [--share-pb] [--overlap] [--close-first-early] [--words-between]]
+ *         [JOB OPTIONS]
  *                                 the first triangle on a render context, N times,
  *                                 every pixel against the CPU reference; the context
  *                                 takes targets up to --max-width x --max-height
@@ -55,6 +63,16 @@
  *                                 --overlap: its job is submitted before the first's is
  *                                 waited for (whether both were in the firmware at once
  *                                 is not checked);
+ *                                 --close-first-early: in the last iteration the first
+ *                                 context is closed after its render and before the
+ *                                 second context's (with --words a snapshot before the
+ *                                 close, N = 100 + the render, and one after it, 200 +
+ *                                 the render; with --close-trace the cleanup's trace);
+ *                                 --words-between (with --words): a snapshot, N = 100 +
+ *                                 the render, before each second-context render;
+ *                                 --kreg-render N:OFFSET=VALUE (or ^=): writes the
+ *                                 register to debugfs kregnow just before render N,
+ *                                 --kreg-render2 before the second context's render N;
  *                                 --close-first: the first context is closed before the
  *                                 second (the default closes the second first);
  *                                 --wait-second (with --overlap): the second context's job is
@@ -238,8 +256,12 @@ struct opts {
 	uint32_t scratch_at;		/* tri: where the scratch buffer is mapped (0: allocated) */
 	uint32_t *scratch_data;		/* tri: --scratch-file's dwords, the buffer's first ones */
 	uint32_t scratch_words;
-	/* tri: kernel pokes written to debugfs kpoke just before render n (--kpoke-render) */
-	struct { uint32_t n; const char *spec; bool second; } kpr[KPR_MAX];
+	/*
+	 * tri: kernel pokes written to debugfs kpoke just before render n (--kpoke-render), or
+	 * register writes to debugfs kregnow (--kreg-render, reg); dummy: pokes before job n
+	 * (--kpoke-job, job)
+	 */
+	struct { uint32_t n; const char *spec; bool second, reg, job; } kpr[KPR_MAX];
 	unsigned int nkpr;
 	uint32_t geometry;		/* tri: renders submitted geometry only (bit n - 1) */
 	const char *dump_dir;		/* tri: the scene's memory there after the renders */
@@ -248,6 +270,8 @@ struct opts {
 	bool keep_going;		/* tri: go on after a render that does not check */
 	bool ctx2;			/* tri: a second render context in the VM, rendering too */
 	bool close_first;		/* tri --ctx2: close the first context before the second */
+	bool close_early;		/* tri --ctx2: ... in the last iteration, between the renders */
+	bool words_between;		/* tri --ctx2 --words: a snapshot before each second render */
 	bool close_trace;		/* tri --ctx2: the kernel's cleanup trace after each close */
 	bool wait_second;		/* tri --overlap: wait for the second job before the first */
 	bool share_pb;			/* tri: ... on the first's parameter buffer (kernel debugfs) */
@@ -281,7 +305,8 @@ static int usage(void)
 	fprintf(stderr,
 		"usage: sgxfive-test [--mock[=rev1|harness|none]] [--mock-pb-pages=N]\n"
 		"                    [--device PATH] [--programs=asm|fake] <command>\n"
-		"       commands: query, dummy [-n N], isolation, regaccess,\n"
+		"       commands: query, dummy [-n N --kpoke-job N:SPEC --wait-ms MS], isolation,\n"
+		"                 regaccess,\n"
 		"                 fill [--width W --height H --x X --y Y --stride S --colour C],\n"
 		"                 copy [--width W --height H --sx X --sy Y --src-stride S\n"
 		"                       --dx X --dy Y --dst-stride S --every-value | --ramp CH=START\n"
@@ -292,6 +317,9 @@ static int usage(void)
 		"                      --kpoke-render N:SPEC --move N:DX,DY --geometry N\n"
 		"                      --keep-going --dump-render DIR --words DIR\n"
 		"                      --wait-ms MS --ctx2 [--share-pb] [--overlap] [--close-first]\n"
+		"                      [--close-first-early] [--words-between]\n"
+		"                      [--kreg-render N:OFFSET=VALUE]\n"
+		"                      [--kreg-render2 N:OFFSET=VALUE]\n"
 		"                      [--close-trace] [--wait-second]\n"
 		"                      [--kpoke-render2 N:SPEC]],\n"
 		"                 fill, copy and tri also take [--poke SPACE:INDEX=VALUE]...\n"
@@ -567,22 +595,53 @@ static uint32_t pages_for(uint32_t stride, uint32_t rows)
 
 /* ---- dummy -------------------------------------------------------------------------- */
 
+static int kpoke_write(const char *spec);	/* below, with the tri command's */
+static int debugfs_set(const char *name, const char *value);
+
+/* A kernel poke (debugfs kpoke) or, with reg, a register write (debugfs kregnow). */
+static int kpr_write(bool reg, const char *spec)
+{
+	char line[128];
+	int n;
+
+	if (!reg)
+		return kpoke_write(spec);
+	n = snprintf(line, sizeof(line), "%s\n", spec);
+	if (n < 0 || (size_t)n >= sizeof(line))
+		return -EINVAL;
+	return debugfs_set("kregnow", line);
+}
+
 static int cmd_dummy(struct tool *t, const struct opts *o)
 {
+	const long long wait_ns = o->wait_ms ? o->wait_ms * 1000000LL : WAIT_NS;
 	struct side s;
 	uint32_t sync = 0;
+	int wait_err = 0;
 	int ret = side_init(t, &s);
 
 	if (!ret)
 		ret = sgxfive_syncobj_create(t->dev, false, &sync);
-	for (uint32_t i = 0; !ret && i < o->n; i++)
-		ret = sgxfive_submit_transfer(t->dev, s.ctx, DRM_SGXFIVE_SUBMIT_JOB_TRANSFER_DUMMY,
-					      NULL, i ? sync : 0, sync);
+	for (uint32_t i = 0; !ret && i < o->n; i++) {
+		for (unsigned int k = 0; !ret && k < o->nkpr; k++) {
+			if (o->kpr[k].n != i + 1)
+				continue;
+			ret = kpoke_write(o->kpr[k].spec);
+			if (!ret)
+				printf("dummy: kpoke before job %u: %s\n", i + 1, o->kpr[k].spec);
+		}
+		if (!ret)
+			ret = sgxfive_submit_transfer(t->dev, s.ctx,
+						      DRM_SGXFIVE_SUBMIT_JOB_TRANSFER_DUMMY, NULL,
+						      i ? sync : 0, sync);
+	}
 	if (!ret)
-		ret = sgxfive_syncobj_wait(t->dev, sync, 0, WAIT_NS);
+		wait_err = sgxfive_syncobj_wait(t->dev, sync, 0, wait_ns);
 	if (sync)
 		sgxfive_syncobj_destroy(t->dev, sync);
 	side_fini(t, &s);
+	if (wait_err && !ret)
+		return fail_job("dummy", wait_err);
 	if (ret)
 		return fail("dummy", ret);
 	printf("dummy: %u jobs ok\n", o->n);
@@ -673,8 +732,16 @@ static int cmd_fill(struct tool *t, const struct opts *o)
 	if (!ret) {
 		sgxfive_xfer_set_hook(s.x, sgxfive_poke_hook,
 				      &(struct sgxfive_poke_set){ o->pokes, o->npokes });
+		for (unsigned int k = 0; !ret && k < o->nkpr; k++) {
+			if (!o->kpr[k].job)
+				continue;
+			ret = kpoke_write(o->kpr[k].spec);
+			if (!ret)
+				printf("fill: kpoke before job 1: %s\n", o->kpr[k].spec);
+		}
 		t0 = now_ns();
-		ret = xfer_job(&s, sgxfive_xfer_fill(s.x, &dst, &r, o->colour, 0), t0);
+		if (!ret)
+			ret = xfer_job(&s, sgxfive_xfer_fill(s.x, &dst, &r, o->colour, 0), t0);
 		print_regs(t, o);
 		print_target(&(struct target){ o->width, o->height, o->stride / 4,
 					       p + (uint64_t)o->y * (o->stride / 4) + o->x,
@@ -1705,9 +1772,6 @@ static int probe_tri_check(struct probe_opts *po)
 	return 0;
 }
 
-static int kpoke_write(const char *spec);	/* below, with the tri command's */
-static int debugfs_set(const char *name, const char *value);
-
 /*
  * --dump-render: the kernel's debugfs render_param and render_tadata (the newest render
  * context's parameter slot from its PB on, and its TA data; SGXFIVE_DEBUGFS overrides
@@ -2216,10 +2280,11 @@ static int tri2_submit(struct sgxfive_render *r2, const struct opts *o, uint32_t
 		 */
 		if (o->overlap)
 			usleep(30000);
-		ret = kpoke_write(o->kpr[k].spec);
+		ret = kpr_write(o->kpr[k].reg, o->kpr[k].spec);
 		if (ret)
 			return ret;
-		printf("tri: kpoke before second-context render %u: %s\n", i + 1, o->kpr[k].spec);
+		printf("tri: %s before second-context render %u: %s\n",
+		       o->kpr[k].reg ? "kregnow" : "kpoke", i + 1, o->kpr[k].spec);
 	}
 	sgxfive_tri_default(p2, o->width, o->height);
 	p2->colour = colours[(i + 1) % 2][0];
@@ -2237,6 +2302,8 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 	struct sgxfive_tri_params p;
 	struct sgxfive_vm *vm = NULL;
 	uint32_t ctx = 0, ctx2 = 0, ok = 0;
+	bool early_closed = false;	/* --close-first-early has closed the first context */
+	bool first_first;		/* the first context is closed before the second */
 	int bad = 0;
 	const uint32_t max_w = o->max_width == UINT32_MAX ? o->width : o->max_width;
 	const uint32_t max_h = o->max_height == UINT32_MAX ? o->height : o->max_height;
@@ -2329,12 +2396,13 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		for (unsigned int k = 0; k < o->nkpr; k++) {
 			if (o->kpr[k].n != i + 1 || o->kpr[k].second)
 				continue;
-			ret = kpoke_write(o->kpr[k].spec);
+			ret = kpr_write(o->kpr[k].reg, o->kpr[k].spec);
 			if (ret) {
-				fail("kpoke", ret);
+				fail(o->kpr[k].reg ? "kregnow" : "kpoke", ret);
 				goto out;
 			}
-			printf("tri: kpoke before render %u: %s\n", i + 1, o->kpr[k].spec);
+			printf("tri: %s before render %u: %s\n", o->kpr[k].reg ? "kregnow" : "kpoke",
+			       i + 1, o->kpr[k].spec);
 		}
 		if (sc.bo)
 			scratch_fill(&sc, o->scratch_fill, o->scratch_data, o->scratch_words);
@@ -2352,6 +2420,27 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		if (!ret)
 			wait_err = sgxfive_render_wait(r, wait_ns);
 		print_job(ret, wait_err);
+		if (r2 && !ret && !wait_err && (o->words_between ||
+						(o->close_early && i + 1 == o->n))) {
+			int wr = o->words_dir ? save_words(o->words_dir, 100 + i + 1) : 0;
+
+			if (!wr && o->close_early && i + 1 == o->n) {
+				sgxfive_ctx_destroy(t->dev, ctx);
+				ctx = 0;
+				early_closed = true;
+				printf("tri: closed the first context before the second context's "
+				       "render %u\n", i + 1);
+				if (o->close_trace)
+					close_trace("after closing the first context");
+				if (o->words_dir)
+					wr = save_words(o->words_dir, 200 + i + 1);
+			}
+			if (wr) {
+				fail("--words", wr);
+				ret = wr;
+				break;
+			}
+		}
 		if (r2 && !ret && !wait_err) {
 			if (!o->overlap)
 				ret2 = tri2_submit(r2, o, i, &p2);
@@ -2458,24 +2547,27 @@ out:
 	 * donor keeping the buffer until the second goes. The kernel's contexts are the ones
 	 * closed in that order (ctx, ctx2); the render objects only unmap the client's pages.
 	 */
+	first_first = o->close_first || early_closed;
 	sgxfive_render_destroy(r2);
 	sgxfive_render_destroy(r);
 	scratch_destroy(vm, &sc);
-	if (r2)
-		printf("tri: closing the %s context before the %s\n", o->close_first ? "first" :
-		       "second", o->close_first ? "second" : "first");
-	if (o->close_first && ctx)
+	if (r2 && early_closed)
+		printf("tri: closing the second context\n");
+	else if (r2)
+		printf("tri: closing the %s context before the %s\n", first_first ? "first" :
+		       "second", first_first ? "second" : "first");
+	if (first_first && ctx)
 		sgxfive_ctx_destroy(t->dev, ctx);
-	if (r2 && o->close_first && o->close_trace)
+	if (r2 && first_first && o->close_trace)
 		close_trace("after closing the first context");
 	if (ctx2)
 		sgxfive_ctx_destroy(t->dev, ctx2);
-	if (r2 && !o->close_first && o->close_trace)
+	if (r2 && !first_first && o->close_trace)
 		close_trace("after closing the second context");
-	if (!o->close_first && ctx)
+	if (!first_first && ctx)
 		sgxfive_ctx_destroy(t->dev, ctx);
 	if (r2 && o->close_trace) {
-		close_trace(o->close_first ? "after closing the second context" :
+		close_trace(first_first ? "after closing the second context" :
 			    "after closing the first context");
 		usleep(500000);	/* a deferred release may run the donor's cleanup */
 		close_trace("500 ms after both are closed");
@@ -2615,6 +2707,11 @@ static int parse_opts(int argc, char **argv, struct opts *o)
 			i--;		/* a flag: no value */
 			continue;
 		}
+		if (!strcmp(argv[i], "--close-first-early") || !strcmp(argv[i], "--words-between")) {
+			*(argv[i][2] == 'c' ? &o->close_early : &o->words_between) = true;
+			i--;		/* a flag: no value */
+			continue;
+		}
 		if (!strcmp(argv[i], "--close-first") || !strcmp(argv[i], "--close-trace")) {
 			*(argv[i][8] == 'f' ? &o->close_first : &o->close_trace) = true;
 			i--;		/* a flag: no value */
@@ -2713,6 +2810,25 @@ static int parse_opts(int argc, char **argv, struct opts *o)
 			}
 			o->kpr[o->nkpr].n = (uint32_t)n;
 			o->kpr[o->nkpr].second = second;
+			o->kpr[o->nkpr++].spec = end + 1;
+			continue;
+		}
+		if ((!strcmp(argv[i], "--kreg-render") || !strcmp(argv[i], "--kreg-render2") ||
+		     !strcmp(argv[i], "--kpoke-job")) && i + 1 < argc) {
+			const bool job = !strcmp(argv[i], "--kpoke-job");
+			const bool second = argv[i][strlen(argv[i]) - 1] == '2';
+			char *end;
+			unsigned long n = strtoul(argv[i + 1], &end, 0);
+
+			if (o->nkpr == KPR_MAX || end == argv[i + 1] || *end != ':' || !end[1]) {
+				fprintf(stderr, "sgxfive-test: bad %s %s (N:%s)\n", argv[i], argv[i + 1],
+					job ? "SPEC" : "OFFSET=VALUE");
+				return -1;
+			}
+			o->kpr[o->nkpr].n = (uint32_t)n;
+			o->kpr[o->nkpr].second = second;
+			o->kpr[o->nkpr].job = job;
+			o->kpr[o->nkpr].reg = !job;
 			o->kpr[o->nkpr++].spec = end + 1;
 			continue;
 		}
@@ -3230,8 +3346,22 @@ int main(int argc, char **argv)
 		fprintf(stderr, "sgxfive-test: --ctx2 does not take --geometry\n");
 		return 2;
 	}
-	if ((o.words_dir || o.wait_ms) && strcmp(cmd, "tri")) {
-		fprintf(stderr, "sgxfive-test: --words and --wait-ms are for tri\n");
+	if (o.words_dir && strcmp(cmd, "tri")) {
+		fprintf(stderr, "sgxfive-test: --words is for tri\n");
+		return 2;
+	}
+	if (o.wait_ms && strcmp(cmd, "tri") && strcmp(cmd, "dummy")) {
+		fprintf(stderr, "sgxfive-test: --wait-ms is for tri and dummy\n");
+		return 2;
+	}
+	if (o.close_early && (strcmp(cmd, "tri") || !o.ctx2 || o.close_first || o.overlap)) {
+		fprintf(stderr, "sgxfive-test: --close-first-early is for tri --ctx2, without "
+			"--close-first and --overlap\n");
+		return 2;
+	}
+	if (o.words_between && (strcmp(cmd, "tri") || !o.ctx2 || !o.words_dir || o.overlap)) {
+		fprintf(stderr, "sgxfive-test: --words-between is for tri --ctx2 --words, without "
+			"--overlap\n");
 		return 2;
 	}
 	if (o.geometry && (strcmp(cmd, "tri") || o.geometry >> (o.n - 1))) {
@@ -3246,11 +3376,16 @@ int main(int argc, char **argv)
 		}
 	}
 	for (unsigned int k = 0; k < o.nkpr + o.nmoves; k++) {
+		const bool job = k < o.nkpr && o.kpr[k].job;
 		const uint32_t n = k < o.nkpr ? o.kpr[k].n : o.moves[k - o.nkpr].n;
 
-		if (strcmp(cmd, "tri") || !n || n > o.n) {
-			fprintf(stderr, "sgxfive-test: --kpoke-render and --move are for tri, "
-				"render 1 to %u\n", o.n);
+		const bool right = job ? (!strcmp(cmd, "dummy") || !strcmp(cmd, "fill")) :
+				   !strcmp(cmd, "tri");
+
+		if (!right || !n || n > (job && !strcmp(cmd, "fill") ? 1 : o.n)) {
+			fprintf(stderr, "sgxfive-test: --kpoke-render, --kreg-render and --move are "
+				"for tri, render 1 to %u; --kpoke-job for dummy, job 1 to %u, and "
+				"fill, job 1\n", o.n, o.n);
 			return 2;
 		}
 	}

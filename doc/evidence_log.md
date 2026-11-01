@@ -2859,17 +2859,38 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   bit 24 alone, in 10 of 10 with neither bit); 1 of 30 jobs with bits 24 and 25 hung (0 of 30 with
   bit 25 alone).
   *pds; HW, infer; data: `pds-iter-wait-colour`.*
+- `E455` On a new transfer context, poking word 0 of its HW context to 0x2 makes a fill complete
+  without writing (2 of 2 runs), 0x10 or 0x12 or a priority word of 1 or 2 hang the job (12 of 12
+  jobs, the driver recovered each), a priority word of 3 faults it (2 of 2), and the controls
+  complete (4 of 4).
+  *transfer; HW, infer; data: `transfer-ctx-flags`.*
+- `E456` A write to register 0x0740 through kregnow (values 0x1ff, 0x200, 0x400, 0x1000, 0x3fe00,
+  0x3ffff) reads back 0 right after each of 156 writes (26 before the first kick, 10 between kicks,
+  120 beside 300 renders) and every one of 64 samples after a job; the 76 renders of 64x64 on one or
+  two contexts are exact.
+  *dpm; HW, infer; data: `dpm-task-fields-0740`.*
+- `E457` With any one of the firmware buffers 6, 7, 8, 10 or 11 left out of a render VM's alias in
+  the client directory, 2 renders are exact in 10 of 10 runs, as in the 2 controls; leaving out
+  buffer 9 (TA3DCtl) alone, buffers 6 to 11 or all sixteen faults the first job in 6 of 6 runs, as
+  TA3DCtl read-only does (2 of 2).
+  *bif; HW, infer; data: `bif-render-directories`.*
+- `E458` With the first context closed after a render that keeps the DPM owner with render flag bit
+  2 alone, a render on a second context at another RT data address is exact and the kept dword 20
+  stays (4 of 4 runs); with bit 3 (NO_DEALLOCATE) kept, the second context's render faulted at page
+  0x20003000 in 6 of 6 runs, and with the first context open it was exact and cleared the words in 4
+  of 4; that the slot step is what stores the kept word is [infer].
+  *render; HW, infer; data: `render-kept-owner-gone-context`.*
 
 ## By unit
 
 ### bif
 
-Records: E151.
+Records: E151, E457.
 
 ### dpm
 
 Records: E199, E200, E201, E202, E204, E205, E206, E203, E253, E256, E309, E310, E311, E312, E313,
-E327, E358, E362, E438, E442, E443, E446, E447, E453.
+E327, E358, E362, E438, E442, E443, E446, E447, E453, E456.
 
 ### edm
 
@@ -2914,7 +2935,7 @@ E404, E405, E434, E445.
 
 Records: E023, E049, E050, E051, E052, E053, E148, E169, E252, E301, E302, E303, E304, E314, E315,
 E316, E323, E324, E325, E326, E354, E355, E356, E360, E361, E363, E408, E412, E422, E433, E435,
-E448, E449, E451.
+E448, E449, E451, E458.
 
 ### ta
 
@@ -2928,7 +2949,7 @@ E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441.
 
 ### transfer
 
-Records: E015, E016, E018, E019, E020, E021, E022, E024, E027, E028, E272, E398.
+Records: E015, E016, E018, E019, E020, E021, E022, E024, E027, E028, E272, E398, E455.
 
 ### tsp
 

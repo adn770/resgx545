@@ -6,12 +6,12 @@
 
 ## bif
 
-- `Q076` (phase 11): which page directory do a render's TA and 3D requestors translate through, and do read-only aliases of the EDM's buffers suffice there as they do for the transfer path? (E021, E023, E151)
+- `Q076` (phase 11): do the TA and 3D requestors of a render need any of the EDM's buffers 6, 7, 8, 10 and 11 in the client directory beyond the writable TA3DCtl alias (each alone is not needed: E457), and is the directory in the list they translate through the client's? (E021, E023, E151, E457)
 
 ## dpm
 
 - `Q038` (phase 10): what does the final render read back of a partial render's depth (a depth buffer stored by ZLS, the 3D kick's RT status bit 1), now that a background object that reloads the target's colour gives an overflowing scene's whole image? (E202, E204, E160, E310, E311, E312, E442)
-- `Q045` (phase 11): what sets the fields of register 0x0740 that the TA kick turns into DPM store and load tasks, and does a load task read back the macrotile lists a partial render stores in the RT data's state page? (E158, E256, E310, E312)
+- `Q045` (phase 11): what sets the fields of register 0x0740 that the TA kick turns into DPM store and load tasks (a host write reads back 0: E456), and does a load task read back the macrotile lists a partial render stores in the RT data's state page? (E158, E256, E310, E312, E456)
 - `Q067` (phase 11): does the settle routine wait for the other pipe to go idle (the page-table builder's store offset is answered: E446, E453)? (E153, E200, E201, E309, E362, E446, E448, E453)
 - `Q081` (phase 11): what does CR_DPM_REG_074C bit 8 make the DPM read or write near offset 0x6010 of the context's TA-data space, and what fixes that place? (E203, E206, E313, E362, E447)
 - `Q084` (phase 11): how does the closed driver turn its PBSize app hint into the parameter buffer's page count and thresholds, given 1 MiB and 8 MiB both give 98 pages and 768 KiB fails? (E327)
@@ -81,13 +81,13 @@
 
 - `Q014` (phase 6): why does a background object whose first PDS word has a high bit wrong render part or all of the first 32x16 tile before the job faults? (E029, E301, E363, E433)
 - `Q029` (phase 9): what does the render context's own cleanup wait for once its RT data set is cleaned up (the PB is released by the PB step of the donor's cleanup: E449)? (E148, E023, E156, E164, E289, E303, E304, E314, E315, E318, E354, E355, E449)
-- `Q041` (phase 11): what does a later job on a context at another address do with the DPM slot word that FRAG_FLAGS.BIT2 or NO_DEALLOCATE leaves set after a render? (E164, E158, E051, E052, E053, E303, E316, E451)
 - `Q043` (phase 11): what does bit 0 of CR_REG_0148, which the firmware loads for every render, partial render and transfer, change, when no bit of the word changes a triangle, five copies, a fill or a copy? (E056, E163, E160, E015, E028, E252, E302, E412, E406)
 - `Q049` (phase 11): does the firmware or the hardware ever read dword 7 (offset 0x01c) of the render context, which the EDM dataflow reaches on no path? (E013, E021, E156, E165, E361, E448)
 - `Q065` (phase 11): why does render flag bit 0 hang a kernel-built triangle job when the firmware completes a NO_RENDER render without rendering, and does one command with FIRST_KICK and LAST_KICK act as two? (E050, E156, E164, E165, E184, E303, E304, E361, E435)
 - `Q083` (phase 11): what bounds TA/3D control block dword 49 at 15 values, and is it a count of render contexts or an index the EDM gives each one? (E303, E314, E315, E316, E319, E360)
 - `Q085` (phase 11): does our tri job's image or time change with the closed driver's two other 3D register values, CR_ISP_CTL bit 8 clear and 0x04c4 bit 25 set? (E326, E408)
 - `Q099` (phase 11): what do bits 25, 8 and 19:12 of 0x04c4 (render details dword 18) hold, which move with a texture target and the parameter buffer's size in the closed driver's frames? (E326, E408)
+- `Q106` (phase 11): why does a render on a second context at another RT data address fault at page 0x20003000 after the first context, which kept the DPM owner with render flag bit 3, is closed (E458)? (E458, E451, E316, E310)
 
 ## ta
 
@@ -107,7 +107,7 @@
 ## transfer
 
 - `Q003` (phase 4): which event (if any) does a bus-interface fault raise, and what do the fault-request bits of CR_BIF_INT_STAT name? (E021, E317, E319, E320, E357, E444)
-- `Q004` (phase 4): what do a transfer context's flag bits 1 and 4 and a priority other than 0 do on the hardware? (E015)
+- `Q004` (phase 4): can a transfer context whose flag bit 4 is set be released, which agent but the host sets flag bits 1 and 4, and which priorities above 0 have queue slots of their own (a priority 1 or 2 hangs a job and 3 faults it: E455)? (E015, E455)
 - `Q011` (phase 6): why does a copy whose background-object tag (transfer word 0) is wrong read one texel, the source's last, for every pixel, and what stores the samples of CR_ISP_MSAA mode 2 in a copy? (E028, E272, E398)
 - `Q028` (phase 9): which of the recovery's reset steps does a later job need after a fault, now that a held fault is seen to stop the EDM's command processing? (E024, E317, E318, E319, E354, E355)
 

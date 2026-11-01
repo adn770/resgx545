@@ -1,0 +1,10 @@
+title = "script table transfer/ctx-flags"
+repo = "data"
+paths = ["transfer/ctx-flags/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 4
+size = 142558
+sha256 = "0fbdbdd821ebeed61f0470b8382083847e64f124105b14e9186e6fca7fd63710"
+recipe = "probes/transfer/ctx-flags.toml"
+needs = ["kpoke", "reset"]

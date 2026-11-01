@@ -821,3 +821,145 @@ def test_probe_stamp_prints_the_jobs_wall_clock_window(tmp_path):
 
 def test_probe_stamp_is_a_flag_of_probe_only(tmp_path):
     assert run("--mock", "tri", "--stamp").returncode == 2
+
+
+def test_dummy_kpoke_job_writes_before_its_job(tmp_path, monkeypatch):
+    # dummy --kpoke-job N:SPEC writes SPEC to debugfs kpoke just before job N is submitted, so
+    # that the kernel applies it to that job (th:N, a transfer context's HW context, is taken
+    # at the next transfer submitted, a dummy too)
+    kp = tmp_path / "kpoke"
+    kp.write_text("")
+    monkeypatch.setenv("SGXFIVE_KPOKE", str(kp))
+    r = run("--mock", "dummy", "-n", "3", "--kpoke-job", "2:th:0=0x10", "--wait-ms", "1000")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert kp.read_text() == "th:0=0x10\n"
+    assert "dummy: kpoke before job 2: th:0=0x10" in r.stdout
+    assert "dummy: 3 jobs ok" in r.stdout
+
+
+@pytest.mark.parametrize("args", [
+    ["dummy", "-n", "3", "--kpoke-job", "4:th:0=1"],
+    ["dummy", "-n", "3", "--kpoke-job", "0:th:0=1"],
+    ["dummy", "--kpoke-job", "x"],
+    ["tri", "--kpoke-job", "1:th:0=1"],
+    ["fill", "--kpoke-job", "2:th:0=1"],
+    ["copy", "--kpoke-job", "1:th:0=1"],
+    ["fill", "--wait-ms", "100"],
+    ["dummy", "--wait-ms", "0"],
+])
+def test_dummy_options_are_checked(args):
+    r = run("--mock", *args)
+    assert r.returncode == 2, r.stdout + r.stderr
+
+
+def test_dummy_without_kpoke_file_fails(tmp_path, monkeypatch):
+    monkeypatch.setenv("SGXFIVE_KPOKE", str(tmp_path / "none"))
+    r = run("--mock", "dummy", "--kpoke-job", "1:th:1=1")
+    assert r.returncode == 1
+
+
+def test_tri_kreg_render_writes_before_its_render(tmp_path, monkeypatch):
+    # --kreg-render N:OFF=V writes the register to debugfs kregnow just before render N of the
+    # first context, --kreg-render2 before the second context's (a write the host does not usually make
+    # holds until the SGX is reset)
+    (tmp_path / "kregnow").write_text("")
+    monkeypatch.setenv("SGXFIVE_DEBUGFS", str(tmp_path))
+    r = run("--mock", "tri", "-n", "2", "--kreg-render", "2:0x0740=0x200")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert (tmp_path / "kregnow").read_text() == "0x0740=0x200\n"
+    assert "tri: kregnow before render 2: 0x0740=0x200" in r.stdout
+    (tmp_path / "kregnow").write_text("")
+    r = run("--mock", "tri", "-n", "1", "--ctx2", "--kreg-render2", "1:0x0740^=0x1000")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert (tmp_path / "kregnow").read_text() == "0x0740^=0x1000\n"
+    assert "tri: kregnow before second-context render 1: 0x0740^=0x1000" in r.stdout
+    assert "tri: kregnow before render" not in r.stdout
+
+
+@pytest.mark.parametrize("args", [["--kreg-render2", "1:0x0740=1"],
+                                  ["--kreg-render", "3:0x0740=1", "-n", "2"],
+                                  ["--kreg-render", "x"],
+                                  ["--kreg-render", "0:0x0740=1"]])
+def test_tri_kreg_render_bounds(args):
+    r = run("--mock", "tri", *args)
+    assert r.returncode == 2, r.stdout + r.stderr
+
+
+def test_tri_kreg_render_without_debugfs_fails(tmp_path, monkeypatch):
+    monkeypatch.setenv("SGXFIVE_DEBUGFS", str(tmp_path / "none"))
+    r = run("--mock", "tri", "--kreg-render", "1:0x0740=1")
+    assert r.returncode == 1
+
+
+def test_tri_close_first_early(tmp_path, monkeypatch):
+    # --close-first-early: in the last iteration the first context is closed after its render and
+    # before the second context's, with --words a snapshot before the close (N = 100 + the render) and one after it (200 +)
+    dbg, out = tmp_path / "dbg", tmp_path / "w"
+    dbg.mkdir()
+    out.mkdir()
+    (dbg / "render_words").write_text("ctx:0=0x00000011\n")
+    (dbg / "buf09").write_bytes(bytes(256))
+    monkeypatch.setenv("SGXFIVE_DEBUGFS", str(dbg))
+    r = run("--mock", "tri", "-n", "2", "--ctx2", "--close-first-early", "--words", str(out))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert r.stdout.count("tri: closed the first context before the second context's render 2") == 1
+    assert "render 1:" not in r.stdout
+    for n in (0, 1, 2, 102, 202):
+        assert (out / f"words.{n}.txt").exists(), n
+        assert (out / f"ta3d.{n}.bin").exists(), n
+    assert not (out / "words.101.txt").exists()
+    assert not (out / "words.201.txt").exists()
+    assert re.search(r"^tri2 64x64 #2: ", r.stdout, re.M)
+    assert "tri: 2 renders ok" in r.stdout
+    assert "tri: closing the second context before the first" not in r.stdout
+
+
+@pytest.mark.parametrize("args", [["tri", "--close-first-early"],
+                                  ["tri", "--ctx2", "--close-first-early", "--close-first"],
+                                  ["tri", "--ctx2", "--close-first-early", "--overlap"],
+                                  ["fill", "--ctx2", "--close-first-early"]])
+def test_tri_close_first_early_is_checked(args):
+    r = run("--mock", *args)
+    assert r.returncode == 2, r.stdout + r.stderr
+
+
+def test_fill_kpoke_job_writes_before_its_job(tmp_path, monkeypatch):
+    # fill has one job: --kpoke-job 1:SPEC is written to debugfs kpoke just before it
+    kp = tmp_path / "kpoke"
+    kp.write_text("")
+    monkeypatch.setenv("SGXFIVE_KPOKE", str(kp))
+    r = run("--mock", "fill", "--kpoke-job", "1:th:0=0x2")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert kp.read_text() == "th:0=0x2\n"
+    assert "fill: kpoke before job 1: th:0=0x2" in r.stdout
+    assert "fill: ok" in r.stdout
+
+
+def test_tri_words_between_saves_a_snapshot_before_the_second_contexts_render(tmp_path,
+                                                                             monkeypatch):
+    # --words-between: with --ctx2 and --words, before the second context's render N the words
+    # are saved again as N = 100 + the render, the first context still open
+    dbg, out = tmp_path / "dbg", tmp_path / "w"
+    dbg.mkdir()
+    out.mkdir()
+    (dbg / "render_words").write_text("ctx:0=0x00000011\n")
+    (dbg / "buf09").write_bytes(bytes(256))
+    monkeypatch.setenv("SGXFIVE_DEBUGFS", str(dbg))
+    r = run("--mock", "tri", "-n", "2", "--ctx2", "--words-between", "--words", str(out))
+    assert r.returncode == 0, r.stdout + r.stderr
+    for n in (0, 1, 2, 101, 102):
+        assert (out / f"words.{n}.txt").exists(), n
+        assert (out / f"ta3d.{n}.bin").exists(), n
+    assert not (out / "words.201.txt").exists()
+    assert "tri: closed the first context" not in r.stdout
+    assert "tri: 2 renders ok" in r.stdout
+
+
+@pytest.mark.parametrize("args", [["tri", "--words-between"],
+                                  ["tri", "--ctx2", "--words-between"],
+                                  ["tri", "--ctx2", "--words-between", "--overlap",
+                                   "--words", "/tmp"],
+                                  ["fill", "--ctx2", "--words-between"]])
+def test_tri_words_between_is_checked(args):
+    r = run("--mock", *args)
+    assert r.returncode == 2, r.stdout + r.stderr
