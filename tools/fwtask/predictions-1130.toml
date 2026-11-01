@@ -1,0 +1,209 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+#
+# Phase 11.30 predictions (the tail-calling writer, Q033 Q1 with the mask, items 11 and 13), frozen before the first run of stage B. classify.py reads only this file.
+# Stage B vars: markers_* are what the writer stored (random per round, host seed 1130);
+# ctl_a, ctl_b the two controls' entry values; p_pattern the complement of the control's p0..p3.
+
+[[row]]
+id = "B_alive"
+stage = "B"
+declared = "with the tail-calling writer armed (the closed task runs after our writes) the tick keeps advancing (900 to 1100 Hz after each round), the writer is done and the next event runs the reader, within 100 ms"
+falsifier = "the tick stops again (as E533) or no reader: the closed task is not what re-arms the tick"
+expect = "rounds_alive and writer_done and reader_done and 900 <= min_rate <= 1100"
+
+[[row]]
+id = "B_ctl_stable"
+stage = "B"
+declared = "two controls (reader only, nothing written) read the same r20, r21, i0, i1, p0 to p3 and pclink at entry"
+falsifier = "they differ: the leftovers are not a function of the task before"
+expect = "ctl_a == ctl_b"
+
+[[row]]
+id = "B_sa_high_next"
+stage = "B"
+declared = "sa64, sa100 and sa127 read at the next event are the markers the writer stored, in 3 of 3 rounds"
+falsifier = "any other value: the closed task, the task start or a reset of the bank changed them"
+expect = "sa_high == markers_high"
+
+[[row]]
+id = "B_sa_low_next"
+stage = "B"
+declared = "sa20 and sa24 read at the next event are the markers, 3 of 3 rounds"
+falsifier = "any other value"
+expect = "sa_low == markers_low"
+
+[[row]]
+id = "B_sa_gap"
+stage = "B"
+declared = "sa64, sa100, sa127, sa20 and sa24 are still the markers after 1200 ms (about 1200 closed ticks), 3 of 3"
+falsifier = "any other value"
+expect = "sa_all == markers_all"
+
+[[row]]
+id = "B_sa_fill"
+stage = "B"
+declared = "sa64, sa100, sa127, sa20 and sa24 are still the markers after a client fill ran between, 3 of 3"
+falsifier = "any other value: client data masters and the EDM share these sa"
+expect = "sa_all == markers_all"
+
+[[row]]
+id = "B_r_gone"
+stage = "B"
+declared = "r20 and r21 read at the next event are not the writer's markers (the closed task or the task start reuses the temporaries), in 3 of 3 rounds"
+falsifier = "r20 or r21 equals the marker in a round: temporaries persist"
+expect = "r_vals != markers_r"
+
+[[row]]
+id = "B_i_kept"
+stage = "B"
+declared = "i0 and i1 read at the next event are the writer's markers, 3 of 3 rounds"
+falsifier = "any other value"
+expect = "i_vals == markers_i"
+
+[[row]]
+id = "B_p_gone"
+stage = "B"
+declared = "p0 to p3 at the entry of the next task are not the writer's pattern (the complement of the control's), in 3 of 3 rounds"
+falsifier = "the pattern equals ours in a round: predicates persist"
+expect = "p_vals != p_pattern"
+
+[[row]]
+id = "B_pclink_const"
+stage = "B"
+declared = "pclink at the entry of a task is the same value in the controls and in every round"
+falsifier = "it differs: it depends on what our task did"
+expect = "len(set(pclinks)) == 1"
+
+[[row]]
+id = "Q033_q1m"
+stage = "Q033"
+declared = "one miscinfo, with pa1 bit 25 masked in the stubs, hits the general slot only, with pa1 & 0xfdffffff == 0x100"
+falsifier = "pa1 = 0x4000 (E146's reading), another slot, or no hit"
+expect = "hit_slots == [0] and (pa1 & 0xfdffffff) == 0x100"
+
+[[row]]
+id = "Q033_quiet"
+stage = "Q033"
+declared = "with the mask, 50 ms of ticks with no event log nothing in any slot (the tick's bit 25 is masked)"
+falsifier = "a hit in the quiet window: the tick has other pa1 bits, or the mask failed"
+expect = "quiet_hits == []"
+
+[[row]]
+id = "Q033_q2"
+stage = "Q033"
+declared = "TA finished arrives in the bit-9 fast slot with pa1 = 0x200 (the last event of slot 1 logged)"
+falsifier = "the general slot with 0x2000"
+expect = "1 in hit_slots and (pa1_slot1 & 0xfdffffff) == 0x200"
+
+[[row]]
+id = "I11_overlap"
+stage = "I11"
+declared = "no overlap: overlap = 0 in 10 of 10 runs and no tick is lost"
+falsifier = "overlap = 1 in any run, or HostCtl dword 12 behind by the ticks of the window"
+expect = "overlap_runs == 0 and lost_ticks == 0"
+
+[[row]]
+id = "I13_T08"
+stage = "I13"
+declared = "TRC 8: r31 is real storage in a firmware task: the marker written is read back"
+falsifier = "the marker is not read back: the EDM allocator differs"
+expect = "marker_back == 0x7a110008"
+
+[[row]]
+id = "I13_T09"
+stage = "I13"
+declared = "TRC 9: r35 is real storage in a firmware task: the marker written is read back"
+falsifier = "the marker is not read back: the EDM allocator differs"
+expect = "marker_back == 0x7a110009"
+
+[[row]]
+id = "I13_T12"
+stage = "I13"
+declared = "TRC 12: r47 is real storage in a firmware task: the marker written is read back"
+falsifier = "the marker is not read back: the EDM allocator differs"
+expect = "marker_back == 0x7a11000c"
+
+[[row]]
+id = "I13_T16"
+stage = "I13"
+declared = "TRC 16: r63 is real storage in a firmware task: the marker written is read back"
+falsifier = "the marker is not read back: the EDM allocator differs"
+expect = "marker_back == 0x7a110010"
+
+[[row]]
+id = "I13_T24"
+stage = "I13"
+declared = "TRC 24: r95 is real storage in a firmware task: the marker written is read back"
+falsifier = "the marker is not read back: the EDM allocator differs"
+expect = "marker_back == 0x7a110018"
+
+[[row]]
+id = "I13_T31"
+stage = "I13"
+declared = "TRC 31: r123 is real storage in a firmware task: the marker written is read back"
+falsifier = "the marker is not read back: the EDM allocator differs"
+expect = "marker_back == 0x7a11001f"
+
+[[row]]
+id = "I13_P09"
+stage = "I13"
+declared = "TRC 9: the register past the allocation (r36) does not hold the marker written to it (a write past the allocation is dropped, E486)"
+falsifier = "it reads the marker: the write landed"
+expect = "past_back != 0x7b220009"
+
+[[row]]
+id = "I13_P12"
+stage = "I13"
+declared = "TRC 12: the register past the allocation (r48) does not hold the marker written to it (a write past the allocation is dropped, E486)"
+falsifier = "it reads the marker: the write landed"
+expect = "past_back != 0x7b22000c"
+
+[[row]]
+id = "I13_P16"
+stage = "I13"
+declared = "TRC 16: the register past the allocation (r64) does not hold the marker written to it (a write past the allocation is dropped, E486)"
+falsifier = "it reads the marker: the write landed"
+expect = "past_back != 0x7b220010"
+
+[[row]]
+id = "I13_P24"
+stage = "I13"
+declared = "TRC 24: the register past the allocation (r96) does not hold the marker written to it (a write past the allocation is dropped, E486)"
+falsifier = "it reads the marker: the write landed"
+expect = "past_back != 0x7b220018"
+
+[[row]]
+id = "I13_T32"
+stage = "I13"
+declared = "TRC 32: runs; only r123 is usable"
+falsifier = "a hang"
+expect = "marker_back == 0x7a110020"
+
+[[row]]
+id = "I13_T40"
+stage = "I13"
+declared = "TRC 40: runs; only r123 is usable"
+falsifier = "a hang"
+expect = "marker_back == 0x7a110028"
+
+[[row]]
+id = "I13_T48"
+stage = "I13"
+declared = "TRC 48: runs; only r123 is usable"
+falsifier = "a hang"
+expect = "marker_back == 0x7a110030"
+
+[[row]]
+id = "I13_T49"
+stage = "I13"
+declared = "TRC 49: hangs the EDM (a client job hung at T mod 256 in 196 to 252 or 0)"
+falsifier = "it runs: the EDM allocator differs from the clients'"
+expect = "hang"
+
+[[row]]
+id = "I13_T64"
+stage = "I13"
+declared = "TRC 64: hangs the EDM (a client job hung at T mod 256 in 196 to 252 or 0)"
+falsifier = "it runs: the EDM allocator differs from the clients'"
+expect = "hang"

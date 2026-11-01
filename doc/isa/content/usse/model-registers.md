@@ -21,25 +21,30 @@ marked.
 | index | `i.l`, `i.h` (`il`, `ih` in operands) | the bases of indexed operands |
 | link | `pclink` | the return address of a call |
 
-- **Temporaries [HW].** The number of temporaries a task gets is set when it is started: the
-  PDS's `doutu` word U0 carries it in fours (`TRC`, `doc/specs/transfer.md` §4.2), and
-  `phas` names it for the next phase. Our end-of-tile program asks for four and uses `r0`-`r3`.
-  Temporaries are **not cleared** between tasks: a client shader that reads one before
-  writing it sees what an earlier task left there, firmware data included
-  (measured from a client pixel shader on our render node); `r40` and `r47` written by one fill
-  were read by the next in 7 of 7 reader jobs (2048 of 2048 pixels each), and by one two fills
-  later, after a fill that wrote no temporary, in 2 of 2 (E484: a pair of fills, not EDM tasks;
-  Q124, Q131). The registers sampled up to `r123` are separate storage in a fill started with up to
-  128 temporaries (`--temps` 52, 64, 80, 96, 112, 124 and 128: 14 of 14 cases, every second or
-  fourth register from `r2` and the top one; E485) **[HW]**. **A register at or past the task's
-  allocation `T` reads as register `n mod T` in most instances, and a write to it was not seen to
-  reach it [HW]**: in client pixel tasks `r(n)` read the marker written to `r(n mod T)` in 88 to
-  99.6 percent of the 2048 instances in 15 of 15 cases (by `T`: 95.3 to 99.6 percent at 8, 95.3 to
-  98.4 at 16, 88.3 to 96.1 at 32, 92.1 to 92.2 at 64), the rest of the instances reading other
-  values, so the rule is "most instances" and no program may rely on it; in 4 of 4 cases that also
-  wrote a marker to `r(n)` (`T` = 8 and 32 only) the instances read the value of `r(n mod T)`, not
-  the one written; nothing faulted or hung (E486). The model gave such a register storage of its own
-  or a fault. A `phas` request is the allocation of its phase (*Tasks and phases*).
+- **Temporaries [HW].** The number of temporaries a task gets is set when it is started: the PDS's
+  `doutu` word U0 carries it in fours (`TRC`, `doc/specs/transfer.md` §4.2), and `phas` names it for
+  the next phase. Our end-of-tile program asks for four and uses `r0`-`r3`. Temporaries are **not
+  cleared** between tasks: a client shader that reads one before writing it sees what an earlier
+  task left there, firmware data included (measured from a client pixel shader on our render node);
+  `r40` and `r47` written by one fill were read by the next in 7 of 7 reader jobs (2048 of 2048
+  pixels each), and by one two fills later, after a fill that wrote no temporary, in 2 of 2 (E484: a
+  pair of fills, not EDM tasks; Q124, Q131). In firmware (EDM) tasks of ours `r20` and `r21` written
+  by one task were read by the next at the next event and after 1200 ms (6 of 6) and replaced by a
+  client fill (0 of 6 kept), and `i0` and `i1` also after a fill (6 of 6) **[HW]** (E536). The
+  registers sampled up to `r123` are separate storage in a fill started with up to 128 temporaries
+  (`--temps` 52, 64, 80, 96, 112, 124 and 128: 14 of 14 cases, every second or fourth register from
+  `r2` and the top one; E485) **[HW]**. **A register at or past the task's allocation `T` reads as
+  register `n mod T` in most instances, and a write to it was not seen to reach it [HW]**: in client
+  pixel tasks `r(n)` read the marker written to `r(n mod T)` in 88 to 99.6 percent of the 2048
+  instances in 15 of 15 cases (by `T`: 95.3 to 99.6 percent at 8, 95.3 to 98.4 at 16, 88.3 to 96.1
+  at 32, 92.1 to 92.2 at 64), the rest of the instances reading other values, so the rule is "most
+  instances" and no program may rely on it; in 4 of 4 cases that also wrote a marker to `r(n)` (`T`
+  = 8 and 32 only) the instances read the value of `r(n mod T)`, not the one written; nothing
+  faulted or hung (E486); and with a marker of its own in every job a write to `r123` under a
+  request of 4 to 100 was not seen by the read of `r123` in the same job (0 of 12 jobs, within the
+  pixels the reports list, E535). The
+  model gave such a register storage of its own or a fault. A `phas` request is the allocation of
+  its phase (*Tasks and phases*).
 - **Primary attributes [HW].** The PDS fills them per task: `doutd` DMAs memory into them
   (the vertex fetch of our triangle lands in `pa0`-`pa3`), `douti` has the iterator write
   them and `doutt` returns a texture fetch into them (our copy shader reads its texel from

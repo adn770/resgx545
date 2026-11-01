@@ -130,14 +130,28 @@ pub fn run_firmware(v: &Json) -> Result<Outcome, String> {
     for (k, val) in init.get("regs").obj() {
         bus.seed_reg(u32::from_str_radix(k.trim_start_matches("0x"), 16).unwrap(), val.hex().unwrap() as u32);
     }
-    let mut m = Machine { temps: 32, ..Machine::default() };
+    let mut m = Machine { temps: init.get("temps").num().map_or(32, |n| n as usize), ..Machine::default() };
     m.pc = v.get("program").get("entry").num().map_or(0, |e| e as usize);
+    seed_task_state(&mut m, init.get("state"))?;
     let mut finished = false;
-    for _ in 0..10_000 {
+    // sa64 is the one register whose write the hardware did not keep (E536): a read of it after
+    // the task wrote it is not a measured case, so it stops the vector
+    let mut sa64_written = false;
+    for _ in 0..FW_STEPS {
         // the wrapper ends in its tail call: the closed task after it is not part of the vector
-        if Machine::text(&prog, m.pc).is_some_and(|t| t.starts_with("lapc")) {
+        let text = Machine::text(&prog, m.pc);
+        if text.is_some_and(|t| t.starts_with("lapc")) {
             finished = true;
             break;
+        }
+        if let Some(t) = text {
+            let (reads, writes) = sa64_use(t);
+            if reads && sa64_written {
+                return Err("unsupported: reads sa64 after the task wrote it (the hardware kept \
+                            the value the host or the closed task left, not the write: E536)"
+                    .into());
+            }
+            sa64_written |= writes;
         }
         match m.step(&prog, &mut bus) {
             Ok(true) => {
@@ -151,7 +165,7 @@ pub fn run_firmware(v: &Json) -> Result<Outcome, String> {
     }
     if !finished {
         // a wrapper that does not end is not compared on whatever state it had reached
-        return Err("unsupported: the wrapper did not reach its tail call in 10000 steps".into());
+        return Err(format!("unsupported: the wrapper did not reach its tail call in {FW_STEPS} steps"));
     }
     let rb = v.get("readback");
     for (k, val) in rb.get("mem").obj() {
@@ -161,6 +175,7 @@ pub fn run_firmware(v: &Json) -> Result<Outcome, String> {
             return Err(format!("page dword {k}: want {want:#x}, got {:#x}", bus.mem(i)));
         }
     }
+    check_task_state(&m, rb.get("state"))?;
     for (k, val) in rb.get("regs").obj() {
         let off = u32::from_str_radix(k.trim_start_matches("0x"), 16).unwrap();
         let want = val.hex().unwrap() as u32;
@@ -169,6 +184,91 @@ pub fn run_firmware(v: &Json) -> Result<Outcome, String> {
         }
     }
     Ok(Outcome::Exact)
+}
+
+/// The step budget of a firmware vector: the slow task of E539 spins 100000 iterations of three
+/// instructions.
+const FW_STEPS: usize = 3_000_000;
+
+/// A register number of `bank` from an init.state or readback.state key: a bank has `size`
+/// registers, and a key that is not one is a stop (a vector of ours that is wrong), not a panic.
+fn bank_key(bank: &str, k: &str, size: usize) -> Result<usize, String> {
+    match k.parse::<usize>() {
+        Ok(n) if n < size => Ok(n),
+        _ => Err(format!("unsupported: state key {bank}{k} is not a register")),
+    }
+}
+
+/// Whether an instruction's text reads sa64 (an operand after the destination) and whether it
+/// writes it (the destination): the text is `[pN] mnemonic dst, src, ...`.
+fn sa64_use(t: &str) -> (bool, bool) {
+    let mut ops = t.split_whitespace().skip_while(|w| w.trim_start_matches('!').starts_with('p') && w.len() <= 3);
+    ops.next(); // the mnemonic
+    let rest = ops.collect::<Vec<_>>().join(" ");
+    let operands: Vec<&str> = rest.split(',').map(str::trim).collect();
+    let writes = operands.first().is_some_and(|d| *d == "sa64");
+    let reads = operands.iter().skip(1).any(|s| s.contains("sa64"));
+    (reads, writes)
+}
+
+/// What the hardware held at a firmware task's entry (init.state, phase 11.30): the task state
+/// that outlives a task (E536: sa, the temporaries r20 and r21, i0 and i1, p1 to p3 and pclink
+/// were as the task before left them), and the event words in pa. The values are what a reader
+/// task read; nothing is modelled about how they got there.
+fn seed_task_state(m: &mut Machine, st: &Json) -> Result<(), String> {
+    for (k, val) in st.get("sa").obj() {
+        let n = bank_key("sa", k, 128)?;
+        m.sa[n] = val.hex().unwrap() as u32;
+        m.written.sa |= 1 << n;
+    }
+    for (k, val) in st.get("r").obj() {
+        let n = bank_key("r", k, 128)?;
+        m.r[n] = val.hex().unwrap() as u32;
+        m.written.r |= 1 << n;
+    }
+    for (k, val) in st.get("i").obj() {
+        let n = bank_key("i", k, 4)?;
+        m.i[n] = val.hex().unwrap() as u32;
+        m.written.i |= 1 << n;
+    }
+    for (k, val) in st.get("pa").obj() {
+        let n = bank_key("pa", k, 128)?;
+        m.pa[n] = val.hex().unwrap() as u32;
+        m.written.pa |= 1 << n;
+    }
+    for (k, val) in st.get("p").obj() {
+        let n = bank_key("p", k, 4)?;
+        m.p[n] = val.hex().unwrap() != 0;
+        m.p_set |= 1 << n;
+    }
+    if let Some(l) = st.get("pclink").hex() {
+        m.link = l as u32;
+        m.link_set = true;
+    }
+    Ok(())
+}
+
+/// readback.state: the registers the task must have left as the hardware read them.
+fn check_task_state(m: &Machine, st: &Json) -> Result<(), String> {
+    for (bank, get) in [
+        ("sa", (|m: &Machine, n: usize| m.sa[n]) as fn(&Machine, usize) -> u32),
+        ("r", |m, n| m.r[n]),
+        ("i", |m, n| m.i[n]),
+    ] {
+        for (k, val) in st.get(bank).obj() {
+            let (n, want) = (bank_key(bank, k, if bank == "i" { 4 } else { 128 })?, val.hex().unwrap() as u32);
+            if get(m, n) != want {
+                return Err(format!("{bank}{n}: want {want:#x}, got {:#x}", get(m, n)));
+            }
+        }
+    }
+    for (k, val) in st.get("p").obj() {
+        let (n, want) = (bank_key("p", k, 4)?, val.hex().unwrap() != 0);
+        if m.p[n] != want {
+            return Err(format!("p{n}: want {want}, got {}", m.p[n]));
+        }
+    }
+    Ok(())
 }
 
 /// The USE filter coefficients of the job a vector ran in (init.job.use_coeffs, written by
@@ -1038,6 +1138,70 @@ mod tests {
         ));
         let r = super::run_firmware(&v);
         assert!(r.as_ref().is_err_and(|e| e.starts_with("unsupported")), "{r:?}");
+    }
+
+    /// A firmware vector from instruction texts ending in the tail call, with the given
+    /// `init` additions (a JSON object body, may be empty) and `readback.state` body.
+    fn fw_vector(texts: &[&str], init_extra: &str, state_rb: &str) -> crate::json::Json {
+        let words: Vec<String> = texts
+            .iter()
+            .map(|t| format!("\"0x{:016x}\"", usse_isa::encode(t, usse_isa::Core::Sgx545).expect(t)))
+            .collect();
+        crate::json::parse(&format!(
+            r#"{{"program": {{"isa": "usse", "words": [{}]}},
+                "init": {{"task": "firmware", "page": {{"base": "0x32140000", "dwords": 8}},
+                          "mem": {{}}, "regs": {{}}{init_extra}}},
+                "readback": {{"mem": {{}}, "regs": {{}}, "state": {{{state_rb}}}}}}}"#,
+            words.join(", ")
+        ))
+    }
+
+    #[test]
+    fn a_firmware_task_starts_from_the_state_the_vector_gives_and_is_compared_on_what_it_left() {
+        // E536: sa, r, i and p1 to p3 are what the task before left; the readback is what the task
+        // leaves for the next one
+        let init = r#", "state": {"sa": {"100": "0x0000a5a5"}, "r": {"20": "0x00000007"}, "p": {"1": "0x1"}}"#;
+        let t = ["mov r2, sa100", "mov sa101, r2", "mov r21, r20", "lapc"];
+        let ok = fw_vector(&t, init, r#""sa": {"101": "0x0000a5a5"}, "r": {"21": "0x00000007"}"#);
+        assert_eq!(super::run_firmware(&ok), Ok(super::Outcome::Exact));
+        let bad = fw_vector(&t, init, r#""sa": {"101": "0x00000001"}"#);
+        assert!(super::run_firmware(&bad).is_err_and(|e| e.contains("sa101: want 0x1")));
+        // a register the vector does not give is still the environment's: a stop
+        let unseeded = fw_vector(&["mov r2, sa100", "lapc"], "", "");
+        assert!(super::run_firmware(&unseeded).is_err_and(|e| e.starts_with("unsupported")));
+    }
+
+    #[test]
+    fn the_temporaries_of_a_firmware_task_are_the_vectors_and_one_past_them_is_a_stop() {
+        let t = ["mov r123, r0", "lapc"];
+        let with = fw_vector(&t, r#", "temps": 124, "state": {"r": {"0": "0x0"}}"#, "");
+        assert_eq!(super::run_firmware(&with), Ok(super::Outcome::Exact));
+        let without = fw_vector(&t, r#", "state": {"r": {"0": "0x0"}}"#, "");
+        assert!(super::run_firmware(&without).is_err_and(|e| e.starts_with("unsupported")));
+    }
+
+    #[test]
+    fn a_read_of_sa64_after_the_task_wrote_it_is_a_stop_and_a_seeded_one_is_not() {
+        // the hardware read 2, not the marker, at the next event (E536): what the task itself would
+        // read back is not measured
+        let init = r#", "state": {"sa": {"64": "0x00000002"}, "r": {"2": "0x00000009"}}"#;
+        let after = fw_vector(&["mov sa64, r2", "mov r3, sa64", "lapc"], init, "");
+        assert!(super::run_firmware(&after).is_err_and(|e| e.contains("sa64 after the task wrote it")));
+        let seeded = fw_vector(&["mov r3, sa64", "lapc"], init, r#""r": {"3": "0x00000002"}"#);
+        assert_eq!(super::run_firmware(&seeded), Ok(super::Outcome::Exact));
+        let only_written = fw_vector(&["mov sa64, r2", "lapc"], init, "");
+        assert_eq!(super::run_firmware(&only_written), Ok(super::Outcome::Exact));
+    }
+
+    #[test]
+    fn a_state_key_that_is_not_a_register_is_a_stop_and_not_a_panic() {
+        for init in [r#", "state": {"i": {"4": "0x0"}}"#, r#", "state": {"sa": {"128": "0x0"}}"#, r#", "state": {"p": {"x": "0x1"}}"#] {
+            let v = fw_vector(&["lapc"], init, "");
+            assert!(super::run_firmware(&v).is_err_and(|e| e.starts_with("unsupported: state key")), "{init}");
+        }
+        let v = fw_vector(&["lapc"], "", r#""i": {"7": "0x0"}"#);
+        assert!(super::run_firmware(&v).is_err_and(|e| e.starts_with("unsupported: state key")));
+
     }
 
     #[test]

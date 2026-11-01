@@ -649,15 +649,24 @@ queue's `EMPTY` flag and bits 15:0 its served-event `COUNT`, which fits (emgd-ps
 A firmware task of ours in the general slot (E531) sees the tick's event as `pa0` = 2, `pa1` =
 0x02000000 and `pa2` = 0x01061a70 (E532: 2 of 2 runs; `pa2` is 0x10 below the value the boot writes
 to the EDM timer, equal in two fresh boots, so it looks constant **[infer]**, the offset
-unexplained; the bit set in `pa1` is outside the 24 bits PDS #13 looks at, Q153). After a task that
-wrote `sa`, `r`, `i`, `p` and `pclink` state and ended with `nop.end` instead of jumping to the
-closed general task, the tick stopped: dword 12 and `USE0_SERV_EVENT` did not move over three reads
-20 ms apart, and one debugfs reset recovered it (E533, 1 run; that task both skipped the closed task
-and wrote the registers, so the cause is not separated, Q152).
+unexplained; the bit set in `pa1` is outside the 24 bits PDS #13 looks at, Q153). A host kick (a
+GETMISCINFO with no job) reaches the general slot only, with `pa0` = 2, `pa1` = 0x03000000 and the
+same `pa2` (E538, 3 of 3 runs: the tick's word with bit 24 added, Q157; it is not bit 8 or bit 14,
+Q033), and `pa2` was the same in all 5 events seen, in five fresh boots, so it looks constant
+**[infer]**. After a task that wrote `sa`, `r`, `i`, `p` and `pclink` state and ended with `nop.end`
+instead of jumping to the closed general task, the tick stopped: dword 12 and `USE0_SERV_EVENT` did
+not move over three reads 20 ms apart, and one debugfs reset recovered it (E533, 1 run; that task
+skipped the closed task, wrote an arbitrary `pclink` and set p0 to p3 to 1, 0, 1, 0, so the cause is
+not separated, Q152). A task of ours that wrote `sa`, `r`, `i` and `p` and then called the closed
+task left the tick running (E536, 3 of 3 rounds, 911 to 1005 Hz), and a second one that also wrote
+`sa63` and `sa65` and called it was not followed by its armed reader within 100 ms (E537, 1 run;
+HostCtl dword 12 advanced 6 in that window and then read 0x9db in both dumps taken seconds later,
+and `USE0_SERV_EVENT` 0x9e0 in both, against E533's three reads 20 ms apart; Q156). The closed task
+does not by itself keep the tick, then, whatever E533's cause was.
 
 *Based on sgx545-ce `src/services4/system/unified/sysconfig.c`,
 `src/services4/srvkm/devices/sgx/sgxconfig.h`; emgd-psb_regs; E002, E006, E008, E009, E011, E531,
-E532, E533.*
+E532, E533, E536, E537, E538.*
 
 ## 13. Open questions
 

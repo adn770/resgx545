@@ -1,0 +1,9 @@
+title = "firmware task of our own: a task that holds the EDM for up to 7 ms, with an overlap flag"
+repo = "data"
+paths = ["firmware-tasks/p1130-d-slow/"]
+method = "the stage of tools/fwtask/run_stage.py on the laptop (direct cable) with the linux fork tip d614af574cc6, module srcversion 7ED723C25D78D7FCB3C08C1, stage 11, one run of 10 jobs"
+date = "2026-11-08"
+files = 6
+size = 11970
+sha256 = "5d3cd011e8cb2924c24bbb9287db5b65d6c1b0d32a23affb6497e9b8d32ff00d"
+recipe = "tools/fwtask/run_stage.py"

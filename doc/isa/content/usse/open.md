@@ -43,28 +43,30 @@ open driver:
    registers is open (Q080).
 9. **Calls, the program counter, the integer forms and the tests**: indices of 256 to 8191 in a fill
    and a jump across a 65536-word step of the code base (Q123; the step of 0x80000 is shown by ten
-   placements: E492); `p0`-`p3` and `pclink` at the start of a firmware task, which no program of
-   ours has run (Q124); what leaves 0xeb3 and 0x98 in them across jobs (Q125: four runs of the
-   readers show 64 pixels of 0xeb3 in 29 of 40 jobs and quads that repeat in part, E500); which
-   extension the test of `iaddu32` reads for a source 1 above 0x7fff, which no test tells, and the
-   value it writes with a repeat, an immediate or a constant in source 2 (Q126); `ima32`'s
-   dual-issue form, `cie`, `.neg` and immediates with the extra operand, its selector 3 and what bit
-   46 does (Q135), and `imae`'s repeats, `u16`/`z16` sources and `.rsN` shifts with the carries,
-   with the operand values and immediates not run (Q127); the rule of the test field on the shifts,
-   the lane operations and the other classes, with the `o` join (Q137, Q151) and the chan field
-   (Q150); how long an `sa0` written by `ima32` lasts and why a write to `pa0` is lost (Q136).
-10. **Fences, repeats, registers and persistence for a firmware compiler**: why a `wdf` waits
-   for another counter's loads in some runs and not in others (Q130); whether a firmware (EDM)
-   task runs two at once (Q131, firmware; a `wdf` with nothing outstanding and an unfenced store
-    at the end of a task act as in a fill, E534);
-    what a client `str` changes and what an `idf` is needed for beyond an instance's own store
-    (Q134; `str` then `ldr` of 0x0814 and 0x0a78 is ordered in a firmware task, E534, and its other
-    registers and the register-index forms are Q154); when another reader
-    sees an unfenced store and when a load not waited for lands (Q143, Q146); why a client `emitpds`
-    faults the job and why its addend 0xFFF to 0x2000 leaves the fill's value (Q128, Q145); the 12
-    pixels of an `sa` writer that show the `sa` (Q129); where a write past the allocation goes
-    (Q132); what bounds a `phas` request and what a request above 256 allocates (Q133, Q144). The
-    overlap of two firmware tasks, what survives from one firmware task to the next (Q124, Q152) and
-    the largest allocation of a firmware task are not measured.
+   placements: E492); `p0`-`p3` and `pclink` at the start of a firmware task, beyond one writer's p1
+   and `pclink` at the next entry (Q124, Q155); what leaves 0xeb3 and 0x98 in them across jobs
+   (Q125: four runs of the readers show 64 pixels of 0xeb3 in 29 of 40 jobs and quads that repeat in
+   part, E500); which extension the test of `iaddu32` reads for a source 1 above 0x7fff, which no
+   test tells, and the value it writes with a repeat, an immediate or a constant in source 2 (Q126);
+   `ima32`'s dual-issue form, `cie`, `.neg` and immediates with the extra operand, its selector 3
+   and what bit 46 does (Q135), and `imae`'s repeats, `u16`/`z16` sources and `.rsN` shifts with the
+   carries, with the operand values and immediates not run (Q127); the rule of the test field on the
+   shifts, the lane operations and the other classes, with the `o` join (Q137, Q151) and the chan
+   field (Q150); how long an `sa0` written by `ima32` lasts and why a write to `pa0` is lost (Q136).
+10. **Fences, repeats, registers and persistence for a firmware compiler**: why a `wdf` waits for
+   another counter's loads in some runs and not in others (Q130); whether a firmware (EDM) task runs
+   two at once (Q131, firmware: no second pass was seen in 10 of 10 runs of a slow task, ticks only
+   in one slot, E539, and what happens to an event that arrives meanwhile is open; a `wdf` with
+   nothing outstanding and an unfenced store at the end of a task act as in a fill, E534); what a
+   client `str` changes and what an `idf` is needed for beyond an instance's own store (Q134; `str`
+   then `ldr` of 0x0814 and 0x0a78 is ordered in a firmware task, E534, and its other registers and
+   the register-index forms are Q154); when another reader sees an unfenced store and when a load
+   not waited for lands (Q143, Q146); why a client `emitpds` faults the job and why its addend 0xFFF
+   to 0x2000 leaves the fill's value (Q128, Q145); the 12 pixels of an `sa` writer that show the
+   `sa` (Q129); where a write past the allocation goes (Q132, Q147); what bounds a `phas` request
+   and what a request above 256 allocates, which is [infer] at least 124 for 260 to 376, T = 101 to
+   123 not run (Q133, Q144). What survives from one firmware task to the next beyond one writer's
+   `sa`, `r`, `i` and p1 (Q124, Q152, Q155, Q158), what stops the tick after a task (Q152, Q156) and
+   the allocation of a firmware task above TRC 31 are not measured.
 
 <!-- @simopen 12 -->

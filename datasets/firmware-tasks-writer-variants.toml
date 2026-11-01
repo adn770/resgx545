@@ -1,0 +1,9 @@
+title = "firmware task of our own: the writer variants of stage B2, stopped at the first writer"
+repo = "data"
+paths = ["firmware-tasks/p1130-b2-variants/"]
+method = "the stage of tools/fwtask/run_stage.py on the laptop (direct cable) with the linux fork tip d614af574cc6, module srcversion 7ED723C25D78D7FCB3C08C1, stage B2, one run that stopped on its trigger after one control and one writer, then one debugfs reset and a stock check"
+date = "2026-11-08"
+files = 10
+size = 30069
+sha256 = "30f3df469ba14adddcd6ccafc4e82119a8c2cdabfd8bc6f9a4174d76c4dc5583"
+recipe = "tools/fwtask/run_stage.py"

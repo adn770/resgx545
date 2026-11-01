@@ -1,0 +1,9 @@
+title = "firmware task of our own: a writer that tail-calls the closed task, and readers at the next event, after 1200 ms and after a fill"
+repo = "data"
+paths = ["firmware-tasks/p1130-b-tailpair/"]
+method = "the stage of tools/fwtask/run_stage.py on the laptop (direct cable) with the linux fork tip d614af574cc6, module srcversion 7ED723C25D78D7FCB3C08C1, stage B, one run (two controls, three rounds)"
+date = "2026-11-08"
+files = 7
+size = 19911
+sha256 = "f7c67156f958db02799078c88e8620b51e60abcfe2372d4cda4791b92f313053"
+recipe = "tools/fwtask/run_stage.py"

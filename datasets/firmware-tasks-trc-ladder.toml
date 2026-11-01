@@ -1,0 +1,9 @@
+title = "firmware task of our own: the temporaries of a task started with TRC 8 to 31, and the refused arm of TRC 32"
+repo = "data"
+paths = ["firmware-tasks/p1130-e-trc/"]
+method = "the stage of tools/fwtask/run_stage.py on the laptop (direct cable) with the linux fork tip d614af574cc6, module srcversion 7ED723C25D78D7FCB3C08C1, stage 13, one reload and boot per TRC (8, 9, 12, 16, 24, 31); the arm of 32 failed and the stage stopped"
+date = "2026-11-08"
+files = 27
+size = 38320
+sha256 = "d1d3171277cbdd5ef9c91ad682612fa1a74670cc4ef052404549baf9b5ed81c7"
+recipe = "tools/fwtask/run_stage.py"

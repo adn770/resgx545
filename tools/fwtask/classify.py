@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: 2026 Josep Torra
-"""The prediction table of phase 11.29 and its classifier.
+"""The prediction table of phase 11.30 and its classifier (the 11.29 table is classify1129.py).
 
-`classify.py write predictions.toml` writes the table; the file is frozen (its sha256 recorded in
-the run log) BEFORE the first `str`, and `evaluate()` reads only that file. A prediction is the
+`classify.py write predictions-1130.toml` writes the table; the file is frozen (its sha256 recorded
+in the run log) BEFORE the first run of stage B, and `evaluate()` reads only that file. A prediction is the
 first line of each row (`declared`); `falsifier` is what contradicts it; `expect` is the
 machine-checked form, a Python expression over the names of the row's `vars`.
 """
@@ -14,74 +14,53 @@ import tomllib
 
 import layout as L
 
-NINE_B = [
-    # id, declared, falsifier, expect
-    ("X0", "L = A and H = A (control: the register does not move by itself)",
-     "any other value: the register moves by itself, stop the table", "L == A and H == A"),
-    ("X1", "L = A and H = A (the first str ever, the same value)",
-     "any change: the bit pattern was not what we thought, stop", "L == A and H == A"),
-]
-for d in (0, 1, 2, 4, 16):
-    NINE_B.append((f"X2_d{d}", f"L = B and H = B at distance {d}: a str is ordered before a later "
-                   "ldr of the same register with no fence",
-                   "L = A (the ldr overtook) or H = A (the str did not land)", "L == B and H == B"))
-NINE_B += [
-    ("X3", "same as X2_d0 (a wdf with nothing outstanding between)",
-     "differs from X2_d0: a wdf matters", "L == B and H == B"),
-    ("X4", "same as X2_d0 (idf then wdf between)", "differs: idf matters", "L == B and H == B"),
-    ("X5", "same as X2_d0 (idf between, no wdf)", "differs", "L == B and H == B"),
-    ("X6_d0", "L = A (an earlier ldr is not overtaken by a later str) and H = B",
-     "L = B: a str can pass an outstanding ldr", "L == A and H == B"),
-    ("X6_d4", "L = A and H = B, four nops between", "L = B", "L == A and H == B"),
-    ("X7", "L = C and H = C (stores in order)", "L or H = B", "L == C and H == C"),
-    ("X8", "L = R2's own start value and R2 H unchanged (registers do not alias)",
-     "R2 changes: the registers alias", "L == A2 and R2H == A2"),
-    ("X9", "every result read with done set although no idf came before state = done",
-     "a 0xdeadc0de result with done: an unfenced stad at the end of a task is not complete",
-     "landed and L == B and H == B"),
-    ("X10", "the second ldr after 64 nops reads B (and the first too)",
-     "A then: str dropped; B after an A first: a delay, not a loss", "L == B and L2 == B and H == B"),
-    ("X11", "t1 - t0 (CR_TIMER counts, 25-bit) is at most 800 for str+ldr+wdf (2 microseconds at "
-     "about 400 MHz [infer])", "no meaning on its own: an upper bound", "(t1 - t0) % (1 << 25) <= 800"),
-]
+NINE_B = []        # phase 11.29's 9b rows are frozen in predictions.toml and classify1129.py, not repeated
 
+# (id, declared, falsifier, expect)
 STAGES = [
-    ("S2_null", "HostCtl dword 12 advances at about 997 Hz, miscinfo is answered, fill and "
-     "triangle diff 0, no fault, with the null wrapper armed",
-     "no tick, no answer, a fault or a diff: the retargeted word or the closed handler failed",
-     "ticks_per_s >= 900 and ticks_per_s <= 1100 and fill_diff == 0 and tri_diff == 0 and faults == 0"),
-    ("S3_mem", "the memory-only wrapper: state done within 100 ms, marker 0x5a5a1129 stored, "
-     "pa1 = 0 (a tick), pa2 nonzero",
-     "no done: our code or the results page is not reached; a wrong marker: the page is not the "
-     "one the task sees",
-     "done and marker == 0x5a5a1129 and pa1 == 0 and pa2 != 0"),
-    ("S4_ldr", "ldr returns CORE_ID, CORE_REVISION as the host reads them and CR_TIMER advancing",
-     "a different value: ldr in an EDM task does not read the register as the host does",
-     "core_id == host_core_id and core_rev == host_core_rev and timer_ok"),
-    ("S1_sa_high", "sa64, sa100 and sa127 are retained 3 of 3, in task 2 and after 1000 closed "
-     "tasks", "any reads 0 or another value", "sa64 == 0xa5000040 and sa100 == 0xa5000064 and sa127 == 0xa500007f"),
-    ("S2_sa_low", "sa20 and sa24 retained as S1", "any reads another value",
-     "sa20 == 0xa5000014 and sa24 == 0xa5000018"),
-    ("S3_regs", "r20, r21, i0, i1 retained in task 2",
-     "any reads another value", "r20 == 0xb5000020 and r21 == 0xb5000021 and i0 == 0xb5000020 and i1 == 0xb5000021"),
-    ("S4_after_fill", "sa retained after a client fill ran between", "sa changed: the EDM and the "
-     "client data masters share sa", "sa64 == 0xa5000040 and sa100 == 0xa5000064 and sa127 == 0xa500007f"),
-    ("Q124_pred", "p0..p3 survive (1010) and pclink keeps bits 17:0 (0x2a5a5)",
-     "a pattern 0000, 1111 or the closed code's: the state is reset at task start",
-     "(p0, p1, p2, p3) == (1, 0, 1, 0) and pclink == 0x2a5a5"),
-    ("Q033_q1", "one miscinfo reaches the general slot (0) with pa1 = 0x100 (reversed status bit 14)",
-     "pa1 = 0x4000 (E146's same-position reading) or a slot other than 0",
-     "hit_slots == [0] and pa1 == 0x100"),
-    ("Q033_q2", "TA finished arrives in the bit-9 fast slot with pa1 = 0x200",
-     "the general slot with 0x2000", "hit_slots == [1] and pa1 == 0x200"),
+    ("B_alive", "with the tail-calling writer armed (the closed task runs after our writes) the tick keeps "
+     "advancing (900 to 1100 Hz after each round), the writer is done and the next event runs the reader, "
+     "within 100 ms", "the tick stops again (as E533) or no reader: the closed task is not what re-arms the tick",
+     "rounds_alive and writer_done and reader_done and 900 <= min_rate <= 1100"),
+    ("B_ctl_stable", "two controls (reader only, nothing written) read the same r20, r21, i0, i1, "
+     "p0 to p3 and pclink at entry", "they differ: the leftovers are not a function of the task before",
+     "ctl_a == ctl_b"),
+    ("B_sa_high_next", "sa64, sa100 and sa127 read at the next event are the markers the writer stored, in 3 of 3 rounds",
+     "any other value: the closed task, the task start or a reset of the bank changed them",
+     "sa_high == markers_high"),
+    ("B_sa_low_next", "sa20 and sa24 read at the next event are the markers, 3 of 3 rounds",
+     "any other value", "sa_low == markers_low"),
+    ("B_sa_gap", "sa64, sa100, sa127, sa20 and sa24 are still the markers after 1200 ms (about 1200 closed ticks), 3 of 3",
+     "any other value", "sa_all == markers_all"),
+    ("B_sa_fill", "sa64, sa100, sa127, sa20 and sa24 are still the markers after a client fill ran between, 3 of 3",
+     "any other value: client data masters and the EDM share these sa", "sa_all == markers_all"),
+    ("B_r_gone", "r20 and r21 read at the next event are not the writer's markers (the closed task or the "
+     "task start reuses the temporaries), in 3 of 3 rounds", "r20 or r21 equals the marker in a round: temporaries persist",
+     "r_vals != markers_r"),
+    ("B_i_kept", "i0 and i1 read at the next event are the writer's markers, 3 of 3 rounds",
+     "any other value", "i_vals == markers_i"),
+    ("B_p_gone", "p0 to p3 at the entry of the next task are not the writer's pattern (the complement of the control's), "
+     "in 3 of 3 rounds", "the pattern equals ours in a round: predicates persist", "p_vals != p_pattern"),
+    ("B_pclink_const", "pclink at the entry of a task is the same value in the controls and in every round",
+     "it differs: it depends on what our task did", "len(set(pclinks)) == 1"),
+    ("Q033_q1m", "one miscinfo, with pa1 bit 25 masked in the stubs, hits the general slot only, with pa1 & 0xfdffffff == 0x100",
+     "pa1 = 0x4000 (E146's reading), another slot, or no hit", "hit_slots == [0] and (pa1 & 0xfdffffff) == 0x100"),
+    ("Q033_quiet", "with the mask, 50 ms of ticks with no event log nothing in any slot (the tick's bit 25 is masked)",
+     "a hit in the quiet window: the tick has other pa1 bits, or the mask failed", "quiet_hits == []"),
+    ("Q033_q2", "TA finished arrives in the bit-9 fast slot with pa1 = 0x200 (the last event of slot 1 logged)",
+     "the general slot with 0x2000", "1 in hit_slots and (pa1_slot1 & 0xfdffffff) == 0x200"),
     ("I11_overlap", "no overlap: overlap = 0 in 10 of 10 runs and no tick is lost",
      "overlap = 1 in any run, or HostCtl dword 12 behind by the ticks of the window",
      "overlap_runs == 0 and lost_ticks == 0"),
 ]
 for t in (8, 9, 12, 16, 24, 31):
-    STAGES.append((f"I13_T{t:02d}", f"TRC {t}: r{min(4 * t - 1, 123)} is real storage; the register "
-                   "past the allocation reads r(n mod 4T) or not at all", "the marker is not read back: "
-                   "the EDM allocator differs", f"marker_back == 0x{0x7a110000 + t:08x}"))
+    STAGES.append((f"I13_T{t:02d}", f"TRC {t}: r{min(4 * t - 1, 123)} is real storage in a firmware task: the marker "
+                   "written is read back", "the marker is not read back: the EDM allocator differs",
+                   f"marker_back == 0x{0x7a110000 + t:08x}"))
+for t in (9, 12, 16, 24):
+    STAGES.append((f"I13_P{t:02d}", f"TRC {t}: the register past the allocation (r{4 * t}) does not hold the marker written "
+                   "to it (a write past the allocation is dropped, E486)", "it reads the marker: the write landed",
+                   f"past_back != 0x{0x7b220000 + t:08x}"))
 for t in (32, 40, 48):
     STAGES.append((f"I13_T{t:02d}", f"TRC {t}: runs; only r123 is usable", "a hang", "marker_back == 0x%08x" % (0x7a110000 + t)))
 for t in (49, 64):
@@ -100,10 +79,9 @@ def table():
 
 def render() -> str:
     out = ["# SPDX-License-Identifier: MIT", "# SPDX-FileCopyrightText: 2026 Josep Torra", "#",
-           "# Phase 11.29 predictions, frozen before the first str. classify.py reads only this file.",
-           "# A: the start value the host wrote; B, C: the task's values; L: the ldr result; H: the",
-           "# register as the host reads it after the task; A2, R2H: the other register (X8).",
-           "# R1 = 0x0814: A 0x15a5a, B 0x0a5a5, C 0x0f0f0; R2 = 0x0a78: A 0x15, B 0x2a, C 0x0c.", ""]
+           "# Phase 11.30 predictions (the tail-calling writer, Q033 Q1 with the mask, items 11 and 13), frozen before the first run of stage B. classify.py reads only this file.",
+           "# Stage B vars: markers_* are what the writer stored (random per round, host seed 1130);",
+           "# ctl_a, ctl_b the two controls' entry values; p_pattern the complement of the control's p0..p3.", ""]
     for r in table():
         out.append("[[row]]")
         for k in ("id", "stage", "declared", "falsifier", "expect"):
@@ -122,7 +100,7 @@ def evaluate(path, row_id, **vars):
     r = rows[row_id]
     if r["expect"] == "hang":
         return bool(vars.get("hang"))
-    return bool(eval(r["expect"], {"__builtins__": {}}, vars))
+    return bool(eval(r["expect"], {"__builtins__": {"len": len, "set": set, "min": min, "max": max, "all": all, "any": any, "zip": zip}}, vars))
 
 
 def reading(Lv, H, A, B):

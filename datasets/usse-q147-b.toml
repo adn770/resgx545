@@ -1,0 +1,10 @@
+title = "probe table usse/q147-b"
+repo = "data"
+paths = ["usse/p1130-q147-b/"]
+method = "probe.py on the laptop target (direct cable), linux fork tip d614af574cc6, one process per case; the table of the probe is the recipe"
+date = "2026-11-08"
+files = 24
+size = 17558
+sha256 = "03f2933c46df9a7c132eb113da34b6df86cb009e0688c04429ed3f9652ed2646"
+recipe = "probes/usse/q147-b.toml"
+needs = ["render"]

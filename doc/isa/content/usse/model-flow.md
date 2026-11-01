@@ -65,8 +65,10 @@
   no other value, and the quad positions repeat from run to run in part (two runs share 4 to 52
   pixels of a job, where chance gives about 2 pixels), not whole; two reader jobs of one run share 1
   to 16 quads, as much, so the positions are neither fixed nor independent across jobs or runs
-  (Q125). A task writes `pclink` before it reads it; across firmware tasks the state is **[open]**
-  (Q124).
+  (Q125). A task writes `pclink` before it reads it; across firmware tasks, after a writer that
+  called the closed task p1 at the next entry was the writer's, `pclink` was 6 (the value of the
+  writer's own tail triple **[infer]**) and p0 was not **[HW]** (E536); the rest is **[open]**
+  (Q124, Q155).
 - **Branch flags [open].** `.nosched`, `.synce`/`.syncent` and `.mon` decode on `ba`, `br`
   and `lapc`; their effect is not established, and the firmware uses none of them.
 - **`bexception` [HW].** Hangs a fill's pixel task, with or without `.nosched`: it neither

@@ -1,11 +1,11 @@
 +++
 id = "Q147"
-question = "does a write to a register past the task's allocation land in the register whose index is the register's modulo the allocation, or is it dropped, and do E486 and E519 disagree"
+question = "does a write to a register past the task's allocation land in the register whose index is the register's modulo the allocation, or is it dropped (E486 and E519 do not disagree: E535)"
 unit = "usse"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E486", "E519"]
+evidence = ["E486", "E519", "E535"]
 terms = []
 +++
 
@@ -27,8 +27,23 @@ disagree: the question of where a write past an allocation goes is Q132 (E486), 
 request above 256 is Q144 (E519), and this one is what the replay needs settled to run the 30
 vectors.
 
-What is open: whether the allocation is the request modulo 256 (E519 tags it [infer]); whether a
-write past the allocation lands in r(n mod T) when it is the only write (E519) and not when an
-earlier write to r(n mod T) exists (E486); and what the 88 to 99.6 percent of E486 and the other
-pixels show. To settle it: run E519 with a different marker per job, the E486 probe with the marker
-written to r(n) only, and the E519 probe with a marker first written to r(n mod T).
+Narrowed in 11.30 (not retired). The first of the three runs named below ran, as two runs: E519's
+job with a different marker per job, in two orders (E535, 36 jobs). A write to r123 under a request
+of 100 or less is not seen by the read of r123 (0 of 12 jobs; all pixels of run a's six, the pixels
+listed in run b's report), under 124 or more it lands (24 of 24 with the controls), and the six
+requests of 260 to 448 landed it too (12 of 12), so the read-back of `phas-high-b` and `-c` was a
+landed write and E486 and E519 do not disagree: E486's drop is the request-of-100-or-less row of
+E535. The request of 260 to 376 allocates at least 124 registers and not its value modulo 256
+(Q144). The 30 vectors of E519 stay stops in the simulator because it takes the allocation to be the
+request modulo 256 (Q144); the 36 vectors of E535 are in the data, and 14 replay exactly (the
+controls and the request of 448), 12 are left out (their pixels are a mixture) and 10 stop on r123
+past the allocation.
+
+What is open: T = 101 to 123 (no case ran), the read side (E486's "n mod T" reads, 88 to 99.6
+percent of 2048, beside E535's read of r123 under T <= 100, which returned physical r123 contents of
+earlier jobs: different probes, not a contradiction in the data, unreconciled), whether a write past
+the allocation lands in r(n mod T) when it is the only write and not when an earlier write to r(n
+mod T) exists (E519's design against E486's, neither of which the E535 runs repeat: they read r123
+only), where a dropped write goes (Q132), and what the 88 to 99.6 percent of E486 and the other
+pixels show. To settle it: the E486 probe with the marker written to r(n) only, and the E519 probe
+with a marker first written to r(n mod T), with a distinct marker per job.

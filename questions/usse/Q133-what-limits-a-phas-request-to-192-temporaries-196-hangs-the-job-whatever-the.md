@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E487", "E519"]
+evidence = ["E487", "E519", "E540"]
 terms = []
 +++
 
@@ -24,8 +24,16 @@ and tested on the 15. A job that ran wrote r123 only (or, from 512 up, r3, r63 o
 does not show whether a write reaches a register under a small allocation (Q132), so what a request
 above 124 allocates is not shown, and Q144 asks it.
 
-What is open: the quantity that bounds it ([infer] the register file divided by the instances in
-flight), the request between 192 and 196 (the field counts in fours, so
-none is encodable), and whether the microkernel's tasks request the same. To settle it: the limit
-against the number of instances (a smaller target, a render with fewer pixels) and the EDM's own
-tasks (phase 12).
+Narrowed in 11.30 (not retired). For a firmware task the allocation is the TRC it is started with:
+TRC 8, 9, 12, 16, 24 and 31 (32 to 124 temporaries) gave real storage up to the top register, r(4T
+- 1), 6 of 6 (r123 for 31), and the register past the allocation did not hold a marker written to it
+(0 of 5, E540), as in a client fill (E535). TRC 32 and above, and the hang predicted for 49 and up,
+were not run (the arm of 32 failed with its error cut off, [infer] at the fork's hazard gate, and
+arming with the hazard word was not made), so
+whether a firmware task's request follows the same limit is open above 31.
+
+What is open: the quantity that bounds a phas request ([infer] the register file divided by the
+instances in flight), the request between 192 and 196 (the field counts in fours, so none is
+encodable), whether the microkernel's tasks request the same, and TRC 32 and above in a firmware
+task. To settle it: the limit against the number of instances (a smaller target, a render with
+fewer pixels) and the firmware tasks with the hazard word (phase 12's tasks).

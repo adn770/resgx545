@@ -4,7 +4,7 @@ question = "do p0-p3 and pclink survive from one firmware (EDM) task to the next
 unit = "usse"
 kind = "fw"
 phase = 11
-evidence = ["E475", "E477", "E484", "E533"]
+evidence = ["E475", "E477", "E484", "E533", "E536", "E537"]
 terms = ["Universal Scalable Shader Engine (USSE)", "Event Data Master (EDM)"]
 +++
 
@@ -15,12 +15,25 @@ a firmware task: it is started by the PDS of a render, in the pixel phase, not b
 through the microkernel's own dispatch, and what the microkernel does between tasks (it uses pclink
 itself: its CCB dispatch moves an address there and jumps, E091) is not seen from here.
 
-What is open: the same pair of jobs as firmware tasks of our own. Tried in 11.29 and not measured:
-the writer wrote `sa64`, `sa100`, `sa127`, `sa20`, `sa24`, `r20`, `r21`, `i0`, `i1`, `p0` to `p3`
-and `pclink` and ended with `nop.end` instead of jumping to the closed general task, and the EDM's
-tick stopped, so the reader never started (E533; one run, stopped by its own trigger, and none of
-the pair's cases ran). The run did both at once, skipped the closed task and wrote the registers, so
-the cause is not separated (Q152). A writer that jumps to the closed task after its writes is a
-different experiment (Q152). To settle it: writer and reader as tasks of ours that keep the tick,
-five pairs, with the pixel count replaced by the instance count of a task; until then a task must
-set p0-p3 by a test and write pclink before reading either.
+Narrowed in 11.30 (not retired). The pair was run as firmware tasks of ours that keep the tick (the
+writer calls the closed task after its writes, E536). The reader at the next event, with the closed
+task run in between, read: p1 = 0 (the writer's value) in 3 of 3 rounds, against 1 in all 8 other
+readings; p2 = 1 and p3 = 1 (the writer's flags, but they also read 1, 1 after 1200 ms and move
+between readings with no writer, controls 0, 0 and after a fill 0, 1, so they show nothing about
+persistence); p0 = 1 (the writer set 0); pclink = 6 (3 of 3), against 0x98 in the 8 other readings,
+where 6 is the value of the writer's own tail triple, which every pass of the wrapper writes
+[infer]. After 1200 ms and after a client fill p1 = 1 and pclink 0x98 as in the controls, while p2
+and p3 differ between readings with no writer (controls 0, 0; after 1200 ms 1, 1; after a fill 0,
+1). So a task of ours does not start with p0 to p3 and pclink clear or as an ordinary tick leaves
+them: at the next entry p1 was as our writer left it and pclink was the writer's own triple value,
+p0 was not, and Q155 asks why. The pclink write that the question first named cannot be run: the
+earlier task (E533) wrote it, the fixed verifier of the fork refuses `mov pclink` outside the
+patched triple, and the prediction that was frozen for it (11.29's Q124_pred: p0 to p3 survive as 1,
+0, 1, 0 and pclink keeps bits 17:0 of 0x2a5a5) was written for that task and was never evaluated
+(its stage stopped, E533); the writers of 11.30 write no arbitrary pclink (only the tail triple's
+own write, which every pass of the wrapper makes).
+
+What is open: p0, p2 and p3 (a writer whose flags differ from the control's in each of them), a
+writer that leaves pclink as a call does (E475, a taken or untaken call writes it), and whether the
+closed task's path is what keeps p1 and pclink (Q155). Until then a task must set p0-p3 by a test
+and write pclink before reading either, as a fill must (E477).

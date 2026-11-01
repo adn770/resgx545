@@ -48,7 +48,8 @@ names the other directories of `nokernel/usse/` one by one, so that its digest s
 `init.mem` the page dwords that went in, `init.regs` the SGX registers (byte offsets) before the
 task, `readback.mem` and `readback.regs` what the host read after. The replay runs the wrapper to
 its tail call (`lapc`; the closed task it jumps to is not run) over `sgx_sim::fwtask::FwBus`; a
-wrapper that does not reach it in 10000 steps stops as unsupported. In a firmware task `FwBus`
+wrapper that does not reach it in 3 000 000 steps (10000 in 11.29; the slow task of E539 spins
+100000 iterations) stops as unsupported. In a firmware task `FwBus`
 allows `str` only to 0x0814 and 0x0a78, of a value inside the register's 17 or 6 bits, and sees the
 write at once, in every later `ldr` and for the host (the ordering measured, E534); it allows `ldr`
 of those two and of `CORE_ID`, `CORE_REVISION` and `CR_TIMER`, and stops on a register nobody
@@ -60,6 +61,37 @@ included, stop the run as unsupported. The client path (`Memory`) refuses `str`,
 the two identity registers, as before. Not modelled: latency, a job running, other writers, the
 closed task. The coverage report counts these vectors under `firmware`, apart from the scalar and
 pixel totals.
+
+The runs of phase 11.30 (state between tasks, event words, a slow task, the temporaries) are
+converted by `tools/fwtask/make_vectors1130.py` into `vectors/nokernel/usse/fwtask-state/` (14
+vectors, E536), `fwtask-events/` (6, E538), `fwtask-slow/` (10, E539) and `fwtask-trc/` (1, E540),
+one file each (`datasets/vectors-usse-fwtask-p1130.toml`), so that 349 firmware vectors replay
+exactly. They add optional keys to a firmware vector: `init.temps` (the TRC: the task is allocated
+4T temporaries, 32 when absent; a register past it still stops the run), `init.state` (what the
+hardware held at the task's entry and the task reads before writing it: `sa`, `r`, `i` and `pa`,
+register numbers to hex values, `p`, predicate numbers to 0 or 1, and `pclink`; a register that
+neither `init.state` nor the program gave still stops the run) and `readback.state` (the `sa`, `r`,
+`i` and `p` the task must have left at its tail call, compared exactly). The closed task is not run,
+so a value that differs at the next entry (`sa64`, p0 and `pclink`, which are [infer] the closed
+task's, and p2 and p3, which move between readings with no writer, E536) is never listed: only p1 of
+the predicates is shown to persist. A read of `sa64` after the task wrote it, a state key that is
+not a register and a wrapper that does not reach its tail call stop the run. The readers' vectors
+are seeded with their own readback, so they check the program and the simulator's reads of the
+state, not the hardware's persistence; the writers' `readback.state` is what the next event's reader
+read, so "349 replay exactly" says nothing of persistence. Two contents are not measurements of the
+run: the tick vectors of `fwtask-events` take `pa` from E532 (E538 masked the tick's `pa1`, its
+expected log of 0 comes from the quiet window), and the writers' state is what the next reader read,
+not what the writer's own task read back. Not modelled: the closed task, the event queue, ticks, the
+p0 and `pclink` values at the next entry (Q155), the stop of E537, TRC above 31 and a write past the
+allocation (the T = 8 to 24 runs of E540 also read the register past the allocation, which the
+simulator stops on, so only T = 31 is a vector).
+
+The two runs of E535 (a write to `r123` with a marker of its own per job, client fills) are
+converted by `tools/usse-asm/convert_extra.py` into `vectors/nokernel/usse/q147-a/` and `q147-b/`
+(18 vectors each, `datasets/vectors-usse-q147.toml`): 14 replay exactly (the controls and the
+request of 448), 12 are left out (their pixels are a mixture, no single o0) and 10 stop on `r123`
+past the allocation, because the simulator takes a request of 260 to 376 to allocate its value
+modulo 256 (Q144).
 
 The simulator's tests (`crates/sgx-sim/tests/vectors.rs`) look for the data repository as
 `$RESGX545_DATA`, else the `resgx545-data` checkout beside this tree (as

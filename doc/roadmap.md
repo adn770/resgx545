@@ -177,14 +177,14 @@ probe and sweep tables that the units above cover.
 
 ### 4.1 Open questions
 
-`doc/open_questions.md` lists every open question, generated from `questions/`: Q001 to Q154, 131
-open (the two ids between Q147 and Q150 are reserved, unused). Each has a kind. The work is
-hardware knowledge, for a simulator and then our own firmware, so the 117 `hw` questions are the
-work queue, each with a value (high 13, medium 62, low 42); the 10 `fw` questions (the closed
-firmware's and driver's own behaviour: Q004, Q029, Q034, Q049, Q084, Q088, Q118, Q119, Q124, Q131)
-and the 4 `kernel` ones (the design of our kernel driver: Q005, Q037, Q095, Q140) stay open, parked.
-By unit: bif 4, dpm 5, edm 8, isp 10, mte 3, pbe 5, pds 16, platform 4, render 9, ta 9, texture 7,
-transfer 3, usse 34, vdm 8, zls 6. A question is removed when a record answers it; one that mixed a
+`doc/open_questions.md` lists every open question, generated from `questions/`: Q001 to Q167, 136
+open (the two ids between Q147 and Q150 are reserved, unused). Each has a kind. The work is hardware
+knowledge, for a simulator and then our own firmware, so the 121 `hw` questions are the work queue,
+each with a value (high 13, medium 64, low 44); the 10 `fw` questions (the closed firmware's and
+driver's own behaviour: Q004, Q029, Q034, Q049, Q084, Q088, Q118, Q119, Q124, Q131) and the 5
+`kernel` ones (the design of our kernel driver: Q005, Q037, Q095, Q140, Q167) stay open, parked. By
+unit: bif 4, dpm 5, edm 12, isp 10, mte 3, pbe 5, pds 16, platform 4, render 9, ta 9, texture 7,
+transfer 3, usse 35, vdm 8, zls 6. A question is removed when a record answers it; one that mixed a
 hardware part with a firmware or kernel part was narrowed to the hardware part or folded into the
 hardware question that holds it (six so far: the control block's per-VM copy and the render context
 count bound into Q076, the recovery's reset steps into Q003, the settle routine and the two faults
@@ -574,3 +574,51 @@ same, 34 of 34 (E549; the module-load KUnit failures on the laptop are Q167). Re
 and E549; Q134 and Q131 are narrowed (Q134's client `str` and `idf` parts, Q131's overlap) and
 none retired; Q124 and Q033 gain their evidence and stay open; Q152 to Q154 are new (hw: medium,
 low, medium), and Q167 (kernel).
+
+Sub-phase 11.30 ran more firmware (EDM) tasks of ours, and the client rerun of Q147, on the laptop
+with the module and fork tip of 11.29 before the verifier fix (module 7ED723C2, tip d614af574cc6;
+data commit b5075fa3, which does not hold its vectors): 7 run directories of firmware tasks (stage
+B, stage B2, three runs of the event stubs, the slow task, the temporaries) and 2 of client fills
+(E535), and an eighth directory of firmware-task data for the stock check after the last stage. They
+are firmware tasks except E535. The runs used the module whose verifier had bypasses, fixed
+afterwards (the overlay was reviewed before the 11.29 re-check): the fixed verifier was not used for
+any run, and 21 of the 22 blob names of the 11.30 runs reassemble here to their recorded hashes and
+are accepted when checked offline (`state.blob`, the 11.29 task that wrote `pclink`, was not
+reassembled: its source as it ran is not in the tree, and that the fixed verifier refuses it is
+[infer] from its rule on `mov pclink`). A writer that called the closed general task after writing
+`sa`, `r`, `i` and `p` left the tick running, and the next task read what it wrote for `sa100`,
+`sa127`, `sa20`, `sa24`, `r20`, `r21`, `i0` and `i1` at the next event and after 1200 ms, and for
+all but `r20` and `r21` after a client fill (E536: 3 of 3 rounds; the stage passed on its own
+criteria and of its 10 frozen rows 4 held on their claim, 1 formally and 5 failed: `sa64` did not
+take the write, `r20` and `r21` persisted, `pclink` was 6 at the next entry, the value of the
+writer's own tail triple [infer], and p1 was the writer's; p2 and p3 move between readings with no
+writer and show nothing). The stage's tool crashed after the hardware part and the rows were judged
+again offline from the saved data. A second writer, which also wrote `sa63` and `sa65` and called
+the closed task, was not followed by its armed reader within 100 ms (E537: one run; HostCtl dword 12
+advanced 6 in that window and then did not move; the stage stopped at its first writer and the 11
+other writers of its plan did not run). Together they narrow E533's stop only this far: the `sa`,
+`r`, `i` and `p` writes alone do not stop the tick when the closed task follows, and a task that
+calls the closed task can stop it too; E533's arbitrary `pclink` write, its p values (1, 0, 1, 0)
+and the missing closed task are still not separated (Q152, Q156). A host kick reached the general
+slot only, with `pa1` = 0x03000000 (E538: 3 of 3 runs; the frozen prediction 0x100 failed) and 50 ms
+of ticks logged nothing with bit 25 masked. A slow task of up to 6.9 ms was never found busy by a
+second pass that started after its busy store (E539: 10 of 10, a tick-only stream in one slot). TRC
+8 to 31 gave real storage up to the top register and the register past the allocation did not hold a
+marker written to it (E540: 6 of 6, 0 of 5, one job and one read per T); TRC 32 and above, and
+Q033's TA event, were not run (the arm of 32 failed with its error cut off, [infer] at the fork's
+hazard gate, and arming with the hazard word was not made). The client rerun (E535, 36 jobs with a
+marker of its own per job) shows that a write to `r123` is not seen under a request of 100 or less
+(0 of 12 jobs: all pixels of run a's six, the listed pixels of run b's) and lands under 124 or more
+(24 of 24), so E519's read-back was a landed write, E486 and E519 do not disagree, and, [infer], a
+request of 260 to 376 allocates at least 124 registers and not its value modulo 256; Q147 stays open
+(two of its three runs, and where a dropped write goes, were not run). The simulator gains the entry
+state of a firmware task (`sa`, `r`, `i`, `pa`, p and `pclink`), its temporaries and the state it
+must leave, and refuses a read of `sa64` after a write of it, a state key that is no register and a
+wrapper that runs past 3 000 000 steps; 31 more firmware vectors replay exactly (349 in all; the
+readers' vectors are seeded with their own readback, so they say nothing of persistence, and the
+writers' readback lists only p1 of the predicates) and so do 14 of the 36 vectors of E535 (12 are
+left out for their mixed pixels and 10 stop on `r123` past the allocation, which the simulator takes
+from the modulo rule); the replay of the other vectors is unchanged (30081 scalar and 193 pixel
+matches, 1112 fitted, 918 stops, 175 skipped, 1937 left out, with 0 mismatches). Records E535-E540;
+Q124, Q131, Q133, Q144, Q147, Q152, Q153 and Q033 are narrowed and none retired; Q155 to Q158 are
+new (hw: medium, medium, low, low).

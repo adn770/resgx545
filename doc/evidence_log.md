@@ -3631,6 +3631,79 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   tell); a stad of the result, then a load of the run id, a wdf and two more stores, then the state
   flag with no idf, landed in 18 of 18 (X9).
   *usse; HW, infer; data: `firmware-tasks-str-then-ldr`, `vectors-usse-fwtask-9b`.*
+- `E535` With a different marker in every job, E519's two-phase fill (started with 8 temporaries,
+  phas #T, r123 written with the job's own marker and read back as o0) read the job's own marker in
+  2048 of 2048 pixels for the 6 requests T = 260, 264, 300, 316, 376 and 448 in both runs (12 of 12
+  jobs) and for the 6 controls that write inside the request (T = 124, 128 and 192 with r123, T = 8,
+  32 and 64 with r3, r31 and r63: 12 of 12 jobs), and did not read it in any pixel the report lists,
+  for the 6 requests T = 4, 8, 16, 32, 64 and 100 that write r123 (0 of 12 jobs: run a lists all
+  2048 pixels of each of its six jobs, run b only its top four values, 1656 to 2040 of 2048 pixels
+  per job), where the pixels read other values (0x403, 0, 0xa4a5a6a7, E519's marker 0x7e57007b,
+  0x7e570003 and, in the run in reverse order, the markers of earlier jobs of that run: 17 of the 24
+  values its report lists for those six cases); so a write to r123 is not seen by the read of r123
+  in the same job when the request is 100 or less, the read-back of r123 at 260 to 448 in E519 was a
+  write that landed, and [infer] five of those requests (260, 264, 300, 316 and 376, which the
+  modulo-256 rule makes 4, 8, 44, 60 and 120 registers) allocated at least 124.
+  *usse; HW, infer; data: `usse-q147-a`, `usse-q147-b`, `vectors-usse-q147`.*
+- `E536` A firmware task of ours (state2.s, cmd 1) that wrote sa64, sa100, sa127, sa20, sa24, r20,
+  r21, i0 and i1 (a random value each, none equal to anything the controls read) and set p0 to p3 to
+  0, 0, 1, 1, armed a reader for the next event and then tail-called the closed general task, left
+  the EDM running (tick rate 910.8 to 1005.4 Hz after each of the 9 steps, 3 writers, 3 readers
+  after 1200 ms and 3 readers after a client fill, the 3 fills diff 0 of 2048; no stop trigger, no
+  log line, no reset), and the reader the writer armed ran at the next event (the writer's flag
+  0.42, 0.47 and 0.70 ms after the command, the reader done 1.50, 1.53 and 1.74 ms after it) and
+  read the values written for sa100, sa127, sa20 and sa24 (12 of 12 values in 3 of 3 rounds), r20
+  and r21 (6 of 6), i0 and i1 (6 of 6), p1 = 0 (3 of 3, against 1 in all 8 other readings) and
+  pclink = 6 (3 of 3, against 0x98 in the 8 readings of the controls, the 1200 ms readers and the
+  fill readers; [infer] 6 is the value the writer's own tail triple wrote, a write every pass of the
+  wrapper makes), p2 and p3 = 1, 1 (as written, but also 1, 1 after 1200 ms, 0, 0 in the controls
+  and 0, 1 after a fill: they move between readings with no writer in between, so they show
+  nothing), but sa64 = 2 (3 of 3, as in both controls) and p0 = 1 (written 0); 1200 ms (1200 ticks
+  of the closed task) later sa (12 of 12), r (6 of 6) and i (6 of 6) were still there, and a client
+  fill between left sa (12 of 12) and i (6 of 6) and replaced r20 and r21 (r20 = 0 and r21 = 0x1000,
+  0x2000, 0x3000: 0 of 6 values ours).
+  *edm; HW, infer; data: `firmware-tasks-tail-pair`, `vectors-usse-fwtask-p1130`.*
+- `E537` A firmware task of ours (state3.s, cmd 4) that wrote sa64, sa100, sa127, sa20, sa24, sa65,
+  sa63, r20, r21, i0 and i1 and set no predicate, stored its done flag with the reader armed (cmd =
+  9) and tail-called the closed general task was not followed by the reader it had armed for the
+  next event within 100 ms (1 of 1 run of this writer); HostCtl dword 12 advanced 6 in that 100.3 ms
+  window (ticks_during = 6) and then did not move: it read 0x9db and USE0_SERV_EVENT 0x9e0 in both
+  dumps taken seconds later (the status dump and the register dump, so no event ran between them);
+  EVENT_STATUS2 0x400, BIF_INT_STAT 0x00080000, BIF_FAULT 0, no log line, and one debugfs reset
+  restored the stock firmware (ticks 999 Hz, GETMISCINFO answered, fill and triangle diff 0 of 2048
+  and 0 of 4096); the writer of E536 (state2.s cmd 1, with p0 to p3 set to 0, 0, 1, 1 and without
+  sa63 and sa65) did not stop the tick in 3 of 3 rounds.
+  *edm; HW, infer; data: `firmware-tasks-writer-variants`.*
+- `E538` With pa1 bit 25 masked in the test of four entry stubs (one per PDS #13 slot, each logging
+  pa0, pa1 and pa2 when pa1 & 0xfdffffff is non-zero and then taking its own tail call), one
+  GETMISCINFO kick with no job reached the general slot only (slot 0: hits flag 1; the other three
+  slots' 12 log dwords 0) with pa0 = 2, pa1 = 0x03000000 and pa2 = 0x01061a70 in 3 of 3 runs, and a
+  window of 50 ms of ticks before the kick logged nothing in any slot (3 of 3 windows, about 150
+  ticks in all); the frozen prediction pa1 & 0xfdffffff = 0x100 (E155's reversed status bit 14)
+  failed (it is 0x01000000) and so did its falsifier 0x4000 (E146's reading).
+  *edm; HW, infer; data: `firmware-tasks-kick-event-words`, `vectors-usse-fwtask-p1130`.*
+- `E539` A firmware task of ours that sets its state flag to busy, spins n iterations of a
+  three-instruction loop (ima32, a test, a branch) and sets the flag to done, with every wrapper
+  pass that finds the flag busy storing an overlap flag, ran 10 times (n = 10000 four times, 30000
+  and 100000 three times each) with the overlap flag 0 in 10 of 10 runs, taking 0.73 to 0.97 ms (n =
+  10000), 2.07 to 2.43 ms (30000) and 6.21 to 6.92 ms (100000) from command to done as the host saw
+  it, and HostCtl dword 12 counted 38 to 42 ticks in the 38.2 to 44.3 ms windows: within 2.2 of the
+  0.997 ticks per ms expected in all 10 runs (none more than 3 behind, the run's limit), +1.7 to
+  -0.7 in the seven runs of n = 10000 and 30000 and 1.9 to 2.2 behind in the three of 100000.
+  *edm; HW, infer; data: `firmware-tasks-slow-task`, `vectors-usse-fwtask-p1130`.*
+- `E540` In a firmware task of ours started with TRC T = 8, 9, 12, 16, 24 and 31 (32 to 124
+  temporaries) a marker written to r(4T - 1) (r31, r35, r47, r63, r95 and r123) read back as written
+  in 6 of 6 runs, with the closed task called after it (the tail call), the tick advancing and the
+  status registers healthy after each (arming rates 965.8 to 999.4 Hz), and the marker written to
+  the register past the allocation (r32, r36, r48, r64 and r96 for T = 8, 9, 12, 16 and 24; none for
+  T = 31, whose next register r124 cannot be named) was not read back in any of the 5 runs (0 of 5;
+  one job and one read per T, so "never" is not shown): it read 0 (T = 8 and 9), 0xb8b9babb (T =
+  12), 0xd0000e00 (T = 16) and 0xd00009c0 (T = 24); r0 read 0 in all 6; TRC 32 and above have no
+  result: the arm of T = 32 failed (its saved error is cut off and kernel.log holds no refusal line;
+  [infer] the fork's arm gate refuses a TRC above its free maximum unless trc_hazard=1 is given,
+  which the tool as it ran gave only from 49), and arming with the hazard word was not made.
+  *edm; HW, infer; data: `firmware-tasks-trc-ladder`, `firmware-tasks-final-stock-check`,
+  `vectors-usse-fwtask-p1130`.*
 
 ### 2026-11-09
 
@@ -3660,7 +3733,7 @@ E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E4
 
 Records: E009, E014, E017, E084, E146, E152, E153, E154, E155, E156, E157, E158, E159, E160, E161,
 E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321, E353, E402, E431, E444,
-E450, E531, E532, E533.
+E450, E531, E532, E533, E536, E537, E538, E539, E540.
 
 ### firmware
 
@@ -3729,7 +3802,7 @@ E244, E245, E255, E292, E293, E294, E295, E296, E297, E298, E350, E351, E366, E3
 E370, E371, E372, E373, E374, E375, E376, E377, E378, E380, E406, E423, E452, E469, E470, E471,
 E472, E473, E474, E475, E476, E477, E478, E479, E480, E481, E482, E483, E484, E485, E486, E487,
 E488, E491, E492, E493, E494, E495, E496, E497, E498, E499, E500, E501, E512, E513, E514, E515,
-E516, E517, E518, E519, E520, E521, E522, E525, E526, E527, E528, E529, E530, E534, E549.
+E516, E517, E518, E519, E520, E521, E522, E525, E526, E527, E528, E529, E530, E534, E535, E549.
 
 ### vdm
 

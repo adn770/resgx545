@@ -6,6 +6,13 @@
   "source": "events.s",
   "source_sha256": "03cbb4c03c2c6f4e86248c7ce2f2b3c232d4b7275b50645d3ec9cc194b866834"
  },
+ "events_m": {
+  "bytes": 632,
+  "insns": 68,
+  "sha256": "9b9ddac0182bce6a2c6a0729423221b9402e7758261f0366f7055ec6266fe194",
+  "source": "events_m.s",
+  "source_sha256": "611a4733272440f2f8ce2401201e5191fbe7a041b090fa1c7a4e9570f49750da"
+ },
  "ldr": {
   "bytes": 282,
   "insns": 30,
@@ -40,6 +47,20 @@
   "sha256": "977c2027dd2e2e6d32303c3c967a6a7a081a6ae301a8be2199db335ac3e6a3df",
   "source": "state.s",
   "source_sha256": "c023ec6f0a6eb92d8acc49d6e5fb24060bc909f59ea1a5e4afac15e05da66ca5"
+ },
+ "state2": {
+  "bytes": 842,
+  "insns": 97,
+  "sha256": "df82c85410feee7019e067ab3e98aada7c65b4faa3e1a1aaa2f8d1f0771d7ebc",
+  "source": "state2.s",
+  "source_sha256": "802d244a32f692e5c64ba8c74d31e7c41734c1acf0ebd976c73f7932794953a1"
+ },
+ "state3": {
+  "bytes": 1018,
+  "insns": 119,
+  "sha256": "4465620910e7f895ba6c903c17a1a76097ef650ace10cc6c2ecf6bf4140c7480",
+  "source": "state3.s",
+  "source_sha256": "b1ff48a7c30e10e62ce1662ad845560b72a7813aafab3ed694c2c46a80ac9429"
  },
  "trc_08": {
   "bytes": 290,

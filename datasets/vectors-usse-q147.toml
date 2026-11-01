@@ -1,0 +1,9 @@
+title = "instruction vectors of the two Q147 runs (a write past the temporaries with a marker of its own per job)"
+repo = "data"
+paths = ["vectors/nokernel/usse/q147-a/", "vectors/nokernel/usse/q147-b/"]
+method = "tools/usse-asm/convert_extra.py on the raw readbacks of usse-q147-a and usse-q147-b with their tables, one file per run (36 vectors in two files)"
+date = "2026-11-08"
+files = 2
+size = 51030
+sha256 = "613f2dbc68fa6bc54fb1168a4447865938a22d7e9b44a4d2b5ec7fdf06324448"
+recipe = "tools/usse-asm/convert_extra.py"

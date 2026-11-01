@@ -1,0 +1,9 @@
+title = "instruction vectors of the 11.30 runs of a firmware task of our own (state between tasks, event words, a slow task, the temporaries)"
+repo = "data"
+paths = ["vectors/nokernel/usse/fwtask-state/", "vectors/nokernel/usse/fwtask-events/", "vectors/nokernel/usse/fwtask-slow/", "vectors/nokernel/usse/fwtask-trc/"]
+method = "tools/fwtask/make_vectors1130.py on the raw runs of firmware-tasks-tail-pair, firmware-tasks-kick-event-words, firmware-tasks-slow-task and firmware-tasks-trc-ladder, one file per run set (31 vectors in four files), the wrapper as the kernel patched it; the closed task a tail call jumps to is not part of a vector"
+date = "2026-11-08"
+files = 4
+size = 113019
+sha256 = "0ae10ff7f448a32da50d127b614e86094ea08c37416142aaf8ebf22e6d55333b"
+recipe = "tools/fwtask/make_vectors1130.py"

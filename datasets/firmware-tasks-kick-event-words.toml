@@ -1,0 +1,9 @@
+title = "firmware task of our own: the event stubs with pa1 bit 25 masked, one host kick and a quiet window, three runs"
+repo = "data"
+paths = ["firmware-tasks/p1130-c-events/", "firmware-tasks/p1130-c2-events/", "firmware-tasks/p1130-c3-events/"]
+method = "the stage of tools/fwtask/run_stage.py on the laptop (direct cable) with the linux fork tip d614af574cc6, module srcversion 7ED723C25D78D7FCB3C08C1, stage Q033 Q1, three runs of one kick each (each reloads and boots the armed image)"
+date = "2026-11-08"
+files = 15
+size = 30246
+sha256 = "4ec3b5ccfae1d1ec7c4999a307fc956587b08c83697149ac758f225470ce4c1a"
+recipe = "tools/fwtask/run_stage.py"

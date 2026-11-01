@@ -392,19 +392,116 @@ def cmd_pair(a):
     return 1 if stop else 0
 
 
+RD_SLOTS = (10, 11, 12, 13)          # the reader's result slots (state2.s)
+PARAM_SA = 32
+
+
+def read_slots(res):
+    return {n: res.r(RESULTS + 4 * n, 4) for n in RD_SLOTS}
+
+
+def wait_state(res, want, ms=DONE_MS):
+    t0 = time.monotonic()
+    while (time.monotonic() - t0) * 1000 < ms:
+        if res.r(STATE)[0] == want:
+            return (time.monotonic() - t0) * 1000
+    return None
+
+
+def cmd_tailpair(a):
+    """Item 12 and Q124 with a writer that tail-calls the closed task (state2.s). `rounds` is a
+    list of {kind, ...}: control (reader only, cmd 9), write (cmd 1 with the markers `vals` and
+    the predicate flags `pflags`, then the reader the writer arms runs at the next event), gap
+    (cmd 9 after gap_ms of closed ticks), fill (a client fill, then cmd 9). Stops at the first
+    trigger: no done, tick not advancing, an unhealthy status, a bad log line."""
+    n0 = dmesg_len()
+    res = Res()
+    out = {"rounds": []}
+    stop = None
+    for k, rd_ in enumerate(a["rounds"]):
+        kind = rd_["kind"]
+        entry = {"kind": kind, "k": k}
+        for n in RD_SLOTS:
+            res.w(RESULTS + 4 * n, [INITFILL] * 4)
+        res.w(RUNID, rd_.get("runid", 100 + k))
+        try:
+            if kind == "write":
+                res.w(PARAM_SA, rd_["vals"])
+                res.w(PARAM_SA + 9, rd_["pflags"])
+                if rd_.get("extra"):
+                    res.w(PARAM_SA + 13, rd_["extra"])
+                res.w(STATE, 0)
+                tk0 = regs()[1].get(12)
+                t0 = time.monotonic()
+                res.w(CMD, rd_.get("cmd", 1))
+                entry["writer_ms"] = wait_state(res, 2)
+                if entry["writer_ms"] is None:
+                    raise Stop("no done from the writer within %d ms" % DONE_MS)
+                entry["reader_cleared"] = wait_cmd_clear(res)
+                entry["since_ms"] = (time.monotonic() - t0) * 1000
+                entry["ticks_during"] = (regs()[1].get(12) - tk0) & 0xffffffff
+                if not entry["reader_cleared"]:
+                    raise Stop("the next event did not run the reader within %d ms" % DONE_MS)
+            else:
+                if kind == "gap":
+                    time.sleep(rd_.get("gap_ms", 1200) / 1000)
+                if kind == "fill":
+                    entry["fill"] = sh("/home/jtorra/sgxfive-test fill 2>&1 | grep -E '^diff|FAIL' | head -2",
+                                       check=False).strip()
+                res.w(STATE, 0)
+                t0 = time.monotonic()
+                res.w(CMD, 9)
+                entry["reader_cleared"] = wait_cmd_clear(res)
+                entry["since_ms"] = (time.monotonic() - t0) * 1000
+                if not entry["reader_cleared"]:
+                    raise Stop("%s: reader not done within %d ms" % (kind, DONE_MS))
+            entry["slots"] = read_slots(res)
+            entry["alive"] = alive()
+            entry["rate_hz"] = tick_rate(100)
+            entry["health"] = health()
+            out["rounds"].append(entry)
+            if not entry["alive"]["advancing"]:
+                raise Stop("tick not advancing after round %d (%s)" % (k, kind))
+            if not entry["health"]["ok"]:
+                raise Stop("unhealthy after round %d: %s" % (k, entry["health"]))
+            bad = [ln for ln in dmesg_new(n0) if BAD_LOG.search(ln)]
+            if bad:
+                raise Stop("kernel log: %s" % bad[:2])
+        except Stop as e:
+            stop = str(e)
+            entry["stopped"] = stop
+            if entry not in out["rounds"]:
+                out["rounds"].append(entry)
+            hang_dump(a["outdir"], "tailpair-stop%d" % k)
+            break
+    out["stop"] = stop
+    out["log_bad"] = [ln for ln in dmesg_new(n0) if BAD_LOG.search(ln)]
+    out["health"] = health()
+    res.close()
+    emit(out)
+    return 1 if stop else 0
+
+
 def cmd_events(a):
     """Q033: clear the log, cause the event (`trigger` miscinfo or fill), read the log."""
     n0 = dmesg_len()
     res = Res()
     res.w(LOG, [0] * 16)
+    quiet = None
+    if a.get("quiet_ms"):
+        time.sleep(a["quiet_ms"] / 1000)
+        quiet = res.r(LOG, 16)
+        res.w(LOG, [0] * 16)
     if a["trigger"] == "miscinfo":
         trig = miscinfo()
+    elif a["trigger"] == "tri":
+        trig = {"tri": sh("/home/jtorra/sgxfive-test" + " tri 2>&1 | grep -E '^diff|FAIL' | head -2", check=False).strip()}
     else:
         trig = {"fill": sh("/home/jtorra/sgxfive-test" + " fill 2>&1 | grep -E '^diff|FAIL' | head -2", check=False).strip()}
     time.sleep(0.05)
     log = res.r(LOG, 16)
     res.close()
-    out = {"log": log, "trigger": trig, "alive": alive(), "health": health(),
+    out = {"log": log, "quiet_log": quiet, "trigger": trig, "alive": alive(), "health": health(),
            "log_bad": [ln for ln in dmesg_new(n0) if BAD_LOG.search(ln)]}
     out["hit_slots"] = [k for k in range(4) if log[4 * k] == 1]
     emit(out)
@@ -437,7 +534,7 @@ def main():
     c = sys.argv[1]
     fn = {"status": cmd_status, "stock": cmd_stock, "arm": cmd_arm, "reset": cmd_reset,
           "gate": cmd_gate, "run": cmd_run, "page": cmd_page, "write": cmd_wait_clear,
-          "ticks": cmd_sleep_ticks, "pair": cmd_pair, "events": cmd_events}[c]
+          "ticks": cmd_sleep_ticks, "pair": cmd_pair, "events": cmd_events, "tailpair": cmd_tailpair}[c]
     sys.exit(fn(a) or 0)
 
 

@@ -14,6 +14,7 @@ sys.path.insert(0, str(HERE))
 import fwtask  # noqa: E402
 import layout as L  # noqa: E402
 import make_vectors  # noqa: E402
+import make_vectors1130  # noqa: E402
 
 
 def fake_run(tmp_path):
@@ -87,3 +88,75 @@ def test_the_vectors_of_the_data_repository_are_the_conversion_of_the_raw_runs(r
     want = json.loads(vec.read_text())
     got["run"].pop("converted"), want["run"].pop("converted")
     assert got == want
+
+
+# ---- phase 11.30: the vectors with task state ------------------------------------------------
+def test_slow_vector_has_the_loop_count_the_overlap_flag_and_no_time(tmp_path):
+    d = tmp_path / "p1130-d-slow"
+    d.mkdir()
+    rec = {"H": {}, "cmd_after": 0, "done": True, "echo": 3, "ms": 0.8, "overlap": 0, "restored": True,
+           "slot": [L.INITFILL] * 4, "job": {"n": 1, "params": {"10": 10000}}}
+    (d / "s11.jsonl").write_text(json.dumps(rec) + "\n")
+    (v,) = make_vectors1130.slow_vectors(tmp_path)
+    assert v["init"]["mem"]["0x00a"] == "0x00002710" and v["init"]["mem"]["0x001"] == "0x00000001"
+    assert v["readback"]["mem"]["0x004"] == "0x00000000"           # overlap
+    assert v["readback"]["mem"]["0x002"] == f"0x{L.DONE:08x}" and v["readback"]["mem"]["0x005"] == "0x00000003"
+    assert "ms" in v["provenance"] and not any("ms" in k for k in v["readback"])
+
+
+def test_events_vector_logs_what_the_stub_was_given_and_the_tick_logs_nothing(tmp_path):
+    for run in ("p1130-c-events", "p1130-c2-events", "p1130-c3-events"):
+        d = tmp_path / run
+        d.mkdir()
+        (d / "q033-q1.json").write_text(json.dumps({"log": [1, 2, 0x03000000, 0x01061a70] + [0] * 12,
+                                                    "quiet_log": [0] * 16}))
+    vs = make_vectors1130.events_vectors(tmp_path)
+    assert len(vs) == 6
+    kick, tick = vs[0], vs[1]
+    assert kick["init"]["state"]["pa"] == {"0": "0x00000002", "1": "0x03000000", "2": "0x01061a70"}
+    assert tick["init"]["state"]["pa"]["1"] == "0x02000000"
+    assert kick["program"]["entry"] == 0 and kick["init"]["task"] == "firmware"
+    log = {k: v for k, v in kick["readback"]["mem"].items() if int(k, 16) >= L.LOG}
+    assert list(log.values())[:4] == ["0x00000001", "0x00000002", "0x03000000", "0x01061a70"]
+    assert set(v for k, v in tick["readback"]["mem"].items() if int(k, 16) >= L.LOG) == {"0x00000000"}
+
+
+def test_a_writer_vector_lists_only_what_the_next_event_read_of_the_state(tmp_path):
+    """readback.state of a writer: sa100, sa127, sa20, sa24, r20, r21, i0, i1 and p1 to p3; never sa64,
+    p0 or pclink, which the closed task changes (E536)."""
+    def rd(k, pclink, p, r20, r21, i0, i1, sa):
+        s = {"10": [pclink, *p[:3]], "11": [p[3], r20, r21, i0], "12": list(sa[:4]),
+             "13": [sa[4], i1, L.INITFILL, L.INITFILL]}
+        return {"k": k, "slots": s, "kind": "x"}
+    ctl = {"rounds": [rd(0, 0x98, (1, 1, 0, 0), 0, 0x1000, 5, 6, (2, 7, 8, 0, 0)),
+                      rd(1, 0x98, (1, 1, 0, 0), 0, 0x1000, 5, 6, (2, 7, 8, 0, 0))], "stop": None}
+    m = [0x80000000 + i for i in range(9)]
+    w = rd(2, 6, (1, 0, 1, 1), m[5], m[6], m[7], m[8], (2, m[1], m[2], m[3], m[4]))
+    g = rd(3, 0x98, (1, 1, 1, 1), m[5], m[6], m[7], m[8], (2, m[1], m[2], m[3], m[4]))
+    f = rd(4, 0x98, (1, 1, 0, 1), 0, 0x1000, m[7], m[8], (2, m[1], m[2], m[3], m[4]))
+    d = tmp_path / "p1130-b-tailpair"
+    d.mkdir()
+    (d / "b-controls.json").write_text(json.dumps(ctl))
+    (d / "b-rounds.json").write_text(json.dumps({"rounds": [w, g, f] * 3, "stop": None}))
+    (d / "b-markers.json").write_text(json.dumps({"markers": [m, m, m], "p_pattern": [0, 0, 1, 1]}))
+    vs = make_vectors1130.state_vectors(tmp_path)
+    assert len(vs) == 14 and sum("writer" in v["id"] for v in vs) == 3
+    st = next(v for v in vs if "writer" in v["id"])["readback"]["state"]
+    assert set(st) == {"sa", "r", "i", "p"}
+    assert set(st["sa"]) == {"100", "127", "20", "24"} and set(st["p"]) == {"1"}   # only p1 is shown to persist
+    assert st["p"]["1"] == "0x00000000" and st["r"]["20"] == f"0x{m[5]:08x}"
+
+
+@pytest.mark.parametrize("sub", ["fwtask-state", "fwtask-events", "fwtask-slow", "fwtask-trc"])
+def test_the_11_30_vectors_of_the_data_repository_are_the_conversion_of_the_raw_runs(sub, tmp_path):
+    """vectors/nokernel/usse/<sub>/ is make_vectors1130's output for the raw runs, apart from the
+    time it was converted."""
+    have = DATA / "vectors/nokernel/usse" / sub if DATA else None
+    if have is None or not have.is_dir():
+        pytest.skip("SKIPPED, NOT PASSED: the 11.30 vectors are not in RESGX545_DATA")
+    make_vectors1130.main(["x", str(DATA / "firmware-tasks"), str(tmp_path)])
+    for want_file in sorted(have.glob("*.vec.json")):
+        got = json.loads((tmp_path / sub / want_file.name).read_text())
+        want = json.loads(want_file.read_text())
+        got["run"].pop("converted"), want["run"].pop("converted")
+        assert got == want, want_file.name

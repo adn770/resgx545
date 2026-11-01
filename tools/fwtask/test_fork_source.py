@@ -39,6 +39,9 @@ def test_own_results_page_stays_writable(src):
 
 
 def test_map_pd_passes_the_flags_to_the_mmu():
-    s = (gen_verify.SGXFIVE / "sgxfive.c").read_text()
+    mmu = gen_verify.SGXFIVE / "sgxfive.c"
+    if not mmu.is_file():
+        pytest.skip(f"SKIPPED, NOT PASSED: no fork checkout at {gen_verify.LINUX} (RESGX545_LINUX)")
+    s = mmu.read_text()
     m = re.search(r"int sgxfive_map_pd\(.*?\n}\n", s, re.S)
     assert m and "u32 flags" in m.group(0) and "b->npages, flags)" in m.group(0)

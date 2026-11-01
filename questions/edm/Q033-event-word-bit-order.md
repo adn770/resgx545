@@ -5,7 +5,7 @@ unit = "edm"
 kind = "hw"
 value = "medium"
 phase = 10
-evidence = ["E155", "E146", "E154", "E532"]
+evidence = ["E155", "E146", "E154", "E532", "E538"]
 terms = ["CR_EVENT_STATUS", "CR_EVENT_HOST_CLEAR", "CR_EVENT_STATUS.DPM_INIT_END", "CR_EVENT_STATUS.DPM_STATE_STORE", "CR_EVENT_STATUS.DPM_CONTROL_LOAD", "CR_EVENT_STATUS.SW_EVENT", "CR_EVENT_KICK"]
 +++
 
@@ -50,3 +50,16 @@ list), and neither bit 8 nor bit 19 was set by a tick. The kick through
 stopped, E533), so the open part is as before for them: the order and positions of the status bits
 in the word the hardware hands the PDS for a kick and for a job, and which events set bits 8 and 19.
 Their run needs a logging wrapper that keeps the tick (Q152).
+
+Narrowed in 11.30 (not retired). The kick through `CR_EVENT_KICK` with no job queued was run, three
+times (a GETMISCINFO through the debugfs, E538): it reached the general slot only (slot 0, the
+other three slots logged nothing, 3 of 3 runs) with `pa0` = 2, `pa1` = 0x03000000 and `pa2` =
+0x01061a70, that is a tick's words (E532) with bit 24 added. The declared prediction, `pa1` bit 8 =
+0x100 (the reversed reading: status bit 14 seen from the other side), failed, and so did its
+falsifier, 0x4000 (E146's reading, bit 14): the kick sets neither bit 8 nor bit 14, and `pa1` bits
+24 and 25 are above the 24 bits PDS #13 reads. A window of 50 ms of ticks logged nothing with bit
+25 masked (3 of 3 windows, about 150 ticks). The TA job that finishes and the job that overflows
+its parameter buffer were not run (the stage that would have run the first, Q2, did not run), so
+the open part is as before for them: the order and positions of the status bits in the word the
+hardware hands the PDS for a job, which events set input bits 8 and 19, and what bits 24 and 25
+mean (Q157 and Q153).

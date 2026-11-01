@@ -75,34 +75,62 @@ The waits and modes on the hardware (E101) **[HW]**:
   by the rule (516, 576, 640, 704, 772, 832, 896 and 960). Hung: 196, 200, 204, 208, 212, 216, 220,
   224, 252, 256, 508 and 1020 (E487: 15 of 15 jobs, 196 also started with 32, 64 and 128), 228 to
   248 and 452 to 504 (20 requests; E519) and 7 of those 15 (512, 708, 764, 768, 964, 1000 and 1016).
-  The rule was written after the first 84 requests and predicted all 15 from 512 up; what a request
-  above 256 allocates is not measured (every E519 job wrote the same marker to `r123`, which earlier
-  jobs wrote too, so the read-back does not show that the write landed under a small allocation:
-  Q132, Q144). Every request from 124 up to 504 wrote `r123` only (`r124` and up cannot be named as
-  an ALU operand), so these show that the job runs and that `r123` is real storage, not that 192
-  temporaries are usable; the register numbers a program can name end at 123. Every request run was
-  a multiple of four. The 15 jobs of E487 that ran took 420 to 583 microseconds, with no cost seen
-  in single samples. A register past a phase's request reads as `n mod T` in most instances
-  (*Machine model*). The limit for a firmware task is **[open]** (Q133, Q144).
+  The rule was written after the first 84 requests and predicted all 15 from 512 up. What a request
+  above 256 allocates is not measured, but it is not the value modulo 256 for 260 to 376: with a
+  marker of its own in every job (E535, 36 jobs in two runs) a write to `r123` landed and read back
+  in 2048 of 2048 pixels under the requests 260, 264, 300, 316, 376 and 448 (12 of 12 jobs) and in
+  the 6 controls (124, 128 and 192 with `r123`, 8, 32 and 64 with `r3`, `r31` and `r63`: 12 of 12
+  jobs), and was not seen under 4, 8, 16, 32, 64 and 100 (0 of 12 jobs, within the pixels the
+  reports list; the pixels read what earlier jobs left). [infer] A request of 260 to 376 therefore
+  allocates at least 124 registers and not the 4 to 120 that its value modulo 256 gives (Q144), and
+  E519's read-back of `r123` was a landed write, not a stale read. Every request from 124 up to 504
+  wrote `r123` only (`r124` and up cannot be named as an ALU operand), so these show that the job
+  runs and that `r123` is real storage, not that 192 temporaries are usable; the register numbers a
+  program can name end at 123. Every request run was a multiple of four. The 15 jobs of E487 that
+  ran took 420 to 583 microseconds, with no cost seen in single samples. A register past a phase's
+  request reads as `n mod T` in most instances (*Machine model*; E535's read of `r123` under 100 or
+  less returned earlier jobs' contents, a different probe, not reconciled: Q147). **For a firmware
+  task [HW]** (E540) the temporaries are the TRC the task is started with: with TRC 8, 9, 12, 16, 24
+  and 31 (32 to 124 temporaries) the top register, `r(4T - 1)`, held the marker written to it in 6
+  of 6 runs, and the register past the allocation (`r32`, `r36`, `r48`, `r64`, `r96` for 8, 9, 12,
+  16 and 24) did not (0 of 5, one job and one read per T; it read 0 or a leftover), as in a fill.
+  TRC 32 and above were not run (the arm of 32 failed with its error cut off, [infer] at the fork's
+  hazard gate), so the limit of a firmware task above 31 is **[open]** (Q133, Q144).
 - **A firmware (EDM) task of ours runs [HW]** (E531 to E534): one start dword of PDS #13 (the
   general slot, which the 1 kHz tick and the host kick reach) pointed at a page of our code at the
-  kernel code heap + 0x20000 (instruction index 0x4000), set when the firmware is loaded and
-  undone by a reset. The wrapper reads a command dword of a results page the host shares, and when
-  it is zero jumps to the task the slot used to start (`mov pclink, rN`, `lapc`, the index a
-  record states, E146), which then runs as before (ticks at 964 to 999 Hz, `miscinfo` answered,
-  a fill and a triangle exact). The forms it uses: `mov rN, #imm32` (a `limm`, patched by the
-  kernel with the results address and the continue index), `ldad.bypassl1`, `stad`, `wdf drc0`,
-  `idf drc0, bif`, `and.testtanz.chan0 !c0, pN, rA, rB` and `xor.testtaz.chan0 !c0, pN, rA, #n` for
-  predicates, `pN br` with a numeric offset, and `ldr rD, #idx, drcN` and `str #idx, rS` with an
-  immediate index only. A tick hands the task `pa0` = 2, `pa1` = 0x02000000 and `pa2` =
-  0x01061a70 (E532, 2 of 2 runs). After a task that wrote `sa`, `r`, `i`, `p` and `pclink` state
-  and ended with `nop.end` instead of jumping to the closed one, every later event stopped until a
-  reset (E533, one run; skipping the closed task and the writes are not separated, Q152). The
-  simulator runs these tasks only through `sgx_sim::fwtask`, and models `ldr` and `str` only there:
-  `str` to 0x0814 and 0x0a78 (values inside their 17 and 6 bits, the immediate index only) and `ldr`
-  of those two and of `CORE_ID`, `CORE_REVISION` and `CR_TIMER`, which a vector seeds (the timer
-  never advances, and no vector reads the first two: unit tests alone cover them); everything else
-  stops the run.
+  kernel code heap + 0x20000 (instruction index 0x4000), set when the firmware is loaded and undone
+  by a reset. The wrapper reads a command dword of a results page the host shares, and when it is
+  zero jumps to the task the slot used to start (`mov pclink, rN`, `lapc`, the index a record
+  states, E146), which then runs as before (ticks at 964 to 999 Hz, `miscinfo` answered, a fill and
+  a triangle exact). The forms it uses: `mov rN, #imm32` (a `limm`, patched by the kernel with the
+  results address and the continue index), `ldad.bypassl1`, `stad`, `wdf drc0`, `idf drc0, bif`,
+  `and.testtanz.chan0 !c0, pN, rA, rB` and `xor.testtaz.chan0 !c0, pN, rA, #n` for predicates, `pN
+  br` with a numeric offset, and `ldr rD, #idx, drcN` and `str #idx, rS` with an immediate index
+  only, `mov saN, rM` and `mov rD, saN`, `mov i0, rN` and `mov rN, i0`, `mov rN, pclink`, a
+  predicated `mov`, `and.testtanz.chan0 !c0, pN, rA, rB` with a register mask, and `ima32.u rD, rS,
+  #1, rM.neg` (a loop counter). A tick hands the task `pa0` = 2, `pa1` = 0x02000000 and `pa2` =
+  0x01061a70 (E532, 2 of 2 runs), and a host kick (a GETMISCINFO with no job) `pa0` = 2, `pa1` =
+  0x03000000 and the same `pa2`, to the general slot only (E538, 3 of 3 runs; `pa2` was the same in
+  all 5 events seen). After a task that wrote `sa`, `r`, `i`, `p` and `pclink` state and ended with
+  `nop.end` instead of jumping to the closed one, every later event stopped until a reset (E533, one
+  run; skipping the closed task, its arbitrary pclink write and its p values are not separated,
+  Q152). **State between firmware tasks [HW]** (E536; a writer that calls the closed task after its
+  writes, with the closed task's ticks between): `sa100`, `sa127`, `sa20` and `sa24` (12 of 12
+  values in 3 of 3 rounds), `r20` and `r21` (6 of 6) and `i0` and `i1` (6 of 6) written by one task
+  were read by the next at the next event and after 1200 ms, and after a client fill all but `r20`
+  and `r21`; `sa64` did not take the write (it read 2); at the next event p1 was the writer's 0 (3
+  of 3, 1 in the other readings) and `pclink` was 6, the value of the writer's own tail triple
+  [infer], not the 0x98 of the other readings, p0 was not the writer's, and p2 and p3 move between
+  readings with no writer (Q155). The same writer kept the tick, a task that also wrote `sa63` and
+  `sa65` and called the closed task was not followed by its armed reader within 100 ms (E537, one
+  run: Q156). No second pass of the wrapper was found busy while a slow task ran, up to 6.9 ms (10
+  of 10 runs, E539; ticks only, slot 0, no job). The simulator runs these tasks only through
+  `sgx_sim::fwtask`, and models `ldr` and `str` only there: `str` to 0x0814 and 0x0a78 (values
+  inside their 17 and 6 bits, the immediate index only) and `ldr` of those two and of `CORE_ID`,
+  `CORE_REVISION` and `CR_TIMER`, which a vector seeds (the timer never advances, and no vector
+  reads the first two: unit tests alone cover them); a vector may give the task's entry state (`sa`,
+  `r`, `i`, `pa`, p and `pclink`) and its temporaries, and the readback the state it must have left;
+  everything else stops the run, including a read of `sa64` after the task wrote it.
 - **The register form** `phas srcA, srcB` hung or faulted with every source layout tried
   (absolute index, offset or `doutu` U0 layout, against the immediate's fields or high dword);
   none started the next phase (E118).

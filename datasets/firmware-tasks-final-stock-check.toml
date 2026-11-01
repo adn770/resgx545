@@ -1,0 +1,9 @@
+title = "firmware task of our own: the stock check after the 11.30 runs"
+repo = "data"
+paths = ["firmware-tasks/p1130-post-stock/"]
+method = "a debugfs reset, then the unarmed gate (job, fill, 64 x 64 triangle) and the status read by hand on the laptop after the last stage; reset-and-stock.txt is a copy of the file of the same name in firmware-tasks-writer-variants"
+date = "2026-11-08"
+files = 2
+size = 2847
+sha256 = "1a544bbc14c11ae8a223b4ece69a123e6edce8121ab2c2680b5da5c107554c99"
+recipe = "tools/fwtask/run_stage.py"
