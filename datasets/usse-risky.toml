@@ -1,0 +1,10 @@
+title = "probe table usse/risky"
+repo = "data"
+paths = ["usse/risky/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 64
+size = 113628
+sha256 = "c4c032611bf03f187daeee0a94402caf54925328bc78e88a8d88daae6d1d3664"
+recipe = "probes/usse/risky.toml"
+needs = ["render"]

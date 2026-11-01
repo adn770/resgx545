@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E100", "E104", "E111", "E113", "E124", "E371"]
+evidence = ["E100", "E104", "E111", "E113", "E124", "E371", "E470", "E472", "E475"]
 terms = []
 +++
 
@@ -18,6 +18,13 @@ task with or without .nosched (E100). A counted loop's time is linear in its cou
 Narrowed by E371: a register written by `mov`, `or`, `fmad`, `frcp` or `fexp` reads as the result
 in the very next instruction and at every distance to 8, with or without `.nosched` on the writer
 (230 cases, every pixel), so for these writers the flag does not change correctness.
+
+Narrowed in 11.23, for `ima32` only in part: four dependent `ima32` in a row, each reading the one
+before it in the next instruction, give the exact chain (10 of 10: E470), and the compare formula
+reads an `ima32`'s result two and three instructions later, with and without three `nop`s after it
+(64 of 64 pairs, and 16 of 16 for the unsigned compare with the `nop`s: E472). A `mov pclink, rN` is
+seen by a `lapc` in the very next instruction, with or without `.nosched` on either (19 of 19:
+E475). Not run for `ima32`: `.nosched` on the writer, and any distance beyond three.
 
 What is open (usse_isa.md §8, items 3 and 7): what `.syncs` and `.nosched` change (timing, with
 the reads correct either way), whether the hardware stalls a reader or the result is ready, and

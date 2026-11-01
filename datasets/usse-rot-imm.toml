@@ -1,0 +1,10 @@
+title = "probe table usse/rot-imm"
+repo = "data"
+paths = ["usse/rot-imm/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 183
+size = 351994
+sha256 = "3e7c2d212077232faf9599dd7de73217639fc7e414b64962dcc61befede3de27"
+recipe = "probes/usse/rot-imm.toml"
+needs = ["render"]

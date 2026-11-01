@@ -1,0 +1,10 @@
+title = "probe table usse/place (a failed run, kept: the first placed table, stopped after its first probe)"
+repo = "data"
+paths = ["usse/place/"]
+method = "campaign runner on the laptop target (tools/campaign); a failed run kept as part of the record of E476: the three jobs of its first probe faulted because the table counted the target of the lapc from the start of the placed program, where the hardware counts from the code base (the placement rounded down to 512 KiB); the runner then stopped at the second probe on the tool's refusal of a program of over 256 words and wrote no manifest, so this one was written by hand with the runner's own digest function"
+date = "2026-11-08"
+files = 8
+size = 14287
+sha256 = "73c39cacbc94dbe841e0fbde2676f6504cd3102ee321427d128bf1d4409b9d0c"
+recipe = "probes/usse/place.toml"
+needs = ["render"]

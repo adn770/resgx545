@@ -1,0 +1,45 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# control of place.toml (phase 11.23 follow-up): placed programs without a jump
+# A FAILED table, kept (E476): the six jobs ran to their end, but the hypotheses were scratch lists
+# for programs that store nothing, so every probe reads NONE. Rerun as place-ctl2.
+needs = ["render"]
+
+[[probe]]
+name = "usse-place-ctl-c-two"
+question = "a program of 2 words placed in the code heap (cbase) with no lapc (control of usse-place-lapc-*, whose jobs all faulted): o0 = 0x600d when it runs to its end"
+source = "place_base.s"
+place = { offset = 0x10000, source = "place_ctl_c-two.s", form = "cbase" }
+temps = 32
+inputs = ["RUN"]
+labels = ["run 1", "run 2"]
+cases = [[1], [2]]
+[probe.hypotheses]
+"model: the program runs to its end" = [[0x600d], [0x600d]]
+"alt: the job faults" = ["fail", "fail"]
+
+[[probe]]
+name = "usse-place-ctl-a-short"
+question = "a program of 8 words placed in the code heap (cbase) with no lapc (control of usse-place-lapc-*, whose jobs all faulted): o0 = 0xfa11 when it runs to its end"
+source = "place_base.s"
+place = { offset = 0x10000, source = "place_ctl_a-short.s", form = "cbase" }
+temps = 32
+inputs = ["RUN"]
+labels = ["run 1", "run 2"]
+cases = [[1], [2]]
+[probe.hypotheses]
+"model: the program runs to its end" = [[0xfa11], [0xfa11]]
+"alt: the job faults" = ["fail", "fail"]
+
+[[probe]]
+name = "usse-place-ctl-b-long"
+question = "a program of 133 words placed in the code heap (cbase) with no lapc (control of usse-place-lapc-*, whose jobs all faulted): o0 = 0xfa11 when it runs to its end"
+source = "place_base.s"
+place = { offset = 0x10000, source = "place_ctl_b-long.s", form = "cbase" }
+temps = 32
+inputs = ["RUN"]
+labels = ["run 1", "run 2"]
+cases = [[1], [2]]
+[probe.hypotheses]
+"model: the program runs to its end" = [[0xfa11], [0xfa11]]
+"alt: the job faults" = ["fail", "fail"]

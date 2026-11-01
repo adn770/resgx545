@@ -1,0 +1,100 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# item 6: lapc to instruction indices up to 511, in a program placed in the code heap (E428's --place):
+# the tool refuses fill programs of over 256 words. Phase 11.23 follow-up.
+# A FAILED table, kept (E476): only the first probe ran, its three jobs faulted (the target counted
+# from the program start of the placed program; the hardware counts from the code base), and the
+# runner stopped at the second probe (a program of over 256 words). The other six probes never ran.
+# Rerun as place2 with targets counted from the code base and at most 250 words.
+needs = ["render"]
+
+[[probe]]
+name = "usse-place-lapc-129"
+question = "lapc to instruction index 129 of a program placed in the code heap (cbase), 133 words: o0 = 0x600D when it lands on the target, 0xFA11 when it falls through, 0x1000 + k when it lands early at k, 0xBAD1 when it lands after (model prediction: lands on the target)"
+source = "place_base.s"
+place = { offset = 0x10000, source = "place_lapc_129.s", form = "cbase" }
+temps = 32
+inputs = ["RUN"]
+labels = ["run 1", "run 2", "run 3"]
+cases = [[1], [2], [3]]
+[probe.hypotheses]
+"model: lands on the target" = [[0x600d], [0x600d], [0x600d]]
+"alt: the stale link is used (falls through)" = [[0xfa11], [0xfa11], [0xfa11]]
+
+[[probe]]
+name = "usse-place-lapc-255"
+question = "lapc to instruction index 255 of a program placed in the code heap (cbase), 259 words: o0 = 0x600D when it lands on the target, 0xFA11 when it falls through, 0x1000 + k when it lands early at k, 0xBAD1 when it lands after (model prediction: lands on the target)"
+source = "place_base.s"
+place = { offset = 0x10000, source = "place_lapc_255.s", form = "cbase" }
+temps = 32
+inputs = ["RUN"]
+labels = ["run 1", "run 2", "run 3"]
+cases = [[1], [2], [3]]
+[probe.hypotheses]
+"model: lands on the target" = [[0x600d], [0x600d], [0x600d]]
+"alt: the stale link is used (falls through)" = [[0xfa11], [0xfa11], [0xfa11]]
+
+[[probe]]
+name = "usse-place-lapc-256"
+question = "lapc to instruction index 256 of a program placed in the code heap (cbase), 260 words: o0 = 0x600D when it lands on the target, 0xFA11 when it falls through, 0x1000 + k when it lands early at k, 0xBAD1 when it lands after (model prediction: lands on the target)"
+source = "place_base.s"
+place = { offset = 0x10000, source = "place_lapc_256.s", form = "cbase" }
+temps = 32
+inputs = ["RUN"]
+labels = ["run 1", "run 2", "run 3"]
+cases = [[1], [2], [3]]
+[probe.hypotheses]
+"model: lands on the target" = [[0x600d], [0x600d], [0x600d]]
+"alt: the stale link is used (falls through)" = [[0xfa11], [0xfa11], [0xfa11]]
+
+[[probe]]
+name = "usse-place-lapc-257"
+question = "lapc to instruction index 257 of a program placed in the code heap (cbase), 261 words: o0 = 0x600D when it lands on the target, 0xFA11 when it falls through, 0x1000 + k when it lands early at k, 0xBAD1 when it lands after (model prediction: lands on the target)"
+source = "place_base.s"
+place = { offset = 0x10000, source = "place_lapc_257.s", form = "cbase" }
+temps = 32
+inputs = ["RUN"]
+labels = ["run 1", "run 2", "run 3"]
+cases = [[1], [2], [3]]
+[probe.hypotheses]
+"model: lands on the target" = [[0x600d], [0x600d], [0x600d]]
+"alt: the stale link is used (falls through)" = [[0xfa11], [0xfa11], [0xfa11]]
+
+[[probe]]
+name = "usse-place-lapc-300"
+question = "lapc to instruction index 300 of a program placed in the code heap (cbase), 304 words: o0 = 0x600D when it lands on the target, 0xFA11 when it falls through, 0x1000 + k when it lands early at k, 0xBAD1 when it lands after (model prediction: lands on the target)"
+source = "place_base.s"
+place = { offset = 0x10000, source = "place_lapc_300.s", form = "cbase" }
+temps = 32
+inputs = ["RUN"]
+labels = ["run 1", "run 2", "run 3"]
+cases = [[1], [2], [3]]
+[probe.hypotheses]
+"model: lands on the target" = [[0x600d], [0x600d], [0x600d]]
+"alt: the stale link is used (falls through)" = [[0xfa11], [0xfa11], [0xfa11]]
+
+[[probe]]
+name = "usse-place-lapc-400"
+question = "lapc to instruction index 400 of a program placed in the code heap (cbase), 404 words: o0 = 0x600D when it lands on the target, 0xFA11 when it falls through, 0x1000 + k when it lands early at k, 0xBAD1 when it lands after (model prediction: lands on the target)"
+source = "place_base.s"
+place = { offset = 0x10000, source = "place_lapc_400.s", form = "cbase" }
+temps = 32
+inputs = ["RUN"]
+labels = ["run 1", "run 2", "run 3"]
+cases = [[1], [2], [3]]
+[probe.hypotheses]
+"model: lands on the target" = [[0x600d], [0x600d], [0x600d]]
+"alt: the stale link is used (falls through)" = [[0xfa11], [0xfa11], [0xfa11]]
+
+[[probe]]
+name = "usse-place-lapc-511"
+question = "lapc to instruction index 511 of a program placed in the code heap (cbase), 512 words: o0 = 0x600D when it lands on the target, 0xFA11 when it falls through, 0x1000 + k when it lands early at k, 0xBAD1 when it lands after (model prediction: lands on the target)"
+source = "place_base.s"
+place = { offset = 0x10000, source = "place_lapc_511.s", form = "cbase" }
+temps = 32
+inputs = ["RUN"]
+labels = ["run 1", "run 2", "run 3"]
+cases = [[1], [2], [3]]
+[probe.hypotheses]
+"model: lands on the target" = [[0x600d], [0x600d], [0x600d]]
+"alt: the stale link is used (falls through)" = [[0xfa11], [0xfa11], [0xfa11]]

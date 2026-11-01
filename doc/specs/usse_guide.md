@@ -178,6 +178,16 @@ The integer multiply-add, colour, dot-product and video groups have only a two-b
   full field and nothing in the firmware or the captures uses it.
 - A repeated instruction tests its predicate once, for the whole instruction **[HW]**
   (*Predicates on repeated instructions*).
+- **Predicates and control flow [HW].** `p0`-`p3` are not changed by `ba`, `br`, `ba.savelink`,
+  `br.savelink`, `lapc` or a predicated one of these, taken or not (E477: 28 of 28 cases with the
+  patterns 1010, 0101, 1111 and 0000, and 16 of 16 through `ba.savelink` and `lapc`). A routine's
+  own tests change them for its caller: there is no save and restore of `p0`-`p3` around a call. A
+  predicated branch is taken when its predicate is set (`!pN` when clear).
+- **The predicates are not reset between jobs [HW].** A job that reads `p0`-`p3` before it sets them
+  reads the pattern the job before it left, in 98 to 99 percent of its 2048 pixel instances (E477:
+  2016 to 2032 pixels in each of the ten readers that followed a setter) and another pattern in the
+  others. The probe table's model, "cleared at the start of a job", fails. A task sets `p0`-`p3` by
+  a test before it reads them; across firmware tasks the state is **[open]** (Q124).
 
 **In the firmware [RE].** The microkernel's predicates guard branches above all: 591 of its
 954 `ba` are predicated (`p0` 318, `!p0` 94, `p2` 76, `p1` 72, `!p1` 26, `p3` 5). A few dozen
@@ -194,13 +204,50 @@ flag into `p0` without writing a register and branches on it.
   a signed 18-bit offset **counted from the `br` itself** (`br #1` is the next instruction)
   **[HW]** (*`br` offsets and the `Pn` predicate*); the assembler accepts only a number for
   `br`, not a label (`tools/usse-asm/README.md`).
-- **Calls.** `ba.savelink` (and `br.savelink`) also write the return address to `pclink`; `lapc`
-  jumps to `pclink`. `pclink` holds the **index of the instruction after the call** **[RE]**: the
-  firmware builds return addresses as instruction indices (it loads an index into a temporary and
-  moves it to `pclink` before a `lapc`), and the kernel CCB dispatch jumps to a handler the same way
-  (the address moved into `pclink`, then `lapc`; `doc/specs/hw_spec.md`). There is one
-  link register, so a routine that calls another saves `pclink` in a temporary first
-  (`mov rN, pclink` ... `mov pclink, rN`) **[RE]**.
+- **Calls.** `ba.savelink` and `br.savelink` write the index of the instruction after the call to
+  `pclink` **[HW]** (E475: calls with the next instruction at index 20, 40, 64, 127 and 128, and a
+  taken predicated call: 9 of 9; both forms store the same index, counted from the program start of
+  a fill and in general from the code base, below). A call whose predicate is false still writes
+  `pclink` **[HW]** in the one case run, `p0 ba.savelink` with `p0` clear: a preset 0x77 read back
+  as the index after the call with the call not taken, where the probe table's model said it was not
+  written (`br.savelink`, the other predicates and `!pN` were not run). `lapc` jumps to `pclink`
+  **[HW]** (E476). The firmware builds return addresses as instruction indices (it loads an index
+  into a temporary and moves it to `pclink` before a `lapc`), and the kernel CCB dispatch jumps to a
+  handler the same way (the address moved into `pclink`, then `lapc`; `doc/specs/hw_spec.md`)
+  **[RE]**.
+- **`pclink` is 18 bits wide [HW].** `mov pclink, rN` keeps bits 17:0 of `rN` (E475: 19 of 19 cases;
+  0x40000 reads back 0, 0x7fffffff reads 0x3ffff, 0xa5a5a5a5 reads 0x1a5a5, and the whole 32 bits
+  come back for no value above 0x3ffff), so the bits above 17 of a register never reach a jump; the
+  probe table's model kept 32. `mov pclink, rN` followed at once by `lapc` jumps to the new value,
+  with no instruction between them and with or without `.nosched` on either (19 of 19; the call's
+  stale link is never used). There is one link register, so a routine that calls another saves
+  `pclink` in a temporary first (`mov rN, pclink` ... `mov pclink, rN`) **[RE]**, and nested calls
+  so written return twice **[HW]** (E476: 2 of 2).
+- **`lapc` lands exactly on the index in `pclink` [HW]** for the indices run (E476): in a fill 30,
+  31, 32, 34, 37, 45, 69 and 129, forward, the target a constant or computed by an `ima32` add (8 of
+  8 and 8 of 8), backward 0, 1, 2, 5, 20 and 100 instructions (6 of 6), the call returns near 20,
+  and in programs placed in the code heap 0x2081, 0x20c8 and 0x20fa and the link plus 8 (0x200a,
+  0xa, 0xfe0a, 0xa, 0xa). The link values themselves (0x2002, 0xfe02, 2) are reads, not targets. No
+  index outside these is known to fail, and no other was run: indices from 256 to 8191 in a fill
+  and a jump across a 65536-word step of the code base were not run, the tool refusing programs of
+  over 256 words: **[open]** (Q123).
+- **Where indices count from [HW].** The index of a `ba`, `lapc` or `pclink` counts from the code
+  base the task was started with (E476). A program placed at heap offset X by `sgxfive-test probe
+  --place X=FILE --place-form cbase` runs with the code base X rounded down to a multiple of 0x80000
+  bytes (65536 instructions) and starts at (X mod 0x80000) / 8: the link read in a program placed at
+  0x10000 is 0x2002, at 0x100000 it is 2, at 0x1ff000 it is 0xfe02, at 0x200000 and at 0x400000 it
+  is 2 (5 placements, 2 runs each). The 0x80000 step rests on one placement that is not aligned,
+  0x1ff000, besides 0x10000; a second one was not run. A jump to an index counted from the program
+  start, in a program placed at 0x10000, faulted the job (5 of 5: 3 `lapc` and 2 `ba #T`) or hung it
+  (2 of 2, a `lapc`); that it went to index 129 of the code base instead is **[infer]**. A computed
+  target independent of the base is the link read at run time plus a constant (`br.savelink #1; mov
+  rN, pclink; ima32.u rM, rN, #1, rK; mov pclink, rM; lapc`), which landed in all five placements
+  **[HW]**.
+- **`pclink` is not reset between jobs [HW].** A job that reads `pclink` before it writes it reads
+  what an earlier job left, in 94 to 98 percent of its 2048 pixel instances (E475: the ten readers
+  of one table; usually the last job's value, the others 0xeb3 or 0x98, in aligned 2 x 2 quads of
+  pixels at positions that change from job to job: Q125). A task writes `pclink` before it reads it;
+  across firmware tasks the state is **[open]** (Q124).
 - **Branch flags [open].** `.nosched`, `.synce`/`.syncent` and `.mon` decode on `ba`, `br`
   and `lapc`; their effect is not established, and the firmware uses none of them.
 - **`bexception` [HW].** Hangs a fill's pixel task, with or without `.nosched`: it neither
@@ -469,10 +516,15 @@ destination extension): temporaries, `pa`, `o` and `sa` only; no immediates.
 | `dst` | 0x80 | `o0` |
 | `imm` | 0x12345678 | `0x12345678` |
 
-- **The rotated immediate** of the bitwise group (source 2 written as `#imm`) is a 16-bit
-  value rotated left by a five-bit amount, so any 32-bit value with at most 16 significant
-  contiguous bits (cyclically) can be written directly; the assembler finds the rotation
-  **[RE]**:
+- **The rotated immediate** of the bitwise group (source 2 written as `#imm`) is a 16-bit field
+  rotated left by the five-bit rotation field `enc[42:38]` **[HW]** (E474: raw words with the fields
+  0xffff, 0x8001 and 0x1234 under all 32 rotations, 96 of 96), so redundant encodings of one value
+  agree, and any 32-bit value with at most 16 significant contiguous bits (cyclically) can be
+  written directly; the assembler finds the first rotation that fits. `~#X` complements the whole
+  32-bit operand after the rotation (19 of 19). A shift or rotate by a rotated immediate uses the
+  whole 32-bit value as the amount: `shl` and `shr` give 0 and `asr` the sign for 32 and over, and
+  `rol` takes it mod 32 (36 of 36). The assembler refuses values that are not `rotl(m16, r)`
+  (0x00010001, 0x55555555, 0x12345678); that no other encoding exists is **[infer]**:
 
 `and r1, r2, #0x00FF0000` assembles with form #16: enc[63:32] = `0x50011230`, enc[31:0] =
 `0x203F8100`; in memory (little endian) `00 81 3F 20 30 12 01 50`.
@@ -1211,10 +1263,11 @@ in the reference, group by group under the same titles.
   state copies are built from it. A source immediate prints in hex.
 - **`mov dst, #imm32`** (class 31) loads a full 32-bit immediate **[HW]**; the driver patches
   colours and PBE words into it.
-- **`mov pclink, src`** and **`mov dst, pclink`** save and restore the link register
-  **[RE]** (*Program counter, calls and the end of a program*). Two encodings exist for each:
-  a plain one with a temporary, and a general one with a predicate, `.nosched` and any
-  operand.
+- **`mov pclink, src`** and **`mov dst, pclink`** save and restore the link register **[RE]**
+  (*Program counter, calls and the end of a program*). Two encodings exist for each: a plain one
+  with a temporary, and a general one with a predicate, `.nosched` and any operand. `pclink` is 18
+  bits wide, so `mov pclink, rN` keeps bits 17:0 of `rN` and a `mov rN, pclink` reads at most
+  0x3ffff **[HW]** (E475).
 
 **In the firmware [RE].** `mov` is its most common instruction (1497): 626 immediates into
 temporaries (constants, addresses, and the nine address-patch sites the loader fills), moves
@@ -1443,9 +1496,29 @@ The test is `.test<S><J><Z>.<chan>`, from `enc[43:36]`:
   tests flags this way hundreds of times, and sign bits by shifting the flag to bit 31 first
   (`shl.testnat`); our state and vertex programs rely on `and.testtanz` of 0 and 0 leaving
   the predicate false (*Predicates*).
-- **The 32-bit adds [HW]** are not full 32-bit adds: `iadd32`/`iaddu32` add source 1's low 16
-  bits, sign- or zero-extended, to the 32-bit source 2, and `iaddu32`'s `n` is never true
-  (*The 32-bit adds `iadd32` and `iaddu32`*).
+- **The 32-bit adds [HW]** are not full 32-bit adds: `iadd32`/`iaddu32` add source 1's low 16 bits,
+  sign- or zero-extended (`iaddu32`'s extension is **[open]**, Q126), to the 32-bit source 2, and a
+  test of some of them applies to the true 33-bit sum, not the wrapped one (E472): `iadd32`'s `n`
+  and `p` read the sign of the true sum (r1 = 0x7fff with r2 = 0x7fffffff leaves `n` clear; 12
+  pairs, 5 of which overflow and separate the readings), `iaddu32`'s nonzero test counts the carry
+  out of bit 31 (1 + 0xffffffff is nonzero, 8 of 8 pairs, decided by that one pair for either
+  extension of r1), `z` of an overflowed `iadd32` sum and `testpat` and `testtaz` of `iaddu32` are
+  **[open]** (Q126), and `iaddu32`'s `n` is never true (*The 32-bit adds `iadd32` and `iaddu32`*).
+  With source 1 = `#0` the test reads source 2's 32 bits exactly: `n`, `p`, `z` and `nz` (8 of 8
+  values each).
+- **Tests with an immediate [HW]** act on the 32-bit result (E473): `shr.testtanz.chan0 !c0, p0, r,
+  #n` is "r >> n is nonzero", with n of 32 and over giving zero (80 of 80), `xor.testtaz` is "r ^ n
+  is zero" over all 32 bits (18 of 18), and `and`, `or`, `xor` and `rol` with `testtanz` and `asr`
+  and `shl` with `testnat` test their 32-bit result (48 of 48). The immediate of a test is seven
+  bits. The assembler refuses `~` in the three test forms tried (`and.testtanz ... ~#7` and `~r2`,
+  `xor.testtaz ... ~#7`), while `and r10, r1, ~#7` assembles; that it is an encoding limit
+  (`enc[43:42]` is the sign test where the bitwise group keeps its invert bit) and not an
+  assembler gap is **[infer]**: no raw word was run.
+- **A 32-bit compare [HW]** of two registers is not one instruction: with `t = ima32.u r11, r2, c56,
+  r1` (a - b), the unsigned a < b is bit 31 of `((~a & b) | (~(a ^ b) & t))` and the signed one bit
+  31 of `(((a ^ b) & (a ^ t)) ^ t)`, each tested by `shr.testtanz.chan0 !c0, p0, rX, #31` (64 of 64
+  pairs of corner values each, and 16 of 16 for the unsigned compare only with three nops after the
+  `ima32`; E472). `ima32` has no test field **[infer]** (the assembler refuses a test on it).
 - **The 16-bit operations [HW]:** `isub16`/`usub16` subtract both lanes, wrapping, and `chan0`
   tests the low lane (*`isub16`/`usub16` lanes*). `iadd16`, `uadd16`, `imul16`, `umul16`,
   `iadd8`, `isub8`, `imul8`, `fadd`, `fmul` and `fsub` test their lanes as the channels say, a
@@ -1555,17 +1628,43 @@ Four classes **[RE]**: 21 `imae` (16 × 16 + 32), 20 `ima16` (16-bit), 26 `ima32
 flags (`.skipinv`, `.nosched`, `.end`, a three-bit repeat) and a two-bit predicate (`ima32`
 and `idiv` the full one).
 
-- **`imae.{u,s} d, a.{low,high}, b.{low,high}, c, u32`** computes `d = a16 × b16 + c`, the
-  halves zero- or sign-extended **[infer]**: the firmware's addition idiom is
-  a multiply-add by an immediate 1 of a 16-bit value, 205 times, and its address
-  arithmetic multiplies indices by structure sizes the same way. **[HW]** `.usat`/`.ssat`
-  saturate, `.rsN` shifts the result right, a `u16` source 2 is sign-extended and a `z16`
-  one zero-extended, `coe, iN` writes the carry out and `cie, iN` adds it (*Integer
-  multiply-add modes*).
-- **`ima32.{u,s} d, a, b, c`** computes the low 32 bits of `a × b + c` **[infer]** (the
-  firmware's ten uses fit). `cie, iN` adds `iN` **[HW]**; the optional `i` register after the
-  destination is **[open]**. As a dual-issue secondary it works on two 16-bit
-  lanes (*Dual issue*).
+- **`imae.{u,s} d, a.{low,high}, b.{low,high}, c, u32`** computes `d = a16 × b16 + c`, the halves
+  zero-extended for `.u` **[infer]** and sign-extended for `.s` **[HW]** (6 cases; E471: `.s`
+  multiplies the halves as signed values and adds `c` as an unsigned 32-bit number, a formula
+  fitted after the six cases): the firmware's
+  addition idiom is a multiply-add by an immediate 1 of a 16-bit value, 205 times, and its address
+  arithmetic multiplies indices by structure sizes the same way. **[HW]** `.usat`/`.ssat` saturate,
+  `.rsN` shifts the result right, a `u16` source 2 is sign-extended and a `z16` one zero-extended
+  (*Integer multiply-add modes*). `coe, iN` writes the carry out of the 32-bit sum to `iN`, 0 or 1,
+  overwriting it whether or not the sum carried (14 of 14); `cie, iN` adds bit 0 of `iN` only (10 of
+  10: `iN` = 2 adds nothing, 0xffff and 0xffffffff add 1); `coe` and `cie` on one `iN` write the
+  carry of the sum that includes the added bit (14 of 14); two `imae` chained through `i0`, a `coe`
+  then a `cie`, are an exact 64-bit accumulate of 16 × 16 products (10 of 10) (E471). `imae` has no
+  negated source (the assembler refuses it **[infer]**: no raw word was run).
+- **`ima32.{u,s} d, a, b, c`** computes the low 32 bits of `a × b + c` **[HW]** (E469: 826 of 826
+  cases, the corner cube of 343 included; `.s` gives the same bits as `.u`, with no saturation). Its
+  operands a, b and c are sources 1, 2 and 3: sources 2 and 3 can be a register, a 7-bit immediate
+  (0 to 127) or a constant-bank register read as an integer (c0 reads 0, c56-c59 read 0xffffffff,
+  c60 0x7fff7fff: E085), source 1 only a register (the assembler refuses anything else in source 1
+  **[infer]**). The runs used the immediates 0, 1, 2, 3 and 127, the constants c0, c3, c13, c60 (and
+  c45, c56 as source 3 only) and temporaries (r bank) as registers, and the destination r10: other
+  banks are **[open]** (Q127). So `add` is `ima32.u d, a, #1, c` and `mul` is
+  `ima32.u d, a, b, c0`.
+- **A 32-bit subtract [HW]** is `ima32.u d, b, c56, a`, which is `a - b` mod 2^32, and so is
+  `ima32.u d, a, #1, b.neg` (E470: 80 of 80 through c56, 6 of 6 through c57, c58, c59 `.u` and c59
+  `.s`). `.neg` on source 2 (`enc[40]`) or source 3 (`enc[39]`) negates that source in two's
+  complement, `-(a × b) + c` and `a × b - c` (90 of 90 cases in nine probes; the readings
+  "complement" and "ignored" fail in all of them and "fields swapped" in the eight probes with one
+  negated source, 80 of 90 cases). It was run with `.u` and `.s` on registers and with `.u` only on
+  an immediate and a constant; `.s` with `.neg` on those two was not run. Source 1 has no `.neg`
+  and `ima32 ... coe` does not assemble, both the assembler's refusals **[infer]**: no carry out of
+  `ima32` is known, so the borrow of a 32-bit compare is software (*The test group*).
+- **`ima32 ... cie, iN` [HW]** adds bit 0 of `iN` only (10 of 10 with iN = 0, 1, 2, 0xffff and
+  0xffffffff in `i0`; the probe table's model added all of `iN`, which fits 4 of 10; an iN with bit
+  0 clear and a high bit set, and an iN other than `i0`, were not run). Dependent `ima32` need no
+  gap: four in a row are exact (10 of 10, E470). The optional `i` register after the destination,
+  and `ima32` as a dual-issue secondary (two 16-bit lanes: *Dual issue*), are **[open]** for the
+  carry flags and the 32-bit result (Q127).
 - **`ima16`** multiplies 16-bit values, its sources read as `u16`, `u8`, `s8` or `o8` with a
   half select. With `u16, u16` it computes `a × b + c` (or `- c`) in each 16-bit lane,
   wrapping **[HW]** (*`ima16` lanes and source formats*); with `u8`, `s8`, `o8` each lane reads
@@ -2489,7 +2588,8 @@ Class 31 with `enc[54:52]` = 0 and the operation in `enc[40:38]` **[RE]**: 0 `ba
 `.savelink` and `.mon`; `ba` and `br` take the full predicate.
 
 - **`ba #n`** jumps to instruction `n`; **`br #k`** by a signed offset from the `br` itself
-  **[HW]**; `.savelink` makes either a call; **`lapc`** returns to `pclink` **[RE/HW]**. See
+  **[HW]**; `.savelink` makes either a call, which writes `pclink` even when its predicate is false
+  (one case run, `p0 ba.savelink`); **`lapc`** returns to `pclink` **[HW]** (E475, E476). See
   *Program counter, calls and the end of a program* for the evidence.
 - **A quad whose instances disagree** on a predicated branch goes, all four instances, where its
   top-left instance goes, without masking **[HW]** (E089): in a triangle, the first covered instance
@@ -3303,11 +3403,29 @@ is ruled out.
 **[HW]**: they add **source 1's low 16 bits**, sign-extended (`iadd32`) or zero-extended
 (`iaddu32`), to the 32-bit source 2, modulo 2^32. `0x12345678 + 0x11111111` gives `0x11116789` and
 `iadd32 0xffff + 1` gives 0, while `#1 + r` is the plain increment the firmware uses **[RE]** (an
-`iaddu32` of the immediate 1 and a register). The test reads the 32-bit sum: `z` and `n` as usual
-for `iadd32`; `iaddu32` is unsigned, its `n` is never and its `p` always true, also for `0x80000000`
+`iaddu32` of the immediate 1 and a register). The test reads the sum: `z` and `n` as usual
+for `iadd32` (but see the true sum below); `iaddu32` is unsigned, its `n` is never and its `p`
+always true, also for `0x80000000`
 (probes `usse-integer-iadd32-value`, `usse-integer-iaddu32-value`, `usse-integer-iaddu32-imm`,
 `usse-integer-iadd32-src1-imm`, `usse-integer-iadd32-z`, `usse-integer-iadd32-n`,
 `usse-integer-iadd32-p`, `usse-integer-iaddu32-tests`, `usse-integer-iaddu32-np`).
+
+*Later probes (2026-11-08).* **A test reads the true 33-bit sum, not the wrapped 32-bit one**
+**[HW]** (E472, probes `usse-compare32x-iadd32-ovf-testnat`, `usse-compare32x-iadd32-ovf-testpat`,
+`usse-compare32x-iaddu32-carry-testtanz`): `iadd32`'s `n` and `p` read the sign of `sext16(r1) + r2`
+with `r2` signed, so r1 = 0x7fff with r2 = 0x7fffffff leaves `n` clear and `p` set (12 pairs, of
+which 5 overflow the signed 32-bit sum: the true sum fits 12 of 12, the wrapped one 7), and the
+nonzero test of `iaddu32` sees the carry out of bit 31, so r1 = 1 with r2 = 0xffffffff is nonzero (8
+of 8, the wrapped sum fits 5 or 7; one pair, (1, 0xffffffff), decides it for both extensions of r1,
+the two others with a wrapped sum of zero only for zero-extension). The probe table's model tested
+the wrapped sum. Whether `z` of an overflowed `iadd32` sum or `iaddu32`'s `p` and `z` do the same is
+not shown. With source 1 = `#0` a test through source 2 reads that register's 32 bits exactly: `n`,
+`p`, `z` and `nz` of `iadd32` (8 of 8 values each), `nz` of `iaddu32` (8 of 8) and its `n`, never
+true (8 of 8).
+
+**Undecided:** whether `iaddu32` zero- or sign-extends a source 1 above 0x7fff (the pairs that would
+tell read nonzero under both), `testtaz` of an overflowed `iadd32` sum, which no pair run
+separates (`testpat` of it is separated), and `testtaz` and `testpat` of `iaddu32` (Q126).
 
 ### 8.4 Test channels
 
@@ -3383,8 +3501,8 @@ multiply-add modes*).
   `ima8`).
 - **`imae`**: `.usat`/`.ssat` saturate the 32-bit result (`.ssat` signed), `.rsN` shifts it right
   by N, source 2 typed `u16` is its half **sign**-extended and `z16` zero-extended, **`coe, iN`
-  writes the carry out to `iN` and `cie, iN` adds `iN`**; `ima32`'s `cie, iN` adds `iN` too
-  (probe `usse-integer-imae-modes`).
+  writes the carry out to `iN` and `cie, iN` adds bit 0 of `iN`** (probe `usse-integer-imae-modes`);
+  `ima32`'s `cie, iN` adds bit 0 of `iN` only, as `imae`'s does (E470, E471: 10 of 10 each).
 
 - **`idiv` repeats** 1 to 16 times, the count enc[47:44] + 1 (enc[47], outside every field
   before, is its high bit): iteration k divides `a + k` by `b + k`, the quotient to `d + k` and
@@ -3396,9 +3514,14 @@ multiply-add modes*).
   writer ran nine or fewer iterations before (probes `usse-idiv-enc47-grid`,
   `usse-idiv-enc47-repeat-sets`, E367).
 
-**Undecided:** `imae` with both `.rsN` and saturation, or with both carries; `ima32`'s extra
-`i` operand after the destination and its source negations; when a repeated `idiv`'s result
-becomes visible to its own later iterations.
+*Later probes (2026-11-08).* **`ima32` is the low 32 bits of `a × b + c`**, `.u` and `.s` alike,
+with the immediates, the constants, `.neg` on sources 2 and 3, a subtract in one instruction and
+the one-bit `cie`, and **`imae`'s carry out and carry in** write and take exactly 0 or 1, in one
+instruction or two, chained to a 64-bit accumulate **[HW]** (E469, E470, E471).
+
+**Undecided:** `imae` with both `.rsN` and saturation, or with a repeat, a `u16`/`z16` source or a
+`.rsN` shift and its carries; `ima32`'s extra `i` operand after the destination (Q127); when a
+repeated `idiv`'s result becomes visible to its own later iterations.
 
 ### 8.8 Shift amounts of 32 and over
 
@@ -4321,6 +4444,12 @@ open driver:
    and `idiv`'s enc[47] is its repeat count's high bit (E367). Words of classes 2, 22 and 26
    that no form decodes end the program when enc[50] is set (E368); what the others do to
    registers is open (Q080).
+9. **Calls, the program counter and the integer forms**: indices of 256 to 8191 in a fill and a jump
+   across a 65536-word step of the code base (Q123); `p0`-`p3` and `pclink` at the start of a
+   firmware task, which no program of ours has run (Q124); what leaves 0xeb3 and 0x98 in them across
+   jobs (Q125); how `iaddu32` extends a source 1 above 0x7fff and what a zero test of an overflowed
+   sum does (Q126); `ima32`'s extra `i` operand and dual-issue form and `imae`'s repeats,
+   `u16`/`z16` sources and `.rsN` shifts with the carries (Q127).
 
 The simulator (`crates/sgx-sim`) reproduces 24711 probe vectors (15526 of them with near values:
 float functions within their measured bound) and 143 pixel vectors; it stops on 1885 rather than

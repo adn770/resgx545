@@ -7,10 +7,11 @@
   state copies are built from it. A source immediate prints in hex.
 - **`mov dst, #imm32`** (class 31) loads a full 32-bit immediate **[HW]**; the driver patches
   colours and PBE words into it.
-- **`mov pclink, src`** and **`mov dst, pclink`** save and restore the link register
-  **[RE]** (*Program counter, calls and the end of a program*). Two encodings exist for each:
-  a plain one with a temporary, and a general one with a predicate, `.nosched` and any
-  operand.
+- **`mov pclink, src`** and **`mov dst, pclink`** save and restore the link register **[RE]**
+  (*Program counter, calls and the end of a program*). Two encodings exist for each: a plain one
+  with a temporary, and a general one with a predicate, `.nosched` and any operand. `pclink` is 18
+  bits wide, so `mov pclink, rN` keeps bits 17:0 of `rN` and a `mov rN, pclink` reads at most
+  0x3ffff **[HW]** (E475).
 
 **In the firmware [RE].** `mov` is its most common instruction (1497): 626 immediates into
 temporaries (constants, addresses, and the nine address-patch sites the loader fills), moves

@@ -1,0 +1,10 @@
+title = "probe table usse/imae-neg"
+repo = "data"
+paths = ["usse/imae-neg/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 66
+size = 112873
+sha256 = "9f39e8fc40220ede5b9c62dd6143bf74f66a2f820a56af1c1f8b63656851c132"
+recipe = "probes/usse/imae-neg.toml"
+needs = ["render"]

@@ -177,21 +177,20 @@ probe and sweep tables that the units above cover.
 
 ### 4.1 Open questions
 
-`doc/open_questions.md` lists every open question, generated from `questions/`: Q001 to Q122, 101
+`doc/open_questions.md` lists every open question, generated from `questions/`: Q001 to Q127, 106
 open. Each has a kind. The work is hardware knowledge, for a simulator and then our own firmware, so
-the 90 `hw` questions are the work queue, each with a value (high 14, medium 51, low 25); the 8
-`fw` questions (the closed firmware's and driver's own behaviour: Q004, Q029, Q034, Q049, Q084,
-Q088, Q118, Q119) and the 3 `kernel` ones (the design of our kernel driver: Q005, Q037, Q095) stay
-open, parked.
-By unit: bif 4, dpm 5, edm 6, isp 8, mte 3, pbe 5, pds 16, platform 4, render 9, ta 6, texture 7,
-transfer 3, usse 11, vdm 8, zls 6. A question is removed when a record answers it; one that mixed a
-hardware part with a firmware or kernel part was narrowed to the hardware part or folded into the
-hardware question that holds it (six so far: the control block's per-VM copy and the render context
-count bound into Q076, the recovery's reset steps into Q003, the settle routine and the two faults
-after a base-only fault or a kept owner into Q036 and Q045), and a fold is not an answer. What a
-fold or a narrowing left of the closed firmware's own behaviour is a new parked question: how a kick
-tells its directory is in no list (Q118, from the render context count) and whether a command with
-both kick flags acts as two (Q119, from Q065).
+the 94 `hw` questions are the work queue, each with a value (high 14, medium 52, low 28); the 9 `fw`
+questions (the closed firmware's and driver's own behaviour: Q004, Q029, Q034, Q049, Q084, Q088,
+Q118, Q119, Q124) and the 3 `kernel` ones (the design of our kernel driver: Q005, Q037, Q095) stay
+open, parked. By unit: bif 4, dpm 5, edm 6, isp 8, mte 3, pbe 5, pds 16, platform 4, render 9, ta 6,
+texture 7, transfer 3, usse 16, vdm 8, zls 6. A question is removed when a record answers it; one
+that mixed a hardware part with a firmware or kernel part was narrowed to the hardware part or
+folded into the hardware question that holds it (six so far: the control block's per-VM copy and the
+render context count bound into Q076, the recovery's reset steps into Q003, the settle routine and
+the two faults after a base-only fault or a kept owner into Q036 and Q045), and a fold is not an
+answer. What a fold or a narrowing left of the closed firmware's own behaviour is a new parked
+question: how a kick tells its directory is in no list (Q118, from the render context count) and
+whether a command with both kick flags acts as two (Q119, from Q065).
 
 ### 4.2 Inferred glossary rows
 
@@ -383,3 +382,23 @@ control bits 11:3 (E465); bits 26:24 are the stored format (E466); bits 1, 13 an
 stencil and the depth (E467); and what an overflowed job stores is the first row of macrotiles as
 zeros and the rest negated (E468). Q088 stays open as a firmware question (its hardware half is
 answered); Q071, Q101 and Q107 are narrowed; Q120 to Q122 are new.
+
+Sub-phase 11.23 ran 15 probe tables on the laptop with no kernel change and no tool change, for the
+integer and flow-control forms a compiler for our own firmware needs (`probes/usse/ima32-full.toml`,
+`ima32-neg`, `imae-neg`, `compare32`, `compare32x`, `rot-imm`, `link`, `pclink`, `pflow`, `risky`,
+and the programs placed in the code heap, `place`, `place-ctl`, `place-ctl2`, `place2` and
+`place-link`). `ima32` is the low 32 bits of `a * b + c` on registers, 7-bit immediates and
+constants, 826 of 826 cases (E469); a 32-bit subtract is one `ima32`, `.neg` on its sources 2 and 3
+is a plain negation, and `cie, iN` adds bit 0 of `iN` only (E470); `imae` writes and takes a carry
+and two chain into a 64-bit accumulate (E471). A test of a 32-bit register through source 2 tests
+all its bits, but `iadd32`'s `n` and `p` and `iaddu32`'s nonzero test read the true 33-bit sum, and
+a 32-bit compare is a six-instruction formula (E472, 64 of 64 pairs each); tests with an immediate
+act on 32 bits (E473); the bitwise immediate is its 16-bit field rotated left by the five-bit
+rotation field (E474). `pclink` holds 18 bits, a call stores the index of the instruction after it,
+a predicated call with a false predicate still writes it (E475), and `lapc` lands on every index
+run, which count from the code base the task started with (E476); no branch changes p0-p3, and p0-p3
+and `pclink` are not reset between jobs (E475, E477). Planned cases that the tool refuses, programs
+of over 256 words, were dropped (12), and the failed first runs of the placed tables are kept in the
+data (`usse-place`, `usse-place-ctl`; the manifest of the first was written by hand with the
+runner's digest function). Records E469-E477; Q052 is narrowed, none retired; Q123 to Q127 are new,
+Q124 for the firmware (`fw`).

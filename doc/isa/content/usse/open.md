@@ -37,5 +37,11 @@ open driver:
    and `idiv`'s enc[47] is its repeat count's high bit (E367). Words of classes 2, 22 and 26
    that no form decodes end the program when enc[50] is set (E368); what the others do to
    registers is open (Q080).
+9. **Calls, the program counter and the integer forms**: indices of 256 to 8191 in a fill and a jump
+   across a 65536-word step of the code base (Q123); `p0`-`p3` and `pclink` at the start of a
+   firmware task, which no program of ours has run (Q124); what leaves 0xeb3 and 0x98 in them across
+   jobs (Q125); how `iaddu32` extends a source 1 above 0x7fff and what a zero test of an overflowed
+   sum does (Q126); `ima32`'s extra `i` operand and dual-issue form and `imae`'s repeats,
+   `u16`/`z16` sources and `.rsN` shifts with the carries (Q127).
 
 <!-- @simopen 12 -->

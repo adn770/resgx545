@@ -29,9 +29,29 @@ The test is `.test<S><J><Z>.<chan>`, from `enc[43:36]`:
   tests flags this way hundreds of times, and sign bits by shifting the flag to bit 31 first
   (`shl.testnat`); our state and vertex programs rely on `and.testtanz` of 0 and 0 leaving
   the predicate false (*Predicates*).
-- **The 32-bit adds [HW]** are not full 32-bit adds: `iadd32`/`iaddu32` add source 1's low 16
-  bits, sign- or zero-extended, to the 32-bit source 2, and `iaddu32`'s `n` is never true
-  (*The 32-bit adds `iadd32` and `iaddu32`*).
+- **The 32-bit adds [HW]** are not full 32-bit adds: `iadd32`/`iaddu32` add source 1's low 16 bits,
+  sign- or zero-extended (`iaddu32`'s extension is **[open]**, Q126), to the 32-bit source 2, and a
+  test of some of them applies to the true 33-bit sum, not the wrapped one (E472): `iadd32`'s `n`
+  and `p` read the sign of the true sum (r1 = 0x7fff with r2 = 0x7fffffff leaves `n` clear; 12
+  pairs, 5 of which overflow and separate the readings), `iaddu32`'s nonzero test counts the carry
+  out of bit 31 (1 + 0xffffffff is nonzero, 8 of 8 pairs, decided by that one pair for either
+  extension of r1), `z` of an overflowed `iadd32` sum and `testpat` and `testtaz` of `iaddu32` are
+  **[open]** (Q126), and `iaddu32`'s `n` is never true (*The 32-bit adds `iadd32` and `iaddu32`*).
+  With source 1 = `#0` the test reads source 2's 32 bits exactly: `n`, `p`, `z` and `nz` (8 of 8
+  values each).
+- **Tests with an immediate [HW]** act on the 32-bit result (E473): `shr.testtanz.chan0 !c0, p0, r,
+  #n` is "r >> n is nonzero", with n of 32 and over giving zero (80 of 80), `xor.testtaz` is "r ^ n
+  is zero" over all 32 bits (18 of 18), and `and`, `or`, `xor` and `rol` with `testtanz` and `asr`
+  and `shl` with `testnat` test their 32-bit result (48 of 48). The immediate of a test is seven
+  bits. The assembler refuses `~` in the three test forms tried (`and.testtanz ... ~#7` and `~r2`,
+  `xor.testtaz ... ~#7`), while `and r10, r1, ~#7` assembles; that it is an encoding limit
+  (`enc[43:42]` is the sign test where the bitwise group keeps its invert bit) and not an
+  assembler gap is **[infer]**: no raw word was run.
+- **A 32-bit compare [HW]** of two registers is not one instruction: with `t = ima32.u r11, r2, c56,
+  r1` (a - b), the unsigned a < b is bit 31 of `((~a & b) | (~(a ^ b) & t))` and the signed one bit
+  31 of `(((a ^ b) & (a ^ t)) ^ t)`, each tested by `shr.testtanz.chan0 !c0, p0, rX, #31` (64 of 64
+  pairs of corner values each, and 16 of 16 for the unsigned compare only with three nops after the
+  `ima32`; E472). `ima32` has no test field **[infer]** (the assembler refuses a test on it).
 - **The 16-bit operations [HW]:** `isub16`/`usub16` subtract both lanes, wrapping, and `chan0`
   tests the low lane (*`isub16`/`usub16` lanes*). `iadd16`, `uadd16`, `imul16`, `umul16`,
   `iadd8`, `isub8`, `imul8`, `fadd`, `fmul` and `fsub` test their lanes as the channels say, a

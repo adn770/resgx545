@@ -10,10 +10,15 @@
 
 <!-- @example usse mov.skipinv.end o0, #0x12345678 -->
 
-- **The rotated immediate** of the bitwise group (source 2 written as `#imm`) is a 16-bit
-  value rotated left by a five-bit amount, so any 32-bit value with at most 16 significant
-  contiguous bits (cyclically) can be written directly; the assembler finds the rotation
-  **[RE]**:
+- **The rotated immediate** of the bitwise group (source 2 written as `#imm`) is a 16-bit field
+  rotated left by the five-bit rotation field `enc[42:38]` **[HW]** (E474: raw words with the fields
+  0xffff, 0x8001 and 0x1234 under all 32 rotations, 96 of 96), so redundant encodings of one value
+  agree, and any 32-bit value with at most 16 significant contiguous bits (cyclically) can be
+  written directly; the assembler finds the first rotation that fits. `~#X` complements the whole
+  32-bit operand after the rotation (19 of 19). A shift or rotate by a rotated immediate uses the
+  whole 32-bit value as the amount: `shl` and `shr` give 0 and `asr` the sign for 32 and over, and
+  `rol` takes it mod 32 (36 of 36). The assembler refuses values that are not `rotl(m16, r)`
+  (0x00010001, 0x55555555, 0x12345678); that no other encoding exists is **[infer]**:
 
 <!-- @example usse and r1, r2, #0x00FF0000 -->
 

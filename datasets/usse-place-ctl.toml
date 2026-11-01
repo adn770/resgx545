@@ -1,0 +1,10 @@
+title = "probe table usse/place-ctl (a failed table, kept: the first controls of the placed programs)"
+repo = "data"
+paths = ["usse/place-ctl/"]
+method = "campaign runner on the laptop target (tools/campaign); a failed table kept as part of the record of E476: its six jobs ran to their end (o0 0xfa11, 0xfa11 and 0x600d, twice each), but the hypotheses of its probes were scratch lists, for programs that store nothing, so every probe reads NONE; the controls were rerun as usse/place-ctl2"
+date = "2026-11-08"
+files = 17
+size = 6372
+sha256 = "e007f5afd61f85a223a6f1a5a4d735706bef468cd348e46834e78902846939b0"
+recipe = "probes/usse/place-ctl.toml"
+needs = ["render"]

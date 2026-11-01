@@ -1,0 +1,53 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# item 3: overflow and carry of the class 9 sum, follow-up (phase 11.23)
+needs = ["render"]
+
+[[probe]]
+name = "usse-compare32x-iadd32-ovf-testnat"
+question = "iadd32.testnat.chan0 !c0, p0, r1, r2 where sext16(r1) + r2 overflows 32 bits as a signed sum: the test of the wrapped 32-bit sum (model) or of the true sum (case 9 of the first run: r1=0x7fff r2=0x7fffffff gave n clear)"
+source = "dump.s"
+params = { OUT = "r10", OP = "iadd32.testnat.chan0 !c0, p0, r1, r2\nmov r10, #0\np0 mov r10, #1", C = 0x00000000, D = 0x00000000, E = 0x00000000, F = 0x00000000, G = 0x00000000, H = 0x00000000 }
+inputs = ["A", "B"]
+labels = ["r1=0x00007fff r2=0x7fffffff", "r1=0x00000001 r2=0x7fffffff", "r1=0x00008000 r2=0x80000000", "r1=0x0000ffff r2=0x80000000", "r1=0x00008000 r2=0x80008000", "r1=0x00007fff r2=0x7fff0000", "r1=0x00000001 r2=0xffffffff", "r1=0x0000ffff r2=0x00000001", "r1=0x00000001 r2=0x7ffffffe", "r1=0x00008000 r2=0x80000001", "r1=0x0000ffff r2=0xffffffff", "r1=0x00007fff r2=0x80000000"]
+cases = [[0x00007fff, 0x7fffffff], [0x00000001, 0x7fffffff], [0x00008000, 0x80000000], [0x0000ffff, 0x80000000], [0x00008000, 0x80008000], [0x00007fff, 0x7fff0000], [0x00000001, 0xffffffff], [0x0000ffff, 0x00000001], [0x00000001, 0x7ffffffe], [0x00008000, 0x80000001], [0x0000ffff, 0xffffffff], [0x00007fff, 0x80000000]]
+[probe.hypotheses]
+"model: the wrapped 32-bit sum is tested" = [[0x00000001], [0x00000001], [0x00000000], [0x00000000], [0x00000001], [0x00000000], [0x00000000], [0x00000000], [0x00000000], [0x00000000], [0x00000001], [0x00000001]]
+"alt: the true (33-bit) sum is tested" = [[0x00000000], [0x00000000], [0x00000001], [0x00000001], [0x00000001], [0x00000000], [0x00000000], [0x00000000], [0x00000000], [0x00000001], [0x00000001], [0x00000001]]
+
+[[probe]]
+name = "usse-compare32x-iadd32-ovf-testpat"
+question = "iadd32.testpat.chan0 !c0, p0, r1, r2 where sext16(r1) + r2 overflows 32 bits as a signed sum: the test of the wrapped 32-bit sum (model) or of the true sum (case 9 of the first run: r1=0x7fff r2=0x7fffffff gave n clear)"
+source = "dump.s"
+params = { OUT = "r10", OP = "iadd32.testpat.chan0 !c0, p0, r1, r2\nmov r10, #0\np0 mov r10, #1", C = 0x00000000, D = 0x00000000, E = 0x00000000, F = 0x00000000, G = 0x00000000, H = 0x00000000 }
+inputs = ["A", "B"]
+labels = ["r1=0x00007fff r2=0x7fffffff", "r1=0x00000001 r2=0x7fffffff", "r1=0x00008000 r2=0x80000000", "r1=0x0000ffff r2=0x80000000", "r1=0x00008000 r2=0x80008000", "r1=0x00007fff r2=0x7fff0000", "r1=0x00000001 r2=0xffffffff", "r1=0x0000ffff r2=0x00000001", "r1=0x00000001 r2=0x7ffffffe", "r1=0x00008000 r2=0x80000001", "r1=0x0000ffff r2=0xffffffff", "r1=0x00007fff r2=0x80000000"]
+cases = [[0x00007fff, 0x7fffffff], [0x00000001, 0x7fffffff], [0x00008000, 0x80000000], [0x0000ffff, 0x80000000], [0x00008000, 0x80008000], [0x00007fff, 0x7fff0000], [0x00000001, 0xffffffff], [0x0000ffff, 0x00000001], [0x00000001, 0x7ffffffe], [0x00008000, 0x80000001], [0x0000ffff, 0xffffffff], [0x00007fff, 0x80000000]]
+[probe.hypotheses]
+"model: the wrapped 32-bit sum is tested" = [[0x00000000], [0x00000000], [0x00000001], [0x00000001], [0x00000000], [0x00000001], [0x00000001], [0x00000001], [0x00000001], [0x00000001], [0x00000000], [0x00000000]]
+"alt: the true (33-bit) sum is tested" = [[0x00000001], [0x00000001], [0x00000000], [0x00000000], [0x00000000], [0x00000001], [0x00000001], [0x00000001], [0x00000001], [0x00000000], [0x00000000], [0x00000000]]
+
+[[probe]]
+name = "usse-compare32x-iadd32-ovf-testtaz"
+question = "iadd32.testtaz.chan0 !c0, p0, r1, r2 where sext16(r1) + r2 overflows 32 bits as a signed sum: the test of the wrapped 32-bit sum (model) or of the true sum (case 9 of the first run: r1=0x7fff r2=0x7fffffff gave n clear)"
+source = "dump.s"
+params = { OUT = "r10", OP = "iadd32.testtaz.chan0 !c0, p0, r1, r2\nmov r10, #0\np0 mov r10, #1", C = 0x00000000, D = 0x00000000, E = 0x00000000, F = 0x00000000, G = 0x00000000, H = 0x00000000 }
+inputs = ["A", "B"]
+labels = ["r1=0x00007fff r2=0x7fffffff", "r1=0x00000001 r2=0x7fffffff", "r1=0x00008000 r2=0x80000000", "r1=0x0000ffff r2=0x80000000", "r1=0x00008000 r2=0x80008000", "r1=0x00007fff r2=0x7fff0000", "r1=0x00000001 r2=0xffffffff", "r1=0x0000ffff r2=0x00000001", "r1=0x00000001 r2=0x7ffffffe", "r1=0x00008000 r2=0x80000001", "r1=0x0000ffff r2=0xffffffff", "r1=0x00007fff r2=0x80000000"]
+cases = [[0x00007fff, 0x7fffffff], [0x00000001, 0x7fffffff], [0x00008000, 0x80000000], [0x0000ffff, 0x80000000], [0x00008000, 0x80008000], [0x00007fff, 0x7fff0000], [0x00000001, 0xffffffff], [0x0000ffff, 0x00000001], [0x00000001, 0x7ffffffe], [0x00008000, 0x80000001], [0x0000ffff, 0xffffffff], [0x00007fff, 0x80000000]]
+[probe.hypotheses]
+"model: the wrapped 32-bit sum is tested" = [[0x00000000], [0x00000000], [0x00000000], [0x00000000], [0x00000000], [0x00000000], [0x00000001], [0x00000001], [0x00000000], [0x00000000], [0x00000000], [0x00000000]]
+"alt: the true (33-bit) sum is tested" = [[0x00000000], [0x00000000], [0x00000000], [0x00000000], [0x00000000], [0x00000000], [0x00000001], [0x00000001], [0x00000000], [0x00000000], [0x00000000], [0x00000000]]
+
+[[probe]]
+name = "usse-compare32x-iaddu32-carry-testtanz"
+question = "iaddu32.testtanz.chan0 !c0, p0, r1, r2: the nonzero test when the unsigned sum carries out of bit 31 to exactly 0 mod 2^32; source 1 zero- or sign-extended (model: wrapped sum, r1 cut to 16 bits and zero-extended)"
+source = "dump.s"
+params = { OUT = "r10", OP = "iaddu32.testtanz.chan0 !c0, p0, r1, r2\nmov r10, #0\np0 mov r10, #1", C = 0x00000000, D = 0x00000000, E = 0x00000000, F = 0x00000000, G = 0x00000000, H = 0x00000000 }
+inputs = ["A", "B"]
+labels = ["r1=0x0000ffff r2=0xffff0001", "r1=0x00008000 r2=0xffff8000", "r1=0x00000001 r2=0xffffffff", "r1=0x0000ffff r2=0xffffffff", "r1=0x00000000 r2=0x00000000", "r1=0x00000001 r2=0x00000000", "r1=0x00000000 r2=0xffffffff", "r1=0x00008000 r2=0x7fff8000"]
+cases = [[0x0000ffff, 0xffff0001], [0x00008000, 0xffff8000], [0x00000001, 0xffffffff], [0x0000ffff, 0xffffffff], [0x00000000, 0x00000000], [0x00000001, 0x00000000], [0x00000000, 0xffffffff], [0x00008000, 0x7fff8000]]
+[probe.hypotheses]
+"model: wrapped sum, r1 zero-extended 16 bits" = [[0x00000000], [0x00000000], [0x00000000], [0x00000001], [0x00000000], [0x00000001], [0x00000001], [0x00000001]]
+"alt: wrapped sum, r1 sign-extended 16 bits" = [[0x00000001], [0x00000001], [0x00000000], [0x00000001], [0x00000000], [0x00000001], [0x00000001], [0x00000001]]
+"alt: the 33-bit sum is tested (carry makes it nonzero)" = [[0x00000001], [0x00000001], [0x00000001], [0x00000001], [0x00000000], [0x00000001], [0x00000001], [0x00000001]]

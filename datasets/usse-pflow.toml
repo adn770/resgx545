@@ -1,0 +1,10 @@
+title = "probe table usse/pflow"
+repo = "data"
+paths = ["usse/pflow/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 55
+size = 104188
+sha256 = "6c41b5d06dea3e9562f24c50266566762511bb08eeb07abb7fa72c2650af4759"
+recipe = "probes/usse/pflow.toml"
+needs = ["render"]

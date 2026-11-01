@@ -2959,6 +2959,122 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   raster order with the first 8 x 12 tile macrotile last, except 512 dwords (0x28, 0x23) and 1536
   (0x30).
   *dpm; HW, infer; data: `zls-store-layout`.*
+- `E469` ima32.u and ima32.s compute the low 32 bits of a * b + c on full 32-bit operands, and every
+  route to its three sources agrees: 826 of 826 cases fit, among them the 343 combinations of the
+  corner values 0, 1, 0xffff, 0x10000, 0x7fffffff, 0x80000000 and 0xffffffff as a, b and c (.u), 147
+  of them signed (.s gives the same bits as .u, with no saturation), 22 sums that land just below,
+  on and just above 2^16 and 2^32, the add lowering ima32.u d, a, #1, c (49 cases, a + c mod 2^32)
+  and immediates 0, 2, 3 and 127 in source 2 (56), immediates 0, 1, 2 and 127 in source 3 (45) and
+  in both (21), c0 as source 3, the mul lowering (49, the low 32 bits of a * b), and the constants
+  c3, c13, c45, c56 and c60 as source 3 (40) and c0, c3, c13 and c60 as source 2 (40) read as the
+  integers of E085.
+  *usse; HW; data: `usse-ima32-full`.*
+- `E470` A 32-bit subtract is one ima32: ima32.u d, b, c56, a computes a - b mod 2^32 because
+  c56-c59 read as 0xffffffff through the integer multiplier (80 of 80 cases through c56, 6 of 6
+  through each of c57 .u, c58 .u, c59 .u and c59 .s, and 8 of 8 with an all-ones register); a .neg
+  on source 2 (enc[40]) or source 3 (enc[39]) of ima32, negates that source in two's complement, -(a
+  * b) + c and a * b - c (90 of 90 cases in nine spellings: registers in .u and .s, and in .u an
+  immediate and a constant; of the three other readings, complement fits 0 or 1 of 10 and ignored 0
+  to 4 in every probe, and swapped 1 or 2 of 10 in the eight probes with one negated source, 80 of
+  the 90 cases, where it is told apart: the probe with both sources negated cannot tell it); a chain
+  of four dependent ima32 is exact with no gap between them (10 of 10); and the carry-in of ima32,
+  cie, iN, adds bit 0 of iN only (10 of 10; adding all of iN fits 4 of 10, adding its low 16 bits
+  4).
+  *usse; HW, infer; data: `usse-ima32-neg`.*
+- `E471` imae.u d, a.low, b.low, c, u32 with coe, iN writes the carry out of the 32-bit sum a16 *
+  b16 + c into iN, overwriting it with 0 or 1 whether or not the sum carried (14 of 14 cases with iN
+  preset 0x55; writing only on a carry fits 7, ORing it in 0); cie, iN adds bit 0 of iN only to that
+  sum (10 of 10; iN = 2 adds nothing, iN = 0xffff and 0xffffffff add 1); coe and cie together on one
+  iN assemble and write the carry of the whole sum including the added bit (14 of 14, the sum a16 *
+  b16 + c + bit 0 of iN); two imae chained through i0, a coe then a cie, are an exact 64-bit
+  accumulate of a16 * b16 products (10 of 10); and imae.s multiplies the 16-bit halves as signed
+  values and adds c as an unsigned 32-bit number, the carry being that add's (6 of 6 cases, no model
+  beforehand).
+  *usse; HW, infer; data: `usse-imae-neg`.*
+- `E472` A class 9 test of a 32-bit register through source 2 tests all 32 bits (iadd32.testnat,
+  testpat, testtaz and testtanz.chan0 !c0, p0, #0, rN: bit 31 set, bit 31 clear, all zero, any set,
+  8 of 8 corner values each; iaddu32.testtanz 8 of 8; iaddu32.testnat never true, 8 of 8), but with
+  a source 1 the sum is not the wrapped 32-bit sum, for the tests run: n and p of iadd32 read the
+  sign of the true sum sext16(r1) + r2 (r2 signed), so r1 = 0x7fff with r2 = 0x7fffffff leaves n
+  clear and p set (12 pairs, of which 5 overflow the signed 32-bit sum and separate the readings:
+  the true sum fits 12 of 12, the wrapped one 7 of 12), and the nonzero test of iaddu32 sees the
+  carry out of bit 31, so r1 = 1 with r2 = 0xffffffff is nonzero (8 of 8, the wrapped sum fits 5 or
+  7; the one pair (1, 0xffffffff) decides it for a zero- and a sign-extended r1 alike, the two
+  others whose wrapped sum is zero only if r1 is zero-extended); z of iadd32 and testpat, testtaz of
+  iaddu32 were not separated; the exact unsigned and signed compares of two 32-bit registers cost
+  six instructions each with the borrow formula over t = ima32.u r11, r2, c56, r1 (64 of 64 pairs
+  each, and 16 of 16 for the unsigned compare only with three nops after the ima32), and ima32
+  itself has no test field.
+  *usse; HW, infer; data: `usse-compare32`, `usse-compare32x`.*
+- `E473` Class 9 tests with a seven-bit immediate in source 2 act on the full 32-bit result:
+  shr.testtanz.chan0 !c0, p0, r1, #n sets p0 when r1 >> n is nonzero, for n in 0, 1, 3, 7, 15, 16,
+  31, 32, 33 and 127, with n of 32 and over giving a result of zero (80 of 80 cases over eight
+  values of r1; reading n mod 32 fits 64), xor.testtaz.chan0 !c0, p0, r1, #n sets p0 when all 32
+  bits of r1 ^ n are zero (18 of 18 cases for n of 0, 7 and 127 including r1 = 0x10000 and
+  0x80000000; looking at the low 16 bits only fits 11), and and, or, xor and rol with testtanz and
+  asr and shl with testnat test their 32-bit result (48 of 48); the assembler refuses ~ in the three
+  test forms tried (and.testtanz with ~#7 and with ~r2, xor.testtaz with ~#7), while and r10, r1,
+  ~#7 assembles; or, rol and xor with ~r2 in a test were not tried, and no raw word was run.
+  *usse; HW, infer; data: `usse-compare32`.*
+- `E474` The immediate of the bitwise group is its 16-bit field rotated left by the five-bit
+  rotation field enc[42:38], whatever the rotation: raw words with the field 0xffff, 0x8001 and
+  0x1234 under each of the 32 rotation values build rotl(field, r) in 96 of 96 cases (rotating right
+  fits 6, ignoring the rotation 3, using its low four bits 48), the 18 values the assembler encodes
+  (0x80000001, 0xffff0000, 0x7fff8000, 0xff0000ff, 0x12340000 ...) arrive unchanged (18 of 18), ~#X
+  complements the whole 32-bit operand after the rotation (19 of 19 on and, or and xor), and shl,
+  shr, asr and rol by a rotated immediate use the whole 32-bit value as the amount (36 of 36: shl
+  and shr give 0 and asr the sign for 32 and over, rol takes it mod 32).
+  *usse; HW, infer; data: `usse-rot-imm`.*
+- `E475` pclink holds 18 bits and a call stores the index of the instruction after it: mov pclink,
+  rN keeps bits 17:0 of rN (19 of 19 cases, 0x40000 reads back 0, 0x7fffffff 0x3ffff, 0x80000000 0,
+  0xa5a5a5a5 0x1a5a5; the whole 32 bits come back for no value above 0x3ffff), ba.savelink and
+  br.savelink store the index of the next instruction (calls with the next instruction at index 20,
+  40, 64, 127 and 128, and a predicated call taken: 9 of 9) as an absolute index counted from the
+  program start of a fill (the code base of a placed program: E476), a predicated ba.savelink whose
+  predicate is false still writes pclink (one case, p0 ba.savelink with p0 clear: the preset 0x77
+  read back 0x15, the index after the call, with the call not taken; br.savelink, other predicates
+  and !pN were not run), and a lapc after mov pclink, rN uses the new value with no instruction
+  between them (19 of 19 cases with 0 to 3 instructions between, with and without .nosched on the
+  move and on the lapc: the stale link of the call never used); pclink is not reset between jobs: a
+  reader job reads the value a writer job left in 94 to 98 percent of its 2048 pixels (the ten
+  reader jobs of usse-pclink-pixels, after five writers) and 0xeb3 or 0x98 in the others, which are
+  aligned 2 x 2 quads of pixels (every deviant pixel has its x^1, y^1 and diagonal neighbours
+  deviant too).
+  *usse; HW, infer; data: `usse-link`, `usse-pclink`.*
+- `E476` lapc lands exactly on the index in pclink for each of the indices run (listed in What it
+  shows; no index outside them is known to fail, and no other index was run): a jump through the
+  link of a ba.savelink call returns to the instruction after it (4 of 4 cases, including a new link
+  moved into pclink after the call with 0 to 2 instructions between), nested calls whose routine
+  saves and restores pclink in r14 return twice with br.savelink and ba.savelink (2 of 2), lapc
+  lands on targets 1 to 100 instructions ahead with the target a constant (8 of 8, landing at the
+  indices 30, 31, 32, 34, 37, 45, 69 and 129) or computed by an ima32 add (8 of 8, the same indices)
+  and 0, 1, 2, 5, 20 and 100 instructions back over three passes (6 of 6), pclink bits above bit 17
+  set in the register moved into it are ignored and the jump lands on bits 17:0 (4 of 4: bit 18, bit
+  19, bit 31 and bits 31:18), and in programs placed in the code heap the indices count from a code
+  base that is the placement rounded down to 512 KiB (this rests on one placement that is neither
+  0x10000 nor a multiple of 0x100000, 0x1ff000: the step of 0x80000 is the only one the five links
+  allow, but a second such placement was not run): a lapc to index 8192 + 129, 8192 + 200 and 8192 +
+  250 lands (3 targets, each run 3 times at the one offset 0x10000: 9 of 9 jobs) and so does a lapc
+  computed from the link of a br.savelink read at run time, forward 8 instructions, in programs
+  placed at offsets 0x10000, 0x100000, 0x1ff000, 0x200000 and 0x400000, whose links read 0x2002, 2,
+  0xfe02, 2 and 2 (5 placements, each run twice: 10 of 10 jobs); a jump to index T in a placed
+  program that counts T from the program start instead faults the job (BIF fault at 0x37001014 to
+  0x37001031) or hangs it, and the GPU recovers (no job after the faults failed to run; 7 jobs
+  failed in all: 3 lapc faults in place, 2 `ba #T` faults and 2 hangs in place-ctl2).
+  *usse; HW, infer; data: `usse-risky`, `usse-place`, `usse-place-ctl`, `usse-place-ctl2`,
+  `usse-place2`, `usse-place-link`.*
+- `E477` p0-p3 are state no branch changes: of 28 cases (patterns 1010, 0101, 1111 and 0000 through
+  ba, br #2, a br.savelink call with a lapc return, a routine that rewrites the predicates, and a
+  predicated ba, !p1 ba and p2 br taken and not) the predicates read back after the flow are those
+  set before it, or the routine's own rewrite when it made one (28 of 28), and the same through
+  ba.savelink calls, lapc returns, a p1 lapc that returns or falls through, and a p0 ba.savelink (16
+  of 16); across jobs the predicates are left over for most pixels but not all: a reader job that
+  reads p0-p3 before setting them reads the previous setter's pattern in 98.4 to 99.2 percent of its
+  2048 pixels (2016 to 2032 pixels in each of the ten readers after a setter of the dataset: 1111
+  after a setter of 1 in five of five readers, 0000 after a setter of 0 in five of five) and another
+  pattern in the other 16 to 32 pixels (0xd, 0x5, 0x1, 0xf or 0 of the packed bits p0..p3); the
+  first reader, after the baseline triangle, has 1992 pixels at 0000 and 56 at others.
+  *usse; HW, infer; data: `usse-pflow`, `usse-risky`.*
 
 ## By unit
 
@@ -3040,7 +3156,8 @@ Records: E075, E076, E077, E078, E079, E080, E081, E082, E083, E085, E086, E087,
 E091, E092, E093, E094, E095, E096, E097, E098, E099, E100, E101, E102, E103, E104, E105, E106,
 E107, E108, E109, E110, E111, E112, E113, E115, E117, E118, E119, E120, E121, E123, E124, E147,
 E244, E245, E255, E292, E293, E294, E295, E296, E297, E298, E350, E351, E366, E367, E368, E369,
-E370, E371, E372, E373, E374, E375, E376, E377, E378, E380, E406, E423, E452.
+E370, E371, E372, E373, E374, E375, E376, E377, E378, E380, E406, E423, E452, E469, E470, E471,
+E472, E473, E474, E475, E476, E477.
 
 ### vdm
 

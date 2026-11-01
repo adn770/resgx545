@@ -8,7 +8,8 @@ Class 31 with `enc[54:52]` = 0 and the operation in `enc[40:38]` **[RE]**: 0 `ba
 `.savelink` and `.mon`; `ba` and `br` take the full predicate.
 
 - **`ba #n`** jumps to instruction `n`; **`br #k`** by a signed offset from the `br` itself
-  **[HW]**; `.savelink` makes either a call; **`lapc`** returns to `pclink` **[RE/HW]**. See
+  **[HW]**; `.savelink` makes either a call, which writes `pclink` even when its predicate is false
+  (one case run, `p0 ba.savelink`); **`lapc`** returns to `pclink` **[HW]** (E475, E476). See
   *Program counter, calls and the end of a program* for the evidence.
 - **A quad whose instances disagree** on a predicated branch goes, all four instances, where its
   top-left instance goes, without masking **[HW]** (E089): in a triangle, the first covered instance

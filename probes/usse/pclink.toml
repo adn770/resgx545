@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# item 6/7 follow-up: the pixels of a reader job that do not read the previous job's pclink
+needs = ["render"]
+
+[[probe]]
+name = "usse-pclink-pixels"
+question = "pclink across jobs with every pixel kept: a writer job (mov pclink, r1), then two reader jobs (mov r10, pclink; o0 = r10); which pixels read other than the writer's value (the earlier runs: about 3% read 0xeb3 or 0x98)"
+source = "dump.s"
+pixels = true
+params = { OUT = "r10", B = 0x00000000, C = 0x00000000, D = 0x00000000, E = 0x00000000, F = 0x00000000, G = 0x00000000, H = 0x00000000 }
+inputs = ["OP", "A"]
+labels = ["writer 0x12345", "reader after the writer of 0x12345", "second reader", "writer 0x2abcd", "reader after the writer of 0x2abcd", "second reader", "writer 0x00155", "reader after the writer of 0x00155", "second reader", "writer 0x3ffff", "reader after the writer of 0x3ffff", "second reader", "writer 0x0abcd", "reader after the writer of 0x0abcd", "second reader"]
+cases = [["mov pclink, r1\nmov r10, pclink", 0x00012345], ["mov r10, pclink", 0x00000000], ["mov r10, pclink", 0x00000000], ["mov pclink, r1\nmov r10, pclink", 0x0002abcd], ["mov r10, pclink", 0x00000000], ["mov r10, pclink", 0x00000000], ["mov pclink, r1\nmov r10, pclink", 0x00000155], ["mov r10, pclink", 0x00000000], ["mov r10, pclink", 0x00000000], ["mov pclink, r1\nmov r10, pclink", 0x0003ffff], ["mov r10, pclink", 0x00000000], ["mov r10, pclink", 0x00000000], ["mov pclink, r1\nmov r10, pclink", 0x0000abcd], ["mov r10, pclink", 0x00000000], ["mov r10, pclink", 0x00000000]]

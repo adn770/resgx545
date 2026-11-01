@@ -1,0 +1,10 @@
+title = "probe table usse/pclink"
+repo = "data"
+paths = ["usse/pclink/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 19
+size = 324966
+sha256 = "48ef336ed7a3de681bb747d568a841a1746f6755bf7224ad01fc2c7105805469"
+recipe = "probes/usse/pclink.toml"
+needs = ["render"]

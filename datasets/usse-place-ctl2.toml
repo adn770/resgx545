@@ -1,0 +1,10 @@
+title = "probe table usse/place-ctl2"
+repo = "data"
+paths = ["usse/place-ctl2/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 27
+size = 24518
+sha256 = "b55d6fa7e18ec2b5e98455f4c4ec727bb520eda7cad49d10e7f2db0d1da67e7c"
+recipe = "probes/usse/place-ctl2.toml"
+needs = ["render"]

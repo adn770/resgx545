@@ -1,0 +1,44 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# item 6: lapc to instruction indices of 8192 + word, in a program placed (sgxfive-test refuses placed programs of over 256 words too) in the code heap (E428's --place):
+# the tool refuses fill programs of over 256 words. Phase 11.23 follow-up.
+needs = ["render"]
+
+[[probe]]
+name = "usse-place2-lapc-129"
+question = "lapc to code heap index 8321 = placed program word 129 (the program is at offset 0x10000 = index 8192), 133 words: o0 = 0x600D when it lands on the target, 0xFA11 when it falls through, 0x1000 + k when it lands early at k, 0xBAD1 when it lands after (model prediction: lands on the target)"
+source = "place_base.s"
+place = { offset = 0x10000, source = "place2_lapc_129.s", form = "cbase" }
+temps = 32
+inputs = ["RUN"]
+labels = ["run 1", "run 2", "run 3"]
+cases = [[1], [2], [3]]
+[probe.hypotheses]
+"model: lands on the target" = [0x600d, 0x600d, 0x600d]
+"alt: the stale link is used (falls through)" = [0xfa11, 0xfa11, 0xfa11]
+
+[[probe]]
+name = "usse-place2-lapc-200"
+question = "lapc to code heap index 8392 = placed program word 200 (the program is at offset 0x10000 = index 8192), 204 words: o0 = 0x600D when it lands on the target, 0xFA11 when it falls through, 0x1000 + k when it lands early at k, 0xBAD1 when it lands after (model prediction: lands on the target)"
+source = "place_base.s"
+place = { offset = 0x10000, source = "place2_lapc_200.s", form = "cbase" }
+temps = 32
+inputs = ["RUN"]
+labels = ["run 1", "run 2", "run 3"]
+cases = [[1], [2], [3]]
+[probe.hypotheses]
+"model: lands on the target" = [0x600d, 0x600d, 0x600d]
+"alt: the stale link is used (falls through)" = [0xfa11, 0xfa11, 0xfa11]
+
+[[probe]]
+name = "usse-place2-lapc-250"
+question = "lapc to code heap index 8442 = placed program word 250 (the program is at offset 0x10000 = index 8192), 254 words: o0 = 0x600D when it lands on the target, 0xFA11 when it falls through, 0x1000 + k when it lands early at k, 0xBAD1 when it lands after (model prediction: lands on the target)"
+source = "place_base.s"
+place = { offset = 0x10000, source = "place2_lapc_250.s", form = "cbase" }
+temps = 32
+inputs = ["RUN"]
+labels = ["run 1", "run 2", "run 3"]
+cases = [[1], [2], [3]]
+[probe.hypotheses]
+"model: lands on the target" = [0x600d, 0x600d, 0x600d]
+"alt: the stale link is used (falls through)" = [0xfa11, 0xfa11, 0xfa11]
