@@ -246,6 +246,7 @@ def load(path: pathlib.Path | None = None) -> list[Probe]:
 
 # What a case of a probe with case_set may set besides the probe's: pokes and kpoke are added, the
 # words of cmd, blk, vdm and vdm_xor replace the probe's.
+POKE_WORDS = {"xfer": 42, "bg": 17}      # sgxfive_xfer.h: the words of each poked object
 CASE_SET_KEYS = {"pokes", "kpoke", "cmd", "blk", "vdm", "vdm_xor"}
 
 
@@ -257,8 +258,12 @@ def _probe(d: dict, table: str) -> Probe:
                  not re.fullmatch(r"\d+:\d+=(0x[0-9a-fA-F]+|\d+)", late)):
         raise ProbeError(f"{d['name']}: late {late!r}: a fill probe's R:K=V")
     pokes = d.get("pokes", [])
-    if any(not re.fullmatch(r"xfer:\d+\^?=(0x[0-9a-fA-F]+|\d+)", k) for k in pokes):
-        raise ProbeError(f"{d['name']}: pokes {pokes}: only xfer:N=V or xfer:N^=V")
+    if any(not re.fullmatch(r"(xfer|bg):\d+\^?=(0x[0-9a-fA-F]+|\d+)", k) for k in pokes):
+        raise ProbeError(f"{d['name']}: pokes {pokes}: only xfer:N or bg:N, =V or ^=V")
+    for k in pokes:
+        obj, idx = k.split(":")[0], int(re.match(r"\w+:(\d+)", k).group(1))
+        if idx >= POKE_WORDS[obj]:
+            raise ProbeError(f"{d['name']}: poke {k}: {obj}:0-{POKE_WORDS[obj] - 1}")
     case_set = d.get("case_set", [])
     if case_set and (len(case_set) != len(d["cases"]) or any(
             not isinstance(c, dict) or set(c) - CASE_SET_KEYS for c in case_set)):

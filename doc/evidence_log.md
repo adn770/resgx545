@@ -705,12 +705,135 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   in the iteration count taken modulo 65536 (3.03 µs an iteration over the 64x32 fill, 100 ms at
   zero, 0.95 ms rms), not in the count itself, although every run ends with the counter at 0.
   *usse; HW; data: `usse-loop-timing`.*
+- `E125` From a fill's secondary PDS program, douta writes its first word to the secondary attribute
+  named by bits 19:8 of its second word, and all sixteen words reached sa0 to sa15 with the
+  background object's secondary attribute size at 4, 1 and 0 rows; attributes a job does not write
+  read what earlier jobs left, and which earlier job differs between the first and the follow-up
+  run; from the triangle's primary program the markers did not arrive, and markers A read the same
+  sixteen values in both runs.
+  *pds; HW; data: `pds-douta`, `pds-douta-followup`, `pds-alu`.*
+- `E126` On a 128x128 triangle render of 64 tiles of 16x16, flipping bit 3 of the end-of-tile task's
+  DOUTU1 or bit 12 gives one and the same whole picture, flipping bits 4 and 5 or bits 13 to 15
+  writes every pixel but exchanges tiles, and flipping bits 6 to 11 or 16 to 21 writes no pixel.
+  *pds; HW; data: `pds-pixel-event`, `pds-pixel-event-followup`.*
+- `E127` In a fill's PDS secondary program, all six load and store cases (loads at 0, 0x40, 0x1000
+  and 0x10000, a store then a load with and without a fence) fault the job, movs to mr, tim, ir0,
+  slc, douts and a movsa on douta complete it and write nothing that the attributes read back show
+  (the ir0 case reads the tile position), and movs to doutc faults it.
+  *pds; HW; data: `pds-load-store`.*
+- `E128` In a fill's PDS secondary program, bit 9 (.1) of a special source makes a mov16 read 0 (of
+  ir0, pc and tim alike; ir1 reads 0 in any case) and a 16-bit 0 is all it writes, but in mov32 it
+  reads the same register as .0; ir0 is the tile position, tile_y << 10 | tile_x, of the fill's
+  16x16 tiles and pc.0 reads 3 ahead of the reading instruction's index with a few irregular places;
+  a second run agrees.
+  *pds; HW; data: `pds-moves`, `pds-alu`, `pds-load-store`, `pds-moves-followup`,
+  `pds-alu-followup`.*
+- `E129` With the render's pixel-event info word at 0, the douta writes of the replaced pixel-event
+  program reach sa0 to sa15 of the plain USSE task it starts, all sixteen words in order; the data
+  does not vary the info word, so the gate that bits 5:0 would make is not tested.
+  *pds; HW; data: `pds-pixel-event`, `pds-pixel-event-followup`.*
+- `E130` In the pixel-event program of triangle jobs, input word ir0 reads 0 on a one-tile render
+  and tile_y << 10 | tile_x for the 16x16 tiles of larger renders (59 of the 60 tiles that stored
+  anything on a 128x128 render, tile_y up to 255 on a 32x4096 one), ir1 reads 2 and, on the last
+  tiles, 6; the vertex-index reading of ir0 is not in this data.
+  *pds; HW; data: `pds-pixel-event`, `pds-pixel-event-followup`.*
+- `E131` In the triangle host's primary pixel program, a douti started with no wait and no texture
+  fetch delivers nothing to pa0 for any of the 64 sources (pa0 keeps 16 stale values), while with
+  the fetch wait (DOUTU1 0x02000004) and the fetch's doutt it delivers source 0 (the pixel's x +
+  0.5), source 1 (the coordinate set's x), sources 32 and 33 (0xff000000) and 0 for sources 2 to 31,
+  34 and 35, and sources 36 to 63 leave the texel.
+  *pds; HW; data: `pds-iteration-sources`, `pds-iteration-sources-followup`, `texture-fetch`.*
+- `E132` With DOUTI0 bits 23:22 at 0, 1 and 2 the textured triangle's iteration writes x; x and y;
+  x, y and 0 to pa0 onward and the texel in the next dword at every pixel, with 3 the first two
+  components hold x and y on 1058 and 1031 of the 1062 pixels but pa3 is 1.0 on 1004 and the texel
+  on 58, so the texel is not always in the dword after the components; bit 21 gives every pixel
+  -0.75, which is vertex 0's x (tried with source 1 only), and bit 28 writes x as a half float in
+  the low half of the dword at all 1062 pixels.
+  *pds; HW; data: `pds-iteration-sources`, `pds-iteration-sources-followup`.*
+- `E133` With state word 13 at 0x83800 and state word 16 at 5, iteration source 32 gives a vertex
+  colour packed as ARGB8888, the colour of vertex 0, 1 or 2 for shade models 0, 1 and 2 on 753, 751
+  and 723 of the 1062 triangle pixels and a varying colour for 3, while with word 13 left at the
+  harness's default and word 16 at 4 it gives 0xff000000 under every shade model, and either word
+  alone gives no colour (word 13 alone faults the job).
+  *pds; HW; data: `pds-iteration-sources`, `pds-iteration-sources-followup`.*
+- `E134` With register 0x0abc written to 0 (it holds 0xe) before the job, a fill, a geometry-only
+  render and a whole render each hang and the context is lost, and each time the register is
+  restored to 0xe a fill passes again; twelve values of 0x0abc from 0x02 to 0x3e, all with bits 4:1
+  nonzero, leave the time of a 256x256 render within 1.2 percent.
+  *pds; HW; data: `pds-task-limits`.*
+- `E135` With DOUTI word 1 bit 6 set, the shade model of DOUTI0 (bits 26:25) 0, 1 and 2 gives every
+  one of the 1062 pixels the x of vertex 0, 1 and 2 (-0.75, 0.75, -0.375), as DOUTI0 bit 21 does,
+  but shade model 3 hangs the job where bit 21 iterates smoothly; word 1 at 0x60 and 0xc0 gives
+  vertex 0's value as bit 6 alone does, and with word 1 at 0 all four shade models iterate smoothly.
+  *pds; HW; data: `pds-iteration-sources`, `pds-iteration-sources-followup`.*
+- `E136` Writing 0, 1, 2, 4, 8, 0x10, 0x20, 0x30 or 0x3f into bits 5:0 of register 0x0800 before a
+  1024x1024 render whose 150-instruction pixel shader runs on 276192 pixels does not change the time
+  the ISP is clocked (28646 to 28776 us in 50 jobs, against 1521 to 1848 us for the store alone) or
+  any pixel.
+  *pds; HW; data: `pds-task-limits`.*
+- `E137` Clearing DOUTU1 bit 2 in the primary pixel program of the working punch-through scene (U1
+  0x01000000 against 0x01000004) gives the same image in each of the three cases, in both runs: 2998
+  background pixels, 1062 of 0x00000000 and 36 of 0x3d800000 in the always fb case and 4096
+  background pixels in the other two.
+  *pds; HW; data: `isp-punch-through`, `isp-punch-through-followup`.*
+- `E138` DOUTU1 bit 2 changes no image in any of our runs, set or clear, on a pixel task, the
+  end-of-tile task or the punch-through scene, so we read it as a scheduling hint of the task; this
+  reading is an inference and no run measured a scheduling effect.
+  *pds; infer; data: `pds-data-words`, `pds-data-words-followup`, `isp-punch-through`,
+  `isp-punch-through-followup`.*
+- `E139` PDS_SIZE bits 17:16 are not unused: at 0, 1 and 2 against 3 they change where the output
+  registers o1 to o3 land, and o0 and the pixels it covers stay the same; we read the field as a
+  size or count of the output register banks a pixel task is given, 3 being the plain value; this
+  reading is an inference.
+  *pds; infer; data: `usse-output-registers`.*
+- `E140` With CR_PDS_REG_0ABC bits 4:1 at 0 a fill, a geometry-only render and a whole render each
+  hang (the job times out and the context is lost), and a render of 256x256 triangles takes 67297 to
+  68131 us at twelve values of the bits, 1 to 8, 10, 12 and 15; we read the field as one count of
+  PDS task slots shared by every data master; this reading is an inference.
+  *pds; infer, HW; data: `pds-task-limits`.*
+- `E141` CR_PDS_REG_0A78 (6 bits, 0x2c as the firmware leaves it) changes no image at any of its 64
+  values (E045); the render time of 256x256 triangles at seven of its values is 67288 to 67658 us at
+  five of them, and 69038 and 70977 us at 0x20 and 0x01; we read it as a PDS tuning value with no
+  effect on the image, and its effect on time is not settled; this reading is an inference.
+  *pds; infer, HW; data: `pds-task-limits`, `platform-untouched-registers`.*
+- `E142` In a PDS program with no load or store, rfence and rwfence leave the data-segment registers
+  as they are: with no fence, with rfence and with rwfence the sixteen registers handed on through
+  douta equal the inputs, and with both fences between three dependent mov32s each mov reads what
+  the one before wrote; all four jobs complete.
+  *pds; HW; data: `pds-memory`, `pds-memory-followup`.*
+- `E143` With the scratch mapped in the first MiB, where the PDS reaches, a PDS load's dwords reach
+  its registers only at the next rfence or rwfence (never by the end of the program, and not after
+  four nops), a store takes the register's value at the time it runs, a load after a store reads the
+  stored value, and stores of 8 dwords complete; rwfence after a store faults the job in 10 of 10
+  programs of the table that have one, in both runs, 5 of them after a completed job or first in
+  their table and 5 right after a faulted job.
+  *pds; HW; data: `pds-memory`, `pds-memory-followup`.*
+- `E144` A PDS program with stores and no rwfence faults when its stores total 2, 3 or 4 dwords,
+  however they are split, after every dword has landed and the program has reached its end (20
+  programs, in both runs), and completes when they total 5 to 9, 12, 16 or 18 (16 programs, in both
+  runs) and in 12 of the 15 programs that total 1 or 10; the other three fault in one run only (two
+  of total 1 in the follow-up run, one of 2 + 8 in the first); a job with rwfence run right after a
+  faulted job faults whether or not it has a store (11 of 11, in both runs).
+  *pds; HW; data: `pds-memory`, `pds-memory-followup`.*
+- `E145` The kernel logs of the two runs of pds/memory hold 37 (first run) and 38 (follow-up run)
+  BIF fault lines, one for each PDS case that faulted, in order; the status is 0xd2000 for the store
+  faults (21 and 22) and 0x92000 for the 16 rwfence faults of each run; the 36 cases that faulted in
+  both runs have the same status, address and SB in both, and the same CID in 32; the value
+  (CR_BIF_FAULT) splits into the fields CID (3:0) and SB (8:4) as follows: SB is 2 or 3 in all 75,
+  with 2 for rwfence after a store and 3 for rwfence with no store before it, and CID is 0 in all 16
+  faults under one page directory in each run.
+  *pds; HW, DDK; data: `pds-memory`, `pds-memory-followup`.*
+- `E146` PDS #13 (40 instructions, 24 data dwords) tests one event word and starts one of four EDM
+  tasks, three fast paths for exact event groups and a general task for everything else; PDS #14 (14
+  instructions, 12 data dwords) tests one request word and starts one of three tasks by request-bit
+  group, in priority order.
+  *edm; RE, infer; data: `firmware-images`.*
 
 ## By unit
 
 ### edm
 
-Records: E009, E013, E014, E017, E084.
+Records: E009, E013, E014, E017, E084, E146.
 
 ### firmware
 
@@ -730,7 +853,8 @@ Records: E029, E030, E031, E032.
 
 ### pds
 
-Records: E043, E044, E045, E046, E047, E048.
+Records: E043, E044, E045, E046, E047, E048, E125, E126, E127, E128, E129, E130, E131, E132, E133,
+E134, E135, E136, E137, E138, E139, E140, E141, E142, E143, E144, E145.
 
 ### platform
 

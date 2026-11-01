@@ -1,0 +1,10 @@
+title = "follow-up run of the probe table pds/douta"
+repo = "data"
+paths = ["followup/pds/douta/"]
+method = "campaign runner on the laptop target (tools/campaign), the follow-up round"
+date = "2026-11-01"
+files = 24
+size = 22341
+sha256 = "8a686c11c28fac421ef03cf1da25f27ad67aea8c81b145efca4aed95ad93dedf"
+recipe = "probes/pds/douta.toml"
+needs = ["render"]

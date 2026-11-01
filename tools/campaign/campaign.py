@@ -26,9 +26,11 @@ For every probe of a table: the baseline triangle must draw clean ("diff: 0"), e
 target is fenced (a probe that hangs the GPU, whose recovery resets it) up to three times;
 the probe runs (probe.py builds its cases, one process per case); its raw output, report and
 assembled cases go to DATA/<unit>/<feature>/<probe>/, and the baseline after it into the
-table's env.toml with the target's environment (kernel, firmware, tool). Then the table's
-manifest, DATASETS/<unit>-<feature>.toml: the repository that holds the bytes (data or
-data-private), the paths, files, size and sha256, and the table as its recipe.
+table's env.toml with the target's environment (kernel, firmware, tool). On the laptop the
+driver's kernel log lines of the table's run go to DATA/<unit>/<feature>/kernel.log (faults
+and recoveries are reported only there). Then the table's manifest,
+DATASETS/<unit>-<feature>.toml: the repository that holds the bytes (data or data-private),
+the paths, files, size and sha256, and the table as its recipe.
 
 Two table fields (top level, before the first [[probe]]/[[range]]):
 
@@ -37,7 +39,8 @@ Two table fields (top level, before the first [[probe]]/[[range]]):
                                   (kpoke, kreg, regs, timer_clock, ...), or "render", the
                                   render node (/dev/dri/renderD*). A missing one refuses the
                                   table, naming it. Targets without ssh (mock, local, build)
-                                  are not checked.
+                                  are not checked. A switch among them (vm_low) is turned
+                                  on while the table runs and off after it.
     open = ["<probe name>", ...]  kept probes no earlier run recorded. In a probe table they
                                   run last, and the GPU is checked (fenced if dirty) after
                                   the last. Both lists go into the table's env.toml and its
@@ -54,11 +57,13 @@ import hashlib
 import os
 import pathlib
 import re
+import secrets
 import shlex
 import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import tomllib
 
 HERE = pathlib.Path(__file__).resolve().parent
@@ -385,7 +390,98 @@ def _ready(target) -> str:
     return line
 
 
+OK = "resgx-ok"      # echoed after a command's `&&`: _ssh returns stdout only, not the status
+
+
+def _ssh_checked(target, cmd: str, what: str) -> str:
+    """Run cmd on an ssh target; a CampaignError when it did not succeed."""
+    out = target._ssh(f"{cmd} && echo {OK}")
+    if OK not in out.split():
+        raise CampaignError(f"{what} failed on the {target.name} target")
+    return out
+
+
+def _log_mark(target, what: str) -> str | None:
+    """Write a mark to the kernel log of an ssh target before a table runs: faults and
+    recoveries are reported only there (kernel.log in the table's data).  The mark is unique
+    per run (a random suffix); a failed write is a CampaignError."""
+    if not hasattr(target, "_ssh"):
+        return None
+    mark = f"resgx545 campaign {what} {time.strftime('%Y%m%dT%H%M%S')} {secrets.token_hex(4)}"
+    cmd = f"printf '%s\\n' {shlex.quote(mark)} | sudo -n tee /dev/kmsg >/dev/null"
+    _ssh_checked(target, cmd, "writing the kernel log mark")
+    return mark
+
+
+_KEEP = re.compile(r"gma500|BUG|Oops|Call Trace|WARNING")
+_BODY = re.compile(r"^\[[^\]]*\] ?(.*)$")
+
+
+def _log_since(target, mark: str) -> str:
+    """The mark line, then the driver and fault lines of the kernel log after it (gma500,
+    BUG, Oops, WARNING, Call Trace and the indented trace lines that follow them).  A mark
+    that is not in the log (the ring wrapped) is a CampaignError, not an empty log."""
+    lines = target._ssh("sudo -n dmesg").splitlines()
+    marks = [n for n, ln in enumerate(lines) if mark in ln]
+    if not marks:
+        raise CampaignError(f"the kernel log mark {mark!r} is not in dmesg "
+                            "(the ring wrapped or the write failed)")
+    i = marks[-1]
+    kept, last = [lines[i]], False
+    for ln in lines[i + 1:]:
+        m = _BODY.match(ln)
+        body = m.group(1) if m else ln
+        last = bool(_KEEP.search(ln)) or (last and body[:1] in (" ", "\t"))
+        if last:
+            kept.append(ln)
+    return "".join(ln + "\n" for ln in kept)
+
+
+# debugfs switches a need turns on for its table: sgx/vm_low lets a VM map the first MiB
+KNOBS = ("vm_low",)
+_KNOB_DIR = '"$(ls -d /sys/kernel/debug/dri/*/sgx | head -1)"'
+
+
+def _knob_get(target, name: str) -> bool:
+    out = target._ssh(f"sudo -n cat {_KNOB_DIR}/{name}")
+    return out.strip().upper().startswith(("Y", "1"))
+
+
+def _knob(target, name: str, on: bool) -> None:
+    _ssh_checked(target, "sudo -n sh -c 'echo %s > %s/%s'" % ("Y" if on else "N", _KNOB_DIR, name),
+                 f"switching {name} {'on' if on else 'off'}")
+
+
 def run_table(path: pathlib.Path, target, data: pathlib.Path, ds_dir: pathlib.Path,
+              *args, **kw) -> dict:
+    """Run every probe of one table (_run_table); the debugfs switches its needs name (KNOBS)
+    are on while it runs and put back to their previous value after.  A failed switch is a
+    CampaignError; a failing restore does not hide the error that stopped the table."""
+    spec = tomllib.loads(pathlib.Path(path).read_text())
+    needs = table_fields(spec, pathlib.Path(path).name).get("needs", [])
+    knobs = [n for n in needs if n in KNOBS] if hasattr(target, "_ssh") else []
+    if knobs:
+        check_needs(target, needs, pathlib.Path(path).name)
+    prev: dict = {}
+    try:
+        for k in knobs:
+            prev[k] = _knob_get(target, k)
+            _knob(target, k, True)
+        return _run_table(path, target, data, ds_dir, *args, **kw)
+    finally:
+        failed = []
+        for k, was in prev.items():
+            try:
+                _knob(target, k, was)
+            except Exception as e:                       # report, go on with the others
+                failed.append(f"{k}: {e}")
+        if failed:
+            if sys.exc_info()[0] is None:
+                raise CampaignError("switch not restored: " + "; ".join(failed))
+            print("warning: switch not restored: " + "; ".join(failed), file=sys.stderr)
+
+
+def _run_table(path: pathlib.Path, target, data: pathlib.Path, ds_dir: pathlib.Path,
               repo: str, root: pathlib.Path | None = None) -> dict:
     """Run every probe of one table; returns (and writes) its dataset manifest."""
     path = pathlib.Path(path).resolve()
@@ -428,70 +524,83 @@ def run_table(path: pathlib.Path, target, data: pathlib.Path, ds_dir: pathlib.Pa
     src_dir = path.parent / "templates"
     src_dir = src_dir if src_dir.is_dir() else probe.PROBES_DIR
     tdir = pathlib.Path(data) / unit / feature
-    tdir.mkdir(parents=True, exist_ok=True)
-    env = {**target.environment(), **fields, "table": path.relative_to(root).as_posix(),
-           "date": datetime.datetime.now().astimezone().isoformat(timespec="seconds")}
-    log: dict = {}
-    if kind == "capture":
-        if not hasattr(target, "capture"):
-            raise CampaignError(f"{path.name}: a capture runs on a capture host "
-                                "(local or build), not a GPU target")
-        script = spec["script"]
-        body = (path.parent / "templates" / script).read_text()
-        (tdir / "output.txt").write_text(target.capture(body, spec.get("files", []), root,
-                                                        tdir))
-        (tdir / script).write_text(body)
-        _write_env(tdir / "env.toml", env, {spec["name"]: {}})
-    if has_sweep:
-        sweeps = sweep.load_all(path)
-        for s in sweeps:
-            # one sweep: the table's directory; several: one directory each (the name's tail)
-            sdir = tdir if len(sweeps) == 1 else tdir / s.name.removeprefix(f"{unit}-{feature}-")
-            before = _ready(target)
-            res = sweep.run(s, target.sweep_exec(), sdir, sweep.tool_size_of(_local_tool()))
-            if res.stopped or res.done < res.total:
-                raise CampaignError(f"{path.name}: sweep {s.name} did not finish "
-                                    f"({res.done} of {res.total} cases"
-                                    f"{'; ' + res.stopped if res.stopped else ''}); "
-                                    "no manifest")
-            log[s.name] = {"before": before, "after": target.baseline()}
+    mark = _log_mark(target, f"{unit}/{feature}")
+    try:
+        tdir.mkdir(parents=True, exist_ok=True)
+        env = {**target.environment(), **fields, "table": path.relative_to(root).as_posix(),
+               "date": datetime.datetime.now().astimezone().isoformat(timespec="seconds")}
+        log: dict = {}
+        if kind == "capture":
+            if not hasattr(target, "capture"):
+                raise CampaignError(f"{path.name}: a capture runs on a capture host "
+                                    "(local or build), not a GPU target")
+            script = spec["script"]
+            body = (path.parent / "templates" / script).read_text()
+            (tdir / "output.txt").write_text(target.capture(body, spec.get("files", []), root,
+                                                            tdir))
+            (tdir / script).write_text(body)
+            _write_env(tdir / "env.toml", env, {spec["name"]: {}})
+        if has_sweep:
+            sweeps = sweep.load_all(path)
+            for s in sweeps:
+                # one sweep: the table's directory; several: one directory each
+                tail = s.name.removeprefix(f"{unit}-{feature}-")
+                sdir = tdir if len(sweeps) == 1 else tdir / tail
+                before = _ready(target)
+                res = sweep.run(s, target.sweep_exec(), sdir, sweep.tool_size_of(_local_tool()))
+                if res.stopped or res.done < res.total:
+                    raise CampaignError(f"{path.name}: sweep {s.name} did not finish "
+                                        f"({res.done} of {res.total} cases"
+                                        f"{'; ' + res.stopped if res.stopped else ''}); "
+                                        "no manifest")
+                log[s.name] = {"before": before, "after": target.baseline()}
+                _write_env(tdir / "env.toml", env, log)
+            (tdir / "table.toml").write_text(text)
+        if has_script:
+            baseline = spec.get("baseline", "tri")
+            if baseline not in ("tri", "none"):
+                raise CampaignError(f"{path.name}: baseline is \"tri\" (the default) or "
+                                    f"\"none\", not {baseline!r}")
+            before = _ready(target) if baseline == "tri" else None
+            body = (path.parent / "templates" / spec["script"]).read_text()
+            with tempfile.TemporaryDirectory() as bins:
+                staged = _stage(table, spec.get("stage", []), root, src_dir, pathlib.Path(bins))
+                if getattr(target, "in_repository", False):
+                    out = target.script(body, root, tdir)
+                elif staged:
+                    out = target.script(body, bins=pathlib.Path(bins))
+                else:
+                    out = target.script(body)
+            (tdir / "output.txt").write_text(out)
+            (tdir / spec["script"]).write_text(body)
+            log[spec["name"]] = ({"before": before, "after": target.baseline()}
+                                 if baseline == "tri" else {"baseline": "none"})
             _write_env(tdir / "env.toml", env, log)
-        (tdir / "table.toml").write_text(text)
-    if has_script:
-        baseline = spec.get("baseline", "tri")
-        if baseline not in ("tri", "none"):
-            raise CampaignError(f"{path.name}: baseline is \"tri\" (the default) or "
-                                f"\"none\", not {baseline!r}")
-        before = _ready(target) if baseline == "tri" else None
-        body = (path.parent / "templates" / spec["script"]).read_text()
-        with tempfile.TemporaryDirectory() as bins:
-            staged = _stage(table, spec.get("stage", []), root, src_dir, pathlib.Path(bins))
-            if getattr(target, "in_repository", False):
-                out = target.script(body, root, tdir)
-            elif staged:
-                out = target.script(body, bins=pathlib.Path(bins))
-            else:
-                out = target.script(body)
-        (tdir / "output.txt").write_text(out)
-        (tdir / spec["script"]).write_text(body)
-        log[spec["name"]] = ({"before": before, "after": target.baseline()}
-                             if baseline == "tri" else {"baseline": "none"})
-        _write_env(tdir / "env.toml", env, log)
-    for p in table:
-        before = _ready(target)
-        with tempfile.TemporaryDirectory() as d:
-            work = pathlib.Path(d)
-            out = target.run([p], work, src_dir)
-            pdir = tdir / p.name
-            pdir.mkdir(parents=True, exist_ok=True)
-            (pdir / "raw.txt").write_text(out)
-            (pdir / "report.txt").write_text(probe.report([p], out))
-            probe.save_bins(work, pdir)
-            probe.save_dumps(work, pdir)
-        log[p.name] = {"before": before, "after": target.baseline()}
-        _write_env(tdir / "env.toml", env, log)
-    if opened and has_probe:
-        _ready(target)              # the last open probe may have wedged the GPU
+        for p in table:
+            before = _ready(target)
+            with tempfile.TemporaryDirectory() as d:
+                work = pathlib.Path(d)
+                out = target.run([p], work, src_dir)
+                pdir = tdir / p.name
+                pdir.mkdir(parents=True, exist_ok=True)
+                (pdir / "raw.txt").write_text(out)
+                (pdir / "report.txt").write_text(probe.report([p], out))
+                probe.save_bins(work, pdir)
+                probe.save_dumps(work, pdir)
+            log[p.name] = {"before": before, "after": target.baseline()}
+            _write_env(tdir / "env.toml", env, log)
+        if opened and has_probe:
+            _ready(target)              # the last open probe may have wedged the GPU
+    except BaseException:
+        if mark:                    # the faults and the recovery are what a failed run needs
+            try:
+                tdir.mkdir(parents=True, exist_ok=True)
+                (tdir / "kernel.log").write_text(_log_since(target, mark))
+            except Exception:
+                pass
+        raise
+    if mark:
+        (tdir / "kernel.log").write_text(_log_since(target, mark))
     rel = f"{unit}/{feature}/"
     files, size, sha = datasets.digest([rel], pathlib.Path(data))
     kinds = [k for k, on in (("capture", kind == "capture"), ("sweep", has_sweep),

@@ -1,0 +1,10 @@
+title = "follow-up run of the probe table pds/iteration-sources"
+repo = "data"
+paths = ["followup/pds/iteration-sources/"]
+method = "campaign runner on the laptop target (tools/campaign), the follow-up round"
+date = "2026-11-01"
+files = 280
+size = 8691243
+sha256 = "e66617d086cae25bc7903c0a854398eed8faa4ac260f8848ac2c3aaee9e5cb69"
+recipe = "probes/pds/iteration-sources.toml"
+needs = ["render"]

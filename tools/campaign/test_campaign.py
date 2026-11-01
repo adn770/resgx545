@@ -490,8 +490,20 @@ class SshFake(FakeTarget):
 
     def _ssh(self, cmd):
         self.cmds.append(cmd)
+        if cmd == "sudo -n dmesg":                  # holds the table's mark, if it wrote one
+            return "".join(f"[1.0] {m}\n" for m in self.marks())
+        ok = f"{campaign.OK}\n" if campaign.OK in cmd else ""      # a command that succeeds
         return "".join(f"sgx/{f}\n" for f in self.debugfs) + \
-            "".join(f"dev/{d}\n" for d in self.dev)
+            "".join(f"dev/{d}\n" for d in self.dev) + ok
+
+
+def _marks(self):
+    import re
+    return [re.search(r"resgx545 campaign \S+ \S+ \S+", c).group(0)
+            for c in self.cmds if "/dev/kmsg" in c]
+
+
+SshFake.marks = _marks
 
 
 def run(path, target, tmp):
@@ -790,3 +802,186 @@ def test_a_local_run_of_a_table_that_needs_the_gpu_is_a_campaign_error(tmp_path)
     with pytest.raises(campaign.CampaignError, match='baseline = "none"'):
         campaign.run_table(t, campaign.LocalHost(), tmp_path / "d", tmp_path / "ds",
                            repo="data", root=tmp_path)
+
+
+class KnobFake(SshFake):
+    """Records the order of the knob writes and the probe runs; vm_low starts as `was`."""
+
+    def __init__(self, fail=False, was="N", fail_write=None):
+        super().__init__(debugfs=("vm_low",), dev=("card0", "renderD128"))
+        self.fail, self.log, self.state = fail, [], was
+        self.fail_write = fail_write          # "on" / "off": that write exits non-zero
+
+    def _ssh(self, cmd):
+        if "vm_low" in cmd and "cat" in cmd:
+            return self.state + "\n"
+        if "vm_low" in cmd and ">" in cmd:
+            val = "Y" if "echo Y" in cmd else "N"
+            self.log.append("on" if val == "Y" else "off")
+            if self.fail_write == self.log[-1]:
+                self.cmds.append(cmd)
+                return ""
+            self.state = val
+        return super()._ssh(cmd)
+
+    def run(self, probes, work, src_dir):
+        self.log.append("probe")
+        if self.fail:
+            raise campaign.probe.ProbeError("sgxfive-test failed")
+        return super().run(probes, work, src_dir)
+
+
+VM_LOW = 'needs = ["render", "vm_low"]\n'
+
+
+def test_a_table_that_needs_vm_low_turns_it_on_for_its_probes_and_off_after(tmp_path):
+    # the low mappings of the PDS memory probes need the kernel's sgx/vm_low switched on
+    tg = KnobFake()
+    run(probe_table(tmp_path, ["a"], head=VM_LOW), tg, tmp_path)
+    assert tg.log == ["on", "probe", "off"]
+    tg = KnobFake(fail=True)
+    with pytest.raises(campaign.probe.ProbeError):
+        run(probe_table(tmp_path / "x", ["a"], head=VM_LOW), tg, tmp_path / "x")
+    assert tg.log == ["on", "probe", "off"]
+
+
+def test_the_switch_goes_back_to_its_previous_value(tmp_path):
+    tg = KnobFake(was="Y")
+    run(probe_table(tmp_path, ["a"], head=VM_LOW), tg, tmp_path)
+    assert tg.state == "Y"
+
+
+def test_a_table_without_a_knob_need_writes_no_switch(tmp_path):
+    tg = KnobFake()
+    run(probe_table(tmp_path, ["a"], head='needs = ["render"]\n'), tg, tmp_path)
+    assert tg.log == ["probe"]
+
+
+def test_the_switch_goes_off_when_the_table_is_refused_after_it_went_on(tmp_path):
+    tg = KnobFake()
+    t = probe_table(tmp_path, ["a"], head=VM_LOW + 'open = ["usse-demo-zz"]\n')
+    with pytest.raises(campaign.CampaignError, match="usse-demo-zz"):
+        run(t, tg, tmp_path)
+    assert tg.log[-1] == "off" and "probe" not in tg.log
+
+
+def test_a_switch_write_that_fails_is_a_campaign_error_and_no_probe_runs(tmp_path):
+    tg = KnobFake(fail_write="on")
+    with pytest.raises(campaign.CampaignError, match="vm_low"):
+        run(probe_table(tmp_path, ["a"], head=VM_LOW), tg, tmp_path)
+    assert "probe" not in tg.log
+
+
+def test_a_restore_that_fails_does_not_mask_the_error_that_stopped_the_table(tmp_path):
+    tg = KnobFake(fail=True, fail_write="off")
+    with pytest.raises(campaign.probe.ProbeError):
+        run(probe_table(tmp_path, ["a"], head=VM_LOW), tg, tmp_path)
+    tg = KnobFake(fail_write="off")             # a table that went well: the failure shows
+    with pytest.raises(campaign.CampaignError, match="not restored"):
+        run(probe_table(tmp_path / "y", ["a"], head=VM_LOW), tg, tmp_path / "y")
+
+
+class LogFake(SshFake):
+    """A laptop whose kernel log holds a line before the table's mark and some after."""
+
+    def __init__(self, *a, mark_ok=True, lines=None, **kw):
+        super().__init__(*a, **kw)
+        self.mark_ok, self.lines = mark_ok, lines
+
+    def mark(self):
+        return self.marks()[-1]
+
+    def _ssh(self, cmd):
+        self.cmds.append(cmd)
+        if cmd == "sudo -n dmesg":         # the kernel log is root's on the laptop
+            if not self.mark_ok:
+                return "[1.0] gma500 0000:00:02.0: [drm] sgxfive: earlier\n"
+            tail = self.lines or (
+                "[3.0] gma500 0000:00:02.0: [drm] sgxfive: BIF fault 0x90020 at 0x0\n"
+                "[4.0] gma500 0000:00:02.0: [drm] sgxfive: EDM up\n")
+            return ("[1.0] gma500 0000:00:02.0: [drm] sgxfive: earlier\n"
+                    f"[2.0] {self.mark()}\n" + tail)
+        if "/dev/kmsg" in cmd and not self.mark_ok:
+            return ""                      # tee failed
+        return super()._ssh(cmd)
+
+
+def kernel_log(tmp_path):
+    return (tmp_path / "d" / "usse" / "demo" / "kernel.log").read_text()
+
+
+def test_the_kernel_log_of_a_tables_run_is_kept_with_its_data(tmp_path):
+    # faults and recoveries are reported only in the kernel log: a table keeps the lines the
+    # driver logged during its run, after a mark written when it starts; the mark line is the
+    # first line, so a reader can tell a clean run from a lost mark
+    t = probe_table(tmp_path, ["a"], head='needs = ["render"]\n')
+    tg = LogFake(debugfs=(), dev=("card0", "renderD128"))
+    rec = run(t, tg, tmp_path)
+    log = kernel_log(tmp_path)
+    assert "BIF fault 0x90020" in log and "EDM up" in log and "earlier" not in log
+    assert tg.mark() in log.splitlines()[0]
+    files = [f for f in (tmp_path / "d" / "usse" / "demo").rglob("*") if f.is_file()]
+    assert rec["files"] == len(files) and "kernel.log" in {f.name for f in files}
+
+
+def test_a_mark_that_is_not_in_the_log_is_a_campaign_error_with_no_manifest(tmp_path):
+    t = probe_table(tmp_path, ["a"], head='needs = ["render"]\n')
+    tg = LogFake(debugfs=(), dev=("card0", "renderD128"))
+    tg.lines = None
+    orig = tg._ssh
+    tg._ssh = lambda cmd: ("[1.0] gma500 other\n" if cmd == "sudo -n dmesg" else orig(cmd))
+    with pytest.raises(campaign.CampaignError, match="mark"):
+        run(t, tg, tmp_path)
+    assert not (tmp_path / "ds" / "usse-demo.toml").exists()
+
+
+def test_a_mark_write_that_fails_is_a_campaign_error(tmp_path):
+    t = probe_table(tmp_path, ["a"], head='needs = ["render"]\n')
+    tg = LogFake(debugfs=(), dev=("card0", "renderD128"), mark_ok=False)
+    with pytest.raises(campaign.CampaignError, match="mark"):
+        run(t, tg, tmp_path)
+
+
+def test_oops_bug_and_trace_lines_are_kept(tmp_path):
+    t = probe_table(tmp_path, ["a"], head='needs = ["render"]\n')
+    tg = LogFake(debugfs=(), dev=("card0", "renderD128"), lines=(
+        "[3.0] BUG: unable to handle kernel paging request at 0\n"
+        "[3.1] Oops: 0000 [#1] SMP\n"
+        "[3.2] Call Trace:\n"
+        "[3.3]  ? sgxfive_irq+0x10/0x20\n"
+        "[3.4]  worker_thread+0x1/0x2\n"
+        "[3.5] usb 1-1: unrelated\n"
+        "[3.6]  indented but not a trace\n"
+        "[3.7] WARNING: CPU: 0 PID: 1 at foo\n"))
+    run(t, tg, tmp_path)
+    log = kernel_log(tmp_path)
+    for kept in ("BUG:", "Oops:", "Call Trace", "sgxfive_irq", "worker_thread", "WARNING"):
+        assert kept in log
+    assert "unrelated" not in log and "not a trace" not in log
+
+
+def test_the_kernel_log_is_kept_when_the_table_fails(tmp_path):
+    tg = LogFake(debugfs=("vm_low",), dev=("card0", "renderD128"))
+    tg.run = lambda *a: (_ for _ in ()).throw(campaign.probe.ProbeError("boom"))
+    with pytest.raises(campaign.probe.ProbeError):
+        run(probe_table(tmp_path, ["a"], head=VM_LOW), tg, tmp_path)
+    assert "BIF fault 0x90020" in kernel_log(tmp_path)
+
+
+def test_the_mark_is_shell_quoted_and_unique_per_run(tmp_path):
+    marks = set()
+    for i in range(2):
+        tg = LogFake(debugfs=(), dev=("card0", "renderD128"))
+        run(probe_table(tmp_path / str(i), ["a"], head='needs = ["render"]\n'), tg,
+            tmp_path / str(i))
+        marks.add(tg.mark())
+    assert len(marks) == 2
+    tg = LogFake(debugfs=())
+    campaign._log_mark(tg, "a'b; rm x")
+    assert campaign.shlex.quote("resgx545 campaign a'b; rm x") not in tg.cmds[0]  # has the time
+    assert "'\"'\"'" in tg.cmds[0]          # the quote is escaped, not left open
+
+
+def test_targets_without_ssh_keep_no_kernel_log(tmp_path):
+    run(probe_table(tmp_path, ["a"]), FakeTarget(), tmp_path)
+    assert not (tmp_path / "d" / "usse" / "demo" / "kernel.log").exists()

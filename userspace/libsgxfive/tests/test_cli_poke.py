@@ -223,7 +223,16 @@ def test_probe_takes_transfer_pokes(tmp_path):
     assert re.search(r"^probe pk: failed", r.stdout, re.M), r.stdout
 
 
-@pytest.mark.parametrize("poke", ["cmd:0=1", "tex:0=1", "xfer:42=1"])
+def test_probe_takes_background_object_pokes(tmp_path):
+    """probe --poke bg:N...: words of the fill's background object, where the PDS state's
+    secondary attribute rows are (bits 24:18 of dword 1)."""
+    f = _probe_file(tmp_path)
+    r = run("--mock", "probe", "--poke", "bg:1=0x130000", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^probe pk: pokes bg:1=0x130000$", r.stdout, re.M), r.stdout
+
+
+@pytest.mark.parametrize("poke", ["cmd:0=1", "tex:0=1", "xfer:42=1", "bg:17=1"])
 def test_probe_rejects_other_pokes(tmp_path, poke):
     r = run("--mock", "probe", "--poke", poke, str(_probe_file(tmp_path)))
     assert r.returncode == 2, r.stdout

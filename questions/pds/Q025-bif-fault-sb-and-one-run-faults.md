@@ -1,0 +1,38 @@
++++
+id = "Q025"
+question = "what does the SB field of CR_BIF_FAULT encode in the PDS faults, and why did a store of one dword fault in the follow-up run only, and a store of two dwords then eight in the first run only?"
+unit = "pds"
+phase = 7
+evidence = ["E143", "E144", "E145"]
+terms = ["CR_BIF_FAULT", "CR_BIF_FAULT.CID", "CR_BIF_FAULT.SB"]
++++
+
+SB. The kernel logs of the two runs hold 37 (first run) and 38 (follow-up run) fault lines, one
+for each PDS case that faulted (E145). SB (bits 8:4) is 2 or 3 in all 75. For the stores totalling
+2 dwords (12 faults in each run) it is 2, and for stores totalling 3 or 4 dwords (8 in each run) it
+is 3; for `rwfence` after a store in the same program (10 in each run) it is 2, and for `rwfence` in
+programs with no store before it (6 in each run, all right after faulted jobs) it is 3. The status
+is 0xd2000 for the store faults (21 and 22) and 0x92000 for the 16 `rwfence` faults of each run.
+The 36 cases that faulted in both runs have the same SB in both. The three one-run faults do not
+follow the total: the store of one dword (two programs, follow-up run) has SB 3 and the store of 2
+then 8 (first run) has SB 2. Whether SB is the kind of access, its size, or a count of requests is
+not shown: the stores of 3 and 4 dwords share a value, and the `rwfence` faults take either value
+depending on the program. CID varies between page directories (0 in all 16 faults of the one
+directory that repeats, in each run) and is not the question.
+
+The one-run faults (E144). `store` of one dword from ds1 and `store` of one dword followed by nine
+`nop`s faulted in the follow-up run and completed in the first; `store` of 2 dwords and then of 8
+faulted in the first run and completed in the follow-up. In each case every dword landed and the
+registers were stored at the end, as for the faults of totals 2 to 4. Everything else (the other
+86 cases of the table) agrees between the runs. The state a faulted job leaves does not explain
+the three, since the two runs ran the same jobs in the same order.
+
+Open: what SB encodes; whether a fault leaves state (a pending request, a stale translation) that
+makes the next job fault; whether the one-run faults depend on timing, or on the contents of the
+memory the store reaches.
+
+To settle it: log the faults of at least five runs of pds-memory-mem, -mem2, -mem5 and -mem6 with
+the status and value of each, and tabulate SB against the store's size, the fence and the previous
+job's outcome. Run the store of one dword, the store of one dword and nine `nop`s, and 2 + 8, each
+alone in a fresh context ten times, and again after a deliberate fault. Add stores totalling 2 to 4
+dwords with an `rfence` between them, to see whether SB follows the total.

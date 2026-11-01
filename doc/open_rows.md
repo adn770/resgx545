@@ -49,10 +49,10 @@ sits, the reading, and the evidence records it rests on.
 - `G0148` `CR_PDS_REG_0A78` (0x0a78): a PDS tuning value (6 bits, 0x2c) with no visible effect at
   our loads. Measured: set once by the init script to 0x2c; not the SGX535 register at this offset;
   implemented bits 5:0; no effect on a fill, copy or triangle in any value [infer]. Evidence: E006,
-  E026, E045.
-- `G0150` `CR_PDS_REG_0ABC.BITS4_1` (0x0abc[4:1]): Bits 4:1 of register 0x0abc: a triangle job hangs
-  exactly when all four are zero; any other value (bit 0 and bit 5 do not matter) gives the baseline
-  image. The unwritten register holds 7 in these bits. Evidence: E045.
+  E026, E045, E141.
+- `G0150` `CR_PDS_REG_0ABC.BITS4_1` (0x0abc[4:1]): the number of PDS task slots shared by every data
+  master (E140): 0 leaves none, so every job hangs. Measured: 7 from the init script; 0 hangs the
+  next job, any other value changes nothing seen [infer]. Evidence: E045, E134, E140.
 
 ## registers: TPU
 
@@ -193,18 +193,19 @@ sits, the reading, and the evidence records it rests on.
 
 ## words: PDS DOUT words
 
-- `G0219` `DOUTU1.BIT2` (doutu U1 [2]): Bit 2 of a pixel task's second USSE word; it is set (value
-  4) in the fill and triangle jobs' pixel tasks, and flipping it changed nothing on a pixel task or
-  on the end-of-tile task. Evidence: E046.
+- `G0219` `DOUTU1.BIT2` (doutu U1 [2]): a scheduling hint of pixel and secondary tasks: set or
+  clear, no image changes, punch-through included (E137); the ISP visibility counter differs between
+  the two punch-through runs and nothing is concluded from it (E137). Measured: set (U1 = 4) in the
+  pixel tasks of our fill, copy and triangle jobs [infer]. Evidence: E046, E137, E138.
 
 ## words: PDS/pixel task words
 
 - `G0226` `EMIT2.BITS15_8` (EMIT2 (emit2 src0) [15:8]): an emit control field: bit 7 valid, bit 0
   with it (0x81) an emit that writes nothing (a mask or count of 0). Measured: 0x80 in every closed
   program and capture [infer]. Evidence: E046.
-- `G0254` `PDS_SIZE.BITS17_16` (PDS_SIZE [17:16]): a size or count of attribute banks or layers the
-  triangle does not use, 3 meaning all. Measured: set to 3 by the closed driver in every transfer
-  and 3D capture [infer]. Evidence: E046.
+- `G0254` `PDS_SIZE.BITS17_16` (PDS_SIZE [17:16]): a size or count of output register banks: at 0, 1
+  and 2 the triangle's o1-o3 land elsewhere while o0 does not change, 3 the plain value [infer].
+  Evidence: E046, E139.
 - `G0257` `PIXEL_EVENT.PT_OFF` (pixel event input ir1 bit 3): Input bit 3 of the pixel-event program
   is named in the punch-through probes but no probe used it, so the 6.1 data show nothing about it
   beyond its name. Evidence: E083.

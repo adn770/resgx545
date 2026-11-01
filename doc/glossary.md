@@ -82,8 +82,24 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 
 ### bitfield
 
+- `CR_EVENT_STATUS.TPC_FLUSH` G0351 (0x012c[10]): status: tail-pointer cache flush done. From
+  `EUR_CR_EVENT_STATUS_TPC_FLUSH` (1, sgx545-ce).
 - `CR_EVENT_STATUS.SW_EVENT` G0092 (0x012c[14]): status: software event. From
   `EUR_CR_EVENT_STATUS_SW_EVENT` (1, sgx545-ce).
+- `CR_EVENT_STATUS.OTPM_INV` G0350 (0x012c[20]): status: OTPM invalidated. From
+  `EUR_CR_EVENT_STATUS_OTPM_INV` (1, sgx545-ce).
+- `CR_EVENT_STATUS.ISP2_ZLS_CSW_FINISHED` G0349 (0x012c[21]): status: second ISP finished a ZLS
+  context switch. From `EUR_CR_EVENT_STATUS_ISP2_ZLS_CSW_FINISHED` (1, sgx545-ce).
+- `CR_EVENT_STATUS.DPM_INIT_END` G0347 (0x012c[22]): status: DPM initialisation finished. From
+  `EUR_CR_EVENT_STATUS_DPM_INITEND` (1, sgx545-ce).
+- `CR_EVENT_STATUS.DPM_STATE_STORE` G0348 (0x012c[4]): status: DPM state store done. From
+  `EUR_CR_EVENT_STATUS_DPM_STATE_STORE` (1, sgx545-ce).
+- `CR_EVENT_STATUS.DPM_CONTROL_STORE` G0346 (0x012c[7]): status: DPM control store done. From
+  `EUR_CR_EVENT_STATUS_DPM_CONTROL_STORE` (1, sgx545-ce).
+- `CR_EVENT_STATUS.DPM_CONTROL_LOAD` G0345 (0x012c[8]): status: DPM control load done. From
+  `EUR_CR_EVENT_STATUS_DPM_CONTROL_LOAD` (1, sgx545-ce).
+- `CR_EVENT_STATUS.DPM_CONTROL_CLEAR` G0344 (0x012c[9]): status: DPM control clear done. From
+  `EUR_CR_EVENT_STATUS_DPM_CONTROL_CLEAR` (1, sgx545-ce).
 - `CR_TE_SCREEN.LAST_TILE_X` G0160 (0x0210 from bit 0 (width open)): x of the screen's last tile, in
   tiles from 0 [infer]. From `CR_TE_SCREEN.LAST_TILE_X` (ours, resgx545).
 - `CR_TE_SCREEN.LAST_TILE_Y` G0161 (0x0210 from bit 12 (width open)): y of the screen's last tile,
@@ -111,9 +127,9 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   filters for sets 2-5; 1: VC-1's bicubic filters; 2: smoothing filters; 3: set 2 loaded, sets 3-5
   zero (the closed driver's value for NV12) [infer]. From `CR_USE_COEFFS_MODE.MODE` (ours,
   resgx545).
-- `CR_PDS_REG_0ABC.BITS4_1` G0150 (0x0abc[4:1]): inferred reading (unconfirmed): Bits 4:1 of
-  register 0x0abc: a triangle job hangs exactly when all four are zero; any other value (bit 0 and
-  bit 5 do not matter) gives the baseline image. The unwritten register holds 7 in these bits. From
+- `CR_PDS_REG_0ABC.BITS4_1` G0150 (0x0abc[4:1]): inferred reading (unconfirmed): the number of PDS
+  task slots shared by every data master (E140): 0 leaves none, so every job hangs. Measured: 7 from
+  the init script; 0 hangs the next job, any other value changes nothing seen [infer]. From
   `CR_PDS_REG_0ABC.BITS4_1` (ours, resgx545).
 - `CR_EVENT_KICK.NOW` G0091 (0x0ac8[0]): write 1 to trigger. From `EUR_CR_EVENT_KICK_NOW` (1,
   sgx545-ce).
@@ -133,6 +149,10 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   `CR_USE3_SERV_VERTEX.TASK_COUNT` (ours, resgx545).
 - `CR_USE3_SERV_VERTEX.EMPTY` G0192 (0x0b98[16]): queue empty [infer]. From
   `CR_USE3_SERV_VERTEX.EMPTY` (ours, resgx545).
+- `CR_BIF_FAULT.CID` G0342 (0x0c08[3:0]): directory-list index (context) of the fault. From
+  `EUR_CR_BIF_FAULT_CID` (1, sgx545-ce).
+- `CR_BIF_FAULT.SB` G0343 (0x0c08[8:4]): SB bits of the fault (meaning open). From
+  `EUR_CR_BIF_FAULT_SB` (1, sgx545-ce).
 - `CR_BIF_BANK0.INDEX_3D` G0088 (0x0c78[15:12]): directory-list index for 3D requests. From
   `EUR_CR_BIF_BANK0_INDEX_3D` (1, sgx545-ce).
 
@@ -807,9 +827,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `ISP1.VISREG` G0248 (ISP1 [2:0]): index of the visibility counter the object counts into (with
   ISP1.VISTEST). From `visreg` (3, mesa-csbgen).
 - `PDS_SIZE.BITS17_16` G0254 (PDS_SIZE [17:16]): inferred reading (unconfirmed): a size or count of
-  attribute banks or layers the triangle does not use, 3 meaning all. Measured: set to 3 by the
-  closed driver in every transfer and 3D capture [infer]. From `PDS_SIZE.BITS17_16` (ours,
-  resgx545).
+  output register banks: at 0, 1 and 2 the triangle's o1-o3 land elsewhere while o0 does not change,
+  3 the plain value [infer]. From `PDS_SIZE.BITS17_16` (ours, resgx545).
 - `T0.MINFILTER` G0276 (T0 [11:10]): minification filter: 1 and 2 linear, 0 and 3 nearest. From
   `minfilter` (3, mesa-csbgen).
 - `T0.STRIDE` G0279 (T0 [11:9] + [26:17]): stride of a strided texture in dwords - 1: bits 2:0 in T0
@@ -861,20 +880,17 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   [infer]. From `DOUTI0.SHADEMODEL` (ours, resgx545).
 - `DOUTI0.FIXED_OUT` G0210 (douti word 0 [27]): the iterated value written as two's-complement fixed
   point, 28 fractional bits, in bits 29:0 [infer]. From `DOUTI0.FIXED_OUT` (ours, resgx545).
-- `DOUTI0.F16` G0209 (douti word 0 [28]): Bit 28 of the first iterator word: the iterated values are
-  written as half floats, two to a dword, instead of single floats. From `DOUTI0.F16` (ours,
-  resgx545).
+- `DOUTI0.F16` G0209 (douti word 0 [28]): write the iterated values as half floats, two to a dword
+  [infer]. From `DOUTI0.F16` (ours, resgx545).
 - `DOUTI0.TEX_COORD_SOURCE` G0216 (douti word 0 [4:0]): the iterated value the texture fetch takes
   its coordinates from, numbered as DOUTI0.ATTR_SOURCE: 1 the first coordinate set; 0 no fetch
   [infer]. From `DOUTI0.TEX_COORD_SOURCE` (ours, resgx545).
 - `DOUTU0.TEMPS` G0008 (doutu U0 [31:24]): temporaries to allocate, in units of 4. From
   `PVR_ROGUE_PDSINST_DOUT_FIELDS_DOUTU_SRC0_TEMPS` (3, mesa-pds-defs).
-- `DOUTU1.BITS11_3` G0220 (doutu U1 [11:3]): the closed pixel-event program ORs its ir0 [8:0] here
-  for the end-of-tile task; it places the end-of-tile write on the target (x); in 32-pixel tile
-  columns from bit 4; width open [infer]. From `DOUTU1.BITS11_3` (ours, resgx545).
-- `DOUTU1.BITS21_12` G0221 (doutu U1 [21:12]): the closed pixel-event program ORs its ir0 [18:9]
-  here for the end-of-tile task; it places the end-of-tile write on the target (y); in 16-pixel tile
-  rows from bit 13; width open [infer]. From `DOUTU1.BITS21_12` (ours, resgx545).
+- `DOUTU1.BITS11_3` G0220 (doutu U1 [11:3]): it places the end-of-tile write on the target (x); in
+  32-pixel tile columns from bit 4; width open [infer]. From `DOUTU1.BITS11_3` (ours, resgx545).
+- `DOUTU1.BITS21_12` G0221 (doutu U1 [21:12]): it places the end-of-tile write on the target (y); in
+  16-pixel tile rows from bit 13; width open [infer]. From `DOUTU1.BITS21_12` (ours, resgx545).
 - `ISP0.PASS_TYPE` G0245 (isp0 [27:25]): pass type. From `passtype` (3, mesa-csbgen).
 - `MTECTL.CULL_MODE` G0251 (mtectl [1:0]): cull mode. From `cullmode` (3, mesa-csbgen).
 - `SIDEBAND.PACKMODE` G0264 (sideband [5:0]): pixel pack format. From `packmode` (3, mesa-csbgen).
@@ -934,9 +950,9 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `DOUTI0.LAST_FETCH` G0212 (douti word 0 [30]): set on the program's last iteration with a texture
   fetch: signals the wait of DOUTU1.WAIT_FETCH; an iteration with a fetch source delivers its values
   with the texel [infer]. From `DOUTI0.LAST_FETCH` (ours, resgx545).
-- `DOUTI1.FLAT` G0218 (douti word 1 [6]): Bit 6 of the second iterator word: the iteration is flat,
-  every pixel taking one vertex's value (vertex 0's x, -0.75, in the case run) instead of the
-  interpolated one. From `DOUTI1.FLAT` (ours, resgx545).
+- `DOUTI1.FLAT` G0218 (douti word 1 [6]): iterate flat: every pixel gets the value of the vertex
+  DOUTI0.SHADEMODEL selects (0-2), as DOUTI0.FLAT; with shade model 3 the job hangs [infer]. From
+  `DOUTI1.FLAT` (ours, resgx545).
 - `DOUTU1.LAST_TILE` G0223 (doutu U1 [22]): carried by the end-of-tile tasks of the render's last
   two 16x16 tiles: the render ends when they do; set on the other tiles' tasks it changes nothing
   seen [infer]. From `DOUTU1.LAST_TILE` (ours, resgx545).
@@ -946,9 +962,11 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   with DOUTI0.LAST_ITER) before it runs [infer]. From `DOUTU1.WAIT_ITER` (ours, resgx545).
 - `DOUTU1.WAIT_FETCH` G0224 (doutu U1 [25]): the task waits for its PDS program's texture fetch
   before it runs [infer]. From `DOUTU1.WAIT_FETCH` (ours, resgx545).
-- `DOUTU1.BIT2` G0219 (doutu U1 [2]): inferred reading (unconfirmed): Bit 2 of a pixel task's second
-  USSE word; it is set (value 4) in the fill and triangle jobs' pixel tasks, and flipping it changed
-  nothing on a pixel task or on the end-of-tile task. From `DOUTU1.BIT2` (ours, resgx545).
+- `DOUTU1.BIT2` G0219 (doutu U1 [2]): inferred reading (unconfirmed): a scheduling hint of pixel and
+  secondary tasks: set or clear, no image changes, punch-through included (E137); the ISP visibility
+  counter differs between the two punch-through runs and nothing is concluded from it (E137).
+  Measured: set (U1 = 4) in the pixel tasks of our fill, copy and triangle jobs [infer]. From
+  `DOUTU1.BIT2` (ours, resgx545).
 - `PIXEL_EVENT.END_OF_TILE` G0255 (pixel event input ir1 bit 1): the signal that a tile is complete,
   on which the EDM generates the task emitting the tile. From `tile is complete` (4,
   patent-US8046761).

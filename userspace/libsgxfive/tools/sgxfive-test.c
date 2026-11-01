@@ -40,7 +40,7 @@
  *   regaccess                     client fill shaders that read and write SGX
  *                                 registers, read temporaries they did not write
  *                                 and kick code base 15
- *   probe [--temps N] [--coords] [--pixels] [--pds N --use USE] [--poke xfer:N=V]...
+ *   probe [--temps N] [--coords] [--pixels] [--pds N --use USE] [--poke xfer:N=V|bg:N=V]...
  *         [--low ADDR] [--late R:K=V] FILE...
  *                                 each FILE (tools/usse-asm output) as the fill
  *                                 shader of its own fill, with N temporaries
@@ -214,7 +214,7 @@ static int usage(void)
 		"                      [--poke SPACE:INDEX^=VALUE]... [--pixels] [--regs LO-HI],\n"
 		"                 contexts [--width W --height H -n N],\n"
 		"                 probe [--temps N] [--coords] [--pixels] [--pds N --use USE]\n"
-		"                       [--poke xfer:N=V]... [--low ADDR] [--late R:K=V] FILE...,\n"
+		"                       [--poke xfer:N=V|bg:N=V]... [--low ADDR] [--late R:K=V] FILE...,\n"
 		"                 probe --tri SLOT[:N] [--slot SLOT=FILE[:N]]... [--width W\n"
 		"                       --height H --max-width W --max-height H] [--vertices N]\n"
 		"                       [--copy-depth] [--vtx-coords N] [--isp2 V]\n"
@@ -2302,14 +2302,16 @@ int main(int argc, char **argv)
 				continue;
 			}
 			if (!strcmp(argv[i], "--poke") && i + 1 < argc) {
-				/* the fill's transfer command only: its 42 dwords */
+				/* the fill's transfer command (42 dwords) or background object */
 				struct sgxfive_poke *pk = &popts.pokes[popts.npokes];
 
 				if (popts.npokes == SGXFIVE_POKE_MAX ||
 				    sgxfive_poke_parse(argv[i + 1], pk) ||
-				    pk->space != SGXFIVE_POKE_XFER || pk->index >= 42) {
+				    !((pk->space == SGXFIVE_POKE_XFER && pk->index < 42) ||
+				      (pk->space == SGXFIVE_POKE_BG &&
+				       pk->index < SGXFIVE_BGOBJ_DWORDS))) {
 					fprintf(stderr, "sgxfive-test: probe --poke %s: xfer:0-41 "
-						"only\n", argv[i + 1]);
+						"or bg:0-16 only\n", argv[i + 1]);
 					return 2;
 				}
 				popts.poke_args[popts.npokes++] = argv[++i];

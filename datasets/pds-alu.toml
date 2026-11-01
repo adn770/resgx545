@@ -1,0 +1,10 @@
+title = "probe table pds/alu"
+repo = "data"
+paths = ["pds/alu/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 394
+size = 477739
+sha256 = "31cc2416fe0d87e1b6e87b9537f2b671ccddb66ec20bb2ca085bb29ae92d717f"
+recipe = "probes/pds/alu.toml"
+needs = ["render"]

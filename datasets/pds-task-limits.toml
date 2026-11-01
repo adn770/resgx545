@@ -1,0 +1,10 @@
+title = "script and probe table pds/task-limits"
+repo = "data"
+paths = ["pds/task-limits/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 7
+size = 18987168
+sha256 = "c3292c1cdb182bc7e0f987e392a92521821eb527f037670691878903ec255be4"
+recipe = "probes/pds/task-limits.toml"
+needs = ["render", "kpoke", "kreg"]

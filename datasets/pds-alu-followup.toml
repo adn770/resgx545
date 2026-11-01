@@ -1,0 +1,10 @@
+title = "follow-up run of the probe table pds/alu"
+repo = "data"
+paths = ["followup/pds/alu/"]
+method = "campaign runner on the laptop target (tools/campaign), the follow-up round"
+date = "2026-11-01"
+files = 394
+size = 477826
+sha256 = "c0a6b5f45b112caabd9ef7318a37f67618365c7d4ae5395943a0a69cdaf99238"
+recipe = "probes/pds/alu.toml"
+needs = ["render"]

@@ -48,6 +48,118 @@ licence = "GPL-2.0-only OR MIT"
 evidence = "same name as our EVENT_STATUS; Rogue offset 0x0130; analogy, function to be confirmed"
 
 [[term]]
+id = "G0344"
+name = "CR_EVENT_STATUS.DPM_CONTROL_CLEAR"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_STATUS_DPM_CONTROL_CLEAR"
+kind = "bitfield"
+sgx545 = "0x012c[9]"
+meaning = "status: DPM control clear done"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0237"
+licence = "GPL-2.0"
+evidence = "mask 0x00000200"
+
+[[term]]
+id = "G0345"
+name = "CR_EVENT_STATUS.DPM_CONTROL_LOAD"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_STATUS_DPM_CONTROL_LOAD"
+kind = "bitfield"
+sgx545 = "0x012c[8]"
+meaning = "status: DPM control load done"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0238"
+licence = "GPL-2.0"
+evidence = "mask 0x00000100"
+
+[[term]]
+id = "G0346"
+name = "CR_EVENT_STATUS.DPM_CONTROL_STORE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_STATUS_DPM_CONTROL_STORE"
+kind = "bitfield"
+sgx545 = "0x012c[7]"
+meaning = "status: DPM control store done"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0239"
+licence = "GPL-2.0"
+evidence = "mask 0x00000080"
+
+[[term]]
+id = "G0347"
+name = "CR_EVENT_STATUS.DPM_INIT_END"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_STATUS_DPM_INITEND"
+kind = "bitfield"
+sgx545 = "0x012c[22]"
+meaning = "status: DPM initialisation finished"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0240"
+licence = "GPL-2.0"
+evidence = "mask 0x00400000"
+
+[[term]]
+id = "G0348"
+name = "CR_EVENT_STATUS.DPM_STATE_STORE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_STATUS_DPM_STATE_STORE"
+kind = "bitfield"
+sgx545 = "0x012c[4]"
+meaning = "status: DPM state store done"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0241"
+licence = "GPL-2.0"
+evidence = "mask 0x00000010"
+
+[[term]]
+id = "G0349"
+name = "CR_EVENT_STATUS.ISP2_ZLS_CSW_FINISHED"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_STATUS_ISP2_ZLS_CSW_FINISHED"
+kind = "bitfield"
+sgx545 = "0x012c[21]"
+meaning = "status: second ISP finished a ZLS context switch"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0242"
+licence = "GPL-2.0"
+evidence = "mask 0x00200000"
+
+[[term]]
+id = "G0350"
+name = "CR_EVENT_STATUS.OTPM_INV"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_STATUS_OTPM_INV"
+kind = "bitfield"
+sgx545 = "0x012c[20]"
+meaning = "status: OTPM invalidated"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0243"
+licence = "GPL-2.0"
+evidence = "mask 0x00100000"
+
+[[term]]
 id = "G0092"
 name = "CR_EVENT_STATUS.SW_EVENT"
 status = "named"
@@ -62,3 +174,19 @@ source = "sgx545-ce"
 citation = "C0139"
 licence = "GPL-2.0"
 evidence = "mask 0x00004000"
+
+[[term]]
+id = "G0351"
+name = "CR_EVENT_STATUS.TPC_FLUSH"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_STATUS_TPC_FLUSH"
+kind = "bitfield"
+sgx545 = "0x012c[10]"
+meaning = "status: tail-pointer cache flush done"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0244"
+licence = "GPL-2.0"
+evidence = "mask 0x00000400"

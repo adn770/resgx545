@@ -24,3 +24,35 @@ source = "emgd-psb_regs"
 citation = "C0043"
 licence = "MIT"
 evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"
+
+[[term]]
+id = "G0342"
+name = "CR_BIF_FAULT.CID"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_FAULT_CID"
+kind = "bitfield"
+sgx545 = "0x0c08[3:0]"
+meaning = "directory-list index (context) of the fault"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0235"
+licence = "GPL-2.0"
+evidence = "mask 0x0000000f"
+
+[[term]]
+id = "G0343"
+name = "CR_BIF_FAULT.SB"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_FAULT_SB"
+kind = "bitfield"
+sgx545 = "0x0c08[8:4]"
+meaning = "SB bits of the fault (meaning open)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0236"
+licence = "GPL-2.0"
+evidence = "mask 0x000001f0"

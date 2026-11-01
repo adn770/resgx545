@@ -1,0 +1,10 @@
+title = "follow-up run of the probe table pds/memory"
+repo = "data"
+paths = ["followup/pds/memory/"]
+method = "campaign runner on the laptop target (tools/campaign), the follow-up round"
+date = "2026-11-01"
+files = 112
+size = 298780
+sha256 = "ab685f2fda2f2de8db05569977f32699e0f2491364e6d9b2b53f27d0d5ede36f"
+recipe = "probes/pds/memory.toml"
+needs = ["render", "vm_low"]

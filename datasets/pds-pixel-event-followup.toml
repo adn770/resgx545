@@ -1,0 +1,10 @@
+title = "follow-up run of the probe table pds/pixel-event"
+repo = "data"
+paths = ["followup/pds/pixel-event/"]
+method = "campaign runner on the laptop target (tools/campaign), the follow-up round"
+date = "2026-11-01"
+files = 65
+size = 2517186
+sha256 = "0c78331a5175c27ef57090022df31d9f58676fba1b29ae1047ba74544fa20c2f"
+recipe = "probes/pds/pixel-event.toml"
+needs = ["render"]

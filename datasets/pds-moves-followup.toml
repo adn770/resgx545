@@ -1,0 +1,10 @@
+title = "follow-up run of the probe table pds/moves"
+repo = "data"
+paths = ["followup/pds/moves/"]
+method = "campaign runner on the laptop target (tools/campaign), the follow-up round"
+date = "2026-11-01"
+files = 137
+size = 275332
+sha256 = "a54866dcd67b0790fc89d5d805ae468bd9ed28178d4446a10e4740be40050ef1"
+recipe = "probes/pds/moves.toml"
+needs = ["render"]

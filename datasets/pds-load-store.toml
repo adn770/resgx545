@@ -1,0 +1,10 @@
+title = "probe table pds/load-store"
+repo = "data"
+paths = ["pds/load-store/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 20
+size = 18706
+sha256 = "f37e9c9642e669cd719f59cc18096a0befc77f172c1e1acfd1018c8928d5ed8b"
+recipe = "probes/pds/load-store.toml"
+needs = ["render"]

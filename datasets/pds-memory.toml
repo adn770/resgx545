@@ -1,0 +1,10 @@
+title = "probe table pds/memory"
+repo = "data"
+paths = ["pds/memory/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 112
+size = 295571
+sha256 = "c42e167802483bd9be68ab6dea2dbfe0dcbf02ff25cde6ec36d89e3eb70aa81c"
+recipe = "probes/pds/memory.toml"
+needs = ["render", "vm_low"]

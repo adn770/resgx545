@@ -495,6 +495,25 @@ def test_pokes_become_poke_options(tmp_path):
                  'pokes = ["cmd:0=1"]\n')
     with pytest.raises(probe.ProbeError):
         probe.load(t)
+    t.write_text('[[probe]]\nname = "p"\nquestion = "q"\nsource = "pred.s"\ncases = [[]]\n'
+                 'pokes = ["bg:1=0x130000"]\n')                # the background object's words
+    assert probe.tool_args(probe.load(t)[0])[-2:] == ["--poke", "bg:1=0x130000"]
+
+
+@pytest.mark.parametrize("poke,ok", [("bg:16=1", True), ("bg:17=1", False),
+                                     ("bg:99=1", False), ("xfer:41=1", True),
+                                     ("xfer:42=1", False), ("xfer:99^=1", False),
+                                     ("bg:3^=0x4", True)])
+def test_a_poke_index_is_checked_at_load(tmp_path, poke, ok):
+    # sgxfive-test refuses an index outside its object (xfer 0-41, bg 0-16) only on the laptop
+    t = tmp_path / "t.toml"
+    t.write_text('[[probe]]\nname = "p"\nquestion = "q"\nsource = "pred.s"\ncases = [[]]\n'
+                 f'pokes = ["{poke}"]\n')
+    if ok:
+        assert probe.load(t)[0].pokes == [poke]
+    else:
+        with pytest.raises(probe.ProbeError, match="xfer:0-41|bg:0-16"):
+            probe.load(t)
 
 
 def test_case_set_runs_each_case_with_its_own_words(tmp_path):

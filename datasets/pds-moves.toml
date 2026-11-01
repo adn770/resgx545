@@ -1,0 +1,10 @@
+title = "probe table pds/moves"
+repo = "data"
+paths = ["pds/moves/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 137
+size = 275300
+sha256 = "13ba191506910e44d945c350f4f234c24deeb6988f8427fd7b205e87356c9b6b"
+recipe = "probes/pds/moves.toml"
+needs = ["render"]
