@@ -1,0 +1,82 @@
+; SPDX-License-Identifier: MIT
+; SPDX-FileCopyrightText: 2026 Josep Torra
+; Probe template (integer division over a long register run, 48 temporaries): r1-r9 hold
+; the inputs A-I, r10-r40 0xA0A1A200 + k; then OP; r10-r40 stored to scratch dwords 0-30,
+; and register OUT as the pixel.
+phas #0, #0, pixel, end, parallel
+mov.skipinv r1, #{A}
+mov.skipinv r2, #{B}
+mov.skipinv r3, #{C}
+mov.skipinv r4, #{D}
+mov.skipinv r5, #{E}
+mov.skipinv r6, #{F}
+mov.skipinv r7, #{G}
+mov.skipinv r8, #{H}
+mov.skipinv r9, #{I}
+mov.skipinv r10, #0xA0A1A20A
+mov.skipinv r11, #0xA0A1A20B
+mov.skipinv r12, #0xA0A1A20C
+mov.skipinv r13, #0xA0A1A20D
+mov.skipinv r14, #0xA0A1A20E
+mov.skipinv r15, #0xA0A1A20F
+mov.skipinv r16, #0xA0A1A210
+mov.skipinv r17, #0xA0A1A211
+mov.skipinv r18, #0xA0A1A212
+mov.skipinv r19, #0xA0A1A213
+mov.skipinv r20, #0xA0A1A214
+mov.skipinv r21, #0xA0A1A215
+mov.skipinv r22, #0xA0A1A216
+mov.skipinv r23, #0xA0A1A217
+mov.skipinv r24, #0xA0A1A218
+mov.skipinv r25, #0xA0A1A219
+mov.skipinv r26, #0xA0A1A21A
+mov.skipinv r27, #0xA0A1A21B
+mov.skipinv r28, #0xA0A1A21C
+mov.skipinv r29, #0xA0A1A21D
+mov.skipinv r30, #0xA0A1A21E
+mov.skipinv r31, #0xA0A1A21F
+mov.skipinv r32, #0xA0A1A220
+mov.skipinv r33, #0xA0A1A221
+mov.skipinv r34, #0xA0A1A222
+mov.skipinv r35, #0xA0A1A223
+mov.skipinv r36, #0xA0A1A224
+mov.skipinv r37, #0xA0A1A225
+mov.skipinv r38, #0xA0A1A226
+mov.skipinv r39, #0xA0A1A227
+mov.skipinv r40, #0xA0A1A228
+{OP}
+mov.skipinv r46, #0x5CAF0000
+stad [r46,+#0], r10
+stad [r46,+#1], r11
+stad [r46,+#2], r12
+stad [r46,+#3], r13
+stad [r46,+#4], r14
+stad [r46,+#5], r15
+stad [r46,+#6], r16
+stad [r46,+#7], r17
+stad [r46,+#8], r18
+stad [r46,+#9], r19
+stad [r46,+#10], r20
+stad [r46,+#11], r21
+stad [r46,+#12], r22
+stad [r46,+#13], r23
+stad [r46,+#14], r24
+stad [r46,+#15], r25
+stad [r46,+#16], r26
+stad [r46,+#17], r27
+stad [r46,+#18], r28
+stad [r46,+#19], r29
+stad [r46,+#20], r30
+stad [r46,+#21], r31
+stad [r46,+#22], r32
+stad [r46,+#23], r33
+stad [r46,+#24], r34
+stad [r46,+#25], r35
+stad [r46,+#26], r36
+stad [r46,+#27], r37
+stad [r46,+#28], r38
+stad [r46,+#29], r39
+stad [r46,+#30], r40
+idf drc0, bif
+wdf drc0
+mov.skipinv.end o0, {OUT}

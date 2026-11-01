@@ -1,0 +1,10 @@
+title = "probe table usse/g19"
+repo = "data"
+paths = ["usse/g19/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-03"
+files = 34
+size = 593537
+sha256 = "ff3ac0fe731f7c670ea6fb1cc351a096cec783da94288d294997a6f5d525ad4f"
+recipe = "probes/usse/g19.toml"
+needs = ["render"]

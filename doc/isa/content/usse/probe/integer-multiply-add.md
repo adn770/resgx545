@@ -19,5 +19,16 @@
   writes the carry out to `iN` and `cie, iN` adds `iN`**; `ima32`'s `cie, iN` adds `iN` too
   (probe `usse-integer-imae-modes`).
 
+- **`idiv` repeats** 1 to 16 times, the count enc[47:44] + 1 (enc[47], outside every field
+  before, is its high bit): iteration k divides `a + k` by `b + k`, the quotient to `d + k` and
+  the remainder to `d + k + 1`, so after the last iteration `d` to `d + n - 1` hold the
+  quotients and `d + n` the last remainder; a divisor 0 gives `0xffffffff` for both. The 21
+  cases (three input sets, counts 1 to 16, other destinations) in which no iteration reads a
+  register an earlier one writes match this exactly. In the nine in which one does, every such
+  read saw what an iteration ten or more before it wrote, and the register's old value where the
+  writer ran nine or fewer iterations before (probes `usse-idiv-enc47-grid`,
+  `usse-idiv-enc47-repeat-sets`, E367).
+
 **Undecided:** `imae` with both `.rsN` and saturation, or with both carries; `ima32`'s extra
-`i` operand after the destination and its source negations; `idiv` with a repeat.
+`i` operand after the destination and its source negations; when a repeated `idiv`'s result
+becomes visible to its own later iterations.

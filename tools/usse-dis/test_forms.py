@@ -47,6 +47,11 @@ FORMS = {
     0xFB20010200210280: "emitpix1.freep #2 /* incp */, r4, r5",
     0xFB24002108E18388: "emitpix2.end.freep #1 /* incp */, r6, r7, r8, #0x00000123",
     0xFB26000B8022428B: "emitpix2.end.freep #3 /* incp */, r9, #5, r11, #0x00000040",
+    # idiv: enc[47] is the high bit of the repeat count (hardware, usse-idiv-enc47-grid)
+    0xD010000001400082: "idiv r10, r1, r2, drc0",
+    0xD010300001400082: "idiv.repeat4 r10, r1, r2, drc0",
+    0xD010800001400082: "idiv.repeat9 r10, r1, r2, drc0",
+    0xD010F00002400082: "idiv.repeat16 r18, r1, r2, drc0",
     # nop flags; bits 37:2 lie outside every field and are ignored
     0xF804014000000000 | 0x1234567800: "nop.end",
     0xF884094000000003 | 0x0ABCDE0000: "nop.syncs.nosched.end.tog.trigger",

@@ -123,6 +123,29 @@ def test_the_committed_tables_are_what_the_generator_writes():
     for group, name in usse_bits.GROUPS.items():
         path = tables / f"{name}.toml"
         ps = usse_bits.gap_probes(usse_bits.gap_words(by_decoder=True)) if group == "gaps" else \
-            usse_bits.probes(group)
+            usse_bits.probes(group, as_run=True)
         what = "encoding gaps" if group == "gaps" else "encoding bits"
         assert usse_bits.table_text(ps, what) == path.read_text(), name
+
+
+def test_a_bit_mapped_since_the_run_is_no_longer_flipped():
+    """idiv's enc[47] is the high bit of its repeat count since 11.13 (E367): a new table leaves it
+    out; the table as run (as_run) keeps the flip the 11.7 run made."""
+    new = {p["name"]: p for p in usse_bits.probes("data")}["usse-encoding-bits-idiv"]
+    old = {p["name"]: p for p in usse_bits.probes("data", as_run=True)}["usse-encoding-bits-idiv"]
+    assert "bit 47" not in new["labels"] and "bit 47" in old["labels"]
+    assert len(old["labels"]) == len(new["labels"]) + 1
+
+
+def test_end_bit_probes_flip_enc50_of_each_gap_word():
+    """The 11.13 follow-up of the gap words (encoding-gaps-end): each word as run and with
+    enc[50] flipped, a marker moved to the pixel after it; flips that decode are left out."""
+    words = {2: [0x16FD0F56289DA082], 22: [0xB21880B46C3C406D]}
+    p = usse_bits.end_probes(words, decoder=lambda w: None)
+    assert p["name"] == "usse-encoding-gaps-end-words"
+    assert p["params"] == {"OUT": "r9"}
+    assert len(p["cases"]) == 1 + 2 * 2
+    assert p["cases"][2][0].startswith(f".long 0x{0x16FD0F56289DA082 ^ 1 << 50:016X}")
+    assert p["cases"][1][0].endswith(usse_bits.END_MARK)
+    p = usse_bits.end_probes(words, decoder=lambda w: 7 if w >> 50 & 1 == 0 else None)
+    assert len(p["cases"]) == 1 + 2

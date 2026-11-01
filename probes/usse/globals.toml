@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse global registers: 0 sweeps, 3 probes (Q053).
+needs = ["render"]
+
+[[probe]]
+name = "usse-globals-tri-64"
+question = "g16-g31 and g39-g43 as the pixel of the triangle's pixel program on a 64x64 target, two runs"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+labels = ["run 1: o0 = g16", "run 1: o0 = g17", "run 1: o0 = g18", "run 1: o0 = g19", "run 1: o0 = g20", "run 1: o0 = g21", "run 1: o0 = g22", "run 1: o0 = g23", "run 1: o0 = g24", "run 1: o0 = g25", "run 1: o0 = g26", "run 1: o0 = g27", "run 1: o0 = g28", "run 1: o0 = g29", "run 1: o0 = g30", "run 1: o0 = g31", "run 1: o0 = g39", "run 1: o0 = g40", "run 1: o0 = g41", "run 1: o0 = g42", "run 1: o0 = g43", "run 2: o0 = g16", "run 2: o0 = g17", "run 2: o0 = g18", "run 2: o0 = g19", "run 2: o0 = g20", "run 2: o0 = g21", "run 2: o0 = g22", "run 2: o0 = g23", "run 2: o0 = g24", "run 2: o0 = g25", "run 2: o0 = g26", "run 2: o0 = g27", "run 2: o0 = g28", "run 2: o0 = g29", "run 2: o0 = g30", "run 2: o0 = g31", "run 2: o0 = g39", "run 2: o0 = g40", "run 2: o0 = g41", "run 2: o0 = g42", "run 2: o0 = g43"]
+cases = [["mov.skipinv.end o0, g16"], ["mov.skipinv.end o0, g17"], ["mov.skipinv.end o0, g18"], ["mov.skipinv.end o0, g19"], ["mov.skipinv.end o0, g20"], ["mov.skipinv.end o0, g21"], ["mov.skipinv.end o0, g22"], ["mov.skipinv.end o0, g23"], ["mov.skipinv.end o0, g24"], ["mov.skipinv.end o0, g25"], ["mov.skipinv.end o0, g26"], ["mov.skipinv.end o0, g27"], ["mov.skipinv.end o0, g28"], ["mov.skipinv.end o0, g29"], ["mov.skipinv.end o0, g30"], ["mov.skipinv.end o0, g31"], ["mov.skipinv.end o0, g39"], ["mov.skipinv.end o0, g40"], ["mov.skipinv.end o0, g41"], ["mov.skipinv.end o0, g42"], ["mov.skipinv.end o0, g43"], ["mov.skipinv.end o0, g16"], ["mov.skipinv.end o0, g17"], ["mov.skipinv.end o0, g18"], ["mov.skipinv.end o0, g19"], ["mov.skipinv.end o0, g20"], ["mov.skipinv.end o0, g21"], ["mov.skipinv.end o0, g22"], ["mov.skipinv.end o0, g23"], ["mov.skipinv.end o0, g24"], ["mov.skipinv.end o0, g25"], ["mov.skipinv.end o0, g26"], ["mov.skipinv.end o0, g27"], ["mov.skipinv.end o0, g28"], ["mov.skipinv.end o0, g29"], ["mov.skipinv.end o0, g30"], ["mov.skipinv.end o0, g31"], ["mov.skipinv.end o0, g39"], ["mov.skipinv.end o0, g40"], ["mov.skipinv.end o0, g41"], ["mov.skipinv.end o0, g42"], ["mov.skipinv.end o0, g43"]]
+
+[[probe]]
+name = "usse-globals-tri-128"
+question = "g16-g31 and g39-g43 as the pixel of the triangle's pixel program on a 128x128 target, two runs"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [128, 128]
+pixels = true
+inputs = ["OP"]
+labels = ["run 1: o0 = g16", "run 1: o0 = g17", "run 1: o0 = g18", "run 1: o0 = g19", "run 1: o0 = g20", "run 1: o0 = g21", "run 1: o0 = g22", "run 1: o0 = g23", "run 1: o0 = g24", "run 1: o0 = g25", "run 1: o0 = g26", "run 1: o0 = g27", "run 1: o0 = g28", "run 1: o0 = g29", "run 1: o0 = g30", "run 1: o0 = g31", "run 1: o0 = g39", "run 1: o0 = g40", "run 1: o0 = g41", "run 1: o0 = g42", "run 1: o0 = g43", "run 2: o0 = g16", "run 2: o0 = g17", "run 2: o0 = g18", "run 2: o0 = g19", "run 2: o0 = g20", "run 2: o0 = g21", "run 2: o0 = g22", "run 2: o0 = g23", "run 2: o0 = g24", "run 2: o0 = g25", "run 2: o0 = g26", "run 2: o0 = g27", "run 2: o0 = g28", "run 2: o0 = g29", "run 2: o0 = g30", "run 2: o0 = g31", "run 2: o0 = g39", "run 2: o0 = g40", "run 2: o0 = g41", "run 2: o0 = g42", "run 2: o0 = g43"]
+cases = [["mov.skipinv.end o0, g16"], ["mov.skipinv.end o0, g17"], ["mov.skipinv.end o0, g18"], ["mov.skipinv.end o0, g19"], ["mov.skipinv.end o0, g20"], ["mov.skipinv.end o0, g21"], ["mov.skipinv.end o0, g22"], ["mov.skipinv.end o0, g23"], ["mov.skipinv.end o0, g24"], ["mov.skipinv.end o0, g25"], ["mov.skipinv.end o0, g26"], ["mov.skipinv.end o0, g27"], ["mov.skipinv.end o0, g28"], ["mov.skipinv.end o0, g29"], ["mov.skipinv.end o0, g30"], ["mov.skipinv.end o0, g31"], ["mov.skipinv.end o0, g39"], ["mov.skipinv.end o0, g40"], ["mov.skipinv.end o0, g41"], ["mov.skipinv.end o0, g42"], ["mov.skipinv.end o0, g43"], ["mov.skipinv.end o0, g16"], ["mov.skipinv.end o0, g17"], ["mov.skipinv.end o0, g18"], ["mov.skipinv.end o0, g19"], ["mov.skipinv.end o0, g20"], ["mov.skipinv.end o0, g21"], ["mov.skipinv.end o0, g22"], ["mov.skipinv.end o0, g23"], ["mov.skipinv.end o0, g24"], ["mov.skipinv.end o0, g25"], ["mov.skipinv.end o0, g26"], ["mov.skipinv.end o0, g27"], ["mov.skipinv.end o0, g28"], ["mov.skipinv.end o0, g29"], ["mov.skipinv.end o0, g30"], ["mov.skipinv.end o0, g31"], ["mov.skipinv.end o0, g39"], ["mov.skipinv.end o0, g40"], ["mov.skipinv.end o0, g41"], ["mov.skipinv.end o0, g42"], ["mov.skipinv.end o0, g43"]]
+
+[[probe]]
+name = "usse-globals-fill"
+question = "g16-g31 and g39-g43 as the pixel of the 64x32 fill, two runs"
+source = "value.s"
+pixels = true
+params = { A = 0, B = 4294967295, C = 0, D = 0, OUT = "r10" }
+inputs = ["OP"]
+labels = ["run 1: o0 = g16", "run 1: o0 = g17", "run 1: o0 = g18", "run 1: o0 = g19", "run 1: o0 = g20", "run 1: o0 = g21", "run 1: o0 = g22", "run 1: o0 = g23", "run 1: o0 = g24", "run 1: o0 = g25", "run 1: o0 = g26", "run 1: o0 = g27", "run 1: o0 = g28", "run 1: o0 = g29", "run 1: o0 = g30", "run 1: o0 = g31", "run 1: o0 = g39", "run 1: o0 = g40", "run 1: o0 = g41", "run 1: o0 = g42", "run 1: o0 = g43", "run 2: o0 = g16", "run 2: o0 = g17", "run 2: o0 = g18", "run 2: o0 = g19", "run 2: o0 = g20", "run 2: o0 = g21", "run 2: o0 = g22", "run 2: o0 = g23", "run 2: o0 = g24", "run 2: o0 = g25", "run 2: o0 = g26", "run 2: o0 = g27", "run 2: o0 = g28", "run 2: o0 = g29", "run 2: o0 = g30", "run 2: o0 = g31", "run 2: o0 = g39", "run 2: o0 = g40", "run 2: o0 = g41", "run 2: o0 = g42", "run 2: o0 = g43"]
+cases = [["mov.skipinv r10, g16"], ["mov.skipinv r10, g17"], ["mov.skipinv r10, g18"], ["mov.skipinv r10, g19"], ["mov.skipinv r10, g20"], ["mov.skipinv r10, g21"], ["mov.skipinv r10, g22"], ["mov.skipinv r10, g23"], ["mov.skipinv r10, g24"], ["mov.skipinv r10, g25"], ["mov.skipinv r10, g26"], ["mov.skipinv r10, g27"], ["mov.skipinv r10, g28"], ["mov.skipinv r10, g29"], ["mov.skipinv r10, g30"], ["mov.skipinv r10, g31"], ["mov.skipinv r10, g39"], ["mov.skipinv r10, g40"], ["mov.skipinv r10, g41"], ["mov.skipinv r10, g42"], ["mov.skipinv r10, g43"], ["mov.skipinv r10, g16"], ["mov.skipinv r10, g17"], ["mov.skipinv r10, g18"], ["mov.skipinv r10, g19"], ["mov.skipinv r10, g20"], ["mov.skipinv r10, g21"], ["mov.skipinv r10, g22"], ["mov.skipinv r10, g23"], ["mov.skipinv r10, g24"], ["mov.skipinv r10, g25"], ["mov.skipinv r10, g26"], ["mov.skipinv r10, g27"], ["mov.skipinv r10, g28"], ["mov.skipinv r10, g29"], ["mov.skipinv r10, g30"], ["mov.skipinv r10, g31"], ["mov.skipinv r10, g39"], ["mov.skipinv r10, g40"], ["mov.skipinv r10, g41"], ["mov.skipinv r10, g42"], ["mov.skipinv r10, g43"]]

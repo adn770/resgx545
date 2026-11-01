@@ -551,7 +551,9 @@ destination extension): temporaries, `pa`, `o` and `sa` only; no immediates.
   **[RE]**; the register used is the index plus `n`, in registers, for `r` and `sa` **[HW]**
   (*Index registers*).
 - **Destination bank 6** writes the index registers: `i.l`, `i.h`, both (`i.lh`), or neither
-  (`i.`, value 0).
+  (`i.`, the number's low two bits 0): a `mov` to numbers 0, 4, 8, 16, 64 and 124 changes no
+  temporary, internal or index register or the pixel a fill reads, and none of pa and sa for
+  0, 4 and 64 **[HW]** (E366); the simulator stops on the other numbers.
 - **Constants** `c0`-`c63` and **globals** `g0`-`g63` share bank 5 (numbers 64 up are `g`).
 
 ### 4.2 Immediates
@@ -917,7 +919,7 @@ Layout 7 of 7 (form #127):
 - `dst`: as in layout 1.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 7 of 7 forms have semantics. The
-probe vectors that test them: 551 match the hardware, 39 stop unsupported, 0 mismatch
+probe vectors that test them: 577 match the hardware, 114 stop unsupported, 0 mismatch
 (`usse-alpha-test-pcoeff-depthf` 1/0/0, `usse-branch-bexc-none` 1/0/0,
 `usse-constant-banks-gbank-write` 0/10/0, `usse-decoder-vectors-and-taz` 14/0/0,
 `usse-decoder-vectors-iadd16-taz` 14/0/0, `usse-decoder-vectors-iadd16-taz-chan1` 14/0/0,
@@ -927,20 +929,25 @@ probe vectors that test them: 551 match the hardware, 39 stop unsupported, 0 mis
 `usse-decoder-vectors-iaddu32-taz` 14/0/0, `usse-decoder-vectors-isub16-taz` 14/0/0,
 `usse-decoder-vectors-shl-pat` 14/0/0, `usse-decoder-vectors-uadd16-taz` 14/0/0,
 `usse-decoder-vectors-usub16-taz` 14/0/0, `usse-decoder-vectors-xor-nat` 14/0/0,
-`usse-encoding-bits-mov` 25/0/0, `usse-encoding-bits-mov-imm` 7/0/0, `usse-flags-other` 1/0/0,
-`usse-form-coverage-form2-test-e50` 9/1/0, `usse-form-coverage-lapc-pclink` 4/0/0,
-`usse-form-coverage-test-fn` 5/0/0, `usse-indexing-index-high` 0/12/0, `usse-indexing-index-store`
-4/0/0, `usse-indexing-index-unit` 7/0/0, `usse-indexing-index-width` 3/0/0,
-`usse-indexing-index-width2` 7/0/0, `usse-indexing-index-width3` 6/0/0, `usse-instance-masking-setm`
-1/0/0, `usse-instance-masking-skipinv-inst` 3/0/0, `usse-internal-registers-across-tasks` 4/4/0,
+`usse-destination-bank6-attributes` 0/19/0, `usse-destination-bank6-moved-high` 0/21/0,
+`usse-destination-bank6-moved-low` 0/21/0, `usse-destination-bank6-temps` 19/0/0,
+`usse-encoding-bits-mov` 25/0/0, `usse-encoding-bits-mov-imm` 7/0/0,
+`usse-encoding-gaps-end-flips-class22` 0/3/0, `usse-encoding-gaps-end-words` 1/9/0,
+`usse-flags-other` 1/0/0, `usse-form-coverage-form2-test-e50` 9/1/0,
+`usse-form-coverage-lapc-pclink` 4/0/0, `usse-form-coverage-test-fn` 5/0/0, `usse-g19-read-paths`
+0/2/0, `usse-indexing-index-high` 0/12/0, `usse-indexing-index-store` 4/0/0,
+`usse-indexing-index-unit` 7/0/0, `usse-indexing-index-width` 3/0/0, `usse-indexing-index-width2`
+7/0/0, `usse-indexing-index-width3` 6/0/0, `usse-instance-masking-setm` 1/0/0,
+`usse-instance-masking-skipinv-inst` 3/0/0, `usse-internal-registers-across-tasks` 4/4/0,
 `usse-internal-registers-bank7` 57/0/0, `usse-internal-registers-ireg-index` 4/4/0,
 `usse-internal-registers-mov-and-tasks` 0/8/0, `usse-internal-registers-per-pixel` 12/0/0,
 `usse-lane-integer-rogue-int` 11/0/0, `usse-memory-mem-forms` 2/0/0, `usse-moe-moest-load` 6/0/0,
-`usse-numbered-modifiers-family-repeat` 32/0/0, `usse-phases-filladdr` 2/0/0,
-`usse-predicates-predicate-pn` 6/0/0, `usse-repeat-order` 3/0/0, `usse-repeat-pred` 4/0/0,
-`usse-test-channels-lanes-other` 74/0/0, `usse-unorm8-add-sub-mul` 12/0/0, `usse-unorm8-mul` 12/0/0,
-`usse-write-masks-wmask-mov` 16/0/0); unsupported mostly for rN is past the task's N temporaries
-(12); destination bank N (10); reads iN before the program writes it (8).
+`usse-moe-state-next-job` 6/0/0, `usse-numbered-modifiers-family-repeat` 32/0/0,
+`usse-phases-filladdr` 2/0/0, `usse-predicates-predicate-pn` 6/0/0, `usse-repeat-order` 3/0/0,
+`usse-repeat-pred` 4/0/0, `usse-test-channels-lanes-other` 74/0/0, `usse-unorm8-add-sub-mul` 12/0/0,
+`usse-unorm8-mul` 12/0/0, `usse-write-masks-wmask-mov` 16/0/0); unsupported mostly for reads paN
+before the program writes it (40); reads saN before the program writes it (21); rN is past the
+task's N temporaries (12).
 
 Confirmed on the hardware (a passing vector): #0, #1, #2, #3, #4, #126, #127.
 
@@ -1363,7 +1370,7 @@ Layout 2 of 2 (forms #18, #19, #22, #23):
   2 (*Register operands*).
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 8 of 8 forms have semantics. The
-probe vectors that test them: 441 match the hardware, 8 stop unsupported, 0 mismatch
+probe vectors that test them: 441 match the hardware, 16 stop unsupported, 0 mismatch
 (`usse-branch-br-offset` 5/0/0, `usse-branch-divergent` 6/2/0, `usse-decoder-vectors-and` 16/0/0,
 `usse-decoder-vectors-andn` 16/0/0, `usse-decoder-vectors-asr` 30/0/0, `usse-decoder-vectors-br1`
 2/0/0, `usse-decoder-vectors-br2` 2/0/0, `usse-decoder-vectors-br3` 2/0/0,
@@ -1375,14 +1382,14 @@ probe vectors that test them: 441 match the hardware, 8 stop unsupported, 0 mism
 6/0/0, `usse-dot-products-fdpc-clip` 16/0/0, `usse-encoding-bits-and` 15/0/0,
 `usse-encoding-bits-and-repeat` 15/0/0, `usse-encoding-bits-shl` 15/0/0,
 `usse-encoding-bits-shr-repeat` 15/0/0, `usse-flags-other` 2/0/0,
-`usse-form-coverage-bitwise-repeat` 9/0/0, `usse-instance-masking-skipinv-inst` 1/0/0,
-`usse-integer-asr-reg` 7/0/0, `usse-integer-rol-reg` 7/0/0, `usse-integer-shift-immediates` 25/0/0,
-`usse-integer-shl-reg` 7/0/0, `usse-integer-shr-reg` 7/0/0, `usse-memory-mem-forms` 3/0/0,
-`usse-moe-setfc-branch` 10/0/0, `usse-moe-smbo-operands` 2/4/0,
-`usse-numbered-modifiers-family-repeat` 30/2/0, `usse-phases-phasbr-fill-parallel` 1/0/0,
+`usse-form-coverage-bitwise-repeat` 9/0/0, `usse-g19-read-paths` 0/8/0,
+`usse-instance-masking-skipinv-inst` 1/0/0, `usse-integer-asr-reg` 7/0/0, `usse-integer-rol-reg`
+7/0/0, `usse-integer-shift-immediates` 25/0/0, `usse-integer-shl-reg` 7/0/0, `usse-integer-shr-reg`
+7/0/0, `usse-memory-mem-forms` 3/0/0, `usse-moe-setfc-branch` 10/0/0, `usse-moe-smbo-operands`
+2/4/0, `usse-numbered-modifiers-family-repeat` 30/2/0, `usse-phases-phasbr-fill-parallel` 1/0/0,
 `usse-phases-phasbr-fill-perinstance` 1/0/0, `usse-write-masks-wmask-and-imm` 16/0/0,
-`usse-write-masks-wmask-or` 16/0/0); unsupported mostly for reads rN before the program writes it
-(4); branch flag .syncent (2); smbo source-N offset (not measured) (2).
+`usse-write-masks-wmask-or` 16/0/0); unsupported mostly for gN (per-instance values, not modelled)
+(8); reads rN before the program writes it (4); branch flag .syncent (2).
 
 Confirmed on the hardware (a passing vector): #16, #17, #18, #19, #20, #21, #22, #23.
 
@@ -1805,7 +1812,10 @@ and `idiv` the full one).
   the `.low`/`.high` byte of its own half **[HW]** (*Integer multiply-add modes*).
   The firmware has two, both `.s` with a negated source.
 - **`idiv d, a, b, drcN`** writes the unsigned quotient to `d` and the remainder to `d + 1`,
-  asynchronously: `wdf drcN` waits for them **[HW]** (*Integer multiply-add modes*).
+  asynchronously: `wdf drcN` waits for them **[HW]** (*Integer multiply-add modes*). Its repeat
+  count has four bits, enc[47:44] + 1: iteration k divides `a + k` by `b + k`, its quotient
+  to `d + k` and its remainder to `d + k + 1`, which the next quotient overwrites **[HW]**
+  (E367).
 - **`ima8`** computes `x + y × z` per byte from its selectors (`s0`, `s1`, `s2` and their alpha
   forms), wrapping or with `.sat` clamping **[HW]** (*Integer multiply-add modes*).
 
@@ -2252,10 +2262,10 @@ Layout 11 of 12 (form #179):
 Layout 12 of 12 (form #180):
 
 ```
- 63   59 58  56 55   54 53 52 51  50      49     48     47  46   44 43 40 39    38 33 32
-+-------+------+-------+-----+---+-------+------+------+---+-------+-----+-----+-----+-----+
-| 11010 | pred | flags |  01 | - | flags | src1 | src2 | - | flags |  -  | dst |  -  | drc |
-+-------+------+-------+-----+---+-------+------+------+---+-------+-----+-----+-----+-----+
+ 63   59 58  56 55   54 53 52 51  50      49     48     47   44 43 40 39    38 33 32
++-------+------+-------+-----+---+-------+------+------+-------+-----+-----+-----+-----+
+| 11010 | pred | flags |  01 | - | flags | src1 | src2 | flags |  -  | dst |  -  | drc |
++-------+------+-------+-----+---+-------+------+------+-------+-----+-----+-----+-----+
  31  30 29  28 27 21 20 14 13   7 6    0
 +------+------+-----+-----+------+------+
 | src1 | src2 | dst |  -  | src1 | src2 |
@@ -2263,7 +2273,8 @@ Layout 12 of 12 (form #180):
 ```
 
 - `pred`: as in layout 3.
-- `flags`: as in layout 1.
+- `flags`: bits 55 → v[0], 54 → v[1], 50 → v[2], 47:44 → v[6:3]. Flags, printed in this order. Each
+  bit adds: v[0] `.skipinv`, v[1] `.nosched`, v[2] `.end`, v[6:3] a count, `.repeat2`…`.repeat16`.
 - `dst`: bits 27:21 → v[6:0], 39 → v[7]. A register operand, v = bank·128 + number (the bank bits
   may carry modifiers). By bank: 0 `r0`…`r127`, 1 `pa0`…`pa127`.
 - `src1`: as in layout 1.
@@ -2271,17 +2282,18 @@ Layout 12 of 12 (form #180):
 - `drc`: bit 32. A 1-bit number, printed in decimal.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 12 of 12 forms have semantics. The
-probe vectors that test them: 199 match the hardware, 1 stop unsupported, 0 mismatch
+probe vectors that test them: 220 match the hardware, 10 stop unsupported, 0 mismatch
 (`usse-decoder-vectors-idiv` 17/0/0, `usse-decoder-vectors-ima16s` 16/0/0,
 `usse-decoder-vectors-ima16u` 16/0/0, `usse-decoder-vectors-ima32s` 16/0/0,
 `usse-decoder-vectors-ima32u` 16/0/0, `usse-encoding-bits-idiv` 19/1/0, `usse-encoding-bits-ima16`
 2/0/0, `usse-encoding-bits-ima16-8bit` 3/0/0, `usse-encoding-bits-ima16-s8` 3/0/0,
 `usse-encoding-bits-ima16-u8u8` 2/0/0, `usse-encoding-bits-ima32` 4/0/0, `usse-encoding-bits-imae`
-2/0/0, `usse-form-coverage-ima16-ignored` 3/0/0, `usse-integer-idiv` 7/0/0, `usse-integer-ima16`
-4/0/0, `usse-integer-ima16-8bit` 8/0/0, `usse-integer-ima16-imm-c` 2/0/0, `usse-integer-ima16-plain`
-3/0/0, `usse-integer-ima16-reg-b` 2/0/0, `usse-integer-ima8` 8/0/0, `usse-integer-imae-modes`
-14/0/0, `usse-numbered-modifiers-family-rs` 32/0/0); unsupported mostly for idiv with enc[N] set, a
-bit the hardware reads (open, QN) (1).
+2/0/0, `usse-form-coverage-ima16-ignored` 3/0/0, `usse-idiv-enc47-grid` 5/9/0,
+`usse-idiv-enc47-repeat-sets` 16/0/0, `usse-integer-idiv` 7/0/0, `usse-integer-ima16` 4/0/0,
+`usse-integer-ima16-8bit` 8/0/0, `usse-integer-ima16-imm-c` 2/0/0, `usse-integer-ima16-plain` 3/0/0,
+`usse-integer-ima16-reg-b` 2/0/0, `usse-integer-ima8` 8/0/0, `usse-integer-imae-modes` 14/0/0,
+`usse-numbered-modifiers-family-rs` 32/0/0); unsupported mostly for reads R(N) before its DRC result
+lands (wdf) (9); reads rN before the program writes it (1).
 
 Confirmed on the hardware (a passing vector): #27, #28, #29, #172, #173, #174, #175, #176, #177,
 #178, #179, #180.
@@ -6079,7 +6091,7 @@ Layout 8 of 8 (form #144):
 - `imm`: bits 6:4. A 3-bit number, printed in decimal.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 8 of 9 forms have semantics (not
-yet: #143). The probe vectors that test them: 345 match the hardware, 12 stop unsupported, 0
+yet: #143). The probe vectors that test them: 346 match the hardware, 12 stop unsupported, 0
 mismatch (`texture-mipmaps-mip-bias` 5/0/0, `texture-mipmaps-mip-grad` 8/0/0,
 `texture-mipmaps-mip-level` 13/0/0, `texture-mipmaps-mip-minfilter` 15/0/0,
 `texture-mipmaps-mip-mipfilter` 24/0/0, `texture-mipmaps-mip-t0-field` 12/0/0,
@@ -6092,11 +6104,11 @@ mismatch (`texture-mipmaps-mip-bias` 5/0/0, `texture-mipmaps-mip-grad` 8/0/0,
 `usse-decoder-vectors-stad-postinc` 3/0/0, `usse-decoder-vectors-stad-reg` 5/0/0,
 `usse-encoding-bits-state-nop` 37/0/0, `usse-encoding-bits-state-setm` 50/0/0,
 `usse-encoding-gaps-class2` 1/0/0, `usse-encoding-gaps-class22` 1/0/0, `usse-encoding-gaps-class26`
-1/0/0, `usse-encoding-gaps-class31` 1/0/0, `usse-form-coverage-ld-pre` 2/0/0,
-`usse-form-coverage-st-pre` 2/0/0, `usse-instance-masking-setm` 22/0/0,
-`usse-internal-registers-ireg-ldad` 0/10/0, `usse-memory-mem-forms` 1/0/0); unsupported mostly for
-fetch past the temporaries (8); gN (per-instance values, not modelled) (2); rN is past the task's N
-temporaries (2).
+1/0/0, `usse-encoding-gaps-class31` 1/0/0, `usse-encoding-gaps-end-words` 1/0/0,
+`usse-form-coverage-ld-pre` 2/0/0, `usse-form-coverage-st-pre` 2/0/0, `usse-instance-masking-setm`
+22/0/0, `usse-internal-registers-ireg-ldad` 0/10/0, `usse-memory-mem-forms` 1/0/0); unsupported
+mostly for fetch past the temporaries (8); gN (per-instance values, not modelled) (2); rN is past
+the task's N temporaries (2).
 
 Confirmed on the hardware (a passing vector): #5, #6, #142; not yet confirmed (as decoded; no
 passing vector yet): #7, #128, #140, #141, #143, #144.
@@ -6350,7 +6362,7 @@ Layout 7 of 7 (form #139):
   */`…`15 /* Reserved */`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 6 of 11 forms have semantics (not
-yet: #129, #130, #131, #132, #137). The probe vectors that test them: 746 match the hardware, 261
+yet: #129, #130, #131, #132, #137). The probe vectors that test them: 749 match the hardware, 261
 stop unsupported, 0 mismatch (`usse-encoding-bits-state-imo` 0/5/0, `usse-encoding-bits-state-moest`
 39/0/0, `usse-encoding-bits-state-setfc` 51/0/0, `usse-encoding-bits-state-smbo-imm` 5/0/0,
 `usse-encoding-bits-state-smlsi-imm` 5/0/0, `usse-encoding-bits-state-smoa-imm` 5/0/0,
@@ -6361,10 +6373,10 @@ stop unsupported, 0 mismatch (`usse-encoding-bits-state-imo` 0/5/0, `usse-encodi
 `usse-moe-smoa-all-none` 36/0/0, `usse-moe-smoa-all-pred` 48/0/0, `usse-moe-smoa-all-repeat` 36/0/0,
 `usse-moe-smoa-all-src` 20/28/0, `usse-moe-smoa-hi-clamp` 56/0/0, `usse-moe-smoa-hi-mirror` 12/44/0,
 `usse-moe-smoa-hi-none` 36/0/0, `usse-moe-smoa-hi-pred` 48/0/0, `usse-moe-smoa-hi-repeat` 36/0/0,
-`usse-moe-smoa-hi-src` 20/28/0, `usse-moe-smr-smoa` 6/12/0, `usse-moe-swizzle` 8/2/0,
-`usse-moe-window` 12/8/0, `usse-moe-window-reset` 56/16/0); unsupported mostly for smoa takes dst to
-r-N (not modelled) (128); smlsi with non-zero limits (58); smoa takes srcN to r-N (not modelled)
-(32).
+`usse-moe-smoa-hi-src` 20/28/0, `usse-moe-smr-smoa` 6/12/0, `usse-moe-state-next-job` 3/0/0,
+`usse-moe-swizzle` 8/2/0, `usse-moe-window` 12/8/0, `usse-moe-window-reset` 56/16/0); unsupported
+mostly for smoa takes dst to r-N (not modelled) (128); smlsi with non-zero limits (58); smoa takes
+srcN to r-N (not modelled) (32).
 
 Confirmed on the hardware (a passing vector): #133, #134, #135, #136, #138, #139; not yet confirmed
 (as decoded; no passing vector yet): #129, #130, #131, #132, #137.
@@ -7588,8 +7600,19 @@ multiply-add modes*).
   writes the carry out to `iN` and `cie, iN` adds `iN`**; `ima32`'s `cie, iN` adds `iN` too
   (probe `usse-integer-imae-modes`).
 
+- **`idiv` repeats** 1 to 16 times, the count enc[47:44] + 1 (enc[47], outside every field
+  before, is its high bit): iteration k divides `a + k` by `b + k`, the quotient to `d + k` and
+  the remainder to `d + k + 1`, so after the last iteration `d` to `d + n - 1` hold the
+  quotients and `d + n` the last remainder; a divisor 0 gives `0xffffffff` for both. The 21
+  cases (three input sets, counts 1 to 16, other destinations) in which no iteration reads a
+  register an earlier one writes match this exactly. In the nine in which one does, every such
+  read saw what an iteration ten or more before it wrote, and the register's old value where the
+  writer ran nine or fewer iterations before (probes `usse-idiv-enc47-grid`,
+  `usse-idiv-enc47-repeat-sets`, E367).
+
 **Undecided:** `imae` with both `.rsN` and saturation, or with both carries; `ima32`'s extra
-`i` operand after the destination and its source negations; `idiv` with a repeat.
+`i` operand after the destination and its source negations; when a repeated `idiv`'s result
+becomes visible to its own later iterations.
 
 ### 7.8 Shift amounts of 32 and over
 
@@ -8436,7 +8459,8 @@ as a raw word in a fill's pixel program (`dump.s`) and flips one such bit per ca
 if the readback differs from the base's, or the job fails **[HW]**. 761 bits of 73 forms ran:
 
 - **Read: 4 bits.** `idiv`'s enc[47] changes every destination from r10 to r17, not only the
-  quotient and the remainder (E295; what it selects: Q079). enc[51] on `setfc` and on `imo` (the
+  quotient and the remainder (E295): it is the high bit of `idiv`'s repeat count, now a field
+  (E367). enc[51] on `setfc` and on `imo` (the
   bit that selects the register forms of `smoa`, `smr`, `smlsi` and `smbo`) and enc[44] on
   `depthf` hang the job (E296).
 - **Ignored: the other 757.** The moves, the bitwise group, integer multiply-add, `fsubflr`,
@@ -8457,8 +8481,14 @@ place of an instruction: none hung or faulted; class 31's changed nothing, but t
 one of class 26 and one of class 22 (bilin's word with format 3, a reserved value rather than a
 gap) left the program's later stores unwritten, and two of class 22 changed some pixels (E297,
 Q080). The five that lost the stores are those of classes 2, 22 and 26 with enc[50] set, the
-`.end` bit of mov, nop, fmad and bilin **[infer]**. The simulator stops on a word no form
-decodes, and on a word with one of the four read bits set.
+`.end` bit of mov, nop, fmad and bilin. Run again with a marker moved to the pixel after the
+word, each of the nine words of classes 2, 22 and 26 with enc[50] set lost the stores and the
+pixel's own write, the pixel keeping what the job before left, and each with it clear kept them,
+or hung the job (three cases): with enc[50] set the program ends at the word. Of the other bits,
+flipped one at a time on three of the words, none changes that; flips of bits 51 to 58 of a
+class 2 and a class 26 word, and of bits 32, 33 and 51 of a class 22 word, change which pixels
+the word writes **[HW]** (E368). The simulator stops on a word no form decodes, and on a word
+with one of the three read bits that remain set.
 
 ### 7.42 `.tpres`, `.partial`, `.nosched`, `.syncs`
 
@@ -8480,29 +8510,34 @@ open driver:
    those banks within their families remain; how the coefficient sets are loaded, what the
    centres below `#−4` and the positions past the line read are settled (E292, E293, E298)
    (Q050).
-2. **The MOE state as a whole**: `smoa`, `smbo`, `smr`, `imo`, `setfc` and what `moest`
-   returns, beyond the `smlsi` increments the probes pinned (Q051).
-3. **`.skipinv`, `.syncs`, `.nosched`** and the other scheduling flags: what changes when they
-   are set or clear (performance only, or correctness); `.syncs` hangs a fill's task (Q052).
-4. **The global bank**: what `g18`-`g20` and `g39`-`g43` hold outside a fill (the constant
-   bank, E085, the tile, quad and task registers and that `mov` cannot write `g`, E086, are
-   settled) (Q053).
-5. **Emits**: `#incp`, `.cut`, `.tasks`/`.taske` and `.twopart` on the state emits (needed
-   on `emitvcbvtx`, E102; shows nothing on the state emits, E106); the PBE
-   sideband bits beyond the pack mode and bit 9, `TILERELATIVE` (Q054; Q074 asks what bit 9
-   does).
-6. **`idf` modes** other than `bif`, `lock`/`release`, `setm`, and the cache-control operands
-   (Q055).
-7. **Instruction timing and hazards**: how many instructions a result takes to be readable,
-   whether the hardware interlocks, and what `.nosched` has to do with it (Q052).
-8. **The destination bank 6 value 0** (`i.`) (Q056).
-9. **Encoding bits**: of the 2,161 bits no field maps, 761 were flipped on the hardware; four
-   are read: `idiv`'s enc[47] changes what it writes (Q079), and enc[51] on `setfc` and `imo`
-   and enc[44] on `depthf` hang the job (E295, E296). Words no form decodes are not all inert
-   (Q080).
+2. **The MOE state as a whole**: what `smoa`, `smbo`, `smr`, `imo` and `setfc` set beyond the
+   offsets, modes and increments pinned, and what `moest` returns: it writes nothing a fill
+   reads. The state does not outlive the job that sets it, and the sequences that faulted did
+   so through the stores after them, whose address register the offsets and the mirror mode
+   moved (E369, E370) (Q051).
+3. **`.syncs`** and the other scheduling flags beyond `.nosched`: a read 0 to 8 instructions
+   after a `mov`, `or`, `fmad`, `frcp` or `fexp` sees its result with or without `.nosched`
+   (E371); `.syncs` hangs a fill's task (Q052).
+4. **The global bank**: what `g18`-`g20` and `g39`-`g43` hold in a vertex task and the
+   end-of-tile task; in a triangle's pixel task they read as in a fill (E374), and `g19` reads
+   0 through `mov`, 0x11 through the bitwise group and 0x1a as a store's source (E372) (Q053).
+5. **Emits**: `.tasks`/`.taske` and `#incp` beyond the vertex emits (incp 1 to 3 on either
+   changes nothing a triangle shows; `.cut` on `emitmtevtx` hangs the job, E376), `.twopart`
+   on the state emits (needed on `emitvcbvtx`, E102; shows nothing on the state emits, E106);
+   the PBE sideband bits beyond the pack mode and bit 9, `TILERELATIVE` (Q054; Q074 asks what
+   bit 9 does).
+6. **`idf` modes** other than `bif` (each hangs a fill's job at its `wdf`, E375), `lock`/
+   `release`, `setm`, and the cache-control operands (Q055).
+7. **Instruction timing**: what a result costs in cycles; a fill's instructions cost 0.320 µs
+   per 2048 instances, 16.03 instances a 399 MHz cycle (E377) (Q002, Q052).
+8. **Encoding bits**: of the 2,161 bits no field maps, 761 were flipped on the hardware; three
+   are read, enc[51] on `setfc` and `imo` and enc[44] on `depthf`, which hang the job (E296),
+   and `idiv`'s enc[47] is its repeat count's high bit (E367). Words of classes 2, 22 and 26
+   that no form decodes end the program when enc[50] is set (E368); what the others do to
+   registers is open (Q080).
 
-The simulator (`crates/sgx-sim`) reproduces 24440 probe vectors (15434 of them with near values:
-float functions within their measured bound) and 143 pixel vectors; it stops on 1816 rather than
+The simulator (`crates/sgx-sim`) reproduces 24711 probe vectors (15526 of them with near values:
+float functions within their measured bound) and 143 pixel vectors; it stops on 1885 rather than
 guess, most often because (vectors, from `doc/isa/sim-coverage.json`):
 
 - firh's fixed bank 1 or 2, whose taps are fitted to these vectors (in-sample, not a hardware check)
@@ -8510,14 +8545,14 @@ guess, most often because (vectors, from `doc/isa/sim-coverage.json`):
 - bytes of the firh latch the task did not write (read in rN) (285)
 - smoa takes dst to r-N (not modelled) (64)
 - no SGX registers on this bus (59)
-- gN (per-instance values, not modelled) (36)
+- gN (per-instance values, not modelled) (50)
 - rN is past the task's N temporaries (26)
 - the firh latch, which a later firh may reach first (read in rN) (24)
+- reads paN before the program writes it (22)
+- undecoded (22)
 - four texels fix no decoder (20)
 - smlsi with non-zero limits (20)
 - smoa takes srcN to r-N (not modelled) (16)
-- frcp test of a near value (14)
-- eld with bit N set in its index, offset or limit (not measured) (12)
 
 ## 9. Appendix: every instruction form
 

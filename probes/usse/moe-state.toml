@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse MOE state across jobs: 0 sweeps, 1 probe (Q051).
+needs = ["render"]
+
+[[probe]]
+name = "usse-moe-state-next-job"
+question = "whether smbo's offsets and smlsi's increments set in one job are in force in the next job that does not set them, three runs"
+source = "dump.s"
+params = { A = 17, B = 34, C = 51, D = 68, E = 85, F = 102, G = 119, H = 136, OUT = "r10" }
+inputs = ["OP"]
+labels = ["run 1: smbo #1, #0, #0, #0; mov r10, r1", "run 1: next job, no smbo: mov r10, r1", "run 1: smlsi #2 x4 increments; mov.repeat2 r10, r1", "run 1: next job, no smlsi: mov.repeat2 r10, r1", "run 2: smbo #1, #0, #0, #0; mov r10, r1", "run 2: next job, no smbo: mov r10, r1", "run 2: smlsi #2 x4 increments; mov.repeat2 r10, r1", "run 2: next job, no smlsi: mov.repeat2 r10, r1", "run 3: smbo #1, #0, #0, #0; mov r10, r1", "run 3: next job, no smbo: mov r10, r1", "run 3: smlsi #2 x4 increments; mov.repeat2 r10, r1", "run 3: next job, no smlsi: mov.repeat2 r10, r1"]
+cases = [["smbo #1, #0, #0, #0\nmov r10, r1"], ["mov r10, r1"], ["smlsi #2, #2, #2, #2, incrementmode, incrementmode, incrementmode, incrementmode, #0, #0, #0\nmov.repeat2 r10, r1"], ["mov.repeat2 r10, r1"], ["smbo #1, #0, #0, #0\nmov r10, r1"], ["mov r10, r1"], ["smlsi #2, #2, #2, #2, incrementmode, incrementmode, incrementmode, incrementmode, #0, #0, #0\nmov.repeat2 r10, r1"], ["mov.repeat2 r10, r1"], ["smbo #1, #0, #0, #0\nmov r10, r1"], ["mov r10, r1"], ["smlsi #2, #2, #2, #2, incrementmode, incrementmode, incrementmode, incrementmode, #0, #0, #0\nmov.repeat2 r10, r1"], ["mov.repeat2 r10, r1"]]

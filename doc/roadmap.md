@@ -278,3 +278,19 @@ texture-region half). The rest of 11.12 needed no capture host: the linux fork's
 and replayed-count follow-ups (E354-E356), the event, DPM, clock-gate and HWPerf registers
 (E357-E359, E365), the BIF directory lists behind TA/3D control block dword 49 (E360) and
 single-word pokes of a render's run (E361-E363).
+
+Sub-phase 11.13 needed no capture host either: the USSE batch ran on the laptop over the cable,
+14 probe tables (`probes/usse/destination-bank6*.toml`, `idiv-enc47*.toml`,
+`encoding-gaps-end.toml`, `moe-faults.toml`, `moe-state.toml`, `hazards.toml`, `g19.toml`,
+`globals.toml`, `leftover-o0.toml`, `idf-modes.toml`, `emit-flags.toml` and `loop-short.toml`).
+The two words the simulator stopped on are settled: a bank 6 destination with no index bit
+writes nothing a fill reads (E366, Q056), and `idiv`'s enc[47] is its repeat count's high bit
+(E367, Q079), now a field the decoder prints and the simulator runs. A word no form decodes
+ends the program when its enc[50] is set (E368, Q080); the MOE faults come from the template's
+stores (E369, Q016) and the MOE state ends with its job (E370, Q051); a result is readable by
+the next instruction with or without `.nosched` (E371, Q052); `g19` reads by the instruction
+that reads it (E372, Q017); an unwritten output register keeps the last job's value, the
+0xff00ff00 of Q018 being the baseline triangle's (E373); the global registers of a triangle's
+pixel task (E374, Q053), `idf`'s other modes (E375, Q055), the vertex emits' incp and `.cut`
+(E376, Q054) and a fill's instruction cost, 0.3203 us per 2048 instances (E377, Q002). The
+simulator matches 271 of the batch's 340 vectors and differs on none (E378). Q050 had no run.

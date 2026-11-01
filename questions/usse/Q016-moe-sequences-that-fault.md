@@ -3,33 +3,23 @@ id = "Q016"
 question = "which part of the smoa, smbo and smr sequences that fault the job makes it fault: the moest selectors, the changed state or the mirror mode?"
 unit = "usse"
 phase = 6
-evidence = ["E087"]
+evidence = ["E087", "E369", "E370"]
 terms = []
 +++
 
-Five cases fault the job in the moe tables (E087): `smoa #1, #2, #3, #4, none,
-repeat, clamp, mirror` and `smoa #-1, #-2, #511, #-512, mirror, clamp, repeat, none`, each
-followed by the sixteen `moest` selectors; `smbo #1, #2, #3, #4` followed by them; and `smr` with
-`smoa mirror` on all four operands before a repeated `mov` (smr 4 with repeat8 and smr 2 with
-repeat4).
+Narrowed (E369, E370): the faults come from the probe template's own stores, not from `moest`. Run
+ten times, interleaved, the three moest-state sequences completed in all 30 jobs. Split, `smoa
+#-1, #-2, #511, #-512` alone, with each `moest` selector alone and with each operand's offset
+alone completes. What faults is, [infer], the MOE state acting on the template's instructions
+after the case: `smbo`'s first value moves the write of the stores' base register (the stores then
+take their address from a stale register: one run of three faulted), and `smoa` mirror on source 0
+moves the stores' address operand (six of six faulted). Every fault is a bus interface fault at an
+address outside the scratch. The mixed pixels of the completed runs are the final `mov.end o0`
+moved to o1, o0 keeping the job before's value.
 
-Three fault in both runs: smoa #-1, #-2,
-#511, #-512 followed by moest (`moest-state` case 2), and the two mirror cases (`smr-smoa` case
-4 and `window` case 4). The other two, smoa #1-#4 and smbo #1-#4 followed by moest (cases 1 and
-5), fault the job in the first run and complete in the follow-up run, with mixed pixels (0xacadaeaf
-at 1340 pixels and 0xa0a1a2a3 at 708 for case 1; 1130 and 918 for case 5). So the data shows
-these two as sometimes faulting, not always.
+What is left: that mechanism is read from which cases fault, not shown (no probe changed the
+stores' base register itself, and `smbo` faulted one run of three), and which register a
+mirrored source 0 reads.
 
-The other cases of the same table complete: moest after task start, after smlsi #1-#4 and
-#5-#8, after smr #5-#8 and #4095..., and after smbo #4095, #2048, #1024, #7 (whose dump the
-offsets move). smoa with non-zero offsets and mode none, repeat or clamp does not fault by
-itself.
-
-Open: which part is the cause. The candidates are the moest selectors after a changed
-state (but moest after other changed state completes), the mirror mode (smr + smoa mirror
-faults without moest), the offsets reaching an addressing path (E087: smbo changes register
-numbers), or a race (two of the five faults are intermittent).
-
-To settle it: run each faulting sequence ten times; then split it: smoa #-1... alone with a
-plain dump, with moest #0 to moest #15 one selector at a time, with mirror on one operand at
-a time (the four operands, in each of the four modes), and the same with smbo's four values.
+To settle it: stores through a base register that is not r29 or r47, with `smbo` and mirror set
+before it, and the base register read back after the case.

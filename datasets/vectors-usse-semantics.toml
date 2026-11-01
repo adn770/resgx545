@@ -1,0 +1,9 @@
+title = "instruction vectors from the 11.13 usse probe runs"
+repo = "data"
+paths = ["vectors/semantics/usse/"]
+method = "vectors.py convert on the raw readbacks and saved programs of the 11.13 runs (destination bank 6, idiv enc[47], encoding gaps end, hazards, MOE state, g19), one file per probe"
+date = "2026-11-03"
+files = 16
+size = 2688087
+sha256 = "60f04701a1c280d44dc43a4f38fd36144c131642d9d0df68b41a3dd88efb1587"
+recipe = "tools/usse-asm/vectors.py"

@@ -1,0 +1,10 @@
+title = "probe table usse/globals"
+repo = "data"
+paths = ["usse/globals/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-03"
+files = 134
+size = 8953470
+sha256 = "eed6898e312323ed6efa65637256e5acfc40f402ea8fbebf919c6ed27ed84ffd"
+recipe = "probes/usse/globals.toml"
+needs = ["render"]

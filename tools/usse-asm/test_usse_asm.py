@@ -52,7 +52,8 @@ def test_more_forms_round_trip(usse_asm, usse_dis):
              "mov.skipinv.end o0.xy, pa0", "nop.syncs.nosched.end.tog.trigger",
              "!p0 and r2, r2, ~#0x00040000", "ldad.bpcache.fetch4 r3, [r2,+#1], drc0",
              "stad.bpcache.fetch2 [r1,#82++], r5", "br -#0x00000010", "ba.savelink #0x00000123",
-             "ldr r9, #372, drc0", "str #372, i2", "ima32.u r0, r0, r0, r0"]
+             "ldr r9, #372, drc0", "str #372, i2", "ima32.u r0, r0, r0, r0",
+             "idiv.repeat9 r18, r1, r2, drc0", "idiv.skipinv.repeat16 r18, r1, r2, drc1"]
     assert usse_dis(usse_asm("\n".join(texts))) == texts
 
 

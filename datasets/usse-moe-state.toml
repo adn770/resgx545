@@ -1,0 +1,10 @@
+title = "probe table usse/moe-state"
+repo = "data"
+paths = ["usse/moe-state/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-03"
+files = 16
+size = 25287
+sha256 = "ef14dd9878d70990e7fcb6ec2482be1ce3e6f5b2a1fce85004d97b5741d8d545"
+recipe = "probes/usse/moe-state.toml"
+needs = ["render"]

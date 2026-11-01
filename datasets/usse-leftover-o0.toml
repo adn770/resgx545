@@ -1,0 +1,10 @@
+title = "probe table usse/leftover-o0"
+repo = "data"
+paths = ["usse/leftover-o0/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-03"
+files = 23
+size = 386776
+sha256 = "7e19534c547b5e4e877be3575f834b75f1958e77da9965c77e88c2f1630c4ff0"
+recipe = "probes/usse/leftover-o0.toml"
+needs = ["render"]

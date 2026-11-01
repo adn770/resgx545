@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse g19: 0 sweeps, 2 probes (Q017).
+needs = ["render"]
+
+[[probe]]
+name = "usse-g19-read-paths"
+question = "g19 (and g18, g23, g24 beside it) through a mov and as source 1 and 2 of or and and, every pixel of the fill, two runs"
+source = "value.s"
+pixels = true
+params = { A = 0, B = 4294967295, C = 0, D = 0, OUT = "r10" }
+inputs = ["OP"]
+labels = ["run 1: mov r10, g19", "run 1: or r10, g19, r1 (r1 = 0): g19 as source 1", "run 1: or r10, r1, g19: g19 as source 2", "run 1: and r10, g19, r2 (r2 = ~0)", "run 1: and r10, r2, g19", "run 1: mov r10, g18", "run 1: or r10, r1, g18", "run 1: mov r10, g23", "run 1: mov r10, g24", "run 2: mov r10, g19", "run 2: or r10, g19, r1 (r1 = 0): g19 as source 1", "run 2: or r10, r1, g19: g19 as source 2", "run 2: and r10, g19, r2 (r2 = ~0)", "run 2: and r10, r2, g19", "run 2: mov r10, g18", "run 2: or r10, r1, g18", "run 2: mov r10, g23", "run 2: mov r10, g24"]
+cases = [["mov.skipinv r10, g19"], ["or r10, g19, r1"], ["or r10, r1, g19"], ["and r10, g19, r2"], ["and r10, r2, g19"], ["mov.skipinv r10, g18"], ["or r10, r1, g18"], ["mov.skipinv r10, g23"], ["mov.skipinv r10, g24"], ["mov.skipinv r10, g19"], ["or r10, g19, r1"], ["or r10, r1, g19"], ["and r10, g19, r2"], ["and r10, r2, g19"], ["mov.skipinv r10, g18"], ["or r10, r1, g18"], ["mov.skipinv r10, g23"], ["mov.skipinv r10, g24"]]
+
+[[probe]]
+name = "usse-g19-store-source"
+question = "g19 (and g17, g18, g20, g23) as a store's source, each pixel storing to its own dword and loading it back as the pixel, two runs"
+source = "store_pixel.s"
+pixels = true
+params = {  }
+inputs = ["SRC"]
+labels = ["run 1: stad g19 to the pixel's own dword, loaded back", "run 1: stad g18 to the pixel's own dword, loaded back", "run 1: stad g17 to the pixel's own dword, loaded back", "run 1: stad g20 to the pixel's own dword, loaded back", "run 1: stad g23 to the pixel's own dword, loaded back", "run 2: stad g19 to the pixel's own dword, loaded back", "run 2: stad g18 to the pixel's own dword, loaded back", "run 2: stad g17 to the pixel's own dword, loaded back", "run 2: stad g20 to the pixel's own dword, loaded back", "run 2: stad g23 to the pixel's own dword, loaded back"]
+cases = [["g19"], ["g18"], ["g17"], ["g20"], ["g23"], ["g19"], ["g18"], ["g17"], ["g20"], ["g23"]]

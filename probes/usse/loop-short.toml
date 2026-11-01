@@ -1,0 +1,84 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse loops below 65536 iterations: 0 sweeps, 10 probes (Q002).
+needs = ["render"]
+
+[[probe]]
+name = "usse-loop-short-n8-1000"
+question = "the host-clock time of the 8-instruction loop at 1000 iterations (below 65536), 5 runs"
+source = "loop_count.s"
+inputs = ["ITER"]
+labels = ["1000 iterations", "1000 iterations", "1000 iterations", "1000 iterations", "1000 iterations"]
+cases = [[1000], [1000], [1000], [1000], [1000]]
+
+[[probe]]
+name = "usse-loop-short-n16-1000"
+question = "the host-clock time of the 16-instruction loop at 1000 iterations (below 65536), 5 runs"
+source = "loop_count16.s"
+inputs = ["ITER"]
+labels = ["1000 iterations", "1000 iterations", "1000 iterations", "1000 iterations", "1000 iterations"]
+cases = [[1000], [1000], [1000], [1000], [1000]]
+
+[[probe]]
+name = "usse-loop-short-n8-4000"
+question = "the host-clock time of the 8-instruction loop at 4000 iterations (below 65536), 5 runs"
+source = "loop_count.s"
+inputs = ["ITER"]
+labels = ["4000 iterations", "4000 iterations", "4000 iterations", "4000 iterations", "4000 iterations"]
+cases = [[4000], [4000], [4000], [4000], [4000]]
+
+[[probe]]
+name = "usse-loop-short-n16-4000"
+question = "the host-clock time of the 16-instruction loop at 4000 iterations (below 65536), 5 runs"
+source = "loop_count16.s"
+inputs = ["ITER"]
+labels = ["4000 iterations", "4000 iterations", "4000 iterations", "4000 iterations", "4000 iterations"]
+cases = [[4000], [4000], [4000], [4000], [4000]]
+
+[[probe]]
+name = "usse-loop-short-n8-16000"
+question = "the host-clock time of the 8-instruction loop at 16000 iterations (below 65536), 5 runs"
+source = "loop_count.s"
+inputs = ["ITER"]
+labels = ["16000 iterations", "16000 iterations", "16000 iterations", "16000 iterations", "16000 iterations"]
+cases = [[16000], [16000], [16000], [16000], [16000]]
+
+[[probe]]
+name = "usse-loop-short-n16-16000"
+question = "the host-clock time of the 16-instruction loop at 16000 iterations (below 65536), 5 runs"
+source = "loop_count16.s"
+inputs = ["ITER"]
+labels = ["16000 iterations", "16000 iterations", "16000 iterations", "16000 iterations", "16000 iterations"]
+cases = [[16000], [16000], [16000], [16000], [16000]]
+
+[[probe]]
+name = "usse-loop-short-n8-32000"
+question = "the host-clock time of the 8-instruction loop at 32000 iterations (below 65536), 5 runs"
+source = "loop_count.s"
+inputs = ["ITER"]
+labels = ["32000 iterations", "32000 iterations", "32000 iterations", "32000 iterations", "32000 iterations"]
+cases = [[32000], [32000], [32000], [32000], [32000]]
+
+[[probe]]
+name = "usse-loop-short-n16-32000"
+question = "the host-clock time of the 16-instruction loop at 32000 iterations (below 65536), 5 runs"
+source = "loop_count16.s"
+inputs = ["ITER"]
+labels = ["32000 iterations", "32000 iterations", "32000 iterations", "32000 iterations", "32000 iterations"]
+cases = [[32000], [32000], [32000], [32000], [32000]]
+
+[[probe]]
+name = "usse-loop-short-n8-60000"
+question = "the host-clock time of the 8-instruction loop at 60000 iterations (below 65536), 5 runs"
+source = "loop_count.s"
+inputs = ["ITER"]
+labels = ["60000 iterations", "60000 iterations", "60000 iterations", "60000 iterations", "60000 iterations"]
+cases = [[60000], [60000], [60000], [60000], [60000]]
+
+[[probe]]
+name = "usse-loop-short-n16-60000"
+question = "the host-clock time of the 16-instruction loop at 60000 iterations (below 65536), 5 runs"
+source = "loop_count16.s"
+inputs = ["ITER"]
+labels = ["60000 iterations", "60000 iterations", "60000 iterations", "60000 iterations", "60000 iterations"]
+cases = [[60000], [60000], [60000], [60000], [60000]]

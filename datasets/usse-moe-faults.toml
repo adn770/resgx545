@@ -1,0 +1,10 @@
+title = "probe table usse/moe-faults"
+repo = "data"
+paths = ["usse/moe-faults/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-03"
+files = 96
+size = 201373
+sha256 = "cc3c28c4bcb077e8441a093be69e9e4cd92a6d33e520ededbef3c0f2f38fa1d6"
+recipe = "probes/usse/moe-faults.toml"
+needs = ["render"]

@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse idf modes: 0 sweeps, 1 probe (Q055).
+needs = ["render"]
+
+[[probe]]
+name = "usse-idf-modes-load"
+question = "a store, idf drc0 in each mode and its wdf, then the load of the same dword: does the load see the store, does the job end"
+source = "idf_mode.s"
+pixels = true
+params = { A = 1592614637 }
+inputs = ["MODE", "LD"]
+labels = ["run 1: idf drc0, bif; ldad", "run 1: idf drc0, bif; ldad.bypassl1", "run 1: idf drc0, pixelbe; ldad", "run 1: idf drc0, pixelbe; ldad.bypassl1", "run 1: idf drc0, reserved(=2); ldad", "run 1: idf drc0, reserved(=2); ldad.bypassl1", "run 1: idf drc0, reserved(=3); ldad", "run 1: idf drc0, reserved(=3); ldad.bypassl1", "run 2: idf drc0, bif; ldad", "run 2: idf drc0, bif; ldad.bypassl1", "run 2: idf drc0, pixelbe; ldad", "run 2: idf drc0, pixelbe; ldad.bypassl1", "run 2: idf drc0, reserved(=2); ldad", "run 2: idf drc0, reserved(=2); ldad.bypassl1", "run 2: idf drc0, reserved(=3); ldad", "run 2: idf drc0, reserved(=3); ldad.bypassl1"]
+cases = [["bif", ""], ["bif", ".bypassl1"], ["pixelbe", ""], ["pixelbe", ".bypassl1"], ["reserved(=2)", ""], ["reserved(=2)", ".bypassl1"], ["reserved(=3)", ""], ["reserved(=3)", ".bypassl1"], ["bif", ""], ["bif", ".bypassl1"], ["pixelbe", ""], ["pixelbe", ".bypassl1"], ["reserved(=2)", ""], ["reserved(=2)", ".bypassl1"], ["reserved(=3)", ""], ["reserved(=3)", ".bypassl1"]]

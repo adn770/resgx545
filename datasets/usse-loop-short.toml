@@ -1,0 +1,10 @@
+title = "probe table usse/loop-short"
+repo = "data"
+paths = ["usse/loop-short/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-03"
+files = 72
+size = 61320
+sha256 = "7e0e57249737285e60c984b5247f2b5812389b3fbb0fe33146c5ce28b366a186"
+recipe = "probes/usse/loop-short.toml"
+needs = ["render"]

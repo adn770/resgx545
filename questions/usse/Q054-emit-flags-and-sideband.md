@@ -3,7 +3,7 @@ id = "Q054"
 question = "what do #incp, .cut and .tasks/.taske do on the emits, and what do sideband bits 11 and 12 select, beyond the pack mode, bits 8:6, 9, 10 and 13 that the end-of-tile emit reads?"
 unit = "usse"
 phase = 11
-evidence = ["E030", "E102", "E106", "E239", "E269"]
+evidence = ["E030", "E102", "E106", "E239", "E269", "E376"]
 terms = ["SIDEBAND.PACKMODE", "SIDEBAND.BIT9", "SIDEBAND.BITS8_6", "SIDEBAND.DITHER"]
 +++
 
@@ -14,9 +14,11 @@ target too (E239), bits 8:6 select the channel of a one-channel mode, bit 10 dit
 that drop colour bits, bit 11 faults the job and bit 12 stores values of no colour (E269). The
 emitpix2 instruction carries sideband bits 13:0 only.
 
-What is open (usse_isa.md §8, item 5): #incp, .cut and .tasks/.taske on the emits; what bits 11
-and 12 select (Q046); bit 9 is Q074.
+Narrowed by E376: on the triangle's vertex program, incp 1 to 3 on emitvcbvtx or emitmtevtx draws
+the triangle as with 0, and .cut on emitmtevtx hangs the job (two runs).
 
-To settle it: on the laptop, the triangle job's vertex emits with each flag flipped alone, with
-several vertex tasks per job and the parameter buffer dumped; the end-of-tile emit's flags
-flipped one at a time on the triangle, every pixel read back.
+What is open (usse_isa.md §8, item 5): what incp counts, .cut on a program that emits more than
+one primitive, .tasks/.taske (emitpds); what bits 11 and 12 select (Q046); bit 9 is Q074.
+
+To settle it: a vertex program that emits two primitives with .cut between them, and emitpds with
+.tasks/.taske in the state task, the parameter buffer dumped.

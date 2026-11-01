@@ -197,8 +197,6 @@ impl Program {
 /// probes), by mnemonic (read_bit): a word with one set stops the run, as their meaning is open,
 /// whether or not the form has semantics.
 const READ_BITS: &[(&str, u32, &str)] = &[
-    // usse-encoding-bits-idiv (E295): every destination r10-r17 changed
-    ("idiv", 47, "open, Q079"),
     // usse-encoding-bits-state (E296): the job hangs
     ("setfc", 51, "the job hangs, E296"),
     ("imo", 51, "the job hangs, E296"),
@@ -819,7 +817,7 @@ impl Machine {
                     // a pixel sees
                     if !(matches!(t, "skipinv" | "syncs" | "nosched" | "end" | "tpres" | "partial")
                         || op == "fpma" && t == "sat"
-                        || COLOUR_REPEATS.contains(&op) && t.starts_with("repeat")
+                        || (COLOUR_REPEATS.contains(&op) || op == "idiv") && t.starts_with("repeat")
                         || op == "efo" && t == "gpiext"
                         || op == "smp" && matches!(t, "pcf" | "pcff16" | "sinf" | "rsd"))
                     {
@@ -923,6 +921,22 @@ impl Machine {
                 return self.steps_in(insn, fi, plain, &comps, 1, false, bits).map(Some);
             }
             return Ok(None);
+        }
+        // idiv's flags carry a four-bit repeat count, enc[47:44] (hardware, usse-idiv-enc47-grid:
+        // iteration k divides src1 + k by src2 + k into dst + k and dst + k + 1)
+        if let Some(fi) = insn.form.role("flags")
+            && op == "idiv"
+        {
+            let v = insn.v[fi];
+            if v >> 3 == 0 {
+                return Ok(None);
+            }
+            // E367 ran the repeats into temporaries only
+            if insn.get("dst").is_some_and(|d| d >> 7 != 0) {
+                return Err(why("idiv repeated into pa"));
+            }
+            let comps: Vec<i32> = (0..=(v >> 3) as i32).collect();
+            return self.steps(insn, fi, v & 7, &comps, 1, false).map(Some);
         }
         // A write mask other than .x (hardware, usse-write-masks-wmask-mov, usse-write-masks-wmask-or,
         // usse-write-masks-wmask-and-imm, usse-write-masks-wmask-other, usse-write-masks-wmask-frcp): component k writes d + k
@@ -3545,6 +3559,12 @@ impl Machine {
                 }
                 self.written.index |= (r & 3) as u8;
             }
+            // hardware (usse-destination-bank6-temps, -moved, -outputs): bank 6 with neither
+            // index bit (printed i.) changes no register a fill reads, for the numbers run (0, 4,
+            // 8, 16, 64 and 124; the attribute registers only for 0, 4 and 64); any other number
+            // with the low two bits clear was not run and stops (E366)
+            6 if matches!(r, 0 | 4 | 8 | 16 | 64 | 124) => {}
+            6 => return Err(why(format!("destination bank 6 number {r}"))),
             b => return Err(why(format!("destination bank {b}"))),
         }
         Ok(())
@@ -5586,8 +5606,7 @@ mod tests {
 
     #[test]
     fn an_unmapped_bit_the_hardware_reads_stops_the_run() {
-        // usse-encoding-bits-idiv (E295): idiv's enc[47], outside every field, changes what it
-        // writes; the simulator stops rather than give the plain idiv
+        // usse-encoding-bits-state (E296): bits outside every field the hardware reads
         let end = usse_isa::encode("nop.end", Core::Sgx545).unwrap();
         let wdf = usse_isa::encode("wdf drc0", Core::Sgx545).unwrap();
         let run_word = |w: u64| {
@@ -5600,8 +5619,6 @@ mod tests {
         // the base word, idiv r10, r1, r2, drc0: 3 rem 1
         let (m, r) = run_word(0xD010_0000_0140_0082);
         assert_eq!((r, m.r[10], m.r[11]), (Ok(()), 3, 1));
-        let (_, r) = run_word(0xD010_8000_0140_0082);
-        assert!(stops_on(&r, "enc[47]"), "{r:?}");
         // usse-encoding-bits-state (E296): enc[51] on setfc and imo and enc[44] on depthf hang
         // the job; imo has no semantics, and stops on the bit as on any read bit
         for (text, bit, ok) in [
@@ -5617,6 +5634,78 @@ mod tests {
             let (_, r) = run_word(w | 1 << bit);
             assert!(stops_on(&r, &format!("{name} with enc[{bit}] set")), "{text}: {r:?}");
         }
+    }
+
+    #[test]
+    fn a_bank_6_destination_with_no_index_register_writes_nothing() {
+        // hardware (usse-destination-bank6-temps, -moved, -outputs): a mov to bank 6 numbers 0,
+        // 4, 8, 16, 64 and 124 (printed i.) changes no temporary, internal, index, attribute or
+        // output register a fill reads; numbers 1-3 write i.l, i.h and both
+        let init = ["mov r1, #0x00030002", "mov i.l, #0x00000000"];
+        for n in [0u64, 4, 8, 16, 64, 124] {
+            let w = 0x2889_1002_2000_0080 | n << 21;
+            let end = usse_isa::encode("nop.end", Core::Sgx545).unwrap();
+            let mut m = Machine { uniform: true, ..Machine::default() };
+            let mut mem = Memory { base: 0x1000, words: vec![0; 64] };
+            (m.r[1], m.written.r) = (0x0003_0002, 0b10);
+            let before = (m.r, m.i, m.index, m.pa, m.sa, m.o);
+            let r = m.run(&Program::new(&[w, end], Core::Sgx545), &mut mem, 10);
+            assert_eq!(r, Ok(()), "number {n}");
+            assert_eq!((m.r, m.i, m.index, m.pa, m.sa, m.o), before, "number {n}");
+        }
+        let (m, r) = run_after(&init, &["mov i.lh, r1"]);
+        assert_eq!((r, m.index), (Ok(()), [2, 3]));
+    }
+
+    #[test]
+    fn a_bank_6_number_not_run_stops() {
+        // only numbers 0, 4, 8, 16, 64 and 124 were run (usse-destination-bank6-temps): another
+        // number with the low two bits clear may write somewhere, so the run stops on it
+        for n in [12u64, 20, 32, 60, 120] {
+            let w = 0x2889_1002_2000_0080 | n << 21;
+            let end = usse_isa::encode("nop.end", Core::Sgx545).unwrap();
+            let mut m = Machine { uniform: true, ..Machine::default() };
+            let mut mem = Memory { base: 0x1000, words: vec![0; 64] };
+            (m.r[1], m.written.r) = (0x0003_0002, 0b10);
+            let r = m.run(&Program::new(&[w, end], Core::Sgx545), &mut mem, 10);
+            assert!(stops_on(&r, "bank 6 number"), "number {n}: {r:?}");
+        }
+    }
+
+    #[test]
+    fn idiv_repeats_up_to_sixteen_times() {
+        // hardware (usse-idiv-enc47-grid): the repeat count is enc[47:44] + 1; iteration k
+        // divides src1 + k by src2 + k, the quotient to dst + k and the remainder to dst + k + 1,
+        // which the next iteration's quotient overwrites; by zero both are 0xffffffff
+        let g1: [u32; 9] = [0x4013caac, 0x155bee39, 0x445960b, 0x9c3a01, 0xe33d1, 0x117ad, 0x1073, 0xdd, 9];
+        let mut init: Vec<String> =
+            g1.iter().enumerate().map(|(k, v)| format!("mov r{}, #0x{v:08x}", k + 1)).collect();
+        init.push("mov r10, #0xa0a1a20a".into());
+        let init: Vec<&str> = init.iter().map(String::as_str).collect();
+        let (m, r) = run_after(&init, &["idiv.repeat2 r12, r1, r2, drc0", "wdf drc0"]);
+        assert_eq!((r, &m.r[12..15]), (Ok(()), &[3, 5, 2][..]));
+        // enc[47] alone: nine iterations (usse-idiv-enc47-grid case "enc47 r12, r1, r2")
+        let (m, r) = run_after(&init, &["idiv.repeat9 r12, r1, r2, drc0", "wdf drc0"]);
+        assert_eq!((r, &m.r[12..22]), (Ok(()), &[3, 5, 7, 0xb, 0xd, 0x11, 0x13, 0x18, 0, 9][..]));
+        let mut zero = init.clone();
+        zero[2] = "mov r3, #0x00000000";
+        let (m, r) = run_after(&zero, &["idiv.repeat4 r12, r1, r2, drc0", "wdf drc0"]);
+        assert_eq!((r, &m.r[12..17]), (Ok(()), &[3, 0xffffffff, 0, 0xb, 6][..]));
+        // a source an earlier iteration writes reads that iteration's result or the old value
+        // depending on the distance between them (usse-idiv-enc47-grid): it stops
+        let (_, r) = run_after(&init, &["idiv.repeat9 r10, r1, r2, drc0", "wdf drc0"]);
+        assert!(stops_on(&r, "DRC"), "{r:?}");
+    }
+
+    #[test]
+    fn a_repeated_idiv_into_pa_stops() {
+        // E367 ran the repeats into temporaries only: a pa destination repeated is not shown;
+        // a single idiv into pa (the 11.7 case) still runs
+        let init = ["mov r1, #0x00000064", "mov r2, #0x00000007", "mov r3, #0x00000009", "mov r4, #0x00000003"];
+        let (m, r) = run_after(&init, &["idiv pa4, r1, r2, drc0", "wdf drc0"]);
+        assert_eq!((r, m.pa[4], m.pa[5]), (Ok(()), 14, 2));
+        let (_, r) = run_after(&init, &["idiv.repeat2 pa4, r1, r2, drc0", "wdf drc0"]);
+        assert!(stops_on(&r, "idiv repeated into pa"), "{r:?}");
     }
 
     #[test]

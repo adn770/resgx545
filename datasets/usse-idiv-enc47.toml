@@ -1,0 +1,10 @@
+title = "probe table usse/idiv-enc47"
+repo = "data"
+paths = ["usse/idiv-enc47/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-03"
+files = 18
+size = 44822
+sha256 = "42b92c75bc56b4e3790ceeb476db617d45bca16a5039f2eafcae2af2936f8dfc"
+recipe = "probes/usse/idiv-enc47.toml"
+needs = ["render"]

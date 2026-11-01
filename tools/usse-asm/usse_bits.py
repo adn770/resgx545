@@ -17,6 +17,11 @@ The no-form encodings (classes 2, 22, 26 and 31 have words that match no form's 
 11.7 run's table took the words the decoder rejects instead (`--gaps-by-decoder`); that rule also
 takes words that match a form's mask but hold a reserved value in a field (one of them, of class
 22, is bilin's with format 3), and the decoder rejects about a quarter of all words that way.
+The 11.13 follow-up (end_probes, encoding-gaps-end) runs each such word as run and with enc[50]
+flipped, a marker moved to the pixel after it: with enc[50] set the program ends at the word.
+
+A bit a later phase put in a field (MAPPED_SINCE_RUN: idiv's enc[47], its repeat count's high
+bit) is no longer flipped; `as_run` gives the committed tables as they ran.
 
     usse_bits.py table DIR [--group G...] [--gaps-by-decoder]
                                             write the tables (GROUPS) into DIR (probes/usse/)
@@ -52,6 +57,13 @@ GROUPS = {"data": "encoding-bits", "state": "encoding-bits-state", "load": "enco
           "gaps": "encoding-gaps"}
 GAP_CLASSES = (2, 22, 26, 31)
 GAPS_PER_CLASS = 3
+# Bits a later phase put in a field, by base: the committed tables keep them as run (as_run).
+# idiv's enc[47] is the high bit of its repeat count (E367).
+MAPPED_SINCE_RUN = {"idiv": (47,)}
+# The follow-up of the gap words (encoding-gaps-end): after the word a marker moved to r9, the
+# pixel, so that a program that ends at the word shows (its pixel keeps the job before's).
+END_BIT = 50
+END_MARK = "mov.skipinv r9, #0x600DF00D"
 
 
 class BitsError(Exception):
@@ -204,10 +216,11 @@ def _case(base: Base, word: int, label: str) -> list:
 
 
 def probes(group: str | None = None, fs: list | None = None, decoder=decode,
-           encoder=_encode) -> list[dict]:
+           encoder=_encode, as_run: bool = False) -> list[dict]:
     """The [[probe]] entries of one group's table (every group's: None), in BASES order. A flip
     whose word decodes to another form is left out; so is a base whose form has no unmapped
-    bit."""
+    bit. as_run: the tables as the 11.7 run had them, with the bits MAPPED_SINCE_RUN flipped
+    too."""
     fs = fs or forms()
     by = {f["index"]: f for f in fs}
     out = []
@@ -216,6 +229,9 @@ def probes(group: str | None = None, fs: list | None = None, decoder=decode,
             continue
         e = encoder(base.test)
         word, f = int(e["word"], 16), by[e["form"]]
+        if as_run:
+            f = {**f, "unmapped": f["unmapped"] | sum(1 << b for b in
+                                                       MAPPED_SINCE_RUN.get(base.name, ()))}
         flips = [b for b in bits(f["unmapped"]) if decoder(word ^ 1 << b) == f["index"]]
         if not flips:
             continue
@@ -271,6 +287,28 @@ def gap_probes(words: dict[int, list[int]]) -> list[dict]:
                     "inputs": ["OP", *"ABCDEFGH"],
                     "labels": ["base"] + [f"0x{w:016X}" for w in ws], "cases": cases})
     return out
+
+
+def end_probes(words: dict[int, list[int]], decoder=decode) -> dict:
+    """The enc[50] follow-up (11.13): case 0 a nop, then each gap word as run and with enc[50]
+    flipped, END_MARK after it; a variant that decodes to a form is left out."""
+    nop = Base("nop", "nop", after=(END_MARK,))
+    cases = [_case(nop, 0, "")[1:]]
+    cases[0].insert(0, f"nop\n{END_MARK}")
+    labels = ["base: nop"]
+    for cls, ws in words.items():
+        for w in ws:
+            for v, how in ((w, "as run"), (w ^ 1 << END_BIT, f"enc[{END_BIT}] flipped")):
+                if decoder(v) is not None:
+                    continue
+                labels.append(f"class {cls} 0x{w:016X} {how}")
+                cases.append(_case(nop, v, f"class {cls} word"))
+    return {"name": f"usse-{GROUPS['gaps']}-end-words",
+            "question": f"whether enc[{END_BIT}] of a word no form decodes ends the program: "
+                        f"each word as run and with enc[{END_BIT}] flipped, r9 = 0x600DF00D "
+                        "moved after it as the pixel",
+            "source": TEMPLATE, "params": {"OUT": "r9"}, "inputs": ["OP", *"ABCDEFGH"],
+            "labels": labels, "cases": cases}
 
 
 def _toml(v) -> str:

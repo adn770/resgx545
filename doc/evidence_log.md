@@ -2254,6 +2254,83 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   render of three, 0x000fffa4 through renders; bits 20 and above never read 1; one run of each loop
   twice.
   *platform; HW; data: `platform-event-timelines`, `platform-event-trigger`.*
+- `E366` A mov to destination bank 6 with neither index bit set (numbers 0, 4, 8, 16, 64 and 124,
+  printed i.) changes no temporary r0-r25, internal register i0-i2, index register or pixel o0 a
+  fill reads back (one run of each number), and no primary attribute pa0-pa15 or secondary attribute
+  sa0-sa31 (read for numbers 0, 4 and 64 only, three runs each); the marker appears in none of the
+  stored o0-o7; numbers 1, 2 and 3 write i.l, i.h (from the low half) and both; no other number
+  whose low two bits are 0 was run.
+  *usse; HW; data: `usse-destination-bank6`, `usse-destination-bank6-moved`.*
+- `E367` idiv's repeat count is enc[47:44] + 1 (1 to 16; enc[47], outside every field before, is its
+  high bit): iteration k divides src1 + k by src2 + k, writes the quotient to dst + k and the
+  remainder to dst + k + 1, which the next iteration's quotient overwrites, a divisor 0 giving
+  0xffffffff for both; the 21 cases in which no iteration reads a register an earlier one writes
+  match this exactly, and in the 9 in which one does every such read saw what an iteration ten or
+  more before wrote and the old value where the writer ran nine or fewer iterations before.
+  *usse; HW; data: `usse-idiv-enc47`, `usse-idiv-enc47-repeat`.*
+- `E368` A word of class 2, 22 or 26 that no form decodes ends the program when its enc[50] is set:
+  of the nine 11.7 words, each with enc[50] set (as run or flipped) lost the sixteen stores after it
+  and the pixel's own final write, the pixel keeping what the job before left (nine of nine), and
+  each with it clear kept them (six) or hung the job (three); flipping any other bit of enc[49:0] of
+  a class 2 and a class 26 word keeps the end, and of a class 22 word with enc[50] clear, bits 32,
+  33 and 51 remove the pixels it writes 0 (3 or 4 in the base) and bits 44, 45 and 46 raise them to
+  7, 12 and 15, while the other bits give 2 to 6 (one run, so the 3-or-4 spread of the base is not
+  told from the flips' by repeats).
+  *usse; HW, infer; data: `usse-encoding-gaps-end`.*
+- `E369` The MOE sequences that faulted fault through the probe template's own stores, not through
+  moest: the three moest-state sequences completed in all 30 of ten interleaved runs, with mixed
+  pixels; smbo #1, #0, #0, #0 before the moest selectors faulted one run of three, and smoa mirror
+  on source 0 (or on all four operands) before a repeated mov faulted every run (6 of 6); each fault
+  is a bus interface fault at an address outside the scratch; smoa #-1, #-2, #511, #-512 alone, each
+  moest selector alone after it and each operand's offset alone complete.
+  *usse; HW, infer; data: `usse-moe-faults`.*
+- `E370` MOE state set in one job is not in force in the next: after a job whose program runs smbo
+  #1, #0, #0, #0 (or smlsi with increments 2), the next job's mov r10, r1 (mov.repeat2 r10, r1)
+  writes r10 (r10 and r11) as with no MOE instruction, in three runs of three; within its own job
+  smbo's destination offset moves the final mov.end o0, r10 to o1, so the pixels keep the job
+  before's o0.
+  *usse; HW, infer; data: `usse-moe-state`.*
+- `E371` A register written by mov, or, fmad, frcp or fexp reads as the result in the next
+  instruction and at every distance up to 8 instructions, with or without .nosched on the writer:
+  230 cases, every pixel the result.
+  *usse; HW; data: `usse-hazards`.*
+- `E372` g19 reads by the instruction that reads it, the same in every pixel of the fill: 0 through
+  mov, 0x11 as source 1 or 2 of or and and, 0x1a as a store's source (each pixel storing to its own
+  dword and loading it back), two runs each; g18 reads the same through mov, or and a store (0x10,
+  0x12, 0x14 and 0x16, 512 pixels each), g23 through mov and a store (0 to 3, 64 pixels each), and
+  g17 (0 to 3) and g20 (1) were read through a store only; g24 through mov only (0 to 3, 128 pixels
+  each).
+  *usse; HW, infer; data: `usse-g19`.*
+- `E373` An output register a job does not write holds what the job before left in that instance's
+  output buffer: a fill that never writes o0 reads 0xff203040 on 1432 pixels and 0xff00ff00 on 616,
+  in the same pixel positions in ten runs, pieces of the baseline triangle's image (its 0xff00ff00
+  triangle on its 0xff203040 background) laid out by tile; after a fill that writes 0x11223344 to o0
+  the next fill's unwritten o0 and o1 read 0x11223344 in every pixel, three runs.
+  *usse; HW, infer; data: `usse-leftover-o0`, `usse-destination-bank6`.*
+- `E374` In the triangle's pixel program, on 64x64 and 128x128 targets, g16, g19 (through mov),
+  g26-g31 and g40 read 0, g20 and g41 read 1, g42 0x3f800000 and g43 0xff000000 on every covered
+  pixel, as in the 64x32 fill; g17, g18, g21-g25 and g39 vary from pixel to pixel in both (g39 takes
+  0, 4, 8 and 12); two runs each.
+  *usse; HW; data: `usse-globals`.*
+- `E375` In a fill's pixel program, idf drc0 with mode pixelbe or the reserved modes 2 and 3
+  followed by wdf drc0 hangs the job, with a plain or a .bypassl1 load after it, two runs of each
+  (12 of 12); with bif every pixel loads back the dword it stored.
+  *usse; HW; data: `usse-idf-modes`.*
+- `E376` On the triangle's vertex program, incp 1, 2 or 3 on emitvcbvtx or on emitmtevtx draws the
+  triangle as with 0 (1062 pixels, two runs each), and .cut on emitmtevtx hangs the job (two of
+  two).
+  *usse; HW; data: `usse-emit-flags`.*
+- `E377` Below 65536 iterations a fill's loop time is linear in its count: 3.020 µs an iteration for
+  8 instructions and 5.582 µs for 16 (1000 to 32000 iterations, 5 runs each, rms 0.4 and 1.2 ms), so
+  0.3203 µs per instruction over the fill's 2048 instances, 127.8 cycles of the 399.0 MHz reference
+  or 16.03 instances a cycle; at 60000 iterations (180 ms and more) our kernel declared 9 of 10 jobs
+  hung.
+  *usse; HW, infer; data: `usse-loop-short`.*
+- `E378` With idiv's four-bit repeat count and bank 6's write to neither index register in the
+  simulator, it matches 271 of the 340 scalar vectors of the 11.13 runs and stops on 69, none
+  differing; over all the vectors 24,711 scalar vectors match (24,440 before), 1,112 are fitted, 755
+  stop and none differs.
+  *usse; HW; data: `vectors-usse-semantics`.*
 
 ## By unit
 
@@ -2329,7 +2406,8 @@ Records: E236, E237.
 Records: E075, E076, E077, E078, E079, E080, E081, E082, E083, E085, E086, E087, E088, E089, E090,
 E091, E092, E093, E094, E095, E096, E097, E098, E099, E100, E101, E102, E103, E104, E105, E106,
 E107, E108, E109, E110, E111, E112, E113, E115, E117, E118, E119, E120, E121, E123, E124, E147,
-E244, E245, E255, E292, E293, E294, E295, E296, E297, E298, E350, E351.
+E244, E245, E255, E292, E293, E294, E295, E296, E297, E298, E350, E351, E366, E367, E368, E369,
+E370, E371, E372, E373, E374, E375, E376, E377, E378.
 
 ### vdm
 

@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse destination bank 6: 0 sweeps, 3 probes (Q056).
+needs = ["render"]
+
+[[probe]]
+name = "usse-destination-bank6-temps"
+question = "where a write to destination bank 6 with a number whose low two bits are 0 (printed i.) lands: r0-r25, i0-i2 and the index registers (as r[il + #0], r[ih + #0]) read back"
+source = "bank6_dump.s"
+params = { OUT = "r0" }
+inputs = ["OP"]
+labels = ["control: r1 = marker, no bank 6 write", "bank 6 number 0 (printed i.)", "bank 6 number 4 (printed i.)", "bank 6 number 8 (printed i.)", "bank 6 number 16 (printed i.)", "bank 6 number 64 (printed i.)", "bank 6 number 124 (printed i.)", "bank 6 number 1 (i.l)", "bank 6 number 2 (i.h)", "bank 6 number 3 (i.lh)"]
+cases = [["mov.skipinv r1, #0x00030002"], ["mov.skipinv r1, #0x00030002\n.long 0x2889100220000080 ; mov.skipinv bank 6 number 0, r1"], ["mov.skipinv r1, #0x00030002\n.long 0x2889100220800080 ; mov.skipinv bank 6 number 4, r1"], ["mov.skipinv r1, #0x00030002\n.long 0x2889100221000080 ; mov.skipinv bank 6 number 8, r1"], ["mov.skipinv r1, #0x00030002\n.long 0x2889100222000080 ; mov.skipinv bank 6 number 16, r1"], ["mov.skipinv r1, #0x00030002\n.long 0x2889100228000080 ; mov.skipinv bank 6 number 64, r1"], ["mov.skipinv r1, #0x00030002\n.long 0x288910022F800080 ; mov.skipinv bank 6 number 124, r1"], ["mov.skipinv r1, #0x00030002\n.long 0x2889100220200080 ; mov.skipinv bank 6 number 1, r1"], ["mov.skipinv r1, #0x00030002\n.long 0x2889100220400080 ; mov.skipinv bank 6 number 2, r1"], ["mov.skipinv r1, #0x00030002\n.long 0x2889100220600080 ; mov.skipinv bank 6 number 3, r1"]]
+
+[[probe]]
+name = "usse-destination-bank6-attributes"
+question = "where a write to destination bank 6 number 0 (printed i.) lands: pa0-pa15 and sa0-sa15 read back"
+source = "attr_dump.s"
+params = { PRE = "nop", OUT = "r1", S0 = "pa0", S1 = "pa1", S2 = "pa2", S3 = "pa3", S4 = "pa4", S5 = "pa5", S6 = "pa6", S7 = "pa7", S8 = "pa8", S9 = "pa9", S10 = "pa10", S11 = "pa11", S12 = "pa12", S13 = "pa13", S14 = "pa14", S15 = "pa15", S16 = "sa0", S17 = "sa1", S18 = "sa2", S19 = "sa3", S20 = "sa4", S21 = "sa5", S22 = "sa6", S23 = "sa7", S24 = "sa8", S25 = "sa9", S26 = "sa10", S27 = "sa11", S28 = "sa12", S29 = "sa13", S30 = "sa14", S31 = "sa15" }
+inputs = ["OP"]
+labels = ["control: r1 = marker, no bank 6 write", "bank 6 number 0 (printed i.)", "bank 6 number 4 (printed i.)", "bank 6 number 8 (printed i.)", "bank 6 number 16 (printed i.)", "bank 6 number 64 (printed i.)", "bank 6 number 124 (printed i.)", "bank 6 number 1 (i.l)", "bank 6 number 2 (i.h)", "bank 6 number 3 (i.lh)"]
+cases = [["mov.skipinv r1, #0x00030002"], ["mov.skipinv r1, #0x00030002\n.long 0x2889100220000080 ; mov.skipinv bank 6 number 0, r1"], ["mov.skipinv r1, #0x00030002\n.long 0x2889100220800080 ; mov.skipinv bank 6 number 4, r1"], ["mov.skipinv r1, #0x00030002\n.long 0x2889100221000080 ; mov.skipinv bank 6 number 8, r1"], ["mov.skipinv r1, #0x00030002\n.long 0x2889100222000080 ; mov.skipinv bank 6 number 16, r1"], ["mov.skipinv r1, #0x00030002\n.long 0x2889100228000080 ; mov.skipinv bank 6 number 64, r1"], ["mov.skipinv r1, #0x00030002\n.long 0x288910022F800080 ; mov.skipinv bank 6 number 124, r1"], ["mov.skipinv r1, #0x00030002\n.long 0x2889100220200080 ; mov.skipinv bank 6 number 1, r1"], ["mov.skipinv r1, #0x00030002\n.long 0x2889100220400080 ; mov.skipinv bank 6 number 2, r1"], ["mov.skipinv r1, #0x00030002\n.long 0x2889100220600080 ; mov.skipinv bank 6 number 3, r1"]]
+
+[[probe]]
+name = "usse-destination-bank6-outputs"
+question = "where a write to destination bank 6 number 0 (printed i.) lands: o0-o7 read back (the pixel is o0)"
+source = "attr_dump.s"
+params = { PRE = "nop", OUT = "o0", S0 = "o0", S1 = "o1", S2 = "o2", S3 = "o3", S4 = "o4", S5 = "o5", S6 = "o6", S7 = "o7", S8 = "r0", S9 = "r1", S10 = "r2", S11 = "r3", S12 = "r4", S13 = "r5", S14 = "r6", S15 = "r7", S16 = "r8", S17 = "r9", S18 = "r10", S19 = "r11", S20 = "r12", S21 = "r13", S22 = "r14", S23 = "r15", S24 = "r16", S25 = "r17", S26 = "r18", S27 = "r19", S28 = "r20", S29 = "r21", S30 = "r22", S31 = "r23" }
+inputs = ["OP"]
+labels = ["control: r1 = marker, no bank 6 write", "bank 6 number 0 (printed i.)", "bank 6 number 4 (printed i.)", "bank 6 number 8 (printed i.)", "bank 6 number 16 (printed i.)", "bank 6 number 64 (printed i.)", "bank 6 number 124 (printed i.)", "bank 6 number 1 (i.l)", "bank 6 number 2 (i.h)", "bank 6 number 3 (i.lh)"]
+cases = [["mov.skipinv r1, #0x00030002"], ["mov.skipinv r1, #0x00030002\n.long 0x2889100220000080 ; mov.skipinv bank 6 number 0, r1"], ["mov.skipinv r1, #0x00030002\n.long 0x2889100220800080 ; mov.skipinv bank 6 number 4, r1"], ["mov.skipinv r1, #0x00030002\n.long 0x2889100221000080 ; mov.skipinv bank 6 number 8, r1"], ["mov.skipinv r1, #0x00030002\n.long 0x2889100222000080 ; mov.skipinv bank 6 number 16, r1"], ["mov.skipinv r1, #0x00030002\n.long 0x2889100228000080 ; mov.skipinv bank 6 number 64, r1"], ["mov.skipinv r1, #0x00030002\n.long 0x288910022F800080 ; mov.skipinv bank 6 number 124, r1"], ["mov.skipinv r1, #0x00030002\n.long 0x2889100220200080 ; mov.skipinv bank 6 number 1, r1"], ["mov.skipinv r1, #0x00030002\n.long 0x2889100220400080 ; mov.skipinv bank 6 number 2, r1"], ["mov.skipinv r1, #0x00030002\n.long 0x2889100220600080 ; mov.skipinv bank 6 number 3, r1"]]

@@ -13,13 +13,15 @@ converter (`tools/usse-asm/vectors.py`) describe and make them.
 <data repository>/vectors/<unit>/<feature>/<probe>.vec.json
 <data repository>/vectors/followup/<unit>/<feature>/<probe>.vec.json
 <data repository>/vectors/knowledge/<unit>/<feature>/<probe>.vec.json
+<data repository>/vectors/semantics/<unit>/<feature>/<probe>.vec.json
 <data repository>/vectors/jobs/<unit>/<feature>/<probe>.job.json
 ```
 
 One directory per probe table (`probes/<unit>/<feature>.toml`), one file per run of one probe
 of it (`<unit>/<feature>/<probe>/raw.txt`, and the same under `followup/` for the follow-up
-round; `knowledge/` holds the runs of the 11.x sub-phases, `jobs/` the jobs of the files
-converted before vectors carried them). Every table whose probes carry a program has one; a
+round; `knowledge/` holds the runs of the 11.x sub-phases to 11.7, `semantics/` those of 11.13
+(a directory of its own, so that the earlier manifest's digest stays), `jobs/` the jobs of the
+files converted before vectors carried them). Every table whose probes carry a program has one; a
 probe run that read back no case of its table gives no file.
 Each unit's vectors are a dataset (`datasets/vectors-<unit>.toml`,
 `vectors-<unit>-followup.toml`) that names the converter as its recipe.

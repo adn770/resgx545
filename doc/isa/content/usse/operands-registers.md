@@ -36,5 +36,7 @@ destination extension): temporaries, `pa`, `o` and `sa` only; no immediates.
   **[RE]**; the register used is the index plus `n`, in registers, for `r` and `sa` **[HW]**
   (*Index registers*).
 - **Destination bank 6** writes the index registers: `i.l`, `i.h`, both (`i.lh`), or neither
-  (`i.`, value 0).
+  (`i.`, the number's low two bits 0): a `mov` to numbers 0, 4, 8, 16, 64 and 124 changes no
+  temporary, internal or index register or the pixel a fill reads, and none of pa and sa for
+  0, 4 and 64 **[HW]** (E366); the simulator stops on the other numbers.
 - **Constants** `c0`-`c63` and **globals** `g0`-`g63` share bank 5 (numbers 64 up are `g`).

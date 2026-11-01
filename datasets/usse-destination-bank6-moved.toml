@@ -1,0 +1,10 @@
+title = "probe table usse/destination-bank6-moved"
+repo = "data"
+paths = ["usse/destination-bank6-moved/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-03"
+files = 30
+size = 86212
+sha256 = "2deec2ea26f4028200ff600fea5a44151bc485f5c568ec4dac09abf23bcfdd87"
+recipe = "probes/usse/destination-bank6-moved.toml"
+needs = ["render"]

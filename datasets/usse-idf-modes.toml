@@ -1,0 +1,10 @@
+title = "probe table usse/idf-modes"
+repo = "data"
+paths = ["usse/idf-modes/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-03"
+files = 20
+size = 167836
+sha256 = "037d77e5df05153290ef653bdd4b495f47f3282e5803ab935dca3b2fd744bbe1"
+recipe = "probes/usse/idf-modes.toml"
+needs = ["render"]

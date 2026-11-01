@@ -24,7 +24,10 @@ and `idiv` the full one).
   the `.low`/`.high` byte of its own half **[HW]** (*Integer multiply-add modes*).
   The firmware has two, both `.s` with a negated source.
 - **`idiv d, a, b, drcN`** writes the unsigned quotient to `d` and the remainder to `d + 1`,
-  asynchronously: `wdf drcN` waits for them **[HW]** (*Integer multiply-add modes*).
+  asynchronously: `wdf drcN` waits for them **[HW]** (*Integer multiply-add modes*). Its repeat
+  count has four bits, enc[47:44] + 1: iteration k divides `a + k` by `b + k`, its quotient
+  to `d + k` and its remainder to `d + k + 1`, which the next quotient overwrites **[HW]**
+  (E367).
 - **`ima8`** computes `x + y × z` per byte from its selectors (`s0`, `s1`, `s2` and their alpha
   forms), wrapping or with `.sat` clamping **[HW]** (*Integer multiply-add modes*).
 

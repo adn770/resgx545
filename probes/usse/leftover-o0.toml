@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse leftover output: 0 sweeps, 1 probe (Q018).
+needs = ["render"]
+
+[[probe]]
+name = "usse-leftover-o0-pixels"
+question = "the pixels of a fill whose o0 is never written: where 0xff00ff00 lands over ten runs, and after a job whose pixels write another colour"
+source = "value.s"
+pixels = true
+params = { A = 0, B = 4294967295, C = 0, D = 0, OUT = "o0" }
+inputs = ["OP"]
+labels = ["run 1: o0 never written (mov o0, o0)", "run 2: o0 never written (mov o0, o0)", "run 3: o0 never written (mov o0, o0)", "run 4: o0 never written (mov o0, o0)", "run 5: o0 never written (mov o0, o0)", "run 6: o0 never written (mov o0, o0)", "run 7: o0 never written (mov o0, o0)", "run 8: o0 never written (mov o0, o0)", "run 9: o0 never written (mov o0, o0)", "run 10: o0 never written (mov o0, o0)", "run 1: o0 = 0x11223344 written", "run 1: o0 never written, after it", "run 1: o1 never written, as the pixel", "run 2: o0 = 0x11223344 written", "run 2: o0 never written, after it", "run 2: o1 never written, as the pixel", "run 3: o0 = 0x11223344 written", "run 3: o0 never written, after it", "run 3: o1 never written, as the pixel"]
+cases = [["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["nop"], ["mov.skipinv o0, #0x11223344\nmov.skipinv r10, o0"], ["nop"], ["mov.skipinv r10, o1"], ["mov.skipinv o0, #0x11223344\nmov.skipinv r10, o0"], ["nop"], ["mov.skipinv r10, o1"], ["mov.skipinv o0, #0x11223344\nmov.skipinv r10, o0"], ["nop"], ["mov.skipinv r10, o1"]]

@@ -9,7 +9,8 @@ as a raw word in a fill's pixel program (`dump.s`) and flips one such bit per ca
 if the readback differs from the base's, or the job fails **[HW]**. 761 bits of 73 forms ran:
 
 - **Read: 4 bits.** `idiv`'s enc[47] changes every destination from r10 to r17, not only the
-  quotient and the remainder (E295; what it selects: Q079). enc[51] on `setfc` and on `imo` (the
+  quotient and the remainder (E295): it is the high bit of `idiv`'s repeat count, now a field
+  (E367). enc[51] on `setfc` and on `imo` (the
   bit that selects the register forms of `smoa`, `smr`, `smlsi` and `smbo`) and enc[44] on
   `depthf` hang the job (E296).
 - **Ignored: the other 757.** The moves, the bitwise group, integer multiply-add, `fsubflr`,
@@ -30,5 +31,11 @@ place of an instruction: none hung or faulted; class 31's changed nothing, but t
 one of class 26 and one of class 22 (bilin's word with format 3, a reserved value rather than a
 gap) left the program's later stores unwritten, and two of class 22 changed some pixels (E297,
 Q080). The five that lost the stores are those of classes 2, 22 and 26 with enc[50] set, the
-`.end` bit of mov, nop, fmad and bilin **[infer]**. The simulator stops on a word no form
-decodes, and on a word with one of the four read bits set.
+`.end` bit of mov, nop, fmad and bilin. Run again with a marker moved to the pixel after the
+word, each of the nine words of classes 2, 22 and 26 with enc[50] set lost the stores and the
+pixel's own write, the pixel keeping what the job before left, and each with it clear kept them,
+or hung the job (three cases): with enc[50] set the program ends at the word. Of the other bits,
+flipped one at a time on three of the words, none changes that; flips of bits 51 to 58 of a
+class 2 and a class 26 word, and of bits 32, 33 and 51 of a class 22 word, change which pixels
+the word writes **[HW]** (E368). The simulator stops on a word no form decodes, and on a word
+with one of the three read bits that remain set.
