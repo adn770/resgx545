@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# pds tile slots: 0 sweeps, 1 probe. E130's grid16 probe (each 16x16 tile's end-of-tile task stores its
+# slot) five times (Q026).
+needs = ["render"]
+
+[[probe]]
+name = "pds-tile-slots-grid16"
+question = "the grid16 probe of E130 five times: which of the 64 tile slots hold data per run; recorded"
+source = "pixev_dump.s"
+host = "tri"
+slot = "pixev"
+slots = { eot = "eot_tile.s" }
+size = [0x80, 0x80]
+temps = 0x8
+params = { OP = "shr ds0[57], ir0, 3\nshl ds1[57], ds0[57], 3\nsub ds0[56], ir0, ds1[57]\nshr ds0[58], ir0, 10\nshl ds1[58], ds0[58], 3\nor ds0[59], ds0[56], ds1[58]\nor ds0[63], ds0[59], ds1[26]\nor ds0[49], ir0, ds1[28]\nor ds0[50], ir1, ds1[28]\nmovs douta, ir0.l, ds1[10], ir0.l, ir0.l\nmovs douta, ds0[49], ds1[11], ds0[49], ds0[49]\nmovs douta, ds0[50], ds1[12], ds0[50], ds0[50]\nmovs douta, ds0[63], ds1[25], ds0[63], ds0[63]\n" }
+labels = ["run 1: 128x128, 64 tiles of 16x16", "run 2: 128x128, 64 tiles of 16x16", "run 3: 128x128, 64 tiles of 16x16", "run 4: 128x128, 64 tiles of 16x16", "run 5: 128x128, 64 tiles of 16x16"]
+cases = [[], [], [], [], []]

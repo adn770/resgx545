@@ -11,16 +11,20 @@
 2. **`if0`/`if1`** in pixel programs: neither tests true in any pixel of the primary pixel
    program nor on any tile of the pixel-event program (E262, E263), so Rogue's pixel readings
    (end of tile, end of render) do not hold there; whether anything sets them outside a vertex
-   program is open (Q058). *(`adc`/`sbc` setting the flags: settled, they do.)*
+   program is open (Q058); with the triangle drawn twice and five times over itself neither tests
+   true on any pixel either (E389). *(`adc`/`sbc` setting the flags: settled, they do.)*
 3. **`load`/`store`**: why stores totalling 2-4 dwords fault, and why `rwfence` after a store
    (or after a faulted job) touches page 0 (their timing and the fences: E143; which
-   programs fault: E144) (Q059).
+   programs fault: E144) (Q059). Totals of 11, 13, 14, 15 and 17 dwords complete (one total-11
+   run in three faulted), 1 and 10 complete in five runs each, and 2 faults with an `rfence`
+   between the stores too (E395).
 4. **`mr01`/`mr23`** read 0 in a fill, the primary pixel and the pixel-event programs; `ir1` reads 0
    in the primary pixel program and the event bits in the pixel-event program by every path,
    `mov32`'s `ir1.0` included; a test's source 65 tests zero exactly where `ir0` is 0, so that it
    reads `ir0` **[infer]** (E262, E263; `tstn` of it unmeasured). Open: the vertex-side programs
-   (Q060). *(settled: the numbering, selector and bit 9; selector 2 is the fetch pc; `ir0` in a fill
-   is the tile position; 8.9, 8.11.)*
+   (Q060); a `douta` from the vertex program does not reach the vertex task's `sa`, so that route
+   does not read them (E390). *(settled: the numbering, selector and bit 9; selector 2 is the fetch
+   pc; `ir0` in a fill is the tile position; 8.9, 8.11.)*
 5. *(settled: the ALU details, `mov128` and `swap`.)*
 6. *(settled: one return register.)*
 7. **The `doutu` word** on this build: whether `EXE` really stops at bit 19 (so that `CBASE`
@@ -45,7 +49,11 @@
     (Q063).
 13. **The fetch pc's offset**: `pc.0` reads the index plus 3, or 1 or 2 below it (E261). Back
     to back the lag sits at instructions 26-27 in ten of twelve runs whatever the `nop`s before,
-    dwords 62-63 after the 36-dword data segment, the last two before a 64-dword boundary;
-    some runs lag elsewhere **[infer]**. What sets it, a model of the PDS fetch, is open (Q062).
-14. **`mov128`'s bit 15** makes it write the data's row 4 `ds0` pair to both halves of its
-    destination whatever its source row (E261); why row 4 (Q077).
+    dwords 62-63 after the 36-dword data segment, the last two before a 64-dword boundary; with 1
+    to 4 leading instructions more a pair sits at instructions 24-25 (dwords 60-61) in 14 of 20
+    runs and among the first four reads in 19 (E384) **[infer]** for the place. The back-to-back
+    baseline varies: E384's five runs with no leading words put the pair at 26-27 in two, at
+    19-20 in two and nowhere in one, so the ten of twelve above stands as E261 counted it and was
+    not repeated. What sets it, a model of the PDS fetch, is open (Q062).
+14. *(settled: `mov128`'s bit 15 writes the `ds0` pair the last `mov32` or `movs` read from a data
+    row, E379.)*

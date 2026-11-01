@@ -294,3 +294,19 @@ that reads it (E372, Q017); an unwritten output register keeps the last job's va
 pixel task (E374, Q053), `idf`'s other modes (E375, Q055), the vertex emits' incp and `.cut`
 (E376, Q054) and a fill's instruction cost, 0.3203 us per 2048 instances (E377, Q002). The
 simulator matches 271 of the batch's 340 vectors and differs on none (E378). Q050 had no run.
+
+Sub-phase 11.14 needed no capture host either: the PDS, PBE and texture batch ran on the laptop over
+the cable, 20 tables (`probes/pds/mov128-bit15.toml`, `douta-primary.toml`, `fetch-pc-pad.toml`,
+`vertex-specials.toml`, `input-flags-overlap.toml`, `attribute-room.toml`, `shade-order.toml`,
+`no-wait.toml`, `tile-slots.toml`, `pixel-event-word2.toml`, `store-totals.toml`,
+`reg-0a78-timing.toml`; `probes/pbe/emit-transforms.toml`, `sideband-channels.toml`,
+`reg-0400-alpha.toml`, `emit-twice.toml`, `pack-floats-channels.toml`, `pack-floats-ramps.toml`;
+`probes/usse/store-sources.toml`; `probes/texture/copy-followup.toml`). The PDS word the simulator
+stopped on is settled: `mov128`'s bit 15 writes the `ds0` pair the last `mov32` or `movs` read from
+a data row (E379, Q077), which the simulator now runs after the instructions measured (E400). A
+store takes `pa` and `sa` as its data source (E380, Q097; Q098 opened on a fill's shared `pa`/`sa`);
+EMIT2 bits 29:28 rotate the stored image and bit 31 scales it by two (E382); SIDEBAND bits 8:6 pick
+the channel in pack modes 7 and 8 only (E383); `CR_REG_0400`'s low byte is ARGB1555's alpha
+threshold (E385); a double emit hangs a job of several tiles and on one tile disturbs the later
+jobs until a reset (E386); T3 bits 7:0 are two signed texel offsets (E397); a no-wait iteration never reaches `pa0` (E393) and E133's stale
+pixels do not recur (E392). Q021, Q023, Q057, Q061, Q007, Q008 and Q009 had no run.

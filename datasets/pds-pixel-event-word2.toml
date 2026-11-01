@@ -1,0 +1,10 @@
+title = "sweep table pds/pixel-event-word2"
+repo = "data"
+paths = ["pds/pixel-event-word2/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-03"
+files = 9
+size = 80440
+sha256 = "a8b8ac40eae0a22849ddf80fe16468b504cb3a57a51d81fafe5688ba9a9c53dd"
+recipe = "probes/pds/pixel-event-word2.toml"
+needs = ["render"]

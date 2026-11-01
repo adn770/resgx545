@@ -395,6 +395,7 @@ pub const SKIP: &[(&str, &str, &str)] = &[
     // a store job's outcome depends on the jobs before it, or differs between two runs of
     // the same program (a fault after a fault, a total-1 store that faults in one run only)
     ("", "pds-memory-mem2__0", "faults in one run only"),
+    ("pds/store-totals/", "pds-store-totals-runs__10", "faults in one run of three, after a faulted job"),
     ("", "pds-memory-mem3__14", "ran after a faulted job"),
     ("", "pds-memory-mem3__15", "ran after a faulted job"),
     ("", "pds-memory-mem5__5", "faults in one run only"),

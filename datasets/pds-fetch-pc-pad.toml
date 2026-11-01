@@ -1,0 +1,10 @@
+title = "probe table pds/fetch-pc-pad"
+repo = "data"
+paths = ["pds/fetch-pc-pad/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-03"
+files = 35
+size = 73685
+sha256 = "4cfb599a9712ab865767a615b22f1925661af507e010d0e11e97ec5c3d661044"
+recipe = "probes/pds/fetch-pc-pad.toml"
+needs = ["render"]

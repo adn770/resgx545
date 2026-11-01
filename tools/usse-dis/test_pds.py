@@ -61,6 +61,10 @@ OTHER = {
     0x17000000 | (0x83 << 9): "mov32 ds0[0], ir1.1",
     0x1F000000 | (0x41 << 10): "mov64 ds0[0], mr23",
     0x27000100: "mov128 ds[0], ds[0], swap",
+    # bit 15 is the lastpair flag, whatever the source row and the other unmapped bits
+    # (pds-mov128-bit15-*); with swap it prints after it
+    0x27008100: "mov128 ds[0], ds[0], swap, lastpair",
+    0x27008868: "mov128 ds[52], ds[4], lastpair",
     # rows 16-31 too: row 24 is the temporaries ds0/ds1[48-49] (pds-encoding-bits-followup-mov128)
     0x27006068: "mov128 ds[52], ds[48]",
     # bra and call take 24 bits: bits 19-23 move the fetch (pds-encoding-bits-flow-bra)
@@ -114,6 +118,21 @@ def test_shift_amount_is_signed(dis):
 ])
 def test_reserved_encodings_are_not_guessed(dis, word):
     assert dis(word) == [f".word 0x{word:08X}"]
+
+
+def test_mov128_bit_15_only_adds_lastpair(dis):
+    """The one change the lastpair field makes: a mov128 word with bit 15 set prints as the
+    word without it, plus ", lastpair"; the other unmapped bits (23:16, 9, 7, 1:0) still change
+    nothing."""
+    base = [0x27000000 | pred << 24 | row << 10 | dst << 2 | swap << 8
+            for pred in (0, 3, 7) for row in (0, 2, 4, 24, 31) for dst in (0, 26, 31)
+            for swap in (0, 1)]
+    plain = dis(*base)
+    assert not any("lastpair" in t for t in plain)
+    for extra in (0xff0000, 0x203, 1, 0xff0203):
+        assert dis(*(w | extra for w in base)) == plain
+        assert dis(*(w | extra | 1 << 15 for w in base)) == [t + ", lastpair" for t in plain]
+    assert dis(*(w | 1 << 15 for w in base)) == [t + ", lastpair" for t in plain]
 
 
 def test_analysis_api(tmp_path):

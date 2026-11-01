@@ -1,0 +1,85 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# pbe reg 0400 alpha: 0 sweeps, 5 probes (written by tools/usse-asm/pbe_words.py).
+# CR_REG_0400's word under an alpha ramp (Q044).
+needs = ["render"]
+
+[[probe]]
+name = "pbe-reg-0400-alpha-mode0"
+question = "what the word that loads CR_REG_0400 does to an alpha ramp over x in pack mode 0"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x200
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+case_set = [{ cmd = { 11 = 0x80 } }, { cmd = { 11 = 0 } }, { cmd = { 11 = 0x40 } }, { cmd = { 11 = 0xc0 } }, { cmd = { 11 = 0xff } }, { cmd = { 11 = 0x180 } }, { cmd = { 11 = 0x280 } }, { cmd = { 11 = 0x480 } }, { cmd = { 11 = 0x880 } }, { cmd = { 11 = 0x80 } }, { cmd = { 11 = 0 } }, { cmd = { 11 = 0x40 } }, { cmd = { 11 = 0xc0 } }, { cmd = { 11 = 0xff } }, { cmd = { 11 = 0x180 } }, { cmd = { 11 = 0x280 } }, { cmd = { 11 = 0x480 } }, { cmd = { 11 = 0x880 } }]
+cases = [["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"]]
+labels = ["run 1: 0x80 (as built)", "run 1: low byte 0", "run 1: low byte 0x40", "run 1: low byte 0xc0", "run 1: low byte 0xff", "run 1: bit 8 set", "run 1: bit 9 set", "run 1: bit 10 set", "run 1: bit 11 set", "run 2: 0x80 (as built)", "run 2: low byte 0", "run 2: low byte 0x40", "run 2: low byte 0xc0", "run 2: low byte 0xff", "run 2: bit 8 set", "run 2: bit 9 set", "run 2: bit 10 set", "run 2: bit 11 set"]
+
+[[probe]]
+name = "pbe-reg-0400-alpha-mode4"
+question = "what the word that loads CR_REG_0400 does to an alpha ramp over x in pack mode 4"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x204
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+case_set = [{ cmd = { 11 = 0x80 } }, { cmd = { 11 = 0 } }, { cmd = { 11 = 0x40 } }, { cmd = { 11 = 0xc0 } }, { cmd = { 11 = 0xff } }, { cmd = { 11 = 0x180 } }, { cmd = { 11 = 0x280 } }, { cmd = { 11 = 0x480 } }, { cmd = { 11 = 0x880 } }, { cmd = { 11 = 0x80 } }, { cmd = { 11 = 0 } }, { cmd = { 11 = 0x40 } }, { cmd = { 11 = 0xc0 } }, { cmd = { 11 = 0xff } }, { cmd = { 11 = 0x180 } }, { cmd = { 11 = 0x280 } }, { cmd = { 11 = 0x480 } }, { cmd = { 11 = 0x880 } }]
+cases = [["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"]]
+labels = ["run 1: 0x80 (as built)", "run 1: low byte 0", "run 1: low byte 0x40", "run 1: low byte 0xc0", "run 1: low byte 0xff", "run 1: bit 8 set", "run 1: bit 9 set", "run 1: bit 10 set", "run 1: bit 11 set", "run 2: 0x80 (as built)", "run 2: low byte 0", "run 2: low byte 0x40", "run 2: low byte 0xc0", "run 2: low byte 0xff", "run 2: bit 8 set", "run 2: bit 9 set", "run 2: bit 10 set", "run 2: bit 11 set"]
+
+[[probe]]
+name = "pbe-reg-0400-alpha-bit25-mode4"
+question = "what the word that loads CR_REG_0400 does to an alpha ramp over x in pack mode 4"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x204
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+case_set = [{ cmd = { 11 = 0x80 } }, { cmd = { 11 = 0x2000080 } }, { cmd = { 11 = 0x80 } }, { cmd = { 11 = 0x2000080 } }]
+cases = [["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"]]
+labels = ["run 1: 0x80 (as built)", "run 1: bit 25 set", "run 2: 0x80 (as built)", "run 2: bit 25 set"]
+
+[[probe]]
+name = "pbe-reg-0400-alpha-bit25-mode5"
+question = "what the word that loads CR_REG_0400 does to an alpha ramp over x in pack mode 5"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x205
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+case_set = [{ cmd = { 11 = 0x80 } }, { cmd = { 11 = 0x2000080 } }, { cmd = { 11 = 0x80 } }, { cmd = { 11 = 0x2000080 } }]
+cases = [["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"]]
+labels = ["run 1: 0x80 (as built)", "run 1: bit 25 set", "run 2: 0x80 (as built)", "run 2: bit 25 set"]
+
+[[probe]]
+name = "pbe-reg-0400-alpha-bit25-mode8"
+question = "what the word that loads CR_REG_0400 does to an alpha ramp over x in pack mode 8"
+source = "pix_xy_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s", pixpds = "pds_iter_xy.s", vtxuse = "vtx_coords.s" }
+sideband = 0x208
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+vtx_coords = 2
+case_set = [{ cmd = { 11 = 0x80 } }, { cmd = { 11 = 0x2000080 } }, { cmd = { 11 = 0x80 } }, { cmd = { 11 = 0x2000080 } }]
+cases = [["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"], ["shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\nmov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0"]]
+labels = ["run 1: 0x80 (as built)", "run 1: bit 25 set", "run 2: 0x80 (as built)", "run 2: bit 25 set"]

@@ -1,0 +1,10 @@
+title = "probe table pds/vertex-specials"
+repo = "data"
+paths = ["pds/vertex-specials/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-03"
+files = 41
+size = 122393
+sha256 = "e63bba095cff9b378dd02770d37451de33aaa22283ab5c06cd70e0e61c669fb6"
+recipe = "probes/pds/vertex-specials.toml"
+needs = ["render"]

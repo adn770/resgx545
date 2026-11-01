@@ -2,8 +2,8 @@
 # SPDX-FileCopyrightText: 2026 Josep Torra
 [[form]]
 order = 2240
-pat = "{0}mov128 ds[{1}], ds[{2}]{3}"
+pat = "{0}mov128 ds[{1}], ds[{2}]{3}{4}"
 op = "mov128"
 mask = "OPM"
 val = "0x04 << 27"
-fields = ["pred=PRED", "dst=K_X2 6:2", "src=K_SRC128 14:10", "swap=SWAP 8"]
+fields = ["pred=PRED", "dst=K_X2 6:2", "src=K_SRC128 14:10", "swap=SWAP 8", "lastpair=LASTPAIR 15"]

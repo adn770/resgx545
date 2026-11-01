@@ -1,0 +1,10 @@
+title = "probe table pbe/pack-floats-channels"
+repo = "data"
+paths = ["pbe/pack-floats-channels/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-03"
+files = 65
+size = 1960192
+sha256 = "f385fc9761090a1d882f605f1032fd8e968fa815913b0dab7ea02355bb7a6d2f"
+recipe = "probes/pbe/pack-floats-channels.toml"
+needs = ["render"]

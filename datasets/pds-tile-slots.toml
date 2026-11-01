@@ -1,0 +1,10 @@
+title = "probe table pds/tile-slots"
+repo = "data"
+paths = ["pds/tile-slots/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-03"
+files = 10
+size = 381244
+sha256 = "7656b402aa14a659bd357b0d1f1103e4cb279587e8fca12d6f212d0007c54b33"
+recipe = "probes/pds/tile-slots.toml"
+needs = ["render"]

@@ -1,0 +1,10 @@
+title = "probe table pbe/emit-transforms"
+repo = "data"
+paths = ["pbe/emit-transforms/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-03"
+files = 67
+size = 2416839
+sha256 = "9098dd899f9d8e6bac2a2572af57b7ca36f81ac973533d4b17ddc7f035df7f03"
+recipe = "probes/pbe/emit-transforms.toml"
+needs = ["render"]

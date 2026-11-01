@@ -42,6 +42,11 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   binding unconfirmed. From `PDSThreshold` (2, cdv-libsrv_um).
 - `Parameter Buffer (PB)` G0064: memory holding the binned scene (TA output, 3D input). From `PB`
   (4, imgtec-sgx-arch-guide-1.0.13); `Parameter Buffer` (4, imgtec-sgx-arch-guide-1.0.8).
+- `Rogue MIPS wrapper registers` G1152: Rogue's MIPS firmware address remap register, at offset
+  0x0818 and 64 bits wide: an analogy at the offset of SGX545's CR_REG_0818 that does not explain
+  it, since SGX545 implements bits 10:0 of the dword there (E401). From
+  `ROGUE_CR_MIPS_ADDR_REMAP1_CONFIG1` (3, linux-imagination); `ROGUE_CR_MIPS_WRAPPER_CONFIG` (3,
+  linux-imagination).
 - `Tile Based Deferred Rendering (TBDR)` G0068: bin the whole scene first, then render tile by tile,
   shading only visible pixels. From `TBDR` (4, imgtec-sgx-arch-guide-1.0.13).
 - `break point object` G0645: an object in the tile lists whose rasterisation halts the ISP and
@@ -515,9 +520,10 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `CR_TE_SCREEN.LAST_TILE_Y` G0161 (0x0210 from bit 12 (width open)): y of the screen's last tile,
   in tiles from 0 [infer]. From `CR_TE_SCREEN.LAST_TILE_Y` (ours, resgx545).
 - `CR_REG_0400.BITS11_0` G1030 (0x0400[11:0]): inferred reading (unconfirmed): twelve bits the
-  register takes (0x80 as the library and the closed stack write them) that change no stored pixel
-  in pack modes 0 to 3; no job here varies the stored alpha, so a field that tests it would not show
-  [infer]. From `CR_REG_0400.BITS11_0` (ours, resgx545).
+  register takes (0x80 as the library and the closed stack write them) of which bits 7:0 are the
+  threshold of ARGB1555's one-bit alpha (pack mode 4, E385) and change no stored pixel in pack modes
+  0 to 3, and bits 11:8 change no stored pixel in pack modes 0 to 4 [infer]. From
+  `CR_REG_0400.BITS11_0` (ours, resgx545).
 - `CR_REG_0400.INVERT_BYTE3` G0153 (0x0400[25]): inverts the alpha channel of every pixel stored:
   bits 31:24 in ARGB8888 and ABGR8888, bits 7:0 in BGRA8888, nothing in RGB565 (the name keeps the
   first reading, byte 3) [infer]. From `CR_REG_0400.INVERT_BYTE3` (ours, resgx545).
@@ -994,9 +1000,10 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   `CR_REG_0374` (ours, resgx545).
 - `CR_REG_0400` G0152 (0x0400): inferred reading (unconfirmed): a pixel output conversion control:
   bit 25 inverts the alpha channel of every pixel stored, wherever the pack mode puts it
-  (CR_REG_0400.INVERT_BYTE3); bits 11:0 change no pixel, 0x80 the default of the other conversions.
-  Measured: per-render word from the render details or transfer command; 0x80 in captures [infer].
-  From `CR_REG_0400` (ours, resgx545).
+  (CR_REG_0400.INVERT_BYTE3); bits 7:0 are the threshold of the one-bit alpha of ARGB1555 (pack mode
+  4) and change no pixel in pack modes 0 to 3, bits 11:8 change no pixel in modes 0 to 4 (E385),
+  0x80 the default of the other conversions. Measured: per-render word from the render details or
+  transfer command; 0x80 in captures [infer]. From `CR_REG_0400` (ours, resgx545).
 - `CR_ISP_RENDER` G0624 (0x0404): render control: mode, direction, resume (Rogue analogue). From
   `ROGUE_CR_ISP_RENDER` (3, linux-imagination); `ROGUE_CR_ISP_RENDER` (3, mesa-csbgen).
 - `CR_ISP_REGION_HEADER_BASE` G0420 (0x0408): address of the region headers (or fast-2D stream) the
@@ -2568,13 +2575,13 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `ISP0.TWO_SIDED` G0633 (isp0 bit 11): (Rogue) two-sided stencil testing. From `two_sided` (3,
   mesa-csbgen); `ISP0.TWO_SIDED` (ours, resgx545).
 - `EMIT2.BIT28` G1039 (EMIT2 (emit2 src0) [28]): inferred reading (unconfirmed): set, the
-  end-of-tile emit stores the image mirrored in x, pixel (x, y) taking the plain image's (63 - x, y)
-  on a 64x64 target; on that symmetric triangle a rotation by 90 degrees gives the same image
-  [infer]. From `EMIT2.BIT28` (ours, resgx545).
+  end-of-tile emit stores the image rotated by 90 degrees (bits 29:28 at 1): on a 64x64 target the
+  pixel stored at (X, Y) is the one from (Y, 63 - X); with bit 29 as well (3) the rotation is by 270
+  degrees (E382). From `EMIT2.BIT28` (ours, resgx545).
 - `EMIT2.BIT29` G1040 (EMIT2 (emit2 src0) [29]): inferred reading (unconfirmed): set, the
-  end-of-tile emit stores the image rotated by 180 degrees, pixel (x, y) taking the plain image's
-  (63 - x, 63 - y) on a 64x64 target, or anti-transposed, which that symmetric triangle does not
-  tell apart [infer]. From `EMIT2.BIT29` (ours, resgx545).
+  end-of-tile emit stores the image rotated by 180 degrees (bits 29:28 at 2): on a 64x64 target the
+  pixel stored at (X, Y) is the one from (63 - X, 63 - Y); with bit 28 as well (3) the rotation is
+  by 270 degrees (E382). From `EMIT2.BIT29` (ours, resgx545).
 - `EMIT2.BIT30` G1041 (EMIT2 (emit2 src0) [30]): inferred reading (unconfirmed): set, the
   end-of-tile emit stores each 32x16 tile downscaled by 2 in x and y into the tile's top-left 16x8
   pixels, each pixel the 2x2 box average of its four (each byte summed, divided by 4, the remainder
@@ -2607,6 +2614,11 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `VDM_STATE1.BIT25` G0502 (VDM_STATE1 bit 25): clearing it changes neither the TA's output nor the
   image of one triangle; what it does is not established [infer]. From `VDM_STATE1.BIT25` (ours,
   resgx545).
+- `PDS_MOV128.LASTPAIR` G1151 (mov128 [15]): inferred reading (unconfirmed): Bit 15 of a mov128
+  word, which the assembler spells `, lastpair`: set, the instruction writes to both halves of its
+  destination row the ds0 pair that the last mov32 or movs read from a data row, whatever its source
+  row and swap (E379); measured only after the instructions E379 lists [infer]. From
+  `PDS_MOV128.LASTPAIR` (ours, resgx545).
 - `OUTSEL.PLANES` G0252 (outsel [7:0]): inferred reading (unconfirmed): user clip-plane enables, bit
   N plane N: each enabled plane removes the triangle whole while its held state is outside: fdpc on
   cpN sets the state, and it outlives the job; the vertex's distance dwords after the position

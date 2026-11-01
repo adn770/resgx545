@@ -1,0 +1,10 @@
+title = "probe table pds/shade-order"
+repo = "data"
+paths = ["pds/shade-order/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-03"
+files = 27
+size = 847207
+sha256 = "5fa8d504d9805f25846bb5f411c49f317f5849f7a75485e6697521c19759f54f"
+recipe = "probes/pds/shade-order.toml"
+needs = ["render"]

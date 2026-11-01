@@ -3,7 +3,7 @@ id = "Q026"
 question = "why do the per-tile stores of the grid pixel-event probes leave empty slots and mixed copies, different ones per run?"
 unit = "pds"
 phase = 7
-evidence = ["E130"]
+evidence = ["E130", "E394"]
 terms = ["PIXEL_EVENT.END_OF_TILE"]
 +++
 
@@ -23,6 +23,11 @@ The follow-up run has the same pattern with different gaps: 59 slots, 58 right, 
 the grid probe 32 slots (31 of its layout and one at slot 64); the tall probe 221 slots. Which
 tiles are lost differs from run to run. Slots 0 and 1 are empty in both runs of the grid16 probe;
 slot 0 holds data in both runs of the grid probe.
+
+Narrowed in 11.14 (E394): five more runs of the grid16 probe: slots 0 and 1 are empty in all five, 1
+to 5 others differ per run (13, 20, 22, 25, 33, 46, 51, 52), and slots 64 and 768 hold only colour
+words, except slot 768 in the first run (data).
+The unique tag word and the fence were not run.
 
 Open: whether the empty slots are tiles whose event never ran, ran but stored nowhere, or stored
 into another tile's slot (the mixed copies suggest the last); whether the tile-to-slot mapping or

@@ -1,0 +1,10 @@
+title = "probe table pds/store-totals"
+repo = "data"
+paths = ["pds/store-totals/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-03"
+files = 39
+size = 107959
+sha256 = "7d8c4967b2319cf3ea35de357f1dc86bfefc50fa4af49064f784bb7a35c939e5"
+recipe = "probes/pds/store-totals.toml"
+needs = ["render", "vm_low"]

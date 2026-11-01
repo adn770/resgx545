@@ -1,0 +1,26 @@
+[[term]]
+id = "G1152"
+name = "Rogue MIPS wrapper registers"
+status = "named"
+
+[[term.source]]
+term = "ROGUE_CR_MIPS_WRAPPER_CONFIG"
+kind = "concept"
+sgx545 = "-"
+meaning = "Rogue's MIPS firmware wrapper configuration register, at offset 0x0810 and 64 bits wide: an analogy at the offset of SGX545's CR_REG_0810 that does not explain it, since SGX545 implements bit 0 of the dword there (E401)"
+tier = "3"
+source = "linux-imagination"
+citation = "C0765"
+licence = "GPL-2.0-only OR MIT"
+evidence = "[DDK] E401: Linux's Rogue driver defines it at 0x0810 with the mask 0x000001030F01FFFF; no SGX register header of the openpvrsgx archive defines a register from 0x0780 to 0x0880; analogy rejected"
+
+[[term.source]]
+term = "ROGUE_CR_MIPS_ADDR_REMAP1_CONFIG1"
+kind = "concept"
+sgx545 = "-"
+meaning = "Rogue's MIPS firmware address remap register, at offset 0x0818 and 64 bits wide: an analogy at the offset of SGX545's CR_REG_0818 that does not explain it, since SGX545 implements bits 10:0 of the dword there (E401)"
+tier = "3"
+source = "linux-imagination"
+citation = "C0766"
+licence = "GPL-2.0-only OR MIT"
+evidence = "[DDK] E401: Linux's Rogue driver defines it at 0x0818 with the mask 0x00000000FFFFF001; no SGX register header of the openpvrsgx archive defines a register from 0x0780 to 0x0880; analogy rejected"

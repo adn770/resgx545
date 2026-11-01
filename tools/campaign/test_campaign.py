@@ -9,6 +9,7 @@ import tomllib
 import pytest
 
 import campaign
+import probe
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 TOOL = ROOT / "userspace/libsgxfive/build/sgxfive-test"
@@ -1119,3 +1120,23 @@ def test_a_failed_laptop_script_carries_its_output(monkeypatch):
     with pytest.raises(campaign.CampaignError) as e:
         campaign.LaptopTarget().script("exit 1\n")
     assert e.value.output == "## check 1: FAILED\n"
+
+
+def test_the_fence_builds_its_probe_from_its_own_table(monkeypatch, tmp_path):
+    """11.14: the fence probe lives in probes/pbe/sideband.toml; it must be built from that
+    table's templates (eot_plain.s, pix_op.s), not the default usse templates, or a dirty GPU
+    stops every later table instead of being fenced."""
+    got = {}
+
+    def fake_run_remote(ps, work, src_dir=None):
+        got["names"], got["src_dir"] = [p.name for p in ps], src_dir
+        for p in ps:
+            probe.build(p, tmp_path / "bins", src_dir)
+            probe.build_helpers(ps, tmp_path / "bins", src_dir)
+        raise probe.ProbeError("the fence hangs on purpose")
+
+    monkeypatch.setattr(probe, "run_remote", fake_run_remote)
+    monkeypatch.setattr(probe, "target", lambda: ("host", []))
+    campaign.LaptopTarget.fence(campaign.LaptopTarget.__new__(campaign.LaptopTarget))
+    assert got["names"] == [campaign.FENCE_PROBE]
+    assert got["src_dir"] == probe.PROBES / "pbe" / "templates"

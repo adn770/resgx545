@@ -1,0 +1,10 @@
+title = "probe table pbe/emit-twice"
+repo = "data"
+paths = ["pbe/emit-twice/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-03"
+files = 44
+size = 192049
+sha256 = "b4e850247b2609bb3c73e0c436684b663a53238097595049fd42d38c37f2ca22"
+recipe = "probes/pbe/emit-twice.toml"
+needs = ["render"]

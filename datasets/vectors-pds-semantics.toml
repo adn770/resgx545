@@ -1,0 +1,9 @@
+title = "instruction vectors from the 11.14 pds probe runs"
+repo = "data"
+paths = ["vectors/semantics/pds/"]
+method = "vectors.py convert on the raw readbacks and saved programs of the 11.14 PDS fill runs (mov128 bit 15, fetch pc after leading words, store totals), one file per probe"
+date = "2026-11-03"
+files = 5
+size = 802089
+sha256 = "15f279c0358081bd24d115398b2b83a12d07eba51e7c7a4176cb77b7825b25e0"
+recipe = "tools/usse-asm/vectors.py"

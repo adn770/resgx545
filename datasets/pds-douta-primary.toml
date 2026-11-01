@@ -1,0 +1,10 @@
+title = "probe table pds/douta-primary"
+repo = "data"
+paths = ["pds/douta-primary/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-03"
+files = 18
+size = 65971
+sha256 = "91b04955cc1e286e3c4fc3ca74ac6046c7de3bbec84f610c0f6d1607fc22c0b0"
+recipe = "probes/pds/douta-primary.toml"
+needs = ["render"]

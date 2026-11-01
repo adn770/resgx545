@@ -90,6 +90,7 @@ FENCES = 3
 # (tools/rewrite/kit_campaign.py plugs in the old-spelling scan).
 CHECKS: list = []
 FENCE_PROBE = "pbe-sideband-0000-32x16"
+FENCE_TABLE = "pbe/sideband.toml"     # the fence probe's table: its programs from its templates/
 FIELDS = ("needs", "open")
 _LIST_NEEDS = ("sudo -n sh -c 'ls /sys/kernel/debug/dri/*/sgx/' 2>/dev/null | sed 's|^|sgx/|'; "
                "ls /dev/dri 2>/dev/null | sed 's|^|dev/|'")
@@ -164,10 +165,11 @@ class LaptopTarget:
         return out or "diff: none"
 
     def fence(self) -> None:
-        (fp,) = [p for p in probe.load() if p.name == FENCE_PROBE]
+        table = probe.PROBES / FENCE_TABLE
+        (fp,) = [p for p in probe.load(table) if p.name == FENCE_PROBE]
         with tempfile.TemporaryDirectory() as d:
             try:
-                probe.run_remote([fp], pathlib.Path(d))
+                probe.run_remote([fp], pathlib.Path(d), table.parent / "templates")
             except probe.ProbeError:
                 pass                # the fence hangs on purpose
 

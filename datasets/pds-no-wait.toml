@@ -1,0 +1,10 @@
+title = "probe table pds/no-wait"
+repo = "data"
+paths = ["pds/no-wait/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-03"
+files = 32
+size = 882716
+sha256 = "70d2ec05b28135ac0ad016825acd4e1b1439c2bf73c4938c040f3708bc105962"
+recipe = "probes/pds/no-wait.toml"
+needs = ["render"]

@@ -555,3 +555,16 @@ def test_case_set_is_checked(tmp_path, extra):
                  'slot = "pixel"\ncases = [[], []]\n' + extra)
     with pytest.raises(probe.ProbeError):
         probe.load(t)
+
+
+def test_a_pds_probe_whose_cases_differ_in_data_size_is_refused(tmp_path):
+    """11.14: the run passes one --pds size for every case; a case with more data words would run
+    them as instructions (pds-fetch-pc-pad did), so the probe is refused."""
+    (tmp_path / "pad.s").write_text(".word 0, 0, 0, 0\n{PAD}\nhalt\n")
+    p = probe.Probe(name="pds-pad", question="", source="pad.s", params={}, inputs=["PAD"],
+                    cases=[[""], [".word 0"]], hypotheses={}, isa="pds")
+    with pytest.raises(probe.ProbeError, match="data segments differ"):
+        probe.pds_data(p, tmp_path)
+    same = probe.Probe(name="pds-same", question="", source="pad.s", params={}, inputs=["PAD"],
+                       cases=[[".word 1"], [".word 2"]], hypotheses={}, isa="pds")
+    assert probe.pds_data(same, tmp_path) == 5

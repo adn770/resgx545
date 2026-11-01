@@ -20,6 +20,8 @@ static const char *const TSTP_T[8] = { "p0", "p1", "p2", "", "", "", "", "" };
 static const usse_kind TSTP = { usse_k_enum_print, NULL, TSTP_T };
 static const char *const SWAP_T[2] = { "", ", swap" };
 static const usse_kind SWAP = { usse_k_enum_print, NULL, SWAP_T };
+static const char *const LASTPAIR_T[2] = { "", ", lastpair" };
+static const usse_kind LASTPAIR = { usse_k_enum_print, NULL, LASTPAIR_T };
 static const char *const ALUM_T[2] = { "unsigned", "signed" };
 static const usse_kind ALUM = { usse_k_enum_print, NULL, ALUM_T };
 
@@ -31,7 +33,7 @@ const usse_form pds_forms[] = {
     /* 2 */ { "{0}mov16 ds{1}[{2}], {3}", 0x00000000F8000000ull, 0x0000000008000000ull, { { &K_PRED, { { 24, 3 } } }, { &K_DEC, { { 7, 1 } } }, { &K_DEC, { { 0, 7 } } }, { &K_SRC9H, { { 8, 9 } } } }, 0x0000000000000000ull },
     /* 3 */ { "{0}mov32 ds{1}[{2}], {3}", 0x00000000F8000000ull, 0x0000000010000000ull, { { &K_PRED, { { 24, 3 } } }, { &K_DEC, { { 7, 1 } } }, { &K_DEC, { { 1, 6 } } }, { &K_SRC8, { { 9, 8 } } } }, 0x0000000000000000ull },
     /* 4 */ { "{0}mov64 ds{1}[{2}], {3}", 0x00000000F8000000ull, 0x0000000018000000ull, { { &K_PRED, { { 24, 3 } } }, { &K_DEC, { { 7, 1 } } }, { &K_X2, { { 2, 5 } } }, { &K_SRC64, { { 10, 7 } } } }, 0x0000000000000000ull },
-    /* 5 */ { "{0}mov128 ds[{1}], ds[{2}]{3}", 0x00000000F8000000ull, 0x0000000020000000ull, { { &K_PRED, { { 24, 3 } } }, { &K_X2, { { 2, 5 } } }, { &K_SRC128, { { 10, 5 } } }, { &SWAP, { { 8, 1 } } } }, 0x0000000000000000ull },
+    /* 5 */ { "{0}mov128 ds[{1}], ds[{2}]{3}{4}", 0x00000000F8000000ull, 0x0000000020000000ull, { { &K_PRED, { { 24, 3 } } }, { &K_X2, { { 2, 5 } } }, { &K_SRC128, { { 10, 5 } } }, { &SWAP, { { 8, 1 } } }, { &LASTPAIR, { { 15, 1 } } } }, 0x0000000000000000ull },
     /* 6 */ { "load {0}, ds{1}[{2}", 0x00000000F8000000ull, 0x0000000030000000ull, { { &K_ADDR, { { 0, 18 } } }, { &K_DEC, { { 22, 1 } } }, { &K_LDRANGE, { { 18, 4 }, { 24, 3 } } } }, 0x0000000000000000ull },
     /* 7 */ { "store {0}, ds{1}[{2}", 0x00000000F8000000ull, 0x0000000038000000ull, { { &K_ADDR, { { 0, 18 } } }, { &K_DEC, { { 22, 1 } } }, { &K_LDRANGE, { { 18, 4 }, { 24, 3 } } } }, 0x0000000000000000ull },
     /* 8 */ { "{0}{1} {2}, {3}, ds1[{4}]", 0x0000000000000000ull, 0x0000000000000000ull, { { &K_PRED, { { 24, 3 } } }, { &ALU, { { 27, 5 } } }, { &K_DST7, { { 0, 7 } } }, { &K_SRC7_3, { { 17, 7 } } }, { &K_DEC, { { 10, 6 } } } }, 0x0000000000000000ull },

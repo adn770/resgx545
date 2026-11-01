@@ -1,0 +1,10 @@
+title = "probe table pbe/sideband-channels"
+repo = "data"
+paths = ["pbe/sideband-channels/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-03"
+files = 363
+size = 5316031
+sha256 = "75fa3285ffb1acf6cdbb00b4ca12842c3d7c6d42f92f1ddc731edbcf0e599002"
+recipe = "probes/pbe/sideband-channels.toml"
+needs = ["render"]

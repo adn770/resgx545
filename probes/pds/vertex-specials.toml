@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# pds vertex specials: 0 sweeps, 1 probe. What the specials read in the triangle's vertex PDS program (Q060):
+# each case's read goes to sa[4 + ir0] of its vertex task (vtx_specials.s), stored by vtx_dump_sa.s;
+# three runs.
+needs = ["render"]
+
+[[probe]]
+name = "pds-vertex-specials-reads"
+question = "what ir0, ir1, tim, mr01, mr23 and the .1 halves read in the vertex PDS program, per vertex of the triangle (vertices 0, 1, 2); recorded"
+source = "vtx_specials.s"
+host = "tri"
+slot = "vtxpds"
+slots = { vtxuse = "vtx_dump_sa.s" }
+size = [0x40, 0x40]
+temps = 0x10
+inputs = ["OP"]
+labels = ["run 1: ALU or ir1 (the control of E127)", "run 1: ALU or ir0", "run 1: ALU or tim", "run 1: mov32 ir1.0", "run 1: mov32 ir1.1", "run 1: mov32 ir0.1", "run 1: mov64 mr01, low", "run 1: mov64 mr01, high", "run 1: mov64 mr23, low", "run 1: mov64 mr23, high", "run 1: tstz ir1: 4 where it holds", "run 1: tstn ir1: 4 where it holds", "run 2: ALU or ir1 (the control of E127)", "run 2: ALU or ir0", "run 2: ALU or tim", "run 2: mov32 ir1.0", "run 2: mov32 ir1.1", "run 2: mov32 ir0.1", "run 2: mov64 mr01, low", "run 2: mov64 mr01, high", "run 2: mov64 mr23, low", "run 2: mov64 mr23, high", "run 2: tstz ir1: 4 where it holds", "run 2: tstn ir1: 4 where it holds", "run 3: ALU or ir1 (the control of E127)", "run 3: ALU or ir0", "run 3: ALU or tim", "run 3: mov32 ir1.0", "run 3: mov32 ir1.1", "run 3: mov32 ir0.1", "run 3: mov64 mr01, low", "run 3: mov64 mr01, high", "run 3: mov64 mr23, low", "run 3: mov64 mr23, high", "run 3: tstz ir1: 4 where it holds", "run 3: tstn ir1: 4 where it holds"]
+cases = [["or ds0[50], ir1, ds1[2]"], ["or ds0[50], ir0, ds1[2]"], ["or ds0[50], tim, ds1[2]"], ["mov32 ds0[50], ir1.0"], ["mov32 ds0[50], ir1.1"], ["mov32 ds0[50], ir0.1"], ["mov64 ds0[50], mr01"], ["mov64 ds0[50], mr01\nmov32 ds0[50], ds0[51]"], ["mov64 ds0[50], mr23"], ["mov64 ds0[50], mr23\nmov32 ds0[50], ds0[51]"], ["tstz p0, ir1\n(p0) mov32 ds0[50], ds1[3]"], ["tstn p0, ir1\n(p0) mov32 ds0[50], ds1[3]"], ["or ds0[50], ir1, ds1[2]"], ["or ds0[50], ir0, ds1[2]"], ["or ds0[50], tim, ds1[2]"], ["mov32 ds0[50], ir1.0"], ["mov32 ds0[50], ir1.1"], ["mov32 ds0[50], ir0.1"], ["mov64 ds0[50], mr01"], ["mov64 ds0[50], mr01\nmov32 ds0[50], ds0[51]"], ["mov64 ds0[50], mr23"], ["mov64 ds0[50], mr23\nmov32 ds0[50], ds0[51]"], ["tstz p0, ir1\n(p0) mov32 ds0[50], ds1[3]"], ["tstn p0, ir1\n(p0) mov32 ds0[50], ds1[3]"], ["or ds0[50], ir1, ds1[2]"], ["or ds0[50], ir0, ds1[2]"], ["or ds0[50], tim, ds1[2]"], ["mov32 ds0[50], ir1.0"], ["mov32 ds0[50], ir1.1"], ["mov32 ds0[50], ir0.1"], ["mov64 ds0[50], mr01"], ["mov64 ds0[50], mr01\nmov32 ds0[50], ds0[51]"], ["mov64 ds0[50], mr23"], ["mov64 ds0[50], mr23\nmov32 ds0[50], ds0[51]"], ["tstz p0, ir1\n(p0) mov32 ds0[50], ds1[3]"], ["tstn p0, ir1\n(p0) mov32 ds0[50], ds1[3]"]]

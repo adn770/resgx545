@@ -2331,6 +2331,161 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   differing; over all the vectors 24,711 scalar vectors match (24,440 before), 1,112 are fitted, 755
   stop and none differs.
   *usse; HW; data: `vectors-usse-semantics`.*
+- `E379` mov128 with bit 15 writes to both halves of its destination row the ds0 pair that the last
+  mov32 or movs read from a data row (rows 0-23): row 4's pair in E261 is the one the template's
+  last mov32 from a data row read (ds0[9]); with each of bits 23:16, 9, 7, 1 and 0 also set, bits
+  23:16 and 1:0 together, source rows 0, 4 and 24 and destination ds[48] the same pair is written; a
+  movs to mr or to douta from ds0[2] or ds0[6] names that pair instead, as does a mov32 from ds0[2],
+  while a movs from the temporary pair ds0[50], ds0[51], a not of a temporary (ds0[48-55] or
+  ds1[48-55]), a mov32 from ds1[9] and a mov64 from mr01 leave it; three runs of every case, and the
+  same with another set of markers.
+  *pds; HW; data: `pds-mov128-bit15`.*
+- `E380` A store (stad) from pa0-pa7 or sa0-sa7 stores what a mov of the same register reads, in
+  every one of 30 jobs: in a fill a mov to sa_n changes what pa_n and sa_n both read, a mov to pa_n
+  changes neither, and an unwritten pa_n or sa_n reads the job's pixel colour (0x0da7a000,
+  0x11110000, 0x33330000, 0x55550000 as the case's colour was), which E366's r1 marker was; the r
+  and o stores store their registers; so a store takes pa and sa as its data source and E366's r1
+  was the register's content, not a substitution.
+  *usse; HW, infer; data: `usse-store-sources`.*
+- `E381` In the triangle's primary pixel program, sixteen douta writes reached the USE task's sa
+  registers in one job of thirteen: markers C to attributes 16-31 arrived in sa16-sa31 in their
+  third run, with sa0-sa15 holding markers B of a job three jobs earlier; in the other twelve jobs
+  sa0-sa31 held one of two sets of values that other jobs had left (one the sa of the fill probe run
+  just before, with sa0 = 0x00000002 in place of its first value), and pa0-pa15 held values that
+  differ from job to job.
+  *pds; HW, infer; data: `pds-douta-primary`.*
+- `E382` With a shader that names each pixel, EMIT2 bits 29:28 rotate the stored image by 90, 180
+  and 270 degrees at 1, 2 and 3 (the pixel stored at (X, Y) of the 64x64 target is the one from (Y,
+  63 - X), (63 - X, 63 - Y) and (63 - Y, X)), every one of the 1062 pixels in both runs, so E267's
+  bit 28 is a rotation by 90 degrees, not a mirror; bit 31 scales by two (the pixel at (X, Y) is the
+  one from (X/2, Y/2), after the rotation of bits 29:28 for 0x9-0xb, all 1728 named pixels); bits 30
+  and 31:30 together store no named pixel; EMIT2 bits 6:0 are fit by an offset into the order in
+  which a tile's pixels are read [infer], an offset of 1 reading the next pixel of the order x0, y0,
+  x1, x2, x3, y1, y2 of each 16x8 block [infer] (1, 2, 4, 8 and 16 fit 928-1053 of about 1050
+  pixels, 3 fits 1035; carries out of the block do not); counts above 0x80 (0x82-0xfe) store the
+  image with 39 to 2742 pixels changed, mostly at the first places of each tile's order.
+  *pbe; HW, infer; data: `pbe-emit-transforms`.*
+- `E383` SIDEBAND bits 8:6 select the channel only in pack modes 8 and 7: in mode 8 (one byte a
+  pixel) 0 stores alpha, 1 red, 2 green and 3 to 7 blue; in mode 7 (two bytes) 0 stores alpha and
+  red and 1 to 7 green and blue; modes 15, 18 and 28 store green and blue and modes 24 and 25 blue
+  whatever the field; two colours whose bytes all differ, every pixel; sideband bit 12 stores words
+  of no colour in modes 0-6 (the same in both runs) and zeros in modes 7 and 8, and bit 11 faults
+  the job in each of modes 0-8.
+  *pbe; HW; data: `pbe-sideband-channels`.*
+- `E384` pc.0 read sixteen times back to back after 0, 1, 2, 3, 4 and 8 leading words of 0 ((p0)
+  movs mr, ds0[0], ...) is the reading instruction's index plus 3, the leading words counted as
+  instructions, or 1 below at a pair of reads, in all 480 reads of 30 jobs (five runs each): with 1
+  to 4 leading words one pair sits at instructions 24-25 (dwords 60-61) in 14 of 20 runs and one
+  among the first four reads in 19; with none at 26-27 (two runs), 19-20 (two) or nowhere (one);
+  with 8 at 35-36 in all five.
+  *pds; HW; data: `pds-fetch-pc-pad`.*
+- `E385` The low byte of the word that loads CR_REG_0400 is the threshold of the one-bit alpha of
+  pack mode 4 (ARGB1555): with an alpha that varies over x, the stored alpha bit is set where the
+  alpha is above the low byte and clear where it is below (low byte 0: set from 2 up; 0x40: clear to
+  62, set from 66; 0x80: clear to 120, set from 132; 0xc0: clear to 188, set from 196; 0xff: clear
+  everywhere), every triangle pixel in both runs; bits 8-11 change nothing in modes 0 and 4 and bits
+  7:0 nothing in mode 0; bit 25 inverts the alpha in modes 4 and 5 (all 2048 dwords) and changes
+  nothing in mode 8.
+  *pbe; HW; data: `pbe-reg-0400-alpha`.*
+- `E386` Two end-of-tile emits per tile hang the job on a 64x64 target (eight tiles) whatever
+  SIDEBAND bit 9 on either emit, in both runs of each of three variants (6 hangs); on a one-tile
+  target a double emit with bit 9 on both or on the first only completes and leaves every later job
+  storing the tile of the job before it (the later single-emit and blank jobs of a sequence store a
+  tile or none by turns, a blank job (EMIT2 count 0) included) until a hang's recovery reset; the
+  campaign's check after the one-tile table found 2164 of 4096 pixels different from the one before
+  it; with bit 9 on the second emit only, a job one or two later hangs (one in run 1, two in run 2).
+  *pbe; HW, infer; data: `pbe-emit-twice`.*
+- `E387` Pack mode 34 stores bits 30:20 of an IEEE single in bits 21:11, for the words found where
+  2.0, 1.0, 0.5, 0.25 and 0.3 land, and for 0.5 + y/128 at 689 of the 704 pixels holding such a word
+  in run 1 and 695 of 709 in run 2 (the others hold another row's word); mode 22 stores 3 in bits
+  31:30 for 1.0 and 0x3ff in bits 19:10 for 2.0; but every pixel of a shader that writes o0-o3
+  shows, in mode 0 as in 22 and 34, the value of o0 at some pixels and of another output register at
+  others (mode 0: o0 at 981, o1 at 512 of the triangle's place), and outside the triangle's pixels
+  the words differ from run to run, so which register each field of a pixel reads is not settled.
+  *pbe; HW; data: `pbe-pack-floats-channels`, `pbe-pack-floats-ramps`.*
+- `E388` Bits 17, 18 and 19 of the pixel-event program's data dword 2 add stray writes of 0x00000002
+  (or 0x00000006) at the first pixel of 16x4 blocks: on the copy bit 17 changes 2-3 pixels in all 10
+  runs, bit 19 1-2 in 7 of 10, bit 18 2 in 1 of 10 (none in 9); on the fill bit 18 changes 3-5
+  pixels in 5 of 5; on the triangle bit 18 6-8 in 5 of 5 and bit 17 1-4 in 4 of 5 (the fifth
+  faulted); bit 16 faults every triangle job and leaves the copy unchanged in 10 of 10.
+  *pds; HW; data: `pds-pixel-event-word2`.*
+- `E389` In the primary pixel program neither if0 nor if1 tests true on any pixel of a 64x64 render
+  with the triangle drawn twice or five times over itself: every pixel of both flag cases equals the
+  source-1 control (x + 0.5 where a flag held would be the source-0 control's), three runs each.
+  *pds; HW; data: `pds-input-flags-overlap`.*
+- `E390` A douta from the triangle's vertex PDS program does not reach the vertex task's sa
+  registers: with each of twelve special reads passed by douta to sa[4 + ir0], the vertex shader
+  stored sa4-sa6 = 0.75, -0.375, 1.0 (vertex data) and sa0-sa3 = 0x32400000, 0x00400000, 0,
+  0x7e570000 in 34 of 36 jobs, whatever the read, as the earlier vertex-programs douta probe's
+  single run did; two jobs (one mov32 ir0.1, one mov64 mr01 high) stored other values (0x2, 0x73,
+  0x1000, 0x32411200, 1); so the specials of a vertex program were not read this way.
+  *pds; HW; data: `pds-vertex-specials`.*
+- `E391` A fill's secondary douta reaches sa0-sa31 at their own index and never sa32-sa63, whatever
+  the secondary attribute size in the background object's dword 1 (bits 24:18 at 0, 1, 2, 4 and 8
+  rows): sixteen markers to attributes 0-15 and to 16-31 arrive in all 20 jobs, to 32-47 and 48-63
+  in none, and nowhere else, two runs.
+  *pds; HW; data: `pds-attribute-room`.*
+- `E392` The vertex-colour iteration cases of E133 (state words 13 = 0x83800, 16 = 5; shade models
+  0, 1, 2) give their vertex colour at all 1062 triangle pixels in every one of 18 jobs, in the
+  order 0, 1, 2, 2, 1, 0 three times: the group of about 300 pixels keeping the previous case's
+  colour (E133) does not occur.
+  *pds; HW; data: `pds-shade-order`.*
+- `E393` With a douti that has no completion bit and no wait, pa0 never holds the iterated value at
+  any of the 1062 pixels, whether the shader reads it at once or after 4, 16 or 64 nops, in 20 jobs;
+  it holds 0 (888-973 pixels), 2 (72-139), 6 (8-25) and a few other values, while the same iteration
+  with bit 29 and the wait gives the iterated x at every pixel (two runs).
+  *pds; HW; data: `pds-no-wait`.*
+- `E394` E130's grid16 probe (a 128x128 render, each 16x16 tile's end-of-tile task storing a slot)
+  run five times: 57-61 of the 64 slots hold data each run (ir1 2 or 6 in their third dword, E130's
+  rule), slots 0 and 1 are empty in all five, 1 to 5 others differ from run to run (13, 20, 22, 25,
+  33, 46, 51, 52), and slots 64 and 768 hold only colour words in four of the runs, slot 768 holding
+  data (ir0 0x1407, ir1 2) in the first.
+  *pds; HW; data: `pds-tile-slots`.*
+- `E395` PDS stores with no rwfence totalling 11, 13, 14, 15 and 17 dwords complete the job (total
+  11 faulted in one of three runs, the others in none), totals of 1 dword (from ds1, and followed by
+  nine nops) and of 10 (2 then 8) complete in all five runs each, and a total of 2 faults in every
+  run, also with an rfence between the two stores; the kernel logged BIF status 0xd2000 at 0x10020
+  for the faults of total 2 and 0x1002e for the total-11 one.
+  *pds; HW; data: `pds-store-totals`.*
+- `E396` CR_PDS_REG_0A78 at 0x00, 0x01, 0x08, 0x20, 0x2c and 0x3f does not change the time of a
+  256x256 triangle render: the median of five runs, each the mean of the last five of six renders,
+  lies between 67274 and 67469 us for every value (0.3 percent), in a shuffled order; one 0x01 run
+  had two slow renders (73110, 74396 us), the only outlier.
+  *pds; HW; data: `pds-reg-0a78-timing`.*
+- `E397` T3 bits 7:0 offset the copy's texel read by two signed 4-bit counts, bits 3:0 in y and 7:4
+  in x, clamped at the source's edge: at each of the 256 values every one of the 2048 pixels is the
+  as-built image's texel at the offset place, and the 16 values run twice agree.
+  *texture; HW; data: `texture-copy-followup`.*
+- `E398` The copy draws its source only with the background tag's layer count (transfer word 0 bits
+  30:25) at 1, as the library builds it: at 0, 2, 3, 31 and 63 every pixel is one colour (0xff6648dc
+  over the every-value source), two runs; a 128x64 copy was rejected by the kernel (Invalid
+  argument) and wrote no pixel, with or without word 7 bit 1 (CR_ISP_MSAA mode 2), so mode 2 on it
+  was not measured.
+  *transfer; HW; data: `texture-copy-followup`.*
+- `E399` The colour-space words set 0 holds survive the driver's GPU reset (debugfs reset) and a 5 s
+  idle: a YUYV copy that does not load set 0 gives, after the reset and after the idle, the same
+  image as one that loads it, every pixel, two runs.
+  *texture; HW; data: `texture-copy-followup`.*
+- `E400` With mov128's bit 15 (lastpair) writing the ds0 pair the last mov32 or movs read from a
+  data row, after the instructions E379 measured, the simulator matches 116 of the 169 vectors of
+  the 11.14 PDS fill runs and stops on 52 (25 on the leading (p0) movs mr words of the fetch-pc
+  probe, whose p0 it does not know, 27 on a movs to mr, an open port in a fill), one skipped (a
+  store fault in one run of three), none differing; over all the vectors 1305 PDS vectors match and
+  98 stop, where the coverage report before 11.14 had 1144 and 91 over the vectors then: the 116 new
+  ones and the 45 mov128 bit 15 stops of E261's runs, now matching, and the USSE and pixel counts
+  are unchanged (24711 matching, 1112 fitted, 755 stopping; 143 pixel vectors), none differing.
+  *pds; HW; data: `vectors-pds-semantics`.*
+
+### 2026-11-07
+
+- `E401` None of the 161 sgx*defs.h headers of the openpvrsgx archive defines a register from 0x0780
+  to 0x0880 (the nearest defined are EUR_CR_TIMER at 0x0144 and EUR_CR_USE_CODE_BASE_0 at 0x0a0c),
+  so no public SGX header names 0x0810, 0x0814 or 0x0818; Linux's Rogue driver defines
+  ROGUE_CR_MIPS_WRAPPER_CONFIG at 0x0810 and ROGUE_CR_MIPS_ADDR_REMAP1_CONFIG1 at 0x0818, each with
+  a 64-bit mask (0x000001030F01FFFF and 0x00000000FFFFF001) on an 8-byte stride, where E122 found
+  0x0810, 0x0814 and 0x0818 to implement bit 0, bits 16:0 and bits 10:0 as separate 4-byte
+  registers.
+  *platform; DDK; data: none.*
 
 ## By unit
 
@@ -2366,17 +2521,19 @@ E348.
 
 ### pbe
 
-Records: E029, E030, E031, E032, E239, E240, E251, E265, E266, E267, E268, E269, E270, E333.
+Records: E029, E030, E031, E032, E239, E240, E251, E265, E266, E267, E268, E269, E270, E333, E382,
+E383, E385, E386, E387.
 
 ### pds
 
 Records: E043, E044, E045, E046, E047, E048, E125, E126, E127, E128, E129, E130, E131, E132, E133,
 E134, E135, E136, E137, E138, E139, E140, E141, E142, E143, E144, E145, E259, E260, E261, E262,
-E263, E264, E343, E344, E345, E364.
+E263, E264, E343, E344, E345, E364, E379, E381, E384, E388, E389, E390, E391, E392, E393, E394,
+E395, E396, E400.
 
 ### platform
 
-Records: E006, E007, E008, E025, E026, E122, E150, E149, E246, E258, E357, E359, E365.
+Records: E006, E007, E008, E025, E026, E122, E150, E149, E246, E258, E357, E359, E365, E401.
 
 ### render
 
@@ -2391,11 +2548,11 @@ E288, E305, E306, E307, E308, E322, E328, E329, E331.
 ### texture
 
 Records: E033, E034, E035, E036, E037, E038, E039, E040, E041, E042, E114, E116, E242, E254, E271,
-E273, E274, E275, E276, E277, E341, E342.
+E273, E274, E275, E276, E277, E341, E342, E397, E399.
 
 ### transfer
 
-Records: E015, E016, E018, E019, E020, E021, E022, E024, E027, E028, E272.
+Records: E015, E016, E018, E019, E020, E021, E022, E024, E027, E028, E272, E398.
 
 ### tsp
 
@@ -2407,7 +2564,7 @@ Records: E075, E076, E077, E078, E079, E080, E081, E082, E083, E085, E086, E087,
 E091, E092, E093, E094, E095, E096, E097, E098, E099, E100, E101, E102, E103, E104, E105, E106,
 E107, E108, E109, E110, E111, E112, E113, E115, E117, E118, E119, E120, E121, E123, E124, E147,
 E244, E245, E255, E292, E293, E294, E295, E296, E297, E298, E350, E351, E366, E367, E368, E369,
-E370, E371, E372, E373, E374, E375, E376, E377, E378.
+E370, E371, E372, E373, E374, E375, E376, E377, E378, E380.
 
 ### vdm
 

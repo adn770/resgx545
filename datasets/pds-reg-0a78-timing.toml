@@ -1,0 +1,10 @@
+title = "script table pds/reg-0a78-timing"
+repo = "data"
+paths = ["pds/reg-0a78-timing/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-03"
+files = 4
+size = 10952
+sha256 = "029f103ba29ed8920295cdf8be98fb53d1a220258c286e497e0f970643fa5934"
+recipe = "probes/pds/reg-0a78-timing.toml"
+needs = ["render", "kreg"]

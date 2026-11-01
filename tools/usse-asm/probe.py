@@ -375,10 +375,17 @@ def _data_dwords(text: str) -> int:
 
 
 def pds_data(p: Probe, src_dir: pathlib.Path = PROBES_DIR) -> int:
-    """The data dwords of a PDS probe's program (its cases share the template's layout)."""
+    """The data dwords of a PDS probe's program. The run passes one size for all its cases
+    (--pds N), so cases whose data segments differ are refused: their extra data words would run
+    as instructions (11.14: pds-fetch-pc-pad's padding did)."""
     key = (src_dir, p.source, p.name)
     if key not in _PDS_DATA:
-        _PDS_DATA[key] = _data_dwords(render(p, p.cases[0], (src_dir / p.source).read_text()))
+        template = (src_dir / p.source).read_text()
+        sizes = {_data_dwords(render(p, c, template)) for c in p.cases}
+        if len(sizes) > 1:
+            raise ProbeError(f"{p.name}: its cases' data segments differ ({sorted(sizes)} "
+                             "dwords); one size runs for all of them")
+        _PDS_DATA[key] = sizes.pop()
     return _PDS_DATA[key]
 
 

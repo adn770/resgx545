@@ -14,7 +14,9 @@ the base's, or the job fails (E259, E260) **[HW]**:
   of `n`, as `not`'s does: `abs ds0[52], ds1[16]` with it set gives the absolute value of
   `ds1[48]` (E261). `mov128`'s bit 15 makes it write `ds0[8]`, `ds0[9]` (the data's row 4 `ds0`
   pair) to both halves of its destination, from every source row into `ds[52]`, and at four
-  destinations from rows 2 and 31 and from row 2 with `swap` (E261; why row 4: Q077).
+  destinations from rows 2 and 31 and from row 2 with `swap` (E261): row 4's pair is the one the
+  template's last `mov32` from a data row read, `ds0[9]`; the bit makes `mov128` write the `ds0`
+  pair the last `mov32` or `movs` read from a data row (E379), and the tables name it `lastpair`.
 - **Ignored: every other bit.** `movs`, `movsa` bit 4; `mov16` 23:17; `mov64` 23:17, 9:8, 1:0;
   `mov128` 23:16, 9, 7, 1:0; the ALU group 16, 9:7; `mul` 8:7; `abs` 23:16, 9, 7 and 16:9, 7;
   `not` 23:16, 9, 7 and 16:9, 7; `tstz`, `tstn` 23:16, 9, 7:3 and 16:9, 7:3; `shl`, `shr` 15,
@@ -22,5 +24,6 @@ the base's, or the job fails (E259, E260) **[HW]**:
   fetch pc as the plain `nop` does (E260, E261). `mov32`'s 23:17, 8, 0 and `alum`'s 23:1 were
   measured before (*`mov16`/`mov32` specials*, `pds-moves-mov32-spare`, `pds-alu-alum-spare`).
 
-So 270 bits are unmapped now (bra and call 0, abs 10 where it had 11), and 269 of them change
-nothing the probes can see; `mov128`'s bit 15 is the one read that no field describes.
+So 270 bits were unmapped after this round (bra and call 0, abs 10 where it had 11), and 269 of
+them change nothing the probes can see; `mov128`'s bit 15 was the one read that no field described,
+and 11.14 names it `lastpair`, which leaves 269 unmapped bits, none of them read.

@@ -44,37 +44,37 @@
 
 ## pbe
 
-- `Q012` (phase 6): what float formats are pack modes 22 and 34, given that both read o0 as an IEEE single (sign, NaN and exponent) and store it at some of the triangle's dwords while the rest change with the job before? (E032, E270)
-- `Q040` (phase 11): what do EMIT2 bits 15:8 count, given that 4v pixels of each tile are stored for an even v up to 0x80, odd values hang and values above 0x80 change the image, what do EMIT2 bits 6:0 and 31 select, and is bit 29 a rotation by 180 degrees or an anti-transpose? (E046, E265, E266, E267)
-- `Q044` (phase 11): what do bits 11:0 of CR_REG_0400 (0x80 as built) do, when no value of them changes a stored pixel in pack modes 0 to 3, and does bit 25 act on the other pack modes? (E029, E028, E031, E251, E268)
-- `Q046` (phase 11): do SIDEBAND bits 8:6 select the channel only in pack mode 8, or in the other one-channel modes too (24, 25 and those that store G8B8), and what do sideband bits 11 and 12 do? (E030, E031, E210, E269)
-- `Q074` (phase 11): why does a second end-of-tile emit in a tile leave the next job's image wrong, and does SIDEBAND bit 9 mark an emit that counts against a PBE tile? (E030, E130, E239, E240)
+- `Q012` (phase 6): what float formats are pack modes 22 and 34, given that both read o0 as an IEEE single (sign, NaN and exponent) and store it at some of the triangle's dwords while the rest change with the job before? (E032, E270, E387)
+- `Q040` (phase 11): what do EMIT2 bits 15:8 count, given that 4v pixels of each tile are stored for an even v up to 0x80, odd values hang and values above 0x80 change the image, and what do EMIT2 bits 6:0 select? (E046, E265, E266, E267, E382)
+- `Q044` (phase 11): what do bits 11:0 of CR_REG_0400 (0x80 as built) do, when no value of them changes a stored pixel in pack modes 0 to 3, and does bit 25 act on the other pack modes? (E029, E028, E031, E251, E268, E385)
+- `Q046` (phase 11): do SIDEBAND bits 8:6 select the channel only in pack mode 8, or in the other one-channel modes too (24, 25 and those that store G8B8), and what do sideband bits 11 and 12 do? (E030, E031, E210, E269, E383)
+- `Q074` (phase 11): why does a second end-of-tile emit in a tile leave the next job's image wrong, and does SIDEBAND bit 9 mark an emit that counts against a PBE tile? (E030, E130, E239, E240, E386)
 
 ## pds
 
-- `Q013` (phase 6): what does bit 18 of the copy's pixel-event data word 2 do, when it leaves the copy unchanged and changes a few pixels of the fill and the triangle? (E043, E046)
-- `Q019` (phase 7): what does the secondary attribute size (bits 24:18 of dword 1 of the background object) limit, given that all sixteen douta words reach sa0 to sa15 with 0, 1 and 4 rows, or does the task take its size from elsewhere? (E125)
-- `Q020` (phase 7): what does a douta in the triangle's primary pixel program do, when its markers never reach the USE task and the readback is the memory table's inputs for markers A in both runs, and other values for markers B in the first? (E125)
+- `Q013` (phase 6): what does bit 18 of the copy's pixel-event data word 2 do, when it leaves the copy unchanged and changes a few pixels of the fill and the triangle? (E043, E046, E388)
+- `Q019` (phase 7): what does the secondary attribute size (bits 24:18 of dword 1 of the background object) limit, given that all sixteen douta words reach sa0 to sa15 with 0, 1 and 4 rows, or does the task take its size from elsewhere? (E125, E391)
+- `Q020` (phase 7): what does a douta in the triangle's primary pixel program do, when its markers never reach the USE task and the readback is the memory table's inputs for markers A in both runs, and other values for markers B in the first? (E125, E381)
 - `Q021` (phase 7): with 4 components (DOUTI0 bits 23:22 = 3) where does the texel land, given pa3 reads 1.0 on most pixels? (E132)
-- `Q022` (phase 7): why do about 30 percent of the pixels keep the previous case's value in the vertex-colour iteration cases, in both runs? (E133)
+- `Q022` (phase 7): why do about 30 percent of the pixels keep the previous case's value in the vertex-colour iteration cases, in both runs? (E133, E392)
 - `Q023` (phase 7): what do PDS_SIZE bits 17:16 do, given that they move where the output registers o1 to o3 land? (E139, E081)
-- `Q024` (phase 7): does CR_PDS_REG_0A78 change timing, when two of its values were slower in one timing run? (E141, E045)
-- `Q025` (phase 7): what does the SB field of CR_BIF_FAULT encode in the PDS faults, and why did a store of one dword fault in the follow-up run only, and a store of two dwords then eight in the first run only? (E143, E144, E145)
-- `Q026` (phase 7): why do the per-tile stores of the grid pixel-event probes leave empty slots and mixed copies, different ones per run? (E130)
-- `Q027` (phase 7): what does the no-wait iteration deliver to pa0: stale values in the first run, and the pixel's own clip x on 60 to 115 pixels per case in the follow-up run? (E131, E048)
+- `Q024` (phase 7): does CR_PDS_REG_0A78 change timing, when two of its values were slower in one timing run? (E141, E045, E396)
+- `Q025` (phase 7): what does the SB field of CR_BIF_FAULT encode in the PDS faults, and why did a store of one dword fault in the follow-up run only, and a store of two dwords then eight in the first run only? (E143, E144, E145, E395)
+- `Q026` (phase 7): why do the per-tile stores of the grid pixel-event probes leave empty slots and mixed copies, different ones per run? (E130, E394)
+- `Q027` (phase 7): what does the no-wait iteration deliver to pa0: stale values in the first run, and the pixel's own clip x on 60 to 115 pixels per case in the follow-up run? (E131, E048, E393)
 - `Q057` (phase 11): what do doutc, douts, slc, mr and ir0 do as move destinations, and movsa on ports other than doutd, and does an enabled small count in tim hang the job, and why? (E127, E128, E264)
-- `Q058` (phase 11): what sets the input flags if0 and if1 outside a vertex program, since neither tests true in any primary pixel or pixel-event task tried? (E128, E130, E262, E263)
-- `Q059` (phase 11): why do PDS stores totalling 2, 3 or 4 dwords fault the job, and why does an rwfence after a store, or after a faulted job, touch page 0? (E143, E144, E145)
-- `Q060` (phase 11): what do mr01, mr23, ir1 and the .h specials read in the vertex-side programs? (E128, E130, E262, E263)
+- `Q058` (phase 11): what sets the input flags if0 and if1 outside a vertex program, since neither tests true in any primary pixel or pixel-event task tried? (E128, E130, E262, E263, E389)
+- `Q059` (phase 11): why do PDS stores totalling 2, 3 or 4 dwords fault the job, and why does an rwfence after a store, or after a faulted job, touch page 0? (E143, E144, E145, E395)
+- `Q060` (phase 11): what do mr01, mr23, ir1 and the .h specials read in the vertex-side programs? (E128, E130, E262, E263, E390)
 - `Q061` (phase 11): does a DOUTU word's EXE field stop at bit 19, leaving CBASE in bits 3:0, or do the 18 program-counter bits reach bit 21? (E004)
-- `Q062` (phase 11): what makes the PDS fetch pc read one or two below the reading instruction's index plus 3, at instructions 26-27 back to back (the end of a 64-dword block) in most runs? (E128, E142, E143, E260, E261)
+- `Q062` (phase 11): what makes the PDS fetch pc read one or two below the reading instruction's index plus 3, at instructions 26-27 back to back (the end of a 64-dword block) in most runs? (E128, E142, E143, E260, E261, E384)
 - `Q063` (phase 11): what does bit 9 of a mov16 or mov32 special source select on the rest of the SGX family, when on SGX545 it only makes mov16 read 0? (E128)
-- `Q077` (phase 11): what does bit 15 of a mov128 word select, which makes it write the data's row 4 ds0 pair to both halves of its destination whatever its source row (and with swap at row 2)? (E259, E261)
+- `Q077` (phase 11): what does bit 15 of a mov128 word select, which makes it write the data's row 4 ds0 pair to both halves of its destination whatever its source row (and with swap at row 2)? (E259, E261, E379)
 - `Q093` (phase 11): why does the closed driver add DOUTU1 bit 24 (wait for iterations) to some textured primary pixel programs, all GLES1 ones but GL_REPLACE and GLES2's two-texture and half-float luminance ones, and not to the other textured programs whose douti and doutt counts are the same? (E345, E364)
 
 ## platform
 
-- `Q001` (phase 3): what do 0x0810, 0x0814 and 0x0818, set once by the init script to 0x1, 0xffff and 0x7ff, control? (E006, E010, E122)
+- `Q001` (phase 3): what do 0x0810, 0x0814 and 0x0818, set once by the init script to 0x1, 0xffff and 0x7ff, control? (E006, E010, E122, E401)
 - `Q075` (phase 11): what does each HWPerf counter the firmware records (0x0044-0x0064, 0x0e84-0x0e90 and 0x0eb4-0x0ec0) count, and how does the group in CR_HWPERF_CTRL select them? (E149, E150, E152, E359)
 - `Q095` (phase 11): does giving the EDM a page directory of its own, rather than gma500's default one, change anything beyond the coupling of their teardowns? (E008, E018, E021)
 
@@ -102,14 +102,14 @@
 - `Q007` (phase 6): where do the copy's source, its destination and the page before the source lie, given that T2 bits 12, 13 and 14 read those buffers rather than the source's continuation? (E036, E041, E273)
 - `Q008` (phase 6): how is the luma compared at the luma key's low cut (bits 7:0 of the word that loads 0x0868), where 8 pixels in 2 of 274 copies, 4/1024 above the cut, fall the other way, and what do bits 31:16 of the alpha word and the offset's precision do? (E039, E275)
 - `Q009` (phase 6): what do T0's maximum level 15 and the LOD bias (bits 26:21) do beyond a five-level chain read with nearest filtering at whole LODs? (E041, E276)
-- `Q010` (phase 6): what clears the colour-space words between jobs, given that a copy that does not load set 0 converts with the last loaded words, and the first job of a session after hung jobs converts with zeros? (E037, E039, E046, E271)
-- `Q078` (phase 11): what do T3 bits 10, 14, 18-19 and 27-28 and T0 bit 27 select, given a copy that reads one texel, a sheared read, coordinates scaled by 2 and 4, smaller images after the source, and values of no texel? (E274)
+- `Q010` (phase 6): what clears the colour-space words between jobs, given that a copy that does not load set 0 converts with the last loaded words, and the first job of a session after hung jobs converts with zeros? (E037, E039, E046, E271, E399)
+- `Q078` (phase 11): what do T3 bits 10, 14, 18-19 and 27-28 and T0 bit 27 select, given a copy that reads one texel, a sheared read, coordinates scaled by 2 and 4, smaller images after the source, and values of no texel? (E274, E397)
 
 ## transfer
 
 - `Q003` (phase 4): which event (if any) does a bus-interface fault raise, and what do the fault-request bits of CR_BIF_INT_STAT name? (E021, E317, E319, E320, E357)
 - `Q004` (phase 4): what do a transfer context's flag bits 1 and 4 and a priority other than 0 do on the hardware? (E015)
-- `Q011` (phase 6): why does a copy whose background-object tag (transfer word 0) is wrong read one texel, the source's last, for every pixel, and what stores the samples of CR_ISP_MSAA mode 2 in a copy? (E028, E272)
+- `Q011` (phase 6): why does a copy whose background-object tag (transfer word 0) is wrong read one texel, the source's last, for every pixel, and what stores the samples of CR_ISP_MSAA mode 2 in a copy? (E028, E272, E398)
 - `Q028` (phase 9): which of the recovery's reset steps does a later job need after a fault, now that a held fault is seen to stop the EDM's command processing? (E024, E317, E318, E319, E354, E355)
 
 ## usse
@@ -127,7 +127,8 @@
 - `Q056` (phase 11): where does a write to destination bank 6 with value 0 (printed i.) land? (E091, E147, E366)
 - `Q079` (phase 11): what does idiv's enc[47], a bit outside every field of the form, select? (E295, E367)
 - `Q080` (phase 11): what do the USSE words no form decodes (classes 2, 22 and 26) do: which stop the stores after them, and which write registers? (E297, E368)
-- `Q097` (phase 11): does a store take pa or sa as its data source, and what does it store instead? (E366)
+- `Q097` (phase 11): does a store take pa or sa as its data source, and what does it store instead? (E366, E380)
+- `Q098` (phase 11): why do pa_n and sa_n read one value in a fill's pixel task, a mov to pa_n being lost, and why does an unwritten one read the job's pixel colour? (E366, E380)
 
 ## vdm
 

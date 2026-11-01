@@ -52,5 +52,11 @@ enum = ["p0", "p1", "p2", "", "", "", "", ""]
 [kind.SWAP]
 enum = ["", ", swap"]
 
+# mov128's bit 15: set, it writes the ds0 pair that the last mov32 or movs read from a data row
+# to both halves of its destination row, whatever its source row and swap (E379). Measured only
+# after the instructions E379 lists; the simulator stops after any other.
+[kind.LASTPAIR]
+enum = ["", ", lastpair"]
+
 [kind.ALUM]
 enum = ["unsigned", "signed"]

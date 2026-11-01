@@ -3,7 +3,7 @@ id = "Q062"
 question = "what makes the PDS fetch pc read one or two below the reading instruction's index plus 3, at instructions 26-27 back to back (the end of a 64-dword block) in most runs?"
 unit = "pds"
 phase = 11
-evidence = ["E128", "E142", "E143", "E260", "E261"]
+evidence = ["E128", "E142", "E143", "E260", "E261", "E384"]
 terms = []
 +++
 
@@ -19,6 +19,14 @@ the nops before them (0-3), and 19-20 in two; the branch program reads the same 
 and the nop-gap programs do but at their first read and one read of one run. With the 36-dword data
 segment, instructions 26-27 are dwords 62-63, the last two before a 64-dword boundary. The simulator
 gives index + 3 and accepts the hardware's value up to 2 below.
+
+Narrowed in 11.14 (E384): with 1 to 4 and 8 words of 0 ((p0) movs mr, ds0[0], ...) before the reads,
+every read is still its index + 3 or + 2 (480 reads, five runs each), the leading words counted as
+instructions; a lag pair sits at instructions 24-25 (dwords 60-61) in 14 of the 20 runs with 1-4
+leading words and among the first four reads in 19; with no leading words the pair sat at 26-27 in
+two runs, at 19-20 in two and nowhere in one, so the baseline varies (E261's ten of twelve was not
+repeated); with 8 at 35-36 in all five runs. The 16-byte offsets and the other pipe busy were not
+run (the tool does not place programs).
 
 What is open (pds_isa.md §7, item 13): whether the lag is the fetch crossing a 64-dword (256-byte)
 boundary, what makes it fall elsewhere in some runs (the other PDS pipe, memory traffic), and so a

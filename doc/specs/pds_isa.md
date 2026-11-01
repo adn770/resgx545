@@ -425,14 +425,15 @@ Layout (forms #0, #1):
   ds0[0], ds0[0]`, 1 `ds0[0], ds0[0], ds0[0], ds0[1]`, 2 `ds0[0], ds0[0], ds0[0], ds1[0]`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 2 of 2 forms have semantics. The
-probe vectors that test them: 51 match the hardware (18 with near values: 2 each within the bound
+probe vectors that test them: 54 match the hardware (18 with near values: 2 each within the bound
 the hardware was measured to, 16 with a value the task does not know, the timer, accepted as any
-value of its width and so not checked), 9 stop unsupported, 0 mismatch (`pds-alu-carry-movs` 4/0/0,
+value of its width and so not checked), 36 stop unsupported, 0 mismatch (`pds-alu-carry-movs` 4/0/0,
 `pds-alu-flags-movs` 4/0/0, `pds-alu-specials` 12/0/0, `pds-alu-specials-paths` 2/0/0,
-`pds-fetch-pc-kinds` 0/3/0, `pds-load-store-ports` 1/6/0, `pds-timer-tim-count` 4/0/0,
-`pds-timer-tim-host` 2/0/0, `pds-timer-tim-period` 2/0/0, `pds-timer-tim-restore` 2/0/0,
-`pds-timer-tim-words` 18/0/0); unsupported mostly for the port is open (5); reads dsN[N] before the
-program writes it (3); movsa to Douta is open (1).
+`pds-fetch-pc-kinds` 0/3/0, `pds-load-store-ports` 1/6/0, `pds-mov128-bit15-companions` 0/3/0,
+`pds-mov128-bit15-mr` 3/24/0, `pds-timer-tim-count` 4/0/0, `pds-timer-tim-host` 2/0/0,
+`pds-timer-tim-period` 2/0/0, `pds-timer-tim-restore` 2/0/0, `pds-timer-tim-words` 18/0/0);
+unsupported mostly for the port is open (32); reads dsN[N] before the program writes it (3); movsa
+to Douta is open (1).
 
 Confirmed on the hardware (a passing vector): #0; not yet confirmed (as decoded; no passing vector
 yet): #1.
@@ -449,11 +450,17 @@ pair, `mr01` or `mr23`); `mov128 ds[2k], ds[2j]` four dwords, optionally `, swap
   half is kept (so `ds0[96]` is the low half of `ds0[48]`). `mov128 ds[2k]` is the row `ds0[2k]`,
   `ds0[2k+1]`, `ds1[2k]`, `ds1[2k+1]` and `swap` exchanges its two pairs; its source field is five
   bits, rows 0-31 (`ds[0..62]`), rows 24-31 the temporaries (rows 24 and 27 read back, E261)
-  **[HW]**. With bit 15 set, which no field maps, it writes the data's row 4 `ds0` pair (`ds0[8]`,
-  `ds0[9]`) to both halves of its destination row: from every source row into `ds[52]`, and at four
-  destinations from rows 2 and 31 and from row 2 with `swap` (E261) **[HW]**; why row 4 is open
-  (Q077). The decoders ignore the bit and print such a word as a plain `mov128`; the simulator stops
-  on it.
+  **[HW]**. With `lastpair` (bit 15) set it writes to both halves of its destination row the
+  `ds0` pair the last `mov32` or `movs` read from a data row (rows 0-23): a `mov32` from `ds0[9]`
+  or `ds0[2]` and a `movs` to `mr` or `douta` from the pair `ds0[2]`, `ds0[3]` or `ds0[6]`,
+  `ds0[7]` name that pair, whatever the `mov128`'s source row, `swap` and other unmapped bits
+  (23:16, 9, 7, 1:0); a `mov32` from `ds1[9]`, a `not` of a temporary (`ds0[48-55]` or
+  `ds1[48-55]`), a `movs` from the temporary pair `ds0[50]`, `ds0[51]` and a `mov64` from `mr01`
+  leave it (E261, E379) **[HW]**. These are the instructions the runs placed before it; others
+  (another row or pair, `movsa`, a `not` of a data row, `mr23`) were not run, so the pair after
+  them is not known. Since the data rows are read-only, the pair named is its value. The decoders
+  print the bit as `, lastpair` after `, swap`; the simulator writes the pair after the
+  instructions measured and stops otherwise.
 - **In the microkernel's programs:** not used; nor in ours.
 
 `mov16 ds0[3], ds1[2].h` assembles with form #2: the word is `0x0F008503`; in memory (little endian)
@@ -476,7 +483,7 @@ Forms (generated from the decoder's table; `<name>` is a field):
 #4    opcode 3       mask F8000000  value 18000000  mov64
       <pred>mov64 ds<ds>[<idx>], <src>
 #5    opcode 4       mask F8000000  value 20000000  mov128
-      <pred>mov128 ds[<idx1>], ds[<idx2>]<extra>
+      <pred>mov128 ds[<idx1>], ds[<idx2>]<extra1><extra2>
 ```
 
 Mnemonics: `mov128`, `mov16`, `mov32`, `mov64`.
@@ -530,10 +537,10 @@ Layout 3 of 4 (form #4):
 Layout 4 of 4 (form #5):
 
 ```
- 31   27 26  24 23 15 14  10 9   8       7   6    2 1 0
-+-------+------+-----+------+---+-------+---+------+---+
-| 00100 | pred |  -  | idx2 | - | extra | - | idx1 | - |
-+-------+------+-----+------+---+-------+---+------+---+
+ 31   27 26  24 23 16 15       14  10 9   8        7   6    2 1 0
++-------+------+-----+--------+------+---+--------+---+------+---+
+| 00100 | pred |  -  | extra2 | idx2 | - | extra1 | - | idx1 | - |
++-------+------+-----+--------+------+---+--------+---+------+---+
 ```
 
 - `pred`: as in layout 1.
@@ -542,20 +549,22 @@ Layout 4 of 4 (form #5):
   `18`, 10 `20`, 11 `22`, 12 `24`, 13 `26`, 14 `28`, 15 `30`, 16 `32`, 17 `34`, 18 `36`, 19 `38`, 20
   `40`, 21 `42`, 22 `44`, 23 `46`, 24 `48`, 25 `50`, 26 `52`, 27 `54`, 28 `56`, 29 `58`, 30 `60`, 31
   `62`.
-- `extra`: bit 8. Values: 0 (none), 1 `, swap`.
+- `extra1`: bit 8. Values: 0 (none), 1 `, swap`.
+- `extra2`: bit 15. Values: 0 (none), 1 `, lastpair`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 4 of 4 forms have semantics. The
-probe vectors that test them: 118 match the hardware (60 with near values, each within the bound the
-hardware was measured to), 18 stop unsupported, 0 mismatch (`pds-alu-after-mov128` 4/0/0,
+probe vectors that test them: 123 match the hardware (65 with near values, each within the bound the
+hardware was measured to), 46 stop unsupported, 0 mismatch (`pds-alu-after-mov128` 4/0/0,
 `pds-alu-after-mov16` 12/0/0, `pds-alu-after-mov64` 4/0/0, `pds-alu-constants` 2/0/0,
 `pds-alu-flags-mov128` 4/0/0, `pds-alu-flags-mov64` 4/0/0, `pds-alu-inputs` 2/0/0,
 `pds-alu-specials-paths` 2/2/0, `pds-alu-specials-paths2` 0/2/0, `pds-alu-uninit` 0/2/0,
 `pds-encoding-bits-flow-bra` 6/0/0, `pds-encoding-bits-flow-nop` 28/0/0,
 `pds-encoding-bits-followup-nop` 10/0/0, `pds-fetch-pc-back-to-back` 12/0/0, `pds-fetch-pc-kinds`
-0/9/0, `pds-fetch-pc-nop-gaps` 6/0/0, `pds-load-store-ports` 0/1/0, `pds-moves-mov-flag-cond` 0/2/0,
-`pds-moves-mov-flag-pipes` 2/0/0, `pds-moves-mov-wide` 10/0/0, `pds-moves-mov16` 2/0/0,
-`pds-moves-mov16-constants` 8/0/0); unsupported mostly for reads dsN[N] before the program writes it
-(11); scratch[NxN] is computed from a near value (4); (aluz) before it is known (2).
+0/9/0, `pds-fetch-pc-nop-gaps` 6/0/0, `pds-fetch-pc-pad-back-to-back` 5/25/0, `pds-load-store-ports`
+0/1/0, `pds-mov128-bit15-mr` 0/3/0, `pds-moves-mov-flag-cond` 0/2/0, `pds-moves-mov-flag-pipes`
+2/0/0, `pds-moves-mov-wide` 10/0/0, `pds-moves-mov16` 2/0/0, `pds-moves-mov16-constants` 8/0/0);
+unsupported mostly for (pN) before it is known (25); reads dsN[N] before the program writes it (11);
+scratch[NxN] is computed from a near value (4).
 
 Confirmed on the hardware (a passing vector): #2, #3, #4, #5.
 
@@ -618,11 +627,11 @@ Layout (forms #6, #7):
   `49-56]`, 2 `50-57]`, 3 `51-58]`, 4 `52-59]`, 5 `53-60]`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 2 of 2 forms have semantics. The
-probe vectors that test them: 196 match the hardware (3 with near values, each within the bound the
+probe vectors that test them: 229 match the hardware (3 with near values, each within the bound the
 hardware was measured to), 0 stop unsupported, 0 mismatch (`pds-encoding-bits-memory-fence` 27/0/0,
 `pds-fetch-pc-load` 3/0/0, `pds-load-store-addressing` 8/0/0, `pds-memory-mem` 40/0/0,
 `pds-memory-mem2` 36/0/0, `pds-memory-mem3` 28/0/0, `pds-memory-mem4` 20/0/0, `pds-memory-mem5`
-24/0/0, `pds-memory-mem6` 10/0/0).
+24/0/0, `pds-memory-mem6` 10/0/0, `pds-store-totals-runs` 33/0/0).
 
 Confirmed on the hardware (a passing vector): #6, #7.
 
@@ -824,13 +833,14 @@ Layout 2 of 2 (forms #11, #13):
   By bank: 0 `ds0[0]`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 4 of 4 forms have semantics. The
-probe vectors that test them: 74 match the hardware, 98 stop unsupported, 0 mismatch
+probe vectors that test them: 318 match the hardware, 64 stop unsupported, 0 mismatch
 (`pds-alu-abs-not` 16/0/0, `pds-alu-abs-signed` 24/0/0, `pds-alu-after-abs` 12/0/0,
 `pds-alu-after-not` 4/0/0, `pds-alu-flags` 6/0/0, `pds-alu-flags-signed` 6/0/0,
-`pds-alu-specials-paths2` 0/4/0, `pds-encoding-bits-followup-mov128` 6/64/0,
-`pds-encoding-bits-mov128-dst` 0/24/0, `pds-fetch-pc-kinds` 0/6/0); unsupported mostly for movN with
-bit N is open (88); reads dsN[N] before the program writes it (6); scratch[NxN] is computed from a
-near value (4).
+`pds-alu-specials-paths2` 0/4/0, `pds-encoding-bits-followup-mov128` 70/0/0,
+`pds-encoding-bits-mov128-dst` 24/0/0, `pds-fetch-pc-kinds` 0/6/0, `pds-mov128-bit15-companions`
+120/6/0, `pds-mov128-bit15-markers2` 30/0/0, `pds-mov128-bit15-mr` 6/48/0); unsupported mostly for
+the port is open (54); reads dsN[N] before the program writes it (6); scratch[NxN] is computed from
+a near value (4).
 
 Confirmed on the hardware (a passing vector): #10, #11, #12, #13.
 
@@ -1111,7 +1121,7 @@ Layout 2 of 2 (form #24):
 - `op`: bit 0. Values: 0 `unsigned`, 1 `signed`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 2 of 2 forms have semantics. The
-probe vectors that test them: 429 match the hardware (51 with near values: 3 each within the bound
+probe vectors that test them: 431 match the hardware (51 with near values: 3 each within the bound
 the hardware was measured to, 48 with a value the task does not know, the timer, accepted as any
 value of its width and so not checked), 13 stop unsupported, 0 mismatch (`pds-alu-abs-signed` 6/0/0,
 `pds-alu-adc-carry` 8/0/0, `pds-alu-after-abs` 12/0/0, `pds-alu-after-adc` 8/0/0,
@@ -1130,9 +1140,9 @@ value of its width and so not checked), 13 stop unsupported, 0 mismatch (`pds-al
 `pds-fetch-pc-kinds` 0/6/0, `pds-fetch-pc-load` 3/0/0, `pds-load-store-addressing` 1/0/0,
 `pds-memory-fence` 6/0/0, `pds-memory-mem` 12/0/0, `pds-memory-mem2` 12/0/0, `pds-memory-mem3`
 6/0/0, `pds-memory-mem4` 14/0/0, `pds-memory-mem5` 6/0/0, `pds-memory-mem6` 10/0/0,
-`pds-moves-index-mul` 14/2/0, `pds-moves-mov-flag-cond` 0/2/0, `pds-moves-mov-flag-flags` 2/0/0);
-unsupported mostly for reads dsN[N] before the program writes it (9); (pN) before it is known (2);
-scratch[NxN] is computed from a near value (2).
+`pds-moves-index-mul` 14/2/0, `pds-moves-mov-flag-cond` 0/2/0, `pds-moves-mov-flag-flags` 2/0/0,
+`pds-store-totals-runs` 2/0/0); unsupported mostly for reads dsN[N] before the program writes it
+(9); (pN) before it is known (2); scratch[NxN] is computed from a near value (2).
 
 Confirmed on the hardware (a passing vector): #14, #24.
 
@@ -1147,16 +1157,20 @@ Confirmed on the hardware (a passing vector): #14, #24.
 2. **`if0`/`if1`** in pixel programs: neither tests true in any pixel of the primary pixel
    program nor on any tile of the pixel-event program (E262, E263), so Rogue's pixel readings
    (end of tile, end of render) do not hold there; whether anything sets them outside a vertex
-   program is open (Q058). *(`adc`/`sbc` setting the flags: settled, they do.)*
+   program is open (Q058); with the triangle drawn twice and five times over itself neither tests
+   true on any pixel either (E389). *(`adc`/`sbc` setting the flags: settled, they do.)*
 3. **`load`/`store`**: why stores totalling 2-4 dwords fault, and why `rwfence` after a store
    (or after a faulted job) touches page 0 (their timing and the fences: E143; which
-   programs fault: E144) (Q059).
+   programs fault: E144) (Q059). Totals of 11, 13, 14, 15 and 17 dwords complete (one total-11
+   run in three faulted), 1 and 10 complete in five runs each, and 2 faults with an `rfence`
+   between the stores too (E395).
 4. **`mr01`/`mr23`** read 0 in a fill, the primary pixel and the pixel-event programs; `ir1` reads 0
    in the primary pixel program and the event bits in the pixel-event program by every path,
    `mov32`'s `ir1.0` included; a test's source 65 tests zero exactly where `ir0` is 0, so that it
    reads `ir0` **[infer]** (E262, E263; `tstn` of it unmeasured). Open: the vertex-side programs
-   (Q060). *(settled: the numbering, selector and bit 9; selector 2 is the fetch pc; `ir0` in a fill
-   is the tile position; 8.9, 8.11.)*
+   (Q060); a `douta` from the vertex program does not reach the vertex task's `sa`, so that route
+   does not read them (E390). *(settled: the numbering, selector and bit 9; selector 2 is the fetch
+   pc; `ir0` in a fill is the tile position; 8.9, 8.11.)*
 5. *(settled: the ALU details, `mov128` and `swap`.)*
 6. *(settled: one return register.)*
 7. **The `doutu` word** on this build: whether `EXE` really stops at bit 19 (so that `CBASE`
@@ -1181,10 +1195,14 @@ Confirmed on the hardware (a passing vector): #14, #24.
     (Q063).
 13. **The fetch pc's offset**: `pc.0` reads the index plus 3, or 1 or 2 below it (E261). Back
     to back the lag sits at instructions 26-27 in ten of twelve runs whatever the `nop`s before,
-    dwords 62-63 after the 36-dword data segment, the last two before a 64-dword boundary;
-    some runs lag elsewhere **[infer]**. What sets it, a model of the PDS fetch, is open (Q062).
-14. **`mov128`'s bit 15** makes it write the data's row 4 `ds0` pair to both halves of its
-    destination whatever its source row (E261); why row 4 (Q077).
+    dwords 62-63 after the 36-dword data segment, the last two before a 64-dword boundary; with 1
+    to 4 leading instructions more a pair sits at instructions 24-25 (dwords 60-61) in 14 of 20
+    runs and among the first four reads in 19 (E384) **[infer]** for the place. The back-to-back
+    baseline varies: E384's five runs with no leading words put the pair at 26-27 in two, at
+    19-20 in two and nowhere in one, so the ten of twelve above stands as E261 counted it and was
+    not repeated. What sets it, a model of the PDS fetch, is open (Q062).
+14. *(settled: `mov128`'s bit 15 writes the `ds0` pair the last `mov32` or `movs` read from a data
+    row, E379.)*
 
 ## 8. Hardware probes
 
@@ -1528,7 +1546,9 @@ the base's, or the job fails (E259, E260) **[HW]**:
   of `n`, as `not`'s does: `abs ds0[52], ds1[16]` with it set gives the absolute value of
   `ds1[48]` (E261). `mov128`'s bit 15 makes it write `ds0[8]`, `ds0[9]` (the data's row 4 `ds0`
   pair) to both halves of its destination, from every source row into `ds[52]`, and at four
-  destinations from rows 2 and 31 and from row 2 with `swap` (E261; why row 4: Q077).
+  destinations from rows 2 and 31 and from row 2 with `swap` (E261): row 4's pair is the one the
+  template's last `mov32` from a data row read, `ds0[9]`; the bit makes `mov128` write the `ds0`
+  pair the last `mov32` or `movs` read from a data row (E379), and the tables name it `lastpair`.
 - **Ignored: every other bit.** `movs`, `movsa` bit 4; `mov16` 23:17; `mov64` 23:17, 9:8, 1:0;
   `mov128` 23:16, 9, 7, 1:0; the ALU group 16, 9:7; `mul` 8:7; `abs` 23:16, 9, 7 and 16:9, 7;
   `not` 23:16, 9, 7 and 16:9, 7; `tstz`, `tstn` 23:16, 9, 7:3 and 16:9, 7:3; `shl`, `shr` 15,
@@ -1536,8 +1556,9 @@ the base's, or the job fails (E259, E260) **[HW]**:
   fetch pc as the plain `nop` does (E260, E261). `mov32`'s 23:17, 8, 0 and `alum`'s 23:1 were
   measured before (*`mov16`/`mov32` specials*, `pds-moves-mov32-spare`, `pds-alu-alum-spare`).
 
-So 270 bits are unmapped now (bra and call 0, abs 10 where it had 11), and 269 of them change
-nothing the probes can see; `mov128`'s bit 15 is the one read that no field describes.
+So 270 bits were unmapped after this round (bra and call 0, abs 10 where it had 11), and 269 of
+them change nothing the probes can see; `mov128`'s bit 15 was the one read that no field described,
+and 11.14 names it `lastpair`, which leaves 269 unmapped bits, none of them read.
 
 ### 8.14 The fetch pc, read everywhere
 
@@ -1565,8 +1586,15 @@ in the program: the back-to-back lag stays at instructions 26-27 whatever the `n
 which with the 36-dword data segment are dwords 62-63, the last two before a 64-dword boundary; the
 branch program gives the same values in all three runs, and the `nop`-gap programs do but at their
 first read and one read of one run. Some runs differ (two of twelve back to back, some first reads,
-the third kinds run and the loads) **[infer]**. The simulator models `pc.0` as index + 3, matched by
-a hardware value up to 2 below (*Input and special registers*; Q062).
+the third kinds run and the loads) **[infer]**.
+
+With 1, 2, 3, 4 and 8 words of 0 (`(p0) movs mr, ds0[0], ...`) as the first instructions
+(`probes/pds/fetch-pc-pad.toml`, five runs each, E384) **[HW]** every read is its index + 3, the
+leading words counted, or 1 below at a pair of reads: for 1 to 4 leading words at instructions
+24-25 (dwords 60-61) in 14 of 20 runs and among the first four of the sixteen reads in 19; with
+none at 26-27 (two runs), 19-20 (two) or nowhere (one); with 8 at 35-36 in all five. The simulator
+models `pc.0` as index + 3, matched by a hardware value up to 2 below (*Input and special
+registers*; Q062).
 
 ### 8.15 The inputs of the primary pixel and pixel-event programs
 
@@ -1638,7 +1666,7 @@ value, its mnemonics and its pattern with named fields.
 
 ```
 #5    opcode 4       mask F8000000  value 20000000  mov128
-      <pred>mov128 ds[<idx1>], ds[<idx2>]<extra>
+      <pred>mov128 ds[<idx1>], ds[<idx2>]<extra1><extra2>
 ```
 
 **Opcode 6**

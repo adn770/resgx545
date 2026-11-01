@@ -1,0 +1,10 @@
+title = "script table texture/copy-followup"
+repo = "data"
+paths = ["texture/copy-followup/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-03"
+files = 4
+size = 7195529
+sha256 = "3d1be754103c50369ed62c23da8d2e427dfcf4ac4d44a84fb8b616f293e3a046"
+recipe = "probes/texture/copy-followup.toml"
+needs = ["render", "reset"]

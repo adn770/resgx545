@@ -13,7 +13,8 @@ from test_usse_asm import pinned
 
 OTHER = [
     "mov16 ds0[1], ds0[0].h", "mov32 ds0[0], ir1.1", "mov64 ds0[0], mr23",
-    "mov128 ds[0], ds[0], swap",
+    "mov128 ds[0], ds[0], swap", "mov128 ds[52], ds[4], lastpair",
+    "mov128 ds[0], ds[0], swap, lastpair",
     "load 0x00000000, ds0[48-54]", "load 0x00012340, ds1[56]", "store 0x00001230, ds0[55-59]",
     "(p0) mul ds1[26], ds0[4].h, ds1[16].h", "(p0) abs ds1[50], ds1[30]", "(if0) not ds0[13], tim",
     "rwfence", "rfence", "nop", "alum signed", "call 0x00001234", "(p0) shl ds1[26], ds0[1], 62",

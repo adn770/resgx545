@@ -227,7 +227,7 @@ pds	1	2A26A6C6	(p2) movsa douta, ds0[18], ds1[43], ds0[19], ds1[42]
 pds	2	0A0037D4	(p2) mov16 ds1[84], ds0[27].h
 pds	3	120024B0	(p2) mov32 ds1[24], ds0[18]
 pds	4	1A0020C0	(p2) mov64 ds1[32], ds0[16]
-pds	5	24002948	(if1) mov128 ds[36], ds[20], swap
+pds	5	2400A948	(if1) mov128 ds[36], ds[20], swap, lastpair
 pds	6	30737230	load 0x000DC8C0, ds1[60-67]
 pds	7	3F71EB25	store 0x0007AC94, ds1[60-66]
 pds	8	52848C2B	(p2) adc ds0[43], tim, ds1[35]

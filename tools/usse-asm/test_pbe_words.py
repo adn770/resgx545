@@ -253,3 +253,50 @@ def test_correlate_on_the_pack_colours_run(capsys):
     out = run(34)
     assert "o0 0x7f807f80: commonest at the triangle 0x608007f9 (727 of 1062)" in out
     assert "in " not in out.splitlines()[-1]
+
+
+# ---- 11.14: the pixel-naming shader and the batch-2 tables (Q012, Q040, Q044, Q046, Q074) ----
+
+PBE_TEMPLATES = ROOT / "probes" / "pbe" / "templates"
+
+
+def test_xy_word_names_each_pixel_and_xy_of_reads_it_back():
+    words = {P.xy_word(x, y) for x in range(64) for y in range(64)}
+    assert len(words) == 4096
+    assert P.xy_word(0, 0) == 0x3f003f00                 # 0.5 and 0.5
+    assert P.xy_of(P.xy_word(37, 5)) == (37, 5)
+    assert P.xy_of(0xff203040) is None                   # the background names no pixel
+
+
+def test_place_map_finds_a_mirror_and_an_offset():
+    w, h = 8, 4
+    plain = [P.xy_word(x, y) for y in range(h) for x in range(w)]
+    mirror = [P.xy_word(w - 1 - x, y) for y in range(h) for x in range(w)]
+    assert P.place_fit(mirror, w, h) == "x' = 7 - x, y' = y (32 of 32 pixels)"
+    shifted = [P.xy_word(min(x + 2, w - 1), y) for y in range(h) for x in range(w)]
+    assert P.place_fit(shifted, w, h).startswith("x' = x - 2, y' = y")
+    assert P.place_fit(plain, w, h) == "x' = x, y' = y (32 of 32 pixels)"
+
+
+def test_the_1114_tables_parse_and_every_case_assembles(tmp_path):
+    ts = P.tables_1114()
+    assert set(ts) == {"emit-transforms", "pack-floats-channels", "pack-floats-ramps",
+                       "sideband-channels",
+                       "reg-0400-alpha", "emit-twice"}
+    for feature, text in ts.items():
+        assert all(line.rstrip() == line for line in text.splitlines())
+        path = tmp_path / f"{feature}.toml"
+        path.write_text(text)
+        for p in probe.load(path):
+            assert p.name.startswith(f"pbe-{feature}-"), p.name
+            assert len(p.cases) == len(p.labels)
+            probe.build(p, tmp_path / "bins", PBE_TEMPLATES)
+
+
+def test_the_transform_table_runs_bits_31_28_and_6_0_twice_with_the_xy_shader():
+    p = P.transform_probe()
+    assert p["slots"]["pixel"] == "pix_xy.s" and p["slots"]["pixpds"] == "pds_iter_xy.s"
+    labels = p["labels"]
+    assert sum(lab.endswith("EMIT2 bits 31:28 = 0x5") for lab in labels) == 2
+    counts = [int(lab.rsplit("0x", 1)[1], 16) for lab in labels if "bits 15:8" in lab]
+    assert counts and all(c % 2 == 0 and c > 0x80 for c in counts)   # odd counts hang (E266)

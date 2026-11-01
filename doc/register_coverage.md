@@ -52,7 +52,7 @@ evidence records its rows, its fields' rows and its measured width cite.
 - `0x0374` `CR_REG_0374`: width 32 bits (31:0, E054, E247); no field rows. Records: E030, E054,
   E056, E071, E072, E159, E182, E183, E247.
 - `0x0400` `CR_REG_0400`: width 13 bits (25, 11:0, E251); 2 fields: INVERT_BYTE3 [25], BITS11_0
-  [11:0]; uncovered - (0 bits). Records: E028, E029, E251, E330.
+  [11:0]; uncovered - (0 bits). Records: E028, E029, E251, E330, E385.
 - `0x0800` `CR_REG_0800`: width 22 bits (23:8, 5:0, E067); no field rows. Records: E006, E066, E067,
   E068, E073, E136, E225.
 - `0x0810` `CR_REG_0810`: width 1 bits (0, E026); no field rows. Records: E006, E026.

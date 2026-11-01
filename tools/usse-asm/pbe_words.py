@@ -27,12 +27,29 @@ The tables (probes/pbe/, all on the triangle job, every pixel read back):
                    byte-field correlator.
   pack-floats      pack modes 0, 22 and 34 over ten IEEE singles.
 
+The 11.14 tables (tables_1114, `table --phase 11.14`), with the pixel-naming shader pix_xy.s
+(pds_iter_xy.s iterates each pixel's x + 0.5 and y + 0.5 into pa0 and pa1; o0 = xy_word):
+
+  emit-transforms      EMIT2 bits 31:28 at each of their 16 values, bits 6:0 at nine values
+                       and even counts above 0x80 in bits 15:8, twice each (Q040).
+  pack-floats-channels pack modes 22 and 34 (and 0) with o0-o3 four singles, each alone, and
+                       the pixel's x and y in o0 and o1 (Q012).
+  sideband-channels    SIDEBAND bits 8:6 at 0-7 in pack modes 7, 8, 15, 18, 24, 25 and 28, two
+                       colours whose bytes all differ; bits 11 and 12 in pack modes 0-8 (Q046).
+  reg-0400-alpha       CR_REG_0400's word (render command word 11) with an alpha that varies
+                       over x, in pack modes 0 and 4, and bit 25 in modes 4, 5 and 8 (Q044).
+  emit-twice           two end-of-tile emits per tile, bit 9 on one of them, each followed by
+                       jobs that store nothing (EMIT2 count 0) (Q074).
+
+place_fit reads where each stored word of a pix_xy.s image came from, as x' and y' of x, y.
+
 The correlator reads each case's pixels where the plain image (a pack mode 0 run of the same
 triangle, BASE) holds the triangle (E031's 1062 pixels), splitting the dwords of the 16- and
 8-bit modes into their pixels, and fits each bit of the commonest value there against o0.
 
     pbe_words.py decode WORD VALUE        the fields of one word (EMIT0-3, SIDEBAND)
-    pbe_words.py table DIR                write the tables into DIR (probes/pbe/)
+    pbe_words.py table DIR [--phase 11.14] write the tables into DIR (probes/pbe/)
+    pbe_words.py place RAW PROBE TABLE    each case of a pix_xy.s run: where its pixels came from
     pbe_words.py effects RAW PROBE TABLE  each case of a saved run against case 0
     pbe_words.py correlate RAW PROBE TABLE BASE  per pack mode, each bit stored at the
                                           triangle against o0's bits
@@ -43,6 +60,7 @@ import argparse
 import collections
 import pathlib
 import re
+import struct
 import sys
 import tomllib
 
@@ -341,6 +359,296 @@ def tables() -> dict[str, str]:
     }
 
 
+# ---- 11.14 (batch 2 of the 11.12 triage) ------------------------------------------------
+
+def _single(v: float) -> int:
+    return struct.unpack("<I", struct.pack("<f", v))[0]
+
+
+def xy_word(x: int, y: int) -> int:
+    """What pix_xy.s stores at (x, y): x + 0.5's bits 31:16, then y + 0.5's."""
+    return _single(x + 0.5) & 0xffff0000 | _single(y + 0.5) >> 16
+
+
+_XY = {xy_word(x, y): (x, y) for x in range(256) for y in range(256)}
+
+
+def xy_of(word: int) -> tuple[int, int] | None:
+    """The pixel an xy_word names, or None."""
+    return _XY.get(word)
+
+
+_XY_SLOTS = {"pixel": "pix_xy.s", "pixpds": "pds_iter_xy.s", "vtxuse": "vtx_coords.s"}
+
+
+def _term(a: int, b: int, c: int) -> str:
+    v = {(1, 0): "x", (-1, 0): "-x", (0, 1): "y", (0, -1): "-y"}[(a, b)]
+    if v.startswith("-"):
+        return f"{c} - {v[1:]}"
+    return v if c == 0 else f"{v} + {c}" if c > 0 else f"{v} - {-c}"
+
+
+def place_fit(img: list[int], width: int, height: int) -> str:
+    """Where the stored words of a pix_xy.s image came from: x' and y' (the place stored) as
+    +-x or +-y plus a constant, each the commonest fit, and the pixels both fit."""
+    pairs = [(i % width, i // width, *xy_of(v)) for i, v in enumerate(img[:width * height])
+             if xy_of(v) is not None]
+    if not pairs:
+        return "no pixel names its source"
+    fits = []
+    for coord in (0, 1):
+        best = None
+        for a, b in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            c, n = collections.Counter(q[coord] - (a * q[2] + b * q[3]) for q in pairs
+                                       ).most_common(1)[0]
+            if best is None or n > best[0]:
+                best = (n, a, b, c)
+        fits.append(best[1:])
+    both = sum(1 for q in pairs if all(q[k] == a * q[2] + b * q[3] + c
+                                        for k, (a, b, c) in enumerate(fits)))
+    return (f"x' = {_term(*fits[0])}, y' = {_term(*fits[1])} "
+            f"({both} of {len(pairs)} pixels)")
+
+
+def place_run(raw: str, probe: str, labels: list[str], size: tuple) -> dict[str, str]:
+    """{label: place_fit} of each case of a pix_xy.s probe."""
+    img, fail = _img(raw, probe)
+    out = {}
+    for i, label in enumerate(labels):
+        out[label] = f"failed: {fail[i]}" if i in fail else "not run" if i not in img else \
+            place_fit(img[i], *size)
+    return out
+
+
+TRANSFORM_RUNS = 2
+EMIT2_HIGH = range(16)                                   # bits 31:28
+EMIT2_LOW = (1, 2, 3, 4, 8, 16, 32, 64, 127)            # bits 6:0
+EMIT2_COUNTS = (0x82, 0x84, 0x90, 0xc0, 0xfe)            # bits 15:8 above 0x80, even (E266)
+
+
+def transform_probe() -> dict:
+    """EMIT2 bits 31:28 at each value, bits 6:0 at EMIT2_LOW and counts above 0x80, the
+    shader naming each pixel, TRANSFORM_RUNS times each (Q040)."""
+    cases, labels = [], []
+    for run in range(1, TRANSFORM_RUNS + 1):
+        for v in EMIT2_HIGH:
+            cases.append(_field_set(2, 31, 28, v))
+            labels.append(f"run {run}: EMIT2 bits 31:28 = 0x{v:x}")
+        for v in EMIT2_LOW:
+            cases.append(_field_set(2, 6, 0, v))
+            labels.append(f"run {run}: EMIT2 bits 6:0 = 0x{v:02x}")
+        for v in EMIT2_COUNTS:
+            cases.append(_field_set(2, 15, 8, v))
+            labels.append(f"run {run}: EMIT2 bits 15:8 = 0x{v:02x}")
+    return _probe("pbe-emit-transforms-xy", "where the end-of-tile emit stores each pixel under "
+                  "EMIT2 bits 31:28, 6:0 and counts above 0x80, the shader naming its pixel",
+                  cases, labels, slots=dict(_XY_SLOTS), vtx_coords=2)
+
+
+ONE, TWO, HALF, QUARTER = 0x3f800000, 0x40000000, 0x3f000000, 0x3e800000
+
+
+def _outs(o: list) -> list[str]:
+    """Writes of o0-o3 (None: left unwritten), the last ending the task."""
+    lines = [f"mov.skipinv o{i}, {v if isinstance(v, str) else f'#0x{v:08X}'}"
+             for i, v in enumerate(o) if v is not None]
+    return ["\n".join(lines[:-1] + [lines[-1].replace("mov.skipinv ", "mov.skipinv.end ")])]
+
+
+def float_channel_probes() -> list[dict]:
+    """Pack modes 22 and 34 (0 the control) with o0-o3 four singles, each alone, and the
+    pixel's place in o0 and o1 (pa0, pa1) (Q012); every case twice."""
+    sets = [("o0-o3 = 1.0, 2.0, 0.5, 0.25", [ONE, TWO, HALF, QUARTER]),
+            ("o0 = 1.0, o1-o3 = 0", [ONE, 0, 0, 0]), ("o1 = 2.0, o0, o2, o3 = 0", [0, TWO, 0, 0]),
+            ("o2 = 0.5, o0, o1, o3 = 0", [0, 0, HALF, 0]),
+            ("o3 = 0.25, o0-o2 = 0", [0, 0, 0, QUARTER]),
+            ("o0 = x + 0.5, o1 = y + 0.5, o2 = 1.0, o3 = 0.5", ["pa0", "pa1", ONE, HALF]),
+            ("o0 = x + 0.5, o1-o3 = 0", ["pa0", 0, 0, 0]),
+            ("o1 = y + 0.5, o0, o2, o3 = 0", [0, "pa1", 0, 0])]
+    out = []
+    for m in (0, 22, 34):
+        cases, labels = [], []
+        for run in (1, 2):
+            for lab, o in sets:
+                cases.append(_outs(o))
+                labels.append(f"run {run}: {lab}")
+        out.append(_sb_probe(f"pbe-pack-floats-channels-mode{m}",
+                             f"what pack mode {m} stores for o0-o3 four singles, each alone, "
+                             "and the pixel's x and y", 0x200 | m, cases, labels,
+                             source="pix_xy_op.s",
+                             slots={"eot": "eot_plain.s", "pixpds": "pds_iter_xy.s",
+                                    "vtxuse": "vtx_coords.s"}, vtx_coords=2))
+    return out
+
+
+# o0 = x / 128 (0 to 0.5), o1 = 0.5 + y / 128 (0.5 to 1), o2 = 0.3, o3 = 0.9: a stored field's
+# value names the register and the pixel it came from (pix_xy_op.s, pa0 = x + 0.5, pa1 = y + 0.5)
+_RAMP_SETUP = ["mov.skipinv r1, #0x3C000000", "mov.skipinv r2, #0x00000000",
+               "mov.skipinv r3, #0x3F000000"]
+RAMPS = (
+    ("o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, o3 = 0.9",
+     ["fmad.skipinv o0, pa0, r1, r2", "fmad.skipinv o1, pa1, r1, r3",
+      "mov.skipinv o2, #0x3E99999A", "mov.skipinv.end o3, #0x3F666666"]),
+    ("o0 = x/128, o1-o3 = 0",
+     ["mov.skipinv o1, #0", "mov.skipinv o2, #0", "mov.skipinv o3, #0",
+      "fmad.skipinv.end o0, pa0, r1, r2"]),
+    ("o1 = 0.5 + y/128, o0, o2, o3 = 0",
+     ["mov.skipinv o0, #0", "mov.skipinv o2, #0", "mov.skipinv o3, #0",
+      "fmad.skipinv.end o1, pa1, r1, r3"]),
+)
+
+
+def ramp_probes() -> list[dict]:
+    """Pack modes 0, 22 and 34 with o0 and o1 ramps over x and y and o2, o3 constants (RAMPS),
+    twice each (Q012): each stored field names its register and pixel."""
+    return [_sb_probe(f"pbe-pack-floats-ramps-mode{m}",
+                      f"what pack mode {m} stores for o0 = x/128, o1 = 0.5 + y/128, o2 = 0.3, "
+                      "o3 = 0.9 and each ramp alone", 0x200 | m,
+                      [["\n".join(_RAMP_SETUP + ops)] for _ in (1, 2) for _, ops in RAMPS],
+                      [f"run {r}: {lab}" for r in (1, 2) for lab, _ in RAMPS],
+                      source="pix_xy_op.s",
+                      slots={"eot": "eot_plain.s", "pixpds": "pds_iter_xy.s",
+                             "vtxuse": "vtx_coords.s"}, vtx_coords=2)
+            for m in (0, 22, 34)]
+
+
+CHANNEL_COLOURS = (0xc0804020, 0x13579bdf)          # every byte differs
+CHANNEL_MODES = (7, 8, 15, 18, 24, 25, 28)
+
+
+def channel_probes() -> list[dict]:
+    """SIDEBAND bits 8:6 at 0-7 in CHANNEL_MODES with two colours, and bits 11 and 12 in pack
+    modes 0-8 (bit 12 twice; bit 11 faults the job, once) (Q046)."""
+    out = []
+    for mode in CHANNEL_MODES:
+        for k in range(8):
+            sb = 0x200 | k << 6 | mode
+            out.append(_sb_probe(f"pbe-sideband-channels-{sb:04x}",
+                                 f"what sideband 0x{sb:x} stores (pack mode {mode}, bits 8:6 = "
+                                 f"{k}) for two colours", sb, [_pix(c) for c in CHANNEL_COLOURS],
+                                 [f"o0 0x{c:08x}" for c in CHANNEL_COLOURS]))
+    for bit, runs in ((12, 2), (11, 1)):
+        for mode in range(9):
+            sb = 0x200 | 1 << bit | mode
+            out.append(_sb_probe(f"pbe-sideband-channels-bit{bit}-{sb:04x}",
+                                 f"what sideband 0x{sb:x} stores (bit {bit}, pack mode {mode})",
+                                 sb, [_pix(CHANNEL_COLOURS[0])] * runs,
+                                 [f"run {r}: o0 0x{CHANNEL_COLOURS[0]:08x}"
+                                  for r in range(1, runs + 1)]))
+    return out
+
+
+# o0 = the colour 0x00ff8040 with alpha = bits 23:16 of x + 0.5 as a single (pix_xy_op.s):
+# from 0 at x = 0 up through 64 values over the 64 columns
+ALPHA_RAMP = ("shl.skipinv r0, pa0, #8\nand.skipinv r0, r0, #0xFF000000\n"
+              "mov.skipinv r1, #0x00FF8040\nor.skipinv r0, r0, r1\nmov.skipinv.end o0, r0")
+REG_0400_VALUES = (("0x80 (as built)", 0x80), ("low byte 0", 0x00), ("low byte 0x40", 0x40),
+                   ("low byte 0xc0", 0xc0), ("low byte 0xff", 0xff),
+                   ("bit 8 set", 0x180), ("bit 9 set", 0x280), ("bit 10 set", 0x480),
+                   ("bit 11 set", 0x880))
+
+
+def alpha_ramp(x: int) -> int:
+    """The alpha ALPHA_RAMP gives column x."""
+    return _single(x + 0.5) >> 16 & 0xff
+
+
+def alpha_probes() -> list[dict]:
+    """CR_REG_0400's word under an alpha that varies over x: REG_0400_VALUES in pack modes 0
+    and 4, and bit 25 against 0x80 in modes 4, 5 and 8; every case twice (Q044)."""
+    out = []
+    for mode, vals in ((0, REG_0400_VALUES), (4, REG_0400_VALUES)) + tuple(
+            (m, (("0x80 (as built)", 0x80), ("bit 25 set", 0x80 | 1 << 25))) for m in (4, 5, 8)):
+        if mode == 4 and len(vals) == 2:
+            name = "pbe-reg-0400-alpha-bit25-mode4"
+        elif len(vals) == 2:
+            name = f"pbe-reg-0400-alpha-bit25-mode{mode}"
+        else:
+            name = f"pbe-reg-0400-alpha-mode{mode}"
+        labels = [f"run {r}: {lab}" for r in (1, 2) for lab, _ in vals]
+        out.append(_sb_probe(name, f"what the word that loads CR_REG_0400 does to an alpha "
+                             f"ramp over x in pack mode {mode}", 0x200 | mode,
+                             [[ALPHA_RAMP]] * len(labels), labels, source="pix_xy_op.s",
+                             slots={"eot": "eot_plain.s", "pixpds": "pds_iter_xy.s",
+                                    "vtxuse": "vtx_coords.s"}, vtx_coords=2,
+                             case_set=[{"cmd": {11: v}} for _ in (1, 2) for _, v in vals]))
+    return out
+
+
+_EMIT1 = "emitpix1{f} #0 /* incp */, r0, r1"
+_EMIT2 = "emitpix2{f} #0 /* incp */, r2, r3, r0, #0x{sb:04X}"
+_BLANK = ("mov.skipinv r4, #0xFFFF00FF\nand.skipinv r2, r2, r4\n" +
+          _EMIT1.format(f=".freep") + "\n" + _EMIT2.format(f=".end.freep", sb=0x200))
+
+
+def _emits(first: int, second: int) -> str:
+    return "\n".join([_EMIT1.format(f=""), _EMIT2.format(f="", sb=first),
+                      _EMIT1.format(f=".freep"), _EMIT2.format(f=".end.freep", sb=second)])
+
+
+EMIT_TWICE = (
+    ("one emit (eot_plain.s)", _EMIT1.format(f=".freep") + "\n" +
+     _EMIT2.format(f=".end.freep", sb=0x200)),
+    ("a blank job (EMIT2 count 0)", _BLANK),
+    ("two emits, sideband 0x200 and 0x200", _emits(0x200, 0x200)),
+    ("a blank job after it", _BLANK), ("a second blank job", _BLANK),
+    ("two emits, bit 9 on the second only (0x000, 0x200)", _emits(0x000, 0x200)),
+    ("a blank job after it", _BLANK),
+    ("two emits, bit 9 on the first only (0x200, 0x000)", _emits(0x200, 0x000)),
+    ("a blank job after it", _BLANK),
+)
+
+
+_ONE = EMIT_TWICE[0][1]
+# On a one-tile target (E239's): each double emit, then a job of one emit, then a blank one.
+EMIT_TWICE_TILE = (
+    ("two emits, sideband 0x200 and 0x200", _emits(0x200, 0x200)),
+    ("one emit after it", _ONE), ("a blank job after that", _BLANK),
+    ("two emits, bit 9 on the second only (0x000, 0x200)", _emits(0x000, 0x200)),
+    ("one emit after it", _ONE), ("a blank job after that", _BLANK),
+    ("two emits, bit 9 on the first only (0x200, 0x000)", _emits(0x200, 0x000)),
+    ("one emit after it", _ONE), ("a blank job after that", _BLANK),
+)
+
+
+def emit_twice_probes() -> list[dict]:
+    """Two end-of-tile emits per tile, each followed by other jobs, bit 9 on one emit only;
+    each sequence twice, on 64x64 and on one tile (E239's 32x16) (Q074)."""
+    out = []
+    for name, seq, size in (("sequence", EMIT_TWICE, [64, 64]),
+                            ("one-tile", EMIT_TWICE_TILE, [32, 16])):
+        cases = [[e] for _ in (1, 2) for _, e in seq]
+        labels = [f"run {r}: {lab}" for r in (1, 2) for lab, _ in seq]
+        out.append(_probe(f"pbe-emit-twice-{name}", "what a second end-of-tile emit does to "
+                          f"its job and the next ones on {size[0]}x{size[1]}, and SIDEBAND bit "
+                          "9 on one of two emits; may hang", cases, labels, source="eot_emits.s",
+                          inputs=["EMITS"], size=size))
+    return out
+
+
+def tables_1114() -> dict[str, str]:
+    """{feature: table text} of the 11.14 PBE tables."""
+    return {
+        "emit-transforms": table_text(
+            "emit transforms", "EMIT2 bits 31:28, 6:0 and counts above 0x80, pix_xy.s (Q040).",
+            [transform_probe()]),
+        "pack-floats-channels": table_text(
+            "pack floats channels", "pack modes 22 and 34 with o0-o3 and x, y (Q012).",
+            float_channel_probes()),
+        "pack-floats-ramps": table_text(
+            "pack floats ramps", "pack modes 22 and 34 with x and y ramps in o0, o1 (Q012).",
+            ramp_probes()),
+        "sideband-channels": table_text(
+            "sideband channels", "SIDEBAND bits 8:6 in seven pack modes; bits 11, 12 (Q046).",
+            channel_probes()),
+        "reg-0400-alpha": table_text(
+            "reg 0400 alpha", "CR_REG_0400's word under an alpha ramp (Q044).", alpha_probes()),
+        "emit-twice": table_text(
+            "emit twice", "two end-of-tile emits, then blank jobs; bit 9 on one (Q074).",
+            emit_twice_probes()),
+    }
+
+
 # ---- readers ------------------------------------------------------------------------------
 
 def _img(raw: str, probe: str) -> tuple[dict, dict]:
@@ -522,6 +830,11 @@ def main(argv=None) -> int:
     d.add_argument("value")
     t = sub.add_parser("table")
     t.add_argument("out")
+    t.add_argument("--phase", default="11.5", choices=("11.5", "11.14"))
+    pl = sub.add_parser("place")
+    pl.add_argument("raw")
+    pl.add_argument("probe")
+    pl.add_argument("table")
     for name in ("effects", "correlate"):
         e = sub.add_parser(name)
         e.add_argument("raw")
@@ -533,8 +846,13 @@ def main(argv=None) -> int:
     if a.cmd == "decode":
         for k, v in decode(a.word, int(a.value, 0)).items():
             print(f"{k} = 0x{v:x}")
+    elif a.cmd == "place":
+        p = _probe_meta(pathlib.Path(a.table), a.probe)
+        for label, e in place_run(pathlib.Path(a.raw).read_text(), a.probe, p["labels"],
+                                  tuple(p.get("size", (64, 64)))).items():
+            print(f"{label}: {e}")
     elif a.cmd == "table":
-        for name, text in tables().items():
+        for name, text in (tables_1114() if a.phase == "11.14" else tables()).items():
             (pathlib.Path(a.out) / f"{name}.toml").write_text(text)
     elif a.cmd == "effects":
         p = _probe_meta(pathlib.Path(a.table), a.probe)

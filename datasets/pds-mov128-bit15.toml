@@ -1,0 +1,10 @@
+title = "probe table pds/mov128-bit15"
+repo = "data"
+paths = ["pds/mov128-bit15/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-03"
+files = 116
+size = 223970
+sha256 = "aa65da7ece934b601f413b675c5a08857c37a4745c3f6a842483ca97b803c650"
+recipe = "probes/pds/mov128-bit15.toml"
+needs = ["render"]

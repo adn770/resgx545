@@ -1,0 +1,15 @@
+[[term]]
+id = "G1151"
+name = "PDS_MOV128.LASTPAIR"
+status = "inferred"
+
+[[term.source]]
+term = "PDS_MOV128.LASTPAIR"
+kind = "bitfield"
+sgx545 = "mov128 [15]"
+meaning = "Bit 15 of a mov128 word, which the assembler spells `, lastpair`: set, the instruction writes to both halves of its destination row the ds0 pair that the last mov32 or movs read from a data row, whatever its source row and swap (E379); measured only after the instructions E379 lists [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E379"
+licence = "MIT"
+evidence = "[HW] E379 (pds-mov128-bit15, three runs of each case): with the bit set the destination row held the ds0 pair of the last mov32 or movs from a data row, with bits 23:16, 9, 7 and 1:0 also set and from source rows 0, 4 and 24 alike; [infer] the name and the reading as a choice of the last pair read are ours"

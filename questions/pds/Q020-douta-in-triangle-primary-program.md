@@ -3,7 +3,7 @@ id = "Q020"
 question = "what does a douta in the triangle's primary pixel program do, when its markers never reach the USE task and the readback is the memory table's inputs for markers A in both runs, and other values for markers B in the first?"
 unit = "pds"
 phase = 7
-evidence = ["E125"]
+evidence = ["E125", "E381"]
 terms = []
 +++
 
@@ -21,6 +21,14 @@ The values 0x22222222 to 0xffffffff and 0x11111110 in `sa1` to `sa15` are, attri
 the sixteen inputs B to P that the programs of the memory table pass to `sa1` to `sa15` with
 `douta` (E142); `sa0` holds 0x00000002 where the table has the input A, 0x11111111. No fit beyond
 this match of values is made. The first value, 0x00000002, is not explained.
+
+Narrowed in 11.14 (E381): with pa0-pa15 and sa0-sa31 stored by the task, the primary program's douta
+markers reached sa in one job of thirteen (markers C to attributes 16-31 in sa16-sa31, the third of
+three runs, with sa0-sa15 holding markers B from three jobs before); the other twelve jobs read one
+of two sets that other jobs had left (the sa of the fill table run just before, with sa0 =
+0x00000002, and another set of vertex-like values), and pa never held a marker. So douta from a
+primary program does write secondary attributes, and the task mostly reads storage other jobs filled
+[infer].
 
 Open: why the task reads the memory table's inputs and not the markers that the fill probes of the
 same table left in the same attributes (E125); whether `douta` in a primary program writes the

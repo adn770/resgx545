@@ -3,7 +3,7 @@ id = "Q025"
 question = "what does the SB field of CR_BIF_FAULT encode in the PDS faults, and why did a store of one dword fault in the follow-up run only, and a store of two dwords then eight in the first run only?"
 unit = "pds"
 phase = 7
-evidence = ["E143", "E144", "E145"]
+evidence = ["E143", "E144", "E145", "E395"]
 terms = ["CR_BIF_FAULT", "CR_BIF_FAULT.CID", "CR_BIF_FAULT.SB"]
 +++
 
@@ -26,6 +26,10 @@ faulted in the first run and completed in the follow-up. In each case every dwor
 registers were stored at the end, as for the faults of totals 2 to 4. Everything else (the other
 86 cases of the table) agrees between the runs. The state a faulted job leaves does not explain
 the three, since the two runs ran the same jobs in the same order.
+
+Narrowed in 11.14 (E395): the one-run faults of E144 did not recur: a store of one dword (alone, and
+with nine nops after it) and 2 then 8 completed in five runs each; the total-2 faults logged BIF
+status 0xd2000 at 0x10020, and a one-run total-11 fault after a faulted job 0x1002e.
 
 Open: what SB encodes; whether a fault leaves state (a pending request, a stale translation) that
 makes the next job fault; whether the one-run faults depend on timing, or on the contents of the

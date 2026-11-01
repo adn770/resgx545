@@ -1,0 +1,10 @@
+title = "probe table pds/attribute-room"
+repo = "data"
+paths = ["pds/attribute-room/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-03"
+files = 45
+size = 134481
+sha256 = "bf978ffa418911c4ec35213fe59ea245ee3a4256879ccd346021048c8c7b138f"
+recipe = "probes/pds/attribute-room.toml"
+needs = ["render"]

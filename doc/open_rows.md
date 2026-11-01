@@ -31,12 +31,15 @@ sits, the reading, and the evidence records it rests on.
   task word. Measured: TA command word; 0 in captures [infer]. Evidence: E030, E056, E071, E072,
   E159, E182, E183.
 - `G0152` `CR_REG_0400` (0x0400): a pixel output conversion control: bit 25 inverts the alpha
-  channel of every pixel stored, wherever the pack mode puts it (CR_REG_0400.INVERT_BYTE3); bits
-  11:0 change no pixel, 0x80 the default of the other conversions. Measured: per-render word from
-  the render details or transfer command; 0x80 in captures [infer]. Evidence: E028, E029, E330.
+  channel of every pixel stored, wherever the pack mode puts it (CR_REG_0400.INVERT_BYTE3); bits 7:0
+  are the threshold of the one-bit alpha of ARGB1555 (pack mode 4) and change no pixel in pack modes
+  0 to 3, bits 11:8 change no pixel in modes 0 to 4 (E385), 0x80 the default of the other
+  conversions. Measured: per-render word from the render details or transfer command; 0x80 in
+  captures [infer]. Evidence: E028, E029, E330, E385.
 - `G1030` `CR_REG_0400.BITS11_0` (0x0400[11:0]): twelve bits the register takes (0x80 as the library
-  and the closed stack write them) that change no stored pixel in pack modes 0 to 3; no job here
-  varies the stored alpha, so a field that tests it would not show [infer].
+  and the closed stack write them) of which bits 7:0 are the threshold of ARGB1555's one-bit alpha
+  (pack mode 4, E385) and change no stored pixel in pack modes 0 to 3, and bits 11:8 change no
+  stored pixel in pack modes 0 to 4 [infer]. Evidence: E385.
 - `G0154` `CR_REG_0800` (0x0800): an on-chip resource limit (bits 5:0 = 48, bits 23:8) for work
   other than pixel tasks (vertex or state tasks, context switches); pixel-bound renders ignore it
   (E136). Measured: set by the init script and per render; 0x30 everywhere [infer]. Evidence: E006,
@@ -365,15 +368,16 @@ sits, the reading, and the evidence records it rests on.
 ## words: PDS/pixel task words
 
 - `G1039` `EMIT2.BIT28` (EMIT2 (emit2 src0) [28]): set, the end-of-tile emit stores the image
-  mirrored in x, pixel (x, y) taking the plain image's (63 - x, y) on a 64x64 target; on that
-  symmetric triangle a rotation by 90 degrees gives the same image [infer].
+  rotated by 90 degrees (bits 29:28 at 1): on a 64x64 target the pixel stored at (X, Y) is the one
+  from (Y, 63 - X); with bit 29 as well (3) the rotation is by 270 degrees (E382). Evidence: E382.
 - `G1040` `EMIT2.BIT29` (EMIT2 (emit2 src0) [29]): set, the end-of-tile emit stores the image
-  rotated by 180 degrees, pixel (x, y) taking the plain image's (63 - x, 63 - y) on a 64x64 target,
-  or anti-transposed, which that symmetric triangle does not tell apart [infer].
+  rotated by 180 degrees (bits 29:28 at 2): on a 64x64 target the pixel stored at (X, Y) is the one
+  from (63 - X, 63 - Y); with bit 28 as well (3) the rotation is by 270 degrees (E382). Evidence:
+  E382.
 - `G1041` `EMIT2.BIT30` (EMIT2 (emit2 src0) [30]): set, the end-of-tile emit stores each 32x16 tile
   downscaled by 2 in x and y into the tile's top-left 16x8 pixels, each pixel the 2x2 box average of
   its four (each byte summed, divided by 4, the remainder dropped), and leaves the rest of the tile
-  unwritten [infer].
+  unwritten [infer]. Evidence: E382.
 - `G0226` `EMIT2.BITS15_8` (EMIT2 (emit2 src0) [15:8]): a count, in units of four pixels, of what an
   emit stores of its 32x16 tile: 0 stores nothing, every odd value hangs the job, an even value v up
   to 0x80 stores 4v pixels of each tile, and above 0x80 the tile is stored with other values over
@@ -387,6 +391,13 @@ sits, the reading, and the evidence records it rests on.
 - `G0257` `PIXEL_EVENT.PT_OFF` (pixel event input ir1 bit 3): Input bit 3 of the pixel-event program
   is named in the punch-through probes but no probe used it, so the 6.1 data show nothing about it
   beyond its name. Evidence: E083.
+
+## words: PDS_MOV128
+
+- `G1151` `PDS_MOV128.LASTPAIR` (mov128 [15]): Bit 15 of a mov128 word, which the assembler spells
+  `, lastpair`: set, the instruction writes to both halves of its destination row the ds0 pair that
+  the last mov32 or movs read from a data row, whatever its source row and swap (E379); measured
+  only after the instructions E379 lists [infer]. Evidence: E379.
 
 ## words: SR
 

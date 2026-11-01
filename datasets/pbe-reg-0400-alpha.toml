@@ -1,0 +1,10 @@
+title = "probe table pbe/reg-0400-alpha"
+repo = "data"
+paths = ["pbe/reg-0400-alpha/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-03"
+files = 75
+size = 1945095
+sha256 = "110e190da5d3d5be42f97f24c7b28a40c174df54fbb67c590c07a5bb2a6f3fb4"
+recipe = "probes/pbe/reg-0400-alpha.toml"
+needs = ["render"]

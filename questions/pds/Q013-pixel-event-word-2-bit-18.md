@@ -3,7 +3,7 @@ id = "Q013"
 question = "what does bit 18 of the copy's pixel-event data word 2 do, when it leaves the copy unchanged and changes a few pixels of the fill and the triangle?"
 unit = "pds"
 phase = 6
-evidence = ["E043", "E046"]
+evidence = ["E043", "E046", "E388"]
 terms = ["PIXEL_EVENT.END_OF_TILE"]
 +++
 
@@ -28,6 +28,13 @@ the follow-up run, bit 19 none and 1.
 So the bits of this word can add a stray write of 0x00000002 to the copy, and the outcome of a
 flip varies from run to run for bits 17 and 19. Bit 18 is stable on the copy (unchanged in
 both runs), and the fill and triangle changes are a few pixels at fixed first positions.
+
+Narrowed in 11.14 (E388): run ten times on the copy and five on the fill and the triangle: bits 17,
+18 and 19 add stray writes of 0x00000002 (or 0x00000006) at the first pixel of a 16x4 block, a
+different block from run to run; on the copy bit 17 in 10 of 10 runs (2-3 pixels), bit 19 in 7 of
+10, bit 18 in 1 of 10; on the fill bit 18 in 5 of 5 (3-5 pixels); on the triangle bit 18 in 5 of 5
+(6-8) and bit 17 in 4 of 5; bit 16 faults every triangle job and left the copy unchanged in 10 of 10
+(E043/E046 saw it fault).
 
 Open: what the word is (an event mask, a count, an address part); why bit 18 leaves the copy
 alone and writes a few pixels of the fill and the triangle; whether the stray 0x00000002 writes

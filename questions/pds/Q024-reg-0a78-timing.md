@@ -3,7 +3,7 @@ id = "Q024"
 question = "does CR_PDS_REG_0A78 change timing, when two of its values were slower in one timing run?"
 unit = "pds"
 phase = 7
-evidence = ["E141", "E045"]
+evidence = ["E141", "E045", "E396"]
 terms = ["CR_PDS_REG_0A78"]
 +++
 
@@ -15,6 +15,11 @@ Five values lie within 0.5 percent of each other; 0x20 is 2.6 percent and 0x01 5
 the 0x2c value. The twelve values of the other register timed the same way (0x0abc) spread 1.2
 percent, so these two are above the noise of that series, but this is one run and one sample per
 value.
+
+Narrowed in 11.14 (E396): six values (0x00, 0x01, 0x08, 0x20, 0x2c, 0x3f), five runs each in a
+shuffled order, give medians within 0.3 percent (67274-67469 us), so E141's slower 0x01 and 0x20
+were noise; one 0x01 run had two slow renders. Left narrowed: the other 58 values and a render with
+many small triangles were not run.
 
 Open: whether 0x01 and 0x20 are slower again on a second run (a real dependence) or were noise or
 a one-off disturbance; what the other 57 values do; whether a load that stresses the PDS more than

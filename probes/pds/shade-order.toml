@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# pds shade order: 0 sweeps, 1 probe. The vertex-colour cases of E133 in the order 0, 1, 2, 2, 1, 0, then a
+# source 1 case, three times (Q022): whether the ~300 pixels keep the previous job's colour.
+needs = ["render"]
+
+[[probe]]
+name = "pds-shade-order-sequence"
+question = "the shade models 0, 1, 2 in forward and reverse order, each pixel read: which pixels keep the previous job's colour; recorded"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_color.s" }
+vtx_coords = 0x4
+blk = { 13 = 0x83800, 16 = 0x5 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+labels = ["run 1: shade model 0", "run 1: shade model 1", "run 1: shade model 2", "run 1: shade model 2", "run 1: shade model 1", "run 1: shade model 0", "run 1: source 1 (x), the iterated coordinate", "run 2: shade model 0", "run 2: shade model 1", "run 2: shade model 2", "run 2: shade model 2", "run 2: shade model 1", "run 2: shade model 0", "run 2: source 1 (x), the iterated coordinate", "run 3: shade model 0", "run 3: shade model 1", "run 3: shade model 2", "run 3: shade model 2", "run 3: shade model 1", "run 3: shade model 0", "run 3: source 1 (x), the iterated coordinate"]
+cases = [[0x21c10000, 0x0, 0x1000004], [0x23c10000, 0x0, 0x1000004], [0x25c10000, 0x0, 0x1000004], [0x25c10000, 0x0, 0x1000004], [0x23c10000, 0x0, 0x1000004], [0x21c10000, 0x0, 0x1000004], [0x20000800, 0x0, 0x1000004], [0x21c10000, 0x0, 0x1000004], [0x23c10000, 0x0, 0x1000004], [0x25c10000, 0x0, 0x1000004], [0x25c10000, 0x0, 0x1000004], [0x23c10000, 0x0, 0x1000004], [0x21c10000, 0x0, 0x1000004], [0x20000800, 0x0, 0x1000004], [0x21c10000, 0x0, 0x1000004], [0x23c10000, 0x0, 0x1000004], [0x25c10000, 0x0, 0x1000004], [0x25c10000, 0x0, 0x1000004], [0x23c10000, 0x0, 0x1000004], [0x21c10000, 0x0, 0x1000004], [0x20000800, 0x0, 0x1000004]]

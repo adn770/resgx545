@@ -3,7 +3,7 @@ id = "Q011"
 question = "why does a copy whose background-object tag (transfer word 0) is wrong read one texel, the source's last, for every pixel, and what stores the samples of CR_ISP_MSAA mode 2 in a copy?"
 unit = "transfer"
 phase = 6
-evidence = ["E028", "E272"]
+evidence = ["E028", "E272", "E398"]
 terms = ["transfer_cmd", "transfer_cmd.isp_background_tag", "transfer_cmd.isp_msaa"]
 +++
 
@@ -12,6 +12,11 @@ with word 7 bit 1 (CR_ISP_MSAA mode 2) only the first tile is written, with the 
 8 + y / 2) at (x, y) (E272). So the counts of E028 are answered: 2047 and 2040 are the pixels
 that are not the last texel's colour, and 2047 and 2044 those of the enlarged tile plus the
 unwritten rest.
+
+Narrowed in 11.14 (E398): the tag's layer count (word 0 bits 30:25) must be 1, as the library builds
+a copy: at 0, 2, 3, 31 and 63 every pixel is one colour, two runs. The tag's offset moved to a
+second object and mode 2 on a larger copy were not run (a 128x64 copy was rejected with Invalid
+argument, with or without mode 2).
 
 What is open: why a wrong tag gives the last texel (the coordinates the hardware takes when the
 object it names has no layer, or a layer count it does not read) and which part of the tag each

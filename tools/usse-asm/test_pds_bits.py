@@ -25,7 +25,9 @@ def test_unmapped_bits_are_neither_identifying_nor_in_a_field():
     # unmapped before 11.4
     assert forms[2380]["unmapped"] == forms[2390]["unmapped"] == 0
     assert forms[2290]["unmapped"] == 0x00ff0280
-    assert sum(bin(f["unmapped"]).count("1") for f in forms.values()) == 270
+    # mov128's bit 15 became the field lastpair in 11.14 (E379)
+    assert forms[2240]["unmapped"] == 0x00ff0283
+    assert sum(bin(f["unmapped"]).count("1") for f in forms.values()) == 269
 
 
 def test_bits_lists_each_unmapped_bit_low_first():
@@ -95,6 +97,7 @@ def test_before_regenerates_the_committed_tables(tmp_path):
         assert (tmp_path / f"{table}.toml").read_text() == committed, table
     forms = {f["order"]: f for f in B.forms(before=True)}
     assert sum(bin(f["unmapped"]).count("1") for f in forms.values()) == 281
+    assert forms[2240]["unmapped"] == 0x00ff8283 and forms[2240]["pat"].endswith("ds[{2}]{3}")
 
 
 def _obs(o0=0x0da7a000, scratch=((0, 1),), failed=None):
@@ -112,3 +115,52 @@ def test_classify_reads_each_case_against_the_base():
 def test_classify_without_a_base_reading_says_so():
     with pytest.raises(B.BitsError):
         B.classify("p", ["base", "bit 4"], {"p__1": _obs()})
+
+
+def test_the_mov128_follow_up_marks_every_input_dword():
+    """11.14 (Q077): each data dword holds its own marker, so a dword read back names its
+    source; bit 15 is set with each companion bit in turn, every case in RUNS runs."""
+    ps = B.mov128_probes()
+    assert [p["name"] for p in ps] == ["pds-mov128-bit15-companions", "pds-mov128-bit15-markers2",
+                                       "pds-mov128-bit15-mr"]
+    p = ps[0]
+    marks = {int(v, 16) for v in p["params"].values()}
+    assert len(marks) == 16
+    assert len(p["cases"]) == len(p["labels"]) == B.MOV128_RUNS * len(B.MOV128_CASES)
+    assert p["labels"][0].startswith("run 1: ") and p["labels"][-1].startswith(
+        f"run {B.MOV128_RUNS}: ")
+    base = B.mov128_word(52, 2)
+    assert base == 0x27000868                    # mov128 ds[52], ds[4] (E261's words)
+    words = [c[0].rsplit(" ", 1)[1] for c in p["cases"][:len(B.MOV128_CASES)]]
+    assert words[0] == f"0x{base:08X}" and words[1] == f"0x{base | 1 << 15:08X}"
+    assert f"0x{base | 1 << 15 | 1 << 16:08X}" in words
+    assert f"0x{base | 1 << 15 | 0xff << 16:08X}" in words
+
+
+def test_the_mov128_follow_up_assembles(tmp_path):
+    t = tmp_path / "mov128-bit15.toml"
+    B.main(["table", str(tmp_path), "--mov128"])
+    t = tmp_path / "mov128-bit15.toml"
+    assert tomllib.loads(t.read_text())["needs"] == ["render"]
+    for p in probe.load(t):
+        assert p.name.startswith("pds-mov128-bit15-")
+        assert probe.build(p, tmp_path / p.name, TEMPLATES)
+
+
+def test_locate_names_the_input_dword_a_value_came_from():
+    params = {"A": "0xA0000002", "B": "0xA0000003", "I": "0xB0000002"}
+    assert B.locate(0xA0000003, params) == "ds0[3]"
+    assert B.locate(0x5FFFFFFD, params) == "~ds0[2]"           # a complemented temporary
+    assert B.locate(0xB0000002, params) == "ds1[2]"
+    assert B.locate(0x12345678, params) is None
+
+
+def test_the_mr_follow_up_writes_mr_before_the_mov128_in_each_case():
+    """The companions run showed bit 15 reading what movs mr wrote: the mr probe tells a value
+    from a selection of registers (the source changed after the movs), and mr from any port."""
+    p = B.mov128_probes()[2]
+    word = f"0x{B.mov128_word(52, 2) | 1 << 15:08X}"
+    assert len(p["labels"]) == B.MOV128_RUNS * len(B.MOV128_MR)
+    for (label, before), case in zip(B.MOV128_MR, p["cases"]):
+        assert before in case[0] and case[0].index(before) < case[0].index("/* ")
+        assert case[0].endswith(word) or "without bit 15" in label

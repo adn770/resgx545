@@ -60,7 +60,6 @@ struct Insn {
     /// with that field read as 0 instead, and the source reads what the hardware read there
     /// (`raw_source`).
     raw: Option<(&'static str, u32)>,
-    word: u32,
 }
 
 impl Insn {
@@ -86,7 +85,7 @@ impl Program {
                 let i = pds_isa::decode(w);
                 match pds_isa::decode_fields(w) {
                     Some(f) => {
-                        Insn { form: Some(forms[f.form]), v: f.v, text: i.text, raw: None, word: w }
+                        Insn { form: Some(forms[f.form]), v: f.v, text: i.text, raw: None }
                     }
                     None => match reread(w) {
                         Some((f, raw)) => Insn {
@@ -94,9 +93,8 @@ impl Program {
                             v: f.v,
                             text: i.text,
                             raw: Some(raw),
-                            word: w,
                         },
-                        None => Insn { form: None, v: [0; 10], text: i.text, raw: None, word: w },
+                        None => Insn { form: None, v: [0; 10], text: i.text, raw: None },
                     },
                 }
             })
@@ -193,6 +191,10 @@ pub struct Pds {
     /// The dwords this task's stores wrote, and the first store's address: rwfence after a
     /// store faults, and stores totalling 2-4 dwords fault at the end (E143, E144).
     pub stored: (u32, u32),
+    /// The ds0 pair (its even index) mov128 with lastpair (bit 15) writes to both halves of its row:
+    /// the data-row pair the last mov32 or movs read from ds0 (pds-mov128-bit15-*, E379).
+    /// None when no such read is known or an instruction not measured to keep it ran.
+    pub pair15: Option<usize>,
 }
 
 impl Default for Pds {
@@ -222,6 +224,7 @@ impl Default for Pds {
             steps: 0,
             pending: Vec::new(),
             stored: (0, 0),
+            pair15: None,
         }
     }
 }
@@ -298,7 +301,40 @@ impl Pds {
         self.steps = 0;
         self.pending.clear();
         self.stored = (0, 0);
+        self.pair15 = None;
         self.port_near.clear();
+    }
+
+    /// What `insn` does to the pair mov128's lastpair flag (bit 15) reads (pds-mov128-bit15-*,
+    /// E379). Only what the runs measured is modelled: a `mov32` from `ds0[2]` or `ds0[9]` and
+    /// a `movs` from the `ds0` pair 2 or 6 name that pair; a `mov32` from `ds1[9]`, a `not` of a
+    /// temporary (`ds0[48-55]` or `ds1[48-55]`), a `movs` from the temporary pair 50 and a
+    /// `mov64` from `mr01` keep it. Any other instruction (a `movsa`, another row or pair, a
+    /// `not` of a data row, `mr23`, a plain `mov128`, one its predicate skips) leaves it open.
+    fn latch15(&self, insn: &Insn, op: &str, form_ds1: bool) -> Option<Option<usize>> {
+        let open = Some(None);
+        match op {
+            "mov32" => match insn.get("src") as usize {
+                n @ (2 | 9) => Some(Some(n & !1)),
+                73 => None,
+                _ => open,
+            },
+            "movs" => {
+                let v = insn.get("srcs");
+                let (pair, ir) = ((v >> 13 & 31) as usize * 2, v >> 18 & 1 != 0);
+                match (ir, pair) {
+                    (false, 2 | 6) => Some(Some(pair)),
+                    (false, 50) => None,
+                    _ => open,
+                }
+            }
+            "not" => {
+                let n = insn.get(if form_ds1 { "ds1" } else { "src" }) as usize;
+                if (48..56).contains(&n) { None } else { open }
+            }
+            "mov64" if insn.get("src") == 64 => None,
+            _ => open,
+        }
     }
 
     /// Start `prog` and run it until `halt`.
@@ -341,7 +377,15 @@ impl Pds {
         self.exec.moving = matches!(op, "mov32" | "mov64" | "mov128");
         // load, store and the fences have no predicate; nop has none either
         if form.role("pred").is_some() && !self.pred(insn.get("pred"))? {
+            self.pair15 = None;
             return Ok(Next::Step);
+        }
+        // mov128's lastpair reads the pair as the instructions before it left it; a mov128
+        // reads it first and leaves it open (not measured)
+        if op != "mov128" {
+            if let Some(l) = self.latch15(insn, op, form.role("ds1").is_some()) {
+                self.pair15 = l;
+            }
         }
         let keeps = match op {
             "movs" | "movsa" => {
@@ -399,10 +443,21 @@ impl Pds {
                 Keeps::Both
             }
             "mov128" => {
-                // bit 15, which no field maps, makes it write the data's row 4 ds0 pair to
-                // both halves whatever its source and swap: open (pds-encoding-bits-*-mov128)
-                if insn.word >> 15 & 1 != 0 {
-                    return Err(why("mov128 with bit 15 is open (pds_isa 8.13)"));
+                // lastpair (bit 15) makes it write the ds0 pair the last mov32 or movs read
+                // from a data row to both halves of its destination row, whatever its source
+                // row, swap and other unmapped bits (pds-mov128-bit15-*, E379)
+                let latched = self.pair15.take();
+                if insn.get("lastpair") != 0 {
+                    let p = latched.ok_or_else(|| {
+                        why("mov128 with lastpair after an instruction not measured to name or \
+                             keep the pair is open (pds_isa 8.13)")
+                    })?;
+                    let pair = [self.ds(0, p)?, self.ds(0, p + 1)?];
+                    let d = insn.get("dst") as usize * 2;
+                    for (k, v) in [pair[0], pair[1], pair[0], pair[1]].into_iter().enumerate() {
+                        self.put(k >> 1, d + (k & 1), v);
+                    }
+                    return Ok(Next::Step);
                 }
                 let s = insn.get("src") as usize * 2;
                 let mut row = [self.ds(0, s)?, self.ds(0, s + 1)?, self.ds(1, s)?, self.ds(1, s + 1)?];
@@ -1173,6 +1228,66 @@ mod tests {
     }
 
     #[test]
+    fn mov128_lastpair_writes_the_pair_the_last_mov32_or_movs_read() {
+        // hardware (pds-mov128-bit15-*, E379): mov128 ds[52], ds[4], lastpair writes the
+        // data-row ds0 pair the last mov32 or movs read, to both halves, whatever its source
+        let data = [
+            0, 0, 0, 0, 0xa2, 0xa3, 0xb2, 0xb3, 0xa4, 0xa5, 0xb4, 0xb5, 0xa6, 0xa7, 0xb6, 0xb7,
+            0xa8, 0xa9, 0xb8, 0xb9,
+        ];
+        let with = |src: &str| {
+            let mut words = data.to_vec();
+            for line in src.lines() {
+                words.push(pds_isa::encode(line).unwrap_or_else(|| panic!("{line}")));
+            }
+            words.push(pds_isa::encode("mov128 ds[52], ds[4], lastpair").unwrap());
+            words.push(pds_isa::encode("halt").unwrap());
+            let mut m = Pds::fill_secondary(0, 0);
+            m.run(&Program::new(&words, data.len()), &mut Ports::default(), 50).map(|_| m)
+        };
+        let pair = |src: &str| {
+            let m = with(src).unwrap_or_else(|e| panic!("{src}: {e:?}"));
+            assert_eq!(m.ds[0][52..54], m.ds[1][52..54], "{src}: both halves");
+            m.ds[0][52..54].to_vec()
+        };
+        // a mov32 from ds0[9] and from ds0[2] name their pair; a mov32 from ds1[9] and a not of
+        // a temporary, ds0 or ds1, keep it (the probe template, then each case's lines)
+        assert_eq!(pair("mov32 ds0[48], ds0[9]\nmov32 ds1[48], ds1[9]\nnot ds0[48], ds0[48]"),
+                   [0xa8, 0xa9]);
+        assert_eq!(pair("mov32 ds1[55], ds1[9]\nmov32 ds0[48], ds0[9]\nnot ds1[55], ds1[55]\n\
+                         not ds0[48], ds0[48]"), [0xa8, 0xa9]);
+        assert_eq!(pair("mov32 ds0[48], ds0[9]\nmov32 ds0[50], ds0[2]"), [0xa2, 0xa3]);
+        // a movs to mr or douta from the pairs 2 and 6 names it; a movs from the temporary pair
+        // 50 and a mov64 from mr01 keep it
+        assert_eq!(pair("movs mr, ds0[2], ds0[3], ds1[2], ds1[3]\nmov64 ds0[48], mr01"),
+                   [0xa2, 0xa3]);
+        assert_eq!(pair("movs douta, ds0[6], ds1[2], ds0[6], ds0[6]"), [0xa6, 0xa7]);
+        assert_eq!(pair("mov32 ds0[48], ds0[9]\nmov32 ds0[50], ds1[9]\n\
+                         movs douta, ds0[50], ds1[2], ds0[50], ds0[50]"), [0xa8, 0xa9]);
+        // what no run measured stays open: a mov32 from another row or from another ds1 row, a
+        // movsa, a movs from another temporary pair, a not of a data row or of another
+        // temporary, a mov64 from mr23, a plain mov128, an add, and the first read
+        for src in [
+            "mov32 ds0[48], ds0[4]",
+            "mov32 ds0[48], ds0[9]\nmov32 ds1[48], ds1[3]",
+            "movsa doutd, ds0[6], ds1[2], ds0[6], ds0[6]",
+            "mov32 ds0[52], ds0[2]\nmov32 ds0[48], ds0[9]\n\
+             movs douta, ds0[52], ds1[2], ds0[52], ds0[52]",
+            "mov32 ds0[48], ds0[9]\nnot ds0[48], ds0[6]",
+            "mov32 ds0[48], ds0[9]\nnot ds1[48], ds1[6]",
+            "mov32 ds1[56], ds1[9]\nmov32 ds0[48], ds0[9]\nnot ds1[48], ds1[56]",
+            "movs mr, ds0[2], ds0[3], ds1[2], ds1[3]\nmov64 ds0[48], mr23",
+            "mov32 ds0[48], ds0[9]\nmov128 ds[50], ds[2]",
+            "mov32 ds0[48], ds0[9]\nadd ds0[49], ds0[48], ds1[2]",
+            "nop",
+        ] {
+            let e = with(src);
+            let open = matches!(e, Err(Error::Unsupported { ref why, .. }) if why.contains("lastpair"));
+            assert!(open, "{src}: {e:?}");
+        }
+    }
+
+    #[test]
     fn mov64_and_mov128_rows() {
         let d = [1, 2, 3, 4, 5, 6, 7, 8];
         let (m, _) = run(&d, "mov64 ds1[48], ds0[2]\nmov128 ds[50], ds[2], swap\nhalt").unwrap();
@@ -1324,7 +1439,8 @@ mod tests {
         let src = "movs douta, ir2.l, ds1[0], ir2.h, ir2.l\nhalt";
         Pds::fill_secondary(1, 0).run(&prog(&[0, 0, 7, 0], src), &mut bus, 20).unwrap();
         assert_eq!(bus.0, vec![(Port::Douta, [0, 7, 0, 0])]);
-        // what is open in a fill stays so: mov128 with bit 15 (pds_isa 8.13)
+        // what is open in a fill stays so: mov128 with bit 15 before any mov32 or movs from a
+        // data row (pds_isa 8.13)
         let p = Program::new(&[0x2700_8868, pds_isa::encode("halt").unwrap()], 0);
         let e = Pds::fill_secondary(0, 0).run(&p, &mut Ports::default(), 10);
         let open = matches!(e, Err(Error::Unsupported { ref why, .. }) if why.contains("mov128"));

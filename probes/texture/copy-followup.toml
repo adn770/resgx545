@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# texture copy follow-up: script table. T3 bits 7:0 at every value (Q078), the background tag's
+# layer count and CR_ISP_MSAA mode 2 on 128x64 (Q011), colour-space set 0 across the driver's
+# reset and an idle (Q010); every pixel read back.
+kind = "script"
+name = "texture-copy-followup"
+script = "copy-followup.sh"
+needs = ["render", "reset"]

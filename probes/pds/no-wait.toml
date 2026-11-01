@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# pds no wait: 0 sweeps, 2 probes. A douti with no wait and no completion bit (pds_iter_nowait.s) and the
+# pixel shader reading pa0 after 0, 4, 16 and 64 nops, five runs (Q027); the reference with the wait.
+needs = ["render"]
+
+[[probe]]
+name = "pds-no-wait-delays"
+question = "what pa0 holds per pixel after a douti with no wait, read after 0, 4, 16 and 64 nops; recorded"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_nowait.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 0x2
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["run 1: read pa0 after 0 nops", "run 1: read pa0 after 4 nops", "run 1: read pa0 after 16 nops", "run 1: read pa0 after 64 nops", "run 2: read pa0 after 0 nops", "run 2: read pa0 after 4 nops", "run 2: read pa0 after 16 nops", "run 2: read pa0 after 64 nops", "run 3: read pa0 after 0 nops", "run 3: read pa0 after 4 nops", "run 3: read pa0 after 16 nops", "run 3: read pa0 after 64 nops", "run 4: read pa0 after 0 nops", "run 4: read pa0 after 4 nops", "run 4: read pa0 after 16 nops", "run 4: read pa0 after 64 nops", "run 5: read pa0 after 0 nops", "run 5: read pa0 after 4 nops", "run 5: read pa0 after 16 nops", "run 5: read pa0 after 64 nops"]
+cases = [["mov.skipinv.end o0, pa0"], ["nop\nnop\nnop\nnop\nmov.skipinv.end o0, pa0"], ["nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nmov.skipinv.end o0, pa0"], ["nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nmov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["nop\nnop\nnop\nnop\nmov.skipinv.end o0, pa0"], ["nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nmov.skipinv.end o0, pa0"], ["nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nmov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["nop\nnop\nnop\nnop\nmov.skipinv.end o0, pa0"], ["nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nmov.skipinv.end o0, pa0"], ["nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nmov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["nop\nnop\nnop\nnop\nmov.skipinv.end o0, pa0"], ["nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nmov.skipinv.end o0, pa0"], ["nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nmov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["nop\nnop\nnop\nnop\nmov.skipinv.end o0, pa0"], ["nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nmov.skipinv.end o0, pa0"], ["nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nmov.skipinv.end o0, pa0"]]
+
+[[probe]]
+name = "pds-no-wait-reference"
+question = "pa0 with the wait (bit 29 and U1 bit 24): the iterated x of each pixel; recorded"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_wait.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 0x2
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["run 1: reference", "run 2: reference"]
+cases = [["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"]]

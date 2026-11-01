@@ -26,5 +26,12 @@ in the program: the back-to-back lag stays at instructions 26-27 whatever the `n
 which with the 36-dword data segment are dwords 62-63, the last two before a 64-dword boundary; the
 branch program gives the same values in all three runs, and the `nop`-gap programs do but at their
 first read and one read of one run. Some runs differ (two of twelve back to back, some first reads,
-the third kinds run and the loads) **[infer]**. The simulator models `pc.0` as index + 3, matched by
-a hardware value up to 2 below (*Input and special registers*; Q062).
+the third kinds run and the loads) **[infer]**.
+
+With 1, 2, 3, 4 and 8 words of 0 (`(p0) movs mr, ds0[0], ...`) as the first instructions
+(`probes/pds/fetch-pc-pad.toml`, five runs each, E384) **[HW]** every read is its index + 3, the
+leading words counted, or 1 below at a pair of reads: for 1 to 4 leading words at instructions
+24-25 (dwords 60-61) in 14 of 20 runs and among the first four of the sixteen reads in 19; with
+none at 26-27 (two runs), 19-20 (two) or nowhere (one); with 8 at 35-36 in all five. The simulator
+models `pc.0` as index + 3, matched by a hardware value up to 2 below (*Input and special
+registers*; Q062).

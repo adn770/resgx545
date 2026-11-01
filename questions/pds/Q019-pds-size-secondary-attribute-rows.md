@@ -3,7 +3,7 @@ id = "Q019"
 question = "what does the secondary attribute size (bits 24:18 of dword 1 of the background object) limit, given that all sixteen douta words reach sa0 to sa15 with 0, 1 and 4 rows, or does the task take its size from elsewhere?"
 unit = "pds"
 phase = 7
-evidence = ["E125"]
+evidence = ["E125", "E391"]
 terms = []
 +++
 
@@ -26,6 +26,10 @@ names an attribute past 15, with the size at 0, 1 and 4. Two readings are open: 
 attribute store the task is given and the hardware does not stop a task that writes past it, or the
 task takes its size from another word (the task's own state, the DOUTU words) and the field is
 read by something not exercised here.
+
+Narrowed in 11.14 (E391): attributes 0-31 arrive at their own sa at every size (0, 1, 2, 4 and 8
+rows) and attributes 32-63 nowhere in sa0-sa63, two runs; so no size tried limits the attributes
+below 32, and 32 is a limit the size field does not set.
 
 To settle it: a fill that writes 32 or 64 attributes by `douta` (the attribute index is bits 19:8 of
 the control word) and stores them all, at 0, 1, 2, 4 and 8 rows; read the registers back from the
