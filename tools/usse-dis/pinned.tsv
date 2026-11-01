@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: 2026 Josep Torra
 # One made-up word per form (test_pinned.py): instruction set, form index, word, the
-# decoder's text. Regenerate a line by decoding its word when a form changes on purpose.
+# decoder's text. Written by pingen.c (make pinned); regenerate it when a form
+# changes on purpose, and review the lines that change.
 usse	0	FCE44C7101FE9D67	!p1 mov.skipinv.nosched.end o15, #0x10FE9D67
 usse	1	2C9FA803A7C01C80	p3 mov.skipinv.syncs.nosched.end i62.yw, #0x00000039
 usse	2	2CB5C801A6C03680	p3 mov.skipinv.syncs.nosched.end.repeat13 o54, pa109

@@ -42,7 +42,9 @@ leave a word undecoded than print a plausible lie.
   text the decoder prints for it; `test_pinned.py` (and the Rust `tests/pinned.rs`) decodes
   each with its form to its text and fails naming any form without a word. The word's fields
   take values distinct from each other and from the form's defaults, so a field moved or
-  resized fails. `test_forms.py`, `test_ldst.py` and `test_pds.py` pin variants of the fields
+  resized fails. `pingen.c` writes the file (`make pinned`, from a fixed seed) and
+  `test_pingen.py` checks the committed file is its output: when a form changes on purpose,
+  regenerate it and review the lines that change. `test_forms.py`, `test_ldst.py` and `test_pds.py` pin variants of the fields
   of the commonest forms.
 - **The user's firmware**: `test_firmware.py` decodes the microkernel, the five EDM PDS
   programs and the captured transfer programs from the private data repository

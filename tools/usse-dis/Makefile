@@ -16,7 +16,14 @@ main.o: main.c usse.h usse_form.h
 pds-dis: pds.c pdsmain.c pds.h pds_table.inc usse_form.c usse_form.h usse.o usse_form.o
 	$(CC) $(CFLAGS) -o $@ pds.c pdsmain.c usse.o usse_form.o
 
-clean:
-	rm -f $(OBJS) usse-dis pds-dis
+# pinned.tsv: one made-up word per form, written by pingen (test_pinned.py, test_pingen.py)
+pingen: pingen.c pds.c pds.h pds_table.inc usse.o usse_form.o
+	$(CC) $(CFLAGS) -o $@ pingen.c pds.c usse.o usse_form.o
 
-.PHONY: all clean
+pinned: pingen
+	./pingen > pinned.tsv
+
+clean:
+	rm -f $(OBJS) usse-dis pds-dis pingen
+
+.PHONY: all clean pinned
