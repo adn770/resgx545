@@ -1,0 +1,10 @@
+title = "probe table usse/temps-max"
+repo = "data"
+paths = ["usse/temps-max/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 31
+size = 54696
+sha256 = "7585b18dda73064bca0b77d4ceed9ac5de47a756b7aeaef6a8a6797a79463193"
+recipe = "probes/usse/temps-max.toml"
+needs = ["render"]

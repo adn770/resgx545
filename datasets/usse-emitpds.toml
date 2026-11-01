@@ -1,0 +1,10 @@
+title = "probe table usse/emitpds"
+repo = "data"
+paths = ["usse/emitpds/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 106
+size = 154300
+sha256 = "4990473b66132414a5e78a1c29f5db8369718625970e9ef24d9f53e1bf65df93"
+recipe = "probes/usse/emitpds.toml"
+needs = ["render", "vm_low"]

@@ -1,0 +1,10 @@
+title = "probe table usse/store-repeat-regs2"
+repo = "data"
+paths = ["usse/store-repeat-regs2/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 11
+size = 15550
+sha256 = "6cac3b4c0b791f98325f6e53f556ef065cae6b46d134f26776203cba9dad0d3c"
+recipe = "probes/usse/store-repeat-regs2.toml"
+needs = ["render"]

@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-106 open: 94 hw (high 14, medium 52, low 28, unrated 0), 9 fw, 3 kernel.
+113 open: 100 hw (high 14, medium 54, low 32, unrated 0), 10 fw, 3 kernel.
 
 ## Work queue: hardware
 
@@ -117,17 +117,23 @@
 - `Q017` (phase 6, hw, low): why does g19 read 0x1a as a store's source but 0 through a mov and as the pixel? (E085, E086, E372)
 - `Q048` (phase 11, hw, low): do the MADD0 and MADD1 clock gates follow the USSE pipes' floating-point arithmetic, or their cache and texture traffic? (E006, E008, E011, E365, E445, E452)
 - `Q050` (phase 11, hw, high): what do the visibility group's instructions do, and how do smp's mipmaps and LOD values, the border address modes, the compressed and YUV formats and firh's edge modes past the line and fixed banks 1 and 2 behave? (E083, E091, E123, E147, E292, E293, E294, E298)
-- `Q051` (phase 11, hw, medium): what state do smoa, smbo, smr, imo and setfc set in the MOE, and what does moest return, beyond the smlsi increments the probes pinned? (E087, E097, E105, E109, E294, E296, E369, E370)
-- `Q052` (phase 11, hw, medium): what do .skipinv, .syncs, .nosched and the other scheduling flags change, and how many instructions after a write can a dependent instruction read the result, with or without an interlock? (E100, E104, E111, E113, E124, E371, E470, E472, E475)
+- `Q051` (phase 11, hw, medium): what state do smoa, smbo, smr, imo and setfc set in the MOE, and what does moest return, beyond the smlsi increments the probes pinned? (E087, E097, E105, E109, E294, E296, E369, E370, E483)
+- `Q052` (phase 11, hw, medium): what do .skipinv, .syncs, .nosched and the other scheduling flags change, and how many instructions after a write can a dependent instruction read the result, with or without an interlock? (E100, E104, E111, E113, E124, E371, E470, E472, E475, E478)
 - `Q053` (phase 11, hw, high): what do the global registers g18 to g20 and g39 to g43 hold in a triangle's pixel task, a vertex task and the end-of-tile task? (E085, E086, E372, E374)
-- `Q054` (phase 11, hw, medium): what do #incp, .cut and .tasks/.taske do on the emits, and what do sideband bits 11 and 12 select, beyond the pack mode, bits 8:6, 9, 10 and 13 that the end-of-tile emit reads? (E030, E102, E106, E239, E269, E376)
+- `Q054` (phase 11, hw, medium): what do #incp, .cut and .tasks/.taske do on the emits, and what do sideband bits 11 and 12 select, beyond the pack mode, bits 8:6, 9, 10 and 13 that the end-of-tile emit reads? (E030, E102, E106, E239, E269, E376, E488)
 - `Q055` (phase 11, hw, medium): what do idf's modes other than bif, lock and release, setm and the cache-control operands do? (E088, E098, E099, E103, E107, E110, E117, E375)
 - `Q080` (phase 11, hw, low): what do the USSE words no form decodes (classes 2, 22 and 26) do: which stop the stores after them, and which write registers? (E297, E368)
-- `Q098` (phase 11, hw, medium): why do pa_n and sa_n read one value in a fill's pixel task, a mov to pa_n being lost, and why does an unwritten one read the job's pixel colour? (E366, E380)
+- `Q098` (phase 11, hw, medium): why do pa_n and sa_n read one value in a fill's pixel task, a mov to pa_n being lost, and why does an unwritten one read the job's pixel colour? (E366, E380, E484)
 - `Q123` (phase 11, hw, medium): does lapc reach instruction indices past the first 65536 words of a code base and the 18th bit of the program counter, and every index from 256 to 8191 in a fill? (E475, E476)
-- `Q125` (phase 11, hw, low): which code leaves 0xeb3 and 0x98 in pclink and 1101, 0101, 0001 or 1111 in p0-p3 of the instances that do not read the last job's value, and why do they come in aligned 2 x 2 quads of pixels? (E475, E477)
+- `Q125` (phase 11, hw, low): which code leaves 0xeb3 and 0x98 in pclink and 1101, 0101, 0001 or 1111 in p0-p3 of the instances that do not read the last job's value, and why do they come in aligned 2 x 2 quads of pixels? (E475, E477, E484)
 - `Q126` (phase 11, hw, low): how do iaddu32 and iadd32 extend a source 1 above 0x7fff, and what do their zero tests do when the sum overflows? (E472)
 - `Q127` (phase 11, hw, low): what do the extra i register of ima32, ima32 as a dual-issue secondary, and imae with a repeat, a u16 or z16 source or a .rsN shift do with the carry flags and with the 32-bit result? (E469, E470, E471)
+- `Q128` (phase 11, hw, medium): why does a client emitpds fault the job at page 0xd2000 or hang it, what do the s0, s1 and s2 operands of the started PDS program become (it saw ir0.0 2 or 3 whatever s2 was), and whether the addend matters (the addend 0x1000 once left the no-emit value) (E488)
+- `Q129` (phase 11, hw, low): why do 12 pixels (4 each of three values) of every fill that writes sa1, sa5 and sa7 show those sa values as their output, and how long does an sa written by one job stay readable (one job, or until the next job that writes it) (E484)
+- `Q130` (phase 11, hw, low): when does a load on one counter land while a wdf waits on another: why four ldad on drc0 issued after a wdf drc1 that waited for four ldad on drc1 landed in 8 of 10 runs, and four ldad on drc1 after two ldr on drc2 never did in 10 (E479)
+- `Q132` (phase 11, hw, low): where does a write to a temporary past the task's allocation go, and which instances' registers do the pixels that do not read the wrapped register read (E486)
+- `Q133` (phase 11, hw, low): what limits a phas request to 192 temporaries (196 hangs the job whatever the task was started with) and is the limit the same for a firmware task (E487)
+- `Q134` (phase 11, hw, medium): which register does a client str change, is str then ldr of one register ordered without a fence, does one instance see its own unfenced stad and does its store reach the host at the end of the job, and when is an idf drcN, bif required (E480, E481)
 
 ### vdm
 
@@ -141,9 +147,9 @@
 
 ### zls
 
-- `Q101` (phase 11, hw, low): what does bit 19 (the negated float) do with the integer stored formats (CR_ISP_ZLSCTL bits 26:24 = 1 and 2)? (E057, E284, E411, E465, E466)
-- `Q107` (phase 11, hw, medium): why does the final render of a job that overflows store zeros for the first row of macrotiles and the depth with its sign bit set for the rest, and in what order are the tiles stored? (E461, E058, E411, E465, E468)
-- `Q120` (phase 11, hw, medium): what do the stored depth formats 3 to 7 (CR_ISP_ZLSCTL bits 26:24) hold and how are they laid out, given that they store depth and stencil packed or nothing? (E466)
+- `Q101` (phase 11, hw, low): what does bit 19 (the negated float) do with the integer stored formats (CR_ISP_ZLSCTL bits 26:24 = 1 and 2)? (E057, E284, E411, E465, E466, E490)
+- `Q107` (phase 11, hw, medium): why does the final render of a job that overflows store zeros for the first row of macrotiles and the depth with its sign bit set for the rest, and in what order are the tiles stored? (E461, E058, E411, E465, E468, E489)
+- `Q120` (phase 11, hw, medium): what do the stored depth formats 3 to 7 (CR_ISP_ZLSCTL bits 26:24) hold and how are they laid out, given that they store depth and stencil packed or nothing? (E466, E490)
 - `Q121` (phase 11, hw, medium): what is the in-tile order of the stencil store (one byte a pixel, 128 dwords a 32 x 16 tile) and what does the stencil test do against a loaded stencil? (E466, E467)
 - `Q122` (phase 11, hw, low): what does the ZLS store write for the pixels of an edge tile that lie outside the target, and for the 16 x 16 blocks outside it? (E465)
 
@@ -172,7 +178,8 @@
 
 #### usse
 
-- `Q124` (phase 11, fw): do p0-p3 and pclink survive from one firmware (EDM) task to the next, and does a task start with them clear, set or as the last task left them? (E475, E477)
+- `Q124` (phase 11, fw): do p0-p3 and pclink survive from one firmware (EDM) task to the next, and does a task start with them clear, set or as the last task left them? (E475, E477, E484)
+- `Q131` (phase 11, fw): can the hardware run two firmware (EDM) tasks at once, and does a wdf with nothing outstanding or an unfenced store at the end of a task behave as it does in a fill (E478, E480)
 
 #### zls
 

@@ -3075,6 +3075,163 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   pattern in the other 16 to 32 pixels (0xd, 0x5, 0x1, 0xf or 0 of the packed bits p0..p3); the
   first reader, after the baseline triangle, has 1992 pixels at 0000 and 56 at others.
   *usse; HW, infer; data: `usse-pflow`, `usse-risky`.*
+- `E478` One wdf drc0 waits for every load outstanding on drc0, ldad, ldad.fetchN and ldr alike, and
+  no limit on how many are outstanding was seen: 1, 2, 4, 8 and 16 independent ldad (5 of 5 cases),
+  five mixes of ldad, ldad.fetchN of 2, 4, 8 and 16 dwords and ldr #7 and #8 (5 of 5), and, in the
+  growth table, 24, 32, 48, 64, 80 and 100 distinct ldad on drc0 (6 cases), 32, 64 and 100 on drc1
+  (3), 128, 160 and 200 ldad that issue the same eight loads again over eight registers, which
+  cannot show a lost reload (3) and 2, 4, 8, 12 and 16 ldad.fetch16, up to 256 dwords (5) (17 of 17
+  cases) all return their data after the one wdf, so what the data show is up to 100 distinct ldad
+  on one counter (drc0 and drc1) and 16 ldad.fetch16, while a single ldad read by a stad after 0, 1,
+  2, 4, 8, 16 or 32 nops and four ldad after 0 or 16 nops still hold the register's marker (9 of 9
+  cases), in a client pixel task: the register still holds its marker 32 instruction slots after a
+  single ldad (16 after four) with no wdf, and the wdf gives the data.
+  *usse; HW; data: `usse-fence-batching`, `usse-fence-growth`.*
+- `E479` A wdf drcN does not wait for loads counted on other counters that were issued after the
+  loads it waits for: in a client pixel task, eight cases run ten times each, of which the data hold
+  one run: in that run two ldr on drc2 followed by four ldad on drc1 and a wdf drc2 only leave all
+  four ldad registers at their markers (case 7) and four ldad on drc1 followed by four on drc0 and a
+  wdf drc1 only leave the drc0 registers at their markers (case 3), and the other six cases return
+  all their data; nine more runs of the table, kept in the scratch tree and not in the data, were
+  recounted by the reviewer together with the dataset's: markers in case 7 in 10 of 10 runs, in case
+  3 in 2 of 10 runs (the dataset's run and one of the nine), and none in the other six cases in 10
+  of 10 runs each (60 of 60 case readings), counts a reader of the data cannot recompute.
+  *usse; HW, infer; data: `usse-fence-batching`.*
+- `E480` A wdf, or an idf drcN, bif, with nothing outstanding returns at once and does not hang the
+  job: as the first instruction after phas on each of drc0, drc1, drc2 and drc3, twice in a row, on
+  all four in a row, with an idf drc0 or drc1, bif, and as the second and third wdf after one load
+  or a wdf on a counter nothing was issued on (11 of 11 cases, the pixel reads the sentinel), and in
+  seven short programs the dword or dwords the host reads after the job hold the stored value
+  whether or not a fence precedes the end of the program (7 of 7 cases; every one of the 2048
+  instances of the fill stores the same value to the same dword, so this shows the final value of
+  that dword, not that any one instance's unfenced store reaches the host): one stad followed by no
+  fence, by idf drc0, bif only, by wdf drc0 only, by the usual idf and wdf, or by one nop (5 cases),
+  and sixteen stad followed by no fence or by idf drc0, bif only (2 cases).
+  *usse; HW; data: `usse-fence-batching`.*
+- `E481` A stad is seen by a later load of the same dword without an idf in between, by instances
+  that all store the same value to the same dword (a single instance's store is not isolated, since
+  each of the 2048 instances of the fill stores to that dword and a load may return another
+  instance's identical store): in 17 cases the load returns the stored value in the 16 that load the
+  stored dword (ten with no idf, among them ldad, ldad.bypassl1, ldad.fcfill, eldd, ldad.bpcache and
+  ldad on drc1, two stad of one dword where the later wins, and sixteen stad then a load of the last
+  and of the first dword, each returning its own store; four with an idf and its wait; two with an
+  idf not waited) and the buffer's fill in the control, a load of the next, untouched dword, so an
+  idf is not needed for this order.
+  *usse; HW, infer; data: `usse-fence-batching`.*
+- `E482` stad.fetchN stores N consecutive registers to N consecutive dwords in one instruction, so
+  that ldad.fetch16 followed by one stad.fetch16 copies 16 dwords with two instructions and one wdf:
+  the stores land one dword on from the base, dwords b + k + 1 to b + k + N for [rb,+#k]
+  (stad.fetch2, 4 and 16 with k 1 and fetch4 with k 0: 4 of 4) and dwords b + 1 to b + N for
+  [rb,#1++], which moves rb by N (fetch2, 4 and 16: 3 of 3), the layout of a load fetch, and the
+  16-dword copy from r2-r17 of the dwords a load fetch read matches in order (1 of 1); a plain stad
+  [rb,#1++] repeated sixteen times, the control, stores b to b + 15 and moves rb by 16 (1 of 1).
+  *usse; HW; data: `usse-store-repeat`.*
+- `E483` stad.repeatN and ldad.repeatN step the pointer register along with the data register:
+  iteration i uses r(b + i) as its address and r(s + i) (r(d + i) for a load) as its data, the
+  address read for every iteration i for N up to 16, and the pointer registers r40 to r43 move by
+  the increment of the form (k after its own access for [rb,#k++], before it for [rb,++#k], not at
+  all for [rb,+#k]), in 26 of 26 stad cases of the follow-up with 16 valid pointers (five plain,
+  five post-increment, three pre-increment, twelve after an smlsi and one 16-dword copy) and in 7 of
+  7 ldad.repeat cases, in a client pixel task; the pointer movement was read for r40 to r43 only
+  (the probe stores its marker through those four pointers, whatever N, so min(N, 4) markers: 2, 3
+  and 4 at N = 2, 3 and 4 and 4 above), so that whether r44 to r55 move, and whether the pointers a
+  repeat does not use stay, was not read; after smlsi #a, #b, #c, #d the second increment sets the
+  step of the pointer register and the fourth the step of the data register, the first and third
+  doing nothing to a store (12 of 12; they were varied only together, in (1, 0, 1, 1) and (1, 1, 1,
+  1)), so that smlsi #0, #0, #0, #1 and stad.repeat16 [r40,#1++], r2 store r2 to r17 at the 16
+  consecutive dwords from r40 and move r40 by 16 (2 of 2: the smlsi probe's case 2 and the 16-dword
+  copy after an ldad.fetch16); with only r40 a valid pointer, 27 of the 43 cases of the first run
+  faulted the job.
+  *usse; HW, infer; data: `usse-store-repeat`, `usse-store-repeat-regs`, `usse-store-repeat-regs2`.*
+- `E484` In a fill pair, a job reads what the job before it left in the temporaries, internal
+  registers, predicates and sa, with different reach: r40 and r47 written by one job are read by the
+  next in 7 of 7 reader jobs (2048 of 2048 pixels each) and still by a reader two jobs later, after
+  a job that wrote no temporary, in 2 of 2; i0, i1 and i2 in 9 of 9; p0 and p1 in 96.3 to 100
+  percent of the pixels of 10 of 10 reader jobs; sa1, sa5 and sa7 written by one job are read by the
+  next in 9 of 9 reader jobs (2048 of 2048), but after a job that wrote no sa the reader reads that
+  job's pixel output instead of the sa it wrote two jobs earlier (3 of 3), as it does for an sa
+  nobody wrote (2 of 2), so sa is kept for one job only; and 12 pixels (4 of each of the three
+  values) of every one of the 18 jobs that wrote sa1, sa5 and sa7 show the sa value as their output
+  instead of the colour.
+  *usse; HW, infer; data: `usse-task-state`.*
+- `E485` In a client pixel task (a fill, not a firmware task) started with up to 128 temporaries
+  every register sampled up to r123 is real, separate storage: with the runner's --temps 52 and 64
+  the registers r2, r4 ... and the top one (26 and 32 registers, 4 of 4 cases, ascending and
+  descending) and with --temps 80, 96, 112, 124 and 128 the registers r2, r6 ... and the top one
+  (21, 25, 29, 32 and 32 registers, 10 of 10 cases) read back their own markers (14 of 14 cases), so
+  the file does not wrap at 32, 48 or 64, and r123 reads back at --temps 124 and 128 (8 of 8 cases);
+  the registers between the sampled ones (r3, r5, r7 and so on) were not read; r124-r127 are not
+  named by an ALU instruction (usse-asm refuses r124 and up as an ALU operand [infer]: no raw word
+  was run) but are destinations of a load, and after ldad.fetch4 r124 in a job started with 128
+  temporaries i0, i1 and i2 keep their markers (1 case, 3 of 3 registers) and i3 reads the marker of
+  i0 (the reading of E075).
+  *usse; HW, infer; data: `usse-temps-max`, `usse-temps-sparse`.*
+- `E486` In a client pixel task (a proxy: not a firmware task), a register past the allocation reads
+  back as the register whose index is the register's modulo the allocation in most pixels, and a
+  write to it was not seen to reach that register: with --temps 8, 16, 32 and 64, r(n) for n of the
+  allocation T and above reads the marker written to r(n mod T) in 88 to 99.6 percent of the 2048
+  pixels in 15 of 15 cases that write nothing to r(n) (T = 8: r10, r11, r18, r29; T = 16: r18, r19,
+  r34, r53; T = 32: r34, r35, r66, r101; T = 64: r66, r67, r123), reads the scratch pointer held in
+  r1 for r(T + 1) in 2040 and 1968 pixels of two cases (r9 with T = 8, r33 with T = 32), and in 4 of
+  4 cases at T = 8 and 32 (none at 16 and 64) that also write a marker to r(n) (r12 and r108 with T
+  = 8, r36 and r48 with T = 32) the pixels and r(n mod T) read the value written to r(n mod T), not
+  the one written to r(n), the rest of the pixels reading other values; the 5 further cases with n a
+  multiple of T (r8, r24, r48 with T = 8; r32, r96 with T = 32) read varying leftovers of earlier
+  jobs.
+  *usse; HW, infer; data: `usse-temps-past`, `usse-temps-wrap`.*
+- `E487` The temporaries a phase uses are the ones its phas asks for, up to 192: a fill started with
+  8, 32, 64 or 128 temporaries whose phas asks for 8, 16, 32, 64, 96, 124, 128, 132, 136, 144, 160
+  or 192 for phase 1 (the 12 values run, all started with 8; 192 also started with 32, 64 and 128)
+  reads back the marker it wrote to its highest register (r123 from 124 up) in all 15 jobs, and a
+  request of 196, 200, 204, 208, 212, 216, 220, 224, 252, 256, 508 or 1020 hangs the job in all 15
+  jobs (196 also when started with 32, 64 and 128), each recovered with no reload, in a client pixel
+  task (196 is the lowest request that hung and 192 the highest that ran, among the values run:
+  every request run was a multiple of four, as the field counts in fours, and 100 to 120, 148 to
+  156, 164 to 188, 228 to 248, 260 to 504 and 512 to 1016 were not run; the 12 and 12 values are not
+  an interval), whatever the task was started with (8, 32, 64 or 128 for 192 and 196); every request
+  from 124 up wrote r123 only, r124 and up cannot be named by usse-asm, so a request above 124
+  exercised r123 and not the registers past it; the 15 jobs that ran took 420 to 583 microseconds,
+  single samples, with no trend seen in the request.
+  *usse; HW, infer; data: `usse-temps-past`, `usse-temps-bound`, `usse-temps-bound2`,
+  `usse-temps-bound3`.*
+- `E488` An emitpds in a client fill shader starts the PDS program it names, and then the job
+  faults: with the fill's PDS secondary named by s1 (its offset in the pixel PDS heap shifted right
+  by four, 4 for the copy's secondary at heap base + 0x40) and s0 = 2 data rows, addend 0x100, the
+  emitted run of the program stores an input word to scratch in 18 of 19 ir0.0 probes (the ir0.1 and
+  ir1 probes are not counted; the program's ir0.0 reads 3 in 16 and 2 in 2, against 0x400 to 0x403
+  for the fill's own run), s2 not reaching ir0.0 or ir1.0 (s2 0, 1, 0xFFFFFFFF and 0xE17D0001 give
+  ir0.0 3, 3, 2, 3, and ir1.0 is 0 for s2 0, 0xFFFFFFFF and 0xE17D0001), and the flags .tasks,
+  .taske, both, neither, .freep and .nosched, #incp 1 to 3, the sideband 0x1, 0x200 and 0x2000 and
+  2, 1 or 4 rows changing nothing seen of that, while with the addend 0x1000 the dword held the
+  no-emit value 0x403 (1 probe, and once more in a probe.py repeat outside the data, both in jobs
+  that faulted: one observation of no 2 or 3 seen, the late 0x400 value moving from run to run in 5
+  of 20 probes); every job with an emit ended with a BIF fault at 0xd2000 (22 of 24, 0x92000 once
+  with sideband 0x1) or a hang (two emitpds in a row), 24 of 24, each recovered with no reload, and
+  the two controls without an emit completed.
+  *usse; HW, infer; data: `usse-emitpds`.*
+- `E489` The address rule of E465 recomputed from stored depth dumps of a rerun of the 11.22
+  store-layout run, by a script written separately from the run's script: of 3415552 dwords stored
+  in the 18 cases (13 target sizes, G 0 to 511), 3279132 decode to a pixel whose rule address is the
+  dword's own, 7780 are the background depth 1.0 of pixels past the target, and 128640 (48000 and
+  80640 in the two overflowed 4096 x 4096 jobs) are zero in both ramp dumps, none is at another
+  address (0), the pixel to address direction holds for all 1098340 pixels of the four cases whose
+  tiles do not overlap, and every one of the 18 lines of the run (changed, slots, not at the
+  predicted address, background) equals the 11.22 run's, so the zeros of E465 are measured zeros,
+  not an inference about the decoding.
+  *zls; HW, infer; data: `zls-store-layout-dumps`.*
+- `E490` The depth formats of E466 recomputed from stored dumps of a rerun of the 11.22 store-format
+  run, by a separate script: at 1024 x 768 with G = 33, format 0 holds the float z of the ramp at
+  786432 of 786432 pixels (within 1e-5 of the geometry's), format 1 holds round(z * 0xffffff) at
+  786432 of 786432 (z is the float format 0 stores at that pixel; floor, 333955), format 2 packs two
+  rows in one dword in 256 dwords a tile with the dword index lx0 ly1 lx1 ly2 lx2 ly3 lx3 lx4 and
+  the half ly0, derived from the dumps alone (786432 halves, 512 of 512 slots the same in every
+  tile), formats 4 and 7 store nothing without a stencil buffer (0 dwords), formats 3, 5 and 6 store
+  965120, 96580 and 86084 dwords in 1885, 1508 and 1536 slots in the x ramp (the y ramp stores
+  965120, 84480 and 73760; format 3 reaches the last dword of the buffer, so its count is a lower
+  bound), and bit 19 stores the float depth negated at 786432 of 786432 pixels and changes no dword
+  of formats 1 and 2 (the dumps are byte-identical to the dumps without it, same sha256), where E466
+  had shown it by three frequent dwords.
+  *zls; HW; data: `zls-store-format-dumps`.*
 
 ## By unit
 
@@ -3157,7 +3314,8 @@ E091, E092, E093, E094, E095, E096, E097, E098, E099, E100, E101, E102, E103, E1
 E107, E108, E109, E110, E111, E112, E113, E115, E117, E118, E119, E120, E121, E123, E124, E147,
 E244, E245, E255, E292, E293, E294, E295, E296, E297, E298, E350, E351, E366, E367, E368, E369,
 E370, E371, E372, E373, E374, E375, E376, E377, E378, E380, E406, E423, E452, E469, E470, E471,
-E472, E473, E474, E475, E476, E477.
+E472, E473, E474, E475, E476, E477, E478, E479, E480, E481, E482, E483, E484, E485, E486, E487,
+E488.
 
 ### vdm
 
@@ -3166,4 +3324,4 @@ E413, E414, E427, E440.
 
 ### zls
 
-Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467.
+Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467, E489, E490.

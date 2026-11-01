@@ -1,0 +1,48 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse registers past the allocation and phas requests (may hang): 0 sweeps, 3 probes.
+needs = ["render"]
+
+[[probe]]
+name = "usse-temps-past-t008"
+question = "--temps 8: registers 8 and up, past the allocation: storage, dropped, aliased or a fault"
+source = "temps.s"
+temps = 8
+params = {  }
+inputs = ["SET", "GET", "OUT"]
+labels = ["--temps 8: r2 = marker, r8 (the allocation + 0) = marker, read r8 (pixel) and r2 (dword 0)", "--temps 8: r3 = marker, r9 (the allocation + 1) = marker, read r9 (pixel) and r3 (dword 0)", "--temps 8: r4 = marker, r12 (the allocation + 4) = marker, read r12 (pixel) and r4 (dword 0)", "--temps 8: r2 = marker, r24 (the allocation + 16) = marker, read r24 (pixel) and r2 (dword 0)", "--temps 8: r2 = marker, r48 (the allocation + 40) = marker, read r48 (pixel) and r2 (dword 0)", "--temps 8: r4 = marker, r108 (the allocation + 100) = marker, read r108 (pixel) and r4 (dword 0)"]
+cases = [["mov.skipinv r2, #0x7E5710C2\nmov.skipinv r8, #0x7E5700C8", "stad [r1,+#0], r2", "r8"], ["mov.skipinv r3, #0x7E5710C3\nmov.skipinv r9, #0x7E5700C9", "stad [r1,+#0], r3", "r9"], ["mov.skipinv r4, #0x7E5710C4\nmov.skipinv r12, #0x7E5700CC", "stad [r1,+#0], r4", "r12"], ["mov.skipinv r2, #0x7E5710C2\nmov.skipinv r24, #0x7E5700D8", "stad [r1,+#0], r2", "r24"], ["mov.skipinv r2, #0x7E5710C2\nmov.skipinv r48, #0x7E5700F0", "stad [r1,+#0], r2", "r48"], ["mov.skipinv r4, #0x7E5710C4\nmov.skipinv r108, #0x7E5700EC", "stad [r1,+#0], r4", "r108"]]
+[probe.hypotheses]
+"a register past the allocation is real storage, apart from the allocated ones" = [{ o0 = 0x7E5700C8, dwords = [0x7E5710C2] }, { o0 = 0x7E5700C9, dwords = [0x7E5710C3] }, { o0 = 0x7E5700CC, dwords = [0x7E5710C4] }, { o0 = 0x7E5700D8, dwords = [0x7E5710C2] }, { o0 = 0x7E5700F0, dwords = [0x7E5710C2] }, { o0 = 0x7E5700EC, dwords = [0x7E5710C4] }]
+"a write past the allocation is dropped" = [{ o0_not = 0x7E5700C8, dwords = [0x7E5710C2] }, { o0_not = 0x7E5700C9, dwords = [0x7E5710C3] }, { o0_not = 0x7E5700CC, dwords = [0x7E5710C4] }, { o0_not = 0x7E5700D8, dwords = [0x7E5710C2] }, { o0_not = 0x7E5700F0, dwords = [0x7E5710C2] }, { o0_not = 0x7E5700EC, dwords = [0x7E5710C4] }]
+"a register past the allocation is an alias of an allocated one" = [{ o0 = 0x7E5700C8, dwords = [0x7E5700C8] }, { o0 = 0x7E5700C9, dwords = [0x7E5700C9] }, { o0 = 0x7E5700CC, dwords = [0x7E5700CC] }, { o0 = 0x7E5700D8, dwords = [0x7E5700D8] }, { o0 = 0x7E5700F0, dwords = [0x7E5700F0] }, { o0 = 0x7E5700EC, dwords = [0x7E5700EC] }]
+"an access past the allocation faults the job" = ["fail", "fail", "fail", "fail", "fail", "fail"]
+
+[[probe]]
+name = "usse-temps-past-t032"
+question = "--temps 32: registers 32 and up, past the allocation: storage, dropped, aliased or a fault"
+source = "temps.s"
+temps = 32
+params = {  }
+inputs = ["SET", "GET", "OUT"]
+labels = ["--temps 32: r2 = marker, r32 (the allocation + 0) = marker, read r32 (pixel) and r2 (dword 0)", "--temps 32: r3 = marker, r33 (the allocation + 1) = marker, read r33 (pixel) and r3 (dword 0)", "--temps 32: r4 = marker, r36 (the allocation + 4) = marker, read r36 (pixel) and r4 (dword 0)", "--temps 32: r16 = marker, r48 (the allocation + 16) = marker, read r48 (pixel) and r16 (dword 0)", "--temps 32: r2 = marker, r96 (the allocation + 64) = marker, read r96 (pixel) and r2 (dword 0)"]
+cases = [["mov.skipinv r2, #0x7E5710C2\nmov.skipinv r32, #0x7E5700E0", "stad [r1,+#0], r2", "r32"], ["mov.skipinv r3, #0x7E5710C3\nmov.skipinv r33, #0x7E5700E1", "stad [r1,+#0], r3", "r33"], ["mov.skipinv r4, #0x7E5710C4\nmov.skipinv r36, #0x7E5700E4", "stad [r1,+#0], r4", "r36"], ["mov.skipinv r16, #0x7E5710D0\nmov.skipinv r48, #0x7E5700F0", "stad [r1,+#0], r16", "r48"], ["mov.skipinv r2, #0x7E5710C2\nmov.skipinv r96, #0x7E5700E0", "stad [r1,+#0], r2", "r96"]]
+[probe.hypotheses]
+"a register past the allocation is real storage, apart from the allocated ones" = [{ o0 = 0x7E5700E0, dwords = [0x7E5710C2] }, { o0 = 0x7E5700E1, dwords = [0x7E5710C3] }, { o0 = 0x7E5700E4, dwords = [0x7E5710C4] }, { o0 = 0x7E5700F0, dwords = [0x7E5710D0] }, { o0 = 0x7E5700E0, dwords = [0x7E5710C2] }]
+"a write past the allocation is dropped" = [{ o0_not = 0x7E5700E0, dwords = [0x7E5710C2] }, { o0_not = 0x7E5700E1, dwords = [0x7E5710C3] }, { o0_not = 0x7E5700E4, dwords = [0x7E5710C4] }, { o0_not = 0x7E5700F0, dwords = [0x7E5710D0] }, { o0_not = 0x7E5700E0, dwords = [0x7E5710C2] }]
+"a register past the allocation is an alias of an allocated one" = [{ o0 = 0x7E5700E0, dwords = [0x7E5700E0] }, { o0 = 0x7E5700E1, dwords = [0x7E5700E1] }, { o0 = 0x7E5700E4, dwords = [0x7E5700E4] }, { o0 = 0x7E5700F0, dwords = [0x7E5700F0] }, { o0 = 0x7E5700E0, dwords = [0x7E5700E0] }]
+"an access past the allocation faults the job" = ["fail", "fail", "fail", "fail", "fail"]
+
+[[probe]]
+name = "usse-temps-past-phas-request"
+question = "a two-phase fill started with 8 temporaries whose phas asks for up to 1020 (255 fours) for phase 1"
+source = "temps_phas.s"
+temps = 8
+params = {  }
+inputs = ["T", "HI", "MARK"]
+labels = ["--temps 8; phas asks for 8 temporaries for phase 1; r7 written and read in phase 1", "--temps 8; phas asks for 16 temporaries for phase 1; r15 written and read in phase 1", "--temps 8; phas asks for 32 temporaries for phase 1; r31 written and read in phase 1", "--temps 8; phas asks for 64 temporaries for phase 1; r63 written and read in phase 1", "--temps 8; phas asks for 96 temporaries for phase 1; r95 written and read in phase 1", "--temps 8; phas asks for 124 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 128 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 256 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 508 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 1020 temporaries for phase 1; r123 written and read in phase 1"]
+cases = [["8", "7", "0x7E570007"], ["16", "15", "0x7E57000F"], ["32", "31", "0x7E57001F"], ["64", "63", "0x7E57003F"], ["96", "95", "0x7E57005F"], ["124", "123", "0x7E57007B"], ["128", "123", "0x7E57007B"], ["256", "123", "0x7E57007B"], ["508", "123", "0x7E57007B"], ["1020", "123", "0x7E57007B"]]
+[probe.hypotheses]
+"phase 1 gets the temporaries its phas asks for, whatever the task was started with" = [{ o0 = 0x7E570007 }, { o0 = 0x7E57000F }, { o0 = 0x7E57001F }, { o0 = 0x7E57003F }, { o0 = 0x7E57005F }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }]
+"the phas request is ignored: phase 1 has the task's allocation (8) and nothing past it works" = [{ o0 = 0x7E570007 }, { o0_not = 0x7E57000F }, { o0_not = 0x7E57001F }, { o0_not = 0x7E57003F }, { o0_not = 0x7E57005F }, { o0_not = 0x7E57007B }, { o0_not = 0x7E57007B }, { o0_not = 0x7E57007B }, { o0_not = 0x7E57007B }, { o0_not = 0x7E57007B }]
+"a request past the allocation faults the job" = [{ o0 = 0x7E570007 }, "fail", "fail", "fail", "fail", "fail", "fail", "fail", "fail", "fail"]

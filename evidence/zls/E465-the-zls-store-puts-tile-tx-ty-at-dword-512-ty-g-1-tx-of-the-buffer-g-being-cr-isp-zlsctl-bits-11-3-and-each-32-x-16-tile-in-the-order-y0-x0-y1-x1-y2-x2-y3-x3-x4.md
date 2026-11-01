@@ -103,3 +103,14 @@ the faults of E411 and is not shown. So bits 3 and 4 of E411 read as the pitch G
 rule for a tile larger than 32 x 16 or for multisampled targets; whether bit 12 or the bits above
 the field change the pitch (the control's other bits did not change the layout in E411 or E466);
 which order the tiles are written in (it decides which tile keeps an overlapped address, E468).
+
+**Recompute, 2026-11-08 (11.24).** The measurements above are unchanged. E489 ran the 18 cases
+again with the raw depth dumps kept and recomputed the rule from them with a separately written
+script: of the 3415552 dwords the 18 cases store, 3279132 decode to a pixel whose rule address is
+the dword's own and 7780 are the background depth; the 128640 dwords the run script could not place
+(48000 of the 4096 x 4096 job with G = 0 and 80640 with G = 1) are 0x00000000 in both ramp dumps,
+so the zeros marked [infer] above are measured, and none of the 18 cases has a dword at another
+address. The 18 lines of the rerun equal this run's, and the pixel-to-address direction holds for
+1098340 pixels in the four cases whose tiles do not overlap. That the zeros are the sign of an
+overflowed parameter buffer (E468) stays an inference. This run's own dataset still holds no raw
+dumps; the rerun's dumps are in E489's dataset.

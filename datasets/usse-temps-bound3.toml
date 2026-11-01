@@ -1,0 +1,10 @@
+title = "probe table usse/temps-bound3"
+repo = "data"
+paths = ["usse/temps-bound3/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 14
+size = 15642
+sha256 = "064f90f8db2842acc69e253f104bb1545bbfd5ecfd553ff7c5cebe31e887a84a"
+recipe = "probes/usse/temps-bound3.toml"
+needs = ["render"]

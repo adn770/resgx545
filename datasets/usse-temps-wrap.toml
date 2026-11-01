@@ -1,0 +1,10 @@
+title = "probe table usse/temps-wrap"
+repo = "data"
+paths = ["usse/temps-wrap/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 25
+size = 12687
+sha256 = "f7c43b3b52bee317e7ecfb960c11930f93f42b3a8ecde6b532bf1d228ae8af87"
+recipe = "probes/usse/temps-wrap.toml"
+needs = ["render"]

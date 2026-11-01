@@ -26,7 +26,20 @@ marked.
   `phas` names it for the next phase. Our end-of-tile program asks for four and uses `r0`-`r3`.
   Temporaries are **not cleared** between tasks: a client shader that reads one before
   writing it sees what an earlier task left there, firmware data included
-  (measured from a client pixel shader on our render node).
+  (measured from a client pixel shader on our render node); `r40` and `r47` written by one fill
+  were read by the next in 7 of 7 reader jobs (2048 of 2048 pixels each), and by one two fills
+  later, after a fill that wrote no temporary, in 2 of 2 (E484: a pair of fills, not EDM tasks;
+  Q124, Q131). The registers sampled up to `r123` are separate storage in a fill started with up to
+  128 temporaries (`--temps` 52, 64, 80, 96, 112, 124 and 128: 14 of 14 cases, every second or
+  fourth register from `r2` and the top one; E485) **[HW]**. **A register at or past the task's
+  allocation `T` reads as register `n mod T` in most instances, and a write to it was not seen to
+  reach it [HW]**: in client pixel tasks `r(n)` read the marker written to `r(n mod T)` in 88 to
+  99.6 percent of the 2048 instances in 15 of 15 cases (by `T`: 95.3 to 99.6 percent at 8, 95.3 to
+  98.4 at 16, 88.3 to 96.1 at 32, 92.1 to 92.2 at 64), the rest of the instances reading other
+  values, so the rule is "most instances" and no program may rely on it; in 4 of 4 cases that also
+  wrote a marker to `r(n)` (`T` = 8 and 32 only) the instances read the value of `r(n mod T)`, not
+  the one written; nothing faulted or hung (E486). The model gave such a register storage of its own
+  or a fault. A `phas` request is the allocation of its phase (*Tasks and phases*).
 - **Primary attributes [HW].** The PDS fills them per task: `doutd` DMAs memory into them
   (the vertex fetch of our triangle lands in `pa0`-`pa3`), `douti` has the iterator write
   them and `doutt` returns a texture fetch into them (our copy shader reads its texel from
@@ -34,7 +47,12 @@ marked.
 - **Secondary attributes [CAP/RE].** Shared by the instances of a task and written by a
   secondary PDS program. The firmware keeps its base pointers there (`sa0`-`sa2`, DMAed from
   the TA/3D control block at boot) and some of its state (`sa8`, `sa9`, `sa19`), and it does
-  write them (`doc/specs/hw_spec.md` 12.1).
+  write them (`doc/specs/hw_spec.md` 12.1). In a pair of fills on the render node **[HW]** an `sa`
+  written by one job is read by the next (`sa1`, `sa5` and `sa7`: 9 of 9 reader jobs, 2048 of 2048
+  pixels each) but not by one two jobs on: after a job that wrote no `sa` the reader read that
+  job's pixel colour (3 of 3), as it does for an `sa` nobody wrote (2 of 2) (E484, Q098); 12
+  pixels (4 of each value) of each of the 18 jobs that wrote `sa1`, `sa5` and `sa7` show the `sa`
+  value as their colour (Q129).
   In an end-of-tile task `sa0`-`sa127` are the tile buffer the task's emit sends: one
   instance of the task covers 16 x 8 pixels, `sa(4q + i)` pixel `i` (top left, top right,
   bottom left, bottom right) of the block's 2 x 2 quad `q` in raster order, and what the task
@@ -73,7 +91,8 @@ marked.
   temporaries (bank 0, numbers 124-127; in the half-float and c10 readings, earlier). They
   are the accumulators of the dual-issue and `efo` groups and the carry registers of
   `imae`/`ima32`. **[HW]** `i0`-`i2` are per instance, hold what `mov` or `fddp` writes and keep it
-  from one task to the next, also another client's; `i3` reads `i0` of the next instance of
+  from one task to the next, also another client's (9 of 9 reader jobs after a writer fill, E484);
+  `i3` reads `i0` of the next instance of
   the 2x2 quad and drops writes, and `efo.gpiext` reaches across the quad (*Internal
   registers*, *`efo`*).
 - **Index registers [RE].** A destination bank writes `i.l`, `i.h` or both (`i.lh`); an

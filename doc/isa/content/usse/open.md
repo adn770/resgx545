@@ -17,9 +17,10 @@ open driver:
    reads. The state does not outlive the job that sets it, and the sequences that faulted did
    so through the stores after them, whose address register the offsets and the mirror mode
    moved (E369, E370) (Q051).
-3. **`.syncs`** and the other scheduling flags beyond `.nosched`: a read 0 to 8 instructions
-   after a `mov`, `or`, `fmad`, `frcp` or `fexp` sees its result with or without `.nosched`
-   (E371); `.syncs` hangs a fill's task (Q052).
+3. **`.syncs`** and the other scheduling flags beyond `.nosched`: a read 0 to 8 instructions after a
+   `mov`, `or`, `fmad`, `frcp` or `fexp` sees its result with or without `.nosched` (E371); a load
+   read by a `stad` after up to 32 `nop`s still holds the register's old value with no `wdf` (E478;
+   a read by an ALU instruction was not run); `.syncs` hangs a fill's task (Q052).
 4. **The global bank**: what `g18`-`g20` and `g39`-`g43` hold in a vertex task and the
    end-of-tile task; in a triangle's pixel task they read as in a fill (E374), and `g19` reads
    0 through `mov`, 0x11 through the bitwise group and 0x1a as a store's source (E372) (Q053).
@@ -27,7 +28,8 @@ open driver:
    changes nothing a triangle shows; `.cut` on `emitmtevtx` hangs the job, E376), `.twopart`
    on the state emits (needed on `emitvcbvtx`, E102; shows nothing on the state emits, E106);
    the PBE sideband bits beyond the pack mode and bit 9, `TILERELATIVE` (Q054; Q074 asks what
-   bit 9 does).
+   bit 9 does); `emitpds` runs the PDS program it names from a client fill but ends the job in a
+   fault or hang, 24 of 24 (E488, Q128).
 6. **`idf` modes** other than `bif` (each hangs a fill's job at its `wdf`, E375), `lock`/
    `release`, `setm`, and the cache-control operands (Q055).
 7. **Instruction timing**: what a result costs in cycles; a fill's instructions cost 0.320 µs
@@ -43,5 +45,12 @@ open driver:
    jobs (Q125); how `iaddu32` extends a source 1 above 0x7fff and what a zero test of an overflowed
    sum does (Q126); `ima32`'s extra `i` operand and dual-issue form and `imae`'s repeats,
    `u16`/`z16` sources and `.rsN` shifts with the carries (Q127).
+10. **Fences, repeats, registers and persistence for a firmware compiler**: why a `wdf` waits
+   for another counter's loads in some runs and not in others (Q130); whether a firmware (EDM)
+   task behaves as a fill for `wdf`, unfenced stores and two tasks at once (Q131, firmware);
+   what a client `str` changes and whether `str` then `ldr` is ordered (Q134); why a client
+   `emitpds` faults the job (Q128); the 12 pixels of an `sa` writer that show the `sa` (Q129);
+   where a write past the allocation goes (Q132); what bounds a `phas` request at 192 (Q133).
+   The overlap of two firmware tasks and `str` then `ldr` are not answered (Q131, Q134).
 
 <!-- @simopen 12 -->

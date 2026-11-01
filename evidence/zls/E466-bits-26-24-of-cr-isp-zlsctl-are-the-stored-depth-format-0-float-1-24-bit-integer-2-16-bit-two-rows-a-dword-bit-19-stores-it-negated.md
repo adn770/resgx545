@@ -90,3 +90,20 @@ changes nothing seen. Bits 2 and 18 enable the depth store, bit 17 the stencil s
 formats; whether the integer formats round the hardware's float or its internal value (the same at
 the 786432 pixels); the stencil store's in-tile order (the first 4 stencil dwords were 0, Q121);
 a comparison of the bit 19 buffers with the buffers without it.
+
+**Recompute, 2026-11-08 (11.24).** The measurements above are unchanged. E490 ran the script again
+with the depth dumps of its parts A and B kept (the control's formats 0 to 7 and bit 19) and
+recomputed from them with a separately written script: format 0 within 1e-5 of the geometry's z at
+786432 of 786432 pixels, format 1 round(z * 0xffffff) at 786432 of 786432 (z the float format 0
+stores at that pixel; floor, 333955), the same counts as above for formats 3 to 7 (965120, 96580 and
+86084 dwords for 3, 5 and 6 in the x ramp, the y ramp storing 965120, 84480 and 73760, and format 3
+reaching the last dword of the buffer, so 965120 is a lower bound; none for 4 and 7), and bit 19
+stores -z at 786432 of 786432 pixels with the float format (the three frequent dwords above were the
+only evidence before). For format 2 the layout was derived from the dumps alone, the halves of every
+dword decoded to pixels: dword k of a tile = lx0, ly1, lx1, ly2, lx2, ly3, lx3, lx4 from the lowest
+bit, the half = ly0, the same in 512 of 512 slots of every tile, at G = 33 only. The stored value of
+format 2 (round(z * 0xffffff) >> 8, fitted after the first run's twin and told apart from floor(z *
+65536) only by E411's clear value) was not compared again: the halves were decoded to pixels, not
+checked against a formula. Not decoded: formats 3, 5 and 6, the stencil dumps (not kept), and bit 19
+with a negative depth for formats 1 and 2: with the positive ramp bit 19 changes no dword of formats
+1 and 2 (the dumps are byte-identical to the dumps without it, E490).

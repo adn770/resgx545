@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E030", "E102", "E106", "E239", "E269", "E376"]
+evidence = ["E030", "E102", "E106", "E239", "E269", "E376", "E488"]
 terms = ["SIDEBAND.PACKMODE", "SIDEBAND.BIT9", "SIDEBAND.BITS8_6", "SIDEBAND.DITHER"]
 +++
 
@@ -19,8 +19,17 @@ emitpix2 instruction carries sideband bits 13:0 only.
 Narrowed by E376: on the triangle's vertex program, incp 1 to 3 on emitvcbvtx or emitmtevtx draws
 the triangle as with 0, and .cut on emitmtevtx hangs the job (two runs).
 
+Narrowed in 11.24 (E488), for `emitpds` in a client fill shader: `.tasks`, `.taske`, both, neither,
+`.freep`, `.nosched`, `#incp` 1 to 3 and the sideband 0x1, 0x200 and 0x2000 each changed nothing
+seen of whether the PDS program the emit names ran (the 19 probes that store `ir0.0`: it ran in 18,
+and with the addend 0x1000 the dword held the no-emit value once: one probe, twice with a repeat
+outside the data, in jobs that faulted), and every job with an emit then faulted at page 0xd2000 (22
+of 24; 0x92000 once) or hung (once, two emits in a row), 24 of 24 (Q128). The flags were run one at
+a time, each on one probe, and the fault may hide an effect after the emit.
+
 What is open (usse_isa.md §8, item 5): what incp counts, .cut on a program that emits more than
-one primitive, .tasks/.taske (emitpds); what bits 11 and 12 select (Q046); bit 9 is Q074.
+one primitive, .tasks/.taske (emitpds: what they do once the emit does not end the job in a
+fault); what bits 11 and 12 select (Q046); bit 9 is Q074.
 
 To settle it: a vertex program that emits two primitives with .cut between them, and emitpds with
 .tasks/.taske in the state task, the parameter buffer dumped.

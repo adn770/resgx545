@@ -3,10 +3,10 @@
 ### Phases: `phas`
 
 Class 31 **[RE]**. The immediate form is described in *Tasks and phases*: the next phase's
-instruction index (18 bits), its temporaries (eight bits, times four), the rate, the wait
-condition and the instance mode, plus `.end`. A register form takes two source operands
-instead (presumably the same information computed at run time **[infer]**). Both exist twice
-in the decoder's table, as for `ldr`/`str`.
+instruction index (18 bits), its temporaries (eight bits, times four; 192 is the highest value run
+that did not hang, *Tasks and phases*), the rate, the wait condition and the instance mode, plus
+`.end`. A register form takes two source operands instead (presumably the same information computed
+at run time **[infer]**). Both exist twice in the decoder's table, as for `ldr`/`str`.
 
 <!-- @prog use_vtx.s match='phas' -->
 

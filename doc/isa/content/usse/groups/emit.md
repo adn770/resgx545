@@ -22,11 +22,24 @@ output registers) to another unit. All take an `#incp` number (three bits) and `
   there, the job hangs. `emitmtevtx` draws the same without it, and with neither emit flagged no
   triangle is drawn. On the state emits `.twopart` changes nothing a triangle shows, on either emit
   or both (E106). What it is for there, and `.cut`, are **[open]**.
-- **`emitpds.tasks.taske #incp, s0, s1, s2, #sideband`** starts a PDS program **[CAP/RE]**:
-  the microkernel's boot task launches PDS programs #11 and #12 this way and its request path
-  #14; the control word carries the program's data size in four-dword units at bits 27-23
-  (`doc/specs/hw_spec.md`). `.tasks`/`.taske` (task start and end?) are
-  **[open]**.
+- **`emitpds.tasks.taske #incp, s0, s1, s2, #sideband`** starts a PDS program **[CAP/RE]**: the
+  microkernel's boot task launches PDS programs #11 and #12 this way and its request path #14; the
+  control word carries the program's data size in four-dword units at bits 27-23
+  (`doc/specs/hw_spec.md`) and, below it, an addend. A client fill shader can execute it **[HW]**
+  (E488, one instance emitting, a copy's shader): with `s1` the pixel PDS heap offset of the fill's
+  PDS secondary shifted right by four (4 for the copy's, at heap base + 0x40), two data rows and the
+  addend 0x100, the named program ran in 18 of the 19 `ir0.0` probes (it stored 3 in 16 and 2 in 2,
+  where the fill's own run leaves 0x400 to 0x403), and with the addend 0x1000 the dword held the
+  no-emit value once (1 probe, twice with a repeat outside the data, in jobs that all faulted: one
+  observation, not a stop). **`s2` is not `ir0` or `ir1` of the started program**: with `s2` 0, 1,
+  0xFFFFFFFF and 0xE17D0001 the program saw `ir0.0` 3, 3, 2 and 3, and `ir1.0` 0 for 0, 0xFFFFFFFF
+  and 0xE17D0001 (against the reading of E146, which came from the operand order). `.tasks`,
+  `.taske`, both, neither, `.freep`, `.nosched`, `#incp` 1 to 3, the sideband 0x1, 0x200 and 0x2000
+  and a data size of 1, 2 or 4 rows each changed nothing seen of whether the program ran (one probe
+  each). **Every job that executed an `emitpds` then faulted or hung, 24 of 24 (`BIF fault` at page
+  0xd2000 in 22, 0x92000 once with sideband 0x1, a hang for two emits in a row), each recovered by
+  the driver with no reload** (Q128): a client emit is a hang risk, not a tool, and the model's
+  start of a PDS program is not the whole of it. What `.tasks`/`.taske` do is **[open]** (Q054).
 - **`.freep`** frees the task's resources after the emit **[infer]**; **`#incp`** is always 0
   in our programs and its meaning is **[open]**.
 - The assembler writes the unprinted source of `emitvcbst`/`emitvcbvtx` and the unprinted

@@ -177,20 +177,20 @@ probe and sweep tables that the units above cover.
 
 ### 4.1 Open questions
 
-`doc/open_questions.md` lists every open question, generated from `questions/`: Q001 to Q127, 106
+`doc/open_questions.md` lists every open question, generated from `questions/`: Q001 to Q134, 113
 open. Each has a kind. The work is hardware knowledge, for a simulator and then our own firmware, so
-the 94 `hw` questions are the work queue, each with a value (high 14, medium 52, low 28); the 9 `fw`
-questions (the closed firmware's and driver's own behaviour: Q004, Q029, Q034, Q049, Q084, Q088,
-Q118, Q119, Q124) and the 3 `kernel` ones (the design of our kernel driver: Q005, Q037, Q095) stay
-open, parked. By unit: bif 4, dpm 5, edm 6, isp 8, mte 3, pbe 5, pds 16, platform 4, render 9, ta 6,
-texture 7, transfer 3, usse 16, vdm 8, zls 6. A question is removed when a record answers it; one
-that mixed a hardware part with a firmware or kernel part was narrowed to the hardware part or
-folded into the hardware question that holds it (six so far: the control block's per-VM copy and the
-render context count bound into Q076, the recovery's reset steps into Q003, the settle routine and
-the two faults after a base-only fault or a kept owner into Q036 and Q045), and a fold is not an
-answer. What a fold or a narrowing left of the closed firmware's own behaviour is a new parked
-question: how a kick tells its directory is in no list (Q118, from the render context count) and
-whether a command with both kick flags acts as two (Q119, from Q065).
+the 100 `hw` questions are the work queue, each with a value (high 14, medium 54, low 32); the 10
+`fw` questions (the closed firmware's and driver's own behaviour: Q004, Q029, Q034, Q049, Q084,
+Q088, Q118, Q119, Q124, Q131) and the 3 `kernel` ones (the design of our kernel driver: Q005, Q037,
+Q095) stay open, parked. By unit: bif 4, dpm 5, edm 6, isp 8, mte 3, pbe 5, pds 16, platform 4,
+render 9, ta 6, texture 7, transfer 3, usse 23, vdm 8, zls 6. A question is removed when a record
+answers it; one that mixed a hardware part with a firmware or kernel part was narrowed to the
+hardware part or folded into the hardware question that holds it (six so far: the control block's
+per-VM copy and the render context count bound into Q076, the recovery's reset steps into Q003, the
+settle routine and the two faults after a base-only fault or a kept owner into Q036 and Q045), and a
+fold is not an answer. What a fold or a narrowing left of the closed firmware's own behaviour is a
+new parked question: how a kick tells its directory is in no list (Q118, from the render context
+count) and whether a command with both kick flags acts as two (Q119, from Q065).
 
 ### 4.2 Inferred glossary rows
 
@@ -402,3 +402,31 @@ of over 256 words, were dropped (12), and the failed first runs of the placed ta
 data (`usse-place`, `usse-place-ctl`; the manifest of the first was written by hand with the
 runner's digest function). Records E469-E477; Q052 is narrowed, none retired; Q123 to Q127 are new,
 Q124 for the firmware (`fw`).
+
+Sub-phase 11.24 ran 14 probe tables on the laptop (355 cases, one campaign run each) and repeated
+two ZLS runs by hand with their raw depth dumps kept, for the fence, store, register and emit
+behaviour a compiler for our own firmware needs (`probes/usse/fence-batching.toml`,
+`fence-growth`, `task-state`, `store-repeat`, `store-repeat-regs`, `store-repeat-regs2`,
+`temps-max`, `temps-sparse`, `temps-past`, `temps-wrap`, `temps-bound`, `temps-bound2`,
+`temps-bound3` and `emitpds`). The tool gained two changes for `emitpds` (a limm that names the
+fill's PDS secondary, and `--pds` with `--coords`), copied forward with its tests. One `wdf drc0`
+covers every load outstanding on `drc0`, up to 100 distinct `ldad` on one counter and 16
+`ldad.fetch16` (128 to 200 `ldad` over eight registers reissue the same loads and cannot show a
+lost reload), but a `wdf drcN` does not wait for the loads of the other counters (E478-E480; E479's
+10 of 10 and 2 of 10 are scratch runs, one run being in the data), and a `stad` then a `ldad` of
+one dword returns the stored value with no `idf`, all 2048 instances storing the same value to it,
+so one instance's own store is not isolated (E481, Q134). `stad.fetchN` stores N registers to N
+consecutive dwords; `stad.repeatN` and `ldad.repeatN` take `r(b + i)` as the pointer of iteration
+`i`, the pointer movement read for `r40` to `r43` only (E482, E483). The temporaries sampled up to
+`r123` are separate storage, a register at or past the allocation reads as the register modulo it
+in most instances (88 to 99.6 percent) and a write was not seen to reach it, and of the `phas`
+requests run 8 to 192 ran and 196 to 224, 252, 256, 508 and 1020 hung the job (12 values each, not
+an interval; `r123` is the only register a request above 124 exercised) (E485-E487). Between two
+fills the
+temporaries, `i0`-`i2`, `p0`, `p1` and for one job an `sa` are what the job before left (E484). An
+`emitpds` in a client fill starts the PDS program it names and ends the job in a fault or a hang
+in all 24 cases (E488). These are fills, proxies for what firmware tasks do, and two requests are
+not answered: two EDM tasks at once (Q131) and `str` then `ldr` (Q134). E489 and E490 recompute
+E465 and E466 from the raw dumps, and E465 and E466 are carried forward with a dated note.
+Records E478-E490; Q051, Q052, Q054, Q098, Q101, Q107, Q120, Q124 and Q125 are narrowed, none
+retired; Q128 to Q134 are new, Q131 for the firmware (`fw`).

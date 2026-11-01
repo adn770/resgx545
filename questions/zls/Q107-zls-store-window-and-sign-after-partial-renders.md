@@ -5,7 +5,7 @@ unit = "zls"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E461", "E058", "E411", "E465", "E468"]
+evidence = ["E461", "E058", "E411", "E465", "E468", "E489"]
 terms = ["CR_ISP_ZLSCTL", "CR_ISP_ZSTORE_BASE"]
 +++
 
@@ -15,7 +15,8 @@ the control, and the library's control has G = 1, so the tiles of a row overlap 
 written keeps the address. The window is (th - 1) * (G + 1) + tw tiles. The in-tile order is the
 bits y0 x0 y1 x1 y2 x2 y3 x3 x4 of the pixel offsets. In 16 of 18 cases on 13 sizes every stored
 dword is at that address; the two overflowed 4096 x 4096 jobs have 80640 and 48000 stored dwords
-that are not (E465).
+that are not (E465): they are 0x00000000 in both ramp dumps of a rerun that kept them (E489), so the
+zeros are measured; that they are the zeros of a parameter-buffer overflow stays E468's inference.
 
 What E461 called the leading zero dwords and the sign flip of a job that overflows is the same
 store (E468): with no two tiles at one address (G = 33) the 336 tiles of tile rows 0 to 11 (the

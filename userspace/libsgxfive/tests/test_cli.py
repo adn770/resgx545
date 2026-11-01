@@ -405,6 +405,70 @@ def test_probe_patches_scratch_immediates(tmp_path, k):
     assert int(o0.group(1), 16) == int(m.group(1), 16) + k
 
 
+def pds_secondary(out: str, name: str) -> tuple[int, int]:
+    """(address, offset in the pixel PDS heap) of the PDS secondary the probe printed."""
+    m = re.search(rf"^probe {name}: PDS secondary at (0x[0-9a-f]+) \(pixel PDS heap base \+ "
+                  rf"(0x[0-9a-f]+)\)$", out, re.M)
+    assert m, out
+    return int(m.group(1), 16), int(m.group(2), 16)
+
+
+@pytest.mark.parametrize("k", [0, 0x10, 0xfff0])
+def test_probe_patches_pds_references(tmp_path, k):
+    # An immediate 0x5CB0nnnn is replaced by the PDS secondary's offset in the pixel PDS heap
+    # shifted right by four, plus nnnn: the s1 an emitpds names that program with. 0x5CB1nnnn is
+    # the same from the program's GPU address. The printed line says where the program is.
+    rel = assemble(tmp_path, "rel", PHAS + f"mov.skipinv.end o0, #0x{0x5CB00000 | k:08X}\n")
+    ab = assemble(tmp_path, "ab", PHAS + f"mov.skipinv.end o0, #0x{0x5CB10000 | k:08X}\n")
+    r = run("--mock", "probe", str(rel), str(ab))
+    assert r.returncode == 0, r.stdout + r.stderr
+    for name, want in (("rel", lambda a, o: (o >> 4) + k), ("ab", lambda a, o: (a >> 4) + k)):
+        addr, off = pds_secondary(r.stdout, name)
+        assert addr % 16 == 0 and off % 16 == 0 and off > 0 and addr >= off
+        o0 = re.search(rf"^probe {name}: o0 (0x\w+) ", r.stdout, re.M)
+        assert int(o0.group(1), 16) == want(addr, off) & 0xffffffff, r.stdout
+
+
+def test_probe_leaves_other_pds_immediates_alone(tmp_path):
+    # only 0x5CB0nnnn and 0x5CB1nnnn are references; 0x5CB2nnnn and 0x5CAFnnnn keep their meaning
+    f = assemble(tmp_path, "other", PHAS + "mov.skipinv.end o0, #0x5CB20010\n")
+    r = run("--mock", "probe", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^probe other: o0 0x5cb20010 ", r.stdout, re.M), r.stdout
+
+
+def test_probe_patches_pds_references_in_a_placed_program(tmp_path):
+    # the program --place maps is patched too, whatever order the programs are built in
+    base = assemble(tmp_path, "base", PHAS + "mov.skipinv.end o0, #0x0000BA5E\n")
+    use = assemble(tmp_path, "use", PHAS + "mov.skipinv.end o0, #0x5CB00020\n")
+    r = run("--mock", "probe", "--place", f"0x100000={use}", "--place-form", "cbase", str(base))
+    assert r.returncode == 0, r.stdout + r.stderr
+    _, off = pds_secondary(r.stdout, "base")
+    o0 = re.search(r"^probe base: o0 (0x\w+) ", r.stdout, re.M)
+    assert int(o0.group(1), 16) == (off >> 4) + 0x20, r.stdout
+
+
+def test_probe_pds_takes_coords(tmp_path):
+    # --pds N --use USE with --coords: the PDS secondary of a copy, whose shader reads the texel
+    # coordinates in pa0 (a probe that lets one instance act, such as an emitpds, tests pa0);
+    # the mock does not run PDS programs: the options are accepted and the probe names the copy's
+    # PDS secondary (at pixel PDS heap base + 0x40, the s1 of 4 an emitpds uses, E488)
+    import sys
+    sys.path.insert(0, str(HERE.parent.parent.parent / "tools" / "fwcutter"))
+    import ours
+    pds = tmp_path / "pds.bin"
+    subprocess.run([str(ours._tool("pds")), "-o", str(pds), "-"],
+                   input=b".word 0, 0, 0, 0\n.word 0, 0, 0, 0\nhalt\n", capture_output=True,
+                   check=True)
+    use = assemble(tmp_path, "use", PHAS + "mov.skipinv.end o0, #0x5CB00020\n")
+    r = run("--mock", "probe", "--pds", "8", "--use", str(use), "--coords", str(pds))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "usage" not in r.stderr
+    _, off = pds_secondary(r.stdout, "pds")
+    assert off == 0x40, r.stdout
+    assert run("--mock", "probe", "--pds", "8", "--coords", str(pds)).returncode == 2  # no --use
+
+
 def test_probe_scratch_pages(tmp_path):
     # --scratch-pages N (16 to 64): a larger scratch buffer, for a texture chain that does not
     # fit 64 KiB; the immediates 0x5CAFnnnn still add nnnn (up to 64 KiB) to its address

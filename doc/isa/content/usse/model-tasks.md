@@ -57,6 +57,20 @@ The waits and modes on the hardware (E101) **[HW]**:
   of ISP words 0 and 1 turns per-sample shading on either (E117), nor any bit of the render
   details' sample-related words (`isp_sample_pos`, `isp_multisamplectl`, which holds the sample
   positions, `isp_line_sample_pos`, `reg_0800`, `frag_flags`; E120).
+- **A phase's temporaries are its `phas` request [HW]** (E487): in a two-phase fill the 12 requests
+  8, 16, 32, 64, 96, 124, 128, 132, 136, 144, 160 and 192 ran: the marker written to the phase's
+  highest register, `r123` from 124 up, read back in 15 of 15 jobs (the task started with 8, and
+  192 also with 32, 64 and 128), whatever the task was started with. Every request from 124 up
+  wrote `r123` only (`r124` and up cannot be named as an ALU operand), so these show that the job
+  runs and that `r123` is real storage, not that 192 temporaries are usable; the register numbers
+  a program can name end at 123. The 12 requests 196, 200, 204, 208, 212, 216, 220, 224, 252, 256,
+  508 and 1020 hung the job (15 of 15, 196 also started with 32, 64 and 128; each hang recovered
+  by the driver with no reload). 192 is the highest value run that did not hang, among the values
+  run, not a measured limit: 228 to 248, 260 to 504, 512 to 1016 and the multiples of four below
+  192 other than the 12 were not run, and the 12 and 12 are not an interval. Every request run was
+  a multiple of four. The 15 jobs that ran took 420 to 583 microseconds, with no cost seen in
+  single samples. A register past a phase's request reads as `n mod T` in most instances
+  (*Machine model*). The limit for a firmware task is **[open]** (Q133).
 - **The register form** `phas srcA, srcB` hung or faulted with every source layout tried
   (absolute index, offset or `doutu` U0 layout, against the immediate's fields or high dword);
   none started the next phase (E118).

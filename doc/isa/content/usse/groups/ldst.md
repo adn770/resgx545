@@ -36,6 +36,31 @@ writes **none of them**: with 32 temporaries, `ldad.fetch4 r28` loads `r28`-`r31
 `(o >> 16) × (o & 0xffff)` bytes, and a fetch starts one element after it too **[HW]** (*Register
 offsets of loads and stores*); the firmware has four such stores.
 
+- **A store has a fetch too [HW].** `stad.fetchN [rb,+#k], rs` stores `rs` to `rs + N - 1` in the
+  N consecutive dwords `b + k + 1` to `b + k + N`, the one-dword shift of a load fetch (N = 2, 4 and
+  16 with `k` = 1 and N = 4 with `k` = 0: 4 of 4 cases), and `stad.fetchN [rb,#1++], rs` stores them
+  from `b + 1` and moves `rb` by N once (N = 2, 4 and 16: 3 of 3) (E482). A copy of 16 dwords is so
+  `ldad.fetch16 rA, [rS,+#0], drc0; wdf drc0; stad.fetch16 [rD,+#0], rA` with `rD` one dword below
+  the destination (1 of 1 case: 16 dwords in order). A fetch store with another `k` (only 0 for
+  fetch4 and 1 were run), the pre-increment form and a fetch wider than 16 were not run.
+- **`.repeatN` of a store or a load steps the pointer register too [HW].** In `stad.repeatN
+  [rb,...], rs` iteration `i` stores `r(s + i)` at the address held in `r(b + i)` (the data
+  address read for every `i`, N up to 16), and the pointer registers `r40` to `r43` move by the
+  form's own increment: `k` after its access for `[rb,#k++]`, `k` before it for `[rb,++#k]`, none
+  for `[rb,+#k]` (26 of 26 cases with 16 valid pointers `r40`-`r55`: N = 2, 3, 4, 8 and 16 plain,
+  N = 2, 4, 8 and 16 post-increment, N = 2 and 4 pre-increment, twelve after an `smlsi` and one
+  copy). The movement was read for `r40` to `r43` only: whether `r44` to `r55` move at N = 8 and
+  16, and whether the pointers a repeat does not use stay, was not read, so a program must not
+  reuse `r(b + 4)` to `r(b + 15)` after a post-incremented `repeat8` or `repeat16` and rely on
+  either; N = 5 to 7 and 9 to 15 were not run. `ldad.repeatN rd, [rb,...]` loads likewise the dword
+  `r(b + i)` addresses into `r(d + i)` (7 of 7 cases: N = 2, 4, 8 and 16; the pointer movement read
+  for 2 or 4 pointers). The model had N accesses from the one pointer `rb`. With
+  only `rb` (and `r41` for the loads) holding an address, the registers after it are read as
+  pointers too: the first run faulted the job in all 7 `ldad.repeatN` cases and in the 9 of 9
+  `stad.repeatN` cases with N of 4, 8 and 16, while `stad.repeat2` and `repeat3` completed, storing
+  `r3` at the address `r41` held (E483). The one-pointer series is `smlsi #0, #0, #0, #1` first
+  (*`smlsi` increments*): `stad.repeat16 [rb,#1++], r2` then stores `r2` to `r17` at 16
+  consecutive dwords and moves `rb` by 16 (2 of 2 cases, two instructions, no one-dword shift).
 - **Cache modes.** The firmware uses `.bpcache` on almost every access; `.fcfill` once.
   The SGX540 swaps the two cache-mode bits; `usse-dis --core 540` follows it. No mode, `eld`'s
   `.bypassl1` included, makes a reload miss a store, in one instance or across instances

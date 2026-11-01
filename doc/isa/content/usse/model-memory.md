@@ -4,13 +4,46 @@
 
 - **Loads complete asynchronously.** A load (`ld*`, `eld*`, `ldr`, the samplers) names a data
   fence counter, `drc0` or `drc1` (two bits for `ldr` and the samplers, `drc0`-`drc3`), and
-  `wdf drcN` waits until the loads counted on it have landed **[RE/HW]**. The firmware almost
-  always follows its loads with a `wdf` before using the data (711 `wdf drc0`, 96 `wdf drc1`),
-  and our programs wait with `wdf drc0` for the attribute DMA the PDS started.
+  `wdf drcN` waits until the loads counted on it have landed **[RE/HW]**. In a fill one `wdf
+  drc0` covers every load outstanding on `drc0`, whether `ldad`, `ldad.fetchN` (the whole fetch)
+  or `ldr`: 1, 2, 4, 8 and 16 independent `ldad`, five mixes with fetches of 2, 4, 8 and 16
+  dwords and `ldr`, and, in the growth runs, 24, 32, 48, 64, 80 and 100 distinct `ldad` on
+  `drc0`, 32, 64 and 100 on `drc1` and 2, 4, 8, 12 and 16 `ldad.fetch16` (256 dwords) were all
+  complete after the one `wdf`, and no limit on the number outstanding was seen up to 100 distinct
+  `ldad` on one counter and 16 `ldad.fetch16` **[HW]** (E478). Three more cases, 128, 160 and 200
+  `ldad` reloading the same eight lines into eight registers, were complete too (27 of 27 cases in
+  all, one run each), but they issue the same loads again, so a lost or late reload would leave
+  the registers unchanged: they cannot show a lost reload. A load is not complete without the
+  `wdf` in the sense that one `ldad` read by a `stad` still holds the register's old value after
+  0, 1, 2, 4, 8, 16 or 32 `nop`s and four `ldad` after 0 or 16 (9 of 9); a read by an ALU
+  instruction, more than 32 slots and a write to the same register were not run, so no instruction
+  count seen stands in for the `wdf`. A `wdf`
+  with nothing outstanding returns at once and hangs nothing (11 of 11 cases: as the first
+  instruction, on a counter never used, twice in a row, on all four counters, and after an
+  `idf drcN, bif` with nothing stored; E480). **A `wdf drcN` does not wait for the loads of the
+  other counters [HW]** (E479): loads of another counter issued after the waited ones were still in
+  flight in 10 of 10 runs (four `ldad` on `drc1` after two `ldr` on `drc2`, `wdf drc2` only) and in
+  2 of 10 (four `ldad` on `drc0` after four on `drc1`, `wdf drc1` only), and complete in the runs
+  that had waited on four `ldad` first (28 of 30), so what has landed depends on timing: each
+  counter counts its own loads **[infer]**, and a program waits on every counter it used. The
+  counts of ten runs are those of scratch runs recounted by the reviewer; the data hold one run of
+  each case (2 of the 8 cases show the markers in it). All this was measured in client pixel tasks,
+  not in an EDM task (Q131). The firmware almost always follows its
+  loads with a `wdf` before using the data (711 `wdf drc0`, 96 `wdf drc1`), and our programs wait
+  with `wdf drc0` for the attribute DMA the PDS started.
 - **`idf drcN, bif`** appears 124 times in the firmware, mostly right before a `wdf` on the
   same counter, after stores **[RE]**: it looks like a fence that makes earlier memory writes
-  visible (through the BIF, the memory interface) and is counted on `drcN` **[infer]**. The
-  `pixelbe` and reserved modes of `idf` are **[open]**.
+  visible (through the BIF, the memory interface) and is counted on `drcN` **[infer]**. In a fill
+  no measured case needed it **[HW]**: a `stad` and a later load of the same dword, all 2048
+  instances of the fill storing the same value to that dword, returned the stored value with no
+  `idf` in 16 of 16 cases (`ldad`, `.bypassl1`, `.fcfill`, `eldd`, `.bpcache`, on `drc1`, after two
+  stores and after sixteen; E481), and the dword the host read held the stored value after seven
+  short programs (one or sixteen `stad`) that ended with no fence, an `idf` only, a `wdf` only,
+  both, or a `nop` (E480). Both show a dword that every instance wrote with one value: they do not
+  show that one instance sees its own store, or that one instance's unfenced store reaches the
+  host (Q134). When an `idf` is required (another instance, the host during the job, a texture
+  fetch of the stored data) is **[open]** (Q134).
+  The `pixelbe` and reserved modes of `idf` are **[open]**.
 - **Addresses.** Loads and stores take a base register and an offset counted in elements of
   the access size (4 bytes for `d`, 2 for `w`, 1 for `b`) **[DDK/HW]**; the addressing modes
   and the fetch rule are in *Loads and stores*. Addresses are device virtual addresses of the
@@ -18,7 +51,8 @@
 - **The SGX register file** is not memory: `ldr rD, #idx` and `str #idx, src` read and write
   the SGX register at offset `idx × 4` **[RE/HW]**. A client pixel shader on our render node
   reads any register this way; a client store to the one register tried was dropped
-  (measured on our render node).
+  (measured on our render node). Whether a `str` then an `ldr` of one register is ordered without
+  a fence is **[open]**: no client `str` was seen to change a register (Q134).
 - **Caches.** `ci`, `cf` and `cfi` invalidate, flush, or flush and invalidate the levels their
   last operand names (L0 and L1, L2, or all three) **[infer]**, from the names the reference
   disassembler prints; the cache mode flags of loads and stores (`.bpcache`, `.fcfill`,

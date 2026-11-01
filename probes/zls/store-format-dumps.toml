@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# zls store format dumps: 0 probes (a shell script run on the laptop by hand, phase 11.24).
+# E466 again with the raw depth dumps of its parts A and B kept (gzip), so that its formats can be recomputed.
+# Documentation of a by-hand run, not a table the campaign runner runs: the runner keeps only output.txt, not the
+# raw dumps that the run kept, so the run was made by hand over ssh and its manifest written with the runner's own
+# digest. The recompute script of the run is in the dataset (zls/store-format-dumps/).
+needs = ["render", "kpoke", "reset"]
+name = "zls-store-format-dumps"
+script = "store-format-dumps.sh"

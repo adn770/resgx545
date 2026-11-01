@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E087", "E097", "E105", "E109", "E294", "E296", "E369", "E370"]
+evidence = ["E087", "E097", "E105", "E109", "E294", "E296", "E369", "E370", "E483"]
 terms = []
 +++
 
@@ -24,6 +24,12 @@ Narrowed in 11.13: the state does not outlive its job: after a job that runs `sm
 or `smlsi` with increments 2, the next job's moves land as with no MOE instruction, three runs
 (E370). `moest` with any selector after `smoa #-1, #-2, #511, #-512` writes nothing a fill reads
 and faults nothing (E369).
+
+Narrowed in 11.24 (E483): on a `stad.repeatN` or `ldad.repeatN` the pointer register steps by
+`smlsi`'s second increment and the data register by its fourth (the first and third did nothing to a
+store, varied together only), so `smlsi #0, #0, #0, #1` makes the repeat a one-pointer series (12 of
+12 stores); the pointer movement of a repeat was read for `r40` to `r43` only, and N = 5 to 7 and 9
+to 15 were not run (E483); the smlsi increments of a `stad` follow the three-source rule of `fmad`.
 
 What is open (usse_isa.md §8, item 2): what each of these instructions sets beyond the offsets,
 modes and increments pinned, what `moest` returns and where, and whether the state survives from

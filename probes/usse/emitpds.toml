@@ -1,0 +1,368 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse emitpds (item 14): 0 sweeps, 26 probes (one case each; may hang or fault).
+needs = ["render", "vm_low"]
+
+[[probe]]
+name = "usse-emitpds-control"
+question = "emitpds in a fill shader naming the PDS secondary of the fill: no emitpds at all: what the fill's own run of the PDS program leaves in dword 0"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_control.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["no emitpds at all: what the fill's own run of the PDS program leaves in dword 0"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emitpds-base"
+question = "emitpds in a fill shader naming the PDS secondary of the fill: emitpds.tasks.taske #0, s0 (2 rows, addend 0x100), s1 (the PDS secondary), s2 0xE17D0001"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_base.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["emitpds.tasks.taske #0, s0 (2 rows, addend 0x100), s1 (the PDS secondary), s2 0xE17D0001"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emitpds-tasks-only"
+question = "emitpds in a fill shader naming the PDS secondary of the fill: the same with .tasks only"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_tasks_only.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["the same with .tasks only"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emitpds-taske-only"
+question = "emitpds in a fill shader naming the PDS secondary of the fill: the same with .taske only"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_taske_only.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["the same with .taske only"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emitpds-no-flags"
+question = "emitpds in a fill shader naming the PDS secondary of the fill: the same with neither .tasks nor .taske"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_no_flags.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["the same with neither .tasks nor .taske"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emitpds-freep"
+question = "emitpds in a fill shader naming the PDS secondary of the fill: the same with .freep"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_freep.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["the same with .freep"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emitpds-incp1"
+question = "emitpds in a fill shader naming the PDS secondary of the fill: #incp 1"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_incp1.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["#incp 1"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emitpds-incp2"
+question = "emitpds in a fill shader naming the PDS secondary of the fill: #incp 2"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_incp2.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["#incp 2"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emitpds-incp3"
+question = "emitpds in a fill shader naming the PDS secondary of the fill: #incp 3"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_incp3.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["#incp 3"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emitpds-addend1000"
+question = "emitpds in a fill shader naming the PDS secondary of the fill: addend 0x1000 instead of 0x100"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_addend1000.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["addend 0x1000 instead of 0x100"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emitpds-s2-zero"
+question = "emitpds in a fill shader naming the PDS secondary of the fill: s2 = 0"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_s2_zero.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["s2 = 0"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emitpds-s2-one"
+question = "emitpds in a fill shader naming the PDS secondary of the fill: s2 = 1"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_s2_one.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["s2 = 1"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emitpds-s2-ones"
+question = "emitpds in a fill shader naming the PDS secondary of the fill: s2 = 0xFFFFFFFF"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_s2_ones.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["s2 = 0xFFFFFFFF"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emitpds-sideband1"
+question = "emitpds in a fill shader naming the PDS secondary of the fill: sideband 0x1"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_sideband1.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["sideband 0x1"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emitpds-sideband200"
+question = "emitpds in a fill shader naming the PDS secondary of the fill: sideband 0x200"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_sideband200.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["sideband 0x200"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emitpds-sideband2000"
+question = "emitpds in a fill shader naming the PDS secondary of the fill: sideband 0x2000"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_sideband2000.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["sideband 0x2000"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emitpds-nosched"
+question = "emitpds in a fill shader naming the PDS secondary of the fill: emitpds.nosched.tasks.taske"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_nosched.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["emitpds.nosched.tasks.taske"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emitpds-two-emits"
+question = "emitpds in a fill shader naming the PDS secondary of the fill: two emitpds in a row, s2 0xE17D0001 then 0xE17D0002"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_two_emits.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["two emitpds in a row, s2 0xE17D0001 then 0xE17D0002"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emitpds-base-ir01"
+question = "emitpds in a fill shader naming the PDS secondary of the fill: the base emit, the PDS program stores ir0.1"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_base_ir01.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.1" }
+inputs = ["A"]
+labels = ["the base emit, the PDS program stores ir0.1"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emitpds-base-ir10"
+question = "emitpds in a fill shader naming the PDS secondary of the fill: the base emit, the PDS program stores ir1.0"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_base_ir10.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir1.0" }
+inputs = ["A"]
+labels = ["the base emit, the PDS program stores ir1.0"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emitpds-base-ir11"
+question = "emitpds in a fill shader naming the PDS secondary of the fill: the base emit, the PDS program stores ir1.1"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_base_ir11.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir1.1" }
+inputs = ["A"]
+labels = ["the base emit, the PDS program stores ir1.1"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emitpds-s2-zero-ir10"
+question = "emitpds in a fill shader naming the PDS secondary of the fill: s2 = 0, the PDS program stores ir1.0"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_s2_zero_ir10.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir1.0" }
+inputs = ["A"]
+labels = ["s2 = 0, the PDS program stores ir1.0"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emitpds-s2-ones-ir10"
+question = "emitpds in a fill shader naming the PDS secondary of the fill: s2 = 0xFFFFFFFF, the PDS program stores ir1.0"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_s2_ones_ir10.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir1.0" }
+inputs = ["A"]
+labels = ["s2 = 0xFFFFFFFF, the PDS program stores ir1.0"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emitpds-control-ir10"
+question = "emitpds in a fill shader naming the PDS secondary of the fill: no emitpds: what the fill's own run leaves as ir1.0"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_control_ir10.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir1.0" }
+inputs = ["A"]
+labels = ["no emitpds: what the fill's own run leaves as ir1.0"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emitpds-rows1"
+question = "emitpds in a fill shader naming the PDS secondary of the fill: rows 1 (the program has 2)"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_rows1.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["rows 1 (the program has 2)"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emitpds-rows4"
+question = "emitpds in a fill shader naming the PDS secondary of the fill: rows 4 (the program has 2)"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_rows4.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["rows 4 (the program has 2)"]
+cases = [[0xC0DE0001]]

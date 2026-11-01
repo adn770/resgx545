@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# zls store layout dumps: 0 probes (a shell script run on the laptop by hand, phase 11.24).
+# E465 again with the raw depth dumps kept (gzip), so that its address rule can be recomputed from stored data.
+# Documentation of a by-hand run, not a table the campaign runner runs: the runner keeps only output.txt, not the
+# raw dumps that the run kept, so the run was made by hand over ssh and its manifest written with the runner's own
+# digest. The recompute script of the run is in the dataset (zls/store-layout-dumps/).
+needs = ["render", "kpoke", "render_pb_pages", "reset"]
+name = "zls-store-layout-dumps"
+script = "store-layout-dumps.sh"

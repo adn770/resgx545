@@ -13,6 +13,16 @@ entry **[RE]** a following `mov` repeat would hold its destination and its sourc
 firmware repeats nothing itself; its 1 is taken to step fetch destinations **[infer]** (*Loads and
 stores*).
 
+*Measured on the hardware (2026-11-08).* On `stad.repeatN [rb,...], rs` the base is source 0 and
+the data source 2, so by the same rule **`I1` is the base register's increment and `I3` the data
+register's** **[HW]** (E483, 12 of 12 cases with 16 valid pointers): with `0, 0, 0, 1` the data
+steps by one and the pointer stays, one post-incremented `rb` for the whole repeat (`stad.repeat4
+[r40,#1++]` stores `r2`-`r5` at four consecutive dwords); `0, 0, 0, 2` stores every second
+register, `0, 0, 0, 0` the same register N times, `0, 1, 0, 1` and `0, 2, 0, 1` step the pointer
+by one and by two registers; `I0` and `I2` changed nothing to a store, varied only together
+(`1, 0, 1, 1` and `1, 1, 1, 1`). Without an `smlsi` both step by one. The first and the third
+increment alone were not run on a store.
+
 The first recorded run of `usse-moe-smlsi-three-sources` began with a case `(1, 1, 1, 1)` that the
 table
 no longer has: each of its readbacks is the previous case's, and with that shift every case

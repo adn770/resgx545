@@ -18,7 +18,8 @@ see the
 values of other pixels: a whole quad of instances moves to another quad of pixels, its four
 positions kept, so `i3` stays within the quad (probe `usse-internal-registers-across-tasks`,
 recorded). They are not cleared by a task start, as the temporaries are not
-(measured on our render node).
+(measured on our render node): `i0`, `i1` and `i2` written by one fill were read by the next in 9
+of 9 reader jobs (E484).
 
 `efo` reads `i0`/`i1` and writes them after its own reads; **`efo.gpiext`** reaches the other
 instances of the quad (*`efo`*).

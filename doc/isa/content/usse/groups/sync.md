@@ -8,10 +8,12 @@ Class 31 **[RE]**: `nop` is flow-control operation 5; the rest are the "other" g
 
 - **`nop`** does nothing **[infer]**; with `.end` it ends the program **[HW]** (our USE
   secondary program). `.tog` and `.trigger` are **[open]**.
-- **`wdf drcN`** waits for the loads counted on `drcN` **[RE/HW]**; **`idf drcN, bif`** is a
-  fence on memory writes counted the same way **[infer]** (*Memory, data fences and the
-  register file*). **`idf drcN, pixelbe`** hangs a fill, waiting for something a fill never
-  gives (the pixel back end?) **[HW]** (E114).
+- **`wdf drcN`** waits for the loads counted on `drcN` **[RE/HW]**, all of them whatever their form,
+  up to 100 distinct `ldad` seen, and not for those of another counter (E478, E479); with nothing
+  outstanding it returns at once (E480). **`idf drcN, bif`** is a fence on memory writes counted the
+  same way **[infer]**, which no fill case needed (*Memory, data fences and the register file*).
+  **`idf drcN, pixelbe`** hangs a fill, waiting for something a fill never gives (the pixel back
+  end?) **[HW]** (E114).
 - **`wop #n`** waits for the outputs to drain before an emit **[infer]**: our state programs
   issue `wop #0` between `emitvcbst` and `emitmtest`, as the captured ones do **[CAP/HW]**.
   `.twopart` is **[open]**.

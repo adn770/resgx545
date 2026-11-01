@@ -1,0 +1,10 @@
+title = "probe table usse/temps-sparse"
+repo = "data"
+paths = ["usse/temps-sparse/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 22
+size = 33951
+sha256 = "fef076b01ab5a8328a357bf32d7fb6360448a14fac13320cfb8e7ee1094742c9"
+recipe = "probes/usse/temps-sparse.toml"
+needs = ["render"]

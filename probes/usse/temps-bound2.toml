@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse phas requests between 192 (worked) and 224 (hung) in 11.24: 0 sweeps, 1 probes.
+needs = ["render"]
+
+[[probe]]
+name = "usse-temps-bound2-phas"
+question = "a two-phase fill started with 8 temporaries whose phas asks for 196 to 220 for phase 1"
+source = "temps_phas.s"
+temps = 8
+params = {  }
+inputs = ["T", "HI", "MARK"]
+labels = ["--temps 8; phas asks for 196 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 200 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 204 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 208 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 212 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 216 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 220 temporaries for phase 1; r123 written and read in phase 1"]
+cases = [["196", "123", "0x7E57007B"], ["200", "123", "0x7E57007B"], ["204", "123", "0x7E57007B"], ["208", "123", "0x7E57007B"], ["212", "123", "0x7E57007B"], ["216", "123", "0x7E57007B"], ["220", "123", "0x7E57007B"]]
+[probe.hypotheses]
+"a phas request up to 255 fours (1020) works, the registers up to r123 are usable" = [{ o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }]
+"a phas request above 128 fails the job" = ["fail", "fail", "fail", "fail", "fail", "fail", "fail"]

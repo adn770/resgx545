@@ -117,7 +117,8 @@
  *                                 the pixel's coordinates; --pixels: every pixel too;
  *                                 --pds N --use USE: each FILE is a PDS program with N
  *                                 data dwords (U0-U2 in dwords 0-2 are set to kick the
- *                                 secondary USE task) as the fill's PDS secondary,
+ *                                 secondary USE task) as the fill's (with --coords, the
+ *                                 copy's: USE then reads the texel in pa0) PDS secondary,
  *                                 USE its shader (a USE program that stores the
  *                                 secondary attributes sa0-sa15); --low ADDR: the scratch
  *                                 buffer mapped again at ADDR, a page in the first MiB
@@ -136,7 +137,13 @@
  *                                 base, stays unstarted) by a primary DOUTU whose EXE and
  *                                 CBASE hold the offset as cbase (bits 18:3 in EXE, bits
  *                                 22:19 in CBASE) or as exe18 (bits 20:3 in an 18-bit EXE,
- *                                 CBASE 0)
+ *                                 CBASE 0); the program placed is the emitter an emitpds
+ *                                 probe needs (the --pds file, or the built-in secondary,
+ *                                 is what it names); a limm of 0x5CB0nnnn or 0x5CB1nnnn in
+ *                                 the fill shader or the placed program is patched to the
+ *                                 PDS secondary's pixel PDS heap offset (0x5CB0) or GPU
+ *                                 address (0x5CB1) shifted right by four, plus nnnn (the s1
+ *                                 of an emitpds), and the probe prints where it is
  *   probe --tri SLOT[:N] [--slot SLOT=FILE[:N]]... [--width W --height H]
  *         [--max-width W --max-height H] [--vertices N [--copy-depth]] [--vtx-coords N]
  *         [--isp2 V] [--blk-add BIT=V[,V]]...
@@ -1164,6 +1171,12 @@ struct probe_source {
 	uint32_t pds_data;	/* its data segment, dwords */
 	bool place_prim;	/* --place: the primary's DOUTU starts the placed program, */
 	uint32_t placed_u0;	/* with these EXE and CBASE bits (21:0) */
+	const uint64_t *place_words;	/* --place: its words, patched again when the programs are */
+	uint32_t place_n;	/* built (the PDS references need the programs' addresses) */
+	uint32_t *place_dst;	/* ... and where they are in the code heap page */
+	uint64_t pds_sec;	/* where the PDS secondary was placed (set when built) */
+	uint64_t pds_base;	/* and the pixel PDS heap's base */
+	bool pds_ref;		/* a PDS reference immediate was patched */
 };
 
 /*
@@ -1181,9 +1194,41 @@ struct probe_source {
 #define LIMM_MASK	0xFF30000000000000ull
 #define LIMM_VAL	0xFC20000000000000ull
 #define SCRATCH_IMM	0x5CAF0000u
+/*
+ * Two more immediates name the PDS secondary program of the fill (the --pds file or the
+ * built-in one), for an emitpds in the probe's program or in a --place program: 0x5CB0nnnn is
+ * its offset in the pixel PDS heap shifted right by four, plus nnnn; 0x5CB1nnnn is its GPU
+ * address shifted right by four, plus nnnn (the low 32 bits). The probe prints the program's
+ * address when it patched one.
+ */
+#define PDSREF_REL	0x5CB00000u
+#define PDSREF_ABS	0x5CB10000u
 static uint32_t scratch_pages = 16;		/* probe --scratch-pages: 64 KiB by default */
 #define SCRATCH_PAGES	scratch_pages
 #define SCRATCH_FILL(i)	(0xD0000000u | (i))	/* dword i of the scratch buffer, before */
+
+/* A probe program's word with the immediates the host fills in patched (see SCRATCH_IMM). */
+static uint64_t probe_patch(struct probe_source *p, const struct sgxfive_prog_env *env,
+			    uint64_t w)
+{
+	const uint32_t imm = sgxfive_limm_get(w), k = imm & 0xffff;
+
+	if ((w & LIMM_MASK) != LIMM_VAL)
+		return w;
+	if (p->scratch && (imm & ~0xffffu) == SCRATCH_IMM)
+		return sgxfive_limm_set(w, (uint32_t)p->scratch + k);
+	if ((imm & ~0xffffu) == PDSREF_REL || (imm & ~0xffffu) == PDSREF_ABS) {
+		const uint64_t a = env->addr[SGXFIVE_PROG_PDS_SEC];
+		const uint64_t b = env->heap_base[DRM_SGXFIVE_HEAP_PDS_PIXEL];
+
+		p->pds_sec = a;
+		p->pds_base = b;
+		p->pds_ref = true;
+		return sgxfive_limm_set(w, (uint32_t)((((imm & ~0xffffu) == PDSREF_REL ? a - b : a)
+						       >> 4) + k));
+	}
+	return w;
+}
 
 static int probe_meta(struct sgxfive_prog_source *src, uint32_t id, struct sgxfive_prog_meta *m)
 {
@@ -1227,16 +1272,17 @@ static int probe_build(struct sgxfive_prog_source *src, uint32_t id,
 		uint64_t *w = out;
 
 		memcpy(out, p->words, p->n * 8);
-		for (uint32_t i = 0; p->scratch && i < p->n; i++) {
-			uint32_t imm = sgxfive_limm_get(w[i]);
-
-			if ((w[i] & LIMM_MASK) == LIMM_VAL && (imm & ~0xffffu) == SCRATCH_IMM)
-				w[i] = sgxfive_limm_set(w[i],
-							(uint32_t)p->scratch + (imm & 0xffff));
-		}
+		for (uint32_t i = 0; i < p->n; i++)
+			w[i] = probe_patch(p, env, w[i]);
 		return 0;
 	}
 	ret = p->inner->ops->build(p->inner, id, env, out);
+	for (uint32_t i = 0; !ret && id == SGXFIVE_PROG_PDS_PRIM && i < p->place_n; i++) {
+		const uint64_t w = probe_patch(p, env, p->place_words[i]);
+
+		p->place_dst[2 * i] = (uint32_t)w;
+		p->place_dst[2 * i + 1] = (uint32_t)(w >> 32);
+	}
 	if (!ret && id == SGXFIVE_PROG_PDS_PRIM && p->place_prim) {
 		uint32_t u0;
 
@@ -1270,7 +1316,7 @@ static int run_probe(struct tool *t, const char *name, const uint64_t *words, ui
 {
 	struct probe_source src = {
 		{ &probe_ops, name }, t->progs, words, n, cbase15, SGXFIVE_PROG_USE_FILL, 0, 0,
-		NULL, 0, 0, false, 0,
+		NULL, 0, 0, false, 0, NULL, 0, NULL, 0, 0, false,
 	};
 	struct sgxfive_prog_source *saved = t->progs;
 	const struct sgxfive_rect r = { 0, 0, 64, 32 };
@@ -1583,7 +1629,7 @@ static void probe_one(struct tool *t, const struct probe_file *f, const struct p
 	struct probe_source src = {
 		{ &probe_ops, f->name }, t->progs, f->words, f->n, false,
 		po->coords ? SGXFIVE_PROG_USE_COPY : SGXFIVE_PROG_USE_FILL, po->temps, 0,
-		NULL, 0, 0, false, 0,
+		NULL, 0, 0, false, 0, NULL, 0, NULL, 0, 0, false,
 	};
 
 	if (po->pds_data) {
@@ -1636,6 +1682,9 @@ static void probe_one(struct tool *t, const struct probe_file *f, const struct p
 			pp[at + 2 * i] = (uint32_t)w;
 			pp[at + 2 * i + 1] = (uint32_t)(w >> 32);
 		}
+		src.place_words = po->place.words;
+		src.place_n = po->place.n;
+		src.place_dst = pp + at;
 		if (!ret)
 			printf("probe %s: program placed at 0x%08llx (code heap base + 0x%x), "
 			       "started as %s: DOUTU bits 21:0 0x%06x\n", f->name,
@@ -1682,6 +1731,10 @@ static void probe_one(struct tool *t, const struct probe_file *f, const struct p
 			ret = sgxfive_xfer_fill(s.x, &dst, &r, 0, 0);
 		}
 	}
+	if (src.pds_ref)
+		printf("probe %s: PDS secondary at 0x%08llx (pixel PDS heap base + 0x%llx)\n",
+		       f->name, (unsigned long long)src.pds_sec,
+		       (unsigned long long)(src.pds_sec - src.pds_base));
 	if (!ret && po->late)
 		probe_late(f->name, sp, po);
 	if (ret) {
@@ -3700,7 +3753,7 @@ int main(int argc, char **argv)
 		if (popts.late && (popts.late_ready >= SCRATCH_PAGES * SGXFIVE_PAGE_SIZE / 4 ||
 				   popts.late_dword >= SCRATCH_PAGES * SGXFIVE_PAGE_SIZE / 4))
 			return usage();
-		if (i >= argc || (popts.pds_data && !popts.use.n) || (popts.pds_data && popts.coords) ||
+		if (i >= argc || (popts.pds_data && !popts.use.n) ||
 		    (popts.place.n && popts.place_form < 0) || (!popts.place.n && popts.place_form >= 0) ||
 		    ((popts.place.n || popts.scratch_texture) && popts.tri.slot >= 0) ||
 		    probe_tri_check(&popts))

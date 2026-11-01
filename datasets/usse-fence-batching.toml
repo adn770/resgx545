@@ -1,0 +1,10 @@
+title = "probe table usse/fence-batching"
+repo = "data"
+paths = ["usse/fence-batching/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 80
+size = 68873
+sha256 = "0322192f02faf45847d750e8f5f1d1b3670941dd4abbef2e4d30ecf86b65bea8"
+recipe = "probes/usse/fence-batching.toml"
+needs = ["render"]

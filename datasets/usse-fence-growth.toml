@@ -1,0 +1,10 @@
+title = "probe table usse/fence-growth"
+repo = "data"
+paths = ["usse/fence-growth/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 27
+size = 46371
+sha256 = "0eeb2aa24fe129e97b1324fdb03f760bc26fee022c873c83021de2cc7be624ff"
+recipe = "probes/usse/fence-growth.toml"
+needs = ["render"]

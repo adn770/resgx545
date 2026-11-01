@@ -1,0 +1,56 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse registers past the allocation read back as the wrapped register: 0 sweeps, 4 probes.
+needs = ["render"]
+
+[[probe]]
+name = "usse-temps-wrap-t008"
+question = "--temps 8: only r(n mod 8) is written, r(n) is read"
+source = "temps.s"
+temps = 8
+params = {  }
+inputs = ["SET", "GET", "OUT"]
+labels = ["--temps 8: r2 = marker only, read r10 (pixel) and r2 (dword 0)", "--temps 8: r3 = marker only, read r11 (pixel) and r3 (dword 0)", "--temps 8: r2 = marker only, read r18 (pixel) and r2 (dword 0)", "--temps 8: r5 = marker only, read r29 (pixel) and r5 (dword 0)"]
+cases = [["mov.skipinv r2, #0x7E5710C2", "stad [r1,+#0], r2", "r10"], ["mov.skipinv r3, #0x7E5710C3", "stad [r1,+#0], r3", "r11"], ["mov.skipinv r2, #0x7E5710C2", "stad [r1,+#0], r2", "r18"], ["mov.skipinv r5, #0x7E5710C5", "stad [r1,+#0], r5", "r29"]]
+[probe.hypotheses]
+"a read past the allocation returns the register index modulo the allocation" = [{ o0 = 0x7E5710C2, dwords = [0x7E5710C2] }, { o0 = 0x7E5710C3, dwords = [0x7E5710C3] }, { o0 = 0x7E5710C2, dwords = [0x7E5710C2] }, { o0 = 0x7E5710C5, dwords = [0x7E5710C5] }]
+"a register past the allocation is storage of its own (not the low register's value)" = [{ o0_not = 0x7E5710C2, dwords = [0x7E5710C2] }, { o0_not = 0x7E5710C3, dwords = [0x7E5710C3] }, { o0_not = 0x7E5710C2, dwords = [0x7E5710C2] }, { o0_not = 0x7E5710C5, dwords = [0x7E5710C5] }]
+
+[[probe]]
+name = "usse-temps-wrap-t016"
+question = "--temps 16: only r(n mod 16) is written, r(n) is read"
+source = "temps.s"
+temps = 16
+params = {  }
+inputs = ["SET", "GET", "OUT"]
+labels = ["--temps 16: r2 = marker only, read r18 (pixel) and r2 (dword 0)", "--temps 16: r3 = marker only, read r19 (pixel) and r3 (dword 0)", "--temps 16: r2 = marker only, read r34 (pixel) and r2 (dword 0)", "--temps 16: r5 = marker only, read r53 (pixel) and r5 (dword 0)"]
+cases = [["mov.skipinv r2, #0x7E5710C2", "stad [r1,+#0], r2", "r18"], ["mov.skipinv r3, #0x7E5710C3", "stad [r1,+#0], r3", "r19"], ["mov.skipinv r2, #0x7E5710C2", "stad [r1,+#0], r2", "r34"], ["mov.skipinv r5, #0x7E5710C5", "stad [r1,+#0], r5", "r53"]]
+[probe.hypotheses]
+"a read past the allocation returns the register index modulo the allocation" = [{ o0 = 0x7E5710C2, dwords = [0x7E5710C2] }, { o0 = 0x7E5710C3, dwords = [0x7E5710C3] }, { o0 = 0x7E5710C2, dwords = [0x7E5710C2] }, { o0 = 0x7E5710C5, dwords = [0x7E5710C5] }]
+"a register past the allocation is storage of its own (not the low register's value)" = [{ o0_not = 0x7E5710C2, dwords = [0x7E5710C2] }, { o0_not = 0x7E5710C3, dwords = [0x7E5710C3] }, { o0_not = 0x7E5710C2, dwords = [0x7E5710C2] }, { o0_not = 0x7E5710C5, dwords = [0x7E5710C5] }]
+
+[[probe]]
+name = "usse-temps-wrap-t032"
+question = "--temps 32: only r(n mod 32) is written, r(n) is read"
+source = "temps.s"
+temps = 32
+params = {  }
+inputs = ["SET", "GET", "OUT"]
+labels = ["--temps 32: r2 = marker only, read r34 (pixel) and r2 (dword 0)", "--temps 32: r3 = marker only, read r35 (pixel) and r3 (dword 0)", "--temps 32: r2 = marker only, read r66 (pixel) and r2 (dword 0)", "--temps 32: r5 = marker only, read r101 (pixel) and r5 (dword 0)"]
+cases = [["mov.skipinv r2, #0x7E5710C2", "stad [r1,+#0], r2", "r34"], ["mov.skipinv r3, #0x7E5710C3", "stad [r1,+#0], r3", "r35"], ["mov.skipinv r2, #0x7E5710C2", "stad [r1,+#0], r2", "r66"], ["mov.skipinv r5, #0x7E5710C5", "stad [r1,+#0], r5", "r101"]]
+[probe.hypotheses]
+"a read past the allocation returns the register index modulo the allocation" = [{ o0 = 0x7E5710C2, dwords = [0x7E5710C2] }, { o0 = 0x7E5710C3, dwords = [0x7E5710C3] }, { o0 = 0x7E5710C2, dwords = [0x7E5710C2] }, { o0 = 0x7E5710C5, dwords = [0x7E5710C5] }]
+"a register past the allocation is storage of its own (not the low register's value)" = [{ o0_not = 0x7E5710C2, dwords = [0x7E5710C2] }, { o0_not = 0x7E5710C3, dwords = [0x7E5710C3] }, { o0_not = 0x7E5710C2, dwords = [0x7E5710C2] }, { o0_not = 0x7E5710C5, dwords = [0x7E5710C5] }]
+
+[[probe]]
+name = "usse-temps-wrap-t064"
+question = "--temps 64: only r(n mod 64) is written, r(n) is read"
+source = "temps.s"
+temps = 64
+params = {  }
+inputs = ["SET", "GET", "OUT"]
+labels = ["--temps 64: r2 = marker only, read r66 (pixel) and r2 (dword 0)", "--temps 64: r3 = marker only, read r67 (pixel) and r3 (dword 0)", "--temps 64: r59 = marker only, read r123 (pixel) and r59 (dword 0)"]
+cases = [["mov.skipinv r2, #0x7E5710C2", "stad [r1,+#0], r2", "r66"], ["mov.skipinv r3, #0x7E5710C3", "stad [r1,+#0], r3", "r67"], ["mov.skipinv r59, #0x7E5710FB", "stad [r1,+#0], r59", "r123"]]
+[probe.hypotheses]
+"a read past the allocation returns the register index modulo the allocation" = [{ o0 = 0x7E5710C2, dwords = [0x7E5710C2] }, { o0 = 0x7E5710C3, dwords = [0x7E5710C3] }, { o0 = 0x7E5710FB, dwords = [0x7E5710FB] }]
+"a register past the allocation is storage of its own (not the low register's value)" = [{ o0_not = 0x7E5710C2, dwords = [0x7E5710C2] }, { o0_not = 0x7E5710C3, dwords = [0x7E5710C3] }, { o0_not = 0x7E5710FB, dwords = [0x7E5710FB] }]

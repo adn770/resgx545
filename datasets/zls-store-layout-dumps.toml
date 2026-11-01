@@ -1,0 +1,10 @@
+title = "script table zls/store-layout-dumps"
+repo = "data"
+paths = ["zls/store-layout-dumps/"]
+method = "script table zls/store-layout-dumps, run by hand over ssh on the laptop (not by the campaign runner, which keeps output.txt only), so this manifest was written by hand with the runner's own digest; the rerun of the 11.22 script that keeps the raw depth dumps (gzip, dumps/), their sizes and raw sha256 (dumps.txt), its output.txt, the kernel log of the window, the recompute scripts of this phase and their output (recompute.txt)"
+date = "2026-11-08"
+files = 43
+size = 1130149
+sha256 = "d72659b6d58c597dc09d2106f4b0e6b4568fc71e8202b861f13bd28e8647acb3"
+recipe = "probes/zls/store-layout-dumps.toml"
+needs = ["render", "kpoke", "render_pb_pages", "reset"]

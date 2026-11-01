@@ -199,7 +199,20 @@ marked.
   `phas` names it for the next phase. Our end-of-tile program asks for four and uses `r0`-`r3`.
   Temporaries are **not cleared** between tasks: a client shader that reads one before
   writing it sees what an earlier task left there, firmware data included
-  (measured from a client pixel shader on our render node).
+  (measured from a client pixel shader on our render node); `r40` and `r47` written by one fill
+  were read by the next in 7 of 7 reader jobs (2048 of 2048 pixels each), and by one two fills
+  later, after a fill that wrote no temporary, in 2 of 2 (E484: a pair of fills, not EDM tasks;
+  Q124, Q131). The registers sampled up to `r123` are separate storage in a fill started with up to
+  128 temporaries (`--temps` 52, 64, 80, 96, 112, 124 and 128: 14 of 14 cases, every second or
+  fourth register from `r2` and the top one; E485) **[HW]**. **A register at or past the task's
+  allocation `T` reads as register `n mod T` in most instances, and a write to it was not seen to
+  reach it [HW]**: in client pixel tasks `r(n)` read the marker written to `r(n mod T)` in 88 to
+  99.6 percent of the 2048 instances in 15 of 15 cases (by `T`: 95.3 to 99.6 percent at 8, 95.3 to
+  98.4 at 16, 88.3 to 96.1 at 32, 92.1 to 92.2 at 64), the rest of the instances reading other
+  values, so the rule is "most instances" and no program may rely on it; in 4 of 4 cases that also
+  wrote a marker to `r(n)` (`T` = 8 and 32 only) the instances read the value of `r(n mod T)`, not
+  the one written; nothing faulted or hung (E486). The model gave such a register storage of its own
+  or a fault. A `phas` request is the allocation of its phase (*Tasks and phases*).
 - **Primary attributes [HW].** The PDS fills them per task: `doutd` DMAs memory into them
   (the vertex fetch of our triangle lands in `pa0`-`pa3`), `douti` has the iterator write
   them and `doutt` returns a texture fetch into them (our copy shader reads its texel from
@@ -207,7 +220,12 @@ marked.
 - **Secondary attributes [CAP/RE].** Shared by the instances of a task and written by a
   secondary PDS program. The firmware keeps its base pointers there (`sa0`-`sa2`, DMAed from
   the TA/3D control block at boot) and some of its state (`sa8`, `sa9`, `sa19`), and it does
-  write them (`doc/specs/hw_spec.md` 12.1).
+  write them (`doc/specs/hw_spec.md` 12.1). In a pair of fills on the render node **[HW]** an `sa`
+  written by one job is read by the next (`sa1`, `sa5` and `sa7`: 9 of 9 reader jobs, 2048 of 2048
+  pixels each) but not by one two jobs on: after a job that wrote no `sa` the reader read that
+  job's pixel colour (3 of 3), as it does for an `sa` nobody wrote (2 of 2) (E484, Q098); 12
+  pixels (4 of each value) of each of the 18 jobs that wrote `sa1`, `sa5` and `sa7` show the `sa`
+  value as their colour (Q129).
   In an end-of-tile task `sa0`-`sa127` are the tile buffer the task's emit sends: one
   instance of the task covers 16 x 8 pixels, `sa(4q + i)` pixel `i` (top left, top right,
   bottom left, bottom right) of the block's 2 x 2 quad `q` in raster order, and what the task
@@ -246,7 +264,8 @@ marked.
   temporaries (bank 0, numbers 124-127; in the half-float and c10 readings, earlier). They
   are the accumulators of the dual-issue and `efo` groups and the carry registers of
   `imae`/`ima32`. **[HW]** `i0`-`i2` are per instance, hold what `mov` or `fddp` writes and keep it
-  from one task to the next, also another client's; `i3` reads `i0` of the next instance of
+  from one task to the next, also another client's (9 of 9 reader jobs after a writer fill, E484);
+  `i3` reads `i0` of the next instance of
   the 2x2 quad and drops writes, and `efo.gpiext` reaches across the quad (*Internal
   registers*, *`efo`*).
 - **Index registers [RE].** A destination bank writes `i.l`, `i.h` or both (`i.lh`); an
@@ -294,7 +313,9 @@ The integer multiply-add, colour, dot-product and video groups have only a two-b
   reads the pattern the job before it left, in 98 to 99 percent of its 2048 pixel instances (E477:
   2016 to 2032 pixels in each of the ten readers that followed a setter) and another pattern in the
   others. The probe table's model, "cleared at the start of a job", fails. A task sets `p0`-`p3` by
-  a test before it reads them; across firmware tasks the state is **[open]** (Q124).
+  a test before it reads them; across firmware tasks the state is **[open]** (Q124). A second
+  table agrees: `p0` and `p1` after a setter read the kept value in 96.3 to 100 percent of the
+  pixels in 10 of 10 reader jobs (E484).
 
 **In the firmware [RE].** The microkernel's predicates guard branches above all: 591 of its
 954 `ba` are predicated (`p0` 318, `!p0` 94, `p2` 76, `p1` 72, `!p1` 26, `p3` 5). A few dozen
@@ -383,7 +404,9 @@ a repeat or, with the MOE-expand bit `enc[53]` clear, as a **fetch** of N regist
   the default MOE state each operand register number advances by one per iteration. The
   iterations run one after the other in ascending order, so overlapping ranges propagate,
   and one predicate covers the whole instruction (*Repeat order and overlapping ranges*,
-  *Predicates on repeated instructions*).
+  *Predicates on repeated instructions*). **A repeated load or store steps its pointer register
+  too [HW]**: iteration `i` of `stad.repeatN [rb,...], rs` uses `r(b + i)` as its address, not
+  `rb` (E483, *Loads and stores*).
 - **The MOE state.** The register advance per iteration is programmable: the MOE group sets
   per-operand increments or swizzles (`smlsi`), base offsets (`smbo`), address modes and
   offsets (`smoa`) and ranges (`smr`) **[RE]**: the decoder names the state
@@ -505,6 +528,20 @@ The waits and modes on the hardware (E101) **[HW]**:
   of ISP words 0 and 1 turns per-sample shading on either (E117), nor any bit of the render
   details' sample-related words (`isp_sample_pos`, `isp_multisamplectl`, which holds the sample
   positions, `isp_line_sample_pos`, `reg_0800`, `frag_flags`; E120).
+- **A phase's temporaries are its `phas` request [HW]** (E487): in a two-phase fill the 12 requests
+  8, 16, 32, 64, 96, 124, 128, 132, 136, 144, 160 and 192 ran: the marker written to the phase's
+  highest register, `r123` from 124 up, read back in 15 of 15 jobs (the task started with 8, and
+  192 also with 32, 64 and 128), whatever the task was started with. Every request from 124 up
+  wrote `r123` only (`r124` and up cannot be named as an ALU operand), so these show that the job
+  runs and that `r123` is real storage, not that 192 temporaries are usable; the register numbers
+  a program can name end at 123. The 12 requests 196, 200, 204, 208, 212, 216, 220, 224, 252, 256,
+  508 and 1020 hung the job (15 of 15, 196 also started with 32, 64 and 128; each hang recovered
+  by the driver with no reload). 192 is the highest value run that did not hang, among the values
+  run, not a measured limit: 228 to 248, 260 to 504, 512 to 1016 and the multiples of four below
+  192 other than the 12 were not run, and the 12 and 12 are not an interval. Every request run was
+  a multiple of four. The 15 jobs that ran took 420 to 583 microseconds, with no cost seen in
+  single samples. A register past a phase's request reads as `n mod T` in most instances
+  (*Machine model*). The limit for a firmware task is **[open]** (Q133).
 - **The register form** `phas srcA, srcB` hung or faulted with every source layout tried
   (absolute index, offset or `doutu` U0 layout, against the immediate's fields or high dword);
   none started the next phase (E118).
@@ -519,13 +556,46 @@ same form our programs use (immediate operands zero, `pixel`, `end`, `parallel`)
 
 - **Loads complete asynchronously.** A load (`ld*`, `eld*`, `ldr`, the samplers) names a data
   fence counter, `drc0` or `drc1` (two bits for `ldr` and the samplers, `drc0`-`drc3`), and
-  `wdf drcN` waits until the loads counted on it have landed **[RE/HW]**. The firmware almost
-  always follows its loads with a `wdf` before using the data (711 `wdf drc0`, 96 `wdf drc1`),
-  and our programs wait with `wdf drc0` for the attribute DMA the PDS started.
+  `wdf drcN` waits until the loads counted on it have landed **[RE/HW]**. In a fill one `wdf
+  drc0` covers every load outstanding on `drc0`, whether `ldad`, `ldad.fetchN` (the whole fetch)
+  or `ldr`: 1, 2, 4, 8 and 16 independent `ldad`, five mixes with fetches of 2, 4, 8 and 16
+  dwords and `ldr`, and, in the growth runs, 24, 32, 48, 64, 80 and 100 distinct `ldad` on
+  `drc0`, 32, 64 and 100 on `drc1` and 2, 4, 8, 12 and 16 `ldad.fetch16` (256 dwords) were all
+  complete after the one `wdf`, and no limit on the number outstanding was seen up to 100 distinct
+  `ldad` on one counter and 16 `ldad.fetch16` **[HW]** (E478). Three more cases, 128, 160 and 200
+  `ldad` reloading the same eight lines into eight registers, were complete too (27 of 27 cases in
+  all, one run each), but they issue the same loads again, so a lost or late reload would leave
+  the registers unchanged: they cannot show a lost reload. A load is not complete without the
+  `wdf` in the sense that one `ldad` read by a `stad` still holds the register's old value after
+  0, 1, 2, 4, 8, 16 or 32 `nop`s and four `ldad` after 0 or 16 (9 of 9); a read by an ALU
+  instruction, more than 32 slots and a write to the same register were not run, so no instruction
+  count seen stands in for the `wdf`. A `wdf`
+  with nothing outstanding returns at once and hangs nothing (11 of 11 cases: as the first
+  instruction, on a counter never used, twice in a row, on all four counters, and after an
+  `idf drcN, bif` with nothing stored; E480). **A `wdf drcN` does not wait for the loads of the
+  other counters [HW]** (E479): loads of another counter issued after the waited ones were still in
+  flight in 10 of 10 runs (four `ldad` on `drc1` after two `ldr` on `drc2`, `wdf drc2` only) and in
+  2 of 10 (four `ldad` on `drc0` after four on `drc1`, `wdf drc1` only), and complete in the runs
+  that had waited on four `ldad` first (28 of 30), so what has landed depends on timing: each
+  counter counts its own loads **[infer]**, and a program waits on every counter it used. The
+  counts of ten runs are those of scratch runs recounted by the reviewer; the data hold one run of
+  each case (2 of the 8 cases show the markers in it). All this was measured in client pixel tasks,
+  not in an EDM task (Q131). The firmware almost always follows its
+  loads with a `wdf` before using the data (711 `wdf drc0`, 96 `wdf drc1`), and our programs wait
+  with `wdf drc0` for the attribute DMA the PDS started.
 - **`idf drcN, bif`** appears 124 times in the firmware, mostly right before a `wdf` on the
   same counter, after stores **[RE]**: it looks like a fence that makes earlier memory writes
-  visible (through the BIF, the memory interface) and is counted on `drcN` **[infer]**. The
-  `pixelbe` and reserved modes of `idf` are **[open]**.
+  visible (through the BIF, the memory interface) and is counted on `drcN` **[infer]**. In a fill
+  no measured case needed it **[HW]**: a `stad` and a later load of the same dword, all 2048
+  instances of the fill storing the same value to that dword, returned the stored value with no
+  `idf` in 16 of 16 cases (`ldad`, `.bypassl1`, `.fcfill`, `eldd`, `.bpcache`, on `drc1`, after two
+  stores and after sixteen; E481), and the dword the host read held the stored value after seven
+  short programs (one or sixteen `stad`) that ended with no fence, an `idf` only, a `wdf` only,
+  both, or a `nop` (E480). Both show a dword that every instance wrote with one value: they do not
+  show that one instance sees its own store, or that one instance's unfenced store reaches the
+  host (Q134). When an `idf` is required (another instance, the host during the job, a texture
+  fetch of the stored data) is **[open]** (Q134).
+  The `pixelbe` and reserved modes of `idf` are **[open]**.
 - **Addresses.** Loads and stores take a base register and an offset counted in elements of
   the access size (4 bytes for `d`, 2 for `w`, 1 for `b`) **[DDK/HW]**; the addressing modes
   and the fetch rule are in *Loads and stores*. Addresses are device virtual addresses of the
@@ -533,7 +603,8 @@ same form our programs use (immediate operands zero, `pixel`, `end`, `parallel`)
 - **The SGX register file** is not memory: `ldr rD, #idx` and `str #idx, src` read and write
   the SGX register at offset `idx × 4` **[RE/HW]**. A client pixel shader on our render node
   reads any register this way; a client store to the one register tried was dropped
-  (measured on our render node).
+  (measured on our render node). Whether a `str` then an `ldr` of one register is ordered without
+  a fence is **[open]**: no client `str` was seen to change a register (Q134).
 - **Caches.** `ci`, `cf` and `cfi` invalidate, flush, or flush and invalidate the levels their
   last operand names (L0 and L1, L2, or all three) **[infer]**, from the names the reference
   disassembler prints; the cache mode flags of loads and stores (`.bpcache`, `.fcfill`,
@@ -587,7 +658,9 @@ destination extension): temporaries, `pa`, `o` and `sa` only; no immediates.
 | 2 | `o0` | `o1` | `o127` |
 | 3 | `sa0` | `sa1` | `sa127` |
 
-- **Temporaries and internal registers.** In bank 0, numbers 124-127 print as `i0`-`i3`; in
+- **Temporaries and internal registers.** In bank 0, numbers 124-127 print as `i0`-`i3` **[RE]**;
+  as load destinations they are not the internal registers: `ldad.fetch4 r124` in a job started
+  with 128 temporaries left `i0`-`i2` as they were (one case, E485) **[HW]**. In
   the 6-bit readings below (half floats, c10, the colour groups) the temporaries stop at `r59`
   (`r29` for half-float halves) and the internal registers follow. A load destination is
   either `r0`-`r127` or `pa0`-`pa127` (one bank bit, `enc[39]`).
@@ -5220,6 +5293,31 @@ writes **none of them**: with 32 temporaries, `ldad.fetch4 r28` loads `r28`-`r31
 `(o >> 16) × (o & 0xffff)` bytes, and a fetch starts one element after it too **[HW]** (*Register
 offsets of loads and stores*); the firmware has four such stores.
 
+- **A store has a fetch too [HW].** `stad.fetchN [rb,+#k], rs` stores `rs` to `rs + N - 1` in the
+  N consecutive dwords `b + k + 1` to `b + k + N`, the one-dword shift of a load fetch (N = 2, 4 and
+  16 with `k` = 1 and N = 4 with `k` = 0: 4 of 4 cases), and `stad.fetchN [rb,#1++], rs` stores them
+  from `b + 1` and moves `rb` by N once (N = 2, 4 and 16: 3 of 3) (E482). A copy of 16 dwords is so
+  `ldad.fetch16 rA, [rS,+#0], drc0; wdf drc0; stad.fetch16 [rD,+#0], rA` with `rD` one dword below
+  the destination (1 of 1 case: 16 dwords in order). A fetch store with another `k` (only 0 for
+  fetch4 and 1 were run), the pre-increment form and a fetch wider than 16 were not run.
+- **`.repeatN` of a store or a load steps the pointer register too [HW].** In `stad.repeatN
+  [rb,...], rs` iteration `i` stores `r(s + i)` at the address held in `r(b + i)` (the data
+  address read for every `i`, N up to 16), and the pointer registers `r40` to `r43` move by the
+  form's own increment: `k` after its access for `[rb,#k++]`, `k` before it for `[rb,++#k]`, none
+  for `[rb,+#k]` (26 of 26 cases with 16 valid pointers `r40`-`r55`: N = 2, 3, 4, 8 and 16 plain,
+  N = 2, 4, 8 and 16 post-increment, N = 2 and 4 pre-increment, twelve after an `smlsi` and one
+  copy). The movement was read for `r40` to `r43` only: whether `r44` to `r55` move at N = 8 and
+  16, and whether the pointers a repeat does not use stay, was not read, so a program must not
+  reuse `r(b + 4)` to `r(b + 15)` after a post-incremented `repeat8` or `repeat16` and rely on
+  either; N = 5 to 7 and 9 to 15 were not run. `ldad.repeatN rd, [rb,...]` loads likewise the dword
+  `r(b + i)` addresses into `r(d + i)` (7 of 7 cases: N = 2, 4, 8 and 16; the pointer movement read
+  for 2 or 4 pointers). The model had N accesses from the one pointer `rb`. With
+  only `rb` (and `r41` for the loads) holding an address, the registers after it are read as
+  pointers too: the first run faulted the job in all 7 `ldad.repeatN` cases and in the 9 of 9
+  `stad.repeatN` cases with N of 4, 8 and 16, while `stad.repeat2` and `repeat3` completed, storing
+  `r3` at the address `r41` held (E483). The one-pointer series is `smlsi #0, #0, #0, #1` first
+  (*`smlsi` increments*): `stad.repeat16 [rb,#1++], r2` then stores `r2` to `r17` at 16
+  consecutive dwords and moves `rb` by 16 (2 of 2 cases, two instructions, no one-dword shift).
 - **Cache modes.** The firmware uses `.bpcache` on almost every access; `.fcfill` once.
   The SGX540 swaps the two cache-mode bits; `usse-dis --core 540` follows it. No mode, `eld`'s
   `.bypassl1` included, makes a reload miss a store, in one instance or across instances
@@ -5635,6 +5733,10 @@ Class 31, other group, operation 6 **[RE]**. `ldr rD, #idx, drcN` reads SGX regi
   returns `BIF_DIR_LIST_BASE0`, from a client pixel shader on our render node; a client
   `str #671` (`USE_G0`) changed nothing (measured on our render node). The firmware
   programs the whole GPU with these two instructions.
+- **Ordering [open].** A `stad` and a later `ldad` of one dword, with all instances storing the same
+  value to it, return the stored value without an `idf` (*Memory, data fences and the register
+  file*, E481; one instance's own store is not isolated, Q134); `str` then `ldr` of one register is
+  not measured, as no client `str` was seen to change anything (Q134).
 - **The index [HW].** `ldr rD, rI` masks a register index to 14 bits (*The 14-bit
   `ldr`/`str` index*); `str` with a register index is **[open]**.
 - The decoder holds two copies of these forms (an older one and the class-31 family's); the
@@ -5985,10 +6087,12 @@ Class 31 **[RE]**: `nop` is flow-control operation 5; the rest are the "other" g
 
 - **`nop`** does nothing **[infer]**; with `.end` it ends the program **[HW]** (our USE
   secondary program). `.tog` and `.trigger` are **[open]**.
-- **`wdf drcN`** waits for the loads counted on `drcN` **[RE/HW]**; **`idf drcN, bif`** is a
-  fence on memory writes counted the same way **[infer]** (*Memory, data fences and the
-  register file*). **`idf drcN, pixelbe`** hangs a fill, waiting for something a fill never
-  gives (the pixel back end?) **[HW]** (E114).
+- **`wdf drcN`** waits for the loads counted on `drcN` **[RE/HW]**, all of them whatever their form,
+  up to 100 distinct `ldad` seen, and not for those of another counter (E478, E479); with nothing
+  outstanding it returns at once (E480). **`idf drcN, bif`** is a fence on memory writes counted the
+  same way **[infer]**, which no fill case needed (*Memory, data fences and the register file*).
+  **`idf drcN, pixelbe`** hangs a fill, waiting for something a fill never gives (the pixel back
+  end?) **[HW]** (E114).
 - **`wop #n`** waits for the outputs to drain before an emit **[infer]**: our state programs
   issue `wop #0` between `emitvcbst` and `emitmtest`, as the captured ones do **[CAP/HW]**.
   `.twopart` is **[open]**.
@@ -6484,10 +6588,10 @@ Confirmed on the hardware (a passing vector): #133, #134, #135, #136, #138, #139
 ### 6.25 Phases: `phas`
 
 Class 31 **[RE]**. The immediate form is described in *Tasks and phases*: the next phase's
-instruction index (18 bits), its temporaries (eight bits, times four), the rate, the wait
-condition and the instance mode, plus `.end`. A register form takes two source operands
-instead (presumably the same information computed at run time **[infer]**). Both exist twice
-in the decoder's table, as for `ldr`/`str`.
+instruction index (18 bits), its temporaries (eight bits, times four; 192 is the highest value run
+that did not hang, *Tasks and phases*), the rate, the wait condition and the instance mode, plus
+`.end`. A register form takes two source operands instead (presumably the same information computed
+at run time **[infer]**). Both exist twice in the decoder's table, as for `ldr`/`str`.
 
 From `asm/tri/use_vtx.s`:
 
@@ -6630,11 +6734,24 @@ output registers) to another unit. All take an `#incp` number (three bits) and `
   there, the job hangs. `emitmtevtx` draws the same without it, and with neither emit flagged no
   triangle is drawn. On the state emits `.twopart` changes nothing a triangle shows, on either emit
   or both (E106). What it is for there, and `.cut`, are **[open]**.
-- **`emitpds.tasks.taske #incp, s0, s1, s2, #sideband`** starts a PDS program **[CAP/RE]**:
-  the microkernel's boot task launches PDS programs #11 and #12 this way and its request path
-  #14; the control word carries the program's data size in four-dword units at bits 27-23
-  (`doc/specs/hw_spec.md`). `.tasks`/`.taske` (task start and end?) are
-  **[open]**.
+- **`emitpds.tasks.taske #incp, s0, s1, s2, #sideband`** starts a PDS program **[CAP/RE]**: the
+  microkernel's boot task launches PDS programs #11 and #12 this way and its request path #14; the
+  control word carries the program's data size in four-dword units at bits 27-23
+  (`doc/specs/hw_spec.md`) and, below it, an addend. A client fill shader can execute it **[HW]**
+  (E488, one instance emitting, a copy's shader): with `s1` the pixel PDS heap offset of the fill's
+  PDS secondary shifted right by four (4 for the copy's, at heap base + 0x40), two data rows and the
+  addend 0x100, the named program ran in 18 of the 19 `ir0.0` probes (it stored 3 in 16 and 2 in 2,
+  where the fill's own run leaves 0x400 to 0x403), and with the addend 0x1000 the dword held the
+  no-emit value once (1 probe, twice with a repeat outside the data, in jobs that all faulted: one
+  observation, not a stop). **`s2` is not `ir0` or `ir1` of the started program**: with `s2` 0, 1,
+  0xFFFFFFFF and 0xE17D0001 the program saw `ir0.0` 3, 3, 2 and 3, and `ir1.0` 0 for 0, 0xFFFFFFFF
+  and 0xE17D0001 (against the reading of E146, which came from the operand order). `.tasks`,
+  `.taske`, both, neither, `.freep`, `.nosched`, `#incp` 1 to 3, the sideband 0x1, 0x200 and 0x2000
+  and a data size of 1, 2 or 4 rows each changed nothing seen of whether the program ran (one probe
+  each). **Every job that executed an `emitpds` then faulted or hung, 24 of 24 (`BIF fault` at page
+  0xd2000 in 22, 0x92000 once with sideband 0x1, a hang for two emits in a row), each recovered by
+  the driver with no reload** (Q128): a client emit is a hang risk, not a tool, and the model's
+  start of a PDS program is not the whole of it. What `.tasks`/`.taske` do is **[open]** (Q054).
 - **`.freep`** frees the task's resources after the emit **[infer]**; **`#incp`** is always 0
   in our programs and its meaning is **[open]**.
 - The assembler writes the unprinted source of `emitvcbst`/`emitvcbvtx` and the unprinted
@@ -7844,6 +7961,16 @@ entry **[RE]** a following `mov` repeat would hold its destination and its sourc
 firmware repeats nothing itself; its 1 is taken to step fetch destinations **[infer]** (*Loads and
 stores*).
 
+*Measured on the hardware (2026-11-08).* On `stad.repeatN [rb,...], rs` the base is source 0 and
+the data source 2, so by the same rule **`I1` is the base register's increment and `I3` the data
+register's** **[HW]** (E483, 12 of 12 cases with 16 valid pointers): with `0, 0, 0, 1` the data
+steps by one and the pointer stays, one post-incremented `rb` for the whole repeat (`stad.repeat4
+[r40,#1++]` stores `r2`-`r5` at four consecutive dwords); `0, 0, 0, 2` stores every second
+register, `0, 0, 0, 0` the same register N times, `0, 1, 0, 1` and `0, 2, 0, 1` step the pointer
+by one and by two registers; `I0` and `I2` changed nothing to a store, varied only together
+(`1, 0, 1, 1` and `1, 1, 1, 1`). Without an `smlsi` both step by one. The first and the third
+increment alone were not run on a store.
+
 The first recorded run of `usse-moe-smlsi-three-sources` began with a case `(1, 1, 1, 1)` that the
 table
 no longer has: each of its readbacks is the previous case's, and with that shift every case
@@ -8068,7 +8195,8 @@ see the
 values of other pixels: a whole quad of instances moves to another quad of pixels, its four
 positions kept, so `i3` stays within the quad (probe `usse-internal-registers-across-tasks`,
 recorded). They are not cleared by a task start, as the temporaries are not
-(measured on our render node).
+(measured on our render node): `i0`, `i1` and `i2` written by one fill were read by the next in 9
+of 9 reader jobs (E484).
 
 `efo` reads `i0`/`i1` and writes them after its own reads; **`efo.gpiext`** reaches the other
 instances of the quad (*`efo`*).
@@ -8638,9 +8766,10 @@ open driver:
    reads. The state does not outlive the job that sets it, and the sequences that faulted did
    so through the stores after them, whose address register the offsets and the mirror mode
    moved (E369, E370) (Q051).
-3. **`.syncs`** and the other scheduling flags beyond `.nosched`: a read 0 to 8 instructions
-   after a `mov`, `or`, `fmad`, `frcp` or `fexp` sees its result with or without `.nosched`
-   (E371); `.syncs` hangs a fill's task (Q052).
+3. **`.syncs`** and the other scheduling flags beyond `.nosched`: a read 0 to 8 instructions after a
+   `mov`, `or`, `fmad`, `frcp` or `fexp` sees its result with or without `.nosched` (E371); a load
+   read by a `stad` after up to 32 `nop`s still holds the register's old value with no `wdf` (E478;
+   a read by an ALU instruction was not run); `.syncs` hangs a fill's task (Q052).
 4. **The global bank**: what `g18`-`g20` and `g39`-`g43` hold in a vertex task and the
    end-of-tile task; in a triangle's pixel task they read as in a fill (E374), and `g19` reads
    0 through `mov`, 0x11 through the bitwise group and 0x1a as a store's source (E372) (Q053).
@@ -8648,7 +8777,8 @@ open driver:
    changes nothing a triangle shows; `.cut` on `emitmtevtx` hangs the job, E376), `.twopart`
    on the state emits (needed on `emitvcbvtx`, E102; shows nothing on the state emits, E106);
    the PBE sideband bits beyond the pack mode and bit 9, `TILERELATIVE` (Q054; Q074 asks what
-   bit 9 does).
+   bit 9 does); `emitpds` runs the PDS program it names from a client fill but ends the job in a
+   fault or hang, 24 of 24 (E488, Q128).
 6. **`idf` modes** other than `bif` (each hangs a fill's job at its `wdf`, E375), `lock`/
    `release`, `setm`, and the cache-control operands (Q055).
 7. **Instruction timing**: what a result costs in cycles; a fill's instructions cost 0.320 µs
@@ -8664,6 +8794,13 @@ open driver:
    jobs (Q125); how `iaddu32` extends a source 1 above 0x7fff and what a zero test of an overflowed
    sum does (Q126); `ima32`'s extra `i` operand and dual-issue form and `imae`'s repeats,
    `u16`/`z16` sources and `.rsN` shifts with the carries (Q127).
+10. **Fences, repeats, registers and persistence for a firmware compiler**: why a `wdf` waits
+   for another counter's loads in some runs and not in others (Q130); whether a firmware (EDM)
+   task behaves as a fill for `wdf`, unfenced stores and two tasks at once (Q131, firmware);
+   what a client `str` changes and whether `str` then `ldr` is ordered (Q134); why a client
+   `emitpds` faults the job (Q128); the 12 pixels of an `sa` writer that show the `sa` (Q129);
+   where a write past the allocation goes (Q132); what bounds a `phas` request at 192 (Q133).
+   The overlap of two firmware tasks and `str` then `ldr` are not answered (Q131, Q134).
 
 The simulator (`crates/sgx-sim`) reproduces 24711 probe vectors (15526 of them with near values:
 float functions within their measured bound) and 143 pixel vectors; it stops on 1885 rather than

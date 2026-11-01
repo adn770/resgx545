@@ -404,7 +404,15 @@ four most frequent values) or `failed: ...`, and the dwords of a 64 KiB scratch 
 program changed. A `mov d, #0x5CAFnnnn` (a limm) is patched to load the scratch buffer's
 address + `nnnn`; the buffer starts with dword `i` = `0xD0000000 | i`, so loads see which
 dword they read and stores show up as changed dwords. A failed probe still prints the dwords
-changed before the job hung or faulted, or `scratch unchanged`.
+changed before the job hung or faulted, or `scratch unchanged`. A limm of `0x5CB0nnnn` or
+`0x5CB1nnnn` (in the shader, or in a `--place` program) is patched to name the fill's PDS
+secondary program (the `--pds` file, else the built-in one) the way an `emitpds` wants it
+(s1): its offset in the pixel PDS heap (`0x5CB0`) or its GPU address (`0x5CB1`), shifted right
+by four, plus `nnnn`; the probe then prints `PDS secondary at ADDR (pixel PDS heap base + OFF)`.
+`--pds N --use USE` may be combined with `--coords` (the PDS secondary of the copy, whose
+shader reads the texel in `pa0`: one instance can be picked by a test of `pa0`).
+`--place` is also how an emitter reaches the hardware: the placed program holds the `emitpds`
+and the probe's own program (at the heap base) is what it can start.
 
 - `--coords` runs FILE as the shader of a 64x32 copy whose source texel (x, y) is
   `(y << 16) | x`, so that `pa0` holds the pixel's coordinates.

@@ -1,0 +1,10 @@
+title = "probe table usse/task-state"
+repo = "data"
+paths = ["usse/task-state/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 96
+size = 52460
+sha256 = "4105372ed5a1a383e4999d1f8391c06ba825816e382a7a01235b76d7ec5e3235"
+recipe = "probes/usse/task-state.toml"
+needs = ["render"]

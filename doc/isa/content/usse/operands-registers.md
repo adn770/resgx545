@@ -25,7 +25,9 @@ destination extension): temporaries, `pa`, `o` and `sa` only; no immediates.
 
 <!-- @banks usse pat='^emitpix1' field=4 -->
 
-- **Temporaries and internal registers.** In bank 0, numbers 124-127 print as `i0`-`i3`; in
+- **Temporaries and internal registers.** In bank 0, numbers 124-127 print as `i0`-`i3` **[RE]**;
+  as load destinations they are not the internal registers: `ldad.fetch4 r124` in a job started
+  with 128 temporaries left `i0`-`i2` as they were (one case, E485) **[HW]**. In
   the 6-bit readings below (half floats, c10, the colour groups) the temporaries stop at `r59`
   (`r29` for half-float halves) and the internal registers follow. A load destination is
   either `r0`-`r127` or `pa0`-`pa127` (one bank bit, `enc[39]`).

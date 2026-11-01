@@ -1,0 +1,10 @@
+title = "probe table usse/temps-past"
+repo = "data"
+paths = ["usse/temps-past/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 29
+size = 27413
+sha256 = "91fcad8ed7fd4fd429af2e8c03e4c9a96248f57823d26ecb3a3070a044edd557"
+recipe = "probes/usse/temps-past.toml"
+needs = ["render"]
