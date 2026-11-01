@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# isp tag write: 2 probes (written by tools/usse-asm/isp_words.py).
+# ISP0 bit 21 and the depth it writes.
+needs = ["render", "kpoke"]
+
+[[probe]]
+name = "isp-tag-write-b210"
+question = "ISP0 bit 21 clear on the first of two objects: does the second still draw behind it"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 6
+blk = { 1 = 0x400200 }
+obj2 = { first = 3, blk = { 1 = 0x400200 }, pixel = "pix_blue.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["bit 21 0"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-tag-write-b211"
+question = "ISP0 bit 21 set on the first of two objects: does the second still draw behind it"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 6
+blk = { 1 = 0x600200 }
+obj2 = { first = 3, blk = { 1 = 0x400200 }, pixel = "pix_blue.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["bit 21 1"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]

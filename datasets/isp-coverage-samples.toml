@@ -1,0 +1,10 @@
+title = "probe table isp/coverage-samples"
+repo = "data"
+paths = ["isp/coverage-samples/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 56
+size = 1951210
+sha256 = "8bb5387fce5a27a268f54081f6a97070519a1b1f75a8ce28f1b3ed161fe8cda5"
+recipe = "probes/isp/coverage-samples.toml"
+needs = ["render", "kpoke"]

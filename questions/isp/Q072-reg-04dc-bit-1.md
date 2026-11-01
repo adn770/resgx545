@@ -1,19 +1,20 @@
 +++
 id = "Q072"
-question = "is bit 1 of CR_ISP_REG_04DC an up-front depth test, given that it hangs every punch-through pass tried?"
+question = "what does bit 1 of CR_ISP_REG_04DC do to a punch-through pass, when it hangs every one tried and changes no opaque or translucent pass?"
 unit = "isp"
 phase = 11
-evidence = ["E068", "E073", "E213", "E222"]
+evidence = ["E068", "E073", "E213", "E222", "E290"]
 terms = ["CR_ISP_REG_04DC"]
 +++
 
-No value of the render-constant ISP registers changes a copy, a fill, a textured triangle (E068) or
-42 overlapping triangles (E073). CR_ISP_REG_04DC bit 1 hangs every punch-through case tried, while
-0, 1 and 4 give the pass's own image (E213, E222).
+No value of the render-constant ISP registers changes a copy, a fill, a textured triangle (E068)
+or 42 overlapping triangles (E073). Bit 1 hangs every punch-through case tried (E213, E222), and
+with five overlapping copies, depth less with writes, it changes neither the kept copy nor the
+visibility count in an opaque or a translucent pass (E290).
 
-What is open (3d.md §11.9): whether bit 1 moves the depth test ahead of the shader, since a hang
-gives no depth.
+What is open (3d.md §11.9): why the punch-through pass alone stops. An up-front depth test would
+keep the same pixels in those passes, so E290 cannot rule it out.
 
-To settle it: on the laptop, bit 1 set on opaque and translucent scenes with depth less and a shader
-whose output would differ before and after the test, the visibility counters read; a punch-through
-scene without feedback.
+To settle it: bit 1 on a punch-through pass whose shader only discards (no feedback), and on one
+whose feedback ends before any depth is written, one case a probe; a translucent pass whose shader
+writes depth (depthf) with the bit set.

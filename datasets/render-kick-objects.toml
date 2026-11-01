@@ -1,0 +1,10 @@
+title = "script and probe table render/kick-objects"
+repo = "data"
+paths = ["render/kick-objects/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 20
+size = 14083092
+sha256 = "0bdc53412c4a33b52d60218c806aeb6300d2749290019031a68e3f74a83601a6"
+recipe = "probes/render/kick-objects.toml"
+needs = ["render"]

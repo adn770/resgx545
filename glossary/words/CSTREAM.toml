@@ -10,9 +10,9 @@ sgx545 = "control-stream object word, low bits (below 26)"
 meaning = "the slot address of the object's ISP words, in dwords; the region's stream holds one primitive word and object word per object [infer]"
 tier = "ours"
 source = "resgx545"
-citation = "E177"
+citation = "E288"
 licence = "MIT"
-evidence = "E177: 6, 9, 18 above 0x400 for objects at 0x1000"
+evidence = "[HW] E288: 0x406, 0xc06, 0x41d for objects whose ISP words are at slot 0x1018, 0x3018, 0x1074 (three kicks of one scene); E177: 6, 9, 18 above 0x400 for objects at 0x1000"
 
 [[term]]
 id = "G0461"

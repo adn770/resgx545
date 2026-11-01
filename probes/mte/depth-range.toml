@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# mte depth range: 3 probes (written by tools/usse-asm/isp_words.py).
+# depths outside [0, 1] (Q069). The data's clip probe ran with vtx_zab.s
+# naming #10 as its second phase and hung (E287); depth-range2 reruns it with #11.
+needs = ["render"]
+
+[[probe]]
+name = "mte-depth-range-clip"
+question = "which clip-space depths the MTE removes"
+source = "vtx_zab.s"
+host = "tri"
+slot = "vtxuse"
+temps = 8
+vtx_coords = 2
+slots = { pixel = "pix_green.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B"]
+labels = ["clip z -2.0", "clip z -1.5", "clip z -1.01", "clip z -1.0", "clip z -0.5", "clip z 0.0", "clip z 0.5", "clip z 1.0", "clip z 1.01", "clip z 1.5", "clip z 2.0", "clip z = 2.0 x + 0.0", "clip z = 4.0 x + 0.0", "clip z = 2.0 x + 1.0", "clip z = 2.0 x + -1.0"]
+cases = [["0x00000000", "0xC0000000"], ["0x00000000", "0xBFC00000"], ["0x00000000", "0xBF8147AE"], ["0x00000000", "0xBF800000"], ["0x00000000", "0xBF000000"], ["0x00000000", "0x00000000"], ["0x00000000", "0x3F000000"], ["0x00000000", "0x3F800000"], ["0x00000000", "0x3F8147AE"], ["0x00000000", "0x3FC00000"], ["0x00000000", "0x40000000"], ["0x40000000", "0x00000000"], ["0x40800000", "0x00000000"], ["0x40000000", "0x3F800000"], ["0x40000000", "0xBF800000"]]
+
+[[probe]]
+name = "mte-depth-range-viewport"
+question = "the viewport's z offset past 0 and 1 on the flat triangle"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+case_set = [{ blk = { 10 = 0xbf000000 } }, { blk = { 10 = 0xbc23d70a } }, { blk = { 10 = 0 } }, { blk = { 10 = 0x3f800000 } }, { blk = { 10 = 0x3f8147ae } }, { blk = { 10 = 0x3fc00000 } }]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["z offset -0.5", "z offset -0.01", "z offset 0.0", "z offset 1.0", "z offset 1.01", "z offset 1.5"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "mte-depth-range-viewport-less"
+question = "the same with depth test less against the clear depth 1.0"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+case_set = [{ blk = { 10 = 0xbf000000, 1 = 0x400200 } }, { blk = { 10 = 0xbc23d70a, 1 = 0x400200 } }, { blk = { 10 = 0, 1 = 0x400200 } }, { blk = { 10 = 0x3f800000, 1 = 0x400200 } }, { blk = { 10 = 0x3f8147ae, 1 = 0x400200 } }, { blk = { 10 = 0x3fc00000, 1 = 0x400200 } }]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["z offset -0.5, less", "z offset -0.01, less", "z offset 0.0, less", "z offset 1.0, less", "z offset 1.01, less", "z offset 1.5, less"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]

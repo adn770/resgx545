@@ -1,0 +1,66 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# isp msaa positions: 4 probes (written by tools/usse-asm/isp_words.py).
+# which register places the 4x samples (Q030).
+needs = ["render", "kpoke"]
+
+[[probe]]
+name = "isp-msaa-positions-isp"
+question = "mode 2 with cmd:16 0xeaa26e26, cmd:10 0x88888888"
+source = "vtx_affine.s"
+host = "tri"
+slot = "vtxuse"
+slots = { pixel = "pix_green.s" }
+temps = 8
+cmd = { 10 = 0x88888888, 13 = 0x80000002, 16 = 0xeaa26e26 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "C", "D", "E", "F"]
+labels = ["k = 0", "k = 2", "k = 4", "k = 6", "k = 8", "k = 10", "k = 12", "k = 14"]
+cases = [["0x3E638E39", "0xBD638E39", "0xBF400000", "0xBD638E39", "0x3E638E39", "0xBF400000"], ["0x3E60B60B", "0xBD60B60B", "0xBF3F6666", "0xBD60B60B", "0x3E60B60B", "0xBF3F6666"], ["0x3E5DDDDE", "0xBD5DDDDE", "0xBF3ECCCD", "0xBD5DDDDE", "0x3E5DDDDE", "0xBF3ECCCD"], ["0x3E5B05B0", "0xBD5B05B0", "0xBF3E3333", "0xBD5B05B0", "0x3E5B05B0", "0xBF3E3333"], ["0x3E582D83", "0xBD582D83", "0xBF3D999A", "0xBD582D83", "0x3E582D83", "0xBF3D999A"], ["0x3E555555", "0xBD555555", "0xBF3D0000", "0xBD555555", "0x3E555555", "0xBF3D0000"], ["0x3E527D28", "0xBD527D28", "0xBF3C6666", "0xBD527D28", "0x3E527D28", "0xBF3C6666"], ["0x3E4FA4FA", "0xBD4FA4FA", "0xBF3BCCCD", "0xBD4FA4FA", "0x3E4FA4FA", "0xBF3BCCCD"]]
+
+[[probe]]
+name = "isp-msaa-positions-mte"
+question = "mode 2 with cmd:16 0x88888888, cmd:10 0xeaa26e26"
+source = "vtx_affine.s"
+host = "tri"
+slot = "vtxuse"
+slots = { pixel = "pix_green.s" }
+temps = 8
+cmd = { 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0x88888888 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "C", "D", "E", "F"]
+labels = ["k = 0", "k = 2", "k = 4", "k = 6", "k = 8", "k = 10", "k = 12", "k = 14"]
+cases = [["0x3E638E39", "0xBD638E39", "0xBF400000", "0xBD638E39", "0x3E638E39", "0xBF400000"], ["0x3E60B60B", "0xBD60B60B", "0xBF3F6666", "0xBD60B60B", "0x3E60B60B", "0xBF3F6666"], ["0x3E5DDDDE", "0xBD5DDDDE", "0xBF3ECCCD", "0xBD5DDDDE", "0x3E5DDDDE", "0xBF3ECCCD"], ["0x3E5B05B0", "0xBD5B05B0", "0xBF3E3333", "0xBD5B05B0", "0x3E5B05B0", "0xBF3E3333"], ["0x3E582D83", "0xBD582D83", "0xBF3D999A", "0xBD582D83", "0x3E582D83", "0xBF3D999A"], ["0x3E555555", "0xBD555555", "0xBF3D0000", "0xBD555555", "0x3E555555", "0xBF3D0000"], ["0x3E527D28", "0xBD527D28", "0xBF3C6666", "0xBD527D28", "0x3E527D28", "0xBF3C6666"], ["0x3E4FA4FA", "0xBD4FA4FA", "0xBF3BCCCD", "0xBD4FA4FA", "0x3E4FA4FA", "0xBF3BCCCD"]]
+
+[[probe]]
+name = "isp-msaa-positions-other"
+question = "mode 2 with cmd:16 0x2e62a6ea, cmd:10 0xeaa26e26"
+source = "vtx_affine.s"
+host = "tri"
+slot = "vtxuse"
+slots = { pixel = "pix_green.s" }
+temps = 8
+cmd = { 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0x2e62a6ea }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "C", "D", "E", "F"]
+labels = ["k = 0", "k = 2", "k = 4", "k = 6", "k = 8", "k = 10", "k = 12", "k = 14"]
+cases = [["0x3E638E39", "0xBD638E39", "0xBF400000", "0xBD638E39", "0x3E638E39", "0xBF400000"], ["0x3E60B60B", "0xBD60B60B", "0xBF3F6666", "0xBD60B60B", "0x3E60B60B", "0xBF3F6666"], ["0x3E5DDDDE", "0xBD5DDDDE", "0xBF3ECCCD", "0xBD5DDDDE", "0x3E5DDDDE", "0xBF3ECCCD"], ["0x3E5B05B0", "0xBD5B05B0", "0xBF3E3333", "0xBD5B05B0", "0x3E5B05B0", "0xBF3E3333"], ["0x3E582D83", "0xBD582D83", "0xBF3D999A", "0xBD582D83", "0x3E582D83", "0xBF3D999A"], ["0x3E555555", "0xBD555555", "0xBF3D0000", "0xBD555555", "0x3E555555", "0xBF3D0000"], ["0x3E527D28", "0xBD527D28", "0xBF3C6666", "0xBD527D28", "0x3E527D28", "0xBF3C6666"], ["0x3E4FA4FA", "0xBD4FA4FA", "0xBF3BCCCD", "0xBD4FA4FA", "0x3E4FA4FA", "0xBF3BCCCD"]]
+
+[[probe]]
+name = "isp-msaa-positions-0520"
+question = "mode 2 with cmd:16 0xeaa26e26, cmd:10 0xeaa26e26, 0x0520 0x2e62a6ea"
+source = "vtx_affine.s"
+host = "tri"
+slot = "vtxuse"
+slots = { pixel = "pix_green.s" }
+temps = 8
+cmd = { 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+kpoke = ["rd:19=0x2e62a6ea"]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "C", "D", "E", "F"]
+labels = ["k = 0", "k = 2", "k = 4", "k = 6", "k = 8", "k = 10", "k = 12", "k = 14"]
+cases = [["0x3E638E39", "0xBD638E39", "0xBF400000", "0xBD638E39", "0x3E638E39", "0xBF400000"], ["0x3E60B60B", "0xBD60B60B", "0xBF3F6666", "0xBD60B60B", "0x3E60B60B", "0xBF3F6666"], ["0x3E5DDDDE", "0xBD5DDDDE", "0xBF3ECCCD", "0xBD5DDDDE", "0x3E5DDDDE", "0xBF3ECCCD"], ["0x3E5B05B0", "0xBD5B05B0", "0xBF3E3333", "0xBD5B05B0", "0x3E5B05B0", "0xBF3E3333"], ["0x3E582D83", "0xBD582D83", "0xBF3D999A", "0xBD582D83", "0x3E582D83", "0xBF3D999A"], ["0x3E555555", "0xBD555555", "0xBF3D0000", "0xBD555555", "0x3E555555", "0xBF3D0000"], ["0x3E527D28", "0xBD527D28", "0xBF3C6666", "0xBD527D28", "0x3E527D28", "0xBF3C6666"], ["0x3E4FA4FA", "0xBD4FA4FA", "0xBF3BCCCD", "0xBD4FA4FA", "0x3E4FA4FA", "0xBF3BCCCD"]]

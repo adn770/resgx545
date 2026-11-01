@@ -1,0 +1,325 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# isp stencil word: 19 probes (written by tools/usse-asm/isp_words.py).
+# ISP word 2: compare, masks and ops (Q071).
+needs = ["render", "kpoke"]
+
+[[probe]]
+name = "isp-stencil-word-cmp"
+question = "ISP word 2's compare and compare mask on one object against the background stencil 0x55"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+isp2 = 0xe00ffff
+case_set = [{ blk = { 1 = 0x1d00354, 3 = 0xff00 }, kpoke = ["rd:17=0x355"] }, { blk = { 1 = 0x1d00355, 3 = 0xff00 }, kpoke = ["rd:17=0x355"] }, { blk = { 1 = 0x1d00356, 3 = 0xff00 }, kpoke = ["rd:17=0x355"] }, { blk = { 1 = 0x1d00354, 3 = 0x200ff00 }, kpoke = ["rd:17=0x355"] }, { blk = { 1 = 0x1d00355, 3 = 0x200ff00 }, kpoke = ["rd:17=0x355"] }, { blk = { 1 = 0x1d00356, 3 = 0x200ff00 }, kpoke = ["rd:17=0x355"] }, { blk = { 1 = 0x1d00354, 3 = 0x400ff00 }, kpoke = ["rd:17=0x355"] }, { blk = { 1 = 0x1d00355, 3 = 0x400ff00 }, kpoke = ["rd:17=0x355"] }, { blk = { 1 = 0x1d00356, 3 = 0x400ff00 }, kpoke = ["rd:17=0x355"] }, { blk = { 1 = 0x1d00354, 3 = 0x600ff00 }, kpoke = ["rd:17=0x355"] }, { blk = { 1 = 0x1d00355, 3 = 0x600ff00 }, kpoke = ["rd:17=0x355"] }, { blk = { 1 = 0x1d00356, 3 = 0x600ff00 }, kpoke = ["rd:17=0x355"] }, { blk = { 1 = 0x1d00354, 3 = 0x800ff00 }, kpoke = ["rd:17=0x355"] }, { blk = { 1 = 0x1d00355, 3 = 0x800ff00 }, kpoke = ["rd:17=0x355"] }, { blk = { 1 = 0x1d00356, 3 = 0x800ff00 }, kpoke = ["rd:17=0x355"] }, { blk = { 1 = 0x1d00354, 3 = 0xa00ff00 }, kpoke = ["rd:17=0x355"] }, { blk = { 1 = 0x1d00355, 3 = 0xa00ff00 }, kpoke = ["rd:17=0x355"] }, { blk = { 1 = 0x1d00356, 3 = 0xa00ff00 }, kpoke = ["rd:17=0x355"] }, { blk = { 1 = 0x1d00354, 3 = 0xc00ff00 }, kpoke = ["rd:17=0x355"] }, { blk = { 1 = 0x1d00355, 3 = 0xc00ff00 }, kpoke = ["rd:17=0x355"] }, { blk = { 1 = 0x1d00356, 3 = 0xc00ff00 }, kpoke = ["rd:17=0x355"] }, { blk = { 1 = 0x1d00354, 3 = 0xe00ff00 }, kpoke = ["rd:17=0x355"] }, { blk = { 1 = 0x1d00355, 3 = 0xe00ff00 }, kpoke = ["rd:17=0x355"] }, { blk = { 1 = 0x1d00356, 3 = 0xe00ff00 }, kpoke = ["rd:17=0x355"] }, { blk = { 1 = 0x1d00305, 3 = 0x4000f00 }, kpoke = ["rd:17=0x355"] }, { blk = { 1 = 0x1d00305, 3 = 0x400ff00 }, kpoke = ["rd:17=0x355"] }, { blk = { 1 = 0x1d00350, 3 = 0x400f000 }, kpoke = ["rd:17=0x355"] }, { blk = { 1 = 0x1d00350, 3 = 0x4000f00 }, kpoke = ["rd:17=0x355"] }, { blk = { 1 = 0x1d00355, 3 = 0x1400ff00 }, kpoke = ["rd:17=0x355"] }, { blk = { 1 = 0x1d00355, 3 = 0x2400ff00 }, kpoke = ["rd:17=0x355"] }, { blk = { 1 = 0x1d00355, 3 = 0x4400ff00 }, kpoke = ["rd:17=0x355"] }, { blk = { 1 = 0x1d00355, 3 = 0x8400ff00 }, kpoke = ["rd:17=0x355"] }]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["SCMP 0, ref 0x54 vs 0x55", "SCMP 0, ref 0x55 vs 0x55", "SCMP 0, ref 0x56 vs 0x55", "SCMP 1, ref 0x54 vs 0x55", "SCMP 1, ref 0x55 vs 0x55", "SCMP 1, ref 0x56 vs 0x55", "SCMP 2, ref 0x54 vs 0x55", "SCMP 2, ref 0x55 vs 0x55", "SCMP 2, ref 0x56 vs 0x55", "SCMP 3, ref 0x54 vs 0x55", "SCMP 3, ref 0x55 vs 0x55", "SCMP 3, ref 0x56 vs 0x55", "SCMP 4, ref 0x54 vs 0x55", "SCMP 4, ref 0x55 vs 0x55", "SCMP 4, ref 0x56 vs 0x55", "SCMP 5, ref 0x54 vs 0x55", "SCMP 5, ref 0x55 vs 0x55", "SCMP 5, ref 0x56 vs 0x55", "SCMP 6, ref 0x54 vs 0x55", "SCMP 6, ref 0x55 vs 0x55", "SCMP 6, ref 0x56 vs 0x55", "SCMP 7, ref 0x54 vs 0x55", "SCMP 7, ref 0x55 vs 0x55", "SCMP 7, ref 0x56 vs 0x55", "SCMP equal, ref 0x05, SCMP_MASK 0x0f", "SCMP equal, ref 0x05, SCMP_MASK 0xff", "SCMP equal, ref 0x50, SCMP_MASK 0xf0", "SCMP equal, ref 0x50, SCMP_MASK 0x0f", "SCMP equal, ref = value, ISP2 bit 28", "SCMP equal, ref = value, ISP2 bit 29", "SCMP equal, ref = value, ISP2 bit 30", "SCMP equal, ref = value, ISP2 bit 31"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-stencil-word-sop3-ref-0f"
+question = "which depth-pass ops (bits 18:16) leave 0x0f, from 0x0f and reference 0x55"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 6
+temps = 4
+isp2 = 0xe00ffff
+case_set = [{ blk = { 3 = 0xe00ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe01ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe02ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe03ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe04ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe05ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe06ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe07ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }]
+obj2 = { first = 3, blk = { 1 = 0x1d0030f, 3 = 0x400ff00 }, pixel = "pix_blue.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["SOP3 0", "SOP3 1", "SOP3 2", "SOP3 3", "SOP3 4", "SOP3 5", "SOP3 6", "SOP3 7"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-stencil-word-sop3-ref-00"
+question = "which depth-pass ops (bits 18:16) leave 0x00, from 0x0f and reference 0x55"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 6
+temps = 4
+isp2 = 0xe00ffff
+case_set = [{ blk = { 3 = 0xe00ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe01ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe02ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe03ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe04ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe05ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe06ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe07ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }]
+obj2 = { first = 3, blk = { 1 = 0x1d00300, 3 = 0x400ff00 }, pixel = "pix_blue.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["SOP3 0", "SOP3 1", "SOP3 2", "SOP3 3", "SOP3 4", "SOP3 5", "SOP3 6", "SOP3 7"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-stencil-word-sop3-ref-55"
+question = "which depth-pass ops (bits 18:16) leave 0x55, from 0x0f and reference 0x55"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 6
+temps = 4
+isp2 = 0xe00ffff
+case_set = [{ blk = { 3 = 0xe00ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe01ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe02ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe03ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe04ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe05ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe06ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe07ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }]
+obj2 = { first = 3, blk = { 1 = 0x1d00355, 3 = 0x400ff00 }, pixel = "pix_blue.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["SOP3 0", "SOP3 1", "SOP3 2", "SOP3 3", "SOP3 4", "SOP3 5", "SOP3 6", "SOP3 7"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-stencil-word-sop3-ref-10"
+question = "which depth-pass ops (bits 18:16) leave 0x10, from 0x0f and reference 0x55"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 6
+temps = 4
+isp2 = 0xe00ffff
+case_set = [{ blk = { 3 = 0xe00ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe01ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe02ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe03ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe04ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe05ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe06ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe07ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }]
+obj2 = { first = 3, blk = { 1 = 0x1d00310, 3 = 0x400ff00 }, pixel = "pix_blue.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["SOP3 0", "SOP3 1", "SOP3 2", "SOP3 3", "SOP3 4", "SOP3 5", "SOP3 6", "SOP3 7"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-stencil-word-sop3-ref-0e"
+question = "which depth-pass ops (bits 18:16) leave 0x0e, from 0x0f and reference 0x55"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 6
+temps = 4
+isp2 = 0xe00ffff
+case_set = [{ blk = { 3 = 0xe00ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe01ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe02ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe03ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe04ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe05ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe06ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe07ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }]
+obj2 = { first = 3, blk = { 1 = 0x1d0030e, 3 = 0x400ff00 }, pixel = "pix_blue.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["SOP3 0", "SOP3 1", "SOP3 2", "SOP3 3", "SOP3 4", "SOP3 5", "SOP3 6", "SOP3 7"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-stencil-word-sop3-ref-f0"
+question = "which depth-pass ops (bits 18:16) leave 0xf0, from 0x0f and reference 0x55"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 6
+temps = 4
+isp2 = 0xe00ffff
+case_set = [{ blk = { 3 = 0xe00ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe01ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe02ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe03ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe04ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe05ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe06ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe07ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }]
+obj2 = { first = 3, blk = { 1 = 0x1d003f0, 3 = 0x400ff00 }, pixel = "pix_blue.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["SOP3 0", "SOP3 1", "SOP3 2", "SOP3 3", "SOP3 4", "SOP3 5", "SOP3 6", "SOP3 7"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-stencil-word-wrap-sff-ref-ff"
+question = "ops (3, 6) from 0xff: clamp or wrap"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 6
+temps = 4
+isp2 = 0xe00ffff
+case_set = [{ blk = { 3 = 0xe03ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x3ff"] }, { blk = { 3 = 0xe06ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x3ff"] }]
+obj2 = { first = 3, blk = { 1 = 0x1d003ff, 3 = 0x400ff00 }, pixel = "pix_blue.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["SOP3 3", "SOP3 6"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-stencil-word-wrap-sff-ref-00"
+question = "ops (3, 6) from 0xff: clamp or wrap"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 6
+temps = 4
+isp2 = 0xe00ffff
+case_set = [{ blk = { 3 = 0xe03ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x3ff"] }, { blk = { 3 = 0xe06ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x3ff"] }]
+obj2 = { first = 3, blk = { 1 = 0x1d00300, 3 = 0x400ff00 }, pixel = "pix_blue.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["SOP3 3", "SOP3 6"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-stencil-word-wrap-s00-ref-00"
+question = "ops (4, 7) from 0x00: clamp or wrap"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 6
+temps = 4
+isp2 = 0xe00ffff
+case_set = [{ blk = { 3 = 0xe04ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x300"] }, { blk = { 3 = 0xe07ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x300"] }]
+obj2 = { first = 3, blk = { 1 = 0x1d00300, 3 = 0x400ff00 }, pixel = "pix_blue.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["SOP3 4", "SOP3 7"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-stencil-word-wrap-s00-ref-ff"
+question = "ops (4, 7) from 0x00: clamp or wrap"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 6
+temps = 4
+isp2 = 0xe00ffff
+case_set = [{ blk = { 3 = 0xe04ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x300"] }, { blk = { 3 = 0xe07ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x300"] }]
+obj2 = { first = 3, blk = { 1 = 0x1d003ff, 3 = 0x400ff00 }, pixel = "pix_blue.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["SOP3 4", "SOP3 7"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-stencil-word-sop1-ref-55"
+question = "replace (2) in each op field with the stencil test failing (never)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 6
+temps = 4
+isp2 = 0xe00ffff
+case_set = [{ blk = { 3 = 0xffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0x80ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0x10ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0x2ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }]
+obj2 = { first = 3, blk = { 1 = 0x1d00355, 3 = 0x400ff00 }, pixel = "pix_blue.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["no op", "SOP1 replace", "SOP2 replace", "SOP3 replace"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-stencil-word-sop2-ref-55"
+question = "replace (2) in each op field with the depth test failing (never)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 6
+temps = 4
+isp2 = 0xe00ffff
+case_set = [{ blk = { 3 = 0xe00ffff, 1 = 0x355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe80ffff, 1 = 0x355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe10ffff, 1 = 0x355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe02ffff, 1 = 0x355 }, kpoke = ["rd:17=0x30f"] }]
+obj2 = { first = 3, blk = { 1 = 0x1d00355, 3 = 0x400ff00 }, pixel = "pix_blue.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["no op", "SOP1 replace", "SOP2 replace", "SOP3 replace"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-stencil-word-sop1-ref-0f"
+question = "replace (2) in each op field with the stencil test failing (never)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 6
+temps = 4
+isp2 = 0xe00ffff
+case_set = [{ blk = { 3 = 0xffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0x80ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0x10ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0x2ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x30f"] }]
+obj2 = { first = 3, blk = { 1 = 0x1d0030f, 3 = 0x400ff00 }, pixel = "pix_blue.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["no op", "SOP1 replace", "SOP2 replace", "SOP3 replace"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-stencil-word-sop2-ref-0f"
+question = "replace (2) in each op field with the depth test failing (never)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 6
+temps = 4
+isp2 = 0xe00ffff
+case_set = [{ blk = { 3 = 0xe00ffff, 1 = 0x355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe80ffff, 1 = 0x355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe10ffff, 1 = 0x355 }, kpoke = ["rd:17=0x30f"] }, { blk = { 3 = 0xe02ffff, 1 = 0x355 }, kpoke = ["rd:17=0x30f"] }]
+obj2 = { first = 3, blk = { 1 = 0x1d0030f, 3 = 0x400ff00 }, pixel = "pix_blue.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["no op", "SOP1 replace", "SOP2 replace", "SOP3 replace"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-stencil-word-swmask-ref-f5"
+question = "replace 0x55 over 0xf0 under four write masks: which leave 0xf5"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 6
+temps = 4
+isp2 = 0xe00ffff
+case_set = [{ blk = { 3 = 0xe02ff0f, 1 = 0x400355 }, kpoke = ["rd:17=0x3f0"] }, { blk = { 3 = 0xe02fff0, 1 = 0x400355 }, kpoke = ["rd:17=0x3f0"] }, { blk = { 3 = 0xe02ff00, 1 = 0x400355 }, kpoke = ["rd:17=0x3f0"] }, { blk = { 3 = 0xe02ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x3f0"] }]
+obj2 = { first = 3, blk = { 1 = 0x1d003f5, 3 = 0x400ff00 }, pixel = "pix_blue.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["SW_MASK 0x0f", "SW_MASK 0xf0", "SW_MASK 0x00", "SW_MASK 0xff"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-stencil-word-swmask-ref-50"
+question = "replace 0x55 over 0xf0 under four write masks: which leave 0x50"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 6
+temps = 4
+isp2 = 0xe00ffff
+case_set = [{ blk = { 3 = 0xe02ff0f, 1 = 0x400355 }, kpoke = ["rd:17=0x3f0"] }, { blk = { 3 = 0xe02fff0, 1 = 0x400355 }, kpoke = ["rd:17=0x3f0"] }, { blk = { 3 = 0xe02ff00, 1 = 0x400355 }, kpoke = ["rd:17=0x3f0"] }, { blk = { 3 = 0xe02ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x3f0"] }]
+obj2 = { first = 3, blk = { 1 = 0x1d00350, 3 = 0x400ff00 }, pixel = "pix_blue.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["SW_MASK 0x0f", "SW_MASK 0xf0", "SW_MASK 0x00", "SW_MASK 0xff"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-stencil-word-swmask-ref-f0"
+question = "replace 0x55 over 0xf0 under four write masks: which leave 0xf0"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 6
+temps = 4
+isp2 = 0xe00ffff
+case_set = [{ blk = { 3 = 0xe02ff0f, 1 = 0x400355 }, kpoke = ["rd:17=0x3f0"] }, { blk = { 3 = 0xe02fff0, 1 = 0x400355 }, kpoke = ["rd:17=0x3f0"] }, { blk = { 3 = 0xe02ff00, 1 = 0x400355 }, kpoke = ["rd:17=0x3f0"] }, { blk = { 3 = 0xe02ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x3f0"] }]
+obj2 = { first = 3, blk = { 1 = 0x1d003f0, 3 = 0x400ff00 }, pixel = "pix_blue.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["SW_MASK 0x0f", "SW_MASK 0xf0", "SW_MASK 0x00", "SW_MASK 0xff"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-stencil-word-swmask-ref-55"
+question = "replace 0x55 over 0xf0 under four write masks: which leave 0x55"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 6
+temps = 4
+isp2 = 0xe00ffff
+case_set = [{ blk = { 3 = 0xe02ff0f, 1 = 0x400355 }, kpoke = ["rd:17=0x3f0"] }, { blk = { 3 = 0xe02fff0, 1 = 0x400355 }, kpoke = ["rd:17=0x3f0"] }, { blk = { 3 = 0xe02ff00, 1 = 0x400355 }, kpoke = ["rd:17=0x3f0"] }, { blk = { 3 = 0xe02ffff, 1 = 0x400355 }, kpoke = ["rd:17=0x3f0"] }]
+obj2 = { first = 3, blk = { 1 = 0x1d00355, 3 = 0x400ff00 }, pixel = "pix_blue.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["SW_MASK 0x0f", "SW_MASK 0xf0", "SW_MASK 0x00", "SW_MASK 0xff"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]

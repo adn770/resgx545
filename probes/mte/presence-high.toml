@@ -1,0 +1,57 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# mte presence high: 4 probes (written by tools/usse-asm/isp_words.py).
+# the presence word's bits 16-31 (Q069).
+needs = ["render"]
+
+[[probe]]
+name = "mte-presence-high-0"
+question = "the presence word's bits 16-31 set one at a time"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+case_set = [{ blk = { 0 = 0x1df43 } }, { blk = { 0 = 0x2df43 } }, { blk = { 0 = 0x4df43 } }, { blk = { 0 = 0x8df43 } }]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["presence bit 16", "presence bit 17", "presence bit 18", "presence bit 19"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "mte-presence-high-1"
+question = "the presence word's bits 16-31 set one at a time"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+case_set = [{ blk = { 0 = 0x10df43 } }, { blk = { 0 = 0x20df43 } }, { blk = { 0 = 0x40df43 } }, { blk = { 0 = 0x80df43 } }]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["presence bit 20", "presence bit 21", "presence bit 22", "presence bit 23"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "mte-presence-high-2"
+question = "the presence word's bits 16-31 set one at a time"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+case_set = [{ blk = { 0 = 0x100df43 } }, { blk = { 0 = 0x200df43 } }, { blk = { 0 = 0x400df43 } }, { blk = { 0 = 0x800df43 } }]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["presence bit 24", "presence bit 25", "presence bit 26", "presence bit 27"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "mte-presence-high-3"
+question = "the presence word's bits 16-31 set one at a time"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+case_set = [{ blk = { 0 = 0x1000df43 } }, { blk = { 0 = 0x2000df43 } }, { blk = { 0 = 0x4000df43 } }, { blk = { 0 = 0x8000df43 } }]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["presence bit 28", "presence bit 29", "presence bit 30", "presence bit 31"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]

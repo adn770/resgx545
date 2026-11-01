@@ -1,4 +1,20 @@
 [[term]]
+id = "G1072"
+name = "PRESENCE"
+status = "named"
+
+[[term.source]]
+term = "STATE_HEADER"
+kind = "struct"
+sgx545 = "MTE state block presence word (S.2)"
+meaning = "presence word: each set bit adds its state words"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0726"
+licence = "MIT"
+evidence = "same function as the SGX presence word (S.2)"
+
+[[term]]
 id = "G0490"
 name = "PRESENCE.COORD"
 status = "named"

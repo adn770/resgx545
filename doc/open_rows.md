@@ -59,19 +59,14 @@ sits, the reading, and the evidence records it rests on.
 
 ## registers: ISP
 
-- `G0122` `CR_ISP_MSAA.ENABLE` (0x042c[31]): enables the multisampled ISP path: with it clear and
-  CR_ISP_MSAA.MODE at 2 no pixel of the triangle is written; whether the triangle is still tiled,
-  and what it does at mode 1 or at mode 0 with other bits set, are not shown; set in every capture
-  [infer]. Evidence: E074, E211, E219.
-- `G0123` `CR_ISP_MSAA.MODE` (0x042c[1:0]): multisample mode: 0 one sample, 1 and 2 change the
-  image, 3 hangs [infer]. Evidence: E066, E074, E210, E215, E220.
 - `G0128` `CR_ISP_POLY_OFFSET_FACTOR` (0x0420): Register 0x0420, loaded from render-details word 6:
-  set to 4.0 with the offset in word 5 at 0 it left the flat triangle's stored depth unchanged, so
-  what it multiplies is not shown by a triangle with no depth slope. Evidence: E071.
-- `G0131` `CR_ISP_REG_04E8` (0x04e8): Register 0x04e8: held 0x100 outside a render, bits 0 and 8
-  take a write, and in every transfer, depth scene, overlapping-triangle scene and textured triangle
-  tried no value of it changed an image; what it does is not shown. Evidence: E066, E067, E068,
-  E073.
+  set to 4.0 with the offset in word 5 at 0 it left the flat triangle's stored depth unchanged, and
+  on a triangle whose depth slopes across it 4.0 moves the depth test's boundary as far as 0x100000
+  units do and 64.0 pushes the whole triangle behind: it scales the offset by the depth's slope
+  [infer]. Evidence: E071, E291.
+- `G0131` `CR_ISP_REG_04E8` (0x04e8): what it does is not shown: no value tried changes an image or
+  a count in any scene; not the background's stencil or mask (E216); 0x100 from the init script and
+  per render [infer]. Evidence: E006, E066, E067, E068, E073, E216, E285.
 
 ## registers: PDS
 
@@ -301,19 +296,23 @@ sits, the reading, and the evidence records it rests on.
 
 ## words: ISP state words
 
+- `G1059` `ISP0.BIT9` (isp0 bit 9): set in every ISP word 0 the library builds; clearing it changes
+  no image of five overlapping copies, so what it selects is not shown, and the block's layout does
+  not move with it [infer].
+- `G1062` `ISP0.ISP2_PRESENT` (isp0 bit 8): set with ISP word 2 (the stencil word) in the state
+  block, where the object takes the stencil test of ISP2; that it announces the word is not probed
+  apart from the word [infer].
 - `G0246` `ISP1` (ISP word 1): The second word of the render's ISP state; bits 13 to 25 set one at a
   time left a 4x triangle at the sample rate unchanged, so those bits do not turn per-sample shading
   on. Evidence: E117.
-- `G0472` `ISP1.LINE_WIDTH` (ISP1 [15:8]): A line width: the TA copies ISP word 1's bits 15:8 into
-  both bytes of the object's line-width dword; the unit is not shown by the object [infer].
-  Evidence: E178.
 
 ## words: MTE state block words
 
 - `G0252` `OUTSEL.PLANES` (outsel [7:0]): user clip-plane enables, bit N plane N: each enabled plane
-  reads a clip distance from the vertex outputs after the position (plane 0 the first; planes 0 and
-  1 together the first two), and a triangle with a negative distance at any vertex is removed whole
-  [infer]. Evidence: E096, E198.
+  removes the triangle whole while its held state is outside: fdpc on cpN sets the state, and it
+  outlives the job; the vertex's distance dwords after the position (plane 0 the first, planes 0 and
+  1 the first two) decided in one session and decided nothing in another [infer]. Evidence: E096,
+  E198.
 - `G0261` `SIDEBAND.BIT9` (sideband bit 9): marks the emit that completes the tile: the PBE counts
   the emits with it against its tiles. Measured: needed for an emit to complete its tile: with it
   clear the only emit hangs; an extra emit with it set leaves the PBE queue one emit behind, with it

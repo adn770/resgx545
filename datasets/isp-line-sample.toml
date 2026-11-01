@@ -1,0 +1,10 @@
+title = "probe table isp/line-sample"
+repo = "data"
+paths = ["isp/line-sample/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 101
+size = 3560029
+sha256 = "908de76dace582e6cc4331d2ac26311ae2e6bf43503a1b6eaf12036292b30d37"
+recipe = "probes/isp/line-sample.toml"
+needs = ["render", "kpoke"]

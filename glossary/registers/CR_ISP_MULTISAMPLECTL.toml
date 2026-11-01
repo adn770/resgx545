@@ -12,7 +12,7 @@ tier = "3"
 source = "mesa-csbgen"
 citation = "C0174"
 licence = "MIT"
-evidence = "Rogue ISP_AA (an AA on/off mode) is not linked to it; [HW] E064: in the triangle the low nibble moves pixels of the steep edge only, the high nibble those of the shallow edge; values near 0x88 change nothing; [HW] E064; Apple's AGX packs its sample positions the same way, 0x88 for one sample and 0xeaa26e26 for four (Mesa src/asahi, MIT; another lineage, context only); [HW] E215: with ISP0 bit 28 set, varying it changes a single-sampled object's coverage as the union of its four samples and CR_ISP_SAMPLE_POS's four predicts (counts, not pixels); a rule without it fits E214's images at its default value, which rule holds being open"
+evidence = "Rogue ISP_AA (an AA on/off mode) is not linked to it; [HW] E064: in the triangle the low nibble moves pixels of the steep edge only, the high nibble those of the shallow edge; values near 0x88 change nothing; [HW] E064; Apple's AGX packs its sample positions the same way, 0x88 for one sample and 0xeaa26e26 for four (Mesa src/asahi, MIT; another lineage, context only); [HW] E215: with ISP0 bit 28 set, varying it changes a single-sampled object's coverage as the union of its four samples and CR_ISP_SAMPLE_POS's four predicts (counts, not pixels); without it byte 0 alone samples (one run); [infer] mode 1's probes set both words alike, so its source is read from mode 2"
 
 [[term]]
 id = "G0125"
@@ -45,3 +45,99 @@ source = "resgx545"
 citation = "E064"
 licence = "MIT"
 evidence = "[HW] E064: every value in a triangle: the edge pixels that move grow with the distance from 8, along y"
+
+[[term]]
+id = "G1053"
+name = "CR_ISP_MULTISAMPLECTL.SAMPLE1_X"
+status = "named"
+
+[[term.source]]
+term = "CR_ISP_MULTISAMPLECTL.SAMPLE1_X"
+kind = "bitfield"
+sgx545 = "0x04c8[11:8]"
+meaning = "x of sample 1's position in the pixel, in sixteenths of a pixel from its top-left corner, laid out as sample 0's: one of the eight samples of ISP0.SAMPLE_COVERAGE, and sample 1 of a multisampled pixel under CR_ISP_MSAA mode 2 and, read from mode 2, mode 1 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "probes/isp/coverage-samples.toml"
+licence = "MIT"
+evidence = "[HW] the coverage-sample probes (isp-coverage-samples, isp-coverage-bytes, two runs each): with ISP0 bit 28 set the eight samples of 0x04c8 and 0x0520 predict all 56 images of 28 settings pixel for pixel, and byte 1 at 0x0f and 0xf0 gives images 24 pixels apart that only x in bits 3:0 and y in 7:4 predict; [HW] the multisample layout probes (isp-msaa-layout, isp-msaa-positions, one run): the stored slot 1 of a multisampled pixel sits at the byte's position; [infer] the field names are ours"
+
+[[term]]
+id = "G1054"
+name = "CR_ISP_MULTISAMPLECTL.SAMPLE1_Y"
+status = "named"
+
+[[term.source]]
+term = "CR_ISP_MULTISAMPLECTL.SAMPLE1_Y"
+kind = "bitfield"
+sgx545 = "0x04c8[15:12]"
+meaning = "y of sample 1's position in the pixel, in sixteenths of a pixel from its top-left corner, laid out as sample 0's: one of the eight samples of ISP0.SAMPLE_COVERAGE, and sample 1 of a multisampled pixel under CR_ISP_MSAA mode 2 and, read from mode 2, mode 1 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "probes/isp/coverage-samples.toml"
+licence = "MIT"
+evidence = "[HW] the coverage-sample probes (isp-coverage-samples, isp-coverage-bytes, two runs each): with ISP0 bit 28 set the eight samples of 0x04c8 and 0x0520 predict all 56 images of 28 settings pixel for pixel, and byte 1 at 0x0f and 0xf0 gives images 24 pixels apart that only x in bits 3:0 and y in 7:4 predict; [HW] the multisample layout probes (isp-msaa-layout, isp-msaa-positions, one run): the stored slot 1 of a multisampled pixel sits at the byte's position; [infer] the field names are ours"
+
+[[term]]
+id = "G1055"
+name = "CR_ISP_MULTISAMPLECTL.SAMPLE2_X"
+status = "named"
+
+[[term.source]]
+term = "CR_ISP_MULTISAMPLECTL.SAMPLE2_X"
+kind = "bitfield"
+sgx545 = "0x04c8[19:16]"
+meaning = "x of sample 2's position in the pixel, in sixteenths of a pixel from its top-left corner, laid out as sample 0's: one of the eight samples of ISP0.SAMPLE_COVERAGE, and sample 2 of a multisampled pixel under CR_ISP_MSAA mode 2"
+tier = "ours"
+source = "resgx545"
+citation = "probes/isp/coverage-samples.toml"
+licence = "MIT"
+evidence = "[HW] the coverage-sample probes (isp-coverage-samples, isp-coverage-bytes, two runs each): with ISP0 bit 28 set the eight samples of 0x04c8 and 0x0520 predict all 56 images of 28 settings pixel for pixel, and byte 2 at 0x0f and 0xf0 gives images 24 pixels apart that only x in bits 3:0 and y in 7:4 predict; [HW] the multisample layout probes (isp-msaa-layout, isp-msaa-positions, one run): the stored slot 2 of a multisampled pixel sits at the byte's position; [infer] the field names are ours"
+
+[[term]]
+id = "G1056"
+name = "CR_ISP_MULTISAMPLECTL.SAMPLE2_Y"
+status = "named"
+
+[[term.source]]
+term = "CR_ISP_MULTISAMPLECTL.SAMPLE2_Y"
+kind = "bitfield"
+sgx545 = "0x04c8[23:20]"
+meaning = "y of sample 2's position in the pixel, in sixteenths of a pixel from its top-left corner, laid out as sample 0's: one of the eight samples of ISP0.SAMPLE_COVERAGE, and sample 2 of a multisampled pixel under CR_ISP_MSAA mode 2"
+tier = "ours"
+source = "resgx545"
+citation = "probes/isp/coverage-samples.toml"
+licence = "MIT"
+evidence = "[HW] the coverage-sample probes (isp-coverage-samples, isp-coverage-bytes, two runs each): with ISP0 bit 28 set the eight samples of 0x04c8 and 0x0520 predict all 56 images of 28 settings pixel for pixel, and byte 2 at 0x0f and 0xf0 gives images 24 pixels apart that only x in bits 3:0 and y in 7:4 predict; [HW] the multisample layout probes (isp-msaa-layout, isp-msaa-positions, one run): the stored slot 2 of a multisampled pixel sits at the byte's position; [infer] the field names are ours"
+
+[[term]]
+id = "G1057"
+name = "CR_ISP_MULTISAMPLECTL.SAMPLE3_X"
+status = "named"
+
+[[term.source]]
+term = "CR_ISP_MULTISAMPLECTL.SAMPLE3_X"
+kind = "bitfield"
+sgx545 = "0x04c8[27:24]"
+meaning = "x of sample 3's position in the pixel, in sixteenths of a pixel from its top-left corner, laid out as sample 0's: one of the eight samples of ISP0.SAMPLE_COVERAGE, and sample 3 of a multisampled pixel under CR_ISP_MSAA mode 2"
+tier = "ours"
+source = "resgx545"
+citation = "probes/isp/coverage-samples.toml"
+licence = "MIT"
+evidence = "[HW] the coverage-sample probes (isp-coverage-samples, isp-coverage-bytes, two runs each): with ISP0 bit 28 set the eight samples of 0x04c8 and 0x0520 predict all 56 images of 28 settings pixel for pixel, and byte 3 at 0x0f and 0xf0 gives images 24 pixels apart that only x in bits 3:0 and y in 7:4 predict; [HW] the multisample layout probes (isp-msaa-layout, isp-msaa-positions, one run): the stored slot 3 of a multisampled pixel sits at the byte's position; [infer] the field names are ours"
+
+[[term]]
+id = "G1058"
+name = "CR_ISP_MULTISAMPLECTL.SAMPLE3_Y"
+status = "named"
+
+[[term.source]]
+term = "CR_ISP_MULTISAMPLECTL.SAMPLE3_Y"
+kind = "bitfield"
+sgx545 = "0x04c8[31:28]"
+meaning = "y of sample 3's position in the pixel, in sixteenths of a pixel from its top-left corner, laid out as sample 0's: one of the eight samples of ISP0.SAMPLE_COVERAGE, and sample 3 of a multisampled pixel under CR_ISP_MSAA mode 2"
+tier = "ours"
+source = "resgx545"
+citation = "probes/isp/coverage-samples.toml"
+licence = "MIT"
+evidence = "[HW] the coverage-sample probes (isp-coverage-samples, isp-coverage-bytes, two runs each): with ISP0 bit 28 set the eight samples of 0x04c8 and 0x0520 predict all 56 images of 28 settings pixel for pixel, and byte 3 at 0x0f and 0xf0 gives images 24 pixels apart that only x in bits 3:0 and y in 7:4 predict; [HW] the multisample layout probes (isp-msaa-layout, isp-msaa-positions, one run): the stored slot 3 of a multisampled pixel sits at the byte's position; [infer] the field names are ours"

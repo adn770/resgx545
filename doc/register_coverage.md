@@ -23,7 +23,7 @@ evidence records its rows, its fields' rows and its measured width cite.
 | DPM | 37 | 2 | 18 | 0 | 0 |
 | EVENT | 16 | 9 | 0 | 102 | 0 |
 | HWPERF | 11 | 1 | 10 | 9 | 9 |
-| ISP | 34 | 4 | 29 | 31 | 31 |
+| ISP | 34 | 4 | 29 | 6 | 6 |
 | MTE | 6 | 0 | 5 | 0 | 0 |
 | PDS | 9 | 5 | 2 | 115 | 2 |
 | PPP | 2 | 0 | 1 | 0 | 0 |
@@ -36,7 +36,7 @@ evidence records its rows, its fields' rows and its measured width cite.
 | TSP | 1 | 0 | 0 | 0 | 0 |
 | USE | 32 | 6 | 12 | 65 | 0 |
 | VDM | 2 | 0 | 1 | 0 | 0 |
-| total | 214 | 48 | 117 | 539 | 44 |
+| total | 214 | 48 | 117 | 514 | 19 |
 
 ## (no unit)
 
@@ -235,14 +235,14 @@ evidence records its rows, its fields' rows and its measured width cite.
 - `0x0404` `CR_ISP_RENDER`: width 5 bits (5:3, 1:0, E249); no field rows. Records: E015, E163, E249.
 - `0x0408` `CR_ISP_REGION_HEADER_BASE`: width 30 bits (31:2, E249); no field rows. Records: E163,
   E249.
-- `0x0414` `CR_ISP_CTL`: width 12 bits (24, 19:16, 8, 5:0, E249); 1 field: VALID_ID [5:0]; uncovered
-  24, 19:16, 8 (6 bits). Records: E231, E232, E233, E249.
+- `0x0414` `CR_ISP_CTL`: width 12 bits (24, 19:16, 8, 5:0, E249); 2 fields: PROCESS_EMPTY_TILES [8],
+  VALID_ID [5:0]; uncovered 24, 19:16 (5 bits). Records: E231, E232, E233, E249.
 - `0x0418` `CR_ISP_LINE_SAMPLE_POS`: width 1 bits (0, E067, E249); no field rows. Records: E066,
-  E067, E068, E072, E073, E249.
+  E067, E068, E072, E073, E249, E279, E291.
 - `0x041c` `CR_ISP_POLY_OFFSET_UNITS`: width 24 bits (23:0, E249); no field rows. Records: E071,
   E249.
 - `0x0420` `CR_ISP_POLY_OFFSET_FACTOR`: width 32 bits (31:0, E249); no field rows. Records: E071,
-  E249.
+  E249, E291.
 - `0x0424` `CR_ISP_POLY_OFFSET_CLAMP`: width 32 bits (31:0, E249); no field rows. Records: E071,
   E249.
 - `0x0428` `CR_ISP_START_RENDER`: width 32 bits assumed; no field rows.
@@ -277,14 +277,15 @@ evidence records its rows, its fields' rows and its measured width cite.
 - `0x04b8` `CR_ISP_BGOBJDEPTH`: width 32 bits (31:0, E249); no field rows. Records: E066, E249.
 - `0x04bc` `CR_ISP_BGOBJVALS`: width 10 bits (9:0, E249); 2 fields: BGTAG_ENABLE [9], STENCIL [7:0];
   uncovered 8 (1 bits). Records: E015, E163, E216, E249.
-- `0x04c8` `CR_ISP_MULTISAMPLECTL`: width 32 bits (31:0, E249); 2 fields: SAMPLE0_Y [7:4], SAMPLE0_X
-  [3:0]; uncovered 31:8 (24 bits). Records: E064, E214, E215, E249.
+- `0x04c8` `CR_ISP_MULTISAMPLECTL`: width 32 bits (31:0, E249); 8 fields: SAMPLE3_Y [31:28],
+  SAMPLE3_X [27:24], SAMPLE2_Y [23:20], SAMPLE2_X [19:16], SAMPLE1_Y [15:12], SAMPLE1_X [11:8],
+  SAMPLE0_Y [7:4], SAMPLE0_X [3:0]; uncovered - (0 bits). Records: E064, E215, E249.
 - `0x04d4` `CR_ISP_SIGNATURE0`: width 32 bits assumed; no field rows.
 - `0x04d8` `CR_ISP_SIGNATURE1`: width 32 bits assumed; no field rows.
 - `0x04dc` `CR_ISP_REG_04DC`: width 3 bits (2:0, E067, E249); no field rows. Records: E066, E067,
   E068, E073, E163, E213, E222, E249.
-- `0x04e8` `CR_ISP_REG_04E8`: width 2 bits (8, 0, E067, E249); no field rows. Records: E066, E067,
-  E068, E073, E249.
+- `0x04e8` `CR_ISP_REG_04E8`: width 2 bits (8, 0, E067, E249); no field rows. Records: E006, E066,
+  E067, E068, E073, E216, E249, E285.
 - `0x050c` `CR_ISP_PARTIAL_REGION_BASE`: width 30 bits (31:2, E249); no field rows. Records: E160,
   E249.
 - `0x0518` `CR_ISP_SIGNATURE2`: width 32 bits assumed; no field rows.

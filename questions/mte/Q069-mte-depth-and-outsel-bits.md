@@ -1,20 +1,22 @@
 +++
 id = "Q069"
-question = "is a depth outside [0, 1] clipped, and what do OUTSEL bits 12 and 13 and the rest of the state block's presence word select?"
+question = "what do OUTSEL bit 13 and the state block's presence bits 16-31 select?"
 unit = "mte"
 phase = 11
-evidence = ["E061", "E066", "E192", "E193", "E198"]
-terms = ["OUTSEL", "VIEWPORT.Z_OFFSET", "VIEWPORT.Z_SCALE"]
+evidence = ["E061", "E066", "E192", "E193", "E198", "E286", "E287"]
+terms = ["OUTSEL", "VIEWPORT.Z_OFFSET", "VIEWPORT.Z_SCALE", "PRESENCE"]
 +++
 
-The viewport's words scale and place the triangle (E061) and the depth is the z offset plus the z
-scale times z (E193); on a flat triangle it is the z offset alone (E066). A coordinate set takes
-OUTSEL's vertex size and two other words changed together (E192), and OUTSEL bits 7:0 enable user
-clip planes (E198).
+The depth question is answered (E287): the MTE clips at clip z = -w and w, cutting a triangle
+along them, and the viewport's depth is not clipped; against a clear depth a depth above 1
+compares as itself and a negative one as 0. OUTSEL bit 12 puts each vertex's 1/w into the TA's
+object (E286): clear, the object loses the 1/w dwords and the format word bit 18.
 
-What is open (3d.md §9, §9.1 and §9.4): whether depth outside [0, 1] is clipped, what OUTSEL bits
-12 and 13 do, and the state block's presence word beyond the fields named.
+What is open: OUTSEL bit 13 changes neither the object nor the image with zero, one and two
+coordinate sets (E286). Of the presence word's bits 16-31, set one at a time, 17, 18 and 22 to 25
+remove the triangle and 27 hangs (one run); which words they announce is not shown. What the
+missing 1/w costs a perspective triangle is not run.
 
-To settle it: on the laptop, the triangle with its depth driven past 0 and 1 by the z offset against
-a loaded depth buffer; OUTSEL bits 12 and 13 flipped with one and two coordinate sets and the
-parameter buffer dumped; the presence word's bits flipped one at a time, three runs.
+To settle it: OUTSEL bit 13 with point sprites and with the vertex colour present; each removing
+presence bit with words appended to the block (--blk-add-like growth) and the render memory
+dumped; OUTSEL bit 12 clear on vtx_persp.s with a perspective iteration.

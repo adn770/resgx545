@@ -17,40 +17,40 @@ evidence = "[HW] E074: bits 1:0 = 1 and 2 change the image, 3 hangs; whether the
 [[term]]
 id = "G0122"
 name = "CR_ISP_MSAA.ENABLE"
-status = "inferred"
+status = "named"
 
 [[term.source]]
 term = "CR_ISP_MSAA.ENABLE"
 kind = "bitfield"
 sgx545 = "0x042c[31]"
-meaning = "enables the multisampled ISP path: with it clear and CR_ISP_MSAA.MODE at 2 no pixel of the triangle is written; whether the triangle is still tiled, and what it does at mode 1 or at mode 0 with other bits set, are not shown; set in every capture [infer]"
+meaning = "enables the multisampled ISP path: with it clear and CR_ISP_MSAA.MODE at 2 no pixel of the triangle is written; the triangle is still tiled (the parameter buffer and TA data are those of the bit set) and mode 1 stores nothing either; what it does at mode 0 with other bits set is not shown; set in every capture [infer]"
 tier = "ours"
 source = "resgx545"
 citation = "E211"
 licence = "MIT"
-evidence = "[HW] E074: clear with bit 1, background only; clear without bit 1, no change; [infer] E219, an analogy of ours (no citation record): a second enable of the multisampled ISP path (Rogue CR_TE_AA); [HW] E211: with bits 1:0 at 2, bit 31 clear draws none of the triangle in two setups; the TA's output with it clear is not in the data"
+evidence = "[HW] E074: clear with bit 1, background only; clear without bit 1, no change; [infer] E219, an analogy of ours (no citation record): a second enable of the multisampled ISP path (Rogue CR_TE_AA); [HW] E211: with bits 1:0 at 2, bit 31 clear draws none of the triangle in two setups; [HW] the multisample layout probes (isp-msaa-layout, two runs): modes 1 and 2 with bit 31 clear store only the background, and their parameter buffer and TA data equal, byte for byte, those with it set"
 
 [[term]]
 id = "G0123"
 name = "CR_ISP_MSAA.MODE"
-status = "inferred"
+status = "named"
 
 [[term.source]]
 term = "CR_ISP_MSAA.MODE"
 kind = "bitfield"
 sgx545 = "0x042c[1:0]"
-meaning = "multisample mode: 0 one sample, 1 and 2 change the image, 3 hangs [infer]"
+meaning = "multisample mode: 0 one sample, byte 0 of CR_ISP_MULTISAMPLECTL; 1 two samples a pixel stored side by side in x, bytes 0 and 1 [infer: their source read from mode 2]; 2 four stored as a 2x2 block, samples 0 to 3 of CR_ISP_MULTISAMPLECTL in byte order; 3 hangs"
 tier = "ours"
 source = "resgx545"
 citation = "E210"
 licence = "MIT"
-evidence = "[HW] E210: bits 1:0 = 1 and 2 change the image, 3 hangs; [infer] E220: other GPUs' anti-aliasing mode fields number the same way, an analogy of ours (no citation record); [HW] E215: 3 still hangs with 0x0520 holding a second grid"
+evidence = "[HW] E210: bits 1:0 = 1 and 2 change the image, 3 hangs; [HW] the multisample layout probes (isp-msaa-layout, isp-msaa-positions, one run): over eight positions of a known edge the 2x1 layout fits every mode 1 image and the 2x2 layout every mode 2 image with no pixel missed, slot k at byte k of 0x04c8, the MTE's word and 0x0520 not used under mode 2; [infer] mode 1's probes set 0x04c8 and the MTE's word alike, so its source is read from mode 2; [infer] E220: other GPUs' anti-aliasing mode fields number the same way, an analogy of ours (no citation record); [HW] E215: 3 still hangs with 0x0520 holding a second grid"
 
 [[term.source]]
 term = "CR_ISP_MSAA.MODE"
 kind = "bitfield"
 sgx545 = "0x042c[1:0]"
-meaning = "Bits 1:0 of register 0x042c: 0 leaves the single-sample image, 1 and 2 each change the 64x64 triangle's image, and 3 hangs the job; the sample count each value selects is not shown by the pixel counts"
+meaning = "Bits 1:0 of register 0x042c: 0 leaves the single-sample image, 1 and 2 each change the 64x64 triangle's image, and 3 hangs the job; the sample-layout probes (isp-msaa-layout) show 1 storing two samples a pixel side by side and 2 four in a 2x2 block"
 tier = "ours"
 source = "resgx545"
 citation = "E074, E066"

@@ -1,0 +1,10 @@
+title = "probe table isp/isp-ctl"
+repo = "data"
+paths = ["isp/isp-ctl/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 42
+size = 4413898
+sha256 = "85e7df1de73fcad388009629b91b924e32c67240a503d31307c095791300356a"
+recipe = "probes/isp/isp-ctl.toml"
+needs = ["render", "kpoke"]

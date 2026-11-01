@@ -1,0 +1,95 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# mte clip plane state: 6 probes (written by tools/usse-asm/isp_words.py).
+# the planes' state across jobs (Q039).
+needs = ["render"]
+
+[[probe]]
+name = "mte-clip-plane-state-p1"
+question = "OUTSEL 0x63002, the distances at +1: does cp1's state outlive its job"
+source = "vtx_fdpc10.s"
+host = "tri"
+slot = "vtxuse"
+temps = 0x10
+vtx_coords = 2
+blk = { 13 = 0x63002 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["0: no fdpc", "1: fdpc cp1, plane -w", "2: no fdpc", "3: fdpc cp1, plane +w", "4: no fdpc", "5: fdpc cp1, plane -w", "6: no fdpc"]
+cases = [["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        fdpc.skipinv.repeat4 r8, cp1, pa0, r4\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        fdpc.skipinv.repeat4 r8, cp1, pa0, r4\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        fdpc.skipinv.repeat4 r8, cp1, pa0, r4\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop"]]
+
+[[probe]]
+name = "mte-clip-plane-state-p2"
+question = "OUTSEL 0x73004, the distances at +1: does cp2's state outlive its job"
+source = "vtx_fdpc10.s"
+host = "tri"
+slot = "vtxuse"
+temps = 0x10
+vtx_coords = 3
+blk = { 13 = 0x73004 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["0: no fdpc", "1: fdpc cp2, plane -w", "2: no fdpc", "3: fdpc cp2, plane +w", "4: no fdpc", "5: fdpc cp2, plane -w", "6: no fdpc"]
+cases = [["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv o6, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv o6, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        fdpc.skipinv.repeat4 r8, cp2, pa0, r4\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv o6, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv o6, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        fdpc.skipinv.repeat4 r8, cp2, pa0, r4\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv o6, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv o6, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        fdpc.skipinv.repeat4 r8, cp2, pa0, r4\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv o6, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop"]]
+
+[[probe]]
+name = "mte-clip-plane-state-p0"
+question = "OUTSEL 0x53001, the distances at +1: does cp0's state outlive its job"
+source = "vtx_fdpc10.s"
+host = "tri"
+slot = "vtxuse"
+temps = 0x10
+vtx_coords = 1
+blk = { 13 = 0x53001 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["0: no fdpc", "1: fdpc cp0, plane -w", "2: no fdpc", "3: fdpc cp0, plane +w", "4: no fdpc", "5: fdpc cp0, plane -w", "6: no fdpc"]
+cases = [["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        fdpc.skipinv.repeat4 r8, cp0, pa0, r4\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        fdpc.skipinv.repeat4 r8, cp0, pa0, r4\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        fdpc.skipinv.repeat4 r8, cp0, pa0, r4\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"]]
+
+[[probe]]
+name = "mte-clip-plane-state-p1-r2"
+question = "OUTSEL 0x63002, the distances at +1: does cp1's state outlive its job"
+source = "vtx_fdpc10.s"
+host = "tri"
+slot = "vtxuse"
+temps = 0x10
+vtx_coords = 2
+blk = { 13 = 0x63002 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["0: no fdpc", "1: fdpc cp1, plane -w", "2: no fdpc", "3: fdpc cp1, plane +w", "4: no fdpc", "5: fdpc cp1, plane -w", "6: no fdpc"]
+cases = [["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        fdpc.skipinv.repeat4 r8, cp1, pa0, r4\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        fdpc.skipinv.repeat4 r8, cp1, pa0, r4\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        fdpc.skipinv.repeat4 r8, cp1, pa0, r4\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop"]]
+
+[[probe]]
+name = "mte-clip-plane-state-p2-r2"
+question = "OUTSEL 0x73004, the distances at +1: does cp2's state outlive its job"
+source = "vtx_fdpc10.s"
+host = "tri"
+slot = "vtxuse"
+temps = 0x10
+vtx_coords = 3
+blk = { 13 = 0x73004 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["0: no fdpc", "1: fdpc cp2, plane -w", "2: no fdpc", "3: fdpc cp2, plane +w", "4: no fdpc", "5: fdpc cp2, plane -w", "6: no fdpc"]
+cases = [["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv o6, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv o6, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        fdpc.skipinv.repeat4 r8, cp2, pa0, r4\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv o6, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv o6, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        fdpc.skipinv.repeat4 r8, cp2, pa0, r4\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv o6, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv o6, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        fdpc.skipinv.repeat4 r8, cp2, pa0, r4\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv o6, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop"]]
+
+[[probe]]
+name = "mte-clip-plane-state-p0-r2"
+question = "OUTSEL 0x53001, the distances at +1: does cp0's state outlive its job"
+source = "vtx_fdpc10.s"
+host = "tri"
+slot = "vtxuse"
+temps = 0x10
+vtx_coords = 1
+blk = { 13 = 0x53001 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["0: no fdpc", "1: fdpc cp0, plane -w", "2: no fdpc", "3: fdpc cp0, plane +w", "4: no fdpc", "5: fdpc cp0, plane -w", "6: no fdpc"]
+cases = [["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        fdpc.skipinv.repeat4 r8, cp0, pa0, r4\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        fdpc.skipinv.repeat4 r8, cp0, pa0, r4\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        fdpc.skipinv.repeat4 r8, cp0, pa0, r4\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        nop\n        nop\n        nop\n        nop\n        nop"]]

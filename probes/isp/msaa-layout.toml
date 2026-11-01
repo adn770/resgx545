@@ -1,0 +1,207 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# isp msaa layout: 14 probes (written by tools/usse-asm/isp_words.py).
+# CR_ISP_MSAA modes over a known edge; bit 31 (Q030).
+needs = ["render", "kpoke"]
+
+[[probe]]
+name = "isp-msaa-layout-m0-te0"
+question = "what CR_ISP_MSAA mode 0 stores of a triangle whose left and top edges sit at 4 + k/16 (without the TE anti-aliasing bits)"
+source = "vtx_affine.s"
+host = "tri"
+slot = "vtxuse"
+slots = { pixel = "pix_green.s" }
+temps = 8
+cmd = { 1 = 0, 10 = 0xeaa26e26, 13 = 0x80000000, 16 = 0xeaa26e26 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "C", "D", "E", "F"]
+labels = ["k = 0", "k = 2", "k = 4", "k = 6", "k = 8", "k = 10", "k = 12", "k = 14"]
+cases = [["0x3E638E39", "0xBD638E39", "0xBF400000", "0xBD638E39", "0x3E638E39", "0xBF400000"], ["0x3E60B60B", "0xBD60B60B", "0xBF3F6666", "0xBD60B60B", "0x3E60B60B", "0xBF3F6666"], ["0x3E5DDDDE", "0xBD5DDDDE", "0xBF3ECCCD", "0xBD5DDDDE", "0x3E5DDDDE", "0xBF3ECCCD"], ["0x3E5B05B0", "0xBD5B05B0", "0xBF3E3333", "0xBD5B05B0", "0x3E5B05B0", "0xBF3E3333"], ["0x3E582D83", "0xBD582D83", "0xBF3D999A", "0xBD582D83", "0x3E582D83", "0xBF3D999A"], ["0x3E555555", "0xBD555555", "0xBF3D0000", "0xBD555555", "0x3E555555", "0xBF3D0000"], ["0x3E527D28", "0xBD527D28", "0xBF3C6666", "0xBD527D28", "0x3E527D28", "0xBF3C6666"], ["0x3E4FA4FA", "0xBD4FA4FA", "0xBF3BCCCD", "0xBD4FA4FA", "0x3E4FA4FA", "0xBF3BCCCD"]]
+
+[[probe]]
+name = "isp-msaa-layout-m1-te0"
+question = "what CR_ISP_MSAA mode 1 stores of a triangle whose left and top edges sit at 4 + k/16 (without the TE anti-aliasing bits)"
+source = "vtx_affine.s"
+host = "tri"
+slot = "vtxuse"
+slots = { pixel = "pix_green.s" }
+temps = 8
+cmd = { 1 = 0, 10 = 0xeaa26e26, 13 = 0x80000001, 16 = 0xeaa26e26 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "C", "D", "E", "F"]
+labels = ["k = 0", "k = 2", "k = 4", "k = 6", "k = 8", "k = 10", "k = 12", "k = 14"]
+cases = [["0x3E638E39", "0xBD638E39", "0xBF400000", "0xBD638E39", "0x3E638E39", "0xBF400000"], ["0x3E60B60B", "0xBD60B60B", "0xBF3F6666", "0xBD60B60B", "0x3E60B60B", "0xBF3F6666"], ["0x3E5DDDDE", "0xBD5DDDDE", "0xBF3ECCCD", "0xBD5DDDDE", "0x3E5DDDDE", "0xBF3ECCCD"], ["0x3E5B05B0", "0xBD5B05B0", "0xBF3E3333", "0xBD5B05B0", "0x3E5B05B0", "0xBF3E3333"], ["0x3E582D83", "0xBD582D83", "0xBF3D999A", "0xBD582D83", "0x3E582D83", "0xBF3D999A"], ["0x3E555555", "0xBD555555", "0xBF3D0000", "0xBD555555", "0x3E555555", "0xBF3D0000"], ["0x3E527D28", "0xBD527D28", "0xBF3C6666", "0xBD527D28", "0x3E527D28", "0xBF3C6666"], ["0x3E4FA4FA", "0xBD4FA4FA", "0xBF3BCCCD", "0xBD4FA4FA", "0x3E4FA4FA", "0xBF3BCCCD"]]
+
+[[probe]]
+name = "isp-msaa-layout-m2-te0"
+question = "what CR_ISP_MSAA mode 2 stores of a triangle whose left and top edges sit at 4 + k/16 (without the TE anti-aliasing bits)"
+source = "vtx_affine.s"
+host = "tri"
+slot = "vtxuse"
+slots = { pixel = "pix_green.s" }
+temps = 8
+cmd = { 1 = 0, 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "C", "D", "E", "F"]
+labels = ["k = 0", "k = 2", "k = 4", "k = 6", "k = 8", "k = 10", "k = 12", "k = 14"]
+cases = [["0x3E638E39", "0xBD638E39", "0xBF400000", "0xBD638E39", "0x3E638E39", "0xBF400000"], ["0x3E60B60B", "0xBD60B60B", "0xBF3F6666", "0xBD60B60B", "0x3E60B60B", "0xBF3F6666"], ["0x3E5DDDDE", "0xBD5DDDDE", "0xBF3ECCCD", "0xBD5DDDDE", "0x3E5DDDDE", "0xBF3ECCCD"], ["0x3E5B05B0", "0xBD5B05B0", "0xBF3E3333", "0xBD5B05B0", "0x3E5B05B0", "0xBF3E3333"], ["0x3E582D83", "0xBD582D83", "0xBF3D999A", "0xBD582D83", "0x3E582D83", "0xBF3D999A"], ["0x3E555555", "0xBD555555", "0xBF3D0000", "0xBD555555", "0x3E555555", "0xBF3D0000"], ["0x3E527D28", "0xBD527D28", "0xBF3C6666", "0xBD527D28", "0x3E527D28", "0xBF3C6666"], ["0x3E4FA4FA", "0xBD4FA4FA", "0xBF3BCCCD", "0xBD4FA4FA", "0x3E4FA4FA", "0xBF3BCCCD"]]
+
+[[probe]]
+name = "isp-msaa-layout-m0-te1"
+question = "what CR_ISP_MSAA mode 0 stores of a triangle whose left and top edges sit at 4 + k/16 (with the TE anti-aliasing bits)"
+source = "vtx_affine.s"
+host = "tri"
+slot = "vtxuse"
+slots = { pixel = "pix_green.s" }
+temps = 8
+cmd = { 1 = 0xe0000000, 10 = 0xeaa26e26, 13 = 0x80000000, 16 = 0xeaa26e26 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "C", "D", "E", "F"]
+labels = ["k = 0", "k = 2", "k = 4", "k = 6", "k = 8", "k = 10", "k = 12", "k = 14"]
+cases = [["0x3E638E39", "0xBD638E39", "0xBF400000", "0xBD638E39", "0x3E638E39", "0xBF400000"], ["0x3E60B60B", "0xBD60B60B", "0xBF3F6666", "0xBD60B60B", "0x3E60B60B", "0xBF3F6666"], ["0x3E5DDDDE", "0xBD5DDDDE", "0xBF3ECCCD", "0xBD5DDDDE", "0x3E5DDDDE", "0xBF3ECCCD"], ["0x3E5B05B0", "0xBD5B05B0", "0xBF3E3333", "0xBD5B05B0", "0x3E5B05B0", "0xBF3E3333"], ["0x3E582D83", "0xBD582D83", "0xBF3D999A", "0xBD582D83", "0x3E582D83", "0xBF3D999A"], ["0x3E555555", "0xBD555555", "0xBF3D0000", "0xBD555555", "0x3E555555", "0xBF3D0000"], ["0x3E527D28", "0xBD527D28", "0xBF3C6666", "0xBD527D28", "0x3E527D28", "0xBF3C6666"], ["0x3E4FA4FA", "0xBD4FA4FA", "0xBF3BCCCD", "0xBD4FA4FA", "0x3E4FA4FA", "0xBF3BCCCD"]]
+
+[[probe]]
+name = "isp-msaa-layout-m1-te1"
+question = "what CR_ISP_MSAA mode 1 stores of a triangle whose left and top edges sit at 4 + k/16 (with the TE anti-aliasing bits)"
+source = "vtx_affine.s"
+host = "tri"
+slot = "vtxuse"
+slots = { pixel = "pix_green.s" }
+temps = 8
+cmd = { 1 = 0xe0000000, 10 = 0xeaa26e26, 13 = 0x80000001, 16 = 0xeaa26e26 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "C", "D", "E", "F"]
+labels = ["k = 0", "k = 2", "k = 4", "k = 6", "k = 8", "k = 10", "k = 12", "k = 14"]
+cases = [["0x3E638E39", "0xBD638E39", "0xBF400000", "0xBD638E39", "0x3E638E39", "0xBF400000"], ["0x3E60B60B", "0xBD60B60B", "0xBF3F6666", "0xBD60B60B", "0x3E60B60B", "0xBF3F6666"], ["0x3E5DDDDE", "0xBD5DDDDE", "0xBF3ECCCD", "0xBD5DDDDE", "0x3E5DDDDE", "0xBF3ECCCD"], ["0x3E5B05B0", "0xBD5B05B0", "0xBF3E3333", "0xBD5B05B0", "0x3E5B05B0", "0xBF3E3333"], ["0x3E582D83", "0xBD582D83", "0xBF3D999A", "0xBD582D83", "0x3E582D83", "0xBF3D999A"], ["0x3E555555", "0xBD555555", "0xBF3D0000", "0xBD555555", "0x3E555555", "0xBF3D0000"], ["0x3E527D28", "0xBD527D28", "0xBF3C6666", "0xBD527D28", "0x3E527D28", "0xBF3C6666"], ["0x3E4FA4FA", "0xBD4FA4FA", "0xBF3BCCCD", "0xBD4FA4FA", "0x3E4FA4FA", "0xBF3BCCCD"]]
+
+[[probe]]
+name = "isp-msaa-layout-m2-te1"
+question = "what CR_ISP_MSAA mode 2 stores of a triangle whose left and top edges sit at 4 + k/16 (with the TE anti-aliasing bits)"
+source = "vtx_affine.s"
+host = "tri"
+slot = "vtxuse"
+slots = { pixel = "pix_green.s" }
+temps = 8
+cmd = { 1 = 0xe0000000, 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "C", "D", "E", "F"]
+labels = ["k = 0", "k = 2", "k = 4", "k = 6", "k = 8", "k = 10", "k = 12", "k = 14"]
+cases = [["0x3E638E39", "0xBD638E39", "0xBF400000", "0xBD638E39", "0x3E638E39", "0xBF400000"], ["0x3E60B60B", "0xBD60B60B", "0xBF3F6666", "0xBD60B60B", "0x3E60B60B", "0xBF3F6666"], ["0x3E5DDDDE", "0xBD5DDDDE", "0xBF3ECCCD", "0xBD5DDDDE", "0x3E5DDDDE", "0xBF3ECCCD"], ["0x3E5B05B0", "0xBD5B05B0", "0xBF3E3333", "0xBD5B05B0", "0x3E5B05B0", "0xBF3E3333"], ["0x3E582D83", "0xBD582D83", "0xBF3D999A", "0xBD582D83", "0x3E582D83", "0xBF3D999A"], ["0x3E555555", "0xBD555555", "0xBF3D0000", "0xBD555555", "0x3E555555", "0xBF3D0000"], ["0x3E527D28", "0xBD527D28", "0xBF3C6666", "0xBD527D28", "0x3E527D28", "0xBF3C6666"], ["0x3E4FA4FA", "0xBD4FA4FA", "0xBF3BCCCD", "0xBD4FA4FA", "0x3E4FA4FA", "0xBF3BCCCD"]]
+
+[[probe]]
+name = "isp-msaa-layout-enable-m1-b310"
+question = "CR_ISP_MSAA mode 1 with bit 31 clear: the image and the render memory"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+cmd = { 10 = 0xeaa26e26, 13 = 1, 16 = 0xeaa26e26 }
+dump_render = true
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["mode 1, bit 31 0"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-msaa-layout-enable-m1-b311"
+question = "CR_ISP_MSAA mode 1 with bit 31 set: the image and the render memory"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+cmd = { 10 = 0xeaa26e26, 13 = 0x80000001, 16 = 0xeaa26e26 }
+dump_render = true
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["mode 1, bit 31 1"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-msaa-layout-enable-m2-b310"
+question = "CR_ISP_MSAA mode 2 with bit 31 clear: the image and the render memory"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+cmd = { 10 = 0xeaa26e26, 13 = 2, 16 = 0xeaa26e26 }
+dump_render = true
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["mode 2, bit 31 0"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-msaa-layout-enable-m2-b311"
+question = "CR_ISP_MSAA mode 2 with bit 31 set: the image and the render memory"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+cmd = { 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+dump_render = true
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["mode 2, bit 31 1"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-msaa-layout-enable-m1-b310-r2"
+question = "CR_ISP_MSAA mode 1 with bit 31 clear: the image and the render memory"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+cmd = { 10 = 0xeaa26e26, 13 = 1, 16 = 0xeaa26e26 }
+dump_render = true
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["mode 1, bit 31 0"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-msaa-layout-enable-m1-b311-r2"
+question = "CR_ISP_MSAA mode 1 with bit 31 set: the image and the render memory"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+cmd = { 10 = 0xeaa26e26, 13 = 0x80000001, 16 = 0xeaa26e26 }
+dump_render = true
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["mode 1, bit 31 1"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-msaa-layout-enable-m2-b310-r2"
+question = "CR_ISP_MSAA mode 2 with bit 31 clear: the image and the render memory"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+cmd = { 10 = 0xeaa26e26, 13 = 2, 16 = 0xeaa26e26 }
+dump_render = true
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["mode 2, bit 31 0"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-msaa-layout-enable-m2-b311-r2"
+question = "CR_ISP_MSAA mode 2 with bit 31 set: the image and the render memory"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+cmd = { 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+dump_render = true
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["mode 2, bit 31 1"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]

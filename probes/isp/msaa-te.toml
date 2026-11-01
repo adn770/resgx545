@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# isp msaa te: 3 probes (written by tools/usse-asm/isp_words.py).
+# the TE anti-aliasing bits under modes 0-2 (Q030).
+needs = ["render", "kpoke"]
+
+[[probe]]
+name = "isp-msaa-te-m0"
+question = "the TE anti-aliasing bits under CR_ISP_MSAA mode 0"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+cmd = { 10 = 0xeaa26e26, 13 = 0x80000000, 16 = 0xeaa26e26 }
+case_set = [{ cmd = { 1 = 0x80000000 } }, { cmd = { 1 = 0x40000000 } }, { cmd = { 1 = 0x20000000 } }, { cmd = { 1 = 0xc0000000 } }, { cmd = { 1 = 0xa0000000 } }, { cmd = { 1 = 0x60000000 } }, { cmd = { 1 = 0xe0000000 } }]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["TE_AA 0x80000000", "TE_AA 0x40000000", "TE_AA 0x20000000", "TE_AA 0xc0000000", "TE_AA 0xa0000000", "TE_AA 0x60000000", "TE_AA 0xe0000000"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-msaa-te-m1"
+question = "the TE anti-aliasing bits under CR_ISP_MSAA mode 1"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+cmd = { 10 = 0xeaa26e26, 13 = 0x80000001, 16 = 0xeaa26e26 }
+case_set = [{ cmd = { 1 = 0x80000000 } }, { cmd = { 1 = 0x40000000 } }, { cmd = { 1 = 0x20000000 } }, { cmd = { 1 = 0xc0000000 } }, { cmd = { 1 = 0xa0000000 } }, { cmd = { 1 = 0x60000000 } }, { cmd = { 1 = 0xe0000000 } }]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["TE_AA 0x80000000", "TE_AA 0x40000000", "TE_AA 0x20000000", "TE_AA 0xc0000000", "TE_AA 0xa0000000", "TE_AA 0x60000000", "TE_AA 0xe0000000"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-msaa-te-m2"
+question = "the TE anti-aliasing bits under CR_ISP_MSAA mode 2"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+cmd = { 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+case_set = [{ cmd = { 1 = 0x80000000 } }, { cmd = { 1 = 0x40000000 } }, { cmd = { 1 = 0x20000000 } }, { cmd = { 1 = 0xc0000000 } }, { cmd = { 1 = 0xa0000000 } }, { cmd = { 1 = 0x60000000 } }, { cmd = { 1 = 0xe0000000 } }]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["TE_AA 0x80000000", "TE_AA 0x40000000", "TE_AA 0x20000000", "TE_AA 0xc0000000", "TE_AA 0xa0000000", "TE_AA 0x60000000", "TE_AA 0xe0000000"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]

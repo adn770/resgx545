@@ -1,0 +1,10 @@
+title = "probe table isp/translucent-blend"
+repo = "data"
+paths = ["isp/translucent-blend/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 18
+size = 483130
+sha256 = "a58930895b736f6d6898247d68da090abc35ca7b52ffcffe41b931d3febe5ad0"
+recipe = "probes/isp/translucent-blend.toml"
+needs = ["render", "kpoke"]

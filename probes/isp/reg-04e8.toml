@@ -1,0 +1,69 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# isp reg 04e8: 4 probes (written by tools/usse-asm/isp_words.py).
+# 0x04e8 under the stencil test and many objects (E204).
+needs = ["render", "kpoke"]
+
+[[probe]]
+name = "isp-reg-04e8-stencil"
+question = "0x04e8 under the stencil test against the background stencil"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+isp2 = 0x400ff00
+case_set = [{ blk = { 1 = 0x1d00300 }, kpoke = ["rd:51=0x100"] }, { blk = { 1 = 0x1d00300 }, kpoke = ["rd:51=0x0"] }, { blk = { 1 = 0x1d00300 }, kpoke = ["rd:51=0x1"] }, { blk = { 1 = 0x1d00300 }, kpoke = ["rd:51=0x101"] }, { blk = { 1 = 0x1d00301 }, kpoke = ["rd:51=0x100"] }, { blk = { 1 = 0x1d00301 }, kpoke = ["rd:51=0x0"] }, { blk = { 1 = 0x1d00301 }, kpoke = ["rd:51=0x1"] }, { blk = { 1 = 0x1d00301 }, kpoke = ["rd:51=0x101"] }]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["equal 0, 04e8 0x100", "equal 0, 04e8 0x0", "equal 0, 04e8 0x1", "equal 0, 04e8 0x101", "equal 1, 04e8 0x100", "equal 1, 04e8 0x0", "equal 1, 04e8 0x1", "equal 1, 04e8 0x101"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-reg-04e8-many"
+question = "0x04e8 under 42 overlapping copies, the visibility counter on"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+case_set = [{ blk = { 1 = 0x1d00200, 2 = 0x10f8 }, kpoke = ["rd:51=0x100"] }, { blk = { 1 = 0x1d00200, 2 = 0x10f8 }, kpoke = ["rd:51=0x0"] }, { blk = { 1 = 0x1d00200, 2 = 0x10f8 }, kpoke = ["rd:51=0x1"] }, { blk = { 1 = 0x1d00200, 2 = 0x10f8 }, kpoke = ["rd:51=0x101"] }, { blk = { 1 = 0x400200, 2 = 0x10f8 }, kpoke = ["rd:51=0x100"] }, { blk = { 1 = 0x400200, 2 = 0x10f8 }, kpoke = ["rd:51=0x0"] }, { blk = { 1 = 0x400200, 2 = 0x10f8 }, kpoke = ["rd:51=0x1"] }, { blk = { 1 = 0x400200, 2 = 0x10f8 }, kpoke = ["rd:51=0x101"] }]
+vertices = 0x7e
+copy_depth = true
+vtx_coords = 2
+temps = 4
+slots = { pixpds = "pds_iter_done.s", vtxuse = "vtx_z.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["42 copies, depth always, 04e8 0x100", "42 copies, depth always, 04e8 0x0", "42 copies, depth always, 04e8 0x1", "42 copies, depth always, 04e8 0x101", "42 copies, depth less, 04e8 0x100", "42 copies, depth less, 04e8 0x0", "42 copies, depth less, 04e8 0x1", "42 copies, depth less, 04e8 0x101"]
+cases = [["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"]]
+
+[[probe]]
+name = "isp-reg-04e8-stencil-r2"
+question = "0x04e8 under the stencil test against the background stencil"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+isp2 = 0x400ff00
+case_set = [{ blk = { 1 = 0x1d00300 }, kpoke = ["rd:51=0x100"] }, { blk = { 1 = 0x1d00300 }, kpoke = ["rd:51=0x0"] }, { blk = { 1 = 0x1d00300 }, kpoke = ["rd:51=0x1"] }, { blk = { 1 = 0x1d00300 }, kpoke = ["rd:51=0x101"] }, { blk = { 1 = 0x1d00301 }, kpoke = ["rd:51=0x100"] }, { blk = { 1 = 0x1d00301 }, kpoke = ["rd:51=0x0"] }, { blk = { 1 = 0x1d00301 }, kpoke = ["rd:51=0x1"] }, { blk = { 1 = 0x1d00301 }, kpoke = ["rd:51=0x101"] }]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["equal 0, 04e8 0x100", "equal 0, 04e8 0x0", "equal 0, 04e8 0x1", "equal 0, 04e8 0x101", "equal 1, 04e8 0x100", "equal 1, 04e8 0x0", "equal 1, 04e8 0x1", "equal 1, 04e8 0x101"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-reg-04e8-many-r2"
+question = "0x04e8 under 42 overlapping copies, the visibility counter on"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+case_set = [{ blk = { 1 = 0x1d00200, 2 = 0x10f8 }, kpoke = ["rd:51=0x100"] }, { blk = { 1 = 0x1d00200, 2 = 0x10f8 }, kpoke = ["rd:51=0x0"] }, { blk = { 1 = 0x1d00200, 2 = 0x10f8 }, kpoke = ["rd:51=0x1"] }, { blk = { 1 = 0x1d00200, 2 = 0x10f8 }, kpoke = ["rd:51=0x101"] }, { blk = { 1 = 0x400200, 2 = 0x10f8 }, kpoke = ["rd:51=0x100"] }, { blk = { 1 = 0x400200, 2 = 0x10f8 }, kpoke = ["rd:51=0x0"] }, { blk = { 1 = 0x400200, 2 = 0x10f8 }, kpoke = ["rd:51=0x1"] }, { blk = { 1 = 0x400200, 2 = 0x10f8 }, kpoke = ["rd:51=0x101"] }]
+vertices = 0x7e
+copy_depth = true
+vtx_coords = 2
+temps = 4
+slots = { pixpds = "pds_iter_done.s", vtxuse = "vtx_z.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["42 copies, depth always, 04e8 0x100", "42 copies, depth always, 04e8 0x0", "42 copies, depth always, 04e8 0x1", "42 copies, depth always, 04e8 0x101", "42 copies, depth less, 04e8 0x100", "42 copies, depth less, 04e8 0x0", "42 copies, depth less, 04e8 0x1", "42 copies, depth less, 04e8 0x101"]
+cases = [["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"]]

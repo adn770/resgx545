@@ -1,0 +1,99 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# isp depth compare: 5 probes (written by tools/usse-asm/isp_words.py).
+# ISP0's depth compare and write bits; its other bits.
+needs = ["render", "kpoke"]
+
+[[probe]]
+name = "isp-depth-compare-bg1"
+question = "ISP0 bits 24:22 and 20 over five copies, clear depth 1.0"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+case_set = [{ blk = { 1 = 0x200 } }, { blk = { 1 = 0x400200 } }, { blk = { 1 = 0x800200 } }, { blk = { 1 = 0xc00200 } }, { blk = { 1 = 0x1000200 } }, { blk = { 1 = 0x1400200 } }, { blk = { 1 = 0x1800200 } }, { blk = { 1 = 0x1c00200 } }, { blk = { 1 = 0x100200 } }, { blk = { 1 = 0x500200 } }, { blk = { 1 = 0x900200 } }, { blk = { 1 = 0xd00200 } }, { blk = { 1 = 0x1100200 } }, { blk = { 1 = 0x1500200 } }, { blk = { 1 = 0x1900200 } }, { blk = { 1 = 0x1d00200 } }]
+cmd = { 14 = 0x3f800000 }
+vertices = 0xf
+copy_depth = true
+vtx_coords = 2
+temps = 4
+slots = { pixpds = "pds_iter_done.s", vtxuse = "vtx_z.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["DCMP 0, bit 20 0", "DCMP 1, bit 20 0", "DCMP 2, bit 20 0", "DCMP 3, bit 20 0", "DCMP 4, bit 20 0", "DCMP 5, bit 20 0", "DCMP 6, bit 20 0", "DCMP 7, bit 20 0", "DCMP 0, bit 20 1", "DCMP 1, bit 20 1", "DCMP 2, bit 20 1", "DCMP 3, bit 20 1", "DCMP 4, bit 20 1", "DCMP 5, bit 20 1", "DCMP 6, bit 20 1", "DCMP 7, bit 20 1"]
+cases = [["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"]]
+
+[[probe]]
+name = "isp-depth-compare-bg0"
+question = "ISP0 bits 24:22 and 20 over five copies, clear depth 0.0"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+case_set = [{ blk = { 1 = 0x200 } }, { blk = { 1 = 0x400200 } }, { blk = { 1 = 0x800200 } }, { blk = { 1 = 0xc00200 } }, { blk = { 1 = 0x1000200 } }, { blk = { 1 = 0x1400200 } }, { blk = { 1 = 0x1800200 } }, { blk = { 1 = 0x1c00200 } }, { blk = { 1 = 0x100200 } }, { blk = { 1 = 0x500200 } }, { blk = { 1 = 0x900200 } }, { blk = { 1 = 0xd00200 } }, { blk = { 1 = 0x1100200 } }, { blk = { 1 = 0x1500200 } }, { blk = { 1 = 0x1900200 } }, { blk = { 1 = 0x1d00200 } }]
+cmd = { 14 = 0 }
+vertices = 0xf
+copy_depth = true
+vtx_coords = 2
+temps = 4
+slots = { pixpds = "pds_iter_done.s", vtxuse = "vtx_z.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["DCMP 0, bit 20 0", "DCMP 1, bit 20 0", "DCMP 2, bit 20 0", "DCMP 3, bit 20 0", "DCMP 4, bit 20 0", "DCMP 5, bit 20 0", "DCMP 6, bit 20 0", "DCMP 7, bit 20 0", "DCMP 0, bit 20 1", "DCMP 1, bit 20 1", "DCMP 2, bit 20 1", "DCMP 3, bit 20 1", "DCMP 4, bit 20 1", "DCMP 5, bit 20 1", "DCMP 6, bit 20 1", "DCMP 7, bit 20 1"]
+cases = [["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"]]
+
+[[probe]]
+name = "isp-depth-compare-bg1-r2"
+question = "ISP0 bits 24:22 and 20 over five copies, clear depth 1.0"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+case_set = [{ blk = { 1 = 0x200 } }, { blk = { 1 = 0x400200 } }, { blk = { 1 = 0x800200 } }, { blk = { 1 = 0xc00200 } }, { blk = { 1 = 0x1000200 } }, { blk = { 1 = 0x1400200 } }, { blk = { 1 = 0x1800200 } }, { blk = { 1 = 0x1c00200 } }, { blk = { 1 = 0x100200 } }, { blk = { 1 = 0x500200 } }, { blk = { 1 = 0x900200 } }, { blk = { 1 = 0xd00200 } }, { blk = { 1 = 0x1100200 } }, { blk = { 1 = 0x1500200 } }, { blk = { 1 = 0x1900200 } }, { blk = { 1 = 0x1d00200 } }]
+cmd = { 14 = 0x3f800000 }
+vertices = 0xf
+copy_depth = true
+vtx_coords = 2
+temps = 4
+slots = { pixpds = "pds_iter_done.s", vtxuse = "vtx_z.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["DCMP 0, bit 20 0", "DCMP 1, bit 20 0", "DCMP 2, bit 20 0", "DCMP 3, bit 20 0", "DCMP 4, bit 20 0", "DCMP 5, bit 20 0", "DCMP 6, bit 20 0", "DCMP 7, bit 20 0", "DCMP 0, bit 20 1", "DCMP 1, bit 20 1", "DCMP 2, bit 20 1", "DCMP 3, bit 20 1", "DCMP 4, bit 20 1", "DCMP 5, bit 20 1", "DCMP 6, bit 20 1", "DCMP 7, bit 20 1"]
+cases = [["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"]]
+
+[[probe]]
+name = "isp-depth-compare-bg0-r2"
+question = "ISP0 bits 24:22 and 20 over five copies, clear depth 0.0"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+case_set = [{ blk = { 1 = 0x200 } }, { blk = { 1 = 0x400200 } }, { blk = { 1 = 0x800200 } }, { blk = { 1 = 0xc00200 } }, { blk = { 1 = 0x1000200 } }, { blk = { 1 = 0x1400200 } }, { blk = { 1 = 0x1800200 } }, { blk = { 1 = 0x1c00200 } }, { blk = { 1 = 0x100200 } }, { blk = { 1 = 0x500200 } }, { blk = { 1 = 0x900200 } }, { blk = { 1 = 0xd00200 } }, { blk = { 1 = 0x1100200 } }, { blk = { 1 = 0x1500200 } }, { blk = { 1 = 0x1900200 } }, { blk = { 1 = 0x1d00200 } }]
+cmd = { 14 = 0 }
+vertices = 0xf
+copy_depth = true
+vtx_coords = 2
+temps = 4
+slots = { pixpds = "pds_iter_done.s", vtxuse = "vtx_z.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["DCMP 0, bit 20 0", "DCMP 1, bit 20 0", "DCMP 2, bit 20 0", "DCMP 3, bit 20 0", "DCMP 4, bit 20 0", "DCMP 5, bit 20 0", "DCMP 6, bit 20 0", "DCMP 7, bit 20 0", "DCMP 0, bit 20 1", "DCMP 1, bit 20 1", "DCMP 2, bit 20 1", "DCMP 3, bit 20 1", "DCMP 4, bit 20 1", "DCMP 5, bit 20 1", "DCMP 6, bit 20 1", "DCMP 7, bit 20 1"]
+cases = [["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"]]
+
+[[probe]]
+name = "isp-depth-compare-bits"
+question = "ISP0's other bits flipped from depth less with writes, five copies"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+case_set = [{ blk = { 1 = 0x400000 } }, { blk = { 1 = 0x400600 } }, { blk = { 1 = 0x401200 } }, { blk = { 1 = 0x402200 } }, { blk = { 1 = 0x404200 } }, { blk = { 1 = 0x480200 } }, { blk = { 1 = 0x600200 } }, { blk = { 1 = 0x20400200 } }, { blk = { 1 = 0x40400200 } }, { blk = { 1 = 0x80400200 } }]
+vertices = 0xf
+copy_depth = true
+vtx_coords = 2
+temps = 4
+slots = { pixpds = "pds_iter_done.s", vtxuse = "vtx_z.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["ISP0 bit 9", "ISP0 bit 10", "ISP0 bit 12", "ISP0 bit 13", "ISP0 bit 14", "ISP0 bit 19", "ISP0 bit 21", "ISP0 bit 29", "ISP0 bit 30", "ISP0 bit 31"]
+cases = [["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"]]

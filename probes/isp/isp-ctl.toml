@@ -1,0 +1,57 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# isp isp ctl: 4 probes (written by tools/usse-asm/isp_words.py).
+# CR_ISP_CTL bits 24, 19:16 and 8 on four target sizes (Q029).
+needs = ["render", "kpoke"]
+
+[[probe]]
+name = "isp-isp-ctl-64x64"
+question = "CR_ISP_CTL's bits on a 64x64 target"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [0x40, 0x40]
+case_set = [{ kpoke = ["rd:3=0xf0100"] }, { kpoke = ["rd:3=0xf0000"] }, { kpoke = ["rd:3=0x10f0100"] }, { kpoke = ["rd:3=0xe0100"] }, { kpoke = ["rd:3=0xd0100"] }, { kpoke = ["rd:3=0xb0100"] }, { kpoke = ["rd:3=0x70100"] }, { kpoke = ["rd:3=0x0"] }]
+pixels = true
+inputs = ["OP"]
+labels = ["CR_ISP_CTL 0x000f0100", "CR_ISP_CTL 0x000f0000", "CR_ISP_CTL 0x010f0100", "CR_ISP_CTL 0x000e0100", "CR_ISP_CTL 0x000d0100", "CR_ISP_CTL 0x000b0100", "CR_ISP_CTL 0x00070100", "CR_ISP_CTL 0x00000000"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-isp-ctl-96x64"
+question = "CR_ISP_CTL's bits on a 96x64 target"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [0x60, 0x40]
+case_set = [{ kpoke = ["rd:3=0xf0100"] }, { kpoke = ["rd:3=0xf0000"] }, { kpoke = ["rd:3=0x10f0100"] }, { kpoke = ["rd:3=0xe0100"] }, { kpoke = ["rd:3=0xd0100"] }, { kpoke = ["rd:3=0xb0100"] }, { kpoke = ["rd:3=0x70100"] }, { kpoke = ["rd:3=0x0"] }]
+pixels = true
+inputs = ["OP"]
+labels = ["CR_ISP_CTL 0x000f0100", "CR_ISP_CTL 0x000f0000", "CR_ISP_CTL 0x010f0100", "CR_ISP_CTL 0x000e0100", "CR_ISP_CTL 0x000d0100", "CR_ISP_CTL 0x000b0100", "CR_ISP_CTL 0x00070100", "CR_ISP_CTL 0x00000000"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-isp-ctl-128x128"
+question = "CR_ISP_CTL's bits on a 128x128 target"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [0x80, 0x80]
+case_set = [{ kpoke = ["rd:3=0xf0100"] }, { kpoke = ["rd:3=0xf0000"] }, { kpoke = ["rd:3=0x10f0100"] }, { kpoke = ["rd:3=0xe0100"] }, { kpoke = ["rd:3=0xd0100"] }, { kpoke = ["rd:3=0xb0100"] }, { kpoke = ["rd:3=0x70100"] }, { kpoke = ["rd:3=0x0"] }]
+pixels = true
+inputs = ["OP"]
+labels = ["CR_ISP_CTL 0x000f0100", "CR_ISP_CTL 0x000f0000", "CR_ISP_CTL 0x010f0100", "CR_ISP_CTL 0x000e0100", "CR_ISP_CTL 0x000d0100", "CR_ISP_CTL 0x000b0100", "CR_ISP_CTL 0x00070100", "CR_ISP_CTL 0x00000000"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-isp-ctl-256x128"
+question = "CR_ISP_CTL's bits on a 256x128 target"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [0x100, 0x80]
+case_set = [{ kpoke = ["rd:3=0xf0100"] }, { kpoke = ["rd:3=0xf0000"] }, { kpoke = ["rd:3=0x10f0100"] }, { kpoke = ["rd:3=0xe0100"] }, { kpoke = ["rd:3=0xd0100"] }, { kpoke = ["rd:3=0xb0100"] }, { kpoke = ["rd:3=0x70100"] }, { kpoke = ["rd:3=0x0"] }]
+pixels = true
+inputs = ["OP"]
+labels = ["CR_ISP_CTL 0x000f0100", "CR_ISP_CTL 0x000f0000", "CR_ISP_CTL 0x010f0100", "CR_ISP_CTL 0x000e0100", "CR_ISP_CTL 0x000d0100", "CR_ISP_CTL 0x000b0100", "CR_ISP_CTL 0x00070100", "CR_ISP_CTL 0x00000000"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]

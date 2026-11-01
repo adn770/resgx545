@@ -1,20 +1,24 @@
 +++
 id = "Q039"
-question = "which vertex dword does user clip plane 1 read as its distance when it is enabled without plane 0?"
+question = "where is a user clip plane's state held between jobs, what resets it, and when do the vertex's distance dwords decide a plane?"
 unit = "mte"
 phase = 10
-evidence = ["E198"]
+evidence = ["E198", "E280"]
 terms = ["OUTSEL.PLANES"]
 +++
 
-OUTSEL bits 7:0 enable user clip planes: plane 0 alone reads its distance from o4, and planes 0
-and 1 together read o4 and o5 (E198). With bit 1 alone the triangle is removed in all four cases
-run: a 5-dword vertex (0x53002) with o4 at -1.0 and at +1.0, and a 6-dword vertex (0x63002) with
-o4 = -1, o5 = +1 and with o4 = +1, o5 = -1. Each case has one of o4 and o5 positive, so neither
-dword on its own decides it, and the case with both positive was not run. Plane 1 alone may read
-o5, read o4, need both, or reject every triangle for another reason, such as a distance it reads
-past the vertex. With a 4-dword vertex every plane bit removes the triangle or faults the job.
+fdpc's clip result for plane N outlives the job that set it (E280): after a job whose fdpc puts
+every vertex outside plane N, later jobs with the plane enabled and no fdpc are removed until an
+fdpc puts the vertices inside again, for planes 0, 1 and 2, in two runs. With the state inside, the
+distance dwords o4 and o5 at -1 or +1 remove nothing, for plane 0, plane 1 alone, and planes 0 and
+1; no run varies a distance dword under plane 2 with its state inside. So the question of which
+dword plane 1 alone reads (E198) had no answer in those terms: plane 1 alone drew in one session and
+was removed in another, while its held state differed.
 
-To settle it: run 0x63002 with o4 and o5 both +1 and both -1, and 0x73002 (a 7-dword vertex) with
-o4, o5 and o6 set one at a time to -1 and the rest +1; also `fdpc cp1` inside and outside with
-0x63002. One run each, the follow-up run repeating any case that draws.
+What is open: where the state is held (the MTE, the USE, per vertex or per plane), what resets it
+(a fresh boot, a reset after a hang, a job with fdpc on another plane), and why E198 saw o4 at -1
+remove plane 0's triangle between two jobs without fdpc.
+
+To settle it: plane 0 with o4 at -1 and +1 right after a GPU reset (a fenced hang), before any
+fdpc; then the state set by fdpc and each candidate reset tried in turn, a job reading the plane
+after each.

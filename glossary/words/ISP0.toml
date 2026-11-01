@@ -15,6 +15,70 @@ licence = "MIT"
 evidence = "same function"
 
 [[term]]
+id = "G1059"
+name = "ISP0.BIT9"
+status = "inferred"
+
+[[term.source]]
+term = "ISP0.BIT9"
+kind = "flag"
+sgx545 = "isp0 bit 9"
+meaning = "set in every ISP word 0 the library builds; clearing it changes no image of five overlapping copies, so what it selects is not shown, and the block's layout does not move with it [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "probes/isp/depth-compare.toml"
+licence = "MIT"
+evidence = "[HW] the depth-compare probes (isp-depth-compare-bits, one run): bit 9 cleared from 0x00400200 keeps the nearest copy's 1062 pixels and 36 of the next, as the word with it set; [infer] no record shows what it selects, so the name is neutral"
+
+[[term]]
+id = "G1060"
+name = "ISP0.DCMP_MODE"
+status = "named"
+
+[[term.source]]
+term = "dcmpmode"
+kind = "field"
+sgx545 = "isp0 [24:22]"
+meaning = "depth compare mode"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0715"
+licence = "MIT"
+evidence = "same function (S.3); [HW] the depth-compare probes (isp-depth-compare, two runs): 0 never, 1 less, 4 greater, 7 always, over five copies against the clear depths 1.0 and 0.0; no depth there equals another, so 2 draws as 0, 3 as 1, 5 as 7 and 6 as 4; [infer] 2 equal, 3 less or equal, 5 not equal and 6 greater or equal by the order of the stencil compare, whose equal case is measured (ISP2.SCMP_MODE)"
+
+[[term]]
+id = "G1061"
+name = "ISP0.DWRITE_DISABLE"
+status = "named"
+
+[[term.source]]
+term = "dwritedisable"
+kind = "flag"
+sgx545 = "isp0 bit 20"
+meaning = "depth write disable"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0716"
+licence = "MIT"
+evidence = "same function (S.3 'depth write off'); [HW] the depth-compare probes (isp-depth-compare, two runs): with bit 20 every copy that passes the clear depth wins over the earlier ones, depth less or less or equal"
+
+[[term]]
+id = "G1062"
+name = "ISP0.ISP2_PRESENT"
+status = "inferred"
+
+[[term.source]]
+term = "ISP0.ISP2_PRESENT"
+kind = "flag"
+sgx545 = "isp0 bit 8"
+meaning = "set with ISP word 2 (the stencil word) in the state block, where the object takes the stencil test of ISP2; that it announces the word is not probed apart from the word [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "probes/isp/stencil-word.toml"
+licence = "MIT"
+evidence = "[HW] the stencil-word probes (isp-stencil-word, one run): every object with the bit and ISP word 2 in its block obeys ISP2's compare, masks and operations; [infer] no run clears the bit with the word present or sets it without, so that the bit announces the word is read from the probes that set both"
+
+[[term]]
 id = "G0471"
 name = "ISP0.OBJ_TYPE"
 status = "named"
@@ -55,12 +119,44 @@ status = "named"
 term = "ISP0.SAMPLE_COVERAGE"
 kind = "flag"
 sgx545 = "isp0 bit 28"
-meaning = "the object covers a pixel when any of eight samples is inside: the four of CR_ISP_MULTISAMPLECTL and the four of CR_ISP_SAMPLE_POS; single-sampled only (it hangs a 4x render) [infer]"
+meaning = "the object covers a pixel when any of eight samples is inside: the four of CR_ISP_MULTISAMPLECTL and the four of CR_ISP_SAMPLE_POS; single-sampled only (it hangs a 4x render); the pixel centre counted inside on every edge, or in place of CR_ISP_MULTISAMPLECTL's samples, takes no part, while a centre sample under the top-left rule added to the eight is not excluded; of the top-left tie rule only the long edge's exclusion is seen, on a triangle with no horizontal edge [infer]"
 tier = "ours"
 source = "resgx545"
 citation = "E215"
 licence = "MIT"
-evidence = "[HW] E214: adds only edge pixels, as many as 0x0520 places samples outside the edge, each of the 55 values' images reproduced pixel for pixel; [HW] E214: ISP0 bit 18 beside it faults the job; [HW] E215: with 0x04c8 and 0x0520 varied the eight-sample union predicts the pixel count of each of the four single-sampled cases; hangs under 4x"
+evidence = "[HW] E214: adds only edge pixels, as many as 0x0520 places samples outside the edge, each of the 55 values' images reproduced pixel for pixel; [HW] E214: ISP0 bit 18 beside it faults the job; [HW] E215: with 0x04c8 and 0x0520 varied the eight-sample union predicts the pixel count of each of the four single-sampled cases; hangs under 4x; [HW] the coverage-sample probes (isp-coverage-samples, isp-coverage-bytes, two runs): the eight-sample union predicts all 56 images of 28 settings pixel for pixel, the reading with the pixel centre misses 12, 24 or 36 pixels in 10 of the 28 settings (20 of the 56 images); with the bit clear byte 0 of 0x04c8 alone samples (one run)"
+
+[[term]]
+id = "G1063"
+name = "ISP0.SREF"
+status = "named"
+
+[[term.source]]
+term = "sref"
+kind = "field"
+sgx545 = "isp0 [7:0]"
+meaning = "stencil reference"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0717"
+licence = "MIT"
+evidence = "same function and bits (S.3); [HW] the stencil-word probes (isp-stencil-word, one run): bits 7:0 are the reference the compare tests and the value replace writes"
+
+[[term]]
+id = "G1064"
+name = "ISP0.TAGWRITE_DISABLE"
+status = "named"
+
+[[term.source]]
+term = "tagwritedisable"
+kind = "flag"
+sgx545 = "isp0 bit 21 (colour write off)"
+meaning = "object not forwarded to the TSP"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0718"
+licence = "MIT"
+evidence = "by function: an ISP-only object writes no colour (S.3); bit position differs; [HW] the depth-compare and tag-write probes (isp-depth-compare, isp-tag-write, one run): with bit 21 the object draws no colour and still hides a second object behind it, so it writes its depth"
 
 [[term]]
 id = "G0633"

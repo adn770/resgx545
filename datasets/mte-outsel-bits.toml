@@ -1,0 +1,10 @@
+title = "probe table mte/outsel-bits"
+repo = "data"
+paths = ["mte/outsel-bits/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 94
+size = 112049819
+sha256 = "b66ba8bb2386a5d86b12b120291a2df2f765812ee8bf5789fe620d9f2d91534b"
+recipe = "probes/mte/outsel-bits.toml"
+needs = ["render"]

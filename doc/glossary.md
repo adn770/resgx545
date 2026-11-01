@@ -107,6 +107,9 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 
 ### bitfield
 
+- `CR_ISP_CTL.PROCESS_EMPTY_TILES` G1052 (0x0414[8]): process empty tiles too, so a partial render
+  visits every tile (Rogue analogue). From `ROGUE_CR_ISP_CTL_PROCESS_EMPTY_TILES` (3,
+  linux-imagination); `process_empty_tiles` (3, mesa-csbgen).
 - `CR_CLKGATECTL.DPM_CLKG` G0779 (0x0000[11:10]): clock-gating mode of the DPM (0 on, 1 off, 2 auto
   per psb_regs.h). From `EUR_CR_CLKGATECTL_DPM_CLKG` (1, sgx545-ce);
   `_PSB_C_CLKGATECTL_DPM_CLKG_MASK` (1c, emgd-psb_regs).
@@ -504,15 +507,42 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `CR_ISP_CTL.VALID_ID` G0418 (0x0414[5:0]): validation threshold: opaque and translucent objects
   whose ISP1.VALID_ID is below it are not drawn (Rogue analogue). From `ROGUE_CR_ISP_CTL_VALID_ID`
   (3, linux-imagination).
-- `CR_ISP_MSAA.MODE` G0123 (0x042c[1:0]): inferred reading (unconfirmed): multisample mode: 0 one
-  sample, 1 and 2 change the image, 3 hangs [infer]. From `CR_ISP_MSAA.MODE` (ours, resgx545).
-- `CR_ISP_MSAA.ENABLE` G0122 (0x042c[31]): inferred reading (unconfirmed): enables the multisampled
-  ISP path: with it clear and CR_ISP_MSAA.MODE at 2 no pixel of the triangle is written; whether the
-  triangle is still tiled, and what it does at mode 1 or at mode 0 with other bits set, are not
-  shown; set in every capture [infer]. From `CR_ISP_MSAA.ENABLE` (ours, resgx545).
+- `CR_ISP_MSAA.MODE` G0123 (0x042c[1:0]): multisample mode: 0 one sample, byte 0 of
+  CR_ISP_MULTISAMPLECTL; 1 two samples a pixel stored side by side in x, bytes 0 and 1 [infer: their
+  source read from mode 2]; 2 four stored as a 2x2 block, samples 0 to 3 of CR_ISP_MULTISAMPLECTL in
+  byte order; 3 hangs. From `CR_ISP_MSAA.MODE` (ours, resgx545).
+- `CR_ISP_MSAA.ENABLE` G0122 (0x042c[31]): enables the multisampled ISP path: with it clear and
+  CR_ISP_MSAA.MODE at 2 no pixel of the triangle is written; the triangle is still tiled (the
+  parameter buffer and TA data are those of the bit set) and mode 1 stores nothing either; what it
+  does at mode 0 with other bits set is not shown; set in every capture [infer]. From
+  `CR_ISP_MSAA.ENABLE` (ours, resgx545).
 - `CR_ISP_BGOBJVALS.STENCIL` G0623 (0x04bc[7:0]): the background's stencil value, which an object's
   stencil test compares against (with bit 8 set) [infer]. From `CR_ISP_BGOBJVALS.STENCIL` (ours,
   resgx545).
+- `CR_ISP_MULTISAMPLECTL.SAMPLE1_X` G1053 (0x04c8[11:8]): x of sample 1's position in the pixel, in
+  sixteenths of a pixel from its top-left corner, laid out as sample 0's: one of the eight samples
+  of ISP0.SAMPLE_COVERAGE, and sample 1 of a multisampled pixel under CR_ISP_MSAA mode 2 and, read
+  from mode 2, mode 1 [infer]. From `CR_ISP_MULTISAMPLECTL.SAMPLE1_X` (ours, resgx545).
+- `CR_ISP_MULTISAMPLECTL.SAMPLE1_Y` G1054 (0x04c8[15:12]): y of sample 1's position in the pixel, in
+  sixteenths of a pixel from its top-left corner, laid out as sample 0's: one of the eight samples
+  of ISP0.SAMPLE_COVERAGE, and sample 1 of a multisampled pixel under CR_ISP_MSAA mode 2 and, read
+  from mode 2, mode 1 [infer]. From `CR_ISP_MULTISAMPLECTL.SAMPLE1_Y` (ours, resgx545).
+- `CR_ISP_MULTISAMPLECTL.SAMPLE2_X` G1055 (0x04c8[19:16]): x of sample 2's position in the pixel, in
+  sixteenths of a pixel from its top-left corner, laid out as sample 0's: one of the eight samples
+  of ISP0.SAMPLE_COVERAGE, and sample 2 of a multisampled pixel under CR_ISP_MSAA mode 2. From
+  `CR_ISP_MULTISAMPLECTL.SAMPLE2_X` (ours, resgx545).
+- `CR_ISP_MULTISAMPLECTL.SAMPLE2_Y` G1056 (0x04c8[23:20]): y of sample 2's position in the pixel, in
+  sixteenths of a pixel from its top-left corner, laid out as sample 0's: one of the eight samples
+  of ISP0.SAMPLE_COVERAGE, and sample 2 of a multisampled pixel under CR_ISP_MSAA mode 2. From
+  `CR_ISP_MULTISAMPLECTL.SAMPLE2_Y` (ours, resgx545).
+- `CR_ISP_MULTISAMPLECTL.SAMPLE3_X` G1057 (0x04c8[27:24]): x of sample 3's position in the pixel, in
+  sixteenths of a pixel from its top-left corner, laid out as sample 0's: one of the eight samples
+  of ISP0.SAMPLE_COVERAGE, and sample 3 of a multisampled pixel under CR_ISP_MSAA mode 2. From
+  `CR_ISP_MULTISAMPLECTL.SAMPLE3_X` (ours, resgx545).
+- `CR_ISP_MULTISAMPLECTL.SAMPLE3_Y` G1058 (0x04c8[31:28]): y of sample 3's position in the pixel, in
+  sixteenths of a pixel from its top-left corner, laid out as sample 0's: one of the eight samples
+  of ISP0.SAMPLE_COVERAGE, and sample 3 of a multisampled pixel under CR_ISP_MSAA mode 2. From
+  `CR_ISP_MULTISAMPLECTL.SAMPLE3_Y` (ours, resgx545).
 - `CR_ISP_MULTISAMPLECTL.SAMPLE0_X` G0125 (0x04c8[3:0]): x of sample 0's position in the pixel, in
   sixteenths of a pixel, 8 the centre [infer]. From `CR_ISP_MULTISAMPLECTL.SAMPLE0_X` (ours,
   resgx545).
@@ -948,15 +978,17 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   resgx545).
 - `CR_ISP_CTL` G0119 (0x0414): ISP control word of a render; the EDM sets bit 8 (process empty
   tiles) for partial renders (Rogue analogue). From `ROGUE_CR_ISP_CTL` (3, linux-imagination).
-- `CR_ISP_LINE_SAMPLE_POS` G0120 (0x0418): bit 0: where lines are sampled, 1 at the pixel centre, 0
-  at its far corner (x + 1, y + 1); triangles do not read it; 1 from the closed driver [infer]. From
-  `CR_ISP_LINE_SAMPLE_POS` (ours, resgx545).
+- `CR_ISP_LINE_SAMPLE_POS` G0120 (0x0418): bit 0: where a line's span test samples a column x, x +
+  1/2 at 1 and x + 1 at 0, its rows taken at the pixel centre at both values, read from one x-major
+  line; triangles do not read it; 1 from the closed driver [infer]. From `CR_ISP_LINE_SAMPLE_POS`
+  (ours, resgx545).
 - `CR_ISP_POLY_OFFSET_UNITS` G0129 (0x041c): the polygon offset's units, as an integer
   (glPolygonOffset units) [infer]. From `CR_ISP_POLY_OFFSET_UNITS` (ours, resgx545).
 - `CR_ISP_POLY_OFFSET_FACTOR` G0128 (0x0420): inferred reading (unconfirmed): Register 0x0420,
   loaded from render-details word 6: set to 4.0 with the offset in word 5 at 0 it left the flat
-  triangle's stored depth unchanged, so what it multiplies is not shown by a triangle with no depth
-  slope. From `CR_ISP_POLY_OFFSET_FACTOR` (ours, resgx545).
+  triangle's stored depth unchanged, and on a triangle whose depth slopes across it 4.0 moves the
+  depth test's boundary as far as 0x100000 units do and 64.0 pushes the whole triangle behind: it
+  scales the offset by the depth's slope [infer]. From `CR_ISP_POLY_OFFSET_FACTOR` (ours, resgx545).
 - `CR_ISP_POLY_OFFSET_CLAMP` G0127 (0x0424): the polygon offset's clamp, an IEEE single: the offset
   is capped at it, 0 no cap, a negative one leaving positive offsets alone [infer]. From
   `CR_ISP_POLY_OFFSET_CLAMP` (ours, resgx545).
@@ -1021,10 +1053,9 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `CR_ISP_REG_04DC` G0130 (0x04dc): ISP word from the render details; bits 2:0 implemented; bit 1
   set hangs a render with punch-through objects, bits 0 and 2 change nothing seen; 0 from the closed
   driver's renders [infer]. From `CR_ISP_REG_04DC` (ours, resgx545).
-- `CR_ISP_REG_04E8` G0131 (0x04e8): inferred reading (unconfirmed): Register 0x04e8: held 0x100
-  outside a render, bits 0 and 8 take a write, and in every transfer, depth scene,
-  overlapping-triangle scene and textured triangle tried no value of it changed an image; what it
-  does is not shown. From `CR_ISP_REG_04E8` (ours, resgx545).
+- `CR_ISP_REG_04E8` G0131 (0x04e8): inferred reading (unconfirmed): what it does is not shown: no
+  value tried changes an image or a count in any scene; not the background's stencil or mask (E216);
+  0x100 from the init script and per render [infer]. From `CR_ISP_REG_04E8` (ours, resgx545).
 - `CR_ISP_PARTIAL_REGION_BASE` G0419 (0x050c): region-header address written per render; the partial
   render points it at the macrotile it renders [infer]. From `CR_ISP_PARTIAL_REGION_BASE` (ours,
   resgx545).
@@ -1035,10 +1066,9 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `CR_ISP_SAMPLE_POS` G0132 (0x0520): four more sample positions, laid out as CR_ISP_MULTISAMPLECTL
   (a byte per sample: x in bits 3:0, y in bits 7:4, sixteenths of a pixel): with ISP0 bit 28 a
   single-sampled object also covers pixels where one of these samples is inside: the union of eight
-  samples (these four and the four of CR_ISP_MULTISAMPLECTL) fits every count measured, and these
-  four with the pixel centre fit the 55 images at the default CR_ISP_MULTISAMPLECTL too, which rule
-  holds being open; under 4x three values give one image; 0 from the closed driver [infer]. From
-  `CR_ISP_SAMPLE_POS` (ours, resgx545).
+  samples (these four and the four of CR_ISP_MULTISAMPLECTL) predicts every image pixel for pixel;
+  not used to place the samples of a multisampled render; under 4x three values give one image; 0
+  from the closed driver [infer]. From `CR_ISP_SAMPLE_POS` (ours, resgx545).
 - `CR_DPM_3D_PAGE_TABLE_BASE` G0369 (0x0600): base of the DPM 3D page table. From
   `PSB_CR_DPM_3D_PAGE_TABLE_BASE` (1c, emgd-psb_regs).
 - `CR_DPM_3D_FREE_LIST` G0367 (0x0604): DPM 3D free list: head and tail. From
@@ -1718,9 +1748,9 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   `event_pixel_pds_data` (3, linux-imagination).
 - `hw_render_details.event_pixel_pds_info` G0686 (HWRENDERDETAILS+0x064): its info word. From
   `event_pixel_pds_info` (3, linux-imagination).
-- `hw_render_details.isp_line_sample_pos` G0692 (HWRENDERDETAILS+0x068): render details word 26,
-  which the 3D kick writes to CR_ISP_LINE_SAMPLE_POS (0x0418) [infer]. From
-  `hw_render_details.isp_line_sample_pos` (ours, resgx545).
+- `hw_render_details.isp_line_sample_pos` G0692 (HWRENDERDETAILS+0x068): value the EDM copies
+  verbatim into CR_ISP_LINE_SAMPLE_POS (0x0418): the line sample position, 1 the pixel centre (1 in
+  the capture) [infer]. From `hw_render_details.isp_line_sample_pos` (ours, resgx545).
 - `hw_render_details.use_coeffs0_a` G0712 (HWRENDERDETAILS+0x06c): value the EDM copies verbatim
   into CR_USE_COEFFS0_A (0x0a84): first tap word of coefficient set 0: signed byte taps at -3, -2,
   -1, 0 from the filter's centre in bytes 3, 2, 1, 0 [infer]. From `hw_render_details.use_coeffs0_a`
@@ -2431,9 +2461,10 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   image of one triangle; what it does is not established [infer]. From `VDM_STATE1.BIT25` (ours,
   resgx545).
 - `OUTSEL.PLANES` G0252 (outsel [7:0]): inferred reading (unconfirmed): user clip-plane enables, bit
-  N plane N: each enabled plane reads a clip distance from the vertex outputs after the position
-  (plane 0 the first; planes 0 and 1 together the first two), and a triangle with a negative
-  distance at any vertex is removed whole [infer]. From `OUTSEL.PLANES` (ours, resgx545).
+  N plane N: each enabled plane removes the triangle whole while its held state is outside: fdpc on
+  cpN sets the state, and it outlives the job; the vertex's distance dwords after the position
+  (plane 0 the first, planes 0 and 1 the first two) decided in one session and decided nothing in
+  another [infer]. From `OUTSEL.PLANES` (ours, resgx545).
 
 ### enum
 
@@ -2499,9 +2530,11 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   From `EMIT2.BITS15_8` (ours, resgx545).
 - `EMIT3.ADDRESS` G1043 (EMIT3 (emit2 src1) [31:2]): surface address >> 2 (the surface base; the PBE
   adds the tile offset). From `address_low` (3, mesa-csbgen).
-- `ISP1.LINE_WIDTH` G0472 (ISP1 [15:8]): inferred reading (unconfirmed): A line width: the TA copies
-  ISP word 1's bits 15:8 into both bytes of the object's line-width dword; the unit is not shown by
-  the object [infer]. From `ISP1.LINE_WIDTH` (ours, resgx545).
+- `ISP1.LINE_WIDTH` G0472 (ISP1 [15:8]): A line width: the TA copies ISP word 1's bits 15:8 into
+  both bytes of the object's line-width dword; the width in sixteenths of a pixel across the line's
+  minor axis, the rows whose centres lie within half of it of the line: 0x10 one pixel, 0x08 half,
+  0x20 two; 0 draws nothing, measured on one x-major line, one run [infer]. From `ISP1.LINE_WIDTH`
+  (ours, resgx545).
 - `ISP1.VISREG` G0248 (ISP1 [2:0]): index of the visibility counter the object counts into (with
   ISP1.VISTEST). From `visreg` (3, mesa-csbgen).
 - `ISP1.VALID_ID` G0473 (ISP1 [31:26]): the object's validation ID: an opaque or translucent object
@@ -2654,7 +2687,15 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `VDM_INDEX0.PRIMITIVE_TOPOLOGY` G0496 (index-list header [29:26]): primitive type of the index
   list. From `primitive_topology` (3, mesa-csbgen).
 - `ISP0.OBJ_TYPE` G0471 (isp0 [17:15]): object type. From `objtype` (3, mesa-csbgen).
+- `ISP0.DCMP_MODE` G1060 (isp0 [24:22]): depth compare mode. From `dcmpmode` (3, mesa-csbgen).
 - `ISP0.PASS_TYPE` G0245 (isp0 [27:25]): pass type. From `passtype` (3, mesa-csbgen).
+- `ISP0.SREF` G1063 (isp0 [7:0]): stencil reference. From `sref` (3, mesa-csbgen).
+- `ISP2.SCMP_MASK` G1066 (isp2 [15:8]): stencil compare mask. From `scmpmask` (3, mesa-csbgen).
+- `ISP2.SOP3` G1070 (isp2 [18:16]): depth-pass operation. From `sop3` (3, mesa-csbgen).
+- `ISP2.SOP2` G1069 (isp2 [21:19]): depth-fail operation. From `sop2` (3, mesa-csbgen).
+- `ISP2.SOP1` G1068 (isp2 [24:22]): stencil-fail operation. From `sop1` (3, mesa-csbgen).
+- `ISP2.SCMP_MODE` G1067 (isp2 [27:25]): stencil compare. From `scmpmode` (3, mesa-csbgen).
+- `ISP2.SW_MASK` G1071 (isp2 [7:0]): stencil write mask. From `swmask` (3, mesa-csbgen).
 - `MTECTL.CULL_MODE` G0251 (mtectl [1:0]): cull mode. From `cullmode` (3, mesa-csbgen).
 - `MTECTL.ATTR_SMOOTH` G0474 (mtectl [29:10], 2 bits per attribute): one field per vertex output
   attribute after the position (attribute i at 11:10 + 2i): non-zero, the vertices the MTE makes
@@ -2771,9 +2812,23 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `VDM_INDEX0.WORDS_PRESENT` G0497 (index-list header bits 22/23): the index list's two trailing
   words are present (bit 22 and bit 23, one word each, read in order after the index base) [infer].
   From `VDM_INDEX0.WORDS_PRESENT` (ours, resgx545).
+- `ISP0.DWRITE_DISABLE` G1061 (isp0 bit 20): depth write disable. From `dwritedisable` (3,
+  mesa-csbgen).
+- `ISP0.TAGWRITE_DISABLE` G1064 (isp0 bit 21 (colour write off)): object not forwarded to the TSP.
+  From `tagwritedisable` (3, mesa-csbgen).
 - `ISP0.SAMPLE_COVERAGE` G0632 (isp0 bit 28): the object covers a pixel when any of eight samples is
   inside: the four of CR_ISP_MULTISAMPLECTL and the four of CR_ISP_SAMPLE_POS; single-sampled only
-  (it hangs a 4x render) [infer]. From `ISP0.SAMPLE_COVERAGE` (ours, resgx545).
+  (it hangs a 4x render); the pixel centre counted inside on every edge, or in place of
+  CR_ISP_MULTISAMPLECTL's samples, takes no part, while a centre sample under the top-left rule
+  added to the eight is not excluded; of the top-left tie rule only the long edge's exclusion is
+  seen, on a triangle with no horizontal edge [infer]. From `ISP0.SAMPLE_COVERAGE` (ours, resgx545).
+- `ISP0.ISP2_PRESENT` G1062 (isp0 bit 8): inferred reading (unconfirmed): set with ISP word 2 (the
+  stencil word) in the state block, where the object takes the stencil test of ISP2; that it
+  announces the word is not probed apart from the word [infer]. From `ISP0.ISP2_PRESENT` (ours,
+  resgx545).
+- `ISP0.BIT9` G1059 (isp0 bit 9): inferred reading (unconfirmed): set in every ISP word 0 the
+  library builds; clearing it changes no image of five overlapping copies, so what it selects is not
+  shown, and the block's layout does not move with it [infer]. From `ISP0.BIT9` (ours, resgx545).
 - `OUTSEL.COLOUR_PRES` G0478 (outsel bit 11): the four dwords after the vertex position are its
   colour (R, G, B, A), iterated by DOUTI0.ATTR_SOURCE 32 [infer]. From `OUTSEL.COLOUR_PRES` (ours,
   resgx545).
@@ -2805,6 +2860,9 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `ISP1` G0246 (ISP word 1): inferred reading (unconfirmed): The second word of the render's ISP
   state; bits 13 to 25 set one at a time left a 4x triangle at the sample rate unchanged, so those
   bits do not turn per-sample shading on. From `ISP1` (ours, resgx545).
+- `ISP2` G1065 (ISP word 2 (isp2)): ISP stencil word. From `STATE_ISPB` (3, mesa-csbgen).
+- `PRESENCE` G1072 (MTE state block presence word (S.2)): presence word: each set bit adds its state
+  words. From `STATE_HEADER` (3, mesa-csbgen).
 - `OUTSEL` G0477 (outsel): output selects of the vertex. From `OUTPUT_SEL` (3, mesa-csbgen).
 - `WCLAMP` G0504 (wclamp): W clamp value (float) [infer]. From `WCLAMP` (3, mesa-csbgen).
 

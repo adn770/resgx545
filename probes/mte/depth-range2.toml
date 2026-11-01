@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# mte depth range2: 2 probes (written by tools/usse-asm/isp_words.py).
+# depths outside [0, 1], again; the clamp (Q069).
+needs = ["render"]
+
+[[probe]]
+name = "mte-depth-range2-clip"
+question = "which clip-space depths the MTE removes"
+source = "vtx_zab.s"
+host = "tri"
+slot = "vtxuse"
+temps = 8
+vtx_coords = 2
+slots = { pixel = "pix_green.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B"]
+labels = ["clip z -2.0", "clip z -1.5", "clip z -1.01", "clip z -1.0", "clip z -0.5", "clip z 0.0", "clip z 0.5", "clip z 1.0", "clip z 1.01", "clip z 1.5", "clip z 2.0", "clip z = 2.0 x + 0.0", "clip z = 4.0 x + 0.0", "clip z = 2.0 x + 1.0", "clip z = 2.0 x + -1.0"]
+cases = [["0x00000000", "0xC0000000"], ["0x00000000", "0xBFC00000"], ["0x00000000", "0xBF8147AE"], ["0x00000000", "0xBF800000"], ["0x00000000", "0xBF000000"], ["0x00000000", "0x00000000"], ["0x00000000", "0x3F000000"], ["0x00000000", "0x3F800000"], ["0x00000000", "0x3F8147AE"], ["0x00000000", "0x3FC00000"], ["0x00000000", "0x40000000"], ["0x40000000", "0x00000000"], ["0x40800000", "0x00000000"], ["0x40000000", "0x3F800000"], ["0x40000000", "0xBF800000"]]
+
+[[probe]]
+name = "mte-depth-range2-clamp"
+question = "whether the depth past 0 and 1 is clamped"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+case_set = [{ blk = { 10 = 0x3fc00000, 1 = 0x1100200 }, cmd = { 14 = 0x3f800000 } }, { blk = { 10 = 0x3f8147ae, 1 = 0x1100200 }, cmd = { 14 = 0x3f800000 } }, { blk = { 10 = 0x3f666666, 1 = 0x1100200 }, cmd = { 14 = 0x3f4ccccd } }, { blk = { 10 = 0xbf000000, 1 = 0x500200 }, cmd = { 14 = 0 } }, { blk = { 10 = 0xbc23d70a, 1 = 0x500200 }, cmd = { 14 = 0 } }, { blk = { 10 = 0x3dcccccd, 1 = 0x500200 }, cmd = { 14 = 0x3e4ccccd } }]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["z offset 1.5, greater than the clear 1.0", "z offset 1.01, greater than the clear 1.0", "z offset 0.9, greater than the clear 0.8", "z offset -0.5, less than the clear 0.0", "z offset -0.01, less than the clear 0.0", "z offset 0.1, less than the clear 0.2"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]

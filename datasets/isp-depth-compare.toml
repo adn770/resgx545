@@ -1,0 +1,10 @@
+title = "probe table isp/depth-compare"
+repo = "data"
+paths = ["isp/depth-compare/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 96
+size = 2974301
+sha256 = "3b8335ac1571f6e497534d59ba5c54ac28241b949e70e1313a2dbd77d9316220"
+recipe = "probes/isp/depth-compare.toml"
+needs = ["render", "kpoke"]

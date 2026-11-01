@@ -1,0 +1,10 @@
+title = "probe table mte/presence-high"
+repo = "data"
+paths = ["mte/presence-high/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 26
+size = 602520
+sha256 = "158021ee75a80cd84d50daec313a041b8f50b4f9020ab8db79544935675b08ed"
+recipe = "probes/mte/presence-high.toml"
+needs = ["render"]

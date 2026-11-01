@@ -1,0 +1,109 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# mte outsel bits: 6 probes (written by tools/usse-asm/isp_words.py).
+# OUTSEL bits 13:12 with zero, one and two sets (Q069).
+needs = ["render"]
+
+[[probe]]
+name = "mte-outsel-bits-none"
+question = "OUTSEL bits 13:12 with none coordinate set(s): the image and the object"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+case_set = [{ blk = { 13 = 0x43000 } }, { blk = { 13 = 0x42000 } }, { blk = { 13 = 0x41000 } }, { blk = { 13 = 0x40000 } }]
+dump_render = true
+temps = 4
+blk = {  }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["OUTSEL 0x43000", "OUTSEL 0x42000", "OUTSEL 0x41000", "OUTSEL 0x40000"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "mte-outsel-bits-one"
+question = "OUTSEL bits 13:12 with one coordinate set(s): the image and the object"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+case_set = [{ blk = { 13 = 0x63000 } }, { blk = { 13 = 0x62000 } }, { blk = { 13 = 0x61000 } }, { blk = { 13 = 0x60000 } }]
+dump_render = true
+temps = 4
+blk = {  }
+vtx_coords = 2
+slots = { vtxuse = "vtx_zx.s", pixpds = "pds_iter_done.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["OUTSEL 0x63000", "OUTSEL 0x62000", "OUTSEL 0x61000", "OUTSEL 0x60000"]
+cases = [["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"]]
+
+[[probe]]
+name = "mte-outsel-bits-two"
+question = "OUTSEL bits 13:12 with two coordinate set(s): the image and the object"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+case_set = [{ blk = { 13 = 0x83000 } }, { blk = { 13 = 0x82000 } }, { blk = { 13 = 0x81000 } }, { blk = { 13 = 0x80000 } }]
+dump_render = true
+temps = 4
+blk = { 16 = 0x12 }
+vtx_coords = 4
+slots = { vtxuse = "vtx_xy4.s", pixpds = "pds_iter_done.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["OUTSEL 0x83000", "OUTSEL 0x82000", "OUTSEL 0x81000", "OUTSEL 0x80000"]
+cases = [["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"]]
+
+[[probe]]
+name = "mte-outsel-bits-none-r2"
+question = "OUTSEL bits 13:12 with none coordinate set(s): the image and the object"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+case_set = [{ blk = { 13 = 0x43000 } }, { blk = { 13 = 0x42000 } }, { blk = { 13 = 0x41000 } }, { blk = { 13 = 0x40000 } }]
+dump_render = true
+temps = 4
+blk = {  }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["OUTSEL 0x43000", "OUTSEL 0x42000", "OUTSEL 0x41000", "OUTSEL 0x40000"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "mte-outsel-bits-one-r2"
+question = "OUTSEL bits 13:12 with one coordinate set(s): the image and the object"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+case_set = [{ blk = { 13 = 0x63000 } }, { blk = { 13 = 0x62000 } }, { blk = { 13 = 0x61000 } }, { blk = { 13 = 0x60000 } }]
+dump_render = true
+temps = 4
+blk = {  }
+vtx_coords = 2
+slots = { vtxuse = "vtx_zx.s", pixpds = "pds_iter_done.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["OUTSEL 0x63000", "OUTSEL 0x62000", "OUTSEL 0x61000", "OUTSEL 0x60000"]
+cases = [["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"]]
+
+[[probe]]
+name = "mte-outsel-bits-two-r2"
+question = "OUTSEL bits 13:12 with two coordinate set(s): the image and the object"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+case_set = [{ blk = { 13 = 0x83000 } }, { blk = { 13 = 0x82000 } }, { blk = { 13 = 0x81000 } }, { blk = { 13 = 0x80000 } }]
+dump_render = true
+temps = 4
+blk = { 16 = 0x12 }
+vtx_coords = 4
+slots = { vtxuse = "vtx_xy4.s", pixpds = "pds_iter_done.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["OUTSEL 0x83000", "OUTSEL 0x82000", "OUTSEL 0x81000", "OUTSEL 0x80000"]
+cases = [["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa0"]]

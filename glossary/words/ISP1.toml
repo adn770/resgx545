@@ -17,18 +17,18 @@ evidence = "[HW] E117: all 13 cases setting ISP word 1 bits 13 to 25 gave the co
 [[term]]
 id = "G0472"
 name = "ISP1.LINE_WIDTH"
-status = "inferred"
+status = "named"
 
 [[term.source]]
 term = "ISP1.LINE_WIDTH"
 kind = "field"
 sgx545 = "ISP1 [15:8]"
-meaning = "A line width: the TA copies ISP word 1's bits 15:8 into both bytes of the object's line-width dword; the unit is not shown by the object [infer]"
+meaning = "A line width: the TA copies ISP word 1's bits 15:8 into both bytes of the object's line-width dword; the width in sixteenths of a pixel across the line's minor axis, the rows whose centres lie within half of it of the line: 0x10 one pixel, 0x08 half, 0x20 two; 0 draws nothing, measured on one x-major line, one run [infer]"
 tier = "ours"
 source = "resgx545"
 citation = "E178"
 licence = "MIT"
-evidence = "[HW] E178: ISP word 1 with bits 15:8 at 0x10, 0x20, 0x35 and 0 gives the object's dword 0x1010, 0x2020, 0x3535 and 0; [infer] the reading as a width is ours"
+evidence = "[HW] E178: ISP word 1 with bits 15:8 at 0x10, 0x20, 0x35 and 0 gives the object's dword 0x1010, 0x2020, 0x3535 and 0; [HW] E279: an x-major line of 48 columns covers 12, 24, 48, 72, 96, 192, 384 and 768 pixels at 0x04, 0x08, 0x10, 0x18, 0x20, 0x40, 0x80 and 0xff, and none at 0, each image predicted pixel for pixel by the line model, one run"
 
 [[term]]
 id = "G0247"

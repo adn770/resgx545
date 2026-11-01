@@ -1,0 +1,10 @@
+title = "probe table mte/clip-plane-dist"
+repo = "data"
+paths = ["mte/clip-plane-dist/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 68
+size = 2179887
+sha256 = "f67a76ba21f75d476d49ccfdd234f46f375509e5efc97d91d34b8037bdd799e8"
+recipe = "probes/mte/clip-plane-dist.toml"
+needs = ["render"]

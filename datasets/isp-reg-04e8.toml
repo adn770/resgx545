@@ -1,0 +1,10 @@
+title = "probe table isp/reg-04e8"
+repo = "data"
+paths = ["isp/reg-04e8/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 46
+size = 1288001
+sha256 = "e22100910c3958af6116f0f529914bc9ccd786978cfa79780400ebdac16f0462"
+recipe = "probes/isp/reg-04e8.toml"
+needs = ["render", "kpoke"]

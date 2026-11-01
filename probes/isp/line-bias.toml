@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# isp line bias: 2 probes (written by tools/usse-asm/isp_words.py).
+# 0x0418 against the polygon offset (E202).
+needs = ["render", "kpoke"]
+
+[[probe]]
+name = "isp-line-bias-r1"
+question = "whether 0x0418 changes the polygon offset of a sloped depth"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+case_set = [{ kpoke = ["rd:5=0x0", "rd:6=0x0", "rd:26=1"] }, { kpoke = ["rd:5=0x0", "rd:6=0x0", "rd:26=0"] }, { kpoke = ["rd:5=0x100000", "rd:6=0x0", "rd:26=1"] }, { kpoke = ["rd:5=0x100000", "rd:6=0x0", "rd:26=0"] }, { kpoke = ["rd:5=0x0", "rd:6=0x40800000", "rd:26=1"] }, { kpoke = ["rd:5=0x0", "rd:6=0x40800000", "rd:26=0"] }, { kpoke = ["rd:5=0x0", "rd:6=0x42800000", "rd:26=1"] }, { kpoke = ["rd:5=0x0", "rd:6=0x42800000", "rd:26=0"] }]
+blk = { 1 = 0x500200, 2 = 0x8010f0 }
+cmd = { 14 = 0x3f000000 }
+vtx_coords = 2
+slots = { vtxuse = "vtx_zx.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["units 0x0, factor 0.0, 0418 1", "units 0x0, factor 0.0, 0418 0", "units 0x100000, factor 0.0, 0418 1", "units 0x100000, factor 0.0, 0418 0", "units 0x0, factor 4.0, 0418 1", "units 0x0, factor 4.0, 0418 0", "units 0x0, factor 64.0, 0418 1", "units 0x0, factor 64.0, 0418 0"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-line-bias-r2"
+question = "whether 0x0418 changes the polygon offset of a sloped depth"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+case_set = [{ kpoke = ["rd:5=0x0", "rd:6=0x0", "rd:26=1"] }, { kpoke = ["rd:5=0x0", "rd:6=0x0", "rd:26=0"] }, { kpoke = ["rd:5=0x100000", "rd:6=0x0", "rd:26=1"] }, { kpoke = ["rd:5=0x100000", "rd:6=0x0", "rd:26=0"] }, { kpoke = ["rd:5=0x0", "rd:6=0x40800000", "rd:26=1"] }, { kpoke = ["rd:5=0x0", "rd:6=0x40800000", "rd:26=0"] }, { kpoke = ["rd:5=0x0", "rd:6=0x42800000", "rd:26=1"] }, { kpoke = ["rd:5=0x0", "rd:6=0x42800000", "rd:26=0"] }]
+blk = { 1 = 0x500200, 2 = 0x8010f0 }
+cmd = { 14 = 0x3f000000 }
+vtx_coords = 2
+slots = { vtxuse = "vtx_zx.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["units 0x0, factor 0.0, 0418 1", "units 0x0, factor 0.0, 0418 0", "units 0x100000, factor 0.0, 0418 1", "units 0x100000, factor 0.0, 0418 0", "units 0x0, factor 4.0, 0418 1", "units 0x0, factor 4.0, 0418 0", "units 0x0, factor 64.0, 0418 1", "units 0x0, factor 64.0, 0418 0"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]

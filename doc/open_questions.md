@@ -24,18 +24,18 @@
 
 ## isp
 
-- `Q030` (phase 10): what does each value of CR_ISP_MSAA.MODE store in the target, and does a clear bit 31 still tile the triangle? (E210, E220, E211, E219)
-- `Q031` (phase 10): with ISP word 0 bit 28 set, is a pixel covered by any of eight samples placed by 0x04c8 and 0x0520, or by the four samples of 0x0520 plus the pixel centre? (E214, E215)
+- `Q030` (phase 10): where do a multisampled render's tiles past the first land in the target, and what do the TE anti-aliasing bits change? (E210, E211, E219, E220, E281)
+- `Q031` (phase 10): why does ISP word 0 bit 28 hang a multisampled render, when single-sampled it widens coverage to the union of eight samples? (E214, E215, E278)
 - `Q032` (phase 10): what does pcoeff hand the ISP in the punch-through pass, when the kept pixels' depth is the same without it and moves between runs only when it runs without the iteration it reads? (E217)
 - `Q066` (phase 11): what do the three background-object words the 3D kick writes mean to the ISP, and what are the other words of a render's background object? (E069, E162, E209, E216)
-- `Q071` (phase 11): what do the rest of ISP word 2 and the ZLS control word's bits do in a render with depth or stencil buffers? (E057, E169, E216, E228)
-- `Q072` (phase 11): is bit 1 of CR_ISP_REG_04DC an up-front depth test, given that it hangs every punch-through pass tried? (E068, E073, E213, E222)
-- `Q073` (phase 11): is blending only a shader that combines its colour with o0 in a translucent pass, or does a unit after the shader blend as well? (E077)
+- `Q071` (phase 11): how does the ISP use the ZLS control word's bits in a render with depth or stencil buffers? (E057, E169, E216, E228, E284)
+- `Q072` (phase 11): what does bit 1 of CR_ISP_REG_04DC do to a punch-through pass, when it hangs every one tried and changes no opaque or translucent pass? (E068, E073, E213, E222, E290)
+- `Q073` (phase 11): what does o0 hold at the start of an opaque pass's pixel shader? (E077, E283)
 
 ## mte
 
-- `Q039` (phase 10): which vertex dword does user clip plane 1 read as its distance when it is enabled without plane 0? (E198)
-- `Q069` (phase 11): is a depth outside [0, 1] clipped, and what do OUTSEL bits 12 and 13 and the rest of the state block's presence word select? (E061, E066, E192, E193, E198)
+- `Q039` (phase 10): where is a user clip plane's state held between jobs, what resets it, and when do the vertex's distance dwords decide a plane? (E198, E280)
+- `Q069` (phase 11): what do OUTSEL bit 13 and the state block's presence bits 16-31 select? (E061, E066, E192, E193, E198, E286, E287)
 
 ## pbe
 
@@ -74,7 +74,7 @@
 ## render
 
 - `Q014` (phase 6): why does render command word 23 bit 27 (cmd:23^=0x8000000) fault with the same 3936 pixels differing in both runs, while bit 28 gives 4000 and then 3968? (E029)
-- `Q029` (phase 9): does clearing bit 8 of the render context's isp_ipfmisc word skip untouched tiles above 64x64, and what do the EDM's render target and render context cleanups wait for? (E148, E023)
+- `Q029` (phase 9): what do the EDM's render target and render context cleanups wait for, and which of them releases the parameter buffer in the TA/3D control block? (E148, E023, E289)
 - `Q041` (phase 11): what does FRAG_FLAGS.BIT2 keep after a render, when the completion leaves the access word and the DPM context slot alone under the mask 0xc but no image changes with the bit? (E164, E158, E051, E052, E053)
 - `Q043` (phase 11): does CR_REG_0148, which the firmware loads for every render, partial render and transfer, change anything a job does, when six address forms of it in the triangle job write nothing and change no pixel? (E056, E163, E160, E015, E028)
 - `Q049` (phase 11): does the firmware or the hardware ever read dword 7 (offset 0x01c) of the render context, which the EDM dataflow reaches on no path? (E013, E021, E156, E165)

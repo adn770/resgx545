@@ -1,0 +1,10 @@
+title = "probe table mte/depth-range"
+repo = "data"
+paths = ["mte/depth-range/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 36
+size = 544819
+sha256 = "608ef1c83d53187b3bb1e8b2ddb6062c2db90463204d733feb9b5ef569edbf75"
+recipe = "probes/mte/depth-range.toml"
+needs = ["render"]

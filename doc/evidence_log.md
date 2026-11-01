@@ -1526,6 +1526,96 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   fetch as f32 channels and the field at 8 the second texel is again in pa8 and pa1 holds the first
   fetch's 0.0.
   *texture; HW, infer; data: `texture-fetch-size`, `texture-fetch-size-followup`.*
+- `E278` With ISP word 0 bit 28 set a pixel is covered when any of eight samples is inside the
+  triangle, the four bytes of CR_ISP_MULTISAMPLECTL and the four of CR_ISP_SAMPLE_POS, each byte x
+  in bits 3:0 and y in bits 7:4 in sixteenths of a pixel from its top-left corner, under the
+  top-left rule, which predicts all 56 bit-28 images of two runs; the reading with the pixel centre
+  in place of 0x04c8's samples misses 12, 24 or 36 pixels in 10 of the 28 settings (20 of the 56
+  images); with the bit clear only byte 0 of CR_ISP_MULTISAMPLECTL samples (one run).
+  *isp; HW, infer; data: `isp-coverage-samples`, `isp-coverage-bytes`.*
+- `E279` CR_ISP_LINE_SAMPLE_POS bit 0 moves the sample of a line's span test: a column x is covered
+  when x + 1/2 (1) or x + 1 (0) lies in the line's span [start, end), and at both values its rows
+  are those whose centre r + 1/2 lies within half the line's width of the line's y at x + 1/2, ties
+  to the upper row; this fits all 32 cases of both runs, 6 of the 8 cases moved in x and y and all
+  nine widths with no pixel missed [infer: one x-major line]; triangles never read the register;
+  ISP1.LINE_WIDTH is the width in sixteenths of a pixel (0x10 one pixel, 48 pixels for the 48-column
+  line, 0x08 24, 0x20 96; one run).
+  *isp; HW, infer; data: `isp-line-sample`.*
+- `E280` A user clip plane's state, set by fdpc on cpN, outlives the job that set it: after a job
+  whose fdpc put every vertex outside plane N (-w), later jobs with that plane enabled and no fdpc
+  are removed until an fdpc puts the vertices inside (+w) again, in planes 0, 1 and 2 and both runs;
+  while the state is inside, the vertex's distance dwords o4 and o5 at -1 or +1 remove nothing with
+  plane 0, plane 1 alone or planes 0 and 1 enabled (and o6 nothing under plane 1 alone with a
+  7-dword vertex); no run varies a distance dword under plane 2 with its state inside, and plane 2
+  alone was removed until its state was first set inside.
+  *mte; HW, infer; data: `mte-clip-plane1`, `mte-clip-plane-state`, `mte-clip-plane-dist`.*
+- `E281` CR_ISP_MSAA mode 1 stores two samples of each pixel side by side in x and mode 2 four in a
+  2x2 block, samples 0 to 3 of CR_ISP_MULTISAMPLECTL in that order (mode 0 its byte 0 alone); under
+  mode 2 the MTE's multisample word and CR_ISP_SAMPLE_POS do not place them, and mode 1's two from
+  bytes 0 and 1 is read from mode 2 [infer: the mode 0 and 1 probes set both words alike]; the
+  layout, position and TE probes ran once; with CR_ISP_MSAA bit 31 clear nothing of the triangle is
+  stored while the parameter buffer and TA data are byte for byte those of bit 31 set; the TE
+  anti-aliasing bits 31 or 30 without bit 29 remove the triangle.
+  *isp; HW, infer; data: `isp-msaa-layout`, `isp-msaa-positions`, `isp-msaa-te`.*
+- `E282` ISP word 0 bits 24:22 are the depth compare, 0 never, 1 less, 4 greater, 7 always, and 2
+  equal, 3 less or equal, 5 not equal and 6 greater or equal by the order of the stencil compare
+  [infer: no depth here equals another, so 2 draws as 0, 3 as 1, 5 as 7 and 6 as 4]; bit 20 set
+  stops the object writing depth; bit 21 set stops it writing colour while it still writes depth
+  (one run); bits 9, 10, 12 to 14, 19 and 29 to 31 change nothing over five overlapping copies (one
+  run).
+  *isp; HW, infer; data: `isp-depth-compare`, `isp-tag-write`.*
+- `E283` In a translucent pass the stored pixel is exactly the shader's o0: a shader that writes a
+  constant without reading o0 stores the constant, one that passes o0 on stores the background
+  unchanged, and one that ORs 0xff into o0 stores the background with its low byte set; in the one
+  ISP and PBE state run, nothing after the shader blends [infer: no blend-related word was varied].
+  *isp; HW, infer; data: `isp-translucent-blend`.*
+- `E284` ISP word 2 is the stencil word: bits 27:25 compare the masked reference with the masked
+  stencil (0 never, 1 less, 2 equal, 3 less or equal, 4 greater, 5 not equal, 6 greater or equal, 7
+  always), bits 15:8 mask both sides of the compare and bits 7:0 the bits written; bits 24:22, 21:19
+  and 18:16 are the operations on stencil fail, depth fail and pass, 0 keep, 1 zero, 2 replace with
+  the reference, 3 increment clamped, 4 decrement clamped, 5 invert, 6 increment wrapping, 7
+  decrement wrapping; bits 31:28 change nothing; each probe ran once.
+  *isp; HW; data: `isp-stencil-word`.*
+- `E285` CR_ISP_REG_04E8 at the job's 0x100, at 0, 1 and 0x101 changes no outcome of the stencil
+  test against the background stencil (equal 0 draws, equal 1 does not) and no pixel or visibility
+  count of 42 overlapping copies, depth always or less, in two runs; it is not the background-object
+  values.
+  *isp; HW, infer; data: `isp-reg-04e8`.*
+- `E286` OUTSEL bit 12 puts each vertex's 1/w into the TA's object: with it clear the object loses
+  the three 1/w dwords, its format word drops bit 18 and one stored and one iterated dword per
+  vertex (0x00040303 to 0x00000202), and the image of the triangle at w 1 is unchanged; bit 13 clear
+  changes neither object nor image; of the presence word's bits 16-31 set one at a time, 17, 18 and
+  22-25 remove the triangle, 27 hangs the job and the other nine change nothing (one run).
+  *mte; HW, infer; data: `mte-outsel-bits`, `mte-presence-high`.*
+- `E287` The MTE clips the triangle at clip z = -w and z = w: at w 1 a flat triangle at clip z from
+  -1 to 1 draws whole and one at -1.01, 1.01 or beyond is removed, and a sloped one is cut where its
+  z passes -1 or 1; the depth the viewport makes is not clipped: a z offset of -0.5 to 1.5 draws the
+  whole triangle under depth always; against a clear depth a depth above 1 compares as itself (1.01
+  and 1.5 pass greater than 1.0) while a negative one compares as 0 (-0.01 and -0.5 fail less than
+  0.0 and pass less than 1.0); each probe ran once.
+  *mte; HW, infer; data: `mte-depth-range`, `mte-depth-range2`.*
+- `E288` In a scene over two and three TA kicks each kick writes its own object (kick 1's at 0x1000,
+  kick 2's on a new page at 0x3000, kick 3's appended to kick 1's at 0x105c), a region's stream
+  holds one primitive and object word pair per object in kick order, and the object word's low bits
+  are the dword address of the object's ISP words (0x406, 0xc06, 0x41d); bits 31:26 of the object
+  word are 1, 3 and 9 for objects of one, two and five triangles, twice the primitives less one; the
+  scenes ran twice, the one-kick probes once.
+  *ta; HW, infer; data: `render-kick-objects`.*
+- `E289` With CR_ISP_CTL bit 8 clear the 3D skips every 32x16 region the TA left without a control
+  stream, except the scene's last region, leaving its pixels unwritten: 1 region at 96x64, 12 at
+  128x128, 33 at 256x128, none at 64x64; bits 24 and 19:16 flipped from 0x000f0100 change no pixel
+  at any of the four sizes; one run.
+  *isp; HW, infer; data: `isp-isp-ctl`.*
+- `E290` CR_ISP_REG_04DC bit 1 neither hangs nor changes an opaque or a translucent pass of five
+  overlapping copies with depth less and writes: the nearest copy keeps its 1062 pixels and the
+  visibility counter counts 0x44a with the bit clear and set, in two runs.
+  *isp; HW, infer; data: `isp-reg-04dc-depth`.*
+- `E291` CR_ISP_LINE_SAMPLE_POS is the line sample position and not a depth-bias format: with a
+  depth sloped across the triangle and the polygon offset on, the units (0x100000) and the factor
+  (4.0) each move the depth test's boundary by the same four columns and a factor of 64.0 removes
+  the triangle, identically with 0x0418 at 1 and at 0, in two runs; the factor acts on a sloped
+  depth.
+  *isp; HW, infer; data: `isp-line-bias`.*
 
 ## By unit
 
@@ -1550,11 +1640,11 @@ Records: E001, E002, E003, E004, E005, E010, E011, E012.
 
 Records: E064, E065, E066, E067, E068, E069, E070, E071, E072, E073, E074, E210, E211, E213, E214,
 E215, E216, E217, E218, E219, E220, E222, E224, E225, E226, E227, E228, E229, E230, E209, E231,
-E232, E233, E234, E235, E249.
+E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E290, E291.
 
 ### mte
 
-Records: E061, E062, E063, E192, E193, E194, E195, E196, E198, E197, E248.
+Records: E061, E062, E063, E192, E193, E194, E195, E196, E198, E197, E248, E280, E286, E287.
 
 ### pbe
 
@@ -1576,7 +1666,8 @@ Records: E023, E049, E050, E051, E052, E053, E148, E169, E252.
 
 ### ta
 
-Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180, E181, E247, E257.
+Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180, E181, E247, E257,
+E288.
 
 ### texture
 

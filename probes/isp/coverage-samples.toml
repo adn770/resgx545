@@ -1,0 +1,46 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# isp coverage samples: 3 probes (written by tools/usse-asm/isp_words.py).
+# ISP0 bit 28 against 0x04c8 and 0x0520 (Q031).
+needs = ["render", "kpoke"]
+
+[[probe]]
+name = "isp-coverage-samples-bit28"
+question = "with ISP word 0 bit 28 set, which samples of 0x04c8 (cmd:16) and 0x0520 (rd:19) decide a pixel's coverage"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+blk = { 1 = 0x11d00200 }
+case_set = [{ cmd = { 16 = 0x88 }, kpoke = ["rd:19=0x0"] }, { cmd = { 16 = 0xcccccccc }, kpoke = ["rd:19=0xcccccccc"] }, { cmd = { 16 = 0xeeeeeeee }, kpoke = ["rd:19=0xeeeeeeee"] }, { cmd = { 16 = 0xcccccccc }, kpoke = ["rd:19=0x0"] }, { cmd = { 16 = 0xeeeeeeee }, kpoke = ["rd:19=0x0"] }, { cmd = { 16 = 0x88 }, kpoke = ["rd:19=0xcccccccc"] }, { cmd = { 16 = 0x88 }, kpoke = ["rd:19=0xeeeeeeee"] }, { cmd = { 16 = 0 }, kpoke = ["rd:19=0xcccccccc"] }, { cmd = { 16 = 0xcccccc00 }, kpoke = ["rd:19=0xcccccccc"] }, { cmd = { 16 = 0xcccc00cc }, kpoke = ["rd:19=0xcccccccc"] }, { cmd = { 16 = 0xcc00cccc }, kpoke = ["rd:19=0xcccccccc"] }, { cmd = { 16 = 0xcccccc }, kpoke = ["rd:19=0xcccccccc"] }, { cmd = { 16 = 0xcccccccc }, kpoke = ["rd:19=0xcccccc00"] }, { cmd = { 16 = 0xcccccccc }, kpoke = ["rd:19=0xcccc00cc"] }, { cmd = { 16 = 0xcccccccc }, kpoke = ["rd:19=0xcc00cccc"] }, { cmd = { 16 = 0xcccccccc }, kpoke = ["rd:19=0xcccccc"] }, { cmd = { 16 = 0x88 }, kpoke = ["rd:19=0xf"] }, { cmd = { 16 = 0x88 }, kpoke = ["rd:19=0xf0"] }, { cmd = { 16 = 0x88 }, kpoke = ["rd:19=0xf000"] }, { cmd = { 16 = 0x88 }, kpoke = ["rd:19=0xf00000"] }, { cmd = { 16 = 0x88 }, kpoke = ["rd:19=0xf0000000"] }, { cmd = { 16 = 0x88 }, kpoke = ["rd:19=0xf0000"] }]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["04c8 0x00000088 0520 0x00000000", "04c8 0xcccccccc 0520 0xcccccccc", "04c8 0xeeeeeeee 0520 0xeeeeeeee", "04c8 0xcccccccc 0520 0x00000000", "04c8 0xeeeeeeee 0520 0x00000000", "04c8 0x00000088 0520 0xcccccccc", "04c8 0x00000088 0520 0xeeeeeeee", "04c8 0x00000000 0520 0xcccccccc", "04c8 0xcccccc00 0520 0xcccccccc", "04c8 0xcccc00cc 0520 0xcccccccc", "04c8 0xcc00cccc 0520 0xcccccccc", "04c8 0x00cccccc 0520 0xcccccccc", "04c8 0xcccccccc 0520 0xcccccc00", "04c8 0xcccccccc 0520 0xcccc00cc", "04c8 0xcccccccc 0520 0xcc00cccc", "04c8 0xcccccccc 0520 0x00cccccc", "04c8 0x00000088 0520 0x0000000f", "04c8 0x00000088 0520 0x000000f0", "04c8 0x00000088 0520 0x0000f000", "04c8 0x00000088 0520 0x00f00000", "04c8 0x00000088 0520 0xf0000000", "04c8 0x00000088 0520 0x000f0000"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-coverage-samples-bit28-r2"
+question = "with ISP word 0 bit 28 set, which samples of 0x04c8 (cmd:16) and 0x0520 (rd:19) decide a pixel's coverage"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+blk = { 1 = 0x11d00200 }
+case_set = [{ cmd = { 16 = 0x88 }, kpoke = ["rd:19=0x0"] }, { cmd = { 16 = 0xcccccccc }, kpoke = ["rd:19=0xcccccccc"] }, { cmd = { 16 = 0xeeeeeeee }, kpoke = ["rd:19=0xeeeeeeee"] }, { cmd = { 16 = 0xcccccccc }, kpoke = ["rd:19=0x0"] }, { cmd = { 16 = 0xeeeeeeee }, kpoke = ["rd:19=0x0"] }, { cmd = { 16 = 0x88 }, kpoke = ["rd:19=0xcccccccc"] }, { cmd = { 16 = 0x88 }, kpoke = ["rd:19=0xeeeeeeee"] }, { cmd = { 16 = 0 }, kpoke = ["rd:19=0xcccccccc"] }, { cmd = { 16 = 0xcccccc00 }, kpoke = ["rd:19=0xcccccccc"] }, { cmd = { 16 = 0xcccc00cc }, kpoke = ["rd:19=0xcccccccc"] }, { cmd = { 16 = 0xcc00cccc }, kpoke = ["rd:19=0xcccccccc"] }, { cmd = { 16 = 0xcccccc }, kpoke = ["rd:19=0xcccccccc"] }, { cmd = { 16 = 0xcccccccc }, kpoke = ["rd:19=0xcccccc00"] }, { cmd = { 16 = 0xcccccccc }, kpoke = ["rd:19=0xcccc00cc"] }, { cmd = { 16 = 0xcccccccc }, kpoke = ["rd:19=0xcc00cccc"] }, { cmd = { 16 = 0xcccccccc }, kpoke = ["rd:19=0xcccccc"] }, { cmd = { 16 = 0x88 }, kpoke = ["rd:19=0xf"] }, { cmd = { 16 = 0x88 }, kpoke = ["rd:19=0xf0"] }, { cmd = { 16 = 0x88 }, kpoke = ["rd:19=0xf000"] }, { cmd = { 16 = 0x88 }, kpoke = ["rd:19=0xf00000"] }, { cmd = { 16 = 0x88 }, kpoke = ["rd:19=0xf0000000"] }, { cmd = { 16 = 0x88 }, kpoke = ["rd:19=0xf0000"] }]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["04c8 0x00000088 0520 0x00000000", "04c8 0xcccccccc 0520 0xcccccccc", "04c8 0xeeeeeeee 0520 0xeeeeeeee", "04c8 0xcccccccc 0520 0x00000000", "04c8 0xeeeeeeee 0520 0x00000000", "04c8 0x00000088 0520 0xcccccccc", "04c8 0x00000088 0520 0xeeeeeeee", "04c8 0x00000000 0520 0xcccccccc", "04c8 0xcccccc00 0520 0xcccccccc", "04c8 0xcccc00cc 0520 0xcccccccc", "04c8 0xcc00cccc 0520 0xcccccccc", "04c8 0x00cccccc 0520 0xcccccccc", "04c8 0xcccccccc 0520 0xcccccc00", "04c8 0xcccccccc 0520 0xcccc00cc", "04c8 0xcccccccc 0520 0xcc00cccc", "04c8 0xcccccccc 0520 0x00cccccc", "04c8 0x00000088 0520 0x0000000f", "04c8 0x00000088 0520 0x000000f0", "04c8 0x00000088 0520 0x0000f000", "04c8 0x00000088 0520 0x00f00000", "04c8 0x00000088 0520 0xf0000000", "04c8 0x00000088 0520 0x000f0000"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-coverage-samples-single"
+question = "the same words with bit 28 clear: which sample decides"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+case_set = [{ cmd = { 16 = 0xcccccccc }, kpoke = ["rd:19=0xcccccccc"] }, { cmd = { 16 = 0xcc }, kpoke = ["rd:19=0x0"] }, { cmd = { 16 = 0x88 }, kpoke = ["rd:19=0xcccccccc"] }, { cmd = { 16 = 0xcccccc88 }, kpoke = ["rd:19=0x0"] }]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["04c8 0xcccccccc 0520 0xcccccccc", "04c8 0x000000cc 0520 0x00000000", "04c8 0x00000088 0520 0xcccccccc", "04c8 0xcccccc88 0520 0x00000000"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]

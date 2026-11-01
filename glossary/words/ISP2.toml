@@ -1,0 +1,111 @@
+[[term]]
+id = "G1065"
+name = "ISP2"
+status = "named"
+
+[[term.source]]
+term = "STATE_ISPB"
+kind = "struct"
+sgx545 = "ISP word 2 (isp2)"
+meaning = "ISP stencil word"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0719"
+licence = "MIT"
+evidence = "same function and same bit layout as S.3; [HW] the stencil-word probes (isp-stencil-word, one run): every field measured; bits 31:28 change nothing"
+
+[[term]]
+id = "G1066"
+name = "ISP2.SCMP_MASK"
+status = "named"
+
+[[term.source]]
+term = "scmpmask"
+kind = "field"
+sgx545 = "isp2 [15:8]"
+meaning = "stencil compare mask"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0720"
+licence = "MIT"
+evidence = "same bits (S.3); [HW] the stencil-word probes (isp-stencil-word, one run): reference 0x05 equals 0x55 under mask 0x0f and not under 0xff, 0x50 under 0xf0 and not under 0x0f"
+
+[[term]]
+id = "G1067"
+name = "ISP2.SCMP_MODE"
+status = "named"
+
+[[term.source]]
+term = "scmpmode"
+kind = "field"
+sgx545 = "isp2 [27:25]"
+meaning = "stencil compare"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0721"
+licence = "MIT"
+evidence = "same bits (S.3); [HW] the stencil-word probes (isp-stencil-word, one run): (reference & mask) against (stencil & mask), 0 never, 1 less, 2 equal, 3 less or equal, 4 greater, 5 not equal, 6 greater or equal, 7 always"
+
+[[term]]
+id = "G1068"
+name = "ISP2.SOP1"
+status = "named"
+
+[[term.source]]
+term = "sop1"
+kind = "field"
+sgx545 = "isp2 [24:22]"
+meaning = "stencil-fail operation"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0722"
+licence = "MIT"
+evidence = "same bits (S.3); [HW] the stencil-word probes (isp-stencil-word, one run): replace here writes the reference only when the stencil compare fails"
+
+[[term]]
+id = "G1069"
+name = "ISP2.SOP2"
+status = "named"
+
+[[term.source]]
+term = "sop2"
+kind = "field"
+sgx545 = "isp2 [21:19]"
+meaning = "depth-fail operation"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0723"
+licence = "MIT"
+evidence = "same bits (S.3); [HW] the stencil-word probes (isp-stencil-word, one run): replace here writes the reference only when the stencil test passes and the depth test fails"
+
+[[term]]
+id = "G1070"
+name = "ISP2.SOP3"
+status = "named"
+
+[[term.source]]
+term = "sop3"
+kind = "field"
+sgx545 = "isp2 [18:16]"
+meaning = "depth-pass operation"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0724"
+licence = "MIT"
+evidence = "same bits (S.3); [HW] the stencil-word probes (isp-stencil-word, one run): from 0x0f with reference 0x55, 0 keep, 1 zero, 2 replace, 3 increment (clamped at 0xff), 4 decrement (clamped at 0), 5 invert, 6 increment wrapping, 7 decrement wrapping"
+
+[[term]]
+id = "G1071"
+name = "ISP2.SW_MASK"
+status = "named"
+
+[[term.source]]
+term = "swmask"
+kind = "field"
+sgx545 = "isp2 [7:0]"
+meaning = "stencil write mask"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0725"
+licence = "MIT"
+evidence = "same bits (S.3); [HW] the stencil-word probes (isp-stencil-word, one run): replace of 0x55 over 0xf0 leaves 0xf5 under mask 0x0f, 0x50 under 0xf0, 0xf0 under 0 and 0x55 under 0xff"

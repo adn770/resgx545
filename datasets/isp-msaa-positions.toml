@@ -1,0 +1,10 @@
+title = "probe table isp/msaa-positions"
+repo = "data"
+paths = ["isp/msaa-positions/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 46
+size = 1289945
+sha256 = "1764dad0e6fe2a0f69c763a2b71e0b36b1d311f8123e11929d590b714ad825d2"
+recipe = "probes/isp/msaa-positions.toml"
+needs = ["render", "kpoke"]

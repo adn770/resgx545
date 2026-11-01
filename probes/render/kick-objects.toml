@@ -1,0 +1,50 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# render kick objects: 3 probes (written by tools/usse-asm/isp_words.py).
+# objects over one to three kicks, and in one kick (E169).
+needs = ["render"]
+name = "render-kick-objects"
+script = "kick-objects.sh"
+
+[[probe]]
+name = "render-kick-objects-tris2"
+question = "one object of two triangles"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 6
+dump_render = true
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["two triangles"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "render-kick-objects-tris5"
+question = "one object of five triangles"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 0xf
+dump_render = true
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["five triangles"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "render-kick-objects-obj2"
+question = "two objects in one kick"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 6
+obj2 = { first = 3, pixel = "pix_blue.s" }
+dump_render = true
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["two objects"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]

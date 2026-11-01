@@ -1,0 +1,10 @@
+title = "probe table isp/tag-write"
+repo = "data"
+paths = ["isp/tag-write/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 10
+size = 80691
+sha256 = "1cebed0cf2a38842ab81887d8b78f648b78f0feefc92d7f719b20e4d8d82c978"
+recipe = "probes/isp/tag-write.toml"
+needs = ["render", "kpoke"]

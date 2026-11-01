@@ -1,0 +1,110 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# mte clip plane1: 7 probes (written by tools/usse-asm/isp_words.py).
+# user clip plane 1 and 2 alone (Q039).
+needs = ["render"]
+
+[[probe]]
+name = "mte-clip-plane1-six"
+question = "plane 1 alone, 6-dword vertex: which dword it reads"
+source = "vtx_fdpc.s"
+host = "tri"
+slot = "vtxuse"
+temps = 0xc
+vtx_coords = 2
+blk = { 13 = 0x63002 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["o4 +1, o5 +1", "o4 -1, o5 -1", "o4 +1, o5 -1", "o4 -1, o5 +1"]
+cases = [["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0xBF800000\n        mov.skipinv o5, #0xBF800000\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0xBF800000\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0xBF800000\n        mov.skipinv o5, #0x3F800000\n        nop\n        nop\n        nop\n        nop"]]
+
+[[probe]]
+name = "mte-clip-plane1-seven-p2"
+question = "OUTSEL planes 0x2 alone, 7-dword vertex: which dword decides"
+source = "vtx_fdpc.s"
+host = "tri"
+slot = "vtxuse"
+temps = 0xc
+vtx_coords = 3
+blk = { 13 = 0x73002 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["o4 -1, o5 +1, o6 +1", "o4 +1, o5 -1, o6 +1", "o4 +1, o5 +1, o6 -1", "o4 +1, o5 +1, o6 +1", "o4 -1, o5 -1, o6 -1"]
+cases = [["        mov.skipinv o4, #0xBF800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv o6, #0x3F800000\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0xBF800000\n        mov.skipinv o6, #0x3F800000\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv o6, #0xBF800000\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv o6, #0x3F800000\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0xBF800000\n        mov.skipinv o5, #0xBF800000\n        mov.skipinv o6, #0xBF800000\n        nop\n        nop\n        nop"]]
+
+[[probe]]
+name = "mte-clip-plane1-seven-p4"
+question = "OUTSEL planes 0x4 alone, 7-dword vertex: which dword decides"
+source = "vtx_fdpc.s"
+host = "tri"
+slot = "vtxuse"
+temps = 0xc
+vtx_coords = 3
+blk = { 13 = 0x73004 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["o4 -1, o5 +1, o6 +1", "o4 +1, o5 -1, o6 +1", "o4 +1, o5 +1, o6 -1", "o4 +1, o5 +1, o6 +1", "o4 -1, o5 -1, o6 -1"]
+cases = [["        mov.skipinv o4, #0xBF800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv o6, #0x3F800000\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0xBF800000\n        mov.skipinv o6, #0x3F800000\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv o6, #0xBF800000\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv o6, #0x3F800000\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0xBF800000\n        mov.skipinv o5, #0xBF800000\n        mov.skipinv o6, #0xBF800000\n        nop\n        nop\n        nop"]]
+
+[[probe]]
+name = "mte-clip-plane1-six-r2"
+question = "plane 1 alone, 6-dword vertex: which dword it reads"
+source = "vtx_fdpc.s"
+host = "tri"
+slot = "vtxuse"
+temps = 0xc
+vtx_coords = 2
+blk = { 13 = 0x63002 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["o4 +1, o5 +1", "o4 -1, o5 -1", "o4 +1, o5 -1", "o4 -1, o5 +1"]
+cases = [["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0xBF800000\n        mov.skipinv o5, #0xBF800000\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0xBF800000\n        nop\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0xBF800000\n        mov.skipinv o5, #0x3F800000\n        nop\n        nop\n        nop\n        nop"]]
+
+[[probe]]
+name = "mte-clip-plane1-seven-p2-r2"
+question = "OUTSEL planes 0x2 alone, 7-dword vertex: which dword decides"
+source = "vtx_fdpc.s"
+host = "tri"
+slot = "vtxuse"
+temps = 0xc
+vtx_coords = 3
+blk = { 13 = 0x73002 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["o4 -1, o5 +1, o6 +1", "o4 +1, o5 -1, o6 +1", "o4 +1, o5 +1, o6 -1", "o4 +1, o5 +1, o6 +1", "o4 -1, o5 -1, o6 -1"]
+cases = [["        mov.skipinv o4, #0xBF800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv o6, #0x3F800000\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0xBF800000\n        mov.skipinv o6, #0x3F800000\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv o6, #0xBF800000\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv o6, #0x3F800000\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0xBF800000\n        mov.skipinv o5, #0xBF800000\n        mov.skipinv o6, #0xBF800000\n        nop\n        nop\n        nop"]]
+
+[[probe]]
+name = "mte-clip-plane1-seven-p4-r2"
+question = "OUTSEL planes 0x4 alone, 7-dword vertex: which dword decides"
+source = "vtx_fdpc.s"
+host = "tri"
+slot = "vtxuse"
+temps = 0xc
+vtx_coords = 3
+blk = { 13 = 0x73004 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["o4 -1, o5 +1, o6 +1", "o4 +1, o5 -1, o6 +1", "o4 +1, o5 +1, o6 -1", "o4 +1, o5 +1, o6 +1", "o4 -1, o5 -1, o6 -1"]
+cases = [["        mov.skipinv o4, #0xBF800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv o6, #0x3F800000\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0xBF800000\n        mov.skipinv o6, #0x3F800000\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv o6, #0xBF800000\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv o6, #0x3F800000\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0xBF800000\n        mov.skipinv o5, #0xBF800000\n        mov.skipinv o6, #0xBF800000\n        nop\n        nop\n        nop"]]
+
+[[probe]]
+name = "mte-clip-plane1-fdpc"
+question = "fdpc's cp1 with plane 1 alone (0x63002), o4 and o5 at +1"
+source = "vtx_fdpc10.s"
+host = "tri"
+slot = "vtxuse"
+temps = 0x10
+vtx_coords = 2
+blk = { 13 = 0x63002 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["fdpc cp1, plane -w (outside)", "fdpc cp1, plane +w (inside)", "fdpc cp0, plane -w (outside)"]
+cases = [["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        fdpc.skipinv.repeat4 r8, cp1, pa0, r4\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0x3F800000\n        fdpc.skipinv.repeat4 r8, cp1, pa0, r4\n        nop\n        nop\n        nop"], ["        mov.skipinv o4, #0x3F800000\n        mov.skipinv o5, #0x3F800000\n        mov.skipinv r4, #0x00000000\n        mov.skipinv r5, #0x00000000\n        mov.skipinv r6, #0x00000000\n        mov.skipinv r7, #0xBF800000\n        fdpc.skipinv.repeat4 r8, cp0, pa0, r4\n        nop\n        nop\n        nop"]]

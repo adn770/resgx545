@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# isp coverage bytes: 2 probes (written by tools/usse-asm/isp_words.py).
+# the nibble order of 0x04c8's bytes 1-3 (Q031).
+needs = ["render", "kpoke"]
+
+[[probe]]
+name = "isp-coverage-bytes-bit28"
+question = "with ISP word 0 bit 28 set, the nibble order of bytes 1-3 of 0x04c8"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+blk = { 1 = 0x11d00200 }
+case_set = [{ cmd = { 16 = 0xcccc0fcc }, kpoke = ["rd:19=0xcccccccc"] }, { cmd = { 16 = 0xccccf0cc }, kpoke = ["rd:19=0xcccccccc"] }, { cmd = { 16 = 0xcc0fcccc }, kpoke = ["rd:19=0xcccccccc"] }, { cmd = { 16 = 0xccf0cccc }, kpoke = ["rd:19=0xcccccccc"] }, { cmd = { 16 = 0xfcccccc }, kpoke = ["rd:19=0xcccccccc"] }, { cmd = { 16 = 0xf0cccccc }, kpoke = ["rd:19=0xcccccccc"] }]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["04c8 0xcccc0fcc 0520 0xcccccccc", "04c8 0xccccf0cc 0520 0xcccccccc", "04c8 0xcc0fcccc 0520 0xcccccccc", "04c8 0xccf0cccc 0520 0xcccccccc", "04c8 0x0fcccccc 0520 0xcccccccc", "04c8 0xf0cccccc 0520 0xcccccccc"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-coverage-bytes-bit28-r2"
+question = "with ISP word 0 bit 28 set, the nibble order of bytes 1-3 of 0x04c8"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+blk = { 1 = 0x11d00200 }
+case_set = [{ cmd = { 16 = 0xcccc0fcc }, kpoke = ["rd:19=0xcccccccc"] }, { cmd = { 16 = 0xccccf0cc }, kpoke = ["rd:19=0xcccccccc"] }, { cmd = { 16 = 0xcc0fcccc }, kpoke = ["rd:19=0xcccccccc"] }, { cmd = { 16 = 0xccf0cccc }, kpoke = ["rd:19=0xcccccccc"] }, { cmd = { 16 = 0xfcccccc }, kpoke = ["rd:19=0xcccccccc"] }, { cmd = { 16 = 0xf0cccccc }, kpoke = ["rd:19=0xcccccccc"] }]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["04c8 0xcccc0fcc 0520 0xcccccccc", "04c8 0xccccf0cc 0520 0xcccccccc", "04c8 0xcc0fcccc 0520 0xcccccccc", "04c8 0xccf0cccc 0520 0xcccccccc", "04c8 0x0fcccccc 0520 0xcccccccc", "04c8 0xf0cccccc 0520 0xcccccccc"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]

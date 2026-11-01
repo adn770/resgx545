@@ -1,18 +1,20 @@
 +++
 id = "Q073"
-question = "is blending only a shader that combines its colour with o0 in a translucent pass, or does a unit after the shader blend as well?"
+question = "what does o0 hold at the start of an opaque pass's pixel shader?"
 unit = "isp"
 phase = 11
-evidence = ["E077"]
+evidence = ["E077", "E283"]
 terms = ["ISP0.PASS_TYPE"]
 +++
 
-In a translucent pass a pixel shader's o0 holds the pixel's current colour when it starts, at every
-pixel of the triangle; in the opaque pass it holds a leftover (E077).
+This record first asked how a translucent pass blends; that is answered (E283), and the question is
+now the opaque pass's o0. In a translucent pass the stored pixel is exactly the shader's o0, so in
+the one ISP and PBE state run no unit after the shader blends [infer]; o0 starts as the pixel's
+colour (E077).
 
-What is open (3d.md §11.11): that blending is a shader combining its colour with o0 is a reading
-[infer].
+What is open: in the opaque pass o0 starts as a leftover. In E283 some pixels held the colour an
+earlier case's shader wrote and the counts differ between runs (517 and 426), so what it is left
+from (an earlier task's output buffer, another tile's pixel) is not shown.
 
-To settle it: on the laptop, a translucent pass whose shader writes a constant without reading o0,
-against one that adds o0, over a coloured target; any image other than the constant in the first
-shows a blend outside the shader.
+To settle it: an opaque pass passing o0 on, after a job whose shader wrote a known colour, and
+after one of a different size; ten runs, every pixel read.

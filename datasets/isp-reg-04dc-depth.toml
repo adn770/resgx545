@@ -1,0 +1,10 @@
+title = "probe table isp/reg-04dc-depth"
+repo = "data"
+paths = ["isp/reg-04dc-depth/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 18
+size = 324146
+sha256 = "701059e4c900330ad2ea7c1fdbe16f089a8606ed733a2b80c3ac6fa3a2e44f3a"
+recipe = "probes/isp/reg-04dc-depth.toml"
+needs = ["render", "kpoke"]

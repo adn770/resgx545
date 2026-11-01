@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# isp translucent blend: 2 probes (written by tools/usse-asm/isp_words.py).
+# the translucent pass and o0 (Q073).
+needs = ["render", "kpoke"]
+
+[[probe]]
+name = "isp-translucent-blend-r1"
+question = "whether anything after the shader blends in a translucent pass"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+case_set = [{ blk = { 1 = 0x3d00200 } }, { blk = { 1 = 0x3d00200 } }, { blk = { 1 = 0x3d00200 } }, { blk = { 1 = 0x1d00200 } }, { blk = { 1 = 0x1d00200 } }, { blk = { 1 = 0x1d00200 } }]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["translucent, a constant", "translucent, o0", "translucent, o0 | 0xff", "opaque, a constant", "opaque, o0", "opaque, o0 | 0xff"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, o0"], ["or.skipinv.end o0, o0, #0x000000FF"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, o0"], ["or.skipinv.end o0, o0, #0x000000FF"]]
+
+[[probe]]
+name = "isp-translucent-blend-r2"
+question = "whether anything after the shader blends in a translucent pass"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+case_set = [{ blk = { 1 = 0x3d00200 } }, { blk = { 1 = 0x3d00200 } }, { blk = { 1 = 0x3d00200 } }, { blk = { 1 = 0x1d00200 } }, { blk = { 1 = 0x1d00200 } }, { blk = { 1 = 0x1d00200 } }]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["translucent, a constant", "translucent, o0", "translucent, o0 | 0xff", "opaque, a constant", "opaque, o0", "opaque, o0 | 0xff"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, o0"], ["or.skipinv.end o0, o0, #0x000000FF"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, o0"], ["or.skipinv.end o0, o0, #0x000000FF"]]

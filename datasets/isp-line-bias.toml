@@ -1,0 +1,10 @@
+title = "probe table isp/line-bias"
+repo = "data"
+paths = ["isp/line-bias/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 24
+size = 640982
+sha256 = "0de251f6e1a12b1e0806ba0869eee149e687b220a3af3195eafb37db2a29c461"
+recipe = "probes/isp/line-bias.toml"
+needs = ["render", "kpoke"]
