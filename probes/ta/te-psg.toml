@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ta te psg: 0 probes (written by tools/usse-asm/ta_words.py).
+# Q064: CR_TE_PSG and CR_DPM_STATE_CONTEXT_ID
+needs = ["render", "kpoke", "render_param", "render_tadata"]
+name = "ta-te-psg"
+script = "te-psg.sh"

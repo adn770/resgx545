@@ -872,10 +872,10 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   `PSB_CR_PDS_CACHE_HOST_CLEAR` (1c, emgd-psb_regs).
 - `CR_TIMER` G0053 (0x0144): free-running timer. From `EUR_CR_TIMER` (1, sgx545-ce);
   `ROGUE_CR_TIMER` (3, linux-imagination).
-- `CR_REG_0148` G0151 (0x0148): inferred reading (unconfirmed): a per-job base address or mode of
-  the 3D and transfer paths for a feature these clients leave off. Measured: per-render word the
-  host supplies with the 3D registers (transfer command and render details); 0 in captures [infer].
-  From `CR_REG_0148` (ours, resgx545).
+- `CR_REG_0148` G0151 (0x0148): inferred reading (unconfirmed): a one-bit (bit 0) per-job mode of
+  the 3D and transfer paths for a feature these clients leave off: no value changes a triangle, five
+  copies, a fill or a copy. Measured: per-render word the host supplies with the 3D registers
+  (transfer command and render details); 0 in captures [infer]. From `CR_REG_0148` (ours, resgx545).
 - `CR_VDM_START` G0459 (0x0200): starts the VDM (TA) pass. From `PSB_CR_VDM_START` (1c,
   emgd-psb_regs).
 - `CR_TE_AA` G0158 (0x0204): tiling-engine anti-aliasing word: 0x20000000 in every single-sample
@@ -890,9 +890,10 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `CR_TE_MACROTILE_STRIDE` G0447 (0x0214): inferred reading (unconfirmed): Tiling-engine register
   loaded by the TA kick from the TA command; it reads 0x10 for a 64x64 target and 0x20 for a 256x256
   one, read as a macrotile stride. From `CR_TE_MACROTILE_STRIDE` (ours, resgx545).
-- `CR_TE_PSG` G0450 (0x0218): tiling-engine control word: bit 22 set on the kick that ends the
-  scene, bit 25 with a depth/stencil buffer (Rogue analogue). From `ROGUE_CR_TE_PSG` (3,
-  mesa-csbgen).
+- `CR_TE_PSG` G0450 (0x0218): tiling-engine control word: bit 22 set on the kick that ends the scene
+  (with the word at 0 the job faults), bit 21 makes the TA mark every target region header
+  (REGION_HDR.FLAGS bit 29), bit 25 with a depth/stencil buffer (Rogue analogue). From
+  `ROGUE_CR_TE_PSG` (3, mesa-csbgen).
 - `CR_TE_PSGREGION_ADDR` G0451 (0x021c): base address of the region headers the TA writes (Rogue
   analogue). From `ROGUE_CR_TE_PSGREGION_ADDR` (3, mesa-csbgen).
 - `CR_TE_TPC_ADDR` G0454 (0x0220): base address of the tail-pointer cache memory (Rogue analogue).
@@ -1833,6 +1834,11 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `hw_render_details.frag_flags` G0687 (HWRENDERDETAILS+0x0d4): fragment (3D) flags: depth/stencil
   buffer present, visibility results (FRAG_FLAGS.*). From `flags` (3, linux-imagination);
   `hw_render_details.frag_flags` (ours, resgx545).
+- `hw_render_details.count_rt_data_set` G1074 (HWRENDERDETAILS+0x0d8): render details word 54, the
+  RT data set the firmware counts the scene in: the render's completion (with FRAG_FLAGS.BIT10) and
+  the finish of a kick that is not the scene's last add one to its executed count, the dword after
+  the set's start (the firmware's code); on the hardware the count follows the word. From
+  `hw_render_details.count_rt_data_set` (ours, resgx545).
 - `hw_render_details.hw_rt_data_dev_vaddr` G0688 (HWRENDERDETAILS+0x0dc): RT data. From
   `sHWRTDataDevAddr` (1, intel-ctp-k900); `hw_render_details.hw_rt_data_dev_vaddr` (ours, resgx545).
 - `hw_render_details.dst_sync_list_dev_vaddr` G0683 (HWRENDERDETAILS+0x0e0): render details word 56,
@@ -1937,8 +1943,10 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `hw_rt_data.state` G0553 (HWRTDATA+0x034): RT data state (0x10 = no render outstanding). From
   `state` (3, linux-imagination).
 - `hw_rt_data_set.executed_count` G0554 (HWRTDATASET+0x004): count the EDM increments at each TA end
-  that is not the scene's last and at each scene render with FRAG_FLAGS.RENDER_SCENE [infer]. From
-  `hw_rt_data_set.executed_count` (ours, resgx545).
+  that is not the scene's last and at each scene render with FRAG_FLAGS.BIT10, in the set render
+  details word 54 points at, a count there following that word on the hardware; that the set's
+  cleanup completes only when it equals the host's pending count fits every outcome, the counts not
+  read [infer]. From `hw_rt_data_set.executed_count` (ours, resgx545).
 - `hw_rt_data_set.num_out_of_mem_signals` G0555 (HWRTDATASET+0x00c): TA out-of-memory count. From
   `ui32NumOutOfMemSignals` (1, sgx545-ce).
 - `hw_rt_data_set.num_spm_renders` G0556 (HWRTDATASET+0x010): partial renders run. From
@@ -2048,6 +2056,9 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `ta3d_ctl.requests` G0734 (TA3D_CTL+0x07c): the request word: a routine ORs its request bits in
   and starts PDS program #14, whose three tasks each remove the bits they serve [infer]. From
   `ta3d_ctl.requests` (ours, resgx545).
+- `ta3d_ctl.cleanup_pb_desc` G1075 (TA3D_CTL+0x080): TA3DCtl dword 32, the PB descriptor of the last
+  render-context cleanup; the cleanup clears the TA's and the 3D's loaded PB descriptor words that
+  equal it [infer]. From `ta3d_ctl.cleanup_pb_desc` (ours, resgx545).
 - `ta3d_ctl.saved_ta_global_list` G0735 (TA3D_CTL+0x084): inferred reading (unconfirmed):
   CR_DPM_TA_GLOBAL_LIST as the out-of-memory path saves it before it grows the TA's global list; the
   global kind of out-of-memory writes it back [infer]. From `ta3d_ctl.saved_ta_global_list` (ours,
@@ -2080,6 +2091,10 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   copied into sa44 [infer]. From `ta3d_ctl.signature_ta_dev_vaddr` (ours, resgx545).
 - `ta3d_ctl.signature_3d_dev_vaddr` G0737 (TA3D_CTL+0x0b4): the 3D signature buffer's address,
   copied into sa45 [infer]. From `ta3d_ctl.signature_3d_dev_vaddr` (ours, resgx545).
+- `ta3d_ctl.render_context_count` G1076 (TA3D_CTL+0x0c4): inferred reading (unconfirmed): TA3DCtl
+  dword 49: one more for each render context, whatever its renders, from the firmware's boot;
+  whether a context's first kick or its cleanup adds it is not shown [infer]. From
+  `ta3d_ctl.render_context_count` (ours, resgx545).
 - `ta3d_ctl.pid_ta` G0605 (TA3D_CTL+0x0c8): the PID of the TA's render context, recorded by the TA
   kick [infer]. From `ta3d_ctl.pid_ta` (ours, resgx545).
 - `ta3d_ctl.pid_3d` G0604 (TA3D_CTL+0x0cc): the PID of the 3D's render context, recorded by the 3D
@@ -2361,12 +2376,14 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `FRAG_FLAGS.ABORT` G0231 (render flags bit1 (0x2)): complete the command without running it
   [infer]. From `FRAG_FLAGS.ABORT` (ours, resgx545).
 - `FRAG_FLAGS.BIT10` G0232 (render flags bit10 (0x400)): inferred reading (unconfirmed): count this
-  render as the scene's completion (the scene's last kick). Measured: at scene-done the EDM
-  increments the RT data set's executed_count; set by the client on the scene's last kick [infer].
-  From `FRAG_FLAGS.BIT10` (ours, resgx545).
+  render in its RT data set: at the render's completion the EDM adds one to the executed count of
+  the set render details word 54 points at; without it the render is drawn and the set's cleanup
+  never completes; set by the client on the scene's last kick [infer]. From `FRAG_FLAGS.BIT10`
+  (ours, resgx545).
 - `FRAG_FLAGS.BIT2` G0233 (render flags bit2 (0x4)): inferred reading (unconfirmed): Bit 2 of the
-  render flags word: when each job ends with its render, set or clear it changed no image; what it
-  keeps in a scene left open is not shown. From `FRAG_FLAGS.BIT2` (ours, resgx545).
+  render flags word: when each job ends with its render, set or clear it changed no image; after the
+  render it keeps TA3DCtl dword 20, the DPM slot's RT data, as NO_DEALLOCATE does; what a later job
+  does with that is not shown. From `FRAG_FLAGS.BIT2` (ours, resgx545).
 - `FRAG_FLAGS.NO_DEALLOCATE` G0236 (render flags bit3 (0x8)): do not deallocate the scene's pages
   during the render (CR_DPM_3D_DEALLOCATE = 0); the scene continues [infer]. From
   `FRAG_FLAGS.NO_DEALLOCATE` (ours, resgx545).
@@ -2584,12 +2601,17 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `PB_OBJ.RHW` G0487 (TA object TSP data, first dword of each vertex, TA object vertex data):
   inferred reading (unconfirmed): 1/w of the vertex, before its outputs, which are stored undivided
   [infer]. From `PB_OBJ.RHW` (ours, resgx545).
-- `PB_OBJ.PDS_WORDS` G0485 (TA object dwords 0-2): the state block's pixel-program words as given:
-  secondary pointer, size word, primary pointer [infer]. From `PB_OBJ.PDS_WORDS` (ours, resgx545).
+- `PB_OBJ.PDS_WORDS` G0485 (TA object dwords 0-2): the state block's words 3 to 5, the pixel
+  program's secondary pointer, size word and primary pointer, copied as given. From
+  `PB_OBJ.PDS_WORDS` (ours, resgx545).
 - `PB_OBJ.PRIM_LIST` G0486 (TA object, after ISP word 1: 16 bits per primitive, two to a dword): the
   object's primitives: per primitive three 5-bit vertex numbers (bits 4:0, 9:5, 14:10), the object's
   vertices numbered from 16; the last entry repeated to fill an odd count [infer]. From
   `PB_OBJ.PRIM_LIST` (ours, resgx545).
+- `PB_OBJ.FORMAT` G1073 (TA object, the dword after the line widths): inferred reading
+  (unconfirmed): the object's format word: bits 7:0 the dwords a vertex takes in the object, bits
+  15:8 the dwords it iterates; bit 18 with the 1/w output select, bit 19 with the vertex colour; the
+  other bits are not shown [infer]. From `PB_OBJ.FORMAT` (ours, resgx545).
 - `PB_OBJ.LINE_WIDTHS` G0484 (TA object, the dword after the primitive list): ISP1.LINE_WIDTH in
   both bytes (bits 15:8 and 7:0) [infer]. From `PB_OBJ.LINE_WIDTHS` (ours, resgx545).
 - `PB_OBJ.SET_MASKS` G0488 (TA object, the four dwords after the format word): bit i for coordinate
@@ -2599,8 +2621,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   state block gives them [infer]. From `PB_OBJ.ISP_WORDS` (ours, resgx545).
 - `VDM_STATE1.BITS11_9` G0292 (VDM_STATE1 [11:9]): inferred reading (unconfirmed): Bits 11:9 of the
   state task's second word: 0 removes the 64x64 triangle (4096 background pixels), 1, 3, 4, 5 and 6
-  give the baseline image, and 7 hangs the job in the sweep but renders in a probe job, so that
-  value is unsettled; the job writes 2. From `VDM_STATE1.BITS11_9` (ours, resgx545).
+  give the baseline image, and 7 hangs some runs of either job and completes others, tiling as 2
+  when it completes; the job writes 2. From `VDM_STATE1.BITS11_9` (ours, resgx545).
 - `VDM_STATE1.BITS15_13` G0293 (VDM_STATE1 [15:13]): inferred reading (unconfirmed): Bits 15:13 of
   the state task's second word: 0, 5 and 6 hang the job, 2, 3, 4 and 7 give the baseline image; the
   job writes 1. From `VDM_STATE1.BITS15_13` (ours, resgx545).
@@ -2678,8 +2700,10 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `EMIT2.LINE_STRIDE` G1042 (emit2 src0 [27:16]): surface line stride. From `linestride` (3,
   mesa-csbgen).
 - `VDM_INDEX2.WORD` G0498 (index list, the first trailing word): inferred reading (unconfirmed): the
-  index list's first trailing word: an instance count or split whose 0xf0000000 means none.
-  Measured: 0xf0000000 in every capture [infer]. From `VDM_INDEX2.WORD` (ours, resgx545).
+  index list's first trailing word: an offset of the list's first index in its low bits [infer: 1,
+  2, 3, 5 and 0xff fit; 0x0f000000 drops two of five triangles, which such an offset does not
+  explain]; bits 31:28 change nothing seen. Measured: 0xf0000000 in every capture. From
+  `VDM_INDEX2.WORD` (ours, resgx545).
 - `VDM_INDEX3.INDEX_WRAP` G0499 (index list, the second trailing word): the vertex range the indices
   wrap at: 0 leaves them, 5 takes them modulo 5, 1 removes every triangle (as degenerate, a reading)
   and 8 hangs; only these four values were tried [infer]. From `VDM_INDEX3.INDEX_WRAP` (ours,
@@ -2715,7 +2739,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   (ours, resgx545).
 - `REGION_HDR.FLAGS` G0492 (region header word 0 [31:24]): bit 25 a region outside the target, 26
   the first region of a macrotile, 27 an empty region inside it, 28 the last region of a macrotile,
-  31 the last of the scene [infer]. From `REGION_HDR.FLAGS` (ours, resgx545).
+  29 every region of the target when CR_TE_PSG bit 21 is set, 31 the last of the scene [infer]. From
+  `REGION_HDR.FLAGS` (ours, resgx545).
 - `REGION_HDR.STREAM` G0494 (region header word 1): the region's control-stream block, relative to
   the parameter slot; 0 for an empty region [infer]. From `REGION_HDR.STREAM` (ours, resgx545).
 - `SIDEBAND.PACKMODE` G0264 (sideband [5:0]): pixel pack format. From `packmode` (3, mesa-csbgen).

@@ -1,0 +1,10 @@
+title = "script table render/rtds-words"
+repo = "data"
+paths = ["render/rtds-words/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 4
+size = 27132
+sha256 = "09451bb0a76c605e9c5471d7b679c3908bff75eeaee6e43d6ff9c586cc894949"
+recipe = "probes/render/rtds-words.toml"
+needs = ["render", "kpoke", "render_cleanup"]

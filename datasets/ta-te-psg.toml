@@ -1,0 +1,10 @@
+title = "script table ta/te-psg"
+repo = "data"
+paths = ["ta/te-psg/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 4
+size = 54745
+sha256 = "6e7d657117fcc78cd93b3c7c09f78f2b539186c09617a559bebb9c61a6e83902"
+recipe = "probes/ta/te-psg.toml"
+needs = ["render", "kpoke", "render_param", "render_tadata"]

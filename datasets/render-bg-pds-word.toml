@@ -1,0 +1,10 @@
+title = "script table render/bg-pds-word"
+repo = "data"
+paths = ["render/bg-pds-word/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 4
+size = 490178
+sha256 = "d10b65d94fe02e5f652cd1a26610a762f6555e540ed3c308beb9d34d9818fe92"
+recipe = "probes/render/bg-pds-word.toml"
+needs = ["render", "kpoke"]

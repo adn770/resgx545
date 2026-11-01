@@ -1,33 +1,26 @@
 +++
 id = "Q014"
-question = "why does render command word 23 bit 27 (cmd:23^=0x8000000) fault with the same 3936 pixels differing in both runs, while bit 28 gives 4000 and then 3968?"
+question = "why does a background object whose first PDS word has a high bit wrong render part or all of the first 32x16 tile before the job faults?"
 unit = "render"
 phase = 6
-evidence = ["E029"]
-terms = []
+evidence = ["E029", "E301"]
+terms = ["cmd_ta.pds_bgnd"]
 +++
 
-The sweep `render-command-words` flips every bit of every dword of the 64x64 triangle's render
-command and sets each to 0 and 0xffffffff (E029 reads word 11 of it), and ran twice (the second
-is the follow-up run). Word 23 has no record. In it:
+What word 23 is and where its surviving pixels lie are answered (E301). Render command word 23 is
+the background object's first pixel PDS word, which the kernel puts in TA command dword 2
+(`cmd_ta.pds_bgnd[0]`): the same flip there, in its one run, gives one of the two images the flip of
+word 23 gives (5 rows) [infer]. With bit 27, 28, 30 or 31 flipped the job faults; the pixels that
+agree with the baseline are always in the target's first 32x16 tile, in whole rows from row 0. Under
+bits 27 and 28 the number of rows changes from run to run: over the sweep's two runs and E301's two,
+bit 27 kept 5, 5, 4 and 5 rows and bit 28 3, 4, 3 and 3, so 4 rows came under either bit, with the
+same image; bits 30 and 31 kept the whole tile (512 pixels) in all four. Everything else holds the
+sentinel.
 
-- bits 0, 1, 4 to 20, 22 and 23 fault the job with all 4096 pixels at the sentinel (hash
-  0xe4364b426cdce325); bits 3 and 21 hang the job (3072 pixels differ); bit 2 and bits 24 to
-  26 are not among the failing cases.
-- bit 27 (`cmd:23^=0x8000000`) faults the job with 3936 of 4096 pixels differing from the
-  baseline, first pixel (32, 0) at the sentinel 0xdeadbeef, hash 0x594a1b99e627f7a5. Both
-  runs agree exactly.
-- bit 28 faults with 4000 differing in the first run (hash 0xdcf6c0e2040198a5) and 3968 in the
-  follow-up run (hash 0x39efaba83319a125), bit 29 hangs with 1536 differing, bits 30 and 31
-  fault with 3584 (hash 0x927a9f8b8aa231a5, both runs).
+What is open: why the first tile, or its first rows, is rendered with a pointer that faults, and
+what sets the number of rows, which varies from run to run under one flip; what the low bits (which
+fault with no pixel, Q014's sweep) and bits 24-26 (which do not fail) mean in the word.
 
-So for bits 27 to 31 part of the target agrees with the baseline when the job fails: 160 pixels
-for bit 27, 96 or 128 for bit 28. Those pixels are not the sentinel; the data does not say which
-pixels they are, only the count.
-
-Open: what word 23 is (the bits above 26 behave unlike the low ones); which pixels survive and
-why their number is the same in both runs for bit 27 and not for bit 28.
-
-To settle it: run `cmd:23^=0x8000000` ten times in fresh boots and after other jobs, with every
-pixel of the target printed, to locate the surviving pixels (whole rows, tiles or scattered)
-and see whether their number takes one value or several; do the same for bits 28, 30 and 31.
+To settle it: the same flips on targets of 64x32 and 128x128 and with the background object's
+other two words flipped, every pixel printed, ten runs each; the BIF fault address after each
+(kernel log) to see what the 3D fetched.

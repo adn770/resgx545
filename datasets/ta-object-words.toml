@@ -1,0 +1,10 @@
+title = "probe table ta/object-words"
+repo = "data"
+paths = ["ta/object-words/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 100
+size = 147415766
+sha256 = "130107d1f057b168a72982fdccdc156c964bf1acddbfce675f1d3002a68ba236"
+recipe = "probes/ta/object-words.toml"
+needs = ["render", "render_param", "render_tadata"]

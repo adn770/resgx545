@@ -1,0 +1,10 @@
+title = "script table render/frag-flags"
+repo = "data"
+paths = ["render/frag-flags/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 4
+size = 39758
+sha256 = "23d669915b81083eb422948d88e91f2aeab3e653c2f5cca6864622804b0f006e"
+recipe = "probes/render/frag-flags.toml"
+needs = ["render", "kpoke", "buf09", "render_cleanup"]

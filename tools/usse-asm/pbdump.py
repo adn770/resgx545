@@ -5,7 +5,8 @@
 and render_tadata): NAME.param.bin is the render context's parameter slot from its PB on
 (slot offset 0x1000), NAME.tadata.bin its TA data. Prints the pages the GPU wrote, the TA's
 object at the start of the PB, the region headers and each region's control stream, the words
-also by the glossary's fields (PB_OBJ, REGION_HDR, CSTREAM).
+also by the glossary's fields (PB_OBJ, REGION_HDR, CSTREAM): the object field by field where a
+stream's object word places its ISP words in it (object_fields).
 
     pbdump.py DIR [NAME...]     every NAME.param.bin in DIR by default
     pbdump.py --map DIR NAME    the regions as a grid of their streams' primitive-word forms
@@ -26,9 +27,9 @@ HEADERS = PAGE // 12     # region headers a TA data page holds
 
 
 # REGION_HDR.FLAGS, region header word 0 [31:24]: the bits the glossary row names, by bit of
-# the word
+# the word (29: every target region's, with CR_TE_PSG bit 21, E305)
 REGION_FLAG_BITS = {25: "outside the target", 26: "first of a macrotile", 27: "empty",
-                    28: "last of a macrotile", 31: "last of the scene"}
+                    28: "last of a macrotile", 29: "TE_PSG bit 21 mark", 31: "last of the scene"}
 
 
 @dataclasses.dataclass(frozen=True)
@@ -83,6 +84,73 @@ def objects(words: list[int]) -> list[tuple[dict, dict | None, int | None]]:
         out.append((prim, ob, mask))
         i += 3 if wide else 2
     return out
+
+
+def _entries(w: int) -> list[tuple[int, int, int, int]]:
+    """A PB_OBJ.PRIM_LIST dword's two entries: three 5-bit vertex numbers each, then the entry's
+    bit 15 (set with one winding of the random triangles and with VDM_INDEX2 0x0f000000)."""
+    return [tuple((h >> s) & 0x1f for s in (0, 5, 10)) + (h >> 15,)
+            for h in (w & 0xffff, w >> 16)]
+
+
+def object_fields(ws: list[int], isp_at: int, vertices: int, prims: int) -> dict | None:
+    """An object's dwords by the glossary's PB_OBJ fields (doc/specs/3d.md §10.1), its ISP
+    words at dword isp_at (a stream's CSTREAM.OBJ_ISP_ADDR), its vertices and primitives from
+    the stream's words (CSTREAM.PRIM_VERTICES + 1, (CSTREAM.OBJ_PRIMS + 1) / 2): the three
+    PDS words, each vertex's dwords (PB_OBJ.RHW first), the ISP words, the primitive list (each
+    entry's bit 15 apart), the line widths, the format word (unnamed: bits 7:0 the dwords a
+    vertex takes as stored), the four set masks and the dwords after them. None when the dwords
+    do not hold that shape."""
+    per, rest = divmod(isp_at - 3, vertices) if vertices > 0 else (0, 1)
+    plist = (prims + 1) // 2
+    tail = isp_at + 2 + plist
+    if isp_at < 3 or rest or per < 1 or len(ws) < tail + 6:
+        return None
+    entries = [e for w in ws[isp_at + 2:tail] for e in _entries(w)][:prims]
+    return {"PB_OBJ.PDS_WORDS": ws[0:3],
+            "PB_OBJ.RHW": [ws[3 + per * v] for v in range(vertices)],
+            "vertex dwords": per,
+            "vertices": [ws[3 + per * v:3 + per * (v + 1)] for v in range(vertices)],
+            "PB_OBJ.ISP_WORDS": ws[isp_at:isp_at + 2],
+            "PB_OBJ.PRIM_LIST": [e[:3] for e in entries],
+            "PB_OBJ.PRIM_LIST bit 15": [e[3] for e in entries],
+            "PB_OBJ.LINE_WIDTHS": ws[tail],
+            "format": ws[tail + 1],
+            "PB_OBJ.SET_MASKS": ws[tail + 2:tail + 6],
+            "packed": ws[tail + 6:]}
+
+
+def _bit15(o: dict) -> str:
+    """The entries of an object's primitive list with bit 15 set, as a report suffix."""
+    on = [str(i) for i, b in enumerate(o.get("PB_OBJ.PRIM_LIST bit 15", [])) if b]
+    return f", bit 15 in entries {' '.join(on)}" if on else ""
+
+
+def object_lines(o: dict) -> list[str]:
+    """object_fields' result as report lines."""
+    hexs = lambda ws: " ".join(f"{w:08x}" for w in ws)  # noqa: E731
+    return [f"  PB_OBJ.RHW {hexs(o['PB_OBJ.RHW'])} ({o['vertex dwords']} dwords a vertex)",
+            f"  PB_OBJ.ISP_WORDS {hexs(o['PB_OBJ.ISP_WORDS'])}",
+            "  PB_OBJ.PRIM_LIST " + " ".join(str(e) for e in o["PB_OBJ.PRIM_LIST"]) + _bit15(o),
+            f"  PB_OBJ.LINE_WIDTHS {o['PB_OBJ.LINE_WIDTHS']:#x}",
+            f"  format {o['format']:08x} (bits 7:0 {o['format'] & 0xff}, "
+            f"15:8 {(o['format'] >> 8) & 0xff})",
+            f"  PB_OBJ.SET_MASKS {hexs(o['PB_OBJ.SET_MASKS'])}",
+            f"  then {len(o['packed'])} dwords"]
+
+
+def first_object(param: bytes, tadata: bytes) -> dict | None:
+    """The TA's first object by its fields, placed by the first stream's first object word."""
+    ws = obj(param)
+    for r in regions(tadata):
+        if r.stream:
+            prim, ob, _m = objects(stream(param, r.stream))[0]
+            if ob is None:
+                return None
+            isp_at = (4 * ob["OBJ_ISP_ADDR"] - PB_BASE) // 4
+            return object_fields(ws, isp_at, prim["PRIM_VERTICES"] + 1,
+                                 (ob["OBJ_PRIMS"] + 1) // 2)
+    return None
 
 
 def _fields(d: dict | None) -> str:
@@ -171,6 +239,8 @@ def report(d: pathlib.Path, name: str) -> str:
     o = obj(param)
     lines.append(f"object ({len(o)} dwords): " + " ".join(f"{w:08x}" for w in o))
     lines.append("  PB_OBJ.PDS_WORDS " + " ".join(f"{w:08x}" for w in o[:3]))
+    if fo := first_object(param, tadata):
+        lines += object_lines(fo)
     rs = regions(tadata)
     for r in rs:
         if r.stream:

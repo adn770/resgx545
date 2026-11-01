@@ -153,6 +153,7 @@ def test_3d_registers_follow_the_kick_store_order():
 def test_render_details_words_by_record():
     rd = "hw_render_details"
     assert dword(rd, "access_dev_vaddr") == 52                    # E164
+    assert dword(rd, "count_rt_data_set") == 54            # E304
     assert dword(rd, "frag_flags") == 53                          # E163, E169
     assert dword(rd, "hw_rt_data_dev_vaddr") == 55                # E163
     assert dword(rd, "dst_sync_list_dev_vaddr") == 56             # E164, E165
@@ -299,15 +300,17 @@ def test_ta3d_ctl_words_other_records_name():
                                   "zls_threshold_step", "abort_status_mtile",
                                   "abort_rt_index")] == [33, 35, 36, 37, 38, 39, 40]  # E160
     assert dword(t, "settle_count") == 52                                           # E153
+    assert [dword(t, f) for f in ("cleanup_pb_desc",
+                                  "render_context_count")] == [32, 49]               # E303
     assert [dword(t, f) for f in ("kick_marks", "kick_clear_ta",
                                   "kick_clear_3d")] == [54, 55, 57]           # E156, E158, E163
 
 
 def test_ta3d_ctl_gaps_stay_unnamed():
-    # only the words no record names are padding: 3-19, 32, 34, 48, 49, 53, 56 and 58
+    # only the words no record names are padding: 3-19, 34, 48, 53, 56 and 58
     pads = {o + k for p, o, _w, c, _a in kick3d._layout(kick3d.STRUCTS["ta3d_ctl"])
             if p.startswith("pad_") for k in range(c)}
-    assert pads == {*range(3, 20), 32, 34, 48, 49, 53, 56, 58}
+    assert pads == {*range(3, 20), 34, 48, 53, 56, 58}
 
 
 # --- the transfer command and the HW transfer context --------------------------------

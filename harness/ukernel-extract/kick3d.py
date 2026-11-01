@@ -148,7 +148,8 @@ REGISTERS_3D = [(name, 1) for _addr, name in REGISTER_3D_WRITES]
 # (E161, E158); 17 the RT data (E158, E161); 19 and 20 the per-render-target depth and stencil
 # strides (E158 copies them to render details dwords 70 and 71, E163); 21 and 170 the 3D patch
 # count and pairs (E158); 22 the shared block (the CCB offset SGX_DOKICK passes points at it,
-# glossary cmd_ta.shared); 142-169 the TA register block (E159).
+# glossary cmd_ta.shared); 142-169 the TA register block (E159). Dword 16, where our kernel puts
+# the RT data set, stays padding: moved within the set it changes nothing (E304).
 CMDTA = [
     ("size", 1), ("geom_flags", 1), ("pds_bgnd", 1, 3), ("num_vertex_partitions", 1),
     ("pad_0x18", 1), ("frag_flags", 1), ("frame_num", 1), ("hw_pb_desc_dev_vaddr", 1),
@@ -169,10 +170,12 @@ CMDTA = [
 # per-render-target depth and stencil strides (E163); 73 the tiling engine state (E156, E158);
 # 74 and 75 the render list links (E156); 76-78 the PDS background-object words (E158, E162);
 # 79 the pixel partitions (E163); 80 the frame number (E158, E163); 81 and 82-89 the 3D status
-# count and pairs, 90 and 91-122 the source syncs (E158, E164, E165).
+# count and pairs, 90 and 91-122 the source syncs (E158, E164, E165); 54 the RT data set the
+# completion and a kick that is not the scene's last count the scene in (E304).
 RENDERDETAILS = [
     ("registers_3d", REGISTERS_3D, 1), ("access_dev_vaddr", 1), ("frag_flags", 1),
-    ("pad_0xd8", 1), ("hw_rt_data_dev_vaddr", 1), ("dst_sync_list_dev_vaddr", 1),
+    ("count_rt_data_set", 1), ("hw_rt_data_dev_vaddr", 1),
+    ("dst_sync_list_dev_vaddr", 1),
     ("tq_3d_write_pending", 1), ("tq_3d_write_complete_dev_vaddr", 1),
     ("tq_3d_read_pending", 1), ("tq_3d_read_complete_dev_vaddr", 1), ("pad_0xf4", 1, 2),
     ("ta3d_dep_write_pending", 1), ("ta3d_dep_write_complete_dev_vaddr", 1), ("num_rts", 1),
@@ -251,7 +254,9 @@ PBBLOCK = [("page_count", 1), ("pad_0x04", 1), ("first_page", 1), ("next_block_d
 # - 52 the nesting count of the settle loop (E153);
 # - 54 the kick marks, bit 0 set by the TA kick and the TA-finished handler (E158, E156), bit 1
 #   by the 3D kick (E163); 55 the word the TA kick, the TA-finished handler and the out-of-memory
-#   path clear (E158, E156, E160); 57 the word the 3D kick clears (E163).
+#   path clear (E158, E156, E160); 57 the word the 3D kick clears (E163);
+# - 32 the PB descriptor of the last render-context cleanup, 49 a count of render contexts
+#   (E303).
 # Dwords 3-19 stay padding: they are 0 at boot (E002) and no instruction reads or writes them
 # in memory (E013); only their secondary attribute copies are used, as the EDM's working state
 # (sa13 and sa14 indexed by a transfer context's priority: E015), not as words of the block.
@@ -261,12 +266,13 @@ TA3DCTL = [
     ("kernel_ccb_dev_vaddr", 1), ("page_dir_phys_addr", 1), ("cmd_ta_dev_vaddr", 1),
     ("hw_rt_data_ta", 1), ("hw_render_details_ta", 1), ("hw_render_context_ta", 1),
     ("hw_rt_data_3d", 1), ("hw_render_details_3d", 1), ("rt_index_3d", 1),
-    ("requests", 1), ("pad_0x80", 1), ("saved_ta_global_list", 1), ("pad_0x88", 1),
+    ("requests", 1), ("cleanup_pb_desc", 1), ("saved_ta_global_list", 1), ("pad_0x88", 1),
     ("abort_page_count0", 1), ("abort_page_count1", 1), ("threshold_ta_global_list", 1),
     ("zls_threshold_step", 1), ("abort_status_mtile", 1), ("abort_rt_index", 1),
     ("frame_num_ta", 1), ("frame_num_3d", 1), ("hwperf_buffer_dev_vaddr", 1),
     ("signature_ta_dev_vaddr", 1), ("signature_3d_dev_vaddr", 1),
-    ("hw_pb_desc_ta", 1), ("hw_pb_desc_3d", 1), ("pad_0xc0", 1, 2), ("pid_ta", 1),
+    ("hw_pb_desc_ta", 1), ("hw_pb_desc_3d", 1), ("pad_0xc0", 1), ("render_context_count", 1),
+    ("pid_ta", 1),
     ("pid_3d", 1), ("settle_count", 1), ("pad_0xd4", 1), ("kick_marks", 1),
     ("kick_clear_ta", 1), ("pad_0xe0", 1), ("kick_clear_3d", 1), ("pad_0xe8", 1),
 ]

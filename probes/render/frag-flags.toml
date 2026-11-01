@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# render frag flags: 0 probes (written by tools/usse-asm/ta_words.py).
+# Q041, Q065: the TA/3D control block after render flags and render counts
+needs = ["render", "kpoke", "buf09", "render_cleanup"]
+name = "render-frag-flags"
+script = "frag-flags.sh"

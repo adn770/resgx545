@@ -1,0 +1,10 @@
+title = "script and probe table render/reg-0148"
+repo = "data"
+paths = ["render/reg-0148/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 10
+size = 175346
+sha256 = "7c1b54e818569b27b578e6224f08ada94254441cc3b4b3df511f0680ee78cb48"
+recipe = "probes/render/reg-0148.toml"
+needs = ["render", "kpoke"]

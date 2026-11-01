@@ -8,5 +8,6 @@ terms = ["CR_TE_PSG"]
 +++
 
 Line 643 of `cr.xml` in Mesa's Rogue csbgen names `ROGUE_CR_TE_PSG`. It backs the glossary register
-`CR_TE_PSG`: tiling-engine control word: bit 22 set on the kick that ends the scene, bit 25 with a
-depth/stencil buffer (Rogue analogue).
+`CR_TE_PSG`: tiling-engine control word: bit 22 set on the kick that ends the scene (with the word
+at 0 the job faults), bit 21 makes the TA mark every target region header (REGION_HDR.FLAGS bit 29),
+bit 25 with a depth/stencil buffer (Rogue analogue).

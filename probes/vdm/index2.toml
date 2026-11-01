@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# vdm index2: 2 probes (written by tools/usse-asm/ta_words.py).
+# Q042: VDM_INDEX2 over the five-copy job
+needs = ["render", "render_param", "render_tadata"]
+name = "vdm-index2"
+
+[[probe]]
+name = "vdm-index2-copies"
+question = "the five-copy job with VDM_INDEX2 at small values, single fields and the job's own 0xf0000000"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 0xf
+dump_render = true
+case_set = [{ vdm = { 4 = 0xf0000000 } }, { vdm = { 4 = 0 } }, { vdm = { 4 = 1 } }, { vdm = { 4 = 2 } }, { vdm = { 4 = 3 } }, { vdm = { 4 = 5 } }, { vdm = { 4 = 0xff } }, { vdm = { 4 = 0xf000000 } }, { vdm = { 4 = 0x80000000 } }]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["VDM_INDEX2 0xf0000000", "VDM_INDEX2 0x00000000", "VDM_INDEX2 0x00000001", "VDM_INDEX2 0x00000002", "VDM_INDEX2 0x00000003", "VDM_INDEX2 0x00000005", "VDM_INDEX2 0x000000ff", "VDM_INDEX2 0x0f000000", "VDM_INDEX2 0x80000000"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "vdm-index2-copies-r2"
+question = "the five-copy job with VDM_INDEX2 at small values, single fields and the job's own 0xf0000000"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 0xf
+dump_render = true
+case_set = [{ vdm = { 4 = 0xf0000000 } }, { vdm = { 4 = 0 } }, { vdm = { 4 = 1 } }, { vdm = { 4 = 2 } }, { vdm = { 4 = 3 } }, { vdm = { 4 = 5 } }, { vdm = { 4 = 0xff } }, { vdm = { 4 = 0xf000000 } }, { vdm = { 4 = 0x80000000 } }]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["VDM_INDEX2 0xf0000000", "VDM_INDEX2 0x00000000", "VDM_INDEX2 0x00000001", "VDM_INDEX2 0x00000002", "VDM_INDEX2 0x00000003", "VDM_INDEX2 0x00000005", "VDM_INDEX2 0x000000ff", "VDM_INDEX2 0x0f000000", "VDM_INDEX2 0x80000000"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]

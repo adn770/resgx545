@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# render reg 0148: 1 probes (written by tools/usse-asm/ta_words.py).
+# Q043: render details dword 9 bit by bit
+needs = ["render", "kpoke"]
+name = "render-reg-0148"
+script = "reg-0148.sh"
+
+[[probe]]
+name = "render-reg-0148-copies"
+question = "render details dword 9 (CR_REG_0148) over the five-copy job"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+vertices = 0xf
+case_set = [{ kpoke = ["rd:9=0x0"] }, { kpoke = ["rd:9=0xffffffff"] }, { kpoke = ["rd:9=0xffff"] }, { kpoke = ["rd:9=0xffff0000"] }]
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["rd:9 0x00000000", "rd:9 0xffffffff", "rd:9 0x0000ffff", "rd:9 0xffff0000"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]

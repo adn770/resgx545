@@ -1,24 +1,28 @@
 +++
 id = "Q042"
-question = "what does the index list's first trailing word (VDM_INDEX2) do, when 0, 0x10000000 and 0x70000000 leave what the TA writes byte for byte the same?"
+question = "what do bits 27:24 of the index list's first trailing word (VDM_INDEX2) do, when its low bits move the list's first index and 0x0f000000 drops two of five triangles?"
 unit = "vdm"
 phase = 11
-evidence = ["E188"]
+evidence = ["E188", "E300", "E307", "E308"]
 terms = ["VDM_INDEX2.WORD", "VDM_INDEX0.WORDS_PRESENT", "VDM_INDEX3.INDEX_WRAP"]
 +++
 
-An index list in the VDM stream is a header word, the index base and two trailing words; the
-glossary reads header bits 22 and 23 as announcing them. In the five-copy job (E188) the second
-trailing word acts on the indices: 0 leaves them alone, 1 makes the TA write no object, 5 fits a
-wrap of the indices by 5, and 8 hangs the job. The first trailing word does nothing seen: at 0,
-0x10000000 and 0x70000000 the parameter buffer and the TA data are byte for byte those of the plain
-five-copy scene. The value the job itself writes there was not read.
+What the word does with small values is answered (E300). In the five-copy job, two runs with the
+same bytes in the eight cases both ran (the job's own value hung in the first), the low values
+change the TA's object: at 1 it keeps five triangles but its last vertex is read past the list (1/w
+100000.0, a vertex whose w meets the clamp), at 2 and 3 four triangles remain, at 5 three, at 0xff
+none. An offset of the list's first index fits these: the last triangles read past the 15 indices
+and are dropped. The job's own value, 0xf0000000, and 0 and 0x80000000 give the job's object, so
+bits 31:28 change nothing seen; the earlier values of E188 (0x10000000, 0x70000000) agree. The
+images do not change, because the copies overlap.
 
-The glossary's reading of the word, an instance count or a split of the list, is a hypothesis from
-other index-list formats: no run has shown a count or a split.
+What is open: 0x0f000000 drops two of the five triangles, which an offset in bits 7:0 does not
+explain, and its object is not that of 5: bit 15 is set in both entries of the primitive list's
+first dword (0xd693ca30 for 0x56934a30) and the packed vertices differ; bit 15 marks one winding in
+the random triangles of E307 (E308), so a winding flip would fit [infer]; which triangles an offset
+drops, since the copies are identical; whether the offset counts indices or bytes, and its width.
 
-To settle it: dump the job's own VDM stream to read the word's value, then run the five-copy job
-with the word at small values (1, 2, 3 and 5), with only bits 7:0 set and with only bits 27:24 set,
-saving the parameter buffer and the TA data after each job, two runs each. An instance count would
-repeat the copies in the object, a split would cut the primitive list, and a word that acts only on
-hardware the job does not use would leave every dump unchanged.
+To settle it: the five-copy job with copies at distinct positions (`copy_depth` or moved copies)
+so that the dropped triangles show in the image and the object, at the offsets 1 to 6, 0x10,
+0x100, 0x1000, and at each of bits 24 to 27 alone; with 16-bit and 32-bit indices if the header
+selects the size.

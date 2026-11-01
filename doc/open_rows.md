@@ -11,9 +11,10 @@ sits, the reading, and the evidence records it rests on.
 
 ## registers: (no unit)
 
-- `G0151` `CR_REG_0148` (0x0148): a per-job base address or mode of the 3D and transfer paths for a
-  feature these clients leave off. Measured: per-render word the host supplies with the 3D registers
-  (transfer command and render details); 0 in captures [infer]. Evidence: E056.
+- `G0151` `CR_REG_0148` (0x0148): a one-bit (bit 0) per-job mode of the 3D and transfer paths for a
+  feature these clients leave off: no value changes a triangle, five copies, a fill or a copy.
+  Measured: per-render word the host supplies with the 3D registers (transfer command and render
+  details); 0 in captures [infer]. Evidence: E056.
 - `G0432` `CR_REG_0324` (0x0324): context store/resume state of an interrupted TA: a state base
   (16-byte aligned, E182), unused while the TA runs to the end. Measured: TA command word; 0 in
   captures [infer]. Evidence: E030, E056, E071, E072, E159, E182, E183.
@@ -141,13 +142,14 @@ sits, the reading, and the evidence records it rests on.
 
 ## structs: FRAG_FLAGS
 
-- `G0232` `FRAG_FLAGS.BIT10` (render flags bit10 (0x400)): count this render as the scene's
-  completion (the scene's last kick). Measured: at scene-done the EDM increments the RT data set's
-  executed_count; set by the client on the scene's last kick [infer]. Evidence: E051, E052, E164,
-  E166.
+- `G0232` `FRAG_FLAGS.BIT10` (render flags bit10 (0x400)): count this render in its RT data set: at
+  the render's completion the EDM adds one to the executed count of the set render details word 54
+  points at; without it the render is drawn and the set's cleanup never completes; set by the client
+  on the scene's last kick [infer]. Evidence: E051, E052, E164, E166.
 - `G0233` `FRAG_FLAGS.BIT2` (render flags bit2 (0x4)): Bit 2 of the render flags word: when each job
-  ends with its render, set or clear it changed no image; what it keeps in a scene left open is not
-  shown. Evidence: E051, E052, E053.
+  ends with its render, set or clear it changed no image; after the render it keeps TA3DCtl dword
+  20, the DPM slot's RT data, as NO_DEALLOCATE does; what a later job does with that is not shown.
+  Evidence: E051, E052, E053.
 
 ## structs: GEOM_FLAGS
 
@@ -264,6 +266,9 @@ sits, the reading, and the evidence records it rests on.
 - `G0732` `ta3d_ctl.kick_marks` (TA3D_CTL+0x0d8): kick marks: bit 0 set by the TA kick and the
   TA-finished handler, bit 1 by the 3D kick; what reads them is not shown [infer]. Evidence: E156,
   E158, E163.
+- `G1076` `ta3d_ctl.render_context_count` (TA3D_CTL+0x0c4): TA3DCtl dword 49: one more for each
+  render context, whatever its renders, from the firmware's boot; whether a context's first kick or
+  its cleanup adds it is not shown [infer].
 - `G0735` `ta3d_ctl.saved_ta_global_list` (TA3D_CTL+0x084): CR_DPM_TA_GLOBAL_LIST as the
   out-of-memory path saves it before it grows the TA's global list; the global kind of out-of-memory
   writes it back [infer]. Evidence: E160.
@@ -366,14 +371,15 @@ sits, the reading, and the evidence records it rests on.
 ## words: VDM stream words
 
 - `G0498` `VDM_INDEX2.WORD` (index list, the first trailing word): the index list's first trailing
-  word: an instance count or split whose 0xf0000000 means none. Measured: 0xf0000000 in every
-  capture [infer]. Evidence: E188.
+  word: an offset of the list's first index in its low bits [infer: 1, 2, 3, 5 and 0xff fit;
+  0x0f000000 drops two of five triangles, which such an offset does not explain]; bits 31:28 change
+  nothing seen. Measured: 0xf0000000 in every capture. Evidence: E188.
 - `G0291` `VDM_STATE1.BIT8` (VDM_STATE1 bit 8): marks the constant or no-op state blocks. Measured:
   set on the captured state blocks whose PDS program loads a constant block or starts a no-op USE
   task, clear on the MTE-state and vertex blocks [infer]. Evidence: E060, E187.
 - `G0292` `VDM_STATE1.BITS11_9` (VDM_STATE1 [11:9]): Bits 11:9 of the state task's second word: 0
   removes the 64x64 triangle (4096 background pixels), 1, 3, 4, 5 and 6 give the baseline image, and
-  7 hangs the job in the sweep but renders in a probe job, so that value is unsettled; the job
+  7 hangs some runs of either job and completes others, tiling as 2 when it completes; the job
   writes 2. Evidence: E060.
 - `G0293` `VDM_STATE1.BITS15_13` (VDM_STATE1 [15:13]): Bits 15:13 of the state task's second word:
   0, 5 and 6 hang the job, 2, 3, 4 and 7 give the baseline image; the job writes 1. Evidence: E060.
@@ -405,5 +411,8 @@ sits, the reading, and the evidence records it rests on.
 
 ## words: the TA's parameter buffer and TA data
 
+- `G1073` `PB_OBJ.FORMAT` (TA object, the dword after the line widths): the object's format word:
+  bits 7:0 the dwords a vertex takes in the object, bits 15:8 the dwords it iterates; bit 18 with
+  the 1/w output select, bit 19 with the vertex colour; the other bits are not shown [infer].
 - `G0487` `PB_OBJ.RHW` (TA object TSP data, first dword of each vertex): 1/w of the vertex, before
   its outputs, which are stored undivided [infer]. Evidence: E176, E196.

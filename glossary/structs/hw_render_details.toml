@@ -47,6 +47,22 @@ licence = "GPL-2.0"
 evidence = "the register this word is loaded into"
 
 [[term]]
+id = "G1074"
+name = "hw_render_details.count_rt_data_set"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.count_rt_data_set"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x0d8"
+meaning = "render details word 54, the RT data set the firmware counts the scene in: the render's completion (with FRAG_FLAGS.BIT10) and the finish of a kick that is not the scene's last add one to its executed count, the dword after the set's start (the firmware's code); on the hardware the count follows the word"
+tier = "ours"
+source = "resgx545"
+citation = "probes/render/rtds-words.toml"
+licence = "MIT"
+evidence = "[HW] the RT data set probes (render-rtds-words, one run): moved by 0xc the kernel reports a parameter buffer overflow after a render and after a geometry kick, a count landing in the set's partial-render word; moved by 0x8 one render's cleanup fails and a two-kick scene's completes; [RE] the EDM's dataflow reads it four times as an untyped pointer, and the TA finish of a kick that is not the scene's last and the render's completion add one to the executed count of the set it names; [infer] where the 0x8 move puts the count is not observed, and no case read the counts; the name is ours, and typing it as a pointer in the dataflow waits for a rerun of the dataflow table"
+
+[[term]]
 id = "G0683"
 name = "hw_render_details.dst_sync_list_dev_vaddr"
 status = "named"

@@ -1,0 +1,10 @@
+title = "script and probe table vdm/state1-split"
+repo = "data"
+paths = ["vdm/state1-split/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 17
+size = 9328262
+sha256 = "3a71edb3f37e3947ecdd63b26f14c432f3a882df0cb0fc3cc513c145c266f6ba"
+recipe = "probes/vdm/state1-split.toml"
+needs = ["render", "render_param", "render_tadata"]

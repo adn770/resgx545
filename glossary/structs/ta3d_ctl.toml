@@ -95,6 +95,22 @@ licence = "MIT"
 evidence = "[RE] E002: the captured block holds sa2 = a pointer to the kernel CCB control (+#0 the write offset, +#1 the read offset)"
 
 [[term]]
+id = "G1075"
+name = "ta3d_ctl.cleanup_pb_desc"
+status = "named"
+
+[[term.source]]
+term = "ta3d_ctl.cleanup_pb_desc"
+kind = "field"
+sgx545 = "TA3D_CTL+0x080"
+meaning = "TA3DCtl dword 32, the PB descriptor of the last render-context cleanup; the cleanup clears the TA's and the 3D's loaded PB descriptor words that equal it [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "probes/render/frag-flags.toml"
+licence = "MIT"
+evidence = "[HW] the render-flag probes (render-frag-flags, two runs): after every cleanup that completes the word holds the PB descriptor the kernel's cleanup trace names, which in every case is also the context's own (one descriptor tried), so the hardware agrees with the name without telling the two apart; [RE] the EDM's dataflow writes it from the cleanup command's data and compares it with dwords 46 and 47; [infer] the name rests on that dataflow"
+
+[[term]]
 id = "G0594"
 name = "ta3d_ctl.cmd_ta_dev_vaddr"
 status = "named"
@@ -429,6 +445,22 @@ source = "resgx545"
 citation = "E159"
 licence = "MIT"
 evidence = "[RE] E159: the TA kick writes TA3DCtl dword 50 = context dword 16 (the PID)"
+
+[[term]]
+id = "G1076"
+name = "ta3d_ctl.render_context_count"
+status = "inferred"
+
+[[term.source]]
+term = "ta3d_ctl.render_context_count"
+kind = "field"
+sgx545 = "TA3D_CTL+0x0c4"
+meaning = "TA3DCtl dword 49: one more for each render context, whatever its renders, from the firmware's boot; whether a context's first kick or its cleanup adds it is not shown [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "probes/render/frag-flags.toml"
+licence = "MIT"
+evidence = "[HW] the render-flag probes (render-frag-flags, two runs): read after each test process's context, it grows by one per process for one to four renders and restarts at 1 after a GPU reset; [infer] the name is ours"
 
 [[term]]
 id = "G0734"

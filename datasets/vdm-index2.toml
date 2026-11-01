@@ -1,0 +1,10 @@
+title = "probe table vdm/index2"
+repo = "data"
+paths = ["vdm/index2/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 60
+size = 83996951
+sha256 = "c238a64ee78de08e093d3d8f70bd1aeda8d52f23404af8e6e8d8409dd5976d29"
+recipe = "probes/vdm/index2.toml"
+needs = ["render", "render_param", "render_tadata"]

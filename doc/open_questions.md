@@ -73,19 +73,19 @@
 
 ## render
 
-- `Q014` (phase 6): why does render command word 23 bit 27 (cmd:23^=0x8000000) fault with the same 3936 pixels differing in both runs, while bit 28 gives 4000 and then 3968? (E029)
-- `Q029` (phase 9): what do the EDM's render target and render context cleanups wait for, and which of them releases the parameter buffer in the TA/3D control block? (E148, E023, E289)
-- `Q041` (phase 11): what does FRAG_FLAGS.BIT2 keep after a render, when the completion leaves the access word and the DPM context slot alone under the mask 0xc but no image changes with the bit? (E164, E158, E051, E052, E053)
-- `Q043` (phase 11): does CR_REG_0148, which the firmware loads for every render, partial render and transfer, change anything a job does, when six address forms of it in the triangle job write nothing and change no pixel? (E056, E163, E160, E015, E028)
+- `Q014` (phase 6): why does a background object whose first PDS word has a high bit wrong render part or all of the first 32x16 tile before the job faults? (E029, E301)
+- `Q029` (phase 9): what does the EDM's render context cleanup wait for, and which cleanup releases the parameter buffer in the TA/3D control block? (E148, E023, E156, E164, E289, E303, E304)
+- `Q041` (phase 11): what does a later job do with the DPM slot word that FRAG_FLAGS.BIT2 or NO_DEALLOCATE leaves set after a render, when no image changes with either bit? (E164, E158, E051, E052, E053, E303)
+- `Q043` (phase 11): what does bit 0 of CR_REG_0148, which the firmware loads for every render, partial render and transfer, change, when no bit of the word changes a triangle, five copies, a fill or a copy? (E056, E163, E160, E015, E028, E252, E302)
 - `Q049` (phase 11): does the firmware or the hardware ever read dword 7 (offset 0x01c) of the render context, which the EDM dataflow reaches on no path? (E013, E021, E156, E165)
-- `Q065` (phase 11): why does render flag bit 0 hang a kernel-built triangle job when the firmware completes a NO_RENDER render without rendering, and does one command with FIRST_KICK and LAST_KICK act as two? (E050, E156, E164, E165, E184)
+- `Q065` (phase 11): why does render flag bit 0 hang a kernel-built triangle job when the firmware completes a NO_RENDER render without rendering, and does one command with FIRST_KICK and LAST_KICK act as two? (E050, E156, E164, E165, E184, E303, E304)
 
 ## ta
 
 - `Q035` (phase 10): does the tiling engine read CR_TE_MTILE1 (0x0208) at all, and does any set of tiling words other than the macrotile rule's also draw a target exactly? (E174, E175, E247, E257)
-- `Q064` (phase 11): what do the CR_TE_PSG bits 24 and 21 the TA kick ORs in do, and is bit 1 of CR_DPM_STATE_CONTEXT_ID the 3D's DPM slot as bit 2 is the TA's? (E158, E172)
+- `Q064` (phase 11): what does the region header mark that CR_TE_PSG bit 21 makes the TA write mean to the 3D, and is bit 1 of CR_DPM_STATE_CONTEXT_ID the 3D's DPM slot as bit 2 is the TA's? (E158, E172, E305)
 - `Q068` (phase 11): do the twelve TA register words that are zero in our jobs save and resume the state of an interrupted TA? (E054, E056, E182, E183, E245)
-- `Q070` (phase 11): what are the TA object's three header words made from, do its set masks mean half precision, one component, has z and has w, and does the fitted region test hold beyond the triangles it was fitted to? (E176, E177, E180, E181, E185)
+- `Q070` (phase 11): what do the TA object's format word bits 15:8 and above and its set masks select beyond the settings seen, and does the fitted region test hold for lines and points? (E176, E177, E180, E181, E185, E306, E307, E308)
 
 ## texture
 
@@ -120,8 +120,8 @@
 
 ## vdm
 
-- `Q015` (phase 6): why does VDM state word 1 with bits 11:9 = 7 hang the triangle sweep but render in the probe job that sets the same word? (E060)
+- `Q015` (phase 6): what makes VDM state word 1 with bits 11:9 = 7 hang some runs of a job and complete others? (E060, E185, E299, E300)
 - `Q036` (phase 10): what do the high halves of CR_DPM_TA_ALLOC_FREE_LIST_STATUS1 and CR_DPM_3D_FREE_LIST_STATUS1 (0x0700, 0x070c), and CR_DPM_TA_ALLOC_FREE_LIST_STATUS2 and CR_DPM_3D_FREE_LIST_STATUS2 (0x0710, 0x071c), hold after a 3D has handed the pages back? (E184, E256)
 - `Q037` (phase 10): does a hung job's saved render memory show how far the TA got, when the control hung in its pixel task leaves its object in one run and none in the next? (E186)
-- `Q042` (phase 11): what does the index list's first trailing word (VDM_INDEX2) do, when 0, 0x10000000 and 0x70000000 leave what the TA writes byte for byte the same? (E188)
-- `Q047` (phase 11): what do VDM_STATE1 bit 8, bits 11:9 and bits 15:13 select for a state task, when on the one-triangle job bit 8 changes nothing, bits 11:9 at 0 stop the triangle before tiling and bits 15:13 at 0, 5 or 6 hang it? (E060, E185, E186, E187)
+- `Q042` (phase 11): what do bits 27:24 of the index list's first trailing word (VDM_INDEX2) do, when its low bits move the list's first index and 0x0f000000 drops two of five triangles? (E188, E300, E307, E308)
+- `Q047` (phase 11): what do VDM_STATE1 bit 8, bits 11:9 and bits 15:13 select for a state task, when on the one-triangle job bit 8 changes nothing, bits 11:9 at 0 stop the triangle before tiling and bits 15:13 at 0, 5 or 6 hang it? (E060, E185, E186, E187, E299)

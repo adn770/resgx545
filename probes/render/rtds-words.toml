@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# render rtds words: 0 probes (written by tools/usse-asm/ta_words.py).
+# the RT data set words of the TA command and the render details
+needs = ["render", "kpoke", "render_cleanup"]
+name = "render-rtds-words"
+script = "rtds-words.sh"

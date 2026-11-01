@@ -1662,6 +1662,88 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   to 27 every mode reads 0. With a load, sets 6 and 7 give 0 at 0x0a9c = 0, and are not 0 at 1 and
   2: bank 1's two sets and bank 2's set 6 give values no loaded group gives.
   *usse; HW; data: `usse-filter-edges`.*
+- `E299` VDM state word 1 with bits 11:9 = 7 hangs some jobs and completes others, on the library's
+  triangle job and on the probe's: in this run, of six jobs with it, the three with every pixel read
+  back hung and the three without completed, whatever the render dump or the pixel program; earlier
+  runs went the other way (E060's sweep hung without the readback and its probe completed with it,
+  two runs each), so the readback does not decide the hang from run to run [infer: two tables]; a
+  library job that completes draws the job's own image and leaves render memory byte for byte that
+  of bits 11:9 = 2; one run of each job.
+  *vdm; HW, infer; data: `vdm-state1-split`, `ta-te-psg`.*
+- `E300` The index list's first trailing word (VDM_INDEX2) changes the TA's object of the five-copy
+  job: at 1 the object keeps five triangles and its last vertex's 1/w reads 100000.0, at 2 and 3
+  four triangles (12 vertices), at 5 and 0x0f000000 three (9 vertices), but with 0x0f000000 bit 15
+  is set in the primitive list's entries and the packed vertices differ, at 0xff none and no pixel
+  of them; at 0, 0x80000000 and the job's own 0xf0000000 the object is the job's; in the first run
+  the job's own value hung (every pixel read back, no TA data saved), and the eight other cases give
+  the same bytes in both runs; every image with triangles is the job's image.
+  *vdm; HW, infer; data: `vdm-index2`.*
+- `E301` Render command word 23 is the background object's first PDS word, the one the kernel puts
+  in TA command dword 2 (cmd_ta.pds_bgnd): flipping bit 27 there through the kernel poke (one run)
+  gives one of the two images the same flip of word 23 gives; with bits 27, 28, 30 or 31 flipped the
+  job faults after part of the first 32x16 tile is written, whole rows from row 0 or the whole tile,
+  and every other pixel stays at the sentinel; under bits 27 and 28 the number of rows changes from
+  run to run: over these two runs and the two of the earlier sweep, bit 27 kept 5, 5, 4 and 5 rows
+  and bit 28 3, 4, 3 and 3, while bits 30 and 31 kept the whole tile in all four.
+  *render; HW, infer; data: `render-bg-pds-word`, `render-command-words`,
+  `render-command-words-followup`.*
+- `E302` Render details dword 9, which the 3D kick loads into CR_REG_0148, changes no image at
+  0xffffffff or with any one of its 32 bits set, in the triangle job and over five overlapping
+  copies; after the job the register reads 1 when bit 0 was set and 0 otherwise; the transfer
+  command's word for the register changes neither a fill nor a copy at any of 34 values; one run.
+  *render; HW; data: `render-reg-0148`, `transfer-kernel-words`.*
+- `E303` Read after a job's context is cleaned up, the TA/3D control block keeps the RT data in
+  dword 20 (the first DPM slot's owner) when the render flags had bit 2 or bit 3, and in dword 25
+  too with bit 3, and neither without them; with render flag bit 10 clear the render draws its image
+  but the context's RT data set cleanup never completes, as after a scene of two kicks; dword 24
+  reads the TA client CCB's base plus 0x2c0 per render less one, dword 32 the context's PB
+  descriptor, the one the cleanup names (the only one tried; that it is the cleanup's is the RE
+  dataflow's reading), and dword 49 one more per context; two runs.
+  *render; HW, RE, infer; data: `render-frag-flags`.*
+- `E304` Render details dword 54, not TA command dword 16, points at the RT data set the firmware
+  counts a scene in: moved by 0xc it makes the kernel report a parameter buffer overflow, after one
+  render and after a scene's geometry kick, so a count lands in the set's partial-render word; moved
+  by 0x8 it turns one render's cleanup from completing to failing and a two-kick scene's from
+  failing to completing; moving dword 16 by either changes nothing; unpoked, a scene of two kicks
+  fails its RT data set cleanup and one render's completes; that the cleanup waits for the executed
+  count to equal the kernel's pending count, which our kernel raises once per scene (DDK: linux
+  fork, sgxfive_render.c), with a kick that is not the scene's last adding one (RE, E156) and a
+  render with render flag bit 10 adding one (RE, E164), is the reading that fits these outcomes
+  [infer]: no case read the counts; one run.
+  *render; HW, DDK, RE, infer; data: `render-rtds-words`.*
+- `E305` CR_TE_PSG reads 0x01400000 after every unpoked job (the kernel's 0x00400000 with bit 24,
+  which the TA kick ORs in); with bit 21 set in the TA command's word the register keeps it and the
+  TA sets bit 29 of word 0 of every target region's header, changing nothing else of its output and
+  no pixel; bit 24 already set changes nothing; the word at 0 makes the job fault;
+  CR_DPM_STATE_CONTEXT_ID reads 0 after one render, two renders and a scene of two kicks; one run.
+  *ta; HW, infer; data: `ta-te-psg`.*
+- `E306` The TA object's three header words are the state block's words 3, 4 and 5 (the pixel PDS
+  secondary pointer, size word and primary pointer) copied as given: each of six values set in one
+  of them appears unchanged in the object's matching dword, and no other dword of the parameter
+  buffer or the TA data changes; the secondary pointer set to 0x08000004 faults the render yet its
+  object holds the word, and the primary pointer set to 0x08000000 changes no pixel; one run.
+  *ta; HW, infer; data: `ta-object-words`.*
+- `E307` The region test fitted to 26 shifts of one triangle (E180: a bounding box half-open between
+  a region's two 16x16 tiles, then each edge against the tiles' corners) predicts exactly the
+  regions and the PRIM_TILES form of 24 fresh random triangles on 128x128, among them triangles
+  reaching past the target's edges: 265 regions predicted, 265 streamed, none missing, none extra,
+  none of another form; the triangles test the generic overlap, not the fitted boundary rules: no
+  vertex or edge of theirs lands on a tile boundary, so a plain overlap test, closed or open, gives
+  the same tiles in all 768 regions, and only the forms 0x80, 0x90 and 0x98 occur; one run.
+  *ta; HW, infer; data: `ta-object-words`.*
+- `E308` The 28 object dumps of probes/ta/objects.toml, from which 3d.md §10.1 was written, and the
+  45 taken since (the 15 of probes/vdm/index2.toml with an object and 30 of the 31 of
+  probes/ta/object-words.toml, the faulting case keeping no TA data to place it) decode with one
+  layout placed by the stream's object word: three PDS words, each vertex's dwords (the object
+  word's ISP address less three, over the vertices, gives 1, 2, 3 or 5 dwords a vertex), the two ISP
+  words, the primitive list, the line widths, a format word whose bits 7:0 are those dwords a
+  vertex, the four set masks, then the packed vertices; the set masks over the coordinate-size
+  settings 1 to 5 of one set read as one bit in mask 2, none, mask 3, mask 4, masks 3 and 4; the 45
+  new objects all have the format 0x00040101 (one dword a vertex) and differ only in their vertex
+  counts, so they test the placement by the stream, the vertex count and bits 7:0 of that one
+  format, while the other formats and the masks rest on the dumps the layout was read from; bit 15
+  of a primitive list entry is set in 11 of the 24 random triangles, exactly those of one winding.
+  *ta; HW, infer; data: `ta-objects`, `vdm-index2`, `ta-object-words`.*
 
 ## By unit
 
@@ -1708,12 +1790,12 @@ Records: E006, E007, E008, E025, E026, E122, E150, E149, E246, E258.
 
 ### render
 
-Records: E023, E049, E050, E051, E052, E053, E148, E169, E252.
+Records: E023, E049, E050, E051, E052, E053, E148, E169, E252, E301, E302, E303, E304.
 
 ### ta
 
 Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180, E181, E247, E257,
-E288.
+E288, E305, E306, E307, E308.
 
 ### texture
 
@@ -1737,7 +1819,7 @@ E244, E245, E255, E292, E293, E294, E295, E296, E297, E298.
 
 ### vdm
 
-Records: E059, E060, E184, E185, E186, E187, E189, E190, E191, E188.
+Records: E059, E060, E184, E185, E186, E187, E189, E190, E191, E188, E299, E300.
 
 ### zls
 

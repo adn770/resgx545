@@ -1,4 +1,20 @@
 [[term]]
+id = "G1073"
+name = "PB_OBJ.FORMAT"
+status = "inferred"
+
+[[term.source]]
+term = "PB_OBJ.FORMAT"
+kind = "field"
+sgx545 = "TA object, the dword after the line widths"
+meaning = "the object's format word: bits 7:0 the dwords a vertex takes in the object, bits 15:8 the dwords it iterates; bit 18 with the 1/w output select, bit 19 with the vertex colour; the other bits are not shown [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "probes/ta/object-words.toml"
+licence = "MIT"
+evidence = "[HW] the object decode over the saved dumps (ta-objects, vdm-index2, ta-object-words): bits 7:0 equal the dwords a vertex takes in every object, 1, 2, 3 or 5; 0x00040101, 0x000c0202, 0x00040303, 0x00040503, 0x00040505 seen in the 28 objects of ta-objects, which the layout was read from, and only 0x00040101 in the 45 taken since; [infer] the reading of bits 15:8, 18 and 19 follows the settings that change them, in the dumps the layout was read from"
+
+[[term]]
 id = "G0483"
 name = "PB_OBJ.ISP_WORDS"
 status = "named"
@@ -39,12 +55,12 @@ status = "named"
 term = "PB_OBJ.PDS_WORDS"
 kind = "field"
 sgx545 = "TA object dwords 0-2"
-meaning = "the state block's pixel-program words as given: secondary pointer, size word, primary pointer [infer]"
+meaning = "the state block's words 3 to 5, the pixel program's secondary pointer, size word and primary pointer, copied as given"
 tier = "ours"
 source = "resgx545"
 citation = "E178"
 licence = "MIT"
-evidence = "[HW] E178: 0x04000004, 0x00030001, 0x04000000 for ours; 0x00030004, 0x0c000080 with a 12-dword primary at 0x80"
+evidence = "[HW] E178: 0x04000004, 0x00030001, 0x04000000 for ours; 0x00030004, 0x0c000080 with a 12-dword primary at 0x80; [HW] the object-word probes (ta-object-words, one run): six values set in state block words 3, 4 and 5 appear unchanged in the object's dwords 0-2, no other dword of the TA's output changing; [infer] the name is ours"
 
 [[term]]
 id = "G0486"

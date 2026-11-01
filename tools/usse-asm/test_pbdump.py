@@ -118,6 +118,11 @@ def test_region_flags_by_their_glossary_bits():
     assert pbdump.region_flags(0x41) == ["0x41"]           # bits no record names, as hex
 
 
+def test_region_flag_bit_29_is_the_te_psg_mark():
+    """REGION_HDR.FLAGS bit 29: every target region's header with CR_TE_PSG bit 21 (E305)."""
+    assert pbdump.region_flags(0x24) == ["first of a macrotile", "TE_PSG bit 21 mark"]
+
+
 def test_report_lists_pages_object_regions_streams(tmp_path):
     (tmp_path / "t__0.param.bin").write_bytes(
         dwords(3, {0: 0x04000004, PAGE: 0x4490ffff, PAGE + 4: 0x04000406,
@@ -189,3 +194,22 @@ def test_diff_lists_the_differing_dwords():
     b = dwords(2, {0: 1, PAGE + 4: 3, 8: 7})
     assert pbdump.diff_words(a, b, base=0x1000) == [(0x1008, 0, 7), (0x2004, 2, 3)]
     assert pbdump.diff_words(a, a) == []
+
+
+def test_prim_list_entries_keep_bit_15():
+    # 0x0f000000 in VDM_INDEX2 and one winding of the random triangles set bit 15 of an entry
+    assert pbdump._entries(0x56934a30) == [(16, 17, 18, 0), (19, 20, 21, 0)]
+    assert pbdump._entries(0xd693ca30) == [(16, 17, 18, 1), (19, 20, 21, 1)]
+    assert pbdump._entries(0x4a30ca30) == [(16, 17, 18, 1), (16, 17, 18, 0)]
+
+
+def test_the_object_flags_the_entries_with_bit_15():
+    ws = [0x04000004, 0x00030001, 0x04000000] + [0x3f800000] * 6 + [0x01d00200, 0x10f0]
+    ws += [0xd693ca30, 0x1010, 0x00040101, 0, 0, 0, 0] + [0] * 8
+    o = pbdump.object_fields(ws, isp_at=9, vertices=6, prims=2)
+    assert o["PB_OBJ.PRIM_LIST"] == [(16, 17, 18), (19, 20, 21)]
+    assert o["PB_OBJ.PRIM_LIST bit 15"] == [1, 1]
+    lines = pbdump.object_lines(o)
+    assert "  PB_OBJ.PRIM_LIST (16, 17, 18) (19, 20, 21), bit 15 in entries 0 1" in lines
+    o["PB_OBJ.PRIM_LIST bit 15"] = [0, 0]
+    assert "  PB_OBJ.PRIM_LIST (16, 17, 18) (19, 20, 21)" in pbdump.object_lines(o)

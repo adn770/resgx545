@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# render bg pds word: 0 probes (written by tools/usse-asm/ta_words.py).
+# Q014: render command word 23, the background object's first PDS word
+needs = ["render", "kpoke"]
+name = "render-bg-pds-word"
+script = "bg-pds-word.sh"
