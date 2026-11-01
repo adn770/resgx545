@@ -1,0 +1,9 @@
+title = "script table platform/edm-tick"
+repo = "data"
+paths = ["platform/edm-tick/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-10-30"
+files = 3
+size = 1312470
+sha256 = "0b55238d5b843b73c8588f81fafd19b3e5039bc28f7b5577b1b59680017d7a71"
+recipe = "probes/platform/edm-tick.toml"

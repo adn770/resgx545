@@ -1,0 +1,9 @@
+title = "capture table firmware/init-payload"
+repo = "data-private"
+paths = ["firmware/init-payload/"]
+method = "campaign runner on the build target (tools/campaign)"
+date = "2026-10-30"
+files = 41
+size = 345939
+sha256 = "bde4f26c315f14f6edb8c409e05d92fc0ece1dc2ce57ead79ab9d002042cd94f"
+recipe = "captures/firmware/init-payload.toml"

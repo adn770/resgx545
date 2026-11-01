@@ -1,0 +1,8 @@
+title = "patent US8669987 (Imagination Technologies)"
+tier = "4"
+kind = "patent"
+licences = ["patent"]
+root = "the patent document as published: its USPTO PDF (scanned pages)"
+upstream = "https://patents.google.com/patent/US8669987B2/en"
+pin = "US8669987B2; USPTO PDF sha256 1734ad3de7c047f9884412bd50d6d595e08530fc9ca23d997b15b08ba38bea51"
+locator = "col C:line L of the printed patent (column and margin line number), else page N of the PDF"

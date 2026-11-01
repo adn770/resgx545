@@ -1,0 +1,37 @@
+[[term]]
+id = "G0062"
+name = "Dynamic Parameter Management (DPM)"
+status = "named"
+
+[[term.source]]
+term = "DPM"
+kind = "unit"
+sgx545 = "-"
+meaning = "allocates and frees parameter buffer pages"
+tier = "4"
+source = "patent-US8669987"
+citation = "C0097"
+licence = "patent"
+evidence = "OCR text"
+
+[[term.source]]
+term = "Parameter Manager"
+kind = "unit"
+sgx545 = "-"
+meaning = "Rogue Parameter Manager (PM), successor of the SGX DPM"
+tier = "3"
+source = "linux-imagination"
+citation = "C0098"
+licence = "GPL-2.0-only OR MIT"
+evidence = "same role as DPM"
+
+[[term.source]]
+term = "DPM"
+kind = "unit"
+sgx545 = "CR_CLKGATECTL.DPM_CLKG"
+meaning = "DPM block (its clock gate)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0099"
+licence = "GPL-2.0"
+evidence = "-"

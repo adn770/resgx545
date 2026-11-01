@@ -1,0 +1,48 @@
+[[term]]
+id = "G0039"
+name = "CR_CORE_ID"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_CORE_ID"
+kind = "register"
+sgx545 = "0x001c"
+meaning = "core id and configuration"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0054"
+licence = "GPL-2.0"
+evidence = "SGX545 defs; same in 17 other trees"
+
+[[term.source]]
+term = "EUR_CR_CORE_ID"
+kind = "register"
+sgx545 = "0x001c"
+meaning = "core id and configuration"
+tier = "1c"
+source = "sgx545-ce"
+citation = "C0055"
+licence = "GPL-2.0"
+evidence = "core SGX520/SGX530/SGX535; same name, OFFSET MISMATCH: 0x0010 on SGX520/SGX530/SGX535 vs ours 0x001c; SGX545 defs have it at 0x001c"
+
+[[term.source]]
+term = "PSB_CR_CORE_ID"
+kind = "register"
+sgx545 = "0x001c"
+meaning = "core id and configuration"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0056"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo); same name, OFFSET MISMATCH: 0x0010 there vs ours 0x001c"
+
+[[term.source]]
+term = "ROGUE_CR_CORE_ID"
+kind = "register"
+sgx545 = "0x001c"
+meaning = "core id and configuration (Rogue analogue)"
+tier = "3"
+source = "linux-imagination"
+citation = "C0057"
+licence = "GPL-2.0-only OR MIT"
+evidence = "same name as our CORE_ID; Rogue offset 0x0018; analogy, function to be confirmed"

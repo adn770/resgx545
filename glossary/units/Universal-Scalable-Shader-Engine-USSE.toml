@@ -1,0 +1,26 @@
+[[term]]
+id = "G0069"
+name = "Universal Scalable Shader Engine (USSE)"
+status = "named"
+
+[[term.source]]
+term = "USSE"
+kind = "unit"
+sgx545 = "-"
+meaning = "the unified, multithreaded shader processor"
+tier = "4"
+source = "imgtec-sgx-arch-guide-1.0.8"
+citation = "C0114"
+licence = "public-doc"
+evidence = "-"
+
+[[term.source]]
+term = "USE"
+kind = "unit"
+sgx545 = "CR_SOFT_RESET.USE_RESET"
+meaning = "USSE block (its soft reset); register names use the short abbreviation"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0115"
+licence = "GPL-2.0"
+evidence = "-"

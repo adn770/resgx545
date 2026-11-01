@@ -1,0 +1,9 @@
+title = "script table platform/boot"
+repo = "data"
+paths = ["platform/boot/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-10-30"
+files = 3
+size = 78595
+sha256 = "c137a8cd4db79991b82a2b82115a587f3ac9f57bfdc7a829e1c3d806a37b8c11"
+recipe = "probes/platform/boot.toml"

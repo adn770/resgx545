@@ -1,0 +1,15 @@
+[[term]]
+id = "G0054"
+name = "CR_USE0_SERV_EVENT"
+status = "named"
+
+[[term.source]]
+term = "PSB_CR_USE0_SERV_EVENT"
+kind = "register"
+sgx545 = "0x0b14"
+meaning = "USSE 0 event service-queue status, the EDM task register (SGX535 0x0b10)"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0087"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; we used another name here"

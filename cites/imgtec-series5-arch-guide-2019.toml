@@ -1,0 +1,8 @@
+title = "Imagination's PowerVR Series5 Architecture Guide for Developers (2019 edition)"
+tier = "4"
+kind = "document"
+licences = ["public-doc"]
+root = "the PDF, as the Wayback Machine captured it"
+upstream = "https://web.archive.org/web/20190712id_/http://cdn.imgtec.com/sdk-documentation/PowerVR+Series5.Architecture+Guide+for+Developers.pdf"
+pin = "capture 2019-07-12, PDF sha256 208d91abcd73de88f7d251515d7b252efbfbb096e119b2c8603efb60ccbaa1bc"
+locator = "page N of the PDF"

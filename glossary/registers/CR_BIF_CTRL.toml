@@ -1,0 +1,37 @@
+[[term]]
+id = "G0030"
+name = "CR_BIF_CTRL"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_CTRL"
+kind = "register"
+sgx545 = "0x0c00"
+meaning = "MMU control: pause, invalidate, clear fault"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0036"
+licence = "GPL-2.0"
+evidence = "SGX545 defs; same in 17 other trees"
+
+[[term.source]]
+term = "PSB_CR_BIF_CTRL"
+kind = "register"
+sgx545 = "0x0c00"
+meaning = "MMU control: pause, invalidate, clear fault"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0037"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches our name EUR_CR_BIF_CTRL"
+
+[[term.source]]
+term = "ROGUE_CR_BIF_CTRL"
+kind = "register"
+sgx545 = "0x0c00"
+meaning = "MMU control: pause, invalidate, clear fault (Rogue analogue)"
+tier = "3"
+source = "linux-imagination"
+citation = "C0038"
+licence = "GPL-2.0-only OR MIT"
+evidence = "same name as our BIF_CTRL; Rogue offset 0x12a8; analogy, function to be confirmed"

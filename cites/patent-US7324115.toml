@@ -1,0 +1,8 @@
+title = "patent US7324115 (Imagination Technologies)"
+tier = "4"
+kind = "patent"
+licences = ["patent"]
+root = "the patent document as published: its USPTO PDF (scanned pages)"
+upstream = "https://patents.google.com/patent/US7324115B2/en"
+pin = "US7324115B2; USPTO PDF sha256 dbc05f92f9f66944af445734dc566d5d2df73db85047e24d3867cfde6f9056e2"
+locator = "col C:line L of the printed patent (column and margin line number), else page N of the PDF"

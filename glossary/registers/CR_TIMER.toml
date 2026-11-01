@@ -1,0 +1,26 @@
+[[term]]
+id = "G0053"
+name = "CR_TIMER"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_TIMER"
+kind = "register"
+sgx545 = "0x0144"
+meaning = "free-running timer"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0085"
+licence = "GPL-2.0"
+evidence = "SGX545 defs; same in 15 other trees"
+
+[[term.source]]
+term = "ROGUE_CR_TIMER"
+kind = "register"
+sgx545 = "0x0144"
+meaning = "free-running timer (Rogue analogue)"
+tier = "3"
+source = "linux-imagination"
+citation = "C0086"
+licence = "GPL-2.0-only OR MIT"
+evidence = "same name as our EUR_CR_TIMER; Rogue offset 0x0160; analogy, function to be confirmed"

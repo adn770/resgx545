@@ -1,0 +1,8 @@
+title = "patent EP1351195A2 (Imagination Technologies): 3-D computer graphics rendering system"
+tier = "4"
+kind = "patent"
+licences = ["patent"]
+root = "the patent document as published: its PDF as Google Patents serves it"
+upstream = "https://patents.google.com/patent/EP1351195A2/en"
+pin = "EP1351195A2; Google Patents PDF sha256 46d8e16e3a32e6d06ff80edb3a7e178f2958c878143fea87cbe89ce51fc80b52"
+locator = "page N of the PDF"

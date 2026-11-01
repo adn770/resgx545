@@ -1,0 +1,15 @@
+[[term]]
+id = "G0061"
+name = "CR_USE_TMPREG"
+status = "named"
+
+[[term.source]]
+term = "PSB_CR_USE_TMPREG"
+kind = "register"
+sgx545 = "0x0aac"
+meaning = "USSE temporary registers: size and initial value"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0096"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"

@@ -1,0 +1,9 @@
+title = "capture table firmware/boot-path"
+repo = "data-private"
+paths = ["firmware/boot-path/"]
+method = "campaign runner on the local target (tools/campaign)"
+date = "2026-10-30"
+files = 4
+size = 12428
+sha256 = "618fdcb45c366e937960eaa64c76d067af96a8392ee3bff67f359f159df9c907"
+recipe = "captures/firmware/boot-path.toml"

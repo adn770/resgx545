@@ -1,0 +1,26 @@
+[[term]]
+id = "G0064"
+name = "Parameter Buffer (PB)"
+status = "named"
+
+[[term.source]]
+term = "PB"
+kind = "concept"
+sgx545 = "-"
+meaning = "memory holding the binned scene (TA output, 3D input)"
+tier = "4"
+source = "imgtec-sgx-arch-guide-1.0.13"
+citation = "C0103"
+licence = "public-doc"
+evidence = "-"
+
+[[term.source]]
+term = "Parameter Buffer"
+kind = "concept"
+sgx545 = "-"
+meaning = "binned geometry and state passed from the TA to the 3D phase"
+tier = "4"
+source = "imgtec-sgx-arch-guide-1.0.8"
+citation = "C0104"
+licence = "public-doc"
+evidence = "-"

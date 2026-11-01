@@ -1,0 +1,26 @@
+[[term]]
+id = "G0066"
+name = "Texture and Shading Processor (TSP)"
+status = "named"
+
+[[term.source]]
+term = "TSP"
+kind = "unit"
+sgx545 = "-"
+meaning = "iterates, textures and shades visible fragments"
+tier = "4"
+source = "imgtec-sgx-arch-guide-1.0.13"
+citation = "C0108"
+licence = "public-doc"
+evidence = "-"
+
+[[term.source]]
+term = "TSP"
+kind = "unit"
+sgx545 = "CR_CLKGATECTL.TSP_CLKG"
+meaning = "TSP block (its clock gate)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0109"
+licence = "GPL-2.0"
+evidence = "-"

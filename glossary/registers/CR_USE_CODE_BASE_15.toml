@@ -1,0 +1,26 @@
+[[term]]
+id = "G0057"
+name = "CR_USE_CODE_BASE_15"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_USE_CODE_BASE_15"
+kind = "register"
+sgx545 = "0x0a48"
+meaning = "USSE code base 15: address and data master"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0091"
+licence = "GPL-2.0"
+evidence = "SGX545 defs; same in 15 other trees"
+
+[[term.source]]
+term = "PSB_CR_USE_CODE_BASE15"
+kind = "register"
+sgx545 = "0x0a48"
+meaning = "USSE code base 15: address and data master"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0092"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches our name USE_CODE_BASE_15"

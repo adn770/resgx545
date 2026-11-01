@@ -1,0 +1,8 @@
+title = "Imagination's PowerVR Series5 Graphics SGX architecture guide for developers 1.0.8 (2011, public)"
+tier = "4"
+kind = "document"
+licences = ["public-doc"]
+root = "the PDF, as the Wayback Machine captured it"
+upstream = "https://web.archive.org/web/20110901id_/http://www.imgtec.com/powervr/insider/docs/PowerVR%20Series5%20Graphics.SGX%20architecture%20guide%20for%20developers.1.0.8.External.pdf"
+pin = "capture 2011-09-01, PDF sha256 61a795efcd2a7c285b65bbbf80de4cb69115d8c80b64ff51fccf7256cbafb4b5"
+locator = "page N of the PDF"

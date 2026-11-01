@@ -1,0 +1,8 @@
+title = "patent US8368691B2 (Imagination Technologies): Untransformed display lists in a tile based rendering system"
+tier = "4"
+kind = "patent"
+licences = ["patent"]
+root = "the patent document as published: its PDF as Google Patents serves it"
+upstream = "https://patents.google.com/patent/US8368691B2/en"
+pin = "US8368691B2; Google Patents PDF sha256 78cf65391545c1877db92af309567bb6ac1649d808a3cb125b6fef328cb3e5ad"
+locator = "col C:line L of the printed patent (column and margin line number), else page N of the PDF"

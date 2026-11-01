@@ -1,0 +1,15 @@
+[[term]]
+id = "G0035"
+name = "CR_CACHE_CTRL"
+status = "named"
+
+[[term.source]]
+term = "PSB_CR_CACHE_CTRL"
+kind = "register"
+sgx545 = "0x0804"
+meaning = "cache control / invalidate"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0046"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"

@@ -1,0 +1,9 @@
+title = "script table platform/boot-registers"
+repo = "data"
+paths = ["platform/boot-registers/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-10-30"
+files = 3
+size = 37914
+sha256 = "2def4593ad755f80bddea0c942ae5a5b7dd4d6237a7e82c9e45fd77af5860618"
+recipe = "probes/platform/boot-registers.toml"

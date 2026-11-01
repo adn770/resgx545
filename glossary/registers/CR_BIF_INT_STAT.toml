@@ -1,0 +1,26 @@
+[[term]]
+id = "G0034"
+name = "CR_BIF_INT_STAT"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_BIF_INT_STAT"
+kind = "register"
+sgx545 = "0x0c04"
+meaning = "MMU fault/interrupt status"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0044"
+licence = "GPL-2.0"
+evidence = "SGX545 defs; same in 17 other trees"
+
+[[term.source]]
+term = "PSB_CR_BIF_INT_STAT"
+kind = "register"
+sgx545 = "0x0c04"
+meaning = "MMU fault/interrupt status"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0045"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"

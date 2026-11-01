@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# i686 build image for igt-gpu-tools with the sgxfive tests (render-node design §8, P8), on top of
+# tools/arch32/build-rootfs.sh's resgx545/arch32:base.
+#
+#   docker build -t resgx545/arch32:igt -f tools/arch32/Dockerfile.igt tools/arch32
+FROM resgx545/arch32:base
+# The base image could not run systemd-tmpfiles while it was assembled (no /proc).
+RUN systemd-tmpfiles --create >/dev/null 2>&1 || true
+RUN pacman -Syu --noconfirm --needed base-devel git meson ninja libdrm libpciaccess kmod \
+	procps-ng libunwind elfutils cairo pixman gsl json-c alsa-lib peg python-docutils \
+	flex bison >/dev/null && pacman -Scc --noconfirm >/dev/null

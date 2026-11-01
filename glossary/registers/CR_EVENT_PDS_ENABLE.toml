@@ -1,0 +1,15 @@
+[[term]]
+id = "G0048"
+name = "CR_EVENT_PDS_ENABLE"
+status = "named"
+
+[[term.source]]
+term = "PSB_CR_EVENT_PDS_ENABLE"
+kind = "register"
+sgx545 = "0x0a58"
+meaning = "events that start a PDS event task"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0074"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"

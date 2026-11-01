@@ -1,0 +1,15 @@
+[[term]]
+id = "G0070"
+name = "display list"
+status = "named"
+
+[[term.source]]
+term = "display list"
+kind = "concept"
+sgx545 = "-"
+meaning = "per-tile display lists (macrotiles)"
+tier = "4"
+source = "patent-US7324115"
+citation = "C0116"
+licence = "patent"
+evidence = "OCR text"

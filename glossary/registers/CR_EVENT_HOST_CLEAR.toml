@@ -1,0 +1,37 @@
+[[term]]
+id = "G0042"
+name = "CR_EVENT_HOST_CLEAR"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_CLEAR"
+kind = "register"
+sgx545 = "0x0134"
+meaning = "write-1-to-clear events, bank 1"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0063"
+licence = "GPL-2.0"
+evidence = "SGX545 defs; same in 17 other trees"
+
+[[term.source]]
+term = "PSB_CR_EVENT_HOST_CLEAR"
+kind = "register"
+sgx545 = "0x0134"
+meaning = "write-1-to-clear events, bank 1"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0064"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches our name EUR_CR_EVENT_HOST_CLEAR"
+
+[[term.source]]
+term = "ROGUE_CR_EVENT_CLEAR"
+kind = "register"
+sgx545 = "0x0134"
+meaning = "write-1-to-clear events, bank 1 (Rogue analogue)"
+tier = "3"
+source = "linux-imagination"
+citation = "C0065"
+licence = "GPL-2.0-only OR MIT"
+evidence = "analogy to our EVENT_HOST_CLEAR; event clear; Rogue drops HOST_; Rogue offset 0x0138"

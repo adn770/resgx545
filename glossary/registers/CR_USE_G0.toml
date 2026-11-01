@@ -1,0 +1,15 @@
+[[term]]
+id = "G0059"
+name = "CR_USE_G0"
+status = "named"
+
+[[term.source]]
+term = "PSB_CR_USE_G0"
+kind = "register"
+sgx545 = "0x0a7c"
+meaning = "USSE global value g0"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0094"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"

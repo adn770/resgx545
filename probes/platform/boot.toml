@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# Load and boot the firmware through the phase-3 kernel's debugfs files, then stop it, twenty
+# times: each cycle's layout, boot result and kernel log, HostCtl, TA3DCtl and the kernel CCB
+# control words after the boot, the fault registers, and the state after the stop.
+kind = "script"
+name = "platform-boot"
+script = "boot.sh"
+baseline = "none"

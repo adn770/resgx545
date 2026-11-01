@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# Who the GPU is, as the platform and the phase-3 kernel see it before the firmware runs:
+# the PCI functions (GPU and host bridge), the register BAR, the interrupt, gma500's own log
+# (stolen memory, GTT, gatt_start) and the core identity registers before any load.
+kind = "script"
+name = "platform-identity"
+script = "identity.sh"
+baseline = "none"

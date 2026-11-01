@@ -1,0 +1,37 @@
+[[term]]
+id = "G0067"
+name = "Tile Accelerator (TA)"
+status = "named"
+
+[[term.source]]
+term = "TA"
+kind = "unit"
+sgx545 = "-"
+meaning = "bins transformed geometry into per-tile lists"
+tier = "4"
+source = "imgtec-sgx-arch-guide-1.0.13"
+citation = "C0110"
+licence = "public-doc"
+evidence = "-"
+
+[[term.source]]
+term = "Tile Accelerator"
+kind = "unit"
+sgx545 = "-"
+meaning = "bins transformed geometry into per-tile lists"
+tier = "4"
+source = "imgtec-technology-overview-1.0.2e"
+citation = "C0111"
+licence = "public-doc"
+evidence = "-"
+
+[[term.source]]
+term = "TA"
+kind = "unit"
+sgx545 = "CR_SOFT_RESET.TA_RESET"
+meaning = "TA block (its soft reset)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0112"
+licence = "GPL-2.0"
+evidence = "-"

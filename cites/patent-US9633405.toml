@@ -1,0 +1,8 @@
+title = "patent US9633405B2 (Imagination Technologies): Tile based computer graphics"
+tier = "4"
+kind = "patent"
+licences = ["patent"]
+root = "the patent document as published: its PDF as Google Patents serves it"
+upstream = "https://patents.google.com/patent/US9633405B2/en"
+pin = "US9633405B2; Google Patents PDF sha256 b62a9d30f3609bed2712bffb0ebc269f8e434ffbb7563faa87e7ea05b22212fe"
+locator = "col C:line L of the printed patent (column and margin line number), else page N of the PDF"

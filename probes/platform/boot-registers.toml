@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# Register snapshots (the debug option's sgx/regs) before the firmware is loaded (gma500's
+# own state), after the boot, after the stop, and after a second boot, with the SGX
+# interrupt count across each step.
+kind = "script"
+name = "platform-boot-registers"
+script = "boot-registers.sh"
+baseline = "none"

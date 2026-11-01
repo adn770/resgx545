@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# The boot payload srvinit hands the kernel at the DDK's REV1 address layout (every heap
+# below 0x3e000000, as the Cedarview kernel uses with host bridges below revision 4), and
+# with only the page directory moved: the init scripts, task registers, clock gating, idle
+# mask, cache control and control-block sizes the kernel replays, decoded by initinfo.py.
+kind = "capture"
+name = "firmware-init-payload"
+host = "build"
+script = "init-payload.sh"
+files = ["harness/ukernel-extract/fakedrm.c", "harness/ukernel-extract/loader.c",
+         "harness/ukernel-extract/ukdir.h", "harness/ukernel-extract/bridgecmd.h",
+         "harness/ukernel-extract/devmem.h", "harness/ukernel-extract/bufclass.h",
+         "harness/ukernel-extract/initinfo.py"]

@@ -1,0 +1,15 @@
+[[term]]
+id = "G0041"
+name = "CR_DMS_CTRL"
+status = "named"
+
+[[term.source]]
+term = "PSB_CR_DMS_CTRL"
+kind = "register"
+sgx545 = "0x0a74"
+meaning = "data-master task/partition limits"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0062"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"

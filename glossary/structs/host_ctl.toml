@@ -13,3 +13,275 @@ source = "sgx545-ce"
 citation = "C0016"
 licence = "GPL-2.0"
 evidence = "size 0x44 from the srvinit boot payload, E001"
+
+[[term]]
+id = "G0071"
+name = "host_ctl.active_powman_sample_rate"
+status = "named"
+
+[[term.source]]
+term = "ui32ActivePowManSampleRate"
+kind = "field"
+sgx545 = "HOST_CTL+0x1c"
+meaning = "active power latency in ticks"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0117"
+licence = "GPL-2.0"
+evidence = "offset per E005 (b)"
+
+[[term]]
+id = "G0072"
+name = "host_ctl.assert_fail"
+status = "named"
+
+[[term.source]]
+term = "ui32AssertFail"
+kind = "field"
+sgx545 = "HOST_CTL+0x38"
+meaning = "EDM assert code"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0118"
+licence = "GPL-2.0"
+evidence = "offset per E005 (b)"
+
+[[term]]
+id = "G0073"
+name = "host_ctl.bp_set_clear_signal"
+status = "named"
+
+[[term.source]]
+term = "ui32BPSetClearSignal"
+kind = "field"
+sgx545 = "HOST_CTL+0x28"
+meaning = "breakpoint set/clear signal"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0119"
+licence = "GPL-2.0"
+evidence = "offset per E005 (b)"
+
+[[term]]
+id = "G0074"
+name = "host_ctl.cleanup_status"
+status = "named"
+
+[[term.source]]
+term = "ui32CleanupStatus"
+kind = "field"
+sgx545 = "HOST_CTL+0x08"
+meaning = "CLEANUP_STATUS.* bits"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0120"
+licence = "GPL-2.0"
+evidence = "offset per E005 (b)"
+
+[[term]]
+id = "G0075"
+name = "host_ctl.edm_ticks"
+status = "named"
+
+[[term.source]]
+term = "ui32TimeWraps"
+kind = "field"
+sgx545 = "HOST_CTL+0x30"
+meaning = "EDM timer tick count; the host never writes it"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0121"
+licence = "GPL-2.0"
+evidence = "offset per E005 (b)"
+
+[[term]]
+id = "G0076"
+name = "host_ctl.host_clock"
+status = "named"
+
+[[term.source]]
+term = "ui32HostClock"
+kind = "field"
+sgx545 = "HOST_CTL+0x34"
+meaning = "host clock at EDM boot"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0122"
+licence = "GPL-2.0"
+evidence = "offset per E005 (b)"
+
+[[term]]
+id = "G0077"
+name = "host_ctl.host_detected_lockups"
+status = "named"
+
+[[term.source]]
+term = "ui32HostDetectedLockups"
+kind = "field"
+sgx545 = "HOST_CTL+0x10"
+meaning = "lockups seen by the host"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0123"
+licence = "GPL-2.0"
+evidence = "offset per E005 (b)"
+
+[[term]]
+id = "G0078"
+name = "host_ctl.hw_recovery_sample_rate"
+status = "named"
+
+[[term.source]]
+term = "ui32HWRecoverySampleRate"
+kind = "field"
+sgx545 = "HOST_CTL+0x14"
+meaning = "lockup check period in timer ticks"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0124"
+licence = "GPL-2.0"
+evidence = "offset per E005 (b)"
+
+[[term]]
+id = "G0079"
+name = "host_ctl.init_status"
+status = "named"
+
+[[term.source]]
+term = "ui32InitStatus"
+kind = "field"
+sgx545 = "HOST_CTL+0x00"
+meaning = "EDM init status; INIT_STATUS.COMPLETE"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0125"
+licence = "GPL-2.0"
+evidence = "offset per E005 (b)"
+
+[[term]]
+id = "G0080"
+name = "host_ctl.interrupt_clear_flags"
+status = "named"
+
+[[term.source]]
+term = "ui32InterruptClearFlags"
+kind = "field"
+sgx545 = "HOST_CTL+0x24"
+meaning = "host acknowledges of host_ctl.interrupt_flags"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0126"
+licence = "GPL-2.0"
+evidence = "offset per E005 (b)"
+
+[[term]]
+id = "G0081"
+name = "host_ctl.interrupt_flags"
+status = "named"
+
+[[term.source]]
+term = "ui32InterruptFlags"
+kind = "field"
+sgx545 = "HOST_CTL+0x20"
+meaning = "EDM->host requests (INTERRUPT_FLAGS.*)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0127"
+licence = "GPL-2.0"
+evidence = "offset per E005 (b)"
+
+[[term]]
+id = "G0082"
+name = "host_ctl.num_active_power_events"
+status = "named"
+
+[[term.source]]
+term = "ui32NumActivePowerEvents"
+kind = "field"
+sgx545 = "HOST_CTL+0x2c"
+meaning = "active power-down count"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0128"
+licence = "GPL-2.0"
+evidence = "offset per E005 (b)"
+
+[[term]]
+id = "G0083"
+name = "host_ctl.opencl_delay_count"
+status = "named"
+
+[[term.source]]
+term = "ui32OpenCLDelayCount"
+kind = "field"
+sgx545 = "HOST_CTL+0x40"
+meaning = "OpenCL task timeout counter"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0129"
+licence = "GPL-2.0"
+evidence = "offset per E005 (b)"
+
+[[term]]
+id = "G0084"
+name = "host_ctl.perf_group"
+status = "named"
+
+[[term.source]]
+term = "ui32PerfGroup"
+kind = "field"
+sgx545 = "HOST_CTL+0x3c"
+meaning = "HW perf counter group"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0130"
+licence = "GPL-2.0"
+evidence = "offset per E005 (b)"
+
+[[term]]
+id = "G0085"
+name = "host_ctl.power_status"
+status = "named"
+
+[[term.source]]
+term = "ui32PowerStatus"
+kind = "field"
+sgx545 = "HOST_CTL+0x04"
+meaning = "POWER_STATUS.* bits"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0131"
+licence = "GPL-2.0"
+evidence = "offset per E005 (b)"
+
+[[term]]
+id = "G0086"
+name = "host_ctl.ukernel_detected_lockups"
+status = "named"
+
+[[term.source]]
+term = "ui32uKernelDetectedLockups"
+kind = "field"
+sgx545 = "HOST_CTL+0x0c"
+meaning = "lockups seen by the EDM"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0132"
+licence = "GPL-2.0"
+evidence = "offset per E005 (b)"
+
+[[term]]
+id = "G0087"
+name = "host_ctl.ukernel_timer_clock"
+status = "named"
+
+[[term.source]]
+term = "ui32uKernelTimerClock"
+kind = "field"
+sgx545 = "HOST_CTL+0x18"
+meaning = "EDM timer period in core clocks"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0133"
+licence = "GPL-2.0"
+evidence = "offset per E005 (b)"

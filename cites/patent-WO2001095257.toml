@@ -1,0 +1,8 @@
+title = "patent WO2001095257A1 (Imagination Technologies): Tiling and compression for rendering 3D images"
+tier = "4"
+kind = "patent"
+licences = ["patent"]
+root = "the patent document as published: its PDF as Google Patents serves it"
+upstream = "https://patents.google.com/patent/WO2001095257A1/en"
+pin = "WO2001095257A1; Google Patents PDF sha256 70b778959937957f938a175361d45f33d5463150b5e0cb8fb153767688dd420a"
+locator = "page N of the PDF"

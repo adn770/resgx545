@@ -1,0 +1,26 @@
+[[term]]
+id = "G0043"
+name = "CR_EVENT_HOST_CLEAR2"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_CLEAR2"
+kind = "register"
+sgx545 = "0x0114"
+meaning = "write-1-to-clear events, bank 2"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0066"
+licence = "GPL-2.0"
+evidence = "SGX545 defs; same in 17 other trees"
+
+[[term.source]]
+term = "PSB_CR_EVENT_HOST_CLEAR2"
+kind = "register"
+sgx545 = "0x0114"
+meaning = "write-1-to-clear events, bank 2"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0067"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches our name EUR_CR_EVENT_HOST_CLEAR2"

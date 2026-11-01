@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# The running firmware left alone: 200 register snapshots over about 40 s, each read stamped
+# with the laptop's clock before and after, to measure the rate of every register that moves.
+kind = "script"
+name = "platform-edm-tick"
+script = "edm-tick.sh"
+baseline = "none"

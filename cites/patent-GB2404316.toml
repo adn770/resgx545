@@ -1,0 +1,8 @@
+title = "patent GB2404316A (Imagination Technologies): Visibility determination in 3D graphics rendering"
+tier = "4"
+kind = "patent"
+licences = ["patent"]
+root = "the patent document as published: its PDF as Google Patents serves it"
+upstream = "https://patents.google.com/patent/GB2404316A/en"
+pin = "GB2404316A; Google Patents PDF sha256 8dd392b4021aa19e87f1dbdfedeace10fa964185e9b449f62bde2ca85b0ca123"
+locator = "page N of the PDF"

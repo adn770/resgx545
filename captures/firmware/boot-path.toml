@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# Facts from the cut firmware (the firmware-images capture) that the boot relies on: the SGX
+# registers the microkernel reads and writes directly (regtouch.py over usse-dis), with the
+# number of read and write sites of each. Indices and counts only; no listing is kept.
+kind = "capture"
+name = "firmware-boot-path"
+host = "local"
+script = "boot-path.sh"
+files = ["tools/usse-dis/regtouch.py"]

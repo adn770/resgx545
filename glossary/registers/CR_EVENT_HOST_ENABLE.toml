@@ -1,0 +1,26 @@
+[[term]]
+id = "G0044"
+name = "CR_EVENT_HOST_ENABLE"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_HOST_ENABLE"
+kind = "register"
+sgx545 = "0x0130"
+meaning = "events routed to the host interrupt, bank 1"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0068"
+licence = "GPL-2.0"
+evidence = "SGX545 defs; same in 17 other trees"
+
+[[term.source]]
+term = "PSB_EUR_CR_EVENT_HOST_ENABLE"
+kind = "register"
+sgx545 = "0x0130"
+meaning = "events routed to the host interrupt, bank 1"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0069"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"

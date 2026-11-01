@@ -1,0 +1,15 @@
+[[term]]
+id = "G0047"
+name = "CR_EVENT_OTHER_PDS_INFO"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_OTHER_PDS_INFO"
+kind = "register"
+sgx545 = "0x0a70"
+meaning = "other-event task sizes"
+tier = "1"
+source = "intel-ctp-santos10"
+citation = "C0073"
+licence = "GPL-2.0 OR MIT"
+evidence = "DDK debug-dump name table (RESTRICTED_REGISTERS block); no offset in any GPL source, offset 0x0a70 is our binding via name EVENT_OTHER_PDS_INFO"

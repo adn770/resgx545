@@ -1,0 +1,15 @@
+[[term]]
+id = "G0058"
+name = "CR_USE_CTRL"
+status = "named"
+
+[[term.source]]
+term = "PSB_CR_USE_CTRL"
+kind = "register"
+sgx545 = "0x0a00"
+meaning = "USSE control"
+tier = "1c"
+source = "emgd-psb_regs"
+citation = "C0093"
+licence = "MIT"
+evidence = "core SGX535 (Poulsbo psb_regs.h); same offset; matches the name we used"

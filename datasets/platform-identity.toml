@@ -1,0 +1,9 @@
+title = "script table platform/identity"
+repo = "data"
+paths = ["platform/identity/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-10-30"
+files = 3
+size = 11893
+sha256 = "8e094edb004866a4dc232a7f881b7def7c2d85431fbb1b3da3e15f38dfe5f003"
+recipe = "probes/platform/identity.toml"

@@ -1,0 +1,32 @@
+#!/bin/bash
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# Run a build command on the laptop inside its frozen Arch Linux 32 build root (a
+# systemd-nspawn copy of the resgx545/arch32:kernel image: the toolchain the test kernel was
+# built with, so kbuild stays incremental), with the tree mounted at its own path; IGT is
+# mounted at /igt, where its build directory was set up.
+#
+#   usage (on the laptop): sgx-build kernel make ARCH=i386 -j4 M=drivers/gpu/drm/gma500
+#                          sgx-build igt ninja -C build32 tests/sgxfive/sgxfive_submit
+#
+# SGX_KERNEL_TREE and SGX_IGT_TREE name the trees (from $HOME, or absolute; defaults
+# src/linux-sgx and src/igt-gpu-tools), SGX_BUILD_ROOT the root
+# (/var/lib/machines/arch32-build). SGX_DRY_RUN=1 prints the command instead of running it.
+set -euo pipefail
+abs() { case $1 in /*) printf '%s' "$1" ;; *) printf '%s' "$HOME/$1" ;; esac; }
+ROOT=${SGX_BUILD_ROOT:-/var/lib/machines/arch32-build}
+KTREE=$(abs "${SGX_KERNEL_TREE:-src/linux-sgx}")
+ITREE=$(abs "${SGX_IGT_TREE:-src/igt-gpu-tools}")
+case ${1:-} in
+kernel) dir=$KTREE; bind=(--bind="$KTREE") ;;
+igt) dir=/igt; bind=(--bind="$ITREE:/igt") ;;
+*) echo "usage: sgx-build kernel|igt COMMAND..." >&2; exit 2 ;;
+esac
+shift
+cmd=(sudo systemd-nspawn -q -D "$ROOT" --user="$(id -un)" -E HOME=/tmp -E LOCALVERSION=
+	"${bind[@]}" --chdir="$dir" nice "$@")
+if [ -n "${SGX_DRY_RUN:-}" ]; then
+	printf '%s\n' "${cmd[*]}"
+else
+	exec "${cmd[@]}"
+fi

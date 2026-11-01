@@ -225,13 +225,30 @@ def test_an_inferred_reading_renders_as_one():
 CITE_KEYS = ["title", "tier", "kind", "licences", "root", "upstream", "pin", "locator"]
 
 
+SPECS = ROOT / "doc" / "specs"
+
+
+def named_by_specs(ids: set[str], specs: pathlib.Path = SPECS) -> set[str]:
+    """The source ids a spec names, as its "Based on" lines do: sgx545-ce `path`."""
+    text = "\n".join(p.read_text() for p in sorted(specs.glob("*.md")))
+    return {i for i in ids if re.search(rf"(?<![\w-]){re.escape(i)}(?![\w-])", text)}
+
+
+def test_a_spec_names_a_source_by_its_whole_id(tmp_path):
+    (tmp_path / "a.md").write_text("*Based on linux-gma500 `psb_irq.c`; patent-EP0725367.*\n")
+    ids = {"linux-gma500", "patent-EP0725367", "linux", "patent-EP07253", "gma500"}
+    assert named_by_specs(ids, tmp_path) == {"linux-gma500", "patent-EP0725367"}
+
+
 def test_every_source_has_a_record():
+    """A source backs a glossary row or a spec names it; none is kept that nothing cites."""
     used = {r["source"] for r in glossary.load()}
     if not used:
         pytest.skip("no glossary terms yet")
     have = {p.stem for p in glossary.CITES.glob("*.toml")}
     assert used <= have, sorted(used - have)
-    assert have <= used | {"resgx545"}, sorted(have - used)   # no source nobody cites
+    cited = used | {"resgx545"} | named_by_specs(have)
+    assert have <= cited, sorted(have - cited)
 
 
 def test_a_source_record_says_what_it_is_and_how_to_find_it():

@@ -1,0 +1,8 @@
+title = "patent EP0725367B1 (Imagination Technologies): Computer 3D rendering method and apparatus"
+tier = "4"
+kind = "patent"
+licences = ["patent"]
+root = "the patent document as published: its PDF as Google Patents serves it"
+upstream = "https://patents.google.com/patent/EP0725367B1/en"
+pin = "EP0725367B1; Google Patents PDF sha256 011624b3c349a023e43b1a6b7cc5445f216d76caf357411d2490e596df8d9aaa"
+locator = "page N of the PDF"

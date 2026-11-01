@@ -1,0 +1,8 @@
+title = "Imagination's PowerVR Technology Overview 1.0.2e (2010)"
+tier = "4"
+kind = "document"
+licences = ["public-doc"]
+root = "the PDF, as the Wayback Machine captured it"
+upstream = "https://web.archive.org/web/20100331id_/http://www.imgtec.com/factsheets/SDK/PowerVR%20Technology%20Overview.1.0.2e.External.pdf"
+pin = "capture 2010-03-31, PDF sha256 5a0e4168edc67c21be985a0f75ad98121f32f80884cc1a8711365aad86d092fa"
+locator = "page N of the PDF"

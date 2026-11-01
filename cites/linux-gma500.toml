@@ -1,0 +1,8 @@
+title = "Linux's gma500 DRM driver, drivers/gpu/drm/gma500, the display driver our SGX driver lives in"
+tier = "3"
+kind = "tree"
+licences = ["GPL-2.0"]
+root = "drivers/gpu/drm/gma500/ in the upstream repository at pin"
+upstream = "https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git"
+pin = "c03c1a14507dfaf8b856c2608f9ac216021fc222"
+locator = "path:line relative to the upstream repository root at pin"

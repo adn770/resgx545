@@ -1,0 +1,37 @@
+[[term]]
+id = "G0065"
+name = "Pixel Back End (PBE)"
+status = "named"
+
+[[term.source]]
+term = "PBE"
+kind = "unit"
+sgx545 = "-"
+meaning = "combines subsamples and writes finished tiles to memory"
+tier = "4"
+source = "imgtec-sgx-arch-guide-1.0.13"
+citation = "C0105"
+licence = "public-doc"
+evidence = "-"
+
+[[term.source]]
+term = "Pixel Back End"
+kind = "unit"
+sgx545 = "-"
+meaning = "PBE as described for Rogue (fed by the TA or the USC)"
+tier = "4"
+source = "powervr-docs"
+citation = "C0106"
+licence = "public-doc"
+evidence = "-"
+
+[[term.source]]
+term = "PIXELBE"
+kind = "unit"
+sgx545 = "CR_EVENT_STATUS.PIXELBE_END_RENDER"
+meaning = "PBE as spelled in register names; signals end of render"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0107"
+licence = "GPL-2.0"
+evidence = "-"

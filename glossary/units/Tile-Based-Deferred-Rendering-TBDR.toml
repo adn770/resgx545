@@ -1,0 +1,15 @@
+[[term]]
+id = "G0068"
+name = "Tile Based Deferred Rendering (TBDR)"
+status = "named"
+
+[[term.source]]
+term = "TBDR"
+kind = "concept"
+sgx545 = "-"
+meaning = "bin the whole scene first, then render tile by tile, shading only visible pixels"
+tier = "4"
+source = "imgtec-sgx-arch-guide-1.0.13"
+citation = "C0113"
+licence = "public-doc"
+evidence = "-"

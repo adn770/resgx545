@@ -1,0 +1,37 @@
+[[term]]
+id = "G0063"
+name = "Image Synthesis Processor (ISP)"
+status = "named"
+
+[[term.source]]
+term = "Hidden Surface Removal unit"
+kind = "unit"
+sgx545 = "-"
+meaning = "patent name for the unit doing hidden surface removal (the ISP)"
+tier = "4"
+source = "patent-US8743117"
+citation = "C0100"
+licence = "patent"
+evidence = "OCR text"
+
+[[term.source]]
+term = "ISP"
+kind = "unit"
+sgx545 = "-"
+meaning = "per-tile hidden surface removal (depth and stencil tests)"
+tier = "4"
+source = "imgtec-sgx-arch-guide-1.0.13"
+citation = "C0101"
+licence = "public-doc"
+evidence = "-"
+
+[[term.source]]
+term = "ISP"
+kind = "unit"
+sgx545 = "CR_CLKGATECTL.ISP_CLKG"
+meaning = "ISP block (its clock gate)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0102"
+licence = "GPL-2.0"
+evidence = "-"

@@ -1,0 +1,8 @@
+title = "patent US7834872B2 (Imagination Technologies): Tiling system for 3D rendered graphics"
+tier = "4"
+kind = "patent"
+licences = ["patent"]
+root = "the patent document as published: its PDF as Google Patents serves it"
+upstream = "https://patents.google.com/patent/US7834872B2/en"
+pin = "US7834872B2; Google Patents PDF sha256 729837c8e6098d9e428704477fd6876199ec0e03ebcffedf47b4c1230edd9c49"
+locator = "col C:line L of the printed patent (column and margin line number), else page N of the PDF"

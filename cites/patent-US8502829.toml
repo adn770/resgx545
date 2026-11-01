@@ -1,0 +1,8 @@
+title = "patent US8502829B2 (Imagination Technologies): Multi-core geometry processing in a tile based rendering system"
+tier = "4"
+kind = "patent"
+licences = ["patent"]
+root = "the patent document as published: its PDF as Google Patents serves it"
+upstream = "https://patents.google.com/patent/US8502829B2/en"
+pin = "US8502829B2; Google Patents PDF sha256 666f1d73aef9ef7a69928b2b2a3dbe061f89c2087bb8483382ba60069766c5d3"
+locator = "col C:line L of the printed patent (column and margin line number), else page N of the PDF"
