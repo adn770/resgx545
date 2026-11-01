@@ -17,8 +17,10 @@ version only after that file has been read in a debug build. Until then
 
 The values the kernel reads from the firmware file (`ddk_build`, `build_options`) are
 reported in every build, but only once the firmware is loaded, which happens at the first
-job. Before that, the firmware query gives zeros. The query on a fresh boot of the laptop
-shows this, in a debug build with the file not yet read (E022):
+context creation (`sgxfive_ioctl_create_ctx` loads the firmware; no other ioctl does). Before
+that, the firmware query gives zeros. The query on a fresh boot of the laptop
+shows this, in a debug build with the file not yet read (E022, which sees only that the
+firmware is running by the first completed job):
 `ddk 0.0.0 build 0 options 0x0`, `fw_state 0`.
 
 Open: whether to send GETMISCINFO after every boot. On the laptop the answer came within

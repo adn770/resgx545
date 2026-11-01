@@ -34,6 +34,7 @@
 ## render
 
 - `Q014` (phase 6): why does render command word 23 bit 27 (cmd:23^=0x8000000) fault with the same 3936 pixels differing in both runs, while bit 28 gives 4000 and then 3968? (E029)
+- `Q029` (phase 9): does clearing bit 8 of the render context's isp_ipfmisc word skip untouched tiles above 64x64, and what do the EDM's render target and render context cleanups wait for? (E148, E023)
 
 ## texture
 
@@ -47,6 +48,7 @@
 - `Q003` (phase 4): why does a transfer render that faults on a read-only page raise no BIF-fault interrupt the host sees, and how does a host recover the EDM in place afterwards? (E021)
 - `Q004` (phase 4): what do a transfer context's flag bits 1 and 4 and a priority other than 0 do on the hardware? (E015)
 - `Q011` (phase 6): why do the plain and every-value copies differ in pixel count for xfer:0 bits 24 to 30 and =0, and xfer:7 bit 1? (E028)
+- `Q028` (phase 9): what does a faulting job leave wedged when the kernel does not recover, and which reset steps does the recovery need? (E024)
 
 ## usse
 

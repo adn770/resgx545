@@ -855,6 +855,11 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   `usse-predicates`, `usse-quad-lock`, `usse-quad-lock-followup`, `usse-repeat`, `usse-rlp`,
   `usse-sample-rate`, `usse-test-channels`, `usse-tests`, `usse-unorm8`, `usse-video-filters`,
   `usse-video-filters-followup`, `usse-video-ops`, `usse-write-masks`.*
+- `E148` Render jobs from userspace draw every pixel exactly on 13 target sizes from 64x64 to
+  256x256, up to sixteen tile rows and eight tile columns, with the library's render state (bit 8 of
+  the render context's isp_ipfmisc word set) and no BIF fault; what clearing that bit does above
+  64x64 and what the EDM's cleanups wait for are not shown by any run.
+  *render; HW; data: `render-target-sizes`, `render-client-jobs`.*
 
 ## By unit
 
@@ -889,7 +894,7 @@ Records: E006, E007, E008, E025, E026, E122.
 
 ### render
 
-Records: E023, E049, E050, E051, E052, E053.
+Records: E023, E049, E050, E051, E052, E053, E148.
 
 ### ta
 

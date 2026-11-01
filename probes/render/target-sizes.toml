@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# The first triangle on render targets from 64x64 to 256x256: tile rows past eight (targets
+# taller than 128 pixels), wider targets and both together, each on a render context sized for
+# its target, against the CPU reference. Faults show in the table's kernel.log.
+kind = "script"
+name = "render-target-sizes"
+script = "target-sizes.sh"
+needs = ["render"]

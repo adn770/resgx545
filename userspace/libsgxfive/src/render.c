@@ -340,10 +340,9 @@ static void render_cmd(struct drm_sgxfive_render_cmd *c, const struct sgxfive_tr
 	c->mte_multisamplectl = 0x88;
 	c->pixelbe = 0x80;
 	/*
-	 * 15 in bits 19:16, as the triangle's hardware runs set it, and bit 8,
-	 * process empty regions: without it
-	 * tiles no geometry touches are not rendered once the target is larger
-	 * than 64 x 64 (seen on hardware).
+	 * 15 in bits 19:16, as the triangle's hardware runs set it, and bit 8:
+	 * with it, targets up to 256 x 256 render exactly (E148); what clearing
+	 * it does above 64 x 64 is open (Q029).
 	 */
 	c->isp_ipfmisc = 0x000f0100;
 	c->aa_mode_3d = 0x80000000;

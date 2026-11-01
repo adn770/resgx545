@@ -1,0 +1,10 @@
+title = "script table render/target-sizes"
+repo = "data"
+paths = ["render/target-sizes/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 4
+size = 8567
+sha256 = "aab8f8975d3e8b0d14fae4eb2a9e31da7672ecb552cae28d2941bd21cd98f5c1"
+recipe = "probes/render/target-sizes.toml"
+needs = ["render"]
