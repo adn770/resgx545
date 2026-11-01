@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-184 open: 165 hw (high 20, medium 76, low 69, unrated 0), 12 fw, 7 kernel.
+185 open: 166 hw (high 21, medium 76, low 69, unrated 0), 12 fw, 7 kernel.
 
 ## Work queue: hardware
 
@@ -58,6 +58,7 @@
 - `Q200` (phase 11, hw, medium): what is the ISP's float32 arithmetic for the depth plane (the stored depth is the exact plane at the pixel centre minus 0.39 of 2^-24 on average, bit-reproduced by none of the 18 variants of E606), and how large is its error as a function of the plane's gradient (E606, E072, E465, E731)
 - `Q201` (phase 11, hw, low): why does the position source (E437, E502: x + 0.375, y + 0.125 in mode 0 and every multisampling mode tried) differ from the point at which coordinate-set attributes are evaluated (the pixel centre, E606, for the one iteration setup used), and does an attribute iterated with the position's source read the same way (E606, E437, E502)
 - `Q202` (phase 11, hw, high): do the coverage rule (centre sample, vertices on the 1/256 grid, top-left ties) and the attribute and depth planes of E606 hold with perspective (w other than 1), under multisampling (the 2x and 4x sample points), with ISP word 0 bit 28 widening, for lines and points, with vertices well outside the target (a guard band) and on targets whose half-size is not a power of two (the clip coordinate is then inexact in float32) (E606, E214, E215, E224, E281, E502)
+- `Q205` (phase 12, hw, high): what is the arithmetic by which the ISP decides the coverage and the depth of a pixel for an arbitrary triangle, and the iterators' arithmetic for the values they interpolate: the precision of the edge functions, the rounding of the plane equation, the rule for a pixel centre exactly on an edge outside the sample-position case, and the ulp behaviour of the plane evaluation? (E023, E148, E174, E307, E048, E072, E214, E215, E542)
 - `Q260` (phase 11, hw, high): which rounding of a vertex coordinate to 1/256 pixel, and which other step of the ISP's setup, reproduces its coverage when a coordinate is negative with a fraction finer than 1/256 (E683: half up is wrong in 288 pixels of 149 cases, half away from zero in 101 pixels of 67 cases, no variant of eight is exact, also when applied to the vertex as the float32 clip words give it), and does the sign act on the coordinate or on a tile-relative offset (E683, E607, E606, E680, E681)
 - `Q261` (phase 11, hw, medium): how large is the error band of the ISP's edge evaluation (E684: 16 pixels in 14 of 208 cases within 5.6e-4 pixel of an edge line) as a function of the far vertex's distance and the edge's length, and where does the vertex format saturate, wrap or cull beyond 2^21 pixels (the 24.8 range of 2^23 pixels, Q199) (E684, E682)
 - `Q262` (phase 11, hw, medium): do the depth and iteration tolerances of E606 (3 U for depth at a gradient below 0.03, 4 U for the iterated clip z, in units of 2^-23) hold on the targets of E680 (up to 4096 x 4096, half-sizes not powers of two) and for a depth plane through vertices outside the target (E606, E607, E680, E684)

@@ -1,0 +1,9 @@
+title = "unit vectors of the pipeline simulator, 12.0: zls-store, te-region, ta-object, isp-tile"
+repo = "data"
+paths = ["unit-vectors/isp/", "unit-vectors/ta/", "unit-vectors/zls/"]
+method = "tools/usse-asm/unit_vectors.py on the landed datasets zls-store-layout-dumps, ta-tri-region, ta-object-format and isp-msaa-ident (offline, no new run): the dumps by path and sha256, the expected values from the datasets' own recompute output"
+date = "2026-11-09"
+files = 4
+size = 207146
+sha256 = "235f996bb55dfb50eb33f30eb962f8eca0182ab1eb2ab5e5bf37038e9479b5cd"
+recipe = "tools/usse-asm/unit_vectors.py"

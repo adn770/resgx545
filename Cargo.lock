@@ -121,6 +121,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "sgx-pipe"
+version = "0.1.0"
+dependencies = [
+ "sgx-sim",
+]
+
+[[package]]
 name = "sgx-sim"
 version = "0.1.0"
 dependencies = [

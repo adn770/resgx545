@@ -173,6 +173,13 @@ What it will need, with the records it starts from:
 Exit: the simulator reproduces the first triangle pixel for pixel (E023) and the readbacks of the
 probe and sweep tables that the units above cover.
 
+The simulator is built in sub-phases 12.0 and on, as the crate `crates/sgx-pipe` over `sgx-sim`
+(which stays as it is): a module for each unit above, each refusing, by the open questions that
+block it, what no record measured, and a replay that holds it to unit vectors and scene vectors in
+the data repository (`doc/specs/vectors.md`). A result by a rule a record states as a fit is
+reported fitted, never matched. The paragraphs at the end of this document say what each
+sub-phase did.
+
 ## 4. Open work by unit
 
 ### 4.1 Open questions
@@ -812,3 +819,19 @@ are folded into Q163, Q197 and Q152, Q045 is split (Q277 for the firmware) and Q
 Q278; no question is answered. The roadmap counts the questions from the built
 `doc/open_questions.md`: 184 open (Q001 to Q288), 165 hw (high 20, medium 76, low 69), 12 fw and 7
 kernel; isp 20, usse 39, texture 19, pds 17, edm 15, ta 15, dpm 12, vdm 11.
+
+Sub-phase 12.0 is the first of the pipeline simulator (section 3), a records and tooling sub-phase
+with no laptop run and no kernel change: the crate `crates/sgx-pipe` beside `sgx-sim`, with a module
+for each fixed-function unit that refuses, naming its open questions, the formats of unit vectors
+and scene vectors (`doc/specs/vectors.md` sections 5 and 6, in directories of the data repository
+outside `vectors/`) and the first four unit vectors, from rules that records state as fits: the ZLS
+store address (E465, E615: 3415552 dwords, 3225000 at the rule's address and counted fitted, the
+dwords past the target and in the overflowed jobs' tiles refused as Q122 and Q107), the TA's region
+test (E542, E616: 14656 pairs, 2414 of them by presence only), the object layout (E541, E617: 56
+layouts, the three failed jobs refused as Q165, not predicted) and the multisample window rule
+(E503, E618: 786 tiles, 13 refused as Q141). Every verdict is fitted, none matched. The inventory of
+the recorded data (E619, `doc/specs/pipe-inventory.md`): 2464 triangle-host vectors, 65 with a
+render dump, and 197 dump directories sorted by what each waits for. The simulator `sgx-sim` is
+unchanged. Q205 (the arithmetic of coverage, depth and iteration for an arbitrary triangle) is new.
+The roadmap counts the questions from the built `doc/open_questions.md`: 185 open (Q001 to Q288),
+166 hw (high 21, medium 76, low 69), 12 fw and 7 kernel; isp 21.

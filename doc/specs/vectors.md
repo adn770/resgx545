@@ -212,3 +212,183 @@ replay` says whether the simulator stops on a phas request that hangs (E519). Th
 pass, unsupported and mismatch counts; a mismatch fails it. `doc/isa/sim-coverage.json` records,
 per form, which probes have a passing vector
 (`RESGX545_WRITE_COVERAGE=1 cargo test --release -p sgx-sim` writes it).
+
+## 5. Unit vectors
+
+The pipeline simulator (`crates/sgx-pipe`, phase 12) holds each fixed-function unit to the
+hardware on its own. A unit vector is a vector of the same container (`"format":
+"sgx545-vectors"`, version 1, section 3) whose `init.task` names a unit kind and whose result is
+`expect` (not `readback`). It lives in the data repository under `unit-vectors/<unit>/<feature>/
+<probe>.vec.json`, outside `vectors/`: the instruction replay walks `vectors/` and would list
+these as excluded, which would change its output (`sgx_sim::vectors::probe_files`). The
+directory is the constant `sgx_pipe::data::UNIT_DIR`, so it is one line to move; `$RESGX545_UNIT_
+VECTORS` replays a set that is not landed yet.
+
+| kind | unit | inputs (`init`) | result (`expect`) | state |
+|---|---|---|---|---|
+| `zls-store` | zls | size, G (ZLSCTL 11:3), two ramp dumps | counts | built |
+| `te-region` | ta | size, the primitives' pixel vertices | tiles listed, counts | built |
+| `ta-object` | ta | N, the size word, the format word | stored, masks, outcome | built |
+| `isp-tile` | isp | MSAA mode, CR_TE_AA, two position dumps | counts | built |
+| `zls-load` | zls | buffer, control | depth and stencil per pixel | stub |
+| `pbe-emit` | pbe | EMIT words, sideband, a tile's colours | stored dwords | stub |
+| `vdm-stream` | vdm | the stream words | tasks, state, hang or cull | stub |
+| `bif-walk` | bif | directories, lists, banks, an access | address or fault fields | stub |
+
+A stub kind replays as `unsupported` naming the unit's open questions (`<unit>::OPEN`); a kind
+the crate does not know is an error, never a pass.
+
+**`expect`.** One of:
+
+- counts: `matched` (items the rule must reproduce: dwords, (primitive, tile) pairs, tiles,
+  objects), `refused` (`{"Q107": n}`: items the rule must refuse, by open question) and
+  kind-specific keys (`stored`, `back_ok`, `listed`, `tiles`, `iterated`, `masks`). The
+  model counts its own items; every item the model gets wrong is a mismatch.
+- `"outcome": "hang"` or `"fault"` (with `addr` where the record has it): the model must predict
+  it, from a record, for that input. A model that computes a result where the hardware hung, or
+  predicts a hang that did not happen, is a mismatch.
+- `"refuse": ["Q165", ...]` beside either: the input is one a question keeps open, and the model
+  must refuse it naming exactly those questions (a subset of them is a refusal the vector did not
+  expect: `unsupported`).
+- `"outcome": "either"` with `"either": [<expect>, <expect>]`: the hardware's result is not
+  repeatable (D5: Q163 hung twice in one script and completed in another; Q026; E536's moving
+  predicates). The vector lists the results measured; the model passes if it gives one of them
+  (`either`, counted apart), and the result is never averaged. Each alternative is any form above.
+
+**`provenance`.** `records`, `questions`, `table` and `case` as in section 3, `options`,
+`rule_status` (the rule's status, see below), and `rebuilt` (false for a unit vector made from
+a dump).
+
+**Verdicts.** A replay gives one of: `matched`, `either`, `predicted hang`, `predicted fault`,
+`near` (equal within a recorded bound), `fitted`, `refused` (as the vector expects),
+`unsupported`, `mismatch`. The gate is zero mismatches (D5); there is no percentage gate.
+Refusals are counted by question and predicted hangs and faults count as matches, as the
+instruction replay counts the 42 of 44 hung `phas` jobs it predicts.
+
+**Fitted rules (D6).** A rule is `fitted` only where its record states the fit, and its status is
+set in one place, `sgx_pipe::rules`. A result by a fitted rule is `fitted` and is never reported
+`matched`, and neither is any result built on it: `Verdict::combine` of a matched and a fitted
+result is fitted, and a scene whose model used a fitted rule is fitted though every pixel is
+exact (`SceneResult.fitted`). A fitted result that differs from the hardware is a mismatch. The
+four rules of 12.0 are all marked fitted, because their records state a post hoc fit: E465
+(fitted on the 1024 x 768 runs and the small targets), E503 (read post hoc from the 64 x 64
+runs), E542 (H70-T1, fitted post hoc to E180's 472 regions), E541 (H70-F2, written from the
+first run's 42 held-out jobs). Each was then checked on data it was not fitted to, which the
+counts below show; flipping a rule to measured is a record decision, not a code one.
+
+**The four built** (`tools/usse-asm/unit_vectors.py`: 18 + 35 + 59 + 48 = 160 vectors). The
+expected values are what the datasets' own recompute output and dumps say, never
+what the model computes.
+
+- `zls-store` (E465, E489): 18 vectors, one per case of `zls/store-layout-dumps`: the x-ramp
+  and y-ramp depth dumps (digest of the gz) and the counts of its `recompute.txt`: 3415552 dwords
+  stored, 3279132 at the rule's address (3225000 for pixels of the target, 54132 for pixels past
+  it, refused Q122), 7780 background depth (1124 at pixels past the target, Q122; 6656 whole tiles
+  of the two overflowed 4096 x 4096 jobs, Q107), 128640 zero (the same jobs, Q107), 0 elsewhere,
+  counted by a classification written in `unit_vectors.py` from the dumps; the slot
+  sets equal the rule's and, where tiles do not overlap, 1098340 pixels walk to their address.
+- `te-region` (E542): 35 jobs (27 `ta-tri-boundary`, 8 `ta-tri-corner`), 14656 (primitive, tile)
+  pairs. The primitives' pixel vertices are the recompute's geometry (the NDC constants and the
+  c / 16 pixel shift of copy c), an assumption the record states and not read from the packed
+  vertices; `expect.listed` is the tiles of the first control stream of each region (`"any"`
+  for the forms 0x80, 0x90 and 0x98 that name no primitive of the object).
+- `ta-object` (E541): 59 jobs of `ta/object-format` (47) and its second run (12): 56 completed
+  with the stored dwords, the format word's bits 31:16 and 15:8 and the four masks; 3 did not
+  (N = 2 faulted, N = 3 and 8 hung): the model predicts these three inputs as recorded and
+  nothing else about the `alt` pattern (the same settings completed at N = 4, 5, 6, 9 and 11:
+  Q165).
+- `isp-tile` (E503): 48 runs of `isp/msaa-ident`: the two position dumps and the counts of
+  `an_ident_rule.txt`: 786 tiles, all equal to the window rule, 773 decodable in all 512 pixels
+  (matched) and 13 with background pixels (refused, Q141).
+
+## 6. Scene vectors
+
+A scene vector is a whole job as the hardware ran it, for the pipeline simulator's `Edm`
+(`sgx_pipe::edm`). `vectors/scenes` of the plan is `scene-vectors/<unit>/<feature>/<probe>.
+scene.json` here, for the reason of section 5 (`sgx_pipe::data::SCENE_DIR`).
+
+### 6.1 Format
+
+```
+{ "format": "sgx545-scene-vectors", "version": 1, "run": {...}, "scenes": [ scene, ... ] }
+scene = { "id", "kind": "render" | "transfer",
+  "target": { "w", "h", "format", "base" },
+  "regs":   { "0x0420": "0x...", ... },     # what the kick writes, byte offsets
+  "regs_log": [["0x0420", "0x..."], ...],   # optional: the writes in order, where order matters
+  "memory": [ { "base", "dwords": [...] | "file", "sha256", "source": "recorded" | "rebuilt" } ],
+  "vm":     { "lists", "banks", "tables" }, # optional; flat when absent, until 12.5
+  "expect": { "image", "buffers", "regs", "counters", "outcome", "refuse", "either" },
+  "provenance": { "probe", "case", "table", "options", "raw", "raw_sha256", "records",
+                  "questions", "rebuilt" } }
+```
+
+A `file` is relative to the data repository and checked against its `sha256`. A segment with
+neither `dwords` nor `file` is an error. `source` is `recorded` when the run itself captured the
+words and `rebuilt` otherwise (6.3).
+
+### 6.2 `expect`
+
+- `image`: `{"pixels": [...]}` (every pixel, raster order), `{"mixed": [[value, count], ...]}`,
+  or `{"o0": value}` (every pixel equal); `"near": n` allows n on each 8-bit channel and a
+  result that needed it is `near`.
+- `buffers`: `{name: {"sparse": {"0xaddr": "0xvalue"}} | {"dwords": [...]}}` for the parameter
+  buffer (`param`), TA data (`tadata`), depth and stencil, compared by byte address.
+- `regs`: the registers the host reads back (status, DPM); `counters`: the visibility counters.
+- `outcome`, `refuse` and `either` as in section 5, at the scene level; an alternative of an
+  `either` may carry an image of its own. The comparer is `sgx_pipe::scene::compare`; it shares
+  the verdicts of section 5, so a scene resting on a fitted rule is `fitted`.
+
+### 6.3 Where the words come from (D4)
+
+1. **Rebuilt offline.** `sgxfive-test --emit-scene FILE` (a new option, no kernel change, no
+   laptop) runs the builder that made a recorded scene against the mock backend and writes the
+   words a real run would have submitted: the render details, TA command, state blocks, VDM
+   stream, programs and PDS words from the run's `bins/`, the buffers. The segments are tagged
+   `rebuilt`: a table may have changed after its run. Where the run kept a render dump (the 65
+   triangle-host vectors with `--dump-render`) the rebuilt parameter-buffer words are compared with
+   the dump and a scene that differs is excluded and listed. The others are rebuilt unchecked and
+   say so in `provenance.rebuilt`.
+2. **Recorded in every new run.** Every new run records the job's inputs directly, so no new data
+   needs a rebuild. Format to build the tool option against (`--record-scene DIR`, work to follow):
+   - one `<case>.scene.json` per submitted job, written at submission before the kick, its
+     `expect` filled in when the job completes, hangs or faults;
+   - `regs`: the register words the kick writes; `regs_log` the host's writes in order;
+   - `memory`: one segment for every buffer object of the context (the builder's own allocation
+     list, so nothing is left out by choice): the programs, PDS words, state blocks, VDM stream,
+     parameter buffer descriptor, textures, the background object, ZLS and target buffers, each
+     with `"source": "recorded"`, as `dwords` up to 4 KiB and a `file` of raw little-endian
+     dwords with its sha256 beyond;
+   - `vm`: the page directory and tables the kernel built for the context, as segments of their
+     own, when 12.5 needs them;
+   - `expect`: the readback image, the dumps of the parameter buffer and TA data
+     (`buffers.param`, `buffers.tadata`), the status registers, and the failure text as
+     `outcome` (`hang`, `fault` with the address from the log);
+   - a run repeated n times with different results writes one scene whose `expect` is `either`
+     of the distinct results (D5), with the count of each in `provenance.runs`.
+   The tool's allocation list is the completeness check: a scene whose `memory` does not cover
+   every segment the kick's structures point to is refused by the loader (`Mem` refuses an access
+   to an unmapped address, it does not return zero).
+
+### 6.4 What a replay does
+
+`sgx_pipe::job::run` loads `memory` into the device address space (`mem`, flat until 12.5),
+applies `regs` through the register file (`regs`: an unlisted register or a value wider than its
+measured width refuses), and runs the units in the order of the data dependencies. In 12.0 no
+unit is modelled, so every scene replays as `unsupported`, naming the open questions of the units
+it would pass (`job::blockers`). A model that returns a result must say which fitted rules it
+used.
+
+### 6.5 Not yet (scope of the format)
+
+- `expect.image` and `expect.buffers` have inline forms only; a `file` plus `sha256` form comes
+  with the first scene whose image does not fit inline (12.4 or 12.7).
+- A scene is one job. Multi-kick jobs (TA then 3D, partial renders, parameter-buffer overflow:
+  Q038, Q107) need an ordered list of kicks and the memory between them; out of scope until 12.7.
+- `vm` is refused by the loader (a scene with one would run as flat memory); its shape (lists,
+  banks, tables) is specified in 12.5. Unknown keys of a scene or its target are errors.
+- Memory segments carry no role (program, pds, state, vdm, pb, tadata, zls, target, texture) yet;
+  the completeness check of 6.3 needs them, and `--record-scene` names them.
+- A `mixed` image compares value counts only (a permuted image passes): weaker evidence than
+  `pixels` or a hash.
+- An `either` lists two or more alternatives that each check something, and a scene or vector whose
+  `expect` compares nothing is a mismatch, not a match.

@@ -4237,6 +4237,54 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   misses at most 0.05% and a 1/256 snap more than 50 pixels) and PF3 failed: the vertex grid exists
   and is 1/256.
   *isp; HW, infer; data: `isp-arith-1138`.*
+- `E615` The address rule of E465 held to the 18 stored-depth dump pairs of E489 by a rule function
+  written for the pipeline simulator (sgx-pipe zls::store_dword, in-tile order y0 x0 y1 x1 y2 x2 y3
+  x3 x4, 512 * (ty * (G + 1) + tx)), replayed as 18 unit vectors: of 3415552 dwords stored 3279132
+  are at the rule's address (3225000 for pixels of the target, which the replay counts fitted, and
+  54132 for pixels past it, refused as Q122), 7780 are background depth (1124 at pixels past the
+  target, refused as Q122, and 6656 in whole tiles of the two 4096 x 4096 jobs, refused as Q107) and
+  128640 are zero in both ramps (the same two jobs, refused as Q107), none is at another address (0
+  mismatches), the slots touched equal the rule's in 18 of 18 and 1098340 pixels walk to their own
+  ramp values at their rule address in the four cases whose tiles do not overlap; every count equals
+  recompute.txt's line of the case.
+  *zls; HW, infer; data: `zls-store-layout-dumps`, `unit-vectors-12-0`.*
+- `E616` The region test of E542 (a 16 x 16 tile lists a primitive iff the bounding box has max x
+  and max y at or beyond the tile's low sides and min x and min y below its high sides, and no edge
+  line has all four tile corners strictly outside it) held to the 35 jobs of ta-tri-boundary and
+  ta-tri-corner by a rule function written for the pipeline simulator (sgx-pipe ta::tile_lists):
+  14656 (primitive, tile) pairs (12242 checked per primitive, 2414 by presence only), 0 mismatches,
+  replayed as 35 unit vectors whose listed tiles are those of each job's first control stream per
+  region, as E542 counts them.
+  *ta; HW, infer; data: `ta-tri-region`, `unit-vectors-12-0`.*
+- `E617` The object layout of E541 (a vertex holds 1 + N dwords less, for each coordinate set whose
+  format bit is set, the components its size code names minus half of them rounded up, with 1, 2, 3,
+  3 and 4 components for the codes 1 to 5, the format word 0x0004 in bits 31:16 and 1 + N in bits
+  15:8, and the four set masks) held to the 59 jobs of ta-object-format and ta-object-format2 by a
+  rule function written for the pipeline simulator (sgx-pipe ta::object_layout): the stored dwords,
+  the format word and the masks of 56 completed jobs agree in 56 of 56, and the three jobs that did
+  not complete (N = 2 faulted, N = 3 and N = 8 hung) are refused as Q165 with the record named,
+  recalled from E541 and not predicted (the rule says nothing of why they failed), 0 mismatches; a
+  set of code 0 with its format bit set takes no component (4 of 4 completed jobs of the alt
+  pattern).
+  *ta; HW, infer; data: `ta-object-format`, `unit-vectors-12-0`.*
+- `E618` The window rule of E503 (tile (tx, ty) of a multisampled render holds the source pixels x =
+  32 tx + 16 b31 + a div sx, y = 16 ty + 8 b30 + b div sy, (sx, sy) = (1, 1), (2, 1), (2, 2) for the
+  modes 0 to 2, b30 counting in mode 2 only) held to the 96 position dumps of the 48 runs of
+  isp/msaa-ident by a rule function written for the pipeline simulator (sgx-pipe isp::msaa_source):
+  of 786 tiles every one equals the rule on every decodable pixel (0 mismatches), 773 are decodable
+  in all 512 pixels (matched) and 13 hold background pixels (refused as Q141), replayed as 48 unit
+  vectors.
+  *isp; HW, infer; data: `isp-msaa-ident`, `unit-vectors-12-0`.*
+- `E619` Of the 2464 triangle-host vectors (717 files) of the data repository 2232 carry an image by
+  pixels, 17 by value counts, 117 hung, 19 faulted and 24 wrote no pixel, and only 65 kept a render
+  dump (`--dump-render`) beside them to check a rebuilt scene against, so the plan's "about 700
+  dumps" are dump directories of other tables; the 197 directories named dumps are classified by
+  unit and by what is missing (4 with unit vectors built in 12.0, 96 ready for one, 84 blocked by an
+  open question, 12 usable only as a whole job, 1 already vectors in sgx-sim), and the MTE clipping
+  and depth-range datasets establish a clip volume of z = -w to w, the w clamp word and no x or y
+  clipping rule.
+  *platform; HW, infer; data: `vectors-usse`, `mte-clipping`, `mte-depth-range`,
+  `mte-depth-range2`.*
 - `E625` A one-triangle scene overflows the parameter buffer exactly when the first abort's page
   status P - 0x22 is below the scene's whole-buffer page need, measured at the boundary as 19 pages
   at 1024x768 and 287 at 4096x4096 (E310's 0x13 and 0x11f): 1024x768 overflows at 0x33 and 0x34
@@ -4654,7 +4702,7 @@ Records: E064, E065, E066, E067, E068, E069, E070, E071, E072, E073, E074, E210,
 E215, E216, E217, E218, E219, E220, E222, E224, E225, E226, E227, E228, E229, E230, E209, E231,
 E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E290, E291, E330,
 E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E508, E510, E590,
-E606, E607, E680, E681, E682, E683, E684, E727, E728, E731.
+E606, E607, E618, E680, E681, E682, E683, E684, E727, E728, E731.
 
 ### mte
 
@@ -4676,7 +4724,7 @@ E395, E396, E400, E420, E421, E428, E430, E436, E437, E454, E459, E460, E709.
 ### platform
 
 Records: E006, E007, E008, E025, E026, E122, E150, E149, E246, E258, E357, E359, E365, E401, E403,
-E404, E405, E434, E445, E547, E548.
+E404, E405, E434, E445, E547, E548, E619.
 
 ### render
 
@@ -4688,7 +4736,7 @@ E448, E449, E451, E458, E462, E732.
 
 Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180, E181, E247, E257,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
-E511, E541, E542, E543, E544, E729.
+E511, E541, E542, E543, E544, E616, E617, E729.
 
 ### texture
 
@@ -4723,4 +4771,5 @@ E413, E414, E427, E440, E545, E546, E700, E701, E702, E703.
 
 ### zls
 
-Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467, E489, E490, E628, E629, E730.
+Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467, E489, E490, E615, E628, E629,
+E730.
