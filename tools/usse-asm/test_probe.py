@@ -596,3 +596,132 @@ def test_a_pds_probe_whose_cases_differ_in_data_size_is_refused(tmp_path):
     same = probe.Probe(name="pds-same", question="", source="pad.s", params={}, inputs=["PAD"],
                        cases=[[".word 1"], [".word 2"]], hypotheses={}, isa="pds")
     assert probe.pds_data(same, tmp_path) == 5
+
+
+def test_parse_reads_the_more_changed_line():
+    # the tool shows at most 32 changed scratch dwords and counts the rest; Obs.more is that
+    # count, and a table may state it ("scratch_more")
+    obs = probe.parse("probe a__0: scratch at 0x3e003000 (64 KiB)\n"
+                      "probe a__0: o0 0x00000001 (2048 of 2048)\n"
+                      + "".join(f"probe a__0: scratch +0x{4 * i:03x} 0x{i:08x}\n"
+                                for i in range(32))
+                      + "probe a__0: scratch 2016 more changed\n"
+                      "probe a__1: scratch at 0x3e003000 (64 KiB)\n"
+                      "probe a__1: o0 0x00000001 (2048 of 2048)\n")
+    assert obs["a__0"].more == 2016 and obs["a__1"].more == 0
+    assert "2016 more changed" in probe.describe(obs["a__0"])
+    assert "more changed" not in probe.describe(obs["a__1"])
+    exact = {"scratch": {hex(4 * i): i for i in range(32)}}
+    assert probe.matches(exact, obs["a__0"])                       # the old reading: passes
+    assert probe.matches({**exact, "scratch_more": 2016}, obs["a__0"])
+    assert not probe.matches({**exact, "scratch_more": 0}, obs["a__0"])
+    assert not probe.matches({**exact, "scratch_more": 0}, obs["a__0"])
+    assert probe.matches({"scratch_more": 0}, obs["a__1"])
+
+
+def test_parse_forgets_a_failure_of_an_earlier_run_of_the_same_label():
+    # a label printed twice in one output is two runs: the second does not keep the first's
+    # failure, o0, scratch or rows
+    obs = probe.parse("probe a__0: scratch at 0x3e003000 (64 KiB)\n"
+                      "probe a__0: failed: job faulted, context lost (Input/output error)\n"
+                      "probe a__0: scratch +0x008 0x7e570002\n"
+                      "probe a__0: scratch at 0x3e003000 (64 KiB)\n"
+                      "probe a__0: o0 0x0000000a (2048 of 2048)\n")
+    assert obs["a__0"] == probe.Obs(o0=10)
+
+
+def test_a_failed_job_is_not_a_tool_error(tmp_path, monkeypatch):
+    # sgxfive-test exits 3 when a job failed: run_local keeps its output and goes on; any
+    # other status is still a tool error
+    calls = []
+
+    def fake_run(cmd, **kw):
+        calls.append(cmd)
+        rc = int(os.environ.get("FAKE_RC", "3"))
+        return subprocess.CompletedProcess(cmd, rc, "probe x__0: failed: job hung\n", "")
+
+    (tmp_path / "t.s").write_text(f"; {SPDX}\nphas #0, #0, pixel, end, parallel\n"
+                                  "mov.skipinv.end o0, #{A}\n")
+    p = probe.Probe(name="x", question="q", source="t.s", params={}, inputs=["A"], cases=[[1]],
+                    hypotheses={})
+    real = subprocess.run
+    monkeypatch.setattr(probe.subprocess, "run",
+                        lambda cmd, **kw: fake_run(cmd, **kw) if cmd[0] == "toolx" else
+                        real(cmd, **kw))
+    out = probe.run_local([p], ["toolx"], tmp_path / "w", src_dir=tmp_path)
+    assert "failed: job hung" in out
+    monkeypatch.setenv("FAKE_RC", "2")
+    with pytest.raises(probe.ProbeError):
+        probe.run_local([p], ["toolx"], tmp_path / "w", src_dir=tmp_path)
+
+
+def test_the_remote_loop_goes_on_after_a_failed_job(tmp_path, monkeypatch):
+    # the ssh loop stopped at the first nonzero status ("|| exit 1"): with exit 3 for a failed
+    # job it would stop the run at the first hung job
+    sent = []
+
+    def fake_run(cmd, **kw):
+        sent.append(cmd)
+        return subprocess.CompletedProcess(cmd, 0, "", "")
+
+    (tmp_path / "t.s").write_text(f"; {SPDX}\nphas #0, #0, pixel, end, parallel\n"
+                                  "mov.skipinv.end o0, #{A}\n")
+    p = probe.Probe(name="x", question="q", source="t.s", params={}, inputs=["A"],
+                    cases=[[1], [2]], hypotheses={})
+    monkeypatch.setenv("SGX_TARGET_HOST", "u@h")
+    monkeypatch.setattr(probe.subprocess, "run", fake_run)
+    probe.run_remote([p], tmp_path / "w", src_dir=tmp_path)
+    loop = [c[-1] for c in sent if c[0] == "ssh" and "for f in" in c[-1]]
+    assert len(loop) == 1
+    assert "$f || exit 1" not in loop[0] and "$f || [ $? -eq 3 ] || exit 1" in loop[0], loop[0]
+
+
+def test_the_remote_loop_runs_a_command_between_jobs(tmp_path, monkeypatch):
+    # SGX_PROBE_BETWEEN: a shell command the laptop runs before every case (a debugfs reset, so
+    # that a job starts on a reset GPU); unset, the loop is as before
+    sent = []
+
+    def fake_run(cmd, **kw):
+        sent.append(cmd)
+        return subprocess.CompletedProcess(cmd, 0, "", "")
+
+    (tmp_path / "t.s").write_text(f"; {SPDX}\nphas #0, #0, pixel, end, parallel\n"
+                                  "mov.skipinv.end o0, #{A}\n")
+    p = probe.Probe(name="x", question="q", source="t.s", params={}, inputs=["A"],
+                    cases=[[1], [2]], hypotheses={})
+    monkeypatch.setenv("SGX_TARGET_HOST", "u@h")
+    monkeypatch.setattr(probe.subprocess, "run", fake_run)
+    probe.run_remote([p], tmp_path / "w", src_dir=tmp_path)
+    plain = [c[-1] for c in sent if c[0] == "ssh" and "for f in" in c[-1]][0]
+    assert "BETWEEN" not in plain and "sgx/reset" not in plain
+    sent.clear()
+    monkeypatch.setenv("SGX_PROBE_BETWEEN", "echo 1 | sudo -n tee /x/sgx/reset; sleep 3")
+    probe.run_remote([p], tmp_path / "w", src_dir=tmp_path)
+    loop = [c[-1] for c in sent if c[0] == "ssh" and "for f in" in c[-1]][0]
+    assert "do sh -ec 'echo 1 | sudo -n tee /x/sgx/reset; sleep 3' || " in loop, loop
+
+
+def test_a_failing_between_command_fails_the_run_visibly(tmp_path, monkeypatch):
+    # SGX_PROBE_BETWEEN is the reset between jobs: if it fails (a missing debugfs path) the jobs
+    # would run on an unreset GPU while the record says they were reset, so the run must stop
+    # and say which command failed. The loop is run by a real shell here, ssh being a local sh.
+    real = subprocess.run
+
+    def fake_run(cmd, **kw):
+        if cmd[0] == "ssh" and "for f in" in cmd[-1]:
+            return real(["sh", "-c", cmd[-1]], **kw)
+        return subprocess.CompletedProcess(cmd, 0, "", "")
+
+    (tmp_path / "t.s").write_text(f"; {SPDX}\nphas #0, #0, pixel, end, parallel\n"
+                                  "mov.skipinv.end o0, #{A}\n")
+    p = probe.Probe(name="x", question="q", source="t.s", params={}, inputs=["A"],
+                    cases=[[1], [2]], hypotheses={})
+    monkeypatch.setenv("SGX_TARGET_HOST", "u@h")
+    monkeypatch.setenv("SGX_PROBE_COUNTERS", "0")
+    monkeypatch.setenv("SGX_PROBE_TOOL", "true")
+    monkeypatch.setattr(probe.subprocess, "run", fake_run)
+    monkeypatch.setenv("SGX_PROBE_BETWEEN", "true; true")
+    probe.run_remote([p], tmp_path / "w", src_dir=tmp_path)
+    monkeypatch.setenv("SGX_PROBE_BETWEEN", "false; true")
+    with pytest.raises(probe.ProbeError, match="SGX_PROBE_BETWEEN"):
+        probe.run_remote([p], tmp_path / "w", src_dir=tmp_path)

@@ -19,6 +19,7 @@ hypothesis that predicts every case is consistent; one consistent hypothesis set
     probe.py eval RAW [NAME...]            report on a saved run (RAW: its output)
 
 The laptop comes from SGX_TARGET_HOST and SGX_TARGET_SSH_OPTS, or tools/bringup/local.env;
+SGX_PROBE_BETWEEN is a shell command the laptop runs before every case (a reset between jobs);
 `sgxfive-test` must be in its home directory (SGX_PROBE_TOOL overrides the path). Every case
 runs inside regtimeline (SGX_PROBE_TIMELINE, default ./regtimeline) over the visibility
 counters, after a "probe-case NAME" line, unless SGX_PROBE_COUNTERS=0; the report names the
@@ -136,12 +137,14 @@ class Probe:
 @dataclasses.dataclass(frozen=True)
 class Obs:
     """What one fill gave: o0 (None unless uniform), the mixed values, the failure, the
-    changed scratch dwords (offset, value), every pixel in raster order (with --pixels)."""
+    changed scratch dwords (offset, value), every pixel in raster order (with --pixels), and
+    the number of further changed dwords the tool did not show ("scratch N more changed")."""
     o0: int | None = None
     mixed: tuple = ()
     failed: str | None = None
     scratch: tuple = ()
     pixels: tuple | None = None
+    more: int = 0           # changed scratch dwords the tool counted and did not show (32 shown)
 
 
 @dataclasses.dataclass
@@ -436,6 +439,8 @@ def pds_data(p: Probe, src_dir: pathlib.Path = PROBES_DIR) -> int:
 
 _LINE = re.compile(r"^probe (\S+): (.*)$")
 _ROW = re.compile(r"^row (\d+): ([0-9a-f ]+)$")
+_MORE = re.compile(r"^scratch (\d+) more changed$")
+JOB_FAILED = 3          # sgxfive-test probe's exit status when a job failed: the output is whole
 
 
 def parse(text: str) -> dict:
@@ -446,8 +451,10 @@ def parse(text: str) -> dict:
         if not m:
             continue
         label, rest = m.groups()
+        if rest.startswith("scratch at ") and label in acc:
+            del acc[label]      # a probe's run starts with this line: a repeat is a new run
         o = acc.setdefault(label, {"o0": None, "mixed": (), "failed": None, "scratch": [],
-                                   "rows": {}})
+                                   "rows": {}, "more": 0})
         row = _ROW.match(rest)
         if row:
             o["rows"][int(row.group(1))] = tuple(int(v, 16) for v in row.group(2).split())
@@ -458,6 +465,8 @@ def parse(text: str) -> dict:
                                re.findall(r"(0x[0-9a-f]+) x(\d+)", rest))
         elif rest.startswith("o0 "):
             o["o0"] = int(rest.split()[1], 16)
+        elif _MORE.match(rest):
+            o["more"] = int(_MORE.match(rest).group(1))
         elif rest.startswith("scratch +"):
             off, val = rest[len("scratch +"):].split()
             o["scratch"].append((int(off, 16), int(val, 16)))
@@ -467,7 +476,7 @@ def parse(text: str) -> dict:
         return tuple(x for y in sorted(rows) for x in rows[y])
 
     return {k: Obs(o0=v["o0"], mixed=v["mixed"], failed=v["failed"],
-                   scratch=tuple(v["scratch"]), pixels=pixels(v["rows"]))
+                   scratch=tuple(v["scratch"]), pixels=pixels(v["rows"]), more=v["more"])
             for k, v in acc.items()}
 
 
@@ -507,7 +516,9 @@ def matches(expect, obs: Obs) -> bool:
     else), "near" (o0 within the tolerance its "ulp"/"abs" give), "most" (the value of at
     least 90% of the pixels), "pixels" (every pixel, in raster order; needs the probe's pixels
     flag), "quad" (every pixel, as quad_pixels gives it), a "scratch" ({offset: value},
-    the exact set of changes) and/or "dwords" (the list form). A table with fail = true wants
+    the exact set of the changes shown: the tool shows 32 and counts the rest), "scratch_more"
+    (the number of changed dwords past those shown; a table that states "scratch" with 32
+    entries should state it too) and/or "dwords" (the list form). A table with fail = true wants
     a job that failed, with only its "dwords" and "scratch" checked: what ran before the
     failure stored there."""
     if expect == "fail":
@@ -547,6 +558,8 @@ def matches(expect, obs: Obs) -> bool:
         want = {int(k, 0): v & 0xffffffff for k, v in expect["scratch"].items()}
         if dict(obs.scratch) != want:
             return False
+    if "scratch_more" in expect and obs.more != expect["scratch_more"]:
+        return False
     return True
 
 
@@ -559,6 +572,8 @@ def describe(obs: Obs) -> str:
         s = "mixed " + " ".join(f"0x{v:08x}x{c}" for v, c in obs.mixed)
     if obs.scratch:
         s += " scratch " + " ".join(f"+0x{o:03x}=0x{v:08x}" for o, v in obs.scratch)
+    if obs.more:
+        s += f" ({obs.more} more changed)"
     return s
 
 
@@ -715,7 +730,7 @@ def run_local(table: list, tool: list, work: pathlib.Path,
         for f in (f for p in ps for f in build(p, work, src_dir)):
             r = subprocess.run([*tool, "probe", *args, str(f)],
                                capture_output=True, text=True, timeout=600)
-            if r.returncode:
+            if r.returncode not in (0, JOB_FAILED):
                 raise ProbeError(f"sgxfive-test failed ({r.returncode}): {r.stderr}")
             out.append(r.stdout)
     return "".join(out)
@@ -763,6 +778,13 @@ def run_remote(table: list, work: pathlib.Path, src_dir: pathlib.Path = PROBES_D
         rt = os.environ.get("SGX_PROBE_TIMELINE", "./regtimeline")
         run = "sudo -n " + shlex.join(counters.wrap([tool, "probe"], rt))
         mark = 'echo "probe-case $(basename $f .bin)"; '
+    between = os.environ.get("SGX_PROBE_BETWEEN", "")
+    if between:
+        # e.g. a debugfs reset: every job starts on a reset GPU; a failing command stops the run
+        # (jobs on an unreset GPU would be recorded as reset)
+        # (sh -e in its own process: set -e is ignored inside the left side of an `||`)
+        q = shlex.quote(between)
+        mark = f"sh -ec {q} || {{ echo \"SGX_PROBE_BETWEEN failed: \"{q} >&2; exit 1; }}; " + mark
     dumps = any(p.dump_render for p in table)
     if (dumps or any(p.kpoke for p in table)) and not run.startswith("sudo "):
         run = "sudo -n " + run          # debugfs: the render dumps and kpoke are root's
@@ -780,7 +802,7 @@ def run_remote(table: list, work: pathlib.Path, src_dir: pathlib.Path = PROBES_D
         subprocess.run(["scp", "-q", *opts, *map(str, files), f"{host}:{rdir}/"], check=True)
         # one process per case (see run_local)
         r = subprocess.run(["ssh", *opts, host, f"for f in {names}; do {mark}"
-                            f"{run} {' '.join(args)} $f || exit 1; done"],
+                            f"{run} {' '.join(args)} $f || [ $? -eq {JOB_FAILED} ] || exit 1; done"],
                            capture_output=True, text=True, timeout=3600)
         if r.returncode:
             raise ProbeError(f"sgxfive-test failed ({r.returncode}): {r.stderr}")

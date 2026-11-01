@@ -39,3 +39,16 @@ cannot be fitted from our stack alone and needs the capture batch.
 
 **What it does not show.** Any 4x case at 320 x 160 and above; U2Q, HS and FX there; the closed
 driver's own words past 64 x 64.
+
+**Correction, 2026-11-09 (11.35).** The measurements above are unchanged. The sentence that 47
+pixels of the last printed row are missing from the rows is wrong. The tool message is inserted at
+the last 4096-byte boundary of the dump's stream (row 126, 127 and 94 in the three dumps), and the
+row is whole once the message line is deleted and the split token rejoined: 16384, 32768 and 18432
+pixel tokens in the three dumps, 7680 of them green and 512 background (the first tile, 32 x 16) in
+each. The first reading of the rows (the script that skips a token it cannot parse and takes a row
+from its own line) dropped 5, 134 and 101 pixels of that row, none of them green. The 47 that the
+tool counts as equal beyond the 7680 green pixels (7727, from its diff lines) are [infer] the tool's
+tolerance at the triangle's edges: it accepts the background colour where the reference says "edge",
+and in the 512 background pixels of the first tile the x = 0 column and the y = 0 row are 16 + 32 -
+1 = 47 pixels. So the dump's rows give 7680 green; the tool's count of 7727 equal is not a count of
+green. The first tile's 512 background pixels are the dump's.

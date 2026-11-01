@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-155 open: 139 hw (high 13, medium 68, low 58, unrated 0), 10 fw, 6 kernel.
+156 open: 140 hw (high 13, medium 68, low 59, unrated 0), 10 fw, 6 kernel.
 
 ## Work queue: hardware
 
@@ -172,6 +172,7 @@
 - `Q151` (phase 11, hw, low): does the o join rule of E529 (enc[39] = 0: the two parts of the test field ORed, an absent part true) hold for the shifts, the 8-bit and 16-bit lane operations and the other classes' tests, and with a chan other than chan0, and does any compiler output need it? (E529, E499)
 - `Q154` (phase 11, hw, medium): does str then ldr of one register stay ordered for a register whose write starts work or that another writer changes, with a job running, and what does an indexed str (the register-index forms, never run) do (E534, E445)
 - `Q183` (phase 11, hw, medium): why does the job fault after a stad in the end-of-tile task has landed its value (BIF fault 0xd0400 at 0x340042, 0x340043 or 0x740012), and what store form would not? (E572)
+- `Q193` (phase 11, hw, low): what holds a temporary a task did not write: which earlier job's value does it read, per instance, and what clears it (a power cycle, a module reload, a job of another context)? (E484, E485, E593)
 
 ### vdm
 

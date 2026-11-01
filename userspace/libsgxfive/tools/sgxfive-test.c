@@ -227,8 +227,12 @@
  * the hardware debugfs sgx/render_pb_pages shrinks the PB of new render
  * contexts, in the mock --mock-pb-pages=N (0x23 to 0x422) does.
  *
- * Exit status: 0 all checks passed, 1 a check or call failed, 2 usage.
+ * Exit status: 0 all checks passed, 1 a check or call failed, 2 usage, 3 (probe and probe
+ * --tri only) the run completed and at least one job failed: its output says which. stdout
+ * is line-buffered, so a message on stderr lands after the lines printed before it.
  */
+#define EXIT_JOB_FAILED	3
+
 #include <errno.h>
 #include <stdarg.h>
 #include <fcntl.h>
@@ -1498,6 +1502,13 @@ struct probe_opts {
 	} tri;
 };
 
+/*
+ * A probe that failed (it says "failed:"): counted, for the exit status 3 of probe and
+ * probe --tri. The line is printed as always; only the status changed.
+ */
+static unsigned int probe_failed_jobs;
+#define PROBE_FAILED(...)	(probe_failed_jobs++, printf(__VA_ARGS__))
+
 /* The texel (x, y) of a --coords probe's source. */
 static uint32_t coord_texel(uint32_t x, uint32_t y)
 {
@@ -1692,12 +1703,12 @@ static void probe_one(struct tool *t, const struct probe_file *f, const struct p
 			       (unsigned long long)paddr + at * 4, po->place_off,
 			       po->place_form ? "an 18-bit EXE" : "EXE and CBASE", src.placed_u0);
 		else
-			printf("probe %s: failed: program at 0x%08llx: %s\n", f->name,
+			PROBE_FAILED("probe %s: failed: program at 0x%08llx: %s\n", f->name,
 			       (unsigned long long)paddr + at * 4, strerror(-ret));
 	}
 	if (!ret && po->low &&
 	    (ret = sgxfive_vm_map(s.vm, po->low, sbo, 0, SCRATCH_PAGES * SGXFIVE_PAGE_SIZE, 0))) {
-		printf("probe %s: failed: scratch at 0x%08llx: %s\n", f->name,
+		PROBE_FAILED("probe %s: failed: scratch at 0x%08llx: %s\n", f->name,
 		       (unsigned long long)po->low, strerror(-ret));
 		goto out;
 	}
@@ -1739,14 +1750,14 @@ static void probe_one(struct tool *t, const struct probe_file *f, const struct p
 	if (!ret && po->late)
 		probe_late(f->name, sp, po);
 	if (ret) {
-		printf("probe %s: failed: %s\n", f->name, strerror(-ret));
+		PROBE_FAILED("probe %s: failed: %s\n", f->name, strerror(-ret));
 	} else if ((ret = probe_wait(s.x, f->name, t0))) {
 		/* faulted or hung: recovered, the job failed and the context is lost */
-		printf("probe %s: failed: %s\n", f->name, job_error(ret, why, sizeof(why)));
+		PROBE_FAILED("probe %s: failed: %s\n", f->name, job_error(ret, why, sizeof(why)));
 		probe_report_failed(f->name, sp, 32);
 	} else if (pixels_all(p, 2048, SENTINEL)) {
 		/* the job completed without writing a pixel */
-		printf("probe %s: failed: no pixel written\n", f->name);
+		PROBE_FAILED("probe %s: failed: no pixel written\n", f->name);
 	} else {
 		probe_report(f->name, p, 64, 32, po->pixels, sp, 32);
 	}
@@ -2108,17 +2119,17 @@ static void probe_tri_one(struct tool *t, const struct probe_file *f,
 		submitted = !ret;
 	}
 	if (ret) {
-		printf("probe %s: failed: %s\n", f->name, strerror(-ret));
+		PROBE_FAILED("probe %s: failed: %s\n", f->name, strerror(-ret));
 	} else if ((ret = sgxfive_tri_rig_wait(g, WAIT_NS))) {
 		/* faulted, hung or overflowed: recovered, the render failed */
-		printf("probe %s: failed: %s\n", f->name, job_error(ret, why, sizeof(why)));
+		PROBE_FAILED("probe %s: failed: %s\n", f->name, job_error(ret, why, sizeof(why)));
 		probe_report_failed(f->name, sp, SCRATCH_PAGES * SGXFIVE_PAGE_SIZE / 4);
 		/* an overflow keeps its context and its target holds the partial renders' stores */
 		if (ret == -ENOSPC)
 			probe_report(f->name, g->fb, pt->width, pt->height, po->pixels, sp,
 				     SCRATCH_PAGES * SGXFIVE_PAGE_SIZE / 4);
 	} else if (pixels_all(g->fb, pt->width * pt->height, SGXFIVE_TRI_SENTINEL)) {
-		printf("probe %s: failed: no pixel written\n", f->name);
+		PROBE_FAILED("probe %s: failed: no pixel written\n", f->name);
 	} else {
 		probe_report(f->name, g->fb, pt->width, pt->height, po->pixels, sp,
 			     SCRATCH_PAGES * SGXFIVE_PAGE_SIZE / 4);
@@ -2128,7 +2139,7 @@ static void probe_tri_one(struct tool *t, const struct probe_file *f,
 		int dr = dump_render(pt->dump_dir, f->name, ret != 0);
 
 		if (dr)
-			printf("probe %s: failed: --dump-render: %s\n", f->name, strerror(-dr));
+			PROBE_FAILED("probe %s: failed: --dump-render: %s\n", f->name, strerror(-dr));
 	}
 	sgxfive_tri_rig_destroy(g);
 	sgxfive_bo_destroy(sbo);
@@ -2146,7 +2157,7 @@ static int cmd_probe(struct tool *t, struct probe_file *files, uint32_t n,
 		else
 			probe_one(t, &files[i], po);
 	}
-	return 0;
+	return probe_failed_jobs ? EXIT_JOB_FAILED : 0;
 }
 
 /* ---- main --------------------------------------------------------------------------- */
@@ -3409,6 +3420,7 @@ static int check_pokes(const struct tool *t, const char *cmd, const struct opts 
 
 int main(int argc, char **argv)
 {
+	setvbuf(stdout, NULL, _IOLBF, 0);
 	struct opts o = {
 		.width = 64, .height = 32, .stride = 256, .colour = 0xff336699,
 		.src_stride = 256, .dst_stride = 256, .n = 8,

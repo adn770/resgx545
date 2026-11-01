@@ -1,0 +1,10 @@
+title = "probe table usse/temps-fresh-c"
+repo = "data"
+paths = ["usse/temps-fresh-c/"]
+method = "campaign runner on the laptop target (tools/campaign), no reset between jobs; E487's 8 jobs, a marker of its own per job; env.toml gained the tool, its source sha256, the between-jobs setting and the predictions' hash by hand after the run; analysis/ holds the predictions and the recompute"
+date = "2026-11-09"
+files = 22
+size = 15961
+sha256 = "fbd5977f2c8508ad8a8dc267c61bfbe309baf233e11235ad61b4b691aae3dcc5"
+recipe = "probes/usse/temps-fresh-c.toml"
+needs = ["render"]

@@ -5038,8 +5038,8 @@ open driver:
    `sa`, `r`, `i` and p1 (Q124, Q152, Q155, Q158), what stops the tick after a task (Q152, Q156) and
    the allocation of a firmware task above TRC 31 are not measured.
 
-The simulator (`crates/sgx-sim`) reproduces 30081 probe vectors (15526 of them with near values:
-float functions within their measured bound) and 434 pixel vectors; it stops on 2214 rather than
+The simulator (`crates/sgx-sim`) reproduces 30137 probe vectors (15526 of them with near values:
+float functions within their measured bound) and 434 pixel vectors; it stops on 2215 rather than
 guess, most often because (vectors, from `doc/isa/sim-coverage.json`):
 
 - firh's fixed bank 1 or 2, whose taps are fitted to these vectors (in-sample, not a hardware check)

@@ -1220,3 +1220,64 @@ def test_the_fence_builds_its_probe_from_its_own_table(monkeypatch, tmp_path):
     campaign.LaptopTarget.fence(campaign.LaptopTarget.__new__(campaign.LaptopTarget))
     assert got["names"] == [campaign.FENCE_PROBE]
     assert got["src_dir"] == probe.PROBES / "pbe" / "templates"
+
+
+def test_the_laptop_records_the_installed_and_the_loaded_module(monkeypatch):
+    # the installed file's srcversion (modinfo) and the loaded module's (sysfs) are both read
+    monkeypatch.setattr(campaign.probe, "target", lambda: ("me@laptop", []))
+    seen = []
+
+    def ssh(self, cmd):
+        seen.append(cmd)
+        return {"modinfo -F srcversion gma500_gfx": "AAAA\n",
+                "cat /sys/module/gma500_gfx/srcversion": "BBBB\n"}.get(cmd, "x\n")
+    monkeypatch.setattr(campaign.LaptopTarget, "_ssh", ssh)
+    env = campaign.LaptopTarget().environment()
+    assert env["module_srcversion"] == "AAAA"
+    assert env["module_srcversion_loaded"] == "BBBB"
+
+
+def test_a_table_refuses_to_run_when_the_loaded_module_is_not_the_installed_one(tmp_path,
+                                                                                 capsys):
+    class Mismatch(FakeTarget):
+        def environment(self):
+            return {"target": "fake", "module_srcversion": "AAAA",
+                    "module_srcversion_loaded": "BBBB"}
+
+    t, tgt = table(tmp_path), Mismatch()
+    with pytest.raises(campaign.CampaignError) as err:
+        campaign.run_table(t, tgt, tmp_path / "d", tmp_path / "ds", repo="data")
+    assert "AAAA" in str(err.value) and "BBBB" in str(err.value)
+    assert tgt.ran == []
+    assert "installed AAAA" in capsys.readouterr().out
+    # a refusal leaves no dataset directory
+    assert not (tmp_path / "d" / "usse" / "demo").exists()
+
+
+def test_a_table_prints_and_records_both_srcversions_when_they_agree(tmp_path, capsys):
+    class Same(FakeTarget):
+        def environment(self):
+            return {"target": "fake", "module_srcversion": "AAAA",
+                    "module_srcversion_loaded": "AAAA"}
+
+    t = table(tmp_path)
+    campaign.run_table(t, Same(), tmp_path / "d", tmp_path / "ds", repo="data")
+    assert "module srcversion: installed AAAA, loaded AAAA" in capsys.readouterr().out
+    env = (tmp_path / "d" / "usse" / "demo" / "env.toml").read_text()
+    assert 'module_srcversion_loaded = "AAAA"' in env
+
+
+def test_a_loaded_module_that_is_not_there_is_refused():
+    with pytest.raises(campaign.CampaignError):
+        campaign.check_module({"module_srcversion": "AAAA", "module_srcversion_loaded": ""})
+
+
+def test_the_laptop_records_the_tool_source_sha256_the_operator_states(monkeypatch):
+    # the binary's sha256 is read on the laptop; the source's is stated (RESGX545_TOOL_SOURCE_SHA256,
+    # the sha256 of tools/sgxfive-test.c the binary was built from), so that env.toml ties them
+    monkeypatch.setattr(campaign.probe, "target", lambda: ("me@laptop", []))
+    monkeypatch.setattr(campaign.LaptopTarget, "_ssh", lambda self, cmd: "x\n")
+    monkeypatch.setenv("RESGX545_TOOL_SOURCE_SHA256", "abc123")
+    assert campaign.LaptopTarget().environment()["tool_source_sha256"] == "abc123"
+    monkeypatch.delenv("RESGX545_TOOL_SOURCE_SHA256")
+    assert campaign.LaptopTarget().environment()["tool_source_sha256"] == ""

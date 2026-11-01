@@ -4040,6 +4040,29 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   list (BASE2 stays 0, 2 of 2); and a partial render (1024x768 on 0x28 pages) under alias_skip masks
   0, 0xc0 and 0xdc0 has it in BASE1 (6 of 6).
   *bif; HW, infer; data: `bif-client-directories`.*
+- `E593` With a marker of its own in every job (a half of its own in the upper 16 bits, the register
+  number in the lower 16) and a GPU reset and 3 seconds before each job, the 25 jobs of E485's two
+  tables (temps-max 15, temps-sparse 10), run in the table's order and in the reverse order, read
+  back in every register read (the pixel, which is the top register r123, and the first 32 dwords
+  the tool shows) the job's own marker: 742 of 742 values of each run in the 25 jobs of each order,
+  with no failed job, no marker of another job and no wrapped register number among them; for the 10
+  jobs of temps-max with T >= 80 (T = 80, 96, 112, 124 and 128, both sweeps) the registers past the
+  32 shown (8, 16, 24, 30 and 30 more) were counted as changed, as predicted, and not read; so
+  E485's finding stands without its fixed marker, for the registers read: a register a job wrote
+  reads back what that job wrote, up to r123, and the i0-i3 job still reads i3 as i0; in the one job
+  of each order that reads r123 without writing it (the i0-i3 job) the pixel holds markers of
+  earlier jobs of the run, one job's marker in 2048 pixels in one order and those of two earlier
+  jobs in 1536 and 512 pixels in the other, after a reset in front of the job [HW]; the temporaries
+  are not cleared between jobs by the debugfs reset [infer].
+  *usse; HW, infer; data: `usse-temps-fresh-a`, `usse-temps-fresh-b`, `vectors-usse-temps-fresh`.*
+- `E594` With a marker of its own in each job, E487's jobs T = 132 to 192 read their marker back: T
+  = 132, 136, 144 and 160 started with 8 temporaries and T = 192 started with 8, 32, 64 and 128 (8
+  of 8 jobs, the same pixel in 2048 of 2048 pixels, the same value in the one scratch dword), each
+  with a marker no other job writes (0x7nnnnnnn from seed 1137), so in these 8 jobs a write of the
+  job's own marker lands and is read back (a clean rerun cannot show what E487's read-back was; that
+  it was a write and not a leftover is [infer]); none hung, as E519's rule predicts (T mod 256 is 4
+  to 192).
+  *usse; HW, infer; data: `usse-temps-fresh-c`, `vectors-usse-temps-fresh`.*
 
 ## By unit
 
@@ -4127,7 +4150,7 @@ E370, E371, E372, E373, E374, E375, E376, E377, E378, E380, E406, E423, E452, E4
 E472, E473, E474, E475, E476, E477, E478, E479, E480, E481, E482, E483, E484, E485, E486, E487,
 E488, E491, E492, E493, E494, E495, E496, E497, E498, E499, E500, E501, E512, E513, E514, E515,
 E516, E517, E518, E519, E520, E521, E522, E525, E526, E527, E528, E529, E530, E534, E535, E549,
-E570, E571, E572.
+E570, E571, E572, E593, E594.
 
 ### vdm
 

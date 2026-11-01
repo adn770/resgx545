@@ -39,3 +39,10 @@ measured (Q134).
 reads after the job); a texture fetch of a stored dword; `str` and `ldr`; the values of the 2016
 stores after the first 32 (they are counted, not read; the load pixels of all 2048 instances are).
 All of this was measured in client pixel tasks (fills), not in firmware tasks.
+
+**Correction, 2026-11-09 (11.35).** The measurements above are unchanged. The table's `load` verdict
+(SETTLED) came from an exact expectation of the 32 scratch dwords the tool shows: it could not fail
+on the other 2016 changed dwords, which are counted by the tool and not shown, so that "2048 dwords
+changed" rests on the tool's count and on the first 32 values, not on the values of the 2016. The
+pixels (all 2048 of every case, `pixels = true`) are checked in full; the claim that an instance
+sees its own stad rests on them. Tables can now state the count (`scratch_more`).

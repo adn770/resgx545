@@ -206,6 +206,7 @@ class LaptopTarget:
         q = shlex.quote
         cmds = {"kernel": "uname -r",
                 "module_srcversion": "modinfo -F srcversion gma500_gfx",
+                "module_srcversion_loaded": "cat /sys/module/gma500_gfx/srcversion",
                 "debug_option": "sudo -n sh -c 'ls /sys/kernel/debug/dri/*/sgx/regs' "
                                 ">/dev/null 2>&1 && echo yes || echo no",
                 "tool_sha256": f"sha256sum {q(self.tool)} 2>/dev/null | cut -d' ' -f1",
@@ -214,7 +215,8 @@ class LaptopTarget:
                 "board": "cat /sys/class/dmi/id/product_name"}
         # the kernel fork's branch commit the module was built from: the operator states it
         env = {"target": "laptop", "host": self.host,
-               "kernel_commit": os.environ.get("RESGX545_KERNEL_COMMIT", "")}
+               "kernel_commit": os.environ.get("RESGX545_KERNEL_COMMIT", ""),
+               "tool_source_sha256": os.environ.get("RESGX545_TOOL_SOURCE_SHA256", "")}
         for k, c in cmds.items():
             env[k] = self._ssh(c).strip()
         return env
@@ -410,6 +412,19 @@ def _ready(target) -> str:
 OK = "resgx-ok"      # echoed after a command's `&&`: _ssh returns stdout only, not the status
 
 
+def check_module(env: dict) -> None:
+    """Print the installed file's and the loaded module's srcversion; a CampaignError when
+    they differ or the loaded one is unreadable (the run would measure another module than the
+    one the data name). A target that reports no srcversion (local, mock) is not checked."""
+    if "module_srcversion" not in env:
+        return
+    inst, loaded = env["module_srcversion"], env.get("module_srcversion_loaded", "")
+    print(f"module srcversion: installed {inst}, loaded {loaded or '(not readable)'}")
+    if not loaded or inst != loaded:
+        raise CampaignError(f"the installed module ({inst}) is not the loaded one "
+                            f"({loaded or 'not readable'}): reload it or fix the install")
+
+
 def _ssh_checked(target, cmd: str, what: str) -> str:
     """Run cmd on an ssh target; a CampaignError when it did not succeed."""
     out = target._ssh(f"{cmd} && echo {OK}")
@@ -554,11 +569,12 @@ def _run_table(path: pathlib.Path, target, data: pathlib.Path, ds_dir: pathlib.P
     src_dir = path.parent / "templates"
     src_dir = src_dir if src_dir.is_dir() else probe.PROBES_DIR
     tdir = pathlib.Path(data) / unit / feature
+    env = {**target.environment(), **fields, "table": path.relative_to(root).as_posix(),
+           "date": datetime.datetime.now().astimezone().isoformat(timespec="seconds")}
+    check_module(env)          # before the dataset directory and the log mark: a refusal leaves none
     mark = _log_mark(target, f"{unit}/{feature}")
     try:
         tdir.mkdir(parents=True, exist_ok=True)
-        env = {**target.environment(), **fields, "table": path.relative_to(root).as_posix(),
-               "date": datetime.datetime.now().astimezone().isoformat(timespec="seconds")}
         log: dict = {}
         if kind == "capture":
             if not hasattr(target, "capture"):

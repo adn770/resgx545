@@ -154,7 +154,7 @@ def test_tri_rejects_bad_files(tmp_path):
     assert "missing.bin" in r.stderr
     # an end-of-tile program too short for the PBE words and the emit: the scene refuses it
     r = run("--mock", "probe", "--tri", "eot", str(f))
-    assert r.returncode == 0, r.stdout + r.stderr
+    assert r.returncode == 3, r.stdout + r.stderr
     assert re.search(r"^probe x: failed: Invalid argument$", r.stdout, re.M), r.stdout
 
 
@@ -163,7 +163,7 @@ def test_tri_reports_a_failed_render(tmp_path):
     # too large for a parameter buffer of 0x23 pages, -ENOSPC).
     f = assemble(tmp_path, "pix", PHAS + "mov.skipinv.end o0, #1\n")
     r = run("--mock", "--mock-pb-pages=0x23", "probe", "--tri", "pixel", str(f))
-    assert r.returncode == 0, r.stdout + r.stderr
+    assert r.returncode == 3, r.stdout + r.stderr
     assert re.search(r"^probe pix: failed: scene overflowed the parameter buffer", r.stdout,
                      re.M), r.stdout
     # what the scratch holds is still reported: what ran before the failure stored there
@@ -175,7 +175,7 @@ def test_tri_reports_a_failed_render(tmp_path):
     assert r.stdout.index("failed: scene overflowed") < r.stdout.index("probe pix: o0 ")
     assert not re.search(r"^probe pix: row ", r.stdout, re.M), r.stdout
     r = run("--mock", "--mock-pb-pages=0x23", "probe", "--tri", "pixel", "--pixels", str(f))
-    assert r.returncode == 0, r.stdout + r.stderr
+    assert r.returncode == 3, r.stdout + r.stderr
     rows = re.findall(r"^probe pix: row (\d+):((?: [0-9a-f]{8})+)$", r.stdout, re.M)
     assert [int(y) for y, _ in rows] == list(range(64)) and len(rows[0][1].split()) == 64, r.stdout
     assert r.stdout.index("failed: scene overflowed") < r.stdout.index("probe pix: row 0:")
@@ -466,7 +466,7 @@ def test_tri_pbe_words(tmp_path):
     f = assemble(tmp_path, "pix", PHAS + "mov.skipinv.end o0, #0x0000000A\n")
     r = run("--mock", "probe", "--tri", "pixel", "--pbe", "1=0x003f003f", "--pbe", "3=0x3e004000",
             str(f))
-    assert r.returncode == 0, r.stdout + r.stderr
+    assert r.returncode == 3, r.stdout + r.stderr
     assert re.search(r"^probe pix: tri 64x64 \(PBE words 1 3\), pixel replaced$", r.stdout,
                      re.M), r.stdout
     for args in (["--tri", "pixel", "--pbe", "4=1"], ["--tri", "pixel", "--pbe", "1^=1"],

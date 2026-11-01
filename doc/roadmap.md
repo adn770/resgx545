@@ -721,3 +721,24 @@ texture layers, the stored words, the partial owner's page). The kernel switch t
 second context's state page between two contexts' renders stays open (`tadata_fill` is taken by the
 first kick after it is armed). The roadmap counts the questions from the built
 `doc/open_questions.md`: 155 open, 139 hw (high 13, medium 68, low 58), 10 fw and 6 kernel.
+
+Sub-phase 11.35 is a tool and records sub-phase after the audit of the laptop capture path, with two
+short laptop runs and no kernel change (the module of 11.34's amended tip, sgxfive-test-1135, a new
+build of the tool). Tool fixes, each with its test: stdout line-buffered so that a failure message
+on stderr no longer lands inside a dump's rows, `probe` and `probe --tri` exit 3 on a failed job,
+the campaign runner prints, records and compares the installed and the loaded module's srcversion
+and refuses a mismatch, a check that flags tables writing the same marker to the same register in
+more than one job (14 tables, the audit's list), the tool's `more changed` count readable and
+statable in a table, the repeated-label reset of `parse()`, and a reset between jobs. Two reruns
+with a marker of its own per job and the predictions hashed first: E485's 25 jobs in both orders
+read their own markers in every register read, 742 of 742 values a run (the 8 to 30 registers past
+the 32 shown in the 10 temps-max jobs with T >= 80 were counted, not read; E593: E485 stands for the
+registers read, and the declared falsification criterion of the stale-read prediction fired in 2 of
+the 50 jobs), E487's 8 jobs that could have been stale reads read their own (E594), and the job that
+reads a register it does not write read earlier jobs' values after a GPU reset in front of it (Q193,
+new). Corrections with measurements kept: E511 (the 47 pixels are the tool's edge tolerance, not
+pixels lost to the inserted message), E507, E485, E487 and E512. The replay of the tree's data with
+the 28 new vector files, from the coverage json by name (pass, unsupported, mismatch): scalar 30137,
+2013, 0 (30081, 2012, 0 before), pixels 434, 202, 0, PDS 1305, 98, 0, firmware 349, 0, 0, 1112
+fitted; on 11.34's basis 30920 pass (30864 at 11.34). The roadmap counts the questions from the
+built `doc/open_questions.md`: 156 open, 140 hw (high 13, medium 68, low 59), 10 fw and 6 kernel.

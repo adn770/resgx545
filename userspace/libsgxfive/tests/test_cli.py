@@ -462,7 +462,7 @@ def test_probe_pds_takes_coords(tmp_path):
                    check=True)
     use = assemble(tmp_path, "use", PHAS + "mov.skipinv.end o0, #0x5CB00020\n")
     r = run("--mock", "probe", "--pds", "8", "--use", str(use), "--coords", str(pds))
-    assert r.returncode == 0, r.stdout + r.stderr
+    assert r.returncode == 3, r.stdout + r.stderr
     assert "usage" not in r.stderr
     _, off = pds_secondary(r.stdout, "pds")
     assert off == 0x40, r.stdout
@@ -494,8 +494,9 @@ def test_probe_low_and_scratch_pages_are_checked_together(tmp_path, order):
         return run("--mock", "probe", *(a + b if order == "low-first" else b + a), str(f))
 
     assert probe("0xf0000", "64").returncode == 2           # 16 pages at parse time, 64 in all
-    assert probe("0xf0000", "16").returncode == 0           # ends exactly at 1 MiB
-    assert probe("0xc0000", "64").returncode == 0           # 64 pages end at 0x100000
+    # ends exactly at 1 MiB; the mock's job fails there (3), the check passed
+    assert probe("0xf0000", "16").returncode == 3
+    assert probe("0xc0000", "64").returncode == 3           # 64 pages end at 0x100000
 
 
 @pytest.mark.parametrize("order", ["late-first", "pages-first"])
@@ -556,7 +557,7 @@ def test_probe_coords_reports_other_programs_as_failed_on_the_mock(tmp_path):
     # The mock knows no other copy shader: a hang, the job fails, as a fill's would.
     f = assemble(tmp_path, "other", PHAS + "mov.skipinv.end o0, #1\n")
     r = run("--mock", "probe", "--coords", str(f))
-    assert r.returncode == 0, r.stdout + r.stderr
+    assert r.returncode == 3, r.stdout + r.stderr
     assert re.search(r"^probe other: failed: job faulted", r.stdout, re.M), r.stdout
 
 
@@ -585,7 +586,7 @@ def test_probe_low_is_refused_without_the_kernels_vm_low(tmp_path):
     # the mock checks VM_MAP against the heaps, as the kernel does with debugfs vm_low off
     f = assemble(tmp_path, "lo", PHAS + "mov.skipinv.end o0, #1\n")
     r = run("--mock", "probe", "--low", "0x10000", str(f))
-    assert r.returncode == 0, r.stdout + r.stderr
+    assert r.returncode == 3, r.stdout + r.stderr
     assert re.search(r"^probe lo: failed: scratch at 0x00010000: Invalid argument$", r.stdout,
                      re.M), r.stdout
 
@@ -625,7 +626,7 @@ def test_probe_reports_a_surface_left_untouched(tmp_path):
     # sentinel (on the mock: a program colouring with it).
     f = assemble(tmp_path, "nopix", PHAS + "mov.skipinv.end o0, #0xDEADBEEF\n")
     r = run("--mock", "probe", str(f))
-    assert r.returncode == 0, r.stdout + r.stderr
+    assert r.returncode == 3, r.stdout + r.stderr
     assert re.search(r"^probe nopix: failed: no pixel written$", r.stdout, re.M), r.stdout
 
 
@@ -636,7 +637,7 @@ def test_probe_reports_a_failed_job(tmp_path):
     f = assemble(tmp_path, "hang", PHAS + "nop.end\n")
     g = assemble(tmp_path, "good", PHAS + "mov.skipinv.end o0, #0x0000000A\n")
     r = run("--mock", "probe", str(f), str(g))
-    assert r.returncode == 0, r.stdout + r.stderr
+    assert r.returncode == 3, r.stdout + r.stderr
     assert re.search(r"^probe hang: failed: job faulted, context lost \(Input/output error\)$",
                      r.stdout, re.M), r.stdout
     assert re.search(r"^probe hang: scratch unchanged$", r.stdout, re.M), r.stdout
@@ -1305,3 +1306,49 @@ def test_tri_words_with_regs_reads_the_registers_at_every_snapshot(tmp_path, mon
     assert snaps == ["0", "101", "1", "102", "2"], (snaps, r.stdout)
     r = run("--mock", "tri", "-n", "1", "--words", str(out))
     assert "registers at snapshot" not in r.stdout
+
+
+def test_stderr_message_lands_after_the_stdout_lines_before_it():
+    # stdout redirected is block-buffered unless the tool flushes it: the failure message the
+    # tool writes to stderr then landed at the last 4096-byte boundary of the stdout stream
+    # (inside a dump's rows, or before every line of a short output). It is now in the order
+    # the program wrote: after "layout:", before the closing "tri: FAILED" line.
+    r = subprocess.run([TOOL, "--mock", "tri", "--fault"], stdout=subprocess.PIPE,
+                       stderr=subprocess.STDOUT, text=True, timeout=30)
+    lines = r.stdout.splitlines()
+    i = [n for n, ln in enumerate(lines) if ln.startswith("sgxfive-test: render:")]
+    assert len(i) == 1, r.stdout
+    assert lines[i[0] - 1].startswith("layout: fb "), r.stdout
+    assert lines[i[0] + 1].startswith("tri: FAILED"), r.stdout
+
+
+def test_stderr_message_is_not_inside_a_long_dump():
+    # a dump that crosses many 4096-byte boundaries: every row is whole, the message is a line
+    # of its own between "layout:" and the closing line, after all of the rows
+    r = subprocess.run([TOOL, "--mock", "tri", "--fault", "--pixels"], stdout=subprocess.PIPE,
+                       stderr=subprocess.STDOUT, text=True, timeout=30)
+    assert len(r.stdout) > 4096 * 4, len(r.stdout)
+    lines = r.stdout.splitlines()
+    rows = [ln for ln in lines if ln.startswith("row ")]
+    assert len(rows) == 64 and all(len(ln.split()) == 66 for ln in rows), len(rows)
+    i = [n for n, ln in enumerate(lines) if ln.startswith("sgxfive-test: render:")]
+    assert len(i) == 1 and lines[i[0] - 1].startswith("layout: fb "), r.stdout[-300:]
+
+
+def test_probe_exits_3_on_a_failed_job(tmp_path):
+    # a probe whose job faulted or hung, or wrote no pixel, ends the run with status 3 (the
+    # output is complete and still says which); a run with no failed job ends with 0
+    f = assemble(tmp_path, "hang", PHAS + "nop.end\n")
+    g = assemble(tmp_path, "good", PHAS + "mov.skipinv.end o0, #0x0000000A\n")
+    h = assemble(tmp_path, "nopix", PHAS + "mov.skipinv.end o0, #0xDEADBEEF\n")
+    bad = run("--mock", "probe", str(f), str(g))
+    assert bad.returncode == 3, bad.stdout + bad.stderr
+    assert re.search(r"^probe hang: failed: job faulted", bad.stdout, re.M), bad.stdout
+    assert re.search(r"^probe good: o0 0x0000000a ", bad.stdout, re.M), bad.stdout
+    assert run("--mock", "probe", str(h)).returncode == 3
+    assert run("--mock", "probe", str(g)).returncode == 0
+
+
+def test_probe_exit_status_is_the_check_failure_before_a_failed_job(tmp_path):
+    # a usage or call error keeps its own status (1 and 2); 3 is only a failed job
+    assert run("--mock", "probe").returncode == 2

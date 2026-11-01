@@ -44,3 +44,11 @@ pixels as R, and the closed driver's own 64 x 64 words are therefore accepted by
 **What it does not show.** H86i at any held-out size, the U2, U2Q, HS and FX families at 96 x 48 to
 192 x 96, and the rule of the closed driver (the capture batch of sizes/ms4-sizes3d.txt was not
 run).
+
+**Correction, 2026-11-09 (11.35).** The measurements above are unchanged. The counts of the printed
+rows ("51187, 73554, 100338, 130845, 196276 and 307162 pixels at the sentinel and 8 others each, a
+few short of the target") counted the words of the inserted tool message as pixels and lost the
+pixels of the row the message was cut into. Rebuilt (the message line deleted, the split token
+rejoined) every dump of the six sizes holds the whole target at the sentinel: 51200, 73728, 100352,
+131072, 196608 and 307200 of the same numbers of pixel tokens, no other value. The tool's diff lines
+(the target read as differing in every pixel) agree.

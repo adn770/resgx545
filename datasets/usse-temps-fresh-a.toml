@@ -1,0 +1,10 @@
+title = "probe table usse/temps-fresh-a"
+repo = "data"
+paths = ["usse/temps-fresh-a/"]
+method = "campaign runner on the laptop target (tools/campaign), SGX_PROBE_BETWEEN a debugfs reset and 3 s before every job; E485's 25 jobs in the table's order, a marker of its own per job; env.toml gained the tool, its source sha256, the between-jobs setting and the predictions' hash by hand after the run; analysis/ holds the predictions and the recompute"
+date = "2026-11-09"
+files = 55
+size = 188471
+sha256 = "1285c4f1f2d485c4ef77b6fc6c929e52b004b722b0e7db440e4da6dc483e1d36"
+recipe = "probes/usse/temps-fresh-a.toml"
+needs = ["render"]

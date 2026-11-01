@@ -54,3 +54,15 @@ highest value that did not hang is 192' holds below 256 only, 'not run: 228 to 2
 and tested (15 of 15); what a request above 256 allocates is not measured (E519 does not show
 whether a write reaches a register under a small allocation: Q132, Q144), and r123 is still the only
 register above 124 any of these jobs wrote. Q133 is narrowed and Q144 asks the rest.
+
+**Correction, 2026-11-09 (11.35).** The measurements above are unchanged. The sentence that the job
+reads back "the marker it wrote ... in all 15 jobs" did not tell a write that landed from a stale
+read for every job (E484): the jobs T = 8, 16, 32, 64 and 96 wrote r7, r15, r31, r63 and r95
+(registers no earlier job of the campaign's table order had written, but probe.py had run the same
+table on the same boot first, with the same marker, so that is not a separation either; E535's
+controls T = 8, 32 and 64 with r3, r31 and r63 and its negative at T <= 100 cover part of them); T =
+124 and 128 are shown by E535 with a marker of its own; the jobs T = 132, 136, 144 and 160 (started
+with 8) and T = 192 (started with 8, 32, 64 and 128) wrote r123 after the T = 124 job had left the
+same value there, so their read-back could have been a leftover. E594 reran those 8 jobs with a
+marker of its own in each: 8 of 8 read their own marker in 2048 of 2048 pixels, none hung. The
+reading holds for them, on E594's evidence and no longer on this record's alone.

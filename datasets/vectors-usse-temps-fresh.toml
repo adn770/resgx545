@@ -1,0 +1,9 @@
+title = "instruction vectors of the three temps-fresh runs (a marker of its own per job)"
+repo = "data"
+paths = ["vectors/nokernel/usse/temps-fresh-a/", "vectors/nokernel/usse/temps-fresh-b/", "vectors/nokernel/usse/temps-fresh-c/"]
+method = "tools/usse-asm/convert_extra.py on the raw readbacks of usse-temps-fresh-a, -b and -c with their tables, one file per probe (58 vectors in 28 files)"
+date = "2026-11-09"
+files = 28
+size = 366855
+sha256 = "3c773c72985a81f3f790c1f84854ce206ec5cb6c0ce9cf3802d86aace5971030"
+recipe = "tools/usse-asm/convert_extra.py"

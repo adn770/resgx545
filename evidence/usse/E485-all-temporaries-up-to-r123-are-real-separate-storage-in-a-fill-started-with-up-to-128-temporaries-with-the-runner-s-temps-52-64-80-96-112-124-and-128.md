@@ -34,3 +34,15 @@ quad), every instance holding the same marker here; the table expected four sepa
 landed in r124-r127 is not shown); the registers between the sampled ones (r3, r5, r7 ... at every
 size, and every register not r2 + 4n above r64); whether a larger request costs time (E487). All of
 this was measured in client pixel tasks (fills), not in firmware tasks.
+
+**Correction, 2026-11-09 (11.35).** The measurements above are unchanged. The capture-path audit
+found that every job of temps-max and temps-sparse wrote the same markers (0x7E570000 | n) to the
+same registers, and that probe.py ran first and the campaign second on the same boot, so a read-back
+of a marker could have been the leftover of an earlier job (E484): "real, separate storage" was not
+told from stale reads by these runs. E593 reran the 25 jobs in the table's order and in the reverse
+order, each with a marker of its own and a GPU reset in front of it: 742 of 742 values read a run
+(the pixel and the first 32 dwords; the 8 to 30 registers past them in the 10 temps-max jobs with T
+>= 80 were counted, not read) were the job's own, none another job's, none a wrapped register
+number, and the i0-i3 job read i3 as i0 again. The finding stands for the registers sampled, on that
+evidence. The registers between the sampled ones are still not read, and the registers a job does
+not write hold earlier jobs' values (Q193).
