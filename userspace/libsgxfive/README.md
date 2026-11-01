@@ -275,8 +275,10 @@ tri [--width W --height H -n N] [--max-width W --max-height H] [--fault]
     [--move N:DX,DY]...
     [--geometry N]... [--keep-going] [--keep-overflow] [--dump-render DIR [--dump-each]]
     [--words DIR] [--wait-ms MS]
-    [--depth [--depth-ctl V] [--depth-ctl-next V] [--depth-fill V] [--depth-base V]
-           [--depth-pages N] [--depth-dump DIR]]
+    [--tri-full] [--tri-z A,B,C]
+    [--depth [--depth-ctl V] [--depth-ctl-next V] [--depth-fill F] [--depth-base V]
+           [--depth-pages N] [--depth-dump DIR] [--depth-store [--depth-store-fill F]]
+           [--stencil [--stencil-fill F] [--stencil-store [--stencil-store-fill F]]]]
     [--ctx2 [--share-pb] [--overlap] [--close-first] [--close-first-early] [--words-between]
           [--close-trace] [--wait-second] [--kpoke-render2 N:SPEC]...
           [--kreg-render2 N:OFFSET=VALUE]...]
@@ -337,7 +339,16 @@ is the control of renders 2 on, and the buffer is then filled before render 1 on
 render loads what the earlier one stored. After each render `depth #N` gives the dwords that
 differ from the fill, the number of distinct values and the four most frequent; `--depth-dump DIR`
 writes the buffer as `DIR/depth.N.bin`. The triangle's depth test is the job option `--poke
-blk:1=0x00400200` (test less). `--depth` does not take `--ctx2`.
+blk:1=0x00400200` (test less). `--depth` does not take `--ctx2`. A fill F is a value, `index`
+(dword i holds i) or `bit:K` (0.75f where bit K of i is set, else 0.25f). `--depth-store` puts the
+store base (`rd:13`) on a buffer of its own (default fill 0xdeadbeef, report `depth store #N`, dump
+`depth-store.N.bin`); `--stencil` adds the stencil render flag (`ta:7` bit 8) and a stencil buffer
+that both stencil bases (`rd:14`, `rd:15`, bit 31 set) point at (`stencil #N`, `stencil.N.bin`), and
+`--stencil-store` a buffer of its own for the stencil store (`stencil store #N`,
+`stencil-store.N.bin`). `--tri-full` makes the triangle
+(0,0), (3W,0), (0,3H), which covers the target; `--tri-z A,B,C` sets its vertices' screen depths
+(0 to 1; clip z = 2z - 1), so that a ramp across x or y makes every stored depth dword name its
+pixel.
 `--ctx2` creates a second render context in the VM, for the same size of target, and renders the
 same scene on it after each render of the first, in the other pair of colours, checking it on
 its own (lines `tri2 ...`); the contexts' buffers are destroyed second context first.

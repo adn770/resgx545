@@ -177,13 +177,14 @@ probe and sweep tables that the units above cover.
 
 ### 4.1 Open questions
 
-`doc/open_questions.md` lists every open question, generated from `questions/`: Q001 to Q119, 98
+`doc/open_questions.md` lists every open question, generated from `questions/`: Q001 to Q122, 101
 open. Each has a kind. The work is hardware knowledge, for a simulator and then our own firmware, so
-the 88 `hw` questions are the work queue, each with a value (high 18, medium 47, low 23); the 7 `fw`
-questions (the closed firmware's and driver's own behaviour: Q004, Q029, Q034, Q049, Q084, Q118,
-Q119) and the 3 `kernel` ones (the design of our kernel driver: Q005, Q037, Q095) stay open, parked.
+the 90 `hw` questions are the work queue, each with a value (high 14, medium 51, low 25); the 8
+`fw` questions (the closed firmware's and driver's own behaviour: Q004, Q029, Q034, Q049, Q084,
+Q088, Q118, Q119) and the 3 `kernel` ones (the design of our kernel driver: Q005, Q037, Q095) stay
+open, parked.
 By unit: bif 4, dpm 5, edm 6, isp 8, mte 3, pbe 5, pds 16, platform 4, render 9, ta 6, texture 7,
-transfer 3, usse 11, vdm 8, zls 3. A question is removed when a record answers it; one that mixed a
+transfer 3, usse 11, vdm 8, zls 6. A question is removed when a record answers it; one that mixed a
 hardware part with a firmware or kernel part was narrowed to the hardware part or folded into the
 hardware question that holds it (six so far: the control block's per-VM copy and the render context
 count bound into Q076, the recovery's reset steps into Q003, the settle routine and the two faults
@@ -371,3 +372,14 @@ were split off (Q118, Q119), and ten new hardware questions open the gaps the sp
 the page table flags and page sizes and the bus interface's tiled ranges (Q108 to Q110), which
 event sets which status bit (Q111), the index list's width bits (Q112), cube and volume textures
 and anisotropy (Q113 to Q115), the region clip as a scissor (Q116) and points (Q117).
+
+Sub-phase 11.22 ran three tables on the laptop with no kernel change, about the depth and stencil
+load and store (ZLS): `zls/store-layout.toml`, `store-format.toml` and `load-copy.toml`. The tool's
+`tri` gained a full-target triangle with a depth at each vertex (`--tri-full`, `--tri-z`), so that a
+ramp makes every stored dword name its pixel, fills that encode the dword's index
+(`--depth-fill index`, `bit:K`), and separate store and stencil buffers (`--depth-store`,
+`--stencil`, `--stencil-store`). The store window of E461 is the arithmetic of the tile pitch,
+control bits 11:3 (E465); bits 26:24 are the stored format (E466); bits 1, 13 and 14 load, the
+stencil and the depth (E467); and what an overflowed job stores is the first row of macrotiles as
+zeros and the rest negated (E468). Q088 stays open as a firmware question (its hardware half is
+answered); Q071, Q101 and Q107 are narrowed; Q120 to Q122 are new.

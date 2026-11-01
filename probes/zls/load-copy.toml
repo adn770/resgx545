@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# zls load copy: 0 probes (a shell script run on the laptop by the campaign).
+# Q088, Q071: what a render loads with bits 1, 13 and 14 of CR_ISP_ZLSCTL, seen through the stores.
+needs = ["render", "kpoke", "reset"]
+name = "zls-load-copy"
+script = "load-copy.sh"

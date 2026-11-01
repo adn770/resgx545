@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-98 open: 88 hw (high 18, medium 47, low 23, unrated 0), 7 fw, 3 kernel.
+101 open: 90 hw (high 14, medium 51, low 25, unrated 0), 8 fw, 3 kernel.
 
 ## Work queue: hardware
 
@@ -17,7 +17,7 @@
 
 ### dpm
 
-- `Q038` (phase 10, hw, high): what does the final render read back of a partial render's depth (a depth buffer stored by ZLS, the 3D kick's RT status bit 1), now that a background object that reloads the target's colour gives an overflowing scene's whole image? (E202, E204, E160, E310, E311, E312, E442, E461)
+- `Q038` (phase 10, hw, high): what does the final render read back of a partial render's depth (a depth buffer stored by ZLS, the 3D kick's RT status bit 1), now that a background object that reloads the target's colour gives an overflowing scene's whole image? (E202, E204, E160, E310, E311, E312, E442, E461, E465, E467, E468)
 - `Q045` (phase 11, hw, high): what sets the fields of register 0x0740 that the TA kick turns into DPM store and load tasks (a host write reads back 0: E456), does a load task read back the macrotile lists a partial render stores in the RT data's state page, and what accesses the state page (0x20003000 for a context of up to 64x64) when a render follows a kept owner's gone context? (E158, E256, E310, E312, E456, E458, E462, E464)
 - `Q081` (phase 11, hw, medium): what does CR_DPM_REG_074C bit 8 make the DPM read or write near offset 0x6010 of the context's TA-data space, and what fixes that place? (E203, E206, E313, E362, E447)
 - `Q103` (phase 11, hw, medium): why does a scene of 100 to 500 triangles hang where the one-triangle scene overflows the parameter buffer and recovers, at 4096x4096 in 0x40 or 0x23 pages from 300 vertices and in 0x100 pages from 900? (E438, E310, E312)
@@ -35,7 +35,7 @@
 - `Q031` (phase 10, hw, medium): why does ISP word 0 bit 28 hang a multisampled render, when single-sampled it widens coverage to the union of eight samples? (E214, E215, E278, E416)
 - `Q032` (phase 10, hw, medium): what does pcoeff hand the ISP in the punch-through pass, when the kept pixels' depth is the same without it and moves between runs only when it runs without the iteration it reads? (E217, E416)
 - `Q066` (phase 11, hw, high): what do the three background-object words the 3D kick writes mean to the ISP, and what are the other words of a render's background object? (E069, E162, E209, E216, E410)
-- `Q071` (phase 11, hw, high): how does the ISP use the ZLS control word's bits in a render with depth or stencil buffers? (E057, E169, E216, E228, E284, E411)
+- `Q071` (phase 11, hw, medium): what do the bits of the ZLS control word that change nothing seen (12, 15, 16, 20 to 23, 27 to 31) do, and how does the ISP use the control in a render with a stencil test? (E057, E169, E216, E228, E284, E337, E411, E465, E466, E467)
 - `Q072` (phase 11, hw, low): what does bit 1 of CR_ISP_REG_04DC do to a punch-through pass, when it hangs every one tried and changes no opaque or translucent pass? (E068, E073, E213, E222, E290, E416)
 - `Q073` (phase 11, hw, medium): what does o0 hold at the start of an opaque pass's pixel shader? (E077, E283, E417)
 - `Q089` (phase 11, hw, high): where does the closed driver's 4x multisampled render become a 64x64 image, when its PBE words are those of a single-sampled 64x64 target and the hardware stores 4x samples as 2x2 blocks; and do alpha to coverage and sample coverage reach the hardware at all? (E333, E339, E439)
@@ -137,9 +137,11 @@
 
 ### zls
 
-- `Q088` (phase 11, hw, high): which of CR_ISP_ZLSCTL bits 1, 13 and 14, which the closed driver adds when a render loads a kept depth and stencil buffer, loads depth and which stencil, and what reads the render details' unpatched ZLS word the driver writes between frames? (E335, E336, E337, E411)
-- `Q101` (phase 11, hw, high): what do bits 3, 4, 19, 24, 25 and 26 of CR_ISP_ZLSCTL do beyond what a store writes, given that they change the stored depth's format and the stored region? (E057, E284, E411)
-- `Q107` (phase 11, hw, high): what is the window of the depth buffer that a ZLS store writes (64512 dwords at 1024x768, 326656 at 4096x4096), and what are the 15104 (80640) leading zero dwords and the sign bit set on the rest in a job that overflows? (E461, E058, E411)
+- `Q101` (phase 11, hw, low): what does bit 19 (the negated float) do with the integer stored formats (CR_ISP_ZLSCTL bits 26:24 = 1 and 2)? (E057, E284, E411, E465, E466)
+- `Q107` (phase 11, hw, medium): why does the final render of a job that overflows store zeros for the first row of macrotiles and the depth with its sign bit set for the rest, and in what order are the tiles stored? (E461, E058, E411, E465, E468)
+- `Q120` (phase 11, hw, medium): what do the stored depth formats 3 to 7 (CR_ISP_ZLSCTL bits 26:24) hold and how are they laid out, given that they store depth and stencil packed or nothing? (E466)
+- `Q121` (phase 11, hw, medium): what is the in-tile order of the stencil store (one byte a pixel, 128 dwords a 32 x 16 tile) and what does the stencil test do against a loaded stencil? (E466, E467)
+- `Q122` (phase 11, hw, low): what does the ZLS store write for the pixels of an edge tile that lie outside the target, and for the 16 x 16 blocks outside it? (E465)
 
 ## Parked: not hardware knowledge
 
@@ -163,6 +165,10 @@
 #### transfer
 
 - `Q004` (phase 4, fw): can a transfer context whose flag bit 4 is set be released, which agent but the host sets flag bits 1 and 4, and which priorities above 0 have queue slots of their own (a priority 1 or 2 hangs a job and 3 faults it: E455)? (E015, E455)
+
+#### zls
+
+- `Q088` (phase 11, fw): what reads the render details' unpatched ZLS control word that the closed driver writes between frames (0x0011700a), now that bit 14 is known to load the depth and bit 13 the stencil? (E335, E336, E337, E411, E467)
 
 ### kernel
 

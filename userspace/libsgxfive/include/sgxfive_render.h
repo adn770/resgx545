@@ -37,6 +37,7 @@ struct sgxfive_tri_params {
 	uint32_t width, height;		/* even, at most SGXFIVE_TRI_MAX_W x _H */
 	uint32_t colour, bg_colour;	/* ARGB8888 */
 	int32_t v[3][2];		/* vertices in 1/16 pixel, window coordinates */
+	float zndc[3];			/* each vertex's clip z; 0: depth 0.5 (= 0.5 + 0.5 z) */
 };
 
 /* The first triangle's: (8, 8), (56, 20), (20, 56) in a 64 x 64 target, scaled. */

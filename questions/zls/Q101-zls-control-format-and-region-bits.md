@@ -1,20 +1,25 @@
 +++
 id = "Q101"
-question = "what do bits 3, 4, 19, 24, 25 and 26 of CR_ISP_ZLSCTL do beyond what a store writes, given that they change the stored depth's format and the stored region?"
+question = "what does bit 19 (the negated float) do with the integer stored formats (CR_ISP_ZLSCTL bits 26:24 = 1 and 2)?"
 unit = "zls"
 kind = "hw"
-value = "high"
+value = "low"
 phase = 11
-evidence = ["E057", "E284", "E411"]
+evidence = ["E057", "E284", "E411", "E465", "E466"]
 terms = ["CR_ISP_ZLSCTL"]
 +++
 
-With the store setup of load-store.sh and control 0x17100c, flipping a bit changes what is stored
-(E411, two runs, identical): bit 19 set stores the depth as -1.0, bit 24 as 0x00ffffff, bit 25 as
-0xffffffff on two pages, bit 26 640 dwords of 0x0000f000 on two pages; bit 3 cleared stores a
-shorter region, bit 4 set another. These read as a depth format and a region, but only the triangle
-at one depth was stored.
+E411 found that flipping a bit of 0x17100c changes what is stored; E465 and E466 read the bits
+with a depth ramp. Answered: bits 11:3 are the tile pitch minus one in tiles (E465: a dword 512 *
+(ty * (G + 1) + tx) + the in-tile order, in 18 cases on 13 target sizes, the sizes that are not
+multiples of the tile and G from 0 to 511 included). Bits 26:24 are the stored format (E466): 0
+float32, 1 the 24-bit unsigned integer round(z * 0xffffff), 2 the 16-bit integer round(z *
+0xffffff) >> 8 with two rows in a dword (256 dwords a tile); bit 19 stores the float negated (the
+three most frequent dwords only). That E411's earlier "region" bits 3 and 4 and its faults with
+bits 5 to 11 were this pitch is [infer] (E465).
 
-What is open: what the stored values mean (which formats), and whether the bits are a field. To
-settle it: store a depth ramp across the target with each of these bits and read the pages back, and
-vary the load and store bases and the target size for the region bits.
+What is open: what bit 19 does with the integer formats (the three most frequent stored dwords are
+the same as without it; the buffers were not compared). The formats 3 to 7 are Q120's, and bit 12
+and the pitch beyond bits 11:3 are Q071's. To settle it: store the integer formats with a depth
+that is negative before the conversion (a depth test greater with a negative ramp) with and
+without bit 19, and compare the whole buffers.

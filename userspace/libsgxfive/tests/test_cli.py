@@ -44,7 +44,9 @@ def test_usage_names_every_command():
         assert re.search(rf"\b{cmd}\b", usage), cmd
     for opt in ("--every-value", "--poke", "--pixels", "--regs", "--low", "--late", "--isp2",
                 "--blk-add", "--vtx-coords", "--obj2", "--pbe", "--ramp", "--print-addrs",
-                "--page-before", "--place", "bgpixel", "N^=V"):
+                "--page-before", "--place", "bgpixel", "N^=V", "--tri-full", "--tri-z",
+                "--depth-store", "--stencil", "--stencil-store", "--stencil-fill",
+                "--depth-store-fill", "--stencil-store-fill"):
         assert opt in usage, opt
 
 
@@ -1109,6 +1111,117 @@ def test_tri_depth_dump_writes_the_buffer_after_each_render(tmp_path, monkeypatc
         assert (tmp_path / f"depth.{n}.bin").read_bytes() == bytes([4, 3, 2, 1]) * (5 * 1024), n
     r = run(*depth_args("--depth-dump", "/nonexistent/dir"))
     assert "--depth-dump" in r.stdout, r.stdout
+
+
+def words(path):
+    import array
+    a = array.array("I")
+    a.frombytes(path.read_bytes())
+    return a
+
+
+def test_tri_depth_fill_index_and_bit_patterns(tmp_path, monkeypatch):
+    # --depth-fill index: dword i holds i (the address in the value); --depth-fill bit:K: dword i
+    # holds 0.75f when bit K of i is set, else 0.25f (a load shows through the pixels' depth
+    # test, one bit of the loaded address a render); the report counts a dword that left its
+    # pattern value as changed
+    kp = tmp_path / "kpoke"
+    kp.write_text("")
+    monkeypatch.setenv("SGXFIVE_KPOKE", str(kp))
+    for fill, want in (("index", lambda i: i),
+                       ("bit:3", lambda i: 0x3f400000 if i >> 3 & 1 else 0x3e800000)):
+        r = run(*depth_args("--depth-fill", fill, "--depth-pages", "4",
+                            "--depth-dump", str(tmp_path)))
+        assert r.returncode == 0, r.stdout + r.stderr
+        assert re.search(rf"^depth: 0x[0-9a-f]{{8}} 4 pages, fill {fill.replace(':', ' ')}, ",
+                         r.stdout, re.M), r.stdout
+        assert "depth #1: 4096 dwords, 0 changed," in r.stdout, r.stdout
+        w = words(tmp_path / "depth.1.bin")
+        assert all(w[i] == want(i) for i in range(4096)), fill
+
+
+@pytest.mark.parametrize("fill", ["bit", "bit:", "bit:32", "bit:x", "indexed", ""])
+def test_tri_depth_fill_is_checked(fill):
+    r = run("--mock", "tri", "--depth", "--depth-fill", fill)
+    assert r.returncode == 2, (fill, r.stdout + r.stderr)
+    assert "--depth-fill" in r.stderr, r.stderr
+
+
+def test_tri_stencil_and_store_buffers_are_armed_and_dumped(tmp_path, monkeypatch):
+    # --depth-store: the store base (rd:13) on a buffer of its own; --stencil: the stencil flag
+    # (ta:7 bit 8 too) and both stencil bases (rd:14, rd:15, bit 31 set) on a stencil buffer,
+    # --stencil-store: the store base on another; each filled (--depth-store-fill,
+    # --stencil-fill, --stencil-store-fill) and dumped
+    kp = tmp_path / "kpoke"
+    kp.write_text("")
+    monkeypatch.setenv("SGXFIVE_KPOKE", str(kp))
+    r = run(*depth_args("--depth-pages", "4", "--depth-store", "--stencil", "--stencil-store",
+                        "--depth-fill", "1", "--depth-store-fill", "2", "--stencil-fill", "3",
+                        "--stencil-store-fill", "4", "--depth-dump", str(tmp_path)))
+    assert r.returncode == 0, r.stdout + r.stderr
+    addrs = {m[1]: int(m[2], 16) for m in re.finditer(
+        r"^(depth|depth store|stencil|stencil store): (0x[0-9a-f]{8}) 4 pages, fill (0x\w+)",
+        r.stdout, re.M)}
+    assert len(addrs) == 4 and len(set(addrs.values())) == 4, r.stdout
+    off = {k: v - 0x3E000000 for k, v in addrs.items()}
+    assert kp.read_text().split() == [
+        "ta:7^=0x180", "rd:1=0x3e000000", "rd:11=0x0017100c", f"rd:12={off['depth']:#x}",
+        f"rd:13={off['depth store']:#x}", f"rd:14={0x80000000 | off['stencil']:#x}",
+        f"rd:15={0x80000000 | off['stencil store']:#x}"], kp.read_text()
+    for name, v in (("depth", 1), ("depth-store", 2), ("stencil", 3), ("stencil-store", 4)):
+        assert (tmp_path / f"{name}.1.bin").read_bytes() == v.to_bytes(4, "little") * 4096, name
+    for what in ("depth", "depth store", "stencil", "stencil store"):
+        assert re.search(rf"^{what} #1: 4096 dwords, 0 changed", r.stdout, re.M), what
+
+
+def test_tri_stencil_without_store_buffer_uses_one_buffer_for_both_bases(tmp_path, monkeypatch):
+    kp = tmp_path / "kpoke"
+    kp.write_text("")
+    monkeypatch.setenv("SGXFIVE_KPOKE", str(kp))
+    r = run(*depth_args("--stencil"))
+    assert r.returncode == 0, r.stdout + r.stderr
+    lines = kp.read_text().split()
+    assert lines[0] == "ta:7^=0x180", lines
+    assert lines[3][5:] == lines[4][5:], lines          # depth: one buffer for both bases
+    assert lines[5][5:] == lines[6][5:] and lines[5].startswith("rd:14=0x8"), lines
+    assert "stencil #1:" in r.stdout and "store #1" not in r.stdout, r.stdout
+
+
+@pytest.mark.parametrize("args", [["tri", "--stencil"], ["tri", "--depth-store"],
+                                  ["tri", "--stencil-store", "--depth"],
+                                  ["tri", "--depth", "--stencil-fill", "1"],
+                                  ["tri", "--depth", "--depth-store-fill", "1"],
+                                  ["tri", "--depth", "--stencil", "--stencil-store-fill", "1"]])
+def test_tri_stencil_options_are_checked(args):
+    r = run("--mock", *args)
+    assert r.returncode == 2, (args, r.stdout + r.stderr)
+    assert "bad option" not in r.stderr and ("--depth" in r.stderr or "--stencil" in r.stderr), \
+        r.stderr
+
+
+def test_tri_full_and_z_set_the_triangle():
+    # --tri-full: the triangle (0,0), (3W,0), (0,3H) covers the target; --tri-z A,B,C: the
+    # screen depth at each vertex (clip z 2z - 1), so 0.25,0.75,0.25 is a ramp across x
+    r = run("--mock", "tri", "--tri-full", "--tri-z", "0.25,0.75,0.25", "--width", "64",
+            "--height", "32")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^tri: triangle \(0,0\) \(192,0\) \(0,96\), depth 0.25 0.75 0.25$",
+                     r.stdout, re.M), r.stdout
+    assert re.search(r"^tri 64x32 #1: 2048 triangle, 0 background", r.stdout, re.M), r.stdout
+
+
+@pytest.mark.parametrize("z", ["1", "1,2", "a,b,c", "0.1,0.2,0.3,0.4", "-0.5,0,0", "0,0,1.5", ""])
+def test_tri_z_is_checked(z):
+    r = run("--mock", "tri", "--tri-z", z)
+    assert r.returncode == 2, (z, r.stdout + r.stderr)
+    assert "--tri-z" in r.stderr and "unknown" not in r.stderr, r.stderr
+    assert "three screen depths" in r.stderr, r.stderr
+
+
+def test_tri_full_and_z_are_for_tri():
+    for opt in (["--tri-full"], ["--tri-z", "0,0,0"]):
+        r = run("--mock", "fill", *opt)
+        assert r.returncode == 2 and "are for tri" in r.stderr, (opt, r.stderr)
 
 
 def test_tri_words_with_regs_reads_the_registers_at_every_snapshot(tmp_path, monkeypatch):

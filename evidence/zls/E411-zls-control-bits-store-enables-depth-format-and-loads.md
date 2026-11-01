@@ -3,7 +3,7 @@ id = "E411"
 claim = "In a render with depth and stencil stored (CR_ISP_ZLSCTL 0x17100c), clearing bit 2 stores nothing, clearing bit 17 stops the stencil store, clearing bit 18 stops the depth store, setting bit 19 stores the depth as -1.0, bit 24 as 0x00ffffff and bit 25 as 0xffffffff on two pages, with the same stored pages in both of two runs for all 32 flips; with bit 1 set, bit 13 drops the stencil store and bit 14 stores the loaded depth, and neither does anything without bit 1, in two runs each"
 unit = "zls"
 method = "probes/zls/control-bits.toml (control-bits.sh) on the laptop (direct cable), linux fork f1fad0ed9d0e with the debug option on: A) the store setup of probes/zls/load-store.sh (kernel poke ta:7^=0x180, rd:1 = 0x3e000000, rd:11 = the control, rd:12 = 0x11000, rd:13 = 0xd000, stencil bases rd:14 = 0x80001000 and rd:15 = 0x80005000, a 16-page scratch buffer of 0.25f, the triangle at z 0.5 with depth test less) with each bit of 0x17100c flipped, twice (66 jobs with the controls); B) bits 1, 13 and 14 in every combination added to 0x17100c and to 0x11700a in a store arrangement and in a load arrangement (the load base on the scratch pages), twice (68 jobs)"
-tiers = ["HW"]
+tiers = ["HW", "infer"]
 date = "2026-11-07"
 data = ["zls-control-bits"]
 terms = ["CR_ISP_ZLSCTL", "CR_ISP_BGOBJVALS.STENCIL", "ISP2"]
@@ -50,3 +50,11 @@ the stored depth the loaded one, and each changes the render's pixels in the loa
 
 **What it does not show.** The stencil load itself (no stencil value was loaded and read); the
 effect of the bits on a partial render's reload (not run); two runs a flip, no third.
+
+**Correction, 2026-11-08 (11.22).** The measurements above are unchanged. Their reading as a
+"region" is superseded: bits 3 to 11 are the tile pitch G (E465), bit 24 the 24-bit and bit 25 the
+16-bit stored depth format and bit 26 format 4, bit 19 the negated float (E466), and bits 13 and
+14 with bit 1 load the stencil and the depth (E467). That bits 3 and 4 changed the stored pages
+and bits 5 to 11 faulted the job is read as the pitch running out of the 16-page scratch buffer
+[infer]: E465 recomputes the pages of the bit 3, bit 4 and bit 26 rows from its rule by hand and
+they match; no run of 11.22 reproduced a fault, so the fault half is not shown.

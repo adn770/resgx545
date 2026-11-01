@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# zls store format: 0 probes (a shell script run on the laptop by the campaign).
+# Q101, Q071: bits 26:24, 19, 18, 17 and 2 of CR_ISP_ZLSCTL against what a store writes.
+needs = ["render", "kpoke", "reset"]
+name = "zls-store-format"
+script = "store-format.sh"

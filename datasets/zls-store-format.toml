@@ -1,0 +1,10 @@
+title = "script table zls/store-format"
+repo = "data"
+paths = ["zls/store-format/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 4
+size = 43791
+sha256 = "6179eea2cb801d3a9ead721889be27667ecc91375a1457d65d237061c428b0b3"
+recipe = "probes/zls/store-format.toml"
+needs = ["render", "kpoke", "reset"]

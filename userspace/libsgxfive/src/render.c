@@ -383,7 +383,7 @@ int sgxfive_tri_scene(const struct sgxfive_tri_cpu *c, const struct sgxfive_tri_
 	for (unsigned int i = 0; i < 3; i++) {
 		v[4 * i] = ndc(p->v[i][0], p->width);
 		v[4 * i + 1] = ndc(p->v[i][1], p->height);
-		v[4 * i + 2] = 0;
+		v[4 * i + 2] = sgxfive_f32(p->zndc[i]);
 		v[4 * i + 3] = sgxfive_f32(1.0f);
 	}
 	for (unsigned int i = 0; i < 2; i++)

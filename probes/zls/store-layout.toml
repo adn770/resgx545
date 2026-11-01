@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# zls store layout: 0 probes (a shell script run on the laptop by the campaign).
+# Q107, Q101: the address of each stored depth dword, from a depth ramp across the target.
+needs = ["render", "kpoke", "render_pb_pages", "reset"]
+name = "zls-store-layout"
+script = "store-layout.sh"

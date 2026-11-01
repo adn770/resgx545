@@ -23,8 +23,11 @@
  *   tri   [--width W --height H -n N] [--max-width W --max-height H] [--fault]
  *         [--scratch N [--scratch-fill V] [--scratch-at ADDR] [--scratch-file FILE]] [--kpoke-render N:SPEC]... [--move N:DX,DY]...
  *         [--geometry N]... [--keep-going] [--keep-overflow] [--dump-render DIR [--dump-each]]
- *         [--depth [--depth-ctl V] [--depth-ctl-next V] [--depth-fill V] [--depth-base V]
- *                [--depth-pages N] [--depth-dump DIR]] [--words DIR]
+ *         [--tri-full] [--tri-z A,B,C]
+ *         [--depth [--depth-ctl V] [--depth-ctl-next V] [--depth-fill F] [--depth-base V]
+ *                [--depth-pages N] [--depth-dump DIR] [--depth-store [--depth-store-fill F]]
+ *                [--stencil [--stencil-fill F] [--stencil-store [--stencil-store-fill F]]]]
+ *         [--words DIR]
  *         [--wait-ms MS] [--ctx2 [--share-pb] [--overlap] [--close-first-early] [--words-between]]
  *         [JOB OPTIONS]
  *                                 the first triangle on a render context, N times,
@@ -51,7 +54,11 @@
  *                                 the parameter buffer and goes on; --dump-each: the
  *                                 --dump-render files after every render N (DIR/tri.N.*);
  *                                 --depth: a depth buffer the ZLS pokes point at, its
- *                                 changed dwords and frequent values reported per render
+ *                                 changed dwords and frequent values reported per render;
+ *                                 a fill F is a value, index or bit:K; --depth-store,
+ *                                 --stencil, --stencil-store: further buffers (the store base
+ *                                 on its own, the stencil bases); --tri-full: the triangle
+ *                                 covers the target; --tri-z A,B,C: its vertices' depths
  *                                 --dump-render DIR: after the renders, the kernel's
  *                                 debugfs render_param and render_tadata copied to
  *                                 DIR/tri.param.bin and DIR/tri.tadata.bin;
@@ -216,6 +223,7 @@
  * Exit status: 0 all checks passed, 1 a check or call failed, 2 usage.
  */
 #include <errno.h>
+#include <stdarg.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -252,6 +260,32 @@ static const char *const heap_names[DRM_SGXFIVE_HEAP_COUNT] = {
 
 #define KPR_MAX	16
 
+/* A buffer's fill: one value, the dword's index, or 0.25f / 0.75f by bit K of the index. */
+struct fill {
+	enum { FILL_VALUE, FILL_INDEX, FILL_BIT } mode;
+	uint32_t val;			/* the value, or the bit K */
+	bool given;
+};
+
+static uint32_t fill_at(const struct fill *f, uint64_t i)
+{
+	if (f->mode == FILL_INDEX)
+		return (uint32_t)i;
+	if (f->mode == FILL_BIT)
+		return i >> f->val & 1 ? 0x3f400000 : 0x3e800000;
+	return f->val;
+}
+
+static void fill_print(const struct fill *f)
+{
+	if (f->mode == FILL_INDEX)
+		printf("fill index");
+	else if (f->mode == FILL_BIT)
+		printf("fill bit %u", f->val);
+	else
+		printf("fill 0x%08x", f->val);
+}
+
 struct opts {
 	uint32_t width, height, x, y, stride, colour;
 	uint32_t sx, sy, src_stride, dst_stride;
@@ -280,7 +314,18 @@ struct opts {
 	/* tri --depth: a depth buffer the ZLS pokes point at (all the depth_* below) */
 	bool depth;
 	bool depth_given;		/* a --depth-* option was given */
-	uint32_t depth_fill, depth_base, depth_ctl, depth_ctl_next;
+	uint32_t depth_base, depth_ctl, depth_ctl_next;
+	/*
+	 * the fills (a value, "index" or "bit:K") of the depth buffer and of the extra buffers:
+	 * --depth-store (the store base on a buffer of its own), --stencil (the stencil flag and
+	 * bases on a stencil buffer) and --stencil-store
+	 */
+	struct fill depth_fill, depth_store_fill, stencil_fill, stencil_store_fill;
+	bool depth_store, stencil, stencil_store;
+	bool zgiven;			/* a --depth-store, --stencil... option was given */
+	bool tri_full;			/* tri --tri-full: the triangle covers the target */
+	bool tri_z_given;		/* tri --tri-z A,B,C: the screen depth at each vertex */
+	float tri_z[3];
 	uint32_t depth_pages;		/* UINT32_MAX: the target's and sixteen over */
 	const char *depth_dump;		/* --depth-dump DIR: the buffer after each render */
 	bool ctx2;			/* tri: a second render context in the VM, rendering too */
@@ -332,8 +377,11 @@ static int usage(void)
 		"                      --kpoke-render N:SPEC --move N:DX,DY --geometry N\n"
 		"                      --keep-going --keep-overflow --dump-render DIR [--dump-each]\n"
 		"                      --words DIR\n"
-		"                      [--depth [--depth-ctl V] [--depth-ctl-next V] [--depth-fill V]\n"
-		"                       [--depth-base V] [--depth-pages N] [--depth-dump DIR]]\n"
+		"                      [--tri-full] [--tri-z A,B,C]\n"
+		"                      [--depth [--depth-ctl V] [--depth-ctl-next V] [--depth-fill F]\n"
+		"                       [--depth-base V] [--depth-pages N] [--depth-dump DIR]\n"
+		"                       [--depth-store [--depth-store-fill F]] [--stencil\n"
+		"                       [--stencil-fill F] [--stencil-store [--stencil-store-fill F]]]]\n"
 		"                      --wait-ms MS --ctx2 [--share-pb] [--overlap] [--close-first]\n"
 		"                      [--close-first-early] [--words-between]\n"
 		"                      [--kreg-render N:OFFSET=VALUE]\n"
@@ -2109,6 +2157,13 @@ static void scratch_fill(const struct scratch *s, uint32_t v, const uint32_t *d,
 		s->map[i] = i < nd ? d[i] : v;
 }
 
+/* every dword of the buffer as its fill says */
+static void zbuf_fill(const struct scratch *s, const struct fill *f)
+{
+	for (uint64_t i = 0; i < s->size / 4; i++)
+		s->map[i] = fill_at(f, i);
+}
+
 static void scratch_report(const struct scratch *s, uint32_t v, const uint32_t *d, uint32_t nd)
 {
 	const uint32_t per_page = SGXFIVE_PAGE_SIZE / 4;
@@ -2148,27 +2203,51 @@ static uint32_t depth_min_pages(const struct opts *o)
 			  SGXFIVE_PAGE_SIZE);
 }
 
-static int depth_arm(const struct scratch *d, uint32_t base, uint32_t ctl)
-{
-	char line[32];
-	int ret = kpoke_write("ta:7^=0x80");
+/* The ZLS buffers of tri --depth: the depth buffer, optional store, stencil and stencil store. */
+struct zbufs {
+	struct scratch depth, depth_store, stencil, stencil_store;
+};
 
-	snprintf(line, sizeof(line), "rd:1=0x%x", base);
+static int depth_poke(const char *fmt, ...)
+{
+	char line[40];
+	va_list ap;
+
+	va_start(ap, fmt);
+	vsnprintf(line, sizeof(line), fmt, ap);
+	va_end(ap);
+	return kpoke_write(line);
+}
+
+/*
+ * The pokes that point the job at the buffers: the render flags (depth buffer, with the stencil
+ * buffer's bit 8 when there is one), the ZLS base, the control, the depth load and store bases
+ * (offsets from the base; the store on its own buffer if there is one) and, with a stencil
+ * buffer, the stencil load and store bases (bit 31 set).
+ */
+static int depth_arm(const struct zbufs *z, uint32_t base, uint32_t ctl)
+{
+	const struct scratch *ds = z->depth_store.bo ? &z->depth_store : &z->depth;
+	const struct scratch *ss = z->stencil_store.bo ? &z->stencil_store : &z->stencil;
+	int ret = depth_poke(z->stencil.bo ? "ta:7^=0x180" : "ta:7^=0x80");
+
 	if (!ret)
-		ret = kpoke_write(line);
-	snprintf(line, sizeof(line), "rd:11=0x%08x", ctl);
+		ret = depth_poke("rd:1=0x%x", base);
 	if (!ret)
-		ret = kpoke_write(line);
-	snprintf(line, sizeof(line), "rd:12=0x%llx", (unsigned long long)(d->addr - base));
+		ret = depth_poke("rd:11=0x%08x", ctl);
 	if (!ret)
-		ret = kpoke_write(line);
-	snprintf(line, sizeof(line), "rd:13=0x%llx", (unsigned long long)(d->addr - base));
+		ret = depth_poke("rd:12=0x%llx", (unsigned long long)(z->depth.addr - base));
 	if (!ret)
-		ret = kpoke_write(line);
+		ret = depth_poke("rd:13=0x%llx", (unsigned long long)(ds->addr - base));
+	if (!ret && z->stencil.bo)
+		ret = depth_poke("rd:14=0x%llx", 0x80000000ull | (z->stencil.addr - base));
+	if (!ret && z->stencil.bo)
+		ret = depth_poke("rd:15=0x%llx", 0x80000000ull | (ss->addr - base));
 	return ret;
 }
 
-static void depth_report(const struct scratch *d, uint32_t fill, uint32_t render)
+static void depth_report(const char *name, const struct scratch *d, const struct fill *fill,
+			 uint32_t render)
 {
 	const uint64_t n = d->size / 4;
 	uint32_t *val = calloc(DEPTH_SLOTS, sizeof(*val));
@@ -2178,7 +2257,7 @@ static void depth_report(const struct scratch *d, uint32_t fill, uint32_t render
 	bool full = false;
 
 	if (!val || !cnt) {
-		printf("depth #%u: no memory for the report\n", render);
+		printf("%s #%u: no memory for the report\n", name, render);
 		free(val);
 		free(cnt);
 		return;
@@ -2187,7 +2266,7 @@ static void depth_report(const struct scratch *d, uint32_t fill, uint32_t render
 		const uint32_t v = d->map[i];
 		uint32_t h = (v * 2654435761u) >> 16;
 
-		changed += v != fill;
+		changed += v != fill_at(fill, i);
 		while (cnt[h] && val[h] != v)
 			h = (h + 1) & (DEPTH_SLOTS - 1);
 		if (!cnt[h]) {
@@ -2215,8 +2294,8 @@ static void depth_report(const struct scratch *d, uint32_t fill, uint32_t render
 			break;
 		top[nt++] = best;
 	}
-	printf("depth #%u: %llu dwords, %u changed, %u%s distinct;", render, (unsigned long long)n,
-	       changed, distinct, full ? "+" : "");
+	printf("%s #%u: %llu dwords, %u changed, %u%s distinct;", name, render,
+	       (unsigned long long)n, changed, distinct, full ? "+" : "");
 	for (unsigned int k = 0; k < nt; k++)
 		printf("%s 0x%08x x %u", k ? "," : "", val[top[k]], cnt[top[k]]);
 	printf("\n");
@@ -2224,13 +2303,13 @@ static void depth_report(const struct scratch *d, uint32_t fill, uint32_t render
 	free(cnt);
 }
 
-static int depth_dump(const char *dir, const struct scratch *d, uint32_t render)
+static int depth_dump(const char *dir, const char *name, const struct scratch *d, uint32_t render)
 {
 	char path[4096];
 	FILE *f;
 	int ret = 0;
 
-	snprintf(path, sizeof(path), "%s/depth.%u.bin", dir, render);
+	snprintf(path, sizeof(path), "%s/%s.%u.bin", dir, name, render);
 	f = fopen(path, "wb");
 	if (!f)
 		return -errno;
@@ -2448,7 +2527,8 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 	const uint32_t max_w = o->max_width == UINT32_MAX ? o->width : o->max_width;
 	const uint32_t max_h = o->max_height == UINT32_MAX ? o->height : o->max_height;
 	const long long wait_ns = o->wait_ms ? o->wait_ms * 1000000LL : WAIT_NS;
-	struct scratch sc = { 0 }, dc = { 0 };
+	struct scratch sc = { 0 };
+	struct zbufs z = { .depth = { 0 } };
 	uint32_t overflowed = 0;
 	int ret;
 
@@ -2478,17 +2558,30 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		const uint32_t pages = o->depth_pages != UINT32_MAX ? o->depth_pages :
 				       depth_min_pages(o) + DEPTH_MARGIN_PAGES;
 
-		ret = scratch_create(t, vm, pages, 0, &dc);
-		if (ret) {
-			fail("depth buffer", ret);
-			goto out;
+		struct { const char *name; bool want; struct scratch *s; const struct fill *f; } zb[] = {
+			{ "depth", true, &z.depth, &o->depth_fill },
+			{ "depth store", o->depth_store, &z.depth_store, &o->depth_store_fill },
+			{ "stencil", o->stencil, &z.stencil, &o->stencil_fill },
+			{ "stencil store", o->stencil_store, &z.stencil_store, &o->stencil_store_fill },
+		};
+
+		for (unsigned int k = 0; k < sizeof(zb) / sizeof(zb[0]); k++) {
+			if (!zb[k].want)
+				continue;
+			ret = scratch_create(t, vm, pages, 0, zb[k].s);
+			if (ret) {
+				fail(k ? "depth, stencil buffer" : "depth buffer", ret);
+				goto out;
+			}
+			printf("%s: 0x%08llx %u pages, ", zb[k].name, (unsigned long long)zb[k].s->addr,
+			       pages);
+			fill_print(zb[k].f);
+			if (!k)
+				printf(", base 0x%08x, control 0x%08x", o->depth_base, o->depth_ctl);
+			if (!k && o->depth_ctl_next)
+				printf(", then 0x%08x", o->depth_ctl_next);
+			printf("\n");
 		}
-		printf("depth: 0x%08llx %u pages, fill 0x%08x, base 0x%08x, control 0x%08x",
-		       (unsigned long long)dc.addr, pages, o->depth_fill, o->depth_base,
-		       o->depth_ctl);
-		if (o->depth_ctl_next)
-			printf(", then 0x%08x", o->depth_ctl_next);
-		printf("\n");
 	}
 	if (o->fault) {
 		struct sgxfive_tri_layout l;
@@ -2541,6 +2634,19 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		sgxfive_tri_default(&p, o->width, o->height);
 		p.colour = colours[i % 2][0];
 		p.bg_colour = colours[i % 2][1];
+		if (o->tri_full) {
+			p.v[0][0] = p.v[0][1] = p.v[1][1] = p.v[2][0] = 0;
+			p.v[1][0] = 3 * 16 * (int32_t)p.width;
+			p.v[2][1] = 3 * 16 * (int32_t)p.height;
+		}
+		if (o->tri_z_given)
+			for (int v = 0; v < 3; v++)
+				p.zndc[v] = 2 * o->tri_z[v] - 1;
+		if (o->tri_full || o->tri_z_given)
+			printf("tri: triangle (%d,%d) (%d,%d) (%d,%d), depth %g %g %g\n",
+			       p.v[0][0] / 16, p.v[0][1] / 16, p.v[1][0] / 16, p.v[1][1] / 16,
+			       p.v[2][0] / 16, p.v[2][1] / 16, (p.zndc[0] + 1) / 2, (p.zndc[1] + 1) / 2,
+			       (p.zndc[2] + 1) / 2);
 		for (unsigned int k = 0; k < o->nmoves; k++) {
 			if (o->moves[k].n != i + 1)
 				continue;
@@ -2551,15 +2657,22 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 			printf("tri: render %u moved by %d,%d\n", i + 1, o->moves[k].dx,
 			       o->moves[k].dy);
 		}
-		if (dc.bo) {
-			ret = depth_arm(&dc, o->depth_base, i && o->depth_ctl_next ?
+		if (z.depth.bo) {
+			ret = depth_arm(&z, o->depth_base, i && o->depth_ctl_next ?
 					o->depth_ctl_next : o->depth_ctl);
 			if (ret) {
 				fail("kpoke", ret);
 				goto out;
 			}
-			if (!i || !o->depth_ctl_next)
-				scratch_fill(&dc, o->depth_fill, NULL, 0);
+			if (!i || !o->depth_ctl_next) {
+				zbuf_fill(&z.depth, &o->depth_fill);
+				if (z.depth_store.bo)
+					zbuf_fill(&z.depth_store, &o->depth_store_fill);
+				if (z.stencil.bo)
+					zbuf_fill(&z.stencil, &o->stencil_fill);
+				if (z.stencil_store.bo)
+					zbuf_fill(&z.stencil_store, &o->stencil_store_fill);
+			}
 		}
 		for (unsigned int k = 0; k < o->nkpr; k++) {
 			if (o->kpr[k].n != i + 1 || o->kpr[k].second)
@@ -2655,10 +2768,24 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		print_regs(t, o);
 		if (sc.bo)
 			scratch_report(&sc, o->scratch_fill, o->scratch_data, o->scratch_words);
-		if (dc.bo) {
-			depth_report(&dc, o->depth_fill, i + 1);
-			if (o->depth_dump && depth_dump(o->depth_dump, &dc, i + 1))
-				printf("depth #%u: --depth-dump: %s\n", i + 1, strerror(errno));
+		if (z.depth.bo) {
+			const struct { const char *name, *file; const struct scratch *s;
+				       const struct fill *f; } zr[] = {
+				{ "depth", "depth", &z.depth, &o->depth_fill },
+				{ "depth store", "depth-store", &z.depth_store, &o->depth_store_fill },
+				{ "stencil", "stencil", &z.stencil, &o->stencil_fill },
+				{ "stencil store", "stencil-store", &z.stencil_store,
+				  &o->stencil_store_fill },
+			};
+
+			for (unsigned int k = 0; k < sizeof(zr) / sizeof(zr[0]); k++) {
+				if (!zr[k].s->bo)
+					continue;
+				depth_report(zr[k].name, zr[k].s, zr[k].f, i + 1);
+				if (o->depth_dump && depth_dump(o->depth_dump, zr[k].file, zr[k].s, i + 1))
+					printf("%s #%u: --depth-dump: %s\n", zr[k].name, i + 1,
+					       strerror(errno));
+			}
 		}
 		if (sgxfive_render_fb(r)) {	/* none before the first scene is built */
 			struct sgxfive_tri_layout l;
@@ -2741,7 +2868,10 @@ out:
 	sgxfive_render_destroy(r2);
 	sgxfive_render_destroy(r);
 	scratch_destroy(vm, &sc);
-	scratch_destroy(vm, &dc);
+	scratch_destroy(vm, &z.depth);
+	scratch_destroy(vm, &z.depth_store);
+	scratch_destroy(vm, &z.stencil);
+	scratch_destroy(vm, &z.stencil_store);
 	if (r2 && early_closed)
 		printf("tri: closing the second context\n");
 	else if (r2)
@@ -2865,8 +2995,51 @@ static bool parse_regs(const char *s, struct opts *o)
 	       o->regs_hi < REGS_SIZE;
 }
 
+/* A fill: a value, "index" or "bit:K" (K 0 to 31). */
+static bool parse_fill(const char *s, struct fill *f)
+{
+	uint32_t k;
+
+	f->given = true;
+	if (!strcmp(s, "index")) {
+		f->mode = FILL_INDEX;
+		return true;
+	}
+	if (!strncmp(s, "bit:", 4)) {
+		if (!parse_u32(s + 4, &k) || k > 31)
+			return false;
+		f->mode = FILL_BIT;
+		f->val = k;
+		return true;
+	}
+	f->mode = FILL_VALUE;
+	return parse_u32(s, &f->val);
+}
+
+/* --tri-z A,B,C: three screen depths, 0 to 1 */
+static bool parse_tri_z(const char *s, float z[3])
+{
+	char *end;
+
+	for (int i = 0; i < 3; i++) {
+		errno = 0;
+		z[i] = strtof(s, &end);
+		if (errno || end == s || !(z[i] >= 0.0f && z[i] <= 1.0f) ||
+		    *end != (i < 2 ? ',' : 0))
+			return false;
+		s = end + 1;
+	}
+	return true;
+}
+
 static int parse_opts(int argc, char **argv, struct opts *o)
 {
+	static const char *const fills[] = {
+		"--depth-fill", "--depth-store-fill", "--stencil-fill", "--stencil-store-fill",
+	};
+	struct fill *const fillp[] = { &o->depth_fill, &o->depth_store_fill, &o->stencil_fill,
+				       &o->stencil_store_fill };
+
 	static const struct { const char *name; size_t off; } names[] = {
 		{ "--width", offsetof(struct opts, width) },
 		{ "--height", offsetof(struct opts, height) },
@@ -2883,7 +3056,6 @@ static int parse_opts(int argc, char **argv, struct opts *o)
 		{ "--scratch", offsetof(struct opts, scratch) },
 		{ "--scratch-fill", offsetof(struct opts, scratch_fill) },
 		{ "--scratch-at", offsetof(struct opts, scratch_at) },
-		{ "--depth-fill", offsetof(struct opts, depth_fill) },
 		{ "--depth-base", offsetof(struct opts, depth_base) },
 		{ "--depth-ctl", offsetof(struct opts, depth_ctl) },
 		{ "--depth-ctl-next", offsetof(struct opts, depth_ctl_next) },
@@ -2905,6 +3077,38 @@ static int parse_opts(int argc, char **argv, struct opts *o)
 			i--;		/* a flag: no value */
 			continue;
 		}
+		if (!strcmp(argv[i], "--depth-store") || !strcmp(argv[i], "--stencil") ||
+		    !strcmp(argv[i], "--stencil-store") || !strcmp(argv[i], "--tri-full")) {
+			*(!strcmp(argv[i], "--tri-full") ? &o->tri_full :
+			  !strcmp(argv[i], "--depth-store") ? &o->depth_store :
+			  !strcmp(argv[i], "--stencil-store") ? &o->stencil_store : &o->stencil) = true;
+			o->zgiven |= argv[i][2] != 't';
+			i--;		/* a flag: no value */
+			continue;
+		}
+		if (!strcmp(argv[i], "--tri-z") && i + 1 < argc) {
+			if (!parse_tri_z(argv[i + 1], o->tri_z)) {
+				fprintf(stderr, "sgxfive-test: bad option --tri-z (three screen depths, 0 "
+					"to 1, comma separated)\n");
+				return -1;
+			}
+			o->tri_z_given = true;
+			continue;
+		}
+		for (size_t k = 0; k < sizeof(fills) / sizeof(fills[0]); k++) {
+			if (strcmp(argv[i], fills[k]))
+				continue;
+			if (i + 1 >= argc || !parse_fill(argv[i + 1], fillp[k])) {
+				fprintf(stderr, "sgxfive-test: bad option %s (a value, index or bit:K, K "
+					"0 to 31)\n", argv[i]);
+				return -1;
+			}
+			o->zgiven |= k > 1 || k == 1;
+			o->depth_given |= k == 0;
+			ok = true;
+		}
+		if (ok)
+			continue;
 		if (!strcmp(argv[i], "--depth-dump") && i + 1 < argc) {
 			o->depth_dump = argv[i + 1];
 			o->depth_given = true;
@@ -3148,7 +3352,10 @@ int main(int argc, char **argv)
 		.src_stride = 256, .dst_stride = 256, .n = 8,
 		.max_width = UINT32_MAX, .max_height = UINT32_MAX,
 		.scratch_fill = 0x3e800000,	/* 0.25f */
-		.depth_fill = 0x3f800000,	/* 1.0f */
+		.depth_fill = { FILL_VALUE, 0x3f800000, false },	/* 1.0f */
+		.depth_store_fill = { FILL_VALUE, 0xdeadbeef, false },
+		.stencil_fill = { FILL_VALUE, 0xdeadbeef, false },
+		.stencil_store_fill = { FILL_VALUE, 0xdeadbeef, false },
 		.depth_base = 0x3e000000,	/* rd:1, the ZLS base: the general heap's */
 		.depth_ctl = 0x0017100c,	/* a clearing frame that stores */
 		.depth_pages = UINT32_MAX,	/* the target's, and sixteen over */
@@ -3545,8 +3752,19 @@ int main(int argc, char **argv)
 		fprintf(stderr, "sgxfive-test: --dump-each needs --dump-render DIR\n");
 		return 2;
 	}
-	if (o.depth_given && !o.depth) {
-		fprintf(stderr, "sgxfive-test: the --depth-* options need --depth\n");
+	if ((o.depth_given || o.zgiven) && !o.depth) {
+		fprintf(stderr, "sgxfive-test: the --depth-*, --stencil* options need --depth\n");
+		return 2;
+	}
+	if (((o.stencil_fill.given || o.stencil_store) && !o.stencil) ||
+	    (o.stencil_store_fill.given && !o.stencil_store) ||
+	    (o.depth_store_fill.given && !o.depth_store)) {
+		fprintf(stderr, "sgxfive-test: --stencil-store and --stencil-fill need --stencil, "
+			"--stencil-store-fill --stencil-store, --depth-store-fill --depth-store\n");
+		return 2;
+	}
+	if ((o.tri_full || o.tri_z_given) && strcmp(cmd, "tri")) {
+		fprintf(stderr, "sgxfive-test: --tri-full and --tri-z are for tri\n");
 		return 2;
 	}
 	if (o.depth && (o.ctx2 || (o.depth_ctl_next && o.n < 2) ||

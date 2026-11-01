@@ -1,0 +1,10 @@
+title = "script table zls/load-copy"
+repo = "data"
+paths = ["zls/load-copy/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 4
+size = 37539
+sha256 = "acdfd9c9d60b7804f2b4be87e587090dc16eb24f495ce3c28aed9fdb41e54df4"
+recipe = "probes/zls/load-copy.toml"
+needs = ["render", "kpoke", "reset"]

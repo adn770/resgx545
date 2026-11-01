@@ -90,6 +90,29 @@ static void test_block(void)
 	CHECK_EQ(eos[1], 0x00070003);
 }
 
+/* The vertices' clip z (a depth ramp across the triangle): 0 is the default depth 0.5. */
+static void test_vertex_z(void)
+{
+	struct sgxfive_tri_cpu c = {
+		calloc(1, 4096), calloc(1, 4096), calloc(1, 4096), calloc(1, 4096),
+		calloc(1, 4096), 0,
+	};
+	struct drm_sgxfive_render_cmd cmd;
+	struct sgxfive_tri_params p;
+	const uint32_t *v = c.gen + SGXFIVE_TRI_G_VTX / 4;
+
+	sgxfive_tri_default(&p, 64, 64);
+	CHECK_EQ(p.zndc[0] == 0.0f && p.zndc[1] == 0.0f && p.zndc[2] == 0.0f, 1);
+	p.zndc[0] = -0.5f;
+	p.zndc[1] = 0.5f;
+	p.zndc[2] = 1.0f;
+	CHECK_EQ(sgxfive_tri_scene(&c, &L, &p, &cmd), 0);
+	CHECK_EQ(v[2], 0xbf000000);
+	CHECK_EQ(v[6], 0x3f000000);
+	CHECK_EQ(v[10], 0x3f800000);
+	CHECK_EQ(v[3], 0x3f800000);	/* w stays 1.0 */
+}
+
 static void test_vdm(void)
 {
 	static const uint32_t want[SGXFIVE_TRI_VDM_WORDS] = {
@@ -168,6 +191,8 @@ static void test_scene(void)
 	CHECK_EQ(g[SGXFIVE_TRI_G_VTX / 4 + 4], 0x3f400000);
 	CHECK_EQ(g[SGXFIVE_TRI_G_VTX / 4 + 5], 0xbec00000);
 	CHECK_EQ(g[SGXFIVE_TRI_G_VTX / 4 + 9], 0x3f400000);
+	CHECK_EQ(g[SGXFIVE_TRI_G_VTX / 4 + 2], 0);	/* clip z 0: depth 0.5 */
+	CHECK_EQ(g[SGXFIVE_TRI_G_VTX / 4 + 6], 0);
 	CHECK_EQ(g[SGXFIVE_TRI_G_IDX / 4], 0x00010000);
 	CHECK_EQ(g[SGXFIVE_TRI_G_IDX / 4 + 1] & 0xffff, 2);
 	CHECK_EQ(g[SGXFIVE_TRI_G_VDM / 4 + 10], 0xc0000000);
@@ -318,6 +343,7 @@ int main(void)
 	test_block();
 	test_vdm();
 	test_scene();
+	test_vertex_z();
 	test_tiling();
 	test_expect();
 	return tap_done();

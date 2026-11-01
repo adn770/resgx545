@@ -2556,7 +2556,7 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   the same stored pages in both of two runs for all 32 flips; with bit 1 set, bit 13 drops the
   stencil store and bit 14 stores the loaded depth, and neither does anything without bit 1, in two
   runs each.
-  *zls; HW; data: `zls-control-bits`.*
+  *zls; HW, infer; data: `zls-control-bits`.*
 - `E412` CR_REG_0148 (render details dword 9) at 0 and at 1 gives the same image, the same stored
   pages and a time within the spread in a render with depth and stencil stored, in 4x multisampled
   renders in modes 1 and 2, in a 1024x768 render and in a 1024x768 render that overflows the
@@ -2924,6 +2924,41 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   leaving the ramp, and the image is unchanged; 0x0740 reads 0 after all 20 jobs and after writes of
   0x200 and 0x3fe00 (2 of 2 each).
   *dpm; HW, infer; data: `dpm-partial-state-page`.*
+- `E465` The ZLS store writes the 32 x 16 pixel tile (tx, ty) at dword 512 * (ty * (G + 1) + tx) of
+  the depth buffer, G being CR_ISP_ZLSCTL bits 11:3, with the dword index inside the tile made of
+  the bits y0 x0 y1 x1 y2 x2 y3 x3 x4 from the lowest; in 18 cases on 13 target sizes (one run each)
+  every stored dword is at the rule's address in 16, and in the two overflowed 4096 x 4096 jobs
+  80640 and 48000 stored dwords are not (the zeros of E468 [infer]), and with a pitch smaller than
+  the tiles of a row the tiles overlap, so the window is (th - 1) * (G + 1) + tw tiles (64512 dwords
+  at 1024 x 768 and 326656 at 4096 x 4096 for the control 0x0017100c, G = 1).
+  *zls; HW, infer; data: `zls-store-layout`.*
+- `E466` Bits 26:24 of CR_ISP_ZLSCTL select the format of the stored depth: 0 the 32-bit float (512
+  dwords a 32 x 16 tile), 1 the 24-bit unsigned integer round(z * 0xffffff) (512 dwords a tile,
+  786432 of 786432 pixels exact), 2 a 16-bit integer, round(z * 0xffffff) >> 8, with the rows y even
+  and odd of a column in the low and high half of a dword (256 dwords a tile, 786432 of 786432
+  exact); 4 and 7 store no depth without a stencil buffer, and 3, 5 and 6 store other layouts; bit
+  19 stores the depth negated (shown by the three most frequent stored dwords only); bits 2 and 18
+  enable the depth store and bit 17 the stencil store (bit 17 from E411; here clearing it changes
+  nothing without a stencil buffer).
+  *zls; HW, infer; data: `zls-store-format`.*
+- `E467` A render loads depth only with CR_ISP_ZLSCTL bits 1 and 14 and stencil only with bits 1 and
+  13 (neither without bit 1; load-only controls without the store enables store nothing), the loaded
+  dword read at the address the store uses (32768 of 32768 depth dwords and 8191 of 8191 stencil
+  dwords copied to the same index of a second buffer; stencil dword 0 cannot be told from the clear
+  value 0), the loaded depth takes part in the depth test (16384 of 32768 pixels drawn when half the
+  loaded depth is 0.25f and half 0.75f against the triangle at 0.5, less), and the sign bit of a
+  loaded depth is cleared (0xdeadbeef stored as 0x5eadbeef, 0xffffffff as 0x7fffffff, 0x80000000 as
+  0).
+  *zls; HW, infer; data: `zls-load-copy`.*
+- `E468` In a 1024 x 768 job that overflows the parameter buffer (0x28, 0x23 and 0x30 pages) with
+  the ZLS store of the control 0x0017110c (no two tiles at one address), the 336 tiles of tile rows
+  0 to 11 hold zeros (48 more are half zeros, at tile columns 6, 14, 23 and 31), the other 1152
+  tiles hold the depth with the sign bit set at the address of E465 (602112 of 602112 dwords), and
+  11264 more stored dwords (their value was not tabulated) lie in the 2 slots each tile row has
+  beyond its 32 tiles; the aliased job of the control 0x0017100c equals those tiles written in
+  raster order with the first 8 x 12 tile macrotile last, except 512 dwords (0x28, 0x23) and 1536
+  (0x30).
+  *dpm; HW, infer; data: `zls-store-layout`.*
 
 ## By unit
 
@@ -2934,7 +2969,7 @@ Records: E151, E457.
 ### dpm
 
 Records: E199, E200, E201, E202, E204, E205, E206, E203, E253, E256, E309, E310, E311, E312, E313,
-E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464.
+E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E468.
 
 ### edm
 
@@ -3014,4 +3049,4 @@ E413, E414, E427, E440.
 
 ### zls
 
-Records: E057, E058, E250, E335, E336, E337, E411.
+Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467.
