@@ -1,0 +1,15 @@
+[[term]]
+id = "G1133"
+name = "UCACHEL2"
+status = "named"
+
+[[term.source]]
+term = "UCACHEL2"
+kind = "unit"
+sgx545 = "0x0004[5:4]"
+meaning = "USE level 2 (code) cache [infer]"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0451"
+licence = "GPL-2.0"
+evidence = "clock gate field EUR_CR_CLKGATECTL2_UCACHEL2_CLKG beside the USE clock gates [infer from name]"

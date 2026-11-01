@@ -1,0 +1,15 @@
+[[term]]
+id = "G1123"
+name = "PPP"
+status = "named"
+
+[[term.source]]
+term = "PPP"
+kind = "unit"
+sgx545 = "MTE registers 0x0230, 0x023c, 0x0248"
+meaning = "Rogue unit that takes state updates and primitives before the clipper and TA; SGX545's counterpart is the MTE"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0738"
+licence = "MIT"
+evidence = "Rogue PPP_MULTISAMPLECTL, PPP_CTRL and PPP_SCREEN sit at our MTE register offsets by function (glossary registers); Mesa gives no expansion"

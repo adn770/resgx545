@@ -1,0 +1,15 @@
+[[term]]
+id = "G1148"
+name = "object list"
+status = "named"
+
+[[term.source]]
+term = "object list"
+kind = "concept"
+sgx545 = "-"
+meaning = "per-tile list of objects from the TA"
+tier = "4"
+source = "patent-US9105131"
+citation = "C0762"
+licence = "patent"
+evidence = "OCR text"

@@ -13,3 +13,19 @@ source = "sgx545-ce"
 citation = "C0164"
 licence = "GPL-2.0"
 evidence = "-"
+
+[[term]]
+id = "G1146"
+name = "misc_info_features.core_rev"
+status = "named"
+
+[[term.source]]
+term = "ui32CoreRev"
+kind = "field"
+sgx545 = "MISCINFO_FEATURES+0x00 (=MISC+0x04)"
+meaning = "core revision"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0760"
+licence = "GPL-2.0"
+evidence = "0x54 misc buffer = 1+7+13 dwords: no memory/status debug"

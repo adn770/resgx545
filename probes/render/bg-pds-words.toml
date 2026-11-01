@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# render bg pds words: 0 probes, a script (bg-pds-words.sh).
+# Q014: the background object's PDS words with a high bit flipped, on 64x32 and 128x128
+needs = ["render"]
+name = "render-bg-pds-words"
+script = "bg-pds-words.sh"

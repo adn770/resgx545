@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: 2026 Josep Torra
 """Tests of render_words.py: the kernel's debugfs render_words by the glossary's names, the RT
-data set's counts, the 11.10 tables and the readers of their scripts' output."""
+data set's counts, the 11.10 and 11.12 tables, the readers of their scripts' output and of the
+driver's lines in a run's kernel log."""
 from __future__ import annotations
 
 import os
@@ -126,9 +127,59 @@ def test_case_words_reads_snapshots_ta3d_and_cleanup():
 def test_report_lists_counts_by_snapshot_and_the_cleanup():
     text = render_words.report(OUT)
     assert "one: cleanup ret 0" in text
-    assert "  1: pending 1 executed 1" in text
-    assert text.index("  1: pending") < text.index("  held: pending 1 executed 0")
+    assert "  1: ctx - pending 1 executed 1" in text
+    assert text.index("  1: ctx") < text.index("  held: ctx - pending 1 executed 0")
     assert "two: cleanup ret -110" in text
+
+
+def test_report_names_the_context_each_snapshot_shows():
+    # render_words shows the newest render context, which need not be the case's own when
+    # several processes render at once: each snapshot names its context page
+    out = "== a: tri -n 1\n#### words 1\n" + WORDS + "#### end\n"
+    assert "  1: ctx 0x32411000 pending 1 executed 1" in render_words.report(out)
+    assert "  0: ctx - pending 0" in render_words.report(OUT)
+
+
+def test_the_11_12_tables_are_among_the_tables():
+    t = render_words.tables()
+    for path in ("render/held-reset", "render/replay-pending"):
+        d = tomllib.loads(t[path])
+        assert "hold_recovery" in d["needs"] and "reset" in d["needs"]
+    assert tomllib.loads(t["render/held-reset"])["stage"] == ["vdm/state1"]
+
+
+# a kernel log as dmesg prints it: the cases' marks, the driver's lines, others
+KLOG = """[ 10.000000] resgx545 campaign render/held-reset 20261103T120000 0123abcd
+[ 10.100000] resgx545 case fault
+[ 10.700000] gma500 0000:00:02.0: [drm] *ERROR* sgxfive: BIF fault 0x90008 at 0x3e00000a (PD 0x6365000) stalls job 7, recovering
+[ 10.700100] gma500 0000:00:02.0: [drm] sgxfive: job 7 hung, recovery held (debugfs hold_recovery)
+[ 12.000000] usb 1-1: something else
+[ 16.000000] gma500 0000:00:02.0: [drm] SGX stopped, 3 events seen
+[ 16.001000] gma500 0000:00:02.0: [drm] SGX reset: BIF_FAULT 0x3e00000a EVENT_STATUS 0x20000000/0x480
+[ 16.002000] gma500 0000:00:02.0: [drm] SGX boot: kicking the EDM
+[ 16.003000] gma500 0000:00:02.0: [drm] SGX boot: EDM up after 206 us
+[ 20.000000] resgx545 case cleanup
+[ 20.500000] gma500 0000:00:02.0: [drm] *ERROR* sgxfive: job 9 hung, recovering
+[ 20.500100] gma500 0000:00:02.0: [drm] sgxfive: job 9 hung, recovery held (debugfs hold_recovery)
+[ 21.900000] gma500 0000:00:02.0: [drm] sgxfive: render context cleanup failed, resetting
+"""
+
+
+def test_kernel_lines_are_split_by_case_and_kind():
+    k = render_words.kernel_lines(KLOG)
+    assert list(k) == ["", "fault", "cleanup"]
+    f = k["fault"]
+    assert [x["kind"] for x in f] == ["fault", "held", "stopped", "reset", "boot", "up"]
+    assert f[0]["job"] == 7 and f[0]["t"] == 10.7 and f[1]["job"] == 7
+    assert [x["kind"] for x in k["cleanup"]] == ["hang", "held", "cleanup-failed"]
+
+
+def test_log_report_counts_each_cases_kinds_and_the_held_span():
+    text = render_words.log_report(KLOG)
+    assert "fault: fault 1, held 1, stopped 1, reset 1, boot 1, up 1" in text
+    assert "fault: held 10.700 to reset 16.001 (5.301 s), 0 lines between" in text
+    assert "cleanup: hang 1, held 1, cleanup-failed 1" in text
+    assert "cleanup: held 20.500, no reset" in text
 
 
 def test_the_11_10_tables_parse_and_name_their_scripts():

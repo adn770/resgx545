@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# render word pokes: 0 probes, a script (word-pokes.sh).
+# Q049, Q065, Q067, Q081: render context dword 7, the PB descriptor's flag bit 0,
+# CR_DPM_REG_074C bit 8 and render flag bit 0, each poked at a render's kick
+needs = [
+    "render", "kpoke", "render_words", "render_param", "render_tadata", "render_cleanup",
+    "render_pb_pages", "hold_recovery", "reset", "buf09",
+]
+name = "render-word-pokes"
+script = "word-pokes.sh"

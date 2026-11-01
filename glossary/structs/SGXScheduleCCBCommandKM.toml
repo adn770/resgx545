@@ -1,0 +1,15 @@
+[[term]]
+id = "G1130"
+name = "SGXScheduleCCBCommandKM"
+status = "named"
+
+[[term.source]]
+term = "SGXScheduleCCBCommandKM"
+kind = "function"
+sgx545 = "-"
+meaning = "queue a kernel CCB command"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0745"
+licence = "GPL-2.0"
+evidence = "-"

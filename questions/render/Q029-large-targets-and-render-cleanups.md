@@ -3,7 +3,10 @@ id = "Q029"
 question = "what does the render context's own cleanup wait for once its RT data set is cleaned up, and which cleanup releases the parameter buffer in the TA/3D control block?"
 unit = "render"
 phase = 9
-evidence = ["E148", "E023", "E156", "E164", "E289", "E303", "E304", "E314", "E315", "E318"]
+evidence = [
+    "E148", "E023", "E156", "E164", "E289", "E303", "E304", "E314", "E315", "E318", "E354",
+    "E355",
+]
 terms = ["CR_ISP_CTL.PROCESS_EMPTY_TILES", "hw_rt_data_set.executed_count", "hw_rt_data_set.pending_count_dev_vaddr"]
 +++
 
@@ -25,10 +28,10 @@ cleanup failures of E303 and E304 were the kernel's pending count of one per sce
 
 What stays open: what the render context's own cleanup waits for once its RT data set is gone,
 and which of the cleanups releases the parameter buffer in the TA/3D control block (the trace shows
-dwords 46 and 47 cleared at the PB step, and dword 32 holding the cleaned-up descriptor). Also
-open: why the cleanups of the held hung jobs of E318 fail (kernel log, one run), after the
-recovery that failed their contexts had rebuilt their RT data sets; their cleanup traces were read
-too early to show the step that waits.
+dwords 46 and 47 cleared at the PB step, and dword 32 holding the cleaned-up descriptor). The
+cleanups of E318's held jobs failed after blame-free resets that ran the held job again; with a
+reset that blames the held job, the held context's cleanup completes (E354, E355; linux fork
+commit 31).
 
 To settle it: the cleanup trace (debugfs `render_cleanup`) of a context whose PB descriptor
 another context shares, which tells the context's PB descriptor from the one the cleanup names in

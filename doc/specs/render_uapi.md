@@ -406,11 +406,10 @@ sets `0x400`). Read on the hardware the two are equal after every job of scenes 
 kicks and every cleanup completes; one off either way, the cleanup times out and the kernel
 resets the GPU (E314, E315, one run each). The kernel's earlier rule, one per scene, failed the
 cleanup of every scene of several kicks (E303, E304). A recovery reset sets the count to the
-number of jobs it runs again, one each: that agrees with the per-kick rule only while every
-render it runs again carries `0x400`, which holds because the kernel always sets it; a render
-whose `0x400` a debug poke cleared would leave the count one above (section 13).
+sum of what the jobs it runs again add, by the same rule: a render whose `0x400` a debug poke
+cleared adds nothing when it runs again, and the set's cleanup completes (E356, two rounds).
 
-Evidence: E049 to E053, E303, E304, E314, E315.
+Evidence: E049 to E053, E303, E304, E314, E315, E356.
 
 ### 8.6 Out-fences and errors
 
@@ -518,13 +517,15 @@ for it: the access word, the pending count, the render target's status and the b
 list) at the next render's kick, after the kernel's own writes. `render_words` shows every word
 of those structures and of the render details of the newest render context, a line each as the
 poke that would set it. `hold_recovery` makes both detectors leave a hung job in the firmware,
-its memory as the GPU left it, until `reset` is written; the kernel warns once that recovery is
-held, while the detectors keep logging the hang at every round (E317). A reset asked for
-(`reset`, a failed cleanup) is never held. `reset` blames no job, so every unfinished job runs
-again after it, the held one included, which then faults or hangs again and is recovered with
-blame: a hold costs two recoveries (E317, E318, one run each; section 13). `rtds_keep` makes
-renders leave the RT data set's size words and out-of-memory counters as the previous job left
-them.
+its memory as the GPU left it, until `reset` is written; the kernel logs the detector's line and
+a warning that recovery is held, then nothing until the reset (E354). A `reset` written while a
+recovery is held is that recovery: the held job fails with its detector's error (`-EIO` for a
+fault, `-ETIMEDOUT` for a timeout), the jobs behind it on its context are cancelled and the other
+contexts' jobs run again, one reset in all; once the held job has finished a `reset` blames no one
+(E354). The reset a failed render context cleanup asks for is not done while a recovery is held:
+the hold stays and the context's memory waits for the reset that ends it (E355). `rtds_keep`
+makes renders leave the RT data set's size words and out-of-memory counters as the previous job
+left them.
 
 Held on the laptop, a render that faulted on its unmapped stream page stops the firmware, not
 only its job: the firmware answers no kernel command (the kernel's 500 ms wait for GETMISCINFO
@@ -537,10 +538,18 @@ has finished its TA: before recovery its render memory holds the object and the 
 and the recovery zeroes the TA data and keeps the parameter buffer (E318, one run; the pixel
 task's hang held twice).
 
+The jobs another context queued while a recovery was held run again after the reset that ends it,
+and the pending count the reset sets for each context is the sum of what its jobs run again add
+(section 8.5): a render without render flag bit 10 run again adds nothing, and its cleanup
+completes (E356, two rounds). The EDM gives each context's page directory one of the bus
+interface's 15 client directory lists at its first kick (the 16th is its own) and the next one
+again when another context has taken it; a fault's `CR_BIF_FAULT` names the list, and the kernel
+reads the directory back from it (E360).
+
 E024 does not show the timeout path, other kinds of fault or the core's behaviour without
 recovery; every fault in its run was recovered.
 
-Evidence: E021, E024, E317, E318, E319; Q003, Q028.
+Evidence: E021, E024, E317, E318, E319, E354, E355, E356, E360; Q003, Q028.
 
 ## 11. Security model
 
@@ -601,8 +610,8 @@ checks of sections 2, 6 and 8.
 - Q028: which of the recovery's reset steps a later job needs, now that a held fault is seen to
   stop the firmware (section 10);
 - Q029: what the render context's own cleanup waits for once its RT data set is cleaned up,
-  which cleanup releases the parameter buffer, and why a held job's cleanup fails after its
-  recovery (sections 8.5 and 10);
+  and which cleanup releases the parameter buffer (sections 8.5 and 10; a held job's cleanup now
+  completes after the reset that blames it, E355);
 - Q003: which event a bus-interface fault raises, and which requester each fault bit of the
   interrupt status names;
 - Q004: what a transfer context's flag bits 1 and 4 and a priority above 0 do (the interface
@@ -612,19 +621,30 @@ checks of sections 2, 6 and 8.
 - Q006: whether a render client's VM can carry its own copy of the control block instead of a
   writable mapping of the device's (section 5.3).
 
-Kernel follow-ups for a later commit of the linux fork (the 11.10 runs all used fork commit
-66dc1fda6ae8, which stays as it is):
+The kernel follow-ups the 11.10 runs listed are done in linux fork commits 30 and 31 (b5a86838ae59,
+the laptop's module since 11.12) and checked on the laptop:
 
-- a `reset` written while a recovery is held should recover with the held job as its suspect,
-  so the held job fails once instead of running again and being recovered with blame (E317,
-  E318; section 10); or the debug view should say that it runs again;
-- a recovery reset should set the RT data set's pending count by the per-kick rule, the sum of
-  what each job it runs again adds (`sgx_render_executed`), not one per job, with a KUnit case
-  for a render without `0x400` run again (section 8.5); or the commit message should say that the
-  rule holds because the kernel always sets `0x400`;
-- while recovery is held the fault watchdog and the job timeout should not log their
-  "recovering" lines at every round (205 lines in E317's 22 s), only the one warning; the commit
-  message and the code comment saying the detectors report once should match;
-- the KUnit case for `rtds_keep` checks only the switch's accessor: the kept words in a built
-  render, `sgxfive_render_words` and the order of the kernel pokes after the kernel's own writes
-  in a render's run are untested.
+- a `reset` written while a recovery is held recovers with the held job as its suspect: the held
+  fault fails once with `-EIO`, the held hang once with `-ETIMEDOUT`, one reset each, no second
+  fault or hang (E354);
+- a recovery reset sets the RT data set's pending count by the per-kick rule; a render without
+  `0x400` run again ends with both counts 0, a scene whose geometry kick ran again with equal
+  counts after every kick, and every cleanup completes (E356); KUnit covers a render without
+  `0x400` (commit 30);
+- while recovery is held the detectors log one line and the hold's warning, then nothing until the
+  reset (E354, 11.2 s of a held fault);
+- a failed cleanup while recovery is held keeps the hold (E355);
+- KUnit (commit 31) checks a render's words with the kernel pokes applied once on top of the
+  kernel's own, the RT data set `rtds_keep` leaves as it was, and every line of `render_words`.
+
+Left open for the kernel: a hold still lets a client give up on a job it queued behind the held
+one, which then runs after the reset with its memory gone and faults (E317).
+
+Follow-ups for a later fork commit, found while writing E355:
+
+- `sgxfive_render_fini` logs "render context cleanup failed, resetting" even when the reset is
+  dropped under a hold (E355 shows that line with no reset after it): log "resetting" only when
+  no recovery is held, or say the reset is deferred;
+- tidy the comment block of `sgxfive_render_fini` to say the same;
+- `sgxfive_recovery_hold` reads `sgx->recovery_held` plainly in its CLEANUP branch while the
+  field is written with `WRITE_ONCE`: use `READ_ONCE` or `sgxfive_recovery_held()`.

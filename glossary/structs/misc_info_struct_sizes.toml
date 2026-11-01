@@ -1,4 +1,20 @@
 [[term]]
+id = "G1147"
+name = "misc_info_struct_sizes"
+status = "named"
+
+[[term.source]]
+term = "SGX_MISCINFO_STRUCT_SIZES"
+kind = "struct"
+sgx545 = "0x34"
+meaning = "structure sizes reported by GETMISCINFO"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0761"
+licence = "GPL-2.0"
+evidence = "-"
+
+[[term]]
 id = "G0011"
 name = "misc_info_struct_sizes.sizeof_3d_registers"
 status = "named"

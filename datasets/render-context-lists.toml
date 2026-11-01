@@ -1,0 +1,10 @@
+title = "script table render/context-lists"
+repo = "data"
+paths = ["render/context-lists/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-03"
+files = 4
+size = 33553
+sha256 = "ba72b904c25b45e6cc3e3ebd0c27ef44a221110055741bd4cea1a5f568452a20"
+recipe = "probes/render/context-lists.toml"
+needs = ["render", "render_words", "buf09", "regs", "reset"]

@@ -3,16 +3,23 @@ id = "Q082"
 question = "what do CR_EVENT_STATUS2 bits 6 and 7 mean, bit 6 set while a job hangs in its pixel task and bit 7 while a TA job hangs or faults?"
 unit = "edm"
 phase = 11
-evidence = ["E317", "E318", "E319"]
+evidence = ["E317", "E318", "E319", "E357"]
 terms = ["CR_EVENT_STATUS2"]
 +++
 
-`CR_EVENT_STATUS2` reads 0x400 when the GPU is idle. With recovery held it reads 0x480 after a
-render faulted reading its stream page (E317) and after the VDM state word 1 bits 15:13 = 0 job
-hung in its TA (E318), 0x440 while the job hung in its pixel task is held (E318, twice), and 0x400
-while the EDM's own write to a read-only control block faults (E319). Every reset puts it back to
-0x400. The bits are read once per held job, 2 s in; when they rise is not shown, and the kernel
-does not enable or acknowledge them.
+Narrowed by E357 (timelines of every change from 50 ms before each job): the timing is answered,
+the meaning is not. `CR_EVENT_STATUS2` bit 7 (`TRIG_TA` in the GPL header) sets 0.1 to 0.2 ms
+after the TA kick's PB load in a TA that hangs and in one that faults on its stream page; bit 6
+(`TRIG_3D`) about 0.1 ms after the pixel units start in a fill whose pixel program loops 128 or
+more times, not 16. Neither sets through renders from 64x64 to 4096x4096, partial renders, fills
+or copies. Once set, each stays through later jobs until a reset, which puts the register back to
+0x400; the kernel neither enables nor clears them [DDK: linux fork, source reading]. That explains
+E317-E319's readings: 0x480 after a TA fault or hang, 0x440 after the pixel hang, 0x400 when the
+EDM's own write faulted before any TA ran.
 
-To settle it: sample the register through a normal render with the register timeline (TA, then 3D)
-and through each held hang, from the kick on.
+What is open: the condition itself. A task running or stalled past a short time is the reading
+that fits both bits [infer]; the threshold between 16 and 128 loop iterations is not placed, nor
+whether a long but progressing TA sets bit 7.
+
+To settle it: loop fills of 16 to 128 iterations in small steps after a reset, and a TA job whose
+vertex program loops a known count, each with the register sampled.

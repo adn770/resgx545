@@ -1,4 +1,31 @@
 [[term]]
+id = "G1141"
+name = "hw_render_context"
+status = "named"
+
+[[term.source]]
+term = "SGXMKIF_HWRENDERCONTEXT"
+kind = "struct"
+sgx545 = "0x44"
+meaning = "HW render context (suspend/resume target)"
+tier = "1"
+source = "intel-ctp-santos10"
+citation = "C0756"
+licence = "GPL-2.0 OR MIT"
+evidence = "named only in a comment"
+
+[[term.source]]
+term = "rogue_fwif_fwrendercontext"
+kind = "struct"
+sgx545 = "~ HWRENDERCONTEXT"
+meaning = "Rogue FW render context (geom + frag common contexts)"
+tier = "3"
+source = "linux-imagination"
+citation = "C0757"
+licence = "GPL-2.0 OR MIT"
+evidence = "same role"
+
+[[term]]
 id = "G0573"
 name = "hw_render_context.ccb_base_dev_vaddr"
 status = "named"
@@ -93,12 +120,12 @@ status = "inferred"
 term = "hw_render_context.param_obj_dev_vaddr"
 kind = "field"
 sgx545 = "HWRENDERCONTEXT+0x01c"
-meaning = "the address of a 0x40-byte object in the parameter heap, at the DPM page table's base plus 0x40000 in both stacks; what the firmware keeps there is open (Q049) [infer]"
+meaning = "the address of a 0x40-byte object in the parameter heap, at the DPM page table's base plus 0x40000 in both stacks; no path run (a render, a scene, a partial render, a cleanup) uses the word's value; the word and the object are unchanged (Q049) [infer]"
 tier = "ours"
 source = "resgx545"
 citation = "captures/render/state-variations.toml"
 licence = "MIT"
-evidence = "[CAP] E323 (render-state-variations): the closed client's word points at a 0x40-byte object at the page table base + 0x40000, and moves with the PB size; [HW] E323 (render-closed-compare): ours reads 0x10463000 with the page table at 0x10423000; [infer] the name is ours"
+evidence = "[CAP] E323 (render-state-variations): the closed client's word points at a 0x40-byte object at the page table base + 0x40000, and moves with the PB size; [HW] E323 (render-closed-compare): ours reads 0x10463000 with the page table at 0x10423000; [HW] E361 (render-word-pokes, two runs): set to 0xdeadbeef or to the background object's address at the first kick, a render, a three-kick scene, an overflowing render and the cleanup come out as their controls, the object reads the same and the word keeps the value; [infer] the name is ours"
 
 [[term]]
 id = "G1105"

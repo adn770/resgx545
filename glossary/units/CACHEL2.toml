@@ -1,0 +1,15 @@
+[[term]]
+id = "G1116"
+name = "CACHEL2"
+status = "named"
+
+[[term.source]]
+term = "CACHEL2"
+kind = "unit"
+sgx545 = "0x0004[3:2]"
+meaning = "level 2 cache [infer]"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0442"
+licence = "GPL-2.0"
+evidence = "clock gate field EUR_CR_CLKGATECTL2_CACHEL2_CLKG [infer from name]"

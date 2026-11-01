@@ -1,0 +1,15 @@
+[[term]]
+id = "G1140"
+name = "hw_2d_context"
+status = "named"
+
+[[term.source]]
+term = "SGXMKIF_HW2DCONTEXT"
+kind = "struct"
+sgx545 = "-"
+meaning = "HW 2D context; no 2D core on SGX545"
+tier = "1"
+source = "intel-ctp-santos10"
+citation = "C0150"
+licence = "GPL-2.0 OR MIT"
+evidence = "-"

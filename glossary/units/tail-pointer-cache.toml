@@ -1,0 +1,15 @@
+[[term]]
+id = "G1149"
+name = "tail pointer cache"
+status = "named"
+
+[[term.source]]
+term = "tail pointer cache"
+kind = "concept"
+sgx545 = "-"
+meaning = "keeps the address of the next available control-stream block per tile"
+tier = "4"
+source = "patent-US8669987"
+citation = "C0763"
+licence = "patent"
+evidence = "OCR text; [RE] the EDM flushes it at the last kick"

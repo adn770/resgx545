@@ -184,7 +184,7 @@ evidence records its rows, its fields' rows and its measured width cite.
   VDM_CONTEXT_LOAD [14], VDM_TASK_KICKED [13], OTPM_MEM_CLEARED [12], OTPM_FLUSHED_INV [11],
   DCU_INVAL_COMPLETE [10], GSG_FLUSHED [9], GSG_LOADED [8], TRIG_TA [7], TRIG_3D [6], TRIG_DL [5],
   DPM_DHOST_FREE_LOAD [3], DPM_HOST_FREE_LOAD [2], DPM_3D_FREE_LOAD [1], DPM_TA_FREE_LOAD [0];
-  uncovered 31:16, 4 (17 bits).
+  uncovered 31:16, 4 (17 bits). Records: E357.
 - `0x012c` `CR_EVENT_STATUS`: width 32 bits assumed; 29 fields: MASTER_INTERRUPT [31], TIMER [29],
   TA_DPM_FAULT [28], MADD_CACHE_INVAL_COMPLETE [26], DPM_OUT_OF_MEMORY_ZLS [25], DPM_TA_MEM_FREE
   [24], ISP_END_TILE [23], DPM_INIT_END [22], ISP2_ZLS_CSW_FINISHED [21], OTPM_INV [20],
@@ -229,7 +229,8 @@ evidence records its rows, its fields' rows and its measured width cite.
 - `0x0044` `CR_HWPERF_COUNTER0`: width 0 bits (-, E246); no field rows. Records: E149, E150, E246.
 - `0x0048` `CR_HWPERF_COUNTER1`: width 0 bits (-, E246); no field rows. Records: E149, E150, E246.
 - `0x004c` `CR_HWPERF_COUNTER2`: width 0 bits (-, E246); no field rows. Records: E149, E150, E246.
-- `0x0050` `CR_HWPERF_COUNTER3`: width 0 bits (-, E246); no field rows. Records: E149, E150, E246.
+- `0x0050` `CR_HWPERF_COUNTER3`: width 0 bits (-, E246); no field rows. Records: E149, E150, E246,
+  E359.
 - `0x0054` `CR_HWPERF_COUNTER4`: width 0 bits (-, E246); no field rows. Records: E149, E150, E246.
 - `0x0058` `CR_HWPERF_COUNTER5`: width 0 bits (-, E246); no field rows. Records: E149, E150, E246.
 - `0x005c` `CR_HWPERF_COUNTER6`: width 0 bits (-, E246); no field rows. Records: E149, E150, E246.

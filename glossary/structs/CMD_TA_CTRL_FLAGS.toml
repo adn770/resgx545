@@ -1,0 +1,15 @@
+[[term]]
+id = "G1117"
+name = "CMD_TA_CTRL_FLAGS.READY"
+status = "named"
+
+[[term.source]]
+term = "SGXMKIF_CMDTA_CTRLFLAGS_READY"
+kind = "flag"
+sgx545 = "CMDTA+0x058 bit0"
+meaning = "shared block complete; set last (0x1)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0732"
+licence = "GPL-2.0"
+evidence = "-"

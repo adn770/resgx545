@@ -1,0 +1,15 @@
+[[term]]
+id = "G1119"
+name = "PASS_TYPE"
+status = "named"
+
+[[term.source]]
+term = "PASSTYPE"
+kind = "enum"
+sgx545 = "isp0 [27:25] values"
+meaning = "OPAQUE, TRANSLUCENT, PUNCH_THROUGH, VIEWPORT_OBJECT..."
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0734"
+licence = "MIT"
+evidence = "SGX 3 is the scissor-mask pass; Rogue 3 is VIEWPORT_OBJECT [infer: same role]"

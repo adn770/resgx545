@@ -1,0 +1,26 @@
+[[term]]
+id = "G1124"
+name = "Programmable Data Sequencer (PDS)"
+status = "named"
+
+[[term.source]]
+term = "PDS"
+kind = "unit"
+sgx545 = "-"
+meaning = "runs data-master programs that load data and start USSE tasks"
+tier = "4"
+source = "patent-US8046761"
+citation = "C0739"
+licence = "patent"
+evidence = "OCR text"
+
+[[term.source]]
+term = "PDS"
+kind = "unit"
+sgx545 = "CR_CLKGATECTL.PDS0_CLKG"
+meaning = "PDS block (clock gate of PDS 0)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0438"
+licence = "GPL-2.0"
+evidence = "-"

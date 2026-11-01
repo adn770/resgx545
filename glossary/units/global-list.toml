@@ -1,0 +1,15 @@
+[[term]]
+id = "G1139"
+name = "global list"
+status = "named"
+
+[[term.source]]
+term = "global list"
+kind = "concept"
+sgx545 = "-"
+meaning = "the list of object data that falls in more than one macro-tile"
+tier = "4"
+source = "patent-US8669987"
+citation = "C0755"
+licence = "patent"
+evidence = "OCR text; [RE] the EDM grows the TA's global-list share on out of memory"

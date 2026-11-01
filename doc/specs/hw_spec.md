@@ -204,6 +204,12 @@ directory cache by writing `INVALDC` to `BIF_CTRL` and then 0 (`SGXResetInvalDC`
 So `CID` and `BIF_DIR_LIST_BASE<CID>` name the page directory, hence the address space, of a
 fault.
 
+On the laptop the EDM keeps its own directory in `BASE15` and gives each render context's
+directory one of lists 0 to 14 at its first kick, in turn after a reset (1, 2, ... 14, then 0),
+recording the last in TA/3D control block dword 49; our kernel reads a fault's directory back from
+the list `CID` names (E360). A fault raises no bit of `EVENT_STATUS` or `EVENT_STATUS2` of its
+own (E357).
+
 ### 5.6 Unit names
 
 `BIF` bus interface and MMU; `DPM` parameter memory manager; `TA` tile accelerator; `VDM`
@@ -212,7 +218,7 @@ sequencer; `USE` the USSE shader core; `ISP` hidden-surface processor; `TSP`, `T
 and shading processor and its pre-processor; `PBE` pixel back end (tile write-out).
 
 *Based on sgx545-ce `src/services4/srvkm/hwdefs/sgx545defs.h`,
-`src/services4/srvkm/devices/sgx/sgxreset.c`.*
+`src/services4/srvkm/devices/sgx/sgxreset.c`; E357, E360.*
 
 ## 6. How the DDK resets and starts the core
 
@@ -284,9 +290,16 @@ value, is `doc/specs/boot_sequence.md`.
 `TA_*` is the geometry and tiling front end, `ISP` the hidden-surface stage, `PIXELBE` the tile
 write-out, `DPM` the parameter memory manager.
 
+`EVENT_STATUS2` (`0x0118`) reads 0x400 (`DCU_INVAL_COMPLETE`) when the core is idle. Its
+`TRIG_TA` (bit 7) and `TRIG_3D` (bit 6) latch on the laptop: bit 7 within 0.2 ms of the PB load of
+a TA that hangs or faults, bit 6 about 0.1 ms into a fill whose pixel program loops 128 times or
+more; neither sets in the renders, fills and copies of our stack, and each stays set until the
+core is reset (E357). `CLKGATESTATUS` (`0x0008`) reads 0x20 idle and the same values under a
+floating-point and an integer pixel loop with the gates as the boot leaves them (E365; Q048).
+
 *Based on sgx545-ce `src/services4/srvkm/devices/sgx/sgxinit.c`, `sgxreset.c`,
 `src/services4/include4/sgxscript.h`, `src/services4/include/sgx_mkif_km.h`,
-`src/services4/srvkm/hwdefs/sgx545defs.h`.*
+`src/services4/srvkm/hwdefs/sgx545defs.h`; E357, E365.*
 
 ## 7. Where the microkernel comes from
 

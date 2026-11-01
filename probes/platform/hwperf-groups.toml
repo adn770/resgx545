@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# platform hwperf groups: 2 probes, a script (hwperf-groups.sh).
+# Q075: the HWPerf counters read around seven jobs under each of the 16 counter groups
+needs = ["render", "hwperf"]
+name = "platform-hwperf-groups"
+script = "hwperf-groups.sh"
+
+[[probe]]
+name = "platform-hwperf-groups-loop-128"
+question = "a fill whose pixel program loops 128 times over eight instructions (six integer multiply-adds)"
+source = "int_loop.s"
+inputs = ["ITER"]
+labels = ["128 iterations"]
+cases = [[128]]
+
+[[probe]]
+name = "platform-hwperf-groups-loop-1024"
+question = "the same loop 1024 times"
+source = "int_loop.s"
+inputs = ["ITER"]
+labels = ["1024 iterations"]
+cases = [[1024]]

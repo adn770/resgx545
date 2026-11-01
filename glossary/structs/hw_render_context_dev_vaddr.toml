@@ -1,0 +1,15 @@
+[[term]]
+id = "G1142"
+name = "hw_render_context_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "sHWRenderContextDevVAddr"
+kind = "field"
+sgx545 = "-"
+meaning = "device address of the registered render context"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0731"
+licence = "GPL-2.0"
+evidence = "-"

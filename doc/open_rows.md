@@ -220,7 +220,8 @@ sits, the reading, and the evidence records it rests on.
 
 - `G1103` `hw_render_context.param_obj_dev_vaddr` (HWRENDERCONTEXT+0x01c): the address of a
   0x40-byte object in the parameter heap, at the DPM page table's base plus 0x40000 in both stacks;
-  what the firmware keeps there is open (Q049) [infer]. Evidence: E323.
+  no path run (a render, a scene, a partial render, a cleanup) uses the word's value; the word and
+  the object are unchanged (Q049) [infer]. Evidence: E323, E361.
 
 ## structs: hw_render_details
 
@@ -291,10 +292,11 @@ sits, the reading, and the evidence records it rests on.
 - `G0732` `ta3d_ctl.kick_marks` (TA3D_CTL+0x0d8): kick marks: bit 0 set by the TA kick and the
   TA-finished handler, bit 1 by the 3D kick; what reads them is not shown [infer]. Evidence: E156,
   E158, E163.
-- `G1076` `ta3d_ctl.render_context_count` (TA3D_CTL+0x0c4): TA3DCtl dword 49: a per-context count or
-  index from the firmware's boot, modulo 15 (0 to 0xe, then 0 again): a context's first kick
-  advances it by one, whatever its renders, before the kick's PB load; what bounds it at 15 is not
-  known [infer]. Evidence: E314, E316, E319.
+- `G1076` `ta3d_ctl.render_context_count` (TA3D_CTL+0x0c4): TA3DCtl dword 49: the bus interface
+  directory list (0 to 14) the EDM last gave a render context's page directory: a kick whose
+  directory is in no list writes it into the next list's CR_BIF_DIR_LIST_BASEn (BASE0 for 0) and
+  advances the word, mod 15 because list 15 is the EDM's own; the name is older than the reading
+  [infer]. Evidence: E314, E316, E319, E360.
 - `G0735` `ta3d_ctl.saved_ta_global_list` (TA3D_CTL+0x084): CR_DPM_TA_GLOBAL_LIST as the
   out-of-memory path saves it before it grows the TA's global list; the global kind of out-of-memory
   writes it back [infer]. Evidence: E160.

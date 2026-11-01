@@ -1,0 +1,15 @@
+[[term]]
+id = "G1131"
+name = "SGXScheduleProcessQueuesKM"
+status = "named"
+
+[[term.source]]
+term = "SGXScheduleProcessQueuesKM"
+kind = "function"
+sgx545 = "-"
+meaning = "kernel side of SGXScheduleProcessQueues"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0746"
+licence = "GPL-2.0"
+evidence = "-"

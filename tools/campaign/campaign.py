@@ -427,13 +427,14 @@ def _log_mark(target, what: str) -> str | None:
     return mark
 
 
-_KEEP = re.compile(r"gma500|BUG|Oops|Call Trace|WARNING")
+_KEEP = re.compile(r"gma500|BUG|Oops|Call Trace|WARNING|resgx545 case ")
 _BODY = re.compile(r"^\[[^\]]*\] ?(.*)$")
 
 
 def _log_since(target, mark: str) -> str:
     """The mark line, then the driver and fault lines of the kernel log after it (gma500,
-    BUG, Oops, WARNING, Call Trace and the indented trace lines that follow them).  A mark
+    BUG, Oops, WARNING, Call Trace and the indented trace lines that follow them) and the
+    marks a script writes at each of its cases ("resgx545 case NAME ...").  A mark
     that is not in the log (the ring wrapped) is a CampaignError, not an empty log."""
     lines = target._ssh("sudo -n dmesg").splitlines()
     marks = [n for n, ln in enumerate(lines) if mark in ln]

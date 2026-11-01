@@ -1,0 +1,15 @@
+[[term]]
+id = "G1127"
+name = "SGXDoKickKM"
+status = "named"
+
+[[term.source]]
+term = "SGXDoKickKM"
+kind = "function"
+sgx545 = "-"
+meaning = "kernel side of SGXKickTA"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0742"
+licence = "GPL-2.0"
+evidence = "-"

@@ -1,4 +1,20 @@
 [[term]]
+id = "G1143"
+name = "hw_render_details"
+status = "named"
+
+[[term.source]]
+term = "rogue_fwif_cmd_frag"
+kind = "struct"
+sgx545 = "~ HWRENDERDETAILS"
+meaning = "Rogue fragment (3D) command"
+tier = "3"
+source = "linux-imagination"
+citation = "C0758"
+licence = "GPL-2.0 OR MIT"
+evidence = "SGX keeps the 3D state in render details, not a command"
+
+[[term]]
 id = "G0538"
 name = "hw_render_details.access_dev_vaddr"
 status = "named"

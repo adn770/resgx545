@@ -1,4 +1,20 @@
 [[term]]
+id = "G1144"
+name = "hw_rt_data"
+status = "named"
+
+[[term.source]]
+term = "rogue_fwif_hwrtdata"
+kind = "struct"
+sgx545 = "~ HWRTDATA/HWRTDATASET"
+meaning = "Rogue FW render-target data (PM state, tail pointers, region headers)"
+tier = "3"
+source = "linux-imagination"
+citation = "C0759"
+licence = "GPL-2.0 OR MIT"
+evidence = "same role: per-render-target FW state (E325 8)"
+
+[[term]]
 id = "G0547"
 name = "hw_rt_data.bgobj_dev_vaddr"
 status = "named"

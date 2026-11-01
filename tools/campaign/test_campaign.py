@@ -993,6 +993,20 @@ def test_oops_bug_and_trace_lines_are_kept(tmp_path):
     assert "unrelated" not in log and "not a trace" not in log
 
 
+def test_a_scripts_case_marks_are_kept(tmp_path):
+    # a script marks the kernel log at each of its cases ("resgx545 case NAME ..."), so a
+    # reader can tell which case the driver's lines follow (render_words.py log)
+    t = probe_table(tmp_path, ["a"], head='needs = ["render"]\n')
+    tg = LogFake(debugfs=(), dev=("card0", "renderD128"), lines=(
+        "[4.0] resgx545 case fault 1700000000-42\n"
+        "[4.1] gma500 0000:00:02.0: [drm] sgxfive: job 7 hung, recovery held\n"
+        "[4.2] resgx545 other words\n"))
+    run(t, tg, tmp_path)
+    log = kernel_log(tmp_path)
+    assert "resgx545 case fault 1700000000-42" in log and "recovery held" in log
+    assert "other words" not in log
+
+
 def test_the_kernel_log_is_kept_when_the_table_fails(tmp_path):
     tg = LogFake(debugfs=("vm_low",), dev=("card0", "renderD128"))
     tg.run = lambda *a: (_ for _ in ()).throw(campaign.probe.ProbeError("boom"))

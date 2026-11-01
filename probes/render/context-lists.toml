@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# render context lists: 0 probes, a script (context-lists.sh).
+# Q083: TA/3D control block dword 49 and the bus interface's directory lists with 14 and 16
+# render contexts alive at once
+needs = ["render", "render_words", "buf09", "regs", "reset"]
+name = "render-context-lists"
+script = "context-lists.sh"

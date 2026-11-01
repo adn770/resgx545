@@ -1,0 +1,15 @@
+[[term]]
+id = "G1150"
+name = "transfer_kick"
+status = "named"
+
+[[term.source]]
+term = "PVRSRV_TRANSFER_SGX_KICK"
+kind = "struct"
+sgx545 = "0x50 (i386)"
+meaning = "bridge payload of SGX_SUBMITTRANSFER"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0764"
+licence = "GPL-2.0"
+evidence = "-"

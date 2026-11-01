@@ -49,10 +49,18 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   object` (4, patent-US20090058848).
 - `control stream` G0516: per-tile control stream data written by the TA. From `control stream` (4,
   patent-US8669987).
+- `data master` G1137: Rogue firmware list of data masters (analogue). From `data master` (3,
+  linux-imagination); `data master` (4, patent-US8046761).
 - `display list` G0070: per-tile display lists (macrotiles). From `display list` (4,
   patent-US7324115).
+- `free list` G1138: Rogue parameter memory free lists (analogue). From `free list` (3,
+  linux-imagination); `free list` (4, patent-US7978199).
+- `global list` G1139: the list of object data that falls in more than one macro-tile. From `global
+  list` (4, patent-US8669987).
 - `macro tile` G0557: Rogue firmware array of macro tiles (analogue). From `macrotile_array` (3,
   linux-imagination); `macro tile` (4, patent-US7978199).
+- `object list` G1148: per-tile list of objects from the TA. From `object list` (4,
+  patent-US9105131).
 - `partial render` G0558: Rogue fragment job run when the PM runs out of memory (analogue). From
   `partial render` (3, linux-imagination); `partial render` (4, imgtec-performance-recommendations);
   `Partial render` (4, patent-US8723860).
@@ -61,6 +69,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `region header` G0562: per-tile region headers written by geometry (Rogue analogue). From `region
   header` (3, linux-imagination); `region header` (4, patent-US9105131); `Region Header` (4,
   patent-US9384584).
+- `tail pointer cache` G1149: keeps the address of the next available control-stream block per tile.
+  From `tail pointer cache` (4, patent-US8669987).
 - `terminate bounding box` G0334: the screen region outside which tiles are invalid: they are not
   processed at the end of the scene. From `terminate bounding box` (4, patent-US9384584).
 - `tile` G0335: 32x16 pixels, two adjacent 16x16 tiles, as the TE writes the control stream. From
@@ -88,6 +98,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   names; signals end of render. From `PIXELBE` (1, sgx545-ce); `PBE` (4,
   imgtec-sgx-arch-guide-1.0.13); `Pixel Back End` (4, powervr-docs); `pixel coprocessor` (4,
   ti-omap4430-trm).
+- `Programmable Data Sequencer (PDS)` G1124 (CR_CLKGATECTL.PDS0_CLKG): PDS block (clock gate of PDS
+  0). From `PDS` (1, sgx545-ce); `PDS` (4, patent-US8046761).
 - `Texture and Shading Processor (TSP)` G0066 (CR_CLKGATECTL.TSP_CLKG): TSP block (its clock gate).
   From `TSP` (1, sgx545-ce); `TSP` (4, imgtec-sgx-arch-guide-1.0.13).
 - `Tile Accelerator (TA)` G0067 (CR_SOFT_RESET.TA_RESET): TA block (its soft reset). From `TA` (1,
@@ -102,6 +114,11 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   reference manual, the wrapper of the main cache: arbitrates the PDS, USSE and texture requests,
   caches them at level 0 and decompresses textures; one of two readings (Q048) [infer]. From
   `mux/arbiter/demux/decompression unit (MADD)` (4, ti-omap4430-trm).
+- `CACHEL2` G1116 (0x0004[3:2]): level 2 cache [infer]. From `CACHEL2` (1, sgx545-ce).
+- `UCACHEL2` G1133 (0x0004[5:4]): USE level 2 (code) cache [infer]. From `UCACHEL2` (1, sgx545-ce).
+- `PPP` G1123 (MTE registers 0x0230, 0x023c, 0x0248): Rogue unit that takes state updates and
+  primitives before the clipper and TA; SGX545's counterpart is the MTE. From `PPP` (3,
+  mesa-csbgen).
 
 ## 2. Registers and their fields
 
@@ -1408,6 +1425,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 
 ### field
 
+- `hw_render_context_dev_vaddr` G1142: device address of the registered render context. From
+  `sHWRenderContextDevVAddr` (1, sgx545-ce).
 - `pb_block.first_page` G0593: inferred reading (unconfirmed): a PB block's third word: the closed
   client and our kernel both hold the PB descriptor's own address there; how the page-table builder
   uses it is a reading [infer]. From `pb_block.first_page` (ours, resgx545).
@@ -1698,7 +1717,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   context. From `sHWPBDescDevVAddr` (1, sgx545-ce).
 - `hw_render_context.param_obj_dev_vaddr` G1103 (HWRENDERCONTEXT+0x01c): inferred reading
   (unconfirmed): the address of a 0x40-byte object in the parameter heap, at the DPM page table's
-  base plus 0x40000 in both stacks; what the firmware keeps there is open (Q049) [infer]. From
+  base plus 0x40000 in both stacks; no path run (a render, a scene, a partial render, a cleanup)
+  uses the word's value; the word and the object are unchanged (Q049) [infer]. From
   `hw_render_context.param_obj_dev_vaddr` (ours, resgx545).
 - `hw_render_context.pending_renders_head` G0528 (HWRENDERCONTEXT+0x020): first render details
   waiting for their scene's TA to finish (pending list) [infer]. From
@@ -2012,6 +2032,9 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   `ui32NumSPMRenders` (1, sgx545-ce).
 - `hw_rt_data_set.num_rt_data` G1112 (HWRTDATASET+0x014): the number of RT data that follow the
   set's header, used in turn one per scene. From `hw_rt_data_set.num_rt_data` (ours, resgx545).
+- `hw_rt_data_set.hw_rt_data` G1145 (HWRTDATASET+0x018): the set's hw_rt_data array, 0x38 bytes
+  each; the TA command's hw_rt_data_dev_vaddr points at one [infer]. From
+  `hw_rt_data_set.hw_rt_data` (ours, resgx545).
 - `hw_transfer_context.fw_com_ctx_flags` G0105 (HWTRANSFERCONTEXT+0x000): context flags. From
   `fw_com_ctx_flags` (3, linux-imagination).
 - `hw_transfer_context.priority` G0107 (HWTRANSFERCONTEXT+0x004): priority. From
@@ -2042,6 +2065,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   `ui32MiscInfoFlags` (1, sgx545-ce).
 - `misc_info.struct_sizes` G0112 (MISC+0x20): structure sizes block. From `sSGXStructSizes` (1,
   sgx545-ce).
+- `misc_info_features.core_rev` G1146 (MISCINFO_FEATURES+0x00 (=MISC+0x04)): core revision. From
+  `ui32CoreRev` (1, sgx545-ce).
 - `misc_info_struct_sizes.sizeof_cmd_ta` G0012 (MISCINFO_STRUCT_SIZES+0x00 (=MISC+0x20); value
   0x2b0): size of CMDTA the EDM was built for: TA command (client CCB entry for TA/3D work). From
   `ui32Sizeof_CMDTA` (1, sgx545-ce).
@@ -2081,6 +2106,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `misc_info_struct_sizes.sizeof_command` G0014 (MISCINFO_STRUCT_SIZES+0x30 (=MISC+0x50); value
   0x20): size of COMMAND the EDM was built for: kernel CCB command. From `ui32Sizeof_COMMAND` (1,
   sgx545-ce).
+- `ccb_kick.ccb_offset` G1135 (SGX_CCB_KICK+0x1f0): client-CCB offset of CMDTA_SHARED. From
+  `ui32CCBOffset` (1, sgx545-ce).
 - `ta3d_ctl.ta3d_ctl_dev_vaddr` G0739 (TA3D_CTL+0x000): the control block's own address, copied into
   sa0, the base the EDM reads the block through [infer]. From `ta3d_ctl.ta3d_ctl_dev_vaddr` (ours,
   resgx545).
@@ -2153,9 +2180,10 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `ta3d_ctl.signature_3d_dev_vaddr` G0737 (TA3D_CTL+0x0b4): the 3D signature buffer's address,
   copied into sa45 [infer]. From `ta3d_ctl.signature_3d_dev_vaddr` (ours, resgx545).
 - `ta3d_ctl.render_context_count` G1076 (TA3D_CTL+0x0c4): inferred reading (unconfirmed): TA3DCtl
-  dword 49: a per-context count or index from the firmware's boot, modulo 15 (0 to 0xe, then 0
-  again): a context's first kick advances it by one, whatever its renders, before the kick's PB
-  load; what bounds it at 15 is not known [infer]. From `ta3d_ctl.render_context_count` (ours,
+  dword 49: the bus interface directory list (0 to 14) the EDM last gave a render context's page
+  directory: a kick whose directory is in no list writes it into the next list's
+  CR_BIF_DIR_LIST_BASEn (BASE0 for 0) and advances the word, mod 15 because list 15 is the EDM's
+  own; the name is older than the reading [infer]. From `ta3d_ctl.render_context_count` (ours,
   resgx545).
 - `ta3d_ctl.pid_ta` G0605 (TA3D_CTL+0x0c8): the PID of the TA's render context, recorded by the TA
   kick [infer]. From `ta3d_ctl.pid_ta` (ours, resgx545).
@@ -2401,6 +2429,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `GEOM_FLAGS.INVALIDATE_DATA_CACHE` G0465 (CMDTA+0x004 bit6 (0x40)): invalidate the data cache
   before the TA (CR_CACHE_CTRL bit 28) [infer]. From `GEOM_FLAGS.INVALIDATE_DATA_CACHE` (ours,
   resgx545).
+- `CMD_TA_CTRL_FLAGS.READY` G1117 (CMDTA+0x058 bit0): shared block complete; set last (0x1). From
+  `SGXMKIF_CMDTA_CTRLFLAGS_READY` (1, sgx545-ce).
 - `PB_FLAGS.INIT_PAGE_TABLE` G0481 (HWPBDESC+0x000 bit0 (0x1)): rebuild the DPM page table and free
   list from the initial values and the block list [infer]. From `PB_FLAGS.INIT_PAGE_TABLE` (ours,
   resgx545).
@@ -2463,8 +2493,26 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `FRAG_FLAGS.TA3D_DEPENDENCY` G0240 (render flags bit9 (0x200)): signal the TA->3D dependency sync
   at the render end [infer]. From `FRAG_FLAGS.TA3D_DEPENDENCY` (ours, resgx545).
 
+### function
+
+- `DevInitSGXPart2KM` G1118: kernel side of SGXDevInitPart2. From `DevInitSGXPart2KM` (1,
+  sgx545-ce).
+- `SGXCleanupRequest` G1125: SGXMKIF_CMD_CLEANUP + wait. From `SGXCleanupRequest` (1, sgx545-ce).
+- `SGXDevInitPart2` G1126: srvinit: hand init info to kernel. From `SGXDevInitPart2` (2,
+  cdv-libsrv_um).
+- `SGXDoKickKM` G1127: kernel side of SGXKickTA. From `SGXDoKickKM` (1, sgx545-ce).
+- `SGXGetInfoForSrvinitKM` G1128: kernel side of SGXGetInfoForSrvInit. From `SGXGetInfoForSrvinitKM`
+  (1, sgx545-ce).
+- `SGXGetMiscInfoKM` G1129: kernel side of SGXGetMiscInfo. From `SGXGetMiscInfoKM` (1, sgx545-ce).
+- `SGXScheduleCCBCommandKM` G1130: queue a kernel CCB command. From `SGXScheduleCCBCommandKM` (1,
+  sgx545-ce).
+- `SGXScheduleProcessQueuesKM` G1131: kernel side of SGXScheduleProcessQueues. From
+  `SGXScheduleProcessQueuesKM` (1, sgx545-ce).
+
 ### struct
 
+- `hw_2d_context` G1140: HW 2D context; no 2D core on SGX545. From `SGXMKIF_HW2DCONTEXT` (1,
+  intel-ctp-santos10).
 - `device_sync_object` G0101 (0x10): pending values + complete-counter addresses of one sync. From
   `PVRSRV_DEVICE_SYNC_OBJECT` (1, sgx545-ce).
 - `misc_info_features` G0113 (0x1c at MISC+0x04): core/DDK identification returned by GETMISCINFO.
@@ -2473,11 +2521,22 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   From `SGXMKIF_CMDTA_SHARED` (1, sgx545-ce).
 - `kernel_ccb` G0109 (0x2000): kernel CCB: 256 commands. From `PVRSRV_SGX_KERNEL_CCB` (1,
   sgx545-ce).
+- `ccb_kick` G1134 (0x22c (i386)): bridge payload of SGX_DOKICK (kernel-side kick of a CMDTA). From
+  `SGX_CCB_KICK` (1, sgx545-ce).
+- `cmd_ta` G1136 (0x2b0, ~ CMDTA): TA command structure proper; CMDTA_SHARED is part of it. From
+  `SGXMKIF_CMDTA` (1, emgd-linux); `rogue_fwif_cmd_geom` (3, linux-imagination).
+- `misc_info_struct_sizes` G1147 (0x34): structure sizes reported by GETMISCINFO. From
+  `SGX_MISCINFO_STRUCT_SIZES` (1, sgx545-ce).
 - `host_ctl` G0010 (0x44): host control block (init/power/cleanup status, timers). From
   `SGXMKIF_HOST_CTL` (1, sgx545-ce).
+- `hw_render_context` G1141 (0x44, ~ HWRENDERCONTEXT): HW render context (suspend/resume target).
+  From `SGXMKIF_HWRENDERCONTEXT` (1, intel-ctp-santos10); `rogue_fwif_fwrendercontext` (3,
+  linux-imagination).
 - `transfer_cmd` G0114 (0x4c8, ~ TRANSFERCMD): transfer command structure proper; holds
   TRANSFERCMD_SHARED. From `SGXMKIF_TRANSFERCMD` (1, emgd-linux); `rogue_fwif_cmd_transfer` (3,
   linux-imagination).
+- `transfer_kick` G1150 (0x50 (i386)): bridge payload of SGX_SUBMITTRANSFER. From
+  `PVRSRV_TRANSFER_SGX_KICK` (1, sgx545-ce).
 - `misc_info` G0110 (0x54): misc-info buffer (hKernelSGXMiscMemInfo). From
   `PVRSRV_SGX_MISCINFO_INFO` (1, sgx545-ce).
 - `ccb_ctl` G0095 (0x8, ~ PVRSRV_SGX_CCB_CTL): CCB control: write and read offsets (kernel and
@@ -2497,6 +2556,10 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   `psHWBlockKernelMemInfo` (1, sgx545-ce).
 - `hw_pb_desc` G0517 (~ HWPBDESC): Rogue FW free list = parameter-buffer pages. From
   `rogue_fwif_freelist` (3, linux-imagination).
+- `hw_render_details` G1143 (~ HWRENDERDETAILS): Rogue fragment (3D) command. From
+  `rogue_fwif_cmd_frag` (3, linux-imagination).
+- `hw_rt_data` G1144 (~ HWRTDATA/HWRTDATASET): Rogue FW render-target data (PM state, tail pointers,
+  region headers). From `rogue_fwif_hwrtdata` (3, linux-imagination).
 
 ## 4. State words, ports and instruction-level terms
 
@@ -2596,6 +2659,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   `tile_y_pix` (3, mesa-pco).
 - `SR.INST_NUM` G0265 (g25 (source bank 5, number 89)): the instance's place in its 2x2 quad (x[0] +
   2*y[0]). From `inst_num` (3, mesa-pco).
+- `PASS_TYPE` G1119 (isp0 [27:25] values): OPAQUE, TRANSLUCENT, PUNCH_THROUGH, VIEWPORT_OBJECT....
+  From `PASSTYPE` (3, mesa-csbgen).
 - `PACKMODE` G0253 (sideband PACKMODE values): PBE pack formats (Rogue values differ); on SGX545 0
   is ARGB8888, 3 RGB565. From `PACKMODE` (3, mesa-csbgen).
 - `USE.NUM_HW_SPECIAL_CONSTS` G0289 (special constant bank): number of hardware constants. From
@@ -2965,9 +3030,15 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `ISP2` G1065 (ISP word 2 (isp2)): ISP stencil word. From `STATE_ISPB` (3, mesa-csbgen).
 - `PRESENCE` G1072 (MTE state block presence word (S.2)): presence word: each set bit adds its state
   words. From `STATE_HEADER` (3, mesa-csbgen).
+- `PDS_PRIMARY` G1120 (MTE state, after the size word (presence bit 6)): primary pixel PDS program
+  pointer (starts the pixel shader). From `STATE_PDS_SHADERBASE` (3, mesa-csbgen).
+- `PDS_SECONDARY` G1121 (MTE state, first PDS word (presence bit 6)): secondary (uniform/constant)
+  pixel PDS program pointer. From `STATE_PDS_UNIFORMDATABASE` (3, mesa-csbgen).
 - `DOUTD1` G1093 (doutd word 1): the second word of a PDS doutd: a two-dimensional copy into the
   USSE attributes. From `DOUTD1` (ours, resgx545).
 - `OUTSEL` G0477 (outsel): output selects of the vertex. From `OUTPUT_SEL` (3, mesa-csbgen).
+- `PDS_SIZE` G1122 (pds_size): pixel PDS/USC size word. From `STATE_PDS_SIZEINFO1` (3, mesa-csbgen).
+- `TERM` G1132 (term): end-of-scene clip words. From `STATE_TERMINATE0` (3, mesa-csbgen).
 - `WCLAMP` G0504 (wclamp): W clamp value (float) [infer]. From `WCLAMP` (3, mesa-csbgen).
 
 ## 5. Sources

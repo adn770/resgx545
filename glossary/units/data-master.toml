@@ -1,0 +1,26 @@
+[[term]]
+id = "G1137"
+name = "data master"
+status = "named"
+
+[[term.source]]
+term = "data master"
+kind = "concept"
+sgx545 = "-"
+meaning = "Rogue firmware list of data masters (analogue)"
+tier = "3"
+source = "linux-imagination"
+citation = "C0751"
+licence = "GPL-2.0-only OR MIT"
+evidence = "same concept"
+
+[[term.source]]
+term = "data master"
+kind = "concept"
+sgx545 = "-"
+meaning = "unit that issues data service requests to the scheduler"
+tier = "4"
+source = "patent-US8046761"
+citation = "C0752"
+licence = "patent"
+evidence = "OCR text"

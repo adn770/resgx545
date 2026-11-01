@@ -1,4 +1,20 @@
 [[term]]
+id = "G1122"
+name = "PDS_SIZE"
+status = "named"
+
+[[term.source]]
+term = "STATE_PDS_SIZEINFO1"
+kind = "struct"
+sgx545 = "pds_size"
+meaning = "pixel PDS/USC size word"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0737"
+licence = "MIT"
+evidence = "same role as the SGX size word between the pointers (S.5); fields differ"
+
+[[term]]
 id = "G0254"
 name = "PDS_SIZE.BITS17_16"
 status = "inferred"

@@ -15,6 +15,22 @@ licence = "MIT"
 evidence = "[RE] the TA-finished handler (E156) and scene-done (E164); [HW] the RT data set probes (render-rtds-words, one run): render details word 54 moved by 0xc makes the kernel report a parameter buffer overflow after a render and after a geometry kick, a count in the set's partial-render word; a scene of two kicks fails the set's cleanup and one render's completes; [HW] E314, E315 (render-pending-counts, render-pending-kw, render-pending-rd54, one run each): read after every job it rises by one per kick, the geometry kicks included, and not for a render without FRAG_FLAGS.BIT10, and equals the kernel's pending count after scenes of one to four kicks, whose cleanups all complete; with the pending count one above or one below the cleanup fails, and with the set's word 0 pointed at this count it completes; [infer] so the two-kick failures above came from our kernel's pending count of one per scene; analogue: Rogue's cleanup counters"
 
 [[term]]
+id = "G1145"
+name = "hw_rt_data_set.hw_rt_data"
+status = "named"
+
+[[term.source]]
+term = "hw_rt_data_set.hw_rt_data"
+kind = "field"
+sgx545 = "HWRTDATASET+0x018"
+meaning = "the set's hw_rt_data array, 0x38 bytes each; the TA command's hw_rt_data_dev_vaddr points at one [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E328"
+licence = "MIT"
+evidence = "-"
+
+[[term]]
 id = "G0555"
 name = "hw_rt_data_set.num_out_of_mem_signals"
 status = "named"

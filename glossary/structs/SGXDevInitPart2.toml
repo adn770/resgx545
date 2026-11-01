@@ -1,0 +1,15 @@
+[[term]]
+id = "G1126"
+name = "SGXDevInitPart2"
+status = "named"
+
+[[term.source]]
+term = "SGXDevInitPart2"
+kind = "function"
+sgx545 = "-"
+meaning = "srvinit: hand init info to kernel"
+tier = "2"
+source = "cdv-libsrv_um"
+citation = "C0741"
+licence = "Intel-binary (ours)"
+evidence = "also exported by libemgdsrv_um.so (emgd-linux debian/*.symbols)"

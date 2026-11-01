@@ -1,0 +1,73 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# platform event trigger: 8 probes, a script (event-trigger.sh).
+# Q082: when CR_EVENT_STATUS2 bit 6 latches: fills whose pixel program loops 16 to 12500 times
+# (eight instructions an iteration), integer and floating-point, each after a reset that
+# clears the bit.
+needs = ["render", "reset"]
+name = "platform-event-trigger"
+script = "event-trigger.sh"
+
+[[probe]]
+name = "platform-event-trigger-int-16"
+question = "a fill whose pixel program loops 16 times over eight instructions, six integer multiply-adds among them"
+source = "int_loop.s"
+inputs = ["ITER"]
+labels = ["16 iterations"]
+cases = [[16]]
+
+[[probe]]
+name = "platform-event-trigger-int-128"
+question = "a fill whose pixel program loops 128 times over eight instructions, six integer multiply-adds among them"
+source = "int_loop.s"
+inputs = ["ITER"]
+labels = ["128 iterations"]
+cases = [[128]]
+
+[[probe]]
+name = "platform-event-trigger-int-1024"
+question = "a fill whose pixel program loops 1024 times over eight instructions, six integer multiply-adds among them"
+source = "int_loop.s"
+inputs = ["ITER"]
+labels = ["1024 iterations"]
+cases = [[1024]]
+
+[[probe]]
+name = "platform-event-trigger-int-2048"
+question = "a fill whose pixel program loops 2048 times over eight instructions, six integer multiply-adds among them"
+source = "int_loop.s"
+inputs = ["ITER"]
+labels = ["2048 iterations"]
+cases = [[2048]]
+
+[[probe]]
+name = "platform-event-trigger-int-4096"
+question = "a fill whose pixel program loops 4096 times over eight instructions, six integer multiply-adds among them"
+source = "int_loop.s"
+inputs = ["ITER"]
+labels = ["4096 iterations"]
+cases = [[4096]]
+
+[[probe]]
+name = "platform-event-trigger-int-12500"
+question = "a fill whose pixel program loops 12500 times over eight instructions, six integer multiply-adds among them"
+source = "int_loop.s"
+inputs = ["ITER"]
+labels = ["12500 iterations"]
+cases = [[12500]]
+
+[[probe]]
+name = "platform-event-trigger-fmad-1024"
+question = "a fill whose pixel program loops 1024 times over eight instructions, six fmads among them"
+source = "fmad_loop.s"
+inputs = ["ITER"]
+labels = ["1024 iterations"]
+cases = [[1024]]
+
+[[probe]]
+name = "platform-event-trigger-fmad-4096"
+question = "a fill whose pixel program loops 4096 times over eight instructions, six fmads among them"
+source = "fmad_loop.s"
+inputs = ["ITER"]
+labels = ["4096 iterations"]
+cases = [[4096]]

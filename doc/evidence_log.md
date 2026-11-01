@@ -2169,6 +2169,91 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   bit 1 when the active-power countdown reaches zero, each followed by a SW_EVENT write; no other
   resolved EDM access writes either word.
   *edm; RE; data: `firmware-edm-dataflow-11`.*
+- `E354` With recovery held, a debugfs reset written while the hold is set recovers the held job
+  with blame: a render faulting on its unmapped stream page fails once with -EIO and a pixel task
+  hung on a fetch it never issued once with -ETIMEDOUT, after one reset each and with no second
+  fault, hang or cleanup failure; while held the driver logs two lines (the detector's recovering
+  line and the hold's warning) and nothing more until the reset, over 11.2 s and 3.1 s; one run.
+  *render; HW, DDK; data: `render-held-reset`.*
+- `E355` While a faulting render's recovery is held, another render context's cleanup that the
+  stopped EDM does not answer fails (ret -110) and logs its warning, but no reset follows: the EDM
+  still answers no GETMISCINFO, the bus fault stays in the status registers and seven kernel memory
+  releases wait on the deferred list; the debugfs reset that ends the hold resets once, fails the
+  held render with -EIO, empties the deferred list, and the faulted context's own cleanup then
+  completes; one run.
+  *render; HW, DDK; data: `render-held-reset`.*
+- `E356` Render jobs queued on other contexts while a fault is held run again after the reset that
+  ends the hold and end with the RT data set's executed count equal to the kernel's pending count: 0
+  and 0 for a render without render flag bit 10, then 1, 2 and 3 for a three-kick scene whose first
+  kick ran again; every cleanup completes and each round resets once; two rounds, and the same jobs
+  without a hold as control.
+  *render; HW, DDK; data: `render-replay-pending`.*
+- `E357` CR_EVENT_STATUS2 bit 7 (TRIG_TA) sets 0.1 to 0.2 ms after the TA kick's PB load in a TA
+  that hangs (VDM state word 1 bits 15:13 = 0) and in one that faults on its stream page, and bit 6
+  (TRIG_3D) about 0.1 ms after the pixel units start in a fill whose pixel program loops 128 or more
+  times over eight instructions, not with 16; neither sets in any render of one to three renders
+  from 64x64 to 256x256, a 1024x768 partial render, a fill or a copy; once set each stays through
+  later jobs until a reset; a fault raises no other bit of CR_EVENT_STATUS or CR_EVENT_STATUS2.
+  *platform; HW, infer; data: `platform-event-timelines`, `platform-event-trigger`.*
+- `E358` Sampled through one to three renders on a context at 64x64, 128x128 and 256x256 and a
+  1024x768 render with partial renders, the high halves of CR_DPM_TA_ALLOC_FREE_LIST_STATUS2
+  (0x0710) and CR_DPM_3D_FREE_LIST_STATUS2 (0x071c) read 0 in every job; CR_DPM_REG_0748 reads 0x1f
+  idle, clears bit 4 while the TA takes pages, bit 0 briefly at a TA's PB load, bit 1 for about 10
+  us before each page the 3D frees and bit 3 at the out-of-memory event; 0x072c reads 0x10001 from
+  the TA's first page to the 3D's last free; TA/3D control block dword 36 reads 0 after the partial
+  renders; two runs.
+  *dpm; HW, infer; data: `platform-event-timelines`.*
+- `E359` With the counter group set through SETHWPERFSTATUS, CR_HWPERF_COUNTER0 to 8 count by group
+  (groups 7 and 9 to 15 count nothing in seven jobs; group 8 moves 0x0044, 0x0048 and 0x0050 in all
+  seven, 0x4c889, 0x66e6 and 0x49e in the 64x64 triangle), and in group 0 COUNTER3 (0x0050) counts
+  the pixels a job shades exactly (0x1000 at 64x64, 0x4000 at 128x128, 0x800 for a 64x32 fill);
+  whatever the group, 0x0e84 counts renders, 0x0e88 jobs, 0x0e8c rises only with renders, 0x0e90
+  with the pixels and the pixel program's length (eight times for eight times the loop) and 0x0eb8
+  is the sum of 0x0e8c and 0x0e90; one run.
+  *platform; HW, infer; data: `platform-hwperf-groups`.*
+- `E360` TA/3D control block dword 49 is the bus interface directory list the EDM last gave a render
+  context: the k-th context's first kick after a reset writes its page directory into
+  CR_BIF_DIR_LIST_BASEk (k 1 to 14) or, at the 15th, CR_BIF_DIR_LIST_BASE0, and dword 49 reads k mod
+  15; list 15 keeps the EDM's own directory; a 16th live context takes list 1 from the first, whose
+  next kick takes list 2, and all 30 contexts of two runs (14 and 16 alive at once) render their
+  second render exactly; one run.
+  *render; HW, RE, infer; data: `render-context-lists`.*
+- `E361` Render context dword 7 set to 0xdeadbeef or to the background object's address at the first
+  kick changes nothing in a render, a scene of three kicks, a 1024x768 render that overflows its
+  parameter buffer or the context's cleanup, and the word keeps the value through later kicks;
+  render flag bit 0 hangs a render after its TA: held, the 3D has taken its render details, the PB
+  descriptor holds the TA's two pages, the executed count is 0 against the kernel's pending 1, the
+  RT data state reads 0x20; two runs and one.
+  *render; HW, infer; data: `render-word-pokes`.*
+- `E362` With the PB descriptor's flag bit 0 set at a render's first kick the EDM's write to the
+  render context's page faults (CR_BIF_FAULT on page 0x32411000, the requester of its own writes)
+  under the context's directory, where the kernel's memory is read-only, and the job fails; with
+  CR_DPM_REG_074C bit 8 (0x100, and 0x1ff) on contexts for 4096x4096 and 1024x768 targets the render
+  is exact and the TA data is the control's to the dword; two runs and one.
+  *dpm; HW, infer; data: `render-word-pokes`.*
+- `E363` The background object's first PDS word with bit 27 or 28 flipped faults at page 0x0001f000
+  and with bit 30 or 31 at page 0x2e001000 (the pixel PDS heap's second page), on 64x32 and 128x128
+  alike; on 64x32 bits 27 and 28 leave 11 to 14 whole rows and the rest of the first 16 rows at half
+  width, bits 30 and 31 rows 0 to 15 whole and rows 16 to 31 at half width (32 of 64 pixels, 16 half
+  rows), and on 128x128 no row; the second word's bits 27 and 31 and the third's bit 27 change
+  nothing, its bit 31 faults at the same pixel-heap page with no row rendered; three runs and one.
+  *render; HW, infer; data: `render-bg-pds-words`.*
+- `E364` In the closed driver's 114 captured primary pixel programs with a texture fetch, DOUTU1 bit
+  24 is set exactly when one of their douti iterates an attribute into the primary attribute
+  registers (DOUTI0 source field 16:11 below 36: the vertex colour 32 or a coordinate set 1 to 3),
+  21 of 21, and every USSE program those 21 start reads that iterated register; in the 93 without it
+  every douti has source 36, which writes no attribute register, and their programs read only
+  fetched texels.
+  *pds; CAP, infer; data: `render-state-variations`, `render-register-gaps`,
+  `render-draws-frames-pb`, `isp-registers`, `isp-line-width`, `texture-textures`,
+  `texture-samplers`, `texture-formats`, `texture-streams`, `usse-inputs`, `usse-gles1-programs`,
+  `usse-shaders`, `ta-target-sizes`.*
+- `E365` With CR_CLKGATECTL2 as the boot leaves it, CR_CLKGATESTATUS reads 0x20 idle and 0x000ccfa0
+  at every EDM tick, 0x000fffa7 and 0x000fffa4 while a fill runs a pixel loop of six fmads or of six
+  integer multiply-adds alike, 0x00000078, 0x000ccff8, 0x000fffa7, 0x000fffff and, in one 256x256
+  render of three, 0x000fffa4 through renders; bits 20 and above never read 1; one run of each loop
+  twice.
+  *platform; HW; data: `platform-event-timelines`, `platform-event-trigger`.*
 
 ## By unit
 
@@ -2179,7 +2264,7 @@ Records: E151.
 ### dpm
 
 Records: E199, E200, E201, E202, E204, E205, E206, E203, E253, E256, E309, E310, E311, E312, E313,
-E327.
+E327, E358, E362.
 
 ### edm
 
@@ -2210,16 +2295,16 @@ Records: E029, E030, E031, E032, E239, E240, E251, E265, E266, E267, E268, E269,
 
 Records: E043, E044, E045, E046, E047, E048, E125, E126, E127, E128, E129, E130, E131, E132, E133,
 E134, E135, E136, E137, E138, E139, E140, E141, E142, E143, E144, E145, E259, E260, E261, E262,
-E263, E264, E343, E344, E345.
+E263, E264, E343, E344, E345, E364.
 
 ### platform
 
-Records: E006, E007, E008, E025, E026, E122, E150, E149, E246, E258.
+Records: E006, E007, E008, E025, E026, E122, E150, E149, E246, E258, E357, E359, E365.
 
 ### render
 
 Records: E023, E049, E050, E051, E052, E053, E148, E169, E252, E301, E302, E303, E304, E314, E315,
-E316, E323, E324, E325, E326.
+E316, E323, E324, E325, E326, E354, E355, E356, E360, E361, E363.
 
 ### ta
 

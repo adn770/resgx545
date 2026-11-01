@@ -1,0 +1,31 @@
+[[term]]
+id = "G1134"
+name = "ccb_kick"
+status = "named"
+
+[[term.source]]
+term = "SGX_CCB_KICK"
+kind = "struct"
+sgx545 = "0x22c (i386)"
+meaning = "bridge payload of SGX_DOKICK (kernel-side kick of a CMDTA)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0748"
+licence = "GPL-2.0"
+evidence = "-"
+
+[[term]]
+id = "G1135"
+name = "ccb_kick.ccb_offset"
+status = "named"
+
+[[term.source]]
+term = "ui32CCBOffset"
+kind = "field"
+sgx545 = "SGX_CCB_KICK+0x1f0"
+meaning = "client-CCB offset of CMDTA_SHARED"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0324"
+licence = "GPL-2.0"
+evidence = "bridge struct, host side"

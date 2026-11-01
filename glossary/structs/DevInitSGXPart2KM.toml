@@ -1,0 +1,15 @@
+[[term]]
+id = "G1118"
+name = "DevInitSGXPart2KM"
+status = "named"
+
+[[term.source]]
+term = "DevInitSGXPart2KM"
+kind = "function"
+sgx545 = "-"
+meaning = "kernel side of SGXDevInitPart2"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0733"
+licence = "GPL-2.0"
+evidence = "-"

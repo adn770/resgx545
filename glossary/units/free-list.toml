@@ -1,0 +1,26 @@
+[[term]]
+id = "G1138"
+name = "free list"
+status = "named"
+
+[[term.source]]
+term = "free list"
+kind = "concept"
+sgx545 = "-"
+meaning = "Rogue parameter memory free lists (analogue)"
+tier = "3"
+source = "linux-imagination"
+citation = "C0753"
+licence = "GPL-2.0-only OR MIT"
+evidence = "same concept (DPM free list)"
+
+[[term.source]]
+term = "free list"
+kind = "concept"
+sgx545 = "-"
+meaning = "list of free parameter buffer blocks"
+tier = "4"
+source = "patent-US7978199"
+citation = "C0754"
+licence = "patent"
+evidence = "OCR text"

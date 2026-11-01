@@ -243,7 +243,7 @@ tier = "1"
 source = "sgx545-ce"
 citation = "C0645"
 licence = "GPL-2.0"
-evidence = "mask 0x00000040"
+evidence = "mask 0x00000040; [HW] E357 (platform-event-trigger): latches about 0.1 ms into a fill whose pixel program loops 128 or more times over eight instructions, not 16 times, never in our stack's renders, fills and copies, and stays set until a reset"
 
 [[term.source]]
 term = "PSB_TRIG_3D"
@@ -297,7 +297,7 @@ tier = "1"
 source = "sgx545-ce"
 citation = "C0649"
 licence = "GPL-2.0"
-evidence = "mask 0x00000080"
+evidence = "mask 0x00000080; [HW] E357 (platform-event-timelines, one run each): latches 0.1 to 0.2 ms after the PB load of a TA that hangs or faults, never in our stack's renders, and stays set until a reset"
 
 [[term.source]]
 term = "PSB_TRIG_TA"

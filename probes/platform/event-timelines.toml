@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# platform event timelines: 2 probes, a script (event-timelines.sh).
+# Q082, Q003, Q036, Q048: CR_EVENT_STATUS2, CR_EVENT_STATUS, the bus interface's fault
+# registers, the DPM status words and CR_CLKGATESTATUS sampled with regtimeline through
+# renders of one to three renders a context, a partial render, a fill, a copy, two USSE loops
+# and three held hangs.
+needs = ["render", "render_pb_pages", "hold_recovery", "reset", "buf09"]
+name = "platform-event-timelines"
+script = "event-timelines.sh"
+stage = ["vdm/state1"]
+
+[[probe]]
+name = "platform-event-timelines-fmad"
+question = "a fill whose pixel program runs 1e7 instructions, six fmads in each loop of eight (the floating-point job of the clock-gate timelines)"
+source = "fmad_loop.s"
+inputs = ["ITER"]
+labels = ["1250000 iterations"]
+cases = [[0x1312D0]]
+
+[[probe]]
+name = "platform-event-timelines-int"
+question = "the same loop with six integer multiply-adds in place of the fmads"
+source = "int_loop.s"
+inputs = ["ITER"]
+labels = ["1250000 iterations"]
+cases = [[0x1312D0]]

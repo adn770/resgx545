@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: 2026 Josep Torra
-"""The render context's words by the glossary's names, and the 11.10 tables: the kernel's debugfs
+"""The render context's words by the glossary's names, the 11.10 and 11.12 tables, and the
+driver's recovery lines in a run's kernel log, case by case: the kernel's debugfs
 render_words (a line per word, `space:N=0x...`, as the kernel poke spells it) of the HW render
 context (ctx, 17 words), the RT data set (rtds, 20), the PB descriptor (pb, 15), the kernel's own
 words (kw: the access word, the pending count, the render target's status, the background
@@ -9,13 +10,17 @@ update list) and the render details (rd, 123), named by harness/ukernel-extract/
 layouts; the RT data set's counts (the kernel's pending count, kw:1, against the firmware's
 executed count, rtds:1); the kernel's word addresses, from the context page; the 11.10 scripts'
 output (snapshots before the first render and after each, the TA/3D control block, the cleanup
-trace).
+trace); the driver's lines of a kernel log by the case each follows (a "resgx545 case NAME"
+mark) and by kind: a fault or hang found, a recovery held, a failed cleanup, the core stopped,
+the reset, the boot.
 
-    render_words.py tables DIR         write the 11.10 tables under DIR (probes/...)
+    render_words.py tables DIR         write the 11.10 and 11.12 tables under DIR (probes/...)
     render_words.py show FILE          a render_words file, a named word a line
     render_words.py diff A B           the words that differ between two files
     render_words.py report FILE        each case of a script's output: counts by snapshot,
                                        the words each snapshot changed, the cleanup's result
+    render_words.py log FILE           a kernel log's driver lines: kinds counted per case,
+                                       the time a recovery was held and the lines meanwhile
 """
 from __future__ import annotations
 
@@ -168,8 +173,9 @@ def case_words(out: str) -> dict[str, dict]:
 
 
 def report(out: str) -> str:
-    """Each case: the cleanup's result, then per snapshot the counts, the TA/3D control
-    block's DPM slot words (20, 21) and TA RT data (25), and the words it changed."""
+    """Each case: the cleanup's result, then per snapshot the context it shows (render_words
+    shows the newest), the counts, the TA/3D control block's DPM slot words (20, 21) and TA
+    RT data (25), and the words it changed."""
     lines = []
     for case, c in case_words(out).items():
         lines.append(f"{case}: cleanup ret {c['cleanup_ret']}")
@@ -179,8 +185,9 @@ def report(out: str) -> str:
             k = counts(w)
             t = c["ta3d"].get(n, [])
             slots = " ".join(f"{d}={t[d]:#x}" for d in (20, 21, 25) if d < len(t))
-            lines.append(f"  {n}: pending {k['pending']} executed {k['executed']} oom {k['oom']}"
-                         f" spm {k['spm']} submitted {k['submitted']}"
+            page = f"{w['ctx'][4] - CCB_CTL_OFF:#x}" if 4 in w.get("ctx", {}) else "-"
+            lines.append(f"  {n}: ctx {page} pending {k['pending']} executed {k['executed']}"
+                         f" oom {k['oom']} spm {k['spm']} submitted {k['submitted']}"
                          + (f"; ta3d {slots}" if slots else ""))
             if prev is not None:
                 lines += [f"     {d}" for d in diff_lines(prev, w)]
@@ -188,7 +195,74 @@ def report(out: str) -> str:
     return "\n".join(lines) + "\n"
 
 
-# ---- the 11.10 tables ----
+# ---- the driver's lines in a kernel log ----
+
+# kind: the line's pattern (linux fork: sgxfive.c, sgxfive_sched.c, sgxfive_debug.c,
+# sgxfive_render.c); the job number, where the line names one, is the group "job"
+KINDS = [
+    ("fault", r"sgxfive: BIF fault .* stalls job (?P<job>\d+), recovering"),
+    ("held", r"sgxfive: job (?P<job>\d+) hung, recovery held"),
+    ("hang", r"sgxfive: job (?P<job>\d+) hung, recovering"),
+    ("cleanup-failed", r"sgxfive: render context cleanup failed"),
+    ("stopped", r"SGX stopped, \d+ events seen"),
+    ("reset", r"SGX reset: "),
+    ("boot", r"SGX boot: kicking the EDM"),
+    ("up", r"SGX boot: EDM up after"),
+    ("failed", r"SGX recovery failed"),
+]
+KLINE = re.compile(r"^\[\s*(\d+\.\d+)\]\s(.*)$")
+KMARK = re.compile(r"resgx545 case (\S+)")
+
+
+def kernel_lines(log: str) -> dict[str, list[dict]]:
+    """{case: [{"t": seconds, "kind": kind, "job": int or None, "text": line}]}: the driver's
+    lines of a kernel log by the "resgx545 case NAME" mark they follow ("" before any)."""
+    res: dict[str, list[dict]] = {"": []}
+    cur = ""
+    for line in log.splitlines():
+        if not (m := KLINE.match(line)):
+            continue
+        t, text = float(m[1]), m[2]
+        if mk := KMARK.search(text):
+            cur = mk[1]
+            res.setdefault(cur, [])
+            continue
+        for kind, pat in KINDS:
+            if k := re.search(pat, text):
+                job = k.groupdict().get("job")
+                res[cur].append({"t": t, "kind": kind, "job": int(job) if job else None,
+                                 "text": text})
+                break
+    return res
+
+
+def log_report(log: str) -> str:
+    """Per case: the kinds counted, in first-seen order; while a recovery was held, from the
+    held line to the next reset, the time and the driver's lines between them."""
+    out = []
+    for case, ls in kernel_lines(log).items():
+        if not ls:
+            continue
+        kinds: dict[str, int] = {}
+        for x in ls:
+            kinds[x["kind"]] = kinds.get(x["kind"], 0) + 1
+        out.append(f"{case or '-'}: " + ", ".join(f"{k} {n}" for k, n in kinds.items()))
+        for i, x in enumerate(ls):
+            if x["kind"] != "held":
+                continue
+            end = next((j for j in range(i + 1, len(ls))
+                        if ls[j]["kind"] in ("stopped", "reset")), None)
+            if end is None:
+                out.append(f"{case or '-'}: held {x['t']:.3f}, no reset")
+                continue
+            r = next(j for j in range(end, len(ls)) if ls[j]["kind"] == "reset") \
+                if any(y["kind"] == "reset" for y in ls[end:]) else end
+            out.append(f"{case or '-'}: held {x['t']:.3f} to reset {ls[r]['t']:.3f} "
+                       f"({ls[r]['t'] - x['t']:.3f} s), {end - i - 1} lines between")
+    return "\n".join(out) + "\n"
+
+
+# ---- the 11.10 and 11.12 tables ----
 
 # path: (what it asks, needs, extra top-level fields)
 TABLES = {
@@ -223,6 +297,14 @@ TABLES = {
     "render/kick-objects-again": (
         "11.6's scenes of one to three kicks again, the kernel counting each kick (E288)",
         ["render", "render_param", "render_tadata", "render_cleanup"], {}),
+    "render/held-reset": (
+        "render_uapi.md section 13: a reset ending a held fault or hang, a failed cleanup "
+        "while held",
+        ["render", "hold_recovery", "reset", "miscinfo", "status", "render_cleanup"],
+        {"stage": ["vdm/state1"]}),
+    "render/replay-pending": (
+        "render_uapi.md section 13: the pending count of the renders a reset runs again", ["render", "kpoke", "render_words", "buf09", "hold_recovery",
+                            "reset"], {}),
 }
 
 
@@ -249,7 +331,7 @@ def _field(key: str, v) -> str:
 
 
 def tables() -> dict[str, str]:
-    """The 11.10 tables' text: script tables, none with probes of its own."""
+    """The 11.10 and 11.12 tables' text: script tables, none with probes of its own."""
     out = {}
     for path, (about, needs, extra) in TABLES.items():
         unit, feature = path.split("/")
@@ -281,6 +363,9 @@ def main(argv: list[str] | None = None) -> int:
     if a[:1] == ["diff"] and len(a) == 3:
         print("\n".join(diff_lines(parse(pathlib.Path(a[1]).read_text()),
                                    parse(pathlib.Path(a[2]).read_text()))))
+        return 0
+    if a[:1] == ["log"] and len(a) == 2:
+        print(log_report(pathlib.Path(a[1]).read_text(errors="replace")), end="")
         return 0
     if a[:1] == ["report"] and len(a) == 2:
         print(report(pathlib.Path(a[1]).read_text()), end="")

@@ -1,0 +1,15 @@
+[[term]]
+id = "G1129"
+name = "SGXGetMiscInfoKM"
+status = "named"
+
+[[term.source]]
+term = "SGXGetMiscInfoKM"
+kind = "function"
+sgx545 = "-"
+meaning = "kernel side of SGXGetMiscInfo"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0744"
+licence = "GPL-2.0"
+evidence = "-"

@@ -1,4 +1,31 @@
 [[term]]
+id = "G1136"
+name = "cmd_ta"
+status = "named"
+
+[[term.source]]
+term = "SGXMKIF_CMDTA"
+kind = "struct"
+sgx545 = "0x2b0"
+meaning = "TA command structure proper; CMDTA_SHARED is part of it"
+tier = "1"
+source = "emgd-linux"
+citation = "C0749"
+licence = "GPL-2.0 OR MIT"
+evidence = "named only in a comment; no GPL definition"
+
+[[term.source]]
+term = "rogue_fwif_cmd_geom"
+kind = "struct"
+sgx545 = "~ CMDTA"
+meaning = "Rogue geometry (TA) command"
+tier = "3"
+source = "linux-imagination"
+citation = "C0750"
+licence = "GPL-2.0 OR MIT"
+evidence = "same role"
+
+[[term]]
 id = "G0646"
 name = "cmd_ta.bif_ta_req_base"
 status = "named"

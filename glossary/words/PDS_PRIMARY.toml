@@ -1,4 +1,20 @@
 [[term]]
+id = "G1120"
+name = "PDS_PRIMARY"
+status = "named"
+
+[[term.source]]
+term = "STATE_PDS_SHADERBASE"
+kind = "struct"
+sgx545 = "MTE state, after the size word (presence bit 6)"
+meaning = "primary pixel PDS program pointer (starts the pixel shader)"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0735"
+licence = "MIT"
+evidence = "same function (S.5 primary pointer) [infer]"
+
+[[term]]
 id = "G0634"
 name = "PDS_PRIMARY.USE_KICK"
 status = "named"

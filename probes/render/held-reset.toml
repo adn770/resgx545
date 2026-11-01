@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# render held reset: 0 probes (written by tools/usse-asm/render_words.py).
+# render_uapi.md section 13: a reset ending a held fault or hang, a failed cleanup while held
+needs = ["render", "hold_recovery", "reset", "miscinfo", "status", "render_cleanup"]
+name = "render-held-reset"
+script = "held-reset.sh"
+stage = ["vdm/state1"]

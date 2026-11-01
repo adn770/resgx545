@@ -268,3 +268,13 @@ directory or the firmware's part in the sample-cache erratum matter is open (Q09
 
 What is still closed-stack only: the closed transfer and copy programs' words and the
 pixel-event program the earlier phases left (no 11.11 table runs the OpenVG stack).
+
+Sub-phase 11.12 settles two of the questions the captures left with an offline reading and the
+laptop: `DOUTU1` bit 24 goes with an attribute the primary iterates into the attribute
+registers, in all 114 captured fetching primaries (E364; Q093 keeps the hardware check), and our
+own probes' textures, all in the general heap on the laptop's revision-3 bridge, sample as
+expected, so the misplaced half of the sample-cache test shows no erratum (Q096 keeps the
+texture-region half). The rest of 11.12 needed no capture host: the linux fork's held-recovery
+and replayed-count follow-ups (E354-E356), the event, DPM, clock-gate and HWPerf registers
+(E357-E359, E365), the BIF directory lists behind TA/3D control block dword 49 (E360) and
+single-word pokes of a render's run (E361-E363).
