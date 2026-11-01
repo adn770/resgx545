@@ -861,3 +861,18 @@ the packed block cannot hold) and Q231 (the VDM and command words no record read
 simulator `sgx-sim` is unchanged. The roadmap counts the questions from the built
 `doc/open_questions.md`: 189 open (Q001 to Q288), 170 hw (high 21, medium 79, low 70), 12 fw and 7
 kernel; ta 17.
+
+Sub-phase 12.3 is the ISP and the first triangle's image, a tooling sub-phase with no laptop run and
+no kernel change: `sgx-pipe` takes E606's coverage rule and E607's vertex rounding into the ISP,
+runs the pixel programs, the end-of-tile task and the PBE after it, and reproduces 2752 of 2752
+recorded images of the E606 and E607 jobs pixel for pixel, 1566 on which the rule was found and 1186
+held out, the stored depth within 3 units of 2^-23 where the gradient is below 0.03 and refused
+above it (Q200), and the clip z within 4 units (E660, E661). It reproduces the first triangle's
+image hash at the three sizes E606 ran and refuses the rest (E662 shows the rule gives it at all 16
+sizes; the model's envelope is three, Q240). Of the 2464 triangle-host vectors, 2281 rebuilt, 47
+reproduce, 1 predicts a hang and 2233 (97.9 percent) are refused, none mismatching; the census is a
+development set (71 first-run mismatches were removed by rules and refusals), and every image rests
+on the fitted coverage rule, so none is matched. Q240 (random triangles on other targets) and Q241
+(ISP words and depth compares no probe separated) are new. The simulator `sgx-sim` is unchanged. The
+roadmap counts the questions from the built `doc/open_questions.md`: 191 open (Q001 to Q288), 172 hw
+(high 21, medium 80, low 71), 12 fw and 7 kernel; isp 23.

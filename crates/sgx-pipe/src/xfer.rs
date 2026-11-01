@@ -59,12 +59,12 @@ const U0_EOR: u32 = 0x0100_00c0;
 const U0_SEC: u32 = 0x20;
 /// Tiles of a render box the model runs at most (the words are 8 bits wide in the sweeps).
 const MAX_TILES_PER_SIDE: u32 = 0x100;
-const STEPS: usize = 100_000;
+pub(crate) const STEPS: usize = 100_000;
 /// The pixel-event program's 29 instruction words (the transfer template, asm/transfer/
 /// pds_pixevent.s) by FNV-1a 64: a program that moved, so that its data segment or code shifted,
 /// is not the one the records ran.
-const PIXEVENT_CODE_FNV: u64 = 0x39de_3648_7c33_127c;
-const PIXEVENT_CODE_LEN: usize = 29;
+pub(crate) const PIXEVENT_CODE_FNV: u64 = 0x39de_3648_7c33_127c;
+pub(crate) const PIXEVENT_CODE_LEN: usize = 29;
 /// The code of the secondary program (and of a fill's primary program): two words; a copy's
 /// primary program has four (the transfer templates, asm/transfer). The assumptions listed in the
 /// header hold for these programs only.
@@ -178,12 +178,12 @@ fn read_cmd(sc: &Scene) -> R<Cmd> {
 
 /// What a task and the PDS programs did on the bus, in order.
 #[derive(Default)]
-struct Events {
-    tasks: Vec<[u32; 3]>,
-    attrs: Vec<(usize, u32)>,
-    iter: Vec<[u32; 2]>,
-    tex: Vec<[u32; 4]>,
-    emits: Vec<(String, [u32; 3])>,
+pub(crate) struct Events {
+    pub(crate) tasks: Vec<[u32; 3]>,
+    pub(crate) attrs: Vec<(usize, u32)>,
+    pub(crate) iter: Vec<[u32; 2]>,
+    pub(crate) tex: Vec<[u32; 4]>,
+    pub(crate) emits: Vec<(String, [u32; 3])>,
 }
 
 struct MemBus<'a> {
@@ -227,7 +227,7 @@ impl Bus for MemBus<'_> {
 /// program that does not end or leaves its code is a job that cannot complete (Q003); what the
 /// PDS simulator does not support is a PDS input or instruction no record measured (Q207); what
 /// the USSE simulator does not support is a task word no record explains (Q206).
-fn refusal(e: Error, what: &str, pds: bool) -> Outcome {
+pub(crate) fn refusal(e: Error, what: &str, pds: bool) -> Outcome {
     match e {
         Error::Fault(a) => refuse(
             format!("{what}: access to unmapped address {a:#010x} (flat memory: no MMU model yet)"),
@@ -241,7 +241,7 @@ fn refusal(e: Error, what: &str, pds: bool) -> Outcome {
 }
 
 /// The dwords from `addr` to the end of its mapped pages, at most `max`.
-fn words(mem: &Mem, addr: u32, max: usize) -> Vec<u32> {
+pub(crate) fn words(mem: &Mem, addr: u32, max: usize) -> Vec<u32> {
     (0..max as u32).map_while(|i| mem.read32(addr.wrapping_add(4 * i)).ok()).collect()
 }
 
@@ -264,7 +264,7 @@ fn pin_code(mem: &Mem, prog: (u32, usize), fits: &[(usize, u64)], what: &str) ->
 }
 
 /// Run a PDS program at `addr` with `data` dwords of data.
-fn run_pds(mem: &mut Mem, addr: u32, data: usize, pds: &mut Pds, what: &str) -> R<Events> {
+pub(crate) fn run_pds(mem: &mut Mem, addr: u32, data: usize, pds: &mut Pds, what: &str) -> R<Events> {
     let w = words(mem, addr, data + 256);
     if w.len() < data {
         return Err(refusal(Error::Fault(addr), what, true));
@@ -276,7 +276,13 @@ fn run_pds(mem: &mut Mem, addr: u32, data: usize, pds: &mut Pds, what: &str) -> 
 }
 
 /// Run the USSE task `u0` of the program decoded from the code base for one instance.
-fn run_task(mem: &mut Mem, prog: &Program, u0: u32, mut m: Machine, what: &str) -> R<(Machine, Events)> {
+pub(crate) fn run_task(
+    mem: &mut Mem,
+    prog: &Program,
+    u0: u32,
+    mut m: Machine,
+    what: &str,
+) -> R<(Machine, Events)> {
     if u0 & 0xf != 0 {
         return Err(refuse(format!("{what}: code base register {} is not modelled", u0 & 0xf), &["Q206"]));
     }
@@ -293,7 +299,7 @@ struct Primary {
     tex: Option<[u32; 4]>,
 }
 
-fn fnv(w: &[u32]) -> u64 {
+pub(crate) fn fnv(w: &[u32]) -> u64 {
     crate::scene::fnv64(w)
 }
 

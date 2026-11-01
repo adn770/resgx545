@@ -187,6 +187,29 @@ fn run_task(
         Err(Error::Unsupported { text, .. })
             if text.starts_with("emitvcbst") || text.starts_with("emitvcbvtx") =>
         {
+            if text.starts_with("emitvcbvtx") && !text.contains("twopart") {
+                // E102: without bit 42 on emitvcbvtx the job hangs if emitmtevtx has it, and completes
+                // with no triangle drawn if it has not either; with it on emitvcbvtx alone the
+                // triangle is exact
+                // the task's own emitmtevtx: the first one after its entry (the page holds the state
+                // blocks' tasks after the vertex program)
+                let mte_two = words
+                    .iter()
+                    .skip((u0 >> 4 & 0xffff) as usize)
+                    .map(|&w| usse_isa::decode(w, Core::Sgx545).text)
+                    .find(|t| t.starts_with("emitmtevtx"))
+                    .is_some_and(|t| t.contains("twopart"));
+                return Err(if mte_two {
+                    Outcome::Hang { record: "E102".into() }
+                } else {
+                    Outcome::unsupported(
+                        &format!(
+                            "{what}: neither vertex emit has .twopart: the job completes with no triangle drawn (E102), what the TA writes then was not dumped"
+                        ),
+                        &["Q230"],
+                    )
+                });
+            }
             Ok(m)
         }
         Ok(()) => Err(Outcome::unsupported(

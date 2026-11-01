@@ -285,6 +285,12 @@ pub struct SceneResult {
     pub outside: Option<u64>,
     /// the fitted rules (records) the result rests on: a result with any is never matched
     pub fitted: Vec<String>,
+    /// why the pixel side (the ISP, the pixel programs, the PBE) gave no image, when the vertex
+    /// side and the TA ran: it makes the scenes that expect an image a refusal, not the others
+    pub pixel_refusal: Option<Outcome>,
+    /// the depth the job stores, where it stores one: the model's plane values and tolerances, or
+    /// the refusal (`pixel::Depth`)
+    pub depth: Option<Result<crate::pixel::Depth, Outcome>>,
 }
 
 impl SceneResult {
@@ -308,6 +314,8 @@ impl SceneResult {
             regs: BTreeMap::new(),
             counters: BTreeMap::new(),
             fitted: vec![],
+            pixel_refusal: None,
+            depth: None,
         }
     }
 }
@@ -436,10 +444,22 @@ fn seen(expect: &Json, r: &SceneResult, near_used: &mut Option<u32>) -> Seen {
 pub fn compare(expect: &Json, r: &SceneResult) -> Verdict {
     let refuse: Vec<String> =
         expect.get("refuse").arr().iter().filter_map(|s| s.str().map(str::to_string)).collect();
+    // a scene that expects an image or the outside count is judged by the pixel side's refusal
+    // when it gave no image; the others by the job's outcome as before
+    // (a recorded hang or fault is the whole job's, the pixel side's included)
+    let wants_pixels = |alt: &Json| {
+        !matches!(alt.get("image"), Json::Null)
+            || alt.get("outside").num().is_some()
+            || matches!(alt.get("outcome").str(), Some("hang" | "fault"))
+    };
     let one = |alt: &Json| {
         let mut near = None;
         let s = seen(alt, r, &mut near);
-        let o = match (&r.outcome, near) {
+        let outcome = match &r.pixel_refusal {
+            Some(p) if wants_pixels(alt) => p,
+            _ => &r.outcome,
+        };
+        let o = match (outcome, near) {
             (Outcome::Ok, Some(n)) => Outcome::Near { ulps: n },
             (o, _) => o.clone(),
         };
@@ -479,6 +499,52 @@ pub fn compare(expect: &Json, r: &SceneResult) -> Verdict {
             Verdict::Fitted
         }
         v => v,
+    }
+}
+
+/// The verdict of the depth a job stores against a recorded dump of the depth buffer (E465's layout,
+/// the model's pitch `g`): pixels where nothing was drawn are the background depth exactly; a covered
+/// pixel is within the tolerance E606 states for its plane (`Near`, never matched: no bit-exact model
+/// exists). A model that refused the depth is a refusal if the vector lists its questions.
+pub fn depth_verdict(r: &SceneResult, dump: &[u32], refuse: &[String]) -> Verdict {
+    let d = match &r.depth {
+        None => return Verdict::Mismatch("the job stored no depth, the vector has one".into()),
+        Some(Err(Outcome::Unsupported { ids, why })) => {
+            return if !ids.is_empty() && ids.iter().all(|i| refuse.contains(i)) {
+                Verdict::Refused(ids.clone())
+            } else {
+                Verdict::Unsupported(why.clone())
+            };
+        }
+        Some(Err(o)) => return Verdict::Mismatch(format!("{o:?}")),
+        Some(Ok(d)) => d,
+    };
+    let (mut covered, mut wrong, mut first) = (0u64, 0u64, None);
+    for y in 0..d.h {
+        for x in 0..d.w {
+            let i = (y * d.w + x) as usize;
+            let Some(&got) = dump.get(crate::zls::store_dword(x, y, d.g) as usize) else {
+                return Verdict::Mismatch("the dump is shorter than the store's window".into());
+            };
+            let (want, tol) = (d.value[i], d.tol[i].unwrap_or(0));
+            let ok = if tol == 0 {
+                f32::from_bits(got) as f64 == want
+            } else {
+                covered += 1;
+                (f32::from_bits(got) as f64 - want).abs() <= tol as f64 * crate::isp::DEPTH_UNIT
+            };
+            if !ok {
+                wrong += 1;
+                first.get_or_insert((x, y, got, want));
+            }
+        }
+    }
+    match first {
+        Some((x, y, got, want)) => Verdict::Mismatch(format!(
+            "{wrong} depth values outside the tolerance, the first at ({x}, {y}): recorded {got:#x}, plane {want}"
+        )),
+        None if covered > 0 => Verdict::Near,
+        None => Verdict::Matched,
     }
 }
 
@@ -754,5 +820,71 @@ mod tests {
         );
         assert_eq!(compare(&e, &ok(vec![7, 7])), Verdict::Either);
         assert!(matches!(compare(&e, &ok(vec![8])), Verdict::Mismatch(_)));
+    }
+
+    fn depth_of(values: &[(f64, Option<u32>)], w: u32, h: u32) -> SceneResult {
+        let mut r = SceneResult::refusing(Outcome::Ok);
+        r.depth = Some(Ok(crate::pixel::Depth {
+            w,
+            h,
+            g: 1,
+            value: values.iter().map(|v| v.0).collect(),
+            tol: values.iter().map(|v| v.1).collect(),
+        }));
+        r
+    }
+
+    fn dump_of(values: &[f32], w: u32, h: u32) -> Vec<u32> {
+        let mut d = vec![0xdead_beef; 2048];
+        for y in 0..h {
+            for x in 0..w {
+                d[crate::zls::store_dword(x, y, 1) as usize] = values[(y * w + x) as usize].to_bits();
+            }
+        }
+        d
+    }
+
+    #[test]
+    fn a_depth_within_the_tolerance_is_near_and_beyond_it_a_mismatch() {
+        let u = crate::isp::DEPTH_UNIT;
+        let vals = [(1.0, Some(0)), (0.5, Some(3)), (0.25, Some(3)), (1.0, Some(0))];
+        let r = depth_of(&vals, 2, 2);
+        let ok = dump_of(&[1.0, (0.5 - 3.0 * u) as f32, (0.25 + 2.0 * u) as f32, 1.0], 2, 2);
+        assert_eq!(depth_verdict(&r, &ok, &[]), Verdict::Near);
+        let bad = dump_of(&[1.0, (0.5 - 4.0 * u) as f32, 0.25, 1.0], 2, 2);
+        assert!(matches!(depth_verdict(&r, &bad, &[]), Verdict::Mismatch(m) if m.contains("(1, 0)")));
+        // a background pixel is exact: one unit off is a mismatch
+        let off = dump_of(&[(1.0 - u) as f32, 0.5, 0.25, 1.0], 2, 2);
+        assert!(matches!(depth_verdict(&r, &off, &[]), Verdict::Mismatch(_)));
+    }
+
+    #[test]
+    fn a_depth_of_background_only_is_matched_and_a_missing_or_refused_depth_is_said() {
+        let r = depth_of(&[(1.0, Some(0)); 4], 2, 2);
+        assert_eq!(depth_verdict(&r, &dump_of(&[1.0; 4], 2, 2), &[]), Verdict::Matched);
+        let none = SceneResult::refusing(Outcome::Ok);
+        assert!(matches!(depth_verdict(&none, &[], &[]), Verdict::Mismatch(_)));
+        let mut refused = SceneResult::refusing(Outcome::Ok);
+        refused.depth = Some(Err(Outcome::unsupported("steep", &["Q200"])));
+        assert_eq!(
+            depth_verdict(&refused, &[], &["Q200".to_string()]),
+            Verdict::Refused(vec!["Q200".into()])
+        );
+        assert!(matches!(depth_verdict(&refused, &[], &[]), Verdict::Unsupported(_)));
+    }
+
+    #[test]
+    fn a_scene_that_expects_an_image_is_judged_by_the_pixel_sides_refusal_and_one_that_does_not_is_not() {
+        let mut r = SceneResult::refusing(Outcome::Ok);
+        r.pixel_refusal = Some(Outcome::unsupported("no", &["Q240"]));
+        let with = parse(r#"{"image": {"hash": "0x1"}, "refuse": ["Q240"]}"#);
+        assert_eq!(compare(&with, &r), Verdict::Refused(vec!["Q240".into()]));
+        let without = parse(r#"{"buffers": {"param": {"sparse": {}}}}"#);
+        assert!(!matches!(compare(&without, &r), Verdict::Refused(_)));
+        let unlisted = parse(r#"{"image": {"hash": "0x1"}}"#);
+        assert!(matches!(compare(&unlisted, &r), Verdict::Unsupported(_)));
+        // a recorded hang is the whole job's: the pixel side that refuses is a refusal, not a mismatch
+        let hang = parse(r#"{"outcome": "hang", "refuse": ["Q240"]}"#);
+        assert_eq!(compare(&hang, &r), Verdict::Refused(vec!["Q240".into()]));
     }
 }

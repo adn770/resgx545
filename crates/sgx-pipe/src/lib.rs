@@ -11,6 +11,7 @@
 //! "matched" ([`outcome::Verdict::combine`]). Not cycle accurate. See doc/specs/vectors.md
 //! sections 5 and 6.
 
+pub mod arith;
 pub mod bif;
 pub mod data;
 pub mod dpm;
@@ -22,8 +23,10 @@ pub mod iter;
 pub mod job;
 pub mod mem;
 pub mod mte;
+pub mod objects;
 pub mod outcome;
 pub mod pbe;
+pub mod pixel;
 pub mod regs;
 pub mod render;
 pub mod report;

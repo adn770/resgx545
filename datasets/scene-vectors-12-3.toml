@@ -1,0 +1,9 @@
+title = "scene vectors of the pipeline simulator, 12.3: the first triangle on 16 sizes and a sample of the E606 depth jobs, with the recorded image hash of each"
+repo = "data"
+paths = ["scene-vectors/isp/"]
+method = "tools/usse-asm/isp_scenes.py first-triangle and arith (offline, no new run): the words of each scene rebuilt by sgxfive-test --mock probe --tri --emit-scene (the pixel program of every scene is the green program of the isp-arith-1138 templates, staged by its stage script) and paired with the image hash printed by the run it stands for (the render-target-sizes, render-client-jobs and parameter-buffer runs for the first triangle; the D job of every eighth case of cases.tsv for arith, with the saved depth dump named in provenance.depth, which is read from the data repository, not copied); the cases of the fine sets (vertices not in 1/256 pixel) are excluded and listed in run.excluded, they are checked at the unit level by tests/isp_arith.rs; the questions each scene's expect.refuse lists are declared from the input (the size, the plane's gradient, the area), never from a result; the digest is the one of tools/records/datasets.py, the sha256 of the `sha256  path` lines of the files in path order"
+date = "2026-11-09"
+files = 2
+size = 2045656
+sha256 = "74db190a443d14f37432965ff5adc1998ff91bb15ddeddd8d16fc58a964db9e1"
+recipe = "tools/usse-asm/isp_scenes.py"

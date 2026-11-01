@@ -4495,6 +4495,75 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   the right mask in bits 31:16 and the left in 15:0.
   *ta; HW, infer; data: `ta-tri-region`, `ta-regions`, `ta-objects`, `ta-object-words`,
   `vdm-vtask-capacity`, `scene-vectors-12-2`.*
+- `E660` A model of the ISP written for the pipeline simulator (sgx-pipe isp, iter, objects, pixel:
+  the exact integer centre test on vertices rounded half up to 1/256 pixel with left and top edges
+  owning ties, the plane through the rounded vertices at the pixel centre) reproduces the colour
+  image of 2752 of 2752 E606 and E607 depth jobs it is asked about, 0 of 14368768 + 11149312 +
+  6586368 pixels wrong, of which 1566 jobs are the ones the rule was found on (E606's 692 fit cases,
+  E607's 874 fine cases) and 1186 held out (E606's 814 held-out cases and 30 repeat cases, E607's
+  342 fine2 cases of 422); the 1.0 stored where nothing is covered exactly, the stored depth of
+  every covered pixel of a plane of gradient below 0.03 within E606's stated 3 units of 2^-23
+  (330844 + 106639 + 201663 pixels, 0 outside; the largest error is 1.9, so the data do not pin the
+  3 from below), and the iterated clip z of 700 triangles within E606's stated 4 units where its
+  range per root area is below 0.05 (132050 pixels, 0 outside); it refuses what E606 and E607 did
+  not measure, naming the open question: the 80 tiny-edge cases on 256 x 256 targets (Q240), the
+  covered pixels of a plane of gradient 0.03 or more (80665 + 60412 + 26292 pixels, Q200) and the
+  iterated clip x (Q200: its error in the record's own table reaches 23 units, E661). Run through
+  the whole pipeline (the vertex tasks on sgx-sim, the MTE, the TA, the ISP, the pixel programs on
+  sgx-sim, the end-of-tile task and the PBE) from the words the library's builder puts in its five
+  pages, the first triangle reproduces the recorded image hash at the three target sizes E606 ran
+  (64 x 64, 128 x 128, 256 x 128: 3 of 3, with E023's 1062 triangle and 3034 background pixels at 64
+  x 64; the rule alone gives the hash at all 16 sizes, E662, and the pipeline refuses the 13 outside
+  E606's three) and 92 of 92 built scenes of the 202 sampled (192 E606 depth jobs, every eighth, and
+  10 E607 fine2 tiny-edge jobs) whose depth the model decides (the image hash and, for the 59 that
+  store a depth by a plane of gradient below 0.03, the depth within 3 units, counted per scene as
+  fitted with depth near; 33 more store only the background); every one of these rests on a fitted
+  rule, so none is reported matched. It refuses 97 of the 202 sampled depth jobs (a depth compare
+  against a plane of gradient 0.03 or more, Q200: the refusal drops the whole image, coverage
+  included, so the replayed sample is skewed to planes of gradient below 0.03 although the coverage
+  of those 97 is not in doubt), 10 (a 256 x 256 target, Q240) and 3 (a triangle with no area: the TA
+  has no record for its winding mark, Q230), and of the 16 first-triangle sizes 2 by the TA (four
+  macrotiles in a row, Q139, Q100, Q086) and 11 by the target size (Q240). It decodes the ISP words
+  only as far as their records go (the unit tests check the model against itself there, see below):
+  a vertex depth outside [0, 1] under a depth compare or write (the clamp of E287, one run), the ISP
+  word 1 gate pairs E232 and E235 did not measure and a pass type 1, 2, 4, 5 or 6 with a pixel
+  shader other than the library's colour write (E065's) refuse under Q241. Of the 2464 triangle-host
+  vectors of the data repository 2281 were rebuilt as scenes (183 not: a kernel poke 159, a job that
+  wrote no pixel 24) and replayed against the image each recorded; this census is a development set
+  (its 71 first-run mismatches were removed by rules and refusals after they showed, so 0 mismatch
+  is a figure after the fixes, not a test on unseen scenes) with 733 content duplicates among the
+  2281 (1548 distinct: 1508 refused, 39 reproduced, 1 predicted hang): 47 reproduce (fitted; the 39
+  distinct are the library's triangle with other programs, evidence of plumbing, not of coverage or
+  depth), 1 predicted hang (E102: the record that defined the rule, a reproduction, not a
+  prediction), 0 mismatch, 2233 refused by question, 97.9 percent of the census, 1231 of them at
+  Q094 before the ISP is reached (Q094 1231, Q206 373, Q142 377, Q052 47, Q050 35, Q202 33, Q240 30,
+  Q230 21, Q162 20, Q047 14, Q042 12, Q069 15, Q066 4, Q163 with Q047 4, Q241 4, Q076 with Q003 3,
+  Q199 2, Q070 2, Q139 with Q100 and Q086 2, Q159 with Q160 2, Q163 2), so the census says almost
+  nothing of the ISP itself.
+  *isp; HW, infer; data: `isp-arith-1138`, `render-target-sizes`, `render-client-jobs`,
+  `dpm-parameter-buffer`, `scene-vectors-12-3`.*
+- `E661` In the iteration jobs of E606 the clip x iterated at the pixel centre (pa1) is not within
+  the 4 units of 2^-23 that the record gives for the clip z: over the 700 triangles of the fit and
+  held-out sets, in the bin whose value range per root area is below 0.05 (358 triangles, 257 of
+  them with a covered pixel, 126104 pixels) 17 triangles all of the small class (8 of the fit set, 9
+  of the held-out) have 19 pixels beyond 4 units, the largest 23.0 units (the record's own table of
+  the bin gives max 23.0), against 0 of 132050 pixels in the 116 triangles of the same bin for the
+  clip z (max 3.7); the plane through the vertices' clip x values stays the right plane (coverage 0
+  wrong in 700 images), 99.69 percent of the bin's pixels (125718 of 126104) are within 1 unit,
+  against 99.49 percent for the clip z (131381 of 132050).
+  *isp; HW; data: `isp-arith-1138`.*
+- `E662` The coverage rule of E606 (vertices on the 1/256 pixel grid, the pixel centre tested
+  exactly, left and top edges owning ties) applied to the library's first triangle ((8, 8), (56,
+  20), (20, 56) of a 64 x 64 target, scaled in 1/16 pixel) gives the recorded image hash of every
+  render of the 16 sizes of E148, E023 and E174: 32 of 32 hashes of 14 sizes (both colour pairs, 64
+  x 64 to 256 x 256, 128 x 96), the first render of 1024 x 768 (207456 triangle and 578976
+  background pixels, hash 0xc9e301d225fe2325) and of 4096 x 4096 (4422528 and 12354688, hash
+  0x08197f1b8b083325), 3 of the 16 sizes are sizes E606 ran (64 x 64, 128 x 128, 256 x 128) and 13
+  are not (64 x 128, 128 x 64 and 256 x 64 of the same family among them, the half-sizes 72, 80, 96
+  and 48, the heights above 128, 1024 x 768 and 4096 x 4096); those renders were checked before only
+  against a CPU reference with a one-pixel undecided band around every edge, the hash is an exact
+  image.
+  *isp; HW; data: `render-target-sizes`, `render-client-jobs`, `dpm-parameter-buffer`.*
 - `E680` Over 590 random triangles with vertices on the 1/256 pixel grid (small, medium, large -9%
   to +124% of the target except at 4096 x 4096 where no x is negative, vertices at pixel centres, 75
   quads cut into two triangles) on 10 targets that E606 did not run or only partly ran (96 x 64, 130
@@ -4763,7 +4832,7 @@ Records: E064, E065, E066, E067, E068, E069, E070, E071, E072, E073, E074, E210,
 E215, E216, E217, E218, E219, E220, E222, E224, E225, E226, E227, E228, E229, E230, E209, E231,
 E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E290, E291, E330,
 E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E508, E510, E590,
-E606, E607, E618, E680, E681, E682, E683, E684, E727, E728, E731.
+E606, E607, E618, E660, E661, E662, E680, E681, E682, E683, E684, E727, E728, E731.
 
 ### mte
 

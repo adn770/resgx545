@@ -2,8 +2,8 @@
 // SPDX-FileCopyrightText: 2026 Josep Torra
 //! A render job's vertex side and the TA (12.2): the VDM stream is parsed, its state blocks and
 //! vertex tasks run on `sgx-sim` (`vtx`), the MTE puts the vertices in the window (`mte`) and the
-//! TA writes the parameter buffer and TA data (`ta`). The result is those two buffers and no image
-//! (the ISP is 12.3). Every word of the command that the vertex side or the TA reads is checked
+//! TA writes the parameter buffer and TA data (`ta`); the pixel side (`pixel`, 12.3) goes on from
+//! them to an image. Every word of the command that the vertex side or the TA reads is checked
 //! against the library's value and refused by question when it differs.
 
 use crate::Outcome;
@@ -31,6 +31,9 @@ const MTE_CTRL: u32 = 0xa2;
 /// The command words 10 to 25 (what follows CR_MTE_SCREEN: multisample, pixel back end, the ISP and
 /// 3D words): no stage of the vertex side or the TA reads them, and all 355 dumped scenes carry the
 /// same value in each, so the model refuses any other (Q231) rather than ignore a changed word.
+/// The words the pixel side reads (`pixel::READS`, 12.3) are left to it: it recognises what it
+/// models (the gate bits of CR_ISP_CTL, the background depth, the event program's place) and
+/// refuses the rest by its own question, so a refusal here would hide the words it reads.
 const CMD_UNREAD: [u32; 16] = [
     0x88,
     0x80,
@@ -102,7 +105,8 @@ fn check_cmd(sc: &Scene) -> Result<(), Outcome> {
             &["Q231"],
         ));
     }
-    if let Some(k) = (0..CMD_UNREAD.len()).find(|&k| c[10 + k] != CMD_UNREAD[k]) {
+    let unread = |k: usize| !crate::pixel::READS.contains(&(10 + k));
+    if let Some(k) = (0..CMD_UNREAD.len()).find(|&k| unread(k) && c[10 + k] != CMD_UNREAD[k]) {
         return Err(refuse(
             format!(
                 "command word {} is {:#x}, the library's is {:#x}: no stage of the vertex side or the TA reads it and no record says a change leaves the object alone",
@@ -182,6 +186,19 @@ pub fn run(sc: &Scene) -> Result<SceneResult, Outcome> {
             "E651" => rules::TA_PACKED_VERTICES,
             _ => rules::TA_STREAMS,
         });
+    }
+    match crate::pixel::image(sc, &out) {
+        Ok(img) => {
+            r.image = Some(img.pixels);
+            r.outside = Some(img.outside);
+            r.depth = img.depth;
+            r.use_rule(rules::ISP_COVERAGE);
+            r.use_rule(rules::ISP_VERTEX_GRID);
+            if r.depth.is_some() {
+                r.use_rule(rules::ISP_DEPTH_STORE);
+            }
+        }
+        Err(o) => r.pixel_refusal = Some(o),
     }
     r.buffers.insert("param".into(), out.param);
     r.buffers.insert("tadata".into(), out.tadata);
@@ -279,6 +296,14 @@ mod tests {
             for v in [sc.cmd[k] ^ 1, sc.cmd[k] ^ 0x8000_0000, 0] {
                 let mut sc = Scene::from_fixture(FIXTURE, id);
                 sc.cmd[k] = v;
+                if crate::pixel::READS.contains(&k) {
+                    // the pixel side reads the word (12.3): a recognised or a refused value is its
+                    // verdict, in `pixel_refusal`, and the vertex side's job still runs
+                    assert!(check_cmd(&sc).is_ok(), "word {k} = {v:#x}");
+                    let r = run(&sc).unwrap_or_else(|e| panic!("word {k} = {v:#x}: {e:?}"));
+                    assert!(r.pixel_refusal.is_some() && r.image.is_none(), "word {k} = {v:#x}");
+                    continue;
+                }
                 match run(&sc) {
                     Err(Outcome::Unsupported { ids, why }) => {
                         assert_eq!(ids, ["Q231"], "word {k} = {v:#x}");
@@ -349,5 +374,41 @@ mod tests {
                 .all(|f| matches!(f, 0x02 | 0x04 | 0x08 | 0x0c | 0x98 | 0x90 | 0x18 | 0x10 | 0x88 | 0x80)),
             "{flags:x?}"
         );
+    }
+
+    /// Toggle bit 42 (.twopart) of the first instruction of the vertex program whose text starts
+    /// with `prefix`.
+    fn toggle_twopart(sc: &mut Scene, prefix: &str) {
+        let seg = sc.memory.iter_mut().find(|s| s.role == "usev").unwrap();
+        let d = seg.dwords.as_mut().unwrap();
+        let at = (0..d.len() / 2)
+            .find(|&i| {
+                let w = d[2 * i] as u64 | (d[2 * i + 1] as u64) << 32;
+                usse_isa::decode(w, usse_isa::Core::Sgx545).text.starts_with(prefix)
+            })
+            .unwrap_or_else(|| panic!("no {prefix}"));
+        d[2 * at + 1] ^= 1 << 10;
+    }
+
+    #[test]
+    fn e102_the_vertex_emits_without_twopart_hang_or_draw_nothing_as_recorded() {
+        let id = "tb-w64-k0-16-16";
+        // emitvcbvtx without .twopart, emitmtevtx with: the job hangs (a predicted hang, no refusal)
+        let mut sc = Scene::from_fixture(FIXTURE, id);
+        toggle_twopart(&mut sc, "emitvcbvtx");
+        assert!(matches!(run(&sc), Err(Outcome::Hang { record }) if record == "E102"));
+        // neither with: the job completes with no triangle, what the TA writes then was not dumped
+        toggle_twopart(&mut sc, "emitmtevtx");
+        match run(&sc) {
+            Err(Outcome::Unsupported { ids, why }) => {
+                assert_eq!(ids, ["Q230"]);
+                assert!(why.contains("E102"), "{why}");
+            }
+            r => panic!("{r:?}"),
+        }
+        // emitmtevtx alone without it: the triangle is exact
+        let mut sc = Scene::from_fixture(FIXTURE, id);
+        toggle_twopart(&mut sc, "emitmtevtx");
+        assert!(run(&sc).is_ok());
     }
 }

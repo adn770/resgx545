@@ -26,6 +26,17 @@ pub const ISP_MSAA_WINDOW: Status = Status::Fitted("E503");
 pub const TA_PACKED_VERTICES: Status = Status::Fitted("E651");
 /// Region headers' flags, the stream forms and where each stream block lands (12.2; E652)
 pub const TA_STREAMS: Status = Status::Fitted("E652");
+/// Triangle coverage: the exact centre-sample test with the left and top edges owning ties, over
+/// vertices on the 1/256 pixel grid (12.3; E606 states the cell of its grid was fitted on 692
+/// triangles and held out on 814; E607 the half-up rounding of the grid)
+pub const ISP_COVERAGE: Status = Status::Fitted("E606");
+/// The vertex grid of 1/256 pixel and its half-up rounding (12.3; E607). The scene path meets
+/// vertices already on the grid (the TA packs them so, Q230), so the rounding itself runs only in
+/// `arith`; the status is marked with the coverage because the grid is E607's finding (r123 D6).
+pub const ISP_VERTEX_GRID: Status = Status::Fitted("E607");
+/// The depth store's layout, when a job stores depth and the model reports it (E465, fitted):
+/// the `depth` of a scene result rests on it.
+pub const ISP_DEPTH_STORE: Status = Status::Fitted("E465");
 /// The 1/w the TA stores: kept above the minimum, the clamp value otherwise (E197, [infer])
 pub const MTE_RHW: Status = Status::Fitted("E197");
 

@@ -38,8 +38,9 @@ pub fn blockers(kind: Kind) -> Vec<&'static str> {
 }
 
 /// Run a scene: a transfer through the model of 12.1 (`xfer`); a render through the vertex side and
-/// the TA (12.2: it gives the parameter buffer and TA data and no image; the ISP is 12.3, so a scene
-/// that expects an image is a mismatch of "no image" and not a silent pass).
+/// the TA (12.2: the parameter buffer and TA data) and the pixel side (12.3: the ISP, the pixel
+/// programs, the PBE: an image). A pixel side that refuses leaves the buffers and says why in
+/// `pixel_refusal`; a scene that expects an image is then a refusal, never a silent pass.
 pub fn run(scene: &Scene) -> SceneResult {
     match scene.kind {
         Kind::Transfer => crate::xfer::run(scene),

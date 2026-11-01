@@ -393,26 +393,26 @@ words and `rebuilt` otherwise (6.3).
 
 ### 6.4 What a replay does
 
-`sgx_pipe::job::run` loads `memory` into the device address space (`mem`, flat until 12.5),
-applies `regs` through the register file (`regs`: an unlisted register or a value wider than its
-measured width refuses), and runs the units in the order of the data dependencies. A render runs
-the vertex side and the TA only (6.6; the ISP is 12.3) and gives the parameter buffer and the TA
-data, not an image. A transfer (fill or copy) runs through `sgx_pipe::xfer` (12.1): the
-17 register words, the render box in 32 x 16 tiles, the pixel-event PDS program of each tile
+`sgx_pipe::job::run` loads `memory` into the device address space (`mem`, flat until 12.5), applies
+`regs` through the register file (`regs`: an unlisted register or a value wider than its measured
+width refuses), and runs the units in the order of the data dependencies. A render runs the vertex
+side and the TA (6.6), then the ISP, the pixel programs and the PBE (6.7), and gives the parameter
+buffer, the TA data and an image. A transfer (fill or copy) runs through `sgx_pipe::xfer` (12.1):
+the 17 register words, the render box in 32 x 16 tiles, the pixel-event PDS program of each tile
 through `sgx-sim` with ir1 = 6 on the last tile, the end-of-tile task and its emit to the PBE (pack
 modes 0 to 3), the pixel shader per pixel of every tile of the box and a copy's texel through
-`tex::sample`. A command word or a task no record explains refuses (`Q206`, the words of a
-transfer with no record), a PDS program or input no record measured (a program that is not a
-template the records ran included) under `Q207`; `Q074` is which tile an end-of-tile task names;
-`Q011` a copy's tag; `Q021` the iterator word; `Q066` the background object; `Q205` a copy's
-iterated coordinates; `Q078` the sampler words; `Q076` and `Q003` an access outside the scene's
-memory, and `Q003` also a job whose completion the words leave unknown. A refusal depends on the
-scene's words only, never on the recorded result. The scene vector lists the questions its poked
-words are open under in `expect.refuse`. The model uses no fitted rule, so a result is `matched`,
-never `fitted`; the PBE predicts the hangs its records state (E266 and E267) and none of the
-replay's scenes reaches them, so no hang or fault is predicted in a replay. The PDS inputs
-`alu_specials_in_movs`, `ifs` and `ir2` are assumptions confined to the template programs. A model
-that returns a result must say which fitted rules it used.
+`tex::sample`. A command word or a task no record explains refuses (`Q206`, the words of a transfer
+with no record), a PDS program or input no record measured (a program that is not a template the
+records ran included) under `Q207`; `Q074` is which tile an end-of-tile task names; `Q011` a copy's
+tag; `Q021` the iterator word; `Q066` the background object; `Q205` a copy's iterated coordinates;
+`Q078` the sampler words; `Q076` and `Q003` an access outside the scene's memory, and `Q003` also a
+job whose completion the words leave unknown. A refusal depends on the scene's words only, never on
+the recorded result. The scene vector lists the questions its poked words are open under in
+`expect.refuse`. The model uses no fitted rule, so a result is `matched`, never `fitted`; the PBE
+predicts the hangs its records state (E266 and E267) and none of the replay's scenes reaches them,
+so no hang or fault is predicted in a replay. The PDS inputs `alu_specials_in_movs`, `ifs` and `ir2`
+are assumptions confined to the template programs. A model that returns a result must say which
+fitted rules it used.
 
 ### 6.5 Not yet (scope of the format)
 
@@ -457,6 +457,72 @@ TA's rules (E541, E542, E651, E652) and the 1/w replacement (E197) are fitted, s
 Q042, Q094, Q112; the history-dependent values Q163), lines and points (Q159, Q160, Q161),
 other output selects and state blocks (Q069, Q162), TE words other than the library's tiling (Q100,
 Q139, Q086, Q142), a triangle the clip removes or cuts or no target region lists (Q230), command
-words 10 to 25, the state's WCLAMP and the end-of-scene word that no record reads or that no dump
-varied (Q231). A stream the parser refuses names the stream's shape (Q112) with its words, so a
-two-object stream lists what blocks it.
+words 10 to 25 that no stage reads (6.7 leaves the ones the pixel side reads to it), the state's
+WCLAMP and the end-of-scene word that no record reads or that no dump varied (Q231). A stream the
+parser refuses names the stream's shape (Q112) with its words, so a two-object stream lists what
+blocks it.
+
+### 6.7 Render scenes with an image: the ISP and the first triangle (12.3)
+
+`sgx_pipe::render::run` goes on from the TA's output to `sgx_pipe::pixel::image`: for each 32 x 16
+tile the region header and the control stream the TA wrote are read back (`objects`), the ISP
+resolves the tile's pixels (`isp::resolve_tile`: coverage, the depth test, the object's ISP words),
+the pixel programs of the winning object and of the background object run per pixel on `sgx-sim`
+(the PDS primary and secondary programs, then the USSE task), the pixel-event program starts the
+end-of-tile task of each tile and the PBE stores it (`pbe::store_tile`). The result is `image` (the
+target as the host reads it), `outside` (dwords past the target that changed) and, where `regs`
+holds a `CR_ISP_ZLSCTL` (`0x0480`) of E465's depth store and the store base (`0x0488`), `depth`.
+The command words 10 to 25 are the pixel side's (`pixel::READS`): the vertex side's refusal of
+words no stage reads (6.6, Q231) leaves them to it, and the pixel side recognises the library's
+values, CR_ISP_CTL bits 5:0 (the gate), the background depth and the pixel-event program's place,
+and refuses the rest by its own question.
+
+Rules, and what each rests on:
+
+- Coverage (E606, E607): the vertices on the 1/256 pixel grid, the pixel centre tested exactly in
+  integers, a centre on an edge belongs to the triangle iff the edge is a left or a top edge, a
+  triangle with no area draws nothing. A fit: every image that rests on it is `fitted` (D6), never
+  `matched`, and names E606, E607 (the grid) and, where the depth is stored, E465. Only inside what
+  E606 ran: the targets 64 x 64, 128 x 128 and 256 x 128 (Q240 for every other: the rest of the
+  power-of-two family, a target below one tile, anything wider than 256 or taller than 128),
+  vertices from -9% to +124% of the target (Q199), 1/w = 1 and a single sample (Q202), `x >= 0`
+  for a coordinate with a fraction below the grid (Q199).
+- Depth: the plane through the vertices at the pixel centre, exact. No bit-exact model exists, so
+  a depth the model stores is compared with E606's tolerance (3 units of 2^-23 where the plane's
+  gradient |dz/dx| + |dz/dy| is below 0.03; the data do not pin the 3 from below):
+  `scene::depth_verdict` says `Near`. A compare against a plane of gradient 0.03 or more, or
+  between two depths closer than the sum of their tolerances (the bound is inclusive), refuses
+  (Q200): the hardware's decision is not predictable from the plane. The refusal drops the whole
+  image of its scene, coverage included, which skews a replayed sample to shallow planes. A vertex
+  depth outside [0, 1] refuses (Q241) unless the compare is always and no depth is written: E287
+  saw the depth clamped in clip space (one run, inferred).
+- Iterated values (`iter`): the plane through the attribute at the centre, within 4 units where
+  the range per root area is below 0.05, for the clip z only (the clip x of the same jobs reached
+  23 units: no tolerance, Q200). Not in the scene path: the TA writes position-only objects (12.2).
+- ISP words (`isp::decode_words`): depth compare 0, 1, 4, 7 (2, 3, 5, 6 were inferred, Q241), depth
+  write (bit 20) and colour write (bit 21), pass types (3 and 7 remove, E065; 1, 2, 4, 5 and 6
+  draw a single triangle as opaque only for the library's colour write, the shader E065 ran, and
+  several triangles or another shader refuse: Q073, Q032, Q241), the gate of ISP word 1 bits 31:26
+  against `CR_ISP_CTL` bits 5:0 only for the pairs E232 and E235 measured (gate 0 at the values 0
+  to 8, 16, 32, 63; gate 0 and 63 at 1 and 63; every other pair refuses, Q241). A stencil word
+  (Q071), bits 15 to 18, a visibility test and the polygon offset (Q241) and bit 28 (Q202) refuse.
+  No replayed vector exercises these decodes (the depth-test and punch-through vectors stop at
+  Q094): the unit tests check the model against itself.
+- The command's pixel-side words must be the library's (Q202, Q085, Q066, Q231, Q206).
+- A pixel program with an `o0` write, a store or an emit that lacks `.skipinv` also runs for the
+  helper instances of a partly covered quad and lands in some runs only (E104, E111, E113): it
+  refuses where the triangle covers a quad in part (Q052). A branch refuses (E112: Q050).
+- The vertex emits (E102): `emitvcbvtx` without `.twopart` hangs the job when `emitmtevtx` has it
+  (a predicted hang: the record that defined the rule is the only case) and draws nothing when it
+  has not either (refused: what the TA writes then was not dumped, Q230).
+
+`tools/usse-asm/isp_scenes.py` rebuilds the scenes: `first-triangle` (E023, E148, E174: the
+library's triangle on 16 sizes with the first render's image hash; three are E606's sizes, the
+others refuse Q240), `arith` (a sample of the E606 depth jobs: the vertices of `cases.tsv`, the
+image hash and the dump of the stored depth in `provenance.depth`), and `inventory` (every
+triangle-host vector of the data repository: its recorded image as the expectation, nothing
+declared refused, for a census; the census is a development set, with duplicates). The builder
+declares the questions open for an input from the input alone (`open_questions`,
+`plane_questions`), never from a result. Examples: `arith_stats` (the unit model against the
+recorded images of E606 and E607 pixel for pixel), `inventory_stats` (the census), `scene_image`
+(one scene's image and code).
