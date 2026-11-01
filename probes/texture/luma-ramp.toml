@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# texture luma ramp: 0 probes (a script, luma-ramp.sh).
+# Q008: the luma key's low and high cuts at 119, 120 and 122 with the weighted sum on every value
+# within 16 of each.
+needs = ["render"]
+name = "texture-luma-ramp"
+script = "luma-ramp.sh"

@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# dpm partial reload: 1 probes (a script, partial-reload.sh).
+# Q038: the final render's background object reading the target (a strided texture at the target's
+# address, fetched at the pixel's position) in a scene that overflows the parameter buffer, against
+# the library's background.
+needs = ["render", "render_pb_pages"]
+name = "dpm-partial-reload"
+script = "partial-reload.sh"
+
+[[probe]]
+name = "dpm-partial-reload-green"
+question = "the triangle's green pixel shader (the script's jobs run it); the background programs are the script's own bg_reload_1024.s, bg_reload_4096.s and pds_bg_pos.s"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { bgpixel = "bg_reload_1024.s", bgpds = "pds_bg_pos.s" }
+size = [0x40, 0x40]
+inputs = ["OP"]
+labels = ["green"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "dpm-partial-reload-green4096"
+question = "the same with the 4096x4096 reload shader (staged for the script)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { bgpixel = "bg_reload_4096.s", bgpds = "pds_bg_pos.s" }
+size = [0x40, 0x40]
+inputs = ["OP"]
+labels = ["green"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]

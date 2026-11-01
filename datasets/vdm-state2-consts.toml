@@ -1,0 +1,10 @@
+title = "probe table vdm/state2-consts"
+repo = "data"
+paths = ["vdm/state2-consts/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 159
+size = 237937762
+sha256 = "d3a02d37bdac9f81a19abd065dc7a5e28d91f3d8ea0b9b095b6864a64c7914b3"
+recipe = "probes/vdm/state2-consts.toml"
+needs = ["render"]

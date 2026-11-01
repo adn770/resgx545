@@ -1,0 +1,10 @@
+title = "script and probe table platform/event-steps"
+repo = "data"
+paths = ["platform/event-steps/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 22
+size = 482544
+sha256 = "fa93b22616653159bde1d83188c52c024dc41906c3d6f2056e814360c27c02f6"
+recipe = "probes/platform/event-steps.toml"
+needs = ["render", "reset"]

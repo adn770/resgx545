@@ -3,7 +3,7 @@ id = "Q096"
 question = "does the firmware itself do anything for the sample-cache erratum, beyond the heap layout the host chooses?"
 unit = "edm"
 phase = 11
-evidence = ["E002", "E011", "E013", "E033", "E035", "E041", "E114"]
+evidence = ["E002", "E011", "E013", "E033", "E035", "E041", "E114", "E432"]
 terms = []
 +++
 
@@ -24,3 +24,9 @@ erratum needs a texture and other data at clashing addresses at once, which no r
 
 To settle it: the sampler-cache probes with the texture mapped in the TEXTURE heap and, apart,
 with a render target and a texture whose addresses differ only above bit 28.
+
+Narrowed in 11.16 (E432, 72 jobs): the texture region half is run: the three sampler-cache probes
+with the texture in the texture heap (0xf0000000) give the same results as in the general heap in
+3 of 3 runs, 24 of 24 cases. No erratum shows on this bridge in that half; a texture and other
+data at addresses that differ only above bit 28 at once is not run. Status: narrowed, not
+answered.

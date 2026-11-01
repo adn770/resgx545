@@ -1,0 +1,10 @@
+title = "script and probe table dpm/partial-reload"
+repo = "data"
+paths = ["dpm/partial-reload/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 14
+size = 46266
+sha256 = "13762f31f1bf69013443384bdbfbbac14fc7baac635c639758e3c8976129dc6c"
+recipe = "probes/dpm/partial-reload.toml"
+needs = ["render", "render_pb_pages"]

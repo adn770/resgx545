@@ -53,6 +53,18 @@
  *           with its data rows and SGXFIVE_TRI_PROBE_PIX_ROWS rows of primary
  *           attributes, so it may douti, doutt or doutd into pa0-pa15 before
  *           its doutu; the background keeps its own.
+ *   bgpds   the background object's primary pixel PDS program, in place of pds_prim's
+ *           background copy (asm/transfer/pds_prim.s), at SGXFIVE_TRI_PROBE_PP_BGPDS in
+ *           the pixel PDS page. As pixpds: data dwords 0 and 1 the bgpixel slot's (or
+ *           the default background's) pixel shader U0 and U1; the render command's
+ *           background object words point at it with its data rows and
+ *           SGXFIVE_TRI_PROBE_PIX_ROWS rows of primary attributes, so it may douti, doutt
+ *           or doutd into pa0-pa15 before its doutu.
+ *   bgpixel the background object's pixel shader (asm/transfer/use_fill.s's background
+ *           copy), at SGXFIVE_TRI_PROBE_UP_BGPIXEL; the background's primary (the
+ *           default's, or the bgpds slot's data dword 0) starts it. Patched as the
+ *           pixel slot, a first phas with a next phase renumbered from the pixel code
+ *           base.
  *   state   the triangle's state task (asm/tri/use_mtest18.s), in its own place,
  *           SGXFIVE_TRI_UV_MTE18 (up to SGXFIVE_TRI_UV_MTE2); the MTE PDS
  *           program's U0 gets the slot's temporaries. Not with blk_add, which
@@ -61,7 +73,8 @@
  * Replacement USE programs run with the temporaries their slot gives (at
  * least the default's), and every limm "mov d, #imm" in them whose immediate
  * is SGXFIVE_TRI_PROBE_SCRATCH_IMM | k (k < 0x10000) loads scratch + k
- * instead, as the fill probes' (sgxfive-test probe); so does every data dword
+ * instead, as the fill probes' (sgxfive-test probe), and every one with
+ * SGXFIVE_TRI_PROBE_TARGET_IMM | k the render target's address + k; so does every data dword
  * of a replacement PDS program with that value (a texture's address, say).
  */
 #ifndef SGXFIVE_TRI_PROBE_H
@@ -80,10 +93,14 @@ enum sgxfive_tri_slot {
 	SGXFIVE_TRI_SLOT_PIXTASK,
 	SGXFIVE_TRI_SLOT_PIXPDS,
 	SGXFIVE_TRI_SLOT_STATE,
+	SGXFIVE_TRI_SLOT_BGPDS,
+	SGXFIVE_TRI_SLOT_BGPIXEL,
 	SGXFIVE_TRI_SLOT_COUNT,
 };
 
 #define SGXFIVE_TRI_PROBE_SCRATCH_IMM	0x5CAF0000u
+/* the same with the render target's address (the layout's fb): a program that reads its target */
+#define SGXFIVE_TRI_PROBE_TARGET_IMM	0x5CB00000u
 #define SGXFIVE_TRI_PROBE_ATTRS		16	/* a replaced pixev's douta range */
 
 /* Where replacements go, inside the scene's pages (after the defaults). */
@@ -92,8 +109,10 @@ enum sgxfive_tri_slot {
 #define SGXFIVE_TRI_PROBE_UP_PIXEL	0x100	/* pixel, up to the pixtask slot */
 #define SGXFIVE_TRI_PROBE_UP_PIXTASK	0x600	/* pixtask, up to the eot slot */
 #define SGXFIVE_TRI_PROBE_PIXTASK_U0	11	/* the pixev data dword with its U0 */
-#define SGXFIVE_TRI_PROBE_UP_EOT	0x800	/* eot, to the page's end */
-#define SGXFIVE_TRI_PROBE_PP_PIXPDS	0x800	/* pixpds, to the page's end (pixev up to it) */
+#define SGXFIVE_TRI_PROBE_UP_EOT	0x800	/* eot, up to the bgpixel slot */
+#define SGXFIVE_TRI_PROBE_UP_BGPIXEL	0xc00	/* bgpixel, to the page's end */
+#define SGXFIVE_TRI_PROBE_PP_PIXPDS	0x800	/* pixpds, up to the bgpds slot (pixev up to it) */
+#define SGXFIVE_TRI_PROBE_PP_BGPDS	0xc00	/* bgpds, to the page's end */
 #define SGXFIVE_TRI_PROBE_PIX_ROWS	4	/* primary attribute rows with pixpds */
 /* A second object (obj2_first): its pds_mte, block, index list, primary and pixel shader. */
 #define SGXFIVE_TRI_PROBE_PV_MTE2	0x0c0	/* pds_mte, the second block's */
@@ -117,8 +136,19 @@ struct sgxfive_tri_prog {
  * 16 bytes at 0x400, their 16-bit indices at 0xc00.
  */
 #define SGXFIVE_TRI_PROBE_MAX_VERTICES	126
+/*
+ * More than that, up to SGXFIVE_TRI_PROBE_WIDE_VERTICES, need the rig's gen region of
+ * SGXFIVE_TRI_PROBE_GEN_PAGES pages (the cpu view's gen_size): the vertices at W_VTX, their
+ * 16-bit indices at W_IDX.
+ */
+#define SGXFIVE_TRI_PROBE_WIDE_VERTICES	1500
+#define SGXFIVE_TRI_PROBE_GEN_PAGES	9
+#define SGXFIVE_TRI_PROBE_W_VTX		0x1000
+#define SGXFIVE_TRI_PROBE_W_IDX		0x8000
 /* The render command's words a probe may set (version 1, 0x68 bytes). */
 #define SGXFIVE_TRI_PROBE_CMD_WORDS	26
+/* The two-object VDM stream's words (with obj2_first); the one-object stream's are 11. */
+#define SGXFIVE_TRI_PROBE_VDM2_WORDS	19
 #define SGXFIVE_TRI_PROBE_G_VTX		0x400
 #define SGXFIVE_TRI_PROBE_G_IDX		0xc00
 
@@ -159,15 +189,34 @@ struct sgxfive_tri_probe {
 	/* state block words set as given: bit i of blk_mask, word i is blk_val[i] */
 	uint32_t blk_mask;
 	uint32_t blk_val[SGXFIVE_TRI_BLOCK_WORDS];
+	/* state block words flipped after those: bit i of blk_xor_mask, word i ^= blk_xor_val[i] */
+	uint32_t blk_xor_mask;
+	uint32_t blk_xor_val[SGXFIVE_TRI_BLOCK_WORDS];
 	/* render command words set as given: bit i of cmd_mask, word i is cmd_val[i] */
 	uint32_t cmd_mask;
 	uint32_t cmd_val[SGXFIVE_TRI_PROBE_CMD_WORDS];
-	/* VDM stream words set as given, after coords: bit i of vdm_mask, word i is vdm_val[i] */
+	/* render command words flipped after those: bit i of cmd_xor_mask, word i ^= cmd_xor_val[i] */
+	uint32_t cmd_xor_mask;
+	uint32_t cmd_xor_val[SGXFIVE_TRI_PROBE_CMD_WORDS];
+	/*
+	 * VDM stream words set as given, after coords: bit i of vdm_mask, word i is vdm_val[i].
+	 * Words 0 to SGXFIVE_TRI_VDM_WORDS - 1 are the one-object stream's; with obj2_first the
+	 * stream is the two-object one (SGXFIVE_TRI_PROBE_VDM2_WORDS words: the first state block
+	 * 0-1, its index list and vertex task 2-7, the second state block 8-9, its index list and
+	 * vertex task 10-15, the end of scene 16-17, terminate 18), set and flipped as built, so
+	 * word 9 changes the second state block alone.
+	 */
 	uint32_t vdm_mask;
-	uint32_t vdm_val[SGXFIVE_TRI_VDM_WORDS];
+	uint32_t vdm_val[SGXFIVE_TRI_PROBE_VDM2_WORDS];
 	/* VDM stream words flipped after those: bit i of vdm_xor_mask, word i ^= vdm_xor_val[i] */
 	uint32_t vdm_xor_mask;
-	uint32_t vdm_xor_val[SGXFIVE_TRI_VDM_WORDS];
+	uint32_t vdm_xor_val[SGXFIVE_TRI_PROBE_VDM2_WORDS];
+	/*
+	 * PBE words 0 to 3 of the end-of-tile task (the default's or the eot slot's) set as
+	 * given: bit i of pbe_mask, word i is pbe_val[i]; word 4, the sideband, is sideband_set's.
+	 */
+	uint32_t pbe_mask;
+	uint32_t pbe_val[4];
 	/* with an end-of-tile slot: its emitpix2's sideband, the default's 0x200 unless set */
 	bool sideband_set;
 	uint32_t sideband;
@@ -182,6 +231,15 @@ struct sgxfive_tri_probe {
 	uint32_t obj2_blk_mask;
 	uint32_t obj2_blk_val[SGXFIVE_TRI_PROBE_BLK2_WORDS];
 	struct sgxfive_tri_prog obj2_pixel;
+	/*
+	 * the second object's primary pixel PDS program, a caller's as the pixpds slot is the
+	 * first's (n 0: the default's, as pds_prim): at SGXFIVE_TRI_PROBE_PP_PRIM2, up to the
+	 * pixpds slot; its data dwords 0 and 1 are the second object's pixel shader's U0 and U1,
+	 * scratch immediates in its data patched; the second block points at it with
+	 * SGXFIVE_TRI_PROBE_PIX_ROWS rows of primary attributes (obj2_blk_val words win), so it
+	 * may douta constants into the shader's secondary attributes with a block of room for them.
+	 */
+	struct sgxfive_tri_prog obj2_pixpds;
 };
 
 /* The slot called name ("pixev", "eot", ...), or -1. */

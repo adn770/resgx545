@@ -43,7 +43,8 @@ def test_usage_names_every_command():
                 "probe"):
         assert re.search(rf"\b{cmd}\b", usage), cmd
     for opt in ("--every-value", "--poke", "--pixels", "--regs", "--low", "--late", "--isp2",
-                "--blk-add", "--vtx-coords", "--obj2"):
+                "--blk-add", "--vtx-coords", "--obj2", "--pbe", "--ramp", "--print-addrs",
+                "--page-before", "--place", "bgpixel", "N^=V"):
         assert opt in usage, opt
 
 
@@ -339,6 +340,50 @@ def test_probe_patches_scratch_immediates(tmp_path, k):
     assert int(o0.group(1), 16) == int(m.group(1), 16) + k
 
 
+def test_probe_scratch_pages(tmp_path):
+    # --scratch-pages N (16 to 64): a larger scratch buffer, for a texture chain that does not
+    # fit 64 KiB; the immediates 0x5CAFnnnn still add nnnn (up to 64 KiB) to its address
+    f = assemble(tmp_path, "big", PHAS + "mov.skipinv.end o0, #0x5CAF0010\n")
+    r = run("--mock", "probe", "--scratch-pages", "24", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    m = re.search(r"^probe big: scratch at (0x\w+) \(96 KiB\)$", r.stdout, re.M)
+    assert m, r.stdout
+    o0 = re.search(r"^probe big: o0 (0x\w+) ", r.stdout, re.M)
+    assert int(o0.group(1), 16) == int(m.group(1), 16) + 0x10
+    for bad in ("15", "65", "x"):
+        assert run("--mock", "probe", "--scratch-pages", bad, str(f)).returncode == 2, bad
+
+
+@pytest.mark.parametrize("order", ["low-first", "pages-first"])
+def test_probe_low_and_scratch_pages_are_checked_together(tmp_path, order):
+    # --low maps the whole scratch buffer, so low + pages x 4 KiB must stay within 1 MiB
+    # whichever option comes first on the command line
+    f = assemble(tmp_path, "lp", PHAS + "mov.skipinv.end o0, #1\n")
+
+    def probe(low, pages):
+        a, b = ["--low", low], ["--scratch-pages", pages]
+        return run("--mock", "probe", *(a + b if order == "low-first" else b + a), str(f))
+
+    assert probe("0xf0000", "64").returncode == 2           # 16 pages at parse time, 64 in all
+    assert probe("0xf0000", "16").returncode == 0           # ends exactly at 1 MiB
+    assert probe("0xc0000", "64").returncode == 0           # 64 pages end at 0x100000
+
+
+@pytest.mark.parametrize("order", ["late-first", "pages-first"])
+def test_probe_late_is_checked_against_the_scratch_pages(tmp_path, order):
+    # --late's dwords lie in the scratch buffer, whose size --scratch-pages sets, whichever
+    # option comes first: dword 20000 is past 16 pages (16384 dwords) but within 24 (24576)
+    f = assemble(tmp_path, "lq", PHAS + "mov.skipinv.end o0, #1\n")
+
+    def probe(late, pages):
+        a, b = ["--late", late], ["--scratch-pages", pages]
+        return run("--mock", "probe", *(a + b if order == "late-first" else b + a), str(f))
+
+    assert probe("0:20000=1", "24").returncode == 0
+    assert probe("0:20000=1", "16").returncode == 2
+    assert probe("0:24576=1", "24").returncode == 2
+
+
 def pixel_rows(out: str, name: str) -> dict:
     """--pixels output: {y: [64 values]}."""
     rows = {}
@@ -487,3 +532,104 @@ def test_tri_reports_a_failed_render():
     r = run("--mock", "tri", "--fault")
     assert r.returncode == 1, r.stdout + r.stderr
     assert "sgxfive-test: render: job faulted, context lost (Input/output error)" in r.stderr
+
+
+def test_copy_ramp_counts_one_channel(tmp_path):
+    # --ramp CH=START [--ramp-base V]: channel CH is START + the pixel's index (modulo 256), the
+    # other channels V's; the copy is checked against that source
+    r = run("--mock", "copy", "--ramp", "g=100", "--ramp-base", "0xff0000ff", "--width", "32",
+            "--height", "2", "--src-stride", "256", "--pixels")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "copy: ok" in r.stdout and "diff: 0 of 64 pixels" in r.stdout, r.stdout
+    row0 = re.search(r"^row 0: (.*)$", r.stdout, re.M).group(1).split()
+    assert row0[:3] == ["0xff0064ff", "0xff0065ff", "0xff0066ff"], row0
+    row1 = re.search(r"^row 1: (.*)$", r.stdout, re.M).group(1).split()
+    assert row1[0] == "0xff00a4ff", row1       # 64 pixels (stride 256 bytes) on: 100 + 64
+    for ch, shift in (("a", 24), ("r", 16), ("b", 0)):
+        r = run("--mock", "copy", "--ramp", f"{ch}=255", "--width", "4", "--height", "1",
+                "--pixels")
+        row0 = re.search(r"^row 0: (.*)$", r.stdout, re.M).group(1).split()
+        assert row0[:2] == [f"0x{0xff << shift:08x}", f"0x{0:08x}"], (ch, row0)
+
+
+@pytest.mark.parametrize("args", [
+    ["--ramp", "x=1"], ["--ramp", "g=256"], ["--ramp", "g"], ["--ramp", "g=1", "--every-value"],
+    ["--ramp-base", "0xff"], ["--ramp", "g=1", "--ramp", "r=2"],
+])
+def test_copy_ramp_usage(args):
+    assert run("--mock", "copy", *args).returncode == 2
+
+
+def test_copy_ramp_is_for_copy():
+    for cmd in ("fill", "tri"):
+        r = run("--mock", cmd, "--ramp", "g=1")
+        assert r.returncode == 2, (cmd, r.stdout + r.stderr)
+
+
+def test_copy_prints_addresses_and_a_counting_page_before():
+    # --print-addrs: where the source and destination lie; --page-before: the source's buffer
+    # has a counting page before it, so the source starts one page into its buffer
+    r = run("--mock", "copy", "--print-addrs")
+    assert r.returncode == 0, r.stdout + r.stderr
+    a = re.search(r"^copy: source at (0x\w+), destination at (0x\w+)$", r.stdout, re.M)
+    assert a, r.stdout
+    r = run("--mock", "copy", "--print-addrs", "--page-before")
+    assert r.returncode == 0, r.stdout + r.stderr
+    b = re.search(r"^copy: source at (0x\w+), destination at (0x\w+), a counting page before "
+                  r"the source$", r.stdout, re.M)
+    assert b, r.stdout
+    assert int(b.group(1), 16) - int(a.group(1), 16) == 4096 or int(b.group(1), 16) % 4096 == 0
+    assert "copy: ok" in r.stdout
+    assert run("--mock", "fill", "--page-before").returncode == 2
+
+
+def test_probe_places_a_program_in_the_code_heap(tmp_path):
+    # --place OFFSET=FILE --place-form cbase|exe18: FILE mapped at the USSE pixel heap's base +
+    # OFFSET and started in place of the fill shader by a primary DOUTU with the offset's bits in
+    # EXE and CBASE (cbase) or in an 18-bit EXE (exe18); the mock runs the placed program
+    base = assemble(tmp_path, "base", PHAS + "mov.skipinv.end o0, #0x0000BA5E\n")
+    use = assemble(tmp_path, "use", PHAS + "mov.skipinv.end o0, #0x61\n")
+    # (offset, form, bits 21:0 of the DOUTU)
+    for off, form, bits in ((0x100000, "cbase", 0x000002), (0x100000, "exe18", 0x200000),
+                            (0x400000, "cbase", 0x000008), (0x400000, "exe18", 0x000000),
+                            (0x10008, "cbase", 0x020010), (0x10008, "exe18", 0x020010)):
+        r = run("--mock", "probe", "--place", f"0x{off:x}={use}", "--place-form", form, str(base))
+        assert r.returncode == 0, r.stdout + r.stderr
+        kind = "EXE and CBASE" if form == "cbase" else "an 18-bit EXE"
+        assert (f"probe base: program placed at 0x{0x37000000 + off:08x} (code heap base + "
+                f"0x{off:x}), started as {kind}: DOUTU bits 21:0 0x{bits:06x}") in r.stdout, r.stdout
+    for args in (["--place", f"0x400000={use}"],                        # no form
+                 ["--place-form", "cbase"],                              # no program
+                 ["--place", f"0x400004={use}", "--place-form", "cbase"],
+                 ["--place", f"0x500000={use}", "--place-form", "cbase"],
+                 ["--place", f"8={use}", "--place", f"16={use}", "--place-form", "cbase"],
+                 ["--place", f"8={use}", "--place-form", "bogus"],
+                 ["--tri", "pixel", "--place", f"8={use}", "--place-form", "cbase"]):
+        r = run("--mock", "probe", *args, str(base))
+        assert r.returncode == 2, (args, r.stdout + r.stderr)
+
+
+def test_probe_scratch_in_the_texture_heap(tmp_path):
+    # --scratch-heap texture: the scratch buffer is allocated in the texture heap (0xf0000000 and
+    # up on the mock), the program's scratch immediates pointing there; only texture is a heap
+    f = assemble(tmp_path, "tx", PHAS + "mov.skipinv.end o0, #0x5CAF0010\n")
+    r = run("--mock", "probe", "--scratch-heap", "texture", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    m = re.search(r"^probe tx: scratch at (0x\w+) \(64 KiB\)$", r.stdout, re.M)
+    assert m and 0xf0000000 <= int(m.group(1), 16) < 0x100000000, r.stdout
+    assert f"0x{int(m.group(1), 16) + 0x10:08x}" in r.stdout, r.stdout
+    for args in (["--scratch-heap", "general"], ["--scratch-heap"], ["--tri", "pixel",
+                                                                         "--scratch-heap", "texture"]):
+        assert run("--mock", "probe", *args, str(f)).returncode == 2, args
+
+
+def test_tri_scratch_at_maps_the_pages_where_asked():
+    # --scratch-at ADDR: the --scratch pages mapped at ADDR (a heap's second page, where a unit
+    # of the render fetches from) instead of allocated in the general heap
+    r = run("--mock", "tri", "--scratch", "1", "--scratch-at", "0x2e001000", "--scratch-fill",
+            "0xd1d1d1d1")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^scratch: 0x2e001000 1 pages, fill 0xd1d1d1d1$", r.stdout, re.M), r.stdout
+    r = run("--mock", "tri", "--scratch", "1", "--scratch-at", "0x2e001")      # not page-aligned
+    assert r.returncode != 0, r.stdout + r.stderr
+    assert "--scratch-at" in run().stderr

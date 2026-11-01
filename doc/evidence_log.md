@@ -2629,6 +2629,141 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   vectors 24711 scalar vectors match, 1112 are fitted, 755 stop and none differs, 143 pixel vectors
   match with 18 stopping and none differing, and the PDS vectors match, as after 11.14 (E400).
   *usse; HW; data: none.*
+- `E424` Flipping bit 8 of the RT data's state word (kernel poke rtds:19, dword 13 of the RT data)
+  before the first kick makes CR_TE_PSG read 0x01600000 after the kick, and the TA data holds the
+  same bytes as with the TA command's te_psg at 0x01600000 (hash equal in 3 of 3 runs at 64x64 and
+  at 1024x768; 8 and 1536 bytes differ from the control): one region header marked each; the images
+  are the controls' in all 48 jobs and CR_DPM_STATE_CONTEXT_ID read 0 throughout.
+  *ta; HW, DDK, infer; data: `ta-psg-state`.*
+- `E425` With the copy's tool printing its addresses and a counting page before the source
+  (0xB0000000 | dword), the source of the 64x32 copy lies at 0x3e002000 (the page before it at
+  0x3e001000), its destination at 0x3e005000 (0x3e006000 with the source moved 4 rows down,
+  0x3e004000 at 64x16), and T2 flipped by 0x2000, 0x3000 and 0x4000 reads 0x3e000000 (first dword
+  0x04000004, then zeros and a few other dwords), the counting page and the destination's second
+  page: 28 of the 30 cases identical pixel for pixel in 3 of 3 runs and the other 2 (64x16, T2
+  flipped by 0x4000) faulting in 3 of 3.
+  *texture; HW; data: `texture-copy-addresses`.*
+- `E426` With a source row whose weighted sum S sits at cut x 1024 + k for every even k from -16 to
+  16 (102 cases, twice), the band of the luma key starts at least 16 below the low cut for the cuts
+  119, 120 and 122 (all of the 8 sums below the cut inside the band, 2 of 2 runs, three cuts), and
+  at the high cut five pixels with S 1000 to 1016 above cut x 1024 are outside the band where others
+  up to 1016 are inside, so the comparison is not on S alone.
+  *texture; HW, infer; data: `texture-luma-ramp`.*
+- `E427` In a stream of two objects, each with its own state task, flipping the fields of the second
+  state word (VDM word 9) while the first block stays as built gives the same completions and hangs
+  as flipping the first block's (word 1) for bits 15:13 (0, 5, 6 and 7 hang in 16 of 16 jobs, 2, 3
+  and 4 complete in 12 of 12) and for bits 11:9 at 3 and 4 (8 of 8 complete); bits 11:9 at 0 in the
+  second block draws the first object only (2 of 2), at 1 hangs in the second block and completes in
+  the first; bit 8 changes nothing in either.
+  *vdm; HW, infer; data: `vdm-state2-fields`.*
+- `E428` A DOUTU word with only bit 21 set (the offset's bits 20:19 in word bits 21:20, CBASE 0)
+  starts a USE program placed 1 MiB above the code heap's base, and one with CBASE 8 starts a
+  program placed 4 MiB above it, in 3 of 3 runs each, while the bit-21 form at 4 MiB (all zero)
+  starts the program at the base: the 18 program-counter bits reach bit 21 of the word and CBASE
+  adds the offset's bits 22:19.
+  *pds; HW, infer; data: `pds-doutu-place`.*
+- `E429` In the room setup of E406, pack mode 34 stores bits 30:20 of o3's single in bits 21:11 on
+  537 pixels for each of 0.75, 1.0, 1.5, 2.0 and 4.0 (3 of 3 runs: 0x001fa304, 0x001fc304,
+  0x001fe304, 0x00200304, 0x00204304), and mode 22 sets the field of bits 19:10 to 0x3ff
+  (0x088ffc00) on 851 pixels at o3 of 1.0, 2.0 and 4.0 (549 to 567 at 0.75 and in two ramps); o2
+  alone reaches a few pixels only (8 in mode 34, 12 in mode 22).
+  *pbe; HW, infer; data: `pbe-pack-floats-o23`.*
+- `E430` After a douti with no wait, none of pa0 to pa15 holds the waited iteration's pa0 at its
+  pixel beyond chance (0 to 25 of 1062 pixels per register, three runs), pa4, pa8 and pa12 hold the
+  target's pre-fill 0xdeadbeef on 258 to 288 pixels in all 9 runs, and the other registers hold 0,
+  2, 6, 0x40000000, 0x3f800000 and other floats that differ between runs on 7 to 54 percent of the
+  pixels, depending on the register and the pair of runs.
+  *pds; HW, infer; data: `pds-no-wait-where`.*
+- `E431` After a reset CR_EVENT_STATUS2 bit 6 (0x40) is set by a fill whose pixel program loops 55
+  or 56 iterations (eight instructions each) in 3 of 3 runs, 54 in 2 of 3, and never by 53 or fewer
+  (3 of 3 runs each, 16 to 53 iterations tried), and always by 56 to 136 iterations in steps of 8.
+  *edm; HW, infer; data: `platform-event-steps`, `platform-event-fine`.*
+- `E432` The 24 cases of the three sampler-cache probes (a store to a sampled texel, with each fence
+  and cache operation between) give the same results with the texture and its buffer in the texture
+  heap (0xf0000000) as in the general heap, in 3 of 3 runs each (72 of 72 jobs).
+  *texture; HW; data: `texture-sampler-cache-texheap`.*
+- `E433` With the TA command's word 23 (the background object's first PDS word) bit 27 or 28
+  flipped, mapping the page 0x1f000 it fetches from (filled with 0xd1d1d1d1, 0 or 0xffffffff) turns
+  the fault into a hang with 512 pixels changed where the unmapped job faults with 1024 to 1184 (3
+  of 3 runs, each fill); with bit 30 or 31 flipped, mapping the pixel PDS heap's second page changes
+  nothing (fault, 512 pixels at 64x32, 3 of 3 runs, each fill).
+  *render; HW, infer; data: `render-bg-pds-map`.*
+- `E434` Under HWPerf group 0 register 0x0060 counts 3, 15, 45 and 126 for the triangle probe with
+  1, 5, 15 and 42 triangles (three vertices each) and group 1's 0x0050 counts the same, group 0's
+  0x004c counts 7 a triangle for 1 to 15 triangles and 304 for 42, and 0x0e84 (renders) is 1 for
+  each triangle job in all 16 groups; the same in 3 of 3 runs of the table (48 group-runs), with the
+  fills of 128x32 and 256x16 and the 128x32 copy run at strides equal to their widths.
+  *platform; HW, infer; data: `platform-hwperf-vary`.*
+- `E435` With render flag bit 0 and debugfs hold_recovery set, the job holds in its hang with
+  CR_EVENT_STATUS (0x012c) gaining bit 11 and 0x0748 ending at 0x1d in 3 of 3 runs; with five
+  registers sampled instead of 118 (five runs) 0x0218 dips in 2 of 5 held jobs and in 4 of 5 unpoked
+  ones, so the TA kick is not absent from the held job.
+  *render; HW; data: `render-flag-bit0-timeline`, `render-flag-bit0-dense`.*
+- `E436` In a textured primary whose program iterates an attribute (a coordinate set) into the
+  primary attributes (DOUTI0 0x20000800: source 1, completion bit 29) and then fetches a texture,
+  pa0 (the attribute) and pa1 (the texel) are the same image at every pixel in all three runs with
+  DOUTU1 bits 24 and 25 set and with bit 25 alone (the fetch wait), and with bit 24 alone or neither
+  bit pa0 and pa1 change from run to run in all three runs; bit 24 with a douti that lacks the
+  completion bit hangs the job (24 of 24 jobs, bit 25 also set or not), while bit 25 alone gives the
+  same pa0 and pa1 images with or without the completion bit.
+  *pds; HW, infer; data: `pds-iter-wait-textured`.*
+- `E437` A douti with DOUTI0 0x20400000 (source 0, components bits 23:22 at 1, completion bit 29)
+  under DOUTU1 bit 24 writes the pixel's x + 0.5 to pa0 and its y + 0.5 to pa1 at all 1062 triangle
+  pixels of the 64x64 job in three runs of each, and pa2 holds none of them (0 of 1062).
+  *pds; HW; data: `dpm-partial-reload-pos`.*
+- `E438` In 66 jobs of the triangle and copies of it (3 to 1500 vertices) on a 4096x4096 and a
+  1024x768 target with parameter buffers of 0x422 to 0x23 pages, the high halves of
+  CR_DPM_TA_ALLOC_FREE_LIST_STATUS2 (0x0710) and CR_DPM_3D_FREE_LIST_STATUS2 (0x071c) read 0 after
+  all 42 jobs that completed or overflowed (their low halves 1 to 0x241), TA3DCtl dword 36 reads 2
+  and 3 after the 4096x4096 jobs of 900 and 1500 vertices in 0x422 pages (global list of 4 and 5
+  pages, three runs each) and 1 after the 1024x768 job of 1500 vertices in 0x23 pages (one page),
+  and 0 after the other overflows, and all 24 jobs of 300 or more vertices at 4096x4096 in 0x40 or
+  0x23 pages or 900 or more in 0x100 pages hang.
+  *dpm; HW, infer; data: `dpm-partial-wide`.*
+- `E439` A 4x render of our stack (CR_ISP_MSAA mode 2, the closed driver's TE words) through our
+  end-of-tile task with the PBE words and sidebands the closed driver hands it (a 64x64 rectangle,
+  pitch 64, sideband 0x200 or 0x2200) writes all 4096 pixels of the 64x64 target with 1248 triangle
+  and 2848 background pixels and no other colour, the same in three runs of each of the 12 probes
+  (36 jobs), with bit 48 of either emit set giving the same image; sideband 0x2200 (bit 13)
+  rearranges the pixels of the single-sampled and the 4x image without changing their counts; a
+  64x64 rectangle on a 128x128 target writes 4096 pixels and leaves 12288 unwritten.
+  *isp; HW, infer; data: `isp-msaa-pbe`.*
+- `E440` In a two-object stream whose second state block's primary pixel PDS program writes a
+  constant (0xff00ff00, douta to sa0) for a shader that writes sa0 as the colour, the constant
+  reaches 24 to 270 of the 978 non-background pixels in the 3 control runs (138, 270 and 24; the
+  others read 2, 6 and other leftovers) and 24 to 270 pixels with every field of either state word
+  flipped (bit 8, bits 11:9 at 1, 3 and 4, bits 15:13 at 2, 3 and 4: 42 jobs of which 37 complete),
+  so no field changes the load beyond that spread; bits 11:9 at 0 in the second block remove the
+  second object (3 of 3 runs, the first object's 1098 pixels showing), in the first block they leave
+  398 green pixels (3 of 3); bits 11:9 at 1 hang in the second block (3 of 3) and at 4 hang in one
+  of three runs of each block.
+  *vdm; HW, infer; data: `vdm-state2-consts`.*
+- `E441` On a 128x128 twiddled chain of eight levels read at whole LODs 1 to 9, T0 bits 20:17 at 1
+  to 14 give level = min(round_half_up(LOD), maximum, 7) in 84 of 84 reads (the 14 reads of a
+  maximum of 8 to 14 at LOD 8 and 9 all read level 7, the 1x1 level), and 0 and 15 read level 0 at
+  every LOD (6 of 6 each); bits 26:21 at all 64 values and LOD 5 and 7 give level = max(0,
+  min(round_half_up(LOD + (value - 63) / 8), 7)) in 128 of 128 reads; with T0 bit 9 (MIPFILTER) set
+  the result is the channel-wise linear blend of the texels read at levels floor(LOD + bias) and the
+  next, by the fraction of LOD + bias, byte for byte in 15 of 15 cases (bias values 0x3f, 0x3b and
+  0x37, LOD 1.25 to 7.5), the same in three runs.
+  *texture; HW, infer; data: `texture-mip8-fields`.*
+- `E442` A background object whose pixel shader fetches the render target itself at the pixel's
+  position (the target as a strided ARGB8888 texture, the position from a douti of source 0 with two
+  components) gives all of the triangle's pixels, 4422528 of 4422528 as a count, of the 4096x4096
+  job that overflows a 0x100-page parameter buffer, in three of three runs, where the library's
+  background gives 987008 of them (three of three); at 1024x768 in 0x23 pages the image is exact
+  with either background (207456 triangle pixels, three runs each); where nothing was stored the
+  reload shows the target's 0xdeadbeef pre-fill (578976 and 12354688 pixels), also in jobs that do
+  not overflow.
+  *dpm; HW, infer; data: `dpm-partial-reload`, `dpm-partial-reload-pos`.*
+- `E443` In timelines of the DPM registers 0x0700 to 0x0750 through 12 renders of the triangle and
+  copies of it at 4096x4096 (3, 900 and 1500 vertices in 0x422 pages, 300 in 0x100, three runs
+  each), the high halves of 0x0710 and 0x071c are 0 in every sample of all 12 runs, 0x072c reaches
+  0x10001 with 3 vertices, 0x40004 with 900 (three runs) and 0x50005 with 1500 (three runs) and
+  0x20002 with 300 in 0x100 pages (three runs), and 0x0748 reads 0xb, with bit 2 clear, in 4 of the
+  12 runs (the three runs of 300 vertices in 0x100 pages and one of 900 in 0x422 pages) and never in
+  the other 8.
+  *dpm; HW, infer; data: `dpm-partial-wide-timelines`.*
 
 ## By unit
 
@@ -2639,12 +2774,12 @@ Records: E151.
 ### dpm
 
 Records: E199, E200, E201, E202, E204, E205, E206, E203, E253, E256, E309, E310, E311, E312, E313,
-E327, E358, E362.
+E327, E358, E362, E438, E442, E443.
 
 ### edm
 
 Records: E009, E014, E017, E084, E146, E152, E153, E154, E155, E156, E157, E158, E159, E160, E161,
-E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321, E353, E402.
+E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321, E353, E402, E431.
 
 ### firmware
 
@@ -2655,7 +2790,7 @@ Records: E001, E002, E003, E004, E005, E010, E011, E012, E352.
 Records: E064, E065, E066, E067, E068, E069, E070, E071, E072, E073, E074, E210, E211, E213, E214,
 E215, E216, E217, E218, E219, E220, E222, E224, E225, E226, E227, E228, E229, E230, E209, E231,
 E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E290, E291, E330,
-E332, E334, E338, E339, E340, E410, E415, E416, E417.
+E332, E334, E338, E339, E340, E410, E415, E416, E417, E439.
 
 ### mte
 
@@ -2665,34 +2800,34 @@ E348, E418, E419.
 ### pbe
 
 Records: E029, E030, E031, E032, E239, E240, E251, E265, E266, E267, E268, E269, E270, E333, E382,
-E383, E385, E386, E387.
+E383, E385, E386, E387, E429.
 
 ### pds
 
 Records: E043, E044, E045, E046, E047, E048, E125, E126, E127, E128, E129, E130, E131, E132, E133,
 E134, E135, E136, E137, E138, E139, E140, E141, E142, E143, E144, E145, E259, E260, E261, E262,
 E263, E264, E343, E344, E345, E364, E379, E381, E384, E388, E389, E390, E391, E392, E393, E394,
-E395, E396, E400, E420, E421.
+E395, E396, E400, E420, E421, E428, E430, E436, E437.
 
 ### platform
 
 Records: E006, E007, E008, E025, E026, E122, E150, E149, E246, E258, E357, E359, E365, E401, E403,
-E404, E405.
+E404, E405, E434.
 
 ### render
 
 Records: E023, E049, E050, E051, E052, E053, E148, E169, E252, E301, E302, E303, E304, E314, E315,
-E316, E323, E324, E325, E326, E354, E355, E356, E360, E361, E363, E408, E412, E422.
+E316, E323, E324, E325, E326, E354, E355, E356, E360, E361, E363, E408, E412, E422, E433, E435.
 
 ### ta
 
 Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180, E181, E247, E257,
-E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409.
+E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424.
 
 ### texture
 
 Records: E033, E034, E035, E036, E037, E038, E039, E040, E041, E042, E114, E116, E242, E254, E271,
-E273, E274, E275, E276, E277, E341, E342, E397, E399.
+E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441.
 
 ### transfer
 
@@ -2713,7 +2848,7 @@ E370, E371, E372, E373, E374, E375, E376, E377, E378, E380, E406, E423.
 ### vdm
 
 Records: E059, E060, E184, E185, E186, E187, E189, E190, E191, E188, E299, E300, E318, E346, E349,
-E413, E414.
+E413, E414, E427, E440.
 
 ### zls
 

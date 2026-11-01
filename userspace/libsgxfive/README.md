@@ -260,29 +260,36 @@ query                          GPU, firmware, job limits and heaps
 dummy [-n N]                   N dummy transfers chained through one syncobj
 fill  [--width W --height H --x X --y Y --stride S --colour C] [JOB OPTIONS]
 copy  [--width W --height H --sx X --sy Y --src-stride S --dx X --dy Y --dst-stride S]
-      [--every-value] [JOB OPTIONS]
+      [--every-value | --ramp CH=START [--ramp-base V]] [--print-addrs] [--page-before]
+      [JOB OPTIONS]
 isolation                      kernel-heap-unmappable, same-address-separate-vms,
                                other-vm-address-faults, fault-recovered-quickly,
                                lost-context-cancelled, other-context-survives,
                                queued-innocent-job-reruns, read-only-faults,
                                faulting-file-banned
 tri [--width W --height H -n N] [--max-width W --max-height H] [--fault]
-    [--scratch N [--scratch-fill V]] [--kpoke-render N:SPEC]... [--move N:DX,DY]...
+    [--scratch N [--scratch-fill V] [--scratch-at ADDR]] [--kpoke-render N:SPEC]...
+    [--move N:DX,DY]...
     [--geometry N]... [--keep-going] [--dump-render DIR] [--words DIR] [--wait-ms MS]
     [JOB OPTIONS]
 contexts [--width W --height H -n N]
 regaccess
-probe [--temps N] [--coords] [--pixels] [--pds N --use USE] [--poke xfer:N=V]...
-      [--low ADDR] [--late R:K=V] FILE...
+probe [--temps N] [--coords] [--pixels] [--scratch-pages N] [--pds N --use USE]
+      [--place OFFSET=FILE --place-form cbase|exe18] [--scratch-heap texture]
+      [--poke xfer:N=V]... [--low ADDR] [--late R:K=V] FILE...
 probe --tri SLOT[:N] [--slot SLOT=FILE[:N]]... [--width W --height H]
       [--max-width W --max-height H] [--vertices N [--copy-depth]] [--vtx-coords N]
       [--isp2 V] [--blk-add BIT=V[,V]]... [--blk N=V]... [--cmd N=V]... [--vdm N=V]...
-      [--sideband V] [--temps N] [--pixels] [--dump-render DIR] [--kpoke SPEC]...
-      [--obj2 FIRST [--obj2-blk N=V]... [--obj2-pixel FILE]] FILE...
+      [--pbe N=V]... [--sideband V] [--temps N] [--pixels] [--dump-render DIR] [--kpoke SPEC]...
+      [--obj2 FIRST [--obj2-blk N=V]... [--obj2-pixel FILE] [--obj2-pixpds FILE:N]] FILE...
 ```
 
 `copy --every-value` uses a source with every value of every channel in each run of 256
-pixels, a permutation per channel.
+pixels, a permutation per channel. `copy --ramp CH=START` makes one channel (a, r, g or b) of
+the source count from START, one a pixel (modulo 256), the others `--ramp-base V` (default 0).
+`--print-addrs` prints where the source's and destination's buffers lie, and `--page-before`
+gives the source's buffer a page before the source, dword i holding `0xB0000000 | i`, so that
+a read below the source shows which dword it took.
 
 `tri` renders the first triangle on a render context N times in alternating colours, every
 pixel against the CPU reference and the area after the target against a sentinel. The
@@ -290,7 +297,8 @@ context takes targets up to `--max-width` x `--max-height` (default: the target'
 `--fault` unmaps the scene's VDM stream page first, so the render faults and fails.
 `--scratch N` maps N more pages (their address printed) for a kernel poke to point a unit
 at, filled with V (default 0.25f) before each render; the dwords that changed are reported
-page by page. `--kpoke-render N:SPEC` writes SPEC to the kernel's debugfs `kpoke` just before
+page by page. `--scratch-at ADDR` maps them at ADDR (a heap's page, say, that a unit fetches
+from) instead of in the general heap. `--kpoke-render N:SPEC` writes SPEC to the kernel's debugfs `kpoke` just before
 render N. `--move N:DX,DY` draws render N's triangle DX, DY pixels away. `--geometry N`
 submits render N as geometry only (the scene left open for the next render, nothing drawn).
 `--keep-going` reports every render, checked or not. `--dump-render DIR` copies the kernel's
@@ -334,19 +342,33 @@ changed before the job hung or faulted, or `scratch unchanged`.
 - `--poke xfer:N=V` sets a word of the fill's transfer command (the job options below).
 - `--low ADDR` maps the scratch buffer again at ADDR, a page in the first MiB (page 0
   excepted), for a PDS program's loads and stores; it needs the kernel's debugfs `vm_low`.
+- `--scratch-pages N` (16 to 64) sizes the scratch buffer (default 16 pages, 64 KiB); the
+  immediates 0x5CAFnnnn still reach 64 KiB. `--low` and `--late` are checked against the size
+  whatever their order on the command line (the low mapping and the scratch buffer must end
+  within 1 MiB).
+- `--scratch-heap texture` puts the scratch buffer in the texture heap, so that a texture in
+  it is in the texture region (its address 0xf0000000 and up).
+- `--place OFFSET=FILE --place-form cbase|exe18` maps the USE program FILE at the USSE pixel
+  heap's base + OFFSET (a multiple of 8, below the heap's 5 MiB), patches its scratch
+  immediates, and starts it in place of the fill shader (the probe's own program, at the
+  heap's base, stays unstarted) by a primary DOUTU whose EXE and CBASE hold the offset as
+  `cbase` (bits 18:3 in EXE, bits 22:19 in CBASE) or as `exe18` (bits 20:3 in an 18-bit EXE,
+  CBASE 0).
 - `--late R:K=V`: while the job runs, once scratch dword R leaves its fill (or after
   200 ms), the host writes V to dword K.
 
 `probe --tri` runs each FILE as the program SLOT of the first triangle's W x H render
 (default 64 x 64), on a render context for up to `--max-width` x `--max-height` (default
-W x H). The slots are `pixev`, `eot`, `vtxpds`, `vtxuse`, `pixel`, `pixtask`, `pixpds` and
-`state`; a PDS slot takes N data dwords. The new programs are patched as the defaults
+W x H). The slots are `pixev`, `eot`, `vtxpds`, `vtxuse`, `pixel`, `pixtask`, `pixpds`,
+`state`, `bgpds` and `bgpixel` (the background object's primary PDS program and pixel shader);
+a PDS slot takes N data dwords. The new programs are patched as the defaults
 (`include/sgxfive_tri_probe.h`), with the scratch buffer; the command prints `tri WxH, SLOT
 ... replaced`, the target as `o0` and every scratch dword changed.
 
 - `--slot SLOT=FILE[:N]` replaces another slot's program in every render.
-- `--vertices N` (3 to 15, whole triangles) draws copies of the triangle after it, each
-  1/16 pixel on, so that the vertex programs run for more vertices than one task's;
+- `--vertices N` (3 to 1500, whole triangles) draws copies of the triangle after it, each
+  1/16 pixel on, so that the vertex programs run for more vertices than one task's (more
+  than 126 move the vertices and indices to the rig's extra gen pages);
   `--copy-depth` puts copy c at clip z = c / 16.
 - `--vtx-coords N` (1 to 11) adds N output dwords per vertex, coordinate sets of four and
   the rest (OUTSEL, coordsize).
@@ -354,7 +376,11 @@ W x H). The slots are `pixev`, `eot`, `vtxpds`, `vtxuse`, `pixel`, `pixtask`, `p
 - `--blk-add BIT=V[,V]` adds presence bit BIT (2-5, or 7 with two words) and its words to
   the state block, which grows.
 - `--blk N=V`, `--cmd N=V` and `--vdm N=V` set word N of the state block, the render
-  command and the VDM stream (after `--vtx-coords`); `N^=V` flips the bits of V.
+  command and the VDM stream (after `--vtx-coords`); `N^=V` flips the bits of V. With
+  `--obj2` the VDM stream is the two-object one, words 0 to 18 (word 9 the second state
+  block's), changed after the second object is built.
+- `--pbe N=V` (N 0 to 3) sets word N of the end-of-tile task's PBE words (the default's or
+  the `eot` slot's; word 4 is `--sideband`).
 - `--sideband V` (with an `eot` slot) sets the end-of-tile `emitpix2`'s sideband (default
   0x200).
 - `--dump-render DIR` copies the kernel's debugfs `render_param` and `render_tadata` to
@@ -362,7 +388,12 @@ W x H). The slots are `pixev`, `eot`, `vtxpds`, `vtxuse`, `pixel`, `pixtask`, `p
 - `--kpoke SPEC` is written to the kernel's debugfs `kpoke` before each case's render.
 - `--obj2 FIRST` (with `--vertices`) makes the copies from vertex FIRST on a second object,
   its state block the first's with the `--obj2-blk N=V` words set and its pixel shader
-  `--obj2-pixel FILE` (or the default fill).
+  `--obj2-pixel FILE` (or the default fill) and its primary pixel PDS program
+  `--obj2-pixpds FILE:N` (N data dwords; or the default's), which may `douta` the pixel
+  side's constants.
+- A replacement program's `mov d, #0x5CB0nnnn` (limm) or PDS data dword 0x5CB0nnnn loads
+  the render target's address + nnnn, as 0x5CAFnnnn does the scratch buffer's: a pixel
+  program can read the target it renders to.
 
 ### Job options: pokes, pixels and registers
 

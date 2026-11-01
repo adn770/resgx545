@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# render flag bit 0 timeline: 0 probes (a script, flag-bit0-timeline.sh).
+# Q065: the registers of the TA, the ISP and the DPM sampled from the kick of a job with render flag
+# bit 0 held in its hang, against the unpoked job.
+needs = ["render", "kpoke", "regs", "hold_recovery", "reset"]
+name = "render-flag-bit0-timeline"
+script = "flag-bit0-timeline.sh"

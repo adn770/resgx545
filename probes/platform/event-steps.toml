@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# platform event steps: 1 probe, a script (event-steps.sh).
+# Q082: when CR_EVENT_STATUS2 bit 6 latches, between 16 and 136 loop iterations of the pixel
+# program (eight instructions an iteration, six integer multiply-adds), in steps of 8, each after a
+# reset, three runs.
+needs = ["render", "reset"]
+name = "platform-event-steps"
+script = "event-steps.sh"
+
+[[probe]]
+name = "platform-event-steps-int"
+question = "a fill whose pixel program loops N times over eight instructions, six integer multiply-adds among them"
+source = "int_loop.s"
+inputs = ["ITER"]
+labels = ["16 iterations", "24 iterations", "32 iterations", "40 iterations", "48 iterations", "56 iterations", "64 iterations", "72 iterations", "80 iterations", "88 iterations", "96 iterations", "104 iterations", "112 iterations", "120 iterations", "128 iterations", "136 iterations"]
+cases = [[16], [24], [32], [40], [48], [56], [64], [72], [80], [88], [96], [104], [112], [120], [128], [136]]

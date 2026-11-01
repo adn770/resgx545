@@ -16,3 +16,8 @@ of a 0x40-byte parameter-heap object there (E323).
 
 What is open: whether a path not run here reads it (a context switch, a PB swap, two contexts on
 one PB), and the dataflow's 379 accesses through a base of unknown origin, none tied to the word.
+
+Not run in 11.16: the paths left (a context switch, a PB swap, two contexts on one PB) need a
+second context on one parameter buffer, which the fork lacks (Q068's route); the dataflow's 379
+accesses through a base of unknown origin are not tied to the word. Status: narrowed, not
+answered.

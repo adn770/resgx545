@@ -268,7 +268,9 @@ Other values of the copy's words, read back pixel by pixel on the laptop:
   taking texel (16 + x / 2, 8 + y / 2) (E272; Q011).
 - T1 bit 28: the source read as YUYV and converted through colour-space set 0, whose words stay
   from the last job that loaded them (E271; Q010).
-- T2 bits 12 to 14: reads of the page before the source and of the destination (E273; Q007).
+- T2 bits 12 to 14: reads of the buffers around the source: the copy's source lies at 0x3e002000
+  with its buffer's first page below it, bit 13 reaches the heap's first page, 0x3e000000, bit 12
+  the source's own second half and bit 14 the destination's second page (E273, E425).
 - The luma key (T0 bit 31): bits 7:0 of its third word are the low end of a luma band whose high
   end is the threshold; a luma inside it takes alpha_below (E275; Q008).
 
@@ -283,7 +285,7 @@ page, `CID` 1, the client directory's list), wrote nothing and never completed; 
 did not answer a power-off, and a halt, a reload and a boot recovered it (recovery in place
 is phase 9).
 
-Evidence: E018, E019, E020, E021, E271, E272, E273, E275.
+Evidence: E018, E019, E020, E021, E271, E272, E273, E275, E425.
 
 ## 5. The kernel command queue
 
@@ -334,7 +336,6 @@ Evidence: E011, E012, E017.
   names (bit 5 for E021's write, bit 3 and bit 10 for the render's), are open. A debugfs reset
   (halt, the firmware's buffers rebuilt, boot in place) recovers without a reload of the module.
 - Q004: context flag bits 1 and 4 and priorities other than 0 are not run on the hardware.
-- Q007: where the copy's buffers lie, which T2 bits 12 and 14 read.
 - Q008: the rounding at the luma key's low cut.
 - Q010: what clears the colour-space words between jobs.
 - Q011: why a wrong background-object tag reads the source's last texel.

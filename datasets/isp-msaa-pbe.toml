@@ -1,0 +1,10 @@
+title = "probe table isp/msaa-pbe"
+repo = "data"
+paths = ["isp/msaa-pbe/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 74
+size = 3510252
+sha256 = "a626708e7fba4af600f7239751acf34a92d2e8f444d0bc9e49a074a30f6dc36d"
+recipe = "probes/isp/msaa-pbe.toml"
+needs = ["render"]

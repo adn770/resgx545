@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# dpm partial wide timelines: 1 probes (a script, partial-wide-timelines.sh).
+# Q036: the DPM registers 0x0700 to 0x0750 sampled during the wide scenes' renders.
+needs = ["render", "render_pb_pages"]
+name = "dpm-partial-wide-timelines"
+script = "partial-wide-timelines.sh"
+
+[[probe]]
+name = "dpm-partial-wide-timelines-green"
+question = "the wide scenes' green pixel shader (the script's jobs run this shader)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+size = [0x40, 0x40]
+inputs = ["OP"]
+labels = ["green"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]

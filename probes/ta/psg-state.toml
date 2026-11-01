@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ta psg state: 0 probes (a script, psg-state.sh).
+# Q064: the RT data's state bit 8 (kpoke rtds:19) against the TA command's CR_TE_PSG bit 21.
+needs = ["render", "kpoke", "regs", "render_param", "render_tadata"]
+name = "ta-psg-state"
+script = "psg-state.sh"

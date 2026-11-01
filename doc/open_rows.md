@@ -66,7 +66,10 @@ sits, the reading, and the evidence records it rests on.
   render's (or a partial render's) start to its end [infer].
 - `G1082` `CR_DPM_REG_0748` (0x0748): a DPM state word: 0x1f idle and from the last TA's end, 0xf
   while the TA holds pages and through a partial render, 0x7 in some samples while the TA takes
-  pages, the 1024x768 abort among them; its bits one by one are not shown [infer].
+  pages, the 1024x768 abort among them; its bits clear one at a time: bit 4 while the TA takes
+  pages, bit 0 at a PB load, bit 1 before each page the 3D frees, bit 3 at the out-of-memory event
+  (E358), and bit 2 (the value 0xb) in 4 of 12 timelines of wide scenes (E443); what each marks is
+  ours [infer]. Evidence: E443.
 - `G0378` `CR_DPM_REG_074C` (0x074c): the enable (bit 8) of a DPM access near offset 0x6010 of the
   context's TA-data space, fixed whatever CR_DPM_STATE_BASE1 holds; with that place mapped the job
   is unchanged; off in every client. Measured: TA command word; 0 in captures [infer]. Evidence:
@@ -291,7 +294,7 @@ sits, the reading, and the evidence records it rests on.
   [infer]. Evidence: E160.
 - `G0723` `ta3d_ctl.abort_page_count1` (TA3D_CTL+0x090): a page count saved at a macrotile abort,
   from 0x072c less 2, which a later out-of-memory compares with the current one [infer]. Evidence:
-  E160.
+  E160, E438.
 - `G0730` `ta3d_ctl.kick_clear_3d` (TA3D_CTL+0x0e4): a word the 3D kick clears; what sets it is not
   shown [infer]. Evidence: E163.
 - `G0731` `ta3d_ctl.kick_clear_ta` (TA3D_CTL+0x0dc): a word the TA kick, the TA-finished handler and

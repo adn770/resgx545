@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# texture copy addresses: 0 probes (a script, copy-addresses.sh).
+# E425: the copy's buffer addresses printed, a counting page before the source, T2's bits 12 to 14.
+needs = ["render"]
+name = "texture-copy-addresses"
+script = "copy-addresses.sh"

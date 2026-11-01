@@ -22,3 +22,7 @@ What is open: what it reads, and what bits 7:0 select.
 To settle it: the TA data's page at 0x6000 filled with a pattern before the job (a kernel or tool
 feature: no poke reaches the TA data), bit 8 with values of bits 7:0, the image and the pattern
 compared.
+
+Not run in 11.16: no poke reaches the TA data. Kernel need: a debugfs hook that fills the TA data
+page at 0x6000 of the render context with a pattern before a job, then bit 8 with values of bits
+7:0 (the dpm/reg-074c probes and kpoke ta: are ready). Status: narrowed, not answered.

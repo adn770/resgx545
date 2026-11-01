@@ -17,8 +17,11 @@ and band_misfits(), the band model against each copy of the luma-cuts script.
 The tables (probes/texture/):
 
   mip-fields   T0 bits 20:17 (all 16 values, LOD 1 to 4) and bits 26:21 (all 64, LOD 2 and 4)
-               on the tagged mip chain of mipmaps.toml's mip-t0-field probe (Q009);
-  fetch-size   T3 bits 26:23 at 8 and 15 in a two-fetch primary program (E242's open values).
+               on the tagged mip chain of mipmaps.toml's mip-t0-field probe (E276);
+  fetch-size   T3 bits 26:23 at 8 and 15 in a two-fetch primary program (E242's open values);
+  mip8-fields  T0 bits 20:17 (all 16 values, LOD 1 to 9), bits 26:21 (all 64, LOD 5 and 7) and
+               MIPFILTER (fractional LODs) on a 128x128 chain of eight levels whose texels are the
+               scratch buffer's own dwords (mip_offsets(), mip_of(), mip_blend(); E441).
 
     tex_words.py decode WORD VALUE [--strided]   the fields of T0-T3
     tex_words.py table DIR                       write the tables into DIR (probes/texture/)
@@ -285,6 +288,133 @@ def mip_probes(table: pathlib.Path = MIPMAPS) -> list[dict]:
     return [p1, p2]
 
 
+# ---- The eight-level chain (E441) ---------------------------------------------------------------
+# A 128x128 twiddled chain of eight levels at the scratch buffer's start: the host fills scratch
+# dword i with SCRATCH_FILL | i, so the texel a sample returns names the dword it came from, and
+# with it the level and the place in the level (x in the even bits of the twiddle, y in the odd).
+
+MIP8_TEMPLATE = "mip_chain8.s"
+MIP_FILL = 0xd0000000           # probe.SCRATCH_FILL: dword i of the scratch buffer starts as this | i
+MIP_U, MIP_V = 0.21875, 0.65625     # the template's coordinates (r24, r25)
+
+
+def mip_offsets(width: int) -> list[int]:
+    """The dword offset of each level of a square chain `width` texels wide, down to 1x1."""
+    if width < 1 or width & (width - 1):
+        raise TexError(f"width {width}: a power of two")
+    out, off = [], 0
+    while True:
+        out.append(off)
+        off += width * width
+        if width == 1:
+            return out
+        width //= 2
+
+
+def mip_dwords(width: int) -> int:
+    return mip_offsets(width)[-1] + 1
+
+
+def twiddle(x: int, y: int) -> int:
+    """The dword index of texel (x, y) in a twiddled level: x bit k at bit 2k, y bit k at 2k+1."""
+    out = 0
+    for k in range(16):
+        out |= (x >> k & 1) << 2 * k | (y >> k & 1) << 2 * k + 1
+    return out
+
+
+def mip_texel(width: int, level: int, x: int, y: int) -> int:
+    """What the filled scratch holds at texel (x, y) of `level`."""
+    return MIP_FILL | mip_offsets(width)[level] + twiddle(x, y)
+
+
+def mip_of(width: int, value: int):
+    """(level, x, y) of a texel read from the chain, or None if the value is not one."""
+    offs = mip_offsets(width)
+    if value & 0xff000000 != MIP_FILL or (value & 0xffffff) >= mip_dwords(width):
+        return None
+    i = value & 0xffffff
+    lv = max(k for k, o in enumerate(offs) if o <= i)
+    i -= offs[lv]
+    x = y = 0
+    for k in range(16):
+        x |= (i >> 2 * k & 1) << k
+        y |= (i >> 2 * k + 1 & 1) << k
+    return lv, x, y
+
+
+def mip_sample(width: int, level: int) -> tuple:
+    """The texel (x, y) of `level` the template's coordinates fall in, point sampled: r25 is the
+    x coordinate and r24 the y (the reads of levels 3 to 7 of the eight-level chain fit this
+    with the plain twiddle; those of levels 0 to 2 lie elsewhere in the level, E441)."""
+    s = max(1, width >> level)
+    return int(MIP_V * s), int(MIP_U * s)
+
+
+def mip_read(width: int, level: int) -> int:
+    return mip_texel(width, level, *mip_sample(width, level))
+
+
+def mip_blend(a: int, b: int, f: float) -> int:
+    """Texels a and b blended f of the way to b, channel by channel, rounded half up."""
+    out = 0
+    for sh in (24, 16, 8, 0):
+        ca, cb = a >> sh & 0xff, b >> sh & 0xff
+        out |= int(ca + (cb - ca) * f + 0.5) << sh
+    return out
+
+
+def mip8_template() -> str:
+    """The shader of the eight-level probes: smp2dreplace of the chain with T0 {T0} and the LOD
+    {LOD} (an IEEE single), the 16 result registers stored to the scratch's start."""
+    lines = ["; SPDX-License-Identifier: MIT", "; SPDX-FileCopyrightText: 2026 Josep Torra",
+             "; The eight-level mip probes (tex_words.py): the scratch buffer (--scratch-pages 24)",
+             "; holds a 128x128 twiddled chain of eight levels from its start, dword i being",
+             "; 0xD0000000 | i as the host fills it, so the texel read names its level; read by",
+             "; smp2dreplace with T0 {T0} in r20 and the LOD {LOD} (an IEEE single) in r26; the",
+             "; result in r10 is the pixel, r10-r17 are stored over the chain's start after it.",
+             "phas #0, #0, pixel, end, parallel"]
+    for k, v in enumerate((0xA0A1A2A3, 0xA4A5A6A7, 0xA8A9AAAB, 0xACADAEAF, 0xB0B1B2B3,
+                           0xB4B5B6B7, 0xB8B9BABB, 0xBCBDBEBF)):
+        lines.append(f"mov.skipinv r{10 + k}, #0x{v:08X}")
+    lines += ["mov r20, #{T0}", "mov r21, #0x0C07F07F", "mov r22, #0x5CAF0000",
+              "mov r23, #0x00800800", "mov r24, #0x3E600000", "mov r25, #0x3F280000",
+              "mov r26, #{LOD}", "smp2dreplace r10, r24, r20, r26, drc0", "wdf drc0",
+              "mov.skipinv r29, #0x5CAF0000"]
+    lines += [f"stad [r29,+#{k}], r{10 + k}" for k in range(8)]
+    lines += ["idf drc0, bif", "wdf drc0", "mov.skipinv.end o0, r10"]
+    return "\n".join(lines) + "\n"
+
+
+def mip8_probes() -> list[dict]:
+    """T0 bits 20:17 and 26:21 and MIPFILTER on the eight-level chain, nearest within a level."""
+    keep = {"source": MIP8_TEMPLATE, "inputs": ["T0", "LOD"], "scratch_pages": 24}
+    lods1 = (1.0, 3.0, 5.0, 7.0, 8.0, 9.0)
+    p1 = {"name": "texture-mip8-fields-max-level",
+          "question": "which level each value of T0 bits 20:17 reads at LOD 1 to 9 on the eight-level "
+                      "chain, bits 26:21 at 0x3f (15 against 0, and levels past the old five)",
+          **keep, "labels": [f"20:17 = 0x{v:x}, LOD {lod}" for v in range(16) for lod in lods1],
+          "cases": [[0x3f << 21 | v << 17, _f32(lod)] for v in range(16) for lod in lods1]}
+    p2 = {"name": "texture-mip8-fields-bias",
+          "question": "which level each value of T0 bits 26:21 reads at LOD 5 and 7 on the "
+                      "eight-level chain, bits 20:17 at 0xe",
+          **keep, "labels": [f"26:21 = 0x{v:02x}, LOD {lod}" for v in range(64) for lod in (5.0, 7.0)],
+          "cases": [[v << 21 | 0xe << 17, _f32(lod)] for v in range(64) for lod in (5.0, 7.0)]}
+    biases = (0x3f, 0x3b, 0x37)
+    lods3 = (1.25, 1.5, 1.75, 5.25, 7.5)
+    labels, cases = [], []
+    for run in (1, 2, 3):
+        for b in biases:
+            for lod in lods3:
+                labels.append(f"MIPFILTER set, 26:21 = 0x{b:02x}, LOD {lod}, run {run}")
+                cases.append([b << 21 | 0xe << 17 | 0x200, _f32(lod)])
+    p3 = {"name": "texture-mip8-fields-mipfilter",
+          "question": "what T0 bit 9 (MIPFILTER) does at fractional LODs on the eight-level chain, "
+                      "with bits 26:21 at 0x3f, 0x3b and 0x37 and bits 20:17 at 0xe, three runs",
+          **keep, "labels": labels, "cases": cases}
+    return [p1, p2, p3]
+
+
 def fetch_probes() -> list[dict]:
     """Two fetches (pds_tex2.s) with the first's T3 bits 26:23 at 1, 8 and 15, as fetched and
     as f32 channels at 8; the second texel looked for in pa1, pa8 and pa15."""
@@ -328,9 +458,11 @@ def table_text(title: str, about: str, ps: list[dict]) -> str:
 
 def tables() -> dict[str, str]:
     return {"mip-fields": table_text("mip fields", "T0 bits 20:17 and 26:21 on the mip chain "
-                                     "(Q009).", mip_probes()),
+                                     "(E276).", mip_probes()),
             "fetch-size": table_text("fetch size", "T3 bits 26:23 at 8 and 15 (E242).",
-                                     fetch_probes())}
+                                     fetch_probes()),
+            "mip8-fields": table_text("mip8 fields", "T0 bits 20:17, 26:21 and MIPFILTER on an "
+                                      "eight-level chain (E441).", mip8_probes())}
 
 
 def main(argv=None) -> int:
@@ -358,6 +490,7 @@ def main(argv=None) -> int:
             (pathlib.Path(a.out) / f"{name}.toml").write_text(text)
     if a.cmd == "table":
         (pathlib.Path(a.out) / "templates" / MIP_TEMPLATE).write_text(mip_template())
+        (pathlib.Path(a.out) / "templates" / MIP8_TEMPLATE).write_text(mip8_template())
     if a.cmd == "cuts":
         key = Band.of(tuple(int(w, 0) for w in a.words))
         for label, pix in sections(pathlib.Path(a.output).read_text()).items():

@@ -40,7 +40,8 @@ KEYS = ["id", "question", "unit", "phase", "evidence", "terms"]
 RETIRED: dict[str, str] = {     # id -> "answered by E<nnn>"
     "Q015": "answered by E413", "Q018": "answered by E373", "Q022": "answered by E392",
     "Q035": "answered by E407", "Q056": "answered by E366", "Q077": "answered by E379",
-    "Q079": "answered by E367", "Q097": "answered by E380",
+    "Q079": "answered by E367", "Q097": "answered by E380", "Q007": "answered by E425",
+    "Q061": "answered by E428", "Q009": "answered by E441",
 }
 NAME = re.compile(r"Q\d{3}-[a-z0-9]+(-[a-z0-9]+)*\.md")
 REF = re.compile(r"\bQ\d{3}\b")

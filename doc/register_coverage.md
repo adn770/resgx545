@@ -157,7 +157,7 @@ evidence records its rows, its fields' rows and its measured width cite.
 - `0x0710` `CR_DPM_TA_ALLOC_FREE_LIST_STATUS2`: width 32 bits assumed; 1 field: PREV [15:0];
   uncovered 31:16 (16 bits).
 - `0x071c` `CR_DPM_3D_FREE_LIST_STATUS2`: width 32 bits assumed; 1 field: PREV [15:0]; uncovered
-  31:16 (16 bits).
+  31:16 (16 bits). Records: E438, E443.
 - `0x0720` `CR_DPM_ABORT_STATUS_MTILE`: width 32 bits assumed; no field rows.
 - `0x0724` `CR_DPM_PAGE_STATUS`: width 32 bits assumed; no field rows.
 - `0x0728` `CR_DPM_PAGE`: width 32 bits assumed; no field rows.
@@ -166,7 +166,7 @@ evidence records its rows, its fields' rows and its measured width cite.
 - `0x0734` `CR_DPM_REQUESTING`: width 32 bits assumed; no field rows.
 - `0x0738` `CR_DPM_REG_0738`: width 32 bits assumed; no field rows.
 - `0x073c` `CR_DPM_3D_RT_INDEX`: width 9 bits (8:0, E253); no field rows. Records: E163, E253.
-- `0x0748` `CR_DPM_REG_0748`: width 32 bits assumed; no field rows.
+- `0x0748` `CR_DPM_REG_0748`: width 32 bits assumed; no field rows. Records: E358, E443.
 - `0x074c` `CR_DPM_REG_074C`: width 9 bits (8:0, E253); no field rows. Records: E030, E056, E071,
   E072, E159, E203, E206, E253.
 

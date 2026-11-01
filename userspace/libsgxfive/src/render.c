@@ -652,6 +652,7 @@ int sgxfive_render_tri_flags(struct sgxfive_render *r, const struct sgxfive_tri_
 		(uint32_t *)(r->map + PG_PDSP * SGXFIVE_PAGE_SIZE),
 		(uint32_t *)(r->map + PG_USEP * SGXFIVE_PAGE_SIZE),
 		(uint32_t *)(r->map + PG_GEN * SGXFIVE_PAGE_SIZE),
+		0,
 	};
 	struct drm_sgxfive_sync_op ops[3] = {
 		{ .handle = r->done, .flags = DRM_SGXFIVE_SYNC_OP_FLAG_SIGNAL },

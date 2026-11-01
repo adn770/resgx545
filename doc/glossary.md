@@ -1195,8 +1195,10 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   [infer]. From `CR_DPM_3D_RT_INDEX` (ours, resgx545).
 - `CR_DPM_REG_0748` G1082 (0x0748): inferred reading (unconfirmed): a DPM state word: 0x1f idle and
   from the last TA's end, 0xf while the TA holds pages and through a partial render, 0x7 in some
-  samples while the TA takes pages, the 1024x768 abort among them; its bits one by one are not shown
-  [infer]. From `CR_DPM_REG_0748` (ours, resgx545).
+  samples while the TA takes pages, the 1024x768 abort among them; its bits clear one at a time: bit
+  4 while the TA takes pages, bit 0 at a PB load, bit 1 before each page the 3D frees, bit 3 at the
+  out-of-memory event (E358), and bit 2 (the value 0xb) in 4 of 12 timelines of wide scenes (E443);
+  what each marks is ours [infer]. From `CR_DPM_REG_0748` (ours, resgx545).
 - `CR_DPM_REG_074C` G0378 (0x074c): inferred reading (unconfirmed): the enable (bit 8) of a DPM
   access near offset 0x6010 of the context's TA-data space, fixed whatever CR_DPM_STATE_BASE1 holds;
   with that place mapped the job is unchanged; off in every client. Measured: TA command word; 0 in
@@ -2729,15 +2731,16 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `T0.MAGFILTER` G0275 (T0 [13:12]): magnification filter: 1 and 2 linear, 0 and 3 nearest. From
   `magfilter` (3, mesa-csbgen).
 - `T0.MAX_LEVEL` G1046 (T0 [20:17] (twiddled textures)): the highest mip level read: 1 to 14 cap the
-  level at that value, 0 and 15 read level 0 only; on stride textures these bits are part of
-  T0.STRIDE; it holds the older rows T0.BITS20_19 and T0.NO_MIPMAPS. From `T0.MAX_LEVEL` (ours,
-  resgx545).
+  level at that value, 0 and 15 read level 0 only (a maximum of 8 to 14 on an eight-level chain
+  reads the last level, E441); on stride textures these bits are part of T0.STRIDE; it holds the
+  older rows T0.BITS20_19 and T0.NO_MIPMAPS. From `T0.MAX_LEVEL` (ours, resgx545).
 - `T0.ADDRMODE_V` G0271 (T0 [5:3]): T (V) wrap mode: 0 repeat, 1 mirror, 2 clamp, 3 mirror once.
   From `addrmode_v` (3, mesa-csbgen).
 - `T0.ADDRMODE_U` G0270 (T0 [8:6]): S (U) wrap mode: 0 repeat, 1 mirror, 2 clamp, 3 mirror once.
   From `addrmode_u` (3, mesa-csbgen).
 - `T0.MIPFILTER` G0277 (T0 [9]): filter between mipmap levels: 0 the nearest level (a half rounds
-  up), 1 a linear blend of the two levels. From `mipfilter` (3, mesa-csbgen).
+  up), 1 the channel-wise linear blend of the texels of the levels floor(LOD + bias) and the next,
+  by the fraction of LOD + bias (E441). From `mipfilter` (3, mesa-csbgen).
 - `T1.HEIGHT` G0640 (T1 [11:0] (HEIGHT)): height - 1. From `height` (3, mesa-csbgen).
 - `T1.WIDTH` G0641 (T1 [23:12] (WIDTH)): width - 1. From `width` (3, mesa-csbgen).
 - `T1.TEXFORMAT` G0280 (T1 [28:24] (TEXFORMAT)): texel format. From `texformat` (3, mesa-csbgen).
@@ -2822,11 +2825,12 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   texel (0, 0); bits 5 and 8 nothing seen; 0 from the closed driver [infer]. From `DOUTI0.BITS10_5`
   (ours, resgx545).
 - `DOUTI0.ATTR_SOURCE` G0207 (douti word 0 [16:11]): what the iterator writes to the task's primary
-  attributes: 0 the pixel's window position, 1 the first texture coordinate set, 32 the vertex
-  colour (OUTSEL.COLOUR_PRES) packed as ARGB8888 in one dword, default 0xff000000, 33 a second
-  colour (0xff000000 when absent), 2-31 zero, 34 the depth plane a punch-through pt phase hands the
-  ISP with pcoeff (three components; (0, 0, 0.5) read outside punch-through), 35 zero or a hang, 36
-  and above nothing [infer]. From `DOUTI0.ATTR_SOURCE` (ours, resgx545).
+  attributes: 0 the pixel's window position (x + 0.5 in pa0 and, with two components, y + 0.5 in
+  pa1, E437), 1 the first texture coordinate set, 32 the vertex colour (OUTSEL.COLOUR_PRES) packed
+  as ARGB8888 in one dword, default 0xff000000, 33 a second colour (0xff000000 when absent), 2-31
+  zero, 34 the depth plane a punch-through pt phase hands the ISP with pcoeff (three components; (0,
+  0, 0.5) read outside punch-through), 35 zero or a hang, 36 and above nothing [infer]. From
+  `DOUTI0.ATTR_SOURCE` (ours, resgx545).
 - `DOUTI0.VERTEX_FRAC` G0217 (douti word 0 [18]): each vertex's value reduced to its fractional part
   (mod 1) before the iteration [infer]. From `DOUTI0.VERTEX_FRAC` (ours, resgx545).
 - `DOUTI0.FLAT` G0211 (douti word 0 [21]): iterate flat: every pixel gets the value of the vertex
@@ -2987,7 +2991,9 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `DOUTU1.EMITPIX_TASK` G0222 (doutu U1 [23]): set on the tasks whose program ends in emitpix (end
   of tile, end of render) and only on them [infer]. From `DOUTU1.EMITPIX_TASK` (ours, resgx545).
 - `DOUTU1.WAIT_ITER` G0225 (doutu U1 [24]): the task waits for its PDS program's iterations (the one
-  with DOUTI0.LAST_ITER) before it runs [infer]. From `DOUTU1.WAIT_ITER` (ours, resgx545).
+  with DOUTI0.LAST_ITER) before it runs; in a textured program with a fetch wait the iterated
+  coordinate set arrives with it set or clear, and without the fetch wait it alone does not make it
+  arrive (E436) [infer]. From `DOUTU1.WAIT_ITER` (ours, resgx545).
 - `DOUTU1.WAIT_FETCH` G0224 (doutu U1 [25]): the task waits for its PDS program's texture fetch
   before it runs [infer]. From `DOUTU1.WAIT_FETCH` (ours, resgx545).
 - `DOUTU1.BIT2` G0219 (doutu U1 [2]): inferred reading (unconfirmed): a scheduling hint of pixel and

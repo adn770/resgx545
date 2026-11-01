@@ -26,3 +26,8 @@ Open: whether any host-enabled event follows a fault (our debug interface cannot
 
 To settle it: a kernel switch that enables one more host event at a time while a fault is held,
 the host interrupt counted.
+
+Not run in 11.16: debugfs kreg refuses CR_EVENT_HOST_ENABLE, so no host event can be enabled while
+a fault is held. Kernel need: a debugfs switch that writes that register one bit at a time, with
+the host interrupt count read, for faults of the TA, the 3D and the PDS (the hold_recovery faults
+of E317, E319 and E363 are ready). Status: narrowed, not answered.

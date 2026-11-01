@@ -55,9 +55,14 @@ struct sgxfive_tri_layout {
 	uint32_t pds_exec_base, usep_base, usev_base;
 };
 
-/* CPU views of the five program/stream pages (4 KiB each). */
+/*
+ * CPU views of the five program/stream pages (4 KiB each). gen_size, in bytes, is how far the
+ * gen view reaches (0: its one page); a scene of more vertices than that page holds needs the
+ * extra pages sgxfive_tri_rig_create maps after it.
+ */
 struct sgxfive_tri_cpu {
 	uint32_t *pdsv, *usev, *pdsp, *usep, *gen;
+	uint32_t gen_size;
 };
 
 /* Offsets inside the pages (the kernel's debugfs triangle test's). */

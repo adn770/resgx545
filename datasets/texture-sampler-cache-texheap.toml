@@ -1,0 +1,10 @@
+title = "probe table texture/sampler-cache-texheap"
+repo = "data"
+paths = ["texture/sampler-cache-texheap/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 80
+size = 1544121
+sha256 = "5fea098a6b4e61a11b7a117f9ee62cf5c91e8e640a3f8f0d971230ec75867673"
+recipe = "probes/texture/sampler-cache-texheap.toml"
+needs = ["render"]

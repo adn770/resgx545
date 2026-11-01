@@ -1,0 +1,10 @@
+title = "probe table texture/mip8-fields"
+repo = "data"
+paths = ["texture/mip8-fields/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 277
+size = 383874
+sha256 = "cedc3f91178368ecd7cdb4e3d2d7ce36a07ad77f032597423305ba86b9ee35f7"
+recipe = "probes/texture/mip8-fields.toml"
+needs = ["render"]

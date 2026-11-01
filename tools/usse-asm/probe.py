@@ -51,8 +51,9 @@ PDS_ASM = HERE / "pds-asm"
 USE_DUMP = "sa_dump.s"       # the USE program of every PDS probe (its results to scratch)
 LOCAL_ENV = ROOT / "kernel" / "scripts" / "local.env"
 # The program slots of a "tri" probe's render (sgxfive_tri_probe.h), and those that are PDS.
-TRI_SLOTS = ("pixev", "eot", "vtxpds", "vtxuse", "pixel", "pixtask", "pixpds", "state")
-TRI_PDS = ("pixev", "vtxpds", "pixpds")
+TRI_SLOTS = ("pixev", "eot", "vtxpds", "vtxuse", "pixel", "pixtask", "pixpds", "state", "bgpds",
+             "bgpixel")
+TRI_PDS = ("pixev", "vtxpds", "pixpds", "bgpds")
 TRI_BLOCK_WORDS = 18             # the triangle's state block (sgxfive_render.h)
 TRI_ADD_WORDS = {2: 1, 3: 1, 4: 1, 5: 1, 7: 2}   # presence bits blk_add may add (S.2)
 TRI_SIZE = (64, 64)
@@ -60,8 +61,10 @@ TRI_MAX = 4096
 TRI_CMD_WORDS = 26             # sgxfive_tri_probe.h: the render command's words
 TRI_BLK2_WORDS = 32            # sgxfive_tri_probe.h: a second object's state block (obj2)
 TRI_VDM_WORDS = 11             # sgxfive_render.h: the triangle's VDM stream
+TRI_VDM2_WORDS = 19            # sgxfive_tri_probe.h: the stream with a second object (obj2)
 DUMPS = "dumps"                # tri: where dump_render probes' render memory goes
-TRI_MAX_VERTICES = 126         # sgxfive_tri_probe.h: the vertex buffer and its spare room
+KPOKE_RE = r"(ta|rd|tq|ctx|rtds|pb|kw):\d+\^?=(0x[0-9a-fA-F]+|\d+)"   # the fork's debugfs kpoke
+TRI_MAX_VERTICES = 1500        # sgxfive_tri_probe.h: SGXFIVE_TRI_PROBE_WIDE_VERTICES, the rig's gen pages
 
 NAME_RE = re.compile(r"[a-z0-9][a-z0-9-]*")
 FILE_RE = re.compile(r"[a-z0-9][a-z0-9-]*__\d+")
@@ -101,6 +104,9 @@ class Probe:
     cmd: dict = dataclasses.field(default_factory=dict)  # tri: render command words (--cmd)
     vdm: dict = dataclasses.field(default_factory=dict)  # tri: VDM stream words (--vdm)
     vdm_xor: dict = dataclasses.field(default_factory=dict)  # tri: VDM words flipped
+    pbe: dict = dataclasses.field(default_factory=dict)  # tri: end-of-tile PBE words 0-3 (--pbe)
+    blk_xor: dict = dataclasses.field(default_factory=dict)  # tri: state block words flipped
+    cmd_xor: dict = dataclasses.field(default_factory=dict)  # tri: render command words flipped
     dump_render: bool = False   # tri: the render's PB and TA data to DUMPS (--dump-render)
     kpoke: list = dataclasses.field(default_factory=list)  # tri: kernel words (--kpoke SPEC)
     obj2: dict = dataclasses.field(default_factory=dict)   # tri: a second object (--obj2),
@@ -109,6 +115,12 @@ class Probe:
     isp2: int | None = None      # tri: ISP word 2 in the state block (--isp2)
     blk_add: dict = dataclasses.field(default_factory=dict)  # tri: presence bit -> words
                                                              # added to the block (--blk-add)
+    scratch_pages: int = 0      # fill: the scratch buffer's pages, 16 to 64 (--scratch-pages; 0: 16)
+    scratch_heap: str = ""      # fill: "texture", the scratch buffer in the texture heap
+                                # (--scratch-heap)
+    place: dict = dataclasses.field(default_factory=dict)   # fill: a USE program in the code
+                                # heap that the fill starts, {offset, source, form}
+                                # (--place OFFSET=FILE --place-form FORM)
     low: int = 0                # fill: the scratch mapped again at this first-MiB address
                                 #       (--low; the kernel's debugfs sgx/vm_low)
     late: str = ""              # fill: "R:K=V", the host writes V to scratch dword K once
@@ -143,8 +155,9 @@ def _tri_fields(d: dict) -> dict:
     """The host fields of a table entry, checked: {} for a fill probe."""
     name, host = d["name"], d.get("host", "fill")
     tri_keys = {"slot", "slots", "size", "max_size", "vertices", "vtx_coords", "copy_depth",
-                "blk", "cmd", "vdm", "vdm_xor", "sideband", "isp2", "blk_add", "dump_render",
-                "kpoke", "obj2"} & set(d)
+                "blk", "cmd", "vdm", "vdm_xor", "blk_xor", "cmd_xor", "sideband", "isp2",
+                "blk_add", "dump_render",
+                "kpoke", "obj2", "pbe"} & set(d)
     if host == "fill":
         if tri_keys:
             raise ProbeError(f"{name}: {sorted(tri_keys)} need host = \"tri\"")
@@ -186,19 +199,30 @@ def _tri_fields(d: dict) -> dict:
         raise ProbeError(f"{name}: cmd {d.get('cmd')} is not {{ word = value }}") from None
     if any(not 0 <= k < TRI_CMD_WORDS or not 0 <= v <= 0xffffffff for k, v in cmd.items()):
         raise ProbeError(f"{name}: cmd words 0-{TRI_CMD_WORDS - 1}, 32-bit values")
-    vdm, vdm_xor = {}, {}
-    for key, out in (("vdm", vdm), ("vdm_xor", vdm_xor)):
+    # the stream's words 11-18 are a second object's (obj2): the one-object stream has 11
+    vdm_words = TRI_VDM2_WORDS if "obj2" in d else TRI_VDM_WORDS
+    vdm, vdm_xor, blk_xor, cmd_xor = {}, {}, {}, {}
+    for key, out, words in (("vdm", vdm, vdm_words), ("vdm_xor", vdm_xor, vdm_words),
+                            ("blk_xor", blk_xor, TRI_BLOCK_WORDS),
+                            ("cmd_xor", cmd_xor, TRI_CMD_WORDS)):
         try:
             out.update({int(k): int(v) for k, v in d.get(key, {}).items()})
         except ValueError:
             raise ProbeError(f"{name}: {key} {d.get(key)} is not {{ word = value }}") from None
-        if any(not 0 <= k < TRI_VDM_WORDS or not 0 <= v <= 0xffffffff for k, v in out.items()):
-            raise ProbeError(f"{name}: {key} words 0-{TRI_VDM_WORDS - 1}, 32-bit values")
+        if any(not 0 <= k < words or not 0 <= v <= 0xffffffff for k, v in out.items()):
+            raise ProbeError(f"{name}: {key} words 0-{words - 1}, 32-bit values")
+    try:
+        pbe = {int(k): int(v) for k, v in d.get("pbe", {}).items()}
+    except ValueError:
+        raise ProbeError(f"{name}: pbe {d.get('pbe')} is not {{ word = value }}") from None
+    if any(not 0 <= k < 4 or not 0 <= v <= 0xffffffff for k, v in pbe.items()):
+        raise ProbeError(f"{name}: pbe words 0-3, 32-bit values (word 4 is the sideband)")
     kpoke = d.get("kpoke", [])
     if not isinstance(kpoke, list) or any(
-            not isinstance(k, str) or not re.fullmatch(r"(ta|rd|tq):\d+\^?=(0x[0-9a-fA-F]+|\d+)", k)
+            not isinstance(k, str) or not re.fullmatch(KPOKE_RE, k)
             for k in kpoke):
-        raise ProbeError(f"{name}: kpoke {kpoke}: a list of ta:N=V, rd:N^=V, tq:N=V")
+        raise ProbeError(f"{name}: kpoke {kpoke}: a list of SPACE:N=V or SPACE:N^=V, the "
+                         "spaces ta, rd, tq, ctx, rtds, pb and kw")
     sideband = d.get("sideband")
     if sideband is not None and ("eot" not in (slot, *slots) or
                                  not 0 <= sideband <= 0xffffffff):
@@ -221,19 +245,21 @@ def _tri_fields(d: dict) -> dict:
             o2blk = {int(k): int(v) for k, v in o.get("blk", {}).items()}
         except (KeyError, TypeError, ValueError):
             raise ProbeError(f"{name}: obj2 {o} is not {{ first = N, blk = {{ W = V }}, "
-                             "pixel = FILE }") from None
-        if (set(o) - {"first", "blk", "pixel"} or first <= 0 or first % 3 or first >= vertices
+                             "pixel = FILE, pixpds = FILE }") from None
+        if (set(o) - {"first", "blk", "pixel", "pixpds"} or first <= 0 or first % 3 or first >= vertices
                 or any(not 0 <= k < TRI_BLK2_WORDS or not 0 <= v <= 0xffffffff
                        for k, v in o2blk.items())
-                or not isinstance(o.get("pixel", ""), str)):
+                or not isinstance(o.get("pixel", ""), str)
+                or not isinstance(o.get("pixpds", ""), str)):
             raise ProbeError(f"{name}: obj2 {o}: first a triangle's vertex among the copies, "
-                             f"blk words 0-{TRI_BLK2_WORDS - 1}, pixel a file")
-        obj2 = {"first": first, "blk": o2blk, **({"pixel": o["pixel"]} if "pixel" in o else {})}
+                             f"blk words 0-{TRI_BLK2_WORDS - 1}, pixel and pixpds files")
+        obj2 = {"first": first, "blk": o2blk, **{k: o[k] for k in ("pixel", "pixpds") if k in o}}
     return {"host": "tri", "slot": slot, "slots": slots, "size": size, "max_size": max_size,
             "vertices": vertices, "vtx_coords": vtx_coords, "copy_depth": copy_depth,
-            "blk": blk, "cmd": cmd, "vdm": vdm, "vdm_xor": vdm_xor, "sideband": sideband,
+            "blk": blk, "cmd": cmd, "vdm": vdm, "vdm_xor": vdm_xor, "blk_xor": blk_xor,
+            "cmd_xor": cmd_xor, "sideband": sideband,
             "isp2": isp2, "blk_add": blk_add, "dump_render": bool(d.get("dump_render", False)),
-            "kpoke": kpoke, "obj2": obj2,
+            "kpoke": kpoke, "obj2": obj2, "pbe": pbe,
             "isa": "pds" if slot in TRI_PDS else "usse"}
 
 
@@ -245,9 +271,9 @@ def load(path: pathlib.Path | None = None) -> list[Probe]:
 
 
 # What a case of a probe with case_set may set besides the probe's: pokes and kpoke are added, the
-# words of cmd, blk, vdm and vdm_xor replace the probe's.
+# words of cmd, blk, vdm, vdm_xor, blk_xor, cmd_xor and pbe replace the probe's.
 POKE_WORDS = {"xfer": 42, "bg": 17}      # sgxfive_xfer.h: the words of each poked object
-CASE_SET_KEYS = {"pokes", "kpoke", "cmd", "blk", "vdm", "vdm_xor"}
+CASE_SET_KEYS = {"pokes", "kpoke", "cmd", "blk", "vdm", "vdm_xor", "blk_xor", "cmd_xor", "pbe"}
 
 
 def _probe(d: dict, table: str) -> Probe:
@@ -257,6 +283,22 @@ def _probe(d: dict, table: str) -> Probe:
     if late and (d.get("host", "fill") != "fill" or
                  not re.fullmatch(r"\d+:\d+=(0x[0-9a-fA-F]+|\d+)", late)):
         raise ProbeError(f"{d['name']}: late {late!r}: a fill probe's R:K=V")
+    place = dict(d.get("place", {}))
+    if place and (d.get("host", "fill") != "fill" or d.get("isa", "usse") != "usse" or
+                  set(place) != {"offset", "source", "form"} or
+                  not isinstance(place["source"], str) or place["form"] not in ("cbase", "exe18") or
+                  not isinstance(place["offset"], int) or place["offset"] % 8 or
+                  not 0 <= place["offset"] <= 0x500000 - 4096):
+        raise ProbeError(f"{d['name']}: place = {{ offset, source, form }} is a fill probe's "
+                         "(its program the fill shader): an offset a multiple of 8 in the 5 MiB "
+                         "code heap, source a USE program, form cbase or exe18")
+    scratch_pages = d.get("scratch_pages", 0)
+    if scratch_pages and (d.get("host", "fill") != "fill" or not 16 <= scratch_pages <= 64):
+        raise ProbeError(f"{d['name']}: scratch_pages = {scratch_pages} is a fill probe's, "
+                         "16 to 64 pages")
+    scratch_heap = d.get("scratch_heap", "")
+    if scratch_heap and (d.get("host", "fill") != "fill" or scratch_heap != "texture"):
+        raise ProbeError(f"{d['name']}: scratch_heap = \"texture\" is a fill probe's")
     pokes = d.get("pokes", [])
     if any(not re.fullmatch(r"(xfer|bg):\d+\^?=(0x[0-9a-fA-F]+|\d+)", k) for k in pokes):
         raise ProbeError(f"{d['name']}: pokes {pokes}: only xfer:N or bg:N, =V or ^=V")
@@ -274,7 +316,8 @@ def _probe(d: dict, table: str) -> Probe:
               cases=d["cases"], hypotheses=d.get("hypotheses", {}),
               temps=d.get("temps", 32), labels=d.get("labels", []),
               coords=d.get("coords", False), pixels=d.get("pixels", False),
-              table=table, pokes=pokes, case_set=case_set, raw=d, low=d.get("low", 0),
+              table=table, pokes=pokes, case_set=case_set, raw=d, low=d.get("low", 0), place=place,
+              scratch_heap=scratch_heap, scratch_pages=scratch_pages,
               late=late, **{"isa": d.get("isa", "usse"), "use": d.get("use", USE_DUMP),
                             **_tri_fields(d)})
     for i in range(len(case_set)):
@@ -350,8 +393,10 @@ def _helpers(p: Probe) -> list:
     """The fixed programs a probe runs with: [(source, isa)]."""
     if p.host == "tri":
         return [(src, "pds" if slot in TRI_PDS else "usse") for slot, src in p.slots.items()] + \
-            ([(p.obj2["pixel"], "usse")] if "pixel" in p.obj2 else [])
-    return [(p.use, "usse")] if p.isa == "pds" else []
+            ([(p.obj2["pixel"], "usse")] if "pixel" in p.obj2 else []) + \
+            ([(p.obj2["pixpds"], "pds")] if "pixpds" in p.obj2 else [])
+    return ([(p.use, "usse")] if p.isa == "pds" else []) + \
+        ([(p.place["source"], "usse")] if p.place else [])
 
 
 def build_helpers(ps: list, outdir: pathlib.Path, src_dir: pathlib.Path = PROBES_DIR) -> list:
@@ -565,7 +610,12 @@ def tool_args(p: Probe, use: str | None = None, src_dir: pathlib.Path | None = N
         return head + _tri_args(p, src_dir)
     use = use or pathlib.Path(p.use).stem + ".bin"
     pds = ["--pds", str(pds_data(p, src_dir or PROBES_DIR)), "--use", use] if p.isa == "pds" else []
+    if p.place:
+        pds += ["--place", f"{p.place['offset']}={pathlib.Path(p.place['source']).stem}.bin",
+                "--place-form", p.place["form"]]
     low = ["--low", hex(p.low)] if p.low else []
+    low += ["--scratch-heap", p.scratch_heap] if p.scratch_heap else []
+    low += ["--scratch-pages", str(p.scratch_pages)] if p.scratch_pages else []
     low += ["--late", p.late] if p.late else []
     return head + pds + low + [a for k in p.pokes for a in ("--poke", k)]
 
@@ -590,6 +640,12 @@ def _tri_args(p: Probe, src_dir: pathlib.Path | None = None) -> list:
         args += ["--vdm", f"{k}=0x{v:08x}"]
     for k, v in sorted(p.vdm_xor.items()):
         args += ["--vdm", f"{k}^=0x{v:08x}"]
+    for k, v in sorted(p.blk_xor.items()):
+        args += ["--blk", f"{k}^=0x{v:08x}"]
+    for k, v in sorted(p.cmd_xor.items()):
+        args += ["--cmd", f"{k}^=0x{v:08x}"]
+    for k, v in sorted(p.pbe.items()):
+        args += ["--pbe", f"{k}=0x{v:08x}"]
     if p.dump_render:
         args += ["--dump-render", DUMPS]
     for k in p.kpoke:
@@ -606,6 +662,10 @@ def _tri_args(p: Probe, src_dir: pathlib.Path | None = None) -> list:
             args += ["--obj2-blk", f"{k}=0x{v:08x}"]
         if "pixel" in p.obj2:
             args += ["--obj2-pixel", pathlib.Path(p.obj2["pixel"]).stem + ".bin"]
+        if "pixpds" in p.obj2:
+            src = p.obj2["pixpds"]
+            args += ["--obj2-pixpds", pathlib.Path(src).stem + ".bin:" +
+                     str(_data_dwords(((src_dir or PROBES_DIR) / src).read_text()))]
     for name, src in p.slots.items():
         f = pathlib.Path(src).stem + ".bin"
         if name in TRI_PDS:
@@ -619,8 +679,11 @@ def _with_use(args: tuple, where: str) -> list:
     out = []
     for i, a in enumerate(args):
         prev = args[i - 1] if i else ""
-        if prev in ("--use", "--dump-render", "--obj2-pixel"):
+        if prev in ("--use", "--dump-render", "--obj2-pixel", "--obj2-pixpds"):
             a = f"{where}/{a}"
+        elif prev == "--place":
+            off, f = a.split("=", 1)
+            a = f"{off}={where}/{f}"
         elif prev == "--slot":
             name, f = a.split("=", 1)
             a = f"{name}={where}/{f}"

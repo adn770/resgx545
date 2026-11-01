@@ -1,0 +1,10 @@
+title = "script table texture/luma-ramp"
+repo = "data"
+paths = ["texture/luma-ramp/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 4
+size = 211649
+sha256 = "17c8c03a391cfe235d66b145add1e26d4af6482545b9df8acacbd5faea893195"
+recipe = "probes/texture/luma-ramp.toml"
+needs = ["render"]

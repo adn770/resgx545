@@ -1,0 +1,63 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# pds iter wait textured: 0 sweeps, 4 probes.
+# E364 asks whether the DOUTU1 bit 24 the closed driver sets with an iteration is needed;
+# a textured primary with an iterated colour (its douti with and without DOUTI0 bit 29), its U1 with
+# and without bits 24 and 25, pa0 to pa3 read, three runs.
+needs = ["render"]
+
+[[probe]]
+name = "pds-iter-wait-textured-pa0"
+question = "pa0 of a textured primary with an iterated colour, the shader's U1 with and without bit 24 and bit 25"
+source = "pds_tex_col.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x20000800, 0x46012201, 0x3000004], [0x20000800, 0x46012201, 0x2000004], [0x20000800, 0x46012201, 0x1000004], [0x20000800, 0x46012201, 0x4], [0x800, 0x46012201, 0x3000004], [0x800, 0x46012201, 0x2000004], [0x800, 0x46012201, 0x1000004], [0x800, 0x46012201, 0x4], [0x20000800, 0x46012201, 0x3000004], [0x20000800, 0x46012201, 0x2000004], [0x20000800, 0x46012201, 0x1000004], [0x20000800, 0x46012201, 0x4], [0x800, 0x46012201, 0x3000004], [0x800, 0x46012201, 0x2000004], [0x800, 0x46012201, 0x1000004], [0x800, 0x46012201, 0x4], [0x20000800, 0x46012201, 0x3000004], [0x20000800, 0x46012201, 0x2000004], [0x20000800, 0x46012201, 0x1000004], [0x20000800, 0x46012201, 0x4], [0x800, 0x46012201, 0x3000004], [0x800, 0x46012201, 0x2000004], [0x800, 0x46012201, 0x1000004], [0x800, 0x46012201, 0x4]]
+labels = ["colour douti with completion bit, U1 bits 24 and 25, run 1", "colour douti with completion bit, U1 bit 25 only, run 1", "colour douti with completion bit, U1 bit 24 only, run 1", "colour douti with completion bit, U1 neither, run 1", "colour douti with no completion bit, U1 bits 24 and 25, run 1", "colour douti with no completion bit, U1 bit 25 only, run 1", "colour douti with no completion bit, U1 bit 24 only, run 1", "colour douti with no completion bit, U1 neither, run 1", "colour douti with completion bit, U1 bits 24 and 25, run 2", "colour douti with completion bit, U1 bit 25 only, run 2", "colour douti with completion bit, U1 bit 24 only, run 2", "colour douti with completion bit, U1 neither, run 2", "colour douti with no completion bit, U1 bits 24 and 25, run 2", "colour douti with no completion bit, U1 bit 25 only, run 2", "colour douti with no completion bit, U1 bit 24 only, run 2", "colour douti with no completion bit, U1 neither, run 2", "colour douti with completion bit, U1 bits 24 and 25, run 3", "colour douti with completion bit, U1 bit 25 only, run 3", "colour douti with completion bit, U1 bit 24 only, run 3", "colour douti with completion bit, U1 neither, run 3", "colour douti with no completion bit, U1 bits 24 and 25, run 3", "colour douti with no completion bit, U1 bit 25 only, run 3", "colour douti with no completion bit, U1 bit 24 only, run 3", "colour douti with no completion bit, U1 neither, run 3"]
+
+[[probe]]
+name = "pds-iter-wait-textured-pa1"
+question = "pa1 of a textured primary with an iterated colour, the shader's U1 with and without bit 24 and bit 25"
+source = "pds_tex_col.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x20000800, 0x46012201, 0x3000004], [0x20000800, 0x46012201, 0x2000004], [0x20000800, 0x46012201, 0x1000004], [0x20000800, 0x46012201, 0x4], [0x800, 0x46012201, 0x3000004], [0x800, 0x46012201, 0x2000004], [0x800, 0x46012201, 0x1000004], [0x800, 0x46012201, 0x4], [0x20000800, 0x46012201, 0x3000004], [0x20000800, 0x46012201, 0x2000004], [0x20000800, 0x46012201, 0x1000004], [0x20000800, 0x46012201, 0x4], [0x800, 0x46012201, 0x3000004], [0x800, 0x46012201, 0x2000004], [0x800, 0x46012201, 0x1000004], [0x800, 0x46012201, 0x4], [0x20000800, 0x46012201, 0x3000004], [0x20000800, 0x46012201, 0x2000004], [0x20000800, 0x46012201, 0x1000004], [0x20000800, 0x46012201, 0x4], [0x800, 0x46012201, 0x3000004], [0x800, 0x46012201, 0x2000004], [0x800, 0x46012201, 0x1000004], [0x800, 0x46012201, 0x4]]
+labels = ["colour douti with completion bit, U1 bits 24 and 25, run 1", "colour douti with completion bit, U1 bit 25 only, run 1", "colour douti with completion bit, U1 bit 24 only, run 1", "colour douti with completion bit, U1 neither, run 1", "colour douti with no completion bit, U1 bits 24 and 25, run 1", "colour douti with no completion bit, U1 bit 25 only, run 1", "colour douti with no completion bit, U1 bit 24 only, run 1", "colour douti with no completion bit, U1 neither, run 1", "colour douti with completion bit, U1 bits 24 and 25, run 2", "colour douti with completion bit, U1 bit 25 only, run 2", "colour douti with completion bit, U1 bit 24 only, run 2", "colour douti with completion bit, U1 neither, run 2", "colour douti with no completion bit, U1 bits 24 and 25, run 2", "colour douti with no completion bit, U1 bit 25 only, run 2", "colour douti with no completion bit, U1 bit 24 only, run 2", "colour douti with no completion bit, U1 neither, run 2", "colour douti with completion bit, U1 bits 24 and 25, run 3", "colour douti with completion bit, U1 bit 25 only, run 3", "colour douti with completion bit, U1 bit 24 only, run 3", "colour douti with completion bit, U1 neither, run 3", "colour douti with no completion bit, U1 bits 24 and 25, run 3", "colour douti with no completion bit, U1 bit 25 only, run 3", "colour douti with no completion bit, U1 bit 24 only, run 3", "colour douti with no completion bit, U1 neither, run 3"]
+
+[[probe]]
+name = "pds-iter-wait-textured-pa2"
+question = "pa2 of a textured primary with an iterated colour, the shader's U1 with and without bit 24 and bit 25"
+source = "pds_tex_col.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x20000800, 0x46012201, 0x3000004], [0x20000800, 0x46012201, 0x2000004], [0x20000800, 0x46012201, 0x1000004], [0x20000800, 0x46012201, 0x4], [0x800, 0x46012201, 0x3000004], [0x800, 0x46012201, 0x2000004], [0x800, 0x46012201, 0x1000004], [0x800, 0x46012201, 0x4], [0x20000800, 0x46012201, 0x3000004], [0x20000800, 0x46012201, 0x2000004], [0x20000800, 0x46012201, 0x1000004], [0x20000800, 0x46012201, 0x4], [0x800, 0x46012201, 0x3000004], [0x800, 0x46012201, 0x2000004], [0x800, 0x46012201, 0x1000004], [0x800, 0x46012201, 0x4], [0x20000800, 0x46012201, 0x3000004], [0x20000800, 0x46012201, 0x2000004], [0x20000800, 0x46012201, 0x1000004], [0x20000800, 0x46012201, 0x4], [0x800, 0x46012201, 0x3000004], [0x800, 0x46012201, 0x2000004], [0x800, 0x46012201, 0x1000004], [0x800, 0x46012201, 0x4]]
+labels = ["colour douti with completion bit, U1 bits 24 and 25, run 1", "colour douti with completion bit, U1 bit 25 only, run 1", "colour douti with completion bit, U1 bit 24 only, run 1", "colour douti with completion bit, U1 neither, run 1", "colour douti with no completion bit, U1 bits 24 and 25, run 1", "colour douti with no completion bit, U1 bit 25 only, run 1", "colour douti with no completion bit, U1 bit 24 only, run 1", "colour douti with no completion bit, U1 neither, run 1", "colour douti with completion bit, U1 bits 24 and 25, run 2", "colour douti with completion bit, U1 bit 25 only, run 2", "colour douti with completion bit, U1 bit 24 only, run 2", "colour douti with completion bit, U1 neither, run 2", "colour douti with no completion bit, U1 bits 24 and 25, run 2", "colour douti with no completion bit, U1 bit 25 only, run 2", "colour douti with no completion bit, U1 bit 24 only, run 2", "colour douti with no completion bit, U1 neither, run 2", "colour douti with completion bit, U1 bits 24 and 25, run 3", "colour douti with completion bit, U1 bit 25 only, run 3", "colour douti with completion bit, U1 bit 24 only, run 3", "colour douti with completion bit, U1 neither, run 3", "colour douti with no completion bit, U1 bits 24 and 25, run 3", "colour douti with no completion bit, U1 bit 25 only, run 3", "colour douti with no completion bit, U1 bit 24 only, run 3", "colour douti with no completion bit, U1 neither, run 3"]
+
+[[probe]]
+name = "pds-iter-wait-textured-pa3"
+question = "pa3 of a textured primary with an iterated colour, the shader's U1 with and without bit 24 and bit 25"
+source = "pds_tex_col.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa3.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x20000800, 0x46012201, 0x3000004], [0x20000800, 0x46012201, 0x2000004], [0x20000800, 0x46012201, 0x1000004], [0x20000800, 0x46012201, 0x4], [0x800, 0x46012201, 0x3000004], [0x800, 0x46012201, 0x2000004], [0x800, 0x46012201, 0x1000004], [0x800, 0x46012201, 0x4], [0x20000800, 0x46012201, 0x3000004], [0x20000800, 0x46012201, 0x2000004], [0x20000800, 0x46012201, 0x1000004], [0x20000800, 0x46012201, 0x4], [0x800, 0x46012201, 0x3000004], [0x800, 0x46012201, 0x2000004], [0x800, 0x46012201, 0x1000004], [0x800, 0x46012201, 0x4], [0x20000800, 0x46012201, 0x3000004], [0x20000800, 0x46012201, 0x2000004], [0x20000800, 0x46012201, 0x1000004], [0x20000800, 0x46012201, 0x4], [0x800, 0x46012201, 0x3000004], [0x800, 0x46012201, 0x2000004], [0x800, 0x46012201, 0x1000004], [0x800, 0x46012201, 0x4]]
+labels = ["colour douti with completion bit, U1 bits 24 and 25, run 1", "colour douti with completion bit, U1 bit 25 only, run 1", "colour douti with completion bit, U1 bit 24 only, run 1", "colour douti with completion bit, U1 neither, run 1", "colour douti with no completion bit, U1 bits 24 and 25, run 1", "colour douti with no completion bit, U1 bit 25 only, run 1", "colour douti with no completion bit, U1 bit 24 only, run 1", "colour douti with no completion bit, U1 neither, run 1", "colour douti with completion bit, U1 bits 24 and 25, run 2", "colour douti with completion bit, U1 bit 25 only, run 2", "colour douti with completion bit, U1 bit 24 only, run 2", "colour douti with completion bit, U1 neither, run 2", "colour douti with no completion bit, U1 bits 24 and 25, run 2", "colour douti with no completion bit, U1 bit 25 only, run 2", "colour douti with no completion bit, U1 bit 24 only, run 2", "colour douti with no completion bit, U1 neither, run 2", "colour douti with completion bit, U1 bits 24 and 25, run 3", "colour douti with completion bit, U1 bit 25 only, run 3", "colour douti with completion bit, U1 bit 24 only, run 3", "colour douti with completion bit, U1 neither, run 3", "colour douti with no completion bit, U1 bits 24 and 25, run 3", "colour douti with no completion bit, U1 bit 25 only, run 3", "colour douti with no completion bit, U1 bit 24 only, run 3", "colour douti with no completion bit, U1 neither, run 3"]

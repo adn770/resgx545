@@ -57,6 +57,8 @@ def test_the_tables_are_the_committed_probe_tables():
         assert (ROOT / "probes" / "texture" / f"{name}.toml").read_text() == text, name
     assert (ROOT / "probes" / "texture" / "templates" / T.MIP_TEMPLATE).read_text() == \
         T.mip_template()
+    assert (ROOT / "probes" / "texture" / "templates" / T.MIP8_TEMPLATE).read_text() == \
+        T.mip8_template()
 
 
 def test_the_copy_words_follow_the_library():
@@ -188,3 +190,64 @@ def test_the_fetch_probes_put_the_field_at_8_and_15(tmp_path):
     f.parent.mkdir(parents=True)
     f.write_text(T.table_text("fetch size", "x", ps))
     assert len(probe.load(f)) == len(ps)
+
+
+def test_the_eight_level_chain_names_each_texel_by_its_scratch_dword():
+    # a 128x128 twiddled chain in the scratch buffer from its start: the host fills dword i with
+    # 0xD0000000 | i, so a texel read names the level and the place it came from (x in the even
+    # bits of the twiddle, y in the odd)
+    offs = T.mip_offsets(128)
+    assert offs == [0, 16384, 20480, 21504, 21760, 21824, 21840, 21844] and T.mip_dwords(128) == 21845
+    assert T.mip_offsets(16) == [0, 256, 320, 336, 340] and T.mip_offsets(1) == [0]
+    assert T.twiddle(0, 0) == 0 and T.twiddle(1, 0) == 1 and T.twiddle(0, 1) == 2
+    assert T.twiddle(2, 0) == 4 and T.twiddle(0, 2) == 8 and T.twiddle(127, 127) == 16383
+    assert T.mip_texel(128, 0, 0, 0) == 0xd0000000
+    assert T.mip_texel(128, 1, 1, 1) == 0xd0000000 | 16384 + 3
+    assert T.mip_texel(128, 7, 0, 0) == 0xd0000000 | 21844
+    for lv in range(8):
+        for x, y in ((0, 0), (max(0, (128 >> lv) - 1),) * 2, (28 >> lv, 84 >> lv)):
+            assert T.mip_of(128, T.mip_texel(128, lv, x, y)) == (lv, x, y)
+    assert T.mip_of(128, 0xd0000000 | 21845) is None and T.mip_of(128, 0xa0000000) is None
+    with pytest.raises(T.TexError):
+        T.mip_offsets(100)
+
+
+def test_the_sampled_texel_follows_the_coordinates_and_the_level():
+    # the template's coordinates r24 = 0.21875 (the y) and r25 = 0.65625 (the x) at level l of a
+    # 128-wide chain
+    assert T.mip_sample(128, 0) == (84, 28) and T.mip_sample(128, 3) == (10, 3)
+    assert T.mip_sample(128, 4) == (5, 1) and T.mip_sample(128, 7) == (0, 0)
+    assert T.mip_read(128, 2) == T.mip_texel(128, 2, 21, 7)
+
+
+def test_the_linear_level_blend_is_a_channel_wise_lerp():
+    a, b = 0xd0102030, 0xd0305070
+    assert T.mip_blend(a, b, 0.0) == a and T.mip_blend(a, b, 1.0) == b
+    assert T.mip_blend(a, b, 0.5) == 0xd0203850
+    assert T.mip_blend(a, b, 0.25) == 0xd0182c40
+
+
+def test_the_eight_level_probes_read_the_chain(tmp_path):
+    ps = {p["name"]: p for p in T.mip8_probes()}
+    assert set(ps) == {"texture-mip8-fields-max-level", "texture-mip8-fields-bias", "texture-mip8-fields-mipfilter"}
+    p = ps["texture-mip8-fields-max-level"]
+    # all 16 values of bits 20:17 at LODs inside the chain (1, 3, 5, 7) and beyond it (8, 9)
+    assert len(p["cases"]) == 16 * 6 and [0x07e00000 | 15 << 17, _f(7.0)] in p["cases"]
+    assert [0x07e00000, _f(9.0)] in p["cases"]
+    p = ps["texture-mip8-fields-bias"]
+    assert len(p["cases"]) == 64 * 2 and p["scratch_pages"] == 24
+    assert [0 << 21 | 0xe << 17, _f(7.0)] in p["cases"] and [63 << 21 | 0xe << 17, _f(5.0)] in p["cases"]
+    p = ps["texture-mip8-fields-mipfilter"]
+    assert all(c[0] & 0x200 for c in p["cases"]) and len(p["cases"]) == 3 * 5 * 3
+    assert all(q["source"] == T.MIP8_TEMPLATE and q["scratch_pages"] == 24 for q in ps.values())
+    text = T.mip8_template()
+    assert "mov r20, #{T0}" in text and "mov r26, #{LOD}" in text and "stad [r30" not in text
+    assert "mov r21, #0x0C07F07F" in text and text.count("smp2dreplace r10") == 1
+    f = tmp_path / "probes" / "texture" / "mip8-fields.toml"
+    f.parent.mkdir(parents=True)
+    f.write_text(T.table_text("mip8 fields", "x", list(ps.values())))
+    assert len(probe.load(f)) == 3
+
+
+def _f(v):
+    return T._f32(v)

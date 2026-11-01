@@ -1,0 +1,10 @@
+title = "script table render/bg-pds-map"
+repo = "data"
+paths = ["render/bg-pds-map/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 4
+size = 10751448
+sha256 = "09982c76b7f0a5afc3b013df00e04f68e0d19c356cdf315e341002aa0a3a6649"
+recipe = "probes/render/bg-pds-map.toml"
+needs = ["render", "kpoke", "vm_low"]

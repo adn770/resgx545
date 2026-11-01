@@ -1,0 +1,10 @@
+title = "probe table pbe/pack-floats-o23"
+repo = "data"
+paths = ["pbe/pack-floats-o23/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 114
+size = 4149738
+sha256 = "8fcb416a034bc69b88ddeead5e094b629a78aee47253fafdfdec450ff1d6e1d1"
+recipe = "probes/pbe/pack-floats-o23.toml"
+needs = ["render", "kpoke"]

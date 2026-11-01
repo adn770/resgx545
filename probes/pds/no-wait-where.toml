@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# pds no-wait where: 2 probes.
+# Q027: the shader of the no-wait iteration probes (pds_iter_nowait.s, E393) copying each of pa0 to
+# pa15 in turn to o0, three runs each, against the waited iteration's pa0 to pa3 (pds_iter_wait.s):
+# where the unwaited douti's values go.
+needs = ["render"]
+
+[[probe]]
+name = "pds-no-wait-where-no-wait"
+question = "what pa0 to pa15 hold at each pixel after a douti without the wait"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_nowait.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["run 1: o0 = pa0", "run 1: o0 = pa1", "run 1: o0 = pa2", "run 1: o0 = pa3", "run 1: o0 = pa4", "run 1: o0 = pa5", "run 1: o0 = pa6", "run 1: o0 = pa7", "run 1: o0 = pa8", "run 1: o0 = pa9", "run 1: o0 = pa10", "run 1: o0 = pa11", "run 1: o0 = pa12", "run 1: o0 = pa13", "run 1: o0 = pa14", "run 1: o0 = pa15", "run 2: o0 = pa0", "run 2: o0 = pa1", "run 2: o0 = pa2", "run 2: o0 = pa3", "run 2: o0 = pa4", "run 2: o0 = pa5", "run 2: o0 = pa6", "run 2: o0 = pa7", "run 2: o0 = pa8", "run 2: o0 = pa9", "run 2: o0 = pa10", "run 2: o0 = pa11", "run 2: o0 = pa12", "run 2: o0 = pa13", "run 2: o0 = pa14", "run 2: o0 = pa15", "run 3: o0 = pa0", "run 3: o0 = pa1", "run 3: o0 = pa2", "run 3: o0 = pa3", "run 3: o0 = pa4", "run 3: o0 = pa5", "run 3: o0 = pa6", "run 3: o0 = pa7", "run 3: o0 = pa8", "run 3: o0 = pa9", "run 3: o0 = pa10", "run 3: o0 = pa11", "run 3: o0 = pa12", "run 3: o0 = pa13", "run 3: o0 = pa14", "run 3: o0 = pa15"]
+cases = [["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa1"], ["mov.skipinv.end o0, pa2"], ["mov.skipinv.end o0, pa3"], ["mov.skipinv.end o0, pa4"], ["mov.skipinv.end o0, pa5"], ["mov.skipinv.end o0, pa6"], ["mov.skipinv.end o0, pa7"], ["mov.skipinv.end o0, pa8"], ["mov.skipinv.end o0, pa9"], ["mov.skipinv.end o0, pa10"], ["mov.skipinv.end o0, pa11"], ["mov.skipinv.end o0, pa12"], ["mov.skipinv.end o0, pa13"], ["mov.skipinv.end o0, pa14"], ["mov.skipinv.end o0, pa15"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa1"], ["mov.skipinv.end o0, pa2"], ["mov.skipinv.end o0, pa3"], ["mov.skipinv.end o0, pa4"], ["mov.skipinv.end o0, pa5"], ["mov.skipinv.end o0, pa6"], ["mov.skipinv.end o0, pa7"], ["mov.skipinv.end o0, pa8"], ["mov.skipinv.end o0, pa9"], ["mov.skipinv.end o0, pa10"], ["mov.skipinv.end o0, pa11"], ["mov.skipinv.end o0, pa12"], ["mov.skipinv.end o0, pa13"], ["mov.skipinv.end o0, pa14"], ["mov.skipinv.end o0, pa15"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa1"], ["mov.skipinv.end o0, pa2"], ["mov.skipinv.end o0, pa3"], ["mov.skipinv.end o0, pa4"], ["mov.skipinv.end o0, pa5"], ["mov.skipinv.end o0, pa6"], ["mov.skipinv.end o0, pa7"], ["mov.skipinv.end o0, pa8"], ["mov.skipinv.end o0, pa9"], ["mov.skipinv.end o0, pa10"], ["mov.skipinv.end o0, pa11"], ["mov.skipinv.end o0, pa12"], ["mov.skipinv.end o0, pa13"], ["mov.skipinv.end o0, pa14"], ["mov.skipinv.end o0, pa15"]]
+
+[[probe]]
+name = "pds-no-wait-where-wait"
+question = "what pa0 to pa15 hold at each pixel after a douti with the wait"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { pixpds = "pds_iter_wait.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+labels = ["run 1: o0 = pa0", "run 1: o0 = pa1", "run 1: o0 = pa2", "run 1: o0 = pa3", "run 2: o0 = pa0", "run 2: o0 = pa1", "run 2: o0 = pa2", "run 2: o0 = pa3", "run 3: o0 = pa0", "run 3: o0 = pa1", "run 3: o0 = pa2", "run 3: o0 = pa3"]
+cases = [["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa1"], ["mov.skipinv.end o0, pa2"], ["mov.skipinv.end o0, pa3"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa1"], ["mov.skipinv.end o0, pa2"], ["mov.skipinv.end o0, pa3"], ["mov.skipinv.end o0, pa0"], ["mov.skipinv.end o0, pa1"], ["mov.skipinv.end o0, pa2"], ["mov.skipinv.end o0, pa3"]]

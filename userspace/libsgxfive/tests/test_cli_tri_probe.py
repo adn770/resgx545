@@ -169,6 +169,16 @@ def test_tri_reports_a_failed_render(tmp_path):
     # what the scratch holds is still reported: what ran before the failure stored there
     # (on the mock nothing ran)
     assert re.search(r"^probe pix: scratch unchanged$", r.stdout, re.M), r.stdout
+    # the target is read after an overflow (the render's partial renders stored into it, its
+    # context kept): its colours follow the failure, and every row with --pixels
+    assert re.search(r"^probe pix: o0 ", r.stdout, re.M), r.stdout
+    assert r.stdout.index("failed: scene overflowed") < r.stdout.index("probe pix: o0 ")
+    assert not re.search(r"^probe pix: row ", r.stdout, re.M), r.stdout
+    r = run("--mock", "--mock-pb-pages=0x23", "probe", "--tri", "pixel", "--pixels", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    rows = re.findall(r"^probe pix: row (\d+):((?: [0-9a-f]{8})+)$", r.stdout, re.M)
+    assert [int(y) for y, _ in rows] == list(range(64)) and len(rows[0][1].split()) == 64, r.stdout
+    assert r.stdout.index("failed: scene overflowed") < r.stdout.index("probe pix: row 0:")
 
 
 def test_tri_vertices(tmp_path):
@@ -183,8 +193,13 @@ def test_tri_vertices(tmp_path):
     # 126: the vertex buffer moved to the scene page's spare room, still drawn
     r = run("--mock", "probe", "--tri", "pixel", "--vertices", "126", str(f))
     assert r.returncode == 0 and summary(r.stdout, "pix").get(0xA, 0) > 0, r.stdout + r.stderr
-    # not whole triangles, more than the vertex buffer holds, or not a --tri probe
-    for args in (["--tri", "pixel", "--vertices", "4"], ["--tri", "pixel", "--vertices", "129"],
+    # 300 and 1500: the wide scenes (the rig's gen region of extra pages), still drawn
+    for n in ("129", "300", "1500"):
+        r = run("--mock", "probe", "--tri", "pixel", "--vertices", n, str(f))
+        assert r.returncode == 0 and summary(r.stdout, "pix").get(0xA, 0) > 0, (n, r.stdout)
+        assert f"({n} vertices)" in r.stdout, r.stdout
+    # not whole triangles, more than the wide scene holds, or not a --tri probe
+    for args in (["--tri", "pixel", "--vertices", "4"], ["--tri", "pixel", "--vertices", "1503"],
                  ["--tri", "pixel", "--vertices", "x"], ["--vertices", "6"]):
         r = run("--mock", "probe", *args, str(f))
         assert r.returncode == 2, (args, r.stdout + r.stderr)   # usage
@@ -273,6 +288,32 @@ def test_tri_obj2(tmp_path):
                  ["--obj2", "3"]):
         r = run("--mock", "probe", *args, str(f))
         assert r.returncode == 2, (args, r.stdout + r.stderr)   # usage
+
+
+def test_tri_obj2_pixpds(tmp_path):
+    # --obj2-pixpds FILE:N: the second object's primary pixel PDS program with N data dwords, as
+    # --tri pixpds:N is the first's, which may load the pixel side's constants (douta)
+    f = assemble(tmp_path, "pix", PHAS + "mov.skipinv.end o0, #0x0000000A\n")
+    g = assemble(tmp_path, "pix2", PHAS + "mov.skipinv.end o0, #0x0000000B\n")
+    pds = assemble(tmp_path, "pp", ".word 0\n.word 0\n.word 0\n.word 4\n"
+                   "movs doutu, ds0[0], ds1[1], ds1[0], ds0[0]\nhalt\n", isa="pds")
+    r = run("--mock", "probe", "--tri", "pixel", "--vertices", "6", "--obj2", "3",
+            "--obj2-pixel", str(g), "--obj2-pixpds", f"{pds}:4", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^probe pix: tri 64x64 \(6 vertices\) \(obj2 from 3: pixel, primary\), "
+                     r"pixel replaced$", r.stdout, re.M), r.stdout
+    r = run("--mock", "probe", "--tri", "pixel", "--vertices", "6", "--obj2", "3",
+            "--obj2-blk", "4=0x130004", "--obj2-pixpds", f"{pds}:4", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "(obj2 from 3: block words 4, primary)" in r.stdout, r.stdout
+    for args in (["--tri", "pixel", "--vertices", "6", "--obj2-pixpds", f"{pds}:4"],  # no obj2
+                 ["--tri", "pixel", "--vertices", "6", "--obj2", "3", "--obj2-pixpds", str(pds)],
+                 ["--tri", "pixel", "--vertices", "6", "--obj2", "3", "--obj2-pixpds",
+                  f"{pds}:3"],                                     # not whole rows
+                 ["--tri", "pixel", "--vertices", "6", "--obj2", "3", "--obj2-pixpds",
+                  f"{pds}:8"]):                                    # no code after the data
+        r = run("--mock", "probe", *args, str(f))
+        assert r.returncode in (1, 2), (args, r.stdout + r.stderr)
 
 
 def test_tri_sideband(tmp_path):
@@ -385,4 +426,64 @@ def test_tri_vdm_flip(tmp_path):
     assert re.search(r"^probe pix: tri 64x64 \(VDM words \^1\), pixel replaced$", r.stdout,
                      re.M), r.stdout
     r = run("--mock", "probe", "--tri", "pixel", "--vdm", "11^=1", str(f))
+    assert r.returncode == 2, r.stdout + r.stderr
+
+
+def test_tri_blk_and_cmd_flip(tmp_path):
+    # --blk N^=V and --cmd N^=V: the state block's word and the render command's word flipped
+    # by V, listed after the set words in the probe's line; out-of-range words are usage errors
+    f = assemble(tmp_path, "pix", PHAS + "mov.skipinv.end o0, #0x0000000A\n")
+    r = run("--mock", "probe", "--tri", "pixel", "--blk", "4^=0x8000", "--blk", "1=0x400200",
+            "--cmd", "10^=1", "--cmd", "11=2", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^probe pix: tri 64x64 \(block words 1 \^4\) \(command words \^10 11\), "
+                     r"pixel replaced$", r.stdout, re.M), r.stdout
+    for args in (["--tri", "pixel", "--blk", "18^=1"], ["--tri", "pixel", "--cmd", "26^=1"],
+                 ["--tri", "pixel", "--blk", "1^1"], ["--blk", "1^=2"], ["--cmd", "1^=2"]):
+        r = run("--mock", "probe", *args, str(f))
+        assert r.returncode == 2, (args, r.stdout + r.stderr)
+
+
+def test_tri_vdm_words_of_the_second_object(tmp_path):
+    # with --obj2 the stream's words 11 to 18 are the second object's, flipped as built (word 9
+    # is the second state block's); without it only 0 to 10 exist
+    f = assemble(tmp_path, "pix", PHAS + "mov.skipinv.end o0, #0x0000000A\n")
+    r = run("--mock", "probe", "--tri", "pixel", "--vertices", "12", "--obj2", "6", "--vdm",
+            "9^=0x200", "--vdm", "18=0xc0000000", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"\(VDM words \^9 18\)", r.stdout), r.stdout
+    for args in (["--vdm", "11^=0x200"], ["--vdm", "18=1"]):
+        r = run("--mock", "probe", "--tri", "pixel", *args, str(f))
+        assert r.returncode == 2, (args, r.stdout + r.stderr)
+    r = run("--mock", "probe", "--tri", "pixel", "--vertices", "12", "--obj2", "6", "--vdm",
+            "19=1", str(f))
+    assert r.returncode == 2, r.stdout + r.stderr
+
+
+def test_tri_pbe_words(tmp_path):
+    # --pbe N=V: the end-of-tile task's PBE word N (0 to 3) as given, with the default end-of-tile
+    # task too; word 4 is --sideband's and a flip is not offered
+    f = assemble(tmp_path, "pix", PHAS + "mov.skipinv.end o0, #0x0000000A\n")
+    r = run("--mock", "probe", "--tri", "pixel", "--pbe", "1=0x003f003f", "--pbe", "3=0x3e004000",
+            str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^probe pix: tri 64x64 \(PBE words 1 3\), pixel replaced$", r.stdout,
+                     re.M), r.stdout
+    for args in (["--tri", "pixel", "--pbe", "4=1"], ["--tri", "pixel", "--pbe", "1^=1"],
+                 ["--tri", "pixel", "--pbe", "x"], ["--pbe", "1=2"]):
+        r = run("--mock", "probe", *args, str(f))
+        assert r.returncode == 2, (args, r.stdout + r.stderr)
+
+
+def test_tri_background_slots(tmp_path):
+    # bgpixel and bgpds: the background object's pixel shader and primary PDS program
+    f = assemble(tmp_path, "bg", PHAS + "mov.skipinv.end o0, #0x0000000B\n")
+    r = run("--mock", "probe", "--tri", "bgpixel", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^probe bg: tri 64x64, bgpixel replaced$", r.stdout, re.M), r.stdout
+    p = pixev(tmp_path, "bgp")          # a PDS program with 60 data dwords
+    r = run("--mock", "probe", "--tri", "bgpds:60", "--slot", f"bgpixel={f}", str(p))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^probe bgp: tri 64x64, bgpds bgpixel replaced$", r.stdout, re.M), r.stdout
+    r = run("--mock", "probe", "--tri", "bgpds", str(p))               # no data dword count
     assert r.returncode == 2, r.stdout + r.stderr

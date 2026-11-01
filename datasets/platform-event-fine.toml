@@ -1,0 +1,10 @@
+title = "script and probe table platform/event-fine"
+repo = "data"
+paths = ["platform/event-fine/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 15
+size = 260132
+sha256 = "8ae0b8a0b84edee9222b002580f73d9d020671101951c0f866fa7f6cf8f79bfe"
+recipe = "probes/platform/event-fine.toml"
+needs = ["render", "reset"]

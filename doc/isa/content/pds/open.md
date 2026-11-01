@@ -27,9 +27,9 @@
    pc; `ir0` in a fill is the tile position; 8.9, 8.11.)*
 5. *(settled: the ALU details, `mov128` and `swap`.)*
 6. *(settled: one return register.)*
-7. **The `doutu` word** on this build: whether `EXE` really stops at bit 19 (so that `CBASE`
-   exists) or the 18 PC bits reach bit 21; our programs keep code low enough for both
-   readings to agree (`doc/specs/transfer.md` §4.2; Q061).
+7. *(settled: bits 21:20 of the word are address bits, so the 18 PC bits reach bit 21 (a word with
+   only bit 21 set starts a program 1 MiB up), and `CBASE` adds multiples of 512 KiB (8 starts
+   one 4 MiB up); E428.)*
 
 8. *(settled: `nop` takes one slot and reads none of its other bits, E260, E261.)*
 9. **The specials in a `movs`**, mostly settled: `.l` passes a whole word and `ir0.l` is all of

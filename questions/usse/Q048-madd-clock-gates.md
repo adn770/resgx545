@@ -24,3 +24,7 @@ cannot write `CR_CLKGATECTL2`.
 To settle it: a kernel switch that writes `CR_CLKGATECTL2` (each field 0 to 3 in turn, idle and
 busy, status sampled), then the MADD gates held off under a floating-point loop, an integer loop
 and a texture-fetching copy.
+
+Not run in 11.16: debugfs kreg cannot write CR_CLKGATECTL2. Kernel need: a debugfs switch that
+writes each of its fields from 0 to 3, idle and busy, with CR_CLKGATESTATUS sampled (the fmad,
+integer and copy loops of E365 are ready). Status: narrowed, not answered.

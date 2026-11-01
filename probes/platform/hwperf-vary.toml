@@ -1,0 +1,57 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# platform hwperf vary: 4 probes, a script (hwperf-vary.sh).
+# Q075: the HWPerf counters around jobs that differ in one thing each: the number of triangles at
+# a fixed target (1, 5, 15 and 42), the same pixels in other shapes (fills of 64x64, 128x32 and
+# 256x16), a copy (texture fetches) of the same pixels, under each of the 16 counter groups.
+needs = ["render", "hwperf"]
+name = "platform-hwperf-vary"
+script = "hwperf-vary.sh"
+
+[[probe]]
+name = "platform-hwperf-vary-tris1"
+question = "1 triangle(s) of the triangle probe, every pixel the same green"
+source = "pix_green.s"
+host = "tri"
+slot = "pixel"
+vertices = 3
+size = [0x40, 0x40]
+inputs = ["RUN"]
+labels = ["green"]
+cases = [[1]]
+
+[[probe]]
+name = "platform-hwperf-vary-tris5"
+question = "5 triangle(s) of the triangle probe, every pixel the same green"
+source = "pix_green.s"
+host = "tri"
+slot = "pixel"
+vertices = 15
+size = [0x40, 0x40]
+inputs = ["RUN"]
+labels = ["green"]
+cases = [[1]]
+
+[[probe]]
+name = "platform-hwperf-vary-tris15"
+question = "15 triangle(s) of the triangle probe, every pixel the same green"
+source = "pix_green.s"
+host = "tri"
+slot = "pixel"
+vertices = 45
+size = [0x40, 0x40]
+inputs = ["RUN"]
+labels = ["green"]
+cases = [[1]]
+
+[[probe]]
+name = "platform-hwperf-vary-tris42"
+question = "42 triangle(s) of the triangle probe, every pixel the same green"
+source = "pix_green.s"
+host = "tri"
+slot = "pixel"
+vertices = 126
+size = [0x40, 0x40]
+inputs = ["RUN"]
+labels = ["green"]
+cases = [[1]]

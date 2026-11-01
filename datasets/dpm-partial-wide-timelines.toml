@@ -1,0 +1,10 @@
+title = "script and probe table dpm/partial-wide-timelines"
+repo = "data"
+paths = ["dpm/partial-wide-timelines/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 7
+size = 1290239
+sha256 = "1895622bed867f01e55c01099f7e14e6d6e20f926a49328b85a08b06f2585485"
+recipe = "probes/dpm/partial-wide-timelines.toml"
+needs = ["render", "render_pb_pages"]

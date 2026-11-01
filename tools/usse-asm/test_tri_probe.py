@@ -69,7 +69,7 @@ def test_tri_fields(tmp_path):
     'host = "tri"\nslot = "pixel"\nsize = [64, 64]\nmax_size = [32, 64]\n',
     'host = "tri"\nslot = "pixel"\ncoords = true\n',
     'host = "tri"\nslot = "pixel"\nvertices = 4\n',            # not whole triangles
-    'host = "tri"\nslot = "pixel"\nvertices = 129\n',          # beyond the vertex buffer
+    'host = "tri"\nslot = "pixel"\nvertices = 1503\n',         # beyond the wide scene
     'host = "tri"\nslot = "pixel"\nvertices = 0\n',
     'vertices = 6\n',                                   # on a fill probe
     'host = "copy"\n',
@@ -427,6 +427,32 @@ def test_tri_obj2_field(tmp_path):
             table(tmp_path, 'source = "pix.s"\nhost = "tri"\nslot = "pixel"\n' + bad)
 
 
+def test_tri_wide_vertices(tmp_path):
+    """vertices up to 1500 (the rig's extra gen pages): --vertices N; 1503 is refused."""
+    for n in (129, 300, 1500):
+        (p,) = table(tmp_path, f'source = "pix.s"\nhost = "tri"\nslot = "pixel"\nvertices = {n}\n')
+        assert p.vertices == n
+        assert probe._tri_args(p)[probe._tri_args(p).index("--vertices") + 1] == str(n)
+    with pytest.raises(probe.ProbeError):
+        table(tmp_path, 'source = "pix.s"\nhost = "tri"\nslot = "pixel"\nvertices = 1503\n')
+
+
+def test_tri_obj2_pixpds_field(tmp_path):
+    """obj2 = { first = N, pixpds = "file.s" }: --obj2-pixpds FILE:N (N the program's data
+    dwords), the file a PDS helper built with the rest."""
+    (p,) = table(tmp_path, 'source = "pix.s"\nhost = "tri"\nslot = "pixel"\nvertices = 6\n'
+                           'obj2 = { first = 3, pixpds = "pds_iter_nowait.s" }\n')
+    assert p.obj2 == {"first": 3, "blk": {}, "pixpds": "pds_iter_nowait.s"}
+    args = probe._tri_args(p, SRC)
+    assert args[args.index("--obj2-pixpds") + 1] == "pds_iter_nowait.bin:12"
+    assert ("pds_iter_nowait.s", "pds") in probe._helpers(p)
+    assert probe._with_use(tuple(args), "dir")[args.index("--obj2-pixpds") + 1] == \
+        "dir/pds_iter_nowait.bin:12"
+    with pytest.raises(probe.ProbeError):
+        table(tmp_path, 'source = "pix.s"\nhost = "tri"\nslot = "pixel"\nvertices = 6\n'
+                        'obj2 = { first = 3, pixpds = 4 }\n')
+
+
 def test_tri_vdm_field(tmp_path):
     """vdm = { N = V }: sgxfive-test --vdm N=V, VDM stream words 0-10."""
     (p,) = table(tmp_path, 'source = "pix.s"\nhost = "tri"\nslot = "pixel"\n'
@@ -628,3 +654,133 @@ def test_tri_vdm_xor_field(tmp_path):
     assert args[args.index("--vdm") + 1] == "6^=0x80000000"
     with pytest.raises(probe.ProbeError):
         table(tmp_path, 'source = "pix.s"\nhost = "tri"\nslot = "pixel"\nvdm_xor = { 11 = 1 }\n')
+
+
+def test_tri_blk_and_cmd_xor_fields(tmp_path):
+    """blk_xor and cmd_xor = { N = V }: sgxfive-test --blk N^=V and --cmd N^=V, the state
+    block's and the render command's words flipped by V; a case_set may set them too."""
+    (p,) = table(tmp_path, 'source = "pix.s"\nhost = "tri"\nslot = "pixel"\n'
+                           'blk_xor = { 4 = 0x8000 }\ncmd_xor = { 10 = 0x1, 11 = 0x2 }\n')
+    assert p.blk_xor == {4: 0x8000} and p.cmd_xor == {10: 1, 11: 2}
+    args = probe._tri_args(p)
+    assert [args[i + 1] for i, a in enumerate(args) if a == "--blk"] == ["4^=0x00008000"]
+    assert [args[i + 1] for i, a in enumerate(args) if a == "--cmd"] == ["10^=0x00000001",
+                                                                         "11^=0x00000002"]
+    for bad in ("blk_xor = { 18 = 1 }\n", "cmd_xor = { 26 = 1 }\n", 'blk_xor = { 1 = "x" }\n'):
+        with pytest.raises(probe.ProbeError):
+            table(tmp_path, 'source = "pix.s"\nhost = "tri"\nslot = "pixel"\n' + bad)
+    t = tmp_path / "cs.toml"
+    t.write_text('[[probe]]\nname = "t"\nquestion = "q"\ncases = [[], []]\nsource = "pix.s"\n'
+                 'host = "tri"\nslot = "pixel"\n'
+                 'case_set = [{ blk_xor = { 2 = 1 } }, { cmd_xor = { 3 = 4 } }]\n')
+    (q,) = probe.load(t)
+    assert probe._view(q, 0).blk_xor == {2: 1} and probe._view(q, 1).cmd_xor == {3: 4}
+
+
+def test_tri_vdm_words_of_a_second_object(tmp_path):
+    """With obj2 the stream's words 11 to 18 are the second object's (vdm and vdm_xor); the
+    one-object stream has words 0 to 10."""
+    base = 'source = "pix.s"\nhost = "tri"\nslot = "pixel"\nvertices = 12\nobj2 = { first = 6 }\n'
+    (p,) = table(tmp_path, base + 'vdm_xor = { 9 = 0x200, 18 = 1 }\nvdm = { 11 = 5 }\n')
+    assert p.vdm_xor == {9: 0x200, 18: 1} and p.vdm == {11: 5}
+    for bad in ('vdm_xor = { 19 = 1 }\n', 'vdm = { 19 = 1 }\n'):
+        with pytest.raises(probe.ProbeError):
+            table(tmp_path, base + bad)
+    with pytest.raises(probe.ProbeError):
+        table(tmp_path, 'source = "pix.s"\nhost = "tri"\nslot = "pixel"\nvdm_xor = { 12 = 1 }\n')
+
+
+def test_tri_kpoke_spaces(tmp_path):
+    """kpoke names the fork's spaces: ta, rd, tq and the render context's ctx, rtds, pb, kw."""
+    (p,) = table(tmp_path, 'source = "pix.s"\nhost = "tri"\nslot = "pixel"\n'
+                           'kpoke = ["rtds:13^=0x100", "ctx:7=1", "pb:0^=1", "kw:2=0"]\n')
+    assert p.kpoke == ["rtds:13^=0x100", "ctx:7=1", "pb:0^=1", "kw:2=0"]
+    with pytest.raises(probe.ProbeError):
+        table(tmp_path, 'source = "pix.s"\nhost = "tri"\nslot = "pixel"\nkpoke = ["xx:1=1"]\n')
+
+
+@pytest.mark.skipif(not TOOL.exists(), reason="sgxfive-test not built")
+def test_tool_accepts_the_flip_and_second_object_options(tmp_path):
+    """The options probe.py writes for blk_xor, cmd_xor and the second object's stream words
+    are the C tool's: it runs the probe on the mock and names the flipped words."""
+    body = ('source = "pix.s"\nhost = "tri"\nslot = "pixel"\nvertices = 12\n'
+            'obj2 = { first = 6 }\nblk_xor = { 4 = 0x8000 }\ncmd_xor = { 10 = 1 }\n'
+            'vdm_xor = { 9 = 0x200 }\n')
+    (p,) = table(tmp_path, body)
+    args = probe._tri_args(p, SRC)
+    pix = tmp_path / "pix.bin"
+    subprocess.run([str(probe.ASM), "-o", str(pix), "-"],
+                   input=b"phas #0, #0, pixel, end, parallel\nmov.skipinv.end o0, #0x0000000A\n",
+                   check=True, capture_output=True)
+    r = subprocess.run([str(TOOL), "--mock", "probe", *args, str(pix)], capture_output=True,
+                       text=True, timeout=60)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "(block words ^4)" in r.stdout and "(command words ^10)" in r.stdout, r.stdout
+    assert "(VDM words ^9)" in r.stdout, r.stdout
+
+
+def test_tri_background_slots_and_pbe_field(tmp_path):
+    """bgpds (a PDS slot) and bgpixel are slots; pbe = { N = V } gives --pbe N=V (words 0-3)."""
+    assert "bgpds" in probe.TRI_SLOTS and "bgpds" in probe.TRI_PDS
+    assert "bgpixel" in probe.TRI_SLOTS and "bgpixel" not in probe.TRI_PDS
+    (p,) = table(tmp_path, 'source = "pix.s"\nhost = "tri"\nslot = "bgpixel"\n'
+                           'pbe = { 1 = 0x3f003f, 3 = 0x3e004000 }\n')
+    assert p.pbe == {1: 0x3f003f, 3: 0x3e004000}
+    args = probe._tri_args(p)
+    assert [args[i + 1] for i, a in enumerate(args) if a == "--pbe"] == ["1=0x003f003f",
+                                                                         "3=0x3e004000"]
+    for bad in ("pbe = { 4 = 1 }\n", 'pbe = { 1 = "x" }\n', "pbe = { 1 = 0x100000000 }\n"):
+        with pytest.raises(probe.ProbeError):
+            table(tmp_path, 'source = "pix.s"\nhost = "tri"\nslot = "pixel"\n' + bad)
+
+
+def test_fill_place_field(tmp_path):
+    """place = { offset, source, form }: a fill probe's USE program in the code heap, started in
+    place of the fill shader, run with --place OFFSET=FILE --place-form FORM, the program built as
+    a helper; refused for other hosts, other forms and offsets out of range."""
+    body = 'source = "pix.s"\nplace = { offset = 0x400000, source = "use_marker.s", form = "exe18" }\n'
+    (p,) = table(tmp_path, body)
+    assert p.place == {"offset": 0x400000, "source": "use_marker.s", "form": "exe18"}
+    assert probe.tool_args(p)[-4:] == ["--place", "4194304=use_marker.bin", "--place-form",
+                                       "exe18"]
+    assert ("use_marker.s", "usse") in probe._helpers(p)
+    assert probe._with_use(("--place", "4194304=use_marker.bin"), "w") == [
+        "--place", "4194304=w/use_marker.bin"]
+    for bad in ('place = { offset = 0x400004, source = "u.s", form = "cbase" }\n',
+                'place = { offset = 0x500000, source = "u.s", form = "cbase" }\n',
+                'place = { offset = 8, source = "u.s", form = "other" }\n',
+                'place = { offset = 8, source = "u.s" }\n'):
+        with pytest.raises(probe.ProbeError):
+            table(tmp_path, 'source = "pix.s"\n' + bad)
+    with pytest.raises(probe.ProbeError):                      # a PDS probe's shader is the fill's
+        table(tmp_path, 'source = "pix.s"\nisa = "pds"\n'
+                        'place = { offset = 8, source = "u.s", form = "cbase" }\n')
+    with pytest.raises(probe.ProbeError):                      # not a fill probe
+        table(tmp_path, 'source = "pix.s"\nhost = "tri"\nslot = "pixel"\n'
+                        'place = { offset = 8, source = "u.s", form = "cbase" }\n')
+
+
+def test_fill_scratch_pages_field(tmp_path):
+    """scratch_pages = N (16 to 64): a fill probe's scratch buffer of N pages, run with
+    --scratch-pages N; not a triangle probe's (its scratch is --scratch)."""
+    (p,) = table(tmp_path, 'source = "pix.s"\nscratch_pages = 24\n')
+    assert p.scratch_pages == 24
+    assert probe.tool_args(p)[-2:] == ["--scratch-pages", "24"]
+    (p,) = table(tmp_path, 'source = "pix.s"\n')
+    assert p.scratch_pages == 0 and "--scratch-pages" not in probe.tool_args(p)
+    for bad in ('source = "pix.s"\nscratch_pages = 15\n', 'source = "pix.s"\nscratch_pages = 65\n',
+                'source = "pix.s"\nhost = "tri"\nslot = "pixel"\nscratch_pages = 24\n'):
+        with pytest.raises(probe.ProbeError):
+            table(tmp_path, bad)
+
+
+def test_fill_scratch_heap_field(tmp_path):
+    """scratch_heap = "texture": a fill probe's scratch buffer in the texture heap, run with
+    --scratch-heap texture; no other heap, and not a triangle probe's."""
+    (p,) = table(tmp_path, 'source = "pix.s"\nscratch_heap = "texture"\n')
+    assert p.scratch_heap == "texture"
+    assert probe.tool_args(p)[-2:] == ["--scratch-heap", "texture"]
+    for bad in ('source = "pix.s"\nscratch_heap = "general"\n',
+                'source = "pix.s"\nhost = "tri"\nslot = "pixel"\nscratch_heap = "texture"\n'):
+        with pytest.raises(probe.ProbeError):
+            table(tmp_path, bad)

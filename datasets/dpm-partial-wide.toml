@@ -1,0 +1,10 @@
+title = "script and probe table dpm/partial-wide"
+repo = "data"
+paths = ["dpm/partial-wide/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 9
+size = 4980297
+sha256 = "f393b03a448066e1b43cae3676f417a3fb1a0d6a1e0cd0a1c88564c0abe21947"
+recipe = "probes/dpm/partial-wide.toml"
+needs = ["render", "render_param", "render_tadata", "render_pb_pages", "regs", "buf09"]

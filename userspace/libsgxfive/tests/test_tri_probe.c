@@ -30,7 +30,7 @@ static void scene_init(struct scene *s, uint32_t w, uint32_t h)
 {
 	s->mem = calloc(5, PAGE);
 	s->c = (struct sgxfive_tri_cpu){ s->mem, s->mem + PAGE / 4, s->mem + 2 * PAGE / 4,
-					 s->mem + 3 * PAGE / 4, s->mem + 4 * PAGE / 4 };
+					 s->mem + 3 * PAGE / 4, s->mem + 4 * PAGE / 4, 0 };
 	s->l = (struct sgxfive_tri_layout){
 		.pdsv = 0x30400000, .usev = 0x3c000000, .pdsp = 0x2e000000, .usep = 0x37000000,
 		.gen = 0x3e000000, .fb = 0x3e001000, .pds_exec_base = 0x2e000000,
@@ -48,7 +48,7 @@ static uint64_t insn(const uint32_t *page, uint32_t off)
 static void slot_names(void)
 {
 	static const char *const names[] = { "pixev", "eot", "vtxpds", "vtxuse", "pixel", "pixtask",
-					      "pixpds", "state" };
+					      "pixpds", "state", "bgpds", "bgpixel" };
 
 	for (int i = 0; i < SGXFIVE_TRI_SLOT_COUNT; i++) {
 		CHECK_EQ(sgxfive_tri_slot_find(names[i]), i);
@@ -64,6 +64,8 @@ static void slot_names(void)
 	CHECK(!sgxfive_tri_slot_is_pds(SGXFIVE_TRI_SLOT_PIXTASK));
 	CHECK(sgxfive_tri_slot_is_pds(SGXFIVE_TRI_SLOT_PIXPDS));
 	CHECK(!sgxfive_tri_slot_is_pds(SGXFIVE_TRI_SLOT_STATE));
+	CHECK(sgxfive_tri_slot_is_pds(SGXFIVE_TRI_SLOT_BGPDS));
+	CHECK(!sgxfive_tri_slot_is_pds(SGXFIVE_TRI_SLOT_BGPIXEL));
 }
 
 /*
@@ -547,11 +549,16 @@ static void refused(void)
 		{ SGXFIVE_TRI_SLOT_PIXEV,
 		  (SGXFIVE_TRI_PROBE_PP_PIXPDS - SGXFIVE_TRI_PP_PIXEV) / 4 + 1, 20, 0 },
 		{ SGXFIVE_TRI_SLOT_PIXPDS, 6, 0, 0 },	/* no data for U0 and U1 */
-		{ SGXFIVE_TRI_SLOT_PIXPDS, (PAGE - SGXFIVE_TRI_PROBE_PP_PIXPDS) / 4 + 1, 4, 0 },
+		{ SGXFIVE_TRI_SLOT_PIXPDS,
+		  (SGXFIVE_TRI_PROBE_PP_BGPDS - SGXFIVE_TRI_PROBE_PP_PIXPDS) / 4 + 1, 4, 0 },
+		{ SGXFIVE_TRI_SLOT_BGPDS, 6, 0, 0 },	/* no data for U0 and U1 */
+		{ SGXFIVE_TRI_SLOT_BGPDS, (PAGE - SGXFIVE_TRI_PROBE_PP_BGPDS) / 4 + 1, 4, 0 },
+		{ SGXFIVE_TRI_SLOT_BGPIXEL, (PAGE - SGXFIVE_TRI_PROBE_UP_BGPIXEL) / 8 + 1, 0, 8 },
 		{ SGXFIVE_TRI_SLOT_VTXPDS, 10, 4, 0 },	/* data too short for dword 4 */
 		{ SGXFIVE_TRI_SLOT_VTXPDS, (PAGE - SGXFIVE_TRI_PROBE_PV_VTX) / 4 + 1, 8, 0 },
 		{ SGXFIVE_TRI_SLOT_EOT, 4, 0, 8 },	/* no emitpix after the PBE words */
-		{ SGXFIVE_TRI_SLOT_EOT, (PAGE - SGXFIVE_TRI_PROBE_UP_EOT) / 8 + 1, 0, 8 },
+		{ SGXFIVE_TRI_SLOT_EOT,
+		  (SGXFIVE_TRI_PROBE_UP_BGPIXEL - SGXFIVE_TRI_PROBE_UP_EOT) / 8 + 1, 0, 8 },
 		{ SGXFIVE_TRI_SLOT_PIXEL,
 		  (SGXFIVE_TRI_PROBE_UP_PIXTASK - SGXFIVE_TRI_PROBE_UP_PIXEL) / 8 + 1, 0, 8 },
 		{ SGXFIVE_TRI_SLOT_PIXTASK,
@@ -579,7 +586,11 @@ static void refused(void)
 		pr.slot[SGXFIVE_TRI_SLOT_PIXEV] = (struct sgxfive_tri_prog){
 			w, (SGXFIVE_TRI_PROBE_PP_PIXPDS - SGXFIVE_TRI_PP_PIXEV) / 4, 128, 0 };
 		pr.slot[SGXFIVE_TRI_SLOT_PIXPDS] = (struct sgxfive_tri_prog){
-			w, (PAGE - SGXFIVE_TRI_PROBE_PP_PIXPDS) / 4, 128, 0 };
+			w, (SGXFIVE_TRI_PROBE_PP_BGPDS - SGXFIVE_TRI_PROBE_PP_PIXPDS) / 4, 128, 0 };
+		pr.slot[SGXFIVE_TRI_SLOT_BGPDS] = (struct sgxfive_tri_prog){
+			w, (PAGE - SGXFIVE_TRI_PROBE_PP_BGPDS) / 4, 128, 0 };
+		pr.slot[SGXFIVE_TRI_SLOT_BGPIXEL] = (struct sgxfive_tri_prog){
+			w, (PAGE - SGXFIVE_TRI_PROBE_UP_BGPIXEL) / 8, 0, 128 };
 		pr.slot[SGXFIVE_TRI_SLOT_PIXEL] = (struct sgxfive_tri_prog){
 			w, (SGXFIVE_TRI_PROBE_UP_PIXTASK - SGXFIVE_TRI_PROBE_UP_PIXEL) / 8, 0, 128 };
 		pr.slot[SGXFIVE_TRI_SLOT_PIXTASK] = (struct sgxfive_tri_prog){
@@ -949,6 +960,180 @@ static void vdm_xor_words(void)
 }
 
 /*
+ * blk_xor and cmd_xor: words of the state block and of the render command flipped by the given
+ * bits after the set words (blk_xor_mask bit i: word i ^= blk_xor_val[i]; the same for cmd), a
+ * word both set and flipped getting the flip on the set value.
+ */
+static void blk_cmd_xor_words(void)
+{
+	struct scene d, s;
+	struct sgxfive_tri_probe pr = { .blk_mask = 1u << 1, .blk_xor_mask = 1u << 1 | 1u << 10,
+					.cmd_mask = 1u << 3, .cmd_xor_mask = 1u << 3 | 1u << 7 };
+	const uint32_t *blk, *dblk;
+	const uint32_t *cmd, *dcmd;
+
+	pr.blk_val[1] = 0x00400200;
+	pr.blk_xor_val[1] = 0x100;
+	pr.blk_xor_val[10] = 0x80000000;
+	pr.cmd_val[3] = 0x1000;
+	pr.cmd_xor_val[3] = 0x1;
+	pr.cmd_xor_val[7] = 0x8;
+	scene_init(&d, 64, 64);
+	scene_init(&s, 64, 64);
+	CHECK_EQ(sgxfive_tri_probe_apply(&s.c, &s.l, &s.p, &pr, &s.cmd), 0);
+	blk = s.c.pdsv + SGXFIVE_TRI_PV_BLOCK / 4;
+	dblk = d.c.pdsv + SGXFIVE_TRI_PV_BLOCK / 4;
+	for (int i = 0; i < SGXFIVE_TRI_BLOCK_WORDS; i++) {
+		const uint32_t want = i == 1 ? 0x00400300 : i == 10 ? dblk[i] ^ 0x80000000 : dblk[i];
+
+		if (!CHECK_EQ(blk[i], want))
+			printf("#   block word %d\n", i);
+	}
+	cmd = (const uint32_t *)&s.cmd;
+	dcmd = (const uint32_t *)&d.cmd;
+	for (int i = 0; i < SGXFIVE_TRI_PROBE_CMD_WORDS; i++) {
+		const uint32_t want = i == 3 ? 0x1001 : i == 7 ? dcmd[i] ^ 0x8 : dcmd[i];
+
+		if (!CHECK_EQ(cmd[i], want))
+			printf("#   command word %d\n", i);
+	}
+	pr.blk_xor_mask = 1u << SGXFIVE_TRI_BLOCK_WORDS;	/* past the block */
+	CHECK_EQ(sgxfive_tri_probe_apply(&s.c, &s.l, &s.p, &pr, &s.cmd), -EINVAL);
+	pr.blk_xor_mask = 0;
+	pr.cmd_xor_mask = 1u << SGXFIVE_TRI_PROBE_CMD_WORDS;	/* past the command */
+	CHECK_EQ(sgxfive_tri_probe_apply(&s.c, &s.l, &s.p, &pr, &s.cmd), -EINVAL);
+	free(d.mem);
+	free(s.mem);
+}
+
+/*
+ * vdm with obj2: the stream has the second object's words (11 to 18 too), set and flipped as
+ * built, so word 9 changes the second state block and leaves the first alone; without obj2
+ * those words are refused.
+ */
+static void vdm_second_state(void)
+{
+	struct scene d, s;
+	struct sgxfive_tri_probe pr = { .vertices = 12, .obj2_first = 6,
+					.vdm_xor_mask = 1u << 9 | 1u << 1, .vdm_mask = 1u << 18 };
+	const uint32_t *vdm;
+
+	pr.vdm_xor_val[9] = 0x200;
+	pr.vdm_xor_val[1] = 0x100;
+	pr.vdm_val[18] = 0xc0000000;
+	scene_init(&d, 64, 64);
+	scene_init(&s, 64, 64);
+	CHECK_EQ(sgxfive_tri_probe_apply(&s.c, &s.l, &s.p, &pr, &s.cmd), 0);
+	vdm = s.c.gen + SGXFIVE_TRI_G_VDM / 4;
+	/* the second block's word is the first's as built, flipped; the first's flipped alone */
+	CHECK_EQ(vdm[1], d.c.gen[SGXFIVE_TRI_G_VDM / 4 + 1] ^ 0x100);
+	CHECK_EQ(vdm[9], d.c.gen[SGXFIVE_TRI_G_VDM / 4 + 1] ^ 0x200);
+	CHECK_EQ(vdm[18], 0xc0000000u);
+	pr.obj2_first = 0;
+	pr.vertices = 0;
+	CHECK_EQ(sgxfive_tri_probe_apply(&s.c, &s.l, &s.p, &pr, &s.cmd), -EINVAL);
+	pr.vdm_xor_mask = 1u << SGXFIVE_TRI_PROBE_VDM2_WORDS;	/* past the two-object stream */
+	pr.obj2_first = 6;
+	pr.vertices = 12;
+	CHECK_EQ(sgxfive_tri_probe_apply(&s.c, &s.l, &s.p, &pr, &s.cmd), -EINVAL);
+	free(d.mem);
+	free(s.mem);
+}
+
+/*
+ * bgpixel and bgpds: the background object's pixel shader at SGXFIVE_TRI_PROBE_UP_BGPIXEL, started
+ * by the background primary (the default's, or the bgpds slot's data dword 0), and its primary
+ * pixel PDS program at SGXFIVE_TRI_PROBE_PP_BGPDS, which the render command's background object
+ * words point at; the triangle's own words stay.
+ */
+static void background_slots(void)
+{
+	struct scene d, s;
+	struct sgxfive_tri_probe pr = { .scratch = 0x3e100000 };
+	uint64_t pix[2] = { 0xfa44070000000005ull, 0xf804014000000000ull }, w[12];
+	const uint32_t at = SGXFIVE_TRI_PROBE_PP_BGPDS, uat = SGXFIVE_TRI_PROBE_UP_BGPIXEL;
+
+	for (int i = 0; i < 12; i++)
+		w[i] = 0xc0000000u | i;
+	w[6] = SGXFIVE_TRI_PROBE_SCRATCH_IMM | 0x40;
+	scene_init(&d, 64, 64);
+	scene_init(&s, 64, 64);
+	/* the shader alone: the background primary's U0 starts it, the command keeps its words */
+	pr.slot[SGXFIVE_TRI_SLOT_BGPIXEL] = (struct sgxfive_tri_prog){ pix, 2, 0, 8 };
+	CHECK_EQ(sgxfive_tri_probe_apply(&s.c, &s.l, &s.p, &pr, &s.cmd), 0);
+	CHECK_EQ(insn(s.c.usep, uat), pix[0] + (s.l.usep + uat - s.l.usep_base) / 8);
+	CHECK_EQ(insn(s.c.usep, uat + 8), pix[1]);
+	CHECK_EQ(s.c.pdsp[SGXFIVE_TRI_PP_BGPRIM / 4],
+		 sgxfive_tri_doutu(s.l.usep + uat, s.l.usep_base, 0, 8));
+	CHECK_EQ(s.c.pdsp[SGXFIVE_TRI_PP_BGPRIM / 4 + 1], d.c.pdsp[SGXFIVE_TRI_PP_BGPRIM / 4 + 1]);
+	CHECK_EQ(s.cmd.bgobj_words[2], d.cmd.bgobj_words[2]);
+	CHECK_EQ(s.c.pdsp[SGXFIVE_TRI_PP_PRIM / 4], d.c.pdsp[SGXFIVE_TRI_PP_PRIM / 4]);
+	/* the PDS program too: its U0 and U1 the shader's and the background's, the words after
+	 * the caller's, the command pointing at it with the rows of attributes */
+	pr.slot[SGXFIVE_TRI_SLOT_BGPDS] = (struct sgxfive_tri_prog){ w, 12, 8, 0 };
+	CHECK_EQ(sgxfive_tri_probe_apply(&s.c, &s.l, &s.p, &pr, &s.cmd), 0);
+	CHECK_EQ(s.c.pdsp[at / 4], s.c.pdsp[SGXFIVE_TRI_PP_BGPRIM / 4]);
+	CHECK_EQ(s.c.pdsp[at / 4 + 1], d.c.pdsp[SGXFIVE_TRI_PP_BGPRIM / 4 + 1]);
+	for (int i = 2; i < 12; i++)
+		if (i != 6 && !CHECK_EQ(s.c.pdsp[at / 4 + i], (uint32_t)w[i]))
+			printf("#   dword %d\n", i);
+	CHECK_EQ(s.c.pdsp[at / 4 + 6], 0x3e100040);		/* a scratch placeholder */
+	CHECK_EQ(s.cmd.bgobj_words[2], sgxfive_tri_pix_ptr(&s.l, s.l.pdsp + at, 8));
+	CHECK_EQ(s.cmd.bgobj_words[1], SGXFIVE_TRI_PROBE_PIX_ROWS | 3u << 16);
+	CHECK_EQ(s.cmd.bgobj_words[0], d.cmd.bgobj_words[0]);
+	/* the triangle's own primary and state block are the default's */
+	CHECK_EQ(s.c.pdsp[SGXFIVE_TRI_PP_PRIM / 4], d.c.pdsp[SGXFIVE_TRI_PP_PRIM / 4]);
+	CHECK_EQ(s.c.pdsv[SGXFIVE_TRI_PV_BLOCK / 4 + 5], d.c.pdsv[SGXFIVE_TRI_PV_BLOCK / 4 + 5]);
+	/* the PDS program alone keeps the default background shader */
+	pr.slot[SGXFIVE_TRI_SLOT_BGPIXEL].n = 0;
+	free(s.mem);
+	scene_init(&s, 64, 64);
+	CHECK_EQ(sgxfive_tri_probe_apply(&s.c, &s.l, &s.p, &pr, &s.cmd), 0);
+	CHECK_EQ(s.c.pdsp[at / 4], d.c.pdsp[SGXFIVE_TRI_PP_BGPRIM / 4]);
+	free(d.mem);
+	free(s.mem);
+}
+
+/*
+ * pbe: the four PBE words of the end-of-tile task as given, the default task's or the eot slot's,
+ * without touching the registers they load into.
+ */
+static void pbe_words(void)
+{
+	struct scene d, s;
+	struct sgxfive_tri_probe pr = { .pbe_mask = 1u << 1 | 1u << 3 };
+	uint64_t w[7];
+
+	pr.pbe_val[1] = 0x003f003f;
+	pr.pbe_val[3] = 0x3e004000;
+	scene_init(&d, 64, 64);
+	scene_init(&s, 64, 64);
+	CHECK_EQ(sgxfive_tri_probe_apply(&s.c, &s.l, &s.p, &pr, &s.cmd), 0);
+	for (int i = 0; i < 7; i++) {
+		const uint64_t want = i == 2 ? sgxfive_limm_set(insn(d.c.usep, SGXFIVE_TRI_UP_EOT + 8 * i),
+								 0x003f003f) :
+				      i == 4 ? sgxfive_limm_set(insn(d.c.usep, SGXFIVE_TRI_UP_EOT + 8 * i),
+								 0x3e004000) :
+				      insn(d.c.usep, SGXFIVE_TRI_UP_EOT + 8 * i);
+
+		if (!CHECK_EQ(insn(s.c.usep, SGXFIVE_TRI_UP_EOT + 8 * i), want))
+			printf("#   eot instruction %d\n", i);
+	}
+	/* with the eot slot, in its own place */
+	for (int i = 0; i < 7; i++)
+		w[i] = insn(d.c.usep, SGXFIVE_TRI_UP_EOT + 8 * i);
+	pr.slot[SGXFIVE_TRI_SLOT_EOT] = (struct sgxfive_tri_prog){ w, 7, 0, 4 };
+	pr.pbe_mask = 1u << 0;
+	pr.pbe_val[0] = 0x00100020;
+	CHECK_EQ(sgxfive_tri_probe_apply(&s.c, &s.l, &s.p, &pr, &s.cmd), 0);
+	CHECK_EQ(sgxfive_limm_get(insn(s.c.usep, SGXFIVE_TRI_PROBE_UP_EOT + 8)), 0x00100020);
+	CHECK_EQ(sgxfive_limm_get(insn(s.c.usep, SGXFIVE_TRI_PROBE_UP_EOT + 16)),
+		 sgxfive_limm_get(w[2]));
+	free(d.mem);
+	free(s.mem);
+}
+
+/*
  * sideband: with sideband_set, the end-of-tile program's emitpix2 gets the given sideband
  * instead of the default's (0x200); without, the default's.
  */
@@ -1104,6 +1289,180 @@ static void obj2(void)
 	free(d.mem);
 }
 
+
+/*
+ * Wide scenes: more than SGXFIVE_TRI_PROBE_MAX_VERTICES vertices (up to
+ * SGXFIVE_TRI_PROBE_WIDE_VERTICES) go to the gen region's extra pages (gen_size in the CPU
+ * view says how far it reaches): the vertex buffer at SGXFIVE_TRI_PROBE_W_VTX, the 16-bit
+ * indices at SGXFIVE_TRI_PROBE_W_IDX; with the one-page view they are refused.
+ */
+static void wide_vertices(void)
+{
+	struct scene s;
+	const uint32_t cap = SGXFIVE_TRI_PROBE_WIDE_VERTICES;
+	const uint32_t *v, *idx, *vdm;
+	struct sgxfive_tri_probe pr = { .vertices = 300 };
+
+	CHECK_EQ(cap, 1500);
+	scene_init(&s, 1024, 768);
+	/* the one-page view refuses what the page cannot hold */
+	CHECK_EQ(sgxfive_tri_probe_apply(&s.c, &s.l, &s.p, &pr, &s.cmd), -EINVAL);
+	free(s.mem);
+	for (uint32_t n = 129; n <= cap + 3; n += n < 300 ? 171 : n < cap ? 1200 : 3) {
+		uint32_t *mem = calloc(4 + SGXFIVE_TRI_PROBE_GEN_PAGES, PAGE);
+		struct sgxfive_tri_cpu c;
+		struct sgxfive_tri_layout l;
+		struct sgxfive_tri_params p;
+		struct drm_sgxfive_render_cmd cmd;
+
+		c = (struct sgxfive_tri_cpu){ mem, mem + PAGE / 4, mem + 2 * PAGE / 4,
+					      mem + 3 * PAGE / 4, mem + 4 * PAGE / 4,
+					      SGXFIVE_TRI_PROBE_GEN_PAGES * PAGE };
+		l = (struct sgxfive_tri_layout){
+			.pdsv = 0x30400000, .usev = 0x3c000000, .pdsp = 0x2e000000,
+			.usep = 0x37000000, .gen = 0x3e000000, .fb = 0x3e100000,
+			.pds_exec_base = 0x2e000000, .usep_base = 0x37000000,
+			.usev_base = 0x3c000000,
+		};
+		sgxfive_tri_default(&p, 1024, 768);
+		CHECK_EQ(sgxfive_tri_scene(&c, &l, &p, &cmd), 0);
+		pr.vertices = n;
+		if (n % 3 || n > cap) {
+			CHECK_EQ(sgxfive_tri_probe_apply(&c, &l, &p, &pr, &cmd), -EINVAL);
+			free(mem);
+			continue;
+		}
+		v = c.gen + SGXFIVE_TRI_PROBE_W_VTX / 4;
+		idx = c.gen + SGXFIVE_TRI_PROBE_W_IDX / 4;
+		vdm = c.gen + SGXFIVE_TRI_G_VDM / 4;
+		CHECK_EQ(sgxfive_tri_probe_apply(&c, &l, &p, &pr, &cmd), 0);
+		CHECK_EQ(c.pdsv[SGXFIVE_TRI_PV_VTX / 4], l.gen + SGXFIVE_TRI_PROBE_W_VTX);
+		CHECK_EQ(vdm[3], l.gen + SGXFIVE_TRI_PROBE_W_IDX);
+		CHECK_EQ(vdm[2] & 0x3fffffu, n);
+		for (uint32_t i = 0; i < n; i += n > 300 ? 97 : 1) {
+			const int32_t d = i / 3;
+
+			if (!CHECK_EQ(v[4 * i], sgxfive_f32((float)(p.v[i % 3][0] + d) / 8.0f / 1024.0f
+							    - 1.0f)) ||
+			    !CHECK_EQ(v[4 * i + 3], sgxfive_f32(1.0f)) ||
+			    !CHECK_EQ(idx[i / 2] >> (i % 2 * 16) & 0xffff, i))
+				printf("#   vertex %u of %u\n", i, n);
+		}
+		CHECK(SGXFIVE_TRI_PROBE_W_VTX + 16 * n <= SGXFIVE_TRI_PROBE_W_IDX);
+		CHECK(SGXFIVE_TRI_PROBE_W_IDX + 2 * n <= SGXFIVE_TRI_PROBE_GEN_PAGES * PAGE);
+		free(mem);
+	}
+}
+
+/* The rig's gen region holds the wide scene, and the mock draws its triangles. */
+static void rig_wide_vertices(void)
+{
+	struct sgxfive_tri_probe pr = { .vertices = SGXFIVE_TRI_PROBE_WIDE_VERTICES };
+	struct sgxfive_tri_params p;
+	struct sgxfive_tri_counts n;
+	struct env e;
+
+	env_init(&e, 64, 64);
+	sgxfive_tri_default(&p, 64, 64);
+	CHECK_EQ(e.g->cpu.gen_size, SGXFIVE_TRI_PROBE_GEN_PAGES * PAGE);
+	CHECK_EQ(sgxfive_tri_rig_build(e.g, &p, &pr), 0);
+	CHECK_EQ(sgxfive_tri_rig_submit(e.g), 0);
+	CHECK_EQ(sgxfive_tri_rig_wait(e.g, 5 * NSEC), 0);
+	sgxfive_tri_check(&p, e.g->fb, &n);
+	CHECK_EQ(n.tri + n.bg, 64 * 64);
+	CHECK(n.tri > 0);
+	env_fini(&e);
+}
+
+/*
+ * obj2_pixpds: the second object's primary pixel PDS program (a caller's, with its data
+ * dwords, as pixpds is the first's) at SGXFIVE_TRI_PROBE_PP_PRIM2, its data dwords 0 and 1 the
+ * second object's pixel shader's U0 and U1, scratch immediates patched; the second block's
+ * primary words point at it with SGXFIVE_TRI_PROBE_PIX_ROWS rows (unless the caller sets them),
+ * the first block and its primary stay.
+ */
+static void obj2_pixpds(void)
+{
+	struct scene d, s;
+	struct sgxfive_tri_probe pr = { .vertices = 12, .obj2_first = 6, .scratch = 0x3e100000 };
+	uint64_t w[8];
+	const uint32_t *b1, *b2;
+
+	for (int i = 0; i < 8; i++)
+		w[i] = 0xe0000000u | i;
+	w[2] = SGXFIVE_TRI_PROBE_SCRATCH_IMM | 0x40;
+	scene_init(&d, 64, 64);
+	scene_init(&s, 64, 64);
+	pr.obj2_pixpds = (struct sgxfive_tri_prog){ w, 8, 4, 0 };
+	CHECK_EQ(sgxfive_tri_probe_apply(&s.c, &s.l, &s.p, &pr, &s.cmd), 0);
+	b1 = s.c.pdsv + SGXFIVE_TRI_PV_BLOCK / 4;
+	b2 = s.c.gen + SGXFIVE_TRI_PROBE_G_BLK2 / 4;
+	/* U0 and U1 are the second object's shader's (the default fill's here), the rest the caller's */
+	CHECK_EQ(s.c.pdsp[SGXFIVE_TRI_PROBE_PP_PRIM2 / 4],
+		 sgxfive_tri_doutu(s.l.usep + SGXFIVE_TRI_UP_FILL, s.l.usep_base, 0, 0));
+	CHECK_EQ(s.c.pdsp[SGXFIVE_TRI_PROBE_PP_PRIM2 / 4 + 1], d.c.pdsp[SGXFIVE_TRI_PP_PRIM / 4 + 1]);
+	CHECK_EQ(s.c.pdsp[SGXFIVE_TRI_PROBE_PP_PRIM2 / 4 + 2], 0x3e100040u);
+	CHECK_EQ(s.c.pdsp[SGXFIVE_TRI_PROBE_PP_PRIM2 / 4 + 3], 0xe0000003u);
+	CHECK_EQ(s.c.pdsp[SGXFIVE_TRI_PROBE_PP_PRIM2 / 4 + 7], 0xe0000007u);
+	CHECK_EQ(b2[4], SGXFIVE_TRI_PROBE_PIX_ROWS | 3u << 16);
+	CHECK_EQ(b2[5], sgxfive_tri_pix_ptr(&s.l, s.l.pdsp + SGXFIVE_TRI_PROBE_PP_PRIM2, 4));
+	/* the first block and primary are the default's */
+	CHECK(!memcmp(b1, d.c.pdsv + SGXFIVE_TRI_PV_BLOCK / 4, 16 * 4));
+	CHECK(!memcmp(s.c.pdsp, d.c.pdsp, SGXFIVE_TRI_PP_BGPRIM));
+	/* the caller's block words win; without obj2 it is refused; too long for its room too */
+	pr.obj2_blk_mask = 1u << 4;
+	pr.obj2_blk_val[4] = 0x130004;
+	CHECK_EQ(sgxfive_tri_probe_apply(&s.c, &s.l, &s.p, &pr, &s.cmd), 0);
+	CHECK_EQ(b2[4], 0x130004u);
+	pr.obj2_first = 0;
+	pr.vertices = 0;
+	CHECK_EQ(sgxfive_tri_probe_apply(&s.c, &s.l, &s.p, &pr, &s.cmd), -EINVAL);
+	pr.vertices = 12;
+	pr.obj2_first = 6;
+	pr.obj2_pixpds.n = 6;
+	pr.obj2_pixpds.data = 8;	/* data longer than the program */
+	CHECK_EQ(sgxfive_tri_probe_apply(&s.c, &s.l, &s.p, &pr, &s.cmd), -EINVAL);
+	free(d.mem);
+	free(s.mem);
+}
+
+/*
+ * SGXFIVE_TRI_PROBE_TARGET_IMM | k (k < 0x10000) in a replacement's limm or PDS data dword
+ * loads the render target's address + k, as SCRATCH_IMM does the scratch buffer's, with or
+ * without a scratch buffer: a pixel program reads the target it renders to.
+ */
+static void target_immediates(void)
+{
+	struct scene s;
+	struct sgxfive_tri_probe pr = { .scratch = 0x3e100000 };
+	uint64_t pix[3] = { 0xfa44070000000005ull, 0xfc20000000000000ull, 0xfc20000000000000ull };
+	uint64_t w[8];
+
+	for (int i = 0; i < 8; i++)
+		w[i] = 0xe0000000u | i;
+	w[2] = SGXFIVE_TRI_PROBE_TARGET_IMM | 0x24;
+	w[3] = SGXFIVE_TRI_PROBE_SCRATCH_IMM | 0x40;
+	CHECK_EQ(SGXFIVE_TRI_PROBE_TARGET_IMM, 0x5CB00000u);
+	scene_init(&s, 64, 64);
+	pix[1] = sgxfive_limm_set(pix[1], SGXFIVE_TRI_PROBE_TARGET_IMM | 0x10);
+	pix[2] = sgxfive_limm_set(pix[2], SGXFIVE_TRI_PROBE_SCRATCH_IMM | 0x10);
+	pr.slot[SGXFIVE_TRI_SLOT_BGPIXEL] = (struct sgxfive_tri_prog){ pix, 3, 0, 8 };
+	pr.slot[SGXFIVE_TRI_SLOT_BGPDS] = (struct sgxfive_tri_prog){ w, 8, 4, 0 };
+	CHECK_EQ(sgxfive_tri_probe_apply(&s.c, &s.l, &s.p, &pr, &s.cmd), 0);
+	CHECK_EQ(sgxfive_limm_get(insn(s.c.usep, SGXFIVE_TRI_PROBE_UP_BGPIXEL + 8)), s.l.fb + 0x10);
+	CHECK_EQ(sgxfive_limm_get(insn(s.c.usep, SGXFIVE_TRI_PROBE_UP_BGPIXEL + 16)), 0x3e100010u);
+	CHECK_EQ(s.c.pdsp[SGXFIVE_TRI_PROBE_PP_BGPDS / 4 + 2], s.l.fb + 0x24);
+	CHECK_EQ(s.c.pdsp[SGXFIVE_TRI_PROBE_PP_BGPDS / 4 + 3], 0x3e100040u);
+	/* no scratch buffer: the target's immediates are still patched, the scratch's stay */
+	pr.scratch = 0;
+	scene_init(&s, 64, 64);
+	CHECK_EQ(sgxfive_tri_probe_apply(&s.c, &s.l, &s.p, &pr, &s.cmd), 0);
+	CHECK_EQ(sgxfive_limm_get(insn(s.c.usep, SGXFIVE_TRI_PROBE_UP_BGPIXEL + 8)), s.l.fb + 0x10);
+	CHECK_EQ(sgxfive_limm_get(insn(s.c.usep, SGXFIVE_TRI_PROBE_UP_BGPIXEL + 16)),
+		 SGXFIVE_TRI_PROBE_SCRATCH_IMM | 0x10);
+	free(s.mem);
+}
+
 int main(void)
 {
 	slot_names();
@@ -1131,7 +1490,15 @@ int main(void)
 	blk_words();
 	vdm_words();
 	vdm_xor_words();
+	blk_cmd_xor_words();
+	vdm_second_state();
+	background_slots();
+	pbe_words();
 	rig_vertices();
 	obj2();
+	wide_vertices();
+	rig_wide_vertices();
+	obj2_pixpds();
+	target_immediates();
 	return tap_done();
 }

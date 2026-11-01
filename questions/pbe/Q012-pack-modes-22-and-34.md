@@ -3,7 +3,7 @@ id = "Q012"
 question = "what float formats are pack modes 22 and 34, given that both read o0 as an IEEE single (sign, NaN and exponent) and store it at some of the triangle's dwords while the rest change with the job before?"
 unit = "pbe"
 phase = 6
-evidence = ["E032", "E270", "E387", "E406"]
+evidence = ["E032", "E270", "E387", "E406", "E429"]
 terms = ["SIDEBAND.PACKMODE", "PACKMODE"]
 +++
 
@@ -48,3 +48,11 @@ triangle does not cover [infer]. Still open: why o2 and o3 feed nothing at the v
 1.0, 0.5 and 0.3, o3 at 0.25, 0.5 and 0.9), what the mode 22 fields encode at unsaturated values,
 the 45 and 43 pixels at 0 in the mode 22 ramps, the 45 or so pixels of the mode 34 ramp that
 differ, and the fields at other values. Status: narrowed, not answered.
+
+Narrowed in 11.16 (E429, 102 jobs, the room setup of E406): o3 reaches the field o1 fills in both
+modes (mode 34: bits 30:20 of o3's single in bits 21:11 for 0.75, 1.0, 1.5, 2.0 and 4.0 on 537
+pixels, 3 of 3 runs; mode 22: 0x088ffc00 on 851 pixels from 1.0 and on about 550 at 0.75 and in
+the ramps), and o2 reaches o0's field in mode 22 on 61 pixels at 1.0 and
+over; o2 feeds nothing in mode 34 beyond 8 pixels. Still open: which pixels take o3 and why, what
+mode 22's fields encode between 0.25 and 0.5, the constants 0x88 and 0x60800000. Status: narrowed,
+not answered.

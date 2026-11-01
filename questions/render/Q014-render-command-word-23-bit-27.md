@@ -3,7 +3,7 @@ id = "Q014"
 question = "why does a background object whose first PDS word has a high bit wrong render part or all of the first 32x16 tile before the job faults?"
 unit = "render"
 phase = 6
-evidence = ["E029", "E301", "E363"]
+evidence = ["E029", "E301", "E363", "E433"]
 terms = ["cmd_ta.pds_bgnd"]
 +++
 
@@ -25,3 +25,10 @@ pipelined fetch of the previous address, or a cached copy), and what sets how ma
 
 To settle it: the same flips with the pixel PDS heap's second page mapped to a known pattern, and
 with a cache invalidate before the job.
+
+Narrowed in 11.16 (E433, 102 jobs): with bit 27 or 28 flipped, mapping the page 0x1f000 the fetch
+reaches (any of three fills) turns the fault into a hang with 512 pixels changed at 64x32 (the
+first 16 rows whole) where the unmapped job faults with 1024 to 1184 (3 of 3 runs each); with bit
+30 or 31 flipped, mapping the pixel PDS heap's second page changes nothing. So the rows rendered
+depend on whether the fetch resolves; the address of the bit 30 and 31 fetch is not that page.
+Open: that address, and what a cache invalidate does. Status: narrowed, not answered.

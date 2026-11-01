@@ -1,0 +1,10 @@
+title = "probe table pds/iter-wait-textured"
+repo = "data"
+paths = ["pds/iter-wait-textured/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 114
+size = 3019652
+sha256 = "dd8ce7ce77269ac717cafa8a496d4a2088867587a70c73ec566e9a4cd4b83a3c"
+recipe = "probes/pds/iter-wait-textured.toml"
+needs = ["render"]

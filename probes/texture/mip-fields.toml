@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: 2026 Josep Torra
 # texture mip fields: 0 sweeps, 2 probes (written by tools/usse-asm/tex_words.py).
-# T0 bits 20:17 and 26:21 on the mip chain (Q009).
+# T0 bits 20:17 and 26:21 on the mip chain (E276).
 needs = ["render"]
 
 [[probe]]

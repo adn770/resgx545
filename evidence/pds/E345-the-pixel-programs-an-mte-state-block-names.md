@@ -58,7 +58,7 @@ write and the data words they read.
   other, and `DOUTU1.WAIT_ITER` (bit 24) on every primary that iterates without fetching [CAP].
   With a fetch, bit 24 is added where the program uses something besides the coordinates'
   texel: the vertex colour (GLES1's environments, fs_tex_modulate) or a second texture; the
-  half-float luminance texture also carries it, so the rule is not settled (Q093) [infer].
+  half-float luminance texture also carries it, so the rule is not settled (E364, E436) [infer].
 - `DOUTU1.BIT2` is set on every primary, the special object's included, and on 415 of the 474
   constant-loading secondaries; bit 1 is set only in three shaders with loops or branches;
   neither is tied to a program shape beyond that [CAP].

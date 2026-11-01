@@ -1,0 +1,10 @@
+title = "script table render/flag-bit0-dense"
+repo = "data"
+paths = ["render/flag-bit0-dense/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 4
+size = 42191
+sha256 = "09b283cf4efb4cb11aacfc6cc4f24207175f4864ffc0bf5257d3add356ac7e2c"
+recipe = "probes/render/flag-bit0-dense.toml"
+needs = ["render", "kpoke", "regs", "hold_recovery", "reset"]

@@ -3,7 +3,7 @@ id = "Q082"
 question = "what do CR_EVENT_STATUS2 bits 6 and 7 mean, bit 6 set while a job hangs in its pixel task and bit 7 while a TA job hangs or faults?"
 unit = "edm"
 phase = 11
-evidence = ["E317", "E318", "E319", "E357"]
+evidence = ["E317", "E318", "E319", "E357", "E431"]
 terms = ["CR_EVENT_STATUS2"]
 +++
 
@@ -23,3 +23,9 @@ whether a long but progressing TA sets bit 7.
 
 To settle it: loop fills of 16 to 128 iterations in small steps after a reset, and a TA job whose
 vertex program loops a known count, each with the register sampled.
+
+Narrowed in 11.16 (E431, 75 jobs): the latch is a threshold in the loop's length: after a reset
+bit 6 sets for fills of 55 and 56 iterations (3 of 3 runs), 54 (2 of 3) and 56 to 136, never for
+53 or fewer (3 of 3 runs each, 16 to 53). What it measures (a time, an instruction count) and bit
+7 (the TA, a vertex program that loops a known count) are not placed. Status: narrowed, not
+answered.

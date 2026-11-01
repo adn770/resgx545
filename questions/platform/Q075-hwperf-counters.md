@@ -3,7 +3,7 @@ id = "Q075"
 question = "what does each HWPerf counter the firmware records (0x0044-0x0064, 0x0e84-0x0e90 and 0x0eb4-0x0ec0) count, and how does the group in CR_HWPERF_CTRL select them?"
 unit = "platform"
 phase = 11
-evidence = ["E149", "E150", "E152", "E359"]
+evidence = ["E149", "E150", "E152", "E359", "E434"]
 terms = ["CR_HWPERF_CTRL", "CR_HWPERF_COUNTER0"]
 +++
 
@@ -23,3 +23,10 @@ and 0x0ec0, near-constant per kind of job.
 
 To settle it: per group, jobs that differ in one more thing each (triangle count at a fixed pixel
 count, texture fetches, depth tests, memory written), read with the same script.
+
+Narrowed in 11.16 (E434, three runs, 432 jobs): under group 0 register 0x0060 counts 3, 15, 45 and
+126 for 1, 5, 15 and 42 triangles (their vertices) and group 1's 0x0050 does the same; group 0's
+0x0050 counts the pixels a job shades and 0x0048 the 64x64 copy's 4096 fetches [infer]; 0x004c
+counts 7 a triangle up to 15 triangles. The other counters of each group are tabled in the data,
+not identified; the fills and copy of other shapes at the right strides count the same 4096 pixels
+(3 of 3). Status: narrowed, not answered.

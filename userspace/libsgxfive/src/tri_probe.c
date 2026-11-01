@@ -15,6 +15,7 @@ static const char *const slot_names[SGXFIVE_TRI_SLOT_COUNT] = {
 	[SGXFIVE_TRI_SLOT_VTXPDS] = "vtxpds", [SGXFIVE_TRI_SLOT_VTXUSE] = "vtxuse",
 	[SGXFIVE_TRI_SLOT_PIXEL] = "pixel", [SGXFIVE_TRI_SLOT_PIXTASK] = "pixtask",
 	[SGXFIVE_TRI_SLOT_PIXPDS] = "pixpds", [SGXFIVE_TRI_SLOT_STATE] = "state",
+	[SGXFIVE_TRI_SLOT_BGPDS] = "bgpds", [SGXFIVE_TRI_SLOT_BGPIXEL] = "bgpixel",
 };
 
 int sgxfive_tri_slot_find(const char *name)
@@ -33,7 +34,7 @@ const char *sgxfive_tri_slot_name(unsigned int slot)
 bool sgxfive_tri_slot_is_pds(unsigned int slot)
 {
 	return slot == SGXFIVE_TRI_SLOT_PIXEV || slot == SGXFIVE_TRI_SLOT_VTXPDS ||
-	       slot == SGXFIVE_TRI_SLOT_PIXPDS;
+	       slot == SGXFIVE_TRI_SLOT_PIXPDS || slot == SGXFIVE_TRI_SLOT_BGPDS;
 }
 
 /* Per slot: its place (page offset and end), the data dwords patched, default temps. */
@@ -41,13 +42,15 @@ static const struct {
 	uint32_t off, end, min_data, temps;
 } slot_place[SGXFIVE_TRI_SLOT_COUNT] = {
 	[SGXFIVE_TRI_SLOT_PIXEV] = { SGXFIVE_TRI_PP_PIXEV, SGXFIVE_TRI_PROBE_PP_PIXPDS, 16, 0 },
-	[SGXFIVE_TRI_SLOT_EOT] = { SGXFIVE_TRI_PROBE_UP_EOT, SGXFIVE_PAGE_SIZE, 0, 4 },
+	[SGXFIVE_TRI_SLOT_EOT] = { SGXFIVE_TRI_PROBE_UP_EOT, SGXFIVE_TRI_PROBE_UP_BGPIXEL, 0, 4 },
 	[SGXFIVE_TRI_SLOT_VTXPDS] = { SGXFIVE_TRI_PROBE_PV_VTX, SGXFIVE_PAGE_SIZE, 8, 0 },
 	[SGXFIVE_TRI_SLOT_VTXUSE] = { SGXFIVE_TRI_PROBE_UV_VTX, SGXFIVE_PAGE_SIZE, 0, 0 },
 	[SGXFIVE_TRI_SLOT_PIXEL] = { SGXFIVE_TRI_PROBE_UP_PIXEL, SGXFIVE_TRI_PROBE_UP_PIXTASK, 0, 0 },
 	[SGXFIVE_TRI_SLOT_PIXTASK] = { SGXFIVE_TRI_PROBE_UP_PIXTASK, SGXFIVE_TRI_PROBE_UP_EOT, 0, 0 },
-	[SGXFIVE_TRI_SLOT_PIXPDS] = { SGXFIVE_TRI_PROBE_PP_PIXPDS, SGXFIVE_PAGE_SIZE, 4, 0 },
+	[SGXFIVE_TRI_SLOT_PIXPDS] = { SGXFIVE_TRI_PROBE_PP_PIXPDS, SGXFIVE_TRI_PROBE_PP_BGPDS, 4, 0 },
 	[SGXFIVE_TRI_SLOT_STATE] = { SGXFIVE_TRI_UV_MTE18, SGXFIVE_TRI_UV_MTE2, 0, 0 },
+	[SGXFIVE_TRI_SLOT_BGPDS] = { SGXFIVE_TRI_PROBE_PP_BGPDS, SGXFIVE_PAGE_SIZE, 4, 0 },
+	[SGXFIVE_TRI_SLOT_BGPIXEL] = { SGXFIVE_TRI_PROBE_UP_BGPIXEL, SGXFIVE_PAGE_SIZE, 0, 0 },
 };
 
 #define EOT_MIN_WORDS	6	/* phas, the four PBE movs, the emitpix2 */
@@ -121,8 +124,22 @@ static void set_insn(uint32_t *p, uint32_t i, uint64_t v)
  * The PDS words at area + off, keeping the dwords keep[] says from what is there, and with
  * every data dword SGXFIVE_TRI_PROBE_SCRATCH_IMM | k pointing at scratch + k.
  */
+struct imm_base {
+	uint32_t scratch, target;	/* 0: that kind of immediate is not patched */
+};
+
+/* imm, or the address its 0x5CAF or 0x5CB0 prefix and low 16 bits name */
+static uint32_t imm_patch(uint32_t imm, const struct imm_base *b)
+{
+	if (b->scratch && (imm & ~0xffffu) == SGXFIVE_TRI_PROBE_SCRATCH_IMM)
+		return b->scratch + (imm & 0xffff);
+	if (b->target && (imm & ~0xffffu) == SGXFIVE_TRI_PROBE_TARGET_IMM)
+		return b->target + (imm & 0xffff);
+	return imm;
+}
+
 static void put_pds(uint32_t *area, uint32_t off, const struct sgxfive_tri_prog *g,
-		    const uint32_t *keep, unsigned int nkeep, uint32_t scratch)
+		    const uint32_t *keep, unsigned int nkeep, const struct imm_base *ib)
 {
 	uint32_t saved[16], *w = area + off / 4;
 
@@ -130,8 +147,8 @@ static void put_pds(uint32_t *area, uint32_t off, const struct sgxfive_tri_prog 
 		saved[k] = w[keep[k]];
 	for (uint32_t i = 0; i < g->n; i++) {
 		w[i] = (uint32_t)g->words[i];
-		if (scratch && i < g->data && (w[i] & ~0xffffu) == SGXFIVE_TRI_PROBE_SCRATCH_IMM)
-			w[i] = scratch + (w[i] & 0xffff);
+		if (i < g->data)
+			w[i] = imm_patch(w[i], ib);
 	}
 	for (unsigned int k = 0; k < nkeep; k++)
 		w[keep[k]] = saved[k];
@@ -139,7 +156,7 @@ static void put_pds(uint32_t *area, uint32_t off, const struct sgxfive_tri_prog 
 
 /* The USSE words at area + off with their scratch immediates patched. */
 static uint32_t *put_usse(uint32_t *area, uint32_t off, const struct sgxfive_tri_prog *g,
-			  uint32_t scratch)
+			  const struct imm_base *ib)
 {
 	uint32_t *w = area + off / 4;
 
@@ -147,9 +164,8 @@ static uint32_t *put_usse(uint32_t *area, uint32_t off, const struct sgxfive_tri
 		uint64_t v = g->words[i];
 		const uint32_t imm = sgxfive_limm_get(v);
 
-		if (scratch && (v & LIMM_MASK) == LIMM_VAL &&
-		    (imm & ~0xffffu) == SGXFIVE_TRI_PROBE_SCRATCH_IMM)
-			v = sgxfive_limm_set(v, scratch + (imm & 0xffff));
+		if ((v & LIMM_MASK) == LIMM_VAL && imm_patch(imm, ib) != imm)
+			v = sgxfive_limm_set(v, imm_patch(imm, ib));
 		set_insn(w, i, v);
 	}
 	return w;
@@ -203,8 +219,11 @@ static void put_copies(const struct sgxfive_tri_cpu *c, const struct sgxfive_tri
 		       const struct sgxfive_tri_params *p, uint32_t n, bool depth)
 {
 	const bool big = n * 16 > SGXFIVE_TRI_G_IDX - SGXFIVE_TRI_G_VTX;
-	const uint32_t vat = big ? SGXFIVE_TRI_PROBE_G_VTX : SGXFIVE_TRI_G_VTX;
-	const uint32_t iat = big ? SGXFIVE_TRI_PROBE_G_IDX : SGXFIVE_TRI_G_IDX;
+	const bool wide = n > SGXFIVE_TRI_PROBE_MAX_VERTICES;
+	const uint32_t vat = wide ? SGXFIVE_TRI_PROBE_W_VTX :
+			     big ? SGXFIVE_TRI_PROBE_G_VTX : SGXFIVE_TRI_G_VTX;
+	const uint32_t iat = wide ? SGXFIVE_TRI_PROBE_W_IDX :
+			     big ? SGXFIVE_TRI_PROBE_G_IDX : SGXFIVE_TRI_G_IDX;
 	uint32_t *v = c->gen + vat / 4, *idx = c->gen + iat / 4;
 	uint32_t *vdm = c->gen + SGXFIVE_TRI_G_VDM / 4;
 
@@ -250,6 +269,8 @@ static int put_obj2(const struct sgxfive_tri_cpu *c, const struct sgxfive_tri_la
 		    const struct sgxfive_tri_probe *pr)
 {
 	const struct sgxfive_tri_prog *g = &pr->obj2_pixel;
+	const struct sgxfive_tri_prog *pp2 = &pr->obj2_pixpds;
+	const struct imm_base ib = { pr->scratch, l->fb };
 	const uint32_t first = pr->obj2_first, n = pr->vertices;
 	uint32_t *vdm = c->gen + SGXFIVE_TRI_G_VDM / 4;
 	const uint32_t words = (vdm[1] & VDM_ATTR_ROWS) * 4;
@@ -269,7 +290,9 @@ static int put_obj2(const struct sgxfive_tri_cpu *c, const struct sgxfive_tri_la
 	    (uint64_t)pr->slot[SGXFIVE_TRI_SLOT_PIXEL].n * 8 >
 		    SGXFIVE_TRI_PROBE_UP_PIXEL2 - SGXFIVE_TRI_PROBE_UP_PIXEL ||
 	    (uint64_t)g->n * 8 > SGXFIVE_TRI_PROBE_UP_PIXTASK - SGXFIVE_TRI_PROBE_UP_PIXEL2 ||
-	    (g->n && g->temps > USE_MAX_TEMPS))
+	    (g->n && g->temps > USE_MAX_TEMPS) ||
+	    (pp2->n && ((uint64_t)pp2->n * 4 > SGXFIVE_TRI_PROBE_PP_PIXPDS - SGXFIVE_TRI_PROBE_PP_PRIM2 ||
+			pp2->data % 4 || pp2->data < 4 || pp2->data > PDS_MAX_DATA || pp2->n <= pp2->data)))
 		return -EINVAL;
 
 	/* the block: the first's, the caller's words, its own primary */
@@ -277,8 +300,10 @@ static int put_obj2(const struct sgxfive_tri_cpu *c, const struct sgxfive_tri_la
 		blk2[i] = pr->obj2_blk_mask >> i & 1 ? pr->obj2_blk_val[i] : blk[i];
 		if (!(pr->obj2_blk_mask >> i & 1) && blk2[i] == pri)
 			blk2[i] = sgxfive_tri_pix_ptr(l, l->pdsp + SGXFIVE_TRI_PROBE_PP_PRIM2,
-						      PRIM_DATA);
+						      pp2->n ? pp2->data : PRIM_DATA);
 	}
+	if (pp2->n && !(pr->obj2_blk_mask >> 4 & 1))
+		blk2[4] = SGXFIVE_TRI_PROBE_PIX_ROWS | 3u << 16;
 	memcpy(mte2, c->pdsv + SGXFIVE_TRI_PV_MTE / 4, SGXFIVE_TRI_PV_EOS - SGXFIVE_TRI_PV_MTE);
 	mte2[0] = l->gen + SGXFIVE_TRI_PROBE_G_BLK2;
 
@@ -286,7 +311,7 @@ static int put_obj2(const struct sgxfive_tri_cpu *c, const struct sgxfive_tri_la
 	memcpy(prim2, c->pdsp + SGXFIVE_TRI_PP_PRIM / 4, SGXFIVE_TRI_PP_BGPRIM - SGXFIVE_TRI_PP_PRIM);
 	if (g->n) {
 		const uint32_t at = l->usep + SGXFIVE_TRI_PROBE_UP_PIXEL2;
-		uint32_t *pw = put_usse(c->usep, SGXFIVE_TRI_PROBE_UP_PIXEL2, g, pr->scratch);
+		uint32_t *pw = put_usse(c->usep, SGXFIVE_TRI_PROBE_UP_PIXEL2, g, &ib);
 		const uint64_t i0 = get_insn(pw, 0);
 
 		if ((i0 & PHAS_MASK) == PHAS_VAL && (i0 & PHAS_NEXT))
@@ -294,6 +319,15 @@ static int put_obj2(const struct sgxfive_tri_cpu *c, const struct sgxfive_tri_la
 		prim2[0] = sgxfive_tri_doutu(at, l->usep_base, 0, temps(SGXFIVE_TRI_SLOT_PIXEL, g));
 	} else {
 		prim2[0] = sgxfive_tri_doutu(l->usep + SGXFIVE_TRI_UP_FILL, l->usep_base, 0, 0);
+	}
+
+	if (pp2->n) {
+		/* the caller's primary: its U0 and U1 the shader's, as the default's */
+		const uint32_t u0 = prim2[0], u1 = prim2[1];
+
+		put_pds(c->pdsp, SGXFIVE_TRI_PROBE_PP_PRIM2, pp2, NULL, 0, &ib);
+		prim2[0] = u0;
+		prim2[1] = u1;
 	}
 
 	/* the index list and the VDM stream: object 1, object 2, end of scene, terminate */
@@ -317,6 +351,7 @@ int sgxfive_tri_probe_apply(const struct sgxfive_tri_cpu *c, const struct sgxfiv
 	static const uint32_t pixev_keep[] = { 0, 1, 2, 3, 4, 5, 12, SGXFIVE_TRI_PROBE_PIXTASK_U0 };
 	static const uint32_t vtxpds_keep[] = { 0, 1, 2, 4 };
 	const struct sgxfive_tri_prog *s = pr->slot;
+	const struct imm_base ib = { pr->scratch, l->fb };
 	uint32_t *pixev = c->pdsp + SGXFIVE_TRI_PP_PIXEV / 4;
 	uint32_t *vtxpds = c->pdsv + SGXFIVE_TRI_PV_VTX / 4;
 	uint32_t *vdm = c->gen + SGXFIVE_TRI_G_VDM / 4;
@@ -325,11 +360,17 @@ int sgxfive_tri_probe_apply(const struct sgxfive_tri_cpu *c, const struct sgxfiv
 	for (unsigned int i = 0; i < SGXFIVE_TRI_SLOT_COUNT; i++)
 		if (check(i, &s[i]))
 			return -EINVAL;
-	if (pr->vertices % 3 || pr->vertices > SGXFIVE_TRI_PROBE_MAX_VERTICES)
+	if (pr->obj2_pixpds.n && !pr->obj2_first)
 		return -EINVAL;
-	if (pr->coords > OUTSEL_VTX_SIZE_MAX - 4 || pr->blk_mask >> SGXFIVE_TRI_BLOCK_WORDS ||
-	    pr->cmd_mask >> SGXFIVE_TRI_PROBE_CMD_WORDS || pr->vdm_mask >> SGXFIVE_TRI_VDM_WORDS ||
-	    pr->vdm_xor_mask >> SGXFIVE_TRI_VDM_WORDS)
+	if (pr->vertices % 3 || pr->vertices > SGXFIVE_TRI_PROBE_WIDE_VERTICES ||
+	    (pr->vertices > SGXFIVE_TRI_PROBE_MAX_VERTICES &&
+	     (pr->obj2_first || c->gen_size < SGXFIVE_TRI_PROBE_GEN_PAGES * SGXFIVE_PAGE_SIZE)))
+		return -EINVAL;
+	if (pr->coords > OUTSEL_VTX_SIZE_MAX - 4 ||
+	    (pr->blk_mask | pr->blk_xor_mask) >> SGXFIVE_TRI_BLOCK_WORDS ||
+	    (pr->cmd_mask | pr->cmd_xor_mask) >> SGXFIVE_TRI_PROBE_CMD_WORDS ||
+	    (pr->vdm_mask | pr->vdm_xor_mask) >> (pr->obj2_first ? SGXFIVE_TRI_PROBE_VDM2_WORDS :
+						  SGXFIVE_TRI_VDM_WORDS))
 		return -EINVAL;
 	if (pr->coords) {
 		uint32_t *blk = c->pdsv + SGXFIVE_TRI_PV_BLOCK / 4;
@@ -350,7 +391,7 @@ int sgxfive_tri_probe_apply(const struct sgxfive_tri_cpu *c, const struct sgxfiv
 
 		/* as render.c's put_eot */
 		sgxfive_pbe(pbe, &r, 4 * p->width, l->fb);
-		w = put_usse(c->usep, SGXFIVE_TRI_PROBE_UP_EOT, g, pr->scratch);
+		w = put_usse(c->usep, SGXFIVE_TRI_PROBE_UP_EOT, g, &ib);
 		for (unsigned int i = 0; i < 4; i++)
 			set_insn(w, 1 + i, sgxfive_limm_set(get_insn(w, 1 + i) + ((uint64_t)i << 21),
 							    pbe[i]));
@@ -359,10 +400,46 @@ int sgxfive_tri_probe_apply(const struct sgxfive_tri_cpu *c, const struct sgxfiv
 		pixev[3] = sgxfive_tri_doutu(l->usep + SGXFIVE_TRI_PROBE_UP_EOT, l->usep_base, 0,
 					     temps(SGXFIVE_TRI_SLOT_EOT, g));
 	}
+	if (pr->pbe_mask) {
+		/* the end-of-tile task's four PBE words are the immediates of its instructions 1-4 */
+		uint32_t *w = c->usep + (s[SGXFIVE_TRI_SLOT_EOT].n ? SGXFIVE_TRI_PROBE_UP_EOT :
+					 SGXFIVE_TRI_UP_EOT) / 4;
+
+		for (unsigned int i = 0; i < 4; i++)
+			if (pr->pbe_mask >> i & 1)
+				set_insn(w, 1 + i, sgxfive_limm_set(get_insn(w, 1 + i), pr->pbe_val[i]));
+	}
+	if (s[SGXFIVE_TRI_SLOT_BGPIXEL].n || s[SGXFIVE_TRI_SLOT_BGPDS].n) {
+		const struct sgxfive_tri_prog *u = &s[SGXFIVE_TRI_SLOT_BGPIXEL];
+		const struct sgxfive_tri_prog *g = &s[SGXFIVE_TRI_SLOT_BGPDS];
+		uint32_t *prim = c->pdsp + SGXFIVE_TRI_PP_BGPRIM / 4;
+
+		if (u->n) {
+			const uint32_t at = l->usep + SGXFIVE_TRI_PROBE_UP_BGPIXEL;
+			uint32_t *pw = put_usse(c->usep, SGXFIVE_TRI_PROBE_UP_BGPIXEL, u, &ib);
+			const uint64_t i0 = get_insn(pw, 0);
+
+			if ((i0 & PHAS_MASK) == PHAS_VAL && (i0 & PHAS_NEXT))
+				set_insn(pw, 0, i0 + (at - l->usep_base) / 8);
+			prim[0] = sgxfive_tri_doutu(at, l->usep_base, 0,
+						    temps(SGXFIVE_TRI_SLOT_BGPIXEL, u));
+		}
+		if (g->n) {
+			const uint32_t at = SGXFIVE_TRI_PROBE_PP_BGPDS;
+			uint32_t *dst = c->pdsp + at / 4;
+
+			/* the shader's U0 and U1, as the default background primary has them */
+			put_pds(c->pdsp, at, g, NULL, 0, &ib);
+			dst[0] = prim[0];
+			dst[1] = prim[1];
+			cmd->bgobj_words[1] = SGXFIVE_TRI_PROBE_PIX_ROWS | 3u << 16;
+			cmd->bgobj_words[2] = sgxfive_tri_pix_ptr(l, l->pdsp + at, g->data);
+		}
+	}
 	if (s[SGXFIVE_TRI_SLOT_PIXTASK].n) {
 		const struct sgxfive_tri_prog *g = &s[SGXFIVE_TRI_SLOT_PIXTASK];
 
-		w = put_usse(c->usep, SGXFIVE_TRI_PROBE_UP_PIXTASK, g, pr->scratch);
+		w = put_usse(c->usep, SGXFIVE_TRI_PROBE_UP_PIXTASK, g, &ib);
 		/*
 		 * A plain task the pixel-event program starts hung on hardware at any
 		 * place but the PTOFF program's: that program becomes its phas and a br
@@ -388,7 +465,7 @@ int sgxfive_tri_probe_apply(const struct sgxfive_tri_cpu *c, const struct sgxfiv
 
 		/* dword 11 stays the caller's unless the pixtask slot put its U0 there */
 		put_pds(c->pdsp, SGXFIVE_TRI_PP_PIXEV, g, pixev_keep,
-			s[SGXFIVE_TRI_SLOT_PIXTASK].n ? 8 : 7, pr->scratch);
+			s[SGXFIVE_TRI_SLOT_PIXTASK].n ? 8 : 7, &ib);
 		cmd->event_pixel_pds_data = g->data / 4;
 		/*
 		 * 0 [HW]: with any of bits 5:0 set douta does not reach the task's
@@ -402,7 +479,7 @@ int sgxfive_tri_probe_apply(const struct sgxfive_tri_cpu *c, const struct sgxfiv
 		const uint32_t at = l->usev + SGXFIVE_TRI_PROBE_UV_VTX;
 		uint64_t i0;
 
-		w = put_usse(c->usev, SGXFIVE_TRI_PROBE_UV_VTX, g, pr->scratch);
+		w = put_usse(c->usev, SGXFIVE_TRI_PROBE_UV_VTX, g, &ib);
 		/* as render.c's put_vertex_programs, for a two-phase program */
 		i0 = get_insn(w, 0);
 		if ((i0 & PHAS_MASK) == PHAS_VAL && (i0 & PHAS_NEXT))
@@ -413,7 +490,7 @@ int sgxfive_tri_probe_apply(const struct sgxfive_tri_cpu *c, const struct sgxfiv
 	if (s[SGXFIVE_TRI_SLOT_STATE].n) {
 		const struct sgxfive_tri_prog *g = &s[SGXFIVE_TRI_SLOT_STATE];
 
-		put_usse(c->usev, SGXFIVE_TRI_UV_MTE18, g, pr->scratch);
+		put_usse(c->usev, SGXFIVE_TRI_UV_MTE18, g, &ib);
 		c->pdsv[SGXFIVE_TRI_PV_MTE / 4 + 4] =
 			sgxfive_tri_doutu(l->usev + SGXFIVE_TRI_UV_MTE18, l->usev_base,
 					  SGXFIVE_TRI_USEV_CBASE, temps(SGXFIVE_TRI_SLOT_STATE, g));
@@ -425,7 +502,7 @@ int sgxfive_tri_probe_apply(const struct sgxfive_tri_cpu *c, const struct sgxfiv
 
 		for (unsigned int k = 0; k < 4; k++)
 			dst[vtxpds_keep[k]] = vtxpds[vtxpds_keep[k]];
-		put_pds(c->pdsv, SGXFIVE_TRI_PROBE_PV_VTX, g, vtxpds_keep, 4, pr->scratch);
+		put_pds(c->pdsv, SGXFIVE_TRI_PROBE_PV_VTX, g, vtxpds_keep, 4, &ib);
 		vdm[6] = (vdm[6] & 0xf0000000u) | ((at >> 4) & 0x0fffffff);
 		vdm[7] = (vdm[7] & ~VDM_DATA_ROWS) | g->data / 4;
 	}
@@ -433,7 +510,7 @@ int sgxfive_tri_probe_apply(const struct sgxfive_tri_cpu *c, const struct sgxfiv
 		const struct sgxfive_tri_prog *g = &s[SGXFIVE_TRI_SLOT_PIXEL];
 
 		const uint32_t at = l->usep + SGXFIVE_TRI_PROBE_UP_PIXEL;
-		uint32_t *pw = put_usse(c->usep, SGXFIVE_TRI_PROBE_UP_PIXEL, g, pr->scratch);
+		uint32_t *pw = put_usse(c->usep, SGXFIVE_TRI_PROBE_UP_PIXEL, g, &ib);
 		const uint64_t i0 = get_insn(pw, 0);
 
 		/* a two-phase shader, as the vtxuse slot's: its next phase from the code base */
@@ -449,7 +526,7 @@ int sgxfive_tri_probe_apply(const struct sgxfive_tri_cpu *c, const struct sgxfiv
 		uint32_t *blk = c->pdsv + SGXFIVE_TRI_PV_BLOCK / 4;
 
 		/* the pixel shader's U0 and U1, as the default primary has them */
-		put_pds(c->pdsp, at, g, NULL, 0, pr->scratch);
+		put_pds(c->pdsp, at, g, NULL, 0, &ib);
 		c->pdsp[at / 4] = c->pdsp[SGXFIVE_TRI_PP_PRIM / 4];
 		c->pdsp[at / 4 + 1] = c->pdsp[SGXFIVE_TRI_PP_PRIM / 4 + 1];
 		blk[4] = SGXFIVE_TRI_PROBE_PIX_ROWS | 3u << 16;
@@ -474,17 +551,28 @@ int sgxfive_tri_probe_apply(const struct sgxfive_tri_cpu *c, const struct sgxfiv
 			if (pr->blk_mask >> i & 1)
 				blk[i] = pr->blk_val[i];
 	}
-	for (unsigned int i = 0; i < SGXFIVE_TRI_VDM_WORDS; i++)
-		if (pr->vdm_mask >> i & 1)
-			vdm[i] = pr->vdm_val[i];
-	for (unsigned int i = 0; i < SGXFIVE_TRI_VDM_WORDS; i++)
-		if (pr->vdm_xor_mask >> i & 1)
-			vdm[i] ^= pr->vdm_xor_val[i];
-	for (unsigned int i = 0; i < SGXFIVE_TRI_PROBE_CMD_WORDS; i++)
+	if (pr->blk_xor_mask) {
+		uint32_t *blk = c->pdsv + SGXFIVE_TRI_PV_BLOCK / 4;
+
+		for (unsigned int i = 0; i < SGXFIVE_TRI_BLOCK_WORDS; i++)
+			if (pr->blk_xor_mask >> i & 1)
+				blk[i] ^= pr->blk_xor_val[i];
+	}
+	for (unsigned int i = 0; i < SGXFIVE_TRI_PROBE_CMD_WORDS; i++) {
 		if (pr->cmd_mask >> i & 1)
 			((uint32_t *)cmd)[i] = pr->cmd_val[i];
+		if (pr->cmd_xor_mask >> i & 1)
+			((uint32_t *)cmd)[i] ^= pr->cmd_xor_val[i];
+	}
+	/* the second object copies the first's state and stream words: the stream is set after it */
 	if (pr->obj2_first && put_obj2(c, l, pr))
 		return -EINVAL;
+	for (unsigned int i = 0; i < SGXFIVE_TRI_PROBE_VDM2_WORDS; i++) {
+		if (pr->vdm_mask >> i & 1)
+			vdm[i] = pr->vdm_val[i];
+		if (pr->vdm_xor_mask >> i & 1)
+			vdm[i] ^= pr->vdm_xor_val[i];
+	}
 	return 0;
 }
 
@@ -518,16 +606,19 @@ int sgxfive_tri_rig_create(struct sgxfive_vm *vm, uint32_t ctx, uint32_t max_w, 
 	/* the target and a guard page after it, whole pages */
 	g->fb_size = ((uint64_t)max_w * max_h * 4 + 2 * SGXFIVE_PAGE_SIZE - 1) &
 		     ~(uint64_t)(SGXFIVE_PAGE_SIZE - 1);
-	ret = sgxfive_bo_create(dev, PG_COUNT * SGXFIVE_PAGE_SIZE,
+	ret = sgxfive_bo_create(dev, (PG_COUNT - 1 + SGXFIVE_TRI_PROBE_GEN_PAGES) * SGXFIVE_PAGE_SIZE,
 				DRM_SGXFIVE_BO_ALLOW_CPU_ACCESS, &g->bo);
 	if (!ret)
 		ret = sgxfive_bo_mmap(g->bo, &map);
 	for (int i = 0; !ret && i < PG_COUNT; i++) {
-		ret = sgxfive_vm_alloc(vm, page_heap[i], SGXFIVE_PAGE_SIZE, SGXFIVE_PAGE_SIZE,
-				       &addr[i]);
+		/* the gen region, the last, has the extra pages of a wide scene after its page */
+		const uint64_t size = (i == PG_GEN ? SGXFIVE_TRI_PROBE_GEN_PAGES : 1) *
+				      SGXFIVE_PAGE_SIZE;
+
+		ret = sgxfive_vm_alloc(vm, page_heap[i], size, SGXFIVE_PAGE_SIZE, &addr[i]);
 		if (!ret)
 			ret = sgxfive_vm_map(vm, addr[i], g->bo, (uint64_t)i * SGXFIVE_PAGE_SIZE,
-					     SGXFIVE_PAGE_SIZE, 0);
+					     size, 0);
 		if (ret)
 			addr[i] = 0;
 	}
@@ -551,6 +642,7 @@ int sgxfive_tri_rig_create(struct sgxfive_vm *vm, uint32_t ctx, uint32_t max_w, 
 		g->cpu = (struct sgxfive_tri_cpu){
 			m, m + SGXFIVE_PAGE_SIZE / 4, m + 2 * SGXFIVE_PAGE_SIZE / 4,
 			m + 3 * SGXFIVE_PAGE_SIZE / 4, m + 4 * SGXFIVE_PAGE_SIZE / 4,
+			SGXFIVE_TRI_PROBE_GEN_PAGES * SGXFIVE_PAGE_SIZE,
 		};
 	}
 	g->fb = fb;
@@ -583,7 +675,9 @@ void sgxfive_tri_rig_destroy(struct sgxfive_tri_rig *g)
 		sgxfive_tri_rig_wait(g, 10LL * 1000000000LL);
 	for (int i = 0; i < PG_COUNT; i++)
 		if (pages[i])
-			sgxfive_vm_unmap(g->vm, pages[i], SGXFIVE_PAGE_SIZE);
+			sgxfive_vm_unmap(g->vm, pages[i], i == PG_GEN ?
+					 SGXFIVE_TRI_PROBE_GEN_PAGES * SGXFIVE_PAGE_SIZE :
+					 SGXFIVE_PAGE_SIZE);
 	if (g->fb_addr)
 		sgxfive_vm_unmap(g->vm, g->fb_addr, g->fb_size);
 	if (g->done)

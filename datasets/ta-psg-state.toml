@@ -1,0 +1,10 @@
+title = "script table ta/psg-state"
+repo = "data"
+paths = ["ta/psg-state/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 4
+size = 47434
+sha256 = "cced2d300230e6e17920bd0c9c7c834c405561e215fc4dfcfb66f3b1f8d8062f"
+recipe = "probes/ta/psg-state.toml"
+needs = ["render", "kpoke", "regs", "render_param", "render_tadata"]

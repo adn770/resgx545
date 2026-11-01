@@ -1,0 +1,10 @@
+title = "script table texture/copy-addresses"
+repo = "data"
+paths = ["texture/copy-addresses/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 4
+size = 1762925
+sha256 = "df2420faa4407a70773681c94650b2fdb42453fea8cba8baaa3ad0859db33d19"
+recipe = "probes/texture/copy-addresses.toml"
+needs = ["render"]

@@ -10,11 +10,11 @@
  *   dummy [-n N]                  N dummy transfers chained through one syncobj
  *   fill  [--width W --height H --x X --y Y --stride S --colour C] [JOB OPTIONS]
  *   copy  [--width W --height H --sx X --sy Y --src-stride S --dx X --dy Y --dst-stride S]
- *         [--every-value]
+ *         [--every-value | --ramp CH=START [--ramp-base V]] [--print-addrs] [--page-before]
  *         [JOB OPTIONS]
  *   isolation                     VM separation, faults, lost contexts, read-only maps
  *   tri   [--width W --height H -n N] [--max-width W --max-height H] [--fault]
- *         [--scratch N [--scratch-fill V]] [--kpoke-render N:SPEC]... [--move N:DX,DY]...
+ *         [--scratch N [--scratch-fill V] [--scratch-at ADDR]] [--kpoke-render N:SPEC]... [--move N:DX,DY]...
  *         [--geometry N]... [--keep-going] [--dump-render DIR] [--words DIR]
  *         [--wait-ms MS] [JOB OPTIONS]
  *                                 the first triangle on a render context, N times,
@@ -25,7 +25,9 @@
  *                                 --scratch maps N more pages (their address printed)
  *                                 for a kernel poke to point a unit at, filled with V
  *                                 (default 0.25f) before each render, the dwords it
- *                                 changed reported page by page; --kpoke-render writes
+ *                                 changed reported page by page; --scratch-at ADDR maps
+ *                                 them at ADDR (a heap's page, say, that a unit fetches
+ *                                 from) instead of in the general heap; --kpoke-render writes
  *                                 SPEC to debugfs kpoke just before render N (each
  *                                 render of the context its own kernel pokes); --move
  *                                 draws render N's triangle DX, DY pixels away;
@@ -47,11 +49,13 @@
  *   regaccess                     client fill shaders that read and write SGX
  *                                 registers, read temporaries they did not write
  *                                 and kick code base 15
- *   probe [--temps N] [--coords] [--pixels] [--pds N --use USE] [--poke xfer:N=V|bg:N=V]...
- *         [--low ADDR] [--late R:K=V] FILE...
+ *   probe [--temps N] [--coords] [--pixels] [--scratch-pages N] [--pds N --use USE]
+ *         [--place OFFSET=FILE --place-form cbase|exe18]
+ *         [--scratch-heap texture] [--poke xfer:N=V|bg:N=V]... [--low ADDR] [--late R:K=V] FILE...
  *                                 each FILE (tools/usse-asm output) as the fill
  *                                 shader of its own fill, with N temporaries
- *                                 (default 32) and a 64 KiB scratch buffer; prints
+ *                                 (default 32) and a 64 KiB scratch buffer (--scratch-pages N: 16
+ *                                 to 64 pages); prints
  *                                 o0 and the scratch dwords the program changed;
  *                                 --coords: as the copy shader of a copy whose
  *                                 source texel (x, y) is (y << 16) | x, so pa0 holds
@@ -65,21 +69,36 @@
  *                                 (page 0 excepted), for the PDS's load and store; needs
  *                                 the kernel's debugfs sgx/vm_low; --late R:K=V: while
  *                                 the job runs, once scratch dword R leaves its fill
- *                                 (or after LATE_NS), the host writes V to dword K
+ *                                 (or after LATE_NS), the host writes V to dword K;
+ *                                 --scratch-heap texture: the scratch buffer in the
+ *                                 texture heap, so that a texture in it is in the
+ *                                 texture region (its address 0xf0000000 and up);
+ *                                 --place OFFSET=FILE --place-form cbase|exe18: the
+ *                                 USE program FILE mapped at the USSE pixel heap's base
+ *                                 + OFFSET (a multiple of 8, below the heap's 5 MiB), its
+ *                                 scratch immediates patched, and started in place of the
+ *                                 fill shader (the probe's own program, at the heap's
+ *                                 base, stays unstarted) by a primary DOUTU whose EXE and
+ *                                 CBASE hold the offset as cbase (bits 18:3 in EXE, bits
+ *                                 22:19 in CBASE) or as exe18 (bits 20:3 in an 18-bit EXE,
+ *                                 CBASE 0)
  *   probe --tri SLOT[:N] [--slot SLOT=FILE[:N]]... [--width W --height H]
  *         [--max-width W --max-height H] [--vertices N [--copy-depth]] [--vtx-coords N]
  *         [--isp2 V] [--blk-add BIT=V[,V]]...
- *         [--blk N=V]... [--cmd N=V]... [--vdm N=V]... [--sideband V] [--temps N]
+ *         [--blk N=V]... [--cmd N=V]... [--vdm N=V]... [--pbe N=V]... [--sideband V]
+ *         [--temps N]
  *         [--pixels] [--dump-render DIR] [--kpoke SPEC]...
  *         [--obj2 FIRST [--obj2-blk N=V]... [--obj2-pixel FILE]] FILE...
  *                                 each FILE as the program SLOT (pixev, eot, vtxpds,
- *                                 vtxuse, pixel, pixtask, pixpds, state; a PDS one with
+ *                                 vtxuse, pixel, pixtask, pixpds, state, bgpds,
+ *                                 bgpixel (the background object's primary PDS and
+ *                                 pixel shader); a PDS one with
  *                                 N data dwords) of the
  *                                 first triangle's render, W x H (default 64 x 64),
  *                                 on a render context for up to --max-width x
  *                                 --max-height (default W x H); each --slot FILE
  *                                 replaces another slot's program in every render;
- *                                 --vertices N (3 to 15, whole triangles): copies of
+ *                                 --vertices N (3 to 1500, whole triangles): copies of
  *                                 the triangle after it, for the vertex programs;
  *                                 --vtx-coords N (1 to 11): N more output dwords per
  *                                 vertex, coordinate sets of four and the rest
@@ -91,8 +110,13 @@
  *                                 added to the state block, which grows; --blk N=V:
  *                                 the state block's word N is V; --cmd N=V: the
  *                                 render command's word N is V; --vdm N=V: the
- *                                 VDM stream's word N is V (after --vtx-coords), with
- *                                 N^=V flipped by V;
+ *                                 VDM stream's word N is V (after --vtx-coords); N^=V
+ *                                 flips the bits of V in the word instead (--blk, --cmd
+ *                                 and --vdm alike); with --obj2 the stream is the
+ *                                 two-object one (words 0-18, word 9 the second state
+ *                                 block's), changed after the second object is built;
+ *                                 --pbe N=V (N 0-3): the end-of-tile task's PBE word N,
+ *                                 the default's or the eot slot's (word 4: --sideband);
  *                                 --dump-render DIR: after the render, the kernel's
  *                                 debugfs render_param and render_tadata copied to
  *                                 DIR/NAME.param.bin and DIR/NAME.tadata.bin;
@@ -103,7 +127,9 @@
  *                                 --obj2 FIRST (with --vertices): the copies from
  *                                 vertex FIRST on as a second object, its state block
  *                                 the first's with --obj2-blk N=V words set and its
- *                                 pixel shader --obj2-pixel FILE (or the default fill).
+ *                                 pixel shader --obj2-pixel FILE (or the default fill)
+ *                                 and primary pixel PDS program --obj2-pixpds FILE:N (N
+ *                                 data dwords; or the default's).
  *                                 Patched as the defaults (sgxfive_tri_probe.h), with
  *                                 the scratch buffer; prints the target's pixels as o0
  *                                 and every scratch dword changed
@@ -117,6 +143,13 @@
  *   --pixels                      every pixel of the target, a row a line
  *   --regs LO-HI                  the SGX registers LO to HI after the job, read-only
  *                                 through /dev/mem (hardware only)
+ *   --ramp CH=START [--ramp-base V]
+ *                                 copy: one channel (a, r, g or b) of the source counts
+ *                                 from START, one a pixel (modulo 256), the others V's
+ *                                 (default 0)
+ *   --print-addrs                 copy: the source's and destination's addresses
+ *   --page-before                 copy: the source's buffer has a page before the source,
+ *                                 dword i holding 0xB0000000 | i
  *   --every-value                 copy: a source with every value of every channel in
  *                                 each run of 256 pixels, a permutation per channel
  * They print the job's result, the target's hash, the pixels that differ from the
@@ -179,6 +212,7 @@ struct opts {
 	bool fault;			/* tri: unmap the scene's stream page first */
 	uint32_t scratch;		/* tri: pages of a scratch buffer for kernel pokes */
 	uint32_t scratch_fill;		/* tri: the scratch buffer's dwords before a render */
+	uint32_t scratch_at;		/* tri: where the scratch buffer is mapped (0: allocated) */
 	/* tri: kernel pokes written to debugfs kpoke just before render n (--kpoke-render) */
 	struct { uint32_t n; const char *spec; } kpr[KPR_MAX];
 	unsigned int nkpr;
@@ -191,6 +225,11 @@ struct opts {
 	struct { uint32_t n; int32_t dx, dy; } moves[KPR_MAX];
 	unsigned int nmoves;
 	bool every_value;		/* copy: the every-value source pattern */
+	bool ramp;			/* copy: --ramp CH=START, one channel counting */
+	uint32_t ramp_shift, ramp_start;	/* ... the channel's low bit, its first value */
+	uint32_t ramp_base;		/* ... the other channels' values (--ramp-base) */
+	bool print_addrs;		/* copy: print where the buffers are (--print-addrs) */
+	bool page_before;		/* copy: a counting page before the source */
 	/* job options (fill, copy, tri) */
 	struct sgxfive_poke pokes[SGXFIVE_POKE_MAX];
 	const char *poke_args[SGXFIVE_POKE_MAX];
@@ -214,9 +253,10 @@ static int usage(void)
 		"       commands: query, dummy [-n N], isolation, regaccess,\n"
 		"                 fill [--width W --height H --x X --y Y --stride S --colour C],\n"
 		"                 copy [--width W --height H --sx X --sy Y --src-stride S\n"
-		"                       --dx X --dy Y --dst-stride S --every-value],\n"
+		"                       --dx X --dy Y --dst-stride S --every-value | --ramp CH=START\n"
+		"                       [--ramp-base V] --print-addrs --page-before],\n"
 		"                 tri [--width W --height H -n N --max-width W --max-height H\n"
-		"                      --fault --scratch N --scratch-fill V\n"
+		"                      --fault --scratch N --scratch-fill V --scratch-at ADDR\n"
 		"                      --kpoke-render N:SPEC --move N:DX,DY --geometry N\n"
 		"                      --keep-going --dump-render DIR --words DIR\n"
 		"                      --wait-ms MS],\n"
@@ -224,14 +264,20 @@ static int usage(void)
 		"                      [--poke SPACE:INDEX^=VALUE]... [--pixels] [--regs LO-HI],\n"
 		"                 contexts [--width W --height H -n N],\n"
 		"                 probe [--temps N] [--coords] [--pixels] [--pds N --use USE]\n"
+		"                       [--place OFFSET=FILE --place-form cbase|exe18]\n"
+		"                       [--scratch-heap texture] [--scratch-pages N]\n"
 		"                       [--poke xfer:N=V|bg:N=V]... [--low ADDR] [--late R:K=V] FILE...,\n"
 		"                 probe --tri SLOT[:N] [--slot SLOT=FILE[:N]]... [--width W\n"
 		"                       --height H --max-width W --max-height H] [--vertices N]\n"
 		"                       [--copy-depth] [--vtx-coords N] [--isp2 V]\n"
 		"                       [--blk-add BIT=V[,V]]... [--blk N=V]...\n"
-		"                       [--cmd N=V]... [--vdm N=V]... [--sideband V]\n"
+		"                       [--cmd N=V]... [--vdm N=V]... [--pbe N=V]... [--sideband V]\n"
+		"                       (--blk, --cmd and --vdm also take N^=V)\n"
 		"                       [--dump-render DIR] [--kpoke SPEC]...\n"
-		"                       [--obj2 FIRST [--obj2-blk N=V]... [--obj2-pixel FILE]]\n"
+		"                       [--obj2 FIRST [--obj2-blk N=V]... [--obj2-pixel FILE]\n"
+		"                        [--obj2-pixpds FILE:N]]\n"
+		"                       [--slot SLOT=FILE[:N]]... (SLOT: pixev eot vtxpds vtxuse pixel\n"
+		"                        pixtask pixpds state bgpds bgpixel)\n"
 		"                       [--temps N] [--pixels] FILE...\n");
 	return 2;
 }
@@ -609,12 +655,16 @@ static int cmd_fill(struct tool *t, const struct opts *o)
 /*
  * The copy's source texel (x, y) of a source sw pixels wide. --every-value: n = y * sw + x
  * runs through every byte value in each channel, each through its own permutation (odd
- * multipliers), so any per-channel function of the value shows in one job.
+ * multipliers), so any per-channel function of the value shows in one job. --ramp CH=START:
+ * one channel is START + n (modulo 256) and the others --ramp-base's.
  */
 static uint32_t pattern(const struct opts *o, uint32_t x, uint32_t y)
 {
 	const uint32_t n = (y * (o->src_stride / 4) + x) & 0xff;
 
+	if (o->ramp)
+		return (o->ramp_base & ~(0xffu << o->ramp_shift)) |
+		       ((o->ramp_start + y * (o->src_stride / 4) + x) & 0xff) << o->ramp_shift;
 	if (o->every_value)
 		return n << 24 | ((n * 167 + 13) & 0xff) << 16 | ((n * 29 + 101) & 0xff) << 8 |
 		       ((n * 93 + 57) & 0xff);
@@ -630,12 +680,15 @@ static bool copy_ok(const void *ctx, uint32_t x, uint32_t y, uint32_t v, uint32_
 	return v == *want;
 }
 
+#define PAGE_BEFORE_FILL	0xB0000000u	/* --page-before: dword i of the page is this | i */
+
 static int cmd_copy(struct tool *t, const struct opts *o)
 {
 	const struct sgxfive_rect r = { o->x, o->y, o->x + o->width, o->y + o->height };
 	const uint32_t srows = o->sy + o->height, drows = o->y + o->height;
 	const uint32_t spages = pages_for(o->src_stride, srows);
 	const uint32_t dpages = pages_for(o->dst_stride, drows);
+	const uint32_t before = o->page_before;	/* pages of the source's buffer before the source */
 	struct sgxfive_bo *sbo = NULL, *dbo = NULL;
 	struct sgxfive_surface src, dst;
 	uint32_t *s = NULL, *d = NULL, bad = 0;
@@ -646,11 +699,23 @@ static int cmd_copy(struct tool *t, const struct opts *o)
 	int ret = side_init(t, &sd);
 
 	if (!ret)
-		ret = surface(t, sd.vm, spages, DRM_SGXFIVE_VM_MAP_READ_ONLY, &saddr, &sbo, &s);
+		ret = surface(t, sd.vm, before + spages, DRM_SGXFIVE_VM_MAP_READ_ONLY, &saddr, &sbo,
+			      &s);
 	if (!ret)
 		ret = surface(t, sd.vm, dpages, 0, &daddr, &dbo, &d);
+	/* the page before the source counts: dword i holds PAGE_BEFORE_FILL | i */
+	for (uint32_t i = 0; !ret && i < before * 1024; i++)
+		s[i] = PAGE_BEFORE_FILL | i;
+	if (!ret) {
+		s += before * 1024;
+		saddr += before * SGXFIVE_PAGE_SIZE;
+	}
 	for (uint32_t i = 0; !ret && i < spages * 1024; i++)
 		s[i] = pattern(o, i % sw, i / sw);
+	if (!ret && o->print_addrs)
+		printf("copy: source at 0x%08llx, destination at 0x%08llx%s\n",
+		       (unsigned long long)saddr, (unsigned long long)daddr,
+		       before ? ", a counting page before the source" : "");
 	src = (struct sgxfive_surface){ saddr, sw, srows, o->src_stride };
 	dst = (struct sgxfive_surface){ daddr, dw, drows, o->dst_stride };
 	if (!ret) {
@@ -915,6 +980,8 @@ struct probe_source {
 	const uint64_t *pds;	/* a PDS probe: the words replacing PDS_SEC (one per slot) */
 	uint32_t pds_n;
 	uint32_t pds_data;	/* its data segment, dwords */
+	bool place_prim;	/* --place: the primary's DOUTU starts the placed program, */
+	uint32_t placed_u0;	/* with these EXE and CBASE bits (21:0) */
 };
 
 /*
@@ -932,7 +999,8 @@ struct probe_source {
 #define LIMM_MASK	0xFF30000000000000ull
 #define LIMM_VAL	0xFC20000000000000ull
 #define SCRATCH_IMM	0x5CAF0000u
-#define SCRATCH_PAGES	16			/* 64 KiB */
+static uint32_t scratch_pages = 16;		/* probe --scratch-pages: 64 KiB by default */
+#define SCRATCH_PAGES	scratch_pages
 #define SCRATCH_FILL(i)	(0xD0000000u | (i))	/* dword i of the scratch buffer, before */
 
 static int probe_meta(struct sgxfive_prog_source *src, uint32_t id, struct sgxfive_prog_meta *m)
@@ -987,6 +1055,14 @@ static int probe_build(struct sgxfive_prog_source *src, uint32_t id,
 		return 0;
 	}
 	ret = p->inner->ops->build(p->inner, id, env, out);
+	if (!ret && id == SGXFIVE_PROG_PDS_PRIM && p->place_prim) {
+		uint32_t u0;
+
+		/* the placed program starts in place of the fill shader: EXE and CBASE (bits 21:0) */
+		memcpy(&u0, out, 4);
+		u0 = (u0 & 0xffc00000u) | p->placed_u0;
+		memcpy(out, &u0, 4);
+	}
 	if (!ret && id == SGXFIVE_PROG_PDS_PRIM && p->cbase15) {
 		uint32_t u0;
 
@@ -1012,7 +1088,7 @@ static int run_probe(struct tool *t, const char *name, const uint64_t *words, ui
 {
 	struct probe_source src = {
 		{ &probe_ops, name }, t->progs, words, n, cbase15, SGXFIVE_PROG_USE_FILL, 0, 0,
-		NULL, 0, 0,
+		NULL, 0, 0, false, 0,
 	};
 	struct sgxfive_prog_source *saved = t->progs;
 	const struct sgxfive_rect r = { 0, 0, 64, 32 };
@@ -1142,6 +1218,10 @@ struct probe_opts {
 	bool pixels;		/* print every pixel */
 	uint32_t pds_data;	/* 0, or the files are PDS programs with this many data dwords */
 	struct probe_file use;	/* with pds_data: the fill's shader (stores sa0-sa15) */
+	bool scratch_texture;	/* --scratch-heap texture: the scratch buffer in the texture heap */
+	struct probe_file place;	/* --place OFFSET=FILE: a USE program in the code heap */
+	uint32_t place_off;	/* ... at the heap base + this */
+	int place_form;		/* --place-form: 0 CBASE, 1 an 18-bit EXE; -1 not given */
 	struct sgxfive_poke pokes[SGXFIVE_POKE_MAX];	/* --poke: words of the fill's command */
 	const char *poke_args[SGXFIVE_POKE_MAX];
 	unsigned int npokes;
@@ -1161,20 +1241,28 @@ struct probe_opts {
 		uint32_t isp2;
 		uint32_t blk_mask;	/* --blk N=V: state block words set */
 		uint32_t blk_val[SGXFIVE_TRI_BLOCK_WORDS];
+		uint32_t blk_xor_mask;	/* --blk N^=V: state block words flipped */
+		uint32_t blk_xor_val[SGXFIVE_TRI_BLOCK_WORDS];
 		uint32_t add_mask;	/* --blk-add BIT=V[,V]: presence bits added */
 		uint32_t add_val[16][2];
 		uint32_t cmd_mask;	/* --cmd N=V: render command words set */
 		uint32_t cmd_val[SGXFIVE_TRI_PROBE_CMD_WORDS];
+		uint32_t cmd_xor_mask;	/* --cmd N^=V: render command words flipped */
+		uint32_t cmd_xor_val[SGXFIVE_TRI_PROBE_CMD_WORDS];
 		uint32_t vdm_mask;	/* --vdm N=V: VDM stream words set */
-		uint32_t vdm_val[SGXFIVE_TRI_VDM_WORDS];
+		uint32_t vdm_val[SGXFIVE_TRI_PROBE_VDM2_WORDS];
 		uint32_t vdm_xor_mask;	/* --vdm N^=V: VDM stream words flipped */
-		uint32_t vdm_xor_val[SGXFIVE_TRI_VDM_WORDS];
+		uint32_t vdm_xor_val[SGXFIVE_TRI_PROBE_VDM2_WORDS];
+		uint32_t pbe_mask;	/* --pbe N=V: the end-of-tile PBE words 0-3 set */
+		uint32_t pbe_val[4];
 		bool sideband_set;	/* --sideband V: the end-of-tile emitpix2's */
 		uint32_t sideband;
 		uint32_t obj2;		/* --obj2 FIRST: 0, or the second object's first vertex */
 		uint32_t obj2_blk_mask;	/* --obj2-blk N=V: its state block words set */
 		uint32_t obj2_blk_val[SGXFIVE_TRI_PROBE_BLK2_WORDS];
 		struct probe_file obj2_pixel;	/* --obj2-pixel FILE (n 0: the default fill) */
+		struct probe_file obj2_pixpds;	/* --obj2-pixpds FILE:N (n 0: the default primary) */
+		uint32_t obj2_pixpds_data;	/* its N data dwords */
 		const char *dump_dir;	/* --dump-render DIR: the render's memory there */
 		const char *kpoke[KPR_MAX];	/* --kpoke SPEC: written before each render */
 		unsigned int nkpoke;
@@ -1297,12 +1385,23 @@ static void probe_late(const char *name, uint32_t *sp, const struct probe_opts *
 	       (t - t0) / 1000, po->late_dword * 4, po->late_value);
 }
 
+/*
+ * The EXE and CBASE bits (19:0) of a DOUTU that starts a program placed at offset off (a multiple
+ * of 8) of the code heap: form 0 has the offset's bits 18:3 in EXE (bits 19:4) and bits 22:19 in
+ * CBASE (bits 3:0); form 1 has bits 20:3 in an 18-bit EXE (bits 21:4) and CBASE 0, which reaches
+ * past bit 19: the word's bits 21:20 are then the offset's bits 20:19, not the temporaries'.
+ */
+static uint32_t placed_doutu(uint32_t off, int form)
+{
+	return form == 0 ? ((off << 1) & 0xffff0) | ((off >> 19) & 0xf) : (off << 1) & 0x3ffff0;
+}
+
 static void probe_one(struct tool *t, const struct probe_file *f, const struct probe_opts *po)
 {
 	struct probe_source src = {
 		{ &probe_ops, f->name }, t->progs, f->words, f->n, false,
 		po->coords ? SGXFIVE_PROG_USE_COPY : SGXFIVE_PROG_USE_FILL, po->temps, 0,
-		NULL, 0, 0,
+		NULL, 0, 0, false, 0,
 	};
 
 	if (po->pds_data) {
@@ -1313,11 +1412,15 @@ static void probe_one(struct tool *t, const struct probe_file *f, const struct p
 		src.pds_n = f->n;
 		src.pds_data = po->pds_data;
 	}
+	if (po->place.n) {
+		src.place_prim = true;
+		src.placed_u0 = placed_doutu(po->place_off, po->place_form);
+	}
 	struct sgxfive_prog_source *saved = t->progs;
 	const struct sgxfive_rect r = { 0, 0, 64, 32 };
 	struct sgxfive_surface dst = { 0, 64, 32, 256 };
-	struct sgxfive_bo *bo = NULL, *sbo = NULL, *cbo = NULL;
-	uint32_t *p = NULL, *sp = NULL, *cp = NULL;
+	struct sgxfive_bo *bo = NULL, *sbo = NULL, *cbo = NULL, *pbo = NULL;
+	uint32_t *p = NULL, *sp = NULL, *cp = NULL, *pp = NULL;
 	uint64_t addr = 0, saddr = 0, caddr = 0;
 	long long t0 = 0;
 	struct side s;
@@ -1329,8 +1432,37 @@ static void probe_one(struct tool *t, const struct probe_file *f, const struct p
 	t->progs = saved;
 	if (!ret)
 		ret = surface(t, s.vm, 2, 0, &addr, &bo, &p);
+	if (!ret && po->scratch_texture)
+		ret = sgxfive_vm_alloc(s.vm, DRM_SGXFIVE_HEAP_TEXTURE,
+				       SCRATCH_PAGES * (uint64_t)SGXFIVE_PAGE_SIZE, SGXFIVE_PAGE_SIZE,
+				       &saddr);
 	if (!ret)
 		ret = surface(t, s.vm, SCRATCH_PAGES, 0, &saddr, &sbo, &sp);
+	if (!ret && po->place.n) {
+		const uint64_t base = sgxfive_dev_info(t->dev)->heaps[DRM_SGXFIVE_HEAP_USSE_PIXEL].base;
+		uint64_t paddr = base + (po->place_off & ~(uint64_t)(SGXFIVE_PAGE_SIZE - 1));
+		const uint32_t at = (po->place_off & (SGXFIVE_PAGE_SIZE - 1)) / 4;	/* dword in its page */
+
+		ret = (po->place_off & (SGXFIVE_PAGE_SIZE - 1)) + po->place.n * 8 > SGXFIVE_PAGE_SIZE ?
+		      -EINVAL : surface(t, s.vm, 1, 0, &paddr, &pbo, &pp);
+		for (uint32_t i = 0; !ret && i < po->place.n; i++) {
+			uint64_t w = po->place.words[i];
+			const uint32_t imm = sgxfive_limm_get(w);
+
+			if ((w & LIMM_MASK) == LIMM_VAL && (imm & ~0xffffu) == SCRATCH_IMM)
+				w = sgxfive_limm_set(w, (uint32_t)saddr + (imm & 0xffff));
+			pp[at + 2 * i] = (uint32_t)w;
+			pp[at + 2 * i + 1] = (uint32_t)(w >> 32);
+		}
+		if (!ret)
+			printf("probe %s: program placed at 0x%08llx (code heap base + 0x%x), "
+			       "started as %s: DOUTU bits 21:0 0x%06x\n", f->name,
+			       (unsigned long long)paddr + at * 4, po->place_off,
+			       po->place_form ? "an 18-bit EXE" : "EXE and CBASE", src.placed_u0);
+		else
+			printf("probe %s: failed: program at 0x%08llx: %s\n", f->name,
+			       (unsigned long long)paddr + at * 4, strerror(-ret));
+	}
 	if (!ret && po->low &&
 	    (ret = sgxfive_vm_map(s.vm, po->low, sbo, 0, SCRATCH_PAGES * SGXFIVE_PAGE_SIZE, 0))) {
 		printf("probe %s: failed: scratch at 0x%08llx: %s\n", f->name,
@@ -1383,6 +1515,7 @@ static void probe_one(struct tool *t, const struct probe_file *f, const struct p
 		probe_report(f->name, p, 64, 32, po->pixels, sp, 32);
 	}
 out:
+	sgxfive_bo_destroy(pbo);
 	sgxfive_bo_destroy(cbo);
 	sgxfive_bo_destroy(sbo);
 	sgxfive_bo_destroy(bo);
@@ -1468,6 +1601,21 @@ static bool probe_tri_size(const char *opt, const char *val, struct probe_tri *p
 	return true;
 }
 
+/* "N=V" or "N^=V" (N below limit, V a 32-bit number): 0, or -1 (usage). */
+static int probe_word_arg(const char *arg, unsigned long limit, unsigned long *n, bool *flip,
+			  unsigned long *v)
+{
+	char *eq, *end;
+
+	*n = strtoul(arg, &eq, 0);
+	*flip = eq[0] == '^';
+	eq += *flip;
+	if (*eq != '=' || eq == arg + *flip || *n >= limit || !eq[1])
+		return -1;
+	*v = strtoul(eq + 1, &end, 0);
+	return *end || *v > UINT32_MAX ? -1 : 0;
+}
+
 /* The --tri options as a whole, with their defaults filled in: 0, or -1 (usage). */
 static int probe_tri_check(struct probe_opts *po)
 {
@@ -1479,15 +1627,19 @@ static int probe_tri_check(struct probe_opts *po)
 	if (pt->slot < 0)
 		return fixed || pt->width || pt->height || pt->max_width || pt->max_height ||
 		       pt->vertices || pt->coords || pt->copy_depth || pt->isp2_set || pt->blk_mask ||
-		       pt->add_mask ||
+		       pt->add_mask || pt->blk_xor_mask || pt->cmd_xor_mask || pt->pbe_mask ||
 		       pt->cmd_mask || pt->vdm_mask || pt->vdm_xor_mask || pt->sideband_set || pt->dump_dir ||
-		       pt->nkpoke || pt->obj2 || pt->obj2_blk_mask || pt->obj2_pixel.n ? -1 : 0;
+		       pt->nkpoke || pt->obj2 || pt->obj2_blk_mask || pt->obj2_pixel.n ||
+		       pt->obj2_pixpds.n ? -1 : 0;
 	if (pt->copy_depth && !pt->vertices)
 		return -1;
 	/* the second object: whole triangles among the copies, and its words only with it */
 	if (pt->obj2 && (pt->obj2 % 3 || pt->obj2 >= pt->vertices))
 		return -1;
-	if (!pt->obj2 && (pt->obj2_blk_mask || pt->obj2_pixel.n))
+	if (!pt->obj2 && (pt->obj2_blk_mask || pt->obj2_pixel.n || pt->obj2_pixpds.n))
+		return -1;
+	/* the stream's words past the one-object stream's are the second object's */
+	if (!pt->obj2 && (pt->vdm_mask | pt->vdm_xor_mask) >> SGXFIVE_TRI_VDM_WORDS)
 		return -1;
 	if (pt->sideband_set && pt->slot != SGXFIVE_TRI_SLOT_EOT && !pt->fixed[SGXFIVE_TRI_SLOT_EOT].n)
 		return -1;
@@ -1592,14 +1744,20 @@ static void probe_tri_one(struct tool *t, const struct probe_file *f,
 	pr.isp2 = pt->isp2;
 	pr.blk_mask = pt->blk_mask;
 	memcpy(pr.blk_val, pt->blk_val, sizeof(pr.blk_val));
+	pr.blk_xor_mask = pt->blk_xor_mask;
+	memcpy(pr.blk_xor_val, pt->blk_xor_val, sizeof(pr.blk_xor_val));
 	pr.add_mask = pt->add_mask;
 	memcpy(pr.add_val, pt->add_val, sizeof(pr.add_val));
 	pr.cmd_mask = pt->cmd_mask;
 	memcpy(pr.cmd_val, pt->cmd_val, sizeof(pr.cmd_val));
+	pr.cmd_xor_mask = pt->cmd_xor_mask;
+	memcpy(pr.cmd_xor_val, pt->cmd_xor_val, sizeof(pr.cmd_xor_val));
 	pr.vdm_mask = pt->vdm_mask;
 	memcpy(pr.vdm_val, pt->vdm_val, sizeof(pr.vdm_val));
 	pr.vdm_xor_mask = pt->vdm_xor_mask;
 	memcpy(pr.vdm_xor_val, pt->vdm_xor_val, sizeof(pr.vdm_xor_val));
+	pr.pbe_mask = pt->pbe_mask;
+	memcpy(pr.pbe_val, pt->pbe_val, sizeof(pr.pbe_val));
 	pr.sideband_set = pt->sideband_set;
 	pr.sideband = pt->sideband;
 	pr.obj2_first = pt->obj2;
@@ -1608,6 +1766,9 @@ static void probe_tri_one(struct tool *t, const struct probe_file *f,
 	if (pt->obj2_pixel.n)
 		pr.obj2_pixel = (struct sgxfive_tri_prog){ pt->obj2_pixel.words, pt->obj2_pixel.n,
 							   0, po->temps };
+	if (pt->obj2_pixpds.n)
+		pr.obj2_pixpds = (struct sgxfive_tri_prog){ pt->obj2_pixpds.words,
+							    pt->obj2_pixpds.n, pt->obj2_pixpds_data, 0 };
 	ret = sgxfive_vm_create(t->dev, &vm);
 	if (!ret)
 		ret = sgxfive_render_ctx_create(vm, pt->max_width, pt->max_height, &ctx);
@@ -1631,28 +1792,41 @@ static void probe_tri_one(struct tool *t, const struct probe_file *f,
 			printf(" (isp2 0x%08x)", pt->isp2);
 		if (pt->add_mask)
 			printf(" (blk-add 0x%02x)", pt->add_mask);
-		if (pt->blk_mask) {
+		if (pt->blk_mask || pt->blk_xor_mask) {
 			printf(" (block words");
-			for (unsigned int k = 0; k < SGXFIVE_TRI_BLOCK_WORDS; k++)
+			for (unsigned int k = 0; k < SGXFIVE_TRI_BLOCK_WORDS; k++) {
 				if (pt->blk_mask >> k & 1)
 					printf(" %u", k);
+				if (pt->blk_xor_mask >> k & 1)
+					printf(" ^%u", k);
+			}
 			printf(")");
 		}
-		if (pt->cmd_mask) {
+		if (pt->cmd_mask || pt->cmd_xor_mask) {
 			printf(" (command words");
-			for (unsigned int k = 0; k < SGXFIVE_TRI_PROBE_CMD_WORDS; k++)
+			for (unsigned int k = 0; k < SGXFIVE_TRI_PROBE_CMD_WORDS; k++) {
 				if (pt->cmd_mask >> k & 1)
 					printf(" %u", k);
+				if (pt->cmd_xor_mask >> k & 1)
+					printf(" ^%u", k);
+			}
 			printf(")");
 		}
 		if (pt->vdm_mask || pt->vdm_xor_mask) {
 			printf(" (VDM words");
-			for (unsigned int k = 0; k < SGXFIVE_TRI_VDM_WORDS; k++) {
+			for (unsigned int k = 0; k < SGXFIVE_TRI_PROBE_VDM2_WORDS; k++) {
 				if (pt->vdm_mask >> k & 1)
 					printf(" %u", k);
 				if (pt->vdm_xor_mask >> k & 1)
 					printf(" ^%u", k);
 			}
+			printf(")");
+		}
+		if (pt->pbe_mask) {
+			printf(" (PBE words");
+			for (unsigned int k = 0; k < 4; k++)
+				if (pt->pbe_mask >> k & 1)
+					printf(" %u", k);
 			printf(")");
 		}
 		if (pt->sideband_set)
@@ -1665,8 +1839,10 @@ static void probe_tri_one(struct tool *t, const struct probe_file *f,
 					if (pt->obj2_blk_mask >> k & 1)
 						printf(" %u", k);
 			}
-			printf("%s%s)", pt->obj2_blk_mask && pt->obj2_pixel.n ? "," : "",
-			       pt->obj2_pixel.n ? " pixel" : "");
+			printf("%s%s%s%s)", pt->obj2_blk_mask && pt->obj2_pixel.n ? "," : "",
+			       pt->obj2_pixel.n ? " pixel" : "",
+			       (pt->obj2_blk_mask || pt->obj2_pixel.n) && pt->obj2_pixpds.n ? "," : "",
+			       pt->obj2_pixpds.n ? " primary" : "");
 		}
 		printf(",");
 		for (unsigned int k = 0; k < SGXFIVE_TRI_SLOT_COUNT; k++)
@@ -1695,6 +1871,10 @@ static void probe_tri_one(struct tool *t, const struct probe_file *f,
 		/* faulted, hung or overflowed: recovered, the render failed */
 		printf("probe %s: failed: %s\n", f->name, job_error(ret, why, sizeof(why)));
 		probe_report_failed(f->name, sp, SCRATCH_PAGES * SGXFIVE_PAGE_SIZE / 4);
+		/* an overflow keeps its context and its target holds the partial renders' stores */
+		if (ret == -ENOSPC)
+			probe_report(f->name, g->fb, pt->width, pt->height, po->pixels, sp,
+				     SCRATCH_PAGES * SGXFIVE_PAGE_SIZE / 4);
 	} else if (pixels_all(g->fb, pt->width * pt->height, SGXFIVE_TRI_SENTINEL)) {
 		printf("probe %s: failed: no pixel written\n", f->name);
 	} else {
@@ -1765,7 +1945,7 @@ struct scratch {
 	uint64_t addr, size;
 };
 
-static int scratch_create(struct tool *t, struct sgxfive_vm *vm, uint32_t pages,
+static int scratch_create(struct tool *t, struct sgxfive_vm *vm, uint32_t pages, uint64_t at,
 			  struct scratch *s)
 {
 	void *map;
@@ -1775,7 +1955,8 @@ static int scratch_create(struct tool *t, struct sgxfive_vm *vm, uint32_t pages,
 	ret = sgxfive_bo_create(t->dev, s->size, DRM_SGXFIVE_BO_ALLOW_CPU_ACCESS, &s->bo);
 	if (!ret)
 		ret = sgxfive_bo_mmap(s->bo, &map);
-	if (!ret)
+	s->addr = at;
+	if (!ret && !at)
 		ret = sgxfive_vm_alloc(vm, DRM_SGXFIVE_HEAP_GENERAL, s->size, SGXFIVE_PAGE_SIZE,
 				       &s->addr);
 	if (!ret)
@@ -1938,7 +2119,7 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 	}
 	printf("tri: render context for targets up to %ux%u\n", max_w, max_h);
 	if (o->scratch) {
-		ret = scratch_create(t, vm, o->scratch, &sc);
+		ret = scratch_create(t, vm, o->scratch, o->scratch_at, &sc);
 		if (ret) {
 			fail("scratch buffer", ret);
 			goto out;
@@ -2198,6 +2379,7 @@ static int parse_opts(int argc, char **argv, struct opts *o)
 		{ "--max-height", offsetof(struct opts, max_height) },
 		{ "--scratch", offsetof(struct opts, scratch) },
 		{ "--scratch-fill", offsetof(struct opts, scratch_fill) },
+		{ "--scratch-at", offsetof(struct opts, scratch_at) },
 	};
 
 	for (int i = 0; i < argc; i += 2) {
@@ -2206,6 +2388,36 @@ static int parse_opts(int argc, char **argv, struct opts *o)
 		if (!strcmp(argv[i], "--keep-going")) {
 			o->keep_going = true;
 			i--;		/* a flag: no value */
+			continue;
+		}
+		if (!strcmp(argv[i], "--print-addrs") || !strcmp(argv[i], "--page-before")) {
+			*(argv[i][2] == 'p' && argv[i][3] == 'r' ? &o->print_addrs : &o->page_before) = true;
+			i--;		/* a flag: no value */
+			continue;
+		}
+		if (!strcmp(argv[i], "--ramp") && i + 1 < argc) {
+			/* CH=START: CH one of a, r, g, b (ARGB8888's byte 3 to 0) */
+			static const char names[] = "bgra";
+			const char *ch = strchr(names, argv[i + 1][0] ? argv[i + 1][0] : '?');
+			char *end;
+			unsigned long v;
+
+			if (!ch || argv[i + 1][1] != '=' || o->ramp ||
+			    (v = strtoul(argv[i + 1] + 2, &end, 0)) > 255 || *end || !argv[i + 1][2]) {
+				fprintf(stderr, "sgxfive-test: bad --ramp %s (a, r, g or b = 0 to 255)\n",
+					argv[i + 1]);
+				return -1;
+			}
+			o->ramp = true;
+			o->ramp_shift = (uint32_t)(ch - names) * 8;
+			o->ramp_start = (uint32_t)v;
+			continue;
+		}
+		if (!strcmp(argv[i], "--ramp-base") && i + 1 < argc) {
+			if (!parse_u32(argv[i + 1], &o->ramp_base)) {
+				fprintf(stderr, "sgxfive-test: bad --ramp-base %s\n", argv[i + 1]);
+				return -1;
+			}
 			continue;
 		}
 		if (!strcmp(argv[i], "--fault") || !strcmp(argv[i], "--pixels") ||
@@ -2351,7 +2563,7 @@ int main(int argc, char **argv)
 	bool use_mock = false, needs_programs, fake = false;
 	struct tool t = { 0 };
 	struct probe_file *probes = NULL;
-	static struct probe_opts popts = { .temps = 32, .tri.slot = -1 };
+	static struct probe_opts popts = { .temps = 32, .tri.slot = -1, .place_form = -1 };
 	uint32_t nprobes = 0;
 	int i = 1, ret;
 
@@ -2399,23 +2611,33 @@ int main(int argc, char **argv)
 				popts.pixels = true;
 				continue;
 			}
+			if (!strcmp(argv[i], "--scratch-pages") && i + 1 < argc) {
+				/* 16 to 64 pages: a texture chain that does not fit 64 KiB */
+				v = strtoul(argv[++i], &end, 0);
+				if (*end || v < 16 || v > 64)
+					return usage();
+				scratch_pages = (uint32_t)v;
+				continue;
+			}
 			if (!strcmp(argv[i], "--low") && i + 1 < argc) {
-				/* a page of the first MiB, page 0 excepted, room for the scratch */
+				/* a page of the first MiB, page 0 excepted; room for the scratch is
+				 * checked after the options, when --scratch-pages is known */
 				v = strtoul(argv[++i], &end, 0);
 				if (*end || v < SGXFIVE_PAGE_SIZE || v % SGXFIVE_PAGE_SIZE ||
-				    v + SCRATCH_PAGES * SGXFIVE_PAGE_SIZE > 0x100000)
+				    v >= 0x100000)
 					return usage();
 				popts.low = v;
 				continue;
 			}
 			if (!strcmp(argv[i], "--late") && i + 1 < argc) {
 				/* R:K=V, two distinct dwords of the scratch and a 32-bit value */
-				const uint32_t n = SCRATCH_PAGES * SGXFIVE_PAGE_SIZE / 4;
+				/* the dwords' bound is checked after the options (--scratch-pages) */
 				unsigned long long r, k, val;
 				int used = -1;
 
 				if (sscanf(argv[++i], "%lli:%lli=%lli%n", &r, &k, &val, &used) != 3 ||
-				    argv[i][used] || r >= n || k >= n || r == k || val > 0xffffffffULL)
+				    argv[i][used] || r >= UINT32_MAX || k >= UINT32_MAX || r == k ||
+				    val > 0xffffffffULL)
 					return usage();
 				popts.late = true;
 				popts.late_ready = (uint32_t)r;
@@ -2452,8 +2674,8 @@ int main(int argc, char **argv)
 			}
 			if (!strcmp(argv[i], "--vertices") && i + 1 < argc) {
 				v = strtoul(argv[++i], &end, 0);
-				/* whole triangles that fit the vertex buffer */
-				if (*end || !v || v % 3 || v > SGXFIVE_TRI_PROBE_MAX_VERTICES)
+				/* whole triangles that fit the (wide) vertex buffer */
+				if (*end || !v || v % 3 || v > SGXFIVE_TRI_PROBE_WIDE_VERTICES)
 					return usage();
 				popts.tri.vertices = (uint32_t)v;
 				continue;
@@ -2495,62 +2717,76 @@ int main(int argc, char **argv)
 					return usage();
 				continue;
 			}
+			if (!strcmp(argv[i], "--obj2-pixpds") && i + 1 < argc) {
+				/* FILE:N, N data dwords (whole rows of four) before its code */
+				char path[4096], *colon, *dend;
+				unsigned long nd;
+
+				if (popts.tri.obj2_pixpds.n || strlen(argv[++i]) >= sizeof(path))
+					return usage();
+				snprintf(path, sizeof(path), "%s", argv[i]);
+				colon = strrchr(path, ':');
+				if (!colon || !colon[1])
+					return usage();
+				nd = strtoul(colon + 1, &dend, 0);
+				if (*dend || nd < 4 || nd % 4 || nd > 128)
+					return usage();
+				*colon = 0;
+				if (probe_read(path, &popts.tri.obj2_pixpds, 4))
+					return 1;
+				if (popts.tri.obj2_pixpds.n <= nd) {
+					fprintf(stderr, "sgxfive-test: %s: no code after %lu data dwords\n",
+						path, nd);
+					return 1;
+				}
+				popts.tri.obj2_pixpds_data = (uint32_t)nd;
+				continue;
+			}
 			if (!strcmp(argv[i], "--copy-depth")) {
 				popts.tri.copy_depth = true;
 				continue;
 			}
-			if (!strcmp(argv[i], "--blk") && i + 1 < argc) {
-				char *eq;
-				unsigned long n;
-
-				n = strtoul(argv[++i], &eq, 0);
-				if (*eq != '=' || eq == argv[i] || n >= SGXFIVE_TRI_BLOCK_WORDS ||
-				    !eq[1])
-					return usage();
-				v = strtoul(eq + 1, &end, 0);
-				if (*end || v > UINT32_MAX)
-					return usage();
-				popts.tri.blk_mask |= 1u << n;
-				popts.tri.blk_val[n] = (uint32_t)v;
-				continue;
-			}
-			if (!strcmp(argv[i], "--cmd") && i + 1 < argc) {
-				char *eq;
-				unsigned long n;
-
-				n = strtoul(argv[++i], &eq, 0);
-				if (*eq != '=' || eq == argv[i] || n >= SGXFIVE_TRI_PROBE_CMD_WORDS ||
-				    !eq[1])
-					return usage();
-				v = strtoul(eq + 1, &end, 0);
-				if (*end || v > UINT32_MAX)
-					return usage();
-				popts.tri.cmd_mask |= 1u << n;
-				popts.tri.cmd_val[n] = (uint32_t)v;
-				continue;
-			}
-			if (!strcmp(argv[i], "--vdm") && i + 1 < argc) {
-				char *eq;
-				unsigned long n;
-
+			if ((!strcmp(argv[i], "--blk") || !strcmp(argv[i], "--cmd") ||
+			     !strcmp(argv[i], "--vdm")) && i + 1 < argc) {
+				/* N=V sets word N, N^=V flips the bits of V in it */
+				const char which = argv[i][2];
+				struct probe_tri *pt = &popts.tri;
+				uint32_t *mask, *xmask, *val, *xval;
+				unsigned long limit, n;
 				bool flip;
 
-				n = strtoul(argv[++i], &eq, 0);
-				flip = eq[0] == '^';
-				eq += flip;
-				if (*eq != '=' || eq == argv[i] + flip || n >= SGXFIVE_TRI_VDM_WORDS ||
-				    !eq[1])
-					return usage();
-				v = strtoul(eq + 1, &end, 0);
-				if (*end || v > UINT32_MAX)
+				if (which == 'b') {
+					mask = &pt->blk_mask, xmask = &pt->blk_xor_mask;
+					val = pt->blk_val, xval = pt->blk_xor_val;
+					limit = SGXFIVE_TRI_BLOCK_WORDS;
+				} else if (which == 'c') {
+					mask = &pt->cmd_mask, xmask = &pt->cmd_xor_mask;
+					val = pt->cmd_val, xval = pt->cmd_xor_val;
+					limit = SGXFIVE_TRI_PROBE_CMD_WORDS;
+				} else {
+					mask = &pt->vdm_mask, xmask = &pt->vdm_xor_mask;
+					val = pt->vdm_val, xval = pt->vdm_xor_val;
+					limit = SGXFIVE_TRI_PROBE_VDM2_WORDS;
+				}
+				if (probe_word_arg(argv[++i], limit, &n, &flip, &v))
 					return usage();
 				if (flip) {
-					popts.tri.vdm_xor_mask |= 1u << n;
-					popts.tri.vdm_xor_val[n] = (uint32_t)v;
+					*xmask |= 1u << n;
+					xval[n] = (uint32_t)v;
 				} else {
-					popts.tri.vdm_mask |= 1u << n;
-					popts.tri.vdm_val[n] = (uint32_t)v;
+					*mask |= 1u << n;
+					val[n] = (uint32_t)v;
 				}
+				continue;
+			}
+			if (!strcmp(argv[i], "--pbe") && i + 1 < argc) {
+				unsigned long n;
+				bool flip;
+
+				if (probe_word_arg(argv[++i], 4, &n, &flip, &v) || flip)
+					return usage();
+				popts.tri.pbe_mask |= 1u << n;
+				popts.tri.pbe_val[n] = (uint32_t)v;
 				continue;
 			}
 			if (!strcmp(argv[i], "--blk-add") && i + 1 < argc) {
@@ -2600,6 +2836,36 @@ int main(int argc, char **argv)
 				i++;
 				continue;
 			}
+			if (!strcmp(argv[i], "--scratch-heap") && i + 1 < argc) {
+				/* the scratch buffer in the texture heap (a texture's own region) */
+				if (strcmp(argv[++i], "texture"))
+					return usage();
+				popts.scratch_texture = true;
+				continue;
+			}
+			if (!strcmp(argv[i], "--place-form") && i + 1 < argc) {
+				/* how the placed program's DOUTU is written */
+				const char *f = argv[++i];
+
+				if (!strcmp(f, "cbase"))
+					popts.place_form = 0;
+				else if (!strcmp(f, "exe18"))
+					popts.place_form = 1;
+				else
+					return usage();
+				continue;
+			}
+			if (!strcmp(argv[i], "--place") && i + 1 < argc) {
+				/* OFFSET=FILE: a USE program at the code heap's base + OFFSET */
+				const char *arg = argv[++i];
+
+				v = strtoul(arg, &end, 0);
+				if (*end != '=' || end == arg || v % 8 || v + SGXFIVE_PAGE_SIZE > 0x500000 ||
+				    popts.place.n || probe_read(end + 1, &popts.place, 8))
+					return usage();
+				popts.place_off = (uint32_t)v;
+				continue;
+			}
 			if (!strcmp(argv[i], "--use") && i + 1 < argc) {
 				if (probe_read(argv[++i], &popts.use, 8))
 					return 1;
@@ -2620,7 +2886,16 @@ int main(int argc, char **argv)
 				return usage();
 			popts.temps = (uint32_t)v;
 		}
+		/* --low and --late address the scratch buffer, whose size --scratch-pages sets, so
+		 * they are checked here, whatever the order of the options */
+		if (popts.low && popts.low + SCRATCH_PAGES * SGXFIVE_PAGE_SIZE > 0x100000)
+			return usage();
+		if (popts.late && (popts.late_ready >= SCRATCH_PAGES * SGXFIVE_PAGE_SIZE / 4 ||
+				   popts.late_dword >= SCRATCH_PAGES * SGXFIVE_PAGE_SIZE / 4))
+			return usage();
 		if (i >= argc || (popts.pds_data && !popts.use.n) || (popts.pds_data && popts.coords) ||
+		    (popts.place.n && popts.place_form < 0) || (!popts.place.n && popts.place_form >= 0) ||
+		    ((popts.place.n || popts.scratch_texture) && popts.tri.slot >= 0) ||
 		    probe_tri_check(&popts))
 			return usage();
 		nprobes = (uint32_t)(argc - i);
@@ -2680,6 +2955,16 @@ int main(int argc, char **argv)
 	}
 	if (o.every_value && strcmp(cmd, "copy")) {
 		fprintf(stderr, "sgxfive-test: --every-value is for copy\n");
+		return 2;
+	}
+	if ((o.ramp || o.ramp_base || o.print_addrs || o.page_before) && strcmp(cmd, "copy")) {
+		fprintf(stderr, "sgxfive-test: --ramp, --ramp-base, --print-addrs and --page-before "
+			"are for copy\n");
+		return 2;
+	}
+	if ((o.ramp && o.every_value) || (o.ramp_base && !o.ramp)) {
+		fprintf(stderr, "sgxfive-test: --ramp-base needs --ramp, which excludes "
+			"--every-value\n");
 		return 2;
 	}
 

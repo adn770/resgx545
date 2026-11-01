@@ -1,0 +1,10 @@
+title = "script table render/flag-bit0-timeline"
+repo = "data"
+paths = ["render/flag-bit0-timeline/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 4
+size = 47291
+sha256 = "9ff07c0fc3463cfde7b1f3324039653a72643f834a5d1934a4bb933b9adb97af"
+recipe = "probes/render/flag-bit0-timeline.toml"
+needs = ["render", "kpoke", "regs", "hold_recovery", "reset"]

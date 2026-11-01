@@ -1,21 +1,27 @@
 +++
 id = "Q093"
-question = "why does the closed driver add DOUTU1 bit 24 (wait for iterations) to some textured primary pixel programs, all GLES1 ones but GL_REPLACE and GLES2's two-texture and half-float luminance ones, and not to the other textured programs whose douti and doutt counts are the same?"
+question = "does DOUTU1 bit 24 (wait for iterations) change what a textured primary pixel program reads when the program iterates the vertex colour or several attribute registers, or reads pa0 to pa2, as the closed driver's programs that set it do?"
 unit = "pds"
 phase = 11
-evidence = ["E345", "E364"]
+evidence = ["E345", "E364", "E436"]
 terms = ["DOUTU1.WAIT_ITER", "DOUTU1.WAIT_FETCH"]
 +++
 
-The main part is answered (E364, the 114 captured primaries with a fetch): the closed driver sets
-DOUTU1 bit 24 exactly when a douti of the primary iterates an attribute into the primary attribute
-registers (the vertex colour or a coordinate set, DOUTI0 source below 36), 21 of 21, and every
-program it starts reads that register; the 93 without it iterate only fetch coordinates (source
-36) and their programs read only texels. GLES2's tex2, tex2_mip and fmt_lf16 iterate a coordinate
-set or the colour into the attribute registers, so they follow the same rule.
+The closed driver sets DOUTU1 bit 24 exactly when a douti of the primary iterates an attribute
+into the primary attribute registers (E364, 21 of 21 captured primaries with a fetch).
 
-What is open: whether the bit is needed: a program reading an iterated register without it might
-read it stale.
+In one program shape the bit adds nothing (E436, 96 jobs, three runs). That shape has a douti of
+source 1, one iterated register and one doutt:
 
-To settle it: on the laptop clear bit 24 in our textured triangle whose shader also reads an
-iterated colour, and compare the image.
+- with the fetch wait (bit 25), pa0 and pa1 are the same with bit 24 set or clear;
+- with bit 24 alone or neither bit, the image changes every run;
+- bit 24 without the douti's completion bit hangs, 24 of 24 jobs.
+
+What is open: whether the bit matters in the shapes E436 did not try. 18 of E364's 21 programs
+iterate the vertex colour (source 32), and 5 read pa0 to pa2. A program of that shape without
+the bit might read an attribute register before its iteration lands. Why the closed driver adds
+the bit is not shown either; that it is redundant under the fetch wait is an inference.
+
+To settle it: on the laptop, run textured primaries that iterate the vertex colour, or two or
+three attribute registers, with the fetch wait and bit 24 set or clear, three runs each, and
+compare pa0 to pa2 and the image.

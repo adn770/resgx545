@@ -23,4 +23,5 @@ while jobs run, so bit 1 of it, the 3D's slot (Q064), cannot be read this way. B
 is cleared briefly at each kick (the firmware clearing and setting it again [infer]).
 
 **What it does not show.** What the 3D does with region headers that bit 21 marks, which needs RT
-data whose state bit 8 is set: no switch sets that bit (the render context flags are not it).
+data whose state bit 8 is set: the render context flags do not set that bit; the kernel poke rtds:19
+does (E424).

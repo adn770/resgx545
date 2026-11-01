@@ -44,7 +44,7 @@ tier = "ours"
 source = "resgx545"
 citation = "E160"
 licence = "MIT"
-evidence = "[RE] E160: the abort writes TA3DCtl dwords 35 and 36 from the page counts of 0x0724 and 0x072c less 2; with bit 8 of sa8 the decision compares dword 36 with that of 0x072c; [HW] the free-list and partial-render probes (dpm-free-list, dpm-partial-renders, one run each): 0 after every job, where the abort at 1024x768 in 0x30 pages, with 0x072c at 0x00010001, predicts 0xffff; open (Q036)"
+evidence = "[RE] E160: the abort writes TA3DCtl dwords 35 and 36 from the page counts of 0x0724 and 0x072c less 2; with bit 8 of sa8 the decision compares dword 36 with that of 0x072c; [HW] the free-list and partial-render probes (dpm-free-list, dpm-partial-renders, one run each): 0 after every job of those runs, where the abort at 1024x768 in 0x30 pages, with 0x072c at 0x00010001, predicts 0xffff; [HW] E438 (dpm-partial-wide, three runs each): 2 and 3 after the 4096x4096 jobs of 900 and 1500 vertices in 0x422 pages (global lists of 4 and 5 pages), 1 after the 1024x768 job of 1500 vertices in 0x23 pages, 0 after the other overflows; open (Q036)"
 
 [[term]]
 id = "G0724"

@@ -1,0 +1,188 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# isp msaa pbe: 0 sweeps, 12 probes.
+# Q089: the 4x render of our stack (mode 2, the closed driver's TE words) with the end-of-tile
+# task's PBE words and sideband the closed driver hands it for a render to a 64x64 texture (E333),
+# three runs each, every pixel read.
+needs = ["render"]
+
+[[probe]]
+name = "isp-msaa-pbe-1x-64-sb200"
+question = "the single-sampled 64x64 render with the end-of-tile sideband 0x200"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 512
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+labels = ["run 1", "run 2", "run 3"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-msaa-pbe-4x-64-sb200"
+question = "the 4x render (the closed driver's render words, the macrotile words poked) to a 64x64 target with the sideband 0x200 and the closed driver's PBE words (64x64, pitch 64)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 512
+cmd = { 1 = 0xe0000000, 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+kpoke = ["ta:143=0x802002", "ta:144=0x802002", "ta:146=0x4"]
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+labels = ["run 1", "run 2", "run 3"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-msaa-pbe-1x-64-sb2200"
+question = "the single-sampled 64x64 render with the end-of-tile sideband 0x2200"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 8704
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+labels = ["run 1", "run 2", "run 3"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-msaa-pbe-4x-64-sb2200"
+question = "the 4x render (the closed driver's render words, the macrotile words poked) to a 64x64 target with the sideband 0x2200 and the closed driver's PBE words (64x64, pitch 64)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 8704
+cmd = { 1 = 0xe0000000, 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+kpoke = ["ta:143=0x802002", "ta:144=0x802002", "ta:146=0x4"]
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+labels = ["run 1", "run 2", "run 3"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-msaa-pbe-4x-128-sb2200"
+question = "the 4x render to a 128x128 target with its own PBE words (128x128, pitch 128), sideband 0x2200, no macrotile words"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 8704
+cmd = { 1 = 0xe0000000, 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+size = [128, 128]
+pixels = true
+inputs = ["OP"]
+labels = ["run 1", "run 2", "run 3"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-msaa-pbe-4x-128-rect64-sb2200"
+question = "the 4x render to a 128x128 target with the PBE words of a 64x64 rectangle (EMIT1 0x003f003f, EMIT2 0x001f8000), sideband 0x2200, no macrotile words"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 8704
+cmd = { 1 = 0xe0000000, 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+pbe = { 1 = 0x3f003f, 2 = 0x1f8000 }
+size = [128, 128]
+pixels = true
+inputs = ["OP"]
+labels = ["run 1", "run 2", "run 3"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-msaa-pbe-1x-128-rect64-sb2200"
+question = "the single-sampled 128x128 render with the PBE words of a 64x64 rectangle, sideband 0x2200"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 8704
+pbe = { 1 = 0x3f003f, 2 = 0x1f8000 }
+size = [128, 128]
+pixels = true
+inputs = ["OP"]
+labels = ["run 1", "run 2", "run 3"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-msaa-pbe-1x-128-sb200"
+question = "the single-sampled 128x128 render with the end-of-tile sideband 0x200"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 512
+size = [128, 128]
+pixels = true
+inputs = ["OP"]
+labels = ["run 1", "run 2", "run 3"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-msaa-pbe-1x-128-sb2200"
+question = "the single-sampled 128x128 render with the end-of-tile sideband 0x2200"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 8704
+size = [128, 128]
+pixels = true
+inputs = ["OP"]
+labels = ["run 1", "run 2", "run 3"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-msaa-pbe-4x-128-sb200"
+question = "the 4x render to a 128x128 target with its own PBE words (128x128, pitch 128), sideband 0x200, no macrotile words"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 512
+cmd = { 1 = 0xe0000000, 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+size = [128, 128]
+pixels = true
+inputs = ["OP"]
+labels = ["run 1", "run 2", "run 3"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-msaa-pbe-4x-64-bit48-1-sb2200"
+question = "the 4x render to a 64x64 target with the closed driver's PBE words and sideband 0x2200, bit 48 of the end-of-tile task's emit 1 set"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_bit48_1.s" }
+sideband = 8704
+cmd = { 1 = 0xe0000000, 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+kpoke = ["ta:143=0x802002", "ta:144=0x802002", "ta:146=0x4"]
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+labels = ["run 1", "run 2", "run 3"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]
+
+[[probe]]
+name = "isp-msaa-pbe-4x-64-bit48-2-sb2200"
+question = "the 4x render to a 64x64 target with the closed driver's PBE words and sideband 0x2200, bit 48 of the end-of-tile task's emit 2 set"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_bit48_2.s" }
+sideband = 8704
+cmd = { 1 = 0xe0000000, 10 = 0xeaa26e26, 13 = 0x80000002, 16 = 0xeaa26e26 }
+kpoke = ["ta:143=0x802002", "ta:144=0x802002", "ta:146=0x4"]
+size = [64, 64]
+pixels = true
+inputs = ["OP"]
+labels = ["run 1", "run 2", "run 3"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"], ["mov.skipinv.end o0, #0xFF00FF00"]]

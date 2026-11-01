@@ -3,7 +3,7 @@ id = "Q047"
 question = "what do VDM_STATE1 bit 8, bits 11:9 and bits 15:13 select for a state task, when on the one-triangle job bit 8 changes nothing, bits 11:9 at 0 stop the triangle before tiling and bits 15:13 at 0, 5 or 6 hang it?"
 unit = "vdm"
 phase = 11
-evidence = ["E060", "E185", "E186", "E187", "E299", "E414"]
+evidence = ["E060", "E185", "E186", "E187", "E299", "E414", "E427", "E440"]
 terms = ["VDM_STATE1.BIT8", "VDM_STATE1.BITS11_9", "VDM_STATE1.BITS15_13"]
 +++
 
@@ -36,3 +36,22 @@ object, at 1 and 6 and bits 15:13 at 0, 5 and 6 hang the job. More geometry does
 units the fields name. The two-block stream of the settle plan needs a VDM stream with a second
 state block, which the tool cannot build (its stream is a fixed 11 words, vdm:N pokes only); not
 run. Status: narrowed, not answered; the missing piece is a tool option for a second state block.
+
+Narrowed in 11.16 (E427, 62 jobs): the tool builds a stream of two objects with a state block each
+(probe --tri --obj2, with --vdm words 0 to 18 set after the second object). Flipping the fields of
+the second block's state word gives the same completions and hangs as the first block's for bits
+15:13 (0, 5, 6, 7 hang, 2, 3, 4 complete, 28 of 28 jobs) and bits 11:9 at 3 and 4, and bits 11:9
+at 0 in the second block removes the second object alone (2 of 2); bit 8 changes nothing in
+either. The fields act per state task; with both blocks the same MTE state the units they name are
+not separated, and a block that loads pixel-side constants is not built. Status: narrowed.
+
+Narrowed again in 11.16 (E440, 51 jobs, three runs each): the tool builds a second block whose
+primary pixel program writes a constant to a secondary attribute (probe --tri --obj2-pixpds) for a
+shader that writes it as the colour. The constant reaches only 24 to 270 of the controls' 978
+non-background pixels, the rest reading leftovers (2, 6, 0xbf3f0000), and no field flip (bit 8,
+bits 11:9 at 1, 3 and 4, bits 15:13 at 2, 3 and 4, in either block) moves it beyond that spread;
+bits 11:9 at 0 still removes the second block's object (3 of 3) and bits 11:9 at 1 hang in the
+second block (3 of 3), bits 11:9 at 4 in one of three runs of each block. So the fields still do
+not separate units. Status: narrowed, not answered; missing: a constant load that reaches every
+pixel (E381 found a douta in a primary program reaching sa in one job of thirteen; Q020 asks of
+it).

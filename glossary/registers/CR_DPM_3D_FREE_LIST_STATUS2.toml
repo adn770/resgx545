@@ -12,7 +12,7 @@ tier = "1"
 source = "intel-ctp-santos10"
 citation = "C0493"
 licence = "GPL-2.0 OR MIT"
-evidence = "DDK debug-dump name table (RESTRICTED_REGISTERS block); no offset in any GPL source, offset 0x071c is our binding via name EUR_CR_DPM_3D_FREE_LIST_STATUS2"
+evidence = "DDK debug-dump name table (RESTRICTED_REGISTERS block); no offset in any GPL source; [HW] E438, E443: the high half of 0x0710 and 0x071c is 0 after all 42 jobs and in every sample of 12 timelines of scenes of 3 to 1500 vertices, offset 0x071c is our binding via name EUR_CR_DPM_3D_FREE_LIST_STATUS2"
 
 [[term]]
 id = "G1079"

@@ -108,7 +108,7 @@ static void test_scene(void)
 {
 	struct sgxfive_tri_cpu c = {
 		calloc(1, 4096), calloc(1, 4096), calloc(1, 4096), calloc(1, 4096),
-		calloc(1, 4096),
+		calloc(1, 4096), 0,
 	};
 	struct drm_sgxfive_render_cmd cmd;
 	struct sgxfive_tri_params p;

@@ -37,5 +37,5 @@ terms = ["DOUTU1.WAIT_ITER", "DOUTU1.WAIT_FETCH"]
 - The closed driver asks the primary to wait for its iterations (bit 24) exactly when it iterates
   something besides the fetch coordinates into the attribute registers, which the program then
   reads [CAP]. Which register holds the texel and that source 36 writes nothing are readings
-  (E132's order, the glossary's row) [infer]; whether the bit is needed, rather than chosen, is not
-  tried on the hardware (Q093).
+  (E132's order, the glossary's row) [infer]; whether the bit is needed, rather than chosen, was
+  tried on the hardware in 11.16: it is not needed under the fetch wait (E436).

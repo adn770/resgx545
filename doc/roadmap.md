@@ -83,8 +83,8 @@ triangle and fault recovery on the laptop); questions Q005 and Q006. Sub-phase 6
 tables by unit (`probes/<unit>/<feature>.toml`), the campaign runner that runs them on a clean GPU
 and records the environment, the sweep runner with the ISP visibility counters around every case,
 and what the runs show: evidence E025 to E124 on the platform, the EDM, the transfer, PBE, texture,
-PDS, render, TA, ZLS, VDM, MTE, ISP and USSE, and questions Q007 to Q017 (the colour left in an
-output register is E373's).
+PDS, render, TA, ZLS, VDM, MTE, ISP and USSE, and questions Q008 to Q017 (and one on the copy's
+buffers; the colour left in an output register is E373's).
 
 ### 2.7 Phase 7: the PDS
 
@@ -242,7 +242,7 @@ what the captures leave open is a question:
 
 - **texture:** YUV streams through colour-space set 0 or the USE coefficients (E341); the texture
   words per filter, wrap, format and size (E342).
-- **pds:** the pixel PDS pointer and size words (E343; Q093); code-address words and bases of the
+- **pds:** the pixel PDS pointer and size words (E343; E436); code-address words and bases of the
   vertex-side programs (E344); the pixel-side programs the MTE state names (E345).
 - **render:** the render context (E323), the closing kick of each frame (E324), the RT data set
   (E325), a one-triangle job against ours (E326; Q085).
@@ -272,7 +272,7 @@ pixel-event program the earlier phases left (no 11.11 table runs the OpenVG stac
 
 Sub-phase 11.12 settles two of the questions the captures left with an offline reading and the
 laptop: `DOUTU1` bit 24 goes with an attribute the primary iterates into the attribute
-registers, in all 114 captured fetching primaries (E364; Q093 keeps the hardware check), and our
+registers, in all 114 captured fetching primaries (E364; E436 ran the hardware check), and our
 own probes' textures, all in the general heap on the laptop's revision-3 bridge, sample as
 expected, so the misplaced half of the sample-cache test shows no erratum (Q096 keeps the
 texture-region half). The rest of 11.12 needed no capture host: the linux fork's held-recovery
@@ -297,18 +297,51 @@ and `.cut` (E376, Q054) and a fill's instruction cost, 0.3203 us per 2048 instan
 Q002). The simulator matches 271 of the batch's 340 vectors and differs on none (E378). Q050 had no
 run.
 
-Sub-phase 11.14 needed no capture host either: the PDS, PBE and texture batch ran on the laptop over
-the cable, 20 tables (`probes/pds/mov128-bit15.toml`, `douta-primary.toml`, `fetch-pc-pad.toml`,
-`vertex-specials.toml`, `input-flags-overlap.toml`, `attribute-room.toml`, `shade-order.toml`,
-`no-wait.toml`, `tile-slots.toml`, `pixel-event-word2.toml`, `store-totals.toml`,
-`reg-0a78-timing.toml`; `probes/pbe/emit-transforms.toml`, `sideband-channels.toml`,
-`reg-0400-alpha.toml`, `emit-twice.toml`, `pack-floats-channels.toml`, `pack-floats-ramps.toml`;
-`probes/usse/store-sources.toml`; `probes/texture/copy-followup.toml`). The PDS word the simulator
-stopped on is settled: `mov128`'s bit 15 writes the `ds0` pair the last `mov32` or `movs` read from
-a data row (E379), which the simulator now runs after the instructions measured (E400). A
-store takes `pa` and `sa` as its data source (E380; Q098 opened on a fill's shared `pa`/`sa`);
-EMIT2 bits 29:28 rotate the stored image and bit 31 scales it by two (E382); SIDEBAND bits 8:6 pick
-the channel in pack modes 7 and 8 only (E383); `CR_REG_0400`'s low byte is ARGB1555's alpha
-threshold (E385); a double emit hangs a job of several tiles and on one tile disturbs the later
-jobs until a reset (E386); T3 bits 7:0 are two signed texel offsets (E397); a no-wait iteration never reaches `pa0` (E393) and E133's stale
-pixels do not recur (E392). Q021, Q023, Q057, Q061, Q007, Q008 and Q009 had no run.
+Sub-phase 11.14 needed no capture host either: the PDS, PBE and texture batch ran on the laptop
+over the cable, 20 tables (`probes/pds/mov128-bit15.toml`, `douta-primary.toml`,
+`fetch-pc-pad.toml`, `vertex-specials.toml`, `input-flags-overlap.toml`, `attribute-room.toml`,
+`shade-order.toml`, `no-wait.toml`, `tile-slots.toml`, `pixel-event-word2.toml`,
+`store-totals.toml`, `reg-0a78-timing.toml`; `probes/pbe/emit-transforms.toml`,
+`sideband-channels.toml`, `reg-0400-alpha.toml`, `emit-twice.toml`, `pack-floats-channels.toml`,
+`pack-floats-ramps.toml`; `probes/usse/store-sources.toml`; `probes/texture/copy-followup.toml`).
+The PDS word the simulator stopped on is settled: `mov128`'s bit 15 writes the `ds0` pair the last
+`mov32` or `movs` read from a data row (E379), which the simulator now runs after the instructions
+measured (E400). A store takes `pa` and `sa` as its data source (E380; Q098 opened on a fill's
+shared `pa`/`sa`); EMIT2 bits 29:28 rotate the stored image and bit 31 scales it by two (E382);
+SIDEBAND bits 8:6 pick the channel in pack modes 7 and 8 only (E383); `CR_REG_0400`'s low byte is
+ARGB1555's alpha threshold (E385); a double emit hangs a job of several tiles and on one tile
+disturbs the later jobs until a reset (E386); T3 bits 7:0 are two signed texel offsets (E397); a
+no-wait iteration never reaches `pa0` (E393) and E133's stale pixels do not recur (E392). Q021,
+Q023, Q057 and Q008 had no run (the questions on a DOUTU's width, on the copy's buffers and on T0's
+maximum level 15 were answered in 11.16: E428, E425, E441).
+
+Sub-phase 11.16 added the tool options the stuck questions needed to `sgxfive-test` and `probe.py`
+and ran them with the fourth batch, on the laptop over the cable: `--blk` and `--cmd` with `N^=V`,
+the VDM stream's words of a second object, `--pbe`, the background object's slots `bgpixel` and
+`bgpds`, `probe --place` and `--scratch-heap texture`, `copy --ramp`, `--print-addrs` and
+`--page-before`, and `tri --scratch-at`. Fourteen tables ran (`probes/ta/psg-state.toml`,
+`vdm/state2-fields.toml`, `pds/doutu-place.toml`, `pds/no-wait-where.toml`,
+`pbe/pack-floats-o23.toml`, `texture/copy-addresses.toml`, `luma-ramp.toml`,
+`sampler-cache-texheap.toml`, `platform/event-steps.toml`, `event-fine.toml`, `hwperf-vary.toml`,
+`render/bg-pds-map.toml`, `flag-bit0-timeline.toml` and `flag-bit0-dense.toml`). The copy's buffers
+lie where the tool prints them (E425), and a DOUTU's bits 21:20 and CBASE both address (E428): both
+questions are answered. The RT data's state bit 8 is reached by the existing kernel poke rtds:19 and
+marks region headers as the command's bit 21 does (E424).
+
+A second batch of 11.16 added to the tool probe --tri's wide scenes (`--vertices` up to 1500, the
+rig's extra gen pages), the second object's primary PDS program (`--obj2-pixpds`), the target's
+address for a replacement program (`0x5CB0nnnn`), the target's colours after an overflow, and probe
+`--scratch-pages`, and `tex_words.py` an eight-level chain whose texels are the scratch buffer's own
+dwords. Eight tables ran (`pds/iter-wait-textured.toml`, `dpm/partial-reload-pos.toml`,
+`partial-wide.toml`, `partial-wide-timelines.toml` and `partial-reload.toml`, `isp/msaa-pbe.toml`,
+`vdm/state2-consts.toml` and `texture/mip8-fields.toml`). In a textured primary the fetch wait
+delivers the iterated coordinate set and the texel and `DOUTU1` bit 24 adds nothing (E436; the
+question narrows to other program shapes), a `douti` of source 0 with two components is the pixel's
+x and y (E437), scenes of 100 to 500 triangles leave STATUS2's high halves at 0 and set `TA3DCtl`
+dword 36 but hang small parameter buffers (E438, E443, a new question), the 4x render through our
+end-of-tile task with the closed driver's PBE words stores plain samples and does not resolve
+(E439), a second state block's constant load reaches few pixels (E440), T0's maximum 15 reads level
+0 while 8 to 14 clamp at the last level and MIPFILTER blends two levels byte for byte (E441: the
+question on the maximum level is answered, non-square chains are a new one), and a background object
+that reads the target back gives an overflowing scene's triangle its full pixel count (E442; the
+depth readback stays open).

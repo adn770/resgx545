@@ -25,3 +25,8 @@ routine polls stop changing (E153).
 To settle it: a kernel switch that maps the context page writable in the client directory for one
 job (as alias_ta3d_ro does for the control block), then flag bit 0 with the kernel's table zeroed,
 the dump compared; the settle registers sampled around a PB swap on a running TA (two contexts).
+
+Not run in 11.16: the builder needs the render context's page writable in the client directory for
+one job. Kernel need: a debugfs switch that maps that page writable (as alias_ta3d_ro does for the
+control block) for the next job, then kpoke pb:0 with the table zeroed and the dump compared; the
+settle sampling needs two contexts. Status: narrowed, not answered.

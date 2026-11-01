@@ -34,6 +34,6 @@ exact taps of banks 1 and 2, which only vectors outside the fit can check.
 
 To settle it: on the laptop, a probe table per group with the campaign runner: the visibility
 group's forms each with a known test value and the visibility counters read back; smp over
-level-tagged mip chains and border colours (with Q009's texture words); firh's fcs6 and fcs7
+level-tagged mip chains and border colours (with E441's texture words); firh's fcs6 and fcs7
 at modes 1 and 2 on impulses and pedestals, as E079 measured sets 2 to 5; and sets 2 to 5 of
 banks 1 and 2 on lines no fitted case used, to test the families out of sample.

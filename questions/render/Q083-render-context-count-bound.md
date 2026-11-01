@@ -18,3 +18,8 @@ the one routine that writes computed register numbers and `CR_BIF_CTRL`.
 What is open: how the kick tells that its directory is in no list (a compare against the lists'
 registers or a per-context record), and what a job of a context whose list was taken while the job
 ran does.
+
+Offline in 11.16: edm_dataflow.md holds the routine's registers (section 3) but not the
+comparisons that decide whether a directory is in a list, so the dataflow cannot say how the kick
+tells; extending it to that routine's compares is the missing piece. No hardware run. Status:
+narrowed, not answered.

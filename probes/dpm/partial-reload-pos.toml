@@ -1,0 +1,45 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# dpm partial reload pos: 3 probes.
+# Q038: whether a douti with source 0 and two components gives the pixel's position (x + 0.5 in pa0,
+# y + 0.5 in pa1), for a background program that fetches the target at the pixel.
+needs = ["render"]
+
+[[probe]]
+name = "dpm-partial-reload-pos-pa0"
+question = "pa0 of a primary program whose douti is source 0 with two components (the pixel position, bit 29 completion, U1 bit 24 waiting)"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+labels = ["source 0, two components, run 1", "source 0, two components, run 2", "source 0, two components, run 3"]
+cases = [[0x20400000, 0x0, 0x1000004], [0x20400000, 0x0, 0x1000004], [0x20400000, 0x0, 0x1000004]]
+
+[[probe]]
+name = "dpm-partial-reload-pos-pa1"
+question = "pa1 of a primary program whose douti is source 0 with two components (the pixel position, bit 29 completion, U1 bit 24 waiting)"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+labels = ["source 0, two components, run 1", "source 0, two components, run 2", "source 0, two components, run 3"]
+cases = [[0x20400000, 0x0, 0x1000004], [0x20400000, 0x0, 0x1000004], [0x20400000, 0x0, 0x1000004]]
+
+[[probe]]
+name = "dpm-partial-reload-pos-pa2"
+question = "pa2 of a primary program whose douti is source 0 with two components (the pixel position, bit 29 completion, U1 bit 24 waiting)"
+source = "pds_iter_nofetch.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s" }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+labels = ["source 0, two components, run 1", "source 0, two components, run 2", "source 0, two components, run 3"]
+cases = [[0x20400000, 0x0, 0x1000004], [0x20400000, 0x0, 0x1000004], [0x20400000, 0x0, 0x1000004]]

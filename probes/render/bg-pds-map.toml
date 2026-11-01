@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# render bg pds map: 0 probes (a script, bg-pds-map.sh).
+# Q014: the background object's first PDS word (cmd:23) with the bits that make its fetch fault, the
+# page the fetch reaches mapped with a pattern.
+needs = ["render", "kpoke", "vm_low"]
+name = "render-bg-pds-map"
+script = "bg-pds-map.sh"

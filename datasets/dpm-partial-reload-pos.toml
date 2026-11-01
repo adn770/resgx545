@@ -1,0 +1,10 @@
+title = "probe table dpm/partial-reload-pos"
+repo = "data"
+paths = ["dpm/partial-reload-pos/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 20
+size = 365343
+sha256 = "e2f1a1ed68b3238029f01aeda4b3b64ccb30ef7a7e6264ba54804c9965a7a885"
+recipe = "probes/dpm/partial-reload-pos.toml"
+needs = ["render"]

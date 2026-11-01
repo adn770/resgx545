@@ -1,0 +1,10 @@
+title = "probe table vdm/state2-fields"
+repo = "data"
+paths = ["vdm/state2-fields/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 191
+size = 288603058
+sha256 = "9cd448b123c383d4b6f31f1ff35aec152dc3312dd40d8b9e8f17419fe84d9d67"
+recipe = "probes/vdm/state2-fields.toml"
+needs = ["render", "render_param", "render_tadata"]

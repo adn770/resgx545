@@ -8,5 +8,6 @@ terms = ["T0.MIPFILTER"]
 +++
 
 Line 517 of `texstate.xml` in Mesa's Rogue csbgen names `mipfilter`. It backs the glossary field
-`T0.MIPFILTER`: filter between mipmap levels: 0 the nearest level (a half rounds up), 1 a linear
-blend of the two levels.
+`T0.MIPFILTER`: filter between mipmap levels: 0 the nearest level (a half rounds up), 1 the
+channel-wise linear blend of the texels of the levels floor(LOD + bias) and the next, by the
+fraction of LOD + bias (E441).

@@ -1,0 +1,10 @@
+title = "probe table pds/doutu-place"
+repo = "data"
+paths = ["pds/doutu-place/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 38
+size = 13837
+sha256 = "5bfc9799b9242e795c0dedf53e318c5f43ccda912035891ce550a893bc959424"
+recipe = "probes/pds/doutu-place.toml"
+needs = ["render"]
