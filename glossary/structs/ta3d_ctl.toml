@@ -28,7 +28,7 @@ tier = "ours"
 source = "resgx545"
 citation = "E160"
 licence = "MIT"
-evidence = "[RE] E160: the abort writes TA3DCtl dwords 35 and 36 from the page counts of 0x0724 and 0x072c less 2; the decision compares dword 35 with the upper half of 0x0724"
+evidence = "[RE] E160: the abort writes TA3DCtl dwords 35 and 36 from the page counts of 0x0724 and 0x072c less 2; the decision compares dword 35 with the upper half of 0x0724; [HW] the free-list probes (dpm-free-list, one run): 0xc after the 1024x768 partial render in 0x30 pages (page status 0xe at the abort) and 0xdc after the 4096x4096 one in 0x100 (0xde), kept by later jobs; [HW] the partial-render probes (dpm-partial-renders, one run): 4, 0 and 0xffff after the 1024x768 jobs in 0x28, 0x24 and 0x23 pages, 0x3c and 0x1f after the 4096x4096 ones in 0x40 and 0x23"
 
 [[term]]
 id = "G0723"
@@ -44,7 +44,7 @@ tier = "ours"
 source = "resgx545"
 citation = "E160"
 licence = "MIT"
-evidence = "[RE] E160: the abort writes TA3DCtl dwords 35 and 36 from the page counts of 0x0724 and 0x072c less 2; with bit 8 of sa8 the decision compares dword 36 with that of 0x072c"
+evidence = "[RE] E160: the abort writes TA3DCtl dwords 35 and 36 from the page counts of 0x0724 and 0x072c less 2; with bit 8 of sa8 the decision compares dword 36 with that of 0x072c; [HW] the free-list and partial-render probes (dpm-free-list, dpm-partial-renders, one run each): 0 after every job, where the abort at 1024x768 in 0x30 pages, with 0x072c at 0x00010001, predicts 0xffff; open (Q036)"
 
 [[term]]
 id = "G0724"
@@ -76,7 +76,7 @@ tier = "ours"
 source = "resgx545"
 citation = "E160"
 licence = "MIT"
-evidence = "[RE] E160: the abort saves CR_DPM_ABORT_STATUS_MTILE in TA3DCtl dword 39; the terminate handler offsets the partial-region base by what it works out from dword 39"
+evidence = "[RE] E160: the abort saves CR_DPM_ABORT_STATUS_MTILE in TA3DCtl dword 39; the terminate handler offsets the partial-region base by what it works out from dword 39; [HW] the free-list probes (dpm-free-list, one run): 5 after both partial renders, the value CR_DPM_ABORT_STATUS_MTILE read at the 1024x768 abort; [HW] the partial-render probes (dpm-partial-renders, one run): 0 after the 1024x768 jobs in 0x28 and 0x24 pages, 0x1f in 0x23, 6 after the 4096x4096 ones in 0x40 and 0x23"
 
 [[term]]
 id = "G0726"

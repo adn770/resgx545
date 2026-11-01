@@ -1744,6 +1744,40 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   format, while the other formats and the masks rest on the dumps the layout was read from; bit 15
   of a primitive list entry is set in 11 of the 24 random triangles, exactly those of one winding.
   *ta; HW, infer; data: `ta-objects`, `vdm-index2`, `ta-object-words`.*
+- `E309` After a job CR_DPM_TA_ALLOC_FREE_LIST_STATUS1 and CR_DPM_3D_FREE_LIST_STATUS1 hold the free
+  list's tail page in the high half and its head page in the low half, and the two STATUS2 registers
+  the page before the tail in the low half, as the page table in memory chains them: the DPM
+  rewrites the table in place, one 32-bit entry per page at the table base plus four times the page
+  number, appending each freed page at the tail; one run of ten jobs, its registers repeated by
+  E256's register timelines.
+  *dpm; HW, infer; data: `dpm-free-list`.*
+- `E310` CR_DPM_STATE_BASE0 and CR_DPM_CONTROL_BASE hold the RT data's DPM state and control pages;
+  after a job with a partial render the state page holds seventeen two-dword page lists, one per
+  macrotile numbered down then across and the global list last, each the page count and head page
+  then the tail page, and every other job leaves the TA data's control, OTPM and state pages zero;
+  TA3DCtl dwords 35 and 39 read the page count less 2 and the macrotile the DPM aborted; one run.
+  *dpm; HW, infer; data: `dpm-free-list`, `dpm-partial-renders`.*
+- `E311` Every triangle pixel of an overflowing scene is drawn by some render: with CR_ISP_CTL's
+  PROCESS_EMPTY_TILES clear the partial-render jobs draw all of the triangle (207456 pixels at
+  1024x768, 4422528 at 4096x4096) at every buffer size; with it set (the kernel's value) the pixels
+  missing are whole 32x16 regions of the macrotiles that held geometry at a partial render, painted
+  with the background by the final render, which has no stream for them.
+  *dpm; HW, infer; data: `dpm-partial-renders`, `dpm-partial-timelines`.*
+- `E312` Through a partial render CR_DPM_ABORT_STATUS_MTILE reads the aborted macrotile (5) as the
+  TA stops, CR_DPM_STATE_CONTEXT_ID turns 2 and CR_DPM_STATE_BASE1 is set to the RT data's state
+  page; the 3D then frees the pages of every macrotile, page status counting down to the global
+  list's one page, and the TA resumes from the list's head; with 0x23 pages the first partial render
+  starts at the first page; 0x0730 reads 1 while the 3D holds the global page, from a partial
+  render's start (or the render's, without one) to the final render's last free, the TA's runs
+  between partial renders included; 0x0738 reads 0 while a render runs, and 0x0748 0x1f idle, 0xf
+  while the TA holds pages and through a partial render, 0x7 in some samples while the TA takes
+  pages; 0x0740 stays 0.
+  *dpm; HW, infer; data: `dpm-partial-timelines`.*
+- `E313` With CR_DPM_REG_074C bit 8 set the 64x64 job faults at the context's address 0x20006010 or
+  0x20006012 whether CR_DPM_STATE_BASE1 holds 0x20006000 or 0x20042000, so the address does not come
+  from that register; on a context for up to 4096x4096, whose TA data covers 0x20006000, the same
+  word renders the triangle exactly, with no fault and nothing written to the TA data's DPM pages.
+  *dpm; HW, infer; data: `dpm-state-base`.*
 
 ## By unit
 
@@ -1753,7 +1787,7 @@ Records: E151.
 
 ### dpm
 
-Records: E199, E200, E201, E202, E204, E205, E206, E203, E253, E256.
+Records: E199, E200, E201, E202, E204, E205, E206, E203, E253, E256, E309, E310, E311, E312, E313.
 
 ### edm
 

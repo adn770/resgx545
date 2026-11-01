@@ -1,0 +1,10 @@
+title = "script table dpm/partial-timelines"
+repo = "data"
+paths = ["dpm/partial-timelines/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 4
+size = 129856
+sha256 = "129f2f4b64ef992834776149fc3ac281dd2640eb3dc9fb622cbcccf8e08eb474"
+recipe = "probes/dpm/partial-timelines.toml"
+needs = ["render", "render_pb_pages"]

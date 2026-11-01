@@ -8,4 +8,6 @@ terms = ["CR_DPM_PAGE"]
 +++
 
 Line 1410 of `sgxinit.c` in Samsung's Santos10 kernel (DDK 1.9) names `EUR_CR_DPM_PAGE`. It backs
-the glossary register `CR_DPM_PAGE`: DPM page register (purpose open).
+the glossary register `CR_DPM_PAGE`: DPM page register: while a 3D frees pages it holds the pages
+still held, as CR_DPM_PAGE_STATUS does, counting down to 0 (to 1, the global list's page, in a
+partial render).

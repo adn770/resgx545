@@ -13,3 +13,35 @@ source = "intel-ctp-santos10"
 citation = "C0499"
 licence = "GPL-2.0 OR MIT"
 evidence = "DDK debug-dump name table (RESTRICTED_REGISTERS block); no offset in any GPL source, offset 0x0700 is our binding via name EUR_CR_DPM_TA_ALLOC_FREE_LIST_STATUS1"
+
+[[term]]
+id = "G1083"
+name = "CR_DPM_TA_ALLOC_FREE_LIST_STATUS1.HEAD"
+status = "named"
+
+[[term.source]]
+term = "CR_DPM_TA_ALLOC_FREE_LIST_STATUS1.HEAD"
+kind = "bitfield"
+sgx545 = "0x0700[15:0]"
+meaning = "the head page of the TA side's free list, the next page the DPM hands out; while the TA runs, one above the pages it has taken"
+tier = "ours"
+source = "resgx545"
+citation = "probes/dpm/free-list.toml"
+licence = "MIT"
+evidence = "[HW] the free-list probes (dpm-free-list, one run; the register-timeline probes, platform-register-timelines, end with the same registers in six of its cases): after each of ten jobs, from 64x64 to 4096x4096, with and without partial renders, the register equals the free list walked in the render dump's page table; [HW] the timeline probes (dpm-partial-timelines, one run): it rises as the TA takes pages; [infer] the field names are ours"
+
+[[term]]
+id = "G1084"
+name = "CR_DPM_TA_ALLOC_FREE_LIST_STATUS1.TAIL"
+status = "named"
+
+[[term.source]]
+term = "CR_DPM_TA_ALLOC_FREE_LIST_STATUS1.TAIL"
+kind = "bitfield"
+sgx545 = "0x0700[31:16]"
+meaning = "the tail page of the TA side's free list: each page the 3D frees is appended there, so after a job it is the last page freed"
+tier = "ours"
+source = "resgx545"
+citation = "probes/dpm/free-list.toml"
+licence = "MIT"
+evidence = "[HW] the free-list probes (dpm-free-list, one run; the register-timeline probes, platform-register-timelines, end with the same registers in six of its cases): after each of ten jobs, from 64x64 to 4096x4096, with and without partial renders, the register equals the free list walked in the render dump's page table; [HW] the timeline probes (dpm-partial-timelines, one run): it takes each freed page in turn while page status counts down; [infer] the field names are ours"

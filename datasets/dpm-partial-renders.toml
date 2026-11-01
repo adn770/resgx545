@@ -1,0 +1,10 @@
+title = "script table dpm/partial-renders"
+repo = "data"
+paths = ["dpm/partial-renders/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 4
+size = 420531
+sha256 = "68c26fd84ca77e5949737c594eacf5f635f44944273b1fe89efcf7043882e3fa"
+recipe = "probes/dpm/partial-renders.toml"
+needs = ["render", "kpoke", "render_pb_pages", "buf09"]

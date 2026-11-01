@@ -13,3 +13,19 @@ source = "intel-ctp-santos10"
 citation = "C0493"
 licence = "GPL-2.0 OR MIT"
 evidence = "DDK debug-dump name table (RESTRICTED_REGISTERS block); no offset in any GPL source, offset 0x071c is our binding via name EUR_CR_DPM_3D_FREE_LIST_STATUS2"
+
+[[term]]
+id = "G1079"
+name = "CR_DPM_3D_FREE_LIST_STATUS2.PREV"
+status = "named"
+
+[[term.source]]
+term = "CR_DPM_3D_FREE_LIST_STATUS2.PREV"
+kind = "bitfield"
+sgx545 = "0x071c[15:0]"
+meaning = "the page before the tail of the 3D side's free list (the PB descriptor's dpm_ta_alloc holds it shifted into its high half); bits 31:16 read 0 in every sample"
+tier = "ours"
+source = "resgx545"
+citation = "probes/dpm/free-list.toml"
+licence = "MIT"
+evidence = "[HW] the free-list probes (dpm-free-list, one run; the register-timeline probes, platform-register-timelines, end with the same registers in six of its cases): after each of ten jobs, from 64x64 to 4096x4096, with and without partial renders, the register equals the free list walked in the render dump's page table; [HW] the timeline probes (dpm-partial-timelines, one run): 0x421 while the TA runs with the whole buffer, the page before each new tail while the 3D frees; [infer] the field names are ours"

@@ -1,27 +1,29 @@
 +++
 id = "Q038"
-question = "when a scene overflows its parameter buffer, are the missing pixels geometry the partial render discards or pixels a later background object paints over, and why does the amount drawn not follow the buffer size?"
+question = "does a background object with a colour reload, or a host that renders the scene's partial renders into a stored target, give the whole image of an overflowing scene, and what does the final render read back of a partial render's depth?"
 unit = "dpm"
 phase = 10
-evidence = ["E202", "E204", "E160"]
+evidence = ["E202", "E204", "E160", "E310", "E311", "E312"]
 terms = ["Parameter Buffer (PB)", "Dynamic Parameter Management (DPM)"]
 +++
 
-A triangle larger than its parameter buffer reports an overflow with the context kept and draws
-only part of the image, the same image in both repeats of every size (E202). The EDM's partial
-render runs in these jobs, once at 1024x768 and 1 to 10 times at 4096x4096 (E204), by the path
-that aborts a macrotile, renders what was tiled and restarts the TA (E160).
+What the missing pixels are is answered (E311): with `CR_ISP_CTL.PROCESS_EMPTY_TILES` clear every
+overflowing job draws the whole triangle (207456 pixels at 1024x768, 4422528 at 4096x4096) at every
+buffer size, so no geometry is discarded. With the kernel's value the missing pixels are whole
+regions of the macrotiles that held geometry at a partial render, painted with the background by the
+final render, whose streams hold only what the TA tiled after the last partial render. A partial
+render frees every macrotile's pages, not only the aborted one's (E312), and stores a page list per
+macrotile in the RT data's state page (E310). The amount drawn is the geometry tiled after the last
+partial render, so it does not follow the buffer size; at 1024x768 in 0x23 pages the image is exact,
+and the job's TA3DCtl words put its last abort at the first page (the ZLS threshold is 1, E310)
+[infer].
 
-Two things do not fit a plain "less buffer, less image". At 1024x768 the lost pixels fall as the
-buffer shrinks, 154574 at 0x30 pages, 44191 at 0x28 and 2225 at 0x24, and at 0x23 the job still
-reports an overflow and runs a partial render, yet the image is pixel-exact. At 4096x4096 the
-amount drawn is not monotone in the buffer size: 0x100 and 0x80 draw more than 0x62, and 0x28 and
-0x24 more than 0x30. Two readings fit the partial images: an aborted macrotile's geometry is
-discarded, or each partial render paints the whole background object over what earlier renders
-stored, since the scene has no colour reload [infer]. Neither is favoured by the data.
+What is open: the remedy is not run. A background object that reloads the target's colour (or
+depth through ZLS) in the final render and in each partial render should give the whole image; no
+run has built one. Whether the 3D kick's RT status bit 1 makes the final render load a partial
+render's depth (3d.md §6.4) is also not run, and a PB dump at each partial render waits for a
+kernel hook (11.10).
 
-To settle it: run the 1024x768 sizes 0x23 to 0x30 and the 4096x4096 sizes with the background
-object given a colour different from the target's sentinel and from the first render's clear, so
-that a pixel painted over by a later partial render is told from one never drawn; then with a
-colour reload of the target between partial renders. Print the missing pixels by macrotile, and
-save the parameter buffer at each partial render to see which macrotiles' objects were dropped.
+To settle it: a background object whose pixel program reads the target (a texture fetch of the
+colour buffer at the pixel's position) for the overflowing 1024x768 and 4096x4096 scenes, the image
+compared with the whole-buffer one; then with a depth test and a depth buffer stored by ZLS.

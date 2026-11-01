@@ -1,0 +1,47 @@
+[[term]]
+id = "G1086"
+name = "DPM_STATE_LIST.HEAD"
+status = "named"
+
+[[term.source]]
+term = "DPM_STATE_LIST.HEAD"
+kind = "field"
+sgx545 = "DPM_STATE_LIST word 0 [15:0]"
+meaning = "the list's first page; a list of one page has its head and tail equal"
+tier = "ours"
+source = "resgx545"
+citation = "probes/dpm/free-list.toml"
+licence = "MIT"
+evidence = "[HW] the free-list probes (dpm-free-list, one run): after the partial renders of the 1024x768 triangle in 0x30 pages and the 4096x4096 one in 0x100 pages the RT data's state page holds these lists, zero after every job without a partial render; [HW] the partial-render probes (dpm-partial-renders, one run): the macrotiles listed are those whose regions the image loses: (0x00030006, 0xb) is three pages from 6 to 0xb, (0x00010002, 2) one page; the counts add up to the pages taken at the abort less the global page; [infer] the name is ours"
+
+[[term]]
+id = "G1087"
+name = "DPM_STATE_LIST.PAGE_COUNT"
+status = "named"
+
+[[term.source]]
+term = "DPM_STATE_LIST.PAGE_COUNT"
+kind = "field"
+sgx545 = "DPM_STATE_LIST word 0 [31:16]"
+meaning = "the pages in the list"
+tier = "ours"
+source = "resgx545"
+citation = "probes/dpm/free-list.toml"
+licence = "MIT"
+evidence = "[HW] the free-list probes (dpm-free-list, one run): after the partial renders of the 1024x768 triangle in 0x30 pages and the 4096x4096 one in 0x100 pages the RT data's state page holds these lists, zero after every job without a partial render; [HW] the partial-render probes (dpm-partial-renders, one run): the macrotiles listed are those whose regions the image loses: (0x00030006, 0xb) is three pages from 6 to 0xb, (0x00010002, 2) one page; the counts add up to the pages taken at the abort less the global page; [infer] the name is ours"
+
+[[term]]
+id = "G1088"
+name = "DPM_STATE_LIST.TAIL"
+status = "named"
+
+[[term.source]]
+term = "DPM_STATE_LIST.TAIL"
+kind = "field"
+sgx545 = "DPM_STATE_LIST word 1 [15:0]"
+meaning = "the list's last page; a list of one page has its head and tail equal"
+tier = "ours"
+source = "resgx545"
+citation = "probes/dpm/free-list.toml"
+licence = "MIT"
+evidence = "[HW] the free-list probes (dpm-free-list, one run): after the partial renders of the 1024x768 triangle in 0x30 pages and the 4096x4096 one in 0x100 pages the RT data's state page holds these lists, zero after every job without a partial render; [HW] the partial-render probes (dpm-partial-renders, one run): the macrotiles listed are those whose regions the image loses: (0x00030006, 0xb) is three pages from 6 to 0xb, (0x00010002, 2) one page; the counts add up to the pages taken at the abort less the global page; [infer] the name is ours"

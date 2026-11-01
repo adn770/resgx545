@@ -9,4 +9,5 @@ terms = ["CR_DPM_ABORT_STATUS_MTILE"]
 
 Line 1408 of `sgxinit.c` in Samsung's Santos10 kernel (DDK 1.9) names
 `EUR_CR_DPM_ABORT_STATUS_MTILE`. It backs the glossary register `CR_DPM_ABORT_STATUS_MTILE`: DPM
-macrotile abort status.
+macrotile abort status: the macrotile the DPM aborts, numbered down then across, read as the TA
+stops for a partial render [infer].

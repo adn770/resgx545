@@ -12,7 +12,7 @@ tier = "1"
 source = "intel-ctp-santos10"
 citation = "C0262"
 licence = "GPL-2.0 OR MIT"
-evidence = "DDK debug-dump name table (RESTRICTED_REGISTERS block); no offset in any GPL source, offset 0x0630 is our binding via name DPM_STATE_CONTEXT_ID"
+evidence = "DDK debug-dump name table (RESTRICTED_REGISTERS block); no offset in any GPL source, offset 0x0630 is our binding via name DPM_STATE_CONTEXT_ID; [HW] the timeline probes (dpm-partial-timelines, one run): 2 from the first partial render's start, back to 0 when the final render starts at 1024x768 in 0x30 pages and 4096x4096 in 0x100, still 2 at the end of the 4096x4096 job in 0x23 pages (ten partial renders); 0 in the jobs without one"
 
 [[term.source]]
 term = "PSB_CR_DPM_STATE_CONTEXT_ID"

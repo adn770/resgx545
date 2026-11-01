@@ -557,6 +557,24 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   `CR_DPM_3D_PAGE_COUNTS.LOCAL` (ours, resgx545).
 - `CR_DPM_3D_PAGE_COUNTS.GLOBAL` G0617 (0x0660[31:16]): global pages of the 3D's PB [infer]. From
   `CR_DPM_3D_PAGE_COUNTS.GLOBAL` (ours, resgx545).
+- `CR_DPM_TA_ALLOC_FREE_LIST_STATUS1.HEAD` G1083 (0x0700[15:0]): the head page of the TA side's free
+  list, the next page the DPM hands out; while the TA runs, one above the pages it has taken. From
+  `CR_DPM_TA_ALLOC_FREE_LIST_STATUS1.HEAD` (ours, resgx545).
+- `CR_DPM_TA_ALLOC_FREE_LIST_STATUS1.TAIL` G1084 (0x0700[31:16]): the tail page of the TA side's
+  free list: each page the 3D frees is appended there, so after a job it is the last page freed.
+  From `CR_DPM_TA_ALLOC_FREE_LIST_STATUS1.TAIL` (ours, resgx545).
+- `CR_DPM_3D_FREE_LIST_STATUS1.HEAD` G1077 (0x070c[15:0]): the head page of the 3D side's free list,
+  the next page the DPM hands out; while the TA runs, one above the pages it has taken. From
+  `CR_DPM_3D_FREE_LIST_STATUS1.HEAD` (ours, resgx545).
+- `CR_DPM_3D_FREE_LIST_STATUS1.TAIL` G1078 (0x070c[31:16]): the tail page of the 3D side's free
+  list: each page the 3D frees is appended there, so after a job it is the last page freed. From
+  `CR_DPM_3D_FREE_LIST_STATUS1.TAIL` (ours, resgx545).
+- `CR_DPM_TA_ALLOC_FREE_LIST_STATUS2.PREV` G1085 (0x0710[15:0]): the page before the tail of the TA
+  side's free list (the PB descriptor's dpm_ta_alloc holds it shifted into its high half); bits
+  31:16 read 0 in every sample. From `CR_DPM_TA_ALLOC_FREE_LIST_STATUS2.PREV` (ours, resgx545).
+- `CR_DPM_3D_FREE_LIST_STATUS2.PREV` G1079 (0x071c[15:0]): the page before the tail of the 3D side's
+  free list (the PB descriptor's dpm_ta_alloc holds it shifted into its high half); bits 31:16 read
+  0 in every sample. From `CR_DPM_3D_FREE_LIST_STATUS2.PREV` (ours, resgx545).
 - `CR_TPU_LUMA_KEY_ALPHA.THRESHOLD` G1034 (0x0868[15:8]): the high end of the luma band; a luma
   above it takes alpha_above [infer]. From `CR_TPU_LUMA_KEY_ALPHA.THRESHOLD` (ours, resgx545).
 - `CR_TPU_LUMA_KEY_ALPHA.BELOW` G1032 (0x0868[23:16]): the alpha written for a luma inside the band
@@ -1115,8 +1133,10 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   `EUR_CR_DPM_CONTEXT_PB_BASE` (1, intel-ctp-santos10).
 - `CR_DPM_PDS_THRESHOLD` G0377 (0x0668): PDS page threshold of the parameter buffer, from the PB
   descriptor [infer]. From `CR_DPM_PDS_THRESHOLD` (ours, resgx545).
-- `CR_DPM_STATE_BASE1` G0381 (0x0674): DPM context state table address (second register of two),
-  written with CR_DPM_STATE_BASE0 [infer]. From `CR_DPM_STATE_BASE1` (ours, resgx545).
+- `CR_DPM_STATE_BASE1` G0381 (0x0674): DPM context state table address (second register of two): set
+  at the start of a partial render to the RT data's state page, CR_DPM_STATE_BASE0's value, and kept
+  until the next partial render; not the place CR_DPM_REG_074C bit 8 reaches [infer]. From
+  `CR_DPM_STATE_BASE1` (ours, resgx545).
 - `CR_DPM_TASK_3D_FREE` G0383 (0x0680): DPM task: load the 3D free list. From
   `PSB_CR_DPM_TASK_3D_FREE` (1c, emgd-psb_regs).
 - `CR_DPM_TASK_TA_FREE` G0386 (0x0684): DPM task: load the TA free list. From
@@ -1137,23 +1157,36 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   From `EUR_CR_DPM_TA_ALLOC_FREE_LIST_STATUS2` (1, intel-ctp-santos10).
 - `CR_DPM_3D_FREE_LIST_STATUS2` G0826 (0x071c): DPM 3D free-list status, word 2. From
   `EUR_CR_DPM_3D_FREE_LIST_STATUS2` (1, intel-ctp-santos10).
-- `CR_DPM_ABORT_STATUS_MTILE` G0371 (0x0720): DPM macrotile abort status. From
+- `CR_DPM_ABORT_STATUS_MTILE` G0371 (0x0720): DPM macrotile abort status: the macrotile the DPM
+  aborts, numbered down then across, read as the TA stops for a partial render [infer]. From
   `EUR_CR_DPM_ABORT_STATUS_MTILE` (1, intel-ctp-santos10).
 - `CR_DPM_PAGE_STATUS` G0375 (0x0724): DPM pages in use: total and TA. From `EUR_CR_DPM_PAGE_STATUS`
   (1, intel-ctp-santos10); `PSB_CR_DPM_PAGE_STATUS` (1c, emgd-psb_regs).
-- `CR_DPM_PAGE` G0829 (0x0728): DPM page register (purpose open). From `EUR_CR_DPM_PAGE` (1,
-  intel-ctp-santos10).
+- `CR_DPM_PAGE` G0829 (0x0728): DPM page register: while a 3D frees pages it holds the pages still
+  held, as CR_DPM_PAGE_STATUS does, counting down to 0 (to 1, the global list's page, in a partial
+  render). From `EUR_CR_DPM_PAGE` (1, intel-ctp-santos10).
 - `CR_DPM_GLOBAL_PAGE_STATUS` G0828 (0x072c): DPM global-list pages: total and TA. From
   `EUR_CR_DPM_GLOBAL_PAGE_STATUS` (1, intel-ctp-santos10); `PSB_CR_DPM_GLOBAL_PAGE_STATUS` (1c,
   emgd-psb_regs).
+- `CR_DPM_REG_0730` G1080 (0x0730): inferred reading (unconfirmed): the 3D side's global page count:
+  1 while the 3D holds the global page, from the first render or partial render of a job until the
+  final render frees its last page, the TA's runs between partial renders included; 0 otherwise
+  [infer]. From `CR_DPM_REG_0730` (ours, resgx545).
 - `CR_DPM_REQUESTING` G0830 (0x0734): DPM requests pending. From `EUR_CR_DPM_REQUESTING` (1,
   intel-ctp-santos10).
+- `CR_DPM_REG_0738` G1081 (0x0738): inferred reading (unconfirmed): a DPM flag that reads 1 when no
+  render runs and 0 from a render's (or a partial render's) start to its end [infer]. From
+  `CR_DPM_REG_0738` (ours, resgx545).
 - `CR_DPM_3D_RT_INDEX` G0370 (0x073c): render target index of the render, for render-target arrays
   [infer]. From `CR_DPM_3D_RT_INDEX` (ours, resgx545).
-- `CR_DPM_REG_074C` G0378 (0x074c): inferred reading (unconfirmed): the enable (bit 8) and setup of
-  a DPM structure that follows the TA data (a second list, as a partial-render or context-switch
-  arrangement would need), off in every client. Measured: TA command word; 0 in captures [infer].
-  From `CR_DPM_REG_074C` (ours, resgx545).
+- `CR_DPM_REG_0748` G1082 (0x0748): inferred reading (unconfirmed): a DPM state word: 0x1f idle and
+  from the last TA's end, 0xf while the TA holds pages and through a partial render, 0x7 in some
+  samples while the TA takes pages, the 1024x768 abort among them; its bits one by one are not shown
+  [infer]. From `CR_DPM_REG_0748` (ours, resgx545).
+- `CR_DPM_REG_074C` G0378 (0x074c): inferred reading (unconfirmed): the enable (bit 8) of a DPM
+  access near offset 0x6010 of the context's TA-data space, fixed whatever CR_DPM_STATE_BASE1 holds;
+  with that place mapped the job is unchanged; off in every client. Measured: TA command word; 0 in
+  captures [infer]. From `CR_DPM_REG_074C` (ours, resgx545).
 - `CR_REG_0800` G0154 (0x0800): inferred reading (unconfirmed): an on-chip resource limit (bits 5:0
   = 48, bits 23:8) for work other than pixel tasks (vertex or state tasks, context switches);
   pixel-bound renders ignore it (E136). Measured: set by the init script and per render; 0x30
@@ -1569,6 +1602,12 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   command. From `ui32CacheControl` (1, sgx545-ce).
 - `command.data` G0099 (COMMAND+0x08): six command words; [1] = context/data address. From
   `ui32Data` (1, sgx545-ce).
+- `dpm_state.mtile_lists` G1091 (DPM_STATE+0x000): the page lists of the sixteen macrotiles, two
+  dwords each (DPM_STATE_LIST), the macrotiles numbered down then across. From
+  `dpm_state.mtile_lists` (ours, resgx545).
+- `dpm_state.global_list` G1090 (DPM_STATE+0x080): the global list's two dwords (DPM_STATE_LIST):
+  one page, page 1, the first page of a job on a fresh table, which the 3D frees last [infer:
+  global]. From `dpm_state.global_list` (ours, resgx545).
 - `host_ctl.init_status` G0079 (HOST_CTL+0x00): EDM init status; INIT_STATUS.COMPLETE. From
   `ui32InitStatus` (1, sgx545-ce).
 - `host_ctl.power_status` G0085 (HOST_CTL+0x04): POWER_STATUS.* bits. From `ui32PowerStatus` (1,
@@ -2426,6 +2465,9 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   transfer command. From `SGXMKIF_TRANSFERCMD_SHARED` (1, sgx545-ce).
 - `ta3d_ctl` G0024 (0xec (hKernelSGXTA3DCtlMemInfo)): TA/3D control block of the EDM. From
   `sTA3DCtl` (1c, emgd-linux).
+- `dpm_state` G1089 (DPM_STATE (0x88 of the state page)): an RT data's DPM state page (its state
+  word, CR_DPM_STATE_BASE0) as the DPM leaves it after a partial render: sixteen macrotile page
+  lists, then the global list (DPM_STATE_LIST). From `dpm_state` (ours, resgx545).
 - `pb_block` G0559 (pb_block (0x10)): GPL name of the HW PB block allocation. From
   `psHWBlockKernelMemInfo` (1, sgx545-ce).
 - `hw_pb_desc` G0517 (~ HWPBDESC): Rogue FW free list = parameter-buffer pages. From
@@ -2538,6 +2580,12 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 
 - `DOUTI.SHADEMODEL` G0206: (Rogue) iteration shade model; placed on SGX545 as DOUTI0.SHADEMODEL.
   From `PVR_ROGUE_PDSINST_DOUT_FIELDS_DOUTI_SRC_SHADEMODEL` (3, mesa-pds-defs).
+- `DPM_STATE_LIST.HEAD` G1086 (DPM_STATE_LIST word 0 [15:0]): the list's first page; a list of one
+  page has its head and tail equal. From `DPM_STATE_LIST.HEAD` (ours, resgx545).
+- `DPM_STATE_LIST.PAGE_COUNT` G1087 (DPM_STATE_LIST word 0 [31:16]): the pages in the list. From
+  `DPM_STATE_LIST.PAGE_COUNT` (ours, resgx545).
+- `DPM_STATE_LIST.TAIL` G1088 (DPM_STATE_LIST word 1 [15:0]): the list's last page; a list of one
+  page has its head and tail equal. From `DPM_STATE_LIST.TAIL` (ours, resgx545).
 - `EMIT0.MINCLIP_X` G1035 (EMIT0 (emit1 src0) [12:0]): clip rectangle min x. From `minclip_x` (3,
   mesa-csbgen).
 - `EMIT2.BITS15_8` G0226 (EMIT2 (emit2 src0) [15:8]): inferred reading (unconfirmed): a count, in

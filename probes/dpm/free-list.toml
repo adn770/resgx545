@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# dpm free list: 1 probes (written by tools/usse-asm/dpm_words.py).
+# Q036, Q067, Q045: the page table, the DPM status registers and the TA data's DPM pages
+needs = ["render", "render_param", "render_tadata", "render_pb_pages", "regs", "buf09"]
+name = "dpm-free-list"
+script = "free-list.sh"
+
+[[probe]]
+name = "dpm-free-list-green"
+question = "the 64x64 triangle with a green pixel shader, its render memory dumped (the script's jobs run this shader)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+dump_render = true
+size = [0x40, 0x40]
+inputs = ["OP"]
+labels = ["green"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]

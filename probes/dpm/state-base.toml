@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# dpm state base: 1 probes (written by tools/usse-asm/dpm_words.py).
+# CR_DPM_REG_074C bit 8 against CR_DPM_STATE_BASE1
+needs = ["render", "kpoke", "render_param", "render_tadata", "render_pb_pages", "regs"]
+name = "dpm-state-base"
+script = "state-base.sh"
+
+[[probe]]
+name = "dpm-state-base-green"
+question = "the 64x64 triangle with a green pixel shader, its render memory dumped (the script's probe jobs run this shader)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+dump_render = true
+size = [0x40, 0x40]
+inputs = ["OP"]
+labels = ["green"]
+cases = [["mov.skipinv.end o0, #0xFF00FF00"]]

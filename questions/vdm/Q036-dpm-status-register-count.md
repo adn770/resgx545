@@ -1,25 +1,29 @@
 +++
 id = "Q036"
-question = "what do the high halves of CR_DPM_TA_ALLOC_FREE_LIST_STATUS1 and CR_DPM_3D_FREE_LIST_STATUS1 (0x0700, 0x070c), and CR_DPM_TA_ALLOC_FREE_LIST_STATUS2 and CR_DPM_3D_FREE_LIST_STATUS2 (0x0710, 0x071c), hold after a 3D has handed the pages back?"
+question = "what do the high half of the DPM STATUS2 registers (0x0710, 0x071c) and the DPM's other status words (0x0748 bit by bit, CR_DPM_3D_PAGE_COUNTS' high half) hold, now that STATUS1 and STATUS2's low half are the free list's tail, head and page before the tail?"
 unit = "vdm"
 phase = 10
-evidence = ["E184", "E256"]
+evidence = ["E160", "E184", "E256", "E309", "E310", "E312"]
 terms = ["Dynamic Parameter Management (DPM)", "Parameter Buffer (PB)", "ta3d_ctl"]
 +++
 
-The four registers agree in pairs (E184). Sampled through every job (E256): while the TA runs, the
-high half of CR_DPM_TA_ALLOC_FREE_LIST_STATUS1 (0x0700) holds the parameter buffer's size in pages
-and CR_DPM_TA_ALLOC_FREE_LIST_STATUS2 (0x0710) that size less one, and the low half of 0x0700 counts
-the pages the TA takes, one above `CR_DPM_PAGE_STATUS`; the 3D copies the TA pair into
-CR_DPM_3D_FREE_LIST_STATUS1 (0x070c) and CR_DPM_3D_FREE_LIST_STATUS2 (0x071c) when it starts. So the
-low half is a count, the pages of the scene plus one, and it keeps that value after the job: E184's
-3, 5 and 6 are two, four and five pages.
+What the four free-list status registers hold after a 3D is answered (E309): the page table in the
+render dump, walked from its head after ten jobs (one run; E256's run repeats the registers), gives
+STATUS1 (0x0700, 0x070c) as the list's tail page in the high half and its head in the low half, and
+STATUS2 (0x0710, 0x071c) as the page before the tail in the low half. The DPM rewrites the table in
+place, one 32-bit entry per page, appending each freed page at the tail; E184's and E256's values
+(0x0001 and 0x94 after 4096x4096) are the tail and the page before it. During the TA the head rises
+as pages are taken and STATUS2 holds the page before the initial tail (E312).
 
-What is open: during the 3D the high halves and the second pair change at every step while the
-page count falls, and after the job they hold values such as 0x0001 and 0x94 that are no count.
-Read as the free list's head and tail after the pages went back, in the order the 3D freed them
-[infer]; no run has read the free list to check it.
+What is open: STATUS2's high half reads 0 in every sample, so what it would hold is not shown;
+0x0748 reads 0x1f idle, 0xf while the TA holds pages and through a partial render, and 0x7 in some
+samples while the TA takes pages, the 1024x768 abort among them (E312), its bits one by one not
+separated; `CR_DPM_3D_PAGE_COUNTS` holds 1 in its high half from 256x256 up and 0 at 64x64 (E310),
+which may count the global list's pages. TA3DCtl dword 36 (`abort_page_count1`) reads 0 after every
+partial render, where E160's reading of the firmware has the abort write
+`CR_DPM_GLOBAL_PAGE_STATUS`' page count less 2 there, which predicts 0xffff at the 1024x768 abort
+(E310); whether that reading or the count it assumes is off is open.
 
-To settle it: save the parameter buffer's free list (the DPM page table) after a 64x64 and a
-1024x768 triangle and after a partial render, with the four registers, and compare the high
-halves and the second pair with the list's first and last entries.
+To settle it: sample 0x0710, 0x0748 and 0x0660 through jobs with one, two and three renders on a
+context and with partial renders in the middle, at sizes between 64x64 and 256x256; sample 0x072c
+and TA3DCtl dword 36 through a partial render whose global list holds more than one page.

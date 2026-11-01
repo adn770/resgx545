@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# dpm partial timelines: 0 probes (written by tools/usse-asm/dpm_words.py).
+# Q038, Q036, Q045: the DPM registers through each partial render
+needs = ["render", "render_pb_pages"]
+name = "dpm-partial-timelines"
+script = "partial-timelines.sh"

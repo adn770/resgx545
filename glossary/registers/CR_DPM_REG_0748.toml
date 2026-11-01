@@ -1,0 +1,15 @@
+[[term]]
+id = "G1082"
+name = "CR_DPM_REG_0748"
+status = "inferred"
+
+[[term.source]]
+term = "CR_DPM_REG_0748"
+kind = "register"
+sgx545 = "0x0748"
+meaning = "a DPM state word: 0x1f idle and from the last TA's end, 0xf while the TA holds pages and through a partial render, 0x7 in some samples while the TA takes pages, the 1024x768 abort among them; its bits one by one are not shown [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "probes/dpm/partial-timelines.toml"
+licence = "MIT"
+evidence = "[HW] the timeline probes (dpm-partial-timelines, one run): 0x1f before and after every job, 0xf from the TA's first page and through each partial render; 0x7 in six samples: the 1024x768 abort in 0x30 pages, page status 0x51 of 4096x4096 in 0x100 (its abort at 0xde reads 0xf), and four of the ten TA runs after a partial render in 0x23 pages, one just after a resume at page status 1; [infer] the reading and the name are ours"

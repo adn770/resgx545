@@ -1,0 +1,10 @@
+title = "script and probe table dpm/state-base"
+repo = "data"
+paths = ["dpm/state-base/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 9
+size = 4643337
+sha256 = "7bae25c7e9f8a7b854dadfc32fc43211afcc4f5ccb1f805622fe927ddfb2dfc0"
+recipe = "probes/dpm/state-base.toml"
+needs = ["render", "kpoke", "render_param", "render_tadata", "render_pb_pages", "regs"]

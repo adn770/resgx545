@@ -1,0 +1,15 @@
+[[term]]
+id = "G1080"
+name = "CR_DPM_REG_0730"
+status = "inferred"
+
+[[term.source]]
+term = "CR_DPM_REG_0730"
+kind = "register"
+sgx545 = "0x0730"
+meaning = "the 3D side's global page count: 1 while the 3D holds the global page, from the first render or partial render of a job until the final render frees its last page, the TA's runs between partial renders included; 0 otherwise [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "probes/dpm/partial-timelines.toml"
+licence = "MIT"
+evidence = "[RE] the EDM stores its low half to hw_pb_desc.global_page_count, where the TA side stores CR_DPM_GLOBAL_PAGE_STATUS' count (edm_dataflow.md); [HW] the timeline probes (dpm-partial-timelines, one run): 0 while the TA takes pages before any render, with CR_DPM_GLOBAL_PAGE_STATUS already 0x00010001; 1 from a render's or the first partial render's start, and, once a partial render has run, also while the TA runs between partial renders (1024x768 in 0x30 pages, 4096x4096 in 0x100, and in 0x23 every gap but one sample); 0 when the final render frees the last page; [HW] the register-timeline probes (platform-register-timelines, one run): 1 while the 3D frees pages; [infer] the reading and the name are ours"

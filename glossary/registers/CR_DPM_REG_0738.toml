@@ -1,0 +1,15 @@
+[[term]]
+id = "G1081"
+name = "CR_DPM_REG_0738"
+status = "inferred"
+
+[[term.source]]
+term = "CR_DPM_REG_0738"
+kind = "register"
+sgx545 = "0x0738"
+meaning = "a DPM flag that reads 1 when no render runs and 0 from a render's (or a partial render's) start to its end [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "probes/dpm/partial-timelines.toml"
+licence = "MIT"
+evidence = "[HW] the timeline probes (dpm-partial-timelines, one run): 0 through each of the twelve partial renders and the final renders sampled, 1 between them; [infer] the reading and the name are ours"

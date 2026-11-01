@@ -53,10 +53,18 @@ sits, the reading, and the evidence records it rests on.
 
 ## registers: DPM
 
-- `G0378` `CR_DPM_REG_074C` (0x074c): the enable (bit 8) and setup of a DPM structure that follows
-  the TA data (a second list, as a partial-render or context-switch arrangement would need), off in
-  every client. Measured: TA command word; 0 in captures [infer]. Evidence: E030, E056, E071, E072,
-  E159, E203, E206.
+- `G1080` `CR_DPM_REG_0730` (0x0730): the 3D side's global page count: 1 while the 3D holds the
+  global page, from the first render or partial render of a job until the final render frees its
+  last page, the TA's runs between partial renders included; 0 otherwise [infer].
+- `G1081` `CR_DPM_REG_0738` (0x0738): a DPM flag that reads 1 when no render runs and 0 from a
+  render's (or a partial render's) start to its end [infer].
+- `G1082` `CR_DPM_REG_0748` (0x0748): a DPM state word: 0x1f idle and from the last TA's end, 0xf
+  while the TA holds pages and through a partial render, 0x7 in some samples while the TA takes
+  pages, the 1024x768 abort among them; its bits one by one are not shown [infer].
+- `G0378` `CR_DPM_REG_074C` (0x074c): the enable (bit 8) of a DPM access near offset 0x6010 of the
+  context's TA-data space, fixed whatever CR_DPM_STATE_BASE1 holds; with that place mapped the job
+  is unchanged; off in every client. Measured: TA command word; 0 in captures [infer]. Evidence:
+  E030, E056, E071, E072, E159, E203, E206.
 
 ## registers: ISP
 

@@ -1,0 +1,47 @@
+[[term]]
+id = "G1089"
+name = "dpm_state"
+status = "named"
+
+[[term.source]]
+term = "dpm_state"
+kind = "struct"
+sgx545 = "DPM_STATE (0x88 of the state page)"
+meaning = "an RT data's DPM state page (its state word, CR_DPM_STATE_BASE0) as the DPM leaves it after a partial render: sixteen macrotile page lists, then the global list (DPM_STATE_LIST)"
+tier = "ours"
+source = "resgx545"
+citation = "probes/dpm/free-list.toml"
+licence = "MIT"
+evidence = "[HW] the free-list probes (dpm-free-list, one run): after the partial renders of the 1024x768 triangle in 0x30 pages and the 4096x4096 one in 0x100 pages the RT data's state page holds these lists, zero after every job without a partial render; [HW] the partial-render probes (dpm-partial-renders, one run): the macrotiles listed are those whose regions the image loses; [infer] the name is ours"
+
+[[term]]
+id = "G1090"
+name = "dpm_state.global_list"
+status = "named"
+
+[[term.source]]
+term = "dpm_state.global_list"
+kind = "field"
+sgx545 = "DPM_STATE+0x080"
+meaning = "the global list's two dwords (DPM_STATE_LIST): one page, page 1, the first page of a job on a fresh table, which the 3D frees last [infer: global]"
+tier = "ours"
+source = "resgx545"
+citation = "probes/dpm/free-list.toml"
+licence = "MIT"
+evidence = "[HW] the free-list probes (dpm-free-list, one run): after the partial renders of the 1024x768 triangle in 0x30 pages and the 4096x4096 one in 0x100 pages the RT data's state page holds these lists, zero after every job without a partial render; [HW] the partial-render probes (dpm-partial-renders, one run): the macrotiles listed are those whose regions the image loses; [infer] the name is ours"
+
+[[term]]
+id = "G1091"
+name = "dpm_state.mtile_lists"
+status = "named"
+
+[[term.source]]
+term = "dpm_state.mtile_lists"
+kind = "field"
+sgx545 = "DPM_STATE+0x000"
+meaning = "the page lists of the sixteen macrotiles, two dwords each (DPM_STATE_LIST), the macrotiles numbered down then across"
+tier = "ours"
+source = "resgx545"
+citation = "probes/dpm/free-list.toml"
+licence = "MIT"
+evidence = "[HW] the free-list probes (dpm-free-list, one run): after the partial renders of the 1024x768 triangle in 0x30 pages and the 4096x4096 one in 0x100 pages the RT data's state page holds these lists, zero after every job without a partial render; [HW] the partial-render probes (dpm-partial-renders, one run): the macrotiles listed are those whose regions the image loses; [infer] the name is ours"

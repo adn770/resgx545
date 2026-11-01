@@ -10,9 +10,10 @@
 
 ## dpm
 
-- `Q038` (phase 10): when a scene overflows its parameter buffer, are the missing pixels geometry the partial render discards or pixels a later background object paints over, and why does the amount drawn not follow the buffer size? (E202, E204, E160)
-- `Q045` (phase 11): what sets the fields of register 0x0740 that the TA kick turns into DPM store and load tasks, and what do those tasks move? (E158, E256)
-- `Q067` (phase 11): how does the PB store offset scale with the page count, how must a host lay out a page table it builds itself, and does the settle routine wait for the other pipe to go idle? (E153, E200, E201)
+- `Q038` (phase 10): does a background object with a colour reload, or a host that renders the scene's partial renders into a stored target, give the whole image of an overflowing scene, and what does the final render read back of a partial render's depth? (E202, E204, E160, E310, E311, E312)
+- `Q045` (phase 11): what sets the fields of register 0x0740 that the TA kick turns into DPM store and load tasks, and does a load task read back the macrotile lists a partial render stores in the RT data's state page? (E158, E256, E310, E312)
+- `Q067` (phase 11): how does the EDM's page-table builder (PB_FLAGS.INIT_PAGE_TABLE) scale its store offset, and does the settle routine wait for the other pipe to go idle? (E153, E200, E201, E309)
+- `Q081` (phase 11): what does CR_DPM_REG_074C bit 8 make the DPM read or write near offset 0x6010 of the context's TA-data space, and what fixes that place? (E203, E206, E313)
 
 ## edm
 
@@ -121,7 +122,7 @@
 ## vdm
 
 - `Q015` (phase 6): what makes VDM state word 1 with bits 11:9 = 7 hang some runs of a job and complete others? (E060, E185, E299, E300)
-- `Q036` (phase 10): what do the high halves of CR_DPM_TA_ALLOC_FREE_LIST_STATUS1 and CR_DPM_3D_FREE_LIST_STATUS1 (0x0700, 0x070c), and CR_DPM_TA_ALLOC_FREE_LIST_STATUS2 and CR_DPM_3D_FREE_LIST_STATUS2 (0x0710, 0x071c), hold after a 3D has handed the pages back? (E184, E256)
+- `Q036` (phase 10): what do the high half of the DPM STATUS2 registers (0x0710, 0x071c) and the DPM's other status words (0x0748 bit by bit, CR_DPM_3D_PAGE_COUNTS' high half) hold, now that STATUS1 and STATUS2's low half are the free list's tail, head and page before the tail? (E160, E184, E256, E309, E310, E312)
 - `Q037` (phase 10): does a hung job's saved render memory show how far the TA got, when the control hung in its pixel task leaves its object in one run and none in the next? (E186)
 - `Q042` (phase 11): what do bits 27:24 of the index list's first trailing word (VDM_INDEX2) do, when its low bits move the list's first index and 0x0f000000 drops two of five triangles? (E188, E300, E307, E308)
 - `Q047` (phase 11): what do VDM_STATE1 bit 8, bits 11:9 and bits 15:13 select for a state task, when on the one-triangle job bit 8 changes nothing, bits 11:9 at 0 stop the triangle before tiling and bits 15:13 at 0, 5 or 6 hang it? (E060, E185, E186, E187, E299)

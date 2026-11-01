@@ -1,0 +1,10 @@
+title = "script and probe table dpm/free-list"
+repo = "data"
+paths = ["dpm/free-list/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 9
+size = 4663121
+sha256 = "6474ef8f93162fe5d7ea2132c9c7ec77f770b07aac1b4e7ea63b53aa7406e982"
+recipe = "probes/dpm/free-list.toml"
+needs = ["render", "render_param", "render_tadata", "render_pb_pages", "regs", "buf09"]

@@ -20,7 +20,7 @@ evidence records its rows, its fields' rows and its measured width cite.
 | CLKGATE | 3 | 3 | 0 | 35 | 0 |
 | CORE | 2 | 2 | 0 | 0 | 0 |
 | DMS | 1 | 0 | 0 | 0 | 0 |
-| DPM | 37 | 2 | 18 | 0 | 0 |
+| DPM | 40 | 6 | 18 | 32 | 0 |
 | EVENT | 16 | 9 | 0 | 102 | 0 |
 | HWPERF | 11 | 1 | 10 | 9 | 9 |
 | ISP | 34 | 4 | 29 | 6 | 6 |
@@ -36,7 +36,7 @@ evidence records its rows, its fields' rows and its measured width cite.
 | TSP | 1 | 0 | 0 | 0 | 0 |
 | USE | 32 | 6 | 12 | 65 | 0 |
 | VDM | 2 | 0 | 1 | 0 | 0 |
-| total | 214 | 48 | 117 | 514 | 19 |
+| total | 217 | 52 | 117 | 546 | 19 |
 
 ## (no unit)
 
@@ -148,16 +148,23 @@ evidence records its rows, its fields' rows and its measured width cite.
 - `0x0698` `CR_DPM_TASK_CONTROL`: width 32 bits assumed; no field rows.
 - `0x069c` `CR_DPM_OUTOFMEM`: width 32 bits assumed; no field rows.
 - `0x06a0` `CR_DPM_FREE_CONTEXT`: width 32 bits assumed; no field rows.
-- `0x0700` `CR_DPM_TA_ALLOC_FREE_LIST_STATUS1`: width 32 bits assumed; no field rows.
-- `0x070c` `CR_DPM_3D_FREE_LIST_STATUS1`: width 32 bits assumed; no field rows.
-- `0x0710` `CR_DPM_TA_ALLOC_FREE_LIST_STATUS2`: width 32 bits assumed; no field rows.
-- `0x071c` `CR_DPM_3D_FREE_LIST_STATUS2`: width 32 bits assumed; no field rows.
+- `0x0700` `CR_DPM_TA_ALLOC_FREE_LIST_STATUS1`: width 32 bits assumed; 2 fields: TAIL [31:16], HEAD
+  [15:0]; uncovered - (0 bits).
+- `0x070c` `CR_DPM_3D_FREE_LIST_STATUS1`: width 32 bits assumed; 2 fields: TAIL [31:16], HEAD
+  [15:0]; uncovered - (0 bits).
+- `0x0710` `CR_DPM_TA_ALLOC_FREE_LIST_STATUS2`: width 32 bits assumed; 1 field: PREV [15:0];
+  uncovered 31:16 (16 bits).
+- `0x071c` `CR_DPM_3D_FREE_LIST_STATUS2`: width 32 bits assumed; 1 field: PREV [15:0]; uncovered
+  31:16 (16 bits).
 - `0x0720` `CR_DPM_ABORT_STATUS_MTILE`: width 32 bits assumed; no field rows.
 - `0x0724` `CR_DPM_PAGE_STATUS`: width 32 bits assumed; no field rows.
 - `0x0728` `CR_DPM_PAGE`: width 32 bits assumed; no field rows.
 - `0x072c` `CR_DPM_GLOBAL_PAGE_STATUS`: width 32 bits assumed; no field rows.
+- `0x0730` `CR_DPM_REG_0730`: width 32 bits assumed; no field rows.
 - `0x0734` `CR_DPM_REQUESTING`: width 32 bits assumed; no field rows.
+- `0x0738` `CR_DPM_REG_0738`: width 32 bits assumed; no field rows.
 - `0x073c` `CR_DPM_3D_RT_INDEX`: width 9 bits (8:0, E253); no field rows. Records: E163, E253.
+- `0x0748` `CR_DPM_REG_0748`: width 32 bits assumed; no field rows.
 - `0x074c` `CR_DPM_REG_074C`: width 9 bits (8:0, E253); no field rows. Records: E030, E056, E071,
   E072, E159, E203, E206, E253.
 
@@ -236,7 +243,7 @@ evidence records its rows, its fields' rows and its measured width cite.
 - `0x0408` `CR_ISP_REGION_HEADER_BASE`: width 30 bits (31:2, E249); no field rows. Records: E163,
   E249.
 - `0x0414` `CR_ISP_CTL`: width 12 bits (24, 19:16, 8, 5:0, E249); 2 fields: PROCESS_EMPTY_TILES [8],
-  VALID_ID [5:0]; uncovered 24, 19:16 (5 bits). Records: E231, E232, E233, E249.
+  VALID_ID [5:0]; uncovered 24, 19:16 (5 bits). Records: E160, E231, E232, E233, E249.
 - `0x0418` `CR_ISP_LINE_SAMPLE_POS`: width 1 bits (0, E067, E249); no field rows. Records: E066,
   E067, E068, E072, E073, E249, E279, E291.
 - `0x041c` `CR_ISP_POLY_OFFSET_UNITS`: width 24 bits (23:0, E249); no field rows. Records: E071,

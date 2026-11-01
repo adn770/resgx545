@@ -12,7 +12,7 @@ tier = "3"
 source = "linux-imagination"
 citation = "C0173"
 licence = "GPL-2.0-only OR MIT"
-evidence = "same function: per-render ISP control from the render details; the EDM ORs 0x100 in on the partial-render path, the role of Rogue's PROCESS_EMPTY_TILES (RE); bit positions differ; [HW] E231: bits 5:0 each remove an opaque triangle and leave punch-through objects drawn; no bit lets the stencil act on a punch-through pass; [HW] E232: any of bits 5:0 removes ISP0 pass types 0 and 1 and leaves 2, 4, 5 and 6 drawn, whatever the value"
+evidence = "same function: per-render ISP control from the render details; the EDM ORs 0x100 in on the partial-render path, the role of Rogue's PROCESS_EMPTY_TILES (RE), not seen on the hardware: [HW] the partial-render probes (dpm-partial-renders, one run): with render details word 3 at 0xf0000 the partial renders of every overflowing job leave the regions without geometry unwritten, as the whole-buffer job does, so bit 8 was not set for them; [RE] E160 lists the partial render's changes to the render details' block, and this word is not among them; bit positions differ; [HW] E231: bits 5:0 each remove an opaque triangle and leave punch-through objects drawn; no bit lets the stencil act on a punch-through pass; [HW] E232: any of bits 5:0 removes ISP0 pass types 0 and 1 and leaves 2, 4, 5 and 6 drawn, whatever the value"
 
 [[term]]
 id = "G1052"
@@ -28,7 +28,7 @@ tier = "3"
 source = "linux-imagination"
 citation = "C0713"
 licence = "GPL-2.0-only OR MIT"
-evidence = "EDM sets bit 8 only on the partial-render path (RE); both need every tile visited, Rogue's bit role; Rogue has the bit at 17; [HW] the ISP_CTL probes (isp-isp-ctl, one run): clear, every 32x16 region without a control stream but the scene's last is left unwritten (1, 12 and 33 regions at 96x64, 128x128 and 256x128, none at 64x64)"
+evidence = "EDM sets bit 8 only on the partial-render path (RE), not seen on the hardware: [HW] the partial-render probes (dpm-partial-renders, one run): with the bit clear in the render details the partial renders of every overflowing job leave the regions without geometry unwritten, so it was not set for them; both need every tile visited, Rogue's bit role; Rogue has the bit at 17; [HW] the ISP_CTL probes (isp-isp-ctl, one run): clear, every 32x16 region without a control stream but the scene's last is left unwritten (1, 12 and 33 regions at 96x64, 128x128 and 256x128, none at 64x64)"
 
 [[term.source]]
 term = "process_empty_tiles"
