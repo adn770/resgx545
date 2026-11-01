@@ -1,0 +1,10 @@
+title = "probe table usse/fw37-ima32hi-repeat"
+repo = "data"
+paths = ["usse/fw37-ima32hi-repeat/"]
+method = "the campaign runner on the laptop target (tools/campaign, the 11.35 copy), SGX_PROBE_BETWEEN a debugfs reset and 3 s before every job, the frozen table of probes/p1136/manifest-1137.sha256 with probe names prefixed usse-fw37-ima32hi-repeat- as the runner requires; env.toml gained the tool, its source sha256, the between-jobs setting, the predictions hash and the table note by hand after the run"
+date = "2026-11-09"
+files = 362
+size = 1837325
+sha256 = "51b852c53bcbb5ab31162b52a167fb3052eba2802bc55402b3806effe9ebf443"
+recipe = "probes/usse/fw37-ima32hi-repeat.toml"
+needs = ["render"]

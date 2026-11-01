@@ -1,0 +1,38 @@
+item verdict           form                                             what
+7    VER: unknown form ima32.u r11, i0, r5, c56, r4                     high word with the extra operand
+7    VER: unknown form ima32.s r11, i0, r5, c56, r4                     signed, extra operand
+7    ACCEPTED          xor.testtanz.chan0 !c0, p0, r5, i0               test of i0 against a register
+7    ACCEPTED          xor.testtanz.chan0 !c0, p0, i0, #0               test of i0 against 0
+7    ACCEPTED          mov i0, r5                                       write i0 from a register
+8    ACCEPTED          p0 mov r12, #5                                   predicated limm
+8    ACCEPTED          !p0 mov r12, #5                                  negated predicated limm
+8    VER: unknown form p0 mov r12, r5                                   predicated register move
+8    VER: unknown form !p0 mov r12, r5                                  negated predicated register move
+8    ACCEPTED          p0 br @c1                                        predicated relative branch
+8    ACCEPTED          !p0 br @c1                                       negated predicated relative branch
+8    VER: form not allowed p0 ba #8198                                      predicated absolute branch
+8    VER: form not allowed !p0 ba #8198                                     negated predicated absolute branch
+9    VER: unknown form ima32.u r10, i0, r10, r10, r10                   high word, one register four times
+10   ACCEPTED          xor.testtanz.chan0 !c0, p0, r5, #127             test immediate 127
+10   ASM-REFUSED       xor.testtanz.chan0 !c0, p0, r5, #128             test immediate 128 (assembler)
+10   ACCEPTED          mov r12, #0x0000ffff ; xor.testtanz.chan0 !c0, p wide value by limm and a register test
+11   ACCEPTED          mov r123, #0x12345678 ; mov r12, r123            r123 write and read
+11   ACCEPTED          ldad.bypassl1 r123, [r1,+#3], drc0 ; wdf drc0    r123 as a load destination
+12   ACCEPTED          ldad.bypassl1 r12, [r1,+#40], drc0 ; ldad.bypass two loads, one wdf
+12   VER: unknown form ldad.bypassl1.fetch4 r12, [r1,+#40], drc0 ; wdf  ldad with fetch
+12   VER: unknown form ldad.bpcache r12, [r1,+#40], drc0                ldad.bpcache
+12   VER: unknown form ldad.bypassl1 r12, [r1,+#40], drc1               ldad on drc1
+12   VER: load or store base is not the results page mov r12, r1 ; ldad.bypassl1 r13, [r12,+#40], drc load base copied from the page base
+12   VER: load or store base is not the results page ldad.bypassl1 r12, [r1,+#40], drc0 ; ldad.bypass load base from memory
+13   VER: unknown form ldab r12, [r1,+#40], drc0                        ldab
+13   VER: unknown form ldaw r12, [r1,+#40], drc0                        ldaw
+13   VER: unknown form stab [r1,+#40], r12                              stab
+13   VER: unknown form staw [r1,+#40], r12                              staw
+14   ACCEPTED          ima32.u r8, r8, #1, r9.neg                       the one ima32 word (counter increment)
+15   ACCEPTED          str #517, r12                                    str 0x0814 (allow list)
+15   ACCEPTED          ldr r12, #517, drc0                              ldr 0x0814 (allow list)
+15   ACCEPTED          str #670, r12                                    str 0x0a78 (allow list)
+15   VER: clock gate register str #1, r12                                      str CR_CLKGATECTL2 (never)
+15   VER: str of a register not on the list str #687, r12                                    str 0x0abc (a register whose write hangs jobs, E026)
+15   VER: form not allowed str #517, r12 ; ldr r12, r13, drc0               register-index ldr
+16   VER: unknown form emitpds.tasks.taske #0, r2, r3, r4, #0x0         emitpds

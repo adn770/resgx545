@@ -4063,6 +4063,107 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   it was a write and not a leftover is [infer]); none hung, as E519's rule predicts (T mod 256 is 4
   to 192).
   *usse; HW, infer; data: `usse-temps-fresh-c`, `vectors-usse-temps-fresh`.*
+- `E595` In client pixel tasks (fills), with a GPU reset and 3 seconds before each job, the
+  two-instruction 64-bit compares `ima32.u t, i0, b, c56, a` then `xor.testtanz.chan0 !c0, p0, b,
+  i0` and `ima32.s t, i0, b, c56, a` then `xor.testtanz.chan0 !c0, p0, i0, #0` gave a < b (unsigned
+  and signed) in 256 of 256 jobs: 192 of 192 on the registers r5/r6/r7, r26/r27/r28, r31/r30/r25,
+  r64/r65/r66 (started with 80 temporaries), r123/r122/r121 (124 temporaries) and with the result
+  register equal to a source (r1/r2/r1), 16 pairs each, p0 set to the opposite first, and 64 of 64
+  right after another compare that left i0 holding its own high word, so the test read the fresh
+  high word and never the one before (32 of 32 unsigned, 32 of 32 signed, 49 of the 64 cases would
+  read the opposite from a stale i0); no job failed [HW]; the measurement is a client pixel task:
+  whether a firmware (EDM) task does the same is not measured, the firmware-task verifier refuses
+  `ima32` with the extra operand i0.
+  *usse; HW, infer; data: `usse-fw37-compare`, `vectors-usse-fw37`.*
+- `E596` In client pixel tasks (fills), with a GPU reset and 3 seconds before each job, the
+  predicated register moves `p0 mov r, r` and `!p0 mov r, r` and the predicated limm moves `p0 mov
+  r, #n` and `!p0 mov r, #n` followed p0 in 64 of 64 jobs (8 gaps between the test that sets p0 and
+  the move: none, 1, 4, 16 and 64 `mov` limm, and 1, 4 and 16 `ldad` with one `wdf`; p0 set to 0 and
+  to 1 for each, a marker of its own per job), and a predicated `ba` whose predicate is false (`p0
+  ba` with p0 = 0, `!p0 ba` with p0 = 1, five gaps each) fell through to the next instruction in 10
+  of 10 jobs, so p0 survived every gap and no form ignored it [HW]; a client pixel task: the
+  verifier of the firmware tasks refuses `p0 mov r, r`, `!p0 mov r, r` and every predicated `ba`, so
+  these forms were not run in a firmware task, and the taken `ba` was not run.
+  *usse; HW, infer; data: `usse-fw37-pred`, `vectors-usse-fw37`.*
+- `E597` In client pixel tasks (fills), with a GPU reset and 3 seconds before each job, `ima32.u d,
+  i0, a, b, c` and `ima32.s d, i0, a, b, c` with the four operands in every one of the 15 partitions
+  into registers (d, a, b and c each its own register, any two or three alike, all four the same
+  one; `mov d, #0; ima32 d, i0, a, b, d; mov d, i0` of the request is the partition with c in d's
+  group) read their sources before the write: r10 held the low word and i0 the high word of the
+  64-bit a*b+c (c sign-extended for .s) in 300 of 300 jobs (30 probes of 10, i0 preset to a marker
+  of its own each so that an unwritten i0 shows), with the markers never read back from i0 [HW]; a
+  client pixel task: the firmware-task verifier refuses `ima32` with the extra operand i0, so the
+  form was not run in a firmware task.
+  *usse; HW, infer; data: `usse-fw37-ima32hi-repeat`, `vectors-usse-fw37`.*
+- `E598` In client pixel tasks (fills), with a GPU reset and 3 seconds before each job, `ldab` and
+  `ldaw` with an immediate offset read the byte at base + n and the halfword at base + 2n,
+  zero-extended (the offset counts elements of the access size, not dwords and not bytes for the
+  halfword): 16 of 16 jobs (8 offsets each, from the dwords 0x9c8db6a7 and 0x7e6d5c4b, every byte of
+  the first with bit 7 set, so a sign extension would show: ldab #0 to #3 read 0xa7, 0xb6, 0x8d and
+  0x9c), and `ldaw` and `ldad` at an address that is not a multiple of their size read the bytes at
+  that address, across the dword boundary too (`ldaw` at base + 1, + 2 and + 3 read 0x8db6, 0x9c8d
+  and 0x4b9c, `ldad` at base + 1, + 2 and + 3 read 0x4b9c8db6, 0x5c4b9c8d and 0x6d5c4b9c): 6 of 6
+  jobs; no job faulted or hung [HW]; client pixel jobs: the firmware-task verifier refuses `ldab`
+  and `ldaw` (unknown form), so a narrow load was not run in a firmware task.
+  *usse; HW, infer; data: `usse-fw37-narrow`, `vectors-usse-fw37`.*
+- `E599` In client pixel tasks (fills), with a GPU reset and 3 seconds before each job, `stab
+  [r28,+#n], r5` changed only the byte at base + n to the low byte of r5 (0xdd) and `staw [r28,+#n],
+  r5` only the two bytes at base + 2n to its low halfword (0xccdd), nothing else changed, in 23 of
+  23 jobs (`stab` 16: bases at +0, +1, +2 and +3 bytes and n = 0 to 3, so also at odd addresses;
+  `staw` 7: bases at +0 and +2 and n up to 3, aligned), and a plain `stad` control landed at an
+  aligned address and nowhere at an unaligned one in 3 of 3 jobs (as usse_isa 7.10 has it): 26 of 26
+  jobs; no job faulted or hung [HW]; client pixel jobs: a narrow store was not run in a firmware
+  task (the verifier refuses `stab` and `staw`), and a `staw` at an odd address and a narrow store
+  with a register offset, a negative offset or an increment form were not run.
+  *usse; HW, infer; data: `usse-fw37-narrow`, `vectors-usse-fw37`.*
+- `E600` In a firmware (EDM) task of ours (stage f10, p1137_imm and p1137_wide, one arm each with
+  slots=0x1 entry=0, the landed verifier unchanged), `xor.testtanz.chan0 !c0, p0, rV, #n` encodes
+  every n from 0 to 127 exactly and zero-extended, and a value of 128 and up reaches the test
+  exactly through `mov rK, #W` (limm) and `xor.testtanz.chan0 !c0, p0, rV, rK`: 7 of 7 jobs with 128
+  and 64 tests each, every p0 as predicted; with V = n all 128 p0 false, with V = n xor one bit (two
+  jobs, the bit 1 << (n mod 32) and 1 << ((n + 16) mod 32)) all 128 true, and with V = n or
+  0xffffff80 all 128 true (the 7-bit field is not sign-extended: n = 64 to 127 would read false if
+  it were), and for 64 wide values W from 128 to 0xffffffff, the limm field boundaries 20/21 and
+  25/26 and the powers of two included, V = W gives p0 false 64 of 64 and V = W with one bit flipped
+  gives p0 true 64 of 64 in two jobs [HW]; every job was done within 0.78 ms, the tick advanced
+  after each arm (991.2 and 998.0 Hz) and the gate was exact after each reset.
+  *edm; HW, infer; data: `firmware-tasks-p1137-f10`, `vectors-firmware-tasks-p1137`.*
+- `E601` In a firmware (EDM) task of ours (stage f8, p1137_pred, slots=0x1 entry=0, the landed
+  verifier unchanged), with p0 set by `and.testtanz` from the job's P before a gap (none; 1, 4, 16
+  or 64 `mov` limm; 1, 4, 16 or 32 `ldad.bypassl1` and one `wdf`; a mix of mov, ldad and a `mov`
+  from a loaded register; `wdf`, `idf`, `wdf`; a taken `br` hop), `p0 mov r20, #A` wrote iff P was
+  not 0 (else r20 kept the job's marker), `!p0 mov r21, #B` wrote iff P was 0, `p0 br` was taken iff
+  P was not 0 and `!p0 br` iff P was 0: 72 of 72 jobs (12 gaps, P = 0 and 1, 3 repeats, shuffled, a
+  pair of markers of its own per job), so p0 survived every gap and the four forms the verifier
+  accepts follow it [HW]; the verifier refuses `p0 mov r, r`, `!p0 mov r, r` (unknown form) and `p0
+  ba`, `!p0 ba` (form not allowed), so those were not run in a firmware task.
+  *edm; HW, infer; data: `firmware-tasks-p1137-f8`, `vectors-firmware-tasks-p1137`.*
+- `E602` In a firmware (EDM) task of ours armed with trc=31 (stage f12, p1137_wdf, the landed
+  verifier unchanged), one `wdf drc0` after N `ldad.bypassl1` (N = 2, 4, 8, 16, 32, 64 and 100, from
+  two page bases, offsets in a permutation of 0 to 127, every 11th load repeating the address of
+  load 0) left every destination holding its own load: 21 of 21 jobs (7 N x 3 repeats, every
+  destination equal to the dword the host stored there for that job), which shows that loads, one
+  `wdf` and then the stores is sufficient for these sequences and not that the `wdf` waits or is
+  needed; and the control prediction failed: 32 `ldad.bypassl1` followed by 32 `stad` of their
+  destinations with NO `wdf` between stored the NEW value in 32 of 32 stores in 3 of 3 jobs (96 of
+  96), where P37_F12b predicted at least 28 of 32 old in every job, so a load that was not waited
+  for had landed within 32 instruction slots in a firmware task, in every job and for every
+  register; in the 21 jobs the stores follow the loads by N + 1 slots (3 to 101), so the jobs with N
+  = 32, 64 and 100 pass whether or not the `wdf` waits, and N = 2 to 16 were not run without it
+  [HW]; whether a `wdf` is needed at a shorter distance or for loads from other memory was not run.
+  *edm; HW, infer; data: `firmware-tasks-p1137-f12`, `vectors-firmware-tasks-p1137`.*
+- `E603` In a firmware (EDM) task of ours armed with trc=31 (stage f11, p1137_regsA and p1137_regsB,
+  one arm each, the landed verifier unchanged), every register r0 to r123 is real storage as a
+  destination of `ldad` and a source of `stad`: a marker of its own per job, loaded from the page
+  into each register and read back to the page, read back as written for r1 to r31 (20 of them
+  outside the wrapper's), r32 to r63, r64 to r95 and r96 to r123 (28) one range at a time (12 jobs),
+  for all 112 registers outside the wrapper's 11 at once (3 jobs), for the wrapper's 11 and r8 from
+  a second wrapper that uses r12 to r22 (3 jobs), and for r0 (3 jobs, markers 0xb921ea5f, 0x8f940932
+  and 0xb3b031b9): 21 of 21 jobs, no register reading a stale value, another register's marker or
+  the sentinel, the tick advancing and the gate exact after each arm [HW]; the markers differ in
+  every job and register, which extends E540's read of the top register r123 and E550's marker to
+  every other register.
+  *edm; HW, infer; data: `firmware-tasks-p1137-f11`, `vectors-firmware-tasks-p1137`.*
 
 ## By unit
 
@@ -4079,7 +4180,7 @@ E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E4
 
 Records: E009, E014, E017, E084, E146, E152, E153, E154, E155, E156, E157, E158, E159, E160, E161,
 E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321, E353, E402, E431, E444,
-E450, E531, E532, E533, E536, E537, E538, E539, E540, E550.
+E450, E531, E532, E533, E536, E537, E538, E539, E540, E550, E600, E601, E602, E603.
 
 ### firmware
 
@@ -4150,7 +4251,7 @@ E370, E371, E372, E373, E374, E375, E376, E377, E378, E380, E406, E423, E452, E4
 E472, E473, E474, E475, E476, E477, E478, E479, E480, E481, E482, E483, E484, E485, E486, E487,
 E488, E491, E492, E493, E494, E495, E496, E497, E498, E499, E500, E501, E512, E513, E514, E515,
 E516, E517, E518, E519, E520, E521, E522, E525, E526, E527, E528, E529, E530, E534, E535, E549,
-E570, E571, E572, E593, E594.
+E570, E571, E572, E593, E594, E595, E596, E597, E598, E599.
 
 ### vdm
 

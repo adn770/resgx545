@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E469", "E470", "E471", "E493", "E494", "E495", "E496", "E501", "E525", "E526", "E527", "E528"]
+evidence = ["E469", "E470", "E471", "E493", "E494", "E495", "E496", "E501", "E525", "E526", "E527", "E528", "E595", "E597"]
 terms = ["Universal Scalable Shader Engine (USSE)", "REGTYPE.FPINTERNAL"]
 +++
 
@@ -26,3 +26,9 @@ to 99 and 101 to 124, and 3 in source 3), `.neg` forms not run (E495 lists them)
 destinations, `imae` with i2 (the assembler refuses it, [infer]), and the rest of what the extra
 operand does (Q135). To settle it: the same corner-value tables over each, as E469 and E471, one
 probe a form.
+
+Narrowed in 11.36 (not retired). In client pixel tasks, the extra operand `i0` of `ima32.u` and `.s`
+was run with every one of the 15 partitions of {d, a, b, c} into registers (300 of 300 jobs, E597)
+and in the 64-bit compares on five more register triples and with a previous compare's high word in
+i0 (256 of 256, E595): the sources are read before the write, i0 is the high word, and the test
+reads the fresh one. Not run in a firmware task (the verifier refuses the form).

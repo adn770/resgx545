@@ -1,0 +1,10 @@
+title = "probe table usse/fw37-narrow"
+repo = "data"
+paths = ["usse/fw37-narrow/"]
+method = "the campaign runner on the laptop target (tools/campaign, the 11.35 copy), SGX_PROBE_BETWEEN a debugfs reset and 3 s before every job, the frozen table of probes/p1136/manifest-1137.sha256 with probe names prefixed usse-fw37-narrow- as the runner requires; env.toml gained the tool, its source sha256, the between-jobs setting, the predictions hash and the table note by hand after the run"
+date = "2026-11-09"
+files = 62
+size = 259799
+sha256 = "6a82de318095c27bd3b70c102d1a7d81e254844171ab5db02456cd705702b5fb"
+recipe = "probes/usse/fw37-narrow.toml"
+needs = ["render"]

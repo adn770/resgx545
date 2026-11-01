@@ -1,0 +1,10 @@
+title = "probe table usse/fw37-compare"
+repo = "data"
+paths = ["usse/fw37-compare/"]
+method = "the campaign runner on the laptop target (tools/campaign, the 11.35 copy), SGX_PROBE_BETWEEN a debugfs reset and 3 s before every job, the frozen table of probes/p1136/manifest-1137.sha256 with probe names prefixed usse-fw37-compare- as the runner requires; env.toml gained the tool, its source sha256, the between-jobs setting, the predictions hash and the table note by hand after the run"
+date = "2026-11-09"
+files = 286
+size = 1554381
+sha256 = "c6c0c1c06d296245d137592d3133cff59d2ad9bd39b73f3783af77bb78833342"
+recipe = "probes/usse/fw37-compare.toml"
+needs = ["render"]

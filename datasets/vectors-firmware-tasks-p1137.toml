@@ -1,0 +1,9 @@
+title = "firmware task vectors of the phase 11.36 stages f10, f8, f12 and f11: 121 vectors"
+repo = "data"
+paths = ["vectors/nokernel/usse/fwtask-p1137-f10/", "vectors/nokernel/usse/fwtask-p1137-f8/", "vectors/nokernel/usse/fwtask-p1137-f12/", "vectors/nokernel/usse/fwtask-p1137-f11/"]
+method = "probes/p1136/make_vectors1137.py on the jobs of the four firmware stages (the no-wdf control jobs are not vectors: the simulator has no rule for them)"
+date = "2026-11-09"
+files = 6
+size = 2210704
+sha256 = "f1486ac2ade880bfa5aeb76c2a428280b912ebdbf5b11937382fcb508caad2e5"
+recipe = "probes/p1136/make_vectors1137.py"

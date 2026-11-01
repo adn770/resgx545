@@ -1,0 +1,4 @@
+test form xor.testtanz #n: assembles for n = 0..127 only (0..1099 swept); the word differs from #0 in bits 6:0 only and they equal n (128 of 128): exact, zero-extended field
+hex text #0x7f in the test form: refused (the assembler's test form takes decimal only)
+non-test `and r12, r2, #n` (rotated 16-bit immediate): assembles for 51 of 52 sampled n; refused: ['0x12345']
+limm `mov rK, #W`: assembler word read back by the loader's limm_get equals W for 2128 of 2128 W (64 wide W, 2000 random, every power of two and every low mask)

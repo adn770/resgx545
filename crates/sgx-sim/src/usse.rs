@@ -3468,10 +3468,19 @@ impl Machine {
     /// or with a pa, sa or o pointer.
     fn load_store(&mut self, insn: &Insn, op: &str, bus: &mut dyn Bus) -> Result<(), Error> {
         let amdt = insn.name("amdt", self.core).unwrap();
-        if amdt != "ad" {
+        let size: u32 = if amdt == "ad" {
+            4
+        } else if amdt == "aw" {
+            2
+        } else if amdt == "ab" {
+            1
+        } else {
             return Err(why(format!("access {amdt}")));
-        }
+        };
         let flags = insn.name("flags", self.core).unwrap();
+        if size != 4 {
+            return self.ls_narrow(insn, op, bus, size, &flags);
+        }
         let (mut count, mut dst_inc, mut repeat) = (1u32, 1i32, 1u32);
         for f in flags.split('.').filter(|f| !f.is_empty()) {
             match f {
@@ -3544,6 +3553,73 @@ impl Machine {
     }
 
     /// One access of load_store: `count` dwords (a fetch), the destination stepping by `dst_inc`.
+    /// `ldab`/`ldaw` and `stab`/`staw` (E598, E599: 22 loads and 26 stores in a client pixel task, none in a
+    /// firmware task). Hardware: an immediate offset counts elements of the access size, so the address is
+    /// base + n (byte) or base + 2n (halfword); a load reads the bytes at the address, zero-extended (an odd
+    /// halfword address reads the bytes there, across dwords too); a store puts the low byte or halfword of
+    /// its source at the address and changes nothing else (a byte store at any address, a halfword store at
+    /// an even one). Only the plain forms ran: no flag, drc0, and the r bank for the base, the destination
+    /// and the store's source. Not measured, so refused: any flag, another drc or bank, a negative or
+    /// register offset, the pre- and post-increment forms, a repeat or a fetch, a halfword store at an odd
+    /// address. The immediate offset is accepted over its field (the jobs ran n = 0 to 7 for a load and 0 to 3
+    /// for a store): that the unit rule holds beyond them is [infer].
+    fn ls_narrow(&mut self, insn: &Insn, op: &str, bus: &mut dyn Bus, size: u32, flags: &str) -> Result<(), Error> {
+        if let Some(f) = flags.split('.').find(|f| !f.is_empty()) {
+            return Err(why(format!("flag .{f} on a narrow access (not measured)")));
+        }
+        if op != "ld" && op != "st" {
+            return Err(why("an increment form of a narrow access (not measured)"));
+        }
+        let ov = insn.get("offset").unwrap();
+        if insn.name("sign", self.core).is_some_and(|s| s.starts_with('-')) || ov >> 7 != 6 {
+            return Err(why("a narrow access with a negative or register offset (not measured)"));
+        }
+        if insn.get("base").unwrap() >> 7 != 0 {
+            return Err(why("a narrow access through a base outside the r bank (not measured)"));
+        }
+        let base = self.src0(insn.get("base").unwrap())?;
+        let addr = base.wrapping_add(self.src(ov, 6)?.wrapping_mul(size));
+        if self.now.read.get().is_some() {
+            return Err(why("an address from a near value"));
+        }
+        let (first, last) = (addr & !3, addr.wrapping_add(size - 1) & !3);
+        if op == "st" {
+            if size == 2 && addr % 2 != 0 {
+                return Err(why("a halfword store at an odd address (not measured)"));
+            }
+            if insn.get("src").unwrap() >> 7 != 0 {
+                return Err(why("a narrow store of a source outside the r bank (not measured)"));
+            }
+            let v = self.src(insn.get("src").unwrap(), 6)?;
+            let shift = 8 * (addr & 3);
+            let mask = (if size == 1 { 0xff } else { 0xffff }) << shift;
+            let old = bus.load32(first)?;
+            match self.now.read.get() {
+                Some(b) => self.near_mem.insert(first, b),
+                None => self.near_mem.remove(&first),
+            };
+            return bus.store32(first, old & !mask | (v << shift) & mask);
+        }
+        if self.near_mem.contains_key(&first) || self.near_mem.contains_key(&last) {
+            return Err(why("a load of a near value"));
+        }
+        let v = bus.load32(addr)? & if size == 1 { 0xff } else { 0xffff };
+        let d = insn.get("dst").unwrap();
+        let r = (d & 0x7f) as usize;
+        if d >> 7 != 0 {
+            return Err(why("a narrow load into a bank other than r (not measured)"));
+        }
+        if r >= 124 {
+            return Err(why("fetch past the temporaries"));
+        }
+        let drc = insn.get("drc").unwrap();
+        if drc != 0 {
+            return Err(why("a narrow load on a drc other than drc0 (not measured)"));
+        }
+        self.pending.push((drc, Reg::R(r), v));
+        Ok(())
+    }
+
     fn ls_access(
         &mut self,
         insn: &Insn,
@@ -7715,6 +7791,111 @@ mod after_11_27 {
         let mut mem = Memory { base: 0x1000, words: (0..64).map(|i| 0xd000_0000 | i).collect() };
         let r = m.run(&Program::new(&words, Core::Sgx545), &mut mem, 1000);
         (m, mem, r)
+    }
+
+    /// Two dwords of the narrow-memory probes (probes/usse/fw37-narrow.toml: bytes a7 b6 8d 9c 4b 5c 6d 7e) at
+    /// 0x1000, r40 pointing at them, r5 = 0xaabbccdd.
+    fn narrow_run(base: u32, src: &[&str]) -> (Machine, Memory, Result<(), Error>) {
+        let mut words: Vec<u64> = ["mov r5, #0xaabbccdd".to_string(), format!("mov r40, #0x{base:08x}")]
+            .iter()
+            .map(|t| usse_isa::encode(t, Core::Sgx545).unwrap())
+            .collect();
+        words.extend(src.iter().map(|t| usse_isa::encode(t, Core::Sgx545).unwrap_or_else(|| panic!("{t}"))));
+        words.push(usse_isa::encode("nop.end", Core::Sgx545).unwrap());
+        let mut m = Machine { temps: 124, ..Machine::default() };
+        let mut mem = Memory { base: 0x1000, words: vec![0x9c8d_b6a7, 0x7e6d_5c4b, 0xd000_0012, 0xd000_0013] };
+        let r = m.run(&Program::new(&words, Core::Sgx545), &mut mem, 1000);
+        (m, mem, r)
+    }
+
+    #[test]
+    fn narrow_loads_count_elements_and_zero_extend() {
+        // E598 (usse-fw37-narrow-ldab-offsets, -ldaw-offsets, -ld-unaligned, 22 jobs on the hardware): the offset
+        // counts bytes for ldab and halfwords for ldaw, the value is zero-extended (every byte of the first dword
+        // has bit 7 set except 4b..7e), and a halfword load at an odd address reads the bytes there
+        let bytes = [0xa7u32, 0xb6, 0x8d, 0x9c, 0x4b, 0x5c, 0x6d, 0x7e];
+        for (n, want) in bytes.iter().enumerate() {
+            let (m, _, r) = narrow_run(0x1000, &[&format!("ldab r10, [r40,+#{n}], drc0"), "wdf drc0"]);
+            assert_eq!(r, Ok(()), "ldab #{n}");
+            assert_eq!(m.r[10], *want, "ldab #{n}");
+        }
+        for (n, want) in [0xb6a7u32, 0x9c8d, 0x5c4b, 0x7e6d].iter().enumerate() {
+            let (m, _, r) = narrow_run(0x1000, &[&format!("ldaw r10, [r40,+#{n}], drc0"), "wdf drc0"]);
+            assert_eq!(r, Ok(()), "ldaw #{n}");
+            assert_eq!(m.r[10], *want, "ldaw #{n}");
+        }
+        for (off, want) in [(1u32, 0x8db6u32), (2, 0x9c8d), (3, 0x4b9c)] {
+            let (m, _, r) = narrow_run(0x1000 + off, &["ldaw r10, [r40,+#0], drc0", "wdf drc0"]);
+            assert_eq!(r, Ok(()), "ldaw at +{off}");
+            assert_eq!(m.r[10], want, "ldaw at +{off}");
+        }
+    }
+
+    #[test]
+    fn narrow_stores_change_only_their_own_bytes() {
+        // E599 (usse-fw37-narrow-stab, -staw, -stad-unaligned-control, 26 jobs): stab puts the low byte of the
+        // source at base + n, staw the low halfword at base + 2n (aligned), nothing else changes
+        let (_, mem, r) = narrow_run(0x1000, &["stab [r40,+#5], r5"]);
+        assert_eq!((r, mem.words[0], mem.words[1]), (Ok(()), 0x9c8d_b6a7, 0x7e6d_dd4b));
+        let (_, mem, r) = narrow_run(0x1000 + 1, &["stab [r40,+#2], r5"]);
+        assert_eq!((r, mem.words[0], mem.words[1]), (Ok(()), 0xdd8d_b6a7, 0x7e6d_5c4b));
+        let (_, mem, r) = narrow_run(0x1000, &["staw [r40,+#3], r5"]);
+        assert_eq!((r, mem.words[0], mem.words[1]), (Ok(()), 0x9c8d_b6a7, 0xccdd_5c4b));
+        let (_, mem, r) = narrow_run(0x1000 + 2, &["staw [r40,+#1], r5"]);
+        assert_eq!((r, mem.words[0], mem.words[1]), (Ok(()), 0x9c8d_b6a7, 0x7e6d_ccdd));
+    }
+
+    #[test]
+    fn narrow_forms_that_did_not_run_are_refused() {
+        // not run in E598/E599: a negative offset, a register offset, the increment forms, a repeat, an
+        // unaligned staw
+        for text in [
+            "ldab r10, [r40,-#1], drc0",
+            "ldaw r10, [r40,-#1], drc0",
+            "ldab r10, [r40,#1++], drc0",
+            "ldab r10, [r40,++#1], drc0",
+            "ldab.repeat2 r10, [r40,+#0], drc0",
+            "stab [r40,-#1], r5",
+            "staw [r40,#1++], r5",
+            "stab.repeat2 [r40,+#0], r5",
+        ] {
+            let (_, _, r) = narrow_run(0x1000, &[text]);
+            match r {
+                Err(Error::Unsupported { why, .. }) => assert!(why.contains("not measured"), "{text}: {why}"),
+                other => panic!("{text}: {other:?}"),
+            }
+        }
+        let (_, _, r) = narrow_run(0x1000 + 1, &["staw [r40,+#0], r5"]);
+        assert!(matches!(r, Err(Error::Unsupported { .. })), "an unaligned staw: {r:?}");
+    }
+
+    #[test]
+    fn narrow_forms_with_flags_banks_or_a_second_drc_are_refused() {
+        // E598/E599 ran the plain forms only: no flag, drc0, the r bank for the base, the destination and the
+        // store's source. Everything else is refused, however the verifier of the loader would see it.
+        for text in [
+            "ldab.bypassl1 r10, [r40,+#0], drc0",
+            "ldab.bpcache r10, [r40,+#0], drc0",
+            "ldaw.fcfill r10, [r40,+#0], drc0",
+            "ldab.syncs r10, [r40,+#0], drc0",
+            "ldaw.skipinv r10, [r40,+#0], drc0",
+            "stab.bypassl1 [r40,+#0], r5",
+            "staw.syncs [r40,+#0], r5",
+            "ldab r10, [r40,+#0], drc1",
+            "ldaw r10, [r40,+#0], drc1",
+            "ldab pa3, [r40,+#0], drc0",
+            "ldaw pa3, [r40,+#0], drc0",
+            "ldab r10, [pa0,+#0], drc0",
+            "stab [pa0,+#0], r5",
+            "stab [r40,+#0], pa1",
+            "staw [r40,+#0], pa1",
+        ] {
+            let (_, _, r) = narrow_run(0x1000, &[text]);
+            match r {
+                Err(Error::Unsupported { why, .. }) => assert!(why.contains("not measured"), "{text}: {why}"),
+                other => panic!("{text}: {other:?}"),
+            }
+        }
     }
 
     #[test]

@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-156 open: 140 hw (high 13, medium 68, low 59, unrated 0), 10 fw, 6 kernel.
+159 open: 143 hw (high 13, medium 68, low 62, unrated 0), 10 fw, 6 kernel.
 
 ## Work queue: hardware
 
@@ -37,6 +37,8 @@
 - `Q157` (phase 11, hw, low): what sets bit 24 of pa1 on a host kick (E538: 0x03000000 in 3 of 3 runs, against a tick's 0x02000000: bit 24 and bit 25 are outside the 24 bits PDS #13 reads), and is pa2 a constant (0x01061a70 in 5 of 5 events across five boots: 2 ticks, 3 kicks) and not a timer (E538, E532, E146)
 - `Q158` (phase 11, hw, low): which sa, i and temporaries of a firmware task keep their value across a debugfs reset and across a firmware reload and boot (E536's controls read i0, i1, sa100 and sa127 as the writer of phase 11.29 left them 15 minutes and a reset and a reload earlier, and sa20, sa24, sa64, r20 and r21 not) (E536, E537)
 - `Q168` (phase 11, hw, low): what limits the temporaries of a firmware task above TRC 48 (E540 predicted a hang for 49 and 64; E550 armed 32 to 48 with trc_hazard=1 and read r123 back in 10 of 10), and can a register above r123 (up to the 4T - 1 of the allocation) be reached, through an indirect or banked access, so that the top of a large allocation can be tested (E540, E550)
+- `Q194` (phase 11, hw, low): does a load that is not waited for land by itself in a firmware (EDM) task, at what distance, and is that a property of the task, of the bypass flag or of the page (E602: the new value in 32 of 32 stores after 32 loads with no wdf, 3 of 3 jobs; E517: a fill's load landed after 40, 100 and 128 nops and not after 48 and 64) (E517, E602)
+- `Q196` (phase 11, hw, low): do the client results of 11.36 for the compare and the high word of ima32 (E595, E597), the predicated register moves and ba (E596) and the narrow memory forms (E598, E599) hold in a firmware (EDM) task (E595, E596, E597, E598, E599, E601)
 
 ### isp
 
@@ -153,7 +155,7 @@
 - `Q123` (phase 11, hw, medium): does lapc reach instruction indices past the first 65536 words of a code base and the 18th bit of the program counter, and every index from 256 to 8191 in a fill? (E475, E476, E492)
 - `Q125` (phase 11, hw, low): which code leaves 0xeb3 and 0x98 in pclink and 1101, 0101, 0001 or 1111 in p0-p3 of the instances that do not read the last job's value, and why do they come in aligned 2 x 2 quads of pixels? (E475, E477, E484, E500)
 - `Q126` (phase 11, hw, low): which extension of a source 1 above 0x7fff does the test of iaddu32 read, and does the value it writes zero-extend source 1 with a repeat, an immediate or a constant in source 2, or with other destinations (E472, E498, E521)
-- `Q127` (phase 11, hw, low): what do the extra i register of ima32, ima32 as a dual-issue secondary, and imae with a repeat, a u16 or z16 source or a .rsN shift do with the carry flags and with the 32-bit result? (E469, E470, E471, E493, E494, E495, E496, E501, E525, E526, E527, E528)
+- `Q127` (phase 11, hw, low): what do the extra i register of ima32, ima32 as a dual-issue secondary, and imae with a repeat, a u16 or z16 source or a .rsN shift do with the carry flags and with the 32-bit result? (E469, E470, E471, E493, E494, E495, E496, E501, E525, E526, E527, E528, E595, E597)
 - `Q128` (phase 11, hw, medium): why does a client emitpds fault the job at page 0xd2000 or hang it, what do the s0, s1 and s2 operands of the started PDS program become (it saw ir0.0 2 or 3 whatever s2 was), and what in the control word's addend the PDS uses (0xFFF to 0x2000 left the fill's own value, 0x100 did not) (E488, E513, E520)
 - `Q129` (phase 11, hw, low): why do 12 pixels (4 each of three values) of every fill that writes sa1, sa5 and sa7 show those sa values as their output, and how long does an sa written by one job stay readable (one job, or until the next job that writes it) (E484)
 - `Q130` (phase 11, hw, low): when does a load on one counter land while a wdf waits on another: why four ldad on drc0 issued after a wdf drc1 that waited for four ldad on drc1 landed in 8 of 10 runs, and four ldad on drc1 after two ldr on drc2 never did in 10 (E479)
@@ -173,6 +175,7 @@
 - `Q154` (phase 11, hw, medium): does str then ldr of one register stay ordered for a register whose write starts work or that another writer changes, with a job running, and what does an indexed str (the register-index forms, never run) do (E534, E445)
 - `Q183` (phase 11, hw, medium): why does the job fault after a stad in the end-of-tile task has landed its value (BIF fault 0xd0400 at 0x340042, 0x340043 or 0x740012), and what store form would not? (E572)
 - `Q193` (phase 11, hw, low): what holds a temporary a task did not write: which earlier job's value does it read, per instance, and what clears it (a power cycle, a module reload, a job of another context)? (E484, E485, E593)
+- `Q195` (phase 11, hw, low): what do the narrow memory forms do that the 11.36 fills did not run: a register or negative offset, the pre- and post-increment forms, .fetchN and .repeatN, staw at an odd address, other banks and flags, and in a firmware task (E598, E599)
 
 ### vdm
 
@@ -219,7 +222,7 @@
 #### usse
 
 - `Q124` (phase 11, fw): do p0-p3 and pclink survive from one firmware (EDM) task to the next, and does a task start with them clear, set or as the last task left them? (E475, E477, E484, E533, E536, E537)
-- `Q131` (phase 11, fw): can the hardware run two firmware (EDM) tasks at once (E478, E480, E532, E534, E539)
+- `Q131` (phase 11, fw): can the hardware run two firmware (EDM) tasks at once (E478, E480, E532, E534, E539, E601, E602)
 
 #### zls
 

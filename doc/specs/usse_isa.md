@@ -1166,7 +1166,7 @@ Layout 7 of 7 (form #127):
 - `dst`: as in layout 1.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 7 of 7 forms have semantics. The
-probe vectors that test them: 2547 match the hardware, 116 stop unsupported, 0 mismatch
+probe vectors that test them: 2603 match the hardware, 116 stop unsupported, 0 mismatch
 (`usse-alpha-test-pcoeff-depthf` 1/0/0, `usse-branch-bexc-none` 1/0/0, `usse-callfalse-chain` 3/0/0,
 `usse-callfalse-link` 36/0/0, `usse-callfalse2-chain` 3/0/0, `usse-callfalse2-link` 36/0/0,
 `usse-compare32-iadd32-testnat-src1` 10/0/0, `usse-compare32-iadd32-testnat-src2` 8/0/0,
@@ -1189,30 +1189,33 @@ probe vectors that test them: 2547 match the hardware, 116 stop unsupported, 0 m
 `usse-encoding-bits-mov` 25/0/0, `usse-encoding-bits-mov-imm` 7/0/0,
 `usse-encoding-gaps-end-flips-class22` 0/3/0, `usse-encoding-gaps-end-words` 1/9/0,
 `usse-flags-other` 1/0/0, `usse-form-coverage-form2-test-e50` 9/1/0,
-`usse-form-coverage-lapc-pclink` 4/0/0, `usse-form-coverage-test-fn` 5/0/0, `usse-g19-read-paths`
-0/2/0, `usse-iaddu32-pairs-iadd32-testnat` 16/0/0, `usse-iaddu32-pairs-iadd32-testpat` 16/0/0,
-`usse-iaddu32-pairs-iadd32-testtanz` 16/0/0, `usse-iaddu32-pairs-iadd32-testtaz` 16/0/0,
-`usse-iaddu32-pairs-iaddu32-testnat` 16/0/0, `usse-iaddu32-pairs-iaddu32-testpat` 16/0/0,
-`usse-iaddu32-pairs-iaddu32-testtanz` 16/0/0, `usse-iaddu32-pairs-iaddu32-testtaz` 16/0/0,
-`usse-indexing-index-high` 0/12/0, `usse-indexing-index-store` 4/0/0, `usse-indexing-index-unit`
-7/0/0, `usse-indexing-index-width` 3/0/0, `usse-indexing-index-width2` 7/0/0,
-`usse-indexing-index-width3` 6/0/0, `usse-instance-masking-setm` 1/0/0,
-`usse-instance-masking-skipinv-inst` 3/0/0, `usse-internal-registers-across-tasks` 4/4/0,
-`usse-internal-registers-bank7` 57/0/0, `usse-internal-registers-ireg-index` 4/4/0,
-`usse-internal-registers-mov-and-tasks` 0/8/0, `usse-internal-registers-per-pixel` 12/0/0,
-`usse-lane-integer-rogue-int` 11/0/0, `usse-link-ba-savelink-read` 10/0/0, `usse-link-lapc-gap`
-19/0/0, `usse-link-pclink-leftover` 10/0/0, `usse-link-pclink-roundtrip` 38/0/0,
-`usse-memory-mem-forms` 2/0/0, `usse-moe-moest-load` 6/0/0, `usse-moe-state-next-job` 6/0/0,
-`usse-numbered-modifiers-family-repeat` 32/0/0, `usse-pa-dest-persist` 0/2/0, `usse-pclink-pixels`
-10/0/0, `usse-pclink-repeat-a` 10/0/0, `usse-pclink-repeat-b` 10/0/0, `usse-pclink-repeat-c` 10/0/0,
-`usse-pflow-flow` 12/0/0, `usse-phases-filladdr` 2/0/0, `usse-predicates-predicate-pn` 6/0/0,
-`usse-raw25-test-bit43` 96/0/0, `usse-raw25-test-plain` 96/0/0, `usse-rawchan-1-and` 36/0/0,
-`usse-rawchan-2-and` 36/0/0, `usse-rawchan-3-and` 36/0/0, `usse-rawchan-4-and` 36/0/0,
-`usse-rawchan-5-and` 36/0/0, `usse-rawchan-6-and` 36/0/0, `usse-rawchan-7-and` 36/0/0,
-`usse-rawcond-and-codes` 90/0/0, `usse-rawcond2-and-imm` 90/0/0, `usse-rawcond2-or-reg` 90/0/0,
-`usse-rawcond2-rol-reg` 90/0/0, `usse-rawcond2-xor-imm` 90/0/0, `usse-rawcond2-xor-reg` 90/0/0,
-`usse-rawjoin-o-and` 90/0/0, `usse-rawjoin-o2-and7-fields` 90/0/0, `usse-rawjoin-o2-or-fields`
-90/0/0, `usse-rawjoin-o2-xor-fields` 90/0/0, `usse-repeat-order` 3/0/0, `usse-repeat-pred` 4/0/0,
+`usse-form-coverage-lapc-pclink` 4/0/0, `usse-form-coverage-test-fn` 5/0/0,
+`usse-fw37-pred-pred-notp0-mov-imm` 10/0/0, `usse-fw37-pred-pred-notp0-mov-reg` 18/0/0,
+`usse-fw37-pred-pred-p0-mov-imm` 10/0/0, `usse-fw37-pred-pred-p0-mov-reg` 18/0/0,
+`usse-g19-read-paths` 0/2/0, `usse-iaddu32-pairs-iadd32-testnat` 16/0/0,
+`usse-iaddu32-pairs-iadd32-testpat` 16/0/0, `usse-iaddu32-pairs-iadd32-testtanz` 16/0/0,
+`usse-iaddu32-pairs-iadd32-testtaz` 16/0/0, `usse-iaddu32-pairs-iaddu32-testnat` 16/0/0,
+`usse-iaddu32-pairs-iaddu32-testpat` 16/0/0, `usse-iaddu32-pairs-iaddu32-testtanz` 16/0/0,
+`usse-iaddu32-pairs-iaddu32-testtaz` 16/0/0, `usse-indexing-index-high` 0/12/0,
+`usse-indexing-index-store` 4/0/0, `usse-indexing-index-unit` 7/0/0, `usse-indexing-index-width`
+3/0/0, `usse-indexing-index-width2` 7/0/0, `usse-indexing-index-width3` 6/0/0,
+`usse-instance-masking-setm` 1/0/0, `usse-instance-masking-skipinv-inst` 3/0/0,
+`usse-internal-registers-across-tasks` 4/4/0, `usse-internal-registers-bank7` 57/0/0,
+`usse-internal-registers-ireg-index` 4/4/0, `usse-internal-registers-mov-and-tasks` 0/8/0,
+`usse-internal-registers-per-pixel` 12/0/0, `usse-lane-integer-rogue-int` 11/0/0,
+`usse-link-ba-savelink-read` 10/0/0, `usse-link-lapc-gap` 19/0/0, `usse-link-pclink-leftover`
+10/0/0, `usse-link-pclink-roundtrip` 38/0/0, `usse-memory-mem-forms` 2/0/0, `usse-moe-moest-load`
+6/0/0, `usse-moe-state-next-job` 6/0/0, `usse-numbered-modifiers-family-repeat` 32/0/0,
+`usse-pa-dest-persist` 0/2/0, `usse-pclink-pixels` 10/0/0, `usse-pclink-repeat-a` 10/0/0,
+`usse-pclink-repeat-b` 10/0/0, `usse-pclink-repeat-c` 10/0/0, `usse-pflow-flow` 12/0/0,
+`usse-phases-filladdr` 2/0/0, `usse-predicates-predicate-pn` 6/0/0, `usse-raw25-test-bit43` 96/0/0,
+`usse-raw25-test-plain` 96/0/0, `usse-rawchan-1-and` 36/0/0, `usse-rawchan-2-and` 36/0/0,
+`usse-rawchan-3-and` 36/0/0, `usse-rawchan-4-and` 36/0/0, `usse-rawchan-5-and` 36/0/0,
+`usse-rawchan-6-and` 36/0/0, `usse-rawchan-7-and` 36/0/0, `usse-rawcond-and-codes` 90/0/0,
+`usse-rawcond2-and-imm` 90/0/0, `usse-rawcond2-or-reg` 90/0/0, `usse-rawcond2-rol-reg` 90/0/0,
+`usse-rawcond2-xor-imm` 90/0/0, `usse-rawcond2-xor-reg` 90/0/0, `usse-rawjoin-o-and` 90/0/0,
+`usse-rawjoin-o2-and7-fields` 90/0/0, `usse-rawjoin-o2-or-fields` 90/0/0,
+`usse-rawjoin-o2-xor-fields` 90/0/0, `usse-repeat-order` 3/0/0, `usse-repeat-pred` 4/0/0,
 `usse-risky-lapc-backward` 6/0/0, `usse-risky-lapc-computed` 8/0/0, `usse-risky-lapc-direct` 8/0/0,
 `usse-risky-lapc-high-bits` 4/0/0, `usse-risky-link-ba-return` 3/0/0, `usse-risky-link-nested`
 2/0/0, `usse-store-own-one` 1/0/0, `usse-store-own2-quad` 1/0/0, `usse-test-channels-lanes-other`
@@ -2114,7 +2117,7 @@ Layout 6 of 6 (forms #207, #212):
 - (form #212) `src1`: as in layout 2.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 18 of 18 forms have semantics. The
-probe vectors that test them: 2165 match the hardware, 16 stop unsupported, 0 mismatch
+probe vectors that test them: 2205 match the hardware, 16 stop unsupported, 0 mismatch
 (`usse-alpha-test-pcoeff-depthf` 1/0/0, `usse-compare32-iadd32-testnat-src1` 10/0/0,
 `usse-compare32-iadd32-testnat-src2` 8/0/0, `usse-compare32-iadd32-testpat-src2` 8/0/0,
 `usse-compare32-iadd32-testtanz-src2` 8/0/0, `usse-compare32-iadd32-testtaz-src1` 10/0/0,
@@ -2134,6 +2137,8 @@ probe vectors that test them: 2165 match the hardware, 16 stop unsupported, 0 mi
 `usse-encoding-bits-test-mask-frcp` 0/14/0, `usse-encoding-bits-test-mask-iadd8` 4/0/0,
 `usse-encoding-bits-test-mask-xor` 4/0/0, `usse-form-coverage-form2-test-e50` 9/1/0,
 `usse-form-coverage-form2-test-mask` 12/1/0, `usse-form-coverage-test-fn` 5/0/0,
+`usse-fw37-pred-pred-notp0-mov-imm` 10/0/0, `usse-fw37-pred-pred-notp0-mov-reg` 10/0/0,
+`usse-fw37-pred-pred-p0-mov-imm` 10/0/0, `usse-fw37-pred-pred-p0-mov-reg` 10/0/0,
 `usse-iaddu32-pairs-iadd32-testnat` 16/0/0, `usse-iaddu32-pairs-iadd32-testpat` 16/0/0,
 `usse-iaddu32-pairs-iadd32-testtanz` 16/0/0, `usse-iaddu32-pairs-iadd32-testtaz` 16/0/0,
 `usse-iaddu32-pairs-iaddu32-testnat` 16/0/0, `usse-iaddu32-pairs-iaddu32-testpat` 16/0/0,
@@ -2726,7 +2731,7 @@ Layout 12 of 12 (form #180):
 - `drc`: bit 32. A 1-bit number, printed in decimal.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 12 of 12 forms have semantics. The
-probe vectors that test them: 3119 match the hardware, 56 stop unsupported, 0 mismatch
+probe vectors that test them: 3675 match the hardware, 56 stop unsupported, 0 mismatch
 (`usse-compare32-pad-slt-padded` 16/0/0, `usse-compare32-pad-slt-padded1` 16/0/0,
 `usse-compare32-pad-slt-padded6` 16/0/0, `usse-compare32-slt` 64/0/0, `usse-compare32-ult` 64/0/0,
 `usse-compare32-ult-padded` 16/0/0, `usse-decoder-vectors-idiv` 17/0/0,
@@ -2735,7 +2740,29 @@ probe vectors that test them: 3119 match the hardware, 56 stop unsupported, 0 mi
 `usse-encoding-bits-idiv` 19/1/0, `usse-encoding-bits-ima16` 2/0/0, `usse-encoding-bits-ima16-8bit`
 3/0/0, `usse-encoding-bits-ima16-s8` 3/0/0, `usse-encoding-bits-ima16-u8u8` 2/0/0,
 `usse-encoding-bits-ima32` 4/0/0, `usse-encoding-bits-imae` 2/0/0,
-`usse-form-coverage-ima16-ignored` 3/0/0, `usse-idiv-enc47-grid` 5/9/0,
+`usse-form-coverage-ima16-ignored` 3/0/0, `usse-fw37-compare-scmp-prev-i0` 32/0/0,
+`usse-fw37-compare-scmp-r123r122r121` 16/0/0, `usse-fw37-compare-scmp-r26r27r28` 16/0/0,
+`usse-fw37-compare-scmp-r31r30r25` 16/0/0, `usse-fw37-compare-scmp-r5r6r7` 16/0/0,
+`usse-fw37-compare-scmp-r64r65r66` 16/0/0, `usse-fw37-compare-scmp-t-is-a` 16/0/0,
+`usse-fw37-compare-ucmp-prev-i0` 32/0/0, `usse-fw37-compare-ucmp-r123r122r121` 16/0/0,
+`usse-fw37-compare-ucmp-r26r27r28` 16/0/0, `usse-fw37-compare-ucmp-r31r30r25` 16/0/0,
+`usse-fw37-compare-ucmp-r5r6r7` 16/0/0, `usse-fw37-compare-ucmp-r64r65r66` 16/0/0,
+`usse-fw37-compare-ucmp-t-is-a` 16/0/0, `usse-fw37-ima32hi-repeat-his-aaaa` 10/0/0,
+`usse-fw37-ima32hi-repeat-his-aaab` 10/0/0, `usse-fw37-ima32hi-repeat-his-aaba` 10/0/0,
+`usse-fw37-ima32hi-repeat-his-aabb` 10/0/0, `usse-fw37-ima32hi-repeat-his-aabc` 10/0/0,
+`usse-fw37-ima32hi-repeat-his-abaa` 10/0/0, `usse-fw37-ima32hi-repeat-his-abab` 10/0/0,
+`usse-fw37-ima32hi-repeat-his-abac` 10/0/0, `usse-fw37-ima32hi-repeat-his-abba` 10/0/0,
+`usse-fw37-ima32hi-repeat-his-abbb` 10/0/0, `usse-fw37-ima32hi-repeat-his-abbc` 10/0/0,
+`usse-fw37-ima32hi-repeat-his-abca` 10/0/0, `usse-fw37-ima32hi-repeat-his-abcb` 10/0/0,
+`usse-fw37-ima32hi-repeat-his-abcc` 10/0/0, `usse-fw37-ima32hi-repeat-his-abcd` 10/0/0,
+`usse-fw37-ima32hi-repeat-hiu-aaaa` 10/0/0, `usse-fw37-ima32hi-repeat-hiu-aaab` 10/0/0,
+`usse-fw37-ima32hi-repeat-hiu-aaba` 10/0/0, `usse-fw37-ima32hi-repeat-hiu-aabb` 10/0/0,
+`usse-fw37-ima32hi-repeat-hiu-aabc` 10/0/0, `usse-fw37-ima32hi-repeat-hiu-abaa` 10/0/0,
+`usse-fw37-ima32hi-repeat-hiu-abab` 10/0/0, `usse-fw37-ima32hi-repeat-hiu-abac` 10/0/0,
+`usse-fw37-ima32hi-repeat-hiu-abba` 10/0/0, `usse-fw37-ima32hi-repeat-hiu-abbb` 10/0/0,
+`usse-fw37-ima32hi-repeat-hiu-abbc` 10/0/0, `usse-fw37-ima32hi-repeat-hiu-abca` 10/0/0,
+`usse-fw37-ima32hi-repeat-hiu-abcb` 10/0/0, `usse-fw37-ima32hi-repeat-hiu-abcc` 10/0/0,
+`usse-fw37-ima32hi-repeat-hiu-abcd` 10/0/0, `usse-idiv-enc47-grid` 5/9/0,
 `usse-idiv-enc47-repeat-sets` 16/0/0, `usse-ima32-forms-banks` 15/25/0, `usse-ima32-forms-cie-in`
 24/0/0, `usse-ima32-forms-dest` 30/3/0, `usse-ima32-forms-extra-i` 15/0/0,
 `usse-ima32-forms-imae-cie-in` 8/0/0, `usse-ima32-forms-imae-coe-in` 8/0/0,
@@ -5863,7 +5890,7 @@ Layout 5 of 5 (form #124):
 - `drc`: as in layout 1.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 7 of 7 forms have semantics. The
-probe vectors that test them: 685 match the hardware, 113 stop unsupported, 0 mismatch
+probe vectors that test them: 757 match the hardware, 113 stop unsupported, 0 mismatch
 (`texture-mipmaps-mip-bias` 5/0/0, `texture-mipmaps-mip-grad` 8/0/0, `texture-mipmaps-mip-level`
 13/0/0, `texture-mipmaps-mip-minfilter` 15/0/0, `texture-mipmaps-mip-mipfilter` 24/0/0,
 `texture-mipmaps-mip-t0-field` 12/0/0, `texture-sampler-cache-texcache-cold` 2/0/0,
@@ -5885,8 +5912,13 @@ probe vectors that test them: 685 match the hardware, 113 stop unsupported, 0 mi
 `usse-fence-batching-store-then-load-recorded` 12/0/0, `usse-fence-growth-fetch16` 5/0/0,
 `usse-fence-growth-ldad-drc0` 6/0/0, `usse-fence-growth-ldad-drc1` 3/0/0,
 `usse-fence-growth-ldad-reuse` 3/0/0, `usse-form-coverage-ld-pre` 4/0/0, `usse-form-coverage-st-pre`
-6/0/0, `usse-internal-registers-ireg-ldad` 0/20/0, `usse-load-readers-alu` 0/6/0,
-`usse-load-readers-slots` 0/5/0, `usse-load-readers-waw` 5/0/0, `usse-memory-ldad-reg-off` 16/0/0,
+6/0/0, `usse-fw37-narrow-ld-unaligned` 6/0/0, `usse-fw37-narrow-ldab-offsets` 8/0/0,
+`usse-fw37-narrow-ldaw-offsets` 8/0/0, `usse-fw37-narrow-stab` 16/0/0,
+`usse-fw37-narrow-stad-unaligned-control` 3/0/0, `usse-fw37-narrow-staw` 7/0/0,
+`usse-fw37-pred-pred-notp0-mov-imm` 6/0/0, `usse-fw37-pred-pred-notp0-mov-reg` 6/0/0,
+`usse-fw37-pred-pred-p0-mov-imm` 6/0/0, `usse-fw37-pred-pred-p0-mov-reg` 6/0/0,
+`usse-internal-registers-ireg-ldad` 0/20/0, `usse-load-readers-alu` 0/6/0, `usse-load-readers-slots`
+0/5/0, `usse-load-readers-waw` 5/0/0, `usse-memory-ldad-reg-off` 16/0/0,
 `usse-memory-ldad-reg-off-fetch` 2/0/0, `usse-memory-ldad-reg-off-neg` 4/0/0,
 `usse-memory-mem-forms` 3/0/0, `usse-memory-stad-reg-off` 6/0/0,
 `usse-memory-stad-reg-off-unaligned` 3/0/0, `usse-moe-setfc` 10/0/0, `usse-moe-setfc-fetch` 10/0/0,
@@ -6419,7 +6451,7 @@ Layout 2 of 2 (form #125):
   `.nosched`, v[1] `.synce`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 5 of 5 forms have semantics. The
-probe vectors that test them: 209 match the hardware, 32 stop unsupported, 0 mismatch
+probe vectors that test them: 219 match the hardware, 32 stop unsupported, 0 mismatch
 (`usse-branch-bexc2-ba10` 0/1/0, `usse-branch-bexc2-ba2` 0/1/0, `usse-branch-bexc2-br5` 0/1/0,
 `usse-branch-bexc2-np0-t10` 0/1/0, `usse-branch-bexc2-p0-t10` 0/1/0, `usse-branch-bexc2-rel5` 0/1/0,
 `usse-branch-bexc2-t10` 0/1/0, `usse-branch-bexc2-t2` 0/1/0, `usse-branch-br-offset` 5/0/0,
@@ -6429,17 +6461,18 @@ probe vectors that test them: 209 match the hardware, 32 stop unsupported, 0 mis
 2/0/0, `usse-decoder-vectors-br4` 2/0/0, `usse-decoder-vectors-br5` 2/0/0,
 `usse-decoder-vectors-brn1` 2/0/0, `usse-decoder-vectors-brn2` 2/0/0, `usse-decoder-vectors-brn3`
 2/0/0, `usse-decoder-vectors-brn4` 2/0/0, `usse-decoder-vectors-brn5` 2/0/0,
-`usse-form-coverage-lapc-pclink` 6/0/0, `usse-link-ba-savelink-read` 1/0/0, `usse-link-control-e091`
-2/0/0, `usse-link-lapc-gap` 38/0/0, `usse-moe-setfc-branch` 10/0/0, `usse-pflow-flow` 24/0/0,
-`usse-phases-filladdr` 2/0/0, `usse-phases-phasbr-fill-parallel` 1/0/0,
+`usse-form-coverage-lapc-pclink` 6/0/0, `usse-fw37-pred-pred-notp0-ba-not-taken` 5/0/0,
+`usse-fw37-pred-pred-p0-ba-not-taken` 5/0/0, `usse-link-ba-savelink-read` 1/0/0,
+`usse-link-control-e091` 2/0/0, `usse-link-lapc-gap` 38/0/0, `usse-moe-setfc-branch` 10/0/0,
+`usse-pflow-flow` 24/0/0, `usse-phases-filladdr` 2/0/0, `usse-phases-phasbr-fill-parallel` 1/0/0,
 `usse-phases-phasbr-fill-perinstance` 1/0/0, `usse-risky-lapc-backward` 12/0/0,
 `usse-risky-lapc-computed` 16/0/0, `usse-risky-lapc-direct` 16/0/0, `usse-risky-lapc-high-bits`
 4/0/0, `usse-risky-link-ba-return` 4/0/0, `usse-risky-link-nested` 3/0/0, `usse-risky-pflow-call`
 16/0/0); unsupported mostly for gN (per-instance values, not modelled) (22); rN is past the task's N
 temporaries (8); branch flag .syncent (2).
 
-Confirmed on the hardware (a passing vector): #13, #125; not yet confirmed (as decoded; no passing
-vector yet): #12, #14, #15.
+Confirmed on the hardware (a passing vector): #12, #13, #125; not yet confirmed (as decoded; no
+passing vector yet): #14, #15.
 
 ### 6.23 Synchronisation and misc: `nop`, `wdf`, `idf`, `setm`, `wop`, `lock`, `release`
 
@@ -9250,7 +9283,7 @@ open driver:
    `sa`, `r`, `i` and p1 (Q124, Q152, Q155, Q158), what stops the tick after a task (Q152, Q156) and
    the allocation of a firmware task above TRC 31 are not measured.
 
-The simulator (`crates/sgx-sim`) reproduces 30137 probe vectors (15526 of them with near values:
+The simulator (`crates/sgx-sim`) reproduces 30815 probe vectors (15526 of them with near values:
 float functions within their measured bound) and 434 pixel vectors; it stops on 2215 rather than
 guess, most often because (vectors, from `doc/isa/sim-coverage.json`):
 

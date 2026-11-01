@@ -1,0 +1,137 @@
+# phase 11.37 predictions (prepared, NOT RUN), frozen before any run: the sha256 of this file is in
+# predictions-1137.sha256, the sha256 of every runnable file in manifest-1137.sha256.
+# setting = "firmware" (an EDM task of ours, the landed verifier) or "client" (a pixel task, a fill).
+# A client row does not answer the firmware part of its item.  The risky stages are last (f15, f14*).
+
+[[row]]
+id = "P37_F8"
+setting = "firmware"
+declared = "In a firmware task, with p0 set from the job's P before a gap (none, 1, 4, 16 or 64 mov limm, 1, 4, 16 or 32 ldad.bypassl1 and one wdf, a mix, wdf+idf+wdf, a taken br hop), `p0 mov r20,#A` writes iff P != 0 (else r20 keeps the job's marker M1), `!p0 mov r21,#B` writes iff P == 0 (else M2), `p0 br` is taken iff P != 0 and `!p0 br` iff P == 0: 72 of 72 jobs (12 gaps x P in 0,1 x 3 repeats, shuffled, markers and the branch codes per job)"
+falsifier = "any job whose r20..r23 differ from that: p0 lost over some gap, a predicated mov limm that ignores p0, a stale marker"
+expect = "72 of 72"
+
+[[row]]
+id = "P37_F10a"
+setting = "firmware"
+declared = "xor.testtanz.chan0 !c0, p0, rV, #n encodes every n from 0 to 127 exactly and zero-extended: with V_n = n all 128 p0 false; with V_n = n ^ (1 << (n mod 32)) and V_n = n ^ (1 << ((n + 16) mod 32)) all 128 true; with V_n = n | 0xffffff80 all 128 true (no sign extension of the 7-bit field)"
+falsifier = "any p0 other than that (an n read as another value, or sign-extended: n >= 64 would read false in the last job)"
+expect = "4 of 4 jobs"
+
+[[row]]
+id = "P37_F10b"
+setting = "firmware"
+declared = "a value of 128 and up reaches a test through mov rK, #W (limm) then xor.testtanz.chan0 !c0, p0, rV, rK: every one of the 64 W (128 .. 0xffffffff, the limm field boundaries 20/21 and 25/26 included) is exact: V = W gives p0 false 64 of 64, V = W with one bit flipped gives p0 true 64 of 64 in two jobs of different flipped bits"
+falsifier = "any W read as another value"
+expect = "3 of 3 jobs"
+
+[[row]]
+id = "P37_F11a"
+setting = "firmware"
+declared = "in a TRC 31 task started with 124 temporaries, each register of r1..r123 outside the wrapper's own (112 of them, regsA) takes a write of its own per-job marker (loaded from the page) and reads it back, separately, written one range at a time first (r1..r31, r32..r63, r64..r95, r96..r123: cmds 3 to 6) and then all at once (cmd 1): 15 of 15 jobs (5 commands x 3 repeats) with every register of the job equal to its marker and none equal to another register's marker or to a marker of an earlier job"
+falsifier = "any register that reads something else (a stale value of an earlier job, another register's marker, 0)"
+expect = "15 of 15 jobs, 112 of 112 registers in the all-at-once job"
+
+[[row]]
+id = "P37_F11b"
+setting = "firmware"
+declared = "the registers of regsA's wrapper (r1..r7, r9..r11, r30) and r8 do the same from a wrapper that uses r12..r22 (regsB): 3 of 3 jobs, 12 of 12"
+falsifier = "any of the 12 reads something else"
+expect = "3 of 3 jobs"
+
+[[row]]
+id = "P37_F11c"
+setting = "firmware"
+declared = "r0 is real storage in a firmware task: a ldad into r0 then a stad of r0 reads the marker back (E540 only read r0 unwritten and saw 0)"
+falsifier = "r0 reads 0 or anything but the marker"
+expect = "3 of 3 jobs"
+
+[[row]]
+id = "P37_F12a"
+setting = "firmware"
+declared = "in a firmware task at TRC 31, one wdf drc0 after N ldad.bypassl1 (N = 2, 4, 8, 16, 32, 64, 100) from two bases with offsets in a permutation of 0..127 (every 11th load repeats the address of load 0) leaves every destination holding its own load: 21 of 21 jobs (7 N x 3 repeats), each destination equal to the dword the host stored there for that job"
+falsifier = "any destination that holds an earlier job's value, the sentinel, or another load's dword"
+expect = "21 of 21"
+
+[[row]]
+id = "P37_F12b"
+setting = "firmware"
+declared = "control: 32 ldad.bypassl1 with no wdf, whose destinations were loaded with other values before, then 32 stad at once: at least 28 of the 32 stores read the OLD value (the wdf is needed in a task as in a fill, E517)"
+falsifier = "28 or more of 32 new in any of the 3 jobs (the loads landed by themselves within the distance)"
+expect = "old >= 28 in 3 of 3 jobs"
+
+[[row]]
+id = "P37_F14a"
+setting = "firmware"
+declared = "with all four slots armed (slots=0xf) and the slow task of slot 0 held for 0.7 ms (n = 10000, 2 jobs) and 6.5 ms (n = 100000, 3 jobs), ticks only and no job: the overlap flag of every slot stays 0, slots 1 to 3 count 0 passes, and at n = 100000 the passes of slot 0 counted are at least 2 fewer than the ticks the clock expects (ticks_expected, 0.997 per ms; E539 saw 1.9 to 2.2 behind) in at least 2 of 3 jobs, at n = 10000 none are missing (within 1)"
+falsifier = "an overlap flag of 1, a pass in slot 1 to 3, or passes equal to the expected at n = 100000 in 2 of 3 jobs (no tick lost)"
+expect = "5 of 5 jobs consistent"
+
+[[row]]
+id = "P37_F14b"
+setting = "firmware"
+declared = "a host kick (the miscinfo read) 2 ms into the 6.5 ms task does not start a pass during it and is not kept: passes of slot 0 equal those of the no-kick jobs (P37_F14a at n = 100000) within 1, overlap flag 0, in 3 of 3 jobs (dropped)"
+falsifier = "passes at least 2 above the no-kick jobs (the kick was queued and served after the task) or an overlap flag of 1"
+expect = "3 of 3 jobs"
+
+[[row]]
+id = "P37_F14c"
+setting = "firmware"
+declared = "a client triangle job started 2 ms into the 6.5 ms task: the TA-finished event (Q033_q2: slot 1, pa1 0x200) is queued, not lost and not overlapped: after done the passes of slot 1 are at least 1, the overlap flag of slot 1 is 0, the triangle is exact (diff 0 of 4096) and the tick still advances after a reset and the gate, in 3 of 3 jobs"
+falsifier = "slot 1 passes 0 (the event was dropped), an overlap flag of 1 (a pass started during the task) or a recovery/fault/hang"
+expect = "3 of 3 jobs"
+
+[[row]]
+id = "P37_F15"
+setting = "firmware"
+declared = "str then ldr of 0x0814 and 0x0a78 (the allow list, E534) with a client fill started 0.5 ms into a 30000-iteration spin: the back-to-back ldr after each str reads the stored value and so does the ldr after the spin, 3 of 3 jobs, the fill exact (diff 0 of 2048)"
+falsifier = "any read other than the stored value (a second writer or a job-dependent write) or a fill that differs"
+expect = "3 of 3 jobs, 4 reads each"
+
+[[row]]
+id = "P37_C7"
+setting = "client"
+declared = "the unsigned and the signed two-instruction compare give a < b on registers r5/r6/r7, r26/r27/r28, r31/r30/r25, r64/r65/r66 (temps 80), r123/r122/r121 (temps 124) and with t = a (r1/r2/r1), 16 pairs each: 192 of 192 jobs, p0 first set to the opposite"
+falsifier = "any job reading the opposite (the compare did not write p0) or any other value"
+expect = "192 of 192"
+
+[[row]]
+id = "P37_C7prev"
+setting = "client"
+declared = "with a previous compare that left i0 = its high word (adversarial: a stale i0 would give the opposite p0 in 28 of 32 cases, and random), the second compare reads its own fresh high word: 32 of 32 unsigned and 32 of 32 signed"
+falsifier = "any case that reads the previous high word"
+expect = "64 of 64"
+
+[[row]]
+id = "P37_C8"
+setting = "client"
+declared = "in a fill `p0 mov r,r`, `!p0 mov r,r`, `p0 mov r,#n` and `!p0 mov r,#n` follow p0 over every gap (none, 1, 4, 16, 64 movs, 1, 4, 16 ldad and a wdf), 64 of 64 jobs, and a predicated ba with a false predicate falls through, 10 of 10 (the taken ba is not run)"
+falsifier = "any job where the form ignores p0 or a false predicated ba jumps"
+expect = "74 of 74"
+
+[[row]]
+id = "P37_C9"
+setting = "client"
+declared = "ima32.u and ima32.s with every partition of {d, a, b, c} into registers (15 each) read their sources before the write: r10 = the low word and r11 = i0 = the high word of the 64-bit a*b+c (c sign-extended for .s) in 10 of 10 jobs of each of the 30 probes, i0 preset to a marker of its own"
+falsifier = "any job that differs (a shared source reading the written value, i0 not written)"
+expect = "300 of 300"
+
+[[row]]
+id = "P37_C13a"
+setting = "client"
+declared = "ldab r10, [r28,+#n] reads the byte at base + n (the offset counts bytes) zero-extended: 8 of 8, and ldaw r10, [r28,+#n] reads the halfword at base + 2n zero-extended: 8 of 8"
+falsifier = "sign extension (the bytes a7 b6 8d 9c have bit 7 set), an offset counted in dwords, or ldaw n counted in bytes"
+expect = "16 of 16"
+
+[[row]]
+id = "P37_C13b"
+setting = "client"
+declared = "ldaw and ldad at an address that is not a multiple of their size read the bytes at that address (usse_isa 7.10 for ldad): 6 of 6"
+falsifier = "an aligned-down read, a zero read, or a fault of the job"
+expect = "6 of 6"
+
+[[row]]
+id = "P37_C13c"
+setting = "client"
+declared = "stab [r28,+#n], r5 changes only byte base + n to the low byte of r5 and staw only the two bytes at base + 2n to the low half of r5, nothing else changes: 16 of 16 and 7 of 7 (aligned bases, inside the two preset dwords), and the plain stad control lands at an aligned address and nowhere at an unaligned one: 3 of 3"
+falsifier = "any other byte changed, a store that does not land, or a store that lands at another byte"
+expect = "26 of 26"

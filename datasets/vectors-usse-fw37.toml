@@ -1,0 +1,9 @@
+title = "instruction vectors of the four phase 11.36 client tables (fw37-compare, -pred, -ima32hi-repeat, -narrow): 678 vectors"
+repo = "data"
+paths = ["vectors/nokernel/usse/fw37-compare/", "vectors/nokernel/usse/fw37-pred/", "vectors/nokernel/usse/fw37-ima32hi-repeat/", "vectors/nokernel/usse/fw37-narrow/"]
+method = "tools/usse-asm/convert_extra.py on the raw readbacks of usse-fw37-compare, -pred, -ima32hi-repeat and -narrow with their tables, one file per probe (14, 6, 30 and 6 files)"
+date = "2026-11-09"
+files = 56
+size = 2196084
+sha256 = "7ec11f66c18f3c2e6af11e6c6b461d4c2b260f12637fca6891eb194eaaa4be6d"
+recipe = "tools/usse-asm/convert_extra.py"

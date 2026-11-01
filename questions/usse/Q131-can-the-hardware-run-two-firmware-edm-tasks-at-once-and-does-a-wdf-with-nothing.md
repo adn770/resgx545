@@ -4,7 +4,7 @@ question = "can the hardware run two firmware (EDM) tasks at once"
 unit = "usse"
 kind = "fw"
 phase = 11
-evidence = ["E478", "E480", "E532", "E534", "E539"]
+evidence = ["E478", "E480", "E532", "E534", "E539", "E601", "E602"]
 terms = []
 +++
 
@@ -39,3 +39,16 @@ while a task runs (queued or dropped: a counter in the handler's own path, a fla
 of other slots, a TA or 3D event during a task, tasks longer than 7 ms, and `wdf` covering several
 loads in a task. To settle it: a task that holds the EDM while a job is queued, with the handler's
 runs counted by a flag per tick.
+
+Narrowed in 11.36 (not retired). Two of the open parts were run in firmware tasks of ours (stage f12
+and f8, data p1137-f12 and p1137-f8). One `wdf` over N = 2 to 100 `ldad.bypassl1` loads from two
+page bases at mixed offsets (every 11th load a repeated address) left every destination holding its
+own load in 21 of 21 jobs, so loads, one `wdf` and the stores is sufficient in a firmware task with
+a backend-like mix of offsets; the `wdf` was not shown to wait or to be needed, since the control
+landed without it at 32 slots (E602); and p0 kept across up to 64 `mov` limm, 32 `ldad` with a
+`wdf`, `wdf` and `idf` and a taken branch (E601, 72 of 72). The control did not do what a fill did:
+32 loads followed by 32 stores with no `wdf` stored the new value in 32 of 32 stores in 3 of 3 jobs
+(E602, prediction P37_F12b failed), so the missing-`wdf` hazard of E517 is not shown in a firmware
+task at that distance (Q194). Still open: events that arrive while a task runs (queued or dropped),
+tasks of other slots, a TA or 3D event during a task and tasks longer than 7 ms (the stages f14a,
+f14b, f14c and q033q2 were not run in this phase; the follow-up stages are run separately).

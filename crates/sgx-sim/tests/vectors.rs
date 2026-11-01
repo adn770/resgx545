@@ -99,6 +99,30 @@ fn probe_vectors_match_where_modelled() {
     assert!(fail.is_empty(), "{} mismatches:\n{}", fail.len(), fail[..fail.len().min(200)].join("\n"));
 }
 
+/// Phase 11.36: the narrow memory forms (`ldab`, `ldaw`, `stab`, `staw`) ran on the hardware as a client
+/// pixel task (probes/usse/fw37-narrow.toml, 48 jobs): every one of those vectors must match, none may stop
+/// unsupported, and the unaligned `ldaw`/`ldad` reads and the plain `stad` control are among them.
+#[test]
+fn the_narrow_memory_vectors_match_the_hardware() {
+    let Some(dir) = vectors() else { return };
+    let (mut pass, mut bad) = (0, Vec::new());
+    for path in probe_files(&dir) {
+        let d = load(&path);
+        for v in d.get("vectors").arr() {
+            let id = v.get("id").str().unwrap_or("");
+            if !id.starts_with("usse-fw37-narrow-") || v.get("readback").get("failed").str().is_some() {
+                continue;
+            }
+            match run(v) {
+                Ok(_) => pass += 1,
+                Err(e) => bad.push(format!("{id}: {e}")),
+            }
+        }
+    }
+    assert!(bad.is_empty(), "{} of {} narrow vectors do not match:\n{}", bad.len(), pass + bad.len(), bad.join("\n"));
+    assert_eq!(pass, 48, "the 48 jobs of fw37-narrow.toml: {pass} found");
+}
+
 /// The PDS vectors: every one matches or stops unsupported (a program or an input whose
 /// meaning is open), and none may mismatch.
 #[test]

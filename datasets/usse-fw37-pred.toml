@@ -1,0 +1,10 @@
+title = "probe table usse/fw37-pred"
+repo = "data"
+paths = ["usse/fw37-pred/"]
+method = "the campaign runner on the laptop target (tools/campaign, the 11.35 copy), SGX_PROBE_BETWEEN a debugfs reset and 3 s before every job, the frozen table of probes/p1136/manifest-1137.sha256 with probe names prefixed usse-fw37-pred- as the runner requires; env.toml gained the tool, its source sha256, the between-jobs setting, the predictions hash and the table note by hand after the run"
+date = "2026-11-09"
+files = 88
+size = 334197
+sha256 = "2011d5f234af24a394adbd2357dac3738a770cb1d9675956d1bf5aad29b4f348"
+recipe = "probes/usse/fw37-pred.toml"
+needs = ["render"]

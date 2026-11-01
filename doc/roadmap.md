@@ -742,3 +742,18 @@ the 28 new vector files, from the coverage json by name (pass, unsupported, mism
 2013, 0 (30081, 2012, 0 before), pixels 434, 202, 0, PDS 1305, 98, 0, firmware 349, 0, 0, 1112
 fitted; on 11.34's basis 30920 pass (30864 at 11.34). The roadmap counts the questions from the
 built `doc/open_questions.md`: 156 open, 140 hw (high 13, medium 68, low 59), 10 fw and 6 kernel.
+
+Sub-phase 11.36 is a records sub-phase with laptop runs and no kernel change, for the items 7 to 13
+of the firmware toolchain's second requests: 678 client pixel jobs (compares, predicated forms, the
+high word of `ima32` with repeated registers, narrow memory) and 124 jobs in firmware tasks of ours
+(test immediates, predicates, one `wdf` over many loads, registers r0 to r123), the predictions
+hashed before the first run, 15 of 19 rows run (the other four not run) and one failed (the control
+of E602, Q194). The client results hold on every case run (E595 to E599); in a firmware task the
+test immediate is exact for n = 0 to 127 (E600), `p0 mov r, #n` and `p0 br` follow p0 (E601), loads,
+one `wdf` and stores is sufficient for 2 to 100 loads without the `wdf` being shown to wait or to be
+needed (E602), and every register r0 to r123 is storage for `ldad` and `stad` (E603). The simulator
+models the narrow memory forms as run and refuses what did not run (flags, banks, negative or
+register offsets); by name in the coverage json (pass, unsupported, mismatch): scalar 30815, 2013,
+0, pixels 434, 202, 0, PDS 1305, 98, 0, firmware 470, 0, 0, 1112 fitted; on 11.34's basis 31719 pass
+(30920 at 11.35). The roadmap counts the questions from the built `doc/open_questions.md`: 159 open
+(Q001 to Q196), 143 hw (high 13, medium 68, low 62), 10 fw and 6 kernel; usse 38, edm 15.
