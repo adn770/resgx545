@@ -1,13 +1,13 @@
 # isa — the instruction-form tables, single source
 
 The forms of the USSE and PDS instruction sets are described once, here, and generated into
-the C and Rust decoders:
+the C and Rust decoders and the assemblers:
 
 | description | output | used by |
 |-------------|--------|---------|
-| `usse/` | `tools/usse-dis/usse_table.inc` | usse-dis, r2 plugin |
+| `usse/` | `tools/usse-dis/usse_table.inc` | usse-dis, usse-asm, r2 plugin, `doc/isa/formdump.c` |
 | | `crates/usse-isa/src/table.rs` | the Rust USSE decoder and its `usse-dis` |
-| `pds/` | `tools/usse-dis/pds_table.inc` | pds-dis |
+| `pds/` | `tools/usse-dis/pds_table.inc` | pds-dis, pds-asm, r2 plugin, `doc/isa/formdump.c` |
 | | `crates/pds-isa/src/table.rs` | the Rust PDS decoder and its `pds-dis` |
 
 `isa/gen.py` (Python stdlib) writes them; both are committed, so neither C nor Rust needs
@@ -16,13 +16,15 @@ stale. After editing a description:
 
 ```sh
 python3 isa/gen.py                                   # rewrite the tables
-make -C tools/usse-dis
-cargo test && .venv/bin/pytest                       # C/Rust cross-check, pinned texts
+make -C tools/usse-dis && make -C tools/usse-asm
+cargo run --release -p sgx-sim --example coverage    # if an op or a role changed
+python3 doc/isa/build.py                             # the ISA references
+cargo test && .venv/bin/pytest                       # C/Rust cross-check, round trips, docs
 ```
 
 ## What a description holds
 
-Each instruction set has two kinds of file:
+Each instruction set has two kinds of file, and optionally a third:
 
 - `isa/<isa>/kinds/<family>.toml`: the definitions (consts, layouts, fields, code and data
   kinds), read in the order `gen.py` lists the families (`main`, `float`, `memctl`,
@@ -37,12 +39,12 @@ Names are global across the files of one instruction set. Both sets run on one f
 (`usse_form.[ch]`, `usse_isa::form`); PDS words are 32 bits.
 
 - **`[[form]]`**: `order`, its place in the decode order; `pat`, the text with `{i}` for
-  field i; `mask` and `val`, the bits that identify it (`word & mask == val`); `fields`, at
-  most ten; optional `dflt`, the value our encoder writes in the bits the instruction ignores
-  (and its preference among field values that print the same text); optional `op`, what the
-  form does.
-- **Roles**: a field may carry a name for what the form does, `"dst=F_DST"` (`dst`, `src1`,
-  `pred`, `flags`, ...). Roles and `op` go into the Rust tables only; the C tables do not change.
+  field i; `mask` and `val`, the bits that
+  identify it (`word & mask == val`); `fields`, at most ten; optional `dflt`, how the closed
+  toolchain fills the bits the form ignores (the assembler's preference); optional `op`, what
+  the form does, for the simulator (`crates/sgx-sim`).
+- **Roles**: a field may carry a name for the simulator, `"dst=F_DST"` (`dst`, `src1`, `pred`,
+  `flags`, ...). Roles and `op` go into the Rust tables only; the C tables do not change.
 - **Fields** are written as a bit-range list with a kind (`"PRED_ALL 58:56"`), a layout with
   a kind (`"SRC1(K_SRCD)"`) or the name of a `[field]` entry (`"F_DST"`). Bit ranges are
   `hi:lo` or one bit, listed LSB first: `"K_DST 27:21 33:32 51"` is enc[27:21] in bits 6:0
@@ -62,7 +64,6 @@ Names are global across the files of one instruction set. Both sets run on one f
   `crates/usse-isa/src/kinds.rs`, `forms/*.rs` and `crates/pds-isa/src/kinds.rs`. `cargo test`
   cross-checks them (`crates/README.md`).
 
-The comments in the description explain each layout. Every form is pinned by one made-up
-word and its decoded text (`tools/usse-dis/pinned.tsv`, read by `test_pinned.py` and by the
-Rust tests `tests/pinned.rs`), and the C and Rust decoders are held identical, form by form on
-random words, by the cross-checks (`tools/usse-dis/forms/README.md`).
+The comments in the description carry the evidence for each layout. The layouts are pinned
+by the decoders' tests and held, form by form on random words, by the assembler round trip
+and the C/Rust cross-check (`tools/usse-dis/forms/README.md`).

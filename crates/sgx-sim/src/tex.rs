@@ -1,0 +1,1414 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2026 Josep Torra
+//! The texture unit, as far as it is measured (doc/isa/content/usse/probe/
+//! sampling.md and sampler-state.md): an smp's four state words T0-T3 (the
+//! PDS doutt words, probes/texture/state-words.toml) and its coordinates
+//! give the registers the sample writes. Texels are read through `load`.
+//! Mipmaps follow E041 (a twiddled square chain, levels by the LOD, the
+//! nearest or a blend of two); border modes, tiled layouts, PCF beyond one
+//! split, the LOD of a quad's own derivatives and the formats the probes only
+//! recorded are not established and stop with Err(why).
+
+/// One sample: the state words, the normalized coordinates, whether the
+/// texture is read as 1D (row 0), .pcf's reference and the level of detail.
+#[derive(Clone, Copy, Debug)]
+pub struct Sample {
+    pub state: [u32; 4],
+    pub u: f32,
+    pub v: f32,
+    pub one_d: bool,
+    pub srd: Srd,
+    pub pcf: Option<f32>,
+    pub lod: Lod,
+}
+
+/// smp's SRD mode (E042): what the sample returns in place of the filtered
+/// texel.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Srd {
+    /// The filtered texel.
+    None,
+    /// .sinf: the sampling decision, the blend fraction and the level.
+    Info,
+    /// .rsd: the texels a filtered sample would blend, not filtered.
+    Raw,
+}
+
+/// What gives a sample its LOD (E041).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Lod {
+    /// No LOD of its own, every instance at the same coordinates: zero
+    /// derivatives, so minus infinity whatever a bias says (texture-mipmaps-mip-bias,
+    /// texture-mipmaps-mip-level case 12 read level 0).
+    Flat,
+    /// smp*replace's value.
+    Value(f32),
+    /// smp2dgrad's du/dx, dv/dx, du/dy, dv/dy (normalized).
+    Grad([f32; 4]),
+    /// Not known: why.
+    Open(&'static str),
+}
+
+/// A load of the dword at an address (4-aligned): the texels' memory.
+pub type Load<'a> = dyn FnMut(u32) -> Result<u32, crate::Error> + 'a;
+
+/// What a sample does, or why it is not known.
+#[derive(Debug, PartialEq)]
+pub enum Fail {
+    Open(String),
+    Load(crate::Error),
+}
+
+fn open<T>(s: impl Into<String>) -> Result<T, Fail> {
+    Err(Fail::Open(s.into()))
+}
+
+/// The registers the sample writes, in order.
+pub fn sample(s: &Sample, load: &mut Load) -> Result<Vec<u32>, Fail> {
+    let [t0, t1, t2, t3] = s.state;
+    let tex = Texture::new(t0, t1, t2, t3)?;
+    let (levels, bilinear) = tex.pick(t0, &s.lod, s.one_d)?;
+    let (u, v) = (s.u as f64, if s.one_d { 0.0 } else { s.v as f64 });
+    if (tex.offset != [0, 0] || tex.shift != 0) && (bilinear || s.pcf.is_some() || s.srd != Srd::None) {
+        return open("T3's texel offset or address scale filtered, with .pcf or an SRD mode");
+    }
+    if tex.format == 14 {
+        // two registers (format_14): one level, point sampled, unconverted
+        return match levels[..] {
+            [(l, _)] if !bilinear && s.pcf.is_none() && s.srd == Srd::None && t3 >> 16 & 3 == 0 => {
+                let t = tex.level(l);
+                let raw = t.fetch((u * t.w as f64).floor() as i64, t.row_of(v, s.one_d), load)?;
+                Ok(format_14(raw).to_vec())
+            }
+            _ => open("format 14 filtered, blended, converted, with .pcf or an SRD mode"),
+        };
+    }
+    if s.srd != Srd::None {
+        if s.pcf.is_some() {
+            return open("an SRD mode with .pcf");
+        }
+        if t3 >> 16 & 3 != 0 {
+            return open("a conversion with an SRD mode");
+        }
+        if tex.format != 12 {
+            return open(format!("an SRD mode on format {}", tex.format));
+        }
+    }
+    match s.srd {
+        Srd::None => {}
+        Srd::Info => return info(&tex, t0, &levels, bilinear),
+        Srd::Raw => return raw(&tex, &levels, bilinear, u, v, s.one_d, load),
+    }
+    if let Some(r) = s.pcf
+        && !tex.colour()
+    {
+        if t3 >> 16 & 3 != 0 {
+            return open("a conversion with .pcf");
+        }
+        if levels != [(0, 64)] {
+            return open(".pcf on a level other than 0");
+        }
+        let (t, w) = if bilinear {
+            tex.quad(u, v, s.one_d, load)?
+        } else {
+            ([tex.fetch((u * tex.w as f64).floor() as i64, tex.row_of(v, s.one_d), load)?; 4], [1024; 4])
+        };
+        return tex.pcf(t, w, r, t3 >> 29).map(|v| vec![v]);
+    }
+    let colour = if let [(l, _)] = levels[..] {
+        tex.level(l).filtered(u, v, bilinear, s.one_d, load)?.0
+    } else {
+        // T0 bit 9 (texture-mipmaps-mip-mipfilter): each channel blends the two levels by
+        // the LOD's fraction in 1/64 (E042's six-bit fraction), to nearest,
+        // halves up; levels that round on their own are not measured
+        let mut out = 0;
+        let mut texels = [0u32; 2];
+        for (k, &(l, _)) in levels.iter().enumerate() {
+            let (t, exact) = tex.level(l).filtered(u, v, bilinear, s.one_d, load)?;
+            if !exact {
+                return open("a blend of filtered levels that round on their own");
+            }
+            texels[k] = t;
+        }
+        let (wa, wb) = (levels[0].1, levels[1].1);
+        for c in 0..4 {
+            let (a, b) = (texels[0] >> (8 * c) & 0xff, texels[1] >> (8 * c) & 0xff);
+            out |= (a * wa + b * wb + 32) >> 6 << (8 * c);
+        }
+        out
+    };
+    convert(colour, t3, tex.format)
+}
+
+/// .sinf (texture-sampler-smp-srd, E042): two dwords, the blend fraction between the
+/// levels in bits 23:16 of the first (its six bits with their top two
+/// repeated below them) and the level in the second (the nearest, or the
+/// lower of the two blended). Measured on a mip chain with point filters:
+/// the mip filter nearest at any LOD (fraction 0) and linear between two
+/// levels.
+fn info(tex: &Texture, t0: u32, levels: &[(u32, u32)], bilinear: bool) -> Result<Vec<u32>, Fail> {
+    if tex.row.is_some() || t0 >> 18 & 1 != 0 || t0 >> 19 & 3 == 0 || t0 >> 21 & 0x3f != 0x3f {
+        return open(".sinf without a mip chain");
+    }
+    if bilinear || matches!(t0 >> 12 & 3, 1 | 2) {
+        return open(".sinf with bilinear filtering");
+    }
+    match *levels {
+        [(l, _)] if t0 >> 9 & 1 == 0 => Ok(vec![0, l]),
+        [(_, _)] => open(".sinf under the linear mip filter at a whole LOD"),
+        [(l, _), (_, f)] => Ok(vec![(f << 2 | f >> 4) << 16, l]),
+        _ => unreachable!(),
+    }
+}
+
+/// .rsd (texture-sampler-smp-srd, E042): with point sampling of one level the texel, as
+/// without the mode; filtering two levels bilinearly, each level's 2x2
+/// footprint, not filtered, the lower level first, each in quad's order (x0,
+/// y0), (x1, y0), (x0, y1), (x1, y1). One bilinear level, or two point ones,
+/// are not measured.
+fn raw(
+    tex: &Texture,
+    levels: &[(u32, u32)],
+    bilinear: bool,
+    u: f64,
+    v: f64,
+    one_d: bool,
+    load: &mut Load,
+) -> Result<Vec<u32>, Fail> {
+    match (levels, bilinear) {
+        ([(l, _)], false) => Ok(vec![tex.level(*l).filtered(u, v, false, one_d, load)?.0]),
+        ([_, _], true) if !one_d => {
+            let mut out = Vec::new();
+            for &(l, _) in levels {
+                out.extend(tex.level(l).quad(u, v, one_d, load)?.0);
+            }
+            Ok(out)
+        }
+        ([_], true) => open(".rsd of one bilinear level"),
+        _ => open(".rsd of point-sampled levels blended"),
+    }
+}
+
+/// T3 bits 17:16 convert the texel, bit 15 normalizing (texture-sampler-smp-convert): none,
+/// c10, f16 pairs or f32 channels, from the B8G8R8A8 channels. Without alpha
+/// (565) c10 and f32 leave its register out and f16 gives 1.0. T3's other
+/// fields: see t3_fields.
+fn convert(texel: u32, t3: u32, format: u32) -> Result<Vec<u32>, Fail> {
+    let conv = t3 >> 16 & 3;
+    if conv == 0 {
+        return Ok(vec![texel]);
+    }
+    let norm = t3 >> 15 & 1 != 0;
+    // the other formats' channels, in order (texture-sampler-smp-convert): u8 (0), two u8
+    // (7, the low byte first), u16 (9; c10 takes its top byte)
+    let (chans, max): (Vec<u32>, f32) = match format {
+        0 => (vec![texel & 0xff], 255.0),
+        7 => (vec![texel & 0xff, texel >> 8 & 0xff], 255.0),
+        9 => (vec![texel & 0xffff], 65535.0),
+        11 | 18 => return float_convert(texel, conv, norm, format),
+        2..=5 | 12 | 13 => (vec![], 0.0),
+        f => return open(format!("a conversion of format {f}")),
+    };
+    if !chans.is_empty() {
+        let value = |c: u32| if norm { c as f32 / max } else { c as f32 };
+        return Ok(match conv {
+            1 if norm => return open("c10 with normalization"),
+            2 if !norm && chans.iter().any(|&c| c > 65504) => return open("f16 past the largest half"),
+            1 => vec![
+                chans
+                    .iter()
+                    .enumerate()
+                    .map(|(k, &c)| (if max > 255.0 { c >> 8 } else { c }) << (10 * k))
+                    .sum(),
+            ],
+            2 => chans
+                .chunks(2)
+                .map(|p| p.iter().enumerate().map(|(k, &c)| half(value(c)) << (16 * k)).sum())
+                .collect(),
+            _ => chans.iter().map(|&c| value(c).to_bits()).collect(),
+        });
+    }
+    let alpha = format != 5;
+    let [b, g, r, a] = [0, 1, 2, 3].map(|c| texel >> (8 * c) & 0xff);
+    let value = |c: u32| if norm { c as f32 / 255.0 } else { c as f32 };
+    Ok(match conv {
+        1 => {
+            if norm {
+                return open("c10 with normalization");
+            }
+            let mut v = vec![b | g << 10 | r << 20, a];
+            v.truncate(1 + alpha as usize);
+            v
+        }
+        2 => {
+            let h = |c: u32| half(value(c));
+            vec![h(r) | h(g) << 16, h(b) | if alpha { h(a) } else { 0x3c00 } << 16]
+        }
+        _ => [b, g, r, a][..3 + alpha as usize].iter().map(|&c| value(c).to_bits()).collect(),
+    })
+}
+
+/// The float formats converted (x-smp3 136-143: format 11's half 0xD000,
+/// -32.0, and 18's f32 0xD00004FF, about -8.6e9): f32 the value exactly,
+/// bit 15 not acting; f16 11's half as it is and 18's saturated at -65504;
+/// c10 x * 255 saturated at -510 (0x202), as pckc10f32 does. Values neither
+/// saturation reaches, positive saturation and normalized c10 or f16 are not
+/// measured.
+fn float_convert(texel: u32, conv: u32, norm: bool, format: u32) -> Result<Vec<u32>, Fail> {
+    let x = if format == 11 { half_to_f32(texel & 0xffff) } else { f32::from_bits(texel) };
+    if !x.is_finite() {
+        return open(format!("a conversion of a NaN or infinite texel of format {format}"));
+    }
+    Ok(vec![match conv {
+        3 => x.to_bits(),
+        _ if norm => return open(format!("a normalized c10 or f16 of format {format}")),
+        2 if format == 11 => texel & 0xffff,
+        2 if x < -65504.0 => 0xfbff,
+        2 => return open("f16 of an f32 texel a half holds, or positive (not measured)"),
+        _ if x <= -2.0 => 0x202,
+        _ => return open(format!("c10 of a format {format} texel above -2 (not measured)")),
+    }])
+}
+
+/// A half as an f32, exactly (not an infinity or NaN: the caller checks).
+fn half_to_f32(h: u32) -> f32 {
+    let (e, f) = (h >> 10 & 31, h & 1023);
+    let mag = match (e, f) {
+        (31, 0) => f32::INFINITY,
+        (31, _) => f32::NAN,
+        (0, _) => f as f32 * 2f32.powi(-24),
+        _ => (1024 + f) as f32 * 2f32.powi(e as i32 - 25),
+    };
+    if h >> 15 != 0 { -mag } else { mag }
+}
+
+/// T3's fields beyond the conversion (x-smp2, one bit at a time on texel
+/// (3, 5) of a stride texture): the texel offset 7:4 (x) and 3:0 (y), signed,
+/// and the address scale 19:18 (1 or 2, the texel's byte offset from the base
+/// shifted left by it); bits 8, 9, 12 and 20-22 change nothing there. The
+/// compare mode 31:29 (for .pcf) and the data size 26:23 change nothing seen;
+/// bit 11: the captured pixel fetches of the closed driver set it (0x00800800)
+/// **[CAP]**, the mip probes (E041), which do, read as the model without it. On a twiddled
+/// texture only those are measured; bits 10, 13, 14, 27 and 28 act in ways
+/// not known.
+fn t3_fields(t3: u32, stride: bool) -> Result<([i64; 2], u32), Fail> {
+    let not_measured = if stride { 0x1800_6400 } else { 0x187c_77ff };
+    if t3 & not_measured != 0 {
+        return open(format!("T3 bits 0x{:08x}", t3 & not_measured));
+    }
+    let shift = t3 >> 18 & 3;
+    if shift == 3 {
+        return open("T3 bits 19:18 = 3");
+    }
+    let s4 = |v: u32| ((v as i64) << 60) >> 60;
+    Ok(([s4(t3 >> 4 & 15), s4(t3 & 15)], shift))
+}
+
+/// Format 14's texel (texture-sampler-smp-formats-other 4-7): A2B10G10R10, each field
+/// widened to 16 bits by repeating its bits, in two registers R | G << 16 and
+/// B | A << 16.
+fn format_14(t: u32) -> [u32; 2] {
+    let w = |v: u32| v << 6 | v >> 4;
+    let a = (t >> 30) * 0x5555;
+    [w(t & 0x3ff) | w(t >> 10 & 0x3ff) << 16, w(t >> 20 & 0x3ff) | a << 16]
+}
+
+/// A float in [0, 65535] as a half, rounded to nearest even.
+fn half(x: f32) -> u32 {
+    if x == 0.0 {
+        return 0;
+    }
+    let e = (x.log2().floor() as i32).max(-14);
+    if e == -14 && x < 2f32.powi(-14) {
+        // a subnormal: m * 2^-24 (1024 is the smallest normal, 0x0400)
+        return (x as f64 * 2f64.powi(24)).round_ties_even() as u32;
+    }
+    let m = (x as f64 / 2f64.powi(e - 10)).round_ties_even() as u32;
+    // a mantissa that rounded up to 2048 is the next exponent's 1024
+    let (m, e) = if m == 2048 { (1024, e + 1) } else { (m, e) };
+    ((e + 15) as u32) << 10 | (m & 0x3ff)
+}
+
+#[derive(Clone, Copy)]
+struct Texture {
+    w: u32,
+    h: u32,
+    format: u32,
+    base: u32,
+    /// Bytes per row of a stride texture, None for a twiddled one.
+    row: Option<u32>,
+    address: [u32; 2],
+    /// T3's texel offset (x, y) and address scale (t3_fields).
+    offset: [i64; 2],
+    shift: u32,
+}
+
+impl Texture {
+    /// T0's measured fields: the stride or (twiddled) the mip fields 26:17
+    /// (see pick), filters 13:12, the min and mip filters or STRIDELO 11:9,
+    /// the address modes 8:0; on a stride texture bits 14-16, 28 and 29 change
+    /// nothing (x-smp2 11-13, 15, 16). Any other bit (27, 30 the second format
+    /// table, 31 the luma key's alpha: x-smp2 14, 17, 18 read other values),
+    /// and T2's low two, is not measured. T3: t3_fields.
+    fn new(t0: u32, t1: u32, t2: u32, t3: u32) -> Result<Texture, Fail> {
+        let stride = t1 >> 29 == 6;
+        let t0_open = t0 & if stride { 0xc800_0000 } else { 0xf801_c000 };
+        if t0_open != 0 || t2 & 3 != 0 {
+            return open(format!("T0 bits 0x{t0_open:08x}, T2 bits {}", t2 & 3));
+        }
+        let (w, h) = ((t1 >> 12 & 0xfff) + 1, (t1 & 0xfff) + 1);
+        let row = match t1 >> 29 {
+            // NP2_STRIDE_EXT: the stride in dwords minus 1, STRIDELO T0[11:9]
+            // and STRIDEHI T0[26:17]
+            6 => Some(((t0 >> 9 & 7 | (t0 >> 17 & 0x3ff) << 3) + 1) * 4),
+            0 if w.is_power_of_two() && h.is_power_of_two() => None,
+            0 => return open("a twiddled texture of a size other than a power of two"),
+            t => return open(format!("texture type {t}")),
+        };
+        let (offset, shift) = t3_fields(t3, stride)?;
+        let tex = Texture {
+            w,
+            h,
+            format: t1 >> 24 & 31,
+            base: t2 & !3,
+            row,
+            address: [t0 >> 6 & 7, t0 >> 3 & 7],
+            offset,
+            shift,
+        };
+        if tex.bytes()? != 4 && shift != 0 {
+            return open(format!("T3's address scale on format {}", tex.format));
+        }
+        if tex.format == 20 && !stride {
+            return open("format 20 on a twiddled texture (its texel pairs)");
+        }
+        Ok(tex)
+    }
+
+    /// Level l of a twiddled chain (E041): the levels follow level 0 back
+    /// to back, largest first, each twiddled at its own size, no padding.
+    fn level(&self, l: u32) -> Texture {
+        let bytes = self.bytes().unwrap_or(4);
+        let off: u32 = (0..l).map(|k| bytes * (self.w >> k) * (self.h >> k)).sum();
+        Texture { w: self.w >> l, h: self.h >> l, base: self.base.wrapping_add(off), ..*self }
+    }
+
+    /// The levels a sample reads, with their weights in 1/64, and whether
+    /// it filters bilinearly (E041). The filter is T0 13:12's magnifying (LOD
+    /// 0 or below) and 11:10's minifying (above 0; 1 and 2 linear, 0 and 3
+    /// point, texture-mipmaps-mip-minfilter). T0 bit 18 set reads level 0 only, as do
+    /// 20:19 = 0 and 26:21 = 0-3 or 7; 26:21 = 0x3f with 20:19 non-zero
+    /// enables the chain (texture-mipmaps-mip-t0-field); 26:21 = 0 also keeps magnifying. The LOD clamps to [0, the last
+    /// level]; T0 bit 9 = 0 takes the nearest level, a half rounding up, = 1
+    /// blends the two around it (texture-mipmaps-mip-mipfilter).
+    fn pick(&self, t0: u32, lod: &Lod, one_d: bool) -> Result<(Vec<(u32, u32)>, bool), Fail> {
+        let mag = matches!(t0 >> 12 & 3, 1 | 2);
+        let level0 = |bilinear: bool| Ok((vec![(0, 64)], bilinear));
+        if self.row.is_some() {
+            // a stride texture: 26:17 and 11:9 are its stride, so neither a
+            // level nor a minification filter; a quad's own LOD samples as
+            // enlarged (the copies' pixel vectors), a value above 0 is not
+            // measured
+            return match lod {
+                Lod::Open(_) => level0(mag),
+                _ if self.lambda(lod)?.0 <= 0.0 => level0(mag),
+                _ => open("a LOD above 0 on a stride texture"),
+            };
+        }
+        let min = matches!(t0 >> 10 & 3, 1 | 2);
+        let (no_mips, chain) = (t0 >> 18 & 1 != 0, t0 >> 19 & 3 != 0);
+        let top = t0 >> 21 & 0x3f;
+        if top == 0 {
+            // as if the LOD were clamped to 0: level 0 enlarged, whatever
+            // the LOD and bit 18 (x-smp 83, 87, 91, 92; texture-mipmaps-mip-t0-field 1, 2)
+            return level0(mag);
+        }
+        if !no_mips && chain && !matches!(top, 1..=3 | 7 | 0x3f) {
+            return open(format!("T0 bits 26:21 = 0x{top:02x} on a mipmapped texture"));
+        }
+        if no_mips || !chain || top != 0x3f {
+            // level 0 only (texture-mipmaps-mip-t0-field)
+            if min == mag {
+                // one level, one filter: the LOD does not matter
+                return level0(mag);
+            }
+            if self.lambda(lod)?.0 <= 0.0 {
+                return level0(mag);
+            }
+            if no_mips && top == 0x3f {
+                // texture-mipmaps-mip-minfilter case 14: level 0 minified
+                return level0(min);
+            }
+            return open(format!("level 0 minified under T0 0x{t0:08x}"));
+        }
+        let (l, exact) = self.lambda(lod)?;
+        if l <= 0.0 {
+            return level0(mag);
+        }
+        if mag && !min && l <= 0.5 {
+            return open("magnification linear, minification point, a LOD in (0, 0.5]");
+        }
+        let last = self.w.trailing_zeros();
+        if self.w != self.h || one_d {
+            return open("mipmaps of a 1D or non-square texture");
+        }
+        if !exact && l < last as f64 {
+            return open("a LOD from gradients that are not a power of two");
+        }
+        let l = l.min(last as f64);
+        let (lo, f) = (l.floor() as u32, (l - l.floor()) * 64.0);
+        let levels = if t0 >> 9 & 1 == 0 {
+            if f > 31.0 && f < 32.0 {
+                return open("a LOD fraction just under a half");
+            }
+            vec![(lo + (f >= 32.0) as u32, 64)]
+        } else if f == 0.0 {
+            vec![(lo, 64)]
+        } else if f.fract() != 0.0 {
+            return open("a blend at a LOD fraction other than 1/64");
+        } else if !self.colour() {
+            return open(format!("a blend of levels of format {}", self.format));
+        } else {
+            vec![(lo, 64 - f as u32), (lo + 1, f as u32)]
+        };
+        if levels.iter().any(|&(l, _)| l > 0) && self.bytes()? != 4 {
+            return open("mip levels of a format other than 32 bits");
+        }
+        Ok((levels, min))
+    }
+
+    /// The LOD (E041) and whether it is exact: smp2dgrad's is log2 of the
+    /// larger footprint in texels (texture-mipmaps-mip-grad, du/dx against dv/dy), measured
+    /// at powers of two and without du/dy or dv/dx.
+    fn lambda(&self, lod: &Lod) -> Result<(f64, bool), Fail> {
+        Ok(match *lod {
+            Lod::Flat => (f64::NEG_INFINITY, true),
+            Lod::Value(x) if x.is_nan() => return open("a NaN LOD"),
+            Lod::Value(x) => (x as f64, true),
+            Lod::Grad([dudx, dvdx, dudy, dvdy]) => {
+                if dvdx != 0.0 || dudy != 0.0 {
+                    return open("gradients off the diagonal");
+                }
+                if !dudx.is_finite() || !dvdy.is_finite() || dudx < 0.0 || dvdy < 0.0 {
+                    return open("negative or not finite gradients");
+                }
+                let rho = (dudx as f64 * self.w as f64).max(dvdy as f64 * self.h as f64);
+                let l = rho.log2();
+                (l, rho == 0.0 || l.fract() == 0.0)
+            }
+            Lod::Open(why) => return open(why),
+        })
+    }
+
+    /// The row of a point sample.
+    fn row_of(&self, v: f64, one_d: bool) -> i64 {
+        if one_d { 0 } else { (v * self.h as f64).floor() as i64 }
+    }
+
+    /// The four texels of a bilinear sample and their weights in 1/4096,
+    /// truncated to 1/64 per axis (texture-sampler-smp-bilinear).
+    fn quad(&self, u: f64, v: f64, one_d: bool, load: &mut Load) -> Result<([u32; 4], [u32; 4]), Fail> {
+        let (x, y) = (u * self.w as f64 - 0.5, v * self.h as f64 - 0.5);
+        let (x0, y0) = (x.floor(), y.floor());
+        let fx = ((x - x0) * 64.0).floor() as u32;
+        let fy = if one_d { 0 } else { ((y - y0) * 64.0).floor() as u32 };
+        let (x0, y0) = (x0 as i64, if one_d { 0 } else { y0 as i64 });
+        let mut t = [0u32; 4];
+        for (k, (dx, dy)) in [(0, 0), (1, 0), (0, 1), (1, 1)].into_iter().enumerate() {
+            t[k] = self.fetch(x0 + dx, y0 + dy, load)?;
+        }
+        Ok((t, [(64 - fx) * (64 - fy), fx * (64 - fy), (64 - fx) * fy, fx * fy]))
+    }
+
+    /// A point or bilinear sample, and whether no channel rounded.
+    fn filtered(
+        &self,
+        u: f64,
+        v: f64,
+        bilinear: bool,
+        one_d: bool,
+        load: &mut Load,
+    ) -> Result<(u32, bool), Fail> {
+        if !bilinear {
+            let raw = self.fetch((u * self.w as f64).floor() as i64, self.row_of(v, one_d), load)?;
+            return Ok((if self.colour() { self.colour_texel(raw)? } else { self.plain_texel(raw)? }, true));
+        }
+        if !self.colour() {
+            return open(format!("bilinear filtering of format {}", self.format));
+        }
+        let (raw, w) = self.quad(u, v, one_d, load)?;
+        let mut t = [0u32; 4];
+        for k in 0..4 {
+            t[k] = self.colour_texel(raw[k])?;
+        }
+        let (mut out, mut exact) = (0, true);
+        for c in 0..4 {
+            let sum: u32 = (0..4).map(|k| (t[k] >> (8 * c) & 0xff) * w[k]).sum();
+            // each 8-bit channel rounds to nearest, halves up
+            out |= (sum + 2048) >> 12 << (8 * c);
+            exact &= sum.is_multiple_of(4096);
+        }
+        Ok((out, exact))
+    }
+
+    /// Bytes per texel (texture-sampler-smp-formats).
+    fn bytes(&self) -> Result<u32, Fail> {
+        Ok(match self.format {
+            0 | 1 => 1,
+            2..=11 | 20 => 2,
+            12..=19 | 21 | 22 | 30 | 31 => 4,
+            // texture-sampler-smp-formats-other recorded four texels of each: at (15, 15)
+            // 23-26 read 0xFFA50000, colour 0xD000 as RGB555 (PVRTC's colour
+            // B?); 27 is ETC1 by the captures; 28 and 29 convert
+            // through colour-space set 0 (E037, E040), whose contents the
+            // vector does not record (BT.601's words miss by one or two)
+            f @ 23..=27 => {
+                return open(format!("texture format {f}, compressed: four texels fix no decoder"));
+            }
+            f @ (28 | 29) => {
+                return open(format!(
+                    "texture format {f}, YUV through a colour-space set the vector does not record"
+                ));
+            }
+            f => return open(format!("texture format {f}")),
+        })
+    }
+
+    /// The formats returned as B8G8R8A8 channels.
+    fn colour(&self) -> bool {
+        matches!(self.format, 2..=5 | 12 | 13)
+    }
+
+    /// Texel (x, y) addressed by the modes (texture-sampler-smp-address): a stride texture
+    /// clamps to the edge; a twiddled one repeats (0), mirrors (1), clamps
+    /// (2) or mirrors once (3).
+    fn fetch(&self, x: i64, y: i64, load: &mut Load) -> Result<u32, Fail> {
+        let axis = |t: i64, n: u32, mode: u32| -> Result<u32, Fail> {
+            let n = n as i64;
+            let clamp = |t: i64| t.clamp(0, n - 1);
+            Ok(if self.row.is_some() {
+                clamp(t)
+            } else {
+                match mode {
+                    0 => t.rem_euclid(n),
+                    1 => {
+                        let m = t.rem_euclid(2 * n);
+                        if m >= n { 2 * n - 1 - m } else { m }
+                    }
+                    2 => clamp(t),
+                    3 => clamp(if t < 0 { -t - 1 } else { t }),
+                    m => return open(format!("address mode {m}")),
+                }
+            } as u32)
+        };
+        let (x, y) = (self.offset[0] + x, self.offset[1] + y);
+        let (x, y) = (axis(x, self.w, self.address[0])?, axis(y, self.h, self.address[1])?);
+        let bytes = self.bytes()?;
+        let off = match self.row {
+            Some(row) => (y * row + x * bytes) << self.shift,
+            None => morton(x, y, self.w, self.h) * bytes,
+        };
+        let a = self.base.wrapping_add(off);
+        let dw = load(a & !3).map_err(Fail::Load)?;
+        Ok(match bytes {
+            4 => dw,
+            // format 20: the pair's dword, the texel's own byte (0 or 2) first
+            _ if self.format == 20 => dw >> (8 * (a & 2)) & 0xff | (dw >> 8 & 0xff) << 8 | (dw >> 24) << 16,
+            _ => dw >> (8 * (a & 3)) & ((1 << (8 * bytes)) - 1),
+        })
+    }
+
+    /// A texel of a colour format as B8G8R8A8: the 16-bit ones expand each
+    /// field by repeating its bits, alpha 0xff without one; 13 is R8G8B8A8.
+    fn colour_texel(&self, t: u32) -> Result<u32, Fail> {
+        let f = |v: u32, lo: u32, n: u32| {
+            let x = v >> lo & ((1 << n) - 1);
+            let mut out = 0;
+            let mut have = 0;
+            while have < 8 {
+                out = out << n | x;
+                have += n;
+            }
+            out >> (have - 8)
+        };
+        let bgra = |b: u32, g: u32, r: u32, a: u32| b | g << 8 | r << 16 | a << 24;
+        Ok(match self.format {
+            2 => bgra(f(t, 0, 4), f(t, 4, 4), f(t, 8, 4), f(t, 12, 4)),
+            3 => bgra(f(t, 0, 2), f(t, 2, 3), f(t, 5, 3), f(t, 8, 8)),
+            4 => bgra(f(t, 0, 5), f(t, 5, 5), f(t, 10, 5), f(t, 15, 1)),
+            5 => bgra(f(t, 0, 5), f(t, 5, 6), f(t, 11, 5), 0xff),
+            12 => t,
+            13 => t & 0xff00_ff00 | (t & 0xff) << 16 | (t >> 16 & 0xff),
+            _ => unreachable!(),
+        })
+    }
+
+    /// .pcf (texture-sampler-smp-pcf): texel OP reference by the compare mode (never, <,
+    /// ==, <=, >, >=, !=, always) on an f32 texture (format 18) or a u16 one
+    /// (9, read as texel / 65535), giving 1.0 or 0xffff when it holds, else
+    /// 0. Filtered, the results average: measured where they agree and for
+    /// one of two texels at half weight.
+    fn pcf(&self, t: [u32; 4], w: [u32; 4], r: f32, mode: u32) -> Result<u32, Fail> {
+        let value = |t: u32| -> Result<f64, Fail> {
+            Ok(match self.format {
+                18 if f32::from_bits(t).is_nan() => return open("a NaN texel with .pcf"),
+                18 => f32::from_bits(t) as f64,
+                9 => t as f64 / 65535.0,
+                f => return open(format!(".pcf on format {f}")),
+            })
+        };
+        let r = r as f64;
+        let mut held = 0;
+        for k in 0..4 {
+            let x = value(t[k])?;
+            let ok = match mode {
+                0 => false,
+                1 => x < r,
+                2 => x == r,
+                3 => x <= r,
+                4 => x > r,
+                5 => x >= r,
+                6 => x != r,
+                _ => true,
+            };
+            held += ok as u32 * w[k];
+        }
+        let one = if self.format == 18 { 0x3f80_0000 } else { 0xffff };
+        Ok(match held {
+            0 => 0,
+            4096 => one,
+            2048 if w.iter().filter(|&&w| w == 2048).count() == 2 => {
+                if self.format == 18 {
+                    0x3f00_0000
+                } else {
+                    0x8000
+                }
+            }
+            _ => return open("filtered .pcf at weights other than one of two halves"),
+        })
+    }
+
+    /// A texel of the other formats, as stored (texture-sampler-smp-formats): 19 clears the
+    /// sign bit, 21 the top byte, 30 sets it. texture-sampler-smp-formats-other: 6 is
+    /// L6V5U5, the six-bit field 15:10 in B, the signed fields 9:5 in G and
+    /// 4:0 in R, each its sign then its four bits below it repeated (2 is
+    /// 0x11, -15 0x88), alpha 0xff; 20 the texel's own byte in R, its pair's
+    /// bytes 1 and 3 in G and B (fetch), alpha 0xff, unconverted.
+    fn plain_texel(&self, t: u32) -> Result<u32, Fail> {
+        let s5 = |v: u32| (v & 0x10) << 3 | (v & 15) << 3 | (v & 15) >> 1;
+        Ok(match self.format {
+            6 => {
+                let l = t >> 10 & 0x3f;
+                0xff00_0000 | s5(t) << 16 | s5(t >> 5) << 8 | (l << 2 | l >> 4)
+            }
+            19 => t & 0x7fff_ffff,
+            20 => 0xff00_0000 | (t & 0xff) << 16 | (t >> 8 & 0xff) << 8 | t >> 16,
+            21 => t & 0x00ff_ffff,
+            30 => t | 0xff00_0000,
+            _ => t,
+        })
+    }
+}
+
+/// The twiddled index of (x, y) (texture-sampler-smp-twiddled): y in bit 0, x in bit 1, and
+/// so on; the longer side's extra bits above.
+fn morton(x: u32, y: u32, w: u32, h: u32) -> u32 {
+    let (bw, bh) = (w.trailing_zeros(), h.trailing_zeros());
+    let common = bw.min(bh);
+    let mut i = 0;
+    for b in 0..common {
+        i |= (y >> b & 1) << (2 * b) | (x >> b & 1) << (2 * b + 1);
+    }
+    let rest = if bw > bh { x } else { y } >> common;
+    i | rest << (2 * common)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A texture whose dwords count up from 0x100 at 0x1000.
+    fn counting(a: u32) -> Result<u32, crate::Error> {
+        Ok(0x100 + (a - 0x1000) / 4)
+    }
+
+    /// T0-T3 of a texture at 0x1000: `ty` 6 (stride, `stride` dwords) or 0.
+    fn state(ty: u32, fmt: u32, w: u32, h: u32, stride: u32, t0: u32, t3: u32) -> [u32; 4] {
+        let s = stride - 1;
+        let t0 = t0 | (s & 7) << 9 | (s >> 3) << 17;
+        [t0, ty << 29 | fmt << 24 | (w - 1) << 12 | (h - 1), 0x1000, t3]
+    }
+
+    fn at(st: [u32; 4], u: f32, v: f32) -> Result<Vec<u32>, Fail> {
+        sample(
+            &Sample { state: st, u, v, one_d: false, srd: Srd::None, pcf: None, lod: Lod::Flat },
+            &mut counting,
+        )
+    }
+
+    #[test]
+    fn point_sampling_picks_and_clamps() {
+        let st = state(6, 12, 4, 4, 4, 0, 0);
+        assert_eq!(at(st, 0.0, 0.0), Ok(vec![0x100]));
+        assert_eq!(at(st, 0.6, 0.3), Ok(vec![0x100 + 4 + 2]));
+        // outside [0, 1) clamps to the edge
+        assert_eq!(at(st, 1.5, -0.2), Ok(vec![0x103]));
+        assert_eq!(
+            sample(
+                &Sample { state: st, u: 0.6, v: 0.9, one_d: true, srd: Srd::None, pcf: None, lod: Lod::Flat },
+                &mut counting
+            ),
+            Ok(vec![0x102])
+        );
+    }
+
+    #[test]
+    fn twiddled_textures_interleave_y_then_x() {
+        let st = state(0, 12, 4, 4, 1, 2 << 6 | 2 << 3, 0);
+        // (x, y) = (1, 0) is index 2, (0, 1) index 1, (3, 3) 15
+        assert_eq!(at(st, 0.3, 0.0), Ok(vec![0x102]));
+        assert_eq!(at(st, 0.0, 0.3), Ok(vec![0x101]));
+        assert_eq!(at(st, 0.9, 0.9), Ok(vec![0x10f]));
+        assert_eq!(morton(5, 1, 8, 2), 0b1011);
+    }
+
+    #[test]
+    fn twiddled_address_modes() {
+        let x = |mode: u32, u: f32| at(state(0, 12, 4, 4, 1, mode << 6 | 2 << 3, 0), u, 0.0);
+        // on row 0, texels 1, 2, 3 are indices 2, 8, 10 (y in bit 0)
+        assert_eq!(x(0, 1.3), Ok(vec![0x102]), "repeat");
+        assert_eq!(x(1, 1.3), Ok(vec![0x108]), "mirror: 5 is 2");
+        assert_eq!(x(2, 1.3), Ok(vec![0x10a]), "clamp");
+        assert_eq!(x(3, -0.3), Ok(vec![0x102]), "mirror once: |-1.2| is 1");
+        assert!(x(4, 0.0).is_err());
+    }
+
+    #[test]
+    fn bilinear_truncates_the_weights_and_rounds_each_channel() {
+        // between 0x...ff and 0x...0f in byte 0, two rows: fy = k/2 (truncated)
+        let st = state(6, 12, 2, 2, 2, 1 << 12, 0);
+        let mut mem = |a: u32| Ok(if a < 0x1008 { 0xff } else { 0x0f });
+        let mut y = |k: f32| {
+            sample(
+                &Sample {
+                    state: st,
+                    u: 0.25,
+                    v: 0.25 + k / 256.0,
+                    one_d: false,
+                    srd: Srd::None,
+                    pcf: None,
+                    lod: Lod::Flat,
+                },
+                &mut mem,
+            )
+        };
+        assert_eq!(y(0.0), Ok(vec![0xff]));
+        assert_eq!(y(1.0), Ok(vec![0xff]));
+        assert_eq!(y(3.0), Ok(vec![251]));
+        // fy = 2/64: (0xff * 62 + 0x0f * 2) * 64 / 4096 = 247.5, halves up
+        assert_eq!(y(4.0), Ok(vec![248]));
+    }
+
+    #[test]
+    fn colour_formats_expand_and_convert() {
+        let st = |fmt: u32, t3: u32| state(6, fmt, 2, 2, 1, 0, t3);
+        let one = |fmt: u32, t3: u32, texel: u32| {
+            sample(
+                &Sample {
+                    state: st(fmt, t3),
+                    u: 0.0,
+                    v: 0.0,
+                    one_d: false,
+                    srd: Srd::None,
+                    pcf: None,
+                    lod: Lod::Flat,
+                },
+                &mut |_| Ok(texel),
+            )
+        };
+        assert_eq!(one(5, 0, 0xf81f), Ok(vec![0xffff_00ff]), "565: R and B full, alpha 0xff");
+        assert_eq!(one(2, 0, 0x1234), Ok(vec![0x1122_3344]), "4444");
+        assert_eq!(one(13, 0, 0x4433_2211), Ok(vec![0x4411_2233]), "R8G8B8A8");
+        assert_eq!(one(0, 0, 0x4433_2211), Ok(vec![0x11]), "a byte");
+        // B, G, R, A = 1, 2, 3, 4
+        let t = 0x0403_0201;
+        assert_eq!(one(12, 1 << 16, t), Ok(vec![1 | 2 << 10 | 3 << 20, 4]), "c10");
+        assert_eq!(one(12, 2 << 16, t), Ok(vec![0x4200 | 0x4000 << 16, 0x3c00 | 0x4400 << 16]), "f16");
+        let f32s = [1.0f32, 2.0, 3.0, 4.0].map(f32::to_bits).to_vec();
+        assert_eq!(one(12, 3 << 16, t), Ok(f32s), "f32");
+        let norm = [1.0f32 / 255.0, 2.0 / 255.0, 3.0 / 255.0, 4.0 / 255.0].map(f32::to_bits).to_vec();
+        assert_eq!(one(12, 3 << 16 | 1 << 15, t), Ok(norm), "normalized");
+        assert_eq!((half(1.0), half(255.0), half(1.0 / 255.0)), (0x3c00, 0x5bf8, 0x1c04));
+        assert_eq!(half(1.0 / 65535.0), 0x0100);
+    }
+
+    #[test]
+    fn without_alpha_the_conversions_drop_it_or_give_one() {
+        // 565 (texture-sampler-smp-convert): c10 writes one register, f32 three, f16 alpha 1.0
+        let one = |t3: u32| {
+            let st = state(6, 5, 2, 2, 1, 0, t3);
+            sample(
+                &Sample {
+                    state: st,
+                    u: 0.0,
+                    v: 0.0,
+                    one_d: false,
+                    srd: Srd::None,
+                    pcf: None,
+                    lod: Lod::Flat,
+                },
+                &mut |_| Ok(0xffff),
+            )
+        };
+        assert_eq!(one(1 << 16), Ok(vec![0xff | 0xff << 10 | 0xff << 20]));
+        assert_eq!(one(2 << 16), Ok(vec![0x5bf8 | 0x5bf8 << 16, 0x5bf8 | 0x3c00 << 16]));
+        assert_eq!(one(3 << 16).map(|v| v.len()), Ok(3));
+    }
+
+    #[test]
+    fn the_other_formats_convert_their_channels() {
+        // texture-sampler-smp-convert: u8 (0), two u8 (7, low byte first), u16 (9)
+        let one = |fmt: u32, t3: u32, texel: u32| {
+            let st = state(6, fmt, 2, 2, 1, 0, t3);
+            sample(
+                &Sample {
+                    state: st,
+                    u: 0.0,
+                    v: 0.0,
+                    one_d: false,
+                    srd: Srd::None,
+                    pcf: None,
+                    lod: Lod::Flat,
+                },
+                &mut |_| Ok(texel),
+            )
+        };
+        let f = |x: f32| x.to_bits();
+        assert_eq!(one(0, 1 << 16, 0xd0), Ok(vec![0xd0]));
+        assert_eq!(one(0, 2 << 16, 0xd0), Ok(vec![0x5a80]));
+        assert_eq!(one(0, 3 << 16, 0xd0), Ok(vec![f(208.0)]));
+        assert_eq!(one(0, 3 << 16 | 1 << 15, 0xd0), Ok(vec![0x3f50_d0d1]));
+        assert_eq!(one(7, 1 << 16, 0x0451), Ok(vec![0x1051]));
+        assert_eq!(one(7, 2 << 16, 0x0451), Ok(vec![0x4400_5510]));
+        assert_eq!(one(7, 3 << 16, 0x0451), Ok(vec![f(81.0), f(4.0)]));
+        assert_eq!(one(7, 3 << 16 | 1 << 15, 0x0451), Ok(vec![0x3ea2_a2a3, 0x3c80_8081]));
+        assert_eq!(one(9, 1 << 16, 0xd000), Ok(vec![0xd0]));
+        assert_eq!(one(9, 2 << 16, 0x0451), Ok(vec![0x6451]));
+        assert_eq!(one(9, 3 << 16, 0xd000), Ok(vec![f(53248.0)]));
+        assert_eq!(one(9, 3 << 16 | 1 << 15, 0x0451), Ok(vec![0x3c8a_208a]));
+        assert!(one(1, 3 << 16, 0x80).is_err(), "s8");
+        assert!(one(9, 2 << 16, 0xfff0).is_err(), "past the largest half");
+    }
+
+    #[test]
+    fn pcf_compares_the_texel_with_the_reference() {
+        let pcf = |fmt: u32, mode: u32, t0: u32, r: f32, texels: [u32; 2], u: f32| {
+            let st = state(6, fmt, 4, 4, 4, t0, mode << 29);
+            // v = 1/8: y = 0, fy = 0
+            let s =
+                Sample { state: st, u, v: 0.125, one_d: false, srd: Srd::None, pcf: Some(r), lod: Lod::Flat };
+            sample(&s, &mut |a| Ok(if a & 4 == 0 { texels[0] } else { texels[1] }))
+        };
+        let f = |x: f32| [x.to_bits(); 2];
+        // f32 (format 18): 1.0 when texel OP reference
+        assert_eq!(pcf(18, 1, 0, 0.5, f(0.25), 0.0), Ok(vec![0x3f80_0000]), "<");
+        assert_eq!(pcf(18, 4, 0, 0.5, f(0.25), 0.0), Ok(vec![0]), ">");
+        assert_eq!(pcf(18, 7, 0, 0.5, f(0.25), 0.0), Ok(vec![0x3f80_0000]), "always");
+        // u16 (format 9): the texel / 65535, 0xffff when it holds
+        assert_eq!(pcf(9, 4, 0, 0.5, [0xd000; 2], 0.0), Ok(vec![0xffff]));
+        // bilinear: two texels at half weight, one holding
+        // texels 0x0451 and 0xd000 share a dword
+        assert_eq!(pcf(9, 4, 1 << 12, 0.5, [0xd000_0451; 2], 0.25), Ok(vec![0x8000]));
+        assert_eq!(pcf(18, 1, 1 << 12, 0.5, [0, 0x4000_0000], 0.25), Ok(vec![0x3f00_0000]));
+        // a colour format ignores it
+        assert_eq!(pcf(12, 4, 0, 0.5, [0xd000_0453; 2], 0.0), Ok(vec![0xd000_0453]));
+        // other weights are not measured
+        assert!(pcf(9, 4, 1 << 12, 0.5, [0xd000_0451; 2], 0.2).is_err());
+    }
+
+    /// E041's probe texture (mips.toml): 16x16 twiddled at 0x2000, level 0 the
+    /// host fill 0xD0000000 | dword index, levels 1-4 packed after it, each
+    /// texel tag << 24 | level << 16 | x * 0x20 << 8 | y * 0x20.
+    fn chain(a: u32) -> Result<u32, crate::Error> {
+        let off = a - 0x2000;
+        if off < 0x400 {
+            return Ok(0xd000_0000 | (a / 4));
+        }
+        let mut start = 0x400;
+        for l in 1..5u32 {
+            let n = 16 >> l;
+            if off < start + 4 * n * n {
+                let i = (off - start) / 4;
+                let (mut x, mut y) = (0, 0);
+                for b in 0..4 {
+                    y |= ((i >> (2 * b)) & 1) << b;
+                    x |= ((i >> (2 * b + 1)) & 1) << b;
+                }
+                let tag = [0, 0x40, 0x80, 0xc0, 0xf0][l as usize];
+                return Ok((tag << 24) | (l << 16) | ((x * 0x20) << 8) | (y * 0x20));
+            }
+            start += 4 * n * n;
+        }
+        Ok(0xd000_0000 | (a / 4))
+    }
+
+    /// A sample of the chain with T0 and T1's format, the probe's T3.
+    fn mip(t0: u32, fmt: u32, u: f32, v: f32, lod: Lod) -> Result<Vec<u32>, Fail> {
+        let state = [t0, fmt << 24 | 15 << 12 | 15, 0x2000, 0x0080_0800];
+        sample(&Sample { state, u, v, one_d: false, srd: Srd::None, pcf: None, lod }, &mut chain)
+    }
+
+    /// texture-mipmaps-mip-level and texture-mipmaps-mip-mipfilter's coordinates: level 0 texel (3, 10).
+    fn lod(t0: u32, l: f32) -> Result<Vec<u32>, Fail> {
+        mip(t0, 12, 0.21875, 0.65625, Lod::Value(l))
+    }
+
+    #[test]
+    fn mip_levels_follow_level_0_back_to_back() {
+        // texture-mipmaps-mip-level-hostfill 1-4 (no stores): LOD 1-4 read dwords 0x913,
+        // 0x944, 0x951, 0x954 of the host fill, levels 1-4 at 0x400, 0x500,
+        // 0x540, 0x550 (E041)
+        let host = |l: f32| {
+            let state = [0x07fa_0000, 0x0c00_f00f, 0x2000, 0x0080_0800];
+            let s = Sample {
+                state,
+                u: 0.21875,
+                v: 0.65625,
+                one_d: false,
+                srd: Srd::None,
+                pcf: None,
+                lod: Lod::Value(l),
+            };
+            sample(&s, &mut |a| Ok(0xd000_0000 | ((a - 0x2000) / 4 + 0x800)))
+        };
+        assert_eq!(host(0.0), Ok(vec![0xd000_084e]));
+        assert_eq!(host(1.0), Ok(vec![0xd000_0913]));
+        assert_eq!(host(2.0), Ok(vec![0xd000_0944]));
+        assert_eq!(host(3.0), Ok(vec![0xd000_0951]));
+        assert_eq!(host(4.0), Ok(vec![0xd000_0954]));
+    }
+
+    #[test]
+    fn the_nearest_level_rounds_halves_up_and_clamps() {
+        // texture-mipmaps-mip-level 0-9 and texture-mipmaps-mip-mipfilter 0-10 (T0 0x07FA0000)
+        let want = [
+            (-1.0, 0xd000_084e),
+            (0.0, 0xd000_084e),
+            (0.25, 0xd000_084e),
+            (0.5, 0x4001_20a0),
+            (0.75, 0x4001_20a0),
+            (1.0, 0x4001_20a0),
+            (1.25, 0x4001_20a0),
+            (1.5, 0x8002_0040),
+            (2.0, 0x8002_0040),
+            (2.5, 0xc003_0020),
+            (3.0, 0xc003_0020),
+            (3.5, 0xf004_0000),
+            (4.0, 0xf004_0000),
+            (4.5, 0xf004_0000),
+            (5.0, 0xf004_0000),
+            (8.0, 0xf004_0000),
+        ];
+        for (l, w) in want {
+            assert_eq!(lod(0x07fa_0000, l), Ok(vec![w]), "LOD {l}");
+        }
+        // texture-mipmaps-mip-level 11: the driver's format 13 swaps red and blue on level 1
+        assert_eq!(mip(0x07fa_0000, 13, 0.21875, 0.65625, Lod::Value(1.0)), Ok(vec![0x40a0_2001]));
+    }
+
+    #[test]
+    fn t0_fields_enable_the_chain() {
+        // texture-mipmaps-mip-t0-field (LOD 2): 26:21 = 0x3f with 20:17 = 0xd, 0xc, 0x9, 0x5
+        // read level 2; 26:21 = 0, 1, 2, 3, 7, bit 18 set or 20:17 = 0 level 0
+        for t0 in [0x07fa_0000, 0x07f8_0000, 0x07f2_0000, 0x07ea_0000] {
+            assert_eq!(lod(t0, 2.0), Ok(vec![0x8002_0040]), "T0 0x{t0:08x}");
+        }
+        for t0 in [
+            0x001a_0000,
+            0x0018_0000,
+            0x003a_0000,
+            0x005a_0000,
+            0x007a_0000,
+            0x00fa_0000,
+            0x07fe_0000,
+            0x07e0_0000,
+        ] {
+            assert_eq!(lod(t0, 2.0), Ok(vec![0xd000_084e]), "T0 0x{t0:08x}");
+        }
+        assert!(lod(0x021a_0000, 2.0).is_err(), "26:21 = 0x10 is not measured");
+    }
+
+    #[test]
+    fn t0_bits_26_21_at_0_keep_magnifying() {
+        // x-smp 83, 87, 91, 92: T0 0x001E0400, min linear, mag
+        // point, LOD 1 or 2 (replace or gradients of 2 and 4 texels) read
+        // texel (3, 5) not filtered; with 26:21 = 0x3f (texture-mipmaps-mip-minfilter 14) the
+        // same minifies linearly
+        let at = |lod: Lod| mip(0x001e_0400, 12, 0.1875, 0.34375, lod);
+        assert_eq!(at(Lod::Value(1.0)), Ok(vec![0xd000_081b]));
+        assert_eq!(at(Lod::Value(2.0)), Ok(vec![0xd000_081b]));
+        assert_eq!(at(Lod::Grad([0.25, 0.0, 0.0, 0.25])), Ok(vec![0xd000_081b]));
+        assert_eq!(at(Lod::Open("a quad")), Ok(vec![0xd000_081b]));
+        // (2.5, 5.0) on level 0: texels (2, 5) and (3, 5), 0x19 and 0x1b
+        assert_eq!(mip(0x07fe_0400, 12, 0.1875, 0.34375, Lod::Value(1.0)), Ok(vec![0xd000_081a]));
+        assert!(
+            mip(0x007e_0400, 12, 0.1875, 0.34375, Lod::Value(1.0)).is_err(),
+            "26:21 = 3, minified: not measured"
+        );
+    }
+
+    #[test]
+    fn the_linear_mip_filter_blends_two_levels() {
+        // texture-mipmaps-mip-mipfilter 11-21 (T0 0x07FA0200): per channel, by the LOD's
+        // fraction, halves up
+        let want = [
+            (0.0, 0xd000_084e),
+            (0.25, 0xac00_0e63),
+            (0.5, 0x8801_1477),
+            (1.0, 0x4001_20a0),
+            (1.25, 0x5001_1888),
+            (1.5, 0x6002_1070),
+            (1.75, 0x7002_0858),
+            (2.5, 0xa003_0030),
+            (3.5, 0xd804_0010),
+            (4.0, 0xf004_0000),
+            (4.5, 0xf004_0000),
+        ];
+        for (l, w) in want {
+            assert_eq!(lod(0x07fa_0200, l), Ok(vec![w]), "LOD {l}");
+        }
+        // texture-mipmaps-mip-mipfilter 22-23: the driver's lml with bilinear levels
+        assert_eq!(lod(0x07fa_1600, 0.5), Ok(vec![0x8801_1873]));
+        assert_eq!(lod(0x07fa_1600, 1.5), Ok(vec![0x6002_1a6e]));
+    }
+
+    #[test]
+    fn the_min_filter_acts_above_lod_0() {
+        // texture-mipmaps-mip-minfilter: level-1 texel (2.0, 2.5), mag point; T0 bits
+        // 11:10 at 1 or 2 filter linearly, 0 or 3 not
+        let at = |t0: u32, l: f32| mip(t0, 12, 0.25, 0.3125, Lod::Value(l));
+        for (k, lin) in [(0, false), (1, true), (2, true), (3, false)] {
+            let t0 = 0x07fa_0000 | k << 10;
+            assert_eq!(at(t0, 0.0), Ok(vec![0xd000_0831]), "{k}: LOD 0 magnifies");
+            assert_eq!(at(t0, 1.0), Ok(vec![if lin { 0x4001_3040 } else { 0x4001_4040 }]), "{k}");
+            assert_eq!(at(t0, 0.25), Ok(vec![if lin { 0xd000_0826 } else { 0xd000_0831 }]), "{k}");
+        }
+        assert_eq!(at(0x07fa_1400, 0.0), Ok(vec![0xd000_0826]), "mag linear");
+        assert_eq!(at(0x07fa_1400, 1.0), Ok(vec![0x4001_3040]));
+        assert_eq!(at(0x07fe_0400, 1.0), Ok(vec![0xd000_0826]), "no mipmaps: level 0 minified");
+    }
+
+    #[test]
+    fn gradients_give_the_larger_axis() {
+        // texture-mipmaps-mip-grad: du/dx and dv/dy of 1, 2, 4, 8, 16, 32 texels
+        let g = |x: f32, y: f32| {
+            mip(0x07fa_0000, 12, 0.21875, 0.65625, Lod::Grad([x / 16.0, 0.0, 0.0, y / 16.0]))
+        };
+        assert_eq!(g(1.0, 1.0), Ok(vec![0xd000_084e]));
+        assert_eq!(g(2.0, 2.0), Ok(vec![0x4001_20a0]));
+        assert_eq!(g(4.0, 4.0), Ok(vec![0x8002_0040]));
+        assert_eq!(g(8.0, 8.0), Ok(vec![0xc003_0020]));
+        assert_eq!(g(16.0, 16.0), Ok(vec![0xf004_0000]));
+        assert_eq!(g(32.0, 32.0), Ok(vec![0xf004_0000]));
+        assert_eq!(g(4.0, 1.0), Ok(vec![0x8002_0040]));
+        assert_eq!(g(1.0, 4.0), Ok(vec![0x8002_0040]));
+        assert!(g(3.0, 3.0).is_err(), "log2 of 3: not measured");
+    }
+
+    #[test]
+    fn flat_coordinates_read_level_0() {
+        // texture-mipmaps-mip-bias, texture-mipmaps-mip-level 12: zero derivatives, any bias
+        assert_eq!(mip(0x07fa_0000, 12, 0.21875, 0.65625, Lod::Flat), Ok(vec![0xd000_084e]));
+    }
+
+    #[test]
+    fn what_the_mip_probes_leave_open_stops() {
+        assert!(lod(0x07fa_0200, 0.3).is_err(), "a blend at a fraction other than 1/64");
+        assert!(lod(0x07fa_0000, 0.495).is_err(), "nearest just under the half");
+        assert_eq!(lod(0x07fa_0000, 0.3), Ok(vec![0xd000_084e]));
+        assert!(lod(0x07fa_1000, 0.25).is_err(), "mag linear, min point, LOD in (0, 0.5]");
+        assert!(mip(0x07fa_0000, 12, 0.2, 0.6, Lod::Open("why")).is_err());
+        // a LOD that cannot matter: no mipmaps, min and mag alike
+        assert_eq!(mip(0x07fe_0000, 12, 0.21875, 0.65625, Lod::Open("why")), Ok(vec![0xd000_084e]));
+        let rect = [0x07fa_0000, 12 << 24 | 15 << 12 | 7, 0x2000, 0];
+        let s = Sample {
+            state: rect,
+            u: 0.0,
+            v: 0.0,
+            one_d: false,
+            srd: Srd::None,
+            pcf: None,
+            lod: Lod::Value(1.0),
+        };
+        assert!(sample(&s, &mut chain).is_err(), "a non-square chain");
+    }
+
+    /// texture-sampler-smp-srd's sample of the chain (E042): level 0 texel (3, 10).
+    fn srd(t0: u32, lod: Lod, srd: Srd) -> Result<Vec<u32>, Fail> {
+        let state = [t0, 12 << 24 | 15 << 12 | 15, 0x2000, 0x0080_0800];
+        let s = Sample { state, u: 0.21875, v: 0.65625, one_d: false, srd, pcf: None, lod };
+        sample(&s, &mut chain)
+    }
+
+    #[test]
+    fn sinf_gives_the_nearest_level_without_a_fraction() {
+        // texture-sampler-smp-srd 1, 5-9 (T0 0x07FA0000): LOD 1, 0.5, 2, 2.75, 4, 6 give
+        // levels 1, 1, 2, 3, 4, 4 in the second dword, 0 in the first; 3:
+        // smp2d (no LOD of its own) level 0
+        for (l, want) in [(1.0, 1), (0.5, 1), (2.0, 2), (2.75, 3), (4.0, 4), (6.0, 4)] {
+            assert_eq!(srd(0x07fa_0000, Lod::Value(l), Srd::Info), Ok(vec![0, want]), "LOD {l}");
+        }
+        assert_eq!(srd(0x07fa_0000, Lod::Flat, Srd::Info), Ok(vec![0, 0]));
+    }
+
+    #[test]
+    fn sinf_gives_the_lower_level_and_the_fraction_when_blending() {
+        // texture-sampler-smp-srd 10-12 (T0 0x07FA0200): LOD 0.25, 1.5, 2.75 give the
+        // lower level and the six-bit fraction replicated to eight bits in
+        // bits 23:16
+        for (l, frac, level) in [(0.25, 0x41, 0), (1.5, 0x82, 1), (2.75, 0xc3, 2)] {
+            assert_eq!(srd(0x07fa_0200, Lod::Value(l), Srd::Info), Ok(vec![frac << 16, level]), "LOD {l}");
+        }
+    }
+
+    #[test]
+    fn rsd_returns_the_unfiltered_texels() {
+        // texture-sampler-smp-srd 2 and 4: point sampling returns the texel, as without
+        // the mode (smp2dreplace at LOD 1; smp2d level 0)
+        assert_eq!(srd(0x07fa_0000, Lod::Value(1.0), Srd::Raw), Ok(vec![0x4001_20a0]));
+        assert_eq!(srd(0x07fa_0000, Lod::Flat, Srd::Raw), Ok(vec![0xd000_084e]));
+        // texture-sampler-smp-srd 13 (T0 0x07FA1600, LOD 1.5; 14 blends them to
+        // 0x60021A6E): level 1's 2x2 footprint then level 2's, each in the
+        // order (x0, y0), (x1, y0), (x0, y1), (x1, y1)
+        assert_eq!(
+            srd(0x07fa_1600, Lod::Value(1.5), Srd::Raw),
+            Ok(vec![
+                0x4001_2080,
+                0x4001_4080,
+                0x4001_20a0,
+                0x4001_40a0,
+                0x8002_0040,
+                0x8002_2040,
+                0x8002_0060,
+                0x8002_2060
+            ])
+        );
+    }
+
+    #[test]
+    fn what_the_srd_probes_leave_open_stops() {
+        assert!(srd(0x07fa_0200, Lod::Value(1.0), Srd::Info).is_err(), ".sinf blending at a whole LOD");
+        assert!(srd(0x07fa_1600, Lod::Value(1.5), Srd::Info).is_err(), ".sinf with bilinear levels");
+        assert!(srd(0x07fe_0000, Lod::Value(1.0), Srd::Info).is_err(), ".sinf without a mip chain");
+        assert!(srd(0x07fa_0200, Lod::Value(1.5), Srd::Raw).is_err(), ".rsd blending point samples");
+        assert!(srd(0x07fa_1400, Lod::Value(1.0), Srd::Raw).is_err(), ".rsd of one bilinear level");
+    }
+
+    /// The sampler probes' texture (x-smp2, x-smp3): 16x16 at
+    /// 0x1000, 64-byte rows, dword i 0xD0000400 + i.
+    fn probe_texel(a: u32) -> Result<u32, crate::Error> {
+        Ok(0xd000_0400u32.wrapping_add((a - 0x1000) / 4))
+    }
+
+    /// A point sample of the probe texture as a stride texture of format
+    /// `fmt` with T0 `t0` and T3 `t3`, at texel (x + 0.5, y + 0.5).
+    fn probe(fmt: u32, t0: u32, t3: u32, x: u32, y: u32) -> Result<Vec<u32>, Fail> {
+        let st = state(6, fmt, 16, 16, 16, t0, t3);
+        let (u, v) = ((x as f32 + 0.5) / 16.0, (y as f32 + 0.5) / 16.0);
+        sample(
+            &Sample { state: st, u, v, one_d: false, srd: Srd::None, pcf: None, lod: Lod::Flat },
+            &mut probe_texel,
+        )
+    }
+
+    /// texture-sampler-smp-formats-other's texels, as (x, y): two-byte formats read 0x0451,
+    /// 0xD000, 0x04F7 and 0xD000; four-byte ones dwords 0x52, 0x53, 0xFE, 0xFF.
+    const OTHER: [(u32, u32); 4] = [(2, 5), (3, 5), (14, 15), (15, 15)];
+
+    fn other(fmt: u32) -> Vec<Result<Vec<u32>, Fail>> {
+        OTHER.iter().map(|&(x, y)| probe(fmt, 0, 0xa080_0000, x, y)).collect()
+    }
+
+    #[test]
+    fn format_6_is_l6_v5_u5() {
+        // texture-sampler-smp-formats-other 0-3 (x-smp3 96-99): the six-bit field 15:10 in
+        // B, the signed fields 9:5 in G and 4:0 in R, each sign kept and the
+        // four bits below it repeated (2 is 0x11, -15 0x88), alpha 0xff
+        let want = [0xff88_1104, 0xff00_00d3, 0xffbb_3b04, 0xff00_00d3];
+        assert_eq!(other(6), Vec::from(want.map(|w| Ok(vec![w]))));
+    }
+
+    #[test]
+    fn format_14_is_a2_b10_g10_r10_in_16_bit_pairs() {
+        // texture-sampler-smp-formats-other 4-7 (x-smp3 100-103, x-smp2 20): each field
+        // widened to 16 bits by repeating its bits, R | G << 16 then B | A << 16
+        let want = [0x0040_1485, 0x0040_14c5, 0x0040_3f8f, 0x0040_3fcf];
+        assert_eq!(other(14), Vec::from(want.map(|w| Ok(vec![w, 0xffff_4010]))));
+    }
+
+    #[test]
+    fn format_20_reads_a_pair_of_texels_unconverted() {
+        // texture-sampler-smp-formats-other 8-11 (x-smp3 104-107): the texel's own byte (0
+        // for an even x, 2 for an odd one) in R, the pair's byte 1 in G and
+        // byte 3 in B, alpha 0xff
+        let want = [0xff51_04d0, 0xff00_04d0, 0xfff7_04d0, 0xff00_04d0];
+        assert_eq!(other(20), Vec::from(want.map(|w| Ok(vec![w]))));
+        let twiddled = [0, 20 << 24 | 15 << 12 | 15, 0x1000, 0];
+        let s = Sample {
+            state: twiddled,
+            u: 0.0,
+            v: 0.0,
+            one_d: false,
+            srd: Srd::None,
+            pcf: None,
+            lod: Lod::Flat,
+        };
+        assert!(sample(&s, &mut probe_texel).is_err(), "format 20 twiddled is not measured");
+    }
+
+    #[test]
+    fn float_formats_convert_exactly_or_saturate() {
+        // x-smp3 136-143 at texel (15, 15): format 11 reads the half 0xD000
+        // (-32.0), 18 the f32 0xD00004FF (about -8.6e9); c10 saturates at
+        // -510 (0x202) as pckc10f32 does, f16 at -65504, f32 is exact and
+        // bit 15 does not act on it
+        let c = |fmt: u32, t3: u32| probe(fmt, 0, 0xa000_0000 | t3, 15, 15);
+        assert_eq!(c(11, 1 << 16), Ok(vec![0x202]));
+        assert_eq!(c(11, 2 << 16), Ok(vec![0xd000]));
+        assert_eq!(c(11, 3 << 16), Ok(vec![0xc200_0000]));
+        assert_eq!(c(11, 3 << 16 | 1 << 15), Ok(vec![0xc200_0000]));
+        assert_eq!(c(18, 1 << 16), Ok(vec![0x202]));
+        assert_eq!(c(18, 2 << 16), Ok(vec![0xfbff]));
+        assert_eq!(c(18, 3 << 16), Ok(vec![0xd000_04ff]));
+        assert_eq!(c(18, 3 << 16 | 1 << 15), Ok(vec![0xd000_04ff]));
+        // values the saturation does not reach are not measured
+        let one = |fmt: u32, t3: u32, texel: u32| {
+            let s = Sample {
+                state: state(6, fmt, 2, 2, 1, 0, t3),
+                u: 0.0,
+                v: 0.0,
+                one_d: false,
+                srd: Srd::None,
+                pcf: None,
+                lod: Lod::Flat,
+            };
+            sample(&s, &mut |_| Ok(texel))
+        };
+        assert!(one(18, 1 << 16, 1.5f32.to_bits()).is_err(), "c10 within +/-2");
+        assert!(one(18, 2 << 16, 1.5f32.to_bits()).is_err(), "f16 of a value a half holds");
+        assert!(one(18, 2 << 16, 1e9f32.to_bits()).is_err(), "positive saturation");
+        assert!(one(11, 2 << 16 | 1 << 15, 0x3c00).is_err(), "normalized f16");
+        assert!(one(18, 3 << 16, f32::NAN.to_bits()).is_err(), "a NaN");
+    }
+
+    #[test]
+    fn t3_bits_7_0_offset_the_texel() {
+        // x-smp2 27-34 at texel (3, 5) of the stride texture: bits 3:0 add a
+        // signed four-bit offset to y, bits 7:4 to x, clamped as the
+        // coordinates are
+        let at = |t3: u32| probe(12, 0, 0xa080_0000 | t3, 3, 5);
+        assert_eq!(at(0), Ok(vec![0xd000_0453]));
+        for (bit, want) in [
+            (0, 0xd000_0463),
+            (1, 0xd000_0473),
+            (2, 0xd000_0493),
+            (3, 0xd000_0403),
+            (4, 0xd000_0454),
+            (5, 0xd000_0455),
+            (6, 0xd000_0457),
+            (7, 0xd000_0450),
+        ] {
+            assert_eq!(at(1 << bit), Ok(vec![want]), "T3 bit {bit}");
+        }
+        // filtered, twiddled or with .pcf not measured
+        assert!(probe(12, 1 << 12, 0xa080_0001, 3, 5).is_err(), "bilinear");
+        let twiddled = [0x001e_0000, 12 << 24 | 15 << 12 | 15, 0x1000, 0xa080_0001];
+        let s = Sample {
+            state: twiddled,
+            u: 0.0,
+            v: 0.0,
+            one_d: false,
+            srd: Srd::None,
+            pcf: None,
+            lod: Lod::Flat,
+        };
+        assert!(sample(&s, &mut probe_texel).is_err(), "twiddled");
+    }
+
+    #[test]
+    fn t3_bits_19_18_scale_the_texel_offset() {
+        // x-smp2 45-46: texel (3, 5), byte 332 of the texture, read at 664
+        // and 1328: the offset from the base doubled per step, past the
+        // texture's end, not the coordinates (which would clamp)
+        assert_eq!(probe(12, 0, 0xa084_0000, 3, 5), Ok(vec![0xd000_04a6]));
+        assert_eq!(probe(12, 0, 0xa088_0000, 3, 5), Ok(vec![0xd000_054c]));
+        assert!(probe(12, 0, 0xa08c_0000, 3, 5).is_err(), "3 is not measured");
+        assert!(probe(5, 0, 0xa084_0000, 3, 5).is_err(), "a 16-bit format");
+    }
+
+    #[test]
+    fn state_bits_that_change_nothing_on_a_stride_texture() {
+        // x-smp2 11-13, 15-16 (T0 bits 14-16, 28, 29) and 35-36, 39, 47-49
+        // (T3 bits 8, 9, 12, 20-22): texel (3, 5) as without them
+        for t0 in [1 << 14, 1 << 15, 1 << 16, 1 << 28, 1 << 29] {
+            assert_eq!(probe(12, t0, 0xa080_0000, 3, 5), Ok(vec![0xd000_0453]), "T0 0x{t0:08x}");
+        }
+        for bit in [8, 9, 12, 20, 21, 22] {
+            assert_eq!(probe(12, 0, 0xa080_0000 | 1 << bit, 3, 5), Ok(vec![0xd000_0453]), "T3 bit {bit}");
+        }
+        // the bits that act in other ways stop: T0 27, 30, 31 and T3 10, 13,
+        // 14, 27, 28 (x-smp2 14, 17, 18, 37, 40, 41, 54, 55)
+        for t0 in [1 << 27, 1 << 30, 1 << 31] {
+            assert!(probe(12, t0, 0xa080_0000, 3, 5).is_err(), "T0 0x{t0:08x}");
+        }
+        for bit in [10, 13, 14, 27, 28] {
+            assert!(probe(12, 0, 0xa080_0000 | 1 << bit, 3, 5).is_err(), "T3 bit {bit}");
+        }
+        // on a twiddled texture they are not measured
+        let twiddled = [0x001e_4000, 12 << 24 | 15 << 12 | 15, 0x1000, 0];
+        let s = Sample {
+            state: twiddled,
+            u: 0.0,
+            v: 0.0,
+            one_d: false,
+            srd: Srd::None,
+            pcf: None,
+            lod: Lod::Flat,
+        };
+        assert!(sample(&s, &mut probe_texel).is_err());
+    }
+
+    #[test]
+    fn the_recorded_formats_and_modes_without_a_model_stop() {
+        // texture-sampler-smp-formats-other 12-39: compressed and YUV layouts; four texels
+        // fix no decoder, and the YUV ones go through a colour-space set the
+        // vector does not record (E037)
+        for fmt in 23..=29 {
+            assert!(other(fmt).iter().all(|r| r.is_err()), "format {fmt}");
+        }
+        // texture-sampler-smp-address-border: modes 4-7 read other texels, one coordinate each
+        for mode in 4..8 {
+            let st = [0x001e_0000 | mode << 6, 12 << 24 | 15 << 12 | 15, 0x1000, 0xa080_0000];
+            let s = Sample {
+                state: st,
+                u: 1.09375,
+                v: 0.03125,
+                one_d: false,
+                srd: Srd::None,
+                pcf: None,
+                lod: Lod::Flat,
+            };
+            assert!(sample(&s, &mut probe_texel).is_err(), "mode {mode}");
+        }
+    }
+
+    #[test]
+    fn what_is_not_measured_stops() {
+        assert!(at(state(6, 12, 4, 4, 4, 1 << 27, 0), 0.0, 0.0).is_err(), "T0 bit 27");
+        assert!(at(state(6, 12, 4, 4, 4, 0, 1 << 14), 0.0, 0.0).is_err(), "T3 bit 14");
+        assert!(at(state(6, 12, 4, 4, 4, 0, 0xa080_0000), 0.0, 0.0).is_ok(), "the copies' T3");
+        assert!(at(state(4, 12, 4, 4, 1, 0, 0), 0.0, 0.0).is_err(), "tiled");
+        assert!(at(state(6, 23, 4, 4, 4, 0, 0), 0.0, 0.0).is_err(), "format 23");
+        assert!(at(state(6, 22, 4, 4, 4, 0, 3 << 16), 0.0, 0.0).is_err(), "conversion of a dword format");
+    }
+}

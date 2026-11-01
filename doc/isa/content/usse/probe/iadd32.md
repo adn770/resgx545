@@ -1,0 +1,13 @@
+<!-- SPDX-License-Identifier: MIT -->
+<!-- SPDX-FileCopyrightText: 2026 Josep Torra -->
+### The 32-bit adds `iadd32` and `iaddu32`
+
+*Measured on the hardware (2026-10-22).* **`iadd32` and `iaddu32` are not full 32-bit adds**
+**[HW]**: they add **source 1's low 16 bits**, sign-extended (`iadd32`) or zero-extended
+(`iaddu32`), to the 32-bit source 2, modulo 2^32. `0x12345678 + 0x11111111` gives `0x11116789` and
+`iadd32 0xffff + 1` gives 0, while `#1 + r` is the plain increment the firmware uses **[RE]** (an
+`iaddu32` of the immediate 1 and a register). The test reads the 32-bit sum: `z` and `n` as usual
+for `iadd32`; `iaddu32` is unsigned, its `n` is never and its `p` always true, also for `0x80000000`
+(probes `usse-integer-iadd32-value`, `usse-integer-iaddu32-value`, `usse-integer-iaddu32-imm`,
+`usse-integer-iadd32-src1-imm`, `usse-integer-iadd32-z`, `usse-integer-iadd32-n`,
+`usse-integer-iadd32-p`, `usse-integer-iaddu32-tests`, `usse-integer-iaddu32-np`).

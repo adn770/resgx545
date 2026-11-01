@@ -1,0 +1,9 @@
+title = "instruction vectors from the isp probe runs"
+repo = "data"
+paths = ["vectors/isp/"]
+method = "vectors.py convert on the raw readbacks and saved programs of the probe runs, one file per run"
+date = "2026-11-01"
+files = 140
+size = 22145904
+sha256 = "a05fd62d8dd61cd36f4d30294ab6a2a6530d0357a72e23001ba83f14bb6e588e"
+recipe = "tools/usse-asm/vectors.py"

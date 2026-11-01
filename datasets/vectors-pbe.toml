@@ -1,0 +1,9 @@
+title = "instruction vectors from the pbe probe runs"
+repo = "data"
+paths = ["vectors/pbe/"]
+method = "vectors.py convert on the raw readbacks and saved programs of the probe runs, one file per run"
+date = "2026-11-01"
+files = 103
+size = 7440746
+sha256 = "f2f9b6e409d00b7fd773603cec375b982ea9f6aab4bae6e7990f2a9f396a8c33"
+recipe = "tools/usse-asm/vectors.py"

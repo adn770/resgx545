@@ -1,0 +1,10 @@
+title = "probe table pds/timer"
+repo = "data"
+paths = ["pds/timer/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 31
+size = 39681
+sha256 = "7ea8b308d7a2d0242cd3b622305d63b486628b74a0e08a137cfb989ea6907e73"
+recipe = "probes/pds/timer.toml"
+needs = ["render"]

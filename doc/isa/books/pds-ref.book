@@ -1,0 +1,49 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+#
+# Book A, PDS: the full instruction set reference.
+# One item per line: a snippet under content/, or @directive (see build.py).
+output doc/specs/pds_isa.md
+isa pds
+number yes
+groups complete
+
+pds/title.md
+shared/generated-note.md
+shared/conventions.md
+shared/reading-encodings.md
+pds/word.md
+pds/model.md
+pds/ports.md
+pds/operands.md
+pds/syntax.md
+
+pds/groups/intro.md
+pds/groups/movs.md
+pds/groups/moves.md
+pds/groups/loadstore.md
+pds/groups/alu.md
+pds/groups/mul.md
+pds/groups/absnot.md
+pds/groups/shift.md
+pds/groups/tests.md
+pds/groups/flow.md
+pds/groups/misc.md
+
+pds/open.md
+
+pds/probes-intro.md
+pds/probe/data-banks.md
+pds/probe/alu.md
+pds/probe/flags.md
+pds/probe/shifts.md
+pds/probe/mul-carry.md
+pds/probe/abs-not.md
+pds/probe/moves.md
+pds/probe/flow.md
+pds/probe/inputs.md
+pds/probe/memory-ports.md
+pds/probe/flag-bit.md
+pds/probe/pixel-event.md
+pds/appendix.md
+@appendix pds

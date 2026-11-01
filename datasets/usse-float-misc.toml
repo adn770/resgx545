@@ -1,0 +1,10 @@
+title = "probe table usse/float-misc"
+repo = "data"
+paths = ["usse/float-misc/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 35
+size = 77898
+sha256 = "04f20b6677172e4db71a3e62b9e2b5a168474b6293e179a9a465e507485454b4"
+recipe = "probes/usse/float-misc.toml"
+needs = ["render"]

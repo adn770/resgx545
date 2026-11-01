@@ -1,0 +1,10 @@
+title = "probe table usse/write-masks"
+repo = "data"
+paths = ["usse/write-masks/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 89
+size = 160383
+sha256 = "c088d076349740d013c3d336392095b6c8359467926a9e137ff01259d2c76c87"
+recipe = "probes/usse/write-masks.toml"
+needs = ["render"]

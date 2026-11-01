@@ -1,0 +1,10 @@
+title = "probe table usse/movc"
+repo = "data"
+paths = ["usse/movc/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 95
+size = 150366
+sha256 = "83d721a20b45bddb7b19e47a4072597699ea00d285d75b1e22a5c6fa4c8bf50c"
+recipe = "probes/usse/movc.toml"
+needs = ["render"]

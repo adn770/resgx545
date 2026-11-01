@@ -1,0 +1,10 @@
+title = "probe table usse/integer-dot"
+repo = "data"
+paths = ["usse/integer-dot/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 109
+size = 271358
+sha256 = "d9ba9c4f1a16b22516d09c4b7d503f1792af9e33f6e4a5db1b9d7b537a031898"
+recipe = "probes/usse/integer-dot.toml"
+needs = ["render"]

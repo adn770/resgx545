@@ -1,0 +1,9 @@
+title = "instruction vectors from the follow-up pds probe runs"
+repo = "data"
+paths = ["vectors/followup/pds/"]
+method = "vectors.py convert on the raw readbacks and saved programs of the follow-up runs, one file per run"
+date = "2026-11-01"
+files = 125
+size = 28974679
+sha256 = "e0dcc51478eb0492be88eb05a065d32bcebd5a6ca776a634500f4a09df7d7a66"
+recipe = "tools/usse-asm/vectors.py"

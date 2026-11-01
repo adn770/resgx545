@@ -1,0 +1,10 @@
+title = "probe table usse/rlp"
+repo = "data"
+paths = ["usse/rlp/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 40
+size = 78929
+sha256 = "e03d1b3749ae416e84a46499d04ee2b5add623f4140d82a3c6dcab4ef700d89b"
+recipe = "probes/usse/rlp.toml"
+needs = ["render"]

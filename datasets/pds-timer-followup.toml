@@ -1,0 +1,10 @@
+title = "follow-up run of the probe table pds/timer"
+repo = "data"
+paths = ["followup/pds/timer/"]
+method = "campaign runner on the laptop target (tools/campaign), the follow-up round"
+date = "2026-11-01"
+files = 31
+size = 39683
+sha256 = "0f95b2c0448ac0b132c91cec109e9b3759dde16c68e9cb8acb7e3ba8cbdc49d9"
+recipe = "probes/pds/timer.toml"
+needs = ["render"]

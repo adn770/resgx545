@@ -1,0 +1,9 @@
+title = "instruction vectors from the follow-up vdm probe runs"
+repo = "data"
+paths = ["vectors/followup/vdm/"]
+method = "vectors.py convert on the raw readbacks and saved programs of the follow-up runs, one file per run"
+date = "2026-11-01"
+files = 16
+size = 881322
+sha256 = "70ebaa53af0d4391ec4b73bc5d5fbc117a40539c44386fccce18eaf8761b30f5"
+recipe = "tools/usse-asm/vectors.py"

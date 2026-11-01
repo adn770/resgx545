@@ -1,0 +1,10 @@
+title = "probe table usse/float-functions"
+repo = "data"
+paths = ["usse/float-functions/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 291
+size = 246945
+sha256 = "947b488611539207c0420c81ec8d4792494435fb1974eaa850ded761c4d5f56d"
+recipe = "probes/usse/float-functions.toml"
+needs = ["render"]

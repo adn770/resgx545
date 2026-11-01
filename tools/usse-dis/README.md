@@ -6,7 +6,11 @@ libraries). The same core is a **radare2 architecture plugin** (`r2/`, `r2/READM
 PowerVR/USSE arch exists in r2 today, and the plugin is structured to be upstreamed).
 
 The instruction sets it decodes are described once, as form tables, in `isa/usse/` and
-`isa/pds/` (`isa/README.md`).
+`isa/pds/` (`isa/README.md`). The documents built from those tables, with the bit diagrams, field
+lists and form index generated from the decoder's form tables, are `doc/specs/usse_isa.md`,
+`doc/specs/pds_isa.md` and the guides beside them (`doc/isa/README.md`): a change to a form
+shows up there as a stale document until `python3 doc/isa/build.py` is run. What an instruction
+does is run by the simulator (`crates/sgx-sim`) over the same tables.
 
 ## Design
 
@@ -20,7 +24,8 @@ The instruction sets it decodes are described once, as form tables, in `isa/usse
   rotated immediate...). `usse_decode()` walks the table in order and prints the first form
   whose fields all print. The encoders (`usse_form_encode` in C, `crates/usse-isa` and
   `crates/pds-isa` in Rust) invert the same table, so the two directions cannot drift apart; a
-  form's `dflt` is the value our encoder writes in the bits an instruction ignores.
+  form's `dflt` is the value our encoder writes in the bits an instruction ignores. The
+  assembler (`tools/usse-asm`) reads the same table.
 - **Rust twin** (`crates/usse-isa`, CLI `crates/sgx-tools` `usse-dis`): the same table,
   generated from the same description, with the code kinds written in Rust. `cargo test`
   holds the two identical: the same `--forms` listing, and the same text and form for every
@@ -44,8 +49,12 @@ leave a word undecoded than print a plausible lie.
   take values distinct from each other and from the form's defaults, so a field moved or
   resized fails. `pingen.c` writes the file (`make pinned`, from a fixed seed) and
   `test_pingen.py` checks the committed file is its output: when a form changes on purpose,
-  regenerate it and review the lines that change. `test_forms.py`, `test_ldst.py` and `test_pds.py` pin variants of the fields
-  of the commonest forms.
+  regenerate it and review the lines that change. `test_forms.py`, `test_ldst.py` and
+  `test_pds.py` pin variants of the fields of the commonest forms.
+- **Round trip**: `tools/usse-asm` inverts the same table. Every word that decodes, drawn per
+  form and uniformly at random, must assemble back to a word that decodes to the same text
+  (`tools/usse-asm/test_roundtrip.py`), in either letter case, and the user's own firmware
+  reassembles bit for bit from its listing.
 - **The user's firmware**: `test_firmware.py` decodes the microkernel, the five EDM PDS
   programs and the captured transfer programs from the private data repository
   (`$RESGX545_DATA_PRIVATE`, or a sibling `resgx545-data-private`): every instruction must
@@ -55,6 +64,10 @@ leave a word undecoded than print a plausible lie.
   same form for every word (`cargo test`, `crates/README.md`). The cross-checks run the C
   binaries and fail without them (`make -C tools/usse-dis` first); `SKIP_C_CROSSCHECK=1` skips
   them.
+- **Hardware**: what an instruction does is measured on the GPU, through the probe tables
+  (`probes/`) whose readbacks are the data repository (`$RESGX545_DATA`). The simulator
+  (`crates/sgx-sim`, run from Python by `crates/pysgx`) must match every settled vector
+  (`doc/specs/vectors.md`); a form it cannot yet run stops with an error instead of a guess.
 
 ## Build & test
 
@@ -105,6 +118,9 @@ a pseudo syntax for both (`r2/README.md`, "In-tree").
 
 1. Open the radare2 PR (`r2/README.md`): the plugin disassembles and assembles through the
    form table.
+2. Semantics beyond text: the radare2 fork's ESIL models most of the instruction set, each
+   behaviour held to the hardware vectors (`r2/README.md`, "Emulation"). What stays open there
+   is what the probes have not pinned yet.
 
 ## Load/store addressing — what the immediate means
 
@@ -131,8 +147,26 @@ The rules the table states:
   offsets the access and is not part of the increment.
 - **A base+offset fetch** starts one element after the printed offset, at `b+k+1`.
 
-Left unmodelled: `.fetchN` with pre-increment or a negative offset, and register offsets
-(`[b,+rN]`). The radare2 plugin follows this table.
+Evidence:
+- **Hardware, the plain forms and the post-increment fetch.** The firmware reads a command from
+  its circular buffer with a post-increment load of the first dword and a post-increment fetch
+  of seven registers for the rest. The command handlers receive their first data dword in the
+  register after those, so the seven registers hold dwords 1 to 7, with no extra element. The
+  reply of the miscellaneous-info command is stored with plain stores at offsets 1 to 7 into
+  dwords 1 to 7. Both were checked on the hardware.
+- **The firmware, the post-increment writeback.** Its copy loops fetch a pair per iteration
+  through a post-incremented base until the base reaches the start plus eight bytes times the
+  count, which needs `b += N`. A store loop that fills pairs from dword 82, after a plain store
+  of the count at offset 81, shows `k` is a displacement there and not part of the increment.
+- **The firmware, the base+offset fetch.** With the extra element, the transfer handler's sync
+  blocks land on the documented fields of the transfer command (`doc/specs/transfer.md`).
+
+Left unmodelled, as no program uses them: `.fetchN` with pre-increment or a negative offset.
+Register offsets (`[b,+rN]`) are measured on the hardware: the offset register holds two
+unsigned 16-bit halves whose product is the byte offset, and a fetch starts one element after
+it (`r2/README.md`, "Hardware probes"). The radare2 plugin follows this table; its ESIL loads
+and stores every fetched register and updates the base, and `asm.pseudo` names the elements
+actually accessed.
 
 ## regtouch — the firmware's register map
 
@@ -150,7 +184,7 @@ RESGX545_REGDEFS=<path>/sgx545defs.h ../../.venv/bin/python regtouch.py uk.txt -
 
 `--r2-flags out.r2` also writes a flag per register, `sgx.` and the header's name for it, at
 `0x100000000 + offset`, a window above the 32-bit device address space (the radare2 emulation
-that uses it arrives with the simulator unit).
+that uses it is in `r2/README.md`).
 
 ## pds-dis — the PDS (data sequencer) decoder
 
@@ -169,7 +203,9 @@ prints the same.
 `test_pinned.py` pins one made-up word for every PDS form, `test_pds.py` variants of the
 fields of each group, and that reserved encodings print as `.word`, never as a guess;
 `test_firmware.py` checks at run time that every instruction of the user's five EDM programs
-decodes.
+decodes. The assembler round trip (`tools/usse-asm/test_roundtrip.py`) reassembles random words
+of every opcode and the captured programs bit for bit; the simulator runs the PDS programs
+(`sgx-sim --pds`) and the fork's PDS ESIL is checked against it (`r2/README.md`).
 
 ```sh
 make pds-dis

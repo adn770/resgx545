@@ -1,0 +1,10 @@
+title = "probe table usse/repeat"
+repo = "data"
+paths = ["usse/repeat/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 23
+size = 10570
+sha256 = "1cb76ef24cb9820ba5c6986fb869286b4b57571b07a3e13c384c3cb55550c5ff"
+recipe = "probes/usse/repeat.toml"
+needs = ["render"]

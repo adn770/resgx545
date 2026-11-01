@@ -1,0 +1,9 @@
+title = "instruction vectors from the texture probe runs"
+repo = "data"
+paths = ["vectors/texture/"]
+method = "vectors.py convert on the raw readbacks and saved programs of the probe runs, one file per run"
+date = "2026-11-01"
+files = 38
+size = 20353634
+sha256 = "8344ffcbc5e200a45a0788f93b282709d683a226cc5e01ca230e9cfd4c9b8daf"
+recipe = "tools/usse-asm/vectors.py"

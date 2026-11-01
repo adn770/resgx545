@@ -1,0 +1,9 @@
+title = "instruction vectors from the ta probe runs"
+repo = "data"
+paths = ["vectors/ta/"]
+method = "vectors.py convert on the raw readbacks and saved programs of the probe runs, one file per run"
+date = "2026-11-01"
+files = 26
+size = 2063596
+sha256 = "39d87c8a38708aed22c8e6bb50f962ab5f8e3dfca35d8c03d9502cb0521dc644"
+recipe = "tools/usse-asm/vectors.py"

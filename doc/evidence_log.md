@@ -828,6 +828,33 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   instructions, 12 data dwords) tests one request word and starts one of three tasks by request-bit
   group, in priority order.
   *edm; RE, infer; data: `firmware-images`.*
+- `E147` Run through the repository's decoder and simulator, the 29,137 vectors the probe runs gave
+  (27,174 USSE, 1,963 PDS) show no mismatch: 6,028 scalar USSE vectors, 135 pixel vectors and 634
+  PDS vectors pass, 19,217 + 26 + 235 stop as unsupported, and 166 USSE (165 scalar and 1 pixel) and
+  18 PDS vectors are left out because one instance cannot reproduce their readback; 170 of the 219
+  USSE forms and 24 of the 27 PDS forms have a passing vector.
+  *usse; HW; data: `vectors-usse`, `vectors-usse-followup`, `vectors-pds`, `vectors-pds-followup`,
+  `vectors-texture`, `vectors-isp`, `vectors-isp-followup`, `vectors-mte`, `vectors-pbe`,
+  `vectors-pbe-followup`, `vectors-ta`, `vectors-vdm`, `vectors-vdm-followup`, `pds-alu`,
+  `pds-alu-followup`, `pds-data-words`, `pds-data-words-followup`, `pds-douta`,
+  `pds-douta-followup`, `pds-douti-fields`, `pds-douti-fields-followup`, `pds-end-of-tile`,
+  `pds-iteration-sources`, `pds-iteration-sources-followup`, `pds-iteration-waits`,
+  `pds-iteration-waits-followup`, `pds-load-store`, `pds-memory`, `pds-memory-followup`,
+  `pds-moves`, `pds-moves-followup`, `pds-pixel-event`, `pds-pixel-event-followup`,
+  `pds-task-limits`, `pds-timer`, `pds-timer-followup`, `pds-vertex-programs`,
+  `texture-sampler-cache`, `usse-alpha-test`, `usse-branch`, `usse-cache-control`,
+  `usse-cache-control-followup`, `usse-colour-ops`, `usse-constant-banks`,
+  `usse-constant-banks-followup`, `usse-decoder-vectors`, `usse-dot-products`, `usse-dual-issue`,
+  `usse-efo`, `usse-emits`, `usse-filter-banks`, `usse-filter-control`, `usse-filter-gain`,
+  `usse-filter-sets`, `usse-filter-taps`, `usse-flags`, `usse-float-functions`, `usse-float-minmax`,
+  `usse-float-misc`, `usse-fmad`, `usse-fmad16`, `usse-form-coverage`, `usse-gradients`,
+  `usse-helper-instances`, `usse-indexing`, `usse-instance-masking`, `usse-integer`,
+  `usse-integer-dot`, `usse-internal-registers`, `usse-lane-integer`, `usse-loop-timing`,
+  `usse-memory`, `usse-moe`, `usse-moe-followup`, `usse-movc`, `usse-numbered-modifiers`,
+  `usse-numbered-modifiers-followup`, `usse-output-registers`, `usse-pack`, `usse-phases`,
+  `usse-predicates`, `usse-quad-lock`, `usse-quad-lock-followup`, `usse-repeat`, `usse-rlp`,
+  `usse-sample-rate`, `usse-test-channels`, `usse-tests`, `usse-unorm8`, `usse-video-filters`,
+  `usse-video-filters-followup`, `usse-video-ops`, `usse-write-masks`.*
 
 ## By unit
 
@@ -880,7 +907,7 @@ Records: E015, E016, E018, E019, E020, E021, E022, E024, E027, E028.
 
 Records: E075, E076, E077, E078, E079, E080, E081, E082, E083, E085, E086, E087, E088, E089, E090,
 E091, E092, E093, E094, E095, E096, E097, E098, E099, E100, E101, E102, E103, E104, E105, E106,
-E107, E108, E109, E110, E111, E112, E113, E115, E117, E118, E119, E120, E121, E123, E124.
+E107, E108, E109, E110, E111, E112, E113, E115, E117, E118, E119, E120, E121, E123, E124, E147.
 
 ### vdm
 

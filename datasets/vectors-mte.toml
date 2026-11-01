@@ -1,0 +1,9 @@
+title = "instruction vectors from the mte probe runs"
+repo = "data"
+paths = ["vectors/mte/"]
+method = "vectors.py convert on the raw readbacks and saved programs of the probe runs, one file per run"
+date = "2026-11-01"
+files = 55
+size = 17134602
+sha256 = "27559af446239a979de6f6d3585676b2df58bbb17b1955c38e423a0a236f5715"
+recipe = "tools/usse-asm/vectors.py"

@@ -1,0 +1,10 @@
+title = "probe table usse/video-ops"
+repo = "data"
+paths = ["usse/video-ops/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 50
+size = 89897
+sha256 = "efaf1f37e5ba1e0cecd31a7f79e1755fe034f64296706096e12291a8292f718e"
+recipe = "probes/usse/video-ops.toml"
+needs = ["render"]

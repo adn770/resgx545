@@ -1,0 +1,10 @@
+title = "probe table usse/decoder-vectors"
+repo = "data"
+paths = ["usse/decoder-vectors/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 655
+size = 1084082
+sha256 = "0601283c94ae3c652baa3d576d06d072995e2b70f844c0760cce3e9480240ddd"
+recipe = "probes/usse/decoder-vectors.toml"
+needs = ["render"]

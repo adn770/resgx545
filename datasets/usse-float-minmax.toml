@@ -1,0 +1,10 @@
+title = "probe table usse/float-minmax"
+repo = "data"
+paths = ["usse/float-minmax/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-01"
+files = 99
+size = 64221
+sha256 = "2885c70c11d73e9c647e3f1c05016098c30cb92d548b1fd426ed6c7d84cde766"
+recipe = "probes/usse/float-minmax.toml"
+needs = ["render"]

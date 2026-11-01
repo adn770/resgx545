@@ -1,33 +1,33 @@
-<!-- SPDX-License-Identifier: MIT -->
-<!-- SPDX-FileCopyrightText: 2026 Josep Torra -->
 # Writing USSE by hand
 
-This tutorial walks through the USSE programs that run our transfer queue on the real SGX545:
-a solid fill, a copy, the end-of-tile and end-of-render programs and the secondary program.
-Each chapter shows the program as it is in `asm/`, explains it line by line, and assembles
-it, or a variant of it with values of our own, with `usse-asm`. `tools/usse-asm/test_tutorial.py`
-checks that every program quoted here is the file in `asm/` and every listing what the
-assembler prints, so the text cannot drift from the sources and the tools.
+This tutorial walks through the USSE programs that run our transfer queue and our first
+triangle on the real SGX545: a solid fill, a copy, the end-of-tile and end-of-render programs,
+a vertex shader in two phases, and the template we test single instructions with. Each chapter
+shows the program as it is in `asm/`, explains it line by line, and runs it on
+the simulator; the code and the runs in this document are generated from the files and the
+tools, so they cannot drift from them.
 
-The tools are those of `tools/usse-asm` and `tools/usse-dis` (`make` in each), or their Rust
-twins in `crates/sgx-tools` (`cargo build --release -p sgx-tools`): `usse-asm` assembles a
-source into raw words and, with `-l`, lists them as `usse-dis` prints them back. The syntax is
-the disassembler's (`tools/usse-asm/README.md`).
+It assumes the machine model of the programmer's guide (`doc/specs/usse_guide.md`: the
+register banks, predicates, phases and the assembler syntax); every instruction used here has a
+section there, and its encoding is in the reference (`doc/specs/usse_isa.md`).
 
-Sources, as everywhere in resgx545: the firmware file's transfer templates
-(`doc/specs/fw_format.md` §9-§11), which these programs reproduce bit for bit, the transfers
-our kernel runs with them on the laptop (`doc/specs/transfer.md` §4; HW), and the readings
-we infer from both, marked **[infer]**. The machine model behind each instruction (register
-banks, predicates, phases, repeats) and what the hardware was measured to do arrive with the
-probes and the simulator, with a reference of every instruction group; this tutorial uses
-only what the transfers need.
+The tools are those of `crates/sgx-tools` (or their C twins in `tools/`): `usse-asm` assembles a
+source into raw words, `usse-dis` prints them back, and `sgx-sim` runs a program and prints what
+it wrote. Build them with `cargo build --release -p sgx-tools`.
+
+> **Generated file.** This document is assembled by `doc/isa/build.py` from the snippet library
+> in `doc/isa/` (see `doc/isa/README.md`). Edit the snippets, not this file, and rebuild; the
+> test `doc/isa/test_build.py` fails while the committed copy is stale. Bit diagrams, field
+> lists, form lists and encoding examples are generated from the form tables of our clean-room
+> disassemblers and assemblers (`tools/usse-dis`, `tools/usse-asm`), so they cannot drift from
+> the tools; the prose around them is handwritten.
 
 ## 1. A solid fill
 
 A transfer fill draws a rectangle in one colour. The ISP covers the rectangle with a
-background object, and the pixel shader runs for every pixel of it (`doc/specs/transfer.md`
-§4.2). Its job is a single write: the colour, into output register `o0`, which the end-of-tile
-program later packs into the surface.
+background object, and the pixel shader runs once for every pixel of it, as one instance of a
+task (`doc/specs/transfer.md` §4.2). Its job is a single write: the colour, into output
+register `o0`, which the end-of-tile program later packs into the surface.
 
 From `asm/transfer/use_fill.s`:
 
@@ -60,39 +60,44 @@ Two instructions:
 
 - **`phas`** opens the program's only phase. Every pixel program here starts with one; its
   operands name the next phase's program and temporaries (none), the rate (`pixel`), what the
-  next phase would wait for (`end`: **[infer]** there is none) and that instances run in
-  `parallel`.
-- **`mov.skipinv.end o0, #imm`** writes the colour. A 32-bit immediate does not fit one field:
-  the encoder scatters it over the word. `.skipinv` is set as on every instruction of these
-  programs (**[infer]** it runs the instruction whatever the instance's coverage), and `.end`
-  makes it the program's last.
+  next phase would wait for (`end`: there is none) and that instances run in `parallel`.
+- **`mov.skipinv.end o0, #imm`** writes the colour. A 32-bit immediate does not fit one field: the
+  encoder scatters it over the word, as the generated example below shows. `.skipinv` is set as on
+  every instruction our pixel programs must run regardless of coverage (what it does exactly is
+  inferred: *Scheduling flags* in the guide), and `.end` makes it the program's last.
+
+`mov.skipinv.end o0, #0xFF00FF00` assembles with form #0: enc[63:32] = `0xFCA7F181`, enc[31:0] =
+`0x0000FF00`; in memory (little endian) `00 FF 00 00 81 F1 A7 FC`.
+
+| field | value | prints |
+|---|---|---|
+| `pred` | 0x0 | (none) |
+| `skipinv` | 0x1 | `.skipinv` |
+| `nosched` | 0x0 | (none) |
+| `end` | 0x1 | `.end` |
+| `dst` | 0x80 | `o0` |
+| `imm` | 0xff00ff00 | `0xFF00FF00` |
 
 The driver writes each fill's colour into that immediate before it submits the program
-(`doc/specs/fw_format.md` §9.4), so every colour needs its own copy. With a colour of our own
-in place of the template's 0, the listing shows where the immediate goes: `0xFF00FF00` lands
-as `0xFF00` in the low half of the word and the rest in fields of the high half.
+(`doc/specs/fw_format.md` §9.4), so every colour needs its own copy. Run with a colour in
+place of the template's 0, the program leaves `o0` as the colour and ends:
 
 ```
 $ cat prog.s
 phas #0, #0, pixel, end, parallel
 mov.skipinv.end o0, #0xff00ff00
-$ usse-asm -l -o prog.bin prog.s
-     0: 0xFA44070000000000	phas #0, #0, pixel, end, parallel
-     1: 0xFCA7F1810000FF00	mov.skipinv.end o0, #0xFF00FF00
+$ sgx-sim prog.s
+ended after 2 steps
+o0 = 0xff00ff00
+p = 0000 (p3-p0)
 ```
-
-The source may spell numbers in either case and in decimal; the listing is the
-disassembler's canonical text. On the laptop, fills built from the firmware file's templates,
-which these programs equal bit for bit, colour every pixel of their rectangle and nothing
-outside it (E019).
 
 ## 2. Reading what the PDS fetched
 
 A copy reads a source surface. The task's data comes from the PDS, the data sequencer that
 starts every USSE task: for a copy its program (`pds_prim_1src.s`) has the texture unit fetch the
-source texel of each pixel into primary attribute `pa0` and makes the task wait for it
-(`doc/specs/fw_format.md` §10.4 lists the words it is patched with). The shader only passes
-the texel on (`doc/specs/transfer.md` §4.3):
+source texel of each pixel into primary attribute `pa0` and makes the task wait for it. The
+shader only passes the texel on (`doc/specs/transfer.md` §4.4):
 
 From `asm/transfer/use_copy.s`:
 
@@ -109,15 +114,31 @@ From `asm/transfer/use_copy.s`:
         mov.skipinv.end o0, pa0                 ; o0 = the fetched texel; end
 ```
 
-The primary attributes `pa0`, `pa1`, ... are per instance and filled before the task runs.
-Copies built from the templates these programs equal reproduce their source texel for texel
-on the laptop (E020).
+The primary attributes `pa0`-`pa127` are per instance and filled before the task runs; here the
+simulator takes them from `--set`. A register no one has written is not defined, and the
+simulator stops on a read of one rather than guess its value:
+
+```
+$ sgx-sim --set pa0=0x80402010 use_copy.s
+ended after 2 steps
+pa0 = 0x80402010
+o0 = 0x80402010
+p = 0000 (p3-p0)
+```
+```
+$ cat prog.s
+mov.skipinv.end o0, pa1
+$ sgx-sim prog.s
+stopped after 1 steps
+p = 0000 (p3-p0)
+unsupported: 0: mov.skipinv.end o0, pa1: reads pa1 before the program writes it
+```
 
 ## 3. Leaving a tile
 
 The pixel programs above only fill output registers. When a tile is finished, the end-of-tile
 program hands those registers to the pixel back end (PBE), with the five state words that say
-where and how to write them (`doc/specs/fw_format.md` §9.6 lists them for a fill):
+where and how to write them (`doc/specs/transfer.md` §4.2):
 
 From `asm/transfer/use_eot.s`:
 
@@ -158,55 +179,38 @@ From `asm/transfer/use_eot.s`:
 ```
 
 - The four `mov`s load PBE words 0-3 into temporaries. The task is given four temporaries
-  (its `temps` in the template's `TQ_META` record, `doc/specs/fw_format.md` §9.3).
+  (its `temps` in the transfer's meta data); a program that used more would reach other
+  instances' registers.
 - **`emitpix1`** and **`emitpix2`** send the words to the PBE: the first words 0 and 1, the
   second words 2 and 3 and, as its last immediate, the sideband word 4 (the pack mode and
-  `TILERELATIVE`). **[infer]** `.freep` frees the task's resources once the emit is done;
-  the `.end` of the second ends the program.
+  `TILERELATIVE`). `.freep` frees the task's resources once the emit is done, and the `.end`
+  of the second ends the program.
 - The driver patches this program per transfer: the immediates become the PBE words, and the
-  destination registers of the last three `mov`s, `r0` in the template, become `r1`-`r3`
-  (`doc/specs/fw_format.md` §9.2, §9.4). Ours keeps `r0` there so that its words are the
-  template's, bit for bit.
+  destination registers of the last three `mov`s, r0 in the template, become r1-r3. The
+  template keeps r0 because the captured template has r0 there, and ours reproduces its
+  words bit for bit (`doc/specs/fw_format.md` §9.4).
 
-Patched by hand, with made-up PBE words for a 64 x 32 rectangle, the program reads as the
-driver would submit it:
-
-From `asm/tutorial/eot_patched.s`:
+Patched by hand, with made-up PBE words, the simulator shows the two emits and the values each
+sends; it models what the USSE hands over, not what the PBE does with it:
 
 ```
-; eot_patched.s -- use_eot.s as the driver patches it for one transfer, with made-up PBE
-; words (doc/specs/usse_tutorial.md, "Leaving a tile"): the movs load r0-r3, the emits send them.
-
-        phas #0, #0, pixel, end, parallel
-        mov.skipinv r0, #0x00000000             ; word 0: XMIN 0, YMIN 0
-        mov.skipinv r1, #0x001f003f             ; word 1: XMAX 63, YMAX 31
-        mov.skipinv r2, #0x01001000             ; word 2: COUNT, LINESTRIDE
-        mov.skipinv r3, #0x12340000             ; word 3: FBADDR
-        emitpix1.freep #0 /* incp */, r0, r1
-        emitpix2.end.freep #0 /* incp */, r2, r3, r0, #0x00000200
+$ sgx-sim tutorial/eot_patched.s
+ended after 7 steps
+r0 = 0x00000000
+r1 = 0x001f003f
+r2 = 0x01001000
+r3 = 0x12340000
+p = 0000 (p3-p0)
+emit emitpix1 0x00000000, 0x001f003f, 0x00000000
+emit emitpix2 0x01001000, 0x12340000, 0x00000000
 ```
-
-```
-$ usse-asm -l -o eot.bin asm/tutorial/eot_patched.s
-     0: 0xFA44070000000000	phas #0, #0, pixel, end, parallel
-     1: 0xFCA0000000000000	mov.skipinv r0, #0x00000000
-     2: 0xFCA00000003F003F	mov.skipinv r1, #0x001F003F
-     3: 0xFCA0008000401000	mov.skipinv r2, #0x01001000
-     4: 0xFCA0411000740000	mov.skipinv r3, #0x12340000
-     5: 0xFB20010000200080	emitpix1.freep #0 /* incp */, r0, r1
-     6: 0xFB24004000208180	emitpix2.end.freep #0 /* incp */, r2, r3, r0, #0x00000200
-```
-
-The destination register sits at bit 21 of the low half (`r1` adds `0x00200000` to it, which is
-the `CONST 1 << 21` patch), and the sideband's bits are scattered over the `emitpix2` word as
-the `EMITPIX_SB` encoding says.
 
 ## 4. Ending a render, and the secondary program
 
 Two more programs complete a transfer. After the last tile of a render, the end-of-render
-program sends one more `emitpix2`, with zero words and the sideband `0x200` (**[infer]** it
-closes the render); the secondary program, which the PDS kicks once per transfer, has
-nothing to do and ends:
+program sends one more `emitpix2`, with zero words and the sideband `0x200`, which the closed
+driver issues to finish the render; the secondary program, which the PDS kicks once per
+transfer, has nothing to do and ends (`doc/specs/transfer.md` §4.2):
 
 From `asm/transfer/use_eor.s`:
 
@@ -223,7 +227,6 @@ From `asm/transfer/use_eor.s`:
         ; Emit r0 (0) and the immediate #0 as words 2 and 3, sideband 0x200; end.
         emitpix2.end.freep #0 /* incp */, r0, #0, r0, #0x00000200
 ```
-
 From `asm/transfer/use_sec.s`:
 
 ```
@@ -237,16 +240,125 @@ From `asm/transfer/use_sec.s`:
 ```
 
 `nop.end` is the shortest program there is: one phase marker, then an instruction that only
-ends. Every program here ends on an instruction with `.end`.
+ends. Programs always end on an instruction with `.end`; one that runs past its last word
+would execute whatever follows it in memory.
 
-## 5. Where to go next
+## 5. A vertex shader in two phases
 
-- **`asm/README.md`** lists every program, the PDS programs that start these tasks
-  (`asm/transfer/pds_*.s`) among them, and why they equal the closed templates bit for bit.
-- **`tools/usse-asm/README.md`** gives the whole syntax: listings as input, PDS data segments
-  and labels, and the Rust tools' `.include`, `.equ` and `.macro`, and `sgx-asm`, which
-  assembles the nine programs and their patch records as one source (`asm/transfer/transfer.s`).
-- **`tools/usse-dis/README.md`** describes the form tables both directions read.
-- The programmer's guide and the instruction reference, with what the hardware was measured to
-  do, a vertex shader in two phases and a template for testing an instruction on the GPU, arrive
-  with the probes and the simulator.
+The first triangle's vertex shader gets one vertex, already in
+clip
+space, in `pa0`-`pa3`, copies it to the outputs `o0`-`o3`, and hands it on twice: to the
+vertex cache, then, once vertex culling has seen it, to the MTE. Those are two phases of one
+task, the second waiting for `vcull`:
+
+From `asm/tri/use_vtx.s`:
+
+```
+; use_vtx.s -- the vertex shader of the first triangle.
+;
+; pds_vtx.s DMAs one vertex (x, y, z, w, already in clip space) into pa0-pa3 and starts
+; this task. It copies the position to the outputs o0-o3 and hands the vertex first to
+; the vertex cache (emitvcbvtx) and then, once the vertex culling stage has seen it, to
+; the MTE (emitmtevtx): two phases, the second waiting for "vcull" ([infer] the MTE
+; takes a vertex only after the culling stage has seen it).
+;
+; The phas operand is the instruction index of the next phase, counted from the code
+; base the task runs from (USE_CODE_BASE_10). This source writes it relative to the
+; program's first instruction; the driver adds the index at which it places the
+; program (libsgxfive's src/render.c).
+
+        ; Phase 0: wait for the attribute DMA, copy the position, emit to the VCB.
+        phas #7, #0, pixel, vcull, parallel
+        nop.nosched
+        ; A load that never runs (p0 is false: 0 & 0 is zero) followed by a wait on the
+        ; data fence: the task does not read pa0-pa3 before the PDS DMA has landed.
+        and.skipinv.testtanz.chan0 !r0, p0, #0x00000000, #0
+        p0 ldad.skipinv.fetch4 pa0, [pa0,+#0], drc0
+        wdf drc0
+        mov.skipinv.repeat4 o0, pa0                     ; o0-o3 = x, y, z, w
+        emitvcbvtx.end.twopart #0, #0
+        ; Phase 1 (instruction 7): emit the vertex to the MTE and end.
+        phas #0, #0, pixel, end, parallel
+        emitmtevtx.end.twopart.freep #0, #0, #0
+```
+
+- **`phas #7, ...`** names the next phase's first instruction, index 7 here. The index counts
+  from the code base the task runs from, so the driver adds where it places the program.
+- **The predicated load and `wdf`.** `and.testtanz` with two zero immediates sets `p0` false;
+  `p0 ldad` therefore never loads, but it gives `wdf drc0` an access to wait for, which is the
+  shape the closed compiler uses so that the task does not read `pa0`-`pa3` before the PDS's
+  attribute DMA has landed.
+- **`mov.repeat4 o0, pa0`** is four moves in one instruction, `o0 = pa0` to `o3 = pa3`: a
+  repeat advances every register operand by one per iteration (*Repeats* in the guide).
+- **`emitvcbvtx`** ends phase 0; phase 1 is `emitmtevtx` with `.end`.
+
+The simulator runs a task from its first instruction to the first `.end`, so here phase 0:
+with a vertex in `pa0`-`pa3`, it ends at the vertex cache emit:
+
+```
+$ sgx-sim --set pa0=1 --set pa1=2 --set pa2=3 --set pa3=4 use_vtx.s
+ended after 7 steps
+pa0 = 0x00000001
+pa1 = 0x00000002
+pa2 = 0x00000003
+pa3 = 0x00000004
+o0 = 0x00000001
+o1 = 0x00000002
+o2 = 0x00000003
+o3 = 0x00000004
+p = 0000 (p3-p0)
+emit emitvcbvtx 0x00000000, 0x00000000, 0x00000000
+```
+
+## 6. Testing an instruction yourself
+
+What an instruction does is settled on the hardware, not in the text. The probe harness
+(`tools/usse-asm/probe.py`) runs a case as the pixel shader of a 64 x 32 fill on the real GPU:
+a template sets inputs, runs the instruction under test, and stores registers to a scratch
+buffer the host reads back. This is the middle of the template most cases use (it sets
+more inputs before and stores more registers after):
+
+From `probes/usse/templates/dump.s`:
+
+```
+{OP}
+mov.skipinv r29, #0x5CAF0000
+stad [r29,+#0], r10
+```
+
+`{OP}` is the instruction under test, and `#0x5CAF0000` a marker the harness replaces by the
+scratch buffer's address; the simulator does the same, so the template runs on it unchanged.
+Here it asks how `fmad` rounds a tie: 1 + 2^-12 squared, written to `r10` and stored:
+
+```
+$ sgx-sim tutorial/fmad_tie.s
+ended after 5 steps
+r1 = 0x3f800800
+r10 = 0x3f801000
+r29 = 0x3e003000
+o0 = 0x3f801000
+p = 0000 (p3-p0)
+[0x3e003000] = 0x3f801000 (was 0xd0000000)
+```
+
+The product, 1 + 2^-11 + 2^-24, is a tie between two binary32 values; `fmad` rounds it to even
+(*Float rounding and NaN*). On the hardware, the same case is an entry of a probe table in
+`probes/usse/` (the `fmad.toml` table holds this one); the probe runner sends it to the GPU, and
+the vector tool turns the readback into a vector the simulator is tested against
+(`doc/specs/vectors.md`), so a rule found this way is held to the hardware from then on:
+
+```
+$ cargo run --release -p sgx-tools --bin sgx-sim -- --vectors \
+    $RESGX545_DATA/vectors/<unit>/<feature>/<probe>.vec.json
+```
+
+## 7. Where to go next
+
+- **The programmer's guide** (`doc/specs/usse_guide.md`) for every group of instructions,
+  with what the hardware was measured to do and what the simulator models.
+- **The reference** (`doc/specs/usse_isa.md`) to encode or decode a word by hand: every
+  group's bit layouts and fields, and every form.
+- **The PDS reference** (`doc/specs/pds_isa.md`) for the programs that start these tasks
+  (`asm/*/pds_*.s`).
+- **The open questions** at the end of the reference: what is not settled yet, and what the
+  simulator stops on.
