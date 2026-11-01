@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# Solid fills from the firmware file's templates: the four rectangles of xfer_fill (whole
+# 64x32, inset on a padded stride, across tiles, one pixel), three times, then interleaved
+# with dummy transfers; every destination dword and a guard page checked by the kernel.
+kind = "script"
+name = "transfer-fill"
+script = "fill.sh"
+baseline = "none"

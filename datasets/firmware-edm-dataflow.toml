@@ -1,0 +1,9 @@
+title = "script table firmware/edm-dataflow"
+repo = "data"
+paths = ["firmware/edm-dataflow/"]
+method = "campaign runner on the local target (tools/campaign)"
+date = "2026-10-31"
+files = 4
+size = 242697
+sha256 = "c70c6bfcd2e9ca06f6c4f18ad1b5a3dbe623e99a09a7cab1d305c950ec75a633"
+recipe = "probes/firmware/edm-dataflow.toml"

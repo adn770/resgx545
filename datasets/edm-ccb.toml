@@ -1,0 +1,9 @@
+title = "script table edm/ccb"
+repo = "data"
+paths = ["edm/ccb/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-10-31"
+files = 3
+size = 46399
+sha256 = "a07d1ff3bbeb5d6ef70fc8e9ced2fc951bd1f2bed87d7474f789391d4b314524"
+recipe = "probes/edm/ccb.toml"

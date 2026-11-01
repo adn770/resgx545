@@ -1,0 +1,9 @@
+title = "script table transfer/isolation"
+repo = "data"
+paths = ["transfer/isolation/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-10-31"
+files = 3
+size = 31379
+sha256 = "d46f3d94ef128e836bde3f50f2c8e27716b2d4a35d19dc249d3301b1a0ec2c6e"
+recipe = "probes/transfer/isolation.toml"

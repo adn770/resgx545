@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# Transfers under a client page directory: a fill and an update through it with the EDM's
+# buffers aliased read-write, read-only, or not at all; then a fill aimed at a read-only alias
+# of a kernel buffer, the fault it raises, and recovery by reload and boot.
+kind = "script"
+name = "transfer-isolation"
+script = "isolation.sh"
+baseline = "none"

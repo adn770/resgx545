@@ -57,16 +57,78 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   TA3DCtl dword 23 follows the page directory.
   *firmware; CAP; data: `firmware-init-payload`, `firmware-layout`.*
 
+### 2026-10-31
+
+- `E012` The boot payload's kick-address table names an EDM handler for eight of the eleven kernel
+  CCB commands (TA, TRANSFER, POWER, CONTEXTSUSPEND, CLEANUP, GETMISCINFO, PROCESS_QUEUES,
+  SETHWPERFSTATUS) and none for 2D, DATABREAKPOINT and FLUSHPDCACHE; the same at both captured
+  layouts.
+  *firmware; CAP, DDK; data: `firmware-init-payload`.*
+- `E013` A forward dataflow over the whole EDM microkernel reaches all 6637 instructions in 70
+  routines from 13 entry points and 21 further roots, and records every structure word (170) it
+  reaches through a typed pointer, register (191) and secondary attribute (20) it touches; 299
+  branches, 554 memory accesses, 14 register addresses and 204 sources it cannot resolve are
+  counted, not guessed.
+  *edm; RE, CAP; data: `firmware-edm-dataflow`, `firmware-images`, `firmware-init-payload`.*
+- `E014` The EDM writes HostCtl dword 14 (assert_fail) only with constants: 0xad002600 at
+  instruction 1, on the instruction-0 path that no normal boot takes, and 0xad001a07 at instruction
+  0x55c of the event routine, taken when the kernel CCB's write and read offsets differ; it never
+  reads the word.
+  *edm; RE, HW; data: `firmware-edm-dataflow`, `platform-boot`.*
+- `E015` The EDM's TRANSFER handler only counts and queues the context; a later routine picks a
+  ready context from the queue heads, skips suspended ones (flag bit 4), takes the dummy path for
+  context flag bit 1 or command flag 0x20, applies updates through the context's directory, loads
+  the command's 17 register words into fixed registers (the three coefficient groups only when their
+  load words are set) and starts the render by writing 1 to 0x0428; completion reads the size word,
+  writes the status values and raises SW_EVENT.
+  *transfer; RE, HW; data: `firmware-edm-dataflow`, `transfer-dummy`, `transfer-fill`,
+  `transfer-isolation`.*
+- `E016` In 67 transfers of the closed stack under the harness every command is 0x1c0 bytes with
+  flags 0x8, no update and one status entry whose value is the command's fence word plus one, the
+  fence word counting the context's commands from 0; the commands lie back to back from offset 0 of
+  a 0x104c8-byte client CCB in KERNEL_DATA, and the context is a 0xb4-byte KERNEL_DATA object.
+  *transfer; CAP, DDK; data: `firmware-transfer`.*
+- `E017` Through the kernel CCB the EDM on the laptop answers GETMISCINFO with the core and DDK
+  identity and the thirteen structure sizes srvinit's payload records, idles and powers off on the
+  POWER command within about 0.2 ms with its clocks gated, and boots again after a power-off.
+  *edm; HW, DDK; data: `edm-ccb`.*
+- `E018` Dummy transfers complete on the laptop: eleven in a row each apply their update, write
+  their status word, advance the client CCB's read offset by the command size, leave the context's
+  count at 0 and raise one SW_EVENT; a dummy behind a destination sync one write short stays queued
+  for the 50 ms the kernel waits and, once the host completes the sync and sends PROCESS_QUEUES,
+  then runs and sets the write counter to pending + 1.
+  *transfer; HW, DDK; data: `transfer-dummy`.*
+- `E019` Solid fills built from the firmware file's templates render exactly on the laptop: a whole
+  64x32 surface, a 32x16 rectangle on a 320-byte stride, a 33x16 rectangle across tiles and one
+  pixel, each with every other dword of three pages untouched, the command equal to the file's 12
+  TQ_CMD words, no BIF fault, interleaved with dummies.
+  *transfer; HW; data: `transfer-fill`.*
+- `E020` Copies built from the firmware file's templates render exactly on the laptop: a whole 64x32
+  surface, a 32x16 rectangle from (5,3) of a 320-byte-stride source to (8,4) of a 288-byte-stride
+  destination, and a 33x16 rectangle across tiles, from a texture-heap source whose dwords all
+  differ, with every other destination dword untouched.
+  *transfer; HW; data: `transfer-copy`.*
+- `E021` A transfer renders and applies its updates through the page directory its context names: a
+  fill and an update into addresses only a client directory maps land, with the EDM's buffers
+  aliased read-write or read-only in that directory, and the fill alone without them; a fill aimed
+  at a read-only alias of a kernel buffer writes nothing, faults at that page, never completes, and
+  leaves the EDM unable to power off until a reload and boot.
+  *transfer; HW; data: `transfer-isolation`.*
+
 ## By unit
 
 ### edm
 
-Records: E009.
+Records: E009, E013, E014, E017.
 
 ### firmware
 
-Records: E001, E002, E003, E004, E005, E010, E011.
+Records: E001, E002, E003, E004, E005, E010, E011, E012.
 
 ### platform
 
 Records: E006, E007, E008.
+
+### transfer
+
+Records: E015, E016, E018, E019, E020, E021.

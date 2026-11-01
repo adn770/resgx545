@@ -1,0 +1,58 @@
+[[term]]
+id = "G0095"
+name = "ccb_ctl"
+status = "named"
+
+[[term.source]]
+term = "PVRSRV_SGX_CCB_CTL"
+kind = "struct"
+sgx545 = "0x8"
+meaning = "CCB control: write and read offsets (kernel and client CCBs)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0142"
+licence = "GPL-2.0"
+evidence = "-"
+
+[[term.source]]
+term = "rogue_fwif_ccb_ctl"
+kind = "struct"
+sgx545 = "~ PVRSRV_SGX_CCB_CTL"
+meaning = "Rogue CCB control"
+tier = "3"
+source = "linux-imagination"
+citation = "C0143"
+licence = "GPL-2.0 OR MIT"
+evidence = "same role"
+
+[[term]]
+id = "G0096"
+name = "ccb_ctl.read_offset"
+status = "named"
+
+[[term.source]]
+term = "ui32ReadOffset"
+kind = "field"
+sgx545 = "CCB_CTL+0x4"
+meaning = "read offset (EDM advances)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0144"
+licence = "GPL-2.0"
+evidence = "-"
+
+[[term]]
+id = "G0097"
+name = "ccb_ctl.write_offset"
+status = "named"
+
+[[term.source]]
+term = "ui32WriteOffset"
+kind = "field"
+sgx545 = "CCB_CTL+0x0"
+meaning = "write offset (host advances)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0145"
+licence = "GPL-2.0"
+evidence = "-"

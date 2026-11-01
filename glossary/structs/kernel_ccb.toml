@@ -1,0 +1,15 @@
+[[term]]
+id = "G0109"
+name = "kernel_ccb"
+status = "named"
+
+[[term.source]]
+term = "PVRSRV_SGX_KERNEL_CCB"
+kind = "struct"
+sgx545 = "0x2000"
+meaning = "kernel CCB: 256 commands"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0160"
+licence = "GPL-2.0"
+evidence = "-"

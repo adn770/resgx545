@@ -1,0 +1,47 @@
+[[term]]
+id = "G0110"
+name = "misc_info"
+status = "named"
+
+[[term.source]]
+term = "PVRSRV_SGX_MISCINFO_INFO"
+kind = "struct"
+sgx545 = "0x54"
+meaning = "misc-info buffer (hKernelSGXMiscMemInfo)"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0161"
+licence = "GPL-2.0"
+evidence = "-"
+
+[[term]]
+id = "G0111"
+name = "misc_info.flags"
+status = "named"
+
+[[term.source]]
+term = "ui32MiscInfoFlags"
+kind = "field"
+sgx545 = "MISC+0x00"
+meaning = "MISC_INFO_FLAGS.* request/ready bits"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0162"
+licence = "GPL-2.0"
+evidence = "-"
+
+[[term]]
+id = "G0112"
+name = "misc_info.struct_sizes"
+status = "named"
+
+[[term.source]]
+term = "sSGXStructSizes"
+kind = "field"
+sgx545 = "MISC+0x20"
+meaning = "structure sizes block"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0163"
+licence = "GPL-2.0"
+evidence = "-"

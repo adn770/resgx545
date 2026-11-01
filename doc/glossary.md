@@ -67,10 +67,16 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 
 ### bitfield
 
+- `CR_EVENT_STATUS.SW_EVENT` G0092 (0x012c[14]): status: software event. From
+  `EUR_CR_EVENT_STATUS_SW_EVENT` (1, sgx545-ce).
 - `CR_USE_CODE_BASE_0.ADDR` G0006 (0x0a0c[24:0]): code base address. From `_PSB_CUC_BASE_ADDR_MASK`
   (1c, emgd-psb_regs).
 - `CR_USE_CODE_BASE_0.DM` G0007 (0x0a0c[26:25]): data master that owns a USE code base. From
   `EUR_CR_USE_CODE_BASE_DM_00` (1, sgx545-ce); `_PSB_CUC_BASE_DM_MASK` (1c, emgd-psb_regs).
+- `CR_EVENT_KICK.NOW` G0091 (0x0ac8[0]): write 1 to trigger. From `EUR_CR_EVENT_KICK_NOW` (1,
+  sgx545-ce).
+- `CR_BIF_BANK0.INDEX_3D` G0088 (0x0c78[15:12]): directory-list index for 3D requests. From
+  `EUR_CR_BIF_BANK0_INDEX_3D` (1, sgx545-ce).
 
 ### register
 
@@ -132,6 +138,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   `EUR_CR_PDS_EXEC_BASE` (1, sgx545-ce); `PSB_CR_PDS_EXEC_BASE` (1c, emgd-psb_regs).
 - `CR_EVENT_KICKER` G0046 (0x0ac4): address the event kicker DMA reads. From `EUR_CR_EVENT_KICKER`
   (1, sgx545-ce).
+- `CR_EVENT_KICK` G0090 (0x0ac8): host doorbell: start the EDM event task. From `EUR_CR_EVENT_KICK`
+  (1, sgx545-ce).
 - `CR_EVENT_TIMER` G0050 (0x0acc): EDM periodic timer: period and enable. From `EUR_CR_EVENT_TIMER`
   (1, sgx545-ce); `PSB_CR_EVENT_TIMER` (1c, emgd-psb_regs).
 - `CR_USE0_SERV_EVENT` G0054 (0x0b14): USSE 0 event service-queue status, the EDM task register
@@ -144,6 +152,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   sgx545-ce); `PSB_CR_BIF_INT_STAT` (1c, emgd-psb_regs).
 - `CR_BIF_FAULT` G0033 (0x0c08): MMU faulting address and context. From `EUR_CR_BIF_FAULT` (1,
   sgx545-ce); `PSB_CR_BIF_FAULT` (1c, emgd-psb_regs).
+- `CR_BIF_DIR_LIST_BASE1` G0089 (0x0c38): page-directory base, context 1. From
+  `EUR_CR_BIF_DIR_LIST_BASE1` (1, sgx545-ce); `PSB_CR_BIF_DIR_LIST_BASE1` (1c, emgd-psb_regs).
 - `CR_BIF_DIR_LIST_BASE15` G0032 (0x0c70): page-directory base, context 15. From
   `EUR_CR_BIF_DIR_LIST_BASE15` (1, sgx545-ce).
 - `CR_BIF_BANK_SET` G0029 (0x0c74): selects which bank register each requestor uses. From
@@ -159,6 +169,16 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 
 ### field
 
+- `ccb_ctl.write_offset` G0097 (CCB_CTL+0x0): write offset (host advances). From `ui32WriteOffset`
+  (1, sgx545-ce).
+- `ccb_ctl.read_offset` G0096 (CCB_CTL+0x4): read offset (EDM advances). From `ui32ReadOffset` (1,
+  sgx545-ce).
+- `command.service_address` G0100 (COMMAND+0x00): EDM handler address (aui32HostKickAddr[type]).
+  From `ui32ServiceAddress` (1, sgx545-ce).
+- `command.cache_control` G0098 (COMMAND+0x04): CACHE_CONTROL.* invalidations done before the
+  command. From `ui32CacheControl` (1, sgx545-ce).
+- `command.data` G0099 (COMMAND+0x08): six command words; [1] = context/data address. From
+  `ui32Data` (1, sgx545-ce).
 - `host_ctl.init_status` G0079 (HOST_CTL+0x00): EDM init status; INIT_STATUS.COMPLETE. From
   `ui32InitStatus` (1, sgx545-ce).
 - `host_ctl.power_status` G0085 (HOST_CTL+0x04): POWER_STATUS.* bits. From `ui32PowerStatus` (1,
@@ -193,6 +213,22 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   sgx545-ce).
 - `host_ctl.opencl_delay_count` G0083 (HOST_CTL+0x40): OpenCL task timeout counter. From
   `ui32OpenCLDelayCount` (1, sgx545-ce).
+- `hw_transfer_context.fw_com_ctx_flags` G0105 (HWTRANSFERCONTEXT+0x000): context flags. From
+  `fw_com_ctx_flags` (3, linux-imagination).
+- `hw_transfer_context.priority` G0107 (HWTRANSFERCONTEXT+0x004): priority. From
+  `ui32OffsetOfPriorityField` (1, sgx545-ce); `priority` (3, linux-imagination).
+- `hw_transfer_context.pd_dev_paddr` G0106 (HWTRANSFERCONTEXT+0x008): PD physical address (kernel
+  writes). From `ui32OffsetToPDDevPAddr` (1, sgx545-ce).
+- `hw_transfer_context.ccb_dev_vaddr` G0104 (HWTRANSFERCONTEXT+0x00c): transfer client CCB. From
+  `hCCBMemInfo` (1, sgx545-ce); `ccb_fw_addr` (3, linux-imagination).
+- `hw_transfer_context.ccb_ctl_dev_vaddr` G0103 (HWTRANSFERCONTEXT+0x010): transfer CCB control.
+  From `PVRSRV_SGX_CCB_CTL` (1, sgx545-ce); `ccbctl_fw_addr` (3, linux-imagination).
+- `hw_transfer_context.submitted_commands` G0108 (HWTRANSFERCONTEXT+0x014): commands queued. From
+  `submitted_commands` (3, linux-imagination).
+- `misc_info.flags` G0111 (MISC+0x00): MISC_INFO_FLAGS.* request/ready bits. From
+  `ui32MiscInfoFlags` (1, sgx545-ce).
+- `misc_info.struct_sizes` G0112 (MISC+0x20): structure sizes block. From `sSGXStructSizes` (1,
+  sgx545-ce).
 - `misc_info_struct_sizes.sizeof_cmd_ta` G0012 (MISCINFO_STRUCT_SIZES+0x00 (=MISC+0x20); value
   0x2b0): size of CMDTA the EDM was built for: TA command (client CCB entry for TA/3D work). From
   `ui32Sizeof_CMDTA` (1, sgx545-ce).
@@ -232,17 +268,47 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `misc_info_struct_sizes.sizeof_command` G0014 (MISCINFO_STRUCT_SIZES+0x30 (=MISC+0x50); value
   0x20): size of COMMAND the EDM was built for: kernel CCB command. From `ui32Sizeof_COMMAND` (1,
   sgx545-ce).
+- `transfer_cmd.isp_render` G0117 (TRANSFERCMD+0x00c): ISP render type/scan. From `isp_render` (3,
+  linux-imagination).
 - `transfer_cmd.bif_3d_req_base` G0025 (TRANSFERCMD+0x018): 3D requestor base. From
   `EUR_CR_BIF_3D_REQ_BASE` (1, sgx545-ce).
 - `transfer_cmd.event_pixel_pds_code` G0026 (TRANSFERCMD+0x024): end-of-tile PDS program. From
   `event_pixel_pds_code` (3, linux-imagination).
 - `transfer_cmd.pds_exec_base` G0027 (TRANSFERCMD+0x03c): PDS execution base. From
   `EUR_CR_PDS_EXEC_BASE` (1, sgx545-ce).
+- `transfer_cmd.cmd_size` G0115 (TRANSFERCMD+0x0a4): command size, 64-byte multiple. From `cmd_size`
+  (3, linux-imagination).
+- `transfer_cmd.flags` G0116 (TRANSFERCMD+0x0a8): TQ_FLAGS.* of the transfer. From `ui32Flags` (1,
+  sgx545-ce); `flags` (3, linux-imagination).
+
+### flag
+
+- `MISC_INFO_FLAGS.READY` G0094 (MISC+0x00 bit0): reply ready (0x1). From
+  `PVRSRV_USSE_MISCINFO_READY` (1, sgx545-ce).
+- `MISC_INFO_FLAGS.GET_STRUCT_SIZES` G0093 (MISC+0x00 bit1): request struct sizes (0x2). From
+  `PVRSRV_USSE_MISCINFO_GET_STRUCT_SIZES` (1, sgx545-ce).
 
 ### struct
 
+- `device_sync_object` G0101 (0x10): pending values + complete-counter addresses of one sync. From
+  `PVRSRV_DEVICE_SYNC_OBJECT` (1, sgx545-ce).
+- `misc_info_features` G0113 (0x1c at MISC+0x04): core/DDK identification returned by GETMISCINFO.
+  From `PVRSRV_SGX_MISCINFO_FEATURES` (1, sgx545-ce).
+- `kernel_ccb` G0109 (0x2000): kernel CCB: 256 commands. From `PVRSRV_SGX_KERNEL_CCB` (1,
+  sgx545-ce).
 - `host_ctl` G0010 (0x44): host control block (init/power/cleanup status, timers). From
   `SGXMKIF_HOST_CTL` (1, sgx545-ce).
+- `transfer_cmd` G0114 (0x4c8, ~ TRANSFERCMD): transfer command structure proper; holds
+  TRANSFERCMD_SHARED. From `SGXMKIF_TRANSFERCMD` (1, emgd-linux); `rogue_fwif_cmd_transfer` (3,
+  linux-imagination).
+- `misc_info` G0110 (0x54): misc-info buffer (hKernelSGXMiscMemInfo). From
+  `PVRSRV_SGX_MISCINFO_INFO` (1, sgx545-ce).
+- `ccb_ctl` G0095 (0x8, ~ PVRSRV_SGX_CCB_CTL): CCB control: write and read offsets (kernel and
+  client CCBs). From `PVRSRV_SGX_CCB_CTL` (1, sgx545-ce); `rogue_fwif_ccb_ctl` (3,
+  linux-imagination).
+- `hw_transfer_context` G0102 (0xb4, ~ HWTRANSFERCONTEXT): HW transfer context. From
+  `SGXMKIF_HWTRANSFERCONTEXT` (1, intel-ctp-santos10); `rogue_fwif_fwtransfercontext` (3,
+  linux-imagination).
 - `ta3d_ctl` G0024 (0xec (hKernelSGXTA3DCtlMemInfo)): TA/3D control block of the EDM. From
   `sTA3DCtl` (1c, emgd-linux).
 

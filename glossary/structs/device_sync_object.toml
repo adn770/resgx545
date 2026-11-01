@@ -1,0 +1,15 @@
+[[term]]
+id = "G0101"
+name = "device_sync_object"
+status = "named"
+
+[[term.source]]
+term = "PVRSRV_DEVICE_SYNC_OBJECT"
+kind = "struct"
+sgx545 = "0x10"
+meaning = "pending values + complete-counter addresses of one sync"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0149"
+licence = "GPL-2.0"
+evidence = "24 bytes in later public trees (second read-ops pair added)"

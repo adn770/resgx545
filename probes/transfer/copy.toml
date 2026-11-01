@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# Linear copies from the firmware file's templates: the three rectangles of xfer_copy (whole
+# 64x32, offset between padded strides, across tiles), three times, then alternating with
+# fills (each operation places its own programs).
+kind = "script"
+name = "transfer-copy"
+script = "copy.sh"
+baseline = "none"

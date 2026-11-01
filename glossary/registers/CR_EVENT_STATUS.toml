@@ -46,3 +46,19 @@ source = "linux-imagination"
 citation = "C0078"
 licence = "GPL-2.0-only OR MIT"
 evidence = "same name as our EVENT_STATUS; Rogue offset 0x0130; analogy, function to be confirmed"
+
+[[term]]
+id = "G0092"
+name = "CR_EVENT_STATUS.SW_EVENT"
+status = "named"
+
+[[term.source]]
+term = "EUR_CR_EVENT_STATUS_SW_EVENT"
+kind = "bitfield"
+sgx545 = "0x012c[14]"
+meaning = "status: software event"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0139"
+licence = "GPL-2.0"
+evidence = "mask 0x00004000"

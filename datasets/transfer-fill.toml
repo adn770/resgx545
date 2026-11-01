@@ -1,0 +1,9 @@
+title = "script table transfer/fill"
+repo = "data"
+paths = ["transfer/fill/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-10-31"
+files = 3
+size = 31265
+sha256 = "cbf0edde46e6871cc8978a80ffd020efe7c3287918ebb3da8215c7f4eec5afb3"
+recipe = "probes/transfer/fill.toml"

@@ -1,0 +1,47 @@
+[[term]]
+id = "G0098"
+name = "command.cache_control"
+status = "named"
+
+[[term.source]]
+term = "ui32CacheControl"
+kind = "field"
+sgx545 = "COMMAND+0x04"
+meaning = "CACHE_CONTROL.* invalidations done before the command"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0146"
+licence = "GPL-2.0"
+evidence = "-"
+
+[[term]]
+id = "G0099"
+name = "command.data"
+status = "named"
+
+[[term.source]]
+term = "ui32Data"
+kind = "field"
+sgx545 = "COMMAND+0x08"
+meaning = "six command words; [1] = context/data address"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0147"
+licence = "GPL-2.0"
+evidence = "-"
+
+[[term]]
+id = "G0100"
+name = "command.service_address"
+status = "named"
+
+[[term.source]]
+term = "ui32ServiceAddress"
+kind = "field"
+sgx545 = "COMMAND+0x00"
+meaning = "EDM handler address (aui32HostKickAddr[type])"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0148"
+licence = "GPL-2.0"
+evidence = "-"

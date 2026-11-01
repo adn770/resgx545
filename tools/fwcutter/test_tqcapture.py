@@ -282,6 +282,128 @@ def test_placement():
     assert T.placement(0x40, [0x40, 0x100], []) == "one of 2"
 
 
+# --- the commands report ------------------------------------------------------------------
+
+class _FakeSnap:
+    """A snapshot with the CCB object kept (or not) and a list of objects."""
+    def __init__(self, objs, ccb=None):
+        self.objs = objs
+        self.ccb = ccb
+        self.dir = pathlib.Path("fake")
+
+    def by_index(self, k):
+        return next(o for o in self.objs if o.index == k)
+
+    def data(self, o):
+        if o.index == 3 and self.ccb is not None:
+            return self.ccb
+        raise KeyError("not kept")
+
+
+def _command_words(n, size=0x1C0, flags=0x8, updates=0, status=0xF0029000):
+    """A made-up command: size, flags, one status entry whose value is n + 1, the fence n."""
+    w = [0] * (size // 4)
+    w[0xA4 // 4], w[0xA8 // 4] = size, flags
+    w[(0xAC + 0xB8) // 4], w[(0xAC + 0xBC) // 4], w[(0xAC + 0xC0) // 4] = 1, status, n + 1
+    w[0x198 // 4], w[0x19C // 4] = n, updates
+    w[0x3C // 4] = 0x1234        # a fixed word
+    w[0x40 // 4] = 0x100 + n     # a varying one
+    return w
+
+
+def _cmd_run(words_list, ccb_size=0x1000, keep=True, objs_extra=()):
+    ccb = bytearray(ccb_size)
+    off = 0
+    offsets = []
+    for w in words_list:
+        struct.pack_into(f"<{len(w)}I", ccb, off, *w)
+        offsets.append(off + T.CMD_SHARED)
+        off += len(w) * 4
+    objs = [T.Obj(3, 3, "KERNEL_DATA", 0xF0017000, ccb_size, 0x1000, 0x4F, 0),
+            T.Obj(4, 3, "KERNEL_DATA", 0xF0018000, 8, 0x1000, 0x4F, 0),
+            T.Obj(9, 3, "KERNEL_DATA", 0xF0029000, 4, 0x1000, 0x4F, 0),
+            T.Obj(7, 3, "KERNEL_DATA", 0xF002A000, 0xB4, 0x1000, 0, 2), *objs_extra]
+    snap = _FakeSnap(objs, bytes(ccb) if keep else None)
+    ts = [T.Transfer(i, "", "fill", [], {}, snap, offsets[i], 3, ccb_size,
+                     ctx=0xF002A000) for i in range(len(words_list))]
+    return T.Run("r", pathlib.Path("."), {}, ts, [])
+
+
+def test_command_words_cut_by_size():
+    r = _cmd_run([_command_words(0), _command_words(1, size=0x1E0, updates=1)])
+    c = T.command_words(r)
+    assert [len(x) * 4 for x in c] == [0x1C0, 0x1E0]
+    assert c[1][0x198 // 4] == 1
+
+
+def test_commands_report_counts_the_status_rules():
+    run = _cmd_run([_command_words(n) for n in range(3)])
+    text = T.commands_report([run])
+    assert "3 commands in 1 runs" in text
+    assert "size word: 0x1c0 x3" in text
+    assert "flags: 0x8 x3" in text
+    assert "dummy flag 0x20 set in 0 commands" in text
+    assert "fence == n in 3/3, status value == fence + 1 in 3/3" in text
+    assert "update count: 0x0 x3" in text
+    assert "0x3c = 0x1234" in text
+    assert "0x40: tracks n + 256" in text or "0x40: varies" in text
+
+
+def test_commands_report_notices_a_broken_rule():
+    ws = [_command_words(n) for n in range(3)]
+    ws[2][0xAC // 4 + 0xC0 // 4] = 99                # a status value not fence + 1
+    ws[1][0xA8 // 4] |= 0x20                         # a dummy command
+    text = T.commands_report([_cmd_run(ws)])
+    assert "status value == fence + 1 in 2/3" in text
+    assert "dummy flag 0x20 set in 1 commands" in text
+
+
+def test_commands_report_follows_the_stream_and_wrap():
+    run = _cmd_run([_command_words(n) for n in range(3)])
+    text = T.commands_report([run])
+    assert "steps between commands: 0x1c0 x2 (each equal to the size word)" in text
+    assert "last command ends at 0x540 of the CCB's 0x1000: no wrap" in text
+
+
+def test_commands_report_says_when_the_ccb_is_trimmed():
+    text = T.commands_report([_cmd_run([_command_words(0)], keep=False)])
+    assert "CCB not kept in any snapshot" in text
+
+
+def test_commands_report_describes_the_objects():
+    run = _cmd_run([_command_words(0)])
+    text = T.commands_report([run])
+    assert "CCB: obj 3 KERNEL_DATA size 0x1000 attribs 0x4f" in text
+    assert "context: obj 7 KERNEL_DATA size 0xb4 attribs 0x0 kind 2" in text
+    assert "context bytes: not kept" in text
+    assert "status address: obj 9 KERNEL_DATA size 0x4" in text
+
+
+def test_alloc_lines(tmp_path):
+    p = tmp_path / "bridge.txt"
+    p.write_text(
+        "   [respond] ALLOC obj 13 heap=KERNEL_DATA attribs=0000004f size=0x104c8 align=0x1000"
+        " dva=f0017000 hMap=4d41000d sync=-1\n"
+        "   [respond] ALLOC obj 14 heap=KERNEL_DATA attribs=0000004f size=0x8 align=0x20"
+        " dva=f0028000 hMap=4d41000e sync=-1\n"
+        "  -> nr=96 (SGX_SUBMITTRANSFER) insz=88 outsz=8 IN=[]\n"
+        "   [respond] ALLOC obj 15 heap=SYNCINFO attribs=00000003 size=0x4 align=0x10"
+        " dva=e0004000 hMap=4d41000f sync=16\n")
+    a = T.alloc_lines(p)
+    assert [(x.index, x.heap, x.attribs, x.size, x.before_first) for x in a] == [
+        (13, "KERNEL_DATA", 0x4F, 0x104C8, True), (14, "KERNEL_DATA", 0x4F, 8, True),
+        (15, "SYNCINFO", 3, 4, False)]
+
+
+def test_alloc_pairs_find_the_ccb_and_its_neighbour():
+    allocs = [T.Alloc(4, "KERNEL_DATA", 0x4F, 0x10420, True),
+              T.Alloc(5, "KERNEL_DATA", 0x4F, 8, True),
+              T.Alloc(13, "KERNEL_DATA", 0x4F, 0x104C8, True),
+              T.Alloc(14, "KERNEL_DATA", 0x4F, 8, True)]
+    assert T.next_alloc(allocs, 13).index == 14
+    assert T.next_alloc(allocs, 14) is None
+
+
 # --- the captures ------------------------------------------------------------------------
 
 @pytest.fixture(scope="module")
@@ -474,3 +596,9 @@ def test_template_records_agree_with_tq_meta(cap):
 def test_report(cap, lib):
     text = T.report(CAPTURE, lib)
     assert "0 mismatches" in text and "ABSENT" not in text
+
+
+def test_commands_report_on_the_capture(cap):
+    text = T.commands_report(cap)
+    assert "67 commands in 14 runs" in text
+    assert "fence == n in 67/67" in text

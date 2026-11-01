@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# The kernel CCB on the laptop: GETMISCINFO's identity and structure sizes, IDLE and POWEROFF
+# through the POWER command, a boot after a power-off; a register snapshot around each step.
+kind = "script"
+name = "edm-ccb"
+script = "ccb.sh"
+baseline = "none"

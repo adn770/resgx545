@@ -106,7 +106,7 @@ def test_constants_fold_through_or_and_and_not():
 
 
 def test_struct_fields_flow_from_loads_to_register_writes():
-    # r1 = a TA command; the TA register block starts at byte 0x238 (dword 142)
+    # r1 = a TA command; the loads start at byte 0x238 (dword 142)
     lines = listing("mov r2, #0x00000238", "imae.u r2, r2.low, #1.low, r1, u32",
                     "ldad.bpcache.fetch2 r3, [r2,#0++], drc0", "wdf drc0",
                     "str #129, r3", "str #130, r4", "ldad.bpcache r5, [r2,#1++], drc0",
@@ -130,11 +130,25 @@ def test_memory_stores_name_both_sides():
                          "st HWRENDERDETAILS+0x0d0 <- 0x0"]
 
 
-def test_pointer_fields_can_be_followed_with_typed_seeds():
-    # cmd.hw_render_details_dev_addr (dword 14) is a render-details pointer
+def test_pointer_fields_can_be_followed_with_typed_seeds(monkeypatch):
+    # a layout whose dword 14 is a render-details pointer (a stand-in: the TA command has no
+    # layout in kick3d.py) types what is loaded through it
+    monkeypatch.setitem(edmtrace.kick3d.STRUCTS, "SGXMKIF_CMDTA",
+                        [("words", 1, 14), ("hw_render_details_dev_addr", 1)])
     lines = listing("ldad.bpcache r4, [r1,+#14], drc0", "ldad.bpcache r5, [r4,+#53], drc0")
     ev = trace(lines, seeds={"r1": ("SGXMKIF_CMDTA", 0)})
     assert texts(ev)[1] == "ld hw_render_details.frag_flags"
+
+
+def test_a_structure_without_a_layout_is_traced_by_offset():
+    # no layout: the loaded word is a plain field, and nothing is typed through it
+    lines = listing("ldad.bpcache r4, [r1,+#14], drc0", "ldad.bpcache r5, [r4,+#53], drc0",
+                    "str #128, r4")
+    ev = trace(lines, seeds={"r1": ("SGXMKIF_CMDTA", 0)})
+    assert "SGXMKIF_CMDTA" not in edmtrace.kick3d.STRUCTS
+    assert texts(ev)[0] == "ld CMDTA+0x038"
+    assert texts(ev)[-1] == "W CR_VDM_START <- CMDTA+0x038"
+    assert not any("hw_render_details" in x for x in texts(ev))
 
 
 def test_unknown_structs_print_dword_indices():
@@ -226,6 +240,8 @@ def test_the_repository_glossary_loads():
 @pytest.mark.skipif(not UKERNEL.exists() or not USSE_DIS.exists(),
                     reason="needs the cut ukernel ($RESGX545_UKERNEL) and a built usse-dis")
 def test_ta_handler_loads_the_ta_registers_from_the_command():
+    assert UKERNEL.read_bytes()[:8] != b"SGX545FW", \
+        "$RESGX545_UKERNEL is the .fw container; give the cut image (00_ukernel.bin)"
     out = subprocess.run([str(USSE_DIS), str(UKERNEL)], capture_output=True, text=True,
                          check=True).stdout.splitlines()
     insns = edmtrace.parse(out)
@@ -234,7 +250,10 @@ def test_ta_handler_loads_the_ta_registers_from_the_command():
                         seeds={"r1": ("CMDTA", 0)})
     got = set(texts(ev))
     for reg, off in ((0x204, 0x238), (0x238, 0x250), (0xC90, 0x274)):
-        assert f"W {g.registers[reg]} <- {g.fields[('CMDTA', off)]}" in got
+        # the TA registers' and words' terms arrive with the TA unit; until then, offsets
+        name = g.registers.get(reg, f"{reg:#06x}")
+        field = g.fields.get(("CMDTA", off), f"CMDTA+{off:#05x}")
+        assert f"W {name} <- {field}" in got
 
 
 def test_cli_rejects_unknown_flags_and_a_trailing_seed(capsys):

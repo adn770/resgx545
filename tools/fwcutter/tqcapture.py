@@ -28,9 +28,12 @@ compare_fields), rebuilds every ARGB8888 transfer's programs from the old tables
 
     tqcapture.py trim RUN...              keep only what the chains touch (the capture script)
     tqcapture.py report DIR [LIBSRV_UM]   the per-template report of E004
+    tqcapture.py commands DIR             the commands, the CCB and the context (counts, value
+                                          classes; no program words)
 """
 from __future__ import annotations
 
+import collections
 import dataclasses
 import pathlib
 import re
@@ -53,6 +56,8 @@ class Obj:
     dva: int
     size: int
     mapped: int
+    attribs: int = 0
+    kind: int = 0                   # fakedrm.c's devmem_kind: 0 memory, 1 sync, 2 context
 
     @property
     def file(self) -> str:
@@ -60,7 +65,7 @@ class Obj:
 
 
 _OBJ = re.compile(r"\s*(\d+) heap=(\d+)\s+(\S+)\s+dva=([0-9a-f]+) size=(0x[0-9a-f]+) "
-                  r"mapped=(0x[0-9a-f]+)")
+                  r"mapped=(0x[0-9a-f]+)(?: attribs=([0-9a-f]+) kind=(\d+))?")
 
 
 def parse_objects(text: str) -> list[Obj]:
@@ -69,9 +74,9 @@ def parse_objects(text: str) -> list[Obj]:
     for line in text.splitlines():
         m = _OBJ.match(line)
         if m:
-            k, heap, name, dva, size, mapped = m.groups()
+            k, heap, name, dva, size, mapped, attribs, kind = m.groups()
             out.append(Obj(int(k), int(heap), name, int(dva, 16), int(size, 16),
-                           int(mapped, 16)))
+                           int(mapped, 16), int(attribs or "0", 16), int(kind or 0)))
     return out
 
 
@@ -151,6 +156,7 @@ class Transfer:
     offset: int = 0                 # the kick's shared offset in the CCB
     ccb: int = 0                    # the CCB's object index
     ccb_size: int = 0               # its allocation size
+    ctx: int = 0                    # the HW transfer context the request names
 
 
 @dataclasses.dataclass
@@ -341,7 +347,7 @@ def load_run(run: pathlib.Path, strides: dict[str, int] | None = None) -> Run:
                                              (strides or {}).get(name, 0)),
                                   datas.get(name, 0))
         out.append(Transfer(i, steps[i], kind, cmd, progs, s, words[3], ccbs[i],
-                            s.by_index(ccbs[i]).size))
+                            s.by_index(ccbs[i]).size, words[4]))
     return Run(run.name, run, hp, out, allocs)
 
 
@@ -922,6 +928,203 @@ def report(d: pathlib.Path, lib: bytes) -> str:
     return "\n".join(out)
 
 
+# --- the commands: the client CCB, its context, what each command holds -----------------
+
+CMD_SIZE, CMD_FLAGS = 0xA4, 0xA8        # the size and flags words (transfer §2.3)
+CMD_FENCE, CMD_UPDATES = 0x198, 0x19C   # fence_id, the update count
+CMD_STATUS = CMD_SHARED + 0xB8          # the shared block's first status entry:
+                                        # count, address, value
+CMD_DUMMY = 0x20                        # the dummy flag of the flags word
+CMD_SYNC_WORDS = (CMD_SHARED, CMD_SHARED + 0xB8)   # the sync block, up to the status entries
+
+
+@dataclasses.dataclass
+class Alloc:
+    index: int
+    heap: str
+    attribs: int
+    size: int
+    before_first: bool              # made before the run's first SGX_SUBMITTRANSFER
+
+
+def alloc_lines(bridge: pathlib.Path) -> list[Alloc]:
+    """The ALLOC lines of a bridge.txt, in order."""
+    out, seen = [], False
+    for line in pathlib.Path(bridge).read_text().splitlines():
+        if "(SGX_SUBMITTRANSFER)" in line:
+            seen = True
+        m = re.search(r"\[respond\] ALLOC obj (\d+) heap=(\S+) attribs=([0-9a-f]+) "
+                      r"size=(0x[0-9a-f]+)", line)
+        if m:
+            out.append(Alloc(int(m.group(1)), m.group(2), int(m.group(3), 16),
+                             int(m.group(4), 16), not seen))
+    return out
+
+
+def next_alloc(allocs: list[Alloc], index: int) -> Alloc | None:
+    """The allocation made right after object `index` (the next index), if any."""
+    return next((a for a in allocs if a.index == index + 1), None)
+
+
+def ccb_image(r: Run) -> bytes | None:
+    """The CCB as the last snapshot that holds it has it (trim keeps it in the last transfer
+    only; the client writes each command once and the CCB does not wrap)."""
+    for t in reversed(r.transfers):
+        try:
+            return t.snapshot.data(t.snapshot.by_index(t.ccb))
+        except KeyError:
+            continue
+    return None
+
+
+def command_words(r: Run) -> list[list[int]]:
+    """Every command of the run in full (the size word's bytes from its start), [] when the
+    CCB is not kept."""
+    img = ccb_image(r)
+    if img is None:
+        return []
+    out = []
+    for t in r.transfers:
+        o = t.offset - CMD_SHARED
+        size = struct.unpack_from("<I", img, o + CMD_SIZE)[0]
+        size = min(size, len(img) - o) & ~3
+        out.append(list(struct.unpack_from(f"<{size // 4}I", img, o)))
+    return out
+
+
+def _ranges(offs: list[int]) -> str:
+    out, i = [], 0
+    while i < len(offs):
+        j = i
+        while j + 1 < len(offs) and offs[j + 1] == offs[j] + 4:
+            j += 1
+        out.append(f"{offs[i]:#x}" if i == j else f"{offs[i]:#x}-{offs[j] + 3:#x}")
+        i = j + 1
+    return ", ".join(out)
+
+
+def _counts(values) -> str:
+    c = collections.Counter(values)
+    return ", ".join(f"{k:#x} x{n}" for k, n in sorted(c.items()))
+
+
+def _obj_text(o: Obj) -> str:
+    return f"obj {o.index} {o.name} size {o.size:#x} attribs {o.attribs:#x}"
+
+
+def _object_at(snap, dva: int) -> Obj | None:
+    return next((o for o in snap.objs if o.dva <= dva < o.dva + max(o.mapped, o.size)), None)
+
+
+def _word_class(col: list[int], ns: list[int], snaps: list) -> str:
+    if len(set(col)) == 1:
+        return f"= {col[0]:#x}"
+    ks = {(v - n) & 0xFFFFFFFF for v, n in zip(col, ns)}
+    if len(ks) == 1:
+        k = ks.pop()
+        return "tracks n" + (f" + {k}" if k else "")
+    objs = {(o.index if (o := _object_at(s, v)) else None) for v, s in zip(col, snaps)}
+    if None not in objs and len(objs) <= 3:
+        return f"addresses in obj {sorted(objs)} ({len(set(col))} distinct)"
+    return f"varies ({len(set(col))} distinct, {sum(v == 0 for v in col)} zero)"
+
+
+def commands_report(cap: list[Run]) -> str:
+    """What the closed stack's transfer commands hold: the objects behind the kick, the
+    stream of commands in the CCB, and every word of the command classed (zero, fixed,
+    tracking the command's index n in the run, an address, varying). Counts and classes
+    only; the fixed words are the command's own, not program words."""
+    ts = [t for r in cap for t in r.transfers]
+    out = [f"{len(ts)} commands in {len(cap)} runs"]
+    out.append("\nobjects (per run: the CCB the kick names, the allocation after it, the "
+               "context, the status address):")
+    cnt: dict[str, int] = collections.Counter()
+    for r in cap:
+        last = r.transfers[-1]
+        s = last.snapshot
+        ccb = s.by_index(last.ccb)
+        cnt[f"CCB: {_obj_text(ccb)}"] += 1
+        br = r.dir / "bridge.txt"
+        allocs = alloc_lines(br) if br.exists() else []
+        nxt = next_alloc(allocs, ccb.index)
+        if nxt:
+            cnt[f"allocation after the CCB: obj {nxt.index} {nxt.heap} size {nxt.size:#x} "
+                f"attribs {nxt.attribs:#x}"] += 1
+        for a in allocs:
+            if a.before_first and a.heap == "KERNEL_DATA" and a.attribs == 0x4F:
+                cnt[f"KERNEL_DATA attribs 0x4f before the first transfer: obj {a.index} "
+                    f"size {a.size:#x}"] += 1
+        ctx = _object_at(s, last.ctx)
+        if ctx:
+            kept = any((t.snapshot.dir / ctx.file).exists() for t in r.transfers)
+            cnt[f"context: {_obj_text(ctx)} kind {ctx.kind}"] += 1
+            cnt["context bytes: " + ("kept" if kept else "not kept in any snapshot "
+                                     "(trimmed)")] += 1
+        else:
+            cnt["context: not in the snapshot's objects"] += 1
+    ws = {r.name: command_words(r) for r in cap}
+    if not any(ws.values()):
+        cnt["CCB not kept in any snapshot: the commands cannot be read"] += 1
+    for r in cap:
+        for t, w in zip(r.transfers, ws[r.name]):
+            st = _object_at(t.snapshot, w[CMD_STATUS // 4 + 1]) if len(w) > CMD_STATUS // 4 \
+                else None
+            cnt["status address: " + (_obj_text(st) if st else "not in an object")] += 1
+    out += [f"  {k} (x{n})" for k, n in cnt.items()]
+    if not any(ws.values()):
+        return "\n".join(out)
+
+    out.append("\nstream in the CCB:")
+    steps, ends, fits = collections.Counter(), [], 0
+    for r in cap:
+        w = ws[r.name]
+        ts_ = r.transfers
+        ends.append((ts_[-1].offset - CMD_SHARED + len(w[-1]) * 4, ts_[-1].ccb_size))
+        for i in range(1, len(ts_)):
+            steps[ts_[i].offset - ts_[i - 1].offset] += 1
+            fits += ts_[i].offset - ts_[i - 1].offset == len(w[i - 1]) * 4
+    inc = all(b.offset > a.offset for r in cap for a, b in zip(r.transfers, r.transfers[1:]))
+    end, size = max(ends)
+    out.append(f"  first command at "
+               f"{_counts(r.transfers[0].offset - CMD_SHARED for r in cap)} (runs)")
+    out.append(f"  steps between commands: {_counts(steps)}"
+               + (" (each equal to the size word)" if fits == sum(steps.values()) else
+                  f" ({fits} of {sum(steps.values())} equal to the size word)"))
+    out.append(f"  last command ends at {end:#x} of the CCB's {size:#x}: "
+               + ("no wrap" if inc and all(e <= z for e, z in ends) else "WRAPS or overruns"))
+
+    cmds = [(r, i, w) for r in cap for i, w in enumerate(ws[r.name])]
+    out.append(f"\nper command ({len(cmds)}):")
+    out.append(f"  size word: {_counts(len(w) and w[CMD_SIZE // 4] for _, _, w in cmds)}")
+    out.append(f"  flags: {_counts(w[CMD_FLAGS // 4] for _, _, w in cmds)}")
+    out.append(f"  dummy flag {CMD_DUMMY:#x} set in "
+               f"{sum(bool(w[CMD_FLAGS // 4] & CMD_DUMMY) for _, _, w in cmds)} commands")
+    out.append(f"  update count: {_counts(w[CMD_UPDATES // 4] for _, _, w in cmds)}")
+    fence = sum(w[CMD_FENCE // 4] == i for _, i, w in cmds)
+    val = sum(w[CMD_STATUS // 4 + 2] == w[CMD_FENCE // 4] + 1 for _, _, w in cmds)
+    out.append(f"  fence == n in {fence}/{len(cmds)}, status value == fence + 1 in "
+               f"{val}/{len(cmds)} (n: the command's index in its run)")
+    out.append(f"  status entries (count at +{CMD_STATUS - CMD_SHARED:#x}): "
+               f"{_counts(w[CMD_STATUS // 4] for _, _, w in cmds)}")
+    zero = sum(not any(w[CMD_SYNC_WORDS[0] // 4:CMD_SYNC_WORDS[1] // 4]) for _, _, w in cmds)
+    out.append(f"  sync block (+0x0..+0xb7 of the shared block): all zero in {zero}/{len(cmds)}")
+
+    n = min(len(w) for _, _, w in cmds)
+    zeros, rows = [], []
+    for k in range(n):
+        col = [w[k] for _, _, w in cmds]
+        if not any(col):
+            zeros.append(k * 4)
+        else:
+            cls = _word_class(col, [i for _, i, _ in cmds],
+                              [r.transfers[i].snapshot for r, i, _ in cmds])
+            rows.append(f"  {k * 4:#x}{'' if cls.startswith('=') else ':'} {cls}")
+    out.append(f"\nwords of the first {n * 4:#x} bytes of the command, over all commands:")
+    out.append(f"  zero in every command: {_ranges(zeros)}")
+    out += rows
+    return "\n".join(out)
+
+
 def facts_cmd() -> list:
     return list(_facts().TQ_CMD)
 
@@ -940,7 +1143,10 @@ def main(argv: list[str]) -> int:
             return 1
         print(report(pathlib.Path(argv[1]), lib.read_bytes()))
         return 0
-    print("\n".join(__doc__.strip().splitlines()[-2:]), file=sys.stderr)
+    if len(argv) == 2 and argv[0] == "commands":
+        print(commands_report(load_capture(pathlib.Path(argv[1]))))
+        return 0
+    print("\n".join(__doc__.strip().splitlines()[-4:]), file=sys.stderr)
     return 2
 
 

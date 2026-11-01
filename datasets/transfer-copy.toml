@@ -1,0 +1,9 @@
+title = "script table transfer/copy"
+repo = "data"
+paths = ["transfer/copy/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-10-31"
+files = 3
+size = 31340
+sha256 = "6b01e81a8453bc1ea29f881bb5b4a4720dae367ac7908af6d95c47e52a2adb9c"
+recipe = "probes/transfer/copy.toml"

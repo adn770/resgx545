@@ -1,0 +1,15 @@
+[[term]]
+id = "G0113"
+name = "misc_info_features"
+status = "named"
+
+[[term.source]]
+term = "PVRSRV_SGX_MISCINFO_FEATURES"
+kind = "struct"
+sgx545 = "0x1c at MISC+0x04"
+meaning = "core/DDK identification returned by GETMISCINFO"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0164"
+licence = "GPL-2.0"
+evidence = "-"

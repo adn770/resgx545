@@ -1,0 +1,9 @@
+title = "script table transfer/dummy"
+repo = "data"
+paths = ["transfer/dummy/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-10-31"
+files = 3
+size = 28418
+sha256 = "62acb1ff8c292bdd4ab1485764720874af303f6eba2502bb576318817e9f598c"
+recipe = "probes/transfer/dummy.toml"

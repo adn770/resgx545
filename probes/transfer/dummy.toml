@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# Dummy transfers on the transfer queue: eleven in a row, then three behind a destination sync
+# one write short, released by PROCESS_QUEUES.
+kind = "script"
+name = "transfer-dummy"
+script = "dummy.sh"
+baseline = "none"

@@ -1,4 +1,31 @@
 [[term]]
+id = "G0114"
+name = "transfer_cmd"
+status = "named"
+
+[[term.source]]
+term = "SGXMKIF_TRANSFERCMD"
+kind = "struct"
+sgx545 = "0x4c8"
+meaning = "transfer command structure proper; holds TRANSFERCMD_SHARED"
+tier = "1"
+source = "emgd-linux"
+citation = "C0165"
+licence = "GPL-2.0 OR MIT"
+evidence = "comment says the shared block is at its start (DDK 1.5); on SGX545 1.7 it is at +0x0ac"
+
+[[term.source]]
+term = "rogue_fwif_cmd_transfer"
+kind = "struct"
+sgx545 = "~ TRANSFERCMD"
+meaning = "Rogue transfer command"
+tier = "3"
+source = "linux-imagination"
+citation = "C0166"
+licence = "GPL-2.0 OR MIT"
+evidence = "same role"
+
+[[term]]
 id = "G0025"
 name = "transfer_cmd.bif_3d_req_base"
 status = "named"
@@ -15,6 +42,22 @@ licence = "GPL-2.0"
 evidence = "register loaded"
 
 [[term]]
+id = "G0115"
+name = "transfer_cmd.cmd_size"
+status = "named"
+
+[[term.source]]
+term = "cmd_size"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x0a4"
+meaning = "command size, 64-byte multiple"
+tier = "3"
+source = "linux-imagination"
+citation = "C0167"
+licence = "GPL-2.0 OR MIT"
+evidence = "rogue_fwif_ccb_cmd_header"
+
+[[term]]
 id = "G0026"
 name = "transfer_cmd.event_pixel_pds_code"
 status = "named"
@@ -27,6 +70,49 @@ meaning = "end-of-tile PDS program"
 tier = "3"
 source = "linux-imagination"
 citation = "C0031"
+licence = "GPL-2.0 OR MIT"
+evidence = "rogue_fwif_transfer_regs"
+
+[[term]]
+id = "G0116"
+name = "transfer_cmd.flags"
+status = "named"
+
+[[term.source]]
+term = "flags"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x0a8"
+meaning = "TQ_FLAGS.* of the transfer"
+tier = "3"
+source = "linux-imagination"
+citation = "C0168"
+licence = "GPL-2.0 OR MIT"
+evidence = "rogue_fwif_cmd_transfer.flags"
+
+[[term.source]]
+term = "ui32Flags"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x0a8"
+meaning = "TQ_FLAGS.* of the transfer"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0169"
+licence = "GPL-2.0"
+evidence = "kick-side copy carries the same SGXMKIF_TQFLAGS_* word"
+
+[[term]]
+id = "G0117"
+name = "transfer_cmd.isp_render"
+status = "named"
+
+[[term.source]]
+term = "isp_render"
+kind = "field"
+sgx545 = "TRANSFERCMD+0x00c"
+meaning = "ISP render type/scan"
+tier = "3"
+source = "linux-imagination"
+citation = "C0170"
 licence = "GPL-2.0 OR MIT"
 evidence = "rogue_fwif_transfer_regs"
 
