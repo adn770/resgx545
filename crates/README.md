@@ -8,7 +8,7 @@ kernel's inputs. Everything here builds and tests offline on Linux and macOS.
 |---|---|
 | `usse-isa` | USSE decoder and encoder: the form engine, operand kinds, the SGX545 form table |
 | `pds-isa` | PDS decoder and encoder: its code kinds and form table, on `usse-isa`'s engine |
-| `sgx-tools` | CLIs: `usse-dis` and `pds-dis`, each as its C twin |
+| `sgx-tools` | CLIs: `usse-dis`, `pds-dis`, `usse-asm`, `pds-asm` (as their C twins), `sgx-asm` |
 
 The core crates are dependency-free, so that a Mesa compiler written in Rust could reuse
 them.
@@ -16,19 +16,21 @@ them.
 ## Build and test
 
 ```sh
-cargo test                       # unit tests and the cross-checks with the C decoders
+cargo test                       # unit tests and the cross-checks with the C tools
 cargo run -p sgx-tools --bin usse-dis -- <blob.bin> [max_words]
 cargo run -p sgx-tools --bin pds-dis -- <program.bin> <data_dwords>
+cargo run -p sgx-tools --bin usse-asm -- -l -o out.bin asm/transfer/use_fill.s
 cargo clippy --all-targets && cargo fmt --check
 ```
 
 `cargo run --release -p usse-isa --example decode_bench` measures decoding: text (`decode`)
 and structured (`decode_fields`, the form and its field values). Both walk only the forms of
 the word's major class (`Table`); most of the time goes into printing fields, which
-`decode_fields` avoids through `Kind::valid`. On an M-series Mac, 2026-10-23: text 344 ns,
+`decode_fields` avoids through `Kind::valid`. On an M-series Mac: text 344 ns,
 structured 118 ns per word (the linear walk with text: 367 ns).
 
-The cross-checks run the C decoders and skip without them:
+The cross-checks run the C tools and fail without them (`make -C tools/usse-dis` and
+`make -C tools/usse-asm` first); `SKIP_C_CROSSCHECK=1` skips them:
 
 - **`usse-isa`'s `tests/c_crosscheck.rs`** and `sgx-tools`' **`tests/usse_dis_cli.rs`** run
   the C decoder (`make -C tools/usse-dis`, or `$USSE_DIS_C`). They compare the `--forms`
@@ -36,6 +38,8 @@ The cross-checks run the C decoders and skip without them:
   and 1000 words matching each form), and the CLI's output for every option.
 - **`pds-isa`'s `tests/c_crosscheck.rs`** and `sgx-tools`' **`tests/pds_dis_cli.rs`** do the
   same for PDS (`tools/usse-dis/pds-dis`).
+- **`usse-isa`'s and `pds-isa`'s `tests/asm_crosscheck.rs`** and `sgx-tools`'
+  **`tests/asm_cli.rs`** run the C assemblers (`tools/usse-asm`), as below.
 
 ## Two decoders, one table
 
@@ -47,6 +51,19 @@ cross-check holds them to each other.
 
 The generated table is `#[rustfmt::skip]`; everything else is `cargo fmt`.
 
-The encoder (`usse_isa::encode`, `pds_isa::encode`) inverts the same table: it matches a text
-against each form's pattern, searches the field values in a fixed order and keeps a word only
-when the table decodes it back to the same text.
+The encoder (`usse_isa::encode`) is the C engine read step for step: the same matching, the
+same order of the value search, the same check that the table decodes the word back, so both
+pick the same word for a text. `tests/asm_crosscheck.rs` (and `pds-isa`'s) assemble the
+text of decoded words, and respelled variants of it (case, decimal numbers, blanks, without
+the disassembler's comments), with the C assembler and compare; `sgx-tools`' `asm_cli.rs` runs
+both `usse-asm`/`pds-asm` on every program in `asm/`, listings on stdin and
+broken sources, and compares binaries, listings, messages and exit status.
+
+## The assemblers
+
+The Rust tools may add what their C twins lack, behind options of their own, while everything
+the C tools do stays identical: `usse-asm --explain` and `pds-asm --explain` follow each "cannot
+assemble" with the closest forms (`usse_isa::explain`). Their sources may also use `.include`,
+`.equ` with C expressions (`sgx_tools::expr`) and `.macro` (`tools/usse-asm/README.md`,
+"Rust-only extensions"); `tests/asm_ext.rs` checks each against the same source written out by
+hand. `sgx-asm` adds sections and patch records (`tests/sgx_asm.rs`).
