@@ -1,0 +1,35 @@
+# The data lives in its own repositories (resgx545-data, resgx545-data-private); a local
+# checkout of either sits beside this one, never inside it.
+
+# Build outputs of the tools that later units add.
+/tools/usse-dis/*.o
+/tools/usse-dis/usse-dis
+/tools/usse-dis/pds-dis
+/tools/usse-dis/r2/*.dylib
+/tools/usse-dis/r2/*.so
+/tools/usse-asm/usse-asm
+/tools/usse-asm/pds-asm
+/tools/sweep/regtimeline
+/tools/sgx_fw/fwdump
+/tools/sgx_fw/*.o
+# fwcutter's output carries Imagination code: it stays local.
+/tools/fwcutter/*.fw
+
+# Throwaway development artifacts (logs, dumps, experiments); safe to delete anytime.
+/debug/*
+!/debug/.gitkeep
+
+# Python virtualenv and caches.
+/.venv
+/**/__pycache__/
+/**/.pytest_cache/
+
+# Local-only files: agent notes, Claude Code state, and the machine-specific settings of
+# the bring-up scripts (tools/bringup, a later unit).
+/AGENTS.md
+/.claude/
+/tools/bringup/local.env
+
+# Rust build outputs.
+/target/
+.DS_Store

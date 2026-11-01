@@ -1,0 +1,8 @@
+title = "this project: our own term for a thing no open source names, after our measurements"
+tier = "ours"
+kind = "project"
+licences = ["MIT"]
+root = "."
+upstream = "-"
+pin = "-"
+locator = "repository path, with a line or section"

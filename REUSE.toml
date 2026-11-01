@@ -1,0 +1,30 @@
+version = 1
+
+# Source files carry their own SPDX lines; this file covers what cannot (docs, records, git
+# metadata) and supplies the copyright for files that name only their licence. Everything of
+# ours is MIT; the firmware loader and the UAPI header, when they land, are dual-licensed with
+# the kernel's (their files say so).
+
+# Our own code and records, including the directories later units add (the ISA and probe
+# tables, the glossary, evidence, cites and datasets): fill in whatever a file does not state.
+[[annotations]]
+path = ["tools/**", "probes/**", "captures/**", "harness/**", "userspace/**", "doc/**",
+    "crates/**", "isa/**", "asm/**", "glossary/**", "evidence/**", "citations/**", "cites/**",
+    "questions/**", "datasets/**", "Cargo.lock", ".cargo/**"]
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Josep Torra"
+SPDX-License-Identifier = "MIT"
+
+# The UAPI header shared with the kernel fork.
+[[annotations]]
+path = "include/uapi/**"
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Josep Torra"
+SPDX-License-Identifier = "(GPL-2.0-only WITH Linux-syscall-note) OR MIT"
+
+# Documentation and git metadata.
+[[annotations]]
+path = ["*.md", "**.md", ".gitattributes", ".gitignore", "**/.gitignore", "debug/.gitkeep"]
+precedence = "override"
+SPDX-FileCopyrightText = "2026 Josep Torra"
+SPDX-License-Identifier = "MIT"
