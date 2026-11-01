@@ -1,0 +1,10 @@
+title = "follow-up run of the probe table pbe/pack-colours"
+repo = "data"
+paths = ["followup/pbe/pack-colours/"]
+method = "campaign runner on the laptop target (tools/campaign), the follow-up round"
+date = "2026-11-02"
+files = 54
+size = 1607744
+sha256 = "c1c41d06a0242a7fc13632db5f939fdcbb961a0a5fe5b6d09e447028d7b8be89"
+recipe = "probes/pbe/pack-colours.toml"
+needs = ["render"]

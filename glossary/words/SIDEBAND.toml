@@ -23,12 +23,28 @@ status = "inferred"
 term = "SIDEBAND.BITS8_6"
 kind = "field"
 sgx545 = "sideband [8:6] [infer]"
-meaning = "a PBE sub-format, downscale or rotation field, 0 for plain output (Rogue downscale/source_pos, AGX rotate/flip). Measured: 0 in every closed program and capture [infer]"
+meaning = "the channel a one-channel pack mode stores: in mode 8, 0 alpha, 1 red, 2 green, 3 reads as blue and 4 to 7 give the same bytes (both colours run have blue 0x40, so blue is not told apart from another source of that byte); no effect seen in the modes that store several channels, under multisampling or on several tiles. Measured: 0 in every closed program and capture [infer]"
 tier = "ours"
 source = "resgx545"
 citation = "E030, E031"
 licence = "MIT"
-evidence = "never varied; Rogue source_pos (mesa pbestate.xml:360, tier 3) has a different word layout; [HW] E030: each of 1-7 changes no pixel of an ARGB8888 triangle; [HW] E031: nor with RGB565 (pack mode 3); [infer] the rest of its reading rests on records still to come"
+evidence = "Rogue source_pos (mesa pbestate.xml:360, tier 3) has a different word layout; [HW] E030: each of 1-7 changes no pixel of an ARGB8888 triangle; [HW] E031: nor with RGB565 (pack mode 3); [HW] the sideband-field probes (pbe-sideband-fields, two runs): in pack mode 8 the stored byte is alpha at 0, red at 1, green at 2 and at 3-7 the 0x40 that is the blue of both colours, and no pixel changes under CR_ISP_MSAA modes 1 and 2, at 128x128 or in pack modes 4, 5, 9 and 26; [infer] 3 as blue, and 4-7 read as 3, are ours (Q046)"
+
+[[term]]
+id = "G1044"
+name = "SIDEBAND.DITHER"
+status = "named"
+
+[[term.source]]
+term = "dither"
+kind = "flag"
+sgx545 = "sideband bit 10"
+meaning = "enable dither"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0712"
+licence = "MIT"
+evidence = "same name and function; [HW] the sideband dither probes (pbe-sideband-dither, one run): set in pack modes 3, 4 and 5, 650 to 1484 of the 4096 stored dwords (650 to 2196 pixels, two to a dword) move one step of one or two channels, each pixel by its plain value and its place in a 4x4 cell of x and y, and in pack mode 0 nothing changes"
 
 [[term]]
 id = "G0263"

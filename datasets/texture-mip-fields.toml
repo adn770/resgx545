@@ -1,0 +1,10 @@
+title = "probe table texture/mip-fields"
+repo = "data"
+paths = ["texture/mip-fields/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 198
+size = 961714
+sha256 = "8a80704548a0d858049e1dfae41c5ef5319417d036db16d5a446594c588a7c27"
+recipe = "probes/texture/mip-fields.toml"
+needs = ["render"]

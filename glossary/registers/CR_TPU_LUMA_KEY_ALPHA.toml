@@ -7,9 +7,73 @@ status = "inferred"
 term = "CR_TPU_LUMA_KEY_ALPHA"
 kind = "register"
 sgx545 = "0x0868"
-meaning = "Register 0x0868: with the copy's luma-key mode on, the threshold in bits 15:8, the alpha written at or below it in bits 23:16 and the alpha written above it in bits 31:24; it starts at 0xff008000 (alpha 0 below 128, 0xff above). Bits 7:0 are not explained: values 64, 128 and 255 fit no threshold"
+meaning = "Register 0x0868: with the copy's luma-key mode on, a luma band and two alphas: bits 7:0 its low end and bits 15:8 its high end (the threshold), alpha_below (bits 23:16) for a luma inside the band and alpha_above (bits 31:24) outside it; it starts at 0xff008000 (a band of 0 to 128, alpha 0 inside, 0xff outside)"
 tier = "ours"
 source = "resgx545"
 citation = "E039, E038"
 licence = "MIT"
-evidence = "[HW] E039: threshold bits 15:8, alpha_below bits 23:16 and alpha_above bits 31:24 fit 74 of 77 copies in both runs; the 3 copies with bits 7:0 at 64, 128 and 255 fit none (at 128 and 255 alpha_above came at all 2048 pixels); bits 7:0 at 1 and 0x10 changed nothing; [HW] E038: the word that loads it changed no copy unless T0 bit 31 was set (102 of 102 cases left the target as the baseline); [infer] E039: the threshold and alpha fields are read from a fit, not measured directly"
+evidence = "[HW] E039: threshold bits 15:8, alpha_below bits 23:16 and alpha_above bits 31:24 fit 74 of 77 copies in both runs; the 3 copies with bits 7:0 at 64, 128 and 255 fit none (at 128 and 255 alpha_above came at all 2048 pixels); bits 7:0 at 1 and 0x10 changed nothing; [HW] E038: the word that loads it changed no copy unless T0 bit 31 was set (102 of 102 cases left the target as the baseline); [HW] the luma-key cut probes (texture-luma-cuts, one run): with bits 7:0 at each of 256 values (threshold 128) and nine values at thresholds 0 and 255, alpha_below where low <= luma <= threshold fits every pixel of 272 of 274 copies, 8 pixels 4/1024 above the low cut in the other two; [infer] E039: the threshold and alpha fields are read from a fit, not measured directly"
+
+[[term]]
+id = "G1031"
+name = "CR_TPU_LUMA_KEY_ALPHA.ABOVE"
+status = "named"
+
+[[term.source]]
+term = "CR_TPU_LUMA_KEY_ALPHA.ABOVE"
+kind = "bitfield"
+sgx545 = "0x0868[31:24]"
+meaning = "the alpha written for a luma outside the band, below or above it [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "probes/texture/luma-cuts.toml"
+licence = "MIT"
+evidence = "[HW] the luma-key cut probes (texture-luma-cuts, one run): 0xff outside the band in every copy; [infer] the field from E039's fit"
+
+[[term]]
+id = "G1032"
+name = "CR_TPU_LUMA_KEY_ALPHA.BELOW"
+status = "named"
+
+[[term.source]]
+term = "CR_TPU_LUMA_KEY_ALPHA.BELOW"
+kind = "bitfield"
+sgx545 = "0x0868[23:16]"
+meaning = "the alpha written for a luma inside the band [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "probes/texture/luma-cuts.toml"
+licence = "MIT"
+evidence = "[HW] the luma-key cut probes (texture-luma-cuts, one run): 0 inside the band in every copy; [infer] the field from E039's fit"
+
+[[term]]
+id = "G1033"
+name = "CR_TPU_LUMA_KEY_ALPHA.LOW"
+status = "named"
+
+[[term.source]]
+term = "CR_TPU_LUMA_KEY_ALPHA.LOW"
+kind = "bitfield"
+sgx545 = "0x0868[7:0]"
+meaning = "the low end of the luma band: a pixel whose luma lies from it to CR_TPU_LUMA_KEY_ALPHA.THRESHOLD takes alpha_below [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "probes/texture/luma-cuts.toml"
+licence = "MIT"
+evidence = "[HW] the luma-key cut probes (texture-luma-cuts, one run): all 256 values at threshold 128, nine at 0 and 255; the band fits every pixel of 272 of 274 copies, 8 pixels 4/1024 above the low cut in the other two; [infer] the rounding at the low cut is open"
+
+[[term]]
+id = "G1034"
+name = "CR_TPU_LUMA_KEY_ALPHA.THRESHOLD"
+status = "named"
+
+[[term.source]]
+term = "CR_TPU_LUMA_KEY_ALPHA.THRESHOLD"
+kind = "bitfield"
+sgx545 = "0x0868[15:8]"
+meaning = "the high end of the luma band; a luma above it takes alpha_above [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "probes/texture/luma-cuts.toml"
+licence = "MIT"
+evidence = "[HW] the luma-key cut probes (texture-luma-cuts, one run): at 0 every pixel takes alpha_above, at 255 none above the band; [infer] the band reading is ours"

@@ -39,10 +39,10 @@
 
 ## pbe
 
-- `Q012` (phase 6): what do pack modes 22 and 34 encode, given a single value in 727 of the triangle's 1062 pixels and backgrounds that vary from run to run? (E032)
-- `Q040` (phase 11): why does the end-of-tile emit write no pixel with EMIT2 bits 15:8 at 0x81 alone, when the other 255 values, those with bit 7 clear among them, write what 0x80 writes? (E046)
-- `Q044` (phase 11): does CR_REG_0400 bit 25 invert the stored pixel's byte 3 or its alpha, and do the register's other bits act in pack modes other than ARGB8888? (E029, E028, E031)
-- `Q046` (phase 11): do SIDEBAND bits 8:6 change what the end-of-tile emit stores under multisampling or in the pack modes that store part of a colour, when at 1 to 7 they change no pixel of an ARGB8888 or RGB565 triangle? (E030, E031, E210)
+- `Q012` (phase 6): what float formats are pack modes 22 and 34, given that both read o0 as an IEEE single (sign, NaN and exponent) and store it at some of the triangle's dwords while the rest change with the job before? (E032, E270)
+- `Q040` (phase 11): what do EMIT2 bits 15:8 count, given that 4v pixels of each tile are stored for an even v up to 0x80, odd values hang and values above 0x80 change the image, what do EMIT2 bits 6:0 and 31 select, and is bit 29 a rotation by 180 degrees or an anti-transpose? (E046, E265, E266, E267)
+- `Q044` (phase 11): what do bits 11:0 of CR_REG_0400 (0x80 as built) do, when no value of them changes a stored pixel in pack modes 0 to 3, and does bit 25 act on the other pack modes? (E029, E028, E031, E251, E268)
+- `Q046` (phase 11): do SIDEBAND bits 8:6 select the channel only in pack mode 8, or in the other one-channel modes too (24, 25 and those that store G8B8), and what do sideband bits 11 and 12 do? (E030, E031, E210, E269)
 - `Q074` (phase 11): why does a second end-of-tile emit in a tile leave the next job's image wrong, and does SIDEBAND bit 9 mark an emit that counts against a PBE tile? (E030, E130, E239, E240)
 
 ## pds
@@ -89,16 +89,17 @@
 
 ## texture
 
-- `Q007` (phase 6): what does bit 12 of the copy's texture address word read, and why does bit 14 complete with nothing written while bit 15 faults? (E036, E041)
-- `Q008` (phase 6): what do bits 7:0 of the luma-key word that the TPU loads into 0x0868 do? (E039)
-- `Q009` (phase 6): what do T0 bits 20:17 do for mipmaps, when bits 26:21 = 0x3f enable the chain only for some of their values? (E041)
-- `Q010` (phase 6): which field of the copy's T1 word is bit 28, that setting it writes opaque black whatever the source and the luma-key words? (E037, E039, E046)
+- `Q007` (phase 6): where do the copy's source, its destination and the page before the source lie, given that T2 bits 12, 13 and 14 read those buffers rather than the source's continuation? (E036, E041, E273)
+- `Q008` (phase 6): how is the luma compared at the luma key's low cut (bits 7:0 of the word that loads 0x0868), where 8 pixels in 2 of 274 copies, 4/1024 above the cut, fall the other way, and what do bits 31:16 of the alpha word and the offset's precision do? (E039, E275)
+- `Q009` (phase 6): what do T0's maximum level 15 and the LOD bias (bits 26:21) do beyond a five-level chain read with nearest filtering at whole LODs? (E041, E276)
+- `Q010` (phase 6): what clears the colour-space words between jobs, given that a copy that does not load set 0 converts with the last loaded words, and the first job of a session after hung jobs converts with zeros? (E037, E039, E046, E271)
+- `Q078` (phase 11): what do T3 bits 10, 14, 18-19 and 27-28 and T0 bit 27 select, given a copy that reads one texel, a sheared read, coordinates scaled by 2 and 4, smaller images after the source, and values of no texel? (E274)
 
 ## transfer
 
 - `Q003` (phase 4): why does a transfer render that faults on a read-only page raise no BIF-fault interrupt the host sees, and how does a host recover the EDM in place afterwards? (E021)
 - `Q004` (phase 4): what do a transfer context's flag bits 1 and 4 and a priority other than 0 do on the hardware? (E015)
-- `Q011` (phase 6): why do the plain and every-value copies differ in pixel count for xfer:0 bits 24 to 30 and =0, and xfer:7 bit 1? (E028)
+- `Q011` (phase 6): why does a copy whose background-object tag (transfer word 0) is wrong read one texel, the source's last, for every pixel, and what stores the samples of CR_ISP_MSAA mode 2 in a copy? (E028, E272)
 - `Q028` (phase 9): what does a faulting job leave wedged when the kernel does not recover, and which reset steps does the recovery need? (E024)
 
 ## usse
@@ -111,7 +112,7 @@
 - `Q051` (phase 11): what state do smoa, smbo, smr, imo and setfc set in the MOE, and what does moest return, beyond the smlsi increments the probes pinned? (E087, E097, E105, E109)
 - `Q052` (phase 11): what do .skipinv, .syncs, .nosched and the other scheduling flags change, and how many instructions after a write can a dependent instruction read the result, with or without an interlock? (E100, E104, E111, E113, E124)
 - `Q053` (phase 11): what do the global registers g18 to g20 and g39 to g43 hold in a triangle's pixel task, a vertex task and the end-of-tile task? (E085, E086)
-- `Q054` (phase 11): what do #incp, .cut and .tasks/.taske do on the emits, and which sideband bits beyond the pack mode and bit 9 does the end-of-tile emit read? (E030, E102, E106, E239)
+- `Q054` (phase 11): what do #incp, .cut and .tasks/.taske do on the emits, and what do sideband bits 11 and 12 select, beyond the pack mode, bits 8:6, 9, 10 and 13 that the end-of-tile emit reads? (E030, E102, E106, E239, E269)
 - `Q055` (phase 11): what do idf's modes other than bif, lock and release, setm and the cache-control operands do? (E088, E098, E099, E103, E107, E110, E117)
 - `Q056` (phase 11): where does a write to destination bank 6 with value 0 (printed i.) land? (E091, E147)
 

@@ -130,7 +130,8 @@ def test_the_isp_constants_are_swept_under_isp_scenes():
 
 
 # every value of a PDS data field, as flips of the job's own value: the copy's DOUTI0
-# (pds:prim:4) bits 4:0, 10:5, 16:11 and the fill's EMIT2 src0 (pds:pixev:8) bits 15:8
+# (pds:prim:4) bits 4:0, 10:5, 16:11 and bits 15:8 of the fill's pixel-event data dword 8
+# (pds:pixev:8), the end-of-render mask E046 took for EMIT2 src0 (E265)
 FIELDS = {"pds-douti-fields-copy-douti-bits4-0": ("copy", "pds:prim", 4, 0, 5),
           "pds-douti-fields-copy-douti-bits10-5": ("copy", "pds:prim", 4, 5, 6),
           "pds-douti-fields-copy-douti-bits16-11": ("copy", "pds:prim", 4, 11, 6),

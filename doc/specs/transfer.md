@@ -255,6 +255,18 @@ layer with the source rectangle's normalised coordinates per vertex (U0 V0, U1 V
 the layer count is 1 in the tag word. Result (E020): whole, offset between padded strides and
 tile-crossing rectangles exact.
 
+Other values of the copy's words, read back pixel by pixel on the laptop:
+
+- Word 0 (the background object tag) at 0, or with bit 24 or 30 flipped: every pixel is the
+  source's last texel, over both sources (E272; Q011).
+- Word 7 bit 1 (`CR_ISP_MSAA` mode 2): only the first 32 x 16 tile is written, pixel (x, y)
+  taking texel (16 + x / 2, 8 + y / 2) (E272; Q011).
+- T1 bit 28: the source read as YUYV and converted through colour-space set 0, whose words stay
+  from the last job that loaded them (E271; Q010).
+- T2 bits 12 to 14: reads of the page before the source and of the destination (E273; Q007).
+- The luma key (T0 bit 31): bits 7:0 of its third word are the low end of a luma band whose high
+  end is the threshold; a luma inside it takes alpha_below (E275; Q008).
+
 ### 4.4 Under a client page directory
 
 A context may name a page directory other than the EDM's: fills and updates through it land
@@ -266,7 +278,7 @@ page, `CID` 1, the client directory's list), wrote nothing and never completed; 
 did not answer a power-off, and a halt, a reload and a boot recovered it (recovery in place
 is phase 9).
 
-Evidence: E018, E019, E020, E021.
+Evidence: E018, E019, E020, E021, E271, E272, E273, E275.
 
 ## 5. The kernel command queue
 
@@ -314,6 +326,10 @@ Evidence: E011, E012, E017.
 - Q003: the faulting transfer of E021 brought no interrupt to the host (whose enable mask is
   `0x4000`, SW_EVENT only), and recovering without a reload is phase 9's.
 - Q004: context flag bits 1 and 4 and priorities other than 0 are not run on the hardware.
+- Q007: where the copy's buffers lie, which T2 bits 12 and 14 read.
+- Q008: the rounding at the luma key's low cut.
+- Q010: what clears the colour-space words between jobs.
+- Q011: why a wrong background-object tag reads the source's last texel.
 - The meanings of the register words without a name here (`0x042c`, `0x0400`, `0x0148`, the
   value `+0x194` adjusts) belong to the 3D state specs (phase 10); the transfer needs only
   the values fw_format.md §9.5 lists.

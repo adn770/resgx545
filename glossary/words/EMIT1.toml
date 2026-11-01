@@ -1,0 +1,31 @@
+[[term]]
+id = "G1037"
+name = "EMIT1.MAXCLIP_X"
+status = "named"
+
+[[term.source]]
+term = "maxclip_x"
+kind = "field"
+sgx545 = "emit1 src1 [12:0]"
+meaning = "clip rectangle max x (inclusive)"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0708"
+licence = "MIT"
+evidence = "same role as Rogue"
+
+[[term]]
+id = "G1038"
+name = "EMIT1.MAXCLIP_Y"
+status = "named"
+
+[[term.source]]
+term = "maxclip_y"
+kind = "field"
+sgx545 = "emit1 src1 [28:16]"
+meaning = "clip rectangle max y (inclusive)"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0709"
+licence = "MIT"
+evidence = "same role as Rogue"

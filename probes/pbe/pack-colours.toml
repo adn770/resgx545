@@ -1,0 +1,61 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# pbe pack colours: 0 sweeps, 4 probes (written by tools/usse-asm/pbe_words.py).
+# pack modes 0, 22, 26 and 34 over ten colours (Q012).
+needs = ["render"]
+
+[[probe]]
+name = "pbe-pack-colours-mode0"
+question = "what pack mode 0 stores for each of 10 shader colours"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x200
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x55555555"], ["mov.skipinv.end o0, #0x66666666"], ["mov.skipinv.end o0, #0x78787878"], ["mov.skipinv.end o0, #0x7F807F80"], ["mov.skipinv.end o0, #0x7FFF8000"], ["mov.skipinv.end o0, #0x80000000"], ["mov.skipinv.end o0, #0x00000000"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x00000000"], ["mov.skipinv.end o0, #0xFFFFFFFF"]]
+labels = ["o0 0x55555555", "o0 0x66666666", "o0 0x78787878", "o0 0x7f807f80", "o0 0x7fff8000", "o0 0x80000000", "o0 0x00000000", "o0 0x80ff8040", "o0 0x00000000", "o0 0xffffffff"]
+
+[[probe]]
+name = "pbe-pack-colours-mode22"
+question = "what pack mode 22 stores for each of 10 shader colours"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x216
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x55555555"], ["mov.skipinv.end o0, #0x66666666"], ["mov.skipinv.end o0, #0x78787878"], ["mov.skipinv.end o0, #0x7F807F80"], ["mov.skipinv.end o0, #0x7FFF8000"], ["mov.skipinv.end o0, #0x80000000"], ["mov.skipinv.end o0, #0x00000000"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x00000000"], ["mov.skipinv.end o0, #0xFFFFFFFF"]]
+labels = ["o0 0x55555555", "o0 0x66666666", "o0 0x78787878", "o0 0x7f807f80", "o0 0x7fff8000", "o0 0x80000000", "o0 0x00000000", "o0 0x80ff8040", "o0 0x00000000", "o0 0xffffffff"]
+
+[[probe]]
+name = "pbe-pack-colours-mode26"
+question = "what pack mode 26 stores for each of 10 shader colours"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x21a
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x55555555"], ["mov.skipinv.end o0, #0x66666666"], ["mov.skipinv.end o0, #0x78787878"], ["mov.skipinv.end o0, #0x7F807F80"], ["mov.skipinv.end o0, #0x7FFF8000"], ["mov.skipinv.end o0, #0x80000000"], ["mov.skipinv.end o0, #0x00000000"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x00000000"], ["mov.skipinv.end o0, #0xFFFFFFFF"]]
+labels = ["o0 0x55555555", "o0 0x66666666", "o0 0x78787878", "o0 0x7f807f80", "o0 0x7fff8000", "o0 0x80000000", "o0 0x00000000", "o0 0x80ff8040", "o0 0x00000000", "o0 0xffffffff"]
+
+[[probe]]
+name = "pbe-pack-colours-mode34"
+question = "what pack mode 34 stores for each of 10 shader colours"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x222
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x55555555"], ["mov.skipinv.end o0, #0x66666666"], ["mov.skipinv.end o0, #0x78787878"], ["mov.skipinv.end o0, #0x7F807F80"], ["mov.skipinv.end o0, #0x7FFF8000"], ["mov.skipinv.end o0, #0x80000000"], ["mov.skipinv.end o0, #0x00000000"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x00000000"], ["mov.skipinv.end o0, #0xFFFFFFFF"]]
+labels = ["o0 0x55555555", "o0 0x66666666", "o0 0x78787878", "o0 0x7f807f80", "o0 0x7fff8000", "o0 0x80000000", "o0 0x00000000", "o0 0x80ff8040", "o0 0x00000000", "o0 0xffffffff"]

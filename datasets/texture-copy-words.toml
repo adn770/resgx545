@@ -1,0 +1,10 @@
+title = "script table texture/copy-words"
+repo = "data"
+paths = ["texture/copy-words/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 4
+size = 2829661
+sha256 = "a420a184ad12fd756cac439a3bcded8c735480c4c0a80c886dd53c946c67000e"
+recipe = "probes/texture/copy-words.toml"
+needs = ["render"]

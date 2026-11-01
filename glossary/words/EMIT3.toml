@@ -1,0 +1,15 @@
+[[term]]
+id = "G1043"
+name = "EMIT3.ADDRESS"
+status = "named"
+
+[[term.source]]
+term = "address_low"
+kind = "field"
+sgx545 = "EMIT3 (emit2 src1) [31:2]"
+meaning = "surface address >> 2 (the surface base; the PBE adds the tile offset)"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0711"
+licence = "MIT"
+evidence = "SGX545 has no high part"

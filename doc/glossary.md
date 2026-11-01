@@ -494,8 +494,13 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   tiles from 0 [infer]. From `CR_TE_SCREEN.LAST_TILE_X` (ours, resgx545).
 - `CR_TE_SCREEN.LAST_TILE_Y` G0161 (0x0210 from bit 12 (width open)): y of the screen's last tile,
   in tiles from 0 [infer]. From `CR_TE_SCREEN.LAST_TILE_Y` (ours, resgx545).
-- `CR_REG_0400.INVERT_BYTE3` G0153 (0x0400[25]): inverts bits 31:24 of every pixel written [infer].
-  From `CR_REG_0400.INVERT_BYTE3` (ours, resgx545).
+- `CR_REG_0400.BITS11_0` G1030 (0x0400[11:0]): inferred reading (unconfirmed): twelve bits the
+  register takes (0x80 as the library and the closed stack write them) that change no stored pixel
+  in pack modes 0 to 3; no job here varies the stored alpha, so a field that tests it would not show
+  [infer]. From `CR_REG_0400.BITS11_0` (ours, resgx545).
+- `CR_REG_0400.INVERT_BYTE3` G0153 (0x0400[25]): inverts the alpha channel of every pixel stored:
+  bits 31:24 in ARGB8888 and ABGR8888, bits 7:0 in BGRA8888, nothing in RGB565 (the name keeps the
+  first reading, byte 3) [infer]. From `CR_REG_0400.INVERT_BYTE3` (ours, resgx545).
 - `CR_ISP_CTL.VALID_ID` G0418 (0x0414[5:0]): validation threshold: opaque and translucent objects
   whose ISP1.VALID_ID is below it are not drawn (Rogue analogue). From `ROGUE_CR_ISP_CTL_VALID_ID`
   (3, linux-imagination).
@@ -522,6 +527,15 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   `CR_DPM_3D_PAGE_COUNTS.LOCAL` (ours, resgx545).
 - `CR_DPM_3D_PAGE_COUNTS.GLOBAL` G0617 (0x0660[31:16]): global pages of the 3D's PB [infer]. From
   `CR_DPM_3D_PAGE_COUNTS.GLOBAL` (ours, resgx545).
+- `CR_TPU_LUMA_KEY_ALPHA.THRESHOLD` G1034 (0x0868[15:8]): the high end of the luma band; a luma
+  above it takes alpha_above [infer]. From `CR_TPU_LUMA_KEY_ALPHA.THRESHOLD` (ours, resgx545).
+- `CR_TPU_LUMA_KEY_ALPHA.BELOW` G1032 (0x0868[23:16]): the alpha written for a luma inside the band
+  [infer]. From `CR_TPU_LUMA_KEY_ALPHA.BELOW` (ours, resgx545).
+- `CR_TPU_LUMA_KEY_ALPHA.ABOVE` G1031 (0x0868[31:24]): the alpha written for a luma outside the
+  band, below or above it [infer]. From `CR_TPU_LUMA_KEY_ALPHA.ABOVE` (ours, resgx545).
+- `CR_TPU_LUMA_KEY_ALPHA.LOW` G1033 (0x0868[7:0]): the low end of the luma band: a pixel whose luma
+  lies from it to CR_TPU_LUMA_KEY_ALPHA.THRESHOLD takes alpha_below [infer]. From
+  `CR_TPU_LUMA_KEY_ALPHA.LOW` (ours, resgx545).
 - `CR_USE_CODE_BASE_0.ADDR` G0006 (0x0a0c[24:0]): code base address. From `_PSB_CUC_BASE_ADDR_MASK`
   (1c, emgd-psb_regs).
 - `CR_USE_CODE_BASE_0.DM` G0007 (0x0a0c[26:25]): data master that owns a USE code base. From
@@ -923,9 +937,10 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   interrupted TA: a 32-bit resume task word. Measured: TA command word; 0 in captures [infer]. From
   `CR_REG_0374` (ours, resgx545).
 - `CR_REG_0400` G0152 (0x0400): inferred reading (unconfirmed): a pixel output conversion control:
-  bit 25 inverts byte 3 of every pixel written (CR_REG_0400.INVERT_BYTE3), 0x80 the default of the
-  other conversions. Measured: per-render word from the render details or transfer command; 0x80 in
-  captures [infer]. From `CR_REG_0400` (ours, resgx545).
+  bit 25 inverts the alpha channel of every pixel stored, wherever the pack mode puts it
+  (CR_REG_0400.INVERT_BYTE3); bits 11:0 change no pixel, 0x80 the default of the other conversions.
+  Measured: per-render word from the render details or transfer command; 0x80 in captures [infer].
+  From `CR_REG_0400` (ours, resgx545).
 - `CR_ISP_RENDER` G0624 (0x0404): render control: mode, direction, resume (Rogue analogue). From
   `ROGUE_CR_ISP_RENDER` (3, linux-imagination); `ROGUE_CR_ISP_RENDER` (3, mesa-csbgen).
 - `CR_ISP_REGION_HEADER_BASE` G0420 (0x0408): address of the region headers (or fast-2D stream) the
@@ -1172,10 +1187,10 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   enters the sum as 512 times its value; it starts at 0x00210064 (weight 100, offset 33). From
   `CR_TPU_LUMA_KEY_B_OFFSET` (ours, resgx545).
 - `CR_TPU_LUMA_KEY_ALPHA` G0162 (0x0868): inferred reading (unconfirmed): Register 0x0868: with the
-  copy's luma-key mode on, the threshold in bits 15:8, the alpha written at or below it in bits
-  23:16 and the alpha written above it in bits 31:24; it starts at 0xff008000 (alpha 0 below 128,
-  0xff above). Bits 7:0 are not explained: values 64, 128 and 255 fit no threshold. From
-  `CR_TPU_LUMA_KEY_ALPHA` (ours, resgx545).
+  copy's luma-key mode on, a luma band and two alphas: bits 7:0 its low end and bits 15:8 its high
+  end (the threshold), alpha_below (bits 23:16) for a luma inside the band and alpha_above (bits
+  31:24) outside it; it starts at 0xff008000 (a band of 0 to 128, alpha 0 inside, 0xff outside).
+  From `CR_TPU_LUMA_KEY_ALPHA` (ours, resgx545).
 - `CR_USE_CTRL` G0058 (0x0a00): USSE control. From `PSB_CR_USE_CTRL` (1c, emgd-psb_regs).
 - `CR_USE_REG_0A04` G0456 (0x0a04): inferred reading (unconfirmed): the USSE's context store/resume
   state base (a 16-byte address) for an interrupted TA's vertex tasks. Measured: USSE word from the
@@ -2375,14 +2390,35 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 
 - `ISP0.TWO_SIDED` G0633 (isp0 bit 11): (Rogue) two-sided stencil testing. From `two_sided` (3,
   mesa-csbgen); `ISP0.TWO_SIDED` (ours, resgx545).
-- `T0.BITS20_19` G0273 (T0 [20:19] (twiddled textures)): with bit 18 clear, 0 keeps level 0 and 1-3
-  let mip levels be read; what the value counts is not shown [infer]. From `T0.BITS20_19` (ours,
+- `EMIT2.BIT28` G1039 (EMIT2 (emit2 src0) [28]): inferred reading (unconfirmed): set, the
+  end-of-tile emit stores the image mirrored in x, pixel (x, y) taking the plain image's (63 - x, y)
+  on a 64x64 target; on that symmetric triangle a rotation by 90 degrees gives the same image
+  [infer]. From `EMIT2.BIT28` (ours, resgx545).
+- `EMIT2.BIT29` G1040 (EMIT2 (emit2 src0) [29]): inferred reading (unconfirmed): set, the
+  end-of-tile emit stores the image rotated by 180 degrees, pixel (x, y) taking the plain image's
+  (63 - x, 63 - y) on a 64x64 target, or anti-transposed, which that symmetric triangle does not
+  tell apart [infer]. From `EMIT2.BIT29` (ours, resgx545).
+- `EMIT2.BIT30` G1041 (EMIT2 (emit2 src0) [30]): inferred reading (unconfirmed): set, the
+  end-of-tile emit stores each 32x16 tile downscaled by 2 in x and y into the tile's top-left 16x8
+  pixels, each pixel the 2x2 box average of its four (each byte summed, divided by 4, the remainder
+  dropped), and leaves the rest of the tile unwritten [infer]. From `EMIT2.BIT30` (ours, resgx545).
+- `T0.BITS20_19` G0273 (T0 [20:19] (twiddled textures)): bits 3:2 of T0.MAX_LEVEL (20:17), the
+  highest mip level read [infer]. From `T0.BITS20_19` (ours, resgx545).
+- `T0.BITS26_21` G0274 (T0 [26:21] (twiddled textures)): an LOD bias of (value - 63) / 8 added
+  before the nearest level is taken: 0x3f (the closed driver's value) is no bias, 0x22 or less keeps
+  LOD 4 at level 0 (on stride textures these bits are T0.STRIDE) [infer]. From `T0.BITS26_21` (ours,
   resgx545).
-- `T0.BITS26_21` G0274 (T0 [26:21] (twiddled textures)): with 0x3f (the closed driver's value) mip
-  levels above 0 are read; with 0-7 only level 0 (on stride textures these bits are T0.STRIDE)
-  [infer]. From `T0.BITS26_21` (ours, resgx545).
-- `T0.NO_MIPMAPS` G0278 (T0 bit 18): set: only level 0 is read, whatever the LOD; the closed driver
-  clears it for a mipmapped texture [infer]. From `T0.NO_MIPMAPS` (ours, resgx545).
+- `T0.BIT27` G1045 (T0 [27]): inferred reading (unconfirmed): changes the form texels are read in:
+  set in a copy, every pixel takes a value of no source texel (0x00000000, 0x0cf90cf9, 0x10f910f9,
+  ...) [infer]. From `T0.BIT27` (ours, resgx545).
+- `T0.NO_MIPMAPS` G0278 (T0 bit 18): inferred reading (unconfirmed): bit 1 of T0.MAX_LEVEL (20:17),
+  not a mipmap disable: values of the field with this bit set (2, 3, 6, 7, ...) read the chain up to
+  that level [infer]. From `T0.NO_MIPMAPS` (ours, resgx545).
+- `T3.BIT10` G1047 (T3 [10]): inferred reading (unconfirmed): set in a copy, every pixel reads texel
+  (0, 0); what it selects is not decoded [infer]. From `T3.BIT10` (ours, resgx545).
+- `T3.BIT14` G1048 (T3 [14]): inferred reading (unconfirmed): set in a copy, pixel (x, y) reads
+  texel (x + 32, y + x), past the source at the sentinel; what it selects is not decoded [infer].
+  From `T3.BIT14` (ours, resgx545).
 - `T3.CMP_MODE` G0642 (T3 [31:29]): the comparison of smp.pcf/.pcff16 against the reference: 0
   never, 1 less, 2 equal, 3 less or equal, 4 greater, 5 greater or equal, 6 not equal, 7 always.
   From `cmp_mode` (3, mesa-csbgen).
@@ -2454,10 +2490,15 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 
 - `DOUTI.SHADEMODEL` G0206: (Rogue) iteration shade model; placed on SGX545 as DOUTI0.SHADEMODEL.
   From `PVR_ROGUE_PDSINST_DOUT_FIELDS_DOUTI_SRC_SHADEMODEL` (3, mesa-pds-defs).
-- `EMIT2.BITS15_8` G0226 (EMIT2 (emit2 src0) [15:8]): inferred reading (unconfirmed): an emit
-  control field: bit 7 valid, bit 0 with it (0x81) an emit that writes nothing (a mask or count of
-  0). Measured: 0x80 in every closed program and capture [infer]. From `EMIT2.BITS15_8` (ours,
-  resgx545).
+- `EMIT0.MINCLIP_X` G1035 (EMIT0 (emit1 src0) [12:0]): clip rectangle min x. From `minclip_x` (3,
+  mesa-csbgen).
+- `EMIT2.BITS15_8` G0226 (EMIT2 (emit2 src0) [15:8]): inferred reading (unconfirmed): a count, in
+  units of four pixels, of what an emit stores of its 32x16 tile: 0 stores nothing, every odd value
+  hangs the job, an even value v up to 0x80 stores 4v pixels of each tile, and above 0x80 the tile
+  is stored with other values over it. Measured: 0x80 in every closed program and capture [infer].
+  From `EMIT2.BITS15_8` (ours, resgx545).
+- `EMIT3.ADDRESS` G1043 (EMIT3 (emit2 src1) [31:2]): surface address >> 2 (the surface base; the PBE
+  adds the tile offset). From `address_low` (3, mesa-csbgen).
 - `ISP1.LINE_WIDTH` G0472 (ISP1 [15:8]): inferred reading (unconfirmed): A line width: the TA copies
   ISP word 1's bits 15:8 into both bytes of the object's line-width dword; the unit is not shown by
   the object [infer]. From `ISP1.LINE_WIDTH` (ours, resgx545).
@@ -2477,6 +2518,10 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   [11:9], bits 12:3 in T0 [26:17]. From `stride` (3, mesa-csbgen).
 - `T0.MAGFILTER` G0275 (T0 [13:12]): magnification filter: 1 and 2 linear, 0 and 3 nearest. From
   `magfilter` (3, mesa-csbgen).
+- `T0.MAX_LEVEL` G1046 (T0 [20:17] (twiddled textures)): the highest mip level read: 1 to 14 cap the
+  level at that value, 0 and 15 read level 0 only; on stride textures these bits are part of
+  T0.STRIDE; it holds the older rows T0.BITS20_19 and T0.NO_MIPMAPS. From `T0.MAX_LEVEL` (ours,
+  resgx545).
 - `T0.ADDRMODE_V` G0271 (T0 [5:3]): T (V) wrap mode: 0 repeat, 1 mirror, 2 clamp, 3 mirror once.
   From `addrmode_v` (3, mesa-csbgen).
 - `T0.ADDRMODE_U` G0270 (T0 [8:6]): S (U) wrap mode: 0 repeat, 1 mirror, 2 clamp, 3 mirror once.
@@ -2490,9 +2535,19 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `T2.TEXADDR` G0282 (T2 [31:2] (TEXADDR)): texture address >> 2. From `texaddr` (3, mesa-csbgen).
 - `T3.CONVERT` G0283 (T3 [17:16]): conversion of the fetched texel: 0 none, 1 c10, 2 f16 pairs, 3
   f32 channels [infer]. From `T3.CONVERT` (ours, resgx545).
+- `T3.BITS19_18` G1049 (T3 [19:18]): inferred reading (unconfirmed): a scale of the texel
+  coordinates: bit 18 reads (2x, 2y), bit 19 (4x, 4y) in a copy [infer]. From `T3.BITS19_18` (ours,
+  resgx545).
 - `T3.DATA_SIZE` G0284 (T3 [26:23]): inferred reading (unconfirmed): Bits 26:23 of the fourth
   sampler word are named in the sampler sweep but that sweep varied only the conversion fields; the
   sampler data show nothing about this field beyond its name. From `T3.DATA_SIZE` (ours, resgx545).
+- `T3.BITS28_27` G1050 (T3 [28:27]): inferred reading (unconfirmed): in a copy, bit 27 reads a
+  half-size image packed 32 rows (8 KiB) after the source and bit 28 a quarter-size one 40 rows
+  after it, at the source's stride: a level select of strided textures [infer]. From `T3.BITS28_27`
+  (ours, resgx545).
+- `T3.BITS7_0` G1051 (T3 [7:0]): inferred reading (unconfirmed): a texel offset: bits 7:4 in x and
+  3:0 in y, each a signed 4-bit count (single bits move the read by 1, 2, 4 and -8 texels), clamped
+  at the texture's edge [infer]. From `T3.BITS7_0` (ours, resgx545).
 - `PB_OBJ.RHW` G0487 (TA object TSP data, first dword of each vertex, TA object vertex data):
   inferred reading (unconfirmed): 1/w of the vertex, before its outputs, which are stored undivided
   [infer]. From `PB_OBJ.RHW` (ours, resgx545).
@@ -2581,6 +2636,14 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   32-pixel tile columns from bit 4; width open [infer]. From `DOUTU1.BITS11_3` (ours, resgx545).
 - `DOUTU1.BITS21_12` G0221 (doutu U1 [21:12]): it places the end-of-tile write on the target (y); in
   16-pixel tile rows from bit 13; width open [infer]. From `DOUTU1.BITS21_12` (ours, resgx545).
+- `EMIT0.MINCLIP_Y` G1036 (emit1 src0 [28:16]): clip rectangle min y. From `minclip_y` (3,
+  mesa-csbgen).
+- `EMIT1.MAXCLIP_X` G1037 (emit1 src1 [12:0]): clip rectangle max x (inclusive). From `maxclip_x`
+  (3, mesa-csbgen).
+- `EMIT1.MAXCLIP_Y` G1038 (emit1 src1 [28:16]): clip rectangle max y (inclusive). From `maxclip_y`
+  (3, mesa-csbgen).
+- `EMIT2.LINE_STRIDE` G1042 (emit2 src0 [27:16]): surface line stride. From `linestride` (3,
+  mesa-csbgen).
 - `VDM_INDEX2.WORD` G0498 (index list, the first trailing word): inferred reading (unconfirmed): the
   index list's first trailing word: an instance count or split whose 0xf0000000 means none.
   Measured: 0xf0000000 in every capture [infer]. From `VDM_INDEX2.WORD` (ours, resgx545).
@@ -2615,9 +2678,11 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `REGION_HDR.STREAM` G0494 (region header word 1): the region's control-stream block, relative to
   the parameter slot; 0 for an empty region [infer]. From `REGION_HDR.STREAM` (ours, resgx545).
 - `SIDEBAND.PACKMODE` G0264 (sideband [5:0]): pixel pack format. From `packmode` (3, mesa-csbgen).
-- `SIDEBAND.BITS8_6` G0262 (sideband [8:6] [infer]): inferred reading (unconfirmed): a PBE
-  sub-format, downscale or rotation field, 0 for plain output (Rogue downscale/source_pos, AGX
-  rotate/flip). Measured: 0 in every closed program and capture [infer]. From `SIDEBAND.BITS8_6`
+- `SIDEBAND.BITS8_6` G0262 (sideband [8:6] [infer]): inferred reading (unconfirmed): the channel a
+  one-channel pack mode stores: in mode 8, 0 alpha, 1 red, 2 green, 3 reads as blue and 4 to 7 give
+  the same bytes (both colours run have blue 0x40, so blue is not told apart from another source of
+  that byte); no effect seen in the modes that store several channels, under multisampling or on
+  several tiles. Measured: 0 in every closed program and capture [infer]. From `SIDEBAND.BITS8_6`
   (ours, resgx545).
 - `SIDEBAND.MEMLAYOUT` G0263 (sideband bit 13): memory layout. From `memlayout` (3, mesa-csbgen).
 - `VIEWPORT.X_OFFSET` G0295 (state block vp0 (with PRESENCE.VIEWPORT)): x offset of the viewport
@@ -2726,6 +2791,7 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   mesa-csbgen).
 - `PRESENCE.COORD` G0490 (presence bits 14/15 (coordsize, coordfmt) [infer]): varying format word
   present. From `pres_varying_word0` (3, mesa-csbgen).
+- `SIDEBAND.DITHER` G1044 (sideband bit 10): enable dither. From `dither` (3, mesa-csbgen).
 - `SIDEBAND.BIT9` G0261 (sideband bit 9): inferred reading (unconfirmed): marks the emit that
   completes the tile: the PBE counts the emits with it against its tiles. Measured: needed for an
   emit to complete its tile: with it clear the only emit hangs; an extra emit with it set leaves the

@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# pbe pack floats: 0 sweeps, 3 probes (written by tools/usse-asm/pbe_words.py).
+# pack modes 22 and 34 over ten floats (Q012).
+needs = ["render"]
+
+[[probe]]
+name = "pbe-pack-floats-mode0"
+question = "what pack mode 0 stores for o0 at ten IEEE singles"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x200
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00000000"], ["mov.skipinv.end o0, #0x3E800000"], ["mov.skipinv.end o0, #0x3F000000"], ["mov.skipinv.end o0, #0x3F400000"], ["mov.skipinv.end o0, #0x3F800000"], ["mov.skipinv.end o0, #0x40000000"], ["mov.skipinv.end o0, #0xBF000000"], ["mov.skipinv.end o0, #0x3DCCCCCD"], ["mov.skipinv.end o0, #0x3F7F0000"], ["mov.skipinv.end o0, #0x3C000000"]]
+labels = ["o0 0x00000000", "o0 0x3e800000", "o0 0x3f000000", "o0 0x3f400000", "o0 0x3f800000", "o0 0x40000000", "o0 0xbf000000", "o0 0x3dcccccd", "o0 0x3f7f0000", "o0 0x3c000000"]
+
+[[probe]]
+name = "pbe-pack-floats-mode22"
+question = "what pack mode 22 stores for o0 at ten IEEE singles"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x216
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00000000"], ["mov.skipinv.end o0, #0x3E800000"], ["mov.skipinv.end o0, #0x3F000000"], ["mov.skipinv.end o0, #0x3F400000"], ["mov.skipinv.end o0, #0x3F800000"], ["mov.skipinv.end o0, #0x40000000"], ["mov.skipinv.end o0, #0xBF000000"], ["mov.skipinv.end o0, #0x3DCCCCCD"], ["mov.skipinv.end o0, #0x3F7F0000"], ["mov.skipinv.end o0, #0x3C000000"]]
+labels = ["o0 0x00000000", "o0 0x3e800000", "o0 0x3f000000", "o0 0x3f400000", "o0 0x3f800000", "o0 0x40000000", "o0 0xbf000000", "o0 0x3dcccccd", "o0 0x3f7f0000", "o0 0x3c000000"]
+
+[[probe]]
+name = "pbe-pack-floats-mode34"
+question = "what pack mode 34 stores for o0 at ten IEEE singles"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x222
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x00000000"], ["mov.skipinv.end o0, #0x3E800000"], ["mov.skipinv.end o0, #0x3F000000"], ["mov.skipinv.end o0, #0x3F400000"], ["mov.skipinv.end o0, #0x3F800000"], ["mov.skipinv.end o0, #0x40000000"], ["mov.skipinv.end o0, #0xBF000000"], ["mov.skipinv.end o0, #0x3DCCCCCD"], ["mov.skipinv.end o0, #0x3F7F0000"], ["mov.skipinv.end o0, #0x3C000000"]]
+labels = ["o0 0x00000000", "o0 0x3e800000", "o0 0x3f000000", "o0 0x3f400000", "o0 0x3f800000", "o0 0x40000000", "o0 0xbf000000", "o0 0x3dcccccd", "o0 0x3f7f0000", "o0 0x3c000000"]

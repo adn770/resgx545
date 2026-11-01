@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# texture fetch size: 0 sweeps, 3 probes (written by tools/usse-asm/tex_words.py).
+# T3 bits 26:23 at 8 and 15 (E242).
+needs = ["render"]
+
+[[probe]]
+name = "texture-fetch-size-pa1"
+question = "pa1 after two fetches, the first's T3 26:23 at 1, 8 and 15"
+source = "pds_tex2.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "T"]
+labels = ["first as fetched, 26:23 = 1", "first as fetched, 26:23 = 8", "first as fetched, 26:23 = 15", "first as f32 channels, 26:23 = 8"]
+cases = [[0x6012201, 0x46012201, 0x800800], [0x6012201, 0x46012201, 0x4000800], [0x6012201, 0x46012201, 0x7800800], [0x6012201, 0x46012201, 0x4030800]]
+
+[[probe]]
+name = "texture-fetch-size-pa8"
+question = "pa8 after two fetches, the first's T3 26:23 at 1, 8 and 15"
+source = "pds_tex2.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa8.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "T"]
+labels = ["first as fetched, 26:23 = 1", "first as fetched, 26:23 = 8", "first as fetched, 26:23 = 15", "first as f32 channels, 26:23 = 8"]
+cases = [[0x6012201, 0x46012201, 0x800800], [0x6012201, 0x46012201, 0x4000800], [0x6012201, 0x46012201, 0x7800800], [0x6012201, 0x46012201, 0x4030800]]
+
+[[probe]]
+name = "texture-fetch-size-pa15"
+question = "pa15 after two fetches, the first's T3 26:23 at 1, 8 and 15"
+source = "pds_tex2.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa15.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 2
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "T"]
+labels = ["first as fetched, 26:23 = 1", "first as fetched, 26:23 = 8", "first as fetched, 26:23 = 15", "first as f32 channels, 26:23 = 8"]
+cases = [[0x6012201, 0x46012201, 0x800800], [0x6012201, 0x46012201, 0x4000800], [0x6012201, 0x46012201, 0x7800800], [0x6012201, 0x46012201, 0x4030800]]

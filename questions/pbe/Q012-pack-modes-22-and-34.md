@@ -1,34 +1,27 @@
 +++
 id = "Q012"
-question = "what do pack modes 22 and 34 encode, given a single value in 727 of the triangle's 1062 pixels and backgrounds that vary from run to run?"
+question = "what float formats are pack modes 22 and 34, given that both read o0 as an IEEE single (sign, NaN and exponent) and store it at some of the triangle's dwords while the rest change with the job before?"
 unit = "pbe"
 phase = 6
-evidence = ["E032"]
+evidence = ["E032", "E270"]
 terms = ["SIDEBAND.PACKMODE", "PACKMODE"]
 +++
 
-With the 64x64 triangle (o0 0x80ff8040 over the background 0xff203040), pack mode 22 writes
-0x00000088 and mode 34 writes 0x60800000 in 727 dwords, in both runs (E032). All 727 pixels lie
-inside the triangle (1062 pixels in the plain ARGB8888 image). One value per pixel; no dword
-holds an interleaved pair.
+Over seven coded colours and ten singles (E270), read at the triangle's pixels, no stored bit of
+either mode copies a bit of o0 (mode 26, the control, gives R >> 3, G >> 3 and B >> 2), and both
+follow o0 as a float. At 727 of the triangle's pixels (665 or 730 in a few cases) mode 22 holds
+0x00000088 for zero, negative and NaN values, 0xc0000088 for positive values from 1/128 to 2.0
+and 0xfff00088 for values of 1e13 and up; mode 34 holds 0x60800000 with bits 31:20 of the single
+in bits 11:0 for the large values that are not NaN (the NaN 0x7f807f80 gives 0x7f9), and at 215
+others (149 at 1/128 and 2.0) bits 30:20 of the single in bits 21:11 for positive values from
+1/128 to 2.0. So the first part of the old question (one value whatever the colour, E032) is
+narrowed: the value depends on o0 as a float, E032's single colour was a negative one.
 
-The rest of the target is not stable. Mode 22 first run: 0x08800088 in 1323 dwords, 0x08800000 in
-1269, 0x088ffc00 in 341 and 436 other; follow-up run: 0x08800000 in 1560, 0x08800088 in 1322,
-0x00000000 in 307 and 180 other; 531 of 4096 dwords differ between runs. Mode 34: 0x60800304 and
-0x00000304 and 0x00000000 and 546 other values in the first run, a different mix in the follow-up
-run, 602 of 4096 dwords differ. The stable part of modes 22 and 34 is the 727 pixels.
+What is open: the formats themselves (the meaning of the constant bits 0x88 and 0x60800000, why a
+group of 727 and one of 215 dwords, which dword holds which pixel), and where the varying rest
+comes from; a format whose other channels come from o1 to o3, which these shaders leave unwritten,
+would explain it.
 
-Neither value matches the luma or chroma of the triangle colour or of the background in studio
-or full range (BT.601 luma 152 or 159 for the triangle, 55 or 45 for the background), or any
-channel's top bits (mode 26 stores R >> 3 and G >> 3, and 22 and 34 do not follow it).
-
-Open: what the two modes encode; why 727 and not 1062 pixels hold the value (the other 335
-triangle pixels may hold a value that is not in the stable set); whether the backgrounds'
-variation is state left by an earlier job. Only one triangle colour and one background colour
-ran, so a rule that depends on colour is not excluded.
-
-To settle it: run both modes with five or more distinct triangle colours (single channels at 0,
-0x80, 0xff, and a grey ramp), read every pixel of the target in both runs, and look for the
-fields that move with a channel; run the target buffer filled with a known pattern first,
-to tell a partial write from leftover state; locate the 727 pixels (and the 335) by position
-against the triangle's coverage.
+To settle it: the shader writing o0 to o3 with four different singles (and each alone set), every
+pixel read back, both modes; a ramp of singles over x (o0 = x / 64) to place each dword's value by
+pixel.

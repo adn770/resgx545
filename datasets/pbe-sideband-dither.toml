@@ -1,0 +1,10 @@
+title = "probe table pbe/sideband-dither"
+repo = "data"
+paths = ["pbe/sideband-dither/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 38
+size = 726788
+sha256 = "1a2f618e6eb1260ab2779ac6d5237b95d4b2f07afc77cef1f45cd6b24ad5a072"
+recipe = "probes/pbe/sideband-dither.toml"
+needs = ["render"]

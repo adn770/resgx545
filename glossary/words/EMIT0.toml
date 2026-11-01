@@ -1,0 +1,31 @@
+[[term]]
+id = "G1035"
+name = "EMIT0.MINCLIP_X"
+status = "named"
+
+[[term.source]]
+term = "minclip_x"
+kind = "field"
+sgx545 = "EMIT0 (emit1 src0) [12:0]"
+meaning = "clip rectangle min x"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0706"
+licence = "MIT"
+evidence = "sibling of EMIT0.MINCLIP_Y"
+
+[[term]]
+id = "G1036"
+name = "EMIT0.MINCLIP_Y"
+status = "named"
+
+[[term.source]]
+term = "minclip_y"
+kind = "field"
+sgx545 = "emit1 src0 [28:16]"
+meaning = "clip rectangle min y"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0707"
+licence = "MIT"
+evidence = "same role as Rogue"

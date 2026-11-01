@@ -1,0 +1,10 @@
+title = "sweep table texture/sampler-bits"
+repo = "data"
+paths = ["texture/sampler-bits/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 7
+size = 4922192
+sha256 = "198660baca86920f8fd8767e61c6a2b0e9224d4d35a42ed1b6a8f1504d83b0ba"
+recipe = "probes/texture/sampler-bits.toml"
+needs = ["render"]

@@ -1,0 +1,10 @@
+title = "follow-up run of the probe table pbe/reg-0400-modes"
+repo = "data"
+paths = ["followup/pbe/reg-0400-modes/"]
+method = "campaign runner on the laptop target (tools/campaign), the follow-up round"
+date = "2026-11-02"
+files = 78
+size = 2560041
+sha256 = "6836044a3299d72a9a2c1149644298e8b54e5f9a77de1a3227ff016c4a35398e"
+recipe = "probes/pbe/reg-0400-modes.toml"
+needs = ["render"]

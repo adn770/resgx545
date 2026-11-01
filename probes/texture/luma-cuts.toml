@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# texture luma cuts: 0 sweeps, 0 probes, hand-run script.
+# the luma key's low byte at all 256 values (Q008).
+name = "texture-luma-cuts"
+kind = "script"
+needs = ["render"]
+script = "luma-cuts.sh"

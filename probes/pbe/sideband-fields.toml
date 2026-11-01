@@ -1,0 +1,959 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# pbe sideband fields: 0 sweeps, 67 probes (written by tools/usse-asm/pbe_words.py).
+# SIDEBAND bits 8:6 under MSAA, partial modes, 128x128 (Q046).
+needs = ["render"]
+
+[[probe]]
+name = "pbe-sideband-fields-msaa1-0200"
+question = "what sideband 0x200 stores under CR_ISP_MSAA mode 1"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x200
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cmd = { 10 = 0xeaa26e26, 16 = 0xeaa26e26, 13 = 0x80000001 }
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 0, MSAA mode 1"]
+
+[[probe]]
+name = "pbe-sideband-fields-msaa2-0200"
+question = "what sideband 0x200 stores under CR_ISP_MSAA mode 2"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x200
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cmd = { 10 = 0xeaa26e26, 16 = 0xeaa26e26, 13 = 0x80000002 }
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 0, MSAA mode 2"]
+
+[[probe]]
+name = "pbe-sideband-fields-128-0200"
+question = "what sideband 0x200 stores on a 128x128 target"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x200
+size = [0x80, 0x80]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 0, 128x128"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode4-0204"
+question = "what sideband 0x204 stores (pack mode 4, bits 8:6 = 0)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x204
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 0, pack mode 4"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode5-0205"
+question = "what sideband 0x205 stores (pack mode 5, bits 8:6 = 0)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x205
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 0, pack mode 5"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode8-0208"
+question = "what sideband 0x208 stores (pack mode 8, bits 8:6 = 0)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x208
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 0, pack mode 8"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode9-0209"
+question = "what sideband 0x209 stores (pack mode 9, bits 8:6 = 0)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x209
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 0, pack mode 9"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode26-021a"
+question = "what sideband 0x21a stores (pack mode 26, bits 8:6 = 0)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x21a
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 0, pack mode 26"]
+
+[[probe]]
+name = "pbe-sideband-fields-msaa1-0240"
+question = "what sideband 0x240 stores under CR_ISP_MSAA mode 1"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x240
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cmd = { 10 = 0xeaa26e26, 16 = 0xeaa26e26, 13 = 0x80000001 }
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 1, MSAA mode 1"]
+
+[[probe]]
+name = "pbe-sideband-fields-msaa2-0240"
+question = "what sideband 0x240 stores under CR_ISP_MSAA mode 2"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x240
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cmd = { 10 = 0xeaa26e26, 16 = 0xeaa26e26, 13 = 0x80000002 }
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 1, MSAA mode 2"]
+
+[[probe]]
+name = "pbe-sideband-fields-128-0240"
+question = "what sideband 0x240 stores on a 128x128 target"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x240
+size = [0x80, 0x80]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 1, 128x128"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode4-0244"
+question = "what sideband 0x244 stores (pack mode 4, bits 8:6 = 1)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x244
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 1, pack mode 4"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode5-0245"
+question = "what sideband 0x245 stores (pack mode 5, bits 8:6 = 1)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x245
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 1, pack mode 5"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode8-0248"
+question = "what sideband 0x248 stores (pack mode 8, bits 8:6 = 1)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x248
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 1, pack mode 8"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode9-0249"
+question = "what sideband 0x249 stores (pack mode 9, bits 8:6 = 1)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x249
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 1, pack mode 9"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode26-025a"
+question = "what sideband 0x25a stores (pack mode 26, bits 8:6 = 1)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x25a
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 1, pack mode 26"]
+
+[[probe]]
+name = "pbe-sideband-fields-msaa1-0280"
+question = "what sideband 0x280 stores under CR_ISP_MSAA mode 1"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x280
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cmd = { 10 = 0xeaa26e26, 16 = 0xeaa26e26, 13 = 0x80000001 }
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 2, MSAA mode 1"]
+
+[[probe]]
+name = "pbe-sideband-fields-msaa2-0280"
+question = "what sideband 0x280 stores under CR_ISP_MSAA mode 2"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x280
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cmd = { 10 = 0xeaa26e26, 16 = 0xeaa26e26, 13 = 0x80000002 }
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 2, MSAA mode 2"]
+
+[[probe]]
+name = "pbe-sideband-fields-128-0280"
+question = "what sideband 0x280 stores on a 128x128 target"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x280
+size = [0x80, 0x80]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 2, 128x128"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode4-0284"
+question = "what sideband 0x284 stores (pack mode 4, bits 8:6 = 2)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x284
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 2, pack mode 4"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode5-0285"
+question = "what sideband 0x285 stores (pack mode 5, bits 8:6 = 2)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x285
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 2, pack mode 5"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode8-0288"
+question = "what sideband 0x288 stores (pack mode 8, bits 8:6 = 2)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x288
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 2, pack mode 8"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode9-0289"
+question = "what sideband 0x289 stores (pack mode 9, bits 8:6 = 2)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x289
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 2, pack mode 9"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode26-029a"
+question = "what sideband 0x29a stores (pack mode 26, bits 8:6 = 2)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x29a
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 2, pack mode 26"]
+
+[[probe]]
+name = "pbe-sideband-fields-msaa1-02c0"
+question = "what sideband 0x2c0 stores under CR_ISP_MSAA mode 1"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x2c0
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cmd = { 10 = 0xeaa26e26, 16 = 0xeaa26e26, 13 = 0x80000001 }
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 3, MSAA mode 1"]
+
+[[probe]]
+name = "pbe-sideband-fields-msaa2-02c0"
+question = "what sideband 0x2c0 stores under CR_ISP_MSAA mode 2"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x2c0
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cmd = { 10 = 0xeaa26e26, 16 = 0xeaa26e26, 13 = 0x80000002 }
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 3, MSAA mode 2"]
+
+[[probe]]
+name = "pbe-sideband-fields-128-02c0"
+question = "what sideband 0x2c0 stores on a 128x128 target"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x2c0
+size = [0x80, 0x80]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 3, 128x128"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode4-02c4"
+question = "what sideband 0x2c4 stores (pack mode 4, bits 8:6 = 3)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x2c4
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 3, pack mode 4"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode5-02c5"
+question = "what sideband 0x2c5 stores (pack mode 5, bits 8:6 = 3)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x2c5
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 3, pack mode 5"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode8-02c8"
+question = "what sideband 0x2c8 stores (pack mode 8, bits 8:6 = 3)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x2c8
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 3, pack mode 8"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode9-02c9"
+question = "what sideband 0x2c9 stores (pack mode 9, bits 8:6 = 3)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x2c9
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 3, pack mode 9"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode26-02da"
+question = "what sideband 0x2da stores (pack mode 26, bits 8:6 = 3)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x2da
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 3, pack mode 26"]
+
+[[probe]]
+name = "pbe-sideband-fields-msaa1-0300"
+question = "what sideband 0x300 stores under CR_ISP_MSAA mode 1"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x300
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cmd = { 10 = 0xeaa26e26, 16 = 0xeaa26e26, 13 = 0x80000001 }
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 4, MSAA mode 1"]
+
+[[probe]]
+name = "pbe-sideband-fields-msaa2-0300"
+question = "what sideband 0x300 stores under CR_ISP_MSAA mode 2"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x300
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cmd = { 10 = 0xeaa26e26, 16 = 0xeaa26e26, 13 = 0x80000002 }
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 4, MSAA mode 2"]
+
+[[probe]]
+name = "pbe-sideband-fields-128-0300"
+question = "what sideband 0x300 stores on a 128x128 target"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x300
+size = [0x80, 0x80]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 4, 128x128"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode4-0304"
+question = "what sideband 0x304 stores (pack mode 4, bits 8:6 = 4)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x304
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 4, pack mode 4"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode5-0305"
+question = "what sideband 0x305 stores (pack mode 5, bits 8:6 = 4)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x305
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 4, pack mode 5"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode8-0308"
+question = "what sideband 0x308 stores (pack mode 8, bits 8:6 = 4)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x308
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 4, pack mode 8"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode9-0309"
+question = "what sideband 0x309 stores (pack mode 9, bits 8:6 = 4)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x309
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 4, pack mode 9"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode26-031a"
+question = "what sideband 0x31a stores (pack mode 26, bits 8:6 = 4)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x31a
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 4, pack mode 26"]
+
+[[probe]]
+name = "pbe-sideband-fields-msaa1-0340"
+question = "what sideband 0x340 stores under CR_ISP_MSAA mode 1"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x340
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cmd = { 10 = 0xeaa26e26, 16 = 0xeaa26e26, 13 = 0x80000001 }
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 5, MSAA mode 1"]
+
+[[probe]]
+name = "pbe-sideband-fields-msaa2-0340"
+question = "what sideband 0x340 stores under CR_ISP_MSAA mode 2"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x340
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cmd = { 10 = 0xeaa26e26, 16 = 0xeaa26e26, 13 = 0x80000002 }
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 5, MSAA mode 2"]
+
+[[probe]]
+name = "pbe-sideband-fields-128-0340"
+question = "what sideband 0x340 stores on a 128x128 target"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x340
+size = [0x80, 0x80]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 5, 128x128"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode4-0344"
+question = "what sideband 0x344 stores (pack mode 4, bits 8:6 = 5)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x344
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 5, pack mode 4"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode5-0345"
+question = "what sideband 0x345 stores (pack mode 5, bits 8:6 = 5)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x345
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 5, pack mode 5"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode8-0348"
+question = "what sideband 0x348 stores (pack mode 8, bits 8:6 = 5)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x348
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 5, pack mode 8"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode9-0349"
+question = "what sideband 0x349 stores (pack mode 9, bits 8:6 = 5)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x349
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 5, pack mode 9"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode26-035a"
+question = "what sideband 0x35a stores (pack mode 26, bits 8:6 = 5)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x35a
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 5, pack mode 26"]
+
+[[probe]]
+name = "pbe-sideband-fields-msaa1-0380"
+question = "what sideband 0x380 stores under CR_ISP_MSAA mode 1"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x380
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cmd = { 10 = 0xeaa26e26, 16 = 0xeaa26e26, 13 = 0x80000001 }
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 6, MSAA mode 1"]
+
+[[probe]]
+name = "pbe-sideband-fields-msaa2-0380"
+question = "what sideband 0x380 stores under CR_ISP_MSAA mode 2"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x380
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cmd = { 10 = 0xeaa26e26, 16 = 0xeaa26e26, 13 = 0x80000002 }
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 6, MSAA mode 2"]
+
+[[probe]]
+name = "pbe-sideband-fields-128-0380"
+question = "what sideband 0x380 stores on a 128x128 target"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x380
+size = [0x80, 0x80]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 6, 128x128"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode4-0384"
+question = "what sideband 0x384 stores (pack mode 4, bits 8:6 = 6)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x384
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 6, pack mode 4"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode5-0385"
+question = "what sideband 0x385 stores (pack mode 5, bits 8:6 = 6)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x385
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 6, pack mode 5"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode8-0388"
+question = "what sideband 0x388 stores (pack mode 8, bits 8:6 = 6)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x388
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 6, pack mode 8"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode9-0389"
+question = "what sideband 0x389 stores (pack mode 9, bits 8:6 = 6)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x389
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 6, pack mode 9"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode26-039a"
+question = "what sideband 0x39a stores (pack mode 26, bits 8:6 = 6)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x39a
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 6, pack mode 26"]
+
+[[probe]]
+name = "pbe-sideband-fields-msaa1-03c0"
+question = "what sideband 0x3c0 stores under CR_ISP_MSAA mode 1"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x3c0
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cmd = { 10 = 0xeaa26e26, 16 = 0xeaa26e26, 13 = 0x80000001 }
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 7, MSAA mode 1"]
+
+[[probe]]
+name = "pbe-sideband-fields-msaa2-03c0"
+question = "what sideband 0x3c0 stores under CR_ISP_MSAA mode 2"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x3c0
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cmd = { 10 = 0xeaa26e26, 16 = 0xeaa26e26, 13 = 0x80000002 }
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 7, MSAA mode 2"]
+
+[[probe]]
+name = "pbe-sideband-fields-128-03c0"
+question = "what sideband 0x3c0 stores on a 128x128 target"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x3c0
+size = [0x80, 0x80]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 7, 128x128"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode4-03c4"
+question = "what sideband 0x3c4 stores (pack mode 4, bits 8:6 = 7)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x3c4
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 7, pack mode 4"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode5-03c5"
+question = "what sideband 0x3c5 stores (pack mode 5, bits 8:6 = 7)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x3c5
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 7, pack mode 5"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode8-03c8"
+question = "what sideband 0x3c8 stores (pack mode 8, bits 8:6 = 7)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x3c8
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 7, pack mode 8"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode9-03c9"
+question = "what sideband 0x3c9 stores (pack mode 9, bits 8:6 = 7)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x3c9
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 7, pack mode 9"]
+
+[[probe]]
+name = "pbe-sideband-fields-mode26-03da"
+question = "what sideband 0x3da stores (pack mode 26, bits 8:6 = 7)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x3da
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bits 8:6 = 7, pack mode 26"]
+
+[[probe]]
+name = "pbe-sideband-fields-bit10"
+question = "what sideband 0x600 stores (bit 10)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x600
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bit 10"]
+
+[[probe]]
+name = "pbe-sideband-fields-bit11"
+question = "what sideband 0xa00 stores (bit 11)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0xa00
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bit 11"]
+
+[[probe]]
+name = "pbe-sideband-fields-bit12"
+question = "what sideband 0x1200 stores (bit 12)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x1200
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["bit 12"]

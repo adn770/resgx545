@@ -1,0 +1,89 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# pbe sideband dither: 0 sweeps, 6 probes (written by tools/usse-asm/pbe_words.py).
+# SIDEBAND bit 10 in pack modes 3, 4 and 5.
+needs = ["render"]
+
+[[probe]]
+name = "pbe-sideband-dither-0203"
+question = "what sideband 0x203 stores (pack mode 3, bit 10 clear)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x203
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80818283"], ["mov.skipinv.end o0, #0xFF7F7F7F"]]
+labels = ["o0 0x80ff8040", "o0 0x80818283", "o0 0xff7f7f7f"]
+
+[[probe]]
+name = "pbe-sideband-dither-0603"
+question = "what sideband 0x603 stores (pack mode 3, bit 10 set)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x603
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80818283"], ["mov.skipinv.end o0, #0xFF7F7F7F"]]
+labels = ["o0 0x80ff8040", "o0 0x80818283", "o0 0xff7f7f7f"]
+
+[[probe]]
+name = "pbe-sideband-dither-0204"
+question = "what sideband 0x204 stores (pack mode 4, bit 10 clear)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x204
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80818283"], ["mov.skipinv.end o0, #0xFF7F7F7F"]]
+labels = ["o0 0x80ff8040", "o0 0x80818283", "o0 0xff7f7f7f"]
+
+[[probe]]
+name = "pbe-sideband-dither-0604"
+question = "what sideband 0x604 stores (pack mode 4, bit 10 set)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x604
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80818283"], ["mov.skipinv.end o0, #0xFF7F7F7F"]]
+labels = ["o0 0x80ff8040", "o0 0x80818283", "o0 0xff7f7f7f"]
+
+[[probe]]
+name = "pbe-sideband-dither-0205"
+question = "what sideband 0x205 stores (pack mode 5, bit 10 clear)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x205
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80818283"], ["mov.skipinv.end o0, #0xFF7F7F7F"]]
+labels = ["o0 0x80ff8040", "o0 0x80818283", "o0 0xff7f7f7f"]
+
+[[probe]]
+name = "pbe-sideband-dither-0605"
+question = "what sideband 0x605 stores (pack mode 5, bit 10 set)"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x605
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+cases = [["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80818283"], ["mov.skipinv.end o0, #0xFF7F7F7F"]]
+labels = ["o0 0x80ff8040", "o0 0x80818283", "o0 0xff7f7f7f"]

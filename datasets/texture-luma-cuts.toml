@@ -1,0 +1,10 @@
+title = "script table texture/luma-cuts"
+repo = "data"
+paths = ["texture/luma-cuts/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 4
+size = 6316444
+sha256 = "05ddbb4923b3e2fee74d8da73f8e607f0b20e1cd98a569b0076b5ff309d6cfc5"
+recipe = "probes/texture/luma-cuts.toml"
+needs = ["render"]

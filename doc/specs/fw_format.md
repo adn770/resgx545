@@ -532,6 +532,15 @@ closed OpenVG stack pads each surface line to 8 pixels; it fills XRGB8888 and RG
 with the same ARGB8888 colour immediate and the sidebands `0x200` and `0x203`, formats this
 table does not cover.
 
+What the PBE makes of these words, measured by varying each in a triangle's end-of-tile program
+(3d.md §12.3): `XMIN`/`YMIN` and `XMAX`/`YMAX` bound the stored rectangle, inclusive, in bits
+12:0 and 28:16 (E267); `COUNT` (`0x80`) is the number of four-pixel units stored of each 32 x 16
+tile, an even value below it storing part of the tile and an odd one hanging the job (E266);
+`LINESTRIDE` + 1 is the row pitch in 8-byte units and `FBADDR` a byte address whose bits 1:0
+are ignored (E267); EMIT2 bits 6:0, the bits below `COUNT`, must stay 0, since they move where
+the colours are read from (E267; Q040). Sideband `0x203` stores RGB565 (E030); bit 10 added
+dithers it (E269).
+
 ### 9.7 Verification
 
 `tools/fwcutter/test_fwload.py` cuts both libraries, places the templates at the addresses of the
@@ -678,6 +687,11 @@ computed from that surface and the PBE words from the destination rectangle, the
 rebuild every captured copy. Both are inputs of these parameters. The captures do not show
 how the closed stack selects the rectangle within the surface; that is in the background
 object, which stays driver code, as for the fill.
+
+Other values of the texture words, measured in a copy on the laptop: T1 bit 28 is `TEXFORMAT`'s
+top bit, and flipped the copy reads the source as YUYV (`TEXFORMAT` 28) through colour-space set
+0 (E271); T2 is an address in every bit from 2 up, its bits 12 and 14 reading the buffers around
+the source (E273); in T3 `0xa0800000` bits 7:0 are a texel offset, left at 0 (E274).
 
 ### 10.5 The reference API
 

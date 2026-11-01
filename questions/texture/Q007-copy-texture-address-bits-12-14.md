@@ -1,36 +1,23 @@
 +++
 id = "Q007"
-question = "what does bit 12 of the copy's texture address word read, and why does bit 14 complete with nothing written while bit 15 faults?"
+question = "where do the copy's source, its destination and the page before the source lie, given that T2 bits 12, 13 and 14 read those buffers rather than the source's continuation?"
 unit = "texture"
 phase = 6
-evidence = ["E036", "E041"]
+evidence = ["E036", "E041", "E273"]
 terms = ["T2.TEXADDR"]
 +++
 
-The copy's source texture address is the word T2 (E036). Flipping bits 2 to 11 and bit 13 moves
-the first source texel read by 2^n bytes, as an address would. Three bits do not follow that.
+T2 is an address in every bit from 2 up (E036, E273). Its odd images come from the memory around
+the source (E273): flipping bit 12 reads the 4 KiB before the source, zeros and a few words such
+as 0x3f800000, so the source's address has bit 12 set; with the source moved 4 rows down the read
+starts 4096 bytes before the moved source; bit 14, and bit 13 with a source of 16 rows, read the
+destination's sentinel and write it back, which is the "nothing written" of E036, and bit 14 with
+a 16-row source faults. So the original question is answered: bit 12 is an address bit read from
+another page, bit 14 copies the destination onto itself.
 
-Bit 12 (`tex:2^=0x1000`) is an offset of 4096 bytes, which is inside the 8192-byte source (64x32
-texels of 4 bytes, so row 16). A source address would give the texel of row 16, 0xa5100010 in
-the plain pattern. The first pixel written is 0x04000004 instead, the job completes, and all
-2048 pixels differ from the baseline (target hash 0x333baa84526172ab). Over the every-value
-source 1024 of the 2048 pixels differ (hash 0x6290812a2f44452b), the first again 0x04000004.
-Bit 13 (+8192 bytes) does give the pattern continued past the source, so only bit 12 breaks the
-rule among the low bits.
+What is open: the inference rests on where the library places the buffers, which the run does not
+print; and what the page before the source holds (0x04000004 at its first texel read).
 
-Bit 14 (`tex:2^=0x4000`) completes the job (`job: ok`) with every pixel left at the sentinel
-(hash 0xfc8ce806207f8325), in both sources. Bit 15 (`tex:2^=0x8000`), every higher bit, 0 and
-0xffffffff fault the job and lose the context, with the same sentinel hash. So the address
-range the unit accepts ends between bit 14 (accepted, nothing written) and bit 15 (rejected by
-a fault).
-
-Not settled: what 0x04000004 is (a word of the scratch buffer, of the render's own state, or a
-value the unit makes up), and whether the nothing-written result of bit 14 is a copy of zero
-pixels or a copy to somewhere else. The state-words table ran once in this campaign, so
-whether the bit 12 pixels repeat is not known either.
-
-To settle it: run bit 12 and bit 14 with the buffer at +4096 and +16384 bytes filled with a
-counting pattern (the host's counting fill of E041), read the whole target and the buffer
-back, and match the first pixels to dwords of the buffer. Repeat the same flips with the source
-at another address, to see whether 0x04000004 moves with it, and read the target of bit 14 and
-of the buffer for writes outside the 64x32 target.
+To settle it: print the source, destination and scratch addresses with the job (a tool option),
+and fill the page before the source with a counting pattern, then repeat the bit-12 and bit-14
+flips.

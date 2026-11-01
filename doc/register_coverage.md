@@ -14,7 +14,7 @@ evidence records its rows, its fields' rows and its measured width cite.
 
 | unit | registers | with fields | measured width | uncovered bits | on a measured width |
 |---|---|---|---|---|---|
-| (no unit) | 11 | 1 | 11 | 12 | 12 |
+| (no unit) | 11 | 1 | 11 | 0 | 0 |
 | BIF | 11 | 11 | 0 | 154 | 0 |
 | CACHE | 1 | 0 | 0 | 0 | 0 |
 | CLKGATE | 3 | 3 | 0 | 35 | 0 |
@@ -32,11 +32,11 @@ evidence records its rows, its fields' rows and its measured width cite.
 | TA | 4 | 0 | 4 | 0 | 0 |
 | TE | 13 | 0 | 10 | 0 | 0 |
 | TIMER | 1 | 1 | 0 | 0 | 0 |
-| TPU | 14 | 1 | 14 | 2 | 2 |
+| TPU | 14 | 2 | 14 | 2 | 2 |
 | TSP | 1 | 0 | 0 | 0 | 0 |
 | USE | 32 | 6 | 12 | 65 | 0 |
 | VDM | 2 | 0 | 1 | 0 | 0 |
-| total | 214 | 47 | 117 | 551 | 56 |
+| total | 214 | 48 | 117 | 539 | 44 |
 
 ## (no unit)
 
@@ -51,8 +51,8 @@ evidence records its rows, its fields' rows and its measured width cite.
   E056, E071, E072, E159, E182, E183, E247.
 - `0x0374` `CR_REG_0374`: width 32 bits (31:0, E054, E247); no field rows. Records: E030, E054,
   E056, E071, E072, E159, E182, E183, E247.
-- `0x0400` `CR_REG_0400`: width 13 bits (25, 11:0, E251); 1 field: INVERT_BYTE3 [25]; uncovered 11:0
-  (12 bits). Records: E028, E029, E251.
+- `0x0400` `CR_REG_0400`: width 13 bits (25, 11:0, E251); 2 fields: INVERT_BYTE3 [25], BITS11_0
+  [11:0]; uncovered - (0 bits). Records: E028, E029, E251.
 - `0x0800` `CR_REG_0800`: width 22 bits (23:8, 5:0, E067); no field rows. Records: E006, E066, E067,
   E068, E073, E136, E225.
 - `0x0810` `CR_REG_0810`: width 1 bits (0, E026); no field rows. Records: E006, E026.
@@ -393,8 +393,8 @@ evidence records its rows, its fields' rows and its measured width cite.
   E039, E254.
 - `0x0864` `CR_TPU_LUMA_KEY_B_OFFSET`: width 18 bits (23:16, 9:0, E254); no field rows. Records:
   E038, E039, E254.
-- `0x0868` `CR_TPU_LUMA_KEY_ALPHA`: width 32 bits (31:0, E254); no field rows. Records: E038, E039,
-  E254.
+- `0x0868` `CR_TPU_LUMA_KEY_ALPHA`: width 32 bits (31:0, E254); 4 fields: ABOVE [31:24], BELOW
+  [23:16], THRESHOLD [15:8], LOW [7:0]; uncovered - (0 bits). Records: E038, E039, E254.
 
 ## TSP
 

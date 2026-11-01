@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# texture copy words: 0 sweeps, 0 probes, hand-run script.
+# the copy's T1 bit 28, T2 bits 11-14 and transfer words 0 and 7 with every pixel (Q007, Q010, Q011).
+name = "texture-copy-words"
+kind = "script"
+needs = ["render"]
+script = "copy-words.sh"

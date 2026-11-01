@@ -1,0 +1,65 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# pbe reg 0400 modes: 0 sweeps, 4 probes (written by tools/usse-asm/pbe_words.py).
+# CR_REG_0400's word under pack modes 0-3 (Q044).
+needs = ["render"]
+
+[[probe]]
+name = "pbe-reg-0400-modes-0"
+question = "what the word that loads CR_REG_0400 does to a triangle stored in pack mode 0"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x200
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+case_set = [{ cmd = { 11 = 0x80 } }, { cmd = { 11 = 0x2000080 } }, { cmd = { 11 = 0x81 } }, { cmd = { 11 = 0x82 } }, { cmd = { 11 = 0x84 } }, { cmd = { 11 = 0x88 } }, { cmd = { 11 = 0x90 } }, { cmd = { 11 = 0xa0 } }, { cmd = { 11 = 0xc0 } }, { cmd = { 11 = 0 } }, { cmd = { 11 = 0x180 } }, { cmd = { 11 = 0x280 } }, { cmd = { 11 = 0x480 } }, { cmd = { 11 = 0x880 } }, { cmd = { 11 = 0 } }, { cmd = { 11 = 0xffffffff } }]
+cases = [["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["0x80 (as built)", "bit 25 flipped", "bit 0 flipped", "bit 1 flipped", "bit 2 flipped", "bit 3 flipped", "bit 4 flipped", "bit 5 flipped", "bit 6 flipped", "bit 7 flipped", "bit 8 flipped", "bit 9 flipped", "bit 10 flipped", "bit 11 flipped", "0", "0xffffffff"]
+
+[[probe]]
+name = "pbe-reg-0400-modes-1"
+question = "what the word that loads CR_REG_0400 does to a triangle stored in pack mode 1"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x201
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+case_set = [{ cmd = { 11 = 0x80 } }, { cmd = { 11 = 0x2000080 } }, { cmd = { 11 = 0x81 } }, { cmd = { 11 = 0x82 } }, { cmd = { 11 = 0x84 } }, { cmd = { 11 = 0x88 } }, { cmd = { 11 = 0x90 } }, { cmd = { 11 = 0xa0 } }, { cmd = { 11 = 0xc0 } }, { cmd = { 11 = 0 } }, { cmd = { 11 = 0x180 } }, { cmd = { 11 = 0x280 } }, { cmd = { 11 = 0x480 } }, { cmd = { 11 = 0x880 } }, { cmd = { 11 = 0 } }, { cmd = { 11 = 0xffffffff } }]
+cases = [["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["0x80 (as built)", "bit 25 flipped", "bit 0 flipped", "bit 1 flipped", "bit 2 flipped", "bit 3 flipped", "bit 4 flipped", "bit 5 flipped", "bit 6 flipped", "bit 7 flipped", "bit 8 flipped", "bit 9 flipped", "bit 10 flipped", "bit 11 flipped", "0", "0xffffffff"]
+
+[[probe]]
+name = "pbe-reg-0400-modes-2"
+question = "what the word that loads CR_REG_0400 does to a triangle stored in pack mode 2"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x202
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+case_set = [{ cmd = { 11 = 0x80 } }, { cmd = { 11 = 0x2000080 } }, { cmd = { 11 = 0x81 } }, { cmd = { 11 = 0x82 } }, { cmd = { 11 = 0x84 } }, { cmd = { 11 = 0x88 } }, { cmd = { 11 = 0x90 } }, { cmd = { 11 = 0xa0 } }, { cmd = { 11 = 0xc0 } }, { cmd = { 11 = 0 } }, { cmd = { 11 = 0x180 } }, { cmd = { 11 = 0x280 } }, { cmd = { 11 = 0x480 } }, { cmd = { 11 = 0x880 } }, { cmd = { 11 = 0 } }, { cmd = { 11 = 0xffffffff } }]
+cases = [["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["0x80 (as built)", "bit 25 flipped", "bit 0 flipped", "bit 1 flipped", "bit 2 flipped", "bit 3 flipped", "bit 4 flipped", "bit 5 flipped", "bit 6 flipped", "bit 7 flipped", "bit 8 flipped", "bit 9 flipped", "bit 10 flipped", "bit 11 flipped", "0", "0xffffffff"]
+
+[[probe]]
+name = "pbe-reg-0400-modes-3"
+question = "what the word that loads CR_REG_0400 does to a triangle stored in pack mode 3"
+source = "pix_op.s"
+host = "tri"
+slot = "pixel"
+slots = { eot = "eot_plain.s" }
+sideband = 0x203
+size = [0x40, 0x40]
+pixels = true
+inputs = ["OP"]
+case_set = [{ cmd = { 11 = 0x80 } }, { cmd = { 11 = 0x2000080 } }, { cmd = { 11 = 0x81 } }, { cmd = { 11 = 0x82 } }, { cmd = { 11 = 0x84 } }, { cmd = { 11 = 0x88 } }, { cmd = { 11 = 0x90 } }, { cmd = { 11 = 0xa0 } }, { cmd = { 11 = 0xc0 } }, { cmd = { 11 = 0 } }, { cmd = { 11 = 0x180 } }, { cmd = { 11 = 0x280 } }, { cmd = { 11 = 0x480 } }, { cmd = { 11 = 0x880 } }, { cmd = { 11 = 0 } }, { cmd = { 11 = 0xffffffff } }]
+cases = [["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"], ["mov.skipinv.end o0, #0x80FF8040"]]
+labels = ["0x80 (as built)", "bit 25 flipped", "bit 0 flipped", "bit 1 flipped", "bit 2 flipped", "bit 3 flipped", "bit 4 flipped", "bit 5 flipped", "bit 6 flipped", "bit 7 flipped", "bit 8 flipped", "bit 9 flipped", "bit 10 flipped", "bit 11 flipped", "0", "0xffffffff"]

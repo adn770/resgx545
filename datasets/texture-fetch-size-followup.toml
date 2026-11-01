@@ -1,0 +1,10 @@
+title = "follow-up run of the probe table texture/fetch-size"
+repo = "data"
+paths = ["followup/texture/fetch-size/"]
+method = "campaign runner on the laptop target (tools/campaign), the follow-up round"
+date = "2026-11-02"
+files = 26
+size = 484149
+sha256 = "6b0f6db3e4079f6b58aaf8a7a4cf6f298844108b29fa18faaec2749b95e224aa"
+recipe = "probes/texture/fetch-size.toml"
+needs = ["render"]

@@ -253,7 +253,9 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   the pixel-event program hangs when cleared; in the copy's DOUTI0, bits 4:0 pick the fetch
   coordinates (0 hangs, 2 to 31 give one image), bits 10:5 pick among five images (the baseline and
   four others), and bits 16:11 pick what the iterator writes (values 37 to 63 give the baseline);
-  EMIT2's bits 15:8 write the same pixels at every value but 0x81.
+  bits 15:8 of the fill's pixel-event data dword 8, which this record first took for EMIT2 and which
+  is the pixel-event program's end-of-render mask (E265), write the same pixels at every value but
+  0x81.
   *pds; HW; data: `pds-data-words`, `pds-douti-fields`, `pbe-emit`, `pds-pixel-event`,
   `pds-data-words-followup`, `pds-douti-fields-followup`.*
 - `E047` With DOUTI0 bit 18 set, the iterated x of the textured triangle is the plane (13/45) x +
@@ -1434,6 +1436,96 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   movs to mr, and ir0 still reads the tile position after the movs to ir0; a movs to doutc faults
   the job (BIF status 0xd0400, address 0x0401f030).
   *pds; HW, infer; data: `pds-task-inputs`.*
+- `E265` The word E046's EMIT2 table varied is the pixel-event program's data dword 8, the
+  end-of-render mask (0x100) of asm/transfer/pds_pixevent.s, and not an emit word: XOR 0x100 (0x81
+  in that table's terms) sets it to 0 and the fill, the copy and the triangle then write no pixel,
+  as at 0 and 0x2; at 0x4 the last 32x16 tile is left unwritten (512 pixels) in all three jobs;
+  0x8000, 0x8100, 0x200, 0x4000 and 0x8 leave every image as built; both repeats of each case agree.
+  *pbe; HW, infer; data: `pbe-emit-words`, `pbe-emit-words-followup`.*
+- `E266` EMIT2 bits 15:8 count what the end-of-tile emit stores of a 32x16 tile in units of four
+  pixels: at 0 the job writes no pixel, at each odd value it hangs, at an even value v up to 0x80
+  (the value the library writes) it writes 4v pixels of every tile and leaves the rest unwritten,
+  and above 0x80 it writes the whole tile with 40 to 2524 of 4096 pixels changed, other words and
+  0x00000000 among them.
+  *pbe; HW, infer; data: `pbe-emit-words`, `pbe-emit-words-followup`.*
+- `E267` The end-of-tile emit stores only the pixels inside the rectangle EMIT0 (minimum x in bits
+  12:0, y in 28:16) and EMIT1 (maximum x and y, inclusive) give; EMIT3 is a byte address whose bits
+  1:0 are ignored; EMIT2 bits 27:16 give the row pitch as (value + 1) x 8 bytes; bits 15:13 and
+  31:29 of EMIT0 and EMIT1 are ignored but EMIT1 bit 31, which hangs the job; EMIT2 bits 6:0 and
+  31:28 change the image and bit 7 does not: bit 28 stores the image mirrored in x, bit 29 rotated
+  by 180 degrees (or anti-transposed; this image does not tell them apart), bit 30 each 32x16 tile's
+  2x2 box average into the tile's top-left 16x8 pixels, and bit 31 a triangle of another shape in
+  the same two colours.
+  *pbe; HW, infer; data: `pbe-emit-words`, `pbe-emit-words-followup`.*
+- `E268` Bit 25 of the word that loads CR_REG_0400 inverts the stored alpha channel wherever the
+  pack mode puts it: bits 31:24 in ARGB8888 (mode 0) and ABGR8888 (mode 1), bits 7:0 in BGRA8888
+  (mode 2), and nothing in RGB565 (mode 3), which stores no alpha; bits 11:0 of the word (each
+  flipped from 0x80), the word at 0 and the other bits change no pixel in any of the four modes.
+  *pbe; HW; data: `pbe-reg-0400-modes`, `pbe-reg-0400-modes-followup`.*
+- `E269` SIDEBAND bits 8:6 pick the channel a one-byte pack mode stores: in mode 8, 0 stores alpha,
+  1 red, 2 green, and 3 to 7 the byte that is blue in both colours run (0x40, so blue is not told
+  apart from another source of 0x40); at each of 0 to 7 they change no pixel under CR_ISP_MSAA modes
+  1 and 2, on a 128x128 target, or in pack modes 4, 5, 9 and 26; sideband bit 10 dithers (one run):
+  in pack modes 3, 4 and 5 it changes 650 to 1484 of the 4096 dwords, 650 to 2196 pixels, each one
+  step of one or two channels off the plain value, the new value set by the plain value and the
+  pixel's place in a 4x4 cell of x and y, and changes nothing in pack mode 0; bit 11 faults the job
+  and bit 12 stores other values at every pixel.
+  *pbe; HW, infer; data: `pbe-sideband-fields`, `pbe-sideband-dither`,
+  `pbe-sideband-fields-followup`.*
+- `E270` Pack modes 22 and 34 read o0 as an IEEE single: at 727 of the triangle's 1062 pixels (665
+  or 730 in a few cases), mode 22 stores 0x00000088 for zero, negative and NaN values, 0xc0000088
+  for every positive value from 1/128 to 2.0 and 0xfff00088 for values of 1e13 and up; mode 34
+  stores 0x60800000 there, with bits 31:20 of the single in bits 11:0 for the values of 1e13 and up
+  that are not NaN (0x7f807f80, a NaN, gives 0x7f9), and at 215 other pixels (149 at 2.0 and 1/128)
+  bits 30:20 of the single in bits 21:11 for positive values from 1/128 to 2.0; read at the
+  triangle's pixels, no stored bit of either mode copies a bit of o0 across the coded colours, while
+  mode 26, the control, stores R >> 3, G >> 3 and B >> 2 at every pixel; the rest of each image
+  changes with the job before it.
+  *pbe; HW, infer; data: `pbe-pack-colours`, `pbe-pack-floats`, `pbe-pack-colours-followup`.*
+- `E271` Bit 28 of the copy's T1 is the top bit of TEXFORMAT: set, the copy reads its source as YUYV
+  (TEXFORMAT 28) and writes, at all 2048 pixels and over both sources, the colour-space set 0
+  conversion of the source read as Y0 U Y1 V pairs at the source's stride; with set 0 at zeros that
+  is opaque black; set 0 keeps its words from one job to the next; T1 bits 28 and 24 together
+  (TEXFORMAT 29) read UYVY the same way.
+  *texture; HW, infer; data: `texture-copy-words`.*
+- `E272` With the copy's transfer word 0 (the background object tag) at 0 or with bit 24 or bit 30
+  flipped, every pixel of the 64x32 copy is the source's last texel (63, 31), over both sources;
+  with word 7 (the word that loads CR_ISP_MSAA) bit 1 flipped, mode 2, only the first 32x16 tile is
+  written, pixel (x, y) holding texel (16 + x / 2, 8 + y / 2), and the other 1536 pixels keep the
+  sentinel.
+  *transfer; HW, infer; data: `texture-copy-words`.*
+- `E273` The copy's T2 bits 12 and 14 read memory outside the source like every other address bit:
+  flipping bit 12 reads the 4 KiB before the source (mostly zeros, 0x3f800000, 0x1000; the first
+  pixel 0x04000004), so the source's address has bit 12 set; with the source 16 rows long bit 13
+  reads the destination's sentinel and bit 14 faults, with it 32 rows long bit 14 reads the sentinel
+  and completes, so bit 14's empty image is the destination's own sentinel read back; bit 13 as
+  built leaves 448 and 256 sentinel pixels in the two rounds (plain source), 224 and 296
+  (every-value source), as a read of a destination the copy is overwriting would.
+  *texture; HW, infer; data: `texture-copy-words`.*
+- `E274` In a copy, T3 bits 3:0 and 7:4 offset the texel read in y and in x by a signed 4-bit count
+  (1, 2, 4 and -8 for each single bit), clamped at the source's edge; T3 bit 10 reads texel (0, 0)
+  for every pixel; bits 18 and 19 scale the coordinates by 2 and 4; bits 27 and 28 read half-size
+  and quarter-size images packed after the source; bit 14 reads (x + 32, y + x); bits 13 and 19
+  fault; T0 bits 27 and 30 change every pixel to values of no texel; T0 bits 2:0, 16:14, 28 and 29
+  and T3 bits 8, 9, 11, 12 and 20 to 22 change no pixel, over both sources; one run.
+  *texture; HW, infer; data: `texture-sampler-bits`.*
+- `E275` Bits 7:0 of the luma-key word that loads 0x0868 are the lower bound of a luma band: the
+  copy writes alpha_below where low byte <= luma <= threshold and alpha_above elsewhere, at every
+  pixel of 272 of 274 copies (all 256 values of the low byte at threshold 128, nine values at
+  thresholds 0 and 255); in the other two (low byte 119 and 122) 8 pixels each, whose weighted sum
+  is 4/1024 above the low cut, fall the other way; RGB is the source's in every copy.
+  *texture; HW, infer; data: `texture-luma-cuts`.*
+- `E276` On a twiddled mip chain T0 bits 20:17 are the highest level read (0 and 15 read level 0
+  only, 1 to 14 cap the level at that value) and bits 26:21 shift the LOD by (value - 63) / 8 before
+  the nearest level is taken: level = max(0, min(round_half_up(LOD + (b - 63) / 8), max)) fits every
+  one of 192 reads, in both runs, a biased LOD below 0 reading level 0; bit 18 alone does not
+  disable the chain.
+  *texture; HW, infer; data: `texture-mip-fields`, `texture-mip-fields-followup`.*
+- `E277` With two fetches in a primary program, T3 bits 26:23 of the first at 8 put the second texel
+  in pa8 and at 15 in pa15, as the control at 1 puts it in pa1, image for image; with the first
+  fetch as f32 channels and the field at 8 the second texel is again in pa8 and pa1 holds the first
+  fetch's 0.0.
+  *texture; HW, infer; data: `texture-fetch-size`, `texture-fetch-size-followup`.*
 
 ## By unit
 
@@ -1466,7 +1558,7 @@ Records: E061, E062, E063, E192, E193, E194, E195, E196, E198, E197, E248.
 
 ### pbe
 
-Records: E029, E030, E031, E032, E239, E240, E251.
+Records: E029, E030, E031, E032, E239, E240, E251, E265, E266, E267, E268, E269, E270.
 
 ### pds
 
@@ -1488,11 +1580,12 @@ Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180,
 
 ### texture
 
-Records: E033, E034, E035, E036, E037, E038, E039, E040, E041, E042, E114, E116, E242, E254.
+Records: E033, E034, E035, E036, E037, E038, E039, E040, E041, E042, E114, E116, E242, E254, E271,
+E273, E274, E275, E276, E277.
 
 ### transfer
 
-Records: E015, E016, E018, E019, E020, E021, E022, E024, E027, E028.
+Records: E015, E016, E018, E019, E020, E021, E022, E024, E027, E028, E272.
 
 ### tsp
 

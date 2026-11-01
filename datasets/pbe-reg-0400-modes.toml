@@ -1,0 +1,10 @@
+title = "probe table pbe/reg-0400-modes"
+repo = "data"
+paths = ["pbe/reg-0400-modes/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 78
+size = 2560041
+sha256 = "b2db6293babbe03c6e5c4972b384ee4ff4a5d22a81d5bb04143d8c1fe5ca07f2"
+recipe = "probes/pbe/reg-0400-modes.toml"
+needs = ["render"]

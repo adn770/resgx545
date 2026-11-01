@@ -1,26 +1,23 @@
 +++
 id = "Q044"
-question = "does CR_REG_0400 bit 25 invert the stored pixel's byte 3 or its alpha, and do the register's other bits act in pack modes other than ARGB8888?"
+question = "what do bits 11:0 of CR_REG_0400 (0x80 as built) do, when no value of them changes a stored pixel in pack modes 0 to 3, and does bit 25 act on the other pack modes?"
 unit = "pbe"
 phase = 11
-evidence = ["E029", "E028", "E031"]
+evidence = ["E029", "E028", "E031", "E251", "E268"]
 terms = ["CR_REG_0400", "CR_REG_0400.INVERT_BYTE3", "SIDEBAND.PACKMODE"]
 +++
 
-Bit 25 of the word that loads 0x0400 inverts bits 31:24 of every pixel a fill, a copy or the
-triangle writes, background and triangle alike; no other bit of the word, nor 0, changes a pixel,
-and over a source holding every value exactly the 128 values of the word's top byte with bit 25 set
-change the image (E029, E028). Every one of these jobs stores ARGB8888, where bits 31:24 are the
-alpha channel, so the data cannot tell an inversion of the alpha channel from an inversion of the
-stored dword's top byte. The end-of-tile emit's pack modes store the colour in other orders too:
-ABGR8888 (mode 1), BGRA8888 (mode 2) and RGB565 (mode 3) (E031).
+Bit 25 of the word that loads 0x0400 inverts the stored alpha channel, wherever the pack mode
+puts it: bits 31:24 in ARGB8888 and ABGR8888, bits 7:0 in BGRA8888, and nothing in RGB565, which
+stores no alpha (E268). So the first half of the question (byte 3 or alpha) is answered: alpha.
+The register takes bit 25 and bits 11:0 (E251); each of bits 0 to 11 flipped from the 0x80 the
+library writes, and the word at 0, change no pixel in pack modes 0 to 3 (E268), as E029 found
+for ARGB8888 over fills and copies.
 
-What is open: what bit 25 inverts in a layout where alpha is not the top byte, and whether the other
-bits, which change nothing in ARGB8888, act in another layout. The glossary's reading of the
-register as a control of the pixel output conversion rests on bit 25 alone.
+What is open: what bits 11:0 control. No job here varies the alpha of the stored pixels (the
+shader colour's alpha is 0x80, the low byte's value), so a field that tests alpha would not show.
+Bit 25 under the pack modes with one or two alpha bits (ARGB1555, ARGB4444, A8) is not run.
 
-To settle it: render the triangle with the emit's pack mode at 1, 2 and 3, each with the register's
-word as the job builds it, with bit 25 flipped, with each other bit flipped, at 0 and at 0xffffffff,
-two runs each, every stored pixel read back. In BGRA8888 the alpha sits in bits 7:0: an alpha
-inversion flips those and a byte-3 inversion flips bits 31:24. In RGB565, with two pixels to a
-dword, a byte-3 inversion flips the high byte of every second pixel.
+To settle it: a triangle whose pixels carry alpha 0 to 0xff (a ramp over x) with the low byte at
+0, 0x40, 0x80, 0xc0 and 0xff, in pack modes 0 and 4 (ARGB1555), where a threshold would decide
+the stored alpha bit; bits 11:8 flipped with the same ramp; bit 25 in pack modes 4, 5 and 8.

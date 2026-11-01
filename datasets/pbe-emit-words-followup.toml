@@ -1,0 +1,10 @@
+title = "sweep and probe table pbe/emit-words-followup"
+repo = "data"
+paths = ["pbe/emit-words-followup/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 77
+size = 2276558
+sha256 = "0b86da432586a58323df8d93c7b91b27e8f8dad5e070ffd51d1015f956f9da8b"
+recipe = "probes/pbe/emit-words-followup.toml"
+needs = ["render"]

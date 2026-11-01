@@ -29,10 +29,13 @@ sits, the reading, and the evidence records it rests on.
 - `G0436` `CR_REG_0374` (0x0374): context store/resume state of an interrupted TA: a 32-bit resume
   task word. Measured: TA command word; 0 in captures [infer]. Evidence: E030, E056, E071, E072,
   E159, E182, E183.
-- `G0152` `CR_REG_0400` (0x0400): a pixel output conversion control: bit 25 inverts byte 3 of every
-  pixel written (CR_REG_0400.INVERT_BYTE3), 0x80 the default of the other conversions. Measured:
-  per-render word from the render details or transfer command; 0x80 in captures [infer]. Evidence:
-  E028, E029.
+- `G0152` `CR_REG_0400` (0x0400): a pixel output conversion control: bit 25 inverts the alpha
+  channel of every pixel stored, wherever the pack mode puts it (CR_REG_0400.INVERT_BYTE3); bits
+  11:0 change no pixel, 0x80 the default of the other conversions. Measured: per-render word from
+  the render details or transfer command; 0x80 in captures [infer]. Evidence: E028, E029.
+- `G1030` `CR_REG_0400.BITS11_0` (0x0400[11:0]): twelve bits the register takes (0x80 as the library
+  and the closed stack write them) that change no stored pixel in pack modes 0 to 3; no job here
+  varies the stored alpha, so a field that tests it would not show [infer].
 - `G0154` `CR_REG_0800` (0x0800): an on-chip resource limit (bits 5:0 = 48, bits 23:8) for work
   other than pixel tasks (vertex or state tasks, context switches); pixel-bound renders ignore it
   (E136). Measured: set by the init script and per render; 0x30 everywhere [infer]. Evidence: E006,
@@ -106,10 +109,10 @@ sits, the reading, and the evidence records it rests on.
 
 ## registers: TPU
 
-- `G0162` `CR_TPU_LUMA_KEY_ALPHA` (0x0868): Register 0x0868: with the copy's luma-key mode on, the
-  threshold in bits 15:8, the alpha written at or below it in bits 23:16 and the alpha written above
-  it in bits 31:24; it starts at 0xff008000 (alpha 0 below 128, 0xff above). Bits 7:0 are not
-  explained: values 64, 128 and 255 fit no threshold. Evidence: E038, E039.
+- `G0162` `CR_TPU_LUMA_KEY_ALPHA` (0x0868): Register 0x0868: with the copy's luma-key mode on, a
+  luma band and two alphas: bits 7:0 its low end and bits 15:8 its high end (the threshold),
+  alpha_below (bits 23:16) for a luma inside the band and alpha_above (bits 31:24) outside it; it
+  starts at 0xff008000 (a band of 0 to 128, alpha 0 inside, 0xff outside). Evidence: E038, E039.
 - `G0163` `CR_TPU_LUMA_KEY_B_OFFSET` (0x0864): Register 0x0864: with the copy's luma-key mode on,
   the B weight in bits 9:0 (1024ths) and an offset in bits 23:16 that enters the sum as 512 times
   its value; it starts at 0x00210064 (weight 100, offset 33). Evidence: E038, E039.
@@ -315,9 +318,11 @@ sits, the reading, and the evidence records it rests on.
   the emits with it against its tiles. Measured: needed for an emit to complete its tile: with it
   clear the only emit hangs; an extra emit with it set leaves the PBE queue one emit behind, with it
   clear for one job only; not tile-relative addressing [infer]. Evidence: E030, E239, E240.
-- `G0262` `SIDEBAND.BITS8_6` (sideband [8:6] [infer]): a PBE sub-format, downscale or rotation
-  field, 0 for plain output (Rogue downscale/source_pos, AGX rotate/flip). Measured: 0 in every
-  closed program and capture [infer]. Evidence: E030, E031.
+- `G0262` `SIDEBAND.BITS8_6` (sideband [8:6] [infer]): the channel a one-channel pack mode stores:
+  in mode 8, 0 alpha, 1 red, 2 green, 3 reads as blue and 4 to 7 give the same bytes (both colours
+  run have blue 0x40, so blue is not told apart from another source of that byte); no effect seen in
+  the modes that store several channels, under multisampling or on several tiles. Measured: 0 in
+  every closed program and capture [infer]. Evidence: E030, E031.
 
 ## words: PDS DOUT words
 
@@ -328,9 +333,20 @@ sits, the reading, and the evidence records it rests on.
 
 ## words: PDS/pixel task words
 
-- `G0226` `EMIT2.BITS15_8` (EMIT2 (emit2 src0) [15:8]): an emit control field: bit 7 valid, bit 0
-  with it (0x81) an emit that writes nothing (a mask or count of 0). Measured: 0x80 in every closed
-  program and capture [infer]. Evidence: E046.
+- `G1039` `EMIT2.BIT28` (EMIT2 (emit2 src0) [28]): set, the end-of-tile emit stores the image
+  mirrored in x, pixel (x, y) taking the plain image's (63 - x, y) on a 64x64 target; on that
+  symmetric triangle a rotation by 90 degrees gives the same image [infer].
+- `G1040` `EMIT2.BIT29` (EMIT2 (emit2 src0) [29]): set, the end-of-tile emit stores the image
+  rotated by 180 degrees, pixel (x, y) taking the plain image's (63 - x, 63 - y) on a 64x64 target,
+  or anti-transposed, which that symmetric triangle does not tell apart [infer].
+- `G1041` `EMIT2.BIT30` (EMIT2 (emit2 src0) [30]): set, the end-of-tile emit stores each 32x16 tile
+  downscaled by 2 in x and y into the tile's top-left 16x8 pixels, each pixel the 2x2 box average of
+  its four (each byte summed, divided by 4, the remainder dropped), and leaves the rest of the tile
+  unwritten [infer].
+- `G0226` `EMIT2.BITS15_8` (EMIT2 (emit2 src0) [15:8]): a count, in units of four pixels, of what an
+  emit stores of its 32x16 tile: 0 stores nothing, every odd value hangs the job, an even value v up
+  to 0x80 stores 4v pixels of each tile, and above 0x80 the tile is stored with other values over
+  it. Measured: 0x80 in every closed program and capture [infer]. Evidence: E046.
 - `G0254` `PDS_SIZE.BITS17_16` (PDS_SIZE [17:16]): a size or count of output register banks: at 0, 1
   and 2 the triangle's o1-o3 land elsewhere while o0 does not change, 3 the plain value [infer].
   Evidence: E046, E139.
@@ -365,9 +381,25 @@ sits, the reading, and the evidence records it rests on.
 
 ## words: texture words T0-T3
 
+- `G1045` `T0.BIT27` (T0 [27]): changes the form texels are read in: set in a copy, every pixel
+  takes a value of no source texel (0x00000000, 0x0cf90cf9, 0x10f910f9, ...) [infer].
 - `G0639` `T0.BIT30` (T0 [30]): with it TEXFORMAT 26 reads one byte per texel, written as grey;
   without it TEXFORMAT 26 gives values that differ from run to run; no other format is tried with it
   [infer]. Evidence: E040.
+- `G0278` `T0.NO_MIPMAPS` (T0 bit 18): bit 1 of T0.MAX_LEVEL (20:17), not a mipmap disable: values
+  of the field with this bit set (2, 3, 6, 7, ...) read the chain up to that level [infer].
+  Evidence: E041.
+- `G1047` `T3.BIT10` (T3 [10]): set in a copy, every pixel reads texel (0, 0); what it selects is
+  not decoded [infer].
+- `G1048` `T3.BIT14` (T3 [14]): set in a copy, pixel (x, y) reads texel (x + 32, y + x), past the
+  source at the sentinel; what it selects is not decoded [infer].
+- `G1049` `T3.BITS19_18` (T3 [19:18]): a scale of the texel coordinates: bit 18 reads (2x, 2y), bit
+  19 (4x, 4y) in a copy [infer].
+- `G1050` `T3.BITS28_27` (T3 [28:27]): in a copy, bit 27 reads a half-size image packed 32 rows (8
+  KiB) after the source and bit 28 a quarter-size one 40 rows after it, at the source's stride: a
+  level select of strided textures [infer].
+- `G1051` `T3.BITS7_0` (T3 [7:0]): a texel offset: bits 7:4 in x and 3:0 in y, each a signed 4-bit
+  count (single bits move the read by 1, 2, 4 and -8 texels), clamped at the texture's edge [infer].
 - `G0284` `T3.DATA_SIZE` (T3 [26:23]): Bits 26:23 of the fourth sampler word are named in the
   sampler sweep but that sweep varied only the conversion fields; the sampler data show nothing
   about this field beyond its name. Evidence: E034, E242.

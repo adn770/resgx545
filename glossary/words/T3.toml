@@ -1,4 +1,84 @@
 [[term]]
+id = "G1047"
+name = "T3.BIT10"
+status = "inferred"
+
+[[term.source]]
+term = "T3.BIT10"
+kind = "bitfield"
+sgx545 = "T3 [10]"
+meaning = "set in a copy, every pixel reads texel (0, 0); what it selects is not decoded [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "probes/texture/sampler-bits.toml"
+licence = "MIT"
+evidence = "[HW] the sampler-bit sweeps (texture-sampler-bits, one run): 2047 of 2048 pixels change, all to the first texel, over both sources"
+
+[[term]]
+id = "G1048"
+name = "T3.BIT14"
+status = "inferred"
+
+[[term.source]]
+term = "T3.BIT14"
+kind = "bitfield"
+sgx545 = "T3 [14]"
+meaning = "set in a copy, pixel (x, y) reads texel (x + 32, y + x), past the source at the sentinel; what it selects is not decoded [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "probes/texture/sampler-bits.toml"
+licence = "MIT"
+evidence = "[HW] the sampler-bit sweeps (texture-sampler-bits, one run): 2048 pixels change, 903 to the sentinel"
+
+[[term]]
+id = "G1049"
+name = "T3.BITS19_18"
+status = "inferred"
+
+[[term.source]]
+term = "T3.BITS19_18"
+kind = "field"
+sgx545 = "T3 [19:18]"
+meaning = "a scale of the texel coordinates: bit 18 reads (2x, 2y), bit 19 (4x, 4y) in a copy [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "probes/texture/sampler-bits.toml"
+licence = "MIT"
+evidence = "[HW] the sampler-bit sweeps (texture-sampler-bits, one run): bit 18 reads every second texel of each row and column; bit 19 every fourth, and the job faults past the source; [infer] a level or scale select of strided textures is a reading"
+
+[[term]]
+id = "G1050"
+name = "T3.BITS28_27"
+status = "inferred"
+
+[[term.source]]
+term = "T3.BITS28_27"
+kind = "field"
+sgx545 = "T3 [28:27]"
+meaning = "in a copy, bit 27 reads a half-size image packed 32 rows (8 KiB) after the source and bit 28 a quarter-size one 40 rows after it, at the source's stride: a level select of strided textures [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "probes/texture/sampler-bits.toml"
+licence = "MIT"
+evidence = "[HW] the sampler-bit sweeps (texture-sampler-bits, one run): bit 27 reads texel (x / 2, 32 + y / 2), bit 28 (x / 4, 40 + y / 4), every pixel, both sources"
+
+[[term]]
+id = "G1051"
+name = "T3.BITS7_0"
+status = "inferred"
+
+[[term.source]]
+term = "T3.BITS7_0"
+kind = "field"
+sgx545 = "T3 [7:0]"
+meaning = "a texel offset: bits 7:4 in x and 3:0 in y, each a signed 4-bit count (single bits move the read by 1, 2, 4 and -8 texels), clamped at the texture's edge [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "probes/texture/sampler-bits.toml"
+licence = "MIT"
+evidence = "[HW] the sampler-bit sweeps (texture-sampler-bits, one run): in the copy, bits 0-3 read texel (x, y + 1, 2, 4, -8) and bits 4-7 (x + 1, 2, 4, -8, y), the last rows or columns clamped, over both sources; [infer] only single bits were set"
+
+[[term]]
 id = "G0642"
 name = "T3.CMP_MODE"
 status = "named"
@@ -55,7 +135,7 @@ tier = "ours"
 source = "resgx545"
 citation = "E242"
 licence = "MIT"
-evidence = "[HW] E242: one fetch at fields 0, 1, 2, 3, 4, 8 and 15 under three conversions writes the same dwords; two fetches put the second texel at pa0, pa1, pa2, pa3, pa4 and pa6 for the first fetch's field 0, 1, 2, 3, 4 and 6, the last two pixel for pixel; [infer] the reading as the size of the fetch's result is ours"
+evidence = "[HW] E242: one fetch at fields 0, 1, 2, 3, 4, 8 and 15 under three conversions writes the same dwords; two fetches put the second texel at pa0, pa1, pa2, pa3, pa4 and pa6 for the first fetch's field 0, 1, 2, 3, 4 and 6, the last two pixel for pixel; [HW] the fetch-size probes (texture-fetch-size, two runs): the first fetch's field at 8 and 15 puts the second texel in pa8 and pa15, image for image, as f32 channels too; [infer] the reading as the size of the fetch's result is ours"
 
 [[term]]
 id = "G0285"

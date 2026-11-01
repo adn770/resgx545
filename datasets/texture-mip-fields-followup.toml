@@ -1,0 +1,10 @@
+title = "follow-up run of the probe table texture/mip-fields"
+repo = "data"
+paths = ["followup/texture/mip-fields/"]
+method = "campaign runner on the laptop target (tools/campaign), the follow-up round"
+date = "2026-11-02"
+files = 198
+size = 961715
+sha256 = "cf5fdf0edd00580c18523945daed046cf980854d1c05cbb615d183cc97fee11e"
+recipe = "probes/texture/mip-fields.toml"
+needs = ["render"]

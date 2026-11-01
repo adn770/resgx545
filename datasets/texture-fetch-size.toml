@@ -1,0 +1,10 @@
+title = "probe table texture/fetch-size"
+repo = "data"
+paths = ["texture/fetch-size/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 26
+size = 484150
+sha256 = "152c2e6d994c855c92f806fecadec87087aafbc2ba82ffece416220c1cb1ba90"
+recipe = "probes/texture/fetch-size.toml"
+needs = ["render"]

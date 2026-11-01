@@ -1,25 +1,24 @@
 +++
 id = "Q046"
-question = "do SIDEBAND bits 8:6 change what the end-of-tile emit stores under multisampling or in the pack modes that store part of a colour, when at 1 to 7 they change no pixel of an ARGB8888 or RGB565 triangle?"
+question = "do SIDEBAND bits 8:6 select the channel only in pack mode 8, or in the other one-channel modes too (24, 25 and those that store G8B8), and what do sideband bits 11 and 12 do?"
 unit = "pbe"
 phase = 11
-evidence = ["E030", "E031", "E210"]
+evidence = ["E030", "E031", "E210", "E269"]
 terms = ["SIDEBAND.BITS8_6", "SIDEBAND.PACKMODE", "CR_ISP_MSAA"]
 +++
 
-With bit 9 of the end-of-tile emit's sideband set, bits 8:6 at each of 1 to 7 give images identical,
-pixel for pixel, to the image with the field at 0, in pack mode 0 (ARGB8888) and in pack mode 3
-(RGB565), in both runs (E030). The pack modes themselves are wider than these two: some store 16- or
-8-bit subsets of the colour, some whole colours into part of the target, and a few values nobody has
-decoded (E031). The triangle of E030 is single-sampled, and the multisample modes of `CR_ISP_MSAA`
-change the image (E210).
+Bits 8:6 choose the channel pack mode 8 stores: 0 alpha, 1 red, 2 green, and 3 to 7 the byte
+0x40, the blue of both colours run, which this run cannot tell from another source of 0x40
+(E269). At
+1 to 7 they change no pixel under CR_ISP_MSAA modes 1 and 2, on a 128x128 target, or in pack
+modes 4, 5, 9 and 26 (E269), as E030 found for modes 0 and 3. So whether the field does anything
+is answered: it is a channel select for a one-channel mode.
 
-What is open: whether the field does anything at all. The glossary's reading, a sub-format,
-downscale or rotation field with 0 for plain output, is a hypothesis: a downscale could only show
-where a tile holds more samples than pixels, a sub-format only in a pack mode with variants, and a
-rotation or flip only in where a tile lands.
+What is open: the other modes that store one or two channels (24 and 25 store B8; 15, 18, 20, 27
+and 28 the low 16 bits) were not run with the field; whether 3 is blue, and whether 4 to 7 read
+the same source as 3 (a two-bit select with bit 8 ignored, or a clamp), needs colours whose
+channels differ. Sideband bit 11 faults the job, and bit 12
+stores values of no colour at every pixel (E269).
 
-To settle it: run the triangle with bits 8:6 at 0 to 7 under `CR_ISP_MSAA` bits 1:0 at 1 and 2,
-with the sample positions set as in E210, in each pack mode that stores a subset of the colour
-(E031), and on a target of several tiles in pack mode 0, two runs each, every stored pixel read
-back and compared with the field at 0.
+To settle it: bits 8:6 at 0 to 7 in pack mode 8 and in pack modes 7, 15, 18, 24, 25 and 28 with
+the coded colours of E270; bits 11 and 12 with each pack mode 0 to 8.

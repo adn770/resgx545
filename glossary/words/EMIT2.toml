@@ -1,4 +1,52 @@
 [[term]]
+id = "G1039"
+name = "EMIT2.BIT28"
+status = "inferred"
+
+[[term.source]]
+term = "EMIT2.BIT28"
+kind = "bitfield"
+sgx545 = "EMIT2 (emit2 src0) [28]"
+meaning = "set, the end-of-tile emit stores the image mirrored in x, pixel (x, y) taking the plain image's (63 - x, y) on a 64x64 target; on that symmetric triangle a rotation by 90 degrees gives the same image [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "probes/pbe/emit-words.toml"
+licence = "MIT"
+evidence = "[HW] the PBE word probes (pbe-emit-words, two runs): with the bit flipped all 4096 pixels hold the plain image mirrored in x, in both runs; [infer] a flip select, by one image symmetric about x = y"
+
+[[term]]
+id = "G1040"
+name = "EMIT2.BIT29"
+status = "inferred"
+
+[[term.source]]
+term = "EMIT2.BIT29"
+kind = "bitfield"
+sgx545 = "EMIT2 (emit2 src0) [29]"
+meaning = "set, the end-of-tile emit stores the image rotated by 180 degrees, pixel (x, y) taking the plain image's (63 - x, 63 - y) on a 64x64 target, or anti-transposed, which that symmetric triangle does not tell apart [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "probes/pbe/emit-words.toml"
+licence = "MIT"
+evidence = "[HW] the PBE word probes (pbe-emit-words, two runs): with the bit flipped all 4096 pixels hold the plain image rotated by 180 degrees, in both runs; [infer] a rotation or flip select, by one image symmetric about x = y (Q040)"
+
+[[term]]
+id = "G1041"
+name = "EMIT2.BIT30"
+status = "inferred"
+
+[[term.source]]
+term = "EMIT2.BIT30"
+kind = "bitfield"
+sgx545 = "EMIT2 (emit2 src0) [30]"
+meaning = "set, the end-of-tile emit stores each 32x16 tile downscaled by 2 in x and y into the tile's top-left 16x8 pixels, each pixel the 2x2 box average of its four (each byte summed, divided by 4, the remainder dropped), and leaves the rest of the tile unwritten [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "probes/pbe/emit-words.toml"
+licence = "MIT"
+evidence = "[HW] the PBE word probes (pbe-emit-words, two runs): with the bit flipped 1024 of 1024 written pixels are those averages and 3072 keep the sentinel, in both runs; [infer] a downscale select, by one image and one format (ARGB8888)"
+
+[[term]]
 id = "G0226"
 name = "EMIT2.BITS15_8"
 status = "inferred"
@@ -7,9 +55,25 @@ status = "inferred"
 term = "EMIT2.BITS15_8"
 kind = "field"
 sgx545 = "EMIT2 (emit2 src0) [15:8]"
-meaning = "an emit control field: bit 7 valid, bit 0 with it (0x81) an emit that writes nothing (a mask or count of 0). Measured: 0x80 in every closed program and capture [infer]"
+meaning = "a count, in units of four pixels, of what an emit stores of its 32x16 tile: 0 stores nothing, every odd value hangs the job, an even value v up to 0x80 stores 4v pixels of each tile, and above 0x80 the tile is stored with other values over it. Measured: 0x80 in every closed program and capture [infer]"
 tier = "ours"
 source = "resgx545"
 citation = "E046"
 licence = "MIT"
-evidence = "never varied; equals 32 x 16 / FEATURE.NUM_USE_PIPES (tier 1), a coincidence or the reason; [HW] E046: every value 0x00-0xff writes the fill's pixels as 0x80 does, except 0x81, which writes none; [infer] the rest of its reading rests on records still to come"
+evidence = "equals 32 x 16 / FEATURE.NUM_USE_PIPES (tier 1), a coincidence or the reason; [HW] the PBE word probes (pbe-emit-words, two runs): set in the end-of-tile program, 0 writes nothing, every odd value hangs, an even v up to 0x80 stores 4v pixels of each of the eight tiles, from the first rows of the tile's two halves; E046's table varied the pixel-event program's data dword 8 (its end-of-render mask), which at 0 skips every end-of-tile task, as the PBE word probes' pixel-event sweeps show; [infer] the unit of four pixels is ours (Q040)"
+
+[[term]]
+id = "G1042"
+name = "EMIT2.LINE_STRIDE"
+status = "named"
+
+[[term.source]]
+term = "linestride"
+kind = "field"
+sgx545 = "emit2 src0 [27:16]"
+meaning = "surface line stride"
+tier = "3"
+source = "mesa-csbgen"
+citation = "C0710"
+licence = "MIT"
+evidence = "same role as Rogue"

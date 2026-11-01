@@ -47,6 +47,22 @@ licence = "MIT"
 evidence = "[HW] E039: the only texture-word bit under which the key's words change the image"
 
 [[term]]
+id = "G1045"
+name = "T0.BIT27"
+status = "inferred"
+
+[[term.source]]
+term = "T0.BIT27"
+kind = "bitfield"
+sgx545 = "T0 [27]"
+meaning = "changes the form texels are read in: set in a copy, every pixel takes a value of no source texel (0x00000000, 0x0cf90cf9, 0x10f910f9, ...) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "probes/texture/sampler-bits.toml"
+licence = "MIT"
+evidence = "[HW] the sampler-bit sweeps (texture-sampler-bits, one run): flipped in the 64x32 copy over both sources, 2048 pixels change to values that are no texel; [infer] a format or layout select, not decoded"
+
+[[term]]
 id = "G0639"
 name = "T0.BIT30"
 status = "inferred"
@@ -71,12 +87,12 @@ status = "named"
 term = "T0.BITS20_19"
 kind = "bitfield"
 sgx545 = "T0 [20:19] (twiddled textures)"
-meaning = "with bit 18 clear, 0 keeps level 0 and 1-3 let mip levels be read; what the value counts is not shown [infer]"
+meaning = "bits 3:2 of T0.MAX_LEVEL (20:17), the highest mip level read [infer]"
 tier = "ours"
 source = "resgx545"
 citation = "E041"
 licence = "MIT"
-evidence = "[HW] E041: probes x-mip-level and x-mip-t0-field"
+evidence = "[HW] E041: probes x-mip-level and x-mip-t0-field; [HW] the mip-field probes (texture-mip-fields, two runs): the four bits 20:17 cap the level read"
 
 [[term]]
 id = "G0274"
@@ -87,12 +103,12 @@ status = "named"
 term = "T0.BITS26_21"
 kind = "bitfield"
 sgx545 = "T0 [26:21] (twiddled textures)"
-meaning = "with 0x3f (the closed driver's value) mip levels above 0 are read; with 0-7 only level 0 (on stride textures these bits are T0.STRIDE) [infer]"
+meaning = "an LOD bias of (value - 63) / 8 added before the nearest level is taken: 0x3f (the closed driver's value) is no bias, 0x22 or less keeps LOD 4 at level 0 (on stride textures these bits are T0.STRIDE) [infer]"
 tier = "ours"
 source = "resgx545"
 citation = "E041"
 licence = "MIT"
-evidence = "[HW] E041: probes x-mip-level and x-mip-t0-field"
+evidence = "[HW] E041: probes x-mip-level and x-mip-t0-field; [HW] the mip-field probes (texture-mip-fields, two runs): level = max(0, min(round_half_up(LOD + (value - 63) / 8), maximum)) fits all 128 reads of the 64 values, a biased LOD below 0 reading level 0"
 
 [[term]]
 id = "G0275"
@@ -109,6 +125,22 @@ source = "mesa-csbgen"
 citation = "C0216"
 licence = "MIT"
 evidence = "-"
+
+[[term]]
+id = "G1046"
+name = "T0.MAX_LEVEL"
+status = "named"
+
+[[term.source]]
+term = "T0.MAX_LEVEL"
+kind = "field"
+sgx545 = "T0 [20:17] (twiddled textures)"
+meaning = "the highest mip level read: 1 to 14 cap the level at that value, 0 and 15 read level 0 only; on stride textures these bits are part of T0.STRIDE; it holds the older rows T0.BITS20_19 and T0.NO_MIPMAPS"
+tier = "ours"
+source = "resgx545"
+citation = "probes/texture/mip-fields.toml"
+licence = "MIT"
+evidence = "[HW] the mip-field probes (texture-mip-fields): all 16 values at LOD 1 to 4 on a tagged five-level chain, two runs, level = max(0, min(nearest level of the biased LOD, value)), no level asked past the chain's last; [infer] 15 marking a texture without mipmaps is a reading"
 
 [[term]]
 id = "G0276"
@@ -145,18 +177,18 @@ evidence = "[HW] E041: probe x-mip-mipfilter at fractional LODs"
 [[term]]
 id = "G0278"
 name = "T0.NO_MIPMAPS"
-status = "named"
+status = "inferred"
 
 [[term.source]]
 term = "T0.NO_MIPMAPS"
 kind = "bitfield"
 sgx545 = "T0 bit 18"
-meaning = "set: only level 0 is read, whatever the LOD; the closed driver clears it for a mipmapped texture [infer]"
+meaning = "bit 1 of T0.MAX_LEVEL (20:17), not a mipmap disable: values of the field with this bit set (2, 3, 6, 7, ...) read the chain up to that level [infer]"
 tier = "ours"
 source = "resgx545"
 citation = "E041"
 licence = "MIT"
-evidence = "[HW] E041: probes x-mip-level and x-mip-t0-field"
+evidence = "[HW] E041: probes x-mip-level and x-mip-t0-field; [HW] the mip-field probes (texture-mip-fields, two runs): bits 20:17 at 2 read levels 1, 2, 2, 2 at LOD 1-4, at 0xf level 0"
 
 [[term]]
 id = "G0279"

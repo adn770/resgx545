@@ -1,0 +1,10 @@
+title = "probe table pbe/sideband-fields"
+repo = "data"
+paths = ["pbe/sideband-fields/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 270
+size = 3614007
+sha256 = "a10c7cc6092e1c39203ff7f44b7a15277984fa16e3cb72b8739919ca1dce1793"
+recipe = "probes/pbe/sideband-fields.toml"
+needs = ["render"]

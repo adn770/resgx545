@@ -1,0 +1,10 @@
+title = "probe table pbe/pack-colours"
+repo = "data"
+paths = ["pbe/pack-colours/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 54
+size = 1607738
+sha256 = "598826eff55011fa9970e175df008c9bdf41ed21ceab4dea96dc5f54447ce83c"
+recipe = "probes/pbe/pack-colours.toml"
+needs = ["render"]
