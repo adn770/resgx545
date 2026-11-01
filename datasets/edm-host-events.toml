@@ -1,0 +1,10 @@
+title = "script table edm/host-events"
+repo = "data"
+paths = ["edm/host-events/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 4
+size = 195657
+sha256 = "e78149aa2351c3f3e8c4ad682cb7a46468c16699dd886bacafbb502bd5af80e5"
+recipe = "probes/edm/host-events.toml"
+needs = ["render", "kregnow", "regs", "hold_recovery", "alias_ta3d_ro", "reset"]

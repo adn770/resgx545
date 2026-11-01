@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# dpm context page writable: 0 probes (a shell script run on the laptop by the campaign).
+# Q067: the EDM's page-table builder (PB_FLAGS.INIT_PAGE_TABLE) with the render context's page
+# writable in the client directory for one context (debugfs alias_ctx_rw, the linux fork's commit 37),
+# its page table aimed at scratch pages the tool maps, to measure its store offset.
+needs = [
+    "render", "kpoke", "alias_ctx_rw", "reset", "regs",
+]
+name = "dpm-ctx-page-writable"
+script = "ctx-page-writable.sh"

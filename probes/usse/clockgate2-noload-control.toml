@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse clock gate 2, the control of E445: 0 probes (a shell script run on the laptop by the campaign).
+# Q048: the long loops of usse-clockgate2 (12500000 iterations, floating-point and integer) run
+# with no kregnow write at all, three times each under regtimeline and once plainly, to see whether
+# a loop of that length hangs by itself. The probe binaries are those staged for usse-clockgate2.
+needs = ["render", "kregnow", "regs", "reset"]
+name = "usse-clockgate2-noload-control"
+script = "clockgate2-noload-control.sh"

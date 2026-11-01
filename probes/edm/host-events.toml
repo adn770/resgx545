@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# edm host events: 0 probes (a shell script run on the laptop by the campaign).
+# Q003: whether any host event is raised while a bus-interface fault is held, by enabling host events
+# through debugfs kregnow (the linux fork's commit 36) and counting the host interrupts.
+needs = [
+    "render", "kregnow", "regs", "hold_recovery", "alias_ta3d_ro", "reset",
+]
+name = "edm-host-events"
+script = "host-events.sh"

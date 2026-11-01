@@ -537,6 +537,21 @@ the hold stays and the context's memory waits for the reset that ends it (E355).
 makes renders leave the RT data set's size words and out-of-memory counters as the previous job
 left them.
 
+Four more switches came with linux fork commits 36 to 39 (11.17). `kregnow` writes the three
+registers the firmware never writes after its boot (`CR_CLKGATECTL2`, `CR_EVENT_HOST_ENABLE2` and
+`CR_EVENT_HOST_ENABLE`), at any time and also under a running or held job, one `OFFSET=VALUE` line
+a write as `kreg` does; reading shows them and the host interrupt counts: all, and those with no
+EDM SW_EVENT while the enables were written, with the status of the last (the first write of an
+enable keeps what the enables held, and such an interrupt puts them back, since only the SW_EVENT
+is acknowledged). `alias_ctx_rw` maps the page of the next render context created (its HW context,
+RT data set and PB descriptor) writable in the client directory instead of read-only, once.
+`tadata_fill` (`PAGE VALUE`, or `PAGE VALUE ramp` for VALUE plus the word's index) fills a page of
+the next render's TA data just before its kick, once. `render_share_pb` makes the next render
+context created run on the PB descriptor of the newest render context of its VM, once; the
+sharing context is destroyed first, and its cleanup leaves the PB to the other. The tool's
+`tri --ctx2 [--share-pb] [--overlap]` runs a second render context in the VM, on a PB of its own
+or the first's.
+
 Held on the laptop, a render that faulted on its unmapped stream page stops the firmware, not
 only its job: the firmware answers no kernel command (the kernel's 500 ms wait for GETMISCINFO
 ends the query, about 0.65 s from the shell), another context's fill does not run, the

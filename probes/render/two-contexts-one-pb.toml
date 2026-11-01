@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# render two contexts one pb: 0 probes (a shell script run on the laptop by the campaign).
+# Q049, Q067: a second render context in the VM, on its own parameter buffer and on the first's
+# (sgxfive-test tri --ctx2 --share-pb, debugfs render_share_pb, the linux fork's commit 39), jobs
+# overlapping, with render context dword 7 poked in either context; and the DPM registers sampled
+# around the two contexts' jobs.
+needs = [
+    "render", "kpoke", "render_share_pb", "regs", "reset",
+]
+name = "render-two-contexts-one-pb"
+script = "two-contexts-one-pb.sh"

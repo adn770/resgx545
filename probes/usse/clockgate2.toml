@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse clock gate 2: 2 probes, a script (clockgate2.sh).
+# Q048: CR_CLKGATESTATUS sampled under a floating-point loop, an integer loop, a texture-fetching
+# copy and a fill with each two-bit field of CR_CLKGATECTL2 (written through debugfs kregnow) at 0,
+# 1 and 3 in turn, the others as the boot leaves them; then both MADD fields written while a loop
+# ten times as long runs.
+needs = ["render", "kregnow", "regs", "reset"]
+name = "usse-clockgate2"
+script = "clockgate2.sh"
+
+[[probe]]
+name = "usse-clockgate2-fmad"
+question = "a fill whose pixel program runs 1e7 instructions, six fmads in each loop of eight (the floating-point job of the clock-gate runs)"
+source = "fmad_loop.s"
+inputs = ["ITER"]
+labels = ["1250000 iterations"]
+cases = [[0x1312D0]]
+
+[[probe]]
+name = "usse-clockgate2-int"
+question = "the same loop with six integer multiply-adds in place of the fmads"
+source = "int_loop.s"
+inputs = ["ITER"]
+labels = ["1250000 iterations"]
+cases = [[0x1312D0]]
+
+[[probe]]
+name = "usse-clockgate2-fmadlong"
+question = "the floating-point loop ten times as long, so that a debugfs write lands while it runs"
+source = "fmad_loop.s"
+inputs = ["ITER"]
+labels = ["12500000 iterations"]
+cases = [[0xBEBC20]]
+
+[[probe]]
+name = "usse-clockgate2-intlong"
+question = "the integer loop ten times as long, so that a debugfs write lands while it runs"
+source = "int_loop.s"
+inputs = ["ITER"]
+labels = ["12500000 iterations"]
+cases = [[0xBEBC20]]

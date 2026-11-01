@@ -3,7 +3,7 @@ id = "Q081"
 question = "what does CR_DPM_REG_074C bit 8 make the DPM read or write near offset 0x6010 of the context's TA-data space, and what fixes that place?"
 unit = "dpm"
 phase = 11
-evidence = ["E203", "E206", "E313", "E362"]
+evidence = ["E203", "E206", "E313", "E362", "E447"]
 terms = ["CR_DPM_REG_074C", "cmd_ta.dpm_reg_074c"]
 +++
 
@@ -17,12 +17,16 @@ control and state pages lie at 0x4000 and 0x6000), the triangle is exact, nothin
 the TA data equals an unpoked control's to the dword. So the access writes nothing new there: a
 read, or a write of the value already in place.
 
-What is open: what it reads, and what bits 7:0 select.
+Narrowed again by E447 (the TA data page at 0x6000 filled with a ramp or a constant before the job,
+debugfs tadata_fill, on a context for 4096x4096): with bit 8 and bits 7:0 of 0x00, 0x01, 0x02, 0x04,
+0x08, 0x10, 0x20, 0x40, 0x80, 0xff, 0x55 or 0xaa the page comes back as written and the image is
+exact in all 17 runs, so the access neither writes there nor reaches the picture through what it
+reads.
 
-To settle it: the TA data's page at 0x6000 filled with a pattern before the job (a kernel or tool
-feature: no poke reaches the TA data), bit 8 with values of bits 7:0, the image and the pattern
-compared.
+What is open: whether what it reads reaches a register or the DPM's state; what bits 7:0 select, as
+no value changes anything seen (twelve values were run, not all 256); what fixes that place (the
+TA data's base, `CR_DPM_CONTROL_BASE` or `CR_DPM_STATE_BASE0`); other pages near 0x6000.
 
-Not run in 11.16: no poke reaches the TA data. Kernel need: a debugfs hook that fills the TA data
-page at 0x6000 of the render context with a pattern before a job, then bit 8 with values of bits
-7:0 (the dpm/reg-074c probes and kpoke ta: are ready). Status: narrowed, not answered.
+To settle it: the DPM registers (0x0700 to 0x0760) and CR_DPM_REG_074C's neighbours sampled under
+regtimeline across the cases of E447, with the page filled with addresses, with zeroes and with
+a ramp.

@@ -294,8 +294,14 @@ write-out, `DPM` the parameter memory manager.
 `TRIG_TA` (bit 7) and `TRIG_3D` (bit 6) latch on the laptop: bit 7 within 0.2 ms of the PB load of
 a TA that hangs or faults, bit 6 about 0.1 ms into a fill whose pixel program loops 128 times or
 more; neither sets in the renders, fills and copies of our stack, and each stays set until the
-core is reset (E357). `CLKGATESTATUS` (`0x0008`) reads 0x20 idle and the same values under a
-floating-point and an integer pixel loop with the gates as the boot leaves them (E365; Q048).
+core is reset (E357). Both are host events: written alone into `CR_EVENT_HOST_ENABLE2` they raise
+the host interrupt once set (E444), as do `TIMER` (`CR_EVENT_STATUS` bit 29) and
+`DCU_INVAL_COMPLETE`, which an idle core has set; the EDM's write fault sets no bit beyond the
+idle ones. `CLKGATESTATUS` (`0x0008`) reads 0x20 idle and the same values under a floating-point
+and an integer pixel loop with the gates as the boot leaves them (E365), and with seven two-bit
+fields of `CR_CLKGATECTL2` at 0, 1 and 3, the MADD fields among them, written in turn while idle
+(E445; Q048). Writing both MADD fields during a loop ten times as long hung all six jobs, and the
+same loops with no write hung in 6 of 7 runs, so that half is untested (E445).
 
 *Based on sgx545-ce `src/services4/srvkm/devices/sgx/sgxinit.c`, `sgxreset.c`,
 `src/services4/include4/sgxscript.h`, `src/services4/include/sgx_mkif_km.h`,

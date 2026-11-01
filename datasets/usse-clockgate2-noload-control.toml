@@ -1,0 +1,10 @@
+title = "script table usse/clockgate2-noload-control"
+repo = "data"
+paths = ["usse/clockgate2-noload-control/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 4
+size = 104670
+sha256 = "487fbd340199db2d90b16f09363f4bb3507da4ed07fcd59ad46cd00d224e9c44"
+recipe = "probes/usse/clockgate2-noload-control.toml"
+needs = ["render", "kregnow", "regs", "reset"]

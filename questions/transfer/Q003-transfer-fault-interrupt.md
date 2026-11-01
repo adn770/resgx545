@@ -3,7 +3,7 @@ id = "Q003"
 question = "which event (if any) does a bus-interface fault raise, and what do the fault-request bits of CR_BIF_INT_STAT name?"
 unit = "transfer"
 phase = 4
-evidence = ["E021", "E317", "E319", "E320", "E357"]
+evidence = ["E021", "E317", "E319", "E320", "E357", "E444"]
 terms = ["CR_BIF_FAULT", "CR_BIF_INT_STAT"]
 +++
 
@@ -21,13 +21,18 @@ Narrowed by E357 (one fault sampled from before its kick): the fault raises no b
 right after it, as it does for a TA that hangs without a fault. `CR_BIF_FAULT`'s bits 3:0 name the
 faulting directory list (E360).
 
-Open: whether any host-enabled event follows a fault (our debug interface cannot write
-`CR_EVENT_HOST_ENABLE`); which requester each of bits 15:0 names beyond those seen; bits 16 and 18.
+Narrowed by E444 (debugfs kregnow writes the host enables while a fault is held, 14 held faults of
+three kinds): the bits that follow a TA read fault and a background-program fetch fault,
+`CR_EVENT_STATUS2` bits 7 (`TRIG_TA`) and 6 (`TRIG_3D`), are host events (alone they raise the host
+interrupt once enabled), but bit 7 is the TA trigger's and not the fault's alone (E357); the EDM's
+write fault sets none. `CR_EVENT_STATUS` bit 29 (`TIMER`) and `CR_EVENT_STATUS2` bit 10
+(`DCU_INVAL_COMPLETE`), set when idle, are host events too. The EDM's write to a read-only page
+leaves the status registers as they are idle.
 
-To settle it: a kernel switch that enables one more host event at a time while a fault is held,
-the host interrupt counted.
+Open: which requester each of bits 15:0 of `CR_BIF_INT_STAT` names beyond those seen; bits 16 and
+18; whether a fault of another unit (the 3D's own fetches, the texture unit, a transfer) sets
+another status bit; what raises bits 7 and 6 of `CR_EVENT_STATUS2` besides a hang.
 
-Not run in 11.16: debugfs kreg refuses CR_EVENT_HOST_ENABLE, so no host event can be enabled while
-a fault is held. Kernel need: a debugfs switch that writes that register one bit at a time, with
-the host interrupt count read, for faults of the TA, the 3D and the PDS (the hold_recovery faults
-of E317, E319 and E363 are ready). Status: narrowed, not answered.
+To settle it: the same enables over faults of the other requesters (a transfer to a read-only page,
+a texture fetch from an unmapped page, a 3D store to one), the status registers read and the
+interrupts counted for each.

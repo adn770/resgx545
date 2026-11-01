@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# dpm context page writable, the control of E446: 0 probes (a shell script run on the laptop by the
+# campaign).
+# Q067: the page-table base of the PB descriptor aimed at the scratch pages as in E446's case C, but
+# with PB flag bit 0 clear (the descriptor's flag word as the kernel leaves it, and set to 0), to see
+# whether the render alone changes the scratch.
+needs = [
+    "render", "kpoke", "alias_ctx_rw", "reset", "regs",
+]
+name = "dpm-ctx-page-writable-control"
+script = "ctx-page-writable-control.sh"

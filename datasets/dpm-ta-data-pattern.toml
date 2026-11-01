@@ -1,0 +1,10 @@
+title = "script table dpm/ta-data-pattern"
+repo = "data"
+paths = ["dpm/ta-data-pattern/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 4
+size = 77764
+sha256 = "7a21997a4df6d45d50e783eb91368aec04211e8bbc558c8b05ee5f591dc185f3"
+recipe = "probes/dpm/ta-data-pattern.toml"
+needs = ["render", "kpoke", "tadata_fill", "reset", "regs"]

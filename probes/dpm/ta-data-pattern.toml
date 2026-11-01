@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# dpm ta data pattern: 0 probes (a shell script run on the laptop by the campaign).
+# Q081: CR_DPM_REG_074C's bit 8 with values of bits 7:0, the page of the context's TA data at
+# 0x6000 filled with a pattern before the job (debugfs tadata_fill, the linux fork's commit 38).
+needs = [
+    "render", "kpoke", "tadata_fill", "reset", "regs",
+]
+name = "dpm-ta-data-pattern"
+script = "ta-data-pattern.sh"

@@ -1,0 +1,10 @@
+title = "script and probe table usse/clockgate2"
+repo = "data"
+paths = ["usse/clockgate2/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 16
+size = 576844
+sha256 = "1dfd30ba5fb942b90e3ab27fea547236413f8601cc278692e29dd405dbbe6ee2"
+recipe = "probes/usse/clockgate2.toml"
+needs = ["render", "kregnow", "regs", "reset"]

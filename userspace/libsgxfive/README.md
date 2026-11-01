@@ -271,7 +271,7 @@ tri [--width W --height H -n N] [--max-width W --max-height H] [--fault]
     [--scratch N [--scratch-fill V] [--scratch-at ADDR]] [--kpoke-render N:SPEC]...
     [--move N:DX,DY]...
     [--geometry N]... [--keep-going] [--dump-render DIR] [--words DIR] [--wait-ms MS]
-    [JOB OPTIONS]
+    [--ctx2 [--share-pb] [--overlap] [--kpoke-render2 N:SPEC]...] [JOB OPTIONS]
 contexts [--width W --height H -n N]
 regaccess
 probe [--temps N] [--coords] [--pixels] [--scratch-pages N] [--pds N --use USE]
@@ -309,6 +309,15 @@ and `DIR/ta3d.N.bin` before the first render (N = 0) and after each render N, fa
 while the context lives (`tools/usse-asm/render_words.py` reads them). `--wait-ms MS` waits MS
 milliseconds for each render (default 5000), so a script can read the kernel's state while a
 held hang lasts.
+`--ctx2` creates a second render context in the VM, for the same size of target, and renders the
+same scene on it after each render of the first, in the other pair of colours, checking it on
+its own (lines `tri2 ...`); the contexts' buffers are destroyed second context first.
+`--share-pb` writes `Y` to the kernel's debugfs `render_share_pb` before the second context is
+created, so that it runs on the first's parameter buffer (the linux fork's debug option).
+`--overlap` submits the second context's job before the first's is waited for; whether both were in
+the firmware at once is not checked. `--kpoke-render2 N:SPEC` is `--kpoke-render` for the second
+context's render N (with `--overlap`, written 30 ms after the first context's job is submitted, so
+that the kernel's kick of the first has taken what was armed before it).
 
 `contexts` creates N render contexts (default 32) for targets up to W x H (default 64 x 64)
 in one VM, and prints the memory they take: MemFree and LowFree of `/proc/meminfo`, before

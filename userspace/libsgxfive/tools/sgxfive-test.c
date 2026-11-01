@@ -16,7 +16,7 @@
  *   tri   [--width W --height H -n N] [--max-width W --max-height H] [--fault]
  *         [--scratch N [--scratch-fill V] [--scratch-at ADDR]] [--kpoke-render N:SPEC]... [--move N:DX,DY]...
  *         [--geometry N]... [--keep-going] [--dump-render DIR] [--words DIR]
- *         [--wait-ms MS] [JOB OPTIONS]
+ *         [--wait-ms MS] [--ctx2 [--share-pb] [--overlap]] [JOB OPTIONS]
  *                                 the first triangle on a render context, N times,
  *                                 every pixel against the CPU reference; the context
  *                                 takes targets up to --max-width x --max-height
@@ -42,7 +42,21 @@
  *                                 DIR/words.N.txt and DIR/ta3d.N.bin before the first
  *                                 render (N = 0) and after each render N, failed or
  *                                 not, while the context lives; --wait-ms MS: how long
- *                                 each render is waited for (default 5000)
+ *                                 each render is waited for (default 5000);
+ *                                 --ctx2: a second render context in the VM (the same
+ *                                 scene, the other pair of colours), rendered after each
+ *                                 render of the first and checked on its own (the lines
+ *                                 "tri2"); --share-pb: it runs on the first's parameter
+ *                                 buffer (writes Y to debugfs render_share_pb before it
+ *                                 is created; the kernel needs the debug option);
+ *                                 --overlap: its job is submitted before the first's is
+ *                                 waited for (whether both were in the firmware at once
+ *                                 is not checked);
+ *                                 --kpoke-render2 N:SPEC: as --kpoke-render, before the
+ *                                 second context's render N (with --overlap, 30 ms
+ *                                 after the first context's job is submitted, so that
+ *                                 the kernel has kicked it and the poke lands on the
+ *                                 second context's kick)
  *   contexts [--width W --height H -n N]  N render contexts for targets up to W x H
  *                                 in one VM, and the memory they take (MemFree and
  *                                 LowFree of /proc/meminfo, before and after)
@@ -214,13 +228,16 @@ struct opts {
 	uint32_t scratch_fill;		/* tri: the scratch buffer's dwords before a render */
 	uint32_t scratch_at;		/* tri: where the scratch buffer is mapped (0: allocated) */
 	/* tri: kernel pokes written to debugfs kpoke just before render n (--kpoke-render) */
-	struct { uint32_t n; const char *spec; } kpr[KPR_MAX];
+	struct { uint32_t n; const char *spec; bool second; } kpr[KPR_MAX];
 	unsigned int nkpr;
 	uint32_t geometry;		/* tri: renders submitted geometry only (bit n - 1) */
 	const char *dump_dir;		/* tri: the scene's memory there after the renders */
 	const char *words_dir;		/* tri: the context's words there around each render */
 	uint32_t wait_ms;		/* tri: each render's wait; 0: WAIT_NS */
 	bool keep_going;		/* tri: go on after a render that does not check */
+	bool ctx2;			/* tri: a second render context in the VM, rendering too */
+	bool share_pb;			/* tri: ... on the first's parameter buffer (kernel debugfs) */
+	bool overlap;			/* tri: ... its job submitted before the first's is waited for */
 	/* tri: render n's triangle moved by dx, dy pixels (--move) */
 	struct { uint32_t n; int32_t dx, dy; } moves[KPR_MAX];
 	unsigned int nmoves;
@@ -259,7 +276,8 @@ static int usage(void)
 		"                      --fault --scratch N --scratch-fill V --scratch-at ADDR\n"
 		"                      --kpoke-render N:SPEC --move N:DX,DY --geometry N\n"
 		"                      --keep-going --dump-render DIR --words DIR\n"
-		"                      --wait-ms MS],\n"
+		"                      --wait-ms MS --ctx2 [--share-pb] [--overlap]\n"
+		"                      [--kpoke-render2 N:SPEC]],\n"
 		"                 fill, copy and tri also take [--poke SPACE:INDEX=VALUE]...\n"
 		"                      [--poke SPACE:INDEX^=VALUE]... [--pixels] [--regs LO-HI],\n"
 		"                 contexts [--width W --height H -n N],\n"
@@ -1657,6 +1675,7 @@ static int probe_tri_check(struct probe_opts *po)
 }
 
 static int kpoke_write(const char *spec);	/* below, with the tri command's */
+static int debugfs_set(const char *name, const char *value);
 
 /*
  * --dump-render: the kernel's debugfs render_param and render_tadata (the newest render
@@ -2009,6 +2028,24 @@ static void scratch_destroy(struct sgxfive_vm *vm, struct scratch *s)
  * tests): the kernel arms it for the next job of its kind. One write(2), appending and
  * never seeking: the debugfs file has no seek, which stdio's append mode does.
  */
+/* One debugfs file's value (SGXFIVE_DEBUGFS overrides the directory, for the tests). */
+static int debugfs_set(const char *name, const char *value)
+{
+	const char *dbg = getenv("SGXFIVE_DEBUGFS");
+	char path[4096];
+	int fd, ret = 0;
+	size_t n = strlen(value);
+
+	snprintf(path, sizeof(path), "%s/%s", dbg ? dbg : "/sys/kernel/debug/dri/0/sgx", name);
+	fd = open(path, O_WRONLY);
+	if (fd < 0)
+		return -errno;
+	if (write(fd, value, n) != (ssize_t)n)
+		ret = errno ? -errno : -EIO;
+	close(fd);
+	return ret;
+}
+
 static int kpoke_write(const char *spec)
 {
 	const char *path = getenv("SGXFIVE_KPOKE");
@@ -2091,16 +2128,46 @@ static int save_words(const char *dir, uint32_t n)
  * context, our programs and scene in the VM, n renders with alternating
  * colours, every pixel against the CPU reference and the guard area intact.
  */
+/* The second context's render i: the first's scene in the other pair of colours. */
+static int tri2_submit(struct sgxfive_render *r2, const struct opts *o, uint32_t i,
+		       struct sgxfive_tri_params *p2)
+{
+	int ret;
+
+	static const uint32_t colours[2][2] = {
+		{ 0xff00ff00, 0xff203040 }, { 0xffff0000, 0xff000080 },
+	};
+
+	for (unsigned int k = 0; k < o->nkpr; k++) {
+		if (o->kpr[k].n != i + 1 || !o->kpr[k].second)
+			continue;
+		/*
+		 * Overlapping, the kernel must have kicked the first context's job before the poke
+		 * is armed, or the poke lands on that kick: give its scheduler 30 ms.
+		 */
+		if (o->overlap)
+			usleep(30000);
+		ret = kpoke_write(o->kpr[k].spec);
+		if (ret)
+			return ret;
+		printf("tri: kpoke before second-context render %u: %s\n", i + 1, o->kpr[k].spec);
+	}
+	sgxfive_tri_default(p2, o->width, o->height);
+	p2->colour = colours[(i + 1) % 2][0];
+	p2->bg_colour = colours[(i + 1) % 2][1];
+	return sgxfive_render_tri_flags(r2, p2, 0, 0, 0);
+}
+
 static int cmd_tri(struct tool *t, const struct opts *o)
 {
 	static const uint32_t colours[2][2] = {
 		{ 0xff00ff00, 0xff203040 }, { 0xffff0000, 0xff000080 },
 	};
-	struct sgxfive_render *r = NULL;
+	struct sgxfive_render *r = NULL, *r2 = NULL;
 	struct sgxfive_poke_set pokes = { o->pokes, o->npokes };
 	struct sgxfive_tri_params p;
 	struct sgxfive_vm *vm = NULL;
-	uint32_t ctx = 0, ok = 0;
+	uint32_t ctx = 0, ctx2 = 0, ok = 0;
 	int bad = 0;
 	const uint32_t max_w = o->max_width == UINT32_MAX ? o->width : o->max_width;
 	const uint32_t max_h = o->max_height == UINT32_MAX ? o->height : o->max_height;
@@ -2138,6 +2205,24 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		}
 	}
 	sgxfive_render_set_hook(r, sgxfive_poke_hook, &pokes);	/* none: no change */
+	if (o->ctx2) {
+		if (o->share_pb) {
+			ret = debugfs_set("render_share_pb", "Y");
+			if (ret) {
+				fail("render_share_pb", ret);
+				goto out;
+			}
+		}
+		ret = sgxfive_render_ctx_create(vm, max_w, max_h, &ctx2);
+		if (!ret)
+			ret = sgxfive_render_create(vm, ctx2, &r2);
+		if (ret) {
+			fail("second render context", ret);
+			goto out;
+		}
+		printf(o->share_pb ? "tri: second render context shares the first's parameter buffer\n"
+				   : "tri: second render context\n");
+	}
 	if (o->words_dir) {
 		ret = save_words(o->words_dir, 0);
 		if (ret) {
@@ -2148,6 +2233,8 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 	}
 	for (uint32_t i = 0; i < o->n; i++) {
 		struct sgxfive_tri_counts n;
+		struct sgxfive_tri_params p2;
+		int ret2 = 0, wait2 = 0;
 		bool geometry;
 		long long t0 = now_ns();
 		uint32_t guard;
@@ -2167,7 +2254,7 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 			       o->moves[k].dy);
 		}
 		for (unsigned int k = 0; k < o->nkpr; k++) {
-			if (o->kpr[k].n != i + 1)
+			if (o->kpr[k].n != i + 1 || o->kpr[k].second)
 				continue;
 			ret = kpoke_write(o->kpr[k].spec);
 			if (ret) {
@@ -2181,9 +2268,37 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		geometry = o->geometry >> i & 1;
 		ret = sgxfive_render_tri_flags(r, &p, 0, 0,
 					       geometry ? DRM_SGXFIVE_SUBMIT_JOB_RENDER_GEOMETRY : 0);
+		if (r2 && !ret && o->overlap)
+			ret2 = tri2_submit(r2, o, i, &p2);
 		if (!ret)
 			wait_err = sgxfive_render_wait(r, wait_ns);
 		print_job(ret, wait_err);
+		if (r2 && !ret && !wait_err) {
+			if (!o->overlap)
+				ret2 = tri2_submit(r2, o, i, &p2);
+			wait2 = ret2 ? 0 : sgxfive_render_wait(r2, wait_ns);
+			print_job(ret2, wait2);
+			if (!ret2 && !wait2) {
+				struct sgxfive_tri_counts n2;
+
+				ret2 = sgxfive_tri_check(&p2, sgxfive_render_fb(r2), &n2);
+				printf("tri2 %ux%u #%u: %u triangle, %u background, %u other; wrong %u "
+				       "inside, %u outside, %u at edges; %u if flipped; guard %u\n",
+				       p2.width, p2.height, i + 1, n2.tri, n2.bg, n2.other,
+				       n2.wrong_in, n2.wrong_out, n2.wrong_edge, n2.flipped,
+				       sgxfive_render_guard_dirty(r2, &p2));
+				if (!ret2 && sgxfive_render_guard_dirty(r2, &p2))
+					ret2 = -EIO;
+			}
+			if (ret2 || wait2) {
+				if (ret2 && ret2 != -EIO && !wait2)
+					fail("second context render", ret2);
+				else
+					fail_job("second context render", wait2 ? wait2 : ret2);
+				ret = wait2 ? wait2 : ret2;
+				break;
+			}
+		}
 		if (o->words_dir) {
 			int wr = save_words(o->words_dir, i + 1);
 
@@ -2256,6 +2371,10 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		printf("tri: FAILED after %u renders\n", ok);
 	}
 out:
+	/* the second context first: it may run on the first's parameter buffer */
+	sgxfive_render_destroy(r2);
+	if (ctx2)
+		sgxfive_ctx_destroy(t->dev, ctx2);
 	sgxfive_render_destroy(r);
 	scratch_destroy(vm, &sc);
 	if (ctx)
@@ -2390,6 +2509,13 @@ static int parse_opts(int argc, char **argv, struct opts *o)
 			i--;		/* a flag: no value */
 			continue;
 		}
+		if (!strcmp(argv[i], "--ctx2") || !strcmp(argv[i], "--share-pb") ||
+		    !strcmp(argv[i], "--overlap")) {
+			*(argv[i][2] == 'c' ? &o->ctx2 : argv[i][2] == 's' ? &o->share_pb :
+			  &o->overlap) = true;
+			i--;		/* a flag: no value */
+			continue;
+		}
 		if (!strcmp(argv[i], "--print-addrs") || !strcmp(argv[i], "--page-before")) {
 			*(argv[i][2] == 'p' && argv[i][3] == 'r' ? &o->print_addrs : &o->page_before) = true;
 			i--;		/* a flag: no value */
@@ -2436,16 +2562,19 @@ static int parse_opts(int argc, char **argv, struct opts *o)
 			o->poke_args[o->npokes++] = argv[i + 1];
 			continue;
 		}
-		if (!strcmp(argv[i], "--kpoke-render") && i + 1 < argc) {
+		if ((!strcmp(argv[i], "--kpoke-render") || !strcmp(argv[i], "--kpoke-render2")) &&
+		    i + 1 < argc) {
+			const bool second = argv[i][strlen(argv[i]) - 1] == '2';
 			char *end;
 			unsigned long n = strtoul(argv[i + 1], &end, 0);
 
 			if (o->nkpr == KPR_MAX || end == argv[i + 1] || *end != ':' || !end[1]) {
-				fprintf(stderr, "sgxfive-test: bad --kpoke-render %s (N:SPEC)\n",
+				fprintf(stderr, "sgxfive-test: bad %s %s (N:SPEC)\n", argv[i],
 					argv[i + 1]);
 				return -1;
 			}
 			o->kpr[o->nkpr].n = (uint32_t)n;
+			o->kpr[o->nkpr].second = second;
 			o->kpr[o->nkpr++].spec = end + 1;
 			continue;
 		}
@@ -2935,6 +3064,18 @@ int main(int argc, char **argv)
 		fprintf(stderr, "sgxfive-test: --dump-render is for tri (probe takes its own)\n");
 		return 2;
 	}
+	if ((o.ctx2 || o.share_pb || o.overlap) && strcmp(cmd, "tri")) {
+		fprintf(stderr, "sgxfive-test: --ctx2, --share-pb and --overlap are for tri\n");
+		return 2;
+	}
+	if ((o.share_pb || o.overlap) && !o.ctx2) {
+		fprintf(stderr, "sgxfive-test: --share-pb and --overlap need --ctx2\n");
+		return 2;
+	}
+	if (o.ctx2 && o.geometry) {
+		fprintf(stderr, "sgxfive-test: --ctx2 does not take --geometry\n");
+		return 2;
+	}
 	if ((o.words_dir || o.wait_ms) && strcmp(cmd, "tri")) {
 		fprintf(stderr, "sgxfive-test: --words and --wait-ms are for tri\n");
 		return 2;
@@ -2943,6 +3084,12 @@ int main(int argc, char **argv)
 		fprintf(stderr, "sgxfive-test: --geometry is for tri, renders 1 to %u (the last "
 			"render closes the scene)\n", o.n - 1);
 		return 2;
+	}
+	for (unsigned int k = 0; k < o.nkpr; k++) {
+		if (o.kpr[k].second && !o.ctx2) {
+			fprintf(stderr, "sgxfive-test: --kpoke-render2 needs --ctx2\n");
+			return 2;
+		}
 	}
 	for (unsigned int k = 0; k < o.nkpr + o.nmoves; k++) {
 		const uint32_t n = k < o.nkpr ? o.kpr[k].n : o.moves[k - o.nkpr].n;

@@ -207,6 +207,69 @@ def test_tri(size):
     assert "tri: 2 renders ok" in r.stdout
 
 
+@pytest.mark.parametrize("overlap", [False, True])
+def test_tri_second_context(overlap):
+    # a second render context in the VM, the same scene in its own colours, each render checked
+    # against its own triangle; --overlap submits both before waiting for either
+    r = run("--mock", "tri", "-n", "2", "--ctx2", *(["--overlap"] if overlap else []))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "tri: second render context" in r.stdout
+    for i in (1, 2):
+        assert re.search(rf"^tri2 64x64 #{i}: \d+ triangle, \d+ background, 0 other; "
+                         r"wrong 0 inside, 0 outside, 0 at edges; \d+ if flipped; guard 0$",
+                         r.stdout, re.M), r.stdout
+    assert "tri: 2 renders ok" in r.stdout
+
+
+def test_tri_share_pb_asks_the_kernel_before_the_second_context(tmp_path, monkeypatch):
+    (tmp_path / "render_share_pb").write_text("N\n")
+    monkeypatch.setenv("SGXFIVE_DEBUGFS", str(tmp_path))
+    r = run("--mock", "tri", "--ctx2", "--share-pb")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert (tmp_path / "render_share_pb").read_text().strip() == "Y"
+    assert "tri: second render context shares the first's parameter buffer" in r.stdout
+
+
+def test_tri_share_pb_needs_the_second_context():
+    r = run("--mock", "tri", "--share-pb")
+    assert r.returncode == 2
+    r = run("--mock", "tri", "--overlap")
+    assert r.returncode == 2
+    r = run("--mock", "fill", "--ctx2")
+    assert r.returncode == 2
+
+
+def test_tri_share_pb_without_debugfs_fails(tmp_path, monkeypatch):
+    monkeypatch.setenv("SGXFIVE_DEBUGFS", str(tmp_path / "none"))
+    r = run("--mock", "tri", "--ctx2", "--share-pb")
+    assert r.returncode == 1
+    assert "render_share_pb" in r.stderr
+
+
+@pytest.mark.parametrize("overlap", [[], ["--overlap"]])
+def test_tri_second_context_kpoke(tmp_path, monkeypatch, overlap):
+    # --kpoke-render2 writes its poke just before the second context's render N, so that the
+    # kernel applies it to that context's kick, not the first's
+    kp = tmp_path / "kpoke"
+    kp.write_text("")
+    monkeypatch.setenv("SGXFIVE_KPOKE", str(kp))
+    r = run("--mock", "tri", "-n", "2", "--ctx2", *overlap,
+            "--kpoke-render2", "2:ctx:7=0xdeadbeef")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert kp.read_text() == "ctx:7=0xdeadbeef\n"
+    assert "tri: kpoke before second-context render 2: ctx:7=0xdeadbeef" in r.stdout
+    assert "tri: kpoke before render" not in r.stdout
+
+
+@pytest.mark.parametrize("args", [["--kpoke-render2", "1:ctx:7=1"],
+                                  ["--ctx2", "--kpoke-render2", "3:ctx:7=1", "-n", "2"],
+                                  ["--ctx2", "--kpoke-render2", "x"]])
+def test_tri_kpoke_render2_bounds(args):
+    r = run("--mock", "tri", *args)
+    assert r.returncode in (1, 2)
+    assert r.returncode == 2 or "bad --kpoke-render2" in r.stderr
+
+
 def test_tri_default_is_the_first_triangle():
     r = run("--mock", "tri", "-n", "1")
     assert r.returncode == 0, r.stdout + r.stderr

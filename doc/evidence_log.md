@@ -2764,6 +2764,55 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   12 runs (the three runs of 300 vertices in 0x100 pages and one of 900 in 0x422 pages) and never in
   the other 8.
   *dpm; HW, infer; data: `dpm-partial-wide-timelines`.*
+- `E444` With a bus-interface fault held and the host event enables written through debugfs kregnow,
+  the host interrupts that come with no SW_EVENT are those of CR_EVENT_STATUS bit 29 and
+  CR_EVENT_STATUS2 bit 10, which an idle GPU has set too, of bit 7 after a TA fault (status2 0x480),
+  and of bit 6 after a background program's fetch fault (0x440); the EDM's write to a read-only page
+  leaves status2 at the idle 0x400 and sets no further bit; the fault itself raises no host
+  interrupt while only the EDM's event is enabled (14 held faults: five of the TA read and of the
+  PDS fetch, four of the EDM write; and an idle control).
+  *edm; HW, infer; data: `edm-host-events`.*
+- `E445` With CR_CLKGATECTL2 written through debugfs kregnow, each of seven of its two-bit fields
+  (bits 13:12 and 21:20, the MADD0 and MADD1 fields of the GPL kernel's header, and bits 15:14,
+  17:16, 19:18, 23:22 and 1:0) at 0, 1 and 3 in turn with the others as the boot leaves them (2),
+  CR_CLKGATESTATUS reads the same five values 0x20, 0x000ccfa0, 0x000fffa4, 0x000fffa7 and
+  0x000fffff under a floating-point loop, an integer loop, a texture copy and a fill as it does
+  unwritten, the loops take 43.99 to 44.49 ms in all 22 settings written while idle, and the copy
+  and the fill finish with the right pixels; with both MADD fields written at 0, 1 and 3 while a
+  loop ten times as long ran, all six runs hung (job hung, context lost) and the GPU was reset, and
+  the same long loops run with no write at all hung in 6 of 7 runs (floating-point 3 of 3, integer 2
+  of 3, a plain run 1 of 1; linux fork 01cff214d7d2), so the hang is the long loop's and not the
+  write's.
+  *platform; HW, infer; data: `usse-clockgate2`, `usse-clockgate2-noload-control`.*
+- `E446` With the render context's page mapped writable in the client directory (debugfs
+  alias_ctx_rw) and render flag bit 0 of the PB descriptor set at the first kick, a 64x64 render
+  comes out exact in 3 of 3 runs on the kernel's own page table (the table after the job equal to
+  that of the job without the flag, byte for byte) and in 3 of 3 runs with the descriptor's
+  page-table base aimed at 16 zeroed scratch pages, where 1058 dwords (0x422 pages) of the table at
+  the base change, 1023 in the first scratch page from dword 1 on and 35 in the second from dword 0,
+  and moving the base by 0x1000 or 0x2000 moves them by as much (a control with the base at scratch
+  and flag bit 0 clear, 6 of 6 runs, faults the render and changes 0 to 2 scratch dwords, so the
+  1058 stores need the flag [HW]; that the EDM's builder makes them is [infer]); with no
+  alias_ctx_rw the same pokes fault as in E362 (once each).
+  *dpm; HW, infer; data: `dpm-ctx-page-writable`, `dpm-ctx-page-writable-control`.*
+- `E447` With the TA data page at 0x6000 of a 4096x4096 render context filled before the job with a
+  ramp (0xa5000000 plus the word's index) or a constant (0x5a5a5a5a), a 64x64 triangle with
+  CR_DPM_REG_074C written through the TA command (word 167) as 0x0ff, as 0x100, 0x101, 0x102, 0x104,
+  0x108, 0x110, 0x120, 0x140, 0x180, 0x1ff, 0x155 and 0x1aa (bit 8 with bits 7:0 of 0x00, 0x01,
+  0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0xff, 0x55 and 0xaa) and unpoked draws the exact image
+  in all 17 runs, no fault, and the page reads back as written in 1024 of 1024 words in every run,
+  the TA data's other nonzero page (page 67, 71 words) the same in all.
+  *dpm; HW, infer; data: `dpm-ta-data-pattern`.*
+- `E448` A second render context in the VM, on a parameter buffer of its own or on the first
+  context's (the PB descriptor and block of the first), renders the triangle exactly in 69 of 69
+  renders at 64x64 and 256x256, with the two contexts' jobs run one after the other or the second's
+  job submitted before the first's was waited for (the overlap in the firmware was not timed), and
+  with render context dword 7 poked to 0xdeadbeef or 0xffffffff in the first context, the second or
+  both (20 renders per context in 10 cases, and 2 per context in a last one, 69 per context in all:
+  32 + 20 + 2 + 15): no fault, no recovery, the first context's 69 renders exact too, and the second
+  context's dword 7 reading 0x10c63000 before the first render and 0xdeadbeef after the first and
+  after the second render.
+  *render; HW, infer; data: `render-two-contexts-one-pb`.*
 
 ## By unit
 
@@ -2774,12 +2823,12 @@ Records: E151.
 ### dpm
 
 Records: E199, E200, E201, E202, E204, E205, E206, E203, E253, E256, E309, E310, E311, E312, E313,
-E327, E358, E362, E438, E442, E443.
+E327, E358, E362, E438, E442, E443, E446, E447.
 
 ### edm
 
 Records: E009, E014, E017, E084, E146, E152, E153, E154, E155, E156, E157, E158, E159, E160, E161,
-E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321, E353, E402, E431.
+E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321, E353, E402, E431, E444.
 
 ### firmware
 
@@ -2812,12 +2861,13 @@ E395, E396, E400, E420, E421, E428, E430, E436, E437.
 ### platform
 
 Records: E006, E007, E008, E025, E026, E122, E150, E149, E246, E258, E357, E359, E365, E401, E403,
-E404, E405, E434.
+E404, E405, E434, E445.
 
 ### render
 
 Records: E023, E049, E050, E051, E052, E053, E148, E169, E252, E301, E302, E303, E304, E314, E315,
-E316, E323, E324, E325, E326, E354, E355, E356, E360, E361, E363, E408, E412, E422, E433, E435.
+E316, E323, E324, E325, E326, E354, E355, E356, E360, E361, E363, E408, E412, E422, E433, E435,
+E448.
 
 ### ta
 

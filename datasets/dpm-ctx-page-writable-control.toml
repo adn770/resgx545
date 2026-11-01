@@ -1,0 +1,10 @@
+title = "script table dpm/ctx-page-writable-control"
+repo = "data"
+paths = ["dpm/ctx-page-writable-control/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 4
+size = 79348
+sha256 = "a3f0283363d26e3f9c2b5cacfadd7b667fc3b18a1e1cc92906dec3d8cd4c20a3"
+recipe = "probes/dpm/ctx-page-writable-control.toml"
+needs = ["render", "kpoke", "alias_ctx_rw", "reset", "regs"]

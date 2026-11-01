@@ -1,0 +1,10 @@
+title = "script table render/two-contexts-one-pb"
+repo = "data"
+paths = ["render/two-contexts-one-pb/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-07"
+files = 4
+size = 167811
+sha256 = "0085c3de60cd5f27dc1d3d10803222413b7689a85a8877f6adc2504d1b17d725"
+recipe = "probes/render/two-contexts-one-pb.toml"
+needs = ["render", "kpoke", "render_share_pb", "regs", "reset"]
