@@ -38,24 +38,31 @@ plugin needs nothing beyond `tools/usse-dis`. `test_r2.py` round-trips several h
 decodable words through `rasm2` in both directions (needs `R2_PREFIX` set and the plugin
 installed; it skips otherwise, naming what to set).
 
-The fork (github.com/adn770/radare2, branch `arch-usse`) carries the same core in-core; run
-its asm tests with `r2r test/db/asm/usse`. Its in-core `usse` plugin takes precedence over this
-out-of-tree one, so keep them in sync.
+## In-tree: the radare2 fork
 
-## Upstreaming to radareorg/radare2
+The radare2 fork (github.com/adn770/radare2, branch `resgx545`) carries this plugin in-tree, as
+a few commits meant for upstream on a radare2 master of October 2026. `libr/arch/p/usse/` holds
+`plugin.c` (this `arch_usse.c`, with local includes and `.author` set to resgx545) and the core
+files unchanged: `usse.c`, `usse.h`, `usse_form.c`, `usse_form.h`, `usse_table.inc` and
+`forms/*.inc`. The plugin is registered in both of radare2's build systems (meson, and make
+through `libr/arch/p/usse.mk`), and `test/db/asm/usse` holds one r2r test per form, made from
+the words of `../pinned.tsv`. The branch disassembles and assembles USSE only; the PDS and
+emulation join it in later phases.
 
-The plugin is structured to drop into the r2 tree with minimal change:
+```sh
+git clone -b resgx545 https://github.com/adn770/radare2 && cd radare2
+meson setup b --prefix=<prefix> && ninja -C b install
+# or: ./configure --prefix=<prefix> && make install
+cd test && PATH=<prefix>/bin:$PATH r2r -L db/asm/usse
+```
 
-1. Create `libr/arch/p/usse/` containing `plugin.c` (this `arch_usse.c`, renamed), plus the core
-   `usse.c` + `usse.h`. The core is already radare2-free and self-contained.
-2. Add the build entries: a `usse` stanza in `libr/arch/p/meson.build` and the `arch.usse`
-   entry in the plugin list (`libr/arch/meson.build` / `meson_options.txt`), mirroring an
-   existing small arch (e.g. `chip8`).
-3. The plugin already follows upstream conventions: `const RArchPlugin r_arch_plugin_usse`,
-   `RLibStruct radare_plugin` guarded by `R2_PLUGIN_INCORE`.
+A radare2 built from that branch has `usse` in-core, and the in-core plugin takes precedence
+over this out-of-tree one: use one or the other. With `R2_PREFIX` set to that build's prefix,
+`test_r2.py` round-trips its random words through the in-core plugin.
 
-Clean-room note for the PR: the decoder was written independently. No vendor source is
-copied or vendored — only our own code is contributed.
+The plugin follows upstream's conventions (`const RArchPlugin r_arch_plugin_usse`,
+`RLibStruct radare_plugin` guarded by `R2_PLUGIN_INCORE`). It was written independently; no
+vendor source is copied or vendored.
 
 ## Licence
 
