@@ -4009,17 +4009,48 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   E443's record does not say of its own; 450 and 600 vertices in 0x100 pages overflowed without a
   hang (6 of 6).
   *dpm; HW, infer; data: `dpm-bit2-grid`.*
+- `E590` In a 64x64 render of one triangle on a coloured background (ISP_BGOBJVALS 0x300), a kernel
+  poke of any one of the words 3 to 16 of the render's background object (17 dwords, at 0x463000 of
+  debugfs render_param's dump: six zero words, then the vertex words) leaves the image the control's
+  in 140 of 140 jobs (ten values a word: bits 0, 3, 7, 8, 15, 16, 24 and 31 flipped, 0, 0xffffffff;
+  131 of the 140 change the word, 9 set a zero word to 0) and the poked value reads back in the
+  object after the job in 140 of 140; setting the words 3 to 16 together to 0xffffffff, to 0 and to
+  0xa5000000 + N leaves it the control's in 6 of 6; a poke of one of the words 0 to 2 is not in the
+  object after the job (the EDM's value) in 18 of 18 and changes nothing in 18 of 18; all 169 jobs
+  completed, none faulted or hung.
+  *isp; HW, infer; data: `isp-bg-object-pokes`.*
+- `E591` With the first context's mappings, slot and memory kept at its close (kernel debugfs
+  render_keep), the second context's render after the close of a first context that kept the DPM
+  owner (render flags 0xc) is exact in 13 of 13 jobs (7 of keep-closed, 6 of keep-pages) and leaves
+  TA3DCtl dwords 20 and 25 cleared as with the first context open (13 of 13), where without keep it
+  faults at 0x200030c1 (BIF status 0x90004) in 2 of 2; afterwards the kept first context's TA data
+  holds words in its control page (page 1: 16 of the ramp's dwords replaced, word 0 0x00200047),
+  OTPM page (page 2: 20 dwords replaced, word 0 0x04000417) and state page (page 3: 34 dwords
+  replaced, words 0 and 1 0x00020001 and 2) in the 9 of 9 flags-0xc jobs that put a ramp 0xa5000000
+  + i in one of the pages, and in none of the 6 of 6 jobs with flag bit 2 alone or no flag, and the
+  ramps do not change the render (exact in 9 of 9); a kept first context that rendered a 1024x768
+  scene in partial renders, with no second context rendered, holds 18 non-zero dwords in its state
+  page (page 6), 4 of 4, as E464 found without keep.
+  *dpm; HW, infer; data: `dpm-kept-state-page`, `dpm-kept-state-page-amended`.*
+- `E592` The page directory word of a render context's HW context (debugfs render_words ctx:2,
+  newest context) equals the list register the kick wrote in 15 of 15 jobs: CR_BIF_DIR_LIST_BASE1
+  after the first kick following a reset (3 of 3 jobs) and never CR_BIF_DIR_LIST_BASE15 (the EDM's
+  own directory, 15 of 15 jobs); the k-th process's context (a new VM each) has it in BASEk for k =
+  1 to 4 (4 of 4, the lists before unchanged); a second context of the same VM, rendered, adds no
+  list (BASE2 stays 0, 2 of 2); and a partial render (1024x768 on 0x28 pages) under alias_skip masks
+  0, 0xc0 and 0xdc0 has it in BASE1 (6 of 6).
+  *bif; HW, infer; data: `bif-client-directories`.*
 
 ## By unit
 
 ### bif
 
-Records: E151, E457, E573.
+Records: E151, E457, E573, E592.
 
 ### dpm
 
 Records: E199, E200, E201, E202, E204, E205, E206, E203, E253, E256, E309, E310, E311, E312, E313,
-E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E468, E574.
+E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E468, E574, E591.
 
 ### edm
 
@@ -4036,7 +4067,7 @@ Records: E001, E002, E003, E004, E005, E010, E011, E012, E352.
 Records: E064, E065, E066, E067, E068, E069, E070, E071, E072, E073, E074, E210, E211, E213, E214,
 E215, E216, E217, E218, E219, E220, E222, E224, E225, E226, E227, E228, E229, E230, E209, E231,
 E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E290, E291, E330,
-E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E508, E510.
+E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E508, E510, E590.
 
 ### mte
 

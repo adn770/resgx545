@@ -72,7 +72,7 @@ evidence records its rows, its fields' rows and its measured width cite.
 - `0x0c08` `CR_BIF_FAULT`: width 32 bits assumed; 3 fields: ADDR [31:12], SB [8:4], CID [3:0];
   uncovered 11:9 (3 bits).
 - `0x0c38` `CR_BIF_DIR_LIST_BASE1`: width 32 bits assumed; 1 field: ADDR [31:8]; uncovered 7:0 (8
-  bits).
+  bits). Records: E360, E457, E592.
 - `0x0c70` `CR_BIF_DIR_LIST_BASE15`: width 32 bits assumed; 1 field: ADDR [31:8]; uncovered 7:0 (8
   bits). Records: E360, E573.
 - `0x0c74` `CR_BIF_BANK_SET`: width 32 bits assumed; 6 fields: SELECT_DPM_LSS [9], SELECT_EDM [8],

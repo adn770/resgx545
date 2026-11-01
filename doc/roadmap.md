@@ -177,22 +177,23 @@ probe and sweep tables that the units above cover.
 
 ### 4.1 Open questions
 
-`doc/open_questions.md` lists every open question, generated from `questions/`: Q001 to Q183, 152
+`doc/open_questions.md` lists every open question, generated from `questions/`: Q001 to Q192, 155
 open (the two ids between Q147 and Q150 are reserved, unused, and so is the one between Q181 and
-Q183; the ids between Q168 and Q175 belong to phases not in this tree). Each has a kind. The work is
-hardware knowledge, for a simulator and then our own firmware, so the 136 `hw` questions are the
-work queue, each with a value (high 12, medium 66, low 58); the 10 `fw` questions (the closed
-firmware's and driver's own behaviour: Q004, Q029, Q034, Q049, Q084, Q088, Q118, Q119, Q124, Q131)
-and the 6 `kernel` ones (the design of our kernel driver: Q005, Q037, Q095, Q140, Q166, Q167) stay
-open, parked. By unit: bif 4, dpm 5, edm 13, isp 10, mte 3, pbe 5, pds 16, platform 5, render 9, ta
-14, texture 14, transfer 3, usse 36, vdm 9, zls 6. A question is removed when a record answers it;
-one that mixed a hardware part with a firmware or kernel part was narrowed to the hardware part or
-folded into the hardware question that holds it (seven so far: the control block's per-VM copy and
-the render context count bound into Q076, the recovery's reset steps into Q003, the settle routine
-and the two faults after a base-only fault or a kept owner into Q036 and Q045, the points question
-into Q161), and a fold is not an answer. What a fold or a narrowing left of the closed firmware's
-own behaviour is a new parked question: how a kick tells its directory is in no list (Q118, from the
-render context count) and whether a command with both kick flags acts as two (Q119, from Q065).
+Q183, and the six between Q183 and Q190; the ids between Q168 and Q175 belong to phases not in this
+tree). Each has a kind. The work is hardware knowledge, for a simulator and then our own firmware,
+so the 139 `hw` questions are the work queue, each with a value (high 13, medium 68, low 58); the 10
+`fw` questions (the closed firmware's and driver's own behaviour: Q004, Q029, Q034, Q049, Q084,
+Q088, Q118, Q119, Q124, Q131) and the 6 `kernel` ones (the design of our kernel driver: Q005, Q037,
+Q095, Q140, Q166, Q167) stay open, parked. By unit: bif 4, dpm 7, edm 13, isp 11, mte 3, pbe 5, pds
+16, platform 5, render 9, ta 14, texture 14, transfer 3, usse 36, vdm 9, zls 6. A question is
+removed when a record answers it; one that mixed a hardware part with a firmware or kernel part was
+narrowed to the hardware part or folded into the hardware question that holds it (seven so far: the
+control block's per-VM copy and the render context count bound into Q076, the recovery's reset steps
+into Q003, the settle routine and the two faults after a base-only fault or a kept owner into Q036
+and Q045, the points question into Q161), and a fold is not an answer. What a fold or a narrowing
+left of the closed firmware's own behaviour is a new parked question: how a kick tells its directory
+is in no list (Q118, from the render context count) and whether a command with both kick flags acts
+as two (Q119, from Q065).
 
 ### 4.2 Inferred glossary rows
 
@@ -702,3 +703,21 @@ and page 0x20003000 in Q045, the client directory against BASE1 in Q076. sgx-sim
 task's global registers (twelve hardware vectors; it refuses the registers and draws not measured);
 the fixed-function DPM and BIF models wait for phase 12. The roadmap counts the questions from the
 built `doc/open_questions.md`: 152 open, 136 hw (high 12, medium 66, low 58), 10 fw and 6 kernel.
+
+Sub-phase 11.34 is a kernel sub-phase and the laptop batch that waited for it: three debug-only
+commits of the linux fork (46 the kpoke space `bg`, 47 debugfs `render_keep`, 48 debugfs
+`render_kept`, series check on the laptop 6 of 6) and 213 job runs in 7 scripts with the 11.26 tool,
+no clock-gate register written. Three evidence records (E590 to E592): in a 64x64 one-triangle
+render no poke of the words 3 to 16 of the background object, ten values a word, changes the image,
+so the ISP is not shown to read them in that scene, and the words 0 to 2 can be shown neither read
+nor not read (E590, Q066); with the first context's mappings, slot and memory kept the render after
+a kept DPM owner is exact (13 of 13) and the kept pages hold words stored after it (E591, Q045); the
+page-directory word of a render context equals the list register the kick wrote in 15 of 15 jobs,
+BASE1 after a reset (E592, Q076), which also corrects the landed statements that it was not
+comparable. Q066, Q045 and Q076 are narrowed and none is retired, Q167 is narrowed (the amended
+module's load failed three cases on an order-5 allocation failure, the first kernel line for the
+allocation reading; no load was on a fresh boot), and Q190 to Q192 are new (hw: the object with
+texture layers, the stored words, the partial owner's page). The kernel switch that would fill the
+second context's state page between two contexts' renders stays open (`tadata_fill` is taken by the
+first kick after it is armed). The roadmap counts the questions from the built
+`doc/open_questions.md`: 155 open, 139 hw (high 13, medium 68, low 58), 10 fw and 6 kernel.

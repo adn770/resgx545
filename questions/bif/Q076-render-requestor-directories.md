@@ -5,7 +5,7 @@ unit = "bif"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E021", "E023", "E151", "E303", "E314", "E315", "E316", "E319", "E360", "E457", "E573"]
+evidence = ["E021", "E023", "E151", "E303", "E314", "E315", "E316", "E319", "E360", "E457", "E573", "E592"]
 terms = ["CR_BIF_DIR_LIST_BASE1", "CR_BIF_BANK0", "ta3d_ctl", "ta3d_ctl.render_context_count"]
 +++
 
@@ -34,9 +34,11 @@ kick after a reset writes the context's page directory into `CR_BIF_DIR_LIST_BAS
 directory. A 16th live context takes list 1 from the first, whose next kick takes list 2; every
 context renders its second render exactly.
 
-Open: that list 1 holds the client's directory (not compared with the client's own), and whether
-the buffers 6, 7, 8, 10 and 11 are needed together or in a larger scene (more than two renders, a
-partial render, a DPM reload), and the buffers 0 to 5 and 12 to 15 one at a time. From the former
+Open (as written in 11.21; see the corrections in 11.34 below): that list 1 holds the client's
+directory (E360 compared it with BASEk for k = 1 to 14 in 11.19 and E592 does so after a reset in
+11.34; the statement here that it was not compared was wrong), and whether the buffers 6, 7, 8, 10
+and 11 are needed together or in a larger scene (more than two renders, a partial render, a DPM
+reload), and the buffers 0 to 5 and 12 to 15 one at a time. From the former
 Q006: which directory the EDM's own requestor translates through while it loads a parameter
 buffer for a render (whether the block must be writable in the client's directory or any list
 that maps it would do). From the former Q083: what the TA and 3D requestors of a job do, and what
@@ -48,9 +50,11 @@ What Q006 asked about the kernel's own choice (whether a VM can carry a private 
 block kept in step by the kernel) is not hardware knowledge and is not carried here. How a kick
 tells that its directory is in no list (a firmware compare) is Q118, parked as an fw question.
 
-To settle it: read the client directory's physical address (the debugfs files of the VM) and
-compare it with CR_BIF_DIR_LIST_BASE1 during a render; rerun with masks of two and of five of the
-buffers 6, 7, 8, 10 and 11 and with the partial render of 1024x768 on 0x23 pages (`probe --tri`).
+To settle it (as written in 11.21; done in 11.34 for the comparison, the five and the partial
+render): read the client directory's word (debugfs render_words `ctx:2`, which has shown it since
+11.17, not "the debugfs files of the VM") and compare it with CR_BIF_DIR_LIST_BASE1 during a render;
+rerun with masks of two and of five of the buffers 6, 7, 8, 10 and 11 and with the partial render of
+1024x768 on 0x23 pages (`probe --tri`).
 
 Narrowed in 11.33 (E573, 30 case runs): the buffers 1, 2, 3, 4, 5, 12, 13 and 14 each left out of
 the client directory's alias alone leave the renders exact (2 of 2 runs each; the mask bit 15 names
@@ -58,6 +62,24 @@ no buffer of the layout and is a control, 2 of 2), and so do the pairs 6+7, 8+10
 five 6, 7, 8, 10, 11 (2 of 2 each); buffer 0 (0x30000000) left out faults the first job (2 of 2,
 bus status 0x91000 at 0x3000b022), the kick having written list 2 with the page directory of the
 fault line. The debugfs layout's pd_phys is the EDM's own directory, CR_BIF_DIR_LIST_BASE15 (30 of
-30), and differs from BASE1, so the client's directory in list 1 or 2 is still not compared with the
-client's own. Not run: pairs of the buffers 1 to 5, larger scenes and a partial render under a
+30), and differs from BASE1, so the client's directory in list 1 or 2 was not compared with the
+client's own in that run (the comparison was possible, with render_words ctx:2: corrected in 11.34
+below). Not run: pairs of the buffers 1 to 5, larger scenes and a partial render under a
 mask, the lists given to another context while a job runs.
+
+Narrowed in 11.34 (E592, 15 jobs; also correcting the two statements above that the client's
+directory was not compared): the PD word of the render context's HW context (debugfs render_words
+`ctx:2`, the VM's directory by construction) equals the list register the kick wrote in 15 of 15
+jobs: CR_BIF_DIR_LIST_BASE1 after the first kick following a reset (3 of 3), the k-th process's
+context in BASEk for k = 1 to 4 (4 of 4; E360 had it for k = 1 to 14), BASE1 for a partial render
+of 1024x768 on 0x28 pages under alias_skip masks 0, 0xc0 and 0xdc0 (6 of 6, identical), and never
+BASE15, the EDM's own directory, which the debugfs layout's pd_phys shows; a second context of the
+same VM, rendered, took no list (BASE2 stays 0, 2 of 2) [infer: the EDM finds the directory already
+in a list, Q118]. So of "which of the 16 lists does each use" the answer is: the kick's first-use
+rule, list k for the k-th VM since a reset, is E360's and E592's, and the lists BASE1 to BASE14 hold
+client directories; which requestor translates through which list at one time is not told apart.
+Still open: which pages each requestor needs together (the buffers 0 to 5 in pairs, larger scenes
+with more than two renders, a DPM reload under the masks), and what the requestors do, and what the
+bus interface reports, when their list is given to another directory while the job runs (no switch
+writes the list registers). H76-D, H76-P and H76-S were not blind: a pilot on the old module had
+shown list 1 (E592).

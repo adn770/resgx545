@@ -40,8 +40,11 @@ value of CR_BIF_DIR_LIST_BASE15 (0x0c70), the EDM's own directory (E360). BASE1 
 it in 30 of 30 runs: H76-D (declared: BASE1 equals the layout's pd_phys at the render's end,
 taking pd_phys for the client's directory) is refuted, 0 of 30, because its premise was wrong,
 pd_phys is the EDM's directory; it was not unscored. The client's directory is the list the kick
-writes, and no existing debugfs file shows it, so "list 2 holds the client's directory" was not
-compared with the client's own.
+writes. Correction (11.34): this paragraph said that no existing debugfs file shows the client's
+directory, so that "list 2 holds the client's directory" was not compared with the client's own.
+That was wrong: debugfs render_words has shown the client's directory as `ctx:2` since 11.17 and
+E360 compared it with BASEk in 11.19; the comparison was possible in these runs and was not made
+(E592 makes it after a reset, with BASE1). The measurements above are unchanged.
 
 **Not shown.** Which buffers beyond 0 and 9 the TA, the 3D and the PB load use together (a pair of
 the buffers 1 to 5 was not run); the larger scenes and the partial render under a mask; what

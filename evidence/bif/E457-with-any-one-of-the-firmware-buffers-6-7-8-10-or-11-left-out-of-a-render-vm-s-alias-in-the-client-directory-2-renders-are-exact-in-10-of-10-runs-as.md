@@ -44,7 +44,10 @@ different one in each run) while they ran, in all 20 runs.
 - During a completed render the TA index and the 3D index of BANK0 read 1 while the directory list
   base 1 holds a directory: the TA and 3D requestors translate through list 1, the list the EDM
   gives the first context after a reset (hw_spec section 5.5) [HW]. That the directory in list 1 is
-  the client's is [infer]: it was not compared with the client's directory. Partial evidence for
+  the client's is [infer]: it was not compared with the client's directory in these runs. Correction
+  (11.34): the comparison was possible, with debugfs render_words `ctx:2`, which has shown the
+  client's directory since 11.17 (E360 compared it with BASEk in 11.19, E592 with BASE1 after a
+  reset); this text did not know of it. Partial evidence for
   Q076's open part [infer]: in the 8 faulted runs kernel.log prints a page directory equal to the
   BIF_DIR_LIST_BASE1 value sampled in that run, and the driver blamed the render context; the driver
   reads that directory from the list base register itself, so this is the register agreeing with

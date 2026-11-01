@@ -5,7 +5,7 @@ unit = "isp"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E069", "E162", "E209", "E216", "E410"]
+evidence = ["E069", "E162", "E209", "E216", "E410", "E590"]
 terms = ["CR_ISP_BGOBJVALS", "hw_render_details.pds_bgnd"]
 +++
 
@@ -28,3 +28,21 @@ pixels wrong, the background pixels green) and with the other 21 bits, and at 0 
 faults the job. So the first word is the one the background pixel program starts from and the second
 and third are not read as poked by this job [infer]. Still open: what the second and third words
 mean to the ISP, and the rest of a render's background object. Status: narrowed, not answered.
+
+Narrowed in 11.34 (E590, kernel commit 46: kpoke space `bg`, 169 jobs, 64x64, one triangle on a
+coloured background, ISP_BGOBJVALS 0x300): the object of this render, which has no texture layer,
+is 17 dwords, the three PDS words, six zero words and eight words that read as the corners of a
+rectangle [infer] (0x463000 of the debugfs render_param dump). A poke of any one of the words 3 to
+16, at ten values each (8 bit flips, 0 and 0xffffffff: 140 jobs, 131 of them changing the word),
+and of all of them together at three values (6 jobs), changes no pixel, and the poked value reads
+back in the object after the job each time; a poke of the words 0 to 2 is not in the object after
+the job (18 of 18: the EDM's value, E162) and changes nothing. So in this scene the ISP is not
+shown to read the words 3 to 16; there is no positive control for that (every word the ISP is shown
+to read is rewritten by the EDM after a poke), only E410's change of the image through the render
+details' dword 69, which shows that the path from the object to the image is live in this job. The
+words 1 and 2 are not shown read or not read: the EDM rewrites them after the poke, and E410's jobs
+poked the render details, not the object. Still open: what the three PDS words mean (word 0 starts
+the background pixel program, E410), the rest of the object in other scenes (another size, another
+ISP_BGOBJVALS, more triangles), and whether an object with texture layers (the 23-dword form of a
+copy) reads its coordinate words and which of the words 3 to 8 then matter, Q190. Status: narrowed,
+not answered.

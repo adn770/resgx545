@@ -1388,8 +1388,10 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   sgx545-ce); `PSB_CR_BIF_INT_STAT` (1c, emgd-psb_regs).
 - `CR_BIF_FAULT` G0033 (0x0c08): MMU faulting address and context. From `EUR_CR_BIF_FAULT` (1,
   sgx545-ce); `PSB_CR_BIF_FAULT` (1c, emgd-psb_regs).
-- `CR_BIF_DIR_LIST_BASE1` G0089 (0x0c38): page-directory base, context 1. From
-  `EUR_CR_BIF_DIR_LIST_BASE1` (1, sgx545-ce); `PSB_CR_BIF_DIR_LIST_BASE1` (1c, emgd-psb_regs).
+- `CR_BIF_DIR_LIST_BASE1` G0089 (0x0c38): page-directory base, list 1: the first kick of a VM after
+  a reset writes the render context's page directory there (the HW context's PD word, 3 of 3 jobs);
+  the TA and 3D requestors translate through it during a render. From `EUR_CR_BIF_DIR_LIST_BASE1`
+  (1, sgx545-ce); `PSB_CR_BIF_DIR_LIST_BASE1` (1c, emgd-psb_regs).
 - `CR_BIF_DIR_LIST_BASE15` G0032 (0x0c70): page-directory base, list 15: the EDM's own directory
   (0x28b0c000 in 30 of 30 runs, the debugfs layout's pd_phys), not a list a kick gives a render
   context's directory. From `EUR_CR_BIF_DIR_LIST_BASE15` (1, sgx545-ce).

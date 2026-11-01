@@ -1,0 +1,10 @@
+title = "scripts keep-closed, keep-pages, keep-partial (debugfs render_keep and render_kept)"
+repo = "data"
+paths = ["dpm/kept-state-page/"]
+method = "scripts keep-closed (15 jobs), keep-pages (6), keep-partial (8, in the runs keep-partial-ctx2 and keep-partial-solo), run by hand over ssh on the laptop with the 11.26 tool (not by the campaign runner), so this manifest was written by hand: the whole raw output of every job (gzip, dumps/<script>/), the case table, output/<script>.out, kernel.log (journalctl -k, in each dumps/<script>/), the recompute (analysis/recompute/) and its output (analysis/recompute-<script>.txt), the declared files (analysis/declared*.tsv, predictions*.tsv, hashes*.txt, plan.md), the run scripts (scripts/) and the kernel series' red/green record (analysis/red-green.txt). Module 34729EB82083B1D04B0643E (linux fork p1135 at tip da1eaeaa1247, commits 46 to 48 before the review fixes, rebuilt in the kit as 7a114862ebe4, 4a47b3953728, 1dd291a61499). Each job keeps the kept context's TA data (render_kept), the second context's dump and the control-block snapshots; analysis/ also holds the series check log, the module build log and install log, the module-load KUnit output (modload-kernel.txt) and the journal since the install. The repository holds the run scripts as probes/p1134/run_keep.sh (keep-closed), run_keep2.sh (keep-partial) and run_keep3.sh (keep-pages), with lib1135.sh and the case tables, equal to the as-run copies but for the phase number in the comments and trailing spaces."
+date = "2026-11-09"
+files = 225
+size = 578024
+sha256 = "648fa51158d5d6fa89e74236ef7bd97306f5a3e6a9458fbaae6fae4de2c70f24"
+recipe = "probes/p1134/run_keep.sh"
+needs = ["render", "kpoke", "tadata_fill", "render_keep", "reset"]

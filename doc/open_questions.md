@@ -4,13 +4,13 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-152 open: 136 hw (high 12, medium 66, low 58, unrated 0), 10 fw, 6 kernel.
+155 open: 139 hw (high 13, medium 68, low 58, unrated 0), 10 fw, 6 kernel.
 
 ## Work queue: hardware
 
 ### bif
 
-- `Q076` (phase 11, hw, high): which pages does each bus-interface requestor of a render (the TA, the 3D, the EDM's PB load) need in the directory of the list it translates through (TA3DCtl writable; each of the buffers 6, 7, 8, 10 and 11 alone is not needed: E457), which of the 16 directory lists does each use, and what does a job do whose list was given to another context while it ran? (E021, E023, E151, E303, E314, E315, E316, E319, E360, E457, E573)
+- `Q076` (phase 11, hw, high): which pages does each bus-interface requestor of a render (the TA, the 3D, the EDM's PB load) need in the directory of the list it translates through (TA3DCtl writable; each of the buffers 6, 7, 8, 10 and 11 alone is not needed: E457), which of the 16 directory lists does each use, and what does a job do whose list was given to another context while it ran? (E021, E023, E151, E303, E314, E315, E316, E319, E360, E457, E573, E592)
 - `Q108` (phase 11, hw, medium): what do the page table entry flags WRITEONLY, CACHECONSISTENT and EDMPROTECT do on the hardware, which of the bus interface's requestors do they stop, and what does the fault report? (E021, E151, E319)
 - `Q109` (phase 11, hw, low): do page directory entries whose page-size field (bits 3:1) names 16 KiB to 4 MiB translate on the hardware, and with which address mask and which table layout? (E021, E151)
 - `Q110` (phase 11, hw, low): what do the bus interface's tiled address ranges (BIF_TILE0 and up: start, end, stride) do to the addresses of a requestor whose accesses fall inside one? (E021, E151, E246)
@@ -18,9 +18,11 @@
 ### dpm
 
 - `Q038` (phase 10, hw, high): what does the final render read back of a partial render's depth (a depth buffer stored by ZLS, the 3D kick's RT status bit 1), now that a background object that reloads the target's colour gives an overflowing scene's whole image? (E202, E204, E160, E310, E311, E312, E442, E461, E465, E467, E468)
-- `Q045` (phase 11, hw, high): what sets the fields of register 0x0740 that the TA kick turns into DPM store and load tasks (a host write reads back 0: E456), does a load task read back the macrotile lists a partial render stores in the RT data's state page, and what accesses the state page (0x20003000 for a context of up to 64x64) when a render follows a kept owner's gone context? (E158, E256, E310, E312, E456, E458, E462, E464, E574)
+- `Q045` (phase 11, hw, high): what sets the fields of register 0x0740 that the TA kick turns into DPM store and load tasks (a host write reads back 0: E456), does a load task read back the macrotile lists a partial render stores in the RT data's state page, and what accesses the state page (0x20003000 for a context of up to 64x64) when a render follows a kept owner's gone context? (E158, E256, E310, E312, E456, E458, E462, E464, E574, E591)
 - `Q081` (phase 11, hw, medium): what does CR_DPM_REG_074C bit 8 make the DPM read or write near offset 0x6010 of the context's TA-data space, and what fixes that place? (E203, E206, E313, E362, E447)
 - `Q103` (phase 11, hw, medium): why does a scene of 100 to 500 triangles hang where the one-triangle scene overflows the parameter buffer and recovers, at 4096x4096 in 0x40 or 0x23 pages from 300 vertices and in 0x100 pages from 900? (E438, E310, E312)
+- `Q191` (phase 11, hw, high): what are the words that land in a kept owner's control page (0x00200047), OTPM page (0x04000417) and state page (0x00020001, 2) after the next context's render, what stores them and at which kick of that context, and does any task read them back? (E310, E458, E462, E591)
+- `Q192` (phase 11, hw, medium): does the store that follows the next context's render replace the state page a partial-render owner left (18 non-zero dwords after its partial renders, E591), and what does it write there? (E310, E464, E591)
 
 ### edm
 
@@ -41,13 +43,14 @@
 - `Q030` (phase 11, hw, medium): what do CR_TE_AA bits 31 and 30 do when bit 29 is clear, where the triangle is gone, and does the sample layout of E281 hold in the tiles and windows past the first? (E210, E211, E219, E220, E281, E415, E502, E503, E504)
 - `Q031` (phase 10, hw, medium): why does ISP word 0 bit 28 hang a multisampled render, when single-sampled it widens coverage to the union of eight samples? (E214, E215, E278, E416)
 - `Q032` (phase 10, hw, medium): what does pcoeff hand the ISP in the punch-through pass, when the kept pixels' depth is the same without it and moves between runs only when it runs without the iteration it reads? (E217, E416)
-- `Q066` (phase 11, hw, high): what do the three background-object words the 3D kick writes mean to the ISP, and what are the other words of a render's background object? (E069, E162, E209, E216, E410)
+- `Q066` (phase 11, hw, high): what do the three background-object words the 3D kick writes mean to the ISP, and what are the other words of a render's background object? (E069, E162, E209, E216, E410, E590)
 - `Q071` (phase 11, hw, medium): what do the bits of the ZLS control word that change nothing seen (12, 15, 16, 20 to 23, 27 to 31) do, and how does the ISP use the control in a render with a stencil test? (E057, E169, E216, E228, E284, E337, E411, E465, E466, E467)
 - `Q072` (phase 11, hw, low): what does bit 1 of CR_ISP_REG_04DC do to a punch-through pass, when it hangs every one tried and changes no opaque or translucent pass? (E068, E073, E213, E222, E290, E416)
 - `Q073` (phase 11, hw, medium): what does o0 hold at the start of an opaque pass's pixel shader? (E077, E283, E417)
 - `Q089` (phase 11, hw, high): where does the closed driver's 4x multisampled render become a 64x64 image, when its PBE words are those of a single-sampled 64x64 target and the hardware stores 4x samples as 2x2 blocks; and do alpha to coverage and sample coverage reach the hardware at all? (E333, E339, E439, E502, E503, E508, E510)
 - `Q138` (phase 11, hw, high): how does the closed driver's 4x render of a 64 x 64 texture fill a 64 x 64 image when one render with CR_TE_AA 0xe0000000 stores only a 16 x 8 window of each 32 x 16 tile (E503): are the four windows (0x20000000, 0x60000000, 0xa0000000, 0xe0000000) four renders of one frame, and what combines them (E503, E508, E510, E339, E439)
 - `Q141` (phase 11, hw, low): why does a handful of pixels in one tile stay background when the full triangle covers the target, with CR_TE_AA bits 30 or 31 set in mode 1 (64 pixels at 64 x 64, tile (1, 2)) or at 96 x 80 in modes 1 and 2 (9 to 39 pixels), and 136 pixels at (32, 32) in mode 0 with 0xe0000000 (E502, E503, E504)
+- `Q190` (phase 11, hw, medium): does a render's background object with texture layers (the 23-dword form of a transfer copy: the six words after the PDS words, the layer's coordinates, the format word) read its coordinate words vertex by vertex in a render as it does in a transfer's (E209), and which of the words 3 to 8 matter then, given that no word 3 to 16 of the layerless object is shown to (E590)? (E069, E209, E590)
 
 ### mte
 
@@ -238,7 +241,7 @@
 
 #### usse
 
-- `Q167` (phase 11, kernel): why did gma500_sgx_render (test_pb) and gma500_sgxfive_debug (test_pb_small) report "Expected pt != NULL" in the KUnit run at module load on the laptop, when the same suites pass under qemu (E549)
+- `Q167` (phase 11, kernel): why did gma500_sgx_render (test_pb) and gma500_sgxfive_debug (test_pb_small) report "Expected pt != NULL" in the KUnit run at module load on the laptop, when the same suites pass under qemu (E549, E591)
 
 #### vdm
 

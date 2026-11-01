@@ -1,0 +1,10 @@
+title = "the amended kernel series (commits 46 to 48 after the review): series check, module build, install, module-load KUnit"
+repo = "data"
+paths = ["dpm/kept-state-page-amended/"]
+method = "run by hand over ssh on the laptop, not by the campaign runner, so this manifest was written by hand: the series check of the three amended commits (analysis/recheck-series.txt, recheck-run.out: 6 of 6 PASS, KUnit 106/106 with the debug option off, 173, 175 and 176 on), the build of the module in the build root (module-build.txt, srcversion B21FDA82BD5E5CB5A627E3B), its install and reload with the console unbound and the backlight raised (install.txt), the module-load KUnit output (modload-kernel.txt: 12 of 14 suites ok, 3 cases failed on an order-5 allocation failure), one plain 64x64 triangle after the load (health.txt), the diff of the old tip against the new (kernel-diff-old-tip-to-new-tip.patch) and notes.txt. No experiment ran on this module: the three runs of the batch used 34729EB82083B1D04B0643E."
+date = "2026-11-09"
+files = 11
+size = 46199
+sha256 = "d6f0f142992e180d8c35b8ee8a8d56e359ba8c8ed77abb3f1bd72e06f1991ef3"
+recipe = "probes/p1134/series_check.sh"
+needs = ["render"]

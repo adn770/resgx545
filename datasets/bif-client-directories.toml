@@ -1,0 +1,10 @@
+title = "script dirs (render_words ctx:2 against CR_BIF_DIR_LIST_BASE)"
+repo = "data"
+paths = ["bif/client-directories/"]
+method = "script dirs (15 jobs), run by hand over ssh on the laptop with the 11.26 tool (not by the campaign runner), so this manifest was written by hand: the whole raw output of every job (gzip, dumps/<script>/), the case table, output/<script>.out, kernel.log (journalctl -k, in each dumps/<script>/), the recompute (analysis/recompute/) and its output (analysis/recompute-<script>.txt), the declared files (analysis/declared*.tsv, predictions*.tsv, hashes*.txt, plan.md), the run scripts (scripts/) and the kernel series' red/green record (analysis/red-green.txt). Module 34729EB82083B1D04B0643E (linux fork p1135 at tip da1eaeaa1247, commits 46 to 48 before the review fixes, rebuilt in the kit as 7a114862ebe4, 4a47b3953728, 1dd291a61499). Each job keeps the tool's words.N.txt (render_words after each render), the register snapshots of its output and the regtimeline. The repository holds the run scripts as probes/p1134/run_dirs.sh (with lib1135.sh and the case table), equal to the as-run copies but for the phase number in the comments and trailing spaces."
+date = "2026-11-09"
+files = 83
+size = 228973
+sha256 = "4386d0676a8b10e5aa0bdf90fa585edabf735ad2ceb2fd86e886d0c414e19d6a"
+recipe = "probes/p1134/run_dirs.sh"
+needs = ["render", "alias_skip", "reset"]

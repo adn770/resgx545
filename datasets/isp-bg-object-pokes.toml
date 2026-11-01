@@ -1,0 +1,10 @@
+title = "scripts bg-words, bg-words-f1 (kernel poke bg:N of a render's background object)"
+repo = "data"
+paths = ["isp/bg-object-pokes/"]
+method = "scripts bg-words (161 jobs) and bg-words-f1 (8 jobs), run by hand over ssh on the laptop with the 11.26 tool (not by the campaign runner), so this manifest was written by hand: the whole raw output of every job (gzip, dumps/<script>/), the case table, output/<script>.out, kernel.log (journalctl -k, in each dumps/<script>/), the recompute (analysis/recompute/) and its output (analysis/recompute-<script>.txt), the declared files (analysis/declared*.tsv, predictions*.tsv, hashes*.txt, plan.md), the run scripts (scripts/) and the kernel series' red/green record (analysis/red-green.txt). Module 34729EB82083B1D04B0643E (linux fork p1135 at tip da1eaeaa1247, commits 46 to 48 before the review fixes, rebuilt in the kit as 7a114862ebe4, 4a47b3953728, 1dd291a61499). Every pixel of every 64x64 job and the parameter dump (tri.param.bin, the object at 0x463000) are kept; analysis/bg_geometry.py is the explore of the vertex words. The repository holds the run scripts as probes/p1134/run_bg.sh (bg-words) and run_bgf1.sh (bg-words-f1), with lib1135.sh and the case tables, equal to the as-run copies but for the phase number in the comments and trailing spaces."
+date = "2026-11-09"
+files = 544
+size = 1664819
+sha256 = "aefb9563f058493d4012b6f0407efd7df1f4dc3531491dc3c36527fa64968c24"
+recipe = "probes/p1134/run_bg.sh"
+needs = ["render", "kpoke", "reset"]
