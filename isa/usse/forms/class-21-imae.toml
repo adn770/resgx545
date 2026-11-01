@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ---- class 21: imae with every source-2 type and carry
+# Source-2 type enc[39:38] (z16, u16, u32; the 16-bit ones print the
+# half in enc[52]), carry out enc[40], carry in enc[41] and the carry
+# register enc[47].
+[[form]]
+order = 1770
+pat = "{0}imae{1}.{2}{3} {4}, {5}, {6}, {7}, {8}"
+op = "imae"
+mask = "CLSM | b(39)"
+val = "cls(21) | b(39)"
+fields = [
+    "pred=PRED_MUL 58:57", "flags=F_MULFLAGS", "sign=SIGNSAT 42 43", "rs=RS 37:35", "dst=F_DST",
+    "src0x=K_INT_S0LH 20:14 34 56", "src1x=FD_RM1(K_INT_SLH)", "src2=F_SRC2D",
+    "carry=K_INT_IMAEC 39:38 41:40 47",
+]
+
+[[form]]
+order = 1780
+pat = "{0}imae{1}.{2}{3} {4}, {5}, {6}, {7}, {8}"
+op = "imae"
+mask = "CLSM | b(39)"
+val = "cls(21)"
+fields = [
+    "pred=PRED_MUL 58:57", "flags=F_MULFLAGS", "sign=SIGNSAT 42 43", "rs=RS 37:35", "dst=F_DST",
+    "src0x=K_INT_S0LH 20:14 34 56", "src1x=FD_RM1(K_INT_SLH)", "src2x=K_INT_SLH 6:0 29:28 48 52",
+    "carry=K_INT_IMAEC 39:38 41:40 47",
+]

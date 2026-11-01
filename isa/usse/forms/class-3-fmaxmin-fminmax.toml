@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ---- class 3: fmaxmin / fminmax
+# The class-0 layout, with the operation in enc[41] (enc[42] invalid).
+[[form]]
+order = 540
+pat = "{0}{1}{2}{3}{4} {5}, {6}, {7}, {8}"
+op = "fminmax"
+mask = "CLSM | b(54)"
+val = "cls(3)"
+fields = [
+    "pred=PRED_ALL 58:56", "op=FLT_OP_MINMAX 42:41", "flags=F_FLT_FLAGS", "rep=F_FLT_REP2",
+    "incs=F_FLT_INCS", "dst=F_FLT_DST", "src0=FLT_SRC0(K_FLT_SRC0)", "src1=FLT_SRC1(K_FLT_SRC)",
+    "src2=FLT_SRC2(K_FLT_SRC)",
+]
+dflt = "b(53)"
+
+[[form]]
+order = 550
+pat = "{0}{1}{2}{3}{4} {5}, {6}, {7}, {8}"
+op = "fminmax"
+mask = "CLSM | b(54)"
+val = "cls(3) | b(54)"
+fields = [
+    "pred=PRED_ALL 58:56", "op=FLT_OP_MINMAX 42:41", "flags=F_FLT_FLAGS", "rep=F_FLT_REP2",
+    "incs=F_FLT_INCS", "dst=F_FLT_DST", "src0=FLT_SRC0(K_FLT_SRC0_MAD16)",
+    "src1=FLT_SRC1(K_FLT_SRC_MAD16)", "src2=FLT_SRC2(K_FLT_SRC_MAD16)",
+]
+dflt = "b(53)"

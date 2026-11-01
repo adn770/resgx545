@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ---- class 31 flow control: ba / br / bexception
+[[form]]
+order = 130
+pat = "{0}ba{1} #{2}"
+op = "ba"
+mask = "CLSM | m(54, 51) | m(40, 38)"
+val = "cls(31)"
+fields = ["pred=PRED_ALL 58:56", "flags=F_BRFLAGS", "target=K_HEX 17:0"]
+
+[[form]]
+order = 140
+pat = "{0}br{1} {2}"
+op = "br"
+mask = "CLSM | m(54, 51) | m(40, 38)"
+val = "cls(31) | b(38)"
+fields = ["pred=PRED_ALL 58:56", "flags=F_BRFLAGS", "target=K_BR 17:0"]
+
+# bexception branches as ba does, and with bit 38 set as br does, by the same fields, so it
+# shares their ops (the probes unit brings the evidence); what bit 51 adds is open
+[[form]]
+order = 150
+pat = "{0}bexception{1} #{2}"
+op = "ba"
+mask = "CLSM | m(54, 51) | m(40, 38)"
+val = "cls(31) | b(51)"
+fields = ["pred=PRED_ALL 58:56", "flags=F_BRFLAGS", "target=K_HEX 17:0"]
+
+[[form]]
+order = 151
+pat = "{0}bexception.rel{1} {2}"
+op = "br"
+mask = "CLSM | m(54, 51) | m(40, 38)"
+val = "cls(31) | b(51) | b(38)"
+fields = ["pred=PRED_ALL 58:56", "flags=F_BRFLAGS", "target=K_BR 17:0"]

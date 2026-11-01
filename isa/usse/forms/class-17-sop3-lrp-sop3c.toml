@@ -1,0 +1,66 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ---- class 17: sop3, lrp, sop3c
+# enc[53] picks sop3 or lrp, enc[43:42] the alpha operation. The pair of
+# 3-bit selectors enc[40:38], enc[37:35] (complements enc[56], enc[47])
+# is the colour of sop3 and sop3c and the alpha of lrp; the sop3 asop
+# alpha repeats the second colour selector.
+[[form]]
+order = 1660
+pat = "{0}sop3{1} {2}, {3}, {4}, {5}, {6}+asop {7}"
+op = "sop3"
+mask = "CLSM | b(53) | m(43, 42)"
+val = "cls(17)"
+fields = [
+    "pred=PRED_MUL 58:57", "flags=F_FLAGS3", "dst=F_INT_D10", "src0=F_INT_S0_10",
+    "src1=F_INT_S1_10", "src2=F_INT_S2_10",
+    "csel=K_INT_SOP3C 40:38 56 37:35 47 52", "asop=K_INT_ASOP 45:44 46 37:35 47 41",
+]
+
+[[form]]
+order = 1670
+pat = "{0}sop3{1} {2}, {3}, {4}, {5}, {6}+arsop {7}"
+op = "sop3"
+mask = "CLSM | b(53) | m(43, 42)"
+val = "cls(17) | b(43)"
+fields = [
+    "pred=PRED_MUL 58:57", "flags=F_FLAGS3", "dst=F_INT_D10", "src0=F_INT_S0_10",
+    "src1=F_INT_S1_10", "src2=F_INT_S2_10",
+    "csel=K_INT_SOP3C 40:38 56 37:35 47 52", "arsop=K_INT_ARSOP 45:44 46 41",
+]
+
+[[form]]
+order = 1680
+pat = "{0}sop3{1} {2}, {3}, {4}, {5}, {6}+alrp {7}"
+op = "sop3"
+mask = "CLSM | b(53) | b(42)"
+val = "cls(17) | b(42)"
+fields = [
+    "pred=PRED_MUL 58:57", "flags=F_FLAGS3", "dst=F_INT_D10", "src0=F_INT_S0_10",
+    "src1=F_INT_S1_10", "src2=F_INT_S2_10",
+    "csel=K_INT_SOP3CN 40:38 56 37:35 47 52 43", "alrp=F_INT_ALRP",
+]
+
+[[form]]
+order = 1690
+pat = "{0}lrp{1} {2}, {3}, {4}, {5}, {6}+asop {7}"
+op = "lrp"
+mask = "CLSM | b(53) | b(42)"
+val = "cls(17) | b(53)"
+fields = [
+    "pred=PRED_MUL 58:57", "flags=F_FLAGS3", "dst=F_INT_D10", "src0=F_INT_S0_10",
+    "src1=F_INT_S1_10", "src2=F_INT_S2_10",
+    "csel=K_INT_LRP1C 45 52 44 46 43", "asop=K_INT_LRP1A 40:38 56 37:35 47 41",
+]
+
+[[form]]
+order = 1700
+pat = "{0}sop3c{1} {2}, {3}, {4}, {5}, {6}+alrp {7}"
+op = "sop3c"
+mask = "CLSM | b(53) | b(42)"
+val = "cls(17) | b(53) | b(42)"
+fields = [
+    "pred=PRED_MUL 58:57", "flags=F_FLAGS3", "dst=F_INT_D10", "src0=F_INT_S0_10",
+    "src1=F_INT_S1_10", "src2=F_INT_S2_10",
+    "csel=K_INT_LRP2C 40:38 56 37:35 47 43 52", "alrp=F_INT_ALRP",
+]

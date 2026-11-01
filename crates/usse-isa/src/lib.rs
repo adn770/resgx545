@@ -1,0 +1,215 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2026 Josep Torra
+//! SGX Series-5 USSE instruction decoder: the whole SGX545 instruction set,
+//! with the SGX540 readings where they differ.
+//!
+//! The USSE instruction word is 64-bit little-endian. The top 5 bits
+//! (enc[63:59]) select the major opcode class; class 0x1F is the
+//! control/special group with further sub-opcode bits. The form table is
+//! generated from isa/usse/ (isa/README.md, tools/usse-dis/README.md), and the
+//! C decoder in tools/usse-dis (which the radare2 plugin wraps) is kept in
+//! step with this one by tests/c_crosscheck.rs.
+
+pub mod encode;
+pub mod form;
+mod forms;
+mod kinds;
+#[rustfmt::skip]
+mod table;
+
+pub use form::{Core, Ctx, Fields, Form, Table};
+
+use std::sync::OnceLock;
+
+/// A decoded word.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Insn {
+    /// The raw 64-bit instruction word.
+    pub enc: u64,
+    /// True if a form decoded it.
+    pub valid: bool,
+    /// The form that decoded it (its index in `forms()`).
+    pub form: Option<usize>,
+    /// Mnemonic and operands, as usse-dis prints them; for an undecoded word
+    /// a readable class hint or `.long 0x...`.
+    pub text: String,
+}
+
+/// Every form of the table, in decoding order.
+pub fn forms() -> impl Iterator<Item = &'static Form> {
+    table::FORMS.iter()
+}
+
+/// The form table, dispatched by the major class enc[63:59].
+pub fn table() -> &'static Table {
+    static T: OnceLock<Table> = OnceLock::new();
+    T.get_or_init(|| Table::new(table::FORMS, 59))
+}
+
+/// Decode to the form and its field values, without text (the form's fields
+/// give their meaning: `table().forms[f.form].f`). None if no form decodes it.
+pub fn decode_fields(enc: u64, core: Core) -> Option<Fields> {
+    table().fields(enc, &Ctx { core, resolve: None })
+}
+
+/// Major opcode class = enc[63:59]. Base mnemonic per class, the most frequent
+/// one of each class; used only as a readable hint for undecoded words.
+pub fn class_name(top5: u32) -> Option<&'static str> {
+    match top5 {
+        0 => Some("fmad"),
+        5 => Some("mov"),
+        7 => Some("efo"),
+        9 | 10 => Some("and"),
+        11 => Some("xor"),
+        12 => Some("shl"),
+        13 => Some("shr"),
+        20 => Some("ima16"),
+        21 => Some("imae"),
+        29 => Some("ldad"),
+        30 => Some("stad"),
+        31 => Some("special"),
+        _ => None,
+    }
+}
+
+/// Encode one instruction, written as the decoder prints it (blanks, case and
+/// number formats are lenient). None if no form matches.
+pub fn encode(text: &str, core: Core) -> Option<u64> {
+    encode_with(text, &Ctx { core, resolve: None })
+}
+
+/// Encode with a context: the core and, for the assembler, a label resolver.
+/// For a text that does not assemble: the forms that matched the most of it,
+/// best first (form index, characters matched, what the form expected next as
+/// its pattern from there). For diagnostics; empty when nothing matched at all.
+pub fn explain(text: &str, core: Core) -> Vec<(usize, usize, String)> {
+    let cx = Ctx { core, resolve: None };
+    encode::explain_in(table(), text, &cx, 3)
+}
+
+pub fn encode_with(text: &str, cx: &Ctx) -> Option<u64> {
+    encode::encode_in(table(), text, cx)
+}
+
+/// Decode one 64-bit USSE word.
+pub fn decode(enc: u64, core: Core) -> Insn {
+    let cx = Ctx { core, resolve: None };
+    match table().decode(enc, &cx) {
+        Some((i, text)) => Insn { enc, valid: true, form: Some(i), text },
+        None => {
+            let text = match class_name((enc >> 59) as u32) {
+                Some(base) => format!("{base:<8}; TODO operands"),
+                None => format!(".long 0x{enc:016X}"),
+            };
+            Insn { enc, valid: false, form: None, text }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn explain_names_the_closest_forms() {
+        // fmad wants three sources; the text has two
+        let near = explain("fmad r10, r1, r2", Core::Sgx545);
+        assert!(!near.is_empty());
+        let (form, matched, _) = &near[0];
+        assert!(table().forms[*form].op == "fmad", "{near:?}");
+        assert!(*matched >= "fmad r10, r1, r2".len(), "{near:?}");
+        assert_eq!(near[0].2, ", <src2>");
+        // no form gets past an unknown mnemonic
+        let near = explain("frobnicate r1", Core::Sgx545);
+        assert!(near.iter().all(|n| n.1 < "frobnicate".len()), "{near:?}");
+    }
+
+    use super::*;
+
+    fn dis(enc: u64) -> String {
+        decode(enc, Core::Sgx545).text
+    }
+
+    #[test]
+    fn decodes_made_up_words() {
+        // our own words, fields set to values of our choosing; idf and wdf have one field,
+        // the DRC (bit 32)
+        for (w, text) in [
+            (0xFC20411001345678, "mov r9, #0x12345678"),
+            (0xF02600068000C289, "stad.bpcache [sa3,+#5], r9"),
+            (0xF820000000000000 | 1 << 32, "idf drc1, bif"),
+            (0xF920000000000000 | 1 << 32, "wdf drc1"),
+            (0xF800000000000123, "ba #0x00000123"),
+        ] {
+            assert_eq!(dis(w), text, "{w:016X}");
+            assert_eq!(encode(text, Core::Sgx545), Some(w), "{text}");
+        }
+    }
+
+    #[test]
+    fn bexception_decodes_its_branch_fields() {
+        // bexception takes ba's target, br's relative bit 38 and offset, and the predicate;
+        // the encoder writes them as 0, a jump to instruction 0
+        for (w, text) in [
+            (0xF808000000000000, "bexception #0x00000000"),
+            (0xF80800000000000A, "bexception #0x0000000A"),
+            (0xFD0800000000000A, "!p0 bexception #0x0000000A"),
+            (0xF808004000000005, "bexception.rel #0x00000005"),
+            (0xF90800400003FFFF, "p0 bexception.rel -#0x00000001"),
+            (0xF808080000000000, "bexception.nosched #0x00000000"),
+        ] {
+            assert_eq!(dis(w), text, "{w:016X}");
+            assert_eq!(encode(text, Core::Sgx545), Some(w), "{text}");
+        }
+    }
+
+    #[test]
+    fn dispatch_and_fields_agree_with_the_linear_walk() {
+        let mut x = 0x0123_4567_89ab_cdefu64;
+        let fs: Vec<_> = forms().collect();
+        for i in 0..200_000 {
+            x ^= x << 13;
+            x ^= x >> 7;
+            x ^= x << 17;
+            let w = if i % 2 == 0 { x } else { fs[i % fs.len()].val | (x & !fs[i % fs.len()].mask) };
+            for core in [Core::Sgx545, Core::Sgx540] {
+                let cx = Ctx { core, resolve: None };
+                let linear = form::decode_in(forms(), w, &cx);
+                assert_eq!(table().decode(w, &cx), linear, "{w:016X}");
+                let f = decode_fields(w, core);
+                assert_eq!(f.map(|f| f.form), linear.map(|l| l.0));
+                if let Some(f) = f {
+                    for (v, fd) in f.v.iter().zip(fs[f.form].f) {
+                        assert_eq!(*v, fd.get(w));
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn every_kind_valid_agrees_with_print() {
+        // every value of fields up to 16 bits, a sample of the wider ones
+        for core in [Core::Sgx545, Core::Sgx540] {
+            let cx = Ctx { core, resolve: None };
+            for (i, fm) in forms().enumerate() {
+                for (j, f) in fm.f.iter().enumerate() {
+                    let w = f.width();
+                    let n = if w > 16 { 1 << 16 } else { 1u64 << w };
+                    for k in 0..n {
+                        let v =
+                            if w > 16 { (k as u32).wrapping_mul(0x9e37_79b9) >> (32 - w) } else { k as u32 };
+                        let printed = f.k.print(v, &cx, &mut String::new());
+                        assert_eq!(f.k.valid(v, &cx), printed, "form {i} field {j} value {v}");
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn undecoded_words_keep_a_hint() {
+        // the float classes decode on the SGX545 only
+        let i = decode(0, Core::Sgx540);
+        assert_eq!((i.valid, i.form, i.text.as_str()), (false, None, "fmad    ; TODO operands"));
+        assert_eq!(decode(4 << 59, Core::Sgx540).text, ".long 0x2000000000000000");
+    }
+}

@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+[[form]]
+order = 2200
+pat = "{0}movsa {1}, {2}"
+op = "movsa"
+mask = "OPM"
+val = "0x05 << 27"
+fields = ["pred=PRED", "port=K_PORT 3:0", "srcs=K_MOVS 23:5"]

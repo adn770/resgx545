@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ---- class 18: sop2wm
+# The selector pair of sop3 (values 4 and 5 invalid), the colour and
+# alpha operations enc[53:52] and enc[42:41], and a byte mask in
+# enc[46:44] (bits 0-2) and enc[43] (bit 3), always printed. The form
+# reads none of enc[20:14] and enc[34].
+[[form]]
+order = 1710
+pat = "{0}sop2wm{1} {2}{3}, {4}, {5}, {6}"
+op = "sop2wm"
+mask = "CLSM"
+val = "cls(18)"
+fields = [
+    "pred=PRED_MUL 58:57", "flags=F_FLAGS3", "dst=F_INT_D10", "bytemask=INT_BYTEMASK4 46:44 43",
+    "src1=F_INT_S1_10", "src2=F_INT_S2_10", "sel=K_INT_SOPWM 40:38 56 37:35 47 53:52 42:41",
+]

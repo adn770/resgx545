@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ---- class 31 control: ldr / str
+# ldr/str: a register index in source 2 (an immediate takes 14 bits)
+[[form]]
+order = 360
+pat = "ldr{0} {1}, #{2}, drc{3}"
+op = "ldr"
+mask = "CLSM | m(58, 56) | m(54, 51) | b(48) | m(29, 28)"
+val = "cls(31) | m(58, 57) | b(53) | b(48) | b(29)"
+fields = ["flags=F_LDRFLAGS", "dst=F_LSDST", "index=F_IDX14", "drc=K_DEC 33:32"]
+
+[[form]]
+order = 370
+pat = "ldr{0} {1}, {2}, drc{3}"
+op = "ldr"
+mask = "CLSM | m(58, 56) | m(54, 51)"
+val = "cls(31) | m(58, 57) | b(53)"
+fields = ["flags=F_LDRFLAGS", "dst=F_LSDST", "index=F_SRC2D", "drc=K_DEC 33:32"]
+
+[[form]]
+order = 380
+pat = "str{0} #{1}, {2}"
+op = "str"
+mask = "CLSM | m(58, 56) | m(54, 51) | b(48) | m(29, 28)"
+val = "cls(31) | m(58, 57) | b(53) | b(51) | b(48) | b(29)"
+fields = ["flags=F_LDRFLAGS", "index=F_IDX14", "src=F_SRC1D"]
+
+[[form]]
+order = 390
+pat = "str{0} {1}, {2}"
+op = "str"
+mask = "CLSM | m(58, 56) | m(54, 51)"
+val = "cls(31) | m(58, 57) | b(53) | b(51)"
+fields = ["flags=F_LDRFLAGS", "index=F_SRC2D", "src=F_SRC1D"]

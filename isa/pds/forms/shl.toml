@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ---- shifts by a signed 7-bit amount (printed as an unsigned 32-bit number)
+[[form]]
+order = 2440
+pat = "{0}shl {1}, {2}, {3}"
+op = "shl"
+mask = "OPM"
+val = "0x1e << 27"
+fields = ["pred=PRED", "dst=DST7", "src=K_SHSRC 23:16", "n=K_SHAMT 14:8"]

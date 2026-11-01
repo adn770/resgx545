@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ---- tests: tstz/tstn of a ds1 register (w[8]) or a first-source operand into p0-p2
+[[form]]
+order = 2340
+pat = "{0}tstz {1}, ds1[{2}]"
+op = "tstz"
+mask = "OPM | b(8)"
+val = "0x10 << 27 | b(8)"
+fields = ["pred=PRED", "pdst=TSTP 2:0", "ds1=K_DEC 15:10"]
+
+[[form]]
+order = 2350
+pat = "{0}tstz {1}, {2}"
+op = "tstz"
+mask = "OPM | b(8)"
+val = "0x10 << 27"
+fields = ["pred=PRED", "pdst=TSTP 2:0", "src=K_SRC7_2 23:17"]

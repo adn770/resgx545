@@ -1,0 +1,58 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ---- class 20: ima16 with every source format
+# Formats enc[39:38] (source 1) and enc[41:40] (source 2): u16, u8, s8,
+# o8. An 8-bit source prints its half: enc[52] for source 1, enc[37] for
+# source 2. The form reads neither enc[47] nor, for a u16 source 2,
+# enc[37].
+[[form]]
+order = 1730
+pat = "{0}ima16{1}.{2}{3} {4}{5}, {6}, {7}, {8}, {9}"
+op = "ima16"
+mask = "CLSM | m(41, 38)"
+val = "cls(20)"
+fields = [
+    "pred=PRED_MUL 58:57", "flags=F_MULFLAGS", "sign=SIGNSAT 42 43", "rs=RS 36:35", "dst=F_DST",
+    "abs=F_ABS 56", "src0=F_MSRC0",
+    "src1=F_SRC1D", "src2x=FD_RM2(K_INT_SNEG)",
+    "fmt=FD_SOP(K_INT_FMT16_0)",
+]
+
+[[form]]
+order = 1740
+pat = "{0}ima16{1}.{2}{3} {4}{5}, {6}, {7}, {8}, {9}"
+op = "ima16"
+mask = "CLSM | m(41, 40)"
+val = "cls(20)"
+fields = [
+    "pred=PRED_MUL 58:57", "flags=F_MULFLAGS", "sign=SIGNSAT 42 43", "rs=RS 36:35", "dst=F_DST",
+    "abs=F_ABS 56", "src0=F_MSRC0",
+    "src1x=K_INT_SLH 13:7 31:30 49 52", "src2x=FD_RM2(K_INT_SNEG)",
+    "fmt=FD_SOP(K_INT_FMT16_1)",
+]
+
+[[form]]
+order = 1750
+pat = "{0}ima16{1}.{2}{3} {4}{5}, {6}, {7}, {8}, {9}"
+op = "ima16"
+mask = "CLSM | m(39, 38)"
+val = "cls(20)"
+fields = [
+    "pred=PRED_MUL 58:57", "flags=F_MULFLAGS", "sign=SIGNSAT 42 43", "rs=RS 36:35", "dst=F_DST",
+    "abs=F_ABS 56", "src0=F_MSRC0",
+    "src1=F_SRC1D", "src2x=K_INT_SNLH 6:0 29:28 48 53 37",
+    "fmt=FD_SOP(K_INT_FMT16_2)",
+]
+
+[[form]]
+order = 1760
+pat = "{0}ima16{1}.{2}{3} {4}{5}, {6}, {7}, {8}, {9}"
+op = "ima16"
+mask = "CLSM"
+val = "cls(20)"
+fields = [
+    "pred=PRED_MUL 58:57", "flags=F_MULFLAGS", "sign=SIGNSAT 42 43", "rs=RS 36:35", "dst=F_DST",
+    "abs=F_ABS 56", "src0=F_MSRC0",
+    "src1x=K_INT_SLH 13:7 31:30 49 52", "src2x=K_INT_SNLH 6:0 29:28 48 53 37",
+    "fmt=FD_SOP(K_INT_FMT16_3)",
+]

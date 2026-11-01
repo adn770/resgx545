@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+[[form]]
+order = 2310
+pat = "{0}not {1}, ds1[{2}]"
+op = "not"
+mask = "OPM | b(8)"
+val = "0x1b << 27 | b(8)"
+fields = ["pred=PRED", "dst=DST7", "ds1=K_DEC 15:10"]
+
+[[form]]
+order = 2320
+pat = "{0}not {1}, {2}"
+op = "not"
+mask = "OPM | b(8)"
+val = "0x1b << 27"
+fields = ["pred=PRED", "dst=DST7", "src=K_SRC7_3 23:17"]

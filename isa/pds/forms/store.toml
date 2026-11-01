@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+[[form]]
+order = 2260
+pat = "store {0}, ds{1}[{2}"
+op = "store"
+mask = "OPM"
+val = "0x07 << 27"
+fields = ["addr=K_ADDR 17:0", "bank=K_DEC 22", "range=K_LDRANGE 21:18 26:24"]

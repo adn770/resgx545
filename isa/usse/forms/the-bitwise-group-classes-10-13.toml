@@ -1,0 +1,94 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ---- the bitwise group: classes 10-13
+# and/or (10), xor (11), shl/rol (12), shr/asr (13): one layout, with
+# the operation in enc[35] and the class's low bit. Source 2 is a rotated
+# 16-bit immediate when its bank reads as an immediate. With enc[53] set,
+# the destination mask field is a repeat count instead.
+[[form]]
+order = 160
+pat = "{0}{1}{2} {3}{4}, {5}, {6}#{7}"
+op = "bitwise"
+mask = "m(63, 60) | b(53) | b(48) | m(29, 28)"
+val = "b(62) | b(60) | b(48) | b(29)"
+fields = [
+    "pred=PRED_ALL 58:56", "op=OP_BW_ANDXOR 35 59", "flags=F_ALUFLAGS", "dst=F_DST",
+    "mask=WMASK 47:44", "src1=F_SRC1D", "inv=F_INV 43", "src2=F_ROT",
+]
+
+[[form]]
+order = 170
+pat = "{0}{1}{2}{4} {3}, {5}, {6}#{7}"
+op = "bitwise"
+mask = "m(63, 60) | b(53) | b(48) | m(29, 28)"
+val = "b(62) | b(60) | b(53) | b(48) | b(29)"
+fields = [
+    "pred=PRED_ALL 58:56", "op=OP_BW_ANDXOR 35 59", "flags=F_ALUFLAGS", "dst=F_DST",
+    "repeat=REPEAT 47:44", "src1=F_SRC1D", "inv=F_INV 43", "src2=F_ROT",
+]
+
+[[form]]
+order = 180
+pat = "{0}{1}{2} {3}{4}, {5}, {6}{7}"
+op = "bitwise"
+mask = "m(63, 60) | b(53)"
+val = "b(62) | b(60)"
+fields = [
+    "pred=PRED_ALL 58:56", "op=OP_BW_ANDXOR 35 59", "flags=F_ALUFLAGS", "dst=F_DST",
+    "mask=WMASK 47:44", "src1=F_SRC1D", "inv=F_INV 43", "src2=F_SRC2D",
+]
+
+[[form]]
+order = 190
+pat = "{0}{1}{2}{4} {3}, {5}, {6}{7}"
+op = "bitwise"
+mask = "m(63, 60) | b(53)"
+val = "b(62) | b(60) | b(53)"
+fields = [
+    "pred=PRED_ALL 58:56", "op=OP_BW_ANDXOR 35 59", "flags=F_ALUFLAGS", "dst=F_DST",
+    "repeat=REPEAT 47:44", "src1=F_SRC1D", "inv=F_INV 43", "src2=F_SRC2D",
+]
+
+[[form]]
+order = 200
+pat = "{0}{1}{2} {3}{4}, {5}, {6}#{7}"
+op = "bitwise"
+mask = "m(63, 60) | b(53) | b(48) | m(29, 28)"
+val = "m(62, 61) | b(48) | b(29)"
+fields = [
+    "pred=PRED_ALL 58:56", "op=OP_BW_SHIFT 35 59", "flags=F_ALUFLAGS", "dst=F_DST",
+    "mask=WMASK 47:44", "src1=F_SRC1D", "inv=F_INV 43", "src2=F_ROT",
+]
+
+[[form]]
+order = 210
+pat = "{0}{1}{2}{4} {3}, {5}, {6}#{7}"
+op = "bitwise"
+mask = "m(63, 60) | b(53) | b(48) | m(29, 28)"
+val = "m(62, 61) | b(53) | b(48) | b(29)"
+fields = [
+    "pred=PRED_ALL 58:56", "op=OP_BW_SHIFT 35 59", "flags=F_ALUFLAGS", "dst=F_DST",
+    "repeat=REPEAT 47:44", "src1=F_SRC1D", "inv=F_INV 43", "src2=F_ROT",
+]
+
+[[form]]
+order = 220
+pat = "{0}{1}{2} {3}{4}, {5}, {6}{7}"
+op = "bitwise"
+mask = "m(63, 60) | b(53)"
+val = "m(62, 61)"
+fields = [
+    "pred=PRED_ALL 58:56", "op=OP_BW_SHIFT 35 59", "flags=F_ALUFLAGS", "dst=F_DST",
+    "mask=WMASK 47:44", "src1=F_SRC1D", "inv=F_INV 43", "src2=F_SRC2D",
+]
+
+[[form]]
+order = 230
+pat = "{0}{1}{2}{4} {3}, {5}, {6}{7}"
+op = "bitwise"
+mask = "m(63, 60) | b(53)"
+val = "m(62, 61) | b(53)"
+fields = [
+    "pred=PRED_ALL 58:56", "op=OP_BW_SHIFT 35 59", "flags=F_ALUFLAGS", "dst=F_DST",
+    "repeat=REPEAT 47:44", "src1=F_SRC1D", "inv=F_INV 43", "src2=F_SRC2D",
+]

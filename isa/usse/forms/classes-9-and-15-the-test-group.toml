@@ -1,0 +1,187 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ---- classes 9 and 15: the test group
+# enc[50] set (both classes)
+[[form]]
+order = 1990
+pat = "{0}{1}{2}.{3} {4}{5}{6}, p{7}, {8}, {9}"
+op = "test"
+mask = "CLSM | b(50)"
+val = "cls(9) | b(50)"
+fields = [
+    "pred=PRED_ALL 58:56", "op=MSC_TOP_I 19:14", "flags=F_TESTFLAGS4", "test=K_TEST 43:36",
+    "write=F_WRITE 20", "dst=F_DST", "mask=WMASK 47:44", "p=K_DEC 35:34", "src1=F_SRC1D",
+    "src2=F_SRC2D",
+]
+
+[[form]]
+order = 2000
+pat = "{0}{1}{2}.sat.{3} {4}{5}{6}, p{7}, {8}, {9}"
+op = "test"
+mask = "CLSM | b(50)"
+val = "cls(9) | b(50)"
+fields = [
+    "pred=PRED_ALL 58:56", "op=MSC_TOP_I8 19:14", "flags=F_TESTFLAGS4", "test=K_TEST 43:36",
+    "write=F_WRITE 20", "dst=F_DST", "mask=WMASK 47:44", "p=K_DEC 35:34", "src1=F_SRC1D",
+    "src2=F_SRC2D",
+]
+
+[[form]]
+order = 2010
+pat = "{0}{1}{2}.{3} {4}{5}{6}, p{7}, {8}, {9}"
+op = "test"
+mask = "CLSM | b(50)"
+val = "cls(9) | b(50)"
+fields = [
+    "pred=PRED_ALL 58:56", "op=MSC_TOP_F2 19:14", "flags=F_TESTFLAGS4", "test=K_TEST 43:36",
+    "write=F_WRITE 20", "dst=DST(K_MSC_FDST)", "mask=WMASK 47:44", "p=K_DEC 35:34",
+    "src1=SRC1(K_MSC_FSRC)", "src2=SRC2(K_MSC_FSRC)",
+]
+
+[[form]]
+order = 2020
+pat = "{0}{1}{2}.{3} {4}{5}{6}, p{7}, {8}, {9}"
+op = "test"
+mask = "CLSM | b(50)"
+val = "cls(9) | b(50)"
+fields = [
+    "pred=PRED_ALL 58:56", "op=MSC_TOP_F2Z 19:14", "flags=F_TESTFLAGS4", "test=K_TEST 43:36",
+    "write=F_WRITE 20", "dst=DST(K_MSC_FDST)", "mask=WMASK 47:44", "p=K_DEC 35:34",
+    "src1=SRC1(K_MSC_FSRC0)", "src2=SRC2(K_MSC_FSRC0)",
+]
+
+[[form]]
+order = 2030
+pat = "{0}{1}{2}.{3} {4}{5}{6}, p{7}, {8}"
+op = "test"
+mask = "CLSM | b(50)"
+val = "cls(9) | b(50)"
+fields = [
+    "pred=PRED_ALL 58:56", "op=TESTOP_1 19:14", "flags=F_TESTFLAGS4", "test=K_TEST 43:36",
+    "write=F_WRITE 20", "dst=DST(K_MSC_FDST)", "mask=WMASK 47:44", "p=K_DEC 35:34",
+    "src1=SRC1(K_MSC_FSRC0)",
+]
+
+[[form]]
+order = 2040
+pat = "{0}{1}{2}.{3} {4}{5}{6}, p{7}, {8}, {9}"
+op = "test"
+mask = "CLSM | b(50)"
+val = "cls(9) | b(50)"
+fields = [
+    "pred=PRED_ALL 58:56", "op=MSC_TOP_C10 19:14", "flags=F_TESTFLAGS4", "test=K_TEST 43:36",
+    "write=F_WRITE 20", "dst=DST(K_MSC_CDST)", "mask=WMASK 47:44", "p=K_DEC 35:34",
+    "src1=SRC1(K_MSC_CSRC)", "src2=SRC2(K_MSC_CSRC)",
+]
+
+# class 15 with enc[50] clear and the bitwise operations, as usse.c's class
+# 9, except that a bitwise operation prints a source-2 immediate in hex
+# and a source-1 one in decimal
+[[form]]
+order = 2050
+pat = "{0}{1}{2}.{3} {4}{5}{6}, {7}, {8}"
+op = "test"
+mask = "CLSM"
+val = "cls(15)"
+fields = [
+    "pred=PRED_ALL 58:56", "op=TESTOP_BW 19:14", "flags=F_TESTFLAGS",
+    "test=K_MSC_TESTMSK 37:36 43:39", "write=F_WRITE 20", "dst=F_DST", "mask=WMASK 47:44",
+    "src1=F_SRC1D", "src2=SRC2(K_SRCH)",
+]
+
+[[form]]
+order = 2060
+pat = "{0}{1}{2}.{3} {4}{5}{6}, {7}, {8}"
+op = "test"
+mask = "CLSM | b(50)"
+val = "cls(15)"
+fields = [
+    "pred=PRED_ALL 58:56", "op=TESTOP_2 19:14", "flags=F_TESTFLAGS4",
+    "test=K_MSC_TESTMSK 37:36 43:39", "write=F_WRITE 20", "dst=F_DST", "mask=WMASK 47:44",
+    "src1=F_SRC1D", "src2=F_SRC2D",
+]
+
+[[form]]
+order = 2070
+pat = "{0}{1}{2}.{3} {4}{5}{6}, {7}"
+op = "test"
+mask = "CLSM | b(50)"
+val = "cls(15)"
+fields = [
+    "pred=PRED_ALL 58:56", "op=TESTOP_1 19:14", "flags=F_TESTFLAGS4",
+    "test=K_MSC_TESTMSK 37:36 43:39", "write=F_WRITE 20", "dst=F_DST", "mask=WMASK 47:44",
+    "src1=F_SRC1D",
+]
+
+# class 15, enc[50] set
+[[form]]
+order = 2080
+pat = "{0}{1}{2}.{3} {4}{5}{6}, {7}, {8}"
+op = "test"
+mask = "CLSM | b(50)"
+val = "cls(15) | b(50)"
+fields = [
+    "pred=PRED_ALL 58:56", "op=MSC_TOP_I 19:14", "flags=F_TESTFLAGS4",
+    "test=K_MSC_TESTMSK 37:36 43:39", "write=F_WRITE 20", "dst=F_DST", "mask=WMASK 47:44",
+    "src1=F_SRC1D", "src2=F_SRC2D",
+]
+
+[[form]]
+order = 2090
+pat = "{0}{1}{2}.sat.{3} {4}{5}{6}, {7}, {8}"
+op = "test"
+mask = "CLSM | b(50)"
+val = "cls(15) | b(50)"
+fields = [
+    "pred=PRED_ALL 58:56", "op=MSC_TOP_I8 19:14", "flags=F_TESTFLAGS4",
+    "test=K_MSC_TESTMSK 37:36 43:39", "write=F_WRITE 20", "dst=F_DST", "mask=WMASK 47:44",
+    "src1=F_SRC1D", "src2=F_SRC2D",
+]
+
+[[form]]
+order = 2100
+pat = "{0}{1}{2}.{3} {4}{5}{6}, {7}, {8}"
+op = "test"
+mask = "CLSM | b(50)"
+val = "cls(15) | b(50)"
+fields = [
+    "pred=PRED_ALL 58:56", "op=MSC_TOP_F2 19:14", "flags=F_TESTFLAGS4",
+    "test=K_MSC_TESTMSK 37:36 43:39", "write=F_WRITE 20", "dst=DST(K_MSC_FDST)", "mask=WMASK 47:44",
+    "src1=SRC1(K_MSC_FSRC)", "src2=SRC2(K_MSC_FSRC)",
+]
+
+[[form]]
+order = 2110
+pat = "{0}{1}{2}.{3} {4}{5}{6}, {7}, {8}"
+op = "test"
+mask = "CLSM | b(50)"
+val = "cls(15) | b(50)"
+fields = [
+    "pred=PRED_ALL 58:56", "op=MSC_TOP_F2Z 19:14", "flags=F_TESTFLAGS4",
+    "test=K_MSC_TESTMSK 37:36 43:39", "write=F_WRITE 20", "dst=DST(K_MSC_FDST)", "mask=WMASK 47:44",
+    "src1=SRC1(K_MSC_FSRC0)", "src2=SRC2(K_MSC_FSRC0)",
+]
+
+[[form]]
+order = 2120
+pat = "{0}{1}{2}.{3} {4}{5}{6}, {7}"
+op = "test"
+mask = "CLSM | b(50)"
+val = "cls(15) | b(50)"
+fields = [
+    "pred=PRED_ALL 58:56", "op=TESTOP_1 19:14", "flags=F_TESTFLAGS4",
+    "test=K_MSC_TESTMSK 37:36 43:39", "write=F_WRITE 20", "dst=DST(K_MSC_FDST)", "mask=WMASK 47:44",
+    "src1=SRC1(K_MSC_FSRC0)",
+]
+
+[[form]]
+order = 2130
+pat = "{0}{1}{2}.{3} {4}{5}{6}, {7}, {8}"
+op = "test"
+mask = "CLSM | b(50)"
+val = "cls(15) | b(50)"
+fields = [
+    "pred=PRED_ALL 58:56", "op=MSC_TOP_C10 19:14", "flags=F_TESTFLAGS4",
+    "test=K_MSC_TESTMSK 37:36 43:39", "write=F_WRITE 20", "dst=DST(K_MSC_CDST)", "mask=WMASK 47:44",
+    "src1=SRC1(K_MSC_CSRC)", "src2=SRC2(K_MSC_CSRC)",
+]

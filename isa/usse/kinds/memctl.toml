@@ -1,0 +1,125 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# USSE forms, the memctl family (classes 28, 29, 31).
+# The source of the C and Rust tables: see isa/README.md.
+
+# Kinds written as code, in both languages (C: tools/usse-dis, Rust: crates/usse-isa).
+code = [
+    "MEM_K_S10",
+    "MEM_K_IMO",
+    "MEM_K_SMLSI",
+]
+
+[const]
+EMIT_UNUSED_SRC1 = "b(49) | b(31)"
+EMIT_UNUSED_SRC0 = "b(51)"
+
+[kind.MEM_ELDTYPE]
+enum = ["d", "q"]
+
+# ---- class 31, enc[53:52] = 1: the MOE group, operation enc[58:56] --------
+[kind.MEM_SMOAMODE]
+enum = ["none", "repeat", "clamp", "mirror"]
+
+[kind.MEM_MOEST]
+enum = ["0 /* SMOA low data */", "1 /* SMOA high data */", "2 /* SMLSI low data */", "3 /* SMLSI high data */", "4 /* SMBO low data */", "5 /* SMBO high data */", "6 /* SMR low data */", "7 /* SMR high data */", "8 /* Index data */", "9 /* Reserved */", "10 /* Reserved */", "11 /* Reserved */", "12 /* Reserved */", "13 /* Reserved */", "14 /* Reserved */", "15 /* Reserved */"]
+
+# ---- class 31, enc[53:52] = 2: the other group ----------------------------
+[kind.MEM_IDFMODE]
+enum = ["bif", "pixelbe", "reserved(=2)", "reserved(=3)"]
+
+[kind.MEM_LOCK]
+enum = ["lock", "release"]
+
+[kind.MEM_F_TWOPART]
+enum = ["", ".twopart"]
+
+[kind.MEM_F_CUT]
+enum = ["", ".cut"]
+
+[kind.MEM_F_TASKS]
+enum = ["", ".tasks"]
+
+[kind.MEM_F_TASKE]
+enum = ["", ".taske"]
+
+[kind.MEM_TWOSIDED]
+enum = [", ", ", twosided, "]
+
+[kind.MEM_VISMODE]
+enum = ["fb", "nfb", "optdwd", "optdwd"]
+
+# ---- class 31, enc[54:52] = 4: cache control -------------------------------
+[kind.MEM_CFOP]
+enum = [false, "ci", "cf", "cfi"]
+
+[kind.MEM_CFLEVEL]
+enum = ["0 /* Reserved */", "1 /* L0 and L1 */", "2 /* L2 */", "3 /* L0, L1 and L2 */"]
+
+# ---- class 28: texture sampling ------------------------------------------
+# The fields: the dimension enc[43:42] (1d, 2d, 3d) and the LOD mode enc[41:40] (none, bias,
+# replace, grad; dimension 3 prints invalid_smp_lod_mode); the flags skipinv
+# enc[55], syncs enc[52], nosched enc[54], PCF enc[38:37] and SRD enc[47:46];
+# the coordinate format enc[36:35]. The value 3 of PCF, SRD and the format is
+# invalid (invalid_smp_pcf_mode, _srd_mode, _data_type).
+[kind.MEM_K_SMP0]
+seq = [
+    ["1d", "2d", "3d", false],
+    ["", false, false, false],
+]
+
+[kind.MEM_K_SMPL]
+seq = [
+    ["1d", "2d", "3d", false],
+    [false, "bias", "replace", "grad"],
+]
+
+[kind.MEM_K_SMPFLAGS]
+seq = [
+    ["", ".skipinv"],
+    ["", ".syncs"],
+    ["", ".nosched"],
+    ["", ".pcf", ".pcff16", false],
+    ["", ".sinf", ".rsd", false],
+]
+
+[kind.MEM_K_SMPFMT]
+seq = [
+    ["", ".flt16", ".c10", false],
+]
+
+# ---- class 29 with enc[54] set: eldd / eldq --------------------------------
+# Every bit of the word is read. The flags are
+# skipinv enc[55], syncs enc[52], the cache mode enc[33] | enc[53] << 1 and
+# the fetch count enc[47:44] (count + 1, nothing for 0).
+[kind.MEM_K_ELDFLAGS]
+seq = [
+    ["", ".skipinv"],
+    ["", ".syncs"],
+    ["", ".bpcache", ".fcfill", ".bypassl1"],
+    ["", ".fetch2", ".fetch3", ".fetch4", ".fetch5", ".fetch6", ".fetch7", ".fetch8", ".fetch9", ".fetch10", ".fetch11", ".fetch12", ".fetch13", ".fetch14", ".fetch15", ".fetch16"],
+]
+
+[kind.MEM_K_SMLSIMODES]
+seq = [
+    [", incrementmode", ", swizzlemode"],
+    [", incrementmode", ", swizzlemode"],
+    [", incrementmode", ", swizzlemode"],
+    [", incrementmode", ", swizzlemode"],
+]
+
+# ---- class 31, enc[53:52] = 3: the visibility test group -------------------
+[kind.MEM_K_VISFLAGS]
+seq = [
+    ["", ".syncs"],
+    ["", ".nosched"],
+    ["", ".end"],
+    ["", ".c10"],
+]
+
+[kind.MEM_K_CFFLAGS]
+seq = [
+    ["", ".nosched"],
+    ["", ".global"],
+    ["", ".dm_nomatch"],
+]

@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ---- class 31 visibility test group (enc[53:52] = 3)
+# pcoeff and ptoff (operation 0, by enc[47]) print no predicate; atst8 (1)
+# and depthf (3) a 2-bit one at enc[42:41]. atst8 writes a destination and
+# a predicate p<enc[40:39]> (enc[38] clear prints "!"), with c10 at enc[54].
+# Both test source 0, 1 and 2 with twosided enc[37] and the feedback mode
+# enc[36:35] (fb, nfb, optdwd twice).
+[[form]]
+order = 1540
+pat = "pcoeff{0}{1} {2}, {3}, {4}"
+mask = "CLSM | m(58, 56) | m(53, 52) | b(47)"
+val = "cls(31) | m(53, 52)"
+fields = ["F_NOSCHED 43", "F_END 50", "F_SRC0", "F_SRC1D", "F_SRC2D"]
+
+[[form]]
+order = 1550
+pat = "ptoff{0}{1}"
+op = "emit"
+mask = "CLSM | m(58, 56) | m(53, 52) | b(47)"
+val = "cls(31) | m(53, 52) | b(47)"
+fields = ["F_NOSCHED 43", "end=F_END 50"]
+
+[[form]]
+order = 1560
+pat = "{0}atst8{1} {2}, {3}p{4}, {5}, {6}, {7}{8}{9}"
+mask = "CLSM | m(58, 56) | m(53, 52)"
+val = "cls(31) | b(56) | m(53, 52)"
+fields = [
+    "PRED_MUL 42:41", "MEM_K_VISFLAGS 55 43 50 54", "DST9(K_DST)", "F_WRITE 38", "K_DEC 40:39",
+    "F_SRC0", "F_SRC1D", "F_SRC2D", "MEM_TWOSIDED 37", "MEM_VISMODE 36:35",
+]
+
+[[form]]
+order = 1570
+pat = "{0}depthf{1} {2}, {3}, {4}{5}{6}"
+mask = "CLSM | m(58, 56) | m(53, 52)"
+val = "cls(31) | m(57, 56) | m(53, 52)"
+fields = [
+    "PRED_MUL 42:41", "MEM_K_VISFLAGS 55 43 50", "F_SRC0", "F_SRC1D", "F_SRC2D", "MEM_TWOSIDED 37",
+    "MEM_VISMODE 36:35",
+]

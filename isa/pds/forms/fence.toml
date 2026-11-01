@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+[[form]]
+order = 2330
+pat = "{0}"
+op = "fence"
+mask = "OPM"
+val = "0x0f << 27"
+fields = ["op=FENCE 0"]

@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ---- class 29 with enc[54] set: eldd / eldq
+# eld + d/q (enc[35]): an r/pa destination (enc[36]), then the base, a
+# source-1-like operand of the r, o, pa or sa bank (enc[31:30]), an r/pa
+# index (enc[34]) and an 11-bit immediate offset enc[43:37] | enc[51:48] << 7,
+# then a source-2-like operand of the same four banks (enc[29:28]) and a
+# 1-bit DRC. On the SGX540 these words read as ld.
+[[form]]
+order = 1240
+pat = "{0}eld{1}{2} {3}, [{4}, {5}, #{6}], {7}, drc{8}"
+mask = "CLSM | b(54)"
+val = "cls(29) | b(54)"
+fields = [
+    "pred=PRED_ALL 58:56", "type=MEM_ELDTYPE 35", "flags=MEM_K_ELDFLAGS 55 52 33 53 47:44",
+    "dst=K_LSDST 27:21 36", "base=K_SRCD 13:7 31:30", "index=F_MSRC0", "offset=K_DEC 43:37 51:48",
+    "limit=K_SRCD 6:0 29:28", "drc=F_DRC",
+]
+op = "eld"

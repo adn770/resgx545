@@ -1,0 +1,68 @@
+# isa — the instruction-form tables, single source
+
+The forms of the USSE and PDS instruction sets are described once, here, and generated into
+the C and Rust decoders:
+
+| description | output | used by |
+|-------------|--------|---------|
+| `usse/` | `tools/usse-dis/usse_table.inc` | usse-dis, r2 plugin |
+| | `crates/usse-isa/src/table.rs` | the Rust USSE decoder and its `usse-dis` |
+| `pds/` | `tools/usse-dis/pds_table.inc` | pds-dis |
+| | `crates/pds-isa/src/table.rs` | the Rust PDS decoder and its `pds-dis` |
+
+`isa/gen.py` (Python stdlib) writes them; both are committed, so neither C nor Rust needs
+the generator to build. `python3 isa/gen.py --check`, which pytest runs, fails when one is
+stale. After editing a description:
+
+```sh
+python3 isa/gen.py                                   # rewrite the tables
+make -C tools/usse-dis
+cargo test && .venv/bin/pytest                       # C/Rust cross-check, pinned texts
+```
+
+## What a description holds
+
+Each instruction set has two kinds of file:
+
+- `isa/<isa>/kinds/<family>.toml`: the definitions (consts, layouts, fields, code and data
+  kinds), read in the order `gen.py` lists the families (`main`, `float`, `memctl`,
+  `intpack`, `misc` for USSE; `pds`), since a family may use what an earlier one defines.
+- `isa/<isa>/forms/<group>.toml`: the forms only, one file per encoding group for USSE (its
+  major class and sub-group: `class-31-moe-group`, `class-27-the-dual-issue-group`, ...) and
+  one per operation for PDS (`movs`, `alu`, ...). Each form carries an `order`: the table
+  is sorted by it, and the first matching form decodes a word, so a new form takes a free
+  number between its neighbours (they are spaced by 10).
+
+Names are global across the files of one instruction set. Both sets run on one form engine
+(`usse_form.[ch]`, `usse_isa::form`); PDS words are 32 bits.
+
+- **`[[form]]`**: `order`, its place in the decode order; `pat`, the text with `{i}` for
+  field i; `mask` and `val`, the bits that identify it (`word & mask == val`); `fields`, at
+  most ten; optional `dflt`, the value our encoder writes in the bits the instruction ignores
+  (and its preference among field values that print the same text); optional `op`, what the
+  form does.
+- **Roles**: a field may carry a name for what the form does, `"dst=F_DST"` (`dst`, `src1`,
+  `pred`, `flags`, ...). Roles and `op` go into the Rust tables only; the C tables do not change.
+- **Fields** are written as a bit-range list with a kind (`"PRED_ALL 58:56"`), a layout with
+  a kind (`"SRC1(K_SRCD)"`) or the name of a `[field]` entry (`"F_DST"`). Bit ranges are
+  `hi:lo` or one bit, listed LSB first: `"K_DST 27:21 33:32 51"` is enc[27:21] in bits 6:0
+  of the value, enc[33:32] in 8:7 and enc[51] in 9.
+- **Expressions** (`mask`, `val`, `dflt`, `[const]`): `b(n)`, `m(hi, lo)`, `cls(c)` (the
+  major class, enc[63:59]), `CLSM`, the consts, `|`, `&`, `~`, `<<`, numbers.
+- **Data kinds**, `[kind.NAME]`, one of:
+  - `enum = [...]`, the text of each value, `false` for an invalid one (values past the end
+    are invalid), or sparse, `enum = { 4 = "frcp", 5 = "frsq" }`;
+  - `flags = [...]`, one-bit flags printed in field order;
+  - `num = "dec"` or `"hex"`, with optional `mul` and `add` (printed `v * mul + add`);
+  - `seq = [[...], ...]`, enumerations printed one after another, each over 2^w names;
+  - `sel = [{ t = [...], comp = bool }, ...]` with optional `pre`/`neg`: a blend selection.
+- **Code kinds** (`code = [...]`): register operands, the float, c10 and dual-issue readings,
+  and every other kind with logic. They are written by hand in both languages under the same
+  name: C in `tools/usse-dis/usse.c`, `forms/*.inc` and `pds.c`, Rust in
+  `crates/usse-isa/src/kinds.rs`, `forms/*.rs` and `crates/pds-isa/src/kinds.rs`. `cargo test`
+  cross-checks them (`crates/README.md`).
+
+The comments in the description explain each layout. Every form is pinned by one made-up
+word and its decoded text (`tools/usse-dis/pinned.tsv`, read by `test_pinned.py` and by the
+Rust tests `tests/pinned.rs`), and the C and Rust decoders are held identical, form by form on
+random words, by the cross-checks (`tools/usse-dis/forms/README.md`).

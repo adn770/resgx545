@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ---- class 31 flow control (enc[54:52] = 0): lapc, mov pclink, nop
+# enc[40:38] picks the operation as for ba (0) and br (1): lapc (2), a
+# move to pclink from a source-1 operand (3), a move from pclink to a
+# destination (4) and nop (5), which prints no predicate. lapc reads
+# nosched and the sync flags as the branches do; the other bits these
+# forms leave out are ignored.
+[[form]]
+order = 1250
+pat = "{0}lapc{1}"
+op = "lapc"
+mask = "CLSM | m(54, 52) | m(40, 38)"
+val = "cls(31) | b(39)"
+fields = ["pred=PRED_ALL 58:56", "flags=K_BRFLAGS 43 55 44"]
+
+[[form]]
+order = 1260
+pat = "{0}mov{1} pclink, {2}"
+op = "mov_to_link"
+mask = "CLSM | m(54, 52) | m(40, 38)"
+val = "cls(31) | m(39, 38)"
+fields = ["pred=PRED_ALL 58:56", "F_NOSCHED 43", "src=F_SRC1H"]
+
+[[form]]
+order = 1270
+pat = "{0}mov{1} {2}, pclink"
+op = "mov_from_link"
+mask = "CLSM | m(54, 52) | m(40, 38)"
+val = "cls(31) | b(40)"
+fields = ["pred=PRED_ALL 58:56", "F_NOSCHED 43", "dst=F_DST"]
+
+[[form]]
+order = 1280
+pat = "nop{0}{1}{2}{3}{4}"
+op = "nop"
+mask = "CLSM | m(54, 52) | m(40, 38)"
+val = "cls(31) | b(40) | b(38)"
+fields = ["F_SYNCS 55", "F_NOSCHED 43", "end=F_END 50", "F_TOG 0", "F_TRIGGER 1"]

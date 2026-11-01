@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ---- integer multiply-add: imae (21), ima16 (20), ima32 (26)
+# Destination, a source-0 operand (r or pa, plus o and sa for ima32) and
+# the usual sources 1 and 2. Source and carry formats other than the
+# plain ones (imae u32, ima16 u16, no carry or extra operand) are left
+# undecoded: those bits are fixed to their plain values.
+[[form]]
+order = 270
+pat = "{0}imae{1}.{2}{3} {4}, {5}.{6}, {7}.{8}, {9}, u32"
+op = "imae"
+mask = "CLSM | b(47) | m(41, 38)"
+val = "cls(21) | b(39)"
+fields = [
+    "pred=PRED_MUL 58:57", "flags=F_MULFLAGS", "sign=SIGNSAT 42 43", "rs=RS 37:35", "dst=F_DST",
+    "src0=F_MSRC0", "half0=LOWHIGH 56", "src1=F_SRC1D", "half1=LOWHIGH 53", "src2=F_SRC2D",
+]
+
+[[form]]
+order = 280
+pat = "{0}ima16{1}.{2}{3} {4}{5}, {6}, {7}, {8}{9}, u16, u16"
+op = "ima16"
+mask = "CLSM | b(47) | m(41, 37)"
+val = "cls(20)"
+fields = [
+    "pred=PRED_MUL 58:57", "flags=F_MULFLAGS", "sign=SIGNSAT 42 43", "rs=RS 36:35", "dst=F_DST",
+    "abs=F_ABS 56", "src0=F_MSRC0", "src1=F_SRC1D", "src2=F_SRC2D", "neg=F_NEG 53",
+]
+
+[[form]]
+order = 290
+pat = "{0}ima32{1}.{2} {3}, {4}, {5}{6}, {7}{8}"
+op = "ima32"
+mask = "CLSM | m(53, 52) | m(43, 42) | b(38)"
+val = "cls(26)"
+fields = [
+    "pred=PRED_ALL 58:56", "flags=F_MULFLAGS", "sign=SU 41", "dst=F_DST", "src0=K_SRC0 20:14 34 47",
+    "src1=F_SRC1D", "neg1=F_NEG 40", "src2=F_SRC2D", "neg2=F_NEG 39",
+]

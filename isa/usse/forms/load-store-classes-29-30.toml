@@ -1,0 +1,82 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ---- load / store (classes 29, 30)
+# ld/st + address mode (a/l/t) + data type (d/w/b). The base is a source-0
+# operand and the offset a source-1 operand; enc[41:40] picks plain
+# (+/-), pre-increment (++/--) or post-increment (++/-- after it). A load
+# with enc[38] set names a range operand (source 2).
+#
+# The cache mode is enc[33] | enc[51] << 1 on the SGX545 (.bpcache,
+# .fcfill, .bypassl1) and the two bits are swapped on the SGX540: see
+# usse_set_core().
+[[form]]
+order = 300
+pat = "{0}ld{1}{2} {3}, [{4},{5}{6}{7}]{8}, drc{9}"
+op = "ld"
+mask = "CLSM | b(54)"
+val = "cls(29)"
+fields = [
+    "pred=PRED_ALL 58:56", "amdt=AMDT 37:36 43:42", "flags=F_LDFLAGS", "dst=F_LSDST", "base=F_BASE",
+    "imode=IMODE_PLAIN 41:40", "sign=F_SIGN 35", "offset=F_SRC1D", "range=F_RANGE", "drc=F_DRC",
+]
+dflt = "UNUSED_SRC2"
+
+[[form]]
+order = 310
+pat = "{0}ld{1}{2} {3}, [{4},{5}{6}]{7}, drc{8}"
+op = "ld.pre"
+mask = "CLSM | b(54) | m(41, 40)"
+val = "cls(29) | b(40)"
+fields = [
+    "pred=PRED_ALL 58:56", "amdt=AMDT 37:36 43:42", "flags=F_LDFLAGS", "dst=F_LSDST", "base=F_BASE",
+    "sign=F_SIGN2 35", "offset=F_SRC1D", "range=F_RANGE", "drc=F_DRC",
+]
+dflt = "UNUSED_SRC2"
+
+[[form]]
+order = 320
+pat = "{0}ld{1}{2} {3}, [{4},{6}{5}]{7}, drc{8}"
+op = "ld.post"
+mask = "CLSM | b(54) | m(41, 40)"
+val = "cls(29) | b(41)"
+fields = [
+    "pred=PRED_ALL 58:56", "amdt=AMDT 37:36 43:42", "flags=F_LDFLAGS", "dst=F_LSDST", "base=F_BASE",
+    "sign=F_SIGN2 35", "offset=F_SRC1D", "range=F_RANGE", "drc=F_DRC",
+]
+dflt = "UNUSED_SRC2"
+
+[[form]]
+order = 330
+pat = "{0}st{1}{2} [{3},{4}{5}{6}], {7}"
+op = "st"
+mask = "CLSM"
+val = "cls(30)"
+fields = [
+    "pred=PRED_ALL 58:56", "amdt=AMDT 37:36 43:42", "flags=F_STFLAGS", "base=F_BASE",
+    "imode=IMODE_PLAIN 41:40", "sign=F_SIGN 35", "offset=F_SRC1D", "src=F_SRC2D",
+]
+dflt = "UNUSED_SRC2"
+
+[[form]]
+order = 340
+pat = "{0}st{1}{2} [{3},{4}{5}], {6}"
+op = "st.pre"
+mask = "CLSM | m(41, 40)"
+val = "cls(30) | b(40)"
+fields = [
+    "pred=PRED_ALL 58:56", "amdt=AMDT 37:36 43:42", "flags=F_STFLAGS", "base=F_BASE",
+    "sign=F_SIGN2 35", "offset=F_SRC1D", "src=F_SRC2D",
+]
+dflt = "UNUSED_SRC2"
+
+[[form]]
+order = 350
+pat = "{0}st{1}{2} [{3},{5}{4}], {6}"
+op = "st.post"
+mask = "CLSM | m(41, 40)"
+val = "cls(30) | b(41)"
+fields = [
+    "pred=PRED_ALL 58:56", "amdt=AMDT 37:36 43:42", "flags=F_STFLAGS", "base=F_BASE",
+    "sign=F_SIGN2 35", "offset=F_SRC1D", "src=F_SRC2D",
+]
+dflt = "UNUSED_SRC2"

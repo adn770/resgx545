@@ -1,0 +1,55 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ---- class 28: smp1d/smp2d/smp3d[bias|replace|grad]
+# The destination is r or pa (enc[39]) with a 2-bit write mask enc[45:44],
+# or with enc[53] set a repeat count in the same bits. The coordinates are
+# a source-0 operand (bank enc[34] | enc[50] << 1) with their format, the
+# state a source-1 operand, and a LOD mode other than none adds its value
+# as a source-2 operand (whose bits are otherwise ignored).
+[[form]]
+order = 1200
+pat = "{0}smp{1}{2} {4}{3}, {5}{6}, {7}, drc{8}"
+mask = "CLSM | b(53)"
+op = "smp"
+val = "cls(28)"
+fields = [
+    "pred=PRED_ALL 58:56", "dim=MEM_K_SMP0 43:42 41:40",
+    "flags=MEM_K_SMPFLAGS 55 52 54 38:37 47:46", "mask=WMASK 45:44", "dst=F_LSDST",
+    "src0=F_BASE", "fmt=MEM_K_SMPFMT 36:35", "src1=F_SRC1D", "drc=K_DEC 33:32",
+]
+
+[[form]]
+order = 1210
+pat = "{0}smp{1}{2}{3} {4}, {5}{6}, {7}, drc{8}"
+mask = "CLSM | b(53)"
+op = "smp"
+val = "cls(28) | b(53)"
+fields = [
+    "pred=PRED_ALL 58:56", "dim=MEM_K_SMP0 43:42 41:40",
+    "flags=MEM_K_SMPFLAGS 55 52 54 38:37 47:46", "repeat=REPEAT 45:44", "dst=F_LSDST",
+    "src0=F_BASE", "fmt=MEM_K_SMPFMT 36:35", "src1=F_SRC1D", "drc=K_DEC 33:32",
+]
+
+[[form]]
+order = 1220
+pat = "{0}smp{1}{2} {4}{3}, {5}{6}, {7}, {8}, drc{9}"
+mask = "CLSM | b(53)"
+op = "smp"
+val = "cls(28)"
+fields = [
+    "pred=PRED_ALL 58:56", "dim=MEM_K_SMPL 43:42 41:40",
+    "flags=MEM_K_SMPFLAGS 55 52 54 38:37 47:46", "mask=WMASK 45:44", "dst=F_LSDST",
+    "src0=F_BASE", "fmt=MEM_K_SMPFMT 36:35", "src1=F_SRC1D", "src2=F_SRC2D", "drc=K_DEC 33:32",
+]
+
+[[form]]
+order = 1230
+pat = "{0}smp{1}{2}{3} {4}, {5}{6}, {7}, {8}, drc{9}"
+mask = "CLSM | b(53)"
+op = "smp"
+val = "cls(28) | b(53)"
+fields = [
+    "pred=PRED_ALL 58:56", "dim=MEM_K_SMPL 43:42 41:40",
+    "flags=MEM_K_SMPFLAGS 55 52 54 38:37 47:46", "repeat=REPEAT 45:44", "dst=F_LSDST",
+    "src0=F_BASE", "fmt=MEM_K_SMPFMT 36:35", "src1=F_SRC1D", "src2=F_SRC2D", "drc=K_DEC 33:32",
+]

@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+[[form]]
+order = 2410
+pat = "{0}halt"
+op = "halt"
+mask = "OPM"
+val = "0x15 << 27"
+fields = ["pred=PRED"]

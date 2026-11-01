@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ---- moves. movs/movsa write a port (mr, slc, the dout* units, tim, ir0) from four
+# 16-bit selections of a ds0 pair or input register and a ds1 pair; mov16/32/64/128 move
+# 16, 32, 64 or 128 bits between data-segment registers.
+[[form]]
+order = 2190
+pat = "{0}movs {1}, {2}"
+op = "movs"
+mask = "OPM"
+val = "0x00 << 27"
+fields = ["pred=PRED", "port=K_PORT 3:0", "srcs=K_MOVS 23:5"]

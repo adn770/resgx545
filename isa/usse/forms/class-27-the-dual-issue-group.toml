@@ -1,0 +1,717 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ---- class 27: the dual-issue group
+# One form per primary and secondary operand shape and half-float
+# reading (enc[54]); the primary's operation and flags print as one
+# field. The secondary mov's source is i<sel> or, with enc[53] set, the
+# primary's source <sel> (selection 3 is invalid), so it takes one form
+# per selection.
+[[form]]
+order = 610
+pat = "{4}{5} {6}, {7}, {8}, {9}+{0} {1}, {2}, {3}"
+op = "dual"
+mask = "CLSM | b(54)"
+val = "cls(27)"
+fields = [
+    "sop=FD_SOP(FLT_SOP4)", "r0=FD_R0(K_FLT_REF_S0_32)", "r1=FD_R1(K_FLT_REF_S1_32)",
+    "r2=FD_R2(K_FLT_REF_S2_32)", "pred=FD_PRED", "pop=FD_POP(K_FLT_POP4)", "dst=F_FLT_DST9",
+    "src0=SRC0P(K_FLT_SRC0)", "src1=FD_PS1(K_FLT_SRC)", "src2=FD_PS2(K_FLT_SRC)",
+]
+
+[[form]]
+order = 620
+pat = "{4}{5} {6}, {7}, {8}, {9}+{0} {1}, {2}, {3}"
+op = "dual"
+mask = "CLSM | b(54)"
+val = "cls(27)"
+fields = [
+    "sop=FD_SOP(FLT_SOP3)", "sdst=FD_SDST", "r1=FD_R1(K_FLT_REF_S1_32)",
+    "r2=FD_R2(K_FLT_REF_S2_32)", "pred=FD_PRED", "pop=FD_POP(K_FLT_POP4)", "dst=F_FLT_DST9",
+    "src0=SRC0P(K_FLT_SRC0)", "src1=FD_PS1(K_FLT_SRC)", "src2=FD_PS2(K_FLT_SRC)",
+]
+
+[[form]]
+order = 630
+pat = "{3}{4} {5}, {6}, {7}, {8}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54)"
+val = "cls(27)"
+fields = [
+    "sop=FD_SOP(FLT_SOP2)", "sdst=FD_SDST", "r1=FD_R1(K_FLT_REF_S1_32)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POP4)", "dst=F_FLT_DST9", "src0=SRC0P(K_FLT_SRC0)",
+    "src1=FD_PS1(K_FLT_SRC)", "src2=FD_PS2(K_FLT_SRC)",
+]
+
+[[form]]
+order = 640
+pat = "{3}{4} {5}, {6}, {7}, {8}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54) | m(47, 46)"
+val = "cls(27)"
+fields = [
+    "sop=FD_SOP(FLT_SOPMOV)", "sdst=FD_SDST", "rm0=FD_RM0(K_FLT_REF_M0_32H)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POP4)", "dst=F_FLT_DST9", "src0=SRC0P(K_FLT_SRC0_L0)",
+    "src1=FD_PS1(K_FLT_SRC)", "src2=FD_PS2(K_FLT_SRC)",
+]
+
+[[form]]
+order = 650
+pat = "{3}{4} {5}, {6}, {7}, {8}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54) | m(47, 46)"
+val = "cls(27) | b(46)"
+fields = [
+    "sop=FD_SOP(FLT_SOPMOV)", "sdst=FD_SDST", "rm1=FD_RM1(K_FLT_REF_M1_32H)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POP4)", "dst=F_FLT_DST9", "src0=SRC0P(K_FLT_SRC0)",
+    "src1=FD_PS1(K_FLT_SRC_L1)", "src2=FD_PS2(K_FLT_SRC)",
+]
+
+[[form]]
+order = 660
+pat = "{3}{4} {5}, {6}, {7}, {8}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54) | m(47, 46)"
+val = "cls(27) | b(47)"
+fields = [
+    "sop=FD_SOP(FLT_SOPMOV)", "sdst=FD_SDST", "rm2=FD_RM2(K_FLT_REF_M2_32H)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POP4)", "dst=F_FLT_DST9", "src0=SRC0P(K_FLT_SRC0)",
+    "src1=FD_PS1(K_FLT_SRC)", "src2=FD_PS2(K_FLT_SRC_L2)",
+]
+
+[[form]]
+order = 670
+pat = "{4}{5} {6}, {7}+{0} {1}, {2}, {3}"
+op = "dual"
+mask = "CLSM | b(54)"
+val = "cls(27)"
+fields = [
+    "sop=FD_SOP(FLT_SOP4)", "r0=FD_R0(K_FLT_REF_S0_32)", "r1=FD_R1(K_FLT_REF_S1_32)",
+    "r2=FD_R2(K_FLT_REF_S2_32)", "pred=FD_PRED", "pop=FD_POP(K_FLT_POPMOV)", "dst=F_FLT_DST9",
+    "src1=FD_PS1(K_FLT_SRCH)",
+]
+
+[[form]]
+order = 680
+pat = "{4}{5} {6}, {7}+{0} {1}, {2}, {3}"
+op = "dual"
+mask = "CLSM | b(54)"
+val = "cls(27)"
+fields = [
+    "sop=FD_SOP(FLT_SOP3)", "sdst=FD_SDST", "r1=FD_R1(K_FLT_REF_S1_32)",
+    "r2=FD_R2(K_FLT_REF_S2_32)", "pred=FD_PRED", "pop=FD_POP(K_FLT_POPMOV)", "dst=F_FLT_DST9",
+    "src1=FD_PS1(K_FLT_SRCH)",
+]
+
+[[form]]
+order = 690
+pat = "{3}{4} {5}, {6}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54)"
+val = "cls(27)"
+fields = [
+    "sop=FD_SOP(FLT_SOP2)", "sdst=FD_SDST", "r1=FD_R1(K_FLT_REF_S1_32)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POPMOV)", "dst=F_FLT_DST9", "src1=FD_PS1(K_FLT_SRCH)",
+]
+
+[[form]]
+order = 700
+pat = "{3}{4} {5}, {6}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54) | m(47, 46)"
+val = "cls(27)"
+fields = [
+    "sop=FD_SOP(FLT_SOPMOV)", "sdst=FD_SDST", "rm0=FD_RM0(K_FLT_REF_M0_32H)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POPMOV)", "dst=F_FLT_DST9", "src1=FD_PS1(K_FLT_SRCH)",
+]
+
+[[form]]
+order = 710
+pat = "{3}{4} {5}, {6}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54) | m(47, 46)"
+val = "cls(27) | b(46)"
+fields = [
+    "sop=FD_SOP(FLT_SOPMOV)", "sdst=FD_SDST", "rm1=FD_RM1(K_FLT_REF_M1_32H)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POPMOV)", "dst=F_FLT_DST9", "src1=FD_PS1(K_FLT_SRCH_L1)",
+]
+
+[[form]]
+order = 720
+pat = "{3}{4} {5}, {6}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54) | m(47, 46)"
+val = "cls(27) | b(47)"
+fields = [
+    "sop=FD_SOP(FLT_SOPMOV)", "sdst=FD_SDST", "rm2=FD_RM2(K_FLT_REF_M2_32H)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POPMOV)", "dst=F_FLT_DST9", "src1=FD_PS1(K_FLT_SRCH)",
+]
+
+[[form]]
+order = 730
+pat = "{4}{5} {6}, i0, {7}, {8}, {9}+{0} {1}, {2}, {3}"
+op = "dual"
+mask = "CLSM | b(54)"
+val = "cls(27)"
+fields = [
+    "sop=FD_SOP(FLT_SOP4)", "r0=FD_R0(K_FLT_REF_S0_32)", "r1=FD_R1(K_FLT_REF_S1_32)",
+    "r2=FD_R2(K_FLT_REF_S2_32)", "pred=FD_PRED", "pop=FD_POP(K_FLT_POPDDP)", "dst=F_FLT_DST9",
+    "src0=SRC0P(K_FLT_SRC0)", "src1=FD_PS1(K_FLT_SRC)", "src2=FD_PS2(K_FLT_SRC)",
+]
+
+[[form]]
+order = 740
+pat = "{4}{5} {6}, i0, {7}, {8}, {9}+{0} {1}, {2}, {3}"
+op = "dual"
+mask = "CLSM | b(54)"
+val = "cls(27)"
+fields = [
+    "sop=FD_SOP(FLT_SOP3)", "sdst=FD_SDST", "r1=FD_R1(K_FLT_REF_S1_32)",
+    "r2=FD_R2(K_FLT_REF_S2_32)", "pred=FD_PRED", "pop=FD_POP(K_FLT_POPDDP)", "dst=F_FLT_DST9",
+    "src0=SRC0P(K_FLT_SRC0)", "src1=FD_PS1(K_FLT_SRC)", "src2=FD_PS2(K_FLT_SRC)",
+]
+
+[[form]]
+order = 750
+pat = "{3}{4} {5}, i0, {6}, {7}, {8}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54)"
+val = "cls(27)"
+fields = [
+    "sop=FD_SOP(FLT_SOP2)", "sdst=FD_SDST", "r1=FD_R1(K_FLT_REF_S1_32)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POPDDP)", "dst=F_FLT_DST9", "src0=SRC0P(K_FLT_SRC0)",
+    "src1=FD_PS1(K_FLT_SRC)", "src2=FD_PS2(K_FLT_SRC)",
+]
+
+[[form]]
+order = 760
+pat = "{3}{4} {5}, i0, {6}, {7}, {8}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54) | m(47, 46)"
+val = "cls(27)"
+fields = [
+    "sop=FD_SOP(FLT_SOPMOV)", "sdst=FD_SDST", "rm0=FD_RM0(K_FLT_REF_M0_32H)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POPDDP)", "dst=F_FLT_DST9", "src0=SRC0P(K_FLT_SRC0_L0)",
+    "src1=FD_PS1(K_FLT_SRC)", "src2=FD_PS2(K_FLT_SRC)",
+]
+
+[[form]]
+order = 770
+pat = "{3}{4} {5}, i0, {6}, {7}, {8}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54) | m(47, 46)"
+val = "cls(27) | b(46)"
+fields = [
+    "sop=FD_SOP(FLT_SOPMOV)", "sdst=FD_SDST", "rm1=FD_RM1(K_FLT_REF_M1_32H)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POPDDP)", "dst=F_FLT_DST9", "src0=SRC0P(K_FLT_SRC0)",
+    "src1=FD_PS1(K_FLT_SRC_L1)", "src2=FD_PS2(K_FLT_SRC)",
+]
+
+[[form]]
+order = 780
+pat = "{3}{4} {5}, i0, {6}, {7}, {8}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54) | m(47, 46)"
+val = "cls(27) | b(47)"
+fields = [
+    "sop=FD_SOP(FLT_SOPMOV)", "sdst=FD_SDST", "rm2=FD_RM2(K_FLT_REF_M2_32H)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POPDDP)", "dst=F_FLT_DST9", "src0=SRC0P(K_FLT_SRC0)",
+    "src1=FD_PS1(K_FLT_SRC)", "src2=FD_PS2(K_FLT_SRC_L2)",
+]
+
+[[form]]
+order = 790
+pat = "{4}{5} {6}, {7}, {8}+{0} {1}, {2}, {3}"
+op = "dual"
+mask = "CLSM | b(54)"
+val = "cls(27)"
+fields = [
+    "sop=FD_SOP(FLT_SOP4)", "r0=FD_R0(K_FLT_REF_S0_32)", "r1=FD_R1(K_FLT_REF_S1_32)",
+    "r2=FD_R2(K_FLT_REF_S2_32)", "pred=FD_PRED", "pop=FD_POP(K_FLT_POPSSQ)", "dst=F_FLT_DST9",
+    "src1=FD_PS1(K_FLT_SRC)", "src2=FD_PS2(K_FLT_SRC)",
+]
+
+[[form]]
+order = 800
+pat = "{4}{5} {6}, {7}, {8}+{0} {1}, {2}, {3}"
+op = "dual"
+mask = "CLSM | b(54)"
+val = "cls(27)"
+fields = [
+    "sop=FD_SOP(FLT_SOP3)", "sdst=FD_SDST", "r1=FD_R1(K_FLT_REF_S1_32)",
+    "r2=FD_R2(K_FLT_REF_S2_32)", "pred=FD_PRED", "pop=FD_POP(K_FLT_POPSSQ)", "dst=F_FLT_DST9",
+    "src1=FD_PS1(K_FLT_SRC)", "src2=FD_PS2(K_FLT_SRC)",
+]
+
+[[form]]
+order = 810
+pat = "{3}{4} {5}, {6}, {7}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54)"
+val = "cls(27)"
+fields = [
+    "sop=FD_SOP(FLT_SOP2)", "sdst=FD_SDST", "r1=FD_R1(K_FLT_REF_S1_32)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POPSSQ)", "dst=F_FLT_DST9", "src1=FD_PS1(K_FLT_SRC)",
+    "src2=FD_PS2(K_FLT_SRC)",
+]
+
+[[form]]
+order = 820
+pat = "{3}{4} {5}, {6}, {7}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54) | m(47, 46)"
+val = "cls(27)"
+fields = [
+    "sop=FD_SOP(FLT_SOPMOV)", "sdst=FD_SDST", "rm0=FD_RM0(K_FLT_REF_M0_32H)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POPSSQ)", "dst=F_FLT_DST9", "src1=FD_PS1(K_FLT_SRC)",
+    "src2=FD_PS2(K_FLT_SRC)",
+]
+
+[[form]]
+order = 830
+pat = "{3}{4} {5}, {6}, {7}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54) | m(47, 46)"
+val = "cls(27) | b(46)"
+fields = [
+    "sop=FD_SOP(FLT_SOPMOV)", "sdst=FD_SDST", "rm1=FD_RM1(K_FLT_REF_M1_32H)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POPSSQ)", "dst=F_FLT_DST9", "src1=FD_PS1(K_FLT_SRC_L1)",
+    "src2=FD_PS2(K_FLT_SRC)",
+]
+
+[[form]]
+order = 840
+pat = "{3}{4} {5}, {6}, {7}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54) | m(47, 46)"
+val = "cls(27) | b(47)"
+fields = [
+    "sop=FD_SOP(FLT_SOPMOV)", "sdst=FD_SDST", "rm2=FD_RM2(K_FLT_REF_M2_32H)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POPSSQ)", "dst=F_FLT_DST9", "src1=FD_PS1(K_FLT_SRC)",
+    "src2=FD_PS2(K_FLT_SRC_L2)",
+]
+
+# the half-float reading (enc[54] set)
+[[form]]
+order = 850
+pat = "{4}{5} {6}, {7}, {8}, {9}+{0} {1}, {2}, {3}"
+op = "dual"
+mask = "CLSM | b(54)"
+val = "cls(27) | b(54)"
+fields = [
+    "sop=FD_SOP(FLT_SOP4M)", "r0=FD_R0(K_FLT_REF_S0_MAD)", "r1=FD_R1(K_FLT_REF_S1_MAD)",
+    "r2=FD_R2(K_FLT_REF_S2_MAD)", "pred=FD_PRED", "pop=FD_POP(K_FLT_POP4M)", "dst=F_FLT_DST9",
+    "src0=SRC0P(K_FLT_SRC0_MAD16)", "src1=FD_PS1(K_FLT_SRC_MAD16)",
+    "src2=FD_PS2(K_FLT_SRC_MAD16)",
+]
+
+[[form]]
+order = 860
+pat = "{4}{5} {6}, {7}, {8}, {9}+{0} {1}, {2}, {3}"
+op = "dual"
+mask = "CLSM | b(54)"
+val = "cls(27) | b(54)"
+fields = [
+    "sop=FD_SOP(FLT_SOP4F)", "r0=FD_R0(K_FLT_REF_S0_FLR)", "r1=FD_R1(K_FLT_REF_S1_FLR)",
+    "r2=FD_R2(K_FLT_REF_S2_FLR)", "pred=FD_PRED", "pop=FD_POP(K_FLT_POP4M)", "dst=F_FLT_DST9",
+    "src0=SRC0P(K_FLT_SRC0_MAD16)", "src1=FD_PS1(K_FLT_SRC_MAD16)",
+    "src2=FD_PS2(K_FLT_SRC_MAD16)",
+]
+
+[[form]]
+order = 870
+pat = "{4}{5} {6}, {7}, {8}, {9}+{0} {1}, {2}, {3}"
+op = "dual"
+mask = "CLSM | b(54)"
+val = "cls(27) | b(54)"
+fields = [
+    "sop=FD_SOP(FLT_SOP3)", "sdst=FD_SDST", "r1=FD_R1(K_FLT_REF_S1_FLR)",
+    "r2=FD_R2(K_FLT_REF_S2_FLR)", "pred=FD_PRED", "pop=FD_POP(K_FLT_POP4M)", "dst=F_FLT_DST9",
+    "src0=SRC0P(K_FLT_SRC0_MAD16)", "src1=FD_PS1(K_FLT_SRC_MAD16)",
+    "src2=FD_PS2(K_FLT_SRC_MAD16)",
+]
+
+[[form]]
+order = 880
+pat = "{3}{4} {5}, {6}, {7}, {8}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54)"
+val = "cls(27) | b(54)"
+fields = [
+    "sop=FD_SOP(FLT_SOP2)", "sdst=FD_SDST", "r1=FD_R1(K_FLT_REF_S1_MAD)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POP4M)", "dst=F_FLT_DST9", "src0=SRC0P(K_FLT_SRC0_MAD16)",
+    "src1=FD_PS1(K_FLT_SRC_MAD16)", "src2=FD_PS2(K_FLT_SRC_MAD16)",
+]
+
+[[form]]
+order = 890
+pat = "{3}{4} {5}, {6}, {7}, {8}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54) | m(47, 46)"
+val = "cls(27) | b(54)"
+fields = [
+    "sop=FD_SOP(FLT_SOPMOV)", "sdst=FD_SDST", "rm0=FD_RM0(K_FLT_REF_M0_FLRH)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POP4M)", "dst=F_FLT_DST9", "src0=SRC0P(K_FLT_SRC0_MAD16_L0)",
+    "src1=FD_PS1(K_FLT_SRC_MAD16)", "src2=FD_PS2(K_FLT_SRC_MAD16)",
+]
+
+[[form]]
+order = 900
+pat = "{3}{4} {5}, {6}, {7}, {8}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54) | m(47, 46)"
+val = "cls(27) | b(54) | b(46)"
+fields = [
+    "sop=FD_SOP(FLT_SOPMOV)", "sdst=FD_SDST", "rm1=FD_RM1(K_FLT_REF_M1_FLRH)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POP4M)", "dst=F_FLT_DST9", "src0=SRC0P(K_FLT_SRC0_MAD16)",
+    "src1=FD_PS1(K_FLT_SRC_MAD16_L1)", "src2=FD_PS2(K_FLT_SRC_MAD16)",
+]
+
+[[form]]
+order = 910
+pat = "{3}{4} {5}, {6}, {7}, {8}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54) | m(47, 46)"
+val = "cls(27) | b(54) | b(47)"
+fields = [
+    "sop=FD_SOP(FLT_SOPMOV)", "sdst=FD_SDST", "rm2=FD_RM2(K_FLT_REF_M2_FLRH)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POP4M)", "dst=F_FLT_DST9", "src0=SRC0P(K_FLT_SRC0_MAD16)",
+    "src1=FD_PS1(K_FLT_SRC_MAD16)", "src2=FD_PS2(K_FLT_SRC_MAD16_L2)",
+]
+
+[[form]]
+order = 920
+pat = "{4}{5} {6}, {7}, {8}, {9}+{0} {1}, {2}, {3}"
+op = "dual"
+mask = "CLSM | b(54)"
+val = "cls(27) | b(54)"
+fields = [
+    "sop=FD_SOP(FLT_SOP4M)", "r0=FD_R0(K_FLT_REF_S0_MAD)", "r1=FD_R1(K_FLT_REF_S1_MAD)",
+    "r2=FD_R2(K_FLT_REF_S2_MAD)", "pred=FD_PRED", "pop=FD_POP(K_FLT_POP4F)", "dst=F_FLT_DST9",
+    "src0=SRC0P(K_FLT_SRC0_FLR16)", "src1=FD_PS1(K_FLT_SRC_FLR16)",
+    "src2=FD_PS2(K_FLT_SRC_FLR16)",
+]
+
+[[form]]
+order = 930
+pat = "{4}{5} {6}, {7}, {8}, {9}+{0} {1}, {2}, {3}"
+op = "dual"
+mask = "CLSM | b(54)"
+val = "cls(27) | b(54)"
+fields = [
+    "sop=FD_SOP(FLT_SOP4F)", "r0=FD_R0(K_FLT_REF_S0_FLR)", "r1=FD_R1(K_FLT_REF_S1_FLR)",
+    "r2=FD_R2(K_FLT_REF_S2_FLR)", "pred=FD_PRED", "pop=FD_POP(K_FLT_POP4F)", "dst=F_FLT_DST9",
+    "src0=SRC0P(K_FLT_SRC0_FLR16)", "src1=FD_PS1(K_FLT_SRC_FLR16)",
+    "src2=FD_PS2(K_FLT_SRC_FLR16)",
+]
+
+[[form]]
+order = 940
+pat = "{4}{5} {6}, {7}, {8}, {9}+{0} {1}, {2}, {3}"
+op = "dual"
+mask = "CLSM | b(54)"
+val = "cls(27) | b(54)"
+fields = [
+    "sop=FD_SOP(FLT_SOP3)", "sdst=FD_SDST", "r1=FD_R1(K_FLT_REF_S1_FLR)",
+    "r2=FD_R2(K_FLT_REF_S2_FLR)", "pred=FD_PRED", "pop=FD_POP(K_FLT_POP4F)", "dst=F_FLT_DST9",
+    "src0=SRC0P(K_FLT_SRC0_FLR16)", "src1=FD_PS1(K_FLT_SRC_FLR16)",
+    "src2=FD_PS2(K_FLT_SRC_FLR16)",
+]
+
+[[form]]
+order = 950
+pat = "{3}{4} {5}, {6}, {7}, {8}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54)"
+val = "cls(27) | b(54)"
+fields = [
+    "sop=FD_SOP(FLT_SOP2)", "sdst=FD_SDST", "r1=FD_R1(K_FLT_REF_S1_MAD)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POP4F)", "dst=F_FLT_DST9", "src0=SRC0P(K_FLT_SRC0_FLR16)",
+    "src1=FD_PS1(K_FLT_SRC_FLR16)", "src2=FD_PS2(K_FLT_SRC_FLR16)",
+]
+
+[[form]]
+order = 960
+pat = "{3}{4} {5}, {6}, {7}, {8}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54) | m(47, 46)"
+val = "cls(27) | b(54)"
+fields = [
+    "sop=FD_SOP(FLT_SOPMOV)", "sdst=FD_SDST", "rm0=FD_RM0(K_FLT_REF_M0_FLRH)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POP4F)", "dst=F_FLT_DST9", "src0=SRC0P(K_FLT_SRC0_FLR16_L0)",
+    "src1=FD_PS1(K_FLT_SRC_FLR16)", "src2=FD_PS2(K_FLT_SRC_FLR16)",
+]
+
+[[form]]
+order = 970
+pat = "{3}{4} {5}, {6}, {7}, {8}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54) | m(47, 46)"
+val = "cls(27) | b(54) | b(46)"
+fields = [
+    "sop=FD_SOP(FLT_SOPMOV)", "sdst=FD_SDST", "rm1=FD_RM1(K_FLT_REF_M1_FLRH)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POP4F)", "dst=F_FLT_DST9", "src0=SRC0P(K_FLT_SRC0_FLR16)",
+    "src1=FD_PS1(K_FLT_SRC_FLR16_L1)", "src2=FD_PS2(K_FLT_SRC_FLR16)",
+]
+
+[[form]]
+order = 980
+pat = "{3}{4} {5}, {6}, {7}, {8}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54) | m(47, 46)"
+val = "cls(27) | b(54) | b(47)"
+fields = [
+    "sop=FD_SOP(FLT_SOPMOV)", "sdst=FD_SDST", "rm2=FD_RM2(K_FLT_REF_M2_FLRH)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POP4F)", "dst=F_FLT_DST9", "src0=SRC0P(K_FLT_SRC0_FLR16)",
+    "src1=FD_PS1(K_FLT_SRC_FLR16)", "src2=FD_PS2(K_FLT_SRC_FLR16_L2)",
+]
+
+[[form]]
+order = 990
+pat = "{4}{5} {6}, {7}+{0} {1}, {2}, {3}"
+op = "dual"
+mask = "CLSM | b(54)"
+val = "cls(27) | b(54)"
+fields = [
+    "sop=FD_SOP(FLT_SOP4M)", "r0=FD_R0(K_FLT_REF_S0_MAD)", "r1=FD_R1(K_FLT_REF_S1_MAD)",
+    "r2=FD_R2(K_FLT_REF_S2_MAD)", "pred=FD_PRED", "pop=FD_POP(K_FLT_POPMOV)", "dst=F_FLT_DST9",
+    "src1=FD_PS1(K_FLT_SRC_FLR16H)",
+]
+
+[[form]]
+order = 1000
+pat = "{4}{5} {6}, {7}+{0} {1}, {2}, {3}"
+op = "dual"
+mask = "CLSM | b(54)"
+val = "cls(27) | b(54)"
+fields = [
+    "sop=FD_SOP(FLT_SOP4F)", "r0=FD_R0(K_FLT_REF_S0_FLR)", "r1=FD_R1(K_FLT_REF_S1_FLR)",
+    "r2=FD_R2(K_FLT_REF_S2_FLR)", "pred=FD_PRED", "pop=FD_POP(K_FLT_POPMOV)", "dst=F_FLT_DST9",
+    "src1=FD_PS1(K_FLT_SRC_FLR16H)",
+]
+
+[[form]]
+order = 1010
+pat = "{4}{5} {6}, {7}+{0} {1}, {2}, {3}"
+op = "dual"
+mask = "CLSM | b(54)"
+val = "cls(27) | b(54)"
+fields = [
+    "sop=FD_SOP(FLT_SOP3)", "sdst=FD_SDST", "r1=FD_R1(K_FLT_REF_S1_FLR)",
+    "r2=FD_R2(K_FLT_REF_S2_FLR)", "pred=FD_PRED", "pop=FD_POP(K_FLT_POPMOV)", "dst=F_FLT_DST9",
+    "src1=FD_PS1(K_FLT_SRC_FLR16H)",
+]
+
+[[form]]
+order = 1020
+pat = "{3}{4} {5}, {6}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54)"
+val = "cls(27) | b(54)"
+fields = [
+    "sop=FD_SOP(FLT_SOP2)", "sdst=FD_SDST", "r1=FD_R1(K_FLT_REF_S1_MAD)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POPMOV)", "dst=F_FLT_DST9", "src1=FD_PS1(K_FLT_SRC_FLR16H)",
+]
+
+[[form]]
+order = 1030
+pat = "{3}{4} {5}, {6}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54) | m(47, 46)"
+val = "cls(27) | b(54)"
+fields = [
+    "sop=FD_SOP(FLT_SOPMOV)", "sdst=FD_SDST", "rm0=FD_RM0(K_FLT_REF_M0_FLRH)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POPMOV)", "dst=F_FLT_DST9", "src1=FD_PS1(K_FLT_SRC_FLR16H)",
+]
+
+[[form]]
+order = 1040
+pat = "{3}{4} {5}, {6}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54) | m(47, 46)"
+val = "cls(27) | b(54) | b(46)"
+fields = [
+    "sop=FD_SOP(FLT_SOPMOV)", "sdst=FD_SDST", "rm1=FD_RM1(K_FLT_REF_M1_FLRH)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POPMOV)", "dst=F_FLT_DST9", "src1=FD_PS1(K_FLT_SRC_FLR16H_L1)",
+]
+
+[[form]]
+order = 1050
+pat = "{3}{4} {5}, {6}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54) | m(47, 46)"
+val = "cls(27) | b(54) | b(47)"
+fields = [
+    "sop=FD_SOP(FLT_SOPMOV)", "sdst=FD_SDST", "rm2=FD_RM2(K_FLT_REF_M2_FLRH)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POPMOV)", "dst=F_FLT_DST9", "src1=FD_PS1(K_FLT_SRC_FLR16H)",
+]
+
+[[form]]
+order = 1060
+pat = "{4}{5} {6}, i0, {7}, {8}, {9}+{0} {1}, {2}, {3}"
+op = "dual"
+mask = "CLSM | b(54)"
+val = "cls(27) | b(54)"
+fields = [
+    "sop=FD_SOP(FLT_SOP4M)", "r0=FD_R0(K_FLT_REF_S0_MAD)", "r1=FD_R1(K_FLT_REF_S1_MAD)",
+    "r2=FD_R2(K_FLT_REF_S2_MAD)", "pred=FD_PRED", "pop=FD_POP(K_FLT_POPDDP)", "dst=F_FLT_DST9",
+    "src0=SRC0P(K_FLT_SRC0_FLR16)", "src1=FD_PS1(K_FLT_SRC_FLR16)",
+    "src2=FD_PS2(K_FLT_SRC_FLR16)",
+]
+
+[[form]]
+order = 1070
+pat = "{4}{5} {6}, i0, {7}, {8}, {9}+{0} {1}, {2}, {3}"
+op = "dual"
+mask = "CLSM | b(54)"
+val = "cls(27) | b(54)"
+fields = [
+    "sop=FD_SOP(FLT_SOP4F)", "r0=FD_R0(K_FLT_REF_S0_FLR)", "r1=FD_R1(K_FLT_REF_S1_FLR)",
+    "r2=FD_R2(K_FLT_REF_S2_FLR)", "pred=FD_PRED", "pop=FD_POP(K_FLT_POPDDP)", "dst=F_FLT_DST9",
+    "src0=SRC0P(K_FLT_SRC0_FLR16)", "src1=FD_PS1(K_FLT_SRC_FLR16)",
+    "src2=FD_PS2(K_FLT_SRC_FLR16)",
+]
+
+[[form]]
+order = 1080
+pat = "{4}{5} {6}, i0, {7}, {8}, {9}+{0} {1}, {2}, {3}"
+op = "dual"
+mask = "CLSM | b(54)"
+val = "cls(27) | b(54)"
+fields = [
+    "sop=FD_SOP(FLT_SOP3)", "sdst=FD_SDST", "r1=FD_R1(K_FLT_REF_S1_FLR)",
+    "r2=FD_R2(K_FLT_REF_S2_FLR)", "pred=FD_PRED", "pop=FD_POP(K_FLT_POPDDP)", "dst=F_FLT_DST9",
+    "src0=SRC0P(K_FLT_SRC0_FLR16)", "src1=FD_PS1(K_FLT_SRC_FLR16)",
+    "src2=FD_PS2(K_FLT_SRC_FLR16)",
+]
+
+[[form]]
+order = 1090
+pat = "{3}{4} {5}, i0, {6}, {7}, {8}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54)"
+val = "cls(27) | b(54)"
+fields = [
+    "sop=FD_SOP(FLT_SOP2)", "sdst=FD_SDST", "r1=FD_R1(K_FLT_REF_S1_MAD)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POPDDP)", "dst=F_FLT_DST9", "src0=SRC0P(K_FLT_SRC0_FLR16)",
+    "src1=FD_PS1(K_FLT_SRC_FLR16)", "src2=FD_PS2(K_FLT_SRC_FLR16)",
+]
+
+[[form]]
+order = 1100
+pat = "{3}{4} {5}, i0, {6}, {7}, {8}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54) | m(47, 46)"
+val = "cls(27) | b(54)"
+fields = [
+    "sop=FD_SOP(FLT_SOPMOV)", "sdst=FD_SDST", "rm0=FD_RM0(K_FLT_REF_M0_FLRH)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POPDDP)", "dst=F_FLT_DST9", "src0=SRC0P(K_FLT_SRC0_FLR16_L0)",
+    "src1=FD_PS1(K_FLT_SRC_FLR16)", "src2=FD_PS2(K_FLT_SRC_FLR16)",
+]
+
+[[form]]
+order = 1110
+pat = "{3}{4} {5}, i0, {6}, {7}, {8}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54) | m(47, 46)"
+val = "cls(27) | b(54) | b(46)"
+fields = [
+    "sop=FD_SOP(FLT_SOPMOV)", "sdst=FD_SDST", "rm1=FD_RM1(K_FLT_REF_M1_FLRH)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POPDDP)", "dst=F_FLT_DST9", "src0=SRC0P(K_FLT_SRC0_FLR16)",
+    "src1=FD_PS1(K_FLT_SRC_FLR16_L1)", "src2=FD_PS2(K_FLT_SRC_FLR16)",
+]
+
+[[form]]
+order = 1120
+pat = "{3}{4} {5}, i0, {6}, {7}, {8}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54) | m(47, 46)"
+val = "cls(27) | b(54) | b(47)"
+fields = [
+    "sop=FD_SOP(FLT_SOPMOV)", "sdst=FD_SDST", "rm2=FD_RM2(K_FLT_REF_M2_FLRH)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POPDDP)", "dst=F_FLT_DST9", "src0=SRC0P(K_FLT_SRC0_FLR16)",
+    "src1=FD_PS1(K_FLT_SRC_FLR16)", "src2=FD_PS2(K_FLT_SRC_FLR16_L2)",
+]
+
+[[form]]
+order = 1130
+pat = "{4}{5} {6}, {7}, {8}+{0} {1}, {2}, {3}"
+op = "dual"
+mask = "CLSM | b(54)"
+val = "cls(27) | b(54)"
+fields = [
+    "sop=FD_SOP(FLT_SOP4M)", "r0=FD_R0(K_FLT_REF_S0_MAD)", "r1=FD_R1(K_FLT_REF_S1_MAD)",
+    "r2=FD_R2(K_FLT_REF_S2_MAD)", "pred=FD_PRED", "pop=FD_POP(K_FLT_POPSSQ)", "dst=F_FLT_DST9",
+    "src1=FD_PS1(K_FLT_SRC_FLR16)", "src2=FD_PS2(K_FLT_SRC_FLR16)",
+]
+
+[[form]]
+order = 1140
+pat = "{4}{5} {6}, {7}, {8}+{0} {1}, {2}, {3}"
+op = "dual"
+mask = "CLSM | b(54)"
+val = "cls(27) | b(54)"
+fields = [
+    "sop=FD_SOP(FLT_SOP4F)", "r0=FD_R0(K_FLT_REF_S0_FLR)", "r1=FD_R1(K_FLT_REF_S1_FLR)",
+    "r2=FD_R2(K_FLT_REF_S2_FLR)", "pred=FD_PRED", "pop=FD_POP(K_FLT_POPSSQ)", "dst=F_FLT_DST9",
+    "src1=FD_PS1(K_FLT_SRC_FLR16)", "src2=FD_PS2(K_FLT_SRC_FLR16)",
+]
+
+[[form]]
+order = 1150
+pat = "{4}{5} {6}, {7}, {8}+{0} {1}, {2}, {3}"
+op = "dual"
+mask = "CLSM | b(54)"
+val = "cls(27) | b(54)"
+fields = [
+    "sop=FD_SOP(FLT_SOP3)", "sdst=FD_SDST", "r1=FD_R1(K_FLT_REF_S1_FLR)",
+    "r2=FD_R2(K_FLT_REF_S2_FLR)", "pred=FD_PRED", "pop=FD_POP(K_FLT_POPSSQ)", "dst=F_FLT_DST9",
+    "src1=FD_PS1(K_FLT_SRC_FLR16)", "src2=FD_PS2(K_FLT_SRC_FLR16)",
+]
+
+[[form]]
+order = 1160
+pat = "{3}{4} {5}, {6}, {7}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54)"
+val = "cls(27) | b(54)"
+fields = [
+    "sop=FD_SOP(FLT_SOP2)", "sdst=FD_SDST", "r1=FD_R1(K_FLT_REF_S1_MAD)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POPSSQ)", "dst=F_FLT_DST9", "src1=FD_PS1(K_FLT_SRC_FLR16)",
+    "src2=FD_PS2(K_FLT_SRC_FLR16)",
+]
+
+[[form]]
+order = 1170
+pat = "{3}{4} {5}, {6}, {7}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54) | m(47, 46)"
+val = "cls(27) | b(54)"
+fields = [
+    "sop=FD_SOP(FLT_SOPMOV)", "sdst=FD_SDST", "rm0=FD_RM0(K_FLT_REF_M0_FLRH)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POPSSQ)", "dst=F_FLT_DST9", "src1=FD_PS1(K_FLT_SRC_FLR16)",
+    "src2=FD_PS2(K_FLT_SRC_FLR16)",
+]
+
+[[form]]
+order = 1180
+pat = "{3}{4} {5}, {6}, {7}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54) | m(47, 46)"
+val = "cls(27) | b(54) | b(46)"
+fields = [
+    "sop=FD_SOP(FLT_SOPMOV)", "sdst=FD_SDST", "rm1=FD_RM1(K_FLT_REF_M1_FLRH)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POPSSQ)", "dst=F_FLT_DST9", "src1=FD_PS1(K_FLT_SRC_FLR16_L1)",
+    "src2=FD_PS2(K_FLT_SRC_FLR16)",
+]
+
+[[form]]
+order = 1190
+pat = "{3}{4} {5}, {6}, {7}+{0} {1}, {2}"
+op = "dual"
+mask = "CLSM | b(54) | m(47, 46)"
+val = "cls(27) | b(54) | b(47)"
+fields = [
+    "sop=FD_SOP(FLT_SOPMOV)", "sdst=FD_SDST", "rm2=FD_RM2(K_FLT_REF_M2_FLRH)", "pred=FD_PRED",
+    "pop=FD_POP(K_FLT_POPSSQ)", "dst=F_FLT_DST9", "src1=FD_PS1(K_FLT_SRC_FLR16)",
+    "src2=FD_PS2(K_FLT_SRC_FLR16_L2)",
+]

@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ---- the ALU: two sources (the first ds0 or ir0/ir1/tim, the second ds1), mul (16x16),
+# and the one-source abs and not (w[8] picks ds1).
+[[form]]
+order = 2270
+pat = "{0}{1} {2}, {3}, ds1[{4}]"
+op = "alu"
+mask = "0"
+val = "0"
+fields = ["pred=PRED", "op=ALU 31:27", "dst=DST7", "src1=K_SRC7_3 23:17", "src2=K_DEC 15:10"]

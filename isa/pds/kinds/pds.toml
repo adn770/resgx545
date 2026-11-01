@@ -1,0 +1,56 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# PDS (Programmable Data Sequencer) forms. The source of the C and Rust tables: see
+# isa/README.md.
+#
+# Word layout: opcode = w[31:27], predicate = w[26:24] (7 = always), and a 24-bit operand body
+# whose shape depends on the opcode group. Registers are the two data-segment banks ds0/ds1
+# plus a few specials (ir0/ir1/ir2 input registers, tim, pc, mr01/mr23). Any encoding that
+# selects a reserved register or opcode is left undecoded rather than guessed. The layouts are
+# pinned by tools/usse-dis/test_pinned.py (one made-up word per form) and test_pds.py, and
+# held identical in C and Rust on random words of every opcode (crates/pds-isa).
+
+# Kinds written as code, in both languages (C: tools/usse-dis/pds.c, Rust: crates/pds-isa).
+code = [
+    "K_PRED", "K_PORT", "K_MOVS", "K_DST7", "K_SRC7_2", "K_SRC7_3", "K_SRC9H", "K_SRC8",
+    "K_SRC64", "K_SRC128", "K_LDRANGE", "K_MULA", "K_HALF", "K_SHSRC", "K_SHAMT",
+]
+
+[const]
+OPM = "m(31, 27)"
+
+[field]
+PRED = "K_PRED 26:24"
+DST7 = "K_DST7 6:0"
+
+[kind.K_DEC]
+num = "dec"
+
+[kind.K_X2]
+num = "dec"
+mul = 2
+
+[kind.K_HEX]
+num = "hex"
+
+# load/store byte addresses: the field counts dwords
+[kind.K_ADDR]
+num = "hex"
+mul = 4
+
+# The two-source ALU operations, by opcode (0x0e is a reserved arithmetic type).
+[kind.ALU]
+enum = { 8 = "add", 9 = "sub", 10 = "adc", 11 = "sbc", 24 = "or", 25 = "and", 26 = "xor", 28 = "nor", 29 = "nand" }
+
+[kind.FENCE]
+enum = ["rfence", "rwfence"]
+
+# tstz/tstn write p0-p2; 3-7 print as nothing
+[kind.TSTP]
+enum = ["p0", "p1", "p2", "", "", "", "", ""]
+
+[kind.SWAP]
+enum = ["", ", swap"]
+
+[kind.ALUM]
+enum = ["unsigned", "signed"]

@@ -1,0 +1,66 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ---- class 31 specials
+[[form]]
+order = 60
+pat = "nop{0}{1}{2}{3}{4}"
+op = "nop"
+mask = "CLSM | m(58, 56) | m(54, 51) | m(49, 44) | m(42, 38)"
+val = "cls(31) | b(40) | b(38)"
+fields = ["F_SYNCS 55", "F_NOSCHED 43", "end=F_END 50", "F_TOG 0", "F_TRIGGER 1"]
+
+[[form]]
+order = 70
+pat = "idf drc{0}, bif"
+op = "idf"
+mask = "~(b(32))"
+val = "cls(31) | b(53)"
+fields = ["drc=F_DRC"]
+
+[[form]]
+order = 80
+pat = "wdf drc{0}"
+op = "wdf"
+mask = "~(b(32))"
+val = "cls(31) | b(56) | b(53)"
+fields = ["drc=F_DRC"]
+
+[[form]]
+order = 90
+pat = "phas{0} #{1}, #{2}, {3}, {4}, {5}"
+op = "phas"
+mask = "CLSM | m(58, 52) | b(50)"
+val = "cls(31) | b(57) | b(54) | b(50)"
+fields = [
+    "F_END 51", "K_DEC 17:0", "K_X4 39:32", "PHAS_RATE 44:43", "PHAS_WAIT 42:40", "PHAS_MODE 45",
+]
+
+[[form]]
+order = 100
+pat = "phas{0}{1} {2}, {3}"
+op = "phas"
+mask = "CLSM | m(58, 52) | b(50)"
+val = "cls(31) | b(57) | b(54)"
+fields = ["F_NOSCHED 43", "F_END 51", "F_SRC1D", "F_SRC2D"]
+
+[[form]]
+order = 110
+pat = "emitpix1{0}{1}{2} #{3} /* incp */, {4}, {5}"
+op = "emit"
+mask = "CLSM | m(58, 56) | m(53, 52) | m(47, 46) | b(40)"
+val = "cls(31) | m(57, 56) | b(53) | b(40)"
+fields = [
+    "F_NOSCHED 43", "end=F_END 50", "F_FREEP 21", "K_DEC 33:32 41", "src0=F_SRC0",
+    "src1=F_SRC1D",
+]
+
+[[form]]
+order = 120
+pat = "emitpix2{0}{1}{2} #{3} /* incp */, {4}, {5}, {6}, #{7}"
+op = "emit"
+mask = "CLSM | m(58, 56) | m(53, 52) | m(47, 46) | b(40)"
+val = "cls(31) | m(57, 56) | b(53)"
+fields = [
+    "F_NOSCHED 43", "end=F_END 50", "F_FREEP 21", "K_DEC 33:32 41", "src0=F_SRC0",
+    "src1=F_SRC1D", "src2=F_SRC2D", "K_HEX 27:22 40:35 55:54",
+]

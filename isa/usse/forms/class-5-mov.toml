@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ---- class 5 mov
+[[form]]
+order = 20
+pat = "{0}mov{1}{2}{3}{4} {5}{6}, {7}"
+op = "mov"
+mask = "CLSM | b(53) | m(42, 40)"
+val = "cls(5)"
+fields = [
+    "pred=PRED_ALL 58:56", "F_SKIPINV 55", "F_SYNCS 52", "F_NOSCHED 43", "end=F_END 50",
+    "dst=F_DST", "mask=WMASK 47:44", "src1=F_SRC1H",
+]
+dflt = "UNUSED_SRC2"
+
+[[form]]
+order = 30
+pat = "{0}mov{1}{2}{3}{4}{5} {6}, {7}"
+op = "mov"
+mask = "CLSM | b(53) | m(42, 40)"
+val = "cls(5) | b(53)"
+fields = [
+    "pred=PRED_ALL 58:56", "F_SKIPINV 55", "F_SYNCS 52", "F_NOSCHED 43", "end=F_END 50",
+    "repeat=REPEAT 47:44", "dst=F_DST", "src1=F_SRC1H",
+]
+dflt = "UNUSED_SRC2"
+
+[[form]]
+order = 40
+pat = "mov pclink, {0}"
+op = "mov_to_link"
+mask = "~(m(13, 7))"
+val = "cls(31) | m(39, 38)"
+fields = ["src=K_TEMP 13:7"]
+
+[[form]]
+order = 50
+pat = "mov {0}, pclink"
+op = "mov_from_link"
+mask = "~(m(27, 21))"
+val = "cls(31) | b(40)"
+fields = ["dst=K_TEMP 27:21"]

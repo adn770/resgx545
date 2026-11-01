@@ -1,0 +1,82 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# USSE forms, the misc family (classes 5, 9, 15, 22, 23).
+# The source of the C and Rust tables: see isa/README.md.
+
+# Kinds written as code, in both languages (C: tools/usse-dis, Rust: crates/usse-isa).
+code = [
+    "K_MSC_TESTMSK",
+    "K_MSC_FDST",
+    "K_MSC_FSRC",
+    "K_MSC_FSRC0",
+    "K_MSC_CDST",
+    "K_MSC_CSRC",
+    "K_MSC_FIRH",
+    "K_MSC_S5",
+    "K_MSC_PAIR",
+]
+
+[field]
+MSC_F_PAIR = "K_MSC_PAIR 20:14 13:7 31:30 49"
+MSC_C5FLAGS = "K_MSC_C5FLAGS 55 52 43 50"
+
+[kind.K_MSC_C5FLAGS]
+flags = [".skipinv", ".syncs", ".nosched", ".end"]
+
+[kind.K_MSC_FIRV]
+flags = [", +src2.2", ", latch", ", scale"]
+
+# ---- class 5: movc / movmsk --------------------------------------------- *
+# enc[42:40] is the class-5 type: 0 the plain mov (usse.c), 1-5 movc with
+# data type i8, i16, i32, flt, i10, 6 movmsk and 7 movmsk.smsk (which adds
+# a source). enc[39] | enc[54] << 1 is the movc test and the movmsk format;
+# u8 is the one movmsk format printed after .smsk and the repeat count.
+[kind.MSC_MOVC_T]
+enum = [false, ".i8", ".i16", ".i32", ".flt", ".i10"]
+
+[kind.MSC_MOVC_TR]
+enum = [false, false, ".i16", ".i32", ".flt", ".i10"]
+
+[kind.MSC_MOVC_TEST]
+enum = [".tz", ".tnz", ".tn", ".tp|z"]
+
+[kind.MSC_MOVMSK_F]
+enum = [".mask", false, ".flt16", ".flt"]
+
+# the component of movmsk's last source, enc[38:37]
+[kind.MSC_COMP]
+enum = ["", ".1", ".2", ".3"]
+
+# Test-group operations enc[19:14], grouped by how they read enc[50] set.
+[kind.MSC_TOP_I]
+enum = { 22 = "iadd16", 23 = "isub16", 24 = "imul16", 25 = "uadd16", 26 = "usub16", 27 = "umul16", 28 = "iadd32", 29 = "iaddu32" }
+
+[kind.MSC_TOP_I8]
+enum = { 32 = "iadd8", 33 = "isub8", 34 = "uadd8", 35 = "usub8", 36 = "imul8", 38 = "umul8" }
+
+[kind.MSC_TOP_F2]
+enum = { 0 = "fadd", 3 = "fsubflr", 13 = "fmul", 14 = "fsub" }
+
+[kind.MSC_TOP_F2Z]
+enum = { 8 = "fdp", 9 = "fmin", 10 = "fmax", 11 = "fdsx", 12 = "fdsy" }
+
+[kind.MSC_TOP_C10]
+enum = { 37 = "fpmul8", 39 = "fpadd8", 40 = "fpsub8" }
+
+# ---- classes 22 and 23: adif, adifsum, bilin, firv, firh ---------------- *
+# Class 22 selects the operation with enc[53:52] (0 adif, or adifsum with
+# enc[38]; 2 bilin; 3 firv); class 23 is firh. All take the multiply flags
+# (skipinv, nosched, end, repeat count) and a 2-bit predicate enc[58:57].
+# firv and firh read their second operand's number from enc[20:14] with
+# source 1's bank.
+[kind.MSC_FMT8]
+enum = ["u8", "s8", "o8"]
+
+[kind.MSC_BILIN_L]
+enum = ["planar", "interleaved"]
+
+[kind.MSC_BILIN_SEL]
+enum = ["src01, dst01", "src23, dst01", "src01, dst23", "src23, dst23"]
+
+[kind.MSC_RND]
+enum = ["", ", rnd"]

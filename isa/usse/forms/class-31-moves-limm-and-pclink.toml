@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ---- class 31 moves: limm and pclink
+[[form]]
+order = 10
+pat = "{0}mov{1}{2}{3} {4}, #{5}"
+op = "mov_imm"
+mask = "CLSM | m(58, 56) | m(53, 52)"
+val = "cls(31) | b(58) | b(53)"
+fields = [
+    "pred=PRED_ALL 43:41", "F_SKIPINV 55", "F_NOSCHED 54", "end=F_END 50", "dst=F_DST",
+    "imm=F_LIMM",
+]

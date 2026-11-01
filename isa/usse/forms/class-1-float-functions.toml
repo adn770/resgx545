@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ---- class 1: frcp frsq flog fexp fsqrt fsin fcos
+# The operation is enc[42:41] | enc[48] << 2; source 1 is the operand.
+# enc[53] clear: a destination write mask in enc[47:44]; set: a repeat
+# count there.
+[[form]]
+order = 440
+pat = "{0}{1}{2} {3}{4}, {5}{6}"
+op = "fsc"
+mask = "CLSM | b(53)"
+val = "cls(1)"
+fields = [
+    "pred=PRED_ALL 58:56", "op=FLT_OP_SC 42:41 48", "flags=F_FLT_FLAGS1", "dst=F_DST",
+    "mask=WMASK 47:44", "src1=F_SRC1D", "mods=F_FLT_MODS1",
+]
+
+[[form]]
+order = 450
+pat = "{0}{1}{2}{3} {4}, {5}{6}"
+op = "fsc"
+mask = "CLSM | b(53)"
+val = "cls(1) | b(53)"
+fields = [
+    "pred=PRED_ALL 58:56", "op=FLT_OP_SC 42:41 48", "flags=F_FLT_FLAGS1", "repeat=REPEAT 47:44",
+    "dst=F_DST", "src1=F_SRC1D", "mods=F_FLT_MODS1",
+]

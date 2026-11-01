@@ -1,0 +1,186 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# USSE forms, the original groups: moves, class-31 specials and flow, the bitwise and test groups,
+# the plain integer multiply-adds, load/store, ldr/str.
+# The source of the C and Rust tables: see isa/README.md.
+
+# Kinds written as code, in both languages (C: tools/usse-dis, Rust: crates/usse-isa).
+code = [
+    "K_LDFLAGS",
+    "K_STFLAGS",
+    "K_LSDST",
+    "K_RANGE",
+    "K_BRFLAGS",
+    "K_TEMP",
+    "K_MULFLAGS",
+    "K_TEST",
+    "K_DST",
+    "K_SRCH",
+    "K_SRCD",
+    "K_SRC0",
+    "K_ROT",
+    "K_BR",
+]
+
+[const]
+UNUSED_SRC2 = "b(48) | b(29)"
+
+[layout]
+DST = "27:21 33:32 51"
+SRC0 = "20:14 34 51"
+SRC0P = "20:14 34"
+SRC1 = "13:7 31:30 49"
+SRC2 = "6:0 29:28 48"
+
+[field]
+F_DST = "DST(K_DST)"
+F_SRC1H = "SRC1(K_SRCH)"
+F_SRC1D = "SRC1(K_SRCD)"
+F_SRC2D = "SRC2(K_SRCD)"
+F_SRC0 = "SRC0(K_SRC0)"
+F_MSRC0 = "SRC0P(K_SRC0)"
+F_LIMM = "K_HEX 20:0 40:36 49:44"
+F_ALUFLAGS = "K_ALUFLAGS 55 52 54 50 34"
+F_BRFLAGS = "K_BRFLAGS 43 55 44 41 42"
+F_LSDST = "K_LSDST 27:21 39"
+F_TESTFLAGS = "K_TESTFLAGS 55 52 54 50 53"
+F_TESTFLAGS4 = "K_TESTFLAGS4 55 52 54 53"
+F_ROT = "K_ROT 6:0 19:14 20 37:36 42:38"
+F_MULFLAGS = "K_MULFLAGS 55 54 50 46:44"
+F_FLAGS3 = "K_MULFLAGS 55 54 50"
+F_LDFLAGS = "K_LDFLAGS 55 52 33 51 53 47:44"
+F_STFLAGS = "K_STFLAGS 55 52 54 33 51 32 38 53 47:44"
+F_BASE = "K_SRC0 20:14 34 50"
+F_RANGE = "K_RANGE 6:0 29:28 48 38"
+F_DRC = "K_DEC 32"
+F_LDRFLAGS = "K_LDRFLAGS 55 43"
+F_IDX14 = "K_DEC 6:0 20:14"
+
+[kind.K_ALUFLAGS]
+flags = [".skipinv", ".syncs", ".nosched", ".end", ".partial"]
+
+[kind.K_LDRFLAGS]
+flags = [".skipinv", ".nosched"]
+
+[kind.K_TESTFLAGS]
+flags = [".skipinv", ".syncs", ".nosched", ".partial", ".quadlead"]
+
+[kind.K_TESTFLAGS4]
+flags = [".skipinv", ".syncs", ".nosched", ".quadlead"]
+
+[kind.K_DEC]
+num = "dec"
+
+[kind.K_HEX]
+num = "hex"
+
+[kind.K_X4]
+num = "dec"
+mul = 4
+
+# Predicates. The full set names every value of the 3-bit field of limm and
+# mov; the narrower sets are the values the older forms have been
+# checked with (an unchecked value is left undecoded).
+[kind.PRED_ALL]
+enum = ["", "p0 ", "p1 ", "p2 ", "p3 ", "!p0 ", "!p1 ", "Pn "]
+
+[kind.PRED_MUL]
+enum = ["", "p0 ", "p1 ", "!p0 "]
+
+[kind.F_SKIPINV]
+enum = ["", ".skipinv"]
+
+[kind.F_NOSCHED]
+enum = ["", ".nosched"]
+
+[kind.F_SYNCS]
+enum = ["", ".syncs"]
+
+[kind.F_END]
+enum = ["", ".end"]
+
+[kind.F_FREEP]
+enum = ["", ".freep"]
+
+[kind.F_TOG]
+enum = ["", ".tog"]
+
+[kind.F_TRIGGER]
+enum = ["", ".trigger"]
+
+[kind.F_INV]
+enum = ["", "~"]
+
+[kind.F_SIGN]
+enum = ["+", "-"]
+
+[kind.SU]
+enum = ["u", "s"]
+
+# enc[42] sat, enc[43] s
+[kind.SIGNSAT]
+enum = ["u", "usat", "s", "ssat"]
+
+# ENUM(SIGNSAT, 4, "u", "usat", "s", "ssat");                 /* enc[42] sat, enc[43] s
+[kind.RS]
+enum = ["", ".rs1", ".rs2", ".rs3", ".rs4", ".rs5", ".rs6", ".rs7"]
+
+[kind.F_ABS]
+enum = ["", ".abs"]
+
+[kind.F_NEG]
+enum = ["", ".neg"]
+
+[kind.LOWHIGH]
+enum = ["low", "high"]
+
+# enc[35], enc[59]
+[kind.OP_BW_ANDXOR]
+enum = ["and", "or", "xor"]
+
+# ENUM(OP_BW_ANDXOR, 4, "and", "or", "xor", NULL);   /* enc[35], enc[59]
+[kind.OP_BW_SHIFT]
+enum = ["shl", "rol", "shr", "asr"]
+
+# load/store: v = data type[1:0] | address mode[3:2]
+[kind.AMDT]
+enum = ["ad", "aw", "ab", false, "ld", "lw", "lb", false, "td", "tw", "tb"]
+
+# enc[41:40]: 0 and 3
+[kind.IMODE_PLAIN]
+enum = ["", false, false, ""]
+
+# ENUM(IMODE_PLAIN, 4, "", NULL, NULL, "");                /* enc[41:40]: 0 and 3
+[kind.F_SIGN2]
+enum = ["++", "--"]
+
+# Test-group operations enc[19:14], by operand count and immediate style.
+[kind.TESTOP_2]
+enum = ["fadd", false, false, "fsubflr", false, false, false, false, "fdp", "fmin", "fmax", "fdsx", "fdsy", "fmul", "fsub", false, false, false, false, false, false, false, "iadd16", "isub16", "imul16", "uadd16", "usub16", "umul16", "iadd32", "iaddu32", false, false, "iadd8", "isub8", "uadd8", "usub8", "imul8", "fpmul8", "umul8", "fpadd8", "fpsub8"]
+
+[kind.TESTOP_1]
+enum = [false, false, false, false, "frcp", "frsq", "flog", "fexp"]
+
+[kind.TESTOP_BW]
+enum = { 48 = "and", 49 = "or", 50 = "xor", 51 = "shl", 52 = "shr", 53 = "rol", 55 = "asr" }
+
+[kind.F_WRITE]
+enum = ["!", ""]
+
+# mov destination write mask (enc[47:44], wzyx): x alone prints nothing.
+[kind.WMASK]
+enum = [".", "", ".y", ".xy", ".z", ".xz", ".yz", ".xyz", ".w", ".xw", ".yw", ".xyw", ".zw", ".xzw", ".yzw", ".xyzw"]
+
+# ... or, with enc[53] set, the repeat count minus one.
+[kind.REPEAT]
+enum = ["", ".repeat2", ".repeat3", ".repeat4", ".repeat5", ".repeat6", ".repeat7", ".repeat8", ".repeat9", ".repeat10", ".repeat11", ".repeat12", ".repeat13", ".repeat14", ".repeat15", ".repeat16"]
+
+# phas
+[kind.PHAS_RATE]
+enum = ["pixel", "selective", "sample"]
+
+[kind.PHAS_WAIT]
+enum = ["none", "pt", "vcull", false, false, false, false, "end"]
+
+[kind.PHAS_MODE]
+enum = ["parallel", "perinstance"]

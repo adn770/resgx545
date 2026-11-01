@@ -1,0 +1,51 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ---- classes 22 and 23: adif, adifsum, bilin, firv, firh
+[[form]]
+order = 2140
+pat = "{0}adif{1} {2}, {3}, {4}"
+op = "adif"
+mask = "CLSM | m(53, 52) | b(38)"
+val = "cls(22)"
+fields = ["pred=PRED_MUL 58:57", "flags=F_MULFLAGS", "dst=F_DST", "src1=F_SRC1D", "src2=F_SRC2D"]
+
+[[form]]
+order = 2150
+pat = "{0}adifsum{1} {2}, {3}.{4}, {5}, {6}"
+op = "adifsum"
+mask = "CLSM | m(53, 52) | b(38)"
+val = "cls(22) | b(38)"
+fields = [
+    "pred=PRED_MUL 58:57", "flags=F_MULFLAGS", "dst=F_DST", "src0=F_MSRC0", "half=LOWHIGH 47",
+    "src1=F_SRC1D", "src2=F_SRC2D",
+]
+
+[[form]]
+order = 2160
+pat = "{0}bilin{1} {2}, {3}, {4}, {5}, {6}, {7}, {8}{9}"
+mask = "CLSM | m(53, 52)"
+val = "cls(22) | b(53)"
+fields = [
+    "PRED_MUL 58:57", "F_MULFLAGS", "F_DST", "F_MSRC0", "F_SRC1D", "F_SRC2D", "MSC_FMT8 41:40",
+    "MSC_BILIN_L 56", "MSC_BILIN_SEL 43 42", "MSC_RND 47",
+]
+
+[[form]]
+order = 2170
+pat = "{0}firv{1} {2}{3}, {4}, {5}, {6}{7}"
+mask = "CLSM | m(53, 52)"
+val = "cls(22) | m(53, 52)"
+fields = [
+    "PRED_MUL 58:57", "F_MULFLAGS", "F_WRITE 47", "F_DST", "MSC_F_PAIR", "F_SRC2D",
+    "MSC_FMT8 41:40", "K_MSC_FIRV 56 39 42",
+]
+
+[[form]]
+order = 2180
+pat = "{0}firh{1} {2}, {3}, {4}, {5}, {6}, #{7}, #{8}"
+mask = "CLSM"
+val = "cls(23)"
+fields = [
+    "PRED_MUL 58:57", "K_MULFLAGS 55 54 50 45:44", "F_DST", "MSC_F_PAIR", "F_SRC2D",
+    "MSC_FMT8 41:40", "K_MSC_FIRH 39:38 37:35", "K_MSC_S5 43:42 47:46 56", "K_DEC 53:52",
+]

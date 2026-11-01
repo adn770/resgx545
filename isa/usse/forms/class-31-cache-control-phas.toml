@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ---- class 31 enc[54:52] = 4: cache control and phas
+# Operation 0 is ci, cf or cfi by enc[45:44] (0 is invalid_cfi_mode), with
+# nosched enc[43], global enc[47], dm_nomatch enc[46], two sources and the
+# cache levels enc[41:40]. Operation 2 is phas; the older phas forms fix
+# enc[55], which it ignores.
+[[form]]
+order = 1580
+pat = "{0}{1} {2}, {3}, #{4}"
+op = "cache"
+mask = "CLSM | m(58, 56) | m(54, 52)"
+val = "cls(31) | b(54)"
+fields = [
+    "op=MEM_CFOP 45:44", "flags=MEM_K_CFFLAGS 43 47 46", "src1=F_SRC1D", "src2=F_SRC2D",
+    "level=MEM_CFLEVEL 41:40",
+]
+
+[[form]]
+order = 1590
+pat = "phas{0} #{1}, #{2}, {3}, {4}, {5}"
+mask = "CLSM | m(58, 56) | m(54, 52) | b(50)"
+val = "cls(31) | b(57) | b(54) | b(50)"
+fields = [
+    "F_END 51", "K_DEC 17:0", "K_X4 39:32", "PHAS_RATE 44:43", "PHAS_WAIT 42:40", "PHAS_MODE 45",
+]
+
+[[form]]
+order = 1600
+pat = "phas{0}{1} {2}, {3}"
+mask = "CLSM | m(58, 56) | m(54, 52) | b(50)"
+val = "cls(31) | b(57) | b(54)"
+fields = ["F_NOSCHED 43", "F_END 51", "F_SRC1D", "F_SRC2D"]

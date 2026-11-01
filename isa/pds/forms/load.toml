@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ---- load/store: 1-8 dwords between memory and ds<bank>[48+]; w[26:24] is the dword
+# count (0 is 8), not a predicate.
+[[form]]
+order = 2250
+pat = "load {0}, ds{1}[{2}"
+op = "load"
+mask = "OPM"
+val = "0x06 << 27"
+fields = ["addr=K_ADDR 17:0", "bank=K_DEC 22", "range=K_LDRANGE 21:18 26:24"]

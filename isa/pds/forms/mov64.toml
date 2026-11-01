@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+[[form]]
+order = 2230
+pat = "{0}mov64 ds{1}[{2}], {3}"
+op = "mov64"
+mask = "OPM"
+val = "0x03 << 27"
+fields = ["pred=PRED", "bank=K_DEC 7", "dst=K_X2 6:2", "src=K_SRC64 16:10"]

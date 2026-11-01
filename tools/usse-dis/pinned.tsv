@@ -1,0 +1,250 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# One made-up word per form (test_pinned.py): instruction set, form index, word, the
+# decoder's text. Regenerate a line by decoding its word when a form changes on purpose.
+usse	0	FCE44C7101FE9D67	!p1 mov.skipinv.nosched.end o15, #0x10FE9D67
+usse	1	2C9FA803A7C01C80	p3 mov.skipinv.syncs.nosched.end i62.yw, #0x00000039
+usse	2	2CB5C801A6C03680	p3 mov.skipinv.syncs.nosched.end.repeat13 o54, pa109
+usse	3	F80000C000002180	mov pclink, r67
+usse	4	F800010001C00000	mov r14, pclink
+usse	5	F884094000000003	nop.syncs.nosched.end.tog.trigger
+usse	6	F820000100000000	idf drc1, bif
+usse	7	F920000100000000	wdf drc1
+usse	8	FA4C37950001D69A	phas.end #120474, #596, sample, end, perinstance
+usse	9	FA490800B0000C26	phas.nosched.end pa24, i38
+usse	10	FB2E0B07002DD700	emitpix1.nosched.end.freep #7 /* incp */, sa55, o[il + #14]
+usse	11	FBE70ACB90E1BB44	emitpix2.nosched.end.freep #7 /* incp */, r6, #118, g4, #0x00003643
+usse	12	FB801A0000038EE0	p2 ba.nosched.savelink.syncent #0x00038EE0
+usse	13	FE801E40000293D1	!p1 br.nosched.savelink.mon.syncent -#0x00016C2F
+usse	14	FE0808000000EA9B	!p1 bexception.nosched #0x0000EA9B
+usse	15	FA0808400002D56B	p1 bexception.rel.nosched -#0x00012A95
+usse	16	5CC5F8112A916F0F	p3 xor.skipinv.nosched.end o84.xyzw, r94, ~#0x0000628F
+usse	17	5C65BEE6E98F4D49	p3 xor.nosched.end.partial.repeat12 pa76, sa26, ~#0x480004F6
+usse	18	5C8CA805F8E000E2	p3 xor.skipinv.end.partial g7.yw, sa1, ~sa98
+usse	19	5BE88800CA40070C	p2 xor.skipinv.nosched.repeat9 sa82, sa14, ~r12
+usse	20	6B41B9266960C375	p2 shr.nosched.partial pa75.xyw, o6, ~#0x00081F50
+usse	21	6AB17ABD67FEBBA0	p1 asr.skipinv.syncs.partial.repeat8 o63, o119, ~#0x03F48000
+usse	22	6E1E8801FFC030A1	!p1 shr.syncs.end g62.w, i97, ~sa33
+usse	23	6EA6B80A484014B5	!p1 asr.skipinv.end.repeat12 pa66, c41, ~r53
+usse	24	4E8C596F6FDCB310	!p1 xor.skipinv.partial.testpoz.and02 i126.xz, p3, o102, pa16
+usse	25	4EE0A6ED44B965ED	!p1 fpmul8.skipinv.nosched.quadlead.testnanz.and02 o37.yw, p3, o75, r109
+usse	26	4A28B6FF02911300	p1 frcp.quadlead.testnanz.or02 i20.xyw, p3, r38
+usse	27	ADE62CA746E17D5E	p1 imae.skipinv.nosched.end.repeat3.ssat.rs4 o[ih + #7], pa5.high, g58.high, r94, u32
+usse	28	A529341D5ECF54FB	p1 ima16.repeat4.usat.rs3 g54.abs, pa61, o41, g59.neg, u16, u16
+usse	29	D2CC13812D4C7323	p1 ima32.skipinv.nosched.end.repeat2.s g42, r49, r102.neg, pa35.neg
+usse	30	EB21D069437D6625	p2 ldab.repeat14 r27, [r117,-o76], o[il + #5], drc1
+usse	31	EB8DD959C83F6267	p2 ldtw.skipinv.fcfill.fetch14 r65, [o125,--sa68], sa[il + #7], drc1
+usse	32	EC83A66B0B138F3F	p3 ldlb.skipinv.bpcache.fetch11 r88, [r78,r[ih + #14]--], o[ih + #15], drc1
+usse	33	F3DF840FB0034741	p2 stld.skipinv.syncs.nosched.bypassl1.noread.fetch9 [sa13,-#14], i65
+usse	34	F459191F4006EA6C	p3 sttw.syncs.nosched.bypassl1.noread.fetch2 [pa27,--o84], sa[il + #12]
+usse	35	F44DC22BA01D699C	p3 stab.nosched.bypassl1.noread.fetch13 [o117,pa83--], #28
+usse	36	FE210801288A402A	ldr.nosched r68, #5290, drc1
+usse	37	FEA108821D20003C	ldr.skipinv.nosched pa105, c60, drc2
+usse	38	FEAB0800A0150252	str.skipinv.nosched #10834, #4
+usse	39	FE2B0800B0001CC8	str.nosched i72, #57
+usse	40	04177312E1041E82	p3 fadm.syncs.end.repeat4.incs011 pa8, r16, i61, #2.abs
+usse	41	048557090E40230E	p3 fsubflr.skipinv.end.repeat2.incs011 o114, r70, r[il + #14].neg
+usse	42	06D9BC08471A432B	!p1 fmsa.skipinv.syncs.nosched.repeat4.incs100 sa56, r20.flt16.2, o6, pa[ih + #3].neg
+usse	43	0459F631C680368E	p3 fsubflr.syncs.repeat4.incs110 c52, sa22.neg.flt16.2, r[ih + #6].abs
+usse	44	0C8FD53548E00B80	p3 fcos.skipinv.end.tpres g7.xzw, c23.neg.c10.2
+usse	45	0C3D6B6C0FA02B00	p3 fsin.syncs.nosched.end.tpres.repeat7 sa125, r86.neg.abs.c10.1
+usse	46	1696B120ABE009AE	!p1 fdp.skipinv.syncs.end.repeat4.incs101 r95, #19.neg, pa46
+usse	47	1685B9201C4146CA	!p1 fdpc.skipinv.nosched.end.repeat4.incs101 r98, cp2, r13.neg, g10
+usse	48	139D6A54F851D7BB	p2 fddp.skipinv.syncs.nosched.end.repeat3.incs010 r66, i1, pa71, sa47.abs, i59.abs
+usse	49	139E2DBD485FA8ED	p2 fddpc.skipinv.syncs.nosched.end.repeat3 o66, i1, cp7, cp6, pa126, g17, r109
+usse	50	16C87051BC2017F1	!p1 fdp.skipinv.repeat4.incs010 g33, pa47.abs, sa24.abs.flt16.2
+usse	51	12DCF1081E635A47	p1 fdpc.skipinv.syncs.end.repeat4.incs111 sa115, cp6, r52, o3.neg.flt16.2
+usse	52	14DEF21CDB01F586	p3 fddp.skipinv.syncs.end.repeat4.incs110 r88, i1, pa7, i21.flt16.2, o6.neg.abs
+usse	53	145D3D75FF9B462C	p3 fddpc.syncs.nosched.end.repeat4 o124, i1, cp6, cp5, pa22.flt16.2, sa12, i44
+usse	54	1E9CBA5573C9E6ED	!p1 fminmax.skipinv.syncs.nosched.end.repeat4.incs100 c30, pa39, o77.abs, sa109.abs
+usse	55	1E576AB1D5EB6BFB	!p1 fminmax.syncs.nosched.end.repeat3.incs010 o47, r45.abs, i11.neg.flt16.2, g59.abs
+usse	56	2603AA50288007C1	!p1 fdsy.nosched.repeat3.incs100 r68, r[il + #15].abs, #65.abs
+usse	57	2646F2206E4037E3	!p1 fdsy.end.repeat4.incs110 r114, g47.neg, pa17.flt16.2
+usse	58	349AF6D51D566BAF	p3 fmad16.skipinv.syncs.repeat2.incs110 g42, pa89.abs.swzf32, pa[ih + #7].abs.swzll, o47.abs
+usse	59	3C16FFBC867AD2BB	efo.nosched.gpiext.repeat4 r51= i1, i0 = a1, i1 = a0, a0=m0-i0, a1=i1+m1, m0=src1*i0, m1=src2*i1, pa107.neg/pa21.neg.flt16.2, pa37.neg, o[ih + #11].neg/sa[ih + #3].neg
+usse	60	C9862263F1B7C589	fpma.skipinv.end.repeat3 r[ih + #5], r31.c10, i11, sa9, s0, s1a.comp, s2, s1a.comp, s1a, s2a
+usse	61	DC08807FAF7C07ED	ima32 sa[ih + #11], pa112, pa15.neg, pa109.neg+fmad16 i1, i1, i2, i0
+usse	62	DCB8033C9D8C8808	ima32.skipinv.syncs r108, pa50, pa16.neg, o8.neg+fsub i1, i0, i2
+usse	63	DF988A2C686DEFA4	!p0 ima32.skipinv.syncs.nosched r67, pa55, o95, pa36.neg+flog i1, i2
+usse	64	DE882BDBEB31979C	p1 ima32.skipinv.nosched pa[ih + #9], r70, sa47.neg, pa28.neg+mov i2, i0
+usse	65	DD1863DBEEF9DFF2	p0 ima32.syncs sa[ih + #7], r103, sa63.neg, pa114.neg+mov i2, i1
+usse	66	DF988BEC6E73AA22	!p0 ima32.skipinv.syncs.nosched r115, pa78, o84, pa34.neg+mov i1, i2
+usse	67	DAA5A5225EB52EAB	p1 mov.skipinv pa117, o93+fmaxmin i0, r84, i2, c43
+usse	68	DB2766C2C74033F4	!p0 mov pa58, i103+fadd i2, i1, sa[ih + #4]
+usse	69	DB9662034DC02500	!p0 mov.skipinv.syncs sa[il + #14], g10+flog i2, i1
+usse	70	DBA61BF3066FB780	!p0 mov.skipinv.nosched.repeat2 o[ih + #3], sa[il + #15].neg+mov i1, r62
+usse	71	D9265BE2CE401A80	p0 mov.nosched.repeat2 pa114, i53+mov i1, i53
+usse	72	DB259BF19B603E65	!p0 mov.nosched.repeat2 o91, pa124.neg+mov i1, g37
+usse	73	DCA088666222135A	fddp.skipinv.nosched pa17, i0, pa8, o38, pa90+fmad16 i1, i1, i2, i2
+usse	74	DE938F31DA877355	p1 fddp.skipinv.syncs.nosched o84, i0, r29, i102.neg, g21+fsub i1, i2, i1
+usse	75	DC008164963ADA32	fddp r49, i0, pa107, pa52, o50+frcp i1, i2
+usse	76	DE3223DBBF994C0F	p1 fddp.syncs sa[ih + #12], i0, r101, #24.neg, sa15.neg+mov i2, r101
+usse	77	DC1163DEB7B4584D	fddp.syncs pa61, i0, pa81, pa48.neg, i77.neg+mov i2, i1
+usse	78	DC9083F8FCB045F9	fddp.skipinv.syncs r101, i0, r65, sa11.neg, sa121.neg+mov i1, i2
+usse	79	DEBEEBAAE515CA36	p1 fssq.skipinv.syncs.nosched pa40, i20, pa54.neg+ima32 i0, r87, i20, i2
+usse	80	DCAE00FB68E03ACE	fssq.skipinv pa[il + #7], g53.neg, pa78.neg+fsubflr i1, i0, i2
+usse	81	DF1C8273FF000A07	!p0 fssq.syncs sa[ih + #8], sa20.neg, sa7+fsin i1, i2
+usse	82	DF2D1BE52B02054F	!p0 fssq.nosched.repeat2 o88, r10, #79+mov i1, pa8
+usse	83	DF2D6BC16BA013F2	!p0 fssq.nosched o93, o39, #114+mov i2, o39
+usse	84	DD2F93F0032033DF	p0 fssq.repeat2 r25, sa[il + #7].neg, pa[ih + #15]+mov i1, pa[ih + #15]
+usse	85	D8582C91F5B9438F	fadm.syncs.nosched o45, r18.flt16.2, sa7.neg, sa15+fmsa i2, i2, i0, i1
+usse	86	D8FE43A911AD3DAC	fmsa.skipinv.syncs o13, r52, sa[ih + #3].flt16.0, o44.neg+ima32 i1, i1, i1, i2
+usse	87	D8FE0B7778EABAF2	fmsa.skipinv.syncs.nosched pa[il + #7], pa42, g53.neg, sa25.flt16.0+fmul i1, i0, i2
+usse	88	D8DD624DDA8B344D	fmsa.skipinv.syncs o84, pa44, sa20.flt16.0, g13.neg+fsin i2, i1
+usse	89	DBE303E9EF05EFD2	!p0 fmad.skipinv o120, r23, i15.flt16.2, #82.neg+mov i1, r23
+usse	90	DB5343F979935ABB	!p0 fmad.syncs o76, r6.flt16.2, c53.neg, i59.neg+mov i1, i1
+usse	91	DB4A83EC742108F6	!p0 fadm r33, pa4, c17, sa27.neg.flt16.0+mov i1, i2
+usse	92	DD5B8D2EECC73D08	p0 ima32.syncs.nosched pa102, pa28, i29.flt16, #8.neg+fmaxmin i1, i1, i2, i1
+usse	93	DD4827924C297B31	p0 ima32 pa97, r37, o27.neg.flt16, r49+ima32 i2, i2, i0, i1
+usse	94	DD49634CCE269DD6	p0 ima32 r113, pa26, sa59, o[il + #6].neg.flt16+fmul i2, i1, i0
+usse	95	DDD96981B0770A9E	p0 ima32.skipinv.syncs.nosched o3, r14.flt16, pa21, i30+frsq i2, i1
+usse	96	DF6A13EA3A0DEE2C	!p0 ima32.repeat2 pa80, r55, o[ih + #4].flt16, sa44.neg+mov i1, r55
+usse	97	DFCB73D6BBB3BD29	!p0 ima32.skipinv.repeat2 pa93, pa7.flt16, #122.neg, i41+mov i2, i1
+usse	98	DFC88BF32F571B2C	!p0 ima32.skipinv.nosched sa[ih + #10], r14.flt16, r54.neg, pa44+mov i1, i2
+usse	99	DA66753025A72184	p1 mov.repeat2 r45, r[il + #3].neg.flt16+fmaxmin i0, r28, i1, pa4
+usse	100	D844AFB280ABEC00	mov.nosched pa5, pa12.neg.flt16+ima32 i0, r47, i2, i1
+usse	101	DB778F30B32019C8	!p0 mov.syncs.nosched r25, #0x00000033.neg+fsub i1, i2, i4.flt16
+usse	102	DB5481B308802300	!p0 mov.syncs pa[il + #4], r3.neg.flt16+frsq i1, i2
+usse	103	D9741BF64BA2E300	p0 mov.syncs.nosched.repeat2 pa93, o3.neg.flt16+mov i1, pa11
+usse	104	D9F453E1C9603600	p0 mov.skipinv.syncs.repeat2 o75, sa22.flt16+mov i1, sa22.flt16
+usse	105	DAF78BD07F0022D7	p1 mov.skipinv.syncs.nosched r120, g5.neg+mov i0, i11.flt16.2
+usse	106	DE52A8BF01CCAA12	p1 fddp.syncs.nosched r[il + #14], i0, pa50, o[il + #4].neg.flt16, r18.neg+fmsa i0, pa50, i2, i0
+usse	107	DED26389C3560CA5	p1 fddp.skipinv.syncs o26, i0, r12.flt16, i25, r37.neg+ima32 i2, i2, i1, i0
+usse	108	DC502743EAA6BB2D	fddp.syncs pa[ih + #5], i0, r26, sa27.flt16, pa45+fmul i2, i0, i1
+usse	109	DEC289FD6CFEA30F	p1 fddp.skipinv.nosched o103, i0, pa29.flt16, g6.neg, pa15.neg+fexp i1, i2
+usse	110	DEE20BE08BCEA757	p1 fddp.skipinv.nosched r94, i0, r58, #78, r11.flt16.2+mov i1, r58
+usse	111	DC5363C2E5D702EE	fddp.syncs pa46, i0, r14.flt16, i5, #110+mov i2, i1
+usse	112	DF5183FE984CE660	!p0 fddp.syncs pa66, i0, pa51, pa6.neg.flt16, g32.neg+mov i1, i2
+usse	113	DE4CA4B20F28A41F	p1 fssq pa121, r4.neg.flt16, r31+fmsa i0, r34, i2, i1
+usse	114	DF7D77AD90A12C2B	!p0 fssq.syncs.repeat2 o5, pa12.flt16, c43.neg+ima32 i0, pa4, i1, c43
+usse	115	DC4C80E29DE03412	fssq pa111, pa20.flt16, o18+fsubflr i1, i2, i0
+usse	116	DF5E89A3D760037E	!p0 fssq.syncs.nosched o[ih + #11], i6, o31.flt16+frsq i1, i2
+usse	117	DFFF13EE780327D2	!p0 fssq.skipinv.syncs.repeat2 pa64, g15, i9.neg.flt16+mov i1, pa12
+usse	118	DF6F63D0BC0011D8	!p0 fssq r96, #35.neg, i12.flt16+mov i2, #0x00000023
+usse	119	DEFDA3DAB5802517	p1 fssq.skipinv.syncs pa44, pa5.neg.flt16, i23.neg+mov i2, i23
+usse	120	E3462855C88F4C00	p2 smp3d.nosched.pcff16 r68.y, sa61.c10, i24, drc1
+usse	121	E4F674D1CFB5FC00	p3 smp2d.skipinv.syncs.nosched.pcff16.sinf.repeat4 pa125, o87.c10, i120, drc1
+usse	122	E2D6555758DCDC42	p1 smp2dbias.skipinv.syncs.nosched.pcff16.sinf r70, sa115.c10, c56, o66, drc3
+usse	123	E4A4B5D5FAE511E8	p3 smp2dbias.skipinv.pcff16.rsd.repeat4 pa87, sa20.c10, sa35, sa104, drc1
+usse	124	ECEEBE7AE0A4FFDB	p3 eldq.skipinv.bypassl1.fetch12 pa5, [sa127, r19, #1907], pa91, drc0
+usse	125	FB00088000000000	p2 lapc.nosched
+usse	126	FC0008C0C0000A80	p3 mov.nosched pclink, sa21
+usse	127	FE00090306E00000	!p1 mov.nosched o[ih + #7], pclink
+usse	128	FA8539763E0BD678	nop.syncs.nosched.end
+usse	129	F81D0000700002F5	smoa.nosched o5, i117
+usse	130	F91D0000D00038AB	smr.nosched sa113, c43
+usse	131	FA1D000040000569	smlsi.nosched o10, sa[il + #9]
+usse	132	FB1D00009000112A	smbo.nosched pa34, c42
+usse	133	F814F665C4914A6B	smoa.nosched #407, #73, #82, #-405, mirror, mirror, repeat, clamp
+usse	134	F914C6BF7134D1B1	smr.nosched #3179, #3953, #845, #433
+usse	135	FB14EFE57608B328	smbo.nosched #3838, #1398, #139, #808
+usse	136	FA1435A182E5B5ED	smlsi.nosched #-126, #-27, #-75, swizzle(ywzw), incrementmode, incrementmode, incrementmode, swizzlemode, #12, #20, #40
+usse	137	FC1472572407A299	imo.nosched #1829, #1828, #-6, #665
+usse	138	FD14000000000001	setfc.nosched #1, #0
+usse	139	FE9C580101A00000	moest.skipinv.nosched c13, #11 /* Reserved */
+usse	140	F820C80200000000	idf.nosched drc2, reserved(=3)
+usse	141	F920080200000000	wdf.nosched drc2
+usse	142	FA2008000000000B	setm.nosched #11
+usse	143	FF2008000000000D	wop.nosched.twopart #5
+usse	144	FD20080000000021	release.nosched #2
+usse	145	FE6734C36316181C	ldr pa24, #11292, drc3
+usse	146	FEE298F6CD6025C9	ldr.skipinv.nosched pa107, r73, drc2
+usse	147	FEE9C902AD27A6D4	str.skipinv.nosched #3924, pa77
+usse	148	FEE903B25ACD7D87	str.skipinv c7, o123
+usse	149	FB26B8B69A2CA157	emitpds.nosched.end.tasks.taske.freep #2 /* incp */, pa50, #66, o87, #0x000005A8
+usse	150	FB2D4E0090200997	emitmtest.nosched.end.twopart.freep #4 /* incp */, pa19, c23
+usse	151	FB267E0340202BD2	emitmtevtx.nosched.end.twopart.cut.freep #7 /* incp */, g23, r82
+usse	152	FB26CC02A020006B	emitvcbst.nosched.end.twopart.freep #2 /* incp */, pa107
+usse	153	FB26DE00A0200044	emitvcbvtx.nosched.end.twopart.freep #4 /* incp */, pa68
+usse	154	F83F0804200493EA	pcoeff.nosched.end sa18, o[il + #7], #106
+usse	155	F834880000000000	ptoff.nosched.end
+usse	156	F9F20DEB61718A0C	p1 atst8.syncs.nosched.c10 r[il + #11], p3, r70, c20, pa12, twosided, nfb
+usse	157	FBB50C2C800F4F6F	p1 depthf.syncs.nosched.end pa61, pa30, sa[il + #15], twosided, nfb
+usse	158	F8425B0030001B1B	ci.nosched.dm_nomatch o[ih + #6], sa27, #3 /* L0, L1 and L2 */
+usse	159	FACD2A77B72F0613	phas.end #198163, #476, selective, vcull, perinstance
+usse	160	FAC3E5A4EBF89490	phas i41, #16
+usse	161	450BE523A0F652C2	!p0 unpcks16o8.scale i7.e3.yzw, #37.2, #66.1, up
+usse	162	45BC610B137EEDE0	!p0 unpcks16u8.skipinv.syncs.end.scale.repeat7 i27.e1, r91.2, o96.3, zero
+usse	163	4796F221A80DBA57	Pn statomic.skipinv.syncs.end.scale o64.e3.xyzw, #116.1, pa87.2, down
+usse	164	41E1623071B90CAA	p0 statomic.skipinv.nosched.repeat7 r13.e2.e3, o25.1, i42, zero
+usse	165	82183E058709682D	p0 sop2.repeat4 c56, pa16.c10, r45, zero, zero, min+asop2 s1a.comp, zeros.comp, sub, neg
+usse	166	8BC9F0C761CC3288	p0 sop3.skipinv.nosched i14, pa48, o37.c10, #8, s1a.comp, zero.comp, add+asop s2a.comp, zero.comp, add
+usse	167	8B40788DD5C91855	p0 sop3.nosched o46, pa36, sa48, o21.c10, s1.comp, asat, add+arsop s2a.comp, add
+usse	168	8A8F1E11733E2F92	p0 sop3.skipinv.end c25, r56.c10, g31, i18, zero, s1, add, neg+alrp zero.comp, s2a
+usse	169	8D7452064367B83F	p1 lrp.nosched.end pa27, pa30, o48.c10, i3, zero.comp, s2.comp, s0+asop zero.comp, zero, sub
+usse	170	8AF24E4AC4760CA9	p0 sop3c.skipinv.nosched pa35, r24.c10, i25, r41, asat, asat, s1.comp, s2+alrp zero.comp, zero.comp
+usse	171	96618E59F6000DF1	!p0 sop2wm.nosched o48.e3, sa27, i49.c10, asat, s1a.comp, min, max
+usse	172	986BCF34A1D78207	ima8.nosched.repeat5.sat sa14, pa30.c10, #4, #7, s0a.comp, s1a, s2a.comp, s1a, s1a, s2a.comp
+usse	173	A0C158359AFAB741	ima16.skipinv.nosched.repeat6.s.rs2 o87, pa106, pa110, g1, u16, u16
+usse	174	A5EE185964A17432	p1 ima16.skipinv.nosched.end.repeat2.s.rs3 c37.abs, r5, g40.low, pa50.neg, u8, u16
+usse	175	A5AF1638694FF973	p1 ima16.skipinv.end.repeat2.usat.rs3 sa74.abs, r63, g50, #115.neg.high, u16, s8
+usse	176	A5C946BD97B01842	p1 ima16.skipinv.nosched.repeat5.usat.rs3 c61.abs, pa64, pa48.low, g2.high, s8, s8
+usse	177	AAA5BE92887EE267	p0 imae.skipinv.end.repeat4.ssat.rs2 pa67, r123.low, pa68.high, sa[il + #7], u32, cie, i1
+usse	178	AA79DF698585E5FB	p0 imae.nosched.repeat6.ssat.rs5 c44, r23.low, pa75.high, sa[ih + #11].high, u16, coe, cie, i1
+usse	179	D4446BE065BA7436	p3 ima32.nosched.end.repeat7.s r45, i2, r105, o104.neg, pa54.neg, cie, i1
+usse	180	D39130816E4037C8	p2 idiv.skipinv.repeat4 pa114, o111, #72, drc1
+usse	181	C57A51C151E12E71	p1 u16dot4off.nosched.repeat6 c15, Cx8, Ax2, g28, o49.c10
+usse	182	C4B3EF40DAC319BF	p1 u16dot3off.skipinv.repeat7 r22.c10, Cx4, Ax8, i51.comp, c63.comp
+usse	183	C47569C156002E4C	p1 u16dot3off.nosched.end.repeat7 o48, Cx8, o28.comp.c10, g12
+usse	184	C6C2E150ABA2B39B	!p0 u8dot3off.skipinv.nosched.repeat7 r29.c10, Cx4, #103, pa27.comp+asub Ax4, zero, s1a.comp, zero, s2a
+usse	185	C62F6B7CA75C8706	!p0 u8dot3off.end.repeat7 sa58, Cx4, #14.comp, #6+alrpc pa50.c10, s2a, s1a.comp
+usse	186	721EE0050156E400	p1 rlp.syncs.end.partial c10.yzw, pa[il + #8], p91
+usse	187	76F4F00584D9F480	!p1 rlp.skipinv.syncs.nosched.end.partial.repeat16 o38, pa105, p103
+usse	188	2CD9A105BF29F5BA	p3 movc.skipinv.syncs.i8.tn g57.yw, pa39, pa107, i58
+usse	189	2BE1A506CB919AD1	p2 movc.skipinv.i10.repeat11.tn pa92, pa70, sa53, pa[ih + #1]
+usse	190	2AE319806893F411	p1 movc.skipinv.nosched.repeat2.i8.tp|z r68, r79, g40, #17
+usse	191	2BCEA623F4400F23	p2 movmsk.skipinv.end.flt16 i34.yw, i30, sa35.1
+usse	192	2C6DA620DE801D3B	p3 movmsk.end.flt16.repeat11 sa116, sa58, c59.1
+usse	193	2ED7976232D08A56	!p1 movmsk.skipinv.syncs.end.flt16.smsk pa22.xw, r66, r[ih + #4], i86.3
+usse	194	2CF737227404912F	p3 movmsk.skipinv.syncs.end.flt16.smsk.repeat4 pa32, r18, c34, i47.1
+usse	195	2A886EE055403C0E	p1 movmsk.skipinv.nosched.u8 sa42.yz, o120, o14.3
+usse	196	2CB7D6A2F6001A1A	p3 movmsk.skipinv.syncs.end.repeat14.u8 pa48, i52, i26.1
+usse	197	2E8A37C3F18F3846	!p1 movmsk.skipinv.smsk.u8 i12.xy, r60, i112, sa70.2
+usse	198	2E3F87C3FC843918	!p1 movmsk.syncs.end.smsk.repeat9.u8 i100, r16, i114, i24.2
+usse	199	4A2EC8FFEFB5F74A	p1 isub16.quadlead.testpat.or02 i125.zw, p3, i110, pa74
+usse	200	4C57C21A8E79826D	p3 umul8.syncs.nosched.sat.testtonz.chan1 pa115.zw, p2, #4, sa[il + #13]
+usse	201	4A4460AE21537615	p1 fmul.nosched.testtat.chan2 pa10.yz, p3, r22.flt16, pa21
+usse	202	4DA7B6ED5FD20F48	!p0 fdp.skipinv.quadlead.testnanz.and02 o31.flt16.xyw, p3, c30, g8
+usse	203	4C94C51A4B91DB80	p3 fexp.skipinv.syncs.testnoz.chan1 pa14.flt16.zw, p2, o55
+usse	204	4ED4D4EC323A3409	!p1 fpsub8.skipinv.syncs.nosched.testnat.and02 r17.xzw, p3, r40.c10, sa9
+usse	205	7E483110A45C61E3	!p1 or.nosched.testtoz.wmsk sa34.xy, pa67, pa99
+usse	206	7C5BD5236639970B	p3 umul8.syncs.nosched.testnoz.dmsk i49.xzw, c46, #11
+usse	207	7A5842230EB16B00	p1 frsq.syncs.nosched.testtonz.dmsk i117.z, r86
+usse	208	7C6F22A35CB72CDE	p3 iadd32.nosched.quadlead.testtanz.dmsk i101.y, g25, g30
+usse	209	7C1D8880C4F9A4E6	p3 umul8.syncs.sat.testpat.bmsk sa39.w, sa73, sa[il + #6]
+usse	210	7EE45501C0D0C77B	!p1 fsubflr.skipinv.nosched.quadlead.testnoz.bmsk o6.xz, sa14, r29.flt16.2
+usse	211	7AC7F101B2B28E51	p1 fmax.skipinv.nosched.testtoz.bmsk o21.xyzw, #28, i8.flt16.2
+usse	212	7E1C85110731F980	!p1 fexp.syncs.testnoz.wmsk c57.w, r25.flt16.2
+usse	213	7E9D4220371A293C	!p1 fpsub8.skipinv.syncs.testtonz.dmsk sa56.z, r18.c10, i60
+usse	214	B406100228003C09	p1 adif.end.repeat2 pa64, sa[ih + #8], pa9
+usse	215	B481F0405EC6102E	p1 adifsum.skipinv.repeat8 r118, r24.high, o32, c46
+usse	216	B7E7B607559C2B7C	!p0 bilin.skipinv.nosched.end.repeat4 o[il + #12], pa112, g22, g60, o8, interleaved, src01, dst23, rnd
+usse	217	B6F69682C673F73F	!p0 firv.skipinv.nosched.end.repeat2 pa51, i79, i110, r63, o8, latch, scale
+usse	218	BD325DBA81DE529D	p1 firh.repeat2 pa14, #121, #37, r29, s8, mdc, fcs7, #-9, #3
+pds	0	0243F685	(p2) movs doutu, ds1[62], ds1[63], ds0[33], ds0[32]
+pds	1	2A26A6C6	(p2) movsa douta, ds0[18], ds1[43], ds0[19], ds1[42]
+pds	2	0A0037D4	(p2) mov16 ds1[84], ds0[27].h
+pds	3	120024B0	(p2) mov32 ds1[24], ds0[18]
+pds	4	1A0020C0	(p2) mov64 ds1[32], ds0[16]
+pds	5	24002948	(if1) mov128 ds[36], ds[20], swap
+pds	6	30737230	load 0x000DC8C0, ds1[60-67]
+pds	7	3F71EB25	store 0x0007AC94, ds1[60-66]
+pds	8	52848C2B	(p2) adc ds0[43], tim, ds1[35]
+pds	9	6284C013	(p2) mul ds0[19], tim.l, ds1[48].l
+pds	10	6A00490D	(p2) abs ds0[13], ds1[18]
+pds	11	6A4C0078	(p2) abs ds1[56], ds0[38]
+pds	12	DA003D15	(p2) not ds0[21], ds1[15]
+pds	13	DA5E006B	(p2) not ds1[43], ds0[47]
+pds	14	78000001	rwfence
+pds	15	83005902	(if0) tstz p2, ds1[22]
+pds	16	81240002	(p1) tstz p2, ds0[18]
+pds	17	8B008102	(if0) tstn p2, ds1[32]
+pds	18	8A4C0001	(p2) tstn p1, ds0[38]
+pds	19	9203CA6C	(p2) bra 0x0003CA6C
+pds	20	990121BB	(p1) call 0x000121BB
+pds	21	A4000000	(if1) rtn
+pds	22	AC000000	(if1) halt
+pds	23	B0000000	nop
+pds	24	BC000001	(if1) alum signed
+pds	25	F2120C71	(p2) shl ds1[49], ds0[18], 12
+pds	26	FA156E47	(p2) shr ds1[7], ds0[21], 4294967278

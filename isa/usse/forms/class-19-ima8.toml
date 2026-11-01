@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ---- class 19: ima8
+# Source 0 with .neg (enc[35]); six selectors: enc[53:52], enc[37],
+# enc[36], enc[41] and two fixed ones, complemented by enc[42], enc[56],
+# enc[47], enc[38], enc[39], enc[40]; .sat is enc[43].
+[[form]]
+order = 1720
+pat = "{0}ima8{1}{2} {3}, {4}, {5}, {6}, {7}"
+op = "ima8"
+mask = "CLSM"
+val = "cls(19)"
+fields = [
+    "pred=PRED_MUL 58:57", "flags=F_MULFLAGS", "sat=INT_SAT 43", "dst=F_INT_D10",
+    "src0=K_INT_S0N_10 20:14 34 35", "src1=F_INT_S1_10", "src2=F_INT_S2_10",
+    "sel=K_INT_IMA8SEL 53:52 42 37 56 36 47 41 38 39 40",
+]

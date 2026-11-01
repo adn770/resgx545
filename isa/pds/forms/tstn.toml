@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+[[form]]
+order = 2360
+pat = "{0}tstn {1}, ds1[{2}]"
+op = "tstn"
+mask = "OPM | b(8)"
+val = "0x11 << 27 | b(8)"
+fields = ["pred=PRED", "pdst=TSTP 2:0", "ds1=K_DEC 15:10"]
+
+[[form]]
+order = 2370
+pat = "{0}tstn {1}, {2}"
+op = "tstn"
+mask = "OPM | b(8)"
+val = "0x11 << 27"
+fields = ["pred=PRED", "pdst=TSTP 2:0", "src=K_SRC7_2 23:17"]

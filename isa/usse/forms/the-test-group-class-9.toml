@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ---- the test group: class 9
+# An ALU operation (enc[19:14]) whose result is tested into predicate
+# p<enc[35:34]>; enc[20] clear disables the register write ("!" before
+# the destination). One-source operations read source 1. The bitwise
+# operations print a source-1 immediate in hex, the others in decimal.
+# Only they read enc[50] as .partial; the others are left with it clear.
+[[form]]
+order = 240
+pat = "{0}{1}{2}.{3} {4}{5}{6}, p{7}, {8}, {9}"
+op = "test"
+mask = "CLSM"
+val = "cls(9)"
+fields = [
+    "pred=PRED_ALL 58:56", "op=TESTOP_BW 19:14", "flags=F_TESTFLAGS", "test=K_TEST 43:36",
+    "write=F_WRITE 20", "dst=F_DST", "mask=WMASK 47:44", "p=K_DEC 35:34", "src1=F_SRC1H",
+    "src2=F_SRC2D",
+]
+
+[[form]]
+order = 250
+pat = "{0}{1}{2}.{3} {4}{5}{6}, p{7}, {8}, {9}"
+op = "test"
+mask = "CLSM | b(50)"
+val = "cls(9)"
+fields = [
+    "pred=PRED_ALL 58:56", "op=TESTOP_2 19:14", "flags=F_TESTFLAGS4", "test=K_TEST 43:36",
+    "write=F_WRITE 20", "dst=F_DST", "mask=WMASK 47:44", "p=K_DEC 35:34", "src1=F_SRC1D",
+    "src2=F_SRC2D",
+]
+
+[[form]]
+order = 260
+pat = "{0}{1}{2}.{3} {4}{5}{6}, p{7}, {8}"
+op = "test"
+mask = "CLSM | b(50)"
+val = "cls(9)"
+fields = [
+    "pred=PRED_ALL 58:56", "op=TESTOP_1 19:14", "flags=F_TESTFLAGS4", "test=K_TEST 43:36",
+    "write=F_WRITE 20", "dst=F_DST", "mask=WMASK 47:44", "p=K_DEC 35:34", "src1=F_SRC1D",
+]

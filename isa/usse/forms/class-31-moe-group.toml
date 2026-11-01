@@ -1,0 +1,99 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ---- class 31 MOE group (enc[53:52] = 1, operation enc[58:56])
+# No predicate; nosched is enc[50] throughout. smoa, smr, smlsi and smbo
+# take two source operands with enc[51] set, or immediates with it clear:
+# smoa four signed 10-bit offsets and four 2-bit address modes, smr and
+# smbo four 12-bit values, smlsi four 8-bit operands (an increment or a
+# swizzle, by the mode bits enc[35:32]) and three 4-bit values times 4.
+# imo (enc[51] ignored) takes four 12-bit immediates, setfc two bits,
+# moest a destination and a 4-bit selector printed by name.
+[[form]]
+order = 1290
+pat = "smoa{0} {1}, {2}"
+mask = "CLSM | m(58, 56) | m(53, 51)"
+val = "cls(31) | m(52, 51)"
+fields = ["F_NOSCHED 50", "F_SRC1D", "F_SRC2D"]
+
+[[form]]
+order = 1300
+pat = "smr{0} {1}, {2}"
+mask = "CLSM | m(58, 56) | m(53, 51)"
+val = "cls(31) | b(56) | m(52, 51)"
+fields = ["F_NOSCHED 50", "F_SRC1D", "F_SRC2D"]
+
+[[form]]
+order = 1310
+pat = "smlsi{0} {1}, {2}"
+mask = "CLSM | m(58, 56) | m(53, 51)"
+val = "cls(31) | b(57) | m(52, 51)"
+fields = ["F_NOSCHED 50", "F_SRC1D", "F_SRC2D"]
+
+[[form]]
+order = 1320
+pat = "smbo{0} {1}, {2}"
+mask = "CLSM | m(58, 56) | m(53, 51)"
+val = "cls(31) | m(57, 56) | m(52, 51)"
+fields = ["F_NOSCHED 50", "F_SRC1D", "F_SRC2D"]
+
+[[form]]
+order = 1330
+pat = "smoa{0} #{1}, #{2}, #{3}, #{4}, {5}, {6}, {7}, {8}"
+op = "smoa"
+mask = "CLSM | m(58, 56) | m(53, 51)"
+val = "cls(31) | b(52)"
+fields = [
+    "F_NOSCHED 50", "off0=MEM_K_S10 39:30", "off1=MEM_K_S10 29:20", "off2=MEM_K_S10 19:10",
+    "off3=MEM_K_S10 9:0", "mode0=MEM_SMOAMODE 47:46", "mode1=MEM_SMOAMODE 45:44",
+    "mode2=MEM_SMOAMODE 43:42", "mode3=MEM_SMOAMODE 41:40",
+]
+
+[[form]]
+order = 1340
+pat = "smr{0} #{1}, #{2}, #{3}, #{4}"
+op = "smr"
+mask = "CLSM | m(58, 56) | m(53, 51)"
+val = "cls(31) | b(56) | b(52)"
+fields = ["F_NOSCHED 50", "range0=K_DEC 47:36", "range1=K_DEC 35:24", "range2=K_DEC 23:12",
+          "range3=K_DEC 11:0"]
+
+[[form]]
+order = 1350
+pat = "smbo{0} #{1}, #{2}, #{3}, #{4}"
+op = "smbo"
+mask = "CLSM | m(58, 56) | m(53, 51)"
+val = "cls(31) | m(57, 56) | b(52)"
+fields = ["F_NOSCHED 50", "base0=K_DEC 47:36", "base1=K_DEC 35:24", "base2=K_DEC 23:12", "base3=K_DEC 11:0"]
+
+[[form]]
+order = 1360
+pat = "smlsi{0} {1}, {2}, {3}, {4}{5}, #{6}, #{7}, #{8}"
+op = "smlsi"
+mask = "CLSM | m(58, 56) | m(53, 51)"
+val = "cls(31) | b(57) | b(52)"
+fields = [
+    "F_NOSCHED 50", "inc0=MEM_K_SMLSI 31:24 35", "inc1=MEM_K_SMLSI 23:16 34",
+    "inc2=MEM_K_SMLSI 15:8 33", "inc3=MEM_K_SMLSI 7:0 32", "modes=MEM_K_SMLSIMODES 35 34 33 32",
+    "l0=K_X4 47:44", "l1=K_X4 43:40", "l2=K_X4 39:36",
+]
+
+[[form]]
+order = 1370
+pat = "imo{0} #{1}, #{2}, #{3}, #{4}"
+mask = "CLSM | m(58, 56) | m(53, 52)"
+val = "cls(31) | b(58) | b(52)"
+fields = ["F_NOSCHED 50", "MEM_K_IMO 47:36", "MEM_K_IMO 35:24", "MEM_K_IMO 23:12", "MEM_K_IMO 11:0"]
+
+[[form]]
+order = 1380
+pat = "setfc{0} #{1}, #{2}"
+mask = "CLSM | m(58, 56) | m(53, 52)"
+val = "cls(31) | b(58) | b(56) | b(52)"
+fields = ["F_NOSCHED 50", "K_DEC 0", "K_DEC 8"]
+
+[[form]]
+order = 1390
+pat = "moest{0}{1} {2}, #{3}"
+mask = "CLSM | m(58, 56) | m(53, 52)"
+val = "cls(31) | m(58, 57) | b(52)"
+fields = ["F_SKIPINV 55", "F_NOSCHED 50", "F_DST", "MEM_MOEST 46:43"]

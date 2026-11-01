@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ---- class 26: ima32 with carry and extra operand, idiv
+# ima32: enc[38] adds the operand i<enc[37:36]> after the destination,
+# enc[43:42] the carry in (i0-i2). idiv (enc[52]): destination r or pa
+# (enc[39]), sources 1 and 2, drc enc[32].
+[[form]]
+order = 1790
+pat = "{0}ima32{1}.{2} {3}{4}, {5}, {6}, {7}{8}"
+op = "ima32"
+mask = "CLSM | m(53, 52)"
+val = "cls(26)"
+fields = [
+    "pred=PRED_ALL 58:56", "flags=F_MULFLAGS", "sign=SU 41", "dst=F_DST", "x=K_INT_IMA32X 38 37:36",
+    "src0=K_SRC0 20:14 34 47", "src1x=K_INT_SNEG 13:7 31:30 49 40",
+    "src2x=K_INT_SNEG 6:0 29:28 48 39", "cie=K_INT_CIE32 43:42",
+]
+
+[[form]]
+order = 1800
+pat = "{0}idiv{1} {2}, {3}, {4}, drc{5}"
+op = "idiv"
+mask = "CLSM | m(53, 52)"
+val = "cls(26) | b(52)"
+fields = [
+    "pred=PRED_ALL 58:56", "flags=F_MULFLAGS", "dst=F_LSDST", "src1=F_SRC1D", "src2=F_SRC2D",
+    "drc=F_DRC",
+]

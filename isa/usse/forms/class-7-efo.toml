@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ---- class 7: efo
+# Every bit is a field: the destination (no bank extension) takes one of
+# i0/i1/a0/a1, the two multipliers, two adders and the internal-register
+# writes are selections, and the three sources have a .neg each.
+[[form]]
+order = 590
+pat = "{0}efo{1} {2}= {3}, {4}, {5}, {6}, {7}, {8}, {9}"
+op = "efo"
+mask = "CLSM"
+val = "cls(7)"
+fields = [
+    "pred=FD_PRED", "flags=K_FLT_EFO_FLAGS 55 43 40 45:44", "dst=F_FLT_DST9",
+    "dsel=FLT_EFO_DSEL 53:52", "iw=K_FLT_EFO_IW 51:50 42 41", "add=K_FLT_EFO_ADD 49:48 54 58",
+    "msel=FLT_EFO_MSEL 47:46", "src0=K_FLT_EFO_S0 20:14 34 38 37", "src1=K_FLT_EFO_S1 13:7 31:30 36",
+    "src2=K_FLT_EFO_S2 6:0 29:28 39 35",
+]

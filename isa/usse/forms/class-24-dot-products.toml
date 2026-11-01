@@ -1,0 +1,68 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# ---- class 24: dot products
+# enc[56] dot4, enc[38] off, Cx enc[40:39] and Ax enc[17:16] (1, 2, 4,
+# 8), sources 1 and 2 complemented by enc[43] and enc[47]. A dot3 has an
+# alpha operation unless enc[53:52] (u16) or enc[42:41] is 3; then, as
+# for dot4, Ax follows Cx. The u8dot3 alpha: aadd/asub (enc[37] clear,
+# enc[36]) with Ax and four selectors, or alrp/alrpc with a source-0
+# operand and two; selectors enc[53:52], enc[42:41].
+[[form]]
+order = 1810
+pat = "{0}{1}dot4{2}{3} {4}, Cx{5}, Ax{6}, {7}, {8}"
+op = "idot4"
+mask = "CLSM | b(56)"
+val = "cls(24) | b(56)"
+fields = [
+    "pred=PRED_MUL 58:57", "fmt=INT_DOTFMT 53:52", "off=INT_OFF 38", "flags=F_MULFLAGS",
+    "dst=F_INT_D10", "cx=INT_X4 40:39", "ax=INT_X4 17:16", "src1=K_INT_SC10 13:7 31:30 49 43",
+    "src2=K_INT_SC10 6:0 29:28 48 47",
+]
+
+[[form]]
+order = 1820
+pat = "{0}{1}dot3{2}{3} {4}, Cx{5}, Ax{6}, {7}, {8}"
+op = "idot3"
+mask = "CLSM | b(56) | m(42, 41)"
+val = "cls(24) | m(42, 41)"
+fields = [
+    "pred=PRED_MUL 58:57", "fmt=INT_DOTFMT 53:52", "off=INT_OFF 38", "flags=F_MULFLAGS",
+    "dst=F_INT_D10", "cx=INT_X4 40:39", "ax=INT_X4 17:16", "src1=K_INT_SC10 13:7 31:30 49 43",
+    "src2=K_INT_SC10 6:0 29:28 48 47",
+]
+
+[[form]]
+order = 1830
+pat = "{0}u16dot3{1}{2} {3}, Cx{4}, {5}, {6}{7}"
+op = "u16dot3"
+mask = "CLSM | b(56) | m(53, 52)"
+val = "cls(24) | m(53, 52)"
+fields = [
+    "pred=PRED_MUL 58:57", "off=INT_OFF 38", "flags=F_MULFLAGS", "dst=F_INT_D10",
+    "cx=INT_X4 40:39", "src1=K_INT_SC10 13:7 31:30 49 43", "src2=K_INT_SC10 6:0 29:28 48 47",
+    "INT_NOT3 42:41",
+]
+
+[[form]]
+order = 1840
+pat = "{0}u8dot3{1}{2} {3}, Cx{4}, {5}, {6}+{7} Ax{8}, {9}"
+op = "u8dot3a"
+mask = "CLSM | b(56) | b(37)"
+val = "cls(24)"
+fields = [
+    "pred=PRED_MUL 58:57", "off=INT_OFF 38", "flags=F_MULFLAGS", "dst=F_INT_D10",
+    "cx=INT_X4 40:39", "src1=K_INT_SC10 13:7 31:30 49 43", "src2=K_INT_SC10 6:0 29:28 48 47",
+    "aop=INT_AADD 36", "ax=INT_X4 17:16", "asel=K_INT_DOTADD 53:52 34 15 42:41 35",
+]
+
+[[form]]
+order = 1850
+pat = "{0}u8dot3{1}{2} {3}, Cx{4}, {5}, {6}+{7} {8}, {9}"
+op = "u8dot3a"
+mask = "CLSM | b(56) | b(37)"
+val = "cls(24) | b(37)"
+fields = [
+    "pred=PRED_MUL 58:57", "off=INT_OFF 38", "flags=F_MULFLAGS", "dst=F_INT_D10",
+    "cx=INT_X4 40:39", "src1=K_INT_SC10 13:7 31:30 49 43", "src2=K_INT_SC10 6:0 29:28 48 47",
+    "aop=INT_AINTRP 36", "src0=F_INT_S0_10", "asel=K_INT_DOTINTRP 53:52 42:41 35",
+]

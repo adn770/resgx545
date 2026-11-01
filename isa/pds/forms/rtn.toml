@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+[[form]]
+order = 2400
+pat = "{0}rtn"
+op = "rtn"
+mask = "OPM"
+val = "0x14 << 27"
+fields = ["pred=PRED"]
