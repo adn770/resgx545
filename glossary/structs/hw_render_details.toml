@@ -31,6 +31,33 @@ licence = "GPL-2.0"
 evidence = "the register this word is loaded into"
 
 [[term]]
+id = "G0576"
+name = "hw_render_details.frame_num"
+status = "named"
+
+[[term.source]]
+term = "ui32FrameNum"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x140"
+meaning = "frame number"
+tier = "1"
+source = "intel-ctp-k900"
+citation = "C0344"
+licence = "GPL-2.0 OR MIT"
+evidence = "declared in SGX_CCB_KICK, the host's kick, of the Lenovo K900 GPL kernel (DDK 1.11)"
+
+[[term.source]]
+term = "hw_render_details.frame_num"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x140"
+meaning = "render details word 80, the frame number copied from the TA command; the 3D kick records it in the EDM's TA/3D control block [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158, E163"
+licence = "MIT"
+evidence = "[RE] E158: the copy routine moves command dword 8 to render details dword 80; [RE] E163: the 3D kick writes render details dword 80 to TA3DCtl dword 42"
+
+[[term]]
 id = "G0320"
 name = "hw_render_details.isp_msaa"
 status = "named"
@@ -136,6 +163,65 @@ source = "cdv-libsrv_um"
 citation = "C0231"
 licence = "Intel-binary (ours)"
 evidence = "string only; likely an app-hint/config key [infer]; [HW] E049: bits 1 and 2 or ~0 hang the job, the other bits and 0 change nothing"
+
+[[term]]
+id = "G0577"
+name = "hw_render_details.num_rts"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.num_rts"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x104"
+meaning = "render details word 65, the number of render targets: the render completes target by target until the index reaches it [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E164"
+licence = "MIT"
+evidence = "[RE] E164: the completion steps render details dword 66 to the next index unless dword 65 (the RT count) is the index plus 1"
+
+[[term]]
+id = "G0578"
+name = "hw_render_details.num_src_syncs"
+status = "named"
+
+[[term.source]]
+term = "ui32NumSrcSyncs"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x168"
+meaning = "source sync count"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0346"
+licence = "GPL-2.0"
+evidence = "same name as CMDTA_SHARED; RD copy"
+
+[[term.source]]
+term = "hw_render_details.num_src_syncs"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x168"
+meaning = "render details word 90: the number of source syncs that follow it [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158, E164"
+licence = "MIT"
+evidence = "[RE] E158: the copy routine moves command dword 33 (the source sync count) to render details dword 90; [RE] E164: the completion completes the dword 90 entries from dword 91"
+
+[[term]]
+id = "G0579"
+name = "hw_render_details.num_status_3d"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.num_status_3d"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x144"
+meaning = "render details word 81: the number of 3D status pairs that follow it [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158, E164"
+licence = "MIT"
+evidence = "[RE] E158: the copy routine moves command dword 24 to render details dword 81 and that many 2-dword pairs from command dword 134 to dword 82 on; [RE] E164: the completion stores the pairs counted by dword 81"
 
 [[term]]
 id = "G0540"
@@ -266,6 +352,22 @@ licence = "MIT"
 evidence = "[RE] the EDM links render details through rd dw74/75 (E156)"
 
 [[term]]
+id = "G0580"
+name = "hw_render_details.rt_index"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.rt_index"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x108"
+meaning = "render details word 66, the render target the 3D renders next; the completion steps it and sets it to 0 after the last [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163, E164"
+licence = "MIT"
+evidence = "[RE] E163: the 3D pick gives the kick the render-target index from render details dword 66; [RE] E164: the completion sets it to the index plus 1, or to 0 on the last index"
+
+[[term]]
 id = "G0544"
 name = "hw_render_details.rt_patch_dev_vaddr"
 status = "named"
@@ -298,6 +400,49 @@ licence = "MIT"
 evidence = "[RE] E163: the 3D kick"
 
 [[term]]
+id = "G0581"
+name = "hw_render_details.src_syncs"
+status = "named"
+
+[[term.source]]
+term = "asSrcSyncs"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x16c"
+meaning = "source syncs [8]"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0347"
+licence = "GPL-2.0"
+evidence = "same name as CMDTA_SHARED; RD copy"
+
+[[term.source]]
+term = "hw_render_details.src_syncs"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x16c"
+meaning = "render details words 91 on: up to eight 4-dword source syncs; the completion sets each one's read-complete word to its pending value plus 1 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158, E164"
+licence = "MIT"
+evidence = "[RE] E158: that many 4-dword entries from command dword 34 to render details dword 91 on; [RE] E164: each source sync's read-complete word is set to its pending plus 1"
+
+[[term]]
+id = "G0582"
+name = "hw_render_details.status_3d"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.status_3d"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x148"
+meaning = "render details words 82 to 89: up to four 3D status pairs, an address and a value; the completion stores each value at its address [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158, E164"
+licence = "MIT"
+evidence = "[RE] E158: copied from the 2-dword pairs from command dword 134; [RE] E164: on the last render target the pairs listed from dword 82 are stored (value at address)"
+
+[[term]]
 id = "G0329"
 name = "hw_render_details.stencil_load_base"
 status = "named"
@@ -312,6 +457,22 @@ source = "resgx545"
 citation = "E058"
 licence = "MIT"
 evidence = "[HW] E058: the stencil store never lands at it; [infer] the load base of the stencil pair; [RE] E163; Rogue keeps one stencil load/store base: name only"
+
+[[term]]
+id = "G0583"
+name = "hw_render_details.stencil_rt_stride"
+status = "inferred"
+
+[[term.source]]
+term = "hw_render_details.stencil_rt_stride"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x11c"
+meaning = "render details word 71: for a render target other than the first the 3D kick adds its index times this word to the stencil load and store bases (0x048c, 0x0490) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158, E163"
+licence = "MIT"
+evidence = "[RE] E158: copied from command dword 20; [RE] E163: the 3D kick adds the render-target index times render details dword 71 to registers 0x048c and 0x0490; [infer] the name is ours"
 
 [[term]]
 id = "G0330"
@@ -330,6 +491,38 @@ licence = "MIT"
 evidence = "[HW] E058; [RE] E163; Rogue keeps one stencil load/store base: name only"
 
 [[term]]
+id = "G0584"
+name = "hw_render_details.ta3d_dep_write_complete_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.ta3d_dep_write_complete_dev_vaddr"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x100"
+meaning = "render details word 64: the address of the write-ops complete word of the TA to 3D dependency [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158, E164"
+licence = "MIT"
+evidence = "[RE] E158: copied from command dword 69 with render flag 0x200; [RE] E164: the completion writes the pending value of dword 63 plus 1 there"
+
+[[term]]
+id = "G0585"
+name = "hw_render_details.ta3d_dep_write_pending"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.ta3d_dep_write_pending"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x0fc"
+meaning = "render details word 63: the write-ops pending value of the TA to 3D dependency, copied from the TA command with render flag 0x200 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158, E164"
+licence = "MIT"
+evidence = "[RE] E158: with render flag 0x200 the copy routine moves command dwords 68 and 69 to render details dwords 63 and 64; [RE] E164: on the last render target the completion sets the dependency's write-complete word to this value plus 1"
+
+[[term]]
 id = "G0546"
 name = "hw_render_details.te_context_state"
 status = "named"
@@ -344,6 +537,86 @@ source = "resgx545"
 citation = "E158"
 licence = "MIT"
 evidence = "[RE] the TA kick (E158) and the TA-finished handler (E156); named after the register"
+
+[[term]]
+id = "G0586"
+name = "hw_render_details.tq_3d_read_complete_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.tq_3d_read_complete_dev_vaddr"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x0f0"
+meaning = "render details word 60: the address of the read-ops complete word of the 3D transfer-queue sync [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158, E164"
+licence = "MIT"
+evidence = "[RE] E158: copied from command dword 32; [RE] E164: the completion writes the pending value of dword 59 plus 1 there"
+
+[[term]]
+id = "G0587"
+name = "hw_render_details.tq_3d_read_pending"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.tq_3d_read_pending"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x0ec"
+meaning = "render details word 59: the read-ops pending value of the 3D transfer-queue sync; the completion writes it plus 1 to the read-complete word [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158, E164"
+licence = "MIT"
+evidence = "[RE] E158: copied from command dword 31; [RE] E164: the completion sets the read-complete word to its pending plus 1 (dwords 59 and 60)"
+
+[[term]]
+id = "G0588"
+name = "hw_render_details.tq_3d_write_complete_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.tq_3d_write_complete_dev_vaddr"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x0e8"
+meaning = "render details word 58: the address of the write-ops complete word of the 3D transfer-queue sync [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158, E165"
+licence = "MIT"
+evidence = "[RE] E158: copied from command dword 30; [RE] E165: the 3D pick tests the sync of dwords 57 to 60, unless its first pointer is 0"
+
+[[term]]
+id = "G0589"
+name = "hw_render_details.tq_3d_write_pending"
+status = "named"
+
+[[term.source]]
+term = "hw_render_details.tq_3d_write_pending"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x0e4"
+meaning = "render details word 57: the write-ops pending value of the 3D transfer-queue sync, copied from the TA command's shared block [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158, E165"
+licence = "MIT"
+evidence = "[RE] E158: the copy routine moves command dwords 29-32 to render details dwords 57-60; [RE] E165: the 3D pick waits for the 3D transfer-queue sync (dwords 57 to 60) to be complete"
+
+[[term]]
+id = "G0590"
+name = "hw_render_details.z_rt_stride"
+status = "inferred"
+
+[[term.source]]
+term = "hw_render_details.z_rt_stride"
+kind = "field"
+sgx545 = "HWRENDERDETAILS+0x118"
+meaning = "render details word 70: for a render target other than the first the 3D kick adds its index times this word to the Z load and store bases (0x0484, 0x0488) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158, E163"
+licence = "MIT"
+evidence = "[RE] E158: copied from command dword 19; [RE] E163: the 3D kick adds the render-target index times render details dword 70 to registers 0x0484 and 0x0488; [infer] the name is ours"
 
 [[term]]
 id = "G0331"

@@ -747,6 +747,9 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 
 ### field
 
+- `pb_block.first_page` G0593: inferred reading (unconfirmed): a PB block's third word, its first
+  page: the page-table builder fills the table block by block from it [infer]. From
+  `pb_block.first_page` (ours, resgx545).
 - `pb_block.next_block_dev_vaddr` G0560: next block of the descriptor's block list (0 = last)
   [infer]. From `pb_block.next_block_dev_vaddr` (ours, resgx545).
 - `pb_block.page_count` G0561: pages in this PB block [infer]. From `pb_block.page_count` (ours,
@@ -766,6 +769,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   `NumVertexPartitions` (2, cdv-libsrv_um).
 - `cmd_ta.frag_flags` G0303 (CMDTA+0x01c): fragment (3D) flags: depth/stencil buffer present,
   visibility results (FRAG_FLAGS.*). From `flags` (3, linux-imagination).
+- `cmd_ta.frame_num` G0566 (CMDTA+0x020): frame number. From `ui32FrameNum` (1, intel-ctp-k900);
+  `frame_num` (3, linux-imagination); `cmd_ta.frame_num` (ours, resgx545).
 - `cmd_ta.ta_threshold` G0514 (CMDTA+0x028): new TA threshold. From `TAThreshold` (2,
   cdv-libsrv_um); `cmd_ta.ta_threshold` (ours, resgx545).
 - `cmd_ta.global_threshold` G0506 (CMDTA+0x030): new global threshold. From `GlobalThreshold` (2,
@@ -775,6 +780,12 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   `cmd_ta.hw_render_details_dev_vaddr` (ours, resgx545).
 - `cmd_ta.hw_rt_data_dev_vaddr` G0508 (CMDTA+0x044): RT data used by this kick. From
   `sHWRTDataDevAddr` (1, intel-ctp-k900).
+- `cmd_ta.z_rt_stride` G0568 (CMDTA+0x04c): inferred reading (unconfirmed): TA command word 19,
+  copied by the TA kick to render details word 70, the depth stride per render target [infer]. From
+  `cmd_ta.z_rt_stride` (ours, resgx545).
+- `cmd_ta.stencil_rt_stride` G0567 (CMDTA+0x050): inferred reading (unconfirmed): TA command word
+  20, copied by the TA kick to render details word 71, the stencil stride per render target [infer].
+  From `cmd_ta.stencil_rt_stride` (ours, resgx545).
 - `cmd_ta.num_patches_3d` G0509 (CMDTA+0x054): count of {address, value} pairs in the TA command's
   patches_3d [infer]. From `cmd_ta.num_patches_3d` (ours, resgx545).
 - `cmd_ta.shared` G0513 (CMDTA+0x058): embedded cmd_ta_shared block; the kick passes its client-CCB
@@ -889,6 +900,9 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `hw_pb_desc.initial_dpm_ta_alloc` G0522 (HWPBDESC+0x00c): initial value of the PB descriptor's
   dpm_ta_alloc (the page before the tail << 16) [infer]. From `hw_pb_desc.initial_dpm_ta_alloc`
   (ours, resgx545).
+- `hw_pb_desc.page_table_base` G0572 (HWPBDESC+0x010): PB descriptor word 4, the page-table base
+  (low 4 bits ignored): loaded into 0x0618 (TA) or 0x0600 (3D), and the base of the page-table
+  builder's stores [infer]. From `hw_pb_desc.page_table_base` (ours, resgx545).
 - `hw_pb_desc.allocated_page_count` G0518 (HWPBDESC+0x014): pages allocated. From
   `allocated_page_count` (3, linux-imagination).
 - `hw_pb_desc.current_stack_top` G0519 (HWPBDESC+0x018): current free list head/tail. From
@@ -896,6 +910,12 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `hw_pb_desc.dpm_ta_alloc` G0520 (HWPBDESC+0x01c): current allocation word: the EDM loads it into
   CR_DPM_TA_ALLOC (the 3D's matching register for the 3D) and stores the status back [infer]. From
   `hw_pb_desc.dpm_ta_alloc` (ours, resgx545).
+- `hw_pb_desc.local_page_count` G0571 (HWPBDESC+0x020): PB descriptor word 8, the local page count:
+  loaded into 0x0638 (TA, low half) or 0x0660 (3D), stored back from the status registers, zeroed
+  when the table is rebuilt [infer]. From `hw_pb_desc.local_page_count` (ours, resgx545).
+- `hw_pb_desc.global_page_count` G0570 (HWPBDESC+0x024): PB descriptor word 9, the global page
+  count: loaded into the high half of 0x0638 (TA) or into 0x0660 (3D), stored back, zeroed when the
+  table is rebuilt [infer]. From `hw_pb_desc.global_page_count` (ours, resgx545).
 - `hw_pb_desc.ta_threshold` G0525 (HWPBDESC+0x028): TA page threshold. From `TAThreshold` (2,
   cdv-libsrv_um); `hw_pb_desc.ta_threshold` (ours, resgx545).
 - `hw_pb_desc.zls_threshold` G0526 (HWPBDESC+0x02c): ZLS page threshold. From `ZLSThreshold` (2,
@@ -904,8 +924,17 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   `GlobalThreshold` (2, cdv-libsrv_um); `hw_pb_desc.global_threshold` (ours, resgx545).
 - `hw_pb_desc.pds_threshold` G0524 (HWPBDESC+0x034): PDS page threshold. From `PDSThreshold` (2,
   cdv-libsrv_um).
+- `hw_pb_desc.first_block_dev_vaddr` G0569 (HWPBDESC+0x038): PB descriptor word 14, the address of
+  the first PB block, whose list the page-table builder walks [infer]. From
+  `hw_pb_desc.first_block_dev_vaddr` (ours, resgx545).
 - `hw_render_context.priority` G0530 (HWRENDERCONTEXT+0x004): scheduling priority. From
   `ui32OffsetOfPriorityField` (1, sgx545-ce); `priority` (3, linux-imagination).
+- `hw_render_context.ccb_base_dev_vaddr` G0573 (HWRENDERCONTEXT+0x00c): render context word 3, the
+  base of the context's client CCB: the TA pick finds the next TA command at it plus the CCB's read
+  offset [infer]. From `hw_render_context.ccb_base_dev_vaddr` (ours, resgx545).
+- `hw_render_context.ccb_ctl_dev_vaddr` G0574 (HWRENDERCONTEXT+0x010): TA client CCB control. From
+  `PVRSRV_SGX_CCB_CTL` (1, sgx545-ce); `ccbctl_fw_addr` (3, linux-imagination);
+  `hw_render_context.ccb_ctl_dev_vaddr` (ours, resgx545).
 - `hw_render_context.submitted_commands` G0537 (HWRENDERCONTEXT+0x014): TA commands queued in the
   context's CCB: the CCB handler increments it, the TA end decrements it. From `submitted_commands`
   (3, linux-imagination).
@@ -928,6 +957,8 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   3D queue [infer]. From `hw_render_context.run_node_prev_3d` (ours, resgx545).
 - `hw_render_context.run_node_next_3d` G0533 (HWRENDERCONTEXT+0x03c): next context in the EDM's 3D
   queue [infer]. From `hw_render_context.run_node_next_3d` (ours, resgx545).
+- `hw_render_context.pid` G0575 (HWRENDERCONTEXT+0x040): owning process. From `pid` (3,
+  linux-imagination); `hw_render_context.pid` (ours, resgx545).
 - `hw_render_details.bif_zls_req_base` G0319 (HWRENDERDETAILS+0x004): ZLS requestor base. From
   `EUR_CR_BIF_ZLS_REQ_BASE` (1, sgx545-ce).
 - `hw_render_details.reg_0400` G0328 (HWRENDERDETAILS+0x008): inferred reading (unconfirmed): The
@@ -975,6 +1006,30 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   `hw_render_details.isp_multisamplectl` (ours, resgx545).
 - `hw_render_details.access_dev_vaddr` G0538 (HWRENDERDETAILS+0x0d0): access/lock word (SYNCINFO).
   From `sAccessDevAddr` (1, sgx545-ce).
+- `hw_render_details.tq_3d_write_pending` G0589 (HWRENDERDETAILS+0x0e4): render details word 57: the
+  write-ops pending value of the 3D transfer-queue sync, copied from the TA command's shared block
+  [infer]. From `hw_render_details.tq_3d_write_pending` (ours, resgx545).
+- `hw_render_details.tq_3d_write_complete_dev_vaddr` G0588 (HWRENDERDETAILS+0x0e8): render details
+  word 58: the address of the write-ops complete word of the 3D transfer-queue sync [infer]. From
+  `hw_render_details.tq_3d_write_complete_dev_vaddr` (ours, resgx545).
+- `hw_render_details.tq_3d_read_pending` G0587 (HWRENDERDETAILS+0x0ec): render details word 59: the
+  read-ops pending value of the 3D transfer-queue sync; the completion writes it plus 1 to the
+  read-complete word [infer]. From `hw_render_details.tq_3d_read_pending` (ours, resgx545).
+- `hw_render_details.tq_3d_read_complete_dev_vaddr` G0586 (HWRENDERDETAILS+0x0f0): render details
+  word 60: the address of the read-ops complete word of the 3D transfer-queue sync [infer]. From
+  `hw_render_details.tq_3d_read_complete_dev_vaddr` (ours, resgx545).
+- `hw_render_details.ta3d_dep_write_pending` G0585 (HWRENDERDETAILS+0x0fc): render details word 63:
+  the write-ops pending value of the TA to 3D dependency, copied from the TA command with render
+  flag 0x200 [infer]. From `hw_render_details.ta3d_dep_write_pending` (ours, resgx545).
+- `hw_render_details.ta3d_dep_write_complete_dev_vaddr` G0584 (HWRENDERDETAILS+0x100): render
+  details word 64: the address of the write-ops complete word of the TA to 3D dependency [infer].
+  From `hw_render_details.ta3d_dep_write_complete_dev_vaddr` (ours, resgx545).
+- `hw_render_details.num_rts` G0577 (HWRENDERDETAILS+0x104): render details word 65, the number of
+  render targets: the render completes target by target until the index reaches it [infer]. From
+  `hw_render_details.num_rts` (ours, resgx545).
+- `hw_render_details.rt_index` G0580 (HWRENDERDETAILS+0x108): render details word 66, the render
+  target the 3D renders next; the completion steps it and sets it to 0 after the last [infer]. From
+  `hw_render_details.rt_index` (ours, resgx545).
 - `hw_render_details.rt_patch_dev_vaddr` G0544 (HWRENDERDETAILS+0x10c): address the 3D kick writes
   the current render target's two-dword entry of rt_patch_list_dev_vaddr to, through the 3D's
   address space; 0 = no write [infer]. From `hw_render_details.rt_patch_dev_vaddr` (ours, resgx545).
@@ -985,6 +1040,14 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   background object word 2 (4 bytes per render-target index); the 3D kick writes the entry for the
   current index after pds_bgnd[0..1] [infer]. From `hw_render_details.pds_bgnd_list_dev_vaddr`
   (ours, resgx545).
+- `hw_render_details.z_rt_stride` G0590 (HWRENDERDETAILS+0x118): inferred reading (unconfirmed):
+  render details word 70: for a render target other than the first the 3D kick adds its index times
+  this word to the Z load and store bases (0x0484, 0x0488) [infer]. From
+  `hw_render_details.z_rt_stride` (ours, resgx545).
+- `hw_render_details.stencil_rt_stride` G0583 (HWRENDERDETAILS+0x11c): inferred reading
+  (unconfirmed): render details word 71: for a render target other than the first the 3D kick adds
+  its index times this word to the stencil load and store bases (0x048c, 0x0490) [infer]. From
+  `hw_render_details.stencil_rt_stride` (ours, resgx545).
 - `hw_render_details.te_context_state` G0546 (HWRENDERDETAILS+0x124): tiling-engine state: loaded
   into CR_TE_CONTEXT_STATE (0x0274) at each TA kick, stored back at a TA end that is not the last of
   the scene, so the next kick resumes tiling [infer]. From `hw_render_details.te_context_state`
@@ -1000,6 +1063,18 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   background object. From `pds_bgnd` (3, linux-imagination).
 - `hw_render_details.num_pixel_partitions` G0324 (HWRENDERDETAILS+0x13c): DMS_CTRL pixel partitions
   (31 << 22). From `NumPixelPartitions` (2, cdv-libsrv_um).
+- `hw_render_details.frame_num` G0576 (HWRENDERDETAILS+0x140): frame number. From `ui32FrameNum` (1,
+  intel-ctp-k900); `hw_render_details.frame_num` (ours, resgx545).
+- `hw_render_details.num_status_3d` G0579 (HWRENDERDETAILS+0x144): render details word 81: the
+  number of 3D status pairs that follow it [infer]. From `hw_render_details.num_status_3d` (ours,
+  resgx545).
+- `hw_render_details.status_3d` G0582 (HWRENDERDETAILS+0x148): render details words 82 to 89: up to
+  four 3D status pairs, an address and a value; the completion stores each value at its address
+  [infer]. From `hw_render_details.status_3d` (ours, resgx545).
+- `hw_render_details.num_src_syncs` G0578 (HWRENDERDETAILS+0x168): source sync count. From
+  `ui32NumSrcSyncs` (1, sgx545-ce); `hw_render_details.num_src_syncs` (ours, resgx545).
+- `hw_render_details.src_syncs` G0581 (HWRENDERDETAILS+0x16c): source syncs [8]. From `asSrcSyncs`
+  (1, sgx545-ce); `hw_render_details.src_syncs` (ours, resgx545).
 - `hw_rt_data.hw_render_details_dev_vaddr` G0550 (HWRTDATA+0x004): render details of the scene in
   flight on this RT data; written by the EDM at the TA kick, cleared when the scene is done (the
   client leaves it 0) [infer]. From `hw_rt_data.hw_render_details_dev_vaddr` (ours, resgx545).
@@ -1015,6 +1090,13 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `hw_rt_data.otpm_dev_vaddr` G0551 (HWRTDATA+0x01c): OTPM context memory; the EDM loads it into
   CR_MTE_OTPM_BASE and clears it with CR_MTE_OTPM_OP = 9 on a first kick [infer]. From
   `hw_rt_data.otpm_dev_vaddr` (ours, resgx545).
+- `hw_rt_data.num_rts` G0591 (HWRTDATA+0x028): RT data word 10, the number of render targets: a
+  first TA kick clears the DPM state once per render target it counts [infer]. From
+  `hw_rt_data.num_rts` (ours, resgx545).
+- `hw_rt_data.region_header_rt_stride` G0592 (HWRTDATA+0x02c): inferred reading (unconfirmed): RT
+  data word 11: for a render target other than the first the 3D kick adds its index times this word
+  to the region header base (0x0408) [infer]. From `hw_rt_data.region_header_rt_stride` (ours,
+  resgx545).
 - `hw_rt_data.rt_status_dev_vaddr` G0552 (HWRTDATA+0x030): one status word per render target: zeroed
   on a first kick, bit 1 set by the partial-render resume, bit 0 set when the RT is rendered; the 3D
   kick adjusts depth/stencil load and store from bit 1 [infer]. From
@@ -1083,6 +1165,34 @@ symbol. Each entry lists the source spellings behind it, best tier first.
 - `misc_info_struct_sizes.sizeof_command` G0014 (MISCINFO_STRUCT_SIZES+0x30 (=MISC+0x50); value
   0x20): size of COMMAND the EDM was built for: kernel CCB command. From `ui32Sizeof_COMMAND` (1,
   sgx545-ce).
+- `ta3d_ctl.dpm_slot0_rt_data_dev_vaddr` G0595 (TA3D_CTL+0x050): the RT data that owns DPM context
+  slot 0; the TA and the 3D kick take a slot that holds their RT data, else a free one [infer]. From
+  `ta3d_ctl.dpm_slot0_rt_data_dev_vaddr` (ours, resgx545).
+- `ta3d_ctl.dpm_slot1_rt_data_dev_vaddr` G0596 (TA3D_CTL+0x054): the RT data that owns DPM context
+  slot 1 [infer]. From `ta3d_ctl.dpm_slot1_rt_data_dev_vaddr` (ours, resgx545).
+- `ta3d_ctl.cmd_ta_dev_vaddr` G0594 (TA3D_CTL+0x060): the TA command the TA runs, recorded by the TA
+  kick [infer]. From `ta3d_ctl.cmd_ta_dev_vaddr` (ours, resgx545).
+- `ta3d_ctl.hw_rt_data_ta` G0603 (TA3D_CTL+0x064): the RT data of the TA's job, recorded by the TA
+  kick [infer]. From `ta3d_ctl.hw_rt_data_ta` (ours, resgx545).
+- `ta3d_ctl.hw_render_details_ta` G0601 (TA3D_CTL+0x068): the render details of the TA's job (the
+  command's word 14), recorded by the TA kick [infer]. From `ta3d_ctl.hw_render_details_ta` (ours,
+  resgx545).
+- `ta3d_ctl.hw_render_context_ta` G0599 (TA3D_CTL+0x06c): the render context of the TA's job,
+  recorded by the TA kick [infer]. From `ta3d_ctl.hw_render_context_ta` (ours, resgx545).
+- `ta3d_ctl.hw_rt_data_3d` G0602 (TA3D_CTL+0x070): the RT data of the 3D's job, recorded by the 3D
+  kick [infer]. From `ta3d_ctl.hw_rt_data_3d` (ours, resgx545).
+- `ta3d_ctl.hw_render_details_3d` G0600 (TA3D_CTL+0x074): the render details the 3D renders,
+  recorded by the 3D kick [infer]. From `ta3d_ctl.hw_render_details_3d` (ours, resgx545).
+- `ta3d_ctl.rt_index_3d` G0606 (TA3D_CTL+0x078): the render-target index the 3D renders, recorded by
+  the 3D kick [infer]. From `ta3d_ctl.rt_index_3d` (ours, resgx545).
+- `ta3d_ctl.frame_num_ta` G0598 (TA3D_CTL+0x0a4): the frame number of the TA's job, copied from the
+  TA command by the TA kick [infer]. From `ta3d_ctl.frame_num_ta` (ours, resgx545).
+- `ta3d_ctl.frame_num_3d` G0597 (TA3D_CTL+0x0a8): the frame number of the 3D's job, copied from the
+  render details by the 3D kick [infer]. From `ta3d_ctl.frame_num_3d` (ours, resgx545).
+- `ta3d_ctl.pid_ta` G0605 (TA3D_CTL+0x0c8): the PID of the TA's render context, recorded by the TA
+  kick [infer]. From `ta3d_ctl.pid_ta` (ours, resgx545).
+- `ta3d_ctl.pid_3d` G0604 (TA3D_CTL+0x0cc): the PID of the 3D's render context, recorded by the 3D
+  kick [infer]. From `ta3d_ctl.pid_3d` (ours, resgx545).
 - `transfer_cmd.isp_render` G0117 (TRANSFERCMD+0x00c): ISP render type/scan. From `isp_render` (3,
   linux-imagination).
 - `transfer_cmd.bif_3d_req_base` G0025 (TRANSFERCMD+0x018): 3D requestor base. From

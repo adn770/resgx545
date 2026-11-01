@@ -7,12 +7,18 @@ A linear value tracer over usse-dis output ("<idx>: 0x<ENC16>\\t<text>"). It wal
 instructions of a range in order (no branches are followed) and keeps a value for each
 register: a constant, a field of a named structure, a pointer into a named structure or
 unknown. Seeds say which registers point at which structures when the range starts
-(e.g. r1 = the TA command the TA handler picked: CMDTA). Names come from the glossary
-(glossary/, loaded by tools/clean-room/glossary.py): a register prints as its term, or as its
-offset (0x0abc) when the glossary has none; a structure word as its term, or as STRUCT+0xOFF
-(CMDTA+0x0f8).
-kick3d.py's layouts serve only for offsets and pointer typing: a word that points at another
-structure yields a typed pointer when it is loaded. Their names are never printed.
+(e.g. r1 = the TA command the TA kick runs: cmd_ta, or the glossary's prefix CMDTA). Names come
+from the glossary (glossary/, loaded by tools/clean-room/glossary.py): a register prints as its
+term, or as its offset (0x0abc) when the glossary has none; a structure word as its term, an
+element of an array as the array's term with its index (hw_render_details.src_syncs[1]+2), a
+later dword of a field wider than one as the field's term with that dword
+(cmd_ta.patches_3d+1), or as STRUCT+0xOFF (CMDTA+0x0f8).
+kick3d.py's layouts give the offsets and the pointer typing: a word whose kick3d name is a
+structure's address (cmd_ta.hw_render_details_dev_vaddr) yields, when it is loaded, a pointer
+into that structure, so the loads and stores through it are named too; a layout nested in
+another (the RT data in the RT data set) names its words as its own. A glossary row with no
+location is placed by the kick3d field of the same name. kick3d's names are printed only where
+the glossary has the same term.
 
 Events, in instruction order:
     W REG <- value         an SGX register write (str #idx), the value as traced
@@ -57,29 +63,61 @@ HALF = re.compile(r"^(\w+|#0x[0-9A-Fa-f]+|#\d+)(?:\.(low|high))?$")
 NO_WRITE = {"str", "stad", "ba", "br", "lapc", "wdf", "idf", "nop", "phas", "smlsi", "ci",
             "cfi", "lock", "emitpds"}
 
-# kick3d layout -> the glossary's structure prefix (the sgx545 column, STRUCT+0xOFF)
+# kick3d layout -> the glossary's structure prefix (the sgx545 column, STRUCT+0xOFF). A layout
+# that only lies inside another (the TA register block in the TA command, the 3D register block
+# in the render details) is located through the one holding it and has none.
 PREFIX = {
-    "SGXMKIF_CMDTA": "CMDTA", "SGXMKIF_CMDTA_SHARED": "CMDTA_SHARED",
-    "hw_3d_registers": "HWRENDERDETAILS", "hw_render_details": "HWRENDERDETAILS",
-    "hw_rt_data": "HWRTDATA", "hw_rt_data_set": "HWRTDATASET",
-    "SGXMKIF_HWRENDERCONTEXT": "HWRENDERCONTEXT", "hw_pb_desc": "HWPBDESC",
-    "hw_pb_block": "PB_BLOCK", "SGXMKIF_HWDEVICE_SYNC_LIST": "HWDEVICE_SYNC_LIST",
-    "SGX_CCB_KICK": "SGX_CCB_KICK",
+    "cmd_ta": "CMDTA", "SGXMKIF_CMDTA_SHARED": "CMDTA_SHARED",
+    "hw_render_details": "HWRENDERDETAILS", "hw_rt_data": "HWRTDATA",
+    "hw_rt_data_set": "HWRTDATASET", "hw_render_context": "HWRENDERCONTEXT",
+    "hw_pb_desc": "HWPBDESC", "pb_block": "PB_BLOCK",
+    "SGXMKIF_HWDEVICE_SYNC_LIST": "HWDEVICE_SYNC_LIST", "SGX_CCB_KICK": "SGX_CCB_KICK",
+    "PVRSRV_BRIDGE_IN_DOKICK": "DOKICK", "ta3d_ctl": "TA3D_CTL",
 }
-KICK3D = {v: k for k, v in reversed(list(PREFIX.items()))}   # prefix -> layout, for seeds
+KICK3D = {v: k for k, v in PREFIX.items()}   # prefix -> layout, for seeds
 
-# pointer fields (by kick3d name; never printed) -> the structure they point at
-POINTS_AT = (
-    ("hw_render_details_dev_addr", "hw_render_details"),
-    ("sHWRTDataSetDevAddr", "hw_rt_data_set"),
-    ("sHWRTDataDevAddr", "hw_rt_data"),
-    ("sHWPBDescDevVAddr", "hw_pb_desc"),
-    ("parent_hw_pb_desc_dev_vaddr", "hw_pb_desc"),
-    ("list_pb_block_dev_vaddr", "hw_pb_block"),
-    ("next_hw_pb_block_dev_vaddr", "hw_pb_block"),
-    ("hw_dst_sync_list_dev_addr", "SGXMKIF_HWDEVICE_SYNC_LIST"),
-    ("hw_render_context_dev_addr", "SGXMKIF_HWRENDERCONTEXT"),
-)
+# The address fields whose name does not end with a layout's: the destination sync list is a
+# device sync list, its entry for render target i at 8 + 16 * i (E164); the PB descriptor's
+# first block and a block's next are PB blocks (E200, E201).
+POINTER_ALIASES = {"dst_sync_list": "SGXMKIF_HWDEVICE_SYNC_LIST", "first_block": "pb_block",
+                   "next_block": "pb_block"}
+POINTER_SUFFIX = "_dev_vaddr"
+PIPES = ("_ta", "_3d")     # the glossary's ta3d_ctl.hw_pb_desc_ta: a layout's address, per pipe
+
+
+def points_at(structs: dict) -> dict[str, str]:
+    """{kick3d field name: the layout it points at}: every field named <x>_dev_vaddr where x
+    is in POINTER_ALIASES or ends with a layout's name, with or without its hw_
+    (ta_render_details -> hw_render_details), and every field named <layout>_ta or
+    <layout>_3d. A layout or a pointer field kick3d gains is typed with no change here."""
+    out = {}
+    leaves = {path.rsplit(".", 1)[-1] for fields in structs.values()
+              for path, _o, width, _c, _a in kick3d._layout(fields) if width == 1}
+    for leaf in sorted(leaves):
+        if leaf.endswith(PIPES) and leaf[:-3] in structs:
+            out[leaf] = leaf[:-3]
+        if not leaf.endswith(POINTER_SUFFIX):
+            continue
+        stem = leaf[:-len(POINTER_SUFFIX)]
+        if stem in POINTER_ALIASES:
+            out[leaf] = POINTER_ALIASES[stem]
+            continue
+        words = stem.split("_")
+        for k in range(len(words)):
+            tail = "_".join(words[k:])
+            hit = tail if tail in structs else "hw_" + tail
+            if hit in structs:
+                out[leaf] = hit
+                break
+    return out
+
+
+POINTS_AT = points_at(kick3d.STRUCTS)
+
+
+def named_layout(shape) -> str | None:
+    """The kick3d layout a nested field's shape is, if it is one."""
+    return next((k for k, v in kick3d.STRUCTS.items() if v is shape), None)
 
 
 @dataclass(frozen=True)
@@ -108,7 +146,7 @@ def load_glossary(path: pathlib.Path | str = GLOSSARY) -> Glossary:
         if key not in best or rank < best[key][0]:
             best[key] = (rank, row["name"])
 
-    frag = []
+    frag, unplaced = [], set()
     for r in rows:
         loc = r["sgx545"].strip()
         if r["kind"] == "register" and (m := _REG_LOC.match(loc)):
@@ -117,6 +155,8 @@ def load_glossary(path: pathlib.Path | str = GLOSSARY) -> Glossary:
             for m in _FIELD_LOC.finditer(loc):
                 for prefix in m.group(1).split("/"):
                     offer(("F", prefix, int(m.group(2), 16)), r)
+            if not _FIELD_LOC.search(loc):
+                unplaced.add(r["name"])
         elif r["kind"] == "flag":
             if (m := _FRAG_FLAG.match(loc)):
                 frag.append((int(m.group(1)), r))
@@ -128,6 +168,9 @@ def load_glossary(path: pathlib.Path | str = GLOSSARY) -> Glossary:
     for bit, r in frag:
         for prefix, off in words:
             offer(("B", prefix, off, bit), r)
+    for name in sorted(unplaced):
+        if (where := _kick3d_word(name)) and ("F", *where) not in best:
+            best[("F", *where)] = (TIER_ORDER["ours"], name)
     regs, fields, flags = {}, {}, {}
     for k, (_, name) in best.items():
         if k[0] == "R":
@@ -137,6 +180,18 @@ def load_glossary(path: pathlib.Path | str = GLOSSARY) -> Glossary:
         else:
             flags.setdefault((k[1], k[2]), {})[k[3]] = name
     return Glossary(regs, fields, flags)
+
+
+def _kick3d_word(name: str) -> tuple[str, int] | None:
+    """(prefix, byte offset) of the kick3d word a glossary term names (pb_block.page_count),
+    for the rows that give no location."""
+    struct, _, leaf = name.partition(".")
+    if struct not in PREFIX or struct not in kick3d.STRUCTS:
+        return None
+    for path, off, _w, _c, _a in kick3d._layout(kick3d.STRUCTS[struct]):
+        if path.rsplit(".", 1)[-1] == leaf:
+            return PREFIX[struct], 4 * off
+    return None
 
 
 def word_name(prefix: str, off: int, fields: dict[tuple[str, int], str]) -> str:
@@ -170,7 +225,8 @@ class Val:
     kind: str            # "const", "field", "ptr", "unknown"
     value: int = 0       # constant, or byte offset of a pointer, or dword of a field
     struct: str = ""
-    name: str = ""       # unknown: what it was (a register or an SGX register name)
+    name: str = ""       # unknown: what it was (a register or an SGX register name); a
+    #                      pointer: the structure word it was loaded from
 
 
 def _split_args(s: str) -> list[str]:
@@ -238,16 +294,51 @@ def _layout_path(struct: str, dword: int) -> str | None:
     return None
 
 
+def _levels(struct: str, dword: int) -> tuple[list[tuple[str, int]], tuple | None]:
+    """The named layouts holding a dword, the outer first, each with the dword's index in it;
+    and the leaf (dword of its first element in the deepest layout, element dwords, whether it
+    is an array) when the dword is one of an array or of a field wider than one dword."""
+    out = [(struct, dword)]
+    while struct in kick3d.STRUCTS:
+        off, inner = 0, None
+        for f in kick3d.STRUCTS[struct]:
+            shape, count = f[1], f[2] if len(f) > 2 else 1
+            n = kick3d._dwords(shape) if isinstance(shape, list) else shape
+            if off <= dword < off + n * count:
+                if isinstance(shape, list) and (inner := named_layout(shape)) and count == 1:
+                    struct, dword = inner, dword - off
+                    out.append((struct, dword))
+                    break
+                inner = None
+                arr = (off, n, count > 1) if count > 1 or n > 1 else None
+                return out, arr
+            off += n * count
+        if inner is None:
+            break
+    return out, None
+
+
 def _loc(struct: str, dword: int, fields: dict[tuple[str, int], str]) -> str:
+    """A structure word as the glossary names it: at the location in any of the layouts that
+    hold it, else as a dword of a named array or wide field (name[i]+k, name+k), else
+    STRUCT+0xOFF."""
+    levels, arr = _levels(struct, dword)
+    for s, d in levels:
+        if s in PREFIX and (PREFIX[s], 4 * d) in fields:
+            return fields[(PREFIX[s], 4 * d)]
+    if arr:
+        first, width, indexed = arr      # in the deepest layout
+        index, part = divmod(levels[-1][1] - first, width)
+        for s, d in levels:
+            at = d - index * width - part    # the array's first dword in this layout
+            if s in PREFIX and (PREFIX[s], 4 * at) in fields:
+                return (fields[(PREFIX[s], 4 * at)] + (f"[{index}]" if indexed else "")
+                        + (f"+{part}" if part else ""))
     return word_name(PREFIX.get(struct, struct), 4 * dword, fields)
 
 
 def _points_at(path: str | None) -> str | None:
-    leaf = (path or "").rsplit(".", 1)[-1]
-    for suffix, target in POINTS_AT:
-        if leaf == suffix:
-            return target
-    return None
+    return POINTS_AT.get((path or "").rsplit(".", 1)[-1])
 
 
 def _next_reg(r: str, i: int) -> str:
@@ -279,14 +370,17 @@ def describe(v: Val, fields: dict[tuple[str, int], str] | None = None) -> str:
     if v.kind == "field":
         return _loc(v.struct, v.value, fields or {})
     if v.kind == "ptr":
-        return f"&{PREFIX.get(v.struct, v.struct)}+{v.value:#x}"
+        # a pointer loaded from a structure word prints as that word
+        return v.name if v.name and not v.value else \
+            f"&{PREFIX.get(v.struct, v.struct)}+{v.value:#x}"
     return v.name
 
 
-def _load_val(base: Val, dword: int) -> Val:
+def _load_val(base: Val, dword: int, fields: dict[tuple[str, int], str]) -> Val:
     d = base.value // 4 + dword
     target = _points_at(_layout_path(base.struct, d))
-    return Val("ptr", 0, target) if target else Val("field", d, base.struct)
+    return Val("ptr", 0, target, _loc(base.struct, d, fields)) if target \
+        else Val("field", d, base.struct)
 
 
 def _operand(st: _State, a: str) -> tuple[Val, bool]:
@@ -391,7 +485,7 @@ def _memop(st: _State, i: Insn) -> list[str]:
         for n, d in enumerate(dwords):
             r = _next_reg(other, n)
             if base.kind == "ptr" and not i.pred:
-                st.set(r, _load_val(base, d))
+                st.set(r, _load_val(base, d, st.fields))
             else:
                 st.forget(r)
         if base.kind == "ptr":

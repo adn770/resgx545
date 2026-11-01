@@ -30,7 +30,7 @@ def dword(name: str, field: str) -> int:
 KERNEL_SIDE = {"PVRSRV_BRIDGE_IN_DOKICK", "SGX_CCB_KICK", "SGXMKIF_CMDTA_SHARED",
                "SGXMKIF_HWDEVICE_SYNC_LIST"}
 CLIENT = {"cmd_ta", "ta_registers", "registers_3d", "hw_render_details", "hw_rt_data",
-          "hw_rt_data_set", "hw_render_context", "hw_pb_desc", "pb_block"}
+          "hw_rt_data_set", "hw_render_context", "hw_pb_desc", "pb_block", "ta3d_ctl"}
 
 
 def test_the_layouts_are_the_kernel_side_ones_and_the_client_structures():
@@ -264,11 +264,50 @@ def test_pb_block_words_by_record():
     assert (b["page_count"], b["first_page"], b["next_block_dev_vaddr"]) == (0, 2, 3)
 
 
+def test_ta3d_ctl_words_by_record():
+    t = "ta3d_ctl"
+    assert [dword(t, f) for f in ("dpm_slot0_rt_data_dev_vaddr",
+                                  "dpm_slot1_rt_data_dev_vaddr")] == [20, 21]       # E158
+    assert [dword(t, f) for f in ("cmd_ta_dev_vaddr", "hw_rt_data_ta",
+                                  "hw_render_details_ta",
+                                  "hw_render_context_ta")] == [24, 25, 26, 27]  # E159
+    assert [dword(t, f) for f in ("hw_rt_data_3d", "hw_render_details_3d",
+                                  "rt_index_3d")] == [28, 29, 30]                   # E163
+    assert [dword(t, f) for f in ("frame_num_ta", "frame_num_3d")] == [41, 42]      # E158, E163
+    assert [dword(t, f) for f in ("hw_pb_desc_ta", "hw_pb_desc_3d")] == [46, 47]    # E200
+    assert [dword(t, f) for f in ("pid_ta", "pid_3d")] == [50, 51]                  # E159, E163
+    assert kick3d.size(t) == 0xec            # the whole block (E002)
+
+
+def test_ta3d_ctl_words_other_records_name():
+    t = "ta3d_ctl"
+    e002 = ("ta3d_ctl_dev_vaddr", "host_ctl_dev_vaddr", "ccb_ctl_dev_vaddr",
+            "kernel_ccb_dev_vaddr", "page_dir_phys_addr", "hwperf_buffer_dev_vaddr",
+            "signature_ta_dev_vaddr", "signature_3d_dev_vaddr")
+    assert [dword(t, f) for f in e002] == [0, 1, 2, 22, 23, 43, 44, 45]            # E002
+    assert dword(t, "requests") == 31                                               # E146, E154
+    assert [dword(t, f) for f in ("saved_ta_global_list", "abort_page_count0",
+                                  "abort_page_count1", "threshold_ta_global_list",
+                                  "zls_threshold_step", "abort_status_mtile",
+                                  "abort_rt_index")] == [33, 35, 36, 37, 38, 39, 40]  # E160
+    assert dword(t, "settle_count") == 52                                           # E153
+    assert [dword(t, f) for f in ("kick_marks", "kick_clear_ta",
+                                  "kick_clear_3d")] == [54, 55, 57]           # E156, E158, E163
+
+
+def test_ta3d_ctl_gaps_stay_unnamed():
+    # only the words no record names are padding: 3-19, 32, 34, 48, 49, 53, 56 and 58
+    pads = {o + k for p, o, _w, c, _a in kick3d._layout(kick3d.STRUCTS["ta3d_ctl"])
+            if p.startswith("pad_") for k in range(c)}
+    assert pads == {*range(3, 20), 32, 34, 48, 49, 53, 56, 58}
+
+
 # --- the glossary agrees with the layouts --------------------------------------------
 
 PREFIXES = {"cmd_ta": "CMDTA", "hw_render_details": "HWRENDERDETAILS",
             "hw_rt_data": "HWRTDATA", "hw_rt_data_set": "HWRTDATASET",
-            "hw_render_context": "HWRENDERCONTEXT", "hw_pb_desc": "HWPBDESC"}
+            "hw_render_context": "HWRENDERCONTEXT", "hw_pb_desc": "HWPBDESC",
+            "ta3d_ctl": "TA3D_CTL"}
 FIELD_LOC = re.compile(r"^([A-Z_0-9]+)\+0x([0-9a-fA-F]+)$")
 FLAG_LOC = re.compile(r"^(?:([A-Z_0-9/]+)\+0x([0-9a-fA-F]+)|render flags) bit(\d+) ")
 

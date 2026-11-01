@@ -174,6 +174,8 @@ sits, the reading, and the evidence records it rests on.
 - `G0310` `cmd_ta.reg_0374` (CMDTA+0x298): as CR_REG_0374's: context store/resume state of an
   interrupted TA: a 32-bit resume task word. Measured: value the EDM copies verbatim into
   CR_REG_0374 (0x0374); 0 in every capture [infer]. Evidence: E054, E182, E183.
+- `G0567` `cmd_ta.stencil_rt_stride` (CMDTA+0x050): TA command word 20, copied by the TA kick to
+  render details word 71, the stencil stride per render target [infer]. Evidence: E158, E163.
 - `G0311` `cmd_ta.ta_reg_02b0` (CMDTA+0x278): as CR_TA_REG_02B0's: context store/resume state of an
   interrupted TA: an 8-bit field in 31:24 (state flags). Measured: value the EDM copies verbatim
   into CR_TA_REG_02B0 (0x02b0); 0 in every capture [infer]. Evidence: E054, E182, E183.
@@ -196,6 +198,8 @@ sits, the reading, and the evidence records it rests on.
 - `G0318` `cmd_ta.use_reg_0aa0` (CMDTA+0x270): as CR_USE_REG_0AA0's: a USSE resume task word for an
   interrupted TA's vertex tasks. Measured: value the EDM copies verbatim into CR_USE_REG_0AA0
   (0x0aa0); 0 in every capture [infer]. Evidence: E054, E182, E183.
+- `G0568` `cmd_ta.z_rt_stride` (CMDTA+0x04c): TA command word 19, copied by the TA kick to render
+  details word 70, the depth stride per render target [infer]. Evidence: E158, E163.
 
 ## structs: hw_render_details
 
@@ -209,6 +213,23 @@ sits, the reading, and the evidence records it rests on.
   register 0x0400: bit 25 inverts bits 31:24 of every pixel the job writes, and no other bit changed
   a pixel; the data come from the render command's word 11, which loads the same register, not from
   the render-details word itself. Evidence: E029.
+- `G0583` `hw_render_details.stencil_rt_stride` (HWRENDERDETAILS+0x11c): render details word 71: for
+  a render target other than the first the 3D kick adds its index times this word to the stencil
+  load and store bases (0x048c, 0x0490) [infer]. Evidence: E158, E163.
+- `G0590` `hw_render_details.z_rt_stride` (HWRENDERDETAILS+0x118): render details word 70: for a
+  render target other than the first the 3D kick adds its index times this word to the Z load and
+  store bases (0x0484, 0x0488) [infer]. Evidence: E158, E163.
+
+## structs: hw_rt_data
+
+- `G0592` `hw_rt_data.region_header_rt_stride` (HWRTDATA+0x02c): RT data word 11: for a render
+  target other than the first the 3D kick adds its index times this word to the region header base
+  (0x0408) [infer]. Evidence: E163.
+
+## structs: pb_block
+
+- `G0593` `pb_block.first_page`: a PB block's third word, its first page: the page-table builder
+  fills the table block by block from it [infer]. Evidence: E200, E201.
 
 ## structs: transfer_cmd
 

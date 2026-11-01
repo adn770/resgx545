@@ -31,6 +31,44 @@ licence = "GPL-2.0 OR MIT"
 evidence = "rogue_fwif_cmd_frag.flags; DEPTHBUFFER/STENCILBUFFER/GET_VIS_RESULTS bits coincide"
 
 [[term]]
+id = "G0566"
+name = "cmd_ta.frame_num"
+status = "named"
+
+[[term.source]]
+term = "frame_num"
+kind = "field"
+sgx545 = "CMDTA+0x020"
+meaning = "frame number"
+tier = "3"
+source = "linux-imagination"
+citation = "C0343"
+licence = "GPL-2.0 OR MIT"
+evidence = "rogue_fwif_cmd_common.frame_num"
+
+[[term.source]]
+term = "ui32FrameNum"
+kind = "field"
+sgx545 = "CMDTA+0x020"
+meaning = "frame number"
+tier = "1"
+source = "intel-ctp-k900"
+citation = "C0344"
+licence = "GPL-2.0 OR MIT"
+evidence = "declared in SGX_CCB_KICK, the host's kick, of the Lenovo K900 GPL kernel (DDK 1.11)"
+
+[[term.source]]
+term = "cmd_ta.frame_num"
+kind = "field"
+sgx545 = "CMDTA+0x020"
+meaning = "TA command word 8, the frame number: the TA kick copies it to render details word 80 and to the EDM's TA/3D control block [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158"
+licence = "MIT"
+evidence = "[RE] E158: the copy routine moves command dword 8 (the frame number) to render details dword 80 and to TA3DCtl dword 41"
+
+[[term]]
 id = "G0506"
 name = "cmd_ta.global_threshold"
 status = "named"
@@ -293,6 +331,22 @@ licence = "GPL-2.0"
 evidence = "SGX_DOKICK passes the CCB offset of this block (= cmd +0x58)"
 
 [[term]]
+id = "G0567"
+name = "cmd_ta.stencil_rt_stride"
+status = "inferred"
+
+[[term.source]]
+term = "cmd_ta.stencil_rt_stride"
+kind = "field"
+sgx545 = "CMDTA+0x050"
+meaning = "TA command word 20, copied by the TA kick to render details word 71, the stencil stride per render target [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158, E163"
+licence = "MIT"
+evidence = "[RE] E158: the copy routine moves command dwords 19 and 20 to render details dwords 70 and 71; [RE] E163: the 3D kick adds the render-target index times dword 71 to the stencil load and store bases; [infer] the name is ours, from that use"
+
+[[term]]
 id = "G0311"
 name = "cmd_ta.ta_reg_02b0"
 status = "inferred"
@@ -462,3 +516,19 @@ source = "resgx545"
 citation = "harness/ukernel-extract/make_r2.sh (its register comment at ukernel 0x4b90)"
 licence = "MIT"
 evidence = "[RE] the TA kick writes the TA register block in structure order, one fixed store per word; [HW] E054: no bit, 0 or ~0 changes the triangle; [infer] E183, an analogy of ours (no citation record): context store/resume state, 0 when a TA is never interrupted (Rogue VDM/TA_CONTEXT_*; AGX preempt_buf*); cull disables (Rogue PPP_CTRL) refuted; [HW] E182: 0x0aa0 implements all 32 bits; at ~0 a culled or off-screen triangle stays unwritten; [infer] the reading is ours (E183)"
+
+[[term]]
+id = "G0568"
+name = "cmd_ta.z_rt_stride"
+status = "inferred"
+
+[[term.source]]
+term = "cmd_ta.z_rt_stride"
+kind = "field"
+sgx545 = "CMDTA+0x04c"
+meaning = "TA command word 19, copied by the TA kick to render details word 70, the depth stride per render target [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158, E163"
+licence = "MIT"
+evidence = "[RE] E158: the copy routine moves command dwords 19 and 20 to render details dwords 70 and 71; [RE] E163: the 3D kick adds the render-target index times dword 70 to the Z load and store bases; [infer] the name is ours, from that use"

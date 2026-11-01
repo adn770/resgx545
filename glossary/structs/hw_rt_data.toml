@@ -63,6 +63,22 @@ licence = "MIT"
 evidence = "[RE] the TA kick (E159) and scene-done (E164)"
 
 [[term]]
+id = "G0591"
+name = "hw_rt_data.num_rts"
+status = "named"
+
+[[term.source]]
+term = "hw_rt_data.num_rts"
+kind = "field"
+sgx545 = "HWRTDATA+0x028"
+meaning = "RT data word 10, the number of render targets: a first TA kick clears the DPM state once per render target it counts [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158"
+licence = "MIT"
+evidence = "[RE] E158: for each render target counted by RT data dword 10 the clear writes (index << 3) | 2 to both DPM task registers"
+
+[[term]]
 id = "G0551"
 name = "hw_rt_data.otpm_dev_vaddr"
 status = "named"
@@ -77,6 +93,22 @@ source = "resgx545"
 citation = "E158"
 licence = "MIT"
 evidence = "[RE] E158: the TA kick's clear step and the DPM context load; OTPM is the glossary's term"
+
+[[term]]
+id = "G0592"
+name = "hw_rt_data.region_header_rt_stride"
+status = "inferred"
+
+[[term.source]]
+term = "hw_rt_data.region_header_rt_stride"
+kind = "field"
+sgx545 = "HWRTDATA+0x02c"
+meaning = "RT data word 11: for a render target other than the first the 3D kick adds its index times this word to the region header base (0x0408) [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: for a render target other than the first, 0x0408 gets the render-target index times RT data dword 11 added; [infer] the name is ours, from that use"
 
 [[term]]
 id = "G0552"

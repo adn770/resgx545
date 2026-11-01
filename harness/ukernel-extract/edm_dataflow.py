@@ -22,9 +22,12 @@ sa0 = TA3D_CTL, sa1 = HOST_CTL, sa2 = CCB_CTL, sa22 = KCCB, sa43 = HWPERF_CB (th
 TA3DCtl, doc/specs/hw_spec.md §11.1); a CCB handler receives the command's words in r4-r11,
 ui32Data[1] (r7) typed where the kernel or the captures say what it holds (doc/specs/transfer.md
 §5).
-Pointer words are typed where a record establishes them (GLOSSARY_POINTERS), by kick3d.py's
-layouts (offsets and pointer typing only) and, iteratively, by what the firmware itself stores
-in a slot: a slot that only ever receives pointers to one structure holds that structure.
+Pointer words are typed where a record establishes them (GLOSSARY_POINTERS), by the pointer
+words of kick3d.py's kernel-side layouts and, iteratively, by what the firmware itself stores in
+a slot: a slot that only ever receives pointers to one structure holds that structure. The
+client layouts' pointer words (edmtrace.POINTS_AT) agree with the given ones; those the given
+words do not hold yet (LAYOUT_ONLY) wait for a rerun of the dataflow table, so the table this
+tool reproduces stays the one probes/firmware/edm-dataflow-3d.toml made.
 
 The analysis names nothing from the glossary, so its TSV is the same whatever the glossary
 says: subjects are offsets (0x0abc, CMDTA+0x0f8) and the details carry tokens, {R:0x012c} for a
@@ -106,12 +109,31 @@ HANDLERS = {0x0D4: ("POWER", None), 0x0EB: ("CONTEXTSUSPEND", None),
             0x157: ("SETHWPERFSTATUS", None), 0x173: ("GETMISCINFO", "MISC")}
 
 
-def _layout_pointers() -> dict[tuple[str, int], str]:
-    """Pointer words of kick3d's layouts, by offset (their names stay internal)."""
+# The layouts kick3d.py keeps from the kernel (sgx545-ce); the others are the client structures,
+# named by us over the records' offsets.
+KERNEL_SIDE = {"PVRSRV_BRIDGE_IN_DOKICK", "SGX_CCB_KICK", "SGXMKIF_CMDTA_SHARED",
+               "SGXMKIF_HWDEVICE_SYNC_LIST"}
+# The client layouts' pointer words the given ones do not hold: the render details' RT data
+# (E163) and destination sync list (E164), a PB block's next block (E200, E201) and the TA/3D
+# control block's own address (E002) and job words (E158, E159, E163, E200). The dataflow infers
+# most of them from the firmware's stores; a rerun of the dataflow table takes them up as given.
+LAYOUT_ONLY = {("HWRENDERDETAILS", 0x0dc): "HWRTDATA",
+               ("HWRENDERDETAILS", 0x0e0): "HWDEVICE_SYNC_LIST",
+               ("PB_BLOCK", 0x00c): "PB_BLOCK", ("TA3D_CTL", 0x000): "TA3D_CTL",
+               **{("TA3D_CTL", o): "HWRTDATA" for o in (0x050, 0x054, 0x064, 0x070)},
+               ("TA3D_CTL", 0x060): "CMDTA",
+               **{("TA3D_CTL", o): "HWRENDERDETAILS" for o in (0x068, 0x074)},
+               ("TA3D_CTL", 0x06c): "HWRENDERCONTEXT",
+               **{("TA3D_CTL", o): "HWPBDESC" for o in (0x0b8, 0x0bc)}}
+
+
+def _layout_pointers(layouts=KERNEL_SIDE) -> dict[tuple[str, int], str]:
+    """Pointer words of kick3d's layouts (by default the kernel-side ones), by offset; their
+    names stay internal."""
     out = {}
     for layout, fields in kick3d.STRUCTS.items():
         prefix = edmtrace.PREFIX.get(layout)
-        if not prefix:
+        if not prefix or layout not in layouts:
             continue
         for path, off, width, count, _a in kick3d._layout(fields):
             target = edmtrace._points_at(path) if width == 1 and count == 1 else None

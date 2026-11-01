@@ -17,10 +17,11 @@ Two kinds of layout, all 32-bit:
   8 source syncs). They keep the kernel's names.
 - The client structures, which no lawful tree defines: the TA command, its TA register block,
   the render details with their 3D register block, the RT data and RT data set, the HW render
-  context, the PB descriptor and a PB block. Every field has our own name, at the offset an
-  evidence record or a glossary row gives (the comment of each structure names them); a word
-  no record reaches is unnamed padding (pad_0x<offset>). A structure's size is the one the
-  microkernel reports (SGX_MISCINFO_STRUCT_SIZES, E001), or what a record shows.
+  context, the PB descriptor and a PB block; and the EDM's TA/3D control block, where the kicks
+  record the job each pipe runs. Every field has our own name, at the offset an evidence record
+  or a glossary row gives (the comment of each structure names them); a word no record reaches
+  is unnamed padding (pad_0x<offset>). A structure's size is the one the microkernel reports
+  (SGX_MISCINFO_STRUCT_SIZES, E001), or what a record shows (the control block's 0xec, E002).
 
 The flag tables (FLAGS) name only the bits a record or a glossary row names; flag_names()
 prints any other bit as hex.
@@ -216,6 +217,42 @@ PBDESC = [
 # first-page field in its third and the next block in its fourth (E201, E200).
 PBBLOCK = [("page_count", 1), ("pad_0x04", 1), ("first_page", 1), ("next_block_dev_vaddr", 1)]
 
+# The EDM's TA/3D control block (glossary ta3d_ctl), its 0xec bytes (E002). PDS #11 copies it
+# into the secondary attributes, so sa<k> is dword k (E002, E003). The glossary's ta3d_ctl.*
+# rows name the kicks' job words; the other words a record names have our names here:
+# - E002: dword 0 the block itself, 1 the host control, 2 the kernel CCB control, 22 the kernel
+#   CCB, 23 the page directory's physical address (a value; E008, E011), 43 the HWPerf buffer,
+#   44 and 45 the TA and 3D signature buffers;
+# - the kicks: 20 and 21 the RT data owning each DPM context slot (E158); 24, 26 and 27 the TA's
+#   command, render details and context (E159); 25 the TA's RT data (E158, E159); 28, 29 and 30
+#   the 3D's RT data, render details and render-target index (E163); 41 and 42 the TA's and the
+#   3D's frame numbers (E158, E163); 46 and 47 the PB descriptors loaded in the TA and the 3D
+#   (E200); 50 and 51 the TA's and the 3D's PIDs (E159, E163);
+# - 31 the request word PDS #14's tasks serve (E146, E154);
+# - the out-of-memory path (E160): 33 the TA global list saved while the list grows, 35 and 36
+#   the page counts saved at an abort (from CR_DPM_PAGE_STATUS and from 0x072c), 37 the global
+#   list saved and 38 the step added to CR_DPM_ZLS_PAGE_THRESHOLD when the threshold is raised,
+#   39 CR_DPM_ABORT_STATUS_MTILE saved at an abort and 40 its bits 13:5, the macrotile's RT index;
+# - 52 the nesting count of the settle loop (E153);
+# - 54 the kick marks, bit 0 set by the TA kick and the TA-finished handler (E158, E156), bit 1
+#   by the 3D kick (E163); 55 the word the TA kick, the TA-finished handler and the out-of-memory
+#   path clear (E158, E156, E160); 57 the word the 3D kick clears (E163).
+TA3DCTL = [
+    ("ta3d_ctl_dev_vaddr", 1), ("host_ctl_dev_vaddr", 1), ("ccb_ctl_dev_vaddr", 1),
+    ("pad_0x0c", 1, 17), ("dpm_slot0_rt_data_dev_vaddr", 1), ("dpm_slot1_rt_data_dev_vaddr", 1),
+    ("kernel_ccb_dev_vaddr", 1), ("page_dir_phys_addr", 1), ("cmd_ta_dev_vaddr", 1),
+    ("hw_rt_data_ta", 1), ("hw_render_details_ta", 1), ("hw_render_context_ta", 1),
+    ("hw_rt_data_3d", 1), ("hw_render_details_3d", 1), ("rt_index_3d", 1),
+    ("requests", 1), ("pad_0x80", 1), ("saved_ta_global_list", 1), ("pad_0x88", 1),
+    ("abort_page_count0", 1), ("abort_page_count1", 1), ("threshold_ta_global_list", 1),
+    ("zls_threshold_step", 1), ("abort_status_mtile", 1), ("abort_rt_index", 1),
+    ("frame_num_ta", 1), ("frame_num_3d", 1), ("hwperf_buffer_dev_vaddr", 1),
+    ("signature_ta_dev_vaddr", 1), ("signature_3d_dev_vaddr", 1),
+    ("hw_pb_desc_ta", 1), ("hw_pb_desc_3d", 1), ("pad_0xc0", 1, 2), ("pid_ta", 1),
+    ("pid_3d", 1), ("settle_count", 1), ("pad_0xd4", 1), ("kick_marks", 1),
+    ("kick_clear_ta", 1), ("pad_0xe0", 1), ("kick_clear_3d", 1), ("pad_0xe8", 1),
+]
+
 STRUCTS = {
     # PVRSRV_BRIDGE_IN_DOKICK (sgx545-ce `src/services4/include/sgx_bridge.h`:199-208)
     "PVRSRV_BRIDGE_IN_DOKICK": [("ui32BridgeFlags", 1), ("hDevCookie", 1),
@@ -232,6 +269,7 @@ STRUCTS = {
     "hw_render_context": RENDERCONTEXT,
     "hw_pb_desc": PBDESC,
     "pb_block": PBBLOCK,
+    "ta3d_ctl": TA3DCTL,
 }
 
 # Flag bits by the glossary's names, only where a record or a glossary row names the bit.

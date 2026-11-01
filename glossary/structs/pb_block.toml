@@ -15,6 +15,22 @@ licence = "GPL-2.0"
 evidence = "names the block concept only"
 
 [[term]]
+id = "G0593"
+name = "pb_block.first_page"
+status = "inferred"
+
+[[term.source]]
+term = "pb_block.first_page"
+kind = "field"
+sgx545 = "-"
+meaning = "a PB block's third word, its first page: the page-table builder fills the table block by block from it [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E201, E200"
+licence = "MIT"
+evidence = "[RE] E201: a block, as the builder reads it, has a page count in its first dword, a first-page field in its third and the next block in its fourth; [infer] what the field holds is read from the builder's use"
+
+[[term]]
 id = "G0560"
 name = "pb_block.next_block_dev_vaddr"
 status = "named"

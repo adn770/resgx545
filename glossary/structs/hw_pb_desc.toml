@@ -63,6 +63,38 @@ licence = "MIT"
 evidence = "[RE] E200: the TA PB load, the 3D PB load and the store; named after the register"
 
 [[term]]
+id = "G0569"
+name = "hw_pb_desc.first_block_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "hw_pb_desc.first_block_dev_vaddr"
+kind = "field"
+sgx545 = "HWPBDESC+0x038"
+meaning = "PB descriptor word 14, the address of the first PB block, whose list the page-table builder walks [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E200, E201"
+licence = "MIT"
+evidence = "[RE] E200: the page-table routine walks the block list from dword 14; [RE] E201: dword 14 is a pointer to the first block of the block list"
+
+[[term]]
+id = "G0570"
+name = "hw_pb_desc.global_page_count"
+status = "named"
+
+[[term.source]]
+term = "hw_pb_desc.global_page_count"
+kind = "field"
+sgx545 = "HWPBDESC+0x024"
+meaning = "PB descriptor word 9, the global page count: loaded into the high half of 0x0638 (TA) or into 0x0660 (3D), stored back, zeroed when the table is rebuilt [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E200, E201"
+licence = "MIT"
+evidence = "[RE] E200: dwords 8 and 9 (the second shifted up 16 bits) go to 0x0638; [RE] E201: dwords 8 and 9 are the local and global page counts"
+
+[[term]]
 id = "G0521"
 name = "hw_pb_desc.global_threshold"
 status = "named"
@@ -120,6 +152,38 @@ source = "resgx545"
 citation = "E200"
 licence = "MIT"
 evidence = "[RE] E200: the page-table builder resets the PB descriptor's current_stack_top from it"
+
+[[term]]
+id = "G0571"
+name = "hw_pb_desc.local_page_count"
+status = "named"
+
+[[term.source]]
+term = "hw_pb_desc.local_page_count"
+kind = "field"
+sgx545 = "HWPBDESC+0x020"
+meaning = "PB descriptor word 8, the local page count: loaded into 0x0638 (TA, low half) or 0x0660 (3D), stored back from the status registers, zeroed when the table is rebuilt [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E200, E201"
+licence = "MIT"
+evidence = "[RE] E200: dwords 8 and 9 (the second shifted up 16 bits) go to 0x0638; [RE] E201: dwords 8 and 9 are the local and global page counts"
+
+[[term]]
+id = "G0572"
+name = "hw_pb_desc.page_table_base"
+status = "named"
+
+[[term.source]]
+term = "hw_pb_desc.page_table_base"
+kind = "field"
+sgx545 = "HWPBDESC+0x010"
+meaning = "PB descriptor word 4, the page-table base (low 4 bits ignored): loaded into 0x0618 (TA) or 0x0600 (3D), and the base of the page-table builder's stores [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E200, E201"
+licence = "MIT"
+evidence = "[RE] E200: the TA load writes descriptor dword 4 with its low 4 bits cleared to 0x0618, the 3D load to 0x0600; [RE] E201: dword 4 is the page-table base"
 
 [[term]]
 id = "G0524"

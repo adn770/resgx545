@@ -15,6 +15,86 @@ licence = "GPL-2.0 OR MIT"
 evidence = "core SGX535 (EMGD), so tier 1c; named in a comment: holds sTAHWPBDesc/s3DHWPBDesc"
 
 [[term]]
+id = "G0594"
+name = "ta3d_ctl.cmd_ta_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "ta3d_ctl.cmd_ta_dev_vaddr"
+kind = "field"
+sgx545 = "TA3D_CTL+0x060"
+meaning = "the TA command the TA runs, recorded by the TA kick [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E159"
+licence = "MIT"
+evidence = "[RE] E159: the TA kick writes TA3DCtl dword 24 = the command"
+
+[[term]]
+id = "G0595"
+name = "ta3d_ctl.dpm_slot0_rt_data_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "ta3d_ctl.dpm_slot0_rt_data_dev_vaddr"
+kind = "field"
+sgx545 = "TA3D_CTL+0x050"
+meaning = "the RT data that owns DPM context slot 0; the TA and the 3D kick take a slot that holds their RT data, else a free one [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158"
+licence = "MIT"
+evidence = "[RE] E158: TA3DCtl dwords 20 and 21 hold which RT data owns each of two DPM context slots; the TA records its RT data in dword 20 or 21"
+
+[[term]]
+id = "G0596"
+name = "ta3d_ctl.dpm_slot1_rt_data_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "ta3d_ctl.dpm_slot1_rt_data_dev_vaddr"
+kind = "field"
+sgx545 = "TA3D_CTL+0x054"
+meaning = "the RT data that owns DPM context slot 1 [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158"
+licence = "MIT"
+evidence = "[RE] E158: TA3DCtl dwords 20 and 21 hold which RT data owns each of two DPM context slots"
+
+[[term]]
+id = "G0597"
+name = "ta3d_ctl.frame_num_3d"
+status = "named"
+
+[[term.source]]
+term = "ta3d_ctl.frame_num_3d"
+kind = "field"
+sgx545 = "TA3D_CTL+0x0a8"
+meaning = "the frame number of the 3D's job, copied from the render details by the 3D kick [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes TA3DCtl dword 42 = render details dword 80 (the frame number)"
+
+[[term]]
+id = "G0598"
+name = "ta3d_ctl.frame_num_ta"
+status = "named"
+
+[[term.source]]
+term = "ta3d_ctl.frame_num_ta"
+kind = "field"
+sgx545 = "TA3D_CTL+0x0a4"
+meaning = "the frame number of the TA's job, copied from the TA command by the TA kick [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158"
+licence = "MIT"
+evidence = "[RE] E158: the copy routine writes command dword 8 (the frame number) to TA3DCtl dword 41"
+
+[[term]]
 id = "G0563"
 name = "ta3d_ctl.hw_pb_desc_3d"
 status = "named"
@@ -45,3 +125,131 @@ source = "emgd-linux"
 citation = "C0030"
 licence = "GPL-2.0 OR MIT"
 evidence = "core SGX535 (EMGD), so tier 1c; comment: EDM clears sTAHWPBDesc/s3DHWPBDesc on PB cleanup; matches dw46/47 (E200)"
+
+[[term]]
+id = "G0599"
+name = "ta3d_ctl.hw_render_context_ta"
+status = "named"
+
+[[term.source]]
+term = "ta3d_ctl.hw_render_context_ta"
+kind = "field"
+sgx545 = "TA3D_CTL+0x06c"
+meaning = "the render context of the TA's job, recorded by the TA kick [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E159"
+licence = "MIT"
+evidence = "[RE] E159: the TA kick writes TA3DCtl dword 27 = the context"
+
+[[term]]
+id = "G0600"
+name = "ta3d_ctl.hw_render_details_3d"
+status = "named"
+
+[[term.source]]
+term = "ta3d_ctl.hw_render_details_3d"
+kind = "field"
+sgx545 = "TA3D_CTL+0x074"
+meaning = "the render details the 3D renders, recorded by the 3D kick [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes TA3DCtl dword 29 = the render details"
+
+[[term]]
+id = "G0601"
+name = "ta3d_ctl.hw_render_details_ta"
+status = "named"
+
+[[term.source]]
+term = "ta3d_ctl.hw_render_details_ta"
+kind = "field"
+sgx545 = "TA3D_CTL+0x068"
+meaning = "the render details of the TA's job (the command's word 14), recorded by the TA kick [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E159"
+licence = "MIT"
+evidence = "[RE] E159: the TA kick writes TA3DCtl dword 26 = command dword 14 (the render details)"
+
+[[term]]
+id = "G0602"
+name = "ta3d_ctl.hw_rt_data_3d"
+status = "named"
+
+[[term.source]]
+term = "ta3d_ctl.hw_rt_data_3d"
+kind = "field"
+sgx545 = "TA3D_CTL+0x070"
+meaning = "the RT data of the 3D's job, recorded by the 3D kick [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick sets TA3DCtl dword 28 = the RT data"
+
+[[term]]
+id = "G0603"
+name = "ta3d_ctl.hw_rt_data_ta"
+status = "named"
+
+[[term.source]]
+term = "ta3d_ctl.hw_rt_data_ta"
+kind = "field"
+sgx545 = "TA3D_CTL+0x064"
+meaning = "the RT data of the TA's job, recorded by the TA kick [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E158, E159"
+licence = "MIT"
+evidence = "[RE] E158: the TA kick records its RT data in TA3DCtl dword 25; [RE] E159: a different RT data in dword 25 has its DPM state stored first"
+
+[[term]]
+id = "G0604"
+name = "ta3d_ctl.pid_3d"
+status = "named"
+
+[[term.source]]
+term = "ta3d_ctl.pid_3d"
+kind = "field"
+sgx545 = "TA3D_CTL+0x0cc"
+meaning = "the PID of the 3D's render context, recorded by the 3D kick [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes TA3DCtl dword 51 = context dword 16 (PID)"
+
+[[term]]
+id = "G0605"
+name = "ta3d_ctl.pid_ta"
+status = "named"
+
+[[term.source]]
+term = "ta3d_ctl.pid_ta"
+kind = "field"
+sgx545 = "TA3D_CTL+0x0c8"
+meaning = "the PID of the TA's render context, recorded by the TA kick [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E159"
+licence = "MIT"
+evidence = "[RE] E159: the TA kick writes TA3DCtl dword 50 = context dword 16 (the PID)"
+
+[[term]]
+id = "G0606"
+name = "ta3d_ctl.rt_index_3d"
+status = "named"
+
+[[term.source]]
+term = "ta3d_ctl.rt_index_3d"
+kind = "field"
+sgx545 = "TA3D_CTL+0x078"
+meaning = "the render-target index the 3D renders, recorded by the 3D kick [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E163"
+licence = "MIT"
+evidence = "[RE] E163: the 3D kick writes the render-target index to TA3DCtl dword 30"

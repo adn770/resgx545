@@ -4,7 +4,8 @@
 """Read the render dumps of dump_render probes (probe.py; the kernel's debugfs render_param
 and render_tadata): NAME.param.bin is the render context's parameter slot from its PB on
 (slot offset 0x1000), NAME.tadata.bin its TA data. Prints the pages the GPU wrote, the TA's
-object at the start of the PB, the region headers and each region's control stream.
+object at the start of the PB, the region headers and each region's control stream, the words
+also by the glossary's fields (PB_OBJ, REGION_HDR, CSTREAM).
 
     pbdump.py DIR [NAME...]     every NAME.param.bin in DIR by default
     pbdump.py --map DIR NAME    the regions as a grid of their streams' primitive-word forms
@@ -24,13 +25,67 @@ FILLER = 0xc0000000      # what a region's stream block holds after its words
 HEADERS = PAGE // 12     # region headers a TA data page holds
 
 
+# REGION_HDR.FLAGS, region header word 0 [31:24]: the bits the glossary row names, by bit of
+# the word
+REGION_FLAG_BITS = {25: "outside the target", 26: "first of a macrotile", 27: "empty",
+                    28: "last of a macrotile", 31: "last of the scene"}
+
+
 @dataclasses.dataclass(frozen=True)
 class Region:
+    """A region header (REGION_HDR): three dwords, the first two read."""
     index: int
-    col: int             # word 0 [23:16]: 2 per 32-pixel column
-    row: int             # word 0 [15:0]: 2 per 16-pixel row; 15:12 the macrotile
-    flags: int           # word 0 [31:24]
-    stream: int          # word 1: the stream block, relative to the parameter slot; 0 empty
+    col: int             # REGION_HDR.POS, word 0 [23:16]: 2 per 32-pixel column
+    row: int             # REGION_HDR.POS, word 0 [15:0]: 2 per 16-pixel row; 15:12 the macrotile
+    flags: int           # REGION_HDR.FLAGS, word 0 [31:24]
+    stream: int          # REGION_HDR.STREAM, word 1: the stream block, relative to the
+    #                      parameter slot; 0 for an empty region
+
+
+def region_flags(flags: int) -> list[str]:
+    """REGION_HDR.FLAGS (word 0 [31:24]) by its named bits; the others as one hex value."""
+    out, rest = [], flags
+    for bit, name in REGION_FLAG_BITS.items():
+        if flags >> (bit - 24) & 1:
+            out.append(name)
+            rest &= ~(1 << (bit - 24))
+    return out + ([f"{rest:#04x}"] if rest else [])
+
+
+def prim_word(w: int) -> dict[str, int]:
+    """A control-stream primitive word by the glossary's CSTREAM fields."""
+    return {"PRIM_TILES": (w >> 16) & 0xff, "PRIM_VERTICES": (w >> 25) & 0xf,
+            "PRIM_POINTS": (w >> 29) & 1}
+
+
+def obj_word(w: int) -> dict[str, int]:
+    """A control-stream object word by the glossary's CSTREAM fields."""
+    return {"OBJ_PRIMS": w >> 26, "OBJ_ISP_ADDR": w & 0x3ffffff}
+
+
+# CSTREAM.PRIM_TILES forms whose masks do not fit the primitive word: the object's block holds
+# one more dword after the object word, the mask (E177, E180; the glossary's PRIM_TILES row)
+WIDE_MASK_TILES = (0x8a, 0x8c)
+
+
+def objects(words: list[int]) -> list[tuple[dict, dict | None, int | None]]:
+    """A region's stream as (primitive word, object word, mask dword) per object: 2 dwords, or
+    3 when PRIM_TILES is a wide-mask form (the mask after the object word); None for a dword
+    the stream does not hold or a block with no mask."""
+    out, i = [], 0
+    while i < len(words):
+        prim = prim_word(words[i])
+        wide = prim["PRIM_TILES"] in WIDE_MASK_TILES
+        ob = obj_word(words[i + 1]) if i + 1 < len(words) else None
+        mask = words[i + 2] if wide and i + 2 < len(words) else None
+        out.append((prim, ob, mask))
+        i += 3 if wide else 2
+    return out
+
+
+def _fields(d: dict | None) -> str:
+    return " ".join(f"{k} {v:#x}" if k in ("PRIM_TILES", "OBJ_ISP_ADDR") else f"{k} {v}"
+                    for k, v in (d or {}).items())
 
 
 def _words(buf: bytes, start: int, n: int) -> list[int]:
@@ -81,7 +136,7 @@ def form_map(param: bytes, tadata: bytes) -> str:
         cell = "...."
         if r.stream:
             w = stream(param, r.stream)
-            cell = f"{w[0] >> 16:04x}" + ("+" if len(w) > 2 else "")
+            cell = f"{w[0] >> 16:04x}" + ("+" if len(objects(w)) > 1 else "")
         cells[((r.row & 0xfff) // 2, r.col // 2)] = cell
     if not cells:
         return ""
@@ -107,12 +162,17 @@ def report(d: pathlib.Path, name: str) -> str:
              ", TA data pages " + " ".join(str(i) for i in written(tadata))]
     o = obj(param)
     lines.append(f"object ({len(o)} dwords): " + " ".join(f"{w:08x}" for w in o))
+    lines.append("  PB_OBJ.PDS_WORDS " + " ".join(f"{w:08x}" for w in o[:3]))
     rs = regions(tadata)
     for r in rs:
         if r.stream:
+            words = stream(param, r.stream)
             lines.append(f"region {r.index} col {r.col} row {r.row:#x} flags {r.flags:#04x} "
-                         f"-> {r.stream:#x}: " +
-                         " ".join(f"{w:08x}" for w in stream(param, r.stream)))
+                         f"-> {r.stream:#x}: " + " ".join(f"{w:08x}" for w in words))
+            lines.append("  REGION_HDR.FLAGS " + (", ".join(region_flags(r.flags)) or "0x00"))
+            lines += [f"  CSTREAM {_fields(p)}" + (f", {_fields(ob)}" if ob else "")
+                      + (f", mask {m:#x}" if m is not None else "")
+                      for p, ob, m in objects(words)]
     lines.append(f"{sum(not r.stream for r in rs)} empty regions")
     return "\n".join(lines) + "\n"
 

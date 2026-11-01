@@ -1,4 +1,58 @@
 [[term]]
+id = "G0573"
+name = "hw_render_context.ccb_base_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "hw_render_context.ccb_base_dev_vaddr"
+kind = "field"
+sgx545 = "HWRENDERCONTEXT+0x00c"
+meaning = "render context word 3, the base of the context's client CCB: the TA pick finds the next TA command at it plus the CCB's read offset [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E161"
+licence = "MIT"
+evidence = "[RE] E161: the command is at the context's CCB base (dword 3) plus the read offset held in the CCB control"
+
+[[term]]
+id = "G0574"
+name = "hw_render_context.ccb_ctl_dev_vaddr"
+status = "named"
+
+[[term.source]]
+term = "PVRSRV_SGX_CCB_CTL"
+kind = "field"
+sgx545 = "HWRENDERCONTEXT+0x010"
+meaning = "TA client CCB control"
+tier = "1"
+source = "sgx545-ce"
+citation = "C0142"
+licence = "GPL-2.0"
+evidence = "the pointed-to control block type"
+
+[[term.source]]
+term = "ccbctl_fw_addr"
+kind = "field"
+sgx545 = "HWRENDERCONTEXT+0x010"
+meaning = "TA client CCB control"
+tier = "3"
+source = "linux-imagination"
+citation = "C0152"
+licence = "GPL-2.0 OR MIT"
+evidence = "rogue_fwif_fwcommoncontext"
+
+[[term.source]]
+term = "hw_render_context.ccb_ctl_dev_vaddr"
+kind = "field"
+sgx545 = "HWRENDERCONTEXT+0x010"
+meaning = "render context word 4, the address of the client CCB's control, which holds the read offset in bytes [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E161"
+licence = "MIT"
+evidence = "[RE] E161: the read offset is held in the CCB control (dword 4 points at it; offset in bytes)"
+
+[[term]]
 id = "G0527"
 name = "hw_render_context.hw_pb_desc_dev_vaddr"
 status = "named"
@@ -45,6 +99,33 @@ source = "resgx545"
 citation = "E156"
 licence = "MIT"
 evidence = "[RE] the TA end of a first kick appends the render details here; the scene's last TA end moves them to the ready list (E156); EDM-owned, the client leaves it 0"
+
+[[term]]
+id = "G0575"
+name = "hw_render_context.pid"
+status = "named"
+
+[[term.source]]
+term = "pid"
+kind = "field"
+sgx545 = "HWRENDERCONTEXT+0x040"
+meaning = "owning process"
+tier = "3"
+source = "linux-imagination"
+citation = "C0345"
+licence = "GPL-2.0 OR MIT"
+evidence = "rogue_fwif_fwcommoncontext"
+
+[[term.source]]
+term = "hw_render_context.pid"
+kind = "field"
+sgx545 = "HWRENDERCONTEXT+0x040"
+meaning = "render context word 16, the PID: the TA and 3D kicks record it in the EDM's TA/3D control block [infer]"
+tier = "ours"
+source = "resgx545"
+citation = "E159, E163"
+licence = "MIT"
+evidence = "[RE] E159: the TA kick writes context dword 16 (the PID) to TA3DCtl dword 50; [RE] E163: the 3D kick writes it to TA3DCtl dword 51"
 
 [[term]]
 id = "G0530"

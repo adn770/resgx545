@@ -161,9 +161,17 @@ def test_given_pointer_words_agree_with_kick3d_names():
         assert not path.startswith("pad_"), (prefix, off)
 
 
-def test_no_pointer_word_is_typed_from_a_client_layout_name():
-    # the client layouts carry our names, which type nothing: only records give pointer words
+def test_the_kernel_side_layouts_give_no_pointer_word():
     assert df._layout_pointers() == {}
+
+
+def test_the_client_layouts_pointer_words_agree_with_the_given_ones():
+    # edmtrace types the client layouts' pointer words (kick3d.py's names); the dataflow keeps
+    # to the given words, which hold the same, and lists the ones a rerun takes up
+    every = df._layout_pointers(set(df.kick3d.STRUCTS))
+    for word, target in every.items():
+        assert df.GLOSSARY_POINTERS.get(word, df.LAYOUT_ONLY.get(word)) == target, word
+    assert set(every) - set(df.GLOSSARY_POINTERS) == set(df.LAYOUT_ONLY)
 
 
 def test_pointers_of_one_type_from_different_words_keep_their_type_at_a_join(monkeypatch):

@@ -106,19 +106,24 @@ also keeps a copy made from the Cedarview build, `firmware/r2/sgx545_ukernel.r2`
 it.
 
 `edmtrace.py` (tested: `test_edmtrace.py`) traces what a range of EDM code reads and writes.
-Given seeds for the registers that point at known structures when the range starts, it
-follows values linearly through moves, adds and loads. It names every SGX register and
-structure word with its glossary term, or with its offset (`0x0abc`, `CMDTA+0x0f8`) when the
-glossary has none:
+Given seeds for the registers that point at known structures when the range starts (a
+`kick3d.py` layout, `cmd_ta`, or the glossary's prefix, `CMDTA`), it follows values linearly
+through moves, adds and loads. A word `kick3d.py` names as a structure's address types what is
+loaded through it, so one seed reaches the structures it points at: `sa0`, the TA/3D control
+block, reaches the command, render details, RT data, context and PB descriptors the kicks
+record there. It names every SGX register and structure word with its glossary term, or with
+its offset (`0x0abc`, `CMDTA+0x0f8`) when the glossary has none:
 
 ```sh
 ../../tools/usse-dis/usse-dis "$RESGX545_UKERNEL" > uk.txt
-../../.venv/bin/python edmtrace.py uk.txt 95a 985 --seed r1=CMDTA
-# 0x095e  W CR_TE_REG_0204 <- cmd_ta.te_aa ...
+../../.venv/bin/python edmtrace.py uk.txt 95a 985 --seed r1=cmd_ta
+# 0x095e  W CR_TE_AA <- cmd_ta.te_aa ...
+../../.venv/bin/python edmtrace.py uk.txt 7b1 7fb --seed r0=cmd_ta
+# 0x07b5  st hw_render_details.frag_flags <- cmd_ta.frag_flags ...
 ```
 
-The exhaustive dataflow analysis of the ukernel (`edm_dataflow.py`, with its generated
-`doc/specs/edm_dataflow.md`) arrives with the host protocol unit.
+The exhaustive dataflow analysis of the ukernel is `edm_dataflow.py`, which writes
+`doc/specs/edm_dataflow.md`.
 
 ## Layout captures (for the fwcutter loader)
 
