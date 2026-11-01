@@ -1,0 +1,10 @@
+title = "probe table pds/encoding-bits-flow"
+repo = "data"
+paths = ["pds/encoding-bits-flow/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 107
+size = 208396
+sha256 = "45e3f864afb5094ca208b03f093d0dd00f72d43805622f95337b1859832b49f5"
+recipe = "probes/pds/encoding-bits-flow.toml"
+needs = ["render"]

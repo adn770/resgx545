@@ -1,0 +1,91 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# pds task inputs: 0 sweeps, 6 probes. What the pixel-event and the primary
+# pixel programs read from their inputs, specials and predicates.
+needs = ["render"]
+
+[[probe]]
+name = "pds-task-inputs-pixev-one-tile"
+question = "ir1 by every path, ir2, mr01, mr23, if0 and if1, .h of the specials, in the pixel-event program of a one-tile render (32x16); three repeats, recorded"
+source = "pixev_dump.s"
+host = "tri"
+slot = "pixev"
+slots = { eot = "eot_dump.s" }
+size = [0x20, 0x10]
+temps = 0x8
+params = { OP = "or ds0[49], ir1, ds1[28]\nmov32 ds0[50], ir1.0\nmov32 ds0[51], ir1.1\nmov16 ds0[104], ir1.0.l\nmov16 ds0[105], ir1.0.h\nmov32 ds0[53], ds0[28]\ntstz p0, ir1\n(p0) mov32 ds0[53], ds0[10]\nmov32 ds0[54], ds0[28]\n(if0) mov32 ds0[54], ds0[11]\nmov32 ds0[55], ds0[28]\n(if1) mov32 ds0[55], ds0[12]\nmov64 ds0[56], mr01\nmov64 ds0[58], mr23\nshl ds0[60], ir1, 0\nabs ds0[61], ir1\nmovs douta, ds0[49], ds1[10], ds0[49], ds0[49]\nmovs douta, ds0[50], ds1[11], ds0[50], ds0[50]\nmovs douta, ds0[51], ds1[12], ds0[51], ds0[51]\nmovs douta, ds0[52], ds1[13], ds0[52], ds0[52]\nmovs douta, ds0[53], ds1[14], ds0[53], ds0[53]\nmovs douta, ds0[54], ds1[15], ds0[54], ds0[54]\nmovs douta, ds0[55], ds1[16], ds0[55], ds0[55]\nmovs douta, ds0[56], ds1[17], ds0[56], ds0[56]\nmovs douta, ds0[57], ds1[18], ds0[57], ds0[57]\nmovs douta, ds0[58], ds1[19], ds0[58], ds0[58]\nmovs douta, ds0[59], ds1[20], ds0[59], ds0[59]\nmovs douta, ir2.l, ds1[21], ir2.l, ir2.l\nmovs douta, ir2.h, ds1[22], ir2.h, ir2.h\nmovs douta, ds0[60], ds1[23], ds0[60], ds0[60]\nmovs douta, ds0[61], ds1[24], ds0[61], ds0[61]\nmovs douta, tim.h, ds1[25], tim.h, tim.h\n" }
+labels = ["ir1 (ALU), ir1.0, ir1.1, ir1.0 by mov16, tstz ir1, if0, if1, mr01, mr23, ir2.l, ir2.h, shl ir1, abs ir1, tim.h; run 1", "ir1 (ALU), ir1.0, ir1.1, ir1.0 by mov16, tstz ir1, if0, if1, mr01, mr23, ir2.l, ir2.h, shl ir1, abs ir1, tim.h; run 2", "ir1 (ALU), ir1.0, ir1.1, ir1.0 by mov16, tstz ir1, if0, if1, mr01, mr23, ir2.l, ir2.h, shl ir1, abs ir1, tim.h; run 3"]
+cases = [[], [], []]
+
+[[probe]]
+name = "pds-task-inputs-pixev-tiles"
+question = "the same per 16x16 tile of a 128x128 render, each tile to its slot (eot_tile.s); three repeats, recorded"
+source = "pixev_dump.s"
+host = "tri"
+slot = "pixev"
+slots = { eot = "eot_tile.s" }
+size = [0x80, 0x80]
+temps = 0x8
+params = { OP = "shr ds0[57], ir0, 3\nshl ds1[57], ds0[57], 3\nsub ds0[56], ir0, ds1[57]\nshr ds0[58], ir0, 10\nshl ds1[58], ds0[58], 3\nor ds0[59], ds0[56], ds1[58]\nor ds0[63], ds0[59], ds1[26]\nor ds0[49], ir1, ds1[28]\nmov32 ds0[50], ir1.0\nmov32 ds0[51], ds0[28]\ntstz p0, ir1\n(p0) mov32 ds0[51], ds0[10]\nmov32 ds0[52], ds0[28]\n(if0) mov32 ds0[52], ds0[11]\nmov32 ds0[53], ds0[28]\n(if1) mov32 ds0[53], ds0[12]\nmov64 ds0[54], mr01\nmov64 ds1[54], mr23\nmov32 ds0[60], ir1.1\nmovs douta, ir0.l, ds1[10], ir0.l, ir0.l\nmovs douta, ds0[49], ds1[11], ds0[49], ds0[49]\nmovs douta, ds0[50], ds1[12], ds0[50], ds0[50]\nmovs douta, ds0[51], ds1[13], ds0[51], ds0[51]\nmovs douta, ds0[52], ds1[14], ds0[52], ds0[52]\nmovs douta, ds0[53], ds1[15], ds0[53], ds0[53]\nmovs douta, ds0[54], ds1[16], ds0[54], ds0[54]\nmovs douta, ds0[55], ds1[17], ds0[55], ds0[55]\nmov32 ds0[56], ds1[54]\nmov32 ds0[57], ds1[55]\nmovs douta, ds0[56], ds1[18], ds0[56], ds0[56]\nmovs douta, ds0[57], ds1[19], ds0[57], ds0[57]\nmovs douta, ir2.l, ds1[20], ir2.l, ir2.l\nmovs douta, ir1.h, ds1[21], ir1.h, ir1.h\nmovs douta, ir0.h, ds1[22], ir0.h, ir0.h\nmovs douta, ds0[60], ds1[23], ds0[60], ds0[60]\nmovs douta, tim.h, ds1[24], tim.h, tim.h\nmovs douta, ds0[63], ds1[25], ds0[63], ds0[63]\n" }
+labels = ["ir0.l, ir1, ir1.0, tstz ir1, if0, if1, mr01, mr23, ir2.l, ir1.h, ir0.h, ir1.1, tim.h, slot; run 1", "ir0.l, ir1, ir1.0, tstz ir1, if0, if1, mr01, mr23, ir2.l, ir1.h, ir0.h, ir1.1, tim.h, slot; run 2", "ir0.l, ir1, ir1.0, tstz ir1, if0, if1, mr01, mr23, ir2.l, ir1.h, ir0.h, ir1.1, tim.h, slot; run 3"]
+cases = [[], [], []]
+
+[[probe]]
+name = "pds-task-inputs-primary-flags-64"
+question = "if0, if1 and whether each input reads 0 in the primary pixel program, per pixel (64x64): x + 0.5 where the condition held, the coordinate set elsewhere; recorded"
+source = "pds_iter_if.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 0x2
+size = [0x40, 0x40]
+pixels = true
+params = { A = "0x20000800", C = "0x20000000", U = "0x01000004", M = "0" }
+inputs = ["OP"]
+labels = ["control: source 1 everywhere", "control: source 0 everywhere", "if0", "if1", "ir0 == 0 (tstz)", "ir1 == 0 (tstz)", "ALU ir1 == 0", "mov32 ir1.0 == 0", "tim == 0", "mr01 low == 0", "mr01 high == 0", "mr23 low == 0", "mr23 high == 0", "pc.0 == 0"]
+cases = [["nop"], ["mov32 ds0[48], ds0[4]"], ["(if0) mov32 ds0[48], ds0[4]"], ["(if1) mov32 ds0[48], ds0[4]"], ["tstz p0, ir0\n(p0) mov32 ds0[48], ds0[4]"], ["tstz p0, ir1\n(p0) mov32 ds0[48], ds0[4]"], ["or ds0[50], ir1, ds1[3]\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]"], ["mov32 ds0[50], ir1.0\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]"], ["or ds0[50], tim, ds1[3]\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]"], ["mov64 ds0[50], mr01\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]"], ["mov64 ds0[50], mr01\ntstz p0, ds0[51]\n(p0) mov32 ds0[48], ds0[4]"], ["mov64 ds0[50], mr23\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]"], ["mov64 ds0[50], mr23\ntstz p0, ds0[51]\n(p0) mov32 ds0[48], ds0[4]"], ["mov32 ds0[50], pc.0\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]"]]
+
+[[probe]]
+name = "pds-task-inputs-primary-flags-128"
+question = "if0, if1 and whether each input reads 0 in the primary pixel program, per pixel (128x128): x + 0.5 where the condition held, the coordinate set elsewhere; recorded"
+source = "pds_iter_if.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 0x2
+size = [0x80, 0x80]
+pixels = true
+params = { A = "0x20000800", C = "0x20000000", U = "0x01000004", M = "0" }
+inputs = ["OP"]
+labels = ["control: source 1 everywhere", "control: source 0 everywhere", "if0", "if1", "ir0 == 0 (tstz)", "ir1 == 0 (tstz)", "ALU ir1 == 0", "mov32 ir1.0 == 0", "tim == 0", "mr01 low == 0", "mr01 high == 0", "mr23 low == 0", "mr23 high == 0", "pc.0 == 0"]
+cases = [["nop"], ["mov32 ds0[48], ds0[4]"], ["(if0) mov32 ds0[48], ds0[4]"], ["(if1) mov32 ds0[48], ds0[4]"], ["tstz p0, ir0\n(p0) mov32 ds0[48], ds0[4]"], ["tstz p0, ir1\n(p0) mov32 ds0[48], ds0[4]"], ["or ds0[50], ir1, ds1[3]\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]"], ["mov32 ds0[50], ir1.0\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]"], ["or ds0[50], tim, ds1[3]\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]"], ["mov64 ds0[50], mr01\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]"], ["mov64 ds0[50], mr01\ntstz p0, ds0[51]\n(p0) mov32 ds0[48], ds0[4]"], ["mov64 ds0[50], mr23\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]"], ["mov64 ds0[50], mr23\ntstz p0, ds0[51]\n(p0) mov32 ds0[48], ds0[4]"], ["mov32 ds0[50], pc.0\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]"]]
+
+[[probe]]
+name = "pds-task-inputs-primary-bits"
+question = "each bit of ir0 (0-15) and of the ALU's ir1 (0-11) in the primary pixel program, per pixel (64x64): x + 0.5 where the bit is clear; recorded"
+source = "pds_iter_if.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 0x2
+size = [0x40, 0x40]
+pixels = true
+params = { A = "0x20000800", C = "0x20000000", U = "0x01000004" }
+inputs = ["OP", "M"]
+labels = ["ir0 bit 0", "ir0 bit 1", "ir0 bit 2", "ir0 bit 3", "ir0 bit 4", "ir0 bit 5", "ir0 bit 6", "ir0 bit 7", "ir0 bit 8", "ir0 bit 9", "ir0 bit 10", "ir0 bit 11", "ir0 bit 12", "ir0 bit 13", "ir0 bit 14", "ir0 bit 15", "ALU ir1 bit 0", "ALU ir1 bit 1", "ALU ir1 bit 2", "ALU ir1 bit 3", "ALU ir1 bit 4", "ALU ir1 bit 5", "ALU ir1 bit 6", "ALU ir1 bit 7", "ALU ir1 bit 8", "ALU ir1 bit 9", "ALU ir1 bit 10", "ALU ir1 bit 11"]
+cases = [["and ds0[50], ir0, ds1[2]\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]", 0x1], ["and ds0[50], ir0, ds1[2]\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]", 0x2], ["and ds0[50], ir0, ds1[2]\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]", 0x4], ["and ds0[50], ir0, ds1[2]\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]", 0x8], ["and ds0[50], ir0, ds1[2]\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]", 0x10], ["and ds0[50], ir0, ds1[2]\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]", 0x20], ["and ds0[50], ir0, ds1[2]\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]", 0x40], ["and ds0[50], ir0, ds1[2]\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]", 0x80], ["and ds0[50], ir0, ds1[2]\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]", 0x100], ["and ds0[50], ir0, ds1[2]\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]", 0x200], ["and ds0[50], ir0, ds1[2]\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]", 0x400], ["and ds0[50], ir0, ds1[2]\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]", 0x800], ["and ds0[50], ir0, ds1[2]\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]", 0x1000], ["and ds0[50], ir0, ds1[2]\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]", 0x2000], ["and ds0[50], ir0, ds1[2]\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]", 0x4000], ["and ds0[50], ir0, ds1[2]\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]", 0x8000], ["and ds0[50], ir1, ds1[2]\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]", 0x1], ["and ds0[50], ir1, ds1[2]\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]", 0x2], ["and ds0[50], ir1, ds1[2]\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]", 0x4], ["and ds0[50], ir1, ds1[2]\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]", 0x8], ["and ds0[50], ir1, ds1[2]\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]", 0x10], ["and ds0[50], ir1, ds1[2]\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]", 0x20], ["and ds0[50], ir1, ds1[2]\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]", 0x40], ["and ds0[50], ir1, ds1[2]\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]", 0x80], ["and ds0[50], ir1, ds1[2]\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]", 0x100], ["and ds0[50], ir1, ds1[2]\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]", 0x200], ["and ds0[50], ir1, ds1[2]\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]", 0x400], ["and ds0[50], ir1, ds1[2]\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]", 0x800]]
+
+[[probe]]
+name = "pds-task-inputs-primary-ports"
+question = "movs to mr, slc, douts, doutc and ir0 in the primary pixel program (64x64): whether the render completes and what the pixels show; recorded; may hang"
+source = "pds_iter_if.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_coords.s" }
+vtx_coords = 0x2
+size = [0x40, 0x40]
+pixels = true
+params = { A = "0x20000800", C = "0x20000000", U = "0x01000004", M = "0" }
+inputs = ["OP"]
+labels = ["control", "movs mr", "movs slc", "movs douts", "movs doutc", "movs ir0", "movs mr, then mr01 low == 0", "movs ir0, then ir0 == 0"]
+cases = [["nop"], ["movs mr, ds0[4], ds0[5], ds1[4], ds1[5]"], ["movs slc, ds0[4], ds0[5], ds1[4], ds1[5]"], ["movs douts, ds0[4], ds0[5], ds1[4], ds1[5]"], ["movs doutc, ds0[4], ds0[5], ds1[4], ds1[5]"], ["movs ir0, ds0[4], ds0[5], ds1[4], ds1[5]"], ["movs mr, ds0[4], ds0[5], ds1[4], ds1[5]\nmov64 ds0[50], mr01\ntstz p0, ds0[50]\n(p0) mov32 ds0[48], ds0[4]"], ["movs ir0, ds0[4], ds0[5], ds1[4], ds1[5]\ntstz p0, ir0\n(p0) mov32 ds0[48], ds0[4]"]]

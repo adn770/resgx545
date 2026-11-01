@@ -1,0 +1,175 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# pds encoding bits: 0 sweeps, 17 probes (written by tools/usse-asm/pds_bits.py).
+# Each probe flips one unmapped bit of a form per case; case 0 is the base word.
+needs = ["render"]
+
+[[probe]]
+name = "pds-encoding-bits-movs"
+question = "which unmapped bits of '{0}movs {1}, {2}' the hardware reads (0x00000010), base 'movs douta, ds0[50], ds1[10], ds0[50], ds0[50]', recorded; may hang"
+isa = "pds"
+source = "pds_bits.s"
+params = { A = "0x11111111", B = "0x22222222", C = "0x80000003", D = "0x00000000", E = "0x55555555", F = "0x66666666", G = "0x77777777", H = "0x0000FF01", I = "0x99999999", J = "0xAAAAAAAA", K = "0x00000000", L = "0x8000000B", M = "0xCCCCCCCC", N = "0xDDDDDDDD", O = "0xEEEEEEEE", P = "0x00010203" }
+inputs = ["OP", "POST", "END"]
+labels = ["base", "bit 4"]
+cases = [["nop", ".word /* base */ 0x0764A406", "halt"], ["nop", ".word /* bit 4 */ 0x0764A416", "halt"]]
+
+[[probe]]
+name = "pds-encoding-bits-movsa"
+question = "which unmapped bits of '{0}movsa {1}, {2}' the hardware reads (0x00000010), base 'movsa douta, ds0[50], ds1[10], ds0[50], ds0[50]', recorded; may hang"
+isa = "pds"
+source = "pds_bits.s"
+params = { A = "0x11111111", B = "0x22222222", C = "0x80000003", D = "0x00000000", E = "0x55555555", F = "0x66666666", G = "0x77777777", H = "0x0000FF01", I = "0x99999999", J = "0xAAAAAAAA", K = "0x00000000", L = "0x8000000B", M = "0xCCCCCCCC", N = "0xDDDDDDDD", O = "0xEEEEEEEE", P = "0x00010203" }
+inputs = ["OP", "POST", "END"]
+labels = ["base", "bit 4"]
+cases = [["nop", ".word /* base */ 0x2F64A406", "halt"], ["nop", ".word /* bit 4 */ 0x2F64A416", "halt"]]
+
+[[probe]]
+name = "pds-encoding-bits-mov16"
+question = "which unmapped bits of '{0}mov16 ds{1}[{2}], {3}' the hardware reads (0x00fe0000), base 'mov16 ds0[105], ds1[49].h', recorded; may hang"
+isa = "pds"
+source = "pds_bits.s"
+params = { A = "0x11111111", B = "0x22222222", C = "0x80000003", D = "0x00000000", E = "0x55555555", F = "0x66666666", G = "0x77777777", H = "0x0000FF01", I = "0x99999999", J = "0xAAAAAAAA", K = "0x00000000", L = "0x8000000B", M = "0xCCCCCCCC", N = "0xDDDDDDDD", O = "0xEEEEEEEE", P = "0x00010203" }
+inputs = ["OP", "POST", "END"]
+labels = ["base", "bit 17", "bit 18", "bit 19", "bit 20", "bit 21", "bit 22", "bit 23"]
+cases = [[".word /* base */ 0x0F00E369", "nop", "halt"], [".word /* bit 17 */ 0x0F02E369", "nop", "halt"], [".word /* bit 18 */ 0x0F04E369", "nop", "halt"], [".word /* bit 19 */ 0x0F08E369", "nop", "halt"], [".word /* bit 20 */ 0x0F10E369", "nop", "halt"], [".word /* bit 21 */ 0x0F20E369", "nop", "halt"], [".word /* bit 22 */ 0x0F40E369", "nop", "halt"], [".word /* bit 23 */ 0x0F80E369", "nop", "halt"]]
+
+[[probe]]
+name = "pds-encoding-bits-mov64"
+question = "which unmapped bits of '{0}mov64 ds{1}[{2}], {3}' the hardware reads (0x00fe0303), base 'mov64 ds0[52], ds1[48]', recorded; may hang"
+isa = "pds"
+source = "pds_bits.s"
+params = { A = "0x11111111", B = "0x22222222", C = "0x80000003", D = "0x00000000", E = "0x55555555", F = "0x66666666", G = "0x77777777", H = "0x0000FF01", I = "0x99999999", J = "0xAAAAAAAA", K = "0x00000000", L = "0x8000000B", M = "0xCCCCCCCC", N = "0xDDDDDDDD", O = "0xEEEEEEEE", P = "0x00010203" }
+inputs = ["OP", "POST", "END"]
+labels = ["base", "bit 0", "bit 1", "bit 8", "bit 9", "bit 17", "bit 18", "bit 19", "bit 20", "bit 21", "bit 22", "bit 23"]
+cases = [[".word /* base */ 0x1F00E068", "nop", "halt"], [".word /* bit 0 */ 0x1F00E069", "nop", "halt"], [".word /* bit 1 */ 0x1F00E06A", "nop", "halt"], [".word /* bit 8 */ 0x1F00E168", "nop", "halt"], [".word /* bit 9 */ 0x1F00E268", "nop", "halt"], [".word /* bit 17 */ 0x1F02E068", "nop", "halt"], [".word /* bit 18 */ 0x1F04E068", "nop", "halt"], [".word /* bit 19 */ 0x1F08E068", "nop", "halt"], [".word /* bit 20 */ 0x1F10E068", "nop", "halt"], [".word /* bit 21 */ 0x1F20E068", "nop", "halt"], [".word /* bit 22 */ 0x1F40E068", "nop", "halt"], [".word /* bit 23 */ 0x1F80E068", "nop", "halt"]]
+
+[[probe]]
+name = "pds-encoding-bits-mov128"
+question = "which unmapped bits of '{0}mov128 ds[{1}], ds[{2}]{3}' the hardware reads (0x00ff8283), base 'mov128 ds[52], ds[4]', recorded; may hang"
+isa = "pds"
+source = "pds_bits.s"
+params = { A = "0x11111111", B = "0x22222222", C = "0x80000003", D = "0x00000000", E = "0x55555555", F = "0x66666666", G = "0x77777777", H = "0x0000FF01", I = "0x99999999", J = "0xAAAAAAAA", K = "0x00000000", L = "0x8000000B", M = "0xCCCCCCCC", N = "0xDDDDDDDD", O = "0xEEEEEEEE", P = "0x00010203" }
+inputs = ["OP", "POST", "END"]
+labels = ["base", "bit 0", "bit 1", "bit 7", "bit 9", "bit 15", "bit 16", "bit 17", "bit 18", "bit 19", "bit 20", "bit 21", "bit 22", "bit 23"]
+cases = [[".word /* base */ 0x27000868", "nop", "halt"], [".word /* bit 0 */ 0x27000869", "nop", "halt"], [".word /* bit 1 */ 0x2700086A", "nop", "halt"], [".word /* bit 7 */ 0x270008E8", "nop", "halt"], [".word /* bit 9 */ 0x27000A68", "nop", "halt"], [".word /* bit 15 */ 0x27008868", "nop", "halt"], [".word /* bit 16 */ 0x27010868", "nop", "halt"], [".word /* bit 17 */ 0x27020868", "nop", "halt"], [".word /* bit 18 */ 0x27040868", "nop", "halt"], [".word /* bit 19 */ 0x27080868", "nop", "halt"], [".word /* bit 20 */ 0x27100868", "nop", "halt"], [".word /* bit 21 */ 0x27200868", "nop", "halt"], [".word /* bit 22 */ 0x27400868", "nop", "halt"], [".word /* bit 23 */ 0x27800868", "nop", "halt"]]
+
+[[probe]]
+name = "pds-encoding-bits-alu"
+question = "which unmapped bits of '{0}{1} {2}, {3}, ds1[{4}]' the hardware reads (0x00010380), base 'add ds0[52], ds0[49], ds1[49]', recorded; may hang"
+isa = "pds"
+source = "pds_bits.s"
+params = { A = "0x11111111", B = "0x22222222", C = "0x80000003", D = "0x00000000", E = "0x55555555", F = "0x66666666", G = "0x77777777", H = "0x0000FF01", I = "0x99999999", J = "0xAAAAAAAA", K = "0x00000000", L = "0x8000000B", M = "0xCCCCCCCC", N = "0xDDDDDDDD", O = "0xEEEEEEEE", P = "0x00010203" }
+inputs = ["OP", "POST", "END"]
+labels = ["base", "bit 7", "bit 8", "bit 9", "bit 16"]
+cases = [[".word /* base */ 0x4762C434", "nop", "halt"], [".word /* bit 7 */ 0x4762C4B4", "nop", "halt"], [".word /* bit 8 */ 0x4762C534", "nop", "halt"], [".word /* bit 9 */ 0x4762C634", "nop", "halt"], [".word /* bit 16 */ 0x4763C434", "nop", "halt"]]
+
+[[probe]]
+name = "pds-encoding-bits-mul"
+question = "which unmapped bits of '{0}mul {1}, {2}, {3}' the hardware reads (0x00000180), base 'mul ds0[52], ds0[49].l, ds1[49].l', recorded; may hang"
+isa = "pds"
+source = "pds_bits.s"
+params = { A = "0x11111111", B = "0x22222222", C = "0x80000003", D = "0x00000000", E = "0x55555555", F = "0x66666666", G = "0x77777777", H = "0x0000FF01", I = "0x99999999", J = "0xAAAAAAAA", K = "0x00000000", L = "0x8000000B", M = "0xCCCCCCCC", N = "0xDDDDDDDD", O = "0xEEEEEEEE", P = "0x00010203" }
+inputs = ["OP", "POST", "END"]
+labels = ["base", "bit 7", "bit 8"]
+cases = [[".word /* base */ 0x6762C434", "nop", "halt"], [".word /* bit 7 */ 0x6762C4B4", "nop", "halt"], [".word /* bit 8 */ 0x6762C534", "nop", "halt"]]
+
+[[probe]]
+name = "pds-encoding-bits-abs-ds1"
+question = "which unmapped bits of '{0}abs {1}, ds1[{2}]' the hardware reads (0x00ff8280), base 'abs ds0[52], ds1[3]', recorded; may hang"
+isa = "pds"
+source = "pds_bits.s"
+params = { A = "0x11111111", B = "0x22222222", C = "0x80000003", D = "0x00000000", E = "0x55555555", F = "0x66666666", G = "0x77777777", H = "0x0000FF01", I = "0x99999999", J = "0xAAAAAAAA", K = "0x00000000", L = "0x8000000B", M = "0xCCCCCCCC", N = "0xDDDDDDDD", O = "0xEEEEEEEE", P = "0x00010203" }
+inputs = ["OP", "POST", "END"]
+labels = ["base", "bit 7", "bit 9", "bit 15", "bit 16", "bit 17", "bit 18", "bit 19", "bit 20", "bit 21", "bit 22", "bit 23"]
+cases = [["alum signed\n.word /* base */ 0x6F000D34", "nop", "halt"], ["alum signed\n.word /* bit 7 */ 0x6F000DB4", "nop", "halt"], ["alum signed\n.word /* bit 9 */ 0x6F000F34", "nop", "halt"], ["alum signed\n.word /* bit 15 */ 0x6F008D34", "nop", "halt"], ["alum signed\n.word /* bit 16 */ 0x6F010D34", "nop", "halt"], ["alum signed\n.word /* bit 17 */ 0x6F020D34", "nop", "halt"], ["alum signed\n.word /* bit 18 */ 0x6F040D34", "nop", "halt"], ["alum signed\n.word /* bit 19 */ 0x6F080D34", "nop", "halt"], ["alum signed\n.word /* bit 20 */ 0x6F100D34", "nop", "halt"], ["alum signed\n.word /* bit 21 */ 0x6F200D34", "nop", "halt"], ["alum signed\n.word /* bit 22 */ 0x6F400D34", "nop", "halt"], ["alum signed\n.word /* bit 23 */ 0x6F800D34", "nop", "halt"]]
+
+[[probe]]
+name = "pds-encoding-bits-abs"
+question = "which unmapped bits of '{0}abs {1}, {2}' the hardware reads (0x0001fe80), base 'abs ds0[52], ds0[50]', recorded; may hang"
+isa = "pds"
+source = "pds_bits.s"
+params = { A = "0x11111111", B = "0x22222222", C = "0x80000003", D = "0x00000000", E = "0x55555555", F = "0x66666666", G = "0x77777777", H = "0x0000FF01", I = "0x99999999", J = "0xAAAAAAAA", K = "0x00000000", L = "0x8000000B", M = "0xCCCCCCCC", N = "0xDDDDDDDD", O = "0xEEEEEEEE", P = "0x00010203" }
+inputs = ["OP", "POST", "END"]
+labels = ["base", "bit 7", "bit 9", "bit 10", "bit 11", "bit 12", "bit 13", "bit 14", "bit 15", "bit 16"]
+cases = [["alum signed\n.word /* base */ 0x6F640034", "nop", "halt"], ["alum signed\n.word /* bit 7 */ 0x6F6400B4", "nop", "halt"], ["alum signed\n.word /* bit 9 */ 0x6F640234", "nop", "halt"], ["alum signed\n.word /* bit 10 */ 0x6F640434", "nop", "halt"], ["alum signed\n.word /* bit 11 */ 0x6F640834", "nop", "halt"], ["alum signed\n.word /* bit 12 */ 0x6F641034", "nop", "halt"], ["alum signed\n.word /* bit 13 */ 0x6F642034", "nop", "halt"], ["alum signed\n.word /* bit 14 */ 0x6F644034", "nop", "halt"], ["alum signed\n.word /* bit 15 */ 0x6F648034", "nop", "halt"], ["alum signed\n.word /* bit 16 */ 0x6F650034", "nop", "halt"]]
+
+[[probe]]
+name = "pds-encoding-bits-not-ds1"
+question = "which unmapped bits of '{0}not {1}, ds1[{2}]' the hardware reads (0x00ff0280), base 'not ds0[52], ds1[3]', recorded; may hang"
+isa = "pds"
+source = "pds_bits.s"
+params = { A = "0x11111111", B = "0x22222222", C = "0x80000003", D = "0x00000000", E = "0x55555555", F = "0x66666666", G = "0x77777777", H = "0x0000FF01", I = "0x99999999", J = "0xAAAAAAAA", K = "0x00000000", L = "0x8000000B", M = "0xCCCCCCCC", N = "0xDDDDDDDD", O = "0xEEEEEEEE", P = "0x00010203" }
+inputs = ["OP", "POST", "END"]
+labels = ["base", "bit 7", "bit 9", "bit 16", "bit 17", "bit 18", "bit 19", "bit 20", "bit 21", "bit 22", "bit 23"]
+cases = [[".word /* base */ 0xDF000D34", "nop", "halt"], [".word /* bit 7 */ 0xDF000DB4", "nop", "halt"], [".word /* bit 9 */ 0xDF000F34", "nop", "halt"], [".word /* bit 16 */ 0xDF010D34", "nop", "halt"], [".word /* bit 17 */ 0xDF020D34", "nop", "halt"], [".word /* bit 18 */ 0xDF040D34", "nop", "halt"], [".word /* bit 19 */ 0xDF080D34", "nop", "halt"], [".word /* bit 20 */ 0xDF100D34", "nop", "halt"], [".word /* bit 21 */ 0xDF200D34", "nop", "halt"], [".word /* bit 22 */ 0xDF400D34", "nop", "halt"], [".word /* bit 23 */ 0xDF800D34", "nop", "halt"]]
+
+[[probe]]
+name = "pds-encoding-bits-not"
+question = "which unmapped bits of '{0}not {1}, {2}' the hardware reads (0x0001fe80), base 'not ds0[52], ds0[50]', recorded; may hang"
+isa = "pds"
+source = "pds_bits.s"
+params = { A = "0x11111111", B = "0x22222222", C = "0x80000003", D = "0x00000000", E = "0x55555555", F = "0x66666666", G = "0x77777777", H = "0x0000FF01", I = "0x99999999", J = "0xAAAAAAAA", K = "0x00000000", L = "0x8000000B", M = "0xCCCCCCCC", N = "0xDDDDDDDD", O = "0xEEEEEEEE", P = "0x00010203" }
+inputs = ["OP", "POST", "END"]
+labels = ["base", "bit 7", "bit 9", "bit 10", "bit 11", "bit 12", "bit 13", "bit 14", "bit 15", "bit 16"]
+cases = [[".word /* base */ 0xDF640034", "nop", "halt"], [".word /* bit 7 */ 0xDF6400B4", "nop", "halt"], [".word /* bit 9 */ 0xDF640234", "nop", "halt"], [".word /* bit 10 */ 0xDF640434", "nop", "halt"], [".word /* bit 11 */ 0xDF640834", "nop", "halt"], [".word /* bit 12 */ 0xDF641034", "nop", "halt"], [".word /* bit 13 */ 0xDF642034", "nop", "halt"], [".word /* bit 14 */ 0xDF644034", "nop", "halt"], [".word /* bit 15 */ 0xDF648034", "nop", "halt"], [".word /* bit 16 */ 0xDF650034", "nop", "halt"]]
+
+[[probe]]
+name = "pds-encoding-bits-tstz-ds1"
+question = "which unmapped bits of '{0}tstz {1}, ds1[{2}]' the hardware reads (0x00ff02f8), base 'tstz p0, ds1[50]', recorded; may hang"
+isa = "pds"
+source = "pds_bits.s"
+params = { A = "0x11111111", B = "0x22222222", C = "0x80000003", D = "0x00000000", E = "0x55555555", F = "0x66666666", G = "0x77777777", H = "0x0000FF01", I = "0x99999999", J = "0xAAAAAAAA", K = "0x00000000", L = "0x8000000B", M = "0xCCCCCCCC", N = "0xDDDDDDDD", O = "0xEEEEEEEE", P = "0x00010203" }
+inputs = ["OP", "POST", "END"]
+labels = ["base", "bit 3", "bit 4", "bit 5", "bit 6", "bit 7", "bit 9", "bit 16", "bit 17", "bit 18", "bit 19", "bit 20", "bit 21", "bit 22", "bit 23"]
+cases = [["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* base */ 0x8700C900\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 3 */ 0x8700C908\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 4 */ 0x8700C910\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 5 */ 0x8700C920\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 6 */ 0x8700C940\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 7 */ 0x8700C980\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 9 */ 0x8700CB00\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 16 */ 0x8701C900\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 17 */ 0x8702C900\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 18 */ 0x8704C900\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 19 */ 0x8708C900\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 20 */ 0x8710C900\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 21 */ 0x8720C900\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 22 */ 0x8740C900\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 23 */ 0x8780C900\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"]]
+
+[[probe]]
+name = "pds-encoding-bits-tstz"
+question = "which unmapped bits of '{0}tstz {1}, {2}' the hardware reads (0x0001fef8), base 'tstz p0, ds0[51]', recorded; may hang"
+isa = "pds"
+source = "pds_bits.s"
+params = { A = "0x11111111", B = "0x22222222", C = "0x80000003", D = "0x00000000", E = "0x55555555", F = "0x66666666", G = "0x77777777", H = "0x0000FF01", I = "0x99999999", J = "0xAAAAAAAA", K = "0x00000000", L = "0x8000000B", M = "0xCCCCCCCC", N = "0xDDDDDDDD", O = "0xEEEEEEEE", P = "0x00010203" }
+inputs = ["OP", "POST", "END"]
+labels = ["base", "bit 3", "bit 4", "bit 5", "bit 6", "bit 7", "bit 9", "bit 10", "bit 11", "bit 12", "bit 13", "bit 14", "bit 15", "bit 16"]
+cases = [["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* base */ 0x87660000\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 3 */ 0x87660008\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 4 */ 0x87660010\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 5 */ 0x87660020\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 6 */ 0x87660040\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 7 */ 0x87660080\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 9 */ 0x87660200\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 10 */ 0x87660400\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 11 */ 0x87660800\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 12 */ 0x87661000\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 13 */ 0x87662000\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 14 */ 0x87664000\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 15 */ 0x87668000\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 16 */ 0x87670000\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"]]
+
+[[probe]]
+name = "pds-encoding-bits-tstn-ds1"
+question = "which unmapped bits of '{0}tstn {1}, ds1[{2}]' the hardware reads (0x00ff02f8), base 'tstn p0, ds1[51]', recorded; may hang"
+isa = "pds"
+source = "pds_bits.s"
+params = { A = "0x11111111", B = "0x22222222", C = "0x80000003", D = "0x00000000", E = "0x55555555", F = "0x66666666", G = "0x77777777", H = "0x0000FF01", I = "0x99999999", J = "0xAAAAAAAA", K = "0x00000000", L = "0x8000000B", M = "0xCCCCCCCC", N = "0xDDDDDDDD", O = "0xEEEEEEEE", P = "0x00010203" }
+inputs = ["OP", "POST", "END"]
+labels = ["base", "bit 3", "bit 4", "bit 5", "bit 6", "bit 7", "bit 9", "bit 16", "bit 17", "bit 18", "bit 19", "bit 20", "bit 21", "bit 22", "bit 23"]
+cases = [["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* base */ 0x8F00CD00\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 3 */ 0x8F00CD08\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 4 */ 0x8F00CD10\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 5 */ 0x8F00CD20\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 6 */ 0x8F00CD40\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 7 */ 0x8F00CD80\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 9 */ 0x8F00CF00\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 16 */ 0x8F01CD00\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 17 */ 0x8F02CD00\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 18 */ 0x8F04CD00\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 19 */ 0x8F08CD00\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 20 */ 0x8F10CD00\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 21 */ 0x8F20CD00\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 22 */ 0x8F40CD00\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 23 */ 0x8F80CD00\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"]]
+
+[[probe]]
+name = "pds-encoding-bits-tstn"
+question = "which unmapped bits of '{0}tstn {1}, {2}' the hardware reads (0x0001fef8), base 'tstn p0, ds0[50]', recorded; may hang"
+isa = "pds"
+source = "pds_bits.s"
+params = { A = "0x11111111", B = "0x22222222", C = "0x80000003", D = "0x00000000", E = "0x55555555", F = "0x66666666", G = "0x77777777", H = "0x0000FF01", I = "0x99999999", J = "0xAAAAAAAA", K = "0x00000000", L = "0x8000000B", M = "0xCCCCCCCC", N = "0xDDDDDDDD", O = "0xEEEEEEEE", P = "0x00010203" }
+inputs = ["OP", "POST", "END"]
+labels = ["base", "bit 3", "bit 4", "bit 5", "bit 6", "bit 7", "bit 9", "bit 10", "bit 11", "bit 12", "bit 13", "bit 14", "bit 15", "bit 16"]
+cases = [["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* base */ 0x8F640000\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 3 */ 0x8F640008\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 4 */ 0x8F640010\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 5 */ 0x8F640020\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 6 */ 0x8F640040\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 7 */ 0x8F640080\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 9 */ 0x8F640200\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 10 */ 0x8F640400\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 11 */ 0x8F640800\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 12 */ 0x8F641000\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 13 */ 0x8F642000\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 14 */ 0x8F644000\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 15 */ 0x8F648000\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"], ["tstz p0, ds1[48]\ntstz p1, ds1[48]\ntstz p2, ds1[48]\n.word /* bit 16 */ 0x8F650000\n(p0) mov32 ds0[52], ds1[48]\n(p1) mov32 ds0[53], ds1[49]\n(p2) mov32 ds0[54], ds1[51]", "nop", "halt"]]
+
+[[probe]]
+name = "pds-encoding-bits-shl"
+question = "which unmapped bits of '{0}shl {1}, {2}, {3}' the hardware reads (0x00008080), base 'shl ds0[52], ds0[49], 4', recorded; may hang"
+isa = "pds"
+source = "pds_bits.s"
+params = { A = "0x11111111", B = "0x22222222", C = "0x80000003", D = "0x00000000", E = "0x55555555", F = "0x66666666", G = "0x77777777", H = "0x0000FF01", I = "0x99999999", J = "0xAAAAAAAA", K = "0x00000000", L = "0x8000000B", M = "0xCCCCCCCC", N = "0xDDDDDDDD", O = "0xEEEEEEEE", P = "0x00010203" }
+inputs = ["OP", "POST", "END"]
+labels = ["base", "bit 7", "bit 15"]
+cases = [[".word /* base */ 0xF7310434", "nop", "halt"], [".word /* bit 7 */ 0xF73104B4", "nop", "halt"], [".word /* bit 15 */ 0xF7318434", "nop", "halt"]]
+
+[[probe]]
+name = "pds-encoding-bits-shr"
+question = "which unmapped bits of '{0}shr {1}, {2}, {3}' the hardware reads (0x00008080), base 'shr ds0[52], ds0[49], 4', recorded; may hang"
+isa = "pds"
+source = "pds_bits.s"
+params = { A = "0x11111111", B = "0x22222222", C = "0x80000003", D = "0x00000000", E = "0x55555555", F = "0x66666666", G = "0x77777777", H = "0x0000FF01", I = "0x99999999", J = "0xAAAAAAAA", K = "0x00000000", L = "0x8000000B", M = "0xCCCCCCCC", N = "0xDDDDDDDD", O = "0xEEEEEEEE", P = "0x00010203" }
+inputs = ["OP", "POST", "END"]
+labels = ["base", "bit 7", "bit 15"]
+cases = [[".word /* base */ 0xFF310434", "nop", "halt"], [".word /* bit 7 */ 0xFF3104B4", "nop", "halt"], [".word /* bit 15 */ 0xFF318434", "nop", "halt"]]

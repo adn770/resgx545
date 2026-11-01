@@ -57,13 +57,14 @@
 - `Q025` (phase 7): what does the SB field of CR_BIF_FAULT encode in the PDS faults, and why did a store of one dword fault in the follow-up run only, and a store of two dwords then eight in the first run only? (E143, E144, E145)
 - `Q026` (phase 7): why do the per-tile stores of the grid pixel-event probes leave empty slots and mixed copies, different ones per run? (E130)
 - `Q027` (phase 7): what does the no-wait iteration deliver to pa0: stale values in the first run, and the pixel's own clip x on 60 to 115 pixels per case in the follow-up run? (E131, E048)
-- `Q057` (phase 11): what do doutc, douts, slc, mr and ir0 do as move destinations, and movsa on ports other than doutd, and why does an enabled small count in tim hang the job? (E127, E128)
-- `Q058` (phase 11): what do the input flags if0 and if1 read in a primary pixel program: the first and last task of a tile, or the end of a tile and of a render? (E128, E130)
+- `Q057` (phase 11): what do doutc, douts, slc, mr and ir0 do as move destinations, and movsa on ports other than doutd, and does an enabled small count in tim hang the job, and why? (E127, E128, E264)
+- `Q058` (phase 11): what sets the input flags if0 and if1 outside a vertex program, since neither tests true in any primary pixel or pixel-event task tried? (E128, E130, E262, E263)
 - `Q059` (phase 11): why do PDS stores totalling 2, 3 or 4 dwords fault the job, and why does an rwfence after a store, or after a faulted job, touch page 0? (E143, E144, E145)
-- `Q060` (phase 11): what do mr01, mr23 and ir1 hold outside a fill, and do the .h specials read 0 in every task and the per-tile inputs follow the tile in a multi-tile render? (E128, E130)
+- `Q060` (phase 11): what do mr01, mr23, ir1 and the .h specials read in the vertex-side programs? (E128, E130, E262, E263)
 - `Q061` (phase 11): does a DOUTU word's EXE field stop at bit 19, leaving CBASE in bits 3:0, or do the 18 program-counter bits reach bit 21? (E004)
-- `Q062` (phase 11): does a PDS nop do anything beyond taking an instruction slot, and why does pc.0 read the instruction index plus 1 or 2, not 3, at some places? (E128, E142, E143)
+- `Q062` (phase 11): what makes the PDS fetch pc read one or two below the reading instruction's index plus 3, at instructions 26-27 back to back (the end of a 64-dword block) in most runs? (E128, E142, E143, E260, E261)
 - `Q063` (phase 11): what does bit 9 of a mov16 or mov32 special source select on the rest of the SGX family, when on SGX545 it only makes mov16 read 0? (E128)
+- `Q077` (phase 11): what does bit 15 of a mov128 word select, which makes it write the data's row 4 ds0 pair to both halves of its destination whatever its source row (and with swap at row 2)? (E259, E261)
 
 ## platform
 

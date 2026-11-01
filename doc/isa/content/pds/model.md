@@ -23,8 +23,8 @@ program must write a temporary before it reads it.
 - `ir0`, input word 0: the vertex index of a vertex program **[HW]**; the tile position
   `tile_y << 10 | tile_x` (16 x 16 tiles) of a fill's secondary program **[HW]** and of the
   pixel-event program, on every one of 41 tiles of a 128x128 triangle read back
-  (`pds-pixel-event-pixev-grid16`) **[HW]**; the request mask the microkernel passes to
-  its PDS #14 **[RE]**.
+  (`pds-pixel-event-pixev-grid16`) **[HW]**, and of the primary pixel program, per pixel, bit
+  by bit (E262) **[HW]**; the request mask the microkernel passes to its PDS #14 **[RE]**.
 - `ir1`, input word 1: the event bits of the pixel-event program **[CAP/infer]**: on the
   end-of-tile events of the render's last two 16 x 16 tiles, and on no other, bit 2 is set
   **[HW]** (a 128x128 and a 64x64 triangle: the events that have it, sent to the end-of-render
@@ -33,7 +33,15 @@ program must write a temporary before it reads it.
   8-11 are clear on every end-of-tile event **[HW]** (`tri-pixev-event-bit*`,
   `pds-pixel-event-pixev-grid16`, `probes/pds/pixel-event.toml`); in the
   microkernel's event program, `EVENT_STATUS` bits 22-0 in reverse order (bit k is status bit
-  22 - k: all eight bits the handlers acknowledge fit) **[RE/infer]**.
+  22 - k: all eight bits the handlers acknowledge fit) **[RE/infer]**. It reads 0 in a fill's
+  secondary program and in the primary pixel program (every pixel, E262) **[HW]**. In the
+  pixel-event program every path reads the event bits: the ALU, `shl`, `abs`, `mov32`'s `ir1.0` and
+  `ir1.1` and `mov16`'s `ir1.0` alike on one tile, and per tile the ALU and `mov32`'s `ir1.0` and
+  `ir1.1` (E263) **[HW]**. A test's source 65, which the decoder names `ir1`, tests zero exactly
+  where `ir0` is 0: `tstz` of it is true on the pixels of tile (0, 0) and on a one-tile render,
+  false on every other tile, while the ALU's `ir1` is 0 (primary pixel program) or never 0
+  (pixel-event program) (E262, E263) **[HW]**; that it reads `ir0` fits every case **[infer]**, and
+  `tstn` of it was not measured.
   Rogue's vertex programs get the vertex index in `IR0` and the instance ID in `IR1` (Mesa
   `pvr_pds.c`, MIT, Imagination); for SGX's vertex programs the second is **[infer]**.
 - `ir2` **[open]**: in a `movs` it reads 0 in a fill's secondary program **[HW]**; the
@@ -48,12 +56,19 @@ program must write a temporary before it reads it.
   every later job, the firmware's included; reset reprograms it (`0x0102_0000`-`0x0106_1a7f` read
   back) and POWER IDLE writes 0 **[HW]**. The firmware writes it only at boot and on POWER resume,
   so it reloads itself with the period last written **[RE/infer]**; an enabled small count, which
-  hung the job, would then raise TIMER events back to back **[infer]**. The ALU, `shl`, `mul` and
-  `movs` read it as `tim`, `mov16`/`mov32` as `tim.0` (*Hardware probes*) **[HW]**.
-- `pc`, through `mov16`/`mov32` only (`pc.0`): the fetch pc, the reading instruction's index
-  plus 3, or plus 1 to 2 where fetch fell behind; the same on every pass of a loop, so not a
-  time (*Hardware probes*) **[HW]**.
-- `mr01`, `mr23`: 64-bit sources of `mov64`; `mr` is also a `movs` destination **[open]**.
+  hung the job in runs by hand that no record holds (Q057), would then raise TIMER events back to
+  back **[infer]**. The ALU, `shl`, `mul` and `movs` read it as `tim`, `mov16`/`mov32` as `tim.0`
+  (*Hardware probes*) **[HW]**.
+- `pc`, through `mov16`/`mov32` only (`pc.0`): the fetch pc, the reading instruction's index plus 3,
+  or plus 1 to 2 where fetch fell behind; the same on every pass of a loop, so not a time (*Hardware
+  probes*) **[HW]**. Over the 399 reads of 27 programs it was never more than 3 nor less than 1
+  ahead (E261) **[HW]**. Where it lags is mostly a fixed place in a program: back to back, at
+  instructions 26-27 (dwords 62-63, before a 64-dword boundary) in ten of twelve runs whatever the
+  `nop`s before, with some runs lagging elsewhere **[infer]** (Q062). The simulator gives index + 3,
+  which the hardware may give up to 2 below.
+- `mr01`, `mr23`: 64-bit sources of `mov64`; they read 0 in a fill's secondary program, the
+  pixel-event program on every tile and the primary pixel program on every pixel, also after
+  a `movs mr` (E262, E263, E264) **[HW]**; what `mr` is for is **[open]** (Q057).
 
 Some operand fields reach only a prefix of the specials (`ir0`, `ir1`; or `ir0`, `ir1`, `tim`):
 the field descriptions below say which. `mov16`/`mov32` number theirs apart **[HW]**: special
@@ -81,8 +96,11 @@ The predicate field `w[26:24]` reads `p0`, `p1`, `p2`, `if0`, `if1`, `aluz`, `al
   tests true **[HW]**. Rogue's PDS defines them as input predicates: `IF0` "Last Vertex In Task"
   for a vertex program and "End of Tile" for a pixel start/end program, `IF1` "First In Task"
   and "End Render" (Mesa `pvr_rogue_pds_defs.h`, MIT, Imagination); its vertex program issues
-  `doutu` once, under `IF0`, on the last vertex (`pvr_pds.c`). Our observations fit that
-  reading **[infer]**.
+  `doutu` once, under `IF0`, on the last vertex (`pvr_pds.c`). Our vertex observations fit that
+  reading **[infer]**. In pixel programs neither tests true anywhere: not in the primary pixel
+  program of any pixel of a 64x64 and a 128x128 triangle, nor in the pixel-event program of any
+  tile, the last ones included (E262, E263) **[HW]**, so Rogue's pixel readings ("End of Tile",
+  "End Render") do not hold for these tasks (Q058).
 - `aluz` tests a zero result of the last `add`, `sub`, `adc`, `sbc` or `mul`; `alun` a negative
   one, but only under `alum signed`; every other instruction keeps both **[HW]** (*Hardware
   probes*).

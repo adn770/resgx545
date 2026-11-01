@@ -163,6 +163,18 @@ def test_simulator_coverage_counts_near_values():
     assert "10 match the hardware (7 with near values" in text
 
 
+def test_simulator_coverage_counts_unchecked_values_apart():
+    # a PDS vector that matches only because an unknown timer is read as any 25-bit value
+    # (vectors::Outcome::AnyValue) is near, and said to be unchecked
+    cov = {"pds_forms": [
+        {"form": 3, "op": "mov32", "probes": {"pds-fetch-pc": [10, 0, 0]},
+         "near": {"pds-fetch-pc": 6}, "any": {"pds-fetch-pc": 2}, "unsupported": {}},
+    ]}
+    text = " ".join(B.sim_coverage([{"index": 3, "pat": "mov32"}], cov, "pds"))
+    assert "10 match the hardware (6 with near values: 4 each within the bound" in text
+    assert "2 with a value the task does not know" in text and "not checked" in text
+
+
 def test_simulator_open_list():
     cov = {"unsupported": {"no semantics for this form yet": 50, "flag .repeatN": 3,
                            "reads rN before the program writes it": 7}, "forms": []}

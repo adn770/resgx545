@@ -1,0 +1,10 @@
+title = "probe table pds/encoding-bits-mov128"
+repo = "data"
+paths = ["pds/encoding-bits-mov128/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 17
+size = 26814
+sha256 = "c66dc5e9807984fbe91aa801a89c39e1c7d068b84d635f14887a190085d294f3"
+recipe = "probes/pds/encoding-bits-mov128.toml"
+needs = ["render"]

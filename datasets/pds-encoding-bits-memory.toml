@@ -1,0 +1,10 @@
+title = "probe table pds/encoding-bits-memory"
+repo = "data"
+paths = ["pds/encoding-bits-memory/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 42
+size = 70983
+sha256 = "f07a015ac4b7ab8f1c2614fabdde78f9d1c428f040304c763c2f886e6ccb917f"
+recipe = "probes/pds/encoding-bits-memory.toml"
+needs = ["render", "vm_low"]

@@ -61,11 +61,17 @@ OTHER = {
     0x17000000 | (0x83 << 9): "mov32 ds0[0], ir1.1",
     0x1F000000 | (0x41 << 10): "mov64 ds0[0], mr23",
     0x27000100: "mov128 ds[0], ds[0], swap",
+    # rows 16-31 too: row 24 is the temporaries ds0/ds1[48-49] (pds-encoding-bits-followup-mov128)
+    0x27006068: "mov128 ds[52], ds[48]",
+    # bra and call take 24 bits: bits 19-23 move the fetch (pds-encoding-bits-flow-bra)
+    0x97880012: "bra 0x00880012",
+    # abs of ds1[n] takes n from bits 15:10, as not does (pds-encoding-bits-followup-abs-ds1)
+    0x6F008134: "abs ds0[52], ds1[32]",
     0x37000000: "load 0x00000000, ds0[48-54]",
     0x31E1C883: "load 0x0007220C, ds1[56]",
     0x3D9D03AC: "store 0x00040EB0, ds0[55-59]",
     0x6009435A: "(p0) mul ds1[26], ds0[4].h, ds1[16].h",
-    0x689CF972: "(p0) abs ds1[50], ds1[30]",
+    0x689CF972: "(p0) abs ds1[50], ds1[62]",
     0xDB859E8D: "(if0) not ds0[13], tim",
     0x7F000001: "rwfence",
     0xB05F8654: "nop",

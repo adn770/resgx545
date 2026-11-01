@@ -13,7 +13,8 @@ other units **[RE]**. What each port does with its words, where we know it:
 | `douti` | two words | issue iterator work **[HW]** |
 | `doutt` | T0-T3 | the state of a texture fetch **[HW]** |
 | `tim` | value, (ignored) | load the counter `tim`: bits 24-0, bit 24 the run bit **[HW]** |
-| `doutc`, `douts`, `slc`, `mr`, `ir0` | | **[open]** |
+| `doutc` | | faults the job, from a fill's secondary or a primary pixel program **[HW]** |
+| `douts`, `slc`, `mr`, `ir0` | | no effect seen (E264) **[open]** |
 
 - **`doutu`** **[HW]**. U0 holds the code address: `CBASE` (`USE_CODE_BASE_n`) in bits 3-0 and
   the instruction index above it (`EXE`, bits 19-4 on this build's layout), plus the

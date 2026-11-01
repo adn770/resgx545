@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# pds encoding bits: 0 sweeps, 3 probes (written by tools/usse-asm/pds_bits.py).
+# Each probe flips one unmapped bit of a form per case; case 0 is the base word.
+needs = ["render", "vm_low"]
+
+[[probe]]
+name = "pds-encoding-bits-memory-load"
+question = "which unmapped bits of 'load {0}, ds{1}[{2}' the hardware reads (0x00800000), base 'load 0x00010100, ds0[52-53]', recorded; may hang"
+isa = "pds"
+source = "pds_bits.s"
+params = { A = "0x11111111", B = "0x22222222", C = "0x80000003", D = "0x00000000", E = "0x55555555", F = "0x66666666", G = "0x77777777", H = "0x0000FF01", I = "0x99999999", J = "0xAAAAAAAA", K = "0x00000000", L = "0x8000000B", M = "0xCCCCCCCC", N = "0xDDDDDDDD", O = "0xEEEEEEEE", P = "0x00010203" }
+low = 0x10000
+inputs = ["OP", "POST", "END"]
+labels = ["base", "bit 23"]
+cases = [[".word /* base */ 0x32104040\nrfence", "nop", "halt"], [".word /* bit 23 */ 0x32904040\nrfence", "nop", "halt"]]
+
+[[probe]]
+name = "pds-encoding-bits-memory-store"
+question = "which unmapped bits of 'store {0}, ds{1}[{2}' the hardware reads (0x00800000), base 'store 0x00010100, ds1[48-55]', recorded; may hang"
+isa = "pds"
+source = "pds_bits.s"
+params = { A = "0x11111111", B = "0x22222222", C = "0x80000003", D = "0x00000000", E = "0x55555555", F = "0x66666666", G = "0x77777777", H = "0x0000FF01", I = "0x99999999", J = "0xAAAAAAAA", K = "0x00000000", L = "0x8000000B", M = "0xCCCCCCCC", N = "0xDDDDDDDD", O = "0xEEEEEEEE", P = "0x00010203" }
+low = 0x10000
+inputs = ["OP", "POST", "END"]
+labels = ["base", "bit 23"]
+cases = [[".word /* base */ 0x38404040", "nop", "halt"], [".word /* bit 23 */ 0x38C04040", "nop", "halt"]]
+
+[[probe]]
+name = "pds-encoding-bits-memory-fence"
+question = "which unmapped bits of '{0}' the hardware reads (0x07fffffe), base 'rfence', recorded; may hang"
+isa = "pds"
+source = "pds_bits.s"
+params = { A = "0x11111111", B = "0x22222222", C = "0x80000003", D = "0x00000000", E = "0x55555555", F = "0x66666666", G = "0x77777777", H = "0x0000FF01", I = "0x99999999", J = "0xAAAAAAAA", K = "0x00000000", L = "0x8000000B", M = "0xCCCCCCCC", N = "0xDDDDDDDD", O = "0xEEEEEEEE", P = "0x00010203" }
+low = 0x10000
+inputs = ["OP", "POST", "END"]
+labels = ["base", "bit 1", "bit 2", "bit 3", "bit 4", "bit 5", "bit 6", "bit 7", "bit 8", "bit 9", "bit 10", "bit 11", "bit 12", "bit 13", "bit 14", "bit 15", "bit 16", "bit 17", "bit 18", "bit 19", "bit 20", "bit 21", "bit 22", "bit 23", "bit 24", "bit 25", "bit 26"]
+cases = [["load 0x00010100, ds0[52-53]\n.word /* base */ 0x78000000", "nop", "halt"], ["load 0x00010100, ds0[52-53]\n.word /* bit 1 */ 0x78000002", "nop", "halt"], ["load 0x00010100, ds0[52-53]\n.word /* bit 2 */ 0x78000004", "nop", "halt"], ["load 0x00010100, ds0[52-53]\n.word /* bit 3 */ 0x78000008", "nop", "halt"], ["load 0x00010100, ds0[52-53]\n.word /* bit 4 */ 0x78000010", "nop", "halt"], ["load 0x00010100, ds0[52-53]\n.word /* bit 5 */ 0x78000020", "nop", "halt"], ["load 0x00010100, ds0[52-53]\n.word /* bit 6 */ 0x78000040", "nop", "halt"], ["load 0x00010100, ds0[52-53]\n.word /* bit 7 */ 0x78000080", "nop", "halt"], ["load 0x00010100, ds0[52-53]\n.word /* bit 8 */ 0x78000100", "nop", "halt"], ["load 0x00010100, ds0[52-53]\n.word /* bit 9 */ 0x78000200", "nop", "halt"], ["load 0x00010100, ds0[52-53]\n.word /* bit 10 */ 0x78000400", "nop", "halt"], ["load 0x00010100, ds0[52-53]\n.word /* bit 11 */ 0x78000800", "nop", "halt"], ["load 0x00010100, ds0[52-53]\n.word /* bit 12 */ 0x78001000", "nop", "halt"], ["load 0x00010100, ds0[52-53]\n.word /* bit 13 */ 0x78002000", "nop", "halt"], ["load 0x00010100, ds0[52-53]\n.word /* bit 14 */ 0x78004000", "nop", "halt"], ["load 0x00010100, ds0[52-53]\n.word /* bit 15 */ 0x78008000", "nop", "halt"], ["load 0x00010100, ds0[52-53]\n.word /* bit 16 */ 0x78010000", "nop", "halt"], ["load 0x00010100, ds0[52-53]\n.word /* bit 17 */ 0x78020000", "nop", "halt"], ["load 0x00010100, ds0[52-53]\n.word /* bit 18 */ 0x78040000", "nop", "halt"], ["load 0x00010100, ds0[52-53]\n.word /* bit 19 */ 0x78080000", "nop", "halt"], ["load 0x00010100, ds0[52-53]\n.word /* bit 20 */ 0x78100000", "nop", "halt"], ["load 0x00010100, ds0[52-53]\n.word /* bit 21 */ 0x78200000", "nop", "halt"], ["load 0x00010100, ds0[52-53]\n.word /* bit 22 */ 0x78400000", "nop", "halt"], ["load 0x00010100, ds0[52-53]\n.word /* bit 23 */ 0x78800000", "nop", "halt"], ["load 0x00010100, ds0[52-53]\n.word /* bit 24 */ 0x79000000", "nop", "halt"], ["load 0x00010100, ds0[52-53]\n.word /* bit 25 */ 0x7A000000", "nop", "halt"], ["load 0x00010100, ds0[52-53]\n.word /* bit 26 */ 0x7C000000", "nop", "halt"]]

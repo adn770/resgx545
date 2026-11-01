@@ -8,4 +8,4 @@ pat = "{0}bra {1}"
 op = "bra"
 mask = "OPM"
 val = "0x12 << 27"
-fields = ["pred=PRED", "target=K_HEX 18:0"]
+fields = ["pred=PRED", "target=K_HEX 23:0"]

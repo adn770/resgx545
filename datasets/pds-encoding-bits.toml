@@ -1,0 +1,10 @@
+title = "probe table pds/encoding-bits"
+repo = "data"
+paths = ["pds/encoding-bits/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 206
+size = 312454
+sha256 = "619c239581d2dd1a16031fa1650cb5e1832cbb15535824240b23c20dc5674d05"
+recipe = "probes/pds/encoding-bits.toml"
+needs = ["render"]

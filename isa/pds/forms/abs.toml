@@ -6,7 +6,7 @@ pat = "{0}abs {1}, ds1[{2}]"
 op = "abs"
 mask = "OPM | b(8)"
 val = "0x0d << 27 | b(8)"
-fields = ["pred=PRED", "dst=DST7", "ds1=K_DEC 14:10"]
+fields = ["pred=PRED", "dst=DST7", "ds1=K_DEC 15:10"]
 
 [[form]]
 order = 2300

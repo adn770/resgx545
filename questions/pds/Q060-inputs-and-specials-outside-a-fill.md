@@ -1,20 +1,25 @@
 +++
 id = "Q060"
-question = "what do mr01, mr23 and ir1 hold outside a fill, and do the .h specials read 0 in every task and the per-tile inputs follow the tile in a multi-tile render?"
+question = "what do mr01, mr23, ir1 and the .h specials read in the vertex-side programs?"
 unit = "pds"
 phase = 11
-evidence = ["E128", "E130"]
+evidence = ["E128", "E130", "E262", "E263"]
 terms = []
 +++
 
 In a fill's secondary program ir1 reads 0 in any case, bit 9 of a special source makes a mov16 read
-0, and ir0 is the tile position (E128). In the pixel-event program ir1.l reads what the ALU's ir1
-does, and .h reads 0 for ir0, ir1 and tim; ir0 reads the tile position in 16x16 tiles (E130).
+0, and ir0 is the tile position (E128). In the primary pixel program, per pixel of a 64x64 and a
+128x128 triangle, ir0 is the 16x16 tile position, the ALU's ir1 and mov32's ir1.0 read 0, and mr01
+and mr23 read 0 (E262). In the pixel-event program every path to ir1 read reads the event bits: on a
+one-tile render the ALU, shl, abs, mov32's ir1.0 and ir1.1 and mov16's ir1.0, and on every tile of a
+128x128 render whose slot word names its tile the ALU and mov32's ir1.0 and ir1.1; mr01, mr23 and
+ir2.l read 0, ir2.h on the one tile, and .h reads 0 for ir0, ir1 and tim (E263). A test's source 65,
+which the decoder names ir1, tests zero exactly where ir0 is 0 in the primary pixel and the
+pixel-event programs, so that it reads ir0 [infer]; tstn of it was not measured (E262, E263).
 
-What is open (pds_isa.md §7, items 4 and 9): mr01, mr23 and ir1 outside a fill, whether .h reads 0
-in every kind of task, and the per-tile inputs of a multi-tile render in tasks other than the
-pixel-event program.
+What is open (pds_isa.md §7, items 4 and 9): the same reads in the vertex-side programs (the
+vertex index is ir0; ir1 is Rogue's instance ID), and what mr01 and mr23 hold in any task, since
+they read 0 in every one tried, also after a movs to mr.
 
-To settle it: on the laptop, each special read with .l and .h and stored through the USE task from
-the primary, secondary and pixel-event programs of a 128x128 triangle render and from the
-vertex-side programs, three runs.
+To settle it: on the laptop, each special read with .l and .h, through the ALU, mov32 and a test,
+stored per vertex by the vertex shader (vtx_dump.s), over 3 and 64 vertices, three runs.

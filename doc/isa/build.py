@@ -652,10 +652,11 @@ def sim_coverage(forms: list[dict], cov: dict, isa: str = "usse") -> list[str]:
         text += " (not yet: " + ", ".join(f"#{f['index']}" for f in missing) + ")"
     probes: dict[str, list[int]] = {}
     whys: dict[str, int] = {}
-    near = 0
+    near = any_ = 0
     for f in forms:
         r = rows.get(f["index"], {})
         near += sum(r.get("near", {}).values())
+        any_ += sum(r.get("any", {}).values())
         for p, c in r.get("probes", {}).items():
             acc = probes.setdefault(p, [0, 0, 0])
             for i in range(3):
@@ -665,7 +666,11 @@ def sim_coverage(forms: list[dict], cov: dict, isa: str = "usse") -> list[str]:
     if probes:
         tot = [sum(c[i] for c in probes.values()) for i in range(3)]
         text += f". The probe vectors that test them: {tot[0]} match the hardware"
-        if near:
+        if near and any_:
+            text += (f" ({near} with near values: {near - any_} each within the bound the hardware "
+                     f"was measured to, {any_} with a value the task does not know, the timer, "
+                     f"accepted as any value of its width and so not checked)")
+        elif near:
             text += f" ({near} with near values, each within the bound the hardware was measured to)"
         text += f", {tot[1]} stop unsupported, {tot[2]} mismatch ("
         text += ", ".join(f"`{p}` {c[0]}/{c[1]}/{c[2]}" for p, c in sorted(probes.items()))

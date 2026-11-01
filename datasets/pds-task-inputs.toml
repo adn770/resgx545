@@ -1,0 +1,10 @@
+title = "probe table pds/task-inputs"
+repo = "data"
+paths = ["pds/task-inputs/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 94
+size = 4433259
+sha256 = "6eafce2ad4bdb208116b2b1501ec3ed5f35c11a35b63caf84d5f4f61069663d8"
+recipe = "probes/pds/task-inputs.toml"
+needs = ["render"]

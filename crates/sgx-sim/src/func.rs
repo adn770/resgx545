@@ -19,6 +19,16 @@ pub enum Bound {
     Log,
     /// Computed from a near value: no bound known.
     Derived,
+    /// An integer the hardware gives up to n below the simulated one: the PDS fetch pc,
+    /// index + 3 in the model, read 1 to 3 ahead in all 399 recorded reads (pds-fetch-pc-*,
+    /// E261; pds_isa 8.11). A measured bound.
+    Lag(u32),
+    /// Any value of n bits: a register whose value the task does not know (EVENT_TIMER, which
+    /// keeps a write's bits 24-0, pds-timer-tim-words; read in a PDS program that did not
+    /// load it, so running or stopped by an earlier job; pds_isa 8.9). Not a measured bound:
+    /// it admits every value of that width, so it checks only that the high bits are clear,
+    /// and a vector that relies on it is counted apart (vectors::Outcome::AnyValue).
+    Bits(u32),
 }
 
 impl Bound {
@@ -34,6 +44,8 @@ impl Bound {
             Bound::Abs(k) => abs(k),
             Bound::Log => ulps(1) || abs(22),
             Bound::Derived => false,
+            Bound::Lag(n) => got >= want && got - want <= n,
+            Bound::Bits(n) => n >= 32 || want >> n == 0,
         }
     }
 }
@@ -46,6 +58,8 @@ impl std::fmt::Display for Bound {
             Bound::Abs(k) => write!(f, "within 2^-{k}"),
             Bound::Log => write!(f, "within 1 ulp or 2^-22"),
             Bound::Derived => write!(f, "computed from a near value"),
+            Bound::Lag(n) => write!(f, "up to {n} below"),
+            Bound::Bits(n) => write!(f, "any {n}-bit value"),
         }
     }
 }
@@ -177,6 +191,19 @@ fn nearest(t: f64, b: Bound) -> (u32, Option<Bound>) {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn a_lag_admits_up_to_n_below() {
+        // the PDS fetch pc: the simulated index + 3, the hardware's up to 2 below (pds_isa 8.11)
+        let b = super::Bound::Lag(2);
+        assert!(b.admits(5, 5) && b.admits(5, 4) && b.admits(5, 3));
+        assert!(!b.admits(5, 2) && !b.admits(5, 6));
+        assert_eq!(b.to_string(), "up to 2 below");
+        // EVENT_TIMER when the task does not know it: any 25-bit value
+        let t = super::Bound::Bits(25);
+        assert!(t.admits(0, 0x01ff_ffff) && t.admits(0, 0x00ab_cdef) && !t.admits(0, 0x0200_0000));
+        assert_eq!(t.to_string(), "any 25-bit value");
+    }
+
     use super::*;
 
     fn f(x: f32) -> u32 {

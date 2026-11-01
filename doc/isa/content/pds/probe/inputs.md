@@ -11,7 +11,7 @@ selector and bit 9 (*Input and special registers*):
 |---|---|---|---|
 | 128 | `ir0` | `ir0.0` | `ir0` |
 | 129 | `ir1` | `ir0.1` | `ir0` (mov32), 0 (mov16) |
-| 130 | `pc` | `ir1.0` | 0 in a fill (the ALU's `ir1` reads 0 there too) |
+| 130 | `pc` | `ir1.0` | the ALU's `ir1`, 0 in a fill (E262, E263) |
 | 131 | `tim` | `ir1.1` | 0 |
 | 132 | `ir2` | `pc.0` | the fetch pc |
 | 133 | (none) | `pc.1` | as `pc.0` (mov32), 0 (mov16) |
@@ -36,14 +36,15 @@ across 0, 1, 2, 4, 8, 16, 32 and 64 `nop`s, through `movs` and the ALU alike) **
 clocks, since the counter is `EVENT_TIMER` (*Input and special registers*) **[GPL]**.
 
 The datapaths number the specials two ways (`pds-alu-specials-paths`, recorded) **[HW]**. The ALU's
-first source, `mul`'s halves and `movs` agree: `ir0` is the input word, `ir1` reads 0 and `tim`
-is the down-counter (`or ds0[n], tim, ...` reads it whole, `mul` with `tim.l`/`tim.h` its 16-bit
-halves). `mov32` and `mov16`, with `pc` inserted in their numbering, read only `ir0` the same:
-their `ir1` reads what `ir0` does, their `pc` and `tim` read 0 (`mov16` of `tim.l`/`tim.h` and
-`pc.l` too), and their `ir2` the varying `0x15`-`0x1f`. `shl` and `abs` read `ir0` and `ir1` as the
-ALU does (`ir1` 0), `not tim` the counter's complement; `tstz` of `ir1` tests nonzero, unlike
-the ALU's `ir1`, and `mov16` reads `ir1.l` as 0 where `mov32` reads `ir1` as `ir0`'s value
-(`pds-alu-specials-paths2`, recorded) **[HW]**.
+first source, `mul`'s halves and `movs` agree: `ir0` is the input word, `ir1` reads 0 and `tim` is
+the down-counter (`or ds0[n], tim, ...` reads it whole, `mul` with `tim.l`/`tim.h` its 16-bit
+halves). `mov32` and `mov16`, with `pc` inserted in their numbering, read only `ir0` the same: their
+`ir1` reads what `ir0` does, their `pc` and `tim` read 0 (`mov16` of `tim.l`/`tim.h` and `pc.l`
+too), and their `ir2` the varying `0x15`-`0x1f`. `shl` and `abs` read `ir0` and `ir1` as the ALU
+does (`ir1` 0), `not tim` the counter's complement; `tstz` of `ir1` tests nonzero, unlike the ALU's
+`ir1` (it tests zero where `ir0` is 0, E262, so that it reads `ir0` **[infer]**), and `mov16` reads
+`ir1.l` as 0 where `mov32` reads `ir1` as `ir0`'s value (`pds-alu-specials-paths2`, recorded)
+**[HW]**.
 
 Every special index of the source fields, swept with hand-encoded words (`pds-x-index-*`,
 recorded; none hung) **[HW]**. The ALU's first source reads `ir0`, `ir1` (0 here) and the counter

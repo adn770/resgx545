@@ -1395,6 +1395,45 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   renders nothing); the USSE slot registers 0x0aa4, 0x0aa8, 0x0b80 and 0x0b84 hold 0xaaaaaaaa when
   idle and other 2-bit-per-slot patterns while tasks run.
   *platform; HW, infer; data: `platform-register-timelines`.*
+- `E259` Of the 281 bits the 27 PDS forms left unmapped, the 136 of the 17 data-operation forms
+  (movs, movsa, mov16, mov64, mov128, the ALU group, mul, both abs, both not, both tstz, both tstn,
+  shl, shr) and the 28 of load, store and the fences were flipped one at a time: each left the
+  readback as the unflipped word did, except abs ds1[n]'s bit 15, which changed the value read, and
+  mov128's bit 15, which changed the four dwords it writes.
+  *pds; HW; data: `pds-encoding-bits`, `pds-encoding-bits-memory`.*
+- `E260` bra and call read bits 19-23 as target bits: each of the ten flips sent the fetch 4 << k
+  bytes past the program, where the job faulted with the BIF fault address 0x2e000000 + (4 << k)
+  (low bits aside); rtn's and halt's bits 23:0 and nop's bits 26:0 change nothing the readback
+  shows, and with each nop bit flipped a later pc.0 read gives what the plain nop gives, within the
+  fetch pc's run-to-run variation (E261).
+  *pds; HW; data: `pds-encoding-bits-flow`.*
+- `E261` pc.0 reads the reading instruction's index plus 3, or plus 2 or 1, never more nor less, in
+  399 reads over 27 programs: back to back it reads less at instructions 26-27 in ten of twelve
+  runs, whatever the nops before, and at 19-20 in two; abs's ds1[n] takes n from bits 15:10;
+  mov128's source row reaches 31, rows 24-31 the temporaries, and with bit 15 set mov128 writes
+  ds0[8], ds0[9] to both halves of its destination whatever its source row, and with swap at row 2;
+  nop's bit 2 does not change the fetch pc.
+  *pds; HW, infer; data: `pds-fetch-pc`, `pds-encoding-bits-followup`, `pds-encoding-bits-mov128`,
+  `vectors-pds-knowledge`.*
+- `E262` In the primary pixel program of a 64x64 and a 128x128 triangle, per pixel: if0 and if1
+  never test true; ir0 is 0 only on tile (0, 0); the ALU's ir1, mov32's ir1.0, mr01 and mr23 read 0;
+  tim and pc.0 are never 0; tstz of the source the decoder names ir1 tests true exactly where ir0 is
+  0; bit by bit on the 64x64 triangle, ir0 is the 16x16 tile position tile_y << 10 | tile_x (bits 0,
+  1, 10, 11 follow the tile, bits 2-9 and 12-15 are clear) and the ALU's ir1 has bits 0-11 clear.
+  *pds; HW, infer; data: `pds-task-inputs`.*
+- `E263` In the pixel-event program, on a one-tile render, the ALU, shl, abs, and mov32's ir1.0 and
+  ir1.1 and mov16's ir1.0.l and .h all read 6, the event bits; per tile of a 128x128 render, on the
+  slots whose slot word names the tile of their ir0, the ALU's ir1 and mov32's ir1.0 and ir1.1 read
+  2 on every tile but (6, 7) and (7, 7), where 6; about a third of the slots carry a slot word that
+  is not their own; if0 and if1 never test true, the last tiles included; mr01, mr23, ir2.l and the
+  .h of ir0, ir1 and tim read 0 on every tile, ir2.h on the one tile; tstz of ir1 tests true on the
+  one-tile render (ir0 0) and false on every other tile read.
+  *pds; HW; data: `pds-task-inputs`.*
+- `E264` In the primary pixel program of a 64x64 triangle, a movs to mr, slc, douts or ir0 before
+  the iteration leaves every pixel as the control's and the render completes; mr01 reads 0 after the
+  movs to mr, and ir0 still reads the tile position after the movs to ir0; a movs to doutc faults
+  the job (BIF status 0xd0400, address 0x0401f030).
+  *pds; HW, infer; data: `pds-task-inputs`.*
 
 ## By unit
 
@@ -1432,7 +1471,8 @@ Records: E029, E030, E031, E032, E239, E240, E251.
 ### pds
 
 Records: E043, E044, E045, E046, E047, E048, E125, E126, E127, E128, E129, E130, E131, E132, E133,
-E134, E135, E136, E137, E138, E139, E140, E141, E142, E143, E144, E145.
+E134, E135, E136, E137, E138, E139, E140, E141, E142, E143, E144, E145, E259, E260, E261, E262,
+E263, E264.
 
 ### platform
 

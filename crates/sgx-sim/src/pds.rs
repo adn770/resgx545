@@ -11,7 +11,7 @@
 //! than `ir0` in a `movs` and in `mov16`/`mov32`, the carry after a port
 //! write and after `adc`/`sbc` under `alum signed` (the PDS vectors).
 
-use crate::{Bus, Error};
+use crate::{Bound, Bus, Error};
 use pds_isa::forms;
 use usse_isa::form::Form;
 
@@ -56,6 +56,11 @@ struct Insn {
     form: Option<&'static Form>,
     v: [u32; 10],
     text: String,
+    /// A source index the decoder leaves undecoded (the role, its value): the word is decoded
+    /// with that field read as 0 instead, and the source reads what the hardware read there
+    /// (`raw_source`).
+    raw: Option<(&'static str, u32)>,
+    word: u32,
 }
 
 impl Insn {
@@ -80,8 +85,19 @@ impl Program {
             .map(|&w| {
                 let i = pds_isa::decode(w);
                 match pds_isa::decode_fields(w) {
-                    Some(f) => Insn { form: Some(forms[f.form]), v: f.v, text: i.text },
-                    None => Insn { form: None, v: [0; 10], text: i.text },
+                    Some(f) => {
+                        Insn { form: Some(forms[f.form]), v: f.v, text: i.text, raw: None, word: w }
+                    }
+                    None => match reread(w) {
+                        Some((f, raw)) => Insn {
+                            form: Some(forms[f.form]),
+                            v: f.v,
+                            text: i.text,
+                            raw: Some(raw),
+                            word: w,
+                        },
+                        None => Insn { form: None, v: [0; 10], text: i.text, raw: None, word: w },
+                    },
                 }
             })
             .collect();
@@ -102,6 +118,24 @@ impl Program {
     }
 }
 
+/// A word whose source index the decoder leaves undecoded, decoded with that field 0, and
+/// the field (role, value): the source sweeps of mov16, mov32, mov64, the ALU, mul and shl
+/// (`pds-moves-index-*`, pds_isa 8.9). Other words stay undecoded.
+fn reread(w: u32) -> Option<(usse_isa::form::Fields, (&'static str, u32))> {
+    let (lo, width, role) = match w >> 27 {
+        1 => (8, 9, "src"),
+        2 => (9, 8, "src"),
+        3 => (10, 7, "src"),
+        8..=11 | 24..=26 | 28 | 29 => (17, 7, "src1"),
+        12 => (16, 8, "src1"),
+        30 => (16, 8, "src"),
+        _ => return None,
+    };
+    let mask = ((1u32 << width) - 1) << lo;
+    let f = pds_isa::decode_fields(w & !mask)?;
+    Some((f, (role, (w & mask) >> lo)))
+}
+
 /// One PDS unit. The two banks persist from one task to the next, as on the
 /// hardware (pds_isa 3.1); `known` says which dwords hold a value the
 /// simulation knows: the data segment of the running program and what a
@@ -115,6 +149,29 @@ pub struct Pds {
     pub tim: Option<u32>,
     /// if0, if1, when the task kind says.
     pub ifs: [Option<bool>; 2],
+    /// pc.0 reads the fetch pc, modelled as the instruction's index + 3, which the hardware
+    /// gives up to 2 below (Bound::Lag; pds_isa 8.11). Off: pc is open.
+    pub fetch_pc: bool,
+    /// The bound of each dword that holds a near value (one read from the fetch pc, or
+    /// computed from one: Derived); None for an exact one.
+    pub near: [[Option<Bound>; 64]; 2],
+    /// The bounds of each port write's four words, in the order of the writes (of this task).
+    pub port_near: Vec<[Option<Bound>; 4]>,
+    /// A timer the task did not load reads as any 25-bit value (Bound::Bits): EVENT_TIMER
+    /// keeps bits 24-0, running or stopped by an earlier job (pds_isa 8.9). Off: tim is open.
+    pub timer_any: bool,
+    /// The running instruction's own state (what it has read, whether it moves).
+    pub exec: Exec,
+    /// What mov16/mov32's selector 1 (`ir1.0`) reads, when the task kind says: it is not
+    /// always the ALU's ir1 (pds_isa 8.9).
+    pub sel_ir1: Option<u32>,
+    /// mr01 and mr23 (mov64's sources), when the task kind says.
+    pub mr: Option<[u32; 4]>,
+    /// `tstz` of source 65 (`ir1` by the decoder's name) tests whether `ir0` is 0, as measured
+    /// in a fill's secondary, the primary pixel and the pixel-event programs (E262, E263); on
+    /// for those task kinds only. That it reads `ir0` is inferred, and `tstn` of it was never
+    /// measured: it stops (pds_isa 8.9).
+    pub test65_is_ir0_zero: bool,
     /// Off by default: a `movs` reads specials 1 and 2 (`ir1.l`, `tim.l`) as the ALU reads
     /// `ir1` and `tim`. Measured to agree in a fill's secondary program (pds_isa 8.9); in the
     /// microkernel's event program the firmware's own fast paths need `ir1.l` to, and the
@@ -146,6 +203,14 @@ impl Default for Pds {
             ir: [None; 3],
             tim: None,
             ifs: [None; 2],
+            sel_ir1: None,
+            mr: None,
+            test65_is_ir0_zero: false,
+            fetch_pc: false,
+            timer_any: false,
+            near: [[None; 64]; 2],
+            port_near: Vec::new(),
+            exec: Exec::default(),
             alu_specials_in_movs: false,
             p: [None; 3],
             aluz: None,
@@ -159,6 +224,14 @@ impl Default for Pds {
             stored: (0, 0),
         }
     }
+}
+
+/// The running instruction's state: the bound of what it has read so far, and whether it
+/// moves its source unchanged (a near value keeps its bound).
+#[derive(Clone, Debug, Default)]
+pub struct Exec {
+    now: std::cell::Cell<Option<Bound>>,
+    moving: bool,
 }
 
 enum Next {
@@ -184,6 +257,24 @@ impl Pds {
         Pds { ifs: [Some(false); 2], ..Pds::default() }
     }
 
+    /// The secondary program of a fill's tile (tile_x, tile_y), 16 x 16 tiles: ir0 is the
+    /// tile position tile_y << 10 | tile_x; the ALU's ir1, mov32's selector 1 and mr01/mr23
+    /// read 0; a movs reads ir1.l and tim.l as the ALU does and ir2.l (its special 3) as 0;
+    /// pc.0 is the fetch pc; tim, unless the task loads it, any 25-bit value; tstz of
+    /// source 65 tests ir0 for 0 (pds_isa 3.2, 8.9, 8.11). if0/if1 as secondary().
+    pub fn fill_secondary(tile_x: u32, tile_y: u32) -> Pds {
+        Pds {
+            ir: [Some(tile_y << 10 | tile_x), Some(0), Some(0)],
+            sel_ir1: Some(0),
+            mr: Some([0; 4]),
+            test65_is_ir0_zero: true,
+            fetch_pc: true,
+            timer_any: true,
+            alu_specials_in_movs: true,
+            ..Pds::secondary()
+        }
+    }
+
     /// Load `prog`'s data segment (rows of four dwords, two per bank: row r is
     /// ds0[2r], ds0[2r+1], ds1[2r], ds1[2r+1]) and reset the per-task state.
     /// The temporaries and the rows past the segment keep what earlier tasks
@@ -194,6 +285,7 @@ impl Pds {
             if n < 64 {
                 self.ds[b][n] = w;
                 self.known[b] |= 1 << n;
+                self.near[b][n] = None;
             }
         }
         self.p = [None; 3];
@@ -206,6 +298,7 @@ impl Pds {
         self.steps = 0;
         self.pending.clear();
         self.stored = (0, 0);
+        self.port_near.clear();
     }
 
     /// Start `prog` and run it until `halt`.
@@ -244,6 +337,8 @@ impl Pds {
     fn exec(&mut self, insn: &Insn, bus: &mut dyn Bus) -> Result<Next, Error> {
         let Some(form) = insn.form else { return Err(why("undecoded")) };
         let op = form.op;
+        self.exec.now.set(None);
+        self.exec.moving = matches!(op, "mov32" | "mov64" | "mov128");
         // load, store and the fences have no predicate; nop has none either
         if form.role("pred").is_some() && !self.pred(insn.get("pred"))? {
             return Ok(Next::Step);
@@ -259,30 +354,56 @@ impl Pds {
                 // a half of a read-only row lands in the temporary ds[48 + (n & 15)],
                 // whose other half is kept (pds_isa 8.7)
                 let d = if n >> 1 < 48 { 48 + (n >> 1 & 15) } else { n >> 1 };
-                let h = self.src9h(insn.get("src"))?;
+                let h = match self.raw_source(insn, "src")? {
+                    Some(x) => half(x, 0),
+                    None => self.src9h(insn.get("src"))?,
+                };
+                let src_near = self.exec.now.take();
                 let old = self.ds(b, d)?;
                 let v = if n & 1 != 0 { old & 0xffff | h << 16 } else { old & 0xffff_0000 | h };
+                // a near low half keeps its bound in the dword (the high half exact); a near
+                // high half has none; an exact low half replaces the near one
+                let bound = match (src_near, n & 1) {
+                    (Some(b), 0) => Some(b),
+                    (Some(_), _) => Some(Bound::Derived),
+                    (None, 0) => None,
+                    (None, _) => self.near[b][48 + (d & 15)],
+                };
                 self.put(b, d, v);
+                self.near[b][48 + (d & 15)] = bound;
                 Keeps::Both
             }
             "mov32" => {
-                let v = self.src8(insn.get("src"))?;
+                let v = match self.raw_source(insn, "src")? {
+                    Some(x) => x,
+                    None => self.src8(insn.get("src"))?,
+                };
                 self.put(insn.get("bank") as usize, insn.get("dst") as usize, v);
                 Keeps::Both
             }
             "mov64" => {
                 let s = insn.get("src");
-                if s >= 64 {
-                    return Err(why("mr01/mr23 are open (pds_isa 7.4)"));
-                }
-                let (sb, sn) = ((s >> 5) as usize, (s & 31) as usize * 2);
-                let pair = [self.ds(sb, sn)?, self.ds(sb, sn + 1)?];
+                let pair = if let Some(x) = self.raw_source(insn, "src")? {
+                    [x, x]
+                } else if s >= 64 {
+                    let mr = self.mr.ok_or_else(|| why("mr01/mr23 are open (pds_isa 7.4)"))?;
+                    let k = if s == 64 { 0 } else { 2 };
+                    [mr[k], mr[k + 1]]
+                } else {
+                    let (sb, sn) = ((s >> 5) as usize, (s & 31) as usize * 2);
+                    [self.ds(sb, sn)?, self.ds(sb, sn + 1)?]
+                };
                 let (b, n) = (insn.get("bank") as usize, insn.get("dst") as usize * 2);
                 self.put(b, n, pair[0]);
                 self.put(b, n + 1, pair[1]);
                 Keeps::Both
             }
             "mov128" => {
+                // bit 15, which no field maps, makes it write the data's row 4 ds0 pair to
+                // both halves whatever its source and swap: open (pds-encoding-bits-*-mov128)
+                if insn.word >> 15 & 1 != 0 {
+                    return Err(why("mov128 with bit 15 is open (pds_isa 8.13)"));
+                }
                 let s = insn.get("src") as usize * 2;
                 let mut row = [self.ds(0, s)?, self.ds(0, s + 1)?, self.ds(1, s)?, self.ds(1, s + 1)?];
                 if insn.get("swap") != 0 {
@@ -331,7 +452,11 @@ impl Pds {
             }
             "alu" => self.alu(insn)?,
             "mul" => {
-                let (x, y) = (self.mula(insn.get("src1"))?, self.half1(insn.get("src2"))?);
+                let x = match self.raw_source(insn, "src1")? {
+                    Some(x) => x,
+                    None => self.mula(insn.get("src1"))?,
+                };
+                let y = self.half1(insn.get("src2"))?;
                 let r = if self.signed {
                     ((x as u16 as i16 as i32) * (y as u16 as i16 as i32)) as u32
                 } else {
@@ -359,9 +484,15 @@ impl Pds {
             "tstz" | "tstn" => {
                 let x = match form.role("ds1") {
                     Some(_) => self.ds(1, insn.get("ds1") as usize)?,
-                    // a test of ir1 reads differently from the ALU's ir1 (pds_isa 8.9)
+                    // a test's source 65 (ir1 by the decoder's name): tstz of it is true
+                    // exactly where ir0 is 0 in a fill, the pixel-event and the primary pixel
+                    // programs (pds-task-inputs-*, E262, E263, pds_isa 8.9); tstn of it, and
+                    // other tasks (the microkernel's event program), are open
                     None if insn.get("src") == 65 => {
-                        return Err(why("tstz/tstn of ir1 are open (pds_isa 8.9)"));
+                        if op != "tstz" || !self.test65_is_ir0_zero {
+                            return Err(why("tstn of source 65, or a test of it in this task, is open"));
+                        }
+                        self.input(0)?
                     }
                     None => self.src7(insn.get("src"), 2)?,
                 };
@@ -369,11 +500,17 @@ impl Pds {
                 if p > 2 {
                     return Err(why(format!("tst writes no predicate with pdst {p}")));
                 }
-                self.p[p] = Some(if op == "tstz" { x == 0 } else { x >> 31 != 0 });
+                self.p[p] = match self.exec.now.get() {
+                    Some(_) => None,
+                    None => Some(if op == "tstz" { x == 0 } else { x >> 31 != 0 }),
+                };
                 Keeps::Both
             }
             "shl" | "shr" => {
-                let x = self.shsrc(insn.get("src"))?;
+                let x = match self.raw_source(insn, "src")? {
+                    Some(x) => x,
+                    None => self.shsrc(insn.get("src"))?,
+                };
                 // the amount is the 7-bit field unsigned; 32 and up give 0 (pds_isa 8.4)
                 let n = insn.get("n");
                 let r = match (op, self.signed) {
@@ -408,6 +545,11 @@ impl Pds {
 
     /// aluz is a zero result; alun a negative one under alum signed only (pds_isa 8.3).
     fn set_flags(&mut self, r: u32) {
+        if self.exec.now.get().is_some() {
+            // from a near value: not known
+            (self.aluz, self.alun) = (None, None);
+            return;
+        }
         self.aluz = Some(r == 0);
         self.alun = Some(self.signed && r >> 31 != 0);
     }
@@ -415,9 +557,24 @@ impl Pds {
     /// The two-source group: add and sub are modular and set the flags and
     /// the carry; adc and sbc add that carry; the logic ops are as named.
     fn alu(&mut self, insn: &Insn) -> Result<Keeps, Error> {
-        let (x, y) = (self.src7(insn.get("src1"), 3)?, self.ds(1, insn.get("src2") as usize)?);
+        let x = match self.raw_source(insn, "src1")? {
+            Some(x) => x,
+            None => self.src7(insn.get("src1"), 3)?,
+        };
+        let nx = self.exec.now.take();
+        let y = self.ds(1, insn.get("src2") as usize)?;
+        let ny = self.exec.now.take();
         let (a, b) = (x as i64, y as i64);
         let name = ALU_OPS.iter().find(|(o, _)| *o == insn.get("op")).map(|(_, n)| *n).unwrap_or("");
+        // a near operand with an exact 0 that leaves it unchanged keeps its bound
+        let bound = match (nx, ny) {
+            (None, None) => None,
+            (Some(b), None) if y == 0 && matches!(name, "or" | "xor" | "add" | "sub") => Some(b),
+            (None, Some(b)) if x == 0 && matches!(name, "or" | "xor" | "add") => Some(b),
+            _ => Some(Bound::Derived),
+        };
+        self.exec.now.set(bound);
+        self.exec.moving = true;
         let (r, keeps) = match name {
             "add" | "sub" => {
                 let exact = if name == "add" { a + b } else { a - b };
@@ -432,6 +589,9 @@ impl Pds {
                     exact >> 32
                 });
                 self.set_flags(r);
+                if self.exec.now.get().is_some() {
+                    self.carry = None;
+                }
                 self.dst7(insn.get("dst"), r);
                 return Ok(Keeps::Both);
             }
@@ -470,7 +630,9 @@ impl Pds {
         let v = insn.get("srcs");
         let (b1, b0, ir) = ((v >> 8 & 31) as usize * 2, (v >> 13 & 31) as usize, v >> 18 & 1 != 0);
         let mut w = [0u32; 4];
+        let mut near = [None; 4];
         for (k, word) in w.iter_mut().enumerate() {
+            self.exec.now.set(None);
             let slot = 3 - k;
             let (sel, hi) = (v >> (2 * slot) & 3, (v >> (2 * slot) & 1) as usize);
             *word = if sel & 2 != 0 {
@@ -483,6 +645,7 @@ impl Pds {
                     (0, _) => self.ir[0].ok_or_else(|| why("ir0 is not known for this task"))?,
                     (1, _) if self.alu_specials_in_movs => self.input(1)?,
                     (2, _) if self.alu_specials_in_movs => self.timer()?,
+                    (3, _) if self.ir[2].is_some() => self.input(2)?,
                     _ => {
                         let name = ["ir0", "ir1", "tim", "ir2"].get(b0).unwrap_or(&"?");
                         return Err(why(format!("{name}.l as a movs source is open (pds_isa 7.9)")));
@@ -491,7 +654,9 @@ impl Pds {
             } else {
                 self.ds(0, b0 * 2 + hi)?
             };
+            near[k] = self.exec.now.get();
         }
+        self.port_near.push(near);
         let port = Port::from_field(insn.get("port")).ok_or_else(|| why("reserved port"))?;
         if add {
             if port != Port::Doutd {
@@ -525,7 +690,15 @@ impl Pds {
         if n >= 64 || self.known[b] >> n & 1 == 0 {
             return Err(why(format!("reads ds{b}[{n}] before the program writes it")));
         }
+        if let Some(x) = self.near[b][n] {
+            self.note(x);
+        }
         Ok(self.ds[b][n])
+    }
+
+    /// The running instruction reads a near value: a second one makes it Derived.
+    fn note(&self, b: Bound) {
+        self.exec.now.set(Some(if self.exec.now.get().is_some() { Bound::Derived } else { b }));
     }
 
     /// A write to dsB[n] lands in the temporary dsB[48 + (n & 15)] (pds_isa 3.1).
@@ -533,6 +706,8 @@ impl Pds {
         let t = 48 + (n & 15);
         self.ds[b][t] = v;
         self.known[b] |= 1 << t;
+        let now = self.exec.now.get();
+        self.near[b][t] = if self.exec.moving { now } else { now.map(|_| Bound::Derived) };
     }
 
     /// A seven-bit destination: ds0[0-63], then ds1[0-63].
@@ -545,7 +720,14 @@ impl Pds {
     }
 
     fn timer(&self) -> Result<u32, Error> {
-        self.tim.ok_or_else(|| why("tim is not known for this task"))
+        match self.tim {
+            Some(t) => Ok(t),
+            None if self.timer_any => {
+                self.note(Bound::Bits(25));
+                Ok(0)
+            }
+            None => Err(why("tim is not known for this task")),
+        }
     }
 
     /// The specials of mov16 (`half`) and mov32 by their index k: selector k >> 1 over
@@ -560,9 +742,31 @@ impl Pds {
         match j {
             0 => self.input(0),
             6 => self.timer(),
-            2 => Err(why("ir1 as a mov16/mov32 source is open (pds_isa 8.9)")),
+            2 => {
+                self.sel_ir1.ok_or_else(|| why("ir1 as a mov16/mov32 source is open (pds_isa 8.9)"))
+            }
+            4 if self.fetch_pc => {
+                self.note(Bound::Lag(2));
+                Ok(self.pc as u32 + 3)
+            }
             4 => Err(why("pc as a mov16/mov32 source (the fetch pc) is open (pds_isa 8.9)")),
             _ => Err(why(format!("special source {i}"))),
+        }
+    }
+
+    /// What an undecoded source index reads (Program::new's reread): shl's 130 the counter,
+    /// as its 66 through the ALU; every other one 0 (pds-moves-index-*, pds_isa 8.9). None for
+    /// a decoded source.
+    fn raw_source(&self, insn: &Insn, role: &str) -> Result<Option<u32>, Error> {
+        match insn.raw {
+            Some((r, v)) if r == role => {
+                let op = insn.form.map_or("", |f| f.op);
+                if op == "shr" {
+                    return Err(why(format!("shr source {v} (not swept)")));
+                }
+                if op == "shl" && v == 130 { self.timer().map(Some) } else { Ok(Some(0)) }
+            }
+            _ => Ok(None),
         }
     }
 
@@ -584,6 +788,10 @@ impl Pds {
         let r = v >> 1;
         let x =
             if r < 128 { self.ds((r >> 6) as usize, (r & 63) as usize)? } else { self.special_pc(r - 128, true)? };
+        // the .h of a lagging value below 0xfffd is 0 whatever the lag
+        if v & 1 != 0 && matches!(self.exec.now.get(), Some(Bound::Lag(n)) if x < 0x1_0000 - n) {
+            self.exec.now.set(None);
+        }
         Ok(half(x, v))
     }
 
@@ -877,10 +1085,21 @@ mod tests {
         let (m, _) = run(&[0x7fff_ffff, 0, 1, 0],
                          "alum signed\nadd ds0[48], ds0[1], ds1[1]\nadc ds0[49], ds0[0], ds1[0]\nhalt").unwrap();
         assert_eq!((m.ds[0][49], m.carry), (0x8000_0000, Some(1)));
-        // tstz/tstn of ir1 test differently from the ALU's ir1 (pds_isa 8.9)
-        let mut m = Pds { ir: [Some(1), Some(0), Some(0)], ..Pds::secondary() };
+        // tstz of ir1 (source 65) is true where ir0 is 0, unlike the ALU's ir1, in the task
+        // kinds measured (pds-task-inputs-*, E262, E263, pds_isa 8.9)
+        for (ir0, p0) in [(1, false), (0, true)] {
+            let mut m =
+                Pds { ir: [Some(ir0), Some(0), Some(0)], test65_is_ir0_zero: true, ..Pds::secondary() };
+            m.run(&prog(&[0; 4], "tstz p0, ir1\nhalt"), &mut Ports::default(), 10).unwrap();
+            assert_eq!(m.p[0], Some(p0));
+        }
+        // tstn of it was never measured, and other tasks (the event program) stop
+        let mut m = Pds { ir: [Some(0); 3], test65_is_ir0_zero: true, ..Pds::secondary() };
+        let e = m.run(&prog(&[0; 4], "tstn p0, ir1\nhalt"), &mut Ports::default(), 10);
+        assert!(matches!(e, Err(Error::Unsupported { .. })), "{e:?}");
+        let mut m = Pds { ir: [Some(0), Some(0), Some(0)], ..Pds::secondary() };
         let e = m.run(&prog(&[0; 4], "tstz p0, ir1\nhalt"), &mut Ports::default(), 10);
-        assert!(matches!(e, Err(Error::Unsupported { ref why, .. }) if why.contains("tst")), "{e:?}");
+        assert!(matches!(e, Err(Error::Unsupported { .. })), "{e:?}");
     }
 
     #[test]
@@ -1086,6 +1305,101 @@ mod tests {
                     "load 0x00010008, ds0[48]\nrwfence\nstore 0x00010000, ds0[48]"] {
             assert_eq!(run_mem(&format!("{FILL}{src}")).0, Ok(()), "{src}");
         }
+    }
+
+    #[test]
+    fn a_fill_tile_knows_its_inputs() {
+        // a fill's secondary program: ir0 the tile position tile_y << 10 | tile_x, the ALU's
+        // ir1 and mov32's ir1.0 0, mr01/mr23 0, movs ir1.l as the ALU's ir1 (pds_isa 3.2, 8.9)
+        let mut m = Pds::fill_secondary(2, 1);
+        let mut bus = Ports::default();
+        let src = "or ds0[48], ir0, ds1[1]\nor ds0[49], ir1, ds1[1]\nmov32 ds0[50], ir1.0\n\
+                   mov32 ds0[51], ir0.0\nmov64 ds0[52], mr01\n\
+                   movs douta, ir1.l, ds1[0], ir1.h, ir1.l\nhalt";
+        m.run(&prog(&[0, 0, 7, 0], src), &mut bus, 20).unwrap();
+        assert_eq!(&m.ds[0][48..54], &[0x402, 0, 0, 0x402, 0, 0]);
+        assert_eq!(bus.0, vec![(Port::Douta, [0, 7, 0, 0])]);
+        // movs special 3 (ir2.l) reads 0 in a fill too (pds_isa 8.9)
+        let mut bus = Ports::default();
+        let src = "movs douta, ir2.l, ds1[0], ir2.h, ir2.l\nhalt";
+        Pds::fill_secondary(1, 0).run(&prog(&[0, 0, 7, 0], src), &mut bus, 20).unwrap();
+        assert_eq!(bus.0, vec![(Port::Douta, [0, 7, 0, 0])]);
+        // what is open in a fill stays so: mov128 with bit 15 (pds_isa 8.13)
+        let p = Program::new(&[0x2700_8868, pds_isa::encode("halt").unwrap()], 0);
+        let e = Pds::fill_secondary(0, 0).run(&p, &mut Ports::default(), 10);
+        let open = matches!(e, Err(Error::Unsupported { ref why, .. }) if why.contains("mov128"));
+        assert!(open, "{e:?}");
+    }
+
+    #[test]
+    fn source_indices_past_the_decoded_ones_read_0() {
+        // hardware (pds-moves-index-*, pds_isa 8.9): the specials the decoder leaves undecoded
+        // read 0: mov32 136-255, mov16 272-511, mov64 64-127, the ALU's first source 67-127,
+        // mul's halves past tim, shl's past 130
+        let words =
+            [0x1701_1060u32, 0x0f01_2060, 0x1f01_a060, 0xc7a0_0430, 0x6790_2430, 0xf790_0030];
+        let enc = |t: &str| pds_isa::encode(t).unwrap();
+        for w in words {
+            // ds0[48] starts as 0x12345678; each word writes ds0[48] (mov16: its low half)
+            let mut words = vec![0x1234_5678u32];
+            words.resize(20, 0);
+            words.extend([enc("mov32 ds0[48], ds0[0]"), w, enc("halt")]);
+            let p = Program::new(&words, 20);
+            let mut m = Pds::secondary();
+            m.run(&p, &mut Ports::default(), 10).unwrap_or_else(|e| panic!("{w:08x}: {e}"));
+            let want = if w >> 27 == 1 { 0x1234_0000 } else { 0 };
+            assert_eq!(m.ds[0][48], want, "{w:08x}");
+        }
+        // an index past the decoded ones does not hide another field's open value
+        let p = Program::new(&[0, 0, 0, 0, 0xc7a0_0c30, enc("halt")], 4);
+        assert!(matches!(Pds::secondary().run(&p, &mut Ports::default(), 10),
+                         Err(Error::Unsupported { .. })));
+    }
+
+    #[test]
+    fn pc_reads_the_fetch_pc_up_to_two_below() {
+        // pc.0 is the fetch pc: the reading instruction's index plus 3, or plus 1 or 2 where
+        // fetch fell behind (pds_isa 8.11, pds-fetch-pc-*): index + 3, near, Lag(2); moves keep
+        // the bound, arithmetic on it has none, a port write carries it
+        let mut m = Pds::fill_secondary(0, 0);
+        let mut bus = Ports::default();
+        let src = "mov32 ds0[50], ds0[0]\nmov32 ds0[48], pc.0\nmov32 ds1[48], ds0[48]\n\
+                   mov16 ds0[100], pc.0.l\nmov16 ds0[101], pc.0.h\n\
+                   movs douta, ds0[48], ds1[0], ds0[48], ds0[48]\n\
+                   add ds0[49], ds0[48], ds1[1]\nhalt";
+        m.run(&prog(&[0, 0, 0, 1], src), &mut bus, 20).unwrap();
+        assert_eq!((m.ds[0][48], m.ds[1][48], m.ds[0][50]), (4, 4, 6));
+        assert_eq!((m.near[0][48], m.near[1][48]), (Some(Bound::Lag(2)), Some(Bound::Lag(2))));
+        // the .l half of a pc below 65536 lags as the dword does; its .h is 0, exactly
+        assert_eq!(m.near[0][50], Some(Bound::Lag(2)));
+        let lag = Some(Bound::Lag(2));
+        assert_eq!(m.port_near, vec![[lag, None, lag, lag]]);
+        assert_eq!((m.near[0][49], m.aluz), (Some(Bound::Derived), None));
+        // a write of an exact value clears the bound; a task that does not say keeps pc open
+        m.run(&prog(&[0, 0, 0, 0], "mov32 ds0[48], ds0[0]\nhalt"), &mut bus, 20).unwrap();
+        assert_eq!(m.near[0][48], None);
+        assert!(why_of(run(&[0; 4], "mov32 ds0[48], pc.0\nhalt")).contains("pc"));
+    }
+
+    #[test]
+    fn a_fill_reads_an_unknown_timer_as_any_25_bit_value() {
+        // EVENT_TIMER keeps bits 24-0 (pds_isa 8.9); running, or stopped by an earlier job, its
+        // value is not the task's to know: a read is near, Bits(25); a move or an or with 0
+        // keeps the bound, other arithmetic has none
+        let mut m = Pds::fill_secondary(0, 0);
+        let mut bus = Ports::default();
+        let src = "mov32 ds0[48], tim.0\nor ds0[49], tim, ds1[1]\nadd ds0[50], tim, ds1[1]\n\
+                   or ds1[50], ds0[49], ds1[1]\nnot ds0[51], tim\n\
+                   movs douta, tim.l, ds1[0], tim.h, tim.l\nhalt";
+        m.run(&prog(&[0, 0, 0, 0], src), &mut bus, 20).unwrap();
+        let b = Some(Bound::Bits(25));
+        assert_eq!(&m.near[0][48..52], &[b, b, b, Some(Bound::Derived)]);
+        assert_eq!(m.near[1][50], b);
+        assert_eq!(m.port_near, vec![[b, None, None, b]]);
+        // a stopped timer the task loaded itself is exact
+        let src = "movs tim, ds0[0], ds0[1], ds1[0], ds1[1]\nmov32 ds0[48], tim.0\nhalt";
+        m.run(&prog(&[5, 0, 0, 0], src), &mut bus, 20).unwrap();
+        assert_eq!((m.ds[0][48], m.near[0][48]), (5, None));
     }
 
     #[test]

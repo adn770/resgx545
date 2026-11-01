@@ -262,12 +262,12 @@ impl Kind for Src64 {
     }
 }
 
-/// mov128 source pair, 5 bits, below 16.
+/// mov128 source row, 5 bits: ds[2v], rows 24-31 the temporaries.
 pub(crate) struct Src128;
 
 impl Kind for Src128 {
     fn print(&self, v: u32, _: &Ctx, out: &mut String) -> bool {
-        if v >= 16 {
+        if v >= 32 {
             return false;
         }
         let _ = write!(out, "{}", v * 2);

@@ -232,7 +232,7 @@ pds	6	30737230	load 0x000DC8C0, ds1[60-67]
 pds	7	3F71EB25	store 0x0007AC94, ds1[60-66]
 pds	8	52848C2B	(p2) adc ds0[43], tim, ds1[35]
 pds	9	6284C013	(p2) mul ds0[19], tim.l, ds1[48].l
-pds	10	6A00490D	(p2) abs ds0[13], ds1[18]
+pds	10	6A00C90D	(p2) abs ds0[13], ds1[50]
 pds	11	6A4C0078	(p2) abs ds1[56], ds0[38]
 pds	12	DA003D15	(p2) not ds0[21], ds1[15]
 pds	13	DA5E006B	(p2) not ds1[43], ds0[47]
@@ -241,8 +241,8 @@ pds	15	83005902	(if0) tstz p2, ds1[22]
 pds	16	81240002	(p1) tstz p2, ds0[18]
 pds	17	8B008102	(if0) tstn p2, ds1[32]
 pds	18	8A4C0001	(p2) tstn p1, ds0[38]
-pds	19	9203CA6C	(p2) bra 0x0003CA6C
-pds	20	990121BB	(p1) call 0x000121BB
+pds	19	927BCA6C	(p2) bra 0x007BCA6C
+pds	20	99A921BB	(p1) call 0x00A921BB
 pds	21	A4000000	(if1) rtn
 pds	22	AC000000	(if1) halt
 pds	23	B0000000	nop

@@ -45,5 +45,8 @@ pds/probe/inputs.md
 pds/probe/memory-ports.md
 pds/probe/flag-bit.md
 pds/probe/pixel-event.md
+pds/probe/encoding-bits.md
+pds/probe/fetch-pc.md
+pds/probe/task-inputs.md
 pds/appendix.md
 @appendix pds

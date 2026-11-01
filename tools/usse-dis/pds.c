@@ -197,10 +197,10 @@ static int k_src64_print(const usse_kind *k, uint32_t v, char *out, size_t n) {
     return 1;
 }
 
-/* mov128 source pair, 5 bits, below 16. */
+/* mov128 source row, 5 bits: ds[2v], rows 24-31 the temporaries. */
 static int k_src128_print(const usse_kind *k, uint32_t v, char *out, size_t n) {
     (void)k;
-    if (v >= 16) return 0;
+    if (v >= 32) return 0;
     snprintf(out, n, "%u", v * 2);
     return 1;
 }

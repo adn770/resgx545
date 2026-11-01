@@ -46,11 +46,25 @@ pub fn patch_scratch(w: u64) -> u64 {
 }
 
 /// How a vector matches: exactly, or with near values (Machine::near) in
-/// it, each within the bound the hardware was measured to.
+/// it, each within the bound the hardware was measured to, or only with a value the task
+/// cannot know accepted whatever the hardware read.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Outcome {
     Exact,
+    /// Near values, each within its measured bound (float functions, the PDS fetch pc's
+    /// Bound::Lag), and none of Bound::Bits.
     Near,
+    /// A value the task does not know, read as any value of its width (Bound::Bits: the PDS
+    /// timer a program did not load), reached the readback: that dword is not checked
+    /// beyond its width. Near, and counted apart from the bounded near values.
+    AnyValue,
+}
+
+impl Outcome {
+    /// Whether the match rests on near values (Near or AnyValue).
+    pub fn is_near(self) -> bool {
+        self != Outcome::Exact
+    }
 }
 
 /// Run one vector: how it matches, else why not ("unsupported: ..." for
@@ -89,9 +103,10 @@ fn compare(v: &Json, m: &Machine, mem: &Memory) -> Result<Outcome, String> {
         let off = usize::from_str_radix(off.trim_start_matches("0x"), 16).unwrap();
         want.insert(off / 4, val.hex().unwrap() as u32);
     }
-    let (mut diffs, mut near) = (Vec::new(), false);
+    let (mut diffs, mut near, mut any) = (Vec::new(), false, false);
     let mut check = |what: String, got: u32, want: u32, bound: Option<&Bound>| -> Result<(), String> {
         near |= bound.is_some();
+        any |= matches!(bound, Some(Bound::Bits(_)));
         match bound {
             _ if got == want => {}
             Some(Bound::Derived) => return Err(format!("unsupported: {what} is computed from a near value")),
@@ -120,7 +135,13 @@ fn compare(v: &Json, m: &Machine, mem: &Memory) -> Result<Outcome, String> {
     if !diffs.is_empty() {
         return Err(diffs[..diffs.len().min(4)].join("; "));
     }
-    Ok(if near { Outcome::Near } else { Outcome::Exact })
+    Ok(if any {
+        Outcome::AnyValue
+    } else if near {
+        Outcome::Near
+    } else {
+        Outcome::Exact
+    })
 }
 
 /// The task a PDS vector's program runs as: a fill's secondary program,
@@ -132,6 +153,9 @@ struct Secondary {
     attrs: usize,
     sa: [u32; 128],
     written: u128,
+    /// The port writes so far, and the attribute each douta wrote (by write index).
+    writes: usize,
+    douta: Vec<(usize, usize)>,
     /// The scratch buffer's dwords, which the PDS reaches through `low`: the probe's
     /// mapping of it in the first MiB (sgxfive-test probe --low), if any.
     scratch: Vec<u32>,
@@ -157,6 +181,10 @@ impl Bus for Secondary {
 
     fn port(&mut self, port: Port, w: [u32; 4]) -> Result<(), Error> {
         let open = |why: String| Error::Unsupported { pc: 0, text: String::new(), why };
+        self.writes += 1;
+        if port == Port::Douta {
+            self.douta.push((self.writes - 1, (w[1] >> 8 & 0xfff) as usize));
+        }
         match port {
             Port::Douta => {
                 let n = (w[1] >> 8 & 0xfff) as usize;
@@ -183,27 +211,69 @@ impl Bus for Secondary {
 /// buffer through the probe's low mapping of it, if any. A job the hardware
 /// lost because it hung matches a program that does not halt, and one that
 /// faulted a program that faults.
+///
+/// Every 16 x 16 tile of the fill (64 pixels wide, its instances in raster order) runs the
+/// program with its own inputs (Pds::fill_secondary) and its pixels store to the same scratch
+/// dwords, so the readback is one tile's: the vector matches if one tile's run does. Else
+/// the error of the first tile, or a mismatch if a tile ran to one. run_pds_tile_match says
+/// which tile.
 pub fn run_pds(v: &Json) -> Result<Outcome, String> {
-    let (p, init) = (v.get("program"), v.get("init"));
+    run_pds_tile_match(v).map(|(o, _)| o)
+}
+
+/// run_pds with the tile (tile_x, tile_y) whose run matched, the first in raster order: a
+/// vector whose program does not depend on the tile matches on (0, 0), so a match on another
+/// tile is one that needed that tile's inputs (its ir0). The readback does not say which
+/// tile's pixel stored last, so the coverage report counts these (pds_tiles).
+pub fn run_pds_tile_match(v: &Json) -> Result<(Outcome, (u32, u32)), String> {
+    let init = v.get("init");
     if init.get("task").str() != Some("pds-secondary") {
         return Err(format!("unsupported: the task {:?}", init.get("task").str()));
     }
+    let instances = init.get("instances").num().unwrap_or(2048.0) as u32;
+    let (tw, th) = (FILL_WIDTH.div_ceil(16), (instances / FILL_WIDTH).max(1).div_ceil(16));
+    let mut err: Option<String> = None;
+    for ty in 0..th {
+        for tx in 0..tw {
+            match run_pds_tile(v, Pds::fill_secondary(tx, ty)) {
+                Ok(o) => return Ok((o, (tx, ty))),
+                Err(e) => match &err {
+                    Some(f) if !f.starts_with("unsupported") || e.starts_with("unsupported") => {}
+                    _ => err = Some(e),
+                },
+            }
+        }
+    }
+    Err(err.unwrap_or_default())
+}
+
+/// The fill's width in pixels (sgxfive-test probe): 64.
+const FILL_WIDTH: u32 = 64;
+
+/// run_pds for one tile's PDS.
+fn run_pds_tile(v: &Json, mut pds: Pds) -> Result<Outcome, String> {
+    let (p, init) = (v.get("program"), v.get("init"));
     let words: Vec<u32> = p.get("words").arr().iter().map(|w| w.hex().unwrap() as u32).collect();
     let prog = pds::Program::new(&words, p.get("data").num().unwrap_or(0.0) as usize);
     let mut bus = Secondary {
         attrs: init.get("attrs").num().unwrap_or(0.0) as usize,
         sa: [0; 128],
         written: 0,
+        writes: 0,
+        douta: Vec::new(),
         scratch: (0..SCRATCH_DWORDS as u32).map(|i| 0xD000_0000 | i).collect(),
         low: init.get("scratch").get("low").hex().map(|a| a as u32),
     };
     let failed = v.get("readback").get("failed").str();
     let hung = failed.is_some_and(|f| f.starts_with("job hung"));
     let faulted = failed.is_some_and(|f| f.starts_with("job faulted"));
-    match Pds::secondary().run(&prog, &mut bus, 10_000) {
+    match pds.run(&prog, &mut bus, 10_000) {
         Err(Error::StepLimit) if hung => return Ok(Outcome::Exact),
         // a load or store outside what the job mapped faults, as the hardware's did (E127)
         Err(Error::Fault(_)) if faulted => return Ok(Outcome::Exact),
+        // a jump out of the program fetches memory the job did not map: the hardware's
+        // 24-bit targets 2 MiB and more past it faulted (pds-encoding-bits-flow-bra)
+        Err(Error::PcOutOfRange(_)) if faulted => return Ok(Outcome::Exact),
         Err(e @ Error::Unsupported { .. }) => return Err(format!("unsupported: {e}")),
         Err(e) => return Err(format!("error: {e}")),
         Ok(()) if failed.is_some() => {
@@ -218,6 +288,16 @@ pub fn run_pds(v: &Json) -> Result<Outcome, String> {
     let temps = init.get("temps").num().map_or(124, |t| t as usize);
     let mut m = Machine { temps, near: true, sa: bus.sa, ..Machine::default() };
     m.written.sa = bus.written;
+    // an attribute written last from a near value (the fetch pc) keeps its bound
+    let mut sa_near = BTreeMap::new();
+    for &(i, n) in &bus.douta {
+        sa_near.insert(n, pds.port_near.get(i).and_then(|w| w[0]));
+    }
+    for (n, b) in sa_near {
+        if let Some(b) = b {
+            m.bounds.insert(("sa", n), b);
+        }
+    }
     match m.run(&prog, &mut mem, 10_000) {
         Ok(()) => {}
         Err(e @ Error::Unsupported { .. }) => return Err(format!("unsupported: USE: {e}")),
@@ -474,7 +554,10 @@ fn esc(s: &str) -> String {
 /// which `cargo run --release -p sgx-sim --example coverage` writes): for
 /// each form of the USSE table, its op and, by the probes whose instructions
 /// under test use it, how many vectors match, stop unsupported or mismatch,
-/// with the unsupported reasons.
+/// with the unsupported reasons. "near" counts, by probe, the matches that rest on near
+/// values; for the PDS forms "any" counts the part of those that rest on a value read as any
+/// value of its width (Outcome::AnyValue), and the totals give "pds_near", "pds_any" and the
+/// tiles the PDS matches ran on ("pds_tiles", run_pds_tile_match).
 pub fn coverage_json(dir: &std::path::Path) -> String {
     type Counts = [usize; 3];
     let table = usse_isa::table();
@@ -488,6 +571,10 @@ pub fn coverage_json(dir: &std::path::Path) -> String {
     let mut pds_probes: Vec<BTreeMap<String, Counts>> = vec![BTreeMap::new(); npds];
     let mut pds_whys: Vec<BTreeMap<String, usize>> = vec![BTreeMap::new(); npds];
     let mut pds_all_whys: BTreeMap<String, usize> = BTreeMap::new();
+    let mut pds_nears: Vec<BTreeMap<String, usize>> = vec![BTreeMap::new(); npds];
+    let mut pds_anys: Vec<BTreeMap<String, usize>> = vec![BTreeMap::new(); npds];
+    let (mut pds_near, mut pds_any) = (0, 0);
+    let mut pds_tiles: BTreeMap<(u32, u32), usize> = BTreeMap::new();
     for path in probe_files(dir) {
         let d = crate::json::parse(&std::fs::read_to_string(&path).unwrap());
         let raw = d.get("run").get("raw").str().unwrap_or("").to_string();
@@ -497,8 +584,16 @@ pub fn coverage_json(dir: &std::path::Path) -> String {
                 continue;
             }
             let k = kind(v);
-            let Some(r) = run(v) else { continue };
             if k == Kind::Pds {
+                let rt = run_pds_tile_match(v);
+                if let Ok((_, t)) = &rt {
+                    *pds_tiles.entry(*t).or_default() += 1;
+                }
+                let r = rt.map(|(o, _)| o);
+                let near = r.as_ref().is_ok_and(|o| o.is_near());
+                let any = r == Ok(Outcome::AnyValue);
+                pds_near += near as usize;
+                pds_any += any as usize;
                 let slot = match &r {
                     Ok(_) => 0,
                     Err(e) if e.starts_with("unsupported") => 1,
@@ -511,13 +606,20 @@ pub fn coverage_json(dir: &std::path::Path) -> String {
                 }
                 for f in under_test(v) {
                     pds_probes[f].entry(probe.clone()).or_default()[slot] += 1;
+                    if near {
+                        *pds_nears[f].entry(probe.clone()).or_default() += 1;
+                    }
+                    if any {
+                        *pds_anys[f].entry(probe.clone()).or_default() += 1;
+                    }
                     if let Some(w) = &why {
                         *pds_whys[f].entry(w.clone()).or_default() += 1;
                     }
                 }
                 continue;
             }
-            let near = r == Ok(Outcome::Near);
+            let Some(r) = run(v) else { continue };
+            let near = r.as_ref().is_ok_and(|o| o.is_near());
             all_near += near as usize;
             let slot = match &r {
                 Ok(_) => 0,
@@ -546,7 +648,10 @@ pub fn coverage_json(dir: &std::path::Path) -> String {
     let mut o = String::from("{\n  \"format\": \"sgx-sim-coverage\",\n  \"version\": 1,\n");
     o += "  \"generated\": \"cargo run --release -p sgx-sim --example coverage\",\n  \"totals\": {";
     o += &totals.iter().map(|(k, c)| format!("\"{k}\": {c:?}")).collect::<Vec<_>>().join(", ");
-    o += &format!(", \"near\": {all_near}}},\n  \"unsupported\": {{");
+    o += &format!(", \"near\": {all_near}, \"pds_near\": {pds_near}, \"pds_any\": {pds_any}");
+    o += ", \"pds_tiles\": {";
+    o += &pds_tiles.iter().map(|((x, y), n)| format!("\"{x},{y}\": {n}")).collect::<Vec<_>>().join(", ");
+    o += "}},\n  \"unsupported\": {";
     o += &all_whys.iter().map(|(w, n)| format!("\"{}\": {n}", esc(w))).collect::<Vec<_>>().join(", ");
     o += "},\n  \"pds_unsupported\": {";
     o += &pds_all_whys.iter().map(|(w, n)| format!("\"{}\": {n}", esc(w))).collect::<Vec<_>>().join(", ");
@@ -579,9 +684,14 @@ pub fn coverage_json(dir: &std::path::Path) -> String {
             let op = if f.op.is_empty() { "null".to_string() } else { format!("\"{}\"", f.op) };
             let pr: Vec<String> = pds_probes[i].iter().map(|(p, c)| format!("\"{}\": {c:?}", esc(p))).collect();
             let wh: Vec<String> = pds_whys[i].iter().map(|(w, n)| format!("\"{}\": {n}", esc(w))).collect();
+            let ne: Vec<String> = pds_nears[i].iter().map(|(p, n)| format!("\"{}\": {n}", esc(p))).collect();
+            let an: Vec<String> = pds_anys[i].iter().map(|(p, n)| format!("\"{}\": {n}", esc(p))).collect();
             format!(
-                "    {{\"form\": {i}, \"op\": {op}, \"probes\": {{{}}}, \"near\": {{}}, \"unsupported\": {{{}}}}}",
+                "    {{\"form\": {i}, \"op\": {op}, \"probes\": {{{}}}, \"near\": {{{}}}, \"any\": {{{}}}, \
+                 \"unsupported\": {{{}}}}}",
                 pr.join(", "),
+                ne.join(", "),
+                an.join(", "),
                 wh.join(", ")
             )
         })
@@ -593,6 +703,88 @@ pub fn coverage_json(dir: &std::path::Path) -> String {
 
 #[cfg(test)]
 mod tests {
+    /// A fill vector whose PDS program passes ir0 to sa0 and whose shader stores sa0 to scratch
+    /// dword 0, read back as `got`.
+    fn ir0_vector(got: u32) -> crate::json::Json {
+        pds_vector("or ds0[48], ir0, ds1[1]", got)
+    }
+
+    /// The same with `first` in place of the read of ir0.
+    fn pds_vector(first: &str, got: u32) -> crate::json::Json {
+        pds_vector_failed(first, got, "null")
+    }
+
+    /// The same, the job's failure given (JSON: null or a string).
+    fn pds_vector_failed(first: &str, got: u32, failed: &str) -> crate::json::Json {
+        let enc = |t: &str| format!("\"0x{:08x}\"", pds_isa::encode(t).unwrap());
+        let code: Vec<&str> = first.lines().chain(["movs douta, ds0[48], ds1[0], ds0[48], ds0[48]",
+                    "movs doutu, ds0[0], ds0[1], ds1[0], ds0[0]", "halt"]).collect();
+        let words: Vec<String> =
+            ["\"0x0\"".into(), "\"0x0\"".into(), "\"0x0\"".into(), "\"0x0\"".into()]
+                .into_iter().chain(code.iter().map(|t| enc(t))).collect();
+        // sa_dump.s cut to sa0: phas, the scratch address, stad sa0, idf, wdf, end
+        let usew = ["0xfa44070000000000", "0xfca1705003af0000", "0xf0220000b0074000",
+                    "0xf820000000000000", "0xf920000000000000", "0xfca430d10007a000"];
+        let usew: Vec<String> = usew.iter().map(|w| format!("\"{w}\"")).collect();
+        crate::json::parse(&format!(
+            r#"{{"program": {{"isa": "pds", "data": 4, "words": [{}]}},
+                "init": {{"task": "pds-secondary", "instances": 2048, "temps": 32, "attrs": 16,
+                          "use": {{"words": [{}]}}}},
+                "readback": {{"failed": {failed}, "o0": null,
+                              "scratch": {{"0x000": "0x{got:08x}"}}}},
+                "provenance": {{"options": ["--pds", "4"]}}}}"#,
+            words.join(", "), usew.join(", ")))
+    }
+
+    #[test]
+    fn a_jump_out_of_the_program_matches_a_faulted_job() {
+        // bra's target is 24 bits (pds-encoding-bits-flow-bra): one far past the program made
+        // the hardware fetch unmapped memory, and the job faulted
+        assert!(super::run_pds(&pds_vector("bra 0x80004", 0)).is_err());
+        let failed = "\"job faulted, context lost (Input/output error)\"";
+        let v = pds_vector_failed("bra 0x80004", 0, failed);
+        assert_eq!(super::run_pds(&v), Ok(super::Outcome::Exact));
+    }
+
+    #[test]
+    fn a_fetch_pc_read_matches_up_to_two_below() {
+        // pc.0 at instruction 0 is modelled as 3; the hardware's 1 to 3 match as near values
+        for got in [1, 2, 3] {
+            let v = pds_vector("mov32 ds0[48], pc.0", got);
+            assert_eq!(super::run_pds(&v), Ok(super::Outcome::Near));
+        }
+        assert!(super::run_pds(&pds_vector("mov32 ds0[48], pc.0", 4)).is_err());
+        let e = super::run_pds(&pds_vector("add ds0[48], ds0[1], ds1[1]\nmov32 ds0[48], pc.0", 0));
+        assert!(e.is_err());
+    }
+
+    #[test]
+    fn a_fill_vector_is_one_tile_s_secondary_program() {
+        // every tile of the 64 x 32 fill runs the program with its own ir0 (tile_y << 10 |
+        // tile_x) and stores to the same scratch dwords: the readback is one tile's
+        assert_eq!(super::run_pds(&ir0_vector(0x403)), Ok(super::Outcome::Exact));
+        assert_eq!(super::run_pds(&ir0_vector(0x002)), Ok(super::Outcome::Exact));
+        let e = super::run_pds(&ir0_vector(0x404)).unwrap_err();
+        assert!(!e.starts_with("unsupported"), "{e}");
+        // and says which tile's run matched: (0, 0) unless the readback needs another's ir0
+        let exact = super::Outcome::Exact;
+        assert_eq!(super::run_pds_tile_match(&ir0_vector(0x403)), Ok((exact, (3, 1))));
+        assert_eq!(super::run_pds_tile_match(&ir0_vector(0)), Ok((exact, (0, 0))));
+    }
+
+    #[test]
+    fn a_timer_the_task_did_not_load_matches_as_any_value() {
+        // Bound::Bits(25) admits every 25-bit value: such a match is counted apart, not as a
+        // bounded near value (pds-timer-tim-words, pds_isa 8.9)
+        for got in [0, 0x1ab_cdef] {
+            let v = pds_vector("mov32 ds0[48], tim.0", got);
+            assert_eq!(super::run_pds(&v), Ok(super::Outcome::AnyValue));
+        }
+        assert!(super::run_pds(&pds_vector("mov32 ds0[48], tim.0", 0x200_0000)).is_err());
+        assert!(super::Outcome::AnyValue.is_near() && super::Outcome::Near.is_near());
+        assert!(!super::Outcome::Exact.is_near());
+    }
+
     #[test]
     fn a_raw_word_tests_the_form_it_decodes_to() {
         // usse-form-coverage-form2-test-e50 0: the form enc[50] selects has no text the
