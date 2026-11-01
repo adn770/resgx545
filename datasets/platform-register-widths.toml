@@ -1,0 +1,10 @@
+title = "regwidth table platform/register-widths"
+repo = "data"
+paths = ["platform/register-widths/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 10
+size = 180882
+sha256 = "e4624da2c64890557db32715fe0c197c5e280f1b20280dfbe5635fb2defe90c2"
+recipe = "probes/platform/register-widths.toml"
+needs = ["kreg", "regs"]

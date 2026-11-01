@@ -387,7 +387,8 @@ def test_a_table_of_several_sweeps_runs_each_into_its_own_directory(tmp_path, mo
 
 
 def test_a_table_of_several_sweeps_is_named_after_its_table(tmp_path):
-    t = table(tmp_path, "transfer", "words", MULTI.replace('name = "transfer-words"', 'name = "x"', 1))
+    t = table(tmp_path, "transfer", "words",
+              MULTI.replace('name = "transfer-words"', 'name = "x"', 1))
     with pytest.raises(campaign.CampaignError, match="named transfer-words"):
         campaign.run_table(t, SweepTarget(), tmp_path / "d", tmp_path / "ds", repo="data")
 
@@ -985,3 +986,90 @@ def test_the_mark_is_shell_quoted_and_unique_per_run(tmp_path):
 def test_targets_without_ssh_keep_no_kernel_log(tmp_path):
     run(probe_table(tmp_path, ["a"]), FakeTarget(), tmp_path)
     assert not (tmp_path / "d" / "usse" / "demo" / "kernel.log").exists()
+
+
+# ---- regwidth tables (regwidth.py, regwidth.c) ---------------------------------------------
+
+REGWIDTH = '''kind = "regwidth"
+name = "platform-register-widths"
+needs = ["regs"]
+
+[[register]]
+offset = 0x0418
+name = "CR_ISP_LINE_SAMPLE_POS"
+batch = 1
+
+[[readonly]]
+offset = 0x0080
+name = "CR_SOFT_RESET"
+reason = "a write resets units"
+'''
+
+REGWIDTH_OUT = """#### batch 1
+regwidth 0x0418 prior 0x00000001 ones 0x00000001 back 0x00000001 zero 0x00000000 restored 0x00000001
+regval 0x0080 0x00000000
+## check 1: ok
+"""
+
+
+class WidthTarget(FakeTarget):
+    def script(self, text, bins=None):
+        self.text = text
+        self.bins = sorted(p.name for p in pathlib.Path(bins).iterdir())
+        return REGWIDTH_OUT
+
+
+def test_a_regwidth_table_runs_its_generated_script_with_the_program(tmp_path):
+    t = table(tmp_path, "platform", "register-widths", REGWIDTH)
+    target = WidthTarget()
+    rec = campaign.run_table(t, target, tmp_path / "d", tmp_path / "ds", repo="data")
+    assert target.bins == ["regwidth.c"]
+    assert "#### batch 1" in target.text and "0x0418" in target.text
+    run = tmp_path / "d" / "platform" / "register-widths"
+    assert (run / "output.txt").read_text() == REGWIDTH_OUT
+    widths = tomllib.loads((run / "widths.toml").read_text())
+    assert widths["reg"]["0x0418"]["implemented"] == "0"
+    assert widths["readonly"]["0x0080"]["values"] == ["0x00000000"]
+    assert (run / "table.toml").read_text() == REGWIDTH
+    assert rec["title"] == "regwidth table platform/register-widths"
+    assert rec["needs"] == ["regs"]
+
+
+def test_a_regwidth_table_that_writes_a_denied_register_is_refused_before_it_runs(tmp_path):
+    t = table(tmp_path, "platform", "register-widths",
+              REGWIDTH.replace("offset = 0x0418", "offset = 0x0c84"))
+
+    class Never(FakeTarget):
+        def script(self, text, bins=None):
+            raise AssertionError("ran")
+    with pytest.raises(campaign.CampaignError, match="deny"):
+        campaign.run_table(t, Never(), tmp_path / "d", tmp_path / "ds", repo="data")
+
+
+def test_a_regwidth_run_that_stops_keeps_its_output_and_writes_no_manifest(tmp_path):
+    t = table(tmp_path, "platform", "register-widths", REGWIDTH)
+
+    class Stops(FakeTarget):
+        def script(self, text, bins=None):
+            raise campaign.CampaignError("script failed (exit 1)", output="## check 1: FAILED\n")
+    with pytest.raises(campaign.CampaignError):
+        campaign.run_table(t, Stops(), tmp_path / "d", tmp_path / "ds", repo="data")
+    run = tmp_path / "d" / "platform" / "register-widths"
+    assert (run / "output.txt").read_text() == "## check 1: FAILED\n"
+    assert not (tmp_path / "ds" / "platform-register-widths.toml").exists()
+
+
+def test_a_regwidth_table_is_named_for_its_unit_and_feature(tmp_path):
+    t = table(tmp_path, "platform", "widths", REGWIDTH)
+    with pytest.raises(campaign.CampaignError, match="named platform-widths"):
+        campaign.run_table(t, WidthTarget(), tmp_path / "d", tmp_path / "ds", repo="data")
+
+
+def test_a_failed_laptop_script_carries_its_output(monkeypatch):
+    class R:
+        returncode, stdout, stderr = 1, "## check 1: FAILED\n", ""
+    monkeypatch.setattr(campaign.subprocess, "run", lambda *a, **k: R())
+    monkeypatch.setattr(campaign.probe, "target", lambda: ("host", []))
+    with pytest.raises(campaign.CampaignError) as e:
+        campaign.LaptopTarget().script("exit 1\n")
+    assert e.value.output == "## check 1: FAILED\n"

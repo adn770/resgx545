@@ -1,0 +1,10 @@
+title = "script table platform/register-timelines"
+repo = "data"
+paths = ["platform/register-timelines/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-02"
+files = 4
+size = 5959446
+sha256 = "f1bfe2df21d795bec783457fa0bd681a33f197c9aa7583cd5462c6fad1df3635"
+recipe = "probes/platform/register-timelines.toml"
+needs = ["render", "regs", "render_pb_pages"]

@@ -4,7 +4,7 @@
 probes/<unit>/<feature>.toml, one probe at a time on a clean GPU, and writes each table's
 data and its dataset manifest.
 
-A table is one of three kinds, or holds several of them (sweeps, then a script, then probes). A
+A table is one of four kinds, or holds several of them (sweeps, then a script, then probes). A
 probe table ([[probe]], tools/usse-asm/probe.py) runs probe
 by probe as below. A sweep ([[range]], tools/sweep/sweep.py), named <unit>-<feature>, runs
 with its own unpoked baseline per case into the table's directory; a table of several sweeps
@@ -15,12 +15,17 @@ the laptop (or, with --target local, in the repository root with $OUT the table'
 local has no GPU, so only with baseline = "none") and keeps its output; the mock cannot run
 one. A failing script (nonzero exit, ssh or scp error), a sweep that stopped or ran fewer cases
 than it has, and a table the target cannot run are CampaignErrors: no manifest.
-A script table that runs before the render path exists (a boot-only kernel) says `baseline = "none"`: no triangle baseline
-before or after it, and no fence. A capture table (kind = "capture",
+A script table that runs before the render path exists (a boot-only kernel) says
+`baseline = "none"`: no triangle baseline before or after it, and no fence. A capture table (kind = "capture",
 under captures/<unit>/, always for the private data repository) runs the closed stack without
 the GPU: its script, from the table's templates/, runs on a capture host (--target local, or
 --target build: $RESGX545_BUILD_HOST over ssh) with the table's `files` copied into its work
-directory, and writes what it captures into $OUT.
+directory, and writes what it captures into $OUT. A regwidth table (kind = "regwidth", named
+<unit>-<feature>, regwidth.py) measures which bits of registers take a write: the runner
+checks it (no register of regwidth.c's deny list is written), runs on the laptop the script
+regwidth.py makes of it with regwidth.c staged, batch by batch with the GPU checked after
+each, and keeps output.txt, widths.toml (the summary) and the table; a run that stops keeps
+its output but writes no manifest.
 
 For every probe of a table: the baseline triangle must draw clean ("diff: 0"), else the
 target is fenced (a probe that hangs the GPU, whose recovery resets it) up to three times;
@@ -73,6 +78,7 @@ sys.path.insert(0, str(ROOT / "tools" / "records"))
 sys.path.insert(0, str(ROOT / "tools" / "sweep"))
 import datasets  # noqa: E402
 import probe  # noqa: E402
+import regwidth  # noqa: E402
 import sweep  # noqa: E402
 
 # the hardware units: a table's directory
@@ -90,7 +96,11 @@ _LIST_NEEDS = ("sudo -n sh -c 'ls /sys/kernel/debug/dri/*/sgx/' 2>/dev/null | se
 
 
 class CampaignError(Exception):
-    pass
+    """A run that cannot go on; output is what a failed script printed, when there is any."""
+
+    def __init__(self, msg: str = "", output: str = ""):
+        super().__init__(msg)
+        self.output = output
 
 
 def _clean(line: str) -> bool:
@@ -186,7 +196,7 @@ class LaptopTarget:
         if r.returncode:
             tail = (r.stdout + r.stderr).strip().splitlines()[-5:]
             raise CampaignError(f"script on {self.host} failed (exit {r.returncode}): "
-                                + " | ".join(tail))
+                                + " | ".join(tail), output=r.stdout + r.stderr)
         return r.stdout + r.stderr
 
     def environment(self) -> dict:
@@ -488,16 +498,23 @@ def _run_table(path: pathlib.Path, target, data: pathlib.Path, ds_dir: pathlib.P
     root = pathlib.Path(root).resolve() if root else path.parents[2]
     text = path.read_text()
     spec = tomllib.loads(text)
-    kind = spec.get("kind") if spec.get("kind") == "capture" else None
-    has_probe = "probe" in spec
-    has_sweep = kind != "capture" and ("range" in spec or "sweep" in spec)
-    has_script = kind != "capture" and ("script" in spec or spec.get("kind") == "script")
+    kind = spec.get("kind") if spec.get("kind") in ("capture", "regwidth") else None
+    has_probe = kind is None and "probe" in spec
+    has_sweep = kind is None and ("range" in spec or "sweep" in spec)
+    has_script = kind is None and ("script" in spec or spec.get("kind") == "script")
+    widths = None
+    if kind == "regwidth":
+        try:
+            widths = regwidth.load(path)
+        except regwidth.RegwidthError as err:
+            raise CampaignError(str(err))
     if kind is None and not (has_probe or has_sweep or has_script):
-        raise CampaignError(f"{path}: not a probe, sweep, script or capture table")
+        raise CampaignError(f"{path}: not a probe, sweep, script, capture or regwidth table")
     if (has_script or kind == "capture") and "script" not in spec:
         raise CampaignError(f"{path.name}: a script or capture table names its `script`")
     if not hasattr(target, "baseline") and (
-            has_probe or has_sweep or (has_script and spec.get("baseline", "tri") == "tri")):
+            has_probe or has_sweep or widths is not None
+            or (has_script and spec.get("baseline", "tri") == "tri")):
         raise CampaignError(f"{path.name}: the {target.name} target has no GPU; only a "
                             "script table with baseline = \"none\" or a capture runs there")
     if ("captures" in path.relative_to(root).parts[:1]) != (kind == "capture") \
@@ -515,11 +532,11 @@ def _run_table(path: pathlib.Path, target, data: pathlib.Path, ds_dir: pathlib.P
     table = [p for p in table if p.name not in opened] + [p for p in table if p.name in opened]
     unit, feature = _check(path, root, table)
     check_needs(target, fields.get("needs", []), path.name)
-    if kind == "capture" or has_sweep or has_script:
+    if kind is not None or has_sweep or has_script:
         name = spec.get("name", "")
         if name != f"{unit}-{feature}":
-            raise CampaignError(f"{path.name}: a table of sweeps, a script or a capture is "
-                                f"named {unit}-{feature}, not {name!r}")
+            raise CampaignError(f"{path.name}: a table of sweeps, a script, a capture or "
+                                f"regwidth is named {unit}-{feature}, not {name!r}")
         _extra(path.name, text)
     src_dir = path.parent / "templates"
     src_dir = src_dir if src_dir.is_dir() else probe.PROBES_DIR
@@ -540,6 +557,20 @@ def _run_table(path: pathlib.Path, target, data: pathlib.Path, ds_dir: pathlib.P
                                                             tdir))
             (tdir / script).write_text(body)
             _write_env(tdir / "env.toml", env, {spec["name"]: {}})
+        if widths is not None:
+            before = _ready(target)
+            with tempfile.TemporaryDirectory() as bins:
+                shutil.copy2(HERE / "regwidth.c", pathlib.Path(bins) / "regwidth.c")
+                try:
+                    out = target.script(regwidth.script(widths), bins=pathlib.Path(bins))
+                except CampaignError as err:
+                    (tdir / "output.txt").write_text(err.output)
+                    raise
+            (tdir / "output.txt").write_text(out)
+            (tdir / "widths.toml").write_text(regwidth.render(widths, regwidth.parse(out)))
+            (tdir / "table.toml").write_text(text)
+            log[spec["name"]] = {"before": before, "after": target.baseline()}
+            _write_env(tdir / "env.toml", env, log)
         if has_sweep:
             sweeps = sweep.load_all(path)
             for s in sweeps:
@@ -603,7 +634,8 @@ def _run_table(path: pathlib.Path, target, data: pathlib.Path, ds_dir: pathlib.P
         (tdir / "kernel.log").write_text(_log_since(target, mark))
     rel = f"{unit}/{feature}/"
     files, size, sha = datasets.digest([rel], pathlib.Path(data))
-    kinds = [k for k, on in (("capture", kind == "capture"), ("sweep", has_sweep),
+    kinds = [k for k, on in (("capture", kind == "capture"), ("regwidth", kind == "regwidth"),
+                             ("sweep", has_sweep),
                              ("script", has_script), ("probe", has_probe)) if on]
     title = " and ".join(filter(None, (", ".join(kinds[:-1]), kinds[-1])))
     rec = {"title": f"{title} table {unit}/{feature}", "repo": repo, "paths": [rel],

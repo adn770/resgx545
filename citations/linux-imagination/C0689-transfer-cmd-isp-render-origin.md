@@ -8,5 +8,5 @@ terms = ["transfer_cmd.isp_render_origin"]
 +++
 
 Line 331 of `pvr_rogue_fwif_client.h` in Linux's Rogue driver declares `isp_render_origin`. It backs
-the glossary field `transfer_cmd.isp_render_origin`: top-left tile of the render: y0 / 16 | (x0 /
-32) << 16, 32 x 16 tiles; the EDM copies it into register 0x040c.
+the glossary field `transfer_cmd.isp_render_origin`: top-left tile of the render: y in 9:0 and x in
+24:16 (y0 / 16 | (x0 / 32) << 16), 32 x 16 tiles; the EDM copies it into register 0x040c.

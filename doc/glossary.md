@@ -2078,9 +2078,9 @@ symbol. Each entry lists the source spellings behind it, best tier first.
   `event_pixel_pds_data` (3, linux-imagination).
 - `transfer_cmd.event_pixel_pds_info` G0742 (TRANSFERCMD+0x02c): its info. From
   `event_pixel_pds_info` (3, linux-imagination).
-- `transfer_cmd.isp_render_origin` G0987 (TRANSFERCMD+0x030): top-left tile of the render: y0 / 16 |
-  (x0 / 32) << 16, 32 x 16 tiles; the EDM copies it into register 0x040c. From `isp_render_origin`
-  (3, linux-imagination).
+- `transfer_cmd.isp_render_origin` G0987 (TRANSFERCMD+0x030): top-left tile of the render: y in 9:0
+  and x in 24:16 (y0 / 16 | (x0 / 32) << 16), 32 x 16 tiles; the EDM copies it into register 0x040c.
+  From `isp_render_origin` (3, linux-imagination).
 - `transfer_cmd.isp_render_end` G0986 (TRANSFERCMD+0x034): transfer command word 13, which the EDM
   loads into register 0x0410 before it starts the render: the last tile of the render, inclusive, in
   the form of transfer_cmd.isp_render_origin (y / 16 in the low half, x / 32 << 16, 32 x 16 tiles)

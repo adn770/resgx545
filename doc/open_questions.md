@@ -11,7 +11,7 @@
 ## dpm
 
 - `Q038` (phase 10): when a scene overflows its parameter buffer, are the missing pixels geometry the partial render discards or pixels a later background object paints over, and why does the amount drawn not follow the buffer size? (E202, E204, E160)
-- `Q045` (phase 11): what do the DPM store and load tasks that the TA kick issues from the fields of register 0x0740 move, and what sets those fields? (E158)
+- `Q045` (phase 11): what sets the fields of register 0x0740 that the TA kick turns into DPM store and load tasks, and what do those tasks move? (E158, E256)
 - `Q067` (phase 11): how does the PB store offset scale with the page count, how must a host lay out a page table it builds itself, and does the settle routine wait for the other pipe to go idle? (E153, E200, E201)
 
 ## edm
@@ -81,7 +81,7 @@
 
 ## ta
 
-- `Q035` (phase 10): which tiling words does the macrotile rule set at target sizes other than the sixteen tried, and does register 0x0208 ever change with the size? (E174, E175)
+- `Q035` (phase 10): does the tiling engine read CR_TE_MTILE1 (0x0208) at all, and does any set of tiling words other than the macrotile rule's also draw a target exactly? (E174, E175, E247, E257)
 - `Q064` (phase 11): what do the CR_TE_PSG bits 24 and 21 the TA kick ORs in do, and is bit 1 of CR_DPM_STATE_CONTEXT_ID the 3D's DPM slot as bit 2 is the TA's? (E158, E172)
 - `Q068` (phase 11): do the twelve TA register words that are zero in our jobs save and resume the state of an interrupted TA? (E054, E056, E182, E183, E245)
 - `Q070` (phase 11): what are the TA object's three header words made from, do its set masks mean half precision, one component, has z and has w, and does the fitted region test hold beyond the triangles it was fitted to? (E176, E177, E180, E181, E185)
@@ -117,7 +117,7 @@
 ## vdm
 
 - `Q015` (phase 6): why does VDM state word 1 with bits 11:9 = 7 hang the triangle sweep but render in the probe job that sets the same word? (E060)
-- `Q036` (phase 10): what do the DPM free-list status registers CR_DPM_TA_ALLOC_FREE_LIST_STATUS1 and _STATUS2 and CR_DPM_3D_FREE_LIST_STATUS1 and _STATUS2 (0x0700, 0x0710, 0x070c and 0x071c) count, when they change on every render but not as a running page count? (E184)
+- `Q036` (phase 10): what do the high halves of CR_DPM_TA_ALLOC_FREE_LIST_STATUS1 and CR_DPM_3D_FREE_LIST_STATUS1 (0x0700, 0x070c), and CR_DPM_TA_ALLOC_FREE_LIST_STATUS2 and CR_DPM_3D_FREE_LIST_STATUS2 (0x0710, 0x071c), hold after a 3D has handed the pages back? (E184, E256)
 - `Q037` (phase 10): does a hung job's saved render memory show how far the TA got, when the control hung in its pixel task leaves its object in one run and none in the next? (E186)
 - `Q042` (phase 11): what does the index list's first trailing word (VDM_INDEX2) do, when 0, 0x10000000 and 0x70000000 leave what the TA writes byte for byte the same? (E188)
 - `Q047` (phase 11): what do VDM_STATE1 bit 8, bits 11:9 and bits 15:13 select for a state task, when on the one-triangle job bit 8 changes nothing, bits 11:9 at 0 stop the triangle before tiling and bits 15:13 at 0, 5 or 6 hang it? (E060, E185, E186, E187)

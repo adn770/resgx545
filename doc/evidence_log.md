@@ -1331,6 +1331,70 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   or b), 0x3eaaaaa9 (or a) and 0x3f333331 (or 2); bit 0 acts on one set of four, bit 1 does nothing
   on it, and with two sets bit 0 cuts set 1 and bit 1 cuts set 2; one run.
   *tsp; HW, infer; data: `tsp-coordinate-sets`.*
+- `E246` Of the registers the glossary places at an offset, and the 13 the firmware or the init
+  script touches with no row, 118 were written with all ones and zero through /dev/mem with the
+  firmware live and idle and put back, in ten batches after each of which a fill and the triangle
+  came out exact with no MMU fault, in two runs that agree in every implemented bit; the 109 others
+  stay read-only for a reason the table gives; the method reproduces the bits earlier records
+  measured for 0x0418, 0x04dc, 0x0520 and 0x0368; CR_HWPERF_CTRL takes bits 12:0, the nine HWPerf
+  counters take no write, and 0x0b30 takes bits 8 and 0.
+  *platform; HW; data: `platform-register-widths`.*
+- `E247` Of the tiling-engine, VDM and TA registers, CR_TE_MTILE1 takes bits 31, 29:22, 19:12 and
+  7:0, CR_TE_MTILE2 bits 30:22, 20:12 and 8:0, CR_TE_SCREEN bits 20:12 and 7:0,
+  CR_TE_MACROTILE_STRIDE bits 17:0, CR_TE_PSG bits 26:18 and 6:0, the region and tail-pointer cache
+  bases bits 31:6, CR_VDM_CTRL_STREAM_BASE bits 31:2 and CR_PPP_SCREEN bits 28:16 and 12:0;
+  CR_TE_CONTEXT_STATE and 0x02b4 take no write; the other TA store registers take the bits E054
+  found.
+  *ta; HW, infer; data: `platform-register-widths`.*
+- `E248` CR_MTE_MULTISAMPLECTL, CR_MTE_RHW_MIN and CR_MTE_RHW_CLAMP take all 32 bits,
+  CR_MTE_OTPM_BASE bits 31:4 and CR_MTE_CTRL bits 14:0.
+  *mte; HW; data: `platform-register-widths`.*
+- `E249` Of the ISP registers, CR_ISP_RENDER takes bits 5:3 and 1:0, CR_ISP_CTL bits 24, 19:16, 8
+  and 5:0, CR_ISP_MSAA bits 31 and 1:0, the render origin and end registers 0x040c and 0x0410 bits
+  24:16 and 9:0, CR_ISP_BGOBJVALS bits 9:0, 0x04c4 bits 30:0 and the polygon-offset units bits 23:0;
+  the visibility control and counters take no write, and 0x0444 and 0x0448 read the same values
+  whatever is written.
+  *isp; HW, infer; data: `platform-register-widths`.*
+- `E250` CR_ISP_ZLSCTL takes bits 26:0, the depth load and store bases bits 30:4 and the stencil
+  load and store bases bits 31:4.
+  *zls; HW; data: `platform-register-widths`.*
+- `E251` CR_REG_0400 takes bit 25 and bits 11:0.
+  *pbe; HW; data: `platform-register-widths`.*
+- `E252` CR_REG_0148 takes bit 0 only.
+  *render; HW; data: `platform-register-widths`.*
+- `E253` Of the DPM registers, the page-table, state and control bases take bits 31:4, the two free
+  lists and the two page-count words all 32 bits, the TA, ZLS and PDS thresholds bits 15:0,
+  CR_DPM_TA_GLOBAL_LIST bits 16:0, CR_DPM_STATE_CONTEXT_ID and CR_DPM_CONTEXT_PB_BASE bits 2:0,
+  CR_DPM_3D_RT_INDEX and CR_DPM_REG_074C bits 8:0 and CR_DPM_SPM_SWITCH bit 0.
+  *dpm; HW, infer; data: `platform-register-widths`.*
+- `E254` Each colour-space and luma-key coefficient word takes two 10-bit fields, 25:16 and 9:0,
+  except words 4 of each set (9:0 only), the luma-key B and offset word (23:16 and 9:0) and the
+  luma-key alpha word (31:0); CR_TPU_YUV_CSC_INPUT takes bits 3:0.
+  *texture; HW, infer; data: `platform-register-widths`.*
+- `E255` The USSE filter coefficient sets 0 and 1 take all 32 bits of their two tap words and bits
+  19:0 of their shift and bias words, set 2 only bits 31:24 and 7:0 of its first tap word, 15:8 of
+  its second and 19:0 of its bias word; CR_USE_COEFFS_MODE takes bits 1:0.
+  *usse; HW, infer; data: `platform-register-widths`.*
+- `E256` While the TA runs, CR_DPM_TA_ALLOC_FREE_LIST_STATUS1 holds the parameter buffer's size in
+  pages in its high half and the pages the TA has taken plus one in its low half, and STATUS2 the
+  size less one; CR_DPM_PAGE_STATUS holds the pages taken in both halves; when the 3D starts the 3D
+  pair copies the TA pair, and while it frees pages the high halves and STATUS2 change at every
+  step, CR_DPM_PAGE_STATUS and CR_DPM_PAGE count down and 0x0730 reads 1; after the job the low half
+  of STATUS1 keeps the TA's count plus one; 0x0740 reads 0 in every job, partial renders and two
+  contexts included.
+  *dpm; HW, infer; data: `platform-register-timelines`.*
+- `E257` At eight target sizes from 64x64 to 4096x4096, 1366x768 among them, the triangle draws
+  exact and the tiling registers 0x0208, 0x020c, 0x0210, 0x0214 and 0x0248 read after the TA exactly
+  the values the library's macrotile rule gives, which the TA command loads: the hardware accepts
+  the rule's encoding; 0x0208 changes with the size from 512x512 on, and its bit 31 is set from
+  1024x768 on, where the rule chooses four macrotiles across.
+  *ta; HW, infer; data: `platform-register-timelines`.*
+- `E258` Around the fill, the copy, the triangle, two renders in one context, two render contexts, a
+  partial render and the triangle at seven sizes, 137 of the 206 registers sampled never change; a
+  fill moves 23, a copy 13, a triangle 31 to 51, a partial render 57, and `contexts -n 2` only 2 (it
+  renders nothing); the USSE slot registers 0x0aa4, 0x0aa8, 0x0b80 and 0x0b84 hold 0xaaaaaaaa when
+  idle and other 2-bit-per-slot patterns while tasks run.
+  *platform; HW, infer; data: `platform-register-timelines`.*
 
 ## By unit
 
@@ -1340,7 +1404,7 @@ Records: E151.
 
 ### dpm
 
-Records: E199, E200, E201, E202, E204, E205, E206, E203.
+Records: E199, E200, E201, E202, E204, E205, E206, E203, E253, E256.
 
 ### edm
 
@@ -1355,15 +1419,15 @@ Records: E001, E002, E003, E004, E005, E010, E011, E012.
 
 Records: E064, E065, E066, E067, E068, E069, E070, E071, E072, E073, E074, E210, E211, E213, E214,
 E215, E216, E217, E218, E219, E220, E222, E224, E225, E226, E227, E228, E229, E230, E209, E231,
-E232, E233, E234, E235.
+E232, E233, E234, E235, E249.
 
 ### mte
 
-Records: E061, E062, E063, E192, E193, E194, E195, E196, E198, E197.
+Records: E061, E062, E063, E192, E193, E194, E195, E196, E198, E197, E248.
 
 ### pbe
 
-Records: E029, E030, E031, E032, E239, E240.
+Records: E029, E030, E031, E032, E239, E240, E251.
 
 ### pds
 
@@ -1372,19 +1436,19 @@ E134, E135, E136, E137, E138, E139, E140, E141, E142, E143, E144, E145.
 
 ### platform
 
-Records: E006, E007, E008, E025, E026, E122, E150, E149.
+Records: E006, E007, E008, E025, E026, E122, E150, E149, E246, E258.
 
 ### render
 
-Records: E023, E049, E050, E051, E052, E053, E148, E169.
+Records: E023, E049, E050, E051, E052, E053, E148, E169, E252.
 
 ### ta
 
-Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180, E181.
+Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180, E181, E247, E257.
 
 ### texture
 
-Records: E033, E034, E035, E036, E037, E038, E039, E040, E041, E042, E114, E116, E242.
+Records: E033, E034, E035, E036, E037, E038, E039, E040, E041, E042, E114, E116, E242, E254.
 
 ### transfer
 
@@ -1399,7 +1463,7 @@ Records: E236, E237.
 Records: E075, E076, E077, E078, E079, E080, E081, E082, E083, E085, E086, E087, E088, E089, E090,
 E091, E092, E093, E094, E095, E096, E097, E098, E099, E100, E101, E102, E103, E104, E105, E106,
 E107, E108, E109, E110, E111, E112, E113, E115, E117, E118, E119, E120, E121, E123, E124, E147,
-E244, E245.
+E244, E245, E255.
 
 ### vdm
 
@@ -1407,4 +1471,4 @@ Records: E059, E060, E184, E185, E186, E187, E189, E190, E191, E188.
 
 ### zls
 
-Records: E057, E058.
+Records: E057, E058, E250.

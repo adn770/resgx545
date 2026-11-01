@@ -14,45 +14,45 @@ evidence records its rows, its fields' rows and its measured width cite.
 
 | unit | registers | with fields | measured width | uncovered bits | on a measured width |
 |---|---|---|---|---|---|
-| (no unit) | 11 | 1 | 9 | 31 | 0 |
+| (no unit) | 11 | 1 | 11 | 12 | 12 |
 | BIF | 11 | 11 | 0 | 154 | 0 |
 | CACHE | 1 | 0 | 0 | 0 | 0 |
 | CLKGATE | 3 | 3 | 0 | 35 | 0 |
 | CORE | 2 | 2 | 0 | 0 | 0 |
 | DMS | 1 | 0 | 0 | 0 | 0 |
-| DPM | 37 | 2 | 0 | 0 | 0 |
+| DPM | 37 | 2 | 18 | 0 | 0 |
 | EVENT | 16 | 9 | 0 | 102 | 0 |
-| HWPERF | 11 | 1 | 0 | 28 | 0 |
-| ISP | 34 | 4 | 4 | 102 | 0 |
-| MTE | 6 | 0 | 0 | 0 | 0 |
+| HWPERF | 11 | 1 | 10 | 9 | 9 |
+| ISP | 34 | 4 | 29 | 31 | 31 |
+| MTE | 6 | 0 | 5 | 0 | 0 |
 | PDS | 9 | 5 | 2 | 115 | 2 |
-| PPP | 2 | 0 | 0 | 0 | 0 |
+| PPP | 2 | 0 | 1 | 0 | 0 |
 | SETTLE | 2 | 0 | 0 | 0 | 0 |
 | SOFT | 1 | 1 | 0 | 26 | 0 |
 | TA | 4 | 0 | 4 | 0 | 0 |
-| TE | 13 | 0 | 1 | 0 | 0 |
+| TE | 13 | 0 | 10 | 0 | 0 |
 | TIMER | 1 | 1 | 0 | 0 | 0 |
-| TPU | 14 | 1 | 0 | 30 | 0 |
+| TPU | 14 | 1 | 14 | 2 | 2 |
 | TSP | 1 | 0 | 0 | 0 | 0 |
-| USE | 32 | 6 | 2 | 95 | 0 |
-| VDM | 2 | 0 | 0 | 0 | 0 |
-| total | 214 | 47 | 22 | 718 | 2 |
+| USE | 32 | 6 | 12 | 65 | 0 |
+| VDM | 2 | 0 | 1 | 0 | 0 |
+| total | 214 | 47 | 117 | 551 | 56 |
 
 ## (no unit)
 
-- `0x0148` `CR_REG_0148`: width 32 bits assumed; no field rows. Records: E056.
-- `0x0324` `CR_REG_0324`: width 28 bits (31:4, E054); no field rows. Records: E030, E054, E056,
-  E071, E072, E159, E182, E183.
-- `0x0364` `CR_REG_0364`: width 32 bits (31:0, E054); no field rows. Records: E030, E054, E056,
-  E071, E072, E159, E182, E183.
-- `0x0368` `CR_REG_0368`: width 15 bits (14:0, E054); no field rows. Records: E030, E054, E056,
-  E071, E072, E159, E182, E183.
-- `0x0370` `CR_REG_0370`: width 32 bits (31:0, E054); no field rows. Records: E030, E054, E056,
-  E071, E072, E159, E182, E183.
-- `0x0374` `CR_REG_0374`: width 32 bits (31:0, E054); no field rows. Records: E030, E054, E056,
-  E071, E072, E159, E182, E183.
-- `0x0400` `CR_REG_0400`: width 32 bits assumed; 1 field: INVERT_BYTE3 [25]; uncovered 31:26, 24:0
-  (31 bits). Records: E028, E029.
+- `0x0148` `CR_REG_0148`: width 1 bits (0, E252); no field rows. Records: E056, E252.
+- `0x0324` `CR_REG_0324`: width 28 bits (31:4, E054, E247); no field rows. Records: E030, E054,
+  E056, E071, E072, E159, E182, E183, E247.
+- `0x0364` `CR_REG_0364`: width 32 bits (31:0, E054, E247); no field rows. Records: E030, E054,
+  E056, E071, E072, E159, E182, E183, E247.
+- `0x0368` `CR_REG_0368`: width 15 bits (14:0, E054, E247); no field rows. Records: E030, E054,
+  E056, E071, E072, E159, E182, E183, E247.
+- `0x0370` `CR_REG_0370`: width 32 bits (31:0, E054, E247); no field rows. Records: E030, E054,
+  E056, E071, E072, E159, E182, E183, E247.
+- `0x0374` `CR_REG_0374`: width 32 bits (31:0, E054, E247); no field rows. Records: E030, E054,
+  E056, E071, E072, E159, E182, E183, E247.
+- `0x0400` `CR_REG_0400`: width 13 bits (25, 11:0, E251); 1 field: INVERT_BYTE3 [25]; uncovered 11:0
+  (12 bits). Records: E028, E029, E251.
 - `0x0800` `CR_REG_0800`: width 22 bits (23:8, 5:0, E067); no field rows. Records: E006, E066, E067,
   E068, E073, E136, E225.
 - `0x0810` `CR_REG_0810`: width 1 bits (0, E026); no field rows. Records: E006, E026.
@@ -118,29 +118,30 @@ evidence records its rows, its fields' rows and its measured width cite.
 
 ## DPM
 
-- `0x0600` `CR_DPM_3D_PAGE_TABLE_BASE`: width 32 bits assumed; no field rows.
-- `0x0604` `CR_DPM_3D_FREE_LIST`: width 32 bits assumed; no field rows.
-- `0x0618` `CR_DPM_TA_ALLOC_PAGE_TABLE_BASE`: width 32 bits assumed; no field rows.
-- `0x061c` `CR_DPM_TA_ALLOC_FREE_LIST`: width 32 bits assumed; no field rows.
-- `0x0620` `CR_DPM_TA_PAGE_THRESHOLD`: width 32 bits assumed; no field rows.
-- `0x0624` `CR_DPM_ZLS_PAGE_THRESHOLD`: width 32 bits assumed; no field rows.
-- `0x0628` `CR_DPM_TA_GLOBAL_LIST`: width 32 bits assumed; no field rows.
-- `0x062c` `CR_DPM_STATE_BASE0`: width 32 bits assumed; no field rows. Records: E158.
-- `0x0630` `CR_DPM_STATE_CONTEXT_ID`: width 32 bits assumed; no field rows.
-- `0x0634` `CR_DPM_CONTROL_BASE`: width 32 bits assumed; no field rows. Records: E158.
-- `0x0638` `CR_DPM_TA_PAGE_COUNTS`: width 32 bits assumed; 2 fields: GLOBAL [31:16], LOCAL [15:0];
-  uncovered - (0 bits). Records: E200.
+- `0x0600` `CR_DPM_3D_PAGE_TABLE_BASE`: width 28 bits (31:4, E253); no field rows. Records: E253.
+- `0x0604` `CR_DPM_3D_FREE_LIST`: width 32 bits (31:0, E253); no field rows. Records: E253.
+- `0x0618` `CR_DPM_TA_ALLOC_PAGE_TABLE_BASE`: width 28 bits (31:4, E253); no field rows. Records:
+  E253.
+- `0x061c` `CR_DPM_TA_ALLOC_FREE_LIST`: width 32 bits (31:0, E253); no field rows. Records: E253.
+- `0x0620` `CR_DPM_TA_PAGE_THRESHOLD`: width 16 bits (15:0, E253); no field rows. Records: E253.
+- `0x0624` `CR_DPM_ZLS_PAGE_THRESHOLD`: width 16 bits (15:0, E253); no field rows. Records: E253.
+- `0x0628` `CR_DPM_TA_GLOBAL_LIST`: width 17 bits (16:0, E253); no field rows. Records: E253.
+- `0x062c` `CR_DPM_STATE_BASE0`: width 28 bits (31:4, E253); no field rows. Records: E158, E253.
+- `0x0630` `CR_DPM_STATE_CONTEXT_ID`: width 3 bits (2:0, E253); no field rows. Records: E253.
+- `0x0634` `CR_DPM_CONTROL_BASE`: width 28 bits (31:4, E253); no field rows. Records: E158, E253.
+- `0x0638` `CR_DPM_TA_PAGE_COUNTS`: width 32 bits (31:0, E253); 2 fields: GLOBAL [31:16], LOCAL
+  [15:0]; uncovered - (0 bits). Records: E200, E253.
 - `0x063c` `CR_DPM_3D_DEALLOCATE`: width 32 bits assumed; no field rows.
 - `0x0648` `CR_DPM_TA_ALLOC`: width 32 bits assumed; no field rows.
 - `0x064c` `CR_DPM_3D`: width 32 bits assumed; no field rows.
 - `0x0658` `CR_DPM_PARTIAL_RENDER`: width 32 bits assumed; no field rows. Records: E163, E199, E204,
   E205.
-- `0x065c` `CR_DPM_SPM_SWITCH`: width 32 bits assumed; no field rows. Records: E199.
-- `0x0660` `CR_DPM_3D_PAGE_COUNTS`: width 32 bits assumed; 2 fields: GLOBAL [31:16], LOCAL [15:0];
-  uncovered - (0 bits). Records: E200.
-- `0x0664` `CR_DPM_CONTEXT_PB_BASE`: width 32 bits assumed; no field rows.
-- `0x0668` `CR_DPM_PDS_THRESHOLD`: width 32 bits assumed; no field rows. Records: E200.
-- `0x0674` `CR_DPM_STATE_BASE1`: width 32 bits assumed; no field rows. Records: E158.
+- `0x065c` `CR_DPM_SPM_SWITCH`: width 1 bits (0, E253); no field rows. Records: E199, E253.
+- `0x0660` `CR_DPM_3D_PAGE_COUNTS`: width 32 bits (31:0, E253); 2 fields: GLOBAL [31:16], LOCAL
+  [15:0]; uncovered - (0 bits). Records: E200, E253.
+- `0x0664` `CR_DPM_CONTEXT_PB_BASE`: width 3 bits (2:0, E253); no field rows. Records: E253.
+- `0x0668` `CR_DPM_PDS_THRESHOLD`: width 16 bits (15:0, E253); no field rows. Records: E200, E253.
+- `0x0674` `CR_DPM_STATE_BASE1`: width 28 bits (31:4, E253); no field rows. Records: E158, E253.
 - `0x0680` `CR_DPM_TASK_3D_FREE`: width 32 bits assumed; no field rows.
 - `0x0684` `CR_DPM_TASK_TA_FREE`: width 32 bits assumed; no field rows.
 - `0x0694` `CR_DPM_TASK_STATE`: width 32 bits assumed; no field rows.
@@ -156,9 +157,9 @@ evidence records its rows, its fields' rows and its measured width cite.
 - `0x0728` `CR_DPM_PAGE`: width 32 bits assumed; no field rows.
 - `0x072c` `CR_DPM_GLOBAL_PAGE_STATUS`: width 32 bits assumed; no field rows.
 - `0x0734` `CR_DPM_REQUESTING`: width 32 bits assumed; no field rows.
-- `0x073c` `CR_DPM_3D_RT_INDEX`: width 32 bits assumed; no field rows. Records: E163.
-- `0x074c` `CR_DPM_REG_074C`: width 32 bits assumed; no field rows. Records: E030, E056, E071, E072,
-  E159, E203, E206.
+- `0x073c` `CR_DPM_3D_RT_INDEX`: width 9 bits (8:0, E253); no field rows. Records: E163, E253.
+- `0x074c` `CR_DPM_REG_074C`: width 9 bits (8:0, E253); no field rows. Records: E030, E056, E071,
+  E072, E159, E203, E206, E253.
 
 ## EVENT
 
@@ -216,74 +217,90 @@ evidence records its rows, its fields' rows and its measured width cite.
 
 ## HWPERF
 
-- `0x0040` `CR_HWPERF_CTRL`: width 32 bits assumed; 1 field: GROUP [12:9]; uncovered 31:13, 8:0 (28
-  bits). Records: E149, E150.
-- `0x0044` `CR_HWPERF_COUNTER0`: width 32 bits assumed; no field rows. Records: E149, E150.
-- `0x0048` `CR_HWPERF_COUNTER1`: width 32 bits assumed; no field rows. Records: E149, E150.
-- `0x004c` `CR_HWPERF_COUNTER2`: width 32 bits assumed; no field rows. Records: E149, E150.
-- `0x0050` `CR_HWPERF_COUNTER3`: width 32 bits assumed; no field rows. Records: E149, E150.
-- `0x0054` `CR_HWPERF_COUNTER4`: width 32 bits assumed; no field rows. Records: E149, E150.
-- `0x0058` `CR_HWPERF_COUNTER5`: width 32 bits assumed; no field rows. Records: E149, E150.
-- `0x005c` `CR_HWPERF_COUNTER6`: width 32 bits assumed; no field rows. Records: E149, E150.
-- `0x0060` `CR_HWPERF_COUNTER7`: width 32 bits assumed; no field rows. Records: E149, E150.
-- `0x0064` `CR_HWPERF_COUNTER8`: width 32 bits assumed; no field rows. Records: E149, E150.
+- `0x0040` `CR_HWPERF_CTRL`: width 13 bits (12:0, E246); 1 field: GROUP [12:9]; uncovered 8:0 (9
+  bits). Records: E149, E150, E246.
+- `0x0044` `CR_HWPERF_COUNTER0`: width 0 bits (-, E246); no field rows. Records: E149, E150, E246.
+- `0x0048` `CR_HWPERF_COUNTER1`: width 0 bits (-, E246); no field rows. Records: E149, E150, E246.
+- `0x004c` `CR_HWPERF_COUNTER2`: width 0 bits (-, E246); no field rows. Records: E149, E150, E246.
+- `0x0050` `CR_HWPERF_COUNTER3`: width 0 bits (-, E246); no field rows. Records: E149, E150, E246.
+- `0x0054` `CR_HWPERF_COUNTER4`: width 0 bits (-, E246); no field rows. Records: E149, E150, E246.
+- `0x0058` `CR_HWPERF_COUNTER5`: width 0 bits (-, E246); no field rows. Records: E149, E150, E246.
+- `0x005c` `CR_HWPERF_COUNTER6`: width 0 bits (-, E246); no field rows. Records: E149, E150, E246.
+- `0x0060` `CR_HWPERF_COUNTER7`: width 0 bits (-, E246); no field rows. Records: E149, E150, E246.
+- `0x0064` `CR_HWPERF_COUNTER8`: width 0 bits (-, E246); no field rows. Records: E149, E150, E246.
 - `0x0e80` `CR_HWPERF_PULSE`: width 32 bits assumed; no field rows. Records: E150, E152.
 
 ## ISP
 
-- `0x0404` `CR_ISP_RENDER`: width 32 bits assumed; no field rows. Records: E015, E163.
-- `0x0408` `CR_ISP_REGION_HEADER_BASE`: width 32 bits assumed; no field rows. Records: E163.
-- `0x0414` `CR_ISP_CTL`: width 32 bits assumed; 1 field: VALID_ID [5:0]; uncovered 31:6 (26 bits).
-  Records: E231, E232, E233.
-- `0x0418` `CR_ISP_LINE_SAMPLE_POS`: width 1 bits (0, E067); no field rows. Records: E066, E067,
-  E068, E072, E073.
-- `0x041c` `CR_ISP_POLY_OFFSET_UNITS`: width 32 bits assumed; no field rows. Records: E071.
-- `0x0420` `CR_ISP_POLY_OFFSET_FACTOR`: width 32 bits assumed; no field rows. Records: E071.
-- `0x0424` `CR_ISP_POLY_OFFSET_CLAMP`: width 32 bits assumed; no field rows. Records: E071.
+- `0x0404` `CR_ISP_RENDER`: width 5 bits (5:3, 1:0, E249); no field rows. Records: E015, E163, E249.
+- `0x0408` `CR_ISP_REGION_HEADER_BASE`: width 30 bits (31:2, E249); no field rows. Records: E163,
+  E249.
+- `0x0414` `CR_ISP_CTL`: width 12 bits (24, 19:16, 8, 5:0, E249); 1 field: VALID_ID [5:0]; uncovered
+  24, 19:16, 8 (6 bits). Records: E231, E232, E233, E249.
+- `0x0418` `CR_ISP_LINE_SAMPLE_POS`: width 1 bits (0, E067, E249); no field rows. Records: E066,
+  E067, E068, E072, E073, E249.
+- `0x041c` `CR_ISP_POLY_OFFSET_UNITS`: width 24 bits (23:0, E249); no field rows. Records: E071,
+  E249.
+- `0x0420` `CR_ISP_POLY_OFFSET_FACTOR`: width 32 bits (31:0, E249); no field rows. Records: E071,
+  E249.
+- `0x0424` `CR_ISP_POLY_OFFSET_CLAMP`: width 32 bits (31:0, E249); no field rows. Records: E071,
+  E249.
 - `0x0428` `CR_ISP_START_RENDER`: width 32 bits assumed; no field rows.
-- `0x042c` `CR_ISP_MSAA`: width 32 bits assumed; 2 fields: ENABLE [31], MODE [1:0]; uncovered 30:2
-  (29 bits). Records: E066, E074, E210, E211, E215, E219, E220.
-- `0x0480` `CR_ISP_ZLSCTL`: width 32 bits assumed; no field rows. Records: E057, E058, E163.
-- `0x0484` `CR_ISP_ZLOAD_BASE`: width 32 bits assumed; no field rows. Records: E058.
-- `0x0488` `CR_ISP_ZSTORE_BASE`: width 32 bits assumed; no field rows. Records: E058.
-- `0x048c` `CR_ISP_STENCIL_LOAD_BASE`: width 32 bits assumed; no field rows. Records: E058.
-- `0x0490` `CR_ISP_STENCIL_STORE_BASE`: width 32 bits assumed; no field rows. Records: E058.
-- `0x0494` `CR_ISP_VISIBILITY_CTRL`: width 32 bits assumed; no field rows. Records: E070, E163.
-- `0x0498` `CR_ISP_VISIBILITY_COUNT0`: width 32 bits assumed; no field rows. Records: E070, E164,
-  E217.
-- `0x049c` `CR_ISP_VISIBILITY_COUNT1`: width 32 bits assumed; no field rows. Records: E070, E164.
-- `0x04a0` `CR_ISP_VISIBILITY_COUNT2`: width 32 bits assumed; no field rows. Records: E070, E164.
-- `0x04a4` `CR_ISP_VISIBILITY_COUNT3`: width 32 bits assumed; no field rows. Records: E070, E164.
-- `0x04a8` `CR_ISP_VISIBILITY_COUNT4`: width 32 bits assumed; no field rows. Records: E070, E164.
-- `0x04ac` `CR_ISP_VISIBILITY_COUNT5`: width 32 bits assumed; no field rows. Records: E070, E164.
-- `0x04b0` `CR_ISP_VISIBILITY_COUNT6`: width 32 bits assumed; no field rows. Records: E070, E164.
-- `0x04b4` `CR_ISP_VISIBILITY_COUNT7`: width 32 bits assumed; no field rows. Records: E065, E070,
-  E164.
-- `0x04b8` `CR_ISP_BGOBJDEPTH`: width 32 bits assumed; no field rows. Records: E066.
-- `0x04bc` `CR_ISP_BGOBJVALS`: width 32 bits assumed; 2 fields: BGTAG_ENABLE [9], STENCIL [7:0];
-  uncovered 31:10, 8 (23 bits). Records: E015, E163, E216.
-- `0x04c8` `CR_ISP_MULTISAMPLECTL`: width 32 bits assumed; 2 fields: SAMPLE0_Y [7:4], SAMPLE0_X
-  [3:0]; uncovered 31:8 (24 bits). Records: E064, E214, E215.
+- `0x042c` `CR_ISP_MSAA`: width 3 bits (31, 1:0, E249); 2 fields: ENABLE [31], MODE [1:0]; uncovered
+  - (0 bits). Records: E066, E074, E210, E211, E215, E219, E220, E249.
+- `0x0480` `CR_ISP_ZLSCTL`: width 27 bits (26:0, E250); no field rows. Records: E057, E058, E163,
+  E250.
+- `0x0484` `CR_ISP_ZLOAD_BASE`: width 27 bits (30:4, E250); no field rows. Records: E058, E250.
+- `0x0488` `CR_ISP_ZSTORE_BASE`: width 27 bits (30:4, E250); no field rows. Records: E058, E250.
+- `0x048c` `CR_ISP_STENCIL_LOAD_BASE`: width 28 bits (31:4, E250); no field rows. Records: E058,
+  E250.
+- `0x0490` `CR_ISP_STENCIL_STORE_BASE`: width 28 bits (31:4, E250); no field rows. Records: E058,
+  E250.
+- `0x0494` `CR_ISP_VISIBILITY_CTRL`: width 0 bits (-, E249); no field rows. Records: E070, E163,
+  E249.
+- `0x0498` `CR_ISP_VISIBILITY_COUNT0`: width 0 bits (-, E249); no field rows. Records: E070, E164,
+  E217, E249.
+- `0x049c` `CR_ISP_VISIBILITY_COUNT1`: width 0 bits (-, E249); no field rows. Records: E070, E164,
+  E249.
+- `0x04a0` `CR_ISP_VISIBILITY_COUNT2`: width 0 bits (-, E249); no field rows. Records: E070, E164,
+  E249.
+- `0x04a4` `CR_ISP_VISIBILITY_COUNT3`: width 0 bits (-, E249); no field rows. Records: E070, E164,
+  E249.
+- `0x04a8` `CR_ISP_VISIBILITY_COUNT4`: width 0 bits (-, E249); no field rows. Records: E070, E164,
+  E249.
+- `0x04ac` `CR_ISP_VISIBILITY_COUNT5`: width 0 bits (-, E249); no field rows. Records: E070, E164,
+  E249.
+- `0x04b0` `CR_ISP_VISIBILITY_COUNT6`: width 0 bits (-, E249); no field rows. Records: E070, E164,
+  E249.
+- `0x04b4` `CR_ISP_VISIBILITY_COUNT7`: width 0 bits (-, E249); no field rows. Records: E065, E070,
+  E164, E249.
+- `0x04b8` `CR_ISP_BGOBJDEPTH`: width 32 bits (31:0, E249); no field rows. Records: E066, E249.
+- `0x04bc` `CR_ISP_BGOBJVALS`: width 10 bits (9:0, E249); 2 fields: BGTAG_ENABLE [9], STENCIL [7:0];
+  uncovered 8 (1 bits). Records: E015, E163, E216, E249.
+- `0x04c8` `CR_ISP_MULTISAMPLECTL`: width 32 bits (31:0, E249); 2 fields: SAMPLE0_Y [7:4], SAMPLE0_X
+  [3:0]; uncovered 31:8 (24 bits). Records: E064, E214, E215, E249.
 - `0x04d4` `CR_ISP_SIGNATURE0`: width 32 bits assumed; no field rows.
 - `0x04d8` `CR_ISP_SIGNATURE1`: width 32 bits assumed; no field rows.
-- `0x04dc` `CR_ISP_REG_04DC`: width 3 bits (2:0, E067); no field rows. Records: E066, E067, E068,
-  E073, E163, E213, E222.
-- `0x04e8` `CR_ISP_REG_04E8`: width 2 bits (8, 0, E067); no field rows. Records: E066, E067, E068,
-  E073.
-- `0x050c` `CR_ISP_PARTIAL_REGION_BASE`: width 32 bits assumed; no field rows. Records: E160.
+- `0x04dc` `CR_ISP_REG_04DC`: width 3 bits (2:0, E067, E249); no field rows. Records: E066, E067,
+  E068, E073, E163, E213, E222, E249.
+- `0x04e8` `CR_ISP_REG_04E8`: width 2 bits (8, 0, E067, E249); no field rows. Records: E066, E067,
+  E068, E073, E249.
+- `0x050c` `CR_ISP_PARTIAL_REGION_BASE`: width 30 bits (31:2, E249); no field rows. Records: E160,
+  E249.
 - `0x0518` `CR_ISP_SIGNATURE2`: width 32 bits assumed; no field rows.
 - `0x051c` `CR_ISP_SIGNATURE3`: width 32 bits assumed; no field rows.
-- `0x0520` `CR_ISP_SAMPLE_POS`: width 32 bits (31:0, E067); no field rows. Records: E056, E066,
-  E067, E068, E073, E214, E215, E224.
+- `0x0520` `CR_ISP_SAMPLE_POS`: width 32 bits (31:0, E067, E249); no field rows. Records: E056,
+  E066, E067, E068, E073, E214, E215, E224, E249.
 
 ## MTE
 
-- `0x0230` `CR_MTE_MULTISAMPLECTL`: width 32 bits assumed; no field rows.
-- `0x0234` `CR_MTE_OTPM_BASE`: width 32 bits assumed; no field rows. Records: E158.
-- `0x023c` `CR_MTE_CTRL`: width 32 bits assumed; no field rows.
-- `0x0240` `CR_MTE_RHW_MIN`: width 32 bits assumed; no field rows. Records: E063, E193, E194, E197.
-- `0x0244` `CR_MTE_RHW_CLAMP`: width 32 bits assumed; no field rows. Records: E063, E193, E194,
-  E197.
+- `0x0230` `CR_MTE_MULTISAMPLECTL`: width 32 bits (31:0, E248); no field rows. Records: E248.
+- `0x0234` `CR_MTE_OTPM_BASE`: width 28 bits (31:4, E248); no field rows. Records: E158, E248.
+- `0x023c` `CR_MTE_CTRL`: width 15 bits (14:0, E248); no field rows. Records: E248.
+- `0x0240` `CR_MTE_RHW_MIN`: width 32 bits (31:0, E248); no field rows. Records: E063, E193, E194,
+  E197, E248.
+- `0x0244` `CR_MTE_RHW_CLAMP`: width 32 bits (31:0, E248); no field rows. Records: E063, E193, E194,
+  E197, E248.
 - `0x024c` `CR_MTE_OTPM_OP`: width 32 bits assumed; no field rows.
 
 ## PDS
@@ -303,7 +320,7 @@ evidence records its rows, its fields' rows and its measured width cite.
 
 ## PPP
 
-- `0x0248` `CR_PPP_SCREEN`: width 32 bits assumed; no field rows. Records: E175.
+- `0x0248` `CR_PPP_SCREEN`: width 26 bits (28:16, 12:0, E247); no field rows. Records: E175, E247.
 - `0x026c` `CR_PPP_SIGNATURE`: width 32 bits assumed; no field rows.
 
 ## SETTLE
@@ -318,31 +335,33 @@ evidence records its rows, its fields' rows and its measured width cite.
 
 ## TA
 
-- `0x02b0` `CR_TA_REG_02B0`: width 8 bits (31:24, E054); no field rows. Records: E030, E054, E056,
-  E071, E072, E159, E182, E183.
-- `0x02b4` `CR_TA_REG_02B4`: width 8 bits (7:0, E054); no field rows. Records: E030, E054, E056,
-  E071, E072, E159, E182, E183.
-- `0x02d0` `CR_TA_REG_02D0`: width 30 bits (31:2, E054); no field rows. Records: E030, E054, E056,
-  E071, E072, E159, E182, E183.
-- `0x02d4` `CR_TA_REG_02D4`: width 26 bits (25:0, E054); no field rows. Records: E030, E054, E056,
-  E071, E072, E159, E182, E183.
+- `0x02b0` `CR_TA_REG_02B0`: width 8 bits (31:24, E054, E247); no field rows. Records: E030, E054,
+  E056, E071, E072, E159, E182, E183, E247.
+- `0x02b4` `CR_TA_REG_02B4`: width 8 bits (7:0, E054, E247); no field rows. Records: E030, E054,
+  E056, E071, E072, E159, E182, E183, E247.
+- `0x02d0` `CR_TA_REG_02D0`: width 30 bits (31:2, E054, E247); no field rows. Records: E030, E054,
+  E056, E071, E072, E159, E182, E183, E247.
+- `0x02d4` `CR_TA_REG_02D4`: width 26 bits (25:0, E054, E247); no field rows. Records: E030, E054,
+  E056, E071, E072, E159, E182, E183, E247.
 
 ## TE
 
-- `0x0204` `CR_TE_AA`: width 32 bits assumed; no field rows. Records: E159.
-- `0x0208` `CR_TE_MTILE1`: width 32 bits assumed; no field rows.
-- `0x020c` `CR_TE_MTILE2`: width 32 bits assumed; no field rows.
-- `0x0210` `CR_TE_SCREEN`: width 32 bits assumed; no field rows. Records: E055.
-- `0x0214` `CR_TE_MACROTILE_STRIDE`: width 32 bits assumed; no field rows. Records: E159, E175.
-- `0x0218` `CR_TE_PSG`: width 32 bits assumed; no field rows. Records: E158.
-- `0x021c` `CR_TE_PSGREGION_ADDR`: width 32 bits assumed; no field rows.
-- `0x0220` `CR_TE_TPC_ADDR`: width 32 bits assumed; no field rows. Records: E159.
+- `0x0204` `CR_TE_AA`: width 3 bits (31:29, E247); no field rows. Records: E159, E247.
+- `0x0208` `CR_TE_MTILE1`: width 25 bits (31, 29:22, 19:12, 7:0, E247); no field rows. Records:
+  E247.
+- `0x020c` `CR_TE_MTILE2`: width 27 bits (30:22, 20:12, 8:0, E247); no field rows. Records: E247.
+- `0x0210` `CR_TE_SCREEN`: width 17 bits (20:12, 7:0, E247); no field rows. Records: E055, E247.
+- `0x0214` `CR_TE_MACROTILE_STRIDE`: width 18 bits (17:0, E247); no field rows. Records: E159, E175,
+  E247.
+- `0x0218` `CR_TE_PSG`: width 16 bits (26:18, 6:0, E247); no field rows. Records: E158, E247.
+- `0x021c` `CR_TE_PSGREGION_ADDR`: width 26 bits (31:6, E247); no field rows. Records: E247.
+- `0x0220` `CR_TE_TPC_ADDR`: width 26 bits (31:6, E247); no field rows. Records: E159, E247.
 - `0x0224` `CR_TE_TPCCONTROL`: width 32 bits assumed; no field rows.
-- `0x0274` `CR_TE_CONTEXT_STATE`: width 32 bits assumed; no field rows. Records: E158.
+- `0x0274` `CR_TE_CONTEXT_STATE`: width 0 bits (-, E247); no field rows. Records: E158, E247.
 - `0x0284` `CR_TE_DIAG2`: width 32 bits assumed; no field rows.
 - `0x0290` `CR_TE_DIAG5`: width 32 bits assumed; no field rows.
-- `0x02a8` `CR_TE_REG_02A8`: width 8 bits (19:12, E054); no field rows. Records: E030, E054, E056,
-  E071, E072, E159, E182, E183.
+- `0x02a8` `CR_TE_REG_02A8`: width 8 bits (19:12, E054, E247); no field rows. Records: E030, E054,
+  E056, E071, E072, E159, E182, E183, E247.
 
 ## TIMER
 
@@ -350,21 +369,32 @@ evidence records its rows, its fields' rows and its measured width cite.
 
 ## TPU
 
-- `0x0820` `CR_TPU_YUV_CSC0_0`: width 32 bits assumed; no field rows. Records: E037.
-- `0x0824` `CR_TPU_YUV_CSC0_1`: width 32 bits assumed; no field rows. Records: E037.
-- `0x0828` `CR_TPU_YUV_CSC0_2`: width 32 bits assumed; no field rows. Records: E037.
-- `0x082c` `CR_TPU_YUV_CSC0_3`: width 32 bits assumed; no field rows. Records: E037.
-- `0x0830` `CR_TPU_YUV_CSC0_4`: width 32 bits assumed; no field rows. Records: E037.
-- `0x0834` `CR_TPU_YUV_CSC1_0`: width 32 bits assumed; no field rows. Records: E038, E040.
-- `0x0838` `CR_TPU_YUV_CSC1_1`: width 32 bits assumed; no field rows. Records: E038, E040.
-- `0x083c` `CR_TPU_YUV_CSC1_2`: width 32 bits assumed; no field rows. Records: E038, E040.
-- `0x0840` `CR_TPU_YUV_CSC1_3`: width 32 bits assumed; no field rows. Records: E038, E040.
-- `0x0844` `CR_TPU_YUV_CSC1_4`: width 32 bits assumed; no field rows. Records: E038, E040.
-- `0x0848` `CR_TPU_YUV_CSC_INPUT`: width 32 bits assumed; 2 fields: UV_SIGNED [2], Y_NO_OFFSET [0];
-  uncovered 31:3, 1 (30 bits). Records: E038, E040.
-- `0x0860` `CR_TPU_LUMA_KEY_RG`: width 32 bits assumed; no field rows. Records: E038, E039.
-- `0x0864` `CR_TPU_LUMA_KEY_B_OFFSET`: width 32 bits assumed; no field rows. Records: E038, E039.
-- `0x0868` `CR_TPU_LUMA_KEY_ALPHA`: width 32 bits assumed; no field rows. Records: E038, E039.
+- `0x0820` `CR_TPU_YUV_CSC0_0`: width 20 bits (25:16, 9:0, E254); no field rows. Records: E037,
+  E254.
+- `0x0824` `CR_TPU_YUV_CSC0_1`: width 20 bits (25:16, 9:0, E254); no field rows. Records: E037,
+  E254.
+- `0x0828` `CR_TPU_YUV_CSC0_2`: width 20 bits (25:16, 9:0, E254); no field rows. Records: E037,
+  E254.
+- `0x082c` `CR_TPU_YUV_CSC0_3`: width 20 bits (25:16, 9:0, E254); no field rows. Records: E037,
+  E254.
+- `0x0830` `CR_TPU_YUV_CSC0_4`: width 10 bits (9:0, E254); no field rows. Records: E037, E254.
+- `0x0834` `CR_TPU_YUV_CSC1_0`: width 20 bits (25:16, 9:0, E254); no field rows. Records: E038,
+  E040, E254.
+- `0x0838` `CR_TPU_YUV_CSC1_1`: width 20 bits (25:16, 9:0, E254); no field rows. Records: E038,
+  E040, E254.
+- `0x083c` `CR_TPU_YUV_CSC1_2`: width 20 bits (25:16, 9:0, E254); no field rows. Records: E038,
+  E040, E254.
+- `0x0840` `CR_TPU_YUV_CSC1_3`: width 20 bits (25:16, 9:0, E254); no field rows. Records: E038,
+  E040, E254.
+- `0x0844` `CR_TPU_YUV_CSC1_4`: width 10 bits (9:0, E254); no field rows. Records: E038, E040, E254.
+- `0x0848` `CR_TPU_YUV_CSC_INPUT`: width 4 bits (3:0, E254); 2 fields: UV_SIGNED [2], Y_NO_OFFSET
+  [0]; uncovered 3, 1 (2 bits). Records: E038, E040, E254.
+- `0x0860` `CR_TPU_LUMA_KEY_RG`: width 20 bits (25:16, 9:0, E254); no field rows. Records: E038,
+  E039, E254.
+- `0x0864` `CR_TPU_LUMA_KEY_B_OFFSET`: width 18 bits (23:16, 9:0, E254); no field rows. Records:
+  E038, E039, E254.
+- `0x0868` `CR_TPU_LUMA_KEY_ALPHA`: width 32 bits (31:0, E254); no field rows. Records: E038, E039,
+  E254.
 
 ## TSP
 
@@ -373,8 +403,8 @@ evidence records its rows, its fields' rows and its measured width cite.
 ## USE
 
 - `0x0a00` `CR_USE_CTRL`: width 32 bits assumed; no field rows.
-- `0x0a04` `CR_USE_REG_0A04`: width 28 bits (31:4, E054); no field rows. Records: E030, E054, E056,
-  E071, E072, E159, E182, E183.
+- `0x0a04` `CR_USE_REG_0A04`: width 28 bits (31:4, E054, E255); no field rows. Records: E030, E054,
+  E056, E071, E072, E159, E182, E183, E255.
 - `0x0a08` `CR_USE_CACHE`: width 32 bits assumed; no field rows.
 - `0x0a0c` `CR_USE_CODE_BASE_0`: width 32 bits assumed; 2 fields: DM [26:25], ADDR [24:0]; uncovered
   31:27 (5 bits).
@@ -382,16 +412,16 @@ evidence records its rows, its fields' rows and its measured width cite.
 - `0x0a48` `CR_USE_CODE_BASE_15`: width 32 bits assumed; no field rows.
 - `0x0a7c` `CR_USE_G0`: width 32 bits assumed; no field rows.
 - `0x0a80` `CR_USE_G1`: width 32 bits assumed; no field rows.
-- `0x0a84` `CR_USE_COEFFS0_A`: width 32 bits assumed; no field rows. Records: E078.
-- `0x0a88` `CR_USE_COEFFS0_B`: width 32 bits assumed; no field rows. Records: E078.
-- `0x0a8c` `CR_USE_COEFFS0_BIAS`: width 32 bits assumed; no field rows. Records: E078.
-- `0x0a90` `CR_USE_COEFFS1_A`: width 32 bits assumed; no field rows. Records: E078.
-- `0x0a94` `CR_USE_COEFFS1_B`: width 32 bits assumed; no field rows. Records: E078.
-- `0x0a98` `CR_USE_COEFFS1_BIAS`: width 32 bits assumed; no field rows. Records: E078.
-- `0x0a9c` `CR_USE_COEFFS_MODE`: width 32 bits assumed; 1 field: MODE [1:0]; uncovered 31:2 (30
-  bits). Records: E078, E079.
-- `0x0aa0` `CR_USE_REG_0AA0`: width 32 bits (31:0, E054); no field rows. Records: E030, E054, E056,
-  E071, E072, E159, E182, E183.
+- `0x0a84` `CR_USE_COEFFS0_A`: width 32 bits (31:0, E255); no field rows. Records: E078, E255.
+- `0x0a88` `CR_USE_COEFFS0_B`: width 32 bits (31:0, E255); no field rows. Records: E078, E255.
+- `0x0a8c` `CR_USE_COEFFS0_BIAS`: width 20 bits (19:0, E255); no field rows. Records: E078, E255.
+- `0x0a90` `CR_USE_COEFFS1_A`: width 32 bits (31:0, E255); no field rows. Records: E078, E255.
+- `0x0a94` `CR_USE_COEFFS1_B`: width 32 bits (31:0, E255); no field rows. Records: E078, E255.
+- `0x0a98` `CR_USE_COEFFS1_BIAS`: width 20 bits (19:0, E255); no field rows. Records: E078, E255.
+- `0x0a9c` `CR_USE_COEFFS_MODE`: width 2 bits (1:0, E255); 1 field: MODE [1:0]; uncovered - (0
+  bits). Records: E078, E079, E255.
+- `0x0aa0` `CR_USE_REG_0AA0`: width 32 bits (31:0, E054, E255); no field rows. Records: E030, E054,
+  E056, E071, E072, E159, E182, E183, E255.
 - `0x0aa4` `CR_USE0_DM_SLOT`: width 32 bits assumed; no field rows.
 - `0x0aa8` `CR_USE1_DM_SLOT`: width 32 bits assumed; no field rows.
 - `0x0aac` `CR_USE_TMPREG`: width 32 bits assumed; no field rows.
@@ -401,9 +431,9 @@ evidence records its rows, its fields' rows and its measured width cite.
 - `0x0b18` `CR_USE1_SERV_PIXEL`: width 32 bits assumed; no field rows.
 - `0x0b1c` `CR_USE1_SERV_VERTEX`: width 32 bits assumed; no field rows.
 - `0x0b20` `CR_USE1_SERV_EVENT`: width 32 bits assumed; no field rows.
-- `0x0b24` `CR_USE_COEFFS2_A`: width 32 bits assumed; no field rows. Records: E078.
-- `0x0b28` `CR_USE_COEFFS2_B`: width 32 bits assumed; no field rows. Records: E078.
-- `0x0b2c` `CR_USE_COEFFS2_BIAS`: width 32 bits assumed; no field rows. Records: E078.
+- `0x0b24` `CR_USE_COEFFS2_A`: width 16 bits (31:24, 7:0, E255); no field rows. Records: E078, E255.
+- `0x0b28` `CR_USE_COEFFS2_B`: width 8 bits (15:8, E255); no field rows. Records: E078, E255.
+- `0x0b2c` `CR_USE_COEFFS2_BIAS`: width 20 bits (19:0, E255); no field rows. Records: E078, E255.
 - `0x0b88` `CR_USE2_SERV_PIXEL`: width 32 bits assumed; 2 fields: EMPTY [16], TASK_COUNT [15:0];
   uncovered 31:17 (15 bits). Records: E076.
 - `0x0b8c` `CR_USE2_SERV_VERTEX`: width 32 bits assumed; 2 fields: EMPTY [16], TASK_COUNT [15:0];
@@ -416,4 +446,5 @@ evidence records its rows, its fields' rows and its measured width cite.
 ## VDM
 
 - `0x0200` `CR_VDM_START`: width 32 bits assumed; no field rows.
-- `0x0238` `CR_VDM_CTRL_STREAM_BASE`: width 32 bits assumed; no field rows. Records: E184.
+- `0x0238` `CR_VDM_CTRL_STREAM_BASE`: width 30 bits (31:2, E247); no field rows. Records: E184,
+  E247.
