@@ -81,3 +81,13 @@ def test_forms_dump_lists_every_form():
         assert int(val, 16) & ~int(mask, 16) == 0
         assert int(mask, 16) & ~int(bits, 16) == 0
     assert any("emitpix2" in line for line in out)
+
+
+def test_analysis_api(tmp_path):
+    """usse_classify and usse_branch (usse.h), the analysis frontends' view of a word."""
+    exe = tmp_path / "test_usse_api"
+    subprocess.run(["cc", "-std=c11", "-Wall", "-Wextra", "-Werror", "-I", str(HERE), "-o",
+                    str(exe), str(HERE / "test_usse_api.c"), str(HERE / "usse.c"),
+                    str(HERE / "usse_form.c")], check=True)
+    r = subprocess.run([str(exe)], capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout

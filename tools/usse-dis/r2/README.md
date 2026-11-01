@@ -26,7 +26,11 @@ radare2 -a usse -b 32 "$RESGX545_DATA_PRIVATE"/firmware/images/images/00_ukernel
 
 `pd` prints the text of `usse-dis`; a word no form decodes shows as `invalid`.
 `ba`/`br`/`ba.savelink` set `op->jump`/`fail` and type
-(JMP/CJMP/CALL), so jump arrows and function graphs render.
+(JMP/CJMP/CALL), so jump arrows and function graphs render. Every other instruction gets the
+type of its class (`usse_classify` in `../usse.h`, pinned by `../test_usse_api.c`): in the
+control and special class, the moves and the writes of the unit's state are `mov`, `ldr` and
+`str` are `load` and `store`, the fences, mutexes, waits, cache control and `phas` are `sync`,
+and the emits and the visibility tests, which send work to other units, are `io`.
 
 ## Assemble
 
@@ -46,14 +50,32 @@ a few commits meant for upstream on a radare2 master of October 2026. `libr/arch
 files unchanged: `usse.c`, `usse.h`, `usse_form.c`, `usse_form.h`, `usse_table.inc` and
 `forms/*.inc`. The plugin is registered in both of radare2's build systems (meson, and make
 through `libr/arch/p/usse.mk`), and `test/db/asm/usse` holds one r2r test per form, made from
-the words of `../pinned.tsv`. The branch disassembles and assembles USSE only; the PDS and
-emulation join it in later phases.
+the words of `../pinned.tsv`, and `test/db/anal/usse` the op types and branch targets of a
+few made-up words.
+
+The branch also carries what has no out-of-tree twin here:
+
+- **a PDS plugin** (`arch pds`, `bits 32`), in `libr/arch/p/pds/`: `plugin.c` and the core
+  files unchanged, `pds.c`, `pds.h`, `pds_table.inc` and `usse_form.h` (the PDS forms run on
+  the USSE plugin's form engine). It disassembles and assembles PDS words as `pds-dis` prints
+  them and sets their op types and branch targets (`pds_classify` and `pds_branch` in
+  `../pds.h`); `bra`/`call` targets count 4-byte instructions from the first one after the
+  data segment, so load the instructions at address 0. `test/db/asm/pds` holds one r2r test
+  per PDS form from `../pinned.tsv`, `test/db/anal/pds` the types and targets;
+- **a pseudo syntax for each** (`e asm.pseudo=true`; `pseudo.c` beside each plugin, registered
+  as the `usse` and `pds` asm parsers, so radare2 no longer warns that it finds none): the
+  instructions whose text says all they do, without flags, read as assignments and returns
+  (`mov r1, r2` as `r1 = r2`, `and`/`or`/`xor`, `lapc` as `ret`; PDS `mov32` and `rtn`),
+  under `if (p0)` when predicated; everything else keeps its text (`test/db/cmd/cmd_pseudo_*`).
+
+Emulation (ESIL) joins the branch in a later phase.
 
 ```sh
 git clone -b resgx545 https://github.com/adn770/radare2 && cd radare2
 meson setup b --prefix=<prefix> && ninja -C b install
 # or: ./configure --prefix=<prefix> && make install
-cd test && PATH=<prefix>/bin:$PATH r2r -L db/asm/usse
+cd test && PATH=<prefix>/bin:$PATH r2r -L db/asm/usse db/asm/pds db/anal/usse db/anal/pds \
+    db/cmd/cmd_pseudo_usse db/cmd/cmd_pseudo_pds
 ```
 
 A radare2 built from that branch has `usse` in-core, and the in-core plugin takes precedence

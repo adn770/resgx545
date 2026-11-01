@@ -12,6 +12,7 @@
 #include "usse_form.h"
 #include <ctype.h>
 #include <stdio.h>
+#include <string.h>
 
 /* Major opcode class = enc[63:59]. Base mnemonic per class (NULL = unmapped),
  * the most frequent mnemonic of each class; used only as a readable hint for
@@ -41,6 +42,53 @@ static int is_flowctrl(uint64_t e, unsigned *op2) {
     return 1;
 }
 
+/* The mnemonic of the text the form table prints for e, after the predicate
+ * (p0-p3, !p0, !p1, Pn): *n characters at the returned pointer, or NULL when
+ * no form decodes e. */
+static const char *mnemonic(uint64_t e, char *t, size_t size, size_t *n) {
+    const char *s = t;
+
+    if (!usse_form_decode(e, t, size)) return NULL;
+    if (s[0] == '!') s++;
+    if ((s[0] == 'p' && isdigit((unsigned char)s[1]) && s[2] == ' ') ||
+        (s[0] == 'P' && s[1] == 'n' && s[2] == ' ')) s += 3;
+    else s = t;
+    *n = strcspn(s, ". ");
+    return s;
+}
+
+static int is(const char *s, size_t n, const char *m) {
+    return strlen(m) == n && !strncmp(s, m, n);
+}
+
+/* Class 31 besides the branches and lapc: the operation is the mnemonic of the
+ * text the form table prints (some forms print it from a field: lock and
+ * release, ci, cf and cfi), so the category follows every form of the table. */
+static usse_op_type classify_special(uint64_t e) {
+    static const struct { const char *m; usse_op_type t; } M[] = {
+        { "mov", USSE_T_MOV },   { "nop", USSE_T_NOP },
+        { "ldr", USSE_T_LOAD },  { "str", USSE_T_STORE },
+        { "smoa", USSE_T_MOV },  { "smr", USSE_T_MOV },    { "smlsi", USSE_T_MOV },
+        { "smbo", USSE_T_MOV },  { "imo", USSE_T_MOV },    { "setfc", USSE_T_MOV },
+        { "moest", USSE_T_MOV }, { "setm", USSE_T_MOV },
+        { "idf", USSE_T_SYNC },  { "wdf", USSE_T_SYNC },   { "wop", USSE_T_SYNC },
+        { "lock", USSE_T_SYNC }, { "release", USSE_T_SYNC },
+        { "ci", USSE_T_SYNC },   { "cf", USSE_T_SYNC },    { "cfi", USSE_T_SYNC },
+        { "phas", USSE_T_SYNC },
+        { "pcoeff", USSE_T_IO }, { "ptoff", USSE_T_IO },
+        { "atst8", USSE_T_IO },  { "depthf", USSE_T_IO },
+    };
+    char t[USSE_TEXT_MAX];
+    size_t n, i;
+    const char *s = mnemonic(e, t, sizeof t, &n);
+
+    if (!s) return USSE_T_UNK;
+    if (n > 4 && !strncmp(s, "emit", 4)) return USSE_T_IO;   /* emitpix1, emitpds, ... */
+    for (i = 0; i < sizeof M / sizeof M[0]; i++)
+        if (is(s, n, M[i].m)) return M[i].t;
+    return USSE_T_UNK;
+}
+
 usse_op_type usse_classify(uint64_t e) {
     unsigned op2;
     if (is_flowctrl(e, &op2)) {
@@ -51,19 +99,35 @@ usse_op_type usse_classify(uint64_t e) {
     /* lapc: jump to the link register, a return; predicated, a conditional one. */
     if (cls == 31 && cbits(e, 54, 52) == 0u && cbits(e, 40, 38) == 2u)
         return cbits(e, 58, 56) ? USSE_T_CRET : USSE_T_RET;
-    if (cls == 31) {
-        if (cbits(e, 63, 54) == 0x3F0u && cbit(e, 53)) return USSE_T_MOV; /* limm */
-        if (e == 0xF800014000000000ull) return USSE_T_NOP;               /* nop  */
-        return USSE_T_SYNC;   /* idf/wdf/lock/ci/cfi/str/ldr/smlsi/... */
+    if (cls == 31) return classify_special(e);
+    if (cls == 8) {                /* pack/unpack conversions, and statomic */
+        char t[USSE_TEXT_MAX];
+        size_t n;
+        const char *s = mnemonic(e, t, sizeof t, &n);
+        if (!s) return USSE_T_UNK;
+        return is(s, n, "statomic") ? USSE_T_STORE : USSE_T_MOV;
+    }
+    if (cls == 26) {               /* ima32, and idiv */
+        char t[USSE_TEXT_MAX];
+        size_t n;
+        const char *s = mnemonic(e, t, sizeof t, &n);
+        return s && is(s, n, "idiv") ? USSE_T_DIV : USSE_T_MUL;
     }
     switch (cls) {
-    case 0:  return USSE_T_MUL;    /* fmad */
+    case 0:  return USSE_T_MUL;    /* the float multiply-adds */
+    case 1:  return USSE_T_ALU;    /* the float functions */
+    case 2:  return USSE_T_MUL;    /* the dot products */
+    case 3:  case 4: return USSE_T_ALU;   /* fminmax, fdsx/fdsy */
     case 5:  return USSE_T_MOV;
-    case 9: case 10: case 11: case 12: case 13: return USSE_T_ALU;
-    case 20: case 21: return USSE_T_MUL;
-    case 29: return USSE_T_LOAD;
-    case 30: return USSE_T_STORE;
-    default: return USSE_T_UNK;
+    case 6:  case 7: return USSE_T_MUL;   /* fmad16, efo */
+    case 9:  case 10: case 11: case 12: case 13: return USSE_T_ALU;
+    case 14: case 15: case 16: case 17: case 18: return USSE_T_ALU;  /* rlp, tests, sop* */
+    case 19: case 20: case 21: return USSE_T_MUL;   /* ima8, ima16, imae */
+    case 22: case 23: return USSE_T_ALU;  /* adif, adifsum, bilin, firv, firh */
+    case 24: case 25: return USSE_T_MUL;  /* the integer dot products, fpma */
+    case 27: return USSE_T_ALU;    /* the dual-issue pairs */
+    case 28: case 29: return USSE_T_LOAD; /* texture sampling, loads */
+    default: return USSE_T_STORE;  /* 30: the stores */
     }
 }
 

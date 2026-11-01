@@ -30,6 +30,7 @@ int main(void) {
     CHECK(pds_classify(0xA7000000) == PDS_T_RET);
     CHECK(pds_classify(0xAF000000) == PDS_T_HALT);
     CHECK(pds_classify(0xB0000000) == PDS_T_NOP);
+    CHECK(pds_classify(0xBC000001) == PDS_T_ALU);      /* (if1) alum signed */
     CHECK(pds_classify(0x7F000000) == PDS_T_SYNC);     /* rfence */
     CHECK(pds_classify(0x705E4D75) == PDS_T_UNK);      /* reserved */
 

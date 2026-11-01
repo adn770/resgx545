@@ -286,7 +286,7 @@ pds_op_type pds_classify(uint32_t w) {
     static const pds_op_type T[32] = {
         PDS_T_MOV,  PDS_T_MOV,  PDS_T_MOV,  PDS_T_MOV,  PDS_T_MOV,  PDS_T_MOV,  PDS_T_LOAD, PDS_T_STORE,
         PDS_T_ADD,  PDS_T_SUB,  PDS_T_ADD,  PDS_T_SUB,  PDS_T_MUL,  PDS_T_ABS,  PDS_T_UNK,  PDS_T_SYNC,
-        PDS_T_CMP,  PDS_T_CMP,  PDS_T_JMP,  PDS_T_CALL, PDS_T_RET,  PDS_T_HALT, PDS_T_NOP,  PDS_T_UNK,
+        PDS_T_CMP,  PDS_T_CMP,  PDS_T_JMP,  PDS_T_CALL, PDS_T_RET,  PDS_T_HALT, PDS_T_NOP,  PDS_T_ALU,
         PDS_T_OR,   PDS_T_AND,  PDS_T_XOR,  PDS_T_NOT,  PDS_T_NOR,  PDS_T_NAND, PDS_T_SHL,  PDS_T_SHR,
     };
     unsigned op = BITS(w, 31, 27), dst = BITS(w, 3, 0);

@@ -97,7 +97,9 @@ print under `--core 540` and its float words stay undecoded rather than wrong.
 `bits 32`): `make -C r2 R2_PREFIX=<your radare2 prefix> install`, then
 `radare2 -a usse -b 32 <blob>`. In r2 it prints the text of `usse-dis` (op types and branch
 targets wired so jump arrows and function graphs work) and assembles that text back. See
-`r2/README.md` for the build and the upstream path to radareorg/radare2.
+`r2/README.md` for the build and the upstream path to radareorg/radare2. The radare2 fork's
+`resgx545` branch carries it in-tree, with a PDS plugin on the same form engine (`pds.c`) and
+a pseudo syntax for both (`r2/README.md`, "In-tree").
 
 ## Next
 

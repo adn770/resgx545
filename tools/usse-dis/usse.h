@@ -36,11 +36,22 @@ void usse_set_core(int core);
 const char *usse_class_name(unsigned top5);
 
 /* Coarse instruction category, for an analysis frontend (e.g. the r2 plugin).
- * r2-independent so the core stays free of radare2 headers. */
+ * r2-independent so the core stays free of radare2 headers. Every opcode
+ * class has one: MUL the multiply-adds, dot products and integer multiplies,
+ * DIV idiv, ALU the other arithmetic, logic, tests and float functions (and
+ * the dual-issue pairs), MOV the moves and the pack/unpack conversions, LOAD
+ * the loads and texture sampling, STORE the stores and statomic. In class 31:
+ * MOV the moves (limm, pclink) and the writes of the unit's state (the MOE
+ * group, setm); LOAD and STORE ldr and str, the unit's registers; SYNC the
+ * fences, mutexes, waits, cache control and phas; IO the emits and the
+ * visibility test group, which send work or results to other units. UNK is
+ * left for a word no form decodes in the classes typed by their mnemonic
+ * (8, 31). */
 typedef enum {
     USSE_T_UNK = 0, USSE_T_MOV, USSE_T_ALU, USSE_T_MUL,
     USSE_T_LOAD, USSE_T_STORE, USSE_T_JMP, USSE_T_CJMP,
-    USSE_T_CALL, USSE_T_NOP, USSE_T_SYNC, USSE_T_RET, USSE_T_CRET
+    USSE_T_CALL, USSE_T_NOP, USSE_T_SYNC, USSE_T_RET, USSE_T_CRET,
+    USSE_T_IO, USSE_T_DIV
 } usse_op_type;
 
 usse_op_type usse_classify(uint64_t enc);

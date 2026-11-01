@@ -26,6 +26,7 @@ static bool usse_decode_cb(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) 
 	case USSE_T_MOV:   op->type = R_ANAL_OP_TYPE_MOV;   break;
 	case USSE_T_ALU:   op->type = R_ANAL_OP_TYPE_ADD;   break; /* generic int ALU */
 	case USSE_T_MUL:   op->type = R_ANAL_OP_TYPE_MUL;   break;
+	case USSE_T_DIV:   op->type = R_ANAL_OP_TYPE_DIV;   break;
 	case USSE_T_LOAD:  op->type = R_ANAL_OP_TYPE_LOAD;  break;
 	case USSE_T_STORE: op->type = R_ANAL_OP_TYPE_STORE; break;
 	case USSE_T_JMP:   op->type = R_ANAL_OP_TYPE_JMP;   break;
@@ -33,6 +34,7 @@ static bool usse_decode_cb(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) 
 	case USSE_T_CALL:  op->type = R_ANAL_OP_TYPE_CALL;  break;
 	case USSE_T_NOP:   op->type = R_ANAL_OP_TYPE_NOP;   break;
 	case USSE_T_SYNC:  op->type = R_ANAL_OP_TYPE_SYNC;  break;
+	case USSE_T_IO:    op->type = R_ANAL_OP_TYPE_IO;    break; /* emits */
 	case USSE_T_RET:   op->type = R_ANAL_OP_TYPE_RET;   break; /* lapc */
 	case USSE_T_CRET:
 		op->type = R_ANAL_OP_TYPE_CRET;
