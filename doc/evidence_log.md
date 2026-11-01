@@ -3362,6 +3362,88 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   six instructions and was run on the 64 pairs of those eight values; the high word was run for b *
   0xffffffff + a only (its source 2 is c56 = 0xffffffff in all 75 cases).
   *usse; HW, infer; data: `usse-ima32hi`, `usse-ucmp2`.*
+- `E502` Under multisampling the pixel program's iterated position is the pixel's x + 0.375 and y +
+  0.125, the same as in mode 0 and for the five CR_TE_AA values tried (0, 0x20000000, 0x60000000,
+  0xa0000000, 0xe0000000; mode 0 only with 0x20000000), not the pixel centre: in 48 identity-map
+  runs (40 configurations of modes 0, 1, 2 and CR_TE_AA 0 to 0xe0000000 at five target sizes from 64
+  x 64 to 128 x 128, four of them run three times; 96 jobs, an x job and a y job a run) 401977 of
+  the 402432 stored pixels of the x jobs decode to a pixel with those offsets, the other 455 hold
+  the background colour, none holds any other value, a CR_TE_AA of 0 and of 0x20000000 give
+  byte-identical outputs in 10 of 10 pairs of configurations (20 of 20 jobs) and the 8 repeat runs
+  are byte-identical to their first runs (16 of 16 jobs).
+  *isp; HW, infer; data: `isp-msaa-ident`.*
+- `E503` A multisampled render stores in each 32 x 16 tile of the target the pixels of a half window
+  of the tile's own area, every sample slot written: tile (tx, ty) holds the source pixels from x =
+  32 tx + 16 b31 and y = 16 ty + 8 b30 (b30 acts in mode 2 only; stated for modes 1 and 2, the modes
+  run with the bits: mode 0 ran only with CR_TE_AA 0x20000000, where b31 = b30 = 0), 16 columns by
+  16 rows in mode 1 and by 8 in mode 2, each stored twice in x (modes 1, 2) and in y (mode 2), where
+  b31 and b30 are CR_TE_AA bits 31 and 30; the rule was read post hoc from the 64 x 64 runs (88
+  tiles of 11 configurations, 88 of 88) after the declared test decoded nothing (E502), and agrees
+  with all 634 tiles of the 29 configurations at the four sizes declared held out (634 of 634: an
+  agreement found after the rule was written, not a prediction) and with the 64 tiles of the 8
+  repeat runs, 786 of 786 tiles of the 48 runs of E502, of which 773 are written in all 512 pixels;
+  the declared H30a (a tile of its own pixels, only its 16 x 16 corner written) failed as a test (0
+  of 48 runs decodable) and post hoc holds in its origin only, not in its corner.
+  *isp; HW, infer; data: `isp-msaa-ident`.*
+- `E504` CR_TE_AA reaches the register as poked in 21 of 21 jobs and acts in the TA's output, not
+  only after tiling: against the CR_TE_AA 0x20000000 job of the same size and mode, a value of 0
+  gives 0 differing dwords of the 1150976-dword parameter buffer and of the 6144-dword TA data (3 of
+  3 pairs), 0x60000000 and 0xa0000000 each differ in 76 and 132 dwords (mode 0 and mode 2, 64 x 64),
+  0xe0000000 in 204 and 279 (64 x 64, mode 2, twice) and 805 and 367 (128 x 128), and 0x40000000,
+  0x80000000 and 0xc0000000 remove the triangle (3969 of 4096 pixels differ, 6 of 6).
+  *isp; HW, infer; data: `isp-msaa-te-dumps`.*
+- `E505` At sizes whose macrotile rule has two macrotiles in a row (n = 2) the first and third
+  boundary fields of the macrotile words are free: at 256 x 256, 28 of 28 poked words (B1 of each
+  word 0 to 3 and 0 to 7, B3 5 to 8 and 9 to 12, four partitions of each word) draw exactly, and at
+  the held-out 512 x 384, 8 of 8 (B1 zero and one less, B3 one and four more, on each word) draw
+  exactly, 3 of 3 control runs a size exact.
+  *ta; HW, infer; data: `ta-mtile-fields`.*
+- `E506` At sizes with four macrotiles in a row (n = 4: 640 x 480, 768 x 640, 1280 x 720) the first
+  and third boundary fields are not free and the declared PB and PC fail: of the 39 fit cases at 640
+  x 480 only 2 draw exactly (CR_TE_MTILE1 B3 25 and 28, both beyond the 20 tile columns) with 34
+  faults and 3 wrong images, and of the 16 held-out cases at 768 x 640 and 1280 x 720 2 draw exactly
+  (768 x 640, CR_TE_MTILE1 B3 one and four more) while PB and PC predicted all 16; B1 zero or one
+  less faults the job in 8 of 8 of them; PA, expected to fail, is right in 16 of 16 of them and in
+  34 of 39 at 640 x 480; the controls draw exactly 3 of 3 a size.
+  *ta; HW, infer; data: `ta-mtile-fields`.*
+- `E507` Our stack's 4x multisampled render (mode 2, CR_TE_AA 0xe0000000, the closed driver's sample
+  words) with the unpoked rule words completes at 64 x 64, 128 x 64, 128 x 128, 256 x 128, 96 x 48
+  and 192 x 96 and faults the job (BIF fault at pages 0x20006, 0x20008 and 0x2000a) at 320 x 160,
+  384 x 192, 448 x 224, 512 x 256, 512 x 384 and 640 x 480, 6 of 6 held-out sizes; the poked family
+  U2 (words 0x802002, 0x802002, stride 4) draws the same image as the rule at 64 x 64.
+  *ta; HW, infer; data: `ta-mtile-msaa`.*
+- `E508` On our stack the 64 x 64 render under the closed driver's 4x settings (mode 2, CR_TE_AA
+  0xe0000000) stores 4096 pixels that hold 1024 distinct source pixels, the 16 x 8 window of each
+  tile written twice in x and in y: the 4096 stored pixels are not a 64 x 64 image of the pixels;
+  the identity maps of E502 cannot show an average, since every sample slot of a pixel holds the
+  same iterated value and an average equals it.
+  *isp; HW, infer; data: `isp-msaa-ident`.*
+- `E509` At 256 x 256 (two macrotile columns) the second boundary B2 alone decides: of 56 poked
+  words that change only B1 or B3 over 0 to 12, 16 and 20 (below and above B2, so also non-monotone)
+  all 56 draw exactly, and of 28 that change only B2 none does (16 fault, 12 wrong); the stride is
+  not the rule's in 12 of 12 (256 x 256: 0 to 31 draw wrong, 33 to 128 fault), bit 31 set faults,
+  and at the held-out sizes B2 one and four more is not exact in 12 of 12 (512 x 384: 4 wrong; 768 x
+  640 and 1280 x 720: 8 faults); with four macrotile columns (640 x 480) B1, B3 and B2 are all read
+  and a B2 at or past B3 (24 and above) of CR_TE_MTILE2 draws exactly.
+  *ta; HW, infer; data: `ta-mtile-fields-risky`, `ta-mtile-fields`.*
+- `E510` No single flip of the 32 sideband bits of the end-of-tile emit, from 0x200 and from 0x2200,
+  resolves or blends a 4x render: of 64 jobs 50 write the plain triangle and background of 1248 and
+  2848 pixels, bits 0 and 1 change the byte order of the colour (0xff403020 and 0x403020ff for
+  0xff203040, no new colour), bit 2 packs two ARGB1555 pixels a dword (0x90c8, 0x83e0, 2048 dwords
+  left at the fill), bit 3 writes 1024 pixels of 0xffffffff, bit 9 cleared from 0x2200 (0x2000)
+  writes 128 background pixels, bit 12 set on 0x200 writes 14 values (four of them 0x0066 and 0x0000
+  pairs, none a mix or a copy of the two colours), and 4 jobs fail (bit 9 cleared from 0x200 hangs,
+  bit 11 faults from both, bit 12 set on 0x2200 hangs); no pixel holds an average of the two colours
+  (the control image has 24 aligned 2 x 2 blocks that mix them).
+  *isp; HW, infer; data: `isp-msaa-resolve`.*
+- `E511` On our stack's 4x render the closed driver's 64 x 64 macrotile words (0x802002 and
+  0x802002, stride 4) draw exactly at 96 x 48 and 128 x 64 and fault the job (BIF fault at
+  0x10000012 to 0x10000016) at 128 x 128, 192 x 96 and 256 x 128; a macrotile of two tiles with only
+  CR_TE_MTILE1 poked draws exactly at 128 x 128; the tile signature of every job that completes
+  equals the unpoked rule's (3 of 3 U2 jobs here, 4 of 4 with E507's U2 job at 64 x 64; the 6 R jobs
+  of E507 are the rule itself), and the 20 held-out and larger cases of the 26 declared were not
+  run.
+  *ta; HW, infer; data: `ta-mtile-msaa-risky`.*
 
 ## By unit
 
@@ -3389,7 +3471,7 @@ Records: E001, E002, E003, E004, E005, E010, E011, E012, E352.
 Records: E064, E065, E066, E067, E068, E069, E070, E071, E072, E073, E074, E210, E211, E213, E214,
 E215, E216, E217, E218, E219, E220, E222, E224, E225, E226, E227, E228, E229, E230, E209, E231,
 E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E290, E291, E330,
-E332, E334, E338, E339, E340, E410, E415, E416, E417, E439.
+E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E508, E510.
 
 ### mte
 
@@ -3422,7 +3504,8 @@ E448, E449, E451, E458, E462.
 ### ta
 
 Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180, E181, E247, E257,
-E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424.
+E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
+E511.
 
 ### texture
 

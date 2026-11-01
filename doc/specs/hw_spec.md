@@ -218,6 +218,13 @@ recording the last in TA/3D control block dword 49; our kernel reads a fault's d
 the list `CID` names (E360). A fault raises no bit of `EVENT_STATUS` or `EVENT_STATUS2` of its
 own (E357).
 
+A 4x multisampled render of our stack (mode 2, `CR_TE_AA` 0xe0000000, the unpoked macrotile words)
+at 320 x 160 and up faults the job with `BIF_FAULT` reading 0x90004 at the page 0x20006 (320 x 160
+to 512 x 256), 0x20008 (512 x 384) and 0x2000a (640 x 480) (6 of 6 jobs, E507); the script's health
+check, a plain 64 x 64 triangle, failed after each of the last three in a row and stopped it (five
+`SGX recovery failed: -110` kernel lines in the run). The cause is open (Q140, a kernel
+question).
+
 ### 5.6 Unit names
 
 `BIF` bus interface and MMU; `DPM` parameter memory manager; `TA` tile accelerator; `VDM`
@@ -226,7 +233,7 @@ sequencer; `USE` the USSE shader core; `ISP` hidden-surface processor; `TSP`, `T
 and shading processor and its pre-processor; `PBE` pixel back end (tile write-out).
 
 *Based on sgx545-ce `src/services4/srvkm/hwdefs/sgx545defs.h`,
-`src/services4/srvkm/devices/sgx/sgxreset.c`; E357, E360.*
+`src/services4/srvkm/devices/sgx/sgxreset.c`; E357, E360, E507.*
 
 ## 6. How the DDK resets and starts the core
 

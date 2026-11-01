@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-116 open: 103 hw (high 14, medium 54, low 35, unrated 0), 10 fw, 3 kernel.
+121 open: 107 hw (high 13, medium 58, low 36, unrated 0), 10 fw, 4 kernel.
 
 ## Work queue: hardware
 
@@ -31,14 +31,16 @@
 
 ### isp
 
-- `Q030` (phase 10, hw, high): where do a multisampled render's tiles past the first land in the target, and what do the TE anti-aliasing bits change? (E210, E211, E219, E220, E281, E415)
+- `Q030` (phase 11, hw, medium): what do CR_TE_AA bits 31 and 30 do when bit 29 is clear, where the triangle is gone, and does the sample layout of E281 hold in the tiles and windows past the first? (E210, E211, E219, E220, E281, E415, E502, E503, E504)
 - `Q031` (phase 10, hw, medium): why does ISP word 0 bit 28 hang a multisampled render, when single-sampled it widens coverage to the union of eight samples? (E214, E215, E278, E416)
 - `Q032` (phase 10, hw, medium): what does pcoeff hand the ISP in the punch-through pass, when the kept pixels' depth is the same without it and moves between runs only when it runs without the iteration it reads? (E217, E416)
 - `Q066` (phase 11, hw, high): what do the three background-object words the 3D kick writes mean to the ISP, and what are the other words of a render's background object? (E069, E162, E209, E216, E410)
 - `Q071` (phase 11, hw, medium): what do the bits of the ZLS control word that change nothing seen (12, 15, 16, 20 to 23, 27 to 31) do, and how does the ISP use the control in a render with a stencil test? (E057, E169, E216, E228, E284, E337, E411, E465, E466, E467)
 - `Q072` (phase 11, hw, low): what does bit 1 of CR_ISP_REG_04DC do to a punch-through pass, when it hangs every one tried and changes no opaque or translucent pass? (E068, E073, E213, E222, E290, E416)
 - `Q073` (phase 11, hw, medium): what does o0 hold at the start of an opaque pass's pixel shader? (E077, E283, E417)
-- `Q089` (phase 11, hw, high): where does the closed driver's 4x multisampled render become a 64x64 image, when its PBE words are those of a single-sampled 64x64 target and the hardware stores 4x samples as 2x2 blocks; and do alpha to coverage and sample coverage reach the hardware at all? (E333, E339, E439)
+- `Q089` (phase 11, hw, high): where does the closed driver's 4x multisampled render become a 64x64 image, when its PBE words are those of a single-sampled 64x64 target and the hardware stores 4x samples as 2x2 blocks; and do alpha to coverage and sample coverage reach the hardware at all? (E333, E339, E439, E502, E503, E508, E510)
+- `Q138` (phase 11, hw, high): how does the closed driver's 4x render of a 64 x 64 texture fill a 64 x 64 image when one render with CR_TE_AA 0xe0000000 stores only a 16 x 8 window of each 32 x 16 tile (E503): are the four windows (0x20000000, 0x60000000, 0xa0000000, 0xe0000000) four renders of one frame, and what combines them (E503, E508, E510, E339, E439)
+- `Q141` (phase 11, hw, low): why does a handful of pixels in one tile stay background when the full triangle covers the target, with CR_TE_AA bits 30 or 31 set in mode 1 (64 pixels at 64 x 64, tile (1, 2)) or at 96 x 80 in modes 1 and 2 (9 to 39 pixels), and 136 pixels at (32, 32) in mode 0 with 0xe0000000 (E502, E503, E504)
 
 ### mte
 
@@ -92,9 +94,11 @@
 - `Q064` (phase 11, hw, medium): what does the region header mark that CR_TE_PSG bit 21 makes the TA write mean to the 3D, and is bit 1 of CR_DPM_STATE_CONTEXT_ID the 3D's DPM slot as bit 2 is the TA's? (E158, E172, E305, E409, E424)
 - `Q068` (phase 11, hw, medium): do the twelve TA register words that are zero in our jobs save and resume the state of an interrupted TA? (E054, E056, E182, E183, E245)
 - `Q070` (phase 11, hw, high): what do the TA object's format word bits 15:8 and above and its set masks select beyond the settings seen, and does the fitted region test hold for lines and points? (E176, E177, E180, E181, E185, E306, E307, E308, E414)
-- `Q086` (phase 11, hw, medium): what rule gives CR_TE_MTILE1, CR_TE_MTILE2 and CR_TE_MACROTILE_STRIDE for a 4x multisampled target, whose 64x64 words are 0x802002, 0x802002 and 0x4 against the single-sampled rule's 0x1004004, 0x1004004 and 0x10? (E331, E329)
-- `Q100` (phase 11, hw, high): what do the fields of CR_TE_MTILE1 and CR_TE_MTILE2 mean, given that flips of their bits change the image or fault the job at 256x256 and 1024x768? (E247, E257, E407)
+- `Q086` (phase 11, hw, medium): what rule gives CR_TE_MTILE1, CR_TE_MTILE2 and CR_TE_MACROTILE_STRIDE for a 4x multisampled target, whose 64x64 words are 0x802002, 0x802002 and 0x4 against the single-sampled rule's 0x1004004, 0x1004004 and 0x10? (E331, E329, E507, E511)
+- `Q100` (phase 11, hw, medium): what do the fields of CR_TE_MTILE1 and CR_TE_MTILE2 mean, given that flips of their bits change the image or fault the job at 256x256 and 1024x768? (E247, E257, E407, E505, E506, E509)
 - `Q117` (phase 11, hw, medium): where does a point's size come from, what footprint does the 3D cover for a point object (E181 shows the TA writes one), and does the closed driver's extra output row carry the size? (E181, E340, E346, E414)
+- `Q139` (phase 11, hw, medium): what does a macrotile row's boundary do beyond the first, second and third fields of the macrotile words: what is bit 31, what is the stride's relation to the RT data, why is B2 at or past B3 exact in CR_TE_MTILE2 at 640 x 480, and what do the wrong images show per macrotile (E505, E506, E509, E407)
+- `Q142` (phase 11, hw, medium): what do the 76 parameter-buffer and 132 TA-data dwords that change with CR_TE_AA bits 30 and 31 hold, and why do 0x60000000 and 0xa0000000 change the same number of dwords by different values (E504)
 
 ### texture
 
@@ -197,6 +201,10 @@
 #### platform
 
 - `Q095` (phase 11, kernel): does giving the EDM a page directory of its own, rather than gma500's default one, change anything beyond the coupling of their teardowns? (E008, E018, E021)
+
+#### ta
+
+- `Q140` (phase 11, kernel): why does our stack's 4x render fault the job (BIF fault at pages 0x20006, 0x20008, 0x2000a) at 320 x 160 and above while 256 x 128 and 192 x 96 complete, and what size does the kernel allocate for a multisampled target (E507)
 
 #### vdm
 

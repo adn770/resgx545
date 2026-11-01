@@ -1,0 +1,10 @@
+title = "script table isp/msaa-te-dumps"
+repo = "data"
+paths = ["isp/msaa-te-dumps/"]
+method = "script table isp/msaa-te-dumps, run by hand over ssh on the laptop with the 11.26 tool (not by the campaign runner), so this manifest was written by hand with the runner's own digest; the whole raw output of every job (gzip, dumps/), the case table, output.txt, kernel.log (from journalctl -k, complete), the recompute scripts of this phase with their output (analysis/) and the run script (scripts/)"
+date = "2026-11-08"
+files = 62
+size = 339680
+sha256 = "81a30461bbeaa119ea4249266261e5bcce62680bf7d24bc4cd08ea21c3601c7a"
+recipe = "probes/isp/msaa-te-dumps.toml"
+needs = ["render", "regs", "dump_render"]

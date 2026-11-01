@@ -32,3 +32,13 @@ writes in modes 1 and 2 [infer: the macrotile row sequence]. One run of each tab
 
 **What it does not show.** Which pixels the unwritten columns hold (they read as the background of
 the tool, not the sentinel); the layout fit (isp_words.py layout) per tile.
+
+**Correction, 2026-11-08 (11.26).** The measurements above are unchanged. Their reading is
+superseded: the "constant displacement of 4 pixels" (x, and y in mode 2) is the doubling of the
+in-tile offset (the sample slots are stored twice in x, and in y in mode 2), and the "tile columns"
+the TE bits choose are the 16-pixel half windows of the 32 x 16 stored tile that `CR_TE_AA` bit 31
+picks: with the bit clear the stored tile holds source columns 0 to 15 of its 32, so a triangle at
+in-tile offset 4 is stored at 8 and one at offset 20 not at all, and with it set the window holds
+columns 16 to 31 and the triangle at offset 20 is stored at 8 (E503). That is a rule read post hoc
+from the 64 x 64 identity maps of E502 and checked against sizes declared held out only after it was
+written; applied to E415's probes it is [infer]: this record's own numbers were not rerun.

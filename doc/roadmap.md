@@ -177,20 +177,20 @@ probe and sweep tables that the units above cover.
 
 ### 4.1 Open questions
 
-`doc/open_questions.md` lists every open question, generated from `questions/`: Q001 to Q137, 116
-open. Each has a kind. The work is hardware knowledge, for a simulator and then our own firmware, so
-the 103 `hw` questions are the work queue, each with a value (high 14, medium 54, low 35); the 10
-`fw` questions (the closed firmware's and driver's own behaviour: Q004, Q029, Q034, Q049, Q084,
-Q088, Q118, Q119, Q124, Q131) and the 3 `kernel` ones (the design of our kernel driver: Q005, Q037,
-Q095) stay open, parked. By unit: bif 4, dpm 5, edm 6, isp 8, mte 3, pbe 5, pds 16, platform 4,
-render 9, ta 6, texture 7, transfer 3, usse 26, vdm 8, zls 6. A question is removed when a record
-answers it; one that mixed a hardware part with a firmware or kernel part was narrowed to the
-hardware part or folded into the hardware question that holds it (six so far: the control block's
-per-VM copy and the render context count bound into Q076, the recovery's reset steps into Q003, the
-settle routine and the two faults after a base-only fault or a kept owner into Q036 and Q045), and a
-fold is not an answer. What a fold or a narrowing left of the closed firmware's own behaviour is a
-new parked question: how a kick tells its directory is in no list (Q118, from the render context
-count) and whether a command with both kick flags acts as two (Q119, from Q065).
+`doc/open_questions.md` lists every open question, generated from `questions/`: Q001 to Q142, 121
+open. Each has a kind. The work is hardware knowledge, for a simulator and then our own firmware,
+so the 107 `hw` questions are the work queue, each with a value (high 13, medium 58, low 36); the
+10 `fw` questions (the closed firmware's and driver's own behaviour: Q004, Q029, Q034, Q049, Q084,
+Q088, Q118, Q119, Q124, Q131) and the 4 `kernel` ones (the design of our kernel driver: Q005, Q037,
+Q095, Q140) stay open, parked. By unit: bif 4, dpm 5, edm 6, isp 10, mte 3, pbe 5, pds 16, platform
+4, render 9, ta 9, texture 7, transfer 3, usse 26, vdm 8, zls 6. A question is removed when a
+record answers it; one that mixed a hardware part with a firmware or kernel part was narrowed to
+the hardware part or folded into the hardware question that holds it (six so far: the control
+block's per-VM copy and the render context count bound into Q076, the recovery's reset steps into
+Q003, the settle routine and the two faults after a base-only fault or a kept owner into Q036 and
+Q045), and a fold is not an answer. What a fold or a narrowing left of the closed firmware's own
+behaviour is a new parked question: how a kick tells its directory is in no list (Q118, from the
+render context count) and whether a command with both kick flags acts as two (Q119, from Q065).
 
 ### 4.2 Inferred glossary rows
 
@@ -456,3 +456,24 @@ and quads that repeat in part (E500). The records state the pairs and values tha
 programs and jobs apart where one program ran twice. E469 to E473, E475 and E476 are carried forward
 with dated corrections where 11.25 answers what they listed as not run. Records E491-E501; Q052,
 Q098, Q123, Q125, Q126 and Q127 are narrowed, none retired; Q135 to Q137 are new.
+
+Sub-phase 11.26 ran seven script tables on the laptop (the identity maps of multisampling, the TA
+output under the TE anti-aliasing bits, the macrotile words at six sizes, the 4x render of our stack
+and the sideband bits under it; `probes/isp/msaa-ident.toml`, `msaa-te-dumps`, `msaa-resolve`,
+`probes/ta/mtile-fields.toml`, `mtile-fields-risky`, `mtile-msaa`, `mtile-msaa-risky`) with no
+kernel change and one tool change (`probe --tri --tri-full`, the sgxfive-test of 11.26). 531 of the
+552 declared jobs ran, one run each; 21 did not (20 poked 4x cases at 320 x 160 and larger and the
+1024 x 768 render, since the unpoked 4x render faults from 320 x 160, E507), and three of the
+scripts ran in a resume with a longer recovery path. The pixel program's iterated position is x +
+0.375 and y + 0.125 in modes 0, 1 and 2 (E502). A multisampled render stores in each 32 x 16 tile a
+half window of the tile's own area, chosen by `CR_TE_AA` bits 31 and 30, each pixel twice in x and
+in y in mode 2 (E503): a rule read post hoc from the 64 x 64 runs after the declared test decoded
+nothing (0 of 48), which then agrees with all 634 tiles of the sizes declared held out (E503), and
+E415's "4 pixels" were the doubling [infer] (E415 is carried forward with a dated correction). Bits
+30 and 31 change 76 and 132 dwords of the parameter buffer and TA data, the closed driver's 4x
+setting stores 1024 distinct pixels of a 64 x 64 target, and no single bit of the end-of-tile
+sideband resolves (E504, E508, E510). At two macrotile columns the second boundary of the macrotile
+words decides, at four B1, B2 and B3 are all read, the stride must be the rule's, and none of the
+declared readings PA, PB and PC fits both (E505, E506, E509); the closed driver's 64 x 64 words draw
+exactly at 96 x 48 and 128 x 64 and fault at 128 x 128 and larger (E511). Records E502-E511; Q030,
+Q086, Q089 and Q100 are narrowed, none retired; Q138 to Q142 are new, Q140 for the kernel.

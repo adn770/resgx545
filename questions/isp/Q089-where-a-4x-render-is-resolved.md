@@ -5,7 +5,7 @@ unit = "isp"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E333", "E339", "E439"]
+evidence = ["E333", "E339", "E439", "E502", "E503", "E508", "E510"]
 terms = ["CR_ISP_MSAA.MODE", "CR_TE_MTILE1", "CR_TE_MACROTILE_STRIDE", "EMIT1.MAXCLIP_X"]
 +++
 
@@ -23,9 +23,9 @@ then the same with that instruction bit flipped in our end-of-render task's equi
 capture walk that also follows the pixel programs' secondary data for coverage words.
 
 Not run in 11.15: the settle plan needs the closed driver's PBE words and a capture walk of the
-pixel programs' secondary data; the poke indices for the PBE words (the closed driver's words are in
-a surface description, not in the render details) are not mapped, and no 4x render of our own stack
-with them was made. Status: narrowed, not answered; missing: a mapped poke for the PBE words.
+pixel programs' secondary data; the poke indices for the PBE words (the closed driver's words are
+in a surface description, not in the render details) are not mapped, and no 4x render of our own
+stack with them was made. Status: narrowed, not answered; missing: a mapped poke for the PBE words.
 
 Run in 11.16 (E439, 12 probes, three runs each): our stack's 4x render (mode 2, the closed driver's
 render and TE words) through our end-of-tile task with the closed driver's PBE words (a 64x64
@@ -38,3 +38,20 @@ resolve the image; where the closed driver's 4x render becomes 64x64 remains ope
 walk of the pixel programs' secondary data was not run. Status: narrowed, not answered; missing:
 where the resolve is (a later pass of the closed driver [infer]) and the coverage words' capture
 walk.
+
+Run in 11.26 (E502, E503, E508, identity maps, 48 runs of 40 configurations): with the closed
+driver's settings (mode 2, CR_TE_AA 0xe0000000) the stored 64 x 64 image holds 1024 distinct source
+pixels of the 4096, each in a 2 x 2 block (by E503's rule, read post hoc, which every tile equals),
+and the identity maps cannot show a blend or a resolve, since every sample slot of a pixel holds the
+same iterated value (E510 has the colour test). The hardware's stored image is the quarter
+window of E503, not a resolved image: the closed texture's 64 x 64 pitch needs something more
+(Q138). The capture walk of the coverage words was not run.
+
+Run in the 11.26 resume (E510, msaa-resolve, 66 jobs, 4 of them failed): each single bit of the
+end-of-tile sideband flipped from 0x200 and from 0x2200 either leaves the image as it was (50 of 64)
+or changes the colour byte order (bits 0, 1), packs two ARGB1555 pixels a dword (bit 2), writes 1024
+pixels (bit 3) or a few patterns (bits 9, 12); 4 jobs fail. No pixel is an average of the two
+colours (the control image has 24 aligned 2 x 2 blocks that mix them): no single sideband bit of our
+emit resolves; combinations of bits and the closed driver's own sideband are not excluded. The
+coverage words are still open. Status: narrowed, not answered; missing: Q138 (the later pass of the
+closed driver [infer]) and the coverage words.

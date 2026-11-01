@@ -289,7 +289,7 @@ probe [--stamp] [--temps N] [--coords] [--pixels] [--scratch-pages N] [--pds N -
       [--place OFFSET=FILE --place-form cbase|exe18] [--scratch-heap texture]
       [--poke xfer:N=V]... [--low ADDR] [--late R:K=V] FILE...
 probe --tri SLOT[:N] [--slot SLOT=FILE[:N]]... [--width W --height H]
-      [--max-width W --max-height H] [--vertices N [--copy-depth]] [--vtx-coords N]
+      [--max-width W --max-height H] [--vertices N [--copy-depth]] [--tri-full] [--vtx-coords N]
       [--isp2 V] [--blk-add BIT=V[,V]]... [--blk N=V]... [--cmd N=V]... [--vdm N=V]...
       [--pbe N=V]... [--sideband V] [--temps N] [--pixels] [--dump-render DIR] [--kpoke SPEC]...
       [--obj2 FIRST [--obj2-blk N=V]... [--obj2-pixel FILE] [--obj2-pixpds FILE:N]] FILE...
@@ -450,7 +450,8 @@ a PDS slot takes N data dwords. The new programs are patched as the defaults
 - `--vertices N` (3 to 1500, whole triangles) draws copies of the triangle after it, each
   1/16 pixel on, so that the vertex programs run for more vertices than one task's (more
   than 126 move the vertices and indices to the rig's extra gen pages);
-  `--copy-depth` puts copy c at clip z = c / 16.
+  `--copy-depth` puts copy c at clip z = c / 16. `--tri-full` (with `--tri`) draws the triangle
+  (0,0), (3W,0), (0,3H) as `tri --tri-full` does and prints `probe NAME: triangle (...)`.
 - `--vtx-coords N` (1 to 11) adds N output dwords per vertex, coordinate sets of four and
   the rest (OUTSEL, coordsize).
 - `--isp2 V` puts ISP word 2 (stencil) V in the state block, in place of the wrap word.

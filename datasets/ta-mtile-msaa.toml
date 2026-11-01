@@ -1,0 +1,10 @@
+title = "script table ta/mtile-msaa"
+repo = "data"
+paths = ["ta/mtile-msaa/"]
+method = "script table ta/mtile-msaa, run by hand over ssh on the laptop with the 11.26 tool (not by the campaign runner), so this manifest was written by hand with the runner's own digest; the whole raw output of every job (gzip, dumps/), the case table, output.txt, kernel.log (from journalctl -k, complete), the recompute scripts of this phase with their output (analysis/) and the run script (scripts/)"
+date = "2026-11-08"
+files = 26
+size = 374236
+sha256 = "020f3c3cb245a210e2a8f7f4644236bd22ab83621239ae183f01b50beac69200"
+recipe = "probes/ta/mtile-msaa.toml"
+needs = ["render", "kpoke"]

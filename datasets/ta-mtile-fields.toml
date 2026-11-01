@@ -1,0 +1,10 @@
+title = "script table ta/mtile-fields"
+repo = "data"
+paths = ["ta/mtile-fields/"]
+method = "script table ta/mtile-fields, run by hand over ssh on the laptop with the 11.26 tool (not by the campaign runner), so this manifest was written by hand with the runner's own digest; the whole raw output of every job (gzip, dumps/), the case table, output.txt, kernel.log (from journalctl -k, complete), the recompute scripts of this phase with their output (analysis/) and the run script (scripts/)"
+date = "2026-11-08"
+files = 118
+size = 1786772
+sha256 = "58d18e1982a316e62fc05527e205b5c64a36bba3a2eed1490547f272e3ee96b8"
+recipe = "probes/ta/mtile-fields.toml"
+needs = ["render", "kpoke"]

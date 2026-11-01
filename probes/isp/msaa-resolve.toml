@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# msaa-resolve: 0 probes (a shell script run on the laptop by hand, phase 11.26). Q089: sideband bits of the end-of-tile emit under 4x (risky, last).
+needs = ["render", "probe"]
+name = "isp-msaa-resolve"
+script = "msaa-resolve.sh"

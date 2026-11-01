@@ -1,0 +1,10 @@
+title = "script table isp/msaa-ident"
+repo = "data"
+paths = ["isp/msaa-ident/"]
+method = "script table isp/msaa-ident, run by hand over ssh on the laptop with the 11.26 tool (not by the campaign runner), so this manifest was written by hand with the runner's own digest; the whole raw output of every job (gzip, dumps/), the case table, output.txt, kernel.log (from journalctl -k, complete), the recompute scripts of this phase with their output (analysis/) and the run script (scripts/)"
+date = "2026-11-08"
+files = 110
+size = 349518
+sha256 = "c99c5313cbb7e1ca5d08d5a4bdfcd303d1e6426a5e99fb5e3be22b1973288861"
+recipe = "probes/isp/msaa-ident.toml"
+needs = ["render", "probe"]

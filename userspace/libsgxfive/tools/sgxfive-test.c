@@ -145,7 +145,7 @@
  *                                 address (0x5CB1) shifted right by four, plus nnnn (the s1
  *                                 of an emitpds), and the probe prints where it is
  *   probe --tri SLOT[:N] [--slot SLOT=FILE[:N]]... [--width W --height H]
- *         [--max-width W --max-height H] [--vertices N [--copy-depth]] [--vtx-coords N]
+ *         [--max-width W --max-height H] [--vertices N [--copy-depth]] [--tri-full] [--vtx-coords N]
  *         [--isp2 V] [--blk-add BIT=V[,V]]...
  *         [--blk N=V]... [--cmd N=V]... [--vdm N=V]... [--pbe N=V]... [--sideband V]
  *         [--temps N]
@@ -404,7 +404,7 @@ static int usage(void)
 		"                       [--poke xfer:N=V|bg:N=V]... [--low ADDR] [--late R:K=V] FILE...,\n"
 		"                 probe --tri SLOT[:N] [--slot SLOT=FILE[:N]]... [--width W\n"
 		"                       --height H --max-width W --max-height H] [--vertices N]\n"
-		"                       [--copy-depth] [--vtx-coords N] [--isp2 V]\n"
+		"                       [--copy-depth] [--tri-full] [--vtx-coords N] [--isp2 V]\n"
 		"                       [--blk-add BIT=V[,V]]... [--blk N=V]...\n"
 		"                       [--cmd N=V]... [--vdm N=V]... [--pbe N=V]... [--sideband V]\n"
 		"                       (--blk, --cmd and --vdm also take N^=V)\n"
@@ -1465,6 +1465,7 @@ struct probe_opts {
 		uint32_t vertices;	/* --vertices: 0, or the triangle and copies of it */
 		uint32_t coords;	/* --vtx-coords: more output dwords per vertex */
 		bool copy_depth;	/* --copy-depth: the copies at z = c / 16 */
+		bool full;		/* --tri-full: the triangle covers the target */
 		bool isp2_set;		/* --isp2 V: ISP word 2 in the state block */
 		uint32_t isp2;
 		uint32_t blk_mask;	/* --blk N=V: state block words set */
@@ -2092,6 +2093,14 @@ static void probe_tri_one(struct tool *t, const struct probe_file *f,
 		for (unsigned int k = 0; k < pt->nkpoke && !ret; k++)
 			ret = kpoke_write(pt->kpoke[k]);
 		sgxfive_tri_default(&p, pt->width, pt->height);
+		if (pt->full) {
+			p.v[0][0] = p.v[0][1] = p.v[1][1] = p.v[2][0] = 0;
+			p.v[1][0] = 3 * 16 * (int32_t)p.width;
+			p.v[2][1] = 3 * 16 * (int32_t)p.height;
+			printf("probe %s: triangle (%d,%d) (%d,%d) (%d,%d)\n", f->name,
+			       p.v[0][0] / 16, p.v[0][1] / 16, p.v[1][0] / 16, p.v[1][1] / 16,
+			       p.v[2][0] / 16, p.v[2][1] / 16);
+		}
 		if (!ret)
 			ret = sgxfive_tri_rig_build(g, &p, &pr);
 		if (!ret)
@@ -3606,6 +3615,10 @@ int main(int argc, char **argv)
 				popts.tri.copy_depth = true;
 				continue;
 			}
+			if (!strcmp(argv[i], "--tri-full")) {
+				popts.tri.full = true;
+				continue;
+			}
 			if ((!strcmp(argv[i], "--blk") || !strcmp(argv[i], "--cmd") ||
 			     !strcmp(argv[i], "--vdm")) && i + 1 < argc) {
 				/* N=V sets word N, N^=V flips the bits of V in it */
@@ -3814,6 +3827,10 @@ int main(int argc, char **argv)
 	    (o.depth_store_fill.given && !o.depth_store)) {
 		fprintf(stderr, "sgxfive-test: --stencil-store and --stencil-fill need --stencil, "
 			"--stencil-store-fill --stencil-store, --depth-store-fill --depth-store\n");
+		return 2;
+	}
+	if (!strcmp(cmd, "probe") && popts.tri.full && popts.tri.slot < 0) {
+		fprintf(stderr, "sgxfive-test: --tri-full is for tri and probe --tri\n");
 		return 2;
 	}
 	if ((o.tri_full || o.tri_z_given) && strcmp(cmd, "tri")) {
