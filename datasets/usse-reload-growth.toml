@@ -1,0 +1,10 @@
+title = "probe table usse/reload-growth"
+repo = "data"
+paths = ["usse/reload-growth/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 23
+size = 21701
+sha256 = "99d447f874843711bf4b14346f9191a0abb1f38d09d1eae92956dab7b1b50fcc"
+recipe = "probes/usse/reload-growth.toml"
+needs = ["render"]

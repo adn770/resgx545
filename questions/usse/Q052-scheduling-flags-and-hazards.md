@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E100", "E104", "E111", "E113", "E124", "E371", "E470", "E472", "E475", "E478", "E495", "E497"]
+evidence = ["E100", "E104", "E111", "E113", "E124", "E371", "E470", "E472", "E475", "E478", "E495", "E497", "E517"]
 terms = []
 +++
 
@@ -42,9 +42,17 @@ Q134). Not run: a load read by an ALU instruction (the interlock of that reader 
 load read more than 32 instructions on with no `wdf`, a load overwritten by a later write to its
 register, and the time a load takes.
 
-What is open (usse_isa.md §8, items 3 and 7): what `.syncs` and `.nosched` change (timing, with
-the reads correct either way), whether the hardware stalls a reader or the result is ready, loads
-read by readers other than `stad`, and the other writers (the texture unit, dual issue).
+Narrowed in 11.27 (E517): an ALU instruction (`ima32.u r11, r10, #1, r12`) reads the old value of a
+load's destination after 0, 1, 4, 16, 32 and 48 `nop`s (6 of 6, one sample each), as a `stad` does;
+a load not waited for had landed when a `stad` read it after 40, 100 and 128 `nop`s and not after 48
+and 64, so no slot count replaces the `wdf`; and a `mov` to the register after the `ldad` and before
+its `wdf` is overwritten by the load (4 of 4), while one after the `wdf` wins. The time a load takes
+is Q146.
+
+What is open (usse_isa.md §8, items 3 and 7): what `.syncs` and `.nosched` change (timing, with the
+reads correct either way), whether the hardware stalls a reader or the result is ready, loads read
+by the texture unit or the dual-issue secondary, and the other writers (the texture unit, dual
+issue).
 
 To settle it: the loop of probes/usse/loop-short.toml with a dependent chain against an
 independent one, with and without `.nosched`, timed; `.syncs` on a multi-task fill with the tasks'

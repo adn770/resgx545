@@ -47,9 +47,15 @@ The waits and modes on the hardware (E101) **[HW]**:
   it too, though fewer, and it is a barrier as `parallel` is (E110, E119).
 - **The mode picks a divergent quad's branch leader [HW]** (E112): under `parallel` a
   predicated branch whose quad disagrees follows the quad's first covered instance, under
-  `perinstance` instance 0 even when it covers nothing; `.skipinv` skips the uncovered
-  instances under both. The closed compiler uses `perinstance` only for a vertex loop whose
-  exit depends on data **[CAP]**.
+  `perinstance` instance 0 even when it covers nothing; `.skipinv` skips the uncovered instances
+  under both. **The branch is the quad's [HW]** (E513): in a fill a test of `pa0` selected by
+  `xor.testtaz.chan0 !c0, p0, r7, #K` and a `!p0 br` over code ran that code in the four lanes of a
+  quad, from the test of its top-left lane (K = 0: the pixels 0, 1, 64 and 65; K = 2: 2, 3, 66 and
+  67; K = 1, 3 and a value no instance has: no lane; 9 cases, K = 0 to 2 a replication of the
+  first run and K = 3 predicted). So 'one instance' selected by a test
+  of `pa0` is a quad of four lanes, and a store or an emit under it is executed by four lanes; a
+  test whose result differs across the lanes of a quad other than by `pa0` was not run. The closed
+  compiler uses `perinstance` only for a vertex loop whose exit depends on data **[CAP]**.
 
 - **The rates [HW]** (E115): `sample` and `selective` change nothing a 1x or 4x triangle
   shows; the shader still runs once per pixel. The compiler never emits them **[CAP]**. No bit
@@ -57,20 +63,26 @@ The waits and modes on the hardware (E101) **[HW]**:
   of ISP words 0 and 1 turns per-sample shading on either (E117), nor any bit of the render
   details' sample-related words (`isp_sample_pos`, `isp_multisamplectl`, which holds the sample
   positions, `isp_line_sample_pos`, `reg_0800`, `frag_flags`; E120).
-- **A phase's temporaries are its `phas` request [HW]** (E487): in a two-phase fill the 12 requests
-  8, 16, 32, 64, 96, 124, 128, 132, 136, 144, 160 and 192 ran: the marker written to the phase's
-  highest register, `r123` from 124 up, read back in 15 of 15 jobs (the task started with 8, and
-  192 also with 32, 64 and 128), whatever the task was started with. Every request from 124 up
-  wrote `r123` only (`r124` and up cannot be named as an ALU operand), so these show that the job
-  runs and that `r123` is real storage, not that 192 temporaries are usable; the register numbers
-  a program can name end at 123. The 12 requests 196, 200, 204, 208, 212, 216, 220, 224, 252, 256,
-  508 and 1020 hung the job (15 of 15, 196 also started with 32, 64 and 128; each hang recovered
-  by the driver with no reload). 192 is the highest value run that did not hang, among the values
-  run, not a measured limit: 228 to 248, 260 to 504, 512 to 1016 and the multiples of four below
-  192 other than the 12 were not run, and the 12 and 12 are not an interval. Every request run was
-  a multiple of four. The 15 jobs that ran took 420 to 583 microseconds, with no cost seen in
-  single samples. A register past a phase's request reads as `n mod T` in most instances
-  (*Machine model*). The limit for a firmware task is **[open]** (Q133).
+- **A phase's temporaries are its `phas` request [HW]** (E487, E519): in a two-phase fill the marker
+  written to a register at the top of the request (`r123` from 124 up to 504, and for the 15
+  requests from 512 up `r(T mod 256 - 1)`, `r123` when that is above 123, for the 8 predicted to
+  run, `r3` for the 7 predicted to hang) was read back, and the job ran, when the request T mod 256
+  was 4 to 192, and the job hung (each hang recovered by the driver with no reload) when it was 0 or
+  196 to 252. Ran: 8, 16, 32, 64, 96, 124, 128, 132, 136, 144, 160 and 192 (E487: 15 of 15 jobs, the
+  task started with 8, 192 also with 32, 64 and 128), 100 to 120, 148 to 156, 164 to 188 and 260 to
+  448 (every multiple of four, 64 requests; E519) and 8 of the 15 requests from 512 to 1016 chosen
+  by the rule (516, 576, 640, 704, 772, 832, 896 and 960). Hung: 196, 200, 204, 208, 212, 216, 220,
+  224, 252, 256, 508 and 1020 (E487: 15 of 15 jobs, 196 also started with 32, 64 and 128), 228 to
+  248 and 452 to 504 (20 requests; E519) and 7 of those 15 (512, 708, 764, 768, 964, 1000 and 1016).
+  The rule was written after the first 84 requests and predicted all 15 from 512 up; what a request
+  above 256 allocates is not measured (every E519 job wrote the same marker to `r123`, which earlier
+  jobs wrote too, so the read-back does not show that the write landed under a small allocation:
+  Q132, Q144). Every request from 124 up to 504 wrote `r123` only (`r124` and up cannot be named as
+  an ALU operand), so these show that the job runs and that `r123` is real storage, not that 192
+  temporaries are usable; the register numbers a program can name end at 123. Every request run was
+  a multiple of four. The 15 jobs of E487 that ran took 420 to 583 microseconds, with no cost seen
+  in single samples. A register past a phase's request reads as `n mod T` in most instances
+  (*Machine model*). The limit for a firmware task is **[open]** (Q133, Q144).
 - **The register form** `phas srcA, srcB` hung or faulted with every source layout tried
   (absolute index, offset or `doutu` U0 layout, against the immediate's fields or high dword);
   none started the next phase (E118).

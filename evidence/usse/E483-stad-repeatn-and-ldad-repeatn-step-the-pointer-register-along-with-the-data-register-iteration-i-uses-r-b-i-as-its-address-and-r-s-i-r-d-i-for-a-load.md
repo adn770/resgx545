@@ -65,3 +65,18 @@ value of the pointers r44 to r55 (N = 8, 16), and of the pointers a repeat does 
 movement of ldad.repeat beyond the 2 or 4 pointers whose markers were stored; `.repeatN` of a load
 with a pre-increment form. All of this was measured in client pixel tasks (fills), not in firmware
 tasks.
+
+**Correction, 2026-11-08 (11.27).** The measurements above are unchanged. E515 lifts the limit of
+the pointers read: with a marker stored 32 dwords past every one of the sixteen pointers r40 to r55
+(r56 to r71 for a load), whatever N, the pointer registers r(40 + i) for i < N moved by the form's
+increment and the others stayed, for N = 5 to 16 post-incremented with K = 1 and N = 8, 12 and 16
+with K = 2 (15 of 15 cases) and N = 8, 12 and 16 pre-incremented with K = 1 and N = 8 with K = 2 (4
+of 4); the data address of iteration i is r(b + i) for N = 5 to 7 and 9 to 15 plain (10 of 10);
+`ldad.repeatN r10, [r56,+#0]` loaded from r(56 + i) into r(10 + i) in 11 of 11 plain cases (N = 5 to
+7 and 9 to 16) and moved r(56 + i) for i < N in 10 of 10 post-incremented cases. So 'the pointers
+r40 to r43 only', the final values of r44 to r55 and of the pointers a repeat does not use, and the
+repeat counts 5 to 7 and 9 to 15 are no longer unread; they were read for a store with plain, post-
+and pre-increment and a load with plain and post-increment forms, with no `smlsi` before them. Not
+run: a pre-incremented `ldad.repeat`, an `smlsi` before a repeat of five or more, N above 16, the
+pointer values after a faulted job. All of this was measured in client pixel tasks, not in firmware
+tasks.

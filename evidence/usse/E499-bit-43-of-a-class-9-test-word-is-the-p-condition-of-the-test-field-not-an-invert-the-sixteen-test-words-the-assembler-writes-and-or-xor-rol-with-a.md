@@ -56,3 +56,18 @@ with #7 2 (0 and 7: no negative result, so the sign parts are only tested on a n
 positive nonzero result), `rol` 5 and `xor` with #7 6. So 'tanz with pat' on a positive nonzero
 result is shown by test-bit43, rawcond and the forms with such a result only. Narrows nothing of
 Q123, Q126 or Q127; Q137 keeps the open rest.
+
+**Correction, 2026-11-08 (11.27).** The measurements above are unchanged. E529 ran the `o` join:
+with enc[39] = 0 and chan0 the two parts of the field are ORed and a part absent from the field
+counts as true (a rule read from the 90 readbacks of a first table, where the prediction 'ORed with
+an absent part false' fitted 75 of 90, then predicted all 270 cases of `or`, `xor` and `and` with #7
+over other pairs), so a one-part field is always true under the `o` join and 'ANDed' above is the
+`a` join only. E530 ran the chan field: none of the values 1 to 7 reads as chan0 with the `a` join
+(the prediction that it is ignored failed in seven of seven tables); the 252 readings fit the rule
+of *Test channels*, read after the data. The statements above that the assembler writes one
+condition at a time and does not write 'greater than zero' are wrong: usse-asm, run on the host
+after the data with no hardware, assembles `and.testpanz.chan0 !c0, p0, r1, r2` to the field 0xa
+(tanz with pat) with the `a` join, `.testnaz` to the field 5 with the `a` join and `.testnoz` and
+`.testtoz` to the fields 5 and 1 with the `o` join, and `.andall`, `.orall`, `.and02` and `.or02` to
+chan 4 to 7; the hardware ran those fields as raw words only. Still not run: the shifts, the other
+classes' tests, the `o` join with a chan other than chan0, and the field value 0 (Q137, Q150, Q151).

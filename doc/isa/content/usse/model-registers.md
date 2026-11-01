@@ -100,13 +100,12 @@ marked.
   temporaries (bank 0, numbers 124-127; in the half-float and c10 readings, earlier). They
   are the accumulators of the dual-issue and `efo` groups and the carry registers of `imae`/`ima32`,
   and the extra operand `ima32.u d, iK, a, b, c` writes the high 32 bits of the product with the
-  addend to `iK`, K = 0 to 2 **[HW]** for the `.u` operands run (E493, E501; the probe table's model
-  had the `i` registers keep their values). **[HW]** `i0`-`i2` are per instance, hold what `mov` or
-  `fddp` writes and keep it
-  from one task to the next, also another client's (9 of 9 reader jobs after a writer fill, E484);
-  `i3` reads `i0` of the next instance of
-  the 2x2 quad and drops writes, and `efo.gpiext` reaches across the quad (*Internal
-  registers*, *`efo`*).
+  addend to `iK`, K = 0 to 2 **[HW]** on register operands, `.u` and `.s` (E493, E501, E525, E526;
+  the probe table's model had the `i` registers keep their values). **[HW]** `i0`-`i2` are per
+  instance, hold what `mov` or `fddp` writes and keep it from one task to the next, also another
+  client's (9 of 9 reader jobs after a writer fill, E484); `i3` reads `i0` of the next instance of
+  the 2x2 quad and drops writes, and `efo.gpiext` reaches across the quad (*Internal registers*,
+  *`efo`*).
 - **Index registers [RE].** A destination bank writes `i.l`, `i.h` or both (`i.lh`); an
   indexed operand `r[il + #n]` names a register of a bank (`r`, `o`, `pa`, `sa`) by index plus
   offset. The firmware loads `i.l` from a temporary 79 times and uses 79 indexed operands,

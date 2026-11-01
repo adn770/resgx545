@@ -1,0 +1,10 @@
+title = "probe table usse/load-readers"
+repo = "data"
+paths = ["usse/load-readers/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 24
+size = 17635
+sha256 = "e78b219560b93236094be605ba145363041323dce6e67d6d559d97640e39ac8f"
+recipe = "probes/usse/load-readers.toml"
+needs = ["render"]

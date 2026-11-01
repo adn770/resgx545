@@ -1,0 +1,10 @@
+title = "probe table usse/rawjoin-o2-xor"
+repo = "data"
+paths = ["usse/rawjoin-o2-xor/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 94
+size = 200460
+sha256 = "7e06ce03b9ebbd5a2e058025bd80515a2ef10c1818baa4d4adfa16bb1ceb362c"
+recipe = "probes/usse/rawjoin-o2-xor.toml"
+needs = ["render"]

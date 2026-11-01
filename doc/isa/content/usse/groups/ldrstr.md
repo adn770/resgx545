@@ -11,10 +11,10 @@ Class 31, other group, operation 6 **[RE]**. `ldr rD, #idx, drcN` reads SGX regi
   returns `BIF_DIR_LIST_BASE0`, from a client pixel shader on our render node; a client
   `str #671` (`USE_G0`) changed nothing (measured on our render node). The firmware
   programs the whole GPU with these two instructions.
-- **Ordering [open].** A `stad` and a later `ldad` of one dword, with all instances storing the same
-  value to it, return the stored value without an `idf` (*Memory, data fences and the register
-  file*, E481; one instance's own store is not isolated, Q134); `str` then `ldr` of one register is
-  not measured, as no client `str` was seen to change anything (Q134).
+- **Ordering [open].** A `stad` and a later `ldad` of one dword return the stored value without an
+  `idf`, for an instance's own store too (*Memory, data fences and the register file*, E481, E512);
+  `str` then `ldr` of one register is not measured, as no client `str` was seen to change anything
+  (Q134).
 - **The index [HW].** `ldr rD, rI` masks a register index to 14 bits (*The 14-bit
   `ldr`/`str` index*); `str` with a register index is **[open]**.
 - The decoder holds two copies of these forms (an older one and the class-31 family's); the

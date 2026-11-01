@@ -32,3 +32,15 @@ destination plus the shift; the loaded dwords of a load fetch also start one dwo
 the pre-increment form of a fetch, a fetch wider than 16, and the offsets `[rb,+#k]` other than k =
 0 (fetch4) and k = 1 (fetch2, 4 and 16). All of this was measured in client pixel tasks (fills), not
 in firmware tasks.
+
+**Correction, 2026-11-08 (11.27).** The measurements above are unchanged. E516 ran the cases listed
+above as not run, in a client pixel task: plain `[rb,+#k]` stores at `b + k + 1` to `b + k + N` for
+k = 2, 3, 4, 7, 8 and 15 (`fetch4`), 3 (`fetch8`) and 2 (`fetch16`) (8 of 8, predicted); the
+post-increment `[rb,#k++]` stores from `b + k` and moves `rb` by N for k = 1 to 4 (k = 2 and 3 with
+`fetch4`, 2 with `fetch8`, 4 with `fetch2`: 4 of 4, a rule read from the readbacks after the table's
+prediction failed), and the pre-increment `[rb,++#k]` stores from `b + k + 1` and moves `rb` by N (3
+of 3, likewise a fit). So 'moves `rb` by N once' holds for k = 1 to 4 (post) and k = 1 and 2 (pre),
+the step being the fetch width, not k, and the one-dword shift belongs to the plain and
+pre-increment forms (the post form starts at `b + k`, which for k = 1 is the `b + 1` above). Not
+run: k above 15, N above 16, the 16-dword copy with k other than 0, and registers of a fetch above
+r33.

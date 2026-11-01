@@ -1,0 +1,10 @@
+title = "probe table usse/rawjoin-o2-and7"
+repo = "data"
+paths = ["usse/rawjoin-o2-and7/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 94
+size = 201725
+sha256 = "5d2bf25a6733cc0c4c515c93a55ea4f15b0c0be33245b1a6b7850e98b5508365"
+recipe = "probes/usse/rawjoin-o2-and7.toml"
+needs = ["render"]

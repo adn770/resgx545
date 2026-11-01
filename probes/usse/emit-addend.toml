@@ -1,0 +1,270 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse the emitpds addend (item 14, E488): the base emit with other addends, one probe each (risky: every emit job faulted or hung in 11.24): 0 sweeps, 19 probes.
+needs = ["render", "vm_low"]
+
+[[probe]]
+name = "usse-emit-addend-a00000"
+question = "emitpds.tasks.taske #0 with s0 = 2 rows and the addend 0x0, naming the fill PDS secondary: does the PDS program run (dword 0 reads 3 or 2 after the emit) and does the job fault"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_a00000.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["addend 0x0"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emit-addend-a00010"
+question = "emitpds.tasks.taske #0 with s0 = 2 rows and the addend 0x10, naming the fill PDS secondary: does the PDS program run (dword 0 reads 3 or 2 after the emit) and does the job fault"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_a00010.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["addend 0x10"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emit-addend-a000f0"
+question = "emitpds.tasks.taske #0 with s0 = 2 rows and the addend 0xf0, naming the fill PDS secondary: does the PDS program run (dword 0 reads 3 or 2 after the emit) and does the job fault"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_a000f0.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["addend 0xf0"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emit-addend-a000ff"
+question = "emitpds.tasks.taske #0 with s0 = 2 rows and the addend 0xff, naming the fill PDS secondary: does the PDS program run (dword 0 reads 3 or 2 after the emit) and does the job fault"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_a000ff.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["addend 0xff"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emit-addend-a00100"
+question = "emitpds.tasks.taske #0 with s0 = 2 rows and the addend 0x100, naming the fill PDS secondary: does the PDS program run (dword 0 reads 3 or 2 after the emit) and does the job fault"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_a00100.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["addend 0x100"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emit-addend-a00101"
+question = "emitpds.tasks.taske #0 with s0 = 2 rows and the addend 0x101, naming the fill PDS secondary: does the PDS program run (dword 0 reads 3 or 2 after the emit) and does the job fault"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_a00101.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["addend 0x101"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emit-addend-a00110"
+question = "emitpds.tasks.taske #0 with s0 = 2 rows and the addend 0x110, naming the fill PDS secondary: does the PDS program run (dword 0 reads 3 or 2 after the emit) and does the job fault"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_a00110.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["addend 0x110"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emit-addend-a00200"
+question = "emitpds.tasks.taske #0 with s0 = 2 rows and the addend 0x200, naming the fill PDS secondary: does the PDS program run (dword 0 reads 3 or 2 after the emit) and does the job fault"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_a00200.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["addend 0x200"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emit-addend-a00400"
+question = "emitpds.tasks.taske #0 with s0 = 2 rows and the addend 0x400, naming the fill PDS secondary: does the PDS program run (dword 0 reads 3 or 2 after the emit) and does the job fault"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_a00400.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["addend 0x400"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emit-addend-a00800"
+question = "emitpds.tasks.taske #0 with s0 = 2 rows and the addend 0x800, naming the fill PDS secondary: does the PDS program run (dword 0 reads 3 or 2 after the emit) and does the job fault"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_a00800.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["addend 0x800"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emit-addend-a00fff"
+question = "emitpds.tasks.taske #0 with s0 = 2 rows and the addend 0xfff, naming the fill PDS secondary: does the PDS program run (dword 0 reads 3 or 2 after the emit) and does the job fault"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_a00fff.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["addend 0xfff"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emit-addend-a01000"
+question = "emitpds.tasks.taske #0 with s0 = 2 rows and the addend 0x1000, naming the fill PDS secondary: does the PDS program run (dword 0 reads 3 or 2 after the emit) and does the job fault"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_a01000.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["addend 0x1000"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emit-addend-a01001"
+question = "emitpds.tasks.taske #0 with s0 = 2 rows and the addend 0x1001, naming the fill PDS secondary: does the PDS program run (dword 0 reads 3 or 2 after the emit) and does the job fault"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_a01001.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["addend 0x1001"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emit-addend-a01010"
+question = "emitpds.tasks.taske #0 with s0 = 2 rows and the addend 0x1010, naming the fill PDS secondary: does the PDS program run (dword 0 reads 3 or 2 after the emit) and does the job fault"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_a01010.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["addend 0x1010"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emit-addend-a01100"
+question = "emitpds.tasks.taske #0 with s0 = 2 rows and the addend 0x1100, naming the fill PDS secondary: does the PDS program run (dword 0 reads 3 or 2 after the emit) and does the job fault"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_a01100.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["addend 0x1100"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emit-addend-a02000"
+question = "emitpds.tasks.taske #0 with s0 = 2 rows and the addend 0x2000, naming the fill PDS secondary: does the PDS program run (dword 0 reads 3 or 2 after the emit) and does the job fault"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_a02000.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["addend 0x2000"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emit-addend-a04000"
+question = "emitpds.tasks.taske #0 with s0 = 2 rows and the addend 0x4000, naming the fill PDS secondary: does the PDS program run (dword 0 reads 3 or 2 after the emit) and does the job fault"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_a04000.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["addend 0x4000"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emit-addend-a08000"
+question = "emitpds.tasks.taske #0 with s0 = 2 rows and the addend 0x8000, naming the fill PDS secondary: does the PDS program run (dword 0 reads 3 or 2 after the emit) and does the job fault"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_a08000.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["addend 0x8000"]
+cases = [[0xC0DE0001]]
+
+[[probe]]
+name = "usse-emit-addend-a10000"
+question = "emitpds.tasks.taske #0 with s0 = 2 rows and the addend 0x10000, naming the fill PDS secondary: does the PDS program run (dword 0 reads 3 or 2 after the emit) and does the job fault"
+source = "emit_pds.s"
+isa = "pds"
+use = "emit_a10000.s"
+low = 0x10000
+coords = true
+temps = 32
+params = { SRC = "ir0.0" }
+inputs = ["A"]
+labels = ["addend 0x10000"]
+cases = [[0xC0DE0001]]

@@ -1,0 +1,10 @@
+title = "probe table usse/rawchan-7"
+repo = "data"
+paths = ["usse/rawchan-7/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 40
+size = 74263
+sha256 = "a45a014cb6049da8ac9c454000a5ecf74724d97850bdff7fa00595d4fe48ff57"
+recipe = "probes/usse/rawchan-7.toml"
+needs = ["render"]

@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse phas requests 100 to 120 with the last register of the request written (the phas-low table wrote r123, past the allocation): 0 sweeps, 1 probes.
+needs = ["render"]
+
+[[probe]]
+name = "usse-phas-low2-below124"
+question = "a two-phase fill started with 8 temporaries whose phas asks for 100 to 120 for phase 1 and writes its last register"
+source = "temps_phas.s"
+temps = 8
+params = {  }
+inputs = ["T", "HI", "MARK"]
+labels = ["--temps 8; phas asks for 100 temporaries for phase 1; r99 written and read in phase 1", "--temps 8; phas asks for 104 temporaries for phase 1; r103 written and read in phase 1", "--temps 8; phas asks for 108 temporaries for phase 1; r107 written and read in phase 1", "--temps 8; phas asks for 112 temporaries for phase 1; r111 written and read in phase 1", "--temps 8; phas asks for 116 temporaries for phase 1; r115 written and read in phase 1", "--temps 8; phas asks for 120 temporaries for phase 1; r119 written and read in phase 1"]
+cases = [["100", "99", "0x7E570063"], ["104", "103", "0x7E570067"], ["108", "107", "0x7E57006B"], ["112", "111", "0x7E57006F"], ["116", "115", "0x7E570073"], ["120", "119", "0x7E570077"]]
+[probe.hypotheses]
+"a request of T temporaries gives r0 to r(T-1) as storage: the marker written to r(T-1) reads back" = [{ o0 = 0x7E570063 }, { o0 = 0x7E570067 }, { o0 = 0x7E57006B }, { o0 = 0x7E57006F }, { o0 = 0x7E570073 }, { o0 = 0x7E570077 }]
+"a request of 100 to 120 hangs the job" = ["fail", "fail", "fail", "fail", "fail", "fail"]

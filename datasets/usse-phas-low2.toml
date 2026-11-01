@@ -1,0 +1,10 @@
+title = "probe table usse/phas-low2"
+repo = "data"
+paths = ["usse/phas-low2/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 10
+size = 5212
+sha256 = "43b490ac71d4969f59b16305ec981fc989e40d4acc7ed0ab83a829c84dc1dd1e"
+recipe = "probes/usse/phas-low2.toml"
+needs = ["render"]

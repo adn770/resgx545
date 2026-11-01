@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E087", "E097", "E105", "E109", "E294", "E296", "E369", "E370", "E483"]
+evidence = ["E087", "E097", "E105", "E109", "E294", "E296", "E369", "E370", "E483", "E515", "E516"]
 terms = []
 +++
 
@@ -29,11 +29,21 @@ Narrowed in 11.24 (E483): on a `stad.repeatN` or `ldad.repeatN` the pointer regi
 `smlsi`'s second increment and the data register by its fourth (the first and third did nothing to a
 store, varied together only), so `smlsi #0, #0, #0, #1` makes the repeat a one-pointer series (12 of
 12 stores); the pointer movement of a repeat was read for `r40` to `r43` only, and N = 5 to 7 and 9
-to 15 were not run (E483); the smlsi increments of a `stad` follow the three-source rule of `fmad`.
+to 15 were not run (E483, lifted in 11.27 below); the smlsi increments of a `stad` follow the
+three-source rule of `fmad`.
+
+Narrowed in 11.27 (E515, E516): with a marker past each of the sixteen pointers `r40` to `r55`
+(`r56` to `r71` for a load), N = 5 to 7 and 9 to 15 plain, N = 5 to 16 post-incremented and N = 8,
+12 and 16 pre-incremented, the pointers `r(40 + i)` for i < N moved by the form's increment and the
+others stayed, and the data address of iteration i is `r(b + i)` (50 of 50 cases); `stad.fetchN
+[rb,#k++]` stores from `b + k` and moves `rb` by N, `[rb,++#k]` from `b + k + 1` and moves `rb` by
+N, for k = 1 to 4 (post) and k = 1 and 2 (pre) (the last two rules read after the data, not
+predicted).
 
 What is open (usse_isa.md §8, item 2): what each of these instructions sets beyond the offsets,
-modes and increments pinned, what `moest` returns and where, and whether the state survives from
-one task to the next within a job.
+modes and increments pinned, what `moest` returns and where, and whether the state survives from one
+task to the next within a job; a repeat of five or more after an `smlsi`, a pre-incremented
+`ldad.repeat` and N above 16 were not run.
 
 To settle it: a fill whose quads run different `smbo` values chosen by a predicate on the quad's
 position, then a plain move, to see whether one task's state reaches the next; `moest` with a

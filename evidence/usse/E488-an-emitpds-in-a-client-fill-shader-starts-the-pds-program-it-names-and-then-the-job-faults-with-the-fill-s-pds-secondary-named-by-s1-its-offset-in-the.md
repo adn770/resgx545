@@ -66,3 +66,15 @@ against the data.
 with 0x100 only); s1 other than the program itself; an emitpds from a firmware task (the question
 the item meant); whether the fault is the emitted run's doutu, its store, or the client's missing
 PDS context; what ir0 is.
+
+**Correction, 2026-11-08 (11.27).** The measurements above are unchanged. E513 shows that a branch
+over code selected by a test of `pa0` is taken by a whole 2 x 2 quad, from the test of its top-left
+lane (a test of `pa0` == 0 ran the code in the pixels 0, 1, 64 and 65, == 2 in 2, 3, 66 and 67, == 1
+and == 3 in none), so the 'one instance emitting' of this record was a quad of four lanes emitting,
+and 'one emit' in the counts above is one quad's. E520 ran the addend over 0, 0x10, 0xF0, 0xFF,
+0x100, 0x101, 0x110, 0x200, 0x400, 0x800, 0xFFF, 0x1000, 0x1001, 0x1010, 0x1100, 0x2000, 0x4000,
+0x8000 and 0x10000 in 39 probes: the addends 0xFFF, 0x1000, 0x1001, 0x1010, 0x1100 and 0x2000 left
+the fill's own 0x403 in 12 of 12 probes, in an interleaved order too, where 0x100 read 3 or 2 (11 of
+11), so 'the addend 0x1000 once left the no-emit value' is now 2 probes of that addend and the
+window of six; every one of the 39 emitting jobs faulted (37) or hung (2), still with a fault racing
+the emitted run (Q145, Q128).

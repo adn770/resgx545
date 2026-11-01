@@ -273,13 +273,12 @@ marked.
   temporaries (bank 0, numbers 124-127; in the half-float and c10 readings, earlier). They
   are the accumulators of the dual-issue and `efo` groups and the carry registers of `imae`/`ima32`,
   and the extra operand `ima32.u d, iK, a, b, c` writes the high 32 bits of the product with the
-  addend to `iK`, K = 0 to 2 **[HW]** for the `.u` operands run (E493, E501; the probe table's model
-  had the `i` registers keep their values). **[HW]** `i0`-`i2` are per instance, hold what `mov` or
-  `fddp` writes and keep it
-  from one task to the next, also another client's (9 of 9 reader jobs after a writer fill, E484);
-  `i3` reads `i0` of the next instance of
-  the 2x2 quad and drops writes, and `efo.gpiext` reaches across the quad (*Internal
-  registers*, *`efo`*).
+  addend to `iK`, K = 0 to 2 **[HW]** on register operands, `.u` and `.s` (E493, E501, E525, E526;
+  the probe table's model had the `i` registers keep their values). **[HW]** `i0`-`i2` are per
+  instance, hold what `mov` or `fddp` writes and keep it from one task to the next, also another
+  client's (9 of 9 reader jobs after a writer fill, E484); `i3` reads `i0` of the next instance of
+  the 2x2 quad and drops writes, and `efo.gpiext` reaches across the quad (*Internal registers*,
+  *`efo`*).
 - **Index registers [RE].** A destination bank writes `i.l`, `i.h` or both (`i.lh`); an
   indexed operand `r[il + #n]` names a register of a bank (`r`, `o`, `pa`, `sa`) by index plus
   offset. The firmware loads `i.l` from a temporary 79 times and uses 79 indexed operands,
@@ -431,7 +430,7 @@ a repeat or, with the MOE-expand bit `enc[53]` clear, as a **fetch** of N regist
   and one predicate covers the whole instruction (*Repeat order and overlapping ranges*,
   *Predicates on repeated instructions*). **A repeated load or store steps its pointer register
   too [HW]**: iteration `i` of `stad.repeatN [rb,...], rs` uses `r(b + i)` as its address, not
-  `rb` (E483, *Loads and stores*).
+  `rb` (E483, E515, *Loads and stores*).
 - **The MOE state.** The register advance per iteration is programmable: the MOE group sets
   per-operand increments or swizzles (`smlsi`), base offsets (`smbo`), address modes and
   offsets (`smoa`) and ranges (`smr`) **[RE]**: the decoder names the state
@@ -543,9 +542,15 @@ The waits and modes on the hardware (E101) **[HW]**:
   it too, though fewer, and it is a barrier as `parallel` is (E110, E119).
 - **The mode picks a divergent quad's branch leader [HW]** (E112): under `parallel` a
   predicated branch whose quad disagrees follows the quad's first covered instance, under
-  `perinstance` instance 0 even when it covers nothing; `.skipinv` skips the uncovered
-  instances under both. The closed compiler uses `perinstance` only for a vertex loop whose
-  exit depends on data **[CAP]**.
+  `perinstance` instance 0 even when it covers nothing; `.skipinv` skips the uncovered instances
+  under both. **The branch is the quad's [HW]** (E513): in a fill a test of `pa0` selected by
+  `xor.testtaz.chan0 !c0, p0, r7, #K` and a `!p0 br` over code ran that code in the four lanes of a
+  quad, from the test of its top-left lane (K = 0: the pixels 0, 1, 64 and 65; K = 2: 2, 3, 66 and
+  67; K = 1, 3 and a value no instance has: no lane; 9 cases, K = 0 to 2 a replication of the
+  first run and K = 3 predicted). So 'one instance' selected by a test
+  of `pa0` is a quad of four lanes, and a store or an emit under it is executed by four lanes; a
+  test whose result differs across the lanes of a quad other than by `pa0` was not run. The closed
+  compiler uses `perinstance` only for a vertex loop whose exit depends on data **[CAP]**.
 
 - **The rates [HW]** (E115): `sample` and `selective` change nothing a 1x or 4x triangle
   shows; the shader still runs once per pixel. The compiler never emits them **[CAP]**. No bit
@@ -553,20 +558,26 @@ The waits and modes on the hardware (E101) **[HW]**:
   of ISP words 0 and 1 turns per-sample shading on either (E117), nor any bit of the render
   details' sample-related words (`isp_sample_pos`, `isp_multisamplectl`, which holds the sample
   positions, `isp_line_sample_pos`, `reg_0800`, `frag_flags`; E120).
-- **A phase's temporaries are its `phas` request [HW]** (E487): in a two-phase fill the 12 requests
-  8, 16, 32, 64, 96, 124, 128, 132, 136, 144, 160 and 192 ran: the marker written to the phase's
-  highest register, `r123` from 124 up, read back in 15 of 15 jobs (the task started with 8, and
-  192 also with 32, 64 and 128), whatever the task was started with. Every request from 124 up
-  wrote `r123` only (`r124` and up cannot be named as an ALU operand), so these show that the job
-  runs and that `r123` is real storage, not that 192 temporaries are usable; the register numbers
-  a program can name end at 123. The 12 requests 196, 200, 204, 208, 212, 216, 220, 224, 252, 256,
-  508 and 1020 hung the job (15 of 15, 196 also started with 32, 64 and 128; each hang recovered
-  by the driver with no reload). 192 is the highest value run that did not hang, among the values
-  run, not a measured limit: 228 to 248, 260 to 504, 512 to 1016 and the multiples of four below
-  192 other than the 12 were not run, and the 12 and 12 are not an interval. Every request run was
-  a multiple of four. The 15 jobs that ran took 420 to 583 microseconds, with no cost seen in
-  single samples. A register past a phase's request reads as `n mod T` in most instances
-  (*Machine model*). The limit for a firmware task is **[open]** (Q133).
+- **A phase's temporaries are its `phas` request [HW]** (E487, E519): in a two-phase fill the marker
+  written to a register at the top of the request (`r123` from 124 up to 504, and for the 15
+  requests from 512 up `r(T mod 256 - 1)`, `r123` when that is above 123, for the 8 predicted to
+  run, `r3` for the 7 predicted to hang) was read back, and the job ran, when the request T mod 256
+  was 4 to 192, and the job hung (each hang recovered by the driver with no reload) when it was 0 or
+  196 to 252. Ran: 8, 16, 32, 64, 96, 124, 128, 132, 136, 144, 160 and 192 (E487: 15 of 15 jobs, the
+  task started with 8, 192 also with 32, 64 and 128), 100 to 120, 148 to 156, 164 to 188 and 260 to
+  448 (every multiple of four, 64 requests; E519) and 8 of the 15 requests from 512 to 1016 chosen
+  by the rule (516, 576, 640, 704, 772, 832, 896 and 960). Hung: 196, 200, 204, 208, 212, 216, 220,
+  224, 252, 256, 508 and 1020 (E487: 15 of 15 jobs, 196 also started with 32, 64 and 128), 228 to
+  248 and 452 to 504 (20 requests; E519) and 7 of those 15 (512, 708, 764, 768, 964, 1000 and 1016).
+  The rule was written after the first 84 requests and predicted all 15 from 512 up; what a request
+  above 256 allocates is not measured (every E519 job wrote the same marker to `r123`, which earlier
+  jobs wrote too, so the read-back does not show that the write landed under a small allocation:
+  Q132, Q144). Every request from 124 up to 504 wrote `r123` only (`r124` and up cannot be named as
+  an ALU operand), so these show that the job runs and that `r123` is real storage, not that 192
+  temporaries are usable; the register numbers a program can name end at 123. Every request run was
+  a multiple of four. The 15 jobs of E487 that ran took 420 to 583 microseconds, with no cost seen
+  in single samples. A register past a phase's request reads as `n mod T` in most instances
+  (*Machine model*). The limit for a firmware task is **[open]** (Q133, Q144).
 - **The register form** `phas srcA, srcB` hung or faulted with every source layout tried
   (absolute index, offset or `doutu` U0 layout, against the immediate's fields or high dword);
   none started the next phase (E118).
@@ -579,48 +590,67 @@ same form our programs use (immediate operands zero, `pixel`, `end`, `parallel`)
 
 ### 3.7 Memory, data fences and the register file
 
-- **Loads complete asynchronously.** A load (`ld*`, `eld*`, `ldr`, the samplers) names a data
-  fence counter, `drc0` or `drc1` (two bits for `ldr` and the samplers, `drc0`-`drc3`), and
-  `wdf drcN` waits until the loads counted on it have landed **[RE/HW]**. In a fill one `wdf
-  drc0` covers every load outstanding on `drc0`, whether `ldad`, `ldad.fetchN` (the whole fetch)
-  or `ldr`: 1, 2, 4, 8 and 16 independent `ldad`, five mixes with fetches of 2, 4, 8 and 16
-  dwords and `ldr`, and, in the growth runs, 24, 32, 48, 64, 80 and 100 distinct `ldad` on
-  `drc0`, 32, 64 and 100 on `drc1` and 2, 4, 8, 12 and 16 `ldad.fetch16` (256 dwords) were all
-  complete after the one `wdf`, and no limit on the number outstanding was seen up to 100 distinct
-  `ldad` on one counter and 16 `ldad.fetch16` **[HW]** (E478). Three more cases, 128, 160 and 200
-  `ldad` reloading the same eight lines into eight registers, were complete too (27 of 27 cases in
-  all, one run each), but they issue the same loads again, so a lost or late reload would leave
-  the registers unchanged: they cannot show a lost reload. A load is not complete without the
-  `wdf` in the sense that one `ldad` read by a `stad` still holds the register's old value after
-  0, 1, 2, 4, 8, 16 or 32 `nop`s and four `ldad` after 0 or 16 (9 of 9); a read by an ALU
-  instruction, more than 32 slots and a write to the same register were not run, so no instruction
-  count seen stands in for the `wdf`. A `wdf`
-  with nothing outstanding returns at once and hangs nothing (11 of 11 cases: as the first
-  instruction, on a counter never used, twice in a row, on all four counters, and after an
-  `idf drcN, bif` with nothing stored; E480). **A `wdf drcN` does not wait for the loads of the
-  other counters [HW]** (E479): loads of another counter issued after the waited ones were still in
-  flight in 10 of 10 runs (four `ldad` on `drc1` after two `ldr` on `drc2`, `wdf drc2` only) and in
-  2 of 10 (four `ldad` on `drc0` after four on `drc1`, `wdf drc1` only), and complete in the runs
-  that had waited on four `ldad` first (28 of 30), so what has landed depends on timing: each
-  counter counts its own loads **[infer]**, and a program waits on every counter it used. The
-  counts of ten runs are those of scratch runs recounted by the reviewer; the data hold one run of
-  each case (2 of the 8 cases show the markers in it). All this was measured in client pixel tasks,
-  not in an EDM task (Q131). The firmware almost always follows its
+- **Loads complete asynchronously.** A load (`ld*`, `eld*`, `ldr`, the samplers) names a data fence
+  counter, `drc0` or `drc1` (two bits for `ldr` and the samplers, `drc0`-`drc3`), and `wdf drcN`
+  waits until the loads counted on it have landed **[RE/HW]**. In a fill one `wdf drc0` covers every
+  load outstanding on `drc0`, whether `ldad`, `ldad.fetchN` (the whole fetch) or `ldr`: 1, 2, 4, 8
+  and 16 independent `ldad`, five mixes with fetches of 2, 4, 8 and 16 dwords and `ldr`, and, in the
+  growth runs, 24, 32, 48, 64, 80 and 100 distinct `ldad` on `drc0`, 32, 64 and 100 on `drc1` and 2,
+  4, 8, 12 and 16 `ldad.fetch16` (256 dwords) were all complete after the one `wdf`, and no limit on
+  the number outstanding was seen up to 100 distinct `ldad` on one counter and 16 `ldad.fetch16`
+  **[HW]** (E478), nor up to 192 distinct-line `ldad` on one counter, the first 100 into `r4` to
+  `r103` and the rest reloading `r4` onward with other lines (104, 112, 128, 160 and 192 on `drc0`,
+  128 and 192 on `drc1`: each of 8 sampled registers held the line of its last load, 7 of 7 jobs,
+  the 4 or 5 reloaded registers read per job; E518). Three more cases, 128, 160 and 200 `ldad`
+  reloading the same eight lines into eight registers, were complete too (27 of 27 cases in all, one
+  run each), but they issue the same loads again, so a lost or late reload would leave the registers
+  unchanged: they cannot show a lost reload; E518 can, for the reloaded registers it read (5 of 92
+  at 192), and saw none lost. 200 distinct loads in one program were not run. A load is not complete
+  without the `wdf` in the sense that one `ldad` read by a `stad` still holds the register's old
+  value after 0, 1, 2, 4, 8, 16 or 32 `nop`s and four `ldad` after 0 or 16 (9 of 9); an ALU
+  instruction (`ima32.u r11, r10, #1, r12`) reads the old value after 0, 1, 4, 16, 32 and 48 `nop`s
+  too (6 of 6, E517), so the reader has no interlock whichever it is; a load not waited for had
+  landed when a `stad` read it after 40, 100 and 128 `nop`s and not after 48 and 64 (one sample
+  each, a timing effect **[infer]**), so no instruction count stands in for the `wdf`; and a `mov`
+  to the register issued after the `ldad` and before its `wdf` is overwritten by the load (4 of 4),
+  while one after the `wdf` wins (E517; the texture unit and the dual-issue secondary as readers
+  were not run, Q052, Q146). A `wdf` with nothing outstanding returns at once and hangs nothing (11
+  of 11 cases: as the first instruction, on a counter never used, twice in a row, on all four
+  counters, and after an `idf drcN, bif` with nothing stored; E480). **A `wdf drcN` does not wait
+  for the loads of the other counters [HW]** (E479): loads of another counter issued after the
+  waited ones were still in flight in 10 of 10 runs (four `ldad` on `drc1` after two `ldr` on
+  `drc2`, `wdf drc2` only) and in 2 of 10 (four `ldad` on `drc0` after four on `drc1`, `wdf drc1`
+  only), and complete in the runs that had waited on four `ldad` first (28 of 30), so what has
+  landed depends on timing: each counter counts its own loads **[infer]**, and a program waits on
+  every counter it used. The counts of ten runs are those of scratch runs recounted by the reviewer;
+  the data hold one run of each case (2 of the 8 cases show the markers in it). All this was
+  measured in client pixel tasks, not in an EDM task (Q131). The firmware almost always follows its
   loads with a `wdf` before using the data (711 `wdf drc0`, 96 `wdf drc1`), and our programs wait
   with `wdf drc0` for the attribute DMA the PDS started.
-- **`idf drcN, bif`** appears 124 times in the firmware, mostly right before a `wdf` on the
-  same counter, after stores **[RE]**: it looks like a fence that makes earlier memory writes
-  visible (through the BIF, the memory interface) and is counted on `drcN` **[infer]**. In a fill
-  no measured case needed it **[HW]**: a `stad` and a later load of the same dword, all 2048
-  instances of the fill storing the same value to that dword, returned the stored value with no
-  `idf` in 16 of 16 cases (`ldad`, `.bypassl1`, `.fcfill`, `eldd`, `.bpcache`, on `drc1`, after two
-  stores and after sixteen; E481), and the dword the host read held the stored value after seven
-  short programs (one or sixteen `stad`) that ended with no fence, an `idf` only, a `wdf` only,
-  both, or a `nop` (E480). Both show a dword that every instance wrote with one value: they do not
-  show that one instance sees its own store, or that one instance's unfenced store reaches the
-  host (Q134). When an `idf` is required (another instance, the host during the job, a texture
-  fetch of the stored data) is **[open]** (Q134).
-  The `pixelbe` and reserved modes of `idf` are **[open]**.
+- **`idf drcN, bif`** appears 124 times in the firmware, mostly right before a `wdf` on the same
+  counter, after stores **[RE]**: it looks like a fence that makes earlier memory writes visible
+  (through the BIF, the memory interface) and is counted on `drcN` **[infer]**. In a fill no
+  measured case needed it **[HW]**: a `stad` and a later load of the same dword, all 2048 instances
+  of the fill storing the same value to that dword, returned the stored value with no `idf` in 16 of
+  16 cases (`ldad`, `.bypassl1`, `.fcfill`, `eldd`, `.bpcache`, on `drc1`, after two stores and
+  after sixteen; E481), and the dword the host read held the stored value after seven short programs
+  (one or sixteen `stad`) that ended with no fence, an `idf` only, a `wdf` only, both, or a `nop`
+  (E480). Both show a dword that every instance wrote with one value, so by themselves they do not
+  show that one instance sees its own store. **An instance sees its own unfenced `stad`, and its
+  store changes the dword the host reads with no fence [HW]** (E512): with each of the 2048
+  instances of the fill storing a value of its own to a dword of its own, the load returned the
+  instance's own value in 2048 of 2048 pixels in each of nine cases (`ldad`, `.bypassl1`, `.fcfill`,
+  `drc1`, a `wdf` only between, two stores where the load returns the later value, an `idf` and its
+  wait between, and the `idf` at the end) and 2048 dwords changed (32 values read) in the seven
+  cases that ended with no `idf` and no fence. A load of another instance's store returns it when
+  that instance ran earlier (the x and y neighbours in its quad: 2048 of 2048, n ^ 65 not run;
+  lower-numbered instances of other quads: 1024 of 1024 in each of three masks; the right 32 columns
+  of the 64 x 32 target reading the left 32: 1024 of 1024) and in part when it runs later (64 of
+  1024 at no delay, 792 and 984 after 64 and 192 `nop`s for the next quad in x, none for 32 columns
+  on): a rule of timing and of the order of the tiles, the left half first **[infer]** (E514), and
+  no case needed an `idf`. The `idf` in the storing instance, the host reading during the job, a
+  texture fetch of the stored data and an EDM task are **[open]** (Q143, Q131); `str` then `ldr`
+  stays **[open]** (Q134). The `pixelbe` and reserved modes of `idf` are **[open]**.
 - **Addresses.** Loads and stores take a base register and an offset counted in elements of
   the access size (4 bytes for `d`, 2 for `w`, 1 for `b`) **[DDK/HW]**; the addressing modes
   and the fetch rule are in *Loads and stores*. Addresses are device virtual addresses of the
@@ -1590,22 +1620,32 @@ The test is `.test<S><J><Z>.<chan>`, from `enc[43:36]`:
   Whether `iaddu32` extends source 1 by zero or by sign is **[open]** (Q126): no test tells it. With
   source 1 = `#0` the test reads source 2's 32 bits exactly: `n`, `p`, `z` and `nz` (8 of 8 values
   each) (*The 32-bit adds `iadd32` and `iaddu32`*).
-- **The test field is two parts, ANDed under the `a` join [HW]** (E499): `enc[43:40]` holds taz =
-  bit 40, tanz = bit 41, nat = bit 42 and pat = bit 43 (the assembler's `.test<S><J><Z>` writes one
-  condition of the two parts at a time). Run as raw words, with enc[39] = 1 (join `a`) and chan0 in
-  all 732 words, the zero part is tanz if bit 41 is set, else taz if bit 40, the sign part is pat if
-  bit 43 is set, else nat if bit 42, and the test is true when the parts present are all true: `and`
-  with r1, r2 over the 15 values of the field and six input pairs (90 of 90, a rule read out of
-  those cases, the plain AND of the set conditions fitting 69 and the OR 57), then predicted on
-  `or`, `xor` and `rol` with registers and `and` and `xor` with #7 (450 of 450, 90 cases each, join
-  `a` and chan0 only). Bit 43 is the bit that `~` sets in `and r10, r1, ~r2`; set in the sixteen
-  test words the assembler writes (`and`, `or`, `xor`, `rol`, with r2 or #7, testtaz and testtanz)
-  it is the `pat` condition ANDed with the test, not an invert (96 of 96; the invert of source 2,
-  the probe table's model, fits 53 of 96): so a test word has no `~`, taz with pat is taz, and tanz
-  with pat is the one-instruction "greater than zero" test that the assembler does not write.
-  **[infer]** The rule is not run for the `o` join (enc[39] = 0) with a two-part field, the shifts
-  `shl`, `shr` and `asr`, `or` and `rol` with #7, the chan fields other than chan0 and the other
-  classes' tests, and that no other bit of a test word inverts a source is not run (Q137).
+- **The test field is two parts, ANDed under the `a` join and ORed under the `o` join [HW]** (E499,
+  E529): `enc[43:40]` holds taz = bit 40, tanz = bit 41, nat = bit 42 and pat = bit 43 (the
+  assembler's `.test<S><J><Z>` writes the sign and zero conditions together: `.testpanz` is the
+  field 0xa, `.testnaz` and `.testnoz` the field 5 with the `a` and the `o` join, `.testtoz` the
+  field 1 with the `o` join, checked with usse-asm on the host; the words ran on the hardware as raw
+  words). Run as raw words, with enc[39] = 1 (join `a`) and chan0 in all 732 words, the zero part is
+  tanz if bit 41 is set, else taz if bit 40, the sign part is pat if bit 43 is set, else nat if bit
+  42, and the test is true when the parts present are all true: `and` with r1, r2 over the 15 values
+  of the field and six input pairs (90 of 90, a rule read out of those cases, the plain AND of the
+  set conditions fitting 69 and the OR 57), then predicted on `or`, `xor` and `rol` with registers
+  and `and` and `xor` with #7 (450 of 450, 90 cases each, join `a` and chan0 only). Bit 43 is the
+  bit that `~` sets in `and r10, r1, ~r2`; set in the sixteen test words the assembler writes
+  (`and`, `or`, `xor`, `rol`, with r2 or #7, testtaz and testtanz) it is the `pat` condition ANDed
+  with the test, not an invert (96 of 96; the invert of source 2, the probe table's model, fits 53
+  of 96): so a test word has no `~`, taz with pat is taz, and tanz with pat is the one-instruction
+  "greater than zero" test, which the assembler writes as `.testpanz` and which ran as a raw word.
+  Under the `o` join (enc[39] = 0, chan0) the two parts are ORed and a part absent from the field
+  counts as true, so a field of one part, and the fields 3 and 0xc, is always true, and 0xa, 0xb,
+  0xe and 0xf (tanz with pat) are tautologies that only the fields 5, 6, 7, 9 and 0xd separate from
+  always true (E529: `and r1, r2` over the 15 values and six pairs, 90 of 90 for a rule read from
+  those readbacks after the first prediction, the parts ORed with an absent part false, fitted 75 of
+  90; then 270 of 270 predicted on `or` and `xor` with registers and `and` with #7, 90 cases each;
+  `and` with #7 gives no negative result). **[infer]** The rule is not run for the shifts `shl`,
+  `shr` and `asr`, `or` and `rol` with #7, 8-bit and 16-bit lane operations, the `o` join with a
+  chan other than chan0, the field value 0 and the other classes' tests, and that no other bit of a
+  test word inverts a source is not run (Q137, Q151).
 - **Tests with an immediate [HW]** act on the 32-bit result (E473): `shr.testtanz.chan0 !c0, p0, r,
   #n` is "r >> n is nonzero", with n of 32 and over giving zero (80 of 80), `xor.testtaz` is "r ^ n
   is zero" over all 32 bits (18 of 18), and `and`, `or`, `xor` and `rol` with `testtanz` and `asr`
@@ -1615,29 +1655,44 @@ The test is `.test<S><J><Z>.<chan>`, from `enc[43:36]`:
   tried as text. The reason is in the test field below: the bit that `~` sets in the non-test forms
   is the `pat` bit of a test word (E499). To test `x & ~mask`, a compiler computes the inverted
   value first (`and r11, r1, ~#7`, then a test of r11).
-- **A 32-bit compare [HW]** of two registers ran as two instructions for the unsigned a < b and six
-  for the signed one. Unsigned: with `ima32.u r11, i0, r2, c56, r1` (`r11` = a - b, `i0` = b - [a <
-  b]: the high word of the extra operand, E493, which ran for b * 0xffffffff + a over eight values
-  of b) and `xor.testtanz.chan0 !c0, p0, r2, i0`, `p0` is a < b (64 of 64 pairs of the eight values
-  0, 1, 0xffff, 0x10000, 0x7fffffff, 0x80000000, 0x80000001 and 0xffffffff, 28 of them with a < b;
-  E501; unsigned only, not padded, with the destination r11: other pairs, other operands and a
-  signed `.s` form were not run, and that `b xor (b - [a < b])` is nonzero exactly when a < b for
-  them is **[infer]** from the arithmetic). Signed: with `t = ima32.u r11, r2, c56, r1` (a - b), the
-  signed one is bit 31 of `(((a ^ b) & (a ^ t)) ^ t)`, tested by `shr.testtanz.chan0 !c0, p0, rX,
-  #31` (64 of 64 pairs of the same eight values, unpadded, and 16 pairs with 1, 3 and 6 nops after
-  the `ima32`, 48 of 48; E472, E497); the six-instruction unsigned formula, bit 31 of `((~a & b) |
-  (~(a ^ b) & t))`, was also exact on the 64 pairs (E472, 16 of 16 with three nops after the
-  `ima32`). A signed compare through the high word was not run (the high word of `.s` is **[open]**,
-  Q135). `ima32` has no test field **[infer]** (the assembler refuses a test on it).
+- **A 32-bit compare [HW]** of two registers runs as two instructions, unsigned or signed, or as six
+  for the signed one without the high word. Unsigned: with `ima32.u r11, i0, r2, c56, r1` (`r11` is
+  a minus b, `i0` = b - [a < b]: the high word of the extra operand, E493, which ran for b *
+  0xffffffff + a over eight values of b) and `xor.testtanz.chan0 !c0, p0, r2, i0`, `p0` is a < b (64
+  of 64 pairs of the eight values 0, 1, 0xffff, 0x10000, 0x7fffffff, 0x80000000, 0x80000001 and
+  0xffffffff, 28 of them with a < b; E501; 252 of 252 seeded pairs, 200 random among them, and 48 of
+  48 pairs with each of 0, 1 and 3 nops between the two instructions, E527; registers and c56 only,
+  the destination r11, no K = 3, `cie` or `.neg`; that `b xor (b - [a < b])` is nonzero exactly when
+  a < b for the pairs not run is **[infer]** from the arithmetic, the high word being shown for 200
+  random triples, E525). Signed: with `t = ima32.u r11, r2, c56, r1` (a - b), the signed one is bit
+  31 of `(((a ^ b) & (a ^ t)) ^ t)`, tested by `shr.testtanz.chan0 !c0, p0, rX, #31` (64 of 64 pairs
+  of the same eight values, unpadded, and 16 pairs with 1, 3 and 6 nops after the `ima32`, 48 of 48;
+  E472, E497); the six-instruction unsigned formula, bit 31 of `((~a & b) | (~(a ^ b) & t))`, was
+  also exact on the 64 pairs (E472, 16 of 16 with three nops after the `ima32`). **Signed, in two
+  instructions:** `ima32.s r11, i0, r2, c56, r1` (c56 reads -1 signed, so `i0` is the high word of
+  the signed a - b, 0xffffffff for a < b and 0 otherwise) and `xor.testtanz.chan0 !c0, p0, i0, #0`
+  set `p0` to a < b signed (164 of 164 pairs: the 64 of the eight values and 100 random pairs, 78
+  with a < b; E528); registers and c56 only, not padded, and not run beyond those pairs, the rest
+  being **[infer]** from the arithmetic of E526. `ima32` has no test field **[infer]** (the
+  assembler refuses a test on it).
 - **The 16-bit operations [HW]:** `isub16`/`usub16` subtract both lanes, wrapping, and `chan0`
   tests the low lane (*`isub16`/`usub16` lanes*). `iadd16`, `uadd16`, `imul16`, `umul16`,
   `iadd8`, `isub8`, `imul8`, `fadd`, `fmul` and `fsub` test their lanes as the channels say, a
   16-bit lane on its full result before it is cut **[HW]** (*Test channels*).
-- **Channels [HW]:** a test has one result per channel: bytes 0-3 for the 8-bit operations,
-  the low and high halves as channels 0 and 2 for the 16-bit ones, the value as channel 0
-  otherwise; a channel without a lane tests as a positive non-zero value. `chan0`-`chan3`
-  pick one, `andall`/`orall` combine all four, `and02`/`or02` channels 0 and 2 (*Test
-  channels*). The masks of class 15, `.partial` and `.quadlead` on tests are **[open]**.
+- **Channels [HW]:** a test has one result per channel: bytes 0-3 for the 8-bit operations, the low
+  and high halves as channels 0 and 2 for the 16-bit ones, the value as channel 0 otherwise; a
+  channel without a lane tests as a positive non-zero value. `chan0`-`chan3` pick one,
+  `andall`/`orall` combine all four, `and02`/`or02` channels 0 and 2 (*Test channels*). **Write
+  `chan0` for every test of a 32-bit value [HW]:** the chan field is not ignored there (E530): with
+  the `a` join and the fields taz, tanz, nat, pat, taz with pat and tanz with pat over six pairs (36
+  jobs a table), none of chan1 to chan7 reads as chan0 as a table (chan4 and chan6 equal it for
+  tanz, pat and tanz with pat, chan5 and chan7 for taz, nat and taz with pat); chan1 to chan3 read
+  one constant per field (taz 0, tanz 1, nat 0, pat 1, taz with pat 0, tanz with pat 1), chan4 and
+  chan6 (`andall`, `and02`) read tanz and pat of the value with taz and nat false, and chan5 and
+  chan7 (`orall`, `or02`) taz and nat of the value with tanz and pat true, which is the rule just
+  given applied after the data (**[infer]**, 252 of 252 cases; not predicted); the same on 8-bit and
+  16-bit lane operations is **[open]** (Q150). The masks of class 15, `.partial` and `.quadlead` on
+  tests are **[open]**.
 - **The unsigned and unorm byte operations [HW]** (E092, E094). `uadd8`, `usub8`, `umul8`,
   `uadd16` and `umul16` work lane by lane, unsigned and wrapping, and `.sat` clamps a byte at
   255 (the Rogue ISR's `UADD8`, `UMUL8`, `UADD16`, `UMUL16`). The unorm8 operations clamp per
@@ -2045,27 +2100,39 @@ and `idiv` the full one).
   0xffff, 0x10000, 0x7fffffff, 0x80000000 and 0xffffffff, `i1` and `i2` over 13 pairs of them), so
   that `xor.testtanz.chan0 !c0, p0, b, i0` sets `p0` to `a < b` unsigned: two instructions instead
   of six (*The test group*), run on the 64 pairs of the eight values 0, 1, 0xffff, 0x10000,
-  0x7fffffff, 0x80000000, 0x80000001 and 0xffffffff, unsigned and not padded; that the high word is
-  `b - [a < b]` for other `b` is **[infer]** (the source 2 of all 75 cases is c56).
+  0x7fffffff, 0x80000000, 0x80000001 and 0xffffffff (E501) and on 252 seeded pairs, 200 random among
+  them, and with 0, 1 and 3 `nop`s between the two instructions on 48 of those pairs each (252 of
+  252 and 48 of 48 three times, E527), registers only, the destination `r11`; that it is exact for
+  every pair is **[infer]** from the arithmetic of the high word, which E525 shows for 200 random
+  register triples. **A signed compare is two instructions too [HW]:** `ima32.s r11, i0, r2, c56,
+  r1` then `xor.testtanz.chan0 !c0, p0, i0, #0` sets `p0` to `a < b` signed (164 of 164 pairs: the
+  64 of the eight values and 100 random, E528; `c56` reads -1 signed, `i0` is the high word of the
+  signed `a - b`, 0xffffffff for `a < b`), against the six of *The test group*; it was not padded
+  and was not run beyond the 164 pairs (**[infer]** for the rest).
 - **The extra `i` operand and `cie` of `ima32` [HW].** `ima32.u d, iK, a, b, c` (`enc[38]` set, `iK`
-  in `enc[37:36]`) writes the low 32 bits of `a × b + c` to `d` and the high 32 bits to `iK` (15 of
-  15 cases, `K` = 0, 1 and 2, five `.u` register triples, (3, 7, 100), (0xffffffff, 1, 1),
-  (0xffffffff, 0xffffffff, 0xffffffff), (0x10000, 0x10000, 0) and (0x80000000, 2, 0xffffffff); E493;
-  and `b * 0xffffffff + a` for eight values of `b`, E501): the probe table's model, that the `i`
-  registers keep their values, fits 0 of 15, and `iK` = the carry out of the 32-bit add fits 6. Raw
-  words with the field `enc[37:36]` set and `enc[38]` clear, with `enc[38]` set and `iK` = 3 and
-  with the bits 45, 44 and 35 set changed neither `r10`, `i0` to `i2` nor `r14` to `r17`; with bit
-  46 set `r14` read 0x2255 in 3 of 3 jobs, what the bit does is **[open]** (Q135). Generic register
-  operands (two multi-limb values), immediates and constants other than c56 with the extra operand,
-  `.s` with the extra operand, the extra operand together with `cie` or `.neg`, the dual-issue form
-  and `K` = 3 are **[open]** (Q135). `ima32 ... cie, iN` adds bit 0 of `iN` only **[HW]**: `i0` to
-  `i2` with the values 0x10000, 0x80000000, 0xfffffffe, 0x10001, 0x80000001, 2, 0x55555554 and
-  0xaaaaaaab (24 of 24, E494; and 10 of 10 with 0, 1, 2, 0xffff and
-  0xffffffff in `i0`, E470; adding all of `iN` fits 0 of 24, E494). Dependent `ima32` need no
-  gap: four in a row are exact (10 of 10, E470), and a reader (`ima32`, `mov` or `xor`) after 0, 1,
-  2, 3, 4, 5, 6 or 8 `nop`s sees the result, with or without `.nosched` on the writer (48 of 48,
-  E495). `ima32` as a dual-issue secondary (two 16-bit lanes: *Dual issue*), `u16`/`z16` sources and
-  `.rsN` on `ima32`, and `imae` with a repeat are **[open]** (Q127).
+  in `enc[37:36]`) writes the low 32 bits of `a × b + c` to `d` and the high 32 bits to `iK`, the
+  bits 63:32 of the exact 64-bit `a × b + c` on register operands (E525: 282 of 282 jobs, 42 corner
+  triples, 0x12345678 × 0x9abcdef0 among them, and 200 random triples with `K` = 0, then `K` = 1 and
+  2 over 20 random triples each; `.s` gives the signed high word with `c` sign-extended, 282 of 282,
+  E526; E493's five `.u` triples, (3, 7, 100), (0xffffffff, 1, 1), (0xffffffff, 0xffffffff,
+  0xffffffff), (0x10000, 0x10000, 0) and (0x80000000, 2, 0xffffffff), 15 of 15 cases with `K` = 0, 1
+  and 2, and `b * 0xffffffff + a` for eight values of `b`, E501, are cases of it): the probe table's
+  model, that the `i` registers keep their values, fits 0 of 15, and `iK` = the carry out of the
+  32-bit add fits 6 of the 15 and 10 of the 282. A backend may lower a 32 × 32 + 32 high-word
+  multiply to it for register operands; its cost was not measured. Raw words with the field
+  `enc[37:36]` set and `enc[38]` clear, with `enc[38]` set and `iK` = 3 and with the bits 45, 44 and
+  35 set changed neither `r10`, `i0` to `i2` nor `r14` to `r17`; with bit 46 set `r14` read 0x2255
+  in 3 of 3 jobs, what the bit does is **[open]** (Q135). Immediates and constants other than c56
+  with the extra operand, the extra operand together with `cie` or `.neg`, an `iK` that is also a
+  source, a destination other than `r10`, the dual-issue form and `K` = 3 are **[open]** (Q135).
+  `ima32 ... cie, iN` adds bit 0 of `iN` only **[HW]**: `i0` to `i2` with the values 0x10000,
+  0x80000000, 0xfffffffe, 0x10001, 0x80000001, 2, 0x55555554 and 0xaaaaaaab (24 of 24, E494; and 10
+  of 10 with 0, 1, 2, 0xffff and 0xffffffff in `i0`, E470; adding all of `iN` fits 0 of 24, E494).
+  Dependent `ima32` need no gap: four in a row are exact (10 of 10, E470), and a reader (`ima32`,
+  `mov` or `xor`) after 0, 1, 2, 3, 4, 5, 6 or 8 `nop`s sees the result, with or without `.nosched`
+  on the writer (48 of 48, E495). `ima32` as a dual-issue secondary (two 16-bit lanes: *Dual
+  issue*), `u16`/`z16` sources and `.rsN` on `ima32`, and `imae` with a repeat are **[open]**
+  (Q127).
 - **`ima16`** multiplies 16-bit values, its sources read as `u16`, `u8`, `s8` or `o8` with a
   half select. With `u16, u16` it computes `a × b + c` (or `- c`) in each 16-bit lane,
   wrapping **[HW]** (*`ima16` lanes and source formats*); with `u8`, `s8`, `o8` each lane reads
@@ -5381,31 +5448,40 @@ writes **none of them**: with 32 temporaries, `ldad.fetch4 r28` loads `r28`-`r31
 `(o >> 16) × (o & 0xffff)` bytes, and a fetch starts one element after it too **[HW]** (*Register
 offsets of loads and stores*); the firmware has four such stores.
 
-- **A store has a fetch too [HW].** `stad.fetchN [rb,+#k], rs` stores `rs` to `rs + N - 1` in the
-  N consecutive dwords `b + k + 1` to `b + k + N`, the one-dword shift of a load fetch (N = 2, 4 and
-  16 with `k` = 1 and N = 4 with `k` = 0: 4 of 4 cases), and `stad.fetchN [rb,#1++], rs` stores them
-  from `b + 1` and moves `rb` by N once (N = 2, 4 and 16: 3 of 3) (E482). A copy of 16 dwords is so
-  `ldad.fetch16 rA, [rS,+#0], drc0; wdf drc0; stad.fetch16 [rD,+#0], rA` with `rD` one dword below
-  the destination (1 of 1 case: 16 dwords in order). A fetch store with another `k` (only 0 for
-  fetch4 and 1 were run), the pre-increment form and a fetch wider than 16 were not run.
-- **`.repeatN` of a store or a load steps the pointer register too [HW].** In `stad.repeatN
-  [rb,...], rs` iteration `i` stores `r(s + i)` at the address held in `r(b + i)` (the data
-  address read for every `i`, N up to 16), and the pointer registers `r40` to `r43` move by the
-  form's own increment: `k` after its access for `[rb,#k++]`, `k` before it for `[rb,++#k]`, none
-  for `[rb,+#k]` (26 of 26 cases with 16 valid pointers `r40`-`r55`: N = 2, 3, 4, 8 and 16 plain,
-  N = 2, 4, 8 and 16 post-increment, N = 2 and 4 pre-increment, twelve after an `smlsi` and one
-  copy). The movement was read for `r40` to `r43` only: whether `r44` to `r55` move at N = 8 and
-  16, and whether the pointers a repeat does not use stay, was not read, so a program must not
-  reuse `r(b + 4)` to `r(b + 15)` after a post-incremented `repeat8` or `repeat16` and rely on
-  either; N = 5 to 7 and 9 to 15 were not run. `ldad.repeatN rd, [rb,...]` loads likewise the dword
-  `r(b + i)` addresses into `r(d + i)` (7 of 7 cases: N = 2, 4, 8 and 16; the pointer movement read
-  for 2 or 4 pointers). The model had N accesses from the one pointer `rb`. With
-  only `rb` (and `r41` for the loads) holding an address, the registers after it are read as
-  pointers too: the first run faulted the job in all 7 `ldad.repeatN` cases and in the 9 of 9
-  `stad.repeatN` cases with N of 4, 8 and 16, while `stad.repeat2` and `repeat3` completed, storing
-  `r3` at the address `r41` held (E483). The one-pointer series is `smlsi #0, #0, #0, #1` first
-  (*`smlsi` increments*): `stad.repeat16 [rb,#1++], r2` then stores `r2` to `r17` at 16
-  consecutive dwords and moves `rb` by 16 (2 of 2 cases, two instructions, no one-dword shift).
+- **A store has a fetch too [HW].** `stad.fetchN [rb,+#k], rs` stores `rs` to `rs + N - 1` in the N
+  consecutive dwords `b + k + 1` to `b + k + N`, the one-dword shift of a load fetch (N = 2, 4 and
+  16 with `k` = 1 and N = 4 with `k` = 0: 4 of 4 cases, E482; `fetch4` with `k` = 2, 3, 4, 7, 8 and
+  15, `fetch8` with 3 and `fetch16` with 2: 8 of 8, E516), `stad.fetchN [rb,#k++], rs` stores them
+  from `b + k` and moves `rb` by N once for `k` = 1 to 4 (`k` = 1 with N = 2, 4 and 16: 3 of 3,
+  E482; `fetch4` with `k` = 2 and 3, `fetch8` with 2 and `fetch2` with 4: 4 of 4, E516: the step is
+  the fetch width, not `k`), and `stad.fetchN [rb,++#k], rs` stores them from `b + k + 1` and moves
+  `rb` by N for `k` = 1 and 2 (`fetch4` with `k` = 1 and 2 and `fetch16` with 1: 3 of 3, E516); the
+  post- and pre-increment rules were read from those readbacks after the first predictions failed. A
+  copy of 16 dwords is so `ldad.fetch16 rA, [rS,+#0], drc0; wdf drc0; stad.fetch16 [rD,+#0], rA`
+  with `rD` one dword below the destination (1 of 1 case: 16 dwords in order). A fetch wider than
+  16, `k` above 15 and a copy with `k` other than 0 were not run.
+- **`.repeatN` of a store or a load steps the pointer register too [HW].** In
+  `stad.repeatN [rb,...], rs` iteration `i` stores `r(s + i)` at the address held in `r(b + i)` (the
+  data address read for every `i`: N = 2, 3, 4, 8 and 16 in E483, 5 to 7 and 9 to 15 in E515), and
+  the pointer registers `r(b + i)` for `i` < N move by the form's own increment: `k` after its
+  access for `[rb,#k++]`, `k` before it for `[rb,++#k]`, none for `[rb,+#k]`, and the other pointers
+  stay (E483: 26 of 26 cases with 16 valid pointers `r40`-`r55`, N = 2, 3, 4, 8 and 16 plain, N = 2,
+  4, 8 and 16 post-increment, N = 2 and 4 pre-increment, twelve after an `smlsi` and one copy, the
+  movement read for `r40` to `r43`; E515: a marker past each of the sixteen pointers, N = 5 to 16
+  post-incremented with `k` = 1 and N = 8, 12 and 16 with `k` = 2 (15 of 15), N = 8, 12 and 16
+  pre-incremented with `k` = 1 and N = 8 with `k` = 2 (4 of 4), so `r44` to `r55` move as `r40` to
+  `r43` do and the unused pointers stay). `ldad.repeatN rd, [rb,...]` loads likewise the dword
+  `r(b + i)` addresses into `r(d + i)` (E483: 7 of 7 cases, N = 2, 4, 8 and 16, the pointer movement
+  read for 2 or 4 pointers; E515: from `r(56 + i)` into `r(10 + i)` in 11 of 11 plain cases, N = 5
+  to 7 and 9 to 16, and `r(56 + i)` moved for `i` < N in 10 of 10 post-incremented cases). A
+  pre-incremented `ldad.repeat`, an `smlsi` before a repeat of five or more and N above 16 were not
+  run. The model had N accesses from the one pointer `rb`. With only `rb` (and `r41` for the loads)
+  holding an address, the registers after it are read as pointers too: the first run faulted the job
+  in all 7 `ldad.repeatN` cases and in the 9 of 9 `stad.repeatN` cases with N of 4, 8 and 16, while
+  `stad.repeat2` and `repeat3` completed, storing `r3` at the address `r41` held (E483). The
+  one-pointer series is `smlsi #0, #0, #0, #1` first (*`smlsi` increments*):
+  `stad.repeat16 [rb,#1++], r2` then stores `r2` to `r17` at 16 consecutive dwords and moves `rb` by
+  16 (2 of 2 cases, two instructions, no one-dword shift).
 - **Cache modes.** The firmware uses `.bpcache` on almost every access; `.fcfill` once.
   The SGX540 swaps the two cache-mode bits; `usse-dis --core 540` follows it. No mode, `eld`'s
   `.bypassl1` included, makes a reload miss a store, in one instance or across instances
@@ -5821,10 +5897,10 @@ Class 31, other group, operation 6 **[RE]**. `ldr rD, #idx, drcN` reads SGX regi
   returns `BIF_DIR_LIST_BASE0`, from a client pixel shader on our render node; a client
   `str #671` (`USE_G0`) changed nothing (measured on our render node). The firmware
   programs the whole GPU with these two instructions.
-- **Ordering [open].** A `stad` and a later `ldad` of one dword, with all instances storing the same
-  value to it, return the stored value without an `idf` (*Memory, data fences and the register
-  file*, E481; one instance's own store is not isolated, Q134); `str` then `ldr` of one register is
-  not measured, as no client `str` was seen to change anything (Q134).
+- **Ordering [open].** A `stad` and a later `ldad` of one dword return the stored value without an
+  `idf`, for an instance's own store too (*Memory, data fences and the register file*, E481, E512);
+  `str` then `ldr` of one register is not measured, as no client `str` was seen to change anything
+  (Q134).
 - **The index [HW].** `ldr rD, rI` masks a register index to 14 bits (*The 14-bit
   `ldr`/`str` index*); `str` with a register index is **[open]**.
 - The decoder holds two copies of these forms (an older one and the class-31 family's); the
@@ -6176,11 +6252,11 @@ Class 31 **[RE]**: `nop` is flow-control operation 5; the rest are the "other" g
 - **`nop`** does nothing **[infer]**; with `.end` it ends the program **[HW]** (our USE
   secondary program). `.tog` and `.trigger` are **[open]**.
 - **`wdf drcN`** waits for the loads counted on `drcN` **[RE/HW]**, all of them whatever their form,
-  up to 100 distinct `ldad` seen, and not for those of another counter (E478, E479); with nothing
-  outstanding it returns at once (E480). **`idf drcN, bif`** is a fence on memory writes counted the
-  same way **[infer]**, which no fill case needed (*Memory, data fences and the register file*).
-  **`idf drcN, pixelbe`** hangs a fill, waiting for something a fill never gives (the pixel back
-  end?) **[HW]** (E114).
+  up to 192 distinct `ldad` seen (E518 read 4 or 5 reloaded registers per job), and not for those of
+  another counter (E478, E518, E479); with nothing outstanding it returns at once (E480). **`idf
+  drcN, bif`** is a fence on memory writes counted the same way **[infer]**, which no fill case
+  needed (*Memory, data fences and the register file*). **`idf drcN, pixelbe`** hangs a fill,
+  waiting for something a fill never gives (the pixel back end?) **[HW]** (E114).
 - **`wop #n`** waits for the outputs to drain before an emit **[infer]**: our state programs
   issue `wop #0` between `emitvcbst` and `emitmtest`, as the captured ones do **[CAP/HW]**.
   `.twopart` is **[open]**.
@@ -6676,8 +6752,8 @@ Confirmed on the hardware (a passing vector): #133, #134, #135, #136, #138, #139
 ### 6.25 Phases: `phas`
 
 Class 31 **[RE]**. The immediate form is described in *Tasks and phases*: the next phase's
-instruction index (18 bits), its temporaries (eight bits, times four; 192 is the highest value run
-that did not hang, *Tasks and phases*), the rate, the wait condition and the instance mode, plus
+instruction index (18 bits), its temporaries (eight bits, times four; a request runs when it is 4 to
+192 modulo 256, *Tasks and phases*), the rate, the wait condition and the instance mode, plus
 `.end`. A register form takes two source operands instead (presumably the same information computed
 at run time **[infer]**). Both exist twice in the decoder's table, as for `ldr`/`str`.
 
@@ -6826,20 +6902,25 @@ output registers) to another unit. All take an `#incp` number (three bits) and `
   microkernel's boot task launches PDS programs #11 and #12 this way and its request path #14; the
   control word carries the program's data size in four-dword units at bits 27-23
   (`doc/specs/hw_spec.md`) and, below it, an addend. A client fill shader can execute it **[HW]**
-  (E488, one instance emitting, a copy's shader): with `s1` the pixel PDS heap offset of the fill's
-  PDS secondary shifted right by four (4 for the copy's, at heap base + 0x40), two data rows and the
-  addend 0x100, the named program ran in 18 of the 19 `ir0.0` probes (it stored 3 in 16 and 2 in 2,
-  where the fill's own run leaves 0x400 to 0x403), and with the addend 0x1000 the dword held the
-  no-emit value once (1 probe, twice with a repeat outside the data, in jobs that all faulted: one
-  observation, not a stop). **`s2` is not `ir0` or `ir1` of the started program**: with `s2` 0, 1,
+  (E488, one quad of four lanes emitting: E513, a copy's shader): with `s1` the pixel PDS heap
+  offset of the fill's PDS secondary shifted right by four (4 for the copy's, at heap base + 0x40),
+  two data rows and the addend 0x100, the named program ran in 18 of the 19 `ir0.0` probes (it
+  stored 3 in 16 and 2 in 2, where the fill's own run leaves 0x400 to 0x403), and **the addend
+  matters [HW]** (E520, 39 probes, every emitting job faulted or hung): with 0xFFF, 0x1000, 0x1001,
+  0x1010, 0x1100 and 0x2000 the dwords the program stores read the fill's own 0x403 (12 of 12
+  probes, in two orders, so not a drift in time), where 0x100 read 3 or 2 (11 of 11) and 0, 0xF0,
+  0xFF, 0x101, 0x110, 0x200, 0x400, 0x4000, 0x8000 and 0x10000 did too (12 of 12 probes), 0x800 read
+  0x401 and 0x400 (2 probes) and 0x10 read 3 and 0x400 (2 probes); the emitted run may not store in
+  the window **[infer]**. **`s2` is not `ir0` or `ir1` of the started program**: with `s2` 0, 1,
   0xFFFFFFFF and 0xE17D0001 the program saw `ir0.0` 3, 3, 2 and 3, and `ir1.0` 0 for 0, 0xFFFFFFFF
   and 0xE17D0001 (against the reading of E146, which came from the operand order). `.tasks`,
   `.taske`, both, neither, `.freep`, `.nosched`, `#incp` 1 to 3, the sideband 0x1, 0x200 and 0x2000
   and a data size of 1, 2 or 4 rows each changed nothing seen of whether the program ran (one probe
-  each). **Every job that executed an `emitpds` then faulted or hung, 24 of 24 (`BIF fault` at page
-  0xd2000 in 22, 0x92000 once with sideband 0x1, a hang for two emits in a row), each recovered by
-  the driver with no reload** (Q128): a client emit is a hang risk, not a tool, and the model's
-  start of a PDS program is not the whole of it. What `.tasks`/`.taske` do is **[open]** (Q054).
+  each). **Every job that executed an `emitpds` then faulted or hung, 24 of 24 in E488 (`BIF fault`
+  at page 0xd2000 in 22, 0x92000 once with sideband 0x1, a hang for two emits in a row) and 39 of 39
+  in E520 (37 faults, 2 hangs), each recovered by the driver with no reload** (Q128): a client emit
+  is a hang risk, not a tool, and the model's start of a PDS program is not the whole of it. What
+  `.tasks`/`.taske` do is **[open]** (Q054).
 - **`.freep`** frees the task's resources after the emit **[infer]**; **`#incp`** is always 0
   in our programs and its meaning is **[open]**.
 - The assembler writes the unprinted source of `emitvcbst`/`emitvcbvtx` and the unprinted
@@ -7876,6 +7957,15 @@ channel **[HW]** (probe `usse-test-channels-lanes-other`).
 A float test of an exact zero product tests the hardware's `+0`: `fmul` of 0 and -3 gives `+0`,
 not IEEE's `-0` **[HW]** (probe `x-misc`).
 
+*Later probes (2026-11-08).* **On a 32-bit result the raw `and` test words with the chan field 1 to
+7 and the `a` join do not read as `chan0` as a table** **[HW]** (E530: six field values and six
+input pairs in each of seven tables, the prediction that the field is ignored having failed), and
+they read as this rule says **[infer]** (252 of 252 cases; the rule was applied after the data, it
+predates the runs and was not predicted for them): `chan1`-`chan3` test a channel with no lane, and
+`andall`, `orall`, `and02` and `or02` (chan4 to chan7) combine channel 0 with such channels, so a
+test of a 32-bit value must name `chan0`. The same on 8-bit and 16-bit lane operations with raw
+words is not run (Q150).
+
 **Undecided:** the mask forms of class 15 (`.bmsk`/`.wmsk`/`.dmsk`); float tests of `-0`,
 infinities and NaNs; the one-source tests (`frcp`, `frsq`, `flog`, `fexp`); `fsubflr`, `fdp`,
 `fmin`, `fmax`, `fdsx`, `fdsy`, `uadd8`, `usub8`, `umul8` and the `fp*8` operations as
@@ -7947,21 +8037,25 @@ with the immediates, the constants, `.neg` on sources 2 and 3, a subtract in one
 one-bit `cie`, and **`imae`'s carry out and carry in** write and take exactly 0 or 1, in one
 instruction or two, chained to a 64-bit accumulate **[HW]** (E469, E470, E471). In a second batch,
 with the same forms: **`ima32.u d, iK, a, b, c` writes the high 32 bits of the product with the
-addend to `iK`** (15 of 15 cases of five `.u` register triples, E493; the probe table's model had
-the `i` registers keep their values, 0 of 15), a borrow follows in one more instruction, `ima32.u
-r10, iK, r2, c56, r1` leaving `a - b` and `b - [a < b]` (75 of 75, E501) and an unsigned compare of
-two registers being that and `xor.testtanz.chan0 !c0, p0, r2, i0` (64 of 64 pairs of the eight
-values 0, 1, 0xffff, 0x10000, 0x7fffffff, 0x80000000, 0x80000001 and 0xffffffff, unsigned, not
-padded, and only for `b * 0xffffffff + a`); 17 more seven-bit immediates, `.neg` on `.s` immediates
-and constants, and a dependent reader after 0 to 6 and 8 `nop`s are exact (E495); the operand banks
-`pa`, `sa`, `o`, `g` and `i` are accepted and read 0 where `mov` reads 0 (31 of 40 cases), and the
-six r-bank destinations run, r0, r9, r18, r28, r30 and r31, `sa0`, `o0`, `i1` and `i2` take the
-result while `pa0` does not (E496); `imae coe, iN` writes the iN named for `i0` and `i1` (E494).
+addend to `iK`** (15 of 15 cases of five `.u` register triples, E493, then 282 of 282 jobs of
+generic register triples, 200 of them random, and the signed form in 282 of 282, E525, E526; the
+probe table's model had the `i` registers keep their values, 0 of 15), a borrow follows in one more
+instruction, `ima32.u r10, iK, r2, c56, r1` leaving `a - b` and `b - [a < b]` (75 of 75, E501) and
+an unsigned compare of two registers being that and `xor.testtanz.chan0 !c0, p0, r2, i0` (64 of 64
+pairs of the eight values 0, 1, 0xffff, 0x10000, 0x7fffffff, 0x80000000, 0x80000001 and 0xffffffff,
+E501; 252 of 252 seeded pairs and 48 of 48 with each of 0, 1 and 3 `nop`s between, E527), and a
+signed compare from `ima32.s` and `xor.testtanz.chan0 !c0, p0, i0, #0` (164 of 164 pairs, E528); 17
+more seven-bit immediates, `.neg` on `.s` immediates and constants, and a dependent reader after 0
+to 6 and 8 `nop`s are exact (E495); the operand banks `pa`, `sa`, `o`, `g` and `i` are accepted and
+read 0 where `mov` reads 0 (31 of 40 cases), and the six r-bank destinations run, r0, r9, r18, r28,
+r30 and r31, `sa0`, `o0`, `i1` and `i2` take the result while `pa0` does not (E496); `imae coe, iN`
+writes the iN named for `i0` and `i1` (E494).
 
 **Undecided:** `imae` with both `.rsN` and saturation, or with a repeat, a `u16`/`z16` source or a
-`.rsN` shift and its carries; `ima32` with `.s` or `cie` or `.neg` and the extra operand, its
-dual-issue secondary form, its selector 3 and what bit 46 of its word does to `r14` (Q135, Q127);
-when a repeated `idiv`'s result becomes visible to its own later iterations.
+`.rsN` shift and its carries; `ima32` with `cie` or `.neg` and the extra operand, or with immediates
+and constants other than c56 there, its dual-issue secondary form, its selector 3 and what bit 46 of
+its word does to `r14` (Q135, Q127); when a repeated `idiv`'s result becomes visible to its own
+later iterations.
 
 ### 7.8 Shift amounts of 32 and over
 
@@ -8878,9 +8972,9 @@ open driver:
 3. **`.syncs`** and the other scheduling flags beyond `.nosched`: a read 0 to 8 instructions after a
    `mov`, `or`, `fmad`, `frcp` or `fexp` sees its result with or without `.nosched` (E371); a load
    read by a `stad` after up to 32 `nop`s still holds the register's old value with no `wdf` (E478;
-   a read by an ALU instruction was not run); a dependent reader of an `ima32` result sees it after
-   0, 1, 2, 3, 4, 5, 6 and 8 `nop`s with or without `.nosched` on the writer (E495); `.syncs` hangs
-   a fill's task (Q052).
+   by an ALU instruction after up to 48, E517); a dependent reader of an `ima32` result sees it
+   after 0, 1, 2, 3, 4, 5, 6 and 8 `nop`s with or without `.nosched` on the writer (E495); `.syncs`
+   hangs a fill's task (Q052).
 4. **The global bank**: what `g18`-`g20` and `g39`-`g43` hold in a vertex task and the
    end-of-tile task; in a triangle's pixel task they read as in a fill (E374), and `g19` reads
    0 through `mov`, 0x11 through the bitwise group and 0x1a as a store's source (E372) (Q053).
@@ -8889,7 +8983,7 @@ open driver:
    on the state emits (needed on `emitvcbvtx`, E102; shows nothing on the state emits, E106);
    the PBE sideband bits beyond the pack mode and bit 9, `TILERELATIVE` (Q054; Q074 asks what
    bit 9 does); `emitpds` runs the PDS program it names from a client fill but ends the job in a
-   fault or hang, 24 of 24 (E488, Q128).
+   fault or hang, 63 of 63 (E488, E520, Q128).
 6. **`idf` modes** other than `bif` (each hangs a fill's job at its `wdf`, E375), `lock`/
    `release`, `setm`, and the cache-control operands (Q055).
 7. **Instruction timing**: what a result costs in cycles; a fill's instructions cost 0.320 µs
@@ -8905,18 +8999,20 @@ open driver:
    ours has run (Q124); what leaves 0xeb3 and 0x98 in them across jobs (Q125: four runs of the
    readers show 64 pixels of 0xeb3 in 29 of 40 jobs and quads that repeat in part, E500); how
    `iaddu32` extends a source 1 above 0x7fff, which no test tells (Q126); `ima32`'s dual-issue form,
-   `.s` and `cie` with the extra operand, its selector 3 and what bit 46 does (Q135), and `imae`'s
-   repeats, `u16`/`z16` sources and `.rsN` shifts with the carries, with the operand values and
-   immediates not run (Q127); the rule of the test field on the shifts, the chan fields and the
-   other classes (Q137); how long an `sa0` written by `ima32` lasts and why a write to `pa0` is lost
-   (Q136).
+   `cie`, `.neg` and immediates with the extra operand, its selector 3 and what bit 46 does (Q135),
+   and `imae`'s repeats, `u16`/`z16` sources and `.rsN` shifts with the carries, with the operand
+   values and immediates not run (Q127); the rule of the test field on the shifts, the lane
+   operations and the other classes, with the `o` join (Q137, Q151) and the chan field (Q150); how
+   long an `sa0` written by `ima32` lasts and why a write to `pa0` is lost (Q136).
 10. **Fences, repeats, registers and persistence for a firmware compiler**: why a `wdf` waits
    for another counter's loads in some runs and not in others (Q130); whether a firmware (EDM)
    task behaves as a fill for `wdf`, unfenced stores and two tasks at once (Q131, firmware);
-   what a client `str` changes and whether `str` then `ldr` is ordered (Q134); why a client
-   `emitpds` faults the job (Q128); the 12 pixels of an `sa` writer that show the `sa` (Q129);
-   where a write past the allocation goes (Q132); what bounds a `phas` request at 192 (Q133).
-   The overlap of two firmware tasks and `str` then `ldr` are not answered (Q131, Q134).
+    what a client `str` changes and whether `str` then `ldr` is ordered (Q134); when another reader
+    sees an unfenced store and when a load not waited for lands (Q143, Q146); why a client `emitpds`
+    faults the job and why its addend 0xFFF to 0x2000 leaves the fill's value (Q128, Q145); the 12
+    pixels of an `sa` writer that show the `sa` (Q129); where a write past the allocation goes
+    (Q132); what bounds a `phas` request and what a request above 256 allocates (Q133, Q144). The
+    overlap of two firmware tasks and `str` then `ldr` are not answered (Q131, Q134).
 
 The simulator (`crates/sgx-sim`) reproduces 24711 probe vectors (15526 of them with near values:
 float functions within their measured bound) and 143 pixel vectors; it stops on 1885 rather than

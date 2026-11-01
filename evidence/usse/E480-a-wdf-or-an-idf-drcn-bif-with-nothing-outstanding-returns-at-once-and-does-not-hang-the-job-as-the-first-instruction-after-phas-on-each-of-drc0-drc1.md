@@ -34,3 +34,13 @@ microkernel handles itself (Q131); that one instance's unfenced store reaches th
 instances store the same value to the same dword; a per-instance address, or one instance selected
 by a test of pa0 as the emitpds probe does, was not run; Q134); visibility of an unfenced store to
 another instance or to the host while the job still runs.
+
+**Correction, 2026-11-08 (11.27).** The measurements above are unchanged (all 2048 instances stored
+the same value to the same dword). E512 ran the same end-of-program cases with a dword of the
+instance's own (0x5107E000 + n, n from `pa0`) and a value of its own: all 2048 dwords of the region
+changed in the seven cases that ended with no `idf` and no fence (the first 32 read, the other 2016
+counted), so an unfenced `stad` changes the dword the host reads in a client pixel task for each
+instance of the fill (2048 changed dwords, 32 values read), and in E513 for the four lanes of a quad
+(4 of 4 in each of the 5 jobs that stored). 'One instance' in the sentence above was a quad of four
+lanes where the instance was selected by a test of `pa0` (E513). Not run: the host reading during
+the job and an EDM task (Q143, Q131).

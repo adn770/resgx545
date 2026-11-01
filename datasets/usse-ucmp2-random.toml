@@ -1,0 +1,10 @@
+title = "probe table usse/ucmp2-random"
+repo = "data"
+paths = ["usse/ucmp2-random/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 256
+size = 538226
+sha256 = "c743180606165b1bbe298ade048cbd8d6b0eed7a96432364f3111646a881bbb2"
+recipe = "probes/usse/ucmp2-random.toml"
+needs = ["render"]

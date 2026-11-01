@@ -36,3 +36,19 @@ by a test of pa0, were not run; Q134); another instance's load of the stored dwo
 by a load of a different word of the same line, a store and load through different virtual addresses
 of the same page, and `str` / `ldr`. All of this was measured in client pixel tasks (fills), not in
 firmware tasks.
+
+**Correction, 2026-11-08 (11.27).** The measurements above are unchanged (all 2048 instances stored
+the same value to the same dword, so the 17 cases cannot show that an instance sees its own store).
+E512 ran the programs with a dword and a value of the instance's own: the load returned the
+instance's own value in 2048 of 2048 pixels in each of nine cases (`ldad`, `ldad.bypassl1`,
+`ldad.fcfill`, `ldad` on `drc1`, a `wdf` only between, two `stad` of V1 then V2 where the load
+returns V2, with an `idf` and its wait between, and with the `idf` at the end), and a load of a
+region nobody stored returned the fill value (2048 of 2048), so an instance sees its own unfenced
+`stad` for those variants, with no `idf`; E513 reads the same in the four lanes of a quad (4 of 4 in
+each of 3 cases, one of them with an `idf` between). Another instance's store is read by a later
+load when that instance ran earlier (E514: 2048 of 2048 for the x and y neighbours in a quad (the
+diagonal was not run), 1024 of 1024 for lower-numbered instances of other quads) and partly when it
+runs later, a rule of timing. `eldd`, `.bpcache` and sixteen stores were not repeated with a
+per-instance address, and `str` then `ldr` is not measured (Q134); the `idf` in the storing
+instance, the host reading during the job and a texture fetch of the stored dword are not run
+(Q143).

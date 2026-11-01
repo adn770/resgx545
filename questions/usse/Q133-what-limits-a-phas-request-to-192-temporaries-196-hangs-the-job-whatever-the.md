@@ -1,11 +1,11 @@
 +++
 id = "Q133"
-question = "what limits a phas request to 192 temporaries (196 hangs the job whatever the task was started with) and is the limit the same for a firmware task"
+question = "what bounds a phas request (it runs when T mod 256 is 4 to 192 and hangs the job when it is 0 or 196 to 252, whatever the task was started with: E519) and is the limit the same for a firmware task"
 unit = "usse"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E487"]
+evidence = ["E487", "E519"]
 terms = []
 +++
 
@@ -16,7 +16,16 @@ each, not an interval (228 to 248 and 260 to 504 were not run); every request fr
 r123 only, since r124 and up cannot be named, so a request above 124 exercised r123 and not the
 registers past it; the field itself takes up to 1020 and counts in fours.
 
+Narrowed in 11.27 (E519): the 12 and 12 values are not an interval. Requests 100 to 120, 148 to 156,
+164 to 188 and 260 to 448 (64 requests, every multiple of four) ran, 228 to 248 and 452 to 504 (20)
+hung, and of 15 requests from 512 to 1016 chosen by the rule 'T mod 256 in 4 to 192 runs, 0 and 196
+to 252 hang' all 15 behaved as predicted (8 ran, 7 hung); the rule was written after the first 84
+and tested on the 15. A job that ran wrote r123 only (or, from 512 up, r3, r63 or r123), and E519
+does not show whether a write reaches a register under a small allocation (Q132), so what a request
+above 124 allocates is not shown, and Q144 asks it.
+
 What is open: the quantity that bounds it ([infer] the register file divided by the instances in
-flight), the request between 192 and 196 (the field counts in fours, so none is encodable), and
-whether the microkernel's tasks request the same. To settle it: the limit against the number of
-instances (a smaller target, a render with fewer pixels) and the EDM's own tasks (phase 12).
+flight), the request between 192 and 196 (the field counts in fours, so
+none is encodable), and whether the microkernel's tasks request the same. To settle it: the limit
+against the number of instances (a smaller target, a render with fewer pixels) and the EDM's own
+tasks (phase 12).

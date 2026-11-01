@@ -42,3 +42,15 @@ passes, 196 hangs); the other multiples of four from 8 to 192, 228 to 248, 260 t
 1016 (not run); a request of more than 124 as anything but r123 (r124 and up are refused as ALU
 operands by usse-asm [infer], E485); the same limit for a firmware (EDM) task, whose temporaries
 the microkernel requests itself (Q133).
+
+**Correction, 2026-11-08 (11.27).** The measurements above are unchanged. E519 shows that the 12
+values that ran and the 12 that hung are not an interval: a request T ran when T mod 256 was 4 to
+192 and hung the job when it was 0 or 196 to 252, in every request run since: 100 to 120, 148 to
+156, 164 to 188 and 260 to 448 (every multiple of four there, 64 requests) ran, 228 to 248 and 452
+to 504 (20 requests) hung, and of 15 requests from 512 to 1016 chosen by that rule 8 ran and 7 hung
+as predicted (15 of 15; the rule was written after the 64 + 20 and tested on these 15). So 'the
+highest value that did not hang is 192' holds below 256 only, 'not run: 228 to 248, 260 to 504 and
+512 to 1016' is mostly run, and the 196 to 256 hang is part of the rule E519 fitted (84 requests)
+and tested (15 of 15); what a request above 256 allocates is not measured (E519 does not show
+whether a write reaches a register under a small allocation: Q132, Q144), and r123 is still the only
+register above 124 any of these jobs wrote. Q133 is narrowed and Q144 asks the rest.

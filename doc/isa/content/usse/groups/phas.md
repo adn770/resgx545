@@ -3,8 +3,8 @@
 ### Phases: `phas`
 
 Class 31 **[RE]**. The immediate form is described in *Tasks and phases*: the next phase's
-instruction index (18 bits), its temporaries (eight bits, times four; 192 is the highest value run
-that did not hang, *Tasks and phases*), the rate, the wait condition and the instance mode, plus
+instruction index (18 bits), its temporaries (eight bits, times four; a request runs when it is 4 to
+192 modulo 256, *Tasks and phases*), the rate, the wait condition and the instance mode, plus
 `.end`. A register form takes two source operands instead (presumably the same information computed
 at run time **[infer]**). Both exist twice in the decoder's table, as for `ldr`/`str`.
 

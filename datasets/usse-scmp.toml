@@ -1,0 +1,10 @@
+title = "probe table usse/scmp"
+repo = "data"
+paths = ["usse/scmp/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 168
+size = 326509
+sha256 = "8e14ea87f74c817b92106731baca573052c55dedb8b1a4c5d85ec9b182816fb5"
+recipe = "probes/usse/scmp.toml"
+needs = ["render"]

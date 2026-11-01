@@ -18,7 +18,7 @@ a repeat or, with the MOE-expand bit `enc[53]` clear, as a **fetch** of N regist
   and one predicate covers the whole instruction (*Repeat order and overlapping ranges*,
   *Predicates on repeated instructions*). **A repeated load or store steps its pointer register
   too [HW]**: iteration `i` of `stad.repeatN [rb,...], rs` uses `r(b + i)` as its address, not
-  `rb` (E483, *Loads and stores*).
+  `rb` (E483, E515, *Loads and stores*).
 - **The MOE state.** The register advance per iteration is programmable: the MOE group sets
   per-operand increments or swizzles (`smlsi`), base offsets (`smbo`), address modes and
   offsets (`smoa`) and ranges (`smr`) **[RE]**: the decoder names the state

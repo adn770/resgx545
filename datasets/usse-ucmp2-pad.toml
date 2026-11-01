@@ -1,0 +1,10 @@
+title = "probe table usse/ucmp2-pad"
+repo = "data"
+paths = ["usse/ucmp2-pad/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 152
+size = 287757
+sha256 = "23a39b2b28d30a543f6a42a3f1556d7ac2b9e79c8b30fadefa864b47e317d580"
+recipe = "probes/usse/ucmp2-pad.toml"
+needs = ["render"]

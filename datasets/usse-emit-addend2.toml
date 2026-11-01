@@ -1,0 +1,10 @@
+title = "probe table usse/emit-addend2"
+repo = "data"
+paths = ["usse/emit-addend2/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 82
+size = 130645
+sha256 = "2e0dfe8e6ad217d9b77c0ad4a388314451e8bc3558cd810f6b5e6cb3db2da3fd"
+recipe = "probes/usse/emit-addend2.toml"
+needs = ["render", "vm_low"]

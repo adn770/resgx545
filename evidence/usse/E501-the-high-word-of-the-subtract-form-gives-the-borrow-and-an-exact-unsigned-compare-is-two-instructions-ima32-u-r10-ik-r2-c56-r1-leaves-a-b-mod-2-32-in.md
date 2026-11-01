@@ -36,3 +36,15 @@ product, was not run), i1 and i2 in the compare (they were run for the high word
 dual-issue form, padding between the two instructions (E497 padded the six-instruction signed
 compare only), what the instruction costs (a fill's timing was not measured), and the signed
 compare. Narrows Q127 (the extra operand) with E493.
+
+**Correction, 2026-11-08 (11.27).** The measurements above are unchanged. E525 shows the high word
+for generic register operands (282 of 282, including 200 random triples), so the sentence that the
+other pairs follow only if the high word of b * 0xffffffff + a is exact for them, which was not run,
+now rests on that run for register operands; E527 ran the two-instruction unsigned compare on 252
+seeded pairs (200 random, 20 equal, 12 one-bit, 10 with equal low half and 10 with equal high half;
+252 of 252) and padded with 0, 1 and 3 `nop`s over 48 of them each (48 of 48 for each padding); and
+E528 ran a signed compare from the high word of `ima32.s` (`ima32.s r11, i0, r2, c56, r1` then
+`xor.testtanz.chan0 !c0, p0, i0, #0`, 164 of 164 pairs, no padding run), so 'the signed compare is
+not given by this' and 'the high word of `.s` was not run' are superseded: a signed compare is two
+instructions on the 164 pairs run. Not run: i1 and i2 in the compare, the dual-issue form, the cost,
+padding of the signed form, and a source other than c56 for the constant.

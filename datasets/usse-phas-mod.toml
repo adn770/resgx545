@@ -1,0 +1,10 @@
+title = "probe table usse/phas-mod"
+repo = "data"
+paths = ["usse/phas-mod/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 19
+size = 35058
+sha256 = "9238523093e039ecfbee18532b63d44d080cd0e0ad9e9e4c8b62362a8dcbd492"
+recipe = "probes/usse/phas-mod.toml"
+needs = ["render"]

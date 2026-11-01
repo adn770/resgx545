@@ -53,27 +53,39 @@ and `idiv` the full one).
   0xffff, 0x10000, 0x7fffffff, 0x80000000 and 0xffffffff, `i1` and `i2` over 13 pairs of them), so
   that `xor.testtanz.chan0 !c0, p0, b, i0` sets `p0` to `a < b` unsigned: two instructions instead
   of six (*The test group*), run on the 64 pairs of the eight values 0, 1, 0xffff, 0x10000,
-  0x7fffffff, 0x80000000, 0x80000001 and 0xffffffff, unsigned and not padded; that the high word is
-  `b - [a < b]` for other `b` is **[infer]** (the source 2 of all 75 cases is c56).
+  0x7fffffff, 0x80000000, 0x80000001 and 0xffffffff (E501) and on 252 seeded pairs, 200 random among
+  them, and with 0, 1 and 3 `nop`s between the two instructions on 48 of those pairs each (252 of
+  252 and 48 of 48 three times, E527), registers only, the destination `r11`; that it is exact for
+  every pair is **[infer]** from the arithmetic of the high word, which E525 shows for 200 random
+  register triples. **A signed compare is two instructions too [HW]:** `ima32.s r11, i0, r2, c56,
+  r1` then `xor.testtanz.chan0 !c0, p0, i0, #0` sets `p0` to `a < b` signed (164 of 164 pairs: the
+  64 of the eight values and 100 random, E528; `c56` reads -1 signed, `i0` is the high word of the
+  signed `a - b`, 0xffffffff for `a < b`), against the six of *The test group*; it was not padded
+  and was not run beyond the 164 pairs (**[infer]** for the rest).
 - **The extra `i` operand and `cie` of `ima32` [HW].** `ima32.u d, iK, a, b, c` (`enc[38]` set, `iK`
-  in `enc[37:36]`) writes the low 32 bits of `a × b + c` to `d` and the high 32 bits to `iK` (15 of
-  15 cases, `K` = 0, 1 and 2, five `.u` register triples, (3, 7, 100), (0xffffffff, 1, 1),
-  (0xffffffff, 0xffffffff, 0xffffffff), (0x10000, 0x10000, 0) and (0x80000000, 2, 0xffffffff); E493;
-  and `b * 0xffffffff + a` for eight values of `b`, E501): the probe table's model, that the `i`
-  registers keep their values, fits 0 of 15, and `iK` = the carry out of the 32-bit add fits 6. Raw
-  words with the field `enc[37:36]` set and `enc[38]` clear, with `enc[38]` set and `iK` = 3 and
-  with the bits 45, 44 and 35 set changed neither `r10`, `i0` to `i2` nor `r14` to `r17`; with bit
-  46 set `r14` read 0x2255 in 3 of 3 jobs, what the bit does is **[open]** (Q135). Generic register
-  operands (two multi-limb values), immediates and constants other than c56 with the extra operand,
-  `.s` with the extra operand, the extra operand together with `cie` or `.neg`, the dual-issue form
-  and `K` = 3 are **[open]** (Q135). `ima32 ... cie, iN` adds bit 0 of `iN` only **[HW]**: `i0` to
-  `i2` with the values 0x10000, 0x80000000, 0xfffffffe, 0x10001, 0x80000001, 2, 0x55555554 and
-  0xaaaaaaab (24 of 24, E494; and 10 of 10 with 0, 1, 2, 0xffff and
-  0xffffffff in `i0`, E470; adding all of `iN` fits 0 of 24, E494). Dependent `ima32` need no
-  gap: four in a row are exact (10 of 10, E470), and a reader (`ima32`, `mov` or `xor`) after 0, 1,
-  2, 3, 4, 5, 6 or 8 `nop`s sees the result, with or without `.nosched` on the writer (48 of 48,
-  E495). `ima32` as a dual-issue secondary (two 16-bit lanes: *Dual issue*), `u16`/`z16` sources and
-  `.rsN` on `ima32`, and `imae` with a repeat are **[open]** (Q127).
+  in `enc[37:36]`) writes the low 32 bits of `a × b + c` to `d` and the high 32 bits to `iK`, the
+  bits 63:32 of the exact 64-bit `a × b + c` on register operands (E525: 282 of 282 jobs, 42 corner
+  triples, 0x12345678 × 0x9abcdef0 among them, and 200 random triples with `K` = 0, then `K` = 1 and
+  2 over 20 random triples each; `.s` gives the signed high word with `c` sign-extended, 282 of 282,
+  E526; E493's five `.u` triples, (3, 7, 100), (0xffffffff, 1, 1), (0xffffffff, 0xffffffff,
+  0xffffffff), (0x10000, 0x10000, 0) and (0x80000000, 2, 0xffffffff), 15 of 15 cases with `K` = 0, 1
+  and 2, and `b * 0xffffffff + a` for eight values of `b`, E501, are cases of it): the probe table's
+  model, that the `i` registers keep their values, fits 0 of 15, and `iK` = the carry out of the
+  32-bit add fits 6 of the 15 and 10 of the 282. A backend may lower a 32 × 32 + 32 high-word
+  multiply to it for register operands; its cost was not measured. Raw words with the field
+  `enc[37:36]` set and `enc[38]` clear, with `enc[38]` set and `iK` = 3 and with the bits 45, 44 and
+  35 set changed neither `r10`, `i0` to `i2` nor `r14` to `r17`; with bit 46 set `r14` read 0x2255
+  in 3 of 3 jobs, what the bit does is **[open]** (Q135). Immediates and constants other than c56
+  with the extra operand, the extra operand together with `cie` or `.neg`, an `iK` that is also a
+  source, a destination other than `r10`, the dual-issue form and `K` = 3 are **[open]** (Q135).
+  `ima32 ... cie, iN` adds bit 0 of `iN` only **[HW]**: `i0` to `i2` with the values 0x10000,
+  0x80000000, 0xfffffffe, 0x10001, 0x80000001, 2, 0x55555554 and 0xaaaaaaab (24 of 24, E494; and 10
+  of 10 with 0, 1, 2, 0xffff and 0xffffffff in `i0`, E470; adding all of `iN` fits 0 of 24, E494).
+  Dependent `ima32` need no gap: four in a row are exact (10 of 10, E470), and a reader (`ima32`,
+  `mov` or `xor`) after 0, 1, 2, 3, 4, 5, 6 or 8 `nop`s sees the result, with or without `.nosched`
+  on the writer (48 of 48, E495). `ima32` as a dual-issue secondary (two 16-bit lanes: *Dual
+  issue*), `u16`/`z16` sources and `.rsN` on `ima32`, and `imae` with a repeat are **[open]**
+  (Q127).
 - **`ima16`** multiplies 16-bit values, its sources read as `u16`, `u8`, `s8` or `o8` with a
   half select. With `u16, u16` it computes `a × b + c` (or `- c`) in each 16-bit lane,
   wrapping **[HW]** (*`ima16` lanes and source formats*); with `u8`, `s8`, `o8` each lane reads

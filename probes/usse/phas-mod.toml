@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse phas requests above 504: does the request count modulo 256 (risky): 0 sweeps, 1 probes.
+needs = ["render"]
+
+[[probe]]
+name = "usse-phas-mod-above504"
+question = "a two-phase fill started with 8 temporaries whose phas asks for 512 to 1016 for phase 1: runs when the request mod 256 is 4 to 192"
+source = "temps_phas.s"
+temps = 8
+params = {  }
+inputs = ["T", "HI", "MARK"]
+labels = ["--temps 8; phas asks for 512 temporaries for phase 1 (mod 256: 0); r3 written and read in phase 1", "--temps 8; phas asks for 516 temporaries for phase 1 (mod 256: 4); r3 written and read in phase 1", "--temps 8; phas asks for 576 temporaries for phase 1 (mod 256: 64); r63 written and read in phase 1", "--temps 8; phas asks for 640 temporaries for phase 1 (mod 256: 128); r123 written and read in phase 1", "--temps 8; phas asks for 704 temporaries for phase 1 (mod 256: 192); r123 written and read in phase 1", "--temps 8; phas asks for 708 temporaries for phase 1 (mod 256: 196); r3 written and read in phase 1", "--temps 8; phas asks for 764 temporaries for phase 1 (mod 256: 252); r3 written and read in phase 1", "--temps 8; phas asks for 768 temporaries for phase 1 (mod 256: 0); r3 written and read in phase 1", "--temps 8; phas asks for 772 temporaries for phase 1 (mod 256: 4); r3 written and read in phase 1", "--temps 8; phas asks for 832 temporaries for phase 1 (mod 256: 64); r63 written and read in phase 1", "--temps 8; phas asks for 896 temporaries for phase 1 (mod 256: 128); r123 written and read in phase 1", "--temps 8; phas asks for 960 temporaries for phase 1 (mod 256: 192); r123 written and read in phase 1", "--temps 8; phas asks for 964 temporaries for phase 1 (mod 256: 196); r3 written and read in phase 1", "--temps 8; phas asks for 1000 temporaries for phase 1 (mod 256: 232); r3 written and read in phase 1", "--temps 8; phas asks for 1016 temporaries for phase 1 (mod 256: 248); r3 written and read in phase 1"]
+cases = [["512", "3", "0x7E570003"], ["516", "3", "0x7E570003"], ["576", "63", "0x7E57003F"], ["640", "123", "0x7E57007B"], ["704", "123", "0x7E57007B"], ["708", "3", "0x7E570003"], ["764", "3", "0x7E570003"], ["768", "3", "0x7E570003"], ["772", "3", "0x7E570003"], ["832", "63", "0x7E57003F"], ["896", "123", "0x7E57007B"], ["960", "123", "0x7E57007B"], ["964", "3", "0x7E570003"], ["1000", "3", "0x7E570003"], ["1016", "3", "0x7E570003"]]
+[probe.hypotheses]
+"the request counts modulo 256: T runs when T mod 256 is 4 to 192 and hangs when it is 0 or 196 to 252" = ["fail", { o0 = 0x7E570003 }, { o0 = 0x7E57003F }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }, "fail", "fail", "fail", { o0 = 0x7E570003 }, { o0 = 0x7E57003F }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }, "fail", "fail", "fail"]
+"no wrap: requests above 192 hang (the 11.27 first runs: 196 to 256 and 452 up hung, 260 to 448 ran)" = ["fail", "fail", "fail", "fail", "fail", "fail", "fail", "fail", "fail", "fail", "fail", "fail", "fail", "fail", "fail"]

@@ -5,18 +5,19 @@ unit = "usse"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E469", "E470", "E471", "E493", "E494", "E495", "E496", "E501"]
+evidence = ["E469", "E470", "E471", "E493", "E494", "E495", "E496", "E501", "E525", "E526", "E527", "E528"]
 terms = ["Universal Scalable Shader Engine (USSE)", "REGTYPE.FPINTERNAL"]
 +++
 
 E469 to E471: the plain `ima32`, its three sources (register, 7-bit immediate, constant), `.neg`,
 `cie`, and `imae` with `coe` and `cie` are measured. E493 to E496 and E501 add: the extra `i`
-operand (the high word, for `.u`; Q135 asks the rest), `cie` with iN other than i0 and with a high
-bit set (the eight values of E494), `imae` with `cie` and `coe` on i1, `.neg` on `.s` with an
-immediate and a constant (the seven `.s` forms of E495), 17 more immediates (22 of 128 have run),
-the banks `pa`, `sa`, `o`, `i` and `g` as operands with the value 0 (nonzero values in i0 to i2
-only), and the destinations r0, r9, r18, r28, r30, r31, sa0, o0, i1 and i2 (not pa0, which is not
-written: E496).
+operand (the high word, for `.u` and `.s`, on generic register operands r1 to r3 with the
+destination r10 and K = 0 to 2: E525, E526; E527 and E528 use it in the compares; Q135 asks the
+rest), `cie` with iN other than i0 and with a high bit set (the eight values of E494), `imae` with
+`cie` and `coe` on i1, `.neg` on `.s` with an immediate and a constant (the seven `.s` forms of
+E495), 17 more immediates (22 of 128 have run), the banks `pa`, `sa`, `o`, `i` and `g` as operands
+with the value 0 (nonzero values in i0 to i2 only), and the destinations r0, r9, r18, r28, r30, r31,
+sa0, o0, i1 and i2 (not pa0, which is not written: E496).
 
 What is open: the dual-issue form (two 16-bit lanes), the carry flags of `imae` with repeats, with
 the `u16`/`z16` sources and with a `.rsN` shift, `u16`/`z16` and `.rsN` on `ima32`, values other

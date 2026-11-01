@@ -1,0 +1,10 @@
+title = "probe table usse/phas-high-c"
+repo = "data"
+paths = ["usse/phas-high-c/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 19
+size = 11847
+sha256 = "601045b8cb953c493df27a59224a4598f173d96ce5cfd08d5aa326383b9728b9"
+recipe = "probes/usse/phas-high-c.toml"
+needs = ["render"]

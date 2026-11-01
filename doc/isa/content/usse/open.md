@@ -20,9 +20,9 @@ open driver:
 3. **`.syncs`** and the other scheduling flags beyond `.nosched`: a read 0 to 8 instructions after a
    `mov`, `or`, `fmad`, `frcp` or `fexp` sees its result with or without `.nosched` (E371); a load
    read by a `stad` after up to 32 `nop`s still holds the register's old value with no `wdf` (E478;
-   a read by an ALU instruction was not run); a dependent reader of an `ima32` result sees it after
-   0, 1, 2, 3, 4, 5, 6 and 8 `nop`s with or without `.nosched` on the writer (E495); `.syncs` hangs
-   a fill's task (Q052).
+   by an ALU instruction after up to 48, E517); a dependent reader of an `ima32` result sees it
+   after 0, 1, 2, 3, 4, 5, 6 and 8 `nop`s with or without `.nosched` on the writer (E495); `.syncs`
+   hangs a fill's task (Q052).
 4. **The global bank**: what `g18`-`g20` and `g39`-`g43` hold in a vertex task and the
    end-of-tile task; in a triangle's pixel task they read as in a fill (E374), and `g19` reads
    0 through `mov`, 0x11 through the bitwise group and 0x1a as a store's source (E372) (Q053).
@@ -31,7 +31,7 @@ open driver:
    on the state emits (needed on `emitvcbvtx`, E102; shows nothing on the state emits, E106);
    the PBE sideband bits beyond the pack mode and bit 9, `TILERELATIVE` (Q054; Q074 asks what
    bit 9 does); `emitpds` runs the PDS program it names from a client fill but ends the job in a
-   fault or hang, 24 of 24 (E488, Q128).
+   fault or hang, 63 of 63 (E488, E520, Q128).
 6. **`idf` modes** other than `bif` (each hangs a fill's job at its `wdf`, E375), `lock`/
    `release`, `setm`, and the cache-control operands (Q055).
 7. **Instruction timing**: what a result costs in cycles; a fill's instructions cost 0.320 µs
@@ -47,17 +47,19 @@ open driver:
    ours has run (Q124); what leaves 0xeb3 and 0x98 in them across jobs (Q125: four runs of the
    readers show 64 pixels of 0xeb3 in 29 of 40 jobs and quads that repeat in part, E500); how
    `iaddu32` extends a source 1 above 0x7fff, which no test tells (Q126); `ima32`'s dual-issue form,
-   `.s` and `cie` with the extra operand, its selector 3 and what bit 46 does (Q135), and `imae`'s
-   repeats, `u16`/`z16` sources and `.rsN` shifts with the carries, with the operand values and
-   immediates not run (Q127); the rule of the test field on the shifts, the chan fields and the
-   other classes (Q137); how long an `sa0` written by `ima32` lasts and why a write to `pa0` is lost
-   (Q136).
+   `cie`, `.neg` and immediates with the extra operand, its selector 3 and what bit 46 does (Q135),
+   and `imae`'s repeats, `u16`/`z16` sources and `.rsN` shifts with the carries, with the operand
+   values and immediates not run (Q127); the rule of the test field on the shifts, the lane
+   operations and the other classes, with the `o` join (Q137, Q151) and the chan field (Q150); how
+   long an `sa0` written by `ima32` lasts and why a write to `pa0` is lost (Q136).
 10. **Fences, repeats, registers and persistence for a firmware compiler**: why a `wdf` waits
    for another counter's loads in some runs and not in others (Q130); whether a firmware (EDM)
    task behaves as a fill for `wdf`, unfenced stores and two tasks at once (Q131, firmware);
-   what a client `str` changes and whether `str` then `ldr` is ordered (Q134); why a client
-   `emitpds` faults the job (Q128); the 12 pixels of an `sa` writer that show the `sa` (Q129);
-   where a write past the allocation goes (Q132); what bounds a `phas` request at 192 (Q133).
-   The overlap of two firmware tasks and `str` then `ldr` are not answered (Q131, Q134).
+    what a client `str` changes and whether `str` then `ldr` is ordered (Q134); when another reader
+    sees an unfenced store and when a load not waited for lands (Q143, Q146); why a client `emitpds`
+    faults the job and why its addend 0xFFF to 0x2000 leaves the fill's value (Q128, Q145); the 12
+    pixels of an `sa` writer that show the `sa` (Q129); where a write past the allocation goes
+    (Q132); what bounds a `phas` request and what a request above 256 allocates (Q133, Q144). The
+    overlap of two firmware tasks and `str` then `ldr` are not answered (Q131, Q134).
 
 <!-- @simopen 12 -->

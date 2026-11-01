@@ -47,3 +47,14 @@ assembler writes `ima32.u d, iK, a, b, c, cie, iJ`; not run), the dual-issue for
 the destination being a register other than r10, an iK that is also a source, and K = 3. Narrows
 Q127: its first item (the extra i register) is answered for `.u` and its raw carry-out word for the
 words run; the rest stays open (Q135).
+
+**Correction, 2026-11-08 (11.27).** The measurements above are unchanged. E525 ran generic register
+operands: `ima32.u r10, iK, r1, r2, r3` over 282 jobs (42 corner triples, among them 0x12345678 x
+0x9abcdef0 with c = 0 and c = 0xffffffff, and 200 random triples, K = 0, then K = 1 and 2 over 20
+random triples each) wrote bits 63:32 of the exact 64-bit a * b + c to iK in 282 of 282, the other
+two i registers keeping their presets, and E526 ran `ima32.s` with the extra operand over the same
+triples: the signed high word with c sign-extended, 282 of 282 (no raw word was needed). So 'the
+five triples', 'no run has two generic multi-limb operands' and '`.s` with the extra operand not
+run' above no longer limit the high word for register operands. Still not run: immediates and
+constants other than c56 with the high word, `cie` or `.neg` with the extra operand, K = 3, the
+dual-issue form, an iK that is also a source, and a destination other than r10 (Q135).

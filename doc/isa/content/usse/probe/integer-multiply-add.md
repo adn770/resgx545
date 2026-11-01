@@ -36,18 +36,22 @@ with the immediates, the constants, `.neg` on sources 2 and 3, a subtract in one
 one-bit `cie`, and **`imae`'s carry out and carry in** write and take exactly 0 or 1, in one
 instruction or two, chained to a 64-bit accumulate **[HW]** (E469, E470, E471). In a second batch,
 with the same forms: **`ima32.u d, iK, a, b, c` writes the high 32 bits of the product with the
-addend to `iK`** (15 of 15 cases of five `.u` register triples, E493; the probe table's model had
-the `i` registers keep their values, 0 of 15), a borrow follows in one more instruction, `ima32.u
-r10, iK, r2, c56, r1` leaving `a - b` and `b - [a < b]` (75 of 75, E501) and an unsigned compare of
-two registers being that and `xor.testtanz.chan0 !c0, p0, r2, i0` (64 of 64 pairs of the eight
-values 0, 1, 0xffff, 0x10000, 0x7fffffff, 0x80000000, 0x80000001 and 0xffffffff, unsigned, not
-padded, and only for `b * 0xffffffff + a`); 17 more seven-bit immediates, `.neg` on `.s` immediates
-and constants, and a dependent reader after 0 to 6 and 8 `nop`s are exact (E495); the operand banks
-`pa`, `sa`, `o`, `g` and `i` are accepted and read 0 where `mov` reads 0 (31 of 40 cases), and the
-six r-bank destinations run, r0, r9, r18, r28, r30 and r31, `sa0`, `o0`, `i1` and `i2` take the
-result while `pa0` does not (E496); `imae coe, iN` writes the iN named for `i0` and `i1` (E494).
+addend to `iK`** (15 of 15 cases of five `.u` register triples, E493, then 282 of 282 jobs of
+generic register triples, 200 of them random, and the signed form in 282 of 282, E525, E526; the
+probe table's model had the `i` registers keep their values, 0 of 15), a borrow follows in one more
+instruction, `ima32.u r10, iK, r2, c56, r1` leaving `a - b` and `b - [a < b]` (75 of 75, E501) and
+an unsigned compare of two registers being that and `xor.testtanz.chan0 !c0, p0, r2, i0` (64 of 64
+pairs of the eight values 0, 1, 0xffff, 0x10000, 0x7fffffff, 0x80000000, 0x80000001 and 0xffffffff,
+E501; 252 of 252 seeded pairs and 48 of 48 with each of 0, 1 and 3 `nop`s between, E527), and a
+signed compare from `ima32.s` and `xor.testtanz.chan0 !c0, p0, i0, #0` (164 of 164 pairs, E528); 17
+more seven-bit immediates, `.neg` on `.s` immediates and constants, and a dependent reader after 0
+to 6 and 8 `nop`s are exact (E495); the operand banks `pa`, `sa`, `o`, `g` and `i` are accepted and
+read 0 where `mov` reads 0 (31 of 40 cases), and the six r-bank destinations run, r0, r9, r18, r28,
+r30 and r31, `sa0`, `o0`, `i1` and `i2` take the result while `pa0` does not (E496); `imae coe, iN`
+writes the iN named for `i0` and `i1` (E494).
 
 **Undecided:** `imae` with both `.rsN` and saturation, or with a repeat, a `u16`/`z16` source or a
-`.rsN` shift and its carries; `ima32` with `.s` or `cie` or `.neg` and the extra operand, its
-dual-issue secondary form, its selector 3 and what bit 46 of its word does to `r14` (Q135, Q127);
-when a repeated `idiv`'s result becomes visible to its own later iterations.
+`.rsN` shift and its carries; `ima32` with `cie` or `.neg` and the extra operand, or with immediates
+and constants other than c56 there, its dual-issue secondary form, its selector 3 and what bit 46 of
+its word does to `r14` (Q135, Q127); when a repeated `idiv`'s result becomes visible to its own
+later iterations.

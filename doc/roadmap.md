@@ -177,20 +177,21 @@ probe and sweep tables that the units above cover.
 
 ### 4.1 Open questions
 
-`doc/open_questions.md` lists every open question, generated from `questions/`: Q001 to Q142, 121
-open. Each has a kind. The work is hardware knowledge, for a simulator and then our own firmware,
-so the 107 `hw` questions are the work queue, each with a value (high 13, medium 58, low 36); the
-10 `fw` questions (the closed firmware's and driver's own behaviour: Q004, Q029, Q034, Q049, Q084,
-Q088, Q118, Q119, Q124, Q131) and the 4 `kernel` ones (the design of our kernel driver: Q005, Q037,
-Q095, Q140) stay open, parked. By unit: bif 4, dpm 5, edm 6, isp 10, mte 3, pbe 5, pds 16, platform
-4, render 9, ta 9, texture 7, transfer 3, usse 26, vdm 8, zls 6. A question is removed when a
-record answers it; one that mixed a hardware part with a firmware or kernel part was narrowed to
-the hardware part or folded into the hardware question that holds it (six so far: the control
-block's per-VM copy and the render context count bound into Q076, the recovery's reset steps into
-Q003, the settle routine and the two faults after a base-only fault or a kept owner into Q036 and
-Q045), and a fold is not an answer. What a fold or a narrowing left of the closed firmware's own
-behaviour is a new parked question: how a kick tells its directory is in no list (Q118, from the
-render context count) and whether a command with both kick flags acts as two (Q119, from Q065).
+`doc/open_questions.md` lists every open question, generated from `questions/`: Q001 to Q151, 127
+open (the three ids between Q146 and Q150 are reserved, unused). Each has a kind. The work is
+hardware knowledge, for a simulator and then our own firmware, so the 113 `hw` questions are the
+work queue, each with a value (high 13, medium 59, low 41); the 10 `fw` questions (the closed
+firmware's and driver's own behaviour: Q004, Q029, Q034, Q049, Q084, Q088, Q118, Q119, Q124, Q131)
+and the 4 `kernel` ones (the design of our kernel driver: Q005, Q037, Q095, Q140) stay open, parked.
+By unit: bif 4, dpm 5, edm 6, isp 10, mte 3, pbe 5, pds 16, platform 4, render 9, ta 9, texture 7,
+transfer 3, usse 32, vdm 8, zls 6. A question is removed when a record answers it; one that mixed a
+hardware part with a firmware or kernel part was narrowed to the hardware part or folded into the
+hardware question that holds it (six so far: the control block's per-VM copy and the render context
+count bound into Q076, the recovery's reset steps into Q003, the settle routine and the two faults
+after a base-only fault or a kept owner into Q036 and Q045), and a fold is not an answer. What a
+fold or a narrowing left of the closed firmware's own behaviour is a new parked question: how a kick
+tells its directory is in no list (Q118, from the render context count) and whether a command with
+both kick flags acts as two (Q119, from Q065).
 
 ### 4.2 Inferred glossary rows
 
@@ -477,3 +478,37 @@ words decides, at four B1, B2 and B3 are all read, the stride must be the rule's
 declared readings PA, PB and PC fits both (E505, E506, E509); the closed driver's 64 x 64 words draw
 exactly at 96 x 48 and 128 x 64 and fault at 128 x 128 and larger (E511). Records E502-E511; Q030,
 Q086, Q089 and Q100 are narrowed, none retired; Q138 to Q142 are new, Q140 for the kernel.
+
+Sub-phase 11.27 ran 32 probe tables on the laptop (2027 cases, one campaign run of each, no probe.py
+run first) with the sgxfive-test of 11.26 and the 11.19 linux fork, no kernel change, for the open
+cases of the 11.24 and 11.25 reviews. A first batch (16 tables, 291 cases:
+`probes/usse/store-own*.toml`, `repeat-ptrs`, `load-readers`, `reload-growth`, `phas-low*`,
+`phas-high-*`, `phas-mod`, `emit-addend*`) followed up the memory, repeat, load, `phas` and emit
+records. An instance sees its own unfenced `stad` and its store changes the dword the host reads
+with no fence (2048 of 2048 pixels in each of nine cases, E512); a branch on a test of `pa0` is
+taken by a whole 2 x 2 quad from its top-left lane, so the one instance selected that way was four
+lanes (E513); another instance's store is read by a later load when that instance ran earlier and in
+part when it runs later, and no case needed an `idf` (E514). On a repeat of 5 to 16 the pointers
+`r(b + i)` move by the form's increment, `r44` to `r55` included, and the others stay (50 of 50
+cases, E515); `stad.fetchN` stores from `b + k + 1` (plain and pre-increment) or `b + k`
+(post-increment) and moves `rb` by N (E516). An ALU reader sees a load's old value up to 48 `nop`s
+and a load lands over an earlier `mov` (E517); up to 192 distinct-line `ldad` on one counter, with
+no reload seen lost in the 4 or 5 reloaded registers read per job (7 of 7 jobs, E518). A `phas`
+request runs when it is 4 to 192 modulo 256 and hangs the job when it is 0 or 196 to 252, predicted
+for 15 of 15 requests from 512 up (E519). The addend of an `emitpds` control word matters (0xFFF to
+0x2000 leave the fill's own value in 12 of 12 probes), and all 39 emitting jobs faulted or hung
+(E520). A second batch (16 tables, 1736 cases: `ima32hi-generic`, `ima32hi-signed`, `ucmp2-random`,
+`ucmp2-pad`, `scmp`, `rawjoin-o*` and `rawchan-1` to `7`) ran the cases of the 11.25 review. The
+high word of `ima32` is bits 63:32 of the exact product with the addend on generic register
+operands, `.u` and `.s` (282 of 282 jobs each: E525, E526); the unsigned two-instruction compare is
+exact on 252 of 252 seeded pairs and padded with 0, 1 and 3 `nop`s (E527), and a signed one from
+`ima32.s` on 164 of 164 pairs (E528). Under the `o` join the two parts of a test field are ORed and
+an absent part counts true, a rule read from 90 readbacks and predicted on 270 of 270 more (E529);
+the chan field 1 to 7 is not ignored by a test of a 32-bit value, so write `chan0` (E530: 252 cases
+that fit the Test channels rule when read after the data). 17 probe runs read NONE (the table's
+hypotheses did not fit; each is stated in its record, the first runs kept), and the records say
+which rules were read after the data and which were predicted. Records E512-E520 and E525-E530
+(E521-E524 are kept for a later phase); E478, E480-E483, E487, E488, E493, E499 and E501 are carried
+forward with dated corrections where 11.27 answers what they listed as not run. Q051, Q052, Q128,
+Q133, Q134, Q135 and Q137 are narrowed, none retired; Q143 to Q146, Q150 and Q151 are new (all hw,
+Q143 medium, the others low).

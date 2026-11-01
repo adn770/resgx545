@@ -47,3 +47,18 @@ marker staying is a load in flight rather than a landing delayed with no wdf; a 
 time (the runner records none per case); the limit, if any, of outstanding loads on drc2 and drc3
 (only ldr was run there, E479); loads of different counters at once (E479). All of this was measured
 in client pixel tasks (fills), not in firmware tasks.
+
+**Correction, 2026-11-08 (11.27).** The measurements above are unchanged. The case the three reload
+cases could not show was run in E518: 104, 112, 128, 160 and 192 distinct-line `ldad` on `drc0` and
+128 and 192 on `drc1`, the first 100 into r4 to r103 and the rest reloading r4 onward with a
+different line, then one `wdf`, left each of 8 sampled registers with the line of its last load in 7
+of 7 jobs (4 or 5 reloaded registers read per job, 5 of 92 at 192), so 'distinct `ldad` beyond 100'
+now holds up to 192 on one counter for those registers and no reload was seen lost (200 distinct
+loads in one program were not run, and why the table stopped at 192 is not recorded). E517 read a
+load's destination with an ALU instruction (`ima32.u r11, r10, #1, r12`) after 0, 1, 4, 16, 32 and
+48 `nop`s, one sample each: the old value in 6 of 6, so a `stad` is not the only reader that sees no
+interlock; a load not waited for had landed when a `stad` read it after 40, 100 and 128 `nop`s and
+not after 48 and 64, so 'still holds the marker 32 slots on' is true of the slot counts run above
+and is not a bound (Q146); and a `mov` to the register after the `ldad` and before its `wdf` is
+overwritten by the load (4 of 4, one sample each). Not run: a load read by the texture unit or the
+dual-issue secondary, and loads of other counters at once beyond E479.

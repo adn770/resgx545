@@ -1,11 +1,11 @@
 +++
 id = "Q134"
-question = "which register does a client str change, is str then ldr of one register ordered without a fence, does one instance see its own unfenced stad and does its store reach the host at the end of the job, and when is an idf drcN, bif required"
+question = "which register does a client str change, is str then ldr of one register ordered without a fence, and when is an idf drcN, bif required beyond an instance's own store (the host reading during the job, a texture fetch of the stored data)"
 unit = "usse"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E480", "E481"]
+evidence = ["E480", "E481", "E512", "E513", "E514"]
 terms = []
 +++
 
@@ -21,12 +21,18 @@ What is open: a register a client str can change and a client ldr can read back,
 ordering. To settle it: an EDM task of our own (phase 12), or a register found by other means that
 a client str reaches.
 
-Also open, from E480 and E481: whether one instance sees its own `stad` unfenced, and whether one
-instance's unfenced store reaches the host at the end of the job. All 2048 instances stored the same
-value to the same dword in those probes, so a load may have seen another instance's identical store
-and a lost store of one instance would be hidden by the others (not run: the same programs with a
-per-instance address, from pa0 or the instance number in the pointer, or one instance selected by a
-test of pa0, as the emitpds probe does; a load of a dword the instance did not store, to read the
-store of another). And when an `idf drcN, bif` after a `stad` is required (another instance, the
-host during the job, a texture fetch of the stored data): no case in E480 or E481 needed one, and
-none tested those readers.
+Narrowed in 11.27: one instance sees its own unfenced `stad` (E512: each of the 2048 instances of
+the fill stored a value of its own to a dword of its own and loaded it back, 2048 of 2048 pixels in
+each of nine cases, with `ldad`, `.bypassl1`, `.fcfill`, `drc1`, a `wdf` only, two stores, an `idf`
+between and the `idf` at the end), and its store changes the dword the host reads with no fence at
+all (2048 dwords changed, 32 values read, in the seven cases that ended with no `idf` and no fence);
+the four lanes of a quad each do the same (E513, where a test of `pa0` selected a quad of four
+lanes, not one instance). A load of another instance's store returns it when that instance ran
+earlier, whole quads and lower-numbered instances in 2048 of 2048 and 1024 of 1024 pixels, and in
+part when it runs later (E514); no case run needed an `idf`. So the part of this question about one
+instance's own store is answered for a client pixel task.
+
+What stays open here is `str` then `ldr` (above), and, beyond the instance's own store, when an `idf
+drcN, bif` after a `stad` is required for a reader other than a load of the same fill: the `idf` in
+the storing instance, the host reading during the job, a texture fetch of the stored data and an EDM
+task; the order in which instances run is Q143, and the EDM task is Q131.

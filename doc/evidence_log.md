@@ -3444,6 +3444,140 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   of E507 are the rule itself), and the 20 held-out and larger cases of the 26 declared were not
   run.
   *ta; HW, infer; data: `ta-mtile-msaa-risky`.*
+- `E512` An instance sees its own unfenced stad: with every one of the 2048 instances of the 64 x 32
+  fill storing a value of its own (0x5107E000 + n, n = y * 64 + x from pa0) to a dword of its own
+  and loading it back, the load returns that instance's own value in 2048 of 2048 pixels in each of
+  nine cases (ldad, ldad.bypassl1, ldad.fcfill, ldad on drc1 and ldad after a wdf drc0 with no idf,
+  two stad of V1 then V2 where the load returns V2, with an idf drc0, bif and its wait between, and
+  with the idf at the end), and a load of another region that was never stored returns the fill
+  value in 2048 of 2048 in the tenth, and 2048 dwords of the region changed in all ten cases (32
+  values read, 2016 counted), among them the seven with no idf at all and no fence at the end.
+  *usse; HW, infer; data: `usse-store-own2`, `usse-store-own`.*
+- `E513` A branch over code that a test of pa0 selects is taken by a whole 2x2 quad, from the test
+  of its top-left lane: with `xor.testtaz.chan0 !c0, p0, r7, #0` and `!p0 br` over the code, the
+  four lanes (the pixels 0, 1, 64 and 65) ran it for pa0 == 0 and the four lanes 2, 3, 66 and 67 for
+  pa0 == 2, and no lane for pa0 == 1, 3 and 64 (a value no instance has); in the quads that ran the
+  code each lane saw its own stad, unfenced in 2 of the 3 cases that load (8 of 8 lanes; the third
+  has an idf and its wait between: 4 of 4 lanes) and the four stores of a quad reached the host in
+  each of the 5 jobs that stored (cases 0, 2, 3, 4 and 6 of the table, three of them, 0, 4 and 6,
+  with no fence at all).
+  *usse; HW, infer; data: `usse-store-own2`, `usse-store-own`.*
+- `E514` An unfenced stad is seen by a load of another instance that ran earlier and in part by one
+  that ran later, [infer] as a rule of timing (raster and tile order, not a fence): in the pairs
+  with the x and y neighbours in the same 2x2 quad (n ^ 1 and n ^ 64; the diagonal n ^ 65 was not
+  run) every one of 2048 loads returned the partner's value in each of four cases (with and without
+  an idf and its wait), with the instances of other quads (n ^ 2: the next quad in x, n ^ 128: two
+  rows on, n ^ 32: 32 columns on) 1088, 1088 and 1024 of 2048 (all 1024 of the loads whose partner
+  has the lower number, and 64, 64 and 0 of those whose partner has the higher), after 64 and 192
+  nop 1816 and 2008 of 2048 for n ^ 2 (1024 lower, 792 and 984 higher) and 1024 for n ^ 32 after 192
+  nop (no higher), and for the partners n ^ 1023, which lie in the other column of 32 (the left half
+  is partner of the right half), 1024 of 2048 in the three cases (no idf, an idf and its wait, 192
+  nop): exactly the pixels with x from 32 to 63.
+  *usse; HW, infer; data: `usse-store-own2`, `usse-store-own3`, `usse-store-own`.*
+- `E515` stad.repeatN and ldad.repeatN move the pointer registers r40 to r55 (r56 to r71 for a load)
+  by the form's increment when they are used and leave the unused ones, for N = 5 to 16: iteration i
+  uses r(b + i) in 10 of 10 plain stad.repeatN [r40,+#0] cases (N = 5, 6, 7 and 9 to 15), and with
+  all sixteen pointers read through a marker, the post-increment form [r40,#K++] moved r(40 + i) by
+  K dwords for i < N and no other pointer in 15 of 15 cases (K = 1: N = 5 to 16; K = 2: N = 8, 12,
+  16), the pre-increment form [r40,++#K] likewise in 4 of 4 (N = 8, 12, 16 with K = 1; N = 8 with K
+  = 2), and ldad.repeatN r10, [r56,#K++] and [r56,+#0] iteration i loads from r(56 + i) into r(10 +
+  i) in 11 of 11 plain cases (N = 5 to 7, 9 to 16, the destinations not reached holding their
+  markers) and moved r(56 + i) for i < N in 10 of 10 post-increment cases (K = 1: N = 5 to 9, 12,
+  15, 16; K = 2: N = 8, 12), in a client pixel task.
+  *usse; HW; data: `usse-repeat-ptrs`.*
+- `E516` stad.fetchN [rb,+#k] stores at the dwords b + k + 1 to b + k + N for k = 2, 3, 4, 7, 8 and
+  15 (fetch4), 3 (fetch8) and 2 (fetch16) (8 of 8 cases), [rb,#k++] stores at b + k to b + k + N - 1
+  and moves rb by N for k = 1 to 4 (4 of 4: fetch4 with k = 2 and 3, fetch8 with k = 2, fetch2 with
+  k = 4; k = 1 from E482), and [rb,++#k] stores at b + k + 1 to b + k + N and moves rb by N for k =
+  1 and 2 (3 of 3: fetch4 with k = 1 and 2, fetch16 with k = 1), in a client pixel task; the plain
+  rule was predicted (8 of 8), the post and pre rules are fits to their 4 and 3 readbacks, read
+  after the run, whose predictions failed.
+  *usse; HW; data: `usse-repeat-ptrs`.*
+- `E517` An ALU instruction reads the old value of a load's destination until a wdf: `ima32.u r11,
+  r10, #1, r12` after `ldad r10` with 0, 1, 4, 16, 32 and 48 `nop` between read the marker (6 of 6
+  cases, r11 = marker + 7 and r10 still the marker when stored), so the ALU reader has no interlock
+  either; a load not waited for had landed when a stad read r10 after 40, 100 and 128 `nop` and not
+  after 48 and 64 (3 of 5 cases landed), so it can land with no wdf, not as a function of the slot
+  count; and a `mov r10, #X` after an `ldad r10` and before its `wdf` is overwritten by the load in
+  4 of 4 cases (0, 4, 16 and 32 `nop` between), while a mov after the wdf wins (1 of 1).
+  *usse; HW, infer; data: `usse-load-readers`.*
+- `E518` No limit on outstanding loads was seen up to 192 ldad on one counter: 104, 112, 128, 160
+  and 192 `ldad` on drc0, and 128 and 192 on drc1, each with the first 100 into r4 to r103 and the
+  others reloading r4 onward with a different line, then one wdf, left every one of the 8 sampled
+  registers holding the line of its last load in 7 of 7 jobs (the 4 or 5 reloaded registers read per
+  job, 4 of 4 up to 5 of 92, the new line, the others the first line), no reload seen lost, and no
+  job hung or faulted, in a client pixel task.
+  *usse; HW; data: `usse-reload-growth`.*
+- `E519` The phas request that runs is not an interval: it counts modulo 256, so that a request T
+  runs when T mod 256 is 4 to 192 and hangs the job when it is 0 or 196 to 252, in every request
+  run: 100 to 120 and 148 to 156, 164 to 188 and 260 to 448 (all multiples of four there) ran (6 +
+  10 + 45 + 3 = 64 requests, o0 = the marker written to the last register of the request, or r123),
+  228 to 248 and 452 to 504 hung (6 + 14 = 20), and the 15 requests 512 to 1016 chosen by the rule
+  (8 predicted to run, 7 to hang) all did as predicted (15 of 15, 8 ran, 7 hung).
+  *usse; HW, infer; data: `usse-phas-low`, `usse-phas-low2`, `usse-phas-high-a`, `usse-phas-high-b`,
+  `usse-phas-high-c`, `usse-phas-high-d`, `usse-phas-high-e`, `usse-phas-mod`.*
+- `E520` The addend of an emitpds control word matters: with the addends 0xFFF, 0x1000, 0x1001,
+  0x1010, 0x1100 and 0x2000 the dwords that the started PDS program stores (dword 8 and dwords 16 to
+  31) read 0x403, the value the fill's own run leaves, in 12 of 12 probes (6 in the first table,
+  which ran them consecutively, 6 in the interleaved second table); of the other 27 probes, 24 read
+  3 or 2 (the base addend 0x100 in 11 of 11, the addends 0, 0x10, 0xF0, 0xFF, 0x101, 0x110, 0x200,
+  0x400, 0x4000, 0x8000 and 0x10000 once each in the first table, and 0x200 and 0x4000 in the
+  second), 0x800 read 0x401 in the first table and 0x400 in the second (2 of 2), and 0x10 read 0x400
+  in the second table; every emitting job faulted (37 of 39) or hung (2 of 39, the addend 0x2000 in
+  each table), in a client pixel task.
+  *usse; HW, infer; data: `usse-emit-addend`, `usse-emit-addend2`.*
+- `E525` ima32.u r10, iK, r1, r2, r3 writes bits 63:32 of the exact 64-bit a * b + c to iK and bits
+  31:0 to r10 on generic 32-bit register operands: 282 of 282 jobs (42 corner triples and 200 random
+  triples with K = 0, then K = 1 and K = 2 over 20 of the random triples each), the other two i
+  registers keeping their presets 0x55, 0x66 and 0x77 in 282 of 282; the reading 'iK = the high word
+  of a * b alone' (no carry from c) fits 141 of 282 and 'iK = the carry out of the 32-bit sum (a * b
+  mod 2^32) + c' fits 10 of 282.
+  *usse; HW; data: `usse-ima32hi-generic`.*
+- `E526` ima32.s r10, iK, r1, r2, r3 (the assembler accepts the .s form with the extra operand, word
+  0xD000024001404103 for K = 0) writes bits 63:32 of the signed 64-bit sext(a) * sext(b) + sext(c)
+  to iK and bits 31:0 to r10: 282 of 282 jobs over the 282 triples of E525 (K = 0, 1, 2 as there);
+  the readings 'c zero-extended' fits 142 of 282 and 'the unsigned high word' 32 of 282 (the same
+  triples); the other two i registers kept their presets in 282 of 282.
+  *usse; HW; data: `usse-ima32hi-signed`.*
+- `E527` The two-instruction unsigned compare of E501, ima32.u r11, i0, r2, c56, r1 then
+  xor.testtanz.chan0 !c0, p0, r2, i0, sets p0 to a < b unsigned in 252 of 252 seeded pairs (200
+  random, 20 equal, 12 differing in one bit at the positions 0, 8, 15, 16, 24 and 31 in both orders,
+  10 with equal low half and 10 with equal high half; 127 with a < b), and with 0, 1 and 3 nops
+  between the two instructions over 48 of those pairs each (24 random, 8 equal, 8 with equal low
+  half, 8 with equal high half; 21 with a < b): 48 of 48 for each of the three paddings.
+  *usse; HW; data: `usse-ucmp2-random`, `usse-ucmp2-pad`.*
+- `E528` A signed compare built from the high word of ima32.s exists and is exact on the pairs run:
+  ima32.s r11, i0, r2, c56, r1 (c56 = 0xffffffff, signed -1: the signed 64-bit a - b, whose high
+  word is 0xffffffff for a < b and 0 otherwise) then xor.testtanz.chan0 !c0, p0, i0, #0 (true when
+  i0 is nonzero) sets p0 to a < b signed in 164 of 164 pairs (the 64 pairs of the eight values 0, 1,
+  0xffff, 0x10000, 0x7fffffff, 0x80000000, 0x80000001, 0xffffffff, the equal pairs and the pairs
+  across the sign boundary included, and 100 seeded random pairs; 78 with a < b signed).
+  *usse; HW, infer; data: `usse-scmp`.*
+- `E529` With enc[39] = 0 (the o join, chan0) the two parts of the class 9 test field are ORed and a
+  part that is absent from the field counts as true: the rule (zero part: tanz if bit 41, else taz
+  if bit 40, else true; sign part: pat if bit 43, else nat if bit 42, else true; p0 = zero part OR
+  sign part) fits the 90 cases of and r1, r2 over the 15 field values 1 to 15 and six input pairs
+  (90 of 90, a rule read from those 90 readbacks, so a fit to them: the first prediction, the parts
+  ORed with an absent part false, fitted 75 of 90, the parts ANDed 48 and the OR of the set
+  conditions 75, and the runner's verdict was NONE) and predicted, written before the run, all 270
+  cases of a fresh run on or and xor with registers and and with #7 (three probes, 15 values over
+  six other input pairs each: 90 of 90, 90 of 90, 90 of 90); in particular every one-part field (1,
+  2, 4, 8) and the fields 3 and 0xc read true for every input of the 90 cases, which is the 'a
+  one-part test is always true under the o join' reading.
+  *usse; HW, infer; data: `usse-rawjoin-o`, `usse-rawjoin-o2-or`, `usse-rawjoin-o2-xor`,
+  `usse-rawjoin-o2-and7`.*
+- `E530` The chan field enc[38:36] of an and test word with the a join changes what the test reads:
+  the prediction written before the runs (the chan field does not change a test of a 32-bit result,
+  p0 as for chan0) failed for each of the seven values 1 to 7 (the readings fit 26, 26, 26, 32, 30,
+  32, 30 of the 36 cases of the six fields 1, 2, 4, 8, 9, 0xa over six input pairs); chan 1, 2 and 3
+  read the same constant for every input pair (taz 0, tanz 1, nat 0, pat 1, taz with pat 0, tanz
+  with pat 1: 36 of 36 equal across the six pairs and the three values), chan 4 and chan 6 read tanz
+  and pat as the result's (true when the result is nonzero, true when it is not negative) and taz
+  and nat as false in all six pairs (the same readings in the two tables), and chan 5 and chan 7
+  read taz and nat as the result's and tanz and pat as true in all six pairs (the same readings in
+  the two tables).
+  *usse; HW, infer; data: `usse-rawchan-1`, `usse-rawchan-2`, `usse-rawchan-3`, `usse-rawchan-4`,
+  `usse-rawchan-5`, `usse-rawchan-6`, `usse-rawchan-7`.*
 
 ## By unit
 
@@ -3528,7 +3662,8 @@ E107, E108, E109, E110, E111, E112, E113, E115, E117, E118, E119, E120, E121, E1
 E244, E245, E255, E292, E293, E294, E295, E296, E297, E298, E350, E351, E366, E367, E368, E369,
 E370, E371, E372, E373, E374, E375, E376, E377, E378, E380, E406, E423, E452, E469, E470, E471,
 E472, E473, E474, E475, E476, E477, E478, E479, E480, E481, E482, E483, E484, E485, E486, E487,
-E488, E491, E492, E493, E494, E495, E496, E497, E498, E499, E500, E501.
+E488, E491, E492, E493, E494, E495, E496, E497, E498, E499, E500, E501, E512, E513, E514, E515,
+E516, E517, E518, E519, E520, E525, E526, E527, E528, E529, E530.
 
 ### vdm
 

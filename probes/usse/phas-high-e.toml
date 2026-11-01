@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse phas requests 440 to 504 (risky, each probably a hang): 0 sweeps, 1 probes.
+# Run note: read NONE: 440, 444 and 448 ran and 452 on hung, so the table's two hypotheses (every request works; every request
+# above 192 hangs) each failed (E519).
+needs = ["render"]
+
+[[probe]]
+name = "usse-phas-high-e-440to504"
+question = "a two-phase fill started with 8 temporaries whose phas asks for 440 to 504 for phase 1"
+source = "temps_phas.s"
+temps = 8
+params = {  }
+inputs = ["T", "HI", "MARK"]
+labels = ["--temps 8; phas asks for 440 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 444 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 448 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 452 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 456 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 460 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 464 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 468 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 472 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 476 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 480 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 484 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 488 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 492 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 496 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 500 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 504 temporaries for phase 1; r123 written and read in phase 1"]
+cases = [["440", "123", "0x7E57007B"], ["444", "123", "0x7E57007B"], ["448", "123", "0x7E57007B"], ["452", "123", "0x7E57007B"], ["456", "123", "0x7E57007B"], ["460", "123", "0x7E57007B"], ["464", "123", "0x7E57007B"], ["468", "123", "0x7E57007B"], ["472", "123", "0x7E57007B"], ["476", "123", "0x7E57007B"], ["480", "123", "0x7E57007B"], ["484", "123", "0x7E57007B"], ["488", "123", "0x7E57007B"], ["492", "123", "0x7E57007B"], ["496", "123", "0x7E57007B"], ["500", "123", "0x7E57007B"], ["504", "123", "0x7E57007B"]]
+[probe.hypotheses]
+"a phas request up to 255 fours (1020) works, the registers up to r123 are usable" = [{ o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }]
+"a phas request above 192 hangs the job" = ["fail", "fail", "fail", "fail", "fail", "fail", "fail", "fail", "fail", "fail", "fail", "fail", "fail", "fail", "fail", "fail", "fail"]

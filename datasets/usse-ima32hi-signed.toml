@@ -1,0 +1,10 @@
+title = "probe table usse/ima32hi-signed"
+repo = "data"
+paths = ["usse/ima32hi-signed/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 286
+size = 606974
+sha256 = "dee4914bb31182dcbed4356bbf768a887c6b7cb50e2d1c24a1092d9c20524bb1"
+recipe = "probes/usse/ima32hi-signed.toml"
+needs = ["render"]

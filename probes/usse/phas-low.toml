@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# usse phas requests between 96 and 192 not run before (all multiples of four 100 to 120, 148 to 156, 164 to 188): 0 sweeps, 2 probes.
+# Run note: usse-phas-low-below124 (100 to 120) read NONE with mixed pixels: the program wrote r123 past the allocation of the
+# request, a table error, kept; redone as phas-low2.toml, which writes the last register of the request.
+needs = ["render"]
+
+[[probe]]
+name = "usse-phas-low-below124"
+question = "a two-phase fill started with 8 temporaries whose phas asks for 100 to 120 for phase 1"
+source = "temps_phas.s"
+temps = 8
+params = {  }
+inputs = ["T", "HI", "MARK"]
+labels = ["--temps 8; phas asks for 100 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 104 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 108 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 112 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 116 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 120 temporaries for phase 1; r123 written and read in phase 1"]
+cases = [["100", "123", "0x7E57007B"], ["104", "123", "0x7E57007B"], ["108", "123", "0x7E57007B"], ["112", "123", "0x7E57007B"], ["116", "123", "0x7E57007B"], ["120", "123", "0x7E57007B"]]
+[probe.hypotheses]
+"a phas request up to 255 fours (1020) works, the registers up to r123 are usable" = [{ o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }]
+"a request between the values that ran (96, 124, 128, 132 to 144, 160, 192) hangs the job" = ["fail", "fail", "fail", "fail", "fail", "fail"]
+
+[[probe]]
+name = "usse-phas-low-above128"
+question = "a two-phase fill started with 8 temporaries whose phas asks for 148 to 156 and 164 to 188 for phase 1"
+source = "temps_phas.s"
+temps = 8
+params = {  }
+inputs = ["T", "HI", "MARK"]
+labels = ["--temps 8; phas asks for 148 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 152 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 156 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 164 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 168 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 172 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 176 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 180 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 184 temporaries for phase 1; r123 written and read in phase 1", "--temps 8; phas asks for 188 temporaries for phase 1; r123 written and read in phase 1"]
+cases = [["148", "123", "0x7E57007B"], ["152", "123", "0x7E57007B"], ["156", "123", "0x7E57007B"], ["164", "123", "0x7E57007B"], ["168", "123", "0x7E57007B"], ["172", "123", "0x7E57007B"], ["176", "123", "0x7E57007B"], ["180", "123", "0x7E57007B"], ["184", "123", "0x7E57007B"], ["188", "123", "0x7E57007B"]]
+[probe.hypotheses]
+"a phas request up to 255 fours (1020) works, the registers up to r123 are usable" = [{ o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }, { o0 = 0x7E57007B }]
+"a request between the values that ran (96, 124, 128, 132 to 144, 160, 192) hangs the job" = ["fail", "fail", "fail", "fail", "fail", "fail", "fail", "fail", "fail", "fail"]
