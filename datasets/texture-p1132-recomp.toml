@@ -1,0 +1,9 @@
+title = "texture sampler batch 11.32, the dumps in the form the vector converter reads (raw.txt and bins per table)"
+repo = "data"
+paths = ["texture/p1132-recomp/"]
+method = "tools/texture/p1132/recompute/recompute_p1132.py --raw on the kept dumps of texture-p1132-*: one raw.txt per table in the campaign form (the 2048 pixels of each job as row lines, the scratch check), the table and the program of each case (bins/), tx_map.s; the vectors of vectors-texture-p1132 are converted from these"
+date = "2026-11-09"
+files = 460
+size = 8670866
+sha256 = "5ecd57f094e16fe98f2580bd652a1bac74f8211636aeca2aeec961298ed40fd7"
+recipe = "tools/texture/p1132/recompute/recompute_p1132.py"

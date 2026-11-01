@@ -451,6 +451,7 @@ sits, the reading, and the evidence records it rests on.
   level select of strided textures [infer].
 - `G1051` `T3.BITS7_0` (T3 [7:0]): a texel offset: bits 7:4 in x and 3:0 in y, each a signed 4-bit
   count (single bits move the read by 1, 2, 4 and -8 texels), clamped at the texture's edge [infer].
+  Evidence: E566.
 - `G0284` `T3.DATA_SIZE` (T3 [26:23]): Bits 26:23 of the fourth sampler word are named in the
   sampler sweep but that sweep varied only the conversion fields; the sampler data show nothing
   about this field beyond its name. Evidence: E034, E242.

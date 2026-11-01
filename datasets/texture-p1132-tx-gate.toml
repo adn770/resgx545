@@ -1,0 +1,10 @@
+title = "texture sampler batch 11.32, script tx-gate: the gate: four controls (a twiddled and a strided identity map, a chain level, a mirror) of the 11.32 texture batch"
+repo = "data"
+paths = ["texture/p1132/tx-gate/"]
+method = "probes/texture/templates/tx-gate.sh on the laptop (direct cable) as the first step of run-all-1132.sh (the batch of phase 11.32, 2026-11-09, runs from 02:36:08), kernel 7.3.0-resgx545, module srcversion 5AD04F33F6BCDA7B880E238, tool sgxfive-test-1126; every job's whole raw output gzipped (NAME.txt.gz, mtime 0), the case table (cases.tsv) and the kernel log of the run (journal-k.txt.gz); the programs and tables are those of probes/texture/tx-gate.toml; the script prints a pixel sha256 per job and compares it with the declared prediction where there is one, nothing is judged on the laptop (tools/texture/p1132/recompute/recompute_p1132.py recomputes everything)"
+date = "2026-11-09"
+files = 6
+size = 7280
+sha256 = "6cff64b8b75d1df58f171d855508fe14831ee8835cf96e4c002fe0541f71e197"
+recipe = "probes/texture/tx-gate.toml"
+needs = ["render"]

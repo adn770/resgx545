@@ -5,7 +5,7 @@ unit = "texture"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E274", "E397"]
+evidence = ["E274", "E397", "E566", "E564"]
 terms = ["T3.BIT10", "T3.BIT14", "T3.BITS19_18", "T3.BITS28_27", "T0.BIT27", "T3.BITS7_0"]
 +++
 
@@ -27,3 +27,15 @@ constant); bit 14's shear; T0 bit 27's format.
 To settle it: T3 bits 7:0 at every value in the copy; bits 18-19 and 27-28 at each of their
 values with a strided chain of tagged levels written after the source; T0 bit 27 over the coded
 source of E270 with the pixels fitted by pbe_words.py correlate.
+
+Narrowed in 11.32 (E566, E564). In smp on a strided 64x32 texture T3 bits 0 to 3 and 4 to 7 are the
+row and column offsets at every value tried (30 single-nibble values and 16 combinations, 46 of 46
+under both declared orders of the offset and the address mode), so they are an offset in a sampler
+as well as in a fetch; the held-out values prefer the offset before the address mode (6 of 24
+against 1 of 24), neither model complete. Bits 8, 9, 20, 21 and 22 change nothing there, as do 11
+and 12; but on a twiddled 64x64 chain texture bit 11 cleared and bit 12 set change every pixel
+(E564), so those two act on a twiddled texture. Bits 10, 14, 18, 27 and 28 give offsets that change
+with the pixel position (a transform of (x, y), not a constant offset), and T3 bit 13 faults the
+job again; they are carried by Q176 with bits 11 and 12. T0 bit 27 on the strided texture reads
+values that are no name of the buffer. What stays open is the transform of bits 10, 14, 18, 27 and
+28 (Q176), what bits 11 and 12 select, and T0 bit 27's format.

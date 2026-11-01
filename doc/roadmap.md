@@ -177,21 +177,22 @@ probe and sweep tables that the units above cover.
 
 ### 4.1 Open questions
 
-`doc/open_questions.md` lists every open question, generated from `questions/`: Q001 to Q167, 143
-open (the two ids between Q147 and Q150 are reserved, unused). Each has a kind. The work is hardware
-knowledge, for a simulator and then our own firmware, so the 127 `hw` questions are the work queue,
-each with a value (high 13, medium 65, low 49); the 10 `fw` questions (the closed firmware's and
-driver's own behaviour: Q004, Q029, Q034, Q049, Q084, Q088, Q118, Q119, Q124, Q131) and the 6
-`kernel` ones (the design of our kernel driver: Q005, Q037, Q095, Q140, Q166, Q167) stay open,
-parked. By unit: bif 4, dpm 5, edm 12, isp 10, mte 3, pbe 5, pds 16, platform 5, render 9, ta 14,
-texture 7, transfer 3, usse 35, vdm 9, zls 6. A question is removed when a record answers it; one
-that mixed a hardware part with a firmware or kernel part was narrowed to the hardware part or
-folded into the hardware question that holds it (seven so far: the control block's per-VM copy and
-the render context count bound into Q076, the recovery's reset steps into Q003, the settle routine
-and the two faults after a base-only fault or a kept owner into Q036 and Q045, the points question
-into Q161), and a fold is not an answer. What a fold or a narrowing left of the closed firmware's
-own behaviour is a new parked question: how a kick tells its directory is in no list (Q118, from the
-render context count) and whether a command with both kick flags acts as two (Q119, from Q065).
+`doc/open_questions.md` lists every open question, generated from `questions/`: Q001 to Q181, 151
+open (the two ids between Q147 and Q150 are reserved, unused, and the ids between Q168 and Q175
+belong to phases not in this tree). Each has a kind. The work is hardware knowledge, for a simulator
+and then our own firmware, so the 135 `hw` questions are the work queue, each with a value (high 13,
+medium 64, low 58); the 10 `fw` questions (the closed firmware's and driver's own behaviour: Q004,
+Q029, Q034, Q049, Q084, Q088, Q118, Q119, Q124, Q131) and the 6 `kernel` ones (the design of our
+kernel driver: Q005, Q037, Q095, Q140, Q166, Q167) stay open, parked. By unit: bif 4, dpm 5, edm 13,
+isp 10, mte 3, pbe 5, pds 16, platform 5, render 9, ta 14, texture 14, transfer 3, usse 35, vdm 9,
+zls 6. A question is removed when a record answers it; one that mixed a hardware part with a
+firmware or kernel part was narrowed to the hardware part or folded into the hardware question that
+holds it (seven so far: the control block's per-VM copy and the render context count bound into
+Q076, the recovery's reset steps into Q003, the settle routine and the two faults after a base-only
+fault or a kept owner into Q036 and Q045, the points question into Q161), and a fold is not an
+answer. What a fold or a narrowing left of the closed firmware's own behaviour is a new parked
+question: how a kick tells its directory is in no list (Q118, from the render context count) and
+whether a command with both kick flags acts as two (Q119, from Q065).
 
 ### 4.2 Inferred glossary rows
 
@@ -645,3 +646,38 @@ to Q165, and Q166 kernel, parked: it needs a kernel change). The TA and VDM mode
 the USSE, PDS or texture models, so sgx-sim is unchanged and the vectors are the same. The roadmap
 counts the questions from the built `doc/open_questions.md`: 143 open (Q001 to Q167), 127 hw (high
 13, medium 65, low 49), 10 fw and 6 kernel; ta 14, vdm 9, platform 5.
+
+Sub-phase 11.32 ran the sampler of the texture unit in a fill of our own, 456 jobs of 2048 pixels
+(2026-11-09, one program, each pixel one `smp` of a texture whose dwords name themselves), and ten
+firmware-task jobs with `trc_hazard=1` (E550). The sampler tables: the first `smp` in a coordinates
+fill read the declared image in 4 of 4 controls (E560); twiddled 32-bit textures with a side above
+16 lie in tiles of 16 x 16, interleaved as before, the tiles in raster order with x first, a law fit
+on 28 of 28 windows that also gives E441's levels 0 to 2 (E561); a non-square chain halves both
+sides down to 1x1 and the T0 fields read it as a square chain (E562: 8 of 8 fit and 49 of 49
+held-out jobs); the LOD of a gradient is a logarithm of a footprint that fits the largest component
+on some cases and the Euclidean length on others, its fraction truncated except at one column
+(E563); the declared bilinear baseline failed its control, so no anisotropy result stands (E564);
+address modes 6 and 7 clamp and 4 and 5 repeat along v while modes 4 to 7 along u read other texels
+(E565); T3 bits 0 to 7 are offsets in `smp` at every value tried and bits 10, 14, 18, 27 and 28 act
+by position (E566); `smp3d` ignored the third coordinate on the types and sizes it ran on and
+TEXTYPE 2 does not (E567); the YUV formats read black in a fill whether or not the colour-space poke
+was given, and of three block orders only one fits format 27 (E568); 28 triangle jobs of the Q021
+probes all hung (E569). The firmware task armed with TRC 32 to 48 and the hazard word ran in 10 of
+10 jobs and read its marker back through `r123`, a register that exists at TRC 31; nothing above
+`r123` was tested (E550, Q168). Records E550 and E560-E569. The simulator (`crates/sgx-sim`) gains
+the E276 and E441 level fields, the tile law for 32-bit twiddled textures in the 14 sizes run, the
+non-square chain in the five sizes run, `smp3d` as `smp2d` only on the point-sampled textures it ran
+on (the rule refuses TEXTYPE 2 itself), TEXTYPE 7 at 16x16, and the YUV formats as black only for a
+job whose recorded pokes leave the colour-space set unloaded (`init.job.pokes`); everything else of
+these tables stays unsupported with a reason. Of the 425 vectors (456 jobs less the 28 triangle jobs
+and 3 that failed) 241 replay exactly, 184 stop and none mismatches (the draft's 241 of 425 is the
+figure; `plan.md`, which is kept as declared, still says 141 of 428 for the state before the
+simulator patches); the replay of the landed vectors is unchanged (30623 pass, 1112 fitted, 918
+stops, 175 skipped, 1937 left out, 82 and 48 hung, 0 mismatches), the eight YUV texels of the landed
+formats-other vectors still stop. Q104 is narrowed to the 1D, side-of-1 and non-32-bit cases, Q078,
+Q050, Q115, Q113, Q114 and Q021 are narrowed or carry their evidence and none is retired; Q168 and
+Q175 to Q181 are new (hw, low).
+The roadmap counts the questions from the built `doc/open_questions.md`: 151 open (Q001 to Q181),
+135 hw (high 13, medium 64, low 58), 10 fw and 6 kernel; edm 13, texture 14. The replay of the
+tree's data, with the 17 new vector files in the data repository: 30864 pass, 1112 fitted, 1102
+unsupported, 175 skipped, 1937 left out, 82 and 48 hung, 0 mismatches.

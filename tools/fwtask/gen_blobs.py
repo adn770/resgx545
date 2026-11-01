@@ -322,6 +322,23 @@ def gen_trc(t):
     return s.text()
 
 
+def gen_trcp(t):
+    """Phase 11.33, item 13 above 31: the marker of the job (parameter 8, its own value per job) is
+    written to r123, the highest register that can be named, read back with r0 and stored. T is
+    the TRC the kernel arms (4T temporaries); r124 and up cannot be named, so no register past the
+    allocation is written."""
+    s = Src("trcp_%d" % t, "item 13: TRC %d (%d temporaries requested): the job's marker in r123" % (t, 4 * t), "11.33")
+    prologue(s)
+    dispatch(s, [1])
+    s("c1:", "ldad.bypassl1 r10, [r1,+#%d], drc0   ; the marker" % L.PARAM_B, "wdf drc0",
+      "mov r123, r10", "mov r12, r123", "mov r14, r0", "mov r13, #0x00000000")
+    result_base(s, 1)
+    store(s, 0, "r12"); store(s, 1, "r13"); store(s, 2, "r14")
+    s("br @done")
+    done(s)
+    return s.text()
+
+
 def gen_state2():
     """Item 12 and Q124 with a writer that tail-calls the closed task. Entry: capture first.
     cmd 1: write sa64, sa100, sa127, sa20, sa24, r20, r21, i0, i1 from the parameters and p0 to p3 from
@@ -468,6 +485,7 @@ def gen_events_m():
 
 
 TRC_STAIRS = [8, 9, 12, 16, 24, 31, 32, 40, 48, 49, 64]
+TRCP_STAIRS = [32, 36, 40, 44, 48]          # 11.33
 
 
 def all_sources():
@@ -477,6 +495,8 @@ def all_sources():
          "state2": gen_state2(), "state3": gen_state3(), "events_m": gen_events_m()}
     for t in TRC_STAIRS:
         d["trc_%02d" % t] = gen_trc(t)
+    for t in TRCP_STAIRS:
+        d["trcp_%d" % t] = gen_trcp(t)
     return d
 
 

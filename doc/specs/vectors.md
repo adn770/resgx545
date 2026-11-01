@@ -36,6 +36,13 @@ of a program placed in the code heap (`--place OFFSET=FILE`) converts with `init
 (`{"offset": heap offset, "words": [...]}`, the placed program from the run's `bins/`): that program
 is the one that ran, from the code base the placement gives (`Machine::code_index`, the offset
 modulo 0x80000 bytes in instructions, E476 and E492), and `program.words` is the fill's stub.
+The 425 vectors of the 11.32 texture batch (`datasets/vectors-texture-p1132.toml`, 17 files in
+`vectors/nokernel/usse/texture-p1132/`, converted from `texture/p1132-recomp/raw/`) are fills of
+2048 pixels, `pa0` the coordinates; 241 replay exactly. A fill whose table pokes the transfer
+command but whose run printed no pokes carries no `init.job`; the simulator takes the YUV
+formats (28 and 29) as opaque black only where `init.job.pokes` is recorded and leaves the
+colour-space load flag (`xfer:17` bit 0) clear (`Machine::csc_unloaded`), so the colour-space jobs
+of that batch and the landed formats-other vectors stop on them.
 `--example replay` lists the outcome of every vector, one line each (`excluded` with its reason for
 those it leaves out).
 

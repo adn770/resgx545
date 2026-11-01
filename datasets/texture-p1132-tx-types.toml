@@ -1,0 +1,10 @@
+title = "texture sampler batch 11.32, script tx-types: texture types and smp3d, 24 jobs"
+repo = "data"
+paths = ["texture/p1132/tx-types/"]
+method = "probes/texture/templates/tx-types.sh on the laptop (direct cable) as the eighth step of run-all-1132.sh (the batch of phase 11.32, 2026-11-09, runs from 02:36:08), kernel 7.3.0-resgx545, module srcversion 5AD04F33F6BCDA7B880E238, tool sgxfive-test-1126; every job's whole raw output gzipped (NAME.txt.gz, mtime 0), the case table (cases.tsv) and the kernel log of the run (journal-k.txt.gz); the programs and tables are those of probes/texture/tx-types.toml; the script prints a pixel sha256 per job and compares it with the declared prediction where there is one, nothing is judged on the laptop (tools/texture/p1132/recompute/recompute_p1132.py recomputes everything)"
+date = "2026-11-09"
+files = 26
+size = 34248
+sha256 = "7bb5c34a13a02018ad3285f5186d2becfeb578bdeda4350466ddfd81044453ad"
+recipe = "probes/texture/tx-types.toml"
+needs = ["render"]

@@ -1,0 +1,9 @@
+title = "firmware task of our own armed with TRC 32, 36, 40, 44 and 48 and trc_hazard=1, pass repeat: the marker written to r123 read back"
+repo = "data"
+paths = ["firmware-tasks/p1133-trc-repeat/"]
+method = "tools/fwtask/run_1133.py on the laptop (direct cable), module srcversion 5AD04F33F6BCDA7B880E238, linux fork tip 71e5791d8f95 (env.toml), stage repeat (seed 1134): per T an arm (slots=0x1 entry=0 trc=T trc_hazard=1), one job with a marker of its own, a debugfs reset to stock and the gate; the arm, run, reset and gate results as JSON per T, the verdicts, the kernel log; env.toml is headed \"phase 11.30 run environment\" and carries the 11.30 predictions hash, env33.toml carries the 11.33 one (c66bbcc9...) and is the authoritative file for it"
+date = "2026-11-09"
+files = 25
+size = 72326
+sha256 = "5d8da82319344f5c27fa4f63924c3432bf7389e1cfde157f68672801368dd9fc"
+recipe = "tools/fwtask/run_1133.py"

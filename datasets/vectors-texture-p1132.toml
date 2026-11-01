@@ -1,0 +1,9 @@
+title = "instruction vectors of the 11.32 texture batch (425 jobs of 17 tables)"
+repo = "data"
+paths = ["vectors/nokernel/usse/texture-p1132/"]
+method = "tools/usse-asm/vectors.py on texture-p1132-recomp, one file per table (425 vectors in 17 files: 456 jobs less 28 triangle jobs and 3 that failed); each vector carries its program, its state (pa0 as coordinates, 2048 pixels) and its 2048 read pixels; a fill whose run printed no pokes carries no job, so the colour-space jobs do not say whether the set was loaded and the YUV formats stop on them in the simulator"
+date = "2026-11-09"
+files = 17
+size = 17589577
+sha256 = "35882a1dfd827dffd45ee9cc1614ce909d1be73b2b13c3ab0b0c1ae1bd0a4cf1"
+recipe = "tools/usse-asm/vectors.py"

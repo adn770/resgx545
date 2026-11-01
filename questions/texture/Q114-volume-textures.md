@@ -5,7 +5,7 @@ unit = "texture"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E342"]
+evidence = ["E342", "E567"]
 terms = ["TEXTYPE", "TEXFORMAT"]
 +++
 
@@ -19,3 +19,8 @@ the third coordinate's address mode and filter, and the mip chain of a volume.
 To settle it: a volume texture uploaded from the host (a stack of the 2D textures of E035) sampled
 by a USSE program with a three-component coordinate set, over the T0 to T3 words and TEXTYPE values
 not yet used (Q078 lists the unexplained bits), the result compared with the 2D slices.
+
+Narrowed in 11.32 (E567). The TEXTYPE values 0 to 7 were run at 16x16 (and 6 at 64x32): 7 reads as
+twiddled, 1 and 3 as one image, 4 and 5 as one image each, and 2 changes with smp3d's third
+coordinate; no volume slice read was identified. Whether type 2 is a volume or a cube is open
+(Q178), as are the slice layout, the third coordinate's mode and filter and a volume's mip chain.

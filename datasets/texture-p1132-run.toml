@@ -1,0 +1,9 @@
+title = "texture sampler batch 11.32, the stdout of the twelve scripts and the log of the batch"
+repo = "data"
+paths = ["texture/p1132/stdout/", "texture/p1132/p1132-runall.log"]
+method = "the standard output of each script of run-all-1132.sh (tx-gate to tx-types-risky, one .out each: the job headers, the kept sizes and sha256, the pixel sha256 and MATCH or MISMATCH against the declared prediction, the health lines) and the batch log p1132-runall.log (rc, jobs, kept files and declared mismatches per script; 3 declared mismatches: shp-32x32-l0 in tx-shapes and in tx-t3 and an-ctl in tx-lod)"
+date = "2026-11-09"
+files = 13
+size = 154465
+sha256 = "efb8eb8913785aed973421489170158d1454a0640397b5987f24476d988b5101"
+recipe = "probes/texture/templates/run-all-1132.sh"

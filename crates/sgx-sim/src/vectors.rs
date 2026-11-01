@@ -103,7 +103,7 @@ pub fn run_scalar_with(v: &Json, setup: impl FnOnce(&mut Machine)) -> Result<Out
     let temps = v.get("init").get("temps").num().map_or(124, |t| t as usize);
     // a fill whose readback is one o0: every instance alike
     let mut m =
-        Machine { temps, near: true, uniform: true, coeffs: job_coeffs(v), code_index, ..Machine::default() };
+        Machine { temps, near: true, uniform: true, coeffs: job_coeffs(v), csc_unloaded: job_csc_unloaded(v), code_index, ..Machine::default() };
     setup(&mut m);
     match m.run(&prog, &mut mem, 10_000) {
         Ok(()) => {}
@@ -286,6 +286,29 @@ pub fn job_coeffs(v: &Json) -> Option<crate::usse::FilterBlock> {
         }
         _ => None,
     }
+}
+
+/// Whether the job a vector ran in left the colour-space set unloaded: its recorded pokes of the
+/// transfer command (init.job.pokes) do not set the load flag, xfer:17 bit 0 (transfer.md 3.2).
+/// False where the vector does not carry its job: the YUV formats are then not modelled.
+pub fn job_csc_unloaded(v: &Json) -> bool {
+    let Json::Arr(pokes) = v.get("init").get("job").get("pokes") else { return false };
+    let mut word17 = 0u32;
+    for k in pokes.iter().filter_map(|k| k.str()) {
+        let Some(rest) = k.strip_prefix("xfer:17") else { continue };
+        let (flip, val) = match (rest.strip_prefix("^="), rest.strip_prefix('=')) {
+            (Some(x), _) => (true, x),
+            (_, Some(x)) => (false, x),
+            _ => continue,
+        };
+        let val = match val.strip_prefix("0x") {
+            Some(h) => u32::from_str_radix(h, 16),
+            None => val.parse(),
+        };
+        let Ok(val) = val else { return false };
+        word17 = if flip { word17 ^ val } else { val };
+    }
+    word17 & 1 == 0
 }
 
 /// A vector file, each vector given its job (init.job) from the file's sidecar where it does
@@ -519,7 +542,7 @@ fn run_pds_tile(v: &Json, mut pds: Pds) -> Result<Outcome, String> {
     let prog = Program::new(&words, Core::Sgx545);
     let mut mem = Memory { base: SCRATCH_BASE, words: std::mem::take(&mut bus.scratch) };
     let temps = init.get("temps").num().map_or(124, |t| t as usize);
-    let mut m = Machine { temps, near: true, sa: bus.sa, coeffs: job_coeffs(v), ..Machine::default() };
+    let mut m = Machine { temps, near: true, sa: bus.sa, coeffs: job_coeffs(v), csc_unloaded: job_csc_unloaded(v), ..Machine::default() };
     m.written.sa = bus.written;
     // an attribute written last from a near value (the fetch pc) keeps its bound
     let mut sa_near = BTreeMap::new();
@@ -625,6 +648,7 @@ pub fn run_pixels(v: &Json) -> Result<Outcome, String> {
             for (m, &(x, y)) in quad.iter_mut().zip(&at) {
                 m.temps = temps;
                 m.coeffs = job_coeffs(v);
+                m.csc_unloaded = job_csc_unloaded(v);
                 m.pa[0] = (y as u32) << 16 | x as u32;
                 m.pixel = Some((x as u32, y as u32));
                 m.written.pa |= 1;
@@ -1058,6 +1082,21 @@ mod tests {
         assert_eq!(super::job_coeffs(&v(none)), Some(FilterBlock::default()));
         // a vector without its job: not known
         assert_eq!(super::job_coeffs(&crate::json::parse(r#"{"init": {}}"#)), None);
+    }
+
+    #[test]
+    fn a_vector_s_job_says_whether_the_colour_space_set_is_unloaded() {
+        let v = |job: &str| crate::json::parse(&format!(r#"{{"init": {{"job": {job}}}}}"#));
+        // p1132 tx-formats-yuv-nocsc: no pokes
+        assert!(super::job_csc_unloaded(&v(r#"{"pokes": [], "use_coeffs": {"load": false}}"#)));
+        // the pokes of tx-formats-yuv-csc set the flag
+        assert!(!super::job_csc_unloaded(&v(r#"{"pokes": ["xfer:17^=0x1", "xfer:18=0x00950095"]}"#)));
+        assert!(!super::job_csc_unloaded(&v(r#"{"pokes": ["xfer:17=1"]}"#)));
+        // set and flipped back, other words, other forms
+        assert!(super::job_csc_unloaded(&v(r#"{"pokes": ["xfer:17=1", "xfer:17^=0x1", "xfer:18=5"]}"#)));
+        assert!(super::job_csc_unloaded(&v(r#"{"pokes": ["xfer:17^=0x4"]}"#)));
+        // a vector without its job: not known
+        assert!(!super::job_csc_unloaded(&crate::json::parse(r#"{"init": {}}"#)));
     }
 
     #[test]

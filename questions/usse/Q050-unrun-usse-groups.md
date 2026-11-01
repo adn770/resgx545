@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E083", "E091", "E123", "E147", "E292", "E293", "E294", "E298"]
+evidence = ["E083", "E091", "E123", "E147", "E292", "E293", "E294", "E298", "E563", "E565", "E568"]
 terms = []
 +++
 
@@ -39,3 +39,14 @@ group's forms each with a known test value and the visibility counters read back
 level-tagged mip chains and border colours (with E441's texture words); firh's fcs6 and fcs7
 at modes 1 and 2 on impulses and pedestals, as E079 measured sets 2 to 5; and sets 2 to 5 of
 banks 1 and 2 on lines no fitted case used, to test the families out of sample.
+
+Narrowed in 11.32 (E563, E565, E568, in a fill that samples a buffer of named dwords). Mipmaps and
+LOD values: whole LODs read the levels of E041's chain for non-square shapes too (E562), and a
+gradient's LOD is a logarithm of a footprint that is the largest component on some cases and the
+Euclidean length on others (E563, Q175 open). Border modes: modes 6 and 7 clamp and 4 and 5 repeat
+along v; along u modes 4 to 7 read other texels, some past the texture, that no declared rule fits
+(E565, Q177). Compressed formats: the names maps and the block jobs of formats 23 to 27 give block
+layouts only in part (E568, Q179). YUV: formats 28 and 29 read opaque black in a fill whether or not
+the transfer command's colour-space words were poked, so the conversion of E037 was not reached
+(E568, Q181). The visibility group, fdpc, and firh's sets 6 and 7 and the exact taps of banks 1 and
+2 are untouched.

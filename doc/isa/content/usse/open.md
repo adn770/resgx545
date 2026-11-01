@@ -6,8 +6,9 @@ Beyond the undecided parts of the hardware probe results, by how much they would
 open driver:
 
 1. **The behaviour of the groups no program of ours has run**: the visibility group. Of the
-   probed groups, mipmaps and the LOD values of `smp`, the border address modes and the
-   compressed and YUV formats, `fdpc`'s clip-plane result (likely a vertex-task output), and
+   probed groups, the LOD of a quad's own derivatives and the footprint rule of `smp`
+   (E563, Q175), the border address modes on the u axis (E565), the compressed and YUV
+   formats (E568), `fdpc`'s clip-plane result (likely a vertex-task output), and
    of the video filters `firh`'s sets 6 and 7 under fixed banks 1 and 2 and the exact taps of
    those banks within their families remain; how the coefficient sets are loaded, what the
    centres below `#−4` and the positions past the line read are settled (E292, E293, E298)

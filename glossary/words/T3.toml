@@ -76,7 +76,7 @@ tier = "ours"
 source = "resgx545"
 citation = "probes/texture/sampler-bits.toml"
 licence = "MIT"
-evidence = "[HW] the sampler-bit sweeps (texture-sampler-bits, one run): in the copy, bits 0-3 read texel (x, y + 1, 2, 4, -8) and bits 4-7 (x + 1, 2, 4, -8, y), the last rows or columns clamped, over both sources; [infer] only single bits were set"
+evidence = "[HW] the sampler-bit sweeps (texture-sampler-bits, one run): in the copy, bits 0-3 read texel (x, y + 1, 2, 4, -8) and bits 4-7 (x + 1, 2, 4, -8, y), the last rows or columns clamped, over both sources; [infer] only single bits were set; [HW] E566: in smp on a strided 64x32 texture 46 of 46 values (30 single-nibble values and 16 combinations) read as these offsets, before or after the address mode"
 
 [[term]]
 id = "G0642"

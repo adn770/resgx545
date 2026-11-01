@@ -1,0 +1,10 @@
+title = "texture sampler batch 11.32, script tx-shapes: mip chains of non-square textures, 64 jobs"
+repo = "data"
+paths = ["texture/p1132/tx-shapes/"]
+method = "probes/texture/templates/tx-shapes.sh on the laptop (direct cable) as the third step of run-all-1132.sh (the batch of phase 11.32, 2026-11-09, runs from 02:36:08), kernel 7.3.0-resgx545, module srcversion 5AD04F33F6BCDA7B880E238, tool sgxfive-test-1126; every job's whole raw output gzipped (NAME.txt.gz, mtime 0), the case table (cases.tsv) and the kernel log of the run (journal-k.txt.gz); the programs and tables are those of probes/texture/tx-shapes.toml; the script prints a pixel sha256 per job and compares it with the declared prediction where there is one, nothing is judged on the laptop (tools/texture/p1132/recompute/recompute_p1132.py recomputes everything)"
+date = "2026-11-09"
+files = 66
+size = 37652
+sha256 = "6fa6df49874fc82f8247687f9baf72d9fceddd978bd963727683c9ca9e1e9fe8"
+recipe = "probes/texture/tx-shapes.toml"
+needs = ["render"]

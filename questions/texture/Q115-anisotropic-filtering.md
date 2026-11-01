@@ -5,7 +5,7 @@ unit = "texture"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E041", "E342"]
+evidence = ["E041", "E342", "E564"]
 terms = ["TEXFORMAT"]
 +++
 
@@ -20,3 +20,13 @@ and what it reads (more taps along the longer axis of the pixel's footprint).
 To settle it: a textured triangle at a steep angle sampled by a USSE program, the T words'
 unexplained bits flipped one at a time (the method of E274 in a copy) and the filtered image
 compared with the plain linear one for taps spread along one axis.
+
+Narrowed in 11.32 (E564, not answered). A ratio sweep (2 to 32) of explicit gradients with bilinear
+filters was compared with one bilinear tap at the level the footprint picks; the declared control
+(ratio 8) did not match that formula either (1528 of 2048 pixels), so the baseline is not
+established and no image can be called one tap or more. Of 15 bit flips at ratio 8, eleven (T0 bits
+14, 15, 16, 28, 29 and T3 bits 8, 9, 15, 20, 21, 22) leave the image unchanged and so are not an
+enable of this image; four change every pixel (T3 bit 11 cleared, T3 bit 12 set, T0 bits 27 and 30)
+and read other state: names of level 0, one constant, and values that are no name of the buffer. No
+anisotropic filtering was identified, and the failed control means none was ruled out. What is open:
+whether the hardware has it, and a baseline the control can pass first.

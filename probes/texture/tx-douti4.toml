@@ -1,0 +1,61 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# tx-douti4: 4 probes (phase 11.32 draft). Q021: the fourth component of a DOUTI0 with bits 23:22 = 3
+# from a source whose fourth component is x + y, not 1.0 (E420's vertex set was x and y only).
+needs = ["render"]
+
+[[probe]]
+name = "tx-douti4-pa2"
+question = "DOUTI0 bits 23:22 = 3 on a vertex with a four-dword set (0.25 and x + y): pa2, five fresh runs"
+source = "pds_tex_iter.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_coords4.s" }
+vtx_coords = 4
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40800801, 0, 0x2000004], [0x40800801, 0, 0x2000004]]
+labels = ["bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 2 (control)", "bits 23:22 = 2 (control)"]
+
+[[probe]]
+name = "tx-douti4-pa3"
+question = "DOUTI0 bits 23:22 = 3 on a vertex with a four-dword set (0.25 and x + y): pa3, five fresh runs"
+source = "pds_tex_iter.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa3.s", vtxuse = "vtx_coords4.s" }
+vtx_coords = 4
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40800801, 0, 0x2000004], [0x40800801, 0, 0x2000004]]
+labels = ["bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 2 (control)", "bits 23:22 = 2 (control)"]
+
+[[probe]]
+name = "tx-douti4-pa4"
+question = "DOUTI0 bits 23:22 = 3 on a vertex with a four-dword set (0.25 and x + y): pa4, five fresh runs"
+source = "pds_tex_iter.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa4.s", vtxuse = "vtx_coords4.s" }
+vtx_coords = 4
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40800801, 0, 0x2000004], [0x40800801, 0, 0x2000004]]
+labels = ["bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 2 (control)", "bits 23:22 = 2 (control)"]
+
+[[probe]]
+name = "tx-douti4-pa5"
+question = "DOUTI0 bits 23:22 = 3 on a vertex with a four-dword set (0.25 and x + y): pa5, five fresh runs"
+source = "pds_tex_iter.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa5.s", vtxuse = "vtx_coords4.s" }
+vtx_coords = 4
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40c00801, 0, 0x2000004], [0x40800801, 0, 0x2000004], [0x40800801, 0, 0x2000004]]
+labels = ["bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 3", "bits 23:22 = 2 (control)", "bits 23:22 = 2 (control)"]

@@ -3787,6 +3787,170 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   before, and one repeat of the 9b matrix on 0x0814 and on 0x0a78 (17 cases each, the discriminating
   value pair) reads the same (L, H) per case as E534, 34 of 34 as predicted.
   *usse; HW, infer; data: `firmware-tasks-recheck`.*
+- `E550` In a firmware task of ours armed with TRC T = 32, 36, 40, 44 and 48 and trc_hazard=1 on the
+  fixed module (srcversion 5AD04F33F6BCDA7B880E238) the arm and the job ran at each T (10 jobs: one
+  per T, then one more per T), and a marker of the job's own (a random 32-bit value with bit 31 set,
+  written by the host to parameter dword 8, never the same in two jobs) written to r123 read back as
+  written in 10 of 10 jobs, r0 read 0 in all 10, every job was done within 100 ms, the tick advanced
+  (arming rates 967.6 to 1016.9 Hz), EVENT_STATUS2 was 0x400, no BIF fault and no kernel log line of
+  fault or hang, and the fill and the triangle were exact after the reset to stock after each of the
+  10 (0 of 2048 and 0 of 4096 pixels differ); r123 is the top register of the T = 31 allocation that
+  E540 already read back, so this shows that these arms run and a marker is read back through r123,
+  and nothing above r123 and no allocation size at T = 32 to 48 was observed (r124 and up cannot be
+  named); TRC 49 and above was not armed.
+  *edm; HW, infer; data: `firmware-tasks-p1133-trc-first`, `firmware-tasks-p1133-trc-repeat`.*
+- `E560` In a --coords --pixels fill of 2048 pixels (pa0 = (y << 16) | x, each pixel building its
+  own coordinates and doing one smp) the four gate controls read the declared image under their
+  hypotheses in 4 of 4 jobs (g1-tw16 a 16x16 twiddled identity map, g2-st64x32 a 64x32 strided one,
+  g3-tw16-lod2 LOD 2 of a chain, g4-tw16-u-mirror a mirror), 4 of 4 again in the second run of the
+  gate that run-all-1132.sh made (the dumps of the first run kept apart), the health triangle exact
+  after each; this is the first smp of ours that ran in a --coords fill.
+  *texture; HW; data: `texture-p1132-gate-first`, `texture-p1132-tx-gate`, `texture-p1132-run`.*
+- `E561` In 28 windows of 64 by 32 texels over twiddled level-0 textures of 32-bit texels, 16x16,
+  32x32, 64x32, 64x16, 64x64, 128x16, 128x32, 32x128, 128x128, 16x64 and 8x128, the index of texel
+  (X, Y) is the plain interleave (Y in bit 0, X in bit 1, and so on) only up to 16 on each side:
+  32x32, 64x32, 64x64, 128x32, 32x128 and 128x128 do not read plain Morton (D1: 512 of 1024 texels
+  plain at 32x32, 512 of 2048 at 64x32, 512 of 4096 at 64x64, 512 of 4096 at 128x32, 2048 of 4096 at
+  32x128, 1024 of 16384 at 128x128) while 16x16, 16x64, 64x16, 128x16 and 8x128 do (all texels); one
+  law fits every size, fit on all 28 windows after the run: tiles of up to 16x16 texels interleaved
+  as before (the whole texture when it is smaller) and the tiles in raster order with x first
+  (32x32: i8 = x4, i9 = y4; 64x32: i8 = x4, i9 = x5, i10 = y4; 128x128: i8 to i10 = x4 to x6, i11 to
+  i13 = y4 to y6), exact on 28 of 28 jobs (the 16384 texels of 128x128 included), and it gives the
+  dwords of E441's levels 0 to 2 (the texel (28, 84) at 128 wide, (14, 42) at 64 and (7, 21) at 32
+  read 0x29b0, 0x8ec and 0x23b, the plain indices of E441's decoded pairs (20, 108), (10, 46) and
+  (5, 23), 3 of 3; E441's data were not used in the fit); the declared prediction (plain Morton at
+  every size) held for the 16x16 control, 1 of 3 fit sizes (64x16; 32x32 and 64x32 failed) and 8 of
+  24 held-out jobs, and the 32x32 control of the shapes group (shp-32x32-l0) failed under all three
+  declared hypotheses for the same reason.
+  *texture; HW, infer; data: `texture-p1132-tx-twiddle`, `texture-p1132-tx-shapes`,
+  `texture-p1132-recomp`, `vectors-texture-p1132`.*
+- `E562` On non-square twiddled textures (32x16, 128x16, 16x32, 64x4, 8x64; 32x32 as the square) the
+  level read at a whole LOD is level l of a chain whose sides halve to 1 each (levels of max(1, w >>
+  l) by max(1, h >> l) texels back to back, the last level 1x1, LOD above it clamping there),
+  hypothesis chain=A: 8 of 8 fit jobs and 49 of 49 held-out jobs exact (7 control jobs: 6 exact
+  under all three, the 32x32 window failed for E561's reason) (chain=B, the chain stopping at the
+  short side's 1: 5 of 8 and 26 of 49; chain=D, square-padded levels: 1 of 8 and 6 of 49); the T0
+  fields on 32x16 and 128x16 (maximum 8 values, bias 7, MIPFILTER 7 fractions, 44 jobs) read it
+  under chain=A as they read a square chain, 22 of 22 fit and 22 of 22 held-out exact (B 18 and 14,
+  D 5 and 3); the 32x32 control failed under all three because of the tile law of E561.
+  *texture; HW; data: `texture-p1132-tx-shapes`, `texture-p1132-tx-fields`.*
+- `E563` In 45 gradient and quad-derivative jobs of 64x64 chains read at a LOD between levels, the
+  LOD read per pixel is a logarithm of a footprint (pwl_max4 and pwl_euc, exponent plus linear
+  mantissa: 0 of 14 fit and 0 of 7 held-out gradient jobs exact, against 2016 to 2048 of 2048 pixels
+  for max4 (a logarithm) on the diagonal cases at k = 2 to 5), but the footprint is neither declared
+  rule on every case: with the gradients given as dudx, dvdx, dudy, dvdy, on these cases max4
+  (largest component) is exact on 2016 to 2048 of 2048 pixels where only dudx and dvdx are set
+  (gr-vx-k2 2016, gr-vx-k4 2048; euc 8 and 0), euc (the larger of the two vectors' lengths) is exact
+  where all four are set (gr-all-k2 2024, gr-all-k4 2048, gr-neg-k2 2024; max4 8, 0 and 8) and for
+  the quad's own derivatives with a v component (au-vx 2048, au-vy 2048, au-vx4 2048; max4 0, 0 and
+  128), and no declared rule is exact on the two-u-term, two-v-term and u-with-dudy jobs (gr-uu-k2,
+  gr-vv-k2 at most 8 of 2048, gr-uvy-k2 52); this partition was read from the vectors after the run
+  and was not declared or held out (held-out exacts: euc 1 of 7); the declared hypotheses scored:
+  gradients fit euc 2 of 14, max4 2 of 14, min 1 of 14, pwl 0 of 14, held out 1 of 7 for euc, max4
+  and min, 0 of 7 for pwl; automatic LOD fit euc 5 of 7, max4, min, pwl_max4 and pwl_euc 4 of 7,
+  held out euc 13 of 17, max4 11 of 17, pwl 11 of 17, min 4 of 17; on the diagonal ladder the
+  fraction of the logarithm in 1/64 is truncated everywhere the columns tell (gr-diag-k2 2036, k3
+  2016, k4 2032 and k5 2048 of 2048 exact under truncation, against 1524, 1520, 1856 and 2048 when
+  rounding to nearest), the one exception being the column x = 5 of k2, k3 and k4 (12, 32 and 16
+  pixels differ from truncation), where the footprint is 4.3125, 8.625 and 17.25 texels, the
+  fraction 6.946/64 and the hardware reads 7/64.
+  *texture; HW, infer; data: `texture-p1132-tx-lod`.*
+- `E564` With bilinear filters and explicit gradients of five ratios (an-r1 to an-r5, ratios 2 to
+  32) none of the 2048-pixel images is exactly any declared single-level bilinear formula (lodf =
+  euc, max4 and min: 0 of 5 jobs each; pixels equal to max4 and euc 1279, 1540, 1528, 1580 and 1792,
+  to min 391, 0, 0, 0 and 0); the declared control an-ctl (ratio 8) did not match either (1528 of
+  2048 pixels under max4 and euc, 0 under min; the script printed MISMATCH against the declared hash
+  b80690ea...), so the baseline, one bilinear tap at the level the footprint picks, is not
+  established and the five ratios and the flips have no reference to be compared with; of the 15 bit
+  flips at ratio 8 eleven give the control's image exactly (T0 bits 14, 15, 16, 28, 29 and T3 bits
+  8, 9, 15, 20, 21, 22), so those 11 bits do not change this image, and four change every pixel
+  (2048 of 2048 pixels differ from the control, 0 of 2048 equal any declared formula): T3 bit 11
+  (cleared from the control's 0x00800800) reads 2048 distinct names from the start of level 0
+  (0xd0000000, 0xd0000002, 0xd0000008, ...), T3 bit 12 (set) reads the constant 0xd0001554, and T0
+  bits 27 and 30 read values that are no name of the buffer (935 and 90 distinct values, the first
+  0x1fae245d and 0x7f9c0000); no anisotropic filtering was identified, and none could be told from
+  the failed baseline, so nothing is claimed about whether the core has it.
+  *texture; HW, infer; data: `texture-p1132-tx-lod`.*
+- `E565` On a 16x16 twiddled texture with u swept over 64 positions (-1.5 + (x + 1/2) / 16, a pitch
+  of one texel) or v swept over 32 positions (-1.5 + (y + 1/2) / 8, a pitch of two texels) the modes
+  0 to 3 reproduce E033 in 12 of 12 control jobs (every declared mode47 hypothesis agrees on them);
+  for modes 4 to 7 on the v axis (u inside) mode 6 and mode 7 read exactly the clamp image (bd-v6,
+  bd-v7: 2048 of 2048 pixels each) and mode 4 and mode 5 read the repeat image, the same as mode 0
+  (bd-v4, bd-v5: 576 of 2048 pixels equal the clamp model, and D5's row and column decode are those
+  of bd-v0), while on the u axis (v inside) and on both modes 4 to 7 read other texels, some of them
+  indices past the 256 of the texture (+324 to +366 in the row of y = 8 in every one of modes 4 to
+  7; in modes 5 to 7 the first columns read texels inside the texture), no u-sweep job exact under
+  clamp or border (0 of 4 each) and under nomask at most 4 of 2048 pixels, and the held-out jobs on
+  another base address and a 32x8 texture read no hypothesis exactly (the 8 jobs: at most 4 of 2048
+  pixels under any; the 5 of 13 held-out jobs exact under each hypothesis are the strided texture's,
+  where modes 4 to 7 read the clamp image of mode 0: bd-st-u0, u4, u5, u6, u7, 2048 of 2048 pixels
+  equal for every hypothesis); the declared hypotheses mode47=clamp, nomask and border were
+  falsified for the u axis.
+  *texture; HW; data: `texture-p1132-tx-border`.*
+- `E566` In smp on a strided 64x32 texture T3 bits 0 to 3 offset the row (+1, +2, +4, -8) and bits 4
+  to 7 the column (+1, +2, +4, -8) at every value tried (single bits, 22 flip jobs and the control,
+  30 single-nibble values and 16 combinations: 46 of 46 fit values exact under both declared t3off
+  hypotheses, pre and post), T3 bits 8, 9, 11, 12, 20, 21 and 22 change nothing on that texture
+  (2048 of 2048 pixels equal the control in each; on the twiddled 64x64 chain texture of E564 bits
+  11 and 12 change every pixel), and bits 10, 14, 18, 27 and 28 give images in which the decoded
+  column and row offsets are not one constant but change with the pixel position (D6: bit 10 column
+  0, -1, -2 ... every 32 pixels and row 0, -1, -2 ...; bit 14 +32 and -32 over 1024 pixels each; bit
+  18 column 0, 1, 2 ... and row 1, 2, 3 ...; bit 27 column -1, -2, -3 and row 31, 30, 29 ...; bit 28
+  column -3, -6, -9 and row 37, 34, 31 ...); the rows of bits 27 and 28 follow the source's height
+  (t3rows=after) at 64x16 (2048 of 2048 pixels each under pre/after and post/after, 0 under
+  pre/fixed) and at 64x32 (all three agree), but at 32x32 strided bits 27 and 28 are exact under
+  none of the three (0 of 2048); on a twiddled 32x32 bit 10 and bit 27 read as the control (2048 of
+  2048), bit 28 under none (0), bit 18 on 4 pixels, bits 0 and 4 offset it (1024 of 1024 under pre,
+  992 under post); held out, t3bits 8 of 15 (pre/after and post/after) and 6 of 15 (pre/fixed),
+  t3vals 6 of 24 under pre and 1 of 24 under post; the declared t3off=pre and t3off=post,
+  t3rows=after and fixed were falsified as complete models; T3 bit 13 faulted the job (r-b13: job
+  faulted, context lost, 1 of 5 risky jobs) and so did bit 14 on a twiddled 32x32 (tw32-t3b14), the
+  health triangle drew exactly after each.
+  *texture; HW; data: `texture-p1132-tx-t3`, `texture-p1132-tx-t3-risky`.*
+- `E567` smp3d (the form without a LOD operand) on a 16x16 twiddled texture at third coordinates
+  -0.5, 0, 0.5, 1, 1.5 and 4 (ty0-3d-w-5, w0, w5, w10, w15, w40, the names read w times 10) and on a
+  strided one (TEXTYPE 6) at 0 and 1 (ty6-3d-w0, w10) gives the 2D image in 8 of 8 jobs (0 of 2048
+  pixels differ from the 2D control in each; w3d=ignore exact 2048 of 2048 in all eight), the third
+  coordinate swept 0 to 2 down the rows changes nothing on types 0, 3 and 6 (wsw-ty0, wsw-ty3,
+  wsw-ty6: the 32 rows of each are identical, 3 sweeps); TEXTYPE 7 reads exactly the twiddled image
+  (the pixel sha256 of the gate's g1) under smp2d and smp3d at 0.5 and 1.5 in 3 of 3 jobs (rt7-2d,
+  rt7-3d-w5, rt7-3d-w15), TEXTYPE 3 reads the same 256-valued image as TEXTYPE 1 (pixel sha256
+  6551611e... in ty3-2d, ty3-3d-w0, ty3-3d-w10 and rt1-2d, rt1-3d-w5, rt1-3d-w15: 6 of 6 jobs, 32
+  and 8 of 2048 pixels equal the twiddled and the raster-of-4-byte-texels models), TEXTYPE 4 and 5
+  give one image each under all three of smp2d and smp3d at 0.5 and 1.5 (rt4: 8a36df6c..., 256
+  distinct values, 8 pixels of the twiddled model; rt5: 354d06c9..., 2 distinct values), and TEXTYPE
+  2 gives three different images under smp2d (dc945d2f..., 9 distinct values), smp3d at 1.5
+  (480213ab..., 25 distinct) and smp3d at 0.5 (79970597..., 12 distinct): the third coordinate acts
+  on TEXTYPE 2, the only type of the eight run (0 to 7) on which it does; flipping T3 bits 10, 18,
+  27, 28 and T0 bits 27, 30 at w 0.625 on type 0 changed the image against the control (ind-t0b27
+  and ind-t0b30 on all 2048 pixels, ind-t3b10 and ind-t3b18 on 2040, ind-t3b27 and ind-t3b28 on
+  2048), T3 bit 14 faulted the job (ind-t3b14); no cube or volume reading was identified, no job
+  hung, and the health triangle drew exactly after every job of the group (97 health checks of the
+  whole batch, none failed).
+  *texture; HW; data: `texture-p1132-tx-types`, `texture-p1132-tx-types-risky`.*
+- `E568` YUV formats 28 and 29 on 64x32 type 3 textures read 0xff000000 at all 2048 pixels in all 8
+  jobs (two patterns, with and without xfer:17^=1 and xfer:18 to 22 poked in the fill's transfer
+  command; the E037 conversion model exact on 0 of 4 csc jobs and on 4 of 4 black ones), so the poke
+  did not reach a loaded colour-space set in a fill (or the set stays unloaded) and the formats
+  cannot be told apart from black here; the names maps of formats 23 to 27 (16x16) read 164, 186,
+  77, 117 and 28 distinct values; in the block jobs formats 23 and 24 read cells that are constant
+  over 4x4, 8x4 and 4x8 regions under constant data but a data bit changes 7 to 13 pixels (in 0 of
+  16 blocks does a data bit change exactly one pixel), and format 27 reads its 16 blocks in an order
+  for which, of the three tried, only Morton with y in the low bit is consistent (morton-y0: 16 of
+  16 blocks; raster 0 of 16, morton-x0 4 of 16; the test fixes the order only up to the permutations
+  that fit the pattern's block map, so other orders are not excluded) with every bit of the low and
+  the high data dword changing exactly one pixel, 16 of 16 blocks each, in the map bit i to (x, y) =
+  (i div 4, i mod 4).
+  *texture; HW, infer; data: `texture-p1132-tx-formats`, `vectors-texture-p1132`.*
+- `E569` The 28 triangle jobs of the Q021 probes (a vertex shader writing a set of four outputs o4,
+  o5 = x, y, o6 = 0.25, o7 = x + y, two temporaries more than E420's; the pixel shader storing pa2,
+  pa3, pa4 or pa5; five runs of 0x40c00801 and two controls of 0x40800801 per register, 7 jobs each)
+  all failed with 'job hung, context lost (Connection timed out)' (28 of 28; the kernel log names 28
+  hung jobs and 'recovering'), no pixel was read, and the health triangle drew exactly after each of
+  the 28 (a reset between, the 28 jobs took about 8 s each); the question whether pa3 is a fourth
+  component or 1.0 (Q021) has no result from this batch, and the two controls of 0x40800801 hung
+  too, so the hang is not tied to the fourth component's source word.
+  *texture; HW; data: `texture-p1132-tx-douti4`.*
 
 ## By unit
 
@@ -3803,7 +3967,7 @@ E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E4
 
 Records: E009, E014, E017, E084, E146, E152, E153, E154, E155, E156, E157, E158, E159, E160, E161,
 E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321, E353, E402, E431, E444,
-E450, E531, E532, E533, E536, E537, E538, E539, E540.
+E450, E531, E532, E533, E536, E537, E538, E539, E540, E550.
 
 ### firmware
 
@@ -3853,7 +4017,8 @@ E511, E541, E542, E543, E544.
 ### texture
 
 Records: E033, E034, E035, E036, E037, E038, E039, E040, E041, E042, E114, E116, E242, E254, E271,
-E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441.
+E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441, E560, E561, E562,
+E563, E564, E565, E566, E567, E568, E569.
 
 ### transfer
 

@@ -5,7 +5,7 @@ unit = "texture"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E342", "E345", "E364"]
+evidence = ["E342", "E345", "E364", "E567"]
 terms = ["TEXTYPE", "TEXFORMAT"]
 +++
 
@@ -21,3 +21,9 @@ face's edge.
 To settle it: a texture chain of six faces whose texels are the scratch buffer's own dwords (the
 tool of E441), sampled by a USSE program that feeds known three-component coordinates to smp, with
 the T0 to T3 words varied.
+
+Narrowed in 11.32 (E567). smp3d at third coordinates from -0.5 to 4 read the smp2d image on
+twiddled and stride textures (8 of 8 jobs and 3 sweeps), and TEXTYPE 7 read the twiddled image; no
+cube reading was identified. TEXTYPE 2 gives three different images under smp2d, smp3d at 0.5 and
+smp3d at 1.5, the only type of eight on which the third coordinate acts: a candidate, with no cube
+face read yet (Q178 carries the observations). The six cube directions of the plan were not run.

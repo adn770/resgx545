@@ -396,6 +396,10 @@ pub struct Machine {
     /// The job's USE filter coefficients (E078), which firh reads; None where the run does
     /// not know them.
     pub coeffs: Option<FilterBlock>,
+    /// The job's colour-space set is known not to be loaded (the vector's job pokes do not set
+    /// the load flag, xfer:17 bit 0), so the YUV formats read opaque black (E037); where it is
+    /// not known the YUV formats stop.
+    pub csc_unloaded: bool,
     /// The registers holding a value the hardware may not have (bank, number), with why:
     /// reading one stops the program.
     pub unknown: BTreeMap<(&'static str, usize), &'static str>,
@@ -761,6 +765,7 @@ impl Default for Machine {
             firh_written: [false; 4],
             fitted: false,
             coeffs: None,
+            csc_unloaded: false,
             unknown: BTreeMap::new(),
             phase: None,
             vertex_task: false,
@@ -2851,9 +2856,14 @@ impl Machine {
     fn smp(&mut self, insn: &Insn, bus: &mut dyn Bus) -> Result<(), Error> {
         let dim = insn.name("dim", self.core).unwrap();
         let (d, lod) = dim.split_at(2);
-        if d == "3d" {
-            return Err(why("smp3d"));
+        // smp3d (the form without a LOD operand) is read as smp2d where it ran and nowhere else
+        // (tex::smp3d_as_2d, checked once the state words are read); with a LOD operand it did
+        // not assemble in p1132
+        let three_d = d == "3d";
+        if three_d && !lod.is_empty() {
+            return Err(why("smp3d with a LOD operand"));
         }
+        let d = if three_d { "2d" } else { d };
         let f32_coords = insn.name("fmt", self.core).unwrap().is_empty();
         let implicit = match (self.quad.is_some(), self.uniform) {
             (true, _) => tex::Lod::Open("a LOD from the quad's derivatives"),
@@ -2932,6 +2942,13 @@ impl Machine {
         }
         if self.now.read.get().is_some() {
             return Err(why("a sample from a near value"));
+        }
+        if three_d {
+            tex::smp3d_as_2d(state, pcf.is_some() || flags.contains(".sinf") || flags.contains(".rsd"))
+                .map_err(why)?;
+        }
+        if matches!(state[1] >> 24 & 31, 28 | 29) && !self.csc_unloaded {
+            return Err(why("YUV through a colour-space set the vector does not record"));
         }
         let (u, v) = (f32::from_bits(u), f32::from_bits(v));
         if !u.is_finite() || !v.is_finite() {
@@ -4775,6 +4792,116 @@ mod tests {
         }
         let r = Machine::default().run(&src("smp2d r10, r24, r20, drc0"), &mut NoTex, 100);
         assert!(matches!(&r, Err(Error::Unsupported { why, .. }) if why.contains("texture unit")), "{r:?}");
+    }
+
+    /// Run `smp` over a counting texture at 0x1000 with the state words `t` and a third
+    /// coordinate `w`; o0 is the texel read.
+    fn run_smp(t: [u32; 4], w: u32, smp: &str) -> Result<u32, Error> {
+        let words = [
+            format!("mov r20, #0x{:08x}", t[0]),
+            format!("mov r21, #0x{:08x}", t[1]),
+            format!("mov r22, #0x{:08x}", t[2]),
+            format!("mov r23, #0x{:08x}", t[3]),
+            "mov r24, #0x3f19999a".to_string(),
+            "mov r25, #0x3e99999a".to_string(),
+            format!("mov r26, #0x{w:08x}"),
+            smp.to_string(),
+            "wdf drc0".to_string(),
+            "mov.end o0, r10".to_string(),
+        ];
+        let refs: Vec<&str> = words.iter().map(|s| s.as_str()).collect();
+        let mut mem = Memory { base: 0x1000, words: (0..4096).map(|i| 0x100 + i).collect() };
+        let mut m = Machine::default();
+        m.run(&prog(&refs), &mut mem, 100).map(|()| m.o[0])
+    }
+
+    fn why_of(r: Result<u32, Error>) -> String {
+        match r {
+            Err(Error::Unsupported { why, .. }) => why,
+            other => format!("not a stop: {other:?}"),
+        }
+    }
+
+    /// The state words of the smp3d jobs that ran (p1132 tx-types, tx-types-risky): T0, T1, T2, T3.
+    const TW16: [u32; 4] = [0x07fe_0000, 0x0c00_f00f, 0x1000, 0x0080_0800];
+    const ST64X32: [u32; 4] = [0x000e_0e00, 0xcc03_f01f, 0x1000, 0xa080_0000];
+
+    #[test]
+    fn smp3d_reads_as_smp2d_only_where_it_ran() {
+        // p1132 tx-types and tx-types-risky (Q113, Q114): point sampled, level 0 only, a 16x16
+        // twiddled texture (TEXTYPE 0 and 7) and a 64x32 stride one, format 12: smp3d at a third
+        // coordinate of -0.5, 0, 0.5, 1, 1.5 and 4 gave the smp2d image (0 of 2048 pixels
+        // differ in the 8 fit jobs, the 3 sweeps and rt7 at 0.5 and 1.5)
+        let w3 = |w: f32| w.to_bits();
+        // (0.6, 0.3): twiddled texel (9, 4), dword 0x92; stride texel (38, 9), dword 9 * 64 + 38
+        for w in [-0.5, 0.0, 0.5, 1.0, 1.5, 4.0] {
+            assert_eq!(run_smp(TW16, w3(w), "smp3d r10, r24, r20, drc0"), Ok(0x192), "twiddled w {w}");
+            assert_eq!(run_smp(ST64X32, w3(w), "smp3d r10, r24, r20, drc0"), Ok(0x366), "stride w {w}");
+        }
+        let mut t7 = TW16;
+        t7[1] |= 7 << 29;
+        assert_eq!(run_smp(t7, w3(0.5), "smp3d r10, r24, r20, drc0"), Ok(0x192), "TEXTYPE 7");
+        assert_eq!(run_smp(TW16, 0, "smp2d r10, r24, r20, drc0"), Ok(0x192));
+    }
+
+    #[test]
+    fn smp3d_stops_off_what_ran() {
+        let w = 0.5f32.to_bits();
+        let go = |t: [u32; 4], smp: &str| why_of(run_smp(t, w, smp));
+        // TEXTYPE 2 is the one type on which the third coordinate acts (E567): the smp3d rule
+        // itself refuses it, as it does types 1, 3, 4 and 5 (not run with a model)
+        for ty in [1u32, 2, 3, 4, 5] {
+            let mut t = TW16;
+            t[1] |= ty << 29;
+            let why = go(t, "smp3d r10, r24, r20, drc0");
+            assert!(why.contains("smp3d") && why.contains(&format!("TEXTYPE {ty}")), "type {ty}: {why}");
+        }
+        // another size, another format, a bilinear filter, a chain, another T3: not run
+        let mut t = TW16;
+        t[1] = 0x0c01_f00f; // 32x16
+        assert!(go(t, "smp3d r10, r24, r20, drc0").contains("smp3d"), "another size");
+        let mut t = TW16;
+        t[1] = 4 << 24 | 0xf00f; // format 4
+        assert!(go(t, "smp3d r10, r24, r20, drc0").contains("smp3d"), "another format");
+        let mut t = TW16;
+        t[0] |= 1 << 12; // magnifying filter 1: bilinear
+        assert!(go(t, "smp3d r10, r24, r20, drc0").contains("smp3d"), "bilinear");
+        let mut t = TW16;
+        t[0] = 0x07fc_0000; // the chain enabled
+        assert!(go(t, "smp3d r10, r24, r20, drc0").contains("smp3d"), "a chain");
+        let mut t = TW16;
+        t[3] ^= 1 << 8;
+        assert!(go(t, "smp3d r10, r24, r20, drc0").contains("smp3d"), "another T3");
+        let mut t = ST64X32;
+        t[1] = 0xcc00_f00f; // a 16x16 stride texture
+        assert!(go(t, "smp3d r10, r24, r20, drc0").contains("smp3d"), "a stride texture of another size");
+    }
+
+    #[test]
+    fn the_yuv_formats_stop_unless_the_set_is_known_to_be_unloaded() {
+        // E037 measures the BT.601 conversion when a copy loads the set; the fills of p1132
+        // read black (E568) whether or not the poke that should load it was given, and Q181
+        // asks why. A vector that does not say the set is unloaded is not modelled.
+        let go = |unloaded: bool| {
+            let words = [
+                "mov r20, #0x000e0e00".to_string(),
+                format!("mov r21, #0x{:08x}", 6u32 << 29 | 29 << 24 | 63 << 12 | 31),
+                "mov r22, #0x00001000".to_string(),
+                "mov r23, #0xa0800000".to_string(),
+                "mov r24, #0x3f19999a".to_string(),
+                "mov r25, #0x3e99999a".to_string(),
+                "smp2d r10, r24, r20, drc0".to_string(),
+                "wdf drc0".to_string(),
+                "mov.end o0, r10".to_string(),
+            ];
+            let refs: Vec<&str> = words.iter().map(|s| s.as_str()).collect();
+            let mut mem = Memory { base: 0x1000, words: (0..4096).map(|i| 0x100 + i).collect() };
+            let mut m = Machine { csc_unloaded: unloaded, ..Machine::default() };
+            m.run(&prog(&refs), &mut mem, 100).map(|()| m.o[0])
+        };
+        let why = why_of(go(false));
+        assert!(why.contains("colour-space set"), "{why}");
+        assert_eq!(go(true), Ok(0xff00_0000));
     }
 
     #[test]

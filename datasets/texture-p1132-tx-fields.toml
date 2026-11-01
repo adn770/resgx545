@@ -1,0 +1,10 @@
+title = "texture sampler batch 11.32, script tx-fields: the T0 level fields on 32x16 and 128x16 chains, 44 jobs"
+repo = "data"
+paths = ["texture/p1132/tx-fields/"]
+method = "probes/texture/templates/tx-fields.sh on the laptop (direct cable) as the fourth step of run-all-1132.sh (the batch of phase 11.32, 2026-11-09, runs from 02:36:08), kernel 7.3.0-resgx545, module srcversion 5AD04F33F6BCDA7B880E238, tool sgxfive-test-1126; every job's whole raw output gzipped (NAME.txt.gz, mtime 0), the case table (cases.tsv) and the kernel log of the run (journal-k.txt.gz); the programs and tables are those of probes/texture/tx-fields.toml; the script prints a pixel sha256 per job and compares it with the declared prediction where there is one, nothing is judged on the laptop (tools/texture/p1132/recompute/recompute_p1132.py recomputes everything)"
+date = "2026-11-09"
+files = 46
+size = 37947
+sha256 = "7d752aa272acc241352acfa11110870d7a7b20ef9bd743f8d6e828662fd82479"
+recipe = "probes/texture/tx-fields.toml"
+needs = ["render"]

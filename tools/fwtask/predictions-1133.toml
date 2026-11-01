@@ -1,0 +1,49 @@
+# phase 11.33 predictions, frozen before the first run (sha256 recorded)
+
+[[row]]
+id = "P33_T32"
+declared = "TRC 32 (trc_hazard=1) arms and the job runs: done within 100 ms, r123 reads back the job's own marker, r0 reads 0, the tick advances (900 to 1100 Hz), EVENT_STATUS2 is 0x400, no BIF fault, the gate is exact after"
+falsifier = "no done, a marker not read back (a stale or zero read), r0 not 0, a hang, a fault or a failed gate"
+expect = "done and marker_back and r0_zero and alive and health_ok and gate_ok"
+
+[[row]]
+id = "P33_T36"
+declared = "TRC 36 (trc_hazard=1) arms and the job runs: done within 100 ms, r123 reads back the job's own marker, r0 reads 0, the tick advances (900 to 1100 Hz), EVENT_STATUS2 is 0x400, no BIF fault, the gate is exact after"
+falsifier = "no done, a marker not read back (a stale or zero read), r0 not 0, a hang, a fault or a failed gate"
+expect = "done and marker_back and r0_zero and alive and health_ok and gate_ok"
+
+[[row]]
+id = "P33_T40"
+declared = "TRC 40 (trc_hazard=1) arms and the job runs: done within 100 ms, r123 reads back the job's own marker, r0 reads 0, the tick advances (900 to 1100 Hz), EVENT_STATUS2 is 0x400, no BIF fault, the gate is exact after"
+falsifier = "no done, a marker not read back (a stale or zero read), r0 not 0, a hang, a fault or a failed gate"
+expect = "done and marker_back and r0_zero and alive and health_ok and gate_ok"
+
+[[row]]
+id = "P33_T44"
+declared = "TRC 44 (trc_hazard=1) arms and the job runs: done within 100 ms, r123 reads back the job's own marker, r0 reads 0, the tick advances (900 to 1100 Hz), EVENT_STATUS2 is 0x400, no BIF fault, the gate is exact after"
+falsifier = "no done, a marker not read back (a stale or zero read), r0 not 0, a hang, a fault or a failed gate"
+expect = "done and marker_back and r0_zero and alive and health_ok and gate_ok"
+
+[[row]]
+id = "P33_T48"
+declared = "TRC 48 (trc_hazard=1) arms and the job runs: done within 100 ms, r123 reads back the job's own marker, r0 reads 0, the tick advances (900 to 1100 Hz), EVENT_STATUS2 is 0x400, no BIF fault, the gate is exact after"
+falsifier = "no done, a marker not read back (a stale or zero read), r0 not 0, a hang, a fault or a failed gate"
+expect = "done and marker_back and r0_zero and alive and health_ok and gate_ok"
+
+[[row]]
+id = "P33_REPEAT"
+declared = "the repeat of every T gives the same outcome as its first job, each with its own marker"
+falsifier = "a repeat that differs from its first job"
+expect = "same_as_first"
+
+[[row]]
+id = "P33_TOP"
+declared = "for every T the top register tested is r123 (the highest that can be named; 4T - 1 is 127 to 191 and cannot be named)"
+falsifier = "a result that names another register"
+expect = "top == 123"
+
+[[row]]
+id = "P33_PAST"
+declared = "no register past the allocation exists to name for T >= 32 (r124 and up are not encodable), so no result about it is declared and none is claimed"
+falsifier = "n/a: not run"
+expect = "not_run"

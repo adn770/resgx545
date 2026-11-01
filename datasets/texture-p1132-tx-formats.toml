@@ -1,0 +1,9 @@
+title = "texture sampler batch 11.32, script tx-formats: texture formats 23 to 29: names maps, block jobs and YUV with and without the colour-space poke"
+repo = "data"
+paths = ["texture/p1132/tx-formats/"]
+method = "probes/texture/templates/tx-formats.sh on the laptop (direct cable) as the ninth step of run-all-1132.sh (the batch of phase 11.32, 2026-11-09, runs from 02:36:08), kernel 7.3.0-resgx545, module srcversion 5AD04F33F6BCDA7B880E238, tool sgxfive-test-1126; every job's whole raw output gzipped (NAME.txt.gz, mtime 0), the case table (cases.tsv) and the kernel log of the run (journal-k.txt.gz); the programs and tables are those of probes/texture/tx-formats-names.toml, tx-formats-blocks.toml, tx-formats-yuv-csc.toml and tx-formats-yuv-nocsc.toml; the script prints a pixel sha256 per job and compares it with the declared prediction where there is one, nothing is judged on the laptop (tools/texture/p1132/recompute/recompute_p1132.py recomputes everything)"
+date = "2026-11-09"
+files = 32
+size = 22096
+sha256 = "d7f88df9cd22826dd0fd7247d6a30005affd6f3249ea7055563eee24629ff324"
+recipe = "probes/texture/templates/tx-formats.sh"

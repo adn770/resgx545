@@ -1,0 +1,9 @@
+title = "texture sampler batch 11.32, the gate run alone before the batch (four controls)"
+repo = "data"
+paths = ["texture/p1132-gate-first/"]
+method = "probes/texture/templates/tx-gate.sh on the laptop (direct cable) alone, before run-all-1132.sh: the same four controls, kept apart, so that the gate was run twice; every job's whole raw output gzipped, the case table and the kernel log"
+date = "2026-11-09"
+files = 7
+size = 9041
+sha256 = "254067822d79d3d577bc30698c6b9e29a5a671393a89507cb1802a2a0da0cd89"
+recipe = "probes/texture/templates/tx-gate.sh"

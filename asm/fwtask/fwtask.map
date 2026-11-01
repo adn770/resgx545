@@ -139,6 +139,41 @@
   "source": "trc_64.s",
   "source_sha256": "f71ea2bc8f286be4f7df915acdd20541258f5ecc2d0418c04c9573e4d54bee00"
  },
+ "trcp_32": {
+  "bytes": 298,
+  "insns": 32,
+  "sha256": "2b16e5629b8db66f3883654e14c1987dda2bffd45540ffc1f6afd5acf133e2f6",
+  "source": "trcp_32.s",
+  "source_sha256": "26a82abccd19f61b0654da5fc6f32de49fdb8a6789d7563b1c66cd565790db6b"
+ },
+ "trcp_36": {
+  "bytes": 298,
+  "insns": 32,
+  "sha256": "2b16e5629b8db66f3883654e14c1987dda2bffd45540ffc1f6afd5acf133e2f6",
+  "source": "trcp_36.s",
+  "source_sha256": "556dd05bfbd14e1b3a1b4bdb0277c4cd3f4c6a32ac193a1851f547b403221fa7"
+ },
+ "trcp_40": {
+  "bytes": 298,
+  "insns": 32,
+  "sha256": "2b16e5629b8db66f3883654e14c1987dda2bffd45540ffc1f6afd5acf133e2f6",
+  "source": "trcp_40.s",
+  "source_sha256": "64e111e6c0795dbd3ae999600ac3f69b208a39df956919e06250c3a8b5995a70"
+ },
+ "trcp_44": {
+  "bytes": 298,
+  "insns": 32,
+  "sha256": "2b16e5629b8db66f3883654e14c1987dda2bffd45540ffc1f6afd5acf133e2f6",
+  "source": "trcp_44.s",
+  "source_sha256": "f1940c6f42c3fd50c2920566bb5614da875ad4ddde601a500994ecd0c6ade101"
+ },
+ "trcp_48": {
+  "bytes": 298,
+  "insns": 32,
+  "sha256": "2b16e5629b8db66f3883654e14c1987dda2bffd45540ffc1f6afd5acf133e2f6",
+  "source": "trcp_48.s",
+  "source_sha256": "ef5b26d875363a7c141cbaecd0860db43365f8930443244c487a9cc9338b138f"
+ },
  "x9b_r1": {
   "bytes": 2738,
   "insns": 321,

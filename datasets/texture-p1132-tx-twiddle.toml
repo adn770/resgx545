@@ -1,0 +1,10 @@
+title = "texture sampler batch 11.32, script tx-twiddle: the twiddled layout of 32-bit textures, 28 windows over 11 sizes"
+repo = "data"
+paths = ["texture/p1132/tx-twiddle/"]
+method = "probes/texture/templates/tx-twiddle.sh on the laptop (direct cable) as the second step of run-all-1132.sh (the batch of phase 11.32, 2026-11-09, runs from 02:36:08), kernel 7.3.0-resgx545, module srcversion 5AD04F33F6BCDA7B880E238, tool sgxfive-test-1126; every job's whole raw output gzipped (NAME.txt.gz, mtime 0), the case table (cases.tsv) and the kernel log of the run (journal-k.txt.gz); the programs and tables are those of probes/texture/tx-twiddle.toml; the script prints a pixel sha256 per job and compares it with the declared prediction where there is one, nothing is judged on the laptop (tools/texture/p1132/recompute/recompute_p1132.py recomputes everything)"
+date = "2026-11-09"
+files = 30
+size = 77137
+sha256 = "5370425616d01e1352f0d68796d85311dc1bd287cef3611fe0f01cb3c9d93a9c"
+recipe = "probes/texture/tx-twiddle.toml"
+needs = ["render"]

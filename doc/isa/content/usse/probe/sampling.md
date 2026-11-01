@@ -18,6 +18,7 @@ by the program itself:
   as if the next iteration read the state one register on **[infer]** (probe
   `texture-sampler-smp-repeat-mask`).
 
-**Undecided:** mipmaps and what the LOD values do, `.sinf`/`.rsd`, `.c10` coordinates,
-`smp3d`, and state read from `sa` or `c` (only temporaries were used); the state fields are
-measured in *Sampler state*.
+**Undecided:** the LOD of a quad's own derivatives, `.sinf`/`.rsd`, `.c10` coordinates, `smp3d`
+beyond the point-sampled textures of E567, and state read from `sa` or `c` (only temporaries were
+used); the state fields, the mip chains and the LOD values are measured in *Sampler state* and
+E041, E441, E562 and E563.

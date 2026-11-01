@@ -12,7 +12,7 @@ tier = "3"
 source = "mesa-csbgen"
 citation = "C0214"
 licence = "MIT"
-evidence = "Rogue name only; on SGX545 the wrap fields are measured: [HW] E033: on a twiddled texture U in T0 [8:6] and V in [5:3], 0 repeats, 1 mirrors, 2 clamps, 3 mirrors once; [CAP] E342: the closed driver's captures, one axis at a time"
+evidence = "Rogue name only; on SGX545 the wrap fields are measured: [HW] E033: on a twiddled texture U in T0 [8:6] and V in [5:3], 0 repeats, 1 mirrors, 2 clamps, 3 mirrors once; [CAP] E342: the closed driver's captures, one axis at a time; [HW] E565: modes 4 to 7 read other texels on the u axis (no clamp, nomask or border rule fits) and on the v axis 6 and 7 clamp and 4 and 5 repeat"
 
 [[term]]
 id = "G0271"
@@ -28,7 +28,7 @@ tier = "3"
 source = "mesa-csbgen"
 citation = "C0215"
 licence = "MIT"
-evidence = "Rogue name only; on SGX545 the wrap fields are measured: [HW] E033: on a twiddled texture U in T0 [8:6] and V in [5:3], 0 repeats, 1 mirrors, 2 clamps, 3 mirrors once; [CAP] E342: the closed driver's captures, one axis at a time"
+evidence = "Rogue name only; on SGX545 the wrap fields are measured: [HW] E033: on a twiddled texture U in T0 [8:6] and V in [5:3], 0 repeats, 1 mirrors, 2 clamps, 3 mirrors once; [CAP] E342: the closed driver's captures, one axis at a time; [HW] E565: modes 4 to 7 read other texels on the u axis (no clamp, nomask or border rule fits) and on the v axis 6 and 7 clamp and 4 and 5 repeat"
 
 [[term]]
 id = "G0272"

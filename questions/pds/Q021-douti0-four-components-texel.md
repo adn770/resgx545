@@ -5,7 +5,7 @@ unit = "pds"
 kind = "hw"
 value = "medium"
 phase = 7
-evidence = ["E132", "E420"]
+evidence = ["E132", "E420", "E569"]
 terms = ["DOUTI0.ATTR_SOURCE", "DOUTU1.WAIT_FETCH"]
 +++
 
@@ -33,3 +33,8 @@ of E132 recur as 24, 4 and 2 pixels with other values in the first run of a prob
 give the texel in pa3 and one component 1.0 in pa3, but pa4 also holds texel-valued dwords there
 (1054 to 1062 pixels), so the fetch may write more than one dword. Not run: a source whose fourth
 component is not 1.0, to tell a component from a constant. Status: narrowed, not answered.
+
+Run again in 11.32 (E569, no result): the 28 triangle jobs of the question's probes, with a vertex
+program that writes four outputs, all hung (the two controls with the old source word included), so
+whether pa3 is a fourth component or 1.0 and where the texel lands is still not shown. The hang is
+not the source word; its cause is carried by Q180. The question stays open until the probe runs.

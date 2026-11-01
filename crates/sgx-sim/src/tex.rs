@@ -362,6 +362,8 @@ impl Texture {
             // and STRIDEHI T0[26:17]
             6 => Some(((t0 >> 9 & 7 | (t0 >> 17 & 0x3ff) << 3) + 1) * 4),
             0 if w.is_power_of_two() && h.is_power_of_two() => None,
+            // p1132 tx-types-risky: TEXTYPE 7 reads as twiddled; measured at 16x16 only
+            7 if (w, h) == (16, 16) => None,
             0 => return open("a twiddled texture of a size other than a power of two"),
             t => return open(format!("texture type {t}")),
         };
@@ -376,6 +378,12 @@ impl Texture {
             offset,
             shift,
         };
+        if tex.row.is_none() && (w > 16 || h > 16) && !(tile_law_ran(w, h) && tex.bytes()? == 4) {
+            return open(format!(
+                "a twiddled {w}x{h} texture of format {} (the 16 x 16 tiles ran only on 32-bit texels in the sizes of E561 and E562)",
+                tex.format
+            ));
+        }
         if tex.bytes()? != 4 && shift != 0 {
             return open(format!("T3's address scale on format {}", tex.format));
         }
@@ -389,8 +397,9 @@ impl Texture {
     /// to back, largest first, each twiddled at its own size, no padding.
     fn level(&self, l: u32) -> Texture {
         let bytes = self.bytes().unwrap_or(4);
-        let off: u32 = (0..l).map(|k| bytes * (self.w >> k) * (self.h >> k)).sum();
-        Texture { w: self.w >> l, h: self.h >> l, base: self.base.wrapping_add(off), ..*self }
+        let side = |n: u32, k: u32| (n >> k).max(1);
+        let off: u32 = (0..l).map(|k| bytes * side(self.w, k) * side(self.h, k)).sum();
+        Texture { w: side(self.w, l), h: side(self.h, l), base: self.base.wrapping_add(off), ..*self }
     }
 
     /// The levels a sample reads, with their weights in 1/64, and whether
@@ -416,41 +425,41 @@ impl Texture {
             };
         }
         let min = matches!(t0 >> 10 & 3, 1 | 2);
-        let (no_mips, chain) = (t0 >> 18 & 1 != 0, t0 >> 19 & 3 != 0);
+        // E276, E441: bits 20:17 are the highest level read (0 and 15 level 0 only), bits 26:21 an
+        // LOD bias in eighths, 63 as none; the level is also capped at the chain's last
+        let mx = t0 >> 17 & 15;
         let top = t0 >> 21 & 0x3f;
         if top == 0 {
-            // as if the LOD were clamped to 0: level 0 enlarged, whatever
-            // the LOD and bit 18 (x-smp 83, 87, 91, 92; texture-mipmaps-mip-t0-field 1, 2)
             return level0(mag);
         }
-        if !no_mips && chain && !matches!(top, 1..=3 | 7 | 0x3f) {
-            return open(format!("T0 bits 26:21 = 0x{top:02x} on a mipmapped texture"));
-        }
-        if no_mips || !chain || top != 0x3f {
-            // level 0 only (texture-mipmaps-mip-t0-field)
+        if mx == 0 || mx == 15 {
             if min == mag {
-                // one level, one filter: the LOD does not matter
                 return level0(mag);
             }
             if self.lambda(lod)?.0 <= 0.0 {
                 return level0(mag);
             }
-            if no_mips && top == 0x3f {
-                // texture-mipmaps-mip-minfilter case 14: level 0 minified
+            if mx == 15 && top == 0x3f {
+                // texture-mipmaps-mip-minfilter case 14: no mipmaps (E276: 15), level 0 minified
                 return level0(min);
             }
             return open(format!("level 0 minified under T0 0x{t0:08x}"));
         }
-        let (l, exact) = self.lambda(lod)?;
+        let (l0, exact) = self.lambda(lod)?;
+        let l = l0 + (top as f64 - 63.0) / 8.0;
         if l <= 0.0 {
             return level0(mag);
         }
         if mag && !min && l <= 0.5 {
             return open("magnification linear, minification point, a LOD in (0, 0.5]");
         }
-        let last = self.w.trailing_zeros();
-        if self.w != self.h || one_d {
-            return open("mipmaps of a 1D or non-square texture");
+        // p1132 tx-shapes (Q104): both sides halve down to 1, so the chain ends at the longer side's log2
+        let last = self.w.trailing_zeros().max(self.h.trailing_zeros()).min(mx);
+        if one_d {
+            return open("mipmaps of a 1D texture");
+        }
+        if self.w != self.h && !CHAIN_SIZES.contains(&(self.w, self.h)) {
+            return open(format!("mipmaps of a non-square {}x{} texture (not run)", self.w, self.h));
         }
         if !exact && l < last as f64 {
             return open("a LOD from gradients that are not a power of two");
@@ -565,11 +574,10 @@ impl Texture {
             f @ 23..=27 => {
                 return open(format!("texture format {f}, compressed: four texels fix no decoder"));
             }
-            f @ (28 | 29) => {
-                return open(format!(
-                    "texture format {f}, YUV through a colour-space set the vector does not record"
-                ));
-            }
+            // 28 and 29 (YUV): opaque black with the colour-space set not loaded (E037, E040,
+            // E568); with it loaded (E037) the conversion is not modelled. Machine::smp lets
+            // them through only where the vector says the set is unloaded (init.job.pokes).
+            28 | 29 => 2,
             f => return open(format!("texture format {f}")),
         })
     }
@@ -705,22 +713,87 @@ impl Texture {
             20 => 0xff00_0000 | (t & 0xff) << 16 | (t >> 8 & 0xff) << 8 | t >> 16,
             21 => t & 0x00ff_ffff,
             30 => t | 0xff00_0000,
+            28 | 29 => 0xff00_0000,
             _ => t,
         })
     }
 }
 
-/// The twiddled index of (x, y) (texture-sampler-smp-twiddled): y in bit 0, x in bit 1, and
-/// so on; the longer side's extra bits above.
+/// Whether an smp3d (the form without a LOD operand) may be read as the smp2d of the same state
+/// words: it ran (p1132 tx-types, tx-types-risky; E567) on TEXTYPE 0, 6 and 7 only, format 12,
+/// point filters and one level, a 16x16 twiddled texture and a 64x32 stride one, with the T0 and T3
+/// words of those jobs (T2 varied nowhere). Its third coordinate acts on TEXTYPE 2 (E567), which
+/// the rule refuses with the rest. With .pcf or an SRD mode it did not run.
+pub fn smp3d_as_2d(state: [u32; 4], pcf_or_srd: bool) -> Result<(), String> {
+    let [t0, t1, _, t3] = state;
+    let ty = t1 >> 29;
+    let no = |what: String| {
+        Err(format!(
+            "smp3d {what}: only the point-sampled 16x16 twiddled and 64x32 stride textures of E567 ran"
+        ))
+    };
+    if pcf_or_srd {
+        return no("with .pcf or an SRD mode".into());
+    }
+    if !matches!(ty, 0 | 6 | 7) {
+        return no(format!("on TEXTYPE {ty}"));
+    }
+    let (w, h) = ((t1 >> 12 & 0xfff) + 1, (t1 & 0xfff) + 1);
+    let (size, t0_ran, t3_ran) =
+        if ty == 6 { ((64, 32), 0x000e_0e00, 0xa080_0000) } else { ((16, 16), 0x07fe_0000, 0x0080_0800) };
+    if (w, h) != size {
+        return no(format!("on a {w}x{h} texture of TEXTYPE {ty}"));
+    }
+    if t1 >> 24 & 31 != 12 {
+        return no(format!("on format {}", t1 >> 24 & 31));
+    }
+    if t0 != t0_ran || t3 != t3_ran {
+        return no(format!("with T0 0x{t0:08x} and T3 0x{t3:08x}"));
+    }
+    Ok(())
+}
+
+/// The sizes of 32-bit twiddled textures, with a side above 16, that p1132 ran (E561 tx-twiddle,
+/// E562 tx-shapes): the tiles of 16 x 16 and their raster order are measured there only.
+const TILE_SIZES: [(u32, u32); 14] = [
+    (32, 32),
+    (64, 32),
+    (64, 16),
+    (64, 64),
+    (128, 16),
+    (128, 32),
+    (32, 128),
+    (128, 128),
+    (16, 64),
+    (8, 128),
+    (32, 16),
+    (16, 32),
+    (64, 4),
+    (8, 64),
+];
+
+/// The non-square sizes whose mip chain p1132 ran (E562 tx-shapes, tx-fields).
+const CHAIN_SIZES: [(u32, u32); 5] = [(32, 16), (128, 16), (16, 32), (64, 4), (8, 64)];
+
+fn tile_law_ran(w: u32, h: u32) -> bool {
+    TILE_SIZES.contains(&(w, h))
+}
+
+/// The twiddled index of (x, y) (texture-sampler-smp-twiddled, p1132 tx-twiddle): a tile of up to
+/// 16 x 16 texels (the whole texture when it is smaller) is interleaved, y in bit 0, x in bit 1,
+/// and so on, the longer side's extra bits above; the tiles follow in raster order, x first.
 fn morton(x: u32, y: u32, w: u32, h: u32) -> u32 {
-    let (bw, bh) = (w.trailing_zeros(), h.trailing_zeros());
+    let (tw, th) = (w.min(16), h.min(16));
+    let (bw, bh) = (tw.trailing_zeros(), th.trailing_zeros());
+    let (cx, cy) = (x & (tw - 1), y & (th - 1));
     let common = bw.min(bh);
     let mut i = 0;
     for b in 0..common {
-        i |= (y >> b & 1) << (2 * b) | (x >> b & 1) << (2 * b + 1);
+        i |= (cy >> b & 1) << (2 * b) | (cx >> b & 1) << (2 * b + 1);
     }
-    let rest = if bw > bh { x } else { y } >> common;
-    i | rest << (2 * common)
+    let rest = if bw > bh { cx } else { cy } >> common;
+    i |= rest << (2 * common);
+    i + ((x / tw) + (y / th) * (w / tw)) * tw * th
 }
 
 #[cfg(test)]
@@ -1035,7 +1108,102 @@ mod tests {
         ] {
             assert_eq!(lod(t0, 2.0), Ok(vec![0xd000_084e]), "T0 0x{t0:08x}");
         }
-        assert!(lod(0x021a_0000, 2.0).is_err(), "26:21 = 0x10 is not measured");
+        // E276: all 64 biases are measured; 0x10 is -47/8, so LOD 2 reads level 0
+        assert_eq!(lod(0x021a_0000, 2.0), Ok(vec![0xd000_084e]), "26:21 = 0x10 is a bias");
+    }
+
+    #[test]
+    fn twiddled_textures_of_32_or_more_texels_are_16x16_tiles_in_raster_order() {
+        // p1132 tx-twiddle (N1): in a tile y is bit 0, x bit 1, and so on over 16 texels; the
+        // tiles follow in raster order, x first (D1: 32x32 i8 = x4, i9 = y4; 64x32 i8 = x4,
+        // i9 = x5, i10 = y4; 128x128 i8..i10 = x4..x6, i11..i13 = y4..y6)
+        assert_eq!(morton(16, 0, 32, 32), 0x100);
+        assert_eq!(morton(0, 16, 32, 32), 0x200);
+        assert_eq!(morton(16, 16, 32, 32), 0x300);
+        assert_eq!(morton(32, 0, 64, 32), 0x200);
+        assert_eq!(morton(0, 16, 64, 32), 0x400);
+        assert_eq!(morton(0, 16, 128, 128), 0x800);
+        assert_eq!(morton(0, 32, 128, 128), 0x1000);
+        // E441's levels 0 to 2 (the texel (28, 84) at 128, (14, 42) at 64, (7, 21) at 32: u =
+        // 0.21875 of the size, v = 0.65625): its decoded pairs (20, 108), (10, 46), (5, 23) are
+        // plain indices of these dwords, which the tile law gives (3 of 3)
+        assert_eq!(morton(28, 84, 128, 128), 0x29b0);
+        assert_eq!(morton(14, 42, 64, 64), 0x8ec);
+        assert_eq!(morton(7, 21, 32, 32), 0x23b);
+        assert_eq!(morton(16, 0, 32, 128), 0x100);
+        assert_eq!(morton(0, 64, 32, 128), 0x600 + 0x200);
+        // up to 16 on a side the plain interleave stands (E035), and a narrow texture is one tile
+        // wide: 16x64, 128x16 and 8x128 are as before
+        assert_eq!(morton(0, 16, 16, 64), 0x100);
+        assert_eq!(morton(16, 0, 128, 16), 0x100);
+        assert_eq!(morton(1, 16, 8, 128), 0x82);
+        assert_eq!(morton(5, 1, 8, 2), 0b1011);
+    }
+
+    #[test]
+    fn the_tile_law_is_refused_off_the_sizes_it_ran_on() {
+        // p1132 tx-twiddle: 32-bit texels in 14 sizes with a side above 16 (E561, E562); a 2-byte
+        // format, a size not run and 256 or more on a side were not run
+        for (w, h) in [(32, 32), (64, 32), (64, 16), (64, 64), (128, 16), (128, 32), (32, 128), (128, 128)] {
+            assert!(at(state(0, 12, w, h, 1, 0, 0), 0.3, 0.7).is_ok(), "{w}x{h}");
+        }
+        for (w, h) in [(16, 64), (8, 128), (32, 16), (16, 32), (64, 4), (8, 64)] {
+            assert!(at(state(0, 12, w, h, 1, 0, 0), 0.3, 0.7).is_ok(), "{w}x{h}");
+        }
+        for (w, h) in [(256, 256), (256, 16), (16, 256), (128, 8), (4, 64), (64, 8), (32, 8), (512, 512)] {
+            let r = at(state(0, 12, w, h, 1, 0, 0), 0.3, 0.7);
+            assert!(matches!(&r, Err(Fail::Open(m)) if m.contains("twiddled")), "{w}x{h}: {r:?}");
+        }
+        // two bytes a texel: the plain interleave up to 16 on each side stands, above it is not run
+        assert!(at(state(0, 4, 16, 16, 1, 0, 0), 0.3, 0.7).is_ok());
+        assert!(at(state(0, 4, 8, 8, 1, 0, 0), 0.3, 0.7).is_ok());
+        let r = at(state(0, 4, 32, 32, 1, 0, 0), 0.3, 0.7);
+        assert!(matches!(&r, Err(Fail::Open(m)) if m.contains("twiddled")), "{r:?}");
+        let r = at(state(0, 4, 8, 128, 1, 0, 0), 0.3, 0.7);
+        assert!(matches!(&r, Err(Fail::Open(m)) if m.contains("twiddled")), "{r:?}");
+        // a stride texture has no tiles
+        assert!(at(state(6, 12, 256, 256, 256, 0, 0xa080_0000), 0.3, 0.7).is_ok());
+    }
+
+    #[test]
+    fn a_non_square_chain_is_read_only_at_the_sizes_it_ran_on() {
+        // p1132 tx-shapes and tx-fields: 32x16, 128x16, 16x32, 64x4 and 8x64 (E562); the square
+        // sizes were measured before (E041, E441). 64x16 and 16x64 ran at level 0 only.
+        let pick = |w: u32, h: u32| {
+            let t =
+                Texture::new(0x07fc_0000, 12 << 24 | (w - 1) << 12 | (h - 1), 0x2000, 0x0080_0800).unwrap();
+            t.pick(0x07fc_0000, &Lod::Value(1.0), false).map(|_| ())
+        };
+        for (w, h) in [(32, 16), (128, 16), (16, 32), (64, 4), (8, 64), (32, 32)] {
+            assert_eq!(pick(w, h), Ok(()), "{w}x{h}");
+        }
+        for (w, h) in [(64, 16), (16, 64), (128, 32), (32, 128)] {
+            let r = pick(w, h);
+            assert!(matches!(&r, Err(Fail::Open(m)) if m.contains("non-square")), "{w}x{h}: {r:?}");
+        }
+    }
+
+    #[test]
+    fn a_mip_chain_of_a_non_square_texture_halves_both_sides_down_to_1x1() {
+        // p1132 tx-shapes (Q104): chain A, 8 of 8 fit and 49 of 49 held-out cases exact. 32x16
+        // reads 512, 128, 32, 8, 2 and 1 dwords at 0, 512, 640, 672, 680 and 682; LOD 6 and 7 read
+        // the last level (1x1)
+        let t = Texture::new(0x07fc_0000, 12 << 24 | 31 << 12 | 15, 0x2000, 0x0080_0800).unwrap();
+        let dims: Vec<(u32, u32, u32)> =
+            (0..6).map(|l| t.level(l)).map(|t| (t.w, t.h, (t.base - 0x2000) / 4)).collect();
+        assert_eq!(
+            dims,
+            [(32, 16, 0), (16, 8, 512), (8, 4, 640), (4, 2, 672), (2, 1, 680), (1, 1, 682)]
+        );
+        let (levels, _) = t.pick(0x07fc_0000, &Lod::Value(7.0), false).unwrap();
+        assert_eq!(levels, [(5, 64)]);
+        let (levels, _) = t.pick(0x07fc_0000, &Lod::Value(4.0), false).unwrap();
+        assert_eq!(levels, [(4, 64)]);
+        // 64x4: the short side is 1 from level 2 on, the chain goes on to level 6
+        let t = Texture::new(0x07fc_0000, 12 << 24 | 63 << 12 | 3, 0x2000, 0x0080_0800).unwrap();
+        assert_eq!(((t.level(6).w, t.level(6).h), (t.level(6).base - 0x2000) / 4), ((1, 1), 350));
+        let (levels, _) = t.pick(0x07fc_0000, &Lod::Value(9.0), false).unwrap();
+        assert_eq!(levels, [(6, 64)]);
     }
 
     #[test]
@@ -1130,17 +1298,18 @@ mod tests {
         assert!(mip(0x07fa_0000, 12, 0.2, 0.6, Lod::Open("why")).is_err());
         // a LOD that cannot matter: no mipmaps, min and mag alike
         assert_eq!(mip(0x07fe_0000, 12, 0.21875, 0.65625, Lod::Open("why")), Ok(vec![0xd000_084e]));
+        // a non-square chain is measured since p1132 (tx-shapes); a 1D one is not
         let rect = [0x07fa_0000, 12 << 24 | 15 << 12 | 7, 0x2000, 0];
         let s = Sample {
             state: rect,
             u: 0.0,
             v: 0.0,
-            one_d: false,
+            one_d: true,
             srd: Srd::None,
             pcf: None,
             lod: Lod::Value(1.0),
         };
-        assert!(sample(&s, &mut chain).is_err(), "a non-square chain");
+        assert!(sample(&s, &mut chain).is_err(), "a 1D chain");
     }
 
     /// texture-sampler-smp-srd's sample of the chain (E042): level 0 texel (3, 10).
@@ -1383,7 +1552,7 @@ mod tests {
         // texture-sampler-smp-formats-other 12-39: compressed and YUV layouts; four texels
         // fix no decoder, and the YUV ones go through a colour-space set the
         // vector does not record (E037)
-        for fmt in 23..=29 {
+        for fmt in 23..=27 {
             assert!(other(fmt).iter().all(|r| r.is_err()), "format {fmt}");
         }
         // texture-sampler-smp-address-border: modes 4-7 read other texels, one coordinate each
@@ -1400,6 +1569,66 @@ mod tests {
             };
             assert!(sample(&s, &mut probe_texel).is_err(), "mode {mode}");
         }
+    }
+
+    #[test]
+    fn the_yuv_texel_model_is_opaque_black_for_an_unloaded_set() {
+        // the texel model for a set that is not loaded (E037, E040 and p1132 tx-formats-yuv-nocsc,
+        // fy-28 and fy-29, two patterns: 2048 of 2048 pixels 0xff000000 in each job); whether
+        // the set is unloaded is the machine's to know (Machine::csc_unloaded)
+        for fmt in [28, 29] {
+            assert!(other(fmt).iter().all(|r| r == &Ok(vec![0xff00_0000])), "format {fmt}");
+        }
+    }
+
+    #[test]
+    fn smp3d_is_smp2d_only_where_it_ran() {
+        // E567: TEXTYPE 0, 6 and 7, format 12, point filters, one level, a 16x16 twiddled and
+        // a 64x32 stride texture, T3 as run
+        let tw = [0x07fe_0000, 0x0c00_f00f, 0x1000, 0x0080_0800];
+        let st = [0x000e_0e00, 0xcc03_f01f, 0x1000, 0xa080_0000];
+        assert_eq!(smp3d_as_2d(tw, false), Ok(()));
+        assert_eq!(smp3d_as_2d(st, false), Ok(()));
+        let mut t7 = tw;
+        t7[1] |= 7 << 29;
+        assert_eq!(smp3d_as_2d(t7, false), Ok(()));
+        // the rule itself refuses TEXTYPE 2, whatever Texture::new does with it
+        for ty in [1, 2, 3, 4, 5] {
+            let mut t = tw;
+            t[1] |= ty << 29;
+            let r = smp3d_as_2d(t, false);
+            assert!(
+                matches!(&r, Err(m) if m.contains("smp3d") && m.contains(&format!("TEXTYPE {ty}"))),
+                "{r:?}"
+            );
+        }
+        assert!(smp3d_as_2d(tw, true).is_err(), "with .pcf or an SRD mode");
+        let mut t = tw;
+        t[1] = 0x0c01_f00f;
+        assert!(smp3d_as_2d(t, false).is_err(), "32x16");
+        let mut t = st;
+        t[1] = 0xcc00_f00f;
+        assert!(smp3d_as_2d(t, false).is_err(), "16x16 stride");
+        let mut t = tw;
+        t[0] = 0x07fc_0000;
+        assert!(smp3d_as_2d(t, false).is_err(), "the chain");
+        let mut t = tw;
+        t[0] |= 3 << 12;
+        assert!(smp3d_as_2d(t, false).is_err(), "a filter");
+        let mut t = tw;
+        t[3] |= 1 << 10;
+        assert!(smp3d_as_2d(t, false).is_err(), "T3 bit 10");
+    }
+
+    #[test]
+    fn texture_type_7_reads_as_twiddled_at_16x16() {
+        // p1132 tx-types-risky (rt7-2d, rt7-3d-w5, rt7-3d-w15): TEXTYPE 7 on a 16x16 texture reads
+        // the twiddled image, 2048 of 2048 pixels each; no other size was run
+        let tw = at(state(0, 12, 16, 16, 1, 0, 0), 0.3, 0.7);
+        assert!(tw.is_ok());
+        assert_eq!(at(state(7, 12, 16, 16, 1, 0, 0), 0.3, 0.7), tw);
+        assert!(at(state(7, 12, 32, 32, 1, 0, 0), 0.3, 0.7).is_err(), "7 at another size");
+        assert!(at(state(1, 12, 16, 16, 1, 0, 0), 0.3, 0.7).is_err(), "type 1");
     }
 
     #[test]
