@@ -35,14 +35,14 @@ first with the first context open.
 | 0x8 in the first | open | A, 0, A | not taken | exact | 0, 0, 0 |
 | 0xc in the first | open | A, 0, A | not taken | exact | 0, 0, 0 |
 
-The 6 faults (0x8 and 0xc in the first and 0xc in both, two runs each) are all INT_STAT `0x90004`,
-BIF_FAULT `0x200030c1`: page 0x20003000, list 1 (CID 1), the second context's directory. The first
-context's job completed in all 18 runs; the tool stopped at the second's fault and did not check the
-first render's pixels in those 6. The 12 runs that did not fault checked both renders: 24 of 24
-exact (0 wrong inside, outside and at the edges, guard 0). No recovery failed (kernel.log is
-authoritative for the logged counts: the six faults at its lines 109 to 687, no "recovery failed";
-output.txt lost most dmesg lines). The run's cleanup lines carry flags 0x1 in the 6 faulted runs and
-0x0 in the 12 that did not fault, which fits a lost context.
+The 6 faults (0x8 and 0xc in the first and 0xc in both, two runs each) are all BIF fault status
+`0x90004` at `0x200030c1` in the kernel log: page 0x20003000, list 1 (CID 1), the second context's
+directory. The first context's job completed in all 18 runs; the tool stopped at the second's fault
+and did not check the first render's pixels in those 6. The 12 runs that did not fault checked both
+renders: 24 of 24 exact (0 wrong inside, outside and at the edges, guard 0). No recovery failed
+(kernel.log is authoritative for the logged counts: the six faults at its lines 109 to 687, no
+"recovery failed"; output.txt lost most dmesg lines). The run's cleanup lines carry flags 0x1 in the
+6 faulted runs and 0x0 in the 12 that did not fault, which fits a lost context.
 
 **What it shows.**
 

@@ -10,13 +10,13 @@
 
 ## dpm
 
-- `Q038` (phase 10): what does the final render read back of a partial render's depth (a depth buffer stored by ZLS, the 3D kick's RT status bit 1), now that a background object that reloads the target's colour gives an overflowing scene's whole image? (E202, E204, E160, E310, E311, E312, E442)
-- `Q045` (phase 11): what sets the fields of register 0x0740 that the TA kick turns into DPM store and load tasks (a host write reads back 0: E456), and does a load task read back the macrotile lists a partial render stores in the RT data's state page? (E158, E256, E310, E312, E456)
+- `Q038` (phase 10): what does the final render read back of a partial render's depth (a depth buffer stored by ZLS, the 3D kick's RT status bit 1), now that a background object that reloads the target's colour gives an overflowing scene's whole image? (E202, E204, E160, E310, E311, E312, E442, E461)
+- `Q045` (phase 11): what sets the fields of register 0x0740 that the TA kick turns into DPM store and load tasks (a host write reads back 0: E456), and does a load task read back the macrotile lists a partial render stores in the RT data's state page? (E158, E256, E310, E312, E456, E464)
 - `Q067` (phase 11): does the settle routine wait for the other pipe to go idle (the page-table builder's store offset is answered: E446, E453)? (E153, E200, E201, E309, E362, E446, E448, E453)
 - `Q081` (phase 11): what does CR_DPM_REG_074C bit 8 make the DPM read or write near offset 0x6010 of the context's TA-data space, and what fixes that place? (E203, E206, E313, E362, E447)
 - `Q084` (phase 11): how does the closed driver turn its PBSize app hint into the parameter buffer's page count and thresholds, given 1 MiB and 8 MiB both give 98 pages and 768 KiB fails? (E327)
 - `Q103` (phase 11): why does a scene of 100 to 500 triangles hang where the one-triangle scene overflows the parameter buffer and recovers, at 4096x4096 in 0x40 or 0x23 pages from 300 vertices and in 0x100 pages from 900? (E438, E310, E312)
-- `Q105` (phase 11): what does a faulted job leave that makes the next job fault, with a GPU reset between (seen with flag bit 0 set over a zeroed table, and with a plain triangle)? (E446, E453)
+- `Q105` (phase 11): what does the base-only fault over a zeroed table leave, which a debugfs GPU reset does not clear, that makes the next two jobs fault whatever they are (E453, E463)? (E446, E453, E463)
 
 ## edm
 
@@ -69,7 +69,7 @@
 - `Q060` (phase 11): what do mr01, mr23, ir1 and the .h specials read in the vertex-side programs? (E128, E130, E262, E263, E390)
 - `Q062` (phase 11): what makes the PDS fetch pc read one or two below the reading instruction's index plus 3, at instructions 26-27 back to back (the end of a 64-dword block) in most runs? (E128, E142, E143, E260, E261, E384)
 - `Q063` (phase 11): what does bit 9 of a mov16 or mov32 special source select on the rest of the SGX family, when on SGX545 it only makes mov16 read 0? (E128)
-- `Q093` (phase 11): does DOUTU1 bit 24 (wait for iterations) change what a textured primary pixel program reads when it iterates a coordinate set (two or three components) before the fetch, or hang the job, as the closed driver's programs that set it do? (E345, E364, E436, E454)
+- `Q093` (phase 11): does DOUTU1 bit 24 (wait for iterations) hang a job under the fetch wait, as it did in 4 of 126 jobs with both bits in colour and coordinate shapes, and why does the closed driver set it with bit 25? (E345, E364, E436, E454, E459, E460)
 
 ## platform
 
@@ -87,7 +87,7 @@
 - `Q083` (phase 11): what bounds TA/3D control block dword 49 at 15 values, and is it a count of render contexts or an index the EDM gives each one? (E303, E314, E315, E316, E319, E360)
 - `Q085` (phase 11): does our tri job's image or time change with the closed driver's two other 3D register values, CR_ISP_CTL bit 8 clear and 0x04c4 bit 25 set? (E326, E408)
 - `Q099` (phase 11): what do bits 25, 8 and 19:12 of 0x04c4 (render details dword 18) hold, which move with a texture target and the parameter buffer's size in the closed driver's frames? (E326, E408)
-- `Q106` (phase 11): why does a render on a second context at another RT data address fault at page 0x20003000 after the first context, which kept the DPM owner with render flag bit 3, is closed (E458)? (E458, E451, E316, E310)
+- `Q106` (phase 11): why does a render on a second context at another RT data address fault at page 0x20003000 after the first context, which kept the DPM owner with render flag bit 3, is closed (E458)? (E458, E451, E316, E310, E462)
 
 ## ta
 
@@ -139,3 +139,4 @@
 
 - `Q088` (phase 11): which of CR_ISP_ZLSCTL bits 1, 13 and 14, which the closed driver adds when a render loads a kept depth and stencil buffer, loads depth and which stencil, and what reads the render details' unpatched ZLS word the driver writes between frames? (E335, E336, E337, E411)
 - `Q101` (phase 11): what do bits 3, 4, 19, 24, 25 and 26 of CR_ISP_ZLSCTL do beyond what a store writes, given that they change the stored depth's format and the stored region? (E057, E284, E411)
+- `Q107` (phase 11): what is the window of the depth buffer that a ZLS store writes (64512 dwords at 1024x768, 326656 at 4096x4096), and what are the 15104 (80640) leading zero dwords and the sign bit set on the rest in a job that overflows? (E461, E058, E411)

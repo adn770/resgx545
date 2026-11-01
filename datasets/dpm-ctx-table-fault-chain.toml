@@ -1,0 +1,10 @@
+title = "script table dpm/ctx-table-fault-chain"
+repo = "data"
+paths = ["dpm/ctx-table-fault-chain/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 4
+size = 498607
+sha256 = "5d830e7c5985cf4fc83479e155cac4935caa0977eec94e55a625441fd6ac84e6"
+recipe = "probes/dpm/ctx-table-fault-chain.toml"
+needs = ["render", "kpoke", "alias_ctx_rw", "regs", "reset"]

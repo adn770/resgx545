@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# dpm depth partial: 0 probes (a shell script run on the laptop by the campaign).
+# Q038: what the depth buffer holds after a job that overflows its parameter buffer (the ZLS
+# store of the final render, after partial renders that stored depth), against the same job in a
+# buffer that holds it; and what a second render that loads that depth does.
+needs = ["render", "kpoke", "render_pb_pages", "reset"]
+name = "dpm-depth-partial"
+script = "depth-partial.sh"

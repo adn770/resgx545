@@ -1,0 +1,10 @@
+title = "script table dpm/ctx-table-fault-order"
+repo = "data"
+paths = ["dpm/ctx-table-fault-order/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 4
+size = 287122
+sha256 = "62ade8137d0cb3b274dcaf45ed7ed351c7e4b0612badf08bc82cdf5449f368e0"
+recipe = "probes/dpm/ctx-table-fault-order.toml"
+needs = ["render", "kpoke", "alias_ctx_rw", "regs", "reset"]

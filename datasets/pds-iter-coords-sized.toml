@@ -1,0 +1,10 @@
+title = "probe table pds/iter-coords-sized"
+repo = "data"
+paths = ["pds/iter-coords-sized/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 146
+size = 2053347
+sha256 = "53e53950e03197557217e56a31649b82dd706d21e50e55e1c0aaa74a3f478c5b"
+recipe = "probes/pds/iter-coords-sized.toml"
+needs = ["render"]

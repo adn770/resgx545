@@ -1,0 +1,10 @@
+title = "probe table pds/iter-coords-arrive"
+repo = "data"
+paths = ["pds/iter-coords-arrive/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 122
+size = 2440980
+sha256 = "525ce3b3baf2b3e97e88c9f06034bbc535edf23458a73332d4e7db61a5656512"
+recipe = "probes/pds/iter-coords-arrive.toml"
+needs = ["render"]

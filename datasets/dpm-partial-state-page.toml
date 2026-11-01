@@ -1,0 +1,10 @@
+title = "script table dpm/partial-state-page"
+repo = "data"
+paths = ["dpm/partial-state-page/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 4
+size = 81636
+sha256 = "0cbd372a2f962d4adabcd7c1556d98fcdd92393fa2ade71ec8dfe94fa218ad5a"
+recipe = "probes/dpm/partial-state-page.toml"
+needs = ["render", "kpoke", "kregnow", "render_pb_pages", "render_tadata", "tadata_fill", "reset"]

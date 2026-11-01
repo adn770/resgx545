@@ -210,7 +210,7 @@ reading and records.
 - **Render flags.** Bit 10's only test in the firmware adds one to the RT data set's executed count
   (E164, E166), and no image changes with it (E051, E052); bit 2 keeps its owner through a
   later live context's job (E451); through a gone context bit 2 alone keeps it and the next
-  render is exact, while after bit 3 a later render faults (E458, Q106).
+  render is exact, while after bit 3 a later render faults (E458, E462, Q106).
 - **Words read from the firmware alone.** The per-render-target strides of the TA command, the
   render details and the RT data (E158, E163) and a PB block's first page (E200, E201) rest on what
   the kicks and the page-table builder do with them.
@@ -338,8 +338,8 @@ dwords. Eight tables ran (`pds/iter-wait-textured.toml`, `dpm/partial-reload-pos
 `partial-wide.toml`, `partial-wide-timelines.toml` and `partial-reload.toml`, `isp/msaa-pbe.toml`,
 `vdm/state2-consts.toml` and `texture/mip8-fields.toml`). In a textured primary the fetch wait
 delivers the iterated coordinate set and the texel and `DOUTU1` bit 24 adds nothing (E436;
-E454 found the same with the vertex colour iterated, but its coordinate registers read 0 and one
-job in 30 with both bits hung, so the coordinate shapes stay open, Q093), a `douti` of source 0
+E454 and E460 found the same with the vertex colour and with coordinate sets on vertices that carry
+their dwords, E459; 4 of 126 jobs with both bits hung, Q093), a `douti` of source 0
 with two components is the pixel's x and y (E437), scenes of 100 to 500 triangles leave STATUS2's
 high halves at 0 and set `TA3DCtl` dword 36 but hang small parameter buffers (E438, E443, a new
 question), the 4x render through our

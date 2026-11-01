@@ -963,3 +963,168 @@ def test_tri_words_between_saves_a_snapshot_before_the_second_contexts_render(tm
 def test_tri_words_between_is_checked(args):
     r = run("--mock", *args)
     assert r.returncode == 2, r.stdout + r.stderr
+
+
+def test_tri_keep_overflow_reports_the_overflowed_render_and_goes_on(tmp_path):
+    # An overflowing scene fails the run by default; --keep-overflow counts it, prints its
+    # target's colours as a render's line (the mock draws nothing) and goes on to the next
+    # render, exiting 0 when no render failed otherwise
+    args = ("--mock", "--mock-pb-pages=0x62", "tri", "--width", "4096", "--height", "4096",
+            "-n", "2")
+    r = run(*args)
+    assert r.returncode == 1 and "#2:" not in r.stdout, r.stdout
+    r = run(*args, "--keep-overflow")
+    assert r.returncode == 0, r.stdout + r.stderr
+    lines = re.findall(r"^tri 4096x4096 #(\d): overflowed, (\d+) triangle, (\d+) background",
+                       r.stdout, re.M)
+    assert [n for n, _, _ in lines] == ["1", "2"], r.stdout
+    assert r.stdout.count("job: failed: scene overflowed the parameter buffer") == 2
+    assert "tri: 0 of 2 renders ok, 2 overflowed" in r.stdout
+
+
+def test_tri_keep_overflow_does_not_hide_other_failures():
+    # a render that fits still checks as before; the mock's fitting 1024x768 job is ok
+    r = run("--mock", "--mock-pb-pages=0x62", "tri", "--width", "1024", "--height", "768",
+            "--keep-overflow")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "tri: 1 renders ok" in r.stdout and "overflowed," not in r.stdout
+    r = run("--mock", "--mock-pb-pages=0x62", "tri", "-n", "2", "--poke", "blk:5^=2",
+            "--keep-overflow")
+    assert r.returncode == 1, r.stdout + r.stderr
+
+
+def test_tri_dump_each_dumps_after_every_render_even_an_overflowed_one(tmp_path, monkeypatch):
+    # --dump-each: the kernel's render_param and render_tadata after every render N as
+    # DIR/tri.N.*.bin, for an overflowed render too (its context is kept, the state page
+    # holds the lists a partial render stored); needs --dump-render DIR
+    dbg, out = tmp_path / "dbg", tmp_path / "out"
+    dbg.mkdir()
+    out.mkdir()
+    (dbg / "render_param").write_bytes(b"\x11" * 64)
+    (dbg / "render_tadata").write_bytes(b"\x22" * 32)
+    monkeypatch.setenv("SGXFIVE_DEBUGFS", str(dbg))
+    r = run("--mock", "--mock-pb-pages=0x62", "tri", "--width", "4096", "--height", "4096",
+            "-n", "2", "--keep-overflow", "--dump-render", str(out), "--dump-each")
+    assert r.returncode == 0, r.stdout + r.stderr
+    for n in (1, 2):
+        assert (out / f"tri.{n}.param.bin").read_bytes() == b"\x11" * 64, n
+        assert (out / f"tri.{n}.tadata.bin").read_bytes() == b"\x22" * 32, n
+    assert (out / "tri.tadata.bin").exists()
+    assert re.search(r"^probe tri\.1: render memory to .* after the failure$", r.stdout, re.M), \
+        r.stdout
+
+
+@pytest.mark.parametrize("args", [["tri", "--dump-each"],
+                                  ["tri", "--dump-each", "--keep-overflow"],
+                                  ["fill", "--keep-overflow"],
+                                  ["copy", "--dump-each", "--dump-render", "/tmp"]])
+def test_tri_keep_overflow_and_dump_each_are_checked(args):
+    r = run("--mock", *args)
+    assert r.returncode == 2, (args, r.stdout + r.stderr)
+    assert "bad option" not in r.stderr and \
+        ("--keep-overflow" in r.stderr or "--dump-each" in r.stderr), r.stderr
+
+
+def depth_args(*extra):
+    return ("--mock", "tri", "--depth", *extra)
+
+
+def test_tri_depth_arms_the_zls_pokes_and_reports_the_buffer(tmp_path, monkeypatch):
+    # --depth maps a depth buffer for the target (width x height dwords and sixteen pages),
+    # fills it (--depth-fill, 1.0f) and before each render arms the render-flag, ZLS-clear,
+    # control and both base pokes at it; after the render it reports the dwords it changed
+    # and the most frequent values (the mock stores no depth: nothing changes)
+    kp = tmp_path / "kpoke"
+    kp.write_text("")
+    monkeypatch.setenv("SGXFIVE_KPOKE", str(kp))
+    r = run(*depth_args("-n", "2"))
+    assert r.returncode == 0, r.stdout + r.stderr
+    head = re.search(r"^depth: (0x[0-9a-f]{8}) (\d+) pages, fill 0x3f800000, base 0x3e000000, "
+                     r"control 0x0017100c$", r.stdout, re.M)
+    assert head, r.stdout
+    addr, pages = int(head.group(1), 16), int(head.group(2))
+    assert addr % 4096 == 0 and pages == 4 + 16
+    lines = kp.read_text().split()
+    off = addr - 0x3E000000     # the bases are offsets from the ZLS base (rd:1)
+    assert lines == ["ta:7^=0x80", "rd:1=0x3e000000", "rd:11=0x0017100c", f"rd:12={off:#x}",
+                     f"rd:13={off:#x}"] * 2, lines
+    for n in (1, 2):
+        assert re.search(rf"^depth #{n}: {pages * 1024} dwords, 0 changed, 1 distinct; 0x3f800000 x "
+                         rf"{pages * 1024}$", r.stdout, re.M), r.stdout
+
+
+def test_tri_depth_options_set_the_words(tmp_path, monkeypatch):
+    # --depth-ctl V, --depth-base V, --depth-fill V, --depth-pages N; --depth-ctl-next V for
+    # renders 2 on, the buffer then filled before render 1 only (render 2 loads what 1 stored)
+    kp = tmp_path / "kpoke"
+    kp.write_text("")
+    monkeypatch.setenv("SGXFIVE_KPOKE", str(kp))
+    r = run(*depth_args("-n", "2", "--depth-ctl", "0x17700e", "--depth-base", "0x3dfff000",
+                        "--depth-fill", "0x12345678", "--depth-pages", "6",
+                        "--depth-ctl-next", "0x11700a"))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^depth: 0x[0-9a-f]{8} 6 pages, fill 0x12345678, base 0x3dfff000, "
+                     r"control 0x0017700e, then 0x0011700a$", r.stdout, re.M), r.stdout
+    lines = kp.read_text().split()
+    addr = int(re.search(r"^depth: (0x[0-9a-f]{8}) ", r.stdout, re.M).group(1), 16)
+    assert "rd:1=0x3dfff000" in lines and f"rd:12={addr - 0x3DFFF000:#x}" in lines, lines
+    assert [x for x in lines if x.startswith("rd:11")] == ["rd:11=0x0017700e",
+                                                            "rd:11=0x0011700a"], lines
+    assert "depth #2: 6144 dwords, 0 changed, 1 distinct; 0x12345678 x 6144" in r.stdout
+
+
+def test_tri_depth_fill_value_is_counted(tmp_path, monkeypatch):
+    # the report's most frequent value is the fill when nothing was stored
+    kp = tmp_path / "kpoke"
+    kp.write_text("")
+    monkeypatch.setenv("SGXFIVE_KPOKE", str(kp))
+    r = run(*depth_args("--depth-fill", "0"))
+    assert re.search(r"^depth #1: 20480 dwords, 0 changed, 1 distinct; 0x00000000 x 20480$", r.stdout, re.M), \
+        r.stdout
+
+
+@pytest.mark.parametrize("args", [["tri", "--depth-ctl", "1"],
+                                  ["tri", "--depth", "--depth-ctl-next", "1"],
+                                  ["tri", "--depth", "--depth-pages", "0"],
+                                  ["tri", "--depth", "--depth-pages", "4", "--width", "128",
+                                   "--height", "128"],
+                                  ["fill", "--depth"],
+                                  ["tri", "--depth", "--ctx2"]])
+def test_tri_depth_is_checked(args):
+    r = run("--mock", *args)
+    assert r.returncode == 2, (args, r.stdout + r.stderr)
+    assert "--depth" in r.stderr and "bad option" not in r.stderr, r.stderr
+
+
+def test_tri_depth_dump_writes_the_buffer_after_each_render(tmp_path, monkeypatch):
+    # --depth-dump DIR: the buffer's bytes after render N as DIR/depth.N.bin, for a layout read
+    # on the host (the mock stores no depth: the fill is all there is)
+    kp = tmp_path / "kpoke"
+    kp.write_text("")
+    monkeypatch.setenv("SGXFIVE_KPOKE", str(kp))
+    r = run(*depth_args("-n", "2", "--depth-fill", "0x01020304", "--depth-pages", "5",
+                        "--depth-dump", str(tmp_path)))
+    assert r.returncode == 0, r.stdout + r.stderr
+    for n in (1, 2):
+        assert (tmp_path / f"depth.{n}.bin").read_bytes() == bytes([4, 3, 2, 1]) * (5 * 1024), n
+    r = run(*depth_args("--depth-dump", "/nonexistent/dir"))
+    assert "--depth-dump" in r.stdout, r.stdout
+
+
+def test_tri_words_with_regs_reads_the_registers_at_every_snapshot(tmp_path, monkeypatch):
+    # --words DIR with --regs LO-HI: each snapshot N (before the first render, after each one, and
+    # the 100 + N and 200 + N of --ctx2) is followed by the register range, so the registers can
+    # be read where the words are (the mock has no registers: its line says so)
+    dbg, out = tmp_path / "dbg", tmp_path / "w"
+    dbg.mkdir()
+    out.mkdir()
+    (dbg / "render_words").write_text("ctx:0=0x00000011\n")
+    (dbg / "buf09").write_bytes(bytes(256))
+    monkeypatch.setenv("SGXFIVE_DEBUGFS", str(dbg))
+    r = run("--mock", "tri", "-n", "2", "--ctx2", "--words-between", "--words", str(out),
+            "--regs", "0x600-0x750")
+    assert r.returncode == 0, r.stdout + r.stderr
+    snaps = re.findall(r"^tri: registers at snapshot (\d+)$", r.stdout, re.M)
+    assert snaps == ["0", "101", "1", "102", "2"], (snaps, r.stdout)
+    r = run("--mock", "tri", "-n", "1", "--words", str(out))
+    assert "registers at snapshot" not in r.stdout

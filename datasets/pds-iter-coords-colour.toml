@@ -1,0 +1,10 @@
+title = "probe table pds/iter-coords-colour"
+repo = "data"
+paths = ["pds/iter-coords-colour/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 122
+size = 1129196
+sha256 = "a815d480f22d6cd15e96357a1ed16f7b4600ae34c322e57fd5dd099b573cac8a"
+recipe = "probes/pds/iter-coords-colour.toml"
+needs = ["render"]

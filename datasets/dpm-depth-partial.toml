@@ -1,0 +1,10 @@
+title = "script table dpm/depth-partial"
+repo = "data"
+paths = ["dpm/depth-partial/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 4
+size = 125634
+sha256 = "554a4b24735ce9d8a1433c64b479d55e8df9bb4337c57f64874c1ee28323951a"
+recipe = "probes/dpm/depth-partial.toml"
+needs = ["render", "kpoke", "render_pb_pages", "reset"]

@@ -22,7 +22,9 @@
  *   isolation                     VM separation, faults, lost contexts, read-only maps
  *   tri   [--width W --height H -n N] [--max-width W --max-height H] [--fault]
  *         [--scratch N [--scratch-fill V] [--scratch-at ADDR] [--scratch-file FILE]] [--kpoke-render N:SPEC]... [--move N:DX,DY]...
- *         [--geometry N]... [--keep-going] [--dump-render DIR] [--words DIR]
+ *         [--geometry N]... [--keep-going] [--keep-overflow] [--dump-render DIR [--dump-each]]
+ *         [--depth [--depth-ctl V] [--depth-ctl-next V] [--depth-fill V] [--depth-base V]
+ *                [--depth-pages N] [--depth-dump DIR]] [--words DIR]
  *         [--wait-ms MS] [--ctx2 [--share-pb] [--overlap] [--close-first-early] [--words-between]]
  *         [JOB OPTIONS]
  *                                 the first triangle on a render context, N times,
@@ -44,7 +46,12 @@
  *                                 draws render N's triangle DX, DY pixels away;
  *                                 --geometry submits render N geometry only (the scene
  *                                 left open for the next render, nothing drawn);
- *                                 --keep-going reports every render, checked or not
+ *                                 --keep-going reports every render, checked or not;
+ *                                 --keep-overflow counts a render whose scene overflowed
+ *                                 the parameter buffer and goes on; --dump-each: the
+ *                                 --dump-render files after every render N (DIR/tri.N.*);
+ *                                 --depth: a depth buffer the ZLS pokes point at, its
+ *                                 changed dwords and frequent values reported per render
  *                                 --dump-render DIR: after the renders, the kernel's
  *                                 debugfs render_param and render_tadata copied to
  *                                 DIR/tri.param.bin and DIR/tri.tadata.bin;
@@ -268,6 +275,14 @@ struct opts {
 	const char *words_dir;		/* tri: the context's words there around each render */
 	uint32_t wait_ms;		/* tri: each render's wait; 0: WAIT_NS */
 	bool keep_going;		/* tri: go on after a render that does not check */
+	bool keep_overflow;		/* tri: an overflowed render is counted and the run goes on */
+	bool dump_each;			/* tri: --dump-render after every render, not only the last */
+	/* tri --depth: a depth buffer the ZLS pokes point at (all the depth_* below) */
+	bool depth;
+	bool depth_given;		/* a --depth-* option was given */
+	uint32_t depth_fill, depth_base, depth_ctl, depth_ctl_next;
+	uint32_t depth_pages;		/* UINT32_MAX: the target's and sixteen over */
+	const char *depth_dump;		/* --depth-dump DIR: the buffer after each render */
 	bool ctx2;			/* tri: a second render context in the VM, rendering too */
 	bool close_first;		/* tri --ctx2: close the first context before the second */
 	bool close_early;		/* tri --ctx2: ... in the last iteration, between the renders */
@@ -315,7 +330,10 @@ static int usage(void)
 		"                      --fault --scratch N --scratch-fill V --scratch-at ADDR\n"
 		"                      --scratch-file FILE\n"
 		"                      --kpoke-render N:SPEC --move N:DX,DY --geometry N\n"
-		"                      --keep-going --dump-render DIR --words DIR\n"
+		"                      --keep-going --keep-overflow --dump-render DIR [--dump-each]\n"
+		"                      --words DIR\n"
+		"                      [--depth [--depth-ctl V] [--depth-ctl-next V] [--depth-fill V]\n"
+		"                       [--depth-base V] [--depth-pages N] [--depth-dump DIR]]\n"
 		"                      --wait-ms MS --ctx2 [--share-pb] [--overlap] [--close-first]\n"
 		"                      [--close-first-early] [--words-between]\n"
 		"                      [--kreg-render N:OFFSET=VALUE]\n"
@@ -2114,6 +2132,115 @@ static void scratch_report(const struct scratch *s, uint32_t v, const uint32_t *
 	printf("scratch: %u dwords changed\n", total);
 }
 
+/*
+ * tri --depth: the buffer of the ZLS load and store (a scratch buffer of the target's
+ * width x height dwords and sixteen pages over), the pokes that point the render flags, the
+ * ZLS clear value, the control word and both bases at it, and what a render left in it:
+ * the dwords that differ from the fill and the most frequent values.
+ */
+#define DEPTH_MARGIN_PAGES	16
+#define DEPTH_SLOTS		(1u << 16)
+#define DEPTH_SLOTS_USED	(DEPTH_SLOTS / 2)
+
+static uint32_t depth_min_pages(const struct opts *o)
+{
+	return (uint32_t)(((uint64_t)o->width * o->height * 4 + SGXFIVE_PAGE_SIZE - 1) /
+			  SGXFIVE_PAGE_SIZE);
+}
+
+static int depth_arm(const struct scratch *d, uint32_t base, uint32_t ctl)
+{
+	char line[32];
+	int ret = kpoke_write("ta:7^=0x80");
+
+	snprintf(line, sizeof(line), "rd:1=0x%x", base);
+	if (!ret)
+		ret = kpoke_write(line);
+	snprintf(line, sizeof(line), "rd:11=0x%08x", ctl);
+	if (!ret)
+		ret = kpoke_write(line);
+	snprintf(line, sizeof(line), "rd:12=0x%llx", (unsigned long long)(d->addr - base));
+	if (!ret)
+		ret = kpoke_write(line);
+	snprintf(line, sizeof(line), "rd:13=0x%llx", (unsigned long long)(d->addr - base));
+	if (!ret)
+		ret = kpoke_write(line);
+	return ret;
+}
+
+static void depth_report(const struct scratch *d, uint32_t fill, uint32_t render)
+{
+	const uint64_t n = d->size / 4;
+	uint32_t *val = calloc(DEPTH_SLOTS, sizeof(*val));
+	uint32_t *cnt = calloc(DEPTH_SLOTS, sizeof(*cnt));
+	uint32_t changed = 0, distinct = 0, top[4];
+	unsigned int nt = 0;
+	bool full = false;
+
+	if (!val || !cnt) {
+		printf("depth #%u: no memory for the report\n", render);
+		free(val);
+		free(cnt);
+		return;
+	}
+	for (uint64_t i = 0; i < n; i++) {
+		const uint32_t v = d->map[i];
+		uint32_t h = (v * 2654435761u) >> 16;
+
+		changed += v != fill;
+		while (cnt[h] && val[h] != v)
+			h = (h + 1) & (DEPTH_SLOTS - 1);
+		if (!cnt[h]) {
+			if (distinct == DEPTH_SLOTS_USED) {
+				full = true;
+				continue;
+			}
+			val[h] = v;
+			distinct++;
+		}
+		cnt[h]++;
+	}
+	while (nt < 4) {		/* the four most frequent values, by repeated scan */
+		uint32_t best = DEPTH_SLOTS;
+
+		for (uint32_t h = 0; h < DEPTH_SLOTS; h++) {
+			bool taken = false;
+
+			for (unsigned int j = 0; j < nt; j++)
+				taken |= top[j] == h;
+			if (cnt[h] && !taken && (best == DEPTH_SLOTS || cnt[h] > cnt[best]))
+				best = h;
+		}
+		if (best == DEPTH_SLOTS)
+			break;
+		top[nt++] = best;
+	}
+	printf("depth #%u: %llu dwords, %u changed, %u%s distinct;", render, (unsigned long long)n,
+	       changed, distinct, full ? "+" : "");
+	for (unsigned int k = 0; k < nt; k++)
+		printf("%s 0x%08x x %u", k ? "," : "", val[top[k]], cnt[top[k]]);
+	printf("\n");
+	free(val);
+	free(cnt);
+}
+
+static int depth_dump(const char *dir, const struct scratch *d, uint32_t render)
+{
+	char path[4096];
+	FILE *f;
+	int ret = 0;
+
+	snprintf(path, sizeof(path), "%s/depth.%u.bin", dir, render);
+	f = fopen(path, "wb");
+	if (!f)
+		return -errno;
+	if (fwrite(d->map, 1, d->size, f) != d->size)
+		ret = -EIO;
+	if (fclose(f) && !ret)
+		ret = -EIO;
+	return ret;
+}
+
 static void scratch_destroy(struct sgxfive_vm *vm, struct scratch *s)
 {
 	if (!s->bo)
@@ -2239,7 +2366,7 @@ static void close_trace(const char *which)
  * RT data set, PB descriptor, kernel words and render details, a kpoke line each) and the
  * EDM's TA/3D control block (debugfs buf09) to DIR/words.N.txt and DIR/ta3d.N.bin.
  */
-static int save_words(const char *dir, uint32_t n)
+static int save_words(const struct tool *t, const struct opts *o, const char *dir, uint32_t n)
 {
 	char words[4096], ta3d[4096];
 	long long ws, ts;
@@ -2253,6 +2380,10 @@ static int save_words(const char *dir, uint32_t n)
 	if (!ret)
 		printf("tri: words %u to %s (%lld bytes), %s (%lld bytes)\n", n, words, ws, ta3d,
 		       ts);
+	if (!ret && o->regs) {		/* the registers where the words were read */
+		printf("tri: registers at snapshot %u\n", n);
+		print_regs(t, o);
+	}
 	return ret;
 }
 
@@ -2292,6 +2423,15 @@ static int tri2_submit(struct sgxfive_render *r2, const struct opts *o, uint32_t
 	return sgxfive_render_tri_flags(r2, p2, 0, 0, 0);
 }
 
+/* "tri.N": the name of render N's --dump-each files */
+static const char *tri_name(uint32_t n)
+{
+	static char name[24];
+
+	snprintf(name, sizeof(name), "tri.%u", n);
+	return name;
+}
+
 static int cmd_tri(struct tool *t, const struct opts *o)
 {
 	static const uint32_t colours[2][2] = {
@@ -2308,7 +2448,8 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 	const uint32_t max_w = o->max_width == UINT32_MAX ? o->width : o->max_width;
 	const uint32_t max_h = o->max_height == UINT32_MAX ? o->height : o->max_height;
 	const long long wait_ns = o->wait_ms ? o->wait_ms * 1000000LL : WAIT_NS;
-	struct scratch sc = { 0 };
+	struct scratch sc = { 0 }, dc = { 0 };
+	uint32_t overflowed = 0;
 	int ret;
 
 	ret = sgxfive_vm_create(t->dev, &vm);
@@ -2331,6 +2472,22 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		       o->scratch, o->scratch_fill);
 		if (o->scratch_words)
 			printf(", file %u dwords", o->scratch_words);
+		printf("\n");
+	}
+	if (o->depth) {
+		const uint32_t pages = o->depth_pages != UINT32_MAX ? o->depth_pages :
+				       depth_min_pages(o) + DEPTH_MARGIN_PAGES;
+
+		ret = scratch_create(t, vm, pages, 0, &dc);
+		if (ret) {
+			fail("depth buffer", ret);
+			goto out;
+		}
+		printf("depth: 0x%08llx %u pages, fill 0x%08x, base 0x%08x, control 0x%08x",
+		       (unsigned long long)dc.addr, pages, o->depth_fill, o->depth_base,
+		       o->depth_ctl);
+		if (o->depth_ctl_next)
+			printf(", then 0x%08x", o->depth_ctl_next);
 		printf("\n");
 	}
 	if (o->fault) {
@@ -2363,7 +2520,7 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 				   : "tri: second render context\n");
 	}
 	if (o->words_dir) {
-		ret = save_words(o->words_dir, 0);
+		ret = save_words(t, o, o->words_dir, 0);
 		if (ret) {
 			fail("--words", ret);
 			printf("tri: --words: %s\n", strerror(-ret));
@@ -2379,6 +2536,7 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		long long t0 = now_ns();
 		uint32_t guard;
 		int wait_err = 0;
+		bool over;
 
 		sgxfive_tri_default(&p, o->width, o->height);
 		p.colour = colours[i % 2][0];
@@ -2392,6 +2550,16 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 			}
 			printf("tri: render %u moved by %d,%d\n", i + 1, o->moves[k].dx,
 			       o->moves[k].dy);
+		}
+		if (dc.bo) {
+			ret = depth_arm(&dc, o->depth_base, i && o->depth_ctl_next ?
+					o->depth_ctl_next : o->depth_ctl);
+			if (ret) {
+				fail("kpoke", ret);
+				goto out;
+			}
+			if (!i || !o->depth_ctl_next)
+				scratch_fill(&dc, o->depth_fill, NULL, 0);
 		}
 		for (unsigned int k = 0; k < o->nkpr; k++) {
 			if (o->kpr[k].n != i + 1 || o->kpr[k].second)
@@ -2422,7 +2590,7 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		print_job(ret, wait_err);
 		if (r2 && !ret && !wait_err && (o->words_between ||
 						(o->close_early && i + 1 == o->n))) {
-			int wr = o->words_dir ? save_words(o->words_dir, 100 + i + 1) : 0;
+			int wr = o->words_dir ? save_words(t, o, o->words_dir, 100 + i + 1) : 0;
 
 			if (!wr && o->close_early && i + 1 == o->n) {
 				sgxfive_ctx_destroy(t->dev, ctx);
@@ -2433,7 +2601,7 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 				if (o->close_trace)
 					close_trace("after closing the first context");
 				if (o->words_dir)
-					wr = save_words(o->words_dir, 200 + i + 1);
+					wr = save_words(t, o, o->words_dir, 200 + i + 1);
 			}
 			if (wr) {
 				fail("--words", wr);
@@ -2470,7 +2638,7 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 			}
 		}
 		if (o->words_dir) {
-			int wr = save_words(o->words_dir, i + 1);
+			int wr = save_words(t, o, o->words_dir, i + 1);
 
 			if (wr) {
 				fail("--words", wr);
@@ -2487,6 +2655,11 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		print_regs(t, o);
 		if (sc.bo)
 			scratch_report(&sc, o->scratch_fill, o->scratch_data, o->scratch_words);
+		if (dc.bo) {
+			depth_report(&dc, o->depth_fill, i + 1);
+			if (o->depth_dump && depth_dump(o->depth_dump, &dc, i + 1))
+				printf("depth #%u: --depth-dump: %s\n", i + 1, strerror(errno));
+		}
 		if (sgxfive_render_fb(r)) {	/* none before the first scene is built */
 			struct sgxfive_tri_layout l;
 
@@ -2495,6 +2668,12 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 				     sgxfive_render_guard_dirty(r, &p), o->pixels);
 			sgxfive_render_get_layout(r, &l);
 			printf("layout: fb 0x%08x\n", l.fb);
+		}
+		/* an overflow keeps its context: --keep-overflow reports the image as it is */
+		over = o->keep_overflow && (ret == -ENOSPC || wait_err == -ENOSPC);
+		if (over) {
+			ret = 0;
+			wait_err = 0;
 		}
 		if (ret) {
 			fail("render", ret);
@@ -2507,10 +2686,17 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		}
 		ret = sgxfive_tri_check(&p, sgxfive_render_fb(r), &n);
 		guard = sgxfive_render_guard_dirty(r, &p);
-		printf("tri %ux%u #%u: %u triangle, %u background, %u other; wrong %u inside, "
+		printf("tri %ux%u #%u: %s%u triangle, %u background, %u other; wrong %u inside, "
 		       "%u outside, %u at edges; %u if flipped; guard %u\n", p.width, p.height,
-		       i + 1, n.tri, n.bg, n.other, n.wrong_in, n.wrong_out, n.wrong_edge,
-		       n.flipped, guard);
+		       i + 1, over ? "overflowed, " : "", n.tri, n.bg, n.other, n.wrong_in,
+		       n.wrong_out, n.wrong_edge, n.flipped, guard);
+		if (over) {		/* counted, not checked: the partial renders drew it */
+			overflowed++;
+			ret = 0;
+			if (o->dump_each && o->dump_dir && dump_render(o->dump_dir, tri_name(i + 1), true))
+				printf("tri: --dump-each: %s\n", strerror(errno));
+			continue;
+		}
 		printf("tri %ux%u #%u: %lld us\n", p.width, p.height, i + 1,
 		       (now_ns() - t0) / 1000);
 		if (ret || guard) {
@@ -2524,6 +2710,8 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 			ret = ret ? ret : -EIO;
 			break;
 		}
+		if (o->dump_each && o->dump_dir && dump_render(o->dump_dir, tri_name(i + 1), false))
+			printf("tri: --dump-each: %s\n", strerror(errno));
 		ok++;
 	}
 	/* what the TA wrote for the last scene, before the context goes */
@@ -2535,6 +2723,8 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 	if (!ret && bad) {
 		ret = bad;
 		printf("tri: %u of %u renders ok\n", ok, o->n);
+	} else if (!ret && overflowed) {
+		printf("tri: %u of %u renders ok, %u overflowed\n", ok, o->n, overflowed);
 	} else if (!ret) {
 		printf("tri: %u renders ok\n", ok);
 	} else {
@@ -2551,6 +2741,7 @@ out:
 	sgxfive_render_destroy(r2);
 	sgxfive_render_destroy(r);
 	scratch_destroy(vm, &sc);
+	scratch_destroy(vm, &dc);
 	if (r2 && early_closed)
 		printf("tri: closing the second context\n");
 	else if (r2)
@@ -2692,6 +2883,11 @@ static int parse_opts(int argc, char **argv, struct opts *o)
 		{ "--scratch", offsetof(struct opts, scratch) },
 		{ "--scratch-fill", offsetof(struct opts, scratch_fill) },
 		{ "--scratch-at", offsetof(struct opts, scratch_at) },
+		{ "--depth-fill", offsetof(struct opts, depth_fill) },
+		{ "--depth-base", offsetof(struct opts, depth_base) },
+		{ "--depth-ctl", offsetof(struct opts, depth_ctl) },
+		{ "--depth-ctl-next", offsetof(struct opts, depth_ctl_next) },
+		{ "--depth-pages", offsetof(struct opts, depth_pages) },
 	};
 
 	for (int i = 0; i < argc; i += 2) {
@@ -2700,6 +2896,18 @@ static int parse_opts(int argc, char **argv, struct opts *o)
 		if (!strcmp(argv[i], "--keep-going")) {
 			o->keep_going = true;
 			i--;		/* a flag: no value */
+			continue;
+		}
+		if (!strcmp(argv[i], "--keep-overflow") || !strcmp(argv[i], "--dump-each") ||
+		    !strcmp(argv[i], "--depth")) {
+			*(argv[i][2] == 'k' ? &o->keep_overflow : argv[i][2] == 'd' && argv[i][3] == 'u' ?
+			  &o->dump_each : &o->depth) = true;
+			i--;		/* a flag: no value */
+			continue;
+		}
+		if (!strcmp(argv[i], "--depth-dump") && i + 1 < argc) {
+			o->depth_dump = argv[i + 1];
+			o->depth_given = true;
 			continue;
 		}
 		if (!strcmp(argv[i], "--wait-second")) {
@@ -2896,6 +3104,7 @@ bad_move:
 			fprintf(stderr, "sgxfive-test: bad option %s\n", argv[i]);
 			return -1;
 		}
+		o->depth_given |= !strncmp(argv[i], "--depth-", 8);
 	}
 	return 0;
 }
@@ -2939,6 +3148,10 @@ int main(int argc, char **argv)
 		.src_stride = 256, .dst_stride = 256, .n = 8,
 		.max_width = UINT32_MAX, .max_height = UINT32_MAX,
 		.scratch_fill = 0x3e800000,	/* 0.25f */
+		.depth_fill = 0x3f800000,	/* 1.0f */
+		.depth_base = 0x3e000000,	/* rd:1, the ZLS base: the general heap's */
+		.depth_ctl = 0x0017100c,	/* a clearing frame that stores */
+		.depth_pages = UINT32_MAX,	/* the target's, and sixteen over */
 	};
 	struct sgxfive_mock_config mcfg = { 0 };
 	const char *device = NULL, *cmd;
@@ -3322,6 +3535,25 @@ int main(int argc, char **argv)
 				o.scratch_words > o.scratch * (SGXFIVE_PAGE_SIZE / 4))) {
 		fprintf(stderr, "sgxfive-test: --scratch-file is for tri with --scratch N, and "
 			"must fit in N pages\n");
+		return 2;
+	}
+	if ((o.keep_overflow || o.dump_each || o.depth || o.depth_given) && strcmp(cmd, "tri")) {
+		fprintf(stderr, "sgxfive-test: --keep-overflow, --dump-each and --depth are for tri\n");
+		return 2;
+	}
+	if (o.dump_each && !o.dump_dir) {
+		fprintf(stderr, "sgxfive-test: --dump-each needs --dump-render DIR\n");
+		return 2;
+	}
+	if (o.depth_given && !o.depth) {
+		fprintf(stderr, "sgxfive-test: the --depth-* options need --depth\n");
+		return 2;
+	}
+	if (o.depth && (o.ctx2 || (o.depth_ctl_next && o.n < 2) ||
+			(o.depth_pages != UINT32_MAX && (o.depth_pages < depth_min_pages(&o) ||
+							 o.depth_pages > 0x100000)))) {
+		fprintf(stderr, "sgxfive-test: --depth does not take --ctx2; --depth-ctl-next needs -n 2 "
+			"or more; --depth-pages N must hold the target (width x height dwords)\n");
 		return 2;
 	}
 	if (o.dump_dir && strcmp(cmd, "tri")) {

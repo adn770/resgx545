@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# render kept owner regs: 0 probes (a shell script run on the laptop by the campaign).
+# Q106: the DPM registers 0x0600-0x0750 beside the slot words (TA3DCtl dwords 20, 21 and 25) at
+# every step of the kept-owner cases of render/kept-owner-gone-context: after the first context's
+# render, before and after its close and after the second context's render, in the exact cases
+# (bit 2 alone with the first context closed, bit 3 with it open, the control) and in the faulting
+# one (bit 3 with it closed), and a regtimeline sample through the faulting render.
+needs = [
+    "render", "kpoke", "buf09", "reset",
+]
+name = "render-kept-owner-regs"
+script = "kept-owner-regs.sh"

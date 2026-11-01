@@ -1,0 +1,10 @@
+title = "script table dpm/depth-load"
+repo = "data"
+paths = ["dpm/depth-load/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 4
+size = 105809
+sha256 = "7573cfab1ebd58f79cea8d617941f25d744befdd6ac698951ed9468a9410f2f0"
+recipe = "probes/dpm/depth-load.toml"
+needs = ["render", "kpoke", "render_pb_pages", "reset"]

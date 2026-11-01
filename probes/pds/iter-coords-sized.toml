@@ -1,0 +1,278 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# pds iter coords sized: 0 sweeps, 18 probes.
+# Q093: which vertex layouts make a coordinate set arrive in the primary attributes of a
+# textured primary: a vertex with one set (as E436), the vertex colour then a set of two or
+# three dwords, the douti's source 1 or 2 with two or three components, pa0 to pa2 read, the
+# fetch wait (DOUTU1 bit 25) set.
+needs = ["render"]
+
+[[probe]]
+name = "pds-iter-coords-sized-f-pa0"
+question = "pa0 of a textured primary on a vertex with the colour in o4-o7 then a two-dword set, vertex size 10, coordsize 0x15, a douti of each source and component count"
+source = "pds_tex_col.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_color2.s" }
+vtx_coords = 6
+blk = { 13 = 0xa3800 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x20400800, 0x46012201, 0x2000004], [0x20401000, 0x46012201, 0x2000004], [0x20800800, 0x46012201, 0x2000004], [0x20801000, 0x46012201, 0x2000004]]
+labels = ["source 1, 2 components", "source 2, 2 components", "source 1, 3 components", "source 2, 3 components"]
+
+[[probe]]
+name = "pds-iter-coords-sized-f-pa1"
+question = "pa1 of a textured primary on a vertex with the colour in o4-o7 then a two-dword set, vertex size 10, coordsize 0x15, a douti of each source and component count"
+source = "pds_tex_col.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_color2.s" }
+vtx_coords = 6
+blk = { 13 = 0xa3800 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x20400800, 0x46012201, 0x2000004], [0x20401000, 0x46012201, 0x2000004], [0x20800800, 0x46012201, 0x2000004], [0x20801000, 0x46012201, 0x2000004]]
+labels = ["source 1, 2 components", "source 2, 2 components", "source 1, 3 components", "source 2, 3 components"]
+
+[[probe]]
+name = "pds-iter-coords-sized-f-pa2"
+question = "pa2 of a textured primary on a vertex with the colour in o4-o7 then a two-dword set, vertex size 10, coordsize 0x15, a douti of each source and component count"
+source = "pds_tex_col.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_color2.s" }
+vtx_coords = 6
+blk = { 13 = 0xa3800 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x20400800, 0x46012201, 0x2000004], [0x20401000, 0x46012201, 0x2000004], [0x20800800, 0x46012201, 0x2000004], [0x20801000, 0x46012201, 0x2000004]]
+labels = ["source 1, 2 components", "source 2, 2 components", "source 1, 3 components", "source 2, 3 components"]
+
+[[probe]]
+name = "pds-iter-coords-sized-g-pa0"
+question = "pa0 of a textured primary on a vertex with the colour in o4-o7 then a two-dword set, vertex size 10, coordsize 2, a douti of each source and component count"
+source = "pds_tex_col.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_color2.s" }
+vtx_coords = 6
+blk = { 13 = 0xa3800, 16 = 0x2 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x20400800, 0x46012201, 0x2000004], [0x20401000, 0x46012201, 0x2000004], [0x20800800, 0x46012201, 0x2000004], [0x20801000, 0x46012201, 0x2000004]]
+labels = ["source 1, 2 components", "source 2, 2 components", "source 1, 3 components", "source 2, 3 components"]
+
+[[probe]]
+name = "pds-iter-coords-sized-g-pa1"
+question = "pa1 of a textured primary on a vertex with the colour in o4-o7 then a two-dword set, vertex size 10, coordsize 2, a douti of each source and component count"
+source = "pds_tex_col.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_color2.s" }
+vtx_coords = 6
+blk = { 13 = 0xa3800, 16 = 0x2 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x20400800, 0x46012201, 0x2000004], [0x20401000, 0x46012201, 0x2000004], [0x20800800, 0x46012201, 0x2000004], [0x20801000, 0x46012201, 0x2000004]]
+labels = ["source 1, 2 components", "source 2, 2 components", "source 1, 3 components", "source 2, 3 components"]
+
+[[probe]]
+name = "pds-iter-coords-sized-g-pa2"
+question = "pa2 of a textured primary on a vertex with the colour in o4-o7 then a two-dword set, vertex size 10, coordsize 2, a douti of each source and component count"
+source = "pds_tex_col.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_color2.s" }
+vtx_coords = 6
+blk = { 13 = 0xa3800, 16 = 0x2 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x20400800, 0x46012201, 0x2000004], [0x20401000, 0x46012201, 0x2000004], [0x20800800, 0x46012201, 0x2000004], [0x20801000, 0x46012201, 0x2000004]]
+labels = ["source 1, 2 components", "source 2, 2 components", "source 1, 3 components", "source 2, 3 components"]
+
+[[probe]]
+name = "pds-iter-coords-sized-h-pa0"
+question = "pa0 of a textured primary on a vertex with the colour in o4-o7 then a three-dword set, vertex size 11, coordsize 0x1d, a douti of each source and component count"
+source = "pds_tex_col.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_color3.s" }
+vtx_coords = 7
+blk = { 13 = 0xb3800 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x20400800, 0x46012201, 0x2000004], [0x20401000, 0x46012201, 0x2000004], [0x20800800, 0x46012201, 0x2000004], [0x20801000, 0x46012201, 0x2000004]]
+labels = ["source 1, 2 components", "source 2, 2 components", "source 1, 3 components", "source 2, 3 components"]
+
+[[probe]]
+name = "pds-iter-coords-sized-h-pa1"
+question = "pa1 of a textured primary on a vertex with the colour in o4-o7 then a three-dword set, vertex size 11, coordsize 0x1d, a douti of each source and component count"
+source = "pds_tex_col.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_color3.s" }
+vtx_coords = 7
+blk = { 13 = 0xb3800 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x20400800, 0x46012201, 0x2000004], [0x20401000, 0x46012201, 0x2000004], [0x20800800, 0x46012201, 0x2000004], [0x20801000, 0x46012201, 0x2000004]]
+labels = ["source 1, 2 components", "source 2, 2 components", "source 1, 3 components", "source 2, 3 components"]
+
+[[probe]]
+name = "pds-iter-coords-sized-h-pa2"
+question = "pa2 of a textured primary on a vertex with the colour in o4-o7 then a three-dword set, vertex size 11, coordsize 0x1d, a douti of each source and component count"
+source = "pds_tex_col.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_color3.s" }
+vtx_coords = 7
+blk = { 13 = 0xb3800 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x20400800, 0x46012201, 0x2000004], [0x20401000, 0x46012201, 0x2000004], [0x20800800, 0x46012201, 0x2000004], [0x20801000, 0x46012201, 0x2000004]]
+labels = ["source 1, 2 components", "source 2, 2 components", "source 1, 3 components", "source 2, 3 components"]
+
+[[probe]]
+name = "pds-iter-coords-sized-i-pa0"
+question = "pa0 of a textured primary on a vertex with the colour in o4-o7 then a three-dword set, vertex size 11, coordsize 3, a douti of each source and component count"
+source = "pds_tex_col.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_color3.s" }
+vtx_coords = 7
+blk = { 13 = 0xb3800, 16 = 0x3 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x20400800, 0x46012201, 0x2000004], [0x20401000, 0x46012201, 0x2000004], [0x20800800, 0x46012201, 0x2000004], [0x20801000, 0x46012201, 0x2000004]]
+labels = ["source 1, 2 components", "source 2, 2 components", "source 1, 3 components", "source 2, 3 components"]
+
+[[probe]]
+name = "pds-iter-coords-sized-i-pa1"
+question = "pa1 of a textured primary on a vertex with the colour in o4-o7 then a three-dword set, vertex size 11, coordsize 3, a douti of each source and component count"
+source = "pds_tex_col.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_color3.s" }
+vtx_coords = 7
+blk = { 13 = 0xb3800, 16 = 0x3 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x20400800, 0x46012201, 0x2000004], [0x20401000, 0x46012201, 0x2000004], [0x20800800, 0x46012201, 0x2000004], [0x20801000, 0x46012201, 0x2000004]]
+labels = ["source 1, 2 components", "source 2, 2 components", "source 1, 3 components", "source 2, 3 components"]
+
+[[probe]]
+name = "pds-iter-coords-sized-i-pa2"
+question = "pa2 of a textured primary on a vertex with the colour in o4-o7 then a three-dword set, vertex size 11, coordsize 3, a douti of each source and component count"
+source = "pds_tex_col.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_color3.s" }
+vtx_coords = 7
+blk = { 13 = 0xb3800, 16 = 0x3 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x20400800, 0x46012201, 0x2000004], [0x20401000, 0x46012201, 0x2000004], [0x20800800, 0x46012201, 0x2000004], [0x20801000, 0x46012201, 0x2000004]]
+labels = ["source 1, 2 components", "source 2, 2 components", "source 1, 3 components", "source 2, 3 components"]
+
+[[probe]]
+name = "pds-iter-coords-sized-j-pa0"
+question = "pa0 of a textured primary on a vertex with the colour in o4-o7 then a four-dword set, vertex size 12, coordsize 0x2d, a douti of each source and component count"
+source = "pds_tex_col.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_color4.s" }
+vtx_coords = 8
+blk = { 13 = 0xc3800 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x20400800, 0x46012201, 0x2000004], [0x20401000, 0x46012201, 0x2000004], [0x20800800, 0x46012201, 0x2000004], [0x20801000, 0x46012201, 0x2000004]]
+labels = ["source 1, 2 components", "source 2, 2 components", "source 1, 3 components", "source 2, 3 components"]
+
+[[probe]]
+name = "pds-iter-coords-sized-j-pa1"
+question = "pa1 of a textured primary on a vertex with the colour in o4-o7 then a four-dword set, vertex size 12, coordsize 0x2d, a douti of each source and component count"
+source = "pds_tex_col.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_color4.s" }
+vtx_coords = 8
+blk = { 13 = 0xc3800 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x20400800, 0x46012201, 0x2000004], [0x20401000, 0x46012201, 0x2000004], [0x20800800, 0x46012201, 0x2000004], [0x20801000, 0x46012201, 0x2000004]]
+labels = ["source 1, 2 components", "source 2, 2 components", "source 1, 3 components", "source 2, 3 components"]
+
+[[probe]]
+name = "pds-iter-coords-sized-j-pa2"
+question = "pa2 of a textured primary on a vertex with the colour in o4-o7 then a four-dword set, vertex size 12, coordsize 0x2d, a douti of each source and component count"
+source = "pds_tex_col.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_color4.s" }
+vtx_coords = 8
+blk = { 13 = 0xc3800 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x20400800, 0x46012201, 0x2000004], [0x20401000, 0x46012201, 0x2000004], [0x20800800, 0x46012201, 0x2000004], [0x20801000, 0x46012201, 0x2000004]]
+labels = ["source 1, 2 components", "source 2, 2 components", "source 1, 3 components", "source 2, 3 components"]
+
+[[probe]]
+name = "pds-iter-coords-sized-k-pa0"
+question = "pa0 of a textured primary on a vertex with the colour in o4-o7 then a four-dword set, vertex size 12, coordsize 5, a douti of each source and component count"
+source = "pds_tex_col.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa0.s", vtxuse = "vtx_color4.s" }
+vtx_coords = 8
+blk = { 13 = 0xc3800, 16 = 0x5 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x20400800, 0x46012201, 0x2000004], [0x20401000, 0x46012201, 0x2000004], [0x20800800, 0x46012201, 0x2000004], [0x20801000, 0x46012201, 0x2000004]]
+labels = ["source 1, 2 components", "source 2, 2 components", "source 1, 3 components", "source 2, 3 components"]
+
+[[probe]]
+name = "pds-iter-coords-sized-k-pa1"
+question = "pa1 of a textured primary on a vertex with the colour in o4-o7 then a four-dword set, vertex size 12, coordsize 5, a douti of each source and component count"
+source = "pds_tex_col.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa1.s", vtxuse = "vtx_color4.s" }
+vtx_coords = 8
+blk = { 13 = 0xc3800, 16 = 0x5 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x20400800, 0x46012201, 0x2000004], [0x20401000, 0x46012201, 0x2000004], [0x20800800, 0x46012201, 0x2000004], [0x20801000, 0x46012201, 0x2000004]]
+labels = ["source 1, 2 components", "source 2, 2 components", "source 1, 3 components", "source 2, 3 components"]
+
+[[probe]]
+name = "pds-iter-coords-sized-k-pa2"
+question = "pa2 of a textured primary on a vertex with the colour in o4-o7 then a four-dword set, vertex size 12, coordsize 5, a douti of each source and component count"
+source = "pds_tex_col.s"
+host = "tri"
+slot = "pixpds"
+slots = { pixel = "pix_pa2.s", vtxuse = "vtx_color4.s" }
+vtx_coords = 8
+blk = { 13 = 0xc3800, 16 = 0x5 }
+size = [0x40, 0x40]
+pixels = true
+inputs = ["A", "B", "U"]
+cases = [[0x20400800, 0x46012201, 0x2000004], [0x20401000, 0x46012201, 0x2000004], [0x20800800, 0x46012201, 0x2000004], [0x20801000, 0x46012201, 0x2000004]]
+labels = ["source 1, 2 components", "source 2, 2 components", "source 1, 3 components", "source 2, 3 components"]

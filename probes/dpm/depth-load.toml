@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# dpm depth load: 0 probes (a shell script run on the laptop by the campaign).
+# Q038: whether the final render of an overflowing job loads a depth buffer: the 1024x768 triangle
+# at z 0.5 (depth test less) over a buffer filled with 0.25f and the ZLS control with the load bit
+# (0x0017100e, and the load-only 0x0011700a), on a parameter buffer that holds the scene and on
+# ones that overflow it, against the same jobs with no depth buffer.
+needs = ["render", "kpoke", "render_pb_pages", "reset"]
+name = "dpm-depth-load"
+script = "depth-load.sh"

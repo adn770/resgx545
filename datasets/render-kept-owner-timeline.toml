@@ -1,0 +1,10 @@
+title = "script table render/kept-owner-timeline"
+repo = "data"
+paths = ["render/kept-owner-timeline/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 4
+size = 75122
+sha256 = "d1c4bd32672dd4236fa36caa7fe5c26df9328a248b81cac612b3d051a91f94da"
+recipe = "probes/render/kept-owner-timeline.toml"
+needs = ["render", "kpoke", "buf09", "reset"]

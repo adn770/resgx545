@@ -273,7 +273,10 @@ tri [--width W --height H -n N] [--max-width W --max-height H] [--fault]
     [--scratch N [--scratch-fill V] [--scratch-at ADDR] [--scratch-file FILE]]
     [--kpoke-render N:SPEC]... [--kreg-render N:OFFSET=VALUE]...
     [--move N:DX,DY]...
-    [--geometry N]... [--keep-going] [--dump-render DIR] [--words DIR] [--wait-ms MS]
+    [--geometry N]... [--keep-going] [--keep-overflow] [--dump-render DIR [--dump-each]]
+    [--words DIR] [--wait-ms MS]
+    [--depth [--depth-ctl V] [--depth-ctl-next V] [--depth-fill V] [--depth-base V]
+           [--depth-pages N] [--depth-dump DIR]]
     [--ctx2 [--share-pb] [--overlap] [--close-first] [--close-first-early] [--words-between]
           [--close-trace] [--wait-second] [--kpoke-render2 N:SPEC]...
           [--kreg-render2 N:OFFSET=VALUE]...]
@@ -313,9 +316,28 @@ debugfs `render_param` and `render_tadata` to `DIR/tri.param.bin` and `DIR/tri.t
 after the renders. `--words DIR` copies the kernel's debugfs `render_words` (the render
 context's words, a kpoke line each) and `buf09` (the TA/3D control block) to `DIR/words.N.txt`
 and `DIR/ta3d.N.bin` before the first render (N = 0) and after each render N, failed or not,
-while the context lives (`tools/usse-asm/render_words.py` reads them). `--wait-ms MS` waits MS
-milliseconds for each render (default 5000), so a script can read the kernel's state while a
-held hang lasts.
+while the context lives (`tools/usse-asm/render_words.py` reads them); with `--regs LO-HI` each
+snapshot is followed by `tri: registers at snapshot N` and the register range.
+`--wait-ms MS` waits MS milliseconds for each render (default 5000), so a script can read the
+kernel's state while a held hang lasts.
+`--keep-overflow` counts a render whose scene overflowed the parameter buffer (the job's
+`-ENOSPC`, its context kept) instead of failing the run: the line `tri WxH #N: overflowed, ...`
+gives the target's colours as the other lines do, the run goes on, and the closing line reads
+`tri: K of N renders ok, M overflowed`; any other failure still stops it. `--dump-each` (with
+`--dump-render DIR`) copies the kernel's `render_param` and `render_tadata` after every render N
+as `DIR/tri.N.param.bin` and `DIR/tri.N.tadata.bin`, an overflowed render's included (its state
+page holds what a partial render stored), besides the last render's `DIR/tri.*.bin`.
+`--depth` maps a depth buffer of the target's width x height dwords and sixteen pages over
+(`--depth-pages N` sets the size), fills it with `--depth-fill V` (default 1.0f) and arms, before
+every render, the kernel pokes `ta:7^=0x80` (the render flags' depth-buffer bit), `rd:1` (the ZLS
+base, `--depth-base V`, default 0x3e000000, the general heap's), `rd:11` (the ZLS control,
+`--depth-ctl V`, default 0x0017100c) and `rd:12`, `rd:13` (the load and store bases, as offsets
+from the ZLS base) at the buffer. `--depth-ctl-next V`
+is the control of renders 2 on, and the buffer is then filled before render 1 only, so a later
+render loads what the earlier one stored. After each render `depth #N` gives the dwords that
+differ from the fill, the number of distinct values and the four most frequent; `--depth-dump DIR`
+writes the buffer as `DIR/depth.N.bin`. The triangle's depth test is the job option `--poke
+blk:1=0x00400200` (test less). `--depth` does not take `--ctx2`.
 `--ctx2` creates a second render context in the VM, for the same size of target, and renders the
 same scene on it after each render of the first, in the other pair of colours, checking it on
 its own (lines `tri2 ...`); the contexts' buffers are destroyed second context first.

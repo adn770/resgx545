@@ -2880,6 +2880,50 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   0x20003000 in 6 of 6 runs, and with the first context open it was exact and cleared the words in 4
   of 4; that the slot step is what stores the kept word is [infer].
   *render; HW, infer; data: `render-kept-owner-gone-context`.*
+- `E459` In a textured primary under the fetch wait, a douti of source 1 reads varying non-zero
+  values in pa0 and pa1 when the vertex has dwords for the set (a set of two or three dwords, the
+  colour dwords then a set, and with the colour select word's vertex size matching 6, 7 or 8
+  coordinate dwords); with the select word left at size 8 over a vertex of 10 or 11 dwords and the
+  default coordinate-size word pa0 and pa1 read 0 in every triangle pixel (16 of 16 jobs, 856
+  pixels), and a coordinate-size word of 2 or 0x12 on 6 coordinate dwords or 3 on 7 faults every job
+  (24 of 24 with the vertex size matching, 36 of 36 with it left at 8).
+  *pds; HW, infer; data: `pds-iter-coords-arrive`, `pds-iter-coords-colour`,
+  `pds-iter-coords-sized`.*
+- `E460` With coordinate registers that deliver (E459), DOUTU1 bit 24 set or clear under the fetch
+  wait gives the same image and registers in 33 of 33 completed jobs with both bits against 36 of 36
+  with bit 25 alone (12 probes of three shapes, three runs each), and 3 of 36 jobs with both bits
+  hung, one in each probe that reads the last iterated register; 0 of 60 further jobs with both bits
+  hung; bit 24 alone or neither bit differ from the stable image in 36 of 36 jobs each.
+  *pds; HW, infer; data: `pds-iter-coords-bit24`.*
+- `E461` With a depth buffer (ZLS stored, the triangle at z 0.5) a job writes a window of 64512
+  dwords at 1024x768 (326656 at 4096x4096) whatever the parameter buffer; when the job overflows,
+  the window's first 15104 dwords (80640) read 0.0 and, at 0x28 pages and below at 1024x768, the
+  rest hold the depth with its sign bit set (-1.0, -0.5), in 2 of 2 runs of every 1024x768 case, and
+  the job draws fewer triangle pixels than without the depth buffer (0, 27408, 31629 and 31629
+  against 51408, 162544, 205061 and 207456 at 0x30, 0x28, 0x24 and 0x23 pages).
+  *dpm; HW, infer; data: `dpm-depth-partial`, `dpm-depth-load`.*
+- `E462` After a first render that keeps the DPM owner with render flag bit 3 (0x8 or 0xc) the DPM
+  status registers read 0x0700 and 0x070c = 0x04220003, 0x0710 and 0x071c = 0x421, 0x0724 =
+  0x00020002 and 0x0728 = 2 (6 of 6 runs), and 0x00020003, 1, 0 and 0 with bit 2 alone or no flag (6
+  of 6); closing the first context changes none of the 85 registers 0x0600 to 0x0750 (4 of 4 runs
+  with bit 3, and in the 4 runs with the control and bit 2 alone) and the second context's render
+  then faults (9 of 9 runs) with none of the 85 changing before the recovery (3 of 3 timeline runs
+  that sampled all of them), where with the first context open the second render takes them back to
+  0x00020003, 1, 2 and 0 (5 of 5).
+  *render; HW, infer; data: `render-kept-owner-regs`, `render-kept-owner-timeline`.*
+- `E463` After a fault of the base alone over a zeroed table (kernel poke pb:4 only), exactly the
+  next two jobs fault whatever they are (the flagged build over zeros 20 of 20, the plain triangle 8
+  of 8, the base over the kernel's table 4 of 4) and the third completes (8 of 8), with a debugfs
+  GPU reset before each job or none (16 of 16 sequences, the same outcomes); a fault from an
+  unmapped scene stream leaves nothing (16 of 16 followed by an exact job).
+  *dpm; HW, infer; data: `dpm-ctx-table-fault-order`, `dpm-ctx-table-fault-chain`.*
+- `E464` After the partial renders of a 1024x768 scene in 0x28 pages the TA data's state page holds
+  18 non-zero dwords (the ten printed read like page numbers) and its control and OTPM pages hold
+  none, in 2 of 2 runs; a second job's dump holds 18 with other page numbers and flipping the second
+  render's flag 0x8 changes nothing; a state page filled with a ramp keeps 990 of 1024 dwords, 34
+  leaving the ramp, and the image is unchanged; 0x0740 reads 0 after all 20 jobs and after writes of
+  0x200 and 0x3fe00 (2 of 2 each).
+  *dpm; HW, infer; data: `dpm-partial-state-page`.*
 
 ## By unit
 
@@ -2890,7 +2934,7 @@ Records: E151, E457.
 ### dpm
 
 Records: E199, E200, E201, E202, E204, E205, E206, E203, E253, E256, E309, E310, E311, E312, E313,
-E327, E358, E362, E438, E442, E443, E446, E447, E453, E456.
+E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464.
 
 ### edm
 
@@ -2924,7 +2968,7 @@ E383, E385, E386, E387, E429.
 Records: E043, E044, E045, E046, E047, E048, E125, E126, E127, E128, E129, E130, E131, E132, E133,
 E134, E135, E136, E137, E138, E139, E140, E141, E142, E143, E144, E145, E259, E260, E261, E262,
 E263, E264, E343, E344, E345, E364, E379, E381, E384, E388, E389, E390, E391, E392, E393, E394,
-E395, E396, E400, E420, E421, E428, E430, E436, E437, E454.
+E395, E396, E400, E420, E421, E428, E430, E436, E437, E454, E459, E460.
 
 ### platform
 
@@ -2935,7 +2979,7 @@ E404, E405, E434, E445.
 
 Records: E023, E049, E050, E051, E052, E053, E148, E169, E252, E301, E302, E303, E304, E314, E315,
 E316, E323, E324, E325, E326, E354, E355, E356, E360, E361, E363, E408, E412, E422, E433, E435,
-E448, E449, E451, E458.
+E448, E449, E451, E458, E462.
 
 ### ta
 

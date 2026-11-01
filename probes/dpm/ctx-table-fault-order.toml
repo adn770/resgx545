@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# dpm ctx table fault order: 0 probes (a shell script run on the laptop by the campaign).
+# Q105: what a faulted job leaves that the next job meets with a GPU reset between: sequences of
+# the flagged build over a zeroed table (Z), an intended fault (F: the scene's stream unmapped) and
+# the plain triangle (P), in the order fault, ok, fault, ok, each step's driver log (faults,
+# failed recoveries) and BIF registers read before the next reset, with and without a reset
+# between the steps.
+needs = [
+    "render", "kpoke", "alias_ctx_rw", "regs", "reset",
+]
+name = "dpm-ctx-table-fault-order"
+script = "ctx-table-fault-order.sh"

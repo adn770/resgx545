@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# dpm ctx table fault chain: 0 probes (a shell script run on the laptop by the campaign).
+# Q105: the chain of E453 (the base alone over zeros faults, the flagged build over zeros after it
+# faults): sequences of the flagged build over zeros (Z), the base alone over zeros (B), over the
+# kernel table (K) and the plain triangle (P), each step's driver log (faults,
+# failed recoveries) and BIF registers read before the next reset, with and without a reset
+# between the steps.
+needs = [
+    "render", "kpoke", "alias_ctx_rw", "regs", "reset",
+]
+name = "dpm-ctx-table-fault-chain"
+script = "ctx-table-fault-chain.sh"

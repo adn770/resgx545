@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# render kept owner timeline: 0 probes (a shell script run on the laptop by the campaign).
+# Q106: the DPM registers 0x0600-0x0750 sampled by regtimeline, whole lines, through the render
+# that faults after a kept bit 3 owner and through the one that is exact with the first context open.
+needs = [
+    "render", "kpoke", "buf09", "reset",
+]
+name = "render-kept-owner-timeline"
+script = "kept-owner-timeline.sh"

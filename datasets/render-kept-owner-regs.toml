@@ -1,0 +1,10 @@
+title = "script table render/kept-owner-regs"
+repo = "data"
+paths = ["render/kept-owner-regs/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 4
+size = 130025
+sha256 = "f21269a36db3a863a5ffb515ea6529888e2b08284128dff3fc4c5b1f6620b74c"
+recipe = "probes/render/kept-owner-regs.toml"
+needs = ["render", "kpoke", "buf09", "reset"]

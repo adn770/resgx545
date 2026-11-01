@@ -1,0 +1,10 @@
+title = "probe table pds/iter-coords-bit24"
+repo = "data"
+paths = ["pds/iter-coords-bit24/"]
+method = "campaign runner on the laptop target (tools/campaign)"
+date = "2026-11-08"
+files = 278
+size = 8669151
+sha256 = "c006b6855b18f6ec01d16d22c7d86a029b4da9b40547f17e27048209b678174c"
+recipe = "probes/pds/iter-coords-bit24.toml"
+needs = ["render"]

@@ -1,43 +1,37 @@
 +++
 id = "Q093"
-question = "does DOUTU1 bit 24 (wait for iterations) change what a textured primary pixel program reads when it iterates a coordinate set (two or three components) before the fetch, or hang the job, as the closed driver's programs that set it do?"
+question = "does DOUTU1 bit 24 (wait for iterations) hang a job under the fetch wait, as it did in 4 of 126 jobs with both bits in colour and coordinate shapes, and why does the closed driver set it with bit 25?"
 unit = "pds"
 phase = 11
-evidence = ["E345", "E364", "E436", "E454"]
+evidence = ["E345", "E364", "E436", "E454", "E459", "E460"]
 terms = ["DOUTU1.WAIT_ITER", "DOUTU1.WAIT_FETCH"]
 +++
 
-The closed driver sets DOUTU1 bit 24 exactly when a douti of the primary iterates an attribute
-into the primary attribute registers (E364, 21 of 21 captured primaries with a fetch).
+The closed driver sets DOUTU1 bit 24 exactly when a douti of the primary iterates an attribute into
+the primary attribute registers (E364, 21 of 21 captured primaries with a fetch).
 
-In one program shape the bit adds nothing (E436, 96 jobs, three runs). That shape has a douti of
-source 1, one iterated register and one doutt:
+Answered for what the programs read (E436, E454, E460): under the fetch wait (bit 25) a textured
+primary reads the same registers and image with bit 24 set and clear, in one source-1 shape (E436,
+96 jobs), the vertex colour (E454, 29 of 29 completed jobs with both bits) and the coordinate sets
+(E460: a 2-component set alone, the colour then a 2-component set, the colour then a 3-component
+set, once the vertices carry the set's dwords, E459): 33 of 33 completed jobs with both bits equal
+the 36 of 36 with bit 25 alone. Without bit 25 the registers change from run to run, with bit 24
+alone or neither; bit 24 without the douti's completion bit hangs (E436, 24 of 24).
 
-- with the fetch wait (bit 25), pa0 and pa1 are the same with bit 24 set or clear;
-- with bit 24 alone or neither bit, the image changes every run;
-- bit 24 without the douti's completion bit hangs, 24 of 24 jobs.
+What is left is the hang with both bits. E454 had 1 job of 30 hang (reading the colour, pa0, of the
+colour then 2-component shape); E460 had 3 of 36 jobs in the 12 probes, each in the probe that
+reads the last register the program iterates (3 of 9 such jobs, 0 of the other 27 with both bits),
+and 0 of 60 more jobs (30 on E454's vertices, 30 on the sized ones, reading the colour) with both
+bits: 4 of 126 jobs with both bits in all (E454's 30, E460's 36 and 60). No job with bit 25 alone
+hung (0 of 96: E454's 60, with the completion bit set or clear, and E460's 36). The count leaves
+out the 3 jobs with each setting of the probe that reads a register nothing writes (none hung). The
+hang's cause is not shown.
 
-Narrowed by E454 (the fetch wait set, bit 24 set or clear, 10 probes of three program shapes, 180
-jobs):
+Open: what makes a job with both bits hang (whether reading the last iterated register right after
+the iteration's completion is the condition, which E460's 3 of 9 fits, 3 hangs in 3 probes of one
+run each, and E454's hang does not), whether it needs the fetch wait, shapes E454 and E460 did not
+try (18 of E364's 21 programs were not run themselves), and why the closed driver adds bit 24 under
+bit 25 (that it is redundant for the values read is an inference).
 
-- The colour-only shape (the vertex colour iterated, then the fetch) is settled: bit 24 set or
-  clear gives the same image under the fetch wait, whichever pa the shader writes out (E454).
-  Over the three shapes, the 29 jobs that completed with bits 24 and 25 equal the 30 of 30 with
-  bit 25 alone; one job with both bits hung (0 of 30 with bit 25 alone);
-- in the coordinate shapes the coordinate registers read 0x00000000 in all 1062 triangle pixels of
-  every stable image (pa1 and pa2 of the two-component shape, pa0 to pa2 of the three-component
-  one), with bit 24 set or clear. The comparison there is against a constant zero, so these
-  shapes are open: it is not shown that the iteration delivers a coordinate set under either bit
-  setting.
-
-What is open: the coordinate shapes (what a coordinate register holds under the fetch wait, with
-the bit set, when it does not read 0); whether the one hang with bits 24 and 25 (the first run of
-the colour then two-component shape, pa0; the same program completed in its other two runs)
-recurs; and shapes E454 did not try (18 of E364's 21 programs iterate the vertex colour and 5
-read pa0 to pa2, and 18 of the 21 were not run themselves). Why the closed driver adds the bit is
-not shown either; that it is redundant under the fetch wait is an inference, for the colour.
-
-To settle it: on the laptop, run the coordinate shapes with a source that delivers a non-zero
-value (a program shape where the registers do not read 0), bit 24 set or clear, three runs each,
-and repeat the colour then two-component shape with bits 24 and 25 at least thirty times to see
-whether the hang recurs.
+To settle it: run the last-register read of each shape with both bits at least thirty times and the
+other registers as many, and one of E364's captured primaries with its own PDS data.

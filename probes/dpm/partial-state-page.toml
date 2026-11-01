@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# dpm partial state page: 0 probes (a shell script run on the laptop by the campaign).
+# Q045: the TA data's control, OTPM and state pages after the partial renders of an overflowing
+# 1024x768 scene (tri --keep-overflow --dump-each), on one render and on two with the second's
+# render flag 0x8 flipped, with the state page filled with a ramp before the kick, and with a
+# write to register 0x0740 before it; the 0x0700-0x0750 registers after each.
+needs = [
+    "render", "kpoke", "kregnow", "render_pb_pages", "render_tadata", "tadata_fill", "reset",
+]
+name = "dpm-partial-state-page"
+script = "partial-state-page.sh"
