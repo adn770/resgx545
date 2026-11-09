@@ -20,7 +20,8 @@ this checkout) holds
                          refs.local.toml.example)
 
     python3 tools/clean-room/guard.py [--tree [PATH] | --staged | --history REPO
-              [--base REV] [--fork] | --message FILE | --accept-glossary] [--show] [--no-glossary]
+              [--ref REF] [--base REV] [--fork] | --message FILE | --accept-glossary]
+              [--show] [--no-glossary]
 
 Output names a file, a line and a category; the matched text is shown only as a short hash,
 unless --show. Exit 0 clean, 1 findings, 2 data absent with RESGX545_REQUIRE_GUARD=1. With the
@@ -263,10 +264,10 @@ def _blobs(repo, spec: list[str]):
 
 
 def scan_history(repo: pathlib.Path, rules: Rules, base: str | None = None,
-                 fork: bool = False) -> list[Finding]:
-    """Every message and every blob of every commit reachable from any ref (and not from
-    base)."""
-    spec = ["--all"] + ([f"^{base}"] if base else [])
+                 fork: bool = False, ref: str = "--all") -> list[Finding]:
+    """Every message and every blob of every commit reachable from ref (default: any ref)
+    and not from base."""
+    spec = [ref] + ([f"^{base}"] if base else [])
     out = []
     log = _git(repo, "log", *spec, "--format=%H%x00%B%x01").decode(errors="replace")
     for rec in log.split("\x01"):
@@ -307,6 +308,7 @@ def main(argv: list[str] | None = None) -> int:
     mode.add_argument("--history", metavar="REPO")
     mode.add_argument("--message", metavar="FILE")
     mode.add_argument("--accept-glossary", action="store_true")
+    ap.add_argument("--ref", default="--all", help="with --history: scan this ref only")
     ap.add_argument("--base", help="with --history: leave out what this revision reaches")
     ap.add_argument("--fork", action="store_true", help="apply the fork-scope patterns")
     ap.add_argument("--show", action="store_true", help="print the matched text")
@@ -329,7 +331,7 @@ def main(argv: list[str] | None = None) -> int:
     if a.staged is not None:
         found = scan_staged(pathlib.Path(a.staged), rules, a.fork)
     elif a.history:
-        found = scan_history(pathlib.Path(a.history), rules, a.base, a.fork)
+        found = scan_history(pathlib.Path(a.history), rules, a.base, a.fork, a.ref)
     elif a.message:
         found = scan_message(pathlib.Path(a.message).read_text(), rules, a.fork)
     else:

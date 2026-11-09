@@ -246,6 +246,17 @@ def test_history_range_excludes_the_base(world):
     assert guard.scan_history(r, rules(world)) != []
 
 
+def test_history_ref_limits_the_scan_to_one_branch(world):
+    r = repo(world / "r")
+    commit(r, {"a.md": "clean\n"})
+    git(r, "checkout", "-q", "-b", "other")
+    commit(r, {"b.md": f"{SECRET}\n"})
+    git(r, "checkout", "-q", "-")
+    assert guard.scan_history(r, rules(world)) != []
+    assert guard.scan_history(r, rules(world), ref="HEAD") == []
+    assert guard.scan_history(r, rules(world), ref="other") != []
+
+
 def test_history_clean(world):
     r = repo(world / "r")
     commit(r, {"a.md": "clean\n"})
