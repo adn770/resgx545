@@ -11,7 +11,8 @@
 #
 # Environment: RESGX545_DATA (default: ../resgx545-data), RESGX545_REQUIRE_DATA (default 1),
 # RESGX545_GUARD_DIR and RESGX545_REQUIRE_GUARD (default 1: a missing guard fails; set 0 to
-# have it reported as NOT CHECKED), CHECK_TAIL (lines of output kept per step, default 25).
+# have it reported as NOT CHECKED), CHECK_TAIL (lines of output kept per step, default 25),
+# CHECK_ONLY (an extended regex: run only the steps whose command line matches).
 HERE=$(cd "$(dirname "$0")" && pwd)
 ROOT=$(dirname "$HERE")
 mode=full
@@ -33,6 +34,7 @@ export RESGX545_REQUIRE_GUARD=${RESGX545_REQUIRE_GUARD:-1}
 failed=()
 steps=0
 step() {
+    if [ -n "${CHECK_ONLY:-}" ] && ! printf '%s' "$*" | grep -Eq "$CHECK_ONLY"; then return; fi
     steps=$((steps + 1))
     if [ "$mode" = list ]; then echo "$*"; return; fi
     echo "=== $*"

@@ -223,3 +223,9 @@ def test_check_script_says_what_it_ran():
                          check=True).stdout
     for word in ("cargo test", "cargo fmt", "reuse lint", "guard.py", "check_refs", "numpy"):
         assert word in out
+
+
+def test_check_only_runs_the_steps_that_match():
+    out = subprocess.run([str(TOOLS / "check.sh"), "--list"], capture_output=True, text=True,
+                         check=True, env={**os.environ, "CHECK_ONLY": "cargo fmt|reuse"}).stdout
+    assert out.strip().splitlines() == ["cargo fmt --check", "reuse lint"]
