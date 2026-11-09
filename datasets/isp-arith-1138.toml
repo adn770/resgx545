@@ -1,9 +1,9 @@
 title = "arithmetic sweep of coverage, depth and iteration for random sub-pixel triangles, phase 11.37 (main 3112 jobs, fine 874, fine2 422, pilots)"
 repo = "data"
 paths = ["isp/arith-1138/"]
-method = "run/run_p1138.py and run_p1138b.py of the dataset on the laptop (direct cable), tools ~/sgxfive-test-1138 and ~/sgxfive-test-1138b (the two .c files of each in tool-sources, shas in env.toml; the landed tool is userspace/libsgxfive with --tri-v and --tri-unit), kernel 7.3.0-resgx545, module B21FDA82BD5E5CB5A627E3B; main/ fit, heldout and repeat sets of cases.tsv (jobs.tsv, D/I0/I1/C raw outputs gzipped, depth buffers gzipped), fine/ (cases-fine.tsv), fine2/ (cases-fine2.tsv), pilot/ and pilot2/ (3 cases outside every set); the frozen predictions and manifests, the generators, the recompute scripts and their output (analysis-main), the templates, the kernel log of the three runs (kernel.log.gz, with a marker line per job) and env.toml; the manifest-*.sha256 files also name tests, stage-bins and tool trees that are not in the dataset (the landed tests are in userspace/libsgxfive/tests), plan.md lacks the kpoke correction of E606's method, and six compiled python caches under recompute/ and run/ are in it by mistake"
+method = "run/run_p1138.py and run_p1138b.py of the dataset on the laptop (direct cable), tools ~/sgxfive-test-1138 and ~/sgxfive-test-1138b (the two .c files of each in tool-sources, shas in env.toml; the landed tool is userspace/libsgxfive with --tri-v and --tri-unit), kernel 7.3.0-resgx545, module B21FDA82BD5E5CB5A627E3B; main/ fit, heldout and repeat sets of cases.tsv (jobs.tsv, D/I0/I1/C raw outputs gzipped, depth buffers gzipped), fine/ (cases-fine.tsv), fine2/ (cases-fine2.tsv), pilot/ and pilot2/ (3 cases outside every set); the frozen predictions and manifests, the generators, the recompute scripts and their output (analysis-main), the templates, the kernel log of the three runs (kernel.log.gz, with a marker line per job) and env.toml; the manifest-*.sha256 files also name tests, stage-bins and tool trees that are not in the dataset (the landed tests are in userspace/libsgxfive/tests), plan.md lacks the kpoke correction of E606's method, and six compiled python caches under recompute/ and run/ are in it by mistake. Correction 2026-11-09: those six caches (cpython-314 .pyc files) were removed from resgx545-data in commit f2d8b986, so files, size and sha256 below are recomputed without them (7343 files, 11486391 bytes, sha256 0a4f6a07... before)"
 date = "2026-11-09"
-files = 7343
-size = 11486391
-sha256 = "0a4f6a0726a0bf102af1fe9e8176e4a7fdb1cb29407641799ac2c2977de07aa9"
+files = 7337
+size = 11371622
+sha256 = "65fef6299d88bac2027a8840668a324bc89b75c0c4e15baa523bdd7228a2ddca"
 recipe = "run/run_p1138.py"
