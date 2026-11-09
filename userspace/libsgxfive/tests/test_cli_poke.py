@@ -304,6 +304,18 @@ def test_tri_move_per_render():
         assert r.returncode == 2, (args, r.stdout + r.stderr)
 
 
+@pytest.mark.parametrize("unit", [[], ["--tri-unit", "10"], ["--tri-unit", "5"]])
+def test_tri_move_moves_fine_vertices(unit):
+    """With --tri-v the render draws the fine vertices (1/2^unit pixel): --move moves those,
+    not only the 1/16-pixel ones the CPU reference reads, so the moved render still checks."""
+    s = 1 << int(unit[1]) if unit else 256
+    v = ",".join(str(c * s) for c in (8, 8, 48, 20, 20, 56))
+    r = run("--mock", "tri", "-n", "2", "--tri-v", v, *unit, "--move", "2:8,4")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^tri: render 2 moved by 8,4$", r.stdout, re.M), r.stdout
+    assert "tri: 2 renders ok" in r.stdout, r.stdout
+
+
 def test_tri_geometry_render():
     """tri --geometry N submits render N as a geometry job (DRM_SGXFIVE_SUBMIT_JOB_RENDER_GEOMETRY):
     it tiles into the context's scene and leaves it open, so nothing is drawn and its image

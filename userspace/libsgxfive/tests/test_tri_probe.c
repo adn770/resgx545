@@ -812,6 +812,78 @@ static void copy_depth(void)
 }
 
 /*
+ * index_width 32: the index list 0 to n - 1 as one 32-bit word each, where the 16-bit list
+ * would be, and VDM word 2 bit 25 set (SGXFIVE_TRI_PROBE_VDM_INDEX32: the bit under test,
+ * whose flip over a 16-bit list faulted); the count and the other words as with 16 bits. The
+ * one triangle (0 or 3 vertices) gets its three. 0 and 16 are the 16-bit list; anything else,
+ * a second object (its list is 16-bit) or a wide scene (no room) is refused.
+ */
+static void index_width(void)
+{
+	struct scene d, s;
+	struct sgxfive_tri_probe pr = { .vertices = 15, .index_width = 32 };
+	const uint32_t *idx, *vdm;
+
+	scene_init(&d, 64, 64);
+	CHECK_EQ(sgxfive_tri_probe_apply(&d.c, &d.l, &d.p,
+					 &(struct sgxfive_tri_probe){ .vertices = 15 }, &d.cmd), 0);
+	scene_init(&s, 64, 64);
+	idx = s.c.gen + SGXFIVE_TRI_G_IDX / 4;
+	vdm = s.c.gen + SGXFIVE_TRI_G_VDM / 4;
+	CHECK_EQ(sgxfive_tri_probe_apply(&s.c, &s.l, &s.p, &pr, &s.cmd), 0);
+	CHECK_EQ(SGXFIVE_TRI_PROBE_VDM_INDEX32, 1u << 25);
+	CHECK_EQ(vdm[2], d.c.gen[SGXFIVE_TRI_G_VDM / 4 + 2] | SGXFIVE_TRI_PROBE_VDM_INDEX32);
+	CHECK_EQ(vdm[3], d.c.gen[SGXFIVE_TRI_G_VDM / 4 + 3]);
+	for (unsigned int i = 0; i < 15; i++)
+		if (!CHECK_EQ(idx[i], i))
+			printf("#   index %u\n", i);
+	/* the vertices as with 16 bits */
+	CHECK(!memcmp(s.c.gen + SGXFIVE_TRI_G_VTX / 4, d.c.gen + SGXFIVE_TRI_G_VTX / 4, 15 * 16));
+	free(s.mem);
+	/* the one triangle */
+	for (uint32_t n = 0; n <= 3; n += 3) {
+		pr.vertices = n;
+		scene_init(&s, 64, 64);
+		idx = s.c.gen + SGXFIVE_TRI_G_IDX / 4;
+		CHECK_EQ(sgxfive_tri_probe_apply(&s.c, &s.l, &s.p, &pr, &s.cmd), 0);
+		CHECK(idx[0] == 0 && idx[1] == 1 && idx[2] == 2);
+		CHECK_EQ(s.c.gen[SGXFIVE_TRI_G_VDM / 4 + 2] & 0x3fffffu, 3);
+		CHECK(s.c.gen[SGXFIVE_TRI_G_VDM / 4 + 2] & SGXFIVE_TRI_PROBE_VDM_INDEX32);
+		free(s.mem);
+	}
+	/* the scene page's spare room: 126 words before the second object's block would be */
+	pr.vertices = SGXFIVE_TRI_PROBE_MAX_VERTICES;
+	scene_init(&s, 64, 64);
+	idx = s.c.gen + SGXFIVE_TRI_PROBE_G_IDX / 4;
+	CHECK_EQ(sgxfive_tri_probe_apply(&s.c, &s.l, &s.p, &pr, &s.cmd), 0);
+	CHECK(idx[0] == 0 && idx[SGXFIVE_TRI_PROBE_MAX_VERTICES - 1] == SGXFIVE_TRI_PROBE_MAX_VERTICES - 1);
+	CHECK(SGXFIVE_TRI_PROBE_G_IDX + 4 * SGXFIVE_TRI_PROBE_MAX_VERTICES <= PAGE);
+	free(s.mem);
+	/* 16 is the default list */
+	pr.vertices = 15;
+	pr.index_width = 16;
+	scene_init(&s, 64, 64);
+	CHECK_EQ(sgxfive_tri_probe_apply(&s.c, &s.l, &s.p, &pr, &s.cmd), 0);
+	CHECK(!memcmp(s.c.gen, d.c.gen, PAGE));
+	free(s.mem);
+	/* refused: another width, a second object, a wide scene */
+	pr.index_width = 8;
+	scene_init(&s, 64, 64);
+	CHECK_EQ(sgxfive_tri_probe_apply(&s.c, &s.l, &s.p, &pr, &s.cmd), -EINVAL);
+	free(s.mem);
+	pr = (struct sgxfive_tri_probe){ .vertices = 12, .obj2_first = 6, .index_width = 32 };
+	scene_init(&s, 64, 64);
+	CHECK_EQ(sgxfive_tri_probe_apply(&s.c, &s.l, &s.p, &pr, &s.cmd), -EINVAL);
+	free(s.mem);
+	pr = (struct sgxfive_tri_probe){ .vertices = SGXFIVE_TRI_PROBE_MAX_VERTICES + 3,
+					 .index_width = 32 };
+	scene_init(&s, 64, 64);
+	CHECK_EQ(sgxfive_tri_probe_apply(&s.c, &s.l, &s.p, &pr, &s.cmd), -EINVAL);
+	free(s.mem);
+	free(d.mem);
+}
+
+/*
  * More than 15 vertices: the vertex buffer and index list move to the scene page's spare
  * room (SGXFIVE_TRI_PROBE_G_VTX, _G_IDX), the vertex PDS and the VDM's index-list address
  * pointing there; the triangle's three vertices first, then the copies as with fewer.
@@ -1486,6 +1558,7 @@ int main(void)
 	copy_depth();
 	eot_sideband();
 	many_vertices();
+	index_width();
 	cmd_words();
 	blk_words();
 	vdm_words();

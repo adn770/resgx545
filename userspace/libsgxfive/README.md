@@ -290,8 +290,8 @@ probe [--stamp] [--temps N] [--coords] [--pixels] [--scratch-pages N] [--pds N -
       [--place OFFSET=FILE --place-form cbase|exe18] [--scratch-heap texture]
       [--poke xfer:N=V]... [--low ADDR] [--late R:K=V] FILE...
 probe --tri SLOT[:N] [--slot SLOT=FILE[:N]]... [--width W --height H]
-      [--max-width W --max-height H] [--vertices N [--copy-depth]] [--tri-full] [--vtx-coords N]
-      [--isp2 V] [--blk-add BIT=V[,V]]... [--blk N=V]... [--cmd N=V]... [--vdm N=V]...
+      [--max-width W --max-height H] [--vertices N [--copy-depth]] [--index-width 16|32]
+      [--tri-full] [--vtx-coords N] [--isp2 V] [--blk-add BIT=V[,V]]... [--blk N=V]... [--cmd N=V]... [--vdm N=V]...
       [--pbe N=V]... [--sideband V] [--temps N] [--pixels] [--dump-render DIR] [--kpoke SPEC]...
       [--obj2 FIRST [--obj2-blk N=V]... [--obj2-pixel FILE] [--obj2-pixpds FILE:N]] FILE...
 ```
@@ -312,7 +312,7 @@ at, filled with V (default 0.25f) before each render; the dwords that changed ar
 page by page. `--scratch-at ADDR` maps them at ADDR (a heap's page, say, that a unit fetches
 from) instead of in the general heap. `--kpoke-render N:SPEC` writes SPEC to the kernel's
 debugfs `kpoke` just before render N. `--move N:DX,DY` draws render N's triangle DX, DY pixels
-away. `--geometry N`
+away (with `--tri-v` the fine vertices move too, in their unit). `--geometry N`
 submits render N as geometry only (the scene left open for the next render, nothing drawn).
 `--keep-going` reports every render, checked or not. `--dump-render DIR` copies the kernel's
 debugfs `render_param` and `render_tadata` to `DIR/tri.param.bin` and `DIR/tri.tadata.bin`
@@ -457,7 +457,10 @@ a PDS slot takes N data dwords. The new programs are patched as the defaults
 - `--vertices N` (3 to 1500, whole triangles) draws copies of the triangle after it, each
   1/16 pixel on, so that the vertex programs run for more vertices than one task's (more
   than 126 move the vertices and indices to the rig's extra gen pages);
-  `--copy-depth` puts copy c at clip z = c / 16. `--tri-full` (with `--tri`) draws the triangle
+  `--copy-depth` puts copy c at clip z = c / 16. `--index-width 32` writes the index list as
+  one 32-bit word per index and sets VDM word 2 bit 25, the bit under test as the width (S1
+  g-e4: set over the 16-bit list it faulted); one object, up to 126 vertices; 16 is the
+  default list. `--tri-full` (with `--tri`) draws the triangle
   (0,0), (3W,0), (0,3H) as `tri --tri-full` does and prints `probe NAME: triangle (...)`.
 - `--vtx-coords N` (1 to 11) adds N output dwords per vertex, coordinate sets of four and
   the rest (OUTSEL, coordsize).

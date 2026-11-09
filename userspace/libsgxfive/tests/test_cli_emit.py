@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 import os
 import pathlib
+import re
 import subprocess
 
 import pytest
@@ -116,6 +117,36 @@ def test_the_triangle_probe_words_follow_the_pokes(tmp_path):
     blk = lambda sc: words(sc["memory"][0])[0x100 // 4:0x100 // 4 + 18]
     assert blk(s)[6] == 0x427F8000 and blk(base)[6] != 0x427F8000
     assert words(s["memory"][4])[4] == 0 and words(base["memory"][4])[4] == 0xF0000000
+
+
+def test_index_width_32_writes_word_indices_and_header_bit_25(tmp_path):
+    """--index-width 32: the index list 0..N-1 as 32-bit words at the list's place (gen 0x200)
+    and VDM word 2 bit 25 set; --vdm 2^=0x02000000 clears the bit again over the same list
+    (the negative of the g-e4 positive test); 16 is the default list."""
+    base = probe_scene(tmp_path, "--vertices", "15")
+    s = probe_scene(tmp_path, "--vertices", "15", "--index-width", "32")
+    g, g0 = words(s["memory"][4]), words(base["memory"][4])
+    assert g[0x200 // 4:0x200 // 4 + 15] == list(range(15))
+    assert g[2] == g0[2] | 0x02000000 and g[2] & 0x3FFFFF == 15
+    assert g[0x100 // 4:0x100 // 4 + 60] == g0[0x100 // 4:0x100 // 4 + 60]
+    n = probe_scene(tmp_path, "--vertices", "15", "--index-width", "32", "--vdm", "2^=0x02000000")
+    gn = words(n["memory"][4])
+    assert gn[2] == g0[2] and gn[0x200 // 4:0x200 // 4 + 15] == list(range(15))
+    assert words(probe_scene(tmp_path, "--vertices", "15", "--index-width", "16")["memory"][4]) == g0
+
+
+def test_index_width_is_checked(tmp_path):
+    prog = tmp_path / "pix.bin"
+    prog.write_bytes(bytes(8))
+    for args in (["--tri", "pixel", "--index-width", "8"], ["--tri", "pixel", "--index-width", "x"],
+                 ["--index-width", "32"],
+                 ["--tri", "pixel", "--vertices", "12", "--obj2", "6", "--index-width", "32"],
+                 ["--tri", "pixel", "--vertices", "129", "--index-width", "32"]):
+        r = run("probe", *args, str(prog))
+        assert r.returncode == 2, (args, r.stdout + r.stderr)
+    r = run("probe", "--tri", "pixel", "--vertices", "15", "--index-width", "32", str(prog))
+    assert re.search(r"^probe pix: tri 64x64 \(15 vertices, 32-bit indices\)", r.stdout, re.M), \
+        r.stdout
 
 
 def test_emit_scene_on_a_probe_without_a_triangle_is_refused(tmp_path):

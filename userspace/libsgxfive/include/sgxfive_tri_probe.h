@@ -151,6 +151,12 @@ struct sgxfive_tri_prog {
 #define SGXFIVE_TRI_PROBE_VDM2_WORDS	19
 #define SGXFIVE_TRI_PROBE_G_VTX		0x400
 #define SGXFIVE_TRI_PROBE_G_IDX		0xc00
+/*
+ * The VDM index-list header bit index_width 32 sets: the bit under test as the index width
+ * (closing pass S1, g-e4: set over the 16-bit list it faulted 0xd0008 2 of 2, bit 24 hung),
+ * not an established field.
+ */
+#define SGXFIVE_TRI_PROBE_VDM_INDEX32	(1u << 25)
 
 struct sgxfive_tri_probe {
 	struct sgxfive_tri_prog slot[SGXFIVE_TRI_SLOT_COUNT];
@@ -170,6 +176,13 @@ struct sgxfive_tri_probe {
 	uint32_t coords;
 	/* the copies at clip-space z = c / 16 (copy c), not all at 0 */
 	bool copy_depth;
+	/*
+	 * 0 or 16: the 16-bit index list; 32: the list 0 to n - 1 (n the vertices, 3 for the
+	 * one triangle) as one 32-bit word each at the list's place, and VDM word 2's
+	 * SGXFIVE_TRI_PROBE_VDM_INDEX32 set. Not with obj2_first (its list is 16-bit) nor more
+	 * than SGXFIVE_TRI_PROBE_MAX_VERTICES (no room at W_IDX).
+	 */
+	uint32_t index_width;
 	/*
 	 * with isp2_set: the state block carries ISP word 2 (stencil) isp2 in place of the wrap
 	 * word, at word 3, the pixel programs and viewport one word on (presence 0xdd47, ISP0

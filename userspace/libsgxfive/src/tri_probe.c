@@ -179,7 +179,8 @@ static uint32_t ndc(int32_t px16, uint32_t size)
 
 /*
  * n vertices: the triangle's three, then copies of it, copy c moved c/16 pixel right and
- * down; the index list 0 to n - 1, its count in the VDM's index-list word. More than the
+ * down; the index list 0 to n - 1 (16-bit pairs, or with idx32 32-bit words and the header's
+ * SGXFIVE_TRI_PROBE_VDM_INDEX32), its count in the VDM's index-list word. More than the
  * scene's vertex buffer holds go to the page's spare room, the vertex PDS's buffer and the
  * VDM's index-list address pointing there.
  */
@@ -216,7 +217,7 @@ static int add_words(const struct sgxfive_tri_cpu *c, const struct sgxfive_tri_p
 }
 
 static void put_copies(const struct sgxfive_tri_cpu *c, const struct sgxfive_tri_layout *l,
-		       const struct sgxfive_tri_params *p, uint32_t n, bool depth)
+		       const struct sgxfive_tri_params *p, uint32_t n, bool depth, bool idx32)
 {
 	const bool big = n * 16 > SGXFIVE_TRI_G_IDX - SGXFIVE_TRI_G_VTX;
 	const bool wide = n > SGXFIVE_TRI_PROBE_MAX_VERTICES;
@@ -240,8 +241,14 @@ static void put_copies(const struct sgxfive_tri_cpu *c, const struct sgxfive_tri
 		v[4 * i + 2] = depth ? sgxfive_f32((float)d / 16.0f) : 0;
 		v[4 * i + 3] = sgxfive_f32(1.0f);
 	}
-	for (uint32_t i = 0; i < n; i += 2)
-		idx[i / 2] = i | (i + 1 < n ? (i + 1) << 16 : 0);
+	if (idx32) {
+		for (uint32_t i = 0; i < n; i++)
+			idx[i] = i;
+		vdm[2] |= SGXFIVE_TRI_PROBE_VDM_INDEX32;
+	} else {
+		for (uint32_t i = 0; i < n; i += 2)
+			idx[i / 2] = i | (i + 1 < n ? (i + 1) << 16 : 0);
+	}
 	vdm[2] = (vdm[2] & ~VDM_INDEX_COUNT) | n;
 }
 
@@ -381,8 +388,13 @@ int sgxfive_tri_probe_apply(const struct sgxfive_tri_cpu *c, const struct sgxfiv
 		vdm[7] = (vdm[7] & ~VDM_OUTPUT_SIZE) | (4 + pr->coords + 3) / 4 << 24;
 	}
 
-	if (pr->vertices > 3)
-		put_copies(c, l, p, pr->vertices, pr->copy_depth);
+	if ((pr->index_width && pr->index_width != 16 && pr->index_width != 32) ||
+	    (pr->index_width == 32 &&
+	     (pr->obj2_first || pr->vertices > SGXFIVE_TRI_PROBE_MAX_VERTICES)))
+		return -EINVAL;
+	if (pr->vertices > 3 || pr->index_width == 32)
+		put_copies(c, l, p, pr->vertices > 3 ? pr->vertices : 3, pr->copy_depth,
+			   pr->index_width == 32);
 
 	if (s[SGXFIVE_TRI_SLOT_EOT].n) {
 		const struct sgxfive_tri_prog *g = &s[SGXFIVE_TRI_SLOT_EOT];

@@ -145,7 +145,8 @@
  *                                 address (0x5CB1) shifted right by four, plus nnnn (the s1
  *                                 of an emitpds), and the probe prints where it is
  *   probe --tri SLOT[:N] [--slot SLOT=FILE[:N]]... [--width W --height H]
- *         [--max-width W --max-height H] [--vertices N [--copy-depth]] [--tri-full] [--vtx-coords N]
+ *         [--max-width W --max-height H] [--vertices N [--copy-depth]] [--index-width 16|32]
+ *         [--tri-full] [--vtx-coords N]
  *         [--isp2 V] [--blk-add BIT=V[,V]]...
  *         [--blk N=V]... [--cmd N=V]... [--vdm N=V]... [--pbe N=V]... [--sideband V]
  *         [--temps N]
@@ -162,6 +163,9 @@
  *                                 replaces another slot's program in every render;
  *                                 --vertices N (3 to 1500, whole triangles): copies of
  *                                 the triangle after it, for the vertex programs;
+ *                                 --index-width 32: the index list as 32-bit words
+ *                                 and VDM word 2 bit 25 set (one object, up to 126
+ *                                 vertices; 16, the default: 16-bit pairs);
  *                                 --vtx-coords N (1 to 11): N more output dwords per
  *                                 vertex, coordinate sets of four and the rest
  *                                 (OUTSEL, coordsize);
@@ -421,7 +425,8 @@ static int usage(void)
 		"                       [--poke xfer:N=V|bg:N=V]... [--low ADDR] [--late R:K=V] FILE...,\n"
 		"                 probe --tri SLOT[:N] [--slot SLOT=FILE[:N]]... [--width W\n"
 		"                       --height H --max-width W --max-height H] [--vertices N]\n"
-		"                       [--copy-depth] [--tri-full] [--vtx-coords N] [--isp2 V]\n"
+		"                       [--copy-depth] [--index-width 16|32] [--tri-full]\n"
+		"                       [--vtx-coords N] [--isp2 V]\n"
 		"                       [--blk-add BIT=V[,V]]... [--blk N=V]...\n"
 		"                       [--cmd N=V]... [--vdm N=V]... [--pbe N=V]... [--sideband V]\n"
 		"                       (--blk, --cmd and --vdm also take N^=V)\n"
@@ -1573,6 +1578,7 @@ struct probe_opts {
 		uint32_t vertices;	/* --vertices: 0, or the triangle and copies of it */
 		uint32_t coords;	/* --vtx-coords: more output dwords per vertex */
 		bool copy_depth;	/* --copy-depth: the copies at z = c / 16 */
+		uint32_t index_width;	/* --index-width: 0 (16), 16 or 32 */
 		bool full;		/* --tri-full: the triangle covers the target */
 		const char *emit_scene;	/* --emit-scene FILE: the built job's words */
 		bool v_set;		/* --tri-v: the vertices, in 1/2^unit pixel */
@@ -1983,13 +1989,17 @@ static int probe_tri_check(struct probe_opts *po)
 		fixed |= pt->fixed[k].n != 0;
 	if (pt->slot < 0)
 		return fixed || pt->width || pt->height || pt->max_width || pt->max_height ||
-		       pt->vertices || pt->coords || pt->copy_depth || pt->isp2_set || pt->blk_mask ||
+		       pt->vertices || pt->coords || pt->copy_depth || pt->index_width ||
+		       pt->isp2_set || pt->blk_mask ||
 		       pt->v_set || pt->z_set || pt->unit ||
 		       pt->add_mask || pt->blk_xor_mask || pt->cmd_xor_mask || pt->pbe_mask ||
 		       pt->cmd_mask || pt->vdm_mask || pt->vdm_xor_mask || pt->sideband_set || pt->dump_dir ||
 		       pt->nkpoke || pt->obj2 || pt->obj2_blk_mask || pt->obj2_pixel.n ||
 		       pt->obj2_pixpds.n ? -1 : 0;
 	if (pt->copy_depth && !pt->vertices)
+		return -1;
+	/* 32-bit indices: one object, the list where 126 vertices' fit */
+	if (pt->index_width == 32 && (pt->obj2 || pt->vertices > SGXFIVE_TRI_PROBE_MAX_VERTICES))
 		return -1;
 	if (pt->v_set && (pt->full || pt->vertices))
 		return -1;
@@ -2155,6 +2165,7 @@ static void probe_tri_one(struct tool *t, const struct probe_file *f,
 	pr.vertices = pt->vertices;
 	pr.coords = pt->coords;
 	pr.copy_depth = pt->copy_depth;
+	pr.index_width = pt->index_width;
 	pr.isp2_set = pt->isp2_set;
 	pr.isp2 = pt->isp2;
 	pr.blk_mask = pt->blk_mask;
@@ -2199,8 +2210,11 @@ static void probe_tri_one(struct tool *t, const struct probe_file *f,
 		       (unsigned long long)saddr, SCRATCH_PAGES * SGXFIVE_PAGE_SIZE / 1024);
 		printf("probe %s: tri %ux%u", f->name, pt->width, pt->height);
 		if (pt->vertices)
-			printf(" (%u vertices%s)", pt->vertices,
-			       pt->copy_depth ? ", at depths" : "");
+			printf(" (%u vertices%s%s)", pt->vertices,
+			       pt->copy_depth ? ", at depths" : "",
+			       pt->index_width == 32 ? ", 32-bit indices" : "");
+		else if (pt->index_width == 32)
+			printf(" (32-bit indices)");
 		if (pt->coords)
 			printf(" (%u coordinates)", pt->coords);
 		if (pt->isp2_set)
@@ -2921,9 +2935,14 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		for (unsigned int k = 0; k < o->nmoves; k++) {
 			if (o->moves[k].n != i + 1)
 				continue;
+			/* a fine render draws v256 (render.c): move those too, in its unit */
 			for (int v = 0; v < 3; v++) {
 				p.v[v][0] += 16 * o->moves[k].dx;
 				p.v[v][1] += 16 * o->moves[k].dy;
+				if (p.fine) {
+					p.v256[v][0] += o->moves[k].dx * (1 << p.fine_shift);
+					p.v256[v][1] += o->moves[k].dy * (1 << p.fine_shift);
+				}
 			}
 			printf("tri: render %u moved by %d,%d\n", i + 1, o->moves[k].dx,
 			       o->moves[k].dy);
@@ -3841,6 +3860,13 @@ int main(int argc, char **argv)
 				if (*end || !v || v % 3 || v > SGXFIVE_TRI_PROBE_WIDE_VERTICES)
 					return usage();
 				popts.tri.vertices = (uint32_t)v;
+				continue;
+			}
+			if (!strcmp(argv[i], "--index-width") && i + 1 < argc) {
+				v = strtoul(argv[++i], &end, 0);
+				if (*end || (v != 16 && v != 32))
+					return usage();
+				popts.tri.index_width = (uint32_t)v;
 				continue;
 			}
 			if (!strcmp(argv[i], "--dump-render") && i + 1 < argc) {
