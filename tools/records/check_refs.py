@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: 2026 Josep Torra
-"""Section references: a reference (`doc.md §N`, or a spec's short name before §) must name a
-document the tree holds and, when that document numbers its headings, sections it has. A landed
-document never points at one that is not there. Reads the tracked text files.
+"""Section references: a reference (a document name or a spec's short name, then the section
+sign and a number) must name a document the tree holds and, when that document numbers its
+headings, sections it has. A landed document never points at one that is not there. Reads the
+tracked text files.
 
     python3 tools/records/check_refs.py --check [ROOT]
 """
