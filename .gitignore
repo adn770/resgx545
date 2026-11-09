@@ -34,3 +34,6 @@
 # Rust build outputs.
 /target/
 .DS_Store
+
+# The guard's machine-local paths (the real file lives in the private guard directory).
+refs.local.toml

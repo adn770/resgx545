@@ -1,0 +1,7 @@
+# Copy to refs.local.toml in the guard directory (RESGX545_GUARD_DIR), which is untracked, and
+# put this machine's paths in. Placeholders only: never commit the real file.
+confidential = "/path/to/the/confidential/tree"
+public_root = "/path/to/the/public/reference/trees"
+public = ["tree-one", "tree-two"]             # directories under public_root
+rogue = ["/path/to/open/gpu/driver/code"]     # more public trees, absolute
+libs = ["/path/to/closed/libraries"]          # the closed libraries' strings, black box
