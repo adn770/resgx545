@@ -71,8 +71,21 @@ def layout() -> fwload.Layout:
     return fwload.Layout(addr=addr, heap_base=dict(HEAPS), pd_phys=0x01234000)
 
 
-def boot(pysgx) -> tuple:
-    """A booted SGX, its layout and the firmware's boot data (fwload.Boot)."""
+class Refused(Exception):
+    """The simulator refused the first form no record measured: init_done's `mov pa2, r0`, a
+    write to pa2 outside the one case measured (pa0 in a fill, E496); pa1 to pa4 are not run
+    (Q098). The boot cannot finish until a record measures the form, so the tests that need a
+    finished boot (the CCB commands) are marked xfail(raises=Refused, strict) and begin to fail
+    as XPASS, to be unmarked, when the simulator learns it. The tests of what the boot has done
+    by the refusal run on the state it stops in."""
+
+
+UNMEASURED = "a write to pa2 (lost in a fill for pa0 only, E496; pa1 to pa4 not run, Q098)"
+REFUSAL_TASK = "task 0x30000000+0x1c4"        # edm.task.init_done's entry, 0x1c4 in the code heap
+
+
+def prepare(pysgx) -> tuple:
+    """A SGX with the firmware placed and the host's boot writes done, the kick not yet given."""
     lay = layout()
     boot = fwload.load(fwformat.unpack(FW.read_bytes()), lay)
     s = pysgx.Sgx()
@@ -91,23 +104,65 @@ def boot(pysgx) -> tuple:
     s.store32(host + HOST_CLOCK, 1000)
     s.store32(host + INIT_STATUS, 0)
     s.write_reg(EVENT_KICK2, 1)
-    s.run(100_000)
     return s, lay, boot
 
 
+def is_refusal(e) -> bool:
+    """e is the simulator's refusal of init_done's `mov pa2, r0` and nothing else."""
+    kind, text = e.args
+    return kind == "unsupported" and UNMEASURED in text and REFUSAL_TASK in text
+
+
+def boot_to_refusal(pysgx) -> tuple:
+    """Run the boot up to the simulator's refusal of init_done's `mov pa2, r0` (Q098): the SGX
+    as it stands there, the layout and the refusal's text. Any other error, or a boot that
+    runs on past it, is not caught."""
+    s, lay, _ = prepare(pysgx)
+    try:
+        s.run(100_000)
+    except pysgx.SimError as e:
+        if not is_refusal(e):
+            raise
+        return s, lay, e.args[1]
+    raise AssertionError("the boot ran past init_done's `mov pa2, r0`: unmark the xfails")
+
+
+def boot(pysgx) -> tuple:
+    """A booted SGX, its layout and the firmware's boot data (fwload.Boot); raises Refused
+    while the simulator refuses init_done's `mov pa2, r0`."""
+    s, lay, boot_data = prepare(pysgx)
+    try:
+        s.run(100_000)
+    except pysgx.SimError as e:
+        if is_refusal(e):
+            raise Refused(e.args[1]) from e
+        raise
+    return s, lay, boot_data
+
+
+unmeasured = pytest.mark.xfail(
+    raises=Refused, strict=True,
+    reason="init_done's `mov pa2, r0` is a pa2 write no record measured (Q098)")
 @pytest.fixture(scope="module")
 def booted():
-    s, lay, _ = boot(load.pysgx())
-    return s, lay
+    return boot_to_refusal(load.pysgx())
+
+
+def test_the_boot_stops_at_the_first_unmeasured_form(booted):
+    """The boot runs PDS #10 to #12 and the tasks boot, pds11 and init_done up to init_done's
+    `mov pa2, r0`, which the simulator refuses with the question that holds it (Q098); the tests
+    below check what the boot has done by then."""
+    s, lay, text = booted
+    assert "Q098" in text and "mov pa2, r0" in text
 
 
 def test_the_boot_sets_init_status(booted):
-    s, lay = booted
+    s, lay, _ = booted
     assert s.load32(lay.addr[facts.HOST_CTL] + INIT_STATUS) & 1 == 1
 
 
 def test_the_boot_chain_runs_in_order(booted):
-    s, lay = booted
+    s, lay, _ = booted
     pds = {lay.addr[i]: i for i in (facts.PDS10, facts.PDS11, facts.PDS12)}
     started = [(pds[e[1]], e[3]) if e[0] == "pds" else ("task", e[2])
                for e in s.log() if e[0] in ("pds", "task")]
@@ -118,7 +173,7 @@ def test_the_boot_chain_runs_in_order(booted):
 
 
 def test_init_done_installs_the_event_program_and_the_timer(booted):
-    s, lay = booted
+    s, lay, _ = booted
     assert s.reg(EVENT_OTHER_PDS_EXEC) == lay.addr[facts.PDS13]
     assert s.reg(EVENT_OTHER_PDS_DATA) == 6
     # from HostCtl.ui32uKernelTimerClock, with bit 24 set (hw_spec 11.1)
@@ -126,7 +181,7 @@ def test_init_done_installs_the_event_program_and_the_timer(booted):
 
 
 def test_pds11_loads_ta3dctl_into_the_secondaries(booted):
-    s, lay = booted
+    s, lay, _ = booted
     ta3d = lay.addr[facts.TA3D_CTL]
     # sa0 TA3DCtl, sa1 HostCtl, sa2 the CCB control, sa22 the CCB, sa23 the PD (hw_spec 11.1)
     assert [s.sa(n) for n in (0, 1, 2, 22, 23)] == [

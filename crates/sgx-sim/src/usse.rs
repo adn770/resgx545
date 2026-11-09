@@ -4091,7 +4091,7 @@ impl Machine {
             2 if r == 0 => {}
             2 => {
                 return Err(why(format!(
-                    "a write to pa{r} (lost in a fill for pa0 only, E496; pa1 to pa4 not run)"
+                    "a write to pa{r} (lost in a fill for pa0 only, E496; pa1 to pa4 not run, Q098)"
                 )));
             }
             4 => {
