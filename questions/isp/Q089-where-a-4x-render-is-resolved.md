@@ -62,3 +62,6 @@ in 0xe0 jobs) with an empty image in 7 of 7 jobs (6 distinct jobs and a repeat),
 empty image reads counter 0 at TE 0x20 (4 controls), so the counter does not show that every
 region is walked [infer]; it may count stored samples (144 = 4 x 36). This does not resolve a 4x
 render and does not remove "the region is skipped"; the question stays open.
+
+Noted 2026-11-09: near duplicate of Q138, not merged (both ask how the closed driver's 4x render
+becomes a 64 x 64 image). A merge or a fold decides which text survives.

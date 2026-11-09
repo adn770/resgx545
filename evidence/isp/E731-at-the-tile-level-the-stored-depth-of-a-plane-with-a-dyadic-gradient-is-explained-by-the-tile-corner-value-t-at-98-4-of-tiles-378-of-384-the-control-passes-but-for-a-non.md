@@ -57,3 +57,22 @@ in b0 is not fl(T + RN(32 A)).
 **What it does not show.** The rule that does explain the words (Q288); why 64 of 64 tiles of dp-
 bx-b2 and dp-by-b2 admit no single T under truncation of the stored word (the words may not be a
 truncation of T plus the gradient term at all in that binade).
+
+**Correction 2026-11-09:** The measurements above are unchanged. Two statements understate what
+the dumps show: the control "fails in binade 2: 3 tiles" and b2 "is outside the premise". A
+pixel-level comparison of the stored words with the exact plane truncated to float32 (the plane
+from the declared vertices and depths in exact arithmetic; an analysis of the kept dumps, not a
+new measurement) shows that the dyadic controls deviate from truncation below binade 0 in a region
+bounded by a diagonal line, so "stored = the truncated plane" fails there, in the
+control itself, and not only in b2. In dp-ax-b1 (A = 2^-13, B = 0, every exact value
+representable in float32) 9216 of the 32768 pixels are one ulp below the truncated exact plane:
+exactly the pixels with x + 2y >= 319 of the 256 x 128 target (that line separates them from the
+rest with no exception). By tile, rows 2 to 7 of the 8 x 8 grid hold 256, 768, 1280, 1792, 2304
+and 2816 of them (a half tile where tx + ty = 9, whole tiles above), and 8192 of the 9216 lie in
+the right macrotile column (x >= 128). dp-ax-b2 and dp-ay-b2 (the gradient in y) have the same
+counts per tile row and per macrotile column, 7680 pixels one ulp and 1536 two ulps below, so the
+effect does not follow the direction of the gradient. The mechanism is unexplained. I could not
+reconcile this with the tile counts above (378 of 384 for the control, the 6 misses all in b2): the
+half-covered tiles of b1 mix pixels at the truncation with pixels one ulp below it. The recompute
+that produced the tile counts was not re-run. Q200 now holds the diagonal region as its own
+effect; Q288 stays the rule for the gradient.

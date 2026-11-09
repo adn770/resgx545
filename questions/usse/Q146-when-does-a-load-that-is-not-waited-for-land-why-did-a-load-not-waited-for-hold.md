@@ -17,3 +17,6 @@ What is open: the load's time (one sample per value), whether the loads of two r
 land in a fixed order, and what a write that comes after the wdf of an earlier load does (the
 control: the mov wins). To settle it: a timer read before and after each case and a series of many
 runs per value.
+
+Noted 2026-11-09: near duplicate of Q194, not merged (both ask when a load that is not waited for
+lands (E517); Q194 adds the firmware task). A merge or a fold decides which text survives.

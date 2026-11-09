@@ -48,3 +48,9 @@ was run below. The controls below the step of dword 36 (1400 and 1300 vertices) 
 tool refuses vertex counts that are not multiples of 3. Open: whether the knob takes effect, the
 ceiling reading (P below 0x420, Q273), the part of dword 36, the exact step between 1350 and
 1500.
+
+Narrowed 2026-11-09 by source (see Q273). "At every P tried from 0x422 to 0x500" was one P: the
+fork's `sgx_render_pb_pages()` returns 0x422 above 0x422, so the eight jobs of E704 are one
+condition and seven repeats, and the exception of wd-glist-1500 has been tested at one buffer size
+only. The ceiling reading and the page-supply reading are both still untested for the scene at a
+smaller P; Q273 holds the run. The question is not answered or reclassified here.

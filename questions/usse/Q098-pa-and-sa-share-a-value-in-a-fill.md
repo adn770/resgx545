@@ -38,3 +38,20 @@ triangle's pixel task has iterated pa).
 To settle it: the store-sources probe with the pixel colour written per instance (from the
 instance's own place) to tell this instance's colour from the previous one's; the same pa and
 sa writes in the triangle's pixel task.
+
+Reading of existing records, 2026-11-09 (analysis, not a measurement). The fill case is wider than
+the simulator's refusal says: E380 gave pa0 to pa7 each a marker by `mov` in a fill and a mov to
+pa_n was lost for all eight (the 30 jobs), so a `mov` to pa1 to pa7 in a fill is measured, and
+only `ima32` to pa1 and above is unmeasured (E496 did pa0). The question is about a fill's pixel
+task, while the boot needs the EDM task, whose pa is a different object; this question does not
+answer that one. For the EDM task the records give one inference and one prediction. E537's
+control reader, before its writer ran, read sa64 = 2 and sa65 = 0x02000000, exactly the pa0 and
+pa1 that a tick hands the general task (E532); E536's writer wrote sa64 and it still read 2 in
+every reading (3 of 3 rounds and both controls), so a write to sa64 does not take, or the event
+path rewrites it. [infer] pa_n of an EDM task may be sa_(64+n): the three words PDS #13 passes
+would then land in the task's attribute store at base 64. It makes one prediction no run has
+tested, sa66 = 0x01061a70 (E532's pa2); no record read sa66. If it holds, a write to pa2 of an EDM
+task is a write to sa66, and E537's writer, which wrote sa65 and stopped the tick, wrote what a
+tick hands as pa1 (whether the closed task uses sa65 is Q152's, not shown). The run is a read of
+sa64 to sa68 by a firmware task of ours with the verifier as it is, then the writes only if sa66
+reads 0x01061a70.

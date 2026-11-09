@@ -47,3 +47,6 @@ mod T) exists (E519's design against E486's, neither of which the E535 runs repe
 only), where a dropped write goes (Q132), and what the 88 to 99.6 percent of E486 and the other
 pixels show. To settle it: the E486 probe with the marker written to r(n) only, and the E519 probe
 with a marker first written to r(n mod T), with a distinct marker per job.
+
+Noted 2026-11-09: near duplicate of Q132, not merged (both ask where a write to a register past
+the task's allocation lands (E486)). A merge or a fold decides which text survives.

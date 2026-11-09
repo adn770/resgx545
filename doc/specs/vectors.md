@@ -444,7 +444,8 @@ through `sgx-sim` with ir1 = 6 on the last tile, the end-of-tile task and its em
 modes 0 to 3), the pixel shader per pixel of every tile of the box and a copy's texel through
 `tex::sample`. A command word or a task no record explains refuses (`Q206`, the words of a transfer
 with no record), a PDS program or input no record measured (a program that is not a template the
-records ran included) under `Q207`; `Q074` is which tile an end-of-tile task names; `Q011` a copy's
+records ran included) under `Q207`; the tile an end-of-tile task names is under `Q206` too
+(narrowed by `Q289`); `Q011` a copy's
 tag; `Q021` the iterator word; `Q066` the background object; `Q205` a copy's iterated coordinates;
 `Q078` the sampler words; `Q076` and `Q003` an access outside the scene's memory, and `Q003` also a
 job whose completion the words leave unknown. A refusal depends on the scene's words only, never on

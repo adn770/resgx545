@@ -25,3 +25,6 @@ request at 192 ([infer] the register file divided by the instances in flight: Q1
 past an allocation goes (Q132, Q147), and whether a firmware task's request follows the same rule
 (E540 has the TRC up to 31 only). To settle it: a request of 260 and of 516 with a distinct marker
 written to each of r0 to r7 and r123 (the way E486 did), read back, and a smaller target.
+
+Noted 2026-11-09: near duplicate of Q133, not merged (both ask what bounds a phas request and what
+a request above 256 allocates (E519)). A merge or a fold decides which text survives.

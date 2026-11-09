@@ -150,6 +150,27 @@ def test_an_answered_question_is_retired_and_cited_only_as_answered(monkeypatch)
         questions.check_retired({"Q002": "it was hard"})
 
 
+def test_a_decided_question_is_retired_and_stays_citable(monkeypatch):
+    monkeypatch.setattr(questions, "RETIRED", {"Q002": "decided in doc/specs/x.md"})
+    assert questions.reference_problems("see Q001 and Q002", {"Q001"}) == []
+    questions.check_retired({"Q002": "decided in doc/specs/x.md"})
+    for why in ("decided in x", "decided", "decided in doc/x.md and more"):
+        with pytest.raises(ValueError):
+            questions.check_retired({"Q002": why})
+
+
+def test_main_fails_when_the_decision_does_not_name_the_question(tree, monkeypatch):
+    monkeypatch.setattr(questions, "RETIRED", {"Q002": "decided in doc/specs/x.md"})
+    assert questions.main(["--check"]) == 1          # no such file
+    (tree / "doc" / "specs").mkdir(parents=True)
+    (tree / "doc" / "specs" / "x.md").write_text("A decision about nothing.\n")
+    assert questions.main(["--check"]) == 1          # does not name Q002
+    (tree / "doc" / "specs" / "x.md").write_text("Decision (Q002): accept what fits.\n")
+    assert questions.main(["--check"]) == 0
+    (tree / "evidence" / "isp" / "E001-x.md").write_text("see Q002")
+    assert questions.main(["--check"]) == 0          # a decided question is still cited
+
+
 def test_the_view_lists_every_question_by_unit(tmp_path):
     p = record(tmp_path)
     text = questions.render([questions.parse(p)])

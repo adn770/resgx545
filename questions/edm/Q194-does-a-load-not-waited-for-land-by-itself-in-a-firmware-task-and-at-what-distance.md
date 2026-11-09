@@ -23,3 +23,6 @@ To settle it: the same task with the number of instructions between the loads an
 verifier accepts, loads from the first and the second page base, and a `wdf` before the stores as
 the control. Until then the backend keeps the `wdf` ([infer]: the hardware may make no promise
 either way).
+
+Noted 2026-11-09: near duplicate of Q146, not merged (both ask when a load that is not waited for
+lands (E517); Q194 adds the firmware task). A merge or a fold decides which text survives.

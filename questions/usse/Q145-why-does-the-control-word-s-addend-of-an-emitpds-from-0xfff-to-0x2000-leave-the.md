@@ -18,3 +18,7 @@ What is open: what the addend is (an offset the PDS adds to an address, [infer])
 those run, what the 0x400 bit of the stored dword marks (it was also read at the addend 0x10 once),
 and whether the 0x800 and 0x10 readings repeat. To settle it: the addends 0x7FF to 0x801, 0x1FFF to
 0x2001, 0x3FFF; a PDS program that stores more than one input word (Q128).
+
+Noted 2026-11-09: near duplicate of Q128, not merged (Q128's question includes what the control
+word's addend of an emitpds does (E520), which is Q145's). A merge or a fold decides which text
+survives.

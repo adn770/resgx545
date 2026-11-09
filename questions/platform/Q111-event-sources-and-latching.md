@@ -53,3 +53,15 @@ stored status word), the events whose pulses are under a sample (bits 6, 9, 20 o
 events of a transfer other than the fill's, an out-of-memory overflow with the DPM bits in the
 larger jobs, and what a write to CR_EVENT_HOST_CLEAR clears (moved to Q166: it needs a kernel
 change). Status: narrowed.
+
+Offline reading of the timelines, 2026-11-09 (the dataset's `events-timelines.txt`, which lists
+the first-rise order of the bits per job; an analysis of existing data, not a new measurement). In
+the 42 non-empty orders of the file the order of the bits of one job kind is not the same from job
+to job: a 64 x 64 triangle at the 1.22 us sampling shows 26 18 14 31 (twice), 14 31, 26 0 18 14 31
+and 26 14 31 0 18, and the partial render's jobs 26 18 13 0 12, 1 0 18 13 14 31 26, 18 14 31 0 26
+and 26 1 0 18 5 13 14 31. What does repeat is that bit 14 (SW_EVENT) is followed at once by bit 31
+(MASTER_INTERRUPT) in every order that holds either. The orders are the order of first sampling at
+1 to 5 us, so bits that rise within one sample (above: bits 6, 9 and 20 of a triangle) have no
+order here, and a bit the firmware acknowledges within a sample can be missed. The within-job
+order Q111 asks for is therefore not given by the timelines; the arrival order at the EDM (Q033's
+event log) is the measurement that would give it.

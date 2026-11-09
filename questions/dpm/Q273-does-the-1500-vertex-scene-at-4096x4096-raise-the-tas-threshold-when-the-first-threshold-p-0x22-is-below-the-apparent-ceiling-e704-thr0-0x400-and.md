@@ -31,3 +31,18 @@ interpreted. Then 1500 vertices at P = 0x3e0, 0x400, 0x410 and 0x420 (prediction
 reading frozen first: raise below 0x3e0 + a margin, none at and above). Then, at 0x422, the counts
 1380, 1410, 1440, 1470, 1491 and 1497 (all whole triangles) with the control block and the global
 list's count read after each. Pages above 0x422 only if a way is found that supplies them.
+
+Narrowed 2026-11-09 by source, not by a measurement. The first clause is answered for the module
+that ran. In the kernel fork `sgx_render_pb_pages()` returns the default 0x422 for a `want` below
+0x23 or above 0x422 (`sgx_render.c`; its KUnit asserts that 0x423 gives 0x422, 0x22 gives 0x422
+and 0x23 gives 0x23); the knob `render_pb_pages` is an unclamped `debugfs_create_x32` read back as
+written and clamped where it is used (`sgxfive_render.c`, `sgxfive_drv.c`). So E704's eight jobs
+at P = 0x422 to 0x500 are one condition and seven repeats, as the record feared, the threshold
+0x400 being 0x422 - 0x22, and a read-back of the knob after a write above 0x422 shows the value
+written and not the value used. The knob's effect at its low end is separately shown (E705:
+overflow at P = 0x28 and 0x30 follows P - 0x22). Read from the working tree of the fork's `sgx545`
+branch; the commit that added the clamp (reported as f5bd8b434ad5a, 2026-10-22) and that no later
+commit changed it were not rechecked here, and E704's installed module was not compared with this
+tree. What stays open is what the first clause never tested: whether a raise happens at this scene
+when the first threshold is below 0x3e0 (P below 0x402), which would read the exception as a
+ceiling, and the part of dword 36.

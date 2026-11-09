@@ -63,3 +63,9 @@ its parameter buffer were not run (the stage that would have run the first, Q2, 
 the open part is as before for them: the order and positions of the status bits in the word the
 hardware hands the PDS for a job, which events set input bits 8 and 19, and what bits 24 and 25
 mean (Q157 and Q153).
+
+Premise noted 2026-11-09 (from reading `asm/fwtask/events_m.s`, not a measurement). E538's stubs
+keep, per slot, a hit flag and the last pa0, pa1 and pa2, not a count or a history: a second hit
+in a slot overwrites the first. The kick's "pa1 bits 8 and 14 not set" is therefore for the last
+non-tick hit of slot 0 in each of the 3 runs; a log that keeps every event in arrival order is
+what would show whether a kick or a job delivers more than one.

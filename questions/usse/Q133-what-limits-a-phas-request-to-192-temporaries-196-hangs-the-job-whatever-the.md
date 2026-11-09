@@ -37,3 +37,6 @@ instances in flight), the request between 192 and 196 (the field counts in fours
 encodable), whether the microkernel's tasks request the same, and TRC 32 and above in a firmware
 task. To settle it: the limit against the number of instances (a smaller target, a render with
 fewer pixels) and the firmware tasks with the hazard word (phase 12's tasks).
+
+Noted 2026-11-09: near duplicate of Q144, not merged (both ask what bounds a phas request and what
+a request above 256 allocates (E519)). A merge or a fold decides which text survives.

@@ -5,7 +5,8 @@ unit = "transfer"
 kind = "hw"
 value = "medium"
 phase = 4
-evidence = ["E021", "E024", "E317", "E318", "E319", "E320", "E354", "E355", "E357", "E444"]
+evidence = ["E021", "E024", "E317", "E318", "E319", "E320", "E354", "E355", "E357", "E444",
+            "E203", "E313", "E362", "E363", "E395", "E457", "E476", "E573", "E631", "E722", "E729"]
 terms = ["CR_BIF_FAULT", "CR_BIF_INT_STAT", "misc_info"]
 +++
 
@@ -59,3 +60,32 @@ after the last.
 
 Folded in 11.21: Q028 is retired into this question, which is not an answer to it. Q111 holds the
 other event sources and what sets each status bit.
+
+Requestor table, 2026-11-09 (a compilation of the words the records already hold, not a new
+measurement; `FAULT_REQ` is bits 15:0 and `FAULT_TYPE` bits 18:16, glossary G0772 and G0773). The
+word is `CR_BIF_INT_STAT` at the fault, type is bits 18:16, req the bit set in 15:0:
+
+| word | type | req bit | what faulted | record |
+|---|---|---|---|---|
+| 0x80020 | 0 | 5 | a transfer's pixel write to a read-only page | E021, E024 |
+| 0x90020 | 1 | 5 | a transfer job (3 of E024's 4 faults; which was which is in E024) | E024 |
+| 0x90002 | 1 | 1 | a texture fetch past the probe's scratch [infer] | E722 |
+| 0x90004 | 1 | 2 | a render's access past the end of the TA data | E203, E313, E729 |
+| 0x90008 | 1 | 3 | the TA's read of an unmapped stream page | E317, E318, E444 |
+| 0x80400 | 0 | 10 | the EDM's write to a read-only page | E319, E362, E457 |
+| 0x90400 | 1 | 10 | buffers 6 to 11 left out; a partial owner closed unkept | E457, E631 |
+| 0xd0400 | 5 | 10 | a background program's fetch at a low address | E363 |
+| 0x91000 | 1 | 12 | buffer 0 (0x30000000) left out; a placed program's `lapc` | E573, E476 |
+| 0xd1000 | 5 | 12 | every buffer id left out (0xffff) | E457 |
+| 0x92000 | 1 | 13 | a PDS program's fetch in the pixel PDS heap | E363 |
+| 0xd2000 | 5 | 13 | PDS store faults | E395 |
+
+Bits seen in 15:0 are 1, 2, 3, 5, 10, 12 and 13; not seen are 0, 4, 6 to 9, 11, 14 and 15. Type 0
+appears with a write to a read-only page and type 1 with an unmapped page [infer]; type 5 (bits 18
+and 16) appeared with a fetch of the background program at a low address, a PDS store, and the
+case where every buffer id was left out. Bit 19 is set in every word and when idle. The words name
+the requestor of the faulting access, not a list or a context; the table does not say which bit a
+fault of the 3D's own fetches or of the ZLS would set, since none has faulted. The rows marked
+[infer] carry the reading of the record's author, not a separate test of the bit. The question
+stays open: bits 16 and 18 beyond the types, the unseen requestors, and what clears a latched
+fault.

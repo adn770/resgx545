@@ -28,3 +28,7 @@ are for beyond the window of E520 (0x100 started the program; the PDS uses the a
 it: an emitted program that stores more than one input word (not 2 to 4 dwords: E144; 5 or more, or
 one store per word) and the other PDS registers, with s0 varied bit by bit and a program placed
 where page 0xd2000 is mapped; for the EDM's own use of the operands, phase 12's firmware.
+
+Noted 2026-11-09: near duplicate of Q145, not merged (Q128's question includes what the control
+word's addend of an emitpds does (E520), which is Q145's). A merge or a fold decides which text
+survives.

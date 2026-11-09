@@ -28,3 +28,13 @@ reading of bit 9 [infer].
 To settle it: on the laptop, the double emit followed by jobs that write a different colour each,
 both targets read back, so that each stored tile names the job it came from; the second emit aimed
 at a separate buffer.
+
+Scope, corrected 2026-11-09. This question is the double emit and sideband bit 9 only, as above.
+It is not "which tile an end-of-tile task names": the 1813 refusals that E620 and the transfer
+model (`sgx-pipe` `xfer`) filed under this id are 1534 sweeps of the end-of-tile task's U1 x
+field (511) and y field (1023) on the fill, plus 279 pokes of the pixel-event program's data
+words (the figure follows from E620's 1813; the 511 and 1023 are the scenes of
+`scene-vectors/transfer/pds/end-of-tile`). None emits twice or varies bit 9. Those belong to
+Q289. The model's refusal sites and the scenes' `expect.refuse` lists still carry Q074 until
+they are relabelled; the double emit and bit 9 are untouched by them and still need their laptop
+run.

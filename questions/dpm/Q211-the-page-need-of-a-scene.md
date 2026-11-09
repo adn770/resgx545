@@ -42,3 +42,10 @@ not made: the tool's -n 4 is four renders, one triangle each, so the two frozen 
 dependence. Open: the need of a scene of 2 to 4
 triangles (a tool option that puts several triangles in one render), the need as a function of
 the macrotiles filled, k and the spacing.
+
+Premise noted 2026-11-09. "A tool option that puts several triangles in one render" exists:
+`--vertices N` (3 to 1500, whole triangles) draws copies of the triangle in one render (E630's
+scenes), and `--geometry N` submits a render as geometry only so that the next render closes the
+scene (`userspace/libsgxfive/README.md`, `tools/sgxfive-test.c`). E705 used `-n 4` without
+`--geometry`, which is four renders, as its record says; a two-triangle scene that is one render
+is run with `--geometry` (E627's two-triangle jobs used it).

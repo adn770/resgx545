@@ -18,3 +18,6 @@ pixels read other values, leftovers or other markers), and what an allocation ot
 and 64 does. To settle it: the same probe with every instance writing a different marker (pa0 or a
 number from the instance) past its allocation and each instance reading its own and its
 neighbours'.
+
+Noted 2026-11-09: near duplicate of Q147, not merged (both ask where a write to a register past
+the task's allocation lands (E486)). A merge or a fold decides which text survives.

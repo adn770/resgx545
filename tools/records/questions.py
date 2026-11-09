@@ -30,8 +30,11 @@ When a question is answered, its file is removed in the commit that adds the evi
 answering it, and its id is retired in RETIRED ("answered by E<nnn>"), never to be given
 again. A question folded into another (its hardware open part moved into that question's text,
 its evidence into that question's list) is retired as "folded into Q<nnn>": a fold is not an
-answer. Specs, evidence records and glossary terms cite a question as Q<nnn>; a retired one may
-not be cited, its answer or the question it was folded into is. doc/open_questions.md is
+answer. A question closed by a decision and not by a measurement is retired as "decided in
+<doc>.md", a document that names it and states the decision: an answer is not claimed, and the id
+stays citable as the name of the decision. Specs, evidence records and glossary terms cite a
+question as Q<nnn>; an answered or folded one may not be cited, its answer or the question it was
+folded into is. doc/open_questions.md is
 generated from the files: the work queue (hw), then the parked fw and kernel questions.
 
     python3 tools/records/questions.py [--check]
@@ -55,7 +58,9 @@ KEYS_HW = KEYS[:4] + ["value"] + KEYS[4:]       # an hw question may carry a val
 KINDS = ("hw", "fw", "kernel")
 VALUES = ("high", "medium", "low")
 PARKED = {"fw": "closed firmware", "kernel": "kernel"}
-RETIRED: dict[str, str] = {     # id -> "answered by E<nnn>" or "folded into Q<nnn>"
+# id -> "answered by E<nnn>", "folded into Q<nnn>" or "decided in <doc>.md" (a decision, not
+# a measurement: the id stays citable and the named document states the decision)
+RETIRED: dict[str, str] = {
     "Q015": "answered by E413", "Q018": "answered by E373", "Q022": "answered by E392",
     "Q035": "answered by E407", "Q056": "answered by E366", "Q077": "answered by E379",
     "Q079": "answered by E367", "Q097": "answered by E380", "Q007": "answered by E425",
@@ -64,6 +69,7 @@ RETIRED: dict[str, str] = {     # id -> "answered by E<nnn>" or "folded into Q<n
     "Q067": "folded into Q036", "Q105": "folded into Q036", "Q106": "folded into Q036",
     "Q117": "folded into Q161", "Q102": "folded into Q163", "Q131": "folded into Q197",
     "Q155": "folded into Q152", "Q156": "folded into Q152",
+    "Q094": "decided in doc/specs/3d.md",
 }
 NAME = re.compile(r"Q\d{3}-[a-z0-9]+(-[a-z0-9]+)*\.md")
 REF = re.compile(r"\bQ\d{3}\b")
@@ -136,12 +142,26 @@ def problems(path: pathlib.Path, evidence_ids: set[str], terms: set[str]) -> lis
 
 
 def check_retired(retired: dict[str, str]) -> None:
-    """A retired question names the record that answered it or the question it folded into."""
+    """A retired question names the record that answered it, the question it folded into or
+    the document that states the decision that closed it."""
     for q, why in retired.items():
         if not re.fullmatch(r"Q\d{3}", q) or not re.fullmatch(
-                r"answered by E\d{3}|folded into Q\d{3}", why):
-            raise ValueError(f"{q}: retired as {why!r}, not 'answered by E<nnn>' or "
-                             "'folded into Q<nnn>'")
+                r"answered by E\d{3}|folded into Q\d{3}|decided in [\w./-]+\.md", why):
+            raise ValueError(f"{q}: retired as {why!r}, not 'answered by E<nnn>', "
+                             "'folded into Q<nnn>' or 'decided in <doc>.md'")
+
+
+def decision_problems(retired: dict[str, str], root: pathlib.Path) -> list[str]:
+    """The decisions whose document is absent or does not name the question it closes."""
+    out = []
+    for q, why in retired.items():
+        if why.startswith("decided in "):
+            doc = root / why[len("decided in "):]
+            if not doc.is_file():
+                out.append(f"{q} {why}: no such file")
+            elif q not in doc.read_text(errors="replace"):
+                out.append(f"{q} {why}: the document does not name {q}")
+    return out
 
 
 def fold_problems(retired: dict[str, str], open_ids: set[str]) -> list[str]:
@@ -156,6 +176,8 @@ def reference_problems(text: str, open_ids: set[str]) -> list[str]:
     for q in dict.fromkeys(REF.findall(text)):
         if q in RETIRED and RETIRED[q].startswith("folded into "):
             out.append(f"{q} was {RETIRED[q]}: cite {RETIRED[q][-4:]}")
+        elif q in RETIRED and RETIRED[q].startswith("decided in "):
+            continue
         elif q in RETIRED:
             out.append(f"{q} is answered ({RETIRED[q]}): cite the answer")
         elif q not in open_ids:
@@ -213,7 +235,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"RETIRED: {e}")
         bad += 1
     open_ids = {p.name[:4] for p in files()}
-    for msg in fold_problems(RETIRED, open_ids):
+    for msg in fold_problems(RETIRED, open_ids) + decision_problems(RETIRED, ROOT):
         print(f"RETIRED: {msg}")
         bad += 1
     for d, pat in (("evidence", "*/*.md"), ("glossary", "*/*.toml"), ("doc", "**/*.md")):

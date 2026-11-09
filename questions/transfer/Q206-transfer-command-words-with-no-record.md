@@ -20,7 +20,8 @@ What this question covers is the command's and the tasks' words: the fixed words
 11 and 16 of the command, a set coefficient group (word 17 and above, 3150 scenes), the tag's
 layer count, the render box's extent, the pixel shader's output, a task's code base register and
 the end-of-tile task's U1 bits no record explains. What it does not cover: a PDS program or input
-the simulator does not know is Q207, which tile an end-of-tile task names is Q074, and a job that
+the simulator does not know is Q207, which tile an end-of-tile task names is Q289 (it was
+filed under Q074 until 2026-11-09), and a job that
 may not complete, or an access outside the scene's memory, is Q003 (with Q076). The hangs and
 faults the hardware recorded under refused scenes are not a reason the model uses: it refuses by
 the scene's words alone.

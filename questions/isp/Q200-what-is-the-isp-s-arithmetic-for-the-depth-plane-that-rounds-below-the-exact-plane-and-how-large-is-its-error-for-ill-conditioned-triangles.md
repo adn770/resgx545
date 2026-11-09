@@ -1,6 +1,6 @@
 +++
 id = "Q200"
-question = "what is the ISP's float32 arithmetic for the depth plane (the stored depth is the exact plane at the pixel centre minus 0.39 of 2^-24 on average, bit-reproduced by none of the 18 variants of E606), and how large is its error as a function of the plane's gradient"
+question = "why do the dyadic controls of E731 store one or two ulps below the truncated exact plane, below binade 0, in a region bounded by a diagonal line (dp-ax-b1: the pixels with x + 2y >= 319), and what error of the ISP's depth plane that region does not explain remains as a function of the gradient (its rule is Q288's)"
 unit = "isp"
 kind = "hw"
 value = "medium"
@@ -35,3 +35,21 @@ in b2 no tile admits a single T, so the premise (stored word = trunc(T + A (x + 
 0.5))) fails and no candidate can be refuted there. Class c: 232, 200 and 64 of 384 in total. The
 candidates are not confirmed where the premise holds in x; the rule is not found (Q288). The tile
 corner "60% in main" statistic is not confirmed as a model of the stored words.
+
+Rescoped 2026-11-09 (from the dumps of E731, an analysis and not a new measurement; E731 carries
+the dated correction). The question as first worded asked for the arithmetic of the depth plane
+and its error against the gradient in one. They separate. The gradient's rule is Q288: for a
+non-dyadic gradient the stored words follow one effective gradient word, 0x3923d700 for A =
+1/6400, where nine rules still fit. What stays here is an effect no gradient error can make,
+because a dyadic gradient has none: dp-ax-b1 (A = 2^-13, B = 0, every exact value representable
+in float32) stores 9216 of 32768 pixels one ulp below the truncation of the exact plane, exactly
+those with x + 2y >= 319; dp-ax-b2 and dp-ay-b2 store 7680 one ulp and 1536 two ulps below, in
+the same counts per tile row (0, 0, 256, 768, 1280, 1792, 2304, 2816 in tile rows 0 to 7) and per
+macrotile column (1024 and 8192 in the two columns of 128 pixels), whichever way the gradient
+runs. Binade 0 has none (dp-ax-b0 and dp-ay-b0: 32768 of 32768 exact). The mechanism is
+unexplained. Open: what the diagonal is (a line in pixels, x + 2y, against a 32 x 16 tile grid;
+whether it moves with the target size, the vertices or the depth's binade), what the second ulp
+in b2 depends on, and whether the same region lies under the non-dyadic jobs of b1 and b2 and
+adds to the gradient's error. To settle it: a dyadic ramp at the binades 0 to 3 on targets of
+other sizes and with the triangle's vertices moved, the words compared with the truncated
+exact plane pixel by pixel.
