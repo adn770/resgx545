@@ -109,9 +109,10 @@ fn what_no_record_explains_is_refused_under_the_question_that_covers_it() {
     // the copy's tag with bit 24 set or at 0 reads the source's last texel (E272): Q011
     refused(scene_with(1, r#"{"xfer": {"0": "0x3000000"}}"#, any), &["Q011"]);
     refused(scene_with(1, r#"{"xfer": {"0": "0x0"}}"#, any), &["Q011"]);
-    // which tile an end-of-tile U1 names is not resolvable from the records (E044, E126): Q074
-    refused(fill_with(r#"{"memory": [{"base": "0x2e000000", "at": {"28": "0x800008"}}]}"#, any), &["Q074"]);
-    refused(fill_with(r#"{"memory": [{"base": "0x2e000000", "at": {"25": "0xfe8"}}]}"#, any), &["Q074"]);
+    // which tile an end-of-tile U1 names is not resolvable from the records (E044, E126): the
+    // task's U1 bits no record explains, which Q206 covers (not Q074, the double emit and bit 9)
+    refused(fill_with(r#"{"memory": [{"base": "0x2e000000", "at": {"28": "0x800008"}}]}"#, any), &["Q206"]);
+    refused(fill_with(r#"{"memory": [{"base": "0x2e000000", "at": {"25": "0xfe8"}}]}"#, any), &["Q206"]);
     // the pixel-event program moved by 16 bytes: not the program the records ran (a PDS program)
     refused(fill_with(r#"{"xfer": {"9": "0x2e000050"}}"#, any), &["Q207"]);
     // a tile whose event starts no task: whether the job completes is not known (Q003), not predicted

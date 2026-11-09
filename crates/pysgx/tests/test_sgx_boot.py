@@ -73,14 +73,14 @@ def layout() -> fwload.Layout:
 
 class Refused(Exception):
     """The simulator refused the first form no record measured: init_done's `mov pa2, r0`, a
-    write to pa2 outside the one case measured (pa0 in a fill, E496); pa1 to pa4 are not run
-    (Q098). The boot cannot finish until a record measures the form, so the tests that need a
+    write to pa2 in an EDM task, which no record measured (a fill's pa is E496 and E380;
+    Q098). The boot cannot finish until a record measures the form, so the tests that need a
     finished boot (the CCB commands) are marked xfail(raises=Refused, strict) and begin to fail
     as XPASS, to be unmarked, when the simulator learns it. The tests of what the boot has done
     by the refusal run on the state it stops in."""
 
 
-UNMEASURED = "a write to pa2 (lost in a fill for pa0 only, E496; pa1 to pa4 not run, Q098)"
+UNMEASURED = "a write to pa2 in an EDM task (not measured, Q098)"
 REFUSAL_TASK = "task 0x30000000+0x1c4"        # edm.task.init_done's entry, 0x1c4 in the code heap
 
 

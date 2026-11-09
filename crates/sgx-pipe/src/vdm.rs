@@ -6,7 +6,7 @@ use crate::Outcome;
 use crate::mem::Mem;
 
 /// Open questions that block the unit.
-pub const OPEN: &[&str] = &["Q047", "Q042", "Q092", "Q094", "Q112", "Q163", "Q231"];
+pub const OPEN: &[&str] = &["Q047", "Q042", "Q092", "Q112", "Q163", "Q231"];
 
 /// A state block of the stream: the PDS program that fetches the MTE state, and whether it is the
 /// stream's last (the end of scene).
@@ -26,6 +26,9 @@ pub struct Task {
     pub pds: u32,
     pub data_dwords: u32,
     pub per_task: u32,
+    /// The rows of four dwords each vertex writes (task word 1 bits 31:24): 1 in the library's
+    /// stream, (7 + N) / 4 for the N outputs the tool's `--vtx-coords` declares (2 to 4).
+    pub rows: u32,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -143,11 +146,14 @@ fn read_index(mem: &Mem, w: &[u32; 6]) -> Result<IndexList, Outcome> {
             &["Q042", "Q092"],
         ));
     }
-    // task word 1: output size 1 row (31:24), vertex size 4 (23:22 = 3), bit 7, the data rows
-    if w[5] & 0xffff_ff80 != 0x01c0_0080 {
+    // task word 1: output rows (31:24), vertex size 4 (23:22 = 3), bit 7, the data rows. The rows
+    // are the natural ones, 1 (the library's) or the 2 to 4 the tool writes for N = 1 to 11
+    // outputs; any other value is a forced row (E703), which breaks the job (Q094, by decision)
+    let rows = w[5] >> 24;
+    if w[5] & 0x00ff_ff80 != 0x00c0_0080 || !(1..=4).contains(&rows) {
         return Err(refuse_ids(
             format!(
-                "vertex task word 1 {:#010x}: the output size and vertex size are the library's only (E189, E346)",
+                "vertex task word 1 {:#010x}: the output rows are 1 to 4 and the vertex size the library's only (E189, E346, E546, E703)",
                 w[5]
             ),
             &["Q094"],
@@ -164,6 +170,7 @@ fn read_index(mem: &Mem, w: &[u32; 6]) -> Result<IndexList, Outcome> {
             pds: (w[4] & 0x0fff_ffff) << 4,
             data_dwords: (w[5] & 0x7f) * 4,
             per_task: (w[4] >> 28) + 1,
+            rows,
         },
     })
 }
@@ -245,15 +252,16 @@ fn merge(errs: Vec<Outcome>) -> Outcome {
     Outcome::Unsupported { why: why.join("; "), ids }
 }
 
-/// The vertex numbers of each vertex task of an index list, `output_rows` rows of four dwords
-/// each vertex writes (E546: R * V <= 32 keeps every vertex in the TA's objects; the model refuses
-/// from 33, where some are lost or repeated by a rule no record states).
-pub fn tasks(l: &IndexList, output_rows: u32) -> Result<Vec<Vec<u32>>, Outcome> {
-    let per = l.task.per_task;
-    if output_rows * per > 32 {
+/// The vertex numbers of each vertex task of an index list, each vertex writing `l.task.rows` rows
+/// of four dwords (E546: R * V <= 32 keeps every vertex in the TA's objects; the model refuses
+/// from 33, where some are lost or repeated by a rule no record states, and a limit between 33
+/// and 36 no natural job can place: Q094 is closed by that decision).
+pub fn tasks(l: &IndexList) -> Result<Vec<Vec<u32>>, Outcome> {
+    let (per, rows) = (l.task.per_task, l.task.rows);
+    if rows * per > 32 {
         return Err(refuse_ids(
             format!(
-                "a vertex task of {per} vertices of {output_rows} output rows: more than 32 words of rows (E546)"
+                "a vertex task of {per} vertices of {rows} output rows: more than 32 words of rows (E546, Q094 decision)"
             ),
             &["Q094"],
         ));
@@ -312,33 +320,53 @@ mod tests {
         assert_eq!(b[3], Block::Terminate);
     }
 
+    fn list(n: u16, per_task: u32, rows: u32) -> IndexList {
+        IndexList { indices: (0..n).collect(), task: Task { pds: 0, data_dwords: 8, per_task, rows } }
+    }
+
     #[test]
     fn a_task_holds_at_most_the_fields_vertices_and_the_tasks_follow_the_index_list() {
-        let task = Task { pds: 0, data_dwords: 8, per_task: 16 };
-        let l = |n: u16| IndexList { indices: (0..n).collect(), task: task.clone() };
-        assert_eq!(tasks(&l(15), 1).unwrap(), vec![(0..15).collect::<Vec<u32>>()]);
-        let t = tasks(&l(40), 1).unwrap();
+        assert_eq!(tasks(&list(15, 16, 1)).unwrap(), vec![(0..15).collect::<Vec<u32>>()]);
+        let t = tasks(&list(40, 16, 1)).unwrap();
         assert_eq!(t.iter().map(Vec::len).collect::<Vec<_>>(), [16, 16, 8]);
         assert_eq!(t[2][0], 32);
     }
 
     #[test]
     fn a_task_of_too_many_output_words_is_refused_not_split_the_way_the_hardware_does() {
-        // E546: with R output rows and V vertices a task keeps every vertex when R * V <= 32 and
-        // loses or repeats some from 36 up (33 depends on the program): refuse from 33
-        let task = Task { pds: 0, data_dwords: 8, per_task: 16 };
-        let l = IndexList { indices: (0..40).collect(), task };
-        assert!(tasks(&l, 2).is_ok());
-        // 33 words (R = 3, V = 11) depends on the program in the record: refused too
-        let at33 =
-            IndexList { indices: (0..40).collect(), task: Task { pds: 0, data_dwords: 8, per_task: 11 } };
-        assert!(matches!(tasks(&at33, 3), Err(Outcome::Unsupported { .. })));
-        assert!(
-            tasks(&IndexList { task: Task { per_task: 10, ..at33.task.clone() }, ..at33.clone() }, 3).is_ok()
-        );
-        match tasks(&l, 3) {
-            Err(Outcome::Unsupported { ids, .. }) => assert!(ids.iter().any(|i| i == "Q094")),
-            r => panic!("{r:?}"),
+        // Q094, closed by decision on E546's measurements: with R output rows and V vertices a
+        // task is accepted when R * V <= 32 and refused from 33 up (33 depends on the program,
+        // 36 and more break the job)
+        for (rows, per_task) in [(1, 16), (2, 16), (3, 10), (4, 8), (3, 1)] {
+            assert!(tasks(&list(40, per_task, rows)).is_ok(), "R {rows} V {per_task}");
+        }
+        for (rows, per_task) in [(3, 11), (2, 17), (3, 12), (4, 9), (4, 11), (3, 16)] {
+            match tasks(&list(40, per_task, rows)) {
+                Err(Outcome::Unsupported { ids, why }) => {
+                    assert_eq!(ids, ["Q094"], "R {rows} V {per_task}: {why}")
+                }
+                r => panic!("R {rows} V {per_task}: {r:?}"),
+            }
+        }
+    }
+
+    #[test]
+    fn the_output_rows_of_the_task_word_are_the_natural_ones_and_other_values_are_forced_rows() {
+        // task word 1 of the library is 0x01c00082 (1 row, vertex size 4, 2 data rows); the tool
+        // writes (7 + N) / 4 rows for N outputs, 2 to 4 for the N of --vtx-coords 1 to 11
+        let Block::Index(l) = &poked(7, 0x01c0_0082).unwrap()[1] else { panic!() };
+        assert_eq!((l.task.rows, l.task.data_dwords, l.task.per_task), (1, 8, 16));
+        for rows in 2..=4u32 {
+            let Block::Index(l) = &poked(7, rows << 24 | 0x00c0_0082).unwrap()[1] else { panic!() };
+            assert_eq!(l.task.rows, rows);
+        }
+        // no row, or more than the tool writes for any N (forced rows, E703): refused under Q094
+        for rows in [0u32, 5, 8, 0x20, 0xff] {
+            refused(poked(7, rows << 24 | 0x00c0_0082), "Q094");
+        }
+        // the vertex size field and the other bits of the word are still the library's
+        for w in [0x02c0_0182, 0x0240_0082, 0x0280_0082, 0x02c0_0002] {
+            refused(poked(7, w), "Q094");
         }
     }
 
@@ -447,7 +475,7 @@ mod tests {
         let idx = mem.read32(base + 12).unwrap(); // index base
         mem.write32(idx, 0x0000_0000).unwrap(); // indices 0, 0
         let Block::Index(l) = &parse(&mem, base).unwrap()[1] else { panic!() };
-        match tasks(l, 1) {
+        match tasks(l) {
             Err(Outcome::Unsupported { ids, .. }) => assert_eq!(ids, ["Q112"]),
             r => panic!("{r:?}"),
         }

@@ -90,8 +90,8 @@ fn a_pds_program_that_is_not_a_template_the_records_ran_refuses_under_q207() {
 #[test]
 fn the_tile_masks_that_build_u1_from_ir0_are_pinned() {
     // data dwords 9 and 13 (page dwords 25 and 29) with bit 4 of the x mask cleared: E620's fact
-    refused(with(0, &pds_at(25, "0xfe8")), &["Q074"]);
-    refused(with(0, &pds_at(29, "0x3fe000")), &["Q074"]);
+    refused(with(0, &pds_at(25, "0xfe8")), &["Q206"]);
+    refused(with(0, &pds_at(29, "0x3fe000")), &["Q206"]);
 }
 
 #[test]

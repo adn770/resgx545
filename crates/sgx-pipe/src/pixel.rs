@@ -432,7 +432,7 @@ pub fn image(sc: &Scene, out: &ta::Written) -> R<Image> {
         return Err(open("the pixel-event program's code is not the template's", &["Q206"]));
     }
     if pw[9] != 0xff8 || pw[13] != 0x3f_f000 {
-        return Err(open("the pixel-event program's tile masks are not the template's", &["Q074"]));
+        return Err(open("the pixel-event program's tile masks are not the template's", &["Q206"]));
     }
     let (eot, eor) = (doutu(UP_EOT, 4), doutu(UP_EOR, 1));
     let pds = |ir: [u32; 2]| Pds {
@@ -463,7 +463,7 @@ pub fn image(sc: &Scene, out: &ta::Written) -> R<Image> {
             {
                 return Err(open(
                     format!("the end-of-tile task's U1 {u1:#x} is not the template's for tile ({tx}, {ty})"),
-                    &["Q074"],
+                    &["Q206"],
                 ));
             }
             let mut m = Machine::default();

@@ -417,6 +417,12 @@ pub struct Machine {
     /// this is (offset mod 0x80000) / 8 (E476, E492: 10 of 10 placements fit; [infer] as a rule).
     /// pclink and the absolute `ba` count from the code base, `br` from the instruction.
     pub code_index: u32,
+    /// Whether the task is one of the firmware's EDM tasks (Sgx::run_task) and not a fill's: its
+    /// pa is not the fill's, so a write to pa1 and up stays refused there (Q098, E537).
+    pub edm_task: bool,
+    /// Set while a `mov` writes its destination: E380 measured `mov` to pa1 to pa7 in a fill,
+    /// and no other instruction (E496 did ima32 to pa0 only).
+    pub mov_dest: bool,
 }
 
 /// What the current operation read and writes, for Machine::bounds.
@@ -774,6 +780,8 @@ impl Default for Machine {
             phase: None,
             vertex_task: false,
             code_index: 0,
+            edm_task: false,
+            mov_dest: false,
         }
     }
 }
@@ -2200,7 +2208,10 @@ impl Machine {
             "mov" => {
                 let v = self.src(insn.get("src1").unwrap(), 6)?;
                 self.now.out = Out::Move;
-                self.write(insn, v)?;
+                self.mov_dest = true;
+                let w = self.write(insn, v);
+                self.mov_dest = false;
+                w?;
                 None
             }
             "fsc" => {
@@ -4086,12 +4097,18 @@ impl Machine {
                 self.mark("o", r);
             }
             // hardware (E496, Q098; usse-pa-dest, 3 of 3 jobs, and E380): in a fill a write to
-            // pa0 by ima32 or mov is lost, pa0 reading what it read before; pa1 to pa4 were not
-            // run
+            // pa0 by ima32 or mov is lost, pa0 reading what it read before; E380 (30 fill jobs):
+            // a mov to pa1 to pa7 is lost the same way. ima32 to pa1 and up was not run, and an
+            // EDM task's pa is not measured (Q098, E537)
+            2 if self.edm_task => {
+                return Err(why(format!("a write to pa{r} in an EDM task (not measured, Q098)")));
+            }
             2 if r == 0 => {}
+            2 if self.mov_dest && r < 8 => {}
             2 => {
                 return Err(why(format!(
-                    "a write to pa{r} (lost in a fill for pa0 only, E496; pa1 to pa4 not run, Q098)"
+                    "a write to pa{r} (lost in a fill for pa0 by ima32 or mov, E496, and for pa1 to pa7 \
+                     by mov, E380; other forms not run, Q098)"
                 )));
             }
             4 => {
@@ -7782,9 +7799,32 @@ mod after_11_27 {
         assert!(refused(&r), "{r:?}");
         let (_, r) = with(&set(3, 7, 100), &["mov pa0, r1", "mov r10, pa0"]);
         assert!(refused(&r), "{r:?}");
-        // pa1 to pa4 were not run: a write stops
-        let (_, r) = with(&set(3, 7, 100), &["mov pa1, r1"]);
-        assert!(refused(&r), "{r:?}");
+        // E380 (30 fill jobs): a mov to pa1 to pa7 is lost the same way, the pa left as the job
+        // had it (here untouched, 0 in a fresh machine)
+        for n in 1..8 {
+            let (m, r) = with(&set(3, 7, 100), &[&format!("mov pa{n}, r1")]);
+            assert_eq!((r, m.pa[n]), (Ok(()), 0), "mov pa{n}");
+        }
+        // ima32 to pa1 and up is not measured (E496 did pa0 only): it stops, under Q098
+        let (_, r) = with(&set(3, 7, 100), &["ima32.u pa1, r1, r2, r3"]);
+        assert!(
+            matches!(&r, Err(Error::Unsupported { why, .. }) if why.contains("Q098") && why.contains("pa1"))
+        );
+        // an EDM task's pa is not the fill's (Q098, E537): any pa1 and up write there stops, mov
+        // included
+        for n in [0, 1, 2, 7] {
+            let words: Vec<u64> = ["mov r1, #5".to_string(), format!("mov pa{n}, r1"), "nop.end".to_string()]
+                .iter()
+                .map(|t| usse_isa::encode(t, Core::Sgx545).unwrap())
+                .collect();
+            let mut m = Machine { edm_task: true, ..Machine::default() };
+            let mut mem = Memory { base: 0x1000, words: vec![0; 64] };
+            let r = m.run(&Program::new(&words, Core::Sgx545), &mut mem, 1000);
+            assert!(
+                matches!(&r, Err(Error::Unsupported { why, .. }) if why.contains("EDM") && why.contains("Q098")),
+                "{r:?}"
+            );
+        }
         // the other destinations of E496 are written: r0, sa0, o0, i1 and i2
         for d in ["r9", "r30", "sa0", "i1", "i2"] {
             let (m, r) =

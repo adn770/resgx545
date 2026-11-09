@@ -259,7 +259,7 @@ impl Sgx {
                 p
             }
         };
-        let mut m = Machine { temps, pc, pa: *pa, sa: self.st.sa, ..Machine::default() };
+        let mut m = Machine { temps, pc, pa: *pa, sa: self.st.sa, edm_task: true, ..Machine::default() };
         m.written.pa = written;
         m.written.sa = self.st.sa_written;
         let mut bus = Unit { st: &mut self.st, bank: Bank::Secondary, pa: [0; 128], written: 0 };

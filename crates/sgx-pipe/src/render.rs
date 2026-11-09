@@ -155,9 +155,21 @@ pub fn run(sc: &Scene) -> Result<SceneResult, Outcome> {
     if list.indices.len() % 3 != 0 {
         return Err(refuse(format!("{} indices: triangles of three only", list.indices.len()), &["Q112"]));
     }
+    // the output rows the vertex task declares are natural when they hold the state's vertex size
+    // (the tool writes (7 + N) / 4 for N outputs): the library's OUTSEL, the only one the state
+    // accepts above, is one row, so another R is a forced row (E703, Q094)
+    if list.task.rows != 1 {
+        return Err(refuse(
+            format!(
+                "a vertex task of {} output rows with the library's OUTSEL of one: a forced row breaks the job (E703)",
+                list.task.rows
+            ),
+            &["Q094"],
+        ));
+    }
     let total = list.indices.len() as u32;
     let mut clip = vec![];
-    for task in vdm::tasks(list, 1)? {
+    for task in vdm::tasks(list)? {
         let v = vtx::vertex_outputs(
             &mem,
             list.task.pds,
@@ -245,6 +257,27 @@ mod tests {
         seg.dwords.as_mut().unwrap()[i] = 0x427f_0000;
         let r = run(&sc).unwrap();
         assert!(matches!(compare(&expect_of("tb-w128-k0-16-16"), &r), Verdict::Mismatch(_)));
+    }
+
+    #[test]
+    fn output_rows_that_do_not_match_the_librarys_vertex_size_are_refused_as_forced_rows_under_q094() {
+        // task word 1 is word 7 of the stream; 2 rows is a natural value for the tool's vertex
+        // programs with outputs, but the library's OUTSEL (4 dwords) declares 1: a forced row
+        let id = "tb-w128-k0-16-16";
+        let mut sc = Scene::from_fixture(FIXTURE, id);
+        let at = sc.cmd[CMD_VDM] + 4 * 7;
+        let seg = sc
+            .memory
+            .iter_mut()
+            .find(|s| s.base <= at && at < s.base + 4 * s.dwords.as_ref().unwrap().len() as u32);
+        let seg = seg.unwrap();
+        let k = ((at - seg.base) / 4) as usize;
+        assert_eq!(seg.dwords.as_ref().unwrap()[k] >> 24, 1);
+        seg.dwords.as_mut().unwrap()[k] = 0x02c0_0082;
+        match run(&sc) {
+            Err(Outcome::Unsupported { ids, why }) => assert_eq!(ids, ["Q094"], "{why}"),
+            r => panic!("{r:?}"),
+        }
     }
 
     #[test]

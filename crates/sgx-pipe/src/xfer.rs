@@ -15,8 +15,8 @@
 //!
 //! Everything a record does not explain refuses, naming a question that depends only on the
 //! scene's words, never on what the hardware did: a command word or task word with no record
-//! (Q206), a PDS program or input the simulator does not know (Q207), the end-of-tile task's
-//! tile naming (Q074), the iterator word (Q021), background object words (Q066), a copy's tag
+//! (Q206, the end-of-tile task's tile naming among them), a PDS program or input the simulator
+//! does not know (Q207), the iterator word (Q021), background object words (Q066), a copy's tag
 //! (Q011), an access to memory the scene does not map or a job that cannot complete (Q076 and
 //! Q003).
 //!
@@ -417,7 +417,8 @@ fn ir0_of(tile: (u32, u32)) -> u32 {
 /// The tile fields of the end-of-tile task's U1 that the pixel-event program builds from ir0 with
 /// the masks 0xff8 and 0x3ff000 of its data (dwords 9 and 13) after `ir0 << 3`: x in bits 11:3
 /// (2 for the second 32-pixel column, the fact of E620 and E130's unit) and y in bits 21:12. What
-/// tile another value names is not in the records (E044, E126): such a U1 refuses (Q074).
+/// tile another value names is not in the records (E044, E126): such a U1 refuses (Q206, the
+/// end-of-tile task's U1 bits no record explains, narrowed by Q289; the vectors list Q206).
 fn u1_tile_fields(tile: (u32, u32)) -> u32 {
     let ir0 = ir0_of(tile);
     (ir0 << 3 & 0xff8) | (ir0 << 3 & 0x3f_f000)
@@ -551,7 +552,7 @@ fn run_inner(sc: &Scene) -> R<SceneResult> {
         // the masks that build U1's tile fields from ir0 (data dwords 9 and 13): which tile a U1
         // names is not in the records (E044, E126)
         if w[9] != 0xff8 || w[13] != 0x3f_f000 {
-            return Err(refuse("the pixel-event program's tile masks are not the template's", &["Q074"]));
+            return Err(refuse("the pixel-event program's tile masks are not the template's", &["Q206"]));
         }
     }
     for (n, &(tx, ty)) in tiles.iter().enumerate() {
@@ -612,7 +613,7 @@ impl Job {
         if u1 & 0x3f_fff8 != u1_tile_fields(tile) {
             return Err(refuse(
                 format!("the end-of-tile task's U1 {u1:#x} names a tile other than the loop's"),
-                &["Q074"],
+                &["Q206"],
             ));
         }
         // the last tile (ir1 bit 2) ends the render: without bit 22 in its U1 no record says
