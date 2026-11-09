@@ -69,7 +69,8 @@ def test_known_um_table_is_consistent():
 
 def captured_ukernel() -> pathlib.Path | None:
     """The ukernel as captured from a running driver: the private data repo's
-    firmware/images/images/00_ukernel.bin, else the notebook's harness copy."""
+    firmware/images/images/00_ukernel.bin, else the harness copy of the template
+    (the retired notebook's name for it)."""
     sys.path.insert(0, str(HERE.parent / "records"))
     try:
         import datasets

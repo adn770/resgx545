@@ -153,7 +153,7 @@ def canon(prefix: str, off: int) -> tuple[str, int]:
     return prefix, off
 
 
-# the evidence record of the dataflow (resgx545's id is put in by the build kit)
+# the evidence record of the dataflow (its id here; the retired rewrite kit used to put it in)
 EVIDENCE = "E0" "13"
 
 

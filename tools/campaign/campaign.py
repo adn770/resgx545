@@ -557,7 +557,7 @@ def _run_table(path: pathlib.Path, target, data: pathlib.Path, ds_dir: pathlib.P
     if absent:
         raise CampaignError(f"{path.name}: open names no probe of the table: "
                             f"{', '.join(absent)}")
-    # the open probes (kept, never run by the notebook) run last
+    # the open probes (kept, never run by the campaign itself) run last
     table = [p for p in table if p.name not in opened] + [p for p in table if p.name in opened]
     unit, feature = _check(path, root, table)
     check_needs(target, fields.get("needs", []), path.name)
