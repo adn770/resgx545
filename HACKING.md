@@ -274,6 +274,12 @@ pushed before `tools/clean-room/guard.py --history` has run over every ref.
   checks a series on the build host, `tools/fork/recheck.sh BASE TIP` sends and runs it and
   records the tested tip, `tools/fork/fork-land.sh HOME BRANCH BASE TIP` moves the branch only
   to that tested tip, after the guard.
+- On the laptop (no docker) the series check runs in its build root:
+  `FORK_CHECK_RUNNER=chroot FORK_CHECK_WORK=$HOME/src/linux-sgx-checkout-check
+  tools/fork/recheck.sh BASE TIP`, the work directory being the host's existing, already built
+  one (`CHECK_RUNNER` and `CHECK_WORK` for `fork-check.sh` itself). `FORK_CHECK_RUNNER` defaults
+  to `docker`. The chroot runner without `FORK_CHECK_WORK` is refused before anything is sent:
+  the default directory would start a from-scratch kernel build on the Atom.
 - Commit style is the one under Commits. The test-cycle scripts and their settings are in
   `tools/bringup/` (`local.env.example`).
 

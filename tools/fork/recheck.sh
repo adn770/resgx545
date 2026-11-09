@@ -12,7 +12,8 @@
 #   FORK_CHECK_SSH      the ssh command (default: ssh -o BatchMode=yes HOST); a test sets sh -c
 #   FORK_CHECK_CLONE    the host's clone, relative to its $HOME (required)
 #   FORK_CHECK_RUNNER   docker (default) or chroot (the laptop's build root)
-#   FORK_CHECK_WORK     the host's build and log directory (default: the script's own)
+#   FORK_CHECK_WORK     the host's build and log directory (default: the script's own);
+#                       required with chroot, which is refused without it
 #   FORK_CHECK_SCRIPT   the check script to send (default: fork-check.sh beside this one)
 #   FORK_PASS_FILE      where the tested tip is written (default: <git dir>/fork-check.pass)
 #   FORK_CHECK_LOG      the log file (default: <git dir>/fork-check.log)
@@ -34,6 +35,12 @@ LOG=${FORK_CHECK_LOG:-$GITDIR/fork-check.log}
 SCRIPT=${FORK_CHECK_SCRIPT:-$HERE/fork-check.sh}
 SSH=${FORK_CHECK_SSH:-ssh -o BatchMode=yes ${FORK_CHECK_HOST:-${SGX_BUILD_HOST:-sgx-build}}}
 RUNNER=${FORK_CHECK_RUNNER:-docker}
+if [ "$RUNNER" = chroot ] && [ -z "${FORK_CHECK_WORK:-}" ]; then
+    echo "recheck.sh: FORK_CHECK_RUNNER=chroot needs FORK_CHECK_WORK (an existing build" \
+        "directory on the host, e.g. \$HOME/src/linux-sgx-checkout-check): without it the" \
+        "laptop would start a from-scratch kernel build" >&2
+    exit 2
+fi
 REMOTE=check-${TIP:0:12}.sh
 n=$(git rev-list --count "$BASE..$TIP")
 [ "$n" -gt 0 ] || { echo "recheck.sh: $BASE..$TIP is empty" >&2; exit 1; }

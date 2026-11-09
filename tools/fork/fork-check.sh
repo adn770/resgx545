@@ -37,7 +37,8 @@
 # CHECK_KUNIT_IMAGE (default resgx545/arch32:kunit, the build image plus qemu); CHECK_JOBS
 # (default the CPU count). CHECK_RUNNER=chroot runs both steps in the laptop's build root
 # (CHECK_ROOT, default /var/lib/machines/arch32-build, with qemu-system-x86 installed) instead
-# of docker, so the laptop checks the series alone (KUnit under TCG: slow).
+# of docker, so the laptop checks the series alone (KUnit under TCG: slow); it requires CHECK_WORK, since
+# the default directory would mean a from-scratch kernel build, and is refused without it.
 set -u
 
 kunit_summary() {
@@ -87,6 +88,12 @@ case $runner in
 docker | chroot) ;;
 *) echo "fork-check.sh: CHECK_RUNNER is docker or chroot, not $runner" >&2; exit 2 ;;
 esac
+if [ "$runner" = chroot ] && [ -z "${CHECK_WORK:-}" ]; then
+	echo "fork-check.sh: CHECK_RUNNER=chroot needs CHECK_WORK (an existing build directory," \
+		"e.g. \$HOME/src/linux-sgx-checkout-check): without it the laptop would start a" \
+		"from-scratch kernel build" >&2
+	exit 2
+fi
 jobs=${CHECK_JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 8)}
 ug="$(id -u):$(id -g)"
 orig=$(git symbolic-ref -q --short HEAD || git rev-parse HEAD)

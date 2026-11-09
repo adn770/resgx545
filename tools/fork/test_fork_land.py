@@ -156,6 +156,24 @@ def test_recheck_refuses_an_unknown_tip(world):
     assert r.returncode != 0
 
 
+def test_recheck_chroot_without_a_work_directory_is_refused_before_anything_is_sent(world):
+    w = world
+    r = recheck(w, w["fake"](FAKE_PASS), FORK_CHECK_RUNNER="chroot", FORK_CHECK_WORK="")
+    assert r.returncode != 0
+    assert "FORK_CHECK_WORK" in r.stderr
+    host = pathlib.Path(w["env"]["HOME"])
+    assert not list(host.glob("check-*.sh"))                    # the script was not copied
+    assert not pathlib.Path(w["env"]["FORK_PASS_FILE"]).exists()
+    assert git(w["home"], "for-each-ref", "refs/fork-recheck") == ""
+
+
+def test_recheck_chroot_with_a_work_directory_goes_ahead(world):
+    w = world
+    r = recheck(w, w["fake"](FAKE_PASS), FORK_CHECK_RUNNER="chroot",
+                FORK_CHECK_WORK=str(w["tmp"] / "work"))
+    assert r.returncode == 0, r.stdout + r.stderr
+
+
 # --- fork-land.sh ------------------------------------------------------------------------
 
 def test_land_checks_then_moves_the_branch(world):

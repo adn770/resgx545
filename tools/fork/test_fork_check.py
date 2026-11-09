@@ -74,6 +74,21 @@ def test_usage_without_a_base(repo):
     assert "usage" in p.stderr
 
 
+@pytest.mark.parametrize("dry_run", ["", "1"])
+def test_chroot_without_a_work_directory_is_refused(repo, dry_run):
+    r, base, *_ = repo
+    p = run([base], r, CHECK_RUNNER="chroot", CHECK_WORK="", CHECK_DRY_RUN=dry_run)
+    assert p.returncode == 2
+    assert "CHECK_WORK" in p.stderr
+    assert p.stdout == ""
+
+
+def test_chroot_with_a_work_directory_is_accepted(repo):
+    r, base, *_ = repo
+    p = run([base], r, CHECK_RUNNER="chroot", CHECK_WORK="/w", CHECK_DRY_RUN="1")
+    assert p.returncode == 0, p.stderr
+
+
 def test_one_line_per_commit_and_config(repo):
     r, base, plain, debug = repo
     lines = dry(r, base)
