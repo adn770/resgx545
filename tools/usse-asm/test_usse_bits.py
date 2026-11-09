@@ -46,7 +46,7 @@ def test_the_tables_load_as_campaign_tables(tmp_path, monkeypatch):
     (tmp_path / "encoding-bits.toml").write_text(text)
     (p,) = probe.load(tmp_path / "encoding-bits.toml")
     assert p.name == "usse-encoding-bits-x" and len(p.cases) == 2 and p.temps == 32
-    assert text.startswith("# SPDX-License-Identifier: MIT\n")
+    assert text.startswith("# SPDX-License-" "Identifier: MIT\n")
 
 
 def test_every_base_reaches_a_form_with_unmapped_bits():

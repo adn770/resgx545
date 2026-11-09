@@ -16,7 +16,7 @@ import gen_verify  # noqa: E402
 def test_header_is_reproducible(tmp_path):
     a = gen_verify.render(fwtask.load_regs())
     assert a == gen_verify.render(fwtask.load_regs())
-    assert a.startswith("/* SPDX-License-Identifier: GPL-2.0-only OR MIT */")
+    assert a.startswith("/* SPDX-License-" "Identifier: GPL-2.0-only OR MIT */")
 
 
 def test_header_lists_exactly_the_allowed_registers():
