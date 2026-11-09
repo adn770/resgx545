@@ -84,16 +84,11 @@ impl Program {
             .map(|&w| {
                 let i = pds_isa::decode(w);
                 match pds_isa::decode_fields(w) {
-                    Some(f) => {
-                        Insn { form: Some(forms[f.form]), v: f.v, text: i.text, raw: None }
-                    }
+                    Some(f) => Insn { form: Some(forms[f.form]), v: f.v, text: i.text, raw: None },
                     None => match reread(w) {
-                        Some((f, raw)) => Insn {
-                            form: Some(forms[f.form]),
-                            v: f.v,
-                            text: i.text,
-                            raw: Some(raw),
-                        },
+                        Some((f, raw)) => {
+                            Insn { form: Some(forms[f.form]), v: f.v, text: i.text, raw: Some(raw) }
+                        }
                         None => Insn { form: None, v: [0; 10], text: i.text, raw: None },
                     },
                 }
@@ -364,7 +359,9 @@ impl Pds {
             Next::Jump(t) => self.pc = t,
             // stores totalling 2-4 dwords fault on the first one's page once they have
             // landed (E144)
-            Next::Halt if (2..=4).contains(&self.stored.0) => return Err(Error::Fault(self.stored.1 & !0xfff)),
+            Next::Halt if (2..=4).contains(&self.stored.0) => {
+                return Err(Error::Fault(self.stored.1 & !0xfff));
+            }
             Next::Halt => return Ok(true),
         }
         Ok(false)
@@ -797,9 +794,7 @@ impl Pds {
         match j {
             0 => self.input(0),
             6 => self.timer(),
-            2 => {
-                self.sel_ir1.ok_or_else(|| why("ir1 as a mov16/mov32 source is open (pds_isa 8.9)"))
-            }
+            2 => self.sel_ir1.ok_or_else(|| why("ir1 as a mov16/mov32 source is open (pds_isa 8.9)")),
             4 if self.fetch_pc => {
                 self.note(Bound::Lag(2));
                 Ok(self.pc as u32 + 3)
@@ -841,8 +836,11 @@ impl Pds {
 
     fn src9h(&self, v: u32) -> Result<u32, Error> {
         let r = v >> 1;
-        let x =
-            if r < 128 { self.ds((r >> 6) as usize, (r & 63) as usize)? } else { self.special_pc(r - 128, true)? };
+        let x = if r < 128 {
+            self.ds((r >> 6) as usize, (r & 63) as usize)?
+        } else {
+            self.special_pc(r - 128, true)?
+        };
         // the .h of a lagging value below 0xfffd is 0 whatever the lag
         if v & 1 != 0 && matches!(self.exec.now.get(), Some(Bound::Lag(n)) if x < 0x1_0000 - n) {
             self.exec.now.set(None);
@@ -1061,35 +1059,58 @@ mod tests {
         assert!(why_of(run(&[0; 4], "mov16 ds0[96], ds1[0].l\nhalt")).contains("ds0[48]"));
         // a half of a read-only row lands in the temporary ds[48 + (n & 15)], whose other
         // half is kept (pds_isa 8.7)
-        let (m, _) = run(&[0x1111_2222, 0, 0xaaaa_bbbb, 0],
-                         "mov32 ds0[49], ds0[0]\nmov16 ds0[35], ds1[0].l\nhalt").unwrap();
+        let (m, _) =
+            run(&[0x1111_2222, 0, 0xaaaa_bbbb, 0], "mov32 ds0[49], ds0[0]\nmov16 ds0[35], ds1[0].l\nhalt")
+                .unwrap();
         assert_eq!(m.ds[0][49], 0xbbbb_2222);
     }
 
     #[test]
     fn the_ops_tried_keep_or_set_the_flags_and_keep_the_carry() {
         // add carries out (+1); every op tried keeps it for the adc (pds_isa 8.5)
-        for op in ["or ds0[50], ds0[0], ds1[0]", "nor ds0[50], ds0[0], ds1[0]",
-                   "nand ds0[50], ds0[0], ds1[0]", "shr ds0[50], ds0[0], 1", "abs ds0[50], ds0[0]",
-                   "mul ds0[50], ds0[0].l, ds1[0].l", "mov16 ds0[100], ds1[0].l", "tstn p0, ds0[0]",
-                   "and ds0[50], ds0[0], ds1[0]", "shl ds0[50], ds0[0], 1", "not ds0[50], ds0[0]",
-                   "mov32 ds0[50], ds0[0]", "mov64 ds0[50], ds0[0]", "mov128 ds[50], ds[0]",
-                   "tstz p0, ds0[0]", "alum unsigned", "nop"] {
-            let src = format!("mov32 ds0[50], ds0[0]\nadd ds0[48], ds0[0], ds1[0]\n{op}\n\
-                               adc ds0[49], ds0[1], ds1[1]\nhalt");
+        for op in [
+            "or ds0[50], ds0[0], ds1[0]",
+            "nor ds0[50], ds0[0], ds1[0]",
+            "nand ds0[50], ds0[0], ds1[0]",
+            "shr ds0[50], ds0[0], 1",
+            "abs ds0[50], ds0[0]",
+            "mul ds0[50], ds0[0].l, ds1[0].l",
+            "mov16 ds0[100], ds1[0].l",
+            "tstn p0, ds0[0]",
+            "and ds0[50], ds0[0], ds1[0]",
+            "shl ds0[50], ds0[0], 1",
+            "not ds0[50], ds0[0]",
+            "mov32 ds0[50], ds0[0]",
+            "mov64 ds0[50], ds0[0]",
+            "mov128 ds[50], ds[0]",
+            "tstz p0, ds0[0]",
+            "alum unsigned",
+            "nop",
+        ] {
+            let src = format!(
+                "mov32 ds0[50], ds0[0]\nadd ds0[48], ds0[0], ds1[0]\n{op}\n\
+                               adc ds0[49], ds0[1], ds1[1]\nhalt"
+            );
             let (m, _) = run(&[0xffff_ffff, 0, 1, 0], &src).unwrap_or_else(|e| panic!("{op}: {e}"));
             assert_eq!(m.ds[0][49], 1, "{op}");
         }
         // the flags: kept by these, set from the result by mul, adc and sbc (pds_isa 8.3)
-        for op in ["or ds0[50], ds0[1], ds1[0]", "nor ds0[50], ds0[0], ds1[0]",
-                   "nand ds0[50], ds0[1], ds1[0]", "shr ds0[50], ds1[0], 0", "abs ds0[50], ds1[0]",
-                   "mov16 ds0[100], ds1[0].l", "tstn p0, ds1[0]"] {
+        for op in [
+            "or ds0[50], ds0[1], ds1[0]",
+            "nor ds0[50], ds0[0], ds1[0]",
+            "nand ds0[50], ds0[1], ds1[0]",
+            "shr ds0[50], ds1[0], 0",
+            "abs ds0[50], ds1[0]",
+            "mov16 ds0[100], ds1[0].l",
+            "tstn p0, ds1[0]",
+        ] {
             let src = format!("mov32 ds0[50], ds0[0]\nsub ds0[48], ds0[1], ds1[1]\n{op}\nhalt");
             let (m, _) = run(&[0xffff_ffff, 0, 1, 0], &src).unwrap_or_else(|e| panic!("{op}: {e}"));
             assert_eq!(m.aluz, Some(true), "{op} keeps aluz");
         }
-        for op in ["mul ds0[50], ds0[0].l, ds1[0].l", "adc ds0[50], ds0[1], ds1[0]",
-                   "sbc ds0[50], ds0[1], ds1[0]"] {
+        for op in
+            ["mul ds0[50], ds0[0].l, ds1[0].l", "adc ds0[50], ds0[1], ds1[0]", "sbc ds0[50], ds0[1], ds1[0]"]
+        {
             let src = format!("sub ds0[48], ds0[1], ds1[1]\n{op}\nhalt");
             let (m, _) = run(&[0xffff_ffff, 0, 1, 0], &src).unwrap_or_else(|e| panic!("{op}: {e}"));
             assert_eq!(m.aluz, Some(false), "{op} sets aluz from its nonzero result");
@@ -1102,16 +1123,23 @@ mod tests {
     #[test]
     fn round_three_flags_carry_and_shifts() {
         // mov64, mov128, alum and a port write keep the flags (pds_isa 8.3)
-        for op in ["mov64 ds0[50], ds0[0]", "mov128 ds[50], ds[0]", "alum unsigned",
-                   "movs douta, ds0[0], ds1[0], ds0[0], ds0[0]"] {
+        for op in [
+            "mov64 ds0[50], ds0[0]",
+            "mov128 ds[50], ds[0]",
+            "alum unsigned",
+            "movs douta, ds0[0], ds1[0], ds0[0], ds0[0]",
+        ] {
             let src = format!("sub ds0[48], ds0[1], ds1[1]\n{op}\nhalt");
             let (m, _) = run(&[5, 0, 1, 0], &src).unwrap_or_else(|e| panic!("{op}: {e}"));
             assert_eq!(m.aluz, Some(true), "{op}");
         }
         // adc/sbc leave the high dword of their exact result: ~0 + 0 + 1 carries again
-        let (m, _) = run(&[0xffff_ffff, 0, 1, 0],
-                         "add ds0[48], ds0[0], ds1[0]\nadc ds0[49], ds0[0], ds1[1]\n\
-                          adc ds0[50], ds0[1], ds1[1]\nhalt").unwrap();
+        let (m, _) = run(
+            &[0xffff_ffff, 0, 1, 0],
+            "add ds0[48], ds0[0], ds1[0]\nadc ds0[49], ds0[0], ds1[1]\n\
+                          adc ds0[50], ds0[1], ds1[1]\nhalt",
+        )
+        .unwrap();
         assert_eq!((m.ds[0][49], m.ds[0][50]), (0, 1));
         // under alum signed the carry is the overflow: exact = signed(r) + c * 2^32
         for (x, y, c) in [(0x7fff_ffffu32, 1u32, 1i64), (0xffff_ffff, 1, 0), (0x8000_0000, 0x8000_0000, -1)] {
@@ -1121,24 +1149,36 @@ mod tests {
         let (m, _) = run(&[0x8000_0000, 0, 1, 0], "alum signed\nsub ds0[48], ds0[0], ds1[0]\nhalt").unwrap();
         assert_eq!(m.carry, Some(-1));
         // an arithmetic shr by 32 or more fills with the sign (pds_isa 8.4)
-        let (m, _) = run(&[0x8000_0001, 0x4000_0001, 0, 0],
-                         "alum signed\nshr ds0[48], ds0[0], 33\nshr ds0[49], ds0[1], 4294967295\nhalt").unwrap();
+        let (m, _) = run(
+            &[0x8000_0001, 0x4000_0001, 0, 0],
+            "alum signed\nshr ds0[48], ds0[0], 33\nshr ds0[49], ds0[1], 4294967295\nhalt",
+        )
+        .unwrap();
         assert_eq!((m.ds[0][48], m.ds[0][49]), (0xffff_ffff, 0));
     }
 
     #[test]
     fn round_four_carries_and_tests() {
         // a movs keeps the carry (pds_isa 8.5)
-        let (m, _) = run(&[0xffff_ffff, 0, 1, 0],
-                         "add ds0[48], ds0[0], ds1[0]\nmovs douta, ds0[0], ds1[0], ds0[0], ds0[0]\n\
-                          adc ds0[49], ds0[1], ds1[1]\nhalt").unwrap();
+        let (m, _) = run(
+            &[0xffff_ffff, 0, 1, 0],
+            "add ds0[48], ds0[0], ds1[0]\nmovs douta, ds0[0], ds1[0], ds0[0], ds0[0]\n\
+                          adc ds0[49], ds0[1], ds1[1]\nhalt",
+        )
+        .unwrap();
         assert_eq!(m.ds[0][49], 1);
         // under alum signed adc/sbc leave the signed overflow, as add/sub
-        let (m, _) = run(&[0x7fff_ffff, 0, 0, 0],
-                         "alum signed\nadd ds0[48], ds0[1], ds1[1]\nadc ds0[49], ds0[0], ds1[0]\nhalt").unwrap();
+        let (m, _) = run(
+            &[0x7fff_ffff, 0, 0, 0],
+            "alum signed\nadd ds0[48], ds0[1], ds1[1]\nadc ds0[49], ds0[0], ds1[0]\nhalt",
+        )
+        .unwrap();
         assert_eq!(m.carry, Some(0));
-        let (m, _) = run(&[0x7fff_ffff, 0, 1, 0],
-                         "alum signed\nadd ds0[48], ds0[1], ds1[1]\nadc ds0[49], ds0[0], ds1[0]\nhalt").unwrap();
+        let (m, _) = run(
+            &[0x7fff_ffff, 0, 1, 0],
+            "alum signed\nadd ds0[48], ds0[1], ds1[1]\nadc ds0[49], ds0[0], ds1[0]\nhalt",
+        )
+        .unwrap();
         assert_eq!((m.ds[0][49], m.carry), (0x8000_0000, Some(1)));
         // tstz of ir1 (source 65) is true where ir0 is 0, unlike the ALU's ir1, in the task
         // kinds measured (pds-task-inputs-*, E262, E263, pds_isa 8.9)
@@ -1161,15 +1201,28 @@ mod tests {
     fn mov16_and_mov32_specials_by_index() {
         // mov32 does not decode bit 9 (ir0.1 reads ir0), mov16 reads 0 with it
         // (pds_isa 8.9, pds-x-index-*)
-        let mut m = Pds { ir: [Some(0x0001_0402), Some(9), Some(11)], tim: Some(0x0090_a090), ..Pds::secondary() };
-        m.run(&prog(&[0; 4], "mov32 ds0[48], ir0.1\nmov32 ds0[50], ds0[1]\nmov16 ds0[100], ir0.1.l\n\
-                              mov16 ds0[101], ir0.0.h\nhalt"), &mut Ports::default(), 10)
-            .unwrap();
+        let mut m =
+            Pds { ir: [Some(0x0001_0402), Some(9), Some(11)], tim: Some(0x0090_a090), ..Pds::secondary() };
+        m.run(
+            &prog(
+                &[0; 4],
+                "mov32 ds0[48], ir0.1\nmov32 ds0[50], ds0[1]\nmov16 ds0[100], ir0.1.l\n\
+                              mov16 ds0[101], ir0.0.h\nhalt",
+            ),
+            &mut Ports::default(),
+            10,
+        )
+        .unwrap();
         assert_eq!((m.ds[0][48], m.ds[0][50]), (0x0001_0402, 0x0001_0000));
         // tim.0 reads the counter; ir1 and pc (the fetch pc) are open
-        for src in ["mov32 ds0[48], ir1.1", "mov32 ds0[48], ir1.0", "mov32 ds0[48], pc.0", "mov16 ds0[96], ir1.0.l"] {
-            let e = Pds { ir: [Some(1), Some(1), Some(1)], tim: Some(5), ..Pds::secondary() }
-                .run(&prog(&[0; 4], &format!("{src}\nhalt")), &mut Ports::default(), 10);
+        for src in
+            ["mov32 ds0[48], ir1.1", "mov32 ds0[48], ir1.0", "mov32 ds0[48], pc.0", "mov16 ds0[96], ir1.0.l"]
+        {
+            let e = Pds { ir: [Some(1), Some(1), Some(1)], tim: Some(5), ..Pds::secondary() }.run(
+                &prog(&[0; 4], &format!("{src}\nhalt")),
+                &mut Ports::default(),
+                10,
+            );
             assert!(matches!(e, Err(Error::Unsupported { .. })), "{src}: {e:?}");
         }
     }
@@ -1177,8 +1230,12 @@ mod tests {
     #[test]
     fn movs_tim_loads_the_counter() {
         // the first word's bits 24-0; bit 24 clear: stopped, set: running, value unknown
-        let (m, bus) = run(&[0xfe12_3456, 1, 2, 0], "movs tim, ds0[0], ds0[1], ds1[0], ds1[1]\n\
-                                                      or ds0[48], tim, ds1[1]\nhalt").unwrap();
+        let (m, bus) = run(
+            &[0xfe12_3456, 1, 2, 0],
+            "movs tim, ds0[0], ds0[1], ds1[0], ds1[1]\n\
+                                                      or ds0[48], tim, ds1[1]\nhalt",
+        )
+        .unwrap();
         assert_eq!((m.ds[0][48], m.tim), (0x0012_3456, Some(0x0012_3456)));
         // and the bus sees the write (EVENT_TIMER on an SGX)
         assert_eq!(bus.0, vec![(Port::Tim, [0xfe12_3456, 1, 2, 0])]);
@@ -1191,8 +1248,12 @@ mod tests {
         // only ir0 reads the same as through the ALU (pds_isa 8.9)
         let mut m = Pds::secondary();
         m.ir = [Some(7), Some(9), Some(11)];
-        m.run(&prog(&[0; 4], "mov32 ds0[48], ir0.0\nor ds0[49], ir1, ds1[1]\nhalt"), &mut Ports::default(), 10)
-            .unwrap();
+        m.run(
+            &prog(&[0; 4], "mov32 ds0[48], ir0.0\nor ds0[49], ir1, ds1[1]\nhalt"),
+            &mut Ports::default(),
+            10,
+        )
+        .unwrap();
         assert_eq!((m.ds[0][48], m.ds[0][49]), (7, 9));
         // mov32's ir0.1 is ir0 again (bit 9 not decoded, mov16_and_mov32_specials_by_index)
         let p = prog(&[0; 4], "mov32 ds0[48], ir0.1\nhalt");
@@ -1207,9 +1268,16 @@ mod tests {
         // fill's secondary program (pds_isa 8.9), an assumption elsewhere
         let src = "movs douta, ir1.l, ds1[0], ir1.l, ir1.l\nmovs douta, tim.l, ds1[0], tim.l, tim.l\nhalt";
         let mut m = Pds { ir: [Some(1), Some(0x100), None], tim: Some(5), ..Pds::secondary() };
-        assert!(matches!(m.run(&prog(&[0; 4], src), &mut Ports::default(), 10), Err(Error::Unsupported { .. })));
-        let mut m = Pds { ir: [Some(1), Some(0x100), None], tim: Some(5), alu_specials_in_movs: true,
-                          ..Pds::secondary() };
+        assert!(matches!(
+            m.run(&prog(&[0; 4], src), &mut Ports::default(), 10),
+            Err(Error::Unsupported { .. })
+        ));
+        let mut m = Pds {
+            ir: [Some(1), Some(0x100), None],
+            tim: Some(5),
+            alu_specials_in_movs: true,
+            ..Pds::secondary()
+        };
         let mut bus = Ports::default();
         m.run(&prog(&[0; 4], src), &mut bus, 10).unwrap();
         assert_eq!((bus.0[0].1[0], bus.0[1].1[0]), (0x100, 5));
@@ -1232,8 +1300,8 @@ mod tests {
         // hardware (pds-mov128-bit15-*, E379): mov128 ds[52], ds[4], lastpair writes the
         // data-row ds0 pair the last mov32 or movs read, to both halves, whatever its source
         let data = [
-            0, 0, 0, 0, 0xa2, 0xa3, 0xb2, 0xb3, 0xa4, 0xa5, 0xb4, 0xb5, 0xa6, 0xa7, 0xb6, 0xb7,
-            0xa8, 0xa9, 0xb8, 0xb9,
+            0, 0, 0, 0, 0xa2, 0xa3, 0xb2, 0xb3, 0xa4, 0xa5, 0xb4, 0xb5, 0xa6, 0xa7, 0xb6, 0xb7, 0xa8, 0xa9,
+            0xb8, 0xb9,
         ];
         let with = |src: &str| {
             let mut words = data.to_vec();
@@ -1252,18 +1320,26 @@ mod tests {
         };
         // a mov32 from ds0[9] and from ds0[2] name their pair; a mov32 from ds1[9] and a not of
         // a temporary, ds0 or ds1, keep it (the probe template, then each case's lines)
-        assert_eq!(pair("mov32 ds0[48], ds0[9]\nmov32 ds1[48], ds1[9]\nnot ds0[48], ds0[48]"),
-                   [0xa8, 0xa9]);
-        assert_eq!(pair("mov32 ds1[55], ds1[9]\nmov32 ds0[48], ds0[9]\nnot ds1[55], ds1[55]\n\
-                         not ds0[48], ds0[48]"), [0xa8, 0xa9]);
+        assert_eq!(pair("mov32 ds0[48], ds0[9]\nmov32 ds1[48], ds1[9]\nnot ds0[48], ds0[48]"), [0xa8, 0xa9]);
+        assert_eq!(
+            pair(
+                "mov32 ds1[55], ds1[9]\nmov32 ds0[48], ds0[9]\nnot ds1[55], ds1[55]\n\
+                         not ds0[48], ds0[48]"
+            ),
+            [0xa8, 0xa9]
+        );
         assert_eq!(pair("mov32 ds0[48], ds0[9]\nmov32 ds0[50], ds0[2]"), [0xa2, 0xa3]);
         // a movs to mr or douta from the pairs 2 and 6 names it; a movs from the temporary pair
         // 50 and a mov64 from mr01 keep it
-        assert_eq!(pair("movs mr, ds0[2], ds0[3], ds1[2], ds1[3]\nmov64 ds0[48], mr01"),
-                   [0xa2, 0xa3]);
+        assert_eq!(pair("movs mr, ds0[2], ds0[3], ds1[2], ds1[3]\nmov64 ds0[48], mr01"), [0xa2, 0xa3]);
         assert_eq!(pair("movs douta, ds0[6], ds1[2], ds0[6], ds0[6]"), [0xa6, 0xa7]);
-        assert_eq!(pair("mov32 ds0[48], ds0[9]\nmov32 ds0[50], ds1[9]\n\
-                         movs douta, ds0[50], ds1[2], ds0[50], ds0[50]"), [0xa8, 0xa9]);
+        assert_eq!(
+            pair(
+                "mov32 ds0[48], ds0[9]\nmov32 ds0[50], ds1[9]\n\
+                         movs douta, ds0[50], ds1[2], ds0[50], ds0[50]"
+            ),
+            [0xa8, 0xa9]
+        );
         // what no run measured stays open: a mov32 from another row or from another ds1 row, a
         // movsa, a movs from another temporary pair, a not of a data row or of another
         // temporary, a mov64 from mr23, a plain mov128, an add, and the first read
@@ -1355,7 +1431,8 @@ mod tests {
     fn run_mem(src: &str) -> (Result<(), Error>, Pds, Mem) {
         let (mut m, mut bus) = (Pds::secondary(), Mem((0..0x500).map(|k| 0xd000_0000 | k).collect()));
         let pre = "mov32 ds0[48], ds0[2]\nmov32 ds0[49], ds0[3]\nmov32 ds1[48], ds1[2]\n";
-        let r = m.run(&prog(&[0, 0, 0, 0, 0x11, 0x22, 0x99, 0xaa], &format!("{pre}{src}\nhalt")), &mut bus, 1000);
+        let r =
+            m.run(&prog(&[0, 0, 0, 0, 0x11, 0x22, 0x99, 0xaa], &format!("{pre}{src}\nhalt")), &mut bus, 1000);
         (r, m, bus)
     }
 
@@ -1379,7 +1456,10 @@ mod tests {
         assert_eq!((r, m.ds[0][48]), (Ok(()), 0x99));
         let fill: String = (50..56).map(|k| format!("mov32 ds0[{k}], ds0[2]\n")).collect();
         let (r, _, mem) = run_mem(&format!("{fill}store 0x00010000, ds0[48-55]"));
-        assert_eq!((r, &mem.0[..9]), (Ok(()), &[0x11, 0x22, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0xd000_0008][..]));
+        assert_eq!(
+            (r, &mem.0[..9]),
+            (Ok(()), &[0x11, 0x22, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0xd000_0008][..])
+        );
     }
 
     #[test]
@@ -1387,22 +1467,27 @@ mod tests {
         // hardware (pds-memory-mem2 to pds-memory-mem5, E143, E144): a program whose stores total
         // 1 or 5 or more dwords completes, one whose stores total 2-4 faults at its end on the
         // first store's page, after every store has landed, however the dwords are split
-        for (src, total) in [("store 0x00011020, ds0[48-49]", 2),
-                             ("store 0x00010000, ds0[48-51]", 4),
-                             ("store 0x00010000, ds0[48-50]", 3),
-                             ("store 0x00010000, ds0[48]\nstore 0x00010004, ds0[49]", 2),
-                             ("store 0x00010000, ds0[48]\nrfence\nstore 0x00010004, ds0[49]", 2),
-                             ("store 0x00010000, ds0[48-49]\nstore 0x00010020, ds0[48]", 3)] {
+        for (src, total) in [
+            ("store 0x00011020, ds0[48-49]", 2),
+            ("store 0x00010000, ds0[48-51]", 4),
+            ("store 0x00010000, ds0[48-50]", 3),
+            ("store 0x00010000, ds0[48]\nstore 0x00010004, ds0[49]", 2),
+            ("store 0x00010000, ds0[48]\nrfence\nstore 0x00010004, ds0[49]", 2),
+            ("store 0x00010000, ds0[48-49]\nstore 0x00010020, ds0[48]", 3),
+        ] {
             let (r, _, mem) = run_mem(&format!("{FILL}{src}"));
             let page = if src.starts_with("store 0x00011020") { 0x11000 } else { 0x10000 };
             assert_eq!(r, Err(Error::Fault(page)), "{src}");
             let landed = mem.0.iter().enumerate().filter(|&(i, &w)| w != 0xd000_0000 | i as u32).count();
             assert_eq!(landed, total, "{src}");
         }
-        for src in ["store 0x00010000, ds0[48]", "store 0x00010000, ds0[48-52]",
-                    "store 0x00010000, ds0[48-51]\nstore 0x00010020, ds0[48]",
-                    "store 0x00010000, ds0[48-55]\nstore 0x00010020, ds0[48-49]",
-                    "store 0x00010000, ds0[48-49]\nstore 0x00010020, ds0[48-55]"] {
+        for src in [
+            "store 0x00010000, ds0[48]",
+            "store 0x00010000, ds0[48-52]",
+            "store 0x00010000, ds0[48-51]\nstore 0x00010020, ds0[48]",
+            "store 0x00010000, ds0[48-55]\nstore 0x00010020, ds0[48-49]",
+            "store 0x00010000, ds0[48-49]\nstore 0x00010020, ds0[48-55]",
+        ] {
             assert_eq!(run_mem(&format!("{FILL}{src}")).0, Ok(()), "{src}");
         }
     }
@@ -1411,13 +1496,19 @@ mod tests {
     fn rwfence_after_a_store_faults_on_page_0() {
         // hardware (E143, E144): rwfence after any store faults on page 0, also with an rfence
         // or nops between; rwfence before a store, or with no store, completes; rfence does
-        for src in ["store 0x00010000, ds0[48]\nrwfence", "store 0x00010000, ds0[48-55]\nrwfence",
-                    "store 0x00010000, ds0[48]\nrfence\nrwfence"] {
+        for src in [
+            "store 0x00010000, ds0[48]\nrwfence",
+            "store 0x00010000, ds0[48-55]\nrwfence",
+            "store 0x00010000, ds0[48]\nrfence\nrwfence",
+        ] {
             assert_eq!(run_mem(&format!("{FILL}{src}")).0, Err(Error::Fault(0)), "{src}");
         }
-        for src in ["rwfence\nrwfence", "rwfence\nstore 0x00010000, ds0[48]",
-                    "store 0x00010000, ds0[48]\nrfence",
-                    "load 0x00010008, ds0[48]\nrwfence\nstore 0x00010000, ds0[48]"] {
+        for src in [
+            "rwfence\nrwfence",
+            "rwfence\nstore 0x00010000, ds0[48]",
+            "store 0x00010000, ds0[48]\nrfence",
+            "load 0x00010008, ds0[48]\nrwfence\nstore 0x00010000, ds0[48]",
+        ] {
             assert_eq!(run_mem(&format!("{FILL}{src}")).0, Ok(()), "{src}");
         }
     }
@@ -1452,8 +1543,7 @@ mod tests {
         // hardware (pds-moves-index-*, pds_isa 8.9): the specials the decoder leaves undecoded
         // read 0: mov32 136-255, mov16 272-511, mov64 64-127, the ALU's first source 67-127,
         // mul's halves past tim, shl's past 130
-        let words =
-            [0x1701_1060u32, 0x0f01_2060, 0x1f01_a060, 0xc7a0_0430, 0x6790_2430, 0xf790_0030];
+        let words = [0x1701_1060u32, 0x0f01_2060, 0x1f01_a060, 0xc7a0_0430, 0x6790_2430, 0xf790_0030];
         let enc = |t: &str| pds_isa::encode(t).unwrap();
         for w in words {
             // ds0[48] starts as 0x12345678; each word writes ds0[48] (mov16: its low half)
@@ -1468,8 +1558,10 @@ mod tests {
         }
         // an index past the decoded ones does not hide another field's open value
         let p = Program::new(&[0, 0, 0, 0, 0xc7a0_0c30, enc("halt")], 4);
-        assert!(matches!(Pds::secondary().run(&p, &mut Ports::default(), 10),
-                         Err(Error::Unsupported { .. })));
+        assert!(matches!(
+            Pds::secondary().run(&p, &mut Ports::default(), 10),
+            Err(Error::Unsupported { .. })
+        ));
     }
 
     #[test]

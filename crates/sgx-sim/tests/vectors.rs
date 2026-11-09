@@ -119,7 +119,13 @@ fn the_narrow_memory_vectors_match_the_hardware() {
             }
         }
     }
-    assert!(bad.is_empty(), "{} of {} narrow vectors do not match:\n{}", bad.len(), pass + bad.len(), bad.join("\n"));
+    assert!(
+        bad.is_empty(),
+        "{} of {} narrow vectors do not match:\n{}",
+        bad.len(),
+        pass + bad.len(),
+        bad.join("\n")
+    );
     assert_eq!(pass, 48, "the 48 jobs of fw37-narrow.toml: {pass} found");
 }
 

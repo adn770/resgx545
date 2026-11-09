@@ -14,7 +14,11 @@ use std::path::PathBuf;
 /// The directory of the vectors, the overlay's first, or None (with the reason said).
 fn dir() -> Option<PathBuf> {
     let overlay = std::env::var_os("SGX_SIM_OVERLAY").map(|p| PathBuf::from(p).join("vectors"));
-    let d = overlay.into_iter().chain(data()).map(|v| v.join("nokernel/usse/globals-vertex")).find(|d| d.is_dir());
+    let d = overlay
+        .into_iter()
+        .chain(data())
+        .map(|v| v.join("nokernel/usse/globals-vertex"))
+        .find(|d| d.is_dir());
     if d.is_none() {
         let msg = "no vectors/nokernel/usse/globals-vertex (set RESGX545_DATA or SGX_SIM_OVERLAY)";
         assert!(std::env::var_os("RESGX545_REQUIRE_DATA").is_none(), "{msg}");
@@ -56,7 +60,10 @@ fn the_vertex_vectors_name_their_raw_files() {
             let p = r.str().expect("a raw path");
             assert!(root.join(p).is_file(), "{f}: {p} does not resolve in the data repository");
             let h = s.str().expect("a sha256");
-            assert!(h.len() == 64 && h.bytes().all(|c| c.is_ascii_digit() || (b'a'..=b'f').contains(&c)), "{f}: {h}");
+            assert!(
+                h.len() == 64 && h.bytes().all(|c| c.is_ascii_digit() || (b'a'..=b'f').contains(&c)),
+                "{f}: {h}"
+            );
         }
     }
 }

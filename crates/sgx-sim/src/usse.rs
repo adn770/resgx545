@@ -3563,7 +3563,14 @@ impl Machine {
     /// register offset, the pre- and post-increment forms, a repeat or a fetch, a halfword store at an odd
     /// address. The immediate offset is accepted over its field (the jobs ran n = 0 to 7 for a load and 0 to 3
     /// for a store): that the unit rule holds beyond them is [infer].
-    fn ls_narrow(&mut self, insn: &Insn, op: &str, bus: &mut dyn Bus, size: u32, flags: &str) -> Result<(), Error> {
+    fn ls_narrow(
+        &mut self,
+        insn: &Insn,
+        op: &str,
+        bus: &mut dyn Bus,
+        size: u32,
+        flags: &str,
+    ) -> Result<(), Error> {
         if let Some(f) = flags.split('.').find(|f| !f.is_empty()) {
             return Err(why(format!("flag .{f} on a narrow access (not measured)")));
         }
@@ -3963,7 +3970,9 @@ impl Machine {
                     (4 | 6 | 8, 41) => 0xf,
                     (4 | 6 | 8, 43) => 0xdf00_0000,
                     _ => {
-                        return Err(why(format!("g{g} with {held} vertices held (measured with 2, 4, 6 and 8)")));
+                        return Err(why(format!(
+                            "g{g} with {held} vertices held (measured with 2, 4, 6 and 8)"
+                        )));
                     }
                 },
                 // g18 and g21 follow the task without a fitted rule; g19 reads by the instruction (E372) and
@@ -4710,8 +4719,17 @@ mod tests {
     #[test]
     fn the_global_bank_follows_the_vertex() {
         // hardware (11.33 q053-vtx, 126 vertices at 8 a task): vertex 13 of the draw is lane 5 of task 1
-        let a = ["mov r1, g17", "mov r2, g22", "mov r3, g24", "mov r4, g25", "mov r5, g39", "mov r6, g41",
-            "mov r7, g43", "mov r8, g26", "nop.end"];
+        let a = [
+            "mov r1, g17",
+            "mov r2, g22",
+            "mov r3, g24",
+            "mov r4, g25",
+            "mov r5, g39",
+            "mov r6, g41",
+            "mov r7, g43",
+            "mov r8, g26",
+            "nop.end",
+        ];
         assert_eq!(vertex_run(&a, 13, 8, 126).unwrap(), [1, 1, 8, 1, 4, 0xf, 0xdf00_0000, 0]);
         assert_eq!(vertex_run(&a, 0, 8, 126).unwrap()[..5], [0, 0, 0, 0, 0]);
         // vertex 30: task 3, lane 6
@@ -7803,7 +7821,8 @@ mod after_11_27 {
         words.extend(src.iter().map(|t| usse_isa::encode(t, Core::Sgx545).unwrap_or_else(|| panic!("{t}"))));
         words.push(usse_isa::encode("nop.end", Core::Sgx545).unwrap());
         let mut m = Machine { temps: 124, ..Machine::default() };
-        let mut mem = Memory { base: 0x1000, words: vec![0x9c8d_b6a7, 0x7e6d_5c4b, 0xd000_0012, 0xd000_0013] };
+        let mut mem =
+            Memory { base: 0x1000, words: vec![0x9c8d_b6a7, 0x7e6d_5c4b, 0xd000_0012, 0xd000_0013] };
         let r = m.run(&Program::new(&words, Core::Sgx545), &mut mem, 1000);
         (m, mem, r)
     }

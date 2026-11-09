@@ -165,7 +165,14 @@ impl Sgx {
         if index == reg::EVENT_KICK2 && value & 1 != 0 {
             let addr = self.st.reg(reg::EVENT_OTHER_PDS_EXEC)? & !0xf;
             let data = self.st.reg(reg::EVENT_OTHER_PDS_DATA)? as usize * 4;
-            self.st.queue.push_back(Work::Pds { addr, data, ir0: None, ir1: None, tim: None, bank: Bank::Primary });
+            self.st.queue.push_back(Work::Pds {
+                addr,
+                data,
+                ir0: None,
+                ir1: None,
+                tim: None,
+                bank: Bank::Primary,
+            });
         }
         // EVENT_KICK, the host's command kick: the event word's bit 8 (read from
         // the handler it reaches)
@@ -444,13 +451,18 @@ mod tests {
         s.event_tim = Some(0x0100_1234);
         s.st.mem.map(
             CODE,
-            &usse(&format!("mov r0, #0x{DATA:08X}\nstad.bpcache [r0,+#0], pa0\nstad.bpcache [r0,+#1], pa1\nnop.end")),
+            &usse(&format!(
+                "mov r0, #0x{DATA:08X}\nstad.bpcache [r0,+#0], pa0\nstad.bpcache [r0,+#1], pa1\nnop.end"
+            )),
         );
         s.st.mem.map(DATA, &[0; 16]);
         // pa0 = ir1.l, pa1 = tim.l (the attribute numbers in ds1[0], ds1[1])
-        let prog = pds(&[code_word(0), 0, 0, 0x100], "movs douta, ir1.l, ds1[0], ir1.l, ir1.l\n\
+        let prog = pds(
+            &[code_word(0), 0, 0, 0x100],
+            "movs douta, ir1.l, ds1[0], ir1.l, ir1.l\n\
                                                       movs douta, tim.l, ds1[1], tim.l, tim.l\n\
-                                                      movs doutu, ds0[0], ds0[0], ds0[0], ds0[0]\nhalt");
+                                                      movs doutu, ds0[0], ds0[0], ds0[0], ds0[0]\nhalt",
+        );
         s.st.mem.map(CODE + 0x1000, &prog);
         s.write_reg(reg::EVENT_OTHER_PDS_EXEC, CODE + 0x1000).unwrap();
         s.write_reg(reg::EVENT_OTHER_PDS_DATA, 1).unwrap();
@@ -469,12 +481,17 @@ mod tests {
         s.event_ir0 = Some(2);
         s.st.mem.map(
             CODE,
-            &usse(&format!("mov r0, #0x{DATA:08X}\nstad.bpcache [r0,+#0], pa0\nstad.bpcache [r0,+#1], pa1\nnop.end")),
+            &usse(&format!(
+                "mov r0, #0x{DATA:08X}\nstad.bpcache [r0,+#0], pa0\nstad.bpcache [r0,+#1], pa1\nnop.end"
+            )),
         );
         s.st.mem.map(DATA, &[0xff; 16]);
-        let prog = pds(&[code_word(0), 0, 0, 0x100], "movs douta, ir0.l, ds1[0], ir0.l, ir0.l\n\
+        let prog = pds(
+            &[code_word(0), 0, 0, 0x100],
+            "movs douta, ir0.l, ds1[0], ir0.l, ir0.l\n\
                                                       movs douta, ir1.l, ds1[1], ir1.l, ir1.l\n\
-                                                      movs doutu, ds0[0], ds0[0], ds0[0], ds0[0]\nhalt");
+                                                      movs doutu, ds0[0], ds0[0], ds0[0], ds0[0]\nhalt",
+        );
         s.st.mem.map(CODE + 0x1000, &prog);
         s.write_reg(reg::EVENT_OTHER_PDS_EXEC, CODE + 0x1000).unwrap();
         s.write_reg(reg::EVENT_OTHER_PDS_DATA, 1).unwrap();
@@ -492,7 +509,12 @@ mod tests {
         let load = pds(&[0xfe00_1234, 0, 0, 0], "movs tim, ds0[0], ds0[1], ds1[0], ds1[1]\nhalt");
         s.st.mem.map(CODE + 0x1000, &load);
         s.st.queue.push_back(Work::Pds {
-            addr: CODE + 0x1000, data: 4, ir0: None, ir1: None, tim: None, bank: Bank::Secondary,
+            addr: CODE + 0x1000,
+            data: 4,
+            ir0: None,
+            ir1: None,
+            tim: None,
+            bank: Bank::Secondary,
         });
         s.run(100).unwrap();
         assert_eq!(s.st.regs[&reg::EVENT_TIMER], 0x0000_1234);
@@ -501,7 +523,12 @@ mod tests {
         s.st.mem.map(CODE + 0x2000, &read);
         let run = |s: &mut Sgx| {
             s.st.queue.push_back(Work::Pds {
-                addr: CODE + 0x2000, data: 4, ir0: None, ir1: None, tim: None, bank: Bank::Secondary,
+                addr: CODE + 0x2000,
+                data: 4,
+                ir0: None,
+                ir1: None,
+                tim: None,
+                bank: Bank::Secondary,
             });
             s.run(100)
         };

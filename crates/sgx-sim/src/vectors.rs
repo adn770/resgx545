@@ -102,8 +102,15 @@ pub fn run_scalar_with(v: &Json, setup: impl FnOnce(&mut Machine)) -> Result<Out
         Memory { base: SCRATCH_BASE, words: (0..SCRATCH_DWORDS as u32).map(|i| 0xD000_0000 | i).collect() };
     let temps = v.get("init").get("temps").num().map_or(124, |t| t as usize);
     // a fill whose readback is one o0: every instance alike
-    let mut m =
-        Machine { temps, near: true, uniform: true, coeffs: job_coeffs(v), csc_unloaded: job_csc_unloaded(v), code_index, ..Machine::default() };
+    let mut m = Machine {
+        temps,
+        near: true,
+        uniform: true,
+        coeffs: job_coeffs(v),
+        csc_unloaded: job_csc_unloaded(v),
+        code_index,
+        ..Machine::default()
+    };
     setup(&mut m);
     match m.run(&prog, &mut mem, 10_000) {
         Ok(()) => {}
@@ -123,9 +130,13 @@ pub fn run_firmware(v: &Json) -> Result<Outcome, String> {
     let prog = Program::new(&words, Core::Sgx545);
     let init = v.get("init");
     let page = init.get("page");
-    let mut bus = FwBus::new(page.get("base").hex().unwrap() as u32, page.get("dwords").num().unwrap() as usize);
+    let mut bus =
+        FwBus::new(page.get("base").hex().unwrap() as u32, page.get("dwords").num().unwrap() as usize);
     for (k, val) in init.get("mem").obj() {
-        bus.set_mem(usize::from_str_radix(k.trim_start_matches("0x"), 16).unwrap(), val.hex().unwrap() as u32);
+        bus.set_mem(
+            usize::from_str_radix(k.trim_start_matches("0x"), 16).unwrap(),
+            val.hex().unwrap() as u32,
+        );
     }
     for (k, val) in init.get("regs").obj() {
         bus.seed_reg(u32::from_str_radix(k.trim_start_matches("0x"), 16).unwrap(), val.hex().unwrap() as u32);
@@ -202,7 +213,8 @@ fn bank_key(bank: &str, k: &str, size: usize) -> Result<usize, String> {
 /// Whether an instruction's text reads sa64 (an operand after the destination) and whether it
 /// writes it (the destination): the text is `[pN] mnemonic dst, src, ...`.
 fn sa64_use(t: &str) -> (bool, bool) {
-    let mut ops = t.split_whitespace().skip_while(|w| w.trim_start_matches('!').starts_with('p') && w.len() <= 3);
+    let mut ops =
+        t.split_whitespace().skip_while(|w| w.trim_start_matches('!').starts_with('p') && w.len() <= 3);
     ops.next(); // the mnemonic
     let rest = ops.collect::<Vec<_>>().join(" ");
     let operands: Vec<&str> = rest.split(',').map(str::trim).collect();
@@ -256,7 +268,8 @@ fn check_task_state(m: &Machine, st: &Json) -> Result<(), String> {
         ("i", |m, n| m.i[n]),
     ] {
         for (k, val) in st.get(bank).obj() {
-            let (n, want) = (bank_key(bank, k, if bank == "i" { 4 } else { 128 })?, val.hex().unwrap() as u32);
+            let (n, want) =
+                (bank_key(bank, k, if bank == "i" { 4 } else { 128 })?, val.hex().unwrap() as u32);
             if get(m, n) != want {
                 return Err(format!("{bank}{n}: want {want:#x}, got {:#x}", get(m, n)));
             }
@@ -542,7 +555,14 @@ fn run_pds_tile(v: &Json, mut pds: Pds) -> Result<Outcome, String> {
     let prog = Program::new(&words, Core::Sgx545);
     let mut mem = Memory { base: SCRATCH_BASE, words: std::mem::take(&mut bus.scratch) };
     let temps = init.get("temps").num().map_or(124, |t| t as usize);
-    let mut m = Machine { temps, near: true, sa: bus.sa, coeffs: job_coeffs(v), csc_unloaded: job_csc_unloaded(v), ..Machine::default() };
+    let mut m = Machine {
+        temps,
+        near: true,
+        sa: bus.sa,
+        coeffs: job_coeffs(v),
+        csc_unloaded: job_csc_unloaded(v),
+        ..Machine::default()
+    };
     m.written.sa = bus.written;
     // an attribute written last from a near value (the fetch pc) keeps its bound
     let mut sa_near = BTreeMap::new();
@@ -1234,7 +1254,8 @@ mod tests {
     fn a_firmware_task_starts_from_the_state_the_vector_gives_and_is_compared_on_what_it_left() {
         // E536: sa, r, i and p1 to p3 are what the task before left; the readback is what the task
         // leaves for the next one
-        let init = r#", "state": {"sa": {"100": "0x0000a5a5"}, "r": {"20": "0x00000007"}, "p": {"1": "0x1"}}"#;
+        let init =
+            r#", "state": {"sa": {"100": "0x0000a5a5"}, "r": {"20": "0x00000007"}, "p": {"1": "0x1"}}"#;
         let t = ["mov r2, sa100", "mov sa101, r2", "mov r21, r20", "lapc"];
         let ok = fw_vector(&t, init, r#""sa": {"101": "0x0000a5a5"}, "r": {"21": "0x00000007"}"#);
         assert_eq!(super::run_firmware(&ok), Ok(super::Outcome::Exact));
@@ -1269,13 +1290,19 @@ mod tests {
 
     #[test]
     fn a_state_key_that_is_not_a_register_is_a_stop_and_not_a_panic() {
-        for init in [r#", "state": {"i": {"4": "0x0"}}"#, r#", "state": {"sa": {"128": "0x0"}}"#, r#", "state": {"p": {"x": "0x1"}}"#] {
+        for init in [
+            r#", "state": {"i": {"4": "0x0"}}"#,
+            r#", "state": {"sa": {"128": "0x0"}}"#,
+            r#", "state": {"p": {"x": "0x1"}}"#,
+        ] {
             let v = fw_vector(&["lapc"], init, "");
-            assert!(super::run_firmware(&v).is_err_and(|e| e.starts_with("unsupported: state key")), "{init}");
+            assert!(
+                super::run_firmware(&v).is_err_and(|e| e.starts_with("unsupported: state key")),
+                "{init}"
+            );
         }
         let v = fw_vector(&["lapc"], "", r#""i": {"7": "0x0"}"#);
         assert!(super::run_firmware(&v).is_err_and(|e| e.starts_with("unsupported: state key")));
-
     }
 
     #[test]

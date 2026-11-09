@@ -1249,10 +1249,7 @@ mod tests {
         let t = Texture::new(0x07fc_0000, 12 << 24 | 31 << 12 | 15, 0x2000, 0x0080_0800).unwrap();
         let dims: Vec<(u32, u32, u32)> =
             (0..6).map(|l| t.level(l)).map(|t| (t.w, t.h, (t.base - 0x2000) / 4)).collect();
-        assert_eq!(
-            dims,
-            [(32, 16, 0), (16, 8, 512), (8, 4, 640), (4, 2, 672), (2, 1, 680), (1, 1, 682)]
-        );
+        assert_eq!(dims, [(32, 16, 0), (16, 8, 512), (8, 4, 640), (4, 2, 672), (2, 1, 680), (1, 1, 682)]);
         let (levels, _) = t.pick(0x07fc_0000, &Lod::Value(7.0), false).unwrap();
         assert_eq!(levels, [(5, 64)]);
         let (levels, _) = t.pick(0x07fc_0000, &Lod::Value(4.0), false).unwrap();
