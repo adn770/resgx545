@@ -163,7 +163,7 @@ def test_pre_commit_refuses_trailing_whitespace(world):
 
 
 def test_pre_commit_refuses_numpy_in_a_tracked_py(world):
-    (world / "m.py").write_text("import numpy as np\n")
+    (world / "m.py").write_text("import " + "numpy as np\n")      # not whole here
     git(world, "add", "m.py")
     r = git(world, "commit", "-q", "-m", msg(), env=env(world), check=False)
     assert r.returncode != 0 and "numpy" in r.stdout + r.stderr
