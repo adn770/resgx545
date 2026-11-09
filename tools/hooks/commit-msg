@@ -1,0 +1,16 @@
+#!/bin/bash
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# commit-msg: the message rules (msgcheck.py) and the guard's patterns and old spellings on the
+# message. RESGX545_GUARD_FORK=1 adds the fork-scope patterns (for the fork clones).
+TOOLS=$(cd "$(dirname "$0")/.." && pwd)
+ROOT=$(dirname "$TOOLS")
+PY=python3
+[ -x "$ROOT/.venv/bin/python" ] && PY="$ROOT/.venv/bin/python"
+export RESGX545_REQUIRE_GUARD=${RESGX545_REQUIRE_GUARD:-1}
+rc=0
+"$PY" "$TOOLS/hooks/msgcheck.py" "$1" || rc=1
+fork=
+[ "${RESGX545_GUARD_FORK:-0}" = 1 ] && fork=--fork
+"$PY" "$TOOLS/clean-room/guard.py" --message "$1" --no-glossary $fork || rc=1
+exit $rc

@@ -1,0 +1,6 @@
+#!/bin/bash
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# pre-commit: the quick check of the staged change (tools/check.sh --quick). Enable it once per
+# clone with: git config core.hooksPath tools/hooks
+exec "$(cd "$(dirname "$0")/.." && pwd)/check.sh" --quick
