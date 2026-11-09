@@ -1,7 +1,7 @@
 # Phase 11.32 (draft) laptop batch: the texture unit and sampler
 
 Scratch, gitignored, written without laptop access. Nothing staged or committed, nothing written
-under `~/src/resgx545` (landed at d994a37, read only), `tools/rewrite/`, the git index or any
+under `~/src/resgx545` (landed at d994a37, read only), `tools/rewrite/` (retired since 2026-11-09), the git index or any
 other p11xx directory. Questions: Q104, Q078, Q050 (smp mipmaps and LOD, border modes, compressed
 and YUV formats), Q115, Q113, Q114, Q021, and one proposed new question, N1 (the twiddle law above
 16 texels, section 1). The direction is hardware facts a simulator needs: which texel, which

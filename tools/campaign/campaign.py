@@ -87,7 +87,8 @@ UNITS = ("platform", "firmware", "bif", "edm", "dpm", "vdm", "ta", "mte", "isp",
 FENCES = 3
 # Extra checks of every probe name, question, label and case, and of every sweep or script
 # table: each takes the text and returns a complaint, or None. Empty here; a caller adds its own
-# (tools/rewrite/kit_campaign.py plugs in the old-spelling scan).
+# (the retired rewrite kit plugged in the old-spelling scan; since 2026-11-09 that is
+# tools/clean-room/guard.py).
 CHECKS: list = []
 FENCE_PROBE = "pbe-sideband-0000-32x16"
 FENCE_TABLE = "pbe/sideband.toml"     # the fence probe's table: its programs from its templates/
