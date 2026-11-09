@@ -8,6 +8,14 @@ its specification together, and the forks of Linux, radare2 and IGT gain the com
 it. This document says what each published phase holds, what the last phase, the pipeline simulator,
 will need, and what is still open, unit by unit.
 
+Note 2026-11-09: the phases below were built one by one from a notebook by a rewrite kit that is
+retired now; their 61 commits keep the dates the kit fixed (2026-11-01, an hour a phase) and are
+not rewritten. From 2026-11-09 work is committed directly, with real dates, under the workflow in
+`HACKING.md`. The clean-room guard that section 2.0 lists for phase 0 was not in the repository
+until now: it landed in 6b6f410 (`tools/clean-room/guard.py`), with its data in the private data
+repository. Entries below that speak of overlays or of a build describe the kit's way of working
+and are kept as they were.
+
 ## 1. How to read it
 
 A phase is one commit, or a few where a sub-phase finishes what its phase began (sub-phases 2.1 to

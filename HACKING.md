@@ -70,9 +70,9 @@ the fact, on one line of at most 200 characters (`tools/records/citations.py` en
 A finding is one file, `evidence/<unit>/E<nnn>-<slug>.md`: TOML front matter between `+++` lines
 (id, claim, unit, method, tiers, date, data, terms, in that order), then prose: what was done, what
 was seen, what it shows and what it does not. The units are the hardware's (the abbreviations become
-glossary terms as their units are published): platform, firmware, bif (bus interface), edm (event data
-master), dpm (dynamic parameter management), vdm (vertex data master), ta (tile accelerator), mte
-(macro tiling engine), isp (image synthesis processor), tsp (texture and shading processor), pds
+glossary terms as their units are published): platform, firmware, bif (bus interface), edm (event
+data master), dpm (dynamic parameter management), vdm (vertex data master), ta (tile accelerator),
+mte (macro tiling engine), isp (image synthesis processor), tsp (texture and shading processor), pds
 (programmable data sequencer), usse (the shader cores), texture, pbe (pixel back end), zls
 (depth/stencil load and store), transfer, render.
 
@@ -202,14 +202,18 @@ lets a reviewer check that they stay clean-room; each check is a test.
 
 ## Getting set up
 
-You need Python 3.11+ (for `tomllib`) with pytest and reuse:
+You need Python 3.15 (the venv is pinned to it) with the dev requirements, pytest and reuse:
 
 ```sh
-python3 -m venv .venv
-.venv/bin/pip install pytest reuse
+python3.15 -m venv .venv
+.venv/bin/pip install -r requirements-dev.txt
+tools/check.sh                   # every check (cargo, pytest, records, reuse, the guard)
 .venv/bin/pytest                 # every suite (pytest.ini lists the trees)
 .venv/bin/reuse lint
 ```
+
+numpy is not in `requirements-dev.txt`: no tracked `.py` imports it (`tools/check.sh` fails if one
+does), so keep it in a scratch venv.
 
 The record checkers run inside pytest; `python3 tools/records/evidence.py --draft` checks
 records whose ids are not assigned yet. Some checks need inputs from outside this repository
@@ -235,6 +239,43 @@ what changed and why.
 - One logical change per commit, with its tests.
 - AI-assisted commits say so: a `Co-Authored-By:` trailer here, `Assisted-by: LLM` in the
   kernel fork. An AI agent never adds a `Signed-off-by:`.
+
+## Workflow
+
+Since 2026-11-09 work is committed directly. The rewrite kit that built the first 61 commits from
+a notebook is retired: those commits keep their 2026-11-01 dates and are never rewritten, and
+new commits carry real dates. Landed history stays as it is once anything is pushed; nothing is
+pushed before `tools/clean-room/guard.py --history` has run over every ref.
+
+- Once per clone: the venv above, then `git config core.hooksPath tools/hooks`. The pre-commit
+  hook runs `tools/check.sh --quick` on the staged change (whitespace, the guard on the index,
+  no numpy, the cheap record checks), the commit-msg hook the message rules (subject of at
+  most 70 characters, body wrapped at 80, the trailer) and the guard's patterns on the message.
+  `tools/check.sh` runs everything, as the hooks' parent. Stage first, then check: the guard
+  reads the index.
+- Confidential sources stay out. The guard derives, on each run, the identifiers found only in
+  the confidential sources from trees outside every repository, and refuses any of them, the
+  private patterns and the renamed-away spellings in files, messages and history. Its data
+  lives in the private data repository's `clean-room/` directory, found through
+  `RESGX545_GUARD_DIR` (default `../resgx545-data-private/clean-room/` beside this checkout):
+  never copy, quote or summarise it here, in a message or in a report. The machine-local paths
+  of the trees it reads are in `refs.local.toml` there (untracked; `refs.local.toml.example`
+  in `tools/clean-room/` shows the shape). A glossary term allows nothing by existing: a
+  confidential-only token passes only through the private review list. With the data missing
+  the guard fails when `RESGX545_REQUIRE_GUARD=1` (the default of `check.sh` and the hooks) and
+  says NOT CHECKED otherwise; a checkout without the private repository sets it to 0 and gets no
+  guard. The private repository is never pushed to a public remote.
+- Landed records get dated corrections only: append a `Correction YYYY-MM-DD:` section, leave
+  the rest as it was. The pre-commit hook warns about any other change to an evidence record;
+  it does not block.
+- The forks (Linux, radare2) are committed to directly in their clones, with the trailer
+  `Assisted-by: LLM`, the hooks of this checkout and `RESGX545_GUARD_FORK=1`, so the fork
+  patterns apply too. Landed fork commits are never rewritten. `tools/fork/fork-check.sh`
+  checks a series on the build host, `tools/fork/recheck.sh BASE TIP` sends and runs it and
+  records the tested tip, `tools/fork/fork-land.sh HOME BRANCH BASE TIP` moves the branch only
+  to that tested tip, after the guard.
+- Commit style is the one under Commits. The test-cycle scripts and their settings are in
+  `tools/bringup/` (`local.env.example`).
 
 ## Markdown
 
