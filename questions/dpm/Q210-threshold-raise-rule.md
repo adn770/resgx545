@@ -5,7 +5,7 @@ unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E310", "E312", "E464", "E625", "E627", "E629", "E704"]
+evidence = ["E310", "E312", "E464", "E625", "E627", "E629", "E704", "E734"]
 terms = ["Dynamic Parameter Management (DPM)", "CR_DPM_STATE_BASE0", "ta3d_ctl"]
 +++
 
@@ -54,3 +54,11 @@ fork's `sgx_render_pb_pages()` returns 0x422 above 0x422, so the eight jobs of E
 condition and seven repeats, and the exception of wd-glist-1500 has been tested at one buffer size
 only. The ceiling reading and the page-supply reading are both still untested for the scene at a
 smaller P; Q273 holds the run. The question is not answered or reclassified here.
+
+Post hoc 2026-11-09 (S1, E734; a reading of the stage's data after the run, not a result and not
+held out; the stage's frozen verdict was METHOD BROKEN, nothing concluded). R2 and E625's rule
+(raise iff 2 * thr0 < U + k) also predict a raise for 1350 vertices at P = 0x3e0 (thr0 0x3be) when
+U is read as the summed run peaks, and none was seen; of the 22 jobs the raise (dwords 37 and 38)
+appeared at thr0 0x1de and 0x2de and in none of the 19 jobs with thr0 from 0x3be whose second run
+reached thr0. A limit on the raised threshold, 0x2fe <= C < 0x3de, fits all of them. A frozen run
+that tests it needs P between 0x300 and 0x3e0 for two scene sizes.

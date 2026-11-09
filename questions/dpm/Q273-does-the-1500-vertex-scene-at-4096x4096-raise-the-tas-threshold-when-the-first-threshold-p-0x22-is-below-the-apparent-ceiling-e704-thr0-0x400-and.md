@@ -5,7 +5,7 @@ unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E704", "E625", "E630"]
+evidence = ["E704", "E625", "E630", "E734"]
 terms = ["Dynamic Parameter Management (DPM)", "ta3d_ctl"]
 +++
 E625's rule for the raise (overflow, then a second run reaching the first threshold) fits 109 of the
@@ -46,3 +46,18 @@ commit changed it were not rechecked here, and E704's installed module was not c
 tree. What stays open is what the first clause never tested: whether a raise happens at this scene
 when the first threshold is below 0x3e0 (P below 0x402), which would read the exception as a
 ceiling, and the part of dword 36.
+
+Narrowed 2026-11-09 (S1, E734; the knob clause only). The knob takes effect below 0x422: in the
+22 jobs of the stage the job's own 0x0624 read P - 0x22 at P = 0x200, 0x300, 0x3e0, 0x400, 0x410
+and 0x420 (15 jobs) and 0x400, the clamp, at 0x422 (7 jobs), as a frozen per-job proof, so P down
+to 0x200 reaches the TA. The raise clause is not answered: the frozen verdict is METHOD BROKEN
+(the job used as a positive control, 1350 vertices at P = 0x3e0, was predicted to raise by every
+hypothesis and did not), and nothing is concluded from it. Measured, and not held out: the
+threshold was raised by 0x20 in 2 of the 22 jobs (1350 vertices at 0x300, 900 at 0x200) and in
+none of the 19 other jobs whose second run reached thr0, among them 1500 vertices at P = 0x3e0 to
+0x422 and 1350 at 0x3e0. Post hoc (read after the run, a reading and not a result): no raise at
+any P from 0x3e0 up for 1350 or 1500 vertices; a limit on the raised threshold between 0x2fe and
+0x3dd, or a P-only rule, fits; the dword-36 step lies between 1350 and 1380 vertices and, at P =
+0x3e0, is not the step of the partial-render count. What stays open: where between P = 0x300 and
+0x3e0 the raise stops and whether it is the same P for 1350 and 1500 vertices (1500 was not run
+below 0x3e0), and what steps dword 36.

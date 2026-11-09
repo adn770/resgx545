@@ -5,7 +5,7 @@ unit = "ta"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E542", "E546", "E702"]
+evidence = ["E542", "E546", "E702", "E738"]
 terms = ["CSTREAM.PRIM_TILES", "CSTREAM.OBJ_ISP_ADDR"]
 +++
 
@@ -35,3 +35,8 @@ identifying 0 of 25 in these; the 10 bit-21 objects of E703's forced jobs fail t
 after the run and not frozen. The extra words seen are 0x400, 0x800, 0xc00
 and 0x1000; the five 0x1000 objects and the form 0x81 are not explained; the decoders that assume
 a contiguous object (first_object, all_objects) are to be fixed.
+
+Post hoc 2026-11-09 (S1, E738; decoded from the dumps after the run, not held out). In the repeated
+a = 8 job of E702's table two of three runs lose vertex 70 and split the objects 15, 15, 15, 15, 9,
+15, 9, 15, 15 and 3 (the first run after the a = 12 runs was clean). Whether this is the vertex E546
+lost is not shown, E546's record not giving its id.

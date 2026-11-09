@@ -5,7 +5,7 @@ unit = "isp"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E077", "E283", "E417"]
+evidence = ["E077", "E283", "E417", "E739"]
 terms = ["ISP0.PASS_TYPE"]
 +++
 
@@ -26,3 +26,9 @@ part of the triangle's pixels (390 to 450 of 1062 at 64x64, 0 to 336 of 2403 at 
 4284 at 128x128) and the background on the rest, repeating counts (426 four times of seven at 64x64)
 and surviving pass-through jobs. A job of another size before the pass-through was not run (each
 probe ran at one size). Status: narrowed, not answered.
+
+Post hoc 2026-11-09 (S1, E739; the frozen verdict: depth order and pass order both fit all six
+jobs, list order is refuted, and the table could not separate the two). The images of the
+translucent jobs (pass type 1 on the second, the first or neither object) are pixel-identical to
+the opaque pair at both depth orders, so "pass type 1 changes nothing here" fits as well; not a
+frozen hypothesis.

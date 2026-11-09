@@ -34,3 +34,12 @@ no scene where they act). E197 shows what they do to the stored 1/w: ta:152 is a
 which the TA stores ta:153 in its place. The 1/w of these small-w vertices (1000 and more) is far
 above the three values tried here, so that rule would replace none of them, which fits the
 unchanged images **[infer]**. One run.
+
+**Correction 2026-11-09:** The pixel counts above are unchanged; what they do not show is that the
+triangle is removed. E736 dumped the TA's object for the same case (w = 1e-5 at every vertex, blk:14
+= 1e-3, a 64 x 64 target) and found one: 4 vertices, a square 0.96 pixel wide centred on (32, 32),
+which covers no pixel centre, so the image shows background only, as here; every 1/w word of it is
+0x4479ffff, the reciprocal of the clamp. Read with E736's jobs at a clamp equal to, one ulp below
+and one ulp above w = 1e-3 (only the last stores the clamp's reciprocal), the clamp replaces a
+smaller w by its own value ([infer], from one case of each), and "removes the triangle at w 1e-5 and
+below" is true of the image and not of the object. The claim line is left as it was measured.

@@ -5,7 +5,7 @@ unit = "pds"
 kind = "hw"
 value = "high"
 phase = 7
-evidence = ["E139", "E081", "E406", "E570", "E709"]
+evidence = ["E139", "E081", "E406", "E570", "E709", "E742"]
 terms = ["PDS_SIZE.BITS17_16"]
 +++
 
@@ -66,3 +66,7 @@ model was right in 4 of 10 jobs and wrong in 6, and the predicate shows no visib
 whether o4 is written; the pair counts differ between configurations (17 at k = 3) and no repeat
 says whether that is noise. Nothing here says what g25 selects (no guard that cannot hold was
 run, Q276). Plain-job spills of o1 to o3 stay a refusal in the simulator.
+
+Post hoc 2026-11-09 (S1, E742; an oddity, not a result): in one run of the order control (both o1
+writes unpredicated) five contiguous source pixels, (16,25), (16,27) and (17..19,27), kept the first
+write where 492 of 497 kept the second; one run, not repeated.

@@ -5,7 +5,7 @@ unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E310", "E625", "E630", "E705"]
+evidence = ["E310", "E625", "E630", "E705", "E735"]
 terms = ["Dynamic Parameter Management (DPM)", "Parameter Buffer (PB)"]
 +++
 
@@ -49,3 +49,17 @@ scenes), and `--geometry N` submits a render as geometry only so that the next r
 scene (`userspace/libsgxfive/README.md`, `tools/sgxfive-test.c`). E705 used `-n 4` without
 `--geometry`, which is four renders, as its record says; a two-triangle scene that is one render
 is run with `--geometry` (E627's two-triangle jobs used it).
+
+Narrowed 2026-11-09 (S1, E735). Scenes of 2 to 4 triangles submitted as one open scene
+(`--geometry`) were measured at 1024x768: the page need U, by the peak of status 0x0724 and by the
+free-list walk alike, is 29, 35 and 37 pages for 2, 3 and 4 triangles apart and 19, 22 and 22 for 2,
+3 and 4 stacked 16 pixels apart (the repeats of 4 apart and 4 stacked gave the same), against 19 for
+one triangle (E705); the need does not follow the triangle count (stacked copies add 0, 3 and 0
+pages, apart copies 10, 6 and 2). E625's overflow rule (overflow iff P - 0x22 is below U) then held
+on the 12 boundary jobs generated from those U and frozen before they ran (overflow at P = U + 0x21,
+completion at U + 0x22, 12 of 12, a held-out result; in 2 of the 12 an earlier kick overflowed
+first, so the rule held for a smaller scene there). The two count jobs frozen to narrow k and the
+spacing are void: at thr0 = 5 and 6 each of the first three kicks overflowed alone and no
+four-triangle scene formed. The six U are fit data from now on. Open: the formula of U for a scene
+(it needs the stream bytes of sgx-pipe, not computed before the run), k and the spacing (a count job
+needs a P above one triangle's need with several triangles still accumulating).

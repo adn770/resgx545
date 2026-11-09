@@ -4868,18 +4868,136 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   other vector of the data repository is unchanged (31727 match, of which the 8 new ones, 1112
   fitted, 1103 stop, 175 skipped, 1950 left out, 48 of 130 hung jobs predicted, none differs).
   *texture; HW; data: `texture-p1141-recomp`, `vectors-texture-p1141`.*
+- `E734` Below P = 0x422 the render_pb_pages knob takes effect (the job's own threshold register
+  0x0624 read P - 0x22 at P = 0x200, 0x300, 0x3e0, 0x400, 0x410 and 0x420, 15 jobs, and 0x400, the
+  clamp, at 0x422 in the other 7), and at 4096x4096 the threshold was raised by 0x20 (TA3DCtl dwords
+  37 and 38 = 1 << 16 | thr0 and 0x20, the second abort at thr0 + 0x20) in exactly 2 of 22 jobs,
+  1350 vertices at P = 0x300 and 900 at 0x200, and in none of the 20 other jobs at P = 0x3e0 to
+  0x422, in 19 of which the second run reached thr0 (1500 vertices at 0x3e0 twice, 0x400, 0x410,
+  0x420 and 0x422; 1350 at 0x3e0; 1380 to 1497 at 0x3e0 and 0x422; the 20th, 1350 at 0x420, took one
+  partial render and is void for the raise); the frozen scorer's verdict is METHOD BROKEN, nothing
+  concluded, because the job that the design used as a positive control, 1350 vertices at 0x3e0, was
+  predicted to raise by every frozen hypothesis and did not; dword 36 read 2 at 1350 vertices (at
+  0x3e0, 0x420 and 0x300) and 3 at 1380 to 1500 (at 0x3e0 and 0x422, 1500 also at 0x400 to 0x420).
+  *dpm; HW, infer; data: `render-closing-s1:out/g-e1/`.*
+- `E735` At 1024x768 the page need U of scenes of K triangles submitted as one open scene (K - 1
+  geometry-only kicks and a closing render, each kick's triangle moved) reads, by the peak of
+  0x0724's status and by the free-list walk alike, 29, 35 and 37 pages for 2, 3 and 4 triangles
+  apart (37 twice) and 19, 22 and 22 for 2, 3 and 4 stacked 16 pixels apart (22 twice), against 19
+  for one triangle (the control, as E705); E625's overflow rule (overflow iff P - 0x22 < U) held on
+  the 12 boundary jobs generated and frozen from those U before they ran (overflow at P = U + 0x21,
+  completion at U + 0x22, 12 of 12, the frozen held-out verdict), in 10 of them on the K-triangle
+  scene itself and in 2 (2 and 4 stacked, low side) on a smaller scene, because an earlier kick
+  overflowed first; the two count jobs, frozen to narrow E625's k and spacing, could not: at thr0 =
+  5 and 6 each of the first three kicks overflowed on its own, so no four-triangle scene formed.
+  *dpm; HW, infer; data: `render-closing-s1:out/g-e2a/`, `render-closing-s1:out/g-e2b/`.*
+- `E736` In 35 dumped 64x64 renders of the TA's object for clipped, perspective, off-target and
+  1/1024-pixel triangles, the frozen scorer says cannot tell because one control failed: with the
+  state block's WCLAMP word (blk:14) at 1e-3 and w = 1e-5 at every vertex, which E194 saw as a
+  background image and the design read as no object, the TA wrote an object of 4 vertices, a square
+  of 0.96 pixel centred on (32, 32) that covers no pixel centre, with every 1/w word 0x4479ffff
+  (1/1e-3 toward zero); the other five controls reproduced E651's object or E650's no-object; read
+  after the run, per group as the proposal's decision says (the frozen scorer voids all groups when
+  one control fails): triangles wholly beyond z = w or -w leave no object, cut and w-clipped
+  triangles are stored as clipped polygons of 3 to 5 vertices, a viewport offset of 8 or 64 pixels
+  keeps the object and 128, 512 and 1000 leave none, 1/1024-pixel vertices are packed rounded to
+  1/256, w = 2 and 0.5 store x / w exactly, and with the clamp one ulp above w = 1e-3 the stored 1/w
+  is the clamp's reciprocal.
+  *ta; HW, infer; data: `render-closing-s1:out/g-e3/`.*
+- `E737` Flipping bits of the index list header (VDM word 2) of E414's five-copy job (15 vertices,
+  16-bit indices) breaks the job, 2 of 2 runs each: bit 24 alone hangs it (job hung, recovering; 1
+  event seen), bit 25 alone and bits 24 and 25 together fault it (BIF fault 0xd0008 at 0x1, 0 events
+  seen, the same word in 4 of 4), while the unflipped control reproduced E414's object (15 vertices,
+  67 dwords); the frozen verdict is HH for bit 24 and HW's signature (a fault) for bit 25 and for
+  both, which by the proposal earns the positive test of a 32-bit index buffer.
+  *vdm; HW, infer; data: `render-closing-s1:out/g-e4/`.*
+- `E738` Repeated three times each after controls that reproduced E702's histograms (N = 8 base
+  0xff203040 x2288, N = 2 base x2821), E702's events at R*V = 33 and 32 behave as follows: 7
+  attribute rows at N = 8 give x2285 in 3 of 3 (the frozen verdict HD) and 32 rows at N = 2 hang 3
+  of 3 (HD); 12 rows at N = 8 give x2582 in 3 of 3, which the frozen scorer labels HO but which is
+  neither E702's x2028 (HD) nor the base x2288 (the proposal's HO); 8 rows at N = 8 give x2288 once
+  and x2156 twice (HI, 2 of 3); read after the run with q164_fate.py's decoder, the a = 7 jobs lose
+  ids 55, 66 and 77 in 3 of 3, the a = 12 jobs keep every vertex in the regular split, and the two
+  changed a = 8 jobs lose vertex 70 with objects of 9, 9 and 3 vertices.
+  *vdm; HW, infer; data: `render-closing-s1:out/g-e5/`.*
+- `E739` Two objects over a depth buffer filled with 0.25 under the ZLS control word 0x0017100e did
+  not test a loaded depth: that word has bit 1 and not bit 14, which E664 needs both of for the
+  load, and the one-object control drew its whole triangle under the compare less (4284 green
+  pixels, the tool's own check exact), so the frozen verdict is cannot tell; read after the run, the
+  drawn mask of all 8 jobs is the frozen model's with the depth starting at 1.0 (0 pixels differ),
+  and both objects of a two-render scene are drawn in the closing render's colour; separately, ISP
+  pass type 1 (bits 27:25 of ISP word 0) on the second, the first or neither of two overlapping
+  objects gives pixel-identical images to the opaque pair at both depth orders (6 of 6 jobs,
+  controls passed), and the frozen verdict is that depth order and pass order both fit and list
+  order does not.
+  *isp; HW, infer; data: `render-closing-s1:out/g-e8/`, `render-closing-s1:out/g-e8b/`.*
+- `E740` Eleven depth ramps on a 1024 x 32 target (a control, a dyadic control and nine ramp jobs,
+  eight non-dyadic gradients with one of them twice) were frozen to give, per job, the joint range
+  of gradients that fits every row with one line; the frozen reader returned no row for any job
+  (EMPTY at row 0), because it counted the cleared depth 1.0 (20496 of 32768 pixels in the control)
+  as covered, so the frozen verdict is cannot tell; read after the run with the clear excluded, the
+  dyadic control fits all 32 rows (16 ulps wide, which the frozen width rule would still call wide),
+  and for the control and every ramp one line fits only over the first 32 to 96 pixels of a row (the
+  control up to 160 and 288 pixels in rows 16 and 31); the same plane stored on this target differs
+  from E731's 256 x 128 dump by one ulp at 167 of 8192 shared pixels.
+  *isp; HW, infer; data: `render-closing-s1:out/p-b1/`.*
+- `E741` E731's deviation of the stored depth below trunc32 of the exact plane in dp-ax-b2
+  reproduced on a new run as the frozen control, pixel for pixel (7680 pixels at -1 ulp and 1536 at
+  -2, exactly those with x + 2y >= 319 on the 256 x 128 target); the frozen verdict on the held-out
+  jobs is cannot tell (d-shift matches neither the target-tied nor the triangle-tied set), because
+  the frozen deviation reader counted the cleared depth 1.0 as covered; read after the run with the
+  clear excluded, the triangle moved by (64, 32), the same triangle on a 256 x 512 target (also in
+  the 128 rows it shares with the control) and a y gradient on 256 x 512 deviate at no pixel, and z0
+  = 0.0625 deviates at the same 9216 pixels by -1 to -3 ulps.
+  *isp; HW, infer; data: `render-closing-s1:out/p-b2/`.*
+- `E742` Two o1 writes under complementary predicates (the !p1 write tagged 2' first, the p1 write
+  tagged 2 second, p1 set by a test of g25) were run with E709's layout; the controls were E709's o4
+  job (22 tag-5 pairs, inside the frozen 17 to 29) and both writes unpredicated, which the design
+  required to show the second write at every source pixel and which showed it at 492 of 497 and the
+  first write at 5, one cluster (sources (16,25), (16,27), (17,27), (18,27), (19,27)), so the frozen
+  verdict is cannot tell; read after the run, with k = 7 no pixel got tag 2, with k = 0 a quarter
+  did, all at even x and even y, with k = 3 a quarter at odd x and odd y, and the replicate of the k
+  = 7 x job differs from it in 36 dwords.
+  *pds; HW, infer; data: `render-closing-s1:out/p-c/`.*
+- `E743` With the probe's scratch at 64 pages the three T3 address jobs that faulted with 16 pages
+  in E722 (L2e2 and L3e3 at 64x64, st-L3e2 at 128x32) completed (rc 0, no fault line), as did L2e2
+  at 21 and at 20 pages, while 16 pages reproduced the fault (BIF fault 0x90002 at 0x3e017001, the
+  scratch base plus 80 KiB) and the 64-page control reproduced E722's A4 image; the frozen verdict
+  is cannot tell (mixed: the completing jobs differ from the frozen A4 images), because the frozen
+  A4 hashes were taken from E722's 16-page predictions, which for these three cases are the image of
+  the model's out-of-buffer sentinel; read after the run, E722's model rendered with each job's own
+  page count equals all four completing images (2048 of 2048 pixels each), and at 20 pages the
+  hardware read words past the scratch without a fault.
+  *texture; HW, infer; data: `render-closing-s1:out/p-d/`.*
+- `E744` Eight ladders of the LOD fraction over 64 columns, with the sampling coordinates u and v
+  held constant and each ladder spanning 0.031 of a 1/64 level step around n/64 for n = 2, 13, 22
+  and 56 (two runs each), wrote one constant dword over all 2048 pixels of each job (0xd00001aa,
+  0xd00004aa, 0xd00006aa, 0xd0000eaa; the repeats equal), so no transition was measured and the
+  frozen verdict is cannot tell, while the control reproduced E721's lf-r8 image hash; read after
+  the run, the constant's bits 8 to 11 (1, 4, 6, 14) follow n coarsely, near n / 4.
+  *texture; HW, infer; data: `render-closing-s1:out/p-g/`.*
+- `E745` With the TA3D control block kept and buffers left out of the client directory's alias by
+  alias_skip, leaving out the pairs {1,2}, {1,3}, {2,3}, {4,5} or {1,5}, or buffers 1 to 5 together,
+  kept two-render jobs exact (2 of 2 runs each, 12 of 12), and leaving out 6, 7, 8, 10 and 11 kept a
+  three-render job exact (2 of 2), while buffer 0 left out faulted 0x91000 at 0x3000b021 (2 of 2,
+  the control: E573's status, which logged 0x3000b022): the frozen held-out verdict is that no pair
+  among those is needed together (HJ refuted for them, HI holds); the 1024x768 partial-render jobs
+  are labelled split and HJ by the frozen scorer, which read after the run are a regex miss (both
+  runs exact, identical hashes, with both renders of each run overflowed) and a mask that included
+  buffer 0 (its fault is buffer 0's).
+  *bif; HW, infer; data: `render-closing-s1:out/p-f/`.*
 
 ## By unit
 
 ### bif
 
-Records: E151, E457, E573, E592.
+Records: E151, E457, E573, E592, E745.
 
 ### dpm
 
 Records: E199, E200, E201, E202, E204, E205, E206, E203, E253, E256, E309, E310, E311, E312, E313,
 E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E468, E574, E591,
-E625, E626, E627, E630, E631, E704, E705, E706.
+E625, E626, E627, E630, E631, E704, E705, E706, E734, E735.
 
 ### edm
 
@@ -4897,7 +5015,8 @@ Records: E064, E065, E066, E067, E068, E069, E070, E071, E072, E073, E074, E210,
 E215, E216, E217, E218, E219, E220, E222, E224, E225, E226, E227, E228, E229, E230, E209, E231,
 E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E290, E291, E330,
 E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E508, E510, E590,
-E606, E607, E618, E660, E661, E662, E680, E681, E682, E683, E684, E727, E728, E731.
+E606, E607, E618, E660, E661, E662, E680, E681, E682, E683, E684, E727, E728, E731, E739, E740,
+E741.
 
 ### mte
 
@@ -4914,7 +5033,7 @@ E383, E385, E386, E387, E429.
 Records: E043, E044, E045, E046, E047, E048, E125, E126, E127, E128, E129, E130, E131, E132, E133,
 E134, E135, E136, E137, E138, E139, E140, E141, E142, E143, E144, E145, E259, E260, E261, E262,
 E263, E264, E343, E344, E345, E364, E379, E381, E384, E388, E389, E390, E391, E392, E393, E394,
-E395, E396, E400, E420, E421, E428, E430, E436, E437, E454, E459, E460, E709.
+E395, E396, E400, E420, E421, E428, E430, E436, E437, E454, E459, E460, E709, E742.
 
 ### platform
 
@@ -4931,13 +5050,14 @@ E448, E449, E451, E458, E462, E732.
 
 Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180, E181, E247, E257,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
-E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729.
+E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736.
 
 ### texture
 
 Records: E033, E034, E035, E036, E037, E038, E039, E040, E041, E042, E114, E116, E242, E254, E271,
 E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441, E560, E561, E562,
-E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E726, E733.
+E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E726, E733, E743,
+E744.
 
 ### transfer
 
@@ -4962,7 +5082,7 @@ E570, E571, E572, E593, E594, E595, E596, E597, E598, E599, E707, E708.
 ### vdm
 
 Records: E059, E060, E184, E185, E186, E187, E189, E190, E191, E188, E299, E300, E318, E346, E349,
-E413, E414, E427, E440, E545, E546, E700, E701, E702, E703.
+E413, E414, E427, E440, E545, E546, E700, E701, E702, E703, E737, E738.
 
 ### zls
 

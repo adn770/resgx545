@@ -5,7 +5,7 @@ unit = "vdm"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E188", "E346", "E414"]
+evidence = ["E188", "E346", "E414", "E737"]
 terms = ["VDM_INDEX0.PRIMITIVE_TOPOLOGY", "VDM_INDEX0.WORDS_PRESENT", "VDM_INDEX3.INDEX_WRAP"]
 +++
 
@@ -22,3 +22,14 @@ Q092. The geometry the simulator takes from indexed draws depends on the width.
 To settle it: `probe --tri` with `--vdm N^=V` flipping the index list header's bits 25:24 over an
 index buffer of 16-bit and of 32-bit values, the object's vertices and the primitive list
 (`--dump-render`) compared with the unflipped job.
+
+Narrowed 2026-11-09 (S1, E737). Header bits 25:24 are not inert: over E414's five-copy job (15
+vertices, 16-bit indices) the control reproduced E414's object, bit 24 alone hung the job (2 of 2:
+`job hung, recovering`, 1 event seen) and bit 25 alone or with bit 24 faulted it (4 of 4: `BIF
+fault 0xd0008 at 0x1`, 0 events seen), a frozen held-out result with a passing control. The two bits
+do different things, so they are not one field whose two non-zero values both mean a wider index;
+the fault is the signature the width hypothesis predicted for bit 25, but a fault does not show that
+the bit selects the width. Open: which bit, if either, is the width select (the positive test: the
+index buffer written as 32-bit words, which needs a tool change, `--index-width 32`, with the bit
+set, must return the five-copy object, and the unflipped header over it must break), what bit 24's
+hang waits on, and the fault word 0xd0008 (in no other record).

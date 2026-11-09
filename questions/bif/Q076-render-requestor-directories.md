@@ -5,7 +5,7 @@ unit = "bif"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E021", "E023", "E151", "E303", "E314", "E315", "E316", "E319", "E360", "E457", "E573", "E592"]
+evidence = ["E021", "E023", "E151", "E303", "E314", "E315", "E316", "E319", "E360", "E457", "E573", "E592", "E745"]
 terms = ["CR_BIF_DIR_LIST_BASE1", "CR_BIF_BANK0", "ta3d_ctl", "ta3d_ctl.render_context_count"]
 +++
 
@@ -83,3 +83,17 @@ with more than two renders, a DPM reload under the masks), and what the requesto
 bus interface reports, when their list is given to another directory while the job runs (no switch
 writes the list registers). H76-D, H76-P and H76-S were not blind: a pilot on the old module had
 shown list 1 (E592).
+
+Narrowed 2026-11-09 (S1, E745; a frozen held-out result with a passing control). Of the buffers 1
+to 5, none of the pairs {1,2}, {1,3}, {2,3}, {4,5} and {1,5}, and not the five together, is needed
+by a two-render job: left out of the client directory's alias, each leaves the renders exact (2 of 2
+runs each, 12 of 12), and 6, 7, 8, 10 and 11 left out together are not needed over three renders
+(2 of 2); a pair needed together (HJ) is refuted for these, and the single-buffer reading (a buffer
+is needed only if leaving it out alone faults) holds. The control, buffer 0 left out, faulted
+0x91000 at 0x3000b021 (2 of 2; E573 logged 0x3000b022). Post hoc (read after the run, from the
+kept output and not held out): the two 1024x768 jobs on 0x23 pages (P = 0x23, both renders
+overflowed) with the mask 0xdc0 were exact, diff 0, with identical target hashes in both runs; the
+frozen scorer labelled them "split" through a pattern that does not match `tri: 0 of 2 renders ok,
+2 overflowed`. The mask 0x1f of the other job includes buffer 0, so its fault (2 of 2) is buffer 0's
+and says nothing about a pair among 1 to 4. Still open: a partial render under a mask as a frozen
+result, a buffer reassigned within a job, which list each requestor walks, pairs among 12 to 15.

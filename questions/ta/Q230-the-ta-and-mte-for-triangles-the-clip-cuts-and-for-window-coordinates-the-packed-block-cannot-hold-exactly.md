@@ -5,7 +5,7 @@ unit = "ta"
 kind = "hw"
 value = "medium"
 phase = 12
-evidence = ["E063", "E182", "E194", "E287", "E307", "E651", "E650"]
+evidence = ["E063", "E182", "E194", "E287", "E307", "E651", "E650", "E736"]
 terms = ["PB_OBJ.RHW", "PB_OBJ.ISP_WORDS", "VIEWPORT.X_OFFSET", "WCLAMP"]
 +++
 
@@ -37,3 +37,14 @@ dumped; triangles moved across the target's edge by 8, 64, 128, 512 and 1000 pix
 with one vertex beyond z = w, dumped.
 
 Status: open.
+
+Post hoc 2026-11-09 (S1, E736; the frozen verdict was cannot tell, because the control of the
+WCLAMP group failed; nothing here is held out or an answer). The WCLAMP control, w = 1e-5 under a
+clamp of 1e-3, wrote an object (4 vertices, a 0.96 pixel square at the target's centre covering no
+pixel centre, 1/w 0x4479ffff), not "no object" as E194's image had been read: the 35 dumped objects
+are in E736. Read per group after the run: triangles wholly beyond z = w or z = -w leave no object;
+cut and w-clipped triangles are stored as clipped polygons of 3 to 5 vertices; a viewport offset of
+8 and 64 pixels keeps the object and 128, 512 and 1000 leave none; 1/1024 coordinates are packed
+rounded to 1/256; x and y are divided by w exactly at w = 2 and 0.5; a clamp one ulp above w = 1e-3
+stores the clamp's reciprocal as 1/w. Each needs a frozen run with the group's control gating that
+group alone.

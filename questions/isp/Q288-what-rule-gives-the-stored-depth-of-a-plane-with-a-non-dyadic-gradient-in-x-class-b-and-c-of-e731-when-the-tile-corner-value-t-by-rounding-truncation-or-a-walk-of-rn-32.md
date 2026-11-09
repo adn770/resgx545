@@ -5,7 +5,7 @@ unit = "isp"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E731", "E606"]
+evidence = ["E731", "E606", "E740"]
 terms = ["CR_ISP_ZLSCTL"]
 +++
 E731: class a (dyadic) fits at 98.4% of tiles, so the interval method works; class b 153 to 167 of
@@ -36,3 +36,10 @@ The part of the first paragraph that said b2 is "outside the premise" is correct
 moved: the dyadic controls themselves deviate below binade 0 in a region bounded by a diagonal
 (Q200), so the b1 and b2 failures of the non-dyadic jobs cannot be put to the gradient rule
 alone [infer].
+
+Post hoc 2026-11-09 (S1, E740; read after the run, not held out; the frozen verdict was cannot
+tell, the reader having counted the cleared depth 1.0 as covered). The row-wide fit of one gradient
+does not carry between targets: on a 1024 x 32 target one line fits the control's row only over its
+first 32 pixels (160 and 288 in rows 16 and 31), every other non-dyadic ramp over 32 to 96 pixels,
+and the same plane differs from E731's 256 x 128 dump by one ulp at 167 of 8192 shared pixels. The
+observable for Q288 is the within-tile step on E731's target, not a row fit.

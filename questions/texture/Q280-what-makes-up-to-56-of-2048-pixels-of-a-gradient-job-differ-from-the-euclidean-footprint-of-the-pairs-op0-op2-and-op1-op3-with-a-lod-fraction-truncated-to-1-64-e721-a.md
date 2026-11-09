@@ -5,7 +5,7 @@ unit = "texture"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E721", "E563"]
+evidence = ["E721", "E563", "E744"]
 terms = ["T0.MIPFILTER"]
 +++
 E721: the footprint P is the best of six on 8 of 8 held-out jobs and exact on 4, but the other 4
@@ -18,3 +18,9 @@ list the missing pixels with the level and fraction the pixel gives, and fit the
 1/512 of a fraction step around the misses.
 
 Status: open. Narrows Q175 (the footprint and the truncation are held-out confirmed).
+
+Post hoc 2026-11-09 (S1, E744; not an answer; the frozen verdict was cannot tell, the ladders
+having held u and v constant and covered 0.031 of a 1/64 level step). The point-sampled output
+follows the level coarsely (bits 11:8 of the constant dword 1, 4, 6, 14 for n = 2, 13, 22, 56,
+about n / 4), a resolution nearer 1/16 than 1/64 of a level. A ladder must span at least one such
+step to show where the output changes.

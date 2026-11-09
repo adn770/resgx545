@@ -5,7 +5,7 @@ unit = "isp"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E606", "E072", "E465", "E731"]
+evidence = ["E606", "E072", "E465", "E731", "E741"]
 terms = []
 +++
 E606: the stored depth of covered pixels is within 1 unit (2^-23, absolute) of the exact plane at
@@ -53,3 +53,16 @@ in b2 depends on, and whether the same region lies under the non-dyadic jobs of 
 adds to the gradient's error. To settle it: a dyadic ramp at the binades 0 to 3 on targets of
 other sizes and with the triangle's vertices moved, the words compared with the truncated
 exact plane pixel by pixel.
+
+Narrowed 2026-11-09 (S1, E741; the control only). E731's region reproduces on a new run, the
+frozen control of a held-out design: on the 256 x 128 target the same triangle stored 7680 pixels
+one ulp and 1536 two ulps below the truncated exact plane, exactly those with x + 2y >= 319, per
+tile row 0, 0, 256, 768, 1280, 1792, 2304, 2816. The held-out question, whether the region is tied
+to target coordinates or to the triangle, is not answered: the frozen scorer counted the cleared
+depth 1.0 as covered and returned cannot tell. Post hoc (read after the run, with the clear
+excluded; not held out): with the triangle moved by (64, 32), on a 256 x 512 target (also in the
+128 rows it shares with the control) and with a y gradient on 256 x 512, no pixel deviates, and a
+depth of 0.0625 deviates at the same 9216 pixels by -1 to -3 ulps; so neither the target-tied nor
+the triangle-tied reading holds. One candidate, untested: the plane is set up from the clipped
+polygon, which changes with the target and the move. Still open: the arithmetic, why x + 2y, and
+the region on other targets.

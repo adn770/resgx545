@@ -5,7 +5,7 @@ unit = "isp"
 kind = "hw"
 value = "low"
 phase = 12
-evidence = ["E065", "E070", "E071", "E072", "E232", "E235", "E282", "E287", "E291", "E660"]
+evidence = ["E065", "E070", "E071", "E072", "E232", "E235", "E282", "E287", "E291", "E660", "E739"]
 terms = ["ISP0.PASS_TYPE", "ISP0.DCMP_MODE", "ISP1.VISTEST", "ISP1.POLY_OFFSET"]
 +++
 
@@ -42,3 +42,7 @@ compare table with equal depths on a loaded depth buffer; the visibility counter
 per setting; two-triangle objects of each pass type.
 
 Status: open.
+
+Post hoc 2026-11-09 (S1, E739; not an answer): ISP pass type 1 (bits 27:25 of word 0) on either of
+two overlapping objects gave images identical to the opaque pair at both depth orders (6 of 6 jobs,
+controls passing); the frozen table could not tell depth order from pass order.
