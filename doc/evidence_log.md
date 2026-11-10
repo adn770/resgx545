@@ -5891,12 +5891,147 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   of H-CCB's own (stop, read = write + 1, dword 14, busy); the stage ended by its stop budget at D2
   by design (the second stop), so D1's replicates, D3 (E537's own word, A8) and D4 were not run.
   *edm; HW, infer; data: `edm-closing-r3x-events:out/d/`.*
+- `E815` R3k stages k0f and k0t (K0, the regression gate of the new module, stock firmware, no task
+  of ours): F0 found all 15 debugfs files the kernel batch added or relies on and every default as
+  designed (hold_recovery N, kick_no_bump N, render_pb_pages 0x00000422, render_rgn_arrays
+  0x00000001, the kicker file 'kicker 2 ccbctl 2 2 kicks 2', six kregnow rows 0x4, 0x110, 0x130,
+  0x740, 0xc00, 0xc04 and neither clear register), 12 of 12 rows held; the pinned old tool
+  ~/sgxfive-test-r1 gave L1's geometry job dd-p1 (o0 mixed 0xff203040 x3622 and 0xff00ff00 x474, the
+  line, parameter-buffer and TA-data hashes equal to the landed ones) and L2's pixel job
+  t-ctl-green-16x16 (o0 0xff00ff00 in 256 of 256, CR_EVENT_STATUS2 0x400 before and after) exactly
+  as they were kept, 11 of 11 rows held; two attempts of k0f before these stopped before any GPU job
+  (the firmware was not loaded after the boot; the landed log filter read a new reset log line as a
+  fault).
+  *platform; HW, infer; data: `edm-closing-r3k-events:out/k0f/`, `edm-closing-r3k-events:out/k0t/`,
+  `edm-closing-r3k-events:out/attempt1-nofw/`, `edm-closing-r3k-events:out/attempt2-logfilter/`.*
+- `E816` R3k stages k0c and k0h (K0, tasks of ours unchanged from L3 and S2b on the new module):
+  alias2 read its registers as E791 found them (C0: pclink 0x98, p1 1, sa64 0x2, sa65 0x02000000,
+  sa63 0; C1, sa65 written with bit 23 set, kept the tick and the next entry read sa65 0x02000000
+  again) and ring_hold read idle with no task (H0: signatures idle-empty twice) and busy in every
+  element sampled inside a 90.5 ms hold (H1: hold 2262434 units, as wanted, signatures busy twice,
+  all elements as a running task); G0, one ordinary miscinfo kick, was answered, logged one kick
+  entry carrying the count 2 and moved the kicker file and the CCB offsets from 2 to 3 (kicker 3
+  ccbctl 3 3 kicks 3), the ticks on the 25000 grid; one row (ticks_K_after, the count byte of the
+  ticks after the kick) is void because the 16-rung ring ended at the kick entry: 7 held, 1 void.
+  *edm; HW, infer; data: `edm-closing-r3k-events:out/k0c/`, `edm-closing-r3k-events:out/k0h/`.*
+- `E817` R3k stage f (K1, 9 jobs of ring_exit.s, which logs every pass of its four PDS #13 slots in
+  a ring and ends a tick pass of window 2 as ACT says; stops 1): the closed exit reached by a tail
+  call from our page (cont4, to exit index 0x1974, the first run of the kernel's new patch kind)
+  kept the tick in 2 of 2 jobs (FC4); our own replica of the exit, cfi.global, idf, wdf, phas ...
+  end, nop.end, kept it in 2 of 2 (FB); cfi.global, idf, wdf, nop.end stopped it in the one job run
+  (FCF: 4 ring entries, busy signature of E537 with CR_CLKGATESTATUS 0x000ccfa0, the miscinfo of P3
+  not answered in 505 ms, CCB offsets 2 and 2, dword 14 0, not replicated by the stop rule); idf,
+  wdf, phas ... end, nop.end kept it in 2 of 2 (FPH); frozen verdict 'H-PHAS (the phase end is what
+  the EDM needs)', H-ANY, H-BOTH, H-CFI and H-PLACE refuted by the held-out rows and H-BEFORE
+  refuted by the control.
+  *edm; HW, infer; data: `edm-closing-r3k-events:out/f/`,
+  `edm-closing-r3k-events:out/kev-attempt1-armlog/`.*
+- `E818` R3k stage t (K1, 5 jobs of ring_timer.s, stops 1): a task of ours that stored the tick
+  handler's own word 0x01061a80 to CR_EVENT_TIMER (str #691, the verifier's new row, the first str
+  of the timer by a task of ours) and then called the closed task kept the tick in 2 of 2 jobs (T1)
+  with the next entry 25114 units after the acted pass in both, outside the frozen 25000 +- 50; the
+  same str followed by our own idf, wdf, nop.end stopped it in the one job run (T2: 4 ring entries,
+  E537's busy signature, the miscinfo of P3 not answered, not replicated); frozen verdict 'H-NOTIMER
+  (the timer write does not make our own end enough)', H-TIMER refuted by the held-out row,
+  H-TIMERW-HARMLESS and H-TIMERW-STOPS refuted by the control.
+  *edm; HW, infer; data: `edm-closing-r3k-events:out/t/`.*
+- `E819` R3k stage kb (K1, 12 jobs of ring_hold.s, Q290, no stop): with the kicker word W written to
+  0x42 (the debugfs kicker file; Q1, 3 jobs) the count byte pa1 bits 31:24 of the ticks after the
+  write stayed 2 (3 to 4 ticks a job), so H-KW (the hardware reads the kernel's kicker word at each
+  event) is REFUTED, 3 of 3; with the write followed by one ordinary miscinfo (Q2) the kicker file
+  read 0x43 (67), the CCB offsets and the kicks counter 3, the miscinfo was answered, and the count
+  after the kick is void because the 16-rung ring held 16 ticks and ended 11 ms before the kick
+  (H-LATCH and H-HWC cannot tell); with the one-shot kick_no_bump (Q3, the command written and
+  kicked, W not bumped) the miscinfo was NOT answered in 3 of 3 jobs (no answer in 504 ms), the CCB
+  write offset moved to 3 and the read offset stayed 2, the kicks counter rose by 1 and W stayed 2,
+  and the 3 controls that predicted an answer FAILED; frozen verdict 'Q0 held (ticks K = 2);
+  consistent with [H-LATCH, H-HWC], refuted [H-KW]'.
+  *edm; HW, infer; data: `edm-closing-r3k-events:out/kb/`.*
+- `E820` R3k stage e2b (K1, 15 jobs of pa_write2.s, Q098, no stop; the first run of the verifier's
+  mov to pa2, pa3 and pa4): the controls held (R x3: pa0 to pa4 read E748's words and the next pass
+  the same; S: a marker written to sa67 read back through pa3 in the same pass and the next; Z67 and
+  Z68 put E748's words back); a marker written by mov to pa3 was read in the same pass through pa3
+  and sa67 and in the next pass (M, M and M, M) in 3 of 3 jobs, H-D alias; a marker written by mov
+  to pa4 was read through neither pa4 nor sa68 in the same pass or the next (old, old and old, old)
+  in 3 of 3, H-B lost; a marker written by mov to pa2 was read through pa2 and sa66 in the same pass
+  (M, M, 3 of 3, H-D) and neither in the next pass (old, old, 3 of 3, not frozen); the neighbours
+  were unchanged in every job; frozen verdict 'write direction: consistent with none, refuted [H-D
+  alias, H-B lost, H-P private]'.
+  *usse; HW, infer; data: `edm-closing-r3k-events:out/e2b/`.*
+- `E821` R3k stage e3h (K1, 3 rounds, Q166, no stop): after a loop fill latched CR_EVENT_STATUS2 at
+  0x440 (bit 6, TRIG_3D, and the idle bit 10; still 0x440 after 1 s), a host write of bit 15
+  (0x8000, a bit that was not set) to CR_EVENT_HOST_CLEAR2 through debugfs kregnow 0x0114 left it at
+  0x440, a host write of bit 6 (0x40) cleared it to 0x400, and a further loop fill latched it again
+  to 0x440, in 3 of 3 rounds: frozen verdict 'CLEAR2 reads [H-W] in 3 rounds', H-W (the bits written
+  clear), H-ALL (any non-zero write clears all) and H-NONE (no write clears) tested, H-ALL and
+  H-NONE refuted.
+  *platform; HW, infer; data: `edm-closing-r3k-events:out/e3h/`.*
+- `E822` R3k stage e3a (K1, 3 rounds, Q166, no stop): the same five steps as E821 with the CLEAR2
+  write made by a task of ours (strclr.s, `str #69`, the verifier's new row for 0x0114) in slot 0
+  instead of the host: CR_EVENT_STATUS2 0x440 after the loop fill and after 1 s, 0x440 after bit 15,
+  0x400 after bit 6, 0x440 after the next loop fill, in 3 of 3 rounds: frozen verdict 'CLEAR2 reads
+  [H-W] in 3 rounds; the host route (e3h) ran: exit 0', H-ALL and H-NONE refuted; the firmware route
+  and the host route agree.
+  *platform; HW, infer; data: `edm-closing-r3k-events:out/e3a/`.*
+- `E823` R3k stage e3b (K1, 4 jobs run of ring_skip3.s, 1 stop, last stage; Q111, Q166): the fill
+  without the skip (B0 x3, controls) completed with one slot-3 end-of-render entry and the tick
+  alive; with the end-of-render pass of slot 3 skipped once (B1: our own end in place of the closed
+  handler, hold_recovery Y) the fill never completed (the tool timed out, job hung), the tick
+  stopped with E537's busy signature (CR_CLKGATESTATUS 0x000ccfa0; the signature's EVENT_STATUS
+  0x20040000), CCB offsets 3 and 3, dword 14 0, the miscinfo of P3 not answered (504 ms): frozen
+  verdict 'H-STOP3 (a skipped end-of-render handler stops the tick)'; the readings of
+  CR_EVENT_STATUS bit 18 and of the host writes of CR_EVENT_HOST_CLEAR are frozen 'refuted [H-FREE3,
+  H-LEVEL, H-PULSE, H-REFIRE, H-W (stop only: ... bit 29)], cannot tell [H-ALL, H-NONE, H-W]'
+  because bit 18 read clear in the first of 9 watch reads; read after the run, bit 18 was set in 8
+  of 9 reads from 7.3 ms to the end of the 50 ms watch, a write of bit 15 left it set at 1 and 3 ms,
+  a write of bit 18 cleared it at 1 and 3 ms and a write of bit 29 left CR_EVENT_STATUS bit 29 set;
+  B2 (the firmware route) did not run.
+  *platform; HW, infer; data: `edm-closing-r3k-events:out/e3b/`.*
+- `E824` R3k stage k-f4 (K2, 11 jobs, Q140): with the new debugfs knob render_rgn_arrays at 4 (four
+  region-header arrays), mode 2 and CR_TE_AA 0xe0000000, 8 of 8 held-out sizes (288 x 144, 256 x
+  288, 384 x 384, 320 x 160, 512 x 384, 640 x 480, 320 x 400, 1024 x 768) completed with 0 wrong
+  pixels of 41472 to 786432 and the TA data size the four-array layout gave (0x8000, 0x8000, 0xb000,
+  0x8000, 0xb000, 0x13000, 0xc000, 0x1e000); the controls passed (64 x 64 at knob 1 and at knob 4
+  complete with the same TA data size 0x6000, and 288 x 144 at knob 1 faulted at BIF_INT_STAT
+  0x90004, page 0x20006, as E729 did): frozen verdict 'k-f4: 8 of 8 held-out rows complete with 0
+  wrong pixels and four arrays in the four-array layout; controls PASS'.
+  *ta; HW, infer; data: `render-closing-r3k-pixel:out/20261110-193547/k-f4/`.*
+- `E825` R3k stage k-pb0 (K2, 3 jobs, Q285, controls of the parameter-buffer pokes, split flow -n 2
+  --geometry 1 at 64 x 64, mode 2): TE 0x40 (the dump run pb-d0 and p1) reproduced E728's empty
+  image (3969 of 4096 pixels wrong, 0 triangle pixels, first wrong pixel (1, 1) 0xff000080) and its
+  parameter buffer words 0 to 26 (stream 04000004 00030001 04000000 at 0 to 2, E728's stretch at 11
+  to 26), with parameter buffer and TA data identical between the two jobs; TE 0x60 (p0, the twin)
+  drew the whole triangle (4096 pixels, 0 wrong) with dwords 0 to 25 as the twin's; the three
+  controls nevertheless FAILED against values frozen from jobs of another shape (E728's and the
+  twin's one-render jobs; this stage ran two renders and the tool checks the image of render 2,
+  which it draws on background 0xff000080, so an all-background hash differs by construction): the
+  target hash of d0 and p1 0x8ea26cdfee74a325 against 0xfc5ff15e0434a325, p0's target hash
+  0xd2bfb75560f4c325 against 0xd0530839d87ea325, and p0's dword 26 0x04000004 against 0; the gate
+  closed, which says nothing about the module ('closed: k-pb0 controls pb-d0-te40 FAIL, pb-p0-te60
+  FAIL, pb-p1-te40 FAIL') and stage k-pb (5 jobs, Q285's pokes) was skipped; frozen verdict 'Q285:
+  not run (no kept k-pb)'.
+  *isp; HW, infer; data: `render-closing-r3k-pixel:out/20261110-193547/k-pb0/`,
+  `render-closing-r3k-pixel:out/20261110-193547/gate-k-pb.txt`,
+  `render-closing-r3k-pixel:out/20261110-193547/verdict.txt`.*
+- `E826` R3k stage k-bif (K2, 5 jobs, Q003 what clears a latched fault, 4 held bus-interface faults:
+  a TA read (f1, f1r, CR_BIF_INT_STAT 0x90008, CR_BIF_FAULT 0x3e000001), a TA write (f2, E788's a6,
+  0x90004 and 0x20008061) and a texture fetch (f3, 0x90002 and 0x3e017001), plus the idle row n0):
+  n0 passed (the four writes with nothing held changed nothing, BIF_CTRL restored); in each held row
+  the write of 0x1 (an unset bit) and the write of the fault word without bit 19 to CR_BIF_INT_STAT
+  (0x10008, 0x10008, 0x10004, 0x10002) left CR_BIF_INT_STAT and CR_BIF_FAULT as they were at the
+  kernel's read after the write (4 of 4); setting bit 4 of CR_BIF_CTRL (the debugfs flip,
+  CLEAR_FAULT) made the kernel's read after the write return 0x80000 and 0 (f1, f1r, f3) or 0 and 0
+  (f2); clearing the bit again returned both registers to the fault's values (4 of 4); the registers
+  stayed latched through the 2.5 s watch, the jobs never completed and only the debugfs reset
+  cleared them; all four held rows are OTHER by the frozen rule: 'Q003: cannot tell: no held row
+  could be read'.
+  *bif; HW, infer; data: `render-closing-r3k-pixel:out/20261110-193547/k-bif/`.*
 
 ## By unit
 
 ### bif
 
-Records: E151, E457, E573, E592, E745, E761, E767, E789.
+Records: E151, E457, E573, E592, E745, E761, E767, E789, E826.
 
 ### dpm
 
@@ -5911,7 +6046,7 @@ Records: E009, E014, E017, E084, E146, E152, E153, E154, E155, E156, E157, E158,
 E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321, E353, E402, E431, E444,
 E450, E531, E532, E533, E536, E537, E538, E539, E540, E550, E600, E601, E602, E603, E604, E605,
 E746, E747, E748, E749, E750, E751, E752, E764, E768, E769, E771, E784, E791, E792, E793, E794,
-E804, E805, E806, E807, E809, E810, E811, E812, E813, E814.
+E804, E805, E806, E807, E809, E810, E811, E812, E813, E814, E816, E817, E818, E819.
 
 ### firmware
 
@@ -5924,7 +6059,7 @@ E215, E216, E217, E218, E219, E220, E222, E224, E225, E226, E227, E228, E229, E2
 E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E290, E291, E330,
 E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E508, E510, E590,
 E606, E607, E618, E660, E661, E662, E680, E681, E682, E683, E684, E727, E728, E731, E739, E740,
-E741, E757, E758, E762.
+E741, E757, E758, E762, E825.
 
 ### mte
 
@@ -5947,7 +6082,7 @@ E808.
 ### platform
 
 Records: E006, E007, E008, E025, E026, E122, E150, E149, E246, E258, E357, E359, E365, E401, E403,
-E404, E405, E434, E445, E547, E548, E619.
+E404, E405, E434, E445, E547, E548, E619, E815, E821, E822, E823.
 
 ### render
 
@@ -5960,7 +6095,7 @@ E448, E449, E451, E458, E462, E732, E770.
 Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180, E181, E247, E257,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
 E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763, E776, E777,
-E778, E780, E781, E782, E783, E788, E795, E796, E797, E798.
+E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824.
 
 ### texture
 
@@ -5987,7 +6122,7 @@ E370, E371, E372, E373, E374, E375, E376, E377, E378, E380, E406, E423, E452, E4
 E472, E473, E474, E475, E476, E477, E478, E479, E480, E481, E482, E483, E484, E485, E486, E487,
 E488, E491, E492, E493, E494, E495, E496, E497, E498, E499, E500, E501, E512, E513, E514, E515,
 E516, E517, E518, E519, E520, E521, E522, E525, E526, E527, E528, E529, E530, E534, E535, E549,
-E570, E571, E572, E593, E594, E595, E596, E597, E598, E599, E707, E708.
+E570, E571, E572, E593, E594, E595, E596, E597, E598, E599, E707, E708, E820.
 
 ### vdm
 
