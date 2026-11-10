@@ -9,6 +9,10 @@
 # Phase 11.29 decisions: str on 0x0814 and 0x0a78 only; ldr on those two and on CORE_ID,
 # CORE_REVISION and CR_TIMER; tier 2 (0x0520) and register 3 (0x0810) are NOT used in this phase,
 # so they are not in the list.
+#
+# Round 3 (2026-11-10, R3-K1): str, never ldr, of the two host clear registers CR_EVENT_HOST_CLEAR2
+# (0x0114) and CR_EVENT_HOST_CLEAR (0x0134), for Q166's clear test (E3); the closed tick handler
+# writes 0x0134 itself (E155). Both are write-only in the register dump.
 
 # ---- clock gating: by name, refused for str AND ldr, checked before anything else ----------
 # E445 (11.17): the first run reached CR_CLKGATECTL2 bits 3:2 and its output was lost; the user
@@ -58,6 +62,16 @@ name = "CR_TIMER"
 offset = 0x0144
 use = "ldr"
 record = "E246, E009"
+[[allow]]
+name = "CR_EVENT_HOST_CLEAR2"
+offset = 0x0114
+use = "str"
+record = "E357, Q166"
+[[allow]]
+name = "CR_EVENT_HOST_CLEAR"
+offset = 0x0134
+use = "str"
+record = "E155, E357, Q166"
 
 # ---- denied, by range (documentation and test; default deny already covers them) ------------
 # The tool imports tools/campaign/regwidth.py DENY and requires that every row below is in it
@@ -68,8 +82,16 @@ hi = 0x0080
 why = "soft reset"
 [[deny]]
 lo = 0x0110
+hi = 0x0110
+why = "event enable"
+[[deny]]
+lo = 0x0118
+hi = 0x0130
+why = "event enable, status, PDS cache events (str of the clear registers 0x0114, 0x0134 is allowed)"
+[[deny]]
+lo = 0x0138
 hi = 0x0144
-why = "event enable, clear, status, PDS cache events, timer (ldr of CR_TIMER 0x0144 is allowed)"
+why = "PDS cache events, timer (ldr of CR_TIMER 0x0144 is allowed)"
 [[deny]]
 lo = 0x0200
 hi = 0x0200

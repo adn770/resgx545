@@ -59,10 +59,18 @@ def test_every_deny_offset_refused_for_str():
             assert not REGS.str_ok(off // 4), hex(off)
 
 
+# the named exceptions to regwidth's DENY: the registers a task of ours may str (round 3,
+# R3-K1: the two host clear registers, E3), all other offsets of the DENY rows stay refused
+STR_EXCEPTIONS = {0x0114: "CR_EVENT_HOST_CLEAR2", 0x0134: "CR_EVENT_HOST_CLEAR"}
+
+
 def test_every_regwidth_deny_offset_refused_for_str_and_ldr_except_timer_read():
     for lo, hi in fwtask.regwidth_deny():
         for off in range(lo, hi + 1, 4):
-            assert not REGS.str_ok(off // 4), hex(off)
+            if off in STR_EXCEPTIONS:
+                assert REGS.str_ok(off // 4), hex(off)
+            else:
+                assert not REGS.str_ok(off // 4), hex(off)
             if off != 0x0144:
                 assert not REGS.ldr_ok(off // 4), hex(off)
 
@@ -72,7 +80,26 @@ def test_deny_table_is_a_superset_of_regwidth():
     for lo, hi in fwtask.regwidth_deny():
         if hi <= 0x000c:
             continue    # the clock-gate rows, kept by name
-        assert any(a <= lo and hi <= b for a, b in ours), (hex(lo), hex(hi))
+        for off in range(lo, hi + 1, 4):
+            assert off in STR_EXCEPTIONS or any(a <= off <= b for a, b in ours), hex(off)
+
+
+def test_str_exceptions_are_named_allow_rows_for_str_only():
+    for off, name in STR_EXCEPTIONS.items():
+        a = REGS._allow[off // 4]
+        assert a["name"] == name and a["use"] == "str", hex(off)
+        assert not any(lo <= off <= hi for lo, hi in REGS.deny_ranges()), hex(off)
+
+
+def test_host_clear_registers_str_accepted_ldr_refused_neighbours_refused():
+    assert verify("str #69, r1\nnop.end") == []
+    assert verify("str #77, r1\nnop.end") == []
+    for idx in (69, 77):
+        e = verify(f"ldr r1, #{idx}, drc0\nnop.end")
+        assert any("not allowed for ldr" in x for x in e), e
+    for off in (0x0110, 0x0118, 0x0130, 0x0138, 0x012c, 0x0144):
+        e = verify(f"str #{off // 4}, r1\nnop.end")
+        assert any("str" in x for x in e), (hex(off), e)
 
 
 def test_default_deny_unlisted_index():
