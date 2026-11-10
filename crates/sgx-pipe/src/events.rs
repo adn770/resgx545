@@ -4,7 +4,9 @@
 
 use crate::Outcome;
 
-/// Open questions that block the unit.
+/// Open questions that block the unit. Q082: no frozen rule for the STATUS2 latches survived round
+/// 3 (bit 6: the multiply-add count, the tile time and the burst length refuted, E805, E806; bit 7:
+/// the per-vertex and per-job counts refuted, E807), so the latches stay refused.
 pub const OPEN: &[&str] = &["Q111", "Q033", "Q082", "Q166", "Q290"];
 
 /// A refusing stub until the unit's sub-phase lands: the model never guesses.

@@ -321,6 +321,9 @@ pub struct Machine {
     /// The instance's pixel (x, y) in a fill, when the run knows it: the g bank's tile and
     /// quad registers depend on it (E086).
     pub pixel: Option<(u32, u32)>,
+    /// The instance is a pixel of a triangle object in a render, not of a fill: the g bank was read
+    /// there for g23, g24 and g25 only (E808), so every other global is refused.
+    pub tri_pixel: bool,
     /// A vertex task's instance (11.33, q053-vtx): (the vertex's sequence number in the draw, the
     /// vertices a task holds, the vertices of the draw); the g bank's per-vertex registers depend on it.
     pub vertex: Option<(u32, u32, u32)>,
@@ -743,6 +746,7 @@ impl Default for Machine {
         Machine {
             core: Core::Sgx545,
             pixel: None,
+            tri_pixel: false,
             vertex: None,
             r: [0; 128],
             i: [0; 4],
@@ -3992,6 +3996,18 @@ impl Machine {
             });
         }
         let pos = |f: fn(u32, u32) -> u32| self.pixel.map(|(x, y)| f(x, y)).ok_or_else(unknown);
+        if self.tri_pixel {
+            // a triangle's pixel task (R3-pixel p-c3, E808, held out at three triangles): the
+            // fill's readings of g23, g24 and g25 hold; nothing else of the bank was read there
+            return match g {
+                23 => pos(|x, _| x % 32),
+                24 => pos(|_, y| y % 16),
+                25 => pos(|x, y| (x & 1) + 2 * (y & 1)),
+                _ => Err(why(format!(
+                    "g{g} in a triangle's pixel task (only g23, g24 and g25 were read there, E808)"
+                ))),
+            };
+        }
         Ok(match g {
             17 => pos(|x, y| 2 * (x >> 4 & 1) + (y >> 3 & 1))?,
             23 => pos(|x, _| x % 32)?,
@@ -4804,6 +4820,82 @@ mod tests {
         assert!(refused(vertex_run(&g, 126, 8, 126), "vertex 126"));
         // the pixel task's constants do not leak in: g41 is 0xf, not 1, in a full task
         assert_eq!(vertex_run(&g, 3, 8, 126).unwrap()[0], 0xf);
+    }
+
+    /// R3-pixel's loop (E804, E806): E431's eight-instruction body closed by a relative `br`, the
+    /// prologue's MARK xored into o0 at the end, so o0 = MARK only where the counter reached zero.
+    fn mark_loop(n: u32, closing: &str) -> Vec<String> {
+        let mut v = vec![
+            "phas #0, #0, pixel, end, parallel".to_string(),
+            format!("mov.skipinv r1, #{n}"),
+            "mov.skipinv r2, #0xFFFFFFFF".to_string(),
+            "mov.skipinv r3, #0x00000003".to_string(),
+            format!("mov.skipinv r30, #0x{:08X}", 0xC0DE_0000u32 | n),
+        ];
+        v.extend((4..10).map(|d| format!("imae.u r{d}, r3.low, r3.low, r3, u32")));
+        v.push("iadd32.skipinv.testtanz.chan0 r1, p0, r1, r2".to_string());
+        v.push(closing.to_string());
+        v.push("xor.skipinv.end o0, r1, r30".to_string());
+        v
+    }
+
+    #[test]
+    fn a_relative_loop_ends_with_its_mark_wherever_the_program_is_placed() {
+        // hardware (E804, E806): the relative loop wrote its MARK on every pixel of a fill (code
+        // index 0) and of full-target triangles whose program sits in the --tri slot (index 0x20);
+        // the simulator agrees at those indices and on a higher page
+        for n in [4u32, 56] {
+            let src = mark_loop(n, "p0 br -#0x00000007");
+            let src: Vec<&str> = src.iter().map(String::as_str).collect();
+            for code_index in [0u32, 0x20, 0x1020] {
+                let mut m = Machine { pixel: Some((5, 3)), code_index, ..Machine::default() };
+                let mut mem = Memory { base: 0, words: vec![] };
+                assert_eq!(m.run(&prog(&src), &mut mem, 2000), Ok(()), "N {n} at {code_index:#x}");
+                assert_eq!(m.o[0], 0xC0DE_0000 | n, "N {n} at {code_index:#x}");
+            }
+        }
+        // E431's absolute loop ends at index 0 (a fill: o0 = 0, E804) and is refused in the slot:
+        // its ba to index 4 lands before the program (E770's void, [infer] on hardware)
+        let mut src = mark_loop(4, "p0 ba #0x00000004");
+        src.remove(4);
+        src.pop();
+        src.push("mov.skipinv.end o0, r1".to_string());
+        let src: Vec<&str> = src.iter().map(String::as_str).collect();
+        let mut m = Machine { pixel: Some((5, 3)), ..Machine::default() };
+        let mut mem = Memory { base: 0, words: vec![] };
+        assert_eq!((m.run(&prog(&src), &mut mem, 2000), m.o[0]), (Ok(()), 0));
+        let mut m = Machine { pixel: Some((5, 3)), code_index: 0x20, ..Machine::default() };
+        let r = m.run(&prog(&src), &mut mem, 2000);
+        assert!(
+            matches!(&r, Err(Error::Unsupported { why, .. }) if why.contains("before the program")),
+            "{r:?}"
+        );
+    }
+
+    #[test]
+    fn a_triangles_pixel_task_reads_g23_g24_and_g25_and_nothing_else_of_the_bank() {
+        // hardware (E808, held out): in a triangle's pixel program g23 = x mod 32, g24 = y mod 16
+        // and g25 = the lane in the 2x2 quad, at the default 64x64 triangle and the full 64x64 and
+        // 128x128 ones (direct reads 1.000 of 1062, 4096 and 16384 written pixels)
+        let p = prog(&["mov r1, g23", "mov r2, g24", "mov r3, g25", "nop.end"]);
+        for (x, y) in [(53u32, 27u32), (127, 126), (0, 0), (96, 17)] {
+            let mut m = Machine { pixel: Some((x, y)), tri_pixel: true, ..Machine::default() };
+            let mut mem = Memory { base: 0, words: vec![] };
+            assert_eq!(m.run(&p, &mut mem, 100), Ok(()));
+            assert_eq!(&m.r[1..4], &[x % 32, y % 16, (x & 1) | (y & 1) << 1], "({x}, {y})");
+        }
+        // the rest of the bank was read in fills only (E086): refused in a triangle's task
+        for g in [17, 20, 39, 42, 7] {
+            let src = [format!("mov r1, g{g}"), "nop.end".to_string()];
+            let src: Vec<&str> = src.iter().map(String::as_str).collect();
+            let mut m = Machine { pixel: Some((5, 3)), tri_pixel: true, ..Machine::default() };
+            let mut mem = Memory { base: 0, words: vec![] };
+            let r = m.run(&prog(&src), &mut mem, 100);
+            assert!(
+                matches!(&r, Err(Error::Unsupported { why, .. }) if why.contains("triangle")),
+                "g{g}: {r:?}"
+            );
+        }
     }
 
     #[test]

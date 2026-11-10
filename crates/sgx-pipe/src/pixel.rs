@@ -248,9 +248,11 @@ impl Ctx {
         Ok(Shader { u0: ev.tasks[0][0] })
     }
 
-    /// o0 of the shader for pixel (x, y).
-    fn colour(&mut self, s: &Shader, x: u32, y: u32) -> R<u32> {
-        let m = Machine { pixel: Some((x, y)), ..Machine::default() };
+    /// o0 of the shader for pixel (x, y). `tri`: the pixel is the triangle object's, whose task
+    /// reads only g23, g24 and g25 of the global bank as measured (E808); the background object's
+    /// task keeps the fill's readings (E086).
+    fn colour(&mut self, s: &Shader, x: u32, y: u32, tri: bool) -> R<u32> {
+        let m = Machine { pixel: Some((x, y)), tri_pixel: tri, ..Machine::default() };
         let (m, _) = run_task(&mut self.mem, &self.code, s.u0, m, "the pixel shader")?;
         if m.written.o & 1 == 0 {
             return Err(open("the pixel shader did not write o0", &["Q206"]));
@@ -409,8 +411,8 @@ pub fn image(sc: &Scene, out: &ta::Written) -> R<Image> {
             for (k, p) in px.iter().enumerate() {
                 let (x, y) = (32 * tx + k as u32 % 32, 16 * ty + k as u32 / 32);
                 let c = match (p.tag, &objshader) {
-                    (Some(_), Some(s)) => cx.colour(s, x, y)?,
-                    _ => cx.colour(&bg, x, y)?,
+                    (Some(_), Some(s)) => cx.colour(s, x, y, true)?,
+                    _ => cx.colour(&bg, x, y, false)?,
                 };
                 cols.push(c);
                 if x < w
