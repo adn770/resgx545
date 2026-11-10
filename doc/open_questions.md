@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-189 open: 172 hw (high 21, medium 78, low 73, unrated 0), 11 fw, 6 kernel.
+188 open: 172 hw (high 21, medium 78, low 73, unrated 0), 11 fw, 5 kernel.
 
 ## Work queue: hardware
 
@@ -259,10 +259,6 @@
 - `Q088` (phase 11, fw): what reads the render details' unpatched ZLS control word that the closed driver writes between frames (0x0011700a), now that bit 14 is known to load the depth and bit 13 the stencil? (E335, E336, E337, E411, E467)
 
 ### kernel
-
-#### edm
-
-- `Q005` (phase 6, kernel): should the kernel ask the firmware for its identity on every boot, so DEV_QUERY reports it without the debug option? (E017, E022, E321, E402)
 
 #### platform
 

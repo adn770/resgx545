@@ -36,7 +36,7 @@ terms = ["misc_info", "misc_info_features"]
 
 - The kernel's request at the end of each boot gives DEV_QUERY the firmware's own identity in a
   build without the debug files, after the load and after each reset, and takes it away while a
-  reset restarts the firmware, as Q005 asked [HW: one run of each build] [DDK: linux fork commits
+  reset restarts the firmware, as the retired question on the firmware identity asked [HW: one run of each build] [DDK: linux fork commits
   32 to 35].
 - The answer takes 0.18 to 3.9 ms; the 3 to 4 ms ones are the first command after a boot that
   carries the cache invalidation the boot's init info asks for, as the 3.4 to 3.7 ms of the

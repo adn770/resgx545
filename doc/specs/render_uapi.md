@@ -115,7 +115,7 @@ Rules:
 The query on a fresh boot reads `ddk 0.0.0 build 0 options 0x0` and `fw_state 0`, and the first
 context creation starts the firmware, so it has happened by the time the first job
 completes (E022); the same creation asks the firmware for its identity, so the next `GPU_INFO`
-has the firmware's own core and the `ddk_version` of `FW_INFO` (Q005, decided: the kernel asks in
+has the firmware's own core and the `ddk_version` of `FW_INFO` (decided 2026-11-07, answered by E402: the kernel asks in
 every build, linux fork commit 32).
 
 Evidence: E022, E017.
@@ -674,7 +674,7 @@ the laptop's module since 11.12) and checked on the laptop:
 - KUnit (commit 31) checks a render's words with the kernel pokes applied once on top of the
   kernel's own, the RT data set `rtds_keep` leaves as it was, and every line of `render_words`.
 
-Q005 is decided: the kernel asks the firmware for its identity (GETMISCINFO) in every build, at
+The firmware identity is decided (answered by E402): the kernel asks the firmware for its identity (GETMISCINFO) in every build, at
 the end of each boot, so after the firmware load and after each reset, and `DEV_QUERY` reports it
 without the debug option (section 4; linux fork commit 32, which also logs the answer). KUnit, in
 builds with and without the debug option, checks an answer, a reply for another core, no answer,
