@@ -87,6 +87,13 @@ static const struct {
 /* br #n: n instructions from the br itself, signed 18 bits (isa/usse/). */
 #define BR_VAL		0xF800004000000000ull
 #define BR_OFFSET	0x3ffffull
+/*
+ * ba #n (and bexception): class 31 with enc[54:51] and enc[40:38] clear
+ * (isa/usse/forms/class-31-flow-control-ba-br-bexception.toml; br sets bit 38).
+ * It counts from the code base, so in a placed slot it would leave the program.
+ */
+#define BA_MASK		0xF87801C000000000ull
+#define BA_VAL		0xF800000000000000ull
 
 static int check(unsigned int slot, const struct sgxfive_tri_prog *g)
 {
@@ -102,6 +109,23 @@ static int check(unsigned int slot, const struct sgxfive_tri_prog *g)
 	if (g->temps > USE_MAX_TEMPS)
 		return -EINVAL;
 	return slot == SGXFIVE_TRI_SLOT_EOT && g->n < EOT_MIN_WORDS ? -EINVAL : 0;
+}
+
+/* The first ba in g's code, or false. */
+static bool has_ba(const struct sgxfive_tri_prog *g)
+{
+	for (uint32_t i = 0; i < g->n; i++)
+		if ((g->words[i] & BA_MASK) == BA_VAL)
+			return true;
+	return false;
+}
+
+const char *sgxfive_tri_probe_ba(const struct sgxfive_tri_probe *pr)
+{
+	for (unsigned int i = 0; i < SGXFIVE_TRI_SLOT_COUNT; i++)
+		if (!sgxfive_tri_slot_is_pds(i) && has_ba(&pr->slot[i]))
+			return sgxfive_tri_slot_name(i);
+	return has_ba(&pr->obj2_pixel) ? "obj2 pixel" : NULL;
 }
 
 static uint32_t temps(unsigned int slot, const struct sgxfive_tri_prog *g)
@@ -364,6 +388,9 @@ int sgxfive_tri_probe_apply(const struct sgxfive_tri_cpu *c, const struct sgxfiv
 	uint32_t *vdm = c->gen + SGXFIVE_TRI_G_VDM / 4;
 	uint32_t *w;
 
+	/* every USSE slot is put away from its code base, where a ba would leave it */
+	if (sgxfive_tri_probe_ba(pr))
+		return -EINVAL;
 	for (unsigned int i = 0; i < SGXFIVE_TRI_SLOT_COUNT; i++)
 		if (check(i, &s[i]))
 			return -EINVAL;

@@ -516,3 +516,24 @@ def test_tri_probe_unit(tmp_path):
     assert re.search(r"^probe pix: vertices4096 32768 32768 196608 81920 81920 229376$", r.stdout, re.M), r.stdout
     r = run("--mock", "probe", "--tri", "pixel", "--tri-unit", "12", str(pix))
     assert r.returncode == 2, r.stdout + r.stderr
+
+
+@pytest.mark.parametrize("slot", ["pixel", "vtxuse"])
+def test_tri_refuses_an_absolute_branch(tmp_path, slot):
+    # A ba counts from the code base, but the slot is not at it (record E770): refused, a br
+    # (relative) branch is accepted.
+    loop = "mov.skipinv r0, #1\n{BR}\nmov.skipinv.end o0, #1\n"
+    ba = assemble(tmp_path, "ba", PHAS + loop.replace("{BR}", "p0 ba #4"))
+    br = assemble(tmp_path, "br", PHAS + loop.replace("{BR}", "p0 br #1"))
+    vp = assemble(tmp_path, "vp", (ROOT / "asm" / "tri" / "pds_vtx.s").read_text(), "pds")
+
+    def probe(prog):
+        if slot == "vtxuse":
+            return run("--mock", "probe", "--tri", "vtxpds:8", "--slot", f"vtxuse={prog}", str(vp))
+        return run("--mock", "probe", "--tri", slot, str(prog))
+
+    r = probe(ba)
+    assert r.returncode == 3, r.stdout + r.stderr
+    assert f"a ba in the --tri {slot} slot counts from the code base: use br" in r.stderr
+    r = probe(br)
+    assert r.returncode == 0, r.stdout + r.stderr

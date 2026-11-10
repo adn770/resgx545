@@ -538,6 +538,46 @@ static void blk_add(void)
 	free(d.mem);
 }
 
+/*
+ * A ba counts from the code base, so in a slot that is not at the base it
+ * would jump into another program (hardware record E770): refused. A br,
+ * a bexception.rel and a phas go in unchanged.
+ */
+static void absolute_branch(void)
+{
+	static const struct { unsigned int slot; uint32_t at; } place[] = {
+		{ SGXFIVE_TRI_SLOT_PIXEL, SGXFIVE_TRI_PROBE_UP_PIXEL },
+		{ SGXFIVE_TRI_SLOT_VTXUSE, SGXFIVE_TRI_PROBE_UV_VTX },
+		{ SGXFIVE_TRI_SLOT_PIXTASK, SGXFIVE_TRI_PROBE_UP_PIXTASK },
+		{ SGXFIVE_TRI_SLOT_BGPIXEL, SGXFIVE_TRI_PROBE_UP_BGPIXEL },
+	};
+	const uint64_t ba = 0xF800000000000004ull;	/* p0 ba #4 */
+	const uint64_t pba = 0xF800000000000004ull | 3ull << 56;
+	const uint64_t br = 0xF800004000000000ull | 0x3fffeull;	/* br -2 */
+	const uint64_t mov = 0xFC20000000000000ull;
+	struct scene s;
+
+	scene_init(&s, 64, 64);
+	for (size_t i = 0; i < sizeof(place) / sizeof(place[0]); i++) {
+		struct sgxfive_tri_probe pr = { 0 };
+		uint64_t w[3] = { mov, ba, mov };
+
+		pr.slot[place[i].slot] = (struct sgxfive_tri_prog){ w, 3, 0, 0 };
+		if (!CHECK_EQ(sgxfive_tri_probe_apply(&s.c, &s.l, &s.p, &pr, &s.cmd), -EINVAL))
+			printf("#   ba case %zu\n", i);
+		CHECK(sgxfive_tri_probe_ba(&pr) &&
+		      !strcmp(sgxfive_tri_probe_ba(&pr), sgxfive_tri_slot_name(place[i].slot)));
+		w[1] = pba;
+		CHECK_EQ(sgxfive_tri_probe_apply(&s.c, &s.l, &s.p, &pr, &s.cmd), -EINVAL);
+		w[1] = br;
+		CHECK_EQ(sgxfive_tri_probe_apply(&s.c, &s.l, &s.p, &pr, &s.cmd), 0);
+		CHECK(!sgxfive_tri_probe_ba(&pr));
+		CHECK_EQ(insn(place[i].slot == SGXFIVE_TRI_SLOT_VTXUSE ? s.c.usev : s.c.usep,
+			      place[i].at + 8), br);
+	}
+	free(s.mem);
+}
+
 static void refused(void)
 {
 	static uint64_t w[1024];
@@ -1551,6 +1591,7 @@ int main(void)
 	isp2();
 	blk_add();
 	refused();
+	absolute_branch();
 	rig_default();
 	rig_every_slot();
 	rig_unmapped_tasks();

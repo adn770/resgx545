@@ -266,11 +266,20 @@ bool sgxfive_tri_slot_is_pds(unsigned int slot);
  * data segment that is not whole rows, too short for the dwords patched
  * (pixev 16, vtxpds 8), longer than 128 dwords or not followed by code, or
  * asks for more than 128 temporaries, or if pr's vertices are not whole
- * triangles or more than the vertex buffer holds.
+ * triangles or more than the vertex buffer holds, or if a USSE program holds
+ * a ba (see sgxfive_tri_probe_ba()).
  */
 int sgxfive_tri_probe_apply(const struct sgxfive_tri_cpu *c, const struct sgxfive_tri_layout *l,
 			    const struct sgxfive_tri_params *p, const struct sgxfive_tri_probe *pr,
 			    struct drm_sgxfive_render_cmd *cmd);
+
+/*
+ * The name of the first slot of pr whose USSE program holds a ba, "obj2 pixel"
+ * for the second object's shader, or NULL. A ba counts from the code base and
+ * every slot is put away from it, so sgxfive_tri_probe_apply() refuses it; use
+ * br.
+ */
+const char *sgxfive_tri_probe_ba(const struct sgxfive_tri_probe *pr);
 
 /* ---- A render engine whose scene the caller may change before it is submitted ------- */
 

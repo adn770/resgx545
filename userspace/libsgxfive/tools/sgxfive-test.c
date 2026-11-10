@@ -2312,6 +2312,11 @@ static void probe_tri_one(struct tool *t, const struct probe_file *f,
 				printf(" depth %g %g %g", pt->z[0], pt->z[1], pt->z[2]);
 			printf("\n");
 		}
+		if (!ret && sgxfive_tri_probe_ba(&pr)) {
+			fprintf(stderr, "a ba in the --tri %s slot counts from the code base: use br\n",
+				sgxfive_tri_probe_ba(&pr));
+			ret = -EINVAL;
+		}
 		if (!ret)
 			ret = sgxfive_tri_rig_build(g, &p, &pr);
 		if (!ret && pt->emit_scene)
