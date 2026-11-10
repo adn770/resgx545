@@ -43,8 +43,8 @@ draws render 2 on background 0xff000080 (first wrong pixel (1, 1) 0xff000080), s
 all-background hash differs from the one-render job's by construction. The controls were frozen
 from a job of another shape (a design error of the stage), so the gate closing says nothing about
 the module (the lead checked the one-render file of E728's dataset). The lead's follow-up, a
-separate session not part of K2's freeze (closing3/overnight/r3k-regress, attempt 20261110-222647,
-to be folded by the lead): on the new module 7 of 7 rows in E728's one-render shape reproduced
+separate session not part of K2's freeze (E827, dataset render-closing-r3k-regress, attempt
+20261110-222647): on the new module 7 of 7 rows in E728's one-render shape reproduced
 E728's hash, diff, dwords and dump sha256s, and 3 of 3 rows in this stage's -n 2 --geometry 1
 shape gave 0x8ea26cdfee74a325 again, so the failure of the controls is the job shape, measured
 there, and not a difference of the module. Two further observations: p0's image is exactly right

@@ -6026,6 +6026,27 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   cleared them; all four held rows are OTHER by the frozen rule: 'Q003: cannot tell: no held row
   could be read'.
   *bif; HW, infer; data: `render-closing-r3k-pixel:out/20261110-193547/k-bif/`.*
+- `E827` R3k-regress (the lead's regression session on the new module, srcversion 230E0EF5): 23 of
+  23 rows of stage rg-ctl, taken from closing sessions that passed on the old module (E773 g-u1 tri
+  and geometry jobs at 1024 x 768 and other sizes, E806 green fills 8 x 8 to 256 x 256, E798 g-dd
+  probes, E763 and E788 r2-a-safe TE 0x20 and 0xe0 jobs; 2 controls, 21 held out), reproduced their
+  old kept values (return code, echo, target hash, diff, first wrong pixel, triangle counts, renders
+  ok and the dump hashes where the old job had a dump); in stage rg-pb 7 of 7 held-out rows in
+  E728's one-render shape (TE 0x40 four times, one in mode 0 and one at 128 x 128, TE 0x80 and 0xc0,
+  all held out) and its two controls (TE 0x20 and 0xe0) reproduced E728's target hash, diff,
+  parameter buffer dwords and dump sha256s, so the module did not change E728's image; the same job
+  in K2's shape (-n 2 --geometry 1, TE 0x40) gave 0x8ea26cdfee74a325, 3969 of 4096 pixels wrong, in
+  3 of 3 jobs, the value of E825's k-pb0, and the twin row (TE 0x60) gave 0xd2bfb75560f4c325, 0
+  wrong, again E825's twin value (H-SHAPE: the hash difference of E825 belongs to the job shape, not
+  to the module [infer]); frozen verdicts 'rg-ctl: control 2 PASS of 2; heldout 21 PASS of 21; every
+  row reproduced its old value (no module regression in these classes)' and 'rg-pb: E728-shape 7 of
+  7 held-out rows as H-OLD, controls {'pb-e20-m2-64': 'PASS', 'pb-ee0-m2-64': 'PASS'}; -n 2
+  --geometry 1: 3 of 3 as H-NEW, twin row H-NEW; H-SHAPE'.
+  *isp; HW, infer; data: `render-closing-r3k-regress:out/20261110-222647/rg-ctl/`,
+  `render-closing-r3k-regress:out/20261110-222647/rg-pb/`,
+  `render-closing-r3k-regress:out/20261110-222647/score-rg-ctl.txt`,
+  `render-closing-r3k-regress:out/20261110-222647/score-rg-pb.txt`,
+  `render-closing-r3k-regress:out/20261110-222647/gate-rg-pb.txt`.*
 
 ## By unit
 
@@ -6059,7 +6080,7 @@ E215, E216, E217, E218, E219, E220, E222, E224, E225, E226, E227, E228, E229, E2
 E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E290, E291, E330,
 E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E508, E510, E590,
 E606, E607, E618, E660, E661, E662, E680, E681, E682, E683, E684, E727, E728, E731, E739, E740,
-E741, E757, E758, E762, E825.
+E741, E757, E758, E762, E825, E827.
 
 ### mte
 
