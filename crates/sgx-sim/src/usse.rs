@@ -3729,7 +3729,7 @@ impl Machine {
             0 => self.temp(r)?,
             1 => {
                 self.not_pending(Reg::Pa(r))?;
-                self.read(self.pa[r], self.written.pa, r, "pa")?
+                self.read_pa(r)?
             }
             2 => self.read(self.o[r], self.written.o, r, "o")?,
             3 => self.read(self.sa[r], self.written.sa, r, "sa")?,
@@ -3830,7 +3830,7 @@ impl Machine {
             1 => self.read(self.o[r], self.written.o, r, "o")?,
             2 => {
                 self.not_pending(Reg::Pa(r))?;
-                self.read(self.pa[r], self.written.pa, r, "pa")?
+                self.read_pa(r)?
             }
             3 => self.read(self.sa[r], self.written.sa, r, "sa")?,
             6 => r as u32,
@@ -4099,9 +4099,12 @@ impl Machine {
             // hardware (E496, Q098; usse-pa-dest, 3 of 3 jobs, and E380): in a fill a write to
             // pa0 by ima32 or mov is lost, pa0 reading what it read before; E380 (30 fill jobs):
             // a mov to pa1 to pa7 is lost the same way. ima32 to pa1 and up was not run, and an
-            // EDM task's pa is not measured (Q098, E537)
+            // EDM task's pa: S2 e2r/e2w measured the read side (pa0 to pa4 are sa64 to sa68) but
+            // not a write to pa, so it stays refused (Q098, E537)
             2 if self.edm_task => {
-                return Err(why(format!("a write to pa{r} in an EDM task (not measured, Q098)")));
+                return Err(why(format!(
+                    "a write to pa{r} in an EDM task (the read side is measured, S2 e2r/e2w; the write side is not, Q098)"
+                )));
             }
             2 if r == 0 => {}
             2 if self.mov_dest && r < 8 => {}
@@ -4155,6 +4158,19 @@ impl Machine {
             return Err(why(format!("r{r} is past the task's {} temporaries", self.temps)));
         }
         Ok(())
+    }
+
+    /// Read pa<r>. In an EDM task pa0 to pa4 are sa64 to sa68 (hardware, S2 e2r/e2w: pa_n read
+    /// sa_(64+n) for n = 0..4, 3 of 3 jobs, and a write to sa67 or sa68 showed through pa3 or
+    /// pa4 in the same pass and the next); pa5 and up are not measured there (Q098).
+    fn read_pa(&self, r: usize) -> Result<u32, Error> {
+        if self.edm_task {
+            if r >= 5 {
+                return Err(why(format!("a read of pa{r} in an EDM task (only pa0 to pa4 measured, Q098)")));
+            }
+            return self.read(self.sa[64 + r], self.written.sa, 64 + r, "sa");
+        }
+        self.read(self.pa[r], self.written.pa, r, "pa")
     }
 
     fn set_pa(&mut self, r: usize, v: u32) {
@@ -7563,6 +7579,41 @@ mod after_11_27 {
                 assert_eq!((r, m.r[10]), (Ok(()), want), "imae {text} {v:#x}");
             }
         }
+    }
+
+    fn edm(src: &[&str], sa: &[(usize, u32)]) -> (Machine, Result<(), Error>) {
+        let words: Vec<u64> = src.iter().map(|t| usse_isa::encode(t, Core::Sgx545).unwrap()).collect();
+        let mut m = Machine { edm_task: true, ..Machine::default() };
+        for &(n, v) in sa {
+            (m.sa[n], m.written.sa) = (v, m.written.sa | 1 << n);
+        }
+        let mut mem = Memory { base: 0x1000, words: vec![0; 64] };
+        let r = m.run(&Program::new(&words, Core::Sgx545), &mut mem, 1000);
+        (m, r)
+    }
+
+    #[test]
+    fn an_edm_tasks_pa_reads_are_sa_64_up() {
+        // S2 e2r (3 of 3 jobs): pa_n reads sa_(64+n) for n = 0..4, in an EDM task
+        let sa: Vec<(usize, u32)> = (0..5).map(|n| (64 + n, 0x100 + n as u32)).collect();
+        for n in 0..5 {
+            let (m, r) = edm(&[&format!("mov r10, pa{n}"), "nop.end"], &sa);
+            assert_eq!((r, m.r[10]), (Ok(()), 0x100 + n as u32), "pa{n}");
+        }
+        // a write to sa67 shows through pa3 in the same pass (S2 e2w, 3 of 3 jobs)
+        let (m, r) = edm(&["mov sa67, #0x55", "mov r10, pa3", "nop.end"], &[]);
+        assert_eq!((r, m.r[10]), (Ok(()), 0x55));
+        // pa5 and up are not measured there: refused under Q098; a pa the sa64 view never got
+        // is unwritten and stops like any unwritten register
+        let (_, r) = edm(&["mov r10, pa5", "nop.end"], &sa);
+        assert!(
+            matches!(&r, Err(Error::Unsupported { why, .. }) if why.contains("Q098") && why.contains("pa5"))
+        );
+        let (_, r) = edm(&["mov r10, pa0", "nop.end"], &[]);
+        assert!(refused(&r), "{r:?}");
+        // and a pa write in an EDM task stays refused, naming both sides
+        let (_, r) = edm(&["mov r1, #5", "mov pa3, r1", "nop.end"], &sa);
+        assert!(matches!(&r, Err(Error::Unsupported { why, .. }) if why.contains("write side is not")));
     }
 
     #[test]

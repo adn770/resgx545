@@ -262,6 +262,13 @@ impl Sgx {
         let mut m = Machine { temps, pc, pa: *pa, sa: self.st.sa, edm_task: true, ..Machine::default() };
         m.written.pa = written;
         m.written.sa = self.st.sa_written;
+        // the task's pa0 to pa4 are sa64 to sa68 (S2 e2r): the words the PDS program wrote with
+        // DOUTA land there, so the pa and sa views agree
+        for n in 0..5 {
+            if written >> n & 1 != 0 {
+                (m.sa[64 + n], m.written.sa) = (pa[n], m.written.sa | 1 << (64 + n));
+            }
+        }
         let mut bus = Unit { st: &mut self.st, bank: Bank::Secondary, pa: [0; 128], written: 0 };
         let r = m.run(&prog, &mut bus, max - self.steps);
         self.steps += m.steps;
@@ -416,6 +423,29 @@ mod tests {
     /// The doutu code word of instruction `pc` at code base 15 with 8 temporaries.
     fn code_word(pc: u32) -> u32 {
         0x0200_0000 | pc << 4 | 0xf
+    }
+
+    #[test]
+    fn an_events_douta_words_land_in_sa_64_up_as_pa_too() {
+        // S2 e2r: in an EDM task started by the event program pa_n is sa_(64+n); the DOUTA words
+        // of the program (pa0, pa2) land in sa64 and sa66, so pa2 and sa66 read the same
+        let mut s = sgx();
+        s.st.mem.map(
+            CODE,
+            &usse("mov r0, pa0\nmov r1, pa2\nmov r2, sa64\nmov r3, sa66\nstr #64, r1\nstr #65, r3\nstr #66, r2\nnop.end"),
+        );
+        let prog = pds(
+            &[code_word(0), 0x1111, 0, 0x200, 0x2222, 0, 0, 0],
+            "movs douta, ds0[1], ds1[0], ds0[1], ds0[1]\nmovs douta, ds0[2], ds1[1], ds0[2], ds0[2]\n\
+             movs doutu, ds0[0], ds0[0], ds0[0], ds0[0]\nhalt",
+        );
+        s.st.mem.map(CODE + 0x1000, &prog);
+        s.write_reg(reg::EVENT_OTHER_PDS_EXEC, CODE + 0x1000).unwrap();
+        s.write_reg(reg::EVENT_OTHER_PDS_DATA, 2).unwrap();
+        s.write_reg(reg::EVENT_KICK2, 1).unwrap();
+        s.run(10_000).unwrap();
+        assert_eq!((s.st.regs[&64], s.st.regs[&65], s.st.regs[&66]), (0x2222, 0x2222, 0x1111));
+        assert_eq!((s.st.sa[64], s.st.sa[66]), (0x1111, 0x2222));
     }
 
     #[test]

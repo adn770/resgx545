@@ -80,7 +80,8 @@ class Refused(Exception):
     by the refusal run on the state it stops in."""
 
 
-UNMEASURED = "a write to pa2 in an EDM task (not measured, Q098)"
+UNMEASURED = ("a write to pa2 in an EDM task (the read side is measured, S2 e2r/e2w; the write side "
+              "is not, Q098)")
 REFUSAL_TASK = "task 0x30000000+0x1c4"        # edm.task.init_done's entry, 0x1c4 in the code heap
 
 
