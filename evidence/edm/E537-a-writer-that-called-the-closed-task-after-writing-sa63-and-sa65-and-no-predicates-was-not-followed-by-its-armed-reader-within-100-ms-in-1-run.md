@@ -64,3 +64,19 @@ mechanism (a word that asks for handlers no event raised); it is a candidate, no
 p0 = p1 = 1 predicates and the sa, r and i writes remain the other differences from E536's writer
 (Q152). The register values above were read from the dump; the reading of sa65 as `pa1` is E155's
 [infer] reading, which no run has fed to the firmware.
+
+**Correction 2026-11-10:** (R3-events, E791 and E793) the reading above that a task stayed
+resident and "the closed task did not end", read as a hang inside the closed task and not as the
+EDM having stopped dispatching, is not supported. [data] A task of ours that never called the
+closed task (E793, ring_skip.s: the pass logged itself and ended with `nop.end`, no sa, r, i, p or
+pclink write) stopped the tick in 2 of 2 runs with the same signature this dump has:
+`CR_CLKGATESTATUS` 0x000ccfa0, `EVENT_STATUS` 0x20000000, `EVENT_TIMER` counting,
+`USE0_SERV_EVENT` with bit 16 clear and its count frozen (0x8ad and 0x33b there, 0x9e0 here, the
+count depending on the time since the load). [infer] So this signature does not by itself mean that
+the closed task hung: it is what the EDM looks like when the tick stops after a task that ended
+without the closed task's end-of-pass work, whatever that work is, and E537's stop may have the same
+cause or another. The note's other readings were tested by single writes in E791: no write of sa63
+alone, of sa64 or of sa65 with the value the closed task found, nor the tail call with p0 = p1 = 1
+and r and i written stopped the tick (19 of 19 jobs); the sa65 word E537's writer left (0xb009c5dc)
+was not written by any of those rows, so the note's leading candidate, the word the closed task
+dispatched on, is neither confirmed nor refuted.

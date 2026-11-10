@@ -565,6 +565,29 @@ mod tests {
     }
 
     #[test]
+    fn two_kicks_queued_behind_a_running_task_are_two_events_with_their_own_counts() {
+        // Q290 (E794): two kicks that arrive while a task holds the EDM were logged as two
+        // entries, K and K + 1, and the tick after them carried K + 2 (3 of 3 jobs); the sim's
+        // queue keeps each kick as its own event, with the count it had when it was written
+        let mut s = sgx();
+        s.event_count = 2;
+        s.write_reg(reg::EVENT_OTHER_PDS_EXEC, CODE + 0x1000).unwrap();
+        s.write_reg(reg::EVENT_OTHER_PDS_DATA, 1).unwrap();
+        s.write_reg(reg::EVENT_KICK, 1).unwrap();
+        s.write_reg(reg::EVENT_KICK, 1).unwrap();
+        s.event(0).unwrap();
+        let words: Vec<u32> =
+            s.st.queue
+                .iter()
+                .map(|w| match w {
+                    Work::Pds { ir1: Some(ir1), .. } => *ir1,
+                    _ => panic!("not an event"),
+                })
+                .collect();
+        assert_eq!(words, [0x0200_0100, 0x0300_0100, 0x0400_0000]);
+    }
+
+    #[test]
     fn an_event_runs_the_event_program_with_its_inputs() {
         // the timer tick: EVENT_STATUS.TIMER, which the event program gets as ir0 bit 1
         // (the microkernel's tick handler tests pa0 bit 1), nothing in ir1

@@ -5,7 +5,7 @@ unit = "edm"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E746", "E747", "E768"]
+evidence = ["E746", "E747", "E768", "E794"]
 terms = ["Event Data Master (EDM)"]
 +++
 Split off 2026-11-10 from the questions on bits 24 and 25 of pa1 (answered by E746, which read them as
@@ -48,3 +48,14 @@ Also open: why the kick's own entry carries the value from before its bump. The 
 the host kicks mod 256 (sgx-sim `event_count`, which is H-HWC's reading and H-KW's too for every
 kick the kernel makes). Value stays low: the simulator loses nothing the two readings differ on
 until a kick is made that the kernel does not make.
+
+Narrowed 2026-11-10 (R3-events stage k7, E794; not retired). Two kicks that arrive while a task
+holds the EDM for 90 ticks are delivered as two entries, not merged: K 2 and 3, the ticks after
+them 4 and ccbctl[0] 4, in 3 of 3 jobs, each kick's read answered, the controls (no kick: burst
+4; one kick: one entry, ticks K + 1) reproducing S2b; H-MERGE is refuted. The count byte of a
+queued kick's entry is the value at its arrival (2, then 3), although both were served after the
+hold, when both bumps had happened [infer]. That answers the sub-question of the second note's
+oddity only in part: the pre-bump value is the value when the event is formed, not when it is
+served; why the latch falls before the bump is still not shown, and H-KW against H-HWC is not
+separated either (the kernel bumped the word before each of these writes). The simulator already
+queues each kick as its own event with its count (a test pins it).

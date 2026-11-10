@@ -511,8 +511,10 @@ The waits and modes on the hardware (E101) **[HW]**:
   timer (E746, 3 of 3; E538's 0x03000000 was the tick after the kick, see its correction). After a
   task that wrote `sa`, `r`, `i`, `p` and `pclink` state and ended with
   `nop.end` instead of jumping to the closed one, every later event stopped until a reset (E533, one
-  run; skipping the closed task, its arbitrary pclink write and its p values are not separated,
-  Q152). **State between firmware tasks [HW]** (E536; a writer that calls the closed task after its
+  run; a task that wrote nothing and ended a tick pass that way stopped it in 2 of 2 runs, so
+  skipping the closed task is enough, E793; no single write of sa63, sa64 or sa65 and no tail call
+  with p0 = p1 = 1 stopped it, E791; what the EDM needs from the closed task is open, Q152).
+  **State between firmware tasks [HW]** (E536; a writer that calls the closed task after its
   writes, with the closed task's ticks between): `sa100`, `sa127`, `sa20` and `sa24` (12 of 12
   values in 3 of 3 rounds), `r20` and `r21` (6 of 6) and `i0` and `i1` (6 of 6) written by one task
   were read by the next at the next event and after 1200 ms, and after a client fill all but `r20`

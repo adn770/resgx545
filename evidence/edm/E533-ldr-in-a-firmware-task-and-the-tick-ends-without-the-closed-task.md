@@ -32,3 +32,11 @@ whether two tasks overlap (item 11), the largest allocation (item 13), and the e
 kick and of a job (Q033): the stage stopped before any of them. A writer that jumps to the closed
 task after its writes, and a task that skips it without writing, are different experiments, not run
 here (Q152).
+
+**Correction 2026-11-10:** (R3-events, E793) the text above that the run does not separate skipping
+the closed task from the writes of that task is answered for the skip: a task of ours that wrote no
+sa, r, i, p or pclink and ended one tick pass with `nop.end` without calling the closed task
+stopped the tick in 2 of 2 runs, so skipping the closed task is enough, and the writes of this
+task are not needed for the stop (not shown: that they are harmless). The recovery was one debugfs
+reset in those runs as here. That the EDM needs something the closed task does at the end of a pass
+is [infer]; what it is is open (Q152).

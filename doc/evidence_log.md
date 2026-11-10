@@ -5559,6 +5559,72 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   c3-2048-0xe2 (peak 4, dword 36 1) and k-1500-0x300 (peak 4, dword 36 1), and in the 5 jobs of g-c3
   that never overflowed (peak count 7, dword 36 0) it does not apply.
   *dpm; HW, infer; data: `render-closing-r2-geo:out/g-c3/`, `render-closing-r2-geo:out/g-c2/`.*
+- `E791` R3-events stage a (Q152 rows A0 to A6, 19 jobs: a writer of ours, one entry of alias.s, 208
+  instructions, wrote sa63, sa64 or sa65 (or none of them) and then called the closed general task,
+  and our reader ran at the next event): the tick was kept in 19 of 19 jobs and no job stopped it
+  (HostCtl dword 12 and USE0_SERV_EVENT advancing in every check after the reader, 912 to 1035 Hz);
+  the controls held (A0 x2: the reader's pclink 0x98, p1 1, sa64 2, sa65 0x02000000, sa63 0); H-63
+  (sa63 stops the tick) is refuted by A1, a marker written to sa63 and left there, kept in 3 of 3
+  jobs and still read back 1200 ms later in 3 of 3, and H-P11 (p0 = p1 = 1 at the tail call with
+  r20, r21, i0 and i1 written) is refuted by A6, kept in 2 of 2; A2 (sa65 written with its own entry
+  value), A3 (sa65 written with a marker and restored before the tail call, 3 of 3 restored) and A4
+  and A5 (sa64 written, E792) kept the tick 3 of 3 each; the frozen scorer printed fit 12 held and 0
+  FAILED, held out 21 held, 4 FAILED and 1 cannot tell, replicate 40 held, 7 FAILED and 2 cannot
+  tell, the FAILED rows being the kept-or-not rows of the two refuted hypotheses (H-63 in A1 x3,
+  H-P11 in A6 x2) and the p1 rows of A2 and A5 (E792); the sa65 value E537's writer left
+  (0xb009c5dc, with bits no event raised) was not written by any row, so the cause of E537's stop is
+  not among these single writes, and no row reproduced that stop.
+  *edm; HW, infer; data: `edm-closing-r3-events:out/a/`.*
+- `E792` In the 17 R3-events stage a jobs that ran a writer (A1 to A6, 3, 3, 3, 3, 3 and 2 jobs; the
+  two A0 jobs had none) the entry registers our reader stored at the next event after the closed
+  task had run were: pclink 0x98 in 14 jobs and 6 in the 3 A4 jobs, the only writer that wrote sa64
+  with bit 1 (the tick bit of pa0) clear (sa64 = pa0 & ~2, which the writer read back as 0 in the
+  same pass), against 0x98 after A5's sa64 = pa0 (3 of 3, the tick bit set), A2's sa65 write, A3's,
+  A1's sa63 write and A6's, as the frozen H-ALIAS predicted for A4, A2 and A5 (pclink held in 9 of 9
+  of those jobs); p0 read 1 in all 19 jobs, whether the writer left it 0 (A1 to A5), 1 (A6) or the
+  previous pass left 0 (A0); p1 read 0 in the 15 jobs of A1 to A5, whose writer set it 0 before its
+  tail call, and 1 in A6 (p0 = p1 = 1 at the tail call) and in the two A0 jobs, so in this stage p1
+  at the next entry is the value our task's tail left in 19 of 19 jobs (frozen rows for A2 and A5
+  said 1 and failed, 6 of 6 jobs: the prediction took the reader's own p1 of A0, not the writer's
+  setp, a design error found after the run, E791 and below); the A4 rows' dword 12 difference to the
+  pass count, frozen as passes - 1, was cannot tell (the bracketed intervals (-9, 6), (-8, 5), (-7,
+  6) contain -1 and 0).
+  *edm; HW, infer; data: `edm-closing-r3-events:out/a/`.*
+- `E793` R3-events stage b (Q152 rows B0 and B1; ring_skip.s, a firmware task of ours that logs
+  every pass of its four PDS #13 slots in a ring and, in window 2, ends one plain tick pass with
+  nop.end after an idf and a wdf, writing no sa, no r, no i and no p and not calling the closed
+  general task, when the host has set SKIP to 1): the control B0 held in 3 of 3 jobs (14 entries
+  each on the 25000-unit grid, SKIPPED 0, no drop); in B1 the pass was skipped as designed (SKIPPED
+  1 in the task's own counter, the skipped pass logged with flag 3) and the tick stopped in 2 of 2
+  jobs, b1 and b1-r2, with no entry after the skipped one (HostCtl dword 12 frozen at 2216 and at
+  822 over three reads, USE0_SERV_EVENT at 0x8ad and 0x33b with its bit 16 (empty) clear and its
+  count not moving): H-FREE (the hardware dispatches the next event after any task end) is refuted,
+  2 of 2; the stop signature read twice (38 and 44 ms apart) before each reset was the busy one of
+  E537, CR_CLKGATESTATUS 0x000ccfa0 (idle 0x20), CR_EVENT_STATUS 0x20000000 and EVENT_TIMER
+  counting, in both jobs (the scorer: signature busy, matches E537), so E537's signature is what a
+  stop looks like when the closed task never ran; the stage ended by design at its second stop (exit
+  8, both resets and gates exact) and b1-r3, b2 and b2-r2 did not run (recorded void by the scorer,
+  status NODATA), so a skip of five ticks (B2) was not measured; the frozen scorer printed B0 held,
+  B1 reads H-STOP, held out 1 held and 1 FAILED (H-FREE's 'kept') with 6 void, replicate 7 held, 1
+  FAILED and 11 void, control 3 held.
+  *edm; HW, infer; data: `edm-closing-r3-events:out/b/`.*
+- `E794` R3-events stage k7 (Q290 K7; a 90-tick hold of the EDM by ring_hold, S2b's blob byte for
+  byte, n = 1508279, hold 2262434 units, window 2, 160 ms open): with no kick the exit was followed
+  by a burst of 4 entries (k7-ctl: 16 entries, 0 kick entries, the ticks after the hold K 2,
+  ccbctl[0] 2 to 2; S2b's ctl90, fit 3 of 3 rows), with one GETMISCINFO kick 3 ms into the hold the
+  burst was 5 with one kick entry (K 2), the ticks after it K 3 and ccbctl[0] 3 (k7-one; S2b's
+  kick90 and E746's identity, fit 4 of 4 rows), and with two real kicks inside the hold, the debugfs
+  xfer_sync's TRANSFER and, 50 ms later, its PROCESS_QUEUES, both answered (read ok), the ring held
+  two kick entries in 3 of 3 jobs (k7, k7-r2, k7-r3), K 2 and 3 in that order, all inside the burst
+  after the hold, the ticks after them K 4 and ccbctl[0] 4 (burst 6, 5 and 6 entries): H-EACH (each
+  kick is delivered as its own entry) held in every row of the three jobs (5 held-out rows and 10
+  replicate rows) and H-MERGE (one entry and a read that times out) is refuted, 3 of 3, its 2
+  held-out and 4 replicate rows being the FAILED rows the scorer printed; the hold band (the
+  kernel's hold length, the knob of S2 run 3) held in 5 of 5 jobs (2262433 to 2262436 units against
+  2262434); each ring held 16 entries and dropped 51 to 54 (k7-ctl 51, k7-one 52, k7 53, k7-r2 51,
+  k7-r3 54), all of them ticks after the burst, which the 16 rungs of slot 0 could not hold, so the
+  drops are harmless to every row (no drop inside the burst: late ticks were read in all five jobs).
+  *edm; HW, infer; data: `edm-closing-r3-events:out/k7/`.*
 
 ## By unit
 
@@ -5578,7 +5644,7 @@ E786, E790.
 Records: E009, E014, E017, E084, E146, E152, E153, E154, E155, E156, E157, E158, E159, E160, E161,
 E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321, E353, E402, E431, E444,
 E450, E531, E532, E533, E536, E537, E538, E539, E540, E550, E600, E601, E602, E603, E604, E605,
-E746, E747, E748, E749, E750, E751, E752, E764, E768, E769, E771, E784.
+E746, E747, E748, E749, E750, E751, E752, E764, E768, E769, E771, E784, E791, E792, E793, E794.
 
 ### firmware
 

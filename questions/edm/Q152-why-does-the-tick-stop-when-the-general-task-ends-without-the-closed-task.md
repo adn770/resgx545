@@ -1,11 +1,11 @@
 +++
 id = "Q152"
-question = "what must a task of ours that runs in place of the closed general task (or before it) leave or do so that the next event is delivered and the 1 kHz tick continues: what in E533's task (an arbitrary pclink write, p0 to p3 = 1, 0, 1, 0, `nop.end` instead of the closed task), in E536's writer (3 of 3 rounds kept the tick) and in E537's writer (sa63 and sa65 written, p0 = p1 = 1: the armed reader did not run) differs, and does the closed task use p0 to p3, sa63 or sa65"
+question = "what does the EDM need from the closed general task's end of a pass so that the next event is delivered and the 1 kHz tick continues (E793: a task of ours that ended a tick pass with `nop.end` and did not call it stopped the tick, 2 of 2, while E791's single writes of sa63, sa64 or sa65 and the tail call with p0 = p1 = 1 did not, 19 of 19), and what in E537's writer (sa63 and sa65 written with the words it left, p0 = p1 = 1: the armed reader did not run, 1 run) stopped it, E536's writer (3 of 3 rounds kept the tick) not, and does the closed task use p0 to p3, sa63 or sa65"
 unit = "edm"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E533", "E155", "E536", "E537"]
+evidence = ["E533", "E155", "E536", "E537", "E791", "E792", "E793"]
 terms = ["Event Data Master (EDM)", "CR_EVENT_TIMER"]
 +++
 
@@ -106,3 +106,35 @@ task may have skipped the tick handler, the reading that would leave pclink 6 an
 the next entry (Q124) [infer, untested]. Hypotheses named for the next runs, to be frozen before
 them: the alias hypothesis (all the closed task sees passes through sa64 and sa65), sa63 alone,
 and p0 = p1 = 1 at the tail call with sa, r and i written.
+
+Narrowed 2026-11-10 (R3-events stages a and b, E791 to E793; not retired). Two halves ran, with
+their controls passing.
+- No single write stops the tick (E791, 19 of 19 jobs kept it, no stop). sa63 alone, left at a
+  marker (3 of 3, still read 1200 ms later), sa64 with the tick bit set or clear (3 and 3), sa65
+  written with the value it held (3) or with a marker restored before the tail call (3), and the
+  tail call with p0 = p1 = 1 and r20, r21, i0 and i1 written (2): H-63 and H-P11 are refuted.
+  The sa65 word E537's writer left in place (0xb009c5dc) was not written by any row, so what stopped
+  E537's writer (that word, the combination, or a stop that does not repeat: 1 run) is open; the
+  rows that would leave such a word (A7, A8) were not run.
+- Ending a tick pass without the closed task stops the tick (E793, 2 of 2): a task that logged its
+  pass and ended with `nop.end`, with no sa, r, i, p or pclink write, was followed by no event, with
+  E537's signature (busy `CR_CLKGATESTATUS` 0x000ccfa0, `EVENT_STATUS` 0x20000000, the timer
+  counting, `USE0_SERV_EVENT` frozen): H-FREE (the hardware dispatches the next event after any
+  task end) is refuted. A reset recovered both, as in E533. So skipping the closed task is enough
+  for E533's stop, and the arbitrary pclink write, the p values and E533's sa, r and i writes are
+  not needed for it (that they are harmless is not shown). The B2 rows (a skip of five ticks) did
+  not run: the stage ended at its second stop.
+
+**Correction 2026-11-10:** the inference of the note above, that the stop signature
+(`USE0_SERV_EVENT` count frozen, a USSE task resident) means that the closed task did not end, is
+withdrawn: the signature also follows a task that never called the closed task (E793), so it does
+not locate the hang in it. The EDM appears to need something the closed task does at the end of a
+pass (E155's tick handler does several things, among them the `EVENT_TIMER` write) [infer]; which
+of them, and whether E537's writer stopped the tick for the same reason, is not shown.
+
+Open: what the closed task does at the end of a pass that the EDM needs (candidates: the
+`EVENT_TIMER` write of E155's tick handler, an acknowledge, a state store: a task of ours that
+repeats one of them after its own `nop.end` pass, run only after the register-write limits allow
+it, would separate them); what E537's stop depends on; whether the closed task reads sa63 at all
+(sa63 is read back by the next task, E791 A1); p2 and p3 (Q124); the B1 control for a skip on a
+kick pass (B3, not run).

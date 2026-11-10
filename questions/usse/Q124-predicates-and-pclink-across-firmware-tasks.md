@@ -4,7 +4,7 @@ question = "do p0-p3 and pclink survive from one firmware (EDM) task to the next
 unit = "usse"
 kind = "fw"
 phase = 11
-evidence = ["E475", "E477", "E484", "E533", "E536", "E537"]
+evidence = ["E475", "E477", "E484", "E533", "E536", "E537", "E791", "E792"]
 terms = ["Universal Scalable Shader Engine (USSE)", "Event Data Master (EDM)"]
 +++
 
@@ -46,3 +46,21 @@ writer left it and pclink at 6 on the next entry, against 1 and 0x98 after an or
 untested: nothing wrote a marker with bit 1 set; a count of HostCtl dword 12 short by one on those
 passes, which would support it, is not recorded in the files read for this note]. It would explain
 p1 and pclink and not p0 (written 0, read 1), p2 and p3.
+
+Narrowed 2026-11-10 (R3-events stage a, E791 and E792; not retired). The reading of the note above
+ran: a writer whose sa64 has bit 1 (the tick bit of `pa0`) clear (A4, sa64 = pa0 & ~2) was followed,
+at the next entry, by pclink 6 and p1 as it left it in 3 of 3 jobs, and a writer whose sa64 has it
+set (A5, sa64 = pa0), the sa65 and sa63 writers and the tail call with p0 = p1 = 1 (A6) by pclink
+0x98 (14 of 14 writer jobs whose sa64 had the tick bit set or was not written; the frozen pclink
+rows of A2, A4 and A5 held in 9 of 9). So pclink
+6 follows a non-tick word in sa64 [data] and a path of the closed task that does not rewrite it is
+what leaves it [infer], and p1 at the next
+entry was the p1 our task left at its tail in 19 of 19 jobs (0 after the writers that set it 0, 1
+after A6 and the readers), so p1 survives from our task through the closed task's pass. p0 read 1
+in all 19 jobs whatever the writer left (0 or 1), so p0 is not ours. The frozen rows that said p1 1
+for A2 and A5 failed (6 of 6 jobs): post hoc a design error (the writers set p1 0 before the call),
+not a refutation of the path reading. Open: p2 and p3 (A0 read 0, 0, every other job 1, 1, and
+what the passes before them left is not recorded register by register), whether the closed task's
+path depends on the tick bit alone (the sa64 words written were 0 and 2 only), the dword 12
+count (cannot tell: the bracket's intervals contain the predicted -1), and the start state of a
+task after a reset or a fill (not run).

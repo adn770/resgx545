@@ -682,21 +682,29 @@ slot 3 with `pa1` bit 4, the reversed order of E155 (E747); bit 19 did not appea
 nor in 8 jobs of 4096x4096 with 1500 vertices that did and did not raise the TA's threshold (E771,
 Q033). While a task of ours holds the EDM the
 events are queued and not lost: up to four ticks (three latched on arrival, one when the hold ends,
-the rest dropped), a kick once, a job's events once, all served after the hold (E749, E751, E752).
+the rest dropped), a kick once, a job's events once, all served after the hold (E749, E751, E752);
+two kicks in one 90-tick hold are two entries, each with the count it had when it arrived (2 and 3,
+the ticks after them 4), 3 of 3 jobs (E794).
 After a task that wrote `sa`, `r`, `i`, `p` and `pclink` state and ended with `nop.end` instead of
 jumping to the closed general task, the tick stopped: dword 12 and `USE0_SERV_EVENT` did not move
-over three reads 20 ms apart, and one debugfs reset recovered it (E533, 1 run; that task skipped the
-closed task, wrote an arbitrary `pclink` and set p0 to p3 to 1, 0, 1, 0, so the cause is not
-separated, Q152). A task of ours that wrote `sa`, `r`, `i` and `p` and then called the closed task
+over three reads 20 ms apart, and one debugfs reset recovered it (E533, 1 run). A task of ours that
+wrote nothing and ended one tick pass with `nop.end`, without calling the closed task, stopped it
+in 2 of 2 runs, with `CR_CLKGATESTATUS` 0x000ccfa0, `CR_EVENT_STATUS` 0x20000000, the event timer
+counting and `USE0_SERV_EVENT` frozen with its empty bit clear: skipping the closed task is enough
+(E793, Q152). A task of ours that wrote `sa`, `r`, `i` and `p` and then called the closed task
 left the tick running (E536, 3 of 3 rounds, 911 to 1005 Hz), and a second one that also wrote `sa63`
 and `sa65` and called it was not followed by its armed reader within 100 ms (E537, 1 run; HostCtl
 dword 12 advanced 6 in that window and then read 0x9db in both dumps taken seconds later, and
 `USE0_SERV_EVENT` 0x9e0 in both, against E533's three reads 20 ms apart; Q152). The closed task does
-not by itself keep the tick, then, whatever E533's cause was.
+not by itself keep the tick, then, but a task that ends a pass without it does not keep it either.
+No single write of `sa63` (a marker, read back after 1200 ms), `sa64` (with the tick bit set or
+clear) or `sa65` (its own value, or a marker restored before the call), and no tail call with p0 =
+p1 = 1 and r and i written, stopped it (E791, 19 of 19 jobs); after an `sa64` with bit 1 clear the
+next entry read `pclink` 6 and p1 as left, after the others 0x98 (E792).
 
 *Based on sgx545-ce `src/services4/system/unified/sysconfig.c`,
 `src/services4/srvkm/devices/sgx/sgxconfig.h`; emgd-psb_regs; E002, E006, E008, E009, E011, E531,
-E532, E533, E536, E537, E538, E746, E747, E749, E751, E752, E768, E771.*
+E532, E533, E536, E537, E538, E746, E747, E749, E751, E752, E768, E771, E791, E792, E793, E794.*
 
 ## 13. Open questions
 
