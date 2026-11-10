@@ -1,11 +1,11 @@
 +++
 id = "Q286"
-question = "is the number f of region-header arrays the TA writes at CR_TE_AA 0xe0000000 4 or 5, what must the kernel's render layout allocate, and why do the health triangles after a 4x fault fault again"
+question = "the TA writes four arrays of region headers at CR_TE_AA 0xe0000000 and a layout of exactly four completes 320x400 (E788): what must the kernel's render layout allocate at the other sizes that fault (the tall case with a page of slack, 288x656 in a context for 544x656, was not run), and why do the health triangles after a 4x fault fault again"
 unit = "ta"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E729", "E507", "E504", "E762", "E763"]
+evidence = ["E729", "E507", "E504", "E762", "E763", "E788"]
 terms = ["CR_TE_AA", "CR_ISP_MSAA"]
 +++
 E729: f in {4, 5} (f = 3 and f >= 6 refuted; fault behaviour cannot separate 4 from 5). After each
@@ -47,3 +47,19 @@ page 0xa) is the layout of that one array continued by E728's doubling, at TE 0x
 not tested at TE 0xe0 (f stays 4 against 5 as above). A rerun's control must predict the image
 with the model, or use a size where it gives diff 0 (64 x 64, 320 x 128), not "diff 0" at 320 x
 400.
+
+Narrowed and retitled 2026-11-10 (R2-pixel, E788; the 4 against 5 clause is answered, the question
+stays open on the kernel's layout and the recovery). The frozen verdict was `Q286: closed H4: four
+arrays written at three layouts and sufficient at 320x400 (a5)`. The control a4 passed with the
+model's 28 wrong pixels and the TA data of 0xa000 bytes with one array of E763; at 256 x 160 and
+320 x 128 the TA data (6 slots read from 0x4000) held four arrays and nothing in the fifth
+slot (held out), the replicate had the same sha256; and a5, 320 x 400 at 0xe0000000 in a context
+made for 544 x 400 whose 0xa000 bytes end exactly after four arrays of 0x1800, completed with 0 of
+128000 pixels wrong, where the context made for 320 x 400 alone (a6, the control) faulted at page
+0x20008. So f = 4 for what the TA writes and four arrays suffice at that size: the fifth array is
+not needed there, which answers the first clause. The slack pair (a tall target with a page of
+slack past four arrays) was not run, its gate being 'not needed'. The a6 fault is also Q003's row
+for a TA write (E789). Not answered here, as before: what `sgx_render_layout` must allocate at
+other sizes (the one measured layout is boundary-exact: 0xa000 = 0x4000 + 4 x 0x1800 at one size),
+and why the health triangles after a failed 4x job fault again (our kernel's recovery, E729's
+contamination note; Q140 holds the kernel part).

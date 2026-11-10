@@ -57,3 +57,12 @@ the raised jobs only the second fits; why the peak is reached after a raise (the
 as E627); whether dword 36 behaves so at other targets and vertex counts. The peak reading wants a
 frozen test on scenes where the peak and the first-abort count differ (raised jobs at another
 vertex count or target).
+
+**Correction 2026-11-10:** (R2-geo, E790) The peak reading above, the maximum of the 0x072c count
+over a job less 2, met 15 jobs it was not read from (g-c3 and g-c2 of R2-geo, each with a first
+abort) and held in 13 of them: it failed in two raised jobs, c3-2048-0xe2 and k-1500-0x300, where
+the peak is 4 and dword 36 reads 1 (the reading gives 2). It is not a rule that holds on every job
+with a first abort, and it does not apply to a job without one (the five jobs of g-c3 that never
+overflowed had a peak of 7 and dword 36 = 0). The register reading at the first abort failed again
+on the raised jobs (4 of 7). The statement "fits all 23 jobs of g-c1 and g-c1f" is unchanged as
+what it was.

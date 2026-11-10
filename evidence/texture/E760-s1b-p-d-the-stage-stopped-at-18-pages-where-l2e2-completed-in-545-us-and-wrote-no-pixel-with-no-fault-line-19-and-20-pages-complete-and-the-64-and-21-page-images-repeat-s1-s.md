@@ -55,3 +55,13 @@ the control never ran in this session.
 19 at which it appears and whether 17 behaves as 18; whether the fault of 16 pages (E722, E743)
 and the empty write of 18 are one effect with the mapping behind the scratch; how large a buffer the
 sampler may read.
+
+**Correction 2026-11-10:** (R2-pixel, E787) The 18-page outcome, "wrote no pixel", was the probe's
+own layout and not an effect of the sampler or the bus: the probe fills every page of its surfaces
+with the sentinel 0xdeadbeef and its test for "no pixel written" is that the target still holds
+the sentinel everywhere. At 18 pages L2e2's reads land in the sentinel page of the probe's coords
+surface, so the job completed and wrote 0xdeadbeef (a variant program storing the word xor 1 wrote
+0xdeadbeee on 2048 of 2048 pixels, held out), and at 17 pages the reads pass the last mapped page
+and fault at 0x3e017001, the address of the 16-page fault. The text above that the outcome was one
+"neither frozen hypothesis predicted" stands as what was measured; what the 18-page job did is
+now explained by the layout, and the page counts 19, 20 and 21 fall on it as well.

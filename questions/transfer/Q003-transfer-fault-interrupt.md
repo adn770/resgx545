@@ -7,7 +7,7 @@ value = "medium"
 phase = 4
 evidence = ["E021", "E024", "E317", "E318", "E319", "E320", "E354", "E355", "E357", "E444",
             "E203", "E313", "E362", "E363", "E395", "E457", "E476", "E573", "E631", "E722", "E729",
-            "E764", "E765", "E766", "E767"]
+            "E764", "E765", "E766", "E767", "E789"]
 terms = ["CR_BIF_FAULT", "CR_BIF_INT_STAT", "misc_info"]
 +++
 
@@ -145,3 +145,13 @@ mapped slot, so it reads as an address outside the directory's range, and type 1
 page within it. Bits 0, 4, 6, 11, 14 and 15 are still not seen. After the faults of bits 7 and 9
 the status reads 0x440, and after bit 8 0x400 or 0x440 (129 of 204 left idle status with the TE
 faults). Both the type and the names are [infer] and the question stays open.
+
+Narrowed 2026-11-10 (R2-pixel, E789; the TA-write row of the S3 note above, held out, one run).
+The held 4x job a6 (320 x 400 at `CR_TE_AA` 0xe0000000 in a context made for 320 x 400) faulted with
+`CR_BIF_INT_STAT` 0x90004 and `CR_BIF_FAULT` 0x20008061, the page the layout model gave, and read
+`CR_EVENT_STATUS` 0x20000000 and `CR_EVENT_STATUS2` 0x480: no status bit of its own beyond the
+bit 7 a TA fault leaves (the frozen HE, extra bits none; HF refuted), a control passing. So of
+"whether a fault of another unit sets another status bit" the TA's write joins the texture unit's
+fetch and a transfer's write (E765, E766): none of the three leaves a bit of its own. Still not
+answered: the 3D's own stores, the ZLS, the type-1 transfer fault (0x90020), which requestor each
+bit names (the names above rest on the address alone), and what clears a latched fault (E767).

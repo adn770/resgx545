@@ -5,7 +5,7 @@ unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E704", "E625", "E630", "E734", "E753", "E774", "E775"]
+evidence = ["E704", "E625", "E630", "E734", "E753", "E774", "E775", "E790"]
 terms = ["Dynamic Parameter Management (DPM)", "ta3d_ctl"]
 +++
 E625's rule for the raise (overflow, then a second run reaching the first threshold) fits 109 of the
@@ -106,3 +106,13 @@ quantity the firmware reads (the count at the first abort or the highest the cou
 in the unraised jobs and different in the raised ones), whether it holds at other vertex counts and
 targets, and what steps it; a frozen test needs raised jobs at another target or vertex count, the
 peak and the first-abort count predicted apart.
+
+Note 2026-11-10 (R2-geo, E790; the question stays open, the reading below it is refuted as a rule).
+The frozen side tables of g-c3 and g-c2 met 15 more jobs with a first abort (E785, E786, 2048x2048
+and poked thresholds as well as 4096x4096): the count at the first abort less 2 held in 5 of 8
+unraised and 3 of 7 raised jobs (the raised ones held out), and the peak less 2 of E775, read after
+the run, held in 13 of the 15 and failed in two raised jobs (peak 4, dword 36 1). Neither is a rule
+for jobs with a first abort, and neither applies to the 5 jobs that never overflowed (peak 7,
+dword 36 0). The scenes are the tool's triangle at 1500 vertices and the default triangle; dword 36
+shows no function of P, the target or the raised threshold in them. Open as above: the quantity the
+firmware reads and what steps it.

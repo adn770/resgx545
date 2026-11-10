@@ -1,11 +1,11 @@
 +++
 id = "Q230"
-question = "what does the TA write in the cases of the clip, the target's edge and the numeric formats that E776 to E781 left open: the stored order of a clipped polygon of 3 or of more than 4 vertices and of a cut by a guard-band plane (E777), the limit of the region lists in y and at the left edge of other targets (E776), the tie of the rounding of the 1/1024 grid to 1/256 (E778), the depth and the 1/w of a vertex with w other than 1 and of a clip-made vertex, the 1/w word under a clamp (within 1 ulp of 1/clamp, no rule, E781), and the size at which a sub-pixel triangle is no longer written (E780)?"
+question = "what does the TA write in the cases of the clip, the target's edge and the numeric formats that E776 to E783 left open: the stored order of a clipped polygon of 3 or of more than 4 vertices and of a cut by a guard-band plane (E777), the limit of the region lists in y and at the left edge of other targets (E776), the tie of the rounding of the 1/1024 grid to 1/256 (E778), the depth word of a vertex with w other than 1 (six words and no formula, E783) and the 1/w word and depth of a clip-made vertex (1/w within 1 ulp of RZ of 1/w_made and exact in 1 of 4, depth 1.0 in 3 of 4, E782), the 1/w word under a clamp (within 1 ulp of 1/clamp, no rule, E781), and the size at which a sub-pixel triangle is no longer written (E780)?"
 unit = "ta"
 kind = "hw"
 value = "medium"
 phase = 12
-evidence = ["E063", "E182", "E194", "E287", "E307", "E651", "E650", "E736", "E754", "E776", "E777", "E778", "E780", "E781"]
+evidence = ["E063", "E182", "E194", "E287", "E307", "E651", "E650", "E736", "E754", "E776", "E777", "E778", "E780", "E781", "E782", "E783"]
 terms = ["PB_OBJ.RHW", "PB_OBJ.ISP_WORDS", "VIEWPORT.X_OFFSET", "WCLAMP"]
 +++
 
@@ -103,3 +103,24 @@ Open (the reworded line): the plane order and the stored order beyond 4 vertices
 guard-band cut, the y and left-edge limits and other targets, the tie rule of the grid, the depth
 and 1/w of clip-made and perspective vertices, a rule for the clamp's 1/w word, and the cull's
 threshold.
+
+Narrowed 2026-11-10 (R2-geo, E782 and E783; the question line is reworded again, the question stays
+open). T3 and T4, the stages that did not run in R1, ran with every control passing.
+- Clip at w other than 1 (E782, held out). Two cut objects (w = 0.5x + 1.25 and -0.5x + 1.25, z =
+  2x + 1) were the Sutherland-Hodgman polygon in (x, y, z, w) against z <= w and z >= -w, 4 vertices
+  in the strip zigzag order with the prim words of E777, the window position 32 + 32 x / w at every
+  vertex, made ones included (2 of 2 each); an uncut one with three different w kept the input
+  order, the window 32 + 32 x / w per vertex and depth 0.5 at z = 0 (1 of 1).
+- 1/w (E782, E783). The 1/w of a kept vertex is RZ of 1/w exactly: 7 of 7 words at differing w
+  (E782) and 6 of 6 pairs with z other than 0 (E783; round to nearest refuted 5 of 5), as E754. The
+  1/w of a clip-made vertex is within 1 ulp of RZ of the reciprocal of the made w in 4 of 4 and
+  exact in 1 of 4 (offsets +1, 0, -1, +1; the frozen exact rows refuted 2 of 2); the hypothesis that
+  it is interpolated along the edge is refuted 2 of 2.
+- Depth (E782, E783). The depth word of a vertex at w other than 1 was recorded at six (z, w)
+  pairs, all above the exact 0.5 + 0.5 z / w; each of six frozen formulas was refuted by at least
+  one pair (D1 and D2 fit 5 of 6 each, D6 0 of 6), and a post hoc search over 768 rounding
+  combinations found none for 6 of 6. A made vertex's depth was 1.0 in 3 of 4 and 0x3f7fffff at one
+  (HDP-made refuted 1 of 2 jobs).
+Open (the reworded line): as above, with the depth formula at w other than 1 (words in E783, a fit
+needs pairs near w = 1 and z of both signs), the made vertex's 1/w and depth rule (a made vertex on
+the -w plane at w other than 1 was not run), and polygons of 3 or 5 vertices at w other than 1.

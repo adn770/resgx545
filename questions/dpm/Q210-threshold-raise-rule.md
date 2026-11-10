@@ -1,11 +1,11 @@
 +++
 id = "Q210"
-question = "what does the DPM compare with the limit C = 0x371 that decides whether the first abort's threshold is raised by 0x20 (E774: raised iff thr0 + 0x20 <= C at 4096x4096, 1350 and 1500 vertices; wd-glist-1500's missing raise at P of 0x422 and above is the clamp of thr0 at 0x400, E753), why is the raise 0x20, and is C a constant of the core or the firmware, or does it follow the knob P, the target or the scene"
+question = "what does the DPM compare with the limit C that decides whether the first abort's threshold is raised by 0x20 (E774: raised iff thr0 + 0x20 <= C = 0x371 at 4096x4096, 1350 and 1500 vertices; E786: the limit is on the threshold the TA runs, not on the knob P; E785: C is in [0xe0, 0x120) at 2048x2048; wd-glist-1500's missing raise at P of 0x422 and above is the clamp of thr0 at 0x400, E753), why is the raise 0x20, and what makes C differ between the targets (the target's size, the scene's page need or something of the scene)"
 unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E310", "E312", "E464", "E625", "E627", "E629", "E704", "E734", "E753", "E774", "E779"]
+evidence = ["E310", "E312", "E464", "E625", "E627", "E629", "E704", "E734", "E753", "E774", "E779", "E785", "E786"]
 terms = ["Dynamic Parameter Management (DPM)", "CR_DPM_STATE_BASE0", "ta3d_ctl"]
 +++
 
@@ -86,3 +86,26 @@ tied to P give the same flip; the descriptor poke of the proposal (a threshold s
 (thr0 0x7e to 0x8e) all raised, as C says. Open: what C is compared with and why the increment is
 0x20, whether C follows P (a poke ladder), and whether it moves with the target and the scene
 (2048x2048, another triangle count).
+
+Narrowed 2026-11-10 (R2-geo, E785 and E786; the question line is reworded, the question stays
+open). Both open halves of the note above ran, with their controls passing.
+- The poke ladder (E786, held out). With P held at 0x422 and the first threshold set by `pb:11`
+  at 1500 vertices and 4096x4096, the threshold was raised at V = 0x300, 0x33e and 0x351 and not at
+  0x352, 0x35e, 0x3a0 and 0x3de, 7 of 7 as H-abs says (raise iff V + 0x20 <= 0x371), the flip at the
+  place E774's knob ladder had it. H-P (a limit on P's value) failed 3 of 7 and H-rel (the limit
+  follows P) 4 of 7. So the limit is on the threshold the TA runs and not on P.
+- The second target (E785, held out). At 2048x2048 the scene needs 0x213 pages, so the cells that
+  E774's C would put at the flip (P = 0x354 to 0x394) never overflowed and were void; the low cells
+  gave a raise at thr0 0x80 and 0xc0 and none at 0x100, so C is in [0xe0, 0x120) there. H-same (the
+  same C at both targets) is refuted, 2 of 3 cells.
+- Combined reading [the lead's reading of E774, E785 and E786, [infer] where it goes past the
+  data]. C is not a function of P; it is a limit on the raised threshold that differs between the
+  two targets, 0x371 at 4096x4096 and between 0xe0 and 0x120 at 2048x2048, so it follows the target
+  or something that moves with it (the page need of the scene is 0x213 at 2048x2048 and about 1300
+  at 4096x4096; the triangles' size in pixels is not separated from the target either). The two C
+  are not in the ratio of the areas (a quarter of 0x371 is 0xdc, below the bracket). One target
+  pair, one triangle, 1500 vertices only: the data do not say which.
+Open: what C is compared with and why the increment is 0x20; whether C follows the target's size,
+the page need or the scene (a third target, another vertex count at 2048x2048, a scene whose need
+at 2048x2048 reaches thr0 up to 0x140 and beyond); and the exact C at 2048x2048 (thr0 0xc1 to 0xff
+not run).

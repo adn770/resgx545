@@ -5,7 +5,7 @@ unit = "edm"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E317", "E318", "E319", "E357", "E431", "E764", "E765", "E766", "E769", "E770"]
+evidence = ["E317", "E318", "E319", "E357", "E431", "E764", "E765", "E766", "E769", "E770", "E784"]
 terms = ["CR_EVENT_STATUS2"]
 +++
 
@@ -72,3 +72,17 @@ so occupancy is still untried. A stock vertex program read 0x400 and a held TA f
 predicted; bit 7's condition (a vertex loop, T5) was not run. Open: the quantity the latch counts,
 a body-4 ladder past about 165 iterations and a body of another mix to test the fit, occupancy
 through fills of other sizes, bit 7, and the 121 us after a fault word of E764 to E766.
+
+Narrowed 2026-11-10 (R2-geo stage g-t5v, E784; bit 7 only, not retired). A vertex program of our own
+that loops on a backward `br` (8 instructions an iteration, the count carried into the stored depth
+as the loop proof) ran on every vertex at 1, 3, 28, 53, 55, 110, 220, 440, 880 and 1760 iterations
+(the controls with no loop, 1 and 3 iterations passed: a backward `br` loop works on this core).
+Bit 7 was clear after every job up to 880 iterations and set after 1760 (STATUS2 0x400 before each
+job, 0x480 after the last): the frozen H-ITER and H-INSTR (set from 55 as the pixel latch, clear at
+53) and H-NEVER are refuted, H-TIME (a monotone dependence on the length) is consistent, the point
+is somewhere in (880, 1760] and 3520 and 7040 were skipped by the sweep's stop. So the TA side's
+condition is not the pixel latch's: [infer] it fits a quantity of the whole job (time, or the three
+vertices' instructions together) better than one of an instance, which is untested. Open: the point
+between 880 and 1760 iterations, whether it is time or instructions (a second body length), whether
+it depends on the number of vertices, bit 6's quantity as before (the multiply-add count fit, the
+body-4 ladder, occupancy), and the 121 us after a fault word.

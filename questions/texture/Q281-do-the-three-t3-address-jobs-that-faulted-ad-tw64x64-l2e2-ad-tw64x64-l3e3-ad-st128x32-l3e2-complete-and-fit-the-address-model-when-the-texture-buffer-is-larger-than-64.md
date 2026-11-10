@@ -1,11 +1,11 @@
 +++
 id = "Q281"
-question = "do the three T3 address jobs that faulted (ad-tw64x64-L2e2, ad-tw64x64-L3e3, ad-st128x32-L3e2) complete and fit the address model when the texture buffer is larger than 64 KiB, and how large is the buffer the sampler may read"
+question = "is there a limit to the extent of a texture the sampler reads without a fault, now that the three T3 address jobs that faulted at 16 pages complete and fit E722's address model with a larger buffer (E743, E760) and the 16 and 17 page faults and the 18-page empty image are the probe's own layout (E787): the largest extent read exactly is 170 KiB (L3e3 at 64 pages) and the probe cannot build a larger"
 unit = "texture"
 kind = "hw"
-value = "medium"
+value = "low"
 phase = 11
-evidence = ["E722", "E566", "E743", "E760"]
+evidence = ["E722", "E566", "E743", "E760", "E787"]
 terms = ["T3.BITS19_18", "T3.BITS28_27"]
 +++
 E722: A4 is exact on the 13 jobs that completed, and the 3 jobs whose A4 extent is 86016, 87040
@@ -38,3 +38,15 @@ HB-end: faults). The 17-page job and the control, L2e2 at 16 pages (E722's fault
 Still open: what the sampler does between 16 and 19 pages, why a job with no fault writes no pixel,
 and how large the buffer the sampler may read is (the scratch size is not it: what lies past the
 scratch differs between jobs).
+
+Narrowed and retitled 2026-11-10 (R2-pixel, E787; decision R2-7: retitle if D2 confirms, and it
+did; the old title asked whether the three jobs complete and fit the model with a larger buffer
+(yes, E743 and E760, 4 of 4 images) and how large a buffer the sampler may read). The frozen
+verdict was `HL: all 2 held-out rows agree`, with every control passing: L2e2 with the scratch at
+18 pages and the program storing the word xor 1 completed and wrote 0xdeadbeee on 2048 of 2048
+pixels, the probe's sentinel (so E760's 'no pixel written' at 18 pages is the sentinel image: the
+sampler read the probe's sentinel page), and at 17 pages it faulted at 0x3e017001, the address of
+the 16-page fault (past the last mapped page of the probe's surfaces). So the 64 KiB reading of
+E722 and the "a buffer the sampler may read" of the old title were the probe's layout: no
+limit was seen. What stays open is whether a limit exists above the largest extent read exactly,
+170 KiB (L3e3 at 64 pages), which the probe cannot build past (the scratch cap).

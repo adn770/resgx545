@@ -4,7 +4,7 @@ question = "why does our stack's 4x render fault the job (BIF fault at pages 0x2
 unit = "ta"
 kind = "kernel"
 phase = 11
-evidence = ["E507", "E729"]
+evidence = ["E507", "E729", "E788"]
 terms = ["CR_TE_AA", "CR_ISP_MSAA"]
 +++
 
@@ -25,3 +25,14 @@ post hoc, under the layout formula as transcribed and integer f). Not
 settled: 4 against 5, the kernel fix, and the health triangles that fault after a failed 4x job
 (Q286). Faulted 4x jobs leave state that makes the next health triangle fault until a reset; no
 reported result is affected.
+
+Note 2026-11-10 (R2-pixel, E788; the question stays open, it is the kernel's). "4 against 5" is
+answered for what the TA writes: four arrays (a1 at 256 x 160 and a2 at 320 x 128 held nothing in a
+fifth slot) and a layout of exactly four (the TA data 0xa000 bytes = 0x4000 + 4 x 0x1800, a context
+made for 544 x 400) completed 320 x 400 at `CR_TE_AA` 0xe0000000 with 0 of 128000 pixels wrong,
+where a context made for 320 x 400 alone faulted at page 0x20008 (a6). [infer] The fault of the
+sizes that fail on our stack is then a layout shorter than four arrays at that size and not a
+missing fifth array; the kernel's own layout for those sizes was not read against it.
+Open: the kernel's `sgx_render_layout` for the multisampled case (what it must allocate at 288 x
+144, 256 x 288 and 384 x 384 and the sizes between 192 x 96 and 320 x 160) and the health triangles
+that fault after a failed 4x job.

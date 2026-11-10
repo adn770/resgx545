@@ -111,21 +111,32 @@ fn rhw_rz32(w: f32) -> f32 {
     if f64::from(r).abs() > exact.abs() { f32::from_bits(r.to_bits() - 1) } else { r }
 }
 
+/// The span of w that E782's t3-nocut ran with a different w at each vertex (0.875, 1.0625 and
+/// 1.625, z = 0, nothing clipped): the window position was 32 + 32 x / w of the vertex's own w and
+/// the stored 1/w its RZ reciprocal, exactly, at all three. One scene, so the span is its own.
+const PERSPECTIVE_W: std::ops::RangeInclusive<f32> = 0.875..=1.625;
+
 /// The w values E754's e3i jobs ran: w = 3, 7, 0.003 and 3e-5, all three vertices alike, x and y
-/// scaled by w (the divided position is the original triangle, inside the viewport), depth z = 0.
-/// Anything else with a w other than 1 stays refused (Q230): other exponents, a perspective
-/// triangle, depth, the guard band's limit.
+/// scaled by w (the divided position is the original triangle, inside the viewport), depth z = 0,
+/// and the perspective triangle of E782's t3-nocut (a w of its own at each vertex inside
+/// `PERSPECTIVE_W`, z = 0). Anything else with a w other than 1 stays refused (Q230): other
+/// exponents, other perspective triangles, depth at w other than 1 (E783 recorded six words and
+/// no formula fits), the guard band's limit.
 fn band_w(c: &[[f32; 4]; 3]) -> Result<(), Outcome> {
-    let w = c[0][3];
-    if !(3e-5..=7.0).contains(&w) || c.iter().any(|v| v[3] != w) {
+    let alike = c.iter().all(|v| v[3] == c[0][3]);
+    let known =
+        if alike { (3e-5..=7.0).contains(&c[0][3]) } else { c.iter().all(|v| PERSPECTIVE_W.contains(&v[3])) };
+    if !known {
         return Err(refuse230(
-            "a w other than 1 outside E754's runs (one w of 3e-5 to 7 at all three vertices): the 1/w and depth of a perspective vertex were not dumped (E063, E194)",
+            "a w other than 1 outside the runs of E754 (one w of 3e-5 to 7 at all three vertices) and E782 (a w of 0.875 to 1.625 at each vertex): the 1/w and depth of other perspective vertices were not dumped (E063, E194)",
         ));
     }
     if c.iter().any(|v| v[2] != 0.0) {
-        return Err(refuse230("the depth at a w other than 1 was not scored (E754)"));
+        return Err(refuse230(
+            "the depth at a w other than 1 has no formula (E754, E783: six words recorded)",
+        ));
     }
-    if c.iter().any(|v| (v[0] / w).abs() > 1.0 || (v[1] / w).abs() > 1.0) {
+    if c.iter().any(|v| (v[0] / v[3]).abs() > 1.0 || (v[1] / v[3]).abs() > 1.0) {
         return Err(refuse230(
             "a vertex outside the viewport at a w other than 1: E754 ran inside it, the guard band's limit was not run",
         ));
@@ -137,8 +148,9 @@ fn band_w(c: &[[f32; 4]; 3]) -> Result<(), Outcome> {
 const RANGE: std::ops::Range<f32> = -4096.0..12288.0;
 
 /// The three vertices' clip positions through the viewport. Whole triangles with w = 1 inside
-/// z = -w and z = w only: what the TA writes for a triangle the clip removes or cuts, and the depth
-/// and 1/w of a perspective vertex, were not dumped (Q230). `rhw_min` and `rhw_clamp` are the
+/// z = -w and z = w, and the w other than 1 of `band_w` (z = 0): what the TA writes for a
+/// triangle the clip removes or cuts at any w is not modelled (the cut polygon of E777 and E782 is
+/// not built here) and the depth at w other than 1 has no formula (E783, Q230). `rhw_min` and `rhw_clamp` are the
 /// command's float words. Returns the vertices and whether the 1/w replacement was used.
 pub fn triangle(
     st: &State,
@@ -375,9 +387,9 @@ mod tests {
         refused(triangle(&s, scaled(10.0), 0, 0), "Q230");
         refused(triangle(&s, scaled(1e-6), 0, 0), "Q230");
         refused(triangle(&s, scaled(-3.0), 0, 0), "Q230");
-        // a vertex of another w (a perspective triangle): not run
+        // a vertex of another w (a perspective triangle) outside E782's span: not run
         refused(triangle(&s, w3(&|t| t[1][3] = F(4.0)), 0, 0), "Q230");
-        // depth at a w other than 1 was not scored; z = 0 only
+        // depth at a w other than 1 has no formula (E783); z = 0 only
         refused(triangle(&s, w3(&|t| t[0][2] = F(0.5)), 0, 0), "Q230");
         // a vertex outside the viewport after the divide: the guard band's limit was not run
         refused(triangle(&s, w3(&|t| t[2][0] = F(5.0)), 0, 0), "Q230");
@@ -385,6 +397,36 @@ mod tests {
         refused(triangle(&s, scaled(3.0), F(1.0), F(0.25)), "Q230");
         // 1/w equal to the minimum, as at w = 1
         refused(triangle(&s, scaled(4.0), F(0.25), F(0.25)), "Q230");
+    }
+
+    #[test]
+    fn a_perspective_triangle_divides_each_vertex_by_its_own_w_and_stores_its_rz_reciprocal_e782() {
+        let s = state(&block([32.0; 4])).unwrap();
+        // E782's t3-nocut [HW, held out]: z = 0, w = 0.5 x + 1.25 at x = -0.75, 0.75 and -0.375
+        let t =
+            [clip(-0.75, -0.75, 0.0, 0.875), clip(0.75, -0.375, 0.0, 1.625), clip(-0.375, 0.75, 0.0, 1.0625)];
+        let (v, used) = triangle(&s, t, 0, 0).unwrap();
+        assert!(!used);
+        // the stored 1/w words, exactly RZ of 1/w at the three vertices
+        assert_eq!(v.map(|p| p.rhw.to_bits()), [0x3f92_4924, 0x3f1d_89d8, 0x3f70_f0f0]);
+        // the window position 32 + 32 x / w (the object packs it to 1/256: 4.5703, 46.7695,
+        // 24.6172, 20.7070 and 54.5898 in the dump), the depth 0.5 at z = 0
+        let want = [(4.5714, 4.5714), (46.7692, 24.6154), (20.7059, 54.5882)];
+        for (p, (x, y)) in v.iter().zip(want) {
+            assert!((p.x - x).abs() < 1e-3 && (p.y - y).abs() < 1e-3, "{p:?}");
+            assert_eq!(p.z, 0.5);
+        }
+        // what E782 did not run stays refused: a w outside its span at one vertex, a vertex
+        // outside the viewport after its own divide, and a depth other than 0 (E783)
+        let with = |f: &dyn Fn(&mut [[u32; 4]; 3])| {
+            let mut u = t;
+            f(&mut u);
+            u
+        };
+        refused(triangle(&s, with(&|u| u[0][3] = F(0.5)), 0, 0), "Q230");
+        refused(triangle(&s, with(&|u| u[2][3] = F(2.0)), 0, 0), "Q230");
+        refused(triangle(&s, with(&|u| u[0][0] = F(1.9)), 0, 0), "Q230");
+        refused(triangle(&s, with(&|u| u[1][2] = F(-0.5)), 0, 0), "Q230");
     }
 
     #[test]

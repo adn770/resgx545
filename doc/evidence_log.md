@@ -5426,25 +5426,159 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   within 1/64 pixel; the frozen verdict: control holds; mixed (RZ 2, RN 3 of 5): within 1 ulp, not a
   rounding rule; position HREP-xy' 6 of 6.
   *ta; HW, infer; data: `render-closing-r1-pixgeo:out/g-t6/`.*
+- `E782` R2-geo stage g-t3 (4 jobs: vertex programs with z = A x + B and w = C x + D on the tool's
+  triangle on a 64x64 target; the control z-cut-p at w = 1, the held-out t3-w-pos (z = 2x + 1, w =
+  0.5x + 1.25, cut by z = w at x = 1/6) and t3-w-neg (z = 2x + 1, w = -0.5x + 1.25, cut at x = 0.1)
+  and t3-nocut (z = 0, w = 0.5x + 1.25, no clip)): the control reproduced S1b's object, and every
+  frozen row about the clip held on both cut objects (HSH 2 of 2 on the polygon of 4 vertices cut in
+  (x, y, z, w) against z <= w and z >= -w, the window position 32 + 32 x / w at every vertex the
+  made ones included, HZZ the strip zigzag order, HPR the prim words (16, 1, 18) and (2, 17, 19))
+  and on t3-nocut (nothing crosses: 3 vertices in input order, window 32 + 32 x / w per vertex,
+  depth word 0x3f000000 at all three, w differing between the vertices); the stored 1/w of the 7
+  original vertices (the two kept ones of each cut object and t3-nocut's three) equalled RZ of 1/w
+  exactly, 7 of 7 (0x3f70f0f0, 0x3f924924, 0x3f321642 and 0x3f1d89d8, the first two again in
+  t3-nocut with 0x3f1d89d8), but the 4 clip-made vertices' 1/w words were 0x3f400001 and 0x3f400000
+  (HI-w predicted 0x3f400000, RZ of 1/(4/3)) and 0x3f555554 and 0x3f555556 (predicted 0x3f555555,
+  1/1.2), so HI-w held within 1 ulp in 4 of 4 and exact in 1 of 4 (the frozen exact rows refuted 2
+  of 2 jobs), and HI-rhw (the ends' 1/w interpolated with the cut parameter: 0x3f48c8c8, 0x3f520d20,
+  0x3f626cc2, 0x3f6a0ea0) was refuted 2 of 2 in both its forms; the depth of the made vertices was
+  0x3f800000 in 3 of the 4 and 0x3f7fffff (one ulp below 1.0) at one, t3-w-neg's (34.668, 39.332),
+  so HDP-made (1.0 exactly whatever w) was refuted 1 of 2 jobs.
+  *ta; HW, infer; data: `render-closing-r2-geo:out/g-t3/`.*
+- `E783` R2-geo stage g-t4 (8 jobs: the tool's triangle with x and y scaled by w so that the window
+  position is the original (8, 8), (56, 20), (20, 56) of a 64x64 target, z the same at all three
+  vertices, z within +-w so that nothing clips; 2 controls t4-ctl-z0-w3 (z = 0, w = 3: depth word
+  0x3f000000, 1/w 0x3eaaaaaa as E754) and t4-ctl-zm05-w1 (z = -0.5, w = 1: 0x3e800000), and 6
+  held-out (z, w) pairs): both controls passed; the object was written unclipped at the original
+  position (6 of 6) and the stored 1/w was RZ of 1/w in 6 of 6 pairs (0x3eaaaaaa at w = 3,
+  0x3e124924 at 7, 0x43a6aaaa at 0.003, 0x3f68ba2e at 1.1; RN refuted 5 of 5 where it differs), but
+  each of the six frozen depth formulas was refuted by at least one pair (D1 0.5 + 0.5 (z RZ(1/w))
+  rounded to nearest by 1 of 6, D2 0.5 + 0.5 RZ(z/w) by 1 of 6, D3 0.5 + 0.5 RN(z/w) by 5 of 6, D5
+  0.5 + 0.5 RZ(z RZ(1/w)) by 4 of 6, D6 RN(RN(z + w) / (2 w)) by 6 of 6, D7 by 5 of 6); the measured
+  depth word (the same at the three vertices of a job) was 0x3e19999c for (-2.1, 3), 0x3d88888c for
+  (-2.6, 3), 0x3df8af8c for (-5.3, 7), 0x3d4cccd0 for (-0.0027, 0.003), 0x3dfb5874 for (-0.83, 1.1)
+  and 0x3d83a840 for (-6.1, 7), each above the exact 0.5 + 0.5 z / w by 0.27 to 0.57 of 2^-24.
+  *ta; HW, infer; data: `render-closing-r2-geo:out/g-t4/`.*
+- `E784` R2-geo stage g-t5v (13 jobs frozen, 11 run: a vertex program on the tool's triangle that
+  loops N times on a backward br with an 8-instruction body, the loop count carried into the depth
+  so that every vertex's stored depth word is 0x3f200000 + N if the loop ran N times;
+  CR_EVENT_STATUS2 read from the debugfs registers after each job's reset and after the job): the
+  controls passed (t5v-ctl0 without a loop, t5v-n1 and t5v-n3 with loops of 1 and 3: the stored
+  depth words 0x3f200000, 0x3f200001, 0x3f200003 at every vertex, so a backward br loop in a vertex
+  program runs on this hardware; STATUS2 0x400 after the reset and 0x400 after the job in all
+  three), and the held-out ladder N = 28, 53, 55, 110, 220, 440 and 880 ran to its end on every
+  vertex (stored depth words 0x3f20001c, 0x3f200035, 0x3f200037, 0x3f20006e, 0x3f2000dc, 0x3f2001b8,
+  0x3f200370) with STATUS2 0x400 before and after each; N = 1760 (0x3f2006e0 at every vertex) ran to
+  its end and STATUS2 read 0x480 after it (bit 7 set; 0x400 before): bit 7 first set at N = 1760 and
+  last clear at 880, so the frozen H-ITER and H-INSTR (bit 7 set from 55 iterations, as the pixel
+  latch of E769, clear at 53) are refuted, H-NEVER (never set) is refuted, and H-TIME (monotone in
+  the run's length) is consistent, with the point between 880 and 1760 iterations (about 7000 and
+  14000 instructions a vertex) not placed; the sweep stopped at the first set bit, so N = 3520 and
+  7040 were skipped.
+  *edm; HW, infer; data: `render-closing-r2-geo:out/g-t5v/`.*
+- `E785` R2-geo stage g-c3 (11 jobs, the tool's triangle with 1500 vertices, p1139-green, the first
+  threshold thr0 = P - 0x22 set by render_pb_pages and read from the job's own 0x0624 in 11 of 11):
+  the controls at 4096x4096 passed (c3-4096-0x372 raised, thr0 0x350, run peaks 0x350, 0x370, 0x23d,
+  dword 38 = 0x20; c3-4096-0x374 did not, thr0 0x352, peaks 0x352 three times: E774's flip
+  reproduced), and at 2048x2048 the scene's page need was 0x213 (531 pages, the calibration
+  c3-2048-cal at P = 0x422 overflowed no threshold, peak status 0x213, held-out 'no overflow'), so
+  the five cells with thr0 from 0x332 to 0x400 (P = 0x354, 0x372, 0x374 and 0x394, and the
+  calibration) never reached a first abort (0 partial renders: void), the cell P = 0x162 (thr0
+  0x140) overflowed but its second run peaked at 0xe6 below thr0 (void), and the three cells that
+  read: P = 0xa2 (thr0 0x80, peaks 0x80, 0xa0, 0xa0) and P = 0xe2 (thr0 0xc0, peaks 0xc0, 0xe0,
+  0xe0) raised the threshold by 0x20 (dword 38 = 0x20), P = 0x122 (thr0 0x100, peaks 0x100, 0x100,
+  0x4f) did not; the frozen verdict was a flip at 2048x2048 with C in [0xe0, 0x120) and H-same (the
+  limit of 4096x4096, 0x371, at this target) REFUTED, 2 of 3 cells as 0x371 predicts (the cell 0x122
+  predicted a raise).
+  *dpm; HW, infer; data: `render-closing-r2-geo:out/g-c3/`.*
+- `E786` R2-geo stage g-c2 (9 jobs at P = 0x422, the knob that clamps the first threshold at 0x400
+  and above which nothing raised in E704, with the first threshold set instead by a poke of word 11
+  of the render context's parameter-buffer descriptor, `pb:11` = V, applied once to the next
+  render): the two E625 controls passed on the tool's default triangle (V = 0x80 raised, V = 0x100
+  did not), the poke landed in 9 of 9 (the first partial render's status and the job's own 0x0624
+  read V), and at 4096x4096 with 1500 vertices the threshold was raised by 0x20 (dword 38 = 0x20,
+  run peaks V, V + 0x20, ...) at V = 0x300, 0x33e and 0x351 and not at 0x352, 0x35e, 0x3a0 and
+  0x3de: H-abs (the limit C = 0x371 applies to the threshold the TA runs: raise iff V + 0x20 <=
+  0x371, frozen before the run from E774) held in 7 of 7 held-out cells with the flip exactly
+  between 0x351 and 0x352, H-P (the limit is on the knob P = 0x373 at its value 0x422, so nothing
+  raises) refuted 3 of 7 and H-rel (the limit follows P, so every poke raises) refuted 4 of 7; dword
+  37 read 0x10400 in all 5 raised jobs (the unpoked clamp value, not V).
+  *dpm; HW, infer; data: `render-closing-r2-geo:out/g-c2/`.*
+- `E787` R2-pixel stages r2-d-safe and r2-d-fault (7 jobs, the T3 address program s1d-tw64x64-l2e2
+  whose A4 reads land 80 to 83 KiB above the probe's scratch base, with the scratch at N pages and
+  the probe's 3-page coords surface after it): the controls passed (d-ok-64: A4 exact; d-L2e2-19:
+  the image byte-identical to S1b's; d-L2e2-19x, the variant program that stores r10 xor 1 in o0:
+  S1b's image xor 1; d-L2e2-16: fault 0x90002 at 0x3e017001 as E722) and both held-out rows agreed
+  with HL, the reading that the 18-page outcome and the fault are the probe's own layout (the
+  sampler reads what lies past the scratch: the coords surface's words, then its sentinel page, then
+  an unmapped page): d-L2e2-18x (18 pages, the variant) completed with rc 0 and read 0xdeadbeee on
+  2048 of 2048 pixels, the probe's sentinel 0xdeadbeef with the variant's xor, and d-L2e2-17 (17
+  pages) faulted with BIF_INT_STAT 0x90002 at 0x3e017001, the address of the 16-page fault; the
+  repeat d-L2e2-18 (the unmodified program, 18 pages, S1b's rc 3 'no pixel written' and no fault)
+  was reproduced; the 18-page 'no pixel written' of E760 is therefore a sentinel image: the probe
+  tests the target against 0xdeadbeef and the job wrote it.
+  *texture; HW, infer; data: `render-closing-r2-pixel:out/20261110-105258/r2-d-safe/`,
+  `render-closing-r2-pixel:out/20261110-105258/r2-d-fault/`.*
+- `E788` R2-pixel stages r2-a-safe and r2-a-fault, Q286 (6 jobs, mode 2, --tri-full, the tool's
+  triangle with CR_TE_AA 0xe0000000 unless noted): the controls passed (a4, 320x400 at CR_TE_AA
+  0x20000000 in a render context made for 544x400: TA data 0xa000 bytes, one array of region headers
+  from 0x4000, nothing below 0x4000 or from 0x5800, and the image of E727's region model, 28 of
+  128000 pixels wrong with the first at (304, 128), the control value frozen from the model; a6,
+  320x400 at 0xe0000000 in a context made for 320x400, held: BIF_INT_STAT 0x90004 at page 0x20008),
+  the TA data of the two completing sizes held four arrays and nothing in a fifth (a1, 256x160, own
+  context: 0 of 40960 wrong, non-zero dwords in the slots of 0x600 bytes from 0x4000: 256, 160, 256,
+  160, 0, 0; a2, 320x128: 0 of 40960 wrong, 256, 256, 160, 160, 0, 0; nothing below 0x4000; the
+  replicate a3 of a1 had a1's TA data sha256, eaa6c96c0b8d7739), so f = 4 for what the TA writes,
+  and the held-out sufficiency job a5 (320x400 at 0xe0000000 in the context made for 544x400, whose
+  TA data is 0xa000 bytes = 0x4000 + 4 x 0x1800 and has no room for a fifth array at the 0x1800
+  spacing) completed with 0 of 128000 pixels wrong and four arrays written (non-zero dwords per
+  array 1024, 800, 640 and 584), where a context made for 320x400 alone faulted (a6): four arrays
+  suffice at 320x400; H4 (f = 4) held on the three frozen rows it predicted (slot 4 zero in a1 and
+  a2, a5 completes in 0xa000) and H5 (a fifth array written or needed) was not supported by any.
+  *ta; HW, infer; data: `render-closing-r2-pixel:out/20261110-105258/r2-a-safe/`,
+  `render-closing-r2-pixel:out/20261110-105258/r2-a-fault/`.*
+- `E789` R2-pixel stage r2-a-fault, job a6-320x400-max320 (a 4x job, mode 2, CR_TE_AA 0xe0000000,
+  320x400 in a render context made for 320x400, held with hold_recovery so that the registers are
+  read before the kernel's reset; the control of the stage's sufficiency job a5, E788): the job
+  faulted (rc 1, class fault) and the held registers read CR_BIF_INT_STAT 0x00090004 and
+  CR_BIF_FAULT 0x20008061 (the faulting page 0x20008, the address the frozen model gave for a TA
+  write past the layout), CR_EVENT_STATUS 0x20000000 and CR_EVENT_STATUS2 0x480; the frozen E1 row
+  for the TA write (the TA's write of the region headers, E763) was HE, the fault raises no status
+  bit of its own (extra bits: none; HF, some, refuted): STATUS2 0x480 is the 0x400 of the idle
+  register plus bit 7, the bit a TA job that faults sets (E317, E764), as for the TA's read fault.
+  *bif; HW; data: `render-closing-r2-pixel:out/20261110-105258/r2-a-fault/`.*
+- `E790` R2-geo stages g-c3 and g-c2 (E785, E786), the frozen side table of dword 36 of the TA/3D
+  control block against the page count of CR_DPM_GLOBAL_PAGE_STATUS (0x072c, low half) in the sample
+  before the first abort (prediction: max(count - 2, 0)), never gating: of the 15 jobs with a first
+  abort the register reading held in 8, unraised jobs 5 of 8 (g-c3 2 of 3, g-c2 3 of 5) and raised
+  jobs 3 of 7 (1 of 3 and 2 of 4; the raised jobs of the two stages were held out), the misses being
+  c3-4096-0x372 (count 3, dword 36 3), c3-2048-0x122 (4, 3), c3-2048-0xa2 (2, 2: predicted 0, read
+  2), k-1500-0x33e (3, 3), k-1500-0x351 (3, 3), k-1500-0x3a0 (4, 3) and k-1500-0x3de (4, 3); read
+  after the run [infer, a check of E775's post hoc reading, not frozen], the maximum of the 0x072c
+  count over the job less 2 equalled dword 36 in 13 of these 15 jobs and failed in two raised ones,
+  c3-2048-0xe2 (peak 4, dword 36 1) and k-1500-0x300 (peak 4, dword 36 1), and in the 5 jobs of g-c3
+  that never overflowed (peak count 7, dword 36 0) it does not apply.
+  *dpm; HW, infer; data: `render-closing-r2-geo:out/g-c3/`, `render-closing-r2-geo:out/g-c2/`.*
 
 ## By unit
 
 ### bif
 
-Records: E151, E457, E573, E592, E745, E761, E767.
+Records: E151, E457, E573, E592, E745, E761, E767, E789.
 
 ### dpm
 
 Records: E199, E200, E201, E202, E204, E205, E206, E203, E253, E256, E309, E310, E311, E312, E313,
 E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E468, E574, E591,
-E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753, E773, E774, E775, E779.
+E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753, E773, E774, E775, E779, E785,
+E786, E790.
 
 ### edm
 
 Records: E009, E014, E017, E084, E146, E152, E153, E154, E155, E156, E157, E158, E159, E160, E161,
 E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321, E353, E402, E431, E444,
 E450, E531, E532, E533, E536, E537, E538, E539, E540, E550, E600, E601, E602, E603, E604, E605,
-E746, E747, E748, E749, E750, E751, E752, E764, E768, E769, E771.
+E746, E747, E748, E749, E750, E751, E752, E764, E768, E769, E771, E784.
 
 ### firmware
 
@@ -5492,14 +5626,14 @@ E448, E449, E451, E458, E462, E732, E770.
 Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180, E181, E247, E257,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
 E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763, E776, E777,
-E778, E780, E781.
+E778, E780, E781, E782, E783, E788.
 
 ### texture
 
 Records: E033, E034, E035, E036, E037, E038, E039, E040, E041, E042, E114, E116, E242, E254, E271,
 E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441, E560, E561, E562,
 E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E726, E733, E743,
-E744, E760, E765.
+E744, E760, E765, E787.
 
 ### transfer
 
