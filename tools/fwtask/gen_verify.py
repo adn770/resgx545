@@ -171,7 +171,7 @@ def crafted_blobs():
         Y.PATCH_TWICE)
     add("patch_res_far", blob(["mov r1, #0xdeadbeef", "nop.end"], [P(0, "res", 0x1000)]), "EPERM",
         Y.PATCH_ADD)
-    add("patch_slot", blob(["mov r30, #0xdeadbeef", "nop.end"], [P(0, "cont4", 0)]), "EPERM", Y.PATCH_SLOT)
+    add("patch_slot", blob(["mov r30, #0xdeadbeef", "nop.end"], [P(0, "cont5", 0)]), "EPERM", Y.PATCH_SLOT)
     add("patch_kind", blob(["mov r30, #0xdeadbeef", "nop.end"], [P(0, "kind7", 0)]), "EPERM", Y.PATCH_KIND)
     # R5: the last word ends the task
     add("last_nop", blob(["nop"]), "EPERM", Y.LAST)

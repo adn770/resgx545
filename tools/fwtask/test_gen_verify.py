@@ -63,6 +63,11 @@ def test_test_blobs_header_is_reproducible_and_lists_both_kinds():
         assert f"own_bad_{name}" in h, name
 
 
+def test_the_bad_slot_blob_is_slot_5():
+    blobs = {n: d for n, d, _, _ in gen_verify.crafted_blobs()}
+    assert fwtask.parse_blob(blobs["patch_slot"]).patches == [fwtask.Patch(0, "cont5", 0)]
+
+
 def test_crafted_blobs_are_all_refused_by_the_python_verifier_for_their_reason():
     regs = fwtask.load_regs()
     for name, data, err, why in gen_verify.crafted_blobs():

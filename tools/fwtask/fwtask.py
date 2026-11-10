@@ -9,6 +9,9 @@ A task is written in assembler (asm/fwtask/*.s) with `usse-asm` text, plus three
                           immediate with the results page address plus 0x40
     ; @patch cont2        ... with the instruction index of the closed task slot 2 started
                           (taken from the replaced FACT record: no closed index is in a source)
+    ; @patch cont4        ... with the index of the closed tasks' shared exit (round 3, R3-K11):
+                          the kernel resolves it only for the firmware file whose digest the
+                          index was read from (E154), and refuses the arm otherwise
     p0 br @label          a branch to a label; written out as a numeric `br` offset
 
 The default-deny verifier below is the one the kernel repeats (sgxfive_owntask.c, from the table
@@ -39,6 +42,9 @@ MAX_INSNS = 1024            # the code page is 8 KiB
 MAX_PATCHES = 256
 MAX_ENTRIES = 4
 PATCH_KINDS = {"res": 1, "cont": 2}
+EXIT_SLOT = 4               # a continue patch's slot 4: the shared exit, not a slot of PDS #13
+# the one firmware file the kernel resolves cont4 for (tools/fwcutter/README.md's cut, format v3)
+EXIT_FW_SHA256 = "6a00268e9d4ca552c02e52651a42a2b4db3887d7fe626f209888369985162b0a"
 
 
 class VerifyError(Exception):
@@ -169,7 +175,8 @@ def limm_get(insn: int) -> int:
 
 
 def apply_patches(words, patches, res_addr: int, cont: dict[int, int]) -> list[int]:
-    """What the kernel overlay does to the blob: res+N -> res_addr + N, contK -> cont[K]."""
+    """What the kernel overlay does to the blob: res+N -> res_addr + N, contK -> cont[K] (cont[4]:
+    the shared exit's index, which the caller has to give)."""
     out = list(words)
     for p in patches:
         v = res_addr + p.addend if p.kind == "res" else cont[int(p.kind[4:])] + p.addend
@@ -303,7 +310,7 @@ def verify_why(words: list[int], patches: list[Patch], regs: Regs, entries=(),
             err.append((p.index, Why.PATCH_LIMM, f"patch at {p.index}: not an unpredicated mov limm"))
             continue
         k = _patch_kind(p.kind)
-        if k is not None and k[0] == PATCH_KINDS["cont"] and k[1] > 3:
+        if k is not None and k[0] == PATCH_KINDS["cont"] and k[1] > EXIT_SLOT:
             err.append((p.index, Why.PATCH_SLOT, f"patch at {p.index}: slot {k[1]}"))
         elif k is None or k[0] not in PATCH_KINDS.values():
             err.append((p.index, Why.PATCH_KIND, f"patch at {p.index}: unknown kind {p.kind}"))

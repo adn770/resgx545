@@ -58,6 +58,25 @@ def test_the_triple_is_accepted_and_needs_nothing_else():
     assert why_of(asm("nop\n" + "\n".join(CONT)), [fwtask.Patch(1, "cont2", 0)], [0]) is None
 
 
+def test_the_shared_exit_patch_cont4_is_a_continue_patch_and_slot_5_is_not():
+    """R3-K11: slot 4 of a continue patch is the closed tasks' shared exit (the kernel resolves
+    it only for the firmware the index was read from); slot 5 and up stay a bad slot."""
+    w = asm("\n".join(CONT))
+    assert why_of(w, [fwtask.Patch(0, "cont4", 0)], [0]) is None
+    assert why_of(w, [fwtask.Patch(0, "cont5", 0)], [0]) == Y.PATCH_SLOT
+    assert why_of(w, [fwtask.Patch(0, "cont255", 0)], [0]) == Y.PATCH_SLOT
+    assert why_of(w, [fwtask.Patch(0, "cont4", 4)], [0]) == Y.PATCH_ADD
+    assert fwtask.EXIT_SLOT == 4
+
+
+def test_cont4_round_trips_and_is_applied_from_the_exit_index_given():
+    b = fwtask.build_blob_text("@entry 0\nmov r30, #0xdeadbeef ; @patch cont4\nmov pclink, r30\nlapc\n")
+    p = fwtask.parse_blob(b)
+    assert p.patches == [fwtask.Patch(0, "cont4", 0)]
+    out = fwtask.apply_patches(p.words, p.patches, 0, {4: 0x1234})
+    assert fwtask.limm_get(out[0]) == 0x1234 and out[1:] == p.words[1:]
+
+
 def test_a_branch_to_the_limm_of_the_triple_is_fine():
     w = asm("p0 br #1\nmov r1, #0\n" + "\n".join(CONT).replace("r30", "r30"))
     assert why_of(w, [fwtask.Patch(2, "cont0", 0)], [0]) is None
