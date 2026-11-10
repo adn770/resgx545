@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-182 open: 166 hw (high 20, medium 77, low 69, unrated 0), 11 fw, 5 kernel.
+181 open: 166 hw (high 20, medium 76, low 70, unrated 0), 11 fw, 4 kernel.
 
 ## Work queue: hardware
 
@@ -30,7 +30,7 @@
 ### edm
 
 - `Q002` (phase 3, hw, low): is the 399.0 MHz reference that times the EDM tick and TIMER the clock the USSE runs from? (E009, E084, E124, E377)
-- `Q033` (phase 10, hw, medium): which hardware event sets bit 19 of the event word pa1 that the hardware hands a PDS event program, if any (none of the 138 job events of 14 jobs in E747 carried it, nor any of 8 4096x4096 jobs of E771 whether the TA's threshold was raised or not, with no rise of status bit 3 in the sampled timeline) (E155, E146, E154, E532, E538, E746, E747, E771)
+- `Q033` (phase 10, hw, low): which hardware event sets bit 19 of the event word pa1 that the hardware hands a PDS event program, if any (none of the 138 job events of 14 jobs in E747 carried it, nor any of 8 4096x4096 jobs of E771 whether the TA's threshold was raised or not, with no rise of status bit 3 in the sampled timeline) (E155, E146, E154, E532, E538, E746, E747, E771)
 - `Q082` (phase 11, hw, medium): what do CR_EVENT_STATUS2 bits 6 and 7 mean, bit 6 set while a job hangs in its pixel task and bit 7 while a TA job hangs or faults? (E317, E318, E319, E357, E431, E764, E765, E766, E769, E770, E784)
 - `Q096` (phase 11, hw, low): does the sampler cache erratum of host bridge revisions below 4 show when a texture and other data have addresses that differ only above bit 28? (E002, E011, E013, E033, E035, E041, E114, E432)
 - `Q152` (phase 11, hw, medium): what does the EDM need from the closed general task's end of a pass so that the next event is delivered and the 1 kHz tick continues (E793: a task of ours that ended a tick pass with `nop.end` and did not call it stopped the tick, 2 of 2, while E791's single writes of sa63, sa64 or sa65 and the tail call with p0 = p1 = 1 did not, 19 of 19), and what in E537's writer (sa63 and sa65 written with the words it left, p0 = p1 = 1: the armed reader did not run, 1 run) stopped it, E536's writer (3 of 3 rounds kept the tick) not, and does the closed task use p0 to p3, sa63 or sa65 (E533, E155, E536, E537, E791, E792, E793)
@@ -266,7 +266,3 @@
 #### usse
 
 - `Q167` (phase 11, kernel): why did gma500_sgx_render (test_pb) and gma500_sgxfive_debug (test_pb_small) report "Expected pt != NULL" in the KUnit run at module load on the laptop, when the same suites pass under qemu (E549, E591)
-
-#### vdm
-
-- `Q037` (phase 10, kernel): why did one of E186's runs find no object after the job hung in its pixel task, when a dump taken before recovery always holds it? (E186, E318, E422)

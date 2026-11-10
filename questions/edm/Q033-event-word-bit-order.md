@@ -3,7 +3,7 @@ id = "Q033"
 question = "which hardware event sets bit 19 of the event word pa1 that the hardware hands a PDS event program, if any (none of the 138 job events of 14 jobs in E747 carried it, nor any of 8 4096x4096 jobs of E771 whether the TA's threshold was raised or not, with no rise of status bit 3 in the sampled timeline)"
 unit = "edm"
 kind = "hw"
-value = "medium"
+value = "low"
 phase = 10
 evidence = ["E155", "E146", "E154", "E532", "E538", "E746", "E747", "E771"]
 terms = ["CR_EVENT_STATUS", "CR_EVENT_HOST_CLEAR", "CR_EVENT_STATUS.DPM_INIT_END", "CR_EVENT_STATUS.DPM_STATE_STORE", "CR_EVENT_STATUS.DPM_CONTROL_LOAD", "CR_EVENT_STATUS.SW_EVENT", "CR_EVENT_KICK"]
@@ -109,3 +109,8 @@ is therefore not tied to the raise (H-RAISE refuted) nor to the TA reaching its 
 Open: whether bit 19 ever reaches the task (H-NEVER, or an event shorter than the timeline's
 sampling, or one the PDS does not hand on), and which hardware event sets it if so. The enable mask
 of the note above lets it through, which is still not evidence that any job raises it.
+
+**Correction 2026-11-10:** the value is lowered from medium to low. The only part still open is
+whether any hardware event sets bit 19 of `pa1` (H-NEVER, untested): none of the 138 job events of
+E747 carried it, nor any of the 8 jobs of E771, and no cheap row is left to reach it (E747, E771),
+so the simulator loses little by not having the answer.

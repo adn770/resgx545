@@ -200,7 +200,7 @@ so the 139 `hw` questions are the work queue, each with a value (high 13, medium
 `fw` questions (the closed firmware's and driver's own behaviour: Q004, Q029, Q034, Q049, Q084,
 Q088, Q118, Q119, Q124, and the one on two EDM tasks, answered by E752) and the 6 `kernel` ones (the
 design
-of our kernel driver: the firmware-identity one, answered later by E402, and Q037, Q095, Q140, Q166, Q167) stay open, parked. By unit: bif 4, dpm 7,
+of our kernel driver: the firmware-identity one, answered later by E402, the one on the hung job's object, answered later by E422, and Q095, Q140, Q166, Q167) stay open, parked. By unit: bif 4, dpm 7,
 edm 13, isp 11, mte 3, pbe 5, pds 16, platform 5, render 9, ta 14, texture 14, transfer 3, usse 36,
 vdm 9, zls 6. A question is removed when a record answers it; one that mixed a hardware part with a
 firmware or kernel part was narrowed to the hardware part or folded into the hardware question that
@@ -253,7 +253,7 @@ reading and records.
   program's input bit 3 (E083), the scheduler's slot and task ids (E086), the sampler's `T3` bits
   26:23 (E034, E242), an object vertex's 1/w (E176, E196), the TPU's luma-key words and
   colour-space set 1 (E038, E039, E040), and the TE's macrotile stride (E159, E175).
-- **VDM words.** The state word's open fields (Q037, Q047, Q163; E413 has the alternation of bits
+- **VDM words.** The state word's open fields (Q047, Q163; E413 has the alternation of bits
   11:9 = 7) and the index list's first trailing word (Q042).
 - **Units.** `MADD`, the unit beside each USSE pipe's iterator and texture unit, has two readings
   (Q048).
