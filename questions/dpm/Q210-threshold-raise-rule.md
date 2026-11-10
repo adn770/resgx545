@@ -5,7 +5,7 @@ unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E310", "E312", "E464", "E625", "E627", "E629", "E704", "E734"]
+evidence = ["E310", "E312", "E464", "E625", "E627", "E629", "E704", "E734", "E753"]
 terms = ["Dynamic Parameter Management (DPM)", "CR_DPM_STATE_BASE0", "ta3d_ctl"]
 +++
 
@@ -62,3 +62,11 @@ U is read as the summed run peaks, and none was seen; of the 22 jobs the raise (
 appeared at thr0 0x1de and 0x2de and in none of the 19 jobs with thr0 from 0x3be whose second run
 reached thr0. A limit on the raised threshold, 0x2fe <= C < 0x3de, fits all of them. A frozen run
 that tests it needs P between 0x300 and 0x3e0 for two scene sizes.
+
+Narrowed 2026-11-10 (S1b, E753). The exception is explained and the rule bounded: the threshold of
+wd-glist-1500 is clamped at 0x400 for P of 0x422 and above, so thr0 + 0x20 is 0x41e, above a limit C
+on the raised threshold that a frozen ladder found in [0x35e, 0x37e) (raises at P = 0x320 to 0x360,
+none at 0x380 to 0x3e0, for 1350 and 1500 vertices alike, controls passing, HP1 held out). R2's rule
+(raise iff 2 * thr0 < U + k) alone does not give the step: every non-raising ladder job had its
+second run reach thr0. Open: what the DPM compares with C, why the increment is 0x20, and whether C
+depends on the target size and the scene (one target, 4096x4096, one pixel program).

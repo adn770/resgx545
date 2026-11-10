@@ -36,3 +36,13 @@ for a = 8.
 
 **Not shown.** What the constant row is, what makes a = 8 split in some runs, and what a = 12
 changes in the image when every vertex is present.
+
+**Correction 2026-11-10:** S1b's g-e5 (E755) adds to two statements above. 'The a = 12 event repeats
+as a change ... x2582 in 3 of 3' does not hold on a rerun: a = 12 gave x2582 and x2313 (neither
+E702's x2028 nor the base x2288), so it is not a function of the words (frozen HI, 2 of 2, repeat
+only). The a = 8 job changed the render in 2 of 3 runs here (x2288, x2156, x2156); six more runs
+gave x2156 with vertex 70 lost, x2260 with vertex 70 lost and the regular 15 x 8 and 6 split, and
+x2288 with no vertex lost (three with a reset before each job, three with none, the latter x2260
+three times): vertex 70 was lost in 5 of those 6 runs and in 7 of the 9 a = 8 runs of S1 and S1b
+together, with three outcomes. The statement that a = 12 keeps every vertex in the regular split
+holds again in both S1b runs.

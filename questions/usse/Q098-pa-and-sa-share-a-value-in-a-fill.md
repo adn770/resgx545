@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E366", "E380", "E484", "E496"]
+evidence = ["E366", "E380", "E484", "E496", "E748"]
 terms = []
 +++
 
@@ -55,3 +55,14 @@ task is a write to sa66, and E537's writer, which wrote sa65 and stopped the tic
 tick hands as pa1 (whether the closed task uses sa65 is Q152's, not shown). The run is a read of
 sa64 to sa68 by a firmware task of ours with the verifier as it is, then the writes only if sa66
 reads 0x01061a70.
+
+Narrowed 2026-11-10 (S2, E748; the read side of an EDM task, which is not the fill's question). In a
+firmware task of ours in the general slot, pa0 to pa4 read what sa64 to sa68 hold in 3 of 3 read
+passes, the frozen held-out prediction sa66 = 0x01061a70 held (3 of 3, with sa0 not equal to pa0),
+and a marker written to sa67 or sa68 by the allowed mov was read back through pa3 or pa4 in the same
+pass and in the next task (3 of 3 markers each), the original values written back afterwards. So for
+an EDM task pa_n names sa_(64+n), at least for n = 0 to 4, as the reading of 2026-11-09 predicted.
+Not shown: the direction pa to sa (a mov to pa_n of an EDM task is refused by the verifier, so
+whether it is lost as in a fill is unmeasured), pa5 and above, and an event that is not a tick. The
+question stays open for the fill (why a mov to pa_n is lost there) and for the write direction in an
+EDM task.

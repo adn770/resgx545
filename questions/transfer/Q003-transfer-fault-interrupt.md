@@ -89,3 +89,15 @@ fault of the 3D's own fetches or of the ZLS would set, since none has faulted. T
 [infer] carry the reading of the record's author, not a separate test of the bit. The question
 stays open: bits 16 and 18 beyond the types, the unseen requestors, and what clears a latched
 fault.
+
+Note 2026-11-10 (a reading of the published kernel logs, not a new measurement). The requestor table
+above says that bits 0, 4, 6 to 9, 11, 14 and 15 of FAULT_REQ were never seen. The kernel logs of
+resgx545-data hold BIF fault words with bit 7: 0x90080 (ta/points, usse/output-room-rd,
+render/hold-fault) and 0xd0080 (usse/output-room-rd); bit 8: 0x90100 (ta/mtile-fields,
+ta/mtile-fields-risky, ta/te-psg, ta/te-words-repeat); bit 9: 0x90200 (zls/control-bits); and type-5
+forms with bit 1, 0xd0002 (texture/sampler-bits), and bit 3, 0xd0008 (usse/output-room-vdm, S1's
+g-e4 and S1b's g-e4w, the last two from a bit-25 index list header, E737, E756). So bits 7, 8 and 9
+are seen. Which requestor each names is not established (the log line carries the word and the
+address), and the statement that no ZLS access has faulted rests on zls/control-bits, whose jobs
+faulted at 0x90200 with bits of the ZLS control word set (E411's data) and are not identified as a
+ZLS fetch. Bits 0, 4, 6, 11, 14 and 15 are still not seen.

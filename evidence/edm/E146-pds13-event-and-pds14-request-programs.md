@@ -83,3 +83,14 @@ bit and what each request bit means; how the general task re-posts several event
 what `ir0` and `ir1` of #13 are at run time (nothing here runs the program); the semantics of
 the three destination words beyond their values; why the work is a separate task rather than
 inside the event program.
+
+**Correction 2026-11-10:** The table of dispatch groups above stands as a reading of the code, but
+the positions its reading of ir1 gives them do not: the first event a firmware task logged for a
+fill's end of render arrived in slot 3 with pa1 bit 4 in 3 of 3 fills (E747, frozen witness, held
+out), not in slot 0 with bit 18, and the frozen bit sets of E155's reversed order explained 132 of
+the 138 job events logged against 88 of the same-position order. So the bits of the group masks are
+status bits 22 minus the bit, as E155 reads them: pa1 bits 22, 7 and 4 are status bits 0, 15 and 18,
+bit 9 is status bit 13, bits 21, 20 and 10 are status bits 1, 2 and 12; the names that this record's
+terms give them (DPM_INIT_END, DPM_STATE_STORE and the others at their own positions) are not their
+names. The dispatch rule itself (bit 8 and the three groups, with ir0 = 0 for a fast path) held on
+all 138 entries (E747).

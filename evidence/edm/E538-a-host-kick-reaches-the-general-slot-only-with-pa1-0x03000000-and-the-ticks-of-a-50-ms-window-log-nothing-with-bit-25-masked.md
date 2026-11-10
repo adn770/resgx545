@@ -23,5 +23,20 @@ shows that no tick in it had a bit of pa1 other than 25 set (the stubs log only 
 does not show that every tick has bit 25, because the stubs mask it.
 
 **Not shown.** Events other than the kick and the tick (TA finished, end of render: Q033's Q2 needs
-a job and was not run; stage E was the last stage that ran), what bits 24 and 25 mean (Q157, Q153),
-whether a tick ever lacks bit 25, and whether pa2 moves with anything (Q157).
+a job and was not run; stage E was the last stage that ran), what bits 24 and 25 mean (answered by
+E746),
+whether a tick ever lacks bit 25, and whether pa2 moves with anything (answered by E746).
+
+**Correction 2026-11-10:** The measurements above are unchanged. Their reading as the kick's words
+is wrong: the stubs keep the last hit of each slot, and the last hit with pa1 and 0xfdffffff not
+zero was the tick after the kick, not the kick. A ring that logs every pass (E746) shows the kick as
+one entry in slot 0 with pa0 = 0, pa1 = (K << 24) | 0x100 and pa2 a sample of EVENT_TIMER, where K
+is a count byte that every event carries and that a kick advances by one (K = 2 after the arm). Each
+run here reloaded the firmware (K = 2), so the tick after the kick carried K = 3, the logged
+0x03000000, with the tick's pa0 = 2 and pa2 = 0x01061a70. So the frozen prediction (pa1 and
+0xfdffffff = 0x100, E155's reversed status bit 14) describes the kick and its 'failed' verdict is
+the stub's; bit 24 of pa1 is bit 0 of the count byte and not a kick bit; the "5 of 5 events" with
+pa2 = 0x01061a70 are five ticks. The quiet windows (nothing but bit 25 set on a tick) stand. The
+reading was made on the second run of S2's e1c (out/e1c.run2-gate-closed of edm-closing-s2) and held
+on its third run (E746, count + 1 3 of 3, pa2 phase 3 of 3, both read against the frozen predictions
+of that run).

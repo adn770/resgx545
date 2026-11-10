@@ -32,3 +32,12 @@ set must give the five-copy object back, and the unflipped header over it must b
 
 **Not shown.** Which bit, if either, is the width select; what bit 24's hang waits on; whether the
 wider read is what faults.
+
+**Correction 2026-11-10:** The reading above that the fault is the signature the width hypothesis
+predicted for bit 25 is refuted by S1b's g-e4w (E756): with the index list written as 32-bit words
+and bit 25 set the job faulted at BIF fault 0xd0008 at 0x1 exactly as over the 16-bit list (1 run
+each; the frozen HW32 predicted E414's object and was refuted, HX consistent), and with bit 25
+cleared the 32-bit list was read as 16-bit. Bit 25 is not a 32-bit index select. Also, 0xd0008 is
+not in no other record: the published kernel log of usse/output-room-vdm holds 16 lines of BIF fault
+0xd0008 (at 0xc100002, 0xb000001 and others), from jobs of another table; that it is the same
+requestor is not shown.

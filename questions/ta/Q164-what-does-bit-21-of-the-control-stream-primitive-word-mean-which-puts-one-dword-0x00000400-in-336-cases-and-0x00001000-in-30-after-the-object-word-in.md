@@ -5,7 +5,7 @@ unit = "ta"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E542", "E546", "E702", "E738"]
+evidence = ["E542", "E546", "E702", "E738", "E755"]
 terms = ["CSTREAM.PRIM_TILES", "CSTREAM.OBJ_ISP_ADDR"]
 +++
 
@@ -40,3 +40,8 @@ Post hoc 2026-11-09 (S1, E738; decoded from the dumps after the run, not held ou
 a = 8 job of E702's table two of three runs lose vertex 70 and split the objects 15, 15, 15, 15, 9,
 15, 9, 15, 15 and 3 (the first run after the a = 12 runs was clean). Whether this is the vertex E546
 lost is not shown, E546's record not giving its id.
+
+Post hoc 2026-11-10 (S1b, E755; decoded from the dumps after the run, not held out). In six further
+runs of E702's a = 8 job, five lost vertex 70, with the objects split 15, 15, 15, 15, 9, 15, 9, 15,
+15 and 3 in one and the regular 15 x 8 and 6 in four; E546's record still gives no id for its lost
+vertex.

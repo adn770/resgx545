@@ -5,7 +5,7 @@ unit = "pds"
 kind = "hw"
 value = "high"
 phase = 7
-evidence = ["E139", "E081", "E406", "E570", "E709", "E742"]
+evidence = ["E139", "E081", "E406", "E570", "E709", "E742", "E759"]
 terms = ["PDS_SIZE.BITS17_16"]
 +++
 
@@ -70,3 +70,7 @@ run, Q276). Plain-job spills of o1 to o3 stay a refusal in the simulator.
 Post hoc 2026-11-09 (S1, E742; an oddity, not a result): in one run of the order control (both o1
 writes unpredicated) five contiguous source pixels, (16,25), (16,27) and (17..19,27), kept the first
 write where 492 of 497 kept the second; one run, not repeated.
+
+Post hoc 2026-11-10 (S1b, E759): the oddity of E742 repeats in part. In three more runs of the order
+control the first unpredicated write survived at 5, 4 and 2 source pixels, (16,27) and (17,27) in
+all three, the five of E742 in the first only.

@@ -5,7 +5,8 @@ unit = "bif"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E021", "E023", "E151", "E303", "E314", "E315", "E316", "E319", "E360", "E457", "E573", "E592", "E745"]
+evidence = ["E021", "E023", "E151", "E303", "E314", "E315", "E316", "E319", "E360", "E457",
+            "E573", "E592", "E745", "E761"]
 terms = ["CR_BIF_DIR_LIST_BASE1", "CR_BIF_BANK0", "ta3d_ctl", "ta3d_ctl.render_context_count"]
 +++
 
@@ -97,3 +98,14 @@ frozen scorer labelled them "split" through a pattern that does not match `tri: 
 2 overflowed`. The mask 0x1f of the other job includes buffer 0, so its fault (2 of 2) is buffer 0's
 and says nothing about a pair among 1 to 4. Still open: a partial render under a mask as a frozen
 result, a buffer reassigned within a job, which list each requestor walks, pairs among 12 to 15.
+
+Narrowed 2026-11-10 (S1b, E761; the partial-render case under a mask, a frozen held-out result with
+its controls). Two 1024x768 renders that both overflow the parameter buffer at render_pb_pages =
+0x23 were exact (every diff 0, the same two target hashes as with no mask) with the mask 0x1e,
+buffers 1 to 4 left out of the client directory's alias together, in 2 of 2 runs, and, as a repeat
+of S1's post hoc reading, with buffers 6, 7, 8, 10 and 11 left out in 2 of 2; the control with
+buffer 0 left out faulted 0x91000 at 0x3000b021 (as in S1; E573 logged 0x3000b022) and the no-mask
+control was exact. So a partial render does not need buffers 1 to 4 together or 6, 7, 8, 10 and 11
+together in that directory. Still open: which list each requestor walks, a buffer reassigned within
+a job, pairs among 12 to 15, a partial render under other masks, and what the requestors do when
+their list is given away while a job runs.

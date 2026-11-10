@@ -201,7 +201,7 @@ marked.
   task left there, firmware data included (measured from a client pixel shader on our render node);
   `r40` and `r47` written by one fill were read by the next in 7 of 7 reader jobs (2048 of 2048
   pixels each), and by one two fills later, after a fill that wrote no temporary, in 2 of 2 (E484: a
-  pair of fills, not EDM tasks; Q124, Q197). In firmware (EDM) tasks of ours `r20` and `r21` written
+  pair of fills, not EDM tasks; Q124). In firmware (EDM) tasks of ours `r20` and `r21` written
   by one task were read by the next at the next event and after 1200 ms (6 of 6) and replaced by a
   client fill (0 of 6 kept), and `i0` and `i1` also after a fill (6 of 6) **[HW]** (E536). The
   registers sampled up to `r123` are separate storage in a fill started with up to 128 temporaries
@@ -613,9 +613,10 @@ The waits and modes on the hardware (E101) **[HW]**:
   only, `mov saN, rM` and `mov rD, saN`, `mov i0, rN` and `mov rN, i0`, `mov rN, pclink`, a
   predicated `mov`, `and.testtanz.chan0 !c0, pN, rA, rB` with a register mask, and `ima32.u rD, rS,
   #1, rM.neg` (a loop counter). A tick hands the task `pa0` = 2, `pa1` = 0x02000000 and `pa2` =
-  0x01061a70 (E532, 2 of 2 runs), and a host kick (a GETMISCINFO with no job) `pa0` = 2, `pa1` =
-  0x03000000 and the same `pa2`, to the general slot only (E538, 3 of 3 runs; `pa2` was the same in
-  all 5 events seen). After a task that wrote `sa`, `r`, `i`, `p` and `pclink` state and ended with
+  0x01061a70 (E532, 2 of 2 runs), and a host kick (a GETMISCINFO with no job) one event to the
+  general slot, `pa0` = 0, `pa1` = (count << 24) | 0x100 and a `pa2` that is a sample of the event
+  timer (E746, 3 of 3; E538's 0x03000000 was the tick after the kick, see its correction). After a
+  task that wrote `sa`, `r`, `i`, `p` and `pclink` state and ended with
   `nop.end` instead of jumping to the closed one, every later event stopped until a reset (E533, one
   run; skipping the closed task, its arbitrary pclink write and its p values are not separated,
   Q152). **State between firmware tasks [HW]** (E536; a writer that calls the closed task after its
@@ -684,7 +685,7 @@ same form our programs use (immediate operands zero, `pixel`, `end`, `parallel`)
   measured in client pixel tasks; the EDM task of ours of E534 shows the same for a result `stad`
   followed by a load, a `wdf` and two more stores and then the flag the host reads with no `idf`
   (18 of 18) and for a `wdf` with no load outstanding between a `str` and an `ldr` (18 of 18, 15 of
-  which could show a change, and none did), and no more (Q197). The firmware almost always follows
+  which could show a change, and none did), and no more. The firmware almost always follows
   its loads with a `wdf` before using the data (711 `wdf drc0`, 96 `wdf drc1`), and our programs
   wait with `wdf drc0` for the attribute DMA the PDS started.
 - **`idf drcN, bif`** appears 124 times in the firmware, mostly right before a `wdf` on the same
@@ -9272,8 +9273,9 @@ open driver:
    field (Q150); how long an `sa0` written by `ima32` lasts and why a write to `pa0` is lost (Q136).
 10. **Fences, repeats, registers and persistence for a firmware compiler**: why a `wdf` waits for
    another counter's loads in some runs and not in others (Q130); whether a firmware (EDM) task runs
-   two at once (Q197, firmware: no second pass was seen in 10 of 10 runs of a slow task, ticks only
-   in one slot, E539, and what happens to an event that arrives meanwhile is open; a `wdf` with
+   two at once (no second pass was seen in 12 of 12 holds of up to 90 ticks, E749, E751, and an
+   event that arrives meanwhile is queued, up to four ticks and a kick or a job's events once, E751,
+   E752; a `wdf` with
    nothing outstanding and an unfenced store at the end of a task act as in a fill, E534); what a
    client `str` changes and what an `idf` is needed for beyond an instance's own store (Q134; `str`
    then `ldr` of 0x0814 and 0x0a78 is ordered in a firmware task, E534, and its other registers and

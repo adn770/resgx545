@@ -63,4 +63,4 @@ order of the job), any overlap of slots (the stage could not provoke one), and f
 kick and a client triangle during the task), which were not run in this phase: the follow-up stages
 are run separately. A task whose pass counter is read from a window inside the job (the page read
 with a short job time, or the tick counter read through a mapped register) would decide it
-(Q197).
+(answered by E752).

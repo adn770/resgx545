@@ -21,7 +21,8 @@ offset is unexplained. `pa0` = 2 is the tick (the microkernel's tick handler tes
 
 **Falsified prediction.** Declared before the first run: `pa1` = 0 for a tick (E146, E155: a tick
 has nothing in `ir1`). Seen: `pa1` = 0x02000000, bit 25, which PDS #13's 24-bit mask (E146) does not
-look at, in 2 of 2 runs. Which event or state sets it is open (Q153). The stage's own criteria
+look at, in 2 of 2 runs. Which event or state sets it is answered by E746 (a count byte). The
+stage's own criteria
 (done, command cleared, run id, marker) were met in both runs, so the stage's function stands and
 only the prediction failed.
 
@@ -30,3 +31,12 @@ only the prediction failed.
 
 **Not shown.** The events of a host kick and of a job (Q033): only ticks were observed here, and a
 kick was not caused. Whether `pa1` is the same on every tick (the two runs each read one).
+
+**Correction 2026-11-10:** The measurements are unchanged. The inference that pa2 "looks constant,
+not a counter" is withdrawn: pa2 is the EDM's EVENT_TIMER sampled for the event (bits 31:24 = 0x01,
+bits 23:0 counting down from 400000 core clocks), and a tick served at once samples it 16 clocks
+after its own reload, which is why two ticks gave 0x01061a70. A kick read at three phases gave three
+other values that agree with the CR_TIMER stamps within 5.3 units (E746), and all 138 events of 14
+client jobs had pa2 in that format and range (E747, frozen, held out); the 0x10 offset is the delay
+after the reload. pa1 bit 25 is bit 1 of the count byte pa1 bits 31:24 (2 after the arm), not an
+event bit (E746).

@@ -63,8 +63,9 @@ open driver:
    field (Q150); how long an `sa0` written by `ima32` lasts and why a write to `pa0` is lost (Q136).
 10. **Fences, repeats, registers and persistence for a firmware compiler**: why a `wdf` waits for
    another counter's loads in some runs and not in others (Q130); whether a firmware (EDM) task runs
-   two at once (Q197, firmware: no second pass was seen in 10 of 10 runs of a slow task, ticks only
-   in one slot, E539, and what happens to an event that arrives meanwhile is open; a `wdf` with
+   two at once (no second pass was seen in 12 of 12 holds of up to 90 ticks, E749, E751, and an
+   event that arrives meanwhile is queued, up to four ticks and a kick or a job's events once, E751,
+   E752; a `wdf` with
    nothing outstanding and an unfenced store at the end of a task act as in a fill, E534); what a
    client `str` changes and what an `idf` is needed for beyond an instance's own store (Q134; `str`
    then `ldr` of 0x0814 and 0x0a78 is ordered in a firmware task, E534, and its other registers and

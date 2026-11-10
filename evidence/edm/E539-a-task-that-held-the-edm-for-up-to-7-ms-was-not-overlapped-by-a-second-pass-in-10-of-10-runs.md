@@ -33,4 +33,12 @@ in the window (a flag per tick, not a counter) is the follow-up.
 
 **Not shown.** A pass that starts before the busy store, overlap of tasks of different slots, or of
 a tick with a TA or 3D event (no job ran), whether events that arrive meanwhile are queued or
-dropped (Q197), and any task longer than 7 ms.
+dropped (answered by E752), and any task longer than 7 ms.
+
+**Correction 2026-11-10:** The [infer] reading that at most two of the six ticks of the busy window
+were lost fits what S2 stamped inside the task: a hold of six tick periods is followed by four tick
+passes within 24 us of its end and the ticks held beyond them are not served, so 6 - 4 = 2 is the
+lag measured here (E749, read after its run), and the frozen rerun with exits mid-period found
+min(H, 4) passes after holds of 1, 2, 3, 4, 6 and 90 ticks in 12 of 12 jobs (E751). The 1.9 to 2.2
+behind of the three runs here is that cap, not a cause of its own; the overlap flags at 0 stand (no
+slot was found busy in 12 of 12 holds in E749 and 20 of 20 in E751 and E752).

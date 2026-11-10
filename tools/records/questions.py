@@ -67,9 +67,10 @@ RETIRED: dict[str, str] = {
     "Q061": "answered by E428", "Q009": "answered by E441", "Q041": "answered by E458",
     "Q006": "folded into Q076", "Q083": "folded into Q076", "Q028": "folded into Q003",
     "Q067": "folded into Q036", "Q105": "folded into Q036", "Q106": "folded into Q036",
-    "Q117": "folded into Q161", "Q102": "folded into Q163", "Q131": "folded into Q197",
+    "Q117": "folded into Q161", "Q102": "folded into Q163", "Q131": "answered by E752",
     "Q155": "folded into Q152", "Q156": "folded into Q152",
     "Q094": "decided in doc/specs/3d.md",
+    "Q153": "answered by E746", "Q157": "answered by E746", "Q197": "answered by E752",
 }
 NAME = re.compile(r"Q\d{3}-[a-z0-9]+(-[a-z0-9]+)*\.md")
 REF = re.compile(r"\bQ\d{3}\b")

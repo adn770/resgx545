@@ -1,11 +1,11 @@
 +++
 id = "Q273"
-question = "does the debugfs knob render_pb_pages take effect above 0x422 (E704: the TA's threshold register read 0x400 and dword 35 0x3fe for every P from 0x422 to 0x500, no raise in 8 of 8), does the 1500-vertex scene at 4096x4096 raise the TA's threshold when the first threshold P - 0x22 is below the apparent ceiling, and what steps dword 36 from 2 to 3 between 1350 and 1500 vertices"
+question = "what steps dword 36 of the TA/3D control block with the vertex count and with P (E753: 1, 1, 3, 2, 3 and 3 at 1500 vertices over P = 0x320 to 0x3c0; 2 at 1350 and 3 at 1380 vertices at P = 0x3e0), now that the raise of the TA's threshold follows a limit C in [0x35e, 0x37e) on thr0 + 0x20 for 1350 and 1500 vertices alike"
 unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E704", "E625", "E630", "E734"]
+evidence = ["E704", "E625", "E630", "E734", "E753"]
 terms = ["Dynamic Parameter Management (DPM)", "ta3d_ctl"]
 +++
 E625's rule for the raise (overflow, then a second run reaching the first threshold) fits 109 of the
@@ -61,3 +61,18 @@ any P from 0x3e0 up for 1350 or 1500 vertices; a limit on the raised threshold b
 0x3e0, is not the step of the partial-render count. What stays open: where between P = 0x300 and
 0x3e0 the raise stops and whether it is the same P for 1350 and 1500 vertices (1500 was not run
 below 0x3e0), and what steps dword 36.
+
+Narrowed 2026-11-10 (S1b, E753; the raise clause is answered, the dword 36 clause is not). At
+4096x4096 the threshold was raised by 0x20 at P = 0x320, 0x340 and 0x360 (thr0 = P - 0x22 = 0x2fe,
+0x31e, 0x33e) and not at P = 0x380, 0x3a0 and 0x3c0 (thr0 0x35e, 0x37e, 0x39e), for 1350 and 1500
+vertices alike, one flip per scene at the same P, and not at 0x3e0 for 1350 and 1380 vertices; the
+frozen HP1 (one step in P for both scenes, a limit C on thr0 + 0x20) held with both controls passing
+(1500 vertices at 0x422: no raise; 1350 at 0x300: raise) and the job's own threshold register
+reading P - 0x22 in 16 of 16 jobs, so C lies in [0x35e, 0x37e). The 1500-vertex scene therefore
+raises when its first threshold is low enough, and its exception at P = 0x422 and above is the
+clamp: thr0 + 0x20 = 0x41e is far above C.
+
+Open: what C compares and why the raise is 0x20 (Q210), and dword 36, which is not a step in the
+vertex count alone: at 1500 vertices it read 1, 1, 3, 2, 3 and 3 over P = 0x320 to 0x3c0, and the 2
+at 1350 and 3 at 1380 vertices reproduced at P = 0x3e0 only (a repeat of S1's post hoc reading, not
+held out).

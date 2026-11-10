@@ -39,7 +39,7 @@
   measured in client pixel tasks; the EDM task of ours of E534 shows the same for a result `stad`
   followed by a load, a `wdf` and two more stores and then the flag the host reads with no `idf`
   (18 of 18) and for a `wdf` with no load outstanding between a `str` and an `ldr` (18 of 18, 15 of
-  which could show a change, and none did), and no more (Q197). The firmware almost always follows
+  which could show a change, and none did), and no more. The firmware almost always follows
   its loads with a `wdf` before using the data (711 `wdf drc0`, 96 `wdf drc1`), and our programs
   wait with `wdf drc0` for the attribute DMA the PDS started.
 - **`idf drcN, bif`** appears 124 times in the firmware, mostly right before a `wdf` on the same

@@ -36,3 +36,11 @@ own pages confirms.
 
 **Not shown.** The first page count that faults between 16 and 20, and what memory lies after the
 scratch.
+
+**Correction 2026-11-10:** S1b's p-d (E760) repeated the 64- and 21-page jobs (4 of 4 images equal
+this record's, byte for byte, with A4 exact at each job's pages) and ran the 20-page job again
+(completes, words read past the scratch with no fault, as here) and, new, 19 pages (completes, every
+model pixel past the scratch) and 18 pages: the L2e2 job completed in 545 us, wrote no pixel
+("failed: no pixel written", rc 3) and left no fault line and no BIF fault. So the reading that the
+fault follows the mapping does not extend down from 20 pages: below 19 the job neither faults nor
+draws; the stage stopped there (cannot tell, the control d-L2e2-16 and the 17-page job did not run).

@@ -5,7 +5,8 @@ unit = "isp"
 kind = "hw"
 value = "low"
 phase = 12
-evidence = ["E065", "E070", "E071", "E072", "E232", "E235", "E282", "E287", "E291", "E660", "E739"]
+evidence = ["E065", "E070", "E071", "E072", "E232", "E235", "E282", "E287", "E291", "E660",
+            "E739", "E757"]
 terms = ["ISP0.PASS_TYPE", "ISP0.DCMP_MODE", "ISP1.VISTEST", "ISP1.POLY_OFFSET"]
 +++
 
@@ -46,3 +47,11 @@ Status: open.
 Post hoc 2026-11-09 (S1, E739; not an answer): ISP pass type 1 (bits 27:25 of word 0) on either of
 two overlapping objects gave images identical to the opaque pair at both depth orders (6 of 6 jobs,
 controls passing); the frozen table could not tell depth order from pass order.
+
+Narrowed 2026-11-10 (S1b, E757; the pass-type bullet only). With the compare always on a farther
+second object, pass type 1 drew it over the first (red 1098 pixels, green 0, 2 of 2), as an opaque
+always did; with it on the first object under a nearer opaque second, the second's colour stayed (2
+of 2). Depth order and pass order, E739's two surviving hypotheses, are refuted in 2 of 4 each; list
+order and 'pass type 1 changes nothing' are consistent and not separated. Two or more triangles of
+one object, the translucent blend with a shader that writes alpha and the other pass types stay
+open.

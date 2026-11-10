@@ -5,7 +5,7 @@ unit = "texture"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E722", "E566", "E743"]
+evidence = ["E722", "E566", "E743", "E760"]
 terms = ["T3.BITS19_18", "T3.BITS28_27"]
 +++
 E722: A4 is exact on the 13 jobs that completed, and the 3 jobs whose A4 extent is 86016, 87040
@@ -26,3 +26,15 @@ E722's model rendered with each job's own page count equals the four completing 
 the scratch without a fault. So the first half is answered yes on the four completing jobs, but it
 needs a frozen rerun with the predictions rendered at each job's pages, and "how large is the buffer
 the sampler may read" is not the scratch size: what lies past it differs between jobs.
+
+Narrowed 2026-11-10 (S1b, E760; the frozen verdict is cannot tell, the stage stopped before its
+control). The first clause fits again as a repeat of S1's post hoc fits: the three jobs that faulted
+at 16 pages (L2e2, L3e3, st-L3e2) completed at 64 pages and L2e2 at 21, each with A4 exact at its
+own page count (4 of 4, images byte-identical to S1's), and the 64-page control was exact. At 20 and
+19 pages (80 and 76 KiB) L2e2 completed with every model pixel past the scratch and no fault; at 18
+pages (72 KiB) it completed in 545 us, wrote no pixel ('failed: no pixel written', rc 3) and left no
+fault line and no BIF fault, an outcome that neither frozen hypothesis predicted (HM: completes;
+HB-end: faults). The 17-page job and the control, L2e2 at 16 pages (E722's fault), did not run.
+Still open: what the sampler does between 16 and 19 pages, why a job with no fault writes no pixel,
+and how large the buffer the sampler may read is (the scratch size is not it: what lies past the
+scratch differs between jobs).

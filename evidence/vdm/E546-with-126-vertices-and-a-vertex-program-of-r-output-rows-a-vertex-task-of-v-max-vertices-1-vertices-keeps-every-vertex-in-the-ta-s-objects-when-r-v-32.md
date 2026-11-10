@@ -49,3 +49,10 @@ count is still open (Q092).
 **What it does not show.** The vertices' fate in an overrun by identity (which are dropped); whether
 the pixels follow (the jobs ran without the pixel readback); the closed driver's choices of 15, 13,
 9, 7 and 2.
+
+**Correction 2026-11-10:** E702's a = 8 words at R * V = 33 lost a vertex again on later runs:
+vertex 70 in 2 of 3 runs of S1 (E738) and 5 of 6 of S1b (E755), three different outcomes over the
+six (x2156 with a split of 9, 9 and 3, x2260 with the regular split, x2288 with none). So the lost
+vertex at 33 with 8 rows is a recurring event of that job and not a one-off, intermittent under a
+reset before every job. That the vertex lost here is vertex 70 is not shown (this record does not
+give its id).

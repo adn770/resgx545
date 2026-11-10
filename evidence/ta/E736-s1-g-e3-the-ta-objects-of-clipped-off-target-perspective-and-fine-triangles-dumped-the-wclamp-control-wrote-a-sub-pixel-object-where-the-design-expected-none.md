@@ -51,3 +51,14 @@ inside the guard band, and the WCLAMP control predicted from the replace reading
 
 **Not shown.** The guard band's exact width, the clip's interpolation of 1/w at the made vertices,
 and where between 64 and 128 pixels the object disappears.
+
+**Correction 2026-11-10:** Two statements above are refined by S1b's g-e3 (E754). The note that the
+w scan's every stored vertex was made by the clip, so that the frozen per-vertex 1/w rule had no
+original vertex to test, is answered inside the guard band: with x and y scaled by w (stored x and y
+equal the original triangle's) the 1/w word was the float32 reciprocal truncated toward zero at w =
+3, 7, 0.003 and 3e-5 (4 of 4, frozen held out, round-to-nearest refuted 4 of 8 checks, the w = 1
+control passing). And the WCLAMP reading that the clamp replaces a smaller w by its own value holds
+for position and 1/w in 4 of 5 clamp jobs at w = 1e-5 (x and y shrunk by w over the clamp, 1/w =
+1/clamp) but is not one rule: the 1/w word was the truncated reciprocal at a clamp of 3e-5, the
+rounded one at 3e-4, and the clamp of 1e-3 wrote no object here where this record's control wrote a
+0.96 pixel square, so every frozen clamp model was refuted at least once.

@@ -65,3 +65,10 @@ marginal product or a limit is not shown, and no rule about a limit at 33 follow
 
 **Not shown.** Whether a = 7, a = 12 and E546's a = 8 repeat (under their own conditions); whether
 the hang at 32 rows depends on N or on R*V; R*V of 34 and 35 (no natural job reaches them, E703).
+
+**Correction 2026-11-10:** The statement above that the a = 8 jobs ran under another module and tool
+and 'do not repeat' E546's lost vertex is answered by later runs of these very words: a = 8 lost
+vertex 70 in 2 of 3 runs of S1 (E738) and in 5 of 6 of S1b (E755), with three outcomes (x2288,
+x2156, x2260), and the a = 12 event is x2582 and x2313 on the later runs, not x2028 (E755). The
+three N = 8 events are therefore intermittent and not functions of the words; E702's own a = 8 jobs
+(2 of 2 unchanged) were the unchanged outcome.

@@ -5,7 +5,7 @@ unit = "platform"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E006", "E154", "E155", "E357", "E431", "E435", "E444", "E547", "E548"]
+evidence = ["E006", "E154", "E155", "E357", "E431", "E435", "E444", "E547", "E548", "E747"]
 terms = ["CR_EVENT_STATUS", "CR_EVENT_STATUS2", "CR_EVENT_HOST_CLEAR", "CR_EVENT_HOST_ENABLE"]
 +++
 
@@ -65,3 +65,15 @@ and 26 1 0 18 5 13 14 31. What does repeat is that bit 14 (SW_EVENT) is followed
 order here, and a bit the firmware acknowledges within a sample can be missed. The within-job
 order Q111 asks for is therefore not given by the timelines; the arrival order at the EDM (Q033's
 event log) is the measurement that would give it.
+
+Narrowed 2026-11-10 (S2, E747). The arrival order at the EDM that the offline reading of 2026-11-09
+asked for was measured: in 14 client jobs the events reach the EDM one status bit at a time, in an
+order identical in every replicate of a kind (fill and copy: a kick entry of the kernel's buffer,
+the end of render, a later kick entry; a 64x64 triangle: kick entry, TA finished (pa1 bit 9), end of
+render (bit 4), the status bit that pa1 bit 22 stands for, then five kick entries; the partial
+render, per render: kick entry, bits 21 and 10, bits 4 and 22, bit 9, bits 4 and 22), with the
+status bits read through the reversed order of E155 (pa1 bit = 22 minus the status bit, E747). That
+is the order of arrival at the EDM, not the order in which the registers rose; no status register
+was read in those jobs, whether a bit is a pulse or a level is not shown, bits 26, 14 and 31 of E547
+never reached the EDM, and which event sets the other bits and what CR_EVENT_HOST_CLEAR clears
+(Q166) stay open.

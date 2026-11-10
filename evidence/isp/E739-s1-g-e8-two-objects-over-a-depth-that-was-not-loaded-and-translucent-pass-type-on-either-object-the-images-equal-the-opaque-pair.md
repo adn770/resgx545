@@ -39,3 +39,14 @@ table could not separate them, and "pass type 1 changes nothing here", which no 
 fits as well (post hoc).
 
 **Not shown.** Any loaded-depth behaviour with two objects; the translucent pass's order or blend.
+
+**Correction 2026-11-10:** S1b's always table (E757) refutes the frozen verdict that depth order and
+pass order both fit, for the case where the pass-type object's compare is always: with the second
+object translucent (pass type 1, compare always 0x03c00200) and farther, the second drew over the
+first (red 1098 pixels, 0 green, 2 of 2), which depth order (HD) predicted green for, and with the
+first object translucent always under a nearer opaque second the second's colour stayed (red 1098, 0
+green, 2 of 2), where pass order (HP) predicted green; HD and HP are refuted in 2 of 4 each and list
+order (HL) and 'pass type changes nothing' (HN) are consistent in 4 of 4 (they predict the same, so
+the table does not separate them). The refutation of list order above is for the compare less (the
+farther second object loses under less), not for always; the observation that pass type 1 changes
+nothing in these images is not refuted.

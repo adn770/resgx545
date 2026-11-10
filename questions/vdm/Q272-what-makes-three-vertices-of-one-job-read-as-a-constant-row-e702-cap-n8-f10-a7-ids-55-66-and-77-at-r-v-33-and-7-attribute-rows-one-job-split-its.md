@@ -5,7 +5,7 @@ unit = "vdm"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E702", "E546", "E738"]
+evidence = ["E702", "E546", "E738", "E755"]
 terms = ["VDM_TASK1.OUTPUT_SIZE"]
 +++
 In E702's 16 jobs at R * V of 32 and 33 and 1 to 32 attribute rows, 13 are plain (the tool's o0
@@ -40,3 +40,14 @@ and 12), and the two changed a = 8 jobs lose vertex 70 with objects of 15, 15, 1
 15, 15 and 3. Still open: what the constant row is, what makes a = 8 split in some runs (a reset
 before it or not), what a = 12 changes when every vertex is present, and whether these are
 the kind of event E546's lost vertex was.
+
+Narrowed 2026-11-10 (S1b, E755; the repeat clause again, the controls reproducing E702's histograms
+2288 and 2821). E702's a = 8 job lost vertex 70 in 5 of 6 further runs (3 with the runner's reset
+before each job, 3 without), as in 2 of 3 runs of S1, with three outcomes (x2156 with the objects
+split 15, 15, 15, 15, 9, 15, 9, 15, 15 and 3; x2260 with vertex 70 lost and the regular split; x2288
+with none lost): the event recurs and is not a function of the words. The a = 12 job gave x2582 and
+x2313, neither E702's x2028 nor S1's x2582 in 3 of 3 (frozen HI, repeat only). The frozen comparison
+of the two triples (HC, state carry: reset ['', 70, 70] against no reset [70, 70, 70], printed as
+different patterns) has three runs a side and is not a test of state carry, which is not ruled out.
+Still open: what the constant row is (the a = 7 event was not run), what selects the a = 8 outcome,
+what a = 12 changes when every vertex is present, and whether the lost vertex 70 is E546's.

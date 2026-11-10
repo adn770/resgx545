@@ -5,7 +5,7 @@ unit = "isp"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E606", "E072", "E465", "E731", "E741"]
+evidence = ["E606", "E072", "E465", "E731", "E741", "E758"]
 terms = []
 +++
 E606: the stored depth of covered pixels is within 1 unit (2^-23, absolute) of the exact plane at
@@ -66,3 +66,14 @@ depth of 0.0625 deviates at the same 9216 pixels by -1 to -3 ulps; so neither th
 the triangle-tied reading holds. One candidate, untested: the plane is set up from the clipped
 polygon, which changes with the target and the move. Still open: the arithmetic, why x + 2y, and
 the region on other targets.
+
+Narrowed 2026-11-10 (S1b, E758). Three readings of where the lower-binade region comes from are
+refuted by a frozen held-out table whose control reproduced E731's set (7680 pixels at -1 ulp and
+1536 at -2 on 256 x 128, 2 of 2): tied to target coordinates (HT) refuted in 4 of 4, tied to the
+triangle (HV) in 2 of 2, and the plane set up from the clipped polygon (HCLIP) in 1 of 4 held out
+and 2 of 3 as repeats; none is consistent. The dyadic plane deviates on 256 x 256 (18528 of 65536
+pixels, -1 and -2 ulps), not on 256 x 192, not on 256 x 512 and not with the triangle moved by (64,
+32); two smaller triangles of the same plane deviate at every covered pixel of 256 x 128 (32768, -5
+to -1 ulps). Post hoc (not held out): on 256 x 256 the deviating set is the covered pixels with x +
+y >= 319. Still open: what the presence depends on (not monotone in the target's height), the
+arithmetic, and why x + 2y on 256 x 128 and x + y on 256 x 256.

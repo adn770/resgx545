@@ -661,26 +661,33 @@ queue's `EMPTY` flag and bits 15:0 its served-event `COUNT`, which fits (emgd-ps
 `psb_regs.h`).
 
 A firmware task of ours in the general slot (E531) sees the tick's event as `pa0` = 2, `pa1` =
-0x02000000 and `pa2` = 0x01061a70 (E532: 2 of 2 runs; `pa2` is 0x10 below the value the boot writes
-to the EDM timer, equal in two fresh boots, so it looks constant **[infer]**, the offset
-unexplained; the bit set in `pa1` is outside the 24 bits PDS #13 looks at, Q153). A host kick (a
-GETMISCINFO with no job) reaches the general slot only, with `pa0` = 2, `pa1` = 0x03000000 and the
-same `pa2` (E538, 3 of 3 runs: the tick's word with bit 24 added, Q157; it is not bit 8 or bit 14,
-Q033), and `pa2` was the same in all 5 events seen, in five fresh boots, so it looks constant
-**[infer]**. After a task that wrote `sa`, `r`, `i`, `p` and `pclink` state and ended with `nop.end`
-instead of jumping to the closed general task, the tick stopped: dword 12 and `USE0_SERV_EVENT` did
-not move over three reads 20 ms apart, and one debugfs reset recovered it (E533, 1 run; that task
-skipped the closed task, wrote an arbitrary `pclink` and set p0 to p3 to 1, 0, 1, 0, so the cause is
-not separated, Q152). A task of ours that wrote `sa`, `r`, `i` and `p` and then called the closed
-task left the tick running (E536, 3 of 3 rounds, 911 to 1005 Hz), and a second one that also wrote
-`sa63` and `sa65` and called it was not followed by its armed reader within 100 ms (E537, 1 run;
-HostCtl dword 12 advanced 6 in that window and then read 0x9db in both dumps taken seconds later,
-and `USE0_SERV_EVENT` 0x9e0 in both, against E533's three reads 20 ms apart; Q152). The closed task
-does not by itself keep the tick, then, whatever E533's cause was.
+0x02000000 and `pa2` = 0x01061a70 (E532: 2 of 2 runs). The byte `pa1` bits 31:24 is a count that
+every event carries: 2 after the arm, +1 after each kick of the kernel's command buffer, a host
+GETMISCINFO or a client job's own (E746 held out 3 of 3; E747 for 138 job events, read after the
+run), so bits 24 and 25 are bits of the count and not event bits; PDS #13 reads only bits 23:0.
+`pa2` is the EDM's event timer sampled for the event (bits 31:24 = 0x01, bits 23:0 counting down
+from 400000 core clocks), 16 clocks after the reload for a tick served at once (0x01061a70) and any
+value for a kick; it is not a constant (E746, E747). A host kick (a GETMISCINFO with no job) is one
+event in the general slot with `pa0` = 0 and `pa1` bits 23:0 = 0x100 (E746); the words E538 logged
+for it, 0x03000000 with `pa0` = 2, are those of the tick after it. A client job's events arrive one
+status bit at a time, in an order the same in every replicate, and the fill's end of render reached
+slot 3 with `pa1` bit 4, the reversed order of E155 (E747). While a task of ours holds the EDM the
+events are queued and not lost: up to four ticks (three latched on arrival, one when the hold ends,
+the rest dropped), a kick once, a job's events once, all served after the hold (E749, E751, E752).
+After a task that wrote `sa`, `r`, `i`, `p` and `pclink` state and ended with `nop.end` instead of
+jumping to the closed general task, the tick stopped: dword 12 and `USE0_SERV_EVENT` did not move
+over three reads 20 ms apart, and one debugfs reset recovered it (E533, 1 run; that task skipped the
+closed task, wrote an arbitrary `pclink` and set p0 to p3 to 1, 0, 1, 0, so the cause is not
+separated, Q152). A task of ours that wrote `sa`, `r`, `i` and `p` and then called the closed task
+left the tick running (E536, 3 of 3 rounds, 911 to 1005 Hz), and a second one that also wrote `sa63`
+and `sa65` and called it was not followed by its armed reader within 100 ms (E537, 1 run; HostCtl
+dword 12 advanced 6 in that window and then read 0x9db in both dumps taken seconds later, and
+`USE0_SERV_EVENT` 0x9e0 in both, against E533's three reads 20 ms apart; Q152). The closed task does
+not by itself keep the tick, then, whatever E533's cause was.
 
 *Based on sgx545-ce `src/services4/system/unified/sysconfig.c`,
 `src/services4/srvkm/devices/sgx/sgxconfig.h`; emgd-psb_regs; E002, E006, E008, E009, E011, E531,
-E532, E533, E536, E537, E538.*
+E532, E533, E536, E537, E538, E746, E747, E749, E751, E752.*
 
 ## 13. Open questions
 

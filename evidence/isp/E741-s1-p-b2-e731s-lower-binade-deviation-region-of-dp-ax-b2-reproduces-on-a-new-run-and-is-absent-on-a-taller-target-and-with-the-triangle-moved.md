@@ -32,3 +32,13 @@ untested candidate: the plane is set up from the clipped polygon, whose vertices
 target and the move. A frozen run with those hypotheses and the parameter-buffer dump confirms.
 
 **Not shown.** The arithmetic; why x + 2y; the region on other targets.
+
+**Correction 2026-11-10:** S1b's p-b2 (E758) tests the candidate left untested above and extends the
+target dependence. The plane set up from the clipped polygon (HCLIP) is refuted: in the frozen
+held-out rows 1 of 4, in the repeat rows 2 of 3, target-tied (HT) 4 of 4 and triangle-tied (HV) 2 of
+2. The control reproduced 7680 pixels at -1 ulp and 1536 at -2 on 256 x 128 (2 of 2); the dyadic
+plane deviates on 256 x 256 (18528 of 65536 pixels) and not on 256 x 192, not on 256 x 512 and not
+with the triangle moved by (64, 32) (0 deviating pixels each), and two smaller triangles of the same
+plane deviated at all 32768 covered pixels of 256 x 128 (-5 to -1 ulps). 'It appears with this
+triangle on this target' is therefore refined: it is present on the 128 and 256 row targets and
+absent on 192 and 512, with no one of the three readings fitting.

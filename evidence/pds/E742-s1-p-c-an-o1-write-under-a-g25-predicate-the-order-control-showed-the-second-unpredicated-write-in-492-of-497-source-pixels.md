@@ -33,3 +33,12 @@ dwords, which the scorer did not compare. A frozen rerun confirms.
 
 **Not shown.** What g23 and g25 hold beyond the quad position; why five sources took the first
 write.
+
+**Correction 2026-11-10:** S1b's p-c (E759) repeated the order control three times and the
+first-write oddity partly repeats: the sources that kept the first write were five in the first
+rerun ((16,25), (16,27), (17..19,27), as here), four in the second and two in the third, with
+(16,27) and (17,27) in all three; the tag-2 fraction was 0.990, 0.992 and 0.996. 'Whether it repeats
+is not known' is therefore: it repeats at a few sources, not at the same five. The post-hoc g23
+fraction read 0.237 (here 0.253) and c-k7-x-rep differed from c-k7-x in 61 dwords (here 36), so the
+repeat of those numbers is approximate; the k = 7, 0 and 3 readings repeated in nearly the same
+numbers (0.000, 0.253 and 0.248) (S1 post hoc fits run again, not held out).

@@ -5,7 +5,7 @@ unit = "pds"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E709", "E570", "E406", "E742"]
+evidence = ["E709", "E570", "E406", "E742", "E759"]
 terms = ["PDS_SIZE.BITS17_16"]
 +++
 Q023 asks which lanes write o4 to o7 in the four-output-room setup. E709 guarded o4 by a test of g25
@@ -29,3 +29,11 @@ shows the predicated write, with k = 0 a quarter do, all at even x and even y, a
 quarter, all at odd x and odd y, which reads as the predicate gating the write per pixel with g25
 taking the pixel's place in its 2 x 2 quad; with g23 a quarter show it (not the half the frozen
 prediction said), concentrated where x mod 8 < 4 and y mod 8 < 4. A frozen rerun is needed.
+
+Post hoc 2026-11-10 (S1b, E759; repeat only, no held-out row). The order control c-u passed the
+frozen criterion (tag-2 fraction at least 0.98) in 3 of 3 runs (0.990, 0.992 and 0.996), the first
+write surviving at 5, 4 and 2 sources, (16,27) and (17,27) in all three. S1's post hoc readings
+repeated in their numbers: g25 == 7 no tag 2 (0 of 486 landings), g25 == 0 a quarter, all at (even,
+even) sources (0.253), g25 == 3 a quarter, all at (odd, odd) sources (0.248), g23 0.237; the frozen
+HQ (g25 = the lane in the 2 x 2 quad) is consistent in 3 rows, as a repeat. A frozen test with a row
+held out against that reading has not run.

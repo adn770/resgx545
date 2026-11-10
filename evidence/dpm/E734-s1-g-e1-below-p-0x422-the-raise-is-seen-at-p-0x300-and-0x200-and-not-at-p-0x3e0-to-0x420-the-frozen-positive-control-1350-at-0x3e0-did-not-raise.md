@@ -52,3 +52,11 @@ of the partial-render count. A frozen run that confirms needs P between 0x300 an
 **Not shown.** What the raise compares, why 0x20, whether the limit is the hardware's or the
 firmware's, and what dword 36 or dword 39 (5 at 0x3e0 and in 1350 at 0x420, 6 in the other jobs)
 count.
+
+**Correction 2026-11-10:** Two readings above are now measured. The 'limit on the raised threshold
+between 0x2fe and 0x3dd' (post hoc here) was run as a frozen ladder in S1b (E753): the threshold was
+raised at P = 0x320, 0x340 and 0x360 and not at 0x380, 0x3a0, 0x3c0 and 0x3e0, for 1350 and 1500
+vertices alike, so a limit C with thr0 + 0x20 <= C lies in [0x35e, 0x37e) for both scenes (frozen
+HP1, controls passing). And dword 36 is not a step in the vertex count alone: at 1500 vertices it
+read 1, 1, 3, 2, 3 and 3 over P = 0x320 to 0x3c0 (E753), so the 3 above holds only at the P values
+listed here; the 2 and 3 at 1350 and 1380 vertices at P = 0x3e0 reproduced once each.

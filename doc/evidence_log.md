@@ -4986,24 +4986,226 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   runs exact, identical hashes, with both renders of each run overflowed) and a mask that included
   buffer 0 (its fault is buffer 0's).
   *bif; HW, infer; data: `render-closing-s1:out/p-f/`.*
+- `E746` A firmware task of ours that logs every pass of the four PDS #13 slots with CR_TIMER
+  (ring_e1, window 2) saw one GETMISCINFO kick with no job as exactly one entry that is not a plain
+  tick, in slot 0, with pa0 = 0 and pa1 bits 23:0 = 0x100 in 3 of 3 jobs (a gated control, rebuilt
+  after run 2 of the stage and so a fit of run 2); held out of that fit and read on the new run: pa1
+  bits 31:24 are a count K that every event carries (2 on every tick before the first kick, K = 2, 3
+  and 4 on the three kicks in job order, K + 1 on every tick after a kick, 3 of 3), and pa2 bits
+  23:0 of the kick is a sample of EVENT_TIMER counting down from 400000 core clocks (the time since
+  the last tick, (400000 - pa2) / 16 CR_TIMER units, agrees with the stamps within 5.3 units, 3 of
+  3); the ticks were pa0 = 2, pa1 bits 23:0 = 0 and pa2 = 0x01061a70 on a grid of 25000 CR_TIMER
+  units, and a filtered 50 ms window logged nothing before the kicks (3 of 3) and after them (2 of
+  2); E538's 'kick' words (pa1 = 0x03000000, pa2 = 0x01061a70) are those of the tick after the kick.
+  *edm; HW, infer; data: `edm-closing-s2:out/e1c/`, `edm-closing-s2:out/e1c.run2-gate-closed/`.*
+- `E747` A firmware task of ours that logs every non-tick pass of the four PDS #13 slots (ring_e1,
+  window 1) saw in 14 client jobs (fill x3, copy x3, 64x64 triangle x3, 256x256 triangles -n 3 x3,
+  1024x768 partial render -n 2 x2) 138 event entries, each with pa0 = 0 and exactly one bit set in
+  pa1 bits 23:0: (slot, bit) (0, 8) 68, (3, 4) 26, (3, 22) 20, (1, 9) 16, (2, 21) 4 and (2, 10) 4;
+  the frozen witness of the bit order, the fill's end of render, arrived in slot 3 with pa1 bit 4 in
+  3 of 3 fills (the reversed order of E155: pa1 bit = 22 minus the status bit, status bit 18
+  PIXELBE_END_RENDER, against pa1 bit 18 in slot 0 for the same-position reading of E146), the
+  frozen bit sets of the reversed order explained 132 of the 138 entries and those of the
+  same-position order 88, every entry's slot equals PDS #13's dispatch of its own words (138 of 138,
+  the instrument control) and pa2 is in EVENT_TIMER's format and range on all 138 (held out); bit 19
+  never appeared (not in the 2 partial renders that overflowed the parameter buffer either) and bit
+  8 only in slot 0 with pa0 = 0; the arrival order per kind was the same in every replicate (3 of 3,
+  3 of 3, 3 of 3, 3 of 3, 2 of 2).
+  *edm; HW, infer; data: `edm-closing-s2:out/e1j/`.*
+- `E748` In a firmware task of ours in the general slot (slot 0), run on the 1 kHz tick, pa0 to pa4
+  read the same words as sa64 to sa68 in 3 of 3 read passes (sa64 = 2, sa65 = pa1 = 0x02000000, sa66
+  = pa2 = 0x01061a70, sa67 = pa3 = 0x04000004, sa68 = pa4 = 0x00030001), with sa0 = 0x32004000 and
+  not pa0; the frozen held-out prediction sa66 = 0x01061a70 (from E537 and E532, never read before)
+  held in 3 of 3 read passes, and a write of a marker to sa67 or to sa68 by the allowed mov to sa
+  was read back through pa3 or pa4 in the same pass and through both banks in the next task, for 3
+  of 3 markers each (0xb2a06701 to 0xb2a06703, 0xb2a06801 to 0xb2a06803), the tick staying alive and
+  the values the control read written back and read back (restore67, restore68) in the same stage.
+  *edm; HW, infer; data: `edm-closing-s2:out/e2r/`, `edm-closing-s2:out/e2w/`.*
+- `E749` A firmware task of ours that held the EDM in a three-instruction loop for 0.6 to 90 tick
+  periods (n = 10000 to 1500000 iterations, CR_TIMER 15015 to 2250017 units, 1.5 units an iteration
+  plus 15 within 2) was never overlapped by a pass of any slot (no slot-0 entry stamped inside a
+  hold, busy flags 0 and passes of slots 1 to 3 at 0 in 12 of 12 holds) and the ticks resumed on the
+  original 25000-unit grid after it; the frozen classifier said LOST for both holds of n = 10000 (a
+  hold that no tick fell inside) and 'cannot tell' for all 8 holds of n = 100000, 300000 and
+  1500000, because every exit fell 79 to 86 units after a tick of the old grid (the design made it
+  so); read after the run, every hold that covered 6, 18 or 90 ticks was followed by exactly four
+  tick entries within 585 units (23.5 us) of its exit (10 of 10 holds: e4h, e4l and the two controls
+  of e5c), the first three with pa2 = 0x01061a74 (400000 - 12) and the fourth with an EVENT_TIMER
+  sample about 183 to 190 CR_TIMER units old, the age of the first entry after the last held tick,
+  and a tick stream of 0x01061a70 on the old grid afterwards.
+  *edm; HW, infer; data: `edm-closing-s2:out/e4c/`, `edm-closing-s2:out/e4h/`,
+  `edm-closing-s2:out/e4l/`, `edm-closing-s2:out/e5c/`.*
+
+### 2026-11-10
+
+- `E750` A GETMISCINFO kick issued 3.4 to 3.6 ms after the command of a 90-period hold of the EDM by
+  a task of ours (the hold's state read busy before the kick, 3 of 3) was not lost: the debugfs read
+  was answered after 86.7 to 87.5 ms and the ring logged exactly one kick entry (pa0 0, pa1 bits
+  23:0 0x100, count byte 2, 3 and 4) 328 to 552 CR_TIMER units after the hold's exit in 3 of 3 jobs,
+  scored QUEUED by the frozen classifier (the other discriminant, LOST, was no kick entry and no
+  answer); the stage's gate stayed closed because its control, the same hold without a kick, which
+  had to reproduce e4l's shape class, had no told shape on either side (every shape 'cannot tell',
+  E749), so the held triangle stage e5t did not run in this session; the kick entries' pa2 (age
+  283.8 and 287.5 units for the first two, 22415 for the third) was read after the run.
+  *edm; HW, infer; data: `edm-closing-s2:out/e5c/`.*
+- `E751` With the exit of every hold designed to fall mid-period (about 12500 CR_TIMER units from
+  the two neighbouring grid ticks), a firmware task of ours that held the EDM for H tick periods was
+  followed by exactly min(H, 4) tick entries before the next grid tick in all 12 holds (H = 1 x2, 2
+  x2, 3 x2, 4 x2, 6 x2, 90 x2 in e4m and e4l: ONE at H = 1, ALL at H = 2 to 4, PARTIAL(4) at H = 6
+  and 90), the frozen held-out prediction q = min(H, 4) of the frozen classifier, which also fits
+  ALL at H = 1 to 4 and ONE at H = 1, and which the 6 and 90 tick holds separate from ALL and the 2
+  to 90 tick holds from ONE; the first min(H, 3) entries read pa2 = 0x01061a74 and for H >= 4 the
+  fourth read an EVENT_TIMER sample 12599 to 12614 units old, within 25 units of the first entry's
+  time after the last held tick (the frozen pa2 signature, 12 of 12), and the window count (entries
+  logged plus drops) equalled open time x 0.99746 - H + min(H, 4) within 1.5 in 12 of 12 (the frozen
+  second instrument; 0.8 at most); the three no-hold controls of e4c held (16 entries on the 25000
+  grid, 3 of 3); the conditions H = 1 to 4 are new, H = 6 and 90 repeat run 3's holds of S2 (E749)
+  with their exits moved mid-period.
+  *edm; HW, infer; data: `edm-closing-s2b:out/e4c/`, `edm-closing-s2b:out/e4m/`,
+  `edm-closing-s2b:out/e4l/`.*
+- `E752` During a hold of the EDM of 90 tick periods by a task of ours (2262433 to 2262438 CR_TIMER
+  units, 90.7 ms, ending mid-period), a GETMISCINFO kick issued 3.4 to 3.6 ms after the command (the
+  hold's state read busy before it, 3 of 3) was queued and logged once after the hold's exit (pa0 0,
+  pa1 bits 23:0 0x100, count byte 2, 3 and 4), in 3 of 3 jobs scored QUEUED by the frozen
+  classifier, the debugfs read answered after 86.98, 87.99 and 88.03 ms, with the control (the same
+  hold with no kick) reproducing e4l's shape class (PARTIAL, 2 of 2, E751) so that the stage gate
+  opened; the kick took the fifth, third and third place of the entries drained after the exit
+  (window 2), its pa2 age 12744 units (latched when the drain began, with the pending tick of E751's
+  fourth entry, age 12604) in the first job and 19522 and 21884 units (latched on arrival, ahead of
+  one pending tick of age 12612 and 12600) in the other two; and a 64x64 triangle (tool `tri`,
+  hold_recovery Y for that job only, read back and put back) started in the same kind of hold
+  completed rc 0 in 75230, 73184 and 74788 us against 5673 and 6038 us for the two no-hold controls,
+  with the same 9 event entries (0:8, 1:9, 3:4, 3:22 and five more 0:8 as without a hold) all logged
+  after the hold's exit, the first 552 to 567 units after it, scored QUEUED (the job's events at the
+  exit) in 3 of 3.
+  *edm; HW, infer; data: `edm-closing-s2b:out/e5c/`, `edm-closing-s2b:out/e5t/`.*
+- `E753` At 4096x4096 with the green pixel program, the TA's threshold was raised by 0x20 (TA3DCtl
+  dword 38 = 0x20, dword 37 = 1 << 16 | thr0) in all 6 ladder jobs at P = 0x320, 0x340 and 0x360
+  (1350 and 1500 vertices each; thr0 = P - 0x22 = 0x2fe, 0x31e, 0x33e) and in none of the 8 jobs at
+  P = 0x380, 0x3a0, 0x3c0 (1350 and 1500 each; thr0 0x35e, 0x37e, 0x39e) and 0x3e0 (1350 and 1380;
+  thr0 0x3be), all 14 of which had a second run that reached thr0; the step is at the same P for
+  both scenes, last raise 0x360 and first silent 0x380, so the limit C of the raised threshold
+  (raise iff thr0 + 0x20 <= C) lies in [0x35e, 0x37e), inside the S1 post-hoc bound [0x2fe, 0x3de):
+  the frozen held-out verdict HP1 (one step for both scenes), with both controls passing
+  (c-1500-0x422 no raise, p-1350-0x300 raise, each as in S1); the job's own register 0x0624 read P -
+  0x22 in 16 of 16 jobs (0x400 at 0x422).
+  *dpm; HW, infer; data: `render-closing-s1b:out/g-e1/`.*
+- `E754` With every vertex at one w inside the guard band (x and y scaled by w, so the stored x and
+  y equal the original triangle's: 4 of 4 jobs, w = 3, 7, 0.003 and 3e-5), the 1/w word of the TA's
+  object is the float32 reciprocal truncated toward zero in 4 of 4 (0x3eaaaaaa, 0x3e124924,
+  0x43a6aaaa, 0x47023555 at all three vertices; round-to-nearest, one unit above, refuted 4 of 8
+  checks), the frozen held-out verdict of group e3i with its control (w = 1, E651's object) passing;
+  with w = 1e-5 under a clamp (block word 14) of 3e-5, 1e-4, 3e-4 and 1e-3 the stored object has the
+  original's x and y shrunk about the centre by w / clamp (to the 1/64 pixel) and 1/w = 1/clamp in 4
+  of 5 jobs (one of them with the clamp equal to w, so unshrunk), the fifth, at 1e-3, writing no
+  object, and the clamp jobs' 1/w words are the truncated reciprocal in one case (3e-5) and the
+  rounded one in another (3e-4), so every frozen clamp model (replace by the clamp with truncation
+  or with rounding, the triangle shrinks, the object removed) is refuted at least once and none is
+  consistent; the repeat of S1's cuts (z = +w and -w) gives clipped polygons of 4 and 3 vertices
+  that are not the original three, 2 of 2.
+  *ta; HW, infer; data: `render-closing-s1b:out/g-e3/`.*
+- `E755` Of E702's three events, in S1b's run of the same VDM words at R * V = 33 on a 64 x 64
+  target with 126 vertices, 8 coordinate outputs (the o0 histogram counts the pixels still reading
+  0xff203040, x), the two controls reproduce E702 (attribute rows 1 at N = 8: x2288, no vertex lost;
+  attribute rows 9 at N = 2: x2821) but the a = 8 job (attribute rows 8) is not a function of its
+  words: three runs with a reset before each gave x2156 with vertex 70 lost and objects split 15,
+  15, 15, 15, 9, 15, 9, 15, 15, 3; x2260 with vertex 70 lost and the regular split 15 x 8 and 6; and
+  x2288 with no vertex lost, and three runs with no reset before gave x2260 with vertex 70 lost 3 of
+  3, the lost-vertex patterns of the two triples differing (HC, state carry, held out: the frozen
+  scorer prints DIFFERENT; not ruled out by this table); the a = 12 job (attribute rows 12) gave
+  x2582 and x2313, neither E702's x2028, nor the base x2288, and not S1's x2582 in 3 of 3: frozen
+  HI, not a function of the words, in 2 of 2 (repeat only).
+  *vdm; HW, infer; data: `render-closing-s1b:out/g-e5/`.*
+- `E756` With the index list of E414's five-triangle job (15 vertices) written as 32-bit words (the
+  tool's --index-width 32, which sets bit 25 of VDM word 2 itself), the job faulted at BIF fault
+  0xd0008 at 0x1 with 0 events seen (1 run), as it did with bit 24 set as well (1 run) and as the
+  control with the 16-bit list and bit 25 does (ix-25, 1 run, the fault of S1's g-e4 in 2 of 2): bit
+  25 does not select a 32-bit index width (the frozen HW32, predicted to draw E414's object, refuted
+  in these 2 of 4 told rows; the frozen HX, bit 25 is something else, consistent in 4 of 4); with
+  bit 25 cleared by a flip over the 32-bit list (ix32-n, 2 of 2) the job completed with an object of
+  5 vertices (30 object dwords, against 15 vertices and 67 dwords of the 16-bit control ix-c) and an
+  image of background only (4096 of 4096 pixels), which both frozen models predicted (not the
+  control's object) and which is what a 32-bit list read as 16-bit indices gives (0, 0, 1, 0, 2, 0,
+  ... name vertices 0 to 4); the two faulting conditions each ran once, because the stage's
+  hypothesis limit skipped their replicates.
+  *vdm; HW, infer; data: `render-closing-s1b:out/g-e4w/`.*
+- `E757` Over two overlapping objects (green first at depth 0.5, red second at 0.25 or 0.75) a
+  second object with the depth compare ALWAYS (ISP word 0 bits 24:22 = 7) and pass type 1 (word
+  0x03c00200) drew over the first although it was the farther (0.75) in 2 of 2 runs (red 1098
+  pixels, green 0), and a first object with compare always and pass type 1 under a nearer opaque
+  second (0.25) left the second's colour in 2 of 2 runs (red 1098, green 0); the opaque always
+  control (0x01c00200, second, farther) gave the same image (red 1098), as did both-opaque-less with
+  the second nearer (red 1098) while the second farther lost (green 1062, red 36); the frozen
+  verdict: controls pass; held out: list order and pass type changes nothing (S1 post hoc)
+  consistent with 4 of 4, depth order and pass order refuted in 2 of 4 each; no hypothesis separates
+  list order from pass type changes nothing here.
+  *isp; HW, infer; data: `render-closing-s1b:out/g-e8b/`.*
+- `E758` The lower-binade deviation of the dyadic depth plane of E731 (A = 1/8192, B = 0, depth
+  0.125 at two vertices and 0.1875 at the third, stored minus truncated exact plane, the cleared 1.0
+  excluded) reproduced exactly on 256 x 128 (the control, 2 of 2 runs: 7680 pixels at -1 ulp and
+  1536 at -2, the set of dp-ax-b2) and was absent on the target 256 x 192 (0 of 49152 covered
+  pixels), present on 256 x 256 (18528 of 65536: 13920 at -1 and 4608 at -2) and absent again on 256
+  x 512 and with the triangle moved by (64, 32) (the two repeats, 0 deviating pixels), and a smaller
+  triangle of the same plane (vertices at 448 and at 384 pixels) deviated at every one of the 32768
+  covered pixels of 256 x 128 (-5 to -1 ulps); the frozen verdict: held out: no hypothesis
+  consistent, HT (the region is tied to target coordinates) refuted in 4 of 4, HV (tied to the
+  triangle) in 2 of 2 and HCLIP (the plane is set up from the clipped polygon in the parameter
+  buffer: a job deviates iff its stored polygon is not the original triangle) in 1 of 4; as repeats
+  HT and HV 2 of 2 and HCLIP 2 of 3.
+  *isp; HW, infer; data: `render-closing-s1b:out/p-b2/`.*
+- `E759` Rerun with the order control c-u three times and the frozen criterion that the tag-2
+  fraction is at least 0.98 (S1 required exactly 1.0 and saw 0.990), the control passed in 3 of 3
+  runs (tag 2 at 486, 482 and 488 source pixels, the first-write tag 2' at 5, 4 and 2: fractions
+  0.990, 0.992 and 0.996; the first write survives at (16,27) and (17,27) in all three runs, at 5
+  sources including (16,25) and (18,27) and (19,27) in the first, as in S1); with the control E709's
+  o4g-3 at 26 tag-5 pairs (17 to 29), S1's post-hoc readings of the predicate guard repeated in the
+  same numbers: g25 == 7 gives no tag 2 (0 of 486 o1 landings), g25 == 0 gives 0.253 of the
+  landings, all at (even, even) sources, g25 == 3 0.248, all at (odd, odd) sources, and the g23 test
+  0.237 (frozen 0.25 within 0.07); the frozen verdict is held out: none (no row of the table was
+  held out), repeat only: HQ (g25 = the lane in the 2 x 2 quad) consistent 3, HP-g23 1, HA (all or
+  nothing) refuted 3 of 3 and HN (both writes land, the second wins) 4 of 4, and the replicate
+  c-k7-x-rep read the same tag-2 fraction (0.000) as c-k7-x with 61 dwords different.
+  *pds; HW, infer; data: `render-closing-s1b:out/p-c/`.*
+- `E760` With the probe's scratch at 20 and 19 pages (80 and 76 KiB) the L2e2 job (E722's extent
+  86016 bytes) completed with rc 0 and no fault line, each image of 2048 pixels with 128 distinct
+  words none of them tagged 0xD, the two images different (every pixel past the scratch in the
+  model), and with 18 pages (72 KiB) the job completed in 545 us, wrote no pixel (the tool: `failed:
+  no pixel written`, rc 3) and left no fault line and no BIF fault (bif_faults 0), an outcome
+  neither HM (completes) nor HB-end (faults) predicted, which stopped the runner at the stage's
+  eighth job: the 17-page job and the control d-L2e2-16 did not run, so the frozen verdict is cannot
+  tell (the control void); the 64-page control d-ok-64 was A4 exact, and the repeats of S1's
+  post-hoc fits gave the images S1 recorded byte for byte, the three jobs that faulted at 16 pages
+  (L2e2, L3e3, st-L3e2) at 64 pages and L2e2 at 21 pages, each A4 exact at its own page count (4 of
+  4).
+  *texture; HW, infer; data: `render-closing-s1b:out/p-d/`.*
+- `E761` With the debugfs alias_skip mask 0x1e (buffers 1, 2, 3 and 4 left out of the client
+  directory's alias together) two 1024x768 renders that both overflow the parameter buffer at
+  render_pb_pages = 0x23 (`tri: 0 of 2 renders ok, 2 overflowed`) were exact in 2 of 2 runs (every
+  diff 0 of 786432, the same two target hashes as the run with no mask), as were the same jobs with
+  the mask 0xdc0 (buffers 6, 7, 8, 10, 11 left out) in 2 of 2 runs, and buffer 0 left out faulted at
+  BIF fault 0x91000 at 0x3000b021 (the control, 1 of 1, as in S1 and E573); the frozen verdict:
+  controls reproduce (f-ctl0, f-dpm-0); held out: f-dpm-1e exact 2 of 2; repeat only: f-dpm-dc0
+  exact 2 of 2.
+  *bif; HW, infer; data: `render-closing-s1b:out/p-f/`.*
 
 ## By unit
 
 ### bif
 
-Records: E151, E457, E573, E592, E745.
+Records: E151, E457, E573, E592, E745, E761.
 
 ### dpm
 
 Records: E199, E200, E201, E202, E204, E205, E206, E203, E253, E256, E309, E310, E311, E312, E313,
 E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E468, E574, E591,
-E625, E626, E627, E630, E631, E704, E705, E706, E734, E735.
+E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753.
 
 ### edm
 
 Records: E009, E014, E017, E084, E146, E152, E153, E154, E155, E156, E157, E158, E159, E160, E161,
 E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321, E353, E402, E431, E444,
-E450, E531, E532, E533, E536, E537, E538, E539, E540, E550, E600, E601, E602, E603, E604, E605.
+E450, E531, E532, E533, E536, E537, E538, E539, E540, E550, E600, E601, E602, E603, E604, E605,
+E746, E747, E748, E749, E750, E751, E752.
 
 ### firmware
 
@@ -5016,7 +5218,7 @@ E215, E216, E217, E218, E219, E220, E222, E224, E225, E226, E227, E228, E229, E2
 E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E290, E291, E330,
 E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E508, E510, E590,
 E606, E607, E618, E660, E661, E662, E680, E681, E682, E683, E684, E727, E728, E731, E739, E740,
-E741.
+E741, E757, E758.
 
 ### mte
 
@@ -5033,7 +5235,7 @@ E383, E385, E386, E387, E429.
 Records: E043, E044, E045, E046, E047, E048, E125, E126, E127, E128, E129, E130, E131, E132, E133,
 E134, E135, E136, E137, E138, E139, E140, E141, E142, E143, E144, E145, E259, E260, E261, E262,
 E263, E264, E343, E344, E345, E364, E379, E381, E384, E388, E389, E390, E391, E392, E393, E394,
-E395, E396, E400, E420, E421, E428, E430, E436, E437, E454, E459, E460, E709, E742.
+E395, E396, E400, E420, E421, E428, E430, E436, E437, E454, E459, E460, E709, E742, E759.
 
 ### platform
 
@@ -5050,14 +5252,14 @@ E448, E449, E451, E458, E462, E732.
 
 Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180, E181, E247, E257,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
-E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736.
+E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754.
 
 ### texture
 
 Records: E033, E034, E035, E036, E037, E038, E039, E040, E041, E042, E114, E116, E242, E254, E271,
 E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441, E560, E561, E562,
 E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E726, E733, E743,
-E744.
+E744, E760.
 
 ### transfer
 
@@ -5082,7 +5284,7 @@ E570, E571, E572, E593, E594, E595, E596, E597, E598, E599, E707, E708.
 ### vdm
 
 Records: E059, E060, E184, E185, E186, E187, E189, E190, E191, E188, E299, E300, E318, E346, E349,
-E413, E414, E427, E440, E545, E546, E700, E701, E702, E703, E737, E738.
+E413, E414, E427, E440, E545, E546, E700, E701, E702, E703, E737, E738, E755, E756.
 
 ### zls
 

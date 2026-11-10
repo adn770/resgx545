@@ -5,7 +5,7 @@ unit = "vdm"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E188", "E346", "E414", "E737"]
+evidence = ["E188", "E346", "E414", "E737", "E756"]
 terms = ["VDM_INDEX0.PRIMITIVE_TOPOLOGY", "VDM_INDEX0.WORDS_PRESENT", "VDM_INDEX3.INDEX_WRAP"]
 +++
 
@@ -33,3 +33,16 @@ the bit selects the width. Open: which bit, if either, is the width select (the 
 index buffer written as 32-bit words, which needs a tool change, `--index-width 32`, with the bit
 set, must return the five-copy object, and the unflipped header over it must break), what bit 24's
 hang waits on, and the fault word 0xd0008 (in no other record).
+
+Narrowed 2026-11-10 (S1b, E756). With the index list of E414's job written as 32-bit words and bit
+25 set (the tool's --index-width 32), the job faulted at BIF fault 0xd0008 at 0x1 (1 run), exactly
+as the 16-bit list with bit 25 does (the control, S1's fault), and so did bits 24 and 25 over the
+32-bit list (1 run). The frozen HW32 (bit 25 selects 32-bit indices: E414's object) is refuted in
+these 2 of 4 told rows and HX (bit 25 is something else) is consistent in 4 of 4; the replicates
+were skipped by the stage's hypothesis limit, so each faulting condition ran once. With bit 25 clear
+the 32-bit list was read as 16-bit (a 5-vertex object, 2 of 2), as both models predicted. So bit 25
+does not select a 32-bit index width, and the fault does not depend on the list width. Still open:
+whether any header bit or other field makes the TA read wider indices (one candidate was run), what
+bit 24's hang waits on (not tried over a 32-bit list), and what the fault word 0xd0008 names: it is
+in another record after all, as the published kernel log of usse/output-room-vdm holds 16 lines of
+it, at other addresses, from another table.

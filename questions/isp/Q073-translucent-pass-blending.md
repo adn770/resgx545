@@ -5,7 +5,7 @@ unit = "isp"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E077", "E283", "E417", "E739"]
+evidence = ["E077", "E283", "E417", "E739", "E757"]
 terms = ["ISP0.PASS_TYPE"]
 +++
 
@@ -32,3 +32,14 @@ jobs, list order is refuted, and the table could not separate the two). The imag
 translucent jobs (pass type 1 on the second, the first or neither object) are pixel-identical to
 the opaque pair at both depth orders, so "pass type 1 changes nothing here" fits as well; not a
 frozen hypothesis.
+
+Narrowed 2026-11-10 (S1b, E757; this does not answer the question of o0). A table where depth order
+and pass order differ, the pass-type-1 object's compare being always (ISP word 0 bits 24:22 = 7,
+word 0x03c00200) and the object farther: the second object drew over the first at any depth (red
+1098 pixels, green 0, 2 of 2), and as the first object under a nearer opaque second it left the
+second's colour (2 of 2); an opaque always second object gave the same image. Frozen verdict:
+controls pass; list order and 'pass type changes nothing' are consistent in 4 of 4 (they predict the
+same), depth order and pass order are refuted in 2 of 4 each. E739's reading that depth order and
+pass order both fit is therefore corrected for the compare always. The translucent pass's images are
+still the shader's colour, with no blend seen, which says nothing about what o0 holds at the start
+of an opaque pass.

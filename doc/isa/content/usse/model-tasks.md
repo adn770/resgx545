@@ -109,9 +109,10 @@ The waits and modes on the hardware (E101) **[HW]**:
   only, `mov saN, rM` and `mov rD, saN`, `mov i0, rN` and `mov rN, i0`, `mov rN, pclink`, a
   predicated `mov`, `and.testtanz.chan0 !c0, pN, rA, rB` with a register mask, and `ima32.u rD, rS,
   #1, rM.neg` (a loop counter). A tick hands the task `pa0` = 2, `pa1` = 0x02000000 and `pa2` =
-  0x01061a70 (E532, 2 of 2 runs), and a host kick (a GETMISCINFO with no job) `pa0` = 2, `pa1` =
-  0x03000000 and the same `pa2`, to the general slot only (E538, 3 of 3 runs; `pa2` was the same in
-  all 5 events seen). After a task that wrote `sa`, `r`, `i`, `p` and `pclink` state and ended with
+  0x01061a70 (E532, 2 of 2 runs), and a host kick (a GETMISCINFO with no job) one event to the
+  general slot, `pa0` = 0, `pa1` = (count << 24) | 0x100 and a `pa2` that is a sample of the event
+  timer (E746, 3 of 3; E538's 0x03000000 was the tick after the kick, see its correction). After a
+  task that wrote `sa`, `r`, `i`, `p` and `pclink` state and ended with
   `nop.end` instead of jumping to the closed one, every later event stopped until a reset (E533, one
   run; skipping the closed task, its arbitrary pclink write and its p values are not separated,
   Q152). **State between firmware tasks [HW]** (E536; a writer that calls the closed task after its

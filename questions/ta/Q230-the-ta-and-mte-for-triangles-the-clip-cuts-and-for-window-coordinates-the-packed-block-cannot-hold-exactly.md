@@ -5,7 +5,7 @@ unit = "ta"
 kind = "hw"
 value = "medium"
 phase = 12
-evidence = ["E063", "E182", "E194", "E287", "E307", "E651", "E650", "E736"]
+evidence = ["E063", "E182", "E194", "E287", "E307", "E651", "E650", "E736", "E754"]
 terms = ["PB_OBJ.RHW", "PB_OBJ.ISP_WORDS", "VIEWPORT.X_OFFSET", "WCLAMP"]
 +++
 
@@ -48,3 +48,16 @@ cut and w-clipped triangles are stored as clipped polygons of 3 to 5 vertices; a
 rounded to 1/256; x and y are divided by w exactly at w = 2 and 0.5; a clamp one ulp above w = 1e-3
 stores the clamp's reciprocal as 1/w. Each needs a frozen run with the group's control gating that
 group alone.
+
+Narrowed 2026-11-10 (S1b, E754; the rounding of 1/w inside the guard band only). With x and y scaled
+by w so that the stored x and y equal the original triangle's, the stored 1/w of a vertex with w =
+3, 7, 0.003 and 3e-5 is the float32 reciprocal truncated toward zero (4 of 4: 0x3eaaaaaa,
+0x3e124924, 0x43a6aaaa, 0x47023555 at every vertex; round-to-nearest refuted in 4 of 8 checks; the w
+= 1 control passing; frozen, held out), so inside the band the object holds the truncated reciprocal
+and the original x and y; the depth at w other than 1 was not scored. Under a clamp (block word 14)
+of 3e-5 to 1e-3 with w = 1e-5 the object had the original's x and y shrunk by w over the clamp and
+1/w = 1/clamp in 4 of 5 jobs (the clamp of 1e-3 wrote no object where E736's control wrote a 0.96
+pixel square), that 1/w truncated at 3e-5 and rounded at 3e-4: every frozen clamp model is refuted
+at least once and none is consistent. The z cuts repeat as clipped polygons (4 and 3 vertices, 2 of
+2, repeat only). Open: the clamp's rule, the depth at w other than 1, the vertex rules of the clip
+cuts, the limit of the region lists and coordinates finer than 1/256.
