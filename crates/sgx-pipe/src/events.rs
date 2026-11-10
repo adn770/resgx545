@@ -18,8 +18,9 @@ mod tests {
 
     #[test]
     fn the_open_list_holds_the_questions_still_open_not_the_ones_e746_answered() {
-        // E746 answered Q153 (the host-kick event) and Q157; the clear (Q166) and the count byte
-        // (Q290) stay open
+        // E746 answered Q153 (the host-kick event) and Q157; the clear (Q166) stays open, and
+        // so does Q290, narrowed by E768 to whether the hardware counts the EVENT_KICK writes or
+        // reads the kernel's kicker word (sgx-sim's `event_count` counts the host kicks mod 256)
         assert!(OPEN.contains(&"Q166") && OPEN.contains(&"Q290"));
         assert!(!OPEN.contains(&"Q153") && !OPEN.contains(&"Q157"));
     }

@@ -143,6 +143,12 @@ pub struct Sgx {
     /// nothing here models.
     pub event_ir0: Option<u32>,
     pub event_tim: Option<u32>,
+    /// The count byte, bits 31:24 of the event word every event carries (Q290, E768): the host
+    /// kicks (EVENT_KICK writes) since the load, mod 256. It starts at 0; the kernel's boot and
+    /// the arm each send a GETMISCINFO, so an armed firmware reads 2 (set it). Whether the
+    /// hardware counts the writes or reads the kernel's kicker word is not separated: the two
+    /// agree whenever the kernel bumps the word before each write, as it does.
+    pub event_count: u8,
     /// pds::Pds::alu_specials_in_movs for every program (an assumption, off by default).
     pub alu_specials_in_movs: bool,
 }
@@ -176,19 +182,23 @@ impl Sgx {
         }
         // EVENT_KICK, the host's command kick: the event word's bit 8 (read from
         // the handler it reaches)
+        // and the count byte steps after the kick's own event, which carries the old value
         if index == reg::EVENT_KICK && value & 1 != 0 {
             self.event(1 << 8)?;
+            self.event_count = self.event_count.wrapping_add(1);
         }
         Ok(())
     }
 
     /// An event: the other-event PDS program with the event word `ir1`, and the ir0 and
     /// counter the caller set (`event_ir0`, `event_tim`). The timer tick is ir0 bit 1 with
-    /// nothing in ir1 (the microkernel's tick handler tests pa0 bit 1).
+    /// nothing in ir1 (the microkernel's tick handler tests pa0 bit 1), and the count byte
+    /// (`event_count`) in bits 31:24 of ir1 as every event carries it.
     pub fn event(&mut self, ir1: u32) -> Result<(), Error> {
         let addr = self.st.reg(reg::EVENT_OTHER_PDS_EXEC)? & !0xf;
         let data = self.st.reg(reg::EVENT_OTHER_PDS_DATA)? as usize * 4;
         let (ir0, tim) = (self.event_ir0, self.event_tim);
+        let ir1 = ir1 | u32::from(self.event_count) << 24;
         self.st.queue.push_back(Work::Pds { addr, data, ir0, ir1: Some(ir1), tim, bank: Bank::Primary });
         Ok(())
     }
@@ -500,6 +510,58 @@ mod tests {
         s.run(10_000).unwrap();
         assert_eq!(s.st.mem.load(DATA).unwrap(), 0x100);
         assert_eq!(s.st.mem.load(DATA + 4).unwrap(), 0x0100_1234);
+    }
+
+    #[test]
+    fn every_event_carries_the_count_of_host_kicks_mod_256_a_kicks_own_before_its_bump() {
+        // Q290 (E768): pa1 bits 31:24 of every event are the host kicks (EVENT_KICK writes: the
+        // boot's and the arm's GETMISCINFO, a client job's command buffer kicks) since the load,
+        // mod 256; a kick's own event carries the value before its bump, the next event the
+        // bumped one. The sim starts at 0 and does not run the kernel's boot: a caller that
+        // wants an armed firmware's 2 sets `event_count`.
+        let mut s = sgx();
+        s.alu_specials_in_movs = true;
+        s.event_ir0 = Some(2);
+        s.st.mem.map(CODE, &usse(&format!("mov r0, #0x{DATA:08X}\nstad.bpcache [r0,+#1], pa1\nnop.end")));
+        s.st.mem.map(DATA, &[0xff; 16]);
+        let prog = pds(
+            &[code_word(0), 0, 0, 0x100],
+            "movs douta, ir0.l, ds1[0], ir0.l, ir0.l\n\
+                                                      movs douta, ir1.l, ds1[1], ir1.l, ir1.l\n\
+                                                      movs doutu, ds0[0], ds0[0], ds0[0], ds0[0]\nhalt",
+        );
+        s.st.mem.map(CODE + 0x1000, &prog);
+        s.write_reg(reg::EVENT_OTHER_PDS_EXEC, CODE + 0x1000).unwrap();
+        s.write_reg(reg::EVENT_OTHER_PDS_DATA, 1).unwrap();
+        fn pa1(s: &mut Sgx, kick: bool) -> u32 {
+            if kick {
+                s.write_reg(reg::EVENT_KICK, 1).unwrap();
+            } else {
+                s.event(0).unwrap();
+            }
+            s.run(10_000).unwrap();
+            s.st.mem.load(DATA + 4).unwrap()
+        }
+        // an armed firmware: the boot's and the arm's GETMISCINFO made it 2
+        s.event_count = 2;
+        assert_eq!(pa1(&mut s, false), 0x0200_0000);
+        assert_eq!(pa1(&mut s, true), 0x0200_0100);
+        assert_eq!(pa1(&mut s, false), 0x0300_0000);
+        // 254 kicks after 2 wrap the byte to 0 (E768: the logged kicks read 0, 1, 2, 3)
+        s.event_count = 2;
+        for _ in 0..254 {
+            s.write_reg(reg::EVENT_KICK, 1).unwrap();
+        }
+        s.st.queue.clear();
+        assert_eq!(s.event_count, 0);
+        let kicks: Vec<u32> = (0..4).map(|_| pa1(&mut s, true)).collect();
+        assert_eq!(kicks, [0x0000_0100, 0x0100_0100, 0x0200_0100, 0x0300_0100]);
+        assert_eq!(pa1(&mut s, false), 0x0400_0000);
+        // KICK2 (the boot's own kick of the other-event program) bumps nothing
+        let before = s.event_count;
+        s.write_reg(reg::EVENT_KICK2, 1).unwrap();
+        s.st.queue.clear();
+        assert_eq!(s.event_count, before);
     }
 
     #[test]

@@ -1,11 +1,11 @@
 +++
 id = "Q290"
-question = "what advances the count byte pa1 bits 31:24 that every event handed to an EDM task carries (in E747's 14 client jobs it rose by one after each entry with pa0 = 0 and pa1 bit 8 and after nothing else, 124 of 124 successive pairs; E746: after each host kick), and why does it read 2 on the first tick after a firmware load"
+question = "does the hardware count the writes to CR_EVENT_KICK or read the kernel's kicker word for the count byte pa1 bits 31:24 that every event handed to an EDM task carries (E768: it equalled the GETMISCINFO commands since the load mod 256 in 15 of 15 jobs, the two readings agreeing whenever the kernel bumps the word before each write), and why does a kick's own entry carry the value from before its bump"
 unit = "edm"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E746", "E747"]
+evidence = ["E746", "E747", "E768"]
 terms = ["Event Data Master (EDM)"]
 +++
 Split off 2026-11-10 from the questions on bits 24 and 25 of pa1 (answered by E746, which read them as
@@ -31,3 +31,20 @@ reads the kicker word modulo 256, one candidate beside a hardware count of the w
 `EVENT_KICK`]. H-KW then predicts 2, 1 or 3 if the arm's post-GETMISCINFO is skipped or doubled,
 and the CCB offset (`ccbctl[0]`) advancing in lockstep would be a free instrument [infer]. An
 oddity that H-KW leaves open: the kick's own entry carries the value from before the bump.
+
+Narrowed 2026-11-10 (R1-events stage k, E768; not retired). The count is the number of commands
+(kicks) the kernel has sent through the CCB since the firmware load, mod 256, equal to ccbctl[0]
+in every row (GETMISCINFO, fill and copy alike): 2 after the arm path (the boot's
+and the runner's own), 1 with the runner's left out and 4 with two more, 2 after a reset and an
+arm, the kick's own entry 2 and the ticks after it 3, 254 more kicks wrapped it to 0 (the logged
+kicks read 0, 1, 2, 3, the ticks after 4, against 255 for a saturating byte), a fill's and a
+copy's two kicks each advanced it after their (0, 8) entries only, and `ccbctl[0]` equalled it in
+every row (15 of 15 jobs, 47 rows held, none failed). What advances it and why it reads 2 after a
+load are answered. Open, and the reason the question stays: whether the hardware counts the writes
+to `CR_EVENT_KICK` (H-HWC) or reads the kicker word the kernel bumps before each write (H-KW) is
+not separated, because every kick of every row had both; telling them apart needs a kernel or
+debugfs change that writes `CR_EVENT_KICK` without a bump or bumps without a write (not run).
+Also open: why the kick's own entry carries the value from before its bump. The simulator takes
+the host kicks mod 256 (sgx-sim `event_count`, which is H-HWC's reading and H-KW's too for every
+kick the kernel makes). Value stays low: the simulator loses nothing the two readings differ on
+until a kick is made that the kernel does not make.

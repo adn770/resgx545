@@ -1,11 +1,11 @@
 +++
 id = "Q033"
-question = "which hardware event sets bit 19 of the event word pa1 that the hardware hands a PDS event program (none of the 138 job events of 14 jobs in E747 carried it, the two overflowing partial renders included)"
+question = "which hardware event sets bit 19 of the event word pa1 that the hardware hands a PDS event program, if any (none of the 138 job events of 14 jobs in E747 carried it, nor any of 8 4096x4096 jobs of E771 whether the TA's threshold was raised or not, with no rise of status bit 3 in the sampled timeline)"
 unit = "edm"
 kind = "hw"
 value = "medium"
 phase = 10
-evidence = ["E155", "E146", "E154", "E532", "E538", "E746", "E747"]
+evidence = ["E155", "E146", "E154", "E532", "E538", "E746", "E747", "E771"]
 terms = ["CR_EVENT_STATUS", "CR_EVENT_HOST_CLEAR", "CR_EVENT_STATUS.DPM_INIT_END", "CR_EVENT_STATUS.DPM_STATE_STORE", "CR_EVENT_STATUS.DPM_CONTROL_LOAD", "CR_EVENT_STATUS.SW_EVENT", "CR_EVENT_KICK"]
 +++
 
@@ -96,3 +96,16 @@ bits 22, 21, 20, 19, 10, 9, 7 and 4: E155's seven tested handlers plus bit 19, w
 mask lets it through, which is not evidence that any job raises it. Lead [infer, no test]: status
 bit 25 (`DPM_OUT_OF_MEMORY_ZLS`) would sit in `pa0` at bit 5 if pa0 bit = 30 minus the status bit,
 a rule only the timer (pa0 bit 1) supports so far.
+
+Narrowed 2026-11-10 (R1-events stages d0 and d1, E771; not retired). Neither candidate that the
+note above allowed for the arrival of bit 19 held. In 8 jobs of a 4096x4096 render of 1500 vertices
+under the ring of S2 (render_pb_pages 0x320, 0x3a0 and 0x422, 3, 3 and 2 runs) no entry of any ring
+carried bit 19, no slot dropped an entry, and a register timeline read in parallel (about 5 us
+between samples at the median, with a long tail) showed no rise of `CR_EVENT_STATUS` bit 3, while
+the TA's threshold was raised at 0x320 in 3 of 3 (0x0624 0x2fe, dword 38 0x20) and not at 0x3a0 or
+0x422, and the TA reached its threshold with 2 or 3 partial renders in every job. The bit-19 event
+is therefore not tied to the raise (H-RAISE refuted) nor to the TA reaching its threshold
+(H-THRESH refuted) on these jobs. The controls reproduced E747 (dispatch of every entry 100%).
+Open: whether bit 19 ever reaches the task (H-NEVER, or an event shorter than the timeline's
+sampling, or one the PDS does not hand on), and which hardware event sets it if so. The enable mask
+of the note above lets it through, which is still not evidence that any job raises it.

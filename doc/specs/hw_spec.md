@@ -665,13 +665,19 @@ A firmware task of ours in the general slot (E531) sees the tick's event as `pa0
 every event carries: 2 after the arm, +1 after each kick of the kernel's command buffer, a host
 GETMISCINFO or a client job's own (E746 held out 3 of 3; E747 for 138 job events, read after the
 run), so bits 24 and 25 are bits of the count and not event bits; PDS #13 reads only bits 23:0.
+The count is the number of commands (kicks) the kernel has sent through the CCB since the firmware
+load, mod 256, equal to the CCB write offset: 2 after the arm path's two GETMISCINFO, 1 with one
+and 4 with four, 0 after 254 more kicks, +1 per fill or copy command (E768, 15 of 15 jobs); a kick's own event carries the value from before its bump, and whether the hardware
+counts the writes to `CR_EVENT_KICK` or reads the kernel's kicker word is not separated (Q290).
 `pa2` is the EDM's event timer sampled for the event (bits 31:24 = 0x01, bits 23:0 counting down
 from 400000 core clocks), 16 clocks after the reload for a tick served at once (0x01061a70) and any
 value for a kick; it is not a constant (E746, E747). A host kick (a GETMISCINFO with no job) is one
 event in the general slot with `pa0` = 0 and `pa1` bits 23:0 = 0x100 (E746); the words E538 logged
 for it, 0x03000000 with `pa0` = 2, are those of the tick after it. A client job's events arrive one
 status bit at a time, in an order the same in every replicate, and the fill's end of render reached
-slot 3 with `pa1` bit 4, the reversed order of E155 (E747). While a task of ours holds the EDM the
+slot 3 with `pa1` bit 4, the reversed order of E155 (E747); bit 19 did not appear in any of them,
+nor in 8 jobs of 4096x4096 with 1500 vertices that did and did not raise the TA's threshold (E771,
+Q033). While a task of ours holds the EDM the
 events are queued and not lost: up to four ticks (three latched on arrival, one when the hold ends,
 the rest dropped), a kick once, a job's events once, all served after the hold (E749, E751, E752).
 After a task that wrote `sa`, `r`, `i`, `p` and `pclink` state and ended with `nop.end` instead of
@@ -687,7 +693,7 @@ not by itself keep the tick, then, whatever E533's cause was.
 
 *Based on sgx545-ce `src/services4/system/unified/sysconfig.c`,
 `src/services4/srvkm/devices/sgx/sgxconfig.h`; emgd-psb_regs; E002, E006, E008, E009, E011, E531,
-E532, E533, E536, E537, E538, E746, E747, E749, E751, E752.*
+E532, E533, E536, E537, E538, E746, E747, E749, E751, E752, E768, E771.*
 
 ## 13. Open questions
 

@@ -68,3 +68,11 @@ arm's own GETMISCINFO read is one guess, not tested), a kick with a job in fligh
 hold the EDM while one arrives), two kicks within one tick, and whether pa2 is the time the event
 was latched or the time its pass ran (E749 and E750 separate them for events that wait behind a
 task of ours).
+
+**Correction 2026-11-10:** The first item of "Not shown" above, what the count counts and why it is
+2 after the arm, is answered by R1-events (E768): the count is the number of GETMISCINFO commands
+(writes to `CR_EVENT_KICK`) the kernel has sent since the firmware load, mod 256; the arm path
+sends two (the boot's and the runner's own read), which makes 2, and an arm without the runner's
+read gave 1, with two more reads 4, and 254 more kicks wrapped it to 0 (15 of 15 jobs). The guess
+above of the arm's own GETMISCINFO was right. Whether the hardware counts the writes or reads the
+kernel's kicker word is not separated.

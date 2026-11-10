@@ -5,7 +5,7 @@ unit = "edm"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E317", "E318", "E319", "E357", "E431", "E764", "E765", "E766"]
+evidence = ["E317", "E318", "E319", "E357", "E431", "E764", "E765", "E766", "E769", "E770"]
 terms = ["CR_EVENT_STATUS2"]
 +++
 
@@ -54,3 +54,21 @@ as the knob; occupancy (the target's size) is the untried second knob. The 121 u
 between a fault and the bit is a different condition and is not tested. An estimate of resident
 instances and of instructions per clock from 440 instructions in 121 us was proposed offline and is
 not recorded here: it rests on a clock not read from the repository.
+
+Narrowed 2026-11-10 (R1-events stage t, E769 and E770; not retired). The latch is not a threshold
+in loop iterations and not one in all instructions an instance executes: with a 16-instruction body
+of our own bit 6 was clear at 20 and set at 26 to 30 and at 56 iterations (1 run each), while a
+4-instruction body stayed clear to 120 iterations (480 instructions) and an 8-instruction body with
+a load and a wait to 56 (448), and E431's 8-instruction body reproduced its 53 clear and 56 set
+(the control, 2 of 2 each). The frozen scorer read the hypotheses of time or instruction count per
+instance and of 54 to 55 iterations as refuted by these ladders, and ended that the ladders are
+'cannot tell' because its job-time control (time grows with the loop length) failed for the
+8-instruction and 4-instruction ladders (single runs). Post hoc, a count of multiply-adds executed
+between about 318 and 336 fits every point of the stage and of E431 (a one-parameter fit to the
+same points; the 4-instruction and load ladders never reached it, so it is untested, and it is not
+a mechanism). The triangle jobs meant to vary occupancy (T3) and the load latency on 8x8 (T4) are
+void: our loops as a triangle's pixel program wrote o0 in a fraction of the pixels or none (E770),
+so occupancy is still untried. A stock vertex program read 0x400 and a held TA fault 0x480 as
+predicted; bit 7's condition (a vertex loop, T5) was not run. Open: the quantity the latch counts,
+a body-4 ladder past about 165 iterations and a body of another mix to test the fit, occupancy
+through fills of other sizes, bit 7, and the 121 us after a fault word of E764 to E766.

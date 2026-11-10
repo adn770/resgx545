@@ -5239,6 +5239,67 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   frozen window].
   *bif; HW, infer; data: `render-closing-s3:out/20261110-003209/s3-e1-ctl/`,
   `render-closing-s3:out/20261110-003406/s3-e1/`.*
+- `E768` The count byte of the event word (pa1 bits 31:24) that a firmware task of ours (ring_e1)
+  read on every tick and kick equalled the number of commands (kicks) the kernel had sent through
+  the CCB since the firmware load, mod 256 (GETMISCINFO, fill and copy alike), in all 15 jobs of the
+  frozen stage: 2 after the arm (the boot's GETMISCINFO and the runner's own: 2 of 2 jobs, and 1 of
+  1 after a debugfs reset and an arm), 1 when the runner's own read was left out of the arm (2 of 2)
+  and 4 when two more were added (2 of 2), the kick's own entry 2 and the ticks after it 3 after one
+  kick (2 of 2), 254 kicks after the arm wrapped it to 0 (the four logged kicks read 0, 1, 2 and 3
+  and the ticks after them 4, 2 of 2, against 255 for a saturating byte), and in a 64x64 fill and a
+  copy it rose by one after each of the job's two (slot 0, pa0 0, pa1 bit 8) entries and after no
+  other entry (4 of 4); the CCB write offset ccbctl[0] equalled the count in every row; held out 31
+  of 31, fit 13 of 13, replicate 3 of 3 rows as the frozen scorer printed, and none of the frozen
+  predictions failed; whether the hardware counts the writes to CR_EVENT_KICK or reads the kernel's
+  kicker word is not separated.
+  *edm; HW, infer; data: `edm-closing-r1-events:out/k/`.*
+- `E769` In fills of 2048 pixels whose pixel program is a loop of our own (every job after a debugfs
+  reset, the register read 0x400 before it, o0 = 0 on all 2048 pixels after it: the loop ran to its
+  end), CR_EVENT_STATUS2 bit 6 set at 26, 27, 28, 29, 30 and 56 iterations of a 16-instruction body
+  (14 multiply-adds, a counter update and a branch; clear at 20; 1 run each) but at no point of a
+  4-instruction body from 50 to 120 iterations (50, 80, 100, 105, 108, 110, 112, 115, 120; 1 run
+  each) and at no point of an 8-instruction body with a load and a wait (ldad, wdf, four
+  multiply-adds, counter, branch) at 40, 50, 53 and 56 iterations (1 run each), while E431's
+  8-instruction body (six multiply-adds) was clear at 53 and set at 56 in 2 of 2 runs each (the
+  control, 0x400 and 0x440), so the latch is neither a count of 54 to 55 iterations (the body of 16
+  sets at 26) nor about 440 instructions of one instance (the body of 4 is clear at 480, the body
+  with a load at 448, the body of 16 sets at 416); the frozen H-TIME = H-INSTR and H-ITER rows read
+  refuted on these points, but the stage's own control rule (the job time must grow with the loop
+  length in every fill ladder) failed for the 8-instruction ladder (4 jobs at 53 and 56) and the
+  4-instruction ladder (9 jobs, 721 to 1421 us, not monotone, single runs), so the frozen scorer
+  ended 'the ladders are cannot tell'; with a stock vertex program (0 iterations) the register read
+  0x400 and a held TA fault 0x480 as predicted.
+  *edm; HW, infer; data: `edm-closing-r1-events:out/t/`.*
+- `E770` Our loop programs (E769's: 6 multiply-adds, a counter update and a branch an iteration, o0
+  written from the counter) run as the pixel program of a probe --tri pixel triangle left the image
+  with o0 = 0 in only some of the pixels, the same ones whatever the iteration count: 16 of 64
+  pixels on 8x8 (with two stray words, 0x04000004 and 0x40800000, and 46 untouched; 12 jobs, T3 at
+  53 to 440 iterations and T4's load body at 20 to 56), 85 of 1024 on 32x32 (6 jobs, 53 to 440), 204
+  of 16384 on 128x128 at 53 iterations (with 18 pixels of 0xff00ff00, one of 0x881d6bc1 and 159
+  others) and no pixel at all on 128x128 at 56, 80, 130, 220 and 440 iterations and on 256x256 at 53
+  to 440 (the probe printed 'o0 0xff203040 (16384 of 16384)' and '(65536 of 65536)', rc 0 in all 11
+  jobs), and CR_EVENT_STATUS2 read 0x400 after every one of the 30 triangle jobs; the loops did not
+  run, or did not write, in most of the pixels the triangles cover, so the 30 triangle rows (T3's
+  four sizes, T4's 8x8 ladder) are void as readings of bit 6 and the occupancy and load-latency
+  questions are not answered; the fill ladders of E769 are not affected.
+  *render; HW, infer; data: `edm-closing-r1-events:out/t/`.*
+- `E771` In 8 jobs of a 4096x4096 render of 1500 vertices under our event ring (ring_e1 with 12
+  rungs in slot 3, window 1) no entry of the ring carried pa1 bit 19 (22, 22, 22, 17, 17, 17, 17 and
+  17 entries, no drops in any slot), whether the TA's threshold was raised (render_pb_pages 0x320:
+  the job's own register 0x0624 read 0x2fe and TA3DCtl dword 38 0x20, 3 partial renders, 3 of 3
+  jobs) or not (0x3a0: 0x37e, dword 38 0, 2 partial renders, 3 of 3; 0x422: 0x400, dword 38 0, 2
+  partial renders, 2 of 2), and the parallel register timeline of CR_EVENT_STATUS (1064 to 1411
+  samples a job, about 5.2 us apart at the median) showed no rising edge of status bit 3, which the
+  reversed order of E155 maps to pa1 bit 19, in any of the 8 jobs; the controls of the stage
+  reproduced E747 (a 64x64 triangle: its 9 entries in E747's order, 2 of 2 runs; a 1024x768 partial
+  render: slot 2 bits 21 and 10, no bit 19, 1 of 1, the dispatch of every entry 100%); so the raise
+  rule (H-RAISE: bit 19 only in raise jobs) and the threshold rule (H-THRESH: whenever the TA
+  reaches its threshold) are refuted on these jobs and what stands is that bit 19 does not arrive
+  here at all (H-NEVER), or arrives in a way neither the ring nor a sampled register shows; the
+  frozen held-out rows read 12 held and 10 FAILED, the 10 being the three H-RAISE rows of the raise
+  jobs and the order comparison of the timeline with the ring (D5) in 7 of 8 jobs.
+  *edm; HW, infer; data: `edm-closing-r1-events:out/d0/`, `edm-closing-r1-events:out/d1/`,
+  `edm-closing-r1-events:out/d0-try1/`, `edm-closing-r1-events:out/d1-try1/`.*
 
 ## By unit
 
@@ -5257,7 +5318,7 @@ E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753.
 Records: E009, E014, E017, E084, E146, E152, E153, E154, E155, E156, E157, E158, E159, E160, E161,
 E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321, E353, E402, E431, E444,
 E450, E531, E532, E533, E536, E537, E538, E539, E540, E550, E600, E601, E602, E603, E604, E605,
-E746, E747, E748, E749, E750, E751, E752, E764.
+E746, E747, E748, E749, E750, E751, E752, E764, E768, E769, E771.
 
 ### firmware
 
@@ -5298,7 +5359,7 @@ E404, E405, E434, E445, E547, E548, E619.
 
 Records: E023, E049, E050, E051, E052, E053, E148, E169, E252, E301, E302, E303, E304, E314, E315,
 E316, E323, E324, E325, E326, E354, E355, E356, E360, E361, E363, E408, E412, E422, E433, E435,
-E448, E449, E451, E458, E462, E732.
+E448, E449, E451, E458, E462, E732, E770.
 
 ### ta
 

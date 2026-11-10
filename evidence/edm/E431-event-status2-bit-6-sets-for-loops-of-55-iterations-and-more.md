@@ -36,3 +36,14 @@ the loop's threshold is in iterations (53 against 55) and not in time since the 
 the latch watches something counted per instance of the pixel program, with the loop length as the
 knob; which quantity (instructions executed by one instance, instances resident, a queue depth) is
 not shown. Occupancy (the target's size) is the untried knob.
+
+**Correction 2026-11-10:** The thresholds of this record (53 clear, 55 set, 56 set in all three
+runs) are a property of its eight-instruction loop body, not of 54 to 55 iterations in general. The
+control of R1-events (E769, `T0`: this body at 53 and 56 iterations, two runs each) reproduced
+them (0x400 and 0x440), and with a 16-instruction body of our own (fourteen multiply-adds) bit 6
+was clear at 20 and set at 26 to 30 and at 56 iterations (1 run each), while a 4-instruction body
+(two multiply-adds) stayed clear to 120 iterations and an 8-instruction body with a load and a wait
+to 56. So a threshold in iterations, and the reading above that the latch watches something counted
+per iteration, do not hold across loop bodies; nor does a threshold in all instructions executed
+(416 sets, 448 and 480 do not), and E769 records the arithmetic that the points fit, with its
+limits. The occupancy knob is still untried (E770: triangle jobs with our loops did not complete).
