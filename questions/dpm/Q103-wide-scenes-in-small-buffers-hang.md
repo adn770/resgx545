@@ -1,6 +1,6 @@
 +++
 id = "Q103"
-question = "why does a scene of 100 to 500 triangles hang where the one-triangle scene overflows the parameter buffer and recovers, at 4096x4096 in 0x40 or 0x23 pages from 300 vertices and in 0x100 pages from 900?"
+question = "why does a scene of 100 to 500 triangles take 35 or more partial renders where the one-triangle scene overflows the parameter buffer and recovers, at 4096x4096 in 0x40 or 0x23 pages from 300 vertices and in 0x100 pages from 900 (the stop E438 called a hang is the kernel's recovery, Q278 decided)?"
 unit = "dpm"
 kind = "hw"
 value = "medium"
@@ -55,3 +55,15 @@ The premise "a scene size hangs" is not retired here: that needs the user's acce
 E438's cells at 900 and 1500 vertices in 0x100 pages were not run without the hold. What triggers
 the kernel's recovery is a kernel-kind part, moved to Q278 (parked); the hardware part that stays
 is why a scene takes 35 or more partial renders.
+
+**Correction 2026-11-10:** the premise "a scene size hangs" is retired, and the question is narrowed
+to why a scene takes 35 or more partial renders. The stop E438 called a hang is the driver's
+recovery (E706, E630), and our kernel source says when it fires: `sgxfive_sched.c` (linux fork
+branch resgx545, tip 3702e0aa3e827) declares `SGXFIVE_JOB_TIMEOUT_MS` as 500 (line 25) and its timeout
+handler (`sgxfive_timedout_job`, lines 107 to 120) recovers when the oldest unfinished job is the same at two
+consecutive timeouts, so after about 1.0 to 1.5 s without progress in the queue, not on a count of
+partial renders nor on a register. That fits the logged jobs (1.03 and 1.38 s) and E630's 1.40 s job
+without the line if a completion re-armed the timeout [infer]. Q278, which asked for that trigger,
+is decided in doc/specs/3d.md. Not run, still the evidence for the narrowed question: 900 and 1500
+vertices in 0x100 pages without the hold, and a timeline of the partial render count against the
+registers below and above 35.

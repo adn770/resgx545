@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-190 open: 172 hw (high 21, medium 78, low 73, unrated 0), 11 fw, 7 kernel.
+189 open: 172 hw (high 21, medium 78, low 73, unrated 0), 11 fw, 6 kernel.
 
 ## Work queue: hardware
 
@@ -20,7 +20,7 @@
 - `Q038` (phase 10, hw, high): what does the final render read back of a partial render's depth (a depth buffer stored by ZLS, the 3D kick's RT status bit 1), now that a background object that reloads the target's colour gives an overflowing scene's whole image? (E160, E202, E204, E310, E311, E312, E442, E461, E465, E467, E468, E625, E628, E629)
 - `Q045` (phase 11, hw, high): what does the DPM store in the state page, does a load task read back the macrotile lists a partial render stores in the RT data's state page, and what accesses the state page (0x20003000 for a context of up to 64x64) when a render follows a kept owner's gone context? (E158, E256, E310, E312, E456, E458, E462, E464, E574, E591, E625, E627, E631)
 - `Q081` (phase 11, hw, medium): what does CR_DPM_REG_074C bit 8 make the DPM read or write near offset 0x6010 of the context's TA-data space, and what fixes that place? (E203, E206, E313, E362, E447)
-- `Q103` (phase 11, hw, medium): why does a scene of 100 to 500 triangles hang where the one-triangle scene overflows the parameter buffer and recovers, at 4096x4096 in 0x40 or 0x23 pages from 300 vertices and in 0x100 pages from 900? (E310, E312, E438, E630, E706)
+- `Q103` (phase 11, hw, medium): why does a scene of 100 to 500 triangles take 35 or more partial renders where the one-triangle scene overflows the parameter buffer and recovers, at 4096x4096 in 0x40 or 0x23 pages from 300 vertices and in 0x100 pages from 900 (the stop E438 called a hang is the kernel's recovery, Q278 decided)? (E310, E312, E438, E630, E706)
 - `Q191` (phase 11, hw, high): what are the words that land in a kept owner's control page (0x00200047), OTPM page (0x04000417) and state page (0x00020001, 2) after the next context's render, what stores them and at which kick of that context, and does any task read them back? (E310, E458, E462, E591, E631)
 - `Q192` (phase 11, hw, medium): does the store that follows the next context's render replace the state page a partial-render owner left (18 non-zero dwords after its partial renders, E591), and what does it write there? (E310, E464, E591, E631)
 - `Q210` (phase 11, hw, high): what does the DPM compare with the limit C that decides whether the first abort's threshold is raised by 0x20 (E774: raised iff thr0 + 0x20 <= C = 0x371 at 4096x4096, 1350 and 1500 vertices; E786: the limit is on the threshold the TA runs, not on the knob P; E785: C is in [0xe0, 0x120) at 2048x2048; wd-glist-1500's missing raise at P of 0x422 and above is the clamp of thr0 at 0x400, E753), why is the raise 0x20, and what makes C differ between the targets (the target's size, the scene's page need or something of the scene) (E310, E312, E464, E625, E627, E629, E704, E734, E753, E774, E779, E785, E786)
@@ -259,10 +259,6 @@
 - `Q088` (phase 11, fw): what reads the render details' unpatched ZLS control word that the closed driver writes between frames (0x0011700a), now that bit 14 is known to load the depth and bit 13 the stencil? (E335, E336, E337, E411, E467)
 
 ### kernel
-
-#### dpm
-
-- `Q278` (phase 11, kernel): what triggers the kernel's hang recovery (`job N hung, recovering`) in a job that takes many partial renders: the number of partial renders, the time since the job began, or a register that stops changing, and what does the recovery do with a job that overflows (E706) (E630, E706)
 
 #### edm
 
