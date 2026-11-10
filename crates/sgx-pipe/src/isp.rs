@@ -6,10 +6,8 @@
 
 use crate::Outcome;
 
-pub const OPEN: &[&str] = &[
-    "Q066", "Q030", "Q086", "Q089", "Q138", "Q141", "Q199", "Q200", "Q202", "Q240", "Q241", "Q071", "Q073",
-    "Q032",
-];
+pub const OPEN: &[&str] =
+    &["Q066", "Q030", "Q086", "Q089", "Q141", "Q199", "Q200", "Q202", "Q240", "Q241", "Q071", "Q073", "Q032"];
 
 pub fn refuse() -> Outcome {
     Outcome::unsupported("the ISP past triangle coverage and depth is not modelled (12.3)", OPEN)
