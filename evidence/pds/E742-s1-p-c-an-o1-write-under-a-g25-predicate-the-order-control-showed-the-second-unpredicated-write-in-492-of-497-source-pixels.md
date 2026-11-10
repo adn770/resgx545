@@ -42,3 +42,11 @@ is not known' is therefore: it repeats at a few sources, not at the same five. T
 fraction read 0.237 (here 0.253) and c-k7-x-rep differed from c-k7-x in 61 dwords (here 36), so the
 repeat of those numbers is approximate; the k = 7, 0 and 3 readings repeated in nearly the same
 numbers (0.000, 0.253 and 0.248) (S1 post hoc fits run again, not held out).
+
+**Correction 2026-11-10:** The g23 reading "concentrated where x mod 8 < 4 and y mod 8 < 4" is
+replaced, post hoc and from R1-pixgeo's own data (E772, whose frozen verdict was cannot tell): the
+direct read of g23 gave o0 = x mod 32 in 1062 of 1062 pixels, and the tag-2 share of the mask 0x10
+was 0.239 there and 0.237 in S1b, the share of the sources with x bit 4 set (the sources run over
+x 10 to 54); as a per-source rule it also fits S1 and S1b's c-g23 (an offline recount of the
+proposal, not re-checked here). The y bit played no part (the mask 0x100000 gave none). The
+quad-position reading of g25 repeated as a lane id (E772), also post hoc.
