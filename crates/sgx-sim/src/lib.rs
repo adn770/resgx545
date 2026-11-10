@@ -11,6 +11,7 @@
 //! (doc/specs/vectors.md). Anything not established yet stops the program
 //! with [`Error::Unsupported`] rather than being guessed.
 
+pub mod edm_pass;
 pub mod func;
 pub mod fwtask;
 pub mod json;
