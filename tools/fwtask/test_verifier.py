@@ -41,6 +41,7 @@ def test_crafted_blob_is_refused_for_its_reason(name):
             "base_one_path", "base_past_the_page", "base_ima32", "base_ldad"]),
     ("R4", ["ba_in", "ba_out", "ba_savelink", "br_savelink"]),
     ("R5", ["last_nop", "last_cond_br", "last_mov", "last_cond_through"]),
+    ("R3-K3", ["mov_pa0", "mov_pa1", "mov_pa5", "mov_pa127"]),
 ])
 def test_each_review_item_has_its_crafted_blobs(review, names):
     for n in names:
@@ -156,6 +157,17 @@ def test_no_single_bit_change_of_a_clock_gate_word_is_accepted(label):
         assert why_of([v, asm("nop.end")[0]]) is not None or fwtask.classify(v)[0] in ("LDR", "STR"), (label, b)
         if fwtask.classify(v)[0] in ("LDR", "STR"):
             assert why_of([v, asm("nop.end")[0]]) == Y.CLOCK, (label, b)
+
+
+def test_the_pa_bank_bit_of_a_mov_makes_it_the_pa_row_not_the_mov_row():
+    """bit 33 (the destination bank's high bit) of an allowed mov: the pa destination row, whose
+    own number check applies; with bit 51 beside it, no form."""
+    (w,) = asm("mov r4, pa0")
+    assert fwtask.classify(w ^ 1 << 33) == ("MOVPA", "mov-reg-pa")
+    assert why_of([w ^ 1 << 33, asm("nop.end")[0]]) is None          # pa4
+    assert fwtask.classify(w ^ 1 << 33 ^ 1 << 51)[0] == "UNKNOWN"
+    (w,) = asm("mov r1, pa0")
+    assert why_of([w ^ 1 << 33, asm("nop.end")[0]]) == Y.PA           # pa1
 
 
 def test_ldr_and_str_unnamed_bits_found_by_the_review_are_refused():

@@ -114,6 +114,10 @@ _STR_FREE = SRC2N | SRC0N | SRC1N
 FORMS = [
     ("mov-limm", "MOVLIMM", ALL & ~_LIMM_FREE, 0xFC20000000000000),                    # #0
     ("mov-reg", "MOVREG", ALL & ~_MOV_FREE, 0x2801100020000000),                       # #1
+    # round 3 (R3-K3, Q098): a mov whose destination is a pa register (bank 2: enc[33:32] = 2,
+    # enc[51] = 0); the number is checked in pass 1, only pa2 to pa4 (pa0 and pa1 are what the
+    # closed task reads, E748, E537)
+    ("mov-reg-pa", "MOVPA", ALL & ~(SRC1N | 3 << 30 | DSTN), 0x2801100220000000),      # #1
     ("mov-to-pclink", "MOVPCLINK", ALL & ~SRC1N, 0xF80000C000000000),                  # #126
     ("mov-from-pclink", "MOVFROMPC", ALL & ~DSTN, 0xF800010000000000),                 # #127
     ("nop", "NOP", ALL & ~(1 << 50), 0xF800014000000000),                              # #128
@@ -249,6 +253,10 @@ class Why:
     LAST = "the last word does not end the task"
     ENTRY = "entry outside the blob or inside a continue triple"
     BASE = "load or store base is not the results page"
+    PA = "mov to a pa register not on the list"
+
+
+PA_OK = (2, 3, 4)           # the pa registers a mov may write (R3-K3)
 
 
 def verify_why(words: list[int], patches: list[Patch], regs: Regs, entries=(),
@@ -279,6 +287,8 @@ def verify_why(words: list[int], patches: list[Patch], regs: Regs, entries=(),
             t = br_target(i, w)
             if not 0 <= t < n:
                 err.append((i, Why.BR_OUT, f"br leaves the blob (target {t})"))
+        elif kind == "MOVPA" and dst_num(w) not in PA_OK:
+            err.append((i, Why.PA, f"mov to pa{dst_num(w)}: only pa2 to pa4"))
     if err:
         return err
     # pass 2: the patches

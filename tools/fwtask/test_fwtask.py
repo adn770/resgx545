@@ -114,6 +114,7 @@ def test_default_deny_unlisted_index():
     ("mov r5, #0xdeadbeef", "MOVLIMM"), ("p0 mov r5, #0x12", "MOVLIMM"),
     ("mov.skipinv r5, #0xdeadbeef", "DENY"),
     ("mov r4, pa0", "MOVREG"), ("mov sa100, r12", "MOVREG"), ("mov i0, r20", "MOVREG"),
+    ("mov pa3, r1", "MOVPA"), ("mov pa2, sa5", "MOVPA"), ("mov pa0, r1", "MOVPA"),
     ("nop", "NOP"), ("nop.end", "NOP"),
     ("wdf drc0", "PLAIN"), ("idf drc0, bif", "PLAIN"),
     ("ldad.bypassl1 r2, [r1,+#1], drc0", "LOAD_ABS"),
@@ -246,3 +247,33 @@ def test_event_timer_str_accepted_ldr_refused_kicker_and_kicks_refused():
     for off in (0x0ac4, 0x0ac8, 0x0ad0, 0x0aec):
         e = verify(f"str #{off // 4}, r1\nnop.end")
         assert any("str" in x for x in e), (hex(off), e)
+
+
+# ---- round 3, R3-K3: mov to pa2, pa3, pa4 (Q098, E2b) ----------------------------------------
+def test_mov_to_pa2_to_pa4_accepted():
+    for n in (2, 3, 4):
+        assert verify(f"mov pa{n}, r1\nnop.end") == [], n
+    assert verify("mov pa3, sa67\nmov pa4, r9\nnop.end") == []
+
+
+@pytest.mark.parametrize("n", [0, 1, 5, 6, 64, 127])
+def test_mov_to_other_pa_refused_for_its_reason(n):
+    err = fwtask.verify_why(asm(f"mov pa{n}, r1\nnop.end"), [], REGS)
+    assert err and err[0][1] == fwtask.Why.PA, err
+
+
+def test_mov_pa_row_is_the_mov_row_with_the_pa_destination_bank():
+    rows = {r[0]: r for r in fwtask.FORMS}
+    _, kind, mask, value = rows["mov-reg-pa"]
+    assert kind == "MOVPA" and value == 0x2801100220000000
+    assert mask == fwtask.ALL & ~(fwtask.SRC1N | 3 << 30 | fwtask.DSTN)
+    (w,) = asm("mov pa3, r1")
+    assert w & mask == value and fwtask.dst_num(w) == 3
+    # the bank bit of another destination (bit 51) beside it is no pa write: refused
+    assert fwtask.classify(w | 1 << 51)[0] == "UNKNOWN"
+
+
+def test_mov_pa_leaves_the_tracked_base_alone():
+    """mov pa3 writes no temporary: r3, the store's base, still holds the results page."""
+    w = asm("mov r3, #0xdeadbeef\nmov pa3, r4\nstad [r3,+#0], r4\nnop.end")
+    assert fwtask.verify(w, [fwtask.Patch(0, "res", 0)], REGS, [0]) == []

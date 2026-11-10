@@ -31,7 +31,7 @@ def in_spec(spec: str, mask: int, value: int) -> bool:
 
 
 KINDS = ("PLAIN", "LDR", "STR", "BR", "LAPC", "MOVLIMM", "MOVREG", "MOVPCLINK", "MOVFROMPC",
-         "NOP", "IMA32", "LOAD_ABS", "STORE_ABS", "DENY")
+         "NOP", "IMA32", "LOAD_ABS", "STORE_ABS", "DENY", "MOVPA")
 
 
 def render(regs) -> str:
@@ -107,6 +107,9 @@ def crafted_blobs():
         ("bexception", "bexception #0", Y.UNKNOWN),
         ("phas", "phas #0, #0, pixel, end, parallel", Y.UNKNOWN),
         ("br_out", "br #5", Y.BR_OUT),
+        # R3-K3: a mov to a pa register other than pa2 to pa4
+        ("mov_pa0", "mov pa0, r1", Y.PA), ("mov_pa1", "mov pa1, r1", Y.PA),
+        ("mov_pa5", "mov pa5, r1", Y.PA), ("mov_pa127", "mov pa127, r1", Y.PA),
         # R4: ba and the savelink flag are refused whole
         ("ba_in", "ba #0x4001", Y.DENY), ("ba_out", "ba #0x4010", Y.DENY),
         ("ba_savelink", "ba.savelink #0x4001", Y.DENY), ("br_savelink", "br.savelink #1", Y.DENY),
