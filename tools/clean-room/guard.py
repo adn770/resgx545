@@ -6,8 +6,9 @@ sources, and none of the private patterns or renamed-away spellings, may be in t
 repository's files, commit messages or history.
 
 The forbidden set is derived on each run: the identifiers of the confidential tree, minus those
-of the public reference trees, the open GPU driver code and the closed libraries' strings. No
-token list is stored anywhere. The data that decides lives in a private directory, never in a
+of the public reference trees, the open GPU driver code and the closed libraries' strings, in any
+casing (an identifier is forbidden only if no casing of it is public), and minus the names of one
+letter and digits only. No token list is stored anywhere. The data that decides lives in a private directory, never in a
 public repository: `RESGX545_GUARD_DIR` (default `../resgx545-data-private/clean-room/` beside
 this checkout) holds
 
@@ -42,6 +43,9 @@ import tomllib
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 TOKEN = re.compile(rb"(?<![A-Za-z0-9_])[A-Za-z_][A-Za-z0-9_]{3,}")
+# A name of one letter and digits only (n1100, x0101) says nothing, whichever tree has it:
+# never forbidden (our job names count loop iterations that way).
+LETTER_DIGITS = re.compile(rb"[A-Za-z_][0-9]+")
 MAX_FILE = 20_000_000
 
 
@@ -149,9 +153,15 @@ def load_rules(gdir: pathlib.Path, terms=None) -> Rules:
     public_root = pathlib.Path(refs.get("public_root", "."))
     others = [public_root / p for p in refs.get("public", [])]
     others += [pathlib.Path(p) for p in refs.get("rogue", []) + refs.get("libs", [])]
+    public: set[bytes] = set()
     for d in others:
         if d.is_dir():
-            only -= tokens(d)
+            public |= tokens(d)
+    # a token is forbidden only if no casing of it is public: IMAE where imae is public, VOID
+    # where void is, are spellings of public words, not confidential names
+    public_folded = {t.lower() for t in public}
+    only = {t for t in only
+            if t.lower() not in public_folded and not LETTER_DIGITS.fullmatch(t)}
     allowed = _words(_read(gdir / "allowed.txt"))
     patterns = []
     for line in _read(gdir / "patterns.txt").splitlines():

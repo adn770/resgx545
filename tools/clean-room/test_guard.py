@@ -77,6 +77,22 @@ def test_forbidden_is_confidential_minus_public(world):
     assert b"commonname" not in r.forbidden
 
 
+def test_another_casing_of_a_public_token_is_not_forbidden(world):
+    write(world / "conf" / "case.c", "#define CASEWORDDELTA 1\nint Mixedcaseword;\n")
+    write(world / "pub" / "x" / "case.c", "int casewordDelta; int MIXEDCASEWORD;\n")
+    r = rules(world)
+    assert b"CASEWORDDELTA" not in r.forbidden
+    assert b"Mixedcaseword" not in r.forbidden
+    assert SECRET.encode() in r.forbidden and SECRET.upper().encode() not in r.forbidden
+
+
+def test_one_letter_and_digits_is_not_forbidden(world):
+    write(world / "conf" / "num.c", "int n1100; int x0101; int _1234; int nn1100; int n11a0;\n")
+    r = rules(world)
+    assert {b"n1100", b"x0101", b"_1234"}.isdisjoint(r.forbidden)
+    assert {b"nn1100", b"n11a0"} <= r.forbidden
+
+
 def test_allowed_words_read_from_the_list(world):
     r = rules(world)
     assert {"allowedword", "otherallowed"} <= r.allowed
