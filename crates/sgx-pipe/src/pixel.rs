@@ -622,11 +622,8 @@ mod tests {
     fn a_triangles_pixels_read_g23_g24_and_g25_and_the_background_keeps_its_own_shader() {
         // E808: in the triangle's task g23 = x mod 32, g24 = y mod 16, g25 = the lane of the quad
         type Want = fn(u32, u32) -> u32;
-        let cases: [(&str, Want); 3] = [
-            ("g23", |x, _| x % 32),
-            ("g24", |_, y| y % 16),
-            ("g25", |x, y| (x & 1) | (y & 1) << 1),
-        ];
+        let cases: [(&str, Want); 3] =
+            [("g23", |x, _| x % 32), ("g24", |_, y| y % 16), ("g25", |x, y| (x & 1) | (y & 1) << 1)];
         for (g, want) in cases {
             let src = format!("mov.skipinv.end o0, {g}");
             let r = render_with(TRI_PROGRAM, &[&src]);
