@@ -5626,6 +5626,112 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   k7-r3 54), all of them ticks after the burst, which the 16 rungs of slot 0 could not hold, so the
   drops are harmless to every row (no drop inside the burst: late ticks were read in all five jobs).
   *edm; HW, infer; data: `edm-closing-r3-events:out/k7/`.*
+- `E795` R3-geo stage g-da (27 jobs: the tool's triangle on a 64x64 target with x and y scaled by w,
+  z and w the same at the three vertices, z / w in (-1, -0.5] so that the sum 0.5 + 0.5 q is exact;
+  6 controls and 21 held-out cells placed by the fraction of |z RZ(1/w)| in its float32 ulp): the 6
+  controls passed (E783's controls 0x3f000000 and 0x3e800000, the repeats of t4-m2p6-3 0x3d88888c
+  and t4-m6p1-7 0x3d83a840, and w = 2 and 0.5 0x3e333340 and 0x3e1999a0), the object was written
+  unclipped at the original position in 21 of 21 held-out cells, H-thr (the post hoc fit of E783's
+  and Q230's notes: the product rounded away from zero iff its fraction exceeds one t in (0.3655,
+  0.4667)) was REFUTED with 5 of the 11 outside cells off its frozen direction (da-lo1 at fraction
+  0.0400 and da-mid2 at 0.3300 went up where it says down; da-mid3 at 0.3479, da-up1 at 0.5334 and
+  da-up2 at 0.5916 stored a word that is neither neighbour of the product), and each of the six
+  frozen depth formulas was refuted (misses of 21: D1 16, D2 10, D5 16, T26 8, T27 8, K23 19); the
+  ten inside cells went down at fractions 0.3710, 0.3800 and 0.3989, neither neighbour at 0.4037 and
+  up from 0.4112 to 0.4610; read after the run (no frozen row), the stored 1/w was RZ of 1/w in the
+  6 controls and 16 of the 21 held-out cells and one ulp above it in the 5 at w = 9 and 0.7.
+  *ta; HW, infer; data: `render-closing-r3-geo:out/g-da/`.*
+- `E796` R3-geo stage g-db (16 held-out jobs, the triangle and template of g-da, whose controls it
+  takes): six cells with z > 0 (z / w from 0.508 to 0.973), six with |z / w| in (0.25, 0.5) (three
+  positive, three negative) and four with z = -0.750953436 at w next to 1 (1 + 2^-23, 1 - 2^-23, 1.5
+  and 1.0000004); all 16 objects were unclipped at the original position; on the z > 0 cells every
+  frozen product rule combined with every rounding of the sum was refuted (21 labels, 2 to 4 misses
+  of 6 each), on the q cells every label (15 with the product at float32 precision, 1 to 4 misses of
+  6; 4 with the product kept on the sum's 2^-23 grid, 4 or 5 misses), and on the four cells next to
+  w = 1 D1 (the product z RZ(1/w) rounded to nearest) was consistent 4 of 4 while D2 missed 2, D5 1
+  and T26, T27, K23, T26d and T27d 3 each; read after the run (no frozen row), the stored 1/w was
+  one ulp above RZ of 1/w at w = 9 (db-pos1, db-q3) and RZ of 1/w in the other 14 jobs.
+  *ta; HW, infer; data: `render-closing-r3-geo:out/g-db/`.*
+- `E797` R3-geo stage g-dc (10 jobs: the viewport z words of the state block written by --blk 10 and
+  --blk 11 on the triangle of g-da; 1 control and 9 held out): the control (blk 10 = blk 11 = 0.5
+  written explicitly, z = -0.5, w = 1) stored 0x3e800000 as measured before; VS (blk 10 the scale
+  and blk 11 the offset) was refuted 9 of 9, and at w = 1 the words were 0x3dc00000 for blk 10 =
+  0.25, blk 11 = 0.5, z = -0.3125 and 0x3ed80000 for 0.5, 0.25 at the same z (blk 10 + blk 11 z, as
+  VF, VT and VZ give), and 0x3eb3a2f3 for blk 10 = 0.6, blk 11 = 0.3, z = -0.830491483, which only
+  VF gives (offset + scale z rounded once; VT, the product rounded first, gives 0x3eb3a2f2
+  [arithmetic]); at w = 3 with blk 10 = 0.6, blk 11 = 0.3 and z / w from -0.995 to -0.827 the six
+  words were 0x3ea8587b (VZ only), 0x3eb42c3e (VT, VZ) and four that VF, VT and VZ all give, so VF
+  (2 of 9), VT (2 of 9) and VZ (1 of 9) were refuted; the objects were unclipped in 9 of 9.
+  *ta; HW, infer; data: `render-closing-r3-geo:out/g-dc/`.*
+- `E798` R3-geo stage g-dd (4 held-out jobs: the tool's triangle on a 64x64 target with z = A x + B
+  and w = C x + D, one vertex beyond a plane; dd-p1 and dd-p2 cut by z = w with made w 11/7 and
+  13/9, dd-m1 and dd-m2 cut by z = -w with made w 1.05 and 47/28): the structure (4 vertices, the
+  vertex set, the stored order and the prim words) held in 4 of 4 jobs, and HSH (the
+  Sutherland-Hodgman polygon in (x, y, z, w) against z <= w and z >= -w), its window rule (32 + 32 x
+  / w, made vertices at the cut), HZZ (the strip zigzag order), HPR (index | 16 for a boundary edge:
+  (16, 1, 18), (2, 17, 19)) and HDP-made (depth exactly 1.0 at a made vertex on z = w and 0.0 on z =
+  -w, whatever w) were consistent in 4 of 4; HI-w (the made vertex's 1/w = RZ of 1/w_made) was
+  refuted as an exact word (4 of 4) and within 1 ulp (3 of 4): the made 1/w words were 0x3f22e8bb
+  and 0x3f22e8bc (dd-p1), 0x3f313b15 and 0x3f313b14 (dd-p2), 0x3f73cf3f twice (dd-m1) and 0x3f1882ba
+  twice (dd-m2); read after the run (no frozen row), the kept vertices' 1/w was RZ of 1/w at w =
+  1.3125, 1.0625 and 1.625 and one ulp above it at w = 1.40625, 1.59375 (twice) and 1.6875.
+  *ta; HW, infer; data: `render-closing-r3-geo:out/g-dd/`.*
+- `E799` R3-geo stage g-c4 (10 jobs, the tool's triangle with 1500 vertices, p1139-green, the first
+  threshold thr0 = P - 0x22 set by render_pb_pages and read from the job's own 0x0624): the four
+  controls passed (4096x4096: P 0x372 raised, 0x374 not; 2048x2048: P 0xe2 raised, 0x122 not; E785's
+  cells repeated), and at 2048x2048 the six bisect cells the runner picked from the kept
+  observations (P 0x102, 0x112, 0x10a, 0x106, 0x104 and 0x105, thr0 0xe0, 0xf0, 0xe8, 0xe4, 0xe2 and
+  0xe3) raised the threshold by 0x20 at thr0 0xe0 and 0xe2 and not at 0xe3, 0xe4, 0xe8 and 0xf0,
+  every cell's second run reaching thr0: one exact flip, last raise at thr0 0xe2 (C = 0x102), first
+  silent 0xe3; LT, frozen before the run (last raise at thr0 floor(0x351 R / 32768) = 0xd4 at this
+  target), REFUTED.
+  *dpm; HW; data: `render-closing-r3-geo:out/g-c4/`.*
+- `E800` R3-geo stage g-c6 (5 jobs, the tool's triangle with 1500 vertices at a 2048x2048 target in
+  a render context made for up to 4096x4096, --max-width 4096 --max-height 4096): the calibration at
+  P 0x422 (thr0 0x400) never overflowed (0 partial renders, peak 0x213, the page need of the plain
+  2048x2048 context in E785), the cell at g-c4's last raise (P 0x104, thr0 0xe2) raised the
+  threshold (peaks 0xe2, 0x102, 0x9b), the cell at g-c4's first silent (P 0x105, thr0 0xe3) did not
+  (0xe3 three times) and neither did thr0 0x100 (P 0x122; 0x100, 0x100, 0x4f), and the cell at thr0
+  0x120 was skipped by the runner (twice its thr0, 576, not below the page need 531); H-target (the
+  flip of g-c4) HOLDS, 3 of 3 cells, and H-context (the 4096x4096 limit, a raise at every valid
+  cell) is REFUTED.
+  *dpm; HW; data: `render-closing-r3-geo:out/g-c6/`.*
+- `E801` R3-geo stage g-c5 (36 jobs, the tool's triangle with 1500 vertices at three more targets,
+  12 a target: a calibration at P 0x422, 5 fixed cells and 6 bisect cells the runner picked from
+  kept output; 33 run, 3 skipped as the bracket had closed): at each target one exact flip, the last
+  raise at thr0 0x1b2 and the first silent at 0x1b3 at 4096x2048, 0x1b6 and 0x1b7 at 2048x4096,
+  0x1e8 and 0x1e9 at 3072x3072 (C = thr0 + 0x20: 0x1d2, 0x1d6 and 0x208 [arithmetic]); the two
+  targets of equal region count, 4096x2048 and 2048x4096, have different limits, so every frozen law
+  in the target's size was REFUTED at every target: LT (C proportional to the region count from
+  0x351 at 4096x4096; it predicted 0x1a8, 0x1a8 and 0x1dd), and the affine laws through g-c4's
+  measured 2048x2048 point and 4096x4096 in the region count (0x1b1, 0x1b1, 0x1e5), in the
+  tail-pointer side squared (0xe2, 0x351, 0x351) and in the macrotile area (0x1b1, 0x1b1, 0x1e5);
+  the three calibrations were void for the raise (page need read 0x3f7, 0x400 and 0x400).
+  *dpm; HW; data: `render-closing-r3-geo:out/g-c5/`.*
+- `E802` R3-geo stage g-c7 (11 jobs, --tri-full --vertices 1500 at 2048x2048, a scene whose triangle
+  covers the target, run last behind a calibration gate): the calibration at P 0x422 (thr0 0x400)
+  made 3 partial renders (peaks 0x400 three times, the gate allowed at most 3) and the scorer read
+  its page need as 0x400; the six cells at and around g-c4's flip all raised the threshold by 0x20,
+  thr0 0xd2 (P 0xf4, 67 partial renders), 0xde (0x100, 63), 0xe2 (0x104, 13), 0xe3 (0x105, 13), 0xe7
+  (0x109, 13) and 0xf3 (0x115, 13), each second run peaking at thr0 + 0x20, so the four bisect cells
+  were skipped (no silent cell above the last raise): no flip among the valid cells, the last raise
+  above them (C at least 0x113 [arithmetic]), and g-c4's last raise 0xe2 outside that interval, the
+  frozen verdict H-scene (the limit differs with the scene); every job ended in class ok with health
+  ok after the stage.
+  *dpm; HW; data: `render-closing-r3-geo:out/g-c7/`.*
+- `E803` R3-geo, H-last (dword 36 of the TA/3D control block = the low-half count of
+  CR_DPM_GLOBAL_PAGE_STATUS, 0x072c, in the sample before the LAST abort, less 2, floor 0; a reading
+  chosen after R1's and R2's data, frozen before this run as held out): in g-d36, the stage that
+  gates on it (6 jobs at 2048x2048 thr0 0x60, 0x70, 0x90 and 0xb0 and 4096x4096 thr0 0x2c0 and
+  0x300, three to six aborts each), H-last HOLDS, 6 of 6 jobs and all 3 jobs that separate it from
+  the peak and second-abort readings (d36-2048-0x90, d36-4096-0x2c0 and d36-4096-0x300: counts 2, 4,
+  3 or 3, 4, 3, dword 36 1); in the never-gating side tables of the other DPM stages it fitted g-c4
+  10 of 10 (1 separating, c3-2048-0xe2), g-c5 33 of 33 (none separating), g-c6 4 of 4 (none) and
+  g-c7 7 of 7 (1 separating, c7-cal: counts 3, 3, 4, dword 36 2): 60 of 60 jobs, 5 of 5 separating;
+  in no job did the count change between the two samples before the last abort.
+  *dpm; HW; data: `render-closing-r3-geo:out/g-d36/`, `render-closing-r3-geo:out/g-c4/`,
+  `render-closing-r3-geo:out/g-c5/`, `render-closing-r3-geo:out/g-c6/`,
+  `render-closing-r3-geo:out/g-c7/`.*
 
 ## By unit
 
@@ -5638,7 +5744,7 @@ Records: E151, E457, E573, E592, E745, E761, E767, E789.
 Records: E199, E200, E201, E202, E204, E205, E206, E203, E253, E256, E309, E310, E311, E312, E313,
 E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E468, E574, E591,
 E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753, E773, E774, E775, E779, E785,
-E786, E790.
+E786, E790, E799, E800, E801, E802, E803.
 
 ### edm
 
@@ -5693,7 +5799,7 @@ E448, E449, E451, E458, E462, E732, E770.
 Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180, E181, E247, E257,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
 E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763, E776, E777,
-E778, E780, E781, E782, E783, E788.
+E778, E780, E781, E782, E783, E788, E795, E796, E797, E798.
 
 ### texture
 

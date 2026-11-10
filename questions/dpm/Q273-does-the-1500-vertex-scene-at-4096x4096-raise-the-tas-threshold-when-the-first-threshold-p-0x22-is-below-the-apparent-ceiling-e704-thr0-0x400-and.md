@@ -5,7 +5,7 @@ unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E704", "E625", "E630", "E734", "E753", "E774", "E775", "E790"]
+evidence = ["E704", "E625", "E630", "E734", "E753", "E774", "E775", "E790", "E803"]
 terms = ["Dynamic Parameter Management (DPM)", "ta3d_ctl"]
 +++
 E625's rule for the raise (overflow, then a second run reaching the first threshold) fits 109 of the
@@ -128,3 +128,12 @@ and counts 3, 4, 3); 36 of the 49 are above the floor and 24 have a last abort t
 first. It also reads the 5 jobs without an abort (dword 36 = 0). The reading was chosen after the
 ten were seen, so a held-out test needs jobs with three or more aborts whose counts differ; until
 then it is a candidate, and "peak less 2" (E790) and "first abort less 2" stay refuted as rules.
+
+Note 2026-11-10 (R3-geo, E803; held out, the question stays open). The candidate of the note
+above, dword 36 = the 0x072c count in the sample before the last abort less 2 (floor 0, and 0
+without an abort), was frozen as H-last and held: g-d36, the stage that gated on it, 6 of 6 jobs
+with all 3 separating jobs (counts 2, 4, 3 or 3, 4, 3, dword 36 1), and the side tables of g-c4,
+g-c5, g-c6 and g-c7, 54 of 54 with 2 separating: 60 of 60 jobs over five targets, a 4096x4096
+context and two scenes of the tool. The first-abort and peak readings stay refuted as rules. Open:
+what the firmware computes dword 36 from (the register over the job, the global list's pages or a
+count of its own); the reading is of the register, held out on the tool's scenes only.

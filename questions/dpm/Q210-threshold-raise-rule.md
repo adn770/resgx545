@@ -1,11 +1,11 @@
 +++
 id = "Q210"
-question = "what does the DPM compare with the limit C that decides whether the first abort's threshold is raised by 0x20 (E774: raised iff thr0 + 0x20 <= C = 0x371 at 4096x4096, 1350 and 1500 vertices; E786: the limit is on the threshold the TA runs, not on the knob P; E785: C is in [0xe0, 0x120) at 2048x2048; wd-glist-1500's missing raise at P of 0x422 and above is the clamp of thr0 at 0x400, E753), why is the raise 0x20, and what makes C differ between the targets (the target's size, the scene's page need or something of the scene)"
+question = "what does the DPM compare with the limit C that decides whether the first abort's threshold is raised by 0x20 (E774: raised iff thr0 + 0x20 <= C = 0x371 at 4096x4096, 1350 and 1500 vertices; E786: the limit is on the threshold the TA runs, not on the knob P; E785 and E799: C = 0x102 at 2048x2048; E801: 0x1d2 at 4096x2048, 0x1d6 at 2048x4096 and 0x208 at 3072x3072; E800: the target sets it, not the context; E802: another scene raises above 0x102 at 2048x2048; wd-glist-1500's missing raise at P of 0x422 and above is the clamp of thr0 at 0x400, E753), why is the raise 0x20, and what makes C differ between the targets and the scenes (no law in the target's size fits, E801)"
 unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E310", "E312", "E464", "E625", "E627", "E629", "E704", "E734", "E753", "E774", "E779", "E785", "E786"]
+evidence = ["E310", "E312", "E464", "E625", "E627", "E629", "E704", "E734", "E753", "E774", "E779", "E785", "E786", "E799", "E800", "E801", "E802"]
 terms = ["Dynamic Parameter Management (DPM)", "CR_DPM_STATE_BASE0", "ta3d_ctl"]
 +++
 
@@ -109,3 +109,21 @@ Open: what C is compared with and why the increment is 0x20; whether C follows t
 the page need or the scene (a third target, another vertex count at 2048x2048, a scene whose need
 at 2048x2048 reaches thr0 up to 0x140 and beyond); and the exact C at 2048x2048 (thr0 0xc1 to 0xff
 not run).
+
+Narrowed 2026-11-10 (R3-geo, E799 to E802; the question line is reworded, the question stays
+open). The four DPM stages on C ran after g-c4's four controls passed.
+- Exact C at 2048x2048 (E799, held out). The runner's bisection gave one exact flip: last raise at
+  thr0 0xe2, first silent 0xe3, so C = 0x102, inside E785's bracket. LT (C proportional to the
+  region count from 0x351 at 4096x4096, last raise 0xd4) is refuted.
+- Context (E800, held out). A 2048x2048 target in a context made for 4096x4096 flipped at g-c4's
+  place (3 of 3 cells): H-target holds, H-context is refuted.
+- Three more targets (E801, held out). Exact flips at 4096x2048 (last raise 0x1b2, C 0x1d2),
+  2048x4096 (0x1b6, C 0x1d6) and 3072x3072 (0x1e8, C 0x208). The two transposed targets have the
+  same region count and different limits, so LT and the affine laws in the region count, the
+  macrotile area and the tail-pointer side squared are all refuted at all three targets.
+- Another scene (E802, held out). `--tri-full` at 2048x2048 raised the threshold at every valid
+  cell from thr0 0xd2 to 0xf3, 0xe3 included, which g-c4's scene did not raise: C depends on the
+  scene (at least 0x113 for it; no silent cell was reached).
+Open (the reworded line): what C is compared with and why the increment is 0x20; which property of
+the scene and of the target sets C (no law in the target's size fits five targets; one other scene
+gives a different limit at one target, its value not reached).

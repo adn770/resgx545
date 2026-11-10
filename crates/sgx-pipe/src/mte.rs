@@ -3,8 +3,9 @@
 //! MTE: viewport, cull, clamp, 1/w, window coordinates, clip planes (12.2): only what records
 //! state. The state block's words (E347: presence 0xdf43, 18 dwords), the viewport on the clip
 //! position (E061, E193), the 1/w the TA stores and its minimum and replacement (E063, E197), the
-//! clip at z = -w and z = w (E287). Everything else refuses: culling (MTECTL bits 1:0), the
-//! output select other than the library's, perspective w, a triangle the clip removes or cuts.
+//! clip at z = -w and z = w (E287), the structure of a triangle cut at one vertex (E782, E798).
+//! Everything else refuses: culling (MTECTL bits 1:0), the output select other than the
+//! library's, perspective w, a triangle the clip removes, the 1/w and depth of a cut one.
 
 use crate::Outcome;
 
@@ -111,29 +112,56 @@ fn rhw_rz32(w: f32) -> f32 {
     if f64::from(r).abs() > exact.abs() { f32::from_bits(r.to_bits() - 1) } else { r }
 }
 
-/// The span of w that E782's t3-nocut ran with a different w at each vertex (0.875, 1.0625 and
-/// 1.625, z = 0, nothing clipped): the window position was 32 + 32 x / w of the vertex's own w and
-/// the stored 1/w its RZ reciprocal, exactly, at all three. One scene, so the span is its own.
-const PERSPECTIVE_W: std::ops::RangeInclusive<f32> = 0.875..=1.625;
+/// The w of a vertex of a perspective triangle (a w of its own at each vertex, z = 0) whose stored
+/// 1/w was measured RZ of 1/w: E782's kept vertices (0.875, 1.0625, 1.4375 and 1.625; t3-nocut's
+/// window was 32 + 32 x / w of each vertex's own w) and E798's (1.3125, 1.0625 and 1.625). At
+/// 1.40625, 1.59375 and 1.6875 E798 read one ulp above RZ, and no rule says which w do, so only
+/// these are taken.
+const PERSPECTIVE_W: [f32; 5] = [0.875, 1.0625, 1.3125, 1.4375, 1.625];
 
-/// The w values E754's e3i jobs ran: w = 3, 7, 0.003 and 3e-5, all three vertices alike, x and y
-/// scaled by w (the divided position is the original triangle, inside the viewport), depth z = 0,
-/// and the perspective triangle of E782's t3-nocut (a w of its own at each vertex inside
-/// `PERSPECTIVE_W`, z = 0). Anything else with a w other than 1 stays refused (Q230): other
-/// exponents, other perspective triangles, depth at w other than 1 (E783 recorded six words and
-/// no formula fits), the guard band's limit.
+/// The w of a triangle with one w at all three vertices (x and y scaled by w) whose stored 1/w
+/// was measured RZ of 1/w: E754 (3, 7, 0.003, 3e-5), E783 (1.1), E795 and E796 (0.3, 0.5, 1.3,
+/// 1.5, 2, 5, 6, 11, 19, 23 and three w next to 1); at w = 9 and 0.7 E795 and E796 read one ulp
+/// above RZ in every job, so a w that was not run refuses.
+const ALIKE_W: [f32; 18] = [
+    3e-5,
+    0.003,
+    0.3,
+    0.5,
+    1.1,
+    1.3,
+    1.5,
+    2.0,
+    3.0,
+    5.0,
+    6.0,
+    7.0,
+    11.0,
+    19.0,
+    23.0,
+    1.0 + f32::EPSILON,
+    1.0 - f32::EPSILON,
+    1.0 + 3.0 * f32::EPSILON,
+];
+
+/// The w values whose stored 1/w was measured, at z = 0 for the depth: one w at all three
+/// vertices in `ALIKE_W`, x and y scaled by w (the divided position is the original triangle,
+/// inside the viewport), or a perspective triangle with each vertex's w in `PERSPECTIVE_W`.
+/// Anything else with a w other than 1 stays refused (Q230): other w (the 1/w is RZ at most w and
+/// one ulp above at some, E795, E798), depth at w other than 1 (no formula: E783, E795, E796),
+/// the guard band's limit.
 fn band_w(c: &[[f32; 4]; 3]) -> Result<(), Outcome> {
     let alike = c.iter().all(|v| v[3] == c[0][3]);
     let known =
-        if alike { (3e-5..=7.0).contains(&c[0][3]) } else { c.iter().all(|v| PERSPECTIVE_W.contains(&v[3])) };
+        if alike { ALIKE_W.contains(&c[0][3]) } else { c.iter().all(|v| PERSPECTIVE_W.contains(&v[3])) };
     if !known {
         return Err(refuse230(
-            "a w other than 1 outside the runs of E754 (one w of 3e-5 to 7 at all three vertices) and E782 (a w of 0.875 to 1.625 at each vertex): the 1/w and depth of other perspective vertices were not dumped (E063, E194)",
+            "a w other than 1 whose stored 1/w was not run: RZ of 1/w at the w of E754, E782, E783 and E795 to E798, one ulp above at w = 9, 0.7, 1.40625, 1.59375 and 1.6875, no rule (E063, E194)",
         ));
     }
     if c.iter().any(|v| v[2] != 0.0) {
         return Err(refuse230(
-            "the depth at a w other than 1 has no formula (E754, E783: six words recorded)",
+            "the depth at a w other than 1 has no formula (E783, E795, E796: every frozen rule refuted, words recorded)",
         ));
     }
     if c.iter().any(|v| (v[0] / v[3]).abs() > 1.0 || (v[1] / v[3]).abs() > 1.0) {
@@ -149,9 +177,10 @@ const RANGE: std::ops::Range<f32> = -4096.0..12288.0;
 
 /// The three vertices' clip positions through the viewport. Whole triangles with w = 1 inside
 /// z = -w and z = w, and the w other than 1 of `band_w` (z = 0): what the TA writes for a
-/// triangle the clip removes or cuts at any w is not modelled (the cut polygon of E777 and E782 is
-/// not built here) and the depth at w other than 1 has no formula (E783, Q230). `rhw_min` and `rhw_clamp` are the
-/// command's float words. Returns the vertices and whether the 1/w replacement was used.
+/// triangle the clip removes is not modelled, a cut one has its structure only (`cut_triangle`),
+/// and the depth at w other than 1 has no formula (E783, E795, Q230). The depth is the viewport's
+/// offset + scale x z rounded once (E797). `rhw_min` and `rhw_clamp` are the command's float
+/// words. Returns the vertices and whether the 1/w replacement was used.
 pub fn triangle(
     st: &State,
     clip: [[u32; 4]; 3],
@@ -193,7 +222,7 @@ pub fn triangle(
         *o = Vertex {
             x: st.vp[0] + st.vp[1] * (v[0] / v[3]),
             y: st.vp[2] + st.vp[3] * (v[1] / v[3]),
-            z: st.vp[4] + st.vp[5] * v[2],
+            z: v[2].mul_add(st.vp[5], st.vp[4]),
             rhw,
         };
         if !RANGE.contains(&o.x) || !RANGE.contains(&o.y) {
@@ -204,6 +233,116 @@ pub fn triangle(
         }
     }
     Ok((out, used))
+}
+
+/// The span of w that the cut objects ran with (E782: 0.875 to 1.625; E798: up to 1.6875;
+/// E777 at w = 1).
+const CUT_W: std::ops::RangeInclusive<f32> = 0.875..=1.6875;
+
+/// What the TA stored for a triangle the clip cut, as far as the cuts that ran say: the window
+/// position of each vertex in stored order, whether the clip made it, and the prim words.
+#[derive(Debug, Clone, PartialEq)]
+pub struct CutObject {
+    pub xy: Vec<(f32, f32)>,
+    pub made: Vec<bool>,
+    pub prims: Vec<[u32; 3]>,
+}
+
+/// The strip order of a convex polygon p0..p(n-1) (E777): p1, p2, p0, p3, p(n-1), p4, ...
+fn zigzag(n: usize) -> Vec<usize> {
+    let mut order = vec![1, 2, 0];
+    let (mut lo, mut hi) = (3, n - 1);
+    let mut turn = 0;
+    while lo <= hi && order.len() < n {
+        if turn % 2 == 0 {
+            order.push(lo);
+            lo += 1;
+        } else {
+            order.push(hi);
+            hi -= 1;
+        }
+        turn += 1;
+    }
+    order.truncate(n);
+    order
+}
+
+/// A triangle with exactly one vertex beyond exactly one of the planes z = w and z = -w, every w
+/// in `CUT_W`: the Sutherland-Hodgman polygon in (x, y, z, w) of 4 vertices (the crossing, then
+/// the end vertex when it is inside, edge by edge from vertex 0), stored in strip zigzag order,
+/// window position offset + scale x / w with the vertex's own w (made ones included), prim words
+/// index | 16 for a boundary edge (E777 at w = 1, E782 and E798 held out at w other than 1). The
+/// 1/w and depth of the vertices are not given: the made 1/w has no rule (E782, E798) and the
+/// depth at w other than 1 none (E783, E795); polygons of 3 or of 5 or more vertices and two
+/// planes (E777 at w = 1 only) and other w refuse (Q230).
+pub fn cut_triangle(st: &State, clip: [[u32; 4]; 3]) -> Result<CutObject, Outcome> {
+    let c = clip.map(|v| v.map(f32::from_bits));
+    if c.iter().any(|v| v.iter().any(|x| !x.is_finite())) {
+        return Err(refuse230("a non-finite clip coordinate"));
+    }
+    if !c.iter().all(|v| CUT_W.contains(&v[3])) {
+        return Err(refuse230(
+            "a cut with a w outside 0.875 to 1.6875: the cut objects of E777, E782 and E798 ran inside it",
+        ));
+    }
+    let above = c.iter().filter(|v| v[2] > v[3]).count();
+    let below = c.iter().filter(|v| v[2] < -v[3]).count();
+    let sign = match (above, below) {
+        (1, 0) => 1.0,
+        (0, 1) => -1.0,
+        (0, 0) => return Err(refuse230("no vertex beyond z = w or z = -w: not a cut (see triangle)")),
+        _ => {
+            return Err(refuse230(
+                "a cut leaving 3, or 5 or more, vertices or crossing both planes: not built here (E777 at w = 1; no such cut at w other than 1)",
+            ));
+        }
+    };
+    let p = c.map(|v| v.map(f64::from));
+    // inside when d >= 0: w - z for the plane z = w, w + z for z = -w
+    let d = |v: &[f64; 4]| v[3] - sign * v[2];
+    let mut poly: Vec<([f64; 4], bool)> = Vec::new();
+    for i in 0..3 {
+        let (a, b) = (&p[i], &p[(i + 1) % 3]);
+        let (da, db) = (d(a), d(b));
+        if (da >= 0.0) != (db >= 0.0) {
+            let t = da / (da - db);
+            poly.push((std::array::from_fn(|k| a[k] + t * (b[k] - a[k])), true));
+        }
+        if db >= 0.0 {
+            poly.push((*b, false));
+        }
+    }
+    let n = poly.len();
+    let zz = zigzag(n);
+    let mut pos = vec![0; n];
+    for (si, &pi) in zz.iter().enumerate() {
+        pos[pi] = si;
+    }
+    let boundary = |a: usize, b: usize| {
+        (0..n).any(|i| {
+            let (x, y) = (pos[i], pos[(i + 1) % n]);
+            (x, y) == (a, b) || (y, x) == (a, b)
+        })
+    };
+    let prims = (0..n - 2)
+        .map(|i| {
+            let t = if i % 2 == 0 { [i, i + 1, i + 2] } else { [i + 1, i, i + 2] };
+            std::array::from_fn(|k| t[k] as u32 | if boundary(t[k], t[(k + 1) % 3]) { 16 } else { 0 })
+        })
+        .collect();
+    let mut xy = Vec::with_capacity(n);
+    let mut made = Vec::with_capacity(n);
+    for &i in &zz {
+        let (v, m) = poly[i];
+        let x = (f64::from(st.vp[0]) + f64::from(st.vp[1]) * v[0] / v[3]) as f32;
+        let y = (f64::from(st.vp[2]) + f64::from(st.vp[3]) * v[1] / v[3]) as f32;
+        if !RANGE.contains(&x) || !RANGE.contains(&y) {
+            return Err(refuse230(format!("window coordinate ({x}, {y}) outside the packed block's range")));
+        }
+        xy.push((x, y));
+        made.push(m);
+    }
+    Ok(CutObject { xy, made, prims })
 }
 
 #[cfg(test)]
@@ -376,6 +515,31 @@ mod tests {
     }
 
     #[test]
+    fn the_1_over_w_is_rz_only_at_the_w_that_were_run_and_one_ulp_above_at_9_and_0_7_e795() {
+        let s = state(&block([32.0; 4])).unwrap();
+        // E795, E796 [HW, read after the run]: one w at all three vertices, RZ of 1/w at w = 5,
+        // 11 and 0.3; one ulp above it at w = 9 (0x3de38e39) and 0.7 (0x3fb6db6e): no rule says
+        // which, so a w that was not run refuses
+        for (w, word) in [(5.0f32, 0x3e4c_ccccu32), (11.0, 0x3dba_2e8b), (0.3, 0x4055_5554)] {
+            let (v, _) = triangle(&s, scaled(w), 0, 0).unwrap();
+            assert_eq!(v.map(|p| p.rhw.to_bits()), [word; 3], "w = {w}");
+        }
+        for w in [9.0f32, 0.7, 4.0, 2.5] {
+            refused(triangle(&s, scaled(w), 0, 0), "Q230");
+        }
+        // E798 [HW, read after the run]: a kept vertex at w = 1.40625, 1.59375 or 1.6875 stored
+        // one ulp above RZ; E782's own triangle (0.875, 1.625, 1.0625) stays as measured
+        let t =
+            [clip(-0.75, -0.75, 0.0, 0.875), clip(0.75, -0.375, 0.0, 1.625), clip(-0.375, 0.75, 0.0, 1.0625)];
+        assert!(triangle(&s, t, 0, 0).is_ok());
+        for w in [1.40625f32, 1.59375, 1.6875, 1.25] {
+            let mut u = t;
+            u[2] = clip(-0.375 * w, 0.75 * w, 0.0, w);
+            refused(triangle(&s, u, 0, 0), "Q230");
+        }
+    }
+
+    #[test]
     fn a_w_other_than_1_outside_what_e754_ran_is_refused() {
         let s = state(&block([32.0; 4])).unwrap();
         let w3 = |f: &dyn Fn(&mut [[u32; 4]; 3])| {
@@ -434,5 +598,81 @@ mod tests {
         let s = state(&block([64.0; 4])).unwrap();
         let far = [clip(-0.5, -0.5, 0.0, 1.0), clip(0.5, -0.5, 0.0, 1.0), clip(1e6, 0.5, 0.0, 1.0)];
         refused(triangle(&s, far, 0, 0), "Q230");
+    }
+
+    #[test]
+    fn the_viewport_z_words_are_offset_then_scale_and_the_depth_is_rounded_once_at_w_1_e797() {
+        // E797 [HW, held out] at w = 1: block word 10 is the offset and 11 the scale (the swap
+        // refuted 9 of 9); 0.6 + 0.3 z at z = -0.830491483 was stored 0x3eb3a2f3, the single
+        // rounding of the sum (the product rounded first gives 0x3eb3a2f2)
+        let rows = [
+            (0.25f32, 0.5f32, -0.3125f32, 0x3dc0_0000u32),
+            (0.5, 0.25, -0.3125, 0x3ed8_0000),
+            (0.6, 0.3, -0.830_491_5, 0x3eb3_a2f3),
+        ];
+        for (off, scale, z, word) in rows {
+            let mut b = block([32.0; 4]);
+            b[10] = F(off);
+            b[11] = F(scale);
+            let s = state(&b).unwrap();
+            let t = [clip(-0.75, -0.75, z, 1.0), clip(0.75, -0.375, z, 1.0), clip(-0.375, 0.75, z, 1.0)];
+            let (v, _) = triangle(&s, t, 0, 0).unwrap();
+            assert_eq!(v.map(|p| p.z.to_bits()), [word; 3], "{off} {scale} {z}");
+        }
+    }
+
+    /// The tool's triangle with z = a x + b and w = c x + d (x and y unscaled), as the vertex
+    /// programs of E782 and E798 made it.
+    fn zw(a: f32, b: f32, c: f32, d: f32) -> [[u32; 4]; 3] {
+        [(-0.75, -0.75), (0.75, -0.375), (-0.375, 0.75)].map(|(x, y)| clip(x, y, a * x + b, c * x + d))
+    }
+
+    /// A cut job: the clip positions, the packed window x and y of each stored vertex in 1/256
+    /// pixel, and which vertices the clip made.
+    type CutCase = ([[u32; 4]; 3], [(u32, u32); 4], [bool; 4]);
+
+    #[test]
+    fn a_triangle_cut_by_one_plane_at_one_vertex_is_the_polygon_of_e782_and_e798() {
+        let s = state(&block([32.0; 4])).unwrap();
+        // E782 [HW, held out] (the +w plane) and E798 [HW, held out] (both planes): stored order,
+        // the made vertices and the prim words (16, 1, 18), (2, 17, 19) in all six; the window
+        // within one 1/256 step of the packed fields
+        let p = [true, false, true, false];
+        let m = [false, false, true, true];
+        let cases: [CutCase; 6] = [
+            (zw(2.0, 1.0, 0.5, 1.25), [(9216, 9472), (5301, 13975), (9216, 4992), (1170, 1170)], p),
+            (zw(2.0, 1.0, -0.5, 1.25), [(8875, 10069), (6055, 12466), (8875, 4523), (4411, 4411)], p),
+            (zw(2.0, 1.0, 0.25, 1.5), [(9681, 8657), (6007, 12561), (9681, 5632), (3511, 3511)], p),
+            (zw(2.0, 1.0, -0.25, 1.5), [(9452, 9058), (6264, 12047), (9452, 5317), (4551, 4551)], p),
+            (zw(2.0, -0.25, 0.5, 1.25), [(11973, 6302), (5301, 13975), (5071, 3023), (5071, 13263)], m),
+            (zw(2.0, -0.25, -0.25, 1.5), [(12873, 5851), (6264, 12047), (4706, 4575), (4706, 5229)], m),
+        ];
+        for (i, (t, xy, made)) in cases.into_iter().enumerate() {
+            let o = cut_triangle(&s, t).unwrap();
+            assert_eq!(o.made, made, "case {i}");
+            assert_eq!(o.prims, vec![[16, 1, 18], [2, 17, 19]], "case {i}");
+            for (p, q) in o.xy.iter().zip(xy) {
+                let (x, y) = (p.0 * 256.0, p.1 * 256.0);
+                assert!(
+                    (x - q.0 as f32).abs() <= 1.0 && (y - q.1 as f32).abs() <= 1.0,
+                    "case {i}: {p:?} {q:?}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn a_cut_nothing_measured_is_refused() {
+        let s = state(&block([32.0; 4])).unwrap();
+        // two vertices beyond the plane (a polygon of 3), both planes crossed, no cut
+        refused(cut_triangle(&s, zw(-2.0, 1.2, 0.0, 1.0)), "Q230");
+        refused(cut_triangle(&s, zw(3.0, 0.0, 0.0, 1.0)), "Q230");
+        refused(cut_triangle(&s, zw(0.0, 0.0, 0.5, 1.25)), "Q230");
+        // a w outside the span the cuts ran with (0.875 to 1.6875)
+        refused(cut_triangle(&s, zw(2.0, 1.0, 0.5, 2.0)), "Q230");
+        refused(cut_triangle(&s, zw(2.0, 1.0, 1.0, 1.0)), "Q230");
+        let mut t = zw(2.0, 1.0, 0.5, 1.25);
+        t[0][0] = F(f32::NAN);
+        refused(cut_triangle(&s, t), "Q230");
     }
 }

@@ -64,3 +64,12 @@ the 1/w is interpolated along the edge like the depth is refuted. The depth of a
 in 3 of 4 and one ulp below at one: "exactly 1.0 or 0.0" (E777 at w = 1) does not extend to w other
 than 1 as a rule; no job here separates why that vertex differs. Nothing tests a made vertex on the
 -w plane at w other than 1, a polygon of 3 or 5 vertices, or a w below 3e-5; those stay open (Q230).
+
+**Correction 2026-11-10:** (R3-geo, E798 and E795; read after the run, no frozen row) "The 1/w of
+a kept vertex is RZ of 1/w, exact" holds for the seven kept vertices above (w = 0.875, 1.0625,
+1.4375 and 1.625) and not at every w: in g-dd's cut objects the kept vertices' 1/w was one ulp
+above RZ of 1/w at w = 1.40625, 1.59375 (twice) and 1.6875 and RZ at 1.3125, 1.0625 and 1.625, and
+with one w at all three vertices it was one ulp above at w = 9 and 0.7 (E795). The made vertex's
+depth, 1.0 in 3 of 4 here, was exactly 1.0 on z = w and 0.0 on z = -w at all eight made vertices of
+g-dd (HDP-made consistent 4 of 4 jobs, held out, E798); the vertex above at 0x3f7fffff stands. The
+table and the frozen verdict above are unaffected.

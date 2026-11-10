@@ -1,11 +1,11 @@
 +++
 id = "Q230"
-question = "what does the TA write in the cases of the clip, the target's edge and the numeric formats that E776 to E783 left open: the stored order of a clipped polygon of 3 or of more than 4 vertices and of a cut by a guard-band plane (E777), the limit of the region lists in y and at the left edge of other targets (E776), the tie of the rounding of the 1/1024 grid to 1/256 (E778), the depth word of a vertex with w other than 1 (six words and no formula, E783) and the 1/w word and depth of a clip-made vertex (1/w within 1 ulp of RZ of 1/w_made and exact in 1 of 4, depth 1.0 in 3 of 4, E782), the 1/w word under a clamp (within 1 ulp of 1/clamp, no rule, E781), and the size at which a sub-pixel triangle is no longer written (E780)?"
+question = "what does the TA write in the cases of the clip, the target's edge and the numeric formats that E776 to E783 and E795 to E798 left open: the stored order of a clipped polygon of 3 or of more than 4 vertices and of a cut by a guard-band plane (E777), the limit of the region lists in y and at the left edge of other targets (E776), the tie of the rounding of the 1/1024 grid to 1/256 (E778), the depth word of a vertex with w other than 1 (no formula: every frozen rule refuted, words recorded, E783, E795 to E797), the 1/w word of a vertex with w other than 1 (RZ of 1/w at most w, one ulp above it at w = 9, 0.7, 1.40625, 1.59375 and 1.6875, E795, E798) and of a clip-made vertex (0 to 3 ulp above RZ of 1/w_made, no rule, E782, E798), the depth of a made vertex (1.0 / 0.0 in 11 of 12, E782, E798), the 1/w word under a clamp (within 1 ulp of 1/clamp, no rule, E781), and the size at which a sub-pixel triangle is no longer written (E780)?"
 unit = "ta"
 kind = "hw"
 value = "medium"
 phase = 12
-evidence = ["E063", "E182", "E194", "E287", "E307", "E651", "E650", "E736", "E754", "E776", "E777", "E778", "E780", "E781", "E782", "E783"]
+evidence = ["E063", "E182", "E194", "E287", "E307", "E651", "E650", "E736", "E754", "E776", "E777", "E778", "E780", "E781", "E782", "E783", "E795", "E796", "E797", "E798"]
 terms = ["PB_OBJ.RHW", "PB_OBJ.ISP_WORDS", "VIEWPORT.X_OFFSET", "WCLAMP"]
 +++
 
@@ -134,3 +134,25 @@ The fit rests on one word (t4-m2p6-3), six words carry at most 6 bits, and about
 by chance alone, so the threshold is a hypothesis for a held-out run and no depth rule is adopted. A
 repeat of t4-m2p6-3 is its first control. E783's offsets for that pair are corrected there (0.17 of
 2^-24, 0.33 ulp of q).
+
+Narrowed 2026-11-10 (R3-geo, E795 to E798; the question line is reworded, the question stays
+open). The four depth stages of round 3 ran with every control passing.
+- Depth at w other than 1 (E795, E796, held out). The post hoc threshold fit of the note above
+  (H-thr) is refuted: 5 of 11 outside cells off its frozen direction, while the word it rested on
+  (t4-m2p6-3, 0x3d88888c) repeated. D1, D2, D5, T26, T27 and K23 are refuted on g-da's 21 cells,
+  and every product rule with every rounding of the sum on g-db's z > 0 and q cells; D1 held on
+  the four cells next to w = 1 only. No depth rule is adopted; the simulator keeps refusing.
+- Viewport z words (E797, held out). Word 10 of the state block is the z offset and word 11 the z
+  scale (the swap refuted 9 of 9); at w = 1 the cell that separates the roundings stored the sum
+  rounded once (one cell). At w = 3 every frozen viewport rule was refuted (their product rule was
+  D1, refuted in g-da).
+- Cuts at w other than 1 (E798, held out). The polygon, zigzag order, window rule and prim words
+  held on four cuts, two of them on the -w plane, and the made vertex's depth was exactly 1.0 /
+  0.0 at all eight made vertices (11 of 12 with E782); the made 1/w is not RZ of 1/w_made (0 of 8
+  words, 1 to 3 ulp above).
+- 1/w [HW, read after the run, no frozen row]. The 1/w of a vertex is not RZ of 1/w at every w:
+  one ulp above at w = 9 and 0.7 (one w at all three vertices, E795, E796) and at 1.40625, 1.59375
+  and 1.6875 (kept vertices of cut objects, E798), RZ at the other w run.
+Open (the reworded line): as above, with the 1/w rule at w other than 1 (which w store one ulp
+above RZ), the depth formula, the made vertex's 1/w, and polygons of 3 or 5 vertices at w other
+than 1.

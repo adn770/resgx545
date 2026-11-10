@@ -81,3 +81,14 @@ of 2^-24 above the exact value and 0.67 ulp of q. The exact values are 0.17 of 2
 q (q = -0.8667 lies in [0.5, 1), ulp 2^-24, and the word is 0.5 + 0.5 q, so the word's offset is
 half of q's). The other five pairs agree with the paragraph (0.33, 0.36, 0.33, 0.27, 0.57 of 2^-24;
 0.67, 0.71, 0.66, 0.54, 1.14 ulp of q). The table of words and the verdict are unaffected.
+
+**Correction 2026-11-10:** (R3-geo, E795 and E796; held out) The first correction above, the post
+hoc fit made before round 3, does not hold. Its threshold family (round |p| away from zero iff its
+fraction exceeds one t in (0.3655, 0.4667)) was frozen as H-thr and refuted on 21 held-out cells:
+5 of the 11 outside cells were off its direction (E795). The word it rested on, t4-m2p6-3's
+0x3d88888c, repeated. D1, D2, D5, T26, T27 and K23 were refuted there too, and on g-db's cells with
+z > 0 and |z / w| in (0.25, 0.5) every frozen rule, while D1 held on the four cells next to w = 1
+(E796). The statement "inside the guard band the 1/w is the float32 reciprocal truncated toward
+zero" holds for the w of the six pairs above and not at every w: the stored 1/w was one ulp above
+RZ of 1/w at w = 9 and 0.7 (E795, E796; read after the run). The words and the verdict above are
+unaffected.

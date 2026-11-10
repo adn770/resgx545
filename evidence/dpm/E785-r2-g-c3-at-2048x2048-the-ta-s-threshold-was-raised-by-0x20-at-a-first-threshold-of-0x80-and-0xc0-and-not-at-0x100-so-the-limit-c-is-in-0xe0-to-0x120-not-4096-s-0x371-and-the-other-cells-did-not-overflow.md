@@ -51,3 +51,12 @@ the area is not what the bracket shows, with C exact at one target only [infer, 
 brackets]. What C depends on, the target, the page need or the scene, is not separated: both
 changed together (a quarter of the area, a lower page need, the same vertex count). The cells above
 thr0 0x140 could not be run with a scene this size. The dword 36 column is E790's.
+
+**Correction 2026-11-10:** (R3-geo, E799, E800 and E802; held out) The bracket above stands and is
+now exact: at 2048x2048 with 1500 vertices the last raise is at thr0 0xe2 and the first silent at
+0xe3, so C = 0x102 (E799). The sentences "It is bracketed, not exact" and "What C depends on, the
+target, the page need or the scene, is not separated" are superseded in part: a 2048x2048 target
+in a context made for 4096x4096 flipped at the same place (E800, the limit follows the target and
+not the context), and another scene at 2048x2048 (`--tri-full`) raised the threshold at thr0 up to
+0xf3 (E802, the limit depends on the scene). The table and the frozen verdict above are
+unaffected.
