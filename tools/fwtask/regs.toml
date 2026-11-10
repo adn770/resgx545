@@ -13,6 +13,9 @@
 # Round 3 (2026-11-10, R3-K1): str, never ldr, of the two host clear registers CR_EVENT_HOST_CLEAR2
 # (0x0114) and CR_EVENT_HOST_CLEAR (0x0134), for Q166's clear test (E3); the closed tick handler
 # writes 0x0134 itself (E155). Both are write-only in the register dump.
+# Round 3 (R3-K10): str, never ldr, of CR_EVENT_TIMER (0x0acc), which the closed tick handler
+# writes (E155), for Q152. The verifier cannot see the value stored: the session's guard on the
+# assembled code pins it to the word the ticks carry (E746).
 
 # ---- clock gating: by name, refused for str AND ldr, checked before anything else ----------
 # E445 (11.17): the first run reached CR_CLKGATECTL2 bits 3:2 and its output was lost; the user
@@ -72,6 +75,11 @@ name = "CR_EVENT_HOST_CLEAR"
 offset = 0x0134
 use = "str"
 record = "E155, E357, Q166"
+[[allow]]
+name = "CR_EVENT_TIMER"
+offset = 0x0acc
+use = "str"
+record = "E155, E746, Q152"
 
 # ---- denied, by range (documentation and test; default deny already covers them) ------------
 # The tool imports tools/campaign/regwidth.py DENY and requires that every row below is in it
@@ -162,8 +170,12 @@ hi = 0x0ab8
 why = "PDS execution base"
 [[deny]]
 lo = 0x0ac4
+hi = 0x0ac8
+why = "kicker, kicks"
+[[deny]]
+lo = 0x0ad0
 hi = 0x0aec
-why = "kicker, kicks, EDM timer, PDS invalidates"
+why = "PDS invalidates (str of the EDM timer 0x0acc is allowed)"
 [[deny]]
 lo = 0x0b0c
 hi = 0x0b20

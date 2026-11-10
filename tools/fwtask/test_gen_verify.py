@@ -21,16 +21,17 @@ def test_header_is_reproducible(tmp_path):
 
 def test_header_lists_exactly_the_allowed_registers():
     h = gen_verify.render(fwtask.load_regs())
-    assert "static const u16 sgx_own_str_regs[] __maybe_unused = { 69, 77, 517, 670 };" in h
+    assert "static const u16 sgx_own_str_regs[] __maybe_unused = { 69, 77, 517, 670, 691 };" in h
     assert "static const u16 sgx_own_ldr_regs[] __maybe_unused = { 7, 8, 81, 517, 670 };" in h
     assert "static const u16 sgx_own_clockgate_regs[] __maybe_unused = { 0, 1, 2, 3 };" in h
 
 
 def test_header_deny_rows_leave_out_the_allowed_str_registers():
     h = gen_verify.render(fwtask.load_regs())
-    for lo, hi in ((0x0110, 0x0110), (0x0118, 0x0130), (0x0138, 0x0144)):
+    for lo, hi in ((0x0110, 0x0110), (0x0118, 0x0130), (0x0138, 0x0144), (0x0ac4, 0x0ac8),
+                   (0x0ad0, 0x0aec)):
         assert f"{{ 0x{lo:04x}, 0x{hi:04x} }}," in h
-    assert "{ 0x0110, 0x0144 }," not in h
+    assert "{ 0x0110, 0x0144 }," not in h and "{ 0x0ac4, 0x0aec }," not in h
 
 
 def test_every_form_row_is_in_the_spec_listing():

@@ -60,8 +60,10 @@ def test_every_deny_offset_refused_for_str():
 
 
 # the named exceptions to regwidth's DENY: the registers a task of ours may str (round 3,
-# R3-K1: the two host clear registers, E3), all other offsets of the DENY rows stay refused
-STR_EXCEPTIONS = {0x0114: "CR_EVENT_HOST_CLEAR2", 0x0134: "CR_EVENT_HOST_CLEAR"}
+# R3-K1: the two host clear registers, E3; R3-K10: the EDM timer the closed tick handler writes,
+# Q152), all other offsets of the DENY rows stay refused
+STR_EXCEPTIONS = {0x0114: "CR_EVENT_HOST_CLEAR2", 0x0134: "CR_EVENT_HOST_CLEAR",
+                  0x0acc: "CR_EVENT_TIMER"}
 
 
 def test_every_regwidth_deny_offset_refused_for_str_and_ldr_except_timer_read():
@@ -235,3 +237,12 @@ def test_map_has_sha256_of_each_section(tmp_path):
     m = fwtask.build_map([tmp_path / "a.s"], tmp_path)
     assert m["a"]["sha256"] == hashlib.sha256((tmp_path / "a.blob").read_bytes()).hexdigest()
     assert m["a"]["source_sha256"] == hashlib.sha256((tmp_path / "a.s").read_bytes()).hexdigest()
+
+
+def test_event_timer_str_accepted_ldr_refused_kicker_and_kicks_refused():
+    assert verify(f"str #{0x0acc // 4}, r1\nnop.end") == []
+    e = verify(f"ldr r1, #{0x0acc // 4}, drc0\nnop.end")
+    assert any("not allowed for ldr" in x for x in e), e
+    for off in (0x0ac4, 0x0ac8, 0x0ad0, 0x0aec):
+        e = verify(f"str #{off // 4}, r1\nnop.end")
+        assert any("str" in x for x in e), (hex(off), e)
