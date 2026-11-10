@@ -116,3 +116,15 @@ for jobs with a first abort, and neither applies to the 5 jobs that never overfl
 dword 36 0). The scenes are the tool's triangle at 1500 vertices and the default triangle; dword 36
 shows no function of P, the target or the raised threshold in them. Open as above: the quantity the
 firmware reads and what steps it.
+
+Note 2026-11-10 (an offline reading of the kept timelines of R1-pixgeo and R2-geo, made before the
+round 3 runs; post hoc fit, not a measurement). Ten readings of dword 36 against the `0x072c` count
+were tried on the 49 existing jobs that have a first abort, a sampled `0x072c` and a control block
+(g-u1, g-c1, g-c1f, g-u2, g-c3, g-c2): the count before the first abort, less 2 (floor 0) fits 25 of
+49, the job peak 47 of 49, the count before the second abort 47 of 49, and the count before the last
+abort, less 2 (floor 0), 49 of 49 (19 of 19 unraised, 30 of 30 raised). Only two jobs separate that
+reading from the peak and second-abort ones (c3-2048-0xe2 and k-1500-0x300, each with three aborts
+and counts 3, 4, 3); 36 of the 49 are above the floor and 24 have a last abort that differs from the
+first. It also reads the 5 jobs without an abort (dword 36 = 0). The reading was chosen after the
+ten were seen, so a held-out test needs jobs with three or more aborts whose counts differ; until
+then it is a candidate, and "peak less 2" (E790) and "first abort less 2" stay refuted as rules.

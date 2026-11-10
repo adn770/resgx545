@@ -43,3 +43,21 @@ that is, and whether E537's writer stopped the tick for the same reason, is not 
 
 **Not run.** B1's third job, B2 (a skip of five ticks, 2 jobs): the stage ended at the second
 stop as designed. B3 (a skip on a kick pass) was not part of the session.
+
+**Correction 2026-11-10:** (offline readings of the kept dumps of rounds 1 and 2 and of our disassembly of
+the closed firmware, made before the round 3 runs; not new measurements). [HW] `CR_EVENT_STATUS`
+(0x12c) reads 0x20000000 in every kept status dump of R1-events and R3-events, healthy and stopped
+alike (232 reads: 230 `reg 0x12c =` lines and the two stop regs dumps; the proposal's count was 234,
+two reads of another form were not reproduced), and `0x008` reads 0x20 in 225 of 232, 0x78 in 3 and
+0x000ccfa0 in the 4 stop reads; so bit 29 of the event status is not part of the stop signature,
+which rests on `CR_CLKGATESTATUS` 0x000ccfa0 and the frozen `USE0_SERV_EVENT` count with bit 16
+clear. [RE] The shared task exit, 0x1974 to 0x1978, is `cfi.global #3, #0, #3`, `idf drc0, bif`,
+`wdf drc0`, `phas #0, #0, pixel, end, parallel` and `nop.end`; none of them reads or writes a
+register, an sa, a pa or memory. The pass this record's task ended had `idf drc0, bif; wdf drc0;
+nop.end` and lacked the `cfi.global` and the `phas ... end` of the exit; that is the only difference
+between the closed end and ours that the code shows, a candidate for what the EDM wants at the end
+of a pass [infer; not shown to matter]. The exit is entered only by seven `ba.savelink #0x1974`
+calls (0x58c, 0x5d1, 0x604, 0xae6, 0xb09, 0xe71, 0xeb2); the landed verifier refuses the
+`cfi.global` and the `phas` (no row for either) and every `ba` and a `br` out of the blob, so a task
+of ours can reach the exit only through the closed task's continue patch (a new form row would be a
+kernel change).

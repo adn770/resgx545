@@ -86,3 +86,12 @@ vertices' instructions together) better than one of an instance, which is untest
 between 880 and 1760 iterations, whether it is time or instructions (a second body length), whether
 it depends on the number of vertices, bit 6's quantity as before (the multiply-add count fit, the
 body-4 ladder, occupancy), and the 121 us after a fault word.
+
+Note 2026-11-10 (the cause of E770's void, an offline reading before the round 3 runs; [infer], not
+a measurement; see the note of E770). The loop programs that E770 ran as a triangle's pixel program
+close their loop with an absolute `ba` to index 4; `probe --tri pixel` places the program at index
+0x20 of the pixel page, renumbers only a first `phas`, and the branch lands in the default `use_sec`
+program (`phas; nop.end`) after one pass of the body, so no instance looped or wrote o0. The 30
+triangle rows of E770 therefore say nothing on the latch, and the loop-count readings of this
+question (E431's fill rows, where the program sits at index 0 and loops) are not touched. The
+program side of the repair (a relative branch) is the next run's.

@@ -42,3 +42,21 @@ told apart).
 
 **Not shown.** The occupancy knob for the latch (a fill at another size is the untried way), the
 load's latency on a small target, and why a triangle's pixels do not complete the loop.
+
+**Correction 2026-11-10:** (the cause of the void, read offline from the source and the mock before the
+round 3 runs; [infer], not a measurement) the loop programs of R1-events close the loop with an
+absolute branch (`p0 ba #4`, `#5` for the load body); `ba` counts from the code base and `br` from
+the instruction (E075, E476, E492). A fill places its program at the base of the pixel code heap, so
+index 4 is the loop's first body instruction (E431, E769: o0 = 0 on 2048 of 2048). `probe --tri
+pixel` places the program at offset 0x100 of the pixel page, instruction index 0x20
+(`SGXFIVE_TRI_PROBE_UP_PIXEL`), and `tri_probe.c` renumbers only a first `phas` with a next phase,
+so the branch target stays 4. In the mock's scene of the 8x8 run (`--emit-scene`) the code base is
+0x37000000, so index 4 is byte 0x20 of the same page, the default `use_sec` program (`phas;
+nop.end`) [infer for the hardware's pixel page: its address is not in the kept output; the scratch
+addresses of the mock equal the kept ones]. So each instance ran the prologue and one pass of the
+body, took the branch (the counter is not zero), landed in `use_sec` and ended there without writing
+o0; the simulator stops at this branch (a `ba` to an index before the program in its code base, at
+code index 0x20) while the same program placed at index 0 ends with o0 = 0. This reads every
+observation above [infer]: the pattern does not move with the iteration count (the count is never
+used), STATUS2 stays 0x400 at 440 iterations (no instance loops), and the image shows whatever the
+unwritten output register held. Stale register contents measure nothing, so the "void" stands.

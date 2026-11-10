@@ -124,3 +124,13 @@ open). T3 and T4, the stages that did not run in R1, ran with every control pass
 Open (the reworded line): as above, with the depth formula at w other than 1 (words in E783, a fit
 needs pairs near w = 1 and z of both signs), the made vertex's 1/w and depth rule (a made vertex on
 the -w plane at w other than 1 was not run), and polygons of 3 or 5 vertices at w other than 1.
+
+Note 2026-11-10 (an offline fit on E783's six words, made before the round 3 runs; post hoc fit, not
+a measurement; see the notes of E783). One family reproduces all six words: the product z * RZ(1/w)
+rounded away from zero to a float32 when its fraction in its ulp exceeds t, with t in (0.3655,
+0.4667); round to nearest is that family with t = 0.5 and misses the pair (-2.6, 3) by 0.033 ulp. Of
+257 models declared in five families before the fit, 13 fit 6 of 6 (one family) and 69 fit 5 of 6.
+The fit rests on one word (t4-m2p6-3), six words carry at most 6 bits, and about 4 of 257 models fit
+by chance alone, so the threshold is a hypothesis for a held-out run and no depth rule is adopted. A
+repeat of t4-m2p6-3 is its first control. E783's offsets for that pair are corrected there (0.17 of
+2^-24, 0.33 ulp of q).

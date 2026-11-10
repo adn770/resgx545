@@ -59,3 +59,25 @@ frozen ways; its words are recorded here for a later fit, and the simulator keep
 at w other than 1 (Q230). What a fit still needs: pairs with w near 1 and with z of both signs, to
 see where the stored word and the exact value part, and the made vertex of E782, whose depth was
 1.0 in 3 of 4 and one ulp below at one.
+
+**Correction 2026-11-10:** (an offline fit on the six words above, made before the round 3 runs; not a new
+measurement; post hoc fit, no held-out row). Each stored word is 0.5 + 0.5 q' with q' a float32, and
+q' is the float below or above |p| = |z * RZ(1/w)| (the stored 1/w is the RZ value in all six
+pairs). Round to nearest of p misses one pair only (-2.6, 3), where the fraction of |p| in its ulp
+is 0.467 and the hardware went up. One family fits 6 of 6: round |p| up when its fraction exceeds t,
+t in (0.3655, 0.4667) (the fractions of the six pairs in table order are 0.967 up, 0.467 up, 0.957
+up, 0.870 up, 0.365 down, 0.271 down). Of 257 models in five families declared before the fit (the
+four frozen formulas, an internal reciprocal of 24 to 32 bits, double rounding of the product at 25
+to 29 bits, an operand cut to 12 to 23 bits, a threshold grid), 13 fit 6 of 6, all of this one
+family (plus one operand-cut model), and 69 fit 5 of 6, D1 and D2 among them. Degrees of freedom:
+each word chooses one of two neighbours of p, so six words carry at most 6 bits and five of them are
+what round to nearest already gives; the fit rests on one word, (-2.6, 3) (t4-m2p6-3), and about 4
+of 257 models fit 6 of 6 by chance alone (257 / 2^6). It is a hypothesis for a held-out run, not a
+finding, and the simulator keeps refusing the depth at w other than 1.
+
+**Correction 2026-11-10:** (arithmetic on the six words above, in exact fractions) the offsets of
+the second pair, (-2.6, 3), word 0x3d88888c, are given in the "Read after the run" paragraph as 0.33
+of 2^-24 above the exact value and 0.67 ulp of q. The exact values are 0.17 of 2^-24 and 0.33 ulp of
+q (q = -0.8667 lies in [0.5, 1), ulp 2^-24, and the word is 0.5 + 0.5 q, so the word's offset is
+half of q's). The other five pairs agree with the paragraph (0.33, 0.36, 0.33, 0.27, 0.57 of 2^-24;
+0.67, 0.71, 0.66, 0.54, 1.14 ulp of q). The table of words and the verdict are unaffected.

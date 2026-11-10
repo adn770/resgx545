@@ -138,3 +138,21 @@ repeats one of them after its own `nop.end` pass, run only after the register-wr
 it, would separate them); what E537's stop depends on; whether the closed task reads sa63 at all
 (sa63 is read back by the next task, E791 A1); p2 and p3 (Q124); the B1 control for a skip on a
 kick pass (B3, not run).
+
+Note 2026-11-10 (offline readings of kept data, of our disassembly and of the landed verifier, made
+before the round 3 runs; not new measurements; see the notes of E537, E793 and E155). [HW, E792 and
+E791] With sa64 = pa0 & ~2 the closed task left `pclink` at 6 (no call returned to 0x98) and the
+tick was kept in 3 of 3, and no single write kept in E791 stopped it: the tick handler at 0x486 is
+not what the EDM needs [infer: the dword 12 instrument said "cannot tell" within a bracket of +-8].
+What remains common to every kept pass is the general task's entry code and the shared exit 0x1974
+to 0x1978 (E793: `cfi.global` and a `phas` with `end` among its five instructions). [RE] The landed
+verifier lets a continue patch name any slot 0 to 3 from any entry (`contK`), so entry 0 may
+tail-call the closed task of slot 1, 2 or 3 (the fast paths at 0x59a, 0xace and 0xe0a) with no
+kernel change; `br` cannot leave the blob, loads and stores cannot leave the results page, `nop` has
+only bit 50 free, so a jump to 0x1974 or an exit form outside the 15 rows needs a kernel row. [RE]
+The path of each fast path to the shared exit with no group bit of its own set (none reads `pa0`;
+each starts `smlsi`, `mov r15, #0`, `mov r22, #0`), with `sa19` bit 3 clear: slot 2 (0xace) 12
+instructions then the exit's 5, 17 in all, with no `sa19` test and no write beyond r0, r15, r16,
+r22, r23 and `pclink`; slot 1 (0x59a) 20 (two `sa19` tests); slot 3 (0xe0a) 26 (two `sa19` tests,
+three `pa1` tests). With `sa19` bit 3 set, slots 1 and 3 call the routine at 0x1979, which stores a
+record to memory (a HWPerf record [infer]); no run of ours has read `sa19` there.

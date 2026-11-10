@@ -80,3 +80,17 @@ alone, of sa64 or of sa65 with the value the closed task found, nor the tail cal
 and r and i written stopped the tick (19 of 19 jobs); the sa65 word E537's writer left (0xb009c5dc)
 was not written by any of those rows, so the note's leading candidate, the word the closed task
 dispatched on, is neither confirmed nor refuted.
+
+**Correction 2026-11-10:** (offline readings of this run's own status dump and of our disassembly of the
+closed firmware, made before the round 3 runs; not new measurements; the readings are in the note of
+Q152). [HW] Besides the busy signature, this stop's dump differs from E793's two stops: `ccbctl[0]`
+reads write offset 2 and read offset 3 (E793: 2 and 2, in both stops), and HostCtl dword 14 reads
+0xad002600 (E793: 0). [RE] The only code that writes that word is at instructions 0x0 to 0x5 (`mov
+r16, #0xAD002600` at 0x0, the store to dword 14 at 0x1; the constant of the other site, 0x55c, is
+0xad001a07); after the store the code fences and branches to 0x173f, it neither loops nor ends. No
+run of ours has entered 0x0 (E014). [infer] The sa65 word E537's writer left, 0xb009c5dc, has bit 8
+set, the bit that starts the kernel CCB reader (E155), which takes the command at the read offset,
+advances it and branches to the address in the command's first dword; a command slot never written
+reads 0 (the buffer pages are zeroed), which would branch to 0x0 and leave exactly the two marks
+above. That chain is a reading of the code and the dump, not shown by a run; the E793 stops, which
+have neither mark, were a different stop.

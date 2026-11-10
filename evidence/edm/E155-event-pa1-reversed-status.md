@@ -58,3 +58,15 @@ took `ir1` to carry `CR_EVENT_STATUS` bits at their own positions; at those posi
 be `DPM_INIT_END` and bit 4 `DPM_STATE_STORE`, yet the handlers for these bits acknowledge status
 bits 0 and 18. Which hardware events set the bits is not shown. That the timer reloads itself on
 expiry is not shown either: the code programs the timer only at those two sites.
+
+**Correction 2026-11-10:** (an offline reading of our disassembly, made before the round 3 runs; not a
+measurement; facts only). The ukernel has 16 instructions that read `pa1`; the table above names 14
+of them. The two it does not: 0x17, `and r0, pa1, r0` with r0 = 0x00400090 (set at 0x16), the mask
+of bits 22, 7 and 4 together, the first gate of the general task (when none is set, 0x1b skips their
+handlers and goes to the test at 0x60); and 0x73, `and r0, pa1, #0x200` (bit 9), a second test of
+the bit tested at 0x6f, whose skip at 0x75 to 0x88 cannot be taken after the first test passed with
+`pa1` unchanged [infer]. The union of the masks tested anywhere in the ukernel is 0x00780790 (bits
+22, 21, 20, 19, 10, 9, 8, 7 and 4): every other `pa1` bit has no code, including the tick's bit 25
+and the SW_EVENT mirror at bit 14 (0x4000). Bit 19 is tested (at 0x60, with the out-of-memory bits)
+and posts and acknowledges nothing; with bit 8 (the CCB reader, 0x98) it is one of the two groups of
+handlers that do not acknowledge.
