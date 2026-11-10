@@ -5,7 +5,8 @@ unit = "platform"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E006", "E154", "E155", "E357", "E431", "E435", "E444", "E547", "E548", "E747"]
+evidence = ["E006", "E154", "E155", "E357", "E431", "E435", "E444", "E547", "E548", "E747",
+            "E764", "E765", "E766"]
 terms = ["CR_EVENT_STATUS", "CR_EVENT_STATUS2", "CR_EVENT_HOST_CLEAR", "CR_EVENT_HOST_ENABLE"]
 +++
 
@@ -77,3 +78,12 @@ is the order of arrival at the EDM, not the order in which the registers rose; n
 was read in those jobs, whether a bit is a pulse or a level is not shown, bits 26, 14 and 31 of E547
 never reached the EDM, and which event sets the other bits and what CR_EVENT_HOST_CLEAR clears
 (Q166) stay open.
+
+Post hoc note, S3 (2026-11-10, dataset render-closing-s3; timeline rows read after the scoring, 1
+run each). For a BIF fault the status bit that follows it, `CR_EVENT_STATUS2` bit 7 or 6, sets 121
+to 124 us after the fault word is visible in `CR_BIF_INT_STAT`, in the TA's read fault, a
+background program's fetch fault, a texture fetch fault and a transfer's write fault (E764, E765,
+E766), so for these jobs the order of the bits is the fault word first and the bit about 122 us
+later; the EDM's write fault sets none (E444). In the background-fetch job the TA's end shows first
+(bit 26, then SW_EVENT with bit 31, cleared 12 us later by the kernel's handler) and the fault 31
+us after that (E764, [infer]).

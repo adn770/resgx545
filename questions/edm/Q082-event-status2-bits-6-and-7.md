@@ -5,7 +5,7 @@ unit = "edm"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E317", "E318", "E319", "E357", "E431"]
+evidence = ["E317", "E318", "E319", "E357", "E431", "E764", "E765", "E766"]
 terms = ["CR_EVENT_STATUS2"]
 +++
 
@@ -31,3 +31,14 @@ bit 6 sets for fills of 55 and 56 iterations (3 of 3 runs), 54 (2 of 3) and 56 t
 53 or fewer (3 of 3 runs each, 16 to 53). What it measures (a time, an instruction count) and bit
 7 (the TA, a vertex program that loops a known count) are not placed. Status: narrowed, not
 answered.
+
+Post hoc note, S3 (2026-11-10, dataset render-closing-s3; nothing was predicted about it, 1 run
+each, sampling about every 4.3 us). Sampled from the launch, the bit follows a BIF fault word and
+is not set with it: after the TA's read fault bit 7 sets 121.2 us after `CR_BIF_INT_STAT` and
+`CR_BIF_FAULT` show the fault (E764), after a background program's fetch fault bit 6 sets 121.1
+us after (E764), after a texture fetch fault 122.5 us after (E765) and after a transfer's write
+fault 124.1 us after (E766), `CR_EVENT_STATUS2` reading 0x400 in between. The EDM's write fault
+sets neither (E444). [infer] The near-equal delay for the two bits points to a time since the
+fault, or to the firmware's reaction to a stalled pipeline, rather than to the fault word; that
+reading is not tested (a threshold of E431 is in loop iterations, and a delay in time here is of
+a different kind).

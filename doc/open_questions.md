@@ -31,7 +31,7 @@
 
 - `Q002` (phase 3, hw, low): is the 399.0 MHz reference that times the EDM tick and TIMER the clock the USSE runs from? (E009, E084, E124, E377)
 - `Q033` (phase 10, hw, medium): which hardware event sets bit 19 of the event word pa1 that the hardware hands a PDS event program (none of the 138 job events of 14 jobs in E747 carried it, the two overflowing partial renders included) (E155, E146, E154, E532, E538, E746, E747)
-- `Q082` (phase 11, hw, medium): what do CR_EVENT_STATUS2 bits 6 and 7 mean, bit 6 set while a job hangs in its pixel task and bit 7 while a TA job hangs or faults? (E317, E318, E319, E357, E431)
+- `Q082` (phase 11, hw, medium): what do CR_EVENT_STATUS2 bits 6 and 7 mean, bit 6 set while a job hangs in its pixel task and bit 7 while a TA job hangs or faults? (E317, E318, E319, E357, E431, E764, E765, E766)
 - `Q096` (phase 11, hw, low): does the sampler cache erratum of host bridge revisions below 4 show when a texture and other data have addresses that differ only above bit 28? (E002, E011, E013, E033, E035, E041, E114, E432)
 - `Q152` (phase 11, hw, medium): what must a task of ours that runs in place of the closed general task (or before it) leave or do so that the next event is delivered and the 1 kHz tick continues: what in E533's task (an arbitrary pclink write, p0 to p3 = 1, 0, 1, 0, `nop.end` instead of the closed task), in E536's writer (3 of 3 rounds kept the tick) and in E537's writer (sa63 and sa65 written, p0 = p1 = 1: the armed reader did not run) differs, and does the closed task use p0 to p3, sa63 or sa65 (E533, E155, E536, E537)
 - `Q158` (phase 11, hw, low): which sa, i and temporaries of a firmware task keep their value across a debugfs reset and across a firmware reload and boot (E536's controls read i0, i1, sa100 and sa127 as the writer of phase 11.29 left them 15 minutes and a reset and a reload earlier, and sa20, sa24, sa64, r20 and r21 not) (E536, E537)
@@ -105,7 +105,7 @@
 
 - `Q001` (phase 3, hw, medium): what do 0x0810, 0x0814 and 0x0818, set once by the init script to 0x1, 0xffff and 0x7ff, control? (E006, E010, E122, E401, E403, E404, E405)
 - `Q075` (phase 11, hw, low): what does each HWPerf counter the firmware records (0x0044-0x0064, 0x0e84-0x0e90 and 0x0eb4-0x0ec0) count, and how does the group in CR_HWPERF_CTRL select them? (E149, E150, E152, E359, E434)
-- `Q111` (phase 11, hw, high): which hardware event sets which bit of CR_EVENT_STATUS and CR_EVENT_STATUS2 in an ordinary TA, 3D, DPM or transfer job, how long does each stay set, and what does a write to CR_EVENT_HOST_CLEAR do to it? (E006, E154, E155, E357, E431, E435, E444, E547, E548, E747)
+- `Q111` (phase 11, hw, high): which hardware event sets which bit of CR_EVENT_STATUS and CR_EVENT_STATUS2 in an ordinary TA, 3D, DPM or transfer job, how long does each stay set, and what does a write to CR_EVENT_HOST_CLEAR do to it? (E006, E154, E155, E357, E431, E435, E444, E547, E548, E747, E764, E765, E766)
 
 ### render
 
@@ -132,7 +132,7 @@
 - `Q165` (phase 11, hw, low): why does a coordinate size and format word that describes sets the vertex program does not write (size code 5 over two or three outputs, a format bit for an absent set) fault or hang at N = 2, 3 and 8 outputs and complete at N = 5, 6, 9 and 11 (E541)
 - `Q230` (phase 12, hw, medium): what does the TA write when the MTE removes a triangle wholly beyond z = -w or z = w or cuts one at it, when a triangle is not listed by any target region (the hardware wrote no object for one 1000 pixels off a 64 x 64 target: where is the limit between that and a triangle partly on the target), and how are window coordinates with more than 8 fraction bits, and the depth and 1/w of a vertex with w other than 1, rounded and stored in the object? (E063, E182, E194, E287, E307, E651, E650, E736, E754)
 - `Q231` (phase 12, hw, low): what do the words of a render job that the vertex side and the TA read or ignore and no record explains do: the command's CR_MTE_CTRL (0xa2) and MTE screen words, the command words 10 to 25, the MTE state block's WCLAMP, the attribute rows of a VDM state block (VDM_STATE1 bits 7:0), the end-of-scene block's two terminate halves (E059 only shows that clearing a half leaves part of the target unwritten), and the stream's forms of a region (the primitive word and the further dword) for an object of more than five triangles? (E059, E060, E177, E180, E650, E652)
-- `Q286` (phase 11, hw, medium): is the number f of region-header arrays the TA writes at CR_TE_AA 0xe0000000 4 or 5, what must the kernel's render layout allocate, and why do the health triangles after a 4x fault fault again (E729, E507, E504)
+- `Q286` (phase 11, hw, medium): is the number f of region-header arrays the TA writes at CR_TE_AA 0xe0000000 4 or 5, what must the kernel's render layout allocate, and why do the health triangles after a 4x fault fault again (E729, E507, E504, E762, E763)
 
 ### texture
 
@@ -158,7 +158,7 @@
 
 ### transfer
 
-- `Q003` (phase 4, hw, medium): which event (if any) does a bus-interface fault raise, and what do the fault-request bits of CR_BIF_INT_STAT name, and what clears a latched fault in CR_BIF_INT_STAT and CR_BIF_FAULT while leaving the bus usable? (E021, E024, E317, E318, E319, E320, E354, E355, E357, E444, E203, E313, E362, E363, E395, E457, E476, E573, E631, E722, E729)
+- `Q003` (phase 4, hw, medium): which event (if any) does a bus-interface fault raise, and what do the fault-request bits of CR_BIF_INT_STAT name, and what clears a latched fault in CR_BIF_INT_STAT and CR_BIF_FAULT while leaving the bus usable? (E021, E024, E317, E318, E319, E320, E354, E355, E357, E444, E203, E313, E362, E363, E395, E457, E476, E573, E631, E722, E729, E764, E765, E766, E767)
 - `Q011` (phase 6, hw, medium): why does a copy whose background-object tag (transfer word 0) is wrong read one texel, the source's last, for every pixel, and what stores the samples of CR_ISP_MSAA mode 2 in a copy? (E028, E272, E398)
 - `Q206` (phase 12, hw, medium): what do the words of a transfer job that no record explains do: the 17 register words of the command beyond the render box (words 12 and 13) and the alpha-inversion bit, the words of the tasks the programs start, and the values the builder writes? (E004, E019, E020, E265, E272, E043, E044, E126, E620)
 - `Q289` (phase 12, hw, medium): which tile does the end-of-tile task's DOUTU1 x field (bits 11:3) and y field (bits 21:12) name when they differ from the pixel-event program's own, on a fill, a copy and a larger target, and do the two fields combine as a tile (x, y) (E043, E044, E126, E620)

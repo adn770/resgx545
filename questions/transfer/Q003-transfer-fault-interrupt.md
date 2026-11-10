@@ -6,7 +6,8 @@ kind = "hw"
 value = "medium"
 phase = 4
 evidence = ["E021", "E024", "E317", "E318", "E319", "E320", "E354", "E355", "E357", "E444",
-            "E203", "E313", "E362", "E363", "E395", "E457", "E476", "E573", "E631", "E722", "E729"]
+            "E203", "E313", "E362", "E363", "E395", "E457", "E476", "E573", "E631", "E722", "E729",
+            "E764", "E765", "E766", "E767"]
 terms = ["CR_BIF_FAULT", "CR_BIF_INT_STAT", "misc_info"]
 +++
 
@@ -101,3 +102,29 @@ are seen. Which requestor each names is not established (the log line carries th
 address), and the statement that no ZLS access has faulted rests on zls/control-bits, whose jobs
 faulted at 0x90200 with bits of the ZLS control word set (E411's data) and are not identified as a
 ZLS fetch. Bits 0, 4, 6, 11, 14 and 15 are still not seen.
+
+Narrowed in S3 (2026-11-10, laptop session S3 of the question-closing pass, dataset
+render-closing-s3; one run each). Frozen verdict: `Q003 E1: partly: e1-tex HE, e1-xfer-ro HE, a6
+(TA write) had no data` (a6 never ran). The two E444 controls reproduce word for word (E764), which
+opened the gates. A held texture fault, S1's 16-page L2e2 job, reads `CR_BIF_INT_STAT` 0x90002 and
+`CR_BIF_FAULT` 0x3e017001 and `CR_EVENT_STATUS` 0x20000000 with `CR_EVENT_STATUS2` 0x440 at 2.8 s
+and 3.8 s, clear after the debugfs reset (E765); the transfer's write fault of E021 (debugfs
+`xfer_ro`, no hold needed) reads 0x80020 and 0x32200001, writes nothing, and the same status 0x440
+(E766). Neither fault raises a status bit of its own (the frozen HE), unlike the EDM's write fault,
+which leaves 0x400 (E444). So of "whether a fault of another unit sets another status bit", the
+texture unit's fetch and a transfer's write are answered: bit 6 and no other, no bit 7. Not
+answered: the 3D's own stores, the ZLS, a held TA-write fault (a5 and a6 did not run), and the
+type-1 transfer fault (0x90020).
+
+Post hoc, from the timeline rows (not frozen, nothing was predicted): in the three held render
+faults and the transfer's, `CR_EVENT_STATUS2` bit 7 (TA read) or bit 6 (background fetch, texture
+fetch, transfer write) sets 121.1 to 124.1 us after the fault word appears, with `CR_EVENT_STATUS2`
+0x400 in between (sampling about every 4.3 us), so the bit follows the fault and is not raised with
+it (E764, E765, E766). What sets it, hardware or the firmware's reaction, is open, and bears on
+Q082. Also post hoc and [infer]: at the kernel's reset of each of three held render faults
+`CR_BIF_INT_STAT` and `CR_BIF_FAULT` read clear (0x80000 and 0) in the first row of the reset,
+6.8 to 11.3 ms before the status registers are host cleared and before the kernel writes the clear
+bit of `CR_BIF_CTRL` (E767); the kernel's order is halt (deinit script and soft reset), then the
+clears. That reads as the halt leaving the fault reading zero, a lead for "what clears a latched
+fault"; whether the latch is cleared or only reads zero while the block is in reset, and whether the
+clear bit alone clears it without the halt (a kernel change), is not shown. Status: narrowed.

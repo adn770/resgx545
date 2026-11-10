@@ -5187,12 +5187,64 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   controls reproduce (f-ctl0, f-dpm-0); held out: f-dpm-1e exact 2 of 2; repeat only: f-dpm-dc0
   exact 2 of 2.
   *bif; HW, infer; data: `render-closing-s1b:out/p-f/`.*
+- `E762` S3's control a4 (tri --tri-full at 320 x 400, CR_TE_AA 0x20000000, mode 2 with E507's
+  sample words, in a render context made for 544 x 400) completed and stored the triangle colour in
+  all but 28 of 128000 pixels, the first wrong one at (304, 128) holding the clear colour
+  0xff203040; E727's region model, unchanged and run after the session, predicts exactly 28
+  background pixels with the first at (304, 128) (7 in each of the 32 x 16 tiles (9, 8), (7, 13),
+  (5, 18), (3, 23), at their top-left corners), with the TA's own per-tile primitive masks as well
+  as with the model's; the frozen prediction (diff 0) did not use the model, so the control's
+  failure is a design error of S3, not a hardware fault, a layout effect or a scorer error [infer,
+  post hoc].
+  *isp; HW, infer; data: `render-closing-s3:out/20261110-003114/s3-a-safe/`.*
+- `E763` In a render context made for 544 x 400, a 320 x 400 render at CR_TE_AA 0x20000000 mode 2
+  (S3's a4) had a TA data buffer of 0xa000 bytes (the maximum's layout: --max-width takes effect)
+  and the TA wrote in it one array of 512 region headers at 0x4000 to 0x57f4, the target's own
+  layout (2 x 2 macrotiles of 8 x 16 regions, rgn_size 0x1800, not the maximum's 0x2400), 250 inside
+  the target with a stream block each and 262 flagged outside it, and nothing below 0x4000 or from
+  0x5800 to 0xa000 (1 run).
+  *ta; HW, infer; data: `render-closing-s3:out/20261110-003114/s3-a-safe/`.*
+- `E764` Held with debugfs hold_recovery and read 2.8 s and 3.8 s after the launch, E444's two
+  faults reproduce word for word (1 run each): the TA's read of an unmapped stream page
+  CR_EVENT_STATUS 0x20000000, CR_EVENT_STATUS2 0x480, CR_BIF_INT_STAT 0x90008, CR_BIF_FAULT
+  0x3e000001, the background program's fetch 0x20000000, 0x440, 0xd0400, 0x0001f061, each stable
+  between the two reads and clear after the debugfs reset (the frozen verdict, a control passing);
+  and, read post hoc from the timeline rows (not frozen), sampled about every 4.3 us from the
+  launch, the fault word and address appear first with CR_EVENT_STATUS2 still 0x400, and bit 7 (TA
+  read) or bit 6 (background fetch) sets 121.2 and 121.1 us later, no other bit rising up to the
+  reset.
+  *edm; HW, infer; data: `render-closing-s3:out/20261110-003209/s3-e1-ctl/`.*
+- `E765` Held with debugfs hold_recovery, S1's texture job that reads past the probe's 64 KiB
+  scratch (s1d-tw64x64-l2e2, E722's ad-tw64x64-L2e2 at the 16-page scratch of E743) faults at
+  CR_BIF_INT_STAT 0x90002 and CR_BIF_FAULT 0x3e017001 (page 0x3e017, as in S1) and reads
+  CR_EVENT_STATUS 0x20000000 and CR_EVENT_STATUS2 0x440 at 2.8 s and 3.8 s, clear after the debugfs
+  reset, the frozen HE (no status bit of its own; 1 run, held out); post hoc from the timeline rows
+  (not frozen), sampled every 4.3 us the fault word appears with status2 0x400 and bit 6 sets 122.5
+  us later, as for E444's background fetch.
+  *texture; HW, infer; data: `render-closing-s3:out/20261110-003406/s3-e1/`.*
+- `E766` debugfs xfer_ro (E021's 64 x 32 fill aimed at a read-only alias of a kernel buffer) on the
+  current kernel writes nothing and faults at CR_BIF_INT_STAT 0x80020 and CR_BIF_FAULT 0x32200001 as
+  in E021, and reads CR_EVENT_STATUS 0x20000000 and CR_EVENT_STATUS2 0x440 at 2.8 s and 3.8 s, clear
+  after the debugfs reset: the transfer's write fault raises no status bit of its own and reads
+  0x440, not the EDM write fault's idle 0x400 (the frozen HE, not HE-edm; 1 run, held out); post hoc
+  from the timeline rows (not frozen), bit 6 sets 124.1 us after the fault word.
+  *transfer; HW, infer; data: `render-closing-s3:out/20261110-003455/s3-xfer/`.*
+- `E767` Sampled every 4.3 us through the debugfs reset of three held render faults (S3's
+  e1-ta-read, e1-bg-fetch, e1-tex), CR_BIF_INT_STAT drops to the idle 0x80000 and CR_BIF_FAULT to 0
+  in one row while CR_EVENT_STATUS and CR_EVENT_STATUS2 keep their held values (0x20000000 and 0x480
+  or 0x440), and the two status registers read 0 only 11.3, 8.2 and 6.8 ms later; by the kernel's
+  reset code the first change is the halt (the firmware's deinit script and the soft reset of every
+  block) and the second the host clears that follow the CLEAR_FAULT write of CR_BIF_CTRL, so the
+  fault already reads clear before CR_BIF_CTRL's clear bit is written [infer, post hoc, outside the
+  frozen window].
+  *bif; HW, infer; data: `render-closing-s3:out/20261110-003209/s3-e1-ctl/`,
+  `render-closing-s3:out/20261110-003406/s3-e1/`.*
 
 ## By unit
 
 ### bif
 
-Records: E151, E457, E573, E592, E745, E761.
+Records: E151, E457, E573, E592, E745, E761, E767.
 
 ### dpm
 
@@ -5205,7 +5257,7 @@ E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753.
 Records: E009, E014, E017, E084, E146, E152, E153, E154, E155, E156, E157, E158, E159, E160, E161,
 E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321, E353, E402, E431, E444,
 E450, E531, E532, E533, E536, E537, E538, E539, E540, E550, E600, E601, E602, E603, E604, E605,
-E746, E747, E748, E749, E750, E751, E752.
+E746, E747, E748, E749, E750, E751, E752, E764.
 
 ### firmware
 
@@ -5218,7 +5270,7 @@ E215, E216, E217, E218, E219, E220, E222, E224, E225, E226, E227, E228, E229, E2
 E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E290, E291, E330,
 E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E508, E510, E590,
 E606, E607, E618, E660, E661, E662, E680, E681, E682, E683, E684, E727, E728, E731, E739, E740,
-E741, E757, E758.
+E741, E757, E758, E762.
 
 ### mte
 
@@ -5252,18 +5304,18 @@ E448, E449, E451, E458, E462, E732.
 
 Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180, E181, E247, E257,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
-E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754.
+E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763.
 
 ### texture
 
 Records: E033, E034, E035, E036, E037, E038, E039, E040, E041, E042, E114, E116, E242, E254, E271,
 E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441, E560, E561, E562,
 E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E726, E733, E743,
-E744, E760.
+E744, E760, E765.
 
 ### transfer
 
-Records: E015, E016, E018, E019, E020, E021, E022, E024, E027, E028, E272, E398, E455, E620.
+Records: E015, E016, E018, E019, E020, E021, E022, E024, E027, E028, E272, E398, E455, E620, E766.
 
 ### tsp
 
