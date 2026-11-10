@@ -61,3 +61,13 @@ pixel square), that 1/w truncated at 3e-5 and rounded at 3e-4: every frozen clam
 at least once and none is consistent. The z cuts repeat as clipped polygons (4 and 3 vertices, 2 of
 2, repeat only). Open: the clamp's rule, the depth at w other than 1, the vertex rules of the clip
 cuts, the limit of the region lists and coordinates finer than 1/256.
+
+Note 2026-11-10 (a post hoc reading of E736's viewport-offset cells, a fit and not a test, made
+before the round 2 runs; see the note of E736). [infer] The viewport's word 6 is an absolute x
+offset (default 32.0), so the window x is X + 32 x_clip: e3o-x64 put the triangle at x 40 to 88 and
+e3o-x128 at 104 to 152, inside macrotile 0's 128-wide region grid and yet with no object. The
+reading that the limit of the region lists is the macrotile grid is therefore refuted on existing
+data; E542's tile rule applied to the target's regions only (low side closed, high side open) fits
+all the cells, with the object's minimum x going out of reach in (64, 104]. The clause "the limit
+of the region lists" is narrowed to that interval and that candidate; the boundary itself has not
+been run.

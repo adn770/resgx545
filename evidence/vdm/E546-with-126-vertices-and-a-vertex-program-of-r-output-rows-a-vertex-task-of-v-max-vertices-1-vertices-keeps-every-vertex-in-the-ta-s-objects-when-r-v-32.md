@@ -56,3 +56,8 @@ six (x2156 with a split of 9, 9 and 3, x2260 with the regular split, x2288 with 
 vertex at 33 with 8 rows is a recurring event of that job and not a one-off, intermittent under a
 reset before every job. That the vertex lost here is vertex 70 is not shown (this record does not
 give its id).
+
+**Correction 2026-11-10:** The primitive list the jobs above compare with the control's is read, post hoc
+and as a fit, as a triangle strip of index plus edge flag fields and not as vertex numbers from 16
+(see the note of E181 and Q070). The comparison here, the list equal to the control's and the
+vertices counted per object, does not depend on that reading and stands.

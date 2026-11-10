@@ -76,3 +76,17 @@ Open: what C compares and why the raise is 0x20 (Q210), and dword 36, which is n
 vertex count alone: at 1500 vertices it read 1, 1, 3, 2, 3 and 3 over P = 0x320 to 0x3c0, and the 2
 at 1350 and 3 at 1380 vertices reproduced at P = 0x3e0 only (a repeat of S1's post hoc reading, not
 held out).
+
+Correction 2026-11-10 (a post hoc reading of data measured before it, a fit and not a test, made
+before the round 2 runs; see the correction of E753). The "open" statement above that dword 36 is
+not a step in the vertex count alone stands, but it has a reading: in the 99 jobs of 150 with a
+control block and a TA-data dump that did not raise (S1 and S1b's g-e1, E630's wd-glist, E704's
+dpm-oom, E625's triangle jobs), dword 36 = max(g - 2, 0), g the page count of the global list
+(99 of 99); every job where it differs is a raised one (9 of 9 in S1 and S1b, 77 in E625's data),
+as E627 explains. [infer] So dword 36 is the global list's page count at the first abort less 2,
+saturating at 0 (E310's firmware reading), the global list's pages hold the objects, and E753's "1,
+1, 3, 2, 3, 3 over P" is the number of object pages the TA had taken when the threshold hit, which
+depends on how far the scene had got and not on the vertex count alone. Held-out part: the raised
+jobs, scored by sampling `CR_DPM_GLOBAL_PAGE_STATUS` (0x072c, G0828) during them: E256, E312 and
+E358 sampled it (0x10001 through renders and a 1024x768 partial render), but no timeline of S1's or
+S1b's g-e1 jobs holds it.

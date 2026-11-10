@@ -79,3 +79,16 @@ calls the closed task can stop the tick as well (Q152).
 that stops it), more than one instance or a second task slot, the effect of a reset on i and sa in
 general (Q158), an arbitrary pclink write (the verifier of the fork as fixed refuses it), and the
 tick rate after the reader at the next event (the rate window follows the step).
+
+**Correction 2026-11-10:** A reading of this record's own data, made before the round 2 runs; the
+measurements above stand. [data] The three markers the writers stored in sa64 (the first entry of
+each round's list in b-markers.json of the tail-pair data) are 0x8add1e25, 0xeec4f0dd and
+0xf8a4ac80, and all three have bit 1 clear. [infer] The tick arrives in `pa0` bit 1 (E155) and the
+sa64 value reads 2 after every pass (above); a marker with bit 1 clear in the word the closed task
+dispatches on would make that pass not a tick, so the closed task would skip the tick handler on it,
+which would leave p1 and pclink (6, the writer's own tail triple) as the writer left them on the
+next entry (Q124). That is a reading of the three markers; it is not tested (nothing wrote a
+marker with bit 1 set), and a count of HostCtl dword 12 short by one on those passes, which would
+support it, is not recorded in this record or in the dataset files read for this note. It is also
+not shown that the same mechanism explains E537's stop (where the sa65 write is the leading
+candidate, not established).

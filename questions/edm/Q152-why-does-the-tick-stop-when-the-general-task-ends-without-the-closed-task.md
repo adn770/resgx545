@@ -88,3 +88,21 @@ earlier wrappers (E532) are not controls: they differ in more than one of these.
 To settle it: state3.s cmd 2, 3 and 1, each three times, then cmd 4 last, one reset at most per
 stop, the stop rule first (a second stop ends the stage), predictions frozen after E537 and before
 the first run. A repeat of cmd 4 alone would say whether the stop repeats.
+
+Note 2026-11-10 (offline readings of E536's and E537's own data, made before the round 2 runs so
+that their predictions are fixed against them; not new measurements; see the notes of E537 and
+E536). E537's stop signature, from its register dump: `CR_CLKGATESTATUS` 0x000ccfa0 (busy, the
+idle value is 0x20), `USE0_SERV_EVENT` 0x9e0 (bit 16 empty clear, the count not moving),
+`EVENT_TIMER` 0x01038ec3 and `EVENT_STATUS` 0x20000000 [data]. [infer] The timer ran, events were
+queued, and a USSE task stayed resident, so the closed task did not end (E154: its waits are
+polls); a reset should be preceded by this dump on every stop. The sa65 the cmd-4 writer wrote,
+0xb009c5dc, read as `pa1` (E155's layout) sets bits 4, 7, 8, 10 and 19 among others with no job in
+flight, under a count byte of 0xb0, and its sa64 0xb0150d9d has bit 1 clear (not a tick) [data for
+the words, infer for the reading]. The closed task dispatched on that word: the sa65 write is the
+leading candidate for E537's stop, with a mechanism (a word asking for handlers no event raised);
+it is not established, and the p0 = p1 = 1 predicates and the sa, r and i writes with them are not
+excluded. Of E536's three sa64 markers all have bit 1 clear [data], so on those passes the closed
+task may have skipped the tick handler, the reading that would leave pclink 6 and p1 as left at
+the next entry (Q124) [infer, untested]. Hypotheses named for the next runs, to be frozen before
+them: the alias hypothesis (all the closed task sees passes through sa64 and sa65), sa63 alone,
+and p0 = p1 = 1 at the tail call with sa, r and i written.

@@ -42,3 +42,15 @@ terms = [
   pixel program that runs long; a TA or pixel task that runs past a short time is the reading
   that fits both, the header naming them TA and 3D triggers [infer].
 - A bus fault raises no event bit of its own in either status register (Q003) [HW: one fault].
+
+**Correction 2026-11-10:** The reading above that bit 6 follows "a pixel program that runs long" and
+"a task that runs past a short time" is narrowed by two facts already in the records, read before
+the round 2 runs and not a new measurement. [data] The renders of this record (up to 4096x4096,
+one to three each) run long without a loop and never set bit 6, and E431's single-run job times
+run from 797 us at 16 iterations to 1917 us at 136. [infer] Interpolated, the latch's threshold
+(53 against 55 iterations) sits at about 1.1 to 1.3 ms of job time (the render times were not
+compared here), while this record's loop fills set the bit 0.10 to 0.32 ms after the pixel units
+start, so job time is not the measure either. So "time since
+the pixel units started" is not supported, and the latch watches something that grows with the
+loop length of an instance (E431's note); the delay of about 121 us between a fault word and the
+bit in E764 to E766 would then be a different condition from this one, which is not tested.

@@ -42,3 +42,15 @@ sets neither (E444). [infer] The near-equal delay for the two bits points to a t
 fault, or to the firmware's reaction to a stalled pipeline, rather than to the fault word; that
 reading is not tested (a threshold of E431 is in loop iterations, and a delay in time here is of
 a different kind).
+
+Note 2026-11-10 (offline readings of E357 and E431 before the round 2 runs; not new measurements;
+see the notes of both). E357's renders, long but not looping, never set bit 6, so "time since the
+pixel units started" is not supported [data for the renders, infer for the reading]. E431's job
+times (single runs, steps of 8) rise from 797 us at 16 iterations to 1917 us at 136, about 9.3 us
+per iteration [data]; with the threshold at 53 against 55 iterations, that is about 1.1 to 1.3 ms
+of job time [infer: interpolated between the single runs].
+[infer] The latch watches something per instance of the pixel program, with the loop length
+as the knob; occupancy (the target's size) is the untried second knob. The 121 us of E764 to E766
+between a fault and the bit is a different condition and is not tested. An estimate of resident
+instances and of instructions per clock from 440 instructions in 121 us was proposed offline and is
+not recorded here: it rests on a clock not read from the repository.

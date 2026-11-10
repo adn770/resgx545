@@ -63,3 +63,15 @@ spacing are void: at thr0 = 5 and 6 each of the first three kicks overflowed alo
 four-triangle scene formed. The six U are fit data from now on. Open: the formula of U for a scene
 (it needs the stream bytes of sgx-pipe, not computed before the run), k and the spacing (a count job
 needs a P above one triangle's need with several triangles still accumulating).
+
+Note 2026-11-10 (an offline model run on the published data, before the round 2 runs). The TA
+model of sgx-pipe applied as it stands (`tiling`, `tile_lists` per 16x16 half-region, `walk`, 128
+bytes a stream, a page per macrotile that has streams, pages = ceil(streams / 32)) plus 1 global
+page gives every U measured so far with residual 0: 16 of 16 in the scratch table (the default
+triangle at 64x64, 128x128, 192x128, 256x256, 512x384, 1024x768 and 4096x4096 as 2, 3, 5, 5, 8, 19
+and 287; the four positions as 19, 20, 17 and 12; E735's six scenes; E627's two-triangle scene as
+24, inside its measured 23 to 26). This is a FIT, not a test: both constants (128 bytes a stream,
+1 global page) were picked from a small grid on these very data (64, 96, 160, 192 and 256 bytes
+and 0 or 2 global pages miss by 16 to 479 pages in total), and only the structure is E650's. [infer]
+It is a candidate for the formula of U, to be held to frozen predictions on scenes not yet run;
+k and the spacing are not touched by it.

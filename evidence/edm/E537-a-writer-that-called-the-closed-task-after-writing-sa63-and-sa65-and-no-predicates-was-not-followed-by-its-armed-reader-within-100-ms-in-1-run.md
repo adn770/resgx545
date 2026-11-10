@@ -44,3 +44,23 @@ only the tail triple's pclink) is not tested by either.
 **Not shown.** Which of the differences stops the tick (Q152), whether the closed task or the
 event path stops it, what the closed task did on the tick before the stop, and whether the stop
 repeats (one run).
+
+**Correction 2026-11-10:** A reading of this run's own dumps, made before the round 2 runs and not a new
+measurement; the measurements above stand. [data] The register dump taken after the stop
+(p1130-b2-variants/tailpair-stop1-regs.txt) reads `CR_CLKGATESTATUS` 0x000ccfa0 (the busy pattern
+the idle value 0x20 does not have), `USE0_SERV_EVENT` 0x9e0 and `EVENT_TIMER` (0x0acc) 0x01038ec3,
+and `EVENT_STATUS` 0x20000000. [infer] So the timer was running and events were queued, bit 16 of
+`USE0_SERV_EVENT` (empty) read clear and its count did not move, and a USSE task stayed resident:
+the closed task did not end (E154: its waits are polls), which reads as a hang inside the closed
+task and not as the EDM having stopped dispatching. [data] The writer's sa65 (the 10th marker of
+the first writer in b2-markers.json, stored by the `mov sa65, r19` of state3.s) was 0xb009c5dc and
+its sa64 0xb0150d9d. [infer] Read as `pa1` by E155's layout, the low bits of the sa65 word are 2,
+3, 4, 6, 7, 8, 10, 14, 15, 16 and 19 under a count byte of 0xb0: of the bits whose handler E155
+names these include 4 (`PIXELBE_END_RENDER`), 7 (`BREAKPOINT`), 8 (the kernel CCB reader), 10
+(`TA_TERMINATE`) and 19 (tested with the out-of-memory bits, posting nothing), with no job in flight
+to cause them; the sa64 word has bit 1 clear, so it is not a tick's. The closed task dispatches on
+the event words it finds, and the sa65 write is the leading candidate for this run's stop, with a
+mechanism (a word that asks for handlers no event raised); it is a candidate, not established: the
+p0 = p1 = 1 predicates and the sa, r and i writes remain the other differences from E536's writer
+(Q152). The register values above were read from the dump; the reading of sa65 as `pa1` is E155's
+[infer] reading, which no run has fed to the firmware.

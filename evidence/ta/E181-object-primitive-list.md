@@ -45,3 +45,20 @@ hang in the vdm/state1 table's lines3 job (E186) and are not drawn here. The rea
 list entry is a vertex triple, bit 29 a points marker and the object word's bits 31:26 twice the
 primitives less one, is the pattern of these dumps [infer].
 One run each.
+
+**Correction 2026-11-10:** A post hoc reading of the objects of S1 and S1b's g-e3 (41 dumped objects of 3,
+4 and 5 vertices; a fit on data measured before the reading, not a test), made before the round 2
+runs; the entries above stand as measured. [infer] The primitive list is a triangle strip: the
+entries of a 4-vertex object are (0, 1, 2) and (2, 1, 3), and of a 5-vertex object (0, 1, 2), (2,
+1, 3), (2, 3, 4) over the stored vertices (41 of 41 objects). Each 5-bit field is a bit 4 flag plus
+a 4-bit stored vertex index in bits 3:0: the flag says that the edge from this vertex to the next
+vertex of the triangle is a boundary edge of the polygon (0 for an internal diagonal), and it is set
+on every edge of a lone triangle, which is why the fields read as "16 to 31" above (the flag plus
+the index 0 to 15) and not as numbers counted from 16 (the object's vertices are numbered from 0).
+The stored vertex order is the strip's zigzag p1, p2, p0, p3, ... of the clipped polygon's boundary
+(41 of 41 are a zigzag of their convex hull); for the two z cuts the polygon is Sutherland-Hodgman
+over the input edges A to B, B to C and C to A, whose zigzag is exactly the stored order (2 of 2
+each, repeats included). The "meaning of the vertex numbering from 16" left open above is thus
+read as an index plus an edge flag; this is not tested by a frozen run. Q070 and E546 (whose
+primitive list equals the control's in 9 of 9 jobs, so its measurements are unaffected) refer to
+this re-reading.

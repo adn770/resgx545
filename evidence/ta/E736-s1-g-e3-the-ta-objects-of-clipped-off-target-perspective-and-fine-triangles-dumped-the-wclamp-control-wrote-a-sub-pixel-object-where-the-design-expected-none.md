@@ -62,3 +62,15 @@ for position and 1/w in 4 of 5 clamp jobs at w = 1e-5 (x and y shrunk by w over 
 1/clamp) but is not one rule: the 1/w word was the truncated reciprocal at a clamp of 3e-5, the
 rounded one at 3e-4, and the clamp of 1e-3 wrote no object here where this record's control wrote a
 0.96 pixel square, so every frozen clamp model was refuted at least once.
+
+**Correction 2026-11-10:** A post hoc reading of this record's viewport-offset cells (e3o-x8, x64, x128
+and the others), made before the round 2 runs on data measured before the reading; it is a fit, not
+a test. [infer] The viewport's word 6 is an absolute x offset (default 32.0): the window x of a
+vertex is X + 32 x_clip, so e3o-x64 put the triangle at x 40 to 88 (straddling the target's edge at
+64, with streams in target column 1 only) and e3o-x128 at 104 to 152, which is inside macrotile 0's
+128-wide region grid and yet wrote no object. A rule "the object is written when the triangle
+overlaps a macrotile of the grid" is therefore refuted on these cells, and a rule of E542's tile
+test applied to the target's regions only (low side closed, high side open) fits all five cells;
+the offset of the object's disappearance lies for its minimum x in (64, 104]. The "as HO-region"
+above stands for the cells, with this reading of what the cells show. Q230's off-target clause
+refers to this note; the boundary has not been run.

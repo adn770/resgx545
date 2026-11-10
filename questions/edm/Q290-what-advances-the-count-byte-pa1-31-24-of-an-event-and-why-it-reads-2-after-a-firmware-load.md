@@ -20,3 +20,14 @@ not tested), whether it wraps at 256 and whether any other event advances it.
 To settle it: a stage that reads the byte at the arm, after a reset and after more than 256 kicks,
 and a job type whose kernel-buffer kicks are known (a transfer, a render with a partial render),
 logged in window 2 of the ring of E746.
+
+Note 2026-11-10 (an offline reading of the kernel fork's source on branch resgx545, made before the
+round 2 runs; the source was not re-read for this note, and nothing here is a measurement). The
+kernel's `sgx_ccb_submit` bumps `BUF_KICKER` (modulo 256) before each `EVENT_KICK`; the boot's KICK2
+does not; the counter is zeroed at boot (sgxfive.c:326), and `CR_EVENT_KICKER` (0x0ac4) is
+programmed with that word's address [source]. The boot ends with a GETMISCINFO (one bump) and the
+arm's own miscinfo is a second, which would make the count 2 after an arm [infer: H-KW, the hardware
+reads the kicker word modulo 256, one candidate beside a hardware count of the writes to
+`EVENT_KICK`]. H-KW then predicts 2, 1 or 3 if the arm's post-GETMISCINFO is skipped or doubled,
+and the CCB offset (`ccbctl[0]`) advancing in lockstep would be a free instrument [infer]. An
+oddity that H-KW leaves open: the kick's own entry carries the value from before the bump.

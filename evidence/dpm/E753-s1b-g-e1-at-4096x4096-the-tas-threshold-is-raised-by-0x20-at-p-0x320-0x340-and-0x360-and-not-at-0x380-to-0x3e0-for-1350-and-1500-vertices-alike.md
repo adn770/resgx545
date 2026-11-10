@@ -67,3 +67,24 @@ increment is 0x20, whether the limit is the hardware's or the firmware's, whethe
 the target size or the other settings (one target, 4096x4096, one pixel program), a ladder finer
 than 0x20 (C is known to 0x20), vertex counts below 1350, and what dword 36 counts (it moves with
 P at 1500 vertices).
+
+**Correction 2026-11-10:** The "1, 1, 3, 2, 3, 3 over P" of dword 36 is read post hoc (a fit on
+data measured before the reading, not a test) as the page count of the global list at the first
+abort, less 2, saturating at 0, and not as a function of the vertex count alone. [data] Across 150
+jobs with a control block and a TA-data dump (S1 g-e1 22, S1b g-e1 16, E630's wd-glist 5, E704's
+dpm-oom 8, E625's triangle jobs 99) dword 36 equals max(g - 2, 0), g the pages of the global list
+in the dump, in all 99 jobs that did not raise (g = 1 gives 0 in 54, g = 2 gives 0 in 3, g = 4
+gives 2, g = 5 gives 3); the jobs where it differs from g - 2 are the raised ones (9 of 9 in S1 and
+S1b, 77 in E625's data), as E627 explains: after a raise the state page holds the lists the TA built
+after the last partial render. [infer] So dword 36 is the global list's page count at the first
+abort less 2 (E310's firmware reading, the count of `CR_DPM_GLOBAL_PAGE_STATUS` less 2, with a
+floor), and the global list's pages hold the objects (packed vertices in the walked pages of the
+1500-vertex list, streams in the macrotile pages): the step between 1350 and 1380 vertices is one
+more object page at that threshold. This corrects the wording "dword 36 moves with P" as a
+property of P: what moves is how far the scene had got when the threshold hit. The 99 of 99 is a
+fit; the held-out part is the raised jobs, which a sample of `CR_DPM_GLOBAL_PAGE_STATUS` (0x072c,
+glossary G0828) during them would score. It was sampled before (E256, E312, E358: 0x10001 through
+renders and a 1024x768 partial render, 0 after the jobs in E438) but in none of this record's or
+S1's g-e1 jobs, whose timelines cover 0x0720 to 0x0724. The counts come from
+scratch scripts (dw36_glist.py, dw36_tri.py, closing2/geometry) that read the published dumps and
+are not in the repository.

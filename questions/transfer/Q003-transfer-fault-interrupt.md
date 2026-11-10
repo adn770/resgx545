@@ -128,3 +128,20 @@ bit of `CR_BIF_CTRL` (E767); the kernel's order is halt (deinit script and soft 
 clears. That reads as the halt leaving the fault reading zero, a lead for "what clears a latched
 fault"; whether the latch is cleared or only reads zero while the block is in reset, and whether the
 clear bit alone clears it without the halt (a kernel change), is not shown. Status: narrowed.
+
+Note 2026-11-10 (a reading of the published kernel logs, made before the round 2 runs; not a new
+measurement; it adds names to the seen-bits note above and changes no table row). [infer] The
+requestor of bit 7 (words 0x90080 and 0xd0080) is the ISP's fetch of the background object or
+primitive block: the page of the fault moves with a kpoke of the descriptor that locates the
+background object (rd:18, `0x04c4`) by the bit moved shifted by 4, in the PARAMETERS range
+0x10465 to 0x10664 and the GENERAL page 0x3e000. Bit 8 (0x90100) is the TE's parameter-buffer
+access: 204 of 204 faults at PARAMETERS page 0x10000, with the TE descriptor pokes (ta:143
+`CR_TE_MTILE1`, ta:147 `CR_TE_PSG`). Bit 9 (0x90200) is the ZLS load or store: faults at six
+GENERAL pages (0x3e016, 017, 01e, 02e, 04e, 08e) that move with the control bits' rd:11 poke
+(bits 5 to 11, the page doubling with the bit). These readings rest on the address and the poke
+alone and no job whose requestor is known by another route has been run. Type 5 (bits 18 and 16),
+seen with bits 1, 3, 7, 10, 12 and 13, appears whenever the faulting address is far outside the
+mapped slot, so it reads as an address outside the directory's range, and type 1 as an unmapped
+page within it. Bits 0, 4, 6, 11, 14 and 15 are still not seen. After the faults of bits 7 and 9
+the status reads 0x440, and after bit 8 0x400 or 0x440 (129 of 204 left idle status with the TE
+faults). Both the type and the names are [infer] and the question stays open.

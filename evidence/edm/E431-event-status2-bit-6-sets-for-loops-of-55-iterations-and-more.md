@@ -22,3 +22,17 @@ not measured here.
 
 **What it does not show.** The condition's meaning beyond the task running or stalled for a while
 (E357's reading), and bit 7 (the TA). Q082 is narrowed.
+
+**Correction 2026-11-10:** A reading of this record's own data (platform-event-steps, the steps-of-8 jobs
+of its first order), made before the round 2 runs. [data] The job times the probe printed rise with
+the loop length: 797 us at 16 iterations, 858 at 24, 972 at 32 and 1917 us at 136 (single runs,
+about 9.3 us per iteration between the ends; the same jobs in the second order read 2117 us at 136,
+so single times are not tight). The "time was not measured here" above is therefore not quite so:
+the probe's job time was, and it does not show the latch at a time: the jobs of 48 and 56
+iterations took 1135 and 1308 us, while in E357's loop fills the bit sets about 0.1 ms after the
+pixel units start. [infer] Since E357's renders (one to three per case, up to 4096x4096; long, but
+not looping) never set bit 6, and
+the loop's threshold is in iterations (53 against 55) and not in time since the pixel units started,
+the latch watches something counted per instance of the pixel program, with the loop length as the
+knob; which quantity (instructions executed by one instance, instances resident, a queue depth) is
+not shown. Occupancy (the target's size) is the untried knob.

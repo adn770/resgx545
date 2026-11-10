@@ -37,3 +37,12 @@ What is open: p0, p2 and p3 (a writer whose flags differ from the control's in e
 writer that leaves pclink as a call does (E475, a taken or untaken call writes it), and whether the
 closed task's path is what keeps p1 and pclink (Q152). Until then a task must set p0-p3 by a test
 and write pclink before reading either, as a fill must (E477).
+
+Note 2026-11-10 (a reading of E536's data before the round 2 runs, not a new measurement; see
+Q152). The three sa64 markers of E536's writers (0x8add1e25, 0xeec4f0dd, 0xf8a4ac80) all have bit 1
+clear [data]. The tick is `pa0` bit 1 (E155), so on those passes the word the closed task dispatches
+on was not a tick, and the closed task may have skipped the tick handler; that would leave p1 as the
+writer left it and pclink at 6 on the next entry, against 1 and 0x98 after an ordinary tick [infer,
+untested: nothing wrote a marker with bit 1 set; a count of HostCtl dword 12 short by one on those
+passes, which would support it, is not recorded in the files read for this note]. It would explain
+p1 and pclink and not p0 (written 0, read 1), p2 and p3.

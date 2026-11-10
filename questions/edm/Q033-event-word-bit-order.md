@@ -87,3 +87,12 @@ Open: the event that sets bit 19 (none of the 138 job events carried it, among t
 renders that overflowed the parameter buffer, whose overflow path logged bits 21 and 10 in slot 2),
 and the six entries outside E547's frozen sets (a copy's pa1 bit 4, a 64x64 triangle's bit 9). The
 status registers as the host sees them, event by event, stay Q111's.
+
+Note 2026-11-10 (an offline reading before the round 2 runs, not a measurement). The last write of
+the init scripts, `EVENT_PDS_ENABLE` = 0x2204b00f (E006), has status bits 0, 1, 2, 3, 12, 13, 15,
+18, 25 and 29 set [data]. Under pa1 bit = 22 minus the status bit (E155) those below 23 map to pa1
+bits 22, 21, 20, 19, 10, 9, 7 and 4: E155's seven tested handlers plus bit 19, which E155 reads as
+`DPM_REACHED_MEM_THRESH` (status bit 3) [infer]. So that event can arrive at the task: the enable
+mask lets it through, which is not evidence that any job raises it. Lead [infer, no test]: status
+bit 25 (`DPM_OUT_OF_MEMORY_ZLS`) would sit in `pa0` at bit 5 if pa0 bit = 30 minus the status bit,
+a rule only the timer (pa0 bit 1) supports so far.

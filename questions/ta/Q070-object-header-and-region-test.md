@@ -59,3 +59,14 @@ and whose closed-driver clause is Q161. What is open of this question: the forma
 other than 18 (none changed in 56 completed jobs; OUTSEL bit 12 clears the word, E544), the line
 region rule (Q159) and several lines (Q160), and that the ISP walks the headers [infer].
 Status: narrowed; the line rule moved to Q159 and Q160.
+
+Note 2026-11-10 (a post hoc reading of the 41 objects of S1 and S1b's g-e3, a fit and not a test,
+made before the round 2 runs; see the note of E181). [infer] The primitive list's 5-bit fields are
+an edge flag (bit 4: the edge from this vertex to the next one of the triangle is a boundary edge
+of the polygon, 0 for an internal diagonal) plus a 4-bit stored vertex index, and the list is a
+triangle strip: (0, 1, 2), (2, 1, 3), (2, 3, 4) over the stored vertices (41 of 41 objects of 3, 4
+and 5 vertices). This re-reads "vertex numbers 16 to 31" (E181, whose list entries E546 compares)
+as the index with the flag set on every edge of a lone triangle. The stored vertex order of a
+clipped polygon is the strip zigzag of its boundary (41 of 41), and for the two z cuts it is the
+Sutherland-Hodgman polygon over the edges A to B, B to C, C to A (2 of 2 each). Not predicted by
+any frozen run; the clipped-polygon rules stay with Q230.
