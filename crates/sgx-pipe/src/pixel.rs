@@ -595,4 +595,71 @@ mod tests {
         let w = usep_words();
         assert!(text(w[(UP_EOT / 8 + 1) as usize]).starts_with("mov.skipinv r0"));
     }
+
+    /// The fixture's scene with its pixel program replaced by `src` (the library's phase word,
+    /// then the instructions: the last must end the program) and rendered through `render::run`.
+    fn render_with(at: usize, src: &[&str]) -> crate::scene::SceneResult {
+        let mut sc = Scene::from_fixture(FIXTURE, "first-triangle/64x64");
+        let mut w = usep_words();
+        for (i, t) in src.iter().enumerate() {
+            w[at + i] = usse_isa::encode(t, Core::Sgx545).unwrap_or_else(|| panic!("{t}"));
+        }
+        let seg = sc.memory.iter_mut().find(|m| m.role == "usep").unwrap();
+        let mut d: Vec<u32> = w.iter().flat_map(|x| [*x as u32, (*x >> 32) as u32]).collect();
+        let n = seg.dwords.as_ref().unwrap().len();
+        d.truncate(n);
+        seg.dwords = Some(d);
+        crate::render::run(&sc).unwrap()
+    }
+
+    /// Word indices (in 64-bit words) of the colour write after the phase word, in the fixture's
+    /// pixel page: the triangle's primary program (u0 0x8000200, phase at 32) and the background
+    /// object's (u0 0x20, phase at 2, the fill 0xFF203040).
+    const TRI_PROGRAM: usize = 33;
+    const BG_FILL: u32 = 0xff20_3040;
+
+    #[test]
+    fn a_triangles_pixels_read_g23_g24_and_g25_and_the_background_keeps_its_own_shader() {
+        // E808: in the triangle's task g23 = x mod 32, g24 = y mod 16, g25 = the lane of the quad
+        type Want = fn(u32, u32) -> u32;
+        let cases: [(&str, Want); 3] = [
+            ("g23", |x, _| x % 32),
+            ("g24", |_, y| y % 16),
+            ("g25", |x, y| (x & 1) | (y & 1) << 1),
+        ];
+        for (g, want) in cases {
+            let src = format!("mov.skipinv.end o0, {g}");
+            let r = render_with(TRI_PROGRAM, &[&src]);
+            assert!(r.pixel_refusal.is_none(), "{g}: {:?}", r.pixel_refusal);
+            let img = r.image.unwrap();
+            let (mut tri, mut bg) = (0, 0);
+            for (i, &v) in img.iter().enumerate() {
+                let (x, y) = (i as u32 % 64, i as u32 / 64);
+                if v == BG_FILL {
+                    bg += 1;
+                } else {
+                    // a triangle pixel: o0 is the value the program read (the PBE stores it as is)
+                    assert_eq!(v & 0xff, want(x, y), "{g} at ({x}, {y}): {v:#x}");
+                    tri += 1;
+                }
+            }
+            assert!(tri > 100 && bg > 100, "{g}: triangle pixels {tri}, background {bg}");
+        }
+    }
+
+    #[test]
+    fn a_triangles_pixel_program_reading_another_global_is_refused_by_the_open_question() {
+        // the background object's shader may read g17 (a fill, E086): the triangle's may not (E808)
+        let r = render_with(TRI_PROGRAM, &["mov.skipinv.end o0, g17"]);
+        match r.pixel_refusal {
+            Some(Outcome::Unsupported { why, ids }) => {
+                assert!(why.contains("g17") && why.contains("triangle"), "{why}");
+                assert!(!ids.is_empty(), "{why}");
+            }
+            o => panic!("{o:?}"),
+        }
+        // the same read in the background's own program still renders: it is a fill's task
+        let r = render_with(3, &["mov.skipinv.end o0, g17"]);
+        assert!(r.pixel_refusal.is_none(), "{:?}", r.pixel_refusal);
+    }
 }
