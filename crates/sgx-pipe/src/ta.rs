@@ -171,6 +171,21 @@ pub const HEADERS_AT: u32 = 0x4000;
 const STREAM_STEP: u32 = 0x80;
 const PAGE: u32 = 0x1000;
 
+/// The 24-bit field of a window coordinate: (c + 4096) * 256. A multiple of 1/256 is exact; one on
+/// the 1/1024 grid is rounded to the nearest 1/256 (E778: 18 of 18 coordinates of three held-out
+/// triangles, truncation refuted 3 of 3). What E778 did not run stays refused: a tie (an exact half
+/// step), a grid finer than 1/1024 and anything the field cannot hold.
+fn pack_coordinate(c: f32) -> Option<u64> {
+    let q = (c as f64 + 4096.0) * 256.0;
+    let frac = q.fract();
+    let r = match frac {
+        0.0 => q,
+        0.25 | 0.75 => q.round(),
+        _ => return None,
+    };
+    (0.0..16777216.0).contains(&r).then_some(r as u64)
+}
+
 /// The object's dwords for the triangles (window coordinates), at the start of the parameter buffer:
 /// three PDS words, the 1/w of each vertex, ISP words, primitive list, line widths, format word,
 /// four masks, packed vertices (E176, E181, E308, E541, E651).
@@ -215,16 +230,15 @@ pub fn object_words(tris: &[[Vertex; 3]], st: &State) -> Result<Vec<u32>, Outcom
     let mut push = |v: u64, n: u32| bits.extend((0..n).map(|i| v >> i & 1 != 0));
     for v in tris.iter().flatten() {
         for c in [v.y, v.x] {
-            let q = (c as f64 + 4096.0) * 256.0;
-            if q.fract() != 0.0 || !(0.0..16777216.0).contains(&q) {
+            let Some(q) = pack_coordinate(c) else {
                 return Err(refuse_ids(
                     format!(
-                        "window coordinate {c}: more than 8 fraction bits or past the 24-bit field: how the TA rounds it was not dumped"
+                        "window coordinate {c}: off the 1/1024 grid, a tie of the rounding to 1/256 or past the 24-bit field: how the TA rounds it was not dumped (E778)"
                     ),
                     &["Q230"],
                 ));
-            }
-            push(q as u64, 24);
+            };
+            push(q, 24);
         }
         push(v.z.to_bits() as u64, 32);
     }
@@ -744,6 +758,38 @@ mod tests {
                 Err(Outcome::Unsupported { ids, .. }) => assert_eq!(ids, ["Q230"], "({x}, {y})"),
                 r => panic!("({x}, {y}): {r:?}"),
             }
+        }
+    }
+
+    #[test]
+    fn a_coordinate_on_the_1_over_1024_grid_is_packed_rounded_to_nearest_e778() {
+        // E778's three held-out triangles (odd multiples of 1/1024, no ties) and the
+        // 24-bit fields the hardware stored, x then y per vertex
+        let cases: [([f32; 6], [u64; 6]); 3] = [
+            (
+                [8239.0, 8341.0, 57367.0, 20727.0, 20573.0, 57373.0],
+                [1050636, 1050661, 1062918, 1053758, 1053719, 1062919],
+            ),
+            (
+                [8309.0, 8207.0, 57535.0, 20533.0, 20559.0, 57559.0],
+                [1050653, 1050628, 1062960, 1053709, 1053716, 1062966],
+            ),
+            (
+                [8359.0, 8263.0, 57469.0, 20519.0, 20717.0, 57447.0],
+                [1050666, 1050642, 1062943, 1053706, 1053755, 1062938],
+            ),
+        ];
+        for (nums, fields) in cases {
+            for (n, f) in nums.iter().zip(fields) {
+                assert_eq!(pack_coordinate(n / 1024.0), Some(f), "{n} / 1024");
+            }
+        }
+        // the grid of 1/256 stays exact (E651), and the cases E778 did not run stay refused: a tie
+        // (a numerator 2 mod 4), a finer grid, and a field past 24 bits
+        assert_eq!(pack_coordinate(8.0), Some(1050624));
+        assert_eq!(pack_coordinate(8.0 + 1.0 / 256.0), Some(1050625));
+        for c in [8.0 + 2.0 / 1024.0, 8.0 + 1.0 / 2048.0, 8.001, 61440.0, -4097.0] {
+            assert_eq!(pack_coordinate(c), None, "{c}");
         }
     }
 

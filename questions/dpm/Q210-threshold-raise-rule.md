@@ -1,11 +1,11 @@
 +++
 id = "Q210"
-question = "what exception to the raise rule of E625 and R2 is wd-glist-1500 (no raise at dword 36 = 3, at every P tried from 0x422 to 0x500), and what makes the DPM raise the first abort's threshold by 0x20 otherwise"
+question = "what does the DPM compare with the limit C = 0x371 that decides whether the first abort's threshold is raised by 0x20 (E774: raised iff thr0 + 0x20 <= C at 4096x4096, 1350 and 1500 vertices; wd-glist-1500's missing raise at P of 0x422 and above is the clamp of thr0 at 0x400, E753), why is the raise 0x20, and is C a constant of the core or the firmware, or does it follow the knob P, the target or the scene"
 unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E310", "E312", "E464", "E625", "E627", "E629", "E704", "E734", "E753"]
+evidence = ["E310", "E312", "E464", "E625", "E627", "E629", "E704", "E734", "E753", "E774", "E779"]
 terms = ["Dynamic Parameter Management (DPM)", "CR_DPM_STATE_BASE0", "ta3d_ctl"]
 +++
 
@@ -70,3 +70,19 @@ none at 0x380 to 0x3e0, for 1350 and 1500 vertices alike, controls passing, HP1 
 (raise iff 2 * thr0 < U + k) alone does not give the step: every non-raising ladder job had its
 second run reach thr0. Open: what the DPM compares with C, why the increment is 0x20, and whether C
 depends on the target size and the scene (one target, 4096x4096, one pixel program).
+
+Narrowed 2026-11-10 (R1-pixgeo, E774; the limit is exact, the question stays open). A fine ladder
+at 4096x4096 (15 cells of 1500 vertices in steps of 2, 5 of 1350, a step-1 cell after the flip, both
+E753 controls reproduced, each job's own 0x0624 read P - 0x22) raised the threshold by 0x20 at every
+P from 0x360 to 0x373 and at none from 0x374 to 0x380, one flip: the raise happens iff thr0 + 0x20
+<= C with C = 0x371 (thr0 at most 0x351, 849 pages), so the last raised threshold is 0x371 and the
+first refused 0x372. HP1 held out: each of the 5 cells of 1350 vertices gave the outcome of the 1500
+cell at that P. E753's ladder, E734's raises, E704's clamp case and E625's default-triangle raises
+are all on the side of C that their thr0 puts them (a check after the run, not frozen). The clause
+"wd-glist-1500 as an exception" is answered by the clamp (E753) and the limit. What the ladder does
+not separate: it moves P and thr0 together, so a constant C of the core or the firmware and a limit
+tied to P give the same flip; the descriptor poke of the proposal (a threshold set without P, E625's
+`pb:11`) and a second target (2048x2048) did not run. E779's nine jobs at the default triangle
+(thr0 0x7e to 0x8e) all raised, as C says. Open: what C is compared with and why the increment is
+0x20, whether C follows P (a poke ladder), and whether it moves with the target and the scene
+(2048x2048, another triangle count).

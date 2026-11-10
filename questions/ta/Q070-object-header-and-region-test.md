@@ -5,7 +5,7 @@ unit = "ta"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E176", "E177", "E180", "E181", "E185", "E306", "E307", "E308", "E414", "E541", "E542", "E543", "E544"]
+evidence = ["E176", "E177", "E180", "E181", "E185", "E306", "E307", "E308", "E414", "E541", "E542", "E543", "E544", "E777"]
 terms = ["PB_OBJ.PDS_WORDS", "PB_OBJ.SET_MASKS", "PB_OBJ.FORMAT", "CSTREAM.PRIM_TILES",
          "REGION_HDR.POS"]
 +++
@@ -70,3 +70,13 @@ as the index with the flag set on every edge of a lone triangle. The stored vert
 clipped polygon is the strip zigzag of its boundary (41 of 41), and for the two z cuts it is the
 Sutherland-Hodgman polygon over the edges A to B, B to C, C to A (2 of 2 each). Not predicted by
 any frozen run; the clipped-polygon rules stay with Q230.
+
+Narrowed 2026-11-10 (R1-pixgeo, E777; not retired). The primitive-list clause of the note above
+was held to frozen predictions on 5 clipped objects not in its 41 (4 and 3 vertices, a cut in x and
+in y, two-plane cuts, a replicate): the entries are the strip triangles (0, 1, 2) and (2, 1, 3) of
+the stored vertices with bit 4 set for a boundary edge and the 4-bit stored index, (16, 1, 18) and
+(2, 17, 19) for 4 vertices and (16, 17, 18) for 3, in 5 of 5, controls passing. So "vertex numbers
+16 to 31" (E181, whose list entries E546 compares) is read as an index plus an edge flag, held out
+once; the stored vertex order is E777's (Q230). What stays open here is unchanged: the format word
+beyond 18, the set masks, the line and point region rules (Q159, Q160) and that the ISP walks the
+headers.

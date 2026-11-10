@@ -1,11 +1,11 @@
 +++
 id = "Q211"
-question = "what is the page need U of a scene at a macrotile grid (19 pages for the default triangle at 1024x768, 287 at 4096x4096) and what is the constant k, 2 to 13, that the partial-render count adds to it?"
+question = "what are the constant k and the spacing s of the partial-render count of a scene of page need U (E625's 1 + floor((U + k - thr0) / (thr0 + s)) with k from 2 to 13 is refuted at U = 287, E779), and does the page need U of HU1 (E773: exact for 15 held-out scenes made of the tool's triangle) hold for wide scenes of many vertices and other shapes (E630)?"
 unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E310", "E625", "E630", "E705", "E735"]
+evidence = ["E310", "E625", "E630", "E705", "E735", "E773", "E779"]
 terms = ["Dynamic Parameter Management (DPM)", "Parameter Buffer (PB)"]
 +++
 
@@ -75,3 +75,18 @@ and 287; the four positions as 19, 20, 17 and 12; E735's six scenes; E627's two-
 and 0 or 2 global pages miss by 16 to 479 pages in total), and only the structure is E650's. [infer]
 It is a candidate for the formula of U, to be held to frozen predictions on scenes not yet run;
 k and the spacing are not touched by it.
+
+Narrowed 2026-11-10 (R1-pixgeo, E773 and E779). The U clause is answered for scenes made of the
+tool's triangle: HU1 (the TA model of sgx-pipe, 128 bytes a stream, a page per macrotile with
+streams, plus 1 global page) was held to frozen predictions on 15 scenes not measured before (the
+triangle moved, two to four copies, 640x480 to 4096x4096, U from 7 to 438) and gave the page need
+exactly in 15 of 15 (the peak of 0x0724 and the free-list walk agreed in all 17 jobs), the controls
+19 and 29 passed, HU2 (macrotiles plus 8) failed 8 of 8 where it differs, and E625's overflow rule
+with HU1's U held in 4 of 4 boundary jobs. The first held-out test of the candidate above passed.
+The count clause failed: at U = 287 (4096x4096, the default triangle) the partial-render count was
+2 at P = 0xa0 and 1 at 0xa3 to 0xa9 and 0xb0, and none of the 24 pairs (k 2 to 13, s 0x1e or 0x1f)
+of E625's formula fits (every pair predicts 2 at 0xa3); the step lies between thr0 126 and 129, and
+the formula's form fits with k at most 1, a reading not checked against E625's other cells. Open: k
+and s, whether the count formula's form holds with another k (P = 0xa1 and 0xa2, the spacing cells
+at count 3), and U for wide scenes (E630's 300 to 900 vertices, `--vertices N`) and for shapes other
+than the tool's triangle.

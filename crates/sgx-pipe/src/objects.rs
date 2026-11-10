@@ -187,6 +187,17 @@ mod tests {
     }
 
     #[test]
+    fn a_1_over_1024_coordinate_reads_back_rounded_to_1_over_256_e778() {
+        // E778's t7-a: the hardware stored these fields, rounded to nearest (truncation refuted)
+        let g = |n: f32| n / 1024.0;
+        let t =
+            [[v(g(8239.0), g(8341.0), 0.5), v(g(57367.0), g(20727.0), 0.5), v(g(20573.0), g(57373.0), 0.5)]];
+        let w = written(&t, 64, 64);
+        let o = read_object(&w.param, OBJECT_DWORD + 6, 1).unwrap();
+        assert_eq!(o.prims[0].tri.v, [(2060, 2085), (14342, 5182), (5143, 14343)]);
+    }
+
+    #[test]
     fn the_winding_mark_reads_back() {
         let w = written(&[[v(8.0, 8.0, 0.5), v(20.0, 56.0, 0.5), v(56.0, 20.0, 0.5)]], 64, 64);
         assert!(read_object(&w.param, OBJECT_DWORD + 6, 1).unwrap().prims[0].negative);

@@ -5300,6 +5300,132 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   jobs and the order comparison of the timeline with the ring (D5) in 7 of 8 jobs.
   *edm; HW, infer; data: `edm-closing-r1-events:out/d0/`, `edm-closing-r1-events:out/d1/`,
   `edm-closing-r1-events:out/d0-try1/`, `edm-closing-r1-events:out/d1-try1/`.*
+- `E772` R1-pixgeo stage p-c2 (41 jobs: 18 configurations of S1b's p-c program as an x job and a y
+  job whose pixel words decode to their source pixel, the direct reads c-rd-g23 and c-rd-g25, the
+  premise pair c-rd-pa and one replicate): the frozen verdict is CANNOT TELL, because the global
+  control c-e709 (E709's o4g-3 unchanged) gave 10 tag-5 pairs against the frozen 17 to 29, so no
+  held-out row was scored (the order controls c-u and c-u-r2 passed the frozen 0.98 with 0.990 and
+  0.994, and c-rd-pa held 1.000 of 1062 pixels); read after the run and not held out [infer over
+  data]: under `xor.testtaz.chan0 !c0, p1, g25, #k` the tag-2 write landed only at (odd x, even y)
+  for k = 1 (120 of 489 o1 sources, 0.245), only at (even, odd) for k = 2 (118 of 484) and never for
+  k = 5 or 7 (0 of 479 and 0 of 487), the replicate the same; the direct read of g25 gave o0 = (x &
+  1) | (y & 1) << 1 in 1062 of 1062 written pixels and that of g23 gave o0 = x mod 32 in 1062 of
+  1062, so the masks 0x01, 0x08, 0x10 gave tag 2 at x bit 0, 3 and 4 and 0x20 and 0x100000 never;
+  the o4 writes were tag 5 and never tag 5' under k = 0, 3, 7 and unpredicated (37, 42, 21 and 23
+  pairs); the tag-5 pair count of the 18 configurations ran from 10 to 42, 8 of 18 outside the
+  frozen range.
+  *pds; HW, infer; data: `render-closing-r1-pixgeo:out/p-c2/`.*
+- `E773` R1-pixgeo stage g-u1 (21 jobs, P = 0x422 except the boundary jobs): the page need U of 17
+  scenes (the default triangle of the tool, one to four copies, moved or apart, at 640x480,
+  1024x768, 1280x1024, 2048x1536, 2048x2048 and 4096x4096) read as the peak of the low half of
+  0x0724 and as the free-list walk (head - 1) agreed in all 17 and equalled HU1's frozen prediction
+  (sgx-pipe's TA model as it stands, 128 bytes a stream, a page per macrotile that has streams, plus
+  1 global page) with residual 0 in 15 of 15 held-out scenes (U = 21, 22, 22, 13, 24, 30, 21, 35,
+  11, 31, 79, 60, 7, 275 and 438), the two controls 19 and 29 passed, HU2 (macrotiles with streams
+  plus 8) was refuted in 8 of 8 held-out scenes where it differs (and in 1 of 2 repeats), and E625's
+  rule (overflow iff P - 0x22 is below U) with HU1's U held in the 4 boundary jobs (overflow at P =
+  0x39 and 0x36, completion at 0x3a and 0x37, 4 of 4, held out); the frozen verdict: controls pass,
+  held out consistent HU1 (15) and E625's rule on HU1's U (4), refuted HU2 (8 of 8).
+  *dpm; HW, infer; data: `render-closing-r1-pixgeo:out/g-u1/`.*
+- `E774` R1-pixgeo stages g-c1 and g-c1f (23 jobs at 4096x4096 with 1500 vertices, 5 of them also
+  with 1350, the tool's triangle and p1139-green, the first threshold thr0 = P - 0x22 set by
+  render_pb_pages and proved by the job's own 0x0624 in 23 of 23): along P the TA's threshold was
+  raised by 0x20 (dword 38 = 0x20, dword 37 = 0x10000 | thr0, the second run reaching thr0 + 0x20)
+  at every cell from P = 0x360 to 0x373 and not at 0x374 to 0x380, one flip and no other, so the
+  raise happens iff thr0 + 0x20 <= C with C = 0x371 (thr0 at most 0x351) for this scene and target;
+  the controls reproduced E753 (raise at 0x360, none at 0x380), HP1 held (each of the 5 cells of
+  1350 vertices, P = 0x366, 0x36e, 0x372, 0x376 and 0x37a, gave the outcome of the 1500 cell at that
+  P, 5 of 5, held out), and the frozen verdict was H-abs holds with the last raise 0x372, the first
+  silent 0x374 and C in [0x370, 0x372), the step-1 cell 0x373 (g-c1f, run after the verdict) raised
+  and fixed C in [0x371, 0x372); the ladder moves P and the threshold together, so a limit tied to P
+  is not separated from a constant C by it.
+  *dpm; HW, infer; data: `render-closing-r1-pixgeo:out/g-c1/`,
+  `render-closing-r1-pixgeo:out/g-c1f/`.*
+- `E775` CR_DPM_GLOBAL_PAGE_STATUS (0x072c) was sampled in the register timelines of the DPM jobs of
+  R1-pixgeo (the gate of two trial jobs, u-ctl-1 and u-ctl-2a, ran clean: normal class, no log line
+  but ours, 0x0724 peaks 19 and 29 as the controls, a plain triangle exact after each; every later
+  DPM job sampled it), its low and high halves equal at 0x10001 to 0x50005 in the 4096x4096 jobs,
+  and the frozen side-table reading 'dword 36 of the control block = max(the 0x072c count in the
+  sample before the first abort - 2, 0)' failed its held-out part: raised jobs 0 of 14 (g-c1 0 of
+  13, g-c1f 0 of 1; every one read dword 36 = 3 against a predicted 1) and unraised jobs 6 of 9 in
+  g-c1 and 2 of 2 in g-u1 (the three misses read 3 where the TA data's global list holds 4 pages and
+  dword 36 = 2), while the 9 raised jobs of g-u2 (count 1, floor 0) fit trivially; read after the
+  run and not held out [infer over data]: the page count of the global list in the TA data at the
+  state page (E753's correction of 2026-11-10) equals dword 36 + 2 in the 9 unraised jobs of g-c1 (9
+  of 9, a reading made before the run and tested on new jobs) and in none of the 14 raised ones (0
+  of 14, as E627 says: after a raise the page holds the lists of the later runs), and the maximum of
+  the 0x072c count over the whole job less 2 (floor 0) equals dword 36 in all 23 jobs of g-c1 and
+  g-c1f (14 raised, 9 unraised; 3 in every raised job where the count reaches 5, 1 or 2 in the
+  unraised where it reaches 3 or 4).
+  *dpm; HW, infer; data: `render-closing-r1-pixgeo:out/g-u1/`, `render-closing-r1-pixgeo:out/g-c1/`,
+  `render-closing-r1-pixgeo:out/g-c1f/`, `render-closing-r1-pixgeo:out/g-u2/`.*
+- `E776` R1-pixgeo stage g-t1 (11 jobs, the tool's 64x64 triangle with the viewport's x offset
+  (block word 6) or y offset (word 8) moved, the triangle spanning offset - 24 to offset + 24): with
+  both controls passing (o-x64 an object, o-x1000 none) the TA wrote and listed an object at x
+  offset 87.5 (min x 63.5) and y offset 87.5, wrote none at x offset 88.0, 88.5, 96 and 104 (min x
+  64.0 and beyond) and none at x offset -24.0 and -24.5 (max x 0.0 and -0.5), and at y offset 88.0
+  wrote the object's 23 words and no region listed it; the frozen verdict: held out consistent none,
+  refuted HO-region (E542's tile rule on target regions only, low side closed, high side open) 1 of
+  9 (the -24.0 cell, predicted present) and HO-band (a band beyond the edge) 3 of 6 (88.0, -24.0,
+  -24.5), the written-unlisted cell undecidable for both.
+  *ta; HW, infer; data: `render-closing-r1-pixgeo:out/g-t1/`.*
+- `E777` R1-pixgeo stage g-t2 (7 jobs: vertex programs with z = A x + B or A y + B on the tool's
+  triangle, w = 1, both controls passing, E651's z-flat099 object and the 4-vertex z-cut-p object of
+  S1b): the objects of the five clipped polygons (z-cut-p05, z-slab, z-cut-ym, z-cut-m-slope and the
+  replicate z-cut-p-r2) were written as clipped polygons (clip 5 of 5), their vertex sets equalled
+  the Sutherland-Hodgman polygon over the edges A to B, B to C, C to A in 5 of 5 (nvert and set, HSH
+  10 of 10 rows) and their prim lists were the strip triangles with entry = stored index | 16 for a
+  boundary edge in 5 of 5 (HPR, (16, 1, 18) and (2, 17, 19) for 4 vertices, (16, 17, 18) for 3); the
+  stored order and depth words (0.5 + 0.5 z at every vertex, the clip-made ones 0 or 1) were those
+  of the strip zigzag of the polygon in the 2 four-vertex objects of the two-plane programs (z-slab,
+  z-cut-m-slope) when the -w plane is applied first and not when the +w plane is (-w first 2 of 2,
+  +w first refuted 2 of 2), and in 2 of 3 of the single-plane polygons (z-cut-p05 and its replicate)
+  but not in z-cut-ym, whose 3 vertices were stored in the Sutherland-Hodgman order itself, one
+  place from the frozen zigzag (the frozen rows HZZ and HDP without a plane order refuted 1 of 3
+  each, the three being z-cut-p05, z-cut-ym and the replicate).
+  *ta; HW, infer; data: `render-closing-r1-pixgeo:out/g-t2/`.*
+- `E778` R1-pixgeo stage g-t7 (4 jobs): with the control e3f-ctl (coordinates on the 1/256 grid,
+  E651's packing) passing, the window coordinates of three held-out triangles given on a 1/1024
+  pixel grid at odd multiples (a quarter or three quarters of a 1/256 step from the 1/256 grid, no
+  ties) were packed in the object's 24-bit fields as the nearest multiple of 1/256 in all 18
+  coordinates (18 x and y of t7-a, t7-b and t7-c, the frozen words of HF-round equal to the stored
+  words 3 of 3 triangles) and truncation (HF-trunc) was refuted in all three (3 of 3); the frozen
+  verdict: controls pass; held out consistent HF-round (3), refuted HF-trunc (3 of 3).
+  *ta; HW, infer; data: `render-closing-r1-pixgeo:out/g-t7/`.*
+- `E779` R1-pixgeo stage g-u2 (9 jobs: the tool's triangle at 4096x4096, one render, render_pb_pages
+  P = 0xa0 to 0xb0, U = 287 by E625 and HU1): the number of partial renders (0x0658 bit 0 stretches)
+  was 2 at P = 0xa0 and 1 at P = 0xa3, 0xa4, 0xa5, 0xa6, 0xa7, 0xa8, 0xa9 and 0xb0 (the controls 2
+  and 1 as E625 measured passed; every job's 0x0624 read P - 0x22), while the count formula of E625,
+  partial renders = 1 + floor((U + k - thr0) / (thr0 + s)) with the first threshold thr0 = P - 0x22
+  and every k from 2 to 13 and s = 0x1e or 0x1f (24 frozen pairs), predicts 2 at P = 0xa3 for every
+  pair and 1 only from P = 0xa4 to 0xa9 according to k: the frozen verdict is that E625's count
+  formula is REFUTED at U = 287, none of the 24 (k, s) pairs fitting the 7 held-out cells' counts;
+  the thresholds were raised by 0x20 in all 9 jobs, as the rule of E774 says.
+  *dpm; HW, infer; data: `render-closing-r1-pixgeo:out/g-u2/`.*
+- `E780` R1-pixgeo stage g-t5 (9 jobs): with both controls passing (the 0.96-pixel square t5-ctl-sq
+  of S1's e3k-ctl present with 1/w 0x4479ffff, the 0.48-pixel triangle none) the TA wrote no object
+  for any of the six triangles centred on the pixel corner (32, 32), the tool's triangle scaled to a
+  bounding box of 0.30, 0.50, 0.60, 0.75, 0.90 and 0.98 pixels (areas 0.042, 0.117, 0.169, 0.264,
+  0.380 and 0.451 pixel), nor for the elongated 0.30 x 0.98 triangle (area 0.138), so the ladder had
+  no flip; the frozen verdict reads `ladder monotone (flip at extent none); elongated none: HS-ext
+  consistent (the 0.98 cell is none), HS-area consistent (area 0.138; absent up to 0.451, present
+  from 0.000); the elongated cell does not separate them`, but the frozen row of the 0.98 cell
+  predicted an object for HS-ext (extent at least T, T in (0.48, 0.96]) and the cell wrote none, so
+  HS-ext as frozen is refuted by that cell and the scorer's word consistent compares the elongated
+  cell with the top cell instead of the row.
+  *ta; HW, infer; data: `render-closing-r1-pixgeo:out/g-t5/`.*
+- `E781` R1-pixgeo stage g-t6 (7 jobs: a vertex program with x and y scaled by w = 1e-5 or 1e-4 and
+  the state block's clamp (word 14) from 3e-5 to 1.2e-3): the control t6-ctl (clamp 3e-5, S1b's
+  e3k-i-c3e5) held its stored 1/w 0x47023555, and in the six held-out cells the TA wrote an object
+  each time with a 1/w that was always one of the two floats next to the exact 1/clamp,
+  round-toward-zero in 2 cells (clamp 6e-5: 0x46823555; 7e-4: 0x44b29249) and round-to-nearest in 3
+  (1.5e-4: 0x45d05555; 6e-4: 0x44d05555; 1.2e-3: 0x44505555) of the 5 where the two differ, the
+  sixth (clamp 2e-4: 0x459c4000) being a cell where they agree, so the stored 1/w under a clamp is
+  within 1 ulp of 1/clamp and not a rounding rule; the stored x and y were the program's x and y
+  divided by the clamp (the triangle shrunk by w over the clamp, HREP-xy') in 6 of 6 held-out cells
+  within 1/64 pixel; the frozen verdict: control holds; mixed (RZ 2, RN 3 of 5): within 1 ulp, not a
+  rounding rule; position HREP-xy' 6 of 6.
+  *ta; HW, infer; data: `render-closing-r1-pixgeo:out/g-t6/`.*
 
 ## By unit
 
@@ -5311,7 +5437,7 @@ Records: E151, E457, E573, E592, E745, E761, E767.
 
 Records: E199, E200, E201, E202, E204, E205, E206, E203, E253, E256, E309, E310, E311, E312, E313,
 E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E468, E574, E591,
-E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753.
+E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753, E773, E774, E775, E779.
 
 ### edm
 
@@ -5348,7 +5474,7 @@ E383, E385, E386, E387, E429.
 Records: E043, E044, E045, E046, E047, E048, E125, E126, E127, E128, E129, E130, E131, E132, E133,
 E134, E135, E136, E137, E138, E139, E140, E141, E142, E143, E144, E145, E259, E260, E261, E262,
 E263, E264, E343, E344, E345, E364, E379, E381, E384, E388, E389, E390, E391, E392, E393, E394,
-E395, E396, E400, E420, E421, E428, E430, E436, E437, E454, E459, E460, E709, E742, E759.
+E395, E396, E400, E420, E421, E428, E430, E436, E437, E454, E459, E460, E709, E742, E759, E772.
 
 ### platform
 
@@ -5365,7 +5491,8 @@ E448, E449, E451, E458, E462, E732, E770.
 
 Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180, E181, E247, E257,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
-E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763.
+E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763, E776, E777,
+E778, E780, E781.
 
 ### texture
 

@@ -1,11 +1,11 @@
 +++
 id = "Q230"
-question = "what does the TA write when the MTE removes a triangle wholly beyond z = -w or z = w or cuts one at it, when a triangle is not listed by any target region (the hardware wrote no object for one 1000 pixels off a 64 x 64 target: where is the limit between that and a triangle partly on the target), and how are window coordinates with more than 8 fraction bits, and the depth and 1/w of a vertex with w other than 1, rounded and stored in the object?"
+question = "what does the TA write in the cases of the clip, the target's edge and the numeric formats that E776 to E781 left open: the stored order of a clipped polygon of 3 or of more than 4 vertices and of a cut by a guard-band plane (E777), the limit of the region lists in y and at the left edge of other targets (E776), the tie of the rounding of the 1/1024 grid to 1/256 (E778), the depth and the 1/w of a vertex with w other than 1 and of a clip-made vertex, the 1/w word under a clamp (within 1 ulp of 1/clamp, no rule, E781), and the size at which a sub-pixel triangle is no longer written (E780)?"
 unit = "ta"
 kind = "hw"
 value = "medium"
 phase = 12
-evidence = ["E063", "E182", "E194", "E287", "E307", "E651", "E650", "E736", "E754"]
+evidence = ["E063", "E182", "E194", "E287", "E307", "E651", "E650", "E736", "E754", "E776", "E777", "E778", "E780", "E781"]
 terms = ["PB_OBJ.RHW", "PB_OBJ.ISP_WORDS", "VIEWPORT.X_OFFSET", "WCLAMP"]
 +++
 
@@ -71,3 +71,35 @@ data; E542's tile rule applied to the target's regions only (low side closed, hi
 all the cells, with the object's minimum x going out of reach in (64, 104]. The clause "the limit
 of the region lists" is narrowed to that interval and that candidate; the boundary itself has not
 been run.
+
+Narrowed 2026-11-10 (R1-pixgeo, E776 to E781; the question line is reworded to what stays open, the
+question stays open). Each group was gated by its own control and every control passed. T3 and T4
+(the 1/w of a clip-made vertex and the depth at w other than 1) did not run.
+- Clip cuts (E777, held out). Five new clipped objects of 4 and 3 vertices, cut in x and y by one
+  and two planes: the vertex set is the Sutherland-Hodgman polygon over A to B, B to C, C to A (5
+  of 5), the prim entries the strip triangles with the boundary flag in bit 4 (5 of 5, the
+  re-reading of E181 and Q070's primitive list held out), the depth at a clip-made vertex 0 or 1
+  exactly, and for a polygon that both planes cut the -w plane acts first (2 of 2: order and
+  depth words; +w first refuted 2 of 2). The 3-vertex polygon was stored in the Sutherland-Hodgman
+  order, one place from the zigzag the frozen rule gave (post hoc: n = 4 zigzags, n = 3 does not).
+- Off-target (E776, held out). At the right edge a triangle with min x 63.5 is written and listed,
+  at 64.0 and beyond nothing is written; at y 63.5 listed, at 64.0 written and unlisted; at the left
+  edge max x 0.0 and below gives nothing. E542's tile rule as frozen failed 1 of 9 (the -24.0 cell)
+  and the band reading 3 of 6. A rule fitting every cell (an object is listed iff the extent
+  overlaps the target with positive width and height) was read after the run and has no held-out
+  cell.
+- Fine grid (E778, held out). Coordinates on the 1/1024 grid are packed rounded to nearest 1/256 in
+  18 of 18 coordinates of three triangles (truncation refuted 3 of 3), no ties; the answer to that
+  clause except for ties and finer grids.
+- Clamp (E781, held out). Under a clamp above w the stored 1/w is one of the two floats next to
+  1/clamp (RZ in 2 cells, RN in 3 of the 5 where they differ), within 1 ulp and no rounding rule,
+  and the position is x, y divided by the clamp in 6 of 6.
+- Sub-pixel cull (E780). No object for any triangle about a pixel corner from a bounding box of
+  0.30 to 0.98 pixel (area 0.042 to 0.451), where the 0.96-pixel square control is written: the
+  frozen HS-ext (an object from a box of at most 0.96) is refuted by the 0.98 cell although the
+  scorer printed consistent; the threshold is not between the ladder's cells, and the box is not
+  the criterion (an area between 0.45 and 0.92 is a post hoc reading across two routes).
+Open (the reworded line): the plane order and the stored order beyond 4 vertices and for a
+guard-band cut, the y and left-edge limits and other targets, the tie rule of the grid, the depth
+and 1/w of clip-made and perspective vertices, a rule for the clamp's 1/w word, and the cull's
+threshold.

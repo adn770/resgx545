@@ -1,11 +1,11 @@
 +++
 id = "Q273"
-question = "what steps dword 36 of the TA/3D control block with the vertex count and with P (E753: 1, 1, 3, 2, 3 and 3 at 1500 vertices over P = 0x320 to 0x3c0; 2 at 1350 and 3 at 1380 vertices at P = 0x3e0), now that the raise of the TA's threshold follows a limit C in [0x35e, 0x37e) on thr0 + 0x20 for 1350 and 1500 vertices alike"
+question = "what steps dword 36 of the TA/3D control block with the vertex count and with P (E753: 1, 1, 3, 2, 3 and 3 at 1500 vertices over P = 0x320 to 0x3c0; 2 at 1350 and 3 at 1380 vertices at P = 0x3e0; it read 3 in all 14 raised jobs of E775 and 1 or 2 in the unraised), now that the raise of the TA's threshold follows a limit C = 0x371 on thr0 + 0x20 for 1350 and 1500 vertices alike (E774) and the count of CR_DPM_GLOBAL_PAGE_STATUS at the first abort less 2 has failed (E775)"
 unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E704", "E625", "E630", "E734", "E753"]
+evidence = ["E704", "E625", "E630", "E734", "E753", "E774", "E775"]
 terms = ["Dynamic Parameter Management (DPM)", "ta3d_ctl"]
 +++
 E625's rule for the raise (overflow, then a second run reaching the first threshold) fits 109 of the
@@ -90,3 +90,19 @@ depends on how far the scene had got and not on the vertex count alone. Held-out
 jobs, scored by sampling `CR_DPM_GLOBAL_PAGE_STATUS` (0x072c, G0828) during them: E256, E312 and
 E358 sampled it (0x10001 through renders and a 1024x768 partial render), but no timeline of S1's or
 S1b's g-e1 jobs holds it.
+
+Note 2026-11-10 (R1-pixgeo, E774 and E775; the held-out part of the reading above failed, the
+question stays open). The register reading of the correction above (dword 36 = the 0x072c count at
+the first abort less 2) was scored in the frozen side table of the stage and does not hold: 0 of 14
+raised jobs (the count was 3 and dword 36 read 3 in every one; the prediction was 1) and 6 of 9
+unraised ones (the three misses read count 3 and dword 36 2). The dump-based statement of the
+correction (the global list's pages in the TA data, less 2) is separate: it held on the 9 unraised
+jobs (9 of 9, new jobs) and fails on the raised ones as E627 explains, with no frozen row testing
+it. [infer, read after the data, no held-out job] The maximum of the 0x072c count over a job, less
+2 (floor 0), equals dword 36 in all 23 jobs of g-c1 and g-c1f (14 raised, peak 5, dword 36 = 3; 9
+unraised, peak 3 or 4, dword 36 = 1 or 2) and in 30 jobs that never exceed a count of 2. The raise
+clause is answered with E753 (C = 0x371 exactly at this target and scene, E774; Q210). Open: which
+quantity the firmware reads (the count at the first abort or the highest the count reached, equal
+in the unraised jobs and different in the raised ones), whether it holds at other vertex counts and
+targets, and what steps it; a frozen test needs raised jobs at another target or vertex count, the
+peak and the first-abort count predicted apart.

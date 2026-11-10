@@ -88,3 +88,18 @@ renders and a 1024x768 partial render, 0 after the jobs in E438) but in none of 
 S1's g-e1 jobs, whose timelines cover 0x0720 to 0x0724. The counts come from
 scratch scripts (dw36_glist.py, dw36_tri.py, closing2/geometry) that read the published dumps and
 are not in the repository.
+
+**Correction 2026-11-10:** (R1-pixgeo, E774 and E775) The register reading of the correction above,
+that dword 36 is the page count of `CR_DPM_GLOBAL_PAGE_STATUS` (0x072c) at the first abort less 2,
+was held to the raised jobs in the frozen side table of R1-pixgeo and failed there: 0 of 14 raised
+4096x4096 jobs (the count was 3, the prediction 1, dword 36 read 3 in every one) and 6 of 9 of the
+unraised ones (the three misses read a count of 3 where dword 36 = 2). The register reading does not
+hold, on the raised jobs or in full. The other statement of the correction, a fit on the global
+list's pages in the TA data at the state page, is a separate statement: it held on the 9 unraised
+jobs of the stage (dword 36 = g - 2, 9 of 9, jobs not in the 150 it was read from) and failed on the
+14 raised ones as E627 explains (the page holds the lists of the later runs), not tested by a frozen
+row. A reading made after these data, the maximum of the 0x072c count over the job less 2, fits all
+23 jobs of g-c1 and g-c1f, raised and unraised (E775), and is a fit with no held-out job. The
+wording that the "1, 1, 3, 2, 3, 3 over P" is the number of object pages the TA had taken when the
+threshold hit is withdrawn as far as it rests on the register at the first abort; what steps it is
+open (Q273).
