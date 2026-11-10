@@ -87,7 +87,8 @@ templates bit for bit, and `doc/specs/usse_tutorial.md` walks through them.
 Userspace places its own programs in its own GPU address space and submits jobs to the render node:
 `include/uapi/sgxfive_drm.h` (pinned to the linux fork's header), `userspace/libsgxfive` with
 `sgxfive-test`, and the first triangle's programs. Evidence E022 to E024 (fills, copies, the first
-triangle and fault recovery on the laptop); the question on the firmware's identity (answered by E402) and, on the control block's mapping in
+triangle and fault recovery on the laptop); the question on the firmware's identity (answered by
+E402) and, on the control block's mapping in
 a client's VM, Q076. Sub-phase 6.1 brings the probe
 tables by unit (`probes/<unit>/<feature>.toml`), the campaign runner that runs them on a clean GPU
 and records the environment, the sweep runner with the ISP visibility counters around every case,
@@ -200,7 +201,9 @@ so the 139 `hw` questions are the work queue, each with a value (high 13, medium
 `fw` questions (the closed firmware's and driver's own behaviour: Q004, Q029, Q034, Q049, Q084,
 Q088, Q118, Q119, Q124, and the one on two EDM tasks, answered by E752) and the 6 `kernel` ones (the
 design
-of our kernel driver: the firmware-identity one, answered later by E402, the one on the hung job's object, answered later by E422, and Q095, Q140, Q166, Q167) stay open, parked. By unit: bif 4, dpm 7,
+of our kernel driver: the firmware-identity one, answered later by E402, the one on the hung
+job's object, answered later by E422, and Q095, Q140, Q166, Q167) stay open, parked. By unit: bif 4,
+dpm 7,
 edm 13, isp 11, mte 3, pbe 5, pds 16, platform 5, render 9, ta 14, texture 14, transfer 3, usse 36,
 vdm 9, zls 6. A question is removed when a record answers it; one that mixed a hardware part with a
 firmware or kernel part was narrowed to the hardware part or folded into the hardware question that
@@ -530,7 +533,8 @@ hypotheses did not fit; each is stated in its record, the first runs kept), and 
 which rules were read after the data and which were predicted. Records E512-E520 and E525-E530
 (E521-E524 are kept for a later phase); E478, E480-E483, E487, E488, E493, E499 and E501 are carried
 forward with dated corrections where 11.27 answers what they listed as not run. Q051, Q052, Q128,
-Q133, Q134, Q135 and Q137 are narrowed, none retired; Q143 to Q146 and two more, since folded into Q137, are new
+Q133, Q134, Q135 and Q137 are narrowed, none retired; Q143 to Q146 and two more, since folded
+into Q137, are new
 (all hw, Q143 medium, the others low).
 
 Sub-phase 11.28 made no run and no kernel change, and the data repository's raw readbacks are the
