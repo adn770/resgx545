@@ -261,7 +261,7 @@ pub fn tasks(l: &IndexList) -> Result<Vec<Vec<u32>>, Outcome> {
     if rows * per > 32 {
         return Err(refuse_ids(
             format!(
-                "a vertex task of {per} vertices of {rows} output rows: more than 32 words of rows (E546, Q094 decision)"
+                "a vertex task of {per} vertices of {rows} output rows: more than 32 words of rows; this is the decided rule (Q094 decision on E546's measurements), not a measurement of what the hardware does from 33 up"
             ),
             &["Q094"],
         ));
@@ -343,7 +343,9 @@ mod tests {
         for (rows, per_task) in [(3, 11), (2, 17), (3, 12), (4, 9), (4, 11), (3, 16)] {
             match tasks(&list(40, per_task, rows)) {
                 Err(Outcome::Unsupported { ids, why }) => {
-                    assert_eq!(ids, ["Q094"], "R {rows} V {per_task}: {why}")
+                    assert_eq!(ids, ["Q094"], "R {rows} V {per_task}: {why}");
+                    // the refusal states a decided rule, not a measurement
+                    assert!(why.contains("decided rule") && why.contains("not a measurement"), "{why}");
                 }
                 r => panic!("R {rows} V {per_task}: {r:?}"),
             }

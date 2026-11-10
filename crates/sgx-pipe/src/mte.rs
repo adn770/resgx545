@@ -103,6 +103,36 @@ fn refuse230(why: impl AsRef<str>) -> Outcome {
     Outcome::unsupported(why.as_ref(), &["Q230"])
 }
 
+/// The float32 reciprocal of `w` rounded toward zero (RZ32): what E754's e3i jobs measured stored
+/// as 1/w inside the guard band, 4 of 4 (round-to-nearest refuted).
+fn rhw_rz32(w: f32) -> f32 {
+    let exact = 1.0f64 / f64::from(w);
+    let r = exact as f32;
+    if f64::from(r).abs() > exact.abs() { f32::from_bits(r.to_bits() - 1) } else { r }
+}
+
+/// The w values E754's e3i jobs ran: w = 3, 7, 0.003 and 3e-5, all three vertices alike, x and y
+/// scaled by w (the divided position is the original triangle, inside the viewport), depth z = 0.
+/// Anything else with a w other than 1 stays refused (Q230): other exponents, a perspective
+/// triangle, depth, the guard band's limit.
+fn band_w(c: &[[f32; 4]; 3]) -> Result<(), Outcome> {
+    let w = c[0][3];
+    if !(3e-5..=7.0).contains(&w) || c.iter().any(|v| v[3] != w) {
+        return Err(refuse230(
+            "a w other than 1 outside E754's runs (one w of 3e-5 to 7 at all three vertices): the 1/w and depth of a perspective vertex were not dumped (E063, E194)",
+        ));
+    }
+    if c.iter().any(|v| v[2] != 0.0) {
+        return Err(refuse230("the depth at a w other than 1 was not scored (E754)"));
+    }
+    if c.iter().any(|v| (v[0] / w).abs() > 1.0 || (v[1] / w).abs() > 1.0) {
+        return Err(refuse230(
+            "a vertex outside the viewport at a w other than 1: E754 ran inside it, the guard band's limit was not run",
+        ));
+    }
+    Ok(())
+}
+
 /// The window coordinates the object's packed block can hold: 24 bits of (v + 4096) * 256.
 const RANGE: std::ops::Range<f32> = -4096.0..12288.0;
 
@@ -121,9 +151,7 @@ pub fn triangle(
         return Err(refuse230("a non-finite clip coordinate"));
     }
     if c.iter().any(|v| v[3] != 1.0) {
-        return Err(refuse230(
-            "a vertex with w other than 1: the depth and the 1/w of a perspective vertex were not dumped (E063, E194)",
-        ));
+        band_w(&c)?;
     }
     // clip against z = -w and z = w (E287 measured pixels: a triangle wholly beyond a plane is
     // removed from the image, a plane through it cuts it); what the TA writes for either was not
@@ -137,16 +165,22 @@ pub fn triangle(
     let mut out = [Vertex { x: 0.0, y: 0.0, z: 0.0, rhw: 0.0 }; 3];
     for (o, v) in out.iter_mut().zip(&c) {
         let (min, clamp) = (f32::from_bits(rhw_min), f32::from_bits(rhw_clamp));
-        if 1.0 / v[3] == min {
+        let r = rhw_rz32(v[3]);
+        if r == min {
             return Err(refuse230(
                 "a 1/w equal to the minimum: E197's values were all clear of the boundary",
             ));
         }
-        let (rhw, u) = stored_rhw(1.0 / v[3], min, clamp);
+        let (rhw, u) = stored_rhw(r, min, clamp);
+        if u && v[3] != 1.0 {
+            return Err(refuse230(
+                "a 1/w replaced by the clamp at a w other than 1: E754's clamp jobs shrank the triangle by w / clamp and stored the clamp's reciprocal, no rule fits all",
+            ));
+        }
         used |= u;
         *o = Vertex {
-            x: st.vp[0] + st.vp[1] * v[0],
-            y: st.vp[2] + st.vp[3] * v[1],
+            x: st.vp[0] + st.vp[1] * (v[0] / v[3]),
+            y: st.vp[2] + st.vp[3] * (v[1] / v[3]),
             z: st.vp[4] + st.vp[5] * v[2],
             rhw,
         };
@@ -301,11 +335,61 @@ mod tests {
         assert!(used && v[0].rhw == 0.25);
     }
 
+    /// The triangle of E754's e3i jobs: x and y scaled by w, so the window x and y are the
+    /// original (8, 8), (56, 20), (20, 56) of a 64 x 64 target.
+    fn scaled(w: f32) -> [[u32; 4]; 3] {
+        let n = |v: f32| v * w;
+        [clip(n(-0.75), n(-0.75), 0.0, w), clip(n(0.75), n(-0.375), 0.0, w), clip(n(-0.375), n(0.75), 0.0, w)]
+    }
+
     #[test]
-    fn a_perspective_vertex_and_one_the_viewport_cannot_encode_are_refused() {
+    fn in_the_guard_band_the_stored_1_over_w_is_the_float32_reciprocal_truncated_e754() {
+        let s = state(&block([32.0; 4])).unwrap();
+        // E754 g-e3 [HW]: w = 3, 7, 0.003 and 3e-5, the stored word at all three vertices; the
+        // rounded reciprocals (...ab, ...25, ...ab, ...56) are refuted
+        for (w, word) in
+            [(3.0f32, 0x3eaa_aaaau32), (7.0, 0x3e12_4924), (0.003, 0x43a6_aaaa), (3e-5, 0x4702_3555)]
+        {
+            let (v, used) = triangle(&s, scaled(w), 0, 0).unwrap();
+            assert!(!used);
+            for p in v {
+                assert_eq!(p.rhw.to_bits(), word, "w = {w}");
+            }
+            // x and y equal the original triangle's (E754 in band)
+            assert!((v[0].x - 8.0).abs() < 1e-3 && (v[1].y - 20.0).abs() < 1e-3, "w = {w}: {v:?}");
+            assert_eq!(v[0].z, 0.5);
+        }
+        // w = 1 is the control (E651's object): the exact reciprocal
+        assert_eq!(triangle(&s, scaled(1.0), 0, 0).unwrap().0[0].rhw, 1.0);
+    }
+
+    #[test]
+    fn a_w_other_than_1_outside_what_e754_ran_is_refused() {
+        let s = state(&block([32.0; 4])).unwrap();
+        let w3 = |f: &dyn Fn(&mut [[u32; 4]; 3])| {
+            let mut t = scaled(3.0);
+            f(&mut t);
+            t
+        };
+        // the w values run span 3e-5 to 7
+        refused(triangle(&s, scaled(10.0), 0, 0), "Q230");
+        refused(triangle(&s, scaled(1e-6), 0, 0), "Q230");
+        refused(triangle(&s, scaled(-3.0), 0, 0), "Q230");
+        // a vertex of another w (a perspective triangle): not run
+        refused(triangle(&s, w3(&|t| t[1][3] = F(4.0)), 0, 0), "Q230");
+        // depth at a w other than 1 was not scored; z = 0 only
+        refused(triangle(&s, w3(&|t| t[0][2] = F(0.5)), 0, 0), "Q230");
+        // a vertex outside the viewport after the divide: the guard band's limit was not run
+        refused(triangle(&s, w3(&|t| t[2][0] = F(5.0)), 0, 0), "Q230");
+        // the minimum 1/w replacing a w != 1 vertex: E754's clamp jobs shrank the triangle instead
+        refused(triangle(&s, scaled(3.0), F(1.0), F(0.25)), "Q230");
+        // 1/w equal to the minimum, as at w = 1
+        refused(triangle(&s, scaled(4.0), F(0.25), F(0.25)), "Q230");
+    }
+
+    #[test]
+    fn a_vertex_the_viewport_cannot_encode_is_refused() {
         let s = state(&block([64.0; 4])).unwrap();
-        let t = [clip(-0.5, -0.5, 0.0, 2.0), clip(0.5, -0.5, 0.0, 2.0), clip(0.0, 0.5, 0.0, 2.0)];
-        refused(triangle(&s, t, 0, 0), "Q230");
         let far = [clip(-0.5, -0.5, 0.0, 1.0), clip(0.5, -0.5, 0.0, 1.0), clip(1e6, 0.5, 0.0, 1.0)];
         refused(triangle(&s, far, 0, 0), "Q230");
     }
