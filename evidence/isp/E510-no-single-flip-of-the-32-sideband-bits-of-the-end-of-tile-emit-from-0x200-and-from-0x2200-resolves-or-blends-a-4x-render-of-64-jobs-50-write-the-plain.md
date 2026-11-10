@@ -39,4 +39,4 @@ driver's two sidebands and bit 48) and E508 (the stored image is one window of t
 end-of-tile task has no resolve in a single-bit change of the sideband [infer].
 
 **What it does not show.** Two or more bits together; a resolve in a later pass of the closed
-driver (Q138); the sideband of the closed driver's own end-of-tile program (we run our own).
+driver (Q089); the sideband of the closed driver's own end-of-tile program (we run our own).

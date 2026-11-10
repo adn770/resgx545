@@ -24,7 +24,7 @@ image has 24 aligned 2 x 2 blocks that mix green and background, partially cover
 averaging stage would give a third colour, and none appears there. [infer] Together with E439 (no
 blend path in the end-of-tile task) and E510 (no single sideband bit of our emit resolves) the
 resolve, if the hardware does one, is a later pass of the closed driver and a four-window render in
-the sense of E503 is the likelier path (Q138).
+the sense of E503 is the likelier path (Q089).
 
 **What it does not show.** Whether anything resolves; alpha to coverage and sample coverage (not
 reachable with this tool).

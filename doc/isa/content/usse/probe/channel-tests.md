@@ -30,7 +30,7 @@ they read as this rule says **[infer]** (252 of 252 cases; the rule was applied 
 predates the runs and was not predicted for them): `chan1`-`chan3` test a channel with no lane, and
 `andall`, `orall`, `and02` and `or02` (chan4 to chan7) combine channel 0 with such channels, so a
 test of a 32-bit value must name `chan0`. The same on 8-bit and 16-bit lane operations with raw
-words is not run (Q150).
+words is not run (Q137).
 
 **Undecided:** the mask forms of class 15 (`.bmsk`/`.wmsk`/`.dmsk`); float tests of `-0`,
 infinities and NaNs; the one-source tests (`frcp`, `frsq`, `flog`, `fexp`); `fsubflr`, `fdp`,

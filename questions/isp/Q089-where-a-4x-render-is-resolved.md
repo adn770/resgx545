@@ -1,14 +1,13 @@
 +++
 id = "Q089"
-question = "where does the closed driver's 4x multisampled render become a 64x64 image, when its PBE words are those of a single-sampled 64x64 target and the hardware stores 4x samples as 2x2 blocks; and do alpha to coverage and sample coverage reach the hardware at all?"
+question = "where does the closed driver's 4x multisampled render become a 64x64 image, when its PBE words are those of a single-sampled 64x64 target and the hardware stores 4x samples as 2x2 blocks (one render with CR_TE_AA 0xe0000000 stores only a 16 x 8 window of each 32 x 16 tile, E503: are the four windows 0x20000000, 0x60000000, 0xa0000000 and 0xe0000000 four renders of one frame, and what combines them); and do alpha to coverage and sample coverage reach the hardware at all?"
 unit = "isp"
 kind = "hw"
 value = "high"
 phase = 11
 evidence = ["E333", "E339", "E439", "E502", "E503", "E508", "E510", "E727"]
-terms = ["CR_ISP_MSAA.MODE", "CR_TE_MTILE1", "CR_TE_MACROTILE_STRIDE", "EMIT1.MAXCLIP_X"]
+terms = ["CR_ISP_MSAA.MODE", "CR_TE_MTILE1", "CR_TE_MACROTILE_STRIDE", "EMIT1.MAXCLIP_X", "CR_TE_AA", "CR_ISP_MSAA"]
 +++
-
 The closed driver's 4x render to a 64x64 texture sets `CR_ISP_MSAA` mode 2, a rotated-grid
 `CR_ISP_MULTISAMPLECTL`, halved TE macrotile words and a macrotile stride of 4, but hands the PBE
 the end-of-tile words of the single-sampled render: a 64x64 rectangle, a pitch of 64 pixels and the
@@ -45,7 +44,7 @@ pixels of the 4096, each in a 2 x 2 block (by E503's rule, read post hoc, which 
 and the identity maps cannot show a blend or a resolve, since every sample slot of a pixel holds the
 same iterated value (E510 has the colour test). The hardware's stored image is the quarter
 window of E503, not a resolved image: the closed texture's 64 x 64 pitch needs something more
-(Q138). The capture walk of the coverage words was not run.
+(the merged question below). The capture walk of the coverage words was not run.
 
 Run in the 11.26 resume (E510, msaa-resolve, 66 jobs, 4 of them failed): each single bit of the
 end-of-tile sideband flipped from 0x200 and from 0x2200 either leaves the image as it was (50 of 64)
@@ -53,7 +52,7 @@ or changes the colour byte order (bits 0, 1), packs two ARGB1555 pixels a dword 
 pixels (bit 3) or a few patterns (bits 9, 12); 4 jobs fail. No pixel is an average of the two
 colours (the control image has 24 aligned 2 x 2 blocks that mix them): no single sideband bit of our
 emit resolves; combinations of bits and the closed driver's own sideband are not excluded. The
-coverage words are still open. Status: narrowed, not answered; missing: Q138 (the later pass of the
+coverage words are still open. Status: narrowed, not answered; missing: the merged question below (the later pass of the
 closed driver [infer]) and the coverage words.
 
 Note from 11.39 (E727): the stored image equals the region model's in 17 of 17 jobs. A 12 x 6
@@ -63,5 +62,29 @@ empty image reads counter 0 at TE 0x20 (4 controls), so the counter does not sho
 region is walked [infer]; it may count stored samples (144 = 4 x 36). This does not resolve a 4x
 render and does not remove "the region is skipped"; the question stays open.
 
-Noted 2026-11-09: near duplicate of Q138, not merged (both ask how the closed driver's 4x render
-becomes a 64 x 64 image). A merge or a fold decides which text survives.
+**Correction 2026-11-10:** Q138 is merged into this question (retired as folded into Q089; a fold is not an answer), and its question is now a clause of the one above. Its question was: how does the closed driver's 4x render of a 64 x 64 texture fill a 64 x 64 image when one render with CR_TE_AA 0xe0000000 stores only a 16 x 8 window of each 32 x 16 tile (E503): are the four windows (0x20000000, 0x60000000, 0xa0000000, 0xe0000000) four renders of one frame, and what combines them.
+
+E503 (a rule read post hoc from the 64 x 64 runs, then found to agree with all 634 tiles of the
+sizes declared held out): a mode 2 render stores in each 32 x 16 tile the pixels of one quarter
+window chosen by CR_TE_AA bits 31 and 30 (bit 29 set), and the four values 0x20000000, 0x60000000,
+0xa0000000, 0xe0000000 choose four disjoint windows that tile the 32 x 16; mode 1 has two. E508: the
+closed driver's setting (0xe0000000) stores 1024 distinct pixels of the 4096. E510 (11.26 resume, 66
+jobs): no single bit of the end-of-tile sideband resolves or blends: the bits change channel order,
+a 16-bit pack and a partial write, 14 of 64 flips, and the other 50 draw the controls' image. So no
+single bit of the sideband of our own emit resolves (64 one-bit flips from two bases); the closed
+driver's own sideband and combinations of bits are not excluded.
+
+What is open: whether the closed driver renders each frame four times (once per window) and what
+reads the four stored images, or whether one render at 0xe0000000 is all the hardware does and the
+other three quarters are produced by a later pass; and, if there are four renders, whether the
+windows of one render can be combined with the targets' addresses. To settle it: a capture walk of
+the closed driver's frame that counts the renders of a 4x frame and the CR_TE_AA word of each (E339
+compared one render only), and on the laptop a mode 2 frame rendered four times with the four
+values into the same target, checking that the stored windows do not overwrite one another.
+
+Note from 11.39 (E727): the stored image equals the region model's in 17 of 17 jobs. A 12 x 6
+triangle in a region other than the last visited reads a non-zero visibility counter 0x0498 (144
+in 0xe0 jobs) with an empty image in 7 of 7 jobs (6 distinct jobs and a repeat), but the same
+empty image reads counter 0 at TE 0x20 (4 controls), so the counter does not show that every
+region is walked [infer]; it may count stored samples (144 = 4 x 36). This does not resolve a 4x
+render and does not remove "the region is skipped"; the question stays open.

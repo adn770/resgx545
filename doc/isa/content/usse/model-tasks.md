@@ -82,20 +82,20 @@ The waits and modes on the hardware (E101) **[HW]**:
   the 6 controls (124, 128 and 192 with `r123`, 8, 32 and 64 with `r3`, `r31` and `r63`: 12 of 12
   jobs), and was not seen under 4, 8, 16, 32, 64 and 100 (0 of 12 jobs, within the pixels the
   reports list; the pixels read what earlier jobs left). [infer] A request of 260 to 376 therefore
-  allocates at least 124 registers and not the 4 to 120 that its value modulo 256 gives (Q144), and
+  allocates at least 124 registers and not the 4 to 120 that its value modulo 256 gives (Q133), and
   E519's read-back of `r123` was a landed write, not a stale read. Every request from 124 up to 504
   wrote `r123` only (`r124` and up cannot be named as an ALU operand), so these show that the job
   runs and that `r123` is real storage, not that 192 temporaries are usable; the register numbers a
   program can name end at 123. Every request run was a multiple of four. The 15 jobs of E487 that
   ran took 420 to 583 microseconds, with no cost seen in single samples. A register past a phase's
   request reads as `n mod T` in most instances (*Machine model*; E535's read of `r123` under 100 or
-  less returned earlier jobs' contents, a different probe, not reconciled: Q147). **For a firmware
+  less returned earlier jobs' contents, a different probe, not reconciled: Q132). **For a firmware
   task [HW]** (E540) the temporaries are the TRC the task is started with: with TRC 8, 9, 12, 16, 24
   and 31 (32 to 124 temporaries) the top register, `r(4T - 1)`, held the marker written to it in 6
   of 6 runs, and the register past the allocation (`r32`, `r36`, `r48`, `r64`, `r96` for 8, 9, 12,
   16 and 24) did not (0 of 5, one job and one read per T; it read 0 or a leftover), as in a fill.
   TRC 32 and above were not run (the arm of 32 failed with its error cut off, [infer] at the fork's
-  hazard gate), so the limit of a firmware task above 31 is **[open]** (Q133, Q144).
+  hazard gate), so the limit of a firmware task above 31 is **[open]** (Q133).
 - **A firmware (EDM) task of ours runs [HW]** (E531 to E534): one start dword of PDS #13 (the
   general slot, which the 1 kHz tick and the host kick reach) pointed at a page of our code at the
   kernel code heap + 0x20000 (instruction index 0x4000), set when the firmware is loaded and undone

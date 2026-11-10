@@ -56,4 +56,4 @@ appears. The "constant of 4 pixels" is the doubling of the in-tile offset, not a
 
 **What it does not show.** The window for CR_TE_AA values without bit 29 (the triangle is gone,
 E281); mode 3; the sample positions inside a pixel (E502); whether the four windows of a tile are
-written by four renders of one frame (Q138).
+written by four renders of one frame (Q089).

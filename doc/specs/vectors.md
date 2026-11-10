@@ -106,7 +106,7 @@ converted by `tools/usse-asm/convert_extra.py` into `vectors/nokernel/usse/q147-
 (18 vectors each, `datasets/vectors-usse-q147.toml`): 14 replay exactly (the controls and the
 request of 448), 12 are left out (their pixels are a mixture, no single o0) and 10 stop on `r123`
 past the allocation, because the simulator takes a request of 260 to 376 to allocate its value
-modulo 256 (Q144).
+modulo 256 (Q133).
 
 The simulator's tests (`crates/sgx-sim/tests/vectors.rs`) look for the data repository as
 `$RESGX545_DATA`, else the `resgx545-data` checkout beside this tree (as

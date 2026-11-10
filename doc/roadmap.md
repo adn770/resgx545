@@ -193,7 +193,7 @@ sub-phase did.
 ### 4.1 Open questions
 
 `doc/open_questions.md` lists every open question, generated from `questions/`: Q001 to Q192, 155
-open (the two ids between Q147 and Q150 are reserved, unused, and so is the one between Q181 and
+open (the two ids between Q132 and Q137 are reserved, unused, and so is the one between Q181 and
 Q183, and the six between Q183 and Q190; the ids between Q168 and Q175 belong to phases not in this
 tree). Each has a kind. The work is hardware knowledge, for a simulator and then our own firmware,
 so the 139 `hw` questions are the work queue, each with a value (high 13, medium 68, low 58); the 10
@@ -497,7 +497,7 @@ sideband resolves (E504, E508, E510). At two macrotile columns the second bounda
 words decides, at four B1, B2 and B3 are all read, the stride must be the rule's, and none of the
 declared readings PA, PB and PC fits both (E505, E506, E509); the closed driver's 64 x 64 words draw
 exactly at 96 x 48 and 128 x 64 and fault at 128 x 128 and larger (E511). Records E502-E511; Q030,
-Q086, Q089 and Q100 are narrowed, none retired; Q138 to Q142 are new, Q140 for the kernel.
+Q086, Q089 and Q100 are narrowed, none retired; Q089 to Q142 are new, Q140 for the kernel.
 
 Sub-phase 11.27 ran 32 probe tables on the laptop (2027 cases, one campaign run of each, no probe.py
 run first) with the sgxfive-test of 11.26 and the 11.19 linux fork, no kernel change, for the open
@@ -530,8 +530,8 @@ hypotheses did not fit; each is stated in its record, the first runs kept), and 
 which rules were read after the data and which were predicted. Records E512-E520 and E525-E530
 (E521-E524 are kept for a later phase); E478, E480-E483, E487, E488, E493, E499 and E501 are carried
 forward with dated corrections where 11.27 answers what they listed as not run. Q051, Q052, Q128,
-Q133, Q134, Q135 and Q137 are narrowed, none retired; Q143 to Q146, Q150 and Q151 are new (all hw,
-Q143 medium, the others low).
+Q133, Q134, Q135 and Q137 are narrowed, none retired; Q143 to Q146 and two more, since folded into Q137, are new
+(all hw, Q143 medium, the others low).
 
 Sub-phase 11.28 made no run and no kernel change, and the data repository's raw readbacks are the
 ones 11.27 left. It brings the USSE model of `crates/sgx-sim` up to what 11.15 to 11.27 found and
@@ -558,8 +558,8 @@ in a pixel task, a write to `pa1`-`pa4`, a `.neg` on an immediate, and others). 
 records the replay (the simulator against the vectors, offline); E521, found in it, shows that the
 value `iaddu32` writes zero-extends source 1 (16 pairs in two datasets run before, seven of which a
 sign extension writes otherwise): Q126 is narrowed to the extension its test reads and to the forms
-not run, none retired; Q147 is new (hw, medium: where a write past a task's allocation goes, which
-E486 and E519 do not settle together, 30 vectors stop on it). The two ids between Q147 and Q150 stay
+not run, none retired; Q132 is new (hw, medium: where a write past a task's allocation goes, which
+E486 and E519 do not settle together, 30 vectors stop on it). The two ids between Q132 and Q137 stay
 reserved. The ZLS and the multisampling are not in the model: they stay for phase 12.
 
 Sub-phase 11.29 ran our own firmware (EDM) tasks on the laptop for the first time, over the cable,
@@ -596,7 +596,7 @@ E549; Q134 and the one on two EDM tasks (answered by E752) are narrowed (Q134's 
 parts, the overlap) and none retired; Q124 and Q033 gain their evidence and stay open; Q152 to Q154
 are new (hw: medium, low, medium), and Q167 (kernel).
 
-Sub-phase 11.30 ran more firmware (EDM) tasks of ours, and the client rerun of Q147, on the laptop
+Sub-phase 11.30 ran more firmware (EDM) tasks of ours, and the client rerun of Q132, on the laptop
 with the module and fork tip of 11.29 before the verifier fix (module 7ED723C2, tip d614af574cc6;
 data commit b5075fa3, which does not hold its vectors): 7 run directories of firmware tasks (stage
 B, stage B2, three runs of the event stubs, the slow task, the temporaries) and 2 of client fills
@@ -632,7 +632,7 @@ hazard gate, and arming with the hazard word was not made). The client rerun (E5
 marker of its own per job) shows that a write to `r123` is not seen under a request of 100 or less
 (0 of 12 jobs: all pixels of run a's six, the listed pixels of run b's) and lands under 124 or more
 (24 of 24), so E519's read-back was a landed write, E486 and E519 do not disagree, and, [infer], a
-request of 260 to 376 allocates at least 124 registers and not its value modulo 256; Q147 stays open
+request of 260 to 376 allocates at least 124 registers and not its value modulo 256; Q132 stays open
 (two of its three runs, and where a dropped write goes, were not run). The simulator gains the entry
 state of a firmware task (`sa`, `r`, `i`, `pa`, p and `pclink`), its temporaries and the state it
 must leave, and refuses a read of `sa64` after a write of it, a state key that is no register and a
@@ -642,7 +642,7 @@ writers' readback lists only p1 of the predicates) and so do 14 of the 36 vector
 left out for their mixed pixels and 10 stop on `r123` past the allocation, which the simulator takes
 from the modulo rule); the replay of the other vectors is unchanged (30081 scalar and 193 pixel
 matches, 1112 fitted, 918 stops, 175 skipped, 1937 left out, with 0 mismatches). Records E535-E540;
-Q124, the one on two EDM tasks (answered by E752), Q133, Q144, Q147, Q152, the one on bit 25 of pa1
+Q124, the one on two EDM tasks (answered by E752), Q133, Q132, Q152, the one on bit 25 of pa1
 (answered by E746) and Q033 are narrowed and none retired; Q158 and the one on bit 24 of pa1
 (answered by E746) are new (hw: low, low), and two more new hw questions (medium, medium)
 are now part of Q152.
@@ -823,7 +823,7 @@ Q260 to Q262). A counter predicts which VDM_STATE1 job hangs, for one job shape 
 vertex task's capacity and forced rows were probed (E702, E703), a 1500-vertex scene's threshold
 does not move with the page count (E704), the page need of one triangle depends on its position
 (E705), the kernel's hang recovery ends a long partial-render sequence (E706), and an end-of-tile
-store is not reproduced (E707 to E709, Q270 to Q278). The sampler's bilinear result is the two-stage
+store is not reproduced (E707 to E709, Q163 to Q278). The sampler's bilinear result is the two-stage
 form of E720, and the simulator `sgx-sim` takes it, tests first, with 8 new vectors; the gradient
 footprint, the T3 address chain, sRGB, ETC1, the texture types and the cube are findings the
 simulator keeps refused (E721 to E726, Q280 to Q284), and the multisample, TE bit, Q140, ZLS band

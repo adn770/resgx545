@@ -31,7 +31,7 @@ when it is 0 or 196 to 252, for every multiple of four 100 to 1016 run (the 15 c
 0x7E57007B, to r123, earlier jobs wrote it there too, and E484 shows that temporaries persist from
 job to job, so the read-back does not show that the write landed: E519 does not show whether a write
 reaches a register under a small allocation (E486 wrote distinct markers, Q132), and the allocation
-of a request above 256 is not measured (Q144). [HW] None of the 16 requests from 100 to 188 run here
+of a request above 256 is not measured (Q133). [HW] None of the 16 requests from 100 to 188 run here
 hung (one job each). All of this was measured in client pixel tasks (fills), not in firmware tasks.
 
 **What it does not show.** Requests not multiples of four (not encodable), the request that gives 4,

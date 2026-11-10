@@ -35,4 +35,4 @@ trend (463 to 938 microseconds, the largest for the largest allocation at start)
 
 **What it does not show.** That a request allocates the registers it asks for: only r123 was written
 (usse-asm cannot name more); the requests between and above those run; E487's hang range (not run
-here); a firmware task (E540); Q144.
+here); a firmware task (E540); Q133.

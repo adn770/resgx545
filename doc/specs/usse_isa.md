@@ -586,20 +586,20 @@ The waits and modes on the hardware (E101) **[HW]**:
   the 6 controls (124, 128 and 192 with `r123`, 8, 32 and 64 with `r3`, `r31` and `r63`: 12 of 12
   jobs), and was not seen under 4, 8, 16, 32, 64 and 100 (0 of 12 jobs, within the pixels the
   reports list; the pixels read what earlier jobs left). [infer] A request of 260 to 376 therefore
-  allocates at least 124 registers and not the 4 to 120 that its value modulo 256 gives (Q144), and
+  allocates at least 124 registers and not the 4 to 120 that its value modulo 256 gives (Q133), and
   E519's read-back of `r123` was a landed write, not a stale read. Every request from 124 up to 504
   wrote `r123` only (`r124` and up cannot be named as an ALU operand), so these show that the job
   runs and that `r123` is real storage, not that 192 temporaries are usable; the register numbers a
   program can name end at 123. Every request run was a multiple of four. The 15 jobs of E487 that
   ran took 420 to 583 microseconds, with no cost seen in single samples. A register past a phase's
   request reads as `n mod T` in most instances (*Machine model*; E535's read of `r123` under 100 or
-  less returned earlier jobs' contents, a different probe, not reconciled: Q147). **For a firmware
+  less returned earlier jobs' contents, a different probe, not reconciled: Q132). **For a firmware
   task [HW]** (E540) the temporaries are the TRC the task is started with: with TRC 8, 9, 12, 16, 24
   and 31 (32 to 124 temporaries) the top register, `r(4T - 1)`, held the marker written to it in 6
   of 6 runs, and the register past the allocation (`r32`, `r36`, `r48`, `r64`, `r96` for 8, 9, 12,
   16 and 24) did not (0 of 5, one job and one read per T; it read 0 or a leftover), as in a fill.
   TRC 32 and above were not run (the arm of 32 failed with its error cut off, [infer] at the fork's
-  hazard gate), so the limit of a firmware task above 31 is **[open]** (Q133, Q144).
+  hazard gate), so the limit of a firmware task above 31 is **[open]** (Q133).
 - **A firmware (EDM) task of ours runs [HW]** (E531 to E534): one start dword of PDS #13 (the
   general slot, which the 1 kHz tick and the host kick reach) pointed at a page of our code at the
   kernel code heap + 0x20000 (instruction index 0x4000), set when the firmware is loaded and undone
@@ -1750,7 +1750,7 @@ The test is `.test<S><J><Z>.<chan>`, from `enc[43:36]`:
   `and` with #7 gives no negative result). **[infer]** The rule is not run for the shifts `shl`,
   `shr` and `asr`, `or` and `rol` with #7, 8-bit and 16-bit lane operations, the `o` join with a
   chan other than chan0, the field value 0 and the other classes' tests, and that no other bit of a
-  test word inverts a source is not run (Q137, Q151).
+  test word inverts a source is not run (Q137).
 - **Tests with an immediate [HW]** act on the 32-bit result (E473): `shr.testtanz.chan0 !c0, p0, r,
   #n` is "r >> n is nonzero", with n of 32 and over giving zero (80 of 80), `xor.testtaz` is "r ^ n
   is zero" over all 32 bits (18 of 18), and `and`, `or`, `xor` and `rol` with `testtanz` and `asr`
@@ -1796,7 +1796,7 @@ The test is `.test<S><J><Z>.<chan>`, from `enc[43:36]`:
   chan6 (`andall`, `and02`) read tanz and pat of the value with taz and nat false, and chan5 and
   chan7 (`orall`, `or02`) taz and nat of the value with tanz and pat true, which is the rule just
   given applied after the data (**[infer]**, 252 of 252 cases; not predicted); the same on 8-bit and
-  16-bit lane operations is **[open]** (Q150). The masks of class 15, `.partial` and `.quadlead` on
+  16-bit lane operations is **[open]** (Q137). The masks of class 15, `.partial` and `.quadlead` on
   tests are **[open]**.
 - **The unsigned and unorm byte operations [HW]** (E092, E094). `uadd8`, `usub8`, `umul8`,
   `uadd16` and `umul16` work lane by lane, unsigned and wrapping, and `.sat` clamps a byte at
@@ -8206,7 +8206,7 @@ they read as this rule says **[infer]** (252 of 252 cases; the rule was applied 
 predates the runs and was not predicted for them): `chan1`-`chan3` test a channel with no lane, and
 `andall`, `orall`, `and02` and `or02` (chan4 to chan7) combine channel 0 with such channels, so a
 test of a 32-bit value must name `chan0`. The same on 8-bit and 16-bit lane operations with raw
-words is not run (Q150).
+words is not run (Q137).
 
 **Undecided:** the mask forms of class 15 (`.bmsk`/`.wmsk`/`.dmsk`); float tests of `-0`,
 infinities and NaNs; the one-source tests (`frcp`, `frsq`, `flog`, `fexp`); `fsubflr`, `fdp`,
@@ -9271,8 +9271,8 @@ open driver:
    `ima32`'s dual-issue form, `cie`, `.neg` and immediates with the extra operand, its selector 3
    and what bit 46 does (Q135), and `imae`'s repeats, `u16`/`z16` sources and `.rsN` shifts with the
    carries, with the operand values and immediates not run (Q127); the rule of the test field on the
-   shifts, the lane operations and the other classes, with the `o` join (Q137, Q151) and the chan
-   field (Q150); how long an `sa0` written by `ima32` lasts and why a write to `pa0` is lost (Q136).
+   shifts, the lane operations and the other classes, with the `o` join (Q137) and the chan
+   field (Q137); how long an `sa0` written by `ima32` lasts and why a write to `pa0` is lost (Q136).
 10. **Fences, repeats, registers and persistence for a firmware compiler**: why a `wdf` waits for
    another counter's loads in some runs and not in others (Q130); whether a firmware (EDM) task runs
    two at once (no second pass was seen in 12 of 12 holds of up to 90 ticks, E749, E751, and an
@@ -9284,9 +9284,9 @@ open driver:
    the register-index forms are Q154); when another reader sees an unfenced store and when a load
    not waited for lands (Q143, Q146); why a client `emitpds` faults the job and why its addend 0xFFF
    to 0x2000 leaves the fill's value (Q128, Q145); the 12 pixels of an `sa` writer that show the
-   `sa` (Q129); where a write past the allocation goes (Q132, Q147); what bounds a `phas` request
+   `sa` (Q129); where a write past the allocation goes (Q132); what bounds a `phas` request
    and what a request above 256 allocates, which is [infer] at least 124 for 260 to 376, T = 101 to
-   123 not run (Q133, Q144). What survives from one firmware task to the next beyond one writer's
+   123 not run (Q133). What survives from one firmware task to the next beyond one writer's
    `sa`, `r`, `i` and p1 (Q124, Q152, Q158), what stops the tick after a task (Q152) and
    the allocation of a firmware task above TRC 31 are not measured.
 

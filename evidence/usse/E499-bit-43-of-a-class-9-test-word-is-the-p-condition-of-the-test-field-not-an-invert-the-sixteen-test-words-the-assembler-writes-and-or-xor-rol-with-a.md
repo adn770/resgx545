@@ -70,4 +70,4 @@ after the data with no hardware, assembles `and.testpanz.chan0 !c0, p0, r1, r2` 
 (tanz with pat) with the `a` join, `.testnaz` to the field 5 with the `a` join and `.testnoz` and
 `.testtoz` to the fields 5 and 1 with the `o` join, and `.andall`, `.orall`, `.and02` and `.or02` to
 chan 4 to 7; the hardware ran those fields as raw words only. Still not run: the shifts, the other
-classes' tests, the `o` join with a chan other than chan0, and the field value 0 (Q137, Q150, Q151).
+classes' tests, the `o` join with a chan other than chan0, and the field value 0 (Q137).

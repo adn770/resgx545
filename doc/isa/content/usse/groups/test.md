@@ -74,7 +74,7 @@ The test is `.test<S><J><Z>.<chan>`, from `enc[43:36]`:
   `and` with #7 gives no negative result). **[infer]** The rule is not run for the shifts `shl`,
   `shr` and `asr`, `or` and `rol` with #7, 8-bit and 16-bit lane operations, the `o` join with a
   chan other than chan0, the field value 0 and the other classes' tests, and that no other bit of a
-  test word inverts a source is not run (Q137, Q151).
+  test word inverts a source is not run (Q137).
 - **Tests with an immediate [HW]** act on the 32-bit result (E473): `shr.testtanz.chan0 !c0, p0, r,
   #n` is "r >> n is nonzero", with n of 32 and over giving zero (80 of 80), `xor.testtaz` is "r ^ n
   is zero" over all 32 bits (18 of 18), and `and`, `or`, `xor` and `rol` with `testtanz` and `asr`
@@ -120,7 +120,7 @@ The test is `.test<S><J><Z>.<chan>`, from `enc[43:36]`:
   chan6 (`andall`, `and02`) read tanz and pat of the value with taz and nat false, and chan5 and
   chan7 (`orall`, `or02`) taz and nat of the value with tanz and pat true, which is the rule just
   given applied after the data (**[infer]**, 252 of 252 cases; not predicted); the same on 8-bit and
-  16-bit lane operations is **[open]** (Q150). The masks of class 15, `.partial` and `.quadlead` on
+  16-bit lane operations is **[open]** (Q137). The masks of class 15, `.partial` and `.quadlead` on
   tests are **[open]**.
 - **The unsigned and unorm byte operations [HW]** (E092, E094). `uadd8`, `usub8`, `umul8`,
   `uadd16` and `umul16` work lane by lane, unsigned and wrapping, and `.sat` clamps a byte at

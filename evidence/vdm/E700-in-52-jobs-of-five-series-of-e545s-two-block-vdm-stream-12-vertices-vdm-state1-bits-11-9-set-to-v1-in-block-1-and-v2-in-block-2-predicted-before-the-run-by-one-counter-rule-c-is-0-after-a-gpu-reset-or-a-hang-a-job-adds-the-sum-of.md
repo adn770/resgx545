@@ -59,6 +59,6 @@ which were designed from the rule. [infer] That c is a count of something the jo
 VDM, the TA or the USE is not shown; the rule is a description.
 
 **Not shown.** Every job here has one shape (12 vertices, two objects, 32 temporaries, 64x64):
-whether g and T depend on the shape is untested (Q270). The jobs ran seconds apart (the 52 in about
+whether g and T depend on the shape is untested (Q163). The jobs ran seconds apart (the 52 in about
 3 minutes), so nothing here says whether time clears c. Whether a reset that follows no hang clears
 c rests on one job.

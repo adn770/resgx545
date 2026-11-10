@@ -40,4 +40,4 @@ prediction ignored the field, and failed because a 32-bit result has channel 0 o
 **What it does not show.** The o join with a chan other than 0, other fields than the six, other ops
 than and with two registers, and the 8-bit and 16-bit lane forms as raw words (the *Test channels*
 page already has [HW] readings of lane operations through the assembler's chan names, 360 cases:
-what is not is the raw word on lanes). Opens Q150.
+what is not is the raw word on lanes). Opens Q137.

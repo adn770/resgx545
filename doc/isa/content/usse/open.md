@@ -59,8 +59,8 @@ open driver:
    `ima32`'s dual-issue form, `cie`, `.neg` and immediates with the extra operand, its selector 3
    and what bit 46 does (Q135), and `imae`'s repeats, `u16`/`z16` sources and `.rsN` shifts with the
    carries, with the operand values and immediates not run (Q127); the rule of the test field on the
-   shifts, the lane operations and the other classes, with the `o` join (Q137, Q151) and the chan
-   field (Q150); how long an `sa0` written by `ima32` lasts and why a write to `pa0` is lost (Q136).
+   shifts, the lane operations and the other classes, with the `o` join (Q137) and the chan
+   field (Q137); how long an `sa0` written by `ima32` lasts and why a write to `pa0` is lost (Q136).
 10. **Fences, repeats, registers and persistence for a firmware compiler**: why a `wdf` waits for
    another counter's loads in some runs and not in others (Q130); whether a firmware (EDM) task runs
    two at once (no second pass was seen in 12 of 12 holds of up to 90 ticks, E749, E751, and an
@@ -72,9 +72,9 @@ open driver:
    the register-index forms are Q154); when another reader sees an unfenced store and when a load
    not waited for lands (Q143, Q146); why a client `emitpds` faults the job and why its addend 0xFFF
    to 0x2000 leaves the fill's value (Q128, Q145); the 12 pixels of an `sa` writer that show the
-   `sa` (Q129); where a write past the allocation goes (Q132, Q147); what bounds a `phas` request
+   `sa` (Q129); where a write past the allocation goes (Q132); what bounds a `phas` request
    and what a request above 256 allocates, which is [infer] at least 124 for 260 to 376, T = 101 to
-   123 not run (Q133, Q144). What survives from one firmware task to the next beyond one writer's
+   123 not run (Q133). What survives from one firmware task to the next beyond one writer's
    `sa`, `r`, `i` and p1 (Q124, Q152, Q158), what stops the tick after a task (Q152) and
    the allocation of a firmware task above TRC 31 are not measured.
 

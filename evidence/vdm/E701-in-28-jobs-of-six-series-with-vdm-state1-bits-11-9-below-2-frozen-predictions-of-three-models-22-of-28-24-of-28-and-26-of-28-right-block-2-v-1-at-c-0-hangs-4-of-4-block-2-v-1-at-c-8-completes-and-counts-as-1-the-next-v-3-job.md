@@ -39,4 +39,4 @@ g(1) = -1 is a decrement that the hardware clamps at 0, and why block 2 hangs at
 shown: the sign of c below 0 is not observable in block 1 (B5).
 
 **Not shown.** One sequence each for the c = 8 pairs (B2, B3, B6); the shape dependence of E700's
-Not-shown paragraph applies (Q270).
+Not-shown paragraph applies (Q163).

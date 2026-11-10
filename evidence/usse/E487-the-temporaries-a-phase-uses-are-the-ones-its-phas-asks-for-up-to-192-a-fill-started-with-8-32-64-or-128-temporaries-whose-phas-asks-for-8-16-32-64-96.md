@@ -52,8 +52,8 @@ as predicted (15 of 15; the rule was written after the 64 + 20 and tested on the
 highest value that did not hang is 192' holds below 256 only, 'not run: 228 to 248, 260 to 504 and
 512 to 1016' is mostly run, and the 196 to 256 hang is part of the rule E519 fitted (84 requests)
 and tested (15 of 15); what a request above 256 allocates is not measured (E519 does not show
-whether a write reaches a register under a small allocation: Q132, Q144), and r123 is still the only
-register above 124 any of these jobs wrote. Q133 is narrowed and Q144 asks the rest.
+whether a write reaches a register under a small allocation: Q132, Q133), and r123 is still the only
+register above 124 any of these jobs wrote. Q133 is narrowed and Q133 asks the rest.
 
 **Correction, 2026-11-09 (11.35).** The measurements above are unchanged. The sentence that the job
 reads back "the marker it wrote ... in all 15 jobs" did not tell a write that landed from a stale

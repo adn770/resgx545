@@ -41,9 +41,9 @@ rule that fits which requests run and hang (E519: T mod 256 is 4 to 192) does no
 allocate: under it the requests 260, 264, 300, 316 and 376 would hold 4, 8, 44, 60 and 120
 registers, and a write to r123 would have been dropped as at T <= 100; it landed in 10 of 10 jobs.
 The request of 448 (192 registers under the rule) is no test of the rule. A request above 255
-therefore allocates at least 124 registers for these five values; what it allocates is open (Q144).
+therefore allocates at least 124 registers for these five values; what it allocates is open (Q133).
 
-**Against Q147.** Q147's three runs were: E519 with a marker per job, E486's probe with the marker
+**Against Q132.** Q132's three runs were: E519 with a marker per job, E486's probe with the marker
 written to r(n) only, and E519's probe with a marker first written to r(n mod T). Only the first
 ran, as these two runs (the same table in two orders). The question's title is answered in part
 (E486 and E519 do not disagree), its open parts about where a write goes and about the 88 to 99.6

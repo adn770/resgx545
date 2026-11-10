@@ -10,7 +10,7 @@ terms = []
 +++
 
 **Results.** The replay lists one line per USSE vector. Over the 5750 new vectors: 5406 match, 135
-stop (30 on a register past the task's allocation, Q147; 26 on a read before its load lands, `wdf`;
+stop (30 on a register past the task's allocation, Q132; 26 on a read before its load lands, `wdf`;
 the others on a read of an unwritten register, a repeat flag or an operand the records did not run),
 9 are skipped (another instance's unfenced store, E514, Q143), 156 are left out (124 with mixed
 pixels and no single `o0`, 32 whose job faulted) and 44 jobs that hung are not replayed, 42 of them
