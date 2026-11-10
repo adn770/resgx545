@@ -48,7 +48,7 @@ def slowevent(a):
     tk1 = FR.regs()[1].get(12)
     out.update({"done": done, "ms": (t1 - t0) * 1000, "trigger_at_ms": (trig_t - t0) * 1000,
                 "ticks": (tk1 - tk0) & 0xffffffff, "ticks_expected": (t1 - t0) * 997,
-                "page": res.page(), "log_bad": [ln for ln in FR.dmesg_new(n0) if FR.BAD_LOG.search(ln)],
+                "page": res.page(), "log_bad": [ln for ln in FR.dmesg_new(n0) if FR.is_bad_log(ln)],
                 "alive": FR.alive(), "health": FR.health()})
     res.close()
     FR.emit(out)

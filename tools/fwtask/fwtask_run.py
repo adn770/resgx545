@@ -27,13 +27,26 @@ RESULTS = 0x40
 LOG = 16
 DONE_MS = 100
 BAD_LOG = re.compile(r"\b(hung|recovering|BUG|Oops)\b|\bfault\b|page fault", re.I)
+# the module's informational line after a reset (fork 36f3d278); exactly this format, nothing broader
+RESET_INFO = re.compile(r"\] SGX reset: after the fault clear BIF_FAULT 0x[0-9a-f]+ BIF_INT_STAT 0x[0-9a-f]+$")
+KMSG = os.environ.get("FWTASK_KMSG", "/dev/kmsg")
+NO_MARKER = "(kernel log marker not found: the whole buffer follows)"
+
+
+def is_bad_log(line):
+    return bool(BAD_LOG.search(line)) and not RESET_INFO.search(line)
 
 
 class Stop(Exception):
     pass
 
 
+LOG_WHOLE = False      # set by dmesg_new when its marker was missing; emit() flags every result then
+
+
 def emit(obj):
+    if LOG_WHOLE:
+        obj = dict(obj, log_whole_buffer=True)
     print(json.dumps(obj, sort_keys=True))
     sys.stdout.flush()
 
@@ -108,11 +121,33 @@ def kreg_write(off, val):
 
 
 def dmesg_len():
-    return len(sh("dmesg").splitlines())
+    """Write a unique marker line to the kernel log and return it (the token dmesg_new takes).  Not a
+    line count: a full ring buffer keeps its line count constant (seen on the laptop, 2026-11-10)."""
+    global LOG_WHOLE
+    LOG_WHOLE = False
+    marker = f"resgx545 fwtask mark {os.getpid()} {time.time_ns()}"
+    try:
+        # O_APPEND without a seek: Python's "a" mode seeks, which /dev/kmsg refuses with EINVAL
+        fd = os.open(KMSG, os.O_WRONLY | os.O_APPEND)
+        try:
+            os.write(fd, (marker + "\n").encode())
+        finally:
+            os.close(fd)
+    except OSError:
+        return None
+    return marker
 
 
-def dmesg_new(n0):
-    return sh("dmesg").splitlines()[n0:]
+def dmesg_new(marker):
+    """The lines after the last occurrence of the marker; when it is not found (or none could be
+    written) the whole buffer, led by a line that says so, never an empty list."""
+    lines = sh("dmesg").splitlines()
+    at = max((i for i, ln in enumerate(lines) if marker and marker in ln), default=None)
+    if at is None:
+        global LOG_WHOLE
+        LOG_WHOLE = True
+        return [NO_MARKER] + lines
+    return lines[at + 1:]
 
 
 def alive(window=3, gap=0.02):
@@ -183,7 +218,7 @@ def cmd_stock(a):
     n0 = dmesg_len()
     out = {"own_arm": rd("own_arm").strip(), "alive": alive(), "rate_hz": tick_rate(),
            "misc": miscinfo(), "health": health(), "gate": gate()}
-    out["log_bad"] = [ln for ln in dmesg_new(n0) if BAD_LOG.search(ln)]
+    out["log_bad"] = [ln for ln in dmesg_new(n0) if is_bad_log(ln)]
     out["ok"] = (out["alive"]["advancing"] and 900 <= out["rate_hz"] <= 1100 and out["health"]["ok"]
                  and out["gate"]["ok"] and not out["log_bad"] and out["own_arm"].startswith("off"))
     emit(out)
@@ -203,7 +238,7 @@ def cmd_arm(a):
     time.sleep(0.1)
     out = {"own_arm": rd("own_arm").strip(), "alive": alive(), "rate_hz": tick_rate(),
            "misc": miscinfo(), "health": health()}
-    out["log_bad"] = [ln for ln in dmesg_new(n0) if BAD_LOG.search(ln)]
+    out["log_bad"] = [ln for ln in dmesg_new(n0) if is_bad_log(ln)]
     out["log"] = [ln for ln in dmesg_new(n0) if "own" in ln]
     res = Res()
     out["magic"] = res.r(0)[0]
@@ -309,7 +344,7 @@ def cmd_run(a):
             if (i % a.get("check_every", 10)) == 9:
                 al = alive()
                 h = health()
-                bad = [ln for ln in dmesg_new(n0) if BAD_LOG.search(ln)]
+                bad = [ln for ln in dmesg_new(n0) if is_bad_log(ln)]
                 if not al["advancing"]:
                     raise Stop("tick not advancing")
                 if not h["ok"]:
@@ -325,7 +360,7 @@ def cmd_run(a):
     if not stop:
         out["alive"] = alive()
         out["health"] = health()
-        out["log_bad"] = [ln for ln in dmesg_new(n0) if BAD_LOG.search(ln)]
+        out["log_bad"] = [ln for ln in dmesg_new(n0) if is_bad_log(ln)]
         out["kreg_after"] = {hex(k): hex(v) for k, v in kreg_all().items()}
     emit(out)
     return 1 if stop else 0
@@ -385,7 +420,7 @@ def cmd_pair(a):
             hang_dump(a["outdir"], f"pair-{kind}")
             break
     out["stop"] = stop
-    out["log_bad"] = [ln for ln in dmesg_new(n0) if BAD_LOG.search(ln)]
+    out["log_bad"] = [ln for ln in dmesg_new(n0) if is_bad_log(ln)]
     out["health"] = health()
     res.close()
     emit(out)
@@ -464,7 +499,7 @@ def cmd_tailpair(a):
                 raise Stop("tick not advancing after round %d (%s)" % (k, kind))
             if not entry["health"]["ok"]:
                 raise Stop("unhealthy after round %d: %s" % (k, entry["health"]))
-            bad = [ln for ln in dmesg_new(n0) if BAD_LOG.search(ln)]
+            bad = [ln for ln in dmesg_new(n0) if is_bad_log(ln)]
             if bad:
                 raise Stop("kernel log: %s" % bad[:2])
         except Stop as e:
@@ -475,7 +510,7 @@ def cmd_tailpair(a):
             hang_dump(a["outdir"], "tailpair-stop%d" % k)
             break
     out["stop"] = stop
-    out["log_bad"] = [ln for ln in dmesg_new(n0) if BAD_LOG.search(ln)]
+    out["log_bad"] = [ln for ln in dmesg_new(n0) if is_bad_log(ln)]
     out["health"] = health()
     res.close()
     emit(out)
@@ -502,7 +537,7 @@ def cmd_events(a):
     log = res.r(LOG, 16)
     res.close()
     out = {"log": log, "quiet_log": quiet, "trigger": trig, "alive": alive(), "health": health(),
-           "log_bad": [ln for ln in dmesg_new(n0) if BAD_LOG.search(ln)]}
+           "log_bad": [ln for ln in dmesg_new(n0) if is_bad_log(ln)]}
     out["hit_slots"] = [k for k in range(4) if log[4 * k] == 1]
     emit(out)
 
