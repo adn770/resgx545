@@ -36,3 +36,9 @@ iterations of the eight-instruction body on three vertices, and earlier with mor
 538 at 48), so it is not a fixed count of a vertex's instructions or multiply-adds; HV-JOB, the
 per-job count, misses at 12 and 48 vertices too. One run a point outside b8v; the sweep stops
 leave b4v's first set point below 1760 unplaced.
+
+**Correction 2026-11-10:** The results table copies the frozen scorer's "ok" for b4v under
+HV-INSTR (2090..2200). The scorer calls it consistent because no point of that ladder was clear,
+but the bit was already set at 1760, the lowest point run, below the window, so the window is
+contradicted (post hoc reading of the frozen output, not the scorer's verdict): HV-INSTR places
+none of the bodies, as the title says.
