@@ -105,7 +105,9 @@ def crafted_blobs():
         ("emit", "emitpix1.freep #0, r0, r1", Y.UNKNOWN),
         ("emitpds", "emitpds.tasks.taske #0, r2, r3, r4, #0x0", Y.UNKNOWN),
         ("bexception", "bexception #0", Y.UNKNOWN),
-        ("phas", "phas #0, #0, pixel, end, parallel", Y.UNKNOWN),
+        # R3-K11: of cfi and phas only the shared exit's two words are allowed
+        ("phas", "phas #0, #0, pixel, end, perinstance", Y.UNKNOWN),
+        ("cfi_other", "cfi.global #1, #0, #1", Y.UNKNOWN),
         ("br_out", "br #5", Y.BR_OUT),
         # R3-K3: a mov to a pa register other than pa2 to pa4
         ("mov_pa0", "mov pa0, r1", Y.PA), ("mov_pa1", "mov pa1, r1", Y.PA),

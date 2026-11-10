@@ -123,6 +123,10 @@ FORMS = [
     ("nop", "NOP", ALL & ~(1 << 50), 0xF800014000000000),                              # #128
     ("idf", "PLAIN", 0xFFFFFFFEFFFFFFFF, 0xF820000000000000),                          # #6
     ("wdf", "PLAIN", 0xFFFFFFFEFFFFFFFF, 0xF920000000000000),                          # #7
+    # round 3 (R3-K11): the two words of the closed tasks' shared exit that no row above has
+    # (readings R-1), each as the one exact word, nothing else of its form
+    ("cfi-exit", "PLAIN", ALL, 0xF843B300A0000180),                                    # #158
+    ("phas-exit", "PLAIN", ALL, 0xFA44070000000000),                                   # #8
     ("br", "BR", ALL & ~(7 << 56 | 0x3FFFF), 0xF800004000000000),                      # #13
     ("lapc", "LAPC", ALL, 0xF800008000000000),                                         # #125
     ("alu-test", "PLAIN", ALL & ~_ALU_FREE, 0x48081081000C0000),                       # #24: and, xor, no write

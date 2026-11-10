@@ -136,7 +136,10 @@ def test_classify(line, kind):
     "emitpds.tasks.taske #0, r2, r3, r4, #0x0",
     "emitpix1.freep #0, r0, r1",
     "bexception #0",
-    "phas #0, #0, pixel, end, parallel",
+    "phas #0, #0, pixel, end, perinstance",     # not the exit's word (R3-K11 allows only that one)
+    "phas #0, #0, pixel, none, parallel",
+    "cfi.global #1, #0, #1",
+    "cfi #3, #0, #3",
 ])
 def test_denied_forms(line):
     e = verify(line + "\nnop.end")
@@ -277,3 +280,29 @@ def test_mov_pa_leaves_the_tracked_base_alone():
     """mov pa3 writes no temporary: r3, the store's base, still holds the results page."""
     w = asm("mov r3, #0xdeadbeef\nmov pa3, r4\nstad [r3,+#0], r4\nnop.end")
     assert fwtask.verify(w, [fwtask.Patch(0, "res", 0)], REGS, [0]) == []
+
+
+# ---- round 3, R3-K11: the shared exit's two words outside the old rows (readings R-1) --------
+EXIT_CFI = 0xF843B300A0000180        # cfi.global #3, #0, #3
+EXIT_PHAS = 0xFA44070000000000       # phas #0, #0, pixel, end, parallel
+EXIT = ["cfi.global #3, #0, #3", "idf drc0, bif", "wdf drc0", "phas #0, #0, pixel, end, parallel",
+        "nop.end"]
+
+
+def test_exit_words_assemble_to_the_pinned_words():
+    assert asm("cfi.global #3, #0, #3") == [EXIT_CFI]
+    assert asm("phas #0, #0, pixel, end, parallel") == [EXIT_PHAS]
+
+
+def test_exit_rows_are_exact_words():
+    rows = {r[0]: r for r in fwtask.FORMS}
+    assert rows["cfi-exit"][1:] == ("PLAIN", fwtask.ALL, EXIT_CFI)
+    assert rows["phas-exit"][1:] == ("PLAIN", fwtask.ALL, EXIT_PHAS)
+    for w in (EXIT_CFI, EXIT_PHAS):
+        for b in range(64):
+            assert fwtask.classify(w ^ 1 << b)[0] in ("UNKNOWN", "DENY"), (hex(w), b)
+
+
+def test_a_copy_of_the_shared_exit_is_accepted():
+    assert verify("\n".join(EXIT)) == []
+    assert verify("mov r1, #0x5\n" + "\n".join(EXIT)) == []
