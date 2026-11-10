@@ -57,5 +57,6 @@ the formula with f >= 4 says, and completes at 256 x 160 and 320 x 128. A failed
 GPU needing a reset: the next health triangle faulted once or twice more before a plain triangle
 drew (3 jobs, 3 recoveries, 0 stops of the script).
 
-**What it does not show.** f = 4 against 5 (needs the size of the TA's header arrays: Q286); the
+**What it does not show.** f = 4 against 5 (needs the size of the TA's header arrays: answered by
+E788); the
 kernel fix; why the recovery reports -110 and still needs a reset.

@@ -8,7 +8,8 @@ date = "2026-11-10"
 data = ["render-closing-s3:out/20261110-003114/s3-a-safe/"]
 terms = ["CR_TE_AA", "CR_ISP_MSAA", "CSTREAM.PRIM_TILES", "REGION_HDR.POS"]
 +++
-**What ran.** a4 was S3's first job and the control of pixel A (Q286): a 4x-free setting (TE 0x20,
+**What ran.** a4 was S3's first job and the control of pixel A (the TA-array question, answered by
+E788): a 4x-free setting (TE 0x20,
 bit 29 alone, one region-header array) at the size of the decisive job a5, frozen to complete with
 `diff: 0 of 128000`, the echo `targets up to 544x400`, a TA data dump of 0xa000 bytes and one array.
 It carried no `expectdiff`, so a wrong image stops the stage (runner exit 4).
@@ -20,8 +21,9 @@ kernel-log line of the job (dmesg slice empty), snap 0 clear, health triangles b
 diff 0. The stage stopped there (a1, a2, a3 did not run), and the gate of s3-a-fault stayed closed
 in the later attempts (a5, a6 did not run).
 
-**Frozen verdict.** a4 control FAIL (diff 28); s3-a-safe "cannot tell"; Q286 "cannot tell (a
-control failed: a4 False, a6 False)" (a6 never ran).
+**Frozen verdict.** a4 control FAIL (diff 28); s3-a-safe "cannot tell"; the TA-array question
+(answered by E788)
+"cannot tell (a control failed: a4 False, a6 False)" (a6 never ran).
 
 **Post hoc, read after the run [infer, not held out, not frozen].**
 E727's model (2026-11-09, scored 17 of 17 on held-out

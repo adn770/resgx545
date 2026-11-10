@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-192 open: 174 hw (high 21, medium 79, low 74, unrated 0), 11 fw, 7 kernel.
+190 open: 172 hw (high 21, medium 78, low 73, unrated 0), 11 fw, 7 kernel.
 
 ## Work queue: hardware
 
@@ -132,7 +132,6 @@
 - `Q165` (phase 11, hw, low): why does a coordinate size and format word that describes sets the vertex program does not write (size code 5 over two or three outputs, a format bit for an absent set) fault or hang at N = 2, 3 and 8 outputs and complete at N = 5, 6, 9 and 11 (E541)
 - `Q230` (phase 12, hw, medium): what does the TA write in the cases of the clip, the target's edge and the numeric formats that E776 to E783 left open: the stored order of a clipped polygon of 3 or of more than 4 vertices and of a cut by a guard-band plane (E777), the limit of the region lists in y and at the left edge of other targets (E776), the tie of the rounding of the 1/1024 grid to 1/256 (E778), the depth word of a vertex with w other than 1 (six words and no formula, E783) and the 1/w word and depth of a clip-made vertex (1/w within 1 ulp of RZ of 1/w_made and exact in 1 of 4, depth 1.0 in 3 of 4, E782), the 1/w word under a clamp (within 1 ulp of 1/clamp, no rule, E781), and the size at which a sub-pixel triangle is no longer written (E780)? (E063, E182, E194, E287, E307, E651, E650, E736, E754, E776, E777, E778, E780, E781, E782, E783)
 - `Q231` (phase 12, hw, low): what do the words of a render job that the vertex side and the TA read or ignore and no record explains do: the command's CR_MTE_CTRL (0xa2) and MTE screen words, the command words 10 to 25, the MTE state block's WCLAMP, the attribute rows of a VDM state block (VDM_STATE1 bits 7:0), the end-of-scene block's two terminate halves (E059 only shows that clearing a half leaves part of the target unwritten), and the stream's forms of a region (the primitive word and the further dword) for an object of more than five triangles? (E059, E060, E177, E180, E650, E652)
-- `Q286` (phase 11, hw, medium): the TA writes four arrays of region headers at CR_TE_AA 0xe0000000 and a layout of exactly four completes 320x400 (E788): what must the kernel's render layout allocate at the other sizes that fault (the tall case with a page of slack, 288x656 in a context for 544x656, was not run), and why do the health triangles after a 4x fault fault again (E729, E507, E504, E762, E763, E788)
 
 ### texture
 
@@ -151,7 +150,6 @@
 - `Q180` (phase 11, hw, low): why did all 28 triangle jobs of the Q021 probes hang (E569), the two controls with the old source word 0x40800801 included: is it the four outputs o4 to o7, the two extra temporaries, or something else in the vertex program (E569, E420, E541)
 - `Q181` (phase 11, hw, low): does the fill's transfer command load a colour-space set at all (xfer:17^=1 and xfer:18 to 22 made no difference for formats 28 and 29, E568), and if not, which path loads the set that the YUV conversion reads (E568, E037, E040)
 - `Q280` (phase 11, hw, low): what makes up to 56 of 2048 pixels of a gradient job differ from the Euclidean footprint of the pairs (op0, op2) and (op1, op3) with a LOD fraction truncated to 1/64 (E721), a rounding of the length, of the logarithm or of the operands, or a footprint that is not exactly Euclidean (E721, E563, E744)
-- `Q281` (phase 11, hw, low): is there a limit to the extent of a texture the sampler reads without a fault, now that the three T3 address jobs that faulted at 16 pages complete and fit E722's address model with a larger buffer (E743, E760) and the 16 and 17 page faults and the 18-page empty image are the probe's own layout (E787): the largest extent read exactly is 170 KiB (L3e3 at 64 pages) and the probe cannot build a larger (E722, E566, E743, E760, E787)
 - `Q282` (phase 11, hw, low): what arithmetic gives the bilinear sample of an sRGB texel (T0 bit 27) given that decode-then-filter in float fits 43% to 56% of the pixels and filtering the bytes then decoding fits none (E723, E720)
 - `Q283` (phase 11, hw, low): is the stride of type 4 textures 32 dwords at every width and are types 1 and 3 read with a stride of the width at widths above 32 and for widths that are not powers of two (E725, E567)
 - `Q284` (phase 11, hw, medium): what are the (s, t) orientation of each cube face, the edge filtering across faces and the face size limits of TEXTYPE 2 (E726, E567)

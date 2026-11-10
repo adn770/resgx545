@@ -36,3 +36,7 @@ missing fifth array; the kernel's own layout for those sizes was not read agains
 Open: the kernel's `sgx_render_layout` for the multisampled case (what it must allocate at 288 x
 144, 256 x 288 and 384 x 384 and the sizes between 192 x 96 and 320 x 160) and the health triangles
 that fault after a failed 4x job.
+
+Note 2026-11-10: Q286 is retired, answered by E788 (four arrays of region headers, and four
+suffice at 320 x 400); its two open clauses, the layout at other sizes and the health triangles
+after a failed 4x job, are this question's (above).

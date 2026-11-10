@@ -5519,22 +5519,23 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   tests the target against 0xdeadbeef and the job wrote it.
   *texture; HW, infer; data: `render-closing-r2-pixel:out/20261110-105258/r2-d-safe/`,
   `render-closing-r2-pixel:out/20261110-105258/r2-d-fault/`.*
-- `E788` R2-pixel stages r2-a-safe and r2-a-fault, Q286 (6 jobs, mode 2, --tri-full, the tool's
-  triangle with CR_TE_AA 0xe0000000 unless noted): the controls passed (a4, 320x400 at CR_TE_AA
-  0x20000000 in a render context made for 544x400: TA data 0xa000 bytes, one array of region headers
-  from 0x4000, nothing below 0x4000 or from 0x5800, and the image of E727's region model, 28 of
-  128000 pixels wrong with the first at (304, 128), the control value frozen from the model; a6,
-  320x400 at 0xe0000000 in a context made for 320x400, held: BIF_INT_STAT 0x90004 at page 0x20008),
-  the TA data of the two completing sizes held four arrays and nothing in a fifth (a1, 256x160, own
-  context: 0 of 40960 wrong, non-zero dwords in the slots of 0x600 bytes from 0x4000: 256, 160, 256,
-  160, 0, 0; a2, 320x128: 0 of 40960 wrong, 256, 256, 160, 160, 0, 0; nothing below 0x4000; the
-  replicate a3 of a1 had a1's TA data sha256, eaa6c96c0b8d7739), so f = 4 for what the TA writes,
-  and the held-out sufficiency job a5 (320x400 at 0xe0000000 in the context made for 544x400, whose
-  TA data is 0xa000 bytes = 0x4000 + 4 x 0x1800 and has no room for a fifth array at the 0x1800
-  spacing) completed with 0 of 128000 pixels wrong and four arrays written (non-zero dwords per
-  array 1024, 800, 640 and 584), where a context made for 320x400 alone faulted (a6): four arrays
-  suffice at 320x400; H4 (f = 4) held on the three frozen rows it predicted (slot 4 zero in a1 and
-  a2, a5 completes in 0xa000) and H5 (a fifth array written or needed) was not supported by any.
+- `E788` R2-pixel stages r2-a-safe and r2-a-fault, the TA-array question (6 jobs, mode 2,
+  --tri-full, the tool's triangle with CR_TE_AA 0xe0000000 unless noted): the controls passed (a4,
+  320x400 at CR_TE_AA 0x20000000 in a render context made for 544x400: TA data 0xa000 bytes, one
+  array of region headers from 0x4000, nothing below 0x4000 or from 0x5800, and the image of E727's
+  region model, 28 of 128000 pixels wrong with the first at (304, 128), the control value frozen
+  from the model; a6, 320x400 at 0xe0000000 in a context made for 320x400, held: BIF_INT_STAT
+  0x90004 at page 0x20008), the TA data of the two completing sizes held four arrays and nothing in
+  a fifth (a1, 256x160, own context: 0 of 40960 wrong, non-zero dwords in the slots of 0x600 bytes
+  from 0x4000: 256, 160, 256, 160, 0, 0; a2, 320x128: 0 of 40960 wrong, 256, 256, 160, 160, 0, 0;
+  nothing below 0x4000; the replicate a3 of a1 had a1's TA data sha256, eaa6c96c0b8d7739), so f = 4
+  for what the TA writes, and the held-out sufficiency job a5 (320x400 at 0xe0000000 in the context
+  made for 544x400, whose TA data is 0xa000 bytes = 0x4000 + 4 x 0x1800 and has no room for a fifth
+  array at the 0x1800 spacing) completed with 0 of 128000 pixels wrong and four arrays written
+  (non-zero dwords per array 1024, 800, 640 and 584), where a context made for 320x400 alone faulted
+  (a6): four arrays suffice at 320x400; H4 (f = 4) held on the three frozen rows it predicted (slot
+  4 zero in a1 and a2, a5 completes in 0xa000) and H5 (a fifth array written or needed) was not
+  supported by any.
   *ta; HW, infer; data: `render-closing-r2-pixel:out/20261110-105258/r2-a-safe/`,
   `render-closing-r2-pixel:out/20261110-105258/r2-a-fault/`.*
 - `E789` R2-pixel stage r2-a-fault, job a6-320x400-max320 (a 4x job, mode 2, CR_TE_AA 0xe0000000,

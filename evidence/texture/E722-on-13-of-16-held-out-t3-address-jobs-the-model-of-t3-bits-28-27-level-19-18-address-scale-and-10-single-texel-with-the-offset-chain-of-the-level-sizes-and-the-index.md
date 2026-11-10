@@ -35,7 +35,8 @@ completed jobs that are not bit-10 jobs (the largest, ad-tw128x32-L0e2, is exact
 86016 (0x15000), 174080 (0x2a800) and 87040 (0x15400) on the three that faulted. So the faults are
 exactly the jobs whose A4 extent exceeds 64 KiB, consistent with a texture buffer of 64 KiB the
 sampler read past, and the order of the fault addresses follows the extents. One buffer size
-explains the three faults; whether the buffer is 64 KiB was not measured (Q281).
+explains the three faults; whether the buffer is 64 KiB was not measured (answered by E787: the
+probe's layout).
 
 **Population.** The model A4 was fitted on the 12 jobs of E566 (in sample); the 13 jobs here are
 held out and confirm it at 100% of the jobs that returned an image. The three extreme jobs are not
@@ -48,8 +49,9 @@ index, on twiddled textures up to 64 x 64 (to L = 1, e = 1; and L = 3, e = 0) an
 jobs refute the index-only form).
 
 **Limits of the run.** Only a 32-bit format and widths up to 128 were run. The 64 KiB cause is
-the probe's scratch size (the probe prints "scratch ... (64 KiB)"), already hinted by Q281: [infer]
-until Q281 runs with a larger buffer. The strided chain is separated from A4 by one job (12 of 13
+the probe's scratch size (the probe prints "scratch ... (64 KiB)"), [infer]
+until a run with a larger buffer (done: E743, E787). The strided chain is separated from A4 by one
+job (12 of 13
 against 13 of 13).
 
 **What it does not show.** The three largest combinations (no image); level 3 with a scale on a

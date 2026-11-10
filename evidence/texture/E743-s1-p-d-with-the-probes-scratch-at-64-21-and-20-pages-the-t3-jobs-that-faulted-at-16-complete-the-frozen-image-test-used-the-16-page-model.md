@@ -8,7 +8,8 @@ date = "2026-11-09"
 data = ["render-closing-s1:out/p-d/"]
 terms = ["T3.BIT10", "T3.BITS19_18", "T3.BITS28_27", "CR_BIF_FAULT"]
 +++
-**What ran.** Q281 asks whether E722's three faulting T3 jobs complete and fit the address model
+**What ran.** The question this record served (answered by E787) asked whether E722's three
+faulting T3 jobs complete and fit the address model
 (A4) when the scratch is larger than 64 KiB. Jobs: the 64-page control (an A4-exact case), the three
 at 64 pages, L2e2 at 21 and 20 pages (the extent boundary), and L2e2 at 16 pages (E722's fault).
 

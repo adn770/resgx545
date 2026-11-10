@@ -20,7 +20,7 @@ past the surface in an unmapped page (17 and 16). The test for page 2 is a varia
 stores the sampled word xor 1: if the pixels are written with the sentinel the image reads
 0xdeadbeee, if nothing is written the probe's own "no pixel written" test cannot tell.
 
-**Frozen verdict.** `Q281: HL: all 2 held-out rows agree (d-L2e2-18x, d-L2e2-17); repeat
+**Frozen verdict.** `HL: all 2 held-out rows agree (d-L2e2-18x, d-L2e2-17); repeat
 d-L2e2-18 {'d-L2e2-18': 'PASS'}; controls {'d-ok-64': 'PASS', 'd-L2e2-19': 'PASS', 'd-L2e2-19x':
 'PASS', 'd-L2e2-16': 'PASS'}`.
 
