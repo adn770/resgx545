@@ -31,10 +31,10 @@
 
 - `Q002` (phase 3, hw, low): is the 399.0 MHz reference that times the EDM tick and TIMER the clock the USSE runs from? (E009, E084, E124, E377)
 - `Q033` (phase 10, hw, low): which hardware event sets bit 19 of the event word pa1 that the hardware hands a PDS event program, if any (none of the 138 job events of 14 jobs in E747 carried it, nor any of 8 4096x4096 jobs of E771 whether the TA's threshold was raised or not, with no rise of status bit 3 in the sampled timeline) (E155, E146, E154, E532, E538, E746, E747, E771)
-- `Q082` (phase 11, hw, medium): what do CR_EVENT_STATUS2 bits 6 and 7 mean, bit 6 set while a job hangs in its pixel task and bit 7 while a TA job hangs or faults? (E317, E318, E319, E357, E431, E764, E765, E766, E769, E770, E784)
+- `Q082` (phase 11, hw, medium): what do CR_EVENT_STATUS2 bits 6 and 7 mean, bit 6 set while a job hangs in its pixel task and bit 7 while a TA job hangs or faults? (E317, E318, E319, E357, E431, E764, E765, E766, E769, E770, E784, E804, E805, E806, E807)
 - `Q096` (phase 11, hw, low): does the sampler cache erratum of host bridge revisions below 4 show when a texture and other data have addresses that differ only above bit 28? (E002, E011, E013, E033, E035, E041, E114, E432)
-- `Q152` (phase 11, hw, medium): what does the EDM need from the closed general task's end of a pass so that the next event is delivered and the 1 kHz tick continues (E793: a task of ours that ended a tick pass with `nop.end` and did not call it stopped the tick, 2 of 2, while E791's single writes of sa63, sa64 or sa65 and the tail call with p0 = p1 = 1 did not, 19 of 19), and what in E537's writer (sa63 and sa65 written with the words it left, p0 = p1 = 1: the armed reader did not run, 1 run) stopped it, E536's writer (3 of 3 rounds kept the tick) not, and does the closed task use p0 to p3, sa63 or sa65 (E533, E155, E536, E537, E791, E792, E793)
-- `Q158` (phase 11, hw, low): which sa, i and temporaries of a firmware task keep their value across a debugfs reset and across a firmware reload and boot (E536's controls read i0, i1, sa100 and sa127 as the writer of phase 11.29 left them 15 minutes and a reset and a reload earlier, and sa20, sa24, sa64, r20 and r21 not) (E536, E537)
+- `Q152` (phase 11, hw, medium): what does the EDM need at the end of a pass so that the next event is delivered and the 1 kHz tick continues (E793, E813: a pass that our task ends with `nop.end`, a tick pass or a kick pass, stops the tick; a tick pass handed to the closed task of slot 2, its fast path and the shared exit, keeps it, 42 of 42), which bits of the event word in sa65 stop it (E814: the count byte with bit 8 stops it with E537's two marks, E537's word without bit 8 stops it without them, its bits 4, 7 and 10 not tried alone; E812: the count byte 0xb0 and bits 2, 3, 6, 14 to 16, 19 and 23 keep it), and does the closed task's path depend on the tick bit of sa64 alone (from Q124; E792, E812: with it clear pclink is left at 6, dword 12 does not advance and the tick is kept) (E533, E155, E536, E537, E791, E792, E793, E811, E812, E813, E814)
+- `Q158` (phase 11, hw, low): which sa, i and temporaries of a firmware task keep their value across a debugfs reset and across a firmware reload and boot (E536's controls read i0, i1, sa100 and sa127 as the writer of phase 11.29 left them 15 minutes and a reset and a reload earlier, and sa20, sa24, sa64, r20 and r21 not) (E536, E537, E809, E810)
 - `Q168` (phase 11, hw, low): what limits the temporaries of a firmware task above TRC 48 (E540 predicted a hang for 49 and 64; E550 armed 32 to 48 with trc_hazard=1 and read r123 back in 10 of 10), and can a register above r123 (up to the 4T - 1 of the allocation) be reached, through an indirect or banked access, so that the top of a large allocation can be tested (E540, E550)
 - `Q194` (phase 11, hw, low): does a load that is not waited for land by itself in a firmware (EDM) task, at what distance, and is that a property of the task, of the bypass flag or of the page (E602: the new value in 32 of 32 stores after 32 loads with no wdf, 3 of 3 jobs; E517: a fill's load landed after 40, 100 and 128 nops and not after 48 and 64) (E517, E602)
 - `Q196` (phase 11, hw, low): do the client results of 11.36 for the compare and the high word of ima32 (E595, E597), the predicated register moves and ba (E596) and the narrow memory forms (E598, E599) hold in a firmware (EDM) task (E595, E596, E597, E598, E599, E601)
@@ -98,7 +98,7 @@
 - `Q063` (phase 11, hw, low): what does bit 9 of a mov16 or mov32 special source select on the rest of the SGX family, when on SGX545 it only makes mov16 read 0? (E128)
 - `Q093` (phase 11, hw, medium): does DOUTU1 bit 24 (wait for iterations) hang a job under the fetch wait, as it did in 4 of 126 jobs with both bits in colour and coordinate shapes, and why does the closed driver set it with bit 25? (E345, E364, E436, E454, E459, E460)
 - `Q207` (phase 12, hw, medium): what do the PDS programs of a transfer do with the inputs and instructions no record measured: if0 and if1, ir2, a movs reading ir1.l and tim.l in the primary program, and a program that is not one of the three templates the records ran? (E130, E262, E263, E043, E265, E620)
-- `Q276` (phase 11, hw, high): does a predicate set by `xor.testtaz.chan0 !c0, p1, g25, #k` gate the write `p1 or.skipinv o4` at all (E709: the o4 writes and their 120 pairs are the same for k = 0, 1, 2, 3 and for no guard), and which instances run when it does (E709, E570, E406, E742, E759, E772)
+- `Q276` (phase 11, hw, high): does a predicate set by `xor.testtaz.chan0 !c0, p1, g25, #k` gate the write `p1 or.skipinv o4` at all (E709: the o4 writes and their 120 pairs are the same for k = 0, 1, 2, 3 and for no guard), and which instances run when it does (E709, E570, E406, E742, E759, E772, E808)
 
 ### platform
 
@@ -247,7 +247,7 @@
 
 #### usse
 
-- `Q124` (phase 11, fw): do p0-p3 and pclink survive from one firmware (EDM) task to the next, and does a task start with them clear, set or as the last task left them? (E475, E477, E484, E533, E536, E537, E791, E792)
+- `Q124` (phase 11, fw): do p0-p3 and pclink survive from one firmware (EDM) task to the next, and does a task start with them clear, set or as the last task left them? (E475, E477, E484, E533, E536, E537, E791, E792, E809, E810, E812)
 
 #### zls
 

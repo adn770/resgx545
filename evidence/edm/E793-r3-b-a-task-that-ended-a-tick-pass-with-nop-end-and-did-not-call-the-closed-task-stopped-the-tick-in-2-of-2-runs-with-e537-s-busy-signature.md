@@ -61,3 +61,16 @@ calls (0x58c, 0x5d1, 0x604, 0xae6, 0xb09, 0xe71, 0xeb2); the landed verifier ref
 `cfi.global` and the `phas` (no row for either) and every `ba` and a `br` out of the blob, so a task
 of ours can reach the exit only through the closed task's continue patch (a new form row would be a
 kernel change).
+
+**Correction 2026-11-10:** (R3x-events, E813 and E811, held out) The candidate above was run from
+the closed side: a tick pass handed by a continue patch to the closed task of slot 2, which runs 12
+instructions and the shared exit and none of the general task, kept the tick (X1 2 of 2; X20 20
+passes a job in 2 of 2), and a kick pass ended with this record's own `idf, wdf, nop.end` stopped it
+with the same busy signature, the kick's CCB command written and not read (B3, 1 job): H-EXIT is
+supported, H-BODY and H-TICKONLY are refuted, so the stop is not limited to tick passes and the
+general task's body is not what the EDM needs [infer: the shared exit's five instructions alone were
+not run]. The reading above that E537's signature "is what a stop looks like when the closed task
+never ran" needs a qualifier: a pass of ours still running inside a 90 ms hold reads the same
+signature in every element sampled (E811, 3 of 3), so the signature does not tell a stopped EDM from
+a pass in progress; whether the stopped pass was counted was not measured (the D instrument never
+read, E811).

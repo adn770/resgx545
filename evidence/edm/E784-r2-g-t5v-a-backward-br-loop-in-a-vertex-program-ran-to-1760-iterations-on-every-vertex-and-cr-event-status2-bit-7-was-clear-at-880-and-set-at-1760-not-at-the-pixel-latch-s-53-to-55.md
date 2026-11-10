@@ -52,3 +52,12 @@ compared here]. Not placed: the point inside (880, 1760], whether it is time or 
 (a second body length would separate them: E769 did that for the pixel side), whether a fault,
 which sets bit 7 121 us later (E764), shares the condition, and whether the bit's setting changes
 the job (it did not: the objects and depth words are intact).
+
+**Correction 2026-11-10:** (R3-pixel, E807, held out) The point inside (880, 1760] is placed: with
+this body on the tool's three vertices bit 7 was clear at 1045 and set at 1100 iterations in both
+orders of a 15-point ladder. The [infer] above, that a quantity of the whole job fits better than
+one of a vertex, does not survive as a count: the per-job count HV-JOB missed at 12 vertices (set
+between 554 and 698 iterations) and 48 (between 329 and 538), and a fixed count of a vertex's
+instructions missed with a 16-instruction body (between 601 and 649) and at 12 and 48 vertices, as
+did a count of its multiply-adds everywhere; bit 7 showed 184 to 195 us after the burst began in
+every set job of E807 [HW].

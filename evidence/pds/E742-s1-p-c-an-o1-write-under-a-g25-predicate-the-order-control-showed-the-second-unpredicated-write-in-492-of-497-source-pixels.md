@@ -50,3 +50,9 @@ was 0.239 there and 0.237 in S1b, the share of the sources with x bit 4 set (the
 x 10 to 54); as a per-source rule it also fits S1 and S1b's c-g23 (an offline recount of the
 proposal, not re-checked here). The y bit played no part (the mask 0x100000 gave none). The
 quad-position reading of g25 repeated as a lane id (E772), also post hoc.
+
+**Correction 2026-11-10:** (R3-pixel, E808) The lane readings of g25 above, post hoc here and in
+E759 and E772, held as frozen CONFIRM rows and in held-out rows: tag 2 at k = 0 only at (even x,
+even y) (123 sources), at k = 3 only at (odd, odd) (121), never at k = 5 and 7, and the direct read
+of g25 equal to (x & 1) | (y & 1) << 1 in every written pixel of three triangles (1062, 4096 and
+16384).

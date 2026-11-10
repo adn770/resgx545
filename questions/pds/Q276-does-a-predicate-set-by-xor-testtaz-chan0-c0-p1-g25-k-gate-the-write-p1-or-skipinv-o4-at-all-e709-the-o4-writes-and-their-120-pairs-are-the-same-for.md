@@ -5,7 +5,7 @@ unit = "pds"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E709", "E570", "E406", "E742", "E759", "E772"]
+evidence = ["E709", "E570", "E406", "E742", "E759", "E772", "E808"]
 terms = ["PDS_SIZE.BITS17_16"]
 +++
 Q023 asks which lanes write o4 to o7 in the four-output-room setup. E709 guarded o4 by a test of g25
@@ -51,3 +51,13 @@ not gated. That answers the first half of the question as "not gated" and the se
 whose id equals k writes o1" on post hoc readings only; the stage's tag-5 pair counts ran from 10 to
 42 over its 18 configurations, so E709's 17 to 29 was too narrow a control. Open: a frozen rerun
 with the same rows and a control range from the stage's own counts.
+
+Narrowed 2026-11-10 (R3-pixel, E808; not retired). The frozen rerun with controls scoped to their
+group held E772's post hoc readings, frozen as a model, in all 29 rows it scored: g25 is the
+instance's lane in its 2x2 quad, g23 = x mod 32 and g24 = y mod 16 (held out, at three triangles),
+and a predicate set by `xor.testtaz.chan0 !c0, p1, g25, #k` gates the o1 write per instance (the
+lane whose id equals k writes). The o4 clause is not settled: every o4 word was tag 5 in both write
+orders, also where 5' was the later write, so the swapped-order control failed and its three rows
+are cannot tell, and tag 5 alone in the original order (k = 0, 3 and 7) cannot tell a predicate that
+is ignored from a write that lands whatever the order (E772's 'not gated' does not follow). Open:
+whether the predicate gates `p1 or.skipinv o4`, and which of two o4 writes lands, and why.

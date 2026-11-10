@@ -92,3 +92,13 @@ marker with bit 1 set), and a count of HostCtl dword 12 short by one on those pa
 support it, is not recorded in this record or in the dataset files read for this note. It is also
 not shown that the same mechanism explains E537's stop (where the sa65 write is the leading
 candidate, not established).
+
+**Correction 2026-11-10:** (R3x-c3, E809 held out and E810) p2 and p3 do show something. A writer of
+ours that left three different flag sets found p2 and p3 as it left them at the next entry in 12 of
+12 jobs (8 of 8 where a flag was 0, held out; p2 = p3 = 1 refuted) and still after 1200 ms (3 of 3),
+and after a client fill, a reload or a reset p2 read 0 and p3 the value left in 9 of 9 jobs [post
+hoc]; this record's 0, 1 after a fill is that reading with its writer's 1, 1 [infer]. Frozen from
+this record, "0 1 after a fill" held in 1 of 3 jobs and "0 0 after a reset and a reload" in 4 of 6,
+refuted as rules. The persistence above repeats with markers: across a fill i0, i1 and sa63 kept,
+r20 0 and r21 0x1000, 0x2000, 0x3000 (3 of 3); across a reload, with or without a reset, i0, i1 and
+r21 kept and r20 and sa63 read 0 (6 of 6) (E810).

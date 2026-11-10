@@ -63,3 +63,15 @@ instruction mix, or a time that these single-run job times do not measure.
 body-4 ladder past 160 iterations or a body of another mix sets the bit where the fit says, bit 7
 (the TA: a vertex loop was not built, T5 is not in this session), and the occupancy knob (E770: the
 triangle jobs could not be used).
+
+**Correction 2026-11-10:** (R3-pixel, E805, held out) The post hoc multiply-add threshold above is
+refuted. Ladders run in two orders with a loop proof set bit 6 with no multiply-add at all (a body
+of two instructions at 500 to 16000 iterations, a body of six `or` at 60 to 3840) and left it clear
+with the body with a load up to 320 iterations (1280 multiply-adds); the body of 16 was clear at 24
+iterations (336 multiply-adds) in both orders and the body of 4 set from 130 (260): H-MA was refuted
+by all six ladders. The single-run points of this record repeat (the body of 16 clear at 20 and set
+from 26, E805's edge at 25; the body of 4 clear to 120, E805 clear at 80 and set from 130; the body
+with a load clear at 40 to 56, E805 clear to 320). The time this record could not measure is the
+burst of `CR_CLKGATESTATUS`: read after the run, in 106 fills without a load the bit was set in
+every job whose burst reached 535.9 us and clear in every one at or below 539.3 us, and the load
+body broke that (clear with a 13 ms burst) (E805, [infer]).

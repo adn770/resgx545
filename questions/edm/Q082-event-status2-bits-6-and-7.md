@@ -5,7 +5,7 @@ unit = "edm"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E317", "E318", "E319", "E357", "E431", "E764", "E765", "E766", "E769", "E770", "E784"]
+evidence = ["E317", "E318", "E319", "E357", "E431", "E764", "E765", "E766", "E769", "E770", "E784", "E804", "E805", "E806", "E807"]
 terms = ["CR_EVENT_STATUS2"]
 +++
 
@@ -95,3 +95,24 @@ program (`phas; nop.end`) after one pass of the body, so no instance looped or w
 triangle rows of E770 therefore say nothing on the latch, and the loop-count readings of this
 question (E431's fill rows, where the program sits at index 0 and loops) are not touched. The
 program side of the repair (a relative branch) is the next run's.
+
+Narrowed 2026-11-10 (R3-pixel, E804 to E807; not retired). The loops ran with a relative branch and
+a MARK proof: a backward `br` loops in a pixel task, and the relative and absolute loop forms set
+bit 6 at the same points in a fill (E804).
+- Bit 6 in fills (E805, held out, two orders). H-MA, a count of an instance's multiply-adds, is
+  refuted by all six bodies: bodies with no multiply-add set the bit and the body with a load never
+  did up to 320 iterations. H-WD (a tile's time) and H-BURST (the burst's length) place every body
+  but the load body, which refutes both; H-WD-busy (time waiting on a load not counted) is open.
+  Read after the run, in 106 fills without a load the bit followed the burst of `CR_CLKGATESTATUS`:
+  set in every job from 535.9 us, clear in every one to 539.3 us [infer]. The bit latched 148 to 305
+  us after the burst began (522 in the one edge job), not at the job's end.
+- Bit 6 in triangles (E806, held out). The loop runs in a placed `--tri` slot at every size; the
+  first set point is 56 or 110 iterations by size (220 at 4x4), with no order in the size; the 64x32
+  triangle does not set where the 2048-pixel fill does; the per-instance, per-tile and per-job
+  scalings are refuted, and the burst does not place it [infer].
+- Bit 7 in vertex loops (E807, held out). First set between 1045 and 1100 iterations of the
+  eight-instruction body on three vertices, in both orders, and earlier with 12 and 48 vertices; a
+  fixed count of a vertex's instructions or multiply-adds and a count a job are refuted.
+Open: what bit 6 follows (time without a load, or what the load body changes; why a triangle differs
+from a fill of the same pixel count), what bit 7 follows (it moves with the body and the vertex
+count, no count fits), and the 121 us after a fault word.

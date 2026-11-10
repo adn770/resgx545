@@ -60,3 +60,11 @@ rerun with a pair-count control of 10 to 42 and the same rows would make the rea
 the direct reads, whose premise held, are the nearest to a test already. Which instances run when
 the predicate gates a write (Q276's second half) is read only as the 2 x 2 lane id, from the
 stage's own post hoc numbers.
+
+**Correction 2026-11-10:** (R3-pixel, E808) The post hoc readings above were frozen as a model and
+run again with new rows: g25 = (x & 1) | (y & 1) << 1 and g23 = x mod 32 held in every CONFIRM and
+HELD OUT row scored, at the default 64x64 triangle and at full 64x64 and 128x128 triangles, and g24
+= y mod 16 held out. HN-o4's reading of the o4 rows ("the o4 write is not gated") does not follow:
+in E808 every o4 word was tag 5 in both write orders, also where 5' was written last, so its
+swapped-order control failed; tag 5 alone in the original order cannot tell an ignored predicate
+from a write that lands whatever the order, and the o4 clause stays open (Q276).

@@ -5,7 +5,7 @@ unit = "edm"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E536", "E537"]
+evidence = ["E536", "E537", "E809", "E810"]
 terms = ["Event Data Master (EDM)", "Universal Scalable Shader Engine (USSE)"]
 +++
 
@@ -18,3 +18,13 @@ the registers the firmware does not load, a backend that relies on "sa starts at
 above the range the boot loads. To settle it: write a marker to sa100, i0, r20 and sa20 from a
 writer, reset (debugfs) and read them with the plain reader; with a reload and boot between; and
 across a client fill. The question needs the closed task only for the tick, not for itself.
+
+Narrowed 2026-11-10 (R3x-c3, E810; not retired). With markers of our own, three jobs a row: across a
+client fill i0, i1 and sa63 kept, r20 read 0 and r21 the fill counter (0x1000, 0x2000, 0x3000);
+across a firmware reload, with no reset and after a debugfs reset alike, i0, i1 and r21 kept and r20
+and sa63 read 0 (6 of 6), with sa65 at 0x02000000. sa100, sa127, sa20 and sa24 are not writable by
+our task (R2-1 b): they read 0x3cc00010, 0x3f800000, 0 and 0 in every reading, unchanged by every
+perturbation, set before the run by what the data does not say. The frozen H-KEEP (i and sa63
+survive, r does not) and H-ALL (r survives too) are both refuted (the frozen scorer's 'r20/r21
+survived 3/3' was a scorer bug, fixed after the run and disclosed in the dataset). Open: the sa
+registers our task may not write, and which step of the reload clears r20 and sa63 and keeps r21.

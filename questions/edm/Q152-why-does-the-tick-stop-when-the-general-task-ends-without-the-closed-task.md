@@ -1,11 +1,11 @@
 +++
 id = "Q152"
-question = "what does the EDM need from the closed general task's end of a pass so that the next event is delivered and the 1 kHz tick continues (E793: a task of ours that ended a tick pass with `nop.end` and did not call it stopped the tick, 2 of 2, while E791's single writes of sa63, sa64 or sa65 and the tail call with p0 = p1 = 1 did not, 19 of 19), and what in E537's writer (sa63 and sa65 written with the words it left, p0 = p1 = 1: the armed reader did not run, 1 run) stopped it, E536's writer (3 of 3 rounds kept the tick) not, and does the closed task use p0 to p3, sa63 or sa65"
+question = "what does the EDM need at the end of a pass so that the next event is delivered and the 1 kHz tick continues (E793, E813: a pass that our task ends with `nop.end`, a tick pass or a kick pass, stops the tick; a tick pass handed to the closed task of slot 2, its fast path and the shared exit, keeps it, 42 of 42), which bits of the event word in sa65 stop it (E814: the count byte with bit 8 stops it with E537's two marks, E537's word without bit 8 stops it without them, its bits 4, 7 and 10 not tried alone; E812: the count byte 0xb0 and bits 2, 3, 6, 14 to 16, 19 and 23 keep it), and does the closed task's path depend on the tick bit of sa64 alone (from Q124; E792, E812: with it clear pclink is left at 6, dword 12 does not advance and the tick is kept)"
 unit = "edm"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E533", "E155", "E536", "E537", "E791", "E792", "E793"]
+evidence = ["E533", "E155", "E536", "E537", "E791", "E792", "E793", "E811", "E812", "E813", "E814"]
 terms = ["Event Data Master (EDM)", "CR_EVENT_TIMER"]
 +++
 
@@ -156,3 +156,26 @@ instructions then the exit's 5, 17 in all, with no `sa19` test and no write beyo
 r22, r23 and `pclink`; slot 1 (0x59a) 20 (two `sa19` tests); slot 3 (0xe0a) 26 (two `sa19` tests,
 three `pa1` tests). With `sa19` bit 3 set, slots 1 and 3 call the routine at 0x1979, which stores a
 record to memory (a HWPerf record [infer]); no run of ours has read `sa19` there.
+
+Narrowed 2026-11-10 (R3x-events stages h, c, e and d, E811 to E814; not retired; the question line
+is reworded and takes Q124's tick-bit clause, decision R3-R9).
+- The end of a pass (E813, held out). A plain tick pass handed to the closed task of slot 2 (12
+  instructions and the shared exit, none of the general task) kept the tick, X1 2 of 2 and X20 20
+  passes a job in 2 of 2; a kick pass ended with our own `idf, wdf, nop.end` stopped it (B3), with
+  the kick's command written and not read. H-EXIT is supported, H-BODY and H-TICKONLY are refuted:
+  what the EDM needs is not in the general task's body and not only on tick passes.
+- What a stop is (E811). A pass of ours still running inside a 90 ms hold reads E537's busy
+  signature in every element sampled (3 of 3), so H-REARM is refuted, and the signature alone does
+  not mark a stop; H-NOTENDED (the stopped pass never ended for the EDM) is cannot tell, its control
+  having failed (the D baseline was never read in the session). P3, one `miscinfo` into a stopped
+  EDM, was not answered in 2 of 2 stops (E814).
+- E537's word (E814, held out). sa65 = 0x02000100 (the count byte and bit 8) stopped the tick with
+  E537's marks (read offset = write + 1, dword 14 0xad002600); 0xb009c4dc (E537's word without bit
+  8) stopped it with neither; H-CCB, H-HANDLER and H-ONCE are refuted. Single sa65 words with bits
+  2, 3, 6, 14, 15, 16, 19 or 23 kept it (E812).
+- The tick bit (E812, held out). sa64 = pa0 & ~2 on 50 passes kept the tick, left pclink at 6 and
+  did not advance dword 12 (2 of 2): the note's reading of E792, now measured.
+Open: whether the shared exit's five instructions alone are what the EDM needs (stage f, after the
+kernel batch), the path by which bits 4, 7 or 10 of E537's word stop it, whether the closed task's
+path depends on the tick bit alone (no sa64 word but 0, 2 and pa0 & ~2 run), and E537's own word
+0xb009c5dc (not run again).

@@ -94,3 +94,14 @@ advances it and branches to the address in the command's first dword; a command 
 reads 0 (the buffer pages are zeroed), which would branch to 0x0 and leave exactly the two marks
 above. That chain is a reading of the code and the dump, not shown by a run; the E793 stops, which
 have neither mark, were a different stop.
+
+**Correction 2026-11-10:** (R3x-events, E814 and E812, held out) The note above's chain from bit 8
+is borne out in its outcome: a writer that left only the count byte and bit 8 in sa65 (0x02000100)
+stopped the tick with both of this record's marks, read offset 3 against write offset 2 and HostCtl
+dword 14 0xad002600, with the busy signature (1 job); the chain itself is not traced by a run. Bit 8
+is not the only cause in this record's word: 0xb009c4dc, the word without bit 8, also stopped the
+tick, busy and with neither mark (read = write, dword 14 0; 1 job), while sa65 words with the count
+byte 0xb0 alone, with bit 23, bit 19 or bits 2, 3, 6, 14, 15 and 16 kept it (E812, 11 jobs), which
+leaves bits 4, 7 and 10 of this word untried alone. The word 0xb009c5dc itself was not run again
+(D3, ended by the stop budget). The busy signature is also what a pass of ours still running reads
+(E811), so it does not mark a stop by itself.

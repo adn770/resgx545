@@ -4,7 +4,7 @@ question = "do p0-p3 and pclink survive from one firmware (EDM) task to the next
 unit = "usse"
 kind = "fw"
 phase = 11
-evidence = ["E475", "E477", "E484", "E533", "E536", "E537", "E791", "E792"]
+evidence = ["E475", "E477", "E484", "E533", "E536", "E537", "E791", "E792", "E809", "E810", "E812"]
 terms = ["Universal Scalable Shader Engine (USSE)", "Event Data Master (EDM)"]
 +++
 
@@ -64,3 +64,17 @@ what the passes before them left is not recorded register by register), whether 
 path depends on the tick bit alone (the sa64 words written were 0 and 2 only), the dword 12
 count (cannot tell: the bracket's intervals contain the predicted -1), and the start state of a
 task after a reset or a fill (not run).
+
+Narrowed 2026-11-10 (R3x-c3, E809 and E810; not retired, a retire candidate under decision R3-R9).
+p2 and p3 are settled at the next entry: a writer of ours that left three different flag sets found
+them as it left them in 12 of 12 jobs (8 of 8 where a flag was 0, held out; H-SET, p2 = p3 = 1 at
+the next entry, refuted), with p1 as left and p0 1 (12 of 12), and so after 1200 ms (3 of 3). The
+start state after a perturbation was read in every job: after a client fill, a firmware reload and a
+debugfs reset and reload alike p0 p1 read 1 1, pclink 0x98, p2 0 and p3 the value left, 9 of 9 [post
+hoc: no frozen row said p2 0, p3 kept; E536's frozen 0 1 after a fill and 0 0 after a reset held in
+1 of 3 and 4 of 6]; after the stage's own arm, before any writer, the task found pclink 0x98 and p0
+to p3 1 1 0 0 (S0). The tick-bit clause (whether the closed task's path depends on the tick bit
+alone) is carried by Q152 from now on (E812 measured the dword 12 count of the tick-bit-clear pass:
+not advanced, 2 of 2). Open here only: p2 cleared and p3 kept across a fill, a reload and a reset as
+a frozen rule (read after the run), and the state a task finds after a cold boot (not run: S0
+followed the stage's arm, not a boot).

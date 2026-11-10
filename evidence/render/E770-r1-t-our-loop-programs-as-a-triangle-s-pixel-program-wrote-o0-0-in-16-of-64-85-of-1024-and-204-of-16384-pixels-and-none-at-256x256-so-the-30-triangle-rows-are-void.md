@@ -60,3 +60,12 @@ code index 0x20) while the same program placed at index 0 ends with o0 = 0. This
 observation above [infer]: the pattern does not move with the iteration count (the count is never
 used), STATUS2 stays 0x400 at 440 iterations (no instance loops), and the image shows whatever the
 unwritten output register held. Stale register contents measure nothing, so the "void" stands.
+
+**Correction 2026-11-10:** (R3-pixel, E806; decision R3-P1) The program side of the repair ran: this
+record's eight-instruction body, closed by a relative `br` and ending with a MARK written only where
+the counter reached zero, wrote its MARK on every pixel of full-target triangles from 4x4 to 256x256
+in the placed `--tri` slot (90 of 90 jobs) and on the 1062 covered pixels of the default 64x64
+triangle, and bit 6 set at 56 or 110 iterations by size. The absolute-branch loops of this record
+were not run again (the generator refused `ba` in a slot), so the cause read above stays [infer],
+now supported by the relative loop working where the absolute one did not. The void of the 30 rows
+stands; the triangle readings are E806's.

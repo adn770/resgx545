@@ -5732,6 +5732,165 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *dpm; HW; data: `render-closing-r3-geo:out/g-d36/`, `render-closing-r3-geo:out/g-c4/`,
   `render-closing-r3-geo:out/g-c5/`, `render-closing-r3-geo:out/g-c6/`,
   `render-closing-r3-geo:out/g-c7/`.*
+- `E804` R3-pixel stage q-f0 (10 fill jobs of 2048 pixels, all controls: loops closed by a relative
+  `p0 br` back to the body with a MARK proof, o0 = 0xC0DE0000 | N written only where the counter
+  reached zero, and E431's absolute `ba` loop, which ends with o0 = 0): the relative loop ran to its
+  end on 2048 of 2048 pixels in all 6 of its rows (N = 16, 53, 53, 56, 56 and 136), so a backward
+  relative branch loops in a pixel task as in a vertex task (E784), and the `ba` loop wrote o0 = 0
+  on 2048 of 2048 in its 4 rows; CR_EVENT_STATUS2 read 0x400 after every reset and, after the job,
+  0x400 at N = 16 and 53 and 0x440 at 56 and 136 with either branch (2 of 2 each at 53 and 56), as
+  E431; the burst was 200 us at N = 16 and 1284 us at 136 (frozen 205 +- 125 and 1287 +- 125 from
+  E431's fit) and bit 6 showed 211 us after the burst began at 136 (frozen 120 to 340); the frozen
+  scorer opened the loop gate with 0 misses of 13 frozen quantities.
+  *edm; HW; data: `render-closing-r3-pixel:out/20261110-160415/q-f0/`.*
+- `E805` R3-pixel stages q-f1a and q-f1b (54 fill jobs each, one table run in two opposite orders;
+  relative loops with the MARK proof of E804 over six bodies, each with a counter update and the
+  branch: b16 with 14 multiply-adds, b12 with 10, b4 with 2, b2 with none, b8n with six `or`, ld8
+  with a load, a wait and 4 multiply-adds; the two shortest points of each ladder FIT, the other 42
+  HELD OUT): every loop proof held and STATUS2 read 0x400 before every job (108 of 108); bit 6 set
+  from b16 N = 25 (clear at 24 in both orders, at 25 in q-f1a only: an edge), from b12 35 (clear at
+  34), from b4 130 (clear at 80), at every point of b2 (500 to 16000) and of b8n (60 to 3840) and at
+  no point of ld8 (20 to 320, bursts up to 13.4 ms), the two orders agreeing everywhere else; H-MA
+  (bit 6 when an instance's multiply-adds reach M* in (318, 336]) is REFUTED by all six ladders,
+  H-WD (when a tile's time (B - 60.2) / 4 reaches 121.8 us, N* from each ladder's FIT points) and
+  H-BURST (when the burst reaches 536 +- 20 us) are REFUTED by ld8 alone, and H-WD-busy (H-WD
+  counting only time without a load) is open, ld8 having no set point; in the 48 jobs set at N >=
+  1.3 N* bit 6 showed 120 to 340 us after the burst began (H-EARLY 48 of 48, H-END 0); read after
+  the run (no frozen row), in the 106 fill jobs of q-f0, q-f1a and q-f1b without a load every job
+  with bit 6 set had a burst of at least 535.9 us and every clear one at most 539.3 us.
+  *edm; HW, infer; data: `render-closing-r3-pixel:out/20261110-160415/q-f1a/`,
+  `render-closing-r3-pixel:out/20261110-160415/q-f1b/`,
+  `render-closing-r3-pixel:out/20261110-160415/q-f0/`.*
+- `E806` R3-pixel stage q-t (93 jobs: triangles that cover the whole target, `probe --tri pixel
+  --tri-full`, at 8x8, 16x16, 32x16, 32x32, 64x32, 128x128 and 256x256, the pixel program in the
+  --tri slot at code index 0x20 closed by a relative br with E804's MARK proof; 7 stock green
+  controls, 7 loops at N = 1 and the 64x32 bridge at N = 53 and 56 as controls, the ladders N = 4 to
+  3520 and three 4x4 rows HELD OUT, three exploratory rows on the default 64x64 triangle): all 90
+  full-target jobs wrote their value on every pixel of the target (green or the MARK of their N, W x
+  H of W x H) and STATUS2 read 0x400 after every reset, so the relative loop runs to its end in a
+  placed --tri slot; the bridge FAILED (the 64x32 triangle was clear at 53 and at 56, where E804's
+  fill of the same 2048 pixels set), so the frozen cells were scaled by 110 / 56; bit 6 first set at
+  N = 56 at 32x16, 32x32 and 128x128 (clear at 53) and at 110 at 8x8, 16x16, 64x32 and 256x256
+  (clear at 56), at 220 at 4x4 (clear at 56), every ladder monotone; the frozen first-set points of
+  a per-instance threshold (which carries H-MA), a per-tile one (32x16 tiles, which carries H-WD)
+  and a per-job one were REFUTED at 4, 6 and 6 of the 8 sizes; in 28 of the 32 jobs set at N >= 1.3
+  times their size's first set point bit 6 showed 120 to 340 us after the burst began; on the
+  default triangle (1062 covered pixels) the loop wrote its MARK on the 1062 and bit 6 stayed clear
+  at 53, 56 and 110.
+  *edm; HW, infer; data: `render-closing-r3-pixel:out/20261110-160415/q-t/`.*
+- `E807` R3-pixel stage q-v (88 jobs frozen, 74 run and 14 skipped by the frozen sweep stops: a
+  vertex program on the tool's triangle that loops N times on a relative br, every vertex's stored
+  depth word 0x3f200000 + N the loop proof, as E784): the five controls passed (no loop, N = 1 and N
+  = 3 with STATUS2 0x400 after the job; N = 880 clear and 1760 set, E784's points), every run job's
+  depth word proved the loop on every decoded vertex and STATUS2 read 0x400 after every reset; with
+  E784's eight-instruction body on 3 vertices bit 7 was clear at N = 1045 and set at 1100 in both
+  orders (ladders of 935 to 1705 in steps of 55, up and down, monotone), so the frozen bracket of
+  width 55 is (1045, 1100]; with a 16-instruction body it was clear at 601 and set at 649, with a
+  4-instruction body set at 1760, the lowest point of its ladder (5 more run, 9 skipped), with 12
+  vertices clear at 554 and set at 698 and with 48 vertices (15 decoded) clear at 329 and set at
+  538; HV-INSTR (a fixed count of instructions a vertex) was REFUTED for the 16-instruction body and
+  for 12 and 48 vertices and consistent for the 4-instruction body, HV-MA (a count of multiply-adds
+  a vertex) REFUTED for all four, and HV-JOB (a count a job) REFUTED for 12 and 48 vertices; bit 7
+  showed 184 to 195 us after the burst began in every set job.
+  *edm; HW; data: `render-closing-r3-pixel:out/20261110-160415/q-v/`.*
+- `E808` R3-pixel stage p-c3 (75 jobs: the frozen rerun of R1's p-c2 for Q276 with controls scoped
+  to their group, 18 controls, 28 CONFIRM rows read post hoc in round 2, 28 HELD OUT rows never run
+  before, 1 replicate; the pixel words of an x job and a y job decode to their source pixel, the
+  direct reads write one global register to o0): the controls passed (G-o4 on c-e709 and c-o4-u,
+  G-o1 with tag-2 fractions 0.988 and 0.988, the register-form c-g23r4, and the premises of the
+  direct reads 1.000 of 1062, 0.995 of 4096 and 0.996 of 16384 pixels) but for the swapped-order o4
+  control c-o4s-u, which read tag 5 in 42 and 39 words and tag 5' in none although 5' was the later
+  write, so its three rows (c-o4s-k0, k3, k7) are cannot tell; the model M held in all 29 rows
+  scored: g25 = (x & 1) | (y & 1) << 1 (the transpose refuted in every row that tests it), g23 = x
+  mod 32 with the high half 0 (x, y << 16 | x and x mod 64 refuted; the exact-column test g23 == 20
+  true at x = 20 and 52 only, g23 == 40 never), g24 = y mod 16 (E086's fill reading; y refuted), at
+  the default 64x64 triangle and the full 64x64 and 128x128 triangles (direct reads 1.000 of 1062,
+  4096 and 16384 written pixels), and in the original order every o4 word was tag 5 under k = 0, 3
+  and 7 (G, the o4 write gated like o1, refuted 2 of 2); the frozen verdict is Q276 NOT ANSWERED (3
+  rows cannot tell).
+  *pds; HW; data: `render-closing-r3-pixel:out/20261110-160415/p-c3/`.*
+- `E809` R3x-c3 stage c3 (13 jobs of start.s, a task of ours; S0 a reader alone, then 12 jobs in
+  which a writer set sa63, r20, r21, i0 and i1 to random markers and p0 to p3 to the job's flags
+  0011, 0100 or 1010, armed a reader for the next event and called the closed task, then a
+  perturbation: N 1200 ms, F a client fill, L a firmware reload, R a debugfs reset and a reload,
+  three jobs each): the tick was kept in 13 of 13 jobs; the reader at the next entry read all five
+  markers in 12 of 12 writer jobs, pclink 0x98, p0 1 and p1 as the writer left it in 12 of 12, and
+  p2 and p3 as the writer left them in 12 of 12 (1 1, 0 0 and 1 0), so in the 8 jobs where a flag
+  was 0 H-KEEP (p2, p3 as left) held 8 of 8 and H-SET (p2 = p3 = 1 at the next entry) is REFUTED, 8
+  of 8; after 1200 ms (N) the five markers and p2 p3 were still as written in 3 of 3 jobs, with p0
+  p1 1 1 and pclink 0x98.
+  *edm; HW; data: `edm-closing-r3x-c3:out/c3/`.*
+- `E810` In R3x-c3 stage c3 (E809's jobs), after a client fill (F, 3 jobs) i0, i1 and sa63 kept the
+  writer's markers in 3 of 3, r20 read 0 and r21 0x1000, 0x2000 and 0x3000; after a firmware reload
+  (L, 3 jobs) and after a debugfs reset and a reload (R, 3 jobs) i0, i1 and r21 kept the markers and
+  r20 and sa63 read 0 in 6 of 6; sa65 read 0x02000000 after every reload and reset and stepped by
+  0x02000000 with each fill (0x04000000 to 0x08000000); sa100 0x3cc00010, sa127 0x3f800000, sa20 0
+  and sa24 0 in every reading of the stage; after F, L and R alike p0 p1 read 1 1 and pclink 0x98,
+  and p2 p3 read 0 1 where the writer had left 1 1 and 0 0 where it had left 0 0 or 1 0 (9 of 9); so
+  the frozen H-KEEP (i and sa63 survive a reload or a reset, r20 and r21 do not) and H-ALL (r20 and
+  r21 survive too) are both REFUTED, H-KEEP by sa63 (0 in 6 of 6) and H-ALL by sa63 and r20, E536's
+  frozen p2 p3 readings held in 1 of 3 fills (0 1) and 4 of 6 reloads and resets (0 0); the start
+  state S0, read after the stage's own arm and before any writer, was pclink 0x98, p0 to p3 1 1 0 0,
+  r20 0, r21 0x2000, i0 0xcd7aa809, i1 0xff326b8c, sa63 0, sa64 2, sa65 0x02000000; the frozen
+  scorer printed 'r20/r21 survived 3/3' for L and for R, a scorer bug (it counted a pair of values,
+  always true, not the row), and two hypothesis lines that score the r20/r21 row alone, both
+  corrected by a disclosed post-run fix.
+  *edm; HW, infer; data: `edm-closing-r3x-c3:out/c3/`.*
+- `E811` R3x-events stage h (6 jobs of ring_hold.blob, S2b's task byte for byte, a reset and an arm
+  before each: H0 x3, no hold, the register signature at 20 and 60 ms after the window opened; H1
+  x3, the signature at 20 and 60 ms inside a hold of one pass of 2262434 timer units, about 90.5
+  ms): H0 read the idle signature in 3 of 3 (CR_CLKGATESTATUS 0x20, USE0_SERV_EVENT with bit 16 set
+  and its count moving), and the hold of H1 was in its band (2262433, 2262434, 2262433 units);
+  inside the hold all four samples of each H1 job read the busy signature of E537 and E793's stops
+  (CR_CLKGATESTATUS 0x000ccfa0, USE0_SERV_EVENT 0x3ed, 0x3ea and 0x415 with bit 16 clear and its
+  count frozen, EVENT_TIMER moving, CCB offsets 2 and 2, HostCtl dword 14 0), all elements as a
+  running task in 3 of 3 jobs, so H-REARM (a stop that differs from a running task in some element)
+  is REFUTED, 3 of 3; the control 'D0 one modal value' FAILED in 3 of 3 (no valid D0 read: in every
+  triple the page's pass count moved between its two reads), so D in the hold could not be read and
+  the frozen verdict for H-NOTENDED (the stopped pass never ended) is cannot tell.
+  *edm; HW, infer; data: `edm-closing-r3x-events:out/h/`.*
+- `E812` R3x-events stage c (13 jobs of alias2.s, one entry: C0 x2 the reader alone; C1 to C4 a
+  writer leaving one sa65 word in place before calling the closed task, C1 x3 count byte K = 2 in
+  bits 31:24 with bit 23, C2 x2 0xb0000000, C3 x2 K with bits 2, 3, 6, 14, 15 and 16, C4 x2 K with
+  bit 19; C5 x2 sa64 = pa0 & ~2 written on 50 consecutive passes): the tick was kept in 13 of 13
+  jobs; C0 read pclink 0x98, p1 1, sa64 2, sa65 0x02000000 and sa63 0 as E791's A0 (2 of 2); after
+  each C1 to C4 writer the next entry read pclink 0x98 and sa65 0x02000000 (K << 24), the CCB write
+  and read offsets 2 and 2 and HostCtl dword 14 0 (9 of 9); after C5's 50 passes pclink read 6 and
+  HostCtl dword 12 less the passes counted was in (-57, -43) and (-58, -43) against the frozen -50
+  +- 8 (2 of 2: dword 12 did not advance on those passes); the frozen scorer: held out 17 held, 0
+  FAILED, 1 cannot tell (C5's D row, D0 never measured, E811).
+  *edm; HW; data: `edm-closing-r3x-events:out/c/`.*
+- `E813` R3x-events stage e (7 jobs of ring_end.s, which logs every pass of its four PDS #13 slots
+  in a ring and acts on the passes of one kind in window 2: E0 x2 no act; X1 x2 one plain tick pass
+  handed by a second continue patch, cont2, to the closed task of slot 2 at 0xace instead of the
+  general task; X20 x2 twenty such passes; B3 x1, last, a kick pass made by one miscinfo and ended
+  with our own idf, wdf, nop.end without the closed task): E0 held (13 and 14 entries on the
+  25000-unit grid, nothing acted); X1 kept the tick in 2 of 2 jobs, the acted pass logged with its
+  flag and the next entry 24995 units after it in both (frozen 25000 +- 50), the CCB offsets 2 and 2
+  and HostCtl dword 14 0; X20 kept it in 2 of 2 with 20 of 20 passes acted (the ring of 16 rungs
+  dropped 8 and 7 entries) and dword 12 less the passes in (-27, -14) and (-27, -13) against the
+  frozen -20 +- 8; B3 stopped the tick: one kick entry with flag 3 and nothing after it, the
+  miscinfo not answered, the CCB write offset 3 and read offset 2 (read = write - 1), dword 14 0,
+  the busy signature of E537 (CR_CLKGATESTATUS 0x000ccfa0, USE0_SERV_EVENT 0x1365 frozen,
+  EVENT_TIMER moving); so H-EXIT (any closed path that reaches the shared exit keeps the tick, a
+  pass ended without it stops it) is supported, H-BODY (the general task's own path is needed: X1
+  stops) is REFUTED, 2 of 2, and H-TICKONLY (only tick passes need the closed task: B3 keeps the
+  tick) is REFUTED, 1 of 1.
+  *edm; HW, infer; data: `edm-closing-r3x-events:out/e/`.*
+- `E814` R3x-events stage d (alias2.s with a reset and an arm before each job; D0 the reader alone,
+  D1 a writer leaving sa65 = 0xb009c4dc, E537's word with bit 8 clear, D2 one leaving sa65 =
+  0x02000100, the count byte with bit 8 alone; each then calling the closed task): D0 held (pclink
+  0x98, p1 1, sa64 2, sa65 0x02000000, sa63 0); D1 stopped the tick after the writer's pass with the
+  busy signature of E537 (CR_CLKGATESTATUS 0x000ccfa0, USE0_SERV_EVENT 0x3f3 frozen, EVENT_TIMER
+  moving), the CCB write and read offsets 2 and 2 (read = write) and HostCtl dword 14 0; D2 stopped
+  it with the same signature (USE0_SERV_EVENT 0x3ee) and E537's two marks, read offset 3 against
+  write offset 2 (read = write + 1) and dword 14 0xad002600; P3 (one miscinfo into the stopped EDM)
+  was not answered in either stop; so H-CCB (bit 8 alone stops it with E537's marks and D1 keeps the
+  tick) is REFUTED by D1, H-HANDLER (a job bit with no job stops it, no mark, D2 keeps it) by D2,
+  H-ONCE (E537 does not repeat) by both, and H-REARM (P3 answered) by both; D2 held every frozen row
+  of H-CCB's own (stop, read = write + 1, dword 14, busy); the stage ended by its stop budget at D2
+  by design (the second stop), so D1's replicates, D3 (E537's own word, A8) and D4 were not run.
+  *edm; HW, infer; data: `edm-closing-r3x-events:out/d/`.*
 
 ## By unit
 
@@ -5751,7 +5910,8 @@ E786, E790, E799, E800, E801, E802, E803.
 Records: E009, E014, E017, E084, E146, E152, E153, E154, E155, E156, E157, E158, E159, E160, E161,
 E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321, E353, E402, E431, E444,
 E450, E531, E532, E533, E536, E537, E538, E539, E540, E550, E600, E601, E602, E603, E604, E605,
-E746, E747, E748, E749, E750, E751, E752, E764, E768, E769, E771, E784, E791, E792, E793, E794.
+E746, E747, E748, E749, E750, E751, E752, E764, E768, E769, E771, E784, E791, E792, E793, E794,
+E804, E805, E806, E807, E809, E810, E811, E812, E813, E814.
 
 ### firmware
 
@@ -5781,7 +5941,8 @@ E383, E385, E386, E387, E429.
 Records: E043, E044, E045, E046, E047, E048, E125, E126, E127, E128, E129, E130, E131, E132, E133,
 E134, E135, E136, E137, E138, E139, E140, E141, E142, E143, E144, E145, E259, E260, E261, E262,
 E263, E264, E343, E344, E345, E364, E379, E381, E384, E388, E389, E390, E391, E392, E393, E394,
-E395, E396, E400, E420, E421, E428, E430, E436, E437, E454, E459, E460, E709, E742, E759, E772.
+E395, E396, E400, E420, E421, E428, E430, E436, E437, E454, E459, E460, E709, E742, E759, E772,
+E808.
 
 ### platform
 

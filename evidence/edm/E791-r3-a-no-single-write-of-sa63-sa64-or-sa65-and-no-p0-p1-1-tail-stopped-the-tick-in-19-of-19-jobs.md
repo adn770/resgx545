@@ -52,3 +52,8 @@ i written).
 
 **Not shown.** What E537's stop depends on (the value left in sa65, the combination of writes, or
 a first stop that does not repeat: E537 was one run); whether the closed task reads sa63 at all.
+
+**Correction 2026-11-10:** (R3x-events, E814) "No row reproduced that stop" stands for this stage.
+In round 3 a single sa65 word with the count byte and bit 8 (0x02000100) reproduced E537's stop with
+both of its marks, and E537's word without bit 8 stopped the tick without them, so the cause of
+E537's stop is among single sa65 writes, not among the sa63, sa64 and sa65 writes of this stage.
