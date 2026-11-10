@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-181 open: 166 hw (high 20, medium 76, low 70, unrated 0), 11 fw, 4 kernel.
+182 open: 167 hw (high 20, medium 76, low 71, unrated 0), 11 fw, 4 kernel.
 
 ## Work queue: hardware
 
@@ -217,7 +217,8 @@
 - `Q242` (phase 12, hw, low): how is the 16-bit stored depth format laid out at a pitch G other than 33 and at an edge, what do the 24-bit and 16-bit formats store for a depth outside 0.25 to 0.4166 other than 1.0 (where round(z * 0xffffff) and floor(z * 2^24) differ), which pixel's value does a dword shared by two overlapping tiles hold, and why did the E411 jobs with G past 3 fault? (E466, E490, E663)
 - `Q243` (phase 12, hw, low): what does the ZLS load do with an integer stored format (bits 26:24 = 1 or 2), at an address other than the one the store writes, and when the loaded depth is a NaN or infinity or is compared with a depth equal to it? (E467, E628, E664)
 - `Q244` (phase 12, hw, low): what do the bits of CR_ISP_ZLSCTL that no record reads (12, 15, 16 and 20 to 23, 27 to 31) do when set in combination, and what does bit 0 store with a control other than 0x0017100c? (E057, E337, E411, E665)
-- `Q287` (phase 11, hw, low): does the 1.25 band of the ZLS store (x + 0.5 < 1.25 W, y + 0.5 < 1.25 H) hold when 1.25 W has a fraction of .25 or .75, when the target ends on a tile boundary and for a triangle that does not cover the band, and does it apply to the iterated attributes (E730, E465)
+- `Q287` (phase 11, hw, low): does the 1.25 band of the ZLS store (x + 0.5 < 1.25 W, y + 0.5 < 1.25 H) hold when 1.25 W has a fraction of .25 or .75, when the target ends on a tile boundary and for a triangle that does not cover the band (the iterated attributes are Q291) (E730, E465)
+- `Q291` (phase 11, hw, low): does the 1.25 band of the ZLS store (x + 0.5 < 1.25 W, y + 0.5 < 1.25 H, E730) apply to the iterated attributes, that is, does a pa0 iterated clip x run at the same sizes store the same band (E730, E465)
 
 ## Parked: not hardware knowledge
 
