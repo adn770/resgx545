@@ -20,6 +20,10 @@ use usse_isa::Core;
 
 /// SGX register dword indices (offset / 4) the loop itself acts on.
 pub mod reg {
+    pub const EVENT_HOST_CLEAR2: u32 = 0x0114 / 4;
+    pub const EVENT_STATUS2: u32 = 0x0118 / 4;
+    pub const EVENT_STATUS: u32 = 0x012c / 4;
+    pub const EVENT_HOST_CLEAR: u32 = 0x0134 / 4;
     pub const USE_CODE_BASE_0: u32 = 0x0a0c / 4;
     pub const EVENT_OTHER_PDS_EXEC: u32 = 0x0a68 / 4;
     pub const EVENT_OTHER_PDS_DATA: u32 = 0x0a6c / 4;
@@ -125,6 +129,39 @@ impl Default for State {
 }
 
 impl State {
+    /// What a write to an event clear register does, by the host or a task, before it is stored:
+    /// `CR_EVENT_HOST_CLEAR2` with STATUS2 known clears the bits written of the latched bit 6
+    /// (E821 host, E822 a task's `str #69`, 3 of 3 rounds each: from 0x440 bit 6 gives 0x400, bit
+    /// 15 leaves it); any other value, or another latched state, is refused. A write of bit 18
+    /// to `CR_EVENT_HOST_CLEAR` with STATUS known is refused (E823: one job, post hoc). With the
+    /// status register unknown the write is only stored, as before.
+    fn clear_event(&mut self, index: u32, value: u32) -> Result<(), Error> {
+        if index == reg::EVENT_HOST_CLEAR2
+            && let Some(&st) = self.regs.get(&reg::EVENT_STATUS2)
+        {
+            let next = match value {
+                _ if st & 0x40 == 0 || st & !0x440 != 0 => None,
+                0x40 => Some(st & !0x40),
+                0x8000 => Some(st),
+                _ => None,
+            };
+            let Some(next) = next else {
+                return Err(why(format!(
+                    "CR_EVENT_HOST_CLEAR2 = {value:#x} with STATUS2 {st:#x}: only bit 6 and bit 15 on the latched \
+                     0x440 were run (E821, E822)"
+                )));
+            };
+            self.regs.insert(reg::EVENT_STATUS2, next);
+        }
+        if index == reg::EVENT_HOST_CLEAR
+            && value >> 18 & 1 != 0
+            && self.regs.contains_key(&reg::EVENT_STATUS)
+        {
+            return Err(why("CR_EVENT_HOST_CLEAR bit 18: one job, post hoc (E823; row B1P has not run)"));
+        }
+        Ok(())
+    }
+
     fn reg(&self, index: u32) -> Result<u32, Error> {
         self.regs
             .get(&index)
@@ -171,6 +208,7 @@ impl Sgx {
 
     /// A host register write (an init script, a kick).
     pub fn write_reg(&mut self, index: u32, value: u32) -> Result<(), Error> {
+        self.st.clear_event(index, value)?;
         self.st.regs.insert(index, value);
         self.st.log.push(Event::Write { host: true, index, value });
         // EVENT_KICK2 runs the other-event PDS program (hw_spec 11.1-11.2):
@@ -365,6 +403,7 @@ impl Bus for Unit<'_> {
     }
 
     fn reg_write(&mut self, index: u32, value: u32) -> Result<(), Error> {
+        self.st.clear_event(index, value)?;
         self.st.regs.insert(index, value);
         self.st.log.push(Event::Write { host: false, index, value });
         Ok(())
@@ -843,5 +882,55 @@ mod tests {
         kick(&mut s).unwrap();
         assert_eq!(queued_words(&s), [0x0200_0100]);
         assert_eq!(s.event_count, 3);
+    }
+
+    fn status2_after(by_task: bool, status2: u32, clear: u32) -> Result<u32, Error> {
+        let mut s = sgx();
+        s.seed(reg::EVENT_STATUS2, status2);
+        if by_task {
+            s.st.mem.map(CODE, &usse(&format!("mov r0, #0x{clear:08X}\nstr #69, r0\nnop.end")));
+            s.st.queue.push_back(Work::Task {
+                base: CODE,
+                pc: 0,
+                temps: 8,
+                pa: Box::new([0; 128]),
+                written: 0,
+            });
+            s.run(100)?;
+        } else {
+            s.write_reg(reg::EVENT_HOST_CLEAR2, clear)?;
+        }
+        Ok(s.st.regs[&reg::EVENT_STATUS2])
+    }
+
+    #[test]
+    fn host_clear2_clears_the_bits_written_of_the_latched_status2_bit_6() {
+        // E821 (host) and E822 (a task's str #69), 3 of 3 rounds each: STATUS2 0x440 after a loop
+        // fill; bit 15 (not set) leaves it, bit 6 clears bit 6 alone
+        assert_eq!((reg::EVENT_HOST_CLEAR2, reg::EVENT_STATUS2), (0x0114 / 4, 0x0118 / 4));
+        for by_task in [false, true] {
+            assert_eq!(status2_after(by_task, 0x440, 0x40).unwrap(), 0x400, "task {by_task}");
+            assert_eq!(status2_after(by_task, 0x440, 0x8000).unwrap(), 0x440, "task {by_task}");
+            // other writes and other latched states were not run
+            for (st, clear) in
+                [(0x440, 0x400), (0x440, 0x8040), (0x440, 0x1), (0x400, 0x40), (0x8440, 0x8000)]
+            {
+                assert!(
+                    refused(status2_after(by_task, st, clear).map(|_| ())),
+                    "{st:#x} {clear:#x} task {by_task}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn host_clear_of_status_bit_18_is_refused() {
+        // E823: one job, post hoc (row B1P has not run); with STATUS known a write of bit 18 to
+        // CR_EVENT_HOST_CLEAR (0x0134) is refused
+        assert_eq!((reg::EVENT_HOST_CLEAR, reg::EVENT_STATUS), (0x0134 / 4, 0x012c / 4));
+        let mut s = sgx();
+        s.seed(reg::EVENT_STATUS, 0x2004_0000);
+        assert!(refused(s.write_reg(reg::EVENT_HOST_CLEAR, 1 << 18)));
+        assert_eq!(s.st.regs[&reg::EVENT_STATUS], 0x2004_0000);
     }
 }
