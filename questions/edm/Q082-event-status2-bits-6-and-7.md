@@ -1,11 +1,11 @@
 +++
 id = "Q082"
-question = "what do CR_EVENT_STATUS2 bits 6 and 7 mean, bit 6 set while a job hangs in its pixel task and bit 7 while a TA job hangs or faults?"
+question = "what does CR_EVENT_STATUS2 bit 6 follow in a pixel task (a fill without a load: a tile's time near 125 us, E805; a program that waits on a load never sets it, E840; in triangles no frozen reading placed the five sizes, E841), and is the timeout that sets bit 7 in a vertex loop (E839: set iff the TA's busy-clock run reaches about 129.5 us, held out) the one that sets bit 6 or 7 about 121 us after a fault word (E764 to E766)?"
 unit = "edm"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E317", "E318", "E319", "E357", "E431", "E764", "E765", "E766", "E769", "E770", "E784", "E804", "E805", "E806", "E807"]
+evidence = ["E317", "E318", "E319", "E357", "E431", "E764", "E765", "E766", "E769", "E770", "E784", "E804", "E805", "E806", "E807", "E839", "E840", "E841"]
 terms = ["CR_EVENT_STATUS2"]
 +++
 
@@ -150,3 +150,26 @@ a claim; to be held out by the planned stages q4-v, q4-f and q4-t).
   to 476 instructions an instance, which would set ld8 near N = 75. Two readings remain, H-YIELD (a
   wait ends the piece of work and restarts the timer) and H-LOADOFF (a program that waits on a load
   never latches); stage q4-f separates them with an ALU loop after one load.
+
+Narrowed 2026-11-11 (R4-pixel q4-v, q4-f and q4-t, E839 to E841; the question line is reworded to
+what stays open, the question is not retired). The question line asked "what do CR_EVENT_STATUS2
+bits 6 and 7 mean, bit 6 set while a job hangs in its pixel task and bit 7 while a TA job hangs or
+faults?".
+- Bit 7 in a vertex loop, answered by E839 (held out). With L the longest run of
+  `CR_CLKGATESTATUS` at 0x000ccff8, the rule frozen from E807's jobs, set iff L >= 129.5 us (edge
+  122 to 136 us), held in 14 of 14 decided held-out rows of three ladders E807 never ran (13, 2
+  and 8 instructions an iteration, 3 and 24 vertices), and the bit showed 122 to 130 us after the
+  run began in 10 of 10 set jobs. The stock program's 1500-vertex TA phases of 11 ms kept it clear
+  (2 of 2): the rule is one of a vertex loop, not of the TA phase's length (H-PHASE refuted in
+  those rows). sgx-pipe's `events::status2_bit7` gives it for a vertex loop and refuses the rest.
+- Bit 6 with a load (E840, held out). One load and wait before the ALU loop that sets it on its
+  own, or loads between rounds of it, kept bit 6 clear in 11 of 11 fills to 220 iterations and
+  4.2 ms: H-LOADOFF (a program that waits on a load never latches) is the one reading left,
+  H-YIELD (a wait restarts the timer) and H-SUM (busy time summed) are refuted.
+- Bit 6 in triangles (E841, held out). The first set points are (96, 104] at 8x8, (140, 170] at
+  4x4, (56, 60] at 32x16, (60, 66] at 64x32 and above 72 at 16x16: H-SEG (a tile's time without
+  progress), H-N (a pass count) and E806's discrete reading are all refuted; the time of the
+  latch held (250 to 360 us after the burst began, 8 of 8 long rows).
+Open: what bit 6 follows in a triangle (the piece of work, if not a tile), why a load turns the
+latch off, and whether one timeout of about 125 us sets both bits after a fault word (E764 to
+E766) and in E357's held TA hang (bit 7 with a busy-clock run of 8 us).

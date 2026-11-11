@@ -1,11 +1,11 @@
 +++
 id = "Q230"
-question = "what does the TA write in the cases of the clip, the target's edge and the numeric formats that E776 to E783 and E795 to E798 left open: the stored order of a clipped polygon of 3 or of more than 4 vertices and of a cut by a guard-band plane (E777), the limit of the region lists in y and at the left edge of other targets (E776), the tie of the rounding of the 1/1024 grid to 1/256 (E778), the depth word of a vertex with w other than 1 (no formula: every frozen rule refuted, words recorded, E783, E795 to E797), the 1/w word of a vertex with w other than 1 (RZ of 1/w at most w, one ulp above it at w = 9, 0.7, 1.40625, 1.59375 and 1.6875, E795, E798) and of a clip-made vertex (0 to 3 ulp above RZ of 1/w_made, no rule, E782, E798), the depth of a made vertex (1.0 / 0.0 in 11 of 12, E782, E798), the 1/w word under a clamp (within 1 ulp of 1/clamp, no rule, E781), and the size at which a sub-pixel triangle is no longer written (E780)?"
+question = "what does the TA write in the cases of the clip, the target's edge and the numeric formats that E776 to E783 and E795 to E798 left open: the stored order of a clipped polygon of 3 or of more than 4 vertices and of a cut by a guard-band plane (E777), the limit of the region lists in y and at the left edge of other targets (E776), the tie of the rounding of the 1/1024 grid to 1/256 (E778), the depth word of a vertex with w other than 1 (no formula: every frozen rule refuted, words recorded, E783, E795 to E797), the rule of the 1/w word of a vertex with w other than 1 (RZ of 1/w or one ulp above it in 65 of 65 words of kept vertices, E795, E798, E842; which w store RZ + 1 is not placed: E842's frozen fit of a table of 60 w did not run, 18 of the w having been cut at the guard band) and of a clip-made vertex (0 to 3 ulp above RZ of 1/w_made, no rule, E782, E798), the depth of a made vertex (1.0 / 0.0 in 11 of 12, E782, E798), the 1/w word under a clamp (within 1 ulp of 1/clamp, no rule, E781), and the size at which a sub-pixel triangle is no longer written (E780)?"
 unit = "ta"
 kind = "hw"
 value = "medium"
 phase = 12
-evidence = ["E063", "E182", "E194", "E287", "E307", "E651", "E650", "E736", "E754", "E776", "E777", "E778", "E780", "E781", "E782", "E783", "E795", "E796", "E797", "E798"]
+evidence = ["E063", "E182", "E194", "E287", "E307", "E651", "E650", "E736", "E754", "E776", "E777", "E778", "E780", "E781", "E782", "E783", "E795", "E796", "E797", "E798", "E842"]
 terms = ["PB_OBJ.RHW", "PB_OBJ.ISP_WORDS", "VIEWPORT.X_OFFSET", "WCLAMP"]
 +++
 
@@ -166,3 +166,16 @@ ulp. Five "above" words carry too few bits to fit an algorithm (E783's lesson: 4
 six words by chance); a table of about 60 w, with a frozen FIT and HELD OUT split, is the smallest
 run that can fit and hold out (planned stage g4-rw). The depth formula stays parked behind it and
 very likely uses the same reciprocal [infer].
+
+Narrowed 2026-11-11 (R4-pixel g4-rw, E842; the question line's 1/w clause is reworded, the question
+stays open). The clause read "the 1/w word of a vertex with w other than 1 (RZ of 1/w at most w, one
+ulp above it at w = 9, 0.7, 1.40625, 1.59375 and 1.6875, E795, E798)". The table of 60 w ran with
+its controls passing: 42 words of kept vertices were read, 31 RZ of 1/w and 11 RZ + 1 (w 1.125,
+1.40625 again, 1.49219, 1.75638, 4.2782, 4.67374, 6.375, 6.75, 7.125, 7.375, 7.83901), 19 of the 30
+FIT and 23 of the 30 HELD OUT words, so the frozen assertion (RZ or RZ + 1) holds on 65 of 65 words
+with the earlier 23 and the frozen family fit, which needs all 60, did not run. The 18 words not
+read are the third of the table scaled by 1/4 (w 0.254 to 0.443): their window coordinates 32 + 32 x
+/ w fell beyond the guard band, and the TA stored polygons of 5 to 7 vertices all made on its edges
+(-16 and 80), read post hoc at the fold. Open: the rule of the RZ + 1 words (a table whose every
+vertex stays inside the band, the FIT and HELD OUT split frozen again; fitting the 42 words now
+would be post hoc), w below 1, and the rest of the line as before.

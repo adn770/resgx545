@@ -6190,6 +6190,76 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   groups), H-PULSE REFUTED; H-W consistent (2 row groups), H-ALL REFUTED, H-NONE REFUTED' on one B1P
   job (H-LEVEL held out, the clears a fit to E823's one job), the two replicates not run.
   *platform; HW, infer; data: `edm-closing-r4-events:out/a1/e3p/`.*
+- `E838` R4-pixel stage p4-o4 (Q276, 36 jobs in E808's p-c3 shape: a triangle's pixel program
+  writing tagged words to o0 to o7 in E709's four-output setup, the words at bits 3:0, a job marker
+  at bits 15:6, x and y jobs decoding to source pixels): the 8 controls passed (G-o4 on c-e709 and
+  c-o4-u, c-o4-u and the swapped c-o4s-u reading tag 5 as E808, G-o1 tag-2 fraction 0.994 of 486
+  sources) and the replicate of c-o4-u read its class; in the 7 held-out value configurations (A3 =
+  tag 13 alone, A4 = tag 5 with bit 4 alone, A then A4, A4 then A, A then A5, A5 then A, A3 then A4;
+  14 of 14 jobs) every o4 word read was the plain A (tag 5, bits 5:3 clear, the job's marker, 22 to
+  63 words a job, no A3, A4 or A5 word), so none of the 12 frozen models (single-write path V1 drops
+  bit 3, V2 refuses a word with bit 3, V3 as written, by combine rule last, first, and, or, min)
+  fits; frozen verdict 'family REFUTED: no (single-write path, combine rule) model fits the value
+  rows; a new reading is needed'; the 12 predicate jobs (6 configurations, also all tag 5) are
+  cannot tell by the frozen gate (the bit-4 pairs read one class in both orders).
+  *pds; HW, infer; data: `render-closing-r4-pixel:out/20261111-205726/p4-o4/`,
+  `render-closing-r4-pixel:fold/`.*
+- `E839` R4-pixel stage q4-v (Q082 bit 7, 28 jobs, 27 scored: a vertex program on the tool's
+  triangle looping N times on a relative br, the stored depth word 0x3f200000 + N the loop proof,
+  every job under regtimeline 0x0008, 0x0118, 0x012c; L = the longest run of CR_CLKGATESTATUS
+  0x000ccff8): the four bridge controls to E807 passed on the rgn4 module (no loop and N = 1 clear
+  with L 9.4 and 4.6 us, E807's 880 clear with L 105.1 us and 1760 set with L 207.3 us); on three
+  ladders E807 never ran (10 multiply-adds an iteration on 3 vertices, counter and branch only on 3,
+  E807's 8-instruction body on 24 vertices) the six FIT points were clear as the model placed them,
+  and the frozen rule 'bit 7 set iff L >= 129.5 us' held in 14 of 14 decided held-out rows (clear to
+  L 119.5 us, set from 138.6 us; the one row in the edge 122 to 136 us, L 133.2 us, set, not
+  scored), the bit showing 121.9 to 129.7 us after the run began in 10 of 10 set jobs (frozen window
+  118 to 138); the stock program with 1500 vertices at 2048 x 2048 kept bit 7 clear in 2 of 2 with L
+  11189.2 and 11209.7 us (H-STALL, frozen: a long but progressing TA does not latch; H-PHASE refuted
+  in those rows); the 4096 x 4096 row returned -ENOSPC (the scene overflowed the parameter buffer at
+  the default pages), void; frozen verdict 'bit 7 follows the TA clock run L (set iff L >= 129.5 us,
+  edge 122..136) (14 of 15 rows decided)'.
+  *edm; HW, infer; data: `render-closing-r4-pixel:out/20261111-205726/q4-v/`,
+  `render-closing-r4-pixel:fold/`.*
+- `E840` R4-pixel stage q4-f (Q082 bit 6, 16 fills of 64 x 32 whose pixel program ends in a MARK
+  only when its loop counters end): the five bridge controls to E804 and E805 passed on the rgn4
+  module (the relative 8-instruction loop clear at 16 and 53, set at 56 and 136 iterations; E805's
+  load body ld8 clear at 70); in 11 of 11 held-out jobs whose program waits on a load, one load then
+  the 8-instruction ALU loop K times (K = 28, 53, 70, 110) or M rounds of a load and K iterations
+  ((K, M) = (28, 4), (28, 16), (40, 8), (70, 1), (70, 4), (110, 2), (220, 1)), bit 6 stayed clear,
+  with bursts of 311 us to 4.2 ms, also where the ALU loop after the load ran 70 to 220 iterations,
+  longer than the 56 that sets it without a load; frozen verdict 'q4-f H-LOADOFF alone is consistent
+  (H-YIELD, H-SUM refuted)' (H-LOADOFF 11 held of 11, H-YIELD 4 held 6 FAILED 1 cannot tell, H-SUM 1
+  held 9 FAILED 1 cannot tell).
+  *edm; HW, infer; data: `render-closing-r4-pixel:out/20261111-210423/q4-f/`.*
+- `E841` R4-pixel stage q4-t (Q082 bit 6 in triangles, 54 jobs: E806's relative 8-instruction loop
+  with a MARK as the pixel program of the tool's triangle covering a W x H target, `--tri-full`):
+  the 12 controls passed (the green triangle and the loop at N = 1 at 4x4, 8x8, 16x16, 32x16 and
+  64x32 clear with the MARK or green on every pixel; the 64 x 32 fill clear at 53 and set at 56,
+  E804); bit 6 first set in (96, 104] at 8x8, (140, 170] at 4x4, (56, 60] at 32x16 and (60, 66] at
+  64x32, and 16x16 stayed clear at 46, 56 (twice), 60, 66 and 72; frozen verdict 'q4-t consistent
+  none, refuted ['H-SEG', 'H-N', 'E806-DISC']': H-SEG (no progress for about 125 us, a piece of work
+  at most a tile) REFUTED by 16x16 clear at 66 and 72 (21 held, 2 FAILED, 15 cannot tell of 38), H-N
+  (a pass count near 57 to 62 at every size) REFUTED (18 held, 10 FAILED, 10 cannot tell), E806-DISC
+  (56 or 110, 220 at 4x4) REFUTED (31 held, 7 FAILED); the time of the latch held the frozen
+  first-piece reading (t6 = 250 + 0.43 N us after the burst's start to N = 290, then 250, +- 15) in
+  8 of 8 rows at 8x8 and 64x32, N 150 to 330 (t6 252 to 357 us).
+  *edm; HW, infer; data: `render-closing-r4-pixel:out/20261111-210423/q4-t/`.*
+- `E842` R4-pixel stage g4-rw (Q230, 24 jobs: R2's t3-nocut shape, z = 0 and w = C x + D on the
+  tool's three vertices, a table of 60 w split 30 FIT and 30 HELD OUT by the sha256 of their bits
+  before the run): the four controls passed (w = 1; 3, 9, 4.5; 7, 10, 7.75; 1.40625, 1.78125, 1.5:
+  three vertices at the window rule's positions, depth 0x3f000000, the known words exact); in the 14
+  jobs at scale 1 and 4 (42 w in 1.03 to 7.84) the PB_OBJ.RHW word of every kept vertex was RZ of
+  1/w (31) or RZ + 1 (11: w 1.125, 1.40625, 1.49219, 1.75638, 4.2782, 4.67374, 6.375, 6.75, 7.125,
+  7.375, 7.83901), 19 of 19 FIT and 23 of 23 HELD OUT words read; the 6 jobs at scale 1/4 (18 w in
+  0.254 to 0.443) read no word: frozen verdict 'every table word is RZ or RZ+1 of 1/w (42 of 60 rows
+  decided); analysis not run: 19 of 30 FIT and 23 of 30 HELD OUT words read' (job shape 14 held, 6
+  FAILED), so the frozen fit of the algorithm families did not run; read at the fold, those 6 jobs'
+  window coordinates 32 + 32 x / w (frozen from -62.4 to 120.9) lie beyond the guard band of the 64
+  x 64 target, and the TA cut each triangle to a polygon of 5 to 7 vertices every one of which lies
+  on x or y = -16 or 80, so no kept vertex, and no 1/w of a table w, was stored.
+  *ta; HW, infer; data: `render-closing-r4-pixel:out/20261111-210423/g4-rw/`,
+  `render-closing-r4-pixel:fold/`.*
 
 ## By unit
 
@@ -6211,7 +6281,7 @@ E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321, E353, E4
 E450, E531, E532, E533, E536, E537, E538, E539, E540, E550, E600, E601, E602, E603, E604, E605,
 E746, E747, E748, E749, E750, E751, E752, E764, E768, E769, E771, E784, E791, E792, E793, E794,
 E804, E805, E806, E807, E809, E810, E811, E812, E813, E814, E816, E817, E818, E819, E830, E834,
-E835, E836.
+E835, E836, E839, E840, E841.
 
 ### firmware
 
@@ -6242,7 +6312,7 @@ Records: E043, E044, E045, E046, E047, E048, E125, E126, E127, E128, E129, E130,
 E134, E135, E136, E137, E138, E139, E140, E141, E142, E143, E144, E145, E259, E260, E261, E262,
 E263, E264, E343, E344, E345, E364, E379, E381, E384, E388, E389, E390, E391, E392, E393, E394,
 E395, E396, E400, E420, E421, E428, E430, E436, E437, E454, E459, E460, E709, E742, E759, E772,
-E808.
+E808, E838.
 
 ### platform
 
@@ -6260,7 +6330,7 @@ E448, E449, E451, E458, E462, E732, E770.
 Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180, E181, E247, E257,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
 E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763, E776, E777,
-E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828.
+E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828, E842.
 
 ### texture
 

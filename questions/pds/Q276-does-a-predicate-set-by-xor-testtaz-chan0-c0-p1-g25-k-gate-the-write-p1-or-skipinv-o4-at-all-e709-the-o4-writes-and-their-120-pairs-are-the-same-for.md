@@ -1,11 +1,11 @@
 +++
 id = "Q276"
-question = "does a predicate set by `xor.testtaz.chan0 !c0, p1, g25, #k` gate the write `p1 or.skipinv o4` at all (E709: the o4 writes and their 120 pairs are the same for k = 0, 1, 2, 3 and for no guard), and which instances run when it does"
+question = "which of the pixel words of E709's four-output setup are o4's own (E838: whatever a triangle's pixel program wrote to o4, tag 13, tag 5 with bit 4 or 5, alone or with the plain tag-5 word in either order, every word at the tag-5 pixels was the plain tag 5 with bits 5:3 clear, and no tag-4 word was ever read), and does a predicate set by `xor.testtaz.chan0 !c0, p1, g25, #k` gate the write `p1 or.skipinv o4`, and which instances run when it does"
 unit = "pds"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E709", "E570", "E406", "E742", "E759", "E772", "E808"]
+evidence = ["E709", "E570", "E406", "E742", "E759", "E772", "E808", "E838"]
 terms = ["PDS_SIZE.BITS17_16"]
 +++
 Q023 asks which lanes write o4 to o7 in the four-output-room setup. E709 guarded o4 by a test of g25
@@ -74,3 +74,17 @@ never appears in the pairs of E570 and E709 (tags 5 to 7 only), which V1 and V2 
 predicate clause cannot be read until this is known: with k = 7 the p1 write never runs, the !p1 write
 carries 13, and 5 was read all the same. No offline check separates V1 to V3; the planned stage
 p4-o4 separates them with tags that differ in one other bit (the bit-4 and bit-5 marker variants).
+
+Narrowed 2026-11-11 (R4-pixel p4-o4, E838; the question line is reworded, the question is not
+retired). The question line asked "does a predicate set by `xor.testtaz.chan0 !c0, p1, g25, #k`
+gate the write `p1 or.skipinv o4` at all (E709: the o4 writes and their 120 pairs are the same for
+k = 0, 1, 2, 3 and for no guard), and which instances run when it does". With words that differ
+in bit 4 or 5 as well as bit 3, every value configuration held out read the plain tag-5 word, also
+a program that wrote only tag 5 with bit 4 (v-a4), or only tag 13: none of the 12 frozen models
+(V1 drops bit 3, V2 refuses a word with bit 3, V3 as written, by five combine rules) fits, frozen
+verdict "family REFUTED", and the 12 predicate jobs are cannot tell by their frozen gate. Read at
+the fold, post hoc: no word of any of the 36 jobs had bit 4 or 5 set, and none had tag 4 (o3) or
+8 (o7). Two readings fit and neither is tested [infer]: the path that brings o4 out clears bits
+5:3; or the tag-5 words are not o4's but tag 1 (o0) OR tag 4 (o3). Open: which reading holds (a
+run that changes o0's or o3's tag and leaves o4 alone separates them); then, with words that
+reach the image, the predicate clause.

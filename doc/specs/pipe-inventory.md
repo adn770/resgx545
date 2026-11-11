@@ -143,8 +143,9 @@ of sections 1 and 2 are those of the 12.0 scan and were not redone.*
   scene.
 - **dpm, bif, events**: dump directories of text (the state page, the directory words, EVENT_STATUS
   per event) that need their units (12.7, 12.5, 12.6) and the registers' semantics (`regs.rs`).
-  The events side refuses the STATUS2 latches (E805 to E807; Q082) and the clears (E821 to E823;
-  Q166).
+  The events side gives two STATUS2 latches as rules over a measured timing, bit 6 of a 64 x 32
+  fill without a load (E805) and bit 7 of a vertex loop (E839), and refuses the other latches
+  (E806, E840, E841; Q082) and the clears (E821 to E823; Q166).
 
 ## 4. The MTE clipping and depth-range datasets
 

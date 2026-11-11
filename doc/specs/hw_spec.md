@@ -411,6 +411,21 @@ and copies of our stack (E357).
   about 125 µs without progress, of the TA for bit 7 and of the pixel side for bit 6, would fit
   these and the 121 to 124 µs after a fault word; a load would end a piece of work. These are
   readings to test, not rules.
+- **Held out in round 4 (R4-pixel, 2026-11-11).** *Bit 7 in a vertex loop* [HW]: the rule above, set
+  iff L >= 129.5 µs with an edge of 122 to 136 µs, held in 14 of 14 decided rows of three ladders
+  E807 never ran (13, 2 and 8 instructions an iteration; 3 and 24 vertices), the bit showing 122 to
+  130 µs after the run began in 10 of 10 set jobs; the stock program's 1500 vertices at 2048 x 2048
+  kept the TA's clocks busy for 11 ms with bit 7 clear (2 of 2), so the rule is one of a vertex loop
+  and not of the TA phase's length (E839). sgx-pipe models it as `events::status2_bit7`. *Bit 6 with
+  a load* [HW]: a fill's pixel program that waits on one load before the ALU loop that sets the bit
+  on its own, or alternates loads with rounds of it, kept bit 6 clear in 11 of 11 jobs, to 220
+  iterations after the load and 4.2 ms: a program that waits on a load does not latch (H-LOADOFF),
+  and neither a timer restarted by the wait nor a summed busy time fits (E840). *Bit 6 in triangles*
+  [HW]: in triangles that cover the target bit 6 first sets in (96, 104] at 8 x 8, (140, 170] at 4 x
+  4, (56, 60] at 32 x 16, (60, 66] at 64 x 32 and not up to 72 at 16 x 16; a pass count, E806's
+  discrete points and a tile's time without progress are each refuted, and in the long rows the bit
+  showed 250 to 360 µs after the burst began, as frozen (E841). What bit 6 follows in a triangle
+  stays open (Q082).
 - **Clearing.** Without a clear each stays set through later jobs (E357, whose runs wrote none);
   the debugfs reset clears both (E357, E764). A host write to `CR_EVENT_HOST_CLEAR2` (0x0114)
   clears the bits written: 0x8000 left a latched 0x440 as it was, 0x40 cleared it to 0x400, and
@@ -441,7 +456,7 @@ untested (E445).
 *Based on sgx545-ce `src/services4/srvkm/devices/sgx/sgxinit.c`, `sgxreset.c`,
 `src/services4/include4/sgxscript.h`, `src/services4/include/sgx_mkif_km.h`,
 `src/services4/srvkm/hwdefs/sgx545defs.h`; E357, E365, E431, E444, E445, E547, E764 to E766,
-E769, E784, E804 to E807, E821 to E823, E837.*
+E769, E784, E804 to E807, E821 to E823, E837, E839 to E841.*
 
 ## 7. Where the microkernel comes from
 
