@@ -1,11 +1,11 @@
 +++
 id = "Q030"
-question = "what do CR_TE_AA bits 31 and 30 do when bit 29 is clear, where the triangle is gone, and does the sample layout of E281 hold in the tiles and windows past the first?"
+question = "does the sample layout of E281 hold in the tiles and windows past the first (what CR_TE_AA bits 31 and 30 do when bit 29 is clear is answered by E728 and E829; why the TA inserts the zero dword that leaves the image empty is Q293)?"
 unit = "isp"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E210", "E211", "E219", "E220", "E281", "E415", "E502", "E503", "E504", "E728"]
+evidence = ["E210", "E211", "E219", "E220", "E281", "E415", "E502", "E503", "E504", "E728", "E829"]
 terms = ["CR_ISP_MSAA", "CR_ISP_MSAA.MODE", "CR_ISP_MSAA.ENABLE", "CR_ISP_MULTISAMPLECTL", "CR_TE_AA", "programmable sample positions"]
 +++
 
@@ -57,3 +57,11 @@ partly answered: bits 31 and 30 act in the TA output the same as with bit 29 set
 triangle is gone" is not answered. Landed te 0x20 equals te 0x00 (0 dwords differ in the parameter
 buffer and the TA data), so bit 29 alone changes nothing and acts only with bit 30 or 31 set. "What
 bit 29 gates" stays open (Q285).
+
+Note 2026-11-11 (round 4, stale text overtaken by E829). The "what bit 29 gates stays open (Q285)"
+of the paragraph above is answered: Q285 is retired as answered by E829, which shows the 3D reads
+the object in the bit-29-set layout, so with bit 29 clear and bit 30 or 31 set the zero the TA
+inserts at dword 11 is read as the format word and the image is empty. "Where the triangle is gone"
+is therefore answered, and what is left of the TA side (why the TA inserts the dword) is Q293. What
+stays here is the sample layout in the tiles and windows past the first (every sample slot held the
+same iterated position in E502's identity maps, which cannot show it).

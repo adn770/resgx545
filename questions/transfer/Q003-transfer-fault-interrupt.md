@@ -165,3 +165,24 @@ brought both back (4 of 4); the registers stayed latched through a 2.5 s watch a
 them (both reset lines 0x80000 and 0, E767's lead held). So no hypothesis fits (H-W1C, H-CLR, H-RST
 each contradicted by one reading). Open: whether a clear lasts with the requester no longer stalled,
 the order inside the reset, the 3D's own and ZLS faults, the type-1 transfer fault.
+
+Note 2026-11-11 (round 4, decision R4-3: Q140's health-triangle clause goes here; a reading of kept
+kernel logs and of K2's netconsole log, not a new measurement; [infer], one boot for the replay).
+After a 0x90004 fault (requestor bit 2, the TA's write: a render's access past the end of the TA
+data, and the 1x DPM context faults `dpm/ctx-table-*` at 0x10000051) the state is not clean:
+"SGX recovery failed: -110" (the EDM boot's "no INIT_COMPLETE after 500 ms", then a register dump
+and -ETIMEDOUT) follows a 0x90004 fault 51 times of 157 over 543 kernel logs of resgx545-data and
+follows none of the other fault words (0x90002, 0x90008, 0x90080, 0x90100, 0x90200, 0x90400, 0x91000,
+0x92000, 0xd0002 to 0xd2000, 0x80400: about 1180 faults; closing4/rank/faultseq.out). In K2 the
+failing health triangles faulted at the previous job's address: 0x20006061 twice after c1 and
+0x20008061 twice after k-bif f2 (4 of 4), a page the health triangle's own layout does not reach
+even with four arrays, and after k-bif's f1, f1r (0x90008), f3 (0x90002) and R3-rgn4's j4 (0x90100)
+the next health triangle passed. The -110 dumps of K2 (BIF_INT_STAT 0x000d0004, BIF_FAULT
+0x1000b050 then 0x10002050: requestor bit 2, `SB` 5, a page of the PARAMETERS heap, `CID` 0) show a
+fault inside the boot itself. [infer] A pending TA region-header write survives the soft reset and
+is issued again when the TA next runs, through whatever directory is then current; the -110 is the
+same state seen by the boot. This bears on "what clears a latched fault" (E767, E826: the reset
+leaves the fault registers reading zero while a TA write is still pending). Not explained: why two
+replays in K2 and one on R3-rgn4's boot, and what ends them. Refuted by: a health fault at the
+health context's own first unmapped page after a job that faulted elsewhere, or a -110 after a
+fault word other than 0x90004.

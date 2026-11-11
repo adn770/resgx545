@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-176 open: 164 hw (high 19, medium 77, low 68, unrated 0), 9 fw, 3 kernel.
+176 open: 165 hw (high 19, medium 77, low 69, unrated 0), 9 fw, 2 kernel.
 
 ## Work queue: hardware
 
@@ -42,7 +42,7 @@
 
 ### isp
 
-- `Q030` (phase 11, hw, medium): what do CR_TE_AA bits 31 and 30 do when bit 29 is clear, where the triangle is gone, and does the sample layout of E281 hold in the tiles and windows past the first? (E210, E211, E219, E220, E281, E415, E502, E503, E504, E728)
+- `Q030` (phase 11, hw, medium): does the sample layout of E281 hold in the tiles and windows past the first (what CR_TE_AA bits 31 and 30 do when bit 29 is clear is answered by E728 and E829; why the TA inserts the zero dword that leaves the image empty is Q293)? (E210, E211, E219, E220, E281, E415, E502, E503, E504, E728, E829)
 - `Q031` (phase 10, hw, medium): why does ISP word 0 bit 28 hang a multisampled render, when single-sampled it widens coverage to the union of eight samples? (E214, E215, E278, E416)
 - `Q032` (phase 10, hw, medium): what does pcoeff hand the ISP in the punch-through pass, when the kept pixels' depth is the same without it and moves between runs only when it runs without the iteration it reads? (E217, E416)
 - `Q066` (phase 11, hw, high): what do the three background-object words the 3D kick writes mean to the ISP, and what are the other words of a render's background object? (E069, E162, E209, E216, E410, E590)
@@ -103,7 +103,8 @@
 
 - `Q001` (phase 3, hw, medium): what do 0x0810, 0x0814 and 0x0818, set once by the init script to 0x1, 0xffff and 0x7ff, control? (E006, E010, E122, E401, E403, E404, E405)
 - `Q075` (phase 11, hw, low): what does each HWPerf counter the firmware records (0x0044-0x0064, 0x0e84-0x0e90 and 0x0eb4-0x0ec0) count, and how does the group in CR_HWPERF_CTRL select them? (E149, E150, E152, E359, E434)
-- `Q111` (phase 11, hw, high): which hardware event sets which bit of CR_EVENT_STATUS and CR_EVENT_STATUS2 in an ordinary TA, 3D, DPM or transfer job, how long does each stay set, and what does a write to CR_EVENT_HOST_CLEAR do to it? (E006, E154, E155, E357, E431, E435, E444, E547, E548, E747, E764, E765, E766, E823)
+- `Q111` (phase 11, hw, high): which hardware event sets which bit of CR_EVENT_STATUS and CR_EVENT_STATUS2 in an ordinary TA, 3D, DPM or transfer job, and how long does each stay set (what a write to CR_EVENT_HOST_CLEAR clears is Q166)? (E006, E154, E155, E357, E431, E435, E444, E547, E548, E747, E764, E765, E766, E823)
+- `Q166` (phase 11, hw, low): what does a write to CR_EVENT_HOST_CLEAR clear, beyond the bit 18 of E823 (is it the bits written and no others, on more than one job and bit, and does a write of a bit that stays set until an acknowledge clear it) (E547, E548, E821, E822, E823)
 
 ### render
 
@@ -142,7 +143,7 @@
 - `Q115` (phase 11, hw, low): does the sampler filter anisotropically on this core, and which bits of the texture words or the smp operands select it and its ratio? (E041, E342, E564, E720, E723)
 - `Q177` (phase 11, hw, low): what do T0 address modes 4 to 7 read along the u axis of a 16x16 twiddled texture (indices 324 to 366 past the 256 texels, a period of 6 or 16 positions), given that on the v axis 6 and 7 clamp and 4 and 5 repeat, and what memory lies past the texture (E565, E033)
 - `Q178` (phase 11, hw, low): what do TEXTYPE 1, 2, 3 (the same image as 1), 4 and 5 read, and why is type 2 the only one of the eight run on which the third coordinate of smp3d changes the image (three images for smp2d, smp3d at 0.5 and smp3d at 1.5) (E567, E342, E725, E726)
-- `Q179` (phase 11, hw, low): how are the blocks and the data bits of formats 23 to 26 laid out (a data bit changes 7 to 13 pixels, the blocks of 23 and 24 do not differ by index in the colour), and does format 27 decode as ETC1 given a block order that is Morton with y in the low bit (the one of three tried that is consistent) and one pixel per data bit (E568, E342, E724)
+- `Q179` (phase 11, hw, low): how are the blocks and the data bits of formats 23 to 26 laid out (a data bit changes 7 to 13 pixels, the blocks of 23 and 24 do not differ by index in the colour; format 27 decodes as ETC1 with Morton block order, y in the low bit, E724) (E568, E342, E724)
 - `Q180` (phase 11, hw, low): why did all 28 triangle jobs of the Q021 probes hang (E569), the two controls with the old source word 0x40800801 included: is it the four outputs o4 to o7, the two extra temporaries, or something else in the vertex program (E569, E420, E541)
 - `Q181` (phase 11, hw, low): does the fill's transfer command load a colour-space set at all (xfer:17^=1 and xfer:18 to 22 made no difference for formats 28 and 29, E568), and if not, which path loads the set that the YUV conversion reads (E568, E037, E040)
 - `Q280` (phase 11, hw, low): what makes up to 56 of 2048 pixels of a gradient job differ from the Euclidean footprint of the pairs (op0, op2) and (op1, op3) with a LOD fraction truncated to 1/64 (E721), a rounding of the length, of the logarithm or of the operands, or a footprint that is not exactly Euclidean (E721, E563, E744)
@@ -250,7 +251,6 @@
 #### platform
 
 - `Q095` (phase 11, kernel): does giving the EDM a page directory of its own, rather than gma500's default one, change anything beyond the coupling of their teardowns? (E008, E018, E021)
-- `Q166` (phase 11, kernel): what does a write to CR_EVENT_HOST_CLEAR or CR_EVENT_HOST_CLEAR2 clear, the bits written or others, and does it clear the bits that stay set until an acknowledge (the timeline of a SW_EVENT lasts 4 to 136 microseconds) (E547, E548, E821, E822, E823)
 
 #### ta
 
