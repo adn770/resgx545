@@ -748,47 +748,88 @@ queue's `EMPTY` flag and bits 15:0 its served-event `COUNT`, which fits (emgd-ps
 `psb_regs.h`).
 
 A firmware task of ours in the general slot (E531) sees the tick's event as `pa0` = 2, `pa1` =
-0x02000000 and `pa2` = 0x01061a70 (E532: 2 of 2 runs). The byte `pa1` bits 31:24 is a count that
-every event carries: 2 after the arm, +1 after each kick of the kernel's command buffer, a host
-GETMISCINFO or a client job's own (E746 held out 3 of 3; E747 for 138 job events, read after the
-run), so bits 24 and 25 are bits of the count and not event bits; PDS #13 reads only bits 23:0.
-The count is the number of commands (kicks) the kernel has sent through the CCB since the firmware
-load, mod 256, equal to the CCB write offset: 2 after the arm path's two GETMISCINFO, 1 with one
-and 4 with four, 0 after 254 more kicks, +1 per fill or copy command (E768, 15 of 15 jobs); a kick's own event carries the value from before its bump, and whether the hardware
-counts the writes to `CR_EVENT_KICK` or reads the kernel's kicker word is not separated (Q290).
-`pa2` is the EDM's event timer sampled for the event (bits 31:24 = 0x01, bits 23:0 counting down
-from 400000 core clocks), 16 clocks after the reload for a tick served at once (0x01061a70) and any
-value for a kick; it is not a constant (E746, E747). A host kick (a GETMISCINFO with no job) is one
-event in the general slot with `pa0` = 0 and `pa1` bits 23:0 = 0x100 (E746); the words E538 logged
-for it, 0x03000000 with `pa0` = 2, are those of the tick after it. A client job's events arrive one
-status bit at a time, in an order the same in every replicate, and the fill's end of render reached
-slot 3 with `pa1` bit 4, the reversed order of E155 (E747); bit 19 did not appear in any of them,
-nor in 8 jobs of 4096x4096 with 1500 vertices that did and did not raise the TA's threshold (E771,
-Q033). While a task of ours holds the EDM the
-events are queued and not lost: up to four ticks (three latched on arrival, one when the hold ends,
-the rest dropped), a kick once, a job's events once, all served after the hold (E749, E751, E752);
-two kicks in one 90-tick hold are two entries, each with the count it had when it arrived (2 and 3,
-the ticks after them 4), 3 of 3 jobs (E794).
-After a task that wrote `sa`, `r`, `i`, `p` and `pclink` state and ended with `nop.end` instead of
-jumping to the closed general task, the tick stopped: dword 12 and `USE0_SERV_EVENT` did not move
-over three reads 20 ms apart, and one debugfs reset recovered it (E533, 1 run). A task of ours that
-wrote nothing and ended one tick pass with `nop.end`, without calling the closed task, stopped it
-in 2 of 2 runs, with `CR_CLKGATESTATUS` 0x000ccfa0, `CR_EVENT_STATUS` 0x20000000, the event timer
-counting and `USE0_SERV_EVENT` frozen with its empty bit clear: skipping the closed task is enough
-(E793, Q152). A task of ours that wrote `sa`, `r`, `i` and `p` and then called the closed task
-left the tick running (E536, 3 of 3 rounds, 911 to 1005 Hz), and a second one that also wrote `sa63`
-and `sa65` and called it was not followed by its armed reader within 100 ms (E537, 1 run; HostCtl
-dword 12 advanced 6 in that window and then read 0x9db in both dumps taken seconds later, and
-`USE0_SERV_EVENT` 0x9e0 in both, against E533's three reads 20 ms apart; Q152). The closed task does
-not by itself keep the tick, then, but a task that ends a pass without it does not keep it either.
-No single write of `sa63` (a marker, read back after 1200 ms), `sa64` (with the tick bit set or
-clear) or `sa65` (its own value, or a marker restored before the call), and no tail call with p0 =
-p1 = 1 and r and i written, stopped it (E791, 19 of 19 jobs); after an `sa64` with bit 1 clear the
-next entry read `pclink` 6 and p1 as left, after the others 0x98 (E792).
+0x02000000 and `pa2` = 0x01061a70 (E532: 2 of 2 runs). The paragraphs below are what the records
+of the closing pass add, by topic; the contract a task of ours must keep is gathered in the USSE
+book's *Tasks and phases* (`doc/specs/usse_isa.md` §3.6).
+
+**The timer and the tick [HW].** The tick is `CR_EVENT_TIMER` (0x0acc): bit 24 set, bits 23:0
+counting down 400000 core clocks and reloading by themselves (E746, E751). One tick is 25000
+`CR_TIMER` units (E746, E813; the plain gaps of the kept rings are 25000 to within a few units).
+`pa2` of an event is the timer sampled for it: 0x01061a70, 16 clocks after the reload, for a tick
+served at once, 0x01061a74 for a tick latched while the EDM was not idle (the first ticks after a
+hold, E751), and any value for a kick (E746, E747). A task's `str` of the reload word 0x01061a80 to
+the timer followed by the closed task kept the tick and moved the next entry to 25114 units, 2 of 2
+(E818 T1); [infer] the store restarts the countdown where it executes. A pass with the tick bit of
+`sa64` clear leaves `pclink` 6 and does not advance HostCtl dword 12 (E792, E812 C5: 50 passes, 2
+of 2), and a tick pass handed to the slot 2 closed task keeps the tick without advancing it (E813
+X1, X20), so dword 12 counts the passes of the closed tick handler, not ticks [infer].
+
+**The end of a pass [HW].** After a task that wrote `sa`, `r`, `i`, `p` and `pclink` state and
+ended with `nop.end` instead of jumping to the closed general task, the tick stopped (E533, 1 run),
+and a task that wrote nothing and ended one tick pass that way stopped it in 2 of 2 runs (E793). A
+task of ours that wrote `sa`, `r`, `i` and `p` and called the closed task left it running (E536, 3
+of 3 rounds), and no single write of `sa63`, `sa64` or `sa65` (without bit 8) and no tail call with
+p0 = p1 = 1 stopped it (E791, 19 of 19; E812, 13 of 13). What the EDM needs is the phase end: a
+plain tick pass of ours keeps the tick iff it executes `phas #0, #0, pixel, end, parallel` before
+its `nop.end`, 13 of 13 jobs with it and 7 of 7 stopped without it, `cfi.global` neither needed nor
+enough (E817 held out, H-PHAS; E830 replicated in three blocks, H-REP; E793, E818 T2). The closed
+exit reached by a tail call (`cont4`) keeps it, 8 of 8, as does any closed path that reaches that
+exit, the general task's or slot 2's (E817, E830, E813: H-EXIT); a kick pass ended with `idf, wdf,
+nop.end` stops it too (E813 B3), and a store to the timer does not replace the phase end (E818 T2).
+[infer] This is the program-shape rule of client programs (E118, `usse_isa.md` §3.6) in an EDM
+task. A kick pass and the slot 3 pass ended with the `phas` have not run (Q152). A stop reads
+`CR_CLKGATESTATUS` 0x000ccfa0, `USE0_SERV_EVENT` bit 16 clear and its count frozen, the event timer
+counting and `CR_EVENT_STATUS` 0x20000000; it answers no host command (0 of 8 tries) and one
+debugfs reset recovers it; a task still running inside a 90.5 ms hold reads the same, so the
+signature cannot tell a stop from a long task (E811, E816). A phantom kick bit (`sa65` bit 8 with
+read = write) makes the closed reader take an empty command and stop with HostCtl dword 14
+0xad002600, read = write + 1 (E814 D2, E537); E537's word without bit 8 stops it with no mark (E814
+D1).
+
+**The kick [HW].** A kick is the command at the CCB write offset, the kicker word bumped (mod 256)
+and a write to `CR_EVENT_KICK`. It is one event in the general slot, `pa0` = 0, `pa1` = (K << 24) |
+0x100 with K the count before the bump, and the ticks after it carry K + 1 (E746, E768, E816 G0).
+The byte `pa1` bits 31:24 is a count every event carries: the number of commands the kernel has
+sent through the CCB since the firmware load, mod 256, equal to the CCB write offset (2 after the
+arm path's two GETMISCINFO, 0 after 254 more kicks, +1 per fill or copy command; E768, 15 of 15
+jobs; E747 for 138 job events, read after the run), so bits 24 and 25 are bits of the count and not
+event bits; PDS #13 reads only bits 23:0. Writing the kicker word alone (0x42) raises no event and
+leaves the count of the ticks at 2, so the hardware does not read the kicker word at each event
+(E819 Q1, 3 of 3: H-KW refuted). A kick written without the bump is not consumed: the read offset
+stays, no answer comes in 504 ms and the tick goes on (E819 Q3, 3 of 3). Whether the count follows
+the kicker word as latched at a served kick or the commands consumed is open (Q290). The words E538
+logged for a kick, 0x03000000 with `pa0` = 2, are those of the tick after it. A client job's events
+arrive one status bit at a time, in an order the same in every replicate, and the fill's end of
+render reached slot 3 with `pa1` bit 4, the reversed order of E155 (E747); bit 19 did not appear in
+any of them, nor in 8 jobs of 4096x4096 with 1500 vertices (E771, Q033). While a task of ours holds
+the EDM the events are queued and not lost: up to four ticks (three latched on arrival, one when
+the hold ends, the rest dropped), a kick once, a job's events once, all served after the hold
+(E749, E750, E751, E752); two kicks in one 90-tick hold are two entries, each with the count it had
+when it arrived (2 and 3, the ticks after them 4), 3 of 3 jobs (E794). Skipping the slot 3
+end-of-render pass once stopped the tick and held the fill (E823).
+
+**State between passes [HW].** At the next entry after a task of ours `pclink` reads 0x98, p0 1
+and p1, p2 and p3 what the task left (E809, 12 of 12; after an `sa64` with the tick bit clear
+`pclink` reads 6, E792); after a client fill, a firmware reload or a reset p0 p1 read 1 1, p2 0 and
+p3 as left (E810). `i0`, `i1` and `r21` survive a reload and a reset, `r20` and `sa63` do not
+(E810). `pa0` to `pa4` read `sa64` to `sa68`; a `mov` to `pa3` writes `sa67` for this pass and the
+next, to `pa2` writes `sa66` for the pass only, to `pa4` is lost (E748, E820). Q158 holds the start
+state after other perturbations and a cold boot.
+
+**The event registers a task or the host writes** (named in the glossary; the effects are the
+records'):
+
+| register | offset | what the records show |
+|---|---|---|
+| `CR_EVENT_TIMER` | 0x0acc | periodic by itself; a `str` of 0x01061a80 moves the grid (E818) |
+| `CR_EVENT_KICK` | 0x0ac8 | an event a kick with the kicker word bumped, else none (E746, E819) |
+| `CR_EVENT_HOST_CLEAR2` | 0x0114 | clears the STATUS2 bits written, host or task (E821, E822) |
+| `CR_EVENT_HOST_CLEAR` | 0x0134 | bit 18 clears STATUS bit 18, bit 15 does not (E823, post hoc) |
 
 *Based on sgx545-ce `src/services4/system/unified/sysconfig.c`,
 `src/services4/srvkm/devices/sgx/sgxconfig.h`; emgd-psb_regs; E002, E006, E008, E009, E011, E531,
-E532, E533, E536, E537, E538, E746, E747, E749, E751, E752, E768, E771, E791, E792, E793, E794.*
+E532, E533, E536, E537, E538, E746, E747, E749 to E752, E768, E771, E791 to E794, E809 to E814,
+E816 to E823, E830.*
 
 ## 13. Open questions
 
