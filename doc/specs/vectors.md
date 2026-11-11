@@ -633,9 +633,9 @@ status with a reason, and rows.
   edges of `0x0658` bit 0), the peak of each TA run, the counts before each abort and dwords 36 to
   38; refused, the abort and partial-render sequence is not modelled (the count is Q211, E832).
 - `zls`: per job the stored (not 1.0f) dwords of the depth store's tile area, their extent and
-  the tool's count of target pixels that differ; refused by sgx-sim. `sgx-pipe`'s `zls.rs` models E831's band
-  at even sizes since round 4 (section 5), but no replay of this table is written; the odd sizes
-  are Q287.
+  the tool's count of target pixels that differ; refused by sgx-sim. `sgx-pipe`'s `zls.rs` models
+  E831's band at even sizes since round 4 (section 5), but no replay of this table is written; the
+  odd sizes are Q287.
 - `pbpages`: per dump the non-zero 4 KiB pages of the parameter buffer, their runs, the TA data
   size and the tile count; refused, the page writes are not modelled (the page model the table
   agrees with in 8 of 8 dumps was fitted to them, E833).
