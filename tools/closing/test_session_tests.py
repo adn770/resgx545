@@ -184,5 +184,5 @@ def test_the_simulator_is_built_from_the_pinned_tree(world, tmp_path):
     r = run(world, "edm/closing-demo", PATH=f"{bin_}:{os.environ['PATH']}")
     assert r.returncode == 0, r.stdout + r.stderr
     line = log.read_text().strip()
-    assert line.endswith("build -q --release -p sgx-sim")
+    assert line.endswith("build -q --release --workspace --bins")
     assert "/src/resgx545 " in line
