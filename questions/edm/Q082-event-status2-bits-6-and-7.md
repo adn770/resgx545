@@ -116,3 +116,37 @@ bit 6 at the same points in a fill (E804).
 Open: what bit 6 follows (time without a load, or what the load body changes; why a triangle differs
 from a fill of the same pixel count), what bit 7 follows (it moves with the body and the vertex
 count, no count fits), and the 121 us after a fault word.
+
+Note 2026-11-11 (round 4, offline readings of the kept timelines of E804 to E807; [data] for the
+counts, [infer] and SEMI or FIT where said; a second reading of the data above, not a correction of
+a claim; to be held out by the planned stages q4-v, q4-f and q4-t).
+- Bit 7 in the vertex loops [SEMI]. In the regtimelines of the `--tri vtxuse` jobs
+  `CR_CLKGATESTATUS` reads 0x000ccff8 while the TA works on the vertices (0xccfa0 before and after;
+  "TA clocks" is a name of ours). With L the longest run of 0xccff8, bit 7 is set iff L is at least
+  125 us (edge 120 to 131): all 74 jobs of E807's stage q-v fall on the predicted side, every clear
+  job with L at most 129.1 us and every set job at least 129.8 us over four bodies and 3, 12 and 48
+  vertices, 8 of them in the edge band; the rule was written after the dumps of 8 of the jobs and
+  before the other 66 were measured. It is the quantity that E807's scorer measured as the whole
+  burst B. It is not the TA phase's length alone: the ten 1500-vertex jobs of R3-geo g-c4 (several
+  aborts, milliseconds of TA) all end with STATUS2 0x400. E764 to E766 measured 121.1 to 124.1 us
+  from a fault word to bit 6 or 7, so one timeout of about 125 us may serve both bits (a stalled
+  unit); E357's held TA hang sets bit 7 with a run of 8 us, so L measures a vertex loop and not
+  every stalled TA.
+- Bit 6 in fills [FIT, then SEMI]. One constant (T = 125 us, edge 118 to 132) on the tile time
+  (B - 60.2) / 4 holds in 187 of 187 fills that have no load (R3-pixel q-f0, q-f1a, q-f1b: 106,
+  0 misses; E431 and E357's timelines: 81, 0 misses), 14 in each set in the edge band. The latch-time
+  part of the same rule fits R3-pixel (62 of 68 set jobs within 15 us) and fails on the older data
+  (30 of 48): it is refuted as written and not offered. What stands: in R3-pixel's long fills the
+  bit shows 121 to 128 us after the 3D's clocks come on, the delay of bit 7.
+- Bit 6 in triangles [FIT]. The fit B = a + s N per size of E806's q-t gives a slope a tile near the
+  fill's (2.26 us a pass) wherever a tile is full and not proportional to the pixels; every bracket
+  (last clear, first set) contains a tile time of 120 to 160 us, so "56 or 110 by size, with no
+  order in the size" is what a threshold near N = 55 to 60 gives on a ladder whose next point is 110.
+  Reading to test, H-SEG: bit 6 latches when the pixel side makes no progress for about 125 us,
+  progress being the end of a piece of work that is at most a tile; refuted by a size that stays
+  clear at a tile time above 170 us (N = 72 at 16 x 16 or 64 x 32).
+- The load body [infer]. The "busy time summed" form of H-WD-busy does not fit: ld8 (a load, a wait,
+  four multiply-adds) stayed clear to N = 320 with bursts of 13.4 ms where the ALU bodies set at 440
+  to 476 instructions an instance, which would set ld8 near N = 75. Two readings remain, H-YIELD (a
+  wait ends the piece of work and restarts the timer) and H-LOADOFF (a program that waits on a load
+  never latches); stage q4-f separates them with an ALU loop after one load.

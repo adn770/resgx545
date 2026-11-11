@@ -156,3 +156,13 @@ open). The four depth stages of round 3 ran with every control passing.
 Open (the reworded line): as above, with the 1/w rule at w other than 1 (which w store one ulp
 above RZ), the depth formula, the made vertex's 1/w, and polygons of 3 or 5 vertices at w other
 than 1.
+
+Note 2026-11-11 (round 4, an offline reading of the 23 w with a recorded 1/w word, E754, E795, E796
+and E798; [data]). The fraction of the exact 1/w in the last place does not separate "RZ" from "one
+ulp above" (1.0625 is RZ at 0.94, 1.59375 is above at 0.63), and neither does the mantissa of w
+(1.375 RZ, 1.40625 above, 1.4375 RZ). So the word is not a directed or nearest rounding of the exact
+quotient at any threshold; [infer] it is an iterative or table reciprocal with an error of 0 or +1
+ulp. Five "above" words carry too few bits to fit an algorithm (E783's lesson: 4 of 257 models fit
+six words by chance); a table of about 60 w, with a frozen FIT and HELD OUT split, is the smallest
+run that can fit and hold out (planned stage g4-rw). The depth formula stays parked behind it and
+very likely uses the same reciprocal [infer].

@@ -28,3 +28,12 @@ perturbation, set before the run by what the data does not say. The frozen H-KEE
 survive, r does not) and H-ALL (r survives too) are both refuted (the frozen scorer's 'r20/r21
 survived 3/3' was a scorer bug, fixed after the run and disclosed in the dataset). Open: the sa
 registers our task may not write, and which step of the reload clears r20 and sa63 and keeps r21.
+
+Moved 2026-11-11 from Q124 (retired as answered by E809; the question was whether p0 to p3 and
+pclink survive from one firmware task to the next, and E809 and E810 read them at the next entry in
+12 of 12 jobs). What the answer leaves, and is this question's: the state a task finds after a
+perturbation is a reading made after the run, not a frozen rule (E809: after a client fill, a
+firmware reload and a debugfs reset alike p0 p1 read 1 1, pclink 0x98, p2 0 and p3 the value left,
+9 of 9; E536's frozen 0 1 after a fill and 0 0 after a reset held in 1 of 3 and 4 of 6), so "p2
+cleared and p3 kept across a fill, a reload and a reset" needs a frozen row; and the state a task
+finds after a cold boot has not run (S0 followed the stage's own arm, not a boot).

@@ -127,3 +127,25 @@ open). The four DPM stages on C ran after g-c4's four controls passed.
 Open (the reworded line): what C is compared with and why the increment is 0x20; which property of
 the scene and of the target sets C (no law in the target's size fits five targets; one other scene
 gives a different limit at one target, its value not reached).
+
+Note 2026-11-11 (round 4, a reading of the landed firmware dataflow, `doc/specs/edm_dataflow.md`,
+generated from E013; [source], a static reading, no run). The raise is the firmware's own write in
+its out-of-memory routine at 0xb50-0xc22: `CR_DPM_ZLS_PAGE_THRESHOLD` (0x0624, the register that
+reads P - 0x22) is written as itself + 0x20, `ta3d_ctl.zls_threshold_step` (dword 38) is written
+from 0x20, `CR_DPM_TA_GLOBAL_LIST` is written as (itself & 0xffff) + 0x10 | 0x10000 with its old
+value saved in dword 37, `abort_page_count0` and `abort_page_count1` (dwords 35 and 36) are written
+there and tested against the high halves of `CR_DPM_PAGE_STATUS` and `CR_DPM_GLOBAL_PAGE_STATUS`,
+and `CR_DPM_REQUESTING` bit 0 branches. So 0x20 is a constant of that routine (with E625's dwords 37
+and 38 as the saved threshold and the step), the clause "why is the raise 0x20" is answered at the
+tier of a static reading plus E625, and the limit C is a branch of that routine, not a hardware
+compare. The spec leaves the routine with "a branch on a predicate of unknown origin" and dwords 35
+and 36 "written from ?", so the guard of the + 0x20 write is not read yet. Dword 36 is written in
+that routine at every abort, which is what H-last (the count before the last abort, 58 of 58 with an
+abort, E803) needs; the value it is written from is the remaining open part of the former Q273
+(retired as answered by E803) and is read with this question. Next, offline: the conditions of the
+routine on the path to the + 0x20 write and the source of the two abort counts (reading R-5, facts
+only, reviewed), then a test held out by construction: the condition must place the five exact flips
+(0x351/0x352 at 4096x4096, 0xe2/0xe3 at 2048x2048, 0x1b2, 0x1b6, 0x1e8; E774, E799, E801) and
+E802's scene from the registers g-c4's and g-c5's kept timelines hold (0x0624, 0x0628, 0x0724,
+0x0728, 0x072c). Refuted by one flip on the wrong side. No hardware unless a register it needs was
+not sampled.

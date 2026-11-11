@@ -1,6 +1,6 @@
 +++
 id = "Q111"
-question = "which hardware event sets which bit of CR_EVENT_STATUS and CR_EVENT_STATUS2 in an ordinary TA, 3D, DPM or transfer job, how long does each stay set, and what does a write to CR_EVENT_HOST_CLEAR do to it?"
+question = "which hardware event sets which bit of CR_EVENT_STATUS and CR_EVENT_STATUS2 in an ordinary TA, 3D, DPM or transfer job, and how long does each stay set (what a write to CR_EVENT_HOST_CLEAR clears is Q166)?"
 unit = "platform"
 kind = "hw"
 value = "high"
@@ -25,8 +25,7 @@ write fault sets none. Q082 holds bits 6 and 7 and Q003 what a fault raises.
 Open: which hardware event sets each of the other bits in a job that runs to its end (the TA's end,
 the 3D's tiles and render, the DPM's page and state tasks, an out-of-memory overflow, a transfer),
 whether a bit is a pulse or a level, for how long it stays when nothing acknowledges it, in which
-order the bits of one job set, and what a write to CR_EVENT_HOST_CLEAR clears (the bits written, or
-others). [infer] The firmware takes its work from these bits, so a simulator that runs it needs
+order the bits of one job set (what a write to CR_EVENT_HOST_CLEAR clears is Q166). [infer] The firmware takes its work from these bits, so a simulator that runs it needs
 them.
 
 To settle it: sample CR_EVENT_STATUS and CR_EVENT_STATUS2 at the finest sampling (`--regs` with
@@ -95,3 +94,8 @@ first read preceded the render's end; the frozen scorer therefore says 'mixed': 
 by a host write of bit 18 and not by one of bit 15: with no acknowledgement the bit is a level, so
 the 4 to 6 microseconds of E547 are the firmware's acknowledgement [infer, one job]. Open: the other
 bits' pulse or level, the firmware route (B2 not run), the order of bits.
+
+Note 2026-11-11 (round 4, decision R4-3): the clause on what a write to `CR_EVENT_HOST_CLEAR` clears
+is Q166's alone and is cut from this question's line; Q166 is retyped from kernel to hw (low). E821
+and E822 answer `CR_EVENT_HOST_CLEAR2` (the bits written are the bits cleared, 3 of 3 rounds by the
+host and by a task's `str`).

@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-182 open: 168 hw (high 20, medium 77, low 71, unrated 0), 10 fw, 4 kernel.
+177 open: 166 hw (high 19, medium 77, low 70, unrated 0), 9 fw, 2 kernel.
 
 ## Work queue: hardware
 
@@ -25,7 +25,6 @@
 - `Q192` (phase 11, hw, medium): does the store that follows the next context's render replace the state page a partial-render owner left (18 non-zero dwords after its partial renders, E591), and what does it write there? (E310, E464, E591, E631)
 - `Q210` (phase 11, hw, high): what does the DPM compare with the limit C that decides whether the first abort's threshold is raised by 0x20 (E774: raised iff thr0 + 0x20 <= C = 0x371 at 4096x4096, 1350 and 1500 vertices; E786: the limit is on the threshold the TA runs, not on the knob P; E785 and E799: C = 0x102 at 2048x2048; E801: 0x1d2 at 4096x2048, 0x1d6 at 2048x4096 and 0x208 at 3072x3072; E800: the target sets it, not the context; E802: another scene raises above 0x102 at 2048x2048; wd-glist-1500's missing raise at P of 0x422 and above is the clamp of thr0 at 0x400, E753), why is the raise 0x20, and what makes C differ between the targets and the scenes (no law in the target's size fits, E801) (E310, E312, E464, E625, E627, E629, E704, E734, E753, E774, E779, E785, E786, E799, E800, E801, E802)
 - `Q211` (phase 11, hw, high): what are the constant k and the spacing s of the partial-render count of a scene of page need U (E625's 1 + floor((U + k - thr0) / (thr0 + s)) with k from 2 to 13 is refuted at U = 287, E779), and does the page need U of HU1 (E773: exact for 15 held-out scenes made of the tool's triangle) hold for wide scenes of many vertices and other shapes (E630)? (E310, E625, E630, E705, E735, E773, E779)
-- `Q273` (phase 11, hw, high): what steps dword 36 of the TA/3D control block with the vertex count and with P (E753: 1, 1, 3, 2, 3 and 3 at 1500 vertices over P = 0x320 to 0x3c0; 2 at 1350 and 3 at 1380 vertices at P = 0x3e0; it read 3 in all 14 raised jobs of E775 and 1 or 2 in the unraised), now that the raise of the TA's threshold follows a limit C = 0x371 on thr0 + 0x20 for 1350 and 1500 vertices alike (E774) and the count of CR_DPM_GLOBAL_PAGE_STATUS at the first abort less 2 has failed (E775) (E704, E625, E630, E734, E753, E774, E775, E790, E803)
 - `Q292` (phase 11, hw, medium): why does a 4x render at 4096 x 4096 on a context made for 4x targets (four region-header arrays) fault at the parameter buffer's base (BIF_INT_STAT 0x90100, BIF_FAULT 0x10000011) with 1048576 of 16777216 pixels right, and at what target size between 1024 x 768 and 4096 x 4096 does a 4x render on four arrays start to fault (E828, E824)
 
 ### edm
@@ -34,16 +33,17 @@
 - `Q033` (phase 10, hw, low): which hardware event sets bit 19 of the event word pa1 that the hardware hands a PDS event program, if any (none of the 138 job events of 14 jobs in E747 carried it, nor any of 8 4096x4096 jobs of E771 whether the TA's threshold was raised or not, with no rise of status bit 3 in the sampled timeline) (E155, E146, E154, E532, E538, E746, E747, E771)
 - `Q082` (phase 11, hw, medium): what do CR_EVENT_STATUS2 bits 6 and 7 mean, bit 6 set while a job hangs in its pixel task and bit 7 while a TA job hangs or faults? (E317, E318, E319, E357, E431, E764, E765, E766, E769, E770, E784, E804, E805, E806, E807)
 - `Q096` (phase 11, hw, low): does the sampler cache erratum of host bridge revisions below 4 show when a texture and other data have addresses that differ only above bit 28? (E002, E011, E013, E033, E035, E041, E114, E432)
-- `Q152` (phase 11, hw, medium): which bits of the event word in sa65 stop the 1 kHz tick (E814: the count byte with bit 8 stops it with E537's two marks, E537's word without bit 8 stops it without them, its bits 4, 7 and 10 not tried alone; E812: the count byte 0xb0 and bits 2, 3, 6, 14 to 16, 19 and 23 keep it), and does the closed task's path depend on the tick bit of sa64 alone (from Q124; E792, E812: with it clear pclink is left at 6, dword 12 does not advance and the tick is kept) (E533, E155, E536, E537, E791, E792, E793, E811, E812, E813, E814, E817, E818, E830)
+- `Q152` (phase 11, hw, medium): what does the EDM need at the end of a tick pass (E817, E830: a pass ending `phas #0, #0, pixel, end, parallel` before `nop.end` keeps the tick in 13 of 13 jobs, one ending `idf, wdf, nop.end` or `cfi.global, idf, wdf, nop.end` stopped it in 7 of 7; E813: the closed task of slot 2 keeps it), and does a kick pass or the slot 3 pass need the same phase end (E533, E155, E536, E537, E791, E792, E793, E811, E812, E813, E814, E816, E817, E818, E830, E748)
 - `Q158` (phase 11, hw, low): which sa, i and temporaries of a firmware task keep their value across a debugfs reset and across a firmware reload and boot (E536's controls read i0, i1, sa100 and sa127 as the writer of phase 11.29 left them 15 minutes and a reset and a reload earlier, and sa20, sa24, sa64, r20 and r21 not) (E536, E537, E809, E810)
 - `Q168` (phase 11, hw, low): what limits the temporaries of a firmware task above TRC 48 (E540 predicted a hang for 49 and 64; E550 armed 32 to 48 with trc_hazard=1 and read r123 back in 10 of 10), and can a register above r123 (up to the 4T - 1 of the allocation) be reached, through an indirect or banked access, so that the top of a large allocation can be tested (E540, E550)
 - `Q194` (phase 11, hw, low): does a load that is not waited for land by itself in a firmware (EDM) task, at what distance, and is that a property of the task, of the bypass flag or of the page (E602: the new value in 32 of 32 stores after 32 loads with no wdf, 3 of 3 jobs; E517: a fill's load landed after 40, 100 and 128 nops and not after 48 and 64) (E517, E602)
 - `Q196` (phase 11, hw, low): do the client results of 11.36 for the compare and the high word of ima32 (E595, E597), the predicated register moves and ba (E596) and the narrow memory forms (E598, E599) hold in a firmware (EDM) task (E595, E596, E597, E598, E599, E601)
 - `Q290` (phase 11, hw, low): does the hardware count the writes to CR_EVENT_KICK or read the kernel's kicker word for the count byte pa1 bits 31:24 that every event handed to an EDM task carries (E768: it equalled the GETMISCINFO commands since the load mod 256 in 15 of 15 jobs, the two readings agreeing whenever the kernel bumps the word before each write), and why does a kick's own entry carry the value from before its bump (E746, E747, E768, E794, E819)
+- `Q294` (phase 11, hw, low): which of bits 4, 7 and 10 of the sa65 word of E537 (0xb009c5dc, without bit 8) stop the tick through the closed task (E814: that word stopped it without E537's marks; E812: the count byte 0xb0 and bits 2, 3, 6, 14 to 16, 19 and 23 alone keep it), and does the closed task's path depend on the tick bit of sa64 alone (E812: sa64 = pa0 & ~2 on 50 passes keeps the tick, leaves pclink at 6 and does not advance dword 12; no sa64 word other than 0, 2 and pa0 & ~2 has run) (E537, E792, E812, E814)
 
 ### isp
 
-- `Q030` (phase 11, hw, medium): what do CR_TE_AA bits 31 and 30 do when bit 29 is clear, where the triangle is gone, and does the sample layout of E281 hold in the tiles and windows past the first? (E210, E211, E219, E220, E281, E415, E502, E503, E504, E728)
+- `Q030` (phase 11, hw, medium): does the sample layout of E281 hold in the tiles and windows past the first (what CR_TE_AA bits 31 and 30 do when bit 29 is clear is answered by E728 and E829; why the TA inserts the zero dword that leaves the image empty is Q293)? (E210, E211, E219, E220, E281, E415, E502, E503, E504, E728, E829)
 - `Q031` (phase 10, hw, medium): why does ISP word 0 bit 28 hang a multisampled render, when single-sampled it widens coverage to the union of eight samples? (E214, E215, E278, E416)
 - `Q032` (phase 10, hw, medium): what does pcoeff hand the ISP in the punch-through pass, when the kept pixels' depth is the same without it and moves between runs only when it runs without the iteration it reads? (E217, E416)
 - `Q066` (phase 11, hw, high): what do the three background-object words the 3D kick writes mean to the ISP, and what are the other words of a render's background object? (E069, E162, E209, E216, E410, E590)
@@ -104,14 +104,14 @@
 
 - `Q001` (phase 3, hw, medium): what do 0x0810, 0x0814 and 0x0818, set once by the init script to 0x1, 0xffff and 0x7ff, control? (E006, E010, E122, E401, E403, E404, E405)
 - `Q075` (phase 11, hw, low): what does each HWPerf counter the firmware records (0x0044-0x0064, 0x0e84-0x0e90 and 0x0eb4-0x0ec0) count, and how does the group in CR_HWPERF_CTRL select them? (E149, E150, E152, E359, E434)
-- `Q111` (phase 11, hw, high): which hardware event sets which bit of CR_EVENT_STATUS and CR_EVENT_STATUS2 in an ordinary TA, 3D, DPM or transfer job, how long does each stay set, and what does a write to CR_EVENT_HOST_CLEAR do to it? (E006, E154, E155, E357, E431, E435, E444, E547, E548, E747, E764, E765, E766, E823)
+- `Q111` (phase 11, hw, high): which hardware event sets which bit of CR_EVENT_STATUS and CR_EVENT_STATUS2 in an ordinary TA, 3D, DPM or transfer job, and how long does each stay set (what a write to CR_EVENT_HOST_CLEAR clears is Q166)? (E006, E154, E155, E357, E431, E435, E444, E547, E548, E747, E764, E765, E766, E823)
+- `Q166` (phase 11, hw, low): what does a write to CR_EVENT_HOST_CLEAR clear, beyond the bit 18 of E823 (is it the bits written and no others, on more than one job and bit, and does a write of a bit that stays set until an acknowledge clear it) (E547, E548, E821, E822, E823)
 
 ### render
 
 - `Q014` (phase 6, hw, low): why does a background object whose first PDS word has a high bit wrong render part or all of the first 32x16 tile before the job faults? (E029, E301, E363, E433)
 - `Q043` (phase 11, hw, medium): what does bit 0 of CR_REG_0148, which the firmware loads for every render, partial render and transfer, change, when no bit of the word changes a triangle, five copies, a fill or a copy? (E056, E163, E160, E015, E028, E252, E302, E412, E406)
 - `Q065` (phase 11, hw, low): what does the 3D wait for when render flag bit 0 hangs a kernel-built triangle job (the TA finishes and the 3D takes the render: E361, E435)? (E050, E156, E164, E165, E184, E303, E304, E361, E435)
-- `Q085` (phase 11, hw, low): does our tri job's image or time change with the closed driver's two other 3D register values, CR_ISP_CTL bit 8 clear and 0x04c4 bit 25 set? (E326, E408)
 - `Q099` (phase 11, hw, low): what do bits 25, 8 and 19:12 of 0x04c4 (render details dword 18) hold, which move with a texture target and the parameter buffer's size in the closed driver's frames? (E326, E408)
 
 ### ta
@@ -137,16 +137,14 @@
 
 - `Q008` (phase 6, hw, low): how is the luma compared at the luma key's high cut, where five colours with the weighted sum 1000 to 1016 above the cut are outside the band while others up to 1016 above are inside, and what do bits 31:16 of the alpha word and the offset's precision do? (E039, E275, E426)
 - `Q010` (phase 6, hw, low): what clears the colour-space words between jobs, given that a copy that does not load set 0 converts with the last loaded words, and the first job of a session after hung jobs converts with zeros? (E037, E039, E046, E271, E399)
-- `Q078` (phase 11, hw, high): what do T3 bits 10, 14, 18-19 and 27-28 and T0 bit 27 select, given a copy that reads one texel, a sheared read, coordinates scaled by 2 and 4, smaller images after the source, and values of no texel? (E274, E397, E566, E564, E722)
+- `Q078` (phase 11, hw, high): what do T3 bits 10, 14, 18-19 and 27-28 and T0 bit 27 select, given a copy that reads one texel, a sheared read, coordinates scaled by 2 and 4, smaller images after the source, and values of no texel; what position-dependent transform of the texel coordinates do bits 10, 14, 18, 27 and 28 apply in smp (offsets that change every 32 or 64 pixels, E566), why are the rows of bits 27 and 28 exact under 'after the source's height' at 64x16 and 64x32 but under no declared rule at a strided 32x32, and what do bits 11 and 12 select, given that they change nothing on a strided texture and every pixel of a twiddled chain texture? (E274, E397, E566, E564, E722)
 - `Q104` (phase 11, hw, low): does a mip chain of a 1D texture, of a texture with a side of 1 at level 0, or of a format other than 32 bits read as the non-square chains of E562 do (both sides halving to 1, T0's fields reading it as a square chain)? (E276, E441, E562)
 - `Q113` (phase 11, hw, medium): how does the sampler address the six faces of a cube map: which TEXTYPE and word layout name one, how are the faces laid out in memory, and how are they picked from the coordinates? (E342, E345, E364, E567, E725, E726)
 - `Q114` (phase 11, hw, low): how does the sampler read a 3D (volume) texture: which TEXTYPE or words name one, how are its slices laid out, and how do the third coordinate and the filter combine the slices? (E342, E567)
 - `Q115` (phase 11, hw, low): does the sampler filter anisotropically on this core, and which bits of the texture words or the smp operands select it and its ratio? (E041, E342, E564, E720, E723)
-- `Q175` (phase 11, hw, low): what footprint function of dudx, dvdx, dudy and dvdy (and of a quad's own derivatives) does the sampler take the logarithm of, given that on these cases the largest component fits a one-vector gradient and the larger vector length fits four and a quad with a v term but neither fits two u terms or two v terms, and what rounding of the fraction of the LOD in 1/64 does it use (a fraction of 6.946/64 reads as 7/64 where the rest truncate) (E563, E041, E276, E721)
-- `Q176` (phase 11, hw, low): what position-dependent transform do T3 bits 10, 14, 18, 27 and 28 apply to the texel coordinates in smp (offsets that change every 32 or 64 pixels, E566), and why are the rows of bits 27 and 28 exact under 'after the source's height' at 64x16 and 64x32 but under no declared rule at a strided 32x32, and what do bits 11 and 12 select, given that they change nothing on a strided texture and every pixel of a twiddled chain texture (E566, E274, E564, E722)
 - `Q177` (phase 11, hw, low): what do T0 address modes 4 to 7 read along the u axis of a 16x16 twiddled texture (indices 324 to 366 past the 256 texels, a period of 6 or 16 positions), given that on the v axis 6 and 7 clamp and 4 and 5 repeat, and what memory lies past the texture (E565, E033)
 - `Q178` (phase 11, hw, low): what do TEXTYPE 1, 2, 3 (the same image as 1), 4 and 5 read, and why is type 2 the only one of the eight run on which the third coordinate of smp3d changes the image (three images for smp2d, smp3d at 0.5 and smp3d at 1.5) (E567, E342, E725, E726)
-- `Q179` (phase 11, hw, low): how are the blocks and the data bits of formats 23 to 26 laid out (a data bit changes 7 to 13 pixels, the blocks of 23 and 24 do not differ by index in the colour), and does format 27 decode as ETC1 given a block order that is Morton with y in the low bit (the one of three tried that is consistent) and one pixel per data bit (E568, E342, E724)
+- `Q179` (phase 11, hw, low): how are the blocks and the data bits of formats 23 to 26 laid out (a data bit changes 7 to 13 pixels, the blocks of 23 and 24 do not differ by index in the colour; format 27 decodes as ETC1 with Morton block order, y in the low bit, E724) (E568, E342, E724)
 - `Q180` (phase 11, hw, low): why did all 28 triangle jobs of the Q021 probes hang (E569), the two controls with the old source word 0x40800801 included: is it the four outputs o4 to o7, the two extra temporaries, or something else in the vertex program (E569, E420, E541)
 - `Q181` (phase 11, hw, low): does the fill's transfer command load a colour-space set at all (xfer:17^=1 and xfer:18 to 22 made no difference for formats 28 and 29, E568), and if not, which path loads the set that the YUV conversion reads (E568, E037, E040)
 - `Q280` (phase 11, hw, low): what makes up to 56 of 2048 pixels of a gradient job differ from the Euclidean footprint of the pairs (op0, op2) and (op1, op3) with a LOD fraction truncated to 1/64 (E721), a rounding of the length, of the logarithm or of the operands, or a footprint that is not exactly Euclidean (E721, E563, E744)
@@ -245,10 +243,6 @@
 
 - `Q004` (phase 4, fw): can a transfer context whose flag bit 4 is set be released, which agent but the host sets flag bits 1 and 4, and which priorities above 0 have queue slots of their own (a priority 1 or 2 hangs a job and 3 faults it: E455)? (E015, E455)
 
-#### usse
-
-- `Q124` (phase 11, fw): do p0-p3 and pclink survive from one firmware (EDM) task to the next, and does a task start with them clear, set or as the last task left them? (E475, E477, E484, E533, E536, E537, E791, E792, E809, E810, E812)
-
 #### zls
 
 - `Q088` (phase 11, fw): what reads the render details' unpatched ZLS control word that the closed driver writes between frames (0x0011700a), now that bit 14 is known to load the depth and bit 13 the stencil? (E335, E336, E337, E411, E467)
@@ -258,12 +252,7 @@
 #### platform
 
 - `Q095` (phase 11, kernel): does giving the EDM a page directory of its own, rather than gma500's default one, change anything beyond the coupling of their teardowns? (E008, E018, E021)
-- `Q166` (phase 11, kernel): what does a write to CR_EVENT_HOST_CLEAR or CR_EVENT_HOST_CLEAR2 clear, the bits written or others, and does it clear the bits that stay set until an acknowledge (the timeline of a SW_EVENT lasts 4 to 136 microseconds) (E547, E548, E821, E822, E823)
 
 #### ta
 
 - `Q140` (phase 11, kernel): what makes the health triangles after a failed 4x job fault before one passes (two after each 4x fault of K2, one after R3-rgn4's j2, none after its 4096 x 4096 fault), now that our 4x faults are known as the kernel's one array of region headers and a context made for 4x targets gets four (E507, E729, E788, E824, E828)
-
-#### usse
-
-- `Q167` (phase 11, kernel): why did gma500_sgx_render (test_pb) and gma500_sgxfive_debug (test_pb_small) report "Expected pt != NULL" in the KUnit run at module load on the laptop, when the same suites pass under qemu (E549, E591)

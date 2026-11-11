@@ -1,6 +1,6 @@
 +++
 id = "Q179"
-question = "how are the blocks and the data bits of formats 23 to 26 laid out (a data bit changes 7 to 13 pixels, the blocks of 23 and 24 do not differ by index in the colour), and does format 27 decode as ETC1 given a block order that is Morton with y in the low bit (the one of three tried that is consistent) and one pixel per data bit"
+question = "how are the blocks and the data bits of formats 23 to 26 laid out (a data bit changes 7 to 13 pixels, the blocks of 23 and 24 do not differ by index in the colour; format 27 decodes as ETC1 with Morton block order, y in the low bit, E724)"
 unit = "texture"
 kind = "hw"
 value = "low"

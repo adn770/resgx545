@@ -68,3 +68,23 @@ separate H-LATCH from H-HWC could not be read (the 16-rung ring was full before 
 no kick entry); post hoc the ticks after Q3's unbumped kick carry 2, which does not fit H-HWC
 [infer]. Open: H-LATCH against a count of consumed commands, why a kick without the bump is not
 read.
+
+Note 2026-11-11 (round 4, two offline readings of the kept rings of E819, made before the next
+session's rows are frozen because they change what row Q3' predicts; [data] for the counts, [infer]
+for the readings, no new measurement).
+- E819's Q3 ring ends at the kick, not 7 ticks after it. The stamps of E819 are taken before the
+  `miscinfo` call starts; in the one kept job of the same op with a logged kick entry (K0's G0, E816)
+  the entry came 6.70 ms after that stamp. Q3's calls started at 14.30, 14.36 and 14.42 ms and its
+  rings (16 rungs, full) ended at 22.00, 22.16 and 21.38 ms, so the `CR_EVENT_KICK` write fell at
+  about 21.0 to 21.1 ms [one latency sample] and the ring holds 2, 1 and 0 to 1 ticks after it, not
+  the 8, 8 and 7 "after the call began". The post hoc reading that the count stayed 2 and the absence
+  of a kick entry rest on at most 3 ticks and about 1 ms. Refuted by: a Q3 job whose ring covers 5
+  ms after the write.
+- Those last ticks carry E751's "latched while busy" mark. Of 635 tick entries in the kept rings of
+  r3k-events (f, t, kb, k0h) and R4-B, `pa2` reads 0x01061a70 in 628 and 0x01061a74 in 6 (plus one
+  mid-period sample): the three ticks of the post-hold burst of K0's H1 (as E749, E751, E752 and
+  r3x-events H1: 12 of 12 burst entries) and the last 2, 1 and 0 entries of q3, q3-r2 and q3-r3, all
+  on the 25000 grid. E751 reads 0x74 as a tick latched on arrival while the EDM is not idle. So
+  from about the time of the unbumped kick's write the EDM was not idle when ticks arrived, with no
+  kick entry logged: the unbumped kick may have left an event pending or in service that never
+  reached our slot 0 task (3 entries in 2 of 3 jobs, post hoc, a candidate).

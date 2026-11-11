@@ -63,3 +63,16 @@ BIF_FAULT 0x20006061) and E827's 4x row `ctl-a1-256x160-tee0` reproduced byte fo
 4096 x 4096 context is created but its 4x job faulted at the parameter buffer's base; that is
 Q292, with the size where 4x starts to fault. Open here: the health triangles after a failed 4x
 job, now seen as two, one or none failing before a pass.
+
+Note 2026-11-11 (round 4, decision R4-3; not yet merged into Q003, see that question's note of this
+date). The question line's "after a failed 4x job" is too narrow: the faulting state follows any
+fault word 0x90004, not 4x. Over 543 kernel logs of resgx545-data "SGX recovery failed: -110" (the
+EDM boot's "no INIT_COMPLETE after 500 ms") follows a `BIF_INT_STAT` 0x90004 fault 51 times of 157
+and none of the other fault words (about 1180 faults; closing4/rank/faultseq.out). In K2 the
+health triangle (a 64 x 64 context of its own, TA data 0x6000 bytes) faulted at the previous job's
+address in 4 of 4 (0x20006061 twice after c1, 0x20008061 twice after k-bif f2), a page its own
+layout does not reach, and after the faults that are not 0x90004 (k-bif f1, f1r 0x90008, f3
+0x90002, R3-rgn4's j4 0x90100) the next health triangle passed. [infer] The TA's pending
+region-header write survives the soft reset and is issued again when the TA next runs, through
+whatever directory is then current; one boot's log, not held out (the K2 health-triangle reading,
+closing4/render4x/exp-render4x-r4.md section 1.2). The 4x sizes are not special.

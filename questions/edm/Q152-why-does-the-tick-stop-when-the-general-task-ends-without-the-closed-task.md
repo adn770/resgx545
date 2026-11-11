@@ -1,12 +1,12 @@
 +++
 id = "Q152"
-question = "which bits of the event word in sa65 stop the 1 kHz tick (E814: the count byte with bit 8 stops it with E537's two marks, E537's word without bit 8 stops it without them, its bits 4, 7 and 10 not tried alone; E812: the count byte 0xb0 and bits 2, 3, 6, 14 to 16, 19 and 23 keep it), and does the closed task's path depend on the tick bit of sa64 alone (from Q124; E792, E812: with it clear pclink is left at 6, dword 12 does not advance and the tick is kept)"
+question = "what does the EDM need at the end of a tick pass (E817, E830: a pass ending `phas #0, #0, pixel, end, parallel` before `nop.end` keeps the tick in 13 of 13 jobs, one ending `idf, wdf, nop.end` or `cfi.global, idf, wdf, nop.end` stopped it in 7 of 7; E813: the closed task of slot 2 keeps it), and does a kick pass or the slot 3 pass need the same phase end"
 unit = "edm"
 kind = "hw"
 value = "medium"
 phase = 11
 evidence = ["E533", "E155", "E536", "E537", "E791", "E792", "E793", "E811", "E812", "E813", "E814",
-            "E817", "E818", "E830"]
+            "E816", "E817", "E818", "E830", "E748"]
 terms = ["Event Data Master (EDM)", "CR_EVENT_TIMER"]
 +++
 
@@ -202,3 +202,21 @@ needs) no longer rests on one stopping job. Open: whether a kick pass needs the 
 (E813's B3 was not run with a `phas`), whether the word order matters or only the absence of the
 cfi, the path by which bits 4, 7 or 10 of E537's word stop it, whether the closed task's path
 depends on the tick bit alone.
+
+Split 2026-11-11 (round 4, decisions R4-3 and events decision 4; the question line is reworded to
+the phase end). The two clauses the line used to carry, which of bits 4, 7 and 10 of the sa65 word
+of E537 stop the tick and whether the closed task's path depends on the tick bit of sa64 alone, are
+Q294 (low): they ask about the closed code's reaction to an event that did not happen, not about
+what the EDM needs, and are of no use to the simulator's refusal or to our own firmware. The phase
+end is the rest: a tick pass keeps the tick if and only if it executes `phas #0, #0, pixel, end,
+parallel` before its `nop.end` (13 of 13 with it, 7 of 7 without, E817, E830); a kick pass ended with
+it (row KP) and the slot 3 pass (B1P) are planned, not run.
+
+Note 2026-11-11 (round 4, an offline reading of the kept rings of E817, E818, E830 and the rings of
+round 3; [data], no new measurement). The tick grid is exact: 702 consecutive plain-tick gaps
+average 25000.2 `CR_TIMER` units (400000 timer clocks at 16.000 clocks a unit; 431 of 513 in the
+first set exactly 25000, the rest within 4). After FC4, FB and FPH the next gap is 24994 or 24995
+and the one after 25006 or 25005: the old grid is kept (the short gap is the logging path of the
+pass after an acted one). After the `EVENT_TIMER` store of T1 (E818) the gaps are 25114 and then
+25000, 25000, ... in both jobs: the grid moved by 114 to 120 units and stayed there. E818 recorded
+the 25114; that the shift is permanent is new.
