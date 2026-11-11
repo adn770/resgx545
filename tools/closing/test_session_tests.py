@@ -1,0 +1,147 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+"""session_tests.sh: re-run a published closing session's own tests from a copy, laid out as
+the session was run (siblings under scratch/resgx545/closing*, a fake HOME holding the pinned
+resgx545 tree), without touching the data repository. Built on a toy tool repository and a toy
+data repository."""
+import hashlib
+import os
+import pathlib
+import subprocess
+
+import pytest
+
+SCRIPT = pathlib.Path(__file__).resolve().parent / "session_tests.sh"
+V1, V2 = "VALUE = 1\n", "VALUE = 2\n"
+GIT = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false"]
+
+
+def sha(text):
+    return hashlib.sha256(text.encode()).hexdigest()
+
+
+def git(cwd, *args):
+    return subprocess.run([*GIT, *args], cwd=cwd, check=True, capture_output=True,
+                          text=True).stdout.strip()
+
+
+RUN_ALL = """#!/bin/bash
+cd "$(dirname "$0")/.." || exit 1
+[ -d debug ] || { echo "no debug dir"; exit 1; }
+[ -n "$PY" ] || { echo "no PY"; exit 1; }
+[ "$(cat "$HOME/src/resgx545/tools/x.py")" = "VALUE = 1" ] || { echo "tool not pinned"; exit 1; }
+[ -f ../../closing/sib/marker ] || { echo "no sibling"; exit 1; }
+[ -x ../../closing/pixel-faults/.venv/bin/python ] || { echo "no scratch python"; exit 1; }
+if [ -n "$DEMO_BUILT" ]; then
+    [ -f "$HOME/src/resgx545/target/marker" ] || { echo "no build products"; exit 1; }
+    grep -q "$HOME/src/resgx545/crates/c" debug/demo/Cargo.toml || { echo "debug-src path"; exit 1; }
+    [ -f debug/demo/src/main.rs ] || { echo "debug-src tree"; exit 1; }
+fi
+shasum -a 256 -c FROZEN.sha256 --quiet || { echo "freeze"; exit 1; }
+echo "RUN_ALL PASSED"
+exit ${DEMO_RC:-0}
+"""
+
+
+@pytest.fixture()
+def world(tmp_path):
+    tool = tmp_path / "tool"
+    (tool / "tools").mkdir(parents=True)
+    git(tool, "init", "-q")
+    (tool / "tools/x.py").write_text(V1)
+    git(tool, "add", ".")
+    git(tool, "commit", "-qm", "v1")
+    c1 = git(tool, "rev-parse", "HEAD")
+    (tool / "tools/x.py").write_text(V2)
+    git(tool, "commit", "-qam", "v2")
+    (tool / ".gitignore").write_text("/target/\n")
+    (tool / "target").mkdir()
+    (tool / "target/marker").write_text("built")
+    data = tmp_path / "data"
+    s = data / "edm/closing-demo"
+    (s / "tests").mkdir(parents=True)
+    (s / "tests/run_all.sh").write_text(RUN_ALL)
+    (s / "FROZEN.sha256").write_text(
+        f"{sha(RUN_ALL)}  tests/run_all.sh\n"
+        f"{sha(V1)}  /Users/someone/src/resgx545/tools/x.py\n")
+    (s / "FROZEN.commits").write_text(
+        "# header\n" f"{sha(V1)}  {c1}  tools/x.py\n")
+    (s / "debug-src/demo/src").mkdir(parents=True)
+    (s / "debug-src/demo/src/main.rs").write_text("fn main() {}\n")
+    (s / "debug-src/demo/Cargo.toml").write_text(
+        '[dependencies]\nc = { path = "/Users/someone/src/resgx545/crates/c" }\n')
+    sib = data / "edm/closing-sib"
+    sib.mkdir(parents=True)
+    (sib / "marker").write_text("m")
+    nt = data / "edm/closing-notests"
+    nt.mkdir()
+    (nt / "README.md").write_text("x")
+    py = tmp_path / "py"
+    py.write_text('#!/bin/sh\nexec python3 "$@"\n')
+    py.chmod(0o755)
+    return tool, data, py
+
+
+def snapshot(root):
+    return {str(p.relative_to(root)): p.read_bytes() if p.is_file() else None
+            for p in sorted(root.rglob("*"))}
+
+
+def run(world, session, **extra):
+    tool, data, py = world
+    env = {**os.environ, "RESGX545_TOOL": str(tool), "RESGX545_DATA": str(data), "PY": str(py)}
+    env.update(extra)
+    return subprocess.run(["bash", str(SCRIPT), session], env=env, capture_output=True,
+                          text=True, timeout=120)
+
+
+def test_script_is_valid_bash_and_executable():
+    assert os.access(SCRIPT, os.X_OK)
+    subprocess.run(["bash", "-n", str(SCRIPT)], check=True)
+
+
+def test_passing_session_reports_pass_and_exit_zero(world):
+    r = run(world, "edm/closing-demo")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "RUN_ALL PASSED" in r.stdout
+    assert "session_tests: edm/closing-demo PASS (exit 0)" in r.stdout
+
+
+def test_data_repository_is_never_modified(world):
+    before = snapshot(world[1])
+    run(world, "edm/closing-demo")
+    assert snapshot(world[1]) == before
+
+
+def test_failing_session_reports_its_exit_code(world):
+    r = run(world, "edm/closing-demo", DEMO_RC="3")
+    assert r.returncode == 3
+    assert "session_tests: edm/closing-demo FAIL (exit 3)" in r.stdout
+
+
+def test_scratch_is_removed_and_no_worktree_is_left(world):
+    r = run(world, "edm/closing-demo")
+    assert r.returncode == 0
+    assert git(world[0], "worktree", "list").count("\n") == 0
+
+
+def test_unknown_session_and_session_without_tests_exit_two(world):
+    for name in ("edm/closing-nope", "edm/closing-notests"):
+        r = run(world, name)
+        assert r.returncode == 2, name
+        assert "session_tests:" in r.stderr
+
+
+def test_run_mock_is_the_entry_when_there_is_no_run_all(world):
+    s = world[1] / "edm/closing-demo/tests"
+    (s / "run_all.sh").rename(s / "run_mock.sh")
+    (s.parent / "FROZEN.sha256").write_text(
+        f"{sha(V1)}  /Users/someone/src/resgx545/tools/x.py\n")
+    r = run(world, "edm/closing-demo")
+    assert "RUN_ALL PASSED" in r.stdout
+
+
+def test_build_products_and_debug_src_are_laid_out(world):
+    r = run(world, "edm/closing-demo", DEMO_BUILT="1")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert not (world[0] / "target/debug").exists()

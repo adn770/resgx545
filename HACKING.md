@@ -157,6 +157,12 @@ frozen name, `out/score-<stage>.fixed.txt` is its output on the kept records bes
 `out/score-<stage>.txt`, and `POSTRUN-FIX.md` gives the bug, the reproduction, the fix and the
 lines that changed. `out/`, the predictions and the freeze the run used are never changed.
 
+`tools/closing/session_tests.sh <area/closing-name>` re-runs a published session's own offline
+tests from a scratch copy (the data repository is never written to): the session's siblings are
+linked where the tests expect them, a fake HOME holds the tool tree at the commits of the
+session's `FROZEN.commits`, and a session's `debug-src/` is copied to `debug/`. It prints PASS or
+FAIL with the tests' exit code.
+
 ## Firmware tasks of our own
 
 Phases 11.29, 11.30 and 11.32 run tasks of ours as firmware (EDM) tasks. The rules below are what
