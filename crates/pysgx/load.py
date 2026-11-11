@@ -9,6 +9,7 @@ Python finds it (target/pysgx/pysgx.abi3.so) and imports it.
 from __future__ import annotations
 
 import importlib
+import os
 import pathlib
 import shutil
 import subprocess
@@ -34,11 +35,23 @@ def build() -> pathlib.Path:
                 if (REPO / "target" / "debug" / f"libpysgx.{x}").is_file()), None)
     if lib is None:
         raise BuildError("cargo built no libpysgx")
-    OUT.mkdir(parents=True, exist_ok=True)
-    dest = OUT / "pysgx.abi3.so"
-    if not dest.is_file() or dest.stat().st_mtime < lib.stat().st_mtime:
-        shutil.copy2(lib, dest)
+    install(lib, OUT / "pysgx.abi3.so")
     return OUT
+
+
+def install(lib: pathlib.Path, dest: pathlib.Path) -> None:
+    """Put the built library at dest when dest is missing or older: copied to a new file and
+    renamed over dest, never written in place (macOS kills a process that loads a Mach-O
+    rewritten in place: its code signature is cached per file)."""
+    if dest.is_file() and dest.stat().st_mtime >= lib.stat().st_mtime:
+        return
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp = dest.with_name(f".{dest.name}.{os.getpid()}.tmp")
+    try:
+        shutil.copy2(lib, tmp)
+        os.replace(tmp, dest)
+    finally:
+        tmp.unlink(missing_ok=True)
 
 
 def pysgx():
