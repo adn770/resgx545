@@ -6063,6 +6063,21 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   band rule of E730 holds held out at every even alignment, and only the fraction .75 of 1.25 W,
   which needs odd sizes, still separates rule A from FLOOR.
   *zls; HW, infer; data: `render-closing-r3-geo-c:out/g-z/`.*
+- `E832` R3-geo-c stages g-qf and g-qh (36 jobs at 4096x4096, the first threshold thr0 = P - 0x22
+  set by render_pb_pages and read from the job's own 0x0624, the count of partial renders read as
+  the 0x0658 bit 0 stretches of the job's timeline): at U = 287 (the tool's triangle, one render)
+  the controls passed (2 at P 0xa0, 1 at 0xb0 and 0xa3, as E625 and E779) and the 19 fit cells read
+  a count that never rises with P, 9 at P 0x24 and 0x25, 8 at 0x27 to 0x29, 7 at 0x2c to 0x31, 6 at
+  0x32, 5 at 0x39 to 0x43, 4 at 0x44 and 0x53, 3 at 0x54 and 0x6d, 2 at 0x6e to 0xa2: the frozen
+  verdict is that E625's count formula 1 + floor((U + k - thr0) / (thr0 + s)) is REFUTED at U = 287,
+  none of the 20 (k, s) pairs that fit E625's and E779's cells (k -8 to 0, s 0x1b to 0x1e, the only
+  pairs of k -60 to 60 and s 1 to 0x5f that do) fitting the 19 cells; in g-qh both scene gates
+  passed (U 275 and 438, no partial render at P 0x422), the scene s275 (one triangle moved by 1024,
+  0) read 8 at P 0x26 and 0x27, 7 at 0x2a and 0x2b, 6 at 0x31 and 3 at 0x52, and the six cells of
+  s438 were void by the frozen rule (the geometry-only first render overflowed before the last); the
+  held-out verdict (REFUTED, none of the 0 pairs the fit left) follows from g-qf's and tests nothing
+  more.
+  *dpm; HW, infer; data: `render-closing-r3-geo-c:out/g-qf/`, `render-closing-r3-geo-c:out/g-qh/`.*
 
 ### 2026-11-11
 
@@ -6120,7 +6135,7 @@ Records: E151, E457, E573, E592, E745, E761, E767, E789, E826.
 Records: E199, E200, E201, E202, E204, E205, E206, E203, E253, E256, E309, E310, E311, E312, E313,
 E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E468, E574, E591,
 E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753, E773, E774, E775, E779, E785,
-E786, E790, E799, E800, E801, E802, E803.
+E786, E790, E799, E800, E801, E802, E803, E832.
 
 ### edm
 
