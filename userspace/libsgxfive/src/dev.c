@@ -390,10 +390,11 @@ int sgxfive_ctx_create(struct sgxfive_vm *vm, uint32_t *handle)
 }
 
 static int ctx_create(struct sgxfive_vm *vm, uint32_t type, uint32_t max_width,
-		      uint32_t max_height, uint32_t *handle)
+		      uint32_t max_height, uint32_t flags, uint32_t *handle)
 {
 	struct drm_sgxfive_create_context_args a = {
 		.type = type,
+		.flags = flags,
 		.priority = DRM_SGXFIVE_CTX_PRIORITY_NORMAL,
 		.vm_context_handle = vm->handle,
 		.max_width = max_width,
@@ -408,13 +409,19 @@ static int ctx_create(struct sgxfive_vm *vm, uint32_t type, uint32_t max_width,
 
 int sgxfive_ctx_create_type(struct sgxfive_vm *vm, uint32_t type, uint32_t *handle)
 {
-	return ctx_create(vm, type, 0, 0, handle);
+	return ctx_create(vm, type, 0, 0, 0, handle);
 }
 
 int sgxfive_render_ctx_create(struct sgxfive_vm *vm, uint32_t max_width, uint32_t max_height,
 			      uint32_t *handle)
 {
-	return ctx_create(vm, DRM_SGXFIVE_CTX_TYPE_RENDER, max_width, max_height, handle);
+	return ctx_create(vm, DRM_SGXFIVE_CTX_TYPE_RENDER, max_width, max_height, 0, handle);
+}
+
+int sgxfive_render_ctx_create_flags(struct sgxfive_vm *vm, uint32_t max_width,
+				    uint32_t max_height, uint32_t flags, uint32_t *handle)
+{
+	return ctx_create(vm, DRM_SGXFIVE_CTX_TYPE_RENDER, max_width, max_height, flags, handle);
 }
 
 int sgxfive_ctx_destroy(struct sgxfive_dev *dev, uint32_t handle)

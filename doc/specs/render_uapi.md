@@ -169,11 +169,14 @@ render context of one VM fails with `-ENOSPC`. The bus interface's TA request ba
   context, `JOB_INFO`); the page table is at `+0x423000`, the scratch primitive block at
   `+0x463000` and the background object at `+0x464000`; the slot's mapped part ends at
   `+0x465000`;
-- tiling data slot: 2 MiB of address space at `0x20000000 + 2 MiB * slot`, holding zeroed
-  buffers sized for the largest target the context declares: tail pointers, then one page each
-  of DPM control, OTPM and DPM state, then the region headers and the ZLS region headers, each
-  rounded up to whole pages. The address space stays 2 MiB whatever the maximum; only the pages
-  behind it shrink;
+- tiling data slot: 4 MiB of address space at `0x20000000 + 4 MiB * slot` (one page table's
+  span; the 32 slots end at `0x28000000`), holding zeroed buffers sized for the largest target
+  the context declares: tail pointers, then one page each of DPM control, OTPM and DPM state,
+  then the region headers (four arrays of them for a context created with `CTX_RENDER_AA_4X`,
+  one otherwise) and the ZLS region headers (one array's size), each rounded up to whole pages.
+  4096 x 4096 takes 0x103000 bytes with one array and 0x223000 with four. The address space
+  stays 4 MiB whatever the maximum; only the pages behind it shrink. Before the linux fork's
+  branch `resgx545-r3-rgn4` the slot was 2 MiB and every context had one array;
 - all of it is mapped read-write in the context's VM, because the tiling accelerator, the DPM
   and the 3D pipe write it through the client's directory. A client's shaders can therefore
   write their own parameter buffer and page table; that corrupts only that client's own scenes.
@@ -250,7 +253,7 @@ A context is one firmware queue (a hardware context and its client command ring,
 memory) bound to one VM context for its lifetime. Its jobs run in submission order; the firmware
 arbitrates between contexts.
 
-`CREATE_CONTEXT` takes a `type`, `flags` (none defined, zero), `priority`
+`CREATE_CONTEXT` takes a `type`, `flags` (`CTX_RENDER_AA_4X` or zero, below), `priority`
 (`CTX_PRIORITY_NORMAL`, the only value; a priority of 1 or 2 hangs a transfer job and 3 faults it,
 E455; Q004), the VM handle and,
 for render contexts, `max_width` and `max_height`.
@@ -263,6 +266,14 @@ for render contexts, `max_width` and `max_height`.
   `-EINVAL`. The largest target any run drew is 256 x 256, E148), in the reserved
   heaps of its VM. It runs one of its jobs at a time: the next job of the context waits for the
   previous one's completion before it reaches the firmware;
+- `CTX_RENDER_AA_4X` (flag bit 0, `CTX_FLAGS_MASK`; render contexts only, any other bit or the
+  flag on a transfer context is `-EINVAL`): the context's jobs may render 4x, a job's `te_aa`
+  setting bit 31 or 30 (0xe0000000 at 4x). The kernel gives it four arrays of region headers,
+  where a 4x render with one array faults past them (E729) and four complete (E824). A job
+  setting either bit on a context created without the flag fails at submission with `-EINVAL`,
+  unless the debug option's `render_rgn_arrays` forced the context's array count (1, 2 or 4;
+  0, the default, is automatic) when it was created. `sgxfive_render_ctx_create_flags` and
+  `sgxfive-test tri --aa4` create such a context;
 - an unknown VM handle is `-EINVAL`; an open file holds at most 64 contexts
   (`DRM_SGXFIVE_FILE_MAX_CONTEXTS`), the 65th is `-ENOSPC`; at most 32 render contexts per VM;
 - `DESTROY_CONTEXT` waits for the context's queued jobs, then releases it. A `SUBMIT_JOBS` call

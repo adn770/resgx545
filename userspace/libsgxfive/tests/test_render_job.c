@@ -192,6 +192,69 @@ static void rules(void)
 	env_fini(&e);
 }
 
+/*
+ * A render context made for 4x targets (DRM_SGXFIVE_CTX_RENDER_AA_4X): only
+ * a render context takes the flag, and no other bit; only such a context
+ * takes a job whose TE_AA sets bit 31 or 30 (0xe0000000 at 4x), and it still
+ * renders a single-sampled job as before.
+ */
+static void aa4(void)
+{
+	static const uint32_t ms[] = { 0xe0000000, 0x60000000, 0xa0000000, 0x40000000, 0x80000000 };
+	struct drm_sgxfive_render_cmd cmd __attribute__((aligned(8)));
+	struct sgxfive_tri_counts n;
+	struct sgxfive_tri_params p;
+	struct sgxfive_render *r;
+	uint32_t ctx, t;
+	struct env e;
+
+	env_init(&e);
+	sgxfive_tri_default(&p, 64, 64);
+	CHECK_EQ(sgxfive_render_tri(e.r, &p, 0, 0), 0);
+	CHECK_EQ(sgxfive_render_wait(e.r, NSEC), 0);
+	cmd = *sgxfive_render_last_cmd(e.r);
+	CHECK_EQ(cmd.te_aa, 0x20000000);
+	/* A context made without the flag refuses a multisampled TE_AA. */
+	for (unsigned int i = 0; i < sizeof(ms) / sizeof(ms[0]); i++) {
+		cmd.te_aa = ms[i];
+		CHECK_EQ(sgxfive_submit_render(e.dev, e.ctx, &cmd, 0, 0), -EINVAL);
+	}
+	/* The flag: render contexts only, no unknown bit. */
+	CHECK_EQ(sgxfive_render_ctx_create_flags(e.vm, 64, 64, 2, &t), -EINVAL);
+	CHECK_EQ(sgxfive_render_ctx_create_flags(e.vm, 64, 64, 0x80000001u, &t), -EINVAL);
+	{
+		struct drm_sgxfive_create_context_args a = {
+			.type = DRM_SGXFIVE_CTX_TYPE_TRANSFER, .flags = DRM_SGXFIVE_CTX_RENDER_AA_4X,
+			.vm_context_handle = sgxfive_vm_handle(e.vm),
+		};
+
+		CHECK_EQ(sgxfive_dev_ioctl(e.dev, DRM_IOCTL_SGXFIVE_CREATE_CONTEXT, &a), -EINVAL);
+	}
+	CHECK_EQ(sgxfive_render_ctx_create_flags(e.vm, 64, 64, 0, &ctx), 0);	/* as before */
+	sgxfive_ctx_destroy(e.dev, ctx);
+	CHECK_EQ(sgxfive_render_ctx_create_flags(e.vm, 4096, 4096,
+						 DRM_SGXFIVE_CTX_RENDER_AA_4X, &ctx), 0);
+	sgxfive_ctx_destroy(e.dev, ctx);
+	CHECK_EQ(sgxfive_render_ctx_create_flags(e.vm, 64, 64, DRM_SGXFIVE_CTX_RENDER_AA_4X,
+						 &ctx), 0);
+	for (unsigned int i = 0; i < sizeof(ms) / sizeof(ms[0]); i++) {
+		cmd.te_aa = ms[i];
+		CHECK_EQ(sgxfive_submit_render(e.dev, ctx, &cmd, 0, 0), 0);
+	}
+	sgxfive_ctx_destroy(e.dev, ctx);
+	/* A 4x context renders a single-sampled triangle as any other. */
+	CHECK_EQ(sgxfive_render_ctx_create_flags(e.vm, 64, 64, DRM_SGXFIVE_CTX_RENDER_AA_4X,
+						 &ctx), 0);
+	CHECK_EQ(sgxfive_render_create(e.vm, ctx, &r), 0);
+	CHECK_EQ(sgxfive_render_tri(r, &p, 0, 0), 0);
+	CHECK_EQ(sgxfive_render_wait(r, NSEC), 0);
+	CHECK_EQ(sgxfive_tri_check(&p, sgxfive_render_fb(r), &n), 0);
+	CHECK_EQ(n.other, 0);
+	sgxfive_render_destroy(r);
+	sgxfive_ctx_destroy(e.dev, ctx);
+	env_fini(&e);
+}
+
 /* A render whose stream is mapped nowhere faults: the context is lost. */
 static void fault(void)
 {
@@ -431,6 +494,7 @@ int main(void)
 	query();
 	triangle();
 	rules();
+	aa4();
 	max_size();
 	fault();
 	fault_wait();

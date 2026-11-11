@@ -117,6 +117,14 @@ int sgxfive_ctx_create_type(struct sgxfive_vm *vm, uint32_t type, uint32_t *hand
  */
 int sgxfive_render_ctx_create(struct sgxfive_vm *vm, uint32_t max_width, uint32_t max_height,
 			      uint32_t *handle);
+/*
+ * As sgxfive_render_ctx_create, with CREATE_CONTEXT flags: DRM_SGXFIVE_CTX_RENDER_AA_4X for a
+ * context whose jobs may render 4x (TE_AA bit 31 or 30 set), which the kernel gives four
+ * arrays of region headers; a job setting either bit on a context made without it is -EINVAL.
+ * 0 is sgxfive_render_ctx_create; an unknown bit is -EINVAL.
+ */
+int sgxfive_render_ctx_create_flags(struct sgxfive_vm *vm, uint32_t max_width,
+				    uint32_t max_height, uint32_t flags, uint32_t *handle);
 int sgxfive_ctx_destroy(struct sgxfive_dev *dev, uint32_t handle);
 
 int sgxfive_syncobj_create(struct sgxfive_dev *dev, bool signaled, uint32_t *handle);

@@ -573,6 +573,17 @@ enum drm_sgxfive_ctx_priority {
 	DRM_SGXFIVE_CTX_PRIORITY_NORMAL = 0,
 };
 
+/*
+ * DRM_SGXFIVE_CTX_RENDER_AA_4X: a render context whose jobs may render 4x
+ * multisampled: a job's &drm_sgxfive_render_cmd.te_aa may set bit 31 or 30
+ * (0xe0000000 at 4x). The kernel sizes the context's tiling data for the four
+ * arrays of region headers the tiling engine writes then. A job that sets
+ * either bit on a context created without the flag fails with -EINVAL. Render
+ * contexts only.
+ */
+#define DRM_SGXFIVE_CTX_RENDER_AA_4X	(1U << 0)
+#define DRM_SGXFIVE_CTX_FLAGS_MASK	DRM_SGXFIVE_CTX_RENDER_AA_4X
+
 /**
  * struct drm_sgxfive_create_context_args - Arguments for
  * %DRM_IOCTL_SGXFIVE_CREATE_CONTEXT.
@@ -581,7 +592,10 @@ struct drm_sgxfive_create_context_args {
 	/** @type: [IN] &enum drm_sgxfive_ctx_type. */
 	__u32 type;
 
-	/** @flags: [IN] None defined; zero. */
+	/**
+	 * @flags: [IN] ``DRM_SGXFIVE_CTX_*`` bits within %DRM_SGXFIVE_CTX_FLAGS_MASK;
+	 * %DRM_SGXFIVE_CTX_RENDER_AA_4X for render contexts only, else zero.
+	 */
 	__u32 flags;
 
 	/** @priority: [IN] &enum drm_sgxfive_ctx_priority. */
@@ -847,6 +861,8 @@ struct drm_sgxfive_transfer_cmd {
  *    &drm_sgxfive_create_context_args.max_width wide and max_height tall,
  *    the maximum the context was created with;
  *  - @isp_bgobj sets no bit but 8 and 9;
+ *  - @te_aa sets bit 31 or 30 only on a context created with
+ *    %DRM_SGXFIVE_CTX_RENDER_AA_4X;
  *  - the tiling words @te_screen, @te_mtile1, @te_mtile2 and
  *    @te_mtile_stride are the layout of the @mte_screen size, by which the
  *    kernel sets the context's tiling data.

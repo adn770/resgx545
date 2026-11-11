@@ -20,7 +20,7 @@
  *         [--every-value | --ramp CH=START [--ramp-base V]] [--print-addrs] [--page-before]
  *         [JOB OPTIONS]
  *   isolation                     VM separation, faults, lost contexts, read-only maps
- *   tri   [--width W --height H -n N] [--max-width W --max-height H] [--fault]
+ *   tri   [--width W --height H -n N] [--max-width W --max-height H] [--aa4] [--fault]
  *         [--scratch N [--scratch-fill V] [--scratch-at ADDR] [--scratch-file FILE]] [--kpoke-render N:SPEC]... [--move N:DX,DY]...
  *         [--geometry N]... [--keep-going] [--keep-overflow] [--dump-render DIR [--dump-each]]
  *         [--tri-full] [--tri-z A,B,C]
@@ -33,7 +33,13 @@
  *                                 the first triangle on a render context, N times,
  *                                 every pixel against the CPU reference; the context
  *                                 takes targets up to --max-width x --max-height
- *                                 (default: the target's size); --fault unmaps the
+ *                                 (default: the target's size); --aa4 creates it (and
+ *                                 --ctx2's) with DRM_SGXFIVE_CTX_RENDER_AA_4X, for 4x
+ *                                 targets: the kernel gives it four arrays of region
+ *                                 headers and takes a job's TE_AA bits 31:30 on it; the
+ *                                 flag only, the job's words stay as built and poked (a
+ *                                 4x run still sets --poke cmd:1=0xe0000000 and its
+ *                                 cmd:10, 13 and 16 words); --fault unmaps the
  *                                 scene's stream first, so the render faults;
  *                                 --scratch maps N more pages (their address printed)
  *                                 for a kernel poke to point a unit at, filled with V
@@ -354,6 +360,7 @@ struct opts {
 	uint32_t depth_pages;		/* UINT32_MAX: the target's and sixteen over */
 	const char *depth_dump;		/* --depth-dump DIR: the buffer after each render */
 	bool ctx2;			/* tri: a second render context in the VM, rendering too */
+	bool aa4;			/* tri: its render contexts made for 4x targets */
 	bool close_first;		/* tri --ctx2: close the first context before the second */
 	bool close_early;		/* tri --ctx2: ... in the last iteration, between the renders */
 	bool words_between;		/* tri --ctx2 --words: a snapshot before each second render */
@@ -399,7 +406,7 @@ static int usage(void)
 		"                       [--ramp-base V] --print-addrs --page-before],\n"
 		"                 (fill, copy) [--emit-scene FILE]\n"
 		"                 tri [--width W --height H -n N --max-width W --max-height H\n"
-		"                      --fault --scratch N --scratch-fill V --scratch-at ADDR\n"
+		"                      --aa4 --fault --scratch N --scratch-fill V --scratch-at ADDR\n"
 		"                      --scratch-file FILE\n"
 		"                      --kpoke-render N:SPEC --move N:DX,DY --geometry N\n"
 		"                      --keep-going --keep-overflow --dump-render DIR [--dump-each]\n"
@@ -2806,6 +2813,7 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 	int bad = 0;
 	const uint32_t max_w = o->max_width == UINT32_MAX ? o->width : o->max_width;
 	const uint32_t max_h = o->max_height == UINT32_MAX ? o->height : o->max_height;
+	const uint32_t ctx_flags = o->aa4 ? DRM_SGXFIVE_CTX_RENDER_AA_4X : 0;
 	const long long wait_ns = o->wait_ms ? o->wait_ms * 1000000LL : WAIT_NS;
 	struct scratch sc = { 0 };
 	struct zbufs z = { .depth = { 0 } };
@@ -2814,7 +2822,7 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 
 	ret = sgxfive_vm_create(t->dev, &vm);
 	if (!ret)
-		ret = sgxfive_render_ctx_create(vm, max_w, max_h, &ctx);
+		ret = sgxfive_render_ctx_create_flags(vm, max_w, max_h, ctx_flags, &ctx);
 	if (!ret)
 		ret = sgxfive_render_create(vm, ctx, &r);
 	if (ret) {
@@ -2822,6 +2830,8 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		goto out;
 	}
 	printf("tri: render context for targets up to %ux%u\n", max_w, max_h);
+	if (o->aa4)
+		printf("tri: render context made for 4x targets (DRM_SGXFIVE_CTX_RENDER_AA_4X)\n");
 	if (o->scratch) {
 		ret = scratch_create(t, vm, o->scratch, o->scratch_at, &sc);
 		if (ret) {
@@ -2882,7 +2892,7 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 				goto out;
 			}
 		}
-		ret = sgxfive_render_ctx_create(vm, max_w, max_h, &ctx2);
+		ret = sgxfive_render_ctx_create_flags(vm, max_w, max_h, ctx_flags, &ctx2);
 		if (!ret)
 			ret = sgxfive_render_create(vm, ctx2, &r2);
 		if (ret) {
@@ -2891,6 +2901,8 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		}
 		printf(o->share_pb ? "tri: second render context shares the first's parameter buffer\n"
 				   : "tri: second render context\n");
+		if (o->aa4)
+			printf("tri: second render context made for 4x targets\n");
 	}
 	if (o->words_dir) {
 		ret = save_words(t, o, o->words_dir, 0);
@@ -3400,6 +3412,11 @@ static int parse_opts(int argc, char **argv, struct opts *o)
 
 		if (!strcmp(argv[i], "--keep-going")) {
 			o->keep_going = true;
+			i--;		/* a flag: no value */
+			continue;
+		}
+		if (!strcmp(argv[i], "--aa4")) {
+			o->aa4 = true;
 			i--;		/* a flag: no value */
 			continue;
 		}
@@ -4167,6 +4184,10 @@ int main(int argc, char **argv)
 				o.scratch_words > o.scratch * (SGXFIVE_PAGE_SIZE / 4))) {
 		fprintf(stderr, "sgxfive-test: --scratch-file is for tri with --scratch N, and "
 			"must fit in N pages\n");
+		return 2;
+	}
+	if (o.aa4 && strcmp(cmd, "tri")) {
+		fprintf(stderr, "sgxfive-test: --aa4 is for tri\n");
 		return 2;
 	}
 	if ((o.keep_overflow || o.dump_each || o.depth || o.depth_given) && strcmp(cmd, "tri")) {

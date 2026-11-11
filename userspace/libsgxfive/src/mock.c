@@ -62,6 +62,7 @@ struct mctx {
 	uint32_t handle;
 	uint32_t type;		/* DRM_SGXFIVE_CTX_TYPE_* */
 	uint32_t max_w, max_h;	/* render: the largest target it takes */
+	bool aa4;		/* render: made for 4x targets (DRM_SGXFIVE_CTX_RENDER_AA_4X) */
 	uint32_t pb_pages;	/* render: its parameter buffer */
 	struct mvm *vm;
 	bool lost;
@@ -509,11 +510,12 @@ static int m_create_ctx(struct sgxfive_mock *m, int fd,
 	struct mctx *c;
 
 	if (a->_padding_1c || (a->type != DRM_SGXFIVE_CTX_TYPE_TRANSFER &&
-				a->type != DRM_SGXFIVE_CTX_TYPE_RENDER) || a->flags ||
+				a->type != DRM_SGXFIVE_CTX_TYPE_RENDER) ||
+	    a->flags & ~DRM_SGXFIVE_CTX_FLAGS_MASK ||
 	    a->priority != DRM_SGXFIVE_CTX_PRIORITY_NORMAL || !vm || !vm->open)
 		return -EINVAL;
-	/* A render context states its largest target, a transfer one none. */
-	if (a->type == DRM_SGXFIVE_CTX_TYPE_TRANSFER ? a->max_width || a->max_height :
+	/* A render context states its largest target (and may be 4x), a transfer one none. */
+	if (a->type == DRM_SGXFIVE_CTX_TYPE_TRANSFER ? a->max_width || a->max_height || a->flags :
 	    !a->max_width || !a->max_height || a->max_width > RENDER_MAX_W ||
 	    a->max_height > RENDER_MAX_H)
 		return -EINVAL;
@@ -535,6 +537,7 @@ static int m_create_ctx(struct sgxfive_mock *m, int fd,
 	c->type = a->type;
 	c->max_w = a->max_width;
 	c->max_h = a->max_height;
+	c->aa4 = a->flags & DRM_SGXFIVE_CTX_RENDER_AA_4X;
 	c->pb_pages = m->pb_pages;
 	c->vm = vm;
 	if (insert((void **)m->ctxs, c))
@@ -734,7 +737,10 @@ static int check_cmd(struct sgxfive_mock *m, const struct drm_sgxfive_transfer_c
 
 /*
  * The stream and the pixel-event program in user heaps, the target
- * within the context's maximum and its tiling words the layout of its size.
+ * within the context's maximum and its tiling words the layout of its size,
+ * a multisampled TE_AA (bit 31 or 30) only on a context made for 4x targets
+ * (the kernel's debugfs render_rgn_arrays, which also allows it, has no
+ * counterpart here).
  */
 static int check_render(struct sgxfive_mock *m, const struct mctx *ctx,
 			const struct drm_sgxfive_render_cmd *c)
@@ -746,6 +752,8 @@ static int check_render(struct sgxfive_mock *m, const struct mctx *ctx,
 	    c->event_pixel_pds_exec & 0xf || !in_user_heap(m, c->event_pixel_pds_exec))
 		return -EINVAL;
 	if (w > ctx->max_w || h > ctx->max_h || c->isp_bgobj & ~0x300u)
+		return -EINVAL;
+	if (c->te_aa & 0xc0000000u && !ctx->aa4)
 		return -EINVAL;
 	sgxfive_tiling(&t, w, h);
 	if (c->te_screen != t.te_screen || c->te_mtile1 != t.te_mtile1 ||
