@@ -116,6 +116,18 @@ over the files, and the recipe that made them. The tests check the manifests aga
 of each data repository beside this one (`../resgx545-data`, `../resgx545-data-private`) or
 named by `RESGX545_DATA` / `RESGX545_DATA_PRIVATE`, and skip a repository that is absent.
 
+A published session (the closing pass's `render/closing-*` and `edm/closing-*` in resgx545-data)
+freezes its inputs in `FROZEN.sha256` before its first job. A freeze that names a file of this
+tree by absolute path stops verifying when the tree changes that file, so the session pins those
+files by commit in `FROZEN.commits` beside the freeze: one `<sha256>  <commit>  <path>` line per
+pinned file and hash, the path relative to this tree, `untracked` in the commit's place for a
+build product the history never held (`tools/usse-asm/usse-asm`). `tools/records/frozen.py
+--write` finds the commits (the newest at or before the manifest's date whose blob has the
+pinned hash) and writes the missing files; `--check`, a step of `tools/check.sh`, verifies each
+line with `git show <commit>:<path>` and refuses a session that pins this tree without one.
+Future freezes are pinned the same way when they are published. The published freeze bytes are
+never rewritten: a `FROZEN.commits` is a new file, and the manifest's digest and method follow it.
+
 ## Firmware tasks of our own
 
 Phases 11.29, 11.30 and 11.32 run tasks of ours as firmware (EDM) tasks. The rules below are what

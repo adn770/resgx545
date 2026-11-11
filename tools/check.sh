@@ -84,7 +84,7 @@ else
     step cargo fmt --check
     step make -C userspace/libsgxfive check
     step "$PY" -m pytest -q
-    for t in questions evidence datasets open_rows evidence_log citations register_coverage \
+    for t in questions evidence datasets frozen open_rows evidence_log citations register_coverage \
              check_refs; do
         step "$PY" "tools/records/$t.py" --check
     done
