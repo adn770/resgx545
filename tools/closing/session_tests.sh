@@ -18,7 +18,9 @@
 #     the newest commit holding exactly that tool source), each pinned file replaced by its
 #     pinned blob, and src/scratch/resgx545 is the scratch tree. The copy's FROZEN.sha256 has its
 #     absolute resgx545 and resgx545-data paths pointed at the fake home, so the freeze
-#     verifies against the pinned source;
+#     verifies against the pinned source; a pin of a tree that sat under scratch/resgx545/
+#     (round 4 froze against closing4/lead/wt) is pointed at the worktree by its FROZEN.commits
+#     path;
 #   - src/resgx545-data is the data repository; the worktree's target/ is the runner's own
 #     (RESGX545_SESSION_TARGET, kept between runs, never the main checkout's), the main
 #     checkout's userspace/libsgxfive/build/ is copied and its .venv linked (current, not
@@ -131,7 +133,7 @@ git -C "$TOOL" worktree add -q --detach "$R" "$BASE" || die "cannot check out $B
 if [ -f "$COMMITS" ]; then
     while read -r hash commit path; do
         case "$hash" in "#"*|"") continue ;; esac
-        grep -q "^$hash [ *]/.*/resgx545/$path\$" "$C/FROZEN.sha256" 2>/dev/null || continue
+        grep -q "^$hash [ *]/.*/$path\$" "$C/FROZEN.sha256" 2>/dev/null || continue
         mkdir -p "$R/$(dirname "$path")"
         if [ "$commit" = untracked ]; then
             [ -f "$COMMON/../$path" ] && cp "$COMMON/../$path" "$R/$path" \
@@ -172,6 +174,26 @@ for f in "$C"/FROZEN*.sha256; do
          || s{^([0-9a-f]{64} [ *])/(?:[^/]+/)*?resgx545/}{$1$ENV{R}/}' "$f" > "$f.new" \
         && mv "$f.new" "$f"
 done
+# a pin of a tree that sat under scratch/resgx545/ (round 4's integration worktree closing4/lead/wt)
+# is pointed at the pinned worktree by its FROZEN.commits path, matched by hash and path suffix
+if [ -f "$COMMITS" ]; then
+    for f in "$C"/FROZEN*.sha256; do
+        [ -f "$f" ] || continue
+        R=$R P="$COMMITS" perl -e '
+            open my $c, "<", $ENV{P} or die;
+            my %pin;
+            while (<$c>) { next if /^#/; my ($h, $m, $p) = split; $pin{$h}{$p} = 1 if defined $p }
+            while (<STDIN>) {
+                if (/^([0-9a-f]{64} [ *])(\/.*)$/ && $pin{substr($1, 0, 64)}) {
+                    my ($pre, $path) = ($1, $2);
+                    for my $p (keys %{$pin{substr($pre, 0, 64)}}) {
+                        if (substr($path, -length($p) - 1) eq "/$p") { $_ = "$pre$ENV{R}/$p\n"; last }
+                    }
+                }
+                print;
+            }' < "$f" > "$f.new" && mv "$f.new" "$f"
+    done
+fi
 
 cd "$C" || die "cannot enter the copy"
 export HOME=$HOMEDIR PY RESGX545=$R TOOL_SRC=$R RESGX545_MAIN=$R \
