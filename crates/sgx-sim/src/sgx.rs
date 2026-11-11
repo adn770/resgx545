@@ -20,9 +20,15 @@ use usse_isa::Core;
 
 /// SGX register dword indices (offset / 4) the loop itself acts on.
 pub mod reg {
+    pub const EVENT_HOST_CLEAR2: u32 = 0x0114 / 4;
+    pub const EVENT_STATUS2: u32 = 0x0118 / 4;
+    pub const EVENT_STATUS: u32 = 0x012c / 4;
+    pub const EVENT_HOST_CLEAR: u32 = 0x0134 / 4;
     pub const USE_CODE_BASE_0: u32 = 0x0a0c / 4;
     pub const EVENT_OTHER_PDS_EXEC: u32 = 0x0a68 / 4;
     pub const EVENT_OTHER_PDS_DATA: u32 = 0x0a6c / 4;
+    /// EVENT_KICKER: the address (bits 31:4) of the kernel's kicker word W (boot_sequence.md 2).
+    pub const EVENT_KICKER: u32 = 0x0ac4 / 4;
     pub const EVENT_KICK: u32 = 0x0ac8 / 4;
     /// EVENT_TIMER: the microkernel's tick, 24-bit count, bit 24 runs it; the PDS
     /// reads and writes it as `tim` (sgx545defs.h, pds_isa 8.9).
@@ -123,6 +129,39 @@ impl Default for State {
 }
 
 impl State {
+    /// What a write to an event clear register does, by the host or a task, before it is stored:
+    /// `CR_EVENT_HOST_CLEAR2` with STATUS2 known clears the bits written of the latched bit 6
+    /// (E821 host, E822 a task's `str #69`, 3 of 3 rounds each: from 0x440 bit 6 gives 0x400, bit
+    /// 15 leaves it); any other value, or another latched state, is refused. A write of bit 18
+    /// to `CR_EVENT_HOST_CLEAR` with STATUS known is refused (E823: one job, post hoc). With the
+    /// status register unknown the write is only stored, as before.
+    fn clear_event(&mut self, index: u32, value: u32) -> Result<(), Error> {
+        if index == reg::EVENT_HOST_CLEAR2
+            && let Some(&st) = self.regs.get(&reg::EVENT_STATUS2)
+        {
+            let next = match value {
+                _ if st & 0x40 == 0 || st & !0x440 != 0 => None,
+                0x40 => Some(st & !0x40),
+                0x8000 => Some(st),
+                _ => None,
+            };
+            let Some(next) = next else {
+                return Err(why(format!(
+                    "CR_EVENT_HOST_CLEAR2 = {value:#x} with STATUS2 {st:#x}: only bit 6 and bit 15 on the latched \
+                     0x440 were run (E821, E822)"
+                )));
+            };
+            self.regs.insert(reg::EVENT_STATUS2, next);
+        }
+        if index == reg::EVENT_HOST_CLEAR
+            && value >> 18 & 1 != 0
+            && self.regs.contains_key(&reg::EVENT_STATUS)
+        {
+            return Err(why("CR_EVENT_HOST_CLEAR bit 18: one job, post hoc (E823; row B1P has not run)"));
+        }
+        Ok(())
+    }
+
     fn reg(&self, index: u32) -> Result<u32, Error> {
         self.regs
             .get(&index)
@@ -144,11 +183,16 @@ pub struct Sgx {
     pub event_ir0: Option<u32>,
     pub event_tim: Option<u32>,
     /// The count byte, bits 31:24 of the event word every event carries (Q290, E768): the host
-    /// kicks (EVENT_KICK writes) since the load, mod 256. It starts at 0; the kernel's boot and
-    /// the arm each send a GETMISCINFO, so an armed firmware reads 2 (set it). Whether the
-    /// hardware counts the writes or reads the kernel's kicker word is not separated: the two
-    /// agree whenever the kernel bumps the word before each write, as it does.
+    /// kicks served since the load, mod 256. It starts at 0; the kernel's boot and the arm each
+    /// send a GETMISCINFO, so an armed firmware reads 2 (set it, and the kicker word with it).
+    /// The hardware does not read the kicker word W per event (E819 Q1, H-KW refuted); whether the
+    /// count is W as latched at a served kick or a count of served kicks is not separated (Q290):
+    /// the two agree whenever the kernel bumps W by one before each EVENT_KICK write, the only
+    /// kick the sim serves (see `write_reg`).
     pub event_count: u8,
+    /// Set by an EVENT_KICK write with the kicker word unchanged, which the hardware did not
+    /// consume (E819 Q3); every later event and kick is refused (Q290).
+    pub kick_unconsumed: bool,
     /// pds::Pds::alu_specials_in_movs for every program (an assumption, off by default).
     pub alu_specials_in_movs: bool,
 }
@@ -164,6 +208,7 @@ impl Sgx {
 
     /// A host register write (an init script, a kick).
     pub fn write_reg(&mut self, index: u32, value: u32) -> Result<(), Error> {
+        self.st.clear_event(index, value)?;
         self.st.regs.insert(index, value);
         self.st.log.push(Event::Write { host: true, index, value });
         // EVENT_KICK2 runs the other-event PDS program (hw_spec 11.1-11.2):
@@ -184,8 +229,35 @@ impl Sgx {
         // the handler it reaches)
         // and the count byte steps after the kick's own event, which carries the old value
         if index == reg::EVENT_KICK && value & 1 != 0 {
+            self.kick()?;
+        }
+        Ok(())
+    }
+
+    /// An EVENT_KICK write, by the kicker word W at the address in EVENT_KICKER (mod 256). W
+    /// bumped by one since the last served kick, as the kernel does before each write: one event
+    /// with the kick bit and the count before the bump (E746, E768, E816 G0). W unchanged: no
+    /// event, the count and W left, the command not answered (E819 Q3, 3 of 3); [infer] the
+    /// event needs W to change. Whether an event stays pending after it (the ticks after the
+    /// write carried pa2 0x01061a74 in 2 of 3 jobs, post hoc) and the count of the ticks after it
+    /// are open (Q290), so the sim refuses every later event and kick. W set to any other value,
+    /// then kicked: refused (E819 Q2 could not read the count after it, Q290).
+    fn kick(&mut self) -> Result<(), Error> {
+        if self.kick_unconsumed {
+            return Err(why("a kick after a kick that was not consumed: not run (Q290, E819)"));
+        }
+        let w = self.st.mem.load(self.st.reg(reg::EVENT_KICKER)? & !0xf)? & 0xff;
+        let count = u32::from(self.event_count);
+        if w == (count + 1) & 0xff {
             self.event(1 << 8)?;
-            self.event_count = self.event_count.wrapping_add(1);
+            self.event_count = w as u8;
+        } else if w == count {
+            self.kick_unconsumed = true;
+        } else {
+            return Err(why(format!(
+                "a kick with the kicker word at {w:#x} and the count at {count:#x}: only a bump by one \
+                 (E768) and no bump (E819 Q3) were run (Q290)"
+            )));
         }
         Ok(())
     }
@@ -195,6 +267,12 @@ impl Sgx {
     /// nothing in ir1 (the microkernel's tick handler tests pa0 bit 1), and the count byte
     /// (`event_count`) in bits 31:24 of ir1 as every event carries it.
     pub fn event(&mut self, ir1: u32) -> Result<(), Error> {
+        if self.kick_unconsumed {
+            return Err(why(
+                "an event after a kick that was not consumed: its count and whether the kick stays pending \
+                 are open (Q290, E819 Q3)",
+            ));
+        }
         let addr = self.st.reg(reg::EVENT_OTHER_PDS_EXEC)? & !0xf;
         let data = self.st.reg(reg::EVENT_OTHER_PDS_DATA)? as usize * 4;
         let (ir0, tim) = (self.event_ir0, self.event_tim);
@@ -325,6 +403,7 @@ impl Bus for Unit<'_> {
     }
 
     fn reg_write(&mut self, index: u32, value: u32) -> Result<(), Error> {
+        self.st.clear_event(index, value)?;
         self.st.regs.insert(index, value);
         self.st.log.push(Event::Write { host: false, index, value });
         Ok(())
@@ -430,6 +509,22 @@ mod tests {
         s
     }
 
+    /// Where the tests keep the kicker word W (the boot writes its address to EVENT_KICKER).
+    const KICKER: u32 = 0xF100_0000;
+
+    /// The kicker word mapped at KICKER with the value `w`, its address in EVENT_KICKER.
+    fn with_kicker(s: &mut Sgx, w: u32) {
+        s.st.mem.map(KICKER, &w.to_le_bytes());
+        s.write_reg(reg::EVENT_KICKER, KICKER).unwrap();
+    }
+
+    /// The kernel's kick: W bumped (mod 256), then EVENT_KICK written.
+    fn kick(s: &mut Sgx) -> Result<(), Error> {
+        let w = s.st.mem.load(KICKER).unwrap();
+        s.st.mem.store(KICKER, (w + 1) & 0xff).unwrap();
+        s.write_reg(reg::EVENT_KICK, 1)
+    }
+
     /// The doutu code word of instruction `pc` at code base 15 with 8 temporaries.
     fn code_word(pc: u32) -> u32 {
         0x0200_0000 | pc << 4 | 0xf
@@ -506,7 +601,8 @@ mod tests {
         s.st.mem.map(CODE + 0x1000, &prog);
         s.write_reg(reg::EVENT_OTHER_PDS_EXEC, CODE + 0x1000).unwrap();
         s.write_reg(reg::EVENT_OTHER_PDS_DATA, 1).unwrap();
-        s.write_reg(reg::EVENT_KICK, 1).unwrap();
+        with_kicker(&mut s, 0);
+        kick(&mut s).unwrap();
         s.run(10_000).unwrap();
         assert_eq!(s.st.mem.load(DATA).unwrap(), 0x100);
         assert_eq!(s.st.mem.load(DATA + 4).unwrap(), 0x0100_1234);
@@ -533,24 +629,26 @@ mod tests {
         s.st.mem.map(CODE + 0x1000, &prog);
         s.write_reg(reg::EVENT_OTHER_PDS_EXEC, CODE + 0x1000).unwrap();
         s.write_reg(reg::EVENT_OTHER_PDS_DATA, 1).unwrap();
-        fn pa1(s: &mut Sgx, kick: bool) -> u32 {
-            if kick {
-                s.write_reg(reg::EVENT_KICK, 1).unwrap();
+        fn pa1(s: &mut Sgx, kicked: bool) -> u32 {
+            if kicked {
+                kick(s).unwrap();
             } else {
                 s.event(0).unwrap();
             }
             s.run(10_000).unwrap();
             s.st.mem.load(DATA + 4).unwrap()
         }
-        // an armed firmware: the boot's and the arm's GETMISCINFO made it 2
+        // an armed firmware: the boot's and the arm's GETMISCINFO made it 2, and W with it
         s.event_count = 2;
+        with_kicker(&mut s, 2);
         assert_eq!(pa1(&mut s, false), 0x0200_0000);
         assert_eq!(pa1(&mut s, true), 0x0200_0100);
         assert_eq!(pa1(&mut s, false), 0x0300_0000);
         // 254 kicks after 2 wrap the byte to 0 (E768: the logged kicks read 0, 1, 2, 3)
         s.event_count = 2;
+        with_kicker(&mut s, 2);
         for _ in 0..254 {
-            s.write_reg(reg::EVENT_KICK, 1).unwrap();
+            kick(&mut s).unwrap();
         }
         s.st.queue.clear();
         assert_eq!(s.event_count, 0);
@@ -571,10 +669,11 @@ mod tests {
         // queue keeps each kick as its own event, with the count it had when it was written
         let mut s = sgx();
         s.event_count = 2;
+        with_kicker(&mut s, 2);
         s.write_reg(reg::EVENT_OTHER_PDS_EXEC, CODE + 0x1000).unwrap();
         s.write_reg(reg::EVENT_OTHER_PDS_DATA, 1).unwrap();
-        s.write_reg(reg::EVENT_KICK, 1).unwrap();
-        s.write_reg(reg::EVENT_KICK, 1).unwrap();
+        kick(&mut s).unwrap();
+        kick(&mut s).unwrap();
         s.event(0).unwrap();
         let words: Vec<u32> =
             s.st.queue
@@ -705,5 +804,133 @@ mod tests {
         s.seed(7, 0x0115_0000);
         s.st.queue.push_back(Work::Task { base: CODE, pc: 0, temps: 8, pa: Box::new([0; 128]), written: 0 });
         s.run(100).unwrap();
+    }
+
+    /// An armed SGX (count 2, W 2) with an event program and nothing queued.
+    fn armed() -> Sgx {
+        let mut s = sgx();
+        s.event_count = 2;
+        with_kicker(&mut s, 2);
+        s.write_reg(reg::EVENT_OTHER_PDS_EXEC, CODE + 0x1000).unwrap();
+        s.write_reg(reg::EVENT_OTHER_PDS_DATA, 1).unwrap();
+        s
+    }
+
+    fn queued_words(s: &Sgx) -> Vec<u32> {
+        s.st.queue
+            .iter()
+            .map(|w| match w {
+                Work::Pds { ir1: Some(ir1), .. } => *ir1,
+                _ => panic!("not an event"),
+            })
+            .collect()
+    }
+
+    fn refused(r: Result<(), Error>) -> bool {
+        matches!(r, Err(Error::Unsupported { .. }))
+    }
+
+    #[test]
+    fn a_kick_without_the_bump_is_not_consumed() {
+        // E819 Q3, 3 of 3: the EVENT_KICK write with W unchanged raised no kick entry, the count
+        // and W stayed, the command was not answered; what follows it (whether an event stays
+        // pending, the count and pa2 of the ticks after it: Q290) is refused, as is a second kick
+        // (row Q4 has not run)
+        let mut s = armed();
+        s.write_reg(reg::EVENT_KICK, 1).unwrap();
+        assert!(queued_words(&s).is_empty());
+        assert_eq!(s.event_count, 2);
+        assert_eq!(s.st.mem.load(KICKER).unwrap(), 2);
+        assert!(s.kick_unconsumed);
+        assert!(matches!(s.event(0), Err(Error::Unsupported { ref why, .. }) if why.contains("Q290")));
+        assert!(refused(kick(&mut s)));
+        assert!(refused(s.write_reg(reg::EVENT_KICK, 1)));
+    }
+
+    #[test]
+    fn writing_the_kicker_word_alone_changes_nothing() {
+        // E819 Q1, 3 of 3: W = 0x42 with no kick, the ticks after it carried the count 2
+        let mut s = armed();
+        s.st.mem.store(KICKER, 0x42).unwrap();
+        s.event(0).unwrap();
+        assert_eq!(queued_words(&s), [0x0200_0000]);
+        assert!(!s.kick_unconsumed);
+    }
+
+    #[test]
+    fn a_kick_after_the_kicker_word_was_set_is_refused() {
+        // E819 Q2 could not read the count after it (H-LATCH 0x43 against H-CNT 3): row Q2'
+        let mut s = armed();
+        s.st.mem.store(KICKER, 0x42).unwrap();
+        assert!(matches!(kick(&mut s), Err(Error::Unsupported { ref why, .. }) if why.contains("Q290")));
+        assert!(queued_words(&s).is_empty());
+        assert_eq!(s.event_count, 2);
+    }
+
+    #[test]
+    fn a_kick_reads_the_kicker_word_where_event_kicker_points() {
+        // CR_EVENT_KICKER (0x0ac4) holds the word's address, bits 31:4 (boot_sequence.md, E006):
+        // without it the kick is refused, as any register nobody wrote
+        let mut s = sgx();
+        s.write_reg(reg::EVENT_OTHER_PDS_EXEC, CODE + 0x1000).unwrap();
+        s.write_reg(reg::EVENT_OTHER_PDS_DATA, 1).unwrap();
+        assert!(refused(s.write_reg(reg::EVENT_KICK, 1)));
+        assert_eq!(reg::EVENT_KICKER, 0x0ac4 / 4);
+        // the low four bits of the register are not the address
+        let mut s = armed();
+        s.write_reg(reg::EVENT_KICKER, KICKER | 0xf).unwrap();
+        kick(&mut s).unwrap();
+        assert_eq!(queued_words(&s), [0x0200_0100]);
+        assert_eq!(s.event_count, 3);
+    }
+
+    fn status2_after(by_task: bool, status2: u32, clear: u32) -> Result<u32, Error> {
+        let mut s = sgx();
+        s.seed(reg::EVENT_STATUS2, status2);
+        if by_task {
+            s.st.mem.map(CODE, &usse(&format!("mov r0, #0x{clear:08X}\nstr #69, r0\nnop.end")));
+            s.st.queue.push_back(Work::Task {
+                base: CODE,
+                pc: 0,
+                temps: 8,
+                pa: Box::new([0; 128]),
+                written: 0,
+            });
+            s.run(100)?;
+        } else {
+            s.write_reg(reg::EVENT_HOST_CLEAR2, clear)?;
+        }
+        Ok(s.st.regs[&reg::EVENT_STATUS2])
+    }
+
+    #[test]
+    fn host_clear2_clears_the_bits_written_of_the_latched_status2_bit_6() {
+        // E821 (host) and E822 (a task's str #69), 3 of 3 rounds each: STATUS2 0x440 after a loop
+        // fill; bit 15 (not set) leaves it, bit 6 clears bit 6 alone
+        assert_eq!((reg::EVENT_HOST_CLEAR2, reg::EVENT_STATUS2), (0x0114 / 4, 0x0118 / 4));
+        for by_task in [false, true] {
+            assert_eq!(status2_after(by_task, 0x440, 0x40).unwrap(), 0x400, "task {by_task}");
+            assert_eq!(status2_after(by_task, 0x440, 0x8000).unwrap(), 0x440, "task {by_task}");
+            // other writes and other latched states were not run
+            for (st, clear) in
+                [(0x440, 0x400), (0x440, 0x8040), (0x440, 0x1), (0x400, 0x40), (0x8440, 0x8000)]
+            {
+                assert!(
+                    refused(status2_after(by_task, st, clear).map(|_| ())),
+                    "{st:#x} {clear:#x} task {by_task}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn host_clear_of_status_bit_18_is_refused() {
+        // E823: one job, post hoc (row B1P has not run); with STATUS known a write of bit 18 to
+        // CR_EVENT_HOST_CLEAR (0x0134) is refused
+        assert_eq!((reg::EVENT_HOST_CLEAR, reg::EVENT_STATUS), (0x0134 / 4, 0x012c / 4));
+        let mut s = sgx();
+        s.seed(reg::EVENT_STATUS, 0x2004_0000);
+        assert!(refused(s.write_reg(reg::EVENT_HOST_CLEAR, 1 << 18)));
+        assert_eq!(s.st.regs[&reg::EVENT_STATUS], 0x2004_0000);
     }
 }

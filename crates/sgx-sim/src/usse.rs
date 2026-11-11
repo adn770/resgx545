@@ -351,6 +351,9 @@ pub struct Machine {
     /// register before is timing-dependent on the hardware (x-misc: a store
     /// right after idiv saw the old value), so it stops the program.
     pub pending: Vec<(u32, Reg, u32)>,
+    /// Registers a DRC operation writes with a value not known (drc, register, why): at the wdf
+    /// on their DRC they become `unknown` (an sRGB sample's second register, tex::unknown_after).
+    pub pending_unknown: Vec<(u32, Reg, &'static str)>,
     /// The MOE increments smlsi set, in its operand order; None until a
     /// program sets them. Before that, repeats and fetches step every operand by
     /// one (hardware: repeat probes, usse-numbered-modifiers-family-repeat, usse-numbered-modifiers-family-fetch).
@@ -421,7 +424,7 @@ pub struct Machine {
     /// pclink and the absolute `ba` count from the code base, `br` from the instruction.
     pub code_index: u32,
     /// Whether the task is one of the firmware's EDM tasks (Sgx::run_task) and not a fill's: its
-    /// pa is not the fill's, so a write to pa1 and up stays refused there (Q098, E537).
+    /// pa0 to pa4 are sa64 to sa68 (E748), and a mov to pa2 to pa4 follows E820 (write_dst).
     pub edm_task: bool,
     /// Set while a `mov` writes its destination: E380 measured `mov` to pa1 to pa7 in a fill,
     /// and no other instruction (E496 did ima32 to pa0 only).
@@ -761,6 +764,7 @@ impl Default for Machine {
             steps: 0,
             written: Written::default(),
             pending: Vec::new(),
+            pending_unknown: Vec::new(),
             moe_inc: None,
             moe_swizzle: [None; 4],
             moe_base: [0; 4],
@@ -863,6 +867,7 @@ impl Machine {
                     self.temps = alloc;
                     self.written.r = 0;
                     self.pending.retain(|p| !matches!(p.1, Reg::R(_)));
+                    self.pending_unknown.retain(|p| !matches!(p.1, Reg::R(_)));
                     self.pc = next;
                 }
             },
@@ -2203,6 +2208,14 @@ impl Machine {
                         Reg::Pa(n) => self.set_pa(n, v),
                     }
                 }
+                let (land, keep): (Vec<_>, Vec<_>) = self.pending_unknown.drain(..).partition(|p| p.0 == drc);
+                self.pending_unknown = keep;
+                for (_, reg, w) in land {
+                    match reg {
+                        Reg::R(n) => self.unknown.insert(("r", n), w),
+                        Reg::Pa(n) => self.unknown.insert(("pa", n), w),
+                    };
+                }
                 None
             }
             "mov_imm" => {
@@ -2983,12 +2996,21 @@ impl Machine {
         };
         let texels = bus.sample(&tex::Sample { state, u, v, one_d: d == "1d", srd, pcf, lod })?;
         let (dst, drc) = (insn.get("dst").unwrap(), insn.get("drc").unwrap());
+        let reg = |r: usize| if dst >> 7 != 0 { Reg::Pa(r) } else { Reg::R(r) };
+        let n = texels.len();
         for (k, t) in texels.into_iter().enumerate() {
             let r = (dst & 0x7f) as usize + k;
             if r >= 124 {
                 return Err(why("a sample past the temporaries"));
             }
-            self.pending.push((drc, if dst >> 7 != 0 { Reg::Pa(r) } else { Reg::R(r) }, t));
+            self.pending.push((drc, reg(r), t));
+        }
+        // the registers the hardware writes after the modelled ones, with no model (E723)
+        if let Some(w) = tex::unknown_after(state) {
+            let r = (dst & 0x7f) as usize + n;
+            if r < 124 {
+                self.pending_unknown.push((drc, reg(r), w));
+            }
         }
         Ok(())
     }
@@ -4071,7 +4093,7 @@ impl Machine {
     }
 
     fn not_pending(&self, reg: Reg) -> Result<(), Error> {
-        if self.pending.iter().any(|p| p.1 == reg) {
+        if self.pending.iter().any(|p| p.1 == reg) || self.pending_unknown.iter().any(|p| p.1 == reg) {
             return Err(why(format!("reads {reg:?} before its DRC result lands (wdf)")));
         }
         Ok(())
@@ -4114,14 +4136,22 @@ impl Machine {
             }
             // hardware (E496, Q098; usse-pa-dest, 3 of 3 jobs, and E380): in a fill a write to
             // pa0 by ima32 or mov is lost, pa0 reading what it read before; E380 (30 fill jobs):
-            // a mov to pa1 to pa7 is lost the same way. ima32 to pa1 and up was not run, and an
-            // EDM task's pa: S2 e2r/e2w measured the read side (pa0 to pa4 are sa64 to sa68) but
-            // not a write to pa, so it stays refused (Q098, E537)
-            2 if self.edm_task => {
-                return Err(why(format!(
-                    "a write to pa{r} in an EDM task (the read side is measured, S2 e2r/e2w; the write side is not, Q098)"
-                )));
-            }
+            // a mov to pa1 to pa7 is lost the same way. ima32 to pa1 and up was not run. In an
+            // EDM task (E820, 3 of 3 each, mov only): a mov to pa3 is sa67, kept to the next
+            // pass; to pa2 is sa66, which the next event's program rewrites [infer]; to pa4 is
+            // lost, sa68 and pa4 unchanged. pa0, pa1, pa5 up and other forms did not run
+            2 if self.edm_task => match r {
+                2 | 3 if self.mov_dest => {
+                    (self.sa[64 + r], self.written.sa) = (v, self.written.sa | 1 << (64 + r));
+                    self.mark("sa", 64 + r);
+                }
+                4 if self.mov_dest => {}
+                _ => {
+                    return Err(why(format!(
+                        "a write to pa{r} in an EDM task (E820 measured mov to pa2, pa3 and pa4 only, Q098)"
+                    )));
+                }
+            },
             2 if r == 0 => {}
             2 if self.mov_dest && r < 8 => {}
             2 => {
@@ -5118,6 +5148,55 @@ mod tests {
         }
         let r = Machine::default().run(&src("smp2d r10, r24, r20, drc0"), &mut NoTex, 100);
         assert!(matches!(&r, Err(Error::Unsupported { why, .. }) if why.contains("texture unit")), "{r:?}");
+    }
+
+    #[test]
+    fn an_srgb_sample_leaves_its_second_register_unknown() {
+        // E723: the first register is the decode of bytes 0 and 1; the second (its r11 reads) has
+        // no model, so a read of it after the fence stops; a twiddled 8 x 8 format 12 texture
+        let st = [0x0ffe_0000u32, 0x0c00_7007, 0x1000, 0x0080_0800];
+        let src = |last: &str| {
+            let mut v: Vec<String> =
+                st.iter().enumerate().map(|(k, w)| format!("mov r{}, #0x{w:08x}", 20 + k)).collect();
+            v.extend(
+                [
+                    "mov r24, #0x3f19999a",
+                    "mov r25, #0x3e99999a",
+                    "mov r11, #1",
+                    "smp2d r10, r24, r20, drc0",
+                    "wdf drc0",
+                    last,
+                ]
+                .map(String::from),
+            );
+            v
+        };
+        let mut mem = Memory { base: 0x1000, words: (0..64).map(|i| 0x100 + i).collect() };
+        let want = tex::sample(
+            &tex::Sample {
+                state: st,
+                u: f32::from_bits(0x3f19999a),
+                v: f32::from_bits(0x3e99999a),
+                one_d: false,
+                srd: tex::Srd::None,
+                pcf: None,
+                lod: tex::Lod::Flat,
+            },
+            &mut |a| Ok(0x100 + (a - 0x1000) / 4),
+        )
+        .unwrap();
+        assert_eq!(want.len(), 1);
+        let first = src("mov.end o0, r10");
+        let mut m = Machine::default();
+        let r = m.run(&prog(&first.iter().map(|s| s.as_str()).collect::<Vec<_>>()), &mut mem, 100);
+        assert_eq!((r, m.o[0]), (Ok(()), want[0]));
+        let second = src("mov.end o0, r11");
+        let r = Machine::default().run(
+            &prog(&second.iter().map(|s| s.as_str()).collect::<Vec<_>>()),
+            &mut mem,
+            100,
+        );
+        assert!(matches!(&r, Err(Error::Unsupported { why, .. }) if why.contains("E723")), "{r:?}");
     }
 
     /// Run `smp` over a counting texture at 0x1000 with the state words `t` and a third
@@ -7703,9 +7782,45 @@ mod after_11_27 {
         );
         let (_, r) = edm(&["mov r10, pa0", "nop.end"], &[]);
         assert!(refused(&r), "{r:?}");
-        // and a pa write in an EDM task stays refused, naming both sides
-        let (_, r) = edm(&["mov r1, #5", "mov pa3, r1", "nop.end"], &sa);
-        assert!(matches!(&r, Err(Error::Unsupported { why, .. }) if why.contains("write side is not")));
+    }
+
+    #[test]
+    fn an_edm_tasks_mov_to_pa2_and_pa3_writes_sa66_and_sa67_and_to_pa4_is_lost() {
+        // E820 (3 of 3 each): mov pa3 is sa67 (read back through both, in the pass and the next),
+        // mov pa2 is sa66 in the pass (the next event rewrites it [infer]), mov pa4 is lost
+        let sa: Vec<(usize, u32)> = (0..5).map(|n| (64 + n, 0x100 + n as u32)).collect();
+        for (n, m) in [(2, 0x5a42_0006u32), (3, 0x5a43_0004)] {
+            let src = [&format!("mov r1, #0x{m:08X}") as &str, &format!("mov pa{n}, r1"), "nop.end"];
+            let (mm, r) = edm(&src, &sa);
+            assert_eq!(r, Ok(()), "pa{n}");
+            assert_eq!(mm.sa[64 + n], m, "sa{}", 64 + n);
+            let src = [
+                &format!("mov r1, #0x{m:08X}") as &str,
+                &format!("mov pa{n}, r1"),
+                &format!("mov r2, pa{n}"),
+                "nop.end",
+            ];
+            let (mm, r) = edm(&src, &sa);
+            assert_eq!((r, mm.r[2]), (Ok(()), m), "pa{n} read back");
+            // the neighbours are unchanged
+            for k in (2..5).filter(|&k| k != n) {
+                assert_eq!(mm.sa[64 + k], 0x100 + k as u32, "sa{} after pa{n}", 64 + k);
+            }
+        }
+        let (m, r) =
+            edm(&["mov r1, #0x5A440005", "mov pa4, r1", "mov r2, pa4", "mov r3, sa68", "nop.end"], &sa);
+        assert_eq!((r, m.r[2], m.r[3], m.sa[68]), (Ok(()), 0x104, 0x104, 0x104));
+        // pa0, pa1 and pa5 up were refused by the verifier and did not run; other forms than mov
+        // did not run either
+        for n in [0, 1, 5, 7] {
+            let (_, r) = edm(&["mov r1, #5", &format!("mov pa{n}, r1"), "nop.end"], &sa);
+            assert!(
+                matches!(&r, Err(Error::Unsupported { why, .. }) if why.contains("E820")),
+                "pa{n}: {r:?}"
+            );
+        }
+        let (_, r) = edm(&["mov r1, #5", "ima32.u pa3, r1, r1, r1", "nop.end"], &sa);
+        assert!(matches!(&r, Err(Error::Unsupported { why, .. }) if why.contains("E820")), "{r:?}");
     }
 
     #[test]
@@ -7953,9 +8068,9 @@ mod after_11_27 {
         assert!(
             matches!(&r, Err(Error::Unsupported { why, .. }) if why.contains("Q098") && why.contains("pa1"))
         );
-        // an EDM task's pa is not the fill's (Q098, E537): any pa1 and up write there stops, mov
-        // included
-        for n in [0, 1, 2, 7] {
+        // an EDM task's pa is not the fill's (Q098, E537, E820): a mov to pa0, pa1 or pa5 up stops
+        // there (mov to pa2 to pa4: an_edm_tasks_mov_to_pa2_and_pa3_writes_sa66_and_sa67...)
+        for n in [0, 1, 7] {
             let words: Vec<u64> = ["mov r1, #5".to_string(), format!("mov pa{n}, r1"), "nop.end".to_string()]
                 .iter()
                 .map(|t| usse_isa::encode(t, Core::Sgx545).unwrap())

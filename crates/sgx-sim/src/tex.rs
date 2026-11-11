@@ -72,6 +72,18 @@ pub fn sample(s: &Sample, load: &mut Load) -> Result<Vec<u32>, Fail> {
     if (tex.offset != [0, 0] || tex.shift != 0) && (bilinear || s.pcf.is_some() || s.srd != Srd::None) {
         return open("T3's texel offset or address scale filtered, with .pcf or an SRD mode");
     }
+    if tex.format == 27 || tex.srgb {
+        // E723, E724: point samples of level 0, as Texture::new admits them
+        if bilinear || levels != [(0, 64)] || s.pcf.is_some() || s.srd != Srd::None {
+            return open("ETC1 or sRGB filtered, blended, with .pcf or an SRD mode (not run)");
+        }
+        let (x, y) = ((u * tex.w as f64).floor() as i64, tex.row_of(v, s.one_d));
+        return Ok(vec![if tex.format == 27 {
+            tex.etc1(x, y, load)?
+        } else {
+            srgb_word(tex.fetch(x, y, load)?)
+        }]);
+    }
     if tex.format == 14 {
         // two registers (format_14): one level, point sampled, unconverted
         return match levels[..] {
@@ -329,6 +341,78 @@ fn half(x: f32) -> u32 {
     ((e + 15) as u32) << 10 | (m & 0x3ff)
 }
 
+/// sRGB to linear (the curve of the sRGB standard) of a byte, as a half, rounded to nearest even
+/// from the double value (E723: 4 of 4 held-out fills exact, every byte 0 to 255 read).
+fn srgb_half(b: u32) -> u32 {
+    let c = b as f64 / 255.0;
+    let l = if c <= 0.04045 { c / 12.92 } else { ((c + 0.055) / 1.055).powf(2.4) };
+    half64(l)
+}
+
+/// The first register of a point sample with T0 bit 27 (E723): byte 1 of the texel decoded in the
+/// high half, byte 0 in the low one. The second register (E723's r11 reads) is not modelled.
+fn srgb_word(t: u32) -> u32 {
+    srgb_half(t >> 8 & 0xff) << 16 | srgb_half(t & 0xff)
+}
+
+/// A double in [0, 1] as a half, rounded to nearest even (the exponent read from its bits).
+fn half64(x: f64) -> u32 {
+    if x == 0.0 {
+        return 0;
+    }
+    let e = ((x.to_bits() >> 52 & 0x7ff) as i32 - 1023).max(-14);
+    if e == -14 && x < 2f64.powi(-14) {
+        return (x * 2f64.powi(24)).round_ties_even() as u32;
+    }
+    let m = (x / 2f64.powi(e - 10)).round_ties_even() as u32;
+    let (m, e) = if m == 2048 { (1024, e + 1) } else { (m, e) };
+    ((e + 15) as u32) << 10 | (m & 0x3ff)
+}
+
+/// Why the registers a sample writes after those `sample` returns are not known, if they are not:
+/// an sRGB sample (T0 bit 27) writes a second register that E723 read without a model.
+pub fn unknown_after(state: [u32; 4]) -> Option<&'static str> {
+    (state[0] >> 27 & 1 != 0)
+        .then_some("an sRGB sample's register after the first (E723 read it with no model)")
+}
+
+/// The texture words of the fills of E723 to E725 (p1141): T0 point filters, repeat, level 0
+/// only; T3 of a twiddled and of a stride texture.
+const T0_REP: u32 = 0x07fe_0000;
+const T3_TW: u32 = 0x0080_0800;
+const T3_ST: u32 = 0xa080_0000;
+/// E723's stride texture: T0_REP's role with the stride of 8 dwords and bit 27.
+const T0_SRGB_STRIDE8: u32 = 0x0800_0e00;
+/// The sizes E724 ran format 27 at and E725 types 1 and 3 at (twiddled block grids, rasters).
+const ETC1_SIZES: [(u32, u32); 5] = [(16, 16), (32, 16), (16, 32), (8, 16), (8, 8)];
+const RASTER_SIZES: [(u32, u32); 4] = [(8, 8), (32, 32), (32, 16), (16, 32)];
+
+/// T0 bit 27 (sRGB), format 27 (ETC1) and texture types 1 and 3 are admitted with the state words
+/// of the held-out jobs that measured them and at their sizes only (E723, E724, E725).
+fn measured_r4(t0: u32, t1: u32, t3: u32) -> Result<(), Fail> {
+    let (ty, fmt) = (t1 >> 29, t1 >> 24 & 31);
+    let (w, h) = ((t1 >> 12 & 0xfff) + 1, (t1 & 0xfff) + 1);
+    let ok = if t0 >> 27 & 1 != 0 {
+        fmt == 12
+            && match ty {
+                6 => (w, h) == (8, 4) && t0 == T0_SRGB_STRIDE8 && t3 == T3_ST,
+                0 => matches!((w, h), (8, 8) | (32, 32)) && t0 == T0_REP | 1 << 27 && t3 == T3_TW,
+                _ => false,
+            }
+    } else if fmt == 27 {
+        ty == 0 && ETC1_SIZES.contains(&(w, h)) && t0 == T0_REP && t3 == T3_TW
+    } else {
+        fmt == 12 && RASTER_SIZES.contains(&(w, h)) && t0 == T0_REP && t3 == T3_TW
+    };
+    if !ok {
+        return open(format!(
+            "T0 0x{t0:08x}, T1 0x{t1:08x}, T3 0x{t3:08x}: sRGB (E723), format 27 (E724) and types 1 and 3 \
+             (E725) ran only with the state words and at the sizes of their held-out jobs"
+        ));
+    }
+    Ok(())
+}
+
 #[derive(Clone, Copy)]
 struct Texture {
     w: u32,
@@ -341,6 +425,10 @@ struct Texture {
     /// T3's texel offset (x, y) and address scale (t3_fields).
     offset: [i64; 2],
     shift: u32,
+    /// Types 1 and 3: a raster of `row` bytes that wraps at the size by the address modes (E725).
+    raster: bool,
+    /// T0 bit 27: the sRGB decode (E723).
+    srgb: bool,
 }
 
 impl Texture {
@@ -352,7 +440,11 @@ impl Texture {
     /// and T2's low two, is not measured. T3: t3_fields.
     fn new(t0: u32, t1: u32, t2: u32, t3: u32) -> Result<Texture, Fail> {
         let stride = t1 >> 29 == 6;
-        let t0_open = t0 & if stride { 0xc800_0000 } else { 0xf801_c000 };
+        let (srgb, raster) = (t0 >> 27 & 1 != 0, matches!(t1 >> 29, 1 | 3));
+        if srgb || raster || t1 >> 24 & 31 == 27 {
+            measured_r4(t0, t1, t3)?;
+        }
+        let t0_open = t0 & !(1 << 27) & if stride { 0xc800_0000 } else { 0xf801_c000 };
         if t0_open != 0 || t2 & 3 != 0 {
             return open(format!("T0 bits 0x{t0_open:08x}, T2 bits {}", t2 & 3));
         }
@@ -364,6 +456,8 @@ impl Texture {
             0 if w.is_power_of_two() && h.is_power_of_two() => None,
             // p1132 tx-types-risky: TEXTYPE 7 reads as twiddled; measured at 16x16 only
             7 if (w, h) == (16, 16) => None,
+            // E725: types 1 and 3 index a raster of w dwords per row (measured_r4 checked them)
+            1 | 3 => Some(4 * w),
             0 => return open("a twiddled texture of a size other than a power of two"),
             t => return open(format!("texture type {t}")),
         };
@@ -377,7 +471,13 @@ impl Texture {
             address: [t0 >> 6 & 7, t0 >> 3 & 7],
             offset,
             shift,
+            raster,
+            srgb,
         };
+        if tex.format == 27 {
+            // ETC1's blocks have their own order (Texture::etc1); measured_r4 checked the rest
+            return Ok(tex);
+        }
         if tex.row.is_none() && (w > 16 || h > 16) && !(tile_law_ran(w, h) && tex.bytes()? == 4) {
             return open(format!(
                 "a twiddled {w}x{h} texture of format {} (the 16 x 16 tiles ran only on 32-bit texels in the sizes of E561 and E562)",
@@ -601,6 +701,29 @@ impl Texture {
         matches!(self.format, 2..=5 | 12 | 13)
     }
 
+    /// Texel (x, y) of an ETC1 texture (format 27, E724: 6 of 6 held-out fills exact) as B8G8R8A8,
+    /// alpha 0xff: the 4 x 4 blocks of two dwords (the high word first) in the Morton order of
+    /// the block grid with y in the low bit, the longer side's extra bits above; the texel at
+    /// (x, y) of a block is bit x * 4 + y of the low word's halves, decoded as ETC1 (the
+    /// individual and differential modes, the flip bit and the modifier tables).
+    fn etc1(&self, x: i64, y: i64, load: &mut Load) -> Result<u32, Fail> {
+        let wrap = |t: i64, n: u32| t.rem_euclid(n as i64) as u32;
+        let (x, y) = (wrap(x, self.w), wrap(y, self.h));
+        let (nbx, nby) = (self.w / 4, self.h / 4);
+        let (bx, by) = (x / 4, y / 4);
+        let common = nbx.trailing_zeros().min(nby.trailing_zeros());
+        let mut i = 0;
+        for b in 0..common {
+            i |= (by >> b & 1) << (2 * b) | (bx >> b & 1) << (2 * b + 1);
+        }
+        i |= (if nbx > nby { bx } else { by }) >> common << (2 * common);
+        let a = self.base.wrapping_add(8 * i);
+        let hi = load(a).map_err(Fail::Load)?;
+        let lo = load(a.wrapping_add(4)).map_err(Fail::Load)?;
+        let [r, g, b] = etc1_texel(hi, lo, x & 3, y & 3);
+        Ok(0xff00_0000 | r << 16 | g << 8 | b)
+    }
+
     /// Texel (x, y) addressed by the modes (texture-sampler-smp-address): a stride texture
     /// clamps to the edge; a twiddled one repeats (0), mirrors (1), clamps
     /// (2) or mirrors once (3).
@@ -608,7 +731,7 @@ impl Texture {
         let axis = |t: i64, n: u32, mode: u32| -> Result<u32, Fail> {
             let n = n as i64;
             let clamp = |t: i64| t.clamp(0, n - 1);
-            Ok(if self.row.is_some() {
+            Ok(if self.row.is_some() && !self.raster {
                 clamp(t)
             } else {
                 match mode {
@@ -731,6 +854,36 @@ impl Texture {
             _ => t,
         })
     }
+}
+
+/// Texel (x, y) of an ETC1 block (the Khronos ETC1 decode; E724): R, G and B.
+fn etc1_texel(hi: u32, lo: u32, x: u32, y: u32) -> [u32; 3] {
+    let (diff, flip) = (hi >> 1 & 1 != 0, hi & 1 != 0);
+    let (c1, c2) = if diff {
+        let base = |sh: u32| hi >> sh & 31;
+        let delta = |sh: u32| ((hi >> sh & 7) as i32 ^ 4) - 4;
+        let e = |v: u32| v << 3 | v >> 2;
+        let one = [27, 19, 11].map(base);
+        // the second colour stays inside 0 to 31 for every valid block; clamp as the decode does
+        let two = [(27, 24), (19, 16), (11, 8)].map(|(b, d)| (base(b) as i32 + delta(d)).clamp(0, 31) as u32);
+        (one.map(e), two.map(e))
+    } else {
+        let n = |sh: u32| (hi >> sh & 15) * 0x11;
+        ([28, 20, 12].map(n), [24, 16, 8].map(n))
+    };
+    const TABLE: [[i32; 2]; 8] =
+        [[2, 8], [5, 17], [9, 29], [13, 42], [18, 60], [24, 80], [33, 106], [47, 183]];
+    let i = x * 4 + y;
+    let first = if flip { y < 2 } else { x < 2 };
+    let (t, base) =
+        if first { (TABLE[(hi >> 5 & 7) as usize], c1) } else { (TABLE[(hi >> 2 & 7) as usize], c2) };
+    let m = match (lo >> (16 + i) & 1, lo >> i & 1) {
+        (0, 0) => t[0],
+        (0, _) => t[1],
+        (_, 0) => -t[0],
+        _ => -t[1],
+    };
+    base.map(|c| (c as i32 + m).clamp(0, 255) as u32)
 }
 
 /// Whether an smp3d (the form without a LOD operand) may be read as the smp2d of the same state
@@ -1694,5 +1847,187 @@ mod tests {
         assert!(at(state(4, 12, 4, 4, 1, 0, 0), 0.0, 0.0).is_err(), "tiled");
         assert!(at(state(6, 23, 4, 4, 4, 0, 0), 0.0, 0.0).is_err(), "format 23");
         assert!(at(state(6, 22, 4, 4, 4, 0, 3 << 16), 0.0, 0.0).is_err(), "conversion of a dword format");
+    }
+
+    /// The state words of the jobs of E723 to E725 (p1141, p1132's catalog): point filters,
+    /// repeat, level 0 only (T0_REP), the T3 of a twiddled and of a stride texture.
+    const T0_REP: u32 = 0x07fe_0000;
+    const T3_TW: u32 = 0x0080_0800;
+    const T3_ST: u32 = 0xa080_0000;
+
+    fn t1(ty: u32, fmt: u32, w: u32, h: u32) -> u32 {
+        ty << 29 | fmt << 24 | (w - 1) << 12 | (h - 1)
+    }
+
+    /// Sample texel (x, y) of a w x h texture at 0x1000 (the centre of the texel) over `mem`.
+    fn texel(
+        st: [u32; 4],
+        w: u32,
+        h: u32,
+        x: u32,
+        y: u32,
+        mem: &dyn Fn(u32) -> u32,
+    ) -> Result<Vec<u32>, Fail> {
+        let (u, v) = ((x as f32 + 0.5) / w as f32, (y as f32 + 0.5) / h as f32);
+        sample(
+            &Sample { state: st, u, v, one_d: false, srd: Srd::None, pcf: None, lod: Lod::Flat },
+            &mut |a| Ok(mem(a)),
+        )
+    }
+
+    fn is_open<T: std::fmt::Debug>(r: Result<T, Fail>) -> bool {
+        matches!(r, Err(Fail::Open(_)))
+    }
+
+    #[test]
+    fn srgb_decodes_bytes_0_and_1_to_nearest_even_halves() {
+        // E723: the dword is half(s2l(byte 1)) << 16 | half(s2l(byte 0)), s2l the sRGB curve
+        for (b, h) in [
+            (0, 0x0000),
+            (1, 0x0cf9),
+            (10, 0x1a37),
+            (11, 0x1adb),
+            (12, 0x1b88),
+            (128, 0x32e8),
+            (200, 0x389f),
+            (254, 0x3bee),
+            (255, 0x3c00),
+        ] {
+            assert_eq!(srgb_half(b), h, "byte {b}");
+        }
+        assert_eq!(srgb_word(0xaabb_ff01), 0x3c00_0cf9);
+    }
+
+    #[test]
+    fn srgb_samples_the_textures_e723_ran_and_refuses_the_rest() {
+        let mem = |a: u32| 0xd000_0000 | ((a - 0x1000) / 4) | 0x0000_ff00;
+        let want = |i: u32| srgb_word(0xd000_ff00 | i);
+        // a stride 8 x 4 texture, and twiddled 8 x 8 and 32 x 32 ones (4 of 4 held out)
+        let st84 = [0x0800_0e00, t1(6, 12, 8, 4), 0x1000, T3_ST];
+        assert_eq!(texel(st84, 8, 4, 3, 2, &mem), Ok(vec![want(2 * 8 + 3)]));
+        let tw8 = [T0_REP | 1 << 27, t1(0, 12, 8, 8), 0x1000, T3_TW];
+        assert_eq!(texel(tw8, 8, 8, 1, 0, &mem), Ok(vec![want(2)]));
+        let tw32 = [T0_REP | 1 << 27, t1(0, 12, 32, 32), 0x1000, T3_TW];
+        assert_eq!(texel(tw32, 32, 32, 0, 1, &mem), Ok(vec![want(1)]));
+        // other sizes, formats, filters, conversions and T3 words did not run (bilinear: Q282)
+        for st in [
+            [T0_REP | 1 << 27, t1(0, 12, 16, 16), 0x1000, T3_TW],
+            [T0_REP | 1 << 27, t1(0, 13, 8, 8), 0x1000, T3_TW],
+            [T0_REP | 1 << 27 | 1 << 12, t1(0, 12, 8, 8), 0x1000, T3_TW],
+            [T0_REP | 1 << 27, t1(0, 12, 8, 8), 0x1000, T3_TW | 2 << 16],
+            [0x0800_0e00 | 1 << 12 | 1 << 10, t1(6, 12, 8, 8), 0x1000, T3_ST],
+            [0x0800_0e00, t1(6, 12, 16, 4), 0x1000, T3_ST],
+        ] {
+            assert!(is_open(texel(st, 8, 8, 1, 1, &mem)), "{st:08x?}");
+        }
+        // the registers after the first are not known (E723's r11 reads: no model)
+        assert!(unknown_after(tw8).is_some());
+        assert!(unknown_after([T0_REP, t1(0, 12, 8, 8), 0x1000, T3_TW]).is_none());
+    }
+
+    #[test]
+    fn etc1_decodes_its_blocks_in_morton_order_with_y_low() {
+        // E724: block (bx, by) of an 8 x 8 texture is block by | bx << 1; a block is two dwords,
+        // the high word first; the texel at (x, y) of a block is its bit x * 4 + y
+        let blocks = [(0x84c2_a06c_u32, 0x0000_ffff_u32), (0x8b45_f2b3, 0x1234_5678)];
+        let mem = move |a: u32| {
+            let d = (a - 0x1000) / 4;
+            let (b, k) = ((d / 2) as usize, d % 2);
+            let (hi, lo) = blocks[b.min(1)];
+            if k == 0 { hi } else { lo }
+        };
+        let st = [T0_REP, t1(0, 27, 8, 8), 0x1000, T3_TW];
+        let px = |x, y| texel(st, 8, 8, x, y, &mem).unwrap()[0];
+        // block 0 at (0, 0): texels (0, 0), (1, 1), (2, 2), (3, 3)
+        assert_eq!(
+            [px(0, 0), px(1, 1), px(2, 2), px(3, 3)],
+            [0xffb2_f6d4, 0xffb2_f6d4, 0xff6e_4c2a, 0xff6e_4c2a]
+        );
+        // block 1 is at (0, 4): y in the low bit
+        assert_eq!(
+            [px(0, 4), px(1, 5), px(2, 6), px(3, 7), px(3, 4)],
+            [0xffa4_5aff, 0xff3c_00a7, 0xffe1_65ff, 0xffb7_3bff, 0xff3c_00a7]
+        );
+    }
+
+    #[test]
+    fn etc1_is_refused_off_the_sizes_and_state_e724_ran() {
+        let mem = |_| 0u32;
+        for (w, h) in [(16, 16), (32, 16), (16, 32), (8, 16), (8, 8)] {
+            assert!(texel([T0_REP, t1(0, 27, w, h), 0x1000, T3_TW], w, h, 1, 1, &mem).is_ok(), "{w} x {h}");
+        }
+        for (w, h) in [(4, 4), (32, 32), (64, 16), (16, 8), (64, 64)] {
+            assert!(is_open(texel([T0_REP, t1(0, 27, w, h), 0x1000, T3_TW], w, h, 1, 1, &mem)), "{w} x {h}");
+        }
+        for st in [
+            [T0_REP | 1 << 12, t1(0, 27, 8, 8), 0x1000, T3_TW],
+            [0x07fc_0000, t1(0, 27, 8, 8), 0x1000, T3_TW],
+            [T0_REP, t1(0, 27, 8, 8), 0x1000, T3_TW | 3 << 16],
+            [T0_REP, t1(6, 27, 8, 8), 0x1000, T3_ST],
+            [T0_REP | 1 << 27, t1(0, 27, 8, 8), 0x1000, T3_TW],
+        ] {
+            assert!(is_open(texel(st, 8, 8, 1, 1, &mem)), "{st:08x?}");
+        }
+        // formats 23 to 26 (PVRTC) stay refused
+        for f in 23..=26 {
+            assert!(is_open(texel([T0_REP, t1(0, f, 8, 8), 0x1000, T3_TW], 8, 8, 1, 1, &mem)), "format {f}");
+        }
+    }
+
+    #[test]
+    fn types_3_and_1_read_a_raster_of_the_width_wrapping_at_the_size() {
+        // E725 (8 of 8 held out): texel (x mod w, y mod h) is dword (y mod h) w + (x mod w)
+        let mem = |a: u32| 0xd000_0000 | ((a - 0x1000) / 4);
+        for ty in [1, 3] {
+            for (w, h) in [(8, 8), (32, 32), (32, 16), (16, 32)] {
+                let st = [T0_REP, t1(ty, 12, w, h), 0x1000, T3_TW];
+                for (x, y) in [(0, 0), (3, 1), (w - 1, h - 1), (5, h - 2)] {
+                    assert_eq!(
+                        texel(st, w, h, x, y, &mem),
+                        Ok(vec![0xd000_0000 | (y * w + x)]),
+                        "{ty} {w}x{h}"
+                    );
+                }
+                // repeat: one texture past the right edge reads column 0
+                let past = sample(
+                    &Sample {
+                        state: st,
+                        u: 1.0 + 0.5 / w as f32,
+                        v: 0.5 / h as f32,
+                        one_d: false,
+                        srd: Srd::None,
+                        pcf: None,
+                        lod: Lod::Flat,
+                    },
+                    &mut |a| Ok(mem(a)),
+                );
+                assert_eq!(past, Ok(vec![0xd000_0000]), "{ty} {w}x{h}");
+            }
+        }
+    }
+
+    #[test]
+    fn types_1_3_and_4_off_what_ran_are_refused() {
+        let mem = |_| 0u32;
+        for ty in [1, 3] {
+            for (w, h) in [(4, 4), (16, 16), (64, 32), (8, 16)] {
+                assert!(
+                    is_open(texel([T0_REP, t1(ty, 12, w, h), 0x1000, T3_TW], w, h, 1, 1, &mem)),
+                    "{ty} {w}x{h}"
+                );
+            }
+            for st in [
+                [T0_REP | 1 << 12, t1(ty, 12, 8, 8), 0x1000, T3_TW],
+                [T0_REP, t1(ty, 13, 8, 8), 0x1000, T3_TW],
+                [T0_REP, t1(ty, 12, 8, 8), 0x1000, T3_TW | 2 << 16],
+                [T0_REP | 1 << 6, t1(ty, 12, 8, 8), 0x1000, T3_TW],
+            ] {
+                assert!(is_open(texel(st, 8, 8, 1, 1, &mem)), "{st:08x?}");
+            }
+        }
+        // type 4's stride of 32 is fitted only (E725), type 5 not run
+        for ty in [4, 5] {
+            assert!(is_open(texel([T0_REP, t1(ty, 12, 8, 8), 0x1000, T3_TW], 8, 8, 1, 1, &mem)), "type {ty}");
+        }
     }
 }
