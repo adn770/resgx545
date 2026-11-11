@@ -224,9 +224,11 @@ to 512 x 256), 0x20008 (512 x 384) and 0x2000a (640 x 480) (6 of 6 jobs, E507); 
 check, a plain 64 x 64 triangle, failed after each of the last three in a row and stopped it (five
 `SGX recovery failed: -110` kernel lines in the run). The faults are our kernel's layout, not the
 hardware's: it held one array of region headers where the TA writes four at `CR_TE_AA` 0xe0000000
-(E788); with four the render completes at every size run up to 1024 x 768 (E824). The health
-triangles that fail after a failed 4x job and the kernel's default stay open (Q140, a kernel
-question).
+(E788); with four the render completes at every size run up to 1024 x 768 (E824). The kernel now
+gives four to a context made with `DRM_SGXFIVE_CTX_RENDER_AA_4X` and refuses a 4x job on any other
+unless debugfs forced its count (E828). The health triangles that fail after a failed 4x job stay
+open (Q140, a kernel question); a 4x render at 4096 x 4096 on four arrays faulted at the parameter
+buffer's base (E828, Q292).
 
 ### 5.6 Unit names
 

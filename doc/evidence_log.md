@@ -6049,6 +6049,23 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   `render-closing-r3k-regress:out/20261110-222647/score-rg-pb.txt`,
   `render-closing-r3k-regress:out/20261110-222647/gate-rg-pb.txt`.*
 
+### 2026-11-11
+
+- `E828` R3-rgn4 (the laptop check of the linux fork's 4x render contexts, fork resgx545 a2788bd8,
+  module srcversion 99CD90DA): at render_rgn_arrays 0 (automatic) a 288 x 144 job at CR_TE_AA
+  0xe0000000, mode 2, on a context made with DRM_SGXFIVE_CTX_RENDER_AA_4X completed with 0 of 41472
+  pixels wrong, hash 0x4a61860dcb4ab325, TA data 0x8000 bytes, its target and both dumps equal to
+  E824's h1; the same job on a context made without the flag was refused with EINVAL at submission;
+  at render_rgn_arrays 1 the job faulted as in E729 (BIF_INT_STAT 0x90004, BIF_FAULT 0x20006061,
+  recovery held; then one health triangle failed before one passed), and E827's row
+  ctl-a1-256x160-tee0 reproduced byte for byte (hash 0x845a011c4fbf2325, 0 of 40960 wrong, TA data
+  0x6000 bytes, sha256 eaa6c96c...4372992); the 1x control reproduced E827's ctl-u-1024-n1; a 4096 x
+  4096 context with the flag was created and its 4x job faulted (BIF_INT_STAT 0x90100, BIF_FAULT
+  0x10000011) with 1048576 of 16777216 pixels right, the first wrong at (1024, 0), no dump written,
+  health ok 3 of 3 after.
+  *ta; HW, infer; data: `render-closing-r3-rgn4:out/rgn4/`,
+  `render-closing-r3-rgn4:rgn4-REPORT.md`.*
+
 ## By unit
 
 ### bif
@@ -6117,7 +6134,7 @@ E448, E449, E451, E458, E462, E732, E770.
 Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180, E181, E247, E257,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
 E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763, E776, E777,
-E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824.
+E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828.
 
 ### texture
 

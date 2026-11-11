@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-181 open: 167 hw (high 20, medium 76, low 71, unrated 0), 10 fw, 4 kernel.
+182 open: 168 hw (high 20, medium 77, low 71, unrated 0), 10 fw, 4 kernel.
 
 ## Work queue: hardware
 
@@ -26,6 +26,7 @@
 - `Q210` (phase 11, hw, high): what does the DPM compare with the limit C that decides whether the first abort's threshold is raised by 0x20 (E774: raised iff thr0 + 0x20 <= C = 0x371 at 4096x4096, 1350 and 1500 vertices; E786: the limit is on the threshold the TA runs, not on the knob P; E785 and E799: C = 0x102 at 2048x2048; E801: 0x1d2 at 4096x2048, 0x1d6 at 2048x4096 and 0x208 at 3072x3072; E800: the target sets it, not the context; E802: another scene raises above 0x102 at 2048x2048; wd-glist-1500's missing raise at P of 0x422 and above is the clamp of thr0 at 0x400, E753), why is the raise 0x20, and what makes C differ between the targets and the scenes (no law in the target's size fits, E801) (E310, E312, E464, E625, E627, E629, E704, E734, E753, E774, E779, E785, E786, E799, E800, E801, E802)
 - `Q211` (phase 11, hw, high): what are the constant k and the spacing s of the partial-render count of a scene of page need U (E625's 1 + floor((U + k - thr0) / (thr0 + s)) with k from 2 to 13 is refuted at U = 287, E779), and does the page need U of HU1 (E773: exact for 15 held-out scenes made of the tool's triangle) hold for wide scenes of many vertices and other shapes (E630)? (E310, E625, E630, E705, E735, E773, E779)
 - `Q273` (phase 11, hw, high): what steps dword 36 of the TA/3D control block with the vertex count and with P (E753: 1, 1, 3, 2, 3 and 3 at 1500 vertices over P = 0x320 to 0x3c0; 2 at 1350 and 3 at 1380 vertices at P = 0x3e0; it read 3 in all 14 raised jobs of E775 and 1 or 2 in the unraised), now that the raise of the TA's threshold follows a limit C = 0x371 on thr0 + 0x20 for 1350 and 1500 vertices alike (E774) and the count of CR_DPM_GLOBAL_PAGE_STATUS at the first abort less 2 has failed (E775) (E704, E625, E630, E734, E753, E774, E775, E790, E803)
+- `Q292` (phase 11, hw, medium): why does a 4x render at 4096 x 4096 on a context made for 4x targets (four region-header arrays) fault at the parameter buffer's base (BIF_INT_STAT 0x90100, BIF_FAULT 0x10000011) with 1048576 of 16777216 pixels right, and at what target size between 1024 x 768 and 4096 x 4096 does a 4x render on four arrays start to fault (E828, E824)
 
 ### edm
 
@@ -261,7 +262,7 @@
 
 #### ta
 
-- `Q140` (phase 11, kernel): why does our stack's 4x render fault the job (BIF fault at pages 0x20006, 0x20008, 0x2000a) at 320 x 160 and above while 256 x 128 and 192 x 96 complete, and what size does the kernel allocate for a multisampled target (E507, E729, E788, E824)
+- `Q140` (phase 11, kernel): what makes the health triangles after a failed 4x job fault before one passes (two after each 4x fault of K2, one after R3-rgn4's j2, none after its 4096 x 4096 fault), now that our 4x faults are known as the kernel's one array of region headers and a context made for 4x targets gets four (E507, E729, E788, E824, E828)
 
 #### usse
 

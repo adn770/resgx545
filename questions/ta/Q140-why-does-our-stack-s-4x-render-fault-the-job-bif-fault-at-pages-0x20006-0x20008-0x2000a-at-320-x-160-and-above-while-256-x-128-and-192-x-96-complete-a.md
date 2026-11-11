@@ -1,10 +1,10 @@
 +++
 id = "Q140"
-question = "why does our stack's 4x render fault the job (BIF fault at pages 0x20006, 0x20008, 0x2000a) at 320 x 160 and above while 256 x 128 and 192 x 96 complete, and what size does the kernel allocate for a multisampled target"
+question = "what makes the health triangles after a failed 4x job fault before one passes (two after each 4x fault of K2, one after R3-rgn4's j2, none after its 4096 x 4096 fault), now that our 4x faults are known as the kernel's one array of region headers and a context made for 4x targets gets four"
 unit = "ta"
 kind = "kernel"
 phase = 11
-evidence = ["E507", "E729", "E788", "E824"]
+evidence = ["E507", "E729", "E788", "E824", "E828"]
 terms = ["CR_TE_AA", "CR_ISP_MSAA"]
 +++
 
@@ -49,3 +49,17 @@ the TA data sizes the model gave (0x8000 to 0x1e000); 288 x 144 at one array fau
 the kernel's default (four arrays; 4096 x 4096 needs 0x223000 bytes, over the 2 MiB TA-data slot)
 and the health triangles after a failed 4x job (two failed, then a pass, after both 4x faults of
 K2).
+
+Narrowed 2026-11-11 (R3-rgn4, E828; not retired). The question was "why does our stack's 4x
+render fault the job (BIF fault at pages 0x20006, 0x20008, 0x2000a) at 320 x 160 and above while
+256 x 128 and 192 x 96 complete, and what size does the kernel allocate for a multisampled
+target". Both parts are answered: the fault is the kernel's single array of region headers (E788,
+E824), and the fork's commits 11 and 12 (the 4 MiB TA-data slot and the context flag
+`DRM_SGXFIVE_CTX_RENDER_AA_4X`) allocate four arrays for a context made with the flag, while a 4x
+job on a context made without it is refused at submission. E828 ran it: 288 x 144 with the flag
+completed with 0 of 41472 wrong and the dumps of E824's h1; without the flag the job was refused
+with EINVAL; with `render_rgn_arrays` forced to 1 E729's fault came back (BIF_INT_STAT 0x90004,
+BIF_FAULT 0x20006061) and E827's 4x row `ctl-a1-256x160-tee0` reproduced byte for byte. The
+4096 x 4096 context is created but its 4x job faulted at the parameter buffer's base; that is
+Q292, with the size where 4x starts to fault. Open here: the health triangles after a failed 4x
+job, now seen as two, one or none failing before a pass.
