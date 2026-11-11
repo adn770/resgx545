@@ -121,8 +121,9 @@ code (file:line at the commit the file names): `pass` (copied unchanged), `valid
 value that breaks the rule fails the submission with `-EINVAL`, nothing runs), `mask` (only
 some bits reach the firmware) or `override` (the kernel writes its own value), and where it
 lands in the firmware command the kernel builds (`tq:N`, `ta:N`, `rd:N`, the kernel-poke
-spaces below). Today 54 words pass and 14 are validated (`xfer:4, 6, 9, 15, 16, 17`, `cmd:0,
-2-5, 9, 15, 18`); none is masked or overridden.
+spaces below). Today 53 words pass and 15 are validated (`xfer:4, 6, 9, 15, 16, 17`, `cmd:0-5,
+9, 15, 18`); none is masked or overridden. `cmd:1` (TE_AA) became validated with the fork's
+4x render contexts: a multisampled value on a context made without them fails.
 
 On a word that is not `pass`, the report tags each listed case `[never reached the GPU]`
 (rejected, overridden, or a flip only of masked-off bits) or `[reached]`, and ends the line

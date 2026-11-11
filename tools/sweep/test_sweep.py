@@ -7,12 +7,14 @@ file standing in for /dev/mem."""
 from __future__ import annotations
 
 import collections
+import os
 import pathlib
 import re
 import shutil
 import struct
 import subprocess
 import textwrap
+import tomllib
 
 import pytest
 
@@ -384,13 +386,14 @@ def test_report_marks_unstable_repeats(tmp_path):
 # ---- what the kernel does with each word (kernel_masks.toml) ----------------------------
 
 VALIDATED = ["xfer:4", "xfer:6", "xfer:9", "xfer:15", "xfer:16", "xfer:17",
-             "cmd:0", "cmd:2", "cmd:3", "cmd:4", "cmd:5", "cmd:9", "cmd:15", "cmd:18"]
+             "cmd:0", "cmd:1", "cmd:2", "cmd:3", "cmd:4", "cmd:5", "cmd:9", "cmd:15", "cmd:18"]
+FORK_PIN = "a2788bd86537"       # the linux fork's resgx545 branch the refs are read at
 
 
 def test_kernel_masks_cover_both_commands():
     m = sweep.load_masks()
     assert set(m) == {f"xfer:{i}" for i in range(42)} | {f"cmd:{i}" for i in range(26)}
-    assert collections.Counter(w.action for w in m.values()) == {"pass": 54, "validate": 14}
+    assert collections.Counter(w.action for w in m.values()) == {"pass": 53, "validate": 15}
     assert [k for k, w in m.items() if w.action == "validate"] == VALIDATED
     assert m["xfer:17"].lands == ["tq:98", "tq:99", "tq:100"] and m["xfer:17"].mask == 7
     assert m["xfer:16"].lands == ["tq:16"] and m["xfer:18"].lands == ["tq:17"]
@@ -401,6 +404,38 @@ def test_kernel_masks_cover_both_commands():
     lands = [x for w in m.values() for x in w.lands]
     assert len(lands) == len(set(lands))        # no two words land on the same word
     assert all(re.fullmatch(r"[a-z_]+\.c:\d+", w.ref) for w in m.values())
+
+
+def test_kernel_masks_te_aa_is_validated_at_the_pinned_fork():
+    # The fork's commit 12 refuses a multisampled TE_AA (bits 31:30) on a render context
+    # made without DRM_SGXFIVE_CTX_RENDER_AA_4X, unless debugfs forces the arrays.
+    assert FORK_PIN in tomllib.loads(sweep.MASKS.read_text())["fork"]
+    w = sweep.load_masks()["cmd:1"]
+    assert (w.action, w.lands, w.ref) == ("validate", ["ta:142"], "sgxfive_cmd.c:133")
+    assert "31:30" in w.note and "RENDER_AA_4X" in w.note and "render_rgn_arrays" in w.note
+
+
+def test_kernel_masks_refs_are_lines_of_the_pinned_fork():
+    linux = pathlib.Path(os.environ.get("RESGX545_LINUX", sweep.ROOT.parent / "linux"))
+    if not (linux / ".git").exists():
+        pytest.skip(f"SKIPPED, NOT PASSED: no fork checkout at {linux} (RESGX545_LINUX)")
+    texts = {}
+    for name, w in sweep.load_masks().items():
+        f, n = w.ref.split(":")
+        if f not in texts:
+            texts[f] = subprocess.run(
+                ["git", "-C", str(linux), "show",
+                 f"{FORK_PIN}:drivers/gpu/drm/gma500/sgxfive/{f}"],
+                capture_output=True, text=True, check=True).stdout.splitlines()
+        assert int(n) <= len(texts[f]), (name, w.ref)
+    # a sample of the render words, each on the line that handles it
+    m = sweep.load_masks()
+    line = lambda k: texts[m[k].ref.split(":")[0]][int(m[k].ref.split(":")[1]) - 1]
+    assert "te_aa" in line("cmd:1") and "te_aa" not in line("cmd:6")
+    assert "c->mte_ctrl" in line("cmd:6") and "c->isp_bgobj" in line("cmd:15")
+    assert "c->aa_mode_3d" in line("cmd:13") and "c->bgobj_words" in line("cmd:23")
+    assert "vdm_ctrl_stream_base" in line("cmd:0")
+    assert "event_pixel_pds_exec" in line("cmd:18")
 
 
 @pytest.mark.parametrize("bad", [

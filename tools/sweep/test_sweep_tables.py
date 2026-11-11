@@ -56,13 +56,20 @@ def test_sweeps_are_named_after_their_table():
         assert s.name == name
 
 
-def _landings(action):
-    """The kernel words the user words of `action` land in, as {(host, space): {index}}."""
+# Validated words the command-word sweeps still carry to the GPU, swept there: TE_AA became
+# validated (bits 31:30, the fork's 4x render contexts) after the campaign that swept it as a
+# passed word; every other bit still passes on a 1x context.
+USER_SWEPT = {"cmd:1"}
+
+
+def _landings(action, also=frozenset()):
+    """The kernel words the user words of `action` (and the words `also`) land in, as
+    {(host, space): {index}}."""
     m = tomllib.loads((sweep.HERE / "kernel_masks.toml").read_text())
     hosts = {"xfer": ("fill", "copy"), "cmd": ("tri",)}
     out: dict = {}
     for w in m["word"]:
-        if w["action"] != action:
+        if w["action"] != action and w["word"] not in also:
             continue
         for land in w["lands"]:
             space, n = land.split(":")
@@ -85,7 +92,9 @@ def _kernel_cover(addr):
 def test_tables_cover_every_kernel_word_and_register():
     """Every kernel word is swept once: by the data sweeps, the address sweeps, or, when
     userspace passes it through unchanged, by the command-word sweeps."""
-    data, addr, passed = _kernel_cover(False), _kernel_cover(True), _landings("pass")
+    data, addr = _kernel_cover(False), _kernel_cover(True)
+    passed = _landings("pass", USER_SWEPT)
+    assert all(sweep.load_masks()[w].action == "validate" for w in USER_SWEPT)
     for host, space in (("tri", "ta"), ("tri", "rd"), ("fill", "tq"), ("copy", "tq")):
         d, a = data.get((host, space), set()), addr.get((host, space), set())
         assert not d & a, (host, space)
