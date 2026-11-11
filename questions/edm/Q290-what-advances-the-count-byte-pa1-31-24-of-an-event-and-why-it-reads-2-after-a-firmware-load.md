@@ -5,7 +5,7 @@ unit = "edm"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E746", "E747", "E768", "E794"]
+evidence = ["E746", "E747", "E768", "E794", "E819"]
 terms = ["Event Data Master (EDM)"]
 +++
 Split off 2026-11-10 from the questions on bits 24 and 25 of pa1 (answered by E746, which read them as
@@ -59,3 +59,12 @@ oddity only in part: the pre-bump value is the value when the event is formed, n
 served; why the latch falls before the bump is still not shown, and H-KW against H-HWC is not
 separated either (the kernel bumped the word before each of these writes). The simulator already
 queues each kick as its own event with its count (a test pins it).
+
+Narrowed 2026-11-10 (K1 stage kb, E819; not retired). H-KW is refuted: with the kicker word written
+to 0x42 (3 jobs) the count byte of the ticks after the write stayed 2. A kick sent without the bump
+(`kick_no_bump`) was not answered by the firmware in 3 of 3 (ccbctl write offset 3, read offset 2,
+kicks counter +1, word unchanged, ticks kept), which failed the design's control. The rows that
+separate H-LATCH from H-HWC could not be read (the 16-rung ring was full before the Q2 kick, Q3 has
+no kick entry); post hoc the ticks after Q3's unbumped kick carry 2, which does not fit H-HWC
+[infer]. Open: H-LATCH against a count of consumed commands, why a kick without the bump is not
+read.

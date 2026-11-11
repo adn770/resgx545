@@ -75,7 +75,7 @@ RETIRED: dict[str, str] = {
     "Q278": "decided in doc/specs/3d.md", "Q005": "answered by E402",
     "Q147": "folded into Q132", "Q144": "folded into Q133", "Q270": "folded into Q163",
     "Q138": "folded into Q089", "Q150": "folded into Q137", "Q151": "folded into Q137",
-    "Q037": "answered by E422",
+    "Q037": "answered by E422", "Q198": "decided in HACKING.md",
 }
 NAME = re.compile(r"Q\d{3}-[a-z0-9]+(-[a-z0-9]+)*\.md")
 REF = re.compile(r"\bQ\d{3}\b")

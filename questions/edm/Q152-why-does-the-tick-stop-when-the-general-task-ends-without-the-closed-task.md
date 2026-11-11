@@ -1,11 +1,12 @@
 +++
 id = "Q152"
-question = "what does the EDM need at the end of a pass so that the next event is delivered and the 1 kHz tick continues (E793, E813: a pass that our task ends with `nop.end`, a tick pass or a kick pass, stops the tick; a tick pass handed to the closed task of slot 2, its fast path and the shared exit, keeps it, 42 of 42), which bits of the event word in sa65 stop it (E814: the count byte with bit 8 stops it with E537's two marks, E537's word without bit 8 stops it without them, its bits 4, 7 and 10 not tried alone; E812: the count byte 0xb0 and bits 2, 3, 6, 14 to 16, 19 and 23 keep it), and does the closed task's path depend on the tick bit of sa64 alone (from Q124; E792, E812: with it clear pclink is left at 6, dword 12 does not advance and the tick is kept)"
+question = "which bits of the event word in sa65 stop the 1 kHz tick (E814: the count byte with bit 8 stops it with E537's two marks, E537's word without bit 8 stops it without them, its bits 4, 7 and 10 not tried alone; E812: the count byte 0xb0 and bits 2, 3, 6, 14 to 16, 19 and 23 keep it), and does the closed task's path depend on the tick bit of sa64 alone (from Q124; E792, E812: with it clear pclink is left at 6, dword 12 does not advance and the tick is kept)"
 unit = "edm"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E533", "E155", "E536", "E537", "E791", "E792", "E793", "E811", "E812", "E813", "E814"]
+evidence = ["E533", "E155", "E536", "E537", "E791", "E792", "E793", "E811", "E812", "E813", "E814",
+            "E817", "E818"]
 terms = ["Event Data Master (EDM)", "CR_EVENT_TIMER"]
 +++
 
@@ -179,3 +180,14 @@ Open: whether the shared exit's five instructions alone are what the EDM needs (
 kernel batch), the path by which bits 4, 7 or 10 of E537's word stop it, whether the closed task's
 path depends on the tick bit alone (no sa64 word but 0, 2 and pa0 & ~2 run), and E537's own word
 0xb009c5dc (not run again).
+
+Narrowed 2026-11-10 (K1 stages f and t, E817, E818; not retired). End of a pass, held out: a plain
+tick pass ending with our own `idf, wdf, phas ... end, nop.end` kept the tick (FPH 2 of 2), as did
+the exact exit replica with `cfi.global` (FB 2 of 2) and the tail call to the closed exit (cont4,
+FC4 2 of 2); the same pass with `cfi.global` and no `phas` stopped it (FCF, 1 job, E537's busy
+signature, not replicated). Frozen verdict H-PHAS; H-ANY, H-BOTH, H-CFI, H-PLACE and H-BEFORE
+refuted. The `EVENT_TIMER` store of the tick handler (0x01061a80) before the closed task kept the
+tick (T1 2 of 2, next gap 25114, not 25000) and before our own end did not (T2, 1 stop): H-NOTIMER.
+Open: whether FCF's stop repeats, whether a kick pass needs the same phase end, the path by which
+bits 4, 7 or 10 of E537's word stop it, whether the closed task's path depends on the tick bit
+alone.

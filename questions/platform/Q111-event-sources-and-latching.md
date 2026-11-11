@@ -5,8 +5,8 @@ unit = "platform"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E006", "E154", "E155", "E357", "E431", "E435", "E444", "E547", "E548", "E747",
-            "E764", "E765", "E766"]
+evidence = ["E006", "E154", "E155", "E357", "E431", "E435", "E444", "E547", "E548", "E747", "E764",
+            "E765", "E766", "E823"]
 terms = ["CR_EVENT_STATUS", "CR_EVENT_STATUS2", "CR_EVENT_HOST_CLEAR", "CR_EVENT_HOST_ENABLE"]
 +++
 
@@ -87,3 +87,11 @@ E766), so for these jobs the order of the bits is the fault word first and the b
 later; the EDM's write fault sets none (E444). In the background-fetch job the TA's end shows first
 (bit 26, then SW_EVENT with bit 31, cleared 12 us later by the kernel's handler) and the fault 31
 us after that (E764, [infer]).
+
+Narrowed 2026-11-10 (K1 stage e3b, E823; not retired). With our task skipping the slot-3
+end-of-render pass once, the fill never completed, the tick stopped (E537's signature, 1 job) and
+`CR_EVENT_STATUS` bit 18 stayed set from 7.3 ms to the end of the 50 ms watch (8 of 9 reads; the
+first read preceded the render's end; the frozen scorer therefore says 'mixed': post hoc), cleared
+by a host write of bit 18 and not by one of bit 15: with no acknowledgement the bit is a level, so
+the 4 to 6 microseconds of E547 are the firmware's acknowledgement [infer, one job]. Open: the other
+bits' pulse or level, the firmware route (B2 not run), the order of bits.

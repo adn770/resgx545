@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E366", "E380", "E484", "E496", "E748"]
+evidence = ["E366", "E380", "E484", "E496", "E748", "E820"]
 terms = []
 +++
 
@@ -66,3 +66,10 @@ Not shown: the direction pa to sa (a mov to pa_n of an EDM task is refused by th
 whether it is lost as in a fill is unmeasured), pa5 and above, and an event that is not a tick. The
 question stays open for the fill (why a mov to pa_n is lost there) and for the write direction in an
 EDM task.
+
+Narrowed 2026-11-10 (K1 stage e2b, E820; not retired). Write direction in an EDM task (first run of
+a `mov` to pa2 to pa4): pa3 aliases sa67 (a marker read back through both in the same pass and the
+next, 3 of 3), pa2 aliases sa66 in the same pass (3 of 3) and the next pass finds the old value, a
+`mov` to pa4 is lost (neither pa4 nor sa68 changed, same pass and next, 3 of 3); neighbours
+unchanged. So no single rule for pa2 to pa4. Open: the fill's lost `mov` to pa_n (this question's
+own case), why pa4 differs from pa3, pa5 and above, an event that is not a tick.

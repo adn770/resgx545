@@ -5,9 +5,9 @@ unit = "transfer"
 kind = "hw"
 value = "medium"
 phase = 4
-evidence = ["E021", "E024", "E317", "E318", "E319", "E320", "E354", "E355", "E357", "E444",
-            "E203", "E313", "E362", "E363", "E395", "E457", "E476", "E573", "E631", "E722", "E729",
-            "E764", "E765", "E766", "E767", "E789"]
+evidence = ["E021", "E024", "E317", "E318", "E319", "E320", "E354", "E355", "E357", "E444", "E203",
+            "E313", "E362", "E363", "E395", "E457", "E476", "E573", "E631", "E722", "E729", "E764",
+            "E765", "E766", "E767", "E789", "E826"]
 terms = ["CR_BIF_FAULT", "CR_BIF_INT_STAT", "misc_info"]
 +++
 
@@ -155,3 +155,13 @@ bit 7 a TA fault leaves (the frozen HE, extra bits none; HF refuted), a control 
 fetch and a transfer's write (E765, E766): none of the three leaves a bit of its own. Still not
 answered: the 3D's own stores, the ZLS, the type-1 transfer fault (0x90020), which requestor each
 bit names (the names above rest on the address alone), and what clears a latched fault (E767).
+
+Narrowed 2026-11-10 (K2 stage k-bif, E826; not retired; frozen verdict cannot tell, 4 of 4 held rows
+OTHER, n0 passed). On held faults of three requesters (TA read twice, TA write, texture fetch) a
+write of the fault's set bits to `CR_BIF_INT_STAT` changed nothing (4 of 4); setting `CR_BIF_CTRL`
+bit 4 made the registers read clear at the kernel's read after the write (4 of 4) and, in the
+runner's later snapshots, both clear in 2 rows and one of them clear in 2; clearing the bit again
+brought both back (4 of 4); the registers stayed latched through a 2.5 s watch and the reset cleared
+them (both reset lines 0x80000 and 0, E767's lead held). So no hypothesis fits (H-W1C, H-CLR, H-RST
+each contradicted by one reading). Open: whether a clear lasts with the requester no longer stalled,
+the order inside the reset, the 3D's own and ZLS faults, the type-1 transfer fault.

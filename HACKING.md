@@ -182,6 +182,14 @@ lets a reviewer check that they stay clean-room; each check is a test.
      kernel's KUnit run the same crafted blobs and compare the reason of each refusal, and
      `test_host_verifier.py` runs the kernel's verifier on the host against the tool's over every
      single-bit change of several blobs and random words of the canonical forms.
+  5. *The `str` allow list.* `tools/fwtask/regs.toml` names the registers a task may store to:
+     0x0814 and 0x0a78, plain storage (phase 11.29), and since round 3 of the closing pass
+     (2026-11-10, the user's decisions R3-K1 and R3-K10) `CR_EVENT_HOST_CLEAR2` (0x0114),
+     `CR_EVENT_HOST_CLEAR` (0x0134) and `CR_EVENT_TIMER` (0x0acc), each for `str` only, never
+     `ldr`. Every other register whose write has an effect, and every clock-gate register, stays
+     refused. This decides Q198 (whether the list would take a register whose write has an
+     effect): the user widened it to these three, and the runs that stored to them are E818 and
+     E822; the str-then-ldr test while a job runs that Q198 named was not run.
 - **What the author ran.** `pytest tools/fwtask` with both data repositories and a fork checkout
   present: every test passes, including those of `test_overlay.py` (the model, the host build on
   the real firmware and the source scan) and the ones that compare the vectors of resgx545-data

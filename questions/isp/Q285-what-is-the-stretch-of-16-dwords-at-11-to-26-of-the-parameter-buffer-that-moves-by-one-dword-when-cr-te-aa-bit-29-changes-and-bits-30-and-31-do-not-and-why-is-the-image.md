@@ -5,7 +5,7 @@ unit = "isp"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E728", "E415", "E281"]
+evidence = ["E728", "E415", "E281", "E825", "E827"]
 terms = ["CR_TE_AA"]
 +++
 E728: TE 0x40 and TE 0x60 (bit 29 alone) give identical TA data and a parameter buffer identical
@@ -32,3 +32,7 @@ word is at dword 11. The cause stays open: it is either a dword the ISP expects 
 bit 29 is clear (a zero, so nothing is drawn) or an ISP that reads the old layout and takes the
 zero as its format word; the dumps do not separate them, and separating them needs the dword
 changed between the TA and the 3D, which no host path does. The cause may be parked under Q030.
+
+Note 2026-11-10 (K2 stage k-pb0, E825): the three controls were frozen from a one-render job and the
+stage ran two renders (job shape, shown by the regression session); the TE 0x40 image and stretch
+reproduced, the TE 0x60 twin drew; k-pb (the pokes) did not run.

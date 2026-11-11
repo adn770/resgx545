@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-182 open: 167 hw (high 20, medium 76, low 71, unrated 0), 11 fw, 4 kernel.
+181 open: 167 hw (high 20, medium 76, low 71, unrated 0), 10 fw, 4 kernel.
 
 ## Work queue: hardware
 
@@ -33,12 +33,12 @@
 - `Q033` (phase 10, hw, low): which hardware event sets bit 19 of the event word pa1 that the hardware hands a PDS event program, if any (none of the 138 job events of 14 jobs in E747 carried it, nor any of 8 4096x4096 jobs of E771 whether the TA's threshold was raised or not, with no rise of status bit 3 in the sampled timeline) (E155, E146, E154, E532, E538, E746, E747, E771)
 - `Q082` (phase 11, hw, medium): what do CR_EVENT_STATUS2 bits 6 and 7 mean, bit 6 set while a job hangs in its pixel task and bit 7 while a TA job hangs or faults? (E317, E318, E319, E357, E431, E764, E765, E766, E769, E770, E784, E804, E805, E806, E807)
 - `Q096` (phase 11, hw, low): does the sampler cache erratum of host bridge revisions below 4 show when a texture and other data have addresses that differ only above bit 28? (E002, E011, E013, E033, E035, E041, E114, E432)
-- `Q152` (phase 11, hw, medium): what does the EDM need at the end of a pass so that the next event is delivered and the 1 kHz tick continues (E793, E813: a pass that our task ends with `nop.end`, a tick pass or a kick pass, stops the tick; a tick pass handed to the closed task of slot 2, its fast path and the shared exit, keeps it, 42 of 42), which bits of the event word in sa65 stop it (E814: the count byte with bit 8 stops it with E537's two marks, E537's word without bit 8 stops it without them, its bits 4, 7 and 10 not tried alone; E812: the count byte 0xb0 and bits 2, 3, 6, 14 to 16, 19 and 23 keep it), and does the closed task's path depend on the tick bit of sa64 alone (from Q124; E792, E812: with it clear pclink is left at 6, dword 12 does not advance and the tick is kept) (E533, E155, E536, E537, E791, E792, E793, E811, E812, E813, E814)
+- `Q152` (phase 11, hw, medium): which bits of the event word in sa65 stop the 1 kHz tick (E814: the count byte with bit 8 stops it with E537's two marks, E537's word without bit 8 stops it without them, its bits 4, 7 and 10 not tried alone; E812: the count byte 0xb0 and bits 2, 3, 6, 14 to 16, 19 and 23 keep it), and does the closed task's path depend on the tick bit of sa64 alone (from Q124; E792, E812: with it clear pclink is left at 6, dword 12 does not advance and the tick is kept) (E533, E155, E536, E537, E791, E792, E793, E811, E812, E813, E814, E817, E818)
 - `Q158` (phase 11, hw, low): which sa, i and temporaries of a firmware task keep their value across a debugfs reset and across a firmware reload and boot (E536's controls read i0, i1, sa100 and sa127 as the writer of phase 11.29 left them 15 minutes and a reset and a reload earlier, and sa20, sa24, sa64, r20 and r21 not) (E536, E537, E809, E810)
 - `Q168` (phase 11, hw, low): what limits the temporaries of a firmware task above TRC 48 (E540 predicted a hang for 49 and 64; E550 armed 32 to 48 with trc_hazard=1 and read r123 back in 10 of 10), and can a register above r123 (up to the 4T - 1 of the allocation) be reached, through an indirect or banked access, so that the top of a large allocation can be tested (E540, E550)
 - `Q194` (phase 11, hw, low): does a load that is not waited for land by itself in a firmware (EDM) task, at what distance, and is that a property of the task, of the bypass flag or of the page (E602: the new value in 32 of 32 stores after 32 loads with no wdf, 3 of 3 jobs; E517: a fill's load landed after 40, 100 and 128 nops and not after 48 and 64) (E517, E602)
 - `Q196` (phase 11, hw, low): do the client results of 11.36 for the compare and the high word of ima32 (E595, E597), the predicated register moves and ba (E596) and the narrow memory forms (E598, E599) hold in a firmware (EDM) task (E595, E596, E597, E598, E599, E601)
-- `Q290` (phase 11, hw, low): does the hardware count the writes to CR_EVENT_KICK or read the kernel's kicker word for the count byte pa1 bits 31:24 that every event handed to an EDM task carries (E768: it equalled the GETMISCINFO commands since the load mod 256 in 15 of 15 jobs, the two readings agreeing whenever the kernel bumps the word before each write), and why does a kick's own entry carry the value from before its bump (E746, E747, E768, E794)
+- `Q290` (phase 11, hw, low): does the hardware count the writes to CR_EVENT_KICK or read the kernel's kicker word for the count byte pa1 bits 31:24 that every event handed to an EDM task carries (E768: it equalled the GETMISCINFO commands since the load mod 256 in 15 of 15 jobs, the two readings agreeing whenever the kernel bumps the word before each write), and why does a kick's own entry carry the value from before its bump (E746, E747, E768, E794, E819)
 
 ### isp
 
@@ -62,7 +62,7 @@
 - `Q260` (phase 11, hw, high): which rounding of a vertex coordinate to 1/256 pixel, and which other step of the ISP's setup, reproduces its coverage when a coordinate is negative with a fraction finer than 1/256 (E683: half up is wrong in 288 pixels of 149 cases, half away from zero in 101 pixels of 67 cases, no variant of eight is exact, also when applied to the vertex as the float32 clip words give it), and does the sign act on the coordinate or on a tile-relative offset (E683, E607, E606, E680, E681)
 - `Q261` (phase 11, hw, medium): how large is the error band of the ISP's edge evaluation (E684: 16 pixels in 14 of 208 cases within 5.6e-4 pixel of an edge line) as a function of the far vertex's distance and the edge's length, and where does the vertex format saturate, wrap or cull beyond 2^21 pixels (the 24.8 range of 2^23 pixels, Q199) (E684, E682)
 - `Q262` (phase 11, hw, medium): do the depth and iteration tolerances of E606 (3 U for depth at a gradient below 0.03, 4 U for the iterated clip z, in units of 2^-23) hold on the targets of E680 (up to 4096 x 4096, half-sizes not powers of two) and for a depth plane through vertices outside the target (E606, E607, E680, E684)
-- `Q285` (phase 11, hw, medium): what is the stretch of 16 dwords at 11 to 26 of the parameter buffer that moves by one dword when CR_TE_AA bit 29 changes and bits 30 and 31 do not, and why is the image empty without bit 29 (E728, E415, E281)
+- `Q285` (phase 11, hw, medium): what is the stretch of 16 dwords at 11 to 26 of the parameter buffer that moves by one dword when CR_TE_AA bit 29 changes and bits 30 and 31 do not, and why is the image empty without bit 29 (E728, E415, E281, E825, E827)
 - `Q288` (phase 11, hw, medium): what rule gives the stored depth of a plane with a non-dyadic gradient in x (class b and c of E731) when the tile-corner value T by rounding, truncation or a walk of RN(32 A) fits 0 of 58 tiles of dp-bx-b0 and no single T fits any tile of dp-bx-b2 and dp-by-b2 (E731, E606, E740)
 
 ### mte
@@ -104,7 +104,7 @@
 
 - `Q001` (phase 3, hw, medium): what do 0x0810, 0x0814 and 0x0818, set once by the init script to 0x1, 0xffff and 0x7ff, control? (E006, E010, E122, E401, E403, E404, E405)
 - `Q075` (phase 11, hw, low): what does each HWPerf counter the firmware records (0x0044-0x0064, 0x0e84-0x0e90 and 0x0eb4-0x0ec0) count, and how does the group in CR_HWPERF_CTRL select them? (E149, E150, E152, E359, E434)
-- `Q111` (phase 11, hw, high): which hardware event sets which bit of CR_EVENT_STATUS and CR_EVENT_STATUS2 in an ordinary TA, 3D, DPM or transfer job, how long does each stay set, and what does a write to CR_EVENT_HOST_CLEAR do to it? (E006, E154, E155, E357, E431, E435, E444, E547, E548, E747, E764, E765, E766)
+- `Q111` (phase 11, hw, high): which hardware event sets which bit of CR_EVENT_STATUS and CR_EVENT_STATUS2 in an ordinary TA, 3D, DPM or transfer job, how long does each stay set, and what does a write to CR_EVENT_HOST_CLEAR do to it? (E006, E154, E155, E357, E431, E435, E444, E547, E548, E747, E764, E765, E766, E823)
 
 ### render
 
@@ -155,7 +155,7 @@
 
 ### transfer
 
-- `Q003` (phase 4, hw, medium): which event (if any) does a bus-interface fault raise, and what do the fault-request bits of CR_BIF_INT_STAT name, and what clears a latched fault in CR_BIF_INT_STAT and CR_BIF_FAULT while leaving the bus usable? (E021, E024, E317, E318, E319, E320, E354, E355, E357, E444, E203, E313, E362, E363, E395, E457, E476, E573, E631, E722, E729, E764, E765, E766, E767, E789)
+- `Q003` (phase 4, hw, medium): which event (if any) does a bus-interface fault raise, and what do the fault-request bits of CR_BIF_INT_STAT name, and what clears a latched fault in CR_BIF_INT_STAT and CR_BIF_FAULT while leaving the bus usable? (E021, E024, E317, E318, E319, E320, E354, E355, E357, E444, E203, E313, E362, E363, E395, E457, E476, E573, E631, E722, E729, E764, E765, E766, E767, E789, E826)
 - `Q011` (phase 6, hw, medium): why does a copy whose background-object tag (transfer word 0) is wrong read one texel, the source's last, for every pixel, and what stores the samples of CR_ISP_MSAA mode 2 in a copy? (E028, E272, E398)
 - `Q206` (phase 12, hw, medium): what do the words of a transfer job that no record explains do: the 17 register words of the command beyond the render box (words 12 and 13) and the alpha-inversion bit, the words of the tasks the programs start, and the values the builder writes? (E004, E019, E020, E265, E272, E043, E044, E126, E620)
 - `Q289` (phase 12, hw, medium): which tile does the end-of-tile task's DOUTU1 x field (bits 11:3) and y field (bits 21:12) name when they differ from the pixel-event program's own, on a fill, a copy and a larger target, and do the two fields combine as a tile (x, y) (E043, E044, E126, E620)
@@ -172,7 +172,7 @@
 - `Q054` (phase 11, hw, medium): what do #incp, .cut and .tasks/.taske do on the emits, and what do sideband bits 11 and 12 select, beyond the pack mode, bits 8:6, 9, 10 and 13 that the end-of-tile emit reads? (E030, E102, E106, E239, E269, E376, E488)
 - `Q055` (phase 11, hw, medium): what do idf's modes other than bif, lock and release, setm and the cache-control operands do? (E088, E098, E099, E103, E107, E110, E117, E375)
 - `Q080` (phase 11, hw, low): what do the USSE words no form decodes (classes 2, 22 and 26) do: which stop the stores after them, and which write registers? (E297, E368)
-- `Q098` (phase 11, hw, medium): why do pa_n and sa_n read one value in a fill's pixel task, a mov to pa_n being lost, and why does an unwritten one read the job's pixel colour? (E366, E380, E484, E496, E748)
+- `Q098` (phase 11, hw, medium): why do pa_n and sa_n read one value in a fill's pixel task, a mov to pa_n being lost, and why does an unwritten one read the job's pixel colour? (E366, E380, E484, E496, E748, E820)
 - `Q123` (phase 11, hw, medium): does lapc reach instruction indices past the first 65536 words of a code base and the 18th bit of the program counter, and every index from 256 to 8191 in a fill? (E475, E476, E492)
 - `Q125` (phase 11, hw, low): which code leaves 0xeb3 and 0x98 in pclink and 1101, 0101, 0001 or 1111 in p0-p3 of the instances that do not read the last job's value, and why do they come in aligned 2 x 2 quads of pixels? (E475, E477, E484, E500)
 - `Q126` (phase 11, hw, low): which extension of a source 1 above 0x7fff does the test of iaddu32 read, and does the value it writes zero-extend source 1 with a repeat, an immediate or a constant in source 2, or with other destinations (E472, E498, E521)
@@ -232,7 +232,6 @@
 #### edm
 
 - `Q034` (phase 10, fw): does the EDM hold back a TA command whose destination sync is incomplete when another context is queued (source and transfer-queue syncs: E450)? (E161, E154, E320, E450)
-- `Q198` (phase 11, fw): after E604 (0x0814 and 0x0a78 read back what a firmware task stored while a client fill was started), does the user want the firmware-task verifier's str allow list widened to a register whose write has an effect, or to a wider value, for a str-then-ldr test while a job runs, and which (E534, E604)
 
 #### render
 
@@ -258,11 +257,11 @@
 #### platform
 
 - `Q095` (phase 11, kernel): does giving the EDM a page directory of its own, rather than gma500's default one, change anything beyond the coupling of their teardowns? (E008, E018, E021)
-- `Q166` (phase 11, kernel): what does a write to CR_EVENT_HOST_CLEAR or CR_EVENT_HOST_CLEAR2 clear, the bits written or others, and does it clear the bits that stay set until an acknowledge (the timeline of a SW_EVENT lasts 4 to 136 microseconds) (E547, E548)
+- `Q166` (phase 11, kernel): what does a write to CR_EVENT_HOST_CLEAR or CR_EVENT_HOST_CLEAR2 clear, the bits written or others, and does it clear the bits that stay set until an acknowledge (the timeline of a SW_EVENT lasts 4 to 136 microseconds) (E547, E548, E821, E822, E823)
 
 #### ta
 
-- `Q140` (phase 11, kernel): why does our stack's 4x render fault the job (BIF fault at pages 0x20006, 0x20008, 0x2000a) at 320 x 160 and above while 256 x 128 and 192 x 96 complete, and what size does the kernel allocate for a multisampled target (E507, E729, E788)
+- `Q140` (phase 11, kernel): why does our stack's 4x render fault the job (BIF fault at pages 0x20006, 0x20008, 0x2000a) at 320 x 160 and above while 256 x 128 and 192 x 96 complete, and what size does the kernel allocate for a multisampled target (E507, E729, E788, E824)
 
 #### usse
 

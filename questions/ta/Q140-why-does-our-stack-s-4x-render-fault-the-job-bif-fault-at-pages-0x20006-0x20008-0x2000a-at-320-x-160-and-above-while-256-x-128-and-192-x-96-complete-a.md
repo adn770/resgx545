@@ -4,7 +4,7 @@ question = "why does our stack's 4x render fault the job (BIF fault at pages 0x2
 unit = "ta"
 kind = "kernel"
 phase = 11
-evidence = ["E507", "E729", "E788"]
+evidence = ["E507", "E729", "E788", "E824"]
 terms = ["CR_TE_AA", "CR_ISP_MSAA"]
 +++
 
@@ -40,3 +40,12 @@ that fault after a failed 4x job.
 Note 2026-11-10: Q286 is retired, answered by E788 (four arrays of region headers, and four
 suffice at 320 x 400); its two open clauses, the layout at other sizes and the health triangles
 after a failed 4x job, are this question's (above).
+
+Narrowed 2026-11-10 (K2 stage k-f4, E824; not retired). With the debug knob `render_rgn_arrays` at
+4, the kernel's own layout completed 8 of 8 held-out 4x sizes (288 x 144, 256 x 288, 384 x 384, 320
+x 160, 512 x 384, 640 x 480, 320 x 400, 1024 x 768) at `CR_TE_AA` 0xe0000000 with 0 wrong pixels and
+the TA data sizes the model gave (0x8000 to 0x1e000); 288 x 144 at one array faulted again at page
+0x20006 (E729). So the fault is the layout's single array and four suffice up to 1024 x 768. Open:
+the kernel's default (four arrays; 4096 x 4096 needs 0x223000 bytes, over the 2 MiB TA-data slot)
+and the health triangles after a failed 4x job (two failed, then a pass, after both 4x faults of
+K2).
