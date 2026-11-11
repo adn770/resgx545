@@ -128,6 +128,35 @@ line with `git show <commit>:<path>` and refuses a session that pins this tree w
 Future freezes are pinned the same way when they are published. The published freeze bytes are
 never rewritten: a `FROZEN.commits` is a new file, and the manifest's digest and method follow it.
 
+## Closing-session scorers
+
+A closing session's scorer turns kept job records into verdict lines. The round-3 audit found
+the same few mistakes in several sessions, so the verdict rules live in one helper,
+`tools/closing/scorekit.py` (tests beside it, standard library only). A new session copies it
+byte for byte into its `score/scorekit.py`, so the freeze pins it, names the commit it was copied
+from, and draws every bracket, gate and headline from it rather than writing its own:
+
+- A row is held, FAILED or cannot tell; a void job is cannot tell and never a pass.
+- A ladder bracket is (last clear, first set]. A void point never narrows it: one inside it
+  widens it. A predicted window is tested by strict overlap with the bracket, an open end is
+  `None` (never zero, never a large number) and there is no slack of a step.
+- An exact-point hypothesis is refuted only when every point it allows lies outside the
+  bracket, and held only when the bracket is closed and every point it could hold is allowed.
+- A control that is not a pass, FAILED, NODATA or cannot tell alike, gates every row that
+  depends on it, not some of them. A control that cannot fail is no control.
+- Replicates that disagree are mixed, never held. Counts of jobs behind a hypothesis count only
+  the rows that decided.
+- A headline is printed only when every control passed and at least one row decided, and it
+  says how many rows decided; no data is "cannot tell", and rows that were read and matched no
+  hypothesis say so rather than "could not be read".
+
+A scorer bug found after a run is fixed in a post-run copy, never in the frozen file's place
+without a trace: `score/<name>.as-run.py` keeps the frozen scorer byte for byte (its hash is the
+scorer's line of `FROZEN.pre-fix.sha256`, the freeze the run used), the fixed scorer takes the
+frozen name, `out/score-<stage>.fixed.txt` is its output on the kept records beside the kept
+`out/score-<stage>.txt`, and `POSTRUN-FIX.md` gives the bug, the reproduction, the fix and the
+lines that changed. `out/`, the predictions and the freeze the run used are never changed.
+
 ## Firmware tasks of our own
 
 Phases 11.29, 11.30 and 11.32 run tasks of ours as firmware (EDM) tasks. The rules below are what
