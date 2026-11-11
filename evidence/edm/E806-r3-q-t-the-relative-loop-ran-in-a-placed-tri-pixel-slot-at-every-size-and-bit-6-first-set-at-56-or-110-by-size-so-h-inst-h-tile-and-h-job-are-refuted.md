@@ -60,3 +60,15 @@ of the table reads ok under per instance; the title holds (H-INST is still refut
 "ok" of the per-job threshold at 128x128 holds only for a reference N of 107 to 110: the scorer
 takes the upper end of the bridge's bracket (56, 110] as a point. Post hoc reading of the kept
 output, not the scorer's verdict; the other cells of the table are unchanged.
+
+**Correction 2026-11-11:** This adds a second reading of this record's kept timelines, made
+offline in round 4's pixel planning (`closing4/pixel/qt_slopes.out`), and leaves the claim as is.
+[data, FIT] A line B = a + s N fitted per size gives a slope a tile near the fill's (2.26 us a
+pass) wherever the tile is full (2.27 to 2.55), 1.65 at 8x8 and 0.72 at 4x4, and at every size the
+time a tile takes at the last clear and the first set point brackets 120 to 160 us (128x128: 121
+at 53, 128 at 56; 8x8: 92 at 56, 181 at 110). So "56 or 110 by size, no order in the size" is what
+one threshold near 55 to 60 passes gives on ladders whose next point is 110, and the bridge's 64x32
+triangle clear at 56 is that edge. In the 23 set jobs at N >= 440 the bit showed 245 to 257 us
+into the burst at every size. [infer, post hoc] Bit 6 latches when the pixel side makes no
+progress for about 125 us, progress being the end of a piece of work of at most a tile; the same
+kind of timing model failed in E805's note, so this needs a held-out run (Q082).

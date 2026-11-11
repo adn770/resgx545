@@ -61,3 +61,17 @@ where it now reads "its window contradicted for the 4-instruction body (bit 7 al
 1760)" it read "and consistent for the 4-instruction body", and the mark "[corrected
 2026-11-11, see Correction]" was added at its end. The correction above therefore no longer
 leaves the claim as written.
+
+**Correction 2026-11-11:** This adds a second reading of this record's kept timelines, made
+offline in round 4's pixel planning (`closing4/pixel/rule_ta.txt`, `ta_rule_qv.out`), and leaves
+the claim as is. [data, SEMI: the rule was written to a file after the dumps of 8 jobs and before
+the other 66 were measured; not held out] In a regtimeline of a vertex-loop job
+`CR_CLKGATESTATUS` reads 0x000ccff8 while the TA works on the vertices (0x000ccfa0 before and
+after; the name "TA clocks" is [infer]). With L the longest such run, every clear job of the 74
+run had L at most 129.1 us and every set job at least 129.8 us, over the four bodies and 3, 12
+and 48 vertices, 8 jobs in an edge band of 120 to 131 us; in the 39 set jobs the bit showed 123.2
+to 133.8 us after that run began. The frozen HV-TIME of round 3 used the whole burst and placed 33
+of 39. Not the TA phase's length alone: the ten 1500-vertex jobs of R3-geo g-c4 (milliseconds of
+TA, several aborts) ended with STATUS2 0x400. [infer] Bit 7 latches when the TA makes no progress
+for about 125 to 130 us, a vertex loop being one such stall. A frozen held-out run is needed
+before it is a result (Q082).

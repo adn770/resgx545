@@ -49,3 +49,16 @@ after the burst began in every set job but the edge one (522 us).
 is refuted outright, and the tile-time and burst readings fail only on the load body, where
 H-WD-busy (time waiting on a load not counted) is untested, ld8 having no set point up to 320.
 The latch is not at the job's end (H-END 0 of 48). Fills of 2048 pixels only; triangles are E806.
+
+**Correction 2026-11-11:** This adds a second reading of the kept timelines, made offline in
+round 4's pixel planning (`closing4/pixel/rule_px.txt`, `px_rule.out`, `fill_d6.out`), and leaves
+the claim as is. [data; FIT on this record's and E804's fills, SEMI on E431's and E357's, whose
+timelines were scored after the rule was written] With one constant, a tile's time (B - 60.2) / 4
+against 125 us with an edge band of 118 to 132 us, the 106 load-free fills of q-f0, q-f1a and q-f1b
+fall 92 on the predicted side and 14 in the band, and the 81 fills of platform/event-fine,
+event-steps and event-trigger 67 and 14: 187 of 187, no miss. A latch-time model written in the
+same file fits these fills and fails on the older data (30 of 48), so by its own rule it is not
+offered; what stands [data] is that in the long fills the bit shows 121 to 128 us after the 3D's
+clocks come on. [infer] The load body (ld8, clear to 320 iterations, bursts of 13.4 ms) does not
+fit a sum of non-waiting time (that would set it near 75 iterations); either a wait ends a piece of
+work and restarts the timer, or a program that waits on a load never latches. Not held out (Q082).
