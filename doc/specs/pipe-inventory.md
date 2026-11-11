@@ -40,7 +40,8 @@ figure of about 700 dumps to check them against counts dump directories of other
 
 The units a scene goes through decide what it can check before its unit models exist: the
 pixel side (`pbe`, `texture`, `pds`, `usse` rows) needs 12.1 and 12.3, `ta`, `vdm`, `mte`
-rows need 12.2, and every `isp` row needs the arithmetic of coverage (Q205) to be pixel exact.
+rows need 12.2, and every `isp` row needs the arithmetic of coverage (Q205) to be pixel exact
+(at 12.0; the coverage half is now E606 and E607, section 3).
 
 ## 2. The dump directories
 
@@ -108,28 +109,41 @@ The directories of each rule, with what is special about them:
 
 ## 3. What is missing, by unit
 
-- **zls**: nothing for the address rule (built). The formats 0 to 2 and the negation bit (E466,
-  E490) have 22 dumps and no rule in `sgx-pipe`; loads (E467) have datasets (`zls/load-store`,
-  `load-copy`) but no dump directory. Overflow store (Q107), formats 3 to 7 (Q120), stencil order
-  (Q121) and pixels outside the target (Q122) stay refused.
-- **ta**: the region test, the object layout and its failures are built. Missing: the macrotile
-  table of the target (a fitted table, `tiling3d.py`, right on 123 and 69 only: Q100, Q139, Q086),
-  lines and points (rules in the dataset's recompute script, not coded: Q159 to Q161), the
-  object's format bits above 7:0 and the masks beyond the settings seen (Q070), the prim word's
-  extra dword (Q164), and the object writer as a whole (12.2).
-- **vdm, mte**: 57 and 12 dump directories of PB and TA data that a stream parser and an MTE
-  model would have to reproduce; they wait for Q047, Q069 and the state word rules. No unit
-  vector is built: the inputs (the stream words, the vertex outputs) are in the render dumps
-  only through the PB, so they need the scene's `memory`.
+*Written at 12.0; revised 2026-11-11 against the records landed since (E606 to E830). The counts
+of sections 1 and 2 are those of the 12.0 scan and were not redone.*
+
+- **zls**: built since 12.0: the address rule (E615), the store of formats 0 to 2 and the
+  negation bit over E490's 22 dumps (E663; formats 4 and 7 store nothing without a stencil
+  buffer), the load pass over E467's 30 cases (E664: the loaded depth loses its sign bit) and the
+  control word's fields (E665). Refused: formats 3, 5 and 6 (Q120), the stencil store's order
+  (Q121), the overflow store (E628, E629: the loaded buffer and the sign bit after a raised
+  abort; Q107) and pixels past the target, where the store holds the set x + 0.5 < 1.25 W and y +
+  0.5 < 1.25 H (E730, post hoc; Q287).
+- **ta**: the region test, the object layout and its failures are built, and since 12.2 the
+  vertex side and the TA as a whole (E650: 89 of 89 dumped one- to five-triangle jobs byte for
+  byte, every one fitted; 266 more scenes refused by question). Missing: the macrotile table of
+  the target (a fitted table, `tiling3d.py`, right on 123 and 69 only: Q100, Q139, Q086), lines and
+  points (Q159 to Q161), the object's format bits above 7:0 and the masks beyond the settings seen
+  (Q070), the prim word's extra dword (Q164), a state word nobody flipped in a two-object stream
+  (Q047, Q112), the 4x object with `CR_TE_AA` bit 29 clear (E728, E829; Q293).
+- **vdm, mte**: the stream parser and the MTE's viewport are in E650's model; the dump directories
+  it refuses wait for Q047, Q069, Q112 and the state word rules. No unit vector is built: the
+  inputs are in the render dumps only through the PB, so they need the scene's `memory`.
 - **isp**: the multisample window is built (786 tiles, 13 with background pixels refused: Q141).
-  Everything else needs a scene (`memory`) and, for pixels, the arithmetic of coverage, depth and
-  iteration (Q205): no record gives it. The sample position, line, polygon offset and stencil
-  rules (E214, E279, E071, E216) are in `isp` triangle-host vectors, not in dump directories.
+  The coverage rule is a record and is built (E606, E607: 1/256 grid, half up, exact centre test,
+  left and top ties; E660 reproduces 2752 of 2752 images through the pipeline), held on ten more
+  targets up to 4096 x 4096 (E680 to E682; `sgx-pipe`'s `isp.rs` names the targets it admits); the
+  depth plane is within E606's tolerance and has no bit-exact rule (Q200, Q262, Q288); negative
+  sub-grid vertices and far vertices refuse (E683, E684; Q199, Q260, Q261). `doc/specs/3d.md`
+  §11.13 states them. The sample position, line, polygon offset and stencil rules (E214, E279,
+  E071, E216) are in `isp` triangle-host vectors, not in dump directories.
 - **pbe, iter**: only whole-job vectors (`pbe` 206, the pixel-event and texture runs): the
   end-of-tile words and the pixel PDS launch are not in any dump. 12.1 needs `memory` from a
   scene.
 - **dpm, bif, events**: dump directories of text (the state page, the directory words, EVENT_STATUS
   per event) that need their units (12.7, 12.5, 12.6) and the registers' semantics (`regs.rs`).
+  The events side refuses the STATUS2 latches (E805 to E807; Q082) and the clears (E821 to E823;
+  Q166).
 
 ## 4. The MTE clipping and depth-range datasets
 
