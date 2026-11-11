@@ -5,7 +5,7 @@
 use crate::Outcome;
 
 /// Open questions that block the unit.
-pub const OPEN: &[&str] = &["Q045", "Q036", "Q038", "Q081", "Q103", "Q191", "Q192", "Q210", "Q211", "Q273"];
+pub const OPEN: &[&str] = &["Q045", "Q036", "Q038", "Q081", "Q103", "Q191", "Q192", "Q210", "Q211"];
 
 /// A refusing stub until the unit's sub-phase lands: the model never guesses.
 pub fn refuse() -> Outcome {
@@ -88,10 +88,12 @@ mod tests {
 
     #[test]
     fn the_open_list_holds_the_threshold_and_page_need_questions() {
-        // Q210 the threshold raise rule, Q211 the page need of a scene, Q273 the 1500-vertex scene
-        for id in ["Q210", "Q211", "Q273"] {
+        // Q210 the threshold raise rule, Q211 the page need of a scene; Q273 (dword 36) is answered
+        // by E803, so it no longer blocks the unit
+        for id in ["Q210", "Q211"] {
             assert!(OPEN.contains(&id), "{id}");
         }
+        assert!(!OPEN.contains(&"Q273"));
     }
 
     #[test]
