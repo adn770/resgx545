@@ -12,7 +12,7 @@ use sgx_pipe::data::Ctx;
 use sgx_sim::json::{Json, parse};
 use sgx_sim::tex::{self, Lod, Sample, Srd};
 use std::collections::BTreeMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 fn base() -> Option<PathBuf> {
     let b = Ctx::from_env().root.map(|r| r.join("texture/p1141")).filter(|d| d.is_dir());
@@ -70,7 +70,7 @@ struct Job {
     image: Vec<u32>,
 }
 
-fn job(b: &PathBuf, cases: &Json, name: &str) -> Job {
+fn job(b: &Path, cases: &Json, name: &str) -> Job {
     let c = cases.arr().iter().find(|c| c.get("name").str() == Some(name)).expect(name);
     assert_eq!(c.get("set").str(), Some("heldout"), "{name}");
     let p =
@@ -92,7 +92,7 @@ fn sample_at(spec: &Json, inject: &BTreeMap<u32, u32>, x: u32, y: u32) -> Result
         pcf: None,
         lod: Lod::Flat,
     };
-    let mut load = |a: u32| Ok(inject.get(&(a / 4)).copied().unwrap_or(0xd000_0000 | a / 4));
+    let mut load = |a: u32| Ok(inject.get(&(a / 4)).copied().unwrap_or(0xd000_0000 | (a / 4)));
     tex::sample(&s, &mut load).map(|r| r[0])
 }
 

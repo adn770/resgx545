@@ -1900,7 +1900,7 @@ mod tests {
 
     #[test]
     fn srgb_samples_the_textures_e723_ran_and_refuses_the_rest() {
-        let mem = |a: u32| 0xd000_0000 | (a - 0x1000) / 4 | 0x0000_ff00;
+        let mem = |a: u32| 0xd000_0000 | ((a - 0x1000) / 4) | 0x0000_ff00;
         let want = |i: u32| srgb_word(0xd000_ff00 | i);
         // a stride 8 x 4 texture, and twiddled 8 x 8 and 32 x 32 ones (4 of 4 held out)
         let st84 = [0x0800_0e00, t1(6, 12, 8, 4), 0x1000, T3_ST];
@@ -1977,7 +1977,7 @@ mod tests {
     #[test]
     fn types_3_and_1_read_a_raster_of_the_width_wrapping_at_the_size() {
         // E725 (8 of 8 held out): texel (x mod w, y mod h) is dword (y mod h) w + (x mod w)
-        let mem = |a: u32| 0xd000_0000 | (a - 0x1000) / 4;
+        let mem = |a: u32| 0xd000_0000 | ((a - 0x1000) / 4);
         for ty in [1, 3] {
             for (w, h) in [(8, 8), (32, 32), (32, 16), (16, 32)] {
                 let st = [T0_REP, t1(ty, 12, w, h), 0x1000, T3_TW];
