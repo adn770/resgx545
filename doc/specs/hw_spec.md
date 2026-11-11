@@ -395,6 +395,22 @@ and copies of our stack (E357).
   32), and, post hoc, 121 to 124 µs after the fault word of a held background-program fetch, a
   texture fetch and a transfer write fault (E764, E765, E766). The quantity the latch watches is
   open (Q082).
+- **Readings of 2026-11-11 from the kept timelines** (round 4 planning, none held out; FIT: read
+  from the data it is scored on; SEMI: a rule written to a file before the jobs it is scored on
+  were opened, after others of the same stage were seen). *Bit 7* [data, SEMI]: in the vertex-loop
+  jobs `CLKGATESTATUS` reads 0x000ccff8 while the TA works on the vertices; with L the longest such
+  run, every clear job of E807's 74 had L at most 129.1 µs and every set one at least 129.8 µs,
+  over four bodies and 3, 12 and 48 vertices, and the bit showed 123 to 134 µs after that run
+  began. It is not the TA phase's length alone: ten 1500-vertex jobs of milliseconds of TA ended
+  with STATUS2 0x400, and E357's held TA hang set it with a run of 8 µs [data]. *Bit 6 in fills*
+  [data; FIT on E804 and E805, SEMI on E431 and E357]: with a tile's time (B - 60.2) / 4 against
+  125 µs, an edge band of 118 to 132 µs, 187 of 187 load-free fills fall on the predicted side or
+  in the band (159 and 28); a body with a load stays clear far beyond that time (E805's ld8 to 320
+  iterations). *Bit 6 in triangles* [data, FIT]: in E806's ladders the time a tile takes at the
+  last clear and the first set point brackets 120 to 160 µs at every size. [infer] One timeout of
+  about 125 µs without progress, of the TA for bit 7 and of the pixel side for bit 6, would fit
+  these and the 121 to 124 µs after a fault word; a load would end a piece of work. These are
+  readings to test, not rules.
 - **Clearing.** Without a clear each stays set through later jobs (E357, whose runs wrote none);
   the debugfs reset clears both (E357, E764). A host write to `CR_EVENT_HOST_CLEAR2` (0x0114)
   clears the bits written: 0x8000 left a latched 0x440 as it was, 0x40 cleared it to 0x400, and
