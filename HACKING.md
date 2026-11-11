@@ -332,6 +332,10 @@ pushed before `tools/clean-room/guard.py --history` has run over every ref.
   default of `check.sh` and the hooks) and says NOT CHECKED otherwise; a checkout without the
   private repository sets it to 0 and gets no guard. The private repository is never pushed to
   a public remote.
+- A hardware record (tier HW or CAP) from E600 on is cited by a spec under `doc/specs`, or
+  listed in `doc/specs/UNCITED.toml` with the reason it is not yet; the list only shrinks
+  (`tools/records/spec_coverage.py --check`, a step of `check.sh`, fails on a record neither
+  cited nor listed and on a listed one that a spec cites). A fold lands its spec text with it.
 - Landed records get dated corrections only: append a `Correction YYYY-MM-DD:` section, leave
   the rest as it was. The pre-commit hook warns about any other change to an evidence record;
   it does not block. One exception (user decision, 2026-11-11): when a correction contradicts

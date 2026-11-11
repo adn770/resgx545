@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# Hardware records (tier HW or CAP) from E600 that no doc/specs file cites yet, each with the
+# reason. tools/records/spec_coverage.py --check; this list only shrinks (HACKING.md).
+E831 = "folded in round 4 (R3-geo-c g-z); its ZLS band rule lands in 3d.md with Q122's retirement"
+E832 = "folded in round 4 (R3-geo-c g-qf, g-qh); 3d.md's DPM count paragraph cites it next"
+E833 = "round 4's closing vectors; vectors.md's section on the closing tables cites it next"
