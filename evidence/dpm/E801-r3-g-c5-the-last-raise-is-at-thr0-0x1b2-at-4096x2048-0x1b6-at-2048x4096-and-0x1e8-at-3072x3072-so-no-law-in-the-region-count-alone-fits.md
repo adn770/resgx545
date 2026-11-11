@@ -43,3 +43,12 @@ the two square targets miss too. The ordered list of the measured limits is 0x10
 0x1d2, 0x1d6, 0x208 (3072x3072), 0x371 (4096x4096); no law in the target's size is offered. Whether
 the difference between the two transposed targets comes from the target or from where the scene's
 triangles land in it is not separated.
+
+**Correction 2026-11-11:** This adds a reading of the three flips' timelines, made offline in round
+4 with the guard of the firmware's out-of-memory routine read from the instructions (reading R-5,
+`closing4/p7/reading-r5.md`, with `flips.py`, `flips.out`, `guard.py` and `sweep_last.out` beside
+it), and leaves the claim as is. [data, SEMI] At 4096x2048 (c5a-b5, c5a-b3), 2048x4096 (c5b-b5,
+c5b-b1) and 3072x3072 (c5c-b4, c5c-b5) every last-raise cell has 3 global pages at the abort and 2
+at the resume, every first-silent cell 3 and 1: 6 of 6 as the guard predicts. [infer] That the
+hardware frees one page below C and two above it, and why C differs between the targets, is not in
+the firmware (Q210).

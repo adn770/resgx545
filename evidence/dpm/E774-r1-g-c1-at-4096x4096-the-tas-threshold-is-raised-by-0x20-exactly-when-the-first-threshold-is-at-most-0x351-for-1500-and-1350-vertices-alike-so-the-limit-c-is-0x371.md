@@ -43,3 +43,16 @@ the knob needs the descriptor poke of the proposal's C2 (a threshold set without
 run, and the scorer's 'H-abs holds' says only that the outcome flipped once, in one direction. What
 the DPM compares with C, why the increment is 0x20, and whether C moves with the target (C3 at
 2048x2048 did not run) stay open (Q210).
+
+**Correction 2026-11-11:** This adds a reading of the flip's own timelines, made offline in round 4
+with the guard of the firmware's out-of-memory routine read from the instructions (reading R-5,
+`closing4/p7/reading-r5.md`, with `flips.py`, `flips.out`, `guard.py` and `sweep_last.out` beside
+it), and leaves the claim as is. [data, SEMI: the guard was read from the instructions before any
+timeline, the flip's cells are the test] The raise is taken at the second out-of-memory entry iff
+the partial render freed fewer than two of the three global pages the abort saw, that is iff
+`0x072c`'s high half at the resume is above the abort's less 2 (the compare at 0xbca-0xbd2 and
+0xdd5-0xddc, `isub16` source 1 minus source 2 [infer: operand order]). At the flip's two cells
+(f-1500-0x373 and f-1500-0x374) the counts at the abort are 3, at the resume 2 and 1, at the next
+entry 4 and 3: raise and no raise, 2 of 2 as observed. [infer] The limit C = 0x371 is where the
+hardware's partial render drops that count by 1 below it and by 2 above it; the firmware compares no
+threshold, so the question of what sets C is the hardware's page accounting, still open (Q210).

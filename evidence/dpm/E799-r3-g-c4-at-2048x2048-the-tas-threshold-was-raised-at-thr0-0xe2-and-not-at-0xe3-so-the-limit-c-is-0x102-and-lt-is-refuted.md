@@ -42,3 +42,17 @@ happens iff the first threshold is at most 0xe2: the highest raised threshold ac
 0x103 is refused, inside E785's bracket. LT (C proportional to the region count from 4096x4096's
 0x351) put the flip at 0xd4 and is refuted. One scene and one target; what C depends on is E800,
 E801 and E802's.
+
+**Correction 2026-11-11:** This adds a reading of the flip's timelines and of one miss, made offline
+in round 4 with the guard of the firmware's out-of-memory routine read from the instructions
+(reading R-5, `closing4/p7/reading-r5.md`, with `flips.py`, `flips.out`, `guard.py` and
+`sweep_last.out` beside it), and leaves the claim as is. [data, SEMI] The cells c4-b5 (last raise,
+0xe2) and c4-b6 (first silent, 0xe3) have 3 global pages at the abort, 2 and 1 at the resume, 4 and
+3 at the next entry: raise and no raise, 2 of 2 as the guard predicts. One cell is not predicted:
+c4-b3 (thr0 0xe8, silent) has the inputs of c4-b5 and no raise. It is the only one of 101 jobs whose
+timeline shows the global list grown before the first abort (0x0628 reads 0x10003, then 0x100e8
+again), so either the guard misses a condition the grow leaves behind or a gate before 0xbbf took
+the second entry out [open]; the sampled registers cannot say which. On the rule "refuted by one
+flip on the wrong side" this cell is on the wrong side of the ladder, so the guard is a reading that
+fits the flips and 288 of 289 decisions, not a law, until c4-b3 is repeated with `0x0734` and sa8
+observed.

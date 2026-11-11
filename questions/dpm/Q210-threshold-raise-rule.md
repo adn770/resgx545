@@ -149,3 +149,43 @@ only, reviewed), then a test held out by construction: the condition must place 
 E802's scene from the registers g-c4's and g-c5's kept timelines hold (0x0624, 0x0628, 0x0724,
 0x0728, 0x072c). Refuted by one flip on the wrong side. No hardware unless a register it needs was
 not sampled.
+
+Note 2026-11-11 (round 4, reading R-5 of the guard of the + 0x20 write, `closing4/p7/reading-r5.md`
+with `flips.py`, `flips.out`, `guard.py` and `sweep_last.out` beside it; our disassembly of the
+cut firmware, a static reading, then an offline test on kept timelines; no run).
+[source] Facts, by instruction index. The write at 0xbe1 (`str #393`, 0x0624 += 0x20) is reached
+only through the decision at 0xbbf-0xbd2: sa8 bit 7 set (0xbbf, 0xbc0), bit 9 clear (0xbc1, 0xbc2),
+and then, with bit 8 clear, `isub16.testpat` of dword 35 against the high half of 0x0724 (0xbca), or
+with bit 8 set of dword 36 against the high half of 0x072c (0xbd1); 0xbd2 `p0 ba` goes to the abort
+when the low lane is not negative and falls into the raise otherwise. Dwords 35 and 36 are written
+only at the abort (0xc11, 0xc19) as those high halves less 2, dword 36 floored at 0. Bits 7 and 8
+are set only by the resume (0xdcc-0xddc), by the same compare with the counts read there, and
+cleared by the abort (0xbf6) and the TA finish. So the guard is: with PS_hi and GPS_hi the page
+counts, the raise happens at an entry iff the resume saw GPS_hi above dword 36 (or PS_hi above
+dword 35, bit 8 clear) and the entry again sees it above. [infer] The operand order of `isub16`
+(source 1 minus source 2) is read from the form line, not stated in a record; the reversed order
+fits 35 of 101 jobs and this one 100 of 101.
+Offline test (SEMI: the guard was written from the instructions before any timeline was read; the
+variants ran after the result). On the kept register timelines the guard places all 12 cells of the
+five exact flips (E774 and E786's two pairs, E799, E801; last raise: 3 global pages at the abort, 2
+at the resume, 4 at the entry; first silent: 3, 1, 3), E802's six raised cells (1, 1, 1; the floor
+makes the saved count 0), 288 of 289 decisions over 107 jobs, and the dword rule 107 of 107
+(E803 extended). Variants: reversed subtraction 35 of 101, no "less 2" 35 of 101, no resume stage
+66 of 101. One miss is open: c4-b3 (E799's grid, 2048x2048, thr0 0xe8, silent) has the inputs of the
+raised c4-b5 and is the only job whose timeline shows the global list grown before the first abort;
+a gate before 0xbbf at its second entry, or a condition the grow leaves, is not excluded and
+0x0734, sa8 and the exit paths were not sampled [open]. The sa8-bit-7-only path (dword 35) never
+fired: unexercised.
+[infer] What it answers: the firmware compares the global page count after the partial render with
+the one at the abort less 2, not a threshold, an area or a limit C. C is where the hardware's
+partial render frees one global page instead of two (the first silent cells go 3 to 1 pages, the
+last raised 3 to 2), and 0x20 is the routine's constant (above). What stays open is that
+accounting, by target and scene (why one page below C and two above, why E802's scene holds one
+global page), and c4-b3.
+Would refute it: one cell with a raise and GPS_hi at the resume at or below dword 36, or a
+raise-less cell above it with no grow before it, reproduced (c4-b3 is the one such cell in the kept
+data; repeating it at the same P with 0x0734, sa8 and the exit paths observed turns it into noise or
+into the missing condition); a repeat of the flips on other hardware that moves the page drop moves
+the flips, not the guard. A prediction needs only 0x072c and 0x0724 at the abort and at the resume,
+which every kept timeline holds; a hardware row is justified for the grow case only. Not read: the
+callees 0xb0b, 0x1765, 0x1676, 0x1773, 0x159e, 0xb46, and what CR_DPM_OUTOFMEM 1 and 4 do.

@@ -49,3 +49,12 @@ descriptor's own threshold word or the knob, and not the register that the poke 
 reading of dword 37 as "the first threshold" holds only when the two are equal]. What the stage
 does not separate: whether C depends on the scene or the target (E785 gives a different C at
 2048x2048) and what the DPM compares with C; and one scene and target only were poked.
+
+**Correction 2026-11-11:** This adds a reading of the kept pair k-1500-0x351 (last raise) and
+k-1500-0x352 (first silent), made offline in round 4 with the guard of the firmware's out-of-memory
+routine read from the instructions (reading R-5, `closing4/p7/reading-r5.md`, with `flips.py`,
+`flips.out`, `guard.py` and `sweep_last.out` beside it), and leaves the claim as is. [data, SEMI]
+Both have 3 global pages at the abort; the resume reads 2 in the first and 1 in the second, and the
+next entry 4 and 3, so the guard predicts raise and no raise, 2 of 2 as observed. The poked
+threshold changes where the TA runs and so where the partial render drops the count, not the
+firmware's compare (Q210).

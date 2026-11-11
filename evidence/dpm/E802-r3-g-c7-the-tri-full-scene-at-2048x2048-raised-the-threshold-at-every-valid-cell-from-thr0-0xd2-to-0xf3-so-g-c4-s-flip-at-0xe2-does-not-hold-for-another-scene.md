@@ -39,3 +39,12 @@ another scene raised the threshold at 0xe3, which g-c4's scene did not: the limi
 scene, not on the target alone. C for this scene is at least 0x113; its value was not reached (no
 silent cell, the bisect had nothing to bracket). Which property of the scene matters (its page
 need, 0x400 or more here against 0x213, the triangles' coverage or their order) is not separated.
+
+**Correction 2026-11-11:** This adds a reading of this stage's six raised cells (thr0 0xd2, 0xde,
+0xe2, 0xe3, 0xe7, 0xf3), made offline in round 4 with the guard of the firmware's out-of-memory
+routine read from the instructions (reading R-5, `closing4/p7/reading-r5.md`, with `flips.py`,
+`flips.out`, `guard.py` and `sweep_last.out` beside it), and leaves the claim as is. [data, SEMI]
+Each has 1 global page at the abort (dword 36 = 0 by the floor) and 1 at the resume, so the saved
+count 0 is below the current one and the guard raises: 6 of 6. [infer] That is why this scene raises
+where g-c4's triangle at the same target does not: the scene holds one global page, and the floor
+makes the saved count smaller than it; why it holds one page is not read (Q210).

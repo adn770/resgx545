@@ -56,3 +56,13 @@ abort. Right: H-last held in 58 of 58 jobs with an abort (g-d36 6 of 6, g-c4 10 
 32, g-c6 3 of 3, g-c7 7 of 7), and the two jobs without one read 0 as the reading's "0 without an
 abort" says. The 5 separating jobs (d36-2048-0x90, d36-4096-0x2c0, d36-4096-0x300, c3-2048-0xe2
 and c7-cal) are unchanged, and so is the verdict of g-d36, the stage that gated on it.
+
+**Correction 2026-11-11:** This adds a reading of the firmware that writes the word, made offline in
+round 4 (reading R-5, `closing4/p7/reading-r5.md`, with `flips.py`, `flips.out`, `guard.py` and
+`sweep_last.out` beside it), and leaves the claim as is. [source, static, plus data] The routine
+writes dword 36 at every abort as the high half of `CR_DPM_GLOBAL_PAGE_STATUS` less 2, floored at 0
+(0xc0e-0xc11), and dword 35 as the high half of `CR_DPM_PAGE_STATUS` less 2 masked to 16 bits
+(0xc17-0xc19), nowhere else in the routine. Against the kept timelines and each job's buffer, the
+rule (the value at the last abort less 2, floor 0) equals dword 36 in 107 of 107 jobs of the DPM
+stages, which extends this record's 60 of 60, and dword 35 follows PS_hi the same way. [infer] The
+sample-time uncertainty this record bounds is the same one the reading rests on.
