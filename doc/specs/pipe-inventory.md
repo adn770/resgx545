@@ -54,7 +54,7 @@ model), `scene-only` (a whole job only), `exists` (vectors already in the data r
 | isp-tile | built | 1 | 96 | E503 E502 | Q141 | 12.8 |
 | ta-object | built | 1 | 177 | E541 | Q070 Q165 | 12.2 |
 | te-region | built | 1 | 105 | E542 | Q070 | 12.2 |
-| zls-store | built | 1 | 36 | E465 E489 | Q107 Q122 | 12.4 |
+| zls-store | built | 1 | 36 | E465 E489 E831 | Q107 | 12.4 |
 | ta-object | unit-ready | 26 | 52 | E054 | Q068 | 12.2 |
 | ta-object | unit-ready | 28 | 56 | E176 E181 E306 | Q070 | 12.2 |
 | ta-object | unit-ready | 2 | 62 | E306 E308 | Q070 | 12.2 |
@@ -115,10 +115,11 @@ of sections 1 and 2 are those of the 12.0 scan and were not redone.*
 - **zls**: built since 12.0: the address rule (E615), the store of formats 0 to 2 and the
   negation bit over E490's 22 dumps (E663; formats 4 and 7 store nothing without a stencil
   buffer), the load pass over E467's 30 cases (E664: the loaded depth loses its sign bit) and the
-  control word's fields (E665). Refused: formats 3, 5 and 6 (Q120), the stencil store's order
-  (Q121), the overflow store (E628, E629: the loaded buffer and the sign bit after a raised
-  abort; Q107) and pixels past the target, where the store holds the set x + 0.5 < 1.25 W and y +
-  0.5 < 1.25 H (E730, post hoc; Q287).
+  control word's fields (E665), and the pixels past the target at even sizes: the depth inside
+  the band x + 0.5 < 1.25 W and y + 0.5 < 1.25 H, cut at the tile area, the background 1.0 past
+  it (E730, E831). Refused: formats 3, 5 and 6 (Q120), the stencil store's order and its edge
+  tiles (Q121), the overflow store (E628, E629: the loaded buffer and the sign bit after a raised
+  abort; Q107), the band at odd sizes (Q287) and an integer format at an edge (Q242).
 - **ta**: the region test, the object layout and its failures are built, and since 12.2 the
   vertex side and the TA as a whole (E650: 89 of 89 dumped one- to five-triangle jobs byte for
   byte, every one fitted; 266 more scenes refused by question). Missing: the macrotile table of

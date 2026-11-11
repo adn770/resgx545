@@ -65,8 +65,10 @@ def recompute(data):
 def zls_classes(w, h, g, ax, ay):
     """The stored dwords of a pair of ramp dumps by class, from the dumps alone (written here, not
     taken from the dataset's recompute): at the rule's address inside the target, at it for a pixel
-    past the target (Q122), background past the target in a tile of it (Q122), background or zero
-    in a slot that is no tile of the target or all zero (Q107), anything else (unexplained)."""
+    past the target inside the band, background past the band in a tile of the target (both by
+    E831's band, x + 0.5 < 1.25 W and y + 0.5 < 1.25 H; at an odd W or H either is "odd", Q287),
+    background or zero in a slot that is no tile of the target or all zero (Q107), anything else
+    (unexplained)."""
     def ramp(v, size):
         p = (struct.unpack("<f", struct.pack("<I", v))[0] - 0.25) * 6.0 * size
         q = round(p - 0.5)
@@ -78,7 +80,11 @@ def zls_classes(w, h, g, ax, ay):
             i |= (y >> b & 1) << 2 * b | (x >> b & 1) << 2 * b + 1
         return i
 
-    c = dict(inside=0, outside=0, bg_outside=0, bg_tiles=0, zero=0, other=0)
+    def band(x, y):
+        return 4 * x + 2 < 5 * w and 4 * y + 2 < 5 * h
+
+    odd = w % 2 or h % 2
+    c = dict(inside=0, outside=0, bg_outside=0, bg_tiles=0, zero=0, odd=0, other=0)
     for i, (vx, vy) in enumerate(zip(ax, ay)):
         if vx == 0xDEADBEEF:
             continue
@@ -92,13 +98,23 @@ def zls_classes(w, h, g, ax, ay):
             x |= (k >> 2 * b + 1 & 1) << b
         past = 32 * tx + x >= w or 16 * ty + y >= h
         if vx == vy == 0x3F800000 and (not in_grid or past):
-            c["bg_outside" if in_grid else "bg_tiles"] += 1
+            if not in_grid:
+                c["bg_tiles"] += 1
+            elif odd:
+                c["odd"] += 1
+            else:
+                c["other" if band(32 * tx + x, 16 * ty + y) else "bg_outside"] += 1
         elif vx == vy == 0:
             c["zero"] += 1
         else:
             px, py = ramp(vx, w), ramp(vy, h)
             if px is not None and py is not None and 512 * (py // 16 * (g + 1) + px // 32) + index(px % 32, py % 16) == i:
-                c["outside" if px >= w or py >= h else "inside"] += 1
+                if px < w and py < h:
+                    c["inside"] += 1
+                elif odd:
+                    c["odd"] += 1
+                else:
+                    c["outside" if band(px, py) else "other"] += 1
             else:
                 c["other"] += 1
     return c
@@ -120,11 +136,11 @@ def zls_store(data):
                          words(data / Z / "dumps" / (base + "-rampy.bin.gz")))
         # the dataset's own totals must still hold: its "at the rule" is the inside and the
         # outside pixels together, its "background" the two background classes
-        assert cl["inside"] + cl["outside"] == int(ok) and cl["bg_outside"] + cl["bg_tiles"] == int(bg), (base, cl)
+        assert cl["inside"] + cl["outside"] + cl["odd"] + cl["bg_outside"] + cl["bg_tiles"] == int(ok) + int(bg), (base, cl)
         assert cl["zero"] == int(und) and cl["other"] == 0
-        expect = {"stored": int(stored), "matched": cl["inside"], "refused": {}}
-        if cl["outside"] + cl["bg_outside"]:
-            expect["refused"]["Q122"] = cl["outside"] + cl["bg_outside"]
+        expect = {"stored": int(stored), "matched": cl["inside"] + cl["outside"] + cl["bg_outside"], "refused": {}}
+        if cl["odd"]:
+            expect["refused"]["Q287"] = cl["odd"]
         if cl["zero"] + cl["bg_tiles"]:
             expect["refused"]["Q107"] = cl["zero"] + cl["bg_tiles"]
         if m[13] is not None:
@@ -138,7 +154,7 @@ def zls_store(data):
                      "x": ref(data, "%s/dumps/%s-rampx.bin.gz" % (Z, base)),
                      "y": ref(data, "%s/dumps/%s-rampy.bin.gz" % (Z, base))},
             "expect": expect,
-            "provenance": {"records": ["E465", "E489"], "questions": ["Q107", "Q122"], "table": Z,
+            "provenance": {"records": ["E465", "E489", "E831"], "questions": ["Q107"], "table": Z,
                            "case": base, "rule_status": "fitted E465 (fitted on the 1024 x 768 runs)",
                            "rebuilt": False}})
     return out

@@ -90,3 +90,9 @@ def test_the_report_fits_100_columns_and_has_no_trailing_space():
     text = inv.report(DATA)
     assert all(len(l) <= 100 for l in text.splitlines()), [l for l in text.splitlines() if len(l) > 100][:2]
     assert all(l == l.rstrip() for l in text.splitlines())
+
+
+def test_the_zls_store_rule_cites_the_band_of_e831_and_no_retired_question():
+    r = next(r for r in inv.RULES if r.pattern == r"zls/store-layout-dumps/")
+    assert "E831" in r.records.split() and r.blockers.split() == ["Q107"]
+    assert "Q122" not in inv.TAIL and "E831" in inv.TAIL

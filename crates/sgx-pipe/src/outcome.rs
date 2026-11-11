@@ -188,10 +188,10 @@ mod tests {
         c.add(&Verdict::Fitted);
         c.add(&Verdict::Fitted);
         c.add(&Verdict::Refused(vec!["Q165".into()]));
-        c.add(&Verdict::Refused(vec!["Q165".into(), "Q122".into()]));
+        c.add(&Verdict::Refused(vec!["Q165".into(), "Q287".into()]));
         assert_eq!((c.matched, c.fitted), (1, 2));
         assert_eq!(c.refused["Q165"], 2);
-        assert_eq!(c.refused["Q122"], 1);
+        assert_eq!(c.refused["Q287"], 1);
         assert_eq!(c.total(), 5, "a refused vector counts once");
     }
 }

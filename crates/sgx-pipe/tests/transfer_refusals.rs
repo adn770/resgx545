@@ -19,7 +19,7 @@ fn fixture() -> Json {
 /// The fixture's base `base` (0 the fill, 1 the copy) with `delta`, against a vector that lists
 /// every question the model may refuse under, as the generator's lists do for a poked space.
 fn with(base: usize, delta: &str) -> Verdict {
-    let any = r#"["Q003", "Q011", "Q021", "Q066", "Q074", "Q076", "Q078", "Q205", "Q206", "Q207"]"#;
+    let any = r#"["Q003", "Q011", "Q066", "Q074", "Q076", "Q078", "Q180", "Q205", "Q206", "Q207"]"#;
     // the baselines' images: the fill's one colour, the copy's source pattern (the fixture's hashes)
     let image =
         if base == 0 { r#"{"hash": "0xb60c6095080bd325"}"# } else { r#"{"hash": "0x9b1c0be484ac0d25"}"# };

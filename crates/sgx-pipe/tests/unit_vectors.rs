@@ -95,14 +95,14 @@ fn the_counts_of_the_records_hold() {
     for u in ["ta", "isp"] {
         assert_eq!(rep.items_matched.get(u).copied().unwrap_or(0), 0, "{u}");
     }
-    // 3279132 at the rule, less 54132 for pixels past the target; the format buffers' 7864320
+    // 3279132 at the rule and 1124 of background past the band (E831); the format buffers' 7864320
     // dwords and the loads' 983040 (8 x 40960 + 20 x 32768)
     // and the 23 fitted control vectors' items: E411's stored pages in dwords and the fields read
     // (103709, counted by the replay, checked by hand for flip 3: 3200 + 6)
-    assert_eq!(rep.items_fitted["zls"], 3_225_000 + 7_864_320 + 983_040 + 103_709);
+    assert_eq!(rep.items_fitted["zls"], 3_225_000 + 54_132 + 1_124 + 7_864_320 + 983_040 + 103_709);
     assert_eq!(rep.items_refused["zls"]["Q107"], 128_640 + 6_656);
     assert_eq!((rep.units["zls"].refused["Q242"], rep.units["zls"].refused["Q120"]), (8, 3 + 1));
-    assert_eq!(rep.items_refused["zls"]["Q122"], 54_132 + 1_124);
+    assert!(!rep.items_refused["zls"].contains_key("Q287"), "no odd size among E489's cases");
     assert_eq!(rep.items_fitted["isp"], 773);
     assert_eq!(rep.items_refused["isp"]["Q141"], 13);
     // 14656 (primitive, tile) pairs of E542 and 56 of E541's jobs

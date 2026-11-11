@@ -16,7 +16,7 @@
 //! Everything a record does not explain refuses, naming a question that depends only on the
 //! scene's words, never on what the hardware did: a command word or task word with no record
 //! (Q206, the end-of-tile task's tile naming among them), a PDS program or input the simulator
-//! does not know (Q207), the iterator word (Q021), background object words (Q066), a copy's tag
+//! does not know (Q207), the iterator word (Q180), background object words (Q066), a copy's tag
 //! (Q011), an access to memory the scene does not map or a job that cannot complete (Q076 and
 //! Q003).
 //!
@@ -49,7 +49,7 @@ use usse_isa::Core;
 pub const SENTINEL: u32 = 0xdead_beef;
 
 /// The questions the model refuses under (the transfer's own; the units' are in their modules).
-pub const OPEN: &[&str] = &["Q206", "Q207", "Q074", "Q011", "Q021", "Q066", "Q205", "Q078", "Q076", "Q003"];
+pub const OPEN: &[&str] = &["Q206", "Q207", "Q074", "Q011", "Q180", "Q066", "Q205", "Q078", "Q076", "Q003"];
 
 /// The EOT and EOR task entries of the builder's use page (the transfer templates, 4 instructions
 /// and 12 instructions in, with 4 and 1 temporaries: fw_format.md 9.2) as a PDS data word U0.
@@ -496,7 +496,7 @@ fn run_inner(sc: &Scene) -> R<SceneResult> {
         return Err(refuse("the primary program is not the template's shader start", &["Q207"]));
     }
     if tex.is_some() && ev.iter != [[0x4001_2001, 0]] || tex.is_none() && !ev.iter.is_empty() {
-        return Err(refuse("the iterator word is not the template's one fetch of layer 0", &["Q021"]));
+        return Err(refuse("the iterator word is not the template's one fetch of layer 0", &["Q180"]));
     }
     // the object's remaining words: the attribute count follows the texture, word 10 changes
     // nothing (E069), a fill's words 3 to 16 change nothing (E069), a copy's coordinates and

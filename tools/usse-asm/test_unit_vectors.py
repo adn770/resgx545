@@ -26,11 +26,46 @@ def test_zls_store_has_the_18_cases_and_the_counts_of_e489():
     vs = vectors(uv.zls_store)
     assert len(vs) == 18
     assert sum(v["expect"]["stored"] for v in vs) == 3415552
-    # 3279132 dwords at the rule's address: 3225000 for pixels of the target, 54132 past it (Q122)
-    assert sum(v["expect"]["matched"] for v in vs) == 3225000
+    # 3279132 dwords at the rule's address: 3225000 for pixels of the target, 54132 past it in the
+    # band, and 1124 of background past the band (E831: matched, none refused at these even sizes)
+    assert sum(v["expect"]["matched"] for v in vs) == 3225000 + 54132 + 1124
     assert sum(v["expect"]["refused"].get("Q107", 0) for v in vs) == 128640 + 6656
-    assert sum(v["expect"]["refused"].get("Q122", 0) for v in vs) == 54132 + 1124
+    assert not any(set(v["expect"]["refused"]) - {"Q107"} for v in vs)
+    assert all(v["provenance"]["questions"] == ["Q107"] for v in vs)
+    assert all("E831" in v["provenance"]["records"] for v in vs)
     assert all(v["init"]["task"] == "zls-store" and len(v["init"]["x"]["sha256"]) == 64 for v in vs)
+
+
+def test_zls_classes_follow_the_band_of_e831_and_leave_odd_sizes_to_q287():
+    import struct
+
+    def ramp(p, size):
+        return struct.unpack("<I", struct.pack("<f", 0.25 + 0.5 * (p + 0.5) / (3 * size)))[0]
+
+    def dumps(w, h, cells):
+        # 34 x 18 or 35 x 18 at G = 3: one slot a tile, tiles (0, 0) and (1, 0) used
+        ax, ay = [0xDEADBEEF] * 4096, [0xDEADBEEF] * 4096
+        for (x, y, vx, vy) in cells:
+            i = 512 * (y // 16 * 4 + x // 32) + uv_index(x % 32, y % 16)
+            ax[i], ay[i] = vx, vy
+        return ax, ay
+
+    def uv_index(x, y):
+        i = (x >> 4 & 1) << 8
+        for b in range(4):
+            i |= (y >> b & 1) << 2 * b | (x >> b & 1) << 2 * b + 1
+        return i
+
+    bg = 0x3F800000
+    # 34 x 18: the band is x < 42, y < 22; a ramp inside it, background past it, and the reverse
+    cells = [(41, 2, ramp(41, 34), ramp(2, 18)), (50, 3, bg, bg),
+             (42, 2, ramp(42, 34), ramp(2, 18)), (41, 21, bg, bg)]
+    c = uv.zls_classes(34, 18, 3, *dumps(34, 18, cells))
+    assert (c["outside"], c["bg_outside"], c["other"], c["odd"]) == (1, 1, 2, 0)
+    # 35 x 18: 1.25 W = 43.75, rule A and FLOOR differ; every pixel past the target is Q287's
+    cells = [(43, 2, ramp(43, 35), ramp(2, 18)), (50, 3, bg, bg)]
+    c = uv.zls_classes(35, 18, 3, *dumps(35, 18, cells))
+    assert (c["outside"], c["bg_outside"], c["other"], c["odd"]) == (0, 0, 0, 2)
 
 
 def test_te_region_has_the_35_jobs_and_14656_pairs_with_no_mismatch():

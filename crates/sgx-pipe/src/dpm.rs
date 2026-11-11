@@ -5,7 +5,7 @@
 use crate::Outcome;
 
 /// Open questions that block the unit.
-pub const OPEN: &[&str] = &["Q045", "Q036", "Q038", "Q081", "Q103", "Q191", "Q192", "Q210", "Q211", "Q273"];
+pub const OPEN: &[&str] = &["Q045", "Q036", "Q038", "Q081", "Q103", "Q191", "Q192", "Q210", "Q211"];
 
 /// A refusing stub until the unit's sub-phase lands: the model never guesses.
 pub fn refuse() -> Outcome {
@@ -76,7 +76,8 @@ pub fn dword36_from_abort_counts(counts: &[u32]) -> u32 {
 
 /// Whether the raise limit C admits a raise of `thr0` by 0x20 (E774). Necessary for a raise at the
 /// measured scene and target and not sufficient anywhere else: whether the second run reaches thr0
-/// (E625's rule, Q210) is not part of it.
+/// (E625's rule, Q210) is not part of it, nor is the count of partial renders: E625's formula for it
+/// is refuted at U = 287 (E832: 9 down to 2 over 19 buffer sizes, none of the 20 fitting pairs).
 pub fn raise_within_limit(thr0: u32) -> bool {
     thr0.saturating_add(0x20) <= RAISE_LIMIT_C
 }
@@ -87,10 +88,12 @@ mod tests {
 
     #[test]
     fn the_open_list_holds_the_threshold_and_page_need_questions() {
-        // Q210 the threshold raise rule, Q211 the page need of a scene, Q273 the 1500-vertex scene
-        for id in ["Q210", "Q211", "Q273"] {
+        // Q210 the threshold raise rule, Q211 the page need of a scene; Q273 (dword 36) is answered
+        // by E803, so it no longer blocks the unit
+        for id in ["Q210", "Q211"] {
             assert!(OPEN.contains(&id), "{id}");
         }
+        assert!(!OPEN.contains(&"Q273"));
     }
 
     #[test]

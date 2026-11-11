@@ -7,7 +7,7 @@
 //! where the job stores it. The library's scenes only: every command word the model does not read
 //! is checked against what the library writes and refused (Q231, Q085) when it differs; what the
 //! iterators would deliver is refused (a pixel program that reads a pa register no one wrote stops
-//! the simulator: Q021).
+//! the simulator: Q180).
 
 use crate::Outcome;
 use crate::isp::{self, Listed, Mode};
@@ -242,7 +242,7 @@ impl Ctx {
                     ev.attrs.len(),
                     ev.tex.len()
                 ),
-                &["Q021"],
+                &["Q180"],
             ));
         }
         Ok(Shader { u0: ev.tasks[0][0] })

@@ -136,7 +136,7 @@ def test_a_poked_scene_names_the_questions_its_poked_words_are_open_under(tmp_pa
     assert ts.refuse_of(["bg:3=0x5", "xfer:7^=0x1"]) == [
         "Q003", "Q011", "Q066", "Q076", "Q205", "Q206", "Q207"]
     assert ts.refuse_of(["pds:pixev:7=0"]) == ["Q003", "Q074", "Q206", "Q207"]
-    assert ts.refuse_of(["pds:prim:6^=0x2000"]) == ["Q003", "Q021", "Q076", "Q078", "Q206", "Q207"]
+    assert ts.refuse_of(["pds:prim:6^=0x2000"]) == ["Q003", "Q076", "Q078", "Q180", "Q206", "Q207"]
     assert ts.refuse_of(["tex:1^=0x20"]) == ["Q003", "Q076", "Q078", "Q206"]
     assert ts.refuse_of([]) == [], "an unpoked job is not one a question keeps open"
     # a word of a space the table does not know is not refused under a guess
