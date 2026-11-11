@@ -181,6 +181,41 @@ def test_main_leaves_the_generated_evidence_log_to_the_records(tree, monkeypatch
     assert questions.main(["--check"]) == 1
 
 
+def test_records_up_to_a_late_fold_may_cite_the_folded_question(monkeypatch):
+    """A fold made after records cited the question ("folded into Q<nnn> after E<nnn>") lets
+    the records up to that one keep their citation; a later record or a doc cites the target."""
+    monkeypatch.setattr(questions, "RETIRED", {"Q002": "folded into Q001 after E003"})
+    assert questions.reference_problems("Q002", {"Q001"}, record="E002") == []
+    assert questions.reference_problems("Q002", {"Q001"}, record="E003") == []
+    assert questions.reference_problems("Q002", {"Q001"}, record="E004") == \
+        ["Q002 was folded into Q001 after E003: cite Q001"]
+    assert questions.reference_problems("Q002", {"Q001"}) == \
+        ["Q002 was folded into Q001 after E003: cite Q001"]
+
+
+def test_a_plain_fold_is_still_never_citable(monkeypatch):
+    monkeypatch.setattr(questions, "RETIRED", {"Q002": "folded into Q001"})
+    assert questions.reference_problems("Q002", {"Q001"}, record="E001") == \
+        ["Q002 was folded into Q001: cite Q001"]
+
+
+def test_a_late_fold_names_an_open_target_and_a_record(monkeypatch):
+    questions.check_retired({"Q002": "folded into Q001 after E003"})
+    with pytest.raises(ValueError):
+        questions.check_retired({"Q002": "folded into Q001 after Q003"})
+    assert questions.fold_problems({"Q002": "folded into Q001 after E003"}, {"Q001"}) == []
+    assert questions.fold_problems({"Q002": "folded into Q009 after E003"}, {"Q001"}) == \
+        ["Q002 folded into Q009 after E003, which is not an open question"]
+
+
+def test_main_lets_earlier_records_cite_a_late_fold(tree, monkeypatch):
+    monkeypatch.setattr(questions, "RETIRED", {"Q002": "folded into Q001 after E003"})
+    (tree / "evidence" / "isp" / "E002-x.md").write_text("see Q002")
+    assert questions.main(["--check"]) == 0
+    (tree / "evidence" / "isp" / "E004-x.md").write_text("see Q002")
+    assert questions.main(["--check"]) == 1
+
+
 def test_a_decided_question_is_retired_and_stays_citable(monkeypatch):
     monkeypatch.setattr(questions, "RETIRED", {"Q002": "decided in doc/specs/x.md"})
     assert questions.reference_problems("see Q001 and Q002", {"Q001"}) == []

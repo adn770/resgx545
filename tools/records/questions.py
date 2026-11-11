@@ -35,7 +35,9 @@ answer. A question closed by a decision and not by a measurement is retired as "
 stays citable as the name of the decision. Specs, evidence records and glossary terms cite a
 question as Q<nnn>; an answered or folded one may not be cited, its answer or the question it was
 folded into is, except that the records up to the answering one keep their citations (a landed
-record changes only by corrections). doc/open_questions.md is
+record changes only by corrections). A fold made after records cited the question is retired as
+"folded into Q<nnn> after E<nnn>", the last record then landed; the records up to it keep their
+citations in the same way. doc/open_questions.md is
 generated from the files: the work queue (hw), then the parked fw and kernel questions.
 
     python3 tools/records/questions.py [--check]
@@ -153,9 +155,10 @@ def check_retired(retired: dict[str, str]) -> None:
     the document that states the decision that closed it."""
     for q, why in retired.items():
         if not re.fullmatch(r"Q\d{3}", q) or not re.fullmatch(
-                r"answered by E\d{3}|folded into Q\d{3}|decided in [\w./-]+\.md", why):
+                r"answered by E\d{3}|folded into Q\d{3}( after E\d{3})?|decided in [\w./-]+\.md",
+                why):
             raise ValueError(f"{q}: retired as {why!r}, not 'answered by E<nnn>', "
-                             "'folded into Q<nnn>' or 'decided in <doc>.md'")
+                             "'folded into Q<nnn>[ after E<nnn>]' or 'decided in <doc>.md'")
 
 
 def decision_problems(retired: dict[str, str], root: pathlib.Path) -> list[str]:
@@ -174,7 +177,12 @@ def decision_problems(retired: dict[str, str], root: pathlib.Path) -> list[str]:
 def fold_problems(retired: dict[str, str], open_ids: set[str]) -> list[str]:
     """The folds whose target is not an open question."""
     return [f"{q} {why}, which is not an open question" for q, why in retired.items()
-            if why.startswith("folded into ") and why[-4:] not in open_ids]
+            if why.startswith("folded into ") and fold_target(why) not in open_ids]
+
+
+def fold_target(why: str) -> str:
+    """The question a fold moved into: "folded into Q<nnn>[ after E<nnn>]"."""
+    return why.split()[2]
 
 
 def reference_problems(text: str, open_ids: set[str], record: str | None = None) -> list[str]:
@@ -183,8 +191,11 @@ def reference_problems(text: str, open_ids: set[str], record: str | None = None)
     citing it (it was written before or with the answer, and changes only by corrections)."""
     out = []
     for q in dict.fromkeys(REF.findall(text)):
-        if q in RETIRED and RETIRED[q].startswith("folded into "):
-            out.append(f"{q} was {RETIRED[q]}: cite {RETIRED[q][-4:]}")
+        if q in RETIRED and RETIRED[q].startswith("folded into ") and record \
+                and " after E" in RETIRED[q] and int(record[1:]) <= int(RETIRED[q][-3:]):
+            continue
+        elif q in RETIRED and RETIRED[q].startswith("folded into "):
+            out.append(f"{q} was {RETIRED[q]}: cite {fold_target(RETIRED[q])}")
         elif q in RETIRED and RETIRED[q].startswith("decided in "):
             continue
         elif q in RETIRED and record and RETIRED[q].startswith("answered by ") \
