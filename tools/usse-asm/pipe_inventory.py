@@ -32,7 +32,7 @@ RULES = [
     Rule(r"zls/store-format-dumps/", "zls-store", "unit-ready", "E466 E490", "Q120 Q121", "12.4",
          "formats 0 to 2 and the sign bit; the format rule is not coded"),
     Rule(r"isp/msaa-ident/", "isp-tile", "built", "E503 E502", "Q141", "12.8", "48 runs, 96 dumps"),
-    Rule(r"isp/msaa-te-dumps/", "te-region", "unit-blocked", "E507 E511", "Q086 Q140", "12.8",
+    Rule(r"isp/msaa-te-dumps/", "te-region", "unit-blocked", "E507 E511", "Q086 Q003", "12.8",
          "TE words under 4x"),
     Rule(r"isp/msaa-resolve/", "isp-tile", "scene-only", "E281", "Q089 Q138", "12.8", "resolve"),
     Rule(r"isp/msaa-layout/", "isp-tile", "scene-only", "E210 E211", "Q030", "12.8", "sample layout"),

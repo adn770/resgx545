@@ -5169,7 +5169,7 @@ open driver:
    then `ldr` of 0x0814 and 0x0a78 is ordered in a firmware task, E534, and its other registers and
    the register-index forms are Q154); when another reader sees an unfenced store and when a load
    not waited for lands (Q143, Q146); why a client `emitpds` faults the job and why its addend 0xFFF
-   to 0x2000 leaves the fill's value (Q128, Q145); the 12 pixels of an `sa` writer that show the
+   to 0x2000 leaves the fill's value (Q128); the 12 pixels of an `sa` writer that show the
    `sa` (Q129); where a write past the allocation goes (Q132); what bounds a `phas` request
    and what a request above 256 allocates, which is [infer] at least 124 for 260 to 376, T = 101 to
    123 not run (Q133). What survives from one firmware task to the next beyond one writer's

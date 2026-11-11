@@ -1,14 +1,14 @@
 +++
 id = "Q003"
-question = "which event (if any) does a bus-interface fault raise, and what do the fault-request bits of CR_BIF_INT_STAT name, and what clears a latched fault in CR_BIF_INT_STAT and CR_BIF_FAULT while leaving the bus usable?"
+question = "which event (if any) does a bus-interface fault raise, and what do the fault-request bits of CR_BIF_INT_STAT name, what clears a latched fault in CR_BIF_INT_STAT and CR_BIF_FAULT while leaving the bus usable, and what makes the health triangles after a 0x90004 fault fault before one passes (two after each 4x fault of K2, one after R3-rgn4's j2, none after its j4)?"
 unit = "transfer"
 kind = "hw"
 value = "medium"
 phase = 4
 evidence = ["E021", "E024", "E317", "E318", "E319", "E320", "E354", "E355", "E357", "E444", "E203",
             "E313", "E362", "E363", "E395", "E457", "E476", "E573", "E631", "E722", "E729", "E764",
-            "E765", "E766", "E767", "E789", "E826"]
-terms = ["CR_BIF_FAULT", "CR_BIF_INT_STAT", "misc_info"]
+            "E765", "E766", "E767", "E789", "E826", "E507", "E729", "E788", "E824", "E828"]
+terms = ["CR_BIF_FAULT", "CR_BIF_INT_STAT", "misc_info", "CR_TE_AA", "CR_ISP_MSAA"]
 +++
 
 In E021 a fill aimed at a page the context's directory maps read-only writes nothing and never
@@ -186,3 +186,5 @@ leaves the fault registers reading zero while a TA write is still pending). Not 
 replays in K2 and one on R3-rgn4's boot, and what ends them. Refuted by: a health fault at the
 health context's own first unmapped page after a job that faulted elsewhere, or a -110 after a
 fault word other than 0x90004.
+
+**Correction 2026-11-11:** Q140 is merged into this question (retired as folded into Q003; a fold is not an answer), and its question is now the last clause of the one above (its health-triangle clause, with the note of this date above; the kernel's parts were answered by E788, E824 and E828). Its question was: what makes the health triangles after a failed 4x job fault before one passes (two after each 4x fault of K2, one after R3-rgn4's j2, none after its 4096 x 4096 fault), now that our 4x faults are known as the kernel's one array of region headers and a context made for 4x targets gets four. Its text: E507 drew exactly at six sizes up to 256 x 128 and 192 x 96 and faulted at the six held-out sizes from 320 x 160 to 640 x 480 (`BIF_FAULT` 0x90004, pages 0x20006 to 0x2000a); E729 (5 held-out sizes) bounded the number of region-header arrays to 4 or 5 and E788 showed four (a layout of exactly four completed 320 x 400); E824 completed 8 of 8 held-out 4x sizes up to 1024 x 768 with `render_rgn_arrays` at 4; E828 made four arrays the kernel's rule for a context made with `DRM_SGXFIVE_CTX_RENDER_AA_4X` and ran 288 x 144 with it (0 of 41472 wrong), without it (refused, EINVAL) and with the knob forced to 1 (E729's fault came back, BIF_FAULT 0x20006061). What stayed open there is Q003's last clause. Q140's 4x-only wording was too narrow: the state follows any 0x90004 fault.

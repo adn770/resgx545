@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-177 open: 166 hw (high 19, medium 77, low 70, unrated 0), 9 fw, 2 kernel.
+175 open: 165 hw (high 19, medium 77, low 69, unrated 0), 9 fw, 1 kernel.
 
 ## Work queue: hardware
 
@@ -154,7 +154,7 @@
 
 ### transfer
 
-- `Q003` (phase 4, hw, medium): which event (if any) does a bus-interface fault raise, and what do the fault-request bits of CR_BIF_INT_STAT name, and what clears a latched fault in CR_BIF_INT_STAT and CR_BIF_FAULT while leaving the bus usable? (E021, E024, E317, E318, E319, E320, E354, E355, E357, E444, E203, E313, E362, E363, E395, E457, E476, E573, E631, E722, E729, E764, E765, E766, E767, E789, E826)
+- `Q003` (phase 4, hw, medium): which event (if any) does a bus-interface fault raise, and what do the fault-request bits of CR_BIF_INT_STAT name, what clears a latched fault in CR_BIF_INT_STAT and CR_BIF_FAULT while leaving the bus usable, and what makes the health triangles after a 0x90004 fault fault before one passes (two after each 4x fault of K2, one after R3-rgn4's j2, none after its j4)? (E021, E024, E317, E318, E319, E320, E354, E355, E357, E444, E203, E313, E362, E363, E395, E457, E476, E573, E631, E722, E729, E764, E765, E766, E767, E789, E826, E507, E729, E788, E824, E828)
 - `Q011` (phase 6, hw, medium): why does a copy whose background-object tag (transfer word 0) is wrong read one texel, the source's last, for every pixel, and what stores the samples of CR_ISP_MSAA mode 2 in a copy? (E028, E272, E398)
 - `Q206` (phase 12, hw, medium): what do the words of a transfer job that no record explains do: the 17 register words of the command beyond the render box (words 12 and 13) and the alpha-inversion bit, the words of the tasks the programs start, and the values the builder writes? (E004, E019, E020, E265, E272, E043, E044, E126, E620)
 - `Q289` (phase 12, hw, medium): which tile does the end-of-tile task's DOUTU1 x field (bits 11:3) and y field (bits 21:12) name when they differ from the pixel-event program's own, on a fill, a copy and a larger target, and do the two fields combine as a tile (x, y) (E043, E044, E126, E620)
@@ -176,7 +176,7 @@
 - `Q125` (phase 11, hw, low): which code leaves 0xeb3 and 0x98 in pclink and 1101, 0101, 0001 or 1111 in p0-p3 of the instances that do not read the last job's value, and why do they come in aligned 2 x 2 quads of pixels? (E475, E477, E484, E500)
 - `Q126` (phase 11, hw, low): which extension of a source 1 above 0x7fff does the test of iaddu32 read, and does the value it writes zero-extend source 1 with a repeat, an immediate or a constant in source 2, or with other destinations (E472, E498, E521)
 - `Q127` (phase 11, hw, low): what do the extra i register of ima32, ima32 as a dual-issue secondary, and imae with a repeat, a u16 or z16 source or a .rsN shift do with the carry flags and with the 32-bit result? (E469, E470, E471, E493, E494, E495, E496, E501, E525, E526, E527, E528, E595, E597)
-- `Q128` (phase 11, hw, medium): why does a client emitpds fault the job at page 0xd2000 or hang it, what do the s0, s1 and s2 operands of the started PDS program become (it saw ir0.0 2 or 3 whatever s2 was), and what in the control word's addend the PDS uses (0xFFF to 0x2000 left the fill's own value, 0x100 did not) (E488, E513, E520)
+- `Q128` (phase 11, hw, medium): why does a client emitpds fault the job at page 0xd2000 or hang it, what do the s0, s1 and s2 operands of the started PDS program become (it saw ir0.0 2 or 3 whatever s2 was), and what in the control word's addend the PDS uses (0xFFF to 0x2000 left the fill's own value, 0x100 did not): why does the addend, from 0xFFF to 0x2000, leave the fill's own dword 0x403 where 0x100 gives 3 or 2, and what does 0x800 do (E488, E513, E520)
 - `Q129` (phase 11, hw, low): why do 12 pixels (4 each of three values) of every fill that writes sa1, sa5 and sa7 show those sa values as their output, and how long does an sa written by one job stay readable (one job, or until the next job that writes it) (E484)
 - `Q130` (phase 11, hw, low): when does a load on one counter land while a wdf waits on another: why four ldad on drc0 issued after a wdf drc1 that waited for four ldad on drc1 landed in 8 of 10 runs, and four ldad on drc1 after two ldr on drc2 never did in 10 (E479)
 - `Q132` (phase 11, hw, medium): where does a write to a temporary or a register past the task's allocation go (does it land in the register whose index is the register's modulo the allocation, or is it dropped: E486, E519 and E535 do not disagree), and which instances' registers do the pixels that do not read the wrapped register read (E486, E519, E535)
@@ -186,7 +186,6 @@
 - `Q136` (phase 11, hw, low): how long does a value written to sa0 last across jobs, why is pa0 not written by ima32 or mov, and is the 0xff00ff00 and 0xff203040 mixture that pa0 reads in the first jobs of a table the colour left by the job before it? (E496, E484)
 - `Q137` (phase 11, hw, low): do the rules of the test field of a class 9 test (zero part: bits 41 over 40; sign part: bits 43 over 42; the parts ANDed under join `a`, E499, ORed with an absent part true under join `o`, E529) hold for the shifts, the 8-bit and 16-bit lane operations, the other forms of the bitwise group and the other classes' tests, with the o join and with a chan field enc[38:36] other than 0 (E530), and is a word with several conditions, greater than zero among them, usable from compiler output? (E499, E498, E529, E530)
 - `Q143` (phase 11, hw, medium): when does another instance's unfenced stad reach a load, what orders the tiles and quads (the left 32 columns before the right, a quad together), and when is an idf drcN, bif needed for another reader (the host during the job, a texture fetch of the stored data, a firmware task) (E512, E513, E514)
-- `Q145` (phase 11, hw, low): why does the control word's addend of an emitpds, from 0xFFF to 0x2000, leave the fill's own dword 0x403 where 0x100 gives 3 or 2, and what 0x800 does (E520)
 - `Q146` (phase 11, hw, low): when does a load that is not waited for land, why did a load not waited for hold the loaded value after 40, 100 and 128 `nop` but not after 48 and 64, and in what order two loads and a `mov` to one register land (E517)
 - `Q154` (phase 11, hw, medium): does str then ldr of one register stay ordered for a register whose write starts work or that another writer changes, with a job running, and what does an indexed str (the register-index forms, never run) do (E534, E445)
 - `Q183` (phase 11, hw, medium): which store forms in the end-of-tile task fault the job and why does E572's fault not reproduce in E707 (a program equal to E572's but for the address immediate completed; two 8-temporary `mov.skipinv` programs faulted at address 0x1) (E572, E707)
@@ -252,7 +251,3 @@
 #### platform
 
 - `Q095` (phase 11, kernel): does giving the EDM a page directory of its own, rather than gma500's default one, change anything beyond the coupling of their teardowns? (E008, E018, E021)
-
-#### ta
-
-- `Q140` (phase 11, kernel): what makes the health triangles after a failed 4x job fault before one passes (two after each 4x fault of K2, one after R3-rgn4's j2, none after its 4096 x 4096 fault), now that our 4x faults are known as the kernel's one array of region headers and a context made for 4x targets gets four (E507, E729, E788, E824, E828)

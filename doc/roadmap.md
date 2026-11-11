@@ -203,17 +203,17 @@ Q088, Q118, Q119, the one on the state between EDM tasks, answered later by E809
 two EDM tasks, answered by E752) and the 6 `kernel` ones (the
 design
 of our kernel driver: the firmware-identity one, answered later by E402, the one on the hung
-job's object, answered later by E422, and Q095, Q140, Q166, and the one on the module load, answered
-later by E828) stay open, parked. By unit: bif 4, dpm 7,
-edm 13, isp 11, mte 3, pbe 5, pds 16, platform 5, render 9, ta 14, texture 14, transfer 3, usse 36,
-vdm 9, zls 6. A question is removed when a record answers it; one that mixed a hardware part with a
-firmware or kernel part was narrowed to the hardware part or folded into the hardware question that
-holds it (seven so far: the control block's per-VM copy and the render context count bound into
-Q076, the recovery's reset steps into Q003, the settle routine and the two faults after a base-only
-fault or a kept owner into Q036 and Q045, the points question into Q161), and a fold is not an
-answer. What a fold or a narrowing left of the closed firmware's own behaviour is a new parked
-question: how a kick tells its directory is in no list (Q118, from the render context count) and
-whether a command with both kick flags acts as two (Q119, from Q065).
+job's object, answered later by E422, and Q095, the 4x fault question (since folded into Q003),
+Q166, and the one on the module load, answered later by E828) stay open, parked. By unit: bif 4, dpm
+7, edm 13, isp 11, mte 3, pbe 5, pds 16, platform 5, render 9, ta 14, texture 14, transfer 3, usse
+36, vdm 9, zls 6. A question is removed when a record answers it; one that mixed a hardware part
+with a firmware or kernel part was narrowed to the hardware part or folded into the hardware
+question that holds it (seven so far: the control block's per-VM copy and the render context count
+bound into Q076, the recovery's reset steps into Q003, the settle routine and the two faults after a
+base-only fault or a kept owner into Q036 and Q045, the points question into Q161), and a fold is
+not an answer. What a fold or a narrowing left of the closed firmware's own behaviour is a new
+parked question: how a kick tells its directory is in no list (Q118, from the render context count)
+and whether a command with both kick flags acts as two (Q119, from Q065).
 
 ### 4.2 Inferred glossary rows
 
@@ -502,7 +502,8 @@ sideband resolves (E504, E508, E510). At two macrotile columns the second bounda
 words decides, at four B1, B2 and B3 are all read, the stride must be the rule's, and none of the
 declared readings PA, PB and PC fits both (E505, E506, E509); the closed driver's 64 x 64 words draw
 exactly at 96 x 48 and 128 x 64 and fault at 128 x 128 and larger (E511). Records E502-E511; Q030,
-Q086, Q089 and Q100 are narrowed, none retired; Q089 to Q142 are new, Q140 for the kernel.
+Q086, Q089 and Q100 are narrowed, none retired; Q089 to Q142 are new, one for the kernel's 4x faults
+(since folded into Q003).
 
 Sub-phase 11.27 ran 32 probe tables on the laptop (2027 cases, one campaign run of each, no probe.py
 run first) with the sgxfive-test of 11.26 and the 11.19 linux fork, no kernel change, for the open
@@ -675,7 +676,7 @@ narrowed; eight questions open (Q159 to Q166; hw: medium, low, low, low, medium,
 to Q165, and Q166 kernel, parked: it needs a kernel change). The TA and VDM models of the simulator
 (region test, object format, points, vertex-task capacity) wait for phase 12; nothing here touches
 the USSE, PDS or texture models, so sgx-sim is unchanged and the vectors are the same. The roadmap
-counts the questions from the built `doc/open_questions.md`: 143 open (Q001 to Q167), 127 hw (high
+counts the questions from the built `doc/open_questions.md`: 143 open (ids up to 167), 127 hw (high
 13, medium 65, low 49), 10 fw and 6 kernel; ta 14, vdm 9, platform 5.
 
 Sub-phase 11.32 ran the sampler of the texture unit in a fill of our own, 456 jobs of 2048 pixels
@@ -837,9 +838,9 @@ does not move with the page count (E704), the page need of one triangle depends 
 store is not reproduced (E707 to E709, Q163 to Q278). The sampler's bilinear result is the two-stage
 form of E720, and the simulator `sgx-sim` takes it, tests first, with 8 new vectors; the gradient
 footprint, the T3 address chain, sRGB, ETC1, the texture types and the cube are findings the
-simulator keeps refused (E721 to E726, Q280 to Q284), and the multisample, TE bit, Q140, ZLS band
-and depth plane results are E727 to E731 (four questions opened then, up to Q288; E829
-answered the first), E732 the accounting. Four questions are
+simulator keeps refused (E721 to E726, Q280 to Q284), and the multisample, TE bit, the 4x health
+triangles (Q003), ZLS band and depth plane results are E727 to E731 (four questions opened then, up
+to Q288; E829 answered the first), E732 the accounting. Four questions are
 folded into Q163, the one on two EDM tasks (answered by E752) and Q152, Q045 is split (Q277 for the
 firmware) and Q103's kernel part is
 Q278; no question is answered. The roadmap counts the questions from the built
