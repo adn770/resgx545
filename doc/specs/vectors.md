@@ -594,3 +594,48 @@ recorded images of E606 and E607 pixel for pixel), `inventory_stats` (the census
 - `timings/<stage>.timing.json` (format `sgx545-timings`, 285 rows): per job the burst, the TA
   clocks' run, bits 6 and 7 of CR_EVENT_STATUS2 after the job and when they showed. They are
   measurements the simulator has no clock for, the input of the STATUS2 latch rule of `events.rs`.
+
+## 8. Tables of the closing pass (format `sgx545-tables`)
+
+What the closing pass measured and no simulator replays is kept as tables beside section 7's
+vectors, under `vectors/closing/` of the data repository, made by `tools/usse-asm/closing_tables.py`
+(tests: `test_closing_tables.py`) from the kept files of each published session, one table a stage
+and one row a job (E833):
+
+```
+closing_tables.py KIND --session DIR --out OUT STAGE...
+```
+
+A file is `{format: "sgx545-tables", version: 1, run, kind, note, replay, rows, skipped}`. `run`
+names the session, the stage and the tool; `replay` is `{status, reason}`, and the status is
+`refused` in every table today, with the reason the simulator does not model what the rows hold, so
+a table is never counted as a pass; `rows` are what the job's kept files say, under the keys of the
+session's own readers (its frozen scorer, or the reader named in the tool), with the raw file and,
+for a dump, its sha256; `skipped` lists the jobs a session scored only as gates or void, with the
+reason. `crates/sgx-sim/tests/closing_tables.rs` checks that every table has the format, a refused
+status with a reason, and rows.
+
+| dataset | path under `vectors/closing/` | kind | stages, jobs | records |
+|---|---|---|---|---|
+| `vectors-closing-r3-geo-depth` | `r3-geo/depth-words/` | `depth` | g-da to g-dd, 57 | E795-E798 |
+| `vectors-closing-r3-geo-dword36` | `r3-geo/dword36.table.json` | `dword36` | g-d36, g-c4 to g-c7, 60 | E803 |
+| `vectors-closing-r3-geo-counts` | `r3-geo/counts/` | `counts` | g-c4 to g-c7, g-d36, 60 | E803 |
+| `vectors-closing-r3-geo-c-counts` | `r3-geo-c/counts/` | `counts` | g-qf 22, g-qh 8 (+ 6 void) | E832 |
+| `vectors-closing-r3-geo-c-zls` | `r3-geo-c/zls-extents/` | `zls` | g-z, 15 | E831 |
+| `vectors-closing-r3k-pixel-pb-pages` | `r3k-pixel/pb-pages/` | `pbpages` | k-f4, 10 dumps | E824 |
+
+- `depth`: per job the stored depth word and 1/w of each vertex of the first object of the render
+  dump and the vertex count; refused, no frozen formula of the depth word held (E795, E796).
+- `dword36`: per job the count before the last abort (`CR_DPM_GLOBAL_PAGE_STATUS` low half) and
+  dword 36 of the TA/3D control block, with whether they agree (60 of 60, E803's rule); refused,
+  the DPM's page counts and the control block are not modelled.
+- `counts`: per job P, the first threshold the job read (`0x0624`), the partial renders (the rising
+  edges of `0x0658` bit 0), the peak of each TA run, the counts before each abort and dwords 36 to
+  38; refused, the abort and partial-render sequence is not modelled (the count is Q211, E832).
+- `zls`: per job the stored (not 1.0f) dwords of the depth store's tile area, their extent and
+  the tool's count of target pixels that differ; refused by sgx-sim. `sgx-pipe`'s `zls.rs` models E831's band
+  at even sizes since round 4 (section 5), but no replay of this table is written; the odd sizes
+  are Q287.
+- `pbpages`: per dump the non-zero 4 KiB pages of the parameter buffer, their runs, the TA data
+  size and the tile count; refused, the page writes are not modelled (the page model the table
+  agrees with in 8 of 8 dumps was fitted to them, E833).
