@@ -61,3 +61,16 @@ orders, also where 5' was the later write, so the swapped-order control failed a
 are cannot tell, and tag 5 alone in the original order (k = 0, 3 and 7) cannot tell a predicate that
 is ignored from a write that lands whatever the order (E772's 'not gated' does not follow). Open:
 whether the predicate gates `p1 or.skipinv o4`, and which of two o4 writes lands, and why.
+
+Note 2026-11-11 (round 4, a reading of E808's data and of the generator; [data] and [source] for
+the facts, [infer] for V1 to V3). Both order rules are refuted for the o4 clause: with the 5' write
+first and 5 last (4 configurations) and with 5 first and 5' last (4 configurations) every o4 word
+read was tag 5 (25 to 51 words a job, tag 5' in none), so "the last write wins" and "the first write
+wins" are each contradicted by four configurations. What can decide is the value: the generator's
+tags are 5 and 13 (0xd, 5'), which differ in bit 3 only (`gen/r3_c.py`). Readings that fit all 16
+jobs: V1 the path drops bit 3 of the word (13 lands as 5); V2 a word with bit 3 set does not land;
+V3 the two writes combine (AND gives 5, the smaller wins). OR is refuted (it gives 13). Tag 8 (o7)
+never appears in the pairs of E570 and E709 (tags 5 to 7 only), which V1 and V2 also predict. The
+predicate clause cannot be read until this is known: with k = 7 the p1 write never runs, the !p1 write
+carries 13, and 5 was read all the same. No offline check separates V1 to V3; the planned stage
+p4-o4 separates them with tags that differ in one other bit (the bit-4 and bit-5 marker variants).

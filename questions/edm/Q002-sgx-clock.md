@@ -32,3 +32,10 @@ dual-issue pairs in place of the nops; a counter the USSE itself reads (a timer 
 
 The only consequence for the driver so far is the length of the EDM tick (1.0025 ms instead of
 1 ms) and of the DDK's `SGXWaitClocks` delays.
+
+Note 2026-11-11 (round 4, an offline reading of 702 consecutive plain-tick gaps of the kept rings
+of round 3; [data] for the count, [infer] for the clock). The gaps average 25000.2 `CR_TIMER` units
+(431 of the first 513 exactly 25000, the rest within 4): 400000 timer clocks a tick at 16.000 clocks
+a unit, so one clock times both `CR_TIMER` and the event timer (`CR_EVENT_TIMER` bits 23:0 count
+down 400000 and reload by themselves, E751). The USSE clause stays open: the issue rate, not the
+timer, turns the rate into the USSE's clock.
