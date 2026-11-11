@@ -608,12 +608,13 @@ closing_tables.py KIND --session DIR --out OUT STAGE...
 
 A file is `{format: "sgx545-tables", version: 1, run, kind, note, replay, rows, skipped}`. `run`
 names the session, the stage and the tool; `replay` is `{status, reason}`, and the status is
-`refused` in every table today, with the reason the simulator does not model what the rows hold, so
-a table is never counted as a pass; `rows` are what the job's kept files say, under the keys of the
+`refused` in every table but one, with the reason the simulator does not model what the rows hold, so
+a table is never counted as a pass; the `zls` table is `replayed`, with the `test` that replays it
+(below); `rows` are what the job's kept files say, under the keys of the
 session's own readers (its frozen scorer, or the reader named in the tool), with the raw file and,
 for a dump, its sha256; `skipped` lists the jobs a session scored only as gates or void, with the
-reason. `crates/sgx-sim/tests/closing_tables.rs` checks that every table has the format, a refused
-status with a reason, and rows.
+reason. `crates/sgx-sim/tests/closing_tables.rs` checks that every table has the format, rows, and
+either a refused status with a reason or a replayed one naming its test.
 
 | dataset | path under `vectors/closing/` | kind | stages, jobs | records |
 |---|---|---|---|---|
@@ -633,9 +634,13 @@ status with a reason, and rows.
   edges of `0x0658` bit 0), the peak of each TA run, the counts before each abort and dwords 36 to
   38; refused, the abort and partial-render sequence is not modelled (the count is Q211, E832).
 - `zls`: per job the stored (not 1.0f) dwords of the depth store's tile area, their extent and
-  the tool's count of target pixels that differ; refused by sgx-sim. `sgx-pipe`'s `zls.rs` models
-  E831's band at even sizes since round 4 (section 5), but no replay of this table is written; the
-  odd sizes are Q287.
+  the tool's count of target pixels that differ. Replayed by `crates/sgx-pipe/tests/zls_table.rs`
+  (`the_band_replays_every_modelled_row_of_the_g_z_table`): per job, the pixels of the tile area that
+  the job's triangle (the full-screen one, or the `--tri-v` of `cases.tsv` in the session's
+  `render/closing-r3-geo-c/out/g-z/`) covers inside `zls::in_band` (E831's rule A) are the stored
+  ones, and their count and extent equal the row's: 15 of 15 match, none refused. A row at an odd
+  size would be counted as refused (Q287), never as a pass; the table's `replay` says `replayed` only
+  because no modelled row mismatched. The test skips without the data. sgx-sim does not model the band.
 - `pbpages`: per dump the non-zero 4 KiB pages of the parameter buffer, their runs, the TA data
   size and the tile count; refused, the page writes are not modelled (the page model the table
   agrees with in 8 of 8 dumps was fitted to them, E833).

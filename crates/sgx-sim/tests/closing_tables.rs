@@ -46,14 +46,22 @@ fn every_table_of_the_closing_pass_is_refused_with_a_reason() {
         let name = f.strip_prefix(&root).unwrap().display().to_string();
         assert_eq!(j.get("format").str(), Some("sgx545-tables"), "{name}");
         let r = j.get("replay");
+        let n = j.get("rows").arr().len();
+        assert!(n > 0, "{name}: no rows");
+        if r.get("status").str() == Some("replayed") {
+            // a table another crate replays names its test (sgx-pipe's zls_table.rs, E831), which
+            // holds every modelled row; it is not counted among the refused
+            let test = r.get("test").str().unwrap_or("");
+            assert!(test.contains(".rs::"), "{name}: a replayed table names its test");
+            eprintln!("REPLAYED {name}: {n} rows ({test})");
+            continue;
+        }
         assert_eq!(
             r.get("status").str(),
             Some("refused"),
             "{name}: a table no simulator replays is refused, not passed"
         );
         assert!(!r.get("reason").str().unwrap_or("").is_empty(), "{name}: no reason");
-        let n = j.get("rows").arr().len();
-        assert!(n > 0, "{name}: no rows");
         rows += n;
         eprintln!("REFUSED {name}: {n} rows ({})", r.get("reason").str().unwrap());
     }
