@@ -193,10 +193,21 @@ The SGX545 header has no `BIF_CTRL_INVAL` register. The DDK's reset therefore in
 directory cache by writing `INVALDC` to `BIF_CTRL` and then 0 (`SGXResetInvalDC`,
 `sgxreset.c:272-300`).
 
+On the laptop `CLEAR_FAULT` hides a latched fault and does not clear it: with four bus faults held
+(a TA read, a TA write, a texture fetch; E826) setting bit 4 made the kernel's next reads of
+`BIF_INT_STAT` and `BIF_FAULT` return the idle 0x80000 (or 0) and 0, and clearing it again
+returned both to the fault's values, 4 of 4. The registers stayed latched through a 2.5 s watch
+and only the debugfs reset cleared them (E826; the frozen rows were cannot tell, the three
+readings agree across rows, post hoc). In that reset the fault words read clear in the same 4.3 µs
+row as the halt, 6.8 to 11.3 ms before the event status is host-cleared, so before the kernel
+writes `CLEAR_FAULT` [infer, post hoc] (E767).
+
 ### 5.5 Faults and directory lists
 
 - `BIF_INT_STAT` (0xC04): `FAULT_REQ` [15:0], one bit per faulting requestor; `FAULT_TYPE`
-  [18:16]; `FLUSH_COMPLETE` [19].
+  [18:16]; `FLUSH_COMPLETE` [19]. Writing the set bits back to it changes nothing on the laptop
+  (0x1 and the fault word without bit 19, 4 of 4 held faults, E826); what clears a fault is the
+  reset (§5.4).
 - `BIF_FAULT` (0xC08): `CID` [3:0], the directory list the faulting access went through; `SB`
   [8:4]; `ADDR` [31:12], the faulting page.
 - `BIF_DIR_LIST_BASE0` (0xC84) and `BASE1..15`: the page directory of each list.
@@ -206,11 +217,31 @@ directory cache by writing `INVALDC` to `BIF_CTRL` and then 0 (`SGXResetInvalDC`
 So `CID` and `BIF_DIR_LIST_BASE<CID>` name the page directory, hence the address space, of a
 fault.
 
+The fault words of the records, by the access that made them. Which unit a `FAULT_REQ` bit
+belongs to is read from the access each record set up, not from a source [infer]:
+
+| `BIF_INT_STAT` | `FAULT_REQ` bit | access | records |
+|---|---|---|---|
+| 0x90002 | 1 | texture fetch past the probe's scratch (page 0x3e017) | E765, E826 |
+| 0x90004 | 2 | TA write of region headers past the kernel's layout (`SB` 6) | E729, E789, E826 |
+| 0x90008 | 3 | TA read of an unmapped stream page | E764, E826 |
+| 0x80020 | 5 | transfer write to a read-only alias | E766 |
+| 0x90100 | 8 | 4x render, at page 0x10000 (`SB` 1) | E511, E828 |
+| 0xd0400 | 10 | background program's fetch (`FAULT_TYPE` 5) | E764 |
+| 0x91000 | 12 | first job with buffer 0 left out of the client alias | E573, E745, E761 |
+
+A held fault sets no bit of `EVENT_STATUS` of its own; `EVENT_STATUS2` bit 7 (TA side) or bit 6
+follows 121 to 124 µs after the fault word (§6.4; E764 to E766, E789).
+
 During the renders of a context on a freshly reset GPU `BIF_BANK0` takes `INDEX_TA` = 1 and
 `INDEX_3D` = 1 (12 of 12 runs; `INDEX_EDM` = 1 as well in 5), and a fault of the first job names
 `CID` 1, so the render's TA and 3D reach memory through list 1 (E457). In the client directory the
 aliases of the EDM's buffers 6, 7, 8, 10 and 11 are not needed for a 64 x 64 render (each left out
-alone, 10 of 10 runs exact); TA3DCtl is, writable (Q076).
+alone, 10 of 10 runs exact); TA3DCtl is, writable (Q076). Nor are buffers 1 to 5 and 12 to 14,
+one at a time (E573), the pairs among 1 to 5 tried and 1 to 5 together in a two-render job, 6, 7,
+8, 10 and 11 together over three renders (E745, held out), and 1 to 4 together in two 1024 x 768
+renders that both overflow the parameter buffer (E761); with buffer 0 left out the first job
+faults (0x91000 at 0x3000b021 or 0x3000b022; E573, E745, E761).
 
 On the laptop the EDM keeps its own directory in `BASE15` and gives each render context's
 directory one of lists 0 to 14 at its first kick, in turn after a reset (1, 2, ... 14, then 0),
@@ -226,9 +257,14 @@ check, a plain 64 x 64 triangle, failed after each of the last three in a row an
 hardware's: it held one array of region headers where the TA writes four at `CR_TE_AA` 0xe0000000
 (E788); with four the render completes at every size run up to 1024 x 768 (E824). The kernel now
 gives four to a context made with `DRM_SGXFIVE_CTX_RENDER_AA_4X` and refuses a 4x job on any other
-unless debugfs forced its count (E828). The health triangles that fail after a failed 4x job stay
-open (Q140, a kernel question); a 4x render at 4096 x 4096 on four arrays faulted at the parameter
-buffer's base (E828, Q292).
+unless debugfs forced its count (E828). A 4x render at 4096 x 4096 on four arrays faulted at the
+parameter buffer's base (0x90100 at 0x10000011, the word of E511's three faults) with 1048576
+pixels right, the first wrong at (1024, 0), and the health triangles after it passed, 3 of 3
+(E828; Q292). [infer, post hoc] That job overflows the parameter buffer: the non-zero PB pages of
+E824's ten four-array dumps fit 1 + ceil(2 (W / 16) (H / 16) / 32), which gives 4097 pages at
+4096 x 4096 against 1024 usable (P - 0x22 at the maximum P 0x422), so it would be the first 4x
+partial render on record; the fit was read from the same dumps. The health triangles that fail
+after a TA write fault are a state the reset leaves [infer] (Q003).
 
 ### 5.6 Unit names
 
@@ -238,7 +274,8 @@ sequencer; `USE` the USSE shader core; `ISP` hidden-surface processor; `TSP`, `T
 and shading processor and its pre-processor; `PBE` pixel back end (tile write-out).
 
 *Based on sgx545-ce `src/services4/srvkm/hwdefs/sgx545defs.h`,
-`src/services4/srvkm/devices/sgx/sgxreset.c`; E357, E360, E507.*
+`src/services4/srvkm/devices/sgx/sgxreset.c`; E357, E360, E457, E507, E511, E573, E729, E745,
+E761, E764 to E767, E789, E824, E826, E828.*
 
 ## 6. How the DDK resets and starts the core
 
