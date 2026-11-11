@@ -6123,6 +6123,18 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   PASS, frozen verdict 'H-REP held (3 held, 0 FAILED, 0 cannot tell of 3); H-NOREP refuted (0 held,
   3 FAILED)'.
   *edm; HW, infer; data: `edm-closing-r4-q152:out/20261111-082403/`.*
+- `E833` Converted from the published closing-pass sessions (R3-pixel, R3-geo, R3-geo-c, R3k-pixel)
+  as vectors, sgx-sim replays all 204 pixel-loop proofs of R3-pixel (q-f0 10, q-f1a 54, q-f1b 54,
+  q-t 86) and its 8 direct-read jobs (48038 pixels, 0 mismatches); it refuses R3-pixel's 73 vertex
+  loops (a `phas` wait on vcull, E121) and the 14 tables of depth words (57 jobs, E795-E798), dword
+  36 (60 jobs, E803), DPM counts (R3-geo, R3-geo-c), ZLS extents (15 jobs, E831) and
+  parameter-buffer pages (10 dumps, E824), each with its reason; R3-pixel's 285 timing rows are
+  data, not a prediction.
+  *usse; HW; data: `vectors-closing-r3-pixel-loops`, `vectors-closing-r3-pixel-direct-reads`,
+  `vectors-closing-r3-pixel-timings`, `vectors-closing-r3-geo-depth`,
+  `vectors-closing-r3-geo-dword36`, `vectors-closing-r3-geo-counts`,
+  `vectors-closing-r3-geo-c-counts`, `vectors-closing-r3-geo-c-zls`,
+  `vectors-closing-r3k-pixel-pb-pages`.*
 
 ## By unit
 
@@ -6219,7 +6231,7 @@ E370, E371, E372, E373, E374, E375, E376, E377, E378, E380, E406, E423, E452, E4
 E472, E473, E474, E475, E476, E477, E478, E479, E480, E481, E482, E483, E484, E485, E486, E487,
 E488, E491, E492, E493, E494, E495, E496, E497, E498, E499, E500, E501, E512, E513, E514, E515,
 E516, E517, E518, E519, E520, E521, E522, E525, E526, E527, E528, E529, E530, E534, E535, E549,
-E570, E571, E572, E593, E594, E595, E596, E597, E598, E599, E707, E708, E820.
+E570, E571, E572, E593, E594, E595, E596, E597, E598, E599, E707, E708, E820, E833.
 
 ### vdm
 
