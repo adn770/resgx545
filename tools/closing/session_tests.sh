@@ -18,7 +18,9 @@
 #     the newest commit holding exactly that tool source), each pinned file replaced by its
 #     pinned blob, and src/scratch/resgx545 is the scratch tree. The copy's FROZEN.sha256 has its
 #     absolute resgx545 and resgx545-data paths pointed at the fake home, so the freeze
-#     verifies against the pinned source;
+#     verifies against the pinned source; a frozen file of the session that only lists such
+#     paths of the freeze (R4-G's gen/data/sources.lst) is pointed there too, its hash line
+#     following;
 #   - src/resgx545-data is the data repository; the worktree's target/ is the runner's own
 #     (RESGX545_SESSION_TARGET, kept between runs, never the main checkout's), the main
 #     checkout's userspace/libsgxfive/build/ is copied and its .venv linked (current, not
@@ -165,6 +167,31 @@ if [ -d "$C/debug-src" ]; then
         [ -f "$f" ] && R=$R perl -pi -e 's{"(?:/[^/"]+)*?/resgx545/crates/}{"$ENV{R}/crates/}' "$f"
     done
 fi
+# a frozen file that only lists absolute paths of the freeze itself (R4-G's gen/data/sources.lst,
+# the files its generator read outside the session) moves with them: its paths are pointed at
+# the fake home as the freeze's are below, and its hash line follows
+for f in "$C"/FROZEN*.sha256; do
+    [ -f "$f" ] || continue
+    R=$R D=$HOMEDIR/src/resgx545-data C=$C perl -e '
+        use Digest::SHA qw(sha256_hex);
+        sub moved { my $p = shift;
+            $p =~ s{^/(?:[^/]+/)*?resgx545-data/}{$ENV{D}/}
+                || $p =~ s{^/(?:[^/]+/)*?resgx545/}{$ENV{R}/};
+            return $p }
+        my @lines = <STDIN>;
+        my %abs = map { /^[0-9a-f]{64} [ *](\/.*)$/ ? ($1 => 1) : () } @lines;
+        for (@lines) {
+            next unless /^([0-9a-f]{64})( [ *])([^\/\n].*)$/;
+            my ($h, $sep, $rel) = ($1, $2, $3);
+            open my $in, "<", "$ENV{C}/$rel" or next;
+            my @l = <$in>; close $in;
+            next unless @l && !grep { chomp(my $x = $_); !$abs{$x} } @l;
+            my $text = join "", map { chomp(my $x = $_); moved($x) . "\n" } @l;
+            open my $out, ">", "$ENV{C}/$rel" or die; print $out $text; close $out;
+            $_ = sha256_hex($text) . "$sep$rel\n";
+        }
+        print @lines;' < "$f" > "$f.new" && mv "$f.new" "$f"
+done
 for f in "$C"/FROZEN*.sha256; do
     [ -f "$f" ] || continue
     R=$R D=$HOMEDIR/src/resgx545-data perl -pe \
