@@ -5,7 +5,7 @@ unit = "ta"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E331", "E329", "E507", "E511"]
+evidence = ["E331", "E329", "E507", "E511", "E824"]
 terms = ["CR_TE_MTILE1", "CR_TE_MTILE2", "CR_TE_MACROTILE_STRIDE", "CR_TE_AA", "CR_TE_SCREEN"]
 +++
 
@@ -39,3 +39,9 @@ and 256 x 128, a two-tile macrotile in CR_TE_MTILE1 alone draws exactly at 128 x
 signature of the 3 jobs that complete equals R's, which cannot fail in this form because every
 completing job is all green (with E507's U2 job at 64 x 64, 4 of 4 U2 jobs;
 the 6 R jobs of E507 are the rule itself). The rule over sizes still needs the capture batch.
+
+Note 2026-11-11: the missing 4x render of our stack past 256 x 128 exists. The faults at 320 x 160
+and above were our kernel's one-array layout (E788): with the new module's `render_rgn_arrays` at
+4, 8 of 8 held-out sizes up to 1024 x 768 complete with 0 wrong pixels (E824). H86i and the poked
+families U2, U2Q, HS and FX of E511's 20 skipped cases can run at 320 x 160 and larger with four
+arrays (not run yet); the closed driver's rule over sizes still needs the capture batch.

@@ -60,3 +60,16 @@ drew (3 jobs, 3 recoveries, 0 stops of the script).
 **What it does not show.** f = 4 against 5 (needs the size of the TA's header arrays: answered by
 E788); the
 kernel fix; why the recovery reports -110 and still needs a reset.
+
+**Correction 2026-11-11:** The faults at 288 x 144, 256 x 288 and 384 x 384 are our kernel's layout,
+not the hardware's: it sized one array of region headers, and the TA writes four at `CR_TE_AA`
+0xe0000000 (E788). With the new module's `render_rgn_arrays` at 4 (E824, K2 stage k-f4) every
+held-out size, 288 x 144, 256 x 288, 384 x 384, 320 x 160, 512 x 384, 640 x 480, 320 x 400 and 1024
+x 768, completed with 0 wrong pixels, and the control with one array at 288 x 144 faulted at page
+0x20006 again. "The multisampled layout" above is our kernel's old one-array layout, and "runs out
+of memory at pages 0x20006 and 0x20008" is a fact of that layout, not of the hardware. The sentence
+"A failed 4x job leaves the GPU needing a reset" stays as measured; its cause is open (Q140): two
+failed health triangles then a pass followed both one-array 4x faults of session K2 (E824's control,
+E826's f2), and none followed the 3 other faults of the k-bif stage (E826). The measurements, the
+frozen scores and the f bound are unchanged; f = 4 is what E788 and E824 hold, and a fifth array was
+never needed.

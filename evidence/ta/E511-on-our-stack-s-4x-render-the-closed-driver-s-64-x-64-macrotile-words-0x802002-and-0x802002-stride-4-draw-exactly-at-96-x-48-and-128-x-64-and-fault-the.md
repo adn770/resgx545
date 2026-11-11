@@ -52,3 +52,12 @@ tolerance at the triangle's edges: it accepts the background colour where the re
 and in the 512 background pixels of the first tile the x = 0 column and the y = 0 row are 16 + 32 -
 1 = 47 pixels. So the dump's rows give 7680 green; the tool's count of 7727 equal is not a count of
 green. The first tile's 512 background pixels are the dump's.
+
+**Correction 2026-11-11:** The 20 cases at 320 x 160 and larger were skipped because 4x faulted
+with the rule's own words (E507, Q140); that fault was our kernel's one-array layout (E788; E824:
+with four arrays the kernel's own layout completes every held-out size to 1024 x 768), so the
+skipped cases can now run. The three faults of the HS family at 128 x 128 to 256 x 128 are at
+0x10000012 to 0x10000016, not at the layout's pages 0x20006 to 0x2000a, and the unpoked render
+completed at those sizes (E507), so the measurements above stand [infer: E824 ran no poked words].
+"Cannot be fitted from our stack alone" is withdrawn as far as it rested on the faults at 320 x
+160 and above; the closed driver's rule still needs the capture batch (Q086).

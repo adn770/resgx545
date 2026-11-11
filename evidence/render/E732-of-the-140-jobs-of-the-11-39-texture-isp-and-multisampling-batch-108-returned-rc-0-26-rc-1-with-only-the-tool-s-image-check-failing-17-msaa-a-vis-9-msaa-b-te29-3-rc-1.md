@@ -45,3 +45,7 @@ own and 5 of the health triangles after them.
 **What it shows and does not.** All 140 jobs are valid results; 3 of 140 are faults the plan did
 not predict (tex-c-addr). One scorer defect is found (E730, the observable of isp-a-guard) and one
 window defect (E729, health faults counted for the job); neither is a job defect.
+
+**Correction 2026-11-11:** The three q140 faults are our kernel's one-array layout, not a property
+of the hardware (E788, E824), so "these are hardware results" holds for the 3 tex-c-addr jobs and,
+for the q140 jobs, only as the hardware's response to our layout; the counts are unchanged.

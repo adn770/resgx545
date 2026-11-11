@@ -52,3 +52,13 @@ pixels of the row the message was cut into. Rebuilt (the message line deleted, t
 rejoined) every dump of the six sizes holds the whole target at the sentinel: 51200, 73728, 100352,
 131072, 196608 and 307200 of the same numbers of pixel tokens, no other value. The tool's diff lines
 (the target read as differing in every pixel) agree.
+
+**Correction 2026-11-11:** The cause of the six faults is found: the kernel's layout held one array
+of region headers and the TA writes four at `CR_TE_AA` 0xe0000000 (E788); with the new module's
+`render_rgn_arrays` at 4 the kernel's own layout completes 320 x 160, 512 x 384, 640 x 480 and the
+other held-out sizes up to 1024 x 768 with 0 wrong pixels (E824). So "the failure is the stack's"
+above is our kernel's layout, and the [infer] about a layout too small is confirmed for that
+cause. The measurements are unchanged; the seven completing jobs and the U2 = R agreement at 64 x
+64 are not affected. "The held-out test of H86i could not run" held for this run; with four arrays
+it can run at every size to 1024 x 768 and has not been run yet (Q086). The failed health
+triangles after the faults are left as recorded; their cause is open (Q140).

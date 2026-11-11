@@ -27,3 +27,7 @@ beyond the 0x480 a TA fault leaves (E317); with E765 and E766 the faults of the 
 transfer unit and the TA's write each leave no bit of their own. What the register's bit 7 does
 after a TA fault in time (E764 read 121 us) was not sampled here. Not answered: the 3D's own
 stores, the ZLS, the type-1 transfer fault, and the requestor of each bit (Q003).
+
+**Correction 2026-11-11:** The access past the TA data that this job makes is our kernel's
+one-array layout at 4x (E824: with four arrays the kernel's own layout completes 320 x 400); the
+registers read are what the hardware does on such an access and are unchanged.

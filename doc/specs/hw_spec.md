@@ -219,10 +219,13 @@ the list `CID` names (E360). A fault raises no bit of `EVENT_STATUS` or `EVENT_S
 own (E357).
 
 A 4x multisampled render of our stack (mode 2, `CR_TE_AA` 0xe0000000, the unpoked macrotile words)
-at 320 x 160 and up faults the job with `BIF_FAULT` reading 0x90004 at the page 0x20006 (320 x 160
+at 320 x 160 and up faulted the job with `BIF_FAULT` reading 0x90004 at the page 0x20006 (320 x 160
 to 512 x 256), 0x20008 (512 x 384) and 0x2000a (640 x 480) (6 of 6 jobs, E507); the script's health
 check, a plain 64 x 64 triangle, failed after each of the last three in a row and stopped it (five
-`SGX recovery failed: -110` kernel lines in the run). The cause is open (Q140, a kernel
+`SGX recovery failed: -110` kernel lines in the run). The faults are our kernel's layout, not the
+hardware's: it held one array of region headers where the TA writes four at `CR_TE_AA` 0xe0000000
+(E788); with four the render completes at every size run up to 1024 x 768 (E824). The health
+triangles that fail after a failed 4x job and the kernel's default stay open (Q140, a kernel
 question).
 
 ### 5.6 Unit names
