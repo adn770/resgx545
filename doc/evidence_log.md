@@ -6065,6 +6065,34 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   health ok 3 of 3 after.
   *ta; HW, infer; data: `render-closing-r3-rgn4:out/rgn4/`,
   `render-closing-r3-rgn4:rgn4-REPORT.md`.*
+- `E829` R4-A stages a-pb0 and a-pb (Q285 rerun, 8 jobs, split flow -n 2 --geometry 1 at 64 x 64,
+  CR_TE_AA 0x40000000, forced render_rgn_arrays 1, module srcversion 99CD90DA, controls frozen from
+  E827's two-render jobs of the same shape): the four controls passed (pb-d0-te40, pb-p1-te40 and
+  pb-p2-own11: hash 0x8ea26cdfee74a325, 3969 of 4096 pixels wrong, first (1, 1) 0xff000080,
+  parameter buffer sha256 b8ada427...; pb-p0-te60: hash 0xd2bfb75560f4c325, 0 of 4096 wrong) and the
+  gate opened; poking the twin's 16 words into dwords 11 to 26 of render 1's parameter buffer
+  between the two renders gave the twin's picture in 2 of 2 jobs (pb-p3a, pb-p3b: 0 of 4096 wrong,
+  render 2 4096 triangle pixels, hash 0xd2bfb75560f4c325, the dump's dwords 11 to 26 the poked
+  words, 16 of 16 pokes applied) and poking dword 11 with 0xffffffff drew nothing in 2 of 2 (pb-p4a,
+  pb-p4b: 3969 of 4096 wrong, render 2 0 triangle, 4096 background, 0 other pixels); frozen verdict
+  'Q285: H-OLD: the 3D reads render 1's object in the old layout (4 of 4 rows decided)', both
+  readings H-FIELD needed (p3 not the twin's picture, p4 drawn) contradicted by both replicate
+  pairs.
+  *isp; HW, infer; data: `render-closing-r4-q285:out/20261111-081210/`.*
+- `E830` R4-B stage fr (Q152 replicate of E817's FCF, 21 jobs in 3 blocks and 3 recoveries,
+  ring_exit.s as in E817, module srcversion 99CD90DA, no reset between the arm and fcf in a block,
+  one stop a block): in each block the controls kept the tick (e0; fc4 and fc4-r2, the tail call to
+  the closed exit, next entry after the acted pass +24994 to +24995; fb and fb-r2, our replica with
+  cfi.global, idf, wdf, phas end, nop.end, +24994 to +24995, 3 blocks of 3 each) and the pass ending
+  cfi.global, idf, wdf, nop.end (fcf1, fcf2, fcf3) stopped it in 3 of 3 with E817's signature (4
+  ring entries, ACT_SEEN 3, both samples busy with CR_CLKGATESTATUS 0x000ccfa0, EVENT_STATUS
+  0x20000000, the EVENT_TIMER counting, USE0_SERV_EVENT bit 16 clear and frozen at 0x1114, 0x1114
+  and 0x1133, CCB read = write = 2, HostCtl dword 14 0, P3 one miscinfo not answered in 505 ms with
+  0 new ring entries); after each stop the reset, gate and health were ok, the re-armed pass idf,
+  wdf, phas end, nop.end (fk1 to fk3, E817's fph) kept the tick (+24994 to +24995); every control
+  PASS, frozen verdict 'H-REP held (3 held, 0 FAILED, 0 cannot tell of 3); H-NOREP refuted (0 held,
+  3 FAILED)'.
+  *edm; HW, infer; data: `edm-closing-r4-q152:out/20261111-082403/`.*
 
 ## By unit
 
@@ -6085,7 +6113,7 @@ Records: E009, E014, E017, E084, E146, E152, E153, E154, E155, E156, E157, E158,
 E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321, E353, E402, E431, E444,
 E450, E531, E532, E533, E536, E537, E538, E539, E540, E550, E600, E601, E602, E603, E604, E605,
 E746, E747, E748, E749, E750, E751, E752, E764, E768, E769, E771, E784, E791, E792, E793, E794,
-E804, E805, E806, E807, E809, E810, E811, E812, E813, E814, E816, E817, E818, E819.
+E804, E805, E806, E807, E809, E810, E811, E812, E813, E814, E816, E817, E818, E819, E830.
 
 ### firmware
 
@@ -6098,7 +6126,7 @@ E215, E216, E217, E218, E219, E220, E222, E224, E225, E226, E227, E228, E229, E2
 E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E290, E291, E330,
 E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E508, E510, E590,
 E606, E607, E618, E660, E661, E662, E680, E681, E682, E683, E684, E727, E728, E731, E739, E740,
-E741, E757, E758, E762, E825, E827.
+E741, E757, E758, E762, E825, E827, E829.
 
 ### mte
 

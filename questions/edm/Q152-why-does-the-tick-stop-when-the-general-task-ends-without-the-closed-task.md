@@ -6,7 +6,7 @@ kind = "hw"
 value = "medium"
 phase = 11
 evidence = ["E533", "E155", "E536", "E537", "E791", "E792", "E793", "E811", "E812", "E813", "E814",
-            "E817", "E818"]
+            "E817", "E818", "E830"]
 terms = ["Event Data Master (EDM)", "CR_EVENT_TIMER"]
 +++
 
@@ -191,3 +191,14 @@ tick (T1 2 of 2, next gap 25114, not 25000) and before our own end did not (T2, 
 Open: whether FCF's stop repeats, whether a kick pass needs the same phase end, the path by which
 bits 4, 7 or 10 of E537's word stop it, whether the closed task's path depends on the tick bit
 alone.
+
+Narrowed 2026-11-11 (R4-B, E830; not retired). FCF's stop repeats: in three blocks that reproduce
+E817's stage f job for job (no reset between the arm and fcf, one arm a block), the pass ending
+`cfi.global, idf, wdf, nop.end` stopped the tick in 3 of 3 with E817's signature (CR_CLKGATESTATUS
+0x000ccfa0, EVENT_STATUS 0x20000000, P3 not answered), while the controls before it (fc4, fb, each
+twice a block) and the control after the recovery (`idf, wdf, phas ... end, nop.end`, fk) kept it
+in every block. H-REP held 3 of 3 and H-NOREP is refuted, so H-PHAS (the phase end is what the EDM
+needs) no longer rests on one stopping job. Open: whether a kick pass needs the same phase end
+(E813's B3 was not run with a `phas`), whether the word order matters or only the absence of the
+cfi, the path by which bits 4, 7 or 10 of E537's word stop it, whether the closed task's path
+depends on the tick bit alone.
