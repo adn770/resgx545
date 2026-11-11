@@ -161,7 +161,9 @@ lines that changed. `out/`, the predictions and the freeze the run used are neve
 tests from a scratch copy (the data repository is never written to): the session's siblings are
 linked where the tests expect them, a fake HOME holds the tool tree at the commits of the
 session's `FROZEN.commits`, and a session's `debug-src/` is copied to `debug/`. It prints PASS or
-FAIL with the tests' exit code.
+FAIL with the tests' exit code. Builds of the pinned tool go to the runner's own target
+(`RESGX545_SESSION_TARGET`, default `scratch/resgx545/session-target`), never the main
+checkout's: old binaries would replace current ones there.
 
 ## Firmware tasks of our own
 

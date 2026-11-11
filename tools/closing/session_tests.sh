@@ -15,19 +15,24 @@
 #   - HOME is a fake home whose src/resgx545 is a git worktree of the tool repository at the
 #     newest commit of the session's FROZEN.commits, each pinned file replaced by its pinned
 #     blob, and src/scratch/resgx545 is the scratch tree. The copy's FROZEN.sha256 has its
-#     absolute resgx545 and resgx545-data paths pointed at the fake home, so the freeze verifies against the pinned source;
-#   - src/resgx545-data is the data repository, the build products of the main checkout that git
-#     ignores (target/, userspace/libsgxfive/build/, .venv/) are linked into the worktree, and a
-#     session's debug-src/ is copied to debug/ with its path dependencies on crates/ pointed at the
-#     worktree (the products are the current ones, not pinned);
+#     absolute resgx545 and resgx545-data paths pointed at the fake home, so the freeze
+#     verifies against the pinned source;
+#   - src/resgx545-data is the data repository; the worktree's target/ is the runner's own
+#     (RESGX545_SESSION_TARGET, kept between runs, never the main checkout's), the main
+#     checkout's userspace/libsgxfive/build/ is copied and its .venv linked (current, not
+#     pinned), and a session's debug-src/ is copied to debug/ with its path dependencies on
+#     crates/ pointed at the worktree;
 #   - the entry is tests/run_all.sh, else tests/run_mock.sh, else tests/run_mock.py.
 #
 # Environment: PY (the python the tests use; default <tool>/.venv/bin/python, else python3),
 # RESGX545_TOOL (the tool repository; default this checkout), RESGX545_DATA (default
-# ../resgx545-data beside the tool repository), KEEP=1 (keep the scratch tree and print it).
+# ../resgx545-data beside the tool repository), RESGX545_SESSION_TARGET (default
+# scratch/resgx545/session-target beside the tool repository), KEEP=1 (keep the scratch tree and
+# print it).
 HERE=$(cd "$(dirname "$0")" && pwd)
 TOOL=$(cd "${RESGX545_TOOL:-$HERE/../..}" && pwd)
 DATA=$(cd "${RESGX545_DATA:-$TOOL/../resgx545-data}" 2>/dev/null && pwd)
+TARGET=${RESGX545_SESSION_TARGET:-$(dirname "$TOOL")/scratch/resgx545/session-target}
 die() { echo "session_tests: $*" >&2; exit 2; }
 
 SESSION=${1%/}
@@ -45,7 +50,8 @@ if [ -z "$PY" ]; then
 fi
 case "$PY" in /*) ;; *) PY=$(command -v "$PY") ;; esac
 NAME=$(basename "$SESSION"); NAME=${NAME#closing-}
-COMMON=$(cd "$TOOL" && git rev-parse --path-format=absolute --git-common-dir) || die "$TOOL is not a git repository"
+COMMON=$(cd "$TOOL" && git rev-parse --path-format=absolute --git-common-dir) \
+    || die "$TOOL is not a git repository"
 
 W=$(mktemp -d "${TMPDIR:-/tmp}/session_tests.XXXXXX") || die "no scratch directory"
 W=$(cd "$W" && pwd -P)
@@ -101,7 +107,13 @@ if [ -f "$COMMITS" ]; then
     done < "$COMMITS"
 fi
 MAIN=$(dirname "$COMMON")
-for b in target userspace/libsgxfive/build .venv tools/usse-asm/usse-asm; do
+# Builds of the pinned tool go to the runner's own target/, never the main checkout's (old
+# binaries there would replace current ones, and on macOS a library rewritten in place kills
+# the next process that loads it); libsgxfive's build is copied for the same reason.
+mkdir -p "$TARGET" && ln -s "$TARGET" "$R/target" || die "cannot link the runner's target"
+[ -d "$MAIN/userspace/libsgxfive/build" ] \
+    && cp -R "$MAIN/userspace/libsgxfive/build" "$R/userspace/libsgxfive/build"
+for b in .venv tools/usse-asm/usse-asm; do
     [ -e "$MAIN/$b" ] && [ ! -e "$R/$b" ] && ln -s "$MAIN/$b" "$R/$b"
 done
 if [ -d "$C/debug-src" ]; then

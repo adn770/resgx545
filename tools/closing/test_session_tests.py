@@ -33,8 +33,10 @@ cd "$(dirname "$0")/.." || exit 1
 [ -f ../../closing/sib/marker ] || { echo "no sibling"; exit 1; }
 [ -x ../../closing/pixel-faults/.venv/bin/python ] || { echo "no scratch python"; exit 1; }
 if [ -n "$DEMO_BUILT" ]; then
-    [ -f "$HOME/src/resgx545/target/marker" ] || { echo "no build products"; exit 1; }
-    grep -q "$HOME/src/resgx545/crates/c" debug/demo/Cargo.toml || { echo "debug-src path"; exit 1; }
+    [ -d "$HOME/src/resgx545/target" ] || { echo "no target"; exit 1; }
+    echo session-build > "$HOME/src/resgx545/target/built-by-session"
+    grep -q "$HOME/src/resgx545/crates/c" debug/demo/Cargo.toml \\
+        || { echo "debug-src path"; exit 1; }
     [ -f debug/demo/src/main.rs ] || { echo "debug-src tree"; exit 1; }
 fi
 shasum -a 256 -c FROZEN.sha256 --quiet || { echo "freeze"; exit 1; }
@@ -89,7 +91,8 @@ def snapshot(root):
 
 def run(world, session, **extra):
     tool, data, py = world
-    env = {**os.environ, "RESGX545_TOOL": str(tool), "RESGX545_DATA": str(data), "PY": str(py)}
+    env = {**os.environ, "RESGX545_TOOL": str(tool), "RESGX545_DATA": str(data), "PY": str(py),
+           "RESGX545_SESSION_TARGET": str(tool.parent / "session-target")}
     env.update(extra)
     return subprocess.run(["bash", str(SCRIPT), session], env=env, capture_output=True,
                           text=True, timeout=120)
@@ -145,3 +148,15 @@ def test_build_products_and_debug_src_are_laid_out(world):
     r = run(world, "edm/closing-demo", DEMO_BUILT="1")
     assert r.returncode == 0, r.stdout + r.stderr
     assert not (world[0] / "target/debug").exists()
+
+
+def test_builds_go_to_the_runner_target_never_the_main_checkout(world):
+    """A pinned tool built into the main checkout's target/ replaces its binaries with old
+    ones (and a library rewritten in place kills the next process that loads it on macOS):
+    the worktree's target/ is the runner's own."""
+    tool = world[0]
+    before = snapshot(tool / "target")
+    r = run(world, "edm/closing-demo", DEMO_BUILT="1")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert snapshot(tool / "target") == before
+    assert (tool.parent / "session-target/built-by-session").read_text() == "session-build\n"
