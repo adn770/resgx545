@@ -6048,6 +6048,21 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   `render-closing-r3k-regress:out/20261110-222647/score-rg-ctl.txt`,
   `render-closing-r3k-regress:out/20261110-222647/score-rg-pb.txt`,
   `render-closing-r3k-regress:out/20261110-222647/gate-rg-pb.txt`.*
+- `E831` R3-geo-c stage g-z (15 jobs, E730's isp-a-guard rows: a depth ramp drawn by the full-screen
+  triangle or by one placed triangle, the depth buffer pre-filled with 0xdeadbeef, a dword stored
+  iff it is not 1.0f as E465 reads it): the three controls reproduced E730 (924, 924 and 3444
+  stored, rule A's sets), and on the 10 held-out full-screen cells at even sizes (widths 20, 36, 44,
+  76, 32 and 64 at H 18; heights 20, 28, 36 and 32 at W 34) the stored set was the frozen rule A's,
+  x + 0.5 < 1.25 W and y + 0.5 < 1.25 H cut at the target's tile area, in 10 of 10 (FLOOR, x <
+  floor(1.25 W), gives the same sets at every even size and was consistent too), while ROUND and
+  CEIL were refuted in 10 of 10 and RSTRICT (x + 1 < 1.25 W) in 6 of 10; where 1.25 W or 1.25 H
+  passes the tile area (W 32 and 64, H 28 and 32) the store stopped at the last tile (extents 32,
+  64, 32 and 32); two single triangles that do not cover the band stored exactly their own
+  pixel-centre raster cut by the band (z-tri-in 96 of 96 at 34x18, wholly inside the band;
+  z-tri-cross 357 of 357 at 36x20, crossing its edge; RSTRICT's raster refuted by 37 pixels): the
+  band rule of E730 holds held out at every even alignment, and only the fraction .75 of 1.25 W,
+  which needs odd sizes, still separates rule A from FLOOR.
+  *zls; HW, infer; data: `render-closing-r3-geo-c:out/g-z/`.*
 
 ### 2026-11-11
 
@@ -6199,4 +6214,4 @@ E413, E414, E427, E440, E545, E546, E700, E701, E702, E703, E737, E738, E755, E7
 ### zls
 
 Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467, E489, E490, E615, E628, E629,
-E663, E664, E665, E730.
+E663, E664, E665, E730, E831.

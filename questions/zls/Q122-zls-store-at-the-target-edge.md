@@ -5,7 +5,7 @@ unit = "zls"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E465", "E730"]
+evidence = ["E465", "E730", "E831"]
 terms = ["CR_ISP_ZLSCTL"]
 +++
 
@@ -27,3 +27,13 @@ triangle depth in a tile is the set x < 1.25 W and y < 1.25 H on 12 of 12 jobs (
 E465; 18 x 18 484, 50 x 26 1984, 66 x 34 3444, 98 x 50 7564, 34 x 50 2604); the rest of the tile
 holds the background depth. Answers the open rule at these alignments, on a post hoc re-score; other
 alignments are Q287.
+
+Note 2026-11-11 (R3-geo-c g-z, E831). Answered held out at even sizes: rule A (x + 0.5 < 1.25 W,
+y + 0.5 < 1.25 H, cut at the tile area) gave the stored set in 10 of 10 new full-screen cells
+(fractions .0 and .5 of 1.25 W, and the band past the tile area), ROUND, CEIL and RSTRICT refuted;
+a single triangle is stored as its own raster cut by the band, past the target too; the
+store writes the target's tiles only, nothing past them (post hoc, 15 of 15 dumps). The odd
+sizes (the fraction .75 that separates rule A from FLOOR) are Q287's. User decision R4-1 (a)
+retires this question as answered by E831; the retirement waits on the citations of Q122 outside
+the records (sgx-pipe `zls.rs` refusals and `OPEN`, `unitvec.rs`, `outcome.rs`, the unit-vector
+tests, `pipe_inventory.py`, doc/specs and doc/roadmap.md), which must move to E831 or Q287 first.
