@@ -18,8 +18,10 @@ job say and nothing else.
              area and their extent
 
 Format sgx545-tables: {format, version, run, kind, note, replay, rows, skipped}. replay says whether
-a simulator replays the table: none does today (the TA's depth words, the DPM and the ZLS store are
-not modelled), so every table is `refused` with the reason, never a pass. The rows are measurements
+a simulator replays the table: only the zls table does (sgx-pipe's ZLS band, E831, held to every row by
+crates/sgx-pipe/tests/zls_table.rs, which counts odd sizes as refused rows), `replayed` with the test's
+name; the others (the TA's depth words, the DPM, the parameter buffer pages) are not modelled, so they are
+`refused` with the reason, never a pass. The rows are measurements
 of the hardware, the keys the readers' own (closing3/r3-geo-c score/score_r3.py, closing-r3-geo
 score/dpm3.py and score_r3.py, closing4/render4x/pb_pages.py).
 
@@ -59,6 +61,11 @@ RULE_REASON = {
     "pbpages": "the TA's parameter buffer page writes are not modelled by sgx-sim",
     "counts": "the DPM abort and partial render sequence is not modelled by sgx-sim or sgx-pipe",
     "zls": "the ZLS store band is not modelled by sgx-sim (Q287 is open for odd sizes): a table, not a replay",
+}
+# tables a test replays: kind -> the test (file::function) that holds every modelled row to the model
+REPLAYED = {
+    "zls": {"test": "crates/sgx-pipe/tests/zls_table.rs::the_band_replays_every_modelled_row_of_the_g_z_table",
+            "model": "sgx-pipe zls::in_band, rule A at even sizes (E831); odd sizes are refused rows (Q287)"},
 }
 
 
@@ -108,7 +115,8 @@ def document(kind: str, stage_dir: pathlib.Path, session: str, rows: list, skipp
             "run": {"session": session, "stage": stage_dir.name, "tool": TOOL},
             "note": "per job, what the kept files say: measurements of the hardware, not a simulator "
                     "prediction and not a rule",
-            "replay": {"status": "refused", "reason": RULE_REASON[kind]},
+            "replay": ({"status": "replayed", **REPLAYED[kind]} if kind in REPLAYED
+                       else {"status": "refused", "reason": RULE_REASON[kind]}),
             "rows": rows, "skipped": skipped, **extra}
 
 

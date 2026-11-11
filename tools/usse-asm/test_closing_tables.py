@@ -188,6 +188,15 @@ def test_no_trailing_whitespace_and_tables_are_json(tmp_path):
 needs_geo = pytest.mark.skipif(not GEO.is_dir(), reason="no render/closing-r3-geo")
 
 
+def test_zls_table_names_the_test_that_replays_it_and_others_stay_refused(tmp_path):
+    d = stage(tmp_path, "g-z", [])
+    t = ct.zls_table(d, "s")
+    assert t["replay"]["status"] == "replayed"
+    assert t["replay"]["test"].endswith("zls_table.rs::the_band_replays_every_modelled_row_of_the_g_z_table")
+    assert "reason" not in t["replay"]
+    assert ct.counts_table(d, "s")["replay"]["status"] == "refused"
+
+
 @needs_geo
 def test_published_depth_words_of_e795_to_e798():
     n = {s: ct.depth_table(ct.find_stage(GEO, s), "x") for s in ("g-da", "g-db", "g-dc", "g-dd")}
