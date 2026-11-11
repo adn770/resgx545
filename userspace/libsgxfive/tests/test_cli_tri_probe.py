@@ -84,6 +84,17 @@ def test_tri_pixel_event_and_end_of_tile(tmp_path):
     assert vals.get(BG, 0) > 0 and sum(vals.values()) == 32 * 16
 
 
+def test_tri_odd_height_runs_and_odd_width_is_refused(tmp_path):
+    f = assemble(tmp_path, "x", PHAS + "mov.skipinv.end o0, #0x12345678\n")
+    r = run("--mock", "probe", "--tri", "pixel", "--pixels", "--width", "32", "--height", "17",
+            str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^probe x: tri 32x17,", r.stdout, re.M), r.stdout
+    assert len(re.findall(r"^probe x: row \d+:", r.stdout, re.M)) == 17
+    r = run("--mock", "probe", "--tri", "pixel", "--width", "33", "--height", "16", str(f))
+    assert r.returncode == 2, r.stdout + r.stderr
+
+
 def test_tri_every_file_runs_in_its_own_render(tmp_path):
     a = pixev(tmp_path, "a")
     b = pixev(tmp_path, "b")

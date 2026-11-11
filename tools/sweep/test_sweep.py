@@ -13,6 +13,7 @@ import re
 import shutil
 import struct
 import subprocess
+import sys
 import textwrap
 import tomllib
 
@@ -21,6 +22,8 @@ import pytest
 import sweep
 
 HERE = pathlib.Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent))
+import forkpin  # noqa: E402
 TOOL = sweep.DEFAULT_TOOL
 
 SIZES = {"xfer": 42, "bg": 17, "pds:prim": 4, "cmd": 26}
@@ -387,7 +390,7 @@ def test_report_marks_unstable_repeats(tmp_path):
 
 VALIDATED = ["xfer:4", "xfer:6", "xfer:9", "xfer:15", "xfer:16", "xfer:17",
              "cmd:0", "cmd:1", "cmd:2", "cmd:3", "cmd:4", "cmd:5", "cmd:9", "cmd:15", "cmd:18"]
-FORK_PIN = "a2788bd86537"       # the linux fork's resgx545 branch the refs are read at
+FORK_PIN = forkpin.PIN          # the linux fork's resgx545 branch the refs are read at
 
 
 def test_kernel_masks_cover_both_commands():
@@ -416,17 +419,13 @@ def test_kernel_masks_te_aa_is_validated_at_the_pinned_fork():
 
 
 def test_kernel_masks_refs_are_lines_of_the_pinned_fork():
-    linux = pathlib.Path(os.environ.get("RESGX545_LINUX", sweep.ROOT.parent / "linux"))
-    if not (linux / ".git").exists():
-        pytest.skip(f"SKIPPED, NOT PASSED: no fork checkout at {linux} (RESGX545_LINUX)")
+    if forkpin.show("drivers/gpu/drm/gma500/sgxfive/sgxfive_cmd.c") is None:
+        pytest.skip(f"SKIPPED, NOT PASSED: no fork commit {FORK_PIN} in {forkpin.home()}")
     texts = {}
     for name, w in sweep.load_masks().items():
         f, n = w.ref.split(":")
         if f not in texts:
-            texts[f] = subprocess.run(
-                ["git", "-C", str(linux), "show",
-                 f"{FORK_PIN}:drivers/gpu/drm/gma500/sgxfive/{f}"],
-                capture_output=True, text=True, check=True).stdout.splitlines()
+            texts[f] = forkpin.show(f"drivers/gpu/drm/gma500/sgxfive/{f}").splitlines()
         assert int(n) <= len(texts[f]), (name, w.ref)
     # a sample of the render words, each on the line that handles it
     m = sweep.load_masks()

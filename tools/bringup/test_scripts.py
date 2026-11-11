@@ -17,6 +17,7 @@ import time
 HERE = pathlib.Path(__file__).resolve().parent
 PUSH = HERE / "push-gma500.sh"
 SESSION = HERE / "test-session.sh"
+PUSH_TOOLS = HERE / "push-tools.sh"
 LISTEN = HERE / "netconsole-listen.py"
 
 
@@ -281,3 +282,22 @@ def test_boot_test_kernel_defaults_to_linux_sgx(tmp_path):
     cfg, env = fake_grub(tmp_path)
     subprocess.run(["bash", str(BOOT)], env=clean_env(**env), capture_output=True, timeout=30)
     assert ">gnulinux-linux-sgx-advanced-1234" in (tmp_path / "calls").read_text()
+
+
+def push_tools(**extra: str) -> str:
+    out = subprocess.run(["sh", str(PUSH_TOOLS)], env=clean_env(SGX_DRY_RUN="1", **extra),
+                         capture_output=True, text=True, timeout=30)
+    assert out.returncode == 0, out.stderr
+    return out.stdout
+
+
+def test_push_tools_builds_in_the_image_the_build_host_has():
+    out = push_tools()
+    assert "sgxhumation/arch32:igt make" in out
+    assert "resgx545/arch32:igt" not in out
+
+
+def test_push_tools_image_is_overridable():
+    out = push_tools(SGX_TOOLS_IMAGE="mine/arch32:x")
+    assert "mine/arch32:x make" in out
+    assert "sgxhumation/arch32:igt" not in out

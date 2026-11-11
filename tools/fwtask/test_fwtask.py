@@ -5,6 +5,7 @@ import hashlib
 import pathlib
 import struct
 import sys
+import warnings
 
 import pytest
 
@@ -306,3 +307,38 @@ def test_exit_rows_are_exact_words():
 def test_a_copy_of_the_shared_exit_is_accepted():
     assert verify("\n".join(EXIT)) == []
     assert verify("mov r1, #0x5\n" + "\n".join(EXIT)) == []
+
+
+# ---- own_end and the exit-phas lint (R4-P5) --------------------------------------------------
+PHAS_END = "phas #0, #0, pixel, end, parallel"
+
+
+def test_own_end_expands_to_the_exit_phas_and_the_end():
+    assert fwtask.assemble_source("own_end\n") == asm(PHAS_END + "\nnop.end\n")
+    assert fwtask.preprocess("idf drc0, bif\nwdf drc0\nown_end\n")[0][-2:] == [PHAS_END, "nop.end"]
+
+
+def test_own_end_task_is_accepted_and_lints_clean():
+    src = "idf drc0, bif\nwdf drc0\nown_end\n"
+    assert fwtask.lint(src) == []
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        fwtask.build_blob_text(src)
+
+
+def test_end_without_the_exit_phas_is_a_warning_not_a_refusal():
+    src = "idf drc0, bif\nwdf drc0\nnop.end\n"
+    out = fwtask.lint(src)
+    assert len(out) == 1 and "nop.end" in out[0] and "phas" in out[0]
+    with pytest.warns(fwtask.LintWarning, match="phas"):
+        blob = fwtask.build_blob_text(src)       # still built: the verifier is unchanged
+    assert fwtask.verify_blob(blob, REGS) == []
+
+
+def test_an_end_on_another_instruction_is_linted_too():
+    assert len(fwtask.lint("mov.end r1, r1\n")) == 1
+    assert fwtask.lint(PHAS_END + "\nmov.end r1, r1\n") == []
+
+
+def test_a_task_that_tails_into_the_closed_exit_has_no_end_to_lint():
+    assert fwtask.lint("mov r30, #0xdeadbeef ; @patch cont4\nmov pclink, r30\nlapc\n") == []

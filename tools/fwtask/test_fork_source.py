@@ -20,7 +20,7 @@ DEBUG = gen_verify.SGXFIVE / "sgxfive_debug.c"
 @pytest.fixture(scope="module")
 def src():
     if not DEBUG.is_file():
-        pytest.skip(f"SKIPPED, NOT PASSED: no fork checkout at {gen_verify.LINUX} (RESGX545_LINUX)")
+        pytest.skip(f"SKIPPED, NOT PASSED: no fork commit {gen_verify.forkpin.pin()} in {gen_verify.LINUX} (RESGX545_LINUX)")
     return DEBUG.read_text()
 
 
@@ -41,7 +41,7 @@ def test_own_results_page_stays_writable(src):
 def test_map_pd_passes_the_flags_to_the_mmu():
     mmu = gen_verify.SGXFIVE / "sgxfive.c"
     if not mmu.is_file():
-        pytest.skip(f"SKIPPED, NOT PASSED: no fork checkout at {gen_verify.LINUX} (RESGX545_LINUX)")
+        pytest.skip(f"SKIPPED, NOT PASSED: no fork commit {gen_verify.forkpin.pin()} in {gen_verify.LINUX} (RESGX545_LINUX)")
     s = mmu.read_text()
     m = re.search(r"int sgxfive_map_pd\(.*?\n}\n", s, re.S)
     assert m and "u32 flags" in m.group(0) and "b->npages, flags)" in m.group(0)
@@ -52,7 +52,7 @@ def test_the_kernel_resolves_cont4_for_the_documented_firmware_file_only():
     tools/fwcutter/README.md documents for the cut (format v3), the file E154 read."""
     own = gen_verify.SGXFIVE / "sgxfive_owntask.c"
     if not own.is_file():
-        pytest.skip(f"SKIPPED, NOT PASSED: no fork checkout at {gen_verify.LINUX} (RESGX545_LINUX)")
+        pytest.skip(f"SKIPPED, NOT PASSED: no fork commit {gen_verify.forkpin.pin()} in {gen_verify.LINUX} (RESGX545_LINUX)")
     m = re.search(r"sgx_own_exit_fw_sha256\[32\] = \{(.*?)\};", own.read_text(), re.S)
     assert m
     digest = bytes(int(x, 16) for x in re.findall(r"0x([0-9a-f]{2})", m.group(1))).hex()
