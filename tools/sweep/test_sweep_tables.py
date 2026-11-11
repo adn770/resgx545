@@ -5,11 +5,17 @@ cover every word of every space of the fill, copy and triangle jobs, the sizes t
 jobs have, and every word and register of the kernel spaces."""
 from __future__ import annotations
 
+import importlib.util
 import tomllib
 
 import pytest
 
 import sweep
+
+_spec = importlib.util.spec_from_file_location(
+    "gen_kernel_words", sweep.ROOT / "probes" / "transfer" / "gen_kernel_words.py")
+_gen = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_gen)
 
 TOOL = sweep.DEFAULT_TOOL
 PROBES = sweep.ROOT / "probes"
@@ -56,10 +62,9 @@ def test_sweeps_are_named_after_their_table():
         assert s.name == name
 
 
-# Validated words the command-word sweeps still carry to the GPU, swept there: TE_AA became
-# validated (bits 31:30, the fork's 4x render contexts) after the campaign that swept it as a
-# passed word; every other bit still passes on a 1x context.
-USER_SWEPT = {"cmd:1"}
+# Validated words the command-word sweeps still carry to the GPU (the kernel-word tables'
+# generator owns the list)
+USER_SWEPT = _gen.USER_SWEPT
 
 
 def _landings(action, also=frozenset()):

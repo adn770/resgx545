@@ -50,11 +50,19 @@ def runs(ix) -> list[list[int]]:
     return out
 
 
+# Validated words the command-word sweeps still carry to the GPU, swept there: TE_AA became
+# validated (bits 31:30, the fork's 4x render contexts) after the campaign that swept it as a
+# passed word; every other bit still passes on a 1x context. The tables keep leaving it out, so
+# render/kernel-words.toml stays the recipe of the datasets swept with it.
+USER_SWEPT = frozenset({"cmd:1"})
+
+
 def passed(masks: pathlib.Path = MASKS) -> dict[str, set]:
-    """The words of each space that userspace's command passes through unchanged."""
+    """The words of each space that userspace's command passes through unchanged, or that the
+    command-word sweeps carry (USER_SWEPT)."""
     out: dict[str, set] = {s: set() for s in SIZE}
     for w in tomllib.loads(masks.read_text())["word"]:
-        if w["action"] == "pass":
+        if w["action"] == "pass" or w["word"] in USER_SWEPT:
             for land in w["lands"]:
                 s, n = land.split(":")
                 a, _, b = n.partition("-")
