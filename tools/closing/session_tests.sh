@@ -116,6 +116,11 @@ mkdir -p "$TARGET" && ln -s "$TARGET" "$R/target" || die "cannot link the runner
 for b in .venv tools/usse-asm/usse-asm; do
     [ -e "$MAIN/$b" ] && [ ! -e "$R/$b" ] && ln -s "$MAIN/$b" "$R/$b"
 done
+# The sessions' simulator scripts run target/release/sgx-sim: build it from the pinned tree.
+if [ -d "$R/crates/sgx-sim" ]; then
+    (cd "$R" && cargo build -q --release -p sgx-sim) \
+        || echo "session_tests: warning: cannot build sgx-sim at the pinned commit"
+fi
 if [ -d "$C/debug-src" ]; then
     cp -R "$C/debug-src/." "$C/debug/"
     for f in "$C"/debug/*/Cargo.toml; do

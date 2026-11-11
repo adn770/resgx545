@@ -160,3 +160,29 @@ def test_builds_go_to_the_runner_target_never_the_main_checkout(world):
     assert r.returncode == 0, r.stdout + r.stderr
     assert snapshot(tool / "target") == before
     assert (tool.parent / "session-target/built-by-session").read_text() == "session-build\n"
+
+
+def test_the_simulator_is_built_from_the_pinned_tree(world, tmp_path):
+    """The sessions' simulator scripts look for target/release/sgx-sim; the runner builds it
+    from the pinned tree, in the runner's target, before the tests run."""
+    tool, data = world[0], world[1]
+    branch = git(tool, "rev-parse", "--abbrev-ref", "HEAD")
+    pin = data / "edm/closing-demo/FROZEN.commits"
+    c1 = pin.read_text().split()[-2]
+    git(tool, "checkout", "-q", c1)
+    (tool / "crates/sgx-sim").mkdir(parents=True)
+    (tool / "crates/sgx-sim/Cargo.toml").write_text("[package]\n")
+    git(tool, "add", "crates")
+    git(tool, "commit", "-qm", "sim")
+    pin.write_text(pin.read_text().replace(c1, git(tool, "rev-parse", "HEAD")))
+    git(tool, "checkout", "-q", branch)
+    bin_ = tmp_path / "bin"
+    bin_.mkdir()
+    log = tmp_path / "cargo.log"
+    (bin_ / "cargo").write_text(f'#!/bin/sh\necho "$PWD $*" >> {log}\n')
+    (bin_ / "cargo").chmod(0o755)
+    r = run(world, "edm/closing-demo", PATH=f"{bin_}:{os.environ['PATH']}")
+    assert r.returncode == 0, r.stdout + r.stderr
+    line = log.read_text().strip()
+    assert line.endswith("build -q --release -p sgx-sim")
+    assert "/src/resgx545 " in line
