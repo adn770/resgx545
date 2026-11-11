@@ -71,20 +71,6 @@ def layout() -> fwload.Layout:
     return fwload.Layout(addr=addr, heap_base=dict(HEAPS), pd_phys=0x01234000)
 
 
-class Refused(Exception):
-    """The simulator refused the first form no record measured: init_done's `mov pa2, r0`, a
-    write to pa2 in an EDM task, which no record measured (a fill's pa is E496 and E380;
-    Q098). The boot cannot finish until a record measures the form, so the tests that need a
-    finished boot (the CCB commands) are marked xfail(raises=Refused, strict) and begin to fail
-    as XPASS, to be unmarked, when the simulator learns it. The tests of what the boot has done
-    by the refusal run on the state it stops in."""
-
-
-UNMEASURED = ("a write to pa2 in an EDM task (the read side is measured, S2 e2r/e2w; the write side "
-              "is not, Q098)")
-REFUSAL_TASK = "task 0x30000000+0x1c4"        # edm.task.init_done's entry, 0x1c4 in the code heap
-
-
 def prepare(pysgx) -> tuple:
     """A SGX with the firmware placed and the host's boot writes done, the kick not yet given."""
     lay = layout()
@@ -108,53 +94,24 @@ def prepare(pysgx) -> tuple:
     return s, lay, boot
 
 
-def is_refusal(e) -> bool:
-    """e is the simulator's refusal of init_done's `mov pa2, r0` and nothing else."""
-    kind, text = e.args
-    return kind == "unsupported" and UNMEASURED in text and REFUSAL_TASK in text
-
-
-def boot_to_refusal(pysgx) -> tuple:
-    """Run the boot up to the simulator's refusal of init_done's `mov pa2, r0` (Q098): the SGX
-    as it stands there, the layout and the refusal's text. Any other error, or a boot that
-    runs on past it, is not caught."""
-    s, lay, _ = prepare(pysgx)
-    try:
-        s.run(100_000)
-    except pysgx.SimError as e:
-        if not is_refusal(e):
-            raise
-        return s, lay, e.args[1]
-    raise AssertionError("the boot ran past init_done's `mov pa2, r0`: unmark the xfails")
-
-
 def boot(pysgx) -> tuple:
-    """A booted SGX, its layout and the firmware's boot data (fwload.Boot); raises Refused
-    while the simulator refuses init_done's `mov pa2, r0`."""
+    """A booted SGX, its layout and the firmware's boot data (fwload.Boot). The boot runs past
+    init_done's `mov pa2, r0`, an EDM task's write to pa2 that E820 measured."""
     s, lay, boot_data = prepare(pysgx)
-    try:
-        s.run(100_000)
-    except pysgx.SimError as e:
-        if is_refusal(e):
-            raise Refused(e.args[1]) from e
-        raise
+    s.run(100_000)
     return s, lay, boot_data
 
 
-unmeasured = pytest.mark.xfail(
-    raises=Refused, strict=True,
-    reason="init_done's `mov pa2, r0` is a pa2 write no record measured (Q098)")
 @pytest.fixture(scope="module")
 def booted():
-    return boot_to_refusal(load.pysgx())
+    return boot(load.pysgx())
 
 
-def test_the_boot_stops_at_the_first_unmeasured_form(booted):
-    """The boot runs PDS #10 to #12 and the tasks boot, pds11 and init_done up to init_done's
-    `mov pa2, r0`, which the simulator refuses with the question that holds it (Q098); the tests
-    below check what the boot has done by then."""
-    s, lay, text = booted
-    assert "Q098" in text and "mov pa2, r0" in text
+def test_the_boot_runs_past_init_done_s_pa2_write(booted):
+    """The boot runs PDS #10 to #12 and the tasks boot, pds11 and init_done to their end,
+    init_done's `mov pa2, r0` included (an EDM task writes pa2 to pa4: E820)."""
+    s, lay, _ = booted
+    assert any(e[0] == "task" and e[2] == 0x1C4 for e in s.log())
 
 
 def test_the_boot_sets_init_status(booted):

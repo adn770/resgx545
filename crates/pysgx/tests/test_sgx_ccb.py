@@ -12,9 +12,8 @@ as the ALU reads ir1 and tim only when asked (pds::Pds::alu_specials_in_movs): m
 agree in a fill's secondary program; here the firmware's own fast paths need ir1.l to, and the
 tim.l it passes on is never read.
 
-Every test here needs the boot to finish, and the simulator refuses init_done's `mov pa2, r0`
-(a pa2 write no record measured, Q098), so all of them are xfail(strict) with that reason, by
-test_sgx_boot.unmeasured, and fail as XPASS, to be unmarked, when the form is measured."""
+Every test here needs the boot to finish; it runs past init_done's `mov pa2, r0` since E820
+measured an EDM task's writes to pa2 to pa4."""
 import pathlib
 import struct
 import sys
@@ -28,7 +27,7 @@ import ccb  # noqa: E402
 import test_sgx_boot as tb  # noqa: E402
 from test_sgx_boot import facts, fwformat, load  # noqa: E402
 
-pytestmark = [*tb.pytestmark, tb.unmeasured]
+pytestmark = [*tb.pytestmark]
 EVENT_KICK, EVENT_TIMER = 0xAC8 // 4, 0xACC // 4
 USE0_SERV_EVENT = 0xB14 // 4
 POWER_STATUS = 0x04
