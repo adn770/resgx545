@@ -11,7 +11,8 @@
 #     "closing-"), with an empty debug/;
 #   - every published session is linked as scratch/resgx545/{closing,closing2,closing3}/<name>
 #     (the copy takes its own place), so the sessions' relative references to siblings resolve;
-#   - scratch/resgx545/closing/pixel-faults/.venv/bin/python is a wrapper that runs $PY;
+#   - scratch/resgx545/{closing,closing2,closing3}/pixel-faults/.venv/bin/python is a wrapper
+#     that runs $PY;
 #   - HOME is a fake home whose src/resgx545 is a git worktree of the tool repository at the
 #     newest commit of the session's FROZEN.commits, each pinned file replaced by its pinned
 #     blob, and src/scratch/resgx545 is the scratch tree. The copy's FROZEN.sha256 has its
@@ -68,12 +69,15 @@ cleanup() {
 }
 trap cleanup EXIT
 
-mkdir -p "$HOMEDIR/src" "$S/closing" "$S/closing2" "$S/closing3" "$S/closing/pixel-faults/.venv/bin"
+mkdir -p "$HOMEDIR/src" "$S/closing" "$S/closing2" "$S/closing3"
 ln -s "$W/scratch" "$HOMEDIR/src/scratch"
 ln -s "$DATA" "$HOMEDIR/src/resgx545-data"
 export CARGO_HOME=${CARGO_HOME:-$HOME/.cargo} RUSTUP_HOME=${RUSTUP_HOME:-$HOME/.rustup}
-printf '#!/bin/sh\nexec "%s" "$@"\n' "$PY" > "$S/closing/pixel-faults/.venv/bin/python"
-chmod +x "$S/closing/pixel-faults/.venv/bin/python"
+for g in closing closing2 closing3; do   # a session's shims find it beside the session's group
+    mkdir -p "$S/$g/pixel-faults/.venv/bin"
+    printf '#!/bin/sh\nexec "%s" "$@"\n' "$PY" > "$S/$g/pixel-faults/.venv/bin/python"
+    chmod +x "$S/$g/pixel-faults/.venv/bin/python"
+done
 for d in "$DATA"/*/closing-*; do
     [ -d "$d" ] || continue
     n=$(basename "$d"); n=${n#closing-}

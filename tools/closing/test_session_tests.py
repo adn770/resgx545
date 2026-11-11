@@ -35,7 +35,9 @@ cd "$(dirname "$0")/.." || exit 1
 [ "$(cat "$HOME/src/resgx545/tools/x.py")" = "VALUE = 1" ] || { echo "tool not pinned"; exit 1; }
 [ -f ../../closing/sib/marker ] || { echo "no sibling"; exit 1; }
 [ -f "$HOME/src/scratch/resgx545/closing/sib/marker" ] || { echo "no sibling by HOME"; exit 1; }
-[ -x ../../closing/pixel-faults/.venv/bin/python ] || { echo "no scratch python"; exit 1; }
+for g in closing closing2 closing3; do
+    [ -x ../../$g/pixel-faults/.venv/bin/python ] || { echo "no scratch python in $g"; exit 1; }
+done
 if [ -n "$DEMO_BUILT" ]; then
     [ -d "$HOME/src/resgx545/target" ] || { echo "no target"; exit 1; }
     echo session-build > "$HOME/src/resgx545/target/built-by-session"
