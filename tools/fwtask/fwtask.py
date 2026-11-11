@@ -13,6 +13,10 @@ A task is written in assembler (asm/fwtask/*.s) with `usse-asm` text, plus three
                           the kernel resolves it only for the firmware file whose digest the
                           index was read from (E154), and refuses the arm otherwise
     p0 br @label          a branch to a label; written out as a numeric `br` offset
+    own_end               the exit of a task that ends itself (E793, E817, E818, E830): the
+                          `phas #0, #0, pixel, end, parallel` that declares the end, then `nop.end`;
+                          a `.end` without that `phas` before it is a lint warning (lint()), not a
+                          refusal: the verifier is unchanged, so an experiment may end otherwise
 
 The default-deny verifier below is the one the kernel repeats (sgxfive_owntask.c, from the table
 gen_verify.py writes): a word is accepted only if it matches an allowed form, and `ldr`/`str`
@@ -32,6 +36,7 @@ import subprocess
 import sys
 import tempfile
 import tomllib
+import warnings
 
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parents[1]       # the repository
@@ -49,6 +54,10 @@ EXIT_FW_SHA256 = "6a00268e9d4ca552c02e52651a42a2b4db3887d7fe626f209888369985162b
 
 class VerifyError(Exception):
     pass
+
+
+class LintWarning(UserWarning):
+    """A task source that assembles and verifies but ends in a way the records say stalls."""
 
 
 # ---- the register lists ----------------------------------------------------------------------
@@ -509,6 +518,22 @@ def assemble_text(text: str) -> list[int]:
     return list(struct.unpack(f"<{len(data) // 8}Q", data))
 
 
+OWN_END = ["phas #0, #0, pixel, end, parallel", "nop.end"]
+EXIT_PHAS = re.compile(r"^phas\b.*\bend\b")
+HAS_END = re.compile(r"^(?:\w+\s*:\s*)*[\w.]*\.end\b")
+
+
+def lint(src: str) -> list[str]:
+    """Warnings for a task source: an instruction with `.end` whose previous instruction is not
+    the exit `phas ... end` (E817 and E830: such an end, 7 of 7 times without it, stops the EDM
+    tick). `own_end` writes the right pair."""
+    lines = preprocess(src)[0]
+    return [f"instruction {i}: `{ln}` ends the task without the exit `phas ... end` before it "
+            f"(use own_end)"
+            for i, ln in enumerate(lines)
+            if HAS_END.match(ln) and not (i and EXIT_PHAS.match(lines[i - 1]))]
+
+
 LABEL = re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_]*):\s*(.*)$")
 
 
@@ -524,6 +549,9 @@ def preprocess(src: str):
             labels[m.group(1)] = len(lines)
             code = m.group(2).strip()
             m = LABEL.match(code)
+        if code == "own_end":
+            lines.extend(OWN_END)
+            continue
         if code.startswith("@entry"):
             entries.append(len(lines))
             continue
@@ -553,6 +581,8 @@ def assemble_source(src: str) -> list[int]:
 
 def build_blob_text(src: str, regs: Regs | None = None) -> bytes:
     lines, entries, patches = preprocess(src)
+    for w in lint(src):
+        warnings.warn(w, LintWarning, stacklevel=2)
     words = assemble_text("\n".join(lines))
     regs = regs or load_regs()
     err = verify(words, patches, regs, entries)
@@ -600,6 +630,7 @@ def main(argv: list[str]) -> int:
         return 2
     out = pathlib.Path(argv[1])
     out.mkdir(parents=True, exist_ok=True)
+    warnings.simplefilter("always", LintWarning)
     try:
         m = build_map(argv[2:], out)
     except VerifyError as e:
