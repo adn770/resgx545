@@ -316,7 +316,15 @@ static void test_scene(void)
 	CHECK_EQ(cmd.te_mtile2, MT4(12));
 	CHECK_EQ(cmd.te_mtile_stride, 16 * 2 * 3);
 	CHECK_EQ(cmd.mte_screen, 1023 | 767 << 16);
-	/* The device's largest; sizes beyond it, odd sizes. */
+	/* Odd heights build (the line stride is in 2-pixel units, so odd widths do not). */
+	sgxfive_tri_default(&p, 64, 17);
+	CHECK_EQ(sgxfive_tri_scene(&c, &L, &p, &cmd), 0);
+	CHECK_EQ(cmd.te_screen, (2 - 1) << 12 | (2 - 1));
+	CHECK_EQ(cmd.mte_screen, 63 | 16 << 16);
+	sgxfive_tri_default(&p, 32, 1);
+	CHECK_EQ(sgxfive_tri_scene(&c, &L, &p, &cmd), 0);
+	CHECK_EQ(cmd.mte_screen, 31);
+	/* The device's largest; sizes beyond it, odd widths. */
 	sgxfive_tri_default(&p, 4096, 4096);
 	CHECK_EQ(sgxfive_tri_scene(&c, &L, &p, &cmd), 0);
 	sgxfive_tri_default(&p, 64, 4098);
@@ -324,6 +332,8 @@ static void test_scene(void)
 	sgxfive_tri_default(&p, 4098, 64);
 	CHECK_EQ(sgxfive_tri_scene(&c, &L, &p, &cmd), -EINVAL);
 	sgxfive_tri_default(&p, 63, 64);
+	CHECK_EQ(sgxfive_tri_scene(&c, &L, &p, &cmd), -EINVAL);
+	sgxfive_tri_default(&p, 63, 17);
 	CHECK_EQ(sgxfive_tri_scene(&c, &L, &p, &cmd), -EINVAL);
 	free(c.pdsv);
 	free(c.usev);

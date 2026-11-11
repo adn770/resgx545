@@ -34,7 +34,7 @@ void sgxfive_tiling_cmd(struct drm_sgxfive_render_cmd *c, uint32_t width, uint32
 
 /* One flat-coloured triangle over a background colour, ARGB8888 W x H. */
 struct sgxfive_tri_params {
-	uint32_t width, height;		/* even, at most SGXFIVE_TRI_MAX_W x _H */
+	uint32_t width, height;		/* width even (PBE line stride: 2 pixels), <= MAX_W x MAX_H */
 	uint32_t colour, bg_colour;	/* ARGB8888 */
 	int32_t v[3][2];		/* vertices in 1/16 pixel, window coordinates */
 	float zndc[3];			/* each vertex's clip z; 0: depth 0.5 (= 0.5 + 0.5 z) */

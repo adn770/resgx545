@@ -2028,7 +2028,7 @@ static int probe_tri_check(struct probe_opts *po)
 	pt->height = pt->height ? pt->height : 64;
 	pt->max_width = pt->max_width ? pt->max_width : pt->width;
 	pt->max_height = pt->max_height ? pt->max_height : pt->height;
-	if (pt->width % 2 || pt->height % 2 || pt->max_width > SGXFIVE_TRI_MAX_W ||
+	if (pt->width % 2 || pt->max_width > SGXFIVE_TRI_MAX_W ||
 	    pt->max_height > SGXFIVE_TRI_MAX_H || pt->width > pt->max_width ||
 	    pt->height > pt->max_height)
 		return -1;

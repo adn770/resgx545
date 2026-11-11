@@ -392,7 +392,7 @@ int sgxfive_tri_scene(const struct sgxfive_tri_cpu *c, const struct sgxfive_tri_
 	uint32_t *v = c->gen + SGXFIVE_TRI_G_VTX / 4;
 	const uint16_t idx[4] = { 0, 1, 2, 0 };
 
-	if (!p->width || !p->height || p->width % 2 || p->height % 2 ||
+	if (!p->width || !p->height || p->width % 2 ||
 	    p->width > SGXFIVE_TRI_MAX_W || p->height > SGXFIVE_TRI_MAX_H)
 		return -EINVAL;
 	memset(c->pdsv, 0, SGXFIVE_PAGE_SIZE);
