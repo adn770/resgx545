@@ -76,7 +76,8 @@ pub fn dword36_from_abort_counts(counts: &[u32]) -> u32 {
 
 /// Whether the raise limit C admits a raise of `thr0` by 0x20 (E774). Necessary for a raise at the
 /// measured scene and target and not sufficient anywhere else: whether the second run reaches thr0
-/// (E625's rule, Q210) is not part of it.
+/// (E625's rule, Q210) is not part of it, nor is the count of partial renders: E625's formula for it
+/// is refuted at U = 287 (E832: 9 down to 2 over 19 buffer sizes, none of the 20 fitting pairs).
 pub fn raise_within_limit(thr0: u32) -> bool {
     thr0.saturating_add(0x20) <= RAISE_LIMIT_C
 }
