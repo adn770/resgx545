@@ -5789,9 +5789,10 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   4-instruction body set at 1760, the lowest point of its ladder (5 more run, 9 skipped), with 12
   vertices clear at 554 and set at 698 and with 48 vertices (15 decoded) clear at 329 and set at
   538; HV-INSTR (a fixed count of instructions a vertex) was REFUTED for the 16-instruction body and
-  for 12 and 48 vertices and consistent for the 4-instruction body, HV-MA (a count of multiply-adds
-  a vertex) REFUTED for all four, and HV-JOB (a count a job) REFUTED for 12 and 48 vertices; bit 7
-  showed 184 to 195 us after the burst began in every set job.
+  for 12 and 48 vertices and its window contradicted for the 4-instruction body (bit 7 already set
+  at 1760), HV-MA (a count of multiply-adds a vertex) REFUTED for all four, and HV-JOB (a count a
+  job) REFUTED for 12 and 48 vertices; bit 7 showed 184 to 195 us after the burst began in every set
+  job [corrected 2026-11-11, see Correction].
   *edm; HW; data: `render-closing-r3-pixel:out/20261110-160415/q-v/`.*
 - `E808` R3-pixel stage p-c3 (75 jobs: the frozen rerun of R1's p-c2 for Q276 with controls scoped
   to their group, 18 controls, 28 CONFIRM rows read post hoc in round 2, 28 HELD OUT rows never run

@@ -290,7 +290,12 @@ pushed before `tools/clean-room/guard.py --history` has run over every ref.
   to 0 and gets no guard. The private repository is never pushed to a public remote.
 - Landed records get dated corrections only: append a `Correction YYYY-MM-DD:` section, leave
   the rest as it was. The pre-commit hook warns about any other change to an evidence record;
-  it does not block.
+  it does not block. One exception (user decision, 2026-11-11): when a correction contradicts
+  the record's `claim`, the claim line is edited to the corrected reading and ends with
+  `[corrected YYYY-MM-DD, see Correction]`, so that `doc/evidence_log.md`, built from the claim,
+  shows it; the correction section of that date quotes the claim as it was. `evidence.py`
+  refuses a mark without its correction, and a test refuses a claim edited since 2026-11-11
+  without the mark.
 - The forks (Linux, radare2) are committed to directly in their clones, with the trailer
   `Assisted-by: LLM`, the hooks of this checkout and `RESGX545_GUARD_FORK=1`, so the fork
   patterns apply too. Landed fork commits are never rewritten. `tools/fork/fork-check.sh`

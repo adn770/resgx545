@@ -94,6 +94,9 @@ def problems(path: pathlib.Path, terms: set[str], draft: bool = False) -> list[s
         out.append("no prose")
     if re.search(r"\.md:\d+", body):
         out.append("cites a line number")
+    for d in re.findall(r"\[corrected (\d{4}-\d{2}-\d{2})", fm["claim"]):
+        if f"**Correction {d}:**" not in body:
+            out.append(f"claim marked corrected {d} but no **Correction {d}:** in the prose")
     return out
 
 

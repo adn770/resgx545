@@ -150,3 +150,37 @@ def test_the_glossary_cites_records_not_documents():
             assert not re.search(r"\bdoc/[\w./-]+\.md|§", r[col]), \
                 (r["name"], col)
             assert set(E_REF.findall(r[col])) <= ids, (r["name"], col)
+
+
+def test_a_corrected_claim_needs_a_correction_of_its_date(tmp_path):
+    marked = GOOD.replace('"an example claim"',
+                          '"a corrected claim [corrected 2026-11-11, see Correction]"')
+    assert evidence.problems(record(tmp_path, marked), {"CR_X"}) == \
+        ["claim marked corrected 2026-11-11 but no **Correction 2026-11-11:** in the prose"]
+    fixed = marked + "\n**Correction 2026-11-11:** The claim said X; it is Y.\n"
+    assert evidence.problems(record(tmp_path, fixed), {"CR_X"}) == []
+
+
+def test_a_claim_edited_after_landing_carries_the_corrected_mark():
+    """A landed record's claim changes only with a dated mark (HACKING.md, Evidence records).
+
+    The rule holds from 2026-11-11; earlier claim edits (the 2026-11-01 rewrite, a retired
+    question's id taken out on 2026-11-10) predate it."""
+    import subprocess
+    root = evidence.ROOT
+    try:
+        log = subprocess.run(["git", "-C", str(root), "log", "--diff-filter=M", "-p",
+                              "--since=2026-11-11T00:00", "--format=@@commit %h", "--",
+                               "evidence"],
+                             capture_output=True, text=True, check=True).stdout
+    except (OSError, subprocess.CalledProcessError):
+        pytest.skip("no git history")
+    edited, path = set(), None
+    for line in log.splitlines():
+        if line.startswith("+++ b/"):
+            path = line[6:]
+        elif line.startswith("+claim = ") and path:
+            edited.add(path)
+    bad = [p for p in sorted(edited) if (root / p).exists()
+           and "[corrected " not in evidence.parse(root / p)[0]["claim"]]
+    assert not bad, bad
