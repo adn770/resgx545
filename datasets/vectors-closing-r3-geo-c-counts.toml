@@ -1,9 +1,9 @@
 title = "count tables of the L1b stages g-qf (22 jobs) and g-qh (8 jobs, 6 listed void): partial renders and the status at each abort at 4096 x 4096"
 repo = "data"
 paths = ["vectors/closing/r3-geo-c/counts/"]
-method = "tools/usse-asm/closing_tables.py counts on the r3-geo-c session (path an argument), one file a stage; rows are measurements, the table says its replay is refused and why"
+method = "tools/usse-asm/closing_tables.py counts on the published render/closing-r3-geo-c session, one file a stage; rows are measurements, the table says its replay is refused and why"
 date = "2026-11-10"
 files = 2
-size = 16192
-sha256 = "f563970588c455fc8d570a3ee96473083d04b7dee43fc3b449c394675c1b10f8"
+size = 16204
+sha256 = "7664dc1f89fd3bc82213e516ef4a2ee7873c681b9d3200c5f8fb60e4661a8784"
 recipe = "tools/usse-asm/closing_tables.py"
