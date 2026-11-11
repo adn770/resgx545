@@ -165,8 +165,8 @@ def test_builds_go_to_the_runner_target_never_the_main_checkout(world):
 
 
 def test_the_simulator_is_built_from_the_pinned_tree(world, tmp_path):
-    """The sessions' simulator scripts look for target/release/sgx-sim; the runner builds it
-    from the pinned tree, in the runner's target, before the tests run."""
+    """The sessions' scripts run target/release/sgx-sim or target/debug/sgx-sim; the runner
+    builds both from the pinned tree, in the runner's target, before the tests run."""
     tool, data = world[0], world[1]
     branch = git(tool, "rev-parse", "--abbrev-ref", "HEAD")
     pin = data / "edm/closing-demo/FROZEN.commits"
@@ -185,6 +185,7 @@ def test_the_simulator_is_built_from_the_pinned_tree(world, tmp_path):
     (bin_ / "cargo").chmod(0o755)
     r = run(world, "edm/closing-demo", PATH=f"{bin_}:{os.environ['PATH']}")
     assert r.returncode == 0, r.stdout + r.stderr
-    line = log.read_text().strip()
-    assert line.endswith("build -q --release --workspace --bins")
-    assert "/src/resgx545 " in line
+    lines = log.read_text().splitlines()
+    assert sorted(x.split(" ", 1)[1] for x in lines) == \
+        ["build -q --release --workspace --bins", "build -q --workspace --bins"]
+    assert all(x.split(" ", 1)[0].endswith("/src/resgx545") for x in lines)

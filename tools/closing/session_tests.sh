@@ -118,10 +118,11 @@ mkdir -p "$TARGET" && ln -s "$TARGET" "$R/target" || die "cannot link the runner
 for b in .venv tools/usse-asm/usse-asm; do
     [ -e "$MAIN/$b" ] && [ ! -e "$R/$b" ] && ln -s "$MAIN/$b" "$R/$b"
 done
-# The sessions' simulator scripts run target/release/sgx-sim (a binary of sgx-tools): build
-# the workspace's binaries from the pinned tree.
+# The sessions' scripts run target/release/sgx-sim or target/debug/sgx-sim (a binary of
+# sgx-tools): build the workspace's binaries in both profiles from the pinned tree.
 if [ -d "$R/crates/sgx-sim" ]; then
-    (cd "$R" && cargo build -q --release --workspace --bins) \
+    (cd "$R" && cargo build -q --release --workspace --bins \
+        && cargo build -q --workspace --bins) \
         || echo "session_tests: warning: cannot build the binaries at the pinned commit"
 fi
 if [ -d "$C/debug-src" ]; then
