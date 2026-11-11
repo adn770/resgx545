@@ -75,3 +75,12 @@ of 39. Not the TA phase's length alone: the ten 1500-vertex jobs of R3-geo g-c4 
 TA, several aborts) ended with STATUS2 0x400. [infer] Bit 7 latches when the TA makes no progress
 for about 125 to 130 us, a vertex loop being one such stall. A frozen held-out run is needed
 before it is a result (Q082).
+
+**Correction 2026-11-11:** (adds a reading; the claim stands.) The scorer is now fixed in the
+published session as a disclosed post-run fix (decision R4-6 a; `POSTRUN-FIX.md` of the dataset,
+second section): `score_v.consistent` tests a strict overlap, and the fixed output on the kept
+records, `out/20261110-160415/score-q-v.fixed.txt` and `out/verdict.fixed.txt`, prints b4v HV-INSTR
+as REFUTED (the ladder line `2090..2200 ok` reads `MISS`) and differs from the as-run output in
+nothing else. The frozen scorer and its output are kept as `score/score_v.as-run.py` and
+`score-q-v.txt`, so the "as printed" verdict and the table above stay as they were; the reading of
+this record is the fixed one, as the correction of 2026-11-11 above gave it.
