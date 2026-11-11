@@ -393,9 +393,9 @@ generated view. Six mixed questions were folded into hardware questions, three n
 hardware part (Q033, Q094, Q096), Q065 was narrowed to the 3D's wait, two parked firmware questions
 were split off (Q118, Q119), and ten new hardware questions open the gaps the specs left:
 the page table flags and page sizes and the bus interface's tiled ranges (Q108 to Q110), which
-event sets which status bit (Q111), the index list's width bits (Q112), cube and volume textures
-and anisotropy (Q113 to Q115), the region clip as a scissor (Q116) and points (folded into Q161 in
-11.31; E544 answers its size and footprint).
+event sets which status bit (Q111), the index list's width bits (Q112), cube maps (answered since
+by E844), volume textures and anisotropy (Q114, Q115), the region clip as a scissor (Q116) and
+points (folded into Q161 in 11.31; E544 answers its size and footprint).
 
 Sub-phase 11.22 ran three tables on the laptop with no kernel change, about the depth and stencil
 load and store (ZLS): `zls/store-layout.toml`, `store-format.toml` and `load-copy.toml`. The tool's
@@ -712,8 +712,9 @@ mismatches (the draft's 241 of 425 is the figure; `plan.md`, which is kept as de
 141 of 428 for the state before the simulator patches); the replay of the landed vectors is
 unchanged (30623 pass, 1112 fitted, 918 stops, 175 skipped, 1937 left out, 82 and 48 hung, 0
 mismatches), the eight YUV texels of the landed formats-other vectors still stop. Q104 is narrowed
-to the 1D, side-of-1 and non-32-bit cases, Q078, Q050, Q115, Q113, Q114 and the four-component
-question (folded since into Q180) are narrowed or carry their evidence and none is retired; Q168,
+to the 1D, side-of-1 and non-32-bit cases, Q078, Q050, Q115, the cube-map question (answered since
+by E844), Q114 and the four-component question (folded since into Q180) are narrowed or carry
+their evidence and none is retired; Q168,
 Q177 to Q181 and two more (the gradient footprint, answered later by E721; the T3 address bits,
 folded later into Q078) are new (hw, low). The roadmap counts the questions from the built
 `doc/open_questions.md`: 151 open (Q001 to Q181), 135 hw (high 13, medium 64, low 58), 10 fw and 6

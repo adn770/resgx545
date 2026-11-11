@@ -7,7 +7,8 @@ value = "medium"
 phase = 4
 evidence = ["E021", "E024", "E317", "E318", "E319", "E320", "E354", "E355", "E357", "E444", "E203",
             "E313", "E362", "E363", "E395", "E457", "E476", "E573", "E631", "E722", "E729", "E764",
-            "E765", "E766", "E767", "E789", "E826", "E507", "E729", "E788", "E824", "E828"]
+            "E765", "E766", "E767", "E789", "E826", "E507", "E729", "E788", "E824", "E828",
+            "E845", "E848"]
 terms = ["CR_BIF_FAULT", "CR_BIF_INT_STAT", "misc_info", "CR_TE_AA", "CR_ISP_MSAA"]
 +++
 
@@ -188,3 +189,23 @@ health context's own first unmapped page after a job that faulted elsewhere, or 
 fault word other than 0x90004.
 
 **Correction 2026-11-11:** Q140 is merged into this question (retired as folded into Q003; a fold is not an answer), and its question is now the last clause of the one above (its health-triangle clause, with the note of this date above; the kernel's parts were answered by E788, E824 and E828). Its question was: what makes the health triangles after a failed 4x job fault before one passes (two after each 4x fault of K2, one after R3-rgn4's j2, none after its 4096 x 4096 fault), now that our 4x faults are known as the kernel's one array of region headers and a context made for 4x targets gets four. Its text: E507 drew exactly at six sizes up to 256 x 128 and 192 x 96 and faulted at the six held-out sizes from 320 x 160 to 640 x 480 (`BIF_FAULT` 0x90004, pages 0x20006 to 0x2000a); E729 (5 held-out sizes) bounded the number of region-header arrays to 4 or 5 and E788 showed four (a layout of exactly four completed 320 x 400); E824 completed 8 of 8 held-out 4x sizes up to 1024 x 768 with `render_rgn_arrays` at 4; E828 made four arrays the kernel's rule for a context made with `DRM_SGXFIVE_CTX_RENDER_AA_4X` and ran 288 x 144 with it (0 of 41472 wrong), without it (refused, EINVAL) and with the knob forced to 1 (E729's fault came back, BIF_FAULT 0x20006061). What stayed open there is Q003's last clause. Q140's 4x-only wording was too narrow: the state follows any 0x90004 fault.
+
+Note 2026-11-11 (round 4, session R4-render4x stage h, E848; the health-triangle clause, held
+out on one boot). Frozen verdict: H-REPLAY not supported, 3 held, 1 FAILED of 4. After a held TA
+write fault (0x90004) of a 4x job on one array and the debugfs reset, the failing health triangles
+named the failed job's page with `SB` 6 in 4 of 4: 0x20006061 once after a 288 x 144 job (h1) and
+0x2000a061 twice after a 640 x 480 job (h2), a page never seen in a health fault and not the health
+context's own end, so the word is the failed job's (the replay's control passed). A 64 x 64 render
+on a context made for 1024 x 768, run first, passed and so did the health triangle after it (h3).
+After a fill that passed, the first health triangle faulted at 0x20006062 (h4, the FAILED row): the
+job's page and `SB`, list 2 in place of 1; read after the run [infer], the fill took list 1 and the
+health context list 2, so the replay goes through the list current at the next TA run, which the
+frozen word test did not allow for. `CR_CLKGATESTATUS` read 0x78 after each fault and after the
+fill, 0x20 after the first completed render. Replays: 1, 2, 0 and 1 by cell (K2: 2 and 2; R3-rgn4:
+1). "SGX recovery failed: -110" followed the held resets of h1, h3 and h4 and the health faults
+of h1 and h4, the dump before it reading `BIF_INT_STAT` 0x000d0004 and `BIF_FAULT` 0x1000b050 (3),
+0x10002050 or 0x20004060 [read after the run]: requestor bit 2 inside the boot each time, at a
+PARAMETERS page in 4 and a 0x2xxxx page in 1. After the three 0x90100 faults of the same boot
+(E845's two sizes, E846's 4096 x 1152) the health triangle passed at once, 3 of 3, as after E828's
+j4. Still open in this clause: what keeps the write pending through the reset, why one or two
+replays, and why the boot after some resets times out.

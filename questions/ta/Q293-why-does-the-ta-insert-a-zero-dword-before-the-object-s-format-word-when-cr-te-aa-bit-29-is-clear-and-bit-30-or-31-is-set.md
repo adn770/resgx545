@@ -5,7 +5,7 @@ unit = "ta"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E728", "E829"]
+evidence = ["E728", "E829", "E847"]
 terms = ["CR_TE_AA", "Parameter Buffer (PB)", "PB_OBJ.FORMAT"]
 +++
 Split on 2026-11-11 from the TA side of a retired question answered by E829. E728: with
@@ -33,3 +33,17 @@ one later, the object growing from 26 to 27 dwords. The ten four-array 4x dumps 
 have the format word at dword 11. All 15 jobs are the tool's one triangle, so whether the inserted
 dword is always zero cannot be read from them; the planned rows (other values of the dword by poke,
 render 2's own object, the four-array layout with bit 29 clear) are not run.
+
+Note 2026-11-11 (round 4, session R4-render4x stage t, E847; not narrowed by a frozen verdict).
+Frozen verdict: cannot tell, the two baseline controls NODATA: the scorer reads a job's dump as
+`NAME.tri.param.bin.gz` and the probe rows (the 11.31 line and point) kept theirs under the
+program's name, so it compared nothing for them (a naming mismatch of the session, not a
+hardware result). The control t6 passed, and on a context made for 4x targets `CR_TE_AA`
+0x40000000 and 0x80000000 gave dword 11 = 0, the format word at 12 and an empty image, as on one
+array (rows held, gated). Read after the run with the frozen insertion check and predictions
+[post hoc]: the baselines equal their frozen heads, and 0x40000000 inserted one zero dword right
+before the format word of the line (dword 9) and of the point object (dword 11), both images then
+empty, so the dword is zero for objects with a width too [infer: padding]. A frozen run of the
+line and point rows with the dump name fixed in the scorer would make this a held-out result;
+still open: other values at the dword, render 2's own object, a setting that makes the 3D read
+the displaced layout.

@@ -80,3 +80,13 @@ has no partial renders (an overflow returns -ENOSPC), and at 1x an overflow has 
 (E311, E412, E438). 1048576 right pixels with the first wrong at (1024, 0) are one 1024 x 1024
 block, a macrotile of a 4 x 4 split; no image was kept. Q292 holds the test (a 4x size whose page
 need is below 1024 faulting, or a small 4x overflow ending in -ENOSPC, would refute it).
+
+**Correction 2026-11-11:** (the second, after R4-render4x) The overflow reading of the correction
+above is refuted and the claim stands as it is. The 4x full triangle on four arrays faulted with
+this record's word (0x90100 at 0x10000011) at 1280 x 1024 and 2048 x 1536, whose scenes need 321
+and 769 of the 1024 usable pages (E845, held out: H-PB not supported, 2 FAILED), and at 4096 x
+1152 (E846); a 4x scene that does overflow ended in -ENOSPC without a fault at 1024 x 768 and 288
+x 144 (E846, read after the run, its frozen verdict gated). So j4 is not a 4x partial render: the
+fault is about the size, and its onset lies past 1024 x 768 and at or before 1280 x 1024 (Q292).
+The page fit U4 itself held again where a dump was kept (193 pages at 1024 x 768, 12 at 288 x
+144; E845, E846).

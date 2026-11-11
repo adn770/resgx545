@@ -4914,7 +4914,9 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   fixed 16 refuted, 0 of 8). Type 4 is read with a fixed stride of 32 (4 of 4 sizes, read after
   the run). **Type 2 is a cube map: six 16 x 16 faces consecutive at 256 dwords a face, read for
   +x, -x, +y, -y, +z, -z as faces 0 to 5** (each axis direction reads one face over 2048 of 2048
-  pixels; the mapping and the dominant-axis rule are post hoc [infer], E726).
+  pixels, E726). **The face is that of the coordinate of largest magnitude, with its sign**: E726's
+  post hoc rule held out on two off-axis programs whose dominant axis changes inside the image,
+  2048 of 2048 pixels each, all six faces between them (E844). The faces' (s, t) and edges: Q284.
 
 *Simulator check, 2026-10-23.* The simulator's texture unit
 (`crates/sgx-sim`, `tex.rs`) follows this page and *Texture sampling*; it reproduces every

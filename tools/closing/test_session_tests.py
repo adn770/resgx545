@@ -247,3 +247,32 @@ def test_pins_of_a_tree_under_scratch_are_pointed_at_the_pinned_tree(world):
     r = run(world, "edm/closing-demo")
     assert r.returncode == 0, r.stdout + r.stderr
     assert "RUN_ALL PASSED" in r.stdout
+
+
+def test_a_frozen_list_of_the_freezes_own_paths_moves_with_them(world):
+    """A session whose generator writes the list of the files it read outside the session (R4-G's
+    gen/data/sources.lst: absolute resgx545 and resgx545-data paths, each also a line of the
+    freeze) freezes that list too. The copy's freeze points those paths at the fake home, so the
+    list is pointed there the same way and its hash line follows; the freeze still verifies and
+    the list names the fake home's files."""
+    s = world[1] / "edm/closing-demo"
+    (world[1] / "edm/closing-sib/data.txt").write_text("D\n")
+    lst = ("/Users/someone/src/resgx545-data/edm/closing-sib/data.txt\n"
+           "/Users/someone/src/resgx545/tools/x.py\n")
+    (s / "gen").mkdir()
+    (s / "gen/sources.lst").write_text(lst)
+    run_all = RUN_ALL.replace(
+        'echo "RUN_ALL PASSED"',
+        'while read -r p; do [ -f "$p" ] || { echo "listed $p"; exit 1; }\n'
+        '    case "$p" in "$HOME"/src/*) ;; *) echo "not moved $p"; exit 1 ;; esac\n'
+        'done < gen/sources.lst\necho "RUN_ALL PASSED"')
+    (s / "tests/run_all.sh").write_text(run_all)
+    (s / "FROZEN.sha256").write_text(
+        f"{sha(run_all)}  tests/run_all.sh\n"
+        f"{sha(lst)}  gen/sources.lst\n"
+        f"{sha('D' + chr(10))}  /Users/someone/src/resgx545-data/edm/closing-sib/data.txt\n"
+        f"{sha(V1)}  /Users/someone/src/resgx545/tools/x.py\n")
+    r = run(world, "edm/closing-demo")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "RUN_ALL PASSED" in r.stdout
+    assert (s / "gen/sources.lst").read_text() == lst

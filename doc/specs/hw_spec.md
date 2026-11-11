@@ -226,7 +226,7 @@ belongs to is read from the access each record set up, not from a source [infer]
 | 0x90004 | 2 | TA write of region headers past the kernel's layout (`SB` 6) | E729, E789, E826 |
 | 0x90008 | 3 | TA read of an unmapped stream page | E764, E826 |
 | 0x80020 | 5 | transfer write to a read-only alias | E766 |
-| 0x90100 | 8 | 4x render, at page 0x10000 (`SB` 1) | E511, E828 |
+| 0x90100 | 8 | 4x render, at page 0x10000 (`SB` 1) | E511, E828, E845, E846 |
 | 0xd0400 | 10 | background program's fetch (`FAULT_TYPE` 5) | E764 |
 | 0x91000 | 12 | first job with buffer 0 left out of the client alias | E573, E745, E761 |
 
@@ -260,11 +260,27 @@ gives four to a context made with `DRM_SGXFIVE_CTX_RENDER_AA_4X` and refuses a 4
 unless debugfs forced its count (E828). A 4x render at 4096 x 4096 on four arrays faulted at the
 parameter buffer's base (0x90100 at 0x10000011, the word of E511's three faults) with 1048576
 pixels right, the first wrong at (1024, 0), and the health triangles after it passed, 3 of 3
-(E828; Q292). [infer, post hoc] That job overflows the parameter buffer: the non-zero PB pages of
-E824's ten four-array dumps fit 1 + ceil(2 (W / 16) (H / 16) / 32), which gives 4097 pages at
-4096 x 4096 against 1024 usable (P - 0x22 at the maximum P 0x422), so it would be the first 4x
-partial render on record; the fit was read from the same dumps. The health triangles that fail
-after a TA write fault are a state the reset leaves [infer] (Q003).
+(E828; Q292). It is not a parameter-buffer overflow: the same 4x full triangle faulted with the
+same word at 1280 x 1024 and 2048 x 1536, whose scenes need 321 and 769 of the 1024 usable pages
+(P - 0x22 at the maximum P 0x422; the need 1 + ceil(2 (W / 16) (H / 16) / 32) fits E824's ten
+dumps and two more here), with no pixel right and health ok after each (E845, held out), and at
+4096 x 1152 (E846). A 4x scene that does overflow ends in -ENOSPC without a fault, as at 1x: 1024
+x 768 at P 0xe2 (need 193, 192 usable) and 288 x 144 at P 0x23, while 0xe3 completed (E846, read
+after the run; the stage's control was frozen for another scene). Every four-array 4x job that
+completed was at most 1024 x 768 and every one that faulted at least 1280 x 1024, so the fault
+starts past 1024 pixels wide, past 768 high or past both; the records do not separate them.
+
+After a TA write fault (0x90004, `SB` 6) and the reset, the next renders that run the TA fault at
+the failed job's page with `SB` 6, once or twice, before one passes: 4 of 4 such health faults
+named the job's page, at 0x20006 and at 0x2000a, never the health context's own end; their `CID`
+is the list current at that render (1, or 2 after a fill took list 1). A fill between them does
+not end it and leaves `CR_CLKGATESTATUS` at 0x78; a 64 x 64 render on a context that maps the page
+ends it with no fault, and the status returns to 0x20 after a completed render (E848; the frozen
+row of the fill cell failed on the list number alone, read after the run). [infer] The TA's
+pending region-header write survives the reset and is issued again at its next run. The boots
+after 3 of 4 held resets and 2 of 4 health faults timed out (`SGX recovery failed: -110`), their
+register dumps reading `BIF_INT_STAT` 0x000d0004, read as a TA write inside the boot [infer]
+(E848; Q003).
 
 ### 5.6 Unit names
 
@@ -275,7 +291,7 @@ and shading processor and its pre-processor; `PBE` pixel back end (tile write-ou
 
 *Based on sgx545-ce `src/services4/srvkm/hwdefs/sgx545defs.h`,
 `src/services4/srvkm/devices/sgx/sgxreset.c`; E357, E360, E457, E507, E511, E573, E729, E745,
-E761, E764 to E767, E789, E824, E826, E828.*
+E761, E764 to E767, E789, E824, E826, E828, E845, E846, E848.*
 
 ## 6. How the DDK resets and starts the core
 
