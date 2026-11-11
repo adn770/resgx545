@@ -605,8 +605,9 @@ later by E828). Records E531-E534 and
 E549; Q134 and the one on two EDM tasks (answered by E752) are narrowed (Q134's client `str` and
 `idf`
 parts, the overlap) and none retired; the one on the state between EDM tasks (answered later by
-E809) and Q033 gain their evidence and stay open; Q152 to Q154 are new (hw: medium, low, medium),
-and one kernel question (the module load, answered later by E828).
+E809) and Q033 gain their evidence and stay open; the one on the end of a pass (answered later by
+E836), one answered later by E746 and Q154 are new (hw: medium, low, medium), and one kernel
+question (the module load, answered later by E828).
 
 Sub-phase 11.30 ran more firmware (EDM) tasks of ours, and the client rerun of Q132, on the laptop
 with the module and fork tip of 11.29 before the verifier fix (module 7ED723C2, tip d614af574cc6;
@@ -632,7 +633,8 @@ advanced 6 in that window and then did not move; the stage stopped at its first 
 other writers of its plan did not run). Together they narrow E533's stop only this far: the `sa`,
 `r`, `i` and `p` writes alone do not stop the tick when the closed task follows, and a task that
 calls the closed task can stop it too; E533's arbitrary `pclink` write, its p values (1, 0, 1, 0)
-and the missing closed task are still not separated (Q152). A host kick reached the general
+and the missing closed task are still not separated (answered later by E836). A host kick reached
+the general
 slot only, with `pa1` = 0x03000000 (E538: 3 of 3 runs; the frozen prediction 0x100 failed, which
 E746 later read as the tick after the kick, see E538's correction) and 50 ms
 of ticks logged nothing with bit 25 masked. A slow task of up to 6.9 ms was never found busy by a
@@ -655,9 +657,10 @@ left out for their mixed pixels and 10 stop on `r123` past the allocation, which
 from the modulo rule); the replay of the other vectors is unchanged (30081 scalar and 193 pixel
 matches, 1112 fitted, 918 stops, 175 skipped, 1937 left out, with 0 mismatches). Records E535-E540;
 the one on the state between EDM tasks (answered later by E809), the one on two EDM tasks (answered
-by E752), Q133, Q132, Q152, the one on bit 25 of pa1 (answered by E746) and Q033 are narrowed and
-none retired; Q158 and the one on bit 24 of pa1 (answered by E746) are new (hw: low, low), and two
-more new hw questions (medium, medium) are now part of Q152.
+by E752), Q133, Q132, the one on the end of a pass (answered later by E836), the one on bit 25 of
+pa1 (answered by E746) and Q033 are narrowed and none retired; Q158 and the one on bit 24 of pa1
+(answered by E746) are new (hw: low, low), and two more new hw questions (medium, medium) were
+folded into the one on the end of a pass and are now part of Q294.
 
 Sub-phase 11.31 ran seven script tables on the laptop with no kernel change, all in the 11.26 tool
 (sgxfive-test-1126): the TA's object format and its vertex dwords (`ta/object-format`), the region
@@ -844,7 +847,8 @@ footprint, the T3 address chain, sRGB, ETC1, the texture types and the cube are 
 simulator keeps refused (E721 to E726, Q280 to Q284), and the multisample, TE bit, the 4x health
 triangles (Q003), ZLS band and depth plane results are E727 to E731 (four questions opened then, up
 to Q288; E829 answered the first), E732 the accounting. Four questions are
-folded into Q163, the one on two EDM tasks (answered by E752) and Q152, Q045 is split (Q277 for the
+folded into Q163, the one on two EDM tasks (answered by E752) and the one on the end of a pass
+(answered later by E836, the two folds now in Q294), Q045 is split (Q277 for the
 firmware) and Q103's kernel part is
 Q278; no question is answered. The roadmap counts the questions from the built
 `doc/open_questions.md`: 184 open (Q001 to Q288), 165 hw (high 20, medium 76, low 69), 12 fw and 7

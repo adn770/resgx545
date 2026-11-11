@@ -6135,6 +6135,61 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   `vectors-closing-r3-geo-dword36`, `vectors-closing-r3-geo-counts`,
   `vectors-closing-r3-geo-c-counts`, `vectors-closing-r3-geo-c-zls`,
   `vectors-closing-r3k-pixel-pb-pages`.*
+- `E834` R4 stage kb2 (r4-events, 10 jobs of ring_hold.s, each a reset and an arm, the writes made
+  before the logging window and one miscinfo 1 ms after it opened, no stop; Q290): the ordinary
+  kicks (g0p x2, the timing control) gave one kick entry with K 2 6.45 and 6.46 ms after the call's
+  stamp, 8 ticks before it and 7 after, the ticks after K 3 and pa2 0x01061a70, answered; with the
+  kicker word W written to 0x42 before one ordinary kick (q2p x3) the kernel's bump made W 0x43
+  (67), the kick was served (one entry, K 2, answered, CCB offsets 3 and 3) and the 6 ticks after it
+  carried K 3 in 3 of 3, so the count is not W as latched (H-LATCH refuted); a kick without the bump
+  (q3p x3, q4 x2) raised no kick entry in 5 of 5 (the ring reached 5 to 6 ticks past the call's
+  stamp + 8 ms), the ticks after it kept K 2 (H-HWC, a count of CR_EVENT_KICK writes, refuted),
+  carried pa2 0x01061a74 (E751's latched mark) from the first tick 6.75 to 7.94 ms after the stamp
+  on, and USE0_SERV_EVENT bit 16 read set in both samples after the 504 ms timeout; an ordinary kick
+  sent after it in a second window (q4 x2) was served at once (one entry with K 2, answered in 3.5
+  ms) and read one command (CCB 4 and 3, W 3), and its ticks still read 0x01061a74; frozen verdict
+  'count byte: H-LATCH REFUTED, H-CNT consistent (3 row groups), H-HWC REFUTED; unbumped kick:
+  H-PEND REFUTED, H-NOEVENT REFUTED, H-LATE REFUTED'.
+  *edm; HW, infer; data: `edm-closing-r4-events:out/a1/kb2/`.*
+- `E835` R4 stage kp (r4-events, 4 jobs of ring_exit2.s, no stop; Q152): with the controls passing
+  (e0, 14 entries on the 25000-unit grid, nothing acted; fk, a plain tick pass ended idf, wdf, phas
+  #0, #0, pixel, end, parallel, nop.end, kept with the next entry +24994, CCB 2 and 2, dword 14 0),
+  a kick pass made by one miscinfo and ended the same way (kp held out, kp-r2 replicate, each after
+  a reset and an arm) kept the tick in 2 of 2: the kick entry logged with flag 3 (ACTED 1, ACT_SEEN
+  4), then 14 and 15 ticks on the grid in the 16-rung ring (kp: the first 24994 units after the tick
+  before the kick, as after fk's acted pass, then 25006 and 25000) and 539 and 537 more entries
+  dropped by the full ring while the call waited, the signature idle in both samples
+  (CR_CLKGATESTATUS 0x20, USE0_SERV_EVENT bit 16 set and counting, CR_EVENT_STATUS 0x20000000), the
+  miscinfo not answered in 504 ms, the CCB write offset 3 and read offset 2 (read = write - 1) and
+  HostCtl dword 14 0, the ticks after the kick carrying K 3; frozen verdict 'H-PHAS-ANY consistent
+  (3 row groups), H-KICK-MORE REFUTED', 19 of 21 non-control rows decided (H-KICK-MORE's P3 row
+  cannot tell: no stop).
+  *edm; HW, infer; data: `edm-closing-r4-events:out/a1/kp/`.*
+- `E836` R4 stage e3p, the end of the pass (r4-events, ring_skip3p.s, 2 of its 4 jobs run, the stage
+  ended by its stop rule at its first B1P; Q152's slot 3 clause): the fill without the skip (b0,
+  control, E823's B0) completed with one slot 3 end-of-render entry and the tick alive; with slot
+  3's first end-of-render pass skipped once and ended by our task idf, wdf, phas #0, #0, pixel, end,
+  parallel, nop.end instead of the closed handler (b1p, held out, hold_recovery Y) the fill was held
+  (the tool's job hung, rc 1) and the tick was found stopped after the 50 ms status watch, with
+  E537's busy signature (CR_CLKGATESTATUS 0x000ccfa0, USE0_SERV_EVENT 0x422, bit 16 clear and
+  frozen, the event timer counting, CR_EVENT_STATUS 0x20040000), CCB read = write = 3, HostCtl dword
+  14 0 and P3 one miscinfo not answered in 505 ms with 0 new ring entries; frozen verdict
+  'H-PHAS-ANY REFUTED, H-SLOT3-MORE consistent (1 row groups)'; read after the run, the ring held 10
+  more ticks on the 25000-unit grid after the slot 3 entry (then full), where E823's B1, which ended
+  the same pass idf, wdf, nop.end, logged nothing after it, so the phase end let the tick run on for
+  at least 10 ticks and the stop came later.
+  *edm; HW, infer; data: `edm-closing-r4-events:out/a1/e3p/`.*
+- `E837` R4 stage e3p, the status bits (r4-events, the same two jobs as E836; Q166, Q111): in b0
+  (the fill without the skip, control) CR_EVENT_STATUS read 0x20000000 in 9 of 9 watch reads from
+  the slot 3 entry to 54 ms (bit 18 never set) and STATUS2 0x400; in b1p (slot 3's end-of-render
+  pass skipped once, the watch started when the page showed the slot 3 entry, 4.76 ms after the fill
+  began) CR_EVENT_STATUS read 0x20040000, PIXELBE_END_RENDER (bit 18) set, in 7 of 7 reads from 0.01
+  to 54.5 ms, STATUS2 0x400 throughout; after the tick had stopped, a host write of bit 15 (0x8000)
+  to CR_EVENT_HOST_CLEAR (0x0134, debugfs kregnow) left bit 18 set at 1 and 3 ms, and a write of bit
+  18 (0x40000) cleared it, 0x20000000 at 1, 3 and 20 ms; frozen verdict 'H-LEVEL consistent (1 row
+  groups), H-PULSE REFUTED; H-W consistent (2 row groups), H-ALL REFUTED, H-NONE REFUTED' on one B1P
+  job (H-LEVEL held out, the clears a fit to E823's one job), the two replicates not run.
+  *platform; HW, infer; data: `edm-closing-r4-events:out/a1/e3p/`.*
 
 ## By unit
 
@@ -6155,7 +6210,8 @@ Records: E009, E014, E017, E084, E146, E152, E153, E154, E155, E156, E157, E158,
 E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321, E353, E402, E431, E444,
 E450, E531, E532, E533, E536, E537, E538, E539, E540, E550, E600, E601, E602, E603, E604, E605,
 E746, E747, E748, E749, E750, E751, E752, E764, E768, E769, E771, E784, E791, E792, E793, E794,
-E804, E805, E806, E807, E809, E810, E811, E812, E813, E814, E816, E817, E818, E819, E830.
+E804, E805, E806, E807, E809, E810, E811, E812, E813, E814, E816, E817, E818, E819, E830, E834,
+E835, E836.
 
 ### firmware
 
@@ -6191,7 +6247,7 @@ E808.
 ### platform
 
 Records: E006, E007, E008, E025, E026, E122, E150, E149, E246, E258, E357, E359, E365, E401, E403,
-E404, E405, E434, E445, E547, E548, E619, E815, E821, E822, E823.
+E404, E405, E434, E445, E547, E548, E619, E815, E821, E822, E823, E837.
 
 ### render
 

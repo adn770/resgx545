@@ -55,3 +55,12 @@ that the job causes (ccbctl 2 then 4).
 writes `CR_EVENT_KICK` without a bump, or bumps without a write (not run, not planned here). The
 byte's meaning for an event that arrives while a task of ours holds the EDM (K7 of the proposal,
 two kicks in a hold) and for kicks of the other-event path (`CR_EVENT_KICK2` does not bump).
+
+**Correction 2026-11-11:** The post hoc reading above, that the count is the number of commands the
+kernel sent through the CCB, holds for the kernel's kicks only, each of which bumps the kicker word
+and is served. Round 4's stage kb2 (E834) wrote `CR_EVENT_KICK` with the kicker word unchanged: the
+command was sent (CCB write offset 3) and the count stayed 2, and with the word set to 0x42 before a
+served kick the count went to 3, not 0x43. The count is the kicks served (H-CNT); a kick pass of
+ours that left its command unread was followed by K 3 (E835, post hoc), so it follows the kick
+events delivered rather than the commands sent or read [infer]. The 15 jobs and their rows stand
+as recorded.

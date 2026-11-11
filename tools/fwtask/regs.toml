@@ -14,8 +14,8 @@
 # (0x0114) and CR_EVENT_HOST_CLEAR (0x0134), for Q166's clear test (E3); the closed tick handler
 # writes 0x0134 itself (E155). Both are write-only in the register dump.
 # Round 3 (R3-K10): str, never ldr, of CR_EVENT_TIMER (0x0acc), which the closed tick handler
-# writes (E155), for Q152. The verifier cannot see the value stored: the session's guard on the
-# assembled code pins it to the word the ticks carry (E746).
+# writes (E155), for the end of a pass (E818). The verifier cannot see the value stored: the
+# session's guard on the assembled code pins it to the word the ticks carry (E746).
 
 # ---- clock gating: by name, refused for str AND ldr, checked before anything else ----------
 # E445 (11.17): the first run reached CR_CLKGATECTL2 bits 3:2 and its output was lost; the user
@@ -79,7 +79,7 @@ record = "E155, E357, Q166"
 name = "CR_EVENT_TIMER"
 offset = 0x0acc
 use = "str"
-record = "E155, E746, Q152"
+record = "E155, E746, E818"
 
 # ---- denied, by range (documentation and test; default deny already covers them) ------------
 # The tool imports tools/campaign/regwidth.py DENY and requires that every row below is in it

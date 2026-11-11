@@ -97,9 +97,9 @@ read, so "349 replay exactly" says nothing of persistence. Two contents are not 
 run: the tick vectors of `fwtask-events` take `pa` from E532 (E538 masked the tick's `pa1`, its
 expected log of 0 comes from the quiet window), and the writers' state is what the next reader read,
 not what the writer's own task read back. Not modelled: the closed task, the event queue, ticks, the
-p0 and `pclink` values at the next entry (Q152), the stop of E537, TRC above 31 and a write past the
-allocation (the T = 8 to 24 runs of E540 also read the register past the allocation, which the
-simulator stops on, so only T = 31 is a vector).
+p0 and `pclink` values at the next entry (E792, E809), the stop of E537, TRC above 31 and a write
+past the allocation (the T = 8 to 24 runs of E540 also read the register past the allocation,
+which the simulator stops on, so only T = 31 is a vector).
 
 The two runs of E535 (a write to `r123` with a marker of its own per job, client fills) are
 converted by `tools/usse-asm/convert_extra.py` into `vectors/nokernel/usse/q147-a/` and `q147-b/`
