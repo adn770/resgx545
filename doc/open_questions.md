@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-174 open: 164 hw (high 19, medium 77, low 68, unrated 0), 9 fw, 1 kernel.
+173 open: 163 hw (high 19, medium 77, low 67, unrated 0), 9 fw, 1 kernel.
 
 ## Work queue: hardware
 
@@ -84,7 +84,6 @@
 - `Q013` (phase 6, hw, low): what does bit 18 of the copy's pixel-event data word 2 do, when it leaves the copy unchanged and changes a few pixels of the fill and the triangle? (E043, E046, E388)
 - `Q019` (phase 7, hw, medium): what does the secondary attribute size (bits 24:18 of dword 1 of the background object) limit, given that all sixteen douta words reach sa0 to sa15 with 0, 1 and 4 rows, or does the task take its size from elsewhere? (E125, E391)
 - `Q020` (phase 7, hw, medium): what does a douta in the triangle's primary pixel program do, when its markers never reach the USE task and the readback is the memory table's inputs for markers A in both runs, and other values for markers B in the first? (E125, E381)
-- `Q021` (phase 7, hw, medium): with 4 components (DOUTI0 bits 23:22 = 3) where does the texel land, given pa3 reads 1.0 on most pixels? (E132, E420, E569)
 - `Q023` (phase 7, hw, high): how many output dwords does a pixel task get per setup, and what do the data rows limit (E406) (E139, E081, E406, E570, E709, E742, E759)
 - `Q024` (phase 7, hw, low): does CR_PDS_REG_0A78 change timing, when two of its values were slower in one timing run? (E141, E045, E396)
 - `Q025` (phase 7, hw, medium): what does the SB field of CR_BIF_FAULT encode in the PDS faults, and why did a store of one dword fault in the follow-up run only, and a store of two dwords then eight in the first run only? (E143, E144, E145, E395)
@@ -145,7 +144,7 @@
 - `Q177` (phase 11, hw, low): what do T0 address modes 4 to 7 read along the u axis of a 16x16 twiddled texture (indices 324 to 366 past the 256 texels, a period of 6 or 16 positions), given that on the v axis 6 and 7 clamp and 4 and 5 repeat, and what memory lies past the texture (E565, E033)
 - `Q178` (phase 11, hw, low): what do TEXTYPE 1, 2, 3 (the same image as 1), 4 and 5 read, and why is type 2 the only one of the eight run on which the third coordinate of smp3d changes the image (three images for smp2d, smp3d at 0.5 and smp3d at 1.5) (E567, E342, E725, E726)
 - `Q179` (phase 11, hw, low): how are the blocks and the data bits of formats 23 to 26 laid out (a data bit changes 7 to 13 pixels, the blocks of 23 and 24 do not differ by index in the colour; format 27 decodes as ETC1 with Morton block order, y in the low bit, E724) (E568, E342, E724)
-- `Q180` (phase 11, hw, low): why did all 28 triangle jobs of the Q021 probes hang (E569), the two controls with the old source word 0x40800801 included: is it the four outputs o4 to o7, the two extra temporaries, or something else in the vertex program (E569, E420, E541)
+- `Q180` (phase 11, hw, medium): why did all 28 triangle jobs of the four-component DOUTI0 probes hang (E569), the two controls with the old source word 0x40800801 included (is it the four outputs o4 to o7, the two extra temporaries, or something else in the vertex program), and with 4 components (DOUTI0 bits 23:22 = 3) where does the texel land, given pa3 reads 1.0 on most pixels (E569, E420, E541, E132)
 - `Q181` (phase 11, hw, low): does the fill's transfer command load a colour-space set at all (xfer:17^=1 and xfer:18 to 22 made no difference for formats 28 and 29, E568), and if not, which path loads the set that the YUV conversion reads (E568, E037, E040)
 - `Q280` (phase 11, hw, low): what makes up to 56 of 2048 pixels of a gradient job differ from the Euclidean footprint of the pairs (op0, op2) and (op1, op3) with a LOD fraction truncated to 1/64 (E721), a rounding of the length, of the logarithm or of the operands, or a footprint that is not exactly Euclidean (E721, E563, E744)
 - `Q282` (phase 11, hw, low): what arithmetic gives the bilinear sample of an sRGB texel (T0 bit 27) given that decode-then-filter in float fits 43% to 56% of the pixels and filtering the bytes then decoding fits none (E723, E720)

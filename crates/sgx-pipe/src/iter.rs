@@ -6,14 +6,14 @@
 //! 2^-23 where the attribute's range per root area is below 0.05, and up to 366 units above it;
 //! no bit-exact arithmetic is known. So a value is `Near`, never matched, and a poorly
 //! conditioned triangle refuses (Q200). Not modelled here, and refused wherever a scene would
-//! need it: four components (Q021), no-wait fetches (Q027, Q093), other sources (Q098, Q180),
+//! need it: four components and other sources (Q180, Q098), no-wait fetches (Q027, Q093),
 //! perspective (w other than 1), and the position source 0 (x + 0.375: E502, Q201).
 
 use crate::Outcome;
 use crate::isp::{DEPTH_UNIT, GRID, Tri};
 
 /// Open questions that block the unit.
-pub const OPEN: &[&str] = &["Q021", "Q027", "Q093", "Q098", "Q180", "Q200", "Q201"];
+pub const OPEN: &[&str] = &["Q027", "Q093", "Q098", "Q180", "Q200", "Q201"];
 
 /// A refusing stub for the parts of the unit nothing models yet.
 pub fn refuse() -> Outcome {

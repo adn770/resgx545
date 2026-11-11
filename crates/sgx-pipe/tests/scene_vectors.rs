@@ -105,7 +105,7 @@ fn refused(v: Verdict, ids: &[&str]) {
 
 #[test]
 fn what_no_record_explains_is_refused_under_the_question_that_covers_it() {
-    let any = r#"{"image": {"o0": "0xff336699"}, "refuse": ["Q011", "Q074", "Q076", "Q003", "Q205", "Q206", "Q207", "Q021", "Q078"]}"#;
+    let any = r#"{"image": {"o0": "0xff336699"}, "refuse": ["Q011", "Q074", "Q076", "Q003", "Q205", "Q206", "Q207", "Q180", "Q078"]}"#;
     // the copy's tag with bit 24 set or at 0 reads the source's last texel (E272): Q011
     refused(scene_with(1, r#"{"xfer": {"0": "0x3000000"}}"#, any), &["Q011"]);
     refused(scene_with(1, r#"{"xfer": {"0": "0x0"}}"#, any), &["Q011"]);
@@ -170,4 +170,8 @@ fn scene_vectors_replay_with_no_mismatch() {
     }
     assert!(rep.gate(), "{} mismatches", rep.mismatches.len());
     assert!(rep.skipped.is_empty(), "scenes that could not be replayed: {:?}", rep.skipped.len());
+    // the iterator word of a copy's primary program refuses under Q180, into which Q021 folded
+    let t = &rep.units["transfer"];
+    assert!(!t.refused.contains_key("Q021"), "Q021 is folded into Q180");
+    assert!(t.refused.get("Q180").is_some_and(|&n| n > 0), "{:?}", t.refused);
 }

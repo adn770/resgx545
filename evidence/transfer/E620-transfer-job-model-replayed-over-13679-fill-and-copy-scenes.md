@@ -130,3 +130,9 @@ The arithmetic of the texture coordinates is the exact plane (E048), checked onl
 identity. The unpoked baselines' hash equals the CPU reference's only for a job that completed
 with no pixel different from the reference and has a reference formula (not the ramp copies); the
 other baselines carry the recorded hash alone.
+
+**Correction 2026-11-11:** Q021 is folded into Q180 (decision R4-3 a), so the model refuses the
+iterator word under Q180 and the six regenerated files of pds/data-words and pds/douti-fields in
+scene-vectors-12-1 list Q180 where they listed Q021, nothing else changed. The replay's refusals
+by question now read Q180 291 where this record reads Q021 291 (the same 291 scenes); the other
+counts are as above.

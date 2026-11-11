@@ -446,7 +446,7 @@ modes 0 to 3), the pixel shader per pixel of every tile of the box and a copy's 
 with no record), a PDS program or input no record measured (a program that is not a template the
 records ran included) under `Q207`; the tile an end-of-tile task names is under `Q206` too
 (narrowed by `Q289`); `Q011` a copy's
-tag; `Q021` the iterator word; `Q066` the background object; `Q205` a copy's iterated coordinates;
+tag; `Q180` the iterator word; `Q066` the background object; `Q205` a copy's iterated coordinates;
 `Q078` the sampler words; `Q076` and `Q003` an access outside the scene's memory, and `Q003` also a
 job whose completion the words leave unknown. A refusal depends on the scene's words only, never on
 the recorded result. The scene vector lists the questions its poked words are open under in

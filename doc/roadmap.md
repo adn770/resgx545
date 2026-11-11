@@ -348,9 +348,10 @@ shared `pa`/`sa`); EMIT2 bits 29:28 rotate the stored image and bit 31 scales it
 SIDEBAND bits 8:6 pick the channel in pack modes 7 and 8 only (E383); `CR_REG_0400`'s low byte is
 ARGB1555's alpha threshold (E385); a double emit hangs a job of several tiles and on one tile
 disturbs the later jobs until a reset (E386); T3 bits 7:0 are two signed texel offsets (E397); a
-no-wait iteration never reaches `pa0` (E393) and E133's stale pixels do not recur (E392). Q021,
-Q023, Q057 and Q008 had no run (the questions on a DOUTU's width, on the copy's buffers and on T0's
-maximum level 15 were answered in 11.16: E428, E425, E441).
+no-wait iteration never reaches `pa0` (E393) and E133's stale pixels do not recur (E392). The
+four-component question (folded since into Q180), Q023, Q057 and Q008 had no run (the questions on
+a DOUTU's width, on the copy's buffers and on T0's maximum level 15 were answered in 11.16: E428,
+E425, E441).
 
 Sub-phase 11.16 added the tool options the stuck questions needed to `sgxfive-test` and `probe.py`
 and ran them with the fourth batch, on the laptop over the cable: `--blk` and `--cmd` with `N^=V`,
@@ -694,27 +695,28 @@ address modes 6 and 7 clamp and 4 and 5 repeat along v while modes 4 to 7 along 
 (E565); T3 bits 0 to 7 are offsets in `smp` at every value tried and bits 10, 14, 18, 27 and 28 act
 by position (E566); `smp3d` ignored the third coordinate on the types and sizes it ran on and
 TEXTYPE 2 does not (E567); the YUV formats read black in a fill whether or not the colour-space poke
-was given, and of three block orders only one fits format 27 (E568); 28 triangle jobs of the Q021
-probes all hung (E569). The firmware task armed with TRC 32 to 48 and the hazard word ran in 10 of
-10 jobs and read its marker back through `r123`, a register that exists at TRC 31; nothing above
-`r123` was tested (E550, Q168). Records E550 and E560-E569. The simulator (`crates/sgx-sim`) gains
-the E276 and E441 level fields, the tile law for 32-bit twiddled textures in the 14 sizes run, the
-non-square chain in the five sizes run, `smp3d` as `smp2d` only on the point-sampled textures it ran
-on (the rule refuses TEXTYPE 2 itself), TEXTYPE 7 at 16x16, and the YUV formats as black only for a
-job whose recorded pokes leave the colour-space set unloaded (`init.job.pokes`); everything else of
-these tables stays unsupported with a reason. Of the 425 vectors (456 jobs less the 28 triangle jobs
-and 3 that failed) 241 replay exactly, 184 stop and none mismatches (the draft's 241 of 425 is the
-figure; `plan.md`, which is kept as declared, still says 141 of 428 for the state before the
-simulator patches); the replay of the landed vectors is unchanged (30623 pass, 1112 fitted, 918
-stops, 175 skipped, 1937 left out, 82 and 48 hung, 0 mismatches), the eight YUV texels of the landed
-formats-other vectors still stop. Q104 is narrowed to the 1D, side-of-1 and non-32-bit cases, Q078,
-Q050, Q115, Q113, Q114 and Q021 are narrowed or carry their evidence and none is retired; Q168,
+was given, and of three block orders only one fits format 27 (E568); 28 triangle jobs of the
+four-component probes all hung (E569, Q180). The firmware task armed with TRC 32 to 48 and the
+hazard word ran in 10 of 10 jobs and read its marker back through `r123`, a register that exists at
+TRC 31; nothing above `r123` was tested (E550, Q168). Records E550 and E560-E569. The simulator
+(`crates/sgx-sim`) gains the E276 and E441 level fields, the tile law for 32-bit twiddled textures
+in the 14 sizes run, the non-square chain in the five sizes run, `smp3d` as `smp2d` only on the
+point-sampled textures it ran on (the rule refuses TEXTYPE 2 itself), TEXTYPE 7 at 16x16, and the
+YUV formats as black only for a job whose recorded pokes leave the colour-space set unloaded
+(`init.job.pokes`); everything else of these tables stays unsupported with a reason. Of the 425
+vectors (456 jobs less the 28 triangle jobs and 3 that failed) 241 replay exactly, 184 stop and none
+mismatches (the draft's 241 of 425 is the figure; `plan.md`, which is kept as declared, still says
+141 of 428 for the state before the simulator patches); the replay of the landed vectors is
+unchanged (30623 pass, 1112 fitted, 918 stops, 175 skipped, 1937 left out, 82 and 48 hung, 0
+mismatches), the eight YUV texels of the landed formats-other vectors still stop. Q104 is narrowed
+to the 1D, side-of-1 and non-32-bit cases, Q078, Q050, Q115, Q113, Q114 and the four-component
+question (folded since into Q180) are narrowed or carry their evidence and none is retired; Q168,
 Q177 to Q181 and two more (the gradient footprint, answered later by E721; the T3 address bits,
-folded later into Q078) are new (hw, low).
-The roadmap counts the questions from the built `doc/open_questions.md`: 151 open (Q001 to Q181),
-135 hw (high 13, medium 64, low 58), 10 fw and 6 kernel; edm 13, texture 14. The replay of the
-tree's data, with the 17 new vector files in the data repository: 30864 pass, 1112 fitted, 1102
-unsupported, 175 skipped, 1937 left out, 82 and 48 hung, 0 mismatches.
+folded later into Q078) are new (hw, low). The roadmap counts the questions from the built
+`doc/open_questions.md`: 151 open (Q001 to Q181), 135 hw (high 13, medium 64, low 58), 10 fw and 6
+kernel; edm 13, texture 14. The replay of the tree's data, with the 17 new vector files in the data
+repository: 30864 pass, 1112 fitted, 1102 unsupported, 175 skipped, 1937 left out, 82 and 48 hung, 0
+mismatches.
 
 Sub-phase 11.33 ran 14 script runs on the laptop with no kernel change and no tool change, all in
 the 11.26 tool (sgxfive-test-1126): where the output registers o1 to o3 of a pixel task land
