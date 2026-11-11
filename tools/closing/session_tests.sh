@@ -22,8 +22,9 @@
 #     checkout's userspace/libsgxfive/build/ is copied and its .venv linked (current, not
 #     pinned), and a session's debug-src/ is copied to debug/ with its path dependencies on
 #     crates/ pointed at the worktree;
-#   - TOOL_SRC and RESGX545 name the pinned worktree (the sessions' override of their tool
-#     tree, which some default to an agent worktree that no longer exists);
+#   - TOOL_SRC, RESGX545 and RESGX545_MAIN name the pinned worktree and RESGX545_DATA the fake
+#     home's data link (the sessions' overrides of their tool and data trees, which some default
+#     to an agent worktree that no longer exists or to the author's absolute paths);
 #   - the entry is tests/run_all.sh, else tests/run_mock.sh, else tests/run_mock.py.
 #
 # Environment: PY (the python the tests use; default <tool>/.venv/bin/python, else python3),
@@ -140,7 +141,8 @@ for f in "$C"/FROZEN*.sha256; do
 done
 
 cd "$C" || die "cannot enter the copy"
-export HOME=$HOMEDIR PY RESGX545=$R TOOL_SRC=$R PYTHONDONTWRITEBYTECODE=1
+export HOME=$HOMEDIR PY RESGX545=$R TOOL_SRC=$R RESGX545_MAIN=$R \
+    RESGX545_DATA=$HOMEDIR/src/resgx545-data PYTHONDONTWRITEBYTECODE=1
 case "$ENTRY" in
     *.py) "$PY" "$ENTRY" ;;
     *) bash "$ENTRY" ;;
