@@ -831,7 +831,8 @@ store is not reproduced (E707 to E709, Q163 to Q278). The sampler's bilinear res
 form of E720, and the simulator `sgx-sim` takes it, tests first, with 8 new vectors; the gradient
 footprint, the T3 address chain, sRGB, ETC1, the texture types and the cube are findings the
 simulator keeps refused (E721 to E726, Q280 to Q284), and the multisample, TE bit, Q140, ZLS band
-and depth plane results are E727 to E731 (Q285 to Q288), E732 the accounting. Four questions are
+and depth plane results are E727 to E731 (four questions opened then, up to Q288; E829
+answered the first), E732 the accounting. Four questions are
 folded into Q163, the one on two EDM tasks (answered by E752) and Q152, Q045 is split (Q277 for the
 firmware) and Q103's kernel part is
 Q278; no question is answered. The roadmap counts the questions from the built

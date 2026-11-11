@@ -150,6 +150,37 @@ def test_an_answered_question_is_retired_and_cited_only_as_answered(monkeypatch)
         questions.check_retired({"Q002": "it was hard"})
 
 
+def test_records_up_to_the_answer_may_cite_an_answered_question(monkeypatch):
+    """A record written before or with the answer keeps its citation (landed records change
+    only by corrections); a later record, a doc or a glossary term cites the answer."""
+    monkeypatch.setattr(questions, "RETIRED", {"Q002": "answered by E003"})
+    assert questions.reference_problems("Q002", {"Q001"}, record="E001") == []
+    assert questions.reference_problems("Q002", {"Q001"}, record="E003") == []
+    assert questions.reference_problems("Q002", {"Q001"}, record="E004") == \
+        ["Q002 is answered (answered by E003): cite the answer"]
+    assert questions.reference_problems("Q002", {"Q001"}) == \
+        ["Q002 is answered (answered by E003): cite the answer"]
+
+
+def test_main_lets_earlier_records_cite_an_answered_question(tree, monkeypatch):
+    monkeypatch.setattr(questions, "RETIRED", {"Q002": "answered by E003"})
+    (tree / "evidence" / "isp" / "E002-x.md").write_text("see Q002")
+    assert questions.main(["--check"]) == 0
+    (tree / "evidence" / "isp" / "E004-x.md").write_text("see Q002")
+    assert questions.main(["--check"]) == 1
+
+
+def test_main_leaves_the_generated_evidence_log_to_the_records(tree, monkeypatch):
+    """doc/evidence_log.md copies the records' claims; their citations are checked in the
+    records themselves."""
+    monkeypatch.setattr(questions, "RETIRED", {"Q002": "answered by E003"})
+    (tree / "evidence" / "isp" / "E002-x.md").write_text("see Q002")
+    (tree / "doc" / "evidence_log.md").write_text("- `E002` see Q002\n")
+    assert questions.main(["--check"]) == 0
+    (tree / "doc" / "other.md").write_text("see Q002\n")
+    assert questions.main(["--check"]) == 1
+
+
 def test_a_decided_question_is_retired_and_stays_citable(monkeypatch):
     monkeypatch.setattr(questions, "RETIRED", {"Q002": "decided in doc/specs/x.md"})
     assert questions.reference_problems("see Q001 and Q002", {"Q001"}) == []
@@ -225,7 +256,9 @@ def test_references_name_open_questions():
     bad = {}
     for d, pat in (("evidence", "*/*.md"), ("glossary", "*/*.toml"), ("doc", "**/*.md")):
         for p in sorted((questions.ROOT / d).glob(pat)):
-            if p != questions.DOC and (m := questions.reference_problems(p.read_text(),
-                                                                         open_ids)):
+            rec = p.name[:4] if d == "evidence" else None
+            gen = (questions.DOC, questions.ROOT / "doc" / "evidence_log.md")
+            if p not in gen and (m := questions.reference_problems(p.read_text(),
+                                                                         open_ids, rec)):
                 bad[str(p.relative_to(questions.ROOT))] = m
     assert not bad, bad

@@ -34,7 +34,8 @@ answer. A question closed by a decision and not by a measurement is retired as "
 <doc>.md", a document that names it and states the decision: an answer is not claimed, and the id
 stays citable as the name of the decision. Specs, evidence records and glossary terms cite a
 question as Q<nnn>; an answered or folded one may not be cited, its answer or the question it was
-folded into is. doc/open_questions.md is
+folded into is, except that the records up to the answering one keep their citations (a landed
+record changes only by corrections). doc/open_questions.md is
 generated from the files: the work queue (hw), then the parked fw and kernel questions.
 
     python3 tools/records/questions.py [--check]
@@ -75,7 +76,7 @@ RETIRED: dict[str, str] = {
     "Q278": "decided in doc/specs/3d.md", "Q005": "answered by E402",
     "Q147": "folded into Q132", "Q144": "folded into Q133", "Q270": "folded into Q163",
     "Q138": "folded into Q089", "Q150": "folded into Q137", "Q151": "folded into Q137",
-    "Q037": "answered by E422", "Q198": "decided in HACKING.md",
+    "Q037": "answered by E422", "Q198": "decided in HACKING.md", "Q285": "answered by E829",
 }
 NAME = re.compile(r"Q\d{3}-[a-z0-9]+(-[a-z0-9]+)*\.md")
 REF = re.compile(r"\bQ\d{3}\b")
@@ -176,13 +177,18 @@ def fold_problems(retired: dict[str, str], open_ids: set[str]) -> list[str]:
             if why.startswith("folded into ") and why[-4:] not in open_ids]
 
 
-def reference_problems(text: str, open_ids: set[str]) -> list[str]:
-    """The Q<nnn> references of a text that do not name an open question."""
+def reference_problems(text: str, open_ids: set[str], record: str | None = None) -> list[str]:
+    """The Q<nnn> references of a text that do not name an open question. `record` is the id of
+    the evidence record the text is: a record up to the one that answered a question keeps
+    citing it (it was written before or with the answer, and changes only by corrections)."""
     out = []
     for q in dict.fromkeys(REF.findall(text)):
         if q in RETIRED and RETIRED[q].startswith("folded into "):
             out.append(f"{q} was {RETIRED[q]}: cite {RETIRED[q][-4:]}")
         elif q in RETIRED and RETIRED[q].startswith("decided in "):
+            continue
+        elif q in RETIRED and record and RETIRED[q].startswith("answered by ") \
+                and int(record[1:]) <= int(RETIRED[q][-3:]):
             continue
         elif q in RETIRED:
             out.append(f"{q} is answered ({RETIRED[q]}): cite the answer")
@@ -246,8 +252,9 @@ def main(argv: list[str] | None = None) -> int:
         bad += 1
     for d, pat in (("evidence", "*/*.md"), ("glossary", "*/*.toml"), ("doc", "**/*.md")):
         for p in sorted((ROOT / d).glob(pat)):
-            if p != DOC:
-                for msg in reference_problems(p.read_text(), open_ids):
+            if p not in (DOC, ROOT / "doc" / "evidence_log.md"):   # generated
+                rec = p.name[:4] if d == "evidence" else None
+                for msg in reference_problems(p.read_text(), open_ids, rec):
                     print(f"{p.relative_to(ROOT)}: {msg}")
                     bad += 1
     text = render([parse(p) for p in files()])
