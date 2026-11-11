@@ -6144,19 +6144,70 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   dominant axis changing inside each image and no pixel within 0.0078 of a tie): the face select of
   E726, post hoc there, held out.
   *texture; HW, infer; data: `render-closing-r4-render4x:out/20261111-211315/c/`.*
+- `E845` R4-render4x stages s0 and p: the three controls reproduced as frozen (1x 1024 x 768 hash
+  0xc9e301d225fe2325; 4x 288 x 144 hash 0x4a61860dcb4ab325, 12 parameter pages; 4x 1024 x 768 hash
+  0xde0b9233c9822325, 193 pages, all 0 wrong), then the 4x full triangle on a context made for 4x
+  targets (four region-header arrays, CR_TE_AA 0xe0000000, parameter buffer 0x422 pages) faulted at
+  1280 x 1024 and at 2048 x 1536, whose frozen page need U4 = 1 + ceil(2 tiles16 / 32) is 321 and
+  769 of the 1024 usable pages, with E828 j4's word (BIF_INT_STAT 0x90100, BIF_FAULT 0x10000011:
+  page 0x10000, SB 1, CID 1), no pixel right and health ok after each; the stage stopped at its
+  second fault and its four other sizes did not run: H-PB not supported (0 held, 2 FAILED, 4 cannot
+  tell), so a 4x render on four arrays faults where its scene fits the buffer, and E828's 4096 x
+  4096 fault is not a parameter-buffer overflow.
+  *dpm; HW, infer; data: `render-closing-r4-render4x:out/20261111-211315/s0/`,
+  `render-closing-r4-render4x:out/20261111-211315/p/`, `render-closing-r4-render4x:postrun/`.*
+- `E846` R4-render4x stage o (7 of 8 jobs run, o6 skipped by its condition): the frozen verdict is
+  cannot tell for Q292 and for H-SPM4 because the control o2 (1x 1024 x 768 at render_pb_pages 0x82,
+  frozen to overflow) completed with 0 wrong pixels; read after the run, its row ran the tool's
+  default triangle, whose dumps hold 19 scene pages (o1, o2 and E845's s0), while its frozen need of
+  97 was the model of the full-screen triangle, so the control's prediction was made for another
+  scene; post hoc and not rescored, the 4x full triangle on four arrays completed at 1024 x 768 with
+  P 0xe3 (193 pages) and ended in -ENOSPC without a fault one page lower (0xe2), as did 288 x 144 at
+  P 0x23 (need 12), while 4096 x 1152 at 0x422 (need 1153) faulted with E828 j4's word (BIF_FAULT
+  0x10000011) and the 1x full triangle at 4096 x 4096 ended in -ENOSPC: an overflowing 4x scene ends
+  as a 1x one does, and the 4x fault is not the overflow.
+  *dpm; HW, infer; data: `render-closing-r4-render4x:out/20261111-211649/o/`,
+  `render-closing-r4-render4x:postrun/`.*
+- `E847` R4-render4x stage t (7 jobs, 64 x 64): the frozen verdict for Q293 is cannot tell, because
+  its two baseline controls (the line and the point object of the 11.31 sessions without a poke) are
+  NODATA: the scorer reads a job's dump as NAME.tri.param.bin.gz and the probe rows kept theirs
+  under the program's name (NAME.p1131-green__0.param.bin.gz, NAME.p1131-psizes__1.param.bin.gz), so
+  neither the baselines nor the poked line and point were compared; the control t6 (E827's
+  pb-e40-m2-64a) passed and on a context made for 4x targets CR_TE_AA 0x40000000 and 0x80000000 gave
+  dword 11 = 0, the format word 0x00040101 at dword 12 and an empty image, as on one array (rows
+  held, gated); read after the run from the kept dumps with the frozen insertion check, the
+  baselines equal their frozen heads and CR_TE_AA 0x40000000 inserted one zero dword right before
+  the format word of the line (dword 9) and of the point (dword 11), the image then empty: H-PAD's
+  frozen positions and value, post hoc.
+  *ta; HW, infer; data: `render-closing-r4-render4x:out/20261111-211649/t/`,
+  `render-closing-r4-render4x:postrun/`.*
+- `E848` R4-render4x stage h (4 held cells, each a 4x job on one array of region headers that
+  faulted with a TA write, BIF_INT_STAT 0x90004, as frozen, then the debugfs reset, the cell's
+  follow-up and health triangles until one passed): every failing health triangle named the failed
+  job's page and SB 6, at 0x20006061 once after a 288 x 144 job (h1) and at 0x2000a061 twice after a
+  640 x 480 job (h2), a page never seen in a health fault and not the health context's own end
+  (0x20006); a 64 x 64 triangle on a context made for 1024 x 768 run first passed and the health
+  triangle after it too (h3, no replay seen); after a fill that passed, the first health triangle
+  faulted at 0x20006062, the job's page and SB with directory list 2 in place of 1 (h4); the frozen
+  verdict over both attempts: H-REPLAY not supported, 3 held, 1 FAILED (h4, which froze the job's
+  whole word); CR_CLKGATESTATUS read 0x78 after every fault and after the fill and 0x20 once a
+  render had completed; the kernel's 'SGX recovery failed: -110' followed 3 of the 4 held resets and
+  2 of the 4 health faults, its register dump reading BIF_INT_STAT 0x000d0004 every time.
+  *bif; HW, infer; data: `render-closing-r4-render4x:out/20261111-211649/h/`,
+  `render-closing-r4-render4x:postrun/`.*
 
 ## By unit
 
 ### bif
 
-Records: E151, E457, E573, E592, E745, E761, E767, E789, E826.
+Records: E151, E457, E573, E592, E745, E761, E767, E789, E826, E848.
 
 ### dpm
 
 Records: E199, E200, E201, E202, E204, E205, E206, E203, E253, E256, E309, E310, E311, E312, E313,
 E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E468, E574, E591,
 E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753, E773, E774, E775, E779, E785,
-E786, E790, E799, E800, E801, E802, E803, E832.
+E786, E790, E799, E800, E801, E802, E803, E832, E845, E846.
 
 ### edm
 
@@ -6213,7 +6264,7 @@ E448, E449, E451, E458, E462, E732, E770.
 Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180, E181, E247, E257,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
 E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763, E776, E777,
-E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828.
+E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828, E847.
 
 ### texture
 

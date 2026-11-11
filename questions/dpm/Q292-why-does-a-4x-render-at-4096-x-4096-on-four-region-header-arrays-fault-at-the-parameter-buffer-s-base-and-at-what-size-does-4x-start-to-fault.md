@@ -1,11 +1,11 @@
 +++
 id = "Q292"
-question = "why does a 4x render at 4096 x 4096 on a context made for 4x targets (four region-header arrays) fault at the parameter buffer's base (BIF_INT_STAT 0x90100, BIF_FAULT 0x10000011) with 1048576 of 16777216 pixels right, and at what target size between 1024 x 768 and 4096 x 4096 does a 4x render on four arrays start to fault"
+question = "why does a 4x render on a context made for 4x targets (four region-header arrays) fault at the parameter buffer's base (BIF_INT_STAT 0x90100, BIF_FAULT 0x10000011) at 1280 x 1024 and larger targets, whose scenes fit the buffer (not an overflow: E845, E846), and is it the width past 1024, the height past 768 or the size between 1024 x 768 and 1280 x 1024 that starts it"
 unit = "dpm"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E828", "E824"]
+evidence = ["E828", "E824", "E845", "E846"]
 terms = ["Parameter Buffer (PB)", "CR_TE_AA", "CR_BIF_FAULT"]
 +++
 Split on 2026-11-11 from the laptop check R3-rgn4 (E828), job j4: with the fork's 4 MiB TA-data
@@ -60,3 +60,22 @@ block, a macrotile of a 4 x 4 split [infer; no image kept]. Refuted by: a 4x siz
 1024 pages that faults, or a small 4x overflow that ends in -ENOSPC. A held-out check (the 1x
 control, a 4x size just under and just over the limit, and 1024 x 768 at P 0x80 and 0x100) is
 planned for the next laptop session, not run.
+
+Narrowed 2026-11-11 (round 4, session R4-render4x, E845 and E846; the question text above is the
+narrowed one). The overflow reading of the note above is refuted held out: stage p's frozen H-PB
+(every held-out size whose need passes completes) is not supported, 0 held, 2 FAILED, 4 cannot
+tell: the 4x full triangle on four arrays faulted with j4's word (0x90100 at 0x10000011, `SB` 1,
+`CID` 1) at 1280 x 1024 and 2048 x 1536, scenes of 321 and 769 of the 1024 usable pages, no pixel
+right, health ok after each; the stage stopped at its second fault, so 2048 x 1920, 4096 x 960,
+960 x 4096 and 3072 x 1280 did not run (E845). Stage o's frozen verdict is cannot tell, its 1x
+control o2 frozen for the full triangle while its row ran the default one (19 pages, so it
+completed); read after the run and not rescored, a 4x overflow ends in -ENOSPC without a fault as
+at 1x (1024 x 768 at P 0xe2, need 193, with 0xe3 completing; 288 x 144 at P 0x23), and 4096 x 1152
+(need 1153) faulted with j4's word (E846). So the fault is about the size, not the parameter
+buffer. What the records bound: every four-array 4x job that completed was at most 1024 x 768
+(E824, E828, E845, E846) and every one that faulted at least 1280 x 1024 (E828, E845, E846); the
+onset is past 1024 wide (2048 samples), past 768 high (1536 samples), or past both, and no run
+separates them. Open: which of these starts it, and what the 3D-side access at page 0x10000
+(requestor bit 8) is. To settle it: 4096 x 960 and 960 x 4096 (the two cells p did not reach),
+then a ladder in the dimension that faults (1088, 1152, 1216 wide at 768, or 832, 896, 960 high at
+1024), with a kept image of each faulting job.
