@@ -61,3 +61,17 @@ lasts while the faulting job is stalled. The reset clears them. Not shown: wheth
 the requester no longer stalled would stay (no row had one), the order of the halt's and the clear
 bit's effects inside the reset, the faults of the 3D's own fetches or the ZLS, whether bit 4's
 effect differs by requester (the later reads differ between f1 and f1r, the same fault).
+
+**Correction 2026-11-11:** This adds a reading of the session's kept kernel log, made offline in
+round 4's render planning (`closing3/netconsole-r3k.log`, lines 3679 to 4660), and leaves the
+claim as is; it is post hoc, one boot, [infer]. After f2's TA write fault (0x20008061) the next
+two health triangles faulted at the same word, 0x20008061, though a health triangle is a 64 x 64
+context of its own whose TA data ends at page 0x20005 (a fault of its own would name 0x20006); the
+same followed K2's c1 (0x20006061, two health faults at that word). After f1 and f1r (TA read) and
+f3 (texture fetch) no health triangle faulted. `CR_CLKGATESTATUS` read 0x78 after the reset of every
+TA-side fault and 0x20 only once a render had completed, and the reset wrote SOFT_RESET 0x3f.
+[infer] A pending TA region-header write survives the soft reset and is issued again when the TA
+next runs, through whatever directory is then current. The two "SGX recovery failed: -110" lines
+of that boot each follow a boot whose dump reads BIF_INT_STAT 0x000d0004 with a PARAMETERS-heap
+page (`SB` 5, `CID` 0), so the boot after the reset took a TA write fault itself; the kernel
+recovered by its second reset. Q003 holds the question.
