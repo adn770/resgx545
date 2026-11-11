@@ -29,8 +29,10 @@ RUN_ALL = """#!/bin/bash
 cd "$(dirname "$0")/.." || exit 1
 [ -d debug ] || { echo "no debug dir"; exit 1; }
 [ -n "$PY" ] || { echo "no PY"; exit 1; }
+[ "$TOOL_SRC" = "$HOME/src/resgx545" ] || { echo "TOOL_SRC $TOOL_SRC"; exit 1; }
 [ "$(cat "$HOME/src/resgx545/tools/x.py")" = "VALUE = 1" ] || { echo "tool not pinned"; exit 1; }
 [ -f ../../closing/sib/marker ] || { echo "no sibling"; exit 1; }
+[ -f "$HOME/src/scratch/resgx545/closing/sib/marker" ] || { echo "no sibling by HOME"; exit 1; }
 [ -x ../../closing/pixel-faults/.venv/bin/python ] || { echo "no scratch python"; exit 1; }
 if [ -n "$DEMO_BUILT" ]; then
     [ -d "$HOME/src/resgx545/target" ] || { echo "no target"; exit 1; }
