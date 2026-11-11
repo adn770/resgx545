@@ -568,3 +568,29 @@ declares the questions open for an input from the input alone (`open_questions`,
 `plane_questions`), never from a result. Examples: `arith_stats` (the unit model against the
 recorded images of E606 and E607 pixel for pixel), `inventory_stats` (the census), `scene_image`
 (one scene's image and code).
+
+## 7. Vectors of the closing pass (round 4, sim item 4)
+
+`vectors/closing/r3-pixel/` of the data repository holds what R3-pixel's kept jobs
+(`render/closing-r3-pixel`, attempt 20261110-160415) give a simulator, made by
+`tools/usse-asm/closing_vectors.py` (tests: `test_closing_vectors.py`) and replayed by
+`crates/sgx-sim/tests/closing_vectors.rs`. Three kinds, none a prediction of a rule:
+
+- `loops/<stage>.vec.json` (q-f0, q-f1a, q-f1b, q-t: 204 pixel loops, q-v: 73 vertex loops): vectors
+  of the layout of section 3 with `init.task` `loop-proof` (a pixel loop) or `vertex` (a vertex
+  loop) and `readback.o0` null, so the generic replay leaves them out. A pixel loop proves itself:
+  it leaves MARK = 0xC0DE0000 | N in o0 where its counter reached zero (0 for E431's `ba` loop), and
+  `readback.proof` says the value and how many of how many pixels read it. `init.host` is `fill`
+  (code index 0) or `tri` (a `--tri pixel` slot, code index 0x20, `init.code_index`); the replay
+  runs the program as one instance from that index and its o0 must equal the proof. A vertex loop's
+  `readback.depth_words` is the stored depth word of each vertex the dump decodes (`pbdump
+  first_object`), 0x3f200000 + N, the float32 0.5 + 0.5 z of the z the loop leaves in o2; the replay
+  is refused today (the model stops on the program's `phas ... vcull`, E121), the files are kept.
+- `direct-reads/p-c3.vec.json` (E808's 8 direct reads of g23, g24 and g25, one compact file):
+  `init.task` `direct-read`, the target's image as printed (`readback.image`, raster order) and
+  `readback.undecoded`, the raster indices the premise control (the pixel's own position written by
+  `c-<shape>-pa-x` and `-y`) does not confirm; a replay runs the aligned 2 x 2 quads and compares
+  the written pixels outside that list (48038 of them, no mismatch).
+- `timings/<stage>.timing.json` (format `sgx545-timings`, 285 rows): per job the burst, the TA
+  clocks' run, bits 6 and 7 of CR_EVENT_STATUS2 after the job and when they showed. They are
+  measurements the simulator has no clock for, the input of the STATUS2 latch rule of `events.rs`.

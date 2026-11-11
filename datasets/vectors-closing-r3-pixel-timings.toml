@@ -1,0 +1,9 @@
+title = "regtimeline timings of the 285 jobs of R3-pixel's stages q-f0, q-f1a, q-f1b, q-t and q-v that ran (burst, TA clocks' run, STATUS2 bits 6 and 7 and when they showed), one file per stage, a row a job; measurements, not predictions"
+repo = "data"
+paths = ["vectors/closing/r3-pixel/timings/"]
+method = "tools/usse-asm/closing_vectors.py on the kept regtimelines of render/closing-r3-pixel (stages p-c3 not included: q-f0, q-f1a, q-f1b, q-t, q-v); the definitions are those of the session's scorers, the 187 fills without a load and the 74 vertex-loop jobs of q-v read by them agree with round 4's rules (data statements of tools/usse-asm/test_closing_vectors.py)"
+date = "2026-11-10"
+files = 5
+size = 105786
+sha256 = "97d540bb0455c366098ba238dd97f58f79a77dd91374f2505e9d3d2964c10af8"
+recipe = "tools/usse-asm/closing_vectors.py"

@@ -1,0 +1,9 @@
+title = "direct reads of g23, g24 and g25 in a triangle's pixel program (E808: the default, the full 64 x 64 and the full 128 x 128 triangle, 8 jobs), with the premise control's mask"
+repo = "data"
+paths = ["vectors/closing/r3-pixel/direct-reads/"]
+method = "tools/usse-asm/closing_vectors.py on the p-c3 stage of render/closing-r3-pixel: the program as run, the target's image as the job printed it, and the pixels the premise control (c-*-pa-x and -y, the pixel's own position) does not confirm"
+date = "2026-11-10"
+files = 1
+size = 797088
+sha256 = "e3688ed1eff748b39df05aeffae83fbbed6a2de2108816ebafc19ce0f3a66e23"
+recipe = "tools/usse-asm/closing_vectors.py"

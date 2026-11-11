@@ -1,0 +1,9 @@
+title = "loop proofs of the R3-pixel pixel and vertex loops (q-f0, q-f1a, q-f1b, q-t: 204 pixel loops as a fill or a triangle's pixel program, q-v: 73 vertex loops; the value each proved itself with, the program as run)"
+repo = "data"
+paths = ["vectors/closing/r3-pixel/loops/"]
+method = "tools/usse-asm/closing_vectors.py on the kept jobs of render/closing-r3-pixel (attempt 20261110-160415) and its bins/, one file per stage; a pixel loop leaves MARK 0xC0DE0000 | N (0 for the abs loop) in o0 where its counter reached zero and the vector carries the count of pixels that read it, a vertex loop's vector the stored depth word of each decoded vertex (0x3f200000 + N, pbdump first_object); the run names the kept files and their sha256"
+date = "2026-11-10"
+files = 5
+size = 410181
+sha256 = "3f57fdebc2bdb256da76d593cfa485a9997a3eb72b3e5c850ab28d351df30efb"
+recipe = "tools/usse-asm/closing_vectors.py"
