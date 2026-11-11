@@ -1,0 +1,9 @@
+title = "E803's dword 36 table: dword 36 of the TA/3D control block against the count before the last abort, 60 jobs of g-d36 and the side tables of g-c4 to g-c7"
+repo = "data"
+paths = ["vectors/closing/r3-geo/dword36.table.json"]
+method = "tools/usse-asm/closing_tables.py dword36 on render/closing-r3-geo, one file a stage; rows are measurements, the table says its replay is refused and why"
+date = "2026-11-09"
+files = 1
+size = 15869
+sha256 = "f55989943fbb109ad1805036ffb687945c143a450fce66b6b0b0e0c6ebc6106b"
+recipe = "tools/usse-asm/closing_tables.py"
