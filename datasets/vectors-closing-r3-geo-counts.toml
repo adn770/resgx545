@@ -1,0 +1,9 @@
+title = "count tables of the DPM stages of render/closing-r3-geo (g-c4 to g-c7, g-d36): partial renders, thr0, TA run peaks, counts before each abort and control block dwords 36 to 38 per usable job; unusable jobs listed with the reason"
+repo = "data"
+paths = ["vectors/closing/r3-geo/counts/"]
+method = "tools/usse-asm/closing_tables.py counts on the kept timelines and control blocks (rising edges of 0x0658 bit 0), one file a stage; rows are measurements, the table says its replay is refused and why"
+date = "2026-11-09"
+files = 5
+size = 32627
+sha256 = "cd22418cec1e1457f1071cc245c6601fcd81ff4c495cc6ddc167bf9b80e8d31f"
+recipe = "tools/usse-asm/closing_tables.py"

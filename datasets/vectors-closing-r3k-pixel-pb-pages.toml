@@ -1,0 +1,9 @@
+title = "E824's ten k-f4 parameter buffer dumps: non-zero 4 KiB pages, runs, TA data size and the tile count of each (four region-header arrays)"
+repo = "data"
+paths = ["vectors/closing/r3k-pixel/pb-pages/"]
+method = "tools/usse-asm/closing_tables.py pbpages on render/closing-r3k-pixel k-f4, one file a stage; rows are measurements, the table says its replay is refused and why"
+date = "2026-11-10"
+files = 1
+size = 5413
+sha256 = "e4779cbff999d5970d8687e09b26dfdea1839e9050b75c7dfd5bc00e15ca98ad"
+recipe = "tools/usse-asm/closing_tables.py"

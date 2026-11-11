@@ -1,0 +1,9 @@
+title = "E795-E798: the stored depth word and 1/w of each vertex of the first object of the 57 g-da, g-db, g-dc and g-dd render dumps"
+repo = "data"
+paths = ["vectors/closing/r3-geo/depth-words/"]
+method = "tools/usse-asm/closing_tables.py depth on the kept dumps of render/closing-r3-geo (pbdump first_object), one file a stage; rows are measurements, the table says its replay is refused and why"
+date = "2026-11-09"
+files = 4
+size = 23505
+sha256 = "ccb8bbf66bac0d815240d8754d2f0af9ef8343a43c7b3227e5638ecff32f1389"
+recipe = "tools/usse-asm/closing_tables.py"
