@@ -25,7 +25,7 @@
 //!    D1). Any other word is refused (bits 4, 7 and 10 were not tried).
 //! 4. `Closed{2}` on a tick pass: kept, next entry on the 25000-unit grid, dword 12 does not
 //!    advance (E813 X1, 2 of 2; X20, 20 passes in each of 2 jobs, dword 12 less passes about -20).
-//! 5. The end of a tick pass (Q152's first half): kept if and only if the pass executes the `phas`
+//! 5. The end of a tick pass (E817, E830): kept if and only if the pass executes the `phas`
 //!    end before its `nop.end`. `OwnEnd { phas: true }`, with the `cfi.global` (E817 FB 2 of 2,
 //!    E830 fb 6 of 6) or without it (E817 FPH 2 of 2, E830 fk 3 of 3), and `Exit` (E817 FC4 2 of
 //!    2, E830 fc4 6 of 6): kept, CCB read = write, dword 14 0, the next entry 24994 or 24995
@@ -42,9 +42,10 @@
 //!
 //! Everything else is refused: `Closed{2}` on a kick pass, `Closed{1}` and `Closed{3}` anywhere
 //! (not run), `Closed{0}` on a kick pass, the `phas` end, a `cfi.global` or `Exit` on a kick pass
-//! (row KP of round 4 has not run; the slot 3 pass, row B1P, is not a [`PassKind`] here), sa64 and
-//! sa65 written together, any sa64 or sa65 write with another end, a timer store of another word,
-//! with another end or with an sa64 or sa65 write, and a count byte other than 2. Which of dword
+//! (E835's row KP kept the tick 2 of 2 and is not taken here yet; the slot 3 pass, E836, is not a
+//! [`PassKind`] here), sa64 and sa65 written together, any sa64 or sa65 write with another end, a
+//! timer store of another word, with another end or with an sa64 or sa65 write, and a count byte
+//! other than 2. Which of dword
 //! 12 and the next pclink the rows of 5 and 7 left was not read, so both are `None` there. A
 //! stalled EDM delivers no later event until a debugfs reset (E793, E537, E817, E830), and one
 //! host command sent into it was not answered (E814 P3 2 of 2, E817 1, E818 1, E830 3: 0 of 7);
@@ -205,7 +206,7 @@ pub fn end_of_pass(i: &Inputs) -> Result<AfterPass, Error> {
             (Some(_), Some(_)) => Err(no("sa64 and sa65 written together: not run".into())),
         },
         (PassKind::Kick, PassEnd::OwnEnd { .. } | PassEnd::Exit) if !writes => Err(no(format!(
-            "a kick pass ending {:?}: not run (E813 B3 ran idf, wdf, nop.end only; row KP of round 4, Q152)",
+            "a kick pass ending {:?}: not modelled (E813 B3 ran idf, wdf, nop.end; E835 the phas end, not taken yet)",
             i.end
         ))),
         _ => Err(no(format!(
@@ -442,8 +443,8 @@ mod tests {
 
     #[test]
     fn the_phas_end_and_the_exit_on_a_kick_pass_are_refused() {
-        // rows KP (H-PHAS-ANY against H-KICK-MORE) and the exit on a kick pass did not run; a
-        // kick pass ended with cfi.global and no phas did not run either (E813 B3 had no cfi)
+        // row KP (E835: the phas end kept the tick, 2 of 2) is not taken here yet, and the exit
+        // and cfi.global on a kick pass did not run (E813 B3 had no cfi)
         for end in [
             PassEnd::OwnEnd { cfi: false, phas: true },
             PassEnd::OwnEnd { cfi: true, phas: true },

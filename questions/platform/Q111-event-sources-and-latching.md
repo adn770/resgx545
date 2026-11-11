@@ -6,7 +6,7 @@ kind = "hw"
 value = "high"
 phase = 11
 evidence = ["E006", "E154", "E155", "E357", "E431", "E435", "E444", "E547", "E548", "E747", "E764",
-            "E765", "E766", "E823"]
+            "E765", "E766", "E823", "E837"]
 terms = ["CR_EVENT_STATUS", "CR_EVENT_STATUS2", "CR_EVENT_HOST_CLEAR", "CR_EVENT_HOST_ENABLE"]
 +++
 
@@ -99,3 +99,12 @@ Note 2026-11-11 (round 4, decision R4-3): the clause on what a write to `CR_EVEN
 is Q166's alone and is cut from this question's line; Q166 is retyped from kernel to hw (low). E821
 and E822 answer `CR_EVENT_HOST_CLEAR2` (the bits written are the bits cleared, 3 of 3 rounds by the
 host and by a task's `str`).
+
+Narrowed 2026-11-11 (round 4 session r4-events, stage e3p, E837; not retired, and the line is not
+reworded: round 4's rule rewords it only when Q166's clears hold in 3 of 3 jobs, and one ran). With
+the slot 3 end-of-render handler skipped and the watch started at the slot 3 entry, bit 18
+(`PIXELBE_END_RENDER`) read set in 7 of 7 reads over 54 ms and two seconds later (H-LEVEL held out,
+1 job; E823's 8 of 9 the other), and never in the control fill without the skip (9 of 9 clear):
+bit 18 is a level until cleared, and its 4 to 6 us pulses in ordinary jobs are the closed
+handler's acknowledgement [infer]. Open as before: the other bits' level or pulse, which event sets
+each, and their order within a job.

@@ -543,7 +543,7 @@ The waits and modes on the hardware (E101) **[HW]**:
   readings with no writer (held out later: they are what the task left, E809). The same writer
   kept the tick, a task that also wrote `sa63` and
   `sa65` and called the closed task was not followed by its armed reader within 100 ms (E537, one
-  run: Q152). No second pass of the wrapper was found busy while a slow task ran, up to 6.9 ms (10
+  run: Q294). No second pass of the wrapper was found busy while a slow task ran, up to 6.9 ms (10
   of 10 runs, E539; ticks only, slot 0, no job). The simulator runs these tasks only through
   `sgx_sim::fwtask`, and models `ldr` and `str` only there: `str` to 0x0814 and 0x0a78 (values
   inside their 17 and 6 bits, the immediate index only) and `ldr` of those two and of `CORE_ID`,
@@ -551,8 +551,8 @@ The waits and modes on the hardware (E101) **[HW]**:
   reads the first two: unit tests alone cover them); a vector may give the task's entry state (`sa`,
   `r`, `i`, `pa`, p and `pclink`) and its temporaries, and the readback the state it must have left;
   everything else stops the run, including a read of `sa64` after the task wrote it.
-- **The contract of a firmware task of ours [HW]** (records E809 to E823, E830; what a task of
-  ours starts with and must leave, each line with its record):
+- **The contract of a firmware task of ours [HW]** (records E809 to E823, E830, E835, E836;
+  what a task of ours starts with and must leave, each line with its record):
   - *Start.* At the next entry after a task of ours `pclink` reads 0x98, p0 1 and p1, p2 and p3
     what the task left (E809: 12 of 12 writer jobs, H-SET refuted 8 of 8); after a client fill, a
     firmware reload or a reset p0 p1 read 1 1, `pclink` 0x98, p2 0 and p3 as left (E810, 9 of 9).
@@ -569,12 +569,15 @@ The waits and modes on the hardware (E101) **[HW]**:
     replicated in three blocks); `cfi.global` is neither needed nor enough. The closed exit
     reached by the `cont4` tail call keeps it (E817, E830: 8 of 8), and so does any closed path
     that reaches it, the general task's or slot 2's (E813 X1, X20: H-EXIT). A kick pass ended
-    with `idf, wdf, nop.end` stops it too (E813 B3); a kick pass and the slot 3 pass ended with
-    the `phas` are not run (Q152). A stop reads the busy signature (`CR_CLKGATESTATUS`
-    0x000ccfa0, `USE0_SERV_EVENT` bit 16 clear and its count frozen, the event timer counting,
-    `CR_EVENT_STATUS` 0x20000000), answers no host command, and one debugfs reset recovers it;
-    the signature cannot tell a stop from a long task (E811). The own end therefore is `idf drc0,
-    bif; wdf drc0; phas #0, #0, pixel, end, parallel; nop.end`.
+    with `idf, wdf, nop.end` stops it too (E813 B3), and ended with the `phas` keeps it, 2 of 2,
+    its command left unread (read = write - 1) since the closed reader never ran (E835). Slot 3's
+    end-of-render pass ended with the `phas` instead of the closed handler is finished too (10
+    ticks after it, E836), but the held render stops the tick within about 20 ms (1 job; Q295):
+    a task of ours skips no closed slot 3 handler. A stop reads the busy signature
+    (`CR_CLKGATESTATUS` 0x000ccfa0, `USE0_SERV_EVENT` bit 16 clear and its count frozen, the
+    event timer counting, `CR_EVENT_STATUS` 0x20000000), answers no host command, and one debugfs
+    reset recovers it; the signature cannot tell a stop from a long task (E811). The own end
+    therefore is `idf drc0, bif; wdf drc0; phas #0, #0, pixel, end, parallel; nop.end`.
   - *What does not stop the tick.* A pass with the tick bit of `sa64` clear (50 passes) leaves
     `pclink` 6 and does not advance HostCtl dword 12; single `sa65` words without bit 8 (bits 2,
     3, 6, 14, 15, 16, 19, 23, the count byte) keep it (E812). `sa65` bit 8 alone makes the closed
@@ -5173,8 +5176,8 @@ open driver:
    `sa` (Q129); where a write past the allocation goes (Q132); what bounds a `phas` request
    and what a request above 256 allocates, which is [infer] at least 124 for 260 to 376, T = 101 to
    123 not run (Q133). What survives from one firmware task to the next beyond one writer's
-   `sa`, `r`, `i` and p (E809, E810; Q158), what else stops the tick after a task (Q152) and
-   the allocation of a firmware task above TRC 31 are not measured.
+   `sa`, `r`, `i` and p (E809, E810; Q158), what stops the tick after a skipped slot 3 pass
+   (Q295) and the allocation of a firmware task above TRC 31 are not measured.
 
 The simulator (`crates/sgx-sim`) reproduces 30815 probe vectors (15526 of them with near values:
 float functions within their measured bound) and 448 pixel vectors; it stops on 2209 rather than

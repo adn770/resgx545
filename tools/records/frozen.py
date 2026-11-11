@@ -16,8 +16,9 @@ blob at that path has exactly the pinned sha256:
 one line per pinned file and hash, over every FROZEN*.sha256 of the session. A pinned file the
 history never tracked (a build product, such as the ignored tools/usse-asm/usse-asm) has no
 commit: its line says `untracked` in the commit's place, and that pin still verifies only against
-the file itself. The published freeze bytes are never rewritten: FROZEN.commits is a new file
-beside them.
+the file itself. A pin of a worktree that sat under scratch/resgx545/ (round 4 froze against
+closing4/lead/wt) is named by the FROZEN.commits line with its hash whose path ends it. The
+published freeze bytes are never rewritten: FROZEN.commits is a new file beside them.
 
 --write finds, for each session whose freezes pin resgx545 files and that has no
 FROZEN.commits, the commits in this tree's history (`git log -- <path>`): the newest commit at
@@ -80,9 +81,30 @@ def freezes(session: pathlib.Path) -> list[pathlib.Path]:
     return sorted(session.glob("FROZEN*.sha256"))
 
 
+def committed(session: pathlib.Path) -> dict[str, set[str]]:
+    """{sha256: paths} of the session's FROZEN.commits lines (empty without one)."""
+    out: dict[str, set[str]] = {}
+    f = session / NAME
+    for line in f.read_text().splitlines() if f.exists() else []:
+        m = LINE.fullmatch(line)
+        if m:
+            out.setdefault(m[1], set()).add(m[3])
+    return out
+
+
 def session_pins(session: pathlib.Path) -> list[tuple[str, str]]:
-    """The distinct pins of all the session's freezes, in path then hash order."""
-    return sorted({p for f in freezes(session) for p in pins(f)}, key=lambda p: (p[1], p[0]))
+    """The distinct pins of all the session's freezes, in path then hash order. A pin of a
+    worktree that sat under scratch/resgx545/ (round 4 froze against closing4/lead/wt) reads
+    as the path below scratch's resgx545; a FROZEN.commits line with the pin's hash whose path
+    ends that path names it."""
+    known = committed(session)
+    out = set()
+    for f in freezes(session):
+        for sha256, path in pins(f):
+            named = [p for p in known.get(sha256, ()) if path.endswith("/" + p)]
+            out.add((sha256, named[0] if len(named) == 1 and path not in known[sha256]
+                     else path))
+    return sorted(out, key=lambda p: (p[1], p[0]))
 
 
 def sessions(data: pathlib.Path) -> list[pathlib.Path]:

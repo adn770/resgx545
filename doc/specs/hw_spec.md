@@ -418,12 +418,15 @@ and copies of our stack (E357).
   clearing all, H-ALL, and no write clearing, H-NONE, refuted). A firmware task's `str` of the same
   words does the same, 3 of 3 (E822). That CLEAR2 clears bit 7 is not measured.
 
-`CR_EVENT_STATUS` bit 18 (`PIXELBE_END_RENDER`) is a level until acknowledged, read after the run
-in one job [infer]: with the slot 3 end-of-render pass skipped once it read set from 7.3 ms to the
-end of a 50 ms watch (8 of 9 reads), a host write of bit 18 to `CR_EVENT_HOST_CLEAR` (0x0134)
-cleared it within 1 ms and a write of bit 15 did not; the frozen rows were cannot tell, the first
-watch read having come before the bit set (E823). Its 4 to 6 µs pulses in ordinary jobs are then
-the firmware's acknowledgement (E547). How long the other bits stay set is open (Q111, Q166).
+`CR_EVENT_STATUS` bit 18 (`PIXELBE_END_RENDER`) is a level until acknowledged: with the slot 3
+end-of-render pass skipped once it read set in every read of a 50 ms watch started at the slot 3
+entry (7 of 7, held out, 1 job) and two seconds later, and never in the fill without the skip (9 of
+9; E837); E823's job, read after the run, had it set from 7.3 ms to the end of its watch (8 of 9,
+its first read before the render's end). A host write of bit 18 to `CR_EVENT_HOST_CLEAR` (0x0134)
+cleared it within 1 ms and kept it clear at 20 ms, a write of bit 15 left it set (E823 post hoc,
+E837: H-W on two jobs, both with the EDM stopped, the replicates not run). Its 4 to 6 µs pulses in
+ordinary jobs are then the firmware's acknowledgement [infer] (E547). How long the other bits stay
+set is open (Q111), and what CLEAR does to other bits and on more jobs (Q166).
 
 Both STATUS2 latches are host events: written alone into
 `CR_EVENT_HOST_ENABLE2` they raise the host interrupt once set (E444), as do `TIMER`
@@ -438,7 +441,7 @@ untested (E445).
 *Based on sgx545-ce `src/services4/srvkm/devices/sgx/sgxinit.c`, `sgxreset.c`,
 `src/services4/include4/sgxscript.h`, `src/services4/include/sgx_mkif_km.h`,
 `src/services4/srvkm/hwdefs/sgx545defs.h`; E357, E365, E431, E444, E445, E547, E764 to E766,
-E769, E784, E804 to E807, E821 to E823.*
+E769, E784, E804 to E807, E821 to E823, E837.*
 
 ## 7. Where the microkernel comes from
 
@@ -797,7 +800,13 @@ exit reached by a tail call (`cont4`) keeps it, 8 of 8, as does any closed path 
 exit, the general task's or slot 2's (E817, E830, E813: H-EXIT); a kick pass ended with `idf, wdf,
 nop.end` stops it too (E813 B3), and a store to the timer does not replace the phase end (E818 T2).
 [infer] This is the program-shape rule of client programs (E118, `usse_isa.md` §3.6) in an EDM
-task. A kick pass and the slot 3 pass ended with the `phas` have not run (Q152). A stop reads
+task. A kick pass ended with the `phas` keeps the tick too, 2 of 2 held out, its command left
+unread (read = write - 1, HostCtl dword 14 0) because the closed reader never ran, and the next
+tick comes 24994 units after the one before the kick, as after an acted tick pass (E835: the phase
+end is what a pass of either kind needs). Slot 3's end-of-render pass skipped and ended with the
+`phas` was followed by 10 ticks on the grid, where without the `phas` nothing followed it (E823),
+but the tick stopped later, within about 20 ms, with the fill held (E836, 1 job: the phase end
+ended the pass, and something of the skipped closed handler is needed later, Q295). A stop reads
 `CR_CLKGATESTATUS` 0x000ccfa0, `USE0_SERV_EVENT` bit 16 clear and its count frozen, the event timer
 counting and `CR_EVENT_STATUS` 0x20000000; it answers no host command (0 of 8 tries) and one
 debugfs reset recovers it (13 of 13 stops in the records, E533 to E830); a task still running inside
@@ -809,15 +818,24 @@ stops it with no mark (E814 D1).
 **The kick [HW].** A kick is the command at the CCB write offset, the kicker word bumped (mod 256)
 and a write to `CR_EVENT_KICK`. It is one event in the general slot, `pa0` = 0, `pa1` = (K << 24) |
 0x100 with K the count before the bump, and the ticks after it carry K + 1 (E746, E768, E816 G0).
-The byte `pa1` bits 31:24 is a count every event carries: the number of commands the kernel has
-sent through the CCB since the firmware load, mod 256, equal to the CCB write offset (2 after the
-arm path's two GETMISCINFO, 0 after 254 more kicks, +1 per fill or copy command; E768, 15 of 15
-jobs; E747 for 138 job events, read after the run), so bits 24 and 25 are bits of the count and not
-event bits; PDS #13 reads only bits 23:0. Writing the kicker word alone (0x42) raises no event and
-leaves the count of the ticks at 2, so the hardware does not read the kicker word at each event
-(E819 Q1, 3 of 3: H-KW refuted). A kick written without the bump is not consumed: the read offset
-stays, no answer comes in 504 ms and the tick goes on (E819 Q3, 3 of 3). Whether the count follows
-the kicker word as latched at a served kick or the commands consumed is open (Q290). The words E538
+The byte `pa1` bits 31:24 is a count every event carries: the kicks served since the firmware
+load, mod 256 (H-CNT, E834), which for the kernel's kicks is the number of commands it has sent
+through the CCB and the CCB write offset (2 after the arm path's two GETMISCINFO, 0 after 254 more
+kicks, +1 per fill or copy command; E768, 15 of 15 jobs; E747 for 138 job events, read after the
+run), so bits 24 and 25 are bits of the count and not event bits; PDS #13 reads only bits 23:0. It
+is not the kicker word: written alone (0x42) the word raises no event and leaves the count at 2
+(E819 Q1, 3 of 3: H-KW refuted), and set to 0x42 before a kick that the kernel bumps to 0x43 the
+ticks after the served kick carry 3 (E834, 3 of 3: H-LATCH refuted). It is not a count of
+`CR_EVENT_KICK` writes: a write without the bump leaves it unchanged (E834, 5 of 5: H-HWC
+refuted). A kick pass of ours that left its command unread was followed by ticks with K 3 (E835),
+so the count follows the kick events delivered rather than the commands read [infer, post hoc;
+Q290]. A kick written without the bump is not consumed and raises no event: the read offset stays,
+no answer comes in 504 ms, no kick entry reaches slot 0 and a later served kick does not deliver it
+(one entry, one command read, CCB 4 and 3), and the tick goes on (E819 Q3, E834: 8 of 8). Read after
+the run (E834, 5 of 5 jobs), it is not inert: from the write on every tick carries 0x01061a74 and
+`CR_CLKGATESTATUS` reads 0x000ccfa0 while the EDM serves ticks and kicks with its queue empty
+(`USE0_SERV_EVENT` bit 16 set), for at least 500 ms and through a served kick, until a debugfs reset
+(what it starts is Q290). The words E538
 logged for a kick, 0x03000000 with `pa0` = 2, are those of the tick after it. A client job's events
 arrive one status bit at a time, in an order the same in every replicate, and the fill's end of
 render reached slot 3 with `pa1` bit 4, the reversed order of E155 (E747); bit 19 did not appear in
@@ -842,14 +860,14 @@ records'):
 | register | offset | what the records show |
 |---|---|---|
 | `CR_EVENT_TIMER` | 0x0acc | periodic by itself; a `str` of 0x01061a80 moves the grid (E818) |
-| `CR_EVENT_KICK` | 0x0ac8 | an event a kick with the kicker word bumped, else none (E746, E819) |
+| `CR_EVENT_KICK` | 0x0ac8 | an event a kick with the word bumped, else none (E746, E819, E834) |
 | `CR_EVENT_HOST_CLEAR2` | 0x0114 | clears the STATUS2 bits written, host or task (E821, E822) |
-| `CR_EVENT_HOST_CLEAR` | 0x0134 | bit 18 clears STATUS bit 18, bit 15 does not (E823, post hoc) |
+| `CR_EVENT_HOST_CLEAR` | 0x0134 | bit 18 clears STATUS bit 18, bit 15 does not (E823, E837) |
 
 *Based on sgx545-ce `src/services4/system/unified/sysconfig.c`,
 `src/services4/srvkm/devices/sgx/sgxconfig.h`; emgd-psb_regs; E002, E006, E008, E009, E011, E531,
 E532, E533, E536, E537, E538, E746, E747, E749 to E752, E768, E771, E791 to E794, E809 to E814,
-E816 to E823, E830.*
+E816 to E823, E830, E834 to E837.*
 
 ## 13. Open questions
 

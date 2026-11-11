@@ -5,7 +5,7 @@ unit = "platform"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E547", "E548", "E821", "E822", "E823"]
+evidence = ["E547", "E548", "E821", "E822", "E823", "E837"]
 terms = ["CR_EVENT_HOST_CLEAR", "CR_EVENT_HOST_CLEAR2"]
 +++
 
@@ -29,3 +29,13 @@ of its complement against a bit that is set and held (bit 18 with the slot 3 pas
 after a hang, TIMER), reading the two status registers; a hang is expected to need a reset to clear
 (E357). Dropped from the text: `str #77` of the register (the firmware route; E822 showed for CLEAR2
 that the route does not matter).
+
+Narrowed 2026-11-11 (round 4 session r4-events, stage e3p, E837; not retired: round 4's rule
+retires it only if the clears hold in 3 of 3 B1P jobs, and one ran). In a second job, with the
+watch started at the slot 3 entry, `CR_EVENT_STATUS` bit 18 read set in 7 of 7 watch reads and was
+still set two seconds later at the stop's signature; a host write of bit 15 to
+`CR_EVENT_HOST_CLEAR` left it set at 1 and 3 ms, a write of bit 18 cleared it at 1, 3 and 20 ms
+(H-W consistent, H-ALL and H-NONE refuted, on rows labelled fit after E823's job). The EDM had
+stopped before the writes (E836), as in E823. Open: CLEAR held out on more jobs, on bits other than
+15 and 18, and on a running EDM (both jobs were stopped); whether a written bit clears others that
+are set.

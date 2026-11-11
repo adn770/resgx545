@@ -49,7 +49,7 @@ list), and neither bit 8 nor bit 19 was set by a tick. The kick through
 `CR_EVENT_KICK`, the finishing TA job and the overflowing job were not run (the stage before them
 stopped, E533), so the open part is as before for them: the order and positions of the status bits
 in the word the hardware hands the PDS for a kick and for a job, and which events set bits 8 and 19.
-Their run needs a logging wrapper that keeps the tick (Q152).
+Their run needs a logging wrapper that keeps the tick (the phase end, E817, E835).
 
 Narrowed in 11.30 (not retired). The kick through `CR_EVENT_KICK` with no job queued was run, three
 times (a GETMISCINFO through the debugfs, E538): it reached the general slot only (slot 0, the

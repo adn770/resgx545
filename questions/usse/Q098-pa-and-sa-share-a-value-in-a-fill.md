@@ -52,7 +52,7 @@ path rewrites it. [infer] pa_n of an EDM task may be sa_(64+n): the three words 
 would then land in the task's attribute store at base 64. It makes one prediction no run has
 tested, sa66 = 0x01061a70 (E532's pa2); no record read sa66. If it holds, a write to pa2 of an EDM
 task is a write to sa66, and E537's writer, which wrote sa65 and stopped the tick, wrote what a
-tick hands as pa1 (whether the closed task uses sa65 is Q152's, not shown). The run is a read of
+tick hands as pa1 (whether the closed task uses sa65 is Q294's, not shown). The run is a read of
 sa64 to sa68 by a firmware task of ours with the verifier as it is, then the writes only if sa66
 reads 0x01061a70.
 

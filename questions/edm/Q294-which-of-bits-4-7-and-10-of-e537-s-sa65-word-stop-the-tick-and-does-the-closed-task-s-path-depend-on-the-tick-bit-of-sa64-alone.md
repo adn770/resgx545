@@ -26,3 +26,9 @@ event that did not happen, which the simulator refuses anyway and our own firmwa
 stays low and open for a time when the closed handlers are read for another reason. To settle it:
 single-bit and pair rows of sa65 over bits 4, 7 and 10 with a reset and an arm before each, and
 sa64 words with the tick bit clear and other bits set, one stop at most a stage.
+
+Note 2026-11-11 (round 4 fold of r4-events): the question this one was split from is answered (by
+E836), and two questions folded into it in phase 11.39 now point here, since a fold must name an
+open question: the one on why p1 and `pclink` at the entry after a writer of ours hold the writer's
+values (E536; read since through E792, E809 and E812, the second clause above) and the one on which
+difference between E536's and E537's writers stops the tick (E537's sa65 word, the first clause).

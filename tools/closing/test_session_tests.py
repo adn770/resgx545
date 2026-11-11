@@ -233,3 +233,17 @@ def test_sibling_sources_are_put_beside_the_session(world):
     (s / "FROZEN.sha256").write_text(frozen.replace(sha(RUN_ALL), sha(run_all.read_text())))
     r = run(world, "edm/closing-demo")
     assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_pins_of_a_tree_under_scratch_are_pointed_at_the_pinned_tree(world):
+    """A session frozen against an integration worktree under scratch/resgx545/ (round 4's
+    closing4/lead/wt) pins its files by an absolute path whose first resgx545 component is
+    the scratch tree, not the tool tree; FROZEN.commits names them relative to the tree. The
+    runner points each such pin at the pinned worktree by its FROZEN.commits path."""
+    s = world[1] / "edm/closing-demo"
+    (s / "FROZEN.sha256").write_text(
+        f"{sha(RUN_ALL)}  tests/run_all.sh\n"
+        f"{sha(V1)}  /Users/someone/src/scratch/resgx545/closing4/lead/wt/tools/x.py\n")
+    r = run(world, "edm/closing-demo")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "RUN_ALL PASSED" in r.stdout

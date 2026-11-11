@@ -62,7 +62,7 @@ def test_every_deny_offset_refused_for_str():
 
 # the named exceptions to regwidth's DENY: the registers a task of ours may str (round 3,
 # R3-K1: the two host clear registers, E3; R3-K10: the EDM timer the closed tick handler writes,
-# Q152), all other offsets of the DENY rows stay refused
+# E818), all other offsets of the DENY rows stay refused
 STR_EXCEPTIONS = {0x0114: "CR_EVENT_HOST_CLEAR2", 0x0134: "CR_EVENT_HOST_CLEAR",
                   0x0acc: "CR_EVENT_TIMER"}
 

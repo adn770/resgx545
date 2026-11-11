@@ -1,11 +1,11 @@
 +++
 id = "Q290"
-question = "does the hardware count the writes to CR_EVENT_KICK or read the kernel's kicker word for the count byte pa1 bits 31:24 that every event handed to an EDM task carries (E768: it equalled the GETMISCINFO commands since the load mod 256 in 15 of 15 jobs, the two readings agreeing whenever the kernel bumps the word before each write), and why does a kick's own entry carry the value from before its bump"
+question = "what does a write to CR_EVENT_KICK with the kicker word unchanged start in the EDM (E834: no event and no command read, before or after a 504 ms timeout or a later served kick, yet every tick after it arrives latched, pa2 0x01061a74, with CR_CLKGATESTATUS reading 0x000ccfa0 and the event queue empty, for at least 500 ms and through a served kick, until a reset), and is the count byte pa1 bits 31:24 the kick events delivered to the EDM or the commands read (E834: neither W nor a count of CR_EVENT_KICK writes; they agree in every frozen row, E835's unread kick pass was followed by K 3 post hoc)"
 unit = "edm"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E746", "E747", "E768", "E794", "E819"]
+evidence = ["E746", "E747", "E768", "E794", "E819", "E834", "E835"]
 terms = ["Event Data Master (EDM)"]
 +++
 Split off 2026-11-10 from the questions on bits 24 and 25 of pa1 (answered by E746, which read them as
@@ -88,3 +88,23 @@ for the readings, no new measurement).
   from about the time of the unbumped kick's write the EDM was not idle when ticks arrived, with no
   kick entry logged: the unbumped kick may have left an event pending or in service that never
   reached our slot 0 task (3 entries in 2 of 3 jobs, post hoc, a candidate).
+
+Narrowed 2026-11-11 (round 4 session r4-events, stage kb2, E834; not retired, and the question
+line is reworded to what is left). With the writes made before the logging window and the kick
+about 6.5 ms into it, the ring covered 5 to 7 ticks after every kick. The count byte is not the
+kicker word as latched at a served kick: with W written to 0x42 and bumped to 0x43 by the kernel's
+kick, the ticks after the served kick carried 3 (H-LATCH refuted, 3 of 3, held out and
+replicated); and it is not a count of `CR_EVENT_KICK` writes: a write without the bump left it 2
+(5 of 5) and the next served kick, the fourth write since the load, made it 3 (H-HWC refuted). It
+counts served kicks (H-CNT consistent). A kick without the bump raised no kick entry and was not
+delivered by the next served kick (one entry, one command read, CCB 4 and 3: H-PEND and H-LATE
+refuted), but it was not inert (H-NOEVENT's plain ticks refuted): read after the run, every tick
+from the write on carried 0x01061a74, `CR_CLKGATESTATUS` read the stop's 0x000ccfa0 while the EDM
+served ticks with its queue empty (`USE0_SERV_EVENT` bit 16 set, counting), and the marks lasted
+500 ms and through the served kick until the reset [post hoc, 5 of 5 jobs]. E835's kick pass of
+ours, which left its command unread (read = write - 1), was followed by ticks with K 3: the count
+is the kick events delivered rather than the commands read [infer, post hoc, 2 of 2]. The old
+line's second clause (why a kick's own entry carries the value from before its bump) reads, with
+H-CNT, as the count of the kicks served before it [infer]. Open: what the unbumped write starts
+(which unit reads busy, and whether anything short of a reset ends it), and delivered against
+read in a frozen row.
