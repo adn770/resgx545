@@ -8956,6 +8956,14 @@ by the program itself:
   as if the next iteration read the state one register on **[infer]** (probe
   `texture-sampler-smp-repeat-mask`).
 
+**The gradient footprint (E721, 8 of 8 held-out jobs with independent operands).** The LOD
+of `smp2dgrad` is the logarithm of the larger of the two Euclidean lengths of the vectors (op0,
+op2) and (op1, op3), scaled by the level size (1992 to 2048 of 2048 pixels, 4 jobs exact, the
+rest off by whole columns or rows; at most 256 for the five other footprints declared), and its
+fraction is truncated to 1/64 (2016 to 2048 of 2048 on 8 of 8 ladders, against 1160 to 1840 for
+rounding). The residual pixels are Q280. A ladder of the fraction over 64 columns with u and v
+held constant wrote one dword a job, so no step was placed there (E744).
+
 **Undecided:** the LOD of a quad's own derivatives, `.sinf`/`.rsd`, `.c10` coordinates, `smp3d`
 beyond the point-sampled textures of E567, and state read from `sa` or `c` (only temporaries were
 used); the state fields, the mip chains and the LOD values are measured in *Sampler state* and
@@ -9027,8 +9035,29 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   row and column offsets at every value tried (E566). Bits 8, 9, 20, 21 and 22 change nothing on a
   strided texture, nor do 11 and 12, but on a twiddled chain texture bits 11 and 12 change every
   pixel (E564). Bits 10, 14, 18, 27 and 28 offset the texel by an amount that changes with the
-  pixel position (Q176), and bit 13 faults the job. Setting T0 bits 27, 30 or 31 reads other
-  values: they act, how is not known.
+  pixel position, and bit 13 faults the job. Setting T0 bits 30 or 31 reads other values: they
+  act, how is not known.
+- **The address bits (E722, 13 of 16 held-out fills; the other 3 faulted past the probe's
+  scratch, E743, E787).** **T3 bits 28:27 pick a level L and bits 19:18 a scale e: the texel is
+  read at base + ((off + idx) << e) dwords**, off the sum over k < L of max(1, w >> k) max(1,
+  h >> k) (the level sizes, not the stride times the height) and idx the tile-law index of (X >>
+  L, Y >> L), or X >> L + stride (Y >> L) on a strided texture; **bit 10 reads the base dword**;
+  the offset bits 7:0 act before. Run on twiddled textures up to 64 x 64 and strided 128 x 32, a
+  32-bit format only; the scale shifts the dword address, not the index alone (3 jobs). Bits 11,
+  12 and 14 stay undecided (Q078).
+- **sRGB (T0 bit 27; E723).** **A point-sampled texel byte is decoded sRGB to half float** (4 of
+  4 held-out fills exact over 2048 pixels: strided 8 x 4, twiddled 8 x 8 twice, twiddled 32 x
+  32). Under bilinear filtering neither declared order fits (filter then decode 0 of 2048 pixels,
+  decode then filter 1147 and 876 of 2048, 2 held-out fills; Q282).
+- **ETC1 (format 27; E724).** **Format 27 is ETC1 with the 4 x 4 blocks in Morton order, y in the
+  low bit** (6 of 6 held-out fills of random valid blocks exact over 2048 pixels, 8 x 8 to 32 x
+  16; raster block order and Morton with x low 0 of 6). Formats 23 to 26 are not decoded.
+- **Texture types (E725, E726).** **Types 3 and 1 are read with a stride of the texture's width
+  and the window wrapping at its size** (8 of 8 held-out fills exact, 8 x 8 to 32 x 32; E567's
+  fixed 16 refuted, 0 of 8). Type 4 is read with a fixed stride of 32 (4 of 4 sizes, read after
+  the run). **Type 2 is a cube map: six 16 x 16 faces consecutive at 256 dwords a face, read for
+  +x, -x, +y, -y, +z, -z as faces 0 to 5** (each axis direction reads one face over 2048 of 2048
+  pixels; the mapping and the dominant-axis rule are post hoc [infer], E726).
 
 *Simulator check, 2026-10-23.* The simulator's texture unit
 (`crates/sgx-sim`, `tex.rs`) follows this page and *Texture sampling*; it reproduces every
@@ -9038,10 +9067,10 @@ recorded formats and modes, tiled textures, and filtered `.pcf` at other weights
 chains in the five sizes run, `smp3d` as `smp2d` where it ran, and the YUV formats as black only
 for a job that records the colour-space set as unloaded.
 
-**Undecided:** tiled textures (T1 type 4), the LOD of a quad's own derivatives and of gradients
-off the diagonal (E563, Q175), the border modes on the u axis, the compressed formats and the YUV
-conversion in a fill, TEXTYPE 1, 2, 4 and 5 and `smp3d` beyond the textures it ran on, `.sinf`/
-`.rsd`, and state from `sa` or `c`.
+**Undecided:** type 4 beyond the sizes read and type 5, the LOD fraction's residual (Q280), the
+border modes on the u axis, formats 23 to 26 and the YUV conversion in a fill, sRGB under
+bilinear filtering (Q282), the cube map's edges and (s, t) within a face (Q284), `smp3d` beyond
+the textures it ran on, `.sinf`/`.rsd`, and state from `sa` or `c`.
 
 ### 7.38 `rlp`
 
