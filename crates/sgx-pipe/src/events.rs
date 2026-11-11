@@ -5,9 +5,9 @@
 
 use crate::Outcome;
 
-/// Open questions that block the unit. Q082: of the STATUS2 latches only bit 6 of a 64 x 32 fill
-/// without a load has a rule that held (`status2_bit6`); bit 6 with a load or in a triangle and bit
-/// 7 stay refused (E805, E806, E807).
+/// Open questions that block the unit. Q082: of the STATUS2 latches bit 6 of a 64 x 32 fill
+/// without a load (`status2_bit6`) and bit 7 of a vertex loop (`status2_bit7`, E839) have rules
+/// that held; bit 6 with a load or in a triangle stays refused (E805, E806, E840, E841).
 pub const OPEN: &[&str] = &["Q111", "Q033", "Q082", "Q166", "Q290"];
 
 /// A refusing stub until the unit's sub-phase lands: the model never guesses.
@@ -26,7 +26,8 @@ pub enum Work {
     VertexLoop,
 }
 
-/// A measured timing: the burst, the time the job kept the units busy, in microseconds.
+/// A measured timing: the burst, the time the job kept the units busy, in microseconds; for a
+/// vertex loop, the longest run of the TA's busy clocks (`CR_CLKGATESTATUS` 0x000ccff8).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Timing {
     pub work: Work,
@@ -76,10 +77,33 @@ pub fn status2_bit6(t: &Timing) -> Result<bool, Outcome> {
     }
 }
 
-/// STATUS2 bit 7: refused. The vertex loop's rule (the TA's run of busy clocks reaching about 125
-/// us) is post hoc until a held-out run (E807; Q082).
+/// The TA's clock run below which bit 7 of a vertex loop stays clear, and above which it sets;
+/// between them the edge, refused.
+pub const BIT7_EDGE_US: (f64, f64) = (122.0, 136.0);
+
+/// STATUS2 bit 7 after a vertex program's loop, from L, the longest run of the TA's busy clocks
+/// (`CR_CLKGATESTATUS` reading 0x000ccff8), which the caller measured and passes as `burst_us`:
+/// clear for L below 122 us, set above 136, refused between (Q082). The rule set iff L >= 129.5
+/// us was written on E807's 74 jobs and held out by E839 (14 of 14 decided rows of three new
+/// ladders: 10 instructions an iteration, 2, and 24 vertices; the edge row not scored; the bit
+/// showed 118 to 138 us after the run began in 10 of 10 set jobs). It is a rule for a vertex
+/// loop only: the stock program's 1500-vertex TA phases of 11 ms kept bit 7 clear (E839, 2 of 2),
+/// and E357's held TA hang set it with a run of 8 us, so a fill, a triangle's pixel programs and
+/// any other TA work are refused.
 pub fn status2_bit7(t: &Timing) -> Result<bool, Outcome> {
-    Err(Outcome::unsupported(&format!("STATUS2 bit 7 of {:?}: no rule held (E807)", t.work), &["Q082"]))
+    let no = |why: String| Err(Outcome::unsupported(&why, &["Q082"]));
+    if t.work != Work::VertexLoop {
+        return no(format!("STATUS2 bit 7 of {:?}: only a vertex loop has a rule that held (E839)", t.work));
+    }
+    let l = t.burst_us;
+    if !l.is_finite() || l < 0.0 {
+        return no(format!("a TA clock run of {l} us"));
+    }
+    match l {
+        _ if l < BIT7_EDGE_US.0 => Ok(false),
+        _ if l > BIT7_EDGE_US.1 => Ok(true),
+        _ => no(format!("a TA clock run of {l:.1} us: inside the edge of 122 to 136 us")),
+    }
 }
 
 #[cfg(test)]
@@ -143,7 +167,8 @@ mod tests {
     #[test]
     fn every_other_latch_is_refused() {
         // a fill with a load (E805 ld8: never set, H-WD refuted by it alone), other targets, a
-        // triangle (E806, post hoc until q4-t), bit 7 (E807, post hoc until q4-v), bad timings
+        // triangle (E806; E841 refuted the three readings held out for it), bit 7 of anything
+        // but a vertex loop (E839: the stock TA phase is not the rule's), bad timings
         assert!(refused_q082(status2_bit6(&fill(true, burst(200.0)))));
         assert!(refused_q082(status2_bit6(&fill(true, burst(50.0)))));
         for (w, h) in [(64, 64), (32, 32), (128, 32)] {
@@ -155,8 +180,37 @@ mod tests {
         for b in [f64::NAN, f64::INFINITY, -1.0, 50.0] {
             assert!(refused_q082(status2_bit6(&fill(false, b))), "{b}");
         }
-        for w in [fill(false, burst(200.0)), Timing { work: Work::VertexLoop, burst_us: 1000.0 }] {
+        for w in [
+            fill(false, burst(200.0)),
+            fill(true, burst(200.0)),
+            Timing { work: Work::Triangle, burst_us: 1000.0 },
+        ] {
             assert!(refused_q082(status2_bit7(&w)));
         }
+    }
+
+    fn vertex_loop(ta_run_us: f64) -> Timing {
+        Timing { work: Work::VertexLoop, burst_us: ta_run_us }
+    }
+
+    #[test]
+    fn bit_7_of_a_vertex_loop_follows_the_tas_clock_run_outside_the_edge() {
+        // E839 (R4-pixel q4-v, held out): with L the longest run of CLKGATESTATUS 0x000ccff8,
+        // bit 7 set iff L >= 129.5 us, 14 of 14 decided held-out rows on three new ladders
+        // (clear to 119.5 us, set from 138.6), the edge 122 to 136 not scored (b2v-n2310 at
+        // 133.2 us); the bridge controls at 4.6, 9.4, 105.1 (clear) and 207.3 us (set)
+        for l in [0.0, 4.6, 9.4, 105.1, 119.5, 121.9] {
+            assert_eq!(status2_bit7(&vertex_loop(l)), Ok(false), "{l}");
+        }
+        for l in [136.1, 138.6, 139.4, 207.3, 231.1] {
+            assert_eq!(status2_bit7(&vertex_loop(l)), Ok(true), "{l}");
+        }
+        for l in [122.0, 129.1, 129.5, 129.8, 133.2, 136.0] {
+            assert!(refused_q082(status2_bit7(&vertex_loop(l))), "{l}");
+        }
+        for l in [f64::NAN, f64::INFINITY, -1.0] {
+            assert!(refused_q082(status2_bit7(&vertex_loop(l))), "{l}");
+        }
+        assert_eq!(BIT7_EDGE_US, (122.0, 136.0));
     }
 }
