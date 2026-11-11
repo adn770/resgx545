@@ -48,3 +48,15 @@ run, so E770's void is repaired for the program side; the absolute branch was no
 (the generator refuses it). None of the three frozen scalings of the threshold places the first
 set point, and the triangle does not set where the fill of the same pixel count does (the
 bridge). One run a point.
+
+**Correction 2026-11-11:** The per-instance threshold (H-INST) was not refuted at 4x4. The frozen
+scorer scaled every other size's cells by the reference N 110 (the bridge failed) but kept the
+4x4 rows at an H-INST first set of 56, unscaled. Scaled like the others, H-INST's first set at 4x4
+is the first point of its ladder (56, 220, 880) at or above 110, i.e. 220, and the 4x4 rows read
+clear at 56 and set at 220 (`score-q-t.txt` of the dataset: "56 clear, 220 set, 880 set"), so
+H-INST is consistent there. Right: H-INST REFUTED at 3 of the 8 sizes, 32x16, 32x32 and 128x128
+(first set 56, clear at 53, outside the scaled cells for any reference in (56, 110]); the 4x4 row
+of the table reads ok under per instance; the title holds (H-INST is still refuted). Also, the
+"ok" of the per-job threshold at 128x128 holds only for a reference N of 107 to 110: the scorer
+takes the upper end of the bridge's bracket (56, 110] as a point. Post hoc reading of the kept
+output, not the scorer's verdict; the other cells of the table are unchanged.

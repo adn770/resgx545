@@ -47,3 +47,12 @@ with 13 to 67 aborts had counts of 1 and 2 and read 0. Every job's row is in the
 followed it, three of them in the stage that gated on it. It is a reading of the register over the
 job, held out; what the firmware computes it from (the register, the global list's pages or a count
 of its own) is not read here, and every scene is one of the tool's two triangle scenes.
+
+**Correction 2026-11-11:** "60 of 60 jobs" counts two jobs that cannot fail the reading. c5a-cal
+(g-c5) and c6-cal (g-c6) had no abort; the frozen scorer's H-last table reads the count before the
+last abort of a job with no abort as 0, and both read dword 36 = 0, so each row prints "ok"
+(`score-g-c5.txt` and `score-g-c6.txt` of the dataset) without testing the count before the last
+abort. Right: H-last held in 58 of 58 jobs with an abort (g-d36 6 of 6, g-c4 10 of 10, g-c5 32 of
+32, g-c6 3 of 3, g-c7 7 of 7), and the two jobs without one read 0 as the reading's "0 without an
+abort" says. The 5 separating jobs (d36-2048-0x90, d36-4096-0x2c0, d36-4096-0x300, c3-2048-0xe2
+and c7-cal) are unchanged, and so is the verdict of g-d36, the stage that gated on it.

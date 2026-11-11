@@ -42,3 +42,16 @@ HV-INSTR (2090..2200). The scorer calls it consistent because no point of that l
 but the bit was already set at 1760, the lowest point run, below the window, so the window is
 contradicted (post hoc reading of the frozen output, not the scorer's verdict): HV-INSTR places
 none of the bodies, as the title says.
+
+**Correction 2026-11-11:** The claim line above (and so its entry in `doc/evidence_log.md`, which
+is built from it) still says HV-INSTR was "consistent for the 4-instruction body"; the correction
+of 2026-11-10 was appended to this text only. That is wrong for the reason given there: b4v's
+bracket is (none, 1760] (`score-q-v.txt` of the dataset, row b4v) and the window is 2090..2200,
+so the bit was already set below the window's lower end. Right: HV-INSTR was REFUTED for the
+16-instruction body and for 12 and 48 vertices, and its window was contradicted for the
+4-instruction body (bit 7 already set at 1760). The frozen scorer printed "consistent" because its
+test takes an open lower bound as 0 and allows a slack of one step on both sides; a strict overlap
+of (last clear, first set] with the window, an open bound left open and no slack, gives the same
+verdict as the scorer for the other 9 rows and differs for b4v only (post hoc reading of the kept
+output, not the scorer's verdict). The claim line is the record's own front matter and is left as
+written.

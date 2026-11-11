@@ -137,3 +137,8 @@ g-c5, g-c6 and g-c7, 54 of 54 with 2 separating: 60 of 60 jobs over five targets
 context and two scenes of the tool. The first-abort and peak readings stay refuted as rules. Open:
 what the firmware computes dword 36 from (the register over the job, the global list's pages or a
 count of its own); the reading is of the register, held out on the tool's scenes only.
+
+Note 2026-11-11 (E803's correction): "54 of 54" and "60 of 60" count c5a-cal and c6-cal, which had
+no abort and read dword 36 = 0 as the reading's floor clause says, without testing the count before
+the last abort. Over jobs with an abort the side tables held 52 of 52 and the whole 58 of 58; the
+separating jobs are unchanged.
