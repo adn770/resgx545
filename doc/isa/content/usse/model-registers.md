@@ -28,21 +28,23 @@ marked.
   task left there, firmware data included (measured from a client pixel shader on our render node);
   `r40` and `r47` written by one fill were read by the next in 7 of 7 reader jobs (2048 of 2048
   pixels each), and by one two fills later, after a fill that wrote no temporary, in 2 of 2 (E484: a
-  pair of fills, not EDM tasks; Q124). In firmware (EDM) tasks of ours `r20` and `r21` written
+  pair of fills, not EDM tasks). In firmware (EDM) tasks of ours `r20` and `r21` written
   by one task were read by the next at the next event and after 1200 ms (6 of 6) and replaced by a
-  client fill (0 of 6 kept), and `i0` and `i1` also after a fill (6 of 6) **[HW]** (E536). The
-  registers sampled up to `r123` are separate storage in a fill started with up to 128 temporaries
-  (`--temps` 52, 64, 80, 96, 112, 124 and 128: 14 of 14 cases, every second or fourth register from
-  `r2` and the top one; E485) **[HW]**. **A register at or past the task's allocation `T` reads as
-  register `n mod T` in most instances, and a write to it was not seen to reach it [HW]**: in client
-  pixel tasks `r(n)` read the marker written to `r(n mod T)` in 88 to 99.6 percent of the 2048
-  instances in 15 of 15 cases (by `T`: 95.3 to 99.6 percent at 8, 95.3 to 98.4 at 16, 88.3 to 96.1
-  at 32, 92.1 to 92.2 at 64), the rest of the instances reading other values, so the rule is "most
-  instances" and no program may rely on it; in 4 of 4 cases that also wrote a marker to `r(n)` (`T`
-  = 8 and 32 only) the instances read the value of `r(n mod T)`, not the one written; nothing
-  faulted or hung (E486); and with a marker of its own in every job a write to `r123` under a
-  request of 4 to 100 was not seen by the read of `r123` in the same job (0 of 12 jobs, within the
-  pixels the reports list, E535). The
+  client fill (0 of 6 kept), and `i0` and `i1` also after a fill (6 of 6) **[HW]** (E536). After a
+  firmware reload, and after a reset and a reload, `i0`, `i1` and `r21` kept the markers and `r20`
+  and `sa63` read 0 (6 of 6; after a fill `r21` read 0x1000 to 0x3000 and `sa63` kept its marker)
+  **[HW]** (E810). The registers sampled up to `r123` are separate storage in a fill started with up
+  to 128 temporaries (`--temps` 52, 64, 80, 96, 112, 124 and 128: 14 of 14 cases, every second or
+  fourth register from `r2` and the top one; E485) **[HW]**. **A register at or past the task's
+  allocation `T` reads as register `n mod T` in most instances, and a write to it was not seen to
+  reach it [HW]**: in client pixel tasks `r(n)` read the marker written to `r(n mod T)` in 88 to
+  99.6 percent of the 2048 instances in 15 of 15 cases (by `T`: 95.3 to 99.6 percent at 8, 95.3 to
+  98.4 at 16, 88.3 to 96.1 at 32, 92.1 to 92.2 at 64), the rest of the instances reading other
+  values, so the rule is "most instances" and no program may rely on it; in 4 of 4 cases that also
+  wrote a marker to `r(n)` (`T` = 8 and 32 only) the instances read the value of `r(n mod T)`, not
+  the one written; nothing faulted or hung (E486); and with a marker of its own in every job a write
+  to `r123` under a request of 4 to 100 was not seen by the read of `r123` in the same job (0 of 12
+  jobs, within the pixels the reports list, E535). The
   model gave such a register storage of its own or a fault. A `phas` request is the allocation of
   its phase (*Tasks and phases*).
 - **Primary attributes [HW].** The PDS fills them per task: `doutd` DMAs memory into them
@@ -98,7 +100,9 @@ marked.
   `g25` its place in the 2x2 quad, `g17` the tile quarter, `g18` a per-tile number, `g39` the
   quad's place in a 4x4 block, and `g21`/`g22` scheduler-assigned task and slot ids; `g21`-`g25`
   follow Rogue's special registers 47-51 in order (`SR.TASK_ID`, `SLOT_NUM`, `TILE_X_PIX`,
-  `TILE_Y_PIX`, `INST_NUM`). A `mov` to `g` is ignored (E086). The firmware reads two globals
+  `TILE_Y_PIX`, `INST_NUM`). In a triangle's pixel program the same held out: `g25` = (x & 1) |
+  (y & 1) << 1, `g23` = x mod 32 and `g24` = y mod 16 (E808: 29 of 29 rows at three triangles; E772
+  post hoc). A `mov` to `g` is ignored (E086). The firmware reads two globals
   once each (as a source of an `xor` and of a `shl`) and otherwise names `c0` only as the dummy
   destination of a test that does not write its result (`!c0`, see the test group) **[RE]**.
 - **Internal registers [RE].** `i0`-`i3` print where a temporary number reaches past the

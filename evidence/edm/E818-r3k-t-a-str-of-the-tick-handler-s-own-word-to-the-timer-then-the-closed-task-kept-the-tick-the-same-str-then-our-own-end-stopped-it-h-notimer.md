@@ -47,3 +47,14 @@ of 2). With E817 the picture for a pass that ends our way is: the `phas ... end`
 the exit that matters, the timer store is not. It does not show what the closed task does at the
 end of a tick pass besides the exit (the tick handler's other stores were not tried), and a stop
 is one job.
+
+**Correction 2026-11-11:** This adds a reading of the kept rings, made offline in round 4's
+planning (`closing4/events/offline/t_ring.out`, `grid.out`), and leaves the claim as is. [data]
+After T1's acted pass the gap was 25114 units and every later gap of both jobs was 25000 (within
+a few units): the grid moved by 114 units and stayed moved, not one long gap followed by the old
+grid. Over 702 consecutive plain-tick gaps of the kept rings the mean is 25000.2 units, and after
+the acted passes of FC4, FB and FPH (E817, E830) the next gap is 24994 or 24995 and the one after
+25005 or 25006, so there the old grid is kept. [infer] The store restarts the countdown where it
+executes; the closed tick handler's own store of the same word (E155 [RE]) does not move the grid
+on ordinary passes, so either it is not made on every pass or an equal store late in a pass is no
+restart; these are not separated.

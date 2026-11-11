@@ -39,6 +39,11 @@ and `idiv` the full one).
   and **a pa0 destination is not written** (E496; the probe table's model had every destination take
   the result). So `add` is `ima32.u d, a, #1, c` and `mul` is
   `ima32.u d, a, b, c0`.
+- **Operand order [HW]** (E597): `ima32.u d, i0, a, b, c` and `ima32.s` read their sources
+  before the write in every one of the 15 partitions of d, a, b and c into registers (any of them
+  alike, all four the same): d held the low word and i0 the high word of the 64-bit a × b + c (c
+  sign-extended for `.s`) in 300 of 300 fills. Not run in a firmware task (the verifier refuses
+  the form).
 - **A 32-bit subtract [HW]** is `ima32.u d, b, c56, a`, which is `a - b` mod 2^32, and so is
   `ima32.u d, a, #1, b.neg` (E470: 80 of 80 through c56, 6 of 6 through c57, c58, c59 `.u` and c59
   `.s`). `.neg` on source 2 (`enc[40]`) or source 3 (`enc[39]`) negates that source in two's

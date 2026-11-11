@@ -193,10 +193,21 @@ The SGX545 header has no `BIF_CTRL_INVAL` register. The DDK's reset therefore in
 directory cache by writing `INVALDC` to `BIF_CTRL` and then 0 (`SGXResetInvalDC`,
 `sgxreset.c:272-300`).
 
+On the laptop `CLEAR_FAULT` hides a latched fault and does not clear it: with four bus faults held
+(a TA read, a TA write, a texture fetch; E826) setting bit 4 made the kernel's next reads of
+`BIF_INT_STAT` and `BIF_FAULT` return the idle 0x80000 (or 0) and 0, and clearing it again
+returned both to the fault's values, 4 of 4. The registers stayed latched through a 2.5 s watch
+and only the debugfs reset cleared them (E826; the frozen rows were cannot tell, the three
+readings agree across rows, post hoc). In that reset the fault words read clear in the same 4.3 µs
+row as the halt, 6.8 to 11.3 ms before the event status is host-cleared, so before the kernel
+writes `CLEAR_FAULT` [infer, post hoc] (E767).
+
 ### 5.5 Faults and directory lists
 
 - `BIF_INT_STAT` (0xC04): `FAULT_REQ` [15:0], one bit per faulting requestor; `FAULT_TYPE`
-  [18:16]; `FLUSH_COMPLETE` [19].
+  [18:16]; `FLUSH_COMPLETE` [19]. Writing the set bits back to it changes nothing on the laptop
+  (0x1 and the fault word without bit 19, 4 of 4 held faults, E826); what clears a fault is the
+  reset (§5.4).
 - `BIF_FAULT` (0xC08): `CID` [3:0], the directory list the faulting access went through; `SB`
   [8:4]; `ADDR` [31:12], the faulting page.
 - `BIF_DIR_LIST_BASE0` (0xC84) and `BASE1..15`: the page directory of each list.
@@ -206,11 +217,31 @@ directory cache by writing `INVALDC` to `BIF_CTRL` and then 0 (`SGXResetInvalDC`
 So `CID` and `BIF_DIR_LIST_BASE<CID>` name the page directory, hence the address space, of a
 fault.
 
+The fault words of the records, by the access that made them. Which unit a `FAULT_REQ` bit
+belongs to is read from the access each record set up, not from a source [infer]:
+
+| `BIF_INT_STAT` | `FAULT_REQ` bit | access | records |
+|---|---|---|---|
+| 0x90002 | 1 | texture fetch past the probe's scratch (page 0x3e017) | E765, E826 |
+| 0x90004 | 2 | TA write of region headers past the kernel's layout (`SB` 6) | E729, E789, E826 |
+| 0x90008 | 3 | TA read of an unmapped stream page | E764, E826 |
+| 0x80020 | 5 | transfer write to a read-only alias | E766 |
+| 0x90100 | 8 | 4x render, at page 0x10000 (`SB` 1) | E511, E828 |
+| 0xd0400 | 10 | background program's fetch (`FAULT_TYPE` 5) | E764 |
+| 0x91000 | 12 | first job with buffer 0 left out of the client alias | E573, E745, E761 |
+
+A held fault sets no bit of `EVENT_STATUS` of its own; `EVENT_STATUS2` bit 7 (TA side) or bit 6
+follows 121 to 124 µs after the fault word (§6.4; E764 to E766, E789).
+
 During the renders of a context on a freshly reset GPU `BIF_BANK0` takes `INDEX_TA` = 1 and
 `INDEX_3D` = 1 (12 of 12 runs; `INDEX_EDM` = 1 as well in 5), and a fault of the first job names
 `CID` 1, so the render's TA and 3D reach memory through list 1 (E457). In the client directory the
 aliases of the EDM's buffers 6, 7, 8, 10 and 11 are not needed for a 64 x 64 render (each left out
-alone, 10 of 10 runs exact); TA3DCtl is, writable (Q076).
+alone, 10 of 10 runs exact); TA3DCtl is, writable (Q076). Nor are buffers 1 to 5 and 12 to 14,
+one at a time (E573), the pairs among 1 to 5 tried and 1 to 5 together in a two-render job, 6, 7,
+8, 10 and 11 together over three renders (E745, held out), and 1 to 4 together in two 1024 x 768
+renders that both overflow the parameter buffer (E761); with buffer 0 left out the first job
+faults (0x91000 at 0x3000b021 or 0x3000b022; E573, E745, E761).
 
 On the laptop the EDM keeps its own directory in `BASE15` and gives each render context's
 directory one of lists 0 to 14 at its first kick, in turn after a reset (1, 2, ... 14, then 0),
@@ -226,9 +257,14 @@ check, a plain 64 x 64 triangle, failed after each of the last three in a row an
 hardware's: it held one array of region headers where the TA writes four at `CR_TE_AA` 0xe0000000
 (E788); with four the render completes at every size run up to 1024 x 768 (E824). The kernel now
 gives four to a context made with `DRM_SGXFIVE_CTX_RENDER_AA_4X` and refuses a 4x job on any other
-unless debugfs forced its count (E828). The health triangles that fail after a failed 4x job stay
-open (Q140, a kernel question); a 4x render at 4096 x 4096 on four arrays faulted at the parameter
-buffer's base (E828, Q292).
+unless debugfs forced its count (E828). A 4x render at 4096 x 4096 on four arrays faulted at the
+parameter buffer's base (0x90100 at 0x10000011, the word of E511's three faults) with 1048576
+pixels right, the first wrong at (1024, 0), and the health triangles after it passed, 3 of 3
+(E828; Q292). [infer, post hoc] That job overflows the parameter buffer: the non-zero PB pages of
+E824's ten four-array dumps fit 1 + ceil(2 (W / 16) (H / 16) / 32), which gives 4097 pages at
+4096 x 4096 against 1024 usable (P - 0x22 at the maximum P 0x422), so it would be the first 4x
+partial render on record; the fit was read from the same dumps. The health triangles that fail
+after a TA write fault are a state the reset leaves [infer] (Q003).
 
 ### 5.6 Unit names
 
@@ -238,7 +274,8 @@ sequencer; `USE` the USSE shader core; `ISP` hidden-surface processor; `TSP`, `T
 and shading processor and its pre-processor; `PBE` pixel back end (tile write-out).
 
 *Based on sgx545-ce `src/services4/srvkm/hwdefs/sgx545defs.h`,
-`src/services4/srvkm/devices/sgx/sgxreset.c`; E357, E360, E507.*
+`src/services4/srvkm/devices/sgx/sgxreset.c`; E357, E360, E457, E507, E511, E573, E729, E745,
+E761, E764 to E767, E789, E824, E826, E828.*
 
 ## 6. How the DDK resets and starts the core
 
@@ -309,7 +346,8 @@ value, is `doc/specs/boot_sequence.md`.
 `DPM_3D_MEM_FREE` 0 (`sgx545defs.h:367-451`; the debug dump decodes them, `sgxinit.c:907`).
 `TA_*` is the geometry and tiling front end, `ISP` the hidden-surface stage, `PIXELBE` the tile
 write-out, `DPM` the parameter memory manager. Which event sets which bit in an ordinary job is
-partly known, and for how long a bit is set is open (Q111, Q166). Seen on the hardware (E547, E548):
+partly known; how long a bit stays set is known for the two below (STATUS2 bit 6, STATUS bit
+18) and open for the rest (Q111, Q166). Seen on the hardware (E547, E548):
 PIXELBE_END_RENDER, DPM_3D_MEM_FREE and MADD_CACHE_INVALCOMPLETE show in a triangle, TA_FINISHED,
 TPC_FLUSH and the DPM state and control bits in the 256-pixel and partial jobs, a fill shows
 PIXELBE_END_RENDER and a copy only SW_EVENT, which comes with MASTER_INTERRUPT (41 of 41 jobs);
@@ -326,12 +364,68 @@ saw.
 `EVENT_STATUS2` (`0x0118`) reads 0x400 (`DCU_INVAL_COMPLETE`) when the core is idle;
 OTPM_MEM_CLEARED (bit 12) and DPM_TA_FREE_LOAD (bit 0) pulse in some depth-store, 256-pixel and
 partial jobs (E547). Its
-`TRIG_TA` (bit 7) and `TRIG_3D` (bit 6) latch on the laptop: bit 7 within 0.2 ms of the PB load of
-a TA that hangs or faults, bit 6 about 0.1 ms into a fill whose pixel program loops 128 times or
-more; neither sets in the renders, fills and copies of our stack, and each stays set until the
-core is reset (E357). A vertex program of our own that loops on a backward `br` (8 instructions an
-iteration) left bit 7 clear through 880 iterations and set it at 1760, so bit 7 does not follow the
-pixel latch's 53 to 55 iterations (E784). Both are host events: written alone into
+`TRIG_TA` (bit 7) and `TRIG_3D` (bit 6) latch on the laptop; neither sets in the renders, fills
+and copies of our stack (E357).
+
+- **Bit 7** sets 0.1 to 0.2 ms after the PB load of a TA that hangs or faults (E357), and, read
+  post hoc from timelines sampled every 4.3 µs, 121 µs after the fault word of a held TA read
+  fault (E764). A vertex program of our own that loops on a relative `br` sets it on the tool's
+  triangle: with an 8-instruction body on 3 vertices clear at 1045 iterations and set at 1100 in
+  both orders of a held-out ladder (E807; E784 had placed it in (880, 1760]), with a
+  16-instruction body in (601, 649], with a 4-instruction body already at 1760, the lowest point
+  run, with 12 vertices in (554, 698] and with 48 in (329, 538]. No fixed count of instructions or
+  of multiply-adds a vertex, nor a count a job, places these points (HV-INSTR, HV-MA and HV-JOB
+  refuted, E807 and its correction of 2026-11-11). Bit 7 showed 184 to 195 µs after the burst
+  began in every set job (E807).
+- **Bit 6** sets in a fill whose pixel program loops, at a point that depends on the loop body and
+  not on a count of iterations: E431's 8-instruction body (six multiply-adds) is clear at 53 and
+  set at 56 (55 in 3 of 3 runs, 54 in 2 of 3; E431, and E804 2 of 2 with a relative `br` and with
+  `ba`); E357's "128 iterations or more" came from runs of 16 and 128 only. Over six
+  bodies run in two orders, with a loop proof, the first set points held out are 25 for a body of
+  16 instructions (24 clear), 35 for 12 (34 clear), in (80, 130] for 4, every point from 500 for a
+  body with no multiply-add and from 60 for six `or`; a body with a load and a wait stayed clear to
+  320 iterations, bursts of 13.4 ms (E805, E769). So neither a count of multiply-adds (H-MA), nor a
+  tile time (H-WD), nor the job's burst (H-BURST) places the bit, held out (E805). Read after the
+  run [infer, no frozen row]: in the 106 load-free fills of E804 and E805 every set job had a burst
+  of at least 535.9 µs and every clear one at most 539.3 µs (E805). In triangles that cover the
+  target (E806) it first set at 56 iterations at 32 x 16, 32 x 32 and 128 x 128 (clear at 53), at
+  110 at 8 x 8, 16 x 16, 64 x 32 and 256 x 256 and at 220 at 4 x 4; the per-instance, per-tile and
+  per-job thresholds frozen for it were refuted at 3, 6 and 6 of the 8 sizes (E806 with its
+  correction). It showed 120 to 340 µs after the burst began (E805, 48 of 48 set jobs; E806, 28 of
+  32), and, post hoc, 121 to 124 µs after the fault word of a held background-program fetch, a
+  texture fetch and a transfer write fault (E764, E765, E766). The quantity the latch watches is
+  open (Q082).
+- **Readings of 2026-11-11 from the kept timelines** (round 4 planning, none held out; FIT: read
+  from the data it is scored on; SEMI: a rule written to a file before the jobs it is scored on
+  were opened, after others of the same stage were seen). *Bit 7* [data, SEMI]: in the vertex-loop
+  jobs `CLKGATESTATUS` reads 0x000ccff8 while the TA works on the vertices; with L the longest such
+  run, every clear job of E807's 74 had L at most 129.1 µs and every set one at least 129.8 µs,
+  over four bodies and 3, 12 and 48 vertices, and the bit showed 123 to 134 µs after that run
+  began. It is not the TA phase's length alone: ten 1500-vertex jobs of milliseconds of TA ended
+  with STATUS2 0x400, and E357's held TA hang set it with a run of 8 µs [data]. *Bit 6 in fills*
+  [data; FIT on E804 and E805, SEMI on E431 and E357]: with a tile's time (B - 60.2) / 4 against
+  125 µs, an edge band of 118 to 132 µs, 187 of 187 load-free fills fall on the predicted side or
+  in the band (159 and 28); a body with a load stays clear far beyond that time (E805's ld8 to 320
+  iterations). *Bit 6 in triangles* [data, FIT]: in E806's ladders the time a tile takes at the
+  last clear and the first set point brackets 120 to 160 µs at every size. [infer] One timeout of
+  about 125 µs without progress, of the TA for bit 7 and of the pixel side for bit 6, would fit
+  these and the 121 to 124 µs after a fault word; a load would end a piece of work. These are
+  readings to test, not rules.
+- **Clearing.** Without a clear each stays set through later jobs (E357, whose runs wrote none);
+  the debugfs reset clears both (E357, E764). A host write to `CR_EVENT_HOST_CLEAR2` (0x0114)
+  clears the bits written: 0x8000 left a latched 0x440 as it was, 0x40 cleared it to 0x400, and
+  the next loop fill latched it again, 3 of 3 rounds held out (E821: H-W; any non-zero write
+  clearing all, H-ALL, and no write clearing, H-NONE, refuted). A firmware task's `str` of the same
+  words does the same, 3 of 3 (E822). That CLEAR2 clears bit 7 is not measured.
+
+`CR_EVENT_STATUS` bit 18 (`PIXELBE_END_RENDER`) is a level until acknowledged, read after the run
+in one job [infer]: with the slot 3 end-of-render pass skipped once it read set from 7.3 ms to the
+end of a 50 ms watch (8 of 9 reads), a host write of bit 18 to `CR_EVENT_HOST_CLEAR` (0x0134)
+cleared it within 1 ms and a write of bit 15 did not; the frozen rows were cannot tell, the first
+watch read having come before the bit set (E823). Its 4 to 6 µs pulses in ordinary jobs are then
+the firmware's acknowledgement (E547). How long the other bits stay set is open (Q111, Q166).
+
+Both STATUS2 latches are host events: written alone into
 `CR_EVENT_HOST_ENABLE2` they raise the host interrupt once set (E444), as do `TIMER`
 (`CR_EVENT_STATUS` bit 29) and `DCU_INVAL_COMPLETE`, which an idle core has set; the EDM's write
 fault sets no bit beyond the idle ones. `CLKGATESTATUS` (`0x0008`) reads 0x20 idle and the same
@@ -343,7 +437,8 @@ untested (E445).
 
 *Based on sgx545-ce `src/services4/srvkm/devices/sgx/sgxinit.c`, `sgxreset.c`,
 `src/services4/include4/sgxscript.h`, `src/services4/include/sgx_mkif_km.h`,
-`src/services4/srvkm/hwdefs/sgx545defs.h`; E357, E365, E784.*
+`src/services4/srvkm/hwdefs/sgx545defs.h`; E357, E365, E431, E444, E445, E547, E764 to E766,
+E769, E784, E804 to E807, E821 to E823.*
 
 ## 7. Where the microkernel comes from
 
@@ -669,47 +764,92 @@ queue's `EMPTY` flag and bits 15:0 its served-event `COUNT`, which fits (emgd-ps
 `psb_regs.h`).
 
 A firmware task of ours in the general slot (E531) sees the tick's event as `pa0` = 2, `pa1` =
-0x02000000 and `pa2` = 0x01061a70 (E532: 2 of 2 runs). The byte `pa1` bits 31:24 is a count that
-every event carries: 2 after the arm, +1 after each kick of the kernel's command buffer, a host
-GETMISCINFO or a client job's own (E746 held out 3 of 3; E747 for 138 job events, read after the
-run), so bits 24 and 25 are bits of the count and not event bits; PDS #13 reads only bits 23:0.
-The count is the number of commands (kicks) the kernel has sent through the CCB since the firmware
-load, mod 256, equal to the CCB write offset: 2 after the arm path's two GETMISCINFO, 1 with one
-and 4 with four, 0 after 254 more kicks, +1 per fill or copy command (E768, 15 of 15 jobs); a kick's own event carries the value from before its bump, and whether the hardware
-counts the writes to `CR_EVENT_KICK` or reads the kernel's kicker word is not separated (Q290).
-`pa2` is the EDM's event timer sampled for the event (bits 31:24 = 0x01, bits 23:0 counting down
-from 400000 core clocks), 16 clocks after the reload for a tick served at once (0x01061a70) and any
-value for a kick; it is not a constant (E746, E747). A host kick (a GETMISCINFO with no job) is one
-event in the general slot with `pa0` = 0 and `pa1` bits 23:0 = 0x100 (E746); the words E538 logged
-for it, 0x03000000 with `pa0` = 2, are those of the tick after it. A client job's events arrive one
-status bit at a time, in an order the same in every replicate, and the fill's end of render reached
-slot 3 with `pa1` bit 4, the reversed order of E155 (E747); bit 19 did not appear in any of them,
-nor in 8 jobs of 4096x4096 with 1500 vertices that did and did not raise the TA's threshold (E771,
-Q033). While a task of ours holds the EDM the
-events are queued and not lost: up to four ticks (three latched on arrival, one when the hold ends,
-the rest dropped), a kick once, a job's events once, all served after the hold (E749, E751, E752);
-two kicks in one 90-tick hold are two entries, each with the count it had when it arrived (2 and 3,
-the ticks after them 4), 3 of 3 jobs (E794).
-After a task that wrote `sa`, `r`, `i`, `p` and `pclink` state and ended with `nop.end` instead of
-jumping to the closed general task, the tick stopped: dword 12 and `USE0_SERV_EVENT` did not move
-over three reads 20 ms apart, and one debugfs reset recovered it (E533, 1 run). A task of ours that
-wrote nothing and ended one tick pass with `nop.end`, without calling the closed task, stopped it
-in 2 of 2 runs, with `CR_CLKGATESTATUS` 0x000ccfa0, `CR_EVENT_STATUS` 0x20000000, the event timer
-counting and `USE0_SERV_EVENT` frozen with its empty bit clear: skipping the closed task is enough
-(E793, Q152). A task of ours that wrote `sa`, `r`, `i` and `p` and then called the closed task
-left the tick running (E536, 3 of 3 rounds, 911 to 1005 Hz), and a second one that also wrote `sa63`
-and `sa65` and called it was not followed by its armed reader within 100 ms (E537, 1 run; HostCtl
-dword 12 advanced 6 in that window and then read 0x9db in both dumps taken seconds later, and
-`USE0_SERV_EVENT` 0x9e0 in both, against E533's three reads 20 ms apart; Q152). The closed task does
-not by itself keep the tick, then, but a task that ends a pass without it does not keep it either.
-No single write of `sa63` (a marker, read back after 1200 ms), `sa64` (with the tick bit set or
-clear) or `sa65` (its own value, or a marker restored before the call), and no tail call with p0 =
-p1 = 1 and r and i written, stopped it (E791, 19 of 19 jobs); after an `sa64` with bit 1 clear the
-next entry read `pclink` 6 and p1 as left, after the others 0x98 (E792).
+0x02000000 and `pa2` = 0x01061a70 (E532: 2 of 2 runs). The paragraphs below are what the records
+of the closing pass add, by topic; the contract a task of ours must keep is gathered in the USSE
+book's *Tasks and phases* (`doc/specs/usse_isa.md` §3.6).
+
+**The timer and the tick [HW].** The tick is `CR_EVENT_TIMER` (0x0acc): bit 24 set, bits 23:0
+counting down 400000 core clocks and reloading by themselves (E746, E751). One tick is 25000
+`CR_TIMER` units (E746, E813; the plain gaps of the kept rings are 25000 to within a few units).
+`pa2` of an event is the timer sampled for it: 0x01061a70, 16 clocks after the reload, for a tick
+served at once, 0x01061a74 for a tick latched while the EDM was not idle (the first ticks after a
+hold, E751), and any value for a kick (E746, E747). A task's `str` of the reload word 0x01061a80 to
+the timer followed by the closed task kept the tick and moved the next entry to 25114 units, 2 of 2
+(E818 T1), and the later gaps were 25000 again, so the grid moved and stayed moved (E818's
+correction of 2026-11-11); [infer] the store restarts the countdown where it executes. The timer
+reloads with nobody serving it: in 9 stops (E813, E814, E817, E818, E823, E830) bits 23:0 read
+below 400000 in 18 of 18 samples taken seconds after the last served pass [data, round 4 reading;
+a counter that ran through 24 bits would be below 400000 in 2.4% of samples]. A pass with the tick
+bit of `sa64` clear leaves `pclink` 6 and does not advance HostCtl dword 12 (E792, E812 C5: 50
+passes, 2 of 2), and a tick pass handed to the slot 2 closed task keeps the tick without advancing
+it (E813 X1, X20), so dword 12 counts the passes of the closed tick handler, not ticks [infer].
+
+**The end of a pass [HW].** After a task that wrote `sa`, `r`, `i`, `p` and `pclink` state and
+ended with `nop.end` instead of jumping to the closed general task, the tick stopped (E533, 1 run),
+and a task that wrote nothing and ended one tick pass that way stopped it in 2 of 2 runs (E793). A
+task of ours that wrote `sa`, `r`, `i` and `p` and called the closed task left it running (E536, 3
+of 3 rounds), and no single write of `sa63`, `sa64` or `sa65` (without bit 8) and no tail call with
+p0 = p1 = 1 stopped it (E791, 19 of 19; E812, 13 of 13). What the EDM needs is the phase end: a
+plain tick pass of ours keeps the tick iff it executes `phas #0, #0, pixel, end, parallel` before
+its `nop.end`, 13 of 13 jobs with it and 7 of 7 stopped without it, `cfi.global` neither needed nor
+enough (E817 held out, H-PHAS; E830 replicated in three blocks, H-REP; E793, E818 T2). The closed
+exit reached by a tail call (`cont4`) keeps it, 8 of 8, as does any closed path that reaches that
+exit, the general task's or slot 2's (E817, E830, E813: H-EXIT); a kick pass ended with `idf, wdf,
+nop.end` stops it too (E813 B3), and a store to the timer does not replace the phase end (E818 T2).
+[infer] This is the program-shape rule of client programs (E118, `usse_isa.md` §3.6) in an EDM
+task. A kick pass and the slot 3 pass ended with the `phas` have not run (Q152). A stop reads
+`CR_CLKGATESTATUS` 0x000ccfa0, `USE0_SERV_EVENT` bit 16 clear and its count frozen, the event timer
+counting and `CR_EVENT_STATUS` 0x20000000; it answers no host command (0 of 8 tries) and one
+debugfs reset recovers it (13 of 13 stops in the records, E533 to E830); a task still running inside
+a 90.5 ms hold reads the same, so the signature cannot tell a stop from a long task (E811, E816). A
+phantom kick bit (`sa65` bit 8 with read = write) makes the closed reader take an empty command and
+stop with HostCtl dword 14 0xad002600, read = write + 1 (E814 D2, E537); E537's word without bit 8
+stops it with no mark (E814 D1).
+
+**The kick [HW].** A kick is the command at the CCB write offset, the kicker word bumped (mod 256)
+and a write to `CR_EVENT_KICK`. It is one event in the general slot, `pa0` = 0, `pa1` = (K << 24) |
+0x100 with K the count before the bump, and the ticks after it carry K + 1 (E746, E768, E816 G0).
+The byte `pa1` bits 31:24 is a count every event carries: the number of commands the kernel has
+sent through the CCB since the firmware load, mod 256, equal to the CCB write offset (2 after the
+arm path's two GETMISCINFO, 0 after 254 more kicks, +1 per fill or copy command; E768, 15 of 15
+jobs; E747 for 138 job events, read after the run), so bits 24 and 25 are bits of the count and not
+event bits; PDS #13 reads only bits 23:0. Writing the kicker word alone (0x42) raises no event and
+leaves the count of the ticks at 2, so the hardware does not read the kicker word at each event
+(E819 Q1, 3 of 3: H-KW refuted). A kick written without the bump is not consumed: the read offset
+stays, no answer comes in 504 ms and the tick goes on (E819 Q3, 3 of 3). Whether the count follows
+the kicker word as latched at a served kick or the commands consumed is open (Q290). The words E538
+logged for a kick, 0x03000000 with `pa0` = 2, are those of the tick after it. A client job's events
+arrive one status bit at a time, in an order the same in every replicate, and the fill's end of
+render reached slot 3 with `pa1` bit 4, the reversed order of E155 (E747); bit 19 did not appear in
+any of them, nor in 8 jobs of 4096x4096 with 1500 vertices (E771, Q033). While a task of ours holds
+the EDM the events are queued and not lost: up to four ticks (three latched on arrival, one when
+the hold ends, the rest dropped), a kick once, a job's events once, all served after the hold
+(E749, E750, E751, E752); two kicks in one 90-tick hold are two entries, each with the count it had
+when it arrived (2 and 3, the ticks after them 4), 3 of 3 jobs (E794). Skipping the slot 3
+end-of-render pass once stopped the tick and held the fill (E823).
+
+**State between passes [HW].** At the next entry after a task of ours `pclink` reads 0x98, p0 1
+and p1, p2 and p3 what the task left (E809, 12 of 12; after an `sa64` with the tick bit clear
+`pclink` reads 6, E792); after a client fill, a firmware reload or a reset p0 p1 read 1 1, p2 0 and
+p3 as left (E810). `i0`, `i1` and `r21` survive a reload and a reset, `r20` and `sa63` do not
+(E810). `pa0` to `pa4` read `sa64` to `sa68`; a `mov` to `pa3` writes `sa67` for this pass and the
+next, to `pa2` writes `sa66` for the pass only, to `pa4` is lost (E748, E820). Q158 holds the start
+state after other perturbations and a cold boot.
+
+**The event registers a task or the host writes** (named in the glossary; the effects are the
+records'):
+
+| register | offset | what the records show |
+|---|---|---|
+| `CR_EVENT_TIMER` | 0x0acc | periodic by itself; a `str` of 0x01061a80 moves the grid (E818) |
+| `CR_EVENT_KICK` | 0x0ac8 | an event a kick with the kicker word bumped, else none (E746, E819) |
+| `CR_EVENT_HOST_CLEAR2` | 0x0114 | clears the STATUS2 bits written, host or task (E821, E822) |
+| `CR_EVENT_HOST_CLEAR` | 0x0134 | bit 18 clears STATUS bit 18, bit 15 does not (E823, post hoc) |
 
 *Based on sgx545-ce `src/services4/system/unified/sysconfig.c`,
 `src/services4/srvkm/devices/sgx/sgxconfig.h`; emgd-psb_regs; E002, E006, E008, E009, E011, E531,
-E532, E533, E536, E537, E538, E746, E747, E749, E751, E752, E768, E771, E791, E792, E793, E794.*
+E532, E533, E536, E537, E538, E746, E747, E749 to E752, E768, E771, E791 to E794, E809 to E814,
+E816 to E823, E830.*
 
 ## 13. Open questions
 

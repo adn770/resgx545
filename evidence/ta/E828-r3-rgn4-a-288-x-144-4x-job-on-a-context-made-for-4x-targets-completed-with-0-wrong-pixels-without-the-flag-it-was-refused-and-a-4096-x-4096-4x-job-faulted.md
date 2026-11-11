@@ -64,3 +64,19 @@ prediction) was not measured, because no dump was written. Between 1024 x 768 (E
 largest 4x render that completed) and 4096 x 4096 no size was run. The ZLS buffer, which keeps one
 array's size, was not examined. The health triangles after a failed 4x job: one failed after j2
 (two after each of E824's c1 and E826's f2), none after j4; the cause stays open (Q140).
+
+**Correction 2026-11-11:** This adds readings made offline in round 4's render planning
+(`closing4/render4x/pb_pages.out`, `u4_layout.out`) and leaves the claim as is; all are post hoc
+and [infer]. The non-zero pages among the 0x422 PB pages of E824's ten kept four-array dumps
+(`--tri-full`, `CR_TE_AA` 0xe0000000) equal U4 = 1 + ceil(2 (W / 16) (H / 16) / 32) in 10 of 10
+(page 0 the object, every later page 32 full 128-byte slots), a fit read from those same dumps.
+At 4096 x 4096 it gives 4097 pages for this record's 4x job, against 1024 usable (P - 0x22 at the
+maximum P 0x422; the knob only shrinks the buffer, E704, E734), so the job would be the first 4x
+partial render on record, and the full triangle would overflow from about 2048 x 2032 up. The
+fault word, BIF_INT_STAT 0x90100 with BIF_FAULT 0x1000001x (requestor bit 8, page 0x10000, `SB`
+1), was seen before only in E511's three HS faults (0x10000016, 0x10000012, 0x10000013); page 0
+of a parameter slot is never mapped, so the access is at the request base plus zero. The fork
+has no partial renders (an overflow returns -ENOSPC), and at 1x an overflow has never faulted
+(E311, E412, E438). 1048576 right pixels with the first wrong at (1024, 0) are one 1024 x 1024
+block, a macrotile of a 4 x 4 split; no image was kept. Q292 holds the test (a 4x size whose page
+need is below 1024 faulting, or a small 4x overflow ending in -ENOSPC, would refute it).

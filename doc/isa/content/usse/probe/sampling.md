@@ -18,6 +18,14 @@ by the program itself:
   as if the next iteration read the state one register on **[infer]** (probe
   `texture-sampler-smp-repeat-mask`).
 
+**The gradient footprint (E721, 8 of 8 held-out jobs with independent operands).** The LOD
+of `smp2dgrad` is the logarithm of the larger of the two Euclidean lengths of the vectors (op0,
+op2) and (op1, op3), scaled by the level size (1992 to 2048 of 2048 pixels, 4 jobs exact, the
+rest off by whole columns or rows; at most 256 for the five other footprints declared), and its
+fraction is truncated to 1/64 (2016 to 2048 of 2048 on 8 of 8 ladders, against 1160 to 1840 for
+rounding). The residual pixels are Q280. A ladder of the fraction over 64 columns with u and v
+held constant wrote one dword a job, so no step was placed there (E744).
+
 **Undecided:** the LOD of a quad's own derivatives, `.sinf`/`.rsd`, `.c10` coordinates, `smp3d`
 beyond the point-sampled textures of E567, and state read from `sa` or `c` (only temporaries were
 used); the state fields, the mip chains and the LOD values are measured in *Sampler state* and

@@ -82,6 +82,12 @@ offsets of loads and stores*); the firmware has four such stores.
   below `limit`, and zeros otherwise: a bounds-checked load **[HW]** (E098). Indices or limits
   with bit 31 set are **[open]**; the firmware does not use them.
 
+**Byte and halfword loads [HW]** (E598, fills): `ldab` and `ldaw` with an immediate offset n read
+the byte at base + n and the halfword at base + 2n, zero-extended (the offset counts elements of
+the access size; 16 of 16 jobs), and `ldaw` and `ldad` at an address that is not a multiple of
+their size read the bytes at that address, across the dword boundary too (6 of 6). Not run in a
+firmware task (the verifier refuses the forms).
+
 **In the firmware [RE].** 598 loads and 349 stores, nearly all `ldad`/`stad` with `.bpcache`
 on its control blocks through `sa0`-`sa2` or computed bases; 120 fetches; `ldaw` twice. Its
 807 `wdf` (for 598 loads and 196 `ldr`) show the pattern: issue the loads, then wait on the

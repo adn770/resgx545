@@ -201,21 +201,23 @@ marked.
   task left there, firmware data included (measured from a client pixel shader on our render node);
   `r40` and `r47` written by one fill were read by the next in 7 of 7 reader jobs (2048 of 2048
   pixels each), and by one two fills later, after a fill that wrote no temporary, in 2 of 2 (E484: a
-  pair of fills, not EDM tasks; Q124). In firmware (EDM) tasks of ours `r20` and `r21` written
+  pair of fills, not EDM tasks). In firmware (EDM) tasks of ours `r20` and `r21` written
   by one task were read by the next at the next event and after 1200 ms (6 of 6) and replaced by a
-  client fill (0 of 6 kept), and `i0` and `i1` also after a fill (6 of 6) **[HW]** (E536). The
-  registers sampled up to `r123` are separate storage in a fill started with up to 128 temporaries
-  (`--temps` 52, 64, 80, 96, 112, 124 and 128: 14 of 14 cases, every second or fourth register from
-  `r2` and the top one; E485) **[HW]**. **A register at or past the task's allocation `T` reads as
-  register `n mod T` in most instances, and a write to it was not seen to reach it [HW]**: in client
-  pixel tasks `r(n)` read the marker written to `r(n mod T)` in 88 to 99.6 percent of the 2048
-  instances in 15 of 15 cases (by `T`: 95.3 to 99.6 percent at 8, 95.3 to 98.4 at 16, 88.3 to 96.1
-  at 32, 92.1 to 92.2 at 64), the rest of the instances reading other values, so the rule is "most
-  instances" and no program may rely on it; in 4 of 4 cases that also wrote a marker to `r(n)` (`T`
-  = 8 and 32 only) the instances read the value of `r(n mod T)`, not the one written; nothing
-  faulted or hung (E486); and with a marker of its own in every job a write to `r123` under a
-  request of 4 to 100 was not seen by the read of `r123` in the same job (0 of 12 jobs, within the
-  pixels the reports list, E535). The
+  client fill (0 of 6 kept), and `i0` and `i1` also after a fill (6 of 6) **[HW]** (E536). After a
+  firmware reload, and after a reset and a reload, `i0`, `i1` and `r21` kept the markers and `r20`
+  and `sa63` read 0 (6 of 6; after a fill `r21` read 0x1000 to 0x3000 and `sa63` kept its marker)
+  **[HW]** (E810). The registers sampled up to `r123` are separate storage in a fill started with up
+  to 128 temporaries (`--temps` 52, 64, 80, 96, 112, 124 and 128: 14 of 14 cases, every second or
+  fourth register from `r2` and the top one; E485) **[HW]**. **A register at or past the task's
+  allocation `T` reads as register `n mod T` in most instances, and a write to it was not seen to
+  reach it [HW]**: in client pixel tasks `r(n)` read the marker written to `r(n mod T)` in 88 to
+  99.6 percent of the 2048 instances in 15 of 15 cases (by `T`: 95.3 to 99.6 percent at 8, 95.3 to
+  98.4 at 16, 88.3 to 96.1 at 32, 92.1 to 92.2 at 64), the rest of the instances reading other
+  values, so the rule is "most instances" and no program may rely on it; in 4 of 4 cases that also
+  wrote a marker to `r(n)` (`T` = 8 and 32 only) the instances read the value of `r(n mod T)`, not
+  the one written; nothing faulted or hung (E486); and with a marker of its own in every job a write
+  to `r123` under a request of 4 to 100 was not seen by the read of `r123` in the same job (0 of 12
+  jobs, within the pixels the reports list, E535). The
   model gave such a register storage of its own or a fault. A `phas` request is the allocation of
   its phase (*Tasks and phases*).
 - **Primary attributes [HW].** The PDS fills them per task: `doutd` DMAs memory into them
@@ -271,7 +273,9 @@ marked.
   `g25` its place in the 2x2 quad, `g17` the tile quarter, `g18` a per-tile number, `g39` the
   quad's place in a 4x4 block, and `g21`/`g22` scheduler-assigned task and slot ids; `g21`-`g25`
   follow Rogue's special registers 47-51 in order (`SR.TASK_ID`, `SLOT_NUM`, `TILE_X_PIX`,
-  `TILE_Y_PIX`, `INST_NUM`). A `mov` to `g` is ignored (E086). The firmware reads two globals
+  `TILE_Y_PIX`, `INST_NUM`). In a triangle's pixel program the same held out: `g25` = (x & 1) |
+  (y & 1) << 1, `g23` = x mod 32 and `g24` = y mod 16 (E808: 29 of 29 rows at three triangles; E772
+  post hoc). A `mov` to `g` is ignored (E086). The firmware reads two globals
   once each (as a source of an `xor` and of a `shl`) and otherwise names `c0` only as the dummy
   destination of a test that does not write its result (`!c0`, see the test group) **[RE]**.
 - **Internal registers [RE].** `i0`-`i3` print where a temporary number reaches past the
@@ -331,9 +335,11 @@ The integer multiply-add, colour, dot-product and video groups have only a two-b
   others. The probe table's model, "cleared at the start of a job", fails. A task sets `p0`-`p3` by
   a test before it reads them; across firmware tasks, p1 at the next entry was the writer's 0 and p0
   was not after a writer that called the closed task **[HW]** (E536, 3 of 3 rounds; p2 and p3
-  equalled the flags but also move between readings with no writer, so they show nothing), and the
-  rest is **[open]** (Q124, Q152). A second table agrees: `p0` and `p1` after a setter read the kept
-  value in 96.3 to 100 percent of the pixels in 10 of 10 reader jobs (E484).
+  equalled the flags but also move between readings with no writer, so they show nothing). Held
+  out, p1, p2 and p3 at the next entry are what the task left and p0 reads 1 (E809: 8 of 8 jobs
+  where a flag was 0); after a fill, a reload or a reset p0 p1 read 1 1, p2 0 and p3 as left
+  (E810). The rest is **[open]** (Q158). A second table agrees: `p0` and `p1` after a setter read
+  the kept value in 96.3 to 100 percent of the pixels in 10 of 10 reader jobs (E484).
 
 **In the firmware [RE].** The microkernel's predicates guard branches above all: 591 of its
 954 `ba` are predicated (`p0` 318, `!p0` 94, `p2` 76, `p1` 72, `!p1` 26, `p3` 5). A few dozen
@@ -349,7 +355,13 @@ flag into `p0` without writing a register and branches on it.
 - **`ba #n`** jumps to instruction `n` of the code base (absolute) **[RE/HW]**. **`br`** takes
   a signed 18-bit offset **counted from the `br` itself** (`br #1` is the next instruction)
   **[HW]** (*`br` offsets and the `Pn` predicate*); the assembler accepts only a number for
-  `br`, not a label (`tools/usse-asm/README.md`).
+  `br`, not a label (`tools/usse-asm/README.md`). **A backward `br` loops [HW]** in a vertex task
+  (E784, E807: up to 1760 iterations, proved by the stored depth word), in a fill (E804: 2048 of
+  2048 pixels, with a mark written only where the counter reached zero) and in a triangle's pixel
+  program placed in the `--tri` slot at code index 0x20 (E806: every pixel of the target at seven
+  sizes). **A predicated `ba` whose predicate is false falls through** to the next instruction
+  (E596: `p0 ba` with p0 0 and `!p0 ba` with p0 1, 10 of 10 fills); the taken predicated `ba` was
+  not run there.
 - **Calls.** `ba.savelink` and `br.savelink` write the index of the instruction after the call to
   `pclink` **[HW]** (E475: calls with the next instruction at index 20, 40, 64, 127 and 128, and a
   taken predicated call: 9 of 9; both forms store the same index, counted from the program start of
@@ -407,8 +419,10 @@ flag into `p0` without writing a register and branches on it.
   to 16 quads, as much, so the positions are neither fixed nor independent across jobs or runs
   (Q125). A task writes `pclink` before it reads it; across firmware tasks, after a writer that
   called the closed task p1 at the next entry was the writer's, `pclink` was 6 (the value of the
-  writer's own tail triple **[infer]**) and p0 was not **[HW]** (E536); the rest is **[open]**
-  (Q124, Q152).
+  writer's own tail triple **[infer]**) and p0 was not **[HW]** (E536); at the next entry `pclink`
+  read 0x98, p0 1 and p1 to p3 what the writer left, 12 of 12 (E809); after a fill, a reload or a
+  reset p0 p1 read 1 1, `pclink` 0x98, p2 0 and p3 as left (E810). The start state after other
+  perturbations and a cold boot is **[open]** (Q158).
 - **Branch flags [open].** `.nosched`, `.synce`/`.syncent` and `.mon` decode on `ba`, `br`
   and `lapc`; their effect is not established, and the firmware uses none of them.
 - **`bexception` [HW].** Hangs a fill's pixel task, with or without `.nosched`: it neither
@@ -540,7 +554,11 @@ The waits and modes on the hardware (E101) **[HW]**:
   until the other quads of its 4x4 block, at least, have finished phase 0.
 - **Program shape [HW]** (E118): a program must start with a `phas`, and its last phase must be
   closed by a `phas` that declares the end; otherwise the job hangs. A fill's shader starts at
-  its code base, so its `#<next>` is the local index.
+  its code base, so its `#<next>` is the local index. A firmware task follows the second half of
+  the rule and not the first: a pass of ours that ends `idf; wdf; phas #0, #0, pixel, end,
+  parallel; nop.end` keeps the tick with no `phas` at its start, and one that ends without the
+  `phas` stops it (E817, E830; below) **[HW]**; that this is E118's rule seen in an EDM task is
+  **[infer]**.
 - Each wait belongs to one kind of task. `vcull` hangs a pixel shader. `pt` hangs a vertex
   shader, and in a pixel shader with no punch-through feedback the next phase never writes
   its pixels. The simulator refuses `pt` and `vcull` in a pixel task, and runs a vertex task's
@@ -620,7 +638,8 @@ The waits and modes on the hardware (E101) **[HW]**:
   `nop.end` instead of jumping to the closed one, every later event stopped until a reset (E533, one
   run; a task that wrote nothing and ended a tick pass that way stopped it in 2 of 2 runs, so
   skipping the closed task is enough, E793; no single write of sa63, sa64 or sa65 and no tail call
-  with p0 = p1 = 1 stopped it, E791; what the EDM needs from the closed task is open, Q152).
+  with p0 = p1 = 1 stopped it, E791; what the EDM needs is the phase end, E817 and E830, in the
+  contract below).
   **State between firmware tasks [HW]** (E536; a writer that calls the closed task after its
   writes, with the closed task's ticks between): `sa100`, `sa127`, `sa20` and `sa24` (12 of 12
   values in 3 of 3 rounds), `r20` and `r21` (6 of 6) and `i0` and `i1` (6 of 6) written by one task
@@ -628,7 +647,8 @@ The waits and modes on the hardware (E101) **[HW]**:
   and `r21`; `sa64` did not take the write (it read 2); at the next event p1 was the writer's 0 (3
   of 3, 1 in the other readings) and `pclink` was 6, the value of the writer's own tail triple
   [infer], not the 0x98 of the other readings, p0 was not the writer's, and p2 and p3 move between
-  readings with no writer (Q152). The same writer kept the tick, a task that also wrote `sa63` and
+  readings with no writer (held out later: they are what the task left, E809). The same writer
+  kept the tick, a task that also wrote `sa63` and
   `sa65` and called the closed task was not followed by its armed reader within 100 ms (E537, one
   run: Q152). No second pass of the wrapper was found busy while a slow task ran, up to 6.9 ms (10
   of 10 runs, E539; ticks only, slot 0, no job). The simulator runs these tasks only through
@@ -638,6 +658,40 @@ The waits and modes on the hardware (E101) **[HW]**:
   reads the first two: unit tests alone cover them); a vector may give the task's entry state (`sa`,
   `r`, `i`, `pa`, p and `pclink`) and its temporaries, and the readback the state it must have left;
   everything else stops the run, including a read of `sa64` after the task wrote it.
+- **The contract of a firmware task of ours [HW]** (records E809 to E823, E830; what a task of
+  ours starts with and must leave, each line with its record):
+  - *Start.* At the next entry after a task of ours `pclink` reads 0x98, p0 1 and p1, p2 and p3
+    what the task left (E809: 12 of 12 writer jobs, H-SET refuted 8 of 8); after a client fill, a
+    firmware reload or a reset p0 p1 read 1 1, `pclink` 0x98, p2 0 and p3 as left (E810, 9 of 9).
+    `i0`, `i1` and `r21` survive a reload and a reset, `r20` and `sa63` read 0 (E810, 6 of 6);
+    the start state of a fresh arm was `pclink` 0x98, p0 to p3 1 1 0 0, `r20` 0, `sa63` 0, `sa64`
+    2 and `sa65` 0x02000000 (E810, one reading). After other perturbations and a cold boot: Q158.
+  - *The event words.* `pa0` to `pa4` read `sa64` to `sa68` (E748, 3 of 3). A `mov` to `pa3`
+    writes `sa67`, read in the same pass and the next; to `pa2` writes `sa66` for the pass only
+    (the next event rewrites it [infer]); to `pa4` is lost, read through neither bank (E820, 3 of
+    3 each). A write to `sa67` or `sa68` reads back through `pa3` or `pa4` (E748).
+  - *The end of a pass.* A plain tick pass of ours keeps the tick iff it executes `phas #0, #0,
+    pixel, end, parallel` before its `nop.end`: with it 13 of 13 jobs kept (E817 FB and FPH, E830
+    fb and fk), without it 7 of 7 stopped (E793 x2, E818 T2, E817 FCF, E830 x3, held out and
+    replicated in three blocks); `cfi.global` is neither needed nor enough. The closed exit
+    reached by the `cont4` tail call keeps it (E817, E830: 8 of 8), and so does any closed path
+    that reaches it, the general task's or slot 2's (E813 X1, X20: H-EXIT). A kick pass ended
+    with `idf, wdf, nop.end` stops it too (E813 B3); a kick pass and the slot 3 pass ended with
+    the `phas` are not run (Q152). A stop reads the busy signature (`CR_CLKGATESTATUS`
+    0x000ccfa0, `USE0_SERV_EVENT` bit 16 clear and its count frozen, the event timer counting,
+    `CR_EVENT_STATUS` 0x20000000), answers no host command, and one debugfs reset recovers it;
+    the signature cannot tell a stop from a long task (E811). The own end therefore is `idf drc0,
+    bif; wdf drc0; phas #0, #0, pixel, end, parallel; nop.end`.
+  - *What does not stop the tick.* A pass with the tick bit of `sa64` clear (50 passes) leaves
+    `pclink` 6 and does not advance HostCtl dword 12; single `sa65` words without bit 8 (bits 2,
+    3, 6, 14, 15, 16, 19, 23, the count byte) keep it (E812). `sa65` bit 8 alone makes the closed
+    reader take an empty command and stop with HostCtl dword 14 0xad002600 (E814 D2), and E537's
+    word without bit 8 stops it with no mark (E814 D1).
+  - *Stores.* A `str` of the tick handler's own word 0x01061a80 to `CR_EVENT_TIMER` followed by
+    the closed task keeps the tick and moves the next entry to 25114 units (E818 T1, 2 of 2); it
+    does not replace the phase end (E818 T2, 1 stop). A `str` to `CR_EVENT_HOST_CLEAR2` clears the
+    bits written, as the host's write does (E822, 3 of 3). Which registers a task may store to is
+    HACKING.md's allow list.
 - **The register form** `phas srcA, srcB` hung or faulted with every source layout tried
   (absolute index, offset or `doutu` U0 layout, against the immediate's fields or high dword);
   none started the next phase (E118).
@@ -2211,6 +2265,11 @@ and `idiv` the full one).
   and **a pa0 destination is not written** (E496; the probe table's model had every destination take
   the result). So `add` is `ima32.u d, a, #1, c` and `mul` is
   `ima32.u d, a, b, c0`.
+- **Operand order [HW]** (E597): `ima32.u d, i0, a, b, c` and `ima32.s` read their sources
+  before the write in every one of the 15 partitions of d, a, b and c into registers (any of them
+  alike, all four the same): d held the low word and i0 the high word of the 64-bit a × b + c (c
+  sign-extended for `.s`) in 300 of 300 fills. Not run in a firmware task (the verifier refuses
+  the form).
 - **A 32-bit subtract [HW]** is `ima32.u d, b, c56, a`, which is `a - b` mod 2^32, and so is
   `ima32.u d, a, #1, b.neg` (E470: 80 of 80 through c56, 6 of 6 through c57, c58, c59 `.u` and c59
   `.s`). `.neg` on source 2 (`enc[40]`) or source 3 (`enc[39]`) negates that source in two's
@@ -5671,6 +5730,12 @@ offsets of loads and stores*); the firmware has four such stores.
   below `limit`, and zeros otherwise: a bounds-checked load **[HW]** (E098). Indices or limits
   with bit 31 set are **[open]**; the firmware does not use them.
 
+**Byte and halfword loads [HW]** (E598, fills): `ldab` and `ldaw` with an immediate offset n read
+the byte at base + n and the halfword at base + 2n, zero-extended (the offset counts elements of
+the access size; 16 of 16 jobs), and `ldaw` and `ldad` at an address that is not a multiple of
+their size read the bytes at that address, across the dword boundary too (6 of 6). Not run in a
+firmware task (the verifier refuses the forms).
+
 **In the firmware [RE].** 598 loads and 349 stores, nearly all `ldad`/`stad` with `.bpcache`
 on its control blocks through `sa0`-`sa2` or computed bases; 120 fetches; `ldaw` twice. Its
 807 `wdf` (for 598 loads and 196 `ldr`) show the pattern: issue the loads, then wait on the
@@ -5962,12 +6027,13 @@ source-1 operand; the LOD value as source 2 when a LOD mode is set; a data fence
   and `.pcf` follow the state words (*Sampler state*). **[HW]** A LOD mode's source 2 selects
   the mip level, with `grad` from the logarithm of a footprint of the four derivatives (E041): the
   largest component fits where only `dudx` and `dvdx` are set and the Euclidean length where all
-  four are, on the cases run, neither on the rest (E563, Q175), and the fraction of the LOD in
-  1/64 is truncated, except at one column of one ladder; a non-square twiddled chain halves both
-  sides down to 1x1 (E562); `.sinf` returns the level and the blend fraction instead of a texel,
-  and `.rsd` the 2x2 texels per level that a filtered sample blends (E042). Our copy path does
-  not use it: the PDS issues the texture fetch (`doutt`) and the result arrives in `pa0` before
-  the task starts (`doc/specs/transfer.md`
+  four are, on the cases run, neither on the rest (E563); held out with independent operands
+  the footprint is the larger of the two Euclidean lengths and the fraction of the LOD in 1/64 is
+  truncated (E721; the residual pixels and the quad's own derivatives are Q280); a non-square
+  twiddled chain halves both sides down to 1x1 (E562); `.sinf` returns the level and the blend
+  fraction instead of a texel, and `.rsd` the 2x2 texels per level that a filtered sample blends
+  (E042). Our copy path does not use it: the PDS issues the texture fetch (`doutt`) and the result
+  arrives in `pa0` before the task starts (`doc/specs/transfer.md`
   §4.4.3) **[HW]**.
 - **`smp3d` without a LOD mode [HW]** (E567, in a fill of our own): on TEXTYPE 0, 6 and 7, point
   sampled, a 16x16 twiddled texture and a 64x32 stride one, the third coordinate is not read and
@@ -8956,6 +9022,14 @@ by the program itself:
   as if the next iteration read the state one register on **[infer]** (probe
   `texture-sampler-smp-repeat-mask`).
 
+**The gradient footprint (E721, 8 of 8 held-out jobs with independent operands).** The LOD
+of `smp2dgrad` is the logarithm of the larger of the two Euclidean lengths of the vectors (op0,
+op2) and (op1, op3), scaled by the level size (1992 to 2048 of 2048 pixels, 4 jobs exact, the
+rest off by whole columns or rows; at most 256 for the five other footprints declared), and its
+fraction is truncated to 1/64 (2016 to 2048 of 2048 on 8 of 8 ladders, against 1160 to 1840 for
+rounding). The residual pixels are Q280. A ladder of the fraction over 64 columns with u and v
+held constant wrote one dword a job, so no step was placed there (E744).
+
 **Undecided:** the LOD of a quad's own derivatives, `.sinf`/`.rsd`, `.c10` coordinates, `smp3d`
 beyond the point-sampled textures of E567, and state read from `sa` or `c` (only temporaries were
 used); the state fields, the mip chains and the LOD values are measured in *Sampler state* and
@@ -9027,8 +9101,29 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   row and column offsets at every value tried (E566). Bits 8, 9, 20, 21 and 22 change nothing on a
   strided texture, nor do 11 and 12, but on a twiddled chain texture bits 11 and 12 change every
   pixel (E564). Bits 10, 14, 18, 27 and 28 offset the texel by an amount that changes with the
-  pixel position (Q176), and bit 13 faults the job. Setting T0 bits 27, 30 or 31 reads other
-  values: they act, how is not known.
+  pixel position, and bit 13 faults the job. Setting T0 bits 30 or 31 reads other values: they
+  act, how is not known.
+- **The address bits (E722, 13 of 16 held-out fills; the other 3 faulted past the probe's
+  scratch, E743, E787).** **T3 bits 28:27 pick a level L and bits 19:18 a scale e: the texel is
+  read at base + ((off + idx) << e) dwords**, off the sum over k < L of max(1, w >> k) max(1,
+  h >> k) (the level sizes, not the stride times the height) and idx the tile-law index of (X >>
+  L, Y >> L), or X >> L + stride (Y >> L) on a strided texture; **bit 10 reads the base dword**;
+  the offset bits 7:0 act before. Run on twiddled textures up to 64 x 64 and strided 128 x 32, a
+  32-bit format only; the scale shifts the dword address, not the index alone (3 jobs). Bits 11,
+  12 and 14 stay undecided (Q078).
+- **sRGB (T0 bit 27; E723).** **A point-sampled texel byte is decoded sRGB to half float** (4 of
+  4 held-out fills exact over 2048 pixels: strided 8 x 4, twiddled 8 x 8 twice, twiddled 32 x
+  32). Under bilinear filtering neither declared order fits (filter then decode 0 of 2048 pixels,
+  decode then filter 1147 and 876 of 2048, 2 held-out fills; Q282).
+- **ETC1 (format 27; E724).** **Format 27 is ETC1 with the 4 x 4 blocks in Morton order, y in the
+  low bit** (6 of 6 held-out fills of random valid blocks exact over 2048 pixels, 8 x 8 to 32 x
+  16; raster block order and Morton with x low 0 of 6). Formats 23 to 26 are not decoded.
+- **Texture types (E725, E726).** **Types 3 and 1 are read with a stride of the texture's width
+  and the window wrapping at its size** (8 of 8 held-out fills exact, 8 x 8 to 32 x 32; E567's
+  fixed 16 refuted, 0 of 8). Type 4 is read with a fixed stride of 32 (4 of 4 sizes, read after
+  the run). **Type 2 is a cube map: six 16 x 16 faces consecutive at 256 dwords a face, read for
+  +x, -x, +y, -y, +z, -z as faces 0 to 5** (each axis direction reads one face over 2048 of 2048
+  pixels; the mapping and the dominant-axis rule are post hoc [infer], E726).
 
 *Simulator check, 2026-10-23.* The simulator's texture unit
 (`crates/sgx-sim`, `tex.rs`) follows this page and *Texture sampling*; it reproduces every
@@ -9038,10 +9133,10 @@ recorded formats and modes, tiled textures, and filtered `.pcf` at other weights
 chains in the five sizes run, `smp3d` as `smp2d` where it ran, and the YUV formats as black only
 for a job that records the colour-space set as unloaded.
 
-**Undecided:** tiled textures (T1 type 4), the LOD of a quad's own derivatives and of gradients
-off the diagonal (E563, Q175), the border modes on the u axis, the compressed formats and the YUV
-conversion in a fill, TEXTYPE 1, 2, 4 and 5 and `smp3d` beyond the textures it ran on, `.sinf`/
-`.rsd`, and state from `sa` or `c`.
+**Undecided:** type 4 beyond the sizes read and type 5, the LOD fraction's residual (Q280), the
+border modes on the u axis, formats 23 to 26 and the YUV conversion in a fill, sRGB under
+bilinear filtering (Q282), the cube map's edges and (s, t) within a face (Q284), `smp3d` beyond
+the textures it ran on, `.sinf`/`.rsd`, and state from `sa` or `c`.
 
 ### 7.38 `rlp`
 
@@ -9218,8 +9313,8 @@ Beyond the undecided parts of the hardware probe results, by how much they would
 open driver:
 
 1. **The behaviour of the groups no program of ours has run**: the visibility group. Of the
-   probed groups, the LOD of a quad's own derivatives and the footprint rule of `smp`
-   (E563, Q175), the border address modes on the u axis (E565), the compressed and YUV
+   probed groups, the LOD of a quad's own derivatives (Q280; the gradient footprint is E721) of
+   `smp`, the border address modes on the u axis (E565), the compressed and YUV
    formats (E568), `fdpc`'s clip-plane result (likely a vertex-task output), and
    of the video filters `firh`'s sets 6 and 7 under fixed banks 1 and 2 and the exact taps of
    those banks within their families remain; how the coefficient sets are loaded, what the
@@ -9238,13 +9333,15 @@ open driver:
    hangs a fill's task (Q052).
 4. **The global bank**: what `g18` and `g21` hold in a vertex task (they follow the task, 0xe to
    0x16 and 0x1a to 0x1f by the vertices a task holds, with no rule found, E571) and what the
-   end-of-tile task of each tile reads in `g17`, `g18`, `g21`-`g25` and `g39` (only the last tile's
-   store survives, and a store faults the job, E572, Q183). The others are read. In a vertex task
+   end-of-tile task of each tile reads in `g18` and `g21` (with E130's register-offset store to a
+   slot of its own, 5 of 5 jobs completed and 32 tiles held `g19` 0x1a, `g25` 3, `g23` 1 or 0x11,
+   `g24` 1 or 9, `g17` 0 to 3, `g18` and `g21` changing from tile to tile, E708; E572's store fault
+   was not reproduced by its own program, E707; Q183). The others are read. In a vertex task
    `g16`, `g19` (through `mov`), `g26`-`g31` and `g40` read 0, `g20` 1, `g42` 1.0, `g41` 0xf and
    `g43` 0xdf000000 (0x3 and 0x20000000 in a last task of 2 vertices), and `g17`, `g22`-`g25`
    and `g39` follow the vertex's task and lane (E571); in the end-of-tile task of the last tile
-   they read as in a pixel task (E572); in a triangle's pixel task as in a fill (E374), and `g19`
-   reads 0 through `mov`, 0x11 through the bitwise group and 0x1a as a store's source (E372)
+   they read as in a pixel task (E572); in a triangle's pixel task as in a fill (E374, E808), and
+   `g19` reads 0 through `mov`, 0x11 through the bitwise group and 0x1a as a store's source (E372)
    (Q053).
 5. **Emits**: `.tasks`/`.taske` and `#incp` beyond the vertex emits (incp 1 to 3 on either
    changes nothing a triangle shows; `.cut` on `emitmtevtx` hangs the job, E376), `.twopart`
@@ -9263,16 +9360,17 @@ open driver:
    registers is open (Q080).
 9. **Calls, the program counter, the integer forms and the tests**: indices of 256 to 8191 in a fill
    and a jump across a 65536-word step of the code base (Q123; the step of 0x80000 is shown by ten
-   placements: E492); `p0`-`p3` and `pclink` at the start of a firmware task, beyond one writer's p1
-   and `pclink` at the next entry (Q124, Q152); what leaves 0xeb3 and 0x98 in them across jobs
-   (Q125: four runs of the readers show 64 pixels of 0xeb3 in 29 of 40 jobs and quads that repeat in
-   part, E500); which extension the test of `iaddu32` reads for a source 1 above 0x7fff, which no
-   test tells, and the value it writes with a repeat, an immediate or a constant in source 2 (Q126);
-   `ima32`'s dual-issue form, `cie`, `.neg` and immediates with the extra operand, its selector 3
-   and what bit 46 does (Q135), and `imae`'s repeats, `u16`/`z16` sources and `.rsN` shifts with the
-   carries, with the operand values and immediates not run (Q127); the rule of the test field on the
-   shifts, the lane operations and the other classes, with the `o` join (Q137) and the chan
-   field (Q137); how long an `sa0` written by `ima32` lasts and why a write to `pa0` is lost (Q136).
+   placements: E492); `p0`-`p3` and `pclink` at the start of a firmware task after a perturbation
+   or a cold boot (Q158; at the next entry they are what the task left, E809, E810); what leaves
+   0xeb3 and 0x98 in them across jobs (Q125: four runs of the readers show 64 pixels of 0xeb3 in 29
+   of 40 jobs and quads that repeat in part, E500); which extension the test of `iaddu32` reads for
+   a source 1 above 0x7fff, which no test tells, and the value it writes with a repeat, an immediate
+   or a constant in source 2 (Q126); `ima32`'s dual-issue form, `cie`, `.neg` and immediates with
+   the extra operand, its selector 3 and what bit 46 does (Q135), and `imae`'s repeats, `u16`/`z16`
+   sources and `.rsN` shifts with the carries, with the operand values and immediates not run
+   (Q127); the rule of the test field on the shifts, the lane operations and the other classes, with
+   the `o` join (Q137) and the chan field (Q137); how long an `sa0` written by `ima32` lasts and why
+   a write to `pa0` is lost (Q136).
 10. **Fences, repeats, registers and persistence for a firmware compiler**: why a `wdf` waits for
    another counter's loads in some runs and not in others (Q130); whether a firmware (EDM) task runs
    two at once (no second pass was seen in 12 of 12 holds of up to 90 ticks, E749, E751, and an
@@ -9287,7 +9385,7 @@ open driver:
    `sa` (Q129); where a write past the allocation goes (Q132); what bounds a `phas` request
    and what a request above 256 allocates, which is [infer] at least 124 for 260 to 376, T = 101 to
    123 not run (Q133). What survives from one firmware task to the next beyond one writer's
-   `sa`, `r`, `i` and p1 (Q124, Q152, Q158), what stops the tick after a task (Q152) and
+   `sa`, `r`, `i` and p (E809, E810; Q158), what else stops the tick after a task (Q152) and
    the allocation of a firmware task above TRC 31 are not measured.
 
 The simulator (`crates/sgx-sim`) reproduces 30815 probe vectors (15526 of them with near values:

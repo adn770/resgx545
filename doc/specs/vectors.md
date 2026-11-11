@@ -550,7 +550,7 @@ Rules, and what each rests on:
   (Q071), bits 15 to 18, a visibility test and the polygon offset (Q241) and bit 28 (Q202) refuse.
   No replayed vector exercises these decodes (the depth-test and punch-through vectors stop at
   Q094): the unit tests check the model against itself.
-- The command's pixel-side words must be the library's (Q202, Q085, Q066, Q231, Q206).
+- The command's pixel-side words must be the library's (Q202, Q099, Q066, Q231, Q206).
 - A pixel program with an `o0` write, a store or an emit that lacks `.skipinv` also runs for the
   helper instances of a partly covered quad and lands in some runs only (E104, E111, E113): it
   refuses where the triangle covers a quad in part (Q052). A branch refuses (E112: Q050).
