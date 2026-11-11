@@ -6135,6 +6135,15 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   `vectors-closing-r3-geo-dword36`, `vectors-closing-r3-geo-counts`,
   `vectors-closing-r3-geo-c-counts`, `vectors-closing-r3-geo-c-zls`,
   `vectors-closing-r3k-pixel-pb-pages`.*
+- `E844` R4-render4x stage c (3 probe fills of 64 x 32, TEXTYPE 2 sampled with smp3d): E726's own
+  cu-xn program, run again as the control, read face 1 (-x) on 2048 of 2048 pixels with E726's
+  pixels byte for byte, and two new off-axis programs, frozen before the run with the dominant-axis
+  rule (face = 2 x axis + (coordinate < 0), axis u, v, w; +x, -x, +y, -y, +z, -z are faces 0 to 5 of
+  256 dwords each), read every pixel's predicted face, 2048 of 2048 each (r4g-cube-a: faces 0, 643,
+  0, 882, 235, 288 pixels; r4g-cube-b: 903, 0, 235, 261, 0, 649; all six faces between them, the
+  dominant axis changing inside each image and no pixel within 0.0078 of a tie): the face select of
+  E726, post hoc there, held out.
+  *texture; HW, infer; data: `render-closing-r4-render4x:out/20261111-211315/c/`.*
 
 ## By unit
 
@@ -6211,7 +6220,7 @@ E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828.
 Records: E033, E034, E035, E036, E037, E038, E039, E040, E041, E042, E114, E116, E242, E254, E271,
 E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441, E560, E561, E562,
 E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E726, E733, E743,
-E744, E760, E765, E787.
+E744, E760, E765, E787, E844.
 
 ### transfer
 

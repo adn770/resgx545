@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-173 open: 163 hw (high 19, medium 77, low 67, unrated 0), 9 fw, 1 kernel.
+172 open: 162 hw (high 19, medium 76, low 67, unrated 0), 9 fw, 1 kernel.
 
 ## Work queue: hardware
 
@@ -138,7 +138,6 @@
 - `Q010` (phase 6, hw, low): what clears the colour-space words between jobs, given that a copy that does not load set 0 converts with the last loaded words, and the first job of a session after hung jobs converts with zeros? (E037, E039, E046, E271, E399)
 - `Q078` (phase 11, hw, high): what do T3 bits 10, 14, 18-19 and 27-28 and T0 bit 27 select, given a copy that reads one texel, a sheared read, coordinates scaled by 2 and 4, smaller images after the source, and values of no texel; what position-dependent transform of the texel coordinates do bits 10, 14, 18, 27 and 28 apply in smp (offsets that change every 32 or 64 pixels, E566), why are the rows of bits 27 and 28 exact under 'after the source's height' at 64x16 and 64x32 but under no declared rule at a strided 32x32, and what do bits 11 and 12 select, given that they change nothing on a strided texture and every pixel of a twiddled chain texture? (E274, E397, E566, E564, E722)
 - `Q104` (phase 11, hw, low): does a mip chain of a 1D texture, of a texture with a side of 1 at level 0, or of a format other than 32 bits read as the non-square chains of E562 do (both sides halving to 1, T0's fields reading it as a square chain)? (E276, E441, E562)
-- `Q113` (phase 11, hw, medium): how does the sampler address the six faces of a cube map: which TEXTYPE and word layout name one, how are the faces laid out in memory, and how are they picked from the coordinates? (E342, E345, E364, E567, E725, E726)
 - `Q114` (phase 11, hw, low): how does the sampler read a 3D (volume) texture: which TEXTYPE or words name one, how are its slices laid out, and how do the third coordinate and the filter combine the slices? (E342, E567)
 - `Q115` (phase 11, hw, low): does the sampler filter anisotropically on this core, and which bits of the texture words or the smp operands select it and its ratio? (E041, E342, E564, E720, E723)
 - `Q177` (phase 11, hw, low): what do T0 address modes 4 to 7 read along the u axis of a 16x16 twiddled texture (indices 324 to 366 past the 256 texels, a period of 6 or 16 positions), given that on the v axis 6 and 7 clamp and 4 and 5 repeat, and what memory lies past the texture (E565, E033)
@@ -149,7 +148,7 @@
 - `Q280` (phase 11, hw, low): what makes up to 56 of 2048 pixels of a gradient job differ from the Euclidean footprint of the pairs (op0, op2) and (op1, op3) with a LOD fraction truncated to 1/64 (E721), a rounding of the length, of the logarithm or of the operands, or a footprint that is not exactly Euclidean (E721, E563, E744)
 - `Q282` (phase 11, hw, low): what arithmetic gives the bilinear sample of an sRGB texel (T0 bit 27) given that decode-then-filter in float fits 43% to 56% of the pixels and filtering the bytes then decoding fits none (E723, E720)
 - `Q283` (phase 11, hw, low): is the stride of type 4 textures 32 dwords at every width and are types 1 and 3 read with a stride of the width at widths above 32 and for widths that are not powers of two (E725, E567)
-- `Q284` (phase 11, hw, medium): what are the (s, t) orientation of each cube face, the edge filtering across faces and the face size limits of TEXTYPE 2 (E726, E567)
+- `Q284` (phase 11, hw, medium): what are the (s, t) orientation of each cube face, the edge filtering across faces and the face size limits of TEXTYPE 2 (E726, E567, E844)
 
 ### transfer
 
