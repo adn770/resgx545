@@ -351,6 +351,9 @@ pub struct Machine {
     /// register before is timing-dependent on the hardware (x-misc: a store
     /// right after idiv saw the old value), so it stops the program.
     pub pending: Vec<(u32, Reg, u32)>,
+    /// Registers a DRC operation writes with a value not known (drc, register, why): at the wdf
+    /// on their DRC they become `unknown` (an sRGB sample's second register, tex::unknown_after).
+    pub pending_unknown: Vec<(u32, Reg, &'static str)>,
     /// The MOE increments smlsi set, in its operand order; None until a
     /// program sets them. Before that, repeats and fetches step every operand by
     /// one (hardware: repeat probes, usse-numbered-modifiers-family-repeat, usse-numbered-modifiers-family-fetch).
@@ -761,6 +764,7 @@ impl Default for Machine {
             steps: 0,
             written: Written::default(),
             pending: Vec::new(),
+            pending_unknown: Vec::new(),
             moe_inc: None,
             moe_swizzle: [None; 4],
             moe_base: [0; 4],
@@ -863,6 +867,7 @@ impl Machine {
                     self.temps = alloc;
                     self.written.r = 0;
                     self.pending.retain(|p| !matches!(p.1, Reg::R(_)));
+                    self.pending_unknown.retain(|p| !matches!(p.1, Reg::R(_)));
                     self.pc = next;
                 }
             },
@@ -2203,6 +2208,14 @@ impl Machine {
                         Reg::Pa(n) => self.set_pa(n, v),
                     }
                 }
+                let (land, keep): (Vec<_>, Vec<_>) = self.pending_unknown.drain(..).partition(|p| p.0 == drc);
+                self.pending_unknown = keep;
+                for (_, reg, w) in land {
+                    match reg {
+                        Reg::R(n) => self.unknown.insert(("r", n), w),
+                        Reg::Pa(n) => self.unknown.insert(("pa", n), w),
+                    };
+                }
                 None
             }
             "mov_imm" => {
@@ -2983,12 +2996,21 @@ impl Machine {
         };
         let texels = bus.sample(&tex::Sample { state, u, v, one_d: d == "1d", srd, pcf, lod })?;
         let (dst, drc) = (insn.get("dst").unwrap(), insn.get("drc").unwrap());
+        let reg = |r: usize| if dst >> 7 != 0 { Reg::Pa(r) } else { Reg::R(r) };
+        let n = texels.len();
         for (k, t) in texels.into_iter().enumerate() {
             let r = (dst & 0x7f) as usize + k;
             if r >= 124 {
                 return Err(why("a sample past the temporaries"));
             }
-            self.pending.push((drc, if dst >> 7 != 0 { Reg::Pa(r) } else { Reg::R(r) }, t));
+            self.pending.push((drc, reg(r), t));
+        }
+        // the registers the hardware writes after the modelled ones, with no model (E723)
+        if let Some(w) = tex::unknown_after(state) {
+            let r = (dst & 0x7f) as usize + n;
+            if r < 124 {
+                self.pending_unknown.push((drc, reg(r), w));
+            }
         }
         Ok(())
     }
@@ -4071,7 +4093,7 @@ impl Machine {
     }
 
     fn not_pending(&self, reg: Reg) -> Result<(), Error> {
-        if self.pending.iter().any(|p| p.1 == reg) {
+        if self.pending.iter().any(|p| p.1 == reg) || self.pending_unknown.iter().any(|p| p.1 == reg) {
             return Err(why(format!("reads {reg:?} before its DRC result lands (wdf)")));
         }
         Ok(())
@@ -5126,6 +5148,55 @@ mod tests {
         }
         let r = Machine::default().run(&src("smp2d r10, r24, r20, drc0"), &mut NoTex, 100);
         assert!(matches!(&r, Err(Error::Unsupported { why, .. }) if why.contains("texture unit")), "{r:?}");
+    }
+
+    #[test]
+    fn an_srgb_sample_leaves_its_second_register_unknown() {
+        // E723: the first register is the decode of bytes 0 and 1; the second (its r11 reads) has
+        // no model, so a read of it after the fence stops; a twiddled 8 x 8 format 12 texture
+        let st = [0x0ffe_0000u32, 0x0c00_7007, 0x1000, 0x0080_0800];
+        let src = |last: &str| {
+            let mut v: Vec<String> =
+                st.iter().enumerate().map(|(k, w)| format!("mov r{}, #0x{w:08x}", 20 + k)).collect();
+            v.extend(
+                [
+                    "mov r24, #0x3f19999a",
+                    "mov r25, #0x3e99999a",
+                    "mov r11, #1",
+                    "smp2d r10, r24, r20, drc0",
+                    "wdf drc0",
+                    last,
+                ]
+                .map(String::from),
+            );
+            v
+        };
+        let mut mem = Memory { base: 0x1000, words: (0..64).map(|i| 0x100 + i).collect() };
+        let want = tex::sample(
+            &tex::Sample {
+                state: st,
+                u: f32::from_bits(0x3f19999a),
+                v: f32::from_bits(0x3e99999a),
+                one_d: false,
+                srd: tex::Srd::None,
+                pcf: None,
+                lod: tex::Lod::Flat,
+            },
+            &mut |a| Ok(0x100 + (a - 0x1000) / 4),
+        )
+        .unwrap();
+        assert_eq!(want.len(), 1);
+        let first = src("mov.end o0, r10");
+        let mut m = Machine::default();
+        let r = m.run(&prog(&first.iter().map(|s| s.as_str()).collect::<Vec<_>>()), &mut mem, 100);
+        assert_eq!((r, m.o[0]), (Ok(()), want[0]));
+        let second = src("mov.end o0, r11");
+        let r = Machine::default().run(
+            &prog(&second.iter().map(|s| s.as_str()).collect::<Vec<_>>()),
+            &mut mem,
+            100,
+        );
+        assert!(matches!(&r, Err(Error::Unsupported { why, .. }) if why.contains("E723")), "{r:?}");
     }
 
     /// Run `smp` over a counting texture at 0x1000 with the state words `t` and a third

@@ -2996,7 +2996,7 @@ probe vectors that test them: 361 match the hardware, 32 stop unsupported, 0 mis
 `texture-sampler-smp-formats-other` 12/28/0, `texture-sampler-smp-lod` 11/0/0,
 `texture-sampler-smp-pcf` 28/0/0, `texture-sampler-smp-point` 13/0/0, `texture-sampler-smp-srd`
 15/0/0, `texture-sampler-smp-twiddled` 16/0/0); unsupported mostly for four texels fix no decoder
-(20); YUV through a colour-space set the vector does not record (8); address mode N (4).
+(16); YUV through a colour-space set the vector does not record (8); address mode N (4).
 
 Confirmed on the hardware (a passing vector): #120, #122; not yet confirmed (as decoded; no passing
 vector yet): #121, #123.
@@ -5079,7 +5079,7 @@ open driver:
    the allocation of a firmware task above TRC 31 are not measured.
 
 The simulator (`crates/sgx-sim`) reproduces 30815 probe vectors (15526 of them with near values:
-float functions within their measured bound) and 442 pixel vectors; it stops on 2215 rather than
+float functions within their measured bound) and 448 pixel vectors; it stops on 2209 rather than
 guess, most often because (vectors, from `doc/isa/sim-coverage.json`):
 
 - firh's fixed bank 1 or 2, whose taps are fitted to these vectors (in-sample, not a hardware check)
@@ -5089,9 +5089,9 @@ guess, most often because (vectors, from `doc/isa/sim-coverage.json`):
 - smoa takes dst to r-N (not modelled) (64)
 - no SGX registers on this bus (59)
 - gN (per-instance values, not modelled) (48)
-- four texels fix no decoder (40)
 - reads saN before the program writes it (36)
 - reads R(N) before its DRC result lands (wdf) (35)
 - reads paN before the program writes it (35)
 - TN bits NxN (34)
+- four texels fix no decoder (30)
 - the firh latch, which a later firh may reach first (read in rN) (24)
