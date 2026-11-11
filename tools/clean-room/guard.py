@@ -6,27 +6,37 @@ sources, and none of the private patterns or renamed-away spellings, may be in t
 repository's files, commit messages or history.
 
 The forbidden set is derived on each run: the identifiers of the confidential tree, minus those
-of the public reference trees, the open GPU driver code and the closed libraries' strings, in any
-casing (an identifier is forbidden only if no casing of it is public), and minus the names of one
-letter and digits only. No token list is stored anywhere. The data that decides lives in a private directory, never in a
-public repository: `RESGX545_GUARD_DIR` (default `../resgx545-data-private/clean-room/` beside
-this checkout) holds
+of the public sources, in any casing (an identifier is forbidden only if no casing of it is
+public), and minus the names of one letter and digits only. The public sources are the public
+reference trees, the open GPU driver code and the closed libraries' strings (directories, read
+on every run), plain word lists, and public git trees at a pinned revision (the blobs of that
+commit, never a working tree). Neither the confidential nor the forbidden set is stored
+anywhere. Only public sources' lowercased token sets are cached, in `cache/` under the guard
+directory: a git tree keyed by sha256 of its path and commit, a word list by its own sha256, so
+a new revision or a changed file makes a new entry; the directories are not cached (a key of
+mtimes and file counts could miss a change). The data that decides lives in a private
+directory, never in a public repository: `RESGX545_GUARD_DIR` (default
+`../resgx545-data-private/clean-room/` beside this checkout) holds
 
     allowed.txt          reviewed exceptions, whitespace separated words, `#` comments
     patterns.txt         `scope<TAB>regex` per line; scope d1 (everywhere) or fork
     oldnames.toml        [rename] old spelling = settled spelling
     glossary-reviewed.txt  sha256 of each confidential-only token that was reviewed and may
                          stay; a glossary term allows nothing by existing
-    refs.local.toml      the machine-local paths of the trees (untracked; see
-                         refs.local.toml.example)
+    refs.local.toml      the machine-local paths of the trees, word lists and pinned git trees
+                         (untracked; see refs.local.toml.example)
+    cache/               public token sets only (untracked, safe to delete)
 
     python3 tools/clean-room/guard.py [--tree [PATH] | --staged | --history REPO
-              [--ref REF] [--base REV] [--fork] | --message FILE | --accept-glossary]
-              [--show] [--no-glossary]
+              [--ref REF] [--base REV] [--fork] | --message FILE | --accept-glossary |
+              --stats] [--show] [--no-glossary]
 
 Output names a file, a line and a category; the matched text is shown only as a short hash,
-unless --show. Exit 0 clean, 1 findings, 2 data absent with RESGX545_REQUIRE_GUARD=1. With the
-data absent and no REQUIRE the run says loudly that nothing was checked and exits 0."""
+unless --show. --stats prints counts only: the confidential tokens, the forbidden ones after
+the directories, the drop from each further source in order, the final forbidden count and the
+time spent loading the rules. Exit 0 clean, 1 findings, 2 data absent with
+RESGX545_REQUIRE_GUARD=1. With the data absent and no REQUIRE the run says loudly that nothing
+was checked and exits 0."""
 from __future__ import annotations
 
 import argparse
@@ -38,7 +48,9 @@ import re
 import subprocess
 import sys
 import threading
+import time
 import tomllib
+import zlib
 
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
@@ -75,6 +87,7 @@ class Rules:
     oldkey: dict[str, str]
     unreviewed: set[str]            # sha256 of glossary tokens that are forbidden and not reviewed
     reviewed: set[str] = dataclasses.field(default_factory=set)   # sha256 of reviewed tokens
+    stats: "Stats | None" = None    # counts only, for --stats
 
 
 @dataclasses.dataclass
@@ -139,6 +152,127 @@ def _oldnames(names) -> tuple[re.Pattern | None, dict[str, str]]:
     return pat, {n.lstrip("."): n for n in names}
 
 
+@dataclasses.dataclass
+class Source:
+    """One public source, as --stats reports it: counts and flags only, never its tokens."""
+    kind: str                       # dir, wordlist, git
+    label: str
+    tokens: int = 0                 # distinct lowercased tokens; 0 when absent
+    present: bool = True
+    cached: bool = False
+    drop: int = 0                   # forbidden tokens it removed, in the order of the sources
+
+
+@dataclasses.dataclass
+class Stats:
+    confidential: int = 0           # distinct confidential tokens
+    baseline: int = 0               # forbidden after the directory trees only
+    sources: list[Source] = dataclasses.field(default_factory=list)
+    forbidden: int = 0
+
+
+# --- the public-token cache: public sources only, never the confidential or forbidden set ---
+
+CACHE_MAGIC = b"resgx545-guard-public-tokens/1"
+
+
+def text_tokens(data: bytes) -> set[bytes]:
+    return {t.lower() for t in TOKEN.findall(data)}
+
+
+def _cache_read(cdir: pathlib.Path, key: str) -> set[bytes] | None:
+    try:
+        raw = (cdir / f"{key}.tok").read_bytes()
+        head, _, body = raw.partition(b"\n")
+        magic, hkey, count = head.split(b" ")
+        out = set(zlib.decompress(body).split(b"\n")) - {b""}
+    except (OSError, ValueError, zlib.error):
+        return None
+    if magic != CACHE_MAGIC or hkey.decode() != key or int(count) != len(out):
+        return None
+    return out
+
+
+def _cache_write(cdir: pathlib.Path, key: str, toks: set[bytes]) -> None:
+    try:
+        cdir.mkdir(exist_ok=True)
+        tmp = cdir / f".{key}.{os.getpid()}.tmp"
+        body = zlib.compress(b"\n".join(sorted(toks)), 6)
+        tmp.write_bytes(b"%s %s %d\n" % (CACHE_MAGIC, key.encode(), len(toks)) + body)
+        os.replace(tmp, cdir / f"{key}.tok")
+    except OSError:
+        pass                        # a cache that cannot be written only costs time
+
+
+def _cached(cdir, key, compute) -> tuple[set[bytes], bool]:
+    hit = _cache_read(cdir, key)
+    if hit is not None:
+        return hit, True
+    toks = compute()
+    _cache_write(cdir, key, toks)
+    return toks, False
+
+
+def blob_tokens(repo: pathlib.Path, commit: str) -> set[bytes]:
+    """The lowercased tokens of every blob of commit's tree (MAX_FILE or less), read from the
+    object store, never the working tree."""
+    listing = _git(repo, "ls-tree", "-r", "-z", "-l", "--full-tree", commit)
+    shas = []
+    for entry in listing.split(b"\0"):
+        meta, _, _path = entry.partition(b"\t")
+        parts = meta.split()
+        if len(parts) == 4 and parts[1] == b"blob" and int(parts[3]) <= MAX_FILE:
+            shas.append(parts[2].decode())
+    out: set[bytes] = set()
+    for _sha, _kind, data in _cat_file(repo, dict.fromkeys(shas)):
+        out |= text_tokens(data)
+    return out
+
+
+def _git_source(repo: pathlib.Path, rev: str, cdir: pathlib.Path) -> tuple[set[bytes] | None,
+                                                                            bool]:
+    try:
+        commit = _git(repo, "rev-parse", "--verify", "--quiet", f"{rev}^{{commit}}"
+                      ).decode().strip()
+    except (subprocess.CalledProcessError, OSError):
+        return None, False
+    if not commit:
+        return None, False
+    key = sha(f"git\0{pathlib.Path(repo).resolve()}\0{commit}")
+    return _cached(cdir, key, lambda: blob_tokens(repo, commit))
+
+
+def _wordlist_source(path: pathlib.Path, cdir: pathlib.Path) -> tuple[set[bytes] | None, bool]:
+    try:
+        data = path.read_bytes()
+    except OSError:
+        return None, False
+    return _cached(cdir, sha(data), lambda: text_tokens(data))
+
+
+def _public_sources(refs: dict, gdir: pathlib.Path):
+    """(Source, lowercased token set or None) of every public source, directory trees first,
+    then the word lists, then the git trees, each in the order refs.local.toml gives."""
+    cdir = gdir / "cache"
+    public_root = pathlib.Path(refs.get("public_root", "."))
+    dirs = [public_root / p for p in refs.get("public", [])]
+    dirs += [pathlib.Path(p) for p in refs.get("rogue", []) + refs.get("libs", [])]
+    folded: set[bytes] = set()
+    for d in dirs:                  # read on every run, uncached (HACKING.md, the guard)
+        if d.is_dir():
+            folded |= {t.lower() for t in tokens(d)}
+    yield Source("dir", "directory trees", len(folded)), folded
+    for w in refs.get("wordlists", []):
+        toks, hit = _wordlist_source(pathlib.Path(w), cdir)
+        yield Source("wordlist", f"wordlist {pathlib.Path(w).name}", len(toks or ()),
+                     toks is not None, hit), toks
+    for g in refs.get("public_git", []):
+        repo, rev = pathlib.Path(g["repo"]), str(g["rev"])
+        toks, hit = _git_source(repo, rev, cdir)
+        yield Source("git", f"git {repo.name}@{rev[:12]}", len(toks or ()), toks is not None,
+                     hit), toks
+
+
 def load_rules(gdir: pathlib.Path, terms=None) -> Rules:
     """The rules from the private directory. terms: the glossary's tokens (None: read this
     repository's glossary; an empty tuple: none)."""
@@ -150,18 +284,19 @@ def load_rules(gdir: pathlib.Path, terms=None) -> Rules:
     if not conf.is_dir():
         raise GuardMissing("the confidential tree named in refs.local.toml is not there")
     only = tokens(conf)
-    public_root = pathlib.Path(refs.get("public_root", "."))
-    others = [public_root / p for p in refs.get("public", [])]
-    others += [pathlib.Path(p) for p in refs.get("rogue", []) + refs.get("libs", [])]
-    public: set[bytes] = set()
-    for d in others:
-        if d.is_dir():
-            public |= tokens(d)
+    stats = Stats(confidential=len(only))
+    only = {t for t in only if not LETTER_DIGITS.fullmatch(t)}
     # a token is forbidden only if no casing of it is public: IMAE where imae is public, VOID
     # where void is, are spellings of public words, not confidential names
-    public_folded = {t.lower() for t in public}
-    only = {t for t in only
-            if t.lower() not in public_folded and not LETTER_DIGITS.fullmatch(t)}
+    for src, folded in _public_sources(refs, gdir):
+        if folded:
+            before = len(only)
+            only = {t for t in only if t.lower() not in folded}
+            src.drop = before - len(only)
+        if src.kind == "dir":
+            stats.baseline = len(only)
+        stats.sources.append(src)
+    stats.forbidden = len(only)
     allowed = _words(_read(gdir / "allowed.txt"))
     patterns = []
     for line in _read(gdir / "patterns.txt").splitlines():
@@ -176,7 +311,7 @@ def load_rules(gdir: pathlib.Path, terms=None) -> Rules:
         terms = glossary_tokens(glossary.load())
     forbidden_terms = {t for t in terms if t.encode() in only and t not in allowed}
     unreviewed = {sha(t) for t in forbidden_terms} - reviewed
-    return Rules(only, allowed, patterns, oldpat, oldkey, unreviewed, reviewed)
+    return Rules(only, allowed, patterns, oldpat, oldkey, unreviewed, reviewed, stats)
 
 
 # --- scanning ----------------------------------------------------------------------------
@@ -253,11 +388,18 @@ def _blobs(repo, spec: list[str]):
         sha_, _, path = line.partition(" ")
         if path:
             paths.setdefault(sha_, path)
+    for sha_, kind, data in _cat_file(repo, paths):
+        if kind == b"blob":
+            yield sha_, paths[sha_], len(data), data
+
+
+def _cat_file(repo, shas):
+    """(sha, kind, data) of each object named, through one git cat-file --batch."""
     proc = subprocess.Popen(["git", "-C", str(repo), "cat-file", "--batch"],
                             stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
     def feed():
-        proc.stdin.write("".join(s + "\n" for s in paths).encode())
+        proc.stdin.write("".join(s + "\n" for s in shas).encode())
         proc.stdin.close()
 
     threading.Thread(target=feed, daemon=True).start()
@@ -268,8 +410,7 @@ def _blobs(repo, spec: list[str]):
         sha_, kind, size = head.split()
         data = proc.stdout.read(int(size))
         proc.stdout.read(1)
-        if kind == b"blob":
-            yield sha_.decode(), paths[sha_.decode()], int(size), data
+        yield sha_.decode(), kind, data
     proc.wait()
 
 
@@ -310,6 +451,21 @@ def accept_glossary(gdir: pathlib.Path, rules: Rules) -> int:
     return len(new)
 
 
+def print_stats(st: Stats, loaded: float) -> None:
+    """Counts only: never a token, a hash of one or a path of the confidential tree."""
+    print(f"guard: confidential tokens: {st.confidential}")
+    print(f"guard: forbidden, directory trees only: {st.baseline}")
+    for s in st.sources:
+        if s.kind == "dir":
+            continue
+        how = "absent" if not s.present else ("cached" if s.cached else "read")
+        print(f"guard: drop, {s.label}: {s.drop} ({s.tokens} public tokens, {how})")
+    print(f"guard: forbidden: {st.forbidden}")
+    extra = [s for s in st.sources if s.kind != "dir" and s.present]
+    hits = sum(s.cached for s in extra)
+    print(f"guard: load: {loaded:.1f} s ({hits} of {len(extra)} cacheable sources cached)")
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     mode = ap.add_mutually_exclusive_group()
@@ -318,6 +474,8 @@ def main(argv: list[str] | None = None) -> int:
     mode.add_argument("--history", metavar="REPO")
     mode.add_argument("--message", metavar="FILE")
     mode.add_argument("--accept-glossary", action="store_true")
+    mode.add_argument("--stats", action="store_true",
+                      help="print the rule counts and the load time, nothing else")
     ap.add_argument("--ref", default="--all", help="with --history: scan this ref only")
     ap.add_argument("--base", help="with --history: leave out what this revision reaches")
     ap.add_argument("--fork", action="store_true", help="apply the fork-scope patterns")
@@ -326,7 +484,9 @@ def main(argv: list[str] | None = None) -> int:
     a = ap.parse_args(argv)
     gdir = guard_dir()
     try:
+        start = time.monotonic()
         rules = load_rules(gdir, terms=() if a.no_glossary else None)
+        loaded = time.monotonic() - start
     except GuardMissing as e:
         print(f"guard: private data ABSENT ({e})", file=sys.stderr)
         if required():
@@ -334,6 +494,9 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         print("guard: NOT CHECKED (set RESGX545_GUARD_DIR; RESGX545_REQUIRE_GUARD=1 fails)",
               file=sys.stderr)
+        return 0
+    if a.stats:
+        print_stats(rules.stats, loaded)
         return 0
     if a.accept_glossary:
         print(f"guard: {accept_glossary(gdir, rules)} glossary tokens marked reviewed")

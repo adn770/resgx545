@@ -310,13 +310,19 @@ pushed before `tools/clean-room/guard.py --history` has run over every ref.
   `RESGX545_GUARD_DIR` (default `../resgx545-data-private/clean-room/` beside this checkout):
   never copy, quote or summarise it here, in a message or in a report. The machine-local paths
   of the trees it reads are in `refs.local.toml` there (untracked; `refs.local.toml.example`
-  in `tools/clean-room/` shows the shape). A glossary term allows nothing by existing: a
-  confidential-only token passes only through the private review list. A name we reached
-  ourselves (a job name, a scorer word, a hypothesis) is claimed through that review, with its
-  provenance, and never reworded or renamed around; only a real slip is reworded. With the
-  data missing the guard fails when `RESGX545_REQUIRE_GUARD=1` (the default of `check.sh` and
-  the hooks) and says NOT CHECKED otherwise; a checkout without the private repository sets it
-  to 0 and gets no guard. The private repository is never pushed to a public remote.
+  in `tools/clean-room/` shows the shape). Beside the public directory trees it takes plain
+  word lists and public git trees at a pinned commit (the blobs of that commit, never a working
+  tree). The forbidden set is still derived on each run and never stored; only the public
+  sources' token sets are cached, in `cache/` there, keyed by the word list's sha256 or by the
+  repository and commit, and the directory trees are read afresh each time. `guard.py --stats`
+  prints counts only: what each source removes and how long the rules take to load. A glossary
+  term allows nothing by existing: a confidential-only token passes only through the private
+  review list. A name we reached ourselves (a job name, a scorer word, a hypothesis) is claimed
+  through that review, with its provenance, and never reworded or renamed around; only a real
+  slip is reworded. With the data missing the guard fails when `RESGX545_REQUIRE_GUARD=1` (the
+  default of `check.sh` and the hooks) and says NOT CHECKED otherwise; a checkout without the
+  private repository sets it to 0 and gets no guard. The private repository is never pushed to
+  a public remote.
 - Landed records get dated corrections only: append a `Correction YYYY-MM-DD:` section, leave
   the rest as it was. The pre-commit hook warns about any other change to an evidence record;
   it does not block. One exception (user decision, 2026-11-11): when a correction contradicts

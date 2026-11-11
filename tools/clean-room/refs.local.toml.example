@@ -5,3 +5,10 @@ public_root = "/path/to/the/public/reference/trees"
 public = ["tree-one", "tree-two"]             # directories under public_root
 rogue = ["/path/to/open/gpu/driver/code"]     # more public trees, absolute
 libs = ["/path/to/closed/libraries"]          # the closed libraries' strings, black box
+# Plain word lists whose words count as public (optional). Cached by the file's sha256.
+wordlists = ["/path/to/an/english/word/list.txt"]
+# Public git trees, read at a pinned commit, never the working tree (optional). Cached by
+# sha256 of the repository path and the full commit id.
+public_git = [
+  { repo = "/path/to/a/public/git/repository", rev = "0123456789abcdef0123456789abcdef01234567" },
+]

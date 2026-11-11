@@ -5,6 +5,7 @@ tokens built in tmp, so no real data is needed and none appears here."""
 import hashlib
 import pathlib
 import subprocess
+import zlib
 
 import pytest
 
@@ -114,6 +115,159 @@ def test_missing_refs_file_raises(world):
     (world / "guard" / "refs.local.toml").unlink()
     with pytest.raises(guard.GuardMissing):
         guard.load_rules(world / "guard")
+
+
+# --- more public sources: word lists, git trees at a pinned revision, the cache -----------
+
+def add_refs(world, text: str):
+    with (world / "guard" / "refs.local.toml").open("a") as fh:
+        fh.write(text)
+
+
+def cache_files(world) -> list[pathlib.Path]:
+    d = world / "guard" / "cache"
+    return sorted(p for p in d.iterdir() if p.is_file()) if d.is_dir() else []
+
+
+def pinned(world, files: dict) -> tuple[pathlib.Path, str]:
+    """A public git repository with one commit of files; returns (repo, full commit id)."""
+    r = repo(world / "pubgit")
+    commit(r, files)
+    return r, git(r, "rev-parse", "HEAD").strip()
+
+
+def test_wordlist_tokens_are_public(world):
+    words = write(world / "words.txt", f"apple\n{SECRET.upper()}'s\nbanana\n")
+    add_refs(world, f'wordlists = ["{words}"]\n')
+    assert SECRET.encode() not in rules(world).forbidden
+
+
+def test_absent_wordlist_removes_nothing(world):
+    add_refs(world, f'wordlists = ["{world}/no-such-list"]\n')
+    assert SECRET.encode() in rules(world).forbidden
+
+
+def test_public_git_reads_the_pinned_revision_not_the_working_tree(world):
+    write(world / "conf" / "more.c", "int laterwordeps; int worktreewordzeta;\n")
+    r, first = pinned(world, {"a.c": f"int {SECRET};\n"})
+    commit(r, {"a.c": "int laterwordeps;\n"})
+    write(r / "a.c", "int worktreewordzeta;\n")            # never committed
+    add_refs(world, f'public_git = [{{ repo = "{r}", rev = "{first}" }}]\n')
+    f = rules(world).forbidden
+    assert SECRET.encode() not in f
+    assert {b"laterwordeps", b"worktreewordzeta"} <= f
+
+
+def test_public_git_short_rev_is_resolved(world):
+    r, full = pinned(world, {"a.c": f"int {SECRET};\n"})
+    add_refs(world, f'public_git = [{{ repo = "{r}", rev = "{full[:9]}" }}]\n')
+    assert SECRET.encode() not in rules(world).forbidden
+    short = cache_files(world)
+    write(world / "guard" / "refs.local.toml",
+          (world / "guard" / "refs.local.toml").read_text().replace(full[:9], full))
+    rules(world)
+    assert cache_files(world) == short
+
+
+def test_public_git_skips_huge_blobs(world, monkeypatch):
+    monkeypatch.setattr(guard, "MAX_FILE", 64)
+    r, rev = pinned(world, {"big.c": f"int {SECRET};\n" + "x" * 100, "small.c": "int ok;\n"})
+    add_refs(world, f'public_git = [{{ repo = "{r}", rev = "{rev}" }}]\n')
+    assert SECRET.encode() in rules(world).forbidden
+
+
+def test_absent_public_git_rev_removes_nothing(world):
+    r, _ = pinned(world, {"a.c": f"int {SECRET};\n"})
+    add_refs(world, f'public_git = [{{ repo = "{r}", rev = "{"0" * 40}" }}]\n')
+    assert SECRET.encode() in rules(world).forbidden
+
+
+def test_public_tokens_are_cached_and_reused(world, monkeypatch):
+    words = write(world / "words.txt", f"{SECRET}\n")
+    r, rev = pinned(world, {"a.c": "int gitwordeta;\n"})
+    write(world / "conf" / "g.c", "int gitwordeta;\n")
+    add_refs(world, f'wordlists = ["{words}"]\n'
+                    f'public_git = [{{ repo = "{r}", rev = "{rev}" }}]\n')
+    first = rules(world).forbidden
+    assert len(cache_files(world)) == 2
+
+    def boom(*a, **k):
+        raise AssertionError("not read from the cache")
+
+    monkeypatch.setattr(guard, "blob_tokens", boom)
+    monkeypatch.setattr(guard, "text_tokens", boom)
+    again = rules(world)
+    assert again.forbidden == first
+    assert [s.cached for s in again.stats.sources if s.kind != "dir"] == [True, True]
+
+
+def test_a_changed_rev_or_file_makes_a_new_entry(world):
+    words = write(world / "words.txt", "apple\n")
+    r, first = pinned(world, {"a.c": "int one;\n"})
+    add_refs(world, f'wordlists = ["{words}"]\n'
+                    f'public_git = [{{ repo = "{r}", rev = "{first}" }}]\n')
+    rules(world)
+    before = cache_files(world)
+    write(words, f"apple\n{SECRET}\n")
+    commit(r, {"a.c": "int two;\n"})
+    second = git(r, "rev-parse", "HEAD").strip()
+    refs = world / "guard" / "refs.local.toml"
+    write(refs, refs.read_text().replace(first, second))
+    assert SECRET.encode() not in rules(world).forbidden
+    after = cache_files(world)
+    assert len(after) == 4 and set(before) < set(after)
+
+
+def test_a_cache_entry_with_the_wrong_key_is_not_trusted(world):
+    words = write(world / "words.txt", f"{SECRET}\n")
+    other = write(world / "other.txt", "pear\n")
+    add_refs(world, f'wordlists = ["{other}"]\n')
+    rules(world)
+    (planted,) = cache_files(world)
+    # the entry of other.txt, renamed to where words.txt's would go: its header key is wrong
+    planted.rename(planted.with_name(guard.sha(words.read_bytes()) + planted.suffix))
+    write(world / "guard" / "refs.local.toml",
+          (world / "guard" / "refs.local.toml").read_text().replace(str(other), str(words)))
+    assert SECRET.encode() not in rules(world).forbidden
+
+
+def test_no_cache_file_holds_a_confidential_only_token(world):
+    words = write(world / "words.txt", f"apple\n{SHARED}\n")
+    r, rev = pinned(world, {"a.c": "int commonname;\n"})
+    add_refs(world, f'wordlists = ["{words}"]\n'
+                    f'public_git = [{{ repo = "{r}", rev = "{rev}" }}]\n')
+    assert SECRET.encode() in rules(world).forbidden
+    files = cache_files(world)
+    assert len(files) == 2
+    for p in files:
+        raw = p.read_bytes()
+        _, _, body = raw.partition(b"\n")
+        text = raw + zlib.decompress(body)
+        for t in (SECRET, SECRET.lower(), SECRET.upper()):
+            assert t.encode() not in text, p.name
+        for t in ("forbidden", digest(SECRET)):
+            assert t.encode() not in text, p.name
+
+
+def test_stats_prints_counts_only(world, monkeypatch, capsys):
+    monkeypatch.setenv("RESGX545_GUARD_DIR", str(world / "guard"))
+    write(world / "conf" / "w.c", "int listwordiota; int gitwordkappa;\n")
+    words = write(world / "words.txt", "listwordiota\n")
+    r, rev = pinned(world, {"a.c": "int gitwordkappa;\n"})
+    add_refs(world, f'wordlists = ["{words}"]\n'
+                    f'public_git = [{{ repo = "{r}", rev = "{rev}" }}]\n')
+    assert guard.main(["--stats", "--no-glossary"]) == 0
+    out = capsys.readouterr().out
+    lines = dict(line.removeprefix("guard: ").split(": ", 1) for line in out.splitlines())
+    # confidential: SECRET SHARED commonname listwordiota gitwordkappa
+    assert lines["confidential tokens"] == "5"
+    assert lines["forbidden, directory trees only"] == "3"
+    assert lines["drop, wordlist words.txt"].startswith("1 ")
+    assert lines["drop, git pubgit@" + rev[:12]].startswith("1 ")
+    assert lines["forbidden"] == "1"
+    assert "load" in out
+    for t in (SECRET, SHARED, "listwordiota", "gitwordkappa", "commonname"):
+        assert t not in out
 
 
 # --- scanning ----------------------------------------------------------------------------
