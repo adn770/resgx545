@@ -66,7 +66,7 @@ cleanup() {
 trap cleanup EXIT
 
 mkdir -p "$HOMEDIR/src" "$S/closing" "$S/closing2" "$S/closing3" "$S/closing/pixel-faults/.venv/bin"
-ln -s "$S" "$HOMEDIR/src/scratch"
+ln -s "$W/scratch" "$HOMEDIR/src/scratch"
 ln -s "$DATA" "$HOMEDIR/src/resgx545-data"
 export CARGO_HOME=${CARGO_HOME:-$HOME/.cargo} RUSTUP_HOME=${RUSTUP_HOME:-$HOME/.rustup}
 printf '#!/bin/sh\nexec "%s" "$@"\n' "$PY" > "$S/closing/pixel-faults/.venv/bin/python"
