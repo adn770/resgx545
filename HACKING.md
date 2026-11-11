@@ -210,8 +210,9 @@ lets a reviewer check that they stay clean-room; each check is a test.
      (each slot, pairs, all four; TRC 8, 9, 12) exactly the start dword of each armed slot differs
      and equals `(trc << 24) | 0xf | (0x4000 << 4)`. That is a check of the model. The kernel's
      code is checked on the real firmware by a host build, `tools/fwtask/host/own_host.c`, which
-     compiles the fork's `sgx_fw.c` and `sgxfive_owntask.c` (needs `RESGX545_LINUX` or `../linux`
-     and a C compiler) with shim headers, runs `sgx_fw_build()` and `sgx_own_apply()` on the
+     compiles the fork's `sgx_fw.c` and `sgxfive_owntask.c` (read at the pinned fork commit by
+     `tools/forkpin.py` from the fork home, `RESGX545_LINUX` or `../linux`, whatever branch it has
+     out; needs a C compiler) with shim headers, runs `sgx_fw_build()` and `sgx_own_apply()` on the
      firmware and prints only a sha256 per buffer: unarmed they equal the reference loader's,
      armed they equal the model's and only buffer 4 differs. Without the fork checkout this
      check skips, and what remains is the check of the model. The kernel's KUnit makes the same
