@@ -546,7 +546,11 @@ The waits and modes on the hardware (E101) **[HW]**:
   until the other quads of its 4x4 block, at least, have finished phase 0.
 - **Program shape [HW]** (E118): a program must start with a `phas`, and its last phase must be
   closed by a `phas` that declares the end; otherwise the job hangs. A fill's shader starts at
-  its code base, so its `#<next>` is the local index.
+  its code base, so its `#<next>` is the local index. A firmware task follows the second half of
+  the rule and not the first: a pass of ours that ends `idf; wdf; phas #0, #0, pixel, end,
+  parallel; nop.end` keeps the tick with no `phas` at its start, and one that ends without the
+  `phas` stops it (E817, E830; below) **[HW]**; that this is E118's rule seen in an EDM task is
+  **[infer]**.
 - Each wait belongs to one kind of task. `vcull` hangs a pixel shader. `pt` hangs a vertex
   shader, and in a pixel shader with no punch-through feedback the next phase never writes
   its pixels. The simulator refuses `pt` and `vcull` in a pixel task, and runs a vertex task's
@@ -626,7 +630,8 @@ The waits and modes on the hardware (E101) **[HW]**:
   `nop.end` instead of jumping to the closed one, every later event stopped until a reset (E533, one
   run; a task that wrote nothing and ended a tick pass that way stopped it in 2 of 2 runs, so
   skipping the closed task is enough, E793; no single write of sa63, sa64 or sa65 and no tail call
-  with p0 = p1 = 1 stopped it, E791; what the EDM needs from the closed task is open, Q152).
+  with p0 = p1 = 1 stopped it, E791; what the EDM needs is the phase end, E817 and E830, in the
+  contract below).
   **State between firmware tasks [HW]** (E536; a writer that calls the closed task after its
   writes, with the closed task's ticks between): `sa100`, `sa127`, `sa20` and `sa24` (12 of 12
   values in 3 of 3 rounds), `r20` and `r21` (6 of 6) and `i0` and `i1` (6 of 6) written by one task
@@ -634,7 +639,8 @@ The waits and modes on the hardware (E101) **[HW]**:
   and `r21`; `sa64` did not take the write (it read 2); at the next event p1 was the writer's 0 (3
   of 3, 1 in the other readings) and `pclink` was 6, the value of the writer's own tail triple
   [infer], not the 0x98 of the other readings, p0 was not the writer's, and p2 and p3 move between
-  readings with no writer (Q152). The same writer kept the tick, a task that also wrote `sa63` and
+  readings with no writer (held out later: they are what the task left, E809). The same writer
+  kept the tick, a task that also wrote `sa63` and
   `sa65` and called the closed task was not followed by its armed reader within 100 ms (E537, one
   run: Q152). No second pass of the wrapper was found busy while a slow task ran, up to 6.9 ms (10
   of 10 runs, E539; ticks only, slot 0, no job). The simulator runs these tasks only through
@@ -644,6 +650,40 @@ The waits and modes on the hardware (E101) **[HW]**:
   reads the first two: unit tests alone cover them); a vector may give the task's entry state (`sa`,
   `r`, `i`, `pa`, p and `pclink`) and its temporaries, and the readback the state it must have left;
   everything else stops the run, including a read of `sa64` after the task wrote it.
+- **The contract of a firmware task of ours [HW]** (records E809 to E823, E830; what a task of
+  ours starts with and must leave, each line with its record):
+  - *Start.* At the next entry after a task of ours `pclink` reads 0x98, p0 1 and p1, p2 and p3
+    what the task left (E809: 12 of 12 writer jobs, H-SET refuted 8 of 8); after a client fill, a
+    firmware reload or a reset p0 p1 read 1 1, `pclink` 0x98, p2 0 and p3 as left (E810, 9 of 9).
+    `i0`, `i1` and `r21` survive a reload and a reset, `r20` and `sa63` read 0 (E810, 6 of 6);
+    the start state of a fresh arm was `pclink` 0x98, p0 to p3 1 1 0 0, `r20` 0, `sa63` 0, `sa64`
+    2 and `sa65` 0x02000000 (E810, one reading). After other perturbations and a cold boot: Q158.
+  - *The event words.* `pa0` to `pa4` read `sa64` to `sa68` (E748, 3 of 3). A `mov` to `pa3`
+    writes `sa67`, read in the same pass and the next; to `pa2` writes `sa66` for the pass only
+    (the next event rewrites it [infer]); to `pa4` is lost, read through neither bank (E820, 3 of
+    3 each). A write to `sa67` or `sa68` reads back through `pa3` or `pa4` (E748).
+  - *The end of a pass.* A plain tick pass of ours keeps the tick iff it executes `phas #0, #0,
+    pixel, end, parallel` before its `nop.end`: with it 13 of 13 jobs kept (E817 FB and FPH, E830
+    fb and fk), without it 7 of 7 stopped (E793 x2, E818 T2, E817 FCF, E830 x3, held out and
+    replicated in three blocks); `cfi.global` is neither needed nor enough. The closed exit
+    reached by the `cont4` tail call keeps it (E817, E830: 8 of 8), and so does any closed path
+    that reaches it, the general task's or slot 2's (E813 X1, X20: H-EXIT). A kick pass ended
+    with `idf, wdf, nop.end` stops it too (E813 B3); a kick pass and the slot 3 pass ended with
+    the `phas` are not run (Q152). A stop reads the busy signature (`CR_CLKGATESTATUS`
+    0x000ccfa0, `USE0_SERV_EVENT` bit 16 clear and its count frozen, the event timer counting,
+    `CR_EVENT_STATUS` 0x20000000), answers no host command, and one debugfs reset recovers it;
+    the signature cannot tell a stop from a long task (E811). The own end therefore is `idf drc0,
+    bif; wdf drc0; phas #0, #0, pixel, end, parallel; nop.end`.
+  - *What does not stop the tick.* A pass with the tick bit of `sa64` clear (50 passes) leaves
+    `pclink` 6 and does not advance HostCtl dword 12; single `sa65` words without bit 8 (bits 2,
+    3, 6, 14, 15, 16, 19, 23, the count byte) keep it (E812). `sa65` bit 8 alone makes the closed
+    reader take an empty command and stop with HostCtl dword 14 0xad002600 (E814 D2), and E537's
+    word without bit 8 stops it with no mark (E814 D1).
+  - *Stores.* A `str` of the tick handler's own word 0x01061a80 to `CR_EVENT_TIMER` followed by
+    the closed task keeps the tick and moves the next entry to 25114 units (E818 T1, 2 of 2); it
+    does not replace the phase end (E818 T2, 1 stop). A `str` to `CR_EVENT_HOST_CLEAR2` clears the
+    bits written, as the host's write does (E822, 3 of 3). Which registers a task may store to is
+    HACKING.md's allow list.
 - **The register form** `phas srcA, srcB` hung or faulted with every source layout tried
   (absolute index, offset or `doutu` U0 layout, against the immediate's fields or high dword);
   none started the next phase (E118).
