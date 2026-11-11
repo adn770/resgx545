@@ -232,3 +232,18 @@ def test_a_tracked_path_without_the_hash_is_not_written_as_untracked(tmp_path):
     (s / "FROZEN.commits").write_text(f"{sha('w')}  untracked  tools/a.py\n")
     bad = frozen.check(tmp_path / "data", repo)
     assert len(bad) == 1 and "tools/a.py" in bad[0] and "is tracked" in bad[0]
+
+
+def test_a_pin_of_a_worktree_under_scratch_is_named_by_its_commits_line(tmp_path):
+    """Round 4 froze against an integration worktree under scratch/resgx545/ (closing4/lead/wt):
+    the first resgx545 component of such a path is the scratch tree, not the tool tree. A line
+    of FROZEN.commits whose hash is the pin's and whose path ends the pin's path names it."""
+    repo, c = history(tmp_path)
+    wt = "/home/u/src/scratch/resgx545/closing4/lead/wt"
+    s = session(tmp_path, [f"{sha('x')}  {wt}/tools/a.py", f"{sha('q')}  score/score_x.py"])
+    (s / "FROZEN.commits").write_text(f"# h\n{sha('x')}  {c['03']}  tools/a.py\n")
+    assert frozen.session_pins(s) == [(sha("x"), "tools/a.py")]
+    assert frozen.check(tmp_path / "data", repo) == []
+    (s / "FROZEN.commits").write_text(f"# h\n{sha('y')}  {c['02']}  tools/a.py\n")
+    bad = frozen.check(tmp_path / "data", repo)
+    assert any("has no line" in b and "closing4/lead/wt/tools/a.py" in b for b in bad)
