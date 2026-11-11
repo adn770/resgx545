@@ -2,12 +2,16 @@
 // SPDX-FileCopyrightText: 2026 Josep Torra
 //! ISP: coverage and depth of a triangle (12.3, E606, E607) and the multisample store window of a
 //! tile (E503). The coverage rule and the vertex grid are the records' fits, reported fitted; the
-//! depth plane has no bit-exact model and is reported `Near` with the record's tolerance.
+//! depth plane has no bit-exact model and is reported `Near` with the record's tolerance. Coverage
+//! alone is admitted on E680's ten further targets as well (`coverage_image`); the depth there is
+//! not (Q262).
 
 use crate::Outcome;
 
-pub const OPEN: &[&str] =
-    &["Q066", "Q030", "Q086", "Q089", "Q141", "Q199", "Q200", "Q202", "Q240", "Q241", "Q071", "Q073", "Q032"];
+pub const OPEN: &[&str] = &[
+    "Q066", "Q030", "Q086", "Q089", "Q141", "Q199", "Q200", "Q202", "Q240", "Q241", "Q262", "Q071", "Q073",
+    "Q032",
+];
 
 pub fn refuse() -> Outcome {
     Outcome::unsupported("the ISP past triangle coverage and depth is not modelled (12.3)", OPEN)
@@ -55,12 +59,39 @@ pub fn snap(c: f64) -> Result<i64, Outcome> {
 }
 
 /// The target shapes E606 ran, in pixels: 64 x 64, 128 x 128 and 256 x 128. Only these are
-/// admitted (r123 item 3): the family around them (64 x 128, 256 x 64, targets below one tile)
-/// was not run, so it refuses (Q240), as does any width or height past them. The sizes of E662
-/// (the library's triangle only) are inside this set only where E606 ran them.
+/// admitted for coverage and depth together (r123 item 3): the family around them (64 x 128,
+/// 256 x 64, targets below one tile) was not run, so it refuses (Q240), as does any width or
+/// height past them. The sizes of E662 (the library's triangle only) are inside this set only
+/// where E606 ran them.
 pub const E606_TARGETS: [(u32, u32); 3] = [(64, 64), (128, 128), (256, 128)];
 
+/// The ten targets E680 ran the coverage rule on (590 random triangles, 0 of 1092224240 pixels
+/// wrong, 410 cases held out): admitted for coverage only. No depth store ran there, so the depth
+/// and the iterated attributes on them refuse (Q262).
+pub const E680_TARGETS: [(u32, u32); 10] = [
+    (96, 64),
+    (130, 66),
+    (200, 120),
+    (512, 256),
+    (512, 512),
+    (640, 480),
+    (1000, 600),
+    (1024, 768),
+    (2048, 1024),
+    (4096, 4096),
+];
+
+/// The envelope of coverage and depth together: E606's three targets; E680's ten refuse naming
+/// Q262 (depth not measured there), the rest Q240.
 pub fn target_in_envelope(w: u32, h: u32) -> Result<(), Outcome> {
+    if E680_TARGETS.contains(&(w, h)) {
+        return Err(open(
+            format!(
+                "a {w} x {h} target: E680 showed the coverage rule there, not the depth plane or the iterated attributes"
+            ),
+            "Q262",
+        ));
+    }
     if !E606_TARGETS.contains(&(w, h)) {
         return Err(open(
             format!(
@@ -70,6 +101,37 @@ pub fn target_in_envelope(w: u32, h: u32) -> Result<(), Outcome> {
         ));
     }
     Ok(())
+}
+
+/// The envelope of coverage alone: E606's three targets and E680's ten.
+pub fn coverage_target_in_envelope(w: u32, h: u32) -> Result<(), Outcome> {
+    if !E606_TARGETS.contains(&(w, h)) && !E680_TARGETS.contains(&(w, h)) {
+        return Err(open(
+            format!(
+                "a {w} x {h} target: the coverage rule ran on E606's three and E680's ten targets only (odd sizes, sizes between them and past 4096 not run)"
+            ),
+            "Q240",
+        ));
+    }
+    Ok(())
+}
+
+/// The vertex envelope of coverage: E606's range on every target, and at 4096 x 4096 no
+/// negative x (E680 drew none there: x from +5% to +121%, y from -8%).
+pub fn coverage_vertices_in_envelope(w: u32, h: u32, t: &Tri) -> Result<(), Outcome> {
+    vertices_in_envelope(w, h, t)?;
+    if (w, h) == (4096, 4096) && t.v.iter().any(|&(x, _)| x < 0) {
+        return Err(open("a negative x on a 4096 x 4096 target: E680 drew none there", "Q199"));
+    }
+    Ok(())
+}
+
+/// The coverage of a triangle on a target, row by row, inside the coverage envelope: E606's rule
+/// (`Tri::covers`), which E680 confirmed on its ten targets with no change.
+pub fn coverage_image(w: u32, h: u32, t: &Tri) -> Result<Vec<bool>, Outcome> {
+    coverage_target_in_envelope(w, h)?;
+    coverage_vertices_in_envelope(w, h, t)?;
+    Ok((0..h).flat_map(|y| (0..w).map(move |x| t.covers(x, y))).collect())
 }
 
 /// The range of E606's vertices, as fractions of the target: -8.9% to +124.1%.
@@ -615,43 +677,108 @@ mod tests {
     }
 
     #[test]
-    fn only_the_three_targets_e606_ran_are_inside_and_every_other_refuses_naming_q240() {
+    fn only_the_three_targets_e606_ran_are_inside_for_depth_and_every_other_refuses() {
         for (w, h) in E606_TARGETS {
             assert!(target_in_envelope(w, h).is_ok(), "{w} x {h}");
         }
         assert_eq!(E606_TARGETS, [(64, 64), (128, 128), (256, 128)]);
-        for (w, h) in [
-            // the family around them that no run covered
-            (64, 128),
-            (128, 64),
-            (256, 64),
-            (32, 16),
-            (2, 2),
-            (32, 32),
-            (64, 32),
-            // past the bounds: 512 wide at the heights run and at the small ones, and tall
-            (512, 64),
-            (512, 128),
-            (512, 16),
-            (256, 256),
-            (128, 256),
-            (64, 256),
-            // not powers of two, the library's big targets, degenerate sizes
-            (128, 96),
-            (64, 144),
-            (1024, 768),
-            (4096, 4096),
-            (0, 16),
-            (0, 0),
-            (100, 64),
-            (65, 64),
-            (64, 65),
-        ] {
+        // E680's ten: coverage only, the depth there is Q262's
+        for (w, h) in E680_TARGETS {
+            match target_in_envelope(w, h) {
+                Err(Outcome::Unsupported { ids, .. }) => assert_eq!(ids, ["Q262"], "{w} x {h}"),
+                o => panic!("{w} x {h}: {o:?}"),
+            }
+        }
+        for (w, h) in NOT_RUN {
             match target_in_envelope(w, h) {
                 Err(Outcome::Unsupported { ids, .. }) => assert_eq!(ids, ["Q240"], "{w} x {h}"),
                 o => panic!("{w} x {h}: {o:?}"),
             }
         }
+    }
+
+    /// Targets neither E606 nor E680 ran.
+    const NOT_RUN: [(u32, u32); 21] = [
+        // the family around E606's that no run covered
+        (64, 128),
+        (128, 64),
+        (256, 64),
+        (32, 16),
+        (2, 2),
+        (32, 32),
+        (64, 32),
+        // between and past the sizes run
+        (512, 64),
+        (512, 128),
+        (512, 16),
+        (256, 256),
+        (128, 256),
+        (64, 256),
+        (128, 96),
+        (64, 144),
+        (4096, 2048),
+        // odd and degenerate sizes
+        (0, 16),
+        (0, 0),
+        (100, 64),
+        (65, 64),
+        (64, 65),
+    ];
+
+    #[test]
+    fn coverage_admits_e606s_three_and_e680s_ten_targets_and_refuses_the_rest_naming_q240() {
+        assert_eq!(
+            E680_TARGETS,
+            [
+                (96, 64),
+                (130, 66),
+                (200, 120),
+                (512, 256),
+                (512, 512),
+                (640, 480),
+                (1000, 600),
+                (1024, 768),
+                (2048, 1024),
+                (4096, 4096)
+            ]
+        );
+        for (w, h) in E606_TARGETS.into_iter().chain(E680_TARGETS) {
+            assert!(coverage_target_in_envelope(w, h).is_ok(), "{w} x {h}");
+        }
+        for (w, h) in NOT_RUN {
+            match coverage_target_in_envelope(w, h) {
+                Err(Outcome::Unsupported { ids, .. }) => assert_eq!(ids, ["Q240"], "{w} x {h}"),
+                o => panic!("{w} x {h}: {o:?}"),
+            }
+        }
+    }
+
+    #[test]
+    fn the_coverage_image_is_the_rule_and_refuses_outside_its_envelope() {
+        let t = tri([(0, 0), (96 * 256, 0), (0, 64 * 256)]);
+        let img = coverage_image(96, 64, &t).unwrap();
+        assert_eq!(img.len(), 96 * 64);
+        for (i, &c) in img.iter().enumerate() {
+            assert_eq!(c, t.covers(i as u32 % 96, i as u32 / 96), "pixel {i}");
+        }
+        match coverage_image(100, 64, &t) {
+            Err(Outcome::Unsupported { ids, .. }) => assert_eq!(ids, ["Q240"]),
+            o => panic!("{o:?}"),
+        }
+        // E606's vertex range applies; at 4096 x 4096 E680 drew no negative x (Q199)
+        let far = tri([(0, 0), (130 * 256, 0), (0, 64 * 256)]);
+        match coverage_image(96, 64, &far) {
+            Err(Outcome::Unsupported { ids, .. }) => assert_eq!(ids, ["Q199"]),
+            o => panic!("{o:?}"),
+        }
+        let neg = tri([(-256, 0), (4096 * 256, 0), (0, 4096 * 256)]);
+        assert!(vertices_in_envelope(4096, 4096, &neg).is_ok());
+        match coverage_vertices_in_envelope(4096, 4096, &neg) {
+            Err(Outcome::Unsupported { ids, .. }) => assert_eq!(ids, ["Q199"]),
+            o => panic!("{o:?}"),
+        }
+        let neg_y = tri([(256, -256), (4096 * 256, 0), (0, 4096 * 256)]);
+        assert!(coverage_vertices_in_envelope(4096, 4096, &neg_y).is_ok());
     }
 
     #[test]
