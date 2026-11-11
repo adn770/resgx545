@@ -64,3 +64,19 @@ H-HWC could not be read. A kick written without the bump is not answered by the 
 the design had not expected. Not shown: the count byte after a bumped kick with W set (Q2),
 whether the firmware reads W at all, and what it means that pa2 read 0x01061a74 instead of
 0x01061a70 in the last 2 ring entries of q3 and the last one of q3-r2.
+
+**Correction 2026-11-11:** This adds a reading of the kept data, made offline in round 4's
+planning (`closing4/events/offline/kick_latency.out`, `pa2_74.out`), and leaves the claim as is.
+[data] The rings' stamps are taken before the `miscinfo` call starts; in the one kept job of the
+same op with a logged kick entry (K0's G0, E816) the entry came 6.70 ms after the call's start.
+Q3's calls started at 14.30, 14.36 and 14.42 ms and their 16-rung rings ended at 22.00, 22.16
+and 21.38 ms, so [infer, one latency sample] the `CR_EVENT_KICK` write fell at about 21.0 to 21.1
+ms and the rings hold 2, 1 and 0 to 1 ticks after it, not the 8, 8 and 7 after the call began.
+The post hoc reading above that the count stayed 2 and that no kick entry came therefore rests on
+at most 3 ticks and about 1 ms. [data] The `pa2` of 0x01061a74 named above as unexplained is the
+last 2, 1 and 0 entries of q3, q3-r2 and q3-r3, after that write; of 635 tick entries in the kept
+rings of R3k and R4-B, 628 read 0x01061a70 and the others are E751's mark of a tick latched while
+the EDM is not idle (the three ticks after a hold, as in E749, E751 and E752) and these. [infer,
+post hoc, 3 entries in 2 of 3 jobs] From about the unbumped kick's write the EDM was not idle when
+ticks arrived, with no kick entry logged: the kick left an event pending or in service that never
+reached our slot 0 task. A ring that covers 5 ms after the write would test it (Q290).
