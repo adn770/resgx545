@@ -336,6 +336,13 @@ pushed before `tools/clean-room/guard.py --history` has run over every ref.
   listed in `doc/specs/UNCITED.toml` with the reason it is not yet; the list only shrinks
   (`tools/records/spec_coverage.py --check`, a step of `check.sh`, fails on a record neither
   cited nor listed and on a listed one that a spec cites). A fold lands its spec text with it.
+- A path of the scratch area that the tree cites (`closing4/p7/reading-r5.md`, bare or after
+  `scratch/resgx545/`) is published: a session directory of a data repository
+  (`closingN/<name>/` is `<area>/closing-<name>/`) or a copy under `cited/` of resgx545-data,
+  or of resgx545-data-private when it derives from the closed firmware. A fold publishes what
+  it cites with `tools/records/scratch_cites.py --publish [--private] CITE...`, which copies the
+  files and refreshes `datasets/cited-scratch{,-private}.toml`; `--check`, a step of
+  `check.sh`, fails on a cite that resolves nowhere. Records keep their text.
 - Landed records get dated corrections only: append a `Correction YYYY-MM-DD:` section, leave
   the rest as it was. The pre-commit hook warns about any other change to an evidence record;
   it does not block. One exception (user decision, 2026-11-11): when a correction contradicts

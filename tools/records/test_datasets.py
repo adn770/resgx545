@@ -174,7 +174,12 @@ def test_evidence_names_datasets_or_tracked_files():
 
 
 def test_every_record_is_cited():
-    """A dataset is recorded because a finding rests on it."""
+    """A dataset is recorded because a finding rests on it. The copies of cited scratch files
+    (recipe scratch_cites.py) are named by the cites in the records' text, which
+    scratch_cites.py --check resolves, not by a record's data list."""
     used = {d.split(":")[0] for p in evidence.DIR.glob("*/*.md")
             for d in evidence.parse(p)[0]["data"]}
-    assert set(datasets.load()) <= used
+    cited = {i for i, d in datasets.load().items()
+             if d["recipe"] == "tools/records/scratch_cites.py"}
+    assert cited == {"cited-scratch", "cited-scratch-private"}
+    assert set(datasets.load()) - cited <= used

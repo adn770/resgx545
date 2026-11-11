@@ -295,7 +295,7 @@ def test_published_direct_reads_have_the_premise_fractions_of_e808():
 
 @needs_data
 def test_published_timings_give_round_4_readings_of_bits_6_and_7():
-    """Data statements, not rules of the simulator (rule_ta.txt, rule_px.txt of closing4/pixel): bit 7 of the
+    """Data statements, not rules of the simulator (closing4/pixel/rule_ta.txt and rule_px.txt): bit 7 of the
     74 q-v jobs is set iff the TA clocks' run is 125 us or more, and bit 6 of the 106 fills without a load iff
     the tile time is 125 us or more, with no job on the wrong side outside the edge bands (120 to 131 and
     118 to 132)."""

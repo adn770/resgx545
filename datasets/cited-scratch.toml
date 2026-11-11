@@ -1,0 +1,9 @@
+title = "files of the scratch area that the records cite: notes, scorers and outputs of the closing pass"
+repo = "data"
+paths = ["cited/"]
+method = "copied byte for byte from ~/src/scratch/resgx545/<cite> to cited/<cite> by tools/records/scratch_cites.py --publish; a cite in a record resolves to the copy; outputs keep the trailing whitespace their writers left"
+date = "2026-11-12"
+files = 23
+size = 791605
+sha256 = "201129c6be2fbf54f0feb40728b059c68a1bd851243560863c730e3783282c57"
+recipe = "tools/records/scratch_cites.py"

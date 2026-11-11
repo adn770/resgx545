@@ -1,0 +1,9 @@
+title = "files of the scratch area that the records cite: readings of the closed firmware's disassembly and other files derived from it"
+repo = "data-private"
+paths = ["cited/"]
+method = "copied byte for byte from ~/src/scratch/resgx545/<cite> to cited/<cite> by tools/records/scratch_cites.py --publish; a cite in a record resolves to the copy; outputs keep the trailing whitespace their writers left"
+date = "2026-11-12"
+files = 2
+size = 48800
+sha256 = "97aced0f761b250beae12dbabda03cfd2a84af750a72a5f0a7db178bba2bb994"
+recipe = "tools/records/scratch_cites.py"
