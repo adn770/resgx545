@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-176 open: 165 hw (high 19, medium 77, low 69, unrated 0), 9 fw, 2 kernel.
+177 open: 166 hw (high 19, medium 77, low 70, unrated 0), 9 fw, 2 kernel.
 
 ## Work queue: hardware
 
@@ -33,12 +33,13 @@
 - `Q033` (phase 10, hw, low): which hardware event sets bit 19 of the event word pa1 that the hardware hands a PDS event program, if any (none of the 138 job events of 14 jobs in E747 carried it, nor any of 8 4096x4096 jobs of E771 whether the TA's threshold was raised or not, with no rise of status bit 3 in the sampled timeline) (E155, E146, E154, E532, E538, E746, E747, E771)
 - `Q082` (phase 11, hw, medium): what do CR_EVENT_STATUS2 bits 6 and 7 mean, bit 6 set while a job hangs in its pixel task and bit 7 while a TA job hangs or faults? (E317, E318, E319, E357, E431, E764, E765, E766, E769, E770, E784, E804, E805, E806, E807)
 - `Q096` (phase 11, hw, low): does the sampler cache erratum of host bridge revisions below 4 show when a texture and other data have addresses that differ only above bit 28? (E002, E011, E013, E033, E035, E041, E114, E432)
-- `Q152` (phase 11, hw, medium): which bits of the event word in sa65 stop the 1 kHz tick (E814: the count byte with bit 8 stops it with E537's two marks, E537's word without bit 8 stops it without them, its bits 4, 7 and 10 not tried alone; E812: the count byte 0xb0 and bits 2, 3, 6, 14 to 16, 19 and 23 keep it), and does the closed task's path depend on the tick bit of sa64 alone (from Q124; E792, E812: with it clear pclink is left at 6, dword 12 does not advance and the tick is kept) (E533, E155, E536, E537, E791, E792, E793, E811, E812, E813, E814, E817, E818, E830)
+- `Q152` (phase 11, hw, medium): what does the EDM need at the end of a tick pass (E817, E830: a pass ending `phas #0, #0, pixel, end, parallel` before `nop.end` keeps the tick in 13 of 13 jobs, one ending `idf, wdf, nop.end` or `cfi.global, idf, wdf, nop.end` stopped it in 7 of 7; E813: the closed task of slot 2 keeps it), and does a kick pass or the slot 3 pass need the same phase end (E533, E155, E536, E537, E791, E792, E793, E811, E812, E813, E814, E816, E817, E818, E830, E748)
 - `Q158` (phase 11, hw, low): which sa, i and temporaries of a firmware task keep their value across a debugfs reset and across a firmware reload and boot (E536's controls read i0, i1, sa100 and sa127 as the writer of phase 11.29 left them 15 minutes and a reset and a reload earlier, and sa20, sa24, sa64, r20 and r21 not) (E536, E537, E809, E810)
 - `Q168` (phase 11, hw, low): what limits the temporaries of a firmware task above TRC 48 (E540 predicted a hang for 49 and 64; E550 armed 32 to 48 with trc_hazard=1 and read r123 back in 10 of 10), and can a register above r123 (up to the 4T - 1 of the allocation) be reached, through an indirect or banked access, so that the top of a large allocation can be tested (E540, E550)
 - `Q194` (phase 11, hw, low): does a load that is not waited for land by itself in a firmware (EDM) task, at what distance, and is that a property of the task, of the bypass flag or of the page (E602: the new value in 32 of 32 stores after 32 loads with no wdf, 3 of 3 jobs; E517: a fill's load landed after 40, 100 and 128 nops and not after 48 and 64) (E517, E602)
 - `Q196` (phase 11, hw, low): do the client results of 11.36 for the compare and the high word of ima32 (E595, E597), the predicated register moves and ba (E596) and the narrow memory forms (E598, E599) hold in a firmware (EDM) task (E595, E596, E597, E598, E599, E601)
 - `Q290` (phase 11, hw, low): does the hardware count the writes to CR_EVENT_KICK or read the kernel's kicker word for the count byte pa1 bits 31:24 that every event handed to an EDM task carries (E768: it equalled the GETMISCINFO commands since the load mod 256 in 15 of 15 jobs, the two readings agreeing whenever the kernel bumps the word before each write), and why does a kick's own entry carry the value from before its bump (E746, E747, E768, E794, E819)
+- `Q294` (phase 11, hw, low): which of bits 4, 7 and 10 of the sa65 word of E537 (0xb009c5dc, without bit 8) stop the tick through the closed task (E814: that word stopped it without E537's marks; E812: the count byte 0xb0 and bits 2, 3, 6, 14 to 16, 19 and 23 alone keep it), and does the closed task's path depend on the tick bit of sa64 alone (E812: sa64 = pa0 & ~2 on 50 passes keeps the tick, leaves pclink at 6 and does not advance dword 12; no sa64 word other than 0, 2 and pa0 & ~2 has run) (E537, E792, E812, E814)
 
 ### isp
 
