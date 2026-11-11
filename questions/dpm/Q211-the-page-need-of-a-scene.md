@@ -1,11 +1,11 @@
 +++
 id = "Q211"
-question = "what are the constant k and the spacing s of the partial-render count of a scene of page need U (E625's 1 + floor((U + k - thr0) / (thr0 + s)) with k from 2 to 13 is refuted at U = 287, E779), and does the page need U of HU1 (E773: exact for 15 held-out scenes made of the tool's triangle) hold for wide scenes of many vertices and other shapes (E630)?"
+question = "what rule gives the partial-render count of a scene of page need U at the first threshold thr0 = P - 0x22 (E625's 1 + floor((U + k - thr0) / (thr0 + s)) is refuted at U = 287 for every k from -60 to 60 and s from 1 to 0x5f, E779 and E832, whose 22 cells are the count curve to fit), and does the page need U of HU1 (E773: exact for 15 held-out scenes made of the tool's triangle) hold for wide scenes of many vertices and other shapes (E630)?"
 unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E310", "E625", "E630", "E705", "E735", "E773", "E779"]
+evidence = ["E310", "E625", "E630", "E705", "E735", "E773", "E779", "E832"]
 terms = ["Dynamic Parameter Management (DPM)", "Parameter Buffer (PB)"]
 +++
 
@@ -90,3 +90,19 @@ the formula's form fits with k at most 1, a reading not checked against E625's o
 and s, whether the count formula's form holds with another k (P = 0xa1 and 0xa2, the spacing cells
 at count 3), and U for wide scenes (E630's 300 to 900 vertices, `--vertices N`) and for shapes other
 than the tool's triangle.
+
+Narrowed 2026-11-11 (R3-geo-c g-qf and g-qh, run 2026-11-10, folded in round 4, E832). The
+question line asked "what are the constant k and the spacing s of the partial-render count of a
+scene of page need U (E625's formula with k from 2 to 13 is refuted at U = 287, E779)". The round
+3 offline fit found 20 (k, s) pairs (k -8 to 0, s 0x1b to 0x1e) fitting E625's and E779's cells,
+the only ones of k -60 to 60 and s 1 to 0x5f; at U = 287 the count read at 22 values of P (9 at
+0x24 down to 1 at 0xa3, never rising with P; 2 at 0xa2, so E779's step from 2 to 1 is between
+thr0 128 and 129) fits none of them (frozen verdict REFUTED, controls passed): E625's form is
+refuted over that grid. The held-out stage could not test anything (no pair left); its scene
+s275 (U 275) gave 6 counts as data (8, 8, 7, 7, 6, 3 at P 0x26, 0x27, 0x2a, 0x2b, 0x31, 0x52),
+and s438's cells were void (its geometry-only first render overflowed). Post hoc [infer]: (0,
+0x1e) and (-1, 0x1e) miss one cell of each scene, and a scratch refit of c + floor or ceil((U +
+a) / (P + b)) and of a two-segment form with a raised first threshold found no member that
+fits all 22 cells (`closing4/rank/q211_refit.py`, scratch), so the count is not a plain page quotient. Open: the rule of the
+count (what a partial render frees and keeps, with Q210's raise), to be fitted on E832's 22 cells
+and held out on s275's 6 before any run; the U clause as above.

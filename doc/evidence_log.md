@@ -6048,6 +6048,36 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   `render-closing-r3k-regress:out/20261110-222647/score-rg-ctl.txt`,
   `render-closing-r3k-regress:out/20261110-222647/score-rg-pb.txt`,
   `render-closing-r3k-regress:out/20261110-222647/gate-rg-pb.txt`.*
+- `E831` R3-geo-c stage g-z (15 jobs, E730's isp-a-guard rows: a depth ramp drawn by the full-screen
+  triangle or by one placed triangle, the depth buffer pre-filled with 0xdeadbeef, a dword stored
+  iff it is not 1.0f as E465 reads it): the three controls reproduced E730 (924, 924 and 3444
+  stored, rule A's sets), and on the 10 held-out full-screen cells at even sizes (widths 20, 36, 44,
+  76, 32 and 64 at H 18; heights 20, 28, 36 and 32 at W 34) the stored set was the frozen rule A's,
+  x + 0.5 < 1.25 W and y + 0.5 < 1.25 H cut at the target's tile area, in 10 of 10 (FLOOR, x <
+  floor(1.25 W), gives the same sets at every even size and was consistent too), while ROUND and
+  CEIL were refuted in 10 of 10 and RSTRICT (x + 1 < 1.25 W) in 6 of 10; where 1.25 W or 1.25 H
+  passes the tile area (W 32 and 64, H 28 and 32) the store stopped at the last tile (extents 32,
+  64, 32 and 32); two single triangles that do not cover the band stored exactly their own
+  pixel-centre raster cut by the band (z-tri-in 96 of 96 at 34x18, wholly inside the band;
+  z-tri-cross 357 of 357 at 36x20, crossing its edge; RSTRICT's raster refuted by 37 pixels): the
+  band rule of E730 holds held out at every even alignment, and only the fraction .75 of 1.25 W,
+  which needs odd sizes, still separates rule A from FLOOR.
+  *zls; HW, infer; data: `render-closing-r3-geo-c:out/g-z/`.*
+- `E832` R3-geo-c stages g-qf and g-qh (36 jobs at 4096x4096, the first threshold thr0 = P - 0x22
+  set by render_pb_pages and read from the job's own 0x0624, the count of partial renders read as
+  the 0x0658 bit 0 stretches of the job's timeline): at U = 287 (the tool's triangle, one render)
+  the controls passed (2 at P 0xa0, 1 at 0xb0 and 0xa3, as E625 and E779) and the 19 fit cells read
+  a count that never rises with P, 9 at P 0x24 and 0x25, 8 at 0x27 to 0x29, 7 at 0x2c to 0x31, 6 at
+  0x32, 5 at 0x39 to 0x43, 4 at 0x44 and 0x53, 3 at 0x54 and 0x6d, 2 at 0x6e to 0xa2: the frozen
+  verdict is that E625's count formula 1 + floor((U + k - thr0) / (thr0 + s)) is REFUTED at U = 287,
+  none of the 20 (k, s) pairs that fit E625's and E779's cells (k -8 to 0, s 0x1b to 0x1e, the only
+  pairs of k -60 to 60 and s 1 to 0x5f that do) fitting the 19 cells; in g-qh both scene gates
+  passed (U 275 and 438, no partial render at P 0x422), the scene s275 (one triangle moved by 1024,
+  0) read 8 at P 0x26 and 0x27, 7 at 0x2a and 0x2b, 6 at 0x31 and 3 at 0x52, and the six cells of
+  s438 were void by the frozen rule (the geometry-only first render overflowed before the last); the
+  held-out verdict (REFUTED, none of the 0 pairs the fit left) follows from g-qf's and tests nothing
+  more.
+  *dpm; HW, infer; data: `render-closing-r3-geo-c:out/g-qf/`, `render-closing-r3-geo-c:out/g-qh/`.*
 
 ### 2026-11-11
 
@@ -6105,7 +6135,7 @@ Records: E151, E457, E573, E592, E745, E761, E767, E789, E826.
 Records: E199, E200, E201, E202, E204, E205, E206, E203, E253, E256, E309, E310, E311, E312, E313,
 E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E468, E574, E591,
 E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753, E773, E774, E775, E779, E785,
-E786, E790, E799, E800, E801, E802, E803.
+E786, E790, E799, E800, E801, E802, E803, E832.
 
 ### edm
 
@@ -6199,4 +6229,4 @@ E413, E414, E427, E440, E545, E546, E700, E701, E702, E703, E737, E738, E755, E7
 ### zls
 
 Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467, E489, E490, E615, E628, E629,
-E663, E664, E665, E730.
+E663, E664, E665, E730, E831.
