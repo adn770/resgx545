@@ -24,3 +24,9 @@ having held u and v constant and covered 0.031 of a 1/64 level step). The point-
 follows the level coarsely (bits 11:8 of the constant dword 1, 4, 6, 14 for n = 2, 13, 22, 56,
 about n / 4), a resolution nearer 1/16 than 1/64 of a level. A ladder must span at least one such
 step to show where the output changes.
+
+Moved 2026-11-11 from Q175 (retired as answered by E721: the footprint is the larger of the two
+Euclidean lengths and the LOD fraction truncates to 1/64, held out on 8 of 8 jobs and 8 of 8
+ladders). What the answer leaves besides this question's residual: the quad's own derivatives
+(`lod-auto`) were not run, so the footprint of a quad that takes its own derivatives is not shown
+by E721 and is open here.

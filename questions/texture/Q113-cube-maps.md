@@ -34,3 +34,9 @@ Run in 11.39 (E725, E726): types 3 and 1 read a raster of w dwords per row (8 jo
 face), face = +x, -x, +y, -y, +z, -z along the dominant axis (exploratory: the plan predicted only
 faces 1, 3, 5 for the negative axes; the mapping and the dominant-axis rule are post hoc [infer],
 checked on cu-w02). Open: the faces' (s, t), the edges, other sizes (Q284); type 5 not run.
+
+Note 2026-11-11 (round 4, decision R4-3; not retired). E725 and E726 answer the main clause (TEXTYPE
+2 with smp3d is the cube, six faces of 256 dwords, face order +x, -x, +y, -y, +z, -z), but the face
+mapping and the dominant-axis rule are post hoc [infer] (E726; the plan predicted only faces 1, 3
+and 5), so the question waits for a 2-job held-out cube row before it is retired as answered. The
+faces' (s, t) and the edges are Q284's.
