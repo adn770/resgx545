@@ -216,3 +216,20 @@ def test_the_worktree_is_the_commit_of_the_frozen_tool_source(world):
     (s / "FROZEN.sha256").write_text(frozen.replace(sha(RUN_ALL), sha(run_all.read_text())))
     r = run(world, "edm/closing-demo")
     assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_sibling_sources_are_put_beside_the_session(world):
+    """Files a session read from scratch directories outside it are published in its
+    sibling-src/<dir>/; the runner puts each <dir> beside the copy, where the tests read it."""
+    s = world[1] / "edm/closing-demo"
+    (s / "sibling-src/kernel").mkdir(parents=True)
+    (s / "sibling-src/kernel/layout.out").write_text("sizes\n")
+    run_all = s / "tests/run_all.sh"
+    frozen = (s / "FROZEN.sha256").read_text()
+    run_all.write_text(run_all.read_text().replace(
+        'echo "RUN_ALL PASSED"',
+        '[ "$(cat ../kernel/layout.out)" = sizes ] || { echo "sibling-src"; exit 1; }\n'
+        'echo "RUN_ALL PASSED"'))
+    (s / "FROZEN.sha256").write_text(frozen.replace(sha(RUN_ALL), sha(run_all.read_text())))
+    r = run(world, "edm/closing-demo")
+    assert r.returncode == 0, r.stdout + r.stderr

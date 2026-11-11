@@ -27,6 +27,8 @@
 #   - TOOL_SRC, RESGX545 and RESGX545_MAIN name the pinned worktree and RESGX545_DATA the fake
 #     home's data link (the sessions' overrides of their tool and data trees, which some default
 #     to an agent worktree that no longer exists or to the author's absolute paths);
+#   - each sibling-src/<dir>/ of the session (inputs it read from scratch beside it) is copied
+#     to scratch/resgx545/closing3/<dir>;
 #   - the entry is tests/run_all.sh, else tests/run_mock.sh, else tests/run_mock.py.
 #
 # Environment: PY (the python the tests use; default <tool>/.venv/bin/python, else python3),
@@ -90,6 +92,12 @@ rm -f "$S/closing3/$NAME"
 cp -R "$SRC" "$S/closing3/$NAME" || die "cannot copy $SESSION"
 C=$S/closing3/$NAME
 mkdir -p "$C/debug"
+for d in "$C"/sibling-src/*/; do       # inputs the session read from scratch beside it
+    [ -d "$d" ] || continue
+    n=$(basename "$d")
+    [ -e "$S/closing3/$n" ] && die "sibling-src/$n would replace closing3/$n"
+    cp -R "$d" "$S/closing3/$n"
+done
 
 # the pinned tool source: a worktree at the newest pinned commit (or the tool source's commit),
 # each pin overlaid
