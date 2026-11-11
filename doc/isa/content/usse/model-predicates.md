@@ -37,9 +37,11 @@ The integer multiply-add, colour, dot-product and video groups have only a two-b
   others. The probe table's model, "cleared at the start of a job", fails. A task sets `p0`-`p3` by
   a test before it reads them; across firmware tasks, p1 at the next entry was the writer's 0 and p0
   was not after a writer that called the closed task **[HW]** (E536, 3 of 3 rounds; p2 and p3
-  equalled the flags but also move between readings with no writer, so they show nothing), and the
-  rest is **[open]** (Q124, Q152). A second table agrees: `p0` and `p1` after a setter read the kept
-  value in 96.3 to 100 percent of the pixels in 10 of 10 reader jobs (E484).
+  equalled the flags but also move between readings with no writer, so they show nothing). Held
+  out, p1, p2 and p3 at the next entry are what the task left and p0 reads 1 (E809: 8 of 8 jobs
+  where a flag was 0); after a fill, a reload or a reset p0 p1 read 1 1, p2 0 and p3 as left
+  (E810). The rest is **[open]** (Q158). A second table agrees: `p0` and `p1` after a setter read
+  the kept value in 96.3 to 100 percent of the pixels in 10 of 10 reader jobs (E484).
 
 **In the firmware [RE].** The microkernel's predicates guard branches above all: 591 of its
 954 `ba` are predicated (`p0` 318, `!p0` 94, `p2` 76, `p1` 72, `!p1` 26, `p3` 5). A few dozen

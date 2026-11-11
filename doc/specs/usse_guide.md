@@ -94,21 +94,23 @@ marked.
   task left there, firmware data included (measured from a client pixel shader on our render node);
   `r40` and `r47` written by one fill were read by the next in 7 of 7 reader jobs (2048 of 2048
   pixels each), and by one two fills later, after a fill that wrote no temporary, in 2 of 2 (E484: a
-  pair of fills, not EDM tasks; Q124). In firmware (EDM) tasks of ours `r20` and `r21` written
+  pair of fills, not EDM tasks). In firmware (EDM) tasks of ours `r20` and `r21` written
   by one task were read by the next at the next event and after 1200 ms (6 of 6) and replaced by a
-  client fill (0 of 6 kept), and `i0` and `i1` also after a fill (6 of 6) **[HW]** (E536). The
-  registers sampled up to `r123` are separate storage in a fill started with up to 128 temporaries
-  (`--temps` 52, 64, 80, 96, 112, 124 and 128: 14 of 14 cases, every second or fourth register from
-  `r2` and the top one; E485) **[HW]**. **A register at or past the task's allocation `T` reads as
-  register `n mod T` in most instances, and a write to it was not seen to reach it [HW]**: in client
-  pixel tasks `r(n)` read the marker written to `r(n mod T)` in 88 to 99.6 percent of the 2048
-  instances in 15 of 15 cases (by `T`: 95.3 to 99.6 percent at 8, 95.3 to 98.4 at 16, 88.3 to 96.1
-  at 32, 92.1 to 92.2 at 64), the rest of the instances reading other values, so the rule is "most
-  instances" and no program may rely on it; in 4 of 4 cases that also wrote a marker to `r(n)` (`T`
-  = 8 and 32 only) the instances read the value of `r(n mod T)`, not the one written; nothing
-  faulted or hung (E486); and with a marker of its own in every job a write to `r123` under a
-  request of 4 to 100 was not seen by the read of `r123` in the same job (0 of 12 jobs, within the
-  pixels the reports list, E535). The
+  client fill (0 of 6 kept), and `i0` and `i1` also after a fill (6 of 6) **[HW]** (E536). After a
+  firmware reload, and after a reset and a reload, `i0`, `i1` and `r21` kept the markers and `r20`
+  and `sa63` read 0 (6 of 6; after a fill `r21` read 0x1000 to 0x3000 and `sa63` kept its marker)
+  **[HW]** (E810). The registers sampled up to `r123` are separate storage in a fill started with up
+  to 128 temporaries (`--temps` 52, 64, 80, 96, 112, 124 and 128: 14 of 14 cases, every second or
+  fourth register from `r2` and the top one; E485) **[HW]**. **A register at or past the task's
+  allocation `T` reads as register `n mod T` in most instances, and a write to it was not seen to
+  reach it [HW]**: in client pixel tasks `r(n)` read the marker written to `r(n mod T)` in 88 to
+  99.6 percent of the 2048 instances in 15 of 15 cases (by `T`: 95.3 to 99.6 percent at 8, 95.3 to
+  98.4 at 16, 88.3 to 96.1 at 32, 92.1 to 92.2 at 64), the rest of the instances reading other
+  values, so the rule is "most instances" and no program may rely on it; in 4 of 4 cases that also
+  wrote a marker to `r(n)` (`T` = 8 and 32 only) the instances read the value of `r(n mod T)`, not
+  the one written; nothing faulted or hung (E486); and with a marker of its own in every job a write
+  to `r123` under a request of 4 to 100 was not seen by the read of `r123` in the same job (0 of 12
+  jobs, within the pixels the reports list, E535). The
   model gave such a register storage of its own or a fault. A `phas` request is the allocation of
   its phase (*Tasks and phases*).
 - **Primary attributes [HW].** The PDS fills them per task: `doutd` DMAs memory into them
@@ -224,9 +226,11 @@ The integer multiply-add, colour, dot-product and video groups have only a two-b
   others. The probe table's model, "cleared at the start of a job", fails. A task sets `p0`-`p3` by
   a test before it reads them; across firmware tasks, p1 at the next entry was the writer's 0 and p0
   was not after a writer that called the closed task **[HW]** (E536, 3 of 3 rounds; p2 and p3
-  equalled the flags but also move between readings with no writer, so they show nothing), and the
-  rest is **[open]** (Q124, Q152). A second table agrees: `p0` and `p1` after a setter read the kept
-  value in 96.3 to 100 percent of the pixels in 10 of 10 reader jobs (E484).
+  equalled the flags but also move between readings with no writer, so they show nothing). Held
+  out, p1, p2 and p3 at the next entry are what the task left and p0 reads 1 (E809: 8 of 8 jobs
+  where a flag was 0); after a fill, a reload or a reset p0 p1 read 1 1, p2 0 and p3 as left
+  (E810). The rest is **[open]** (Q158). A second table agrees: `p0` and `p1` after a setter read
+  the kept value in 96.3 to 100 percent of the pixels in 10 of 10 reader jobs (E484).
 
 **In the firmware [RE].** The microkernel's predicates guard branches above all: 591 of its
 954 `ba` are predicated (`p0` 318, `!p0` 94, `p2` 76, `p1` 72, `!p1` 26, `p3` 5). A few dozen
@@ -300,8 +304,10 @@ flag into `p0` without writing a register and branches on it.
   to 16 quads, as much, so the positions are neither fixed nor independent across jobs or runs
   (Q125). A task writes `pclink` before it reads it; across firmware tasks, after a writer that
   called the closed task p1 at the next entry was the writer's, `pclink` was 6 (the value of the
-  writer's own tail triple **[infer]**) and p0 was not **[HW]** (E536); the rest is **[open]**
-  (Q124, Q152).
+  writer's own tail triple **[infer]**) and p0 was not **[HW]** (E536); at the next entry `pclink`
+  read 0x98, p0 1 and p1 to p3 what the writer left, 12 of 12 (E809); after a fill, a reload or a
+  reset p0 p1 read 1 1, `pclink` 0x98, p2 0 and p3 as left (E810). The start state after other
+  perturbations and a cold boot is **[open]** (Q158).
 - **Branch flags [open].** `.nosched`, `.synce`/`.syncent` and `.mon` decode on `ba`, `br`
   and `lapc`; their effect is not established, and the firmware uses none of them.
 - **`bexception` [HW].** Hangs a fill's pixel task, with or without `.nosched`: it neither
@@ -2946,12 +2952,13 @@ source-1 operand; the LOD value as source 2 when a LOD mode is set; a data fence
   and `.pcf` follow the state words (*Sampler state*). **[HW]** A LOD mode's source 2 selects
   the mip level, with `grad` from the logarithm of a footprint of the four derivatives (E041): the
   largest component fits where only `dudx` and `dvdx` are set and the Euclidean length where all
-  four are, on the cases run, neither on the rest (E563, Q175), and the fraction of the LOD in
-  1/64 is truncated, except at one column of one ladder; a non-square twiddled chain halves both
-  sides down to 1x1 (E562); `.sinf` returns the level and the blend fraction instead of a texel,
-  and `.rsd` the 2x2 texels per level that a filtered sample blends (E042). Our copy path does
-  not use it: the PDS issues the texture fetch (`doutt`) and the result arrives in `pa0` before
-  the task starts (`doc/specs/transfer.md`
+  four are, on the cases run, neither on the rest (E563); held out with independent operands
+  the footprint is the larger of the two Euclidean lengths and the fraction of the LOD in 1/64 is
+  truncated (E721; the residual pixels and the quad's own derivatives are Q280); a non-square
+  twiddled chain halves both sides down to 1x1 (E562); `.sinf` returns the level and the blend
+  fraction instead of a texel, and `.rsd` the 2x2 texels per level that a filtered sample blends
+  (E042). Our copy path does not use it: the PDS issues the texture fetch (`doutt`) and the result
+  arrives in `pa0` before the task starts (`doc/specs/transfer.md`
   §4.4.3) **[HW]**.
 - **`smp3d` without a LOD mode [HW]** (E567, in a fill of our own): on TEXTYPE 0, 6 and 7, point
   sampled, a 16x16 twiddled texture and a 64x32 stride one, the third coordinate is not read and
@@ -5035,8 +5042,8 @@ Beyond the undecided parts of the hardware probe results, by how much they would
 open driver:
 
 1. **The behaviour of the groups no program of ours has run**: the visibility group. Of the
-   probed groups, the LOD of a quad's own derivatives and the footprint rule of `smp`
-   (E563, Q175), the border address modes on the u axis (E565), the compressed and YUV
+   probed groups, the LOD of a quad's own derivatives (Q280; the gradient footprint is E721) of
+   `smp`, the border address modes on the u axis (E565), the compressed and YUV
    formats (E568), `fdpc`'s clip-plane result (likely a vertex-task output), and
    of the video filters `firh`'s sets 6 and 7 under fixed banks 1 and 2 and the exact taps of
    those banks within their families remain; how the coefficient sets are loaded, what the
@@ -5080,16 +5087,17 @@ open driver:
    registers is open (Q080).
 9. **Calls, the program counter, the integer forms and the tests**: indices of 256 to 8191 in a fill
    and a jump across a 65536-word step of the code base (Q123; the step of 0x80000 is shown by ten
-   placements: E492); `p0`-`p3` and `pclink` at the start of a firmware task, beyond one writer's p1
-   and `pclink` at the next entry (Q124, Q152); what leaves 0xeb3 and 0x98 in them across jobs
-   (Q125: four runs of the readers show 64 pixels of 0xeb3 in 29 of 40 jobs and quads that repeat in
-   part, E500); which extension the test of `iaddu32` reads for a source 1 above 0x7fff, which no
-   test tells, and the value it writes with a repeat, an immediate or a constant in source 2 (Q126);
-   `ima32`'s dual-issue form, `cie`, `.neg` and immediates with the extra operand, its selector 3
-   and what bit 46 does (Q135), and `imae`'s repeats, `u16`/`z16` sources and `.rsN` shifts with the
-   carries, with the operand values and immediates not run (Q127); the rule of the test field on the
-   shifts, the lane operations and the other classes, with the `o` join (Q137) and the chan
-   field (Q137); how long an `sa0` written by `ima32` lasts and why a write to `pa0` is lost (Q136).
+   placements: E492); `p0`-`p3` and `pclink` at the start of a firmware task after a perturbation
+   or a cold boot (Q158; at the next entry they are what the task left, E809, E810); what leaves
+   0xeb3 and 0x98 in them across jobs (Q125: four runs of the readers show 64 pixels of 0xeb3 in 29
+   of 40 jobs and quads that repeat in part, E500); which extension the test of `iaddu32` reads for
+   a source 1 above 0x7fff, which no test tells, and the value it writes with a repeat, an immediate
+   or a constant in source 2 (Q126); `ima32`'s dual-issue form, `cie`, `.neg` and immediates with
+   the extra operand, its selector 3 and what bit 46 does (Q135), and `imae`'s repeats, `u16`/`z16`
+   sources and `.rsN` shifts with the carries, with the operand values and immediates not run
+   (Q127); the rule of the test field on the shifts, the lane operations and the other classes, with
+   the `o` join (Q137) and the chan field (Q137); how long an `sa0` written by `ima32` lasts and why
+   a write to `pa0` is lost (Q136).
 10. **Fences, repeats, registers and persistence for a firmware compiler**: why a `wdf` waits for
    another counter's loads in some runs and not in others (Q130); whether a firmware (EDM) task runs
    two at once (no second pass was seen in 12 of 12 holds of up to 90 ticks, E749, E751, and an
@@ -5104,7 +5112,7 @@ open driver:
    `sa` (Q129); where a write past the allocation goes (Q132); what bounds a `phas` request
    and what a request above 256 allocates, which is [infer] at least 124 for 260 to 376, T = 101 to
    123 not run (Q133). What survives from one firmware task to the next beyond one writer's
-   `sa`, `r`, `i` and p1 (Q124, Q152, Q158), what stops the tick after a task (Q152) and
+   `sa`, `r`, `i` and p (E809, E810; Q158), what else stops the tick after a task (Q152) and
    the allocation of a firmware task above TRC 31 are not measured.
 
 The simulator (`crates/sgx-sim`) reproduces 30815 probe vectors (15526 of them with near values:

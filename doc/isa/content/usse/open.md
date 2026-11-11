@@ -6,8 +6,8 @@ Beyond the undecided parts of the hardware probe results, by how much they would
 open driver:
 
 1. **The behaviour of the groups no program of ours has run**: the visibility group. Of the
-   probed groups, the LOD of a quad's own derivatives and the footprint rule of `smp`
-   (E563, Q175), the border address modes on the u axis (E565), the compressed and YUV
+   probed groups, the LOD of a quad's own derivatives (Q280; the gradient footprint is E721) of
+   `smp`, the border address modes on the u axis (E565), the compressed and YUV
    formats (E568), `fdpc`'s clip-plane result (likely a vertex-task output), and
    of the video filters `firh`'s sets 6 and 7 under fixed banks 1 and 2 and the exact taps of
    those banks within their families remain; how the coefficient sets are loaded, what the
@@ -51,16 +51,17 @@ open driver:
    registers is open (Q080).
 9. **Calls, the program counter, the integer forms and the tests**: indices of 256 to 8191 in a fill
    and a jump across a 65536-word step of the code base (Q123; the step of 0x80000 is shown by ten
-   placements: E492); `p0`-`p3` and `pclink` at the start of a firmware task, beyond one writer's p1
-   and `pclink` at the next entry (Q124, Q152); what leaves 0xeb3 and 0x98 in them across jobs
-   (Q125: four runs of the readers show 64 pixels of 0xeb3 in 29 of 40 jobs and quads that repeat in
-   part, E500); which extension the test of `iaddu32` reads for a source 1 above 0x7fff, which no
-   test tells, and the value it writes with a repeat, an immediate or a constant in source 2 (Q126);
-   `ima32`'s dual-issue form, `cie`, `.neg` and immediates with the extra operand, its selector 3
-   and what bit 46 does (Q135), and `imae`'s repeats, `u16`/`z16` sources and `.rsN` shifts with the
-   carries, with the operand values and immediates not run (Q127); the rule of the test field on the
-   shifts, the lane operations and the other classes, with the `o` join (Q137) and the chan
-   field (Q137); how long an `sa0` written by `ima32` lasts and why a write to `pa0` is lost (Q136).
+   placements: E492); `p0`-`p3` and `pclink` at the start of a firmware task after a perturbation
+   or a cold boot (Q158; at the next entry they are what the task left, E809, E810); what leaves
+   0xeb3 and 0x98 in them across jobs (Q125: four runs of the readers show 64 pixels of 0xeb3 in 29
+   of 40 jobs and quads that repeat in part, E500); which extension the test of `iaddu32` reads for
+   a source 1 above 0x7fff, which no test tells, and the value it writes with a repeat, an immediate
+   or a constant in source 2 (Q126); `ima32`'s dual-issue form, `cie`, `.neg` and immediates with
+   the extra operand, its selector 3 and what bit 46 does (Q135), and `imae`'s repeats, `u16`/`z16`
+   sources and `.rsN` shifts with the carries, with the operand values and immediates not run
+   (Q127); the rule of the test field on the shifts, the lane operations and the other classes, with
+   the `o` join (Q137) and the chan field (Q137); how long an `sa0` written by `ima32` lasts and why
+   a write to `pa0` is lost (Q136).
 10. **Fences, repeats, registers and persistence for a firmware compiler**: why a `wdf` waits for
    another counter's loads in some runs and not in others (Q130); whether a firmware (EDM) task runs
    two at once (no second pass was seen in 12 of 12 holds of up to 90 ticks, E749, E751, and an
@@ -75,7 +76,7 @@ open driver:
    `sa` (Q129); where a write past the allocation goes (Q132); what bounds a `phas` request
    and what a request above 256 allocates, which is [infer] at least 124 for 260 to 376, T = 101 to
    123 not run (Q133). What survives from one firmware task to the next beyond one writer's
-   `sa`, `r`, `i` and p1 (Q124, Q152, Q158), what stops the tick after a task (Q152) and
+   `sa`, `r`, `i` and p (E809, E810; Q158), what else stops the tick after a task (Q152) and
    the allocation of a firmware task above TRC 31 are not measured.
 
 <!-- @simopen 12 -->

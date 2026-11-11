@@ -16,12 +16,13 @@ source-1 operand; the LOD value as source 2 when a LOD mode is set; a data fence
   and `.pcf` follow the state words (*Sampler state*). **[HW]** A LOD mode's source 2 selects
   the mip level, with `grad` from the logarithm of a footprint of the four derivatives (E041): the
   largest component fits where only `dudx` and `dvdx` are set and the Euclidean length where all
-  four are, on the cases run, neither on the rest (E563, Q175), and the fraction of the LOD in
-  1/64 is truncated, except at one column of one ladder; a non-square twiddled chain halves both
-  sides down to 1x1 (E562); `.sinf` returns the level and the blend fraction instead of a texel,
-  and `.rsd` the 2x2 texels per level that a filtered sample blends (E042). Our copy path does
-  not use it: the PDS issues the texture fetch (`doutt`) and the result arrives in `pa0` before
-  the task starts (`doc/specs/transfer.md`
+  four are, on the cases run, neither on the rest (E563); held out with independent operands
+  the footprint is the larger of the two Euclidean lengths and the fraction of the LOD in 1/64 is
+  truncated (E721; the residual pixels and the quad's own derivatives are Q280); a non-square
+  twiddled chain halves both sides down to 1x1 (E562); `.sinf` returns the level and the blend
+  fraction instead of a texel, and `.rsd` the 2x2 texels per level that a filtered sample blends
+  (E042). Our copy path does not use it: the PDS issues the texture fetch (`doutt`) and the result
+  arrives in `pa0` before the task starts (`doc/specs/transfer.md`
   §4.4.3) **[HW]**.
 - **`smp3d` without a LOD mode [HW]** (E567, in a fill of our own): on TEXTYPE 0, 6 and 7, point
   sampled, a 16x16 twiddled texture and a 64x32 stride one, the third coordinate is not read and
