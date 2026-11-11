@@ -31,3 +31,10 @@ nowhere.
 
 **What it does not show.** `p0 mov r, r`, `!p0 mov r, r` and every `ba` in a firmware task (the
 verifier refuses them), a taken `!p0 ba`, p0 across a task boundary (Q124).
+
+**Correction 2026-11-11:** "No log line" for the arm was the tool's report, not the kernel's:
+`cmd_arm` of tools/fwtask/fwtask_run.py slices dmesg by a line count and read an empty list on a
+full ring buffer (`"log": []` in f8-arm.json). The stage's kernel.log (dataset
+firmware-tasks-p1137-f8) has the kernel's `own_code: 3786 bytes accepted` and `own task armed:
+slots 0x1, trc 0 (0: stock)` lines for the arm and no fault, hang or recovering line; no other
+statement here depends on it.

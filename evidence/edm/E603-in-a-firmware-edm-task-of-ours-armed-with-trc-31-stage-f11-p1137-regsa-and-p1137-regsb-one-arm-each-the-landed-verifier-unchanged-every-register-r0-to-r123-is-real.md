@@ -46,3 +46,10 @@ operands of the ALU or of `mov` (only `ldad` destinations and `stad` sources wer
 r127 (no operand names them, Q168); a TRC above 48 or the stock tick under a task that clobbers more
 (nothing past the tail call was clobbered but the temporaries); whether the values survive from one
 task to the next (Q158); what an unwritten register holds.
+
+**Correction 2026-11-11:** "No log line" for the arms was the tool's report, not the kernel's:
+`cmd_arm` of tools/fwtask/fwtask_run.py slices dmesg by a line count and read an empty list on a
+full ring buffer (`"log": []` in f11-p1137_regsB-arm.json and f11-p1137_regsA-arm.json). The
+stage's kernel.log (dataset firmware-tasks-p1137-f11) has the kernel's `own_code` (442 and 4250
+bytes accepted) and `own task armed: slots 0x1, trc 31 (0: stock)` lines for each of the two arms
+and no fault, hang or recovering line; no other statement here depends on it.

@@ -43,3 +43,10 @@ the missing-`wdf` hazard cannot be demonstrated with this distance (Q194).
 the `wdf` waits for anything or is needed at any distance; `.fetchN`, `.bpcache`, `drc1` and a
 computed base (the verifier refuses them); loads from memory other than the page; the control at
 other distances (fewer than 32 instructions) or after a long `nop` run.
+
+**Correction 2026-11-11:** "No log line" for the arm was the tool's report, not the kernel's:
+`cmd_arm` of tools/fwtask/fwtask_run.py slices dmesg by a line count and read an empty list on a
+full ring buffer (`"log": []` in f12-arm.json). The stage's kernel.log (dataset
+firmware-tasks-p1137-f12) has the kernel's `own_code: 5218 bytes accepted` and `own task armed:
+slots 0x1, trc 31 (0: stock)` lines for the arm and no fault, hang or recovering line; no other
+statement here depends on it.

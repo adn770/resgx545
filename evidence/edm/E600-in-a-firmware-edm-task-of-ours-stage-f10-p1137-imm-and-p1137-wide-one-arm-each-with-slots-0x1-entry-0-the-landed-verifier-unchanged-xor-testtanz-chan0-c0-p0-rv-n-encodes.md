@@ -42,3 +42,11 @@ imm-encode.txt.
 raw word was run); the non-test rotated 16-bit immediate (`and r, r, #n`: the landed verifier's
 verdict function says unknown form for `and r12, r5, #5`, which verifier-matrix.txt does not list);
 the other test channels.
+
+**Correction 2026-11-11:** The arms' "no log line of the kernel's own-task path" was the tool's own
+report, not the kernel's: `cmd_arm` of tools/fwtask/fwtask_run.py slices dmesg by a line count and
+read an empty list on a full ring buffer (`"log": []` in f10-imm-arm.json and f10-wide-arm.json).
+The stage's kernel.log (dataset firmware-tasks-p1137-f10) holds the kernel's lines for each arm,
+`own_code: 5490 bytes accepted` (p1137_imm) and `own_code: 3378 bytes accepted` (p1137_wide), each
+followed by `own task armed: slots 0x1, trc 0 (0: stock)`, and no fault, hang or recovering line.
+Nothing else in this record depends on it.
