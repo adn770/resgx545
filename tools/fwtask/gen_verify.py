@@ -10,8 +10,12 @@ import sys
 import fwtask
 
 HERE = pathlib.Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent))
+import forkpin  # noqa: E402
 LINUX = pathlib.Path(os.environ.get("RESGX545_LINUX", fwtask.ROOT.parent / "linux"))
-SGXFIVE = LINUX / "drivers" / "gpu" / "drm" / "gma500" / "sgxfive"     # where the fork keeps them
+# the fork's sgxfive sources at the pinned commit (forkpin.py), whatever the home has checked out;
+# a path that does not exist when there is no fork, so the tests that read it skip
+SGXFIVE = forkpin.sgxfive_dir() or LINUX / "drivers" / "gpu" / "drm" / "gma500" / "sgxfive"
 
 
 def spec_path() -> str:

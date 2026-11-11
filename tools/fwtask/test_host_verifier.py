@@ -3,7 +3,7 @@
 """The kernel's verifier against the Python one (phase 11.29 review R9).
 
 host/own_host.c is built with shim headers around the fork's real sgxfive_owntask.c and sgx_fw.c
-(the checkout is RESGX545_LINUX or ../linux, as test_gen_verify.py needs), and run over the same
+(the fork is read at the pinned commit of forkpin.py, from RESGX545_LINUX or ../linux), and run over the same
 blobs as fwtask.refusal(): the crafted ones, every blob of asm/fwtask, every single-bit change of
 the words of some of them, and random words of the canonical forms. The two must agree on every
 verdict and on the first reason. Without a C compiler or the checkout the tests skip and say so;
@@ -31,7 +31,7 @@ REGS = fwtask.load_regs()
 def host_build() -> pathlib.Path:
     cc = shutil.which("cc") or shutil.which("gcc")
     if cc is None or not (SGXFIVE / "sgxfive_owntask.c").is_file():
-        pytest.skip(f"SKIPPED, NOT PASSED: no C compiler or no fork checkout at {gen_verify.LINUX}")
+        pytest.skip(f"SKIPPED, NOT PASSED: no C compiler or no fork commit {gen_verify.forkpin.pin()} in {gen_verify.LINUX}")
     out = pathlib.Path(__import__("tempfile").mkdtemp(prefix="own_host_")) / "own_host"
     flags = [] if "sgx_own_apply" in (SGXFIVE / "sgxfive_owntask.h").read_text() else ["-DHOST_NO_APPLY"]
     r = subprocess.run([cc, "-std=gnu11", "-O1", "-Wall", "-Wextra", *flags, f"-I{HERE / 'host' / 'shim'}",

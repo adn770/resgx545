@@ -49,7 +49,7 @@ def test_header_forms_follow_fwtask():
 def test_committed_header_is_current():
     p = gen_verify.SGXFIVE / "sgx_own_regs.h"
     if not p.is_file():
-        pytest.skip(f"SKIPPED, NOT PASSED: no fork checkout at {gen_verify.LINUX} (RESGX545_LINUX)")
+        pytest.skip(f"SKIPPED, NOT PASSED: no fork commit {gen_verify.forkpin.pin()} in {gen_verify.LINUX} (RESGX545_LINUX)")
     assert p.read_text() == gen_verify.render(fwtask.load_regs())
 
 
@@ -78,5 +78,5 @@ def test_kernel_blobs_header_matches_the_sources():
     """The blobs the kernel's KUnit accepts are the ones the sources build now (the fork's copy)."""
     p = gen_verify.SGXFIVE / "sgxfive_owntask_blobs.h"
     if not p.is_file():
-        pytest.skip(f"SKIPPED, NOT PASSED: no fork checkout at {gen_verify.LINUX} (RESGX545_LINUX)")
+        pytest.skip(f"SKIPPED, NOT PASSED: no fork commit {gen_verify.forkpin.pin()} in {gen_verify.LINUX} (RESGX545_LINUX)")
     assert p.read_text() == gen_verify.render_test_blobs(fwtask.ASM)

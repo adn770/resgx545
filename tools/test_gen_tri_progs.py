@@ -17,14 +17,16 @@ import pytest
 
 HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
+import forkpin                # noqa: E402
 import gen_tri_progs as G     # noqa: E402
 
 
 def test_generated_header_is_fresh():
-    if not G.OUTPUT.is_file():
-        pytest.skip(f"no linux fork checkout at {G.LINUX} (RESGX545_LINUX)")
-    assert G.OUTPUT.read_text() == G.generate(), \
-        f"stale: run tools/gen_tri_progs.py -o {G.OUTPUT}"
+    pinned = forkpin.show(f"{forkpin.SGXFIVE}/sgx_tri_progs.h")
+    if pinned is None:
+        pytest.skip(f"SKIPPED, NOT PASSED: no fork commit {forkpin.pin()} in {forkpin.home()}")
+    assert pinned == G.generate(), \
+        f"stale: run tools/gen_tri_progs.py -o {G.OUTPUT} (the fork at {forkpin.pin()})"
 
 
 def test_user_header_is_fresh():
