@@ -775,10 +775,14 @@ counting down 400000 core clocks and reloading by themselves (E746, E751). One t
 served at once, 0x01061a74 for a tick latched while the EDM was not idle (the first ticks after a
 hold, E751), and any value for a kick (E746, E747). A task's `str` of the reload word 0x01061a80 to
 the timer followed by the closed task kept the tick and moved the next entry to 25114 units, 2 of 2
-(E818 T1); [infer] the store restarts the countdown where it executes. A pass with the tick bit of
-`sa64` clear leaves `pclink` 6 and does not advance HostCtl dword 12 (E792, E812 C5: 50 passes, 2
-of 2), and a tick pass handed to the slot 2 closed task keeps the tick without advancing it (E813
-X1, X20), so dword 12 counts the passes of the closed tick handler, not ticks [infer].
+(E818 T1), and the later gaps were 25000 again, so the grid moved and stayed moved (E818's
+correction of 2026-11-11); [infer] the store restarts the countdown where it executes. The timer
+reloads with nobody serving it: in 9 stops (E813, E814, E817, E818, E823, E830) bits 23:0 read
+below 400000 in 18 of 18 samples taken seconds after the last served pass [data, round 4 reading;
+a counter that ran through 24 bits would be below 400000 in 2.4% of samples]. A pass with the tick
+bit of `sa64` clear leaves `pclink` 6 and does not advance HostCtl dword 12 (E792, E812 C5: 50
+passes, 2 of 2), and a tick pass handed to the slot 2 closed task keeps the tick without advancing
+it (E813 X1, X20), so dword 12 counts the passes of the closed tick handler, not ticks [infer].
 
 **The end of a pass [HW].** After a task that wrote `sa`, `r`, `i`, `p` and `pclink` state and
 ended with `nop.end` instead of jumping to the closed general task, the tick stopped (E533, 1 run),
@@ -796,11 +800,11 @@ nop.end` stops it too (E813 B3), and a store to the timer does not replace the p
 task. A kick pass and the slot 3 pass ended with the `phas` have not run (Q152). A stop reads
 `CR_CLKGATESTATUS` 0x000ccfa0, `USE0_SERV_EVENT` bit 16 clear and its count frozen, the event timer
 counting and `CR_EVENT_STATUS` 0x20000000; it answers no host command (0 of 8 tries) and one
-debugfs reset recovers it; a task still running inside a 90.5 ms hold reads the same, so the
-signature cannot tell a stop from a long task (E811, E816). A phantom kick bit (`sa65` bit 8 with
-read = write) makes the closed reader take an empty command and stop with HostCtl dword 14
-0xad002600, read = write + 1 (E814 D2, E537); E537's word without bit 8 stops it with no mark (E814
-D1).
+debugfs reset recovers it (13 of 13 stops in the records, E533 to E830); a task still running inside
+a 90.5 ms hold reads the same, so the signature cannot tell a stop from a long task (E811, E816). A
+phantom kick bit (`sa65` bit 8 with read = write) makes the closed reader take an empty command and
+stop with HostCtl dword 14 0xad002600, read = write + 1 (E814 D2, E537); E537's word without bit 8
+stops it with no mark (E814 D1).
 
 **The kick [HW].** A kick is the command at the CCB write offset, the kicker word bumped (mod 256)
 and a write to `CR_EVENT_KICK`. It is one event in the general slot, `pa0` = 0, `pa1` = (K << 24) |
