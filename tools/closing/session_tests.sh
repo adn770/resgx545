@@ -14,8 +14,9 @@
 #   - scratch/resgx545/{closing,closing2,closing3}/pixel-faults/.venv/bin/python is a wrapper
 #     that runs $PY;
 #   - HOME is a fake home whose src/resgx545 is a git worktree of the tool repository at the
-#     newest commit of the session's FROZEN.commits, each pinned file replaced by its pinned
-#     blob, and src/scratch/resgx545 is the scratch tree. The copy's FROZEN.sha256 has its
+#     newest commit of the session's FROZEN.commits (or, when the session has a TOOLSRC.sha256,
+#     the newest commit holding exactly that tool source), each pinned file replaced by its
+#     pinned blob, and src/scratch/resgx545 is the scratch tree. The copy's FROZEN.sha256 has its
 #     absolute resgx545 and resgx545-data paths pointed at the fake home, so the freeze
 #     verifies against the pinned source;
 #   - src/resgx545-data is the data repository; the worktree's target/ is the runner's own
@@ -90,13 +91,33 @@ cp -R "$SRC" "$S/closing3/$NAME" || die "cannot copy $SESSION"
 C=$S/closing3/$NAME
 mkdir -p "$C/debug"
 
-# the pinned tool source: a worktree at the newest pinned commit, each pin overlaid
+# the pinned tool source: a worktree at the newest pinned commit (or the tool source's commit),
+# each pin overlaid
 COMMITS=$C/FROZEN.commits
 BASE=HEAD
 if [ -f "$COMMITS" ]; then
     pinned=$(awk '!/^#/ && $2 != "untracked" && NF >= 3 {print $2}' "$COMMITS" | sort -u)
     # shellcheck disable=SC2086
     [ -n "$pinned" ] && BASE=$(git -C "$TOOL" rev-list --no-walk --date-order $pinned | head -1)
+fi
+# a session that deployed a tool froze its source in TOOLSRC.sha256 (paths relative to the
+# tree): the worktree is then the newest commit holding exactly those files
+toolsrc_commit() {
+    local c h p ok sum
+    for c in $(git -C "$TOOL" rev-list -n 300 HEAD -- $(awk '{print $2}' "$1")); do
+        ok=1
+        while read -r h p; do
+            sum=$(git -C "$TOOL" show "$c:$p" 2>/dev/null | shasum -a 256 | cut -d' ' -f1)
+            [ "$sum" = "$h" ] || { ok=0; break; }
+        done < "$1"
+        [ $ok = 1 ] && { echo "$c"; return; }
+    done
+}
+if [ -f "$C/TOOLSRC.sha256" ] && ! awk '$2 ~ /^\//' "$C/TOOLSRC.sha256" | grep -q .; then
+    tc=$(toolsrc_commit "$C/TOOLSRC.sha256")
+    if [ -n "$tc" ]; then BASE=$tc
+    else echo "session_tests: warning: no commit holds the frozen tool source (TOOLSRC.sha256)"
+    fi
 fi
 git -C "$TOOL" worktree add -q --detach "$R" "$BASE" || die "cannot check out $BASE of $TOOL"
 if [ -f "$COMMITS" ]; then

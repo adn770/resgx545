@@ -193,3 +193,26 @@ def test_the_simulator_is_built_from_the_pinned_tree(world, tmp_path):
     assert sorted(x.split(" ", 1)[1] for x in lines) == \
         ["build -q --release --workspace --bins", "build -q --workspace --bins"]
     assert all(x.split(" ", 1)[0].endswith("/src/resgx545") for x in lines)
+
+
+def test_the_worktree_is_the_commit_of_the_frozen_tool_source(world):
+    """A session's TOOLSRC.sha256 pins the tool source it deployed; the worktree is the newest
+    commit holding exactly those files (the FROZEN.commits pins still overlaid on it)."""
+    tool, data = world[0], world[1]
+    src = tool / "userspace/t.c"
+    src.parent.mkdir(parents=True)
+    for v in ("one\n", "two\n", "three\n"):
+        src.write_text(v)
+        git(tool, "add", "userspace")
+        git(tool, "commit", "-qm", v.strip())
+    s = data / "edm/closing-demo"
+    (s / "TOOLSRC.sha256").write_text(f"{sha('two' + chr(10))}  userspace/t.c\n")
+    frozen = (s / "FROZEN.sha256").read_text()
+    run_all = s / "tests/run_all.sh"
+    run_all.write_text(run_all.read_text().replace(
+        'echo "RUN_ALL PASSED"',
+        '[ "$(cat "$HOME/src/resgx545/userspace/t.c")" = two ] || { echo "toolsrc"; exit 1; }\n'
+        'echo "RUN_ALL PASSED"'))
+    (s / "FROZEN.sha256").write_text(frozen.replace(sha(RUN_ALL), sha(run_all.read_text())))
+    r = run(world, "edm/closing-demo")
+    assert r.returncode == 0, r.stdout + r.stderr
