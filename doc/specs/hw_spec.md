@@ -309,7 +309,8 @@ value, is `doc/specs/boot_sequence.md`.
 `DPM_3D_MEM_FREE` 0 (`sgx545defs.h:367-451`; the debug dump decodes them, `sgxinit.c:907`).
 `TA_*` is the geometry and tiling front end, `ISP` the hidden-surface stage, `PIXELBE` the tile
 write-out, `DPM` the parameter memory manager. Which event sets which bit in an ordinary job is
-partly known, and for how long a bit is set is open (Q111, Q166). Seen on the hardware (E547, E548):
+partly known; how long a bit stays set is known for the two below (STATUS2 bit 6, STATUS bit
+18) and open for the rest (Q111, Q166). Seen on the hardware (E547, E548):
 PIXELBE_END_RENDER, DPM_3D_MEM_FREE and MADD_CACHE_INVALCOMPLETE show in a triangle, TA_FINISHED,
 TPC_FLUSH and the DPM state and control bits in the 256-pixel and partial jobs, a fill shows
 PIXELBE_END_RENDER and a copy only SW_EVENT, which comes with MASTER_INTERRUPT (41 of 41 jobs);
@@ -326,12 +327,52 @@ saw.
 `EVENT_STATUS2` (`0x0118`) reads 0x400 (`DCU_INVAL_COMPLETE`) when the core is idle;
 OTPM_MEM_CLEARED (bit 12) and DPM_TA_FREE_LOAD (bit 0) pulse in some depth-store, 256-pixel and
 partial jobs (E547). Its
-`TRIG_TA` (bit 7) and `TRIG_3D` (bit 6) latch on the laptop: bit 7 within 0.2 ms of the PB load of
-a TA that hangs or faults, bit 6 about 0.1 ms into a fill whose pixel program loops 128 times or
-more; neither sets in the renders, fills and copies of our stack, and each stays set until the
-core is reset (E357). A vertex program of our own that loops on a backward `br` (8 instructions an
-iteration) left bit 7 clear through 880 iterations and set it at 1760, so bit 7 does not follow the
-pixel latch's 53 to 55 iterations (E784). Both are host events: written alone into
+`TRIG_TA` (bit 7) and `TRIG_3D` (bit 6) latch on the laptop; neither sets in the renders, fills
+and copies of our stack (E357).
+
+- **Bit 7** sets 0.1 to 0.2 ms after the PB load of a TA that hangs or faults (E357), and, read
+  post hoc from timelines sampled every 4.3 µs, 121 µs after the fault word of a held TA read
+  fault (E764). A vertex program of our own that loops on a relative `br` sets it on the tool's
+  triangle: with an 8-instruction body on 3 vertices clear at 1045 iterations and set at 1100 in
+  both orders of a held-out ladder (E807; E784 had placed it in (880, 1760]), with a
+  16-instruction body in (601, 649], with a 4-instruction body already at 1760, the lowest point
+  run, with 12 vertices in (554, 698] and with 48 in (329, 538]. No fixed count of instructions or
+  of multiply-adds a vertex, nor a count a job, places these points (HV-INSTR, HV-MA and HV-JOB
+  refuted, E807 and its correction of 2026-11-11). Bit 7 showed 184 to 195 µs after the burst
+  began in every set job (E807).
+- **Bit 6** sets in a fill whose pixel program loops, at a point that depends on the loop body and
+  not on a count of iterations: E431's 8-instruction body (six multiply-adds) is clear at 53 and
+  set at 56 (55 in 3 of 3 runs, 54 in 2 of 3; E431, and E804 2 of 2 with a relative `br` and with
+  `ba`); E357's "128 iterations or more" came from runs of 16 and 128 only. Over six
+  bodies run in two orders, with a loop proof, the first set points held out are 25 for a body of
+  16 instructions (24 clear), 35 for 12 (34 clear), in (80, 130] for 4, every point from 500 for a
+  body with no multiply-add and from 60 for six `or`; a body with a load and a wait stayed clear to
+  320 iterations, bursts of 13.4 ms (E805, E769). So neither a count of multiply-adds (H-MA), nor a
+  tile time (H-WD), nor the job's burst (H-BURST) places the bit, held out (E805). Read after the
+  run [infer, no frozen row]: in the 106 load-free fills of E804 and E805 every set job had a burst
+  of at least 535.9 µs and every clear one at most 539.3 µs (E805). In triangles that cover the
+  target (E806) it first set at 56 iterations at 32 x 16, 32 x 32 and 128 x 128 (clear at 53), at
+  110 at 8 x 8, 16 x 16, 64 x 32 and 256 x 256 and at 220 at 4 x 4; the per-instance, per-tile and
+  per-job thresholds frozen for it were refuted at 3, 6 and 6 of the 8 sizes (E806 with its
+  correction). It showed 120 to 340 µs after the burst began (E805, 48 of 48 set jobs; E806, 28 of
+  32), and, post hoc, 121 to 124 µs after the fault word of a held background-program fetch, a
+  texture fetch and a transfer write fault (E764, E765, E766). The quantity the latch watches is
+  open (Q082).
+- **Clearing.** Without a clear each stays set through later jobs (E357, whose runs wrote none);
+  the debugfs reset clears both (E357, E764). A host write to `CR_EVENT_HOST_CLEAR2` (0x0114)
+  clears the bits written: 0x8000 left a latched 0x440 as it was, 0x40 cleared it to 0x400, and
+  the next loop fill latched it again, 3 of 3 rounds held out (E821: H-W; any non-zero write
+  clearing all, H-ALL, and no write clearing, H-NONE, refuted). A firmware task's `str` of the same
+  words does the same, 3 of 3 (E822). That CLEAR2 clears bit 7 is not measured.
+
+`CR_EVENT_STATUS` bit 18 (`PIXELBE_END_RENDER`) is a level until acknowledged, read after the run
+in one job [infer]: with the slot 3 end-of-render pass skipped once it read set from 7.3 ms to the
+end of a 50 ms watch (8 of 9 reads), a host write of bit 18 to `CR_EVENT_HOST_CLEAR` (0x0134)
+cleared it within 1 ms and a write of bit 15 did not; the frozen rows were cannot tell, the first
+watch read having come before the bit set (E823). Its 4 to 6 µs pulses in ordinary jobs are then
+the firmware's acknowledgement (E547). How long the other bits stay set is open (Q111, Q166).
+
+Both STATUS2 latches are host events: written alone into
 `CR_EVENT_HOST_ENABLE2` they raise the host interrupt once set (E444), as do `TIMER`
 (`CR_EVENT_STATUS` bit 29) and `DCU_INVAL_COMPLETE`, which an idle core has set; the EDM's write
 fault sets no bit beyond the idle ones. `CLKGATESTATUS` (`0x0008`) reads 0x20 idle and the same
@@ -343,7 +384,8 @@ untested (E445).
 
 *Based on sgx545-ce `src/services4/srvkm/devices/sgx/sgxinit.c`, `sgxreset.c`,
 `src/services4/include4/sgxscript.h`, `src/services4/include/sgx_mkif_km.h`,
-`src/services4/srvkm/hwdefs/sgx545defs.h`; E357, E365, E784.*
+`src/services4/srvkm/hwdefs/sgx545defs.h`; E357, E365, E431, E444, E445, E547, E764 to E766,
+E769, E784, E804 to E807, E821 to E823.*
 
 ## 7. Where the microkernel comes from
 
