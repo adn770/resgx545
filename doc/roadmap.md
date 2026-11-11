@@ -405,7 +405,8 @@ ramp makes every stored dword name its pixel, fills that encode the dword's inde
 control bits 11:3 (E465); bits 26:24 are the stored format (E466); bits 1, 13 and 14 load, the
 stencil and the depth (E467); and what an overflowed job stores is the first row of macrotiles as
 zeros and the rest negated (E468). Q088 stays open as a firmware question (its hardware half is
-answered); Q071, Q101 and Q107 are narrowed; Q120 to Q122 are new.
+answered); Q071, Q101 and Q107 are narrowed; Q120 and Q121 are new, and so was the question of
+the pixels past the target, answered since by E831.
 
 Sub-phase 11.23 ran 15 probe tables on the laptop with no kernel change and no tool change, for the
 integer and flow-control forms a compiler for our own firmware needs (`probes/usse/ima32-full.toml`,
@@ -853,9 +854,10 @@ for each fixed-function unit that refuses, naming its open questions, the format
 and scene vectors (`doc/specs/vectors.md` sections 5 and 6, in directories of the data repository
 outside `vectors/`) and the first four unit vectors, from rules that records state as fits: the ZLS
 store address (E465, E615: 3415552 dwords, 3225000 at the rule's address and counted fitted, the
-dwords past the target and in the overflowed jobs' tiles refused as Q122 and Q107), the TA's region
-test (E542, E616: 14656 pairs, 2414 of them by presence only), the object layout (E541, E617: 56
-layouts, the three failed jobs refused as Q165, not predicted) and the multisample window rule
+dwords past the target refused then, matched since by E831's band, and those in the overflowed
+jobs' tiles refused as Q107), the TA's region test (E542, E616: 14656 pairs, 2414 of them by
+presence only), the object layout (E541, E617: 56 layouts, the three failed jobs refused as Q165,
+not predicted) and the multisample window rule
 (E503, E618: 786 tiles, 13 refused as Q141). Every verdict is fitted, none matched. The inventory of
 the recorded data (E619, `doc/specs/pipe-inventory.md`): 2464 triangle-host vectors, 65 with a
 render dump, and 197 dump directories sorted by what each waits for. The simulator `sgx-sim` is

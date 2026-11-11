@@ -2,12 +2,12 @@
 // SPDX-FileCopyrightText: 2026 Josep Torra
 //! ZLS: the depth/stencil store and load (12.4). The address rule (E465, E489), the control word
 //! (E411, E337), the stored depth formats 0 to 2 and the negation (E466, E490), the load by bits 1,
-//! 13 and 14 with the sign cleared (E467) and the pass over a loaded buffer. What no record
-//! states refuses by question: formats 3 to 7 (Q120), the stencil's in-tile order (Q121), the
-//! pixels past the target (Q122), the overflowed job's store (Q107), the integer formats' values
-//! outside the ramp that ran, the 16-bit pitch, overlapping tiles and the pitches past the
-//! scratch buffer (Q242), a load of an integer format or a loaded depth the compare cannot decide
-//! (Q243), bit 0 beyond the one control it ran on and the control bits no run explained (Q244),
+//! 13 and 14 with the sign cleared (E467), the pass over a loaded buffer and the band of an edge
+//! tile (E730, E831). What no record states refuses by question: formats 3 to 7 (Q120), the
+//! stencil's in-tile order and its edge tiles (Q121), the band at odd sizes (Q287), the
+//! overflowed job's store (Q107), the integer formats' values outside the ramp that ran and at an
+//! edge, the 16-bit pitch, overlapping tiles and the pitches past the scratch buffer (Q242), a load of an integer format or a loaded depth the compare cannot decide
+//! (Q243), the load and the pass over edge tiles (Q243), bit 0 beyond the one control it ran on and the control bits no run explained (Q244),
 //! bit 19 with an integer format or a load (Q101). Every refusal depends on the input alone.
 
 use crate::Outcome;
@@ -16,7 +16,7 @@ use crate::Outcome;
 /// The status of the address rule (rules.rs).
 pub const STORE_STATUS: crate::rules::Status = crate::rules::ZLS_ADDRESS;
 
-pub const OPEN: &[&str] = &["Q107", "Q120", "Q121", "Q122", "Q242", "Q243", "Q244"];
+pub const OPEN: &[&str] = &["Q107", "Q120", "Q121", "Q242", "Q243", "Q244", "Q287"];
 
 pub fn refuse() -> Outcome {
     Outcome::unsupported("zls: this input is not one a record states (12.4)", OPEN)
@@ -54,6 +54,14 @@ pub fn store_dword(x: u32, y: u32, g: u32) -> u32 {
     512 * ((y >> 4) * (g + 1) + (x >> 5)) + in_tile_index(x, y)
 }
 
+/// Whether pixel (x, y) of a W x H target's tiles lies in the band the store keeps the depth of
+/// the tile pass in: x + 0.5 < 1.25 W and y + 0.5 < 1.25 H (rule A, E730, held out at even sizes
+/// in E831); past it, in the target's tiles, the store holds the background depth 1.0. At odd
+/// sizes rule A and FLOOR (x < floor(1.25 W)) differ, which is open (Q287).
+pub fn in_band(x: u32, y: u32, w: u32, h: u32) -> bool {
+    u64::from(x) * 4 + 2 < u64::from(w) * 5 && u64::from(y) * 4 + 2 < u64::from(h) * 5
+}
+
 /// What `check_store` found in a pair of stored depth dumps.
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct StoreCheck {
@@ -61,11 +69,14 @@ pub struct StoreCheck {
     pub stored: u64,
     /// decode to a pixel whose rule address is the dword's own
     pub at_rule: u64,
-    /// at the rule's address, for a pixel past the target (x >= W or y >= H): what the store
-    /// holds there is open (Q122), so these are not counted matched
+    /// at the rule's address, for a pixel past the target (x >= W or y >= H) inside the band
+    /// ([`in_band`], E831): the depth of the tile pass, as the band says
     pub at_rule_outside: u64,
-    /// the background depth 1.0 in both ramps, in a tile of the target, at a pixel past it (Q122)
+    /// the background depth 1.0 in both ramps, in a tile of the target, at a pixel past the band
+    /// (E831)
     pub background_outside: u64,
+    /// either of the two above at an odd W or H, where the band's edge is open (Q287)
+    pub past_odd: u64,
     /// the background depth 1.0 in both ramps, in a slot that is no tile of the target
     /// (the overflowed jobs' tiles after the zero ones: Q107)
     pub background_tiles: u64,
@@ -109,14 +120,30 @@ pub fn check_store(w: u32, h: u32, g: u32, ax: &[u32], ay: &[u32]) -> StoreCheck
         let in_grid = tx < w.div_ceil(32) && ty < h.div_ceil(16);
         let (ix, iy) = in_tile_pixel(k);
         let past = 32 * tx + ix >= w || 16 * ty + iy >= h;
+        let odd = w % 2 == 1 || h % 2 == 1;
         if vx == BACKGROUND && vy == BACKGROUND && (!in_grid || past) {
-            if in_grid { c.background_outside += 1 } else { c.background_tiles += 1 }
+            if !in_grid {
+                c.background_tiles += 1;
+            } else if odd {
+                c.past_odd += 1;
+            } else if !in_band(32 * tx + ix, 16 * ty + iy, w, h) {
+                c.background_outside += 1;
+            } else {
+                c.other += 1;
+            }
         } else if vx == 0 && vy == 0 {
             c.zero += 1;
         } else if let (Some(px), Some(py)) = (decode_ramp(vx, w), decode_ramp(vy, h))
             && store_dword(px, py, g) as usize == i
+            && (px < w && py < h || odd || in_band(px, py, w, h))
         {
-            if px >= w || py >= h { c.at_rule_outside += 1 } else { c.at_rule += 1 }
+            if px < w && py < h {
+                c.at_rule += 1;
+            } else if odd {
+                c.past_odd += 1;
+            } else {
+                c.at_rule_outside += 1;
+            }
         } else {
             c.other += 1;
         }
@@ -301,13 +328,24 @@ pub struct Stored {
 
 type Dwords = std::collections::BTreeSet<u32>;
 
-/// A target of whole tiles only: what the store holds for the pixels past a target's edge is open
-/// (Q122).
-fn whole_tiles(w: u32, h: u32) -> Result<(), Outcome> {
-    if !w.is_multiple_of(32) || !h.is_multiple_of(16) {
+fn has_edge(w: u32, h: u32) -> bool {
+    !w.is_multiple_of(32) || !h.is_multiple_of(16)
+}
+
+/// A target with edge tiles stores by the band (E831) at even sizes, in the float format: an odd
+/// W or H refuses (Q287: rule A and FLOOR differ there), and so does an integer format, which ran
+/// on whole tiles only (Q242).
+fn edge_store(ctl: &Ctl, w: u32, h: u32) -> Result<(), Outcome> {
+    if w % 2 == 1 || h % 2 == 1 {
         return Err(open(
-            format!("a {w} x {h} target has edge tiles: what the store holds past it is open"),
-            &["Q122"],
+            format!("a {w} x {h} target: the band's edge at an odd size is open (rule A or FLOOR)"),
+            &["Q287"],
+        ));
+    }
+    if has_edge(w, h) && ctl.format_code() != 0 {
+        return Err(open(
+            format!("a {w} x {h} target in an integer format: its edge tiles were not run"),
+            &["Q242"],
         ));
     }
     Ok(())
@@ -338,12 +376,14 @@ fn depth_dwords(ctl: &Ctl, w: u32, h: u32, stencil_buffer: bool) -> Result<Dword
         return Ok(d);
     }
     let fmt = ctl.format()?;
-    whole_tiles(w, h)?;
+    edge_store(ctl, w, h)?;
     let g = ctl.g();
+    // every dword of the target's tiles (E831: the band's pixels and the background past it)
+    let (tw, th) = (32 * w.div_ceil(32), 16 * h.div_ceil(16));
     match fmt {
         Format::F32 | Format::U24 => {
-            for y in 0..h {
-                for x in 0..w {
+            for y in 0..th {
+                for x in 0..tw {
                     d.insert(store_dword(x, y, g));
                 }
             }
@@ -366,13 +406,18 @@ fn depth_dwords(ctl: &Ctl, w: u32, h: u32, stencil_buffer: bool) -> Result<Dword
 }
 
 /// The dwords of the stencil buffer a store writes: 128 a tile slot (Q121: the in-tile order is
-/// not modelled).
+/// not modelled, nor what an edge tile stores).
 fn stencil_dwords(ctl: &Ctl, w: u32, h: u32) -> Result<Dwords, Outcome> {
     let mut d = Dwords::new();
     if !ctl.store_stencil() {
         return Ok(d);
     }
-    whole_tiles(w, h)?;
+    if has_edge(w, h) {
+        return Err(open(
+            format!("the stencil store of a {w} x {h} target: edge tiles were not measured"),
+            &["Q121"],
+        ));
+    }
     for ty in 0..h / 16 {
         for tx in 0..w / 32 {
             d.extend((0..128).map(|j| 128 * (ty * (ctl.g() + 1) + tx) + j));
@@ -408,8 +453,10 @@ pub fn check_scratch_pitch(ctl: &Ctl) -> Result<(), Outcome> {
 /// pass left at the pixel (a measured input, or the plane's: the caller says which). Nothing is
 /// stored with the stores off (E411, E466: bit 2 or bit 18 clear), nor in formats 4 and 7 without a
 /// stencil buffer (E466, E490: 0 dwords); the other formats of E466 refuse (Q120); the 16-bit
-/// format refuses a pitch other than 33, where its layout was derived (Q242); targets with edge
-/// tiles refuse (Q122) and so do overlapping tiles (Q242: [`dword_sets`] counts those).
+/// format refuses a pitch other than 33, where its layout was derived (Q242); overlapping tiles
+/// refuse (Q242: [`dword_sets`] counts those). A target with edge tiles stores every dword of
+/// its tiles: `depth` inside the band ([`in_band`]), the background 1.0 past it (E831), at even
+/// sizes (Q287) and in the float format (Q242).
 pub fn store(
     ctl: &Ctl,
     w: u32,
@@ -424,11 +471,12 @@ pub fn store(
     }
     no_overlap(w, ctl.g())?;
     let (fmt, g) = (ctl.format()?, ctl.g());
+    let banded = |x: u32, y: u32| if in_band(x, y, w, h) { depth(x, y) } else { 1.0 };
     match fmt {
         Format::F32 | Format::U24 => {
-            for y in 0..h {
-                for x in 0..w {
-                    s.words.insert(store_dword(x, y, g), encode_depth(fmt, ctl.negate(), depth(x, y))?);
+            for y in 0..16 * h.div_ceil(16) {
+                for x in 0..32 * w.div_ceil(32) {
+                    s.words.insert(store_dword(x, y, g), encode_depth(fmt, ctl.negate(), banded(x, y))?);
                 }
             }
         }
@@ -477,8 +525,8 @@ pub struct Pass {
 /// tile slot (E466, E467: the copy is by dword, not by pixel: Q121). Float format only (Q243); a
 /// compare closer than the planes' tolerance refuses (Q200: 12.3's rule), a compare against a
 /// loaded NaN or infinity refuses (Q243), a triangle depth other than 0.5 and the ramp's refuses
-/// (Q242), bit 19 with a load refuses (Q101) and so do edge tiles (Q122) and overlapping tiles
-/// (Q242).
+/// (Q242), bit 19 with a load refuses (Q101) and so do edge tiles (Q243: E831's band is the
+/// store's without a load) and overlapping tiles (Q242).
 #[allow(clippy::too_many_arguments)]
 pub fn pass(
     ctl: &Ctl,
@@ -491,7 +539,12 @@ pub fn pass(
     load_depth: &dyn Fn(u32) -> u32,
     load_stencil: &dyn Fn(u32) -> u32,
 ) -> Result<Pass, Outcome> {
-    whole_tiles(w, h)?;
+    if has_edge(w, h) {
+        return Err(open(
+            format!("a pass over a {w} x {h} target: the load and the pass ran on whole tiles"),
+            &["Q243"],
+        ));
+    }
     no_overlap(w, ctl.g())?;
     if !(z == 0.5 || RAMP_DEPTH.contains(&z)) {
         return Err(open(format!("a triangle at depth {z}: only 0.5 and 0.25 to 0.4166 ran"), &["Q242"]));
@@ -662,18 +715,92 @@ mod tests {
     }
 
     #[test]
-    fn pixels_past_the_target_are_counted_apart_whatever_they_hold() {
-        // 34 x 18: edge tiles hold pixels past x = 34 and y = 18 (Q122: what they store is open)
+    fn pixels_past_the_target_follow_the_band_of_e831() {
+        // 34 x 18: edge tiles hold pixels past x = 34 and y = 18; the band is x < 42, y < 22
         let (mut ax, mut ay) = dumps(34, 18, 3, 512 * 8);
-        // the ramp continues past the target in the real dumps: pixel (40, 2) with its own values
-        let i = store_dword(40, 2, 3) as usize;
-        (ax[i], ay[i]) = (ramp(40, 34), ramp(2, 18));
-        // and a background dword at (50, 3), outside as well
-        let j = store_dword(50, 3, 3) as usize;
-        (ax[j], ay[j]) = (BACKGROUND, BACKGROUND);
+        // the ramp continues past the target inside the band: pixel (41, 2) with its own values
+        let i = store_dword(41, 2, 3) as usize;
+        (ax[i], ay[i]) = (ramp(41, 34), ramp(2, 18));
+        // and the background past the band at (50, 3) and (42, 21)
+        for (x, y) in [(50, 3), (42, 21)] {
+            let j = store_dword(x, y, 3) as usize;
+            (ax[j], ay[j]) = (BACKGROUND, BACKGROUND);
+        }
         let c = check_store(34, 18, 3, &ax, &ay);
         assert_eq!(c.at_rule, 34 * 18);
-        assert_eq!((c.at_rule_outside, c.background_outside, c.other), (1, 1, 0));
+        assert_eq!((c.at_rule_outside, c.background_outside, c.other, c.past_odd), (1, 2, 0, 0));
+        // the ramp past the band and the background inside it are what the band rules out
+        let (mut ax, mut ay) = dumps(34, 18, 3, 512 * 8);
+        let i = store_dword(42, 2, 3) as usize;
+        (ax[i], ay[i]) = (ramp(42, 34), ramp(2, 18));
+        let j = store_dword(41, 21, 3) as usize;
+        (ax[j], ay[j]) = (BACKGROUND, BACKGROUND);
+        let c = check_store(34, 18, 3, &ax, &ay);
+        assert_eq!((c.at_rule_outside, c.background_outside, c.other), (0, 0, 2));
+    }
+
+    #[test]
+    fn pixels_past_an_odd_target_are_counted_apart_as_q287() {
+        // 35 x 18: 1.25 W = 43.75, where rule A and FLOOR differ; nothing past it is decided
+        let (mut ax, mut ay) = dumps(35, 18, 3, 512 * 8);
+        let i = store_dword(43, 2, 3) as usize;
+        (ax[i], ay[i]) = (ramp(43, 35), ramp(2, 18));
+        let j = store_dword(50, 3, 3) as usize;
+        (ax[j], ay[j]) = (BACKGROUND, BACKGROUND);
+        let c = check_store(35, 18, 3, &ax, &ay);
+        assert_eq!(c.at_rule, 35 * 18);
+        assert_eq!((c.at_rule_outside, c.background_outside, c.other, c.past_odd), (0, 0, 0, 2));
+    }
+
+    #[test]
+    fn the_band_is_rule_a_x_plus_half_below_1_25_w() {
+        // E730's sizes and E831's held-out cells: the band's extent, before the tile cut
+        for (w, x) in [(34u32, 42u32), (66, 82), (20, 25), (36, 45), (44, 55), (76, 95), (32, 40)] {
+            assert!(in_band(x - 1, 0, w, 18) && !in_band(x, 0, w, 18), "W {w}");
+        }
+        for (h, y) in [(18u32, 22u32), (20, 25), (28, 35), (36, 45), (34, 42)] {
+            assert!(in_band(0, y - 1, 34, h) && !in_band(0, y, 34, h), "H {h}");
+        }
+    }
+
+    #[test]
+    fn a_store_past_the_target_holds_the_depth_in_the_band_and_the_background_beyond() {
+        let n = |s: &Stored, v: f32| s.words.values().filter(|&&d| d == v.to_bits()).count();
+        // E831's controls: 34 x 18 at G = 1 and 66 x 34 at G = 2 (0x171014), the full-screen ramp
+        let s = store(&ctl(0x0017_100c), 34, 18, false, &|_, _| 0.3).unwrap();
+        assert_eq!((s.words.len(), n(&s, 0.3), n(&s, 1.0)), (2048, 924, 1124));
+        let s = store(&ctl(0x0017_1014), 66, 34, false, &|_, _| 0.3).unwrap();
+        assert_eq!((s.words.len(), n(&s, 0.3)), (9 * 512, 3444));
+        // held out: the band past the tile area is cut at it (z-w32 704, z-w64 1408, z-h32 1344)
+        let s = store(&ctl(0x0017_100c), 32, 18, false, &|_, _| 0.3).unwrap();
+        assert_eq!((s.words.len(), n(&s, 0.3)), (1024, 704));
+        let s = store(&ctl(0x0017_100c), 64, 18, false, &|_, _| 0.3).unwrap();
+        assert_eq!(n(&s, 0.3), 1408);
+        let s = store(&ctl(0x0017_100c), 34, 32, false, &|_, _| 0.3).unwrap();
+        assert_eq!(n(&s, 0.3), 1344);
+        for (w, h, want) in [(20, 18, 550), (36, 18, 990), (44, 18, 1210), (34, 20, 1050), (34, 28, 1344)] {
+            let s = store(&ctl(0x0017_100c), w, h, false, &|_, _| 0.3).unwrap();
+            assert_eq!(n(&s, 0.3), want, "{w} x {h}");
+        }
+        // a triangle short of the band is its own raster: the depth the pass left, 1.0 elsewhere
+        let tri = |x: u32, y: u32| if x >= 24 && y >= 8 && x < 40 && y < 20 { 0.3 } else { 1.0 };
+        let s = store(&ctl(0x0017_100c), 34, 18, false, &tri).unwrap();
+        assert_eq!((n(&s, 0.3), n(&s, 1.0)), (16 * 12, 2048 - 16 * 12));
+    }
+
+    #[test]
+    fn a_store_past_the_target_refuses_odd_sizes_integer_formats_and_the_stencil() {
+        let d = |_: u32, _: u32| 0.25f32;
+        // odd sizes: 1.25 W with the fraction .75 separates rule A from FLOOR (Q287)
+        assert_eq!(ids(store(&ctl(0x0017_100c), 35, 18, false, &d)), ["Q287"]);
+        assert_eq!(ids(store(&ctl(0x0017_100c), 34, 19, false, &d)), ["Q287"]);
+        // the band ran with the float format only; an integer format at an edge is Q242's
+        assert_eq!(ids(store(&ctl(0x0017_100c | 1 << 24), 34, 18, false, &d)), ["Q242"]);
+        assert_eq!(ids(store(&ctl(0x0017_110c | 2 << 24), 34, 18, false, &d)), ["Q242"]);
+        // the stencil store of an edge tile was not measured (Q121, its in-tile order)
+        assert_eq!(ids(dword_sets(&ctl(0x0017_110c), 34, 16, true)), ["Q121"]);
+        let (d, st) = dword_sets(&ctl(0x0015_110c), 34, 16, true).unwrap();
+        assert_eq!((d.len(), st.len()), (1024, 0));
     }
 
     #[test]
@@ -945,8 +1072,9 @@ mod tests {
 
     #[test]
     fn a_pass_refuses_edge_tiles_and_integer_formats() {
+        // E831's band is the store's without a load; the load and the pass ran on whole tiles
         let r = pass(&ctl(0x0017_110c), 34, 18, 1.0, 0.5, Test::Never, &|_, _| true, &|i| i, &|i| i);
-        assert!(matches!(r, Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q122"]));
+        assert!(matches!(r, Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q243"]));
         let r = run(0x0017_110c | 1 << 24, Test::Never, &|i| i);
         assert!(matches!(r, Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q243"]));
     }
@@ -955,10 +1083,9 @@ mod tests {
     fn a_store_refuses_what_no_run_measured_by_input_alone() {
         let d = |_: u32, _: u32| 0.5f32;
         let q = |r: Result<Stored, Outcome>| ids(r);
-        // pixels past the target: edge tiles (float, 24-bit) and an odd height (16-bit)
-        assert_eq!(q(store(&ctl(0x0017_110c), 34, 18, false, &d)), ["Q122"]);
-        assert_eq!(q(store(&ctl(0x0017_110c | 1 << 24), 34, 18, false, &|_, _| 0.25)), ["Q122"]);
-        assert_eq!(q(store(&ctl(0x0017_110c | 2 << 24), 32, 17, false, &|_, _| 0.25)), ["Q122"]);
+        // pixels past the target: an odd height (Q287), edge tiles in the 24-bit format (Q242)
+        assert_eq!(q(store(&ctl(0x0017_110c | 2 << 24), 32, 17, false, &|_, _| 0.25)), ["Q287"]);
+        assert_eq!(q(store(&ctl(0x0017_110c | 1 << 24), 34, 18, false, &|_, _| 0.25)), ["Q242"]);
         // overlapping tiles (pitch G + 1 below the tiles of a row): which pixel a shared dword
         // holds was not measured, only how many dwords were written (E465)
         assert_eq!(q(store(&ctl(0x0017_100c), 1024, 768, false, &d)), ["Q242"]);
@@ -980,7 +1107,7 @@ mod tests {
         // the 16-bit format at G = 33, a refused edge and a refused pitch
         let (d, _) = dword_sets(&ctl(0x0017_110c | 2 << 24), 64, 32, true).unwrap();
         assert_eq!(d.len(), 64 * 32 / 2);
-        assert_eq!(ids(dword_sets(&ctl(0x0017_110c), 34, 16, true)), ["Q122"]);
+        assert_eq!(ids(dword_sets(&ctl(0x0017_110c), 34, 16, true)), ["Q121"]);
         assert_eq!(ids(dword_sets(&ctl(0x0017_100c | 2 << 24), 64, 64, true)), ["Q242"]);
         assert_eq!(ids(dword_sets(&ctl(0x0017_100c | 4 << 24), 64, 64, true)), ["Q120"]);
         // the stores off, nothing; formats 4 and 7 without a stencil buffer, nothing

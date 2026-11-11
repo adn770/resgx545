@@ -19,3 +19,7 @@ the dword index, or another), and how the stencil test (ISP word 2, E284) reads 
 To settle it: a stencil buffer loaded with a pattern of the byte's own pixel index and a stencil
 test that keeps or replaces by the loaded value, stored and read back; the state block needs the
 second ISP word, which `tri` does not set.
+
+Note 2026-11-11 (E831). E831 measured the depth store of edge tiles only; `sgx-pipe` refuses the
+stencil store of a target with edge tiles here, its slots and what they hold past the target being
+unmeasured.

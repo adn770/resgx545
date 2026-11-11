@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-175 open: 165 hw (high 19, medium 77, low 69, unrated 0), 9 fw, 1 kernel.
+174 open: 164 hw (high 19, medium 77, low 68, unrated 0), 9 fw, 1 kernel.
 
 ## Work queue: hardware
 
@@ -211,7 +211,6 @@
 - `Q107` (phase 11, hw, medium): why does the final render of a job that overflows store zeros for the first row of macrotiles and the depth with its sign bit set for the rest, and in what order are the tiles stored? (E058, E411, E461, E465, E468, E489, E628, E629)
 - `Q120` (phase 11, hw, medium): what do the stored depth formats 3 to 7 (CR_ISP_ZLSCTL bits 26:24) hold and how are they laid out, given that they store depth and stencil packed or nothing? (E466, E490)
 - `Q121` (phase 11, hw, medium): what is the in-tile order of the stencil store (one byte a pixel, 128 dwords a 32 x 16 tile) and what does the stencil test do against a loaded stencil? (E466, E467)
-- `Q122` (phase 11, hw, low): what does the ZLS store write for the pixels of an edge tile that lie outside the target, and for the 16 x 16 blocks outside it? (E465, E730, E831)
 - `Q242` (phase 12, hw, low): how is the 16-bit stored depth format laid out at a pitch G other than 33 and at an edge, what do the 24-bit and 16-bit formats store for a depth outside 0.25 to 0.4166 other than 1.0 (where round(z * 0xffffff) and floor(z * 2^24) differ), which pixel's value does a dword shared by two overlapping tiles hold, and why did the E411 jobs with G past 3 fault? (E466, E490, E663)
 - `Q243` (phase 12, hw, low): what does the ZLS load do with an integer stored format (bits 26:24 = 1 or 2), at an address other than the one the store writes, and when the loaded depth is a NaN or infinity or is compared with a depth equal to it? (E467, E628, E664)
 - `Q244` (phase 12, hw, low): what do the bits of CR_ISP_ZLSCTL that no record reads (12, 15, 16 and 20 to 23, 27 to 31) do when set in combination, and what does bit 0 store with a control other than 0x0017100c? (E057, E337, E411, E665)

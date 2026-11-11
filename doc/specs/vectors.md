@@ -285,9 +285,9 @@ what the model computes.
 - `zls-store` (E465, E489): 18 vectors, one per case of `zls/store-layout-dumps`: the x-ramp
   and y-ramp depth dumps (digest of the gz) and the counts of its `recompute.txt`: 3415552 dwords
   stored, 3279132 at the rule's address (3225000 for pixels of the target, 54132 for pixels past
-  it, refused Q122), 7780 background depth (1124 at pixels past the target, Q122; 6656 whole tiles
-  of the two overflowed 4096 x 4096 jobs, Q107), 128640 zero (the same jobs, Q107), 0 elsewhere,
-  counted by a classification written in `unit_vectors.py` from the dumps; the slot
+  it inside E831's band), 7780 background depth (1124 at pixels past the band, E831; 6656 whole
+  tiles of the two overflowed 4096 x 4096 jobs, Q107), 128640 zero (the same jobs, Q107), 0
+  elsewhere, counted by a classification written in `unit_vectors.py` from the dumps; the slot
   sets equal the rule's and, where tiles do not overlap, 1098340 pixels walk to their address.
 - `te-region` (E542): 35 jobs (27 `ta-tri-boundary`, 8 `ta-tri-corner`), 14656 (primitive, tile)
   pairs. The primitives' pixel vertices are the recompute's geometry (the NDC constants and the

@@ -179,7 +179,8 @@ fn file(ctx: &Ctx, j: &Json) -> Result<Vec<u8>, String> {
     ctx.read_gz(j.get("path").str().ok_or("no dump path")?, j.get("sha256").str().unwrap_or(""))
 }
 
-/// zls-store: the E465 address rule over a pair of stored depth dumps (E489's recompute).
+/// zls-store: the E465 address rule over a pair of stored depth dumps (E489's recompute), and
+/// E831's band past the target.
 fn kind_zls_store(v: &Json, ctx: &Ctx) -> Result<Modelled, String> {
     let i = v.get("init");
     let (w, h, g) = (u(i.get("w")), u(i.get("h")), u(i.get("g")));
@@ -187,11 +188,13 @@ fn kind_zls_store(v: &Json, ctx: &Ctx) -> Result<Modelled, String> {
     let ay = crate::data::dwords(&file(ctx, i.get("y"))?);
     let c = zls::check_store(w, h, g, &ax, &ay);
     let e = v.get("expect");
-    let mut seen = Seen { matched: c.at_rule, mismatched: c.other, ..Seen::default() };
-    // pixels past the target: what the store holds there is open (Q122); the overflowed jobs'
-    // zero tiles and the background tiles after them are Q107's
-    if c.background_outside + c.at_rule_outside > 0 {
-        seen.refused.insert("Q122".into(), c.background_outside + c.at_rule_outside);
+    // pixels past the target hold the depth inside the band and the background past it (E831);
+    // at an odd size the band's edge is open (Q287); the overflowed jobs' zero tiles and the
+    // background tiles after them are Q107's
+    let matched = c.at_rule + c.at_rule_outside + c.background_outside;
+    let mut seen = Seen { matched, mismatched: c.other, ..Seen::default() };
+    if c.past_odd > 0 {
+        seen.refused.insert("Q287".into(), c.past_odd);
     }
     if c.zero + c.background_tiles > 0 {
         seen.refused.insert("Q107".into(), c.zero + c.background_tiles);
@@ -733,7 +736,7 @@ mod tests {
         got.seen.refused.insert("Q107".into(), 3);
         assert!(matches!(judge(&e, &got), Verdict::Mismatch(_)));
         let mut other = m(Outcome::Ok, 8, 0);
-        other.seen.refused.insert("Q122".into(), 2);
+        other.seen.refused.insert("Q287".into(), 2);
         assert!(matches!(judge(&e, &other), Verdict::Mismatch(_)));
     }
 

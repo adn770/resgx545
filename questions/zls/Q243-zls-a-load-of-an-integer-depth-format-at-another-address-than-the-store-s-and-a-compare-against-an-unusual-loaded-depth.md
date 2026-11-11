@@ -21,3 +21,7 @@ base moved by a tile and by a page from the store base, and with loaded NaN and 
 under the depth test less; bit 19 with a load, and a triangle depth other than 0.5.
 
 Status: open.
+
+Note 2026-11-11 (E831). The band of the store past the target (E831) was measured without a load:
+`sgx-pipe`'s pass over a target with edge tiles refuses here, since what a load and the pass hold
+past the target is not measured. To settle it: E467's load run at 34 x 18 with the dumps kept.

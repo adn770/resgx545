@@ -33,3 +33,11 @@ simulator is fitted, as E465 states.
 **What it does not show.** The overflow store and tile order (Q107), pixels outside the target
 (Q122), the formats other than 0 to 2 (Q120) and the stencil's in-tile order (Q121); a rule for
 a tile larger than 32 x 16.
+
+**Correction 2026-11-11:** with E831 the replay models the pixels past the target: inside the band
+(x + 0.5 < 1.25 W and y + 0.5 < 1.25 H, cut at the tile area) the store holds the depth of the
+tile pass, past it the background 1.0. Every one of the 55256 dwords this record refused as Q122
+(54132 at the rule's address, 1124 background, all at even sizes) is where the band puts it, so the
+regenerated vectors of unit-vectors-12-0 expect them matched: the replay now counts 3280256 items
+fitted and refuses only the 135296 of Q107. The counts above are the replay as it ran on
+2026-11-09.
