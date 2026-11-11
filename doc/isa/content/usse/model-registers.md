@@ -100,7 +100,9 @@ marked.
   `g25` its place in the 2x2 quad, `g17` the tile quarter, `g18` a per-tile number, `g39` the
   quad's place in a 4x4 block, and `g21`/`g22` scheduler-assigned task and slot ids; `g21`-`g25`
   follow Rogue's special registers 47-51 in order (`SR.TASK_ID`, `SLOT_NUM`, `TILE_X_PIX`,
-  `TILE_Y_PIX`, `INST_NUM`). A `mov` to `g` is ignored (E086). The firmware reads two globals
+  `TILE_Y_PIX`, `INST_NUM`). In a triangle's pixel program the same held out: `g25` = (x & 1) |
+  (y & 1) << 1, `g23` = x mod 32 and `g24` = y mod 16 (E808: 29 of 29 rows at three triangles; E772
+  post hoc). A `mov` to `g` is ignored (E086). The firmware reads two globals
   once each (as a source of an `xor` and of a `shl`) and otherwise names `c0` only as the dummy
   destination of a test that does not write its result (`!c0`, see the test group) **[RE]**.
 - **Internal registers [RE].** `i0`-`i3` print where a temporary number reaches past the

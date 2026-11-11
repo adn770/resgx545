@@ -166,7 +166,9 @@ marked.
   `g25` its place in the 2x2 quad, `g17` the tile quarter, `g18` a per-tile number, `g39` the
   quad's place in a 4x4 block, and `g21`/`g22` scheduler-assigned task and slot ids; `g21`-`g25`
   follow Rogue's special registers 47-51 in order (`SR.TASK_ID`, `SLOT_NUM`, `TILE_X_PIX`,
-  `TILE_Y_PIX`, `INST_NUM`). A `mov` to `g` is ignored (E086). The firmware reads two globals
+  `TILE_Y_PIX`, `INST_NUM`). In a triangle's pixel program the same held out: `g25` = (x & 1) |
+  (y & 1) << 1, `g23` = x mod 32 and `g24` = y mod 16 (E808: 29 of 29 rows at three triangles; E772
+  post hoc). A `mov` to `g` is ignored (E086). The firmware reads two globals
   once each (as a source of an `xor` and of a `shl`) and otherwise names `c0` only as the dummy
   destination of a test that does not write its result (`!c0`, see the test group) **[RE]**.
 - **Internal registers [RE].** `i0`-`i3` print where a temporary number reaches past the
@@ -246,7 +248,13 @@ flag into `p0` without writing a register and branches on it.
 - **`ba #n`** jumps to instruction `n` of the code base (absolute) **[RE/HW]**. **`br`** takes
   a signed 18-bit offset **counted from the `br` itself** (`br #1` is the next instruction)
   **[HW]** (*`br` offsets and the `Pn` predicate*); the assembler accepts only a number for
-  `br`, not a label (`tools/usse-asm/README.md`).
+  `br`, not a label (`tools/usse-asm/README.md`). **A backward `br` loops [HW]** in a vertex task
+  (E784, E807: up to 1760 iterations, proved by the stored depth word), in a fill (E804: 2048 of
+  2048 pixels, with a mark written only where the counter reached zero) and in a triangle's pixel
+  program placed in the `--tri` slot at code index 0x20 (E806: every pixel of the target at seven
+  sizes). **A predicated `ba` whose predicate is false falls through** to the next instruction
+  (E596: `p0 ba` with p0 0 and `!p0 ba` with p0 1, 10 of 10 fills); the taken predicated `ba` was
+  not run there.
 - **Calls.** `ba.savelink` and `br.savelink` write the index of the instruction after the call to
   `pclink` **[HW]** (E475: calls with the next instruction at index 20, 40, 64, 127 and 128, and a
   taken predicated call: 9 of 9; both forms store the same index, counted from the program start of
@@ -2019,6 +2027,11 @@ and `idiv` the full one).
   and **a pa0 destination is not written** (E496; the probe table's model had every destination take
   the result). So `add` is `ima32.u d, a, #1, c` and `mul` is
   `ima32.u d, a, b, c0`.
+- **Operand order [HW]** (E597): `ima32.u d, i0, a, b, c` and `ima32.s` read their sources
+  before the write in every one of the 15 partitions of d, a, b and c into registers (any of them
+  alike, all four the same): d held the low word and i0 the high word of the 64-bit a × b + c (c
+  sign-extended for `.s`) in 300 of 300 fills. Not run in a firmware task (the verifier refuses
+  the form).
 - **A 32-bit subtract [HW]** is `ima32.u d, b, c56, a`, which is `a - b` mod 2^32, and so is
   `ima32.u d, a, #1, b.neg` (E470: 80 of 80 through c56, 6 of 6 through c57, c58, c59 `.u` and c59
   `.s`). `.neg` on source 2 (`enc[40]`) or source 3 (`enc[39]`) negates that source in two's
@@ -2874,6 +2887,12 @@ offsets of loads and stores*); the firmware has four such stores.
   dword (`eldd`) or four dwords (`eldq`) of element `index + offset` from the base when it is
   below `limit`, and zeros otherwise: a bounds-checked load **[HW]** (E098). Indices or limits
   with bit 31 set are **[open]**; the firmware does not use them.
+
+**Byte and halfword loads [HW]** (E598, fills): `ldab` and `ldaw` with an immediate offset n read
+the byte at base + n and the halfword at base + 2n, zero-extended (the offset counts elements of
+the access size; 16 of 16 jobs), and `ldaw` and `ldad` at an address that is not a multiple of
+their size read the bytes at that address, across the dword boundary too (6 of 6). Not run in a
+firmware task (the verifier refuses the forms).
 
 **In the firmware [RE].** 598 loads and 349 stores, nearly all `ldad`/`stad` with `.bpcache`
 on its control blocks through `sa0`-`sa2` or computed bases; 120 fetches; `ldaw` twice. Its
@@ -5102,13 +5121,15 @@ open driver:
    hangs a fill's task (Q052).
 4. **The global bank**: what `g18` and `g21` hold in a vertex task (they follow the task, 0xe to
    0x16 and 0x1a to 0x1f by the vertices a task holds, with no rule found, E571) and what the
-   end-of-tile task of each tile reads in `g17`, `g18`, `g21`-`g25` and `g39` (only the last tile's
-   store survives, and a store faults the job, E572, Q183). The others are read. In a vertex task
+   end-of-tile task of each tile reads in `g18` and `g21` (with E130's register-offset store to a
+   slot of its own, 5 of 5 jobs completed and 32 tiles held `g19` 0x1a, `g25` 3, `g23` 1 or 0x11,
+   `g24` 1 or 9, `g17` 0 to 3, `g18` and `g21` changing from tile to tile, E708; E572's store fault
+   was not reproduced by its own program, E707; Q183). The others are read. In a vertex task
    `g16`, `g19` (through `mov`), `g26`-`g31` and `g40` read 0, `g20` 1, `g42` 1.0, `g41` 0xf and
    `g43` 0xdf000000 (0x3 and 0x20000000 in a last task of 2 vertices), and `g17`, `g22`-`g25`
    and `g39` follow the vertex's task and lane (E571); in the end-of-tile task of the last tile
-   they read as in a pixel task (E572); in a triangle's pixel task as in a fill (E374), and `g19`
-   reads 0 through `mov`, 0x11 through the bitwise group and 0x1a as a store's source (E372)
+   they read as in a pixel task (E572); in a triangle's pixel task as in a fill (E374, E808), and
+   `g19` reads 0 through `mov`, 0x11 through the bitwise group and 0x1a as a store's source (E372)
    (Q053).
 5. **Emits**: `.tasks`/`.taske` and `#incp` beyond the vertex emits (incp 1 to 3 on either
    changes nothing a triangle shows; `.cut` on `emitmtevtx` hangs the job, E376), `.twopart`

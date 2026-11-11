@@ -9,7 +9,13 @@
 - **`ba #n`** jumps to instruction `n` of the code base (absolute) **[RE/HW]**. **`br`** takes
   a signed 18-bit offset **counted from the `br` itself** (`br #1` is the next instruction)
   **[HW]** (*`br` offsets and the `Pn` predicate*); the assembler accepts only a number for
-  `br`, not a label (`tools/usse-asm/README.md`).
+  `br`, not a label (`tools/usse-asm/README.md`). **A backward `br` loops [HW]** in a vertex task
+  (E784, E807: up to 1760 iterations, proved by the stored depth word), in a fill (E804: 2048 of
+  2048 pixels, with a mark written only where the counter reached zero) and in a triangle's pixel
+  program placed in the `--tri` slot at code index 0x20 (E806: every pixel of the target at seven
+  sizes). **A predicated `ba` whose predicate is false falls through** to the next instruction
+  (E596: `p0 ba` with p0 0 and `!p0 ba` with p0 1, 10 of 10 fills); the taken predicated `ba` was
+  not run there.
 - **Calls.** `ba.savelink` and `br.savelink` write the index of the instruction after the call to
   `pclink` **[HW]** (E475: calls with the next instruction at index 20, 40, 64, 127 and 128, and a
   taken predicated call: 9 of 9; both forms store the same index, counted from the program start of

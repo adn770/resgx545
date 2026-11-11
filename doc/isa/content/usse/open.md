@@ -26,13 +26,15 @@ open driver:
    hangs a fill's task (Q052).
 4. **The global bank**: what `g18` and `g21` hold in a vertex task (they follow the task, 0xe to
    0x16 and 0x1a to 0x1f by the vertices a task holds, with no rule found, E571) and what the
-   end-of-tile task of each tile reads in `g17`, `g18`, `g21`-`g25` and `g39` (only the last tile's
-   store survives, and a store faults the job, E572, Q183). The others are read. In a vertex task
+   end-of-tile task of each tile reads in `g18` and `g21` (with E130's register-offset store to a
+   slot of its own, 5 of 5 jobs completed and 32 tiles held `g19` 0x1a, `g25` 3, `g23` 1 or 0x11,
+   `g24` 1 or 9, `g17` 0 to 3, `g18` and `g21` changing from tile to tile, E708; E572's store fault
+   was not reproduced by its own program, E707; Q183). The others are read. In a vertex task
    `g16`, `g19` (through `mov`), `g26`-`g31` and `g40` read 0, `g20` 1, `g42` 1.0, `g41` 0xf and
    `g43` 0xdf000000 (0x3 and 0x20000000 in a last task of 2 vertices), and `g17`, `g22`-`g25`
    and `g39` follow the vertex's task and lane (E571); in the end-of-tile task of the last tile
-   they read as in a pixel task (E572); in a triangle's pixel task as in a fill (E374), and `g19`
-   reads 0 through `mov`, 0x11 through the bitwise group and 0x1a as a store's source (E372)
+   they read as in a pixel task (E572); in a triangle's pixel task as in a fill (E374, E808), and
+   `g19` reads 0 through `mov`, 0x11 through the bitwise group and 0x1a as a store's source (E372)
    (Q053).
 5. **Emits**: `.tasks`/`.taske` and `#incp` beyond the vertex emits (incp 1 to 3 on either
    changes nothing a triangle shows; `.cut` on `emitmtevtx` hangs the job, E376), `.twopart`
