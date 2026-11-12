@@ -16,6 +16,10 @@
 # Round 3 (R3-K10): str, never ldr, of CR_EVENT_TIMER (0x0acc), which the closed tick handler
 # writes (E155), for the end of a pass (E818). The verifier cannot see the value stored: the
 # session's guard on the assembled code pins it to the word the ticks carry (E746).
+# Round 7 (2026-11-12, R7-4): ldr, never str, of CR_DPM_PAGE_STATUS (0x0724) and
+# CR_DPM_GLOBAL_PAGE_STATUS (0x072c), for the page counts at each out-of-memory pass (E864); the
+# closed out-of-memory routine reads both itself (doc/specs/edm_dataflow.md, the 0x0724 and
+# 0x072c rows) and the host reads both at every timeline sample. No deny row names either.
 
 # ---- clock gating: by name, refused for str AND ldr, checked before anything else ----------
 # E445 (11.17): the first run reached CR_CLKGATECTL2 bits 3:2 and its output was lost; the user
@@ -65,6 +69,16 @@ name = "CR_TIMER"
 offset = 0x0144
 use = "ldr"
 record = "E246, E009"
+[[allow]]
+name = "CR_DPM_PAGE_STATUS"
+offset = 0x0724
+use = "ldr"
+record = "E864"
+[[allow]]
+name = "CR_DPM_GLOBAL_PAGE_STATUS"
+offset = 0x072c
+use = "ldr"
+record = "E864"
 [[allow]]
 name = "CR_EVENT_HOST_CLEAR2"
 offset = 0x0114

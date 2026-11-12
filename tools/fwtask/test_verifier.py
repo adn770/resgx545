@@ -127,6 +127,7 @@ def test_code_no_entry_reaches_is_not_checked_but_every_word_is_still_canonical(
 # ---- R3: canonical words ------------------------------------------------------------------------
 CANON = {
     "ldr #7": "ldr r13, #7, drc0", "ldr #517": "ldr r13, #517, drc0",
+    "ldr #457": "ldr r13, #457, drc0", "ldr #459": "ldr r13, #459, drc0",
     "str #517": "str #517, r10", "str #670": "str #670, r10",
     "mov pclink": "mov pclink, r30", "lapc": "lapc", "nop": "nop", "nop.end": "nop.end",
     "clock ldr 0": "ldr r1, #0, drc0", "clock ldr 1": "ldr r1, #1, drc0",
@@ -138,6 +139,18 @@ CANON = {
     "idf": "idf drc0, bif", "wdf": "wdf drc0", "alu": "xor.testtaz.chan0 !c0, p1, r2, #5",
     "ima32": "ima32.u r8, r8, #1, r9.neg",
 }
+
+
+def test_the_two_dpm_page_status_registers_are_ldr_only_and_their_neighbours_refused():
+    """Round 7 (R7-4): CR_DPM_PAGE_STATUS (0x0724, #457) and CR_DPM_GLOBAL_PAGE_STATUS (0x072c,
+    #459) may be read, never written; the DPM registers around them stay refused."""
+    end = asm("nop.end")
+    for idx in (457, 459):
+        assert why_of(asm(f"ldr r13, #{idx}, drc0\nnop.end")) is None, idx
+        assert why_of(asm(f"str #{idx}, r10\nnop.end")) == Y.STR, idx
+    for off in (0x0720, 0x0728, 0x0730, 0x0734):
+        assert why_of(asm(f"ldr r13, #{off // 4}, drc0") + end) == Y.LDR, hex(off)
+        assert why_of(asm(f"str #{off // 4}, r10") + end) == Y.STR, hex(off)
 
 
 def pinned_bits(form):

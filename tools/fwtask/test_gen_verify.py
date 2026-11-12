@@ -22,7 +22,7 @@ def test_header_is_reproducible(tmp_path):
 def test_header_lists_exactly_the_allowed_registers():
     h = gen_verify.render(fwtask.load_regs())
     assert "static const u16 sgx_own_str_regs[] __maybe_unused = { 69, 77, 517, 670, 691 };" in h
-    assert "static const u16 sgx_own_ldr_regs[] __maybe_unused = { 7, 8, 81, 517, 670 };" in h
+    assert "static const u16 sgx_own_ldr_regs[] __maybe_unused = { 7, 8, 81, 457, 459, 517, 670 };" in h
     assert "static const u16 sgx_own_clockgate_regs[] __maybe_unused = { 0, 1, 2, 3 };" in h
 
 
