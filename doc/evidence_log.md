@@ -6365,6 +6365,51 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   54 distinct mantissas, 'always RZ' 42).
   *ta; HW, infer; data: `render-closing-r4-pixel:out/20261111-210423/g4-rw/`,
   `render-closing-r4-pixel:score/`, `cited-scratch:closing5/pixel/`.*
+- `E852` Round 5 offline reading of the kept DPM timelines (Q210; post hoc, a FIT on one positive,
+  nothing held out): in the first TA run of every kept job the high half of 0x072c (the global page
+  count) steps at page counts of 0x0724 that are the same in every job of a target and scene, S_k
+  being the count read before global page k appears: S2, S3, S4, S5 = 0x51, 0x9d, 0xe8, 0x132 at
+  2048x2048, 0x125, 0x240, 0x35b at 4096x4096 (1350 vertices as 1500 for S2 and S3), 0x97, 0x126,
+  0x1b9 at 4096x2048, 0x9a, 0x12c, 0x1be, 0x255 at 2048x4096 and 0xa9, 0x14d, 0x1ef, 0x293 at
+  3072x3072 (the tool's triangle, 1500 vertices), S4 lying 6, 10, 7, 8 and 7 pages above the last
+  raise of E799, E774 and E801; of the 107 kept jobs with a partial render E799's c4-b3 (thr0 0xe8 =
+  S4 at 2048x2048) is the only one whose first threshold equals a step, and the only one of 495 TA
+  runs with the global list grown (0x0628) before an abort; two readings of its missing raise are
+  named and not decided: H-PEND (the page the TA asked for is served after the resume read the
+  count, so the guard is right and our resume count one page high) and H-BLOCK (the grow leaves a
+  state that prevents the raise).
+  *dpm; HW, infer; data: `render-closing-r3-geo:out/g-c4/`, `render-closing-r3-geo:out/g-c5/`,
+  `render-closing-r3-geo:out/g-c6/`, `render-closing-r3-geo:out/g-c7/`,
+  `render-closing-r3-geo:out/g-d36/`, `render-closing-r2-geo:out/g-c3/`,
+  `render-closing-r2-geo:out/g-c2/`, `render-closing-r1-pixgeo:out/g-c1/`,
+  `render-closing-r1-pixgeo:out/g-c1f/`, `render-closing-r1-pixgeo:out/g-u1/`,
+  `render-closing-r1-pixgeo:out/g-u2/`.*
+- `E853` Round 5 offline test of R-5's guard of the firmware's raise (Q210, Q211): the guard as
+  written on 2026-11-11 (closing4/p7/guard.py, imported unchanged) on the kept timelines of R3-geo-c
+  that R-5 never read placed 121 of 121 decisions in g-qf (22 jobs, 88) and scene s275 (6 jobs, 33),
+  held out by construction, every job one raise at its first decision and aborts after it, and the
+  dword rule (dword 35 the page count at the last abort less 2, dword 36 the global page count less
+  2, floor 0) in 34 of 34 jobs; the two-kick scene s438 gave 27 of 33 as run and 27 of 27 only after
+  each timeline was cut at its second kick, a cut added after the 6 misses were seen (SEMI); every
+  cell holds one global page, so these test the floor of dword 36 and bit 9, not the compare of two
+  counts.
+  *dpm; HW, RE, infer; data: `render-closing-r3-geo-c:out/g-qf/`,
+  `render-closing-r3-geo-c:out/g-qh/`.*
+- `E854` Round 5 offline fit of the partial-render count (Q211; a FIT, nothing held out by a frozen
+  prediction): for the tool's triangle at 4096x4096 the count n at the first threshold thr0 = P -
+  0x22 fits n = min{n >= 1 : thr0 + n (thr0 + 0x20 - 7/4) >= U}, the one rule left by the 4 of 2716
+  members of thr0 + n (thr0 + 0x20 - d) >= U + k (d 0 to 6 in sixteenths, k -12 to 15) that fit
+  E832's 22 cells at U = 287 (d 1.5625 to 1.75, k 0 or 1, the same count at every thr0 for U 287 and
+  275); it gives s275's 6 cells (U 275; SEMI, their counts had been seen; 754 of the 2716 members
+  give them too), E625's ten 4096x4096 cells, E779's nine and E625's 18 cells at 1024x768 (U 19),
+  none used in the fit, and E625's form with an integer spacing fits none of the 22; the rule does
+  not hold for the 1500-vertex scenes, whose pages taken less pages kept are not U (544 to 898 at
+  2048x2048 for U = 0x213) and whose counts at 2048x2048 it gives in 11 of 17 jobs (post hoc).
+  *dpm; HW, infer; data: `render-closing-r3-geo-c:out/g-qf/`, `render-closing-r3-geo-c:out/g-qh/`,
+  `render-closing-r3-geo:out/g-c4/`, `render-closing-r3-geo:out/g-c5/`,
+  `render-closing-r3-geo:out/g-c6/`, `render-closing-r3-geo:out/g-d36/`,
+  `render-closing-r2-geo:out/g-c3/`, `render-closing-r2-geo:out/g-c2/`,
+  `render-closing-r1-pixgeo:out/g-c1/`, `render-closing-r1-pixgeo:out/g-c1f/`.*
 
 ## By unit
 
@@ -6377,7 +6422,7 @@ Records: E151, E457, E573, E592, E745, E761, E767, E789, E826, E848.
 Records: E199, E200, E201, E202, E204, E205, E206, E203, E253, E256, E309, E310, E311, E312, E313,
 E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E468, E574, E591,
 E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753, E773, E774, E775, E779, E785,
-E786, E790, E799, E800, E801, E802, E803, E832, E845, E846.
+E786, E790, E799, E800, E801, E802, E803, E832, E845, E846, E852, E853, E854.
 
 ### edm
 

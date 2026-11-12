@@ -5,7 +5,7 @@ unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E310", "E625", "E630", "E705", "E735", "E773", "E779", "E832"]
+evidence = ["E310", "E625", "E630", "E705", "E735", "E773", "E779", "E832", "E853", "E854"]
 terms = ["Dynamic Parameter Management (DPM)", "Parameter Buffer (PB)"]
 +++
 
@@ -106,3 +106,15 @@ a) / (P + b)) and of a two-segment form with a raised first threshold found no m
 fits all 22 cells (`closing4/rank/q211_refit.py`, scratch), so the count is not a plain page quotient. Open: the rule of the
 count (what a partial render frees and keeps, with Q210's raise), to be fitted on E832's 22 cells
 and held out on s275's 6 before any run; the U clause as above.
+
+Note 2026-11-12 (round 5, offline, E853 and E854; decision R5-1 a, before any session; the question
+stays open). [HW, FIT] In g-qf and s275 the first run takes thr0 pages, every later run but the last
+peaks at thr0 + `0x20` (the guard's one raise, E853), and each partial render keeps 1 or 2 pages.
+The count fits n = min{n >= 1 : thr0 + n (thr0 + `0x20` - 7/4) >= U}, the one rule the four fitting
+members of a 2716-member family leave on E832's 22 cells (E854); it gives s275's 6 cells (SEMI: seen
+before the fit), E625's and E779's 4096x4096 cells and E625's 1024x768 cells, none of them used in
+the fit. E832's "not a plain page quotient" stays true for integer spacings; the fitted spacing is
+thr0 + 30.25. The rule does not hold for the 1500-vertex scenes, which do not conserve pages (11 of
+17 counts at 2048x2048, post hoc). Open: a held-out test of the rule on one-triangle scenes at other
+U, cells frozen from a measured U; what a partial render frees; the count for scenes of many
+vertices; the U clause as above.
