@@ -5,7 +5,7 @@ unit = "pds"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E709", "E570", "E406", "E742", "E759", "E772", "E808", "E838"]
+evidence = ["E709", "E570", "E406", "E742", "E759", "E772", "E808", "E838", "E850"]
 terms = ["PDS_SIZE.BITS17_16"]
 +++
 Q023 asks which lanes write o4 to o7 in the four-output-room setup. E709 guarded o4 by a test of g25
@@ -88,3 +88,18 @@ the fold, post hoc: no word of any of the 36 jobs had bit 4 or 5 set, and none h
 5:3; or the tag-5 words are not o4's but tag 1 (o0) OR tag 4 (o3). Open: which reading holds (a
 run that changes o0's or o3's tag and leaves o4 alone separates them); then, with words that
 reach the image, the predicate clause.
+
+Note 2026-11-12 (E850, an offline reading of E808's and E838's kept images; post hoc against
+E838's reading, no held-out row; the question stays open). The first of E838's two readings, "the
+path that brings o4 out clears bits 5:3", is refuted on kept data: the 1525 tag-5 words of E808's
+44 jobs whose marker has a bit at 5:4 all keep it, and E838's c-e709-x (every output 0xcf0 | tag)
+read 0xcf5 at 39 of 39; bit 4 is absent only when `o4` alone carries it (v-a4). So the other
+outputs' words decide those bits [infer]. Of 821 bitwise models declared before the check (OR,
+AND, XOR over subsets of one instance's `o0` to `o7`, MUX of one output's bits 2:0 with another's
+bits 5:3), 9 fit all 8 kept configurations: OR(o0, o3), AND(o4, o6), XOR(o0, o2, o6), XOR(o3, o5,
+o6) and MUX(o4's bits 2:0, bits 5:3 of o0, o2, o3, o5 or o6). No kept job changes `o0`, `o2`,
+`o3`, `o5`, `o6` or `o7`, so a run is needed: a walk that puts bit 4 on one output at a time
+separates all nine (plan closing5/pixel/exp-pixel-r5.md, stage p5-o4). The question line's "bits
+5:3 clear" is true of E838's marker-layout jobs only, and its "E709's four-output setup" means
+E709's command (state block word 4 at 0x00030001), not E406's full setup with the ISP word 0 and
+`CR_REG_0148` bits; both are reworded when the question is next narrowed.
