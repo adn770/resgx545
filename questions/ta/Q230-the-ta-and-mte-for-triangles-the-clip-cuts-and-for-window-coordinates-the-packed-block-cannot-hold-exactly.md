@@ -1,6 +1,6 @@
 +++
 id = "Q230"
-question = "what does the TA write in the cases of the clip, the target's edge and the numeric formats that E776 to E783 and E795 to E798 left open: the stored order of a clipped polygon of 3 or of more than 4 vertices and of a cut by a guard-band plane (E777), the limit of the region lists in y and at the left edge of other targets (E776), the tie of the rounding of the 1/1024 grid to 1/256 (E778), the depth word of a vertex with w other than 1 (no formula: every frozen rule refuted, words recorded, E783, E795 to E797), the rule of the 1/w word of a vertex with w other than 1 (RZ of 1/w or one ulp above it in 514 of 514 words of kept vertices, w from 3e-5 to 8027; which of the two follows the mantissa of w alone, held out 42 of 42 at other exponents, E859, and 72 of 72 at the exponents -12, -6, -3, 5, 8 and 12, E879; a mantissa whose exact 1/w lies less than half an ulp above RZ stores RZ, 181 of 181, 117 of 117 held out, H-FRAC, E872, E879; which of the 189 mantissas read above half an ulp store RZ + 1, 106 of them, has no rule: 0 of 512703 declared table-plus-Newton and binary32 models fit, E872, and the offset e of floor(1/w + e) is not constant over windows of 36 neighbouring mantissas at strides 1, 2^8 and 2^16, E879) and of a clip-made vertex (0 to 3 ulp above RZ of 1/w_made, no rule, E782, E798), the depth of a made vertex (1.0 / 0.0 in 11 of 12, E782, E798), the 1/w word under a clamp (within 1 ulp of 1/clamp, no rule, E781), and the size at which a sub-pixel triangle is no longer written (E780)?"
+question = "what does the TA write in the cases of the clip, the target's edge and the numeric formats that E776 to E783 and E795 to E798 left open: the stored order of a clipped polygon of 3 or of more than 4 vertices and of a cut by a guard-band plane (E777), the limit of the region lists in y and at the left edge of other targets (E776), the tie of the rounding of the 1/1024 grid to 1/256 (E778), the depth word of a vertex with w other than 1 (no formula: every frozen rule refuted, words recorded, E783, E795 to E797), the rule of the 1/w word of a clip-made vertex (0 to 3 ulp above RZ of 1/w_made, no rule, E782, E798; a kept vertex's word is Q296), the depth of a made vertex (1.0 / 0.0 in 11 of 12, E782, E798), the 1/w word under a clamp (within 1 ulp of 1/clamp, no rule, E781), and the size at which a sub-pixel triangle is no longer written (E780)?"
 unit = "ta"
 kind = "hw"
 value = "medium"
@@ -237,3 +237,11 @@ half an ulp (decision R6-7 a), the table of read mantissas above it, at the expo
 which mantissas above half an ulp store RZ + 1 (a family declared from the windows' reading before
 it is fitted on FIT and scored on the dense table's HELD OUT half, still unused for fits), the
 exponents between and beyond those read, and the rest of the line as before.
+
+Split 2026-11-12 (round 7 housekeeping, decision R7-1 a; the question line is reworded, the
+question stays open). The kept vertex's 1/w clause moved to Q296 (which mantissas above half an ulp
+store RZ + 1, and the exponents not read), so the numeric part can retire on its own. It read "the
+rule of the 1/w word of a vertex with w other than 1 (RZ of 1/w or one ulp above it in 514 of 514
+words of kept vertices, ..., E879) and of a clip-made vertex (...)"; Q296 quotes it whole. The
+clip-made vertex's and the clamp's 1/w, the depth, the clip orders, the region limits, the grid's
+tie and the cull stay here.
