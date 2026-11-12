@@ -7126,6 +7126,25 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   2 rows decided)'.
   *ta; HW, infer; data: `render-closing-r7-rp:out/20261112-205431/q293/`,
   `render-closing-r7-rp:out/20261112-205431/s0/`, `render-closing-r7-rp:fold/`.*
+- `E907` r7-rp stage q139 (Q139, 24 TA-dump jobs at E877's missed macrotile cases, 256 x 256 and 640
+  x 480): every case replicated its dataset's wrong-tile map (21 of 21), and the frozen H-MOVED, a
+  tile is wrong iff its region header is not at the baseline's slot, is not supported on the fit
+  rows (2 held, 8 failed of 10): every wrong tile's header had left its slot (no wrong tile with its
+  header in place, H-INPLACE never) but in 9 fit rows headers also moved for tiles that drew; read
+  at the fold from the fit rows' dumps, a target tile is wrong exactly when no header names it (3296
+  of 3296 tiles), and a placement rule fitted on them (R7-BLK: headers in 4 x 4 tile blocks of 16
+  slots per macrotile, N * S + block * 16 + (y mod 4) * 4 + x mod 4 with the blocks counted from the
+  macrotile's first tile at the first macrotile's width over 4, the TA writing tiles past the target
+  to the last bound plus the first macrotile's width, a later header overwriting an earlier one)
+  matched all 11 fit rows tile for tile, was hashed and committed to the data repository (8e6fd91b)
+  and then predicted the held-out rows' wrong-tile sets and header slots in 9 of 10, bit 31 clear at
+  640 x 480 among them, and failed at stride 4 (68 of 84 wrong tiles in common, 96 of 128 slots);
+  held-out verdict as printed 'Q139 held out: the fitted placement model predicts the held-out
+  wrong-tile sets is not supported: 9 held, 1 FAILED, 0 cannot tell of 10'; read after that, a write
+  order by 4 x 4 tile block fits all 21 rows, stride 4 included [post hoc].
+  *ta; HW, infer; data: `render-closing-r7-rp:out/20261112-205431/q139/`,
+  `render-closing-r7-rp:out/20261112-205431/s0/`, `render-closing-r7-rp:fold/`, `ta-mtile-fields`,
+  `ta-mtile-fields-risky`.*
 
 ## By unit
 
@@ -7199,7 +7218,7 @@ Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
 E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763, E776, E777,
 E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828, E842, E847, E851, E859,
-E865, E872, E877, E879, E886, E888, E893, E897, E906.
+E865, E872, E877, E879, E886, E888, E893, E897, E906, E907.
 
 ### texture
 
