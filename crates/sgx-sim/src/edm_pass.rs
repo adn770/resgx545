@@ -283,6 +283,10 @@ pub struct Lockup {
     pub signature_3d: u32,
     /// `CR_EVENT_STATUS` at the stop.
     pub event_status: u32,
+    /// `CR_DPM_TASK_STATE` (0x0694) read at the stop, where it was read: 0 at 400000 with no
+    /// host write before the stop (E890, the r6 kernel's peek), not the 2 R-6 reads stored
+    /// [RE]; `None` where it was not read (E856, E857: the rgn4 kernel never reads it).
+    pub dpm_task_state: Option<u32>,
     pub ccb_read_minus_write: i32,
     pub after: AfterPass,
 }
@@ -301,6 +305,8 @@ pub fn tick_units(timer_clock: u32) -> Option<u32> {
 /// while sa9 bit 0 is set, which the skipped handler would have cleared; the sim models the
 /// measured outcome, not the firmware. Refused: another dword 5, another clock, the clears at
 /// another clock (not run), a skip without the `phas` end (E823: a stop at once, no marks).
+/// `CR_DPM_TASK_STATE` read 0 at the stop (E890, 2 of 2 at 400000): R-6's store of 2 before
+/// the poll is not seen on the hardware.
 pub fn skipped_render(s: &SkippedRender) -> Result<Lockup, Error> {
     if s.hw_recovery_sample_rate != 10 {
         return Err(no(format!(
@@ -331,6 +337,7 @@ pub fn skipped_render(s: &SkippedRender) -> Result<Lockup, Error> {
         kick_clear_3d: 0,
         signature_3d: SIGNATURE_3D_READ,
         event_status,
+        dpm_task_state: (s.timer_clock == 400_000 && s.host == HostBeforeStop::Nothing).then_some(0),
         ccb_read_minus_write: 0,
         after: AfterPass {
             tick: Tick::Stalled,
@@ -620,6 +627,21 @@ mod tests {
         assert_eq!(tick_units(400_000), Some(25_000));
         assert_eq!(tick_units(800_000), Some(50_000));
         assert_eq!(tick_units(1_600_000), Some(100_000));
+    }
+
+    #[test]
+    fn cr_dpm_task_state_reads_zero_at_the_stop_where_it_was_read() {
+        // E890 (r6-held part P, 2 of 2 at 400000, the r6 kernel's peek): 0x0694 read 0 at the
+        // stop as at the arm; R-6's store of 2 is not seen. Not read at the other clocks or with
+        // the clears before the stop (E856, E857 ran on the rgn4 kernel): None.
+        let l = skipped_render(&skipped(400_000, HostBeforeStop::Nothing)).unwrap();
+        assert_eq!(l.dpm_task_state, Some(0));
+        for clock in [800_000, 1_600_000] {
+            let l = skipped_render(&skipped(clock, HostBeforeStop::Nothing)).unwrap();
+            assert_eq!(l.dpm_task_state, None, "{clock}");
+        }
+        let l = skipped_render(&skipped(1_600_000, HostBeforeStop::ClearsThenMiscinfo)).unwrap();
+        assert_eq!(l.dpm_task_state, None);
     }
 
     #[test]

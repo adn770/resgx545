@@ -146,7 +146,10 @@ of sections 1 and 2 are those of the 12.0 scan and were not redone.*
   The events side gives two STATUS2 latches as rules over a measured timing, bit 6 of a 64 x 32
   fill without a load (E805) and bit 7 of a vertex loop (E839), and refuses the other latches
   (E806, E840, E841; Q082), and of the clears takes `CR_EVENT_HOST_CLEAR` bits 15 and 18 against a
-  held bit 18 (E855, E857) and refuses the rest (E821 to E823; Q111).
+  held bit 18 (E855, E857) and refuses the rest (E821 to E823; Q111). The BIF side gives one
+  rule, the word of the replay after a held TA write fault (the held page and `SB` through
+  the list of the next TA run, a flush while held changing nothing: E848, E891, E892), and
+  refuses the other faults, the number of replays and the boots that time out (Q003).
 
 ## 4. The MTE clipping and depth-range datasets
 
