@@ -247,3 +247,34 @@ def test_a_pin_of_a_worktree_under_scratch_is_named_by_its_commits_line(tmp_path
     (s / "FROZEN.commits").write_text(f"# h\n{sha('y')}  {c['02']}  tools/a.py\n")
     bad = frozen.check(tmp_path / "data", repo)
     assert any("has no line" in b and "closing4/lead/wt/tools/a.py" in b for b in bad)
+
+
+def test_inputs_read_from_scratch_are_checked_against_their_published_copies(tmp_path):
+    """Round 5's r5-events froze the plan, the decisions and a reading of the firmware by
+    absolute paths under scratch/resgx545/ that no FROZEN.commits line names: they are no files
+    of the tool tree but inputs published as cited/<path> of resgx545-data or, derived from the
+    firmware, of resgx545-data-private. Each must have a copy with the frozen hash; without the
+    private repository a copy found in neither is not reported."""
+    repo, c = history(tmp_path)
+    sc = "/home/u/src/scratch/resgx545"
+    r5 = "closing" + "5"   # not a scratch cite of this file (scratch_cites.py)
+    s = session(tmp_path, [f"{sha('x')}  {TREE}/tools/a.py",
+                           f"{sha('P')}  {sc}/{r5}/events/plan.md",
+                           f"{sha('R')}  {sc}/{r5}/r6/reading.md"])
+    (s / "FROZEN.commits").write_text(f"# h\n{sha('x')}  {c['03']}  tools/a.py\n")
+    data, priv = tmp_path / "data", tmp_path / "priv"
+    assert frozen.session_pins(s) == [(sha("x"), "tools/a.py")]
+    assert frozen.scratch_inputs(s) == [(sha("P"), f"{r5}/events/plan.md"),
+                                        (sha("R"), f"{r5}/r6/reading.md")]
+    (data / f"cited/{r5}/events").mkdir(parents=True)
+    (data / f"cited/{r5}/events/plan.md").write_text("P")
+    assert frozen.check(data, repo) == []
+    priv.mkdir()
+    bad = frozen.check(data, repo, priv)
+    assert len(bad) == 1 and f"{r5}/r6/reading.md" in bad[0] and "not published" in bad[0]
+    (priv / f"cited/{r5}/r6").mkdir(parents=True)
+    (priv / f"cited/{r5}/r6/reading.md").write_text("R")
+    assert frozen.check(data, repo, priv) == []
+    (data / f"cited/{r5}/events/plan.md").write_text("changed")
+    bad = frozen.check(data, repo, priv)
+    assert len(bad) == 1 and "plan.md" in bad[0] and sha("changed") in bad[0]

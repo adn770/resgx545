@@ -17,8 +17,12 @@ one line per pinned file and hash, over every FROZEN*.sha256 of the session. A p
 history never tracked (a build product, such as the ignored tools/usse-asm/usse-asm) has no
 commit: its line says `untracked` in the commit's place, and that pin still verifies only against
 the file itself. A pin of a worktree that sat under scratch/resgx545/ (round 4 froze against
-closing4/lead/wt) is named by the FROZEN.commits line with its hash whose path ends it. The
-published freeze bytes are never rewritten: FROZEN.commits is a new file beside them.
+closing4/lead/wt, listed in scratch_cites.NOT_FILES) is named by the FROZEN.commits line with its
+hash whose path ends it. Any other line under scratch/resgx545/ is an input the session read from
+scratch (round 5's r5-events froze its plan, the decisions and a reading of the firmware): no file
+of the tool tree but a cite, published as cited/<path> of resgx545-data or of
+resgx545-data-private, and checked against that copy. The published freeze bytes are never
+rewritten: FROZEN.commits is a new file beside them.
 
 --write finds, for each session whose freezes pin resgx545 files and that has no
 FROZEN.commits, the commits in this tree's history (`git log -- <path>`): the newest commit at
@@ -29,7 +33,8 @@ replaced (one that differs from what would be written is reported).
 
 --check verifies every FROZEN.commits: each resgx545 pin of the session's freezes has a line,
 each line is a pin, `git show <commit>:<path>` hashes to the pinned sha256, and an untracked
-line names a path the history has never tracked. Once any session has a FROZEN.commits, a
+line names a path the history has never tracked; each scratch input has a published copy with its
+hash (one found in neither repository is reported only when the private one is present). Once any session has a FROZEN.commits, a
 session whose freezes pin resgx545 files without one is a problem. It skips quietly when the
 data repository (found as datasets.py finds it) or this tree's git history is absent.
 
@@ -45,11 +50,13 @@ import subprocess
 import sys
 
 import datasets
+import scratch_cites
 
 ROOT = datasets.ROOT
 NAME = "FROZEN.commits"
 UNTRACKED = "untracked"
 TREE = "resgx545"
+SCRATCH = "/scratch/resgx545/"
 HEADER = """\
 # FROZEN.commits: the resgx545 commit that holds each file of the resgx545 tree this session's
 # FROZEN*.sha256 pin by absolute path. One line per pinned file and hash: the sha256, the
@@ -92,15 +99,34 @@ def committed(session: pathlib.Path) -> dict[str, set[str]]:
     return out
 
 
+def scratch_inputs(session: pathlib.Path) -> list[tuple[str, str]]:
+    """(sha256, path below scratch/resgx545/) of the freezes' lines under the scratch tree outside
+    the worktrees whose files FROZEN.commits pins (scratch_cites.NOT_FILES): inputs read from
+    scratch, not pins of the tool tree."""
+    out = set()
+    for f in freezes(session):
+        for line in f.read_text().splitlines():
+            m = re.fullmatch(r"([0-9a-f]{64}) [ *](/.+)", line)
+            if not m or SCRATCH not in m[2]:
+                continue
+            rel = m[2].split(SCRATCH, 1)[1]
+            if not any(rel.startswith(n + "/") for n in scratch_cites.NOT_FILES):
+                out.add((m[1], rel))
+    return sorted(out, key=lambda p: (p[1], p[0]))
+
+
 def session_pins(session: pathlib.Path) -> list[tuple[str, str]]:
     """The distinct pins of all the session's freezes, in path then hash order. A pin of a
     worktree that sat under scratch/resgx545/ (round 4 froze against closing4/lead/wt) reads
     as the path below scratch's resgx545; a FROZEN.commits line with the pin's hash whose path
     ends that path names it."""
     known = committed(session)
+    inputs = set(scratch_inputs(session))
     out = set()
     for f in freezes(session):
         for sha256, path in pins(f):
+            if (sha256, path) in inputs:
+                continue
             named = [p for p in known.get(sha256, ()) if path.endswith("/" + p)]
             out.add((sha256, named[0] if len(named) == 1 and path not in known[sha256]
                      else path))
@@ -210,8 +236,10 @@ def write(data: pathlib.Path, repo: pathlib.Path, dates: dict[str, str]) -> list
     return bad
 
 
-def check(data: pathlib.Path, repo: pathlib.Path) -> list[str]:
-    """What is wrong with the FROZEN.commits of the data repository."""
+def check(data: pathlib.Path, repo: pathlib.Path,
+          private: pathlib.Path | None = None) -> list[str]:
+    """What is wrong with the FROZEN.commits of the data repository (and the published copies of
+    the scratch inputs, in it or in the private one)."""
     find, bad = Finder(repo), []
     all_sessions = sessions(data)
     adopted = any((s / NAME).exists() for s in all_sessions)
@@ -245,6 +273,16 @@ def check(data: pathlib.Path, repo: pathlib.Path) -> list[str]:
                 bad.append(f"{name}/{NAME}: {c}:{path} hashes to {got}, not {sha256}")
         bad += [f"{name}: {path} {sha256} has no line in {NAME}"
                 for sha256, path in sorted(want - have, key=lambda p: p[1])]
+        for sha256, path in scratch_inputs(s):
+            copies = [b / "cited" / path for b in (data, private) if b is not None]
+            copies = [p for p in copies if p.is_file()]
+            if not copies:
+                if private is not None:
+                    bad.append(f"{name}: scratch input {path} is not published (cited/{path})")
+                continue
+            got = hashlib.sha256(copies[0].read_bytes()).hexdigest()
+            if got != sha256:
+                bad.append(f"{name}: cited/{path} hashes to {got}, not {sha256}")
     return bad
 
 
@@ -260,7 +298,7 @@ def main(argv: list[str] | None = None) -> int:
         names = [s.relative_to(data).as_posix() for s in sessions(data)]
         bad = write(data, ROOT, session_dates(datasets.load(datasets.DIR), names))
     else:
-        bad = check(data, ROOT)
+        bad = check(data, ROOT, datasets.repos().get("data-private"))
     if bad:
         print("\n".join(bad))
     return 1 if bad else 0
