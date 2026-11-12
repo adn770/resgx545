@@ -87,6 +87,7 @@ RETIRED: dict[str, str] = {
     "Q152": "answered by E836", "Q166": "answered by E857", "Q295": "answered by E857",
     "Q274": "folded into Q183 after E869", "Q244": "folded into Q071 after E869",
     "Q289": "answered by E884",
+    "Q292": "answered by E889",
 }
 NAME = re.compile(r"Q\d{3}-[a-z0-9]+(-[a-z0-9]+)*\.md")
 REF = re.compile(r"\bQ\d{3}\b")

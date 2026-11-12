@@ -6861,6 +6861,40 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   it.
   *ta; HW, infer; data: `render-closing-r6-misc:out/20261112-144153/q086/`,
   `render-closing-r6-misc:fold/`.*
+- `E887` R6-render4x set A, stages s0 and a (16 jobs, one attempt, 6 faults, no stop): H-TPM held
+  out, 11 of 11 rows decided: on the rgn4 module a four-array 4x job of the full triangle faults iff
+  the end of its target's tail-pointer entries, 4 x (Z(2tx - 1, 2ty - 1) + 1) with y on the even
+  bits, passes the td.rgn of its context's maximum; 1024 x 1280 (end 0x13000 at td.rgn 0x13000, and
+  its replicate), 992 x 1280 and 512 x 1536 completed on their own maximum and 1024 x 1024 and 1024
+  x 800 on a 1024 x 1280 maximum with 0 wrong pixels, where size rules of E868 said fault; 1024 x
+  1296, 1040 x 1280, 1024 x 1536 and 1024 x 800 on 2048 x 1024 faulted with E845's word (0x0100 at
+  0x10000011); two held faults, 1024 x 800 and 1280 x 768, lost exactly the frozen stream offsets as
+  sets (43, header 0 among them, and 511); of H-TPM's eight variants only TPM-y-rgn survives; s0's
+  three controls and a4 (1024 x 768 on 2048 x 1024, at the limit) passed.
+  *dpm; HW, infer; data: `render-closing-r6-render4x:out/20261112-144822/s0/`,
+  `render-closing-r6-render4x:out/20261112-144822/a/`, `render-closing-r6-render4x:postrun/`.*
+- `E888` R6-render4x set A, stage t (4 jobs, one attempt, no fault): Q293's held-out rows, 3 of 3
+  decided, the control passing (t8, E827's pb-e40-m2-64a with its hash): with CR_TE_AA 0xc0000000
+  the TA inserts one zero dword right before the format word of the 11.31 line (dword 9) and point
+  (dword 11) and the image is empty, as with 0x40000000 and 0x80000000 (H-PAD); on the 0x40000000
+  triangle the kernel's poke of 0x00000001 into the inserted dword 11 of render 2 landed (the format
+  word 0x00040101 at dword 12) and render 2 drew nothing, 0 triangle and 4096 background pixels: the
+  3D reads the poked value as the format word (H-OLD, as E829's 0xffffffff).
+  *ta; HW, infer; data: `render-closing-r6-render4x:out/20261112-144822/t/`,
+  `render-closing-r6-render4x:postrun/`.*
+- `E889` R6-render4x set B on the r6-kernel module (fork r6-kernel 3f0b3e74, srcversion
+  41E2F5C756F96D20F7109A4; 21 jobs, one attempt, 3 faults, all predicted): with four times the 4
+  side^2 tail room for a context made for 4x targets the eight own-maximum cells that faulted on the
+  rgn4 module (1280 x 1024, 1184 x 768, 1024 x 800, 2048 x 240, 768 x 2048, 2048 x 1536, 1280 x 768,
+  1024 x 1024) completed with 0 wrong pixels and no region header off the rule (H-ROOM, 8 of 8 held
+  out); with the room set by the debugfs render_tail_room, 1280 x 1024 completed at 0xb000 (td.rgn
+  0xe000, its entries end 0xd800) and faulted one page lower with E845's word, losing exactly the
+  frozen 171 stream offsets 0xd000 to 0xd7f8, and 1024 x 768 faulted at 0x3000 (H-TPM's limit, 3 of
+  3 held out; the controls 1280 x 1024 at 0x4000 faulted and 1024 x 768 at 0x4000 completed); 2048 x
+  2032 (1017 pages) and 4096 x 960 completed with 0 wrong and 4096 x 1152 (1153 pages needed) ended
+  in -ENOSPC without a fault [explore]; s0b's four controls passed.
+  *dpm; HW, infer; data: `render-closing-r6-render4x:out/20261112-153845/`,
+  `render-closing-r6-render4x:postrun/`.*
 
 ## By unit
 
@@ -6874,7 +6908,7 @@ Records: E199, E200, E201, E202, E204, E205, E206, E203, E253, E256, E309, E310,
 E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E468, E574, E591,
 E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753, E773, E774, E775, E779, E785,
 E786, E790, E799, E800, E801, E802, E803, E832, E845, E846, E852, E853, E854, E860, E861, E862,
-E863, E864, E866, E867, E868, E869, E870, E873, E874, E875, E881, E882, E883.
+E863, E864, E866, E867, E868, E869, E870, E873, E874, E875, E881, E882, E883, E887, E889.
 
 ### edm
 
@@ -6933,7 +6967,7 @@ Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
 E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763, E776, E777,
 E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828, E842, E847, E851, E859,
-E865, E872, E877, E879, E886.
+E865, E872, E877, E879, E886, E888.
 
 ### texture
 

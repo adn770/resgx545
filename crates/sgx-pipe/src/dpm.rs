@@ -134,61 +134,91 @@ pub enum Ending4x {
 }
 
 /// U4, the scene pages of that job, page 0 included: 1 + ceil(2 tiles16 / 32), the doubled grid
-/// (E845's fit on E824's dumps; E866 at three boundaries one page apart, two held out; E867, E868).
+/// (E845's fit on E824's dumps; E866 at three boundaries one page apart, two held out; E867, E868,
+/// E887, E889). Two cells used two pages more, 992 x 1280 (313) and 1184 x 768 (225), both with an
+/// odd count of 32-pixel tile columns on four macrotiles a side, a shape no cell matched U4 in
+/// (E887, E889); `four_array_4x_ending` refuses that band.
 pub fn full_triangle_4x_pages(w: u32, h: u32) -> u32 {
     1 + (2 * w.div_ceil(16) * h.div_ceil(16)).div_ceil(32)
 }
 
-/// A measured cell: (target, context maximum, faulted).
-type Cell4x = ((u32, u32), (u32, u32), bool);
+/// The 32 x 16 tiles, the macrotiles a side and the tail side of a context made for `mw` x `mh`
+/// (the fork's single-sampled layout, `sgx_render.c`): (tiles x, tiles y, macrotiles a side, side).
+fn render_grid(mw: u32, mh: u32) -> (u32, u32, u32, u32) {
+    let (tx, ty) = (mw.div_ceil(32), mh.div_ceil(16));
+    let n = if mw * mh >= 640 * 480 { 4 } else { 2 };
+    let (mx, my) = (tx.div_ceil(n).next_multiple_of(4), ty.div_ceil(n).next_multiple_of(4));
+    (tx, ty, n, (n * mx).max(n * my).next_power_of_two())
+}
 
-/// The measured endings at P 0x422 by (target, context maximum): true for a fault. No rule of
-/// eleven fits them (E868: none survives the 13 rows of E867 and E868; the context's tail room
-/// matters, E867), so nothing is interpolated (Q292).
-const FOUR_ARRAY_4X: &[Cell4x] = &[
-    // E824 (and E828, E845, E846 at 288 x 144 and 1024 x 768): complete on their own maximum
-    ((64, 64), (64, 64), false),
-    ((288, 144), (288, 144), false),
-    ((256, 288), (256, 288), false),
-    ((384, 384), (384, 384), false),
-    ((320, 160), (320, 160), false),
-    ((512, 384), (512, 384), false),
-    ((640, 480), (640, 480), false),
-    ((320, 400), (320, 400), false),
-    ((1024, 768), (1024, 768), false),
-    // E845, E869 (row d replicated it); E846 o7 and E828 j4 also overflow
-    ((1280, 1024), (1280, 1024), true),
-    ((2048, 1536), (2048, 1536), true),
-    ((4096, 1152), (4096, 1152), true),
-    ((4096, 4096), (4096, 4096), true),
-    // E867: the same targets on a larger maximum
-    ((1024, 768), (2048, 2048), false),
-    ((1280, 1024), (1280, 1040), false),
-    ((1280, 1024), (2048, 2048), false),
-    ((1280, 1024), (2048, 1024), true),
-    ((2048, 1536), (4096, 4096), false),
-    // E868: on their own maximum
-    ((2048, 240), (2048, 240), true),
-    ((256, 1536), (256, 1536), false),
-    ((768, 2048), (768, 2048), true),
-    ((1280, 768), (1280, 768), true),
-    ((1024, 1024), (1024, 1024), true),
-    ((1024, 512), (1024, 512), false),
-    ((1184, 768), (1184, 768), true),
-    ((1024, 800), (1024, 800), true),
-];
+/// The Z-order index of tile (x, y) of a 4x job's doubled grid (16 x 8 pixel tiles): y on the even
+/// bits, x on the odd bits. The TA keeps the tile's tail pointer, one dword, at TA-data offset 4
+/// times this (H-TPM: E870's fit on E869's dump, held out by E887 and E889).
+pub fn tail_index_4x(x: u32, y: u32) -> u32 {
+    let spread = |v: u32| (0..16).fold(0, |r, b| r | ((v >> b) & 1) << (2 * b));
+    spread(y) | spread(x) << 1
+}
 
-/// How the job ends at target `w` x `h` on a context made for `mw` x `mh` with `p` parameter-buffer
-/// pages, where a run decides it: a cell that completed at P 0x422 completes when its scene fits
-/// and ends in -ENOSPC when it does not (E866, H-ENOSPC4 at four sizes); a cell that faulted is a
-/// fault at P 0x422 only, where it ran. `None` elsewhere (Q292).
+/// The end in bytes of a `w` x `h` 4x target's tail-pointer entries: 4 x (Z(2tx - 1, 2ty - 1) + 1),
+/// tx and ty its 32 x 16 tile counts (Z grows in each coordinate, so the far corner is the last).
+pub fn tail_entries_end_4x(w: u32, h: u32) -> u32 {
+    let (tx, ty) = (w.div_ceil(32), h.div_ceil(16));
+    4 * (tail_index_4x(2 * tx - 1, 2 * ty - 1) + 1)
+}
+
+/// The tail-pointer room our kernel gives a context made for 4x targets: the rgn4 module's 4 side^2
+/// bytes (fork resgx545 a2788bd8, srcversion 99CD90DA26E3AFF9C450517), the r6-kernel module's four
+/// times that (fork r6-kernel 3f0b3e74, srcversion 41E2F5C756F96D20F7109A4) or its debugfs
+/// `render_tail_room` (a whole number of pages).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TailRoom {
+    Rgn4,
+    Quad,
+    Set(u32),
+}
+
+/// `td.rgn`, the region headers' offset from the TA-data base (the tail-pointer base), of a 4x
+/// context made for `mw` x `mh`: the room rounded to a page, then the control, OTPM and state pages.
+pub fn region_headers_4x(mw: u32, mh: u32, room: TailRoom) -> u32 {
+    let (.., side) = render_grid(mw, mh);
+    let bytes = match room {
+        TailRoom::Rgn4 => 4 * side * side,
+        TailRoom::Quad => 16 * side * side,
+        TailRoom::Set(r) => r,
+    };
+    bytes.next_multiple_of(0x1000) + 0x3000
+}
+
+/// How the job ends at target `w` x `h` on a context made for `mw` x `mh` by the rgn4 module with
+/// `p` parameter-buffer pages (`four_array_4x_ending_on` with `TailRoom::Rgn4`).
 pub fn four_array_4x_ending(w: u32, h: u32, mw: u32, mh: u32, p: u32) -> Option<Ending4x> {
-    let &(_, _, fault) = FOUR_ARRAY_4X.iter().find(|(t, m, _)| *t == (w, h) && *m == (mw, mh))?;
-    if fault {
+    four_array_4x_ending_on(w, h, mw, mh, p, TailRoom::Rgn4)
+}
+
+/// How the job ends: a fault where the target's tail-pointer entries pass the region headers of the
+/// context (H-TPM: 26 of 26 recorded cells, E870; 11 of 11 held out, E887; through the kernel's
+/// room and one page either side of its limit, E889), else complete when its scene fits the buffer
+/// and -ENOSPC when it does not (H-ENOSPC4, E866; E889's 4096 x 1152). `None` for a target larger
+/// than its maximum or a maximum past 4096 (not run), a faulting cell at a P other than 0x422
+/// (every 4x fault on record ran there) and the band where the page need is not U4's (above).
+pub fn four_array_4x_ending_on(w: u32, h: u32, mw: u32, mh: u32, p: u32, room: TailRoom) -> Option<Ending4x> {
+    if w == 0 || h == 0 || w > mw || h > mh || mw > 4096 || mh > 4096 {
+        return None;
+    }
+    if tail_entries_end_4x(w, h) > region_headers_4x(mw, mh, room) {
         return (p == PB_PAGES_DEFAULT).then_some(Ending4x::Fault);
     }
-    let fits = p.saturating_sub(PB_FIXED_RESERVE) >= full_triangle_4x_pages(w, h);
-    Some(if fits { Ending4x::Complete } else { Ending4x::Enospc })
+    let (tx, _, n, _) = render_grid(w, h);
+    let need = full_triangle_4x_pages(w, h);
+    let slack = if tx % 2 == 1 && n == 4 { 2 } else { 0 };
+    let usable = p.saturating_sub(PB_FIXED_RESERVE);
+    if usable >= need + slack {
+        Some(Ending4x::Complete)
+    } else if usable < need {
+        Some(Ending4x::Enospc)
+    } else {
+        None
+    }
 }
 
 #[cfg(test)]
@@ -442,18 +472,188 @@ mod tests {
     }
 
     #[test]
-    fn an_unmeasured_4x_cell_is_refused_and_a_faulting_one_only_at_the_measured_buffer() {
-        // no rule of E868's eleven survives, so nothing is interpolated: neighbours of measured
-        // cells, a measured target on another maximum, a faulting cell at another P
-        for (w, h, mw, mh) in
-            [(1088, 768, 1088, 768), (1024, 832, 1024, 832), (1280, 1024, 1536, 1536), (64, 64, 128, 128)]
-        {
-            assert_eq!(four_array_4x_ending(w, h, mw, mh, PB_PAGES_DEFAULT), None, "{w}x{h} on {mw}x{mh}");
+    fn the_4x_tail_pointers_are_z_ordered_with_y_on_the_even_bits_e870() {
+        // E870's fit on E869's dump, held out by E887 and E889: one dword a tile of the doubled
+        // grid at 4 x Z(x, y), y on the even bits, x on the odd bits
+        assert_eq!(tail_index_4x(0, 0), 0);
+        assert_eq!(tail_index_4x(0, 1), 1);
+        assert_eq!(tail_index_4x(1, 0), 2);
+        assert_eq!(tail_index_4x(3, 5), 27);
+        // the end of a target's entries, 4 x (Z(2tx - 1, 2ty - 1) + 1) (E870's table, E887, E889)
+        let ends = [
+            ((64, 64), 0x80),
+            ((1024, 768), 0x7000),
+            ((1024, 512), 0x4000),
+            ((1024, 800), 0x7ac0),
+            ((1280, 768), 0xc800),
+            ((1280, 1024), 0xd800),
+            ((2048, 240), 0xaff0),
+            ((768, 2048), 0x17800),
+            ((992, 1280), 0x12fe0),
+            ((1024, 1280), 0x13000),
+            ((1024, 1296), 0x13ab0),
+            ((2048, 2032), 0x1fff0),
+            ((4096, 1152), 0x3ac00),
+            ((4096, 4096), 0x80000),
+        ];
+        for ((w, h), end) in ends {
+            assert_eq!(tail_entries_end_4x(w, h), end, "{w}x{h}");
         }
+    }
+
+    #[test]
+    fn the_region_headers_follow_the_kernels_tail_room() {
+        // the rgn4 module (fork a2788bd8): room 4 side^2 bytes, then the control, OTPM and state
+        // pages; the r6-kernel module (fork r6-kernel 3f0b3e74): four times that room for a
+        // context made for 4x targets, or the debugfs render_tail_room
+        let rgn4 = [
+            ((64, 64), 0x4000),
+            ((1024, 768), 0x7000),
+            ((2048, 1024), 0x7000),
+            ((1024, 1280), 0x13000),
+            ((4096, 4096), 0x43000),
+        ];
+        for ((mw, mh), rgn) in rgn4 {
+            assert_eq!(region_headers_4x(mw, mh, TailRoom::Rgn4), rgn, "{mw}x{mh}");
+        }
+        let auto = [
+            ((1024, 768), 0x13000),
+            ((1280, 1024), 0x13000),
+            ((2048, 1536), 0x43000),
+            ((4096, 1152), 0x43000),
+        ];
+        for ((mw, mh), rgn) in auto {
+            assert_eq!(region_headers_4x(mw, mh, TailRoom::Quad), rgn, "{mw}x{mh}");
+        }
+        for (room, rgn) in [(0x3000, 0x6000), (0x4000, 0x7000), (0xa000, 0xd000), (0xb000, 0xe000)] {
+            assert_eq!(region_headers_4x(1280, 1024, TailRoom::Set(room)), rgn, "{room:#x}");
+        }
+    }
+
+    #[test]
+    fn the_rule_gives_every_four_array_outcome_on_record_and_the_held_out_rows_e887() {
+        // (target, maximum, fault) on the rgn4 module at P 0x422: E824, E828, E845, E846, E867,
+        // E868, E869 (E870's 26 cells), then E887's held-out rows a1-a14, h1, h2 and its control a4
+        // (target, maximum, faulted)
+        type Cell = ((u32, u32), (u32, u32), bool);
+        let cells: &[Cell] = &[
+            ((64, 64), (64, 64), false),
+            ((288, 144), (288, 144), false),
+            ((256, 288), (256, 288), false),
+            ((384, 384), (384, 384), false),
+            ((320, 160), (320, 160), false),
+            ((512, 384), (512, 384), false),
+            ((640, 480), (640, 480), false),
+            ((320, 400), (320, 400), false),
+            ((1024, 768), (1024, 768), false),
+            ((1280, 1024), (1280, 1024), true),
+            ((2048, 1536), (2048, 1536), true),
+            ((4096, 1152), (4096, 1152), true),
+            ((4096, 4096), (4096, 4096), true),
+            ((1024, 768), (2048, 2048), false),
+            ((1280, 1024), (1280, 1040), false),
+            ((1280, 1024), (2048, 2048), false),
+            ((1280, 1024), (2048, 1024), true),
+            ((2048, 1536), (4096, 4096), false),
+            ((2048, 240), (2048, 240), true),
+            ((256, 1536), (256, 1536), false),
+            ((768, 2048), (768, 2048), true),
+            ((1280, 768), (1280, 768), true),
+            ((1024, 1024), (1024, 1024), true),
+            ((1024, 512), (1024, 512), false),
+            ((1184, 768), (1184, 768), true),
+            ((1024, 800), (1024, 800), true),
+            // E887 [HW, held out]
+            ((1024, 768), (2048, 1024), false),
+            ((1024, 1280), (1024, 1280), false),
+            ((992, 1280), (992, 1280), false),
+            ((512, 1536), (512, 1536), false),
+            ((1024, 1024), (1024, 1280), false),
+            ((1024, 800), (1024, 1280), false),
+            ((1024, 1296), (1024, 1296), true),
+            ((1040, 1280), (1040, 1280), true),
+            ((1024, 800), (2048, 1024), true),
+            ((1024, 1536), (1024, 1536), true),
+        ];
+        for &((w, h), (mw, mh), fault) in cells {
+            let end = if fault { Ending4x::Fault } else { Ending4x::Complete };
+            assert_eq!(
+                four_array_4x_ending(w, h, mw, mh, PB_PAGES_DEFAULT),
+                Some(end),
+                "{w}x{h} on {mw}x{mh}"
+            );
+        }
+    }
+
+    #[test]
+    fn the_quadrupled_tail_room_ends_the_fault_and_the_knob_moves_the_limit_e889() {
+        // E889 [HW]: on the r6-kernel module every own-maximum cell that faulted completes
+        // (b1-b8, b9 the control), the largest targets complete or overflow without a fault
+        let quad = [
+            ((1024, 768), Ending4x::Complete),
+            ((1280, 1024), Ending4x::Complete),
+            ((1184, 768), Ending4x::Complete),
+            ((1024, 800), Ending4x::Complete),
+            ((2048, 240), Ending4x::Complete),
+            ((768, 2048), Ending4x::Complete),
+            ((2048, 1536), Ending4x::Complete),
+            ((1280, 768), Ending4x::Complete),
+            ((1024, 1024), Ending4x::Complete),
+            ((2048, 2032), Ending4x::Complete),
+            ((4096, 960), Ending4x::Complete),
+            ((4096, 1152), Ending4x::Enospc),
+        ];
+        for ((w, h), end) in quad {
+            assert_eq!(
+                four_array_4x_ending_on(w, h, w, h, PB_PAGES_DEFAULT, TailRoom::Quad),
+                Some(end),
+                "{w}x{h}"
+            );
+        }
+        // the knob one page apart: k1, k5, k2, k4, k3
+        let knob = [
+            ((1280, 1024), 0x4000, Ending4x::Fault),
+            ((1024, 768), 0x4000, Ending4x::Complete),
+            ((1280, 1024), 0xb000, Ending4x::Complete),
+            ((1024, 768), 0x3000, Ending4x::Fault),
+            ((1280, 1024), 0xa000, Ending4x::Fault),
+        ];
+        for ((w, h), room, end) in knob {
+            assert_eq!(
+                four_array_4x_ending_on(w, h, w, h, PB_PAGES_DEFAULT, TailRoom::Set(room)),
+                Some(end),
+                "{w}x{h} at {room:#x}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_4x_cell_outside_what_was_run_is_refused() {
+        // a target larger than its context's maximum, a maximum past 4096, a faulting cell at
+        // another P (every 4x fault on record ran at P 0x422)
+        assert_eq!(four_array_4x_ending(1280, 1024, 1024, 768, PB_PAGES_DEFAULT), None);
+        assert_eq!(four_array_4x_ending(64, 64, 8192, 64, PB_PAGES_DEFAULT), None);
         assert_eq!(four_array_4x_ending(1280, 1024, 1280, 1024, 0x200), None);
-        // E828, E846: the 4096-wide faults also overflow; measured at the default buffer only
-        assert_eq!(four_array_4x_ending(4096, 4096, 4096, 4096, PB_PAGES_DEFAULT), Some(Ending4x::Fault));
-        assert_eq!(four_array_4x_ending(4096, 1152, 4096, 1152, PB_PAGES_DEFAULT), Some(Ending4x::Fault));
+        // a completing cell at another P follows its page need (H-ENOSPC4, E866)
+        assert_eq!(four_array_4x_ending(1088, 768, 1088, 768, PB_PAGES_DEFAULT), Some(Ending4x::Fault));
+        assert_eq!(four_array_4x_ending(64, 64, 128, 128, 0x23), Some(Ending4x::Enospc));
+    }
+
+    #[test]
+    fn the_page_need_of_odd_32_pixel_columns_on_four_macrotiles_is_refused_near_the_buffer() {
+        // E887 a12 (992 x 1280) and E889 b2 (1184 x 768) used 313 and 225 pages, U4 + 2: no
+        // measured cell of that shape (an odd count of 32-pixel tile columns, four macrotiles a
+        // side) matched U4, so within two pages above U4 neither ending is given
+        assert_eq!(full_triangle_4x_pages(992, 1280), 311);
+        assert_eq!(full_triangle_4x_pages(1184, 768), 223);
+        let at = |p| four_array_4x_ending(992, 1280, 992, 1280, p);
+        assert_eq!(at(0x22 + 313), Some(Ending4x::Complete));
+        assert_eq!(at(0x22 + 312), None);
+        assert_eq!(at(0x22 + 311), None);
+        assert_eq!(at(0x22 + 310), Some(Ending4x::Enospc));
+        // a shape that matched U4 keeps its exact boundary (E866: 1024 x 768 at 0xe3 and 0xe2)
+        assert_eq!(four_array_4x_ending(1024, 768, 1024, 768, 0xe3), Some(Ending4x::Complete));
+        assert_eq!(four_array_4x_ending(1024, 768, 1024, 768, 0xe2), Some(Ending4x::Enospc));
     }
 
     #[test]

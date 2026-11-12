@@ -1,11 +1,11 @@
 +++
 id = "Q293"
-question = "with CR_TE_AA bit 29 clear and bit 30 or 31 set the TA inserts one zero dword right before the format word of a triangle, line or point object (at 0x40 and 0x80, on one array and on four: E728, E847, E865), and the 3D reads the zero as the format word and draws nothing (E829): what do 0xc0000000 on a line and a point object, a non-zero value poked into the inserted dword, and render 2's own object give"
+question = "with CR_TE_AA bit 29 clear and bit 30, 31 or both set the TA inserts one zero dword right before the format word of a triangle, line or point object (E728, E847, E865, E888), and the 3D reads whatever that dword holds as the format word and draws nothing (E829, E888): what does the TA write for render 2's own object, and how does the 3D read it"
 unit = "ta"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E728", "E829", "E847", "E865"]
+evidence = ["E728", "E829", "E847", "E865", "E888"]
 terms = ["CR_TE_AA", "Parameter Buffer (PB)", "PB_OBJ.FORMAT"]
 +++
 Split on 2026-11-11 from the TA side of a retired question answered by E829. E728: with
@@ -68,3 +68,12 @@ dword before the format word, at 9 and 11, and an empty image, as with 0x4000000
 0x80000000); t7, the 0x40000000 triangle with a non-zero value poked into dword 11 (predicted: an
 empty image, the 3D reading it as the format word as in E829); t8, the round 5 control of stage t.
 Render 2's own object is not among them.
+
+Narrowed 2026-11-12 (round 6, session R6-render4x stage t, E888; the question text above is the
+narrowed one). Frozen verdict, 3 of 3 rows decided, the control (E827's row) passing: with
+`CR_TE_AA` 0xc0000000 the TA inserts one zero dword right before the format word of the 11.31 line
+(dword 9) and point (dword 11) and the image is empty, as at 0x40000000 and 0x80000000 (held out);
+on the 0x40000000 triangle 0x00000001 poked into the inserted dword 11 of render 2 (applied, the
+format word at 12) drew nothing, so the 3D reads a non-zero value there as the format word too, as
+E829's 0xffffffff (held out). Answered: 0xc0000000 on a line and a point, a non-zero value in the
+dword. Open: render 2's own object, the one item the plan's rows did not run.

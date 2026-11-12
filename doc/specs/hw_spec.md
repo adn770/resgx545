@@ -260,7 +260,7 @@ gives four to a context made with `DRM_SGXFIVE_CTX_RENDER_AA_4X` and refuses a 4
 unless debugfs forced its count (E828). A 4x render at 4096 x 4096 on four arrays faulted at the
 parameter buffer's base (0x90100 at 0x10000011, the word of E511's three faults) with 1048576
 pixels right, the first wrong at (1024, 0), and the health triangles after it passed, 3 of 3
-(E828; Q292). It is not a parameter-buffer overflow: the same 4x full triangle faulted with the
+(E828). It is not a parameter-buffer overflow: the same 4x full triangle faulted with the
 same word at 1280 x 1024 and 2048 x 1536, whose scenes need 321 and 769 of the 1024 usable pages
 (P - 0x22 at the maximum P 0x422; the need 1 + ceil(2 (W / 16) (H / 16) / 32) fits E824's ten
 dumps and two more here), with no pixel right and health ok after each (E845, held out), and at
@@ -292,8 +292,25 @@ included: a wide target faults early because x 64 sets bit 13 of the index (E870
 dump, the 26 outcomes known when the rule was written, so not held out). The room a 4x context
 needs is then 4 x (Z(2tx - 1, 2ty - 1) + 1) bytes, at most 4 x (2 side)^2 [infer]. Not explained:
 189 word-0 losses at header-grid entries outside the target, bit 27 set on 914 headers and in no
-completed dump, and the 4096-wide right blocks of E828 and E846 (E870). What the job needs of the
-layout, as a function of its target, is Q292.
+completed dump, and the 4096-wide right blocks of E828 and E846 (E870). Round 6 held the rule out on
+the module that made these contexts (11 of 11 rows decided): 1024 x 1280 (entries end 0x13000,
+`td.rgn` 0x13000), 992 x 1280 and 512 x 1536 completed on their own maximum, and 1024 x 1024 and
+1024 x 800 on a 1024 x 1280 one, where size rules of E868 said fault; 1024 x 1296, 1040 x 1280, 1024
+x 1536 and 1024 x 800 on 2048 x 1024 faulted with the same word; two held faults, 1024 x 800 and
+1280 x 768, lost exactly the frozen stream offsets (43, header 0 among them, and 511, as sets), and
+of the eight frozen variants only y on the even bits with the limit at `td.rgn` stays (E887). A
+module that gives a 4x context four times the room (fork r6-kernel 3f0b3e74) ends the fault: the
+eight own-maximum sizes that faulted complete with 0 wrong pixels and no region header off the rule,
+and so do 2048 x 2032 and 4096 x 960, while 4096 x 1152 (1153 pages needed) ends in -ENOSPC with no
+fault; with the room set by hand 1280 x 1024 completes at 0xb000 (`td.rgn` 0xe000, its entries end
+0xd800) and faults one page lower losing exactly the frozen 171 offsets from 0xd000 to 0xd7f8, and
+1024 x 768 faults at 0x3000 (E889). So a four-array 4x job needs its target's tail-pointer entries,
+4 x (Z(2tx - 1, 2ty - 1) + 1) bytes from the tail-pointer base, to end at or before the region
+headers; where they pass them the end of the TA's run zeroes the entries that lie over the headers
+[infer], and the in-target headers whose stream offset sits at an in-target entry are the ones lost.
+The scene pages of 992 x 1280 and 1184 x 768, 313 and 225, are two above the page need above (E887,
+E889). The faulting state's residue (the word-0 losses, bit 27, the 4096-wide blocks) belongs to a
+layout the r6-kernel module no longer gives a 4x context and is not pursued.
 
 After a TA write fault (0x90004, `SB` 6) and the reset, the next renders that run the TA fault at
 the failed job's page with `SB` 6, once or twice, before one passes: 4 of 4 such health faults
@@ -316,7 +333,7 @@ and shading processor and its pre-processor; `PBE` pixel back end (tile write-ou
 
 *Based on sgx545-ce `src/services4/srvkm/hwdefs/sgx545defs.h`,
 `src/services4/srvkm/devices/sgx/sgxreset.c`; E357, E360, E457, E507, E511, E573, E729, E745,
-E761, E764 to E767, E789, E824, E826, E828, E845, E846, E848, E866 to E870.*
+E761, E764 to E767, E789, E824, E826, E828, E845, E846, E848, E866 to E870, E887, E889.*
 
 ## 6. How the DDK resets and starts the core
 

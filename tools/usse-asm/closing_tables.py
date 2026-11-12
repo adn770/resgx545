@@ -299,7 +299,7 @@ def depth_table(stage_dir: pathlib.Path, session: str) -> dict:
 # ---------------------------------------------------------------------------------------------- PB pages
 def pb_pages_table(stage_dir: pathlib.Path, session: str) -> dict:
     """The non-zero 4 KiB pages of each job's parameter buffer dump (closing4/render4x/pb_pages.py). model_nonzero is
-    the post hoc reading of Q292 [post hoc]: ceil(tiles / 8) pages and 4 more, tiles of 32 x 16; it is the
+    the post hoc reading of the 4x page need (E828) [post hoc]: ceil(tiles / 8) pages and 4 more, tiles of 32 x 16; it is the
     reading's number, not part of the measurement."""
     rows, skipped = [], {}
     for c in read_cases(stage_dir):
