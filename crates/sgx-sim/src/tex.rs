@@ -383,12 +383,16 @@ const T3_TW: u32 = 0x0080_0800;
 const T3_ST: u32 = 0xa080_0000;
 /// E723's stride texture: T0_REP's role with the stride of 8 dwords and bit 27.
 const T0_SRGB_STRIDE8: u32 = 0x0800_0e00;
-/// The sizes E724 ran format 27 at and E725 types 1 and 3 at (twiddled block grids, rasters).
+/// The sizes E724 ran format 27 at and E725 types 1 and 3 at (twiddled block grids, rasters), and
+/// those E910 held the raster of the width out at in the window's 64 columns: 4 x 16 for type 1,
+/// 64 x 8 for both (type 3 at 4 x 16 read rows 8 dwords apart; 128 x 8 ran, but only its first
+/// 64 columns were read).
 const ETC1_SIZES: [(u32, u32); 5] = [(16, 16), (32, 16), (16, 32), (8, 16), (8, 8)];
 const RASTER_SIZES: [(u32, u32); 4] = [(8, 8), (32, 32), (32, 16), (16, 32)];
+const RASTER_SIZES_E910: [(u32, u32); 2] = [(4, 16), (64, 8)];
 
 /// T0 bit 27 (sRGB), format 27 (ETC1) and texture types 1 and 3 are admitted with the state words
-/// of the held-out jobs that measured them and at their sizes only (E723, E724, E725).
+/// of the held-out jobs that measured them and at their sizes only (E723, E724, E725, E910).
 fn measured_r4(t0: u32, t1: u32, t3: u32) -> Result<(), Fail> {
     let (ty, fmt) = (t1 >> 29, t1 >> 24 & 31);
     let (w, h) = ((t1 >> 12 & 0xfff) + 1, (t1 & 0xfff) + 1);
@@ -402,12 +406,13 @@ fn measured_r4(t0: u32, t1: u32, t3: u32) -> Result<(), Fail> {
     } else if fmt == 27 {
         ty == 0 && ETC1_SIZES.contains(&(w, h)) && t0 == T0_REP && t3 == T3_TW
     } else {
-        fmt == 12 && RASTER_SIZES.contains(&(w, h)) && t0 == T0_REP && t3 == T3_TW
+        let e910 = RASTER_SIZES_E910.contains(&(w, h)) && (ty == 1 || (w, h) != (4, 16));
+        fmt == 12 && (RASTER_SIZES.contains(&(w, h)) || e910) && t0 == T0_REP && t3 == T3_TW
     };
     if !ok {
         return open(format!(
             "T0 0x{t0:08x}, T1 0x{t1:08x}, T3 0x{t3:08x}: sRGB (E723), format 27 (E724) and types 1 and 3 \
-             (E725) ran only with the state words and at the sizes of their held-out jobs"
+             (E725, E910) ran only with the state words and at the sizes of their held-out jobs"
         ));
     }
     Ok(())
@@ -1976,12 +1981,14 @@ mod tests {
 
     #[test]
     fn types_3_and_1_read_a_raster_of_the_width_wrapping_at_the_size() {
-        // E725 (8 of 8 held out): texel (x mod w, y mod h) is dword (y mod h) w + (x mod w)
+        // E725 (8 of 8 held out): texel (x mod w, y mod h) is dword (y mod h) w + (x mod w); E910
+        // held it out at 4 x 16 (type 1) and 64 x 8 (both types)
         let mem = |a: u32| 0xd000_0000 | ((a - 0x1000) / 4);
         for ty in [1, 3] {
-            for (w, h) in [(8, 8), (32, 32), (32, 16), (16, 32)] {
+            let more: &[(u32, u32)] = if ty == 1 { &[(4, 16), (64, 8)] } else { &[(64, 8)] };
+            for &(w, h) in [(8, 8), (32, 32), (32, 16), (16, 32)].iter().chain(more) {
                 let st = [T0_REP, t1(ty, 12, w, h), 0x1000, T3_TW];
-                for (x, y) in [(0, 0), (3, 1), (w - 1, h - 1), (5, h - 2)] {
+                for (x, y) in [(0, 0), (3, 1), (w - 1, h - 1), (5 % w, h - 2)] {
                     assert_eq!(
                         texel(st, w, h, x, y, &mem),
                         Ok(vec![0xd000_0000 | (y * w + x)]),
@@ -2010,7 +2017,8 @@ mod tests {
     fn types_1_3_and_4_off_what_ran_are_refused() {
         let mem = |_| 0u32;
         for ty in [1, 3] {
-            for (w, h) in [(4, 4), (16, 16), (64, 32), (8, 16)] {
+            // 128 x 8 ran, but the 64-pixel window read only its first 64 columns (E910)
+            for (w, h) in [(4, 4), (16, 16), (64, 32), (8, 16), (128, 8)] {
                 assert!(
                     is_open(texel([T0_REP, t1(ty, 12, w, h), 0x1000, T3_TW], w, h, 1, 1, &mem)),
                     "{ty} {w}x{h}"
@@ -2025,7 +2033,10 @@ mod tests {
                 assert!(is_open(texel(st, 8, 8, 1, 1, &mem)), "{st:08x?}");
             }
         }
-        // type 4's stride of 32 is fitted only (E725), type 5 not run
+        // type 3 at 4 x 16 read a stride of 8, not the width (E910, no rule frozen for it)
+        assert!(is_open(texel([T0_REP, t1(3, 12, 4, 16), 0x1000, T3_TW], 4, 16, 1, 1, &mem)), "type 3 4x16");
+        // type 4's stride of 32 is fitted only (E725) and wider ones read no frozen rule (E910);
+        // type 5 reads the texture memory by no known layout (E911)
         for ty in [4, 5] {
             assert!(is_open(texel([T0_REP, t1(ty, 12, 8, 8), 0x1000, T3_TW], 8, 8, 1, 1, &mem)), "type {ty}");
         }
