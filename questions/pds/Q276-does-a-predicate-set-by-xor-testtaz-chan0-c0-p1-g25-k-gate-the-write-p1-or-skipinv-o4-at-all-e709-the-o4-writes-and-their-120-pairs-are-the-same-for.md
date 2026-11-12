@@ -1,11 +1,11 @@
 +++
 id = "Q276"
-question = "is a write to o4 to o7 stored at all in E709's command (state block word 4 at 0x00030001), now that their own words reach no pixel of any kept image (E871: 0 of 12143 marked words of E858's walk rows w-4 to w-7, no tag-8 word in E570's 68 jobs) and the word at the tag-5 pixels is the OR of the source instance's o0 and o3 words (E858), and does a predicate set by `xor.testtaz.chan0 !c0, p1, g25, #k` gate the write `p1 or.skipinv o4`"
+question = "is a write to o4 to o7 stored at all in E709's command (state block word 4 at 0x00030001), now that their own words reach no pixel of any kept image (E871) and a read of them inside the instance (`mov r10, oN`, then o0 = r10) returned the word of o0 to o3, the register number modulo 4, whether o4 or o5 was written or not (E878, read post hoc: the frozen readback test is cannot tell), and does a predicate set by `xor.testtaz.chan0 !c0, p1, g25, #k` gate the write `p1 or.skipinv o4` (it gates o0's write per lane, and read post hoc o3's, E878)"
 unit = "pds"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E709", "E570", "E406", "E742", "E759", "E772", "E808", "E838", "E850", "E858", "E081", "E871"]
+evidence = ["E709", "E570", "E406", "E742", "E759", "E772", "E808", "E838", "E850", "E858", "E081", "E871", "E878", "E880"]
 terms = ["PDS_SIZE.BITS17_16"]
 +++
 Q023 asks which lanes write o4 to o7 in the four-output-room setup. E709 guarded o4 by a test of g25
@@ -139,3 +139,27 @@ they go" has the offline answer "on no pixel, at any shape tried", and the predi
 be read from image pairs. Open: whether an o4 to o7 write is stored at all, read back inside the
 instance (`mov r10, oN`, then o0 = r10: the plan's stage p6-rd, closing6/pixel/exp-pixel-r6.md
 section 2), then, if o4 reads back, whether the predicate gates its write per lane.
+
+Narrowed 2026-11-12 (R6-pixel p6-rd, p6-l3 and p6-s, E878 and E880; the question line is reworded,
+the question is not retired). The line read "is a write to o4 to o7 stored at all in E709's command
+(state block word 4 at 0x00030001), now that their own words reach no pixel of any kept image (E871:
+0 of 12143 marked words of E858's walk rows w-4 to w-7, no tag-8 word in E570's 68 jobs) and the
+word at the tag-5 pixels is the OR of the source instance's o0 and o3 words (E858), and does a
+predicate set by `xor.testtaz.chan0 !c0, p1, g25, #k` gate the write `p1 or.skipinv o4`". Stage
+p6-rd read each output register back inside the instance with every control passing (the readback
+through `r10` 1.0 of TRI, the predicate gating an `o0` write per lane as frozen), but no readback
+configuration reached the frozen share of 90 percent of TRI in both jobs (87 to 89 percent in the x
+jobs: words the walk's other outputs leave on TRI pixels from other sources), so its frozen verdict
+is cannot tell and the predicate rows are cannot tell by design. Read post hoc with the same reader
+(E878, not held out): `o1` to `o3` read back their own words, `o4` to `o7` the words of `o0` to `o3`
+(H-MOD4's vector), also with no `o4` write and with `o4` written as tag 13 or `o5` as tag 14; the
+readback of `o3` after `p1 or.skipinv o3` showed the predicated word on lane k only, and that of
+`o4` showed `o0`'s word on every lane. Decision R6-6 a retires the `o4`-predicate clause if `o4`
+does not read back; the reading that it does not is post hoc, the frozen test cannot tell, so the
+clause is kept and narrowed, not retired. Set L3 (E880, held out): the `o3` word in the tag-5 OR is
+lane 0's in the x job and lane 1's in the y job (H-Y1), which explains R5's P3 rows at k = 0. Set S
+(E880, held out): in E406's full setup the tag-5 word is the OR of `o0` and `o3` too (E406
+corrected). Open: whether an `o4` to `o7` write is stored anywhere (a frozen rerun of rd-4, n-rd-4
+and x-rd-4 with the class share taken over the own-source words would decide the readback; if `o4`
+reads as `o0` there, nothing in this command observes an `o4` write and the predicate clause can be
+retired as not observable), and why the lane of the OR's `o3` word depends on the job.

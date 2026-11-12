@@ -5,7 +5,7 @@ unit = "pds"
 kind = "hw"
 value = "high"
 phase = 7
-evidence = ["E139", "E081", "E406", "E570", "E709", "E742", "E759"]
+evidence = ["E139", "E081", "E406", "E570", "E709", "E742", "E759", "E880"]
 terms = ["PDS_SIZE.BITS17_16"]
 +++
 
@@ -74,3 +74,14 @@ write where 492 of 497 kept the second; one run, not repeated.
 Post hoc 2026-11-10 (S1b, E759): the oddity of E742 repeats in part. In three more runs of the order
 control the first unpredicated write survived at 5, 4 and 2 source pixels, (16,27) and (17,27) in
 all three, the five of E742 in the first only.
+
+Note 2026-11-12 (R6-pixel p6-s, E880, held out; the question stays open, the line unchanged). The
+narrowing of 11.15 reads E406's setup as leaving "o0 on its own pixel and o4 alone on other pixels
+(tags 1 and 5)". R5's walk run in that setup (ISP word 0 at 0x05d00200, render details dword 9 bit
+0, state block word 4 at 0x00030001; its control again tags 1 and 5 only) read the tag-5 word's bits
+5:4 as 3, 2, 2, 3, 2, 2, 2, 2 for o0 to o7 and the plain tag 5 with no o4 write: the tag-5 word is
+the OR of the source instance's o0 and o3 words, as in E709's command (E858), not o4's (E406
+corrected). So under the setup o1 to o3 reach no other pixel as words of their own, o3 reaches one
+inside the OR, and no word of o4 to o7 is seen; the "room for four output dwords" reading of E406
+rested in part on o4's landing [infer]. Not walked: the 2 to 4 data rows (tags 1, 3, 5, 7) and ISP
+word 0 bit 27.
