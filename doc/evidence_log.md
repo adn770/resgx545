@@ -6722,12 +6722,57 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   by the dataset's own split: 0 of 4), so H-SLOT is FAILED.
   *ta; HW, infer; data: `ta-mtile-fields`, `ta-mtile-fields-risky`, `cited-scratch:closing6/rank/`,
   `cited-scratch:closing6/fold-misc/q139/`.*
+- `E890` R6 session r6-held part P (stage p1, E855's job on the r6 kernel with a debugfs peek of
+  0x0694; Q111, and the lockup rows of E855 to E857): the fill without the skip (b0, control)
+  completed with the tick alive and no marks; with slot 3's first end-of-render pass skipped and
+  ended with the phase end (b1p, b1p-r2, held out, hold_recovery Y) the tick stopped in 2 of 2 jobs
+  after exactly 20 slot 0 passes after the fill's kick with E855's lockup marks (HostCtl dword 3 +
+  1, dword 8 1, sw_events 1, TA3DCtl dword 57 0 and dword 58 0xaac267c2, CR_EVENT_STATUS 0x20040000
+  with bit 6 clear, P3 not answered), a host write of bit 15 to CR_EVENT_HOST_CLEAR left bit 18 and
+  of bit 18 cleared it; CR_DPM_TASK_STATE (0x0694) read 0x00000000 at the arm, at the stop before
+  any write, after the clears and after the recovery in both, and 0x00000000 in every other read of
+  the session; frozen verdict 'H-HWR consistent (12 row groups), H-NOMARK REFUTED; H-TICKS
+  consistent; H-LEVEL consistent, H-PULSE REFUTED; H-W consistent (2 row groups), H-ALL REFUTED,
+  H-NONE REFUTED; H-R6 REFUTED, H-IDLE consistent; H-RESET consistent', every control passing (29),
+  64 of 64 non-control rows decided; so the store of 2 to CR_DPM_TASK_STATE that the firmware
+  reading R-6 places before the lockup's poll is not seen in a host read of the register.
+  *edm; HW, RE, infer; data: `render-closing-r6-held:p/out/a1/p1/`,
+  `cited-scratch-private:cited/closing5/r6/`.*
+- `E891` R6 session r6-held part H stage q, the list rows (Q003's health-triangle clause; E848's
+  held 4x job on one array, a TA write fault BIF_INT_STAT 0x90004, then the debugfs reset, the
+  cell's follow-up and triangles until one drew, on the r6 kernel): with no follow-up (a0, 640 x
+  480, the control) the first triangle faulted at the job's word 0x2000a061 (the replay on this
+  kernel, H-REPLAY's control); after a fill that passed, the first triangle faulted at the job's
+  page and SB through list 2, 0x2000a062 at 640 x 480 (a1, held out at a new size) and 0x20006062 at
+  288 x 144 (a2, E848 h4's replicate), where the frozen word test wanted list 1; every held job
+  faulted with the frozen word and every cell ended with a triangle that drew within three; frozen
+  verdict 'H-LIST consistent (2 held, 0 FAILED, 0 cannot tell of 2); H-WORD REFUTED (0 held, 2
+  FAILED); H-REPLAY consistent (2 held of 2)', controls 40 PASS, 0 FAIL, 0 NODATA over the stage; so
+  the replayed write goes through the directory list current at the next TA run, not the list of the
+  faulted job.
+  *bif; HW, infer; data: `render-closing-r6-held:out/20261112-154536/q/`,
+  `render-closing-r6-held:postrun/`.*
+- `E892` R6 session r6-held part H stage q, the flush rows (Q003; the cells of E891 with the r6
+  kernel's debugfs bif_flush, CR_BIF_CTRL.INVAL_DC set and cleared with the other bits kept, written
+  while E848's TA write fault 0x90004 was held, before the debugfs reset): the flush was taken in 3
+  of 3 (status 0, BIF_CTRL 0x00000000 before and after) and BIF_INT_STAT 0x90004 and BIF_FAULT
+  stayed latched after it (H-LATCH, 3 of 3); after the reset the first triangle faulted at the
+  replay's word as without the flush, 0x2000a061 at 640 x 480 (b0), 0x2000a062 after a fill (b1) and
+  0x20006061 at 288 x 144 (b2), each cell ending with a triangle that drew at the third; the boot
+  after b2's flushed held reset timed out ('SGX recovery failed: -110', BIF_INT_STAT 0x000d0004 in
+  the dump before it) as did the unflushed a2's; frozen verdict 'H-FLUSH REFUTED (0 held, 3 FAILED,
+  0 cannot tell of 3); H-PEND consistent (6 held of 6); H-BOOT REFUTED (2 held, 1 FAILED of 3);
+  H-LATCH consistent (6 held of 6)', every control passing (the flush's two H-KEEP controls in 3 of
+  3, n0's refusal with nothing held); so a BIF invalidate while the fault is held does not drop the
+  pending write, and does not prevent the -110.
+  *bif; HW, infer; data: `render-closing-r6-held:out/20261112-154536/q/`,
+  `render-closing-r6-held:postrun/`.*
 
 ## By unit
 
 ### bif
 
-Records: E151, E457, E573, E592, E745, E761, E767, E789, E826, E848.
+Records: E151, E457, E573, E592, E745, E761, E767, E789, E826, E848, E891, E892.
 
 ### dpm
 
@@ -6744,7 +6789,7 @@ E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321, E353, E4
 E450, E531, E532, E533, E536, E537, E538, E539, E540, E550, E600, E601, E602, E603, E604, E605,
 E746, E747, E748, E749, E750, E751, E752, E764, E768, E769, E771, E784, E791, E792, E793, E794,
 E804, E805, E806, E807, E809, E810, E811, E812, E813, E814, E816, E817, E818, E819, E830, E834,
-E835, E836, E839, E840, E841, E849, E855, E856, E857.
+E835, E836, E839, E840, E841, E849, E855, E856, E857, E890.
 
 ### firmware
 

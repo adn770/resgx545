@@ -8,7 +8,7 @@ phase = 4
 evidence = ["E021", "E024", "E317", "E318", "E319", "E320", "E354", "E355", "E357", "E444", "E203",
             "E313", "E362", "E363", "E395", "E457", "E476", "E573", "E631", "E722", "E729", "E764",
             "E765", "E766", "E767", "E789", "E826", "E507", "E729", "E788", "E824", "E828",
-            "E845", "E848"]
+            "E845", "E848", "E891", "E892"]
 terms = ["CR_BIF_FAULT", "CR_BIF_INT_STAT", "misc_info", "CR_TE_AA", "CR_ISP_MSAA"]
 +++
 
@@ -209,3 +209,19 @@ PARAMETERS page in 4 and a 0x2xxxx page in 1. After the three 0x90100 faults of 
 (E845's two sizes, E846's 4096 x 1152) the health triangle passed at once, 3 of 3, as after E828's
 j4. Still open in this clause: what keeps the write pending through the reset, why one or two
 replays, and why the boot after some resets times out.
+
+Narrowed 2026-11-12 (round 6 session r6-held part H, E891 and E892; the health-triangle clause,
+held out on one boot of the r6 kernel; not retired: the requestors, what clears a latched fault and
+the rest of this clause stay open). Frozen verdict: H-LIST consistent 2 of 2, H-WORD refuted;
+H-FLUSH refuted 0 of 3, H-PEND 6 of 6; H-BOOT refuted (1 FAILED of 3); H-LATCH 6 of 6; H-REPLAY's
+control held; controls 40 of 40. After a held TA write fault (0x90004, `SB` 6) and the reset the
+first render that runs the TA faults at the job's page and `SB` through the directory list current
+at that run (list 2 after a fill took list 1, at 640 x 480 and at 288 x 144; E891), and a second
+replay goes through the next render's own list. A directory-cache invalidate written while the
+fault is held (`CR_BIF_CTRL.INVAL_DC` set and cleared, the r6 kernel's `bif_flush`) leaves the
+fault latched and does not drop the write: the replay came as without it in 3 of 3 (E892). The
+stage stopped by its rule after its last cell (a -110 in two cells in a row) and was not resumed.
+Every -110 of the boot followed a 288 x 144 cell (4 of 5 recoveries there, flushed or not; none of
+12 at 640 x 480), the dumps reading `BIF_INT_STAT` 0x000d0004 and once `BIF_FAULT` 0x20006060, the
+held job's page with `CID` 0 [post hoc]. Still open in this clause: what keeps the write pending
+(not the directory cache), why one or two replays, and why the boot after some resets times out.

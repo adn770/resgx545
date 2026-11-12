@@ -6,7 +6,7 @@ kind = "hw"
 value = "high"
 phase = 11
 evidence = ["E006", "E154", "E155", "E357", "E431", "E435", "E444", "E547", "E548", "E747", "E764",
-            "E765", "E766", "E823", "E837", "E855", "E857"]
+            "E765", "E766", "E823", "E837", "E855", "E857", "E890"]
 terms = ["CR_EVENT_STATUS", "CR_EVENT_STATUS2", "CR_EVENT_HOST_CLEAR", "CR_EVENT_HOST_ENABLE"]
 +++
 
@@ -124,3 +124,12 @@ decided: what a write of any bit other than 15 and 18 clears, and a write agains
 other bits set (only `TIMER` and bit 18 were ever set when a CLEAR was written). Open as before:
 the other bits' level or pulse, which event sets each, their order within a job, and the clears
 of the other bits.
+
+Note 2026-11-12 (round 6 session r6-held part P, E890; 0x0694, not retired). The r6 kernel's
+debugfs `peek` reads `CR_DPM_TASK_STATE` (0x0694), which the regs file skips. At E855's lockup stop
+(2 of 2, the marks and clears replicated) it read 0 at the arm, at the stop, after the clears and
+after the recovery, and 0 in every other read of the session (before, during and after six held
+TA faults, E891 and E892): H-R6, the store of 2 that the firmware reading R-6 places before the
+lockup's poll of `CR_EVENT_STATUS` bit 6, is refuted as a register read, and E855 has a correction.
+Bit 6 (`DPM_STATE_CLEAR`) read clear at every stop. Whether the store is made and does not read
+back, goes elsewhere, or is never reached is open; no read has shown 0x0694 other than 0.
