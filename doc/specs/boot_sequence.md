@@ -370,7 +370,14 @@ both, and the routine that tests `InterruptClearFlags` bit 0 clears bit 0 of bot
 also zeroes the TA/3D control words and sets the kernel CCB's read offset to its write offset;
 the same routine sets `InterruptFlags` bit 0 on a lockup it
 counts and bit 1 when its active-power countdown runs out, each with a `SW_EVENT` (E353, from
-the firmware's code; not yet seen on the hardware).
+the firmware's code). The lockup path has been seen once on the hardware (E849, read offline
+after the hypothesis, 1 job): with slot 3's end-of-render pass skipped by a task of ours (E836),
+the stop left `uKernelDetectedLockups` = 1, `InterruptFlags` = 1 (`HWR`), one `SW_EVENT` and
+TA3DCtl `+0xe8` written, all 0 at the arm, after exactly 20 tick passes after the 3D kick, 2 x
+`HWRecoverySampleRate`; [infer] the routine samples a 3D progress word every
+`HWRecoverySampleRate` passes and counts a lockup when two samples are equal. The clearing of
+bit 0 has not been seen: our kernel never answers the request (it reads no dword 8), and the
+stop was recovered by a reset.
 
 **Host watchdog: `SGXOSTimer`, every 50 ms while powered.** It reads `USE0_SERV_EVENT`
 (`0xb14`) XOR `USE1_SERV_EVENT` (`0xb20`), the EDM task registers named by the init info
@@ -410,7 +417,7 @@ three. §5 lists the required changes.
 *Based on sgx545-ce `src/services4/srvkm/devices/sgx/sgxinit.c`,
 `src/services4/system/unified/sysconfig.c:1022`; Linux v7.3
 `drivers/gpu/drm/gma500/psb_irq.c`; E006, E008, E009, E010, E011, E317, E318, E319, E321,
-E353.*
+E353, E836, E849.*
 
 ## 4. `FIX_HW_BRN_SAMPLE_CACHE` and the heap layout
 

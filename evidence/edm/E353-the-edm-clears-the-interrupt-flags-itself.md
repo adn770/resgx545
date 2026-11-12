@@ -38,3 +38,12 @@ active-power bit (1) on a `POWER` command [RE]. With `active_powman_sample_rate`
 countdown never runs, so bit 1 is never set [infer]. The dataflow does not resolve which branch
 of the `0x1d1` test leads to the clearing, and no run has caused a lockup the EDM detects, so the
 clearing has not been seen on the hardware.
+
+**Correction 2026-11-12:** "No run has caused a lockup the EDM detects, so the clearing has not
+been seen on the hardware" no longer holds for the setting half: E836's job b1p (round 4, slot 3's
+end-of-render pass skipped by a task of ours) left, at its stop, `ukernel_detected_lockups` = 1,
+`InterruptFlags` = 1 (bit 0, the recovery request), the kernel's `SW_EVENT` count 1 and TA3DCtl
+`+0xe8` = 0xaac267c2, all 0 at the arm, after exactly 20 tick passes = 2 x
+`hw_recovery_sample_rate` (E849, read offline after the hypothesis, 1 job, post hoc). So the
+routine's lockup path has been seen once on the hardware [HW]; the clearing of bit 0 has not
+(the host never set `InterruptClearFlags` bit 0, and the stop was recovered by a reset).
