@@ -321,3 +321,67 @@ def test_a_data_line_is_checked_at_its_commit_when_the_data_history_is_there(tmp
                                       f"{sha('k')}  {'a' * 40}  linux:drivers/k.c\n")
     bad = frozen.check(data, repo)
     assert len(bad) == 2 and "data:render/closing-y/p.bin" in bad[0] and "b" * 40 in bad[1]
+
+
+def built_session(tmp_path, recipe="data:render/closing-r/lead/build.sh"):
+    """A session that froze a binary it ran (bin/t/tool, by relative path, not published) and
+    binds it to its source: tools/b.c at the 11-01 commit, built by a recipe published in the
+    data repository."""
+    repo, c = history(tmp_path)
+    s = session(tmp_path, [f"{sha('x')}  {TREE}/tools/a.py", f"{sha('BIN')}  bin/t/tool"])
+    r = tmp_path / "data" / "render" / "closing-r" / "lead"
+    r.mkdir(parents=True)
+    (r / "build.sh").write_text("make\n")
+    (s / "FROZEN.commits").write_text(
+        f"# h\n{sha('x')}  {c['03']}  tools/a.py\n"
+        f"{sha('BIN')}  built  {c['01']}  tools/b.c  {sha('b')}  {recipe}\n")
+    return repo, c, s
+
+
+def test_a_built_binary_is_checked_by_its_source_not_its_bytes(tmp_path):
+    """`<binary-sha256>  built  <commit>  <source-path>  <source-sha256>  <recipe>` binds a
+    binary the freeze names to the source it was built from: the source blob at the commit has
+    the source hash and the recipe is at its pinned place (data:PATH in the data repository, a
+    bare or resgx545:PATH in this tree at the commit). The binary itself is never needed."""
+    repo, c, s = built_session(tmp_path)
+    assert not (s / "bin").exists()
+    assert frozen.check(tmp_path / "data", repo) == []
+    text = (s / "FROZEN.commits").read_text()
+    (s / "FROZEN.commits").write_text(text.replace("closing-r/lead/build.sh", "tools/b.c")
+                                      .replace("data:render/", ""))
+    assert frozen.check(tmp_path / "data", repo) == []     # a recipe of this tree at the commit
+
+
+def test_a_built_line_with_the_wrong_source_hash_is_reported(tmp_path):
+    repo, c, s = built_session(tmp_path)
+    text = (s / "FROZEN.commits").read_text()
+    (s / "FROZEN.commits").write_text(text.replace(f"tools/b.c  {sha('b')}",
+                                                   f"tools/b.c  {sha('w')}"))
+    bad = frozen.check(tmp_path / "data", repo)
+    assert len(bad) == 1 and "tools/b.c" in bad[0] and sha("w") in bad[0]
+
+
+def test_a_built_line_whose_recipe_is_missing_is_reported(tmp_path):
+    repo, _, _ = built_session(tmp_path, recipe="data:render/closing-r/lead/gone.sh")
+    bad = frozen.check(tmp_path / "data", repo)
+    assert len(bad) == 1 and "gone.sh" in bad[0] and "recipe" in bad[0]
+    (tmp_path / "t2").mkdir()
+    repo2, _, _ = built_session(tmp_path / "t2", recipe="tools/gone.sh")
+    bad = frozen.check(tmp_path / "t2" / "data", repo2)
+    assert len(bad) == 1 and "tools/gone.sh" in bad[0] and "recipe" in bad[0]
+
+
+def test_a_built_line_for_a_binary_no_freeze_names_is_reported(tmp_path):
+    repo, c, s = built_session(tmp_path)
+    text = (s / "FROZEN.commits").read_text()
+    (s / "FROZEN.commits").write_text(text.replace(sha("BIN"), sha("OTHER")))
+    bad = frozen.check(tmp_path / "data", repo)
+    assert len(bad) == 1 and sha("OTHER") in bad[0] and "no freeze" in bad[0]
+
+
+def test_a_malformed_built_line_is_reported(tmp_path):
+    repo, c, s = built_session(tmp_path)
+    (s / "FROZEN.commits").write_text(f"# h\n{sha('x')}  {c['03']}  tools/a.py\n"
+                                      f"{sha('BIN')}  built  {c['01']}  tools/b.c\n")
+    bad = frozen.check(tmp_path / "data", repo)
+    assert len(bad) == 1 and "built" in bad[0]

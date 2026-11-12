@@ -50,6 +50,16 @@
 #   - a file of the session frozen by its relative path but derived from the closed firmware, so
 #     left out of the published session, is copied back from cited/closingN/<name>/<path> of the
 #     private repository (r6-held's private/o3/; no copy: the freeze fails);
+#   - a binary the session built and ran, frozen by its relative path (R7-geo's
+#     bin/t6/sgxfive-test), is bound to its source by a FROZEN.commits line
+#     `<binary-sha256>  built  <commit>  <source-path>  <source-sha256>  <recipe>`: the source blob
+#     at the commit must hash to <source-sha256> and the recipe (data:PATH in the data repository,
+#     else a PATH of the tool tree at the commit) must be in place, else the session FAILs; the
+#     bytes are neither looked for nor restored: the binary's place holds a stand-in (one text
+#     line naming the hash) that a shasum wrapper first on PATH reads as the pinned hash, so the
+#     session's freeze, verify and re-freeze steps run as frozen (R7-geo's run_mock re-freezes
+#     copies and its freeze script compares the binary with TOOL6.sha256); a changed stand-in
+#     hashes as itself, and no test runs it (a session's mocks run fakes of its tools);
 #   - a part of the session with a freeze of its own (r6-held's p/, its FROZEN.sha256 and
 #     FROZEN.commits) is pinned and pointed as the session's freeze is;
 #   - the copy's tests/ files that no freeze names have their absolute resgx545-data and resgx545
@@ -171,7 +181,7 @@ BASE=HEAD
 if [ -f "$COMMITS" ]; then
     # a line may name its repository (R5-dpm: resgx545:PATH, linux:PATH, data:PATH): only the
     # tool tree's lines choose the commit
-    pinned=$(awk '!/^#/ && $2 != "untracked" && NF >= 3 \
+    pinned=$(awk '!/^#/ && $2 != "untracked" && $2 != "built" && NF >= 3 \
         && ($3 !~ /^[a-z][a-z0-9-]*:/ || $3 ~ /^resgx545:/) {print $2}' "$COMMITS" | sort -u)
     # shellcheck disable=SC2086
     [ -n "$pinned" ] && BASE=$(git -C "$TOOL" rev-list --no-walk --date-order $pinned | head -1)
@@ -207,6 +217,7 @@ for CM in "$C"/FROZEN.commits "$C"/*/FROZEN.commits; do
     [ -f "$CM" ] || continue
     while read -r hash commit path; do
         case "$hash" in "#"*|"") continue ;; esac
+        [ "$commit" = built ] && continue
         case "$path" in resgx545:*) path=${path#resgx545:} ;; [a-z]*:*) continue ;; esac
         grep -q "^$hash [ *]/.*/$path\$" "$(dirname "$CM")/FROZEN.sha256" 2>/dev/null || continue
         mkdir -p "$R/$(dirname "$path")"
@@ -219,6 +230,71 @@ for CM in "$C"/FROZEN.commits "$C"/*/FROZEN.commits; do
         fi
     done < "$CM"
 done
+# a binary bound to its source (a built line of FROZEN.commits) is verified by the source blob at
+# its commit and the recipe's place, never by its bytes: its place in the copy holds a stand-in
+# that the shasum wrapper below reads as the pinned hash
+built_fail() { echo "session_tests: $SESSION FAIL (built $1)"; exit 1; }
+STANDIN="resgx545 session_tests stand-in for the built binary"
+BUILT=0
+for CM in "$C"/FROZEN.commits "$C"/*/FROZEN.commits; do
+    [ -f "$CM" ] || continue
+    while read -r hash kind commit src want recipe; do
+        [ "$kind" = built ] || continue
+        src=${src#resgx545:}
+        got=$(git -C "$TOOL" show "$commit:$src" 2>/dev/null | shasum -a 256 | cut -d' ' -f1)
+        [ "$got" = "$want" ] || built_fail "$hash: $commit:$src hashes to $got, not $want"
+        r=${recipe#resgx545:}
+        case "$r" in
+            data:*) [ -n "$DATA" ] && [ -f "$DATA/${r#data:}" ] ;;
+            [a-z]*:*) false ;;
+            *) git -C "$TOOL" cat-file -e "$commit:$r" 2>/dev/null ;;
+        esac || built_fail "$hash: recipe $recipe is not in place"
+        d=$(dirname "$CM"); names=
+        for f in "$d"/FROZEN*.sha256; do
+            [ -f "$f" ] || continue
+            for b in $(awk -v h="$hash" \
+                    '$1 == h && $2 !~ /^\*?\// {sub(/^\*/, "", $2); print $2}' "$f"); do
+                names="$names $b"
+                [ -e "$d/$b" ] && continue
+                mkdir -p "$(dirname "$d/$b")" && echo "$STANDIN $hash" > "$d/$b"
+                BUILT=1
+            done
+        done
+        echo "session_tests: built${names:- $hash}: source verified, $commit:$src" \
+            "(recipe $recipe)"
+    done < "$CM"
+done
+if [ $BUILT = 1 ]; then
+    # shasum reads an exact stand-in as the hash it names: printed hashes are replaced, and the
+    # lines of a -c list that name a stand-in by its hash are checked against the stand-in itself
+    REAL_SHASUM=$(command -v shasum) || die "no shasum"
+    mkdir -p "$W/shims"
+    cat > "$W/shims/shasum" <<SHIM
+#!/usr/bin/perl
+use strict; use Digest::SHA qw(sha256_hex); use File::Temp qw(tempfile);
+my \$real = "$REAL_SHASUM";
+sub standin { my \$p = shift; open my \$f, "<", \$p or return; local \$/; my \$t = <\$f>;
+              return defined \$t && \$t =~ /^\Q$STANDIN\E ([0-9a-f]{64})\n\z/ ? \$1 : undef }
+sub own { my \$p = shift; open my \$f, "<", \$p or return ""; local \$/; return sha256_hex(<\$f>) }
+if (grep { \$_ eq "-c" || \$_ eq "--check" } @ARGV) {
+    for my \$a (@ARGV) {
+        next if \$a =~ /^-/ || ! -f \$a;
+        open my \$in, "<", \$a or next; my @l = <\$in>; close \$in;
+        for (@l) { s{^([0-9a-f]{64})( [ *])(.*)\$}{my \$s = standin(\$3);
+                   (defined \$s && \$s eq \$1 ? own(\$3) : \$1) . "\$2\$3"}e }
+        my (\$fh, \$tmp) = tempfile(); print \$fh @l; close \$fh; \$a = \$tmp;
+    }
+    exec \$real, @ARGV;
+}
+open my \$out, "-|", \$real, @ARGV or exit 2;
+while (<\$out>) {
+    s{^([0-9a-f]{64})( [ *])(.*)\$}{my \$s = standin(\$3); (\$s // \$1) . "\$2\$3"}e; print
+}
+close \$out; exit(\$? >> 8);
+SHIM
+    chmod +x "$W/shims/shasum"
+    export PATH="$W/shims:$PATH"
+fi
 MAIN=$(dirname "$COMMON")
 # Builds of the pinned tool go to the runner's own target/, never the main checkout's (old
 # binaries there would replace current ones, and on macOS a library rewritten in place kills

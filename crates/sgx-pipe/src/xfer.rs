@@ -435,7 +435,8 @@ fn u1_tile_fields(tile: (u32, u32)) -> u32 {
 /// the pixel-event program's own arithmetic here, 20 of 20); E126's XOR into the fields on a
 /// 128 x 128 render moves whole tiles the same way. A place past the target is cut by the PBE's
 /// rectangle (`pbe::store_tile`), so nothing is stored there, as every one of those jobs showed.
-/// Every run moved one field alone: a tile moved on both axes refuses (Q206).
+/// With both fields moved at once each axis is placed by its own field, independently (E909, held
+/// out at 128 x 64, 8 of 8; only one field acting was refuted).
 fn u1_place(u1: u32) -> (u32, u32) {
     ((u1 >> 3 & 0x1ff) >> 1, (u1 >> 12 & 0x3ff) >> 1)
 }
@@ -625,16 +626,9 @@ fn run_inner(sc: &Scene) -> R<SceneResult> {
 impl Job {
     fn end_of_tile(&mut self, tile: (u32, u32), last: bool, u1: u32, attrs: &[(usize, u32)]) -> R<()> {
         // U1 = base | tile_x | tile_y | end-of-render: the tile is stored at the place its fields
-        // name (E876, E884: the loop's own tile unless the program's words moved it)
+        // name (E876, E884: the loop's own tile unless the program's words moved it); each axis by
+        // its own field, also when both move at once (E909)
         let place = u1_place(u1);
-        // each run moved one field alone (E044, E876, E884, E126): a place off the tile on both
-        // axes at once is a combination no record measured
-        if place.0 != tile.0 && place.1 != tile.1 {
-            return Err(refuse(
-                format!("the end-of-tile task's U1 {u1:#x} moves the tile on both axes: not measured"),
-                &["Q206"],
-            ));
-        }
         self.moved |= place != tile;
         // the last tile (ir1 bit 2) ends the render: without bit 22 in its U1 no record says
         // whether the job completes (Q003)

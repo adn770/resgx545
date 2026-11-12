@@ -29,6 +29,16 @@ never the working tree, as the session kit's freeze verify reads it: tools/closi
 history is there; a line of another repository (linux:) is left to the session. The published
 freeze bytes are never rewritten: FROZEN.commits is a new file beside them.
 
+A binary the session built and ran (R7-geo's bin/t6/sgxfive-test, frozen by its relative path) is
+bound to its source rather than shipped:
+
+    <binary-sha256>  built  <commit>  <source-path>  <source-sha256>  <recipe>
+
+the binary's hash (a line of the session's freezes names it: the record of what ran), the
+resgx545 commit it was built from, the source file in this tree whose blob at that commit hashes
+to <source-sha256>, and the recipe that built it: data:PATH in the data repository, or a bare (or
+resgx545:) PATH in this tree at the commit. The binary bytes are never checked nor published.
+
 --write finds, for each session whose freezes pin resgx545 files and that has no
 FROZEN.commits, the commits in this tree's history (`git log -- <path>`): the newest commit at
 or before the session's date (the date of the dataset manifest holding the session) whose blob
@@ -38,11 +48,12 @@ replaced (one that differs from what would be written is reported).
 
 --check verifies every FROZEN.commits: each resgx545 pin of the session's freezes has a line,
 each line is a pin, `git show <commit>:<path>` hashes to the pinned sha256, and an untracked
-line names a path the history has never tracked; each scratch input has a published copy with its
-hash (one found in neither repository is reported only when the private one is present). Once
-any session has a FROZEN.commits, a session whose freezes pin resgx545 files without one is a
-problem. It skips quietly when the
-data repository (found as datasets.py finds it) or this tree's git history is absent.
+line names a path the history has never tracked; a built line names a binary of the freezes,
+its source blob at the commit has the source hash and its recipe is in place; each scratch
+input has a published copy with its hash (one found in neither repository is reported only when
+the private one is present). Once any session has a FROZEN.commits, a session whose freezes pin
+resgx545 files without one is a problem. It skips quietly when the data repository
+(found as datasets.py finds it) or this tree's git history is absent.
 
     python3 tools/records/frozen.py [--check]   check the FROZEN.commits of the data
     python3 tools/records/frozen.py --write     write the missing ones
@@ -73,6 +84,7 @@ HEADER = """\
 # tools/records/frozen.py --write; the freezes themselves are never rewritten.
 """
 LINE = re.compile(r"([0-9a-f]{64})  ([0-9a-f]{7,40}|" + UNTRACKED + r")  (\S.*)")
+BUILT = re.compile(r"([0-9a-f]{64})  built  ([0-9a-f]{7,40})  (\S+)  ([0-9a-f]{64})  (\S+)")
 REPO = re.compile(r"([a-z][a-z0-9-]*):(\S.*)")
 
 
@@ -273,6 +285,37 @@ def data_line_problems(find: Finder, where: str, sha256: str, c: str, named: str
     return []
 
 
+def frozen_hashes(session: pathlib.Path) -> set[str]:
+    """The hashes of every line of the session's freezes."""
+    return {line[:64] for f in freezes(session) for line in f.read_text().splitlines()
+            if re.fullmatch(r"[0-9a-f]{64} [ *].+", line)}
+
+
+def check_built(name: str, m: re.Match, session: pathlib.Path, data: pathlib.Path,
+                find: Finder) -> list[str]:
+    """What is wrong with a built line: the binary it binds, its source, its recipe."""
+    binary, c, named, want, recipe = m.groups()
+    where, bad = f"{name}/{NAME}", []
+    if binary not in frozen_hashes(session):
+        bad.append(f"{where}: built binary {binary} is named by no freeze")
+    src = tree_path(named)
+    got = find.sha(c, src) if src is not None else None
+    if got is None:
+        bad.append(f"{where}: built source {c}:{named} is not in the resgx545 history")
+    elif got != want:
+        bad.append(f"{where}: built source {c}:{src} hashes to {got}, not {want}")
+    r = REPO.fullmatch(recipe)
+    if r is not None and r[1] == "data":
+        ok = (data / r[2]).is_file()
+    elif tree_path(recipe) is not None:
+        ok = find.sha(c, tree_path(recipe)) is not None
+    else:
+        ok = False
+    if not ok:
+        bad.append(f"{where}: built recipe {recipe} is not in place")
+    return bad
+
+
 def check(data: pathlib.Path, repo: pathlib.Path,
           private: pathlib.Path | None = None) -> list[str]:
     """What is wrong with the FROZEN.commits of the data repository (and the published copies of
@@ -292,9 +335,14 @@ def check(data: pathlib.Path, repo: pathlib.Path,
         for line in (s / NAME).read_text().splitlines():
             if not line.strip() or line.startswith("#"):
                 continue
+            b = BUILT.fullmatch(line)
+            if b:
+                bad += check_built(name, b, s, data, find)
+                continue
             m = LINE.fullmatch(line)
             if not m:
-                bad.append(f"{name}/{NAME}: not '<sha256>  <commit>  <path>': {line!r}")
+                bad.append(f"{name}/{NAME}: not '<sha256>  <commit>  <path>' nor a built line: "
+                           f"{line!r}")
                 continue
             sha256, c, named = m.groups()
             path = tree_path(named)

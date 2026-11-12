@@ -124,13 +124,12 @@ fn the_end_of_tile_u1_fields_place_each_tile_in_half_tile_units_and_outside_noth
     assert_eq!(u1("0x804000", "0xfc8ce806207f8325"), Verdict::Fitted);
     // a wrong image is still a mismatch
     assert!(matches!(u1("0x800010", "0xb60c6095080bd325"), Verdict::Mismatch(_)));
-    // both fields moved at once: every run moved one field alone, so the combination is a U1
-    // no record explains (Q206)
-    let both = fill_with(
-        r#"{"memory": [{"base": "0x2e000000", "at": {"28": "0x802010"}}]}"#,
-        r#"{"image": {"hash": "0xfc8ce806207f8325"}, "refuse": ["Q206"]}"#,
-    );
-    assert_eq!(both, Verdict::Refused(vec!["Q206".into()]));
+    // both fields moved at once: each axis places its tile by its own field, independently
+    // (E909, held out at 128 x 64, 8 of 8): x and y field 2 store all four tiles at (1, 1), the
+    // image R7-geo's frozen model gives for this fill; only x acting (field 2 on x alone, the
+    // rival E909 refuted) is a mismatch
+    assert_eq!(u1("0x802010", "0x11fd0c954f0e9725"), Verdict::Fitted);
+    assert!(matches!(u1("0x802010", "0x97334f75829dab25"), Verdict::Mismatch(_)));
 }
 
 #[test]

@@ -1,11 +1,11 @@
 +++
 id = "Q178"
-question = "what layout does TEXTYPE 5 read (one image under smp2d and smp3d at 16 x 16, E567), the one texture type of the eight whose layout no record reads"
+question = "what does TEXTYPE 5 compute from the texture memory it reads (two values, 0 and 0x0000ffff, that follow the stored dwords, a 16-column step at 16 to 64 texels and a 2-row alternation at 8 under E725's map fill, E911), the one texture type of the eight whose reading no record states"
 unit = "texture"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E567", "E342", "E725", "E726", "E894"]
+evidence = ["E567", "E342", "E725", "E726", "E894", "E911"]
 terms = ["TEXTYPE"]
 +++
 
@@ -39,3 +39,14 @@ return tags. [infer] Type 5 does not read the 32-bit texels as a layout, so the 
 "to settle it" above would read no offset at other sizes either; what decides is whether the image
 follows the texture memory (the same job on a zeroed and an all-ones texture) and whether the step
 stays at half the width at 8 x 8 to 64 x 64.
+
+Narrowed 2026-11-12 (round 7, R7-geo stage tx, E911; decision 5 of the ranking does not apply:
+its retirement needed H-STEP to hold and the memory rows to show no read). Type 5 reads the
+texture memory: the program storing 0 over the texture's first 112 dwords made the 16 x 16 image
+0 in every pixel, storing 0xffffffff made it 0x0000ffff in every pixel (H-STEP's premise refuted 2
+of 2). The step at half the width is refuted (0 of 3): at 32 x 32 and 64 x 64 the image repeats
+E567's 16-column step (H-FIX16, frozen as a rival), at 8 x 8 it alternates by row. So the note
+above (E894's [infer]) is withdrawn: type 5 is not a step of its own; what remains open is which
+bits of which texels it reads and how it turns them into one of two values. To settle it: type 5
+on textures whose dwords vary in one bit field at a time (the high and low halves of the map fill
+are constant and counting), at 8 x 8 and 16 x 16, and with the format and the filter changed.

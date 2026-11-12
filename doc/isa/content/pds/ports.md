@@ -36,7 +36,9 @@ other units **[RE]**. What each port does with its words, where we know it:
   outside the target **[HW]** (E884): the program ORs the poked word into the tile's own field
   and the task stores the tile at the place the field names, field >> 1 in 32 x 16 tiles. E126's
   XOR flips on a 128 x 128 render move whole tiles the same way (19 of 19 pictures, post hoc).
-  Each run moved one field alone; both at once was not run.
+  With both fields poked at once each axis is placed by its own field the same way, independently
+  of the other: held out on a 128 x 64 fill, 8 of 8 image hashes, where only the x field acting or
+  only the y field gave none **[HW]** (E909).
 - **`doutd`** **[CAP/HW]**. The first word is the source address; the second is
   burst size − 1 (bits 3-0), lines − 1 (7-4), the destination attribute (19-8) and
   stride − 1 (29-22) With `movsa` the third source is added to

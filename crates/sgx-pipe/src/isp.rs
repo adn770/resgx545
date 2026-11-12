@@ -3,8 +3,9 @@
 //! ISP: coverage and depth of a triangle (12.3, E606, E607) and the multisample store window of a
 //! tile (E503). The coverage rule and the vertex grid are the records' fits, reported fitted; the
 //! depth plane has no bit-exact model and is reported `Near` with the record's tolerance. Coverage
-//! alone is admitted on E680's ten further targets as well (`coverage_image`); the depth there is
-//! not (Q262).
+//! alone is admitted on E680's ten and E913's ten further targets as well (`coverage_image`); the
+//! depth there is not: 1- and 2-pixel triangles missed E606's tolerance on them (E912, E913; Q262,
+//! Q240).
 
 use crate::Outcome;
 
@@ -66,8 +67,10 @@ pub fn snap(c: f64) -> Result<i64, Outcome> {
 pub const E606_TARGETS: [(u32, u32); 3] = [(64, 64), (128, 128), (256, 128)];
 
 /// The ten targets E680 ran the coverage rule on (590 random triangles, 0 of 1092224240 pixels
-/// wrong, 410 cases held out): admitted for coverage only. No depth store ran there, so the depth
-/// and the iterated attributes on them refuse (Q262).
+/// wrong, 410 cases held out): admitted for coverage only. R7-geo's depth jobs on four of them and
+/// 4096 x 4096 drew E606's coverage and stored the whole tile area, but 6 of 100 triangles, each
+/// covering 1 or 2 pixels, stored a depth more than E606's 3 units off the plane, and 3 of 24
+/// iterated clip z more than 4 (E912): the depth and the iterated attributes refuse (Q262).
 pub const E680_TARGETS: [(u32, u32); 10] = [
     (96, 64),
     (130, 66),
@@ -81,13 +84,32 @@ pub const E680_TARGETS: [(u32, u32); 10] = [
     (4096, 4096),
 ];
 
+/// The ten targets around E606's that R7-geo's zf ran the rule on, coverage and depth (24 random
+/// triangles each, 240 of 240 images and triangle counts as the rule, held out; E913): admitted
+/// for coverage only: 12 of 240 triangles of 1 or 2 pixels stored a depth more than 3 units off,
+/// so the depth there, and with it a render, refuses (Q240). Two have odd heights (the userspace
+/// tool refuses odd widths, Q240).
+pub const E913_TARGETS: [(u32, u32); 10] = [
+    (64, 128),
+    (128, 64),
+    (256, 64),
+    (128, 96),
+    (128, 144),
+    (32, 16),
+    (16, 8),
+    (4096, 16),
+    (64, 33),
+    (96, 47),
+];
+
 /// The envelope of coverage and depth together: E606's three targets; E680's ten refuse naming
-/// Q262 (depth not measured there), the rest Q240.
+/// Q262 (the depth there missed E606's tolerance on 1- and 2-pixel triangles, E912), the rest
+/// Q240 (E913's ten as well: the same miss).
 pub fn target_in_envelope(w: u32, h: u32) -> Result<(), Outcome> {
     if E680_TARGETS.contains(&(w, h)) {
         return Err(open(
             format!(
-                "a {w} x {h} target: E680 showed the coverage rule there, not the depth plane or the iterated attributes"
+                "a {w} x {h} target: the coverage rule holds there, but 1- and 2-pixel triangles stored a depth outside E606's tolerance (E912)"
             ),
             "Q262",
         ));
@@ -103,12 +125,12 @@ pub fn target_in_envelope(w: u32, h: u32) -> Result<(), Outcome> {
     Ok(())
 }
 
-/// The envelope of coverage alone: E606's three targets and E680's ten.
+/// The envelope of coverage alone: E606's three targets, E680's ten and E913's ten.
 pub fn coverage_target_in_envelope(w: u32, h: u32) -> Result<(), Outcome> {
-    if !E606_TARGETS.contains(&(w, h)) && !E680_TARGETS.contains(&(w, h)) {
+    if !E606_TARGETS.contains(&(w, h)) && !E680_TARGETS.contains(&(w, h)) && !E913_TARGETS.contains(&(w, h)) {
         return Err(open(
             format!(
-                "a {w} x {h} target: the coverage rule ran on E606's three and E680's ten targets only (odd sizes, sizes between them and past 4096 not run)"
+                "a {w} x {h} target: the coverage rule ran on E606's three, E680's ten and E913's ten targets only (odd widths, sizes between them and past 4096 not run)"
             ),
             "Q240",
         ));
@@ -127,7 +149,7 @@ pub fn coverage_vertices_in_envelope(w: u32, h: u32, t: &Tri) -> Result<(), Outc
 }
 
 /// The coverage of a triangle on a target, row by row, inside the coverage envelope: E606's rule
-/// (`Tri::covers`), which E680 confirmed on its ten targets with no change.
+/// (`Tri::covers`), which E680 and E913 confirmed on their ten targets each with no change.
 pub fn coverage_image(w: u32, h: u32, t: &Tri) -> Result<Vec<bool>, Outcome> {
     coverage_target_in_envelope(w, h)?;
     coverage_vertices_in_envelope(w, h, t)?;
@@ -682,10 +704,17 @@ mod tests {
             assert!(target_in_envelope(w, h).is_ok(), "{w} x {h}");
         }
         assert_eq!(E606_TARGETS, [(64, 64), (128, 128), (256, 128)]);
-        // E680's ten: coverage only, the depth there is Q262's
+        // E680's ten and E913's ten: coverage only; the depth there missed E606's tolerance on
+        // 1- and 2-pixel triangles (E912, E913): Q262 on E680's, Q240 on E913's
         for (w, h) in E680_TARGETS {
             match target_in_envelope(w, h) {
                 Err(Outcome::Unsupported { ids, .. }) => assert_eq!(ids, ["Q262"], "{w} x {h}"),
+                o => panic!("{w} x {h}: {o:?}"),
+            }
+        }
+        for (w, h) in E913_TARGETS {
+            match target_in_envelope(w, h) {
+                Err(Outcome::Unsupported { ids, .. }) => assert_eq!(ids, ["Q240"], "{w} x {h}"),
                 o => panic!("{w} x {h}: {o:?}"),
             }
         }
@@ -697,16 +726,14 @@ mod tests {
         }
     }
 
-    /// Targets neither E606 nor E680 ran.
+    /// Targets neither E606, E680 nor E913 ran.
     const NOT_RUN: [(u32, u32); 21] = [
         // the family around E606's that no run covered
-        (64, 128),
-        (128, 64),
-        (256, 64),
-        (32, 16),
         (2, 2),
         (32, 32),
         (64, 32),
+        (16, 16),
+        (8, 8),
         // between and past the sizes run
         (512, 64),
         (512, 128),
@@ -714,19 +741,37 @@ mod tests {
         (256, 256),
         (128, 256),
         (64, 256),
-        (128, 96),
         (64, 144),
         (4096, 2048),
+        (8192, 16),
+        (2048, 16),
         // odd and degenerate sizes
         (0, 16),
         (0, 0),
         (100, 64),
         (65, 64),
         (64, 65),
+        (95, 47),
     ];
 
     #[test]
-    fn coverage_admits_e606s_three_and_e680s_ten_targets_and_refuses_the_rest_naming_q240() {
+    fn coverage_admits_e606s_three_e680s_ten_and_e913s_ten_targets_and_refuses_the_rest_naming_q240() {
+        // E913 (R7-geo zf, held out): 24 random triangles on each, 240 of 240 images exact
+        assert_eq!(
+            E913_TARGETS,
+            [
+                (64, 128),
+                (128, 64),
+                (256, 64),
+                (128, 96),
+                (128, 144),
+                (32, 16),
+                (16, 8),
+                (4096, 16),
+                (64, 33),
+                (96, 47)
+            ]
+        );
         assert_eq!(
             E680_TARGETS,
             [
@@ -742,7 +787,7 @@ mod tests {
                 (4096, 4096)
             ]
         );
-        for (w, h) in E606_TARGETS.into_iter().chain(E680_TARGETS) {
+        for (w, h) in E606_TARGETS.into_iter().chain(E680_TARGETS).chain(E913_TARGETS) {
             assert!(coverage_target_in_envelope(w, h).is_ok(), "{w} x {h}");
         }
         for (w, h) in NOT_RUN {

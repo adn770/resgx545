@@ -1,11 +1,11 @@
 +++
 id = "Q260"
-question = "which rounding of a vertex coordinate to 1/256 pixel, and which other step of the ISP's setup, reproduces its coverage when a coordinate is negative with a fraction finer than 1/256 (E683: half up is wrong in 288 pixels of 149 cases, half away from zero in 101 pixels of 67 cases, no variant of eight is exact, also when applied to the vertex as the float32 clip words give it), and does the sign act on the coordinate or on a tile-relative offset"
+question = "the tie of a negative window coordinate 1/512 above the 1/256 grid rounds away from zero on five of six sweeps (E914): what makes the y sweeps aimed 100 pixels away at -64.5 and +64.5 and one non-tie case differ from every frozen rounding by pixels within 6.4e-4 pixel of an edge 258 to 313 pixels long, and do half away from zero for negative coordinates and a rule for those long edges reproduce E683's 101 pixels"
 unit = "isp"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E683", "E607", "E606", "E680", "E681"]
+evidence = ["E683", "E607", "E606", "E680", "E681", "E914"]
 terms = []
 +++
 E607 fitted a rounding half up to 1/256 pixel at x >= 0 and E681 shows it holds at positive ties up
@@ -43,3 +43,16 @@ Control that could fail and did not: the script reproduces E683's counts for hal
 another local venv's interpreter under `python -I -B` (the repository's .venv has no numpy) and
 printed byte-identical output. The offline routes are spent: the sweeps above remain the way to
 settle it.
+
+Narrowed 2026-11-12 (round 7, R7-geo stage zs, E914). The sweeps of "to settle it" ran (230 jobs,
+512 x 256). No frozen rounding is exact held out: HA and SETUP(7) (the c the -0.5 x sweep fits;
+the same image as HA here) 125 of 143, HU 121, FAR 119, and HU on the positive mirror 42 of 51.
+The model-free step table settles the tie: on the -0.5 (x, y), -3.5 (x, y) and -64.5 x sweeps the
+image changes one step after the 1/512 tie (the tie rounds away from zero, every step HA's), on
++0.5, +64.5 and the far side at the tie (half up; FAR refuted at its own two rows), and on -64.5 y
+not at all. Read after the run, the rows no rival matches (all of -64.5 y, non-tie case 01) and
+the mirror misses (+64.5 y from the tie on) differ from HU only in pixels within 6.4e-4 pixel of
+an edge of 258 to 313 pixels, E684's band, so the open part looks like the edge evaluation of long
+edges rather than the rounding [infer]. The simulator still refuses a negative coordinate with a
+sub-grid fraction: no rounding held out. To settle it: HA frozen with the long-edge sweeps
+repeated in x and y at 1, 4, 100 and 300 pixels, so that the band and the rounding separate.

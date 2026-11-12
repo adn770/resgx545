@@ -143,6 +143,19 @@ each that differs from its rebuild. `.gitattributes` gives them `merge=regen`: o
 of them without a conflict. They are stale until rebuilt, so merge with
 `git merge --no-commit BRANCH && tools/regen_generated.py && git add -u && git commit`.
 
+Sessions bind the tools they build by source commit and recipe and never ship binaries. A binary
+a session built and ran (R7-geo's `bin/t6/sgxfive-test`) keeps its hash in the freeze as the
+record of what ran, and `FROZEN.commits` binds it to its source with a line
+`<binary-sha256>  built  <commit>  <source-path>  <source-sha256>  <recipe>`: the resgx545
+commit it was built from, the source file whose blob there hashes to `<source-sha256>`, and the
+recipe that built it (`data:PATH` in resgx545-data, else a path of this tree at the commit).
+`frozen.py --check` and `tools/closing/session_tests.sh` verify the source blob and the recipe's
+place, never the binary bytes. The runner puts a stand-in at the binary's place in its copy (a
+text line naming the hash) and a `shasum` wrapper first on PATH reads that exact stand-in as the
+pinned hash, so the session's own freeze, verify and re-freeze steps run as frozen; a changed
+stand-in hashes as itself, and the session's mocks run fakes of the tool, never the binary.
+Neither data repository holds the binary.
+
 ## Closing-session scorers
 
 A closing session's scorer turns kept job records into verdict lines. The round-3 audit found
@@ -229,6 +242,12 @@ and calls from its own tests, rather than hand-rolling the check:
   `mkdir -p` with a test) makes sure every directory the tool writes into exists; a mock's fake
   tool refuses a missing one as the real tool does (r6-misc's `--depth-dump` directory was never
   made and q287 kept no dump).
+- **Tools are bound by source, never shipped.** A tool the session builds is bound by its
+  resgx545 commit, its source's sha256 (`TOOL6SRC.sha256`) and its recipe (`lead/build_*.sh`,
+  building from `git archive <commit>`); the binary's sha256 is a slot the lead fills after the
+  build (r6-misc's `TOOL6.sha256`) or a hash passed in (r7-rp's t6 and t7), the record of what
+  ran. No binary goes in the session, its freeze or either data repository; a freeze that names
+  one (R7-geo's) is bound by a `built` line of `FROZEN.commits` (above).
 
 ### Session kit
 

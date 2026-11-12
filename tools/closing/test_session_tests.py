@@ -595,3 +595,62 @@ def test_absolute_paths_in_the_tests_point_at_the_fake_home(world):
     assert r.returncode == 0, r.stdout + r.stderr
     assert "RUN_ALL PASSED" in r.stdout
     assert snapshot(data) == before
+
+
+def built_world(world, source=V1, recipe="data:edm/closing-demo/lead/build.sh"):
+    """The demo session froze a binary it ran (bin/t/tool, by relative path) that the published
+    copy does not hold, and binds it to its source in FROZEN.commits: tools/x.py at the first
+    commit, built by a recipe published beside it."""
+    tool, data, _ = world
+    s = data / "edm/closing-demo"
+    c1 = git(tool, "rev-list", "--max-parents=0", "HEAD")
+    (s / "lead").mkdir()
+    (s / "lead/build.sh").write_text("make\n")
+    (s / "FROZEN.sha256").write_text((s / "FROZEN.sha256").read_text()
+                                     + f"{sha('BIN')}  bin/t/tool\n")
+    (s / "FROZEN.commits").write_text((s / "FROZEN.commits").read_text()
+                                      + f"{sha('BIN')}  built  {c1}  tools/x.py  {sha(source)}"
+                                      f"  {recipe}\n")
+    return s
+
+
+def test_a_built_binary_is_verified_by_its_source_not_its_bytes(world, tmp_path):
+    """A FROZEN.commits built line stands for the binary: the runner checks the source blob at
+    the commit and the recipe's place and never looks for the bytes (nor a private copy). The
+    binary's place holds a stand-in that `shasum -a 256` reads as the pinned hash, so the
+    session's own freeze, verify and re-freeze steps run (R7-geo's run_mock re-freezes copies
+    and its freeze script compares the binary with TOOL6.sha256); a changed stand-in hashes as
+    itself."""
+    s = built_world(world)
+    run_all = (s / "tests/run_all.sh").read_text().replace(
+        'echo "RUN_ALL PASSED"',
+        '[ "$(shasum -a 256 bin/t/tool | cut -c1-64)" = "%s" ] || { echo "stand-in"; exit 1; }\n'
+        'cp -R bin bin2 && printf x >> bin2/t/tool\n'
+        '[ "$(shasum -a 256 bin2/t/tool | cut -c1-64)" != "%s" ] || { echo "changed"; exit 1; }\n'
+        'echo "RUN_ALL PASSED"' % (sha("BIN"), sha("BIN")))
+    (s / "tests/run_all.sh").write_text(run_all)
+    frozen = (s / "FROZEN.sha256").read_text().replace(sha(RUN_ALL), sha(run_all))
+    (s / "FROZEN.sha256").write_text(frozen)
+    priv = tmp_path / "data-private"
+    (priv / "cited/closing7/demo/bin/t").mkdir(parents=True)
+    (priv / "cited/closing7/demo/bin/t/tool").write_text("NOT THE BINARY")
+    r = run(world, "edm/closing-demo", RESGX545_DATA_PRIVATE=str(priv))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "RUN_ALL PASSED" in r.stdout
+    assert "built bin/t/tool" in r.stdout and "source verified" in r.stdout
+    assert (s / "FROZEN.sha256").read_text() == frozen          # the published freeze is kept
+    assert not (s / "bin").exists()
+
+
+def test_a_built_binary_whose_source_differs_fails(world):
+    built_world(world, source=V2)
+    r = run(world, "edm/closing-demo")
+    assert r.returncode == 1 and "RUN_ALL PASSED" not in r.stdout
+    assert "tools/x.py" in r.stdout and "FAIL" in r.stdout
+
+
+def test_a_built_binary_whose_recipe_is_missing_fails(world):
+    built_world(world, recipe="data:edm/closing-demo/lead/gone.sh")
+    r = run(world, "edm/closing-demo")
+    assert r.returncode == 1 and "RUN_ALL PASSED" not in r.stdout
+    assert "gone.sh" in r.stdout and "FAIL" in r.stdout

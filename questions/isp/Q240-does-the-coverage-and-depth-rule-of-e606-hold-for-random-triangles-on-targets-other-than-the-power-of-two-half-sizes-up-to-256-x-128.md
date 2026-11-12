@@ -1,11 +1,11 @@
 +++
 id = "Q240"
-question = "does the coverage rule of E606 (vertices on the 1/256 pixel grid, exact centre test, left and top edges owning ties) and its depth plane hold for random sub-pixel triangles on the targets E606 did not run: every target but 64 x 64, 128 x 128 and 256 x 128 (the others of the power-of-two family such as 64 x 128, 128 x 64 and 256 x 64, a target below one tile, a width above 256, a half-size that is not a power of two (72, 80, 96), a height above 128 (256), 1024 x 768, 4096 x 4096 and the sizes between)?"
+question = "does the coverage rule of E606 (vertices on the 1/256 pixel grid, exact centre test, left and top edges owning ties) hold for random sub-pixel triangles on the targets no run has covered, odd widths, sizes past 4096 and the sizes between those run (E606's three, E680's ten, E913's ten), and what bounds the depth plane's error on every target but E606's three, where 1- and 2-pixel triangles exceed E606's 3 units (E913)?"
 unit = "isp"
 kind = "hw"
 value = "medium"
 phase = 12
-evidence = ["E606", "E607", "E662", "E660", "E148", "E174", "E680", "E681", "E682"]
+evidence = ["E606", "E607", "E662", "E660", "E148", "E174", "E680", "E681", "E682", "E912", "E913"]
 terms = []
 +++
 
@@ -37,3 +37,13 @@ odd sizes, and the sizes between (the sweep's envelope document lists what the r
 The simulator's list is not widened by this: it still admits the three targets of E606.
 
 Status: open.
+
+Narrowed 2026-11-12 (round 7, R7-geo stage zf, E913; decision 3 a of the ranking). Held out on
+ten more targets, 64 x 128, 128 x 64, 256 x 64, 128 x 96, 128 x 144, 32 x 16 and 16 x 8 (below one
+tile), 4096 x 16, 64 x 33 and 96 x 47 (odd heights): E606's coverage rule drew 240 of 240 images
+and the depth store wrote each tile area whole and nothing past it (240 of 240). E606's 3-unit
+depth tolerance held in 228 of 240 jobs; the 12 misses, as E912's 6, are 1- and 2-pixel triangles
+(read after the run). The simulator admits the coverage on those ten targets (`isp::E913_TARGETS`,
+`coverage_image`); a render or a depth there still refuses under this question, the depth bound
+being open (Q200 for the arithmetic, Q262 on E680's targets). Still open: odd widths (the
+userspace tool refuses them), sizes past 4096, the sizes between those run.

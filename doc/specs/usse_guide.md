@@ -4913,17 +4913,24 @@ scratch buffer whose dwords count up, so every result names the texels it came f
 - **ETC1 (format 27; E724).** **Format 27 is ETC1 with the 4 x 4 blocks in Morton order, y in the
   low bit** (6 of 6 held-out fills of random valid blocks exact over 2048 pixels, 8 x 8 to 32 x
   16; raster block order and Morton with x low 0 of 6). Formats 23 to 26 are not decoded.
-- **Texture types (E725, E726).** **Types 3 and 1 are read with a stride of the texture's width
-  and the window wrapping at its size** (8 of 8 held-out fills exact, 8 x 8 to 32 x 32; E567's
-  fixed 16 refuted, 0 of 8). Type 4 is read with a fixed stride of 32 (4 of 4 sizes, read after
-  the run). **Type 2 is a cube map: six 16 x 16 faces consecutive at 256 dwords a face, read for
+- **Texture types (E725, E726, E910).** **Types 3 and 1 are read with a stride of the texture's
+  width and the window wrapping at its size** (8 of 8 held-out fills exact, 8 x 8 to 32 x 32;
+  E567's fixed 16 refuted, 0 of 8), held out again at 64 x 8 and 128 x 8 for both and at 4 x 16
+  for type 1 (E910, 5 of 6); type 3 at 4 x 16 reads rows 8 dwords apart (no frozen rule; Q283).
+  Type 4 is read with a fixed stride of 32 up to 32 wide (4 of 4 sizes, read after the run, and 4
+  x 16 held out, E910); at 64 and 128 wide no frozen stride fits, and read after the run its
+  texels lie in 32 x 32 blocks of 1024 dwords, columns 32 to 63 at +1024 [infer] (E910, Q283).
+  **Type 2 is a cube map: six 16 x 16 faces consecutive at 256 dwords a face, read for
   +x, -x, +y, -y, +z, -z as faces 0 to 5** (each axis direction reads one face over 2048 of 2048
   pixels, E726). **The face is that of the coordinate of largest magnitude, with its sign**: E726's
   post hoc rule held out on two off-axis programs whose dominant axis changes inside the image,
   2048 of 2048 pixels each, all six faces between them (E844). The faces' (s, t) and edges: Q284.
   Type 5 at 16 x 16 returned no texel: 0 at x mod 16 below 8 and `0x0000ffff` above in every row,
   under `smp2d` and `smp3d` alike, with every texel naming its offset (E894, E567's dumps read post
-  hoc); it is not a layout of the 32-bit texels [infer] (Q178).
+  hoc). **Type 5 reads the texture memory**: with the texture's first 112 dwords stored 0 the
+  16 x 16 image is 0 in every pixel, stored 0xffffffff it is `0x0000ffff` in every pixel; at 32
+  and 64 texels it repeats the 16-column step, at 8 x 8 it alternates by row (E911). It returns one
+  of two values from the texels' bits [infer], by a rule not known (Q178).
 
 *Simulator check, 2026-10-23.* The simulator's texture unit
 (`crates/sgx-sim`, `tex.rs`) follows this page and *Texture sampling*; it reproduces every
