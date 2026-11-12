@@ -6,7 +6,7 @@ kind = "hw"
 value = "high"
 phase = 11
 evidence = ["E006", "E154", "E155", "E357", "E431", "E435", "E444", "E547", "E548", "E747", "E764",
-            "E765", "E766", "E823", "E837", "E855", "E857", "E890"]
+            "E765", "E766", "E823", "E837", "E855", "E857", "E890", "E902"]
 terms = ["CR_EVENT_STATUS", "CR_EVENT_STATUS2", "CR_EVENT_HOST_CLEAR", "CR_EVENT_HOST_ENABLE"]
 +++
 
@@ -133,3 +133,12 @@ TA faults, E891 and E892): H-R6, the store of 2 that the firmware reading R-6 pl
 lockup's poll of `CR_EVENT_STATUS` bit 6, is refuted as a register read, and E855 has a correction.
 Bit 6 (`DPM_STATE_CLEAR`) read clear at every stop. Whether the store is made and does not read
 back, goes elsewhere, or is never reached is open; no read has shown 0x0694 other than 0.
+
+Note 2026-11-12 (round 7 offline fold, E902; 0x0694, not retired). The six held TA jobs of r6-held
+were each the first render of a new context, so their kicks carried TA flag 0x1 and the firmware's
+Clear wrote `(index << 3) | 2` to `CR_DPM_TASK_STATE` before the fault [RE]; the peek read 0 before
+each job, during each hold and after each reset, 18 of 18. The register does not read back what the
+TA kick writes [infer], so a host read of 0x0694 cannot tell whether the lockup path's store is
+reached: the peek is exhausted and no more peek rows are planned. Open: whether the store is reached
+(the plan's stage L, `lock #0` twice in a pixel program, or the kernel option K1), and the rest of
+this question as before.

@@ -329,7 +329,16 @@ through the next render's own list. A directory-cache invalidate (`INVAL_DC` set
 written while the fault is held leaves `BIF_INT_STAT` and `BIF_FAULT` latched and does not drop the
 write: the replay came as without it, 3 of 3 (E892), and a flushed held reset at 288 x 144 still
 ended in a -110 boot. On that boot every -110 followed a 288 x 144 cell (4 of 5 recoveries there,
-none of 12 at 640 x 480), the dumps reading `BIF_INT_STAT` 0x000d0004 (E892).
+none of 12 at 640 x 480), the dumps reading `BIF_INT_STAT` 0x000d0004 (E892). Over every kept
+kernel log (2956, read after the runs) the boot after a fault timed out only after 0x90004 (54 of
+147; 0 of 756 after any other word), and with `SB` 6 by the job's fault page: 10 of 11 at 0x20006,
+0 of 15 at 0x2000a; a page rule fitted to that (0x20006 to 0x20008 time out) gave 16 of 17 r6-held
+boots, a score on data already read (E901). Each timed-out boot's dump has the TA's clocks on
+(`CR_CLKGATESTATUS` 0x000ccff8) and a TA write through list 0, the reset directory at that point
+[infer], and the second boot comes up (54 of 54). The kernel's reset reads `BIF_FAULT` 0 and
+`BIF_INT_STAT` 0x80000 with every block held in reset, before and after `CLEAR_FAULT`, also before
+the boots that time out (10 of 10): reading clear while held does not mean the write is gone
+(E901; Q003).
 
 ### 5.6 Unit names
 
@@ -341,7 +350,7 @@ and shading processor and its pre-processor; `PBE` pixel back end (tile write-ou
 *Based on sgx545-ce `src/services4/srvkm/hwdefs/sgx545defs.h`,
 `src/services4/srvkm/devices/sgx/sgxreset.c`; E357, E360, E457, E507, E511, E573, E729, E745,
 E761, E764 to E767, E789, E824, E826, E828, E845, E846, E848, E866 to E870, E887, E889, E891,
-E892.*
+E892, E901.*
 
 ## 6. How the DDK resets and starts the core
 
@@ -925,7 +934,10 @@ of bit 18 and a command (E857). The store is not seen [HW]: a host read of `CR_D
 (0x0694) gave 0 at the arm, at the stop, after the clears and after the recovery, 2 of 2 held out,
 the marks replicated (E890; the rgn4 kernel never read it, E855). Whether the EDM waits before the
 store, the store goes elsewhere or the register does not read back what is written is open, so
-the EDM's wait after the lockup is not shown to be the bit 6 poll (bit 6 reads clear).
+the EDM's wait after the lockup is not shown to be the bit 6 poll (bit 6 reads clear). The
+register does not read back what the TA kick writes either: in six held first kicks, whose Clear
+writes `(index << 3) | 2` there [RE], a host read gave 0 before the job, during the hold and after
+the reset, 18 of 18 (E902), so a read of 0x0694 cannot show whether the lockup's store was made.
 
 **The kick [HW].** A kick is the command at the CCB write offset, the kicker word bumped (mod 256)
 and a write to `CR_EVENT_KICK`. It is one event in the general slot, `pa0` = 0, `pa1` = (K << 24) |

@@ -7026,12 +7026,39 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *dpm; HW, infer; data: `render-closing-r1-pixgeo:out/`, `render-closing-r2-geo:out/`,
   `render-closing-r3-geo:out/`, `render-closing-r5-dpm:out/a2/`, `render-closing-r6-dpm:out/a2/`,
   `render-closing-s1:out/g-e1/`, `render-closing-s1b:out/g-e1/`, `cited-scratch:cited/closing7/b/`.*
+- `E901` Round 7 offline reading of every kept kernel log of resgx545-data (Q003; post hoc scans,
+  then one rule frozen as a fit and scored on r6-held, which the planner's scans had already read:
+  SEMI, not held out): over 2956 logs of 336 sessions the first boot after a BIF fault timed out (no
+  INIT_COMPLETE, 'SGX recovery failed: -110') only after fault word 0x90004, 54 of 147 such boots
+  (53 unique: one log is kept twice), and 0 of 756 after the fifteen other words; for SB 6 (the
+  region headers) it follows the job's fault page, 10 of 11 at 0x20006 and 0 of 15 at 0x2000a; the
+  frozen rule R-PAGE (times out iff the page is 0x20006 to 0x20008) gave 770 of 771 fit boots and 16
+  of 17 r6-held boots, the control (no time-out after 0x90008 or 0x90100) 109 of 109; every
+  timed-out dump read CR_CLKGATESTATUS 0x000ccff8, BIF_INT_STAT 0x000d0004 and a BIF_FAULT through
+  list 0 (54 of 54), and the second boot came up in 54 of 54; where the kernel logs it (27 boots),
+  the reset read BIF_FAULT 0 and BIF_INT_STAT 0x80000 with every block held in reset, before and
+  after CLEAR_FAULT and before the boot, in the 10 that timed out as in the 17 that came up.
+  *bif; HW, infer; data: `cited-scratch`, `render-closing-r6-held`.*
+- `E902` Round 7 offline fold (Q111's 0x0694 clause and Q294): the six held TA jobs of r6-held were
+  each the first render of a new context, so by the module's fork the kicks carried TA flag 0x1
+  (flags 0x73) and the firmware's Clear wrote (index << 3) | 2 to CR_DPM_TASK_STATE (0x0694) before
+  the fault [RE]; the debugfs peek of 0x0694 read 0 before each job, during each hold and after each
+  reset (18 of 18, and 3 of 3 in stage s0), so the register does not read back what the Clear writes
+  and E890's reads could not tell a reached store from an unreached one [infer]: the peek is
+  exhausted; the refrozen oracle O4 (pysgx running the stock microkernel after E814's own writer
+  alias2.blob, seeded with 0x0728 = 0 and the writer's measured entry state) kept the tick on D0 and
+  E812's four words with the next entry's pclink 0x98 as measured, but D1 (0xb009c4dc) and D2
+  (0x02000100) ended in refusals of the simulator, not modelled hangs, so O4 fails its controls, and
+  all seven of Q294's test words were refused at the same point (an emitted PDS program reading the
+  running timer), so it does not separate them and no Q294 laptop rows follow.
+  *edm; HW, RE, infer; data: `render-closing-r6-held`, `edm-closing-r3x-events`,
+  `cited-scratch-private`.*
 
 ## By unit
 
 ### bif
 
-Records: E151, E457, E573, E592, E745, E761, E767, E789, E826, E848, E891, E892.
+Records: E151, E457, E573, E592, E745, E761, E767, E789, E826, E848, E891, E892, E901.
 
 ### dpm
 
@@ -7049,7 +7076,7 @@ E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321, E353, E4
 E450, E531, E532, E533, E536, E537, E538, E539, E540, E550, E600, E601, E602, E603, E604, E605,
 E746, E747, E748, E749, E750, E751, E752, E764, E768, E769, E771, E784, E791, E792, E793, E794,
 E804, E805, E806, E807, E809, E810, E811, E812, E813, E814, E816, E817, E818, E819, E830, E834,
-E835, E836, E839, E840, E841, E849, E855, E856, E857, E890.
+E835, E836, E839, E840, E841, E849, E855, E856, E857, E890, E902.
 
 ### firmware
 

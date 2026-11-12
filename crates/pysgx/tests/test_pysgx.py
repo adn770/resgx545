@@ -139,3 +139,37 @@ def test_cli_and_module_agree_on_listings(sgx, tmp_path):
     texts = [ln.split("\t", 1)[1] for ln in out.splitlines() if "\t" in ln]
     words = [int.from_bytes(img[i:i + 8], "little") for i in range(0, len(img), 8)]
     assert texts == [sgx.usse_decode(w) for w in words]
+
+
+def test_sgx_code_window_and_carried_task_state(sgx):
+    """A task at instruction 0x4000 of the code base (our own tasks' page) runs only with a
+    longer code window; its read of pclink is refused until a carry is seeded, and the carry
+    then holds what the task left (sgx_sim::sgx::Carry, E536)."""
+    code, pds_at = 0xE8000000, 0xF2000000
+    s = sgx.Sgx()
+    s.write_reg(0xA0C // 4 + 15, code >> 7)
+    data = [0, 0, 0x02000000 | 0x4000 << 4 | 0xF, 0]
+    prog = data + [sgx.pds_encode("movs doutu, ds1[0], ds1[0], ds1[0], ds1[0]"),
+                   sgx.pds_encode("halt")]
+    s.map(pds_at, b"".join(w.to_bytes(4, "little") for w in prog))
+    s.write_reg(0xA68 // 4, pds_at)
+    s.write_reg(0xA6C // 4, 1)
+    task = sgx.assemble(".section p, usse, 0\nmov r1, pclink\nstr #65, r1\nmov r2, #6\n"
+                        "mov pclink, r2\nnop.end\n")["sections"][0]["image"]
+    s.map(code, bytes(0x20000))
+    s.map(code + 0x20000, task)
+    assert s.code_len is None and s.carry() is None
+    s.event(0)
+    with pytest.raises(sgx.SimError):
+        s.run()
+    s.code_len = 0x4000 + 5
+    s.event(0)
+    with pytest.raises(sgx.SimError) as e:
+        s.run()
+    assert "pclink" in str(e.value)
+    s.seed_carry(pclink=0x98, p=[True, None, None, None])
+    s.event(0)
+    s.run()
+    assert s.reg(65) == 0x98
+    c = s.carry()
+    assert c["pclink"] == 6 and c["p"] == [True, None, None, None] and c["r20"] is None
