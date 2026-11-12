@@ -5,7 +5,7 @@ unit = "ta"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E331", "E329", "E507", "E511", "E824", "E886"]
+evidence = ["E331", "E329", "E507", "E511", "E824", "E886", "E908"]
 terms = ["CR_TE_MTILE1", "CR_TE_MTILE2", "CR_TE_MACROTILE_STRIDE", "CR_TE_AA", "CR_TE_SCREEN"]
 +++
 
@@ -55,3 +55,14 @@ axis) covers the target's 1x tile grid, so the six U2 and U2Q words completed 32
 set completes with four arrays) is refuted. That gives a validity rule for poked words of our own
 stack, not the closed driver's rule over sizes, which still needs the capture batch; the 11
 skipped rows (the FX rows past 320 x 160, the HS rows past 384 x 192) are predicted to fault.
+
+Note 2026-11-12 (round 7, r7-rp q086, E908; not retired). Four new sizes split H-COV from its
+one-axis and area readings, which E886's nine rows could not: U2's words (a 12 x 12 grid) faulted
+the job on the 3D side at 448 x 160 and 416 x 192 (short in x only) and at 320 x 224 and 384 x 208
+(short in y only), 4 of 4 as H-COV predicts, where H-X, H-Y and H-AREA each predicted completion in
+2; the rule's own words completed all four sizes with 0 wrong, and the bridges repeated E886 on
+module 41E2F5C7. So poked words are valid for our stack's 4x contexts exactly when their grid
+covers the target on both axes (13 of 13 held out with E886). E886's 11 skipped rows were not
+pursued by design: every rule predicts they fault. Still open, and the question's subject: the
+closed driver's words over sizes (the capture batch, `sizes/ms4-sizes3d.txt`, not run) and the
+RT data's size words for a 4x target.

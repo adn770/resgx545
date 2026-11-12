@@ -7145,6 +7145,21 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *ta; HW, infer; data: `render-closing-r7-rp:out/20261112-205431/q139/`,
   `render-closing-r7-rp:out/20261112-205431/s0/`, `render-closing-r7-rp:fold/`, `ta-mtile-fields`,
   `ta-mtile-fields-risky`.*
+- `E908` r7-rp stage q086 (Q086, 11 4x jobs on contexts made for 4x targets, module 41E2F5C7): a 4x
+  render with poked macrotile words completes exactly when their grid (B3 + B1 tiles per axis)
+  covers the target's 1x tile grid on both axes, not when it covers one axis or as many tiles: U2's
+  words (a 12 x 12 grid) faulted the job on the 3D side at 448 x 160 (14 x 10 tiles: short in x,
+  enough in y and in area), 320 x 224 (10 x 14: short in y), 416 x 192 (13 x 12) and 384 x 208 (12 x
+  13), 4 of 4 as H-COV predicted, where H-X, H-Y and H-AREA each predicted completion in 2 of the 4;
+  the rule's own words completed every one of those sizes and 1024 x 768 with 0 wrong pixels; the
+  bridges repeated E886 on the new module (U2 at 320 x 160 completed, the closed driver's 64 x 64
+  words FX faulted); every fault BIF requestor 256, word 0x10000011, followed by a reset and a
+  strict health check that passed (5 faults, the 5 predicted, budget 6); frozen verdict 'Q086: H-COV
+  held (4 of 4 rows), H-X refuted (2 of 4 rows), H-Y refuted (2 of 4 rows), H-AREA refuted (2 of 4
+  rows), H-ANY refuted (0 of 4 rows); bridges: 320x160-U2 ok, 320x160-FX fault; controls pass 5 of
+  5; 11 unrun E886 rows not pursued, by design'.
+  *ta; HW, infer; data: `render-closing-r7-rp:out/20261112-205431/q086/`,
+  `render-closing-r7-rp:out/20261112-205431/s0/`, `render-closing-r7-rp:fold/`.*
 
 ## By unit
 
@@ -7218,7 +7233,7 @@ Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
 E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763, E776, E777,
 E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828, E842, E847, E851, E859,
-E865, E872, E877, E879, E886, E888, E893, E897, E906, E907.
+E865, E872, E877, E879, E886, E888, E893, E897, E906, E907, E908.
 
 ### texture
 
