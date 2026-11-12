@@ -226,7 +226,7 @@ belongs to is read from the access each record set up, not from a source [infer]
 | 0x90004 | 2 | TA write of region headers past the kernel's layout (`SB` 6) | E729, E789, E826 |
 | 0x90008 | 3 | TA read of an unmapped stream page | E764, E826 |
 | 0x80020 | 5 | transfer write to a read-only alias | E766 |
-| 0x90100 | 8 | 4x render, at page 0x10000 (`SB` 1) | E511, E828, E845, E846 |
+| 0x90100 | 8 | 4x render, at page 0x10000 (`SB` 1) | E511, E828, E845, E846, E867 to E869 |
 | 0xd0400 | 10 | background program's fetch (`FAULT_TYPE` 5) | E764 |
 | 0x91000 | 12 | first job with buffer 0 left out of the client alias | E573, E745, E761 |
 
@@ -267,8 +267,22 @@ dumps and two more here), with no pixel right and health ok after each (E845, he
 4096 x 1152 (E846). A 4x scene that does overflow ends in -ENOSPC without a fault, as at 1x: 1024
 x 768 at P 0xe2 (need 193, 192 usable) and 288 x 144 at P 0x23, while 0xe3 completed (E846, read
 after the run; the stage's control was frozen for another scene). Every four-array 4x job that
-completed was at most 1024 x 768 and every one that faulted at least 1280 x 1024, so the fault
-starts past 1024 pixels wide, past 768 high or past both; the records do not separate them.
+completed was at most 1024 x 768 and every one that faulted at least 1280 x 1024 (E845, E846). Round
+5 held out H-ENOSPC4: one page short of the need a 4x scene ends in -ENOSPC with no BIF line and at
+the need it completes, at 640 x 480 (76 pages) and 512 x 384 (49) as at 1024 x 768 and 288 x 144 (6
+of 6 rows decided, E866). The fault depends on the context the job runs on, not on the target alone:
+1280 x 1024 completed on contexts made for 1280 x 1040 and 2048 x 2048, and 2048 x 1536 on 4096 x
+4096, contexts whose tail-pointer room (the kernel's 4 side^2 bytes before the control, OTPM, state
+pages and region headers) is four times the target's own, while 1280 x 1024 on 2048 x 1024, whose
+region buffer grows and whose room does not, faulted (E867, H-TPC held 4 of 4; every size rule had
+predicted faults). On its own maximum the job faulted at 1184 x 768, 1024 x 800, 1280 x 768, 1024 x
+1024, 2048 x 240 and 768 x 2048 and completed at 1024 x 512 and 256 x 1536: no width, height, count,
+page or area limit and none of four frozen tail-pointer extents fits (E868). A held 1280 x 1024
+fault had written its whole scene (321 pages) and left 1212 of its 12288 region headers off the
+doubled-grid rule from `td.rgn` (0x7000) to 0xd804, most with word 0 intact and a zero stream
+offset, nothing below `td.rgn` non-zero (E869, the off headers' kinds post hoc); [infer] a zero
+offset points the 3D at the request base, page 0x10000, never mapped. What the job needs of the
+layout, as a function of its target, is Q292.
 
 After a TA write fault (0x90004, `SB` 6) and the reset, the next renders that run the TA fault at
 the failed job's page with `SB` 6, once or twice, before one passes: 4 of 4 such health faults
@@ -291,7 +305,7 @@ and shading processor and its pre-processor; `PBE` pixel back end (tile write-ou
 
 *Based on sgx545-ce `src/services4/srvkm/hwdefs/sgx545defs.h`,
 `src/services4/srvkm/devices/sgx/sgxreset.c`; E357, E360, E457, E507, E511, E573, E729, E745,
-E761, E764 to E767, E789, E824, E826, E828, E845, E846, E848.*
+E761, E764 to E767, E789, E824, E826, E828, E845, E846, E848, E866 to E869.*
 
 ## 6. How the DDK resets and starts the core
 

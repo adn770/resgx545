@@ -5,7 +5,7 @@ unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E310", "E625", "E630", "E705", "E735", "E773", "E779", "E832", "E853", "E854"]
+evidence = ["E310", "E625", "E630", "E705", "E735", "E773", "E779", "E832", "E853", "E854", "E866"]
 terms = ["Dynamic Parameter Management (DPM)", "Parameter Buffer (PB)"]
 +++
 
@@ -118,3 +118,11 @@ thr0 + 30.25. The rule does not hold for the 1500-vertex scenes, which do not co
 17 counts at 2048x2048, post hoc). Open: a held-out test of the rule on one-triangle scenes at other
 U, cells frozen from a measured U; what a partial render frees; the count for scenes of many
 vertices; the U clause as above.
+
+Note 2026-11-12 (round 5, session R5-render4x stage o, E866; the U clause, exploratory rows, the
+question stays open). The tool's full-screen triangle at 1x and 1024 x 768 completed at P 0x53 with
+49 scene pages and overflowed at 0x52, the need the round 5 render plan's model gave before the run
+(one stream a 32 x 16 tile, the pages taken a macrotile, HU1 as E773: 16 x 3 + 1), where E846 had
+frozen 97; the model fits its one earlier dump (r2-pixel's 320 x 400, 10 pages) and this boundary,
+two scenes of another shape than the tool's triangle. At 4x on four arrays U4 = 1 + ceil(2 tiles16 /
+32) held at three boundaries one page apart (E866, two of them held out).

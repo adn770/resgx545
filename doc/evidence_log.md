@@ -6410,6 +6410,61 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   `render-closing-r3-geo:out/g-c6/`, `render-closing-r3-geo:out/g-d36/`,
   `render-closing-r2-geo:out/g-c3/`, `render-closing-r2-geo:out/g-c2/`,
   `render-closing-r1-pixgeo:out/g-c1/`, `render-closing-r1-pixgeo:out/g-c1f/`.*
+- `E865` R5-render4x stages s0 and t (12 jobs, one attempt, no fault): s0's three controls passed as
+  frozen (1x 1024 x 768 hash 0xc9e301d225fe2325, 4x 288 x 144 0x4a61860dcb4ab325, 4x 1024 x 768
+  0xde0b9233c9822325, 0 wrong pixels each); in stage t the controls passed (t6, E827's pb-e40-m2-64a
+  with its hash; the unpoked 11.31 line and point t3b and t4b with their frozen heads), and with
+  CR_TE_AA bit 29 clear the TA inserted one zero dword right before the object's format word: at
+  dword 9 of the line and dword 11 of the point with 0x80000000 (t3c, t4c, held out) as with
+  0x40000000 (t3, t4, replicates of E847), and at dword 11 of the triangle on a context made for 4x
+  targets with 0x40000000 and 0x80000000 (t1, t2, format word 0x00040101 at dword 12, empty image);
+  the frozen verdict: the dword is zero and sits right before the format word, padding, not a field
+  [infer] (6 of 6 rows decided).
+  *ta; HW, infer; data: `render-closing-r5-render4x:out/20261112-100112/s0/`,
+  `render-closing-r5-render4x:out/20261112-100112/t/`, `render-closing-r5-render4x:postrun/`.*
+- `E866` R5-render4x stage o (11 jobs, no fault): the controls passed (the tool's default 1x
+  triangle at 1024 x 768 completed at render_pb_pages 0x35 with 19 scene pages and overflowed at
+  0x34; the 4x full triangle on four arrays completed at 1024 x 768 with P 0xe3 and 193 pages), and
+  H-ENOSPC4 held, 6 of 6 rows decided: the 4x full triangle on a context made for 4x targets ended
+  in -ENOSPC with no BIF line one page short of its need (1024 x 768 at 0xe2 and 288 x 144 at 0x23,
+  replicates of E846; 640 x 480 at 0x6d and 512 x 384 at 0x52, held out) and completed with 0 wrong
+  pixels at the need (640 x 480 at 0x6e, 76 pages; 512 x 384 at 0x53, 49 pages, held out);
+  exploratory, the 1x full triangle at 1024 x 768 completed at 0x53 with 49 scene pages and
+  overflowed at 0x52, the need the plan's per-macrotile model gave, not E846's frozen 97.
+  *dpm; HW, infer; data: `render-closing-r5-render4x:out/20261112-100112/o/`,
+  `render-closing-r5-render4x:postrun/`.*
+- `E867` R5-render4x stage m (5 jobs, 1 fault): the 4x full triangle on four arrays, at target sizes
+  that fault on their own maximum (E845), completed with 0 wrong pixels on a context made for a
+  larger maximum whose tail-pointer room (4 side^2 bytes) is larger: 1280 x 1024 on 1280 x 1040 and
+  on 2048 x 2048 (room 0x10000 against 0x4000, 321 scene pages) and 2048 x 1536 on 4096 x 4096
+  (0x40000, 769 pages), while 1280 x 1024 on 2048 x 1024, whose region buffer grows and whose room
+  stays 0x4000, faulted with E845's word (BIF_INT_STAT 0x90100, BIF_FAULT 0x10000011), health ok
+  after it; the control 1024 x 768 on 2048 x 2048 completed; the frozen verdict: H-TPC held, 4 of 4
+  rows decided, where every size rule predicted a fault in the three completed rows.
+  *dpm; HW, infer; data: `render-closing-r5-render4x:out/20261112-100112/m/`,
+  `render-closing-r5-render4x:postrun/`.*
+- `E868` R5-render4x stages l and x (8 jobs on their own maximum, 6 faults): the 4x full triangle on
+  four arrays faulted with E845's word (BIF_INT_STAT 0x90100, BIF_FAULT 0x10000011) at 2048 x 240,
+  768 x 2048, 1280 x 768, 1024 x 1024, 1184 x 768 and 1024 x 800 and completed with 0 wrong pixels
+  at 256 x 1536 (97 scene pages) and 1024 x 512 (129), health ok after every fault; 2048 x 240 and
+  768 x 2048 fault where all four frozen H-TPC variants predicted completion, and 1024 x 512
+  completes where TPC-d-state predicted a fault; the frozen verdict over the 13 decided rows of m, l
+  and x: no frozen rule survives, Q292's cause is none of the eleven (stage l alone leaves none;
+  stage x alone leaves TPC-rb-rgn, K-OR, K-P and K-AREA).
+  *dpm; HW, infer; data: `render-closing-r5-render4x:out/20261112-100112/l/`,
+  `render-closing-r5-render4x:out/20261112-100112/x/`, `render-closing-r5-render4x:postrun/`.*
+- `E869` R5-render4x row d (1 held job): the 4x full triangle at 1280 x 1024 on its own maximum
+  faulted with E845's word (BIF_INT_STAT 0x90100, BIF_FAULT 0x10000011), replicating E845, and the
+  held dumps were read: the parameter buffer holds 321 scene pages, as U4 and H-TPC predicted (the
+  TA finished its scene), and in the TA data 1212 of the 12288 region headers are off the
+  doubled-grid rule, from td.rgn 0x7000 (header 0 among them) to 0xd804, past the 0xa000 and 0xc000
+  bounds frozen for H-TPC's extents, so the extent fits no variant; read after the run, 1023 of the
+  1212 keep their word 0 and have a zero stream offset (word 1) where the tile is inside the target,
+  189 have word 0 off as well, they lie in macrotiles 0 to 2 only and in 15 runs (the longest 512
+  headers from 0x7000, then runs from 0x9004, 0xc004 and 0xd000), and every dword below td.rgn is
+  zero.
+  *dpm; HW, infer; data: `render-closing-r5-render4x:out/20261112-100112/d/`,
+  `render-closing-r5-render4x:postrun/`.*
 
 ## By unit
 
@@ -6422,7 +6477,8 @@ Records: E151, E457, E573, E592, E745, E761, E767, E789, E826, E848.
 Records: E199, E200, E201, E202, E204, E205, E206, E203, E253, E256, E309, E310, E311, E312, E313,
 E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E468, E574, E591,
 E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753, E773, E774, E775, E779, E785,
-E786, E790, E799, E800, E801, E802, E803, E832, E845, E846, E852, E853, E854.
+E786, E790, E799, E800, E801, E802, E803, E832, E845, E846, E852, E853, E854, E866, E867, E868,
+E869.
 
 ### edm
 
@@ -6480,7 +6536,7 @@ E448, E449, E451, E458, E462, E732, E770.
 Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180, E181, E247, E257,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
 E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763, E776, E777,
-E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828, E842, E847, E851.
+E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828, E842, E847, E851, E865.
 
 ### texture
 
