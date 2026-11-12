@@ -6,7 +6,7 @@ kind = "hw"
 value = "high"
 phase = 11
 evidence = ["E006", "E154", "E155", "E357", "E431", "E435", "E444", "E547", "E548", "E747", "E764",
-            "E765", "E766", "E823", "E837", "E855", "E857", "E890", "E902"]
+            "E765", "E766", "E823", "E837", "E855", "E857", "E890", "E902", "E921"]
 terms = ["CR_EVENT_STATUS", "CR_EVENT_STATUS2", "CR_EVENT_HOST_CLEAR", "CR_EVENT_HOST_ENABLE"]
 +++
 
@@ -142,3 +142,15 @@ TA kick writes [infer], so a host read of 0x0694 cannot tell whether the lockup 
 reached: the peek is exhausted and no more peek rows are planned. Open: whether the store is reached
 (the plan's stage L, `lock #0` twice in a pixel program, or the kernel option K1), and the rest of
 this question as before.
+
+Note 2026-11-12 (round 7 session r7-faults stage L, E921; the lockup stop's `lock #0` twice, not
+retired). In a pixel program a second `lock #0` by the quad that holds mutex 0 blocks that quad: the
+counter fill hung with no update stored, with two releases after it or one (H-SELF 4 of 4 rows held
+out; H-REFLAG and H-RECOUNT refuted; `lock #0`, `lock #1` ran to 512). Read with R-6, the EDM's
+lockup routine would then stop at its second `lock #0`, before its store to `CR_DPM_TASK_STATE` and
+before the poll of bit 6 (`DPM_STATE_CLEAR`), which fits every reading of the stop (E855, E890,
+E902) [infer]: the transfer from a pixel program to an EDM task is not measured, and neither is
+whether mutex 0 is free on entry or anything releases it. If it holds, the stop's bit 6 reading
+clear says nothing of the DPM's state-clear event, and this question's open part (which event sets
+each bit, a pulse or a level, their order, the other bits' clears) is unchanged. The direct test, an
+own EDM task taking `lock #0` twice (kernel option K2), was not run.

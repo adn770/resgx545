@@ -7083,6 +7083,20 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   each dump with CR_CLKGATESTATUS 0x000ccff8 and BIF_INT_STAT 0x000d0004, the second boot up in all.
   *bif; HW, infer; data: `render-closing-r7-faults:out/20261112-222800/m/`,
   `render-closing-r7-faults:postrun/`.*
+- `E921` R7 session r7-faults stage L (Q111's lockup stop, read by R-6 as two `lock #0` and no
+  release; E088's counter fill, 64 x 32, each pixel instance adding 1 to one scratch dword): with
+  `lock #0` ... `release #0` the counter ended at 512 and with `lock #0`, `lock #1` ... `release
+  #1`, `release #0` at 512 too (controls), with `lock #0` twice and then two releases or one the
+  fill hung with the counter at 0 (no quad's update stored) and the kernel's reset recovered it, and
+  with `lock #0` and no release it hung after one update (E088's case, replicated); frozen verdict
+  'H-SELF consistent (4 held, 0 FAILED, 0 cannot tell of 4); H-REFLAG REFUTED (0 held, 4 FAILED, 0
+  cannot tell of 4); H-RECOUNT REFUTED (1 held, 3 FAILED, 0 cannot tell of 4); L-REP consistent (2
+  held, 0 FAILED, 0 cannot tell of 2)', 9 controls passing; so in a pixel program a second `lock` of
+  a mutex its holder still holds blocks the holder itself, neither passing as a flag nor counting;
+  that the EDM's lockup routine stops at its second `lock #0` the same way is an inference from the
+  pixel pipeline, not measured in the EDM.
+  *usse; HW, RE, infer; data: `render-closing-r7-faults:out/20261112-222800/l/`,
+  `render-closing-r7-faults:bins/`.*
 
 ## By unit
 
@@ -7184,7 +7198,7 @@ E370, E371, E372, E373, E374, E375, E376, E377, E378, E380, E406, E423, E452, E4
 E472, E473, E474, E475, E476, E477, E478, E479, E480, E481, E482, E483, E484, E485, E486, E487,
 E488, E491, E492, E493, E494, E495, E496, E497, E498, E499, E500, E501, E512, E513, E514, E515,
 E516, E517, E518, E519, E520, E521, E522, E525, E526, E527, E528, E529, E530, E534, E535, E549,
-E570, E571, E572, E593, E594, E595, E596, E597, E598, E599, E707, E708, E820, E833, E898.
+E570, E571, E572, E593, E594, E595, E596, E597, E598, E599, E707, E708, E820, E833, E898, E921.
 
 ### vdm
 

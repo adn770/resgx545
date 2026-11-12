@@ -429,6 +429,8 @@ pub struct Machine {
     /// Set while a `mov` writes its destination: E380 measured `mov` to pa1 to pa7 in a fill,
     /// and no other instruction (E496 did ima32 to pa0 only).
     pub mov_dest: bool,
+    /// The mutexes this instance holds (bit n: `lock #n` taken and not released).
+    pub locks: u8,
 }
 
 /// What the current operation read and writes, for Machine::bounds.
@@ -790,6 +792,7 @@ impl Default for Machine {
             code_index: 0,
             edm_task: false,
             mov_dest: false,
+            locks: 0,
         }
     }
 }
@@ -2488,8 +2491,26 @@ impl Machine {
                 self.moe_range = ["range0", "range1", "range2", "range3"].map(|r| insn.get(r).unwrap());
                 None
             }
-            // one instance holds every mutex; no caches are modelled
-            "lock" | "cache" => None,
+            // one instance holds every mutex it takes: no other quad is modelled to wait for it;
+            // hardware (r7-faults stage L, E921): a second `lock` of a mutex its holder still
+            // holds blocks the holder (the fill hung with no quad's update stored); no caches
+            "lock" => {
+                let bit = 1u8 << (insn.get("mutex").unwrap() & 7);
+                if insn.name("op", self.core).as_deref() == Some("release") {
+                    self.locks &= !bit;
+                } else if self.locks & bit != 0 {
+                    return Err(why(if self.edm_task {
+                        "a second lock of a held mutex in an EDM task: it blocks a pixel program's \
+                         holder (E921), not measured in an EDM task"
+                    } else {
+                        "a second lock of a held mutex hangs the job (E921)"
+                    }));
+                } else {
+                    self.locks |= bit;
+                }
+                None
+            }
+            "cache" => None,
             // the emits hand the instruction and its sources (0 where it has
             // none) to the unit behind the bus; what that unit does is not
             // the USSE's
@@ -4764,6 +4785,35 @@ mod tests {
         let mut mem = Memory { base: 0x1000, words: vec![0; 64] };
         let r = m.run(&prog(src), &mut mem, 1000);
         (m, r)
+    }
+
+    #[test]
+    fn a_second_lock_of_a_held_mutex_blocks_its_holder() {
+        // hardware (r7-faults stage L, E921): the counter fill with `lock #0` twice hung with the
+        // counter at 0, with two releases after it or one; `lock #0` then `lock #1` ran (512)
+        let (_, r) = run(&["lock #0", "release #0", "nop.end"]);
+        assert!(r.is_ok(), "{r:?}");
+        let (_, r) = run(&["lock #0", "lock #1", "release #1", "release #0", "nop.end"]);
+        assert!(r.is_ok(), "{r:?}");
+        for src in [
+            &["lock #0", "lock #0", "release #0", "release #0", "nop.end"][..],
+            &["lock #0", "lock #0", "release #0", "nop.end"][..],
+            &["lock #3", "lock #3", "release #3", "nop.end"][..],
+        ] {
+            let (_, r) = run(src);
+            assert!(stops_on(&r, "a second lock of a held mutex hangs the job (E921)"), "{src:?}: {r:?}");
+        }
+        // a release gives the mutex back (E088: the next quad takes it)
+        let (_, r) = run(&["lock #0", "release #0", "lock #0", "release #0", "nop.end"]);
+        assert!(r.is_ok(), "{r:?}");
+        // in an EDM task (the lockup path's two `lock #0`, E890) it was not measured: refused
+        let mut m = Machine { edm_task: true, ..Machine::default() };
+        let mut mem = Memory { base: 0x1000, words: vec![0; 64] };
+        let r = m.run(&prog(&["lock #0", "lock #0", "nop.end"]), &mut mem, 100);
+        assert!(stops_on(&r, "not measured in an EDM task"), "{r:?}");
+        let mut m = Machine { edm_task: true, ..Machine::default() };
+        let r = m.run(&prog(&["lock #0", "release #0", "nop.end"]), &mut mem, 100);
+        assert!(r.is_ok(), "{r:?}");
     }
 
     #[test]

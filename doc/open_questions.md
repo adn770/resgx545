@@ -101,7 +101,7 @@
 
 - `Q001` (phase 3, hw, medium): what do 0x0810, 0x0814 and 0x0818, set once by the init script to 0x1, 0xffff and 0x7ff, control? (E006, E010, E122, E401, E403, E404, E405)
 - `Q075` (phase 11, hw, low): what does each HWPerf counter the firmware records (0x0044-0x0064, 0x0e84-0x0e90 and 0x0eb4-0x0ec0) count, and how does the group in CR_HWPERF_CTRL select them? (E149, E150, E152, E359, E434)
-- `Q111` (phase 11, hw, high): which hardware event sets which bit of CR_EVENT_STATUS and CR_EVENT_STATUS2 in an ordinary TA, 3D, DPM or transfer job, and how long does each stay set, and what does a host write of a bit other than 15 and 18 to CR_EVENT_HOST_CLEAR clear? (E006, E154, E155, E357, E431, E435, E444, E547, E548, E747, E764, E765, E766, E823, E837, E855, E857, E890, E902)
+- `Q111` (phase 11, hw, high): which hardware event sets which bit of CR_EVENT_STATUS and CR_EVENT_STATUS2 in an ordinary TA, 3D, DPM or transfer job, and how long does each stay set, and what does a host write of a bit other than 15 and 18 to CR_EVENT_HOST_CLEAR clear? (E006, E154, E155, E357, E431, E435, E444, E547, E548, E747, E764, E765, E766, E823, E837, E855, E857, E890, E902, E921)
 
 ### render
 
