@@ -1,11 +1,11 @@
 +++
 id = "Q210"
-question = "what sets the page counts S_k at which the global page count steps in the first TA run (E852, E861: nearly evenly spaced within a target, different between targets and scenes), and the margin below each step in which a partial render leaves one global page instead of two (E852, E862: 6, 5 and 4 pages below S3, S4 and S5 at 2048x2048), which places the flip of the first threshold's raise by 0x20 (the guard of the firmware's write compares global page counts, E853, E864; C at five targets, E774, E785, E799, E801; E802's scene raises above it); why E802's scene holds one global page; and why a page is pending at the resume only after a grow of the global list (E861, E864)"
+question = "what keeps the second global page past A_k, the page count once the object block straddling global pages k - 1 and k is tiled, at band 6 of 3072x3072 and 2560x2560 (E915; H-SPAN held there at bands 3 and 5 of four new targets and at bands 5 to 7 of 2048x2048), what puts E874's step replay one page off at 2048x3072 S6 (E915) and three at 2048x4096 S3 (E874), what sets the global steps of objects larger than 67 dwords, whose blocks at 8 coordinate pairs differ between runs (E882, E900, E917), and do E802's one global page and the page pending after a grow (H-PENDREQ, read by our own task, E918) follow from E874's replay as read after the runs?"
 unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E310", "E312", "E464", "E625", "E627", "E629", "E704", "E734", "E753", "E774", "E779", "E785", "E786", "E799", "E800", "E801", "E802", "E852", "E853", "E860", "E861", "E862", "E863", "E864", "E873", "E874", "E881", "E882", "E900"]
+evidence = ["E310", "E312", "E464", "E625", "E627", "E629", "E704", "E734", "E753", "E774", "E779", "E785", "E786", "E799", "E800", "E801", "E802", "E852", "E853", "E860", "E861", "E862", "E863", "E864", "E873", "E874", "E881", "E882", "E900", "E915", "E917", "E918"]
 terms = ["Dynamic Parameter Management (DPM)", "CR_DPM_STATE_BASE0", "ta3d_ctl"]
 +++
 
@@ -279,3 +279,30 @@ replay with those objects places 9 of 12 steps at N 4 and 1 of 17 at N 8, so no 
 objects (H-CUM) is frozen. Open: H-SPAN held out; what opens the bursts for larger objects and
 what sets their block sizes; the lag; the 2048x4096 S3 miss (the kept dumps there all overflowed);
 the counts at the passes.
+
+Narrowed 2026-11-12 (round 7, laptop session R7-dpm, E915, E917 and E918; decisions R7-2 a, R7-4 a;
+the question stays open). The question line asked "what sets the page counts S_k at which the global
+page count steps in the first TA run (E852, E861: nearly evenly spaced within a target, different
+between targets and scenes), and the margin below each step in which a partial render leaves one
+global page instead of two (E852, E862: 6, 5 and 4 pages below S3, S4 and S5 at 2048x2048), which
+places the flip of the first threshold's raise by 0x20 (the guard of the firmware's write compares
+global page counts, E853, E864; C at five targets, E774, E785, E799, E801; E802's scene raises above
+it); why E802's scene holds one global page; and why a page is pending at the resume only after a
+grow of the global list (E861, E864)"; it now asks what the session left open. [HW, held out] The
+premise held, 29 of 29 control rows (E915). E874's step replay gave the steps of four of five
+targets never run (3072x3072, 3072x2048, 2560x2560, 1024x1024; the needs 773, 808 and 153) and
+missed 2048x3072's S6 by one page. H-SPAN, the margin ending at the straddling block (E900), held at
+all 19 cells where it parts from E874's burst end B_k and at every cell of bands 3 and 5 of the new
+targets and the 2048x2048 replicates of bands 5 to 7, with R-5's raise flipping at B3 = A3 (6 of 6);
+its frozen verdict is "not supported" at 3072x3072 and 2560x2560, where the cell at A_6 kept two
+pages (E915). So the steps and the margin of the 1500-vertex scene are E874's replay and A_k at the
+bands held, and C = A3 + `0x1f` with R-5's guard; `dpm.rs` gives them there (`tool_triangle_steps`,
+`first_partial_render_global_pages_left`) and refuses the rest. Our own task oomring2, loading both
+page status registers (R7-4 a, module 37EC97AB), read the counts at the abort as the host samples
+them (10 of 10) and the creep cell silent, a frozen verdict for E864's `isub16` order; R-5's bits
+held at 5 of 8 cells, k-s4p1 failing as the session froze it ("2 pages left raises") where R-5 as
+written, with dword 36 = 4 - 2 at that abort, gives the silent cell that ran (post hoc), and the
+frozen H-PASS clause at the decision entry failed, that entry being the second run's abort; read
+after the run, the end-of-render rung holds the global pages left, and 1 at both grow cells where
+the host's next sample reads 2 (E918). With 8 coordinate pairs the same command made other object
+blocks, steps and need than in R6-dpm (E917).
