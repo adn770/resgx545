@@ -466,6 +466,21 @@ pushed before `tools/clean-room/guard.py --history` has run over every ref.
 - Commit style is the one under Commits. The test-cycle scripts and their settings are in
   `tools/bringup/` (`local.env.example`).
 
+## Known tool weaknesses
+
+Weaknesses of our tools that a session or a fold has found and that are not fixed yet. Each
+round reviews this list: an entry leaves it with the commit that fixes it (and its test), or
+stays with what a session must do around it.
+
+- `tri --depth` (`userspace/libsgxfive/tools/sgxfive-test.c`): `depth_min_pages` sizes the
+  depth buffer, and the floor of `--depth-pages`, as W x H dwords, below the depth store's tile
+  extent (tiles of 32 x 16), so a target that is not a whole number of tiles gets fewer pages
+  than the store writes, `DEPTH_MARGIN_PAGES` aside (found by closing7/r7-rp's builder).
+- sgx-sim refusals that block oracles: the sim refuses what is not modelled, and some of those
+  refusals stop a replay that would otherwise serve as an oracle, e.g. `0x0728` and the `pclink`
+  path before E902's seeds. A session that needs the sim as an oracle checks first that its
+  path does not hit one.
+
 ## Markdown
 
 Wrap lines at 100 characters and break long sentences at natural points.
