@@ -5,7 +5,7 @@ unit = "transfer"
 kind = "hw"
 value = "medium"
 phase = 12
-evidence = ["E004", "E019", "E020", "E265", "E272", "E043", "E044", "E126", "E620", "E876", "E884"]
+evidence = ["E004", "E019", "E020", "E265", "E272", "E043", "E044", "E126", "E620", "E876", "E884", "E909"]
 terms = ["PIXEL_EVENT.END_OF_TILE"]
 +++
 
@@ -21,7 +21,8 @@ What this question covers is the command's and the tasks' words: the fixed words
 layer count, the render box's extent, the pixel shader's output, a task's code base register and
 the end-of-tile task's U1 bits no record explains. What it does not cover: a PDS program or input
 the simulator does not know is Q207, which tile an end-of-tile task names is answered (E876,
-E884: the place its U1 tile fields name, in half-tile units), and a job that may not complete, or an access outside the scene's memory, is Q003 (with Q076). The hangs and
+E884: the place its U1 tile fields name, in half-tile units; both fields at once, E909), and a
+job that may not complete, or an access outside the scene's memory, is Q003 (with Q076). The hangs and
 faults the hardware recorded under refused scenes are not a reason the model uses: it refuses by
 the scene's words alone.
 
@@ -41,3 +42,10 @@ the fill and the data-word pokes that move a tile, reported fitted). One clause 
 moves here: where a tile goes when its U1 moves it on both axes at once. Every run so far moved
 one field alone (E044, E126, E876, E884), so the model refuses such a U1 under this question. A
 fill or copy with both fields poked together would settle it.
+
+Note 2026-11-12 (round 7, R7-geo stage xf, E909). The both-fields clause of the note above is
+answered, held out: with the x and y tile fields of the fill's end-of-tile U1 poked together on a
+128 x 64 fill, each axis places its tile by its own field, (2t | f) >> 1 on each, nothing past the
+target (H-INDEP 8 of 8; only the x field acting or only the y field 0 of 8). The transfer model
+places such a tile and no longer refuses it under this question. The question stays open for the
+command's fixed words, the tasks' other U0 and U1 bits and the alpha-inversion bit.
