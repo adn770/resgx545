@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-168 open: 158 hw (high 19, medium 74, low 65, unrated 0), 9 fw, 1 kernel.
+167 open: 157 hw (high 19, medium 73, low 65, unrated 0), 9 fw, 1 kernel.
 
 ## Work queue: hardware
 
@@ -152,8 +152,7 @@
 
 - `Q003` (phase 4, hw, medium): which event (if any) does a bus-interface fault raise, and what do the fault-request bits of CR_BIF_INT_STAT name, what clears a latched fault in CR_BIF_INT_STAT and CR_BIF_FAULT while leaving the bus usable, and what makes the health triangles after a 0x90004 fault fault before one passes (two after each 4x fault of K2, one after R3-rgn4's j2, none after its j4)? (E021, E024, E317, E318, E319, E320, E354, E355, E357, E444, E203, E313, E362, E363, E395, E457, E476, E573, E631, E722, E729, E764, E765, E766, E767, E789, E826, E507, E729, E788, E824, E828, E845, E848)
 - `Q011` (phase 6, hw, medium): why does a copy whose background-object tag (transfer word 0) is wrong read one texel, the source's last, for every pixel, and what stores the samples of CR_ISP_MSAA mode 2 in a copy? (E028, E272, E398)
-- `Q206` (phase 12, hw, medium): what do the words of a transfer job that no record explains do: the 17 register words of the command beyond the render box (words 12 and 13) and the alpha-inversion bit, the words of the tasks the programs start, and the values the builder writes? (E004, E019, E020, E265, E272, E043, E044, E126, E620)
-- `Q289` (phase 12, hw, medium): which tile does the end-of-tile task's DOUTU1 x field (bits 11:3) and y field (bits 21:12) name when they differ from the pixel-event program's own, on a fill, a copy and a larger target, and do the two fields combine as a tile (x, y) (E043, E044, E126, E620, E876)
+- `Q206` (phase 12, hw, medium): what do the words of a transfer job that no record explains do: the 17 register words of the command beyond the render box (words 12 and 13) and the alpha-inversion bit, the words of the tasks the programs start, and the values the builder writes? (E004, E019, E020, E265, E272, E043, E044, E126, E620, E876, E884)
 
 ### usse
 

@@ -30,8 +30,13 @@ other units **[RE]**. What each port does with its words, where we know it:
   in half-tile units (16 pixels in x, 8 rows in y): each 32 x 16 tile t stores at
   (2t | f) >> 1 or (2t + f) >> 1 per axis and nothing is stored where that lies outside the
   target, which gives the tool's image hash in 1536 of 1536 jobs, XOR in place of OR in 1532
-  (E876, post hoc). The lowest bit is half a tile, which is why its flip changed nothing; OR
-  against addition, the copy and the two fields together are Q289's.
+  (E876, post hoc). The lowest bit is half a tile, which is why its flip changed nothing. Held
+  out on fills of 128 x 64 and 256 x 32, where OR and addition differ, OR gave every image hash
+  (20 of 20 rows, 8 of 8 that separate the two) and addition failed 8 of 8, with nothing stored
+  outside the target **[HW]** (E884): the program ORs the poked word into the tile's own field
+  and the task stores the tile at the place the field names, field >> 1 in 32 x 16 tiles. E126's
+  XOR flips on a 128 x 128 render move whole tiles the same way (19 of 19 pictures, post hoc).
+  Each run moved one field alone; both at once was not run.
 - **`doutd`** **[CAP/HW]**. The first word is the source address; the second is
   burst size − 1 (bits 3-0), lines − 1 (7-4), the destination attribute (19-8) and
   stride − 1 (29-22) With `movsa` the third source is added to

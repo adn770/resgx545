@@ -6722,6 +6722,18 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   by the dataset's own split: 0 of 4), so H-SLOT is FAILED.
   *ta; HW, infer; data: `ta-mtile-fields`, `ta-mtile-fields-risky`, `cited-scratch:closing6/rank/`,
   `cited-scratch:closing6/fold-misc/q139/`.*
+- `E884` R6-misc stage q289 (Q289, 23 fills, one attempt, no fault): with the fill's end-of-tile
+  DOUTU1 x field (bits 11:3) or y field (bits 21:12) poked by XOR, M-OR (each 32 x 16 tile t stored
+  at (2t | f) >> 1, the field f read in half-tile units, nothing stored past the target) gave the
+  tool's image hash in 20 of 20 held-out rows (128 x 64 x and y pokes, 256 x 32 x pokes), 8 of 8 of
+  the rows where it differs from M-ADD, which failed all 8; every job stored no dword outside the
+  target and the controls passed (E876's 64 x 32 x ^ 0x10 hash 0x97334f75829dab25 and the two
+  baselines 0xf7befd67a3c8e325); frozen verdict 'M-OR held (20 of 20 held-out rows, 8 of 8
+  separating); M-ADD refuted (12 of 20 held-out rows, 0 of 8 separating); controls pass'; read after
+  the run, E126's 19 flips of the same fields on a 128 x 128 render fit the same place rule with the
+  probe's XOR (19 of 19 pictures, post hoc).
+  *transfer; HW, infer; data: `render-closing-r6-misc:out/20261112-144153/q289/`,
+  `render-closing-r6-misc:fold/`, `pds-pixel-event`.*
 
 ## By unit
 
@@ -6806,7 +6818,7 @@ E744, E760, E765, E787, E844.
 ### transfer
 
 Records: E015, E016, E018, E019, E020, E021, E022, E024, E027, E028, E272, E398, E455, E620, E766,
-E876.
+E876, E884.
 
 ### tsp
 
