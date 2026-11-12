@@ -16,7 +16,9 @@
 #   - HOME is a fake home whose src/resgx545 is a git worktree of the tool repository at the
 #     newest commit of the session's FROZEN.commits (or, when the session has a TOOLSRC.sha256,
 #     the newest commit holding exactly that tool source), each pinned file replaced by its
-#     pinned blob, and src/scratch/resgx545 is the scratch tree. The copy's FROZEN.sha256 has its
+#     pinned blob (a FROZEN.commits line may name its repository, R5-dpm's resgx545:PATH; a
+#     line of another repository, linux: or data:, is left to the session's own checks), and
+#     src/scratch/resgx545 is the scratch tree. The copy's FROZEN.sha256 has its
 #     absolute resgx545 and resgx545-data paths pointed at the fake home, so the freeze
 #     verifies against the pinned source; a pin of a tree that sat under scratch/resgx545/
 #     (round 4 froze against closing4/lead/wt) is pointed at the worktree by its FROZEN.commits
@@ -108,7 +110,10 @@ done
 COMMITS=$C/FROZEN.commits
 BASE=HEAD
 if [ -f "$COMMITS" ]; then
-    pinned=$(awk '!/^#/ && $2 != "untracked" && NF >= 3 {print $2}' "$COMMITS" | sort -u)
+    # a line may name its repository (R5-dpm: resgx545:PATH, linux:PATH, data:PATH): only the
+    # tool tree's lines choose the commit
+    pinned=$(awk '!/^#/ && $2 != "untracked" && NF >= 3 \
+        && ($3 !~ /^[a-z][a-z0-9-]*:/ || $3 ~ /^resgx545:/) {print $2}' "$COMMITS" | sort -u)
     # shellcheck disable=SC2086
     [ -n "$pinned" ] && BASE=$(git -C "$TOOL" rev-list --no-walk --date-order $pinned | head -1)
 fi
@@ -135,6 +140,7 @@ git -C "$TOOL" worktree add -q --detach "$R" "$BASE" || die "cannot check out $B
 if [ -f "$COMMITS" ]; then
     while read -r hash commit path; do
         case "$hash" in "#"*|"") continue ;; esac
+        case "$path" in resgx545:*) path=${path#resgx545:} ;; [a-z]*:*) continue ;; esac
         grep -q "^$hash [ *]/.*/$path\$" "$C/FROZEN.sha256" 2>/dev/null || continue
         mkdir -p "$R/$(dirname "$path")"
         if [ "$commit" = untracked ]; then
@@ -209,7 +215,8 @@ if [ -f "$COMMITS" ]; then
         R=$R P="$COMMITS" perl -e '
             open my $c, "<", $ENV{P} or die;
             my %pin;
-            while (<$c>) { next if /^#/; my ($h, $m, $p) = split; $pin{$h}{$p} = 1 if defined $p }
+            while (<$c>) { next if /^#/; my ($h, $m, $p) = split; next unless defined $p;
+                           $p =~ s{^resgx545:}{}; $pin{$h}{$p} = 1 unless $p =~ /^[a-z][a-z0-9-]*:/ }
             while (<STDIN>) {
                 if (/^([0-9a-f]{64} [ *])(\/.*)$/ && $pin{substr($1, 0, 64)}) {
                     my ($pre, $path) = ($1, $2);

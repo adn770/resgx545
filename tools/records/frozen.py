@@ -18,7 +18,10 @@ history never tracked (a build product, such as the ignored tools/usse-asm/usse-
 commit: its line says `untracked` in the commit's place, and that pin still verifies only against
 the file itself. A pin of a worktree that sat under scratch/resgx545/ (round 4 froze against
 closing4/lead/wt) is named by the FROZEN.commits line with its hash whose path ends it. The
-published freeze bytes are never rewritten: FROZEN.commits is a new file beside them.
+published freeze bytes are never rewritten: FROZEN.commits is a new file beside them. A session
+may name the repository of each line (R5-dpm: `resgx545:PATH`, `linux:PATH`, `data:PATH`, for
+every outside file its freeze pins or its checks read): a resgx545 line is checked as a bare
+path is, without needing a freeze pin; a line of another repository is left to the session.
 
 --write finds, for each session whose freezes pin resgx545 files and that has no
 FROZEN.commits, the commits in this tree's history (`git log -- <path>`): the newest commit at
@@ -59,6 +62,17 @@ HEADER = """\
 # tools/records/frozen.py --write; the freezes themselves are never rewritten.
 """
 LINE = re.compile(r"([0-9a-f]{64})  ([0-9a-f]{7,40}|" + UNTRACKED + r")  (\S.*)")
+REPO = re.compile(r"([a-z][a-z0-9-]*):(\S.*)")
+
+
+def tree_path(path: str) -> str | None:
+    """The path in this tree of a FROZEN.commits line's path: a bare path, or one named
+    `resgx545:PATH` (R5-dpm's form, which names the repository of every line); None for a line
+    of another repository (`linux:`, `data:`), which the session checks itself."""
+    m = REPO.fullmatch(path)
+    if m is None:
+        return path
+    return m[2] if m[1] == TREE else None
 
 
 def pins(freeze: pathlib.Path) -> list[tuple[str, str]]:
@@ -87,8 +101,8 @@ def committed(session: pathlib.Path) -> dict[str, set[str]]:
     f = session / NAME
     for line in f.read_text().splitlines() if f.exists() else []:
         m = LINE.fullmatch(line)
-        if m:
-            out.setdefault(m[1], set()).add(m[3])
+        if m and tree_path(m[3]) is not None:
+            out.setdefault(m[1], set()).add(tree_path(m[3]))
     return out
 
 
@@ -230,9 +244,12 @@ def check(data: pathlib.Path, repo: pathlib.Path) -> list[str]:
             if not m:
                 bad.append(f"{name}/{NAME}: not '<sha256>  <commit>  <path>': {line!r}")
                 continue
-            sha256, c, path = m.groups()
+            sha256, c, named = m.groups()
+            path = tree_path(named)
+            if path is None:
+                continue
             have.add((sha256, path))
-            if (sha256, path) not in want:
+            if (sha256, path) not in want and path == named:
                 bad.append(f"{name}/{NAME}: {path} {sha256} is pinned by no freeze")
             if c == UNTRACKED:
                 if find.log(path):

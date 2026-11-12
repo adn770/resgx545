@@ -247,3 +247,26 @@ def test_a_pin_of_a_worktree_under_scratch_is_named_by_its_commits_line(tmp_path
     (s / "FROZEN.commits").write_text(f"# h\n{sha('y')}  {c['02']}  tools/a.py\n")
     bad = frozen.check(tmp_path / "data", repo)
     assert any("has no line" in b and "closing4/lead/wt/tools/a.py" in b for b in bad)
+
+
+def test_a_line_may_name_its_repository(tmp_path):
+    """Round 5's R5-dpm wrote `<sha256>  <commit>  <repo>:<path>` for every outside file its
+    freeze pins or its checks read: resgx545:PATH is a file of this tree, verified at its commit
+    as a bare path is, and may be one the freeze does not pin (a file its checks read); a line of
+    another repository (linux:, data:) is the session's own check and not this tree's."""
+    repo, c = history(tmp_path)
+    s = session(tmp_path, [f"{sha('x')}  {TREE}/tools/a.py", f"{sha('q')}  score/score_x.py"])
+    (s / "FROZEN.commits").write_text(
+        f"# h\n{sha('x')}  {c['03']}  resgx545:tools/a.py\n"
+        f"{sha('b')}  {c['01']}  resgx545:tools/b.c\n"
+        f"{sha('k')}  {'a' * 40}  linux:drivers/k.c\n"
+        f"{sha('d')}  {'b' * 40}  data:render/closing-y/bins/p.bin\n"
+        f"{sha('e')}  untracked  resgx545:tools/bin/e\n")
+    assert frozen.check(tmp_path / "data", repo) == []
+    (s / "FROZEN.commits").write_text(f"# h\n{sha('x')}  {c['02']}  resgx545:tools/a.py\n"
+                                      f"{sha('w')}  {c['01']}  resgx545:tools/b.c\n")
+    bad = frozen.check(tmp_path / "data", repo)
+    assert len(bad) == 2 and c["02"] in bad[0] and "tools/b.c" in bad[1]
+    (s / "FROZEN.commits").write_text(f"# h\n{sha('b')}  {c['01']}  resgx545:tools/b.c\n")
+    bad = frozen.check(tmp_path / "data", repo)
+    assert len(bad) == 1 and "tools/a.py" in bad[0] and "has no line" in bad[0]

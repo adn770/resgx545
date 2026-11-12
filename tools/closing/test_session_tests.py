@@ -276,3 +276,20 @@ def test_a_frozen_list_of_the_freezes_own_paths_moves_with_them(world):
     assert r.returncode == 0, r.stdout + r.stderr
     assert "RUN_ALL PASSED" in r.stdout
     assert (s / "gen/sources.lst").read_text() == lst
+
+
+def test_lines_that_name_their_repository_pin_only_the_tool_tree(world):
+    """R5-dpm's FROZEN.commits names the repository of each line (`resgx545:PATH`, and
+    `linux:PATH`, `data:PATH` with commits of other repositories): the tool tree is pinned by
+    its resgx545 lines, and the other lines neither choose the worktree's commit nor stop it."""
+    tool, data = world[0], world[1]
+    c1 = git(tool, "rev-list", "--max-parents=0", "HEAD")
+    s = data / "edm/closing-demo"
+    (s / "FROZEN.commits").write_text(
+        "# header\n"
+        f"{sha(V1)}  {c1}  resgx545:tools/x.py\n"
+        f"{sha('k')}  {'a' * 40}  linux:drivers/k.c\n"
+        f"{sha('d')}  {'b' * 40}  data:edm/closing-sib/marker\n")
+    r = run(world, "edm/closing-demo")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "RUN_ALL PASSED" in r.stdout
