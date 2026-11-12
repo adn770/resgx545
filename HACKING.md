@@ -181,6 +181,40 @@ kept. Finished sessions' laptop directories move to `~/scratch/archive/`. An off
 not depend on a few milliseconds of process start-up: r5-events' fake laptop had 16 ms to start
 the fill and fails on a loaded Mac.
 
+### Session build rules
+
+Round 6 lost stages to three slips of the build, not of the hardware. Their design-outs live in
+`scorekit.py` and in `tools/closing/sessioncheck.py` (tests beside it, standard library only),
+which a session copies byte for byte beside its `scorekit.py` (it imports it), pins in its freeze
+and calls from its own tests, rather than hand-rolling the check:
+
+- **A control declares what it reads.** Every control lists the reading keys it needs, and the
+  generator calls `scorekit.refuse_unreadable(controls, producible)`, where `producible(row)`
+  is the set of keys the row's job can produce: a control reading a key its row cannot produce,
+  or reading nothing, is refused before the freeze (r6-dpm froze `grow = 0` on a job that never
+  takes a partial render; `grow` read `-` and every stage was gated cannot tell). At run time a
+  control with no reading (`-`, empty or absent) STOPS the session at the premise stage, it does
+  not reach a gate: `scorekit.premise_stops` in Python, `sessioncheck.py premise NAME "KEYS"
+  READING` (rc 1 and a STOP line) from a shell runner, which then stages `sessioncheck.py`
+  and `scorekit.py` (the staged check below finds the import).
+- **The staged tree is complete.** `sessioncheck.py staged RUN_DIR FILE...` with the exact list
+  the stage script copies: every file a staged script sources or runs under its own directory
+  (`$DIR/name`, the variable set from `dirname "$0"` or `BASH_SOURCE`), every module a staged
+  Python file imports from `RUN_DIR`, and every function a staged script calls that a script of
+  `RUN_DIR` defines must be staged. A mock then runs that tree under `env -i`
+  (`sessioncheck.py envi --set K=V ... -- bash run_stage.sh STAGE`), which fails on a non-zero
+  status or a `command not found` / `No such file` line (r6-dpm staged no `lib_check.sh`, so
+  `num_eq` was not found at a control on the laptop).
+- **Every scorer input is declared, made and kept.** A scorer names the files it reads in
+  `REQUIRED = {stage: (".suffix" per row, or a file name)}`; after a mock run
+  `sessioncheck.py kept score/<scorer>.py STAGE KEPT_DIR [--call F]` fails on a declared file the
+  kept output lacks and, with `F(stage, dir)`, on a file read there that `REQUIRED` does not
+  declare. The runner checks the same before it moves on (a stop of its own status), and before
+  each job `sessioncheck.py outdirs --dir-opt=--depth-dump -- ARGS` (or the runner's own
+  `mkdir -p` with a test) makes sure every directory the tool writes into exists; a mock's fake
+  tool refuses a missing one as the real tool does (r6-misc's `--depth-dump` directory was never
+  made and q287 kept no dump).
+
 ## Firmware tasks of our own
 
 Phases 11.29, 11.30 and 11.32 run tasks of ours as firmware (EDM) tasks. The rules below are what
