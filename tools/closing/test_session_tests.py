@@ -360,3 +360,51 @@ def test_a_data_view_shows_an_area_as_the_freeze_saw_it(world):
     (s / "postrun/data-view.txt").unlink()
     r = run(world, "edm/closing-demo")
     assert "later seen" in r.stdout
+
+
+def test_a_data_view_still_shows_the_data_commits_its_freeze_pins(world):
+    """R6-dpm's freeze checks its data: pins with `git -C $RESGX545_DATA show COMMIT:PATH`, and
+    its offline rules scan render/closing-*, so it needs a view and git at once. The view reads
+    the data repository's objects (any pinned commit, the session's own later sessions included)
+    through a repository of its own, so that nothing git does there writes the data repository."""
+    data = world[1]
+    git(data, "init", "-q")
+    git(data, "add", ".")
+    git(data, "commit", "-qm", "data")
+    c = git(data, "rev-parse", "HEAD")
+    s = data / "edm/closing-demo"
+    (s / "postrun").mkdir()
+    (s / "postrun/data-view.txt").write_text("edm/closing-sib\n")
+    run_all = RUN_ALL.replace(
+        'echo "RUN_ALL PASSED"',
+        'D=$RESGX545_DATA\n'
+        '[ -d "$D/edm/closing-notests" ] && { echo "unlisted seen"; exit 1; }\n'
+        f'[ "$(git -C "$D" show {c}:edm/closing-sib/marker)" = m ] || {{ echo "no git"; exit 1; }}\n'
+        'git -C "$D" status >/dev/null 2>&1\n'
+        'echo "RUN_ALL PASSED"')
+    (s / "tests/run_all.sh").write_text(run_all)
+    frozen = (s / "FROZEN.sha256").read_text()
+    (s / "FROZEN.sha256").write_text(frozen.replace(sha(RUN_ALL), sha(run_all)))
+    before = snapshot(data)
+    r = run(world, "edm/closing-demo")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "RUN_ALL PASSED" in r.stdout
+    assert snapshot(data) == before
+
+
+def test_sessions_of_later_rounds_find_their_siblings_by_group(world):
+    """R6-dpm's scorer test rescores R5-dpm's kept attempt as closing5/r5-dpm beside its own
+    group: every published session is linked in the groups of rounds 4 to 6 as well."""
+    s = world[1] / "edm/closing-demo"
+    run_all = RUN_ALL.replace(
+        'echo "RUN_ALL PASSED"',
+        'for g in closing4 closing5 closing6; do\n'
+        '    [ -f ../../$g/sib/marker ] || { echo "no sibling in $g"; exit 1; }\n'
+        'done\n'
+        'echo "RUN_ALL PASSED"')
+    (s / "tests/run_all.sh").write_text(run_all)
+    frozen = (s / "FROZEN.sha256").read_text()
+    (s / "FROZEN.sha256").write_text(frozen.replace(sha(RUN_ALL), sha(run_all)))
+    r = run(world, "edm/closing-demo")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "RUN_ALL PASSED" in r.stdout

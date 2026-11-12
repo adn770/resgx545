@@ -1,11 +1,11 @@
 +++
 id = "Q211"
-question = "what rule gives the partial-render count of a one-triangle scene of page need U at the first threshold thr0 = P - 0x22 (E625's 1 + floor((U + k - thr0) / (thr0 + s)) is refuted at U = 287, E779 and E832; E854's spacing thr0 + 0x20 - d fits each scene with its own d and failed held out at U 119 and 198, no one d fitting U 287, 275, 198 and 119, E863), and does the page need U of HU1 (E773, E863: exact for E773's 15 held-out scenes made of the tool's triangle and E863's 2) hold for wide scenes of many vertices and other shapes (E630)?"
+question = "what rule gives the partial-render count of a one-triangle scene of page need U at the first threshold thr0 = P - 0x22 (E625's 1 + floor((U + k - thr0) / (thr0 + s)) is refuted at U = 287, E779 and E832; E854's spacing thr0 + 0x20 - d fits each scene with its own d and failed held out at U 119 and 198, no one d fitting U 287, 275, 198 and 119, E863; E875's page-by-page replay in row order, post hoc on 56 kept counts, failed on four new scenes, 28 of 32 counts and 13 of 32 run peaks read ungated, E883), and does the page need U of HU1 (E773, E863: exact for E773's 15 held-out scenes made of the tool's triangle and E863's 2) hold for wide scenes of many vertices and other shapes (E630)?"
 unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E310", "E625", "E630", "E705", "E735", "E773", "E779", "E832", "E853", "E854", "E863", "E866", "E874", "E875"]
+evidence = ["E310", "E625", "E630", "E705", "E735", "E773", "E779", "E832", "E853", "E854", "E863", "E866", "E874", "E875", "E883"]
 terms = ["Dynamic Parameter Management (DPM)", "Parameter Buffer (PB)"]
 +++
 
@@ -152,3 +152,18 @@ s119 (E875), and row order, named after the counts were read, gives 54 of 56 kep
 E874's replay with partial renders gives 43 of 43 counts at 2048x2048 (exploratory). Open: the
 walk order, held out on new scenes; what row order misses; scenes of many objects in general,
 multi-kick scenes; the U clause as above.
+
+Narrowed 2026-11-12 (round 6, laptop session R6-dpm stage r-b, E883; the question stays open). The
+question line asked "what rule gives the partial-render count of a one-triangle scene of page need U
+at the first threshold thr0 = P - 0x22 (E625's ... refuted at U = 287, E779 and E832; E854's
+spacing thr0 + 0x20 - d fits each scene with its own d and failed held out at U 119 and 198, no
+one d fitting U 287, 275, 198 and 119, E863), and does the page need U of HU1 ... hold for wide
+scenes of many vertices and other shapes (E630)?"; it now adds E883. Every frozen headline of r-b
+is "cannot tell", gated by an r-a0 control with no reading (E881). [HW, held out] The four g-qf
+controls repeated E832's counts and four new scenes at 4096x4096 needed HU1's U (262, 243, 220,
+179), 4 of 4 more for the U clause on scenes of the tool's triangle. [HW, post hoc: the scorer's
+rows tallied without the gate] Row order, E875's post hoc walk, gave 28 of 32 counts (s262 4 of 8,
+one partial render too many each time) and every run's peak exactly in 13 of 32 cells (within 3
+pages in 28), so H-REPLAY as frozen fails on new scenes; column order gave 19 of 32 counts, E854's
+d = 7/4 18 and d = 1 27 (E875's correction). Open: the rule of the count (what a partial render
+frees, by scene); scenes of many objects and multi-kick scenes; the U clause as above.

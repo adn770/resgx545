@@ -6674,13 +6674,16 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   the steps are the page counts when b_k is written, the bursts the blocks opened at the next
   multiple of 15, the creep the regions that the moving copies reach later; the pages left by the
   first partial render are 2 iff the first threshold falls between a step and the model's burst end
-  B_k, else 1 (H-PHASE: 26 of 26 fit rows at 2048x2048, 60 of 61 rows of the other targets, the miss
-  a row reading 0), so the first silent cell of the raise is B3 at all five targets (E774, E799,
-  E801; post hoc), where the frozen timeline burst-end rule placed only 49 of 61; read after the
-  fact, at the 21 kept grow cells the global count goes from 1 to 2 at the first sample after the
-  render (H-PENDREQ), E802's --tri-full scene (71-dword blocks, 3-dword entries) has S2 0x201 and S3
-  0x302 by the same replay, so one global page at all its cells, and the replay with partial renders
-  gives 43 of 43 partial-render counts of kept 2048x2048 jobs (exploratory).
+  B_k, else 1 on the kept rows (H-PHASE: 26 of 26 fit rows at 2048x2048, 60 of 61 rows of the other
+  targets, the miss a row reading 0; held out in R6-dpm, read ungated, it held at bands 3 and 4 of
+  three new targets, 18 of 18, and failed 5 of 15 cells at bands 5 to 7 of 2048x2048, where one page
+  is left only from B_k + 1 or B_k + 2, E881), so the first silent cell of the raise is B3 at all
+  five targets (E774, E799, E801; post hoc), where the frozen timeline burst-end rule placed only 49
+  of 61; read after the fact, at the 21 kept grow cells the global count goes from 1 to 2 at the
+  first sample after the render (H-PENDREQ), E802's --tri-full scene (71-dword blocks, 3-dword
+  entries) has S2 0x201 and S3 0x302 by the same replay, so one global page at all its cells, and
+  the replay with partial renders gives 43 of 43 partial-render counts of kept 2048x2048 jobs
+  (exploratory) [corrected 2026-11-12, see Correction].
   *dpm; HW, infer; data: `render-closing-r1-pixgeo:out/g-c1/`, `render-closing-r2-geo:out/g-c2/`,
   `render-closing-r2-geo:out/g-c3/`, `render-closing-r3-geo:out/g-c4/`,
   `render-closing-r3-geo:out/g-c5/`, `render-closing-r3-geo:out/g-c6/`,
@@ -6771,6 +6774,51 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   check with dword 9 back at its default passed G-o1 (0.992 of 498 sources).
   *pds; HW, infer; data: `render-closing-r6-pixel:out/20261112-142113/p6-l3/`,
   `render-closing-r6-pixel:out/20261112-142113/p6-s/`.*
+- `E881` R6-dpm stages r-a0, r-m, r-n and r-k on the rgn4 module (Q210; the tool's triangle with
+  1500 vertices; attempt a2 under freeze 2, after attempt a1 stopped in r-a0 on a runner slip):
+  every frozen headline printed 'cannot tell', gated by one r-a0 control, a0-cal-2048f grow, that
+  has no reading by construction (the full calibration runs at knob 0x400 and takes no partial
+  render: a design slip of the builder), while every other r-a0 control held (S2 to S7 0x51, 0x9d,
+  0xe8, 0x132, 0x181, 0x1ca and the need 0x213 in their brackets, c4-b5 raised, c4-b6 silent, t-s3m7
+  and t-s3m6 2 and 1 global pages left, g-qf at P 0xa2 two partial renders, 7 of 7 knobs); read
+  ungated after the run (post hoc): E874's step model held at three targets never run before
+  (2048x1024, 1024x2048, 1536x1536: 18 of 18 steps in their brackets and the needs 277, 288 and 314
+  as predicted), H-PHASE held at their bands 3 and 4 (18 of 18 cells) with R-5's raise 14 of 14 (B3
+  - 1 raised, B3 silent at all three), H-GREQ held at 15 of 15 r-m cells, but H-PHASE failed 5 of 15
+  r-m cells at bands 5 to 7 of 2048x2048, where one global page is left from thr0 0x178, 0x1c3 and
+  0x20d, the model's B_k + 2, + 2 and + 1 (the timeline rival E-TL 10 of 15 too); r-k, with R5-dpm's
+  oomring because both verifiers refuse oomring2, read R-5's sa8 bits at 3 of 3 held-out cells, a
+  repeat of c4-b3 and both controls, and its 2048x4096 creep cell (thr0 0x24a, twice) was voided by
+  the scene check (its S3 0x12c against E874's model 0x129, the known miss); read without that
+  check, both runs had dword 36 = 2, one page left, sa8 & 0x380 = 0 and no raise, as E864's [infer]
+  isub16 order predicts (post hoc).
+  *dpm; HW, infer; data: `render-closing-r6-dpm:out/a2/r-a0/`, `render-closing-r6-dpm:out/a2/r-m/`,
+  `render-closing-r6-dpm:out/a2/r-n/`, `render-closing-r6-dpm:out/a2/r-k/`,
+  `render-closing-r6-dpm:out/a1/`, `render-closing-r6-dpm:postrun/`.*
+- `E882` R6-dpm stage r-v on the rgn4 module (Q210, the cause of the bursts; 2048x2048, the tool's
+  triangle with 1500 vertices and --vtx-coords 4 or 8, objects larger than E874's 67 dwords): the
+  frozen verdict, tagged [GATED: r-a0 a0-cal-2048f grow: cannot tell] as every stage of the session
+  (E881), is 'both refuted' at both N; at N 4 the calibration's dump read L = 127 dwords, the 67 +
+  15 N the plan inferred, and H-BURST-CAP's replay at that L placed 10 of 13 calibration rows (12
+  steps and the need 538: S4, S9 and S10 off by 3, 2 and 2 pages) and H-BURST-PAGE's 1 of 13, while
+  at its two band 3 cells (thr0 0x99, 0x9a, both 2 pages left) H-PHASE with PAGE's burst end placed
+  2 of 2 and with CAP's 0 of 2; at N 8 CAP placed 1 of 19 and PAGE 1 of 14 and the frozen reader
+  found no L (read after the run: the head pair of PB page 1 recurs at 187, 187, 198, 198 and 198
+  dwords), so its cells could not be scored; read after the run, the global steps come in pairs and
+  triples a few pages apart near the 1500-vertex scene's own steps (N 4: 0x4f 0x52, 0x98 0x9f, 0xe7,
+  0x12e 0x133, 0x17d 0x182, 0x1c7 0x1cd, 0x214), not one a burst.
+  *dpm; HW, infer; data: `render-closing-r6-dpm:out/a2/r-v/`, `render-closing-r6-dpm:postrun/`.*
+- `E883` R6-dpm stage r-b on the rgn4 module (Q211; 4096x4096, one default triangle moved to four
+  new places, single kick): every frozen headline printed 'cannot tell', gated by r-a0's control
+  without a reading (E881); the four g-qf controls repeated E832's counts 4, 3, 2, 1 at P 0x53,
+  0x54, 0xa2, 0xa3 and the four calibrations needed HU1's U (262, 243, 220, 179) with no partial
+  render; over the 32 held-out cells, E875's replay in row order (post hoc there) placed 1, 3, 4 and
+  5 of 8 cells' every run's peak exactly (13 of 32; within 3 pages 4, 8, 8 and 8, as printed beside
+  the gated headlines) and, read ungated after the run, 28 of 32 counts (s262 4 of 8, one partial
+  render too many at thr0 0xb, 0x2b, 0x43 and 0x74; s243, s220, s179 8 of 8 each), so H-REPLAY in
+  row order (count and every run's peak) fails held out; the rivals' counts: the frozen column order
+  19 of 32, E854's d = 7/4 18 of 32 and d = 1 27 of 32.
+  *dpm; HW, infer; data: `render-closing-r6-dpm:out/a2/r-b/`, `render-closing-r6-dpm:postrun/`.*
 
 ## By unit
 
@@ -6784,7 +6832,7 @@ Records: E199, E200, E201, E202, E204, E205, E206, E203, E253, E256, E309, E310,
 E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E468, E574, E591,
 E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753, E773, E774, E775, E779, E785,
 E786, E790, E799, E800, E801, E802, E803, E832, E845, E846, E852, E853, E854, E860, E861, E862,
-E863, E864, E866, E867, E868, E869, E870, E873, E874, E875.
+E863, E864, E866, E867, E868, E869, E870, E873, E874, E875, E881, E882, E883.
 
 ### edm
 

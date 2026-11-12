@@ -9,7 +9,7 @@
 # written to. In the scratch tree:
 #   - the session is copied to scratch/resgx545/closing3/<name> (name = the directory without
 #     "closing-"), with an empty debug/;
-#   - every published session is linked as scratch/resgx545/{closing,closing2,closing3}/<name>
+#   - every published session is linked as scratch/resgx545/{closing,closing2,...,closing6}/<name>
 #     (the copy takes its own place), so the sessions' relative references to siblings resolve;
 #   - scratch/resgx545/{closing,closing2,closing3}/pixel-faults/.venv/bin/python is a wrapper
 #     that runs $PY;
@@ -26,7 +26,9 @@
 #     pointed there too, its hash line following;
 #   - src/resgx545-data is the data repository (or, when the session has a
 #     postrun/data-view.txt, a view of it in which each area the file names holds only the
-#     sessions it lists: the corpus a generator that scans the area saw at the freeze); the
+#     sessions it lists: the corpus a generator that scans the area saw at the freeze, with a git
+#     repository of its own that borrows the data repository's objects, so a freeze's data: pins
+#     show at their commits and nothing is written to the data repository); the
 #     worktree's target/ is the runner's own (RESGX545_SESSION_TARGET, kept between runs, never
 #     the main checkout's), the main checkout's userspace/libsgxfive/build/ is copied and its
 #     .venv linked (current, not pinned), and a session's debug-src/ is copied to debug/ with its
@@ -85,7 +87,8 @@ cleanup() {
 }
 trap cleanup EXIT
 
-mkdir -p "$HOMEDIR/src" "$S/closing" "$S/closing2" "$S/closing3"
+mkdir -p "$HOMEDIR/src" "$S/closing" "$S/closing2" "$S/closing3" "$S/closing4" "$S/closing5" \
+    "$S/closing6"
 ln -s "$W/scratch" "$HOMEDIR/src/scratch"
 # a session whose generator scans an area of the data repository lists in postrun/data-view.txt
 # the sessions of that area its freeze saw; the fake home's data repository is then a view that
@@ -105,6 +108,12 @@ if [ -f "$VIEW" ]; then
             ln -s "$e" "$FD/$a"
         fi
     done
+    # git in the view reads the data repository's commits (a freeze's data: pins) through a
+    # repository of its own that borrows the objects, so nothing git writes lands in the data
+    if DGIT=$(git -C "$DATA" rev-parse --path-format=absolute --git-common-dir 2>/dev/null); then
+        git init -q "$FD" && echo "$DGIT/objects" > "$FD/.git/objects/info/alternates" \
+            || die "no git repository for the data view"
+    fi
 else
     ln -s "$DATA" "$HOMEDIR/src/resgx545-data"
 fi
@@ -117,7 +126,7 @@ done
 for d in "$DATA"/*/closing-*; do
     [ -d "$d" ] || continue
     n=$(basename "$d"); n=${n#closing-}
-    for g in closing closing2 closing3; do ln -s "$d" "$S/$g/$n"; done
+    for g in closing closing2 closing3 closing4 closing5 closing6; do ln -s "$d" "$S/$g/$n"; done
 done
 # names the sessions used while they were scratch directories
 [ -e "$S/closing/s1b" ] && ln -s "$S/closing/s1b" "$S/closing/s1b-v2"
