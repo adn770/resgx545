@@ -5,7 +5,7 @@ unit = "ta"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E728", "E829", "E847", "E865", "E888"]
+evidence = ["E728", "E829", "E847", "E865", "E888", "E897"]
 terms = ["CR_TE_AA", "Parameter Buffer (PB)", "PB_OBJ.FORMAT"]
 +++
 Split on 2026-11-11 from the TA side of a retired question answered by E829. E728: with
@@ -77,3 +77,12 @@ on the 0x40000000 triangle 0x00000001 poked into the inserted dword 11 of render
 format word at 12) drew nothing, so the 3D reads a non-zero value there as the format word too, as
 E829's 0xffffffff (held out). Answered: 0xc0000000 on a line and a point, a non-zero value in the
 dword. Open: render 2's own object, the one item the plan's rows did not run.
+
+Note 2026-11-12 (round 7, offline, E897; post hoc, not narrowed by a frozen verdict). The kept
+dumps of the two-render rows already hold render 2's own object: in 13 of 13 at 0x40000000 it
+starts at dword 27 with a zero at its dword 11 and the format word at its dword 12, the layout of
+render 1's object, and in the 11 jobs whose render 1 object stayed displaced render 2 drew no
+pixel of its full-target triangle. Not separated: whether the 3D skips render 2's object for its
+own zero or stops at render 1's displaced object first (every empty job had both displaced). The
+plan's held-out rows (closing7/a/exp-pixel-r7.md section 3.5: three renders, pokes into render 2's
+object only) would answer the item; until they run, it stays open.

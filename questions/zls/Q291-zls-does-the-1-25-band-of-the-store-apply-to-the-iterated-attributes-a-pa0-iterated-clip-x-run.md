@@ -5,7 +5,7 @@ unit = "zls"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E730", "E465"]
+evidence = ["E730", "E465", "E898"]
 terms = ["CR_ISP_ZLSCTL"]
 +++
 Split on 2026-11-10 from Q287, whose last clause it was. E730 ran the band on the depth store only
@@ -26,3 +26,9 @@ pixels of the tile area past the target (the `--pixels` form of E606). The plan 
 ranking froze for it (R6-2): the clip x probe at 34 x 18, 34 x 19 and 34 x 23, reading rows 19 to
 31 of the tile area, predicted to show the depth band's rows [infer: a guard-band clip, E730];
 not run.
+
+Note 2026-11-12 (round 7, offline, E898; a program, no hardware run). The per-instance store the
+rows need exists: `probes/pds/templates/pix_posstore.s` stores pa0, pa0 (valid instances), pa1 and
+a lane tag at the scratch slot of each instance's place in its tile (g24 << 5 | g23), and passes
+sgx-sim at 2048 of 2048 pixels. It reads only g23 to g25, so each row must touch one 32 x 16 tile.
+Nothing about the band is measured yet.
