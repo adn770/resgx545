@@ -37,7 +37,10 @@
 #     path dependencies on crates/ pointed at the worktree;
 #   - TOOL_SRC, RESGX545 and RESGX545_MAIN name the pinned worktree and RESGX545_DATA the fake
 #     home's data link (the sessions' overrides of their tool and data trees, which some default
-#     to an agent worktree that no longer exists or to the author's absolute paths);
+#     to an agent worktree that no longer exists or to the author's absolute paths); a
+#     variable named in the session's postrun/env-as-frozen.txt is left unset instead, so the
+#     session's own default applies (R7-rp's generator writes the trees it read into a frozen
+#     list, kept with postrun/paths-as-frozen.txt);
 #   - each sibling-src/<dir>/ of the session (inputs it read from scratch beside it) is copied
 #     to scratch/resgx545/closing3/<dir>;
 #   - a frozen input the session read from scratch outside every tree (an absolute path under
@@ -274,6 +277,12 @@ for f in $(freezes); do
         }
         print @lines;' < "$f" > "$f.new" && mv "$f.new" "$f"
 done
+# the paths a list of postrun/paths-as-frozen.txt names stay as frozen in the freeze too (data,
+# tool, pinned and scratch paths alike: R7-rp's lists name all four)
+KEPT=$W/kept-paths
+: > "$KEPT"
+[ -f "$C/postrun/paths-as-frozen.txt" ] && grep -v '^#' "$C/postrun/paths-as-frozen.txt" \
+    | while read -r l; do [ -n "$l" ] && [ -f "$C/$l" ] && cat "$C/$l"; done >> "$KEPT"
 # a frozen input read from scratch outside every tree (a plan, a reading of the firmware), named by
 # an absolute path under scratch/resgx545/ and pinned by no FROZEN.commits line, is published as
 # cited/<path> of a data repository: the copy is put at its scratch place and the freeze points
@@ -292,19 +301,16 @@ for f in $(freezes); do
             fi
         done
     done < "$f"
-    S=$S P="$CM" perl -e '
+    S=$S P="$CM" K=$KEPT perl -e '
         my %pin;
         if (open my $c, "<", $ENV{P}) { while (<$c>) { $pin{$1} = 1 if /^([0-9a-f]{64})\s/ } }
+        open my $k, "<", $ENV{K}; my %k = map { chomp; ($_ => 1) } <$k>;
         while (<STDIN>) {
-            s{^([0-9a-f]{64})( [ *])/(?:[^/]+/)*?scratch/resgx545/}{$1$2$ENV{S}/} unless $pin{substr($_, 0, 64)};
+            s{^([0-9a-f]{64})( [ *])/(?:[^/]+/)*?scratch/resgx545/}{$1$2$ENV{S}/}
+                unless $pin{substr($_, 0, 64)} || (m{^[0-9a-f]{64} [ *](.*)$} && $k{$1});
             print;
         }' < "$f" > "$f.new" && mv "$f.new" "$f"
 done
-# the paths a list of postrun/paths-as-frozen.txt names stay as frozen in the freeze too
-KEPT=$W/kept-paths
-: > "$KEPT"
-[ -f "$C/postrun/paths-as-frozen.txt" ] && grep -v '^#' "$C/postrun/paths-as-frozen.txt" \
-    | while read -r l; do [ -n "$l" ] && [ -f "$C/$l" ] && cat "$C/$l"; done >> "$KEPT"
 for f in $(freezes); do
     R=$R S=$S D=$HOMEDIR/src/resgx545-data K=$KEPT perl -pe \
         'BEGIN { open my $k, "<", $ENV{K}; %k = map { chomp; ($_ => 1) } <$k> }
@@ -319,13 +325,14 @@ done
 for f in $(freezes); do
     CM=$(dirname "$f")/FROZEN.commits
     if [ -f "$CM" ]; then
-        R=$R P="$CM" perl -e '
+        R=$R P="$CM" K=$KEPT perl -e '
             open my $c, "<", $ENV{P} or die;
+            open my $k, "<", $ENV{K}; my %k = map { chomp; ($_ => 1) } <$k>;
             my %pin;
             while (<$c>) { next if /^#/; my ($h, $m, $p) = split; next unless defined $p;
                            $p =~ s{^resgx545:}{}; $pin{$h}{$p} = 1 unless $p =~ /^[a-z][a-z0-9-]*:/ }
             while (<STDIN>) {
-                if (/^([0-9a-f]{64} [ *])(\/.*)$/ && $pin{substr($1, 0, 64)}) {
+                if (/^([0-9a-f]{64} [ *])(\/.*)$/ && $pin{substr($1, 0, 64)} && !$k{$2}) {
                     my ($pre, $path) = ($1, $2);
                     for my $p (keys %{$pin{substr($pre, 0, 64)}}) {
                         if (substr($path, -length($p) - 1) eq "/$p") { $_ = "$pre$ENV{R}/$p\n"; last }
@@ -357,6 +364,14 @@ done
 cd "$C" || die "cannot enter the copy"
 export HOME=$HOMEDIR PY RESGX545=$R TOOL_SRC=$R RESGX545_MAIN=$R \
     RESGX545_DATA=$HOMEDIR/src/resgx545-data PYTHONDONTWRITEBYTECODE=1
+# a variable named in postrun/env-as-frozen.txt is left unset, so the session's own default (the
+# path of the freeze) applies: R7-rp's g_rd.py writes the trees it read into a frozen list
+if [ -f "$C/postrun/env-as-frozen.txt" ]; then
+    for v in $(grep -v '^#' "$C/postrun/env-as-frozen.txt"); do
+        case "$v" in RESGX545_MAIN|RESGX545_DATA|RESGX545|TOOL_SRC) unset "$v" ;;
+            *) die "postrun/env-as-frozen.txt: $v is not a variable this script sets" ;; esac
+    done
+fi
 case "$ENTRY" in
     *.py) "$PY" "$ENTRY" ;;
     *) bash "$ENTRY" ;;

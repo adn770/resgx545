@@ -487,6 +487,69 @@ def test_a_list_named_in_postrun_keeps_the_paths_as_frozen(world, tmp_path):
     assert "RUN_ALL PASSED" in r.stdout
 
 
+def test_kept_paths_of_scratch_and_of_pinned_tool_files_stay_as_frozen(world, tmp_path):
+    """R7-rp's generators list the scratch files and the pinned tool files they read by the
+    author's paths, and its freeze verify wants every listed path in the freeze. A path listed in
+    a postrun/paths-as-frozen.txt list keeps its freeze line, whether it is a scratch input or a
+    file FROZEN.commits pins (neither is pointed at the scratch tree or the pinned worktree)."""
+    s = world[1] / "edm/closing-demo"
+    tool = tmp_path / "author/src/resgx545/tools/x.py"
+    tool.parent.mkdir(parents=True)
+    tool.write_text(V1)
+    scr = tmp_path / "author/src/scratch/resgx545/closing6/other/in.txt"
+    scr.parent.mkdir(parents=True)
+    scr.write_text("S\n")
+    lst = f"{scr}\n{tool}\n"
+    (s / "gen").mkdir()
+    (s / "gen/sources.lst").write_text(lst)
+    (s / "postrun").mkdir()
+    (s / "postrun/paths-as-frozen.txt").write_text("gen/sources.lst\n")
+    run_all = RUN_ALL.replace(
+        'echo "RUN_ALL PASSED"',
+        f'grep -q " {scr}$" FROZEN.sha256 || {{ echo "scratch line moved"; exit 1; }}\n'
+        f'grep -q " {tool}$" FROZEN.sha256 || {{ echo "pinned line moved"; exit 1; }}\n'
+        'echo "RUN_ALL PASSED"')
+    run_all = run_all.replace(
+        '[ "$(cat "$HOME/src/resgx545/tools/x.py")" = "VALUE = 1" ] || { echo "tool not pinned"; exit 1; }\n',
+        '')
+    (s / "tests/run_all.sh").write_text(run_all)
+    c1 = (s / "FROZEN.commits").read_text().split()[-2]
+    (s / "FROZEN.sha256").write_text(
+        f"{sha(run_all)}  tests/run_all.sh\n"
+        f"{sha(lst)}  gen/sources.lst\n"
+        f"{sha('S' + chr(10))}  {scr}\n"
+        f"{sha(V1)}  {tool}\n")
+    assert len(c1) == 40
+    r = run(world, "edm/closing-demo")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "RUN_ALL PASSED" in r.stdout
+
+
+def test_variables_named_in_postrun_are_left_to_the_sessions_defaults(world):
+    """R7-rp's generator g_rd.py reads its data and tool trees by RESGX545_DATA and
+    RESGX545_MAIN and writes the paths it read into a frozen list, beside lists of fixed author
+    paths: pointed at the fake home, the list it regenerates is not the frozen one. A variable
+    named in postrun/env-as-frozen.txt is not set for the session's entry (its own default, the
+    path of the freeze, applies); the others are set as always."""
+    s = world[1] / "edm/closing-demo"
+    (s / "postrun").mkdir()
+    (s / "postrun/env-as-frozen.txt").write_text(
+        "# left to the session's defaults\nRESGX545_DATA\nRESGX545_MAIN\n")
+    run_all = RUN_ALL.replace(
+        '[ "$RESGX545_MAIN" = "$HOME/src/resgx545" ] || { echo "RESGX545_MAIN"; exit 1; }\n'
+        '[ "$RESGX545_DATA" = "$HOME/src/resgx545-data" ] || { echo "RESGX545_DATA"; exit 1; }\n',
+        '[ -z "${RESGX545_MAIN+x}" ] || { echo "RESGX545_MAIN set"; exit 1; }\n'
+        '[ -z "${RESGX545_DATA+x}" ] || { echo "RESGX545_DATA set"; exit 1; }\n')
+    assert run_all != RUN_ALL
+    (s / "tests/run_all.sh").write_text(run_all)
+    (s / "FROZEN.sha256").write_text(
+        f"{sha(run_all)}  tests/run_all.sh\n"
+        f"{sha(V1)}  /Users/someone/src/resgx545/tools/x.py\n")
+    r = run(world, "edm/closing-demo")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "RUN_ALL PASSED" in r.stdout
+
+
 def test_absolute_paths_in_the_tests_point_at_the_fake_home(world):
     """R6-dpm's tests/test_read.py scans render/ by the author's absolute data path, so it sees
     the session's own kept rows, published after its freeze, and not the data view. The copy's
