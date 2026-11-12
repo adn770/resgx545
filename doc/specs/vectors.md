@@ -529,11 +529,14 @@ Rules, and what each rests on:
 - Coverage (E606, E607): the vertices on the 1/256 pixel grid, the pixel centre tested exactly in
   integers, a centre on an edge belongs to the triangle iff the edge is a left or a top edge, a
   triangle with no area draws nothing. A fit: every image that rests on it is `fitted` (D6), never
-  `matched`, and names E606, E607 (the grid) and, where the depth is stored, E465. Only inside what
-  E606 ran: the targets 64 x 64, 128 x 128 and 256 x 128 (Q240 for every other: the rest of the
-  power-of-two family, a target below one tile, anything wider than 256 or taller than 128),
+  `matched`, and names E606, E607 (the grid) and, where the depth is stored, E465. A render only
+  inside what E606 ran: the targets 64 x 64, 128 x 128 and 256 x 128 (Q262 on E680's ten, where
+  the depth missed E606's tolerance on 1- and 2-pixel triangles, E912; Q240 for every other),
   vertices from -9% to +124% of the target (Q199), 1/w = 1 and a single sample (Q202), `x >= 0`
-  for a coordinate with a fraction below the grid (Q199).
+  for a coordinate with a fraction below the grid (Q199). The coverage alone (`isp::coverage_image`)
+  is admitted on E680's ten targets and on E913's ten (the family around E606's, two below one
+  tile, 4096 x 16 and two odd heights), each kept image of R7-geo's zd and zf stages replayed pixel
+  for pixel (`tests/isp_closing_r7_geo.rs`).
 - Depth: the plane through the vertices at the pixel centre, exact. No bit-exact model exists, so
   a depth the model stores is compared with E606's tolerance (3 units of 2^-23 where the plane's
   gradient |dz/dx| + |dz/dy| is below 0.03; the data do not pin the 3 from below):
