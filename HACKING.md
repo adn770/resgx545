@@ -456,6 +456,13 @@ pushed before `tools/clean-room/guard.py --history` has run over every ref.
   (e.g. the series check's `build-on`), copied once into the delivery directory and never
   changed. Without a seed the chroot runner refuses the full build (most of a day on the Atom)
   unless `FORK_DELIVER_FULL=1`.
+- The IGT fork's sgxfive tests are built the same way, with no laptop:
+  `tools/bringup/build-igt.sh COMMIT` (a commit of the clone's `sgxfive` branch; `IGT_FORCE=1`
+  for another) sends a `git archive` and `build-igt-host.sh` to the build host, builds libigt and
+  every program of `tests/sgxfive` for i686 in `SGX_TOOLS_IMAGE`, runs each binary's
+  `--list-subtests` in the same image as a smoke, and copies the binaries, the subtest lists and
+  a manifest (commit, image id, meson options, sha256 per file, smoke per binary) back to
+  `<clone git dir>/igt-deliver/<commit12>/`, checking each sha256 and the i686 ELF header.
 - Commit style is the one under Commits. The test-cycle scripts and their settings are in
   `tools/bringup/` (`local.env.example`).
 
