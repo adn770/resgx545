@@ -14,12 +14,12 @@ job say and nothing else.
     counts   the count tables of the DPM stages (r3-geo g-c4 .. g-c7 and g-d36, r3-geo-c g-qf and
              g-qh): partial renders (rising edges of 0x0658 bit 0), the status at the first abort
              (thr0), the peak of each TA run, the control block's dwords 36 to 38
-    zls      r3-geo-c g-z (E730's reader): the stored (not 1.0f) dwords of the depth store's tile
-             area and their extent
+    zls      r3-geo-c g-z (E730's reader) and r6-misc q287 (E885, odd heights): the stored (not 1.0f)
+             dwords of the depth store's tile area and their extent
 
 Format sgx545-tables: {format, version, run, kind, note, replay, rows, skipped}. replay says whether
-a simulator replays the table: only the zls table does (sgx-pipe's ZLS band, E831, held to every row by
-crates/sgx-pipe/tests/zls_table.rs, which counts odd sizes as refused rows), `replayed` with the test's
+a simulator replays the table: only the zls tables do (sgx-pipe's ZLS band, E831 and E885, held to every
+row by crates/sgx-pipe/tests/zls_table.rs, which counts odd widths as refused rows), `replayed` with the test's
 name; the others (the TA's depth words, the DPM, the parameter buffer pages) are not modelled, so they are
 `refused` with the reason, never a pass. The rows are measurements
 of the hardware, the keys the readers' own (closing3/r3-geo-c score/score_r3.py, closing-r3-geo
@@ -27,9 +27,9 @@ score/dpm3.py and score_r3.py, closing4/render4x/pb_pages.py).
 
     closing_tables.py KIND --session DIR --out OUT STAGE...
 
-DIR is a session directory of the data repository (render/closing-r3-geo, closing-r3k-pixel, or the
-r3-geo-c session wherever it is published: it is an argument, not a fixed path). A stage directory
-is DIR/out/STAGE or DIR/out/<latest attempt>/STAGE. OUT is the vectors/closing directory.
+DIR is a session directory of the data repository (render/closing-r3-geo, closing-r3k-pixel,
+closing-r6-misc, or the r3-geo-c session wherever it is published: it is an argument, not a fixed path).
+A stage directory is DIR/out/STAGE or DIR/out/<latest attempt>/STAGE. OUT is the vectors/closing directory.
 """
 from __future__ import annotations
 
@@ -60,12 +60,13 @@ RULE_REASON = {
     "dword36": "the DPM page counts and the TA/3D control block are not modelled by sgx-sim or sgx-pipe",
     "pbpages": "the TA's parameter buffer page writes are not modelled by sgx-sim",
     "counts": "the DPM abort and partial render sequence is not modelled by sgx-sim or sgx-pipe",
-    "zls": "the ZLS store band is not modelled by sgx-sim (Q287 is open for odd sizes): a table, not a replay",
+    "zls": "the ZLS store band is not modelled by sgx-sim (Q287 is open for odd widths): a table, not a replay",
 }
 # tables a test replays: kind -> the test (file::function) that holds every modelled row to the model
 REPLAYED = {
-    "zls": {"test": "crates/sgx-pipe/tests/zls_table.rs::the_band_replays_every_modelled_row_of_the_g_z_table",
-            "model": "sgx-pipe zls::in_band, rule A at even sizes (E831); odd sizes are refused rows (Q287)"},
+    "zls": {"test": "crates/sgx-pipe/tests/zls_table.rs::the_band_replays_every_modelled_row_of_the_zls_tables",
+            "model": "sgx-pipe zls::in_band, rule A at even sizes (E831) and odd heights (E885); odd widths are "
+                     "refused rows (Q287)"},
 }
 
 
