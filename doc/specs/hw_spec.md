@@ -322,7 +322,14 @@ row of the fill cell failed on the list number alone, read after the run). [infe
 pending region-header write survives the reset and is issued again at its next run. The boots
 after 3 of 4 held resets and 2 of 4 health faults timed out (`SGX recovery failed: -110`), their
 register dumps reading `BIF_INT_STAT` 0x000d0004, read as a TA write inside the boot [infer]
-(E848; Q003).
+(E848; Q003). Held out on the r6 kernel (E891): after a fill the first replay went through list 2
+at 640 x 480 and at 288 x 144, so the list is the one current at the next TA run, not the faulted
+job's (H-LIST 2 of 2; the whole-word test refuted); a second replay, when there is one, goes
+through the next render's own list. A directory-cache invalidate (`INVAL_DC` set and cleared)
+written while the fault is held leaves `BIF_INT_STAT` and `BIF_FAULT` latched and does not drop the
+write: the replay came as without it, 3 of 3 (E892), and a flushed held reset at 288 x 144 still
+ended in a -110 boot. On that boot every -110 followed a 288 x 144 cell (4 of 5 recoveries there,
+none of 12 at 640 x 480), the dumps reading `BIF_INT_STAT` 0x000d0004 (E892).
 
 ### 5.6 Unit names
 
@@ -333,7 +340,8 @@ and shading processor and its pre-processor; `PBE` pixel back end (tile write-ou
 
 *Based on sgx545-ce `src/services4/srvkm/hwdefs/sgx545defs.h`,
 `src/services4/srvkm/devices/sgx/sgxreset.c`; E357, E360, E457, E507, E511, E573, E729, E745,
-E761, E764 to E767, E789, E824, E826, E828, E845, E846, E848, E866 to E870, E887, E889.*
+E761, E764 to E767, E789, E824, E826, E828, E845, E846, E848, E866 to E870, E887, E889, E891,
+E892.*
 
 ## 6. How the DDK resets and starts the core
 
@@ -909,11 +917,15 @@ each was recovered by one reset. [RE] (our reading R-6 of the firmware, the read
 before the run; E855, E857) After a 3D kick, while sa9 bit 0 ("3D running") is set, the tick
 routine counts its passes in dword 57 against dword 5, stores a signature of the USE pixel service
 counters and four other registers in dword 58 at the 10th and compares at the 20th; equal, it
-counts the lockup, sets dword 8 bit 0, writes `SW_EVENT` and `CR_DPM_TASK_STATE` = 2 and polls
-`CR_EVENT_STATUS` bit 6 (`DPM_STATE_CLEAR`) under a lock with no exit, which is why the EDM is busy
-afterwards: it waits for the host's reset. The 3D kicks set sa9 bit 0 and only the end-of-render
-path (and the recovery) clears it; on the hardware that state survives a host clear of bit 18 and
-a command (E857), and `CR_DPM_TASK_STATE` is not read by our kernel (cannot tell, E855).
+counts the lockup, sets dword 8 bit 0, writes `SW_EVENT`, then (R-6's reading) takes a lock,
+stores 2 to `CR_DPM_TASK_STATE` and polls `CR_EVENT_STATUS` bit 6 (`DPM_STATE_CLEAR`) with no
+exit, so that the EDM stays busy until the host's reset. The 3D kicks set sa9 bit 0 and only the
+end-of-render path (and the recovery) clears it; on the hardware that state survives a host clear
+of bit 18 and a command (E857). The store is not seen [HW]: a host read of `CR_DPM_TASK_STATE`
+(0x0694) gave 0 at the arm, at the stop, after the clears and after the recovery, 2 of 2 held out,
+the marks replicated (E890; the rgn4 kernel never read it, E855). Whether the EDM waits before the
+store, the store goes elsewhere or the register does not read back what is written is open, so
+the EDM's wait after the lockup is not shown to be the bit 6 poll (bit 6 reads clear).
 
 **The kick [HW].** A kick is the command at the CCB write offset, the kicker word bumped (mod 256)
 and a write to `CR_EVENT_KICK`. It is one event in the general slot, `pa0` = 0, `pa1` = (K << 24) |

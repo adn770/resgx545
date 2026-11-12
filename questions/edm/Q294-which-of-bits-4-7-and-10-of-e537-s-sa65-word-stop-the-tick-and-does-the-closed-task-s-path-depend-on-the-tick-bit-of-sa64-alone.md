@@ -32,3 +32,10 @@ E836), and two questions folded into it in phase 11.39 now point here, since a f
 open question: the one on why p1 and `pclink` at the entry after a writer of ours hold the writer's
 values (E536; read since through E792, E809 and E812, the second clause above) and the one on which
 difference between E536's and E537's writers stops the tick (E537's sa65 word, the first clause).
+
+Note 2026-11-12 (round 6 session r6-held, decision R6-4 a and the plan's condition): no Q294
+rows were run. The plan ran them only if a pysgx oracle of the closed task separated the seven
+sa65 words; that oracle (O3, frozen before it ran; closing6/r6-held/private/o3/RESULT.md, derived
+from the firmware, in resgx545-data-private) kept the tick on its two controls, and every test word
+ended in a refusal of the simulator (an unmeasured read), so all seven gave the same outcome and it
+did not separate them. The question stays low and open.

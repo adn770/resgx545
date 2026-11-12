@@ -101,7 +101,7 @@
 
 - `Q001` (phase 3, hw, medium): what do 0x0810, 0x0814 and 0x0818, set once by the init script to 0x1, 0xffff and 0x7ff, control? (E006, E010, E122, E401, E403, E404, E405)
 - `Q075` (phase 11, hw, low): what does each HWPerf counter the firmware records (0x0044-0x0064, 0x0e84-0x0e90 and 0x0eb4-0x0ec0) count, and how does the group in CR_HWPERF_CTRL select them? (E149, E150, E152, E359, E434)
-- `Q111` (phase 11, hw, high): which hardware event sets which bit of CR_EVENT_STATUS and CR_EVENT_STATUS2 in an ordinary TA, 3D, DPM or transfer job, and how long does each stay set, and what does a host write of a bit other than 15 and 18 to CR_EVENT_HOST_CLEAR clear? (E006, E154, E155, E357, E431, E435, E444, E547, E548, E747, E764, E765, E766, E823, E837, E855, E857)
+- `Q111` (phase 11, hw, high): which hardware event sets which bit of CR_EVENT_STATUS and CR_EVENT_STATUS2 in an ordinary TA, 3D, DPM or transfer job, and how long does each stay set, and what does a host write of a bit other than 15 and 18 to CR_EVENT_HOST_CLEAR clear? (E006, E154, E155, E357, E431, E435, E444, E547, E548, E747, E764, E765, E766, E823, E837, E855, E857, E890)
 
 ### render
 
@@ -149,7 +149,7 @@
 
 ### transfer
 
-- `Q003` (phase 4, hw, medium): which event (if any) does a bus-interface fault raise, and what do the fault-request bits of CR_BIF_INT_STAT name, what clears a latched fault in CR_BIF_INT_STAT and CR_BIF_FAULT while leaving the bus usable, and what makes the health triangles after a 0x90004 fault fault before one passes (two after each 4x fault of K2, one after R3-rgn4's j2, none after its j4)? (E021, E024, E317, E318, E319, E320, E354, E355, E357, E444, E203, E313, E362, E363, E395, E457, E476, E573, E631, E722, E729, E764, E765, E766, E767, E789, E826, E507, E729, E788, E824, E828, E845, E848)
+- `Q003` (phase 4, hw, medium): which event (if any) does a bus-interface fault raise, and what do the fault-request bits of CR_BIF_INT_STAT name, what clears a latched fault in CR_BIF_INT_STAT and CR_BIF_FAULT while leaving the bus usable, and what makes the health triangles after a 0x90004 fault fault before one passes (two after each 4x fault of K2, one after R3-rgn4's j2, none after its j4)? (E021, E024, E317, E318, E319, E320, E354, E355, E357, E444, E203, E313, E362, E363, E395, E457, E476, E573, E631, E722, E729, E764, E765, E766, E767, E789, E826, E507, E729, E788, E824, E828, E845, E848, E891, E892)
 - `Q011` (phase 6, hw, medium): why does a copy whose background-object tag (transfer word 0) is wrong read one texel, the source's last, for every pixel, and what stores the samples of CR_ISP_MSAA mode 2 in a copy? (E028, E272, E398)
 - `Q206` (phase 12, hw, medium): what do the words of a transfer job that no record explains do: the 17 register words of the command beyond the render box (words 12 and 13) and the alpha-inversion bit, the words of the tasks the programs start, and the values the builder writes? (E004, E019, E020, E265, E272, E043, E044, E126, E620, E876, E884)
 

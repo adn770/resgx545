@@ -82,3 +82,21 @@ cannot tell, and bit 6 read clear is all the hardware says of the poll. Which re
 dword 58 samples (R-6 reads the registers; no row varied them). Whether the arm is sa9 bit 0 on the
 hardware: no row reads sa9 (E857 tests what a host write and a command do not change). The clears
 on a running EDM (E857), and on bits other than 15 and 18.
+
+**Correction 2026-11-12:** E890 read the row this record left cannot tell. On the r6 kernel (fork
+r6-kernel 3f0b3e74, debugfs `peek` of db7faabc, module srcversion 41E2F5C7) the same job stopped
+the same way in 2 of 2 and `CR_DPM_TASK_STATE` (0x0694) read 0x00000000 at the arm, at the stop
+before any write, after the clears and after the recovery (H-R6 refuted, H-IDLE held). Of the
+firmware reading R-6 this record cites, what rests on its prediction (ii) is the store and the
+poll: in What ran, "`CR_DPM_TASK_STATE` = 2, then a poll of `CR_EVENT_STATUS` bit 6 with no
+exit", and in What it does not show, "`CR_DPM_TASK_STATE` = 2 and the poll of `EVENT_STATUS` bit 6
+under the lock [RE, R-6, S0]". As a register read the store of 2 is not seen: read those as R-6's
+reading of the code [RE], which the hardware does not confirm. The refutation does not say which
+part of the reading fails: the EDM may wait before the store (at the second `lock #0`, which R-6
+leaves open), the store may reach another register, or 0x0694 may not read back what is written
+(every read on record is 0). So the busy EDM after the stop is a wait on the lockup path, not
+shown to be the bit 6 poll. The claim stands: the marks, the count, bit 18 as a level, the clears
+and bit 6 read clear were replicated (E890), and the row was cannot tell on this kernel. E856 and
+E857 rest on R-6's (i) (the count against HostCtl dword 5, the arm sa9 bit 0) and (iii) (what the
+skipped handler clears), not on (ii); their `CR_DPM_TASK_STATE` mentions are cannot tell on the
+rgn4 kernel, which stays true.
