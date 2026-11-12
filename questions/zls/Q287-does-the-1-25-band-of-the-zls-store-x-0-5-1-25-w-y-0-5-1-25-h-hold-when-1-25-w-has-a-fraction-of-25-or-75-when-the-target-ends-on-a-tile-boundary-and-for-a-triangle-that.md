@@ -1,11 +1,11 @@
 +++
 id = "Q287"
-question = "does the band of the ZLS store follow rule A (x + 0.5 < 1.25 W, y + 0.5 < 1.25 H) or FLOOR (x < floor(1.25 W)) when 1.25 W or 1.25 H has the fraction .75 (W or H = 3 mod 4, the only sizes that separate them; .25 is a confirmation), sizes the tool refuses as odd (the iterated attributes are Q291)"
+question = "does the band of the ZLS store follow rule A (x + 0.5 < 1.25 W) or FLOOR (x < floor(1.25 W)) at odd widths, when 1.25 W has the fraction .75 (W = 3 mod 4, the only widths that separate them; .25 is a confirmation), widths the tool still refuses (odd heights follow rule A, E885; the iterated attributes are Q291)"
 unit = "zls"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E730", "E465", "E831"]
+evidence = ["E730", "E465", "E831", "E885"]
 terms = ["CR_ISP_ZLSCTL"]
 +++
 E730: 12 of 12 jobs at widths 18, 34, 50, 66, 98 (2 mod 4, so 1.25 W is x.5) and heights 18, 26,
@@ -40,3 +40,15 @@ To settle it: widths 19 and 35 at H 18 and height 19 at W 34 (the .75 cells), wi
 and heights 17 and 21 as confirmations (.25), the 34 x 18 control; the tool refuses odd sizes
 (`userspace/libsgxfive/src/render.c`, `width % 2 || height % 2`), so a tool change comes first.
 Q122's rule (an edge tile past the target) is answered at even sizes by E730 and E831.
+
+**Narrowed 2026-11-12 (R6-misc q287, E885).** The y side is answered held out: at W 34, with a
+tool built from main that allows odd heights, rule A gave the stored set at H 7, 11, 23 and 35
+(two runs each) and with the x ramp at 19, 23 and 35 (7 of 7 held-out cells), FLOOR one row short
+in each; the fit cell 19 stored 24 rows, the .25 cells 17 and 21 the rows both rules give, and the
+34 x 18 control E831's 924 with both tools. The question line was "does the band of the ZLS store
+follow rule A (x + 0.5 < 1.25 W, y + 0.5 < 1.25 H) or FLOOR (x < floor(1.25 W)) when 1.25 W or
+1.25 H has the fraction .75 (W or H = 3 mod 4, ...), sizes the tool refuses as odd"; it now asks
+the x side only. The tool still refuses odd widths (`userspace/libsgxfive/src/render.c`), so a
+tool change comes first: widths 19 and 35 at H 18 (the .75 cells), 17 and 33 as confirmations,
+the 34 x 18 control. The pipeline simulator stores odd heights by rule A and refuses odd widths
+under this question (`zls.rs`).

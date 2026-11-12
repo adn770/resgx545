@@ -19,6 +19,7 @@ DATA = pathlib.Path(os.environ.get("RESGX545_DATA") or ROOT.parent / "resgx545-d
 GEO = DATA / "render" / "closing-r3-geo"
 K = DATA / "render" / "closing-r3k-pixel"
 GEOC = pathlib.Path(os.environ.get("RESGX545_GEOC") or DATA / "render" / "closing-r3-geo-c")
+R6M = DATA / "render" / "closing-r6-misc"
 
 HEAD = "name\tstage\tset\trisk\tP\tknobs\trt\targs\trc\tclass\tnote\n"
 
@@ -192,7 +193,8 @@ def test_zls_table_names_the_test_that_replays_it_and_others_stay_refused(tmp_pa
     d = stage(tmp_path, "g-z", [])
     t = ct.zls_table(d, "s")
     assert t["replay"]["status"] == "replayed"
-    assert t["replay"]["test"].endswith("zls_table.rs::the_band_replays_every_modelled_row_of_the_g_z_table")
+    assert t["replay"]["test"].endswith("zls_table.rs::the_band_replays_every_modelled_row_of_the_zls_tables")
+    assert "E885" in t["replay"]["model"] and "odd widths" in t["replay"]["model"]
     assert "reason" not in t["replay"]
     assert ct.counts_table(d, "s")["replay"]["status"] == "refused"
 
@@ -256,3 +258,16 @@ def test_r3_geo_c_tables():
     assert len(f["rows"]) == 22
     h = ct.counts_table(ct.find_stage(GEOC, "g-qh"), "x")
     assert len(h["rows"]) == 8 and len(h["skipped"]) == 6
+
+
+@pytest.mark.skipif(not R6M.is_dir(), reason="no render/closing-r6-misc")
+def test_r6_misc_q287_table_is_e885s_odd_heights():
+    # the latest attempt (freeze 2's rerun): every row of the 20 has its dump, W 34 throughout
+    d = ct.find_stage(R6M, "q287")
+    assert d.parent.name == "20261112-152213"
+    z = ct.zls_table(d, "x")
+    assert len(z["rows"]) == 20 and not z["skipped"]
+    got = {(r["height"], tuple(r["extent"]), r["stored"]) for r in z["rows"]}
+    assert got == {(17, (42, 21), 882), (18, (42, 22), 924), (19, (42, 24), 1008), (7, (42, 9), 378),
+                   (11, (42, 14), 588), (23, (42, 29), 1218), (35, (42, 44), 1848), (21, (42, 26), 1092)}
+    assert all(r["width"] == 34 and r["full_screen"] and r["diff_zero"] for r in z["rows"])

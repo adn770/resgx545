@@ -43,6 +43,11 @@ pub const ISP_DEPTH_STORE: Status = Status::Fitted("E465");
 /// only over the ramp's 0.25 to 0.4166 and 1.0, and the 16-bit layout derived at G = 33 only
 /// (12.4; E466, E490)
 pub const ZLS_INT_FORMATS: Status = Status::Fitted("E466");
+/// Where the transfer's end-of-tile task stores a tile whose U1 names another place than the loop's
+/// (`xfer`, the half-tile place of the U1 tile fields): read post hoc on the fill's kept sweeps
+/// (E876 states the fit) and then held out on larger fills (E884, 20 of 20); only a scene whose
+/// tile moved uses it.
+pub const XFER_U1_PLACE: Status = Status::Fitted("E876");
 /// The 1/w the TA stores: kept above the minimum, the clamp value otherwise (E197, [infer])
 pub const MTE_RHW: Status = Status::Fitted("E197");
 

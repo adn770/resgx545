@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-168 open: 158 hw (high 19, medium 74, low 65, unrated 0), 9 fw, 1 kernel.
+167 open: 157 hw (high 19, medium 73, low 65, unrated 0), 9 fw, 1 kernel.
 
 ## Work queue: hardware
 
@@ -116,7 +116,7 @@
 - `Q064` (phase 11, hw, medium): what does the region header mark that CR_TE_PSG bit 21 makes the TA write mean to the 3D, and is bit 1 of CR_DPM_STATE_CONTEXT_ID the 3D's DPM slot as bit 2 is the TA's? (E158, E172, E305, E409, E424)
 - `Q068` (phase 11, hw, medium): do the twelve TA register words that are zero in our jobs save and resume the state of an interrupted TA? (E054, E056, E182, E183, E245)
 - `Q070` (phase 11, hw, high): what do the TA object's format word bits 15:8 and above and its set masks select beyond the settings seen, and does the fitted region test hold for lines and points? (E176, E177, E180, E181, E185, E306, E307, E308, E414, E541, E542, E543, E544, E777)
-- `Q086` (phase 11, hw, medium): what rule gives CR_TE_MTILE1, CR_TE_MTILE2 and CR_TE_MACROTILE_STRIDE for a 4x multisampled target, whose 64x64 words are 0x802002, 0x802002 and 0x4 against the single-sampled rule's 0x1004004, 0x1004004 and 0x10? (E331, E329, E507, E511, E824)
+- `Q086` (phase 11, hw, medium): what rule gives CR_TE_MTILE1, CR_TE_MTILE2 and CR_TE_MACROTILE_STRIDE for a 4x multisampled target, whose 64x64 words are 0x802002, 0x802002 and 0x4 against the single-sampled rule's 0x1004004, 0x1004004 and 0x10? (E331, E329, E507, E511, E824, E886)
 - `Q100` (phase 11, hw, medium): what do the fields of CR_TE_MTILE1 and CR_TE_MTILE2 mean, given that flips of their bits change the image or fault the job at 256x256 and 1024x768? (E247, E257, E407, E505, E506, E509)
 - `Q139` (phase 11, hw, medium): what does a macrotile row's boundary do beyond the first, second and third fields of the macrotile words: what is bit 31, what is the stride's relation to the RT data, why is B2 at or past B3 exact in CR_TE_MTILE2 at 640 x 480, and which rule places a region's header when the words differ from the rule's (the wrong images lose whole tiles, E877) (E505, E506, E509, E407, E877)
 - `Q142` (phase 11, hw, medium): what do the 76 parameter-buffer and 132 TA-data dwords that change with CR_TE_AA bits 30 and 31 hold, and why do 0x60000000 and 0xa0000000 change the same number of dwords by different values (E504)
@@ -152,8 +152,7 @@
 
 - `Q003` (phase 4, hw, medium): which event (if any) does a bus-interface fault raise, and what do the fault-request bits of CR_BIF_INT_STAT name, what clears a latched fault in CR_BIF_INT_STAT and CR_BIF_FAULT while leaving the bus usable, and what makes the health triangles after a 0x90004 fault fault before one passes (two after each 4x fault of K2, one after R3-rgn4's j2, none after its j4)? (E021, E024, E317, E318, E319, E320, E354, E355, E357, E444, E203, E313, E362, E363, E395, E457, E476, E573, E631, E722, E729, E764, E765, E766, E767, E789, E826, E507, E729, E788, E824, E828, E845, E848)
 - `Q011` (phase 6, hw, medium): why does a copy whose background-object tag (transfer word 0) is wrong read one texel, the source's last, for every pixel, and what stores the samples of CR_ISP_MSAA mode 2 in a copy? (E028, E272, E398)
-- `Q206` (phase 12, hw, medium): what do the words of a transfer job that no record explains do: the 17 register words of the command beyond the render box (words 12 and 13) and the alpha-inversion bit, the words of the tasks the programs start, and the values the builder writes? (E004, E019, E020, E265, E272, E043, E044, E126, E620)
-- `Q289` (phase 12, hw, medium): which tile does the end-of-tile task's DOUTU1 x field (bits 11:3) and y field (bits 21:12) name when they differ from the pixel-event program's own, on a fill, a copy and a larger target, and do the two fields combine as a tile (x, y) (E043, E044, E126, E620, E876)
+- `Q206` (phase 12, hw, medium): what do the words of a transfer job that no record explains do: the 17 register words of the command beyond the render box (words 12 and 13) and the alpha-inversion bit, the words of the tasks the programs start, and the values the builder writes? (E004, E019, E020, E265, E272, E043, E044, E126, E620, E876, E884)
 
 ### usse
 
@@ -208,7 +207,7 @@
 - `Q121` (phase 11, hw, medium): what is the in-tile order of the stencil store (one byte a pixel, 128 dwords a 32 x 16 tile) and what does the stencil test do against a loaded stencil? (E466, E467)
 - `Q242` (phase 12, hw, low): how is the 16-bit stored depth format laid out at a pitch G other than 33 and at an edge, what do the 24-bit and 16-bit formats store for a depth outside 0.25 to 0.4166 other than 1.0 (where round(z * 0xffffff) and floor(z * 2^24) differ), which pixel's value does a dword shared by two overlapping tiles hold, and why did the E411 jobs with G past 3 fault? (E466, E490, E663)
 - `Q243` (phase 12, hw, low): what does the ZLS load do with an integer stored format (bits 26:24 = 1 or 2), at an address other than the one the store writes, and when the loaded depth is a NaN or infinity or is compared with a depth equal to it? (E467, E628, E664)
-- `Q287` (phase 11, hw, low): does the band of the ZLS store follow rule A (x + 0.5 < 1.25 W, y + 0.5 < 1.25 H) or FLOOR (x < floor(1.25 W)) when 1.25 W or 1.25 H has the fraction .75 (W or H = 3 mod 4, the only sizes that separate them; .25 is a confirmation), sizes the tool refuses as odd (the iterated attributes are Q291) (E730, E465, E831)
+- `Q287` (phase 11, hw, low): does the band of the ZLS store follow rule A (x + 0.5 < 1.25 W) or FLOOR (x < floor(1.25 W)) at odd widths, when 1.25 W has the fraction .75 (W = 3 mod 4, the only widths that separate them; .25 is a confirmation), widths the tool still refuses (odd heights follow rule A, E885; the iterated attributes are Q291) (E730, E465, E831, E885)
 - `Q291` (phase 11, hw, low): does the 1.25 band of the ZLS store (x + 0.5 < 1.25 W, y + 0.5 < 1.25 H, E730) apply to the iterated attributes, that is, do the pixel tasks of the tile area past the target run with an iterated pa0 (clip x) over the same band, read through per-instance scratch stores since the colour store ends at the target (E730, E465)
 
 ## Parked: not hardware knowledge

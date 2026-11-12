@@ -5,7 +5,7 @@ unit = "ta"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E331", "E329", "E507", "E511", "E824"]
+evidence = ["E331", "E329", "E507", "E511", "E824", "E886"]
 terms = ["CR_TE_MTILE1", "CR_TE_MTILE2", "CR_TE_MACROTILE_STRIDE", "CR_TE_AA", "CR_TE_SCREEN"]
 +++
 
@@ -45,3 +45,13 @@ and above were our kernel's one-array layout (E788): with the new module's `rend
 4, 8 of 8 held-out sizes up to 1024 x 768 complete with 0 wrong pixels (E824). H86i and the poked
 families U2, U2Q, HS and FX of E511's 20 skipped cases can run at 320 x 160 and larger with four
 arrays (not run yet); the closed driver's rule over sizes still needs the capture batch.
+
+Note 2026-11-12 (round 6, R6-misc q086, E886): 10 of the 20 skipped cases and the 1024 x 768 R
+job ran with four arrays (11 skipped by the frozen fault budget of 3). H-COV held out 9 of 9: a 4x
+render with poked words completes iff the macrotile grid the words describe (B3 + B1 tiles per
+axis) covers the target's 1x tile grid, so the six U2 and U2Q words completed 320 x 160 to 640 x
+480 with 0 wrong pixels, and the closed driver's 64 x 64 words (FX, 320 x 160) and E511's HS words
+(320 x 160, 384 x 192), whose grids fall short, faulted the job on the 3D side; H-ANY (every word
+set completes with four arrays) is refuted. That gives a validity rule for poked words of our own
+stack, not the closed driver's rule over sizes, which still needs the capture batch; the 11
+skipped rows (the FX rows past 320 x 160, the HS rows past 384 x 192) are predicted to fault.

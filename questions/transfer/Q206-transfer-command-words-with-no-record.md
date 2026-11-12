@@ -5,7 +5,7 @@ unit = "transfer"
 kind = "hw"
 value = "medium"
 phase = 12
-evidence = ["E004", "E019", "E020", "E265", "E272", "E043", "E044", "E126", "E620"]
+evidence = ["E004", "E019", "E020", "E265", "E272", "E043", "E044", "E126", "E620", "E876", "E884"]
 terms = ["PIXEL_EVENT.END_OF_TILE"]
 +++
 
@@ -20,9 +20,8 @@ What this question covers is the command's and the tasks' words: the fixed words
 11 and 16 of the command, a set coefficient group (word 17 and above, 3150 scenes), the tag's
 layer count, the render box's extent, the pixel shader's output, a task's code base register and
 the end-of-tile task's U1 bits no record explains. What it does not cover: a PDS program or input
-the simulator does not know is Q207, which tile an end-of-tile task names is Q289 (it was
-filed under Q074 until 2026-11-09), and a job that
-may not complete, or an access outside the scene's memory, is Q003 (with Q076). The hangs and
+the simulator does not know is Q207, which tile an end-of-tile task names is answered (E876,
+E884: the place its U1 tile fields name, in half-tile units), and a job that may not complete, or an access outside the scene's memory, is Q003 (with Q076). The hangs and
 faults the hardware recorded under refused scenes are not a reason the model uses: it refuses by
 the scene's words alone.
 
@@ -34,3 +33,11 @@ are Q003's territory.
 
 Status: open. Open items it covers: the fixed words of the command, the tasks' U0 and U1 values,
 and the alpha-inversion bit's other effects (E268 measured modes 0 to 3 only).
+
+Note 2026-11-12 (round 6, E884). The question of which tile the end-of-tile task's U1 fields name
+was answered on the fill (held out at 128 x 64 and 256 x 32) and retired; the transfer model now
+stores each tile at the place its U1 names and no longer refuses those scenes (the 1534 sweeps of
+the fill and the data-word pokes that move a tile, reported fitted). One clause of that question
+moves here: where a tile goes when its U1 moves it on both axes at once. Every run so far moved
+one field alone (E044, E126, E876, E884), so the model refuses such a U1 under this question. A
+fill or copy with both fields poked together would settle it.

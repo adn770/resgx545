@@ -7,7 +7,8 @@
 //! pixel-event program; each tile of the box runs the pixel-event PDS program with ir0 =
 //! tile_y << 10 | tile_x in the units E130 records (16 pixels across, 16 rows: the second 32-pixel
 //! column of the box is tile_x 2) and ir1 = 2, or 6 on the last tile (E130, E265), which starts
-//! the end-of-tile task (or the end-of-render task, E265); the shader of the background object's
+//! the end-of-tile task (or the end-of-render task, E265), which stores the tile at the place its
+//! U1's tile fields name in half-tile units (E876, E884); the shader of the background object's
 //! primary PDS program runs for every pixel of the tile (the ISP covers whole tiles of the box:
 //! the vertices do not clip, E069, E590; the PBE's rectangle does, E267), a copy's texel
 //! coming from `tex::sample` at the iterated coordinates; the end-of-tile task's emit words
@@ -15,7 +16,7 @@
 //!
 //! Everything a record does not explain refuses, naming a question that depends only on the
 //! scene's words, never on what the hardware did: a command word or task word with no record
-//! (Q206, the end-of-tile task's tile naming among them), a PDS program or input the simulator
+//! (Q206), a PDS program or input the simulator
 //! does not know (Q207), the iterator word (Q180), background object words (Q066), a copy's tag
 //! (Q011), an access to memory the scene does not map or a job that cannot complete (Q076 and
 //! Q003).
@@ -33,7 +34,8 @@
 //! - The builder's addresses (the target, a copy's source, the pages of the programs and the
 //!   background object) are the mock's: the fill and copy sweeps print no layout line.
 //!
-//! No fitted rule is used.
+//! One fitted rule: the place of a moved tile (`u1_place`, `rules::XFER_U1_PLACE`; E876 states
+//! the fit, E884 held it out), so a scene whose tile moved is reported fitted.
 
 pub mod population;
 
@@ -367,6 +369,8 @@ struct Job {
     /// the address ranges the scene's memory holds (what the builder placed, not the target)
     segments: Vec<(u32, u32)>,
     prim: Primary,
+    /// a tile was stored at another place than its own (`u1_place`, a fitted rule)
+    moved: bool,
 }
 
 impl Job {
@@ -416,12 +420,24 @@ fn ir0_of(tile: (u32, u32)) -> u32 {
 
 /// The tile fields of the end-of-tile task's U1 that the pixel-event program builds from ir0 with
 /// the masks 0xff8 and 0x3ff000 of its data (dwords 9 and 13) after `ir0 << 3`: x in bits 11:3
-/// (2 for the second 32-pixel column, the fact of E620 and E130's unit) and y in bits 21:12. What
-/// tile another value names is not in the records (E044, E126): such a U1 refuses (Q206, the
-/// end-of-tile task's U1 bits no record explains, narrowed by Q289; the vectors list Q206).
+/// (2 for the second 32-pixel column, the fact of E620 and E130's unit) and y in bits 21:12; the
+/// place they name is the tile itself (`u1_place`).
+#[cfg(test)]
 fn u1_tile_fields(tile: (u32, u32)) -> u32 {
     let ir0 = ir0_of(tile);
     (ir0 << 3 & 0xff8) | (ir0 << 3 & 0x3f_f000)
+}
+
+/// The place, in 32 x 16 tiles, where the end-of-tile task with this U1 stores its tile: the x field
+/// (bits 11:3) and the y field (bits 21:12) read in half-tile units (16 pixels, 8 rows), so a
+/// field's bit 0 changes nothing. Read on the kept sweeps of the fill (E876, post hoc) and held
+/// out at 128 x 64 and 256 x 32 (E884: OR of the poked word into the tile's own field, which is
+/// the pixel-event program's own arithmetic here, 20 of 20); E126's XOR into the fields on a
+/// 128 x 128 render moves whole tiles the same way. A place past the target is cut by the PBE's
+/// rectangle (`pbe::store_tile`), so nothing is stored there, as every one of those jobs showed.
+/// Every run moved one field alone: a tile moved on both axes refuses (Q206).
+fn u1_place(u1: u32) -> (u32, u32) {
+    ((u1 >> 3 & 0x1ff) >> 1, (u1 >> 12 & 0x3ff) >> 1)
 }
 
 /// Run a transfer scene.
@@ -533,7 +549,7 @@ fn run_inner(sc: &Scene) -> R<SceneResult> {
         .iter()
         .map(|s| (s.base, s.base + 4 * s.dwords.as_ref().map_or(0, |d| d.len() as u32)))
         .collect();
-    let mut job = Job { mem, cmd, code, bg, segments, prim: Primary { tex } };
+    let mut job = Job { mem, cmd, code, bg, segments, prim: Primary { tex }, moved: false };
     let mut tiles = vec![];
     for ty in job.cmd.box_min.1..=job.cmd.box_max.1 {
         for tx in job.cmd.box_min.0..=job.cmd.box_max.0 {
@@ -549,11 +565,8 @@ fn run_inner(sc: &Scene) -> R<SceneResult> {
         {
             return Err(refuse("the pixel-event program's code is not the template's", &["Q207"]));
         }
-        // the masks that build U1's tile fields from ir0 (data dwords 9 and 13): which tile a U1
-        // names is not in the records (E044, E126)
-        if w[9] != 0xff8 || w[13] != 0x3f_f000 {
-            return Err(refuse("the pixel-event program's tile masks are not the template's", &["Q206"]));
-        }
+        // the masks that build U1's tile fields from ir0 (data dwords 9 and 13) are data the
+        // program runs on: what U1 they give is the program's, where it stores is `u1_place`
     }
     for (n, &(tx, ty)) in tiles.iter().enumerate() {
         let ir0 = ir0_of((tx, ty));
@@ -587,6 +600,9 @@ fn run_inner(sc: &Scene) -> R<SceneResult> {
         }
     }
     let mut res = SceneResult::refusing(Outcome::Ok);
+    if job.moved {
+        res.use_rule(crate::rules::XFER_U1_PLACE);
+    }
     let mut image = Vec::with_capacity((t.w * t.h) as usize);
     for y in 0..t.h {
         for x in 0..t.w {
@@ -608,14 +624,18 @@ fn run_inner(sc: &Scene) -> R<SceneResult> {
 
 impl Job {
     fn end_of_tile(&mut self, tile: (u32, u32), last: bool, u1: u32, attrs: &[(usize, u32)]) -> R<()> {
-        // U1 = base | tile_x | tile_y | end-of-render: the tile fields are the program's own for
-        // the tile only; which tile another value names is not in the records (E044, E126)
-        if u1 & 0x3f_fff8 != u1_tile_fields(tile) {
+        // U1 = base | tile_x | tile_y | end-of-render: the tile is stored at the place its fields
+        // name (E876, E884: the loop's own tile unless the program's words moved it)
+        let place = u1_place(u1);
+        // each run moved one field alone (E044, E876, E884, E126): a place off the tile on both
+        // axes at once is a combination no record measured
+        if place.0 != tile.0 && place.1 != tile.1 {
             return Err(refuse(
-                format!("the end-of-tile task's U1 {u1:#x} names a tile other than the loop's"),
+                format!("the end-of-tile task's U1 {u1:#x} moves the tile on both axes: not measured"),
                 &["Q206"],
             ));
         }
+        self.moved |= place != tile;
         // the last tile (ir1 bit 2) ends the render: without bit 22 in its U1 no record says
         // whether the job completes (Q003)
         if last && u1 & 0x40_0000 == 0 {
@@ -646,7 +666,7 @@ impl Job {
                     side(b).ok_or_else(|| refuse("the emit's sideband is not an immediate", &["Q054"]))?;
                 let e = Emit { words: [s1[0], s1[1], s2[0], s2[1]], sideband };
                 let colours = self.shade(tile)?;
-                pbe::store_tile(&e, self.cmd.reg0400, tile, &colours, &mut self.mem)
+                pbe::store_tile(&e, self.cmd.reg0400, place, &colours, &mut self.mem)
             }
             _ => Err(refuse("the end-of-tile task does not emit once as the template does", &["Q054"])),
         }
@@ -705,5 +725,21 @@ mod tests {
         assert_eq!(u1_tile_fields((0, 0)), 0);
         assert_eq!(u1_tile_fields((1, 0)), 0x10);
         assert_eq!(u1_tile_fields((0, 1)), 2 << 12);
+    }
+
+    #[test]
+    fn a_u1_names_its_place_in_half_tile_units_and_the_programs_own_fields_name_the_tile() {
+        // E876, E884: field bit 0 is half a tile; the template's fields name the loop's tile
+        for t in [(0, 0), (1, 0), (0, 1), (3, 255), (255, 7)] {
+            assert_eq!(u1_place(0x80_0000 | u1_tile_fields(t)), t);
+        }
+        // the 64 x 32 fill's second column with x ^ 0x10 (field 3) stores at column 1 under OR,
+        // the first column with x | 0x10 (field 2) too, and field 1 changes nothing
+        assert_eq!(u1_place(0x10 | 0x10), (1, 0));
+        assert_eq!(u1_place(0x08), (0, 0));
+        assert_eq!(u1_place(0x18), (1, 0));
+        // E884's 128 x 64 x ^ 0x20 (field 4 = two tiles): column 1 stores at place 3
+        assert_eq!(u1_place(0x10 | 0x20), (3, 0));
+        assert_eq!(u1_place(0x3_f000 | 0x2000), (0, 31));
     }
 }

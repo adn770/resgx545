@@ -6819,6 +6819,48 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   row order (count and every run's peak) fails held out; the rivals' counts: the frozen column order
   19 of 32, E854's d = 7/4 18 of 32 and d = 1 27 of 32.
   *dpm; HW, infer; data: `render-closing-r6-dpm:out/a2/r-b/`, `render-closing-r6-dpm:postrun/`.*
+- `E884` R6-misc stage q289 (Q289, 23 fills, one attempt, no fault): with the fill's end-of-tile
+  DOUTU1 x field (bits 11:3) or y field (bits 21:12) poked by XOR, M-OR (each 32 x 16 tile t stored
+  at (2t | f) >> 1, the field f read in half-tile units, nothing stored past the target) gave the
+  tool's image hash in 20 of 20 held-out rows (128 x 64 x and y pokes, 256 x 32 x pokes), 8 of 8 of
+  the rows where it differs from M-ADD, which failed all 8; every job stored no dword outside the
+  target and the controls passed (E876's 64 x 32 x ^ 0x10 hash 0x97334f75829dab25 and the two
+  baselines 0xf7befd67a3c8e325); frozen verdict 'M-OR held (20 of 20 held-out rows, 8 of 8
+  separating); M-ADD refuted (12 of 20 held-out rows, 0 of 8 separating); controls pass'; read after
+  the run, E126's 19 flips of the same fields on a 128 x 128 render fit the same place rule with the
+  probe's XOR (19 of 19 pictures, post hoc).
+  *transfer; HW, infer; data: `render-closing-r6-misc:out/20261112-144153/q289/`,
+  `render-closing-r6-misc:fold/`, `pds-pixel-event`.*
+- `E885` R6-misc stage q287 (Q287, 20 depth-dump jobs at W 34, rerun as a second attempt on freeze 2
+  after freeze 1's runner kept no dump): at odd target heights the ZLS store's band past the target
+  is rule A (y + 0.5 < 1.25 H), not FLOOR (y < floor(1.25 H)): the full-screen triangle stored 42
+  columns times 9, 14, 29 and 44 rows at H 7, 11, 23 and 35 (y ramp, two runs each) and 24, 29 and
+  44 rows with the x ramp at 19, 23 and 35, rule A's set and one row more than FLOOR's in every
+  held-out cell (7 of 7), the fit cell 34 x 19 stored 1008 (24 rows) in both runs, the .25 cells 17
+  and 21 stored 882 and 1092 (A = FLOOR there, 2 of 2) and the controls at 34 x 18 reproduced E831's
+  924 with the rgn4 tool and with the tool built from main d9b2969 (both ramps); ROUND and CEIL
+  failed every decided cell and y + 1 < 1.25 H the fit and held-out ones; frozen verdict 'rule A
+  held on the held-out cells (7 of 7), FLOOR refuted (0 of 7); fit cell 19: A held, FLOOR refuted;
+  .25 confirmations A 2 of 2; controls pass'.
+  *zls; HW; data: `render-closing-r6-misc:out/20261112-152213/q287/`,
+  `render-closing-r6-misc:out/20261112-144153/q287/`, `render-closing-r6-misc:freeze1/`,
+  `render-closing-r6-misc:fold/`, `vectors-closing-r6-misc-zls`.*
+- `E886` R6-misc stage q086 (Q086, 10 of 21 4x jobs run, 11 skipped by the frozen fault budget, one
+  attempt): on contexts made for 4x targets (four region-header arrays) a render with CR_TE_MTILE1,
+  CR_TE_MTILE2 and CR_TE_MACROTILE_STRIDE poked over the kernel's completes exactly when the
+  macrotile grid the words describe (the last boundary plus one more macrotile of the first's size,
+  B3 + B1 tiles per axis) covers the target's 1x grid of 32 x 16 tiles: the six U2 and U2Q words,
+  whose grid covers it, completed 320 x 160 to 640 x 480 with 0 wrong pixels, the closed driver's 64
+  x 64 words (0x802002, 0x802002, 4) at 320 x 160 and E511's HS words (the target's single-sampled
+  words shifted right by one, 0x1004004 at both sizes) at 320 x 160 and 384 x 192, whose grid covers
+  4 or 8 tiles a side of the 10 or 12 needed, faulted the job on the 3D side (BIF fault requestor
+  256, word 0x10000011, 3 of 3), and the control (the rule's own words at 1024 x 768) completed with
+  0 wrong; frozen verdict 'H-COV held (9 of 9 held-out rows), H-ANY refuted (6 of 9); 11 rows not
+  run; control R passes'; read after the run, each faulted image holds the triangle (and one to two
+  tiles of background) inside the rectangle the words' grid covers and the sentinel everywhere past
+  it.
+  *ta; HW, infer; data: `render-closing-r6-misc:out/20261112-144153/q086/`,
+  `render-closing-r6-misc:fold/`.*
 
 ## By unit
 
@@ -6891,7 +6933,7 @@ Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
 E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763, E776, E777,
 E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828, E842, E847, E851, E859,
-E865, E872, E877, E879.
+E865, E872, E877, E879, E886.
 
 ### texture
 
@@ -6903,7 +6945,7 @@ E744, E760, E765, E787, E844.
 ### transfer
 
 Records: E015, E016, E018, E019, E020, E021, E022, E024, E027, E028, E272, E398, E455, E620, E766,
-E876.
+E876, E884.
 
 ### tsp
 
@@ -6929,4 +6971,4 @@ E413, E414, E427, E440, E545, E546, E700, E701, E702, E703, E737, E738, E755, E7
 ### zls
 
 Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467, E489, E490, E615, E628, E629,
-E663, E664, E665, E730, E831.
+E663, E664, E665, E730, E831, E885.

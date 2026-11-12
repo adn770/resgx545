@@ -442,19 +442,23 @@ buffer, the TA data and an image. A transfer (fill or copy) runs through `sgx_pi
 the 17 register words, the render box in 32 x 16 tiles, the pixel-event PDS program of each tile
 through `sgx-sim` with ir1 = 6 on the last tile, the end-of-tile task and its emit to the PBE (pack
 modes 0 to 3), the pixel shader per pixel of every tile of the box and a copy's texel through
-`tex::sample`. A command word or a task no record explains refuses (`Q206`, the words of a transfer
-with no record), a PDS program or input no record measured (a program that is not a template the
-records ran included) under `Q207`; the tile an end-of-tile task names is under `Q206` too
-(narrowed by `Q289`); `Q011` a copy's
+`tex::sample`. The end-of-tile task stores its tile at the place its U1 tile fields name in
+half-tile units (E876, held out in E884), so a poke of the pixel-event program's U1 word or tile
+masks moves tiles, and a place past the target is cut by the PBE's rectangle. A command word or a
+task no record explains refuses (`Q206`, the words of a transfer with no record, a U1 bit outside
+the tile fields and a tile moved on both axes at once among them), a PDS program or input no record
+measured (a program that is not a template the records ran included) under `Q207`; `Q011` a copy's
 tag; `Q180` the iterator word; `Q066` the background object; `Q205` a copy's iterated coordinates;
 `Q078` the sampler words; `Q076` and `Q003` an access outside the scene's memory, and `Q003` also a
 job whose completion the words leave unknown. A refusal depends on the scene's words only, never on
 the recorded result. The scene vector lists the questions its poked words are open under in
-`expect.refuse`. The model uses no fitted rule, so a result is `matched`, never `fitted`; the PBE
-predicts the hangs its records state (E266 and E267) and none of the replay's scenes reaches them,
-so no hang or fault is predicted in a replay. The PDS inputs `alu_specials_in_movs`, `ifs` and `ir2`
-are assumptions confined to the template programs. A model that returns a result must say which
-fitted rules it used.
+`expect.refuse`. The one fitted rule is the place of a moved tile (`rules::XFER_U1_PLACE`: E876
+states the fit, E884 held it out), so a scene whose tile moved is `fitted`, every other result
+`matched` (1601 fitted in the replay, the 1532 moved fills of the two end-of-tile sweeps among
+them); the PBE predicts the hangs its records state (E266 and E267) and none of the replay's scenes
+reaches them, so no hang or fault is predicted in a replay. The PDS inputs `alu_specials_in_movs`,
+`ifs` and `ir2` are assumptions confined to the template programs. A model that returns a result
+must say which fitted rules it used.
 
 ### 6.5 Not yet (scope of the format)
 
@@ -608,10 +612,9 @@ closing_tables.py KIND --session DIR --out OUT STAGE...
 
 A file is `{format: "sgx545-tables", version: 1, run, kind, note, replay, rows, skipped}`. `run`
 names the session, the stage and the tool; `replay` is `{status, reason}`, and the status is
-`refused` in every table but one, with the reason the simulator does not model what the rows
-hold, so a table is never counted as a pass; the `zls` table is `replayed`, with the `test` that
-replays it
-(below); `rows` are what the job's kept files say, under the keys of the
+`refused` in every table but the `zls` ones, with the reason the simulator does not model what the
+rows hold, so a table is never counted as a pass; the `zls` tables are `replayed`, with the `test`
+that replays them (below); `rows` are what the job's kept files say, under the keys of the
 session's own readers (its frozen scorer, or the reader named in the tool), with the raw file and,
 for a dump, its sha256; `skipped` lists the jobs a session scored only as gates or void, with the
 reason. `crates/sgx-sim/tests/closing_tables.rs` checks that every table has the format, rows, and
@@ -624,6 +627,7 @@ either a refused status with a reason or a replayed one naming its test.
 | `vectors-closing-r3-geo-counts` | `r3-geo/counts/` | `counts` | g-c4 to g-c7, g-d36, 60 | E803 |
 | `vectors-closing-r3-geo-c-counts` | `r3-geo-c/counts/` | `counts` | g-qf 22, g-qh 8 (+ 6 void) | E832 |
 | `vectors-closing-r3-geo-c-zls` | `r3-geo-c/zls-extents/` | `zls` | g-z, 15 | E831 |
+| `vectors-closing-r6-misc-zls` | `r6-misc/zls-extents/` | `zls` | q287, 20 | E885 |
 | `vectors-closing-r3k-pixel-pb-pages` | `r3k-pixel/pb-pages/` | `pbpages` | k-f4, 10 dumps | E824 |
 
 - `depth`: per job the stored depth word and 1/w of each vertex of the first object of the render
@@ -634,15 +638,16 @@ either a refused status with a reason or a replayed one naming its test.
 - `counts`: per job P, the first threshold the job read (`0x0624`), the partial renders (the rising
   edges of `0x0658` bit 0), the peak of each TA run, the counts before each abort and dwords 36 to
   38; refused, the abort and partial-render sequence is not modelled (the count is Q211, E832).
-- `zls`: per job the stored (not 1.0f) dwords of the depth store's tile area, their extent and
-  the tool's count of target pixels that differ. Replayed by `crates/sgx-pipe/tests/zls_table.rs`
-  (`the_band_replays_every_modelled_row_of_the_g_z_table`): per job, the pixels of the tile area
+- `zls`: per job the stored (not 1.0f) dwords of the depth store's tile area, their extent and the
+  tool's count of target pixels that differ. Replayed by `crates/sgx-pipe/tests/zls_table.rs`
+  (`the_band_replays_every_modelled_row_of_the_zls_tables`): per job, the pixels of the tile area
   that the job's triangle (the full-screen one, or the `--tri-v` of `cases.tsv` in the session's
-  `render/closing-r3-geo-c/out/g-z/`) covers inside `zls::in_band` (E831's rule A) are the stored
-  ones, and their count and extent equal the row's: 15 of 15 match, none refused. A row at an odd
-  size would be counted as refused (Q287), never as a pass; the table's `replay` says `replayed`
-  only because no modelled row mismatched. The test skips without the data. sgx-sim does not
-  model the band.
+  stage directory: `render/closing-r3-geo-c/out/g-z/`,
+  `render/closing-r6-misc/out/20261112-152213/q287/`) covers inside `zls::in_band` (rule A: E831 at
+  even sizes, E885 at odd heights) are the stored ones, and their count and extent equal the row's:
+  15 of 15 and 20 of 20 match, none refused. A row at an odd width would be counted as refused
+  (Q287), never as a pass; a table's `replay` says `replayed` only because no modelled row
+  mismatched. The test skips without the data. sgx-sim does not model the band.
 - `pbpages`: per dump the non-zero 4 KiB pages of the parameter buffer, their runs, the TA data
   size and the tile count; refused, the page writes are not modelled (the page model the table
   agrees with in 8 of 8 dumps was fitted to them, E833).
