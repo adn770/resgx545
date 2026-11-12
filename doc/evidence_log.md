@@ -6321,6 +6321,22 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *bif; HW, infer; data: `render-closing-r4-render4x:out/20261111-211649/h/`,
   `render-closing-r4-render4x:postrun/`.*
 
+### 2026-11-12
+
+- `E849` Read offline after the hypothesis (post hoc, no frozen prediction; round 5 plan
+  closing5/events, step F0): E836's b1p stop dump, taken at the stop's signature before the host's
+  clears, holds HostCtl dword 3 (host_ctl.ukernel_detected_lockups) = 1 and dword 8
+  (host_ctl.interrupt_flags) = 1, dword 9 0, dword 14 0, sw_events 1 and TA3DCtl dwords 56 to 58 =
+  0, 0 (ta3d_ctl.kick_clear_3d), 0xaac267c2, where the dumps of the same job at the arm read 0
+  throughout; its page counts exactly 20 slot 0 passes after the fill's kick entry (10 ticks logged
+  in the ring, then 10 counted with the ring full), 2 x host_ctl.hw_recovery_sample_rate (dword 5 =
+  10), against 0 in E823's b1 and 302 and 289 in the two fills that completed; of the 23 published
+  dumps past the boot with CR_CLKGATESTATUS 0x000ccfa0, b1p's alone has dword 3 or dword 8 set (the
+  other 22 read 0, 0 and dwords 56 to 58 = 0): [infer] the stop is the EDM's own lockup routine of
+  E353, its second sample of a 3D progress word equal to the first.
+  *edm; HW, infer; data: `edm-closing-r4-events:out/a1/e3p/`, `edm-closing-r3k-events:out/e3b/`,
+  `cited-scratch:cited/closing5/events/offline/`.*
+
 ## By unit
 
 ### bif
@@ -6341,7 +6357,7 @@ E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321, E353, E4
 E450, E531, E532, E533, E536, E537, E538, E539, E540, E550, E600, E601, E602, E603, E604, E605,
 E746, E747, E748, E749, E750, E751, E752, E764, E768, E769, E771, E784, E791, E792, E793, E794,
 E804, E805, E806, E807, E809, E810, E811, E812, E813, E814, E816, E817, E818, E819, E830, E834,
-E835, E836, E839, E840, E841.
+E835, E836, E839, E840, E841, E849.
 
 ### firmware
 

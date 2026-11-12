@@ -63,3 +63,16 @@ after 10 ticks; dword 12's 20 passes are an estimate); whether a slot 3 pass tha
 or the closed handler called after our phase end, keeps it; whether the later stop needs the held
 render (the fill) or the unacknowledged bit 18 (clearing bit 18 from the host did not restart a
 stopped EDM, which does not say what would have kept it).
+
+**Correction 2026-11-12:** Read offline after the hypothesis (E849, post hoc), the stop's time is
+no longer an estimate: b1p's page counted 10 more slot 0 passes with the ring full (dword 16), so
+the tick stopped after exactly 20 slot 0 passes after the fill's kick entry, the twentieth about
+19.3 ms after it, which is 2 x HostCtl dword 5 (`host_ctl.hw_recovery_sample_rate`, 10); "about 20
+passes", "about 20 ms" and "dword 12's 20 passes are an estimate" above give way to that count.
+And "something the closed end-of-render handler does for the held render that a later pass needs
+(an acknowledgement, the render's state), the EDM stopping in a later closed pass that waits for
+it" becomes, on the stop dump: the EDM's own lockup check. The dump taken at the signature holds
+dword 3 (`host_ctl.ukernel_detected_lockups`) = 1, dword 8 (`host_ctl.interrupt_flags`) = 1,
+`sw_events` 1 and TA3DCtl dword 58 = 0xaac267c2, all 0 at the arm, the marks of E353's routine;
+[infer] its 3D check sampled a progress word at pass 10 and found it unchanged at pass 20, which
+the skipped closed handler would have prevented. Which state it reads stays open (Q295).
