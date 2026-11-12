@@ -5,6 +5,7 @@ questions, the cited-scratch manifests, the USSE books) are rebuilt from their s
 merge, and a generated file that differs from its regeneration is reported."""
 from __future__ import annotations
 
+import importlib.util
 import os
 import pathlib
 import subprocess
@@ -115,3 +116,33 @@ def test_check_sh_runs_the_generated_guard_in_quick_mode():
     text = (HERE / "check.sh").read_text()
     quick = text.split('if [ "$mode" = quick ]')[1].split("\nelse\n")[0]
     assert "regen_generated.py" in quick and "--check" in quick
+
+
+def test_check_sh_runs_pytest_in_parallel_and_the_venv_has_xdist():
+    assert "-n \"${CHECK_JOBS:-auto}\"" in (HERE / "check.sh").read_text()
+    assert "pytest-xdist" in (ROOT / "requirements-dev.txt").read_text()
+
+
+def root_conftest():
+    """The conftest.py of the tree root (several others are called conftest)."""
+    spec = importlib.util.spec_from_file_location("root_conftest", ROOT / "conftest.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_parallel_runs_build_the_shared_tools_once_before_the_workers_start():
+    """Tests of several files make the same tool directories and cargo targets; with xdist the
+    controller builds them first, so no two workers write the same binary."""
+    top = root_conftest()
+    dirs = {c[c.index("-C") + 1] for c in top.PREBUILD if c[0] == "make"}
+    assert {"tools/usse-dis", "tools/usse-asm"} <= dirs
+    assert all((ROOT / d).is_dir() for d in dirs)
+    assert any(c[0] == "cargo" for c in top.PREBUILD)
+    assert top.wants_prebuild(4, None) and not top.wants_prebuild(0, None)
+    assert not top.wants_prebuild(4, {"workerid": "gw0"})
+
+
+def test_the_controller_can_import_the_modules_that_define_warning_classes():
+    top = root_conftest()
+    assert all((ROOT / p / "fwtask.py").is_file() for p in top.WARNING_PATHS[:1])

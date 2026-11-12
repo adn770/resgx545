@@ -329,8 +329,14 @@ python3.15 -m venv .venv
 .venv/bin/pip install -r requirements-dev.txt
 tools/check.sh                   # every check (cargo, pytest, records, reuse, the guard)
 .venv/bin/pytest                 # every suite (pytest.ini lists the trees)
+.venv/bin/pytest -n auto --dist loadfile   # the same in parallel (pytest-xdist, as check.sh)
 .venv/bin/reuse lint
 ```
+
+`tools/check.sh` runs pytest with `-n ${CHECK_JOBS:-auto}` (`CHECK_JOBS=0`: one process). A test
+that shares state with another file (a tool directory or cargo target that is built, a fixed path
+outside `tmp_path`) must stay in one file (`--dist loadfile` keeps a file on one worker); the
+root `conftest.py` builds the shared tools once before the workers start.
 
 numpy is not in `requirements-dev.txt`: no tracked `.py` imports it (`tools/check.sh` fails if one
 does), so keep it in a scratch venv.
