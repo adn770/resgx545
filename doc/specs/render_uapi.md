@@ -174,9 +174,15 @@ render context of one VM fails with `-ENOSPC`. The bus interface's TA request ba
   the context declares: tail pointers, then one page each of DPM control, OTPM and DPM state,
   then the region headers (four arrays of them for a context created with `CTX_RENDER_AA_4X`,
   one otherwise) and the ZLS region headers (one array's size), each rounded up to whole pages.
-  4096 x 4096 takes 0x103000 bytes with one array and 0x223000 with four. The address space
+  The tail room of a context created with `CTX_RENDER_AA_4X` is four times its maximum's 1x
+  tail bytes (the square of twice the side: every tail-pointer entry of any 4x target within
+  the maximum, whatever the order), since with the 1x room a 4x job faulted once its entries
+  passed the region headers (E845, E867 to E869); a 1x context's layout is as before.
+  4096 x 4096 takes 0x103000 bytes at 1x (one array) and 0x2e3000 at 4x (four arrays and the
+  4x room, `SGX_RENDER_TD_MAX4_SIZE`; 0x223000 with the 1x room). The address space
   stays 4 MiB whatever the maximum; only the pages behind it shrink. Before the linux fork's
-  branch `resgx545-r3-rgn4` the slot was 2 MiB and every context had one array;
+  branch `resgx545-r3-rgn4` the slot was 2 MiB and every context had one array; before linux
+  fork commit 56f8b9321ea4 (round 6) a 4x context had the 1x room;
 - all of it is mapped read-write in the context's VM, because the tiling accelerator, the DPM
   and the 3D pipe write it through the client's directory. A client's shaders can therefore
   write their own parameter buffer and page table; that corrupts only that client's own scenes.
@@ -269,7 +275,8 @@ for render contexts, `max_width` and `max_height`.
 - `CTX_RENDER_AA_4X` (flag bit 0, `CTX_FLAGS_MASK`; render contexts only, any other bit or the
   flag on a transfer context is `-EINVAL`): the context's jobs may render 4x, a job's `te_aa`
   setting bit 31 or 30 (0xe0000000 at 4x). The kernel gives it four arrays of region headers,
-  where a 4x render with one array faults past them (E729) and four complete (E824). A job
+  where a 4x render with one array faults past them (E729) and four complete (E824), and four
+  times the 1x tail room (above). A job
   setting either bit on a context created without the flag fails at submission with `-EINVAL`,
   unless the debug option's `render_rgn_arrays` forced the context's array count (1, 2 or 4;
   0, the default, is automatic) when it was created. `sgxfive_render_ctx_create_flags` and
@@ -574,6 +581,21 @@ tasks; it reads back 0 after every write (E456). `alias_skip` is a mask of firmw
 TA3DCtl (9) left out faults the first job, the other CCB, kicker, HostCtl and misc buffers (6, 7, 8,
 10, 11) one at a time do not (E457). The tool's `dummy` and `fill` take `--kpoke-job`, and `tri`
 takes `--kreg-render`, `--close-first-early` and `--words-between`.
+
+Three more came with linux fork commits 56f8b9321ea4, db7faabc1cf1 and 3f0b3e74b51b (round 6).
+`render_tail_room` (default 0, automatic) sets the tail room of the render contexts created from
+then on: a whole number of pages, not 0, is that many bytes for a 1x or a 4x context (the
+maximum's 1x room, 0x4000 at 1280 x 1024, gives a 4x context the old layout), any other value is
+taken as 0; a room past the 4 MiB slot fails the creation with `-E2BIG`. `peek` (0600) takes a
+register offset and reads it once, as `reg 0x0694 0x...`, under the device lock: its list holds
+`CR_DPM_TASK_STATE` (0x0694) only, the register `regs` skips with those whose write starts
+work, and that the firmware reads itself; any other offset is `-EPERM`, a value that is not a
+number `-EINVAL`, a read with no firmware running `-ENODEV`; nothing is written. `bif_flush`
+(0200) takes `1` while a recovery is held and runs the boot sequence's invalidate of
+`CR_BIF_CTRL` (`INVALDC` set, then cleared, then its delay, the register's other bits kept),
+with the hold left as it was, and logs `BIF_CTRL` before and after and the BIF status registers;
+`-EBUSY` with nothing held, `-ENODEV` while no firmware runs, `-EINVAL` for any other value. No
+clock-gate register is written. It is for the replay of Q003 after E848's held faults.
 
 Held on the laptop, a render that faulted on its unmapped stream page stops the firmware, not
 only its job: the firmware answers no kernel command (the kernel's 500 ms wait for GETMISCINFO
