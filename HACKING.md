@@ -128,6 +128,18 @@ line with `git show <commit>:<path>` and refuses a session that pins this tree w
 Future freezes are pinned the same way when they are published. The published freeze bytes are
 never rewritten: a `FROZEN.commits` is a new file, and the manifest's digest and method follow it.
 
+## Generated files and merges
+
+`doc/evidence_log.md`, `doc/open_questions.md`, `datasets/cited-scratch{,-private}.toml` (the
+digests over `cited/` of the data repositories) and the books `doc/specs/usse_isa.md`,
+`usse_guide.md`, `usse_tutorial.md`, `pds_isa.md` are generated; never edit them by hand, edit
+their sources (`evidence/`, `questions/`, `doc/isa/content`) and run `tools/regen_generated.py`.
+`tools/regen_generated.py --check` (a step of `check.sh --quick`, so of the pre-commit hook) names
+each that differs from its rebuild. `.gitattributes` gives them `merge=regen`: once per clone run
+`git config merge.regen.driver 'tools/merge-regen.sh %O %A %B %L %P'`, and a merge keeps our side
+of them without a conflict. They are stale until rebuilt, so merge with
+`git merge --no-commit BRANCH && tools/regen_generated.py && git add -u && git commit`.
+
 ## Closing-session scorers
 
 A closing session's scorer turns kept job records into verdict lines. The round-3 audit found
@@ -317,8 +329,14 @@ python3.15 -m venv .venv
 .venv/bin/pip install -r requirements-dev.txt
 tools/check.sh                   # every check (cargo, pytest, records, reuse, the guard)
 .venv/bin/pytest                 # every suite (pytest.ini lists the trees)
+.venv/bin/pytest -n auto --dist loadfile   # the same in parallel (pytest-xdist, as check.sh)
 .venv/bin/reuse lint
 ```
+
+`tools/check.sh` runs pytest with `-n ${CHECK_JOBS:-auto}` (`CHECK_JOBS=0`: one process). A test
+that shares state with another file (a tool directory or cargo target that is built, a fixed path
+outside `tmp_path`) must stay in one file (`--dist loadfile` keeps a file on one worker); the
+root `conftest.py` builds the shared tools once before the workers start.
 
 numpy is not in `requirements-dev.txt`: no tracked `.py` imports it (`tools/check.sh` fails if one
 does), so keep it in a scratch venv.

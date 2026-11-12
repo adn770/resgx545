@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Josep Torra
+# Generated files: a merge keeps our side and tools/regen_generated.py rebuilds them (HACKING.md;
+# one-time: git config merge.regen.driver 'tools/merge-regen.sh %O %A %B %L %P').
+doc/evidence_log.md merge=regen
+doc/open_questions.md merge=regen
+datasets/cited-scratch.toml merge=regen
+datasets/cited-scratch-private.toml merge=regen
+doc/specs/usse_isa.md merge=regen
+doc/specs/usse_guide.md merge=regen
+doc/specs/usse_tutorial.md merge=regen
+doc/specs/pds_isa.md merge=regen

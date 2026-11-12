@@ -12,7 +12,8 @@
 # Environment: RESGX545_DATA (default: ../resgx545-data), RESGX545_REQUIRE_DATA (default 1),
 # RESGX545_GUARD_DIR and RESGX545_REQUIRE_GUARD (default 1: a missing guard fails; set 0 to
 # have it reported as NOT CHECKED), CHECK_TAIL (lines of output kept per step, default 25),
-# CHECK_ONLY (an extended regex: run only the steps whose command line matches).
+# CHECK_ONLY (an extended regex: run only the steps whose command line matches), CHECK_JOBS
+# (pytest-xdist workers, default auto; 0 runs the tests in one process).
 HERE=$(cd "$(dirname "$0")" && pwd)
 ROOT=$(dirname "$HERE")
 mode=full
@@ -74,6 +75,7 @@ if [ "$mode" = quick ]; then
             step "$PY" "tools/records/$t.py" --check
         done
         step "$PY" tools/clean-room/glossary.py --check
+        step "$PY" "$HERE/regen_generated.py" --check
     fi
     "$PY" "$HERE/hooks/corrections.py" "$TOP" || true
 else
@@ -83,7 +85,7 @@ else
     step cargo clippy --workspace --all-targets
     step cargo fmt --check
     step make -C userspace/libsgxfive check
-    step "$PY" -m pytest -q
+    step "$PY" -m pytest -q -n "${CHECK_JOBS:-auto}" --dist loadfile
     for t in questions evidence datasets frozen open_rows evidence_log citations register_coverage \
              check_refs spec_coverage scratch_cites; do
         step "$PY" "tools/records/$t.py" --check

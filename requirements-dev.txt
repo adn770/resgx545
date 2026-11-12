@@ -2,5 +2,6 @@
 # SPDX-FileCopyrightText: 2026 Josep Torra
 # Python 3.15 (python3.15 -m venv .venv). Dev-only; no numpy here (scratch venvs only).
 pytest==9.1.1
+pytest-xdist==3.8.0
 reuse[charset-normalizer]==6.2.0
 charset-normalizer==3.5.2
