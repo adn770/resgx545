@@ -7031,13 +7031,15 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   SEMI, not held out): over 2956 logs of 336 sessions the first boot after a BIF fault timed out (no
   INIT_COMPLETE, 'SGX recovery failed: -110') only after fault word 0x90004, 54 of 147 such boots
   (53 unique: one log is kept twice), and 0 of 756 after the fifteen other words; for SB 6 (the
-  region headers) it follows the job's fault page, 10 of 11 at 0x20006 and 0 of 15 at 0x2000a; the
-  frozen rule R-PAGE (times out iff the page is 0x20006 to 0x20008) gave 770 of 771 fit boots and 16
-  of 17 r6-held boots, the control (no time-out after 0x90008 or 0x90100) 109 of 109; every
-  timed-out dump read CR_CLKGATESTATUS 0x000ccff8, BIF_INT_STAT 0x000d0004 and a BIF_FAULT through
-  list 0 (54 of 54), and the second boot came up in 54 of 54; where the kernel logs it (27 boots),
-  the reset read BIF_FAULT 0 and BIF_INT_STAT 0x80000 with every block held in reset, before and
-  after CLEAR_FAULT and before the boot, in the 10 that timed out as in the 17 that came up.
+  region headers) the kept boots split by the job's fault page, 10 of 11 at 0x20006 and 0 of 15 at
+  0x2000a, a split that did not hold out (E919: the boot does not follow the page); the frozen rule
+  R-PAGE (times out iff the page is 0x20006 to 0x20008) gave 770 of 771 fit boots and 16 of 17
+  r6-held boots, the control (no time-out after 0x90008 or 0x90100) 109 of 109; every timed-out dump
+  read CR_CLKGATESTATUS 0x000ccff8, BIF_INT_STAT 0x000d0004 and a BIF_FAULT through list 0 (54 of
+  54), and the second boot came up in 54 of 54; where the kernel logs it (27 boots), the reset read
+  BIF_FAULT 0 and BIF_INT_STAT 0x80000 with every block held in reset, before and after CLEAR_FAULT
+  and before the boot, in the 10 that timed out as in the 17 that came up [corrected 2026-11-12, see
+  Correction].
   *bif; HW, infer; data: `cited-scratch`, `render-closing-r6-held`.*
 - `E902` Round 7 offline fold (Q111's 0x0694 clause and Q294): the six held TA jobs of r6-held were
   each the first render of a new context, so by the module's fork the kicks carried TA flag 0x1
@@ -7301,12 +7303,54 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   while the end-of-render rung reads the global pages left as the host's last sample in the render,
   10 of 10, and 1 at both grow cells where the host's next sample reads 2 (H-PENDREQ).
   *dpm; HW, infer; data: `render-closing-r7-dpm:out/b1/s-k/`, `render-closing-r7-dpm:postrun/`.*
+- `E919` R7 session r7-faults stage d (Q003; E848's held 4x TA write fault, one array, at seven
+  sizes whose fault pages are 0x2000a, 0x20006, 0x20008 and 0x20009, then the held reset and
+  triangles until one drew): every held job faulted 0x90004 at its frozen page and every cell ended
+  with a triangle that drew; the first boot after the held reset timed out ('SGX recovery failed:
+  -110') at 288 x 144 (0x20006, control) and at 128 x 528 (0x20009) and came up at 640 x 480
+  (0x2000a, control), 256 x 288 (0x20006), 320 x 400 twice and 384 x 384 (0x20008), so E901's frozen
+  page rule fails held out: frozen verdict 'H-PAGE REFUTED (2 held, 8 FAILED, 0 cannot tell of 10);
+  H-SIZE REFUTED (4 held, 1 FAILED, 0 cannot tell of 5)', 35 controls passing; 2 held resets and 3
+  replays of the stage timed out, every dump with CR_CLKGATESTATUS 0x000ccff8 and BIF_INT_STAT
+  0x000d0004 and the second boot up; read after the run with stage m (E920), the boots after a
+  0x90004 fault timed out in 11 of 14 at 288 x 144 and 3 of 15 at the other five sizes, and no
+  register read at the hold separates the boots that timed out from those that came up.
+  *bif; HW, infer; data: `render-closing-r7-faults:out/20261112-222800/d/`,
+  `render-closing-r7-faults:postrun/`.*
+- `E920` R7 session r7-faults stage m (Q003; E848's held TA write fault at 288 x 144, page 0x20006,
+  with a manipulation while held, before the reset: none, CR_BIF_CTRL.CLEAR_FAULT set then cleared
+  through kregnow (E826's write), or a hold of about 10 s; order M0 M1 M2 M2 M1 M0): every job
+  faulted 0x90004 at 0x20006061, both clear cells read the fault registers hidden with the bit set
+  and back after it, and every cell ended with a triangle that drew; the first boot after the held
+  reset timed out in both M0 cells (controls), in both 10 s holds and in one of the two clears, and
+  came up after the other clear (m1b), whose first triangle then drew with no replay, the only held
+  0x90004 reset of the session without one; frozen verdict 'H-CLR REFUTED (1 held, 1 FAILED, 0
+  cannot tell of 2); H-TIME REFUTED (0 held, 2 FAILED, 0 cannot tell of 2); H-NULL REFUTED (3 held,
+  1 FAILED, 0 cannot tell of 4)', 35 controls passing; so neither the clear nor the hold time
+  decides the boot, and the null fails on the same one cell; 5 held resets and 4 replays timed out,
+  each dump with CR_CLKGATESTATUS 0x000ccff8 and BIF_INT_STAT 0x000d0004, the second boot up in all.
+  *bif; HW, infer; data: `render-closing-r7-faults:out/20261112-222800/m/`,
+  `render-closing-r7-faults:postrun/`.*
+- `E921` R7 session r7-faults stage L (Q111's lockup stop, read by R-6 as two `lock #0` and no
+  release; E088's counter fill, 64 x 32, each pixel instance adding 1 to one scratch dword): with
+  `lock #0` ... `release #0` the counter ended at 512 and with `lock #0`, `lock #1` ... `release
+  #1`, `release #0` at 512 too (controls), with `lock #0` twice and then two releases or one the
+  fill hung with the counter at 0 (no quad's update stored) and the kernel's reset recovered it, and
+  with `lock #0` and no release it hung after one update (E088's case, replicated); frozen verdict
+  'H-SELF consistent (4 held, 0 FAILED, 0 cannot tell of 4); H-REFLAG REFUTED (0 held, 4 FAILED, 0
+  cannot tell of 4); H-RECOUNT REFUTED (1 held, 3 FAILED, 0 cannot tell of 4); L-REP consistent (2
+  held, 0 FAILED, 0 cannot tell of 2)', 9 controls passing; so in a pixel program a second `lock` of
+  a mutex its holder still holds blocks the holder itself, neither passing as a flag nor counting;
+  that the EDM's lockup routine stops at its second `lock #0` the same way is an inference from the
+  pixel pipeline, not measured in the EDM.
+  *usse; HW, RE, infer; data: `render-closing-r7-faults:out/20261112-222800/l/`,
+  `render-closing-r7-faults:bins/`.*
 
 ## By unit
 
 ### bif
 
-Records: E151, E457, E573, E592, E745, E761, E767, E789, E826, E848, E891, E892, E901.
+Records: E151, E457, E573, E592, E745, E761, E767, E789, E826, E848, E891, E892, E901, E919, E920.
 
 ### dpm
 
@@ -7402,7 +7446,7 @@ E370, E371, E372, E373, E374, E375, E376, E377, E378, E380, E406, E423, E452, E4
 E472, E473, E474, E475, E476, E477, E478, E479, E480, E481, E482, E483, E484, E485, E486, E487,
 E488, E491, E492, E493, E494, E495, E496, E497, E498, E499, E500, E501, E512, E513, E514, E515,
 E516, E517, E518, E519, E520, E521, E522, E525, E526, E527, E528, E529, E530, E534, E535, E549,
-E570, E571, E572, E593, E594, E595, E596, E597, E598, E599, E707, E708, E820, E833, E898.
+E570, E571, E572, E593, E594, E595, E596, E597, E598, E599, E707, E708, E820, E833, E898, E921.
 
 ### vdm
 

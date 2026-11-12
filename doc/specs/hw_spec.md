@@ -338,7 +338,15 @@ boots, a score on data already read (E901). Each timed-out boot's dump has the T
 [infer], and the second boot comes up (54 of 54). The kernel's reset reads `BIF_FAULT` 0 and
 `BIF_INT_STAT` 0x80000 with every block held in reset, before and after `CLEAR_FAULT`, also before
 the boots that time out (10 of 10): reading clear while held does not mean the write is gone
-(E901; Q003).
+(E901; Q003). Held out, that page rule fails (E919): held resets at 0x20008 came up 3 of 3, one at
+0x20006 (256 x 288) came up and one at 0x20009 (128 x 528) timed out; and neither a
+`CLEAR_FAULT` toggle nor a 10 s hold while held decides the boot at 288 x 144, which timed out after
+5 of 6 held resets with or without them (E920). Over those two stages 14 of 29 boots after a
+0x90004 timed out, 11 of 14 at 288 x 144 and 3 of 15 at five other sizes, the same cell going either
+way, and no register read at the hold separates them [post hoc]: the -110 is frequent at one size,
+not a rule of page or size. Every one had E901's dump and a second boot that came up (14 of 14).
+Once, after a toggle of `CLEAR_FAULT` while held, the boot came up and the first triangle drew with
+no replay (E920).
 
 ### 5.6 Unit names
 
@@ -350,7 +358,7 @@ and shading processor and its pre-processor; `PBE` pixel back end (tile write-ou
 *Based on sgx545-ce `src/services4/srvkm/hwdefs/sgx545defs.h`,
 `src/services4/srvkm/devices/sgx/sgxreset.c`; E357, E360, E457, E507, E511, E573, E729, E745,
 E761, E764 to E767, E789, E824, E826, E828, E845, E846, E848, E866 to E870, E887, E889, E891,
-E892, E901.*
+E892, E901, E919, E920.*
 
 ## 6. How the DDK resets and starts the core
 

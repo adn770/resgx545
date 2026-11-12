@@ -8,7 +8,7 @@ phase = 4
 evidence = ["E021", "E024", "E317", "E318", "E319", "E320", "E354", "E355", "E357", "E444", "E203",
             "E313", "E362", "E363", "E395", "E457", "E476", "E573", "E631", "E722", "E729", "E764",
             "E765", "E766", "E767", "E789", "E826", "E507", "E729", "E788", "E824", "E828",
-            "E845", "E848", "E891", "E892", "E901"]
+            "E845", "E848", "E891", "E892", "E901", "E919", "E920"]
 terms = ["CR_BIF_FAULT", "CR_BIF_INT_STAT", "misc_info", "CR_TE_AA", "CR_ISP_MSAA"]
 +++
 
@@ -244,3 +244,21 @@ the reading of zero while held does not show the pending write gone. Requestors 
 page 0x20006 to 0x20008 and not 0x2000a (the plan's stage d, H-PAGE against H-DONE), when in the
 boot the write is issued (kernel option K3), whether the latch is cleared or only reads zero while
 held, why one or two replays, and the requestor bits never seen.
+
+Narrowed 2026-11-12 (round 7 session r7-faults, stages d and m, E919 and E920; held out on one boot
+of module 41E2F5C7; not retired). Frozen verdict: d: H-PAGE refuted (2 held, 8 FAILED of 10), H-SIZE
+refuted (4 held, 1 FAILED of 5); m: H-CLR refuted (1 held, 1 FAILED of 2), H-TIME refuted (0 of 2),
+H-NULL refuted (3 held, 1 FAILED of 4); controls 35 and 35 of each stage, s0's 5. E901's page rule
+does not hold out: after a held 0x90004 fault the boot came up at 0x20008 (3 of 3 held resets, 6 of
+7 boots) and at 256 x 288 (0x20006), and timed out at 128 x 528 (0x20009); E901 has a correction.
+Neither `CLEAR_FAULT` toggled while held nor a 10 s hold makes the boot come up, and the same cell
+goes either way (d6: held reset up, its replay timed out; m1a and m1b, both cleared, one each way).
+Read after the run [post hoc]: 14 of 29 boots after a 0x90004 timed out, 11 of 14 at 288 x 144 and 3
+of 15 at the other five sizes; no register read at the hold separates them (the `CR_TE_DIAG` counts
+split this session's cells and fail on E848's h1). Every timed-out dump was E901's (TA clocks on,
+`BIF_INT_STAT` 0x000d0004, a write through list 0) and the second boot came up, 14 of 14. Once (m1b,
+cleared while held) the held reset's boot came up and the first triangle drew with no replay. Still
+open in this clause: what decides whether a given boot times out (no reading at the hold does; the
+boot's own steps, kernel option K3, were not traced), why m1b's write did not come back, why one or
+two replays, whether the latch is cleared or only reads zero while held, and the requestor bits
+never seen. The page count of a completed job (H-DONE, plan step F2) was not compiled.
