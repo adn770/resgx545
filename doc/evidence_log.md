@@ -6940,6 +6940,28 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   pending write, and does not prevent the -110.
   *bif; HW, infer; data: `render-closing-r6-held:out/20261112-154536/q/`,
   `render-closing-r6-held:postrun/`.*
+- `E897` Round 7 offline reading of the kept parameter-buffer dumps (Q293; post hoc, nothing held
+  out): in 13 of 13 kept two-object dumps of `tri --tri-full -n 2 --geometry 1` at 64 x 64 with
+  CR_TE_AA 0x40000000 (r3k-pixel k-pb0 2, r3k-regress rg-pb 3, r4-q285 a-pb 5 and a-pb0 2,
+  r6-render4x t7 1) render 2's own object starts at dword 27, holds a zero at its dword 11 (dump
+  dword 38) and its format word 0x00040101 at its dword 12 (dump dword 39), the 27-dword layout with
+  the inserted zero that render 1's object has; in the 11 of those jobs whose first object was not
+  put in the bit-29-set layout (no poke, or 0, 1 or 0xffffffff at dword 11) render 2's image has 0
+  triangle and 4096 background pixels although its triangle covers the target, and the 3 kept
+  two-object dumps at 0x60000000 (bit 29 set) have the second object at dword 26 with the format
+  word at its dword 11.
+  *ta; HW, infer; data: `render-closing-r3k-pixel:out/20261110-193547/k-pb0/`,
+  `render-closing-r3k-regress:out/20261110-222647/rg-pb/`,
+  `render-closing-r4-q285:out/20261111-081210/`,
+  `render-closing-r6-render4x:out/20261112-144822/t/`, `cited-scratch:closing7/a/q293/`.*
+- `E898` Round 7 offline, a program and tool record, no hardware run (Q291): the position-store
+  pixel program pix_posstore.s (17 instructions, landed as probes/pds/templates/pix_posstore.s),
+  assembled with our usse-asm (sha256 8a136e52...), passes sgx-sim as a triangle's pixel instance at
+  2048 of 2048 pixels of a 64 x 32 area with pa0 = x + 0.5 and pa1 = y + 0.5: each stores pa0, pa0,
+  pa1 and 0x7E570000 | g25 at scratch 16 x (g24 << 5 | g23) and leaves o0 = pa0; it reads only g23,
+  g24 and g25, the globals sgx-sim models in a triangle's pixel task (it refuses g18 there), so one
+  job's rows must touch one tile.
+  *usse; infer; data: `cited-scratch:closing7/a/q291/`, `probes/pds/templates/pix_posstore.s`.*
 
 ## By unit
 
@@ -7012,7 +7034,7 @@ Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
 E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763, E776, E777,
 E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828, E842, E847, E851, E859,
-E865, E872, E877, E879, E886, E888.
+E865, E872, E877, E879, E886, E888, E897.
 
 ### texture
 
@@ -7040,7 +7062,7 @@ E370, E371, E372, E373, E374, E375, E376, E377, E378, E380, E406, E423, E452, E4
 E472, E473, E474, E475, E476, E477, E478, E479, E480, E481, E482, E483, E484, E485, E486, E487,
 E488, E491, E492, E493, E494, E495, E496, E497, E498, E499, E500, E501, E512, E513, E514, E515,
 E516, E517, E518, E519, E520, E521, E522, E525, E526, E527, E528, E529, E530, E534, E535, E549,
-E570, E571, E572, E593, E594, E595, E596, E597, E598, E599, E707, E708, E820, E833.
+E570, E571, E572, E593, E594, E595, E596, E597, E598, E599, E707, E708, E820, E833, E898.
 
 ### vdm
 
