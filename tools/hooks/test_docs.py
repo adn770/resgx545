@@ -39,4 +39,10 @@ def test_roadmap_has_the_dated_note():
 def test_markdown_lines_are_at_most_100_columns():
     for name in ("HACKING.md", "tools/README.md", "doc/roadmap.md"):
         long = [n for n, l in enumerate(text(name).splitlines(), 1) if len(l) > 100]
-        assert long == [], (name, long)
+        assert long == [], (name, long, f"run: tools/wrapmd.py --fix {name}")
+
+
+def test_hacking_states_where_line_limits_apply():
+    t = text("HACKING.md")
+    assert "tools/wrapmd.py" in t and "do not hand-wrap code" in t
+    assert "tools/wrapmd.py --fix" in (ROOT / "tools/hooks/test_docs.py").read_text()

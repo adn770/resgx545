@@ -570,3 +570,8 @@ stays with what a session must do around it.
 ## Markdown
 
 Wrap lines at 100 characters and break long sentences at natural points.
+
+Line limits apply where a check exists and nowhere else: Markdown prose is wrapped at 100 columns
+(`tools/wrapmd.py --fix FILE` does it, `--check` lists offenders), and commit messages are 70 for
+the subject and 80 for the body (`tools/hooks/msgcheck.py`). Code follows its formatter or the
+file's existing style; do not hand-wrap code (shell, Python, Rust) to a column count.
