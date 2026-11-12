@@ -1,11 +1,11 @@
 +++
 id = "Q230"
-question = "what does the TA write in the cases of the clip, the target's edge and the numeric formats that E776 to E783 and E795 to E798 left open: the stored order of a clipped polygon of 3 or of more than 4 vertices and of a cut by a guard-band plane (E777), the limit of the region lists in y and at the left edge of other targets (E776), the tie of the rounding of the 1/1024 grid to 1/256 (E778), the depth word of a vertex with w other than 1 (no formula: every frozen rule refuted, words recorded, E783, E795 to E797), the rule of the 1/w word of a vertex with w other than 1 (RZ of 1/w or one ulp above it in 196 of 196 words of kept vertices, w from 3e-5 to 31; which of the two follows the mantissa of w alone, held out 42 of 42 at other exponents, E859; which of the 130 mantissas read store RZ + 1, 23 of them, has no rule, and exponents outside -2 to 4 were read at two w only) and of a clip-made vertex (0 to 3 ulp above RZ of 1/w_made, no rule, E782, E798), the depth of a made vertex (1.0 / 0.0 in 11 of 12, E782, E798), the 1/w word under a clamp (within 1 ulp of 1/clamp, no rule, E781), and the size at which a sub-pixel triangle is no longer written (E780)?"
+question = "what does the TA write in the cases of the clip, the target's edge and the numeric formats that E776 to E783 and E795 to E798 left open: the stored order of a clipped polygon of 3 or of more than 4 vertices and of a cut by a guard-band plane (E777), the limit of the region lists in y and at the left edge of other targets (E776), the tie of the rounding of the 1/1024 grid to 1/256 (E778), the depth word of a vertex with w other than 1 (no formula: every frozen rule refuted, words recorded, E783, E795 to E797), the rule of the 1/w word of a vertex with w other than 1 (RZ of 1/w or one ulp above it in 196 of 196 words of kept vertices, w from 3e-5 to 31; which of the two follows the mantissa of w alone, held out 42 of 42 at other exponents, E859; which of the 130 mantissas read store RZ + 1, 23 of them, has no rule: 0 of 512703 declared table-plus-Newton and binary32 models fit the 99 FIT mantissas, and a mantissa whose exact 1/w lies less than half an ulp above RZ stored RZ in 64 of 64, 13 of 13 on the dense table's HELD OUT half, SEMI, E872; exponents outside -2 to 4 were read at two w only) and of a clip-made vertex (0 to 3 ulp above RZ of 1/w_made, no rule, E782, E798), the depth of a made vertex (1.0 / 0.0 in 11 of 12, E782, E798), the 1/w word under a clamp (within 1 ulp of 1/clamp, no rule, E781), and the size at which a sub-pixel triangle is no longer written (E780)?"
 unit = "ta"
 kind = "hw"
 value = "medium"
 phase = 12
-evidence = ["E063", "E182", "E194", "E287", "E307", "E651", "E650", "E736", "E754", "E776", "E777", "E778", "E780", "E781", "E782", "E783", "E795", "E796", "E797", "E798", "E842", "E851", "E859"]
+evidence = ["E063", "E182", "E194", "E287", "E307", "E651", "E650", "E736", "E754", "E776", "E777", "E778", "E780", "E781", "E782", "E783", "E795", "E796", "E797", "E798", "E842", "E851", "E859", "E872"]
 terms = ["PB_OBJ.RHW", "PB_OBJ.ISP_WORDS", "VIEWPORT.X_OFFSET", "WCLAMP"]
 +++
 
@@ -204,3 +204,18 @@ below 1" (E851's note) is answered for the RZ or RZ + 1 assertion. sgx-pipe give
 the 130 mantissas read at exponents -2 to 4 and refuses the rest. Open: which mantissas store RZ +
 1 (a family declared before it is fitted on the dense table's FIT half and scored on its HELD OUT
 half), exponents outside -2 to 4, and the rest of the line as before.
+
+Narrowed 2026-11-12 (E872, an offline fit and a SEMI test on E859's kept words; the question line's
+1/w clause is reworded, the question stays open). The clause read "which of the 130 mantissas read
+store RZ + 1, 23 of them, has no rule, and exponents outside -2 to 4 were read at two w only)". The
+fit E859 left undone ran on the FIT mantissas only (99, w = 1 left out, 15 RZ + 1): 0 of 512703
+models declared before the run fit them (tables plus Newton steps with truncated products, binary32
+compositions, RZ of a cut w), so the HELD OUT half was not used for a fit. H-FRAC, read on FIT (with
+frac the fraction of 2^47 / M, no mantissa with frac below 0.5 stores RZ + 1: 0 of 51), was frozen
+with a hash and held on the HELD OUT half by counts: 13 mantissas below 0.5, all RZ, 8 RZ + 1 above
+(chance 0.0042). SEMI, not held out: the planner had read the 130 deltas unlabelled in E859's fold
+output before the freeze. Read [infer]: the word is floor(1/w + e) with 0 <= e < 0.5 ulp, e not
+smooth in the mantissa. Open: which mantissas with frac of 0.5 or more store RZ + 1 (how e varies
+between neighbouring mantissas: windows of 36 at three strides, the plan's stage g6-rw,
+closing6/pixel/exp-pixel-r6.md section 4), exponents outside -2 to 4, and the rest of the line as
+before. sgx-pipe keeps the table of read mantissas; H-FRAC is not a rule there yet.

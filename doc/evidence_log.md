@@ -6613,6 +6613,21 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *pds; HW, infer; data: `render-closing-r5-pixel:out/20261112-091752/p5-o4/`,
   `render-closing-r5-pixel:bins/`, `usse-output-room-tiles`, `usse-output-registers`,
   `cited-scratch:closing6/pixel/`.*
+- `E872` Offline fit and test on E859's kept 1/w words (Q230; no new job): the fit E859 left undone
+  was run on the FIT mantissas only (every mantissa read except the 30 of the dense table E859's
+  frozen hash marked HELD OUT; 99 with w = 1 left out, 15 RZ + 1): 0 of 512703 models declared
+  before the run fit all 99 (family A, fixed-point table plus one or two Newton steps with truncated
+  products, 511056; B, binary32 compositions, 1539; C, RZ of 1/w with w cut to 12 to 23 bits, 108;
+  best of B and C 89 of 99, 'always RZ' 84); then H-FRAC, read on FIT ('a mantissa M whose exact 1/w
+  lies less than half an ulp above RZ, the fraction of 2^47 / M below 0.5, never stores RZ + 1': 0
+  of 51 FIT mantissas below 0.5 do, the 15 RZ + 1 at 0.583 to 0.995), was frozen with a hash before
+  its script ran and held on the HELD OUT half: 13 mantissas below 0.5, 8 RZ + 1, none of them below
+  0.5 (chance 0.0042 if the delta were independent of the fraction); SEMI, not held out: the planner
+  had read the 130 deltas unlabelled in E859's fold output before the freeze; read as the stored
+  word being floor(1/w + e) with 0 <= e < 0.5 ulp and e not smooth in the mantissa [infer].
+  *ta; HW, infer; data: `render-closing-r4-pixel:out/20261111-210423/`,
+  `render-closing-r5-pixel:out/20261112-091752/`, `render-closing-r5-pixel:fold/`,
+  `cited-scratch:closing6/pixel/`.*
 
 ## By unit
 
@@ -6685,7 +6700,7 @@ Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
 E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763, E776, E777,
 E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828, E842, E847, E851, E859,
-E865.
+E865, E872.
 
 ### texture
 

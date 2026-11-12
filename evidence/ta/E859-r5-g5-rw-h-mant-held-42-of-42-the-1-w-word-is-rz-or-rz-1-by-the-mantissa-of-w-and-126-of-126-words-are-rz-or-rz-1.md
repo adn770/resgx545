@@ -55,3 +55,12 @@ at this fold: E851's 225 frozen models and 32000 explored ones fit none of the e
 dense table's halves wait for a declared family); the word at exponents outside -2 to 4 other than
 the two read; the 1/w and depth of a clip-made vertex and the depth formula at w other than 1
 (Q230).
+
+**Correction 2026-11-12:** (adds a reading; the claim stands.) The method says no fit family was
+declared at the fold and both halves of the dense table are unused. E872 ran that fit offline on
+the FIT half (every mantissa read but the 30 HELD OUT ones): 0 of 512703 declared models fit the
+99 FIT mantissas. It then froze H-FRAC, read on FIT ("a mantissa whose exact 1/w lies less than
+half an ulp above RZ never stores RZ + 1"), and scored it once on the HELD OUT half by counts: 13
+mantissas below the half ulp, all RZ, 8 RZ + 1 above it (SEMI: the 130 deltas of
+`fold/posthoc_r5.txt` had been read unlabelled before the freeze). The HELD OUT half has been used
+once; it stays unread for a declared model fit.
