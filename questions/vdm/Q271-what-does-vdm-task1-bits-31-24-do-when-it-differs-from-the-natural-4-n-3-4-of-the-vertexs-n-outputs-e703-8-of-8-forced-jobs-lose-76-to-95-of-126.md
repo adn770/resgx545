@@ -1,6 +1,6 @@
 +++
 id = "Q271"
-question = "what does VDM_TASK1 bits 31:24 do when it differs from the natural (4 + N + 3) / 4 of the vertex's N outputs (E703: the render of 8 of 8 forced jobs differs from the natural jobs' at products R * V of 30 to 40, and the decoder reads 76 to 95 of 126 vertices as lost, a reading under a layout assumption; the two natural jobs at 32 and 33 are intact), and where does the capacity limit of a task lie between R * V = 33 and 36"
+question = "what does VDM_TASK1 bits 31:24 do when it is forced to differ from the natural (4 + N + 3) / 4 of the vertex's N outputs (E703: the render of 8 of 8 forced jobs differs from the natural jobs' at products R * V of 30 to 40, and the decoder reads 76 to 95 of 126 vertices as lost, a reading under a layout assumption; the two natural jobs at 32 and 33 are intact)"
 unit = "vdm"
 kind = "hw"
 value = "medium"
@@ -34,3 +34,11 @@ a xor, if the tool can be changed), forced rows below the natural value (N = 11,
 11), forced = natural + 1 at a small product (N = 2, R = 3, V = 2) to see whether any forced job is
 intact, and a stream with the vertex size field written beyond 11 (tri_probe.c checks it), if the
 tool can be changed.
+
+Narrowed 2026-11-12 (round 6 housekeeping, decision R6-1 a; arithmetic, no run) to forced R. With N
+at most 11 and V at most 16 no natural job has R * V of 34 or 35 (R = ceil((4 + N) / 4); the natural
+products are 33 and less, then 36 and more), so for the streams our tools write a simulator needs
+only "refuse R * V above 33", which it does; where a capacity limit lies between 33 and 36 is not
+asked any more. What stays open is the forced field: what the rows do when they differ from the
+vertex's own size, whether a forced R below the natural one loses vertices, and a forced = natural
+control.

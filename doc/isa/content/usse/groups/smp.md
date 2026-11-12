@@ -27,7 +27,8 @@ source-1 operand; the LOD value as source 2 when a LOD mode is set; a data fence
 - **`smp3d` without a LOD mode [HW]** (E567, in a fill of our own): on TEXTYPE 0, 6 and 7, point
   sampled, a 16x16 twiddled texture and a 64x32 stride one, the third coordinate is not read and
   the texel is the `smp2d` one (8 of 8 jobs, 3 sweeps, `rt7` at two values); on TEXTYPE 2 it
-  changes the image (three images for `smp2d`, 0.5 and 1.5), which is not decoded (Q178). The
+  changes the image (three images for `smp2d`, 0.5 and 1.5): type 2 is the cube layout, its face
+  chosen by the dominant coordinate (E725, E726, E844). The
   simulator reads `smp3d` as `smp2d` on the first and stops on every other state.
 - **In the firmware:** not used.
 - **The sampler cache [HW]** (E114). The sampler keeps what it fetched, in lines that hold at

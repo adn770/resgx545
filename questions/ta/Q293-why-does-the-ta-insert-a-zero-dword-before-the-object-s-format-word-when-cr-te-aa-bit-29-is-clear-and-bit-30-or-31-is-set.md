@@ -1,6 +1,6 @@
 +++
 id = "Q293"
-question = "with CR_TE_AA bit 29 clear and bit 30 or 31 set the TA inserts one zero dword right before the format word of a triangle, line or point object (at 0x40 and 0x80, on one array and on four: E728, E847, E865), and the 3D reads the zero as the format word and draws nothing (E829): is there a setting under which the 3D reads the displaced layout, and what do another value at that dword and render 2's own object give"
+question = "with CR_TE_AA bit 29 clear and bit 30 or 31 set the TA inserts one zero dword right before the format word of a triangle, line or point object (at 0x40 and 0x80, on one array and on four: E728, E847, E865), and the 3D reads the zero as the format word and draws nothing (E829): what do 0xc0000000 on a line and a point object, a non-zero value poked into the inserted dword, and render 2's own object give"
 unit = "ta"
 kind = "hw"
 value = "medium"
@@ -58,3 +58,13 @@ targets with both values, the image empty in every case. H-FIELD (a non-zero fie
 object kind the tool draws, at both values and whatever the region-header array count (settled by
 E865). Open: whether any register makes the 3D read the displaced layout, 0xc0000000 on a line or a
 point, a non-zero value poked into the dword, render 2's own object.
+
+Reworded 2026-11-12 (round 6 housekeeping, decision R6-1 a; section 5 of the round 6 render4x
+plan) to its bounded items. Whether some setting makes
+the 3D read the displaced layout has no finite test (any ISP or 3D register, in any combination)
+and is not pursued; the question keeps the three items a run can settle, with the four rows the
+plan offers: t5 and t6, `CR_TE_AA` 0xc0000000 on the 11.31 line and point (predicted: one zero
+dword before the format word, at 9 and 11, and an empty image, as with 0x40000000 and
+0x80000000); t7, the 0x40000000 triangle with a non-zero value poked into dword 11 (predicted: an
+empty image, the 3D reading it as the format word as in E829); t8, the round 5 control of stage t.
+Render 2's own object is not among them.
