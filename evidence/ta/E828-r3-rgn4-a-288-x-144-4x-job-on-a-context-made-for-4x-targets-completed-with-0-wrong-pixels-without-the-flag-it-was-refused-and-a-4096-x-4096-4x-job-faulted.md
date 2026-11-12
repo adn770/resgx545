@@ -90,3 +90,12 @@ x 144 (E846, read after the run, its frozen verdict gated). So j4 is not a 4x pa
 fault is about the size, and its onset lies past 1024 x 768 and at or before 1280 x 1024 (Q292).
 The page fit U4 itself held again where a dump was kept (193 pages at 1024 x 768, 12 at 288 x
 144; E845, E846).
+
+**Correction 2026-11-12:** (the third, after R6-render4x) The claim stands; the cause of j4's
+fault is now held out. A four-array 4x job faults with this word where its target's Z-ordered
+tail-pointer entries pass the region headers of its context (E887, 11 of 11 held-out rows, two
+held faults losing exactly the predicted stream offsets); at 4096 x 4096 they end at 0x80000
+against `td.rgn` 0x43000. On a module that gives a 4x context four times the tail room, 4096 x 960
+completes with 0 wrong pixels and 4096 x 1152, which also overflows, ends in -ENOSPC without a
+fault (E889), so j4's fault is the layout's tail room, not the overflow; its right 1024 x 1024
+block is a property of the faulting job that was not pursued.

@@ -53,3 +53,10 @@ allocate four. Not shown: a default of four (the knob is debug only, default 1),
 4096 x 4096 (the layout needs 0x223000 bytes, over the 2 MiB TA-data slot, design), whether the
 ZLS buffer, which keeps one array's size, is enough (it was at all 8), and the cause of the two
 failing health triangles after a failed 4x job (reproduced twice, not explained).
+
+**Correction 2026-11-12:** (after R6-render4x) The claim stands. The four-array layout measured
+here gives a 4x context the single-sampled tail room (4 side^2 bytes) before the region headers,
+and a 4x job's tail-pointer entries, one dword per tile of the doubled grid in Z-order, end at 4 x
+(Z(2tx - 1, 2ty - 1) + 1) bytes; every size here ends at or before its own `td.rgn` (1024 x 768
+exactly at 0x7000), so the layout was enough for them, and sizes past it fault (E887, held out 11
+of 11); a module with four times the room completes them (E889).
