@@ -47,6 +47,13 @@
 #   - a file of the session frozen by its relative path but derived from the closed firmware, so
 #     left out of the published session, is copied back from cited/closingN/<name>/<path> of the
 #     private repository (r6-held's private/o3/; no copy: the freeze fails);
+#   - a binary the session built and ran, frozen by its relative path (R7-geo's
+#     bin/t6/sgxfive-test), is bound to its source by a FROZEN.commits line
+#     `<binary-sha256>  built  <commit>  <source-path>  <source-sha256>  <recipe>`: the source blob
+#     at the commit must hash to <source-sha256> and the recipe (data:PATH in the data repository,
+#     else a PATH of the tool tree at the commit) must be in place, else the session FAILs; the
+#     binary's line then leaves the copy's freeze, its bytes are neither looked for nor restored
+#     (the hash stays in the published freeze as the record of what ran);
 #   - a part of the session with a freeze of its own (r6-held's p/, its FROZEN.sha256 and
 #     FROZEN.commits) is pinned and pointed as the session's freeze is;
 #   - the copy's tests/ files that no freeze names have their absolute resgx545-data and resgx545
@@ -159,7 +166,7 @@ BASE=HEAD
 if [ -f "$COMMITS" ]; then
     # a line may name its repository (R5-dpm: resgx545:PATH, linux:PATH, data:PATH): only the
     # tool tree's lines choose the commit
-    pinned=$(awk '!/^#/ && $2 != "untracked" && NF >= 3 \
+    pinned=$(awk '!/^#/ && $2 != "untracked" && $2 != "built" && NF >= 3 \
         && ($3 !~ /^[a-z][a-z0-9-]*:/ || $3 ~ /^resgx545:/) {print $2}' "$COMMITS" | sort -u)
     # shellcheck disable=SC2086
     [ -n "$pinned" ] && BASE=$(git -C "$TOOL" rev-list --no-walk --date-order $pinned | head -1)
@@ -195,6 +202,7 @@ for CM in "$C"/FROZEN.commits "$C"/*/FROZEN.commits; do
     [ -f "$CM" ] || continue
     while read -r hash commit path; do
         case "$hash" in "#"*|"") continue ;; esac
+        [ "$commit" = built ] && continue
         case "$path" in resgx545:*) path=${path#resgx545:} ;; [a-z]*:*) continue ;; esac
         grep -q "^$hash [ *]/.*/$path\$" "$(dirname "$CM")/FROZEN.sha256" 2>/dev/null || continue
         mkdir -p "$R/$(dirname "$path")"
@@ -205,6 +213,33 @@ for CM in "$C"/FROZEN.commits "$C"/*/FROZEN.commits; do
             git -C "$TOOL" show "$commit:$path" > "$R/$path" \
                 || die "cannot read $commit:$path"
         fi
+    done < "$CM"
+done
+# a binary bound to its source (a built line of FROZEN.commits) is verified by the source blob at
+# its commit and the recipe's place, never by its bytes: its line leaves the copy's freezes
+built_fail() { echo "session_tests: $SESSION FAIL (built $1)"; exit 1; }
+for CM in "$C"/FROZEN.commits "$C"/*/FROZEN.commits; do
+    [ -f "$CM" ] || continue
+    while read -r hash kind commit src want recipe; do
+        [ "$kind" = built ] || continue
+        src=${src#resgx545:}
+        got=$(git -C "$TOOL" show "$commit:$src" 2>/dev/null | shasum -a 256 | cut -d' ' -f1)
+        [ "$got" = "$want" ] || built_fail "$hash: $commit:$src hashes to $got, not $want"
+        r=${recipe#resgx545:}
+        case "$r" in
+            data:*) [ -n "$DATA" ] && [ -f "$DATA/${r#data:}" ] ;;
+            [a-z]*:*) false ;;
+            *) git -C "$TOOL" cat-file -e "$commit:$r" 2>/dev/null ;;
+        esac || built_fail "$hash: recipe $recipe is not in place"
+        names=
+        for f in "$(dirname "$CM")"/FROZEN*.sha256; do
+            [ -f "$f" ] || continue
+            names="$names$(awk -v h="$hash" \
+                '$1 == h {sub(/^[0-9a-f]+ [ *]/, ""); print " " $0}' "$f")"
+            awk -v h="$hash" '$1 != h' "$f" > "$f.new" && mv "$f.new" "$f"
+        done
+        echo "session_tests: built${names:- $hash}: source verified, $commit:$src" \
+            "(recipe $recipe)"
     done < "$CM"
 done
 MAIN=$(dirname "$COMMON")

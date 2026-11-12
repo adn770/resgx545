@@ -532,3 +532,49 @@ def test_absolute_paths_in_the_tests_point_at_the_fake_home(world):
     assert r.returncode == 0, r.stdout + r.stderr
     assert "RUN_ALL PASSED" in r.stdout
     assert snapshot(data) == before
+
+
+def built_world(world, source=V1, recipe="data:edm/closing-demo/lead/build.sh"):
+    """The demo session froze a binary it ran (bin/t/tool, by relative path) that the published
+    copy does not hold, and binds it to its source in FROZEN.commits: tools/x.py at the first
+    commit, built by a recipe published beside it."""
+    tool, data, _ = world
+    s = data / "edm/closing-demo"
+    c1 = git(tool, "rev-list", "--max-parents=0", "HEAD")
+    (s / "lead").mkdir()
+    (s / "lead/build.sh").write_text("make\n")
+    (s / "FROZEN.sha256").write_text((s / "FROZEN.sha256").read_text()
+                                     + f"{sha('BIN')}  bin/t/tool\n")
+    (s / "FROZEN.commits").write_text((s / "FROZEN.commits").read_text()
+                                      + f"{sha('BIN')}  built  {c1}  tools/x.py  {sha(source)}"
+                                      f"  {recipe}\n")
+    return s
+
+
+def test_a_built_binary_is_verified_by_its_source_not_its_bytes(world, tmp_path):
+    """A FROZEN.commits built line stands for the binary: the runner checks the source blob at
+    the commit and the recipe's place, drops the binary's line from the copy's freeze and never
+    looks for the bytes (nor the private copy); the worktree stays at the tool tree's commit."""
+    s = built_world(world)
+    priv = tmp_path / "data-private"
+    (priv / "cited/closing7/demo/bin/t").mkdir(parents=True)
+    (priv / "cited/closing7/demo/bin/t/tool").write_text("NOT THE BINARY")
+    r = run(world, "edm/closing-demo", RESGX545_DATA_PRIVATE=str(priv))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "RUN_ALL PASSED" in r.stdout
+    assert "built bin/t/tool" in r.stdout and "source verified" in r.stdout
+    assert sha("BIN") in (s / "FROZEN.sha256").read_text()      # the published freeze is kept
+
+
+def test_a_built_binary_whose_source_differs_fails(world):
+    built_world(world, source=V2)
+    r = run(world, "edm/closing-demo")
+    assert r.returncode == 1 and "RUN_ALL PASSED" not in r.stdout
+    assert "tools/x.py" in r.stdout and "FAIL" in r.stdout
+
+
+def test_a_built_binary_whose_recipe_is_missing_fails(world):
+    built_world(world, recipe="data:edm/closing-demo/lead/gone.sh")
+    r = run(world, "edm/closing-demo")
+    assert r.returncode == 1 and "RUN_ALL PASSED" not in r.stdout
+    assert "gone.sh" in r.stdout and "FAIL" in r.stdout
