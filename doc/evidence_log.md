@@ -449,10 +449,12 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   16 at the centre and at +1 (taps 1, 1/2, 1/2); the results clamp at 0, so negative taps are not
   seen, and the table has no lifted case, so [1 -4 4 -1]/8 for set 2 is consistent but not measured.
   *usse; HW; data: `usse-filter-banks`.*
-- `E081` A pixel's o0 lands on its own pixel (all 1062 covered pixels, in all four tables); o1-o7
-  write fewer pixels (508, 604, 400, 348, 348, 348, 312) and where they land is the instance's own
-  pixel or one 16 or 32 rows and 0 or 32 columns away, a few at other offsets, for the plain table
-  and for PDS_SIZE bits 17:16 = 0, 1, 2.
+- `E081` A pixel's o0 lands on its own pixel (all 1062 covered pixels, in all four tables); o1-o3
+  write fewer pixels (508, 604, 400) and where they land is the instance's own pixel or one 16 or 32
+  rows and 0 or 32 columns away, a few at other offsets, for the plain table and for PDS_SIZE bits
+  17:16 = 0, 1, 2; the o4-o7 images (348, 348, 348, 312 pixels) equal the previous case's image at
+  every non-background pixel and show no word of the o4-o7 write [corrected 2026-11-12, see
+  Correction].
   *usse; HW, infer; data: `usse-output-registers`.*
 - `E082` With the iteration marked done (U1 bit 24, iteration source set) the colour phase after a
   pt phase does not get the pt phase's writes or the iterated attributes: in the punch-through scene
@@ -6613,6 +6615,36 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   `render-closing-r5-render4x:out/20261112-100112/m/`,
   `render-closing-r5-render4x:out/20261112-100112/l/`,
   `render-closing-r5-render4x:out/20261112-100112/x/`, `cited-scratch:cited/closing6/render4x/`.*
+- `E871` Offline reading of kept images (Q276; no new job, post hoc counts, no held-out row): in
+  E709's command the own words of o4 to o7 reach no pixel of any kept image: in E858's walk rows w-4
+  to w-7, where only o_j's word carries bit 4 and every other output's word bit 5, 0 of the 12143
+  image words with the job's marker carry bit 4 (8 jobs), while the rows' positive controls w-0 to
+  w-3 hold 1944, 1007, 106 and 78 such words (o0 to o3); every word of E858's 54 marker jobs is a
+  word of o0 to o3 or an OR of them [infer for the few tag-6 and tag-3 OR words]; in E570's 68 jobs
+  at ten target shapes (64 x 64 to 256 x 128, PDS_SIZE 0 to 3), whose shader tags o0 to o7 as 1 to
+  8, none of the 221662 single-image marker words is tag 8, and the tag-5 to tag-7 words (2393
+  pairs) never land at their source's place in another 32 x 16 tile, the way o1 to o3 land, but all
+  come from (even, even) sources as E858's OR words; E081's o4 to o7 images equal the previous
+  case's image at every non-background pixel (348, 348, 348 and 312 of as many in the x run, 348,
+  348, 312 and 276 in the y run), so they show no word of the oN write (E081 corrected).
+  *pds; HW, infer; data: `render-closing-r5-pixel:out/20261112-091752/p5-o4/`,
+  `render-closing-r5-pixel:bins/`, `usse-output-room-tiles`, `usse-output-registers`,
+  `cited-scratch:closing6/pixel/`.*
+- `E872` Offline fit and test on E859's kept 1/w words (Q230; no new job): the fit E859 left undone
+  was run on the FIT mantissas only (every mantissa read except the 30 of the dense table E859's
+  frozen hash marked HELD OUT; 99 with w = 1 left out, 15 RZ + 1): 0 of 512703 models declared
+  before the run fit all 99 (family A, fixed-point table plus one or two Newton steps with truncated
+  products, 511056; B, binary32 compositions, 1539; C, RZ of 1/w with w cut to 12 to 23 bits, 108;
+  best of B and C 89 of 99, 'always RZ' 84); then H-FRAC, read on FIT ('a mantissa M whose exact 1/w
+  lies less than half an ulp above RZ, the fraction of 2^47 / M below 0.5, never stores RZ + 1': 0
+  of 51 FIT mantissas below 0.5 do, the 15 RZ + 1 at 0.583 to 0.995), was frozen with a hash before
+  its script ran and held on the HELD OUT half: 13 mantissas below 0.5, 8 RZ + 1, none of them below
+  0.5 (chance 0.0042 if the delta were independent of the fraction); SEMI, not held out: the planner
+  had read the 130 deltas unlabelled in E859's fold output before the freeze; read as the stored
+  word being floor(1/w + e) with 0 <= e < 0.5 ulp and e not smooth in the mantissa [infer].
+  *ta; HW, infer; data: `render-closing-r4-pixel:out/20261111-210423/`,
+  `render-closing-r5-pixel:out/20261112-091752/`, `render-closing-r5-pixel:fold/`,
+  `cited-scratch:closing6/pixel/`.*
 
 ## By unit
 
@@ -6666,7 +6698,7 @@ Records: E043, E044, E045, E046, E047, E048, E125, E126, E127, E128, E129, E130,
 E134, E135, E136, E137, E138, E139, E140, E141, E142, E143, E144, E145, E259, E260, E261, E262,
 E263, E264, E343, E344, E345, E364, E379, E381, E384, E388, E389, E390, E391, E392, E393, E394,
 E395, E396, E400, E420, E421, E428, E430, E436, E437, E454, E459, E460, E709, E742, E759, E772,
-E808, E838, E850, E858.
+E808, E838, E850, E858, E871.
 
 ### platform
 
@@ -6685,7 +6717,7 @@ Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
 E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763, E776, E777,
 E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828, E842, E847, E851, E859,
-E865.
+E865, E872.
 
 ### texture
 

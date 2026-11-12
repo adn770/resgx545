@@ -76,3 +76,12 @@ on that OR. Refuted by: a walk entry off OR(o0, o3)'s vector, or a tag-5 word wi
 counts wander (Q276). The P3 reading is post hoc and its k = 0 y jobs are not explained. All of it
 is in E709's command (state block word 4 = 0x00030001), not E406's full setup with the ISP word 0
 and `CR_REG_0148` bits.
+
+**Correction 2026-11-12:** (adds a reading; the claim stands.) "What it does not show" says
+where the own words of `o4` to `o7` go is open, no tag-8 word being read. Read offline from this
+record's kept images (E871, post hoc counts): in the walk rows w-4 to w-7, where only `o_j`'s
+word carries bit 4, 0 of the 12143 words with the job's marker carry bit 4, while w-0 to w-3 hold
+1944, 1007, 106 and 78 such words; every word of the 54 marker jobs is a word of `o0` to `o3` or
+an OR of them. With E570's 68 jobs (no tag-8 word in 221662 marker words), the own words of `o4`
+to `o7` reach no pixel of any kept image, so where they go cannot be read from the image; Q276
+now asks whether such a write is stored at all, by reading it back inside the instance.

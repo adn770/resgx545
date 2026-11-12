@@ -1,11 +1,11 @@
 +++
 id = "Q276"
-question = "where do the own words of o4 to o7 go in E709's command (state block word 4 at 0x00030001), now that the word at the tag-5 pixels is the OR of the source instance's o0 and o3 words (E858: the walk read OR(o0,o3)'s vector and a program with no o4 write read tag 5), and does a predicate set by `xor.testtaz.chan0 !c0, p1, g25, #k` gate the write `p1 or.skipinv o4`"
+question = "is a write to o4 to o7 stored at all in E709's command (state block word 4 at 0x00030001), now that their own words reach no pixel of any kept image (E871: 0 of 12143 marked words of E858's walk rows w-4 to w-7, no tag-8 word in E570's 68 jobs) and the word at the tag-5 pixels is the OR of the source instance's o0 and o3 words (E858), and does a predicate set by `xor.testtaz.chan0 !c0, p1, g25, #k` gate the write `p1 or.skipinv o4`"
 unit = "pds"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E709", "E570", "E406", "E742", "E759", "E772", "E808", "E838", "E850", "E858"]
+evidence = ["E709", "E570", "E406", "E742", "E759", "E772", "E808", "E838", "E850", "E858", "E081", "E871"]
 terms = ["PDS_SIZE.BITS17_16"]
 +++
 Q023 asks which lanes write o4 to o7 in the four-output-room setup. E709 guarded o4 by a test of g25
@@ -122,3 +122,20 @@ read the p1 word and the y jobs the !p1 word, unexplained. Open: where o4 to o7'
 (a run that reads them, for example with o0 and o3 written as tag 0 so that no OR reaches the
 tag-5 pixels), then whether the predicate gates the o4 write; the line says "E709's command"
 rather than "four-output setup", as E850's note asked.
+
+Narrowed 2026-11-12 (E871, an offline reading of kept images, post hoc counts, no held-out row; the
+question line is reworded, the question is not retired). The line read "where do the own words of o4
+to o7 go in E709's command (state block word 4 at 0x00030001), now that the word at the tag-5 pixels
+is the OR of the source instance's o0 and o3 words (E858: the walk read OR(o0,o3)'s vector and a
+program with no o4 write read tag 5), and does a predicate set by `xor.testtaz.chan0 !c0, p1, g25,
+#k` gate the write `p1 or.skipinv o4`". The walk of E858 marks one output by bit 4: in the rows w-4
+to w-7 none of the 12143 words with the job's marker carries it, while the rows w-0 to w-3 hold
+1944, 1007, 106 and 78 such words, and every word of the 54 marker jobs is a word of o0 to o3 or an
+OR of them. E570's 68 jobs at ten target shapes hold no tag-8 word in 221662 marker words, and their
+tag-5 to tag-7 words never land at their source's place in another tile (the way o1 to o3 land) but
+come from (even, even) sources, as E858's OR words. E081's o4 to o7 images equal the previous case's
+image at every non-background pixel: leftovers (E373), not writes (E081 corrected). So "where do
+they go" has the offline answer "on no pixel, at any shape tried", and the predicate clause cannot
+be read from image pairs. Open: whether an o4 to o7 write is stored at all, read back inside the
+instance (`mov r10, oN`, then o0 = r10: the plan's stage p6-rd, closing6/pixel/exp-pixel-r6.md
+section 2), then, if o4 reads back, whether the predicate gates its write per lane.
