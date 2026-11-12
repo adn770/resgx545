@@ -250,6 +250,12 @@ def render(qs: list[dict]) -> str:
     return "\n".join(out).rstrip() + "\n"
 
 
+def generated() -> tuple[pathlib.Path, ...]:
+    """The generated documents that copy the records' text (their citations are checked in
+    the records themselves)."""
+    return DOC, ROOT / "doc" / "evidence_log.md", ROOT / "doc" / "state_digest.md"
+
+
 def main(argv: list[str] | None = None) -> int:
     a = sys.argv[1:] if argv is None else argv
     ids = {p.name[:4] for p in evidence.DIR.glob("*/E*.md")}
@@ -272,7 +278,7 @@ def main(argv: list[str] | None = None) -> int:
         bad += 1
     for d, pat in (("evidence", "*/*.md"), ("glossary", "*/*.toml"), ("doc", "**/*.md")):
         for p in sorted((ROOT / d).glob(pat)):
-            if p not in (DOC, ROOT / "doc" / "evidence_log.md"):   # generated
+            if p not in generated():
                 rec = p.name[:4] if d == "evidence" else None
                 for msg in reference_problems(p.read_text(), open_ids, rec):
                     print(f"{p.relative_to(ROOT)}: {msg}")
