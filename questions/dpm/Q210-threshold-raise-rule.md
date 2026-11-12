@@ -5,7 +5,7 @@ unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E310", "E312", "E464", "E625", "E627", "E629", "E704", "E734", "E753", "E774", "E779", "E785", "E786", "E799", "E800", "E801", "E802"]
+evidence = ["E310", "E312", "E464", "E625", "E627", "E629", "E704", "E734", "E753", "E774", "E779", "E785", "E786", "E799", "E800", "E801", "E802", "E852", "E853"]
 terms = ["Dynamic Parameter Management (DPM)", "CR_DPM_STATE_BASE0", "ta3d_ctl"]
 +++
 
@@ -189,3 +189,20 @@ into the missing condition); a repeat of the flips on other hardware that moves 
 the flips, not the guard. A prediction needs only 0x072c and 0x0724 at the abort and at the resume,
 which every kept timeline holds; a hardware row is justified for the grow case only. Not read: the
 callees 0xb0b, 0x1765, 0x1676, 0x1773, 0x159e, 0xb46, and what CR_DPM_OUTOFMEM 1 and 4 do.
+
+Note 2026-11-12 (round 5, offline, E852 and E853; decision R5-1 a, before any session; the
+question stays open). [HW, post hoc] The global page count steps at fixed page counts S_k per
+target and scene (S4 is `0xe8` at 2048x2048, `0x35b` at 4096x4096, 6 to 10 pages above the last
+raise at the five targets), and c4-b3, R-5's one miss, is the only one of 107 kept jobs whose
+first threshold equals a step (thr0 `0xe8` = S4) and the only one of 495 TA runs with the global
+list grown before an abort (E852). Two readings of its missing raise are named and not decided:
+H-PEND, after a grow the page the TA asked for is served at the restart, after the resume read the
+count, so the guard stands and our resume count is one page high in such cells only; H-BLOCK, the
+grow leaves a state that prevents the raise. They differ at the steps on the raising side (S2 and
+S3 at 2048x2048, S3 at 4096x4096): raise under H-PEND, silent under H-BLOCK. That the grow
+happens iff thr0 = S_k (H-GREQ) is fitted on one positive. [HW, RE] R-5's guard, unchanged, placed
+121 of 121 decisions of g-qf and s275, which it had never read, and s438's 27 only after a cut at
+the second kick added post hoc (E853); those cells hold one global page, so they test the floor
+and bit 9, not the compare. Open: H-PEND against H-BLOCK (a repeat of c4-b3 and the S cells with
+`0x0734` sampled, or `sa8` read by a task of ours), the margin m by target and scene, and why
+E802's scene holds one global page.
