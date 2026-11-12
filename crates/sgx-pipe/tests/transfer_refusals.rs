@@ -88,10 +88,11 @@ fn a_pds_program_that_is_not_a_template_the_records_ran_refuses_under_q207() {
 }
 
 #[test]
-fn the_tile_masks_that_build_u1_from_ir0_are_pinned() {
-    // data dwords 9 and 13 (page dwords 25 and 29) with bit 4 of the x mask cleared: E620's fact
-    refused(with(0, &pds_at(25, "0xfe8")), &["Q206"]);
-    refused(with(0, &pds_at(29, "0x3fe000")), &["Q206"]);
+fn an_end_of_tile_u1_with_a_bit_no_record_explains_refuses_under_q206() {
+    // pixel-event data dword 12 (page dword 28) is U1's constant: bit 0 lies below the tile
+    // fields, bit 24 above them; the fields themselves place the tile (E876, E884)
+    refused(with(0, &pds_at(28, "0x800001")), &["Q206"]);
+    refused(with(0, &pds_at(28, "0x1800000")), &["Q206"]);
 }
 
 #[test]
@@ -109,16 +110,26 @@ fn the_replay_of_the_scene_vectors_has_no_unsupported_scene() {
         return;
     };
     let mut rep = Report::default();
+    let mut fitted_elsewhere = vec![];
     // the transfer scenes only: the render scenes of the later sub-phases sit beside them and refuse by
     // their own lists (render_scenes.rs, isp_scenes.rs replay those)
     for f in files(&dir.join("transfer"), ".scene.json") {
         let d = parse(&std::fs::read_to_string(&f).unwrap());
+        // the one fitted rule is the place of a moved tile (E876), which only the pixel-event
+        // program's data words move: the end-of-tile sweeps and the PDS data-word sweeps
+        let pixev = ["end-of-tile", "data-words"].iter().any(|p| f.to_string_lossy().contains(p));
         for r in replay_file(&d, "transfer") {
-            rep.add(&r.unwrap());
+            let r = r.unwrap();
+            if r.verdict == Verdict::Fitted && !pixev {
+                fitted_elsewhere.push(r.id.clone());
+            }
+            rep.add(&r);
         }
     }
     let c = &rep.units["transfer"];
     assert_eq!(c.mismatch, 0, "mismatches");
     assert_eq!(c.unsupported, 0, "a refusal under a question the vector's refuse list lacks");
-    assert_eq!(c.fitted, 0, "the transfer model uses no fitted rule");
+    assert!(fitted_elsewhere.is_empty(), "fitted outside the pixel-event sweeps: {fitted_elsewhere:?}");
+    // the 1532 moved fills of the two end-of-tile sweeps are among them (E876, E884)
+    assert!(c.fitted >= 1532, "{} fitted", c.fitted);
 }

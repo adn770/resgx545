@@ -442,19 +442,23 @@ buffer, the TA data and an image. A transfer (fill or copy) runs through `sgx_pi
 the 17 register words, the render box in 32 x 16 tiles, the pixel-event PDS program of each tile
 through `sgx-sim` with ir1 = 6 on the last tile, the end-of-tile task and its emit to the PBE (pack
 modes 0 to 3), the pixel shader per pixel of every tile of the box and a copy's texel through
-`tex::sample`. A command word or a task no record explains refuses (`Q206`, the words of a transfer
-with no record), a PDS program or input no record measured (a program that is not a template the
-records ran included) under `Q207`; the tile an end-of-tile task names is under `Q206` too
-(answered by E884, not modelled yet); `Q011` a copy's
+`tex::sample`. The end-of-tile task stores its tile at the place its U1 tile fields name in
+half-tile units (E876, held out in E884), so a poke of the pixel-event program's U1 word or tile
+masks moves tiles, and a place past the target is cut by the PBE's rectangle. A command word or a
+task no record explains refuses (`Q206`, the words of a transfer with no record, a U1 bit outside
+the tile fields and a tile moved on both axes at once among them), a PDS program or input no record
+measured (a program that is not a template the records ran included) under `Q207`; `Q011` a copy's
 tag; `Q180` the iterator word; `Q066` the background object; `Q205` a copy's iterated coordinates;
 `Q078` the sampler words; `Q076` and `Q003` an access outside the scene's memory, and `Q003` also a
 job whose completion the words leave unknown. A refusal depends on the scene's words only, never on
 the recorded result. The scene vector lists the questions its poked words are open under in
-`expect.refuse`. The model uses no fitted rule, so a result is `matched`, never `fitted`; the PBE
-predicts the hangs its records state (E266 and E267) and none of the replay's scenes reaches them,
-so no hang or fault is predicted in a replay. The PDS inputs `alu_specials_in_movs`, `ifs` and `ir2`
-are assumptions confined to the template programs. A model that returns a result must say which
-fitted rules it used.
+`expect.refuse`. The one fitted rule is the place of a moved tile (`rules::XFER_U1_PLACE`: E876
+states the fit, E884 held it out), so a scene whose tile moved is `fitted`, every other result
+`matched` (1601 fitted in the replay, the 1532 moved fills of the two end-of-tile sweeps among
+them); the PBE predicts the hangs its records state (E266 and E267) and none of the replay's scenes
+reaches them, so no hang or fault is predicted in a replay. The PDS inputs `alu_specials_in_movs`,
+`ifs` and `ir2` are assumptions confined to the template programs. A model that returns a result
+must say which fitted rules it used.
 
 ### 6.5 Not yet (scope of the format)
 

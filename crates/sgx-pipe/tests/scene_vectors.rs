@@ -99,6 +99,53 @@ fn a_word_no_record_explains_refuses_under_q206_and_a_wrong_expectation_is_a_mis
     assert!(matches!(hung, Verdict::Mismatch(_)), "the model computes where the hardware hung");
 }
 
+#[test]
+fn the_end_of_tile_u1_fields_place_each_tile_in_half_tile_units_and_outside_nothing_after_e884() {
+    // E876 (the kept sweeps of the fill) and E884 (held out at 128 x 64 and 256 x 32): the x field
+    // (bits 11:3) and the y field (bits 21:12) of the end-of-tile task's U1 name a place in
+    // half-tile units, the pixel-event program ORs the poked dword 12 (page dword 28) into the
+    // tile's own field, and a tile whose place lies outside the target stores nothing
+    let u1 = |v: &str, hash: &str| {
+        fill_with(
+            &format!(r#"{{"memory": [{{"base": "0x2e000000", "at": {{"28": "{v}"}}}}]}}"#),
+            &format!(r#"{{"image": {{"hash": "{hash}"}}, "outside": 0}}"#),
+        )
+    };
+    // x or y field 1 is half a tile: every tile stays in place, the baseline image, matched
+    assert_eq!(u1("0x800008", "0xb60c6095080bd325"), Verdict::Matched);
+    assert_eq!(u1("0x801000", "0xb60c6095080bd325"), Verdict::Matched);
+    // a moved tile rests on the place rule, which E876 states as a fit (D6): reported fitted
+    // field 2 or 3: both tiles of a row (column) store at place 1, place 0 keeps the sentinel
+    assert_eq!(u1("0x800010", "0x97334f75829dab25"), Verdict::Fitted);
+    assert_eq!(u1("0x800018", "0x97334f75829dab25"), Verdict::Fitted);
+    assert_eq!(u1("0x802000", "0x55d29a878f45ab25"), Verdict::Fitted);
+    // field 4 and up: every place lies outside the 64 x 32 target, no pixel is written
+    assert_eq!(u1("0x800020", "0xfc8ce806207f8325"), Verdict::Fitted);
+    assert_eq!(u1("0x804000", "0xfc8ce806207f8325"), Verdict::Fitted);
+    // a wrong image is still a mismatch
+    assert!(matches!(u1("0x800010", "0xb60c6095080bd325"), Verdict::Mismatch(_)));
+    // both fields moved at once: every run moved one field alone, so the combination is a U1
+    // no record explains (Q206)
+    let both = fill_with(
+        r#"{"memory": [{"base": "0x2e000000", "at": {"28": "0x802010"}}]}"#,
+        r#"{"image": {"hash": "0xfc8ce806207f8325"}, "refuse": ["Q206"]}"#,
+    );
+    assert_eq!(both, Verdict::Refused(vec!["Q206".into()]));
+}
+
+#[test]
+fn the_tile_masks_that_build_u1_from_ir0_move_the_tiles_by_the_place_rule() {
+    // data dwords 9 and 13 (page dwords 25 and 29): with bit 4 of the x mask cleared the second
+    // column's U1 names the first column and the second is unwritten (E620's fact), and the same
+    // for the second row with bit 13 of the y mask cleared; a moved tile is reported fitted
+    let half = r#"{"image": {"mixed": [["0xff336699", 1024], ["0xdeadbeef", 1024]]}, "outside": 0}"#;
+    let mask = |i: u32, v: &str| {
+        fill_with(&format!(r#"{{"memory": [{{"base": "0x2e000000", "at": {{"{i}": "{v}"}}}}]}}"#), half)
+    };
+    assert_eq!(mask(25, "0xfe8"), Verdict::Fitted);
+    assert_eq!(mask(29, "0x3fd000"), Verdict::Fitted);
+}
+
 fn refused(v: Verdict, ids: &[&str]) {
     assert_eq!(v, Verdict::Refused(ids.iter().map(|s| s.to_string()).collect::<Vec<_>>()));
 }
@@ -109,10 +156,9 @@ fn what_no_record_explains_is_refused_under_the_question_that_covers_it() {
     // the copy's tag with bit 24 set or at 0 reads the source's last texel (E272): Q011
     refused(scene_with(1, r#"{"xfer": {"0": "0x3000000"}}"#, any), &["Q011"]);
     refused(scene_with(1, r#"{"xfer": {"0": "0x0"}}"#, any), &["Q011"]);
-    // which tile an end-of-tile U1 names is not resolvable from the records (E044, E126): the
-    // task's U1 bits no record explains, which Q206 covers (not Q074, the double emit and bit 9)
-    refused(fill_with(r#"{"memory": [{"base": "0x2e000000", "at": {"28": "0x800008"}}]}"#, any), &["Q206"]);
-    refused(fill_with(r#"{"memory": [{"base": "0x2e000000", "at": {"25": "0xfe8"}}]}"#, any), &["Q206"]);
+    // an end-of-tile U1 with a bit below the tile fields: the task's U1 bits no record explains,
+    // which Q206 covers (not Q074, the double emit and bit 9)
+    refused(fill_with(r#"{"memory": [{"base": "0x2e000000", "at": {"28": "0x800001"}}]}"#, any), &["Q206"]);
     // the pixel-event program moved by 16 bytes: not the program the records ran (a PDS program)
     refused(fill_with(r#"{"xfer": {"9": "0x2e000050"}}"#, any), &["Q207"]);
     // a tile whose event starts no task: whether the job completes is not known (Q003), not predicted
