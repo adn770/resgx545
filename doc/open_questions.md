@@ -96,7 +96,7 @@
 - `Q063` (phase 11, hw, low): what does bit 9 of a mov16 or mov32 special source select on the rest of the SGX family, when on SGX545 it only makes mov16 read 0? (E128)
 - `Q093` (phase 11, hw, medium): does DOUTU1 bit 24 (wait for iterations) hang a job under the fetch wait, as it did in 4 of 126 jobs with both bits in colour and coordinate shapes, and why does the closed driver set it with bit 25? (E345, E364, E436, E454, E459, E460)
 - `Q207` (phase 12, hw, medium): what do the PDS programs of a transfer do with the inputs and instructions no record measured: if0 and if1, ir2, a movs reading ir1.l and tim.l in the primary program, and a program that is not one of the three templates the records ran? (E130, E262, E263, E043, E265, E620)
-- `Q276` (phase 11, hw, high): where do the own words of o4 to o7 go in E709's command (state block word 4 at 0x00030001), now that the word at the tag-5 pixels is the OR of the source instance's o0 and o3 words (E858: the walk read OR(o0,o3)'s vector and a program with no o4 write read tag 5), and does a predicate set by `xor.testtaz.chan0 !c0, p1, g25, #k` gate the write `p1 or.skipinv o4` (E709, E570, E406, E742, E759, E772, E808, E838, E850, E858)
+- `Q276` (phase 11, hw, high): is a write to o4 to o7 stored at all in E709's command (state block word 4 at 0x00030001), now that their own words reach no pixel of any kept image (E871: 0 of 12143 marked words of E858's walk rows w-4 to w-7, no tag-8 word in E570's 68 jobs) and the word at the tag-5 pixels is the OR of the source instance's o0 and o3 words (E858), and does a predicate set by `xor.testtaz.chan0 !c0, p1, g25, #k` gate the write `p1 or.skipinv o4` (E709, E570, E406, E742, E759, E772, E808, E838, E850, E858, E081, E871)
 
 ### platform
 
