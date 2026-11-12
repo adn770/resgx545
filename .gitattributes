@@ -10,3 +10,4 @@ doc/specs/usse_isa.md merge=regen
 doc/specs/usse_guide.md merge=regen
 doc/specs/usse_tutorial.md merge=regen
 doc/specs/pds_isa.md merge=regen
+doc/state_digest.md merge=regen

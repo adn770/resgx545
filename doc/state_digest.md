@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-166 open: 156 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+164 open: 154 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -21,10 +21,10 @@ list.
   macrotile lists a partial render stores in the RT data's state ... (E625, E627, E631)
 - `Q191` dpm, high: what are the words that land in a kept owner's control page (0x00200047), OTPM
   page (0x04000417) and state page (0x00020001, 2) after the ... (E462, E591, E631)
-- `Q210` dpm, high: what sets the page counts S_k at which the global page count steps in the first
-  TA run (E852, E861: nearly evenly spaced within a target, ... (E881, E882, E900)
-- `Q211` dpm, high: what rule gives the partial-render count of a one-triangle scene of page need U
-  at the first threshold thr0 = P - 0x22 (E625's 1 + floor((U ... (E875, E883, E899)
+- `Q210` dpm, high: what keeps the second global page past A_k, the page count once the object block
+  straddling global pages k - 1 and k is tiled, at band 6 of ... (E915, E917, E918)
+- `Q211` dpm, high: does the page need U of HU1 (E773, E863, E883, E916: exact for 26 held-out
+  scenes made of the tool's triangle) hold for wide scenes of many ... (E883, E899, E916)
 - `Q066` isp, high: what do the three background-object words the 3D kick writes mean to the ISP,
   and what are the other words of a render's background object? (E216, E410, E590)
 - `Q089` isp, high: where does the closed driver's 4x multisampled render become a 64x64 image, when
@@ -35,14 +35,14 @@ list.
   and the attribute and depth planes of E606 hold with ... (E281, E502, E606)
 - `Q205` isp, high: what is the arithmetic by which the ISP decides the coverage and the depth of a
   pixel for an arbitrary triangle, and the iterators' ... (E215, E307, E542)
-- `Q260` isp, high: which rounding of a vertex coordinate to 1/256 pixel, and which other step of
-  the ISP's setup, reproduces its coverage when a coordinate is ... (E680, E681, E683)
+- `Q260` isp, high: the tie of a negative window coordinate 1/512 above the 1/256 grid rounds away
+  from zero on five of six sweeps (E914): what makes the y ... (E681, E683, E914)
 - `Q023` pds, high: how many output dwords does a pixel task get per setup, and what do the data
   rows limit (E406) (E742, E759, E880)
-- `Q276` pds, high: is a write to o4 to o7 stored at all in E709's command (state block word 4 at
-  0x00030001), now that their own words reach no pixel of any ... (E871, E878, E880)
+- `Q276` pds, high: in E709's command (state block word 4 at 0x00030001), why is the o3 word in the
+  tag-5 OR that of lane 0 of the quad in a job whose words ... (E878, E880, E905)
 - `Q111` platform, high: which hardware event sets which bit of CR_EVENT_STATUS and CR_EVENT_STATUS2
-  in an ordinary TA, 3D, DPM or transfer job, and how long does ... (E857, E890, E902)
+  in an ordinary TA, 3D, DPM or transfer job, and how long does ... (E890, E902, E921)
 - `Q070` ta, high: what do the TA object's format word bits 15:8 and above and its set masks select
   beyond the settings seen, and does the fitted region test ... (E543, E544, E777)
 - `Q078` texture, high: what do T3 bits 10, 14, 18-19 and 27-28 and T0 bit 27 select, given a copy
@@ -74,13 +74,13 @@ list.
 - `Q190` isp, medium: does a render's background object with texture layers (the 23-dword form of a
   transfer copy: the six words after the PDS words, the layer's ... (E069, E209, E590)
 - `Q200` isp, medium: why do the dyadic controls of E731 store one or two ulps below the truncated
-  exact plane, below binade 0, in a region bounded by a diagonal ... (E731, E741, E758)
+  exact plane, below binade 0, in a region bounded by a diagonal ... (E758, E912, E913)
 - `Q240` isp, medium: does the coverage rule of E606 (vertices on the 1/256 pixel grid, exact centre
-  test, left and top edges owning ties) and its depth plane ... (E680, E681, E682)
+  test, left and top edges owning ties) hold for random ... (E682, E912, E913)
 - `Q261` isp, medium: how large is the error band of the ISP's edge evaluation (E684: 16 pixels in
   14 of 208 cases within 5.6e-4 pixel of an edge line) as a ... (E682, E684)
-- `Q262` isp, medium: do the depth and iteration tolerances of E606 (3 U for depth at a gradient
-  below 0.03, 4 U for the iterated clip z, in units of 2^-23) hold ... (E607, E680, E684)
+- `Q262` isp, medium: what bounds the error of the stored depth and of the iterated clip z on E680's
+  targets, where E606's tolerances fail for some triangles of ... (E684, E912, E913)
 - `Q288` isp, medium: what rule gives the stored depth of a plane with a non-dyadic gradient in x
   (class b and c of E731) when the tile-corner value T by ... (E606, E731, E740)
 - `Q039` mte, medium: where is a user clip plane's state held between jobs, what resets it, and when
@@ -126,29 +126,29 @@ list.
 - `Q068` ta, medium: do the twelve TA register words that are zero in our jobs save and resume the
   state of an interrupted TA? (E182, E183, E245)
 - `Q086` ta, medium: what rule gives CR_TE_MTILE1, CR_TE_MTILE2 and CR_TE_MACROTILE_STRIDE for a 4x
-  multisampled target, whose 64x64 words are 0x802002, ... (E511, E824, E886)
+  multisampled target, whose 64x64 words are 0x802002, ... (E824, E886, E908)
 - `Q100` ta, medium: what do the fields of CR_TE_MTILE1 and CR_TE_MTILE2 mean, given that flips of
   their bits change the image or fault the job at 256x256 and ... (E506, E509, E877)
-- `Q139` ta, medium: what does a macrotile row's boundary do beyond the first, second and third
-  fields of the macrotile words: what is bit 31, what is the ... (E506, E509, E877)
+- `Q139` ta, medium: in what order does the TA write a macrotile's region headers (row by row fits
+  20 of E907's 21 dumped cases and misses stride 4, 4 x 4 tile ... (E509, E877, E907)
 - `Q142` ta, medium: which control-stream form does the TA write in a region of the grid that
   CR_TE_AA bits 30 and 31 halve (16 x 16, 32 x 8 and 16 x 8 ... (E504, E893)
 - `Q159` ta, medium: what rule lists the 32 x 16 regions of a one-line object: at ISP word 1 width
   0x10 the list reaches a near-vertical segment at 0.4375 pixel ... (E543)
 - `Q230` ta, medium: what does the TA write in the cases of the clip, the target's edge and the
   numeric formats that E776 to E783 and E795 to E798 left open: ... (E859, E872, E879)
-- `Q293` ta, medium: with CR_TE_AA bit 29 clear and bit 30, 31 or both set the TA inserts one zero
-  dword right before the format word of a triangle, line or ... (E865, E888, E897)
+- `Q296` ta, medium: which mantissas of w whose exact 1/w lies half an ulp or more above RZ of 1/w
+  store RZ + 1 as a kept vertex's 1/w word (106 of the 189 read ... (E859, E872, E879)
 - `Q180` texture, medium: why did all 28 triangle jobs of the four-component DOUTI0 probes hang
   (E569), the two controls with the old source word 0x40800801 included ... (E420, E541, E569)
 - `Q284` texture, medium: what are the (s, t) orientation of each cube face, the edge filtering
   across faces and the face size limits of TEXTYPE 2 (E567, E726, E844)
 - `Q003` transfer, medium: which event (if any) does a bus-interface fault raise, and what do the
-  fault-request bits of CR_BIF_INT_STAT name, what clears a latched ... (E891, E892, E901)
+  fault-request bits of CR_BIF_INT_STAT name, what clears a latched ... (E901, E919, E920)
 - `Q011` transfer, medium: why does a copy whose background-object tag (transfer word 0) is wrong
   read one texel, the source's last, for every pixel, and what stores ... (E028, E272, E398)
 - `Q206` transfer, medium: what do the words of a transfer job that no record explains do: the 17
-  register words of the command beyond the render box (words 12 and ... (E620, E876, E884)
+  register words of the command beyond the render box (words 12 and ... (E876, E884, E909)
 - `Q016` usse, medium: which part of the smoa, smbo and smr sequences that fault the job makes it
   fault: the moest selectors, the changed state or the mirror mode? (E087, E369, E370)
 - `Q051` usse, medium: what state do smoa, smbo, smr, imo and setfc set in the MOE, and what does
@@ -268,8 +268,8 @@ list.
   texture words or the smp operands select it and its ratio? (E564, E720, E723)
 - `Q177` texture, low: what do T0 address modes 4 to 7 read along the u axis of a 16x16 twiddled
   texture (indices 324 to 366 past the 256 texels, a period of 6 or ... (E033, E565)
-- `Q178` texture, low: what layout does TEXTYPE 5 read (one image under smp2d and smp3d at 16 x 16,
-  E567), the one texture type of the eight whose layout no ... (E725, E726, E894)
+- `Q178` texture, low: what does TEXTYPE 5 compute from the texture memory it reads (two values, 0
+  and 0x0000ffff, that follow the stored dwords, a 16-column step ... (E726, E894, E911)
 - `Q179` texture, low: how are the blocks and the data bits of formats 23 to 26 laid out (a data bit
   changes 7 to 13 pixels, the blocks of 23 and 24 do not differ ... (E342, E568, E724)
 - `Q181` texture, low: does the fill's transfer command load a colour-space set at all (xfer:17^=1
@@ -278,8 +278,8 @@ list.
   Euclidean footprint of the pairs (op0, op2) and (op1, op3) with a LOD ... (E563, E721, E744)
 - `Q282` texture, low: what arithmetic gives the bilinear sample of an sRGB texel (T0 bit 27) given
   that decode-then-filter in float fits 43% to 56% of the pixels ... (E720, E723)
-- `Q283` texture, low: is the stride of type 4 textures 32 dwords at every width and are types 1 and
-  3 read with a stride of the width at widths above 32 and for ... (E567, E725)
+- `Q283` texture, low: what layout does type 4 read past 32 texels wide (32 x 32 blocks of 1024
+  dwords read post hoc at 64 and 128, E910) and in what order are ... (E567, E725, E910)
 - `Q017` usse, low: why does g19 read 0x1a as a store's source but 0 through a mov and as the pixel?
   (E085, E086, E372)
 - `Q048` usse, low: do the MADD0 and MADD1 clock gates follow the USSE pipes' floating-point
@@ -320,10 +320,6 @@ list.
   an edge, what do the 24-bit and 16-bit formats store for a ... (E466, E490, E663)
 - `Q243` zls, low: what does the ZLS load do with an integer stored format (bits 26:24 = 1 or 2), at
   an address other than the one the store writes, and when ... (E467, E628, E664)
-- `Q287` zls, low: does the band of the ZLS store follow rule A (x + 0.5 < 1.25 W) or FLOOR (x <
-  floor(1.25 W)) at odd widths, when 1.25 W has the fraction ... (E730, E831, E885)
-- `Q291` zls, low: does the 1.25 band of the ZLS store (x + 0.5 < 1.25 W, y + 0.5 < 1.25 H, E730)
-  apply to the iterated attributes, that is, do the pixel ... (E465, E730, E898)
 - `Q004` transfer, fw (parked): can a transfer context whose flag bit 4 is set be released, which
   agent but the host sets flag bits 1 and 4, and which priorities above 0 ... (E015, E455)
 - `Q029` render, fw (parked): what does the render context's own cleanup wait for once its RT data
@@ -347,9 +343,66 @@ list.
 
 ## Recent records
 
-70 records of 2026-11-11 to 2026-11-12 (the last 2 days to the newest record's date), newest first;
+89 records of 2026-11-11 to 2026-11-12 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E921` usse, 2026-11-12: R7 session r7-faults stage L (Q111's lockup stop, read by R-6 as two
+  `lock #0` and no release; E088's counter fill, 64 x 32, each pixel instance adding 1 to one
+  scratch dword): with `lock #0` ... ...
+- `E920` bif, 2026-11-12: R7 session r7-faults stage m (Q003; E848's held TA write fault at 288 x
+  144, page 0x20006, with a manipulation while held, before the reset: none, CR_BIF_CTRL.CLEAR_FAULT
+  set then cleared through ...
+- `E919` bif, 2026-11-12: R7 session r7-faults stage d (Q003; E848's held 4x TA write fault, one
+  array, at seven sizes whose fault pages are 0x2000a, 0x20006, 0x20008 and 0x20009, then the held
+  reset and triangles until one ...
+- `E918` dpm, 2026-11-12: R7-dpm stage s-k, set B, on module 37EC97AB after the lead's one-shot boot
+  (Q210; our own task oomring2 armed before each of 10 jobs, logging pa1, sa8, sa9 and, new, the two
+  DPM page status registers ...
+- `E917` dpm, 2026-11-12: R7-dpm stage s-v, set A, on the test module 41E2F5C7 (Q210, larger
+  objects; exploration, no verdict frozen: E900 froze no step rule for them): the 2048x2048
+  calibration of the tool's triangle with ...
+- `E916` dpm, 2026-11-12: R7-dpm stage s-b, set A, on the test module 41E2F5C7 (Q211; one default
+  triangle moved to five places never run, one kick): held out, E875's page replay with the regions
+  walked in E899's order ...
+- `E915` dpm, 2026-11-12: R7-dpm stages s-a0 and s-m, set A, on the test module 41E2F5C7 (Q210; the
+  tool's triangle with 1500 vertices, frozen from E874's step replay and E900's straddling-block
+  rule H-SPAN): the premise ...
+- `E914` isp, 2026-11-12: R7-geo stage zs (Q260; 230 jobs on 512 x 256, vertices in 1/4096 pixel, no
+  fault): no frozen rounding is exact on the 143 held-out rows (half away from zero for negative
+  coordinates, HA, and SETUP ...
+- `E913` isp, 2026-11-12: R7-geo stage zf (Q240; 242 depth jobs, no fault): on ten targets E606 did
+  not run, 64 x 128, 128 x 64, 256 x 64, 128 x 96, 128 x 144, 32 x 16 and 16 x 8 (below one tile),
+  4096 x 16, and the odd ...
+- `E912` isp, 2026-11-12: R7-geo stages zd and zi (Q262; 128 jobs on 512 x 256, 640 x 480, 1024 x
+  768, 2048 x 1024 and 4096 x 4096, random triangles with vertices inside the target on the 1/256
+  grid and depth planes of ...
+- `E911` texture, 2026-11-12: R7-geo stage tx, type 5 (Q178; E725's 64 x 32 map-texture fill, dword
+  i of the texture 0xD0000000 | i; 6 jobs, no fault): TEXTYPE 5 reads the texture memory: with the
+  program zeroing the texture's ...
+- `E910` texture, 2026-11-12: R7-geo stage tx, types 1, 3 and 4 (Q283; E725's 64 x 32 map-texture
+  fill, dword i of the texture 0xD0000000 | i, pixel (x, y) sampling texel (x mod w, y mod h); 11
+  held-out jobs and E725's type 3 ...
+- `E909` transfer, 2026-11-12: R7-geo stage xf (Q206's both-fields clause, 10 fills at 128 x 64, no
+  fault): with the fill's end-of-tile DOUTU1 x field (bits 11:3) and y field (bits 21:12) XORed in
+  one poke, H-INDEP (each 32 x 16 ...
+- `E908` ta, 2026-11-12: r7-rp stage q086 (Q086, 11 4x jobs on contexts made for 4x targets, module
+  41E2F5C7): a 4x render with poked macrotile words completes exactly when their grid (B3 + B1 tiles
+  per axis) covers the ...
+- `E907` ta, 2026-11-12: r7-rp stage q139 (Q139, 24 TA-dump jobs at E877's missed macrotile cases,
+  256 x 256 and 640 x 480): every case replicated its dataset's wrong-tile map (21 of 21), and the
+  frozen H-MOVED, a tile is ...
+- `E906` ta, 2026-11-12: r7-rp stage q293 (Q293, 4 jobs, three renders of one scene with CR_TE_AA
+  0x40000000): the 3D reads render 2's own object as it reads render 1's: with the kernel's poke
+  before render 3 putting render ...
+- `E905` pds, 2026-11-12: r7-rp stages p7-rdc and p7-rd (Q276, 48 jobs, E878's readback rerun with
+  the class share taken over the own-source words): in E709's command (state block word 4 at
+  0x00030001) a `mov` from o1 to o3 ...
+- `E904` zls, 2026-11-12: r7-rp stages q291g and q291 (Q291, 27 jobs with t6): the pixel tasks past
+  the target run over the ZLS store's band and nowhere else, with the attribute iterated linearly
+  there: with E898's ...
+- `E903` zls, 2026-11-12: r7-rp stage q287 (Q287, 25 depth-dump jobs at H 18, odd widths through t7,
+  the tool built from main 1c64f3a): at odd target widths the ZLS store's band past the target is
+  rule A (x + 0.5 < 1.25 W), ...
 - `E902` edm, 2026-11-12: Round 7 offline fold (Q111's 0x0694 clause and Q294): the six held TA jobs
   of r6-held were each the first render of a new context, so by the module's fork the kicks carried
   TA flag 0x1 (flags 0x73) ...
@@ -563,9 +616,14 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-27 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+31 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r7-rp`: 2026-11-12; module 41E2F5C756F96D20F7109A4; tools ~/sgxfive-test-rgn4
+- `render/closing-r7-geo`: 2026-11-12; module 41E2F5C756F96D20F7109A4; tools ~/sgxfive-test-rgn4
+- `render/closing-r7-faults`: 2026-11-12; module 41E2F5C756F96D20F7109A4; fork r6-kernel at
+  3f0b3e74; tools ~/sgxfive-test-rgn4
+- `render/closing-r7-dpm`: 2026-11-12; module 41E2F5C756F96D20F7109A4; tools ~/sgxfive-test-rgn4
 - `render/closing-r6-render4x`: 2026-11-12; module 41E2F5C756F96D20F7109A4, 99CD90DA26E3AFF9C450517;
   fork r6-kernel at 3f0b3e74, resgx545 at a2788bd8; tools ~/sgxfive-test-rgn4
 - `render/closing-r6-pixel`: 2026-11-12; module 99CD90DA26E3AFF9C450517; tools ~/sgxfive-test-rgn4
@@ -611,7 +669,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 664fd0d00765
-- module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 2 sessions, fork r6-kernel at
+- module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at
   3f0b3e74
 - module srcversion 99CD90DA26E3AFF9C450517: last named 2026-11-12, 14 sessions, fork resgx545 at
   a2788bd8
@@ -622,8 +680,21 @@ srcversion, fork tip, laptop tools.
 
 ## Known tool weaknesses
 
-None listed: no known-weaknesses section in HACKING.md.
+From HACKING.md, "Known tool weaknesses":
+
+Weaknesses of our tools that a session or a fold has found and that are not fixed yet. Each
+round reviews this list: an entry leaves it with the commit that fixes it (and its test), or
+stays with what a session must do around it.
+
+- `tri --depth` (`userspace/libsgxfive/tools/sgxfive-test.c`): `depth_min_pages` sizes the
+  depth buffer, and the floor of `--depth-pages`, as W x H dwords, below the depth store's tile
+  extent (tiles of 32 x 16), so a target that is not a whole number of tiles gets fewer pages
+  than the store writes, `DEPTH_MARGIN_PAGES` aside (found by closing7/r7-rp's builder).
+- sgx-sim refusals that block oracles: the sim refuses what is not modelled, and some of those
+  refusals stop a replay that would otherwise serve as an oracle, e.g. `0x0728` and the `pclink`
+  path before E902's seeds. A session that needs the sim as an oracle checks first that its
+  path does not hit one.
 
 ## Simulator coverage baseline
 
-no `crates/SIM_UNMODELLED.toml` yet.
+125 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).

@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: 2026 Josep Torra
 """regen_generated.py and the merge driver: the generated files (the evidence log, the open
-questions, the cited-scratch manifests, the USSE books) are rebuilt from their sources after a
-merge, and a generated file that differs from its regeneration is reported."""
+questions, the cited-scratch manifests, the USSE books, the state digest) are rebuilt from their
+sources after a merge, and a generated file that differs from its regeneration is reported."""
 from __future__ import annotations
 
 import importlib.util
@@ -65,9 +65,18 @@ def test_regeneration_runs_every_generator(tmp_path):
     seen = []
     rg.regen(root, repos, lambda cmd, cwd: seen.append(" ".join(cmd[1:])) or 0)
     joined = "\n".join(seen)
-    for tool in ("evidence_log.py", "questions.py", "build.py"):
+    for tool in ("evidence_log.py", "questions.py", "build.py", "digest.py"):
         assert tool in joined
     assert "--check" not in joined
+    assert seen[-1].endswith("digest.py")      # the digest reads the other generated files
+
+
+def test_the_state_digest_is_a_generated_file(tmp_path):
+    root, repos = manifest(tmp_path)
+    rg.refresh_manifests(root, repos)
+    bad = rg.problems(root, repos, lambda cmd, cwd: 1 if cmd[1].endswith("digest.py") else 0)
+    assert bad == ["doc/state_digest.md"]
+    assert "doc/state_digest.md" in rg.GENERATED
 
 
 def test_the_real_tree_is_generated_from_its_sources():
@@ -116,6 +125,14 @@ def test_check_sh_runs_the_generated_guard_in_quick_mode():
     text = (HERE / "check.sh").read_text()
     quick = text.split('if [ "$mode" = quick ]')[1].split("\nelse\n")[0]
     assert "regen_generated.py" in quick and "--check" in quick
+
+
+def test_check_sh_checks_the_state_digest_in_both_modes():
+    text = (HERE / "check.sh").read_text()
+    quick, full = text.split('if [ "$mode" = quick ]')[1].split("\nelse\n")[:2]
+    for part in (quick, full):
+        loop = part.split("for t in ")[1].split("; do")[0]
+        assert "digest" in loop.split()
 
 
 def test_check_sh_runs_pytest_in_parallel_and_the_venv_has_xdist():

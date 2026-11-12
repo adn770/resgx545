@@ -135,8 +135,9 @@ method follow it.
 
 `doc/evidence_log.md`, `doc/open_questions.md`, `datasets/cited-scratch{,-private}.toml` (the
 digests over `cited/` of the data repositories) and the books `doc/specs/usse_isa.md`,
-`usse_guide.md`, `usse_tutorial.md`, `pds_isa.md` are generated; never edit them by hand, edit
-their sources (`evidence/`, `questions/`, `doc/isa/content`) and run `tools/regen_generated.py`.
+`usse_guide.md`, `usse_tutorial.md`, `pds_isa.md` and the state digest `doc/state_digest.md`
+(`tools/records/digest.py`, rebuilt last) are generated; never edit them by hand, edit their
+sources (`evidence/`, `questions/`, `doc/isa/content`) and run `tools/regen_generated.py`.
 `tools/regen_generated.py --check` (a step of `check.sh --quick`, so of the pre-commit hook) names
 each that differs from its rebuild. `.gitattributes` gives them `merge=regen`: once per clone run
 `git config merge.regen.driver 'tools/merge-regen.sh %O %A %B %L %P'`, and a merge keeps our side

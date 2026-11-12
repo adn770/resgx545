@@ -10,7 +10,8 @@ They are doc/evidence_log.md (tools/records/evidence_log.py), doc/open_questions
 (tools/records/questions.py), the digests of datasets/cited-scratch{,-private}.toml over the
 cited/ directory of the data repositories (a manifest whose repository is absent is left alone),
 and the books of doc/isa/build.py (doc/specs/usse_isa.md, usse_guide.md, usse_tutorial.md,
-pds_isa.md). Edit the sources; a hand edit of a generated file is what --check reports.
+pds_isa.md), and last doc/state_digest.md (tools/records/digest.py), which reads the others. Edit
+the sources; a hand edit of a generated file is what --check reports.
 """
 from __future__ import annotations
 
@@ -28,7 +29,7 @@ import datasets                  # noqa: E402
 GENERATED = ["doc/evidence_log.md", "doc/open_questions.md",
              "datasets/cited-scratch.toml", "datasets/cited-scratch-private.toml",
              "doc/specs/usse_isa.md", "doc/specs/usse_guide.md", "doc/specs/usse_tutorial.md",
-             "doc/specs/pds_isa.md"]
+             "doc/specs/pds_isa.md", "doc/state_digest.md"]
 MANIFESTS = {"cited-scratch": "data", "cited-scratch-private": "data-private"}
 Runner = Callable[[list[str], pathlib.Path], int]
 
@@ -82,7 +83,8 @@ def problems(root: pathlib.Path = ROOT, repos: dict | None = None,
     bad = []
     for label, rel in (("doc/evidence_log.md", "tools/records/evidence_log.py"),
                        ("doc/open_questions.md", "tools/records/questions.py"),
-                       ("doc/isa books", "doc/isa/build.py")):
+                       ("doc/isa books", "doc/isa/build.py"),
+                       ("doc/state_digest.md", "tools/records/digest.py")):
         if runner(_py(root, rel, "--check"), root):
             bad.append(label)
     return bad + manifest_problems(root, repos)
@@ -95,6 +97,8 @@ def regen(root: pathlib.Path = ROOT, repos: dict | None = None, runner: Runner =
                 "doc/isa/build.py"):
         rc |= runner(_py(root, rel), root)
     refresh_manifests(root, repos)
+    # Last: the digest reads the open questions and the records the others rebuild.
+    rc |= runner(_py(root, "tools/records/digest.py"), root)
     return rc
 
 
