@@ -5,7 +5,7 @@ unit = "ta"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E247", "E257", "E407", "E505", "E506", "E509"]
+evidence = ["E247", "E257", "E407", "E505", "E506", "E509", "E877"]
 terms = ["CR_TE_MTILE1", "CR_TE_MTILE2", "cmd_ta.te_mtile1", "cmd_ta.te_mtile2"]
 +++
 
