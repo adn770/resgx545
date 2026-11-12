@@ -8,7 +8,7 @@ phase = 4
 evidence = ["E021", "E024", "E317", "E318", "E319", "E320", "E354", "E355", "E357", "E444", "E203",
             "E313", "E362", "E363", "E395", "E457", "E476", "E573", "E631", "E722", "E729", "E764",
             "E765", "E766", "E767", "E789", "E826", "E507", "E729", "E788", "E824", "E828",
-            "E845", "E848", "E891", "E892"]
+            "E845", "E848", "E891", "E892", "E901"]
 terms = ["CR_BIF_FAULT", "CR_BIF_INT_STAT", "misc_info", "CR_TE_AA", "CR_ISP_MSAA"]
 +++
 
@@ -225,3 +225,22 @@ Every -110 of the boot followed a 288 x 144 cell (4 of 5 recoveries there, flush
 12 at 640 x 480), the dumps reading `BIF_INT_STAT` 0x000d0004 and once `BIF_FAULT` 0x20006060, the
 held job's page with `CID` 0 [post hoc]. Still open in this clause: what keeps the write pending
 (not the directory cache), why one or two replays, and why the boot after some resets times out.
+
+Narrowed 2026-11-12 (round 7 offline fold, E901; the health-triangle clause and "what clears a
+latched fault"; post hoc readings of every kept kernel log, one rule frozen and scored SEMI on
+r6-held, not held out; not retired). Frozen verdict: R-PAGE 770 of 771 fit boots, 16 of 17 r6-held
+boots, its control 109 of 109. Over 2956 kept logs the boot after a fault timed out only after
+0x90004 (54 of 147, 53 unique; 0 of 756 after the fifteen other words), and with `SB` 6 it follows
+the job's fault page, not the size: 0x20006 10 of 11, 0x20008 2 of 3 (one log kept twice), 0x2000a
+0 of 15, 0x2000e 0 of 3; with `SB` 5 at 0x10000 (the dpm context-table sessions) 42 of 67. Every
+timed-out dump read `CR_CLKGATESTATUS` 0x000ccff8 and a TA write through list 0, and the second boot
+came up 54 of 54. The latch: the fork's reset reads `BIF_FAULT` 0 and `BIF_INT_STAT` 0x80000 with
+every block held in reset, before and after `CLEAR_FAULT` and before the boot, in the 10 boots that
+timed out as in the 17 that came up, so the firmware's boot is not what clears the registers, and
+the reading of zero while held does not show the pending write gone. Requestors (a compilation of
+1112 faults, closing7/c/offline/reqtab.out): requestor bit 2 carries `BIF_FAULT[11:4]` 1, 2, 5, 6,
+8 and 12; bits 0, 4, 5, 6, 11, 14 and 15 do not appear in the kept logs; no name follows. E892's
+"the timeouts followed the 288 x 144 cells" is the page class. Still open in this question: why
+page 0x20006 to 0x20008 and not 0x2000a (the plan's stage d, H-PAGE against H-DONE), when in the
+boot the write is issued (kernel option K3), whether the latch is cleared or only reads zero while
+held, why one or two replays, and the requestor bits never seen.

@@ -6940,12 +6940,25 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   pending write, and does not prevent the -110.
   *bif; HW, infer; data: `render-closing-r6-held:out/20261112-154536/q/`,
   `render-closing-r6-held:postrun/`.*
+- `E901` Round 7 offline reading of every kept kernel log of resgx545-data (Q003; post hoc scans,
+  then one rule frozen as a fit and scored on r6-held, which the planner's scans had already read:
+  SEMI, not held out): over 2956 logs of 336 sessions the first boot after a BIF fault timed out (no
+  INIT_COMPLETE, 'SGX recovery failed: -110') only after fault word 0x90004, 54 of 147 such boots
+  (53 unique: one log is kept twice), and 0 of 756 after the fifteen other words; for SB 6 (the
+  region headers) it follows the job's fault page, 10 of 11 at 0x20006 and 0 of 15 at 0x2000a; the
+  frozen rule R-PAGE (times out iff the page is 0x20006 to 0x20008) gave 770 of 771 fit boots and 16
+  of 17 r6-held boots, the control (no time-out after 0x90008 or 0x90100) 109 of 109; every
+  timed-out dump read CR_CLKGATESTATUS 0x000ccff8, BIF_INT_STAT 0x000d0004 and a BIF_FAULT through
+  list 0 (54 of 54), and the second boot came up in 54 of 54; where the kernel logs it (27 boots),
+  the reset read BIF_FAULT 0 and BIF_INT_STAT 0x80000 with every block held in reset, before and
+  after CLEAR_FAULT and before the boot, in the 10 that timed out as in the 17 that came up.
+  *bif; HW, infer; data: `cited-scratch`, `render-closing-r6-held`.*
 
 ## By unit
 
 ### bif
 
-Records: E151, E457, E573, E592, E745, E761, E767, E789, E826, E848, E891, E892.
+Records: E151, E457, E573, E592, E745, E761, E767, E789, E826, E848, E891, E892, E901.
 
 ### dpm
 
