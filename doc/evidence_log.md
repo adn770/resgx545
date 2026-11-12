@@ -6940,6 +6940,20 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   pending write, and does not prevent the -110.
   *bif; HW, infer; data: `render-closing-r6-held:out/20261112-154536/q/`,
   `render-closing-r6-held:postrun/`.*
+- `E893` Round 7 offline decode of E504's dumps (Q142): with CR_TE_AA bit 29 set, bit 31 halves the
+  TA's region width (32 to 16 pixels) and bit 30 its height (16 to 8), a macrotile keeping its pixel
+  area and number; the position fields count 16 pixels in x and 8 in y at every setting, a halved
+  grid's macrotile is written in 4 x 4-region sub-blocks, streams are allocated in the writer's walk
+  over the finer regions and a macrotile with more than 32 streams takes a second page: H-GRID,
+  fitted on the nine 64 x 64 pairs (0 of 6144 TA-data dwords off and streams equal to the opened
+  blocks in 9 of 9) and frozen by hash before the 128 x 128 jobs were opened, predicted
+  te-m2-e0-128x128 from its 0x20000000 twin with 0 of 6144 TA-data dwords off (384 non-zero) and its
+  128 streams exactly the 128 blocks the parameter dump opens [held out, one job]; the control
+  H-HALF (same regions, position halved) failed there, 353 dwords off. So 0x60000000 and 0xa0000000
+  change the same number of dwords by different values because they double the region grid along y
+  and along x.
+  *ta; HW, infer; data: `isp-msaa-te-dumps`, `cited-scratch:closing7/fold-rank/q142/`,
+  `cited-scratch:closing7/rank/`.*
 
 ## By unit
 
@@ -7012,7 +7026,7 @@ Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
 E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763, E776, E777,
 E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828, E842, E847, E851, E859,
-E865, E872, E877, E879, E886, E888.
+E865, E872, E877, E879, E886, E888, E893.
 
 ### texture
 
