@@ -934,7 +934,10 @@ of bit 18 and a command (E857). The store is not seen [HW]: a host read of `CR_D
 (0x0694) gave 0 at the arm, at the stop, after the clears and after the recovery, 2 of 2 held out,
 the marks replicated (E890; the rgn4 kernel never read it, E855). Whether the EDM waits before the
 store, the store goes elsewhere or the register does not read back what is written is open, so
-the EDM's wait after the lockup is not shown to be the bit 6 poll (bit 6 reads clear).
+the EDM's wait after the lockup is not shown to be the bit 6 poll (bit 6 reads clear). The
+register does not read back what the TA kick writes either: in six held first kicks, whose Clear
+writes `(index << 3) | 2` there [RE], a host read gave 0 before the job, during the hold and after
+the reset, 18 of 18 (E902), so a read of 0x0694 cannot show whether the lockup's store was made.
 
 **The kick [HW].** A kick is the command at the CCB write offset, the kicker word bumped (mod 256)
 and a write to `CR_EVENT_KICK`. It is one event in the general slot, `pa0` = 0, `pa1` = (K << 24) |

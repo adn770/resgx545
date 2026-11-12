@@ -5,7 +5,7 @@ unit = "edm"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E537", "E792", "E812", "E814"]
+evidence = ["E537", "E792", "E812", "E814", "E902"]
 terms = ["Event Data Master (EDM)"]
 +++
 Split on 2026-11-11 from Q152 (round 4, decision R4-3, events decision 4), whose line is now the
@@ -39,3 +39,15 @@ sa65 words; that oracle (O3, frozen before it ran; closing6/r6-held/private/o3/R
 from the firmware, in resgx545-data-private) kept the tick on its two controls, and every test word
 ended in a refusal of the simulator (an unmeasured read), so all seven gave the same outcome and it
 did not separate them. The question stays low and open.
+
+Note 2026-11-12 (round 7 offline fold, decision R7-1 a, E902). The oracle was refrozen as O4
+with the two reads O3 refused seeded from measurements (register 0x0728 = 0, read 0 in 83 kept
+dumps, and the writer's entry state as E814's D0 read it, pclink 0x98 among it) and E814's own
+writer run before the closed task (closing7/c/o4/, firmware-derived, in resgx545-data-private).
+Frozen verdict: O4 fails its controls (D1 and D2 ended in refusals of the simulator, not modelled
+hangs; D0 and E812's C1 to C4 kept, the next entry reading pclink 0x98 as measured) and does not
+separate the words (all seven refused at one point: an emitted PDS program reading the running
+timer). So, as decision R7-2 conditions, no Q294 laptop rows; the question stays low and open.
+Read after the run [infer]: in the sim every word with bit 4, 7 or 10 ends the closed pass with
+that emitted program and the kept words do not; the next unmeasured reads are that timer value
+and `CR_EVENT_STATUS` at the closed task's later read.
