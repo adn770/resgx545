@@ -1,6 +1,6 @@
 +++
 id = "Q178"
-question = "what do TEXTYPE 1, 2, 3 (the same image as 1), 4 and 5 read, and why is type 2 the only one of the eight run on which the third coordinate of smp3d changes the image (three images for smp2d, smp3d at 0.5 and smp3d at 1.5)"
+question = "what layout does TEXTYPE 5 read (one image under smp2d and smp3d at 16 x 16, E567), the one texture type of the eight whose layout no record reads"
 unit = "texture"
 kind = "hw"
 value = "low"
@@ -23,3 +23,11 @@ Run in 11.39 (E725, E726): types 3 and 1 read a raster of w dwords per row (8 jo
 face), face = +x, -x, +y, -y, +z, -z along the dominant axis (exploratory: the plan predicted only
 faces 1, 3, 5 for the negative axes; the mapping and the dominant-axis rule are post hoc [infer],
 checked on cu-w02). Open: the faces' (s, t), the edges, other sizes (Q284); type 5 not run.
+
+Narrowed 2026-11-12 (round 6 housekeeping, decision R6-1 a) to TEXTYPE 5. Types 3 and 1 read a
+raster of w dwords per row and type 4 32 dwords per row (E725; the strides at other widths are
+Q283), type 2 with smp3d is the cube, its face chosen by the dominant coordinate and its sign
+(E725, E726, held out by E844; the faces' coordinates, edges and sizes are Q284). Type 5 was run
+once, at 16 x 16 (E567: one image under smp2d and smp3d), and nothing else. To settle it: type 5
+at 8 x 8 to 64 x 64 with a texture whose dwords name their own offsets, as E725 read types 1, 3
+and 4.

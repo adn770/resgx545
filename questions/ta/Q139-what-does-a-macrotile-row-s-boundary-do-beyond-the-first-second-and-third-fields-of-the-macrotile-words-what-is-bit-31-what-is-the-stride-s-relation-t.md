@@ -1,11 +1,11 @@
 +++
 id = "Q139"
-question = "what does a macrotile row's boundary do beyond the first, second and third fields of the macrotile words: what is bit 31, what is the stride's relation to the RT data, why is B2 at or past B3 exact in CR_TE_MTILE2 at 640 x 480, and what do the wrong images show per macrotile"
+question = "what does a macrotile row's boundary do beyond the first, second and third fields of the macrotile words: what is bit 31, what is the stride's relation to the RT data, why is B2 at or past B3 exact in CR_TE_MTILE2 at 640 x 480, and which rule places a region's header when the words differ from the rule's (the wrong images lose whole tiles, E877)"
 unit = "ta"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E505", "E506", "E509", "E407"]
+evidence = ["E505", "E506", "E509", "E407", "E877"]
 terms = ["CR_TE_MTILE1", "CR_TE_MTILE2", "CR_TE_MACROTILE_STRIDE"]
 +++
 
@@ -25,3 +25,14 @@ second boundary at or past the third draws exactly for CR_TE_MTILE2 (6 of 6) and
 kept, 8 of the safe and 59 of the risky script: which tiles are missing says which macrotile each
 was put in). To settle it: read the digit maps of the wrong images of the two datasets into
 per-macrotile maps and test the four-boundary reading against them.
+
+Narrowed 2026-11-12 (round 6, offline, E877). The 67 kept wrong images are wrong in whole 32 x 16
+tiles, 67 of 67 [post hoc, data], so the maps are read per region. The test asked for above ran
+and failed: the cells that the rule's and the job's boundaries cut hold 5 of the 8 safe and 3 of
+the 59 risky wrong images, and a slot reading fitted on the safe dataset (a region's header at its
+macrotile's base plus ly times the rule's macrotile width plus lx, dropped when that index reaches
+the stride; 61 of 63 safe jobs) and frozen by hash before the risky images were read predicts 39
+of the risky dataset's 104 jobs with an image and none of its 59 wrong images (SEMI held out). The
+per-macrotile step is done; what places a region under words other than the rule's is not. No
+header or stream was dumped in either dataset: a dump of the TA data at the words of the misses
+(two macrotile columns, the stride pokes, B2 at or past B3) is the next step.

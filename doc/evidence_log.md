@@ -6700,6 +6700,28 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   of 29, d = 1 17 of 22 and 26 of 29.
   *dpm; HW, infer; data: `render-closing-r3-geo-c:out/g-qf/`, `render-closing-r3-geo-c:out/g-qh/`,
   `render-closing-r5-dpm:out/a2/d-b/`.*
+- `E876` Round 6 offline reading of the two kept sweeps of the fill's end-of-tile DOUTU1 x field
+  (bits 11:3, 512 cases) and y field (bits 21:12, 1024 cases) (Q289; post hoc, nothing held out):
+  every job completed with no dword stored outside the target and only three image hashes occur per
+  sweep; reading the poked field f in half-tile units (16 pixels in x, 8 rows in y), with each 32 x
+  16 tile t of the 64 x 32 fill stored at (2t | f) >> 1 or (2t + f) >> 1 and nothing stored where
+  that lies outside the target, reproduces the tool's image hash in 1536 of 1536 cases (8 of 8 class
+  checks), XOR in place of OR fails 4 of 8 (4 of 1536 cases); on this 2 x 2-tile fill OR and ADD
+  give the same image for every case, so which of them holds is not shown.
+  *transfer; HW, infer; data: `pds-end-of-tile`, `cited-scratch:closing6/rank/`,
+  `cited-scratch:closing6/fold-misc/q289/`.*
+- `E877` Round 6 offline reading of the kept images of Q100's macrotile-word pokes (Q139): all 67
+  wrong images (8 of ta/mtile-fields, 59 of ta/mtile-fields-risky) are wrong in whole 32 x 16 tiles,
+  no tile partly wrong [post hoc, data]; the offline macrotile test then failed: the ranking's set
+  test (wrong tiles a union of the cells the rule's and the job's boundaries cut) holds for 5 of the
+  8 safe and 3 of the 59 risky wrong images, and a slot reading fitted on the safe dataset (each
+  target region's header at N * stride + ly * mx + lx of the macrotile the job's words give it,
+  dropped when ly * mx + lx reaches the stride, later regions winning a shared slot; 61 of its 63
+  jobs with an image) and frozen by hash before the risky images were read predicted the risky
+  dataset's wrong-tile set in 39 of 104 jobs, 39 of 45 exact images and 0 of 59 wrong ones (held out
+  by the dataset's own split: 0 of 4), so H-SLOT is FAILED.
+  *ta; HW, infer; data: `ta-mtile-fields`, `ta-mtile-fields-risky`, `cited-scratch:closing6/rank/`,
+  `cited-scratch:closing6/fold-misc/q139/`.*
 
 ## By unit
 
@@ -6772,7 +6794,7 @@ Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
 E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763, E776, E777,
 E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828, E842, E847, E851, E859,
-E865, E872.
+E865, E872, E877.
 
 ### texture
 
@@ -6783,7 +6805,8 @@ E744, E760, E765, E787, E844.
 
 ### transfer
 
-Records: E015, E016, E018, E019, E020, E021, E022, E024, E027, E028, E272, E398, E455, E620, E766.
+Records: E015, E016, E018, E019, E020, E021, E022, E024, E027, E028, E272, E398, E455, E620, E766,
+E876.
 
 ### tsp
 

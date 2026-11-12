@@ -7,7 +7,7 @@
 //! stencil's in-tile order and its edge tiles (Q121), the band at odd sizes (Q287), the
 //! overflowed job's store (Q107), the integer formats' values outside the ramp that ran and at an
 //! edge, the 16-bit pitch, overlapping tiles and the pitches past the scratch buffer (Q242), a load of an integer format or a loaded depth the compare cannot decide
-//! (Q243), the load and the pass over edge tiles (Q243), bit 0 beyond the one control it ran on and the control bits no run explained (Q244),
+//! (Q243), the load and the pass over edge tiles (Q243), bit 0 beyond the one control it ran on and the control bits no run explained (Q071),
 //! bit 19 with an integer format or a load (Q101). Every refusal depends on the input alone.
 
 use crate::Outcome;
@@ -16,7 +16,7 @@ use crate::Outcome;
 /// The status of the address rule (rules.rs).
 pub const STORE_STATUS: crate::rules::Status = crate::rules::ZLS_ADDRESS;
 
-pub const OPEN: &[&str] = &["Q107", "Q120", "Q121", "Q242", "Q243", "Q244", "Q287"];
+pub const OPEN: &[&str] = &["Q071", "Q107", "Q120", "Q121", "Q242", "Q243", "Q287"];
 
 pub fn refuse() -> Outcome {
     Outcome::unsupported("zls: this input is not one a record states (12.4)", OPEN)
@@ -189,7 +189,7 @@ pub struct Ctl {
 impl Ctl {
     /// Decode a control word. Bit 0 set writes no colour pixel (E057, E411) and stores what the
     /// control stores, seen in two runs of 0x0017100d (E411, control-bits); with any other
-    /// control the store under bit 0 was not seen: refused (Q244).
+    /// control the store under bit 0 was not seen: refused (Q071).
     pub fn decode(word: u32) -> Result<Ctl, Outcome> {
         if word & 1 != 0 && word != BIT0_RAN {
             return Err(open(
@@ -197,7 +197,7 @@ impl Ctl {
                     "CR_ISP_ZLSCTL {word:#x}: with bit 0 the colour image is not written (E057), and \
                      the depth and stencil store was seen only for {BIT0_RAN:#x} (E411)"
                 ),
-                &["Q244"],
+                &["Q071"],
             ));
         }
         Ok(Ctl { word })
@@ -879,8 +879,8 @@ mod tests {
         assert!(ctl(0x0017_100c).writes_pixels());
         assert_eq!((c.store_depth(), c.store_stencil(), c.g()), (true, true, 1));
         // any other control with bit 0 set: what it stores was not seen
-        assert_eq!(ids(Ctl::decode(0x0017_110d)), ["Q244"]);
-        assert_eq!(ids(Ctl::decode(0xffff_ffff)), ["Q244"]);
+        assert_eq!(ids(Ctl::decode(0x0017_110d)), ["Q071"]);
+        assert_eq!(ids(Ctl::decode(0xffff_ffff)), ["Q071"]);
     }
 
     #[test]

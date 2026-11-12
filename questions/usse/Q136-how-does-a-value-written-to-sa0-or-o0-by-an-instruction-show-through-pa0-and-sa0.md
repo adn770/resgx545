@@ -1,6 +1,6 @@
 +++
 id = "Q136"
-question = "how long does a value written to sa0 last across jobs, why is pa0 not written by ima32 or mov, and is the 0xff00ff00 and 0xff203040 mixture that pa0 reads in the first jobs of a table the colour left by the job before it?"
+question = "how long does a value written to sa0 last across jobs, and is the 0xff00ff00 and 0xff203040 mixture that pa0 reads in the first jobs of a table the colour left by the job before it?"
 unit = "usse"
 kind = "hw"
 value = "low"
@@ -22,9 +22,13 @@ job before them output); the mixture's first value came from the job before the 
 
 What is open: how long an sa0 write by `ima32` lasts, and whether it persists at all (job 8 is
 confounded with the colour rule), whether another fill or the kernel's jobs clear it, the colours of
-the job before the first job of a table (the runner's baseline job), why the `ima32` and `mov`
-destination of pa0 is lost while sa0, o0, i1 and i2 take it, whether a pa1 to pa4 or an o
-destination, and a value other than the left-over colour held in pa, sa, o or g as an operand,
+the job before the first job of a table (the runner's baseline job), whether an o destination,
+and a value other than the left-over colour held in pa, sa, o or g as an operand,
 behave the same way. To settle it: the pa-dest order with a writer whose colour differs from its sa0
 value and a job that outputs a known colour before each reader, with waiting times and with a
 triangle job between, and one job per register of the banks.
+
+Narrowed 2026-11-12 (round 6 housekeeping, decision R6-1 a): why the `ima32` and `mov`
+destination of pa0 is lost while sa0, o0, i1 and i2 take it (E496), and whether a pa1 to pa4
+destination is lost as well, moved to Q098, whose lost `mov` to pa_n it is. This question keeps the
+sa0 lifetime and the left-over colour.

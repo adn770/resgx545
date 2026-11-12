@@ -1,6 +1,6 @@
 +++
 id = "Q098"
-question = "why do pa_n and sa_n read one value in a fill's pixel task, a mov to pa_n being lost, and why does an unwritten one read the job's pixel colour?"
+question = "why do pa_n and sa_n read one value in a fill's pixel task, a mov or ima32 to pa_n being lost, and why does an unwritten one read the job's pixel colour?"
 unit = "usse"
 kind = "hw"
 value = "medium"
@@ -73,3 +73,8 @@ next, 3 of 3), pa2 aliases sa66 in the same pass (3 of 3) and the next pass find
 `mov` to pa4 is lost (neither pa4 nor sa68 changed, same pass and next, 3 of 3); neighbours
 unchanged. So no single rule for pa2 to pa4. Open: the fill's lost `mov` to pa_n (this question's
 own case), why pa4 differs from pa3, pa5 and above, an event that is not a tick.
+
+Note 2026-11-12 (round 6 housekeeping, decision R6-1 a): Q136's clause "why is pa0 not written by
+ima32 or mov" moves here: it is this question's lost write to pa_n (E496: `ima32.u pa0` and `mov
+pa0` lost in 3 of 3, while `ima32.u` to sa0, o0, i1 and i2 is read back). Open from it, besides the
+fill's `mov`: whether `ima32` to pa1 and above is lost too (E380 measured `mov` to pa0 to pa7).
