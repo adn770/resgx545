@@ -74,6 +74,7 @@ if [ "$mode" = quick ]; then
             step "$PY" "tools/records/$t.py" --check
         done
         step "$PY" tools/clean-room/glossary.py --check
+        step "$PY" "$HERE/regen_generated.py" --check
     fi
     "$PY" "$HERE/hooks/corrections.py" "$TOP" || true
 else
