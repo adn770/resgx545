@@ -175,8 +175,8 @@ impl State {
 pub struct Sgx {
     pub st: State,
     pub pds: Pds,
-    /// USSE programs by code base, decoded once.
-    programs: HashMap<u32, Rc<Program>>,
+    /// USSE programs by code base and length, decoded once.
+    programs: HashMap<(u32, usize), Rc<Program>>,
     pub steps: usize,
     /// An event program's ir0 and the counter it reads (tim), which the hardware gives and
     /// nothing here models.
@@ -195,6 +195,63 @@ pub struct Sgx {
     pub kick_unconsumed: bool,
     /// pds::Pds::alu_specials_in_movs for every program (an assumption, off by default).
     pub alu_specials_in_movs: bool,
+    /// The instructions a task reads from its code base: `MAX_CODE` unless set. Our own tasks sit
+    /// at instruction 0x4000 (tools/fwtask OWN_INDEX), past the default window.
+    pub code_len: Option<usize>,
+    /// The task state that outlives a task, `None` by default: each task then starts with it
+    /// unwritten, and a read of it is refused. Set, every task starts from it and what the task
+    /// leaves replaces it (E536: pclink, p1 to p3, r20, r21, i0 and i1 at a firmware task's entry
+    /// were as the task before left them); the caller seeds the first entry with what a run read.
+    pub carry: Option<Carry>,
+}
+
+/// A firmware task's entry state that the task before left (`Sgx::carry`); `None`: unknown.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Carry {
+    pub pclink: Option<u32>,
+    pub p: [Option<bool>; 4],
+    pub r20: Option<u32>,
+    pub r21: Option<u32>,
+    pub i0: Option<u32>,
+    pub i1: Option<u32>,
+}
+
+impl Carry {
+    fn enter(&self, m: &mut Machine) {
+        if let Some(l) = self.pclink {
+            m.set_link(l);
+        }
+        for (n, v) in self.p.iter().enumerate() {
+            if let Some(v) = v {
+                m.set_pred(n, *v);
+            }
+        }
+        for (n, v) in [(20, self.r20), (21, self.r21)] {
+            if let Some(v) = v {
+                (m.r[n], m.written.r) = (v, m.written.r | 1 << n);
+            }
+        }
+        for (n, v) in [(0, self.i0), (1, self.i1)] {
+            if let Some(v) = v {
+                (m.i[n], m.written.i) = (v, m.written.i | 1 << n);
+            }
+        }
+    }
+
+    fn leave(&mut self, m: &Machine) {
+        if m.link_set {
+            self.pclink = Some(m.link);
+        }
+        for n in 0..4 {
+            if m.p_set >> n & 1 != 0 {
+                self.p[n] = Some(m.p[n]);
+            }
+        }
+        let r = |n: usize| (m.written.r >> n & 1 != 0).then_some(m.r[n]);
+        let i = |n: usize| (m.written.i >> n & 1 != 0).then_some(m.i[n]);
+        (self.r20, self.r21) = (r(20).or(self.r20), r(21).or(self.r21));
+        (self.i0, self.i1) = (i(0).or(self.i0), i(1).or(self.i1));
+    }
 }
 
 /// The longest program read from a code base, in instructions.
@@ -332,18 +389,19 @@ impl Sgx {
         max: usize,
     ) -> Result<(), Error> {
         self.st.log.push(Event::Task { base, pc, temps });
-        let prog = match self.programs.get(&base) {
+        let len = self.code_len.unwrap_or(MAX_CODE);
+        let prog = match self.programs.get(&(base, len)) {
             Some(p) => p.clone(),
             None => {
                 let w: Vec<u64> = self
                     .st
                     .mem
-                    .words(base, 2 * MAX_CODE)
+                    .words(base, 2 * len)
                     .chunks_exact(2)
                     .map(|d| d[0] as u64 | (d[1] as u64) << 32)
                     .collect();
                 let p = Rc::new(Program::new(&w, Core::Sgx545));
-                self.programs.insert(base, p.clone());
+                self.programs.insert((base, len), p.clone());
                 p
             }
         };
@@ -357,9 +415,15 @@ impl Sgx {
                 (m.sa[64 + n], m.written.sa) = (pa[n], m.written.sa | 1 << (64 + n));
             }
         }
+        if let Some(c) = &self.carry {
+            c.enter(&mut m);
+        }
         let mut bus = Unit { st: &mut self.st, bank: Bank::Secondary, pa: [0; 128], written: 0 };
         let r = m.run(&prog, &mut bus, max - self.steps);
         self.steps += m.steps;
+        if let Some(c) = &mut self.carry {
+            c.leave(&m);
+        }
         // the secondary attributes outlive the task
         (self.st.sa, self.st.sa_written) = (m.sa, m.written.sa);
         r.map_err(|e| context(e, &format!("task 0x{base:08x}+{pc:#x}")))
@@ -932,5 +996,65 @@ mod tests {
         s.seed(reg::EVENT_STATUS, 0x2004_0000);
         assert!(refused(s.write_reg(reg::EVENT_HOST_CLEAR, 1 << 18)));
         assert_eq!(s.st.regs[&reg::EVENT_STATUS], 0x2004_0000);
+    }
+
+    fn task_at(s: &mut Sgx, pc: usize) {
+        s.st.queue.push_back(Work::Task { base: CODE, pc, temps: 32, pa: Box::new([0; 128]), written: 0 });
+    }
+
+    #[test]
+    fn a_task_past_the_default_window_runs_only_with_a_longer_code_window() {
+        // our own tasks sit at instruction 0x4000 of the EDM code base (the page the kernel maps
+        // at heap + 0x20000, tools/fwtask OWN_INDEX); the default window ends before it
+        let mut s = sgx();
+        s.st.mem.map(CODE, &vec![0; 0x20000]);
+        s.st.mem.map(CODE + 0x20000, &usse("mov r1, #5\nstr #65, r1\nnop.end"));
+        task_at(&mut s, 0x4000);
+        assert!(s.run(100).is_err());
+        let mut s = sgx();
+        s.st.mem.map(CODE, &vec![0; 0x20000]);
+        s.st.mem.map(CODE + 0x20000, &usse("mov r1, #5\nstr #65, r1\nnop.end"));
+        s.code_len = Some(0x4000 + 3);
+        task_at(&mut s, 0x4000);
+        s.run(100).unwrap();
+        assert_eq!(s.st.regs[&65], 5);
+    }
+
+    #[test]
+    fn without_a_carry_each_task_starts_with_pclink_and_the_predicates_unwritten() {
+        let mut s = sgx();
+        s.st.mem.map(CODE, &usse("mov r1, pclink\nstr #65, r1\nnop.end"));
+        task_at(&mut s, 0);
+        assert!(refused(s.run(100)));
+    }
+
+    #[test]
+    fn a_seeded_carry_gives_each_task_what_the_task_before_left() {
+        // E536: pclink, p1 to p3, r20, r21, i0 and i1 at a task's entry were as the task before
+        // left them; the first entry is seeded with what a run read there
+        let mut s = sgx();
+        s.st.mem.map(
+            CODE,
+            &usse(
+                "mov r1, pclink\nstr #65, r1\nmov r1, r20\nstr #66, r1\nmov r1, i0\nstr #67, r1\n\
+                 p0 mov r2, #9\nstr #68, r2\n\
+                 mov r3, #6\nmov pclink, r3\nmov r20, #0x00000044\nnop.end",
+            ),
+        );
+        s.carry = Some(Carry {
+            pclink: Some(0x98),
+            p: [Some(true), None, None, None],
+            r20: Some(0x11),
+            i0: Some(0x22),
+            ..Carry::default()
+        });
+        task_at(&mut s, 0);
+        s.run(1000).unwrap();
+        assert_eq!([65, 66, 67, 68].map(|r| s.st.regs[&r]), [0x98, 0x11, 0x22, 9]);
+        let c = s.carry.clone().unwrap();
+        assert_eq!((c.pclink, c.r20, c.i0, c.p[0]), (Some(6), Some(0x44), Some(0x22), Some(true)));
+        task_at(&mut s, 0);
+        s.run(1000).unwrap();
+        assert_eq!([65, 66].map(|r| s.st.regs[&r]), [6, 0x44]);
     }
 }

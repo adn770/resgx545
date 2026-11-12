@@ -431,6 +431,45 @@ impl Sgx {
         self.s.alu_specials_in_movs = v;
     }
 
+    /// The instructions a task reads from its code base (None: the default window).
+    #[getter]
+    fn code_len(&self) -> Option<usize> {
+        self.s.code_len
+    }
+
+    #[setter]
+    fn set_code_len(&mut self, v: Option<usize>) {
+        self.s.code_len = v;
+    }
+
+    /// Carry the task state that outlives a task (sgx_sim::sgx::Carry, E536) from here on, the
+    /// next entry seeded with these values (None: unknown, a read of it is refused).
+    #[pyo3(signature = (pclink = None, p = None, r20 = None, r21 = None, i0 = None, i1 = None))]
+    fn seed_carry(
+        &mut self,
+        pclink: Option<u32>,
+        p: Option<[Option<bool>; 4]>,
+        r20: Option<u32>,
+        r21: Option<u32>,
+        i0: Option<u32>,
+        i1: Option<u32>,
+    ) {
+        self.s.carry = Some(sgx_sim::sgx::Carry { pclink, p: p.unwrap_or_default(), r20, r21, i0, i1 });
+    }
+
+    /// The carried task state as a dict, or None when nothing is carried.
+    fn carry<'py>(&self, py: Python<'py>) -> PyResult<Option<Bound<'py, PyDict>>> {
+        let Some(c) = &self.s.carry else { return Ok(None) };
+        let d = PyDict::new(py);
+        d.set_item("pclink", c.pclink)?;
+        d.set_item("p", c.p.to_vec())?;
+        d.set_item("r20", c.r20)?;
+        d.set_item("r21", c.r21)?;
+        d.set_item("i0", c.i0)?;
+        d.set_item("i1", c.i1)?;
+        Ok(Some(d))
+    }
+
     /// Run the queued work until none is left; raises SimError when it stops.
     #[pyo3(signature = (max_steps = 1_000_000))]
     fn run(&mut self, max_steps: usize) -> PyResult<()> {
