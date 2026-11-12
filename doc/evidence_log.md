@@ -6940,6 +6940,48 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   pending write, and does not prevent the -110.
   *bif; HW, infer; data: `render-closing-r6-held:out/20261112-154536/q/`,
   `render-closing-r6-held:postrun/`.*
+- `E899` Round 7 offline stage G1, G2 and G4 (Q211; no run): the TA takes a region's 128-byte stream
+  block walking the target in strips of 64 pixel rows, each strip in 64 x 64-pixel blocks left to
+  right and a block's 32 x 16 regions row by row, a macrotile filling its current page (32 blocks)
+  before it takes another (H-WALK64, named by the planner after printing u-2048's pages): frozen
+  verdict HELD, every block of 760 kept dumps of one-object, one-kick jobs without a partial render
+  at its page and slot, 28621 of 28621 (fit u-2048 2341; SEMI ten dumps, 13683; held out 749 dumps,
+  12597, of which only 18, at 1024x768 and 128x128 with 8009 blocks, separate the walk from row
+  order, which places 2114 of those; none held out above 1024x768); E875's replay, unchanged, in
+  that order gives the partial-render count and every TA run's peak of the 89 kept one-triangle
+  cells at 4096x4096 (eight scenes, U 119 to 287) and the 37 record counts of E625 and E779 (frozen
+  verdict HELD, SEMI: the planner had tallied every cell), where row order gives 83 counts and 47
+  peak sets and column order 73 and 23; read after, in scenes of several kicks each kick is one more
+  walk of a macrotile's blocks, and the first block of a later walk went to the page the earlier one
+  had left open 157 of 163 times (21 dumps).
+  *dpm; HW, infer; data: `render-closing-r1-pixgeo:out/`, `render-closing-r2-geo:out/`,
+  `render-closing-r3-geo:out/`, `render-closing-r3-pixel:out/`, `render-closing-r3k-pixel:out/`,
+  `render-closing-r3k-regress:out/`, `render-closing-r4-pixel:out/`, `render-closing-r4-q285:out/`,
+  `render-closing-r4-render4x:out/`, `render-closing-r5-pixel:out/`,
+  `render-closing-r5-render4x:out/`, `render-closing-r6-pixel:out/`,
+  `render-closing-r6-render4x:out/`, `render-closing-s1:out/`, `render-closing-s1b:out/`,
+  `render-closing-r3-geo-c:out/g-qf/`, `render-closing-r3-geo-c:out/g-qh/`,
+  `render-closing-r5-dpm:out/a2/d-b/`, `render-closing-r6-dpm:out/a2/r-b/`,
+  `cited-scratch:cited/closing7/b/`.*
+- `E900` Round 7 offline stage G3 and G5 to G7 (Q210; no run): for the tool's 1500-vertex triangle
+  the first partial render leaves 2 global pages iff S_k < thr0 < A_k, else 1, A_k being the page
+  count of E874's frozen replay once object b_k = floor(1024 (k - 1) / 67), the object block that
+  straddles global pages k - 1 and k, is tiled (H-SPAN; E874's B_k took the first object from b_k -
+  3 on whose index is divisible by 15, the same object for k up to 4): frozen verdict HELD, 159 of
+  159 scored rows at eight targets (fit R6-dpm r-m's 15 rows at 2048x2048 bands 5 to 7, where E874's
+  B gives 10; SEMI the other 144, all of which B gives too, so no row outside the fit separates the
+  two), A_k being 0x178, 0x1c3 and 0x20d at bands 5 to 7 there, the observed first one-page cells;
+  the frozen rule left out R6-dpm's four --vtx-coords rows and five rows at the threshold clamp;
+  read from R6-dpm r-v's two calibration dumps, the object blocks are 127 dwords for all 100 objects
+  with --vtx-coords 4, and with 8 the stream names 97 objects whose blocks are 79 to 198 dwords (187
+  in 66 of 96, 196 in 9, 189 in 10), the entry with the base dword is that of the object whose block
+  holds global dword 1024 (k - 1) on the read sizes (12 of 12 at N 4; 17 of 17 at N 8, post hoc
+  after a fix of the test), and E874's replay with those objects places 9 of 12 steps at N 4 and 1
+  of 17 at N 8, so H-CUM is not frozen; the kept 2048x4096 dumps (all overflowed) do not read the S3
+  miss, and the end-state dumps do not read the lag.
+  *dpm; HW, infer; data: `render-closing-r1-pixgeo:out/`, `render-closing-r2-geo:out/`,
+  `render-closing-r3-geo:out/`, `render-closing-r5-dpm:out/a2/`, `render-closing-r6-dpm:out/a2/`,
+  `render-closing-s1:out/g-e1/`, `render-closing-s1b:out/g-e1/`, `cited-scratch:cited/closing7/b/`.*
 
 ## By unit
 
@@ -6953,7 +6995,8 @@ Records: E199, E200, E201, E202, E204, E205, E206, E203, E253, E256, E309, E310,
 E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E468, E574, E591,
 E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753, E773, E774, E775, E779, E785,
 E786, E790, E799, E800, E801, E802, E803, E832, E845, E846, E852, E853, E854, E860, E861, E862,
-E863, E864, E866, E867, E868, E869, E870, E873, E874, E875, E881, E882, E883, E887, E889.
+E863, E864, E866, E867, E868, E869, E870, E873, E874, E875, E881, E882, E883, E887, E889, E899,
+E900.
 
 ### edm
 

@@ -5,7 +5,7 @@ unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E310", "E312", "E464", "E625", "E627", "E629", "E704", "E734", "E753", "E774", "E779", "E785", "E786", "E799", "E800", "E801", "E802", "E852", "E853", "E860", "E861", "E862", "E863", "E864", "E873", "E874", "E881", "E882"]
+evidence = ["E310", "E312", "E464", "E625", "E627", "E629", "E704", "E734", "E753", "E774", "E779", "E785", "E786", "E799", "E800", "E801", "E802", "E852", "E853", "E860", "E861", "E862", "E863", "E864", "E873", "E874", "E881", "E882", "E900"]
 terms = ["Dynamic Parameter Management (DPM)", "CR_DPM_STATE_BASE0", "ta3d_ctl"]
 +++
 
@@ -266,3 +266,16 @@ read without it (dword 36 = 2, one page left, `sa8 & 0x380` = 0, silent, twice) 
 (rerun with a control that can read); what keeps the second page at bands 5 to 7; what opens the
 bursts for larger objects; the lag; the 2048x4096 S3 miss; the counts at the passes (oomring2 is
 refused by both verifiers).
+
+Note 2026-11-12 (round 7, offline stage G3 and G5 to G7, E900; decision R7-1 a; the question
+stays open). [HW, fit and SEMI] The margin's end at the 67-dword scene is A_k, the page count once
+the object block that straddles global pages k - 1 and k (b_k = floor(1024 (k - 1) / 67)) is
+tiled: H-SPAN gave 159 of 159 scored rows at eight targets, including the five bands 5 to 7 cells
+E874's B_k missed; outside those fit rows B gives the same, so it is not held out yet (the plan's
+s-m stage). [HW, reading] With `--vtx-coords` 4 the object blocks are 127 dwords, with 8 the 1500
+vertices make 97 blocks of 79 to 198 dwords over 4689 regions; at both the base dword sits at the
+object whose block holds global dword 1024 (k - 1) on the read sizes (N 8 post hoc), but E874's
+replay with those objects places 9 of 12 steps at N 4 and 1 of 17 at N 8, so no rule for larger
+objects (H-CUM) is frozen. Open: H-SPAN held out; what opens the bursts for larger objects and
+what sets their block sizes; the lag; the 2048x4096 S3 miss (the kept dumps there all overflowed);
+the counts at the passes.
