@@ -26,7 +26,16 @@ cannot pass a gate by being truthy.
   disagree are "mixed", never "held".
 - headline(claim, controls, rows): the claim only when every control passed and at least one
   row was decided, with the count of decided rows; otherwise what stopped it.
+- control_read_problems(controls, producible) / refuse_unreadable(...): the generator side. A
+  control declares the readings it needs; one whose row's job cannot produce one of them (r6-dpm:
+  "grow" on a job with no partial render) or that declares none is refused before the freeze.
+- premise_stops(controls, readings): the run side. A control with no reading of a key it
+  declared (None, "" or "-"), or that did not run, STOPS the session at the premise stage; it
+  never reaches a gate to shut it silently.
+- missing_files(required, kept_dir, rows): the files a scorer reads (its REQUIRED: ".suffix"
+  per row, any other name once) that the kept directory lacks, kept plain or gzipped.
 """
+import os
 from dataclasses import dataclass, field
 
 PASS_STATES = {True, "PASS"}
@@ -207,3 +216,71 @@ def headline(claim, controls, rows):
     if t.failed:
         return f"{claim} is not supported: {t}"
     return f"{claim} ({t.decided} of {t.total} rows decided)"
+
+
+# ---- what a control reads --------------------------------------------------------------------
+NO_READING = (None, "", "-")
+
+
+class ControlReadError(ValueError):
+    """A control that cannot produce the reading it is frozen on."""
+
+
+def _keys(reads, name):
+    if isinstance(reads, str):
+        raise TypeError(f"control {name}: reads {reads!r} is a string, not a tuple of keys")
+    return tuple(reads)
+
+
+def control_read_problems(controls, producible):
+    """controls: {name: (reads, row)}; producible(row): the reading keys the row's job can
+    produce. A problem for every key a control reads that its row cannot produce, and for a
+    control that reads nothing."""
+    out = []
+    for name, (reads, row) in controls.items():
+        keys = _keys(reads, name)
+        if not keys:
+            out.append(f"control {name} declares no reading: it cannot fail")
+            continue
+        can = set(producible(row))
+        out += [f"control {name} reads {k}, which its row cannot produce"
+                for k in keys if k not in can]
+    return out
+
+
+def refuse_unreadable(controls, producible):
+    """The generator's check: raise ControlReadError naming every unreadable control."""
+    probs = control_read_problems(controls, producible)
+    if probs:
+        raise ControlReadError("; ".join(probs))
+
+
+def premise_stops(controls, readings):
+    """controls: {name: reads}; readings: {name: {key: value}} of the run. The STOP lines of the
+    premise stage, empty when every control has every reading it declared."""
+    out = []
+    for name, reads in controls.items():
+        keys = _keys(reads, name)
+        if name not in readings:
+            out.append(f"STOP: premise: control {name} did not run")
+            continue
+        r = readings[name]
+        out += [f"STOP: premise: control {name} has no reading of {k}"
+                for k in keys if k not in r or r[k] in NO_READING]
+    return out
+
+
+# ---- files a scorer reads --------------------------------------------------------------------
+def missing_files(required, kept_dir, rows):
+    """The files of `required` (".suffix": NAME.suffix for every row; any other name: that file)
+    not in kept_dir, plain or with ".gz". Per-row files and no row: "(no row)"."""
+    def kept(f):
+        p = os.path.join(kept_dir, f)
+        return os.path.exists(p) or os.path.exists(p + ".gz")
+    rows = list(rows)
+    fixed = [f for f in required if not f.startswith(".")]
+    per = [f for f in required if f.startswith(".")]
+    out = [f for f in fixed if not kept(f)]
+    if per and not rows:
+        return out + ["(no row)"]
+    return out + [n + s for n in rows for s in per if not kept(n + s)]
