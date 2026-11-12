@@ -42,7 +42,7 @@ def test_push_defaults_to_ssh_aliases():
     assert "sgx-target:/tmp/" in out
     assert "cd src/linux-sgx" in out
     assert "vermagic=7.3.0-sgx " in out
-    assert "/usr/lib/modules/7.3.0-sgx/" in out
+    assert "./install-module.sh /tmp/gma500_gfx.ko 7.3.0-sgx linux-sgx" in out
     assert "-j\\$(nproc)" in out or "-j$(nproc)" in out
 
 
@@ -60,7 +60,7 @@ def test_push_takes_hosts_and_paths_from_the_environment():
     assert "-j8 " in out
     assert "PATH=~/.local/bin:" in out
     assert "vermagic=7.4.0-sgx " in out
-    assert "depmod 7.4.0-sgx" in out
+    assert "./install-module.sh /tmp/gma500_gfx.ko 7.4.0-sgx linux-sgx" in out
     assert "test-session.sh 10.1.2.3 7777" in out
     assert "sgx-build" not in out and "sgx-target" not in out
 
@@ -92,8 +92,8 @@ def test_push_reads_the_example_settings():
 
 def test_push_no_reboot_stops_after_install():
     out = push("--no-reboot")
-    assert "mkinitcpio" in out
-    assert "boot-test-kernel.sh" not in out.split("mkinitcpio", 1)[1]
+    assert "install-module.sh /tmp" in out
+    assert "boot-test-kernel.sh" not in out.split("install-module.sh /tmp", 1)[1]
 
 
 def test_push_passes_the_render_gate():
@@ -192,7 +192,8 @@ def test_push_builds_on_the_laptop_when_the_build_host_is_the_target():
     assert build.startswith("ssh me@laptop ") and "sgx-build kernel" in build
     assert "SGX_KERNEL_TREE=src/linux-resgx545" in build and "-j4 " in build
     assert "M=drivers/gpu/drm/gma500" in build
-    assert "install -m644 src/linux-resgx545/drivers/gpu/drm/gma500/gma500_gfx.ko" in out
+    assert ("./install-module.sh src/linux-resgx545/drivers/gpu/drm/gma500/gma500_gfx.ko "
+            "7.3.0-sgx linux-sgx") in out
     assert "scp -q target:" not in out and "/tmp/gma500_gfx.ko" not in out
     assert "test-session.sh 10.42.0.1 6666" in out
 
@@ -206,10 +207,51 @@ def test_push_on_the_laptop_needs_a_netconsole_host():
 
 def test_push_takes_the_kernel_package_base():
     out = push(SGX_KERNEL_PKGBASE="linux-resgx545", SGX_KERNEL_RELEASE="7.3.0-resgx545")
-    assert "mkinitcpio -p linux-resgx545" in out
+    assert "./install-module.sh /tmp/gma500_gfx.ko 7.3.0-resgx545 linux-resgx545" in out
     assert "boot-test-kernel.sh 1 linux-resgx545" in out
-    assert "/usr/lib/modules/7.3.0-resgx545/" in out
-    assert "mkinitcpio -p linux-sgx " in push() + " "        # the default stays
+    assert "7.3.0-sgx linux-sgx" in push()                    # the default stays
+
+
+# ---- the install step is install-module.sh; --ko installs a delivered module ------------
+
+def test_push_sends_the_install_step_with_the_boot_scripts():
+    out = push()
+    send = next(l for l in out.splitlines() if "boot-test-kernel.sh" in l and "scp" in l)
+    assert "install-module.sh" in send
+
+
+def test_push_ko_installs_a_delivered_module_without_building(tmp_path):
+    ko = tmp_path / "3f0b3e74b51b" / "gma500_gfx.ko"
+    ko.parent.mkdir()
+    ko.write_bytes(b"module")
+    (ko.parent / "manifest").write_text("tip=3f0b3e74\nsha256=" + "ab" * 32 + "\n")
+    out = push("--ko", str(ko), "--no-reboot", SGX_KERNEL_RELEASE="7.3.0-resgx545",
+               SGX_KERNEL_PKGBASE="linux-resgx545")
+    assert "make" not in out and "ssh sgx-build" not in out
+    assert f"scp -q {ko} sgx-target:/tmp/gma500_gfx.ko" in out
+    assert ("./install-module.sh /tmp/gma500_gfx.ko 7.3.0-resgx545 linux-resgx545 "
+            + "ab" * 32) in out
+    assert "boot-test-kernel.sh 1" not in out
+
+
+def test_push_ko_without_a_manifest_installs_without_a_sha256(tmp_path):
+    ko = tmp_path / "gma500_gfx.ko"
+    ko.write_bytes(b"module")
+    out = push("--no-reboot", "--ko", str(ko))
+    assert out.rstrip().endswith("./install-module.sh /tmp/gma500_gfx.ko 7.3.0-sgx linux-sgx")
+
+
+def test_push_ko_then_boots():
+    out = push("--ko", "/nowhere/gma500_gfx.ko")
+    assert "boot-test-kernel.sh 1 linux-sgx" in out
+
+
+def test_push_refuses_an_unknown_option():
+    env = clean_env(SGX_DRY_RUN="1")
+    for args in (["--bogus"], ["--ko"]):
+        out = subprocess.run(["bash", str(PUSH), *args], env=env, capture_output=True,
+                             text=True, timeout=30)
+        assert out.returncode == 2 and "usage" in out.stderr
 
 
 def tool(script, *args, **extra):

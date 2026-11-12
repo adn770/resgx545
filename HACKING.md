@@ -376,6 +376,31 @@ pushed before `tools/clean-room/guard.py --history` has run over every ref.
   one (`CHECK_RUNNER` and `CHECK_WORK` for `fork-check.sh` itself). `FORK_CHECK_RUNNER` defaults
   to `docker`. The chroot runner without `FORK_CHECK_WORK` is refused before anything is sent:
   the default directory would start a from-scratch kernel build on the Atom.
+- The module the laptop runs comes from a checked fork tip, never from a hand-run recipe:
+  `tools/fork/deliver-module.sh TIP`, in the fork clone as `recheck.sh`, refuses a tip the pass
+  file does not name (`FORK_DELIVER_FORCE=1` delivers anyway, recorded as `checked=forced`),
+  builds it on the build host and copies `gma500_gfx.ko` and its `manifest` (tip, vermagic,
+  srcversion, depends, sha256) to `<git dir>/deliver/<tip12>/`. On the host
+  (`build-module.sh`, sent by it) the source is a `git archive` of the tip (no `.git`, so no
+  `+` from setlocalversion), the build directory is made from the installed kernel's config
+  (`FORK_DELIVER_CONFIG`) and built in full once, and again only when a tip changes more than
+  gma500, so modpost has a `Module.symvers`. Every make runs in the toolchain root with
+  `LOCALVERSION=`, never on the host (the build directory's Makefile includes `/k/Makefile`),
+  and the module is delivered only when `kernel.release` and the vermagic
+  (`<release> SMP preempt mod_unload 686`) are exactly the target's. `SGX_DRY_RUN=1` prints the
+  host's commands.
+- Installing is a separate step: `tools/bringup/push-gma500.sh --ko FILE [--no-reboot]` runs
+  `install-module.sh` on the laptop (sha256 against the manifest, vermagic against the
+  installed gma500, old module and initramfs kept with the old srcversion's first eight
+  characters as a suffix, depmod, mkinitcpio, and the new initramfs must hold the new sha256),
+  then boots the test kernel once unless `--no-reboot`. The module loop without `--ko` installs
+  through the same script.
+- Traveling, the laptop delivers to itself: `FORK_CHECK_HOST` the laptop,
+  `FORK_CHECK_RUNNER=chroot` (its sgx-build nspawn root), `FORK_CHECK_CLONE` its fork clone,
+  and `FORK_DELIVER_SEED` a built O= directory of the same config with its `.built` record
+  (e.g. the series check's `build-on`), copied once into the delivery directory and never
+  changed. Without a seed the chroot runner refuses the full build (most of a day on the Atom)
+  unless `FORK_DELIVER_FULL=1`.
 - Commit style is the one under Commits. The test-cycle scripts and their settings are in
   `tools/bringup/` (`local.env.example`).
 
