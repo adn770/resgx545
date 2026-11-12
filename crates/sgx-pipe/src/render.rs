@@ -90,7 +90,7 @@ fn check_cmd(sc: &Scene) -> Result<(), Outcome> {
     if c[CMD_TE_AA] != TE_AA {
         return Err(refuse(
             format!(
-                "CR_TE_AA {:#x}: the dwords that change with its bits 30 and 31 are not modelled",
+                "CR_TE_AA {:#x}: the region headers of the halved grid are modelled (E893, ta::region_data), the control streams it writes in them are not",
                 c[CMD_TE_AA]
             ),
             &["Q142"],

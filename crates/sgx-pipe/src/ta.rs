@@ -286,23 +286,74 @@ pub fn stream_words(nprims: u32, left: u32, right: u32, isp: u32) -> Result<Vec<
     })
 }
 
+/// The region grid of the TA: the library's 32 x 16 regions, or with `CR_TE_AA` bit 29 set, bit 31
+/// halving a region's width and bit 30 its height (E893, held out at 128 x 128; fitted on E504's
+/// 64 x 64 dumps). A macrotile keeps its pixel area and number, so it holds twice the regions
+/// along a halved axis.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Grid {
+    pub half_width: bool,
+    pub half_height: bool,
+}
+
+impl Grid {
+    pub const LIBRARY: Grid = Grid { half_width: false, half_height: false };
+
+    /// The grid of a `CR_TE_AA` word: bits 31 and 30 with bit 29 (E893); 0 and bit 29 alone are
+    /// the library's (E504, E281). Bit 30 or 31 without bit 29 removes the triangle (E281) and
+    /// shifts the object (E888): refused, as is any other bit.
+    pub fn from_te_aa(te_aa: u32) -> Result<Grid, Outcome> {
+        if te_aa & !0xe000_0000 != 0 || (te_aa & 0xc000_0000 != 0 && te_aa & 0x2000_0000 == 0) {
+            return Err(refuse_ids(
+                format!(
+                    "CR_TE_AA {te_aa:#x}: only bits 31 and 30 with bit 29 are a region grid (E893); without bit 29 the triangle is removed (E281, E888)"
+                ),
+                &["Q142"],
+            ));
+        }
+        Ok(Grid { half_width: te_aa >> 31 & 1 != 0, half_height: te_aa >> 30 & 1 != 0 })
+    }
+
+    /// A region's width and height in pixels.
+    pub fn region(&self) -> (u32, u32) {
+        (32 >> u32::from(self.half_width), 16 >> u32::from(self.half_height))
+    }
+
+    /// The regions of a macrotile across and down.
+    pub fn per_macrotile(&self, t: &Tiling) -> (u32, u32) {
+        (t.mx << u32::from(self.half_width), t.my << u32::from(self.half_height))
+    }
+}
+
 /// A region header's word 0 (position and flags) for every region of every macrotile, in header
-/// order, and whether the region has a stream (`has_stream(macrotile, local index)`): bit 25
-/// outside the target, 26 the first and 28 the last header of a macrotile with target regions, 27 a
-/// target region without a stream, 31 the last header of the scene's last such macrotile
-/// (E177, E178, E652).
-pub fn headers(t: &Tiling, w: u32, h: u32, has_stream: &dyn Fn(u32, u32) -> bool) -> Vec<(u32, bool)> {
-    let per = t.mx * t.my;
+/// order, and whether the region has a stream (`has_stream(macrotile, local index)`, the local
+/// index `row * across + column` in the grid's regions): bit 25 outside the target, 26 the first
+/// and 28 the last header of a macrotile with target regions, 27 a target region without a
+/// stream, 31 the last header of the scene's last such macrotile (E177, E178, E652). The position
+/// fields count 16 pixels in x (bits 23:16) and 8 in y (bits 11:0) on every grid, and a
+/// macrotile's headers are written in 4 x 4-region sub-blocks, raster order across them and
+/// inside one (E893; a library macrotile is one sub-block).
+pub fn headers(
+    t: &Tiling,
+    w: u32,
+    h: u32,
+    grid: Grid,
+    has_stream: &dyn Fn(u32, u32) -> bool,
+) -> Vec<(u32, bool)> {
+    let (fx, fy) = grid.per_macrotile(t);
+    let (rw, rh) = grid.region();
+    let at = |m: u32, i: u32| ((m / t.n) * fx + i % fx, (m % t.n) * fy + i / fx);
     let inside = |m: u32, i: u32| {
-        let (c, r) = ((m / t.n) * t.mx + i % t.mx, (m % t.n) * t.my + i / t.mx);
-        32 * c < w && 16 * r < h
+        let (c, r) = at(m, i);
+        rw * c < w && rh * r < h
     };
-    let last_macro = (0..t.n * t.n).rev().find(|&m| (0..per).any(|i| inside(m, i)));
+    let order = header_order(t, grid);
+    let last_macro = (0..t.n * t.n).rev().find(|&m| order.iter().any(|&i| inside(m, i)));
     let mut out = vec![];
     for m in 0..t.n * t.n {
-        let ins: Vec<u32> = (0..per).filter(|&i| inside(m, i)).collect();
-        for i in 0..per {
-            let (c, r) = ((m / t.n) * t.mx + i % t.mx, (m % t.n) * t.my + i / t.mx);
+        let ins: Vec<u32> = order.iter().copied().filter(|&i| inside(m, i)).collect();
+        for &i in &order {
+            let (c, r) = at(m, i);
             let stream = inside(m, i) && has_stream(m, i);
             let mut f = 0u32;
             if !inside(m, i) {
@@ -319,10 +370,95 @@ pub fn headers(t: &Tiling, w: u32, h: u32, has_stream: &dyn Fn(u32, u32) -> bool
                     f |= 0x80;
                 }
             }
-            out.push(((f << 24) | ((2 * c) << 16) | ((2 * r) & 0xfff) | (m << 12), stream));
+            out.push(((f << 24) | ((c * rw / 16) << 16) | ((r * rh / 8) & 0xfff) | (m << 12), stream));
         }
     }
     out
+}
+
+/// The stream block of every region with a stream (`has_stream(macrotile, local index)`): the
+/// macrotiles with streams in raster order (rows outer), each from a new page and taking as many
+/// pages as its streams fill, 128 bytes a stream in the order of `walk` over the grid's regions
+/// (E652; two pages for one macrotile's 64 streams, E893).
+pub fn stream_blocks(
+    t: &Tiling,
+    grid: Grid,
+    has_stream: &dyn Fn(u32, u32) -> bool,
+) -> BTreeMap<(u32, u32), u32> {
+    let (fx, fy) = grid.per_macrotile(t);
+    let mut addr = BTreeMap::new();
+    let mut page = STREAM_AT;
+    for my in 0..t.n {
+        for mxi in 0..t.n {
+            let m = mxi * t.n + my;
+            let mut k = 0;
+            for i in walk(fx, fy) {
+                if has_stream(m, i) {
+                    addr.insert((m, i), page + STREAM_STEP * k);
+                    k += 1;
+                }
+            }
+            page += PAGE * k.div_ceil(PAGE / STREAM_STEP);
+        }
+    }
+    addr
+}
+
+/// A macrotile's local region indices (`row * across + column`) in header order: raster on the
+/// library's grid (E652), 4 x 4-region sub-blocks in raster order, raster inside one, on a halved
+/// grid (E893, measured with library macrotiles of 4 x 4 regions).
+pub fn header_order(t: &Tiling, grid: Grid) -> Vec<u32> {
+    let (fx, fy) = grid.per_macrotile(t);
+    let mut order: Vec<u32> = (0..fx * fy).collect();
+    if grid != Grid::LIBRARY {
+        order.sort_by_key(|&i| {
+            let (c, r) = (i % fx, i / fx);
+            (r / 4, c / 4, r % 4, c % 4)
+        });
+    }
+    order
+}
+
+/// The TA data's region headers (word 0 and the stream word) by dump offset, for the target
+/// regions with a stream (`has_stream(macrotile, local index)`; a region outside the target has
+/// none). A halved grid on macrotiles other than 4 x 4 regions refuses: E893 measured 4 x 4 only.
+pub fn region_data(
+    t: &Tiling,
+    w: u32,
+    h: u32,
+    grid: Grid,
+    has_stream: &dyn Fn(u32, u32) -> bool,
+) -> Result<BTreeMap<u32, u32>, Outcome> {
+    if grid != Grid::LIBRARY && (t.mx, t.my) != (4, 4) {
+        return Err(refuse_ids(
+            format!(
+                "{w} x {h}: a halved region grid on macrotiles of {} x {} regions; E893's dumps had 4 x 4",
+                t.mx, t.my
+            ),
+            &["Q142"],
+        ));
+    }
+    let (fx, fy) = grid.per_macrotile(t);
+    let (rw, rh) = grid.region();
+    let inside = |m: u32, i: u32| {
+        let (c, r) = ((m / t.n) * fx + i % fx, (m % t.n) * fy + i / fx);
+        rw * c < w && rh * r < h
+    };
+    let streamed = |m: u32, i: u32| inside(m, i) && has_stream(m, i);
+    let addr = stream_blocks(t, grid, &streamed);
+    let order = header_order(t, grid);
+    let mut out = BTreeMap::new();
+    for (idx, (w0, has)) in headers(t, w, h, grid, &streamed).into_iter().enumerate() {
+        let at = HEADERS_AT + 12 * idx as u32;
+        if w0 != 0 {
+            out.insert(at, w0);
+        }
+        if has {
+            let per = order.len();
+            out.insert(at + 4, addr[&(idx as u32 / per as u32, order[idx % per])]);
+        }
+    }
+    Ok(out)
 }
 
 /// The order a macrotile's streams are allocated in, as local region indices: 64 x 64 pixel
@@ -412,25 +548,8 @@ pub fn write(job: &Job) -> Result<Written, Outcome> {
             ));
         }
     }
-    // stream blocks: a page for each macrotile with streams, in raster order of the macrotiles (rows
-    // outer), 128 bytes a stream in the order of `walk`
-    let mut addr: BTreeMap<(u32, u32), u32> = BTreeMap::new();
-    let mut page = STREAM_AT;
-    for my in 0..t.n {
-        for mxi in 0..t.n {
-            let m = mxi * t.n + my;
-            let mut k = 0;
-            for i in walk(t.mx, t.my) {
-                if masks.contains_key(&(m, i)) {
-                    addr.insert((m, i), page + STREAM_STEP * k);
-                    k += 1;
-                }
-            }
-            if k > 0 {
-                page += PAGE;
-            }
-        }
-    }
+    let has = |m: u32, i: u32| masks.contains_key(&(m, i));
+    let addr = stream_blocks(&t, Grid::LIBRARY, &has);
     for (&(m, i), &(l, r)) in &masks {
         let mut w = stream_words(job.tris.len() as u32, l, r, isp)?;
         w.resize(8, 0xc000_0000);
@@ -438,18 +557,7 @@ pub fn write(job: &Job) -> Result<Written, Outcome> {
             out.param.insert(addr[&(m, i)] + 4 * k as u32, *v);
         }
     }
-    for (idx, (w0, has)) in
-        headers(&t, job.w, job.h, &|m, i| masks.contains_key(&(m, i))).into_iter().enumerate()
-    {
-        let at = HEADERS_AT + 12 * idx as u32;
-        if w0 != 0 {
-            out.tadata.insert(at, w0);
-        }
-        if has {
-            let (m, i) = (idx as u32 / (t.mx * t.my), idx as u32 % (t.mx * t.my));
-            out.tadata.insert(at + 4, addr[&(m, i)]);
-        }
-    }
+    out.tadata.extend(region_data(&t, job.w, job.h, Grid::LIBRARY, &has)?);
     out.rules.push("E652");
     Ok(out)
 }
@@ -714,7 +822,7 @@ mod tests {
         // the dump of tb-w64: 0 first, 1 empty, 2 and 3 outside, 13 last of the macrotile and of the scene
         let t = tiling(64, 64);
         let has = |m: u32, i: u32| m == 0 && [0, 4, 5, 8, 9, 12, 13].contains(&i);
-        let h = headers(&t, 64, 64, &has);
+        let h = headers(&t, 64, 64, Grid::LIBRARY, &has);
         assert_eq!(h.len(), 64);
         let flags = |i: usize| h[i].0 >> 24;
         assert_eq!(
@@ -725,6 +833,63 @@ mod tests {
         // positions: column 2 per region column, row 2 per region row, the macrotile number in 15:12
         assert_eq!(h[5].0 & 0x00ff_ffff, 2 << 16 | 2);
         assert_eq!(h[16].0 & 0xffff, 0x1008);
+    }
+
+    /// The TA data of a job whose every target region has a stream, at CR_TE_AA `te_aa`.
+    fn full(w: u32, h: u32, te_aa: u32) -> BTreeMap<u32, u32> {
+        let grid = Grid::from_te_aa(te_aa).unwrap();
+        region_data(&tiling(w, h), w, h, grid, &|_, _| true).unwrap()
+    }
+
+    /// Dump dword `k` of the TA data (the dump starts at offset 0; the headers at HEADERS_AT).
+    fn dw(d: &BTreeMap<u32, u32>, k: u32) -> u32 {
+        d.get(&(4 * k)).copied().unwrap_or(0)
+    }
+
+    #[test]
+    fn cr_te_aa_bit_31_halves_the_region_width_and_bit_30_its_height_e893() {
+        // E504's 64 x 64 dumps (fit): 0x20000000 72 non-zero dwords, 0x60000000 and 0xa0000000
+        // 144, 0xe0000000 288; the 0xa0000000 macrotile is written in two 4 x 4 sub-blocks
+        let n = |d: &BTreeMap<u32, u32>| d.values().filter(|&&v| v != 0).count();
+        let (d20, d60, da0, de0) = (
+            full(64, 64, 0x2000_0000),
+            full(64, 64, 0x6000_0000),
+            full(64, 64, 0xa000_0000),
+            full(64, 64, 0xe000_0000),
+        );
+        assert_eq!([n(&d20), n(&d60), n(&da0), n(&de0)], [72, 144, 144, 288]);
+        assert_eq!([dw(&da0, 4096), dw(&da0, 4097)], [0x0400_0000, 0x2000]);
+        assert_eq!([dw(&da0, 4099), dw(&da0, 4100), dw(&da0, 4102)], [0x0001_0000, 0x2080, 0x0002_0000]);
+        assert_eq!(dw(&da0, 4103), 0x2400, "the walk takes blocks of 2 regions across, 4 down");
+        assert_eq!([dw(&da0, 4096 + 3 * 15), dw(&da0, 4096 + 3 * 16)], [0x9003_0006, 0x0204_0000]);
+        assert_eq!([dw(&d60, 4096 + 3 * 16), dw(&d60, 4097 + 3 * 16)], [0x0000_0004, 0x2400]);
+        assert_eq!(dw(&d60, 4096 + 3 * 29), 0x9002_0007);
+        // a CR_TE_AA of 0 is the library's word for the TA (E504: 0 of 6144 dwords differ)
+        assert_eq!(full(64, 64, 0), d20);
+    }
+
+    #[test]
+    fn at_128_x_128_both_bits_give_64_streams_a_macrotile_over_two_pages_e893() {
+        // E893 [HW, held out]: te-m2-e0-128x128's TA data, 384 non-zero dwords, 0 of 6144 off
+        let d = full(128, 128, 0xe000_0000);
+        assert_eq!(d.values().filter(|&&v| v != 0).count(), 384);
+        let hdr = |k: u32| [dw(&d, 4096 + 3 * k), dw(&d, 4097 + 3 * k)];
+        assert_eq!(hdr(0), [0x0400_0000, 0x2000]);
+        assert_eq!(hdr(16), [0x0004_0000, 0x2800]);
+        assert_eq!(hdr(31), [0x0007_0003, 0x2f80]);
+        assert_eq!(hdr(32), [0x0000_0004, 0x3000], "the 33rd stream opens the next page");
+        assert_eq!(hdr(63), [0x1007_0007, 0x3f80]);
+        assert_eq!(hdr(64), [0x0400_1008, 0x4000]);
+        assert_eq!(hdr(127), [0x9007_100f, 0x5f80]);
+        assert_eq!(hdr(128), [0x0208_2000, 0]);
+    }
+
+    #[test]
+    fn a_te_aa_word_with_bit_30_or_31_and_not_bit_29_is_refused() {
+        // E281, E888: without bit 29 the triangle is removed and the object shifted
+        for te_aa in [0x4000_0000, 0x8000_0000, 0xc000_0000] {
+            assert!(Grid::from_te_aa(te_aa).is_err(), "{te_aa:#x}");
+        }
     }
 
     #[test]
