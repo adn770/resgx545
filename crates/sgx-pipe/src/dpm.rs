@@ -355,6 +355,21 @@ mod tests {
     }
 
     #[test]
+    fn r6_dpm_s_gated_targets_and_bands_stay_refused_e881() {
+        // E881 [HW, post hoc]: R6-dpm's step model held at 2048x1024, 1024x2048 and 1536x1536
+        // (18 of 18 steps, the raise flipping at B3) and H-GREQ at 2048x2048 bands 5 to 7, but
+        // every frozen headline is gated "cannot tell" (a control with no reading), so neither the
+        // steps, the limits nor the grow there are modelled: the model refuses them
+        for (w, h, s3, b3) in [(2048, 1024, 0x52, 0x79), (1024, 2048, 0x56, 0x7b), (1536, 1536, 0x5d, 0x87)] {
+            assert_eq!(grows_at_first_abort(Scene::ToolTriangle, w, h, s3), None, "{w}x{h}");
+            assert_eq!(raise_within_limit_at(Scene::ToolTriangle, w, h, b3), None, "{w}x{h}");
+        }
+        for t in [0x176, 0x1c1, 0x20c] {
+            assert_eq!(grows_at_first_abort(Scene::ToolTriangle, 2048, 2048, t), None, "{t:#x}");
+        }
+    }
+
+    #[test]
     fn the_4x_full_triangle_needs_u4_pages_at_every_measured_size() {
         // E824's dumps, E845's s0, E866's boundaries and E867's, E868's completed rows
         let needs = [
