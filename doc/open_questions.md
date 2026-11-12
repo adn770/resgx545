@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-166 open: 156 hw (high 19, medium 72, low 65, unrated 0), 9 fw, 1 kernel.
+164 open: 154 hw (high 19, medium 72, low 63, unrated 0), 9 fw, 1 kernel.
 
 ## Work queue: hardware
 
@@ -206,8 +206,6 @@
 - `Q121` (phase 11, hw, medium): what is the in-tile order of the stencil store (one byte a pixel, 128 dwords a 32 x 16 tile) and what does the stencil test do against a loaded stencil? (E466, E467)
 - `Q242` (phase 12, hw, low): how is the 16-bit stored depth format laid out at a pitch G other than 33 and at an edge, what do the 24-bit and 16-bit formats store for a depth outside 0.25 to 0.4166 other than 1.0 (where round(z * 0xffffff) and floor(z * 2^24) differ), which pixel's value does a dword shared by two overlapping tiles hold, and why did the E411 jobs with G past 3 fault? (E466, E490, E663)
 - `Q243` (phase 12, hw, low): what does the ZLS load do with an integer stored format (bits 26:24 = 1 or 2), at an address other than the one the store writes, and when the loaded depth is a NaN or infinity or is compared with a depth equal to it? (E467, E628, E664)
-- `Q287` (phase 11, hw, low): does the band of the ZLS store follow rule A (x + 0.5 < 1.25 W) or FLOOR (x < floor(1.25 W)) at odd widths, when 1.25 W has the fraction .75 (W = 3 mod 4, the only widths that separate them; .25 is a confirmation), widths the tool still refuses (odd heights follow rule A, E885; the iterated attributes are Q291) (E730, E465, E831, E885)
-- `Q291` (phase 11, hw, low): does the 1.25 band of the ZLS store (x + 0.5 < 1.25 W, y + 0.5 < 1.25 H, E730) apply to the iterated attributes, that is, do the pixel tasks of the tile area past the target run with an iterated pa0 (clip x) over the same band, read through per-instance scratch stores since the colour store ends at the target (E730, E465, E898)
 
 ## Parked: not hardware knowledge
 

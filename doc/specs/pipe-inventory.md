@@ -119,7 +119,8 @@ of sections 1 and 2 are those of the 12.0 scan and were not redone.*
   the band x + 0.5 < 1.25 W and y + 0.5 < 1.25 H, cut at the tile area, the background 1.0 past
   it (E730, E831). Refused: formats 3, 5 and 6 (Q120), the stencil store's order and its edge
   tiles (Q121), the overflow store (E628, E629: the loaded buffer and the sign bit after a raised
-  abort; Q107), the band at odd sizes (Q287) and an integer format at an edge (Q242).
+  abort; Q107) and an integer format at an edge (Q242); the band at odd sizes follows rule A
+  (E885, E903).
 - **ta**: the region test, the object layout and its failures are built, and since 12.2 the
   vertex side and the TA as a whole (E650: 89 of 89 dumped one- to five-triangle jobs byte for
   byte, every one fitted; 266 more scenes refused by question). Missing: the macrotile table of

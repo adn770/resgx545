@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: 2026 Josep Torra
-"""The position-store pixel program (probes/pds/templates/pix_posstore.s, Q291, E898): usse-asm
+"""The position-store pixel program (probes/pds/templates/pix_posstore.s, E898, E904): usse-asm
 assembles the landed template to the binary the round 7 plan checked in sgx-sim
 (closing7/a/q291/SHA256.txt), so the simulator check of the plan and of
 crates/sgx-tools/tests/posstore_sim.rs is a check of this program."""

@@ -7053,6 +7053,45 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   running timer), so it does not separate them and no Q294 laptop rows follow.
   *edm; HW, RE, infer; data: `render-closing-r6-held`, `edm-closing-r3x-events`,
   `cited-scratch-private`.*
+- `E903` r7-rp stage q287 (Q287, 25 depth-dump jobs at H 18, odd widths through t7, the tool built
+  from main 1c64f3a): at odd target widths the ZLS store's band past the target is rule A (x + 0.5 <
+  1.25 W), not FLOOR (x < floor(1.25 W)): the full-screen triangle stored 22 rows times 9, 14, 29,
+  44, 54 and 64 columns at W 7, 11, 23, 35, 43 and 51 (two runs each at 7 to 35) and 24, 29 and 44
+  columns with the y ramp at 19, 23 and 35, rule A's set and one column more than FLOOR's in every
+  held-out cell (9 of 9), the fit cell 19 x 18 stored 528 (24 columns) in both runs, the .25 cells
+  17 and 21 stored 462 and 572 (A = FLOOR, 2 of 2), the gate row 33 x 18 902 (41 columns), and 34 x
+  18 reproduced E831's 924 with t4, t6 and t7 (both ramps with t7); ROUND, CEIL and the strict x + 1
+  < 1.25 W failed every fit and held-out cell; and in the poke twins at W 20 (frozen with no
+  favourite) the band followed the viewport words, not CR_MTE_SCREEN: the screen word poked to 19 x
+  18 left W 20's 25 columns (550) and the viewport's x scale and offset poked to 9.5 stored W 19's
+  24 (528), both together 528; frozen verdict 'rule A held on the held-out cells (9 of 9), FLOOR
+  refuted (0 of 9); fit cell 19: A held, FLOOR refuted; .25 confirmations A 2 of 2; controls pass;
+  poke twins (W 20, gate nothing): scr H-VP, vp H-VP, both both (same set)'.
+  *zls; HW, infer; data: `render-closing-r7-rp:out/20261112-205431/q287/`,
+  `render-closing-r7-rp:out/20261112-205431/s0/`, `render-closing-r7-rp:fold/`,
+  `vectors-closing-r7-rp-zls`.*
+- `E904` r7-rp stages q291g and q291 (Q291, 27 jobs with t6): the pixel tasks past the target run
+  over the ZLS store's band and nowhere else, with the attribute iterated linearly there: with
+  E898's position-store program (each valid instance stores its iterated pa0 and pa1 and its lane at
+  the scratch slot of its place in its 32 x 16 tile), E437's position pair (pa0 = x + 0.5, pa1 = y +
+  0.5) and one tile touched a job, the set of slots that held a valid instance's store was rule A's
+  band cut to the tile and the triangle (x + 0.5 < 1.25 W, y + 0.5 < 1.25 H; H-BAND) in 12 of 12
+  held-out rows (18 x 12, 24 x 8, 12 x 12, 20 x 8, 26 x 10 and 10 x 6 on one tile; W 34, 36, 44 and
+  50 at H 16 and H 18 and 24 at W 32 with the triangle cut to one tile: 330, 300, 225, 250, 384, 84,
+  160, 208, 368, 480, 192 and 448 slots), against 0 of 12 for H-TARGET (the target's pixels only)
+  and H-TILE (the whole tile), and every stored pa0 and pa1 was f32(x + 0.5) and f32(y + 0.5) of the
+  slot past the target too (H-LIN, 12 of 12 rows); the vertex pair (E606: pa0 the clip z, pa1 the
+  clip x iterated) gave the band at 20 x 12, 18 x 12 and 24 x 8 (3 of 3) with clip x within E661's
+  tolerance; the fit pair 20 x 12 stored 375 slots twice; the depth twins (E885's depth row at 20 x
+  12, 18 x 12, 24 x 8, 12 x 12 and 10 x 6) stored rule A's sets, 375, 330, 300, 225 and 84 dwords (5
+  of 5); the gate row (32 x 16, all 512 slots, each its position and lane), the pix_pa0 image and
+  the cut-triangle and vertex controls passed; frozen verdict 'Q291 H-BAND held: held-out P 12 held,
+  0 FAILED, 0 cannot tell of 12; rivals H-TARGET 0, H-TILE 0; values H-LIN held (12 held ...); fit
+  pair held; vertex pair H-BAND 3 held ..., values E661 held (3 held ...); depth twins rule A 5 held
+  ...'.
+  *zls; HW, infer; data: `render-closing-r7-rp:out/20261112-205431/q291g/`,
+  `render-closing-r7-rp:out/20261112-205431/q291/`, `render-closing-r7-rp:out/20261112-205431/s0/`,
+  `render-closing-r7-rp:bins/`, `render-closing-r7-rp:fold/`.*
 
 ## By unit
 
@@ -7164,4 +7203,4 @@ E413, E414, E427, E440, E545, E546, E700, E701, E702, E703, E737, E738, E755, E7
 ### zls
 
 Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467, E489, E490, E615, E628, E629,
-E663, E664, E665, E730, E831, E885.
+E663, E664, E665, E730, E831, E885, E903, E904.

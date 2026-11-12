@@ -1,6 +1,6 @@
 ; SPDX-License-Identifier: MIT
 ; SPDX-FileCopyrightText: 2026 Josep Torra
-; pix_posstore.s (round 7 plan, Q291; checked in sgx-sim only, E898, not yet run): a triangle's
+; pix_posstore.s (round 7; checked in sgx-sim, E898, run on the laptop in E904): a triangle's
 ; pixel shader that stores each instance's iterated attributes at a scratch slot formed from the
 ; instance's own place in its tile, so that instances of the tile area past the target (where
 ; the colour store writes nothing) can be read.  slot = g24 << 5 | g23 (g23 = x mod 32, g24 = y

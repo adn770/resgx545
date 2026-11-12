@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: 2026 Josep Torra
-//! The position-store pixel program (probes/pds/templates/pix_posstore.s, Q291, E898) on the
+//! The position-store pixel program (probes/pds/templates/pix_posstore.s, E898, run in E904) on the
 //! simulator: assembled from the template, run as a triangle's pixel instance (g23, g24 and g25
 //! as E808 measured) at every pixel of a 64 x 32 area with E437's position pair (pa0 = x + 0.5,
 //! pa1 = y + 0.5 as floats). Every instance stores at the scratch slot of its place in its tile,
