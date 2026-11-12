@@ -6954,6 +6954,14 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   and along x.
   *ta; HW, infer; data: `isp-msaa-te-dumps`, `cited-scratch:closing7/fold-rank/q142/`,
   `cited-scratch:closing7/rank/`.*
+- `E894` Round 7 offline reading of E567's kept TEXTYPE 5 dumps (rt5-2d, rt5-3d-w5, rt5-3d-w15; a 16
+  x 16 texture whose dword i is 0xD0000000 | i, a 64 x 32 fill) [HW, post hoc]: no pixel of the 3 x
+  2048 holds a texel tag (0xD000xxxx); every row of every job stores 0x00000000 at x mod 16 = 0 to 7
+  and 0x0000ffff at 8 to 15 (32 identical rows a job, 1024 pixels of each value), the same under
+  smp2d and smp3d at w 0.5 and 1.5, where TEXTYPE 4's rt4-2d of the same group returns tags (16
+  distinct rows); so TEXTYPE 5 at 16 x 16 did not return a dword of the texture, and its two values
+  follow the column alone.
+  *texture; HW, infer; data: `texture-p1132-tx-types-risky`, `cited-scratch:closing7/rank/`.*
 
 ## By unit
 
@@ -7033,7 +7041,7 @@ E865, E872, E877, E879, E886, E888, E893.
 Records: E033, E034, E035, E036, E037, E038, E039, E040, E041, E042, E114, E116, E242, E254, E271,
 E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441, E560, E561, E562,
 E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E726, E733, E743,
-E744, E760, E765, E787, E844.
+E744, E760, E765, E787, E844, E894.
 
 ### transfer
 

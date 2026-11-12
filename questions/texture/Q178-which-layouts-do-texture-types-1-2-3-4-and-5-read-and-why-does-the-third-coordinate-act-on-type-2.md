@@ -5,7 +5,7 @@ unit = "texture"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E567", "E342", "E725", "E726"]
+evidence = ["E567", "E342", "E725", "E726", "E894"]
 terms = ["TEXTYPE"]
 +++
 
@@ -31,3 +31,11 @@ Q283), type 2 with smp3d is the cube, its face chosen by the dominant coordinate
 once, at 16 x 16 (E567: one image under smp2d and smp3d), and nothing else. To settle it: type 5
 at 8 x 8 to 64 x 64 with a texture whose dwords name their own offsets, as E725 read types 1, 3
 and 4.
+
+Note 2026-11-12 (round 7 offline, E894; post hoc, the question stays open, the line unchanged).
+E567's three type 5 jobs stored no texel tag in any of their 2048 pixels: 0 at x mod 16 = 0 to 7
+and 0x0000ffff at 8 to 15 in every row, under smp2d and smp3d alike, where types 1, 3, 4 and 7
+return tags. [infer] Type 5 does not read the 32-bit texels as a layout, so the map texture of the
+"to settle it" above would read no offset at other sizes either; what decides is whether the image
+follows the texture memory (the same job on a zeroed and an all-ones texture) and whether the step
+stays at half the width at 8 x 8 to 64 x 64.
