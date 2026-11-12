@@ -6734,6 +6734,20 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   probe's XOR (19 of 19 pictures, post hoc).
   *transfer; HW, infer; data: `render-closing-r6-misc:out/20261112-144153/q289/`,
   `render-closing-r6-misc:fold/`, `pds-pixel-event`.*
+- `E885` R6-misc stage q287 (Q287, 20 depth-dump jobs at W 34, rerun as a second attempt on freeze 2
+  after freeze 1's runner kept no dump): at odd target heights the ZLS store's band past the target
+  is rule A (y + 0.5 < 1.25 H), not FLOOR (y < floor(1.25 H)): the full-screen triangle stored 42
+  columns times 9, 14, 29 and 44 rows at H 7, 11, 23 and 35 (y ramp, two runs each) and 24, 29 and
+  44 rows with the x ramp at 19, 23 and 35, rule A's set and one row more than FLOOR's in every
+  held-out cell (7 of 7), the fit cell 34 x 19 stored 1008 (24 rows) in both runs, the .25 cells 17
+  and 21 stored 882 and 1092 (A = FLOOR there, 2 of 2) and the controls at 34 x 18 reproduced E831's
+  924 with the rgn4 tool and with the tool built from main d9b2969 (both ramps); ROUND and CEIL
+  failed every decided cell and y + 1 < 1.25 H the fit and held-out ones; frozen verdict 'rule A
+  held on the held-out cells (7 of 7), FLOOR refuted (0 of 7); fit cell 19: A held, FLOOR refuted;
+  .25 confirmations A 2 of 2; controls pass'.
+  *zls; HW; data: `render-closing-r6-misc:out/20261112-152213/q287/`,
+  `render-closing-r6-misc:out/20261112-144153/q287/`, `render-closing-r6-misc:freeze1/`,
+  `render-closing-r6-misc:fold/`, `vectors-closing-r6-misc-zls`.*
 
 ## By unit
 
@@ -6844,4 +6858,4 @@ E413, E414, E427, E440, E545, E546, E700, E701, E702, E703, E737, E738, E755, E7
 ### zls
 
 Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467, E489, E490, E615, E628, E629,
-E663, E664, E665, E730, E831.
+E663, E664, E665, E730, E831, E885.
