@@ -245,3 +245,81 @@ def test_headline_says_how_many_rows_decided():
 def test_headline_mixed_rows():
     h = K.headline("x", {"a": True}, [True, False, None])
     assert h == "x is not supported: 1 held, 1 FAILED, 1 cannot tell of 3"
+
+
+# ---- what a control reads (round 6 r6-dpm) --------------------------------------------------
+def producible(row):
+    """The toy job model: `grow` is read at a partial render only, the rest always."""
+    keys = {"knob", "cls", "gps_left", "nparts"}
+    return keys | {"grow"} if row["nparts"] > 0 else keys
+
+
+def test_control_reads_refuses_a_reading_its_row_cannot_produce():
+    # r6-dpm froze "grow = 0" on a0-t-s3m7, a job with no partial render: grow read "-" there,
+    # and every stage was gated cannot tell
+    controls = {"a0-t-s3m7": (("knob", "grow", "gps_left"), {"nparts": 0}),
+                "g-qf": (("nparts", "grow"), {"nparts": 2})}
+    probs = K.control_read_problems(controls, producible)
+    assert probs == ["control a0-t-s3m7 reads grow, which its row cannot produce"]
+    with pytest.raises(K.ControlReadError, match="a0-t-s3m7 reads grow"):
+        K.refuse_unreadable(controls, producible)
+
+
+def test_control_reads_passes_readable_controls():
+    controls = {"g-qf": (("nparts", "grow"), {"nparts": 2}), "c4": (("cls",), {"nparts": 0})}
+    assert K.control_read_problems(controls, producible) == []
+    K.refuse_unreadable(controls, producible)
+
+
+def test_control_that_reads_nothing_is_refused():
+    # a control that declares no reading cannot fail, so it is no control
+    probs = K.control_read_problems({"c": ((), {"nparts": 0})}, producible)
+    assert probs == ["control c declares no reading: it cannot fail"]
+
+
+def test_control_reads_a_bare_string_is_refused():
+    # "grow" is not a tuple of keys: iterating it would declare g, r, o, w
+    with pytest.raises(TypeError):
+        K.control_read_problems({"c": ("grow", {"nparts": 2})}, producible)
+
+
+def test_premise_stops_a_control_with_no_reading():
+    # at run time a control whose reading is missing stops the session at the premise stage
+    controls = {"a0-t-s3m7": ("knob", "gps_left"), "c4-b5": ("cls",)}
+    readings = {"a0-t-s3m7": {"knob": "0x96", "gps_left": "-"}, "c4-b5": {"cls": "R"}}
+    assert K.premise_stops(controls, readings) == [
+        "STOP: premise: control a0-t-s3m7 has no reading of gps_left"]
+
+
+def test_premise_stops_no_reading_forms():
+    controls = {"a": ("x",), "b": ("x",), "c": ("x",), "d": ("x",)}
+    readings = {"a": {"x": None}, "b": {"x": ""}, "c": {}}
+    assert K.premise_stops(controls, readings) == [
+        "STOP: premise: control a has no reading of x",
+        "STOP: premise: control b has no reading of x",
+        "STOP: premise: control c has no reading of x",
+        "STOP: premise: control d did not run"]
+
+
+def test_premise_passes_zero_readings():
+    # 0 and "0" are readings, not missing ones
+    assert K.premise_stops({"a": ("x", "y")}, {"a": {"x": 0, "y": "0"}}) == []
+
+
+# ---- files a scorer reads (round 6 r6-misc) -------------------------------------------------
+def test_missing_files_per_row_and_fixed(tmp_path):
+    # r6-misc: q287 reads NAME.txt and NAME.depth.1.bin per row; freeze 1 kept no dump
+    for f in ("cases.tsv", "a.txt.gz", "a.depth.1.bin.gz", "b.txt.gz"):
+        (tmp_path / f).write_text("x")
+    req = ("cases.tsv", ".txt", ".depth.1.bin")
+    assert K.missing_files(req, tmp_path, ["a", "b"]) == ["b.depth.1.bin"]
+    (tmp_path / "b.depth.1.bin").write_text("x")       # kept plain is kept too
+    assert K.missing_files(req, tmp_path, ["a", "b"]) == []
+    assert K.missing_files(req, tmp_path / "none", ["a"]) == [
+        "cases.tsv", "a.txt", "a.depth.1.bin"]
+
+
+def test_missing_files_no_row_is_not_complete(tmp_path):
+    # a stage with per-row files and no row kept has kept nothing a scorer can read
+    (tmp_path / "cases.tsv").write_text("")
+    assert K.missing_files((".txt",), tmp_path, []) == ["(no row)"]
