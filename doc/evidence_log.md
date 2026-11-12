@@ -6339,6 +6339,19 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *pds; HW, infer; data: `render-closing-r3-pixel:out/20261110-160415/p-c3/`,
   `render-closing-r4-pixel:out/20261111-205726/p4-o4/`, `render-closing-r4-pixel:fold/`,
   `cited-scratch:closing5/pixel/`.*
+- `E851` Offline reading of E842's kept words (Q230; no new job): the frozen analysis of g4-rw is
+  decided without its 18 unread words: its rule adopts a model only at 30 of 30 FIT words, and none
+  of the 225 frozen models (score/rwfam.py, five families) reproduces all 19 FIT words that were
+  read (best per family a 14, b 13, c 16, d 14, e 14 of 19; HELD OUT words not touched), so no
+  completion of the table can make one fit and the frozen verdict stays 'no rule adopted'; read post
+  hoc over all 65 known 1/w words of kept vertices (E754, E782, E795, E796, E798, E842; 49 RZ, 16 RZ
+  + 1), H-MANT, 'whether the word is RZ or RZ + 1 follows the mantissa of w alone', is consistent
+  with 6 of 6 mantissas read at two or three exponents (1.0625, 1.125, 1.5, 1.59375, 1.6875, 1.75:
+  none shows both), a reading made after the data, not held out; a wider declared family
+  (fixed-point table plus Newton steps with truncated products, 32000 models) fits none (best 49 of
+  54 distinct mantissas, 'always RZ' 42).
+  *ta; HW, infer; data: `render-closing-r4-pixel:out/20261111-210423/g4-rw/`,
+  `render-closing-r4-pixel:score/`, `cited-scratch:closing5/pixel/`.*
 
 ## By unit
 
@@ -6409,7 +6422,7 @@ E448, E449, E451, E458, E462, E732, E770.
 Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180, E181, E247, E257,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
 E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763, E776, E777,
-E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828, E842, E847.
+E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828, E842, E847, E851.
 
 ### texture
 
