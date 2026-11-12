@@ -67,3 +67,18 @@ family at all (it was declared, not derived): no kept job changes `o0`, `o2`, `o
 `o7`. Where `o4`'s own word lands, whether the predicate gates `p1 or.skipinv o4`, and why pair
 counts wander (22 to 63) stay open (Q276). The family check is a fit over kept configurations,
 not a held-out test.
+
+**Correction 2026-11-12:** The family check above modelled each of its 8 configurations with `o4`
+written at the instance the tag-5 words come from, as the base configuration writes it. Three of
+the eight do not write `o4` unconditionally: E709's o4g-3 (the c-e709-x configuration) has
+`p1 or.skipinv o4` with `p1` set by g25 == 3, and E808's k3 and k5 / k7 programs `p1 or.skipinv
+o4` with g25 == k (R3's `gen/r3_c.py`). Every tag-5 pair source is (even x, even y), lane 0 of the
+quad, so if the predicate gates `o4` as E808 showed it gates `o1`, those jobs never wrote `o4`
+there, and the six models that read `o4` (AND(o4, o6) and the five MUX(o4; ...)) fit them only on
+that unstated assumption; OR(o0, o3), XOR(o0, o2, o6) and XOR(o3, o5, o6) do not read `o4` and are
+unaffected. So "9 of 821 fit all 8 configurations" holds as the script models them, and only 3 of
+the 9 fit without an assumption about the predicate on `o4`. E858 (round 5's walk, unpredicated
+programs, held out) decided the question without it: the tag-5 word is OR(o0, o3), which refutes
+the other eight on the walk, and its n-o4 row (no `o4` write) read the plain tag 5. The finding
+that R-CLR is refuted rests on words, not on the family, and stands. Read in E858's fold
+(`fold/posthoc_r5.txt` section A of render-closing-r5-pixel).
