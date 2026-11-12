@@ -386,6 +386,13 @@ pushed before `tools/clean-room/guard.py --history` has run over every ref.
   listed in `doc/specs/UNCITED.toml` with the reason it is not yet; the list only shrinks
   (`tools/records/spec_coverage.py --check`, a step of `check.sh`, fails on a record neither
   cited nor listed and on a listed one that a spec cites). A fold lands its spec text with it.
+- The same records are cited by the simulators too, as a model or as a refusal: by a file of
+  `crates/sgx-sim`, `crates/sgx-pipe` or `crates/pysgx` (sources, tests, examples), or listed in
+  `crates/SIM_UNMODELLED.toml` with a one-line reason. That list started at 119 of 224 records
+  (2026-11-12) and only shrinks (`tools/records/sim_coverage.py --check`, a step of `check.sh`,
+  fails on a record neither cited nor listed and on a listed one the code cites;
+  `--write-baseline` only removes once the list exists). A fold that models or refuses a record
+  cites it in the code and takes it off the list in the same commit.
 - A path of the scratch area that the tree cites (`closing4/p7/reading-r5.md`, bare or after
   `scratch/resgx545/`) is published: a session directory of a data repository
   (`closingN/<name>/` is `<area>/closing-<name>/`) or a copy under `cited/` of resgx545-data,
