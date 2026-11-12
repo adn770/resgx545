@@ -6336,6 +6336,35 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   E353, its second sample of a 3D progress word equal to the first.
   *edm; HW, infer; data: `edm-closing-r4-events:out/a1/e3p/`, `edm-closing-r3k-events:out/e3b/`,
   `cited-scratch:cited/closing5/events/offline/`.*
+- `E850` Offline reading of kept images (Q276; no new job, post hoc against E838's reading, no
+  held-out row): E838's reading 'the path that brings o4 out clears bits 5:3 of the word' is refuted
+  on the kept data of E808 and E838: in E808's p-c3 (words marker * 16 + tag, so the marker's two
+  low bits sit at bits 5:4) the 44 of 58 jobs whose marker has a non-zero bit there held 1525 tag-5
+  words, all 1525 with the job's whole marker and none with bits 5:4 cleared, and E838's bridge
+  control c-e709-x (E709's own program, every output word 0xcfN) read 0xcf5 at all 39 of its tag-5
+  words; so bits 5:4 of the tag-5 word are kept when every output carries them and absent when only
+  o4 does (E838's v-a4), which no rule local to o4's word gives [infer]; of a family of 821 bitwise
+  models declared before the check (OR, AND, XOR over every subset of one instance's o0 to o7, and
+  MUX of bits 2:0 of one output with bits 5:3 of another), 9 reproduce the tag-5 word in all 8 kept
+  configurations: OR(o0, o3), AND(o4, o6), XOR(o0, o2, o6), XOR(o3, o5, o6) and MUX(bits 2:0 of o4,
+  bits 5:3 of o_i) for i = 0, 2, 3, 5, 6; no kept job changes o0, o2, o3, o5, o6 or o7, so nothing
+  kept separates the nine.
+  *pds; HW, infer; data: `render-closing-r3-pixel:out/20261110-160415/p-c3/`,
+  `render-closing-r4-pixel:out/20261111-205726/p4-o4/`, `render-closing-r4-pixel:fold/`,
+  `cited-scratch:closing5/pixel/`.*
+- `E851` Offline reading of E842's kept words (Q230; no new job): the frozen analysis of g4-rw is
+  decided without its 18 unread words: its rule adopts a model only at 30 of 30 FIT words, and none
+  of the 225 frozen models (score/rwfam.py, five families) reproduces all 19 FIT words that were
+  read (best per family a 14, b 13, c 16, d 14, e 14 of 19; HELD OUT words not touched), so no
+  completion of the table can make one fit and the frozen verdict stays 'no rule adopted'; read post
+  hoc over all 65 known 1/w words of kept vertices (E754, E782, E795, E796, E798, E842; 49 RZ, 16 RZ
+  + 1), H-MANT, 'whether the word is RZ or RZ + 1 follows the mantissa of w alone', is consistent
+  with 6 of 6 mantissas read at two or three exponents (1.0625, 1.125, 1.5, 1.59375, 1.6875, 1.75:
+  none shows both), a reading made after the data, not held out; a wider declared family
+  (fixed-point table plus Newton steps with truncated products, 32000 models) fits none (best 49 of
+  54 distinct mantissas, 'always RZ' 42).
+  *ta; HW, infer; data: `render-closing-r4-pixel:out/20261111-210423/g4-rw/`,
+  `render-closing-r4-pixel:score/`, `cited-scratch:closing5/pixel/`.*
 
 ## By unit
 
@@ -6388,7 +6417,7 @@ Records: E043, E044, E045, E046, E047, E048, E125, E126, E127, E128, E129, E130,
 E134, E135, E136, E137, E138, E139, E140, E141, E142, E143, E144, E145, E259, E260, E261, E262,
 E263, E264, E343, E344, E345, E364, E379, E381, E384, E388, E389, E390, E391, E392, E393, E394,
 E395, E396, E400, E420, E421, E428, E430, E436, E437, E454, E459, E460, E709, E742, E759, E772,
-E808, E838.
+E808, E838, E850.
 
 ### platform
 
@@ -6406,7 +6435,7 @@ E448, E449, E451, E458, E462, E732, E770.
 Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180, E181, E247, E257,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
 E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763, E776, E777,
-E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828, E842, E847.
+E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828, E842, E847, E851.
 
 ### texture
 

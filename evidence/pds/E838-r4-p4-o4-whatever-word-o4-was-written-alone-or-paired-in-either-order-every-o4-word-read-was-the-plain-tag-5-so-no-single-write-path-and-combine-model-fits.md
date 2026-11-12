@@ -64,3 +64,15 @@ combination of two other outputs, tag 1 (o0) OR tag 4 (o3) being 5, which would 
 no tag-4 word is ever read. A run that changes o0's or o3's tag and leaves o4 alone separates
 them. Not shown: which instances write o4, whether the predicate gates `p1 or.skipinv o4`, why
 the pair counts wander (22 to 63 words).
+
+**Correction 2026-11-12:** Two statements above are wrong, read offline from this record's and
+E808's kept files (E850; post hoc against the reading, no new job). "No word of any job has bit 4
+or 5 set" is false for c-e709-x: that job runs E709's own program, which writes 0xcf0 | tag to every
+output, and all 1539 of its words have bits 5:4 set, its 39 tag-5 words reading 0xcf5
+(`fold/posthoc_o4_bits.txt`, first line). It holds for c-e709-y and the 34 marker-layout jobs. The
+first of the two readings in the last paragraph, "the path that brings o4 out clears bits 5:3 of
+the word", is refuted: besides c-e709-x, the 1525 tag-5 words of E808's 44 jobs whose marker has a
+bit at 5:4 all keep the marker's bits there. Bit 4 is kept when every output carries it and absent
+when only `o4` does (v-a4), so no rule local to `o4`'s word fits [infer]. The second reading (tag 1
+OR tag 4) survives, with eight other bitwise models (E850, Q276). The claim, the frozen verdict and
+the results are unchanged.

@@ -5,7 +5,7 @@ unit = "ta"
 kind = "hw"
 value = "medium"
 phase = 12
-evidence = ["E063", "E182", "E194", "E287", "E307", "E651", "E650", "E736", "E754", "E776", "E777", "E778", "E780", "E781", "E782", "E783", "E795", "E796", "E797", "E798", "E842"]
+evidence = ["E063", "E182", "E194", "E287", "E307", "E651", "E650", "E736", "E754", "E776", "E777", "E778", "E780", "E781", "E782", "E783", "E795", "E796", "E797", "E798", "E842", "E851"]
 terms = ["PB_OBJ.RHW", "PB_OBJ.ISP_WORDS", "VIEWPORT.X_OFFSET", "WCLAMP"]
 +++
 
@@ -179,3 +179,13 @@ read are the third of the table scaled by 1/4 (w 0.254 to 0.443): their window c
 (-16 and 80), read post hoc at the fold. Open: the rule of the RZ + 1 words (a table whose every
 vertex stays inside the band, the FIT and HELD OUT split frozen again; fitting the 42 words now
 would be post hoc), w below 1, and the rest of the line as before.
+
+Note 2026-11-12 (E851, an offline reading of E842's kept words; the question stays open, the line
+unchanged). The frozen analysis of g4-rw is decided without its 18 unread words: none of the 225
+frozen models reproduces all 19 FIT words that were read (best 16), so none can reach the 30 of 30
+its rule needs, and its verdict is "no rule adopted"; the HELD OUT words were not used. Read post
+hoc over the 65 known words (not held out) [infer]: H-MANT, whether the word is RZ or RZ + 1
+follows the mantissa of w alone, fits the 6 of 6 mantissas read at two or three exponents (1.0625,
+1.125, 1.5, 1.59375, 1.6875, 1.75), and a wider declared family of table-plus-Newton models fits
+none. Open: H-MANT held out (E842's mantissas at other exponents of w, every window coordinate
+inside the viewport), w below 1, then a rule for the RZ + 1 mantissas.
