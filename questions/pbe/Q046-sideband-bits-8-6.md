@@ -30,3 +30,6 @@ stores values of no colour at every pixel (E269).
 
 To settle it: bits 8:6 at 0 to 7 in pack mode 8 and in pack modes 7, 15, 18, 24, 25 and 28 with
 the coded colours of E270; bits 11 and 12 with each pack mode 0 to 8.
+
+Note 2026-11-12 (round 6 housekeeping, decision R6-1 a): the clause on sideband bits 11 and 12 is
+this question's alone; Q054 dropped its copy and keeps the emit flags.

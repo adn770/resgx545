@@ -1,6 +1,6 @@
 +++
 id = "Q054"
-question = "what do #incp, .cut and .tasks/.taske do on the emits, and what do sideband bits 11 and 12 select, beyond the pack mode, bits 8:6, 9, 10 and 13 that the end-of-tile emit reads?"
+question = "what do #incp, .cut and .tasks/.taske do on the emits?"
 unit = "usse"
 kind = "hw"
 value = "medium"
@@ -29,7 +29,13 @@ a time, each on one probe, and the fault may hide an effect after the emit.
 
 What is open (usse_isa.md §8, item 5): what incp counts, .cut on a program that emits more than
 one primitive, .tasks/.taske (emitpds: what they do once the emit does not end the job in a
-fault); what bits 11 and 12 select (Q046); bit 9 is Q074.
+fault). Sideband bits 11 and 12 are Q046's and bit 9 is Q074.
 
 To settle it: a vertex program that emits two primitives with .cut between them, and emitpds with
 .tasks/.taske in the state task, the parameter buffer dumped.
+
+Narrowed 2026-11-12 (round 6 housekeeping, decision R6-1 a): the clause on sideband bits 11 and
+12 (bit 11 faults the job, bit 12 stores values of no colour, E269, E383) was in this question and
+in Q046; it stays in Q046, which sweeps the pack modes, and leaves this one, which asks about the
+emit flags. What the end-of-tile emit's sideband pack mode and bits 8:6, 9, 10 and 13 do is in the
+paragraphs above.

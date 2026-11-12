@@ -5142,9 +5142,9 @@ open driver:
 5. **Emits**: `.tasks`/`.taske` and `#incp` beyond the vertex emits (incp 1 to 3 on either
    changes nothing a triangle shows; `.cut` on `emitmtevtx` hangs the job, E376), `.twopart`
    on the state emits (needed on `emitvcbvtx`, E102; shows nothing on the state emits, E106);
-   the PBE sideband bits beyond the pack mode and bit 9, `TILERELATIVE` (Q054; Q074 asks what
-   bit 9 does); `emitpds` runs the PDS program it names from a client fill but ends the job in a
-   fault or hang, 63 of 63 (E488, E520, Q128).
+   the PBE sideband bits beyond the pack mode and bit 9, `TILERELATIVE` (bits 11 and 12: Q046;
+   Q074 asks what bit 9 does); `emitpds` runs the PDS program it names from a client fill but
+   ends the job in a fault or hang, 63 of 63 (E488, E520, Q128).
 6. **`idf` modes** other than `bif` (each hangs a fill's job at its `wdf`, E375), `lock`/
    `release`, `setm`, and the cache-control operands (Q055).
 7. **Instruction timing**: what a result costs in cycles; a fill's instructions cost 0.320 µs
@@ -5165,8 +5165,8 @@ open driver:
    the extra operand, its selector 3 and what bit 46 does (Q135), and `imae`'s repeats, `u16`/`z16`
    sources and `.rsN` shifts with the carries, with the operand values and immediates not run
    (Q127); the rule of the test field on the shifts, the lane operations and the other classes, with
-   the `o` join (Q137) and the chan field (Q137); how long an `sa0` written by `ima32` lasts and why
-   a write to `pa0` is lost (Q136).
+   the `o` join (Q137) and the chan field (Q137); how long an `sa0` written by `ima32` lasts (Q136)
+   and why a write to `pa0` is lost (Q098).
 10. **Fences, repeats, registers and persistence for a firmware compiler**: why a `wdf` waits for
    another counter's loads in some runs and not in others (Q130); whether a firmware (EDM) task runs
    two at once (no second pass was seen in 12 of 12 holds of up to 90 ticks, E749, E751, and an
