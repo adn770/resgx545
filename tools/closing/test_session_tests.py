@@ -360,3 +360,80 @@ def test_a_data_view_shows_an_area_as_the_freeze_saw_it(world):
     (s / "postrun/data-view.txt").unlink()
     r = run(world, "edm/closing-demo")
     assert "later seen" in r.stdout
+
+
+def test_firmware_derived_files_of_the_session_come_from_the_private_copy(world, tmp_path):
+    """r6-held froze its O3 oracle (private/o3/, derived from the firmware) by relative path;
+    the published session leaves it out and resgx545-data-private holds it as
+    cited/closingN/<name>/<path>. The runner puts the copy back in the session's place; without
+    it the freeze fails."""
+    s = world[1] / "edm/closing-demo"
+    priv = tmp_path / "data-private"
+    (priv / "cited/closing6/demo/private/o3").mkdir(parents=True)
+    (priv / "cited/closing6/demo/private/o3/RESULT.md").write_text("O\n")
+    frozen = (s / "FROZEN.sha256").read_text()
+    (s / "FROZEN.sha256").write_text(frozen + f"{sha('O' + chr(10))}  private/o3/RESULT.md\n")
+    r = run(world, "edm/closing-demo", RESGX545_DATA_PRIVATE=str(priv))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "RUN_ALL PASSED" in r.stdout
+    assert not (s / "private").exists()
+    r = run(world, "edm/closing-demo", RESGX545_DATA_PRIVATE=str(tmp_path / "absent"))
+    assert r.returncode != 0
+    assert "freeze" in r.stdout
+
+
+def test_a_part_with_its_own_freeze_is_pointed_like_the_session(world):
+    """r6-held's part P (p/) has its own FROZEN.sha256 and FROZEN.commits, naming files of the
+    tool tree and inputs read from scratch by absolute path: they are pinned and pointed at
+    their copies as the session's own freeze is."""
+    tool, data = world[0], world[1]
+    c1 = git(tool, "rev-list", "--max-parents=0", "HEAD")
+    s = data / "edm/closing-demo"
+    (data / "cited/closing6").mkdir(parents=True)
+    (data / "cited/closing6/plan.md").write_text("P\n")
+    (s / "p").mkdir()
+    (s / "p/FROZEN.sha256").write_text(
+        f"{sha(V1)}  /Users/someone/src/resgx545/tools/x.py\n"
+        f"{sha('P' + chr(10))}  /Users/someone/src/scratch/resgx545/closing6/plan.md\n")
+    (s / "p/FROZEN.commits").write_text("# header\n" f"{sha(V1)}  {c1}  tools/x.py\n")
+    run_all = RUN_ALL.replace(
+        'echo "RUN_ALL PASSED"',
+        '(cd p && shasum -a 256 -c FROZEN.sha256 --quiet) || { echo "part freeze"; exit 1; }\n'
+        'echo "RUN_ALL PASSED"')
+    (s / "tests/run_all.sh").write_text(run_all)
+    frozen = (s / "FROZEN.sha256").read_text()
+    (s / "FROZEN.sha256").write_text(frozen.replace(sha(RUN_ALL), sha(run_all)))
+    r = run(world, "edm/closing-demo")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "RUN_ALL PASSED" in r.stdout
+
+
+def test_a_list_named_in_postrun_keeps_the_paths_as_frozen(world, tmp_path):
+    """r6-held's generator writes its fixed data path into gen/data/sources.lst and checks the
+    list against what it would write, and its freeze check wants every listed path in the
+    freeze: moved to the fake home, neither holds. A list named in postrun/paths-as-frozen.txt
+    keeps its bytes, and so do the freeze's lines of the paths it lists (they are read where the
+    session read them)."""
+    s = world[1] / "edm/closing-demo"
+    kept = tmp_path / "author/resgx545-data/edm/closing-sib/data.txt"
+    kept.parent.mkdir(parents=True)
+    kept.write_text("D\n")
+    lst = f"{kept}\n"
+    (s / "gen").mkdir()
+    (s / "gen/sources.lst").write_text(lst)
+    (s / "postrun").mkdir()
+    (s / "postrun/paths-as-frozen.txt").write_text("# kept as frozen\ngen/sources.lst\n")
+    run_all = RUN_ALL.replace(
+        'echo "RUN_ALL PASSED"',
+        f'[ "$(cat gen/sources.lst)" = {kept} ] || {{ echo "moved"; exit 1; }}\n'
+        f'grep -q " {kept}$" FROZEN.sha256 || {{ echo "freeze line moved"; exit 1; }}\n'
+        'echo "RUN_ALL PASSED"')
+    (s / "tests/run_all.sh").write_text(run_all)
+    (s / "FROZEN.sha256").write_text(
+        f"{sha(run_all)}  tests/run_all.sh\n"
+        f"{sha(lst)}  gen/sources.lst\n"
+        f"{sha('D' + chr(10))}  {kept}\n"
+        f"{sha(V1)}  /Users/someone/src/resgx545/tools/x.py\n")
+    r = run(world, "edm/closing-demo")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "RUN_ALL PASSED" in r.stdout

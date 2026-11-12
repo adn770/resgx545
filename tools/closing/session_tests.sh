@@ -23,7 +23,9 @@
 #     the pinned source; a pin of a tree that sat under scratch/resgx545/ (round 4 froze against
 #     closing4/lead/wt) is pointed at the worktree by its FROZEN.commits path, and a frozen file
 #     of the session that only lists such paths of the freeze (R4-G's gen/data/sources.lst) is
-#     pointed there too, its hash line following;
+#     pointed there too, its hash line following (a list named in postrun/paths-as-frozen.txt,
+#     r6-held's, which its generator checks against the fixed paths it writes, keeps them, and
+#     the freeze's lines of those paths stay as frozen);
 #   - src/resgx545-data is the data repository (or, when the session has a
 #     postrun/data-view.txt, a view of it in which each area the file names holds only the
 #     sessions it lists: the corpus a generator that scans the area saw at the freeze); the
@@ -40,6 +42,11 @@
 #     scratch/resgx545/ that no FROZEN.commits line pins: a plan, a reading of the firmware) is
 #     copied from its published copy, cited/<path> of the data repository or of the private one,
 #     to scratch/resgx545/<path>, and the copy's freeze points there (no copy: the freeze fails);
+#   - a file of the session frozen by its relative path but derived from the closed firmware, so
+#     left out of the published session, is copied back from cited/closingN/<name>/<path> of the
+#     private repository (r6-held's private/o3/; no copy: the freeze fails);
+#   - a part of the session with a freeze of its own (r6-held's p/, its FROZEN.sha256 and
+#     FROZEN.commits) is pinned and pointed as the session's freeze is;
 #   - the entry is tests/run_all.sh, else tests/run_mock.sh, else tests/run_mock.py.
 #
 # Environment: PY (the python the tests use; default <tool>/.venv/bin/python, else python3),
@@ -164,11 +171,19 @@ if [ -f "$C/TOOLSRC.sha256" ] && ! awk '$2 ~ /^\//' "$C/TOOLSRC.sha256" | grep -
     fi
 fi
 git -C "$TOOL" worktree add -q --detach "$R" "$BASE" || die "cannot check out $BASE of $TOOL"
-if [ -f "$COMMITS" ]; then
+# a part of the session with a freeze of its own (r6-held's p/) is pinned and pointed as the
+# session is: each directory of the copy that holds a FROZEN.sha256, with the FROZEN.commits
+# beside it
+freezes() {
+    local f
+    for f in "$C"/FROZEN*.sha256 "$C"/*/FROZEN*.sha256; do [ -f "$f" ] && echo "$f"; done
+}
+for CM in "$C"/FROZEN.commits "$C"/*/FROZEN.commits; do
+    [ -f "$CM" ] || continue
     while read -r hash commit path; do
         case "$hash" in "#"*|"") continue ;; esac
         case "$path" in resgx545:*) path=${path#resgx545:} ;; [a-z]*:*) continue ;; esac
-        grep -q "^$hash [ *]/.*/$path\$" "$C/FROZEN.sha256" 2>/dev/null || continue
+        grep -q "^$hash [ *]/.*/$path\$" "$(dirname "$CM")/FROZEN.sha256" 2>/dev/null || continue
         mkdir -p "$R/$(dirname "$path")"
         if [ "$commit" = untracked ]; then
             [ -f "$COMMON/../$path" ] && cp "$COMMON/../$path" "$R/$path" \
@@ -177,8 +192,8 @@ if [ -f "$COMMITS" ]; then
             git -C "$TOOL" show "$commit:$path" > "$R/$path" \
                 || die "cannot read $commit:$path"
         fi
-    done < "$COMMITS"
-fi
+    done < "$CM"
+done
 MAIN=$(dirname "$COMMON")
 # Builds of the pinned tool go to the runner's own target/, never the main checkout's (old
 # binaries there would replace current ones, and on macOS a library rewritten in place kills
@@ -202,12 +217,28 @@ if [ -d "$C/debug-src" ]; then
         [ -f "$f" ] && R=$R perl -pi -e 's{"(?:/[^/"]+)*?/resgx545/crates/}{"$ENV{R}/crates/}' "$f"
     done
 fi
+# a file of the session that derives from the closed firmware (r6-held's O3 oracle, private/o3/)
+# is frozen by its relative path but published only in resgx545-data-private, as
+# cited/closingN/<name>/<path>: the copy is put back in its place (no copy: the freeze fails)
+for f in $(freezes); do
+    d=$(dirname "$f"); sub=${d#"$C"}; sub=${sub#/}
+    while read -r hash path; do
+        case "$path" in /*|"") continue ;; esac
+        [ -e "$d/$path" ] && continue
+        for p in "$DATAP"/cited/closing*/"$NAME"/${sub:+$sub/}"$path"; do
+            [ -n "$DATAP" ] && [ -f "$p" ] || continue
+            mkdir -p "$(dirname "$d/$path")" && cp "$p" "$d/$path"
+            break
+        done
+    done < "$f"
+done
 # a frozen file that only lists absolute paths of the freeze itself (R4-G's gen/data/sources.lst,
 # the files its generator read outside the session) moves with them: its paths are pointed at
-# the fake home as the freeze's are below, and its hash line follows
-for f in "$C"/FROZEN*.sha256; do
-    [ -f "$f" ] || continue
-    R=$R D=$HOMEDIR/src/resgx545-data C=$C perl -e '
+# the fake home as the freeze's are below, and its hash line follows; a list named in
+# postrun/paths-as-frozen.txt (r6-held's, which its generator checks against the fixed data path
+# it writes) keeps its bytes
+for f in $(freezes); do
+    R=$R D=$HOMEDIR/src/resgx545-data C=$(dirname "$f") K="$C/postrun/paths-as-frozen.txt" perl -e '
         use Digest::SHA qw(sha256_hex);
         sub moved { my $p = shift;
             $p =~ s{^/(?:[^/]+/)*?resgx545-data/}{$ENV{D}/}
@@ -215,9 +246,12 @@ for f in "$C"/FROZEN*.sha256; do
             return $p }
         my @lines = <STDIN>;
         my %abs = map { /^[0-9a-f]{64} [ *](\/.*)$/ ? ($1 => 1) : () } @lines;
+        my %keep;
+        if (open my $k, "<", $ENV{K}) { while (<$k>) { chomp; $keep{$_} = 1 unless /^#/ } }
         for (@lines) {
             next unless /^([0-9a-f]{64})( [ *])([^\/\n].*)$/;
             my ($h, $sep, $rel) = ($1, $2, $3);
+            next if $keep{$rel};
             open my $in, "<", "$ENV{C}/$rel" or next;
             my @l = <$in>; close $in;
             next unless @l && !grep { chomp(my $x = $_); !$abs{$x} } @l;
@@ -231,11 +265,11 @@ done
 # an absolute path under scratch/resgx545/ and pinned by no FROZEN.commits line, is published as
 # cited/<path> of a data repository: the copy is put at its scratch place and the freeze points
 # there
-for f in "$C"/FROZEN*.sha256; do
-    [ -f "$f" ] || continue
+for f in $(freezes); do
+    CM=$(dirname "$f")/FROZEN.commits
     while read -r hash path; do
         case "$path" in /*/scratch/resgx545/*) ;; *) continue ;; esac
-        [ -f "$COMMITS" ] && grep -q "^$hash " "$COMMITS" && continue
+        [ -f "$CM" ] && grep -q "^$hash " "$CM" && continue
         rel=${path#*/scratch/resgx545/}
         [ -e "$S/$rel" ] && continue
         for d in "$DATA" "$DATAP"; do
@@ -245,7 +279,7 @@ for f in "$C"/FROZEN*.sha256; do
             fi
         done
     done < "$f"
-    S=$S P="$COMMITS" perl -e '
+    S=$S P="$CM" perl -e '
         my %pin;
         if (open my $c, "<", $ENV{P}) { while (<$c>) { $pin{$1} = 1 if /^([0-9a-f]{64})\s/ } }
         while (<STDIN>) {
@@ -253,20 +287,26 @@ for f in "$C"/FROZEN*.sha256; do
             print;
         }' < "$f" > "$f.new" && mv "$f.new" "$f"
 done
-for f in "$C"/FROZEN*.sha256; do
-    [ -f "$f" ] || continue
-    R=$R S=$S D=$HOMEDIR/src/resgx545-data perl -pe \
-        'm{^[0-9a-f]{64} [ *]\Q$ENV{S}\E/}
+# the paths a list of postrun/paths-as-frozen.txt names stay as frozen in the freeze too
+KEPT=$W/kept-paths
+: > "$KEPT"
+[ -f "$C/postrun/paths-as-frozen.txt" ] && grep -v '^#' "$C/postrun/paths-as-frozen.txt" \
+    | while read -r l; do [ -n "$l" ] && [ -f "$C/$l" ] && cat "$C/$l"; done >> "$KEPT"
+for f in $(freezes); do
+    R=$R S=$S D=$HOMEDIR/src/resgx545-data K=$KEPT perl -pe \
+        'BEGIN { open my $k, "<", $ENV{K}; %k = map { chomp; ($_ => 1) } <$k> }
+         m{^[0-9a-f]{64} [ *](.*)$} && $k{$1}
+         || m{^[0-9a-f]{64} [ *]\Q$ENV{S}\E/}
          || s{^([0-9a-f]{64} [ *])/(?:[^/]+/)*?resgx545-data/}{$1$ENV{D}/}
          || s{^([0-9a-f]{64} [ *])/(?:[^/]+/)*?resgx545/}{$1$ENV{R}/}' "$f" > "$f.new" \
         && mv "$f.new" "$f"
 done
 # a pin of a tree that sat under scratch/resgx545/ (round 4's integration worktree closing4/lead/wt)
 # is pointed at the pinned worktree by its FROZEN.commits path, matched by hash and path suffix
-if [ -f "$COMMITS" ]; then
-    for f in "$C"/FROZEN*.sha256; do
-        [ -f "$f" ] || continue
-        R=$R P="$COMMITS" perl -e '
+for f in $(freezes); do
+    CM=$(dirname "$f")/FROZEN.commits
+    if [ -f "$CM" ]; then
+        R=$R P="$CM" perl -e '
             open my $c, "<", $ENV{P} or die;
             my %pin;
             while (<$c>) { next if /^#/; my ($h, $m, $p) = split; next unless defined $p;
@@ -280,8 +320,8 @@ if [ -f "$COMMITS" ]; then
                 }
                 print;
             }' < "$f" > "$f.new" && mv "$f.new" "$f"
-    done
-fi
+    fi
+done
 
 cd "$C" || die "cannot enter the copy"
 export HOME=$HOMEDIR PY RESGX545=$R TOOL_SRC=$R RESGX545_MAIN=$R \
