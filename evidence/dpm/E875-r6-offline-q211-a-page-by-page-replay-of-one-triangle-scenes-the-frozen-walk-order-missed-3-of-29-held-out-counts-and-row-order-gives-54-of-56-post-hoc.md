@@ -48,3 +48,14 @@ row order is post hoc and needs held-out scenes on the hardware (the plan's stag
 two g-qf misses and the run peaks it misses by 1 to 3 pages are not explained. Scenes of many
 objects (E874's replay is for the 1500-vertex scene, with stream blocks of many entries) and
 multi-kick scenes (s438) are outside it, and so is Q211's U clause for wide scenes.
+
+**Correction 2026-11-12:** Row order failed its held-out test, and the claim stands as a reading
+of the kept counts. Round 6's laptop session R6-dpm ran four new one-triangle scenes at 4096x4096
+(U 262, 243, 220 and 179, HU1's needs, measured as predicted) with 8 cells each, frozen from this
+record's replay (E883). Every headline there is gated "cannot tell" by an r-a0 control that has no
+reading by construction (E881); the scorer's own rows, tallied ungated after the run [HW, post
+hoc]: row order gave 28 of 32 counts (s262 4 of 8, one partial render too many each time; the
+other three scenes 8 of 8) and every run's peak exactly in 13 of 32 cells, within 3 pages in 28;
+the frozen column order 19 of 32 counts, E854's d = 7/4 18 and d = 1 27. So H-REPLAY in row order
+(count and every run's peak) does not hold on new scenes, and "54 of 56" above is post hoc only;
+the walk order, and what a partial render frees, stay open (Q211).
