@@ -114,11 +114,14 @@ fn rhw_rz32(w: f32) -> f32 {
 
 /// The stored 1/w less RZ of 1/w (0 or 1) by the 23-bit mantissa of w, for every mantissa whose
 /// word was read at a kept vertex (196 words: E754, E782, E783, E795, E796, E798, E842 and E859;
-/// `fold/posthoc_r5.txt` of render/closing-r5-pixel lists them). H-MANT, "the delta is a function
-/// of the mantissa of w alone", held on 42 of 42 held-out words at other exponents (E859), and no
-/// mantissa read at two exponents (47 of them) shows both; which mantissas store RZ + 1, by what
-/// rule, is not known, so a mantissa not listed refuses (Q230).
-const RHW_MANTISSA: [(u32, u8); 130] = [
+/// `fold/posthoc_r5.txt` of render/closing-r5-pixel lists them), and the 123 new mantissas of
+/// g6-rw's windows and boundary rows whose exact 1/w lies half an ulp or more above RZ (E879;
+/// `fold/posthoc_r6.txt` of render/closing-r6-pixel lists them). H-MANT, "the delta is a function
+/// of the mantissa of w alone", held on 42 of 42 held-out words at other exponents (E859) and 72
+/// of 72 at six more (E879), and no mantissa read at two exponents shows both. Below half an ulp
+/// the rule `rhw_frac_below_half` gives RZ (H-FRAC); above it which mantissas store RZ + 1 has no
+/// rule, so a mantissa not listed refuses (Q230).
+const RHW_MANTISSA: [(u32, u8); 253] = [
     (0x00_0000, 0),
     (0x00_0001, 0),
     (0x00_0003, 0),
@@ -132,8 +135,11 @@ const RHW_MANTISSA: [(u32, u8); 130] = [
     (0x08_e700, 1),
     (0x09_0000, 0),
     (0x09_05fe, 0),
+    (0x09_8b0e, 0),
     (0x0a_0000, 0),
+    (0x0a_2d48, 0),
     (0x0a_336c, 0),
+    (0x0a_b3cb, 0),
     (0x0b_0000, 0),
     (0x0c_0000, 1),
     (0x0c_cccd, 0),
@@ -142,60 +148,156 @@ const RHW_MANTISSA: [(u32, u8); 130] = [
     (0x0f_0000, 0),
     (0x0f_0c30, 0),
     (0x0f_4438, 0),
+    (0x0f_d7d1, 1),
+    (0x0f_d9d1, 1),
+    (0x0f_dcd1, 1),
+    (0x0f_dfd1, 1),
+    (0x0f_e0d1, 1),
+    (0x0f_e4d1, 1),
+    (0x0f_e5d1, 1),
+    (0x0f_e9d1, 0),
+    (0x0f_ecd1, 0),
+    (0x0f_edd1, 0),
+    (0x0f_eed1, 1),
+    (0x0f_efd1, 1),
+    (0x0f_f0d1, 1),
+    (0x0f_f1d1, 1),
+    (0x0f_f4d1, 0),
+    (0x0f_f5d1, 1),
+    (0x0f_f6d1, 1),
+    (0x0f_f8d1, 1),
+    (0x0f_f9d1, 1),
+    (0x0f_fed1, 1),
     (0x10_0000, 1),
+    (0x10_00d1, 0),
     (0x12_0000, 0),
+    (0x12_1814, 0),
     (0x12_9355, 0),
     (0x14_0000, 0),
+    (0x14_80a2, 1),
+    (0x15_80a2, 1),
     (0x15_8f4d, 1),
     (0x16_0000, 0),
+    (0x16_80a2, 1),
     (0x18_0000, 0),
+    (0x18_0235, 0),
+    (0x18_80a2, 1),
     (0x19_999a, 0),
     (0x1a_0000, 0),
+    (0x1b_80a2, 0),
     (0x1c_0000, 0),
+    (0x1c_80a2, 0),
     (0x1d_0000, 0),
+    (0x1d_80a2, 1),
     (0x1e_0000, 0),
+    (0x1e_1de4, 1),
     (0x1f_0000, 0),
+    (0x1f_1de4, 0),
+    (0x1f_80a2, 1),
     (0x20_0000, 0),
     (0x21_0000, 0),
     (0x22_0000, 0),
+    (0x22_1de4, 0),
     (0x22_524d, 0),
+    (0x22_a0e9, 0),
     (0x23_0000, 0),
+    (0x23_1de4, 1),
     (0x24_0000, 0),
+    (0x24_1de4, 0),
+    (0x24_80a2, 1),
     (0x25_0000, 0),
+    (0x25_1de4, 1),
     (0x26_0000, 0),
+    (0x26_1de4, 0),
     (0x26_6666, 0),
     (0x27_0000, 0),
+    (0x27_80a2, 1),
     (0x28_0000, 0),
+    (0x28_1de4, 1),
     (0x28_2e6c, 0),
     (0x28_3d12, 0),
     (0x28_6904, 0),
+    (0x29_1de4, 1),
     (0x29_b969, 1),
     (0x2a_0000, 1),
+    (0x2a_1de4, 0),
+    (0x2b_1de4, 1),
     (0x2c_0000, 0),
     (0x2e_0000, 0),
+    (0x2f_80a2, 1),
     (0x30_0000, 0),
+    (0x30_80a2, 1),
+    (0x31_1de4, 0),
+    (0x31_80a2, 1),
     (0x32_0000, 0),
+    (0x33_1de4, 1),
     (0x33_3333, 1),
     (0x34_0000, 1),
+    (0x34_1de4, 1),
     (0x35_0000, 0),
+    (0x35_1de4, 1),
+    (0x35_80a2, 1),
     (0x36_0000, 0),
+    (0x36_1de4, 0),
     (0x37_0000, 0),
+    (0x37_1de4, 0),
     (0x38_0000, 0),
     (0x39_0000, 1),
     (0x39_7b97, 0),
+    (0x39_80a2, 1),
     (0x3a_0000, 0),
+    (0x3a_1de4, 1),
     (0x3b_0000, 0),
+    (0x3b_1de4, 1),
     (0x3b_2b3a, 0),
     (0x3b_992f, 0),
     (0x3c_0000, 0),
     (0x3d_0000, 0),
+    (0x3d_8656, 1),
+    (0x3d_8856, 1),
+    (0x3d_8a56, 1),
+    (0x3d_8c56, 1),
+    (0x3d_8e56, 1),
+    (0x3d_9056, 1),
+    (0x3d_9256, 1),
+    (0x3d_9856, 0),
+    (0x3d_9a56, 1),
+    (0x3d_9d56, 1),
+    (0x3d_9e56, 0),
+    (0x3d_a056, 1),
+    (0x3d_a156, 1),
+    (0x3d_a456, 1),
+    (0x3d_a556, 1),
+    (0x3d_a856, 1),
+    (0x3d_a956, 1),
+    (0x3d_ad56, 1),
+    (0x3d_ae56, 1),
+    (0x3d_af56, 1),
     (0x3e_0000, 0),
     (0x3f_0000, 1),
+    (0x3f_1de4, 1),
     (0x40_0000, 0),
+    (0x41_1de4, 1),
     (0x42_0000, 0),
+    (0x42_d7f6, 1),
+    (0x42_d7f7, 1),
+    (0x42_d7f8, 1),
+    (0x42_d7fd, 1),
+    (0x42_d7fe, 1),
+    (0x42_d7ff, 1),
+    (0x42_d804, 0),
+    (0x42_d80b, 0),
+    (0x42_d80c, 0),
+    (0x42_d80d, 1),
+    (0x42_d80e, 1),
+    (0x42_d812, 0),
+    (0x42_d813, 0),
+    (0x42_d814, 1),
+    (0x42_d815, 1),
     (0x44_0000, 0),
     (0x44_9ba6, 0),
     (0x46_0000, 0),
+    (0x46_1de4, 1),
     (0x46_73ad, 1),
     (0x48_0000, 0),
     (0x48_26b3, 0),
@@ -219,7 +321,9 @@ const RHW_MANTISSA: [(u32, u8); 130] = [
     (0x5e_0000, 0),
     (0x5e_5ca1, 0),
     (0x60_0000, 0),
+    (0x60_4061, 0),
     (0x60_d10e, 1),
+    (0x61_7069, 0),
     (0x62_0000, 0),
     (0x62_430c, 0),
     (0x62_caeb, 1),
@@ -239,11 +343,33 @@ const RHW_MANTISSA: [(u32, u8); 130] = [
     (0x70_0000, 0),
     (0x71_3881, 0),
     (0x72_0000, 0),
+    (0x73_5d03, 0),
     (0x74_0000, 0),
     (0x74_6675, 1),
+    (0x74_76a8, 0),
+    (0x74_8b32, 0),
+    (0x74_8b33, 1),
+    (0x74_8b35, 1),
+    (0x74_8b37, 1),
+    (0x74_8b39, 0),
+    (0x74_8b3b, 0),
+    (0x74_8b3e, 1),
+    (0x74_8b40, 1),
+    (0x74_8b44, 0),
+    (0x74_8b46, 0),
+    (0x74_8b49, 1),
+    (0x74_8b4b, 1),
+    (0x74_8b4d, 1),
+    (0x74_8b4f, 0),
+    (0x74_8b51, 0),
+    (0x74_8b52, 1),
+    (0x74_8b54, 1),
+    (0x74_8b5a, 0),
+    (0x75_776e, 1),
     (0x76_0000, 0),
     (0x78_0000, 0),
     (0x7a_0000, 0),
+    (0x7a_b3ec, 1),
     (0x7a_d92c, 1),
     (0x7b_a882, 0),
     (0x7c_0000, 0),
@@ -251,16 +377,25 @@ const RHW_MANTISSA: [(u32, u8); 130] = [
     (0x7f_fffe, 0),
 ];
 
-/// The exponents of w at which words were read and H-MANT held out (E859's words at -2, -1, 0, 1,
-/// 2 and 4; E842's at 0 to 2). Below them only the two w that were read themselves.
-const RHW_EXP: std::ops::RangeInclusive<i32> = -2..=4;
+/// The exponents of w at which words were read and H-MANT held out: E859's words at -2, -1, 0, 1,
+/// 2 and 4 (E842's at 0 to 2; 3 lies between them), E879's at -12, -6, -3, 5, 8 and 12. Another
+/// exponent refuses [the delta there is not read], except the two w read themselves below.
+const RHW_EXP: [i32; 13] = [-12, -6, -3, -2, -1, 0, 1, 2, 3, 4, 5, 8, 12];
 
-/// The w below the exponents of `RHW_EXP` whose word was read: E754's 3e-5 and 0.003, RZ.
+/// The w at exponents not in `RHW_EXP` whose word was read: E754's 3e-5 and 0.003, RZ.
 const RHW_READ_LOW: [f32; 2] = [3e-5, 0.003];
 
-/// The stored 1/w less RZ of 1/w: by the mantissa table at an exponent of `RHW_EXP`
-/// [infer from H-MANT for a pair of mantissa and exponent not read], 0 at the w of
-/// `RHW_READ_LOW`, `None` elsewhere.
+/// H-FRAC: whether the exact 1/w of the 24-bit mantissa `m` (with its leading one) lies less
+/// than half an ulp above RZ, the fraction of 2^47 / m below 0.5. No such mantissa stored RZ + 1:
+/// 64 of 64 read before the rule was frozen (E872, SEMI) and 117 of 117 new ones held out (E879).
+fn rhw_frac_below_half(m: u32) -> bool {
+    let m = u64::from(m);
+    2 * ((1u64 << 47) % m) < m
+}
+
+/// The stored 1/w less RZ of 1/w: by the mantissa table at an exponent of `RHW_EXP`, 0 for a
+/// mantissa below half an ulp (H-FRAC) [infer from H-MANT for a pair of mantissa and exponent not
+/// read], 0 at the w of `RHW_READ_LOW`, `None` elsewhere.
 fn rhw_delta(w: f32) -> Option<u32> {
     if RHW_READ_LOW.contains(&w) {
         return Some(0);
@@ -270,10 +405,11 @@ fn rhw_delta(w: f32) -> Option<u32> {
     if w <= 0.0 || !RHW_EXP.contains(&e) {
         return None;
     }
-    RHW_MANTISSA
-        .binary_search_by_key(&(b & 0x7f_ffff), |&(m, _)| m)
-        .ok()
-        .map(|i| u32::from(RHW_MANTISSA[i].1))
+    let m = b & 0x7f_ffff;
+    if let Ok(i) = RHW_MANTISSA.binary_search_by_key(&m, |&(t, _)| t) {
+        return Some(u32::from(RHW_MANTISSA[i].1));
+    }
+    rhw_frac_below_half(m | 0x80_0000).then_some(0)
 }
 
 /// The w values whose stored 1/w the model gives, at z = 0 for the depth: every vertex's w
@@ -284,7 +420,7 @@ fn rhw_delta(w: f32) -> Option<u32> {
 fn band_w(c: &[[f32; 4]; 3]) -> Result<(), Outcome> {
     if c.iter().any(|v| rhw_delta(v[3]).is_none()) {
         return Err(refuse230(
-            "a w whose 1/w word is not known: RZ of 1/w or one ulp above by the mantissa of w (H-MANT, E859), the mantissa not read or the exponent outside -2 to 4",
+            "a w whose 1/w word is not known: RZ of 1/w or one ulp above by the mantissa of w (H-MANT, E859, E879), a mantissa not read whose exact 1/w lies half an ulp or more above RZ (H-FRAC gives RZ below it, E872, E879), or an exponent no word was read at",
         ));
     }
     if c.iter().any(|v| v[2] != 0.0) {
@@ -658,12 +794,40 @@ mod tests {
         for (w, d) in [(2.25f32, 1u32), (0.5625, 1), (9.0, 1), (0.7, 1), (1.4, 1), (10.0, 0), (2.5, 0)] {
             assert_eq!(rhw(w).unwrap(), [rhw_rz32(w).to_bits() + d; 3], "w = {w}");
         }
-        // a mantissa never read, an exponent outside -2 to 4, and the two w read below it (E754)
-        for w in [1.7f32, 2.1, 40.0, 0.2] {
+        // a mantissa never read whose exact 1/w lies half an ulp or more above RZ (2.1: frac
+        // 0.678), and exponents no word was read at (2^10, 2^-20); the two w read below (E754)
+        for w in [2.1f32, 1.25 * 1024.0, 1.25 / 1_048_576.0] {
             refused(triangle(&s, scaled(w), 0, 0), "Q230");
         }
         assert_eq!(rhw(3e-5).unwrap(), [0x4702_3555; 3]);
         assert_eq!(rhw(0.003).unwrap(), [0x43a6_aaaa; 3]);
+    }
+
+    #[test]
+    fn the_1_over_w_is_rz_below_half_an_ulp_and_by_the_r6_table_above_e879() {
+        let s = state(&block([32.0; 4])).unwrap();
+        let rhw = |w: f32| triangle(&s, scaled(w), 0, 0).map(|(v, _)| v.map(|p| p.rhw.to_bits()));
+        // E879 [HW, held out]: g6-rw's new mantissas with frac >= 0.5 are a table: l-16a-00's
+        // third w stores RZ + 1, b-04's first RZ
+        assert_eq!(rhw(f32::from_bits(0x3f95_80a2)).unwrap(), [0x3f5b_2e2a; 3]);
+        assert_eq!(rhw(f32::from_bits(0x3f89_8b0e)).unwrap(), [0x3f6e_3ce7; 3]);
+        // H-FRAC (E872 SEMI, E879 held out 117 of 117): a mantissa whose exact 1/w lies less
+        // than half an ulp above RZ stores RZ, read or not (1.7: frac 0.311; 1.3: 0.243)
+        for w in [1.7f32, 1.3] {
+            assert_eq!(rhw(w).unwrap(), [rhw_rz32(w).to_bits(); 3], "w = {w}");
+        }
+        // H-MANT held out at exponents -12, -6, -3, 5, 8 and 12 (E879, 72 of 72): R4's rw-10 at
+        // 2^-12 and 2^5 (RZ + 1, RZ + 1, RZ at the three vertices)
+        for (w, word) in [
+            (0x39cc_0000u32, 0x4520_a0a1u32),
+            (0x39d8_0000, 0x4517_b426),
+            (0x39cf_0000, 0x451e_4cad),
+            (0x424c_0000, 0x3ca0_a0a1),
+            (0x4258_0000, 0x3c97_b426),
+            (0x424f_0000, 0x3c9e_4cad),
+        ] {
+            assert_eq!(rhw(f32::from_bits(w)).unwrap(), [word; 3], "w = {w:#x}");
+        }
     }
 
     #[test]
@@ -703,9 +867,10 @@ mod tests {
             f(&mut t);
             t
         };
-        // a w whose mantissa was not read (1.7), or beyond the exponents run (40 = 1.25 x 2^5)
-        refused(triangle(&s, scaled(1.7), 0, 0), "Q230");
-        refused(triangle(&s, scaled(40.0), 0, 0), "Q230");
+        // a w whose mantissa was not read and lies half an ulp or more above RZ (2.1), or at an
+        // exponent no word was read at (1280 = 1.25 x 2^10)
+        refused(triangle(&s, scaled(2.1), 0, 0), "Q230");
+        refused(triangle(&s, scaled(1280.0), 0, 0), "Q230");
         refused(triangle(&s, scaled(1e-6), 0, 0), "Q230");
         refused(triangle(&s, scaled(-3.0), 0, 0), "Q230");
         // a vertex of another w (a perspective triangle) whose mantissa was not read
