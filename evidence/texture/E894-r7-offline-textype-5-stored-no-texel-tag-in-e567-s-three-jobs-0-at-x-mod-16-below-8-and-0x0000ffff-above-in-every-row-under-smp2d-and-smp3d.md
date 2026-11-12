@@ -29,3 +29,13 @@ format of its own, so a map texture at other sizes would read no offset either.
 **What it does not show.** Other sizes (8 x 8 to 64 x 64), whether the values depend on the
 texture memory at all (a zeroed or all-ones texture was not run), how u maps to the column in
 E567's program, and what type 5 is for. Nothing here was predicted before it was read.
+
+**Correction 2026-11-12:** (the claim stands: it reports E567's 16 x 16 dumps.) The [infer] of
+"What it shows", that type 5 is not a layout of the 32-bit texels and that a map texture at other
+sizes would read no offset either, is refuted for the part that mattered: R7-geo's stage tx (E911)
+ran type 5 with the program storing 0 and then 0xffffffff over the texture's first 112 dwords, and
+the 16 x 16 image became 0x00000000 and 0x0000ffff in every pixel, so type 5 reads the texture
+memory; at 8 x 8 its image alternates by row and at 32 and 64 it repeats E567's 16-column step.
+The two values are what type 5 makes of the map fill's bits, not a step independent of the
+texture. "Whether the values depend on the texture memory" in "What it does not show" is answered
+by E911.
