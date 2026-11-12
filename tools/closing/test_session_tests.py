@@ -485,3 +485,50 @@ def test_a_list_named_in_postrun_keeps_the_paths_as_frozen(world, tmp_path):
     r = run(world, "edm/closing-demo")
     assert r.returncode == 0, r.stdout + r.stderr
     assert "RUN_ALL PASSED" in r.stdout
+
+
+def test_absolute_paths_in_the_tests_point_at_the_fake_home(world):
+    """R6-dpm's tests/test_read.py scans render/ by the author's absolute data path, so it sees
+    the session's own kept rows, published after its freeze, and not the data view. The copy's
+    tests/ files that no freeze names have their absolute resgx545-data and resgx545 paths
+    pointed at the fake home; other trees are left alone (scratch too: R6-misc's test_gen.py
+    reads a ranking kept only in the author's scratch); a frozen file keeps the bytes that
+    ran (R6-pixel's freeze verify wants every tests/*.py frozen as it is), and the data
+    repository is never written."""
+    data = world[1]
+    s = data / "edm/closing-demo"
+    (data / "edm/closing-later").mkdir()
+    (s / "postrun").mkdir()
+    (s / "postrun/data-view.txt").write_text("edm/closing-sib\n")
+    paths = (
+        'D=/Users/someone/src/resgx545-data/edm\n'
+        '[ "$D" = "$HOME/src/resgx545-data/edm" ] || { echo "data path $D"; exit 1; }\n'
+        '[ -d "$D/closing-later" ] && { echo "later seen"; exit 1; }\n'
+        '[ -f "$D/closing-sib/marker" ] || { echo "listed missing"; exit 1; }\n'
+        'T="/Users/someone/src/resgx545/tools/x.py"\n'
+        '[ "$T" = "$HOME/src/resgx545/tools/x.py" ] || { echo "tool path $T"; exit 1; }\n'
+        "X='/Users/someone/src/scratch/resgx545/closing/sib'\n"
+        'case "$X" in "$HOME"/*) echo "scratch $X"; exit 1 ;; esac\n'
+        'P=/Users/someone/src/resgx545-data-private/cited\n'
+        'case "$P" in "$HOME"/*) echo "private $P"; exit 1 ;; esac\n'
+        'L=/Volumes/linux/linux-sgx\n'
+        'case "$L" in "$HOME"/*) echo "linux $L"; exit 1 ;; esac\n')
+    (s / "tests/paths.sh").write_text(paths)
+    frozen_py = 'D = "/Users/someone/src/resgx545-data/render"\n'
+    (s / "tests/frozen.py").write_text(frozen_py)
+    run_all = RUN_ALL.replace(
+        'echo "RUN_ALL PASSED"',
+        'bash tests/paths.sh || exit 1\n'
+        f'[ "$(shasum -a 256 tests/frozen.py | cut -c1-64)" = {sha(frozen_py)} ] '
+        '|| { echo "frozen moved"; exit 1; }\n'
+        'grep -q "  tests/frozen.py$" FROZEN.sha256 || { echo "freeze line moved"; exit 1; }\n'
+        'echo "RUN_ALL PASSED"')
+    (s / "tests/run_all.sh").write_text(run_all)
+    frozen = (s / "FROZEN.sha256").read_text()
+    (s / "FROZEN.sha256").write_text(frozen.replace(sha(RUN_ALL), sha(run_all))
+                                     + f"{sha(frozen_py)}  tests/frozen.py\n")
+    before = snapshot(data)
+    r = run(world, "edm/closing-demo")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "RUN_ALL PASSED" in r.stdout
+    assert snapshot(data) == before

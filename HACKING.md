@@ -163,7 +163,10 @@ linked where the tests expect them, a fake HOME holds the tool tree at the commi
 session's `FROZEN.commits`, and a session's `debug-src/` is copied to `debug/`. A session whose
 generator scans an area of the data repository lists the sessions of that area its freeze saw in
 `postrun/data-view.txt`; the fake home's data repository then shows only those there, so the
-session's own kept rows and later sessions do not change what its checks regenerate. It prints
+session's own kept rows and later sessions do not change what its checks regenerate.
+The copy's `tests/` files that no freeze names have their absolute paths into resgx545-data and
+resgx545 pointed at the fake home (R6-dpm's `tests/test_read.py` scans `render/` by
+its path); a frozen file keeps the bytes that ran. It prints
 PASS or FAIL with the tests' exit code. Builds of the pinned tool go to the runner's own target
 (`RESGX545_SESSION_TARGET`, default `scratch/resgx545/session-target`), never the main
 checkout's: old binaries would replace current ones there.

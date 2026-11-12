@@ -49,6 +49,10 @@
 #     private repository (r6-held's private/o3/; no copy: the freeze fails);
 #   - a part of the session with a freeze of its own (r6-held's p/, its FROZEN.sha256 and
 #     FROZEN.commits) is pinned and pointed as the session's freeze is;
+#   - the copy's tests/ files that no freeze names have their absolute resgx545-data and resgx545
+#     paths (the author's trees: R6-dpm's tests/test_read.py scans render/ by its path)
+#     pointed at the fake home, so they read the data view and the pinned tree; a frozen file
+#     keeps the bytes that ran;
 #   - the entry is tests/run_all.sh, else tests/run_mock.sh, else tests/run_mock.py.
 #
 # Environment: PY (the python the tests use; default <tool>/.venv/bin/python, else python3),
@@ -331,6 +335,24 @@ for f in $(freezes); do
             }' < "$f" > "$f.new" && mv "$f.new" "$f"
     fi
 done
+# a test that names the author's data or tool tree by its absolute path (R6-dpm's
+# tests/test_read.py scans render/ that way) would read past the data view and the pinned tree:
+# the copy's tests/ files that no freeze names are pointed at the fake home (a frozen file keeps
+# the bytes that ran, and its session's verify may want every test file frozen as it is)
+FROZEN_REL=$W/frozen-relative
+: > "$FROZEN_REL"
+for f in $(freezes); do
+    d=$(dirname "$f")
+    sed -n "s#^[0-9a-f]\{64\} [ *]\([^/].*\)\$#$d/\1#p" "$f" >> "$FROZEN_REL"
+done
+[ -d "$C/tests" ] && find "$C/tests" -type f -print0 | H=$HOMEDIR/src K=$FROZEN_REL perl -0ne '
+    BEGIN { local $/ = "\n"; open my $k, "<", $ENV{K}; %k = map { chomp; ($_ => 1) } <$k> }
+    chomp(my $f = $_);
+    next if $k{$f};
+    open my $in, "<", $f or next; my $t = do { local $/; <$in> }; close $in;
+    $t =~ s{(?<![\w.-])/(?:[^/\s"\x27\x60:;()]+/)*?src/(resgx545-data|resgx545)(?![\w-])}{$ENV{H}/$1}g
+        or next;
+    open my $out, ">", $f or die "$f: $!"; print $out $t; close $out;'
 
 cd "$C" || die "cannot enter the copy"
 export HOME=$HOMEDIR PY RESGX545=$R TOOL_SRC=$R RESGX545_MAIN=$R \
