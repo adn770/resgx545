@@ -247,7 +247,7 @@ def ctl_vectors(data):
     def add(vid, ctl, expect, rec, note, init=None):
         out.append({"id": "zls-ctl__" + vid, "init": {"task": "zls-ctl", "ctl": "0x%08x" % ctl, **(init or {})},
                     "expect": expect,
-                    "provenance": {"records": rec, "rebuilt": False, "note": note, "questions": ["Q244"],
+                    "provenance": {"records": rec, "rebuilt": False, "note": note, "questions": ["Q071"],
                                    "basis": "a script: the records' bit arithmetic and the run's own page lines"}})
 
     for bit in range(32):

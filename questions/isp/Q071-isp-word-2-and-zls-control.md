@@ -1,11 +1,11 @@
 +++
 id = "Q071"
-question = "what do the bits of the ZLS control word that change nothing seen (12, 15, 16, 20 to 23, 27 to 31) do, and how does the ISP use the control in a render with a stencil test?"
+question = "what do the bits of the ZLS control word that change nothing seen (12, 15, 16, 20 to 23, 27 to 31) do, alone and set together, what does bit 0 store with a control other than 0x0017100c, and how does the ISP use the control in a render with a stencil test?"
 unit = "isp"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E057", "E169", "E216", "E228", "E284", "E337", "E411", "E465", "E466", "E467"]
+evidence = ["E057", "E169", "E216", "E228", "E284", "E337", "E411", "E465", "E466", "E467", "E665"]
 terms = ["CR_ISP_ZLSCTL", "CR_ISP_BGOBJVALS.STENCIL", "ISP2"]
 +++
 
@@ -31,3 +31,16 @@ attachment, 0x00140008, has both clear. Also open: the stencil test against a st
 loaded (Q121). The stored formats 3 to 7 are Q120 and bit 19 with the integer formats is Q101. To
 settle it: the same ramp stores with each of those bits flipped in a render with a stencil test
 and a loaded stencil, the pitch and format fields set so that the stored dwords are readable.
+
+Folded here 2026-11-12 (round 6 housekeeping, decision R6-1 a): Q244 asked the same control bits
+(12, 15, 16, 20 to 23, 27 to 31) set in combination, and bit 0 under another control; both fit
+this question, and its evidence (E665) moves here. E411 flipped each bit of 0x0017100c once: bits
+1, 12 to 16, 20 to 23 and 27 to 31 left the image and the stored pages as the control's; the closed
+driver sets 12, 16 and 20 in every value (E337). The pipeline simulator (E665) ignores those bits
+as the single flips showed and models bit 0 as E411's raw output shows it: with 0x0017100d (two
+runs) the colour image is not written (4096 of 4096 pixels keep the sentinel) and the stored pages
+are the control's (page 4 and pages 12 to 15, 5120 dwords, the same first values); the image and
+the depth and stencil store are different things. Bit 0 with any other control was not run and
+refuses. To settle it, besides the runs above: the control with several of these bits set
+together, and bit 0 with other controls (the formats, the load bits, another pitch), with the
+depth and stencil dumps kept and the image counted.

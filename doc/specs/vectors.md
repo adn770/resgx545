@@ -350,7 +350,7 @@ otherwise compare nothing and pass). A vector that matched but compared no item 
   stored page make the vector fitted, and one that compares only the store enables, the negation,
   the loads by bits 13 and 14 and whether the image is written stays matched. 15 matched, 23
   fitted, 9 refused (bits 5 to 11, which faulted the job, and bit 25: Q242; bit 26: Q120). Bit 0 is
-  the colour image off and stores the control's pages, modelled for 0x0017100d only (Q244).
+  the colour image off and stores the control's pages, modelled for 0x0017100d only (Q071).
 
 ## 6. Scene vectors
 
