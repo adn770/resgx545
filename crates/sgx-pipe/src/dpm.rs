@@ -82,6 +82,82 @@ pub fn raise_within_limit(thr0: u32) -> bool {
     thr0.saturating_add(0x20) <= RAISE_LIMIT_C
 }
 
+/// The parameter buffer's default size in pages (debugfs `render_pb_pages`); a scene overflows when
+/// P - 0x22 is below its page need (E625, E735, E773).
+pub const PB_PAGES_DEFAULT: u32 = 0x422;
+const PB_FIXED_RESERVE: u32 = 0x22;
+
+/// How a 4x job of the tool's full-screen triangle (`--tri-full --aa4`, `CR_TE_AA` 0xe0000000) on a
+/// context made for 4x targets (four region-header arrays) ends.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Ending4x {
+    /// Completes with every pixel right.
+    Complete,
+    /// The scene overflows the parameter buffer: -ENOSPC with no BIF fault, as at 1x (E866).
+    Enospc,
+    /// The job faults on the 3D side at the request base (`BIF_INT_STAT` 0x90100, `BIF_FAULT`
+    /// 0x10000011), no pixel right below 4096 wide (E845, E868).
+    Fault,
+}
+
+/// U4, the scene pages of that job, page 0 included: 1 + ceil(2 tiles16 / 32), the doubled grid
+/// (E845's fit on E824's dumps; E866 at three boundaries one page apart, two held out; E867, E868).
+pub fn full_triangle_4x_pages(w: u32, h: u32) -> u32 {
+    1 + (2 * w.div_ceil(16) * h.div_ceil(16)).div_ceil(32)
+}
+
+/// A measured cell: (target, context maximum, faulted).
+type Cell4x = ((u32, u32), (u32, u32), bool);
+
+/// The measured endings at P 0x422 by (target, context maximum): true for a fault. No rule of
+/// eleven fits them (E868: none survives the 13 rows of E867 and E868; the context's tail room
+/// matters, E867), so nothing is interpolated (Q292).
+const FOUR_ARRAY_4X: &[Cell4x] = &[
+    // E824 (and E828, E845, E846 at 288 x 144 and 1024 x 768): complete on their own maximum
+    ((64, 64), (64, 64), false),
+    ((288, 144), (288, 144), false),
+    ((256, 288), (256, 288), false),
+    ((384, 384), (384, 384), false),
+    ((320, 160), (320, 160), false),
+    ((512, 384), (512, 384), false),
+    ((640, 480), (640, 480), false),
+    ((320, 400), (320, 400), false),
+    ((1024, 768), (1024, 768), false),
+    // E845, E869 (row d replicated it); E846 o7 and E828 j4 also overflow
+    ((1280, 1024), (1280, 1024), true),
+    ((2048, 1536), (2048, 1536), true),
+    ((4096, 1152), (4096, 1152), true),
+    ((4096, 4096), (4096, 4096), true),
+    // E867: the same targets on a larger maximum
+    ((1024, 768), (2048, 2048), false),
+    ((1280, 1024), (1280, 1040), false),
+    ((1280, 1024), (2048, 2048), false),
+    ((1280, 1024), (2048, 1024), true),
+    ((2048, 1536), (4096, 4096), false),
+    // E868: on their own maximum
+    ((2048, 240), (2048, 240), true),
+    ((256, 1536), (256, 1536), false),
+    ((768, 2048), (768, 2048), true),
+    ((1280, 768), (1280, 768), true),
+    ((1024, 1024), (1024, 1024), true),
+    ((1024, 512), (1024, 512), false),
+    ((1184, 768), (1184, 768), true),
+    ((1024, 800), (1024, 800), true),
+];
+
+/// How the job ends at target `w` x `h` on a context made for `mw` x `mh` with `p` parameter-buffer
+/// pages, where a run decides it: a cell that completed at P 0x422 completes when its scene fits
+/// and ends in -ENOSPC when it does not (E866, H-ENOSPC4 at four sizes); a cell that faulted is a
+/// fault at P 0x422 only, where it ran. `None` elsewhere (Q292).
+pub fn four_array_4x_ending(w: u32, h: u32, mw: u32, mh: u32, p: u32) -> Option<Ending4x> {
+    let &(_, _, fault) = FOUR_ARRAY_4X.iter().find(|(t, m, _)| *t == (w, h) && *m == (mw, mh))?;
+    if fault {
+        return (p == PB_PAGES_DEFAULT).then_some(Ending4x::Fault);
+    }
+    let fits = p.saturating_sub(PB_FIXED_RESERVE) >= full_triangle_4x_pages(w, h);
+    Some(if fits { Ending4x::Complete } else { Ending4x::Enospc })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -201,6 +277,93 @@ mod tests {
         assert_eq!(dword36_from_abort_counts(&[7]), 5);
         assert_eq!(dword36_from_abort_counts(&[1, 1, 2, 2, 2]), 0);
         assert_eq!(dword36_from_abort_counts(&[1, 2, 1]), 0);
+    }
+
+    #[test]
+    fn the_4x_full_triangle_needs_u4_pages_at_every_measured_size() {
+        // E824's dumps, E845's s0, E866's boundaries and E867's, E868's completed rows
+        let needs = [
+            ((288, 144), 12),
+            ((512, 384), 49),
+            ((640, 480), 76),
+            ((256, 1536), 97),
+            ((1024, 512), 129),
+            ((1024, 768), 193),
+            ((1280, 1024), 321),
+            ((2048, 1536), 769),
+        ];
+        for ((w, h), u) in needs {
+            assert_eq!(full_triangle_4x_pages(w, h), u, "{w}x{h}");
+        }
+    }
+
+    #[test]
+    fn a_4x_overflow_ends_in_enospc_one_page_short_of_the_need_e866() {
+        // E866 [HW]: H-ENOSPC4 held, 6 of 6 (o4, o5 replicate E846; o6 to o9 held out)
+        let rows = [
+            ((1024, 768), 0xe3, Ending4x::Complete),
+            ((1024, 768), 0xe2, Ending4x::Enospc),
+            ((288, 144), 0x23, Ending4x::Enospc),
+            ((640, 480), 0x6e, Ending4x::Complete),
+            ((640, 480), 0x6d, Ending4x::Enospc),
+            ((512, 384), 0x53, Ending4x::Complete),
+            ((512, 384), 0x52, Ending4x::Enospc),
+        ];
+        for ((w, h), p, end) in rows {
+            assert_eq!(four_array_4x_ending(w, h, w, h, p), Some(end), "{w}x{h} at {p:#x}");
+        }
+    }
+
+    #[test]
+    fn the_4x_fault_follows_the_contexts_maximum_and_no_size_rule_e867_e868() {
+        // E867 [HW]: the faulting 1280x1024 completes on a context made for a larger maximum with
+        // more tail room (m1, m2, m4) and faults when only the region buffer grows (m3)
+        let m = [
+            ((1024, 768), (2048, 2048), Ending4x::Complete),
+            ((1280, 1024), (1280, 1040), Ending4x::Complete),
+            ((1280, 1024), (2048, 2048), Ending4x::Complete),
+            ((1280, 1024), (2048, 1024), Ending4x::Fault),
+            ((2048, 1536), (4096, 4096), Ending4x::Complete),
+        ];
+        for ((w, h), (mw, mh), end) in m {
+            assert_eq!(
+                four_array_4x_ending(w, h, mw, mh, PB_PAGES_DEFAULT),
+                Some(end),
+                "{w}x{h} on {mw}x{mh}"
+            );
+        }
+        // E868 [HW]: on its own maximum; E845, E869: 1280 x 1024 and 2048 x 1536 fault
+        let own = [
+            ((2048, 240), true),
+            ((256, 1536), false),
+            ((768, 2048), true),
+            ((1280, 768), true),
+            ((1024, 1024), true),
+            ((1024, 512), false),
+            ((1184, 768), true),
+            ((1024, 800), true),
+            ((1280, 1024), true),
+            ((2048, 1536), true),
+        ];
+        for ((w, h), fault) in own {
+            let end = if fault { Ending4x::Fault } else { Ending4x::Complete };
+            assert_eq!(four_array_4x_ending(w, h, w, h, PB_PAGES_DEFAULT), Some(end), "{w}x{h}");
+        }
+    }
+
+    #[test]
+    fn an_unmeasured_4x_cell_is_refused_and_a_faulting_one_only_at_the_measured_buffer() {
+        // no rule of E868's eleven survives, so nothing is interpolated: neighbours of measured
+        // cells, a measured target on another maximum, a faulting cell at another P
+        for (w, h, mw, mh) in
+            [(1088, 768, 1088, 768), (1024, 832, 1024, 832), (1280, 1024, 1536, 1536), (64, 64, 128, 128)]
+        {
+            assert_eq!(four_array_4x_ending(w, h, mw, mh, PB_PAGES_DEFAULT), None, "{w}x{h} on {mw}x{mh}");
+        }
+        assert_eq!(four_array_4x_ending(1280, 1024, 1280, 1024, 0x200), None);
+        // E828, E846: the 4096-wide faults also overflow; measured at the default buffer only
+        assert_eq!(four_array_4x_ending(4096, 4096, 4096, 4096, PB_PAGES_DEFAULT), Some(Ending4x::Fault));
+        assert_eq!(four_array_4x_ending(4096, 1152, 4096, 1152, PB_PAGES_DEFAULT), Some(Ending4x::Fault));
     }
 
     #[test]
