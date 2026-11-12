@@ -1275,6 +1275,19 @@ def test_tri_full_and_z_set_the_triangle():
     assert re.search(r"^tri 64x32 #1: 2048 triangle, 0 background", r.stdout, re.M), r.stdout
 
 
+def test_tri_odd_width_prints_every_pixel():
+    # the row pitch is rounded up to even pixels (the PBE line stride's unit); the image
+    # read back skips the pad pixel: 18 rows of 19 values, every one the triangle's
+    r = run("--mock", "tri", "--width", "19", "--height", "18", "--tri-full", "--pixels")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "diff: 0 of 342 pixels" in r.stdout, r.stdout
+    assert "outside: 0 dwords" in r.stdout, r.stdout
+    rows = re.findall(r"^row \d+:(.*)$", r.stdout, re.M)
+    assert len(rows) == 18
+    assert all(row.split() == ["0xff00ff00"] * 19 for row in rows), rows
+    assert re.search(r"^tri 19x18 #1: 342 triangle, 0 background", r.stdout, re.M), r.stdout
+
+
 @pytest.mark.parametrize("z", ["1", "1,2", "a,b,c", "0.1,0.2,0.3,0.4", "-0.5,0,0", "0,0,1.5", ""])
 def test_tri_z_is_checked(z):
     r = run("--mock", "tri", "--tri-z", z)

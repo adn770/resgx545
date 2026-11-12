@@ -111,6 +111,17 @@ def test_a_triangle_probe_emits_the_pages_the_vdm_reads(tmp_path):
     assert vdm[4] == 0xF0000000 and vdm[5] == 0x3FFFFF
 
 
+def test_an_odd_width_probe_emits_the_even_row_pitch(tmp_path):
+    prog = tmp_path / "pix.bin"
+    prog.write_bytes(bytes(8))
+    out = tmp_path / "tri.json"
+    r = run("probe", "--tri", "pixel", "--width", "33", "--height", "17", "--emit-scene",
+            str(out), str(prog))
+    assert r.returncode == 0, r.stdout + r.stderr
+    t = json.loads(out.read_text())["target"]
+    assert (t["w"], t["h"], t["stride"]) == (33, 17, 4 * 34)
+
+
 def test_the_triangle_probe_words_follow_the_pokes(tmp_path):
     base = probe_scene(tmp_path)
     s = probe_scene(tmp_path, "--blk", "6=0x427f8000", "--vdm", "4=0x0")
