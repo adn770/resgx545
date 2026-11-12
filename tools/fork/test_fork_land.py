@@ -149,6 +149,17 @@ def test_recheck_dry_run_runs_the_real_script_and_records_nothing(world):
     assert not pathlib.Path(w["env"]["FORK_PASS_FILE"]).exists()
 
 
+def test_recheck_dry_run_keeps_an_earlier_pass_file(world):
+    # round 6: a dry run after the real one removed its pass file, so the module of the
+    # checked tip was delivered as checked=forced and the landing had nothing to read
+    w = world
+    p = pathlib.Path(w["env"]["FORK_PASS_FILE"])
+    p.write_text(w["c2"] + "\n")
+    r = recheck(w, None, CHECK_DRY_RUN="1")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert p.read_text() == w["c2"] + "\n"
+
+
 def test_recheck_refuses_an_unknown_tip(world):
     w = world
     r = subprocess.run([str(RECHECK), w["base"], "0" * 40], cwd=w["home"], env=w["env"],

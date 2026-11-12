@@ -45,7 +45,8 @@ REMOTE=check-${TIP:0:12}.sh
 n=$(git rev-list --count "$BASE..$TIP")
 [ "$n" -gt 0 ] || { echo "recheck.sh: $BASE..$TIP is empty" >&2; exit 1; }
 
-rm -f "$PASSFILE"                       # a stale pass never outlives a new run
+# a stale pass never outlives a new run; a dry run checks nothing and leaves it
+[ -n "${CHECK_DRY_RUN:-}" ] || rm -f "$PASSFILE"
 # a bundle needs a ref to name: a temporary one, removed again
 git update-ref refs/fork-recheck/tip "$TIP"
 git bundle create - "refs/fork-recheck/tip" "^$BASE" 2>/dev/null |

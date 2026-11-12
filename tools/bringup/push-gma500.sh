@@ -5,8 +5,13 @@
 # SGX_BUILD_HOST=target the laptop builds the module itself, in its own kernel tree through
 # sgx-build (the toolchain root the kernel was built with), and installs it from there.
 #
-#   usage: [SGX_RENDER=0] [SGX_DRY_RUN=1] tools/bringup/push-gma500.sh [--no-reboot]
+#   usage: [SGX_RENDER=0] [SGX_DRY_RUN=1] tools/bringup/push-gma500.sh [--ko FILE] [--no-reboot]
 #
+# --ko FILE installs that module instead of building one: a module delivered from a checked
+# fork tip (tools/fork/deliver-module.sh), checked against the sha256 of the manifest beside
+# it when there is one. The install is install-module.sh on the laptop (old module and
+# initramfs kept under the old srcversion, vermagic checked, initramfs verified); --no-reboot
+# stops there.
 # The test kernel boots with gma500_gfx.sgx_render=1 (the render node the tests use) unless
 # SGX_RENDER=0 asks for the gate-off boot (no render node, card0 answers only DEV_QUERY).
 # The installed kernel is 7.3.0-sgx with LOCALVERSION_AUTO off, so a module built with an
@@ -48,6 +53,16 @@ else
 fi
 NC_PORT=${SGX_NETCONSOLE_PORT:-6666}
 MOD=drivers/gpu/drm/gma500/gma500_gfx.ko
+usage() { echo "usage: push-gma500.sh [--ko FILE] [--no-reboot]" >&2; exit 2; }
+KO_FILE= REBOOT=1
+while [ $# -gt 0 ]; do
+	case $1 in
+	--no-reboot) REBOOT= ;;
+	--ko) [ $# -ge 2 ] || usage; KO_FILE=$2; shift ;;
+	*) usage ;;
+	esac
+	shift
+done
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 
@@ -60,7 +75,13 @@ run() {
 }
 on_target() { run ssh ${TOPTS[@]+"${TOPTS[@]}"} "$TARGET" "$@"; }
 
-if [ "$BUILD" = target ]; then
+SHA=
+if [ -n "$KO_FILE" ]; then
+	manifest=$(dirname "$KO_FILE")/manifest
+	[ -f "$manifest" ] && SHA=$(sed -n 's/^sha256=//p' "$manifest")
+	run scp -q ${TOPTS[@]+"${TOPTS[@]}"} "$KO_FILE" "$TARGET:/tmp/gma500_gfx.ko"
+	KO=/tmp/gma500_gfx.ko
+elif [ "$BUILD" = target ]; then
 	on_target "SGX_KERNEL_TREE=$KTREE sgx-build kernel make ARCH=i386 -j$JOBS \
 		M=drivers/gpu/drm/gma500 >/dev/null &&
 		strings $KTREE/$MOD | grep -q \"^vermagic=$KREL \""
@@ -74,11 +95,9 @@ else
 	KO=/tmp/gma500_gfx.ko
 fi
 run scp -q ${TOPTS[@]+"${TOPTS[@]}"} "$SCRIPTS/boot-test-kernel.sh" "$SCRIPTS/test-session.sh" \
-	"$TARGET:"
-on_target "sudo install -m644 $KO \
-	/usr/lib/modules/$KREL/kernel/$MOD && sudo depmod $KREL &&
-	sudo mkinitcpio -p $KPKG >/dev/null 2>&1"
-[ "${1:-}" = --no-reboot ] && exit 0
+	"$SCRIPTS/install-module.sh" "$TARGET:"
+on_target "sudo ./install-module.sh $KO $KREL $KPKG${SHA:+ $SHA}"
+[ -n "$REBOOT" ] || exit 0
 
 on_target "sudo ./boot-test-kernel.sh ${SGX_RENDER:-1} $KPKG >/dev/null" || true
 run sleep 15
