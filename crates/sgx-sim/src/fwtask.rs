@@ -23,8 +23,9 @@ use std::collections::BTreeMap;
 pub const STR_OK: [(u32, u32); 2] = [(0x0814, 0x1_ffff), (0x0a78, 0x3f)];
 /// And may `ldr`: CORE_ID, CORE_REVISION, CR_TIMER, and the two above. The first two and CR_TIMER
 /// are read as the vector seeded them (CR_TIMER never advances); no vector of the 318 reads CORE_ID
-/// or CORE_REVISION, so unit tests alone cover them.
-pub const LDR_OK: [u32; 5] = [0x001c, 0x0020, 0x0144, 0x0814, 0x0a78];
+/// or CORE_REVISION, so unit tests alone cover them. Since round 7 (R7-4, E864) also
+/// CR_DPM_PAGE_STATUS (0x0724) and CR_DPM_GLOBAL_PAGE_STATUS (0x072c), read as seeded, never written.
+pub const LDR_OK: [u32; 7] = [0x001c, 0x0020, 0x0144, 0x0724, 0x072c, 0x0814, 0x0a78];
 /// The widest immediate index of `ldr` and `str` (14 bits); a wider one is no alias of a register.
 const INDEX_MAX: u32 = 0x3fff;
 
@@ -161,6 +162,21 @@ mod tests {
         assert_eq!(b.reg_read(7).unwrap(), 0x0115_0000);
         assert!(matches!(b.reg_read(8), Err(Error::Unsupported { .. })), "CORE_REVISION not seeded");
         for off in [0x0000u32, 0x0004, 0x0810, 0x0818, 0x0520] {
+            assert!(matches!(b.reg_read(off / 4), Err(Error::Unsupported { .. })), "{off:#x}");
+        }
+    }
+
+    #[test]
+    fn the_two_dpm_page_status_registers_are_read_only_and_only_when_seeded() {
+        let mut b = bus();
+        for off in [0x0724u32, 0x072c] {
+            assert!(matches!(b.reg_read(off / 4), Err(Error::Unsupported { .. })), "{off:#x} unseeded");
+            b.seed_reg(off, 0x0123_0045);
+            assert_eq!(b.reg_read(off / 4).unwrap(), 0x0123_0045, "{off:#x}");
+            assert!(matches!(b.reg_write(off / 4, 1), Err(Error::Unsupported { .. })), "{off:#x} str");
+        }
+        for off in [0x0720u32, 0x0728, 0x0730, 0x0734] {
+            b.seed_reg(off, 1);
             assert!(matches!(b.reg_read(off / 4), Err(Error::Unsupported { .. })), "{off:#x}");
         }
     }
