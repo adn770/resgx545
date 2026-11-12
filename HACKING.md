@@ -441,6 +441,15 @@ pushed before `tools/clean-room/guard.py --history` has run over every ref.
 - Commit style is the one under Commits. The test-cycle scripts and their settings are in
   `tools/bringup/` (`local.env.example`).
 
+## Waiting on work
+
+- Run long work in the background and wait for its completion notice; do not poll.
+- If a wait is needed, use `tools/waitfor.py --pid N` (or `--pidfile F`, or `--file F`) with a
+  `--timeout SECONDS` (exit 0 met, 124 timeout). `tools/closing/session_tests.sh` names its
+  pidfile (`$TARGET/session_tests.pid`) in its first output line.
+- Never poll process names with `pgrep -f` (it matches the waiting shell's own command line, so
+  the loop never ends), and never write a wait loop without a timeout.
+
 ## Markdown
 
 Wrap lines at 100 characters and break long sentences at natural points.
