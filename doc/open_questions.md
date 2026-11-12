@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-172 open: 162 hw (high 19, medium 76, low 67, unrated 0), 9 fw, 1 kernel.
+170 open: 160 hw (high 19, medium 75, low 66, unrated 0), 9 fw, 1 kernel.
 
 ## Work queue: hardware
 
@@ -39,7 +39,6 @@
 - `Q196` (phase 11, hw, low): do the client results of 11.36 for the compare and the high word of ima32 (E595, E597), the predicated register moves and ba (E596) and the narrow memory forms (E598, E599) hold in a firmware (EDM) task (E595, E596, E597, E598, E599, E601)
 - `Q290` (phase 11, hw, low): what does a write to CR_EVENT_KICK with the kicker word unchanged start in the EDM (E834: no event and no command read, before or after a 504 ms timeout or a later served kick, yet every tick after it arrives latched, pa2 0x01061a74, with CR_CLKGATESTATUS reading 0x000ccfa0 and the event queue empty, for at least 500 ms and through a served kick, until a reset), and is the count byte pa1 bits 31:24 the kick events delivered to the EDM or the commands read (E834: neither W nor a count of CR_EVENT_KICK writes; they agree in every frozen row, E835's unread kick pass was followed by K 3 post hoc) (E746, E747, E768, E794, E819, E834, E835)
 - `Q294` (phase 11, hw, low): which of bits 4, 7 and 10 of the sa65 word of E537 (0xb009c5dc, without bit 8) stop the tick through the closed task (E814: that word stopped it without E537's marks; E812: the count byte 0xb0 and bits 2, 3, 6, 14 to 16, 19 and 23 alone keep it), and does the closed task's path depend on the tick bit of sa64 alone (E812: sa64 = pa0 & ~2 on 50 passes keeps the tick, leaves pclink at 6 and does not advance dword 12; no sa64 word other than 0, 2 and pa0 & ~2 has run) (E537, E792, E812, E814)
-- `Q295` (phase 11, hw, medium): what keeps the EDM's 3D lockup check armed after slot 3's end-of-render pass when our task skips the closed handler and ends the pass with the phase end (E836, E849: the tick stopped after exactly 20 slot 0 passes after the fill's kick, 2 x hw_recovery_sample_rate, with the lockup marks set, 1 job read post hoc), is the count in passes or in time, and why does the EDM stop after flagging the lockup (E823, E835, E836, E837, E849)
 
 ### isp
 
@@ -103,8 +102,7 @@
 
 - `Q001` (phase 3, hw, medium): what do 0x0810, 0x0814 and 0x0818, set once by the init script to 0x1, 0xffff and 0x7ff, control? (E006, E010, E122, E401, E403, E404, E405)
 - `Q075` (phase 11, hw, low): what does each HWPerf counter the firmware records (0x0044-0x0064, 0x0e84-0x0e90 and 0x0eb4-0x0ec0) count, and how does the group in CR_HWPERF_CTRL select them? (E149, E150, E152, E359, E434)
-- `Q111` (phase 11, hw, high): which hardware event sets which bit of CR_EVENT_STATUS and CR_EVENT_STATUS2 in an ordinary TA, 3D, DPM or transfer job, and how long does each stay set (what a write to CR_EVENT_HOST_CLEAR clears is Q166)? (E006, E154, E155, E357, E431, E435, E444, E547, E548, E747, E764, E765, E766, E823, E837)
-- `Q166` (phase 11, hw, low): what does a write to CR_EVENT_HOST_CLEAR clear, beyond the bit 18 of E823 (is it the bits written and no others, on more than one job and bit, and does a write of a bit that stays set until an acknowledge clear it) (E547, E548, E821, E822, E823, E837)
+- `Q111` (phase 11, hw, high): which hardware event sets which bit of CR_EVENT_STATUS and CR_EVENT_STATUS2 in an ordinary TA, 3D, DPM or transfer job, and how long does each stay set, and what does a host write of a bit other than 15 and 18 to CR_EVENT_HOST_CLEAR clear? (E006, E154, E155, E357, E431, E435, E444, E547, E548, E747, E764, E765, E766, E823, E837, E855, E857)
 
 ### render
 

@@ -33,16 +33,22 @@
 #     to an agent worktree that no longer exists or to the author's absolute paths);
 #   - each sibling-src/<dir>/ of the session (inputs it read from scratch beside it) is copied
 #     to scratch/resgx545/closing3/<dir>;
+#   - a frozen input the session read from scratch outside every tree (an absolute path under
+#     scratch/resgx545/ that no FROZEN.commits line pins: a plan, a reading of the firmware) is
+#     copied from its published copy, cited/<path> of the data repository or of the private one,
+#     to scratch/resgx545/<path>, and the copy's freeze points there (no copy: the freeze fails);
 #   - the entry is tests/run_all.sh, else tests/run_mock.sh, else tests/run_mock.py.
 #
 # Environment: PY (the python the tests use; default <tool>/.venv/bin/python, else python3),
 # RESGX545_TOOL (the tool repository; default this checkout), RESGX545_DATA (default
-# ../resgx545-data beside the tool repository), RESGX545_SESSION_TARGET (default
+# ../resgx545-data beside the tool repository), RESGX545_DATA_PRIVATE (default
+# ../resgx545-data-private; only its cited/ copies are read), RESGX545_SESSION_TARGET (default
 # scratch/resgx545/session-target beside the tool repository), KEEP=1 (keep the scratch tree and
 # print it).
 HERE=$(cd "$(dirname "$0")" && pwd)
 TOOL=$(cd "${RESGX545_TOOL:-$HERE/../..}" && pwd)
 DATA=$(cd "${RESGX545_DATA:-$TOOL/../resgx545-data}" 2>/dev/null && pwd)
+DATAP=$(cd "${RESGX545_DATA_PRIVATE:-$TOOL/../resgx545-data-private}" 2>/dev/null && pwd)
 TARGET=${RESGX545_SESSION_TARGET:-$(dirname "$TOOL")/scratch/resgx545/session-target}
 die() { echo "session_tests: $*" >&2; exit 2; }
 
@@ -194,10 +200,37 @@ for f in "$C"/FROZEN*.sha256; do
         }
         print @lines;' < "$f" > "$f.new" && mv "$f.new" "$f"
 done
+# a frozen input read from scratch outside every tree (a plan, a reading of the firmware), named by
+# an absolute path under scratch/resgx545/ and pinned by no FROZEN.commits line, is published as
+# cited/<path> of a data repository: the copy is put at its scratch place and the freeze points
+# there
 for f in "$C"/FROZEN*.sha256; do
     [ -f "$f" ] || continue
-    R=$R D=$HOMEDIR/src/resgx545-data perl -pe \
-        's{^([0-9a-f]{64} [ *])/(?:[^/]+/)*?resgx545-data/}{$1$ENV{D}/}
+    while read -r hash path; do
+        case "$path" in /*/scratch/resgx545/*) ;; *) continue ;; esac
+        [ -f "$COMMITS" ] && grep -q "^$hash " "$COMMITS" && continue
+        rel=${path#*/scratch/resgx545/}
+        [ -e "$S/$rel" ] && continue
+        for d in "$DATA" "$DATAP"; do
+            if [ -n "$d" ] && [ -f "$d/cited/$rel" ]; then
+                mkdir -p "$S/$(dirname "$rel")" && cp "$d/cited/$rel" "$S/$rel"
+                break
+            fi
+        done
+    done < "$f"
+    S=$S P="$COMMITS" perl -e '
+        my %pin;
+        if (open my $c, "<", $ENV{P}) { while (<$c>) { $pin{$1} = 1 if /^([0-9a-f]{64})\s/ } }
+        while (<STDIN>) {
+            s{^([0-9a-f]{64})( [ *])/(?:[^/]+/)*?scratch/resgx545/}{$1$2$ENV{S}/} unless $pin{substr($_, 0, 64)};
+            print;
+        }' < "$f" > "$f.new" && mv "$f.new" "$f"
+done
+for f in "$C"/FROZEN*.sha256; do
+    [ -f "$f" ] || continue
+    R=$R S=$S D=$HOMEDIR/src/resgx545-data perl -pe \
+        'm{^[0-9a-f]{64} [ *]\Q$ENV{S}\E/}
+         || s{^([0-9a-f]{64} [ *])/(?:[^/]+/)*?resgx545-data/}{$1$ENV{D}/}
          || s{^([0-9a-f]{64} [ *])/(?:[^/]+/)*?resgx545/}{$1$ENV{R}/}' "$f" > "$f.new" \
         && mv "$f.new" "$f"
 done

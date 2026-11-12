@@ -1,12 +1,12 @@
 +++
 id = "Q111"
-question = "which hardware event sets which bit of CR_EVENT_STATUS and CR_EVENT_STATUS2 in an ordinary TA, 3D, DPM or transfer job, and how long does each stay set (what a write to CR_EVENT_HOST_CLEAR clears is Q166)?"
+question = "which hardware event sets which bit of CR_EVENT_STATUS and CR_EVENT_STATUS2 in an ordinary TA, 3D, DPM or transfer job, and how long does each stay set, and what does a host write of a bit other than 15 and 18 to CR_EVENT_HOST_CLEAR clear?"
 unit = "platform"
 kind = "hw"
 value = "high"
 phase = 11
 evidence = ["E006", "E154", "E155", "E357", "E431", "E435", "E444", "E547", "E548", "E747", "E764",
-            "E765", "E766", "E823", "E837"]
+            "E765", "E766", "E823", "E837", "E855", "E857"]
 terms = ["CR_EVENT_STATUS", "CR_EVENT_STATUS2", "CR_EVENT_HOST_CLEAR", "CR_EVENT_HOST_ENABLE"]
 +++
 
@@ -25,8 +25,9 @@ write fault sets none. Q082 holds bits 6 and 7 and Q003 what a fault raises.
 Open: which hardware event sets each of the other bits in a job that runs to its end (the TA's end,
 the 3D's tiles and render, the DPM's page and state tasks, an out-of-memory overflow, a transfer),
 whether a bit is a pulse or a level, for how long it stays when nothing acknowledges it, in which
-order the bits of one job set (what a write to CR_EVENT_HOST_CLEAR clears is Q166). [infer] The firmware takes its work from these bits, so a simulator that runs it needs
-them.
+order the bits of one job set (what a write to CR_EVENT_HOST_CLEAR clears was a question of its
+own, answered by E857 for bits 15 and 18). [infer] The firmware takes its work from these bits,
+so a simulator that runs it needs them.
 
 To settle it: sample CR_EVENT_STATUS and CR_EVENT_STATUS2 at the finest sampling (`--regs` with
 regtimeline as in E435) through a fill, a copy, a triangle, a partial render and an overflowing
@@ -51,8 +52,8 @@ raised it is inferred from the enable written, not read, and a no is only that t
 interrupt (E548). Open: the order of the bits within a job (the firmware-task work of p1130 and a
 stored status word), the events whose pulses are under a sample (bits 6, 9, 20 of a triangle), the
 events of a transfer other than the fill's, an out-of-memory overflow with the DPM bits in the
-larger jobs, and what a write to CR_EVENT_HOST_CLEAR clears (moved to Q166: it needs a kernel
-change). Status: narrowed.
+larger jobs, and what a write to CR_EVENT_HOST_CLEAR clears (moved to a question of its own: it
+needs a kernel change; answered by E857). Status: narrowed.
 
 Offline reading of the timelines, 2026-11-09 (the dataset's `events-timelines.txt`, which lists
 the first-rise order of the bits per job; an analysis of existing data, not a new measurement). In
@@ -76,7 +77,7 @@ status bits read through the reversed order of E155 (pa1 bit = 22 minus the stat
 is the order of arrival at the EDM, not the order in which the registers rose; no status register
 was read in those jobs, whether a bit is a pulse or a level is not shown, bits 26, 14 and 31 of E547
 never reached the EDM, and which event sets the other bits and what CR_EVENT_HOST_CLEAR clears
-(Q166) stay open.
+(then a question of its own, answered by E857) stay open.
 
 Post hoc note, S3 (2026-11-10, dataset render-closing-s3; timeline rows read after the scoring, 1
 run each). For a BIF fault the status bit that follows it, `CR_EVENT_STATUS2` bit 7 or 6, sets 121
@@ -96,15 +97,30 @@ the 4 to 6 microseconds of E547 are the firmware's acknowledgement [infer, one j
 bits' pulse or level, the firmware route (B2 not run), the order of bits.
 
 Note 2026-11-11 (round 4, decision R4-3): the clause on what a write to `CR_EVENT_HOST_CLEAR` clears
-is Q166's alone and is cut from this question's line; Q166 is retyped from kernel to hw (low). E821
+is the CLEAR question's alone and is cut from this question's line; that question is retyped from
+kernel to hw (low). E821
 and E822 answer `CR_EVENT_HOST_CLEAR2` (the bits written are the bits cleared, 3 of 3 rounds by the
 host and by a task's `str`).
 
 Narrowed 2026-11-11 (round 4 session r4-events, stage e3p, E837; not retired, and the line is not
-reworded: round 4's rule rewords it only when Q166's clears hold in 3 of 3 jobs, and one ran). With
+reworded: round 4's rule rewords it only when the CLEAR question's clears hold in 3 of 3 jobs, and
+one ran). With
 the slot 3 end-of-render handler skipped and the watch started at the slot 3 entry, bit 18
 (`PIXELBE_END_RENDER`) read set in 7 of 7 reads over 54 ms and two seconds later (H-LEVEL held out,
 1 job; E823's 8 of 9 the other), and never in the control fill without the skip (9 of 9 clear):
 bit 18 is a level until cleared, and its 4 to 6 us pulses in ordinary jobs are the closed
 handler's acknowledgement [infer]. Open as before: the other bits' level or pulse, which event sets
 each, and their order within a job.
+
+Narrowed 2026-11-12 (round 5 session r5-events, E855 to E857; the question line is reworded, the
+question is not retired; user decision R5-7 a). The line asked "... how long does each stay set
+(what a write to CR_EVENT_HOST_CLEAR clears is Q166)?". The CLEAR question is answered by E857 and
+retired: a host write to `CR_EVENT_HOST_CLEAR` clears the bits written and no others that are set,
+bit 15 leaving bit 18 and `TIMER`, bit 18 clearing bit 18 alone, 3 of 3 with the EDM stopped
+(E855) and 3 of 3 with it running (E857), held out (H-W; H-ALL and H-NONE refuted), and bit 18
+(`PIXELBE_END_RENDER`) is a level from the slot 3 entry to the stop whenever the closed handler is
+skipped (E855, E856: 7 of 7 jobs, every watch read). Its other bits move here, as R5-7 (a)
+decided: what a write of any bit other than 15 and 18 clears, and a write against a status with
+other bits set (only `TIMER` and bit 18 were ever set when a CLEAR was written). Open as before:
+the other bits' level or pulse, which event sets each, their order within a job, and the clears
+of the other bits.

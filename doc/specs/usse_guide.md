@@ -572,8 +572,11 @@ The waits and modes on the hardware (E101) **[HW]**:
     with `idf, wdf, nop.end` stops it too (E813 B3), and ended with the `phas` keeps it, 2 of 2,
     its command left unread (read = write - 1) since the closed reader never ran (E835). Slot 3's
     end-of-render pass ended with the `phas` instead of the closed handler is finished too (10
-    ticks after it, E836), but the held render stops the tick within about 20 ms (1 job; Q295):
-    a task of ours skips no closed slot 3 handler. A stop reads the busy signature
+    ticks after it, E836), but the held render stops the tick 20 tick passes after the fill's kick,
+    whatever the tick's rate, with the lockup counted and the recovery requested (E855, E856: 7 of
+    7): the EDM's 3D lockup check, which the closed handler's end-of-render path would have ended
+    and which host clears of bit 18 and a command do not end (E857). A task of ours therefore
+    skips no closed slot 3 handler. A stop reads the busy signature
     (`CR_CLKGATESTATUS` 0x000ccfa0, `USE0_SERV_EVENT` bit 16 clear and its count frozen, the
     event timer counting, `CR_EVENT_STATUS` 0x20000000), answers no host command, and one debugfs
     reset recovers it; the signature cannot tell a stop from a long task (E811). The own end
@@ -5178,8 +5181,9 @@ open driver:
    `sa` (Q129); where a write past the allocation goes (Q132); what bounds a `phas` request
    and what a request above 256 allocates, which is [infer] at least 124 for 260 to 376, T = 101 to
    123 not run (Q133). What survives from one firmware task to the next beyond one writer's
-   `sa`, `r`, `i` and p (E809, E810; Q158), what stops the tick after a skipped slot 3 pass
-   (Q295) and the allocation of a firmware task above TRC 31 are not measured.
+   `sa`, `r`, `i` and p (E809, E810; Q158), whether a task that ends a skipped slot 3 pass and
+   clears the 3D lockup check's arm keeps the tick (the check is E855 to E857) and the allocation
+   of a firmware task above TRC 31 are not measured.
 
 The simulator (`crates/sgx-sim`) reproduces 30815 probe vectors (15526 of them with near values:
 float functions within their measured bound) and 448 pixel vectors; it stops on 2209 rather than

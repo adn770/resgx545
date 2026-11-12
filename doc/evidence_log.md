@@ -6410,6 +6410,48 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   `render-closing-r3-geo:out/g-c6/`, `render-closing-r3-geo:out/g-d36/`,
   `render-closing-r2-geo:out/g-c3/`, `render-closing-r2-geo:out/g-c2/`,
   `render-closing-r1-pixgeo:out/g-c1/`, `render-closing-r1-pixgeo:out/g-c1f/`.*
+- `E855` R5 stage h1 (r5-events, ring_skip3p.s of E836 at the stock timer_clock; Q295, Q166): the
+  fill without the skip (b0, control) completed with the tick alive, bit 18 never set and HostCtl
+  dwords 3 and 8 at 0 after the watch; with slot 3's first end-of-render pass skipped once and ended
+  with the phase end (b1p, b1p-r2, b1p-r3, held out, hold_recovery Y) the tick stopped in 3 of 3
+  jobs after exactly 20 slot 0 passes after the fill's kick entry, each stop with the lockup marks
+  (HostCtl dword 3 stop minus arm 1, dword 8 1, dword 9 0, dword 14 0, sw_events 1, TA3DCtl dword 57
+  0 and dword 58 0xaac267c2, CCB 3 and 3, CR_EVENT_STATUS 0x20040000 with bit 6 clear) and P3 not
+  answered; CR_EVENT_STATUS bit 18 read set in 9 of 9 watch reads of each job, and after the stop a
+  host write of bit 15 to CR_EVENT_HOST_CLEAR left it set and a write of bit 18 cleared it, in 3 of
+  3; frozen verdict 'H-HWR consistent (12 row groups), H-NOMARK REFUTED; H-TICKS consistent; H-LEVEL
+  consistent, H-PULSE REFUTED; H-W consistent (2 row groups), H-ALL REFUTED, H-NONE REFUTED', every
+  control passing (33), CR_DPM_TASK_STATE cannot tell (the rgn4 kernel never reads 0x0694).
+  *edm; HW, RE, infer; data: `edm-closing-r5-events:out/a1/h1/`,
+  `cited-scratch-private:cited/closing5/r6/`.*
+- `E856` R5 stage h2, the dose (r5-events, ring_skip3p.s; Q295): with HostCtl dword 6 set through
+  the timer_clock knob to 800000 and to 1600000 (read back and read in each arm dump), the fill
+  without the skip completed with the tick alive on a grid of 50000 and of 100000 CR_TIMER units
+  (b0a, b0b, controls; b0b the first measurement of E084's rule at 1600000), and with slot 3's first
+  end-of-render pass skipped once and ended with the phase end and no host write before the stop
+  (b1pa x2 at 800000, b1pb x2 at 1600000, held out) the tick stopped in 4 of 4 jobs after exactly 20
+  slot 0 passes after the fill's kick entry, about 40 and 80 ms after it, with the lockup marks of
+  E855 (HostCtl dword 3 stop minus arm 1, dword 8 1, sw_events 1, TA3DCtl dword 57 0 and dword 58
+  0xaac267c2, CR_EVENT_STATUS 0x20040000) and bit 18 set in every watch read; frozen verdict 'H-HWR
+  consistent (24 row groups), H-NOMARK REFUTED; H-TICKS consistent (2 row groups), H-TIME REFUTED;
+  H-LEVEL consistent (2 row groups), H-PULSE REFUTED' (H-TIME: 10 +-1 passes at 800000 and 5 +-1 at
+  1600000, the stop about 19.3 ms after the kick), every control passing (52).
+  *edm; HW, RE, infer; data: `edm-closing-r5-events:out/a1/h2/`,
+  `cited-scratch-private:cited/closing5/r6/`.*
+- `E857` R5 stage h3 (r5-events, ring_skip3p.s at timer_clock 1600000; Q295, Q166): the fill without
+  the skip (b0, control) completed with the tick alive and bit 18 never set; with slot 3's first
+  end-of-render pass skipped once and ended with the phase end (b1e, b1e-r2, b1e-r3, held out),
+  CR_EVENT_STATUS read 0x20040000 at the slot 3 entry, a host write of bit 15 to CR_EVENT_HOST_CLEAR
+  left bit 18 set and a write of bit 18 about 18 ms later cleared it (0x20000000), one GETMISCINFO
+  sent about 36 ms after the entry was answered in 147 to 206 us with its kick entry in the slot 0
+  ring and ticks after it (the EDM running), and still the tick stopped in 3 of 3 jobs after exactly
+  20 slot 0 passes after the fill's kick entry with the lockup marks (HostCtl dword 3 stop minus arm
+  1, dword 8 1, sw_events 1, TA3DCtl dword 58 0xaac267c2, CR_EVENT_STATUS 0x20000000, CCB 4 and 4);
+  frozen verdict 'H-STATE consistent (4 row groups), H-ACK18 REFUTED; H-TICKS consistent; H-LEVEL
+  consistent; H-W consistent (2 row groups), H-ALL REFUTED, H-NONE REFUTED', every control passing
+  (39), 51 of 51 non-control rows decided.
+  *edm; HW, RE, infer; data: `edm-closing-r5-events:out/a1/h3/`,
+  `cited-scratch-private:cited/closing5/r6/`.*
 
 ## By unit
 
@@ -6431,7 +6473,7 @@ E162, E163, E164, E165, E166, E167, E013, E168, E317, E319, E320, E321, E353, E4
 E450, E531, E532, E533, E536, E537, E538, E539, E540, E550, E600, E601, E602, E603, E604, E605,
 E746, E747, E748, E749, E750, E751, E752, E764, E768, E769, E771, E784, E791, E792, E793, E794,
 E804, E805, E806, E807, E809, E810, E811, E812, E813, E814, E816, E817, E818, E819, E830, E834,
-E835, E836, E839, E840, E841, E849.
+E835, E836, E839, E840, E841, E849, E855, E856, E857.
 
 ### firmware
 

@@ -8,11 +8,29 @@ use crate::Outcome;
 /// Open questions that block the unit. Q082: of the STATUS2 latches bit 6 of a 64 x 32 fill
 /// without a load (`status2_bit6`) and bit 7 of a vertex loop (`status2_bit7`, E839) have rules
 /// that held; bit 6 with a load or in a triangle stays refused (E805, E806, E840, E841).
-pub const OPEN: &[&str] = &["Q111", "Q033", "Q082", "Q166", "Q290"];
+pub const OPEN: &[&str] = &["Q111", "Q033", "Q082", "Q290"];
 
 /// A refusing stub until the unit's sub-phase lands: the model never guesses.
 pub fn refuse() -> Outcome {
     Outcome::unsupported("events are not modelled (12.6)", OPEN)
+}
+
+/// `CR_EVENT_STATUS` after a host write to `CR_EVENT_HOST_CLEAR` (0x0134): the bits written are
+/// cleared, on the rows measured. With the status 0x20040000 (`TIMER` and a held
+/// `PIXELBE_END_RENDER`) a write of bit 15 leaves bit 18 and a write of bit 18 clears it: E855 (3
+/// of 3, the EDM stopped) and E857 (3 of 3, the EDM running), after E823 and E837 (H-W; H-ALL
+/// and H-NONE refuted). Any other bit written, or another status, is refused (Q111).
+pub fn host_clear(status: u32, write: u32) -> Result<u32, Outcome> {
+    const MEASURED: u32 = 0x2004_0000;
+    if status != MEASURED || !(write == 1 << 15 || write == 1 << 18) {
+        return Err(Outcome::unsupported(
+            &format!(
+                "CR_EVENT_HOST_CLEAR write {write:#x} with CR_EVENT_STATUS {status:#x}: only bits 15 and 18 against {MEASURED:#x} were run (E855, E857)"
+            ),
+            &["Q111"],
+        ));
+    }
+    Ok(status & !write)
 }
 
 /// The work whose STATUS2 latch is asked about.
@@ -111,12 +129,35 @@ mod tests {
     use super::*;
 
     #[test]
-    fn the_open_list_holds_the_questions_still_open_not_the_ones_e746_answered() {
-        // E746 answered Q153 (the host-kick event) and Q157; the clear (Q166) stays open, and
-        // so does Q290, narrowed by E768 to whether the hardware counts the EVENT_KICK writes or
-        // reads the kernel's kicker word (sgx-sim's `event_count` counts the host kicks mod 256)
-        assert!(OPEN.contains(&"Q166") && OPEN.contains(&"Q290"));
+    fn the_open_list_holds_the_questions_still_open_not_the_answered_ones() {
+        // E746 answered Q153 (the host-kick event) and Q157, E857 the clear of CR_EVENT_HOST_CLEAR
+        // (its other bits are Q111's); Q290 stays open, narrowed by E768 to whether the hardware
+        // counts the EVENT_KICK writes or reads the kernel's kicker word (sgx-sim's
+        // `event_count` counts the host kicks mod 256)
+        assert_eq!(OPEN, &["Q111", "Q033", "Q082", "Q290"]);
         assert!(!OPEN.contains(&"Q153") && !OPEN.contains(&"Q157"));
+    }
+
+    #[test]
+    fn a_host_clear_of_bit_18_clears_it_and_of_bit_15_leaves_it() {
+        // E855 (h1, 3 of 3, the EDM stopped) and E857 (h3, 3 of 3, the EDM running), after
+        // E823 and E837: with CR_EVENT_STATUS 0x20040000 (TIMER and PIXELBE_END_RENDER held), a
+        // write of bit 15 to CR_EVENT_HOST_CLEAR leaves it, a write of bit 18 clears bit 18
+        assert_eq!(host_clear(0x2004_0000, 1 << 15), Ok(0x2004_0000));
+        assert_eq!(host_clear(0x2004_0000, 1 << 18), Ok(0x2000_0000));
+        assert_eq!(host_clear(0x2004_0000, 1 << 15).and_then(|s| host_clear(s, 1 << 18)), Ok(0x2000_0000));
+    }
+
+    #[test]
+    fn every_other_host_clear_is_refused() {
+        // other bits written, other bits set: Q111
+        let refused = |r: Result<u32, Outcome>| matches!(r, Err(Outcome::Unsupported { ref ids, .. }) if ids.iter().any(|i| i == "Q111"));
+        for w in [0, 1 << 6, 1 << 14, 1 << 29, (1 << 18) | (1 << 15), 0xffff_ffff] {
+            assert!(refused(host_clear(0x2004_0000, w)), "{w:#x}");
+        }
+        for s in [0x2000_0000, 0x2004_4000, 0x2004_0040, 0x0004_0000] {
+            assert!(refused(host_clear(s, 1 << 18)), "{s:#x}");
+        }
     }
 
     #[test]

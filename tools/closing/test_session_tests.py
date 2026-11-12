@@ -276,3 +276,34 @@ def test_a_frozen_list_of_the_freezes_own_paths_moves_with_them(world):
     assert r.returncode == 0, r.stdout + r.stderr
     assert "RUN_ALL PASSED" in r.stdout
     assert (s / "gen/sources.lst").read_text() == lst
+
+
+def test_frozen_scratch_inputs_are_read_from_their_published_copies(world, tmp_path):
+    """A session that froze inputs it read from scratch outside every tree (round 5's
+    r5-events: the plan, the decisions, and readings of the firmware) names them by absolute
+    path under scratch/resgx545/, with no FROZEN.commits pin. Each is published as
+    cited/<path> of resgx545-data or, derived from the firmware, of resgx545-data-private: the
+    runner puts the copy at its scratch place and points the freeze there."""
+    s = world[1] / "edm/closing-demo"
+    (world[1] / "cited/closing5/events").mkdir(parents=True)
+    (world[1] / "cited/closing5/events/plan.md").write_text("P\n")
+    priv = tmp_path / "data-private"
+    (priv / "cited/closing5/r6").mkdir(parents=True)
+    (priv / "cited/closing5/r6/reading.md").write_text("R\n")
+    run_all = RUN_ALL.replace(
+        'echo "RUN_ALL PASSED"',
+        '[ "$(cat ../../closing5/events/plan.md)" = P ] || { echo "plan"; exit 1; }\n'
+        'echo "RUN_ALL PASSED"')
+    (s / "tests/run_all.sh").write_text(run_all)
+    (s / "FROZEN.sha256").write_text(
+        f"{sha(run_all)}  tests/run_all.sh\n"
+        f"{sha(V1)}  /Users/someone/src/resgx545/tools/x.py\n"
+        f"{sha('P' + chr(10))}  /Users/someone/src/scratch/resgx545/closing5/events/plan.md\n"
+        f"{sha('R' + chr(10))}  /Users/someone/src/scratch/resgx545/closing5/r6/reading.md\n")
+    r = run(world, "edm/closing-demo", RESGX545_DATA_PRIVATE=str(priv))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "RUN_ALL PASSED" in r.stdout
+    # without the private copy the freeze does not verify: no silent pass
+    r = run(world, "edm/closing-demo", RESGX545_DATA_PRIVATE=str(tmp_path / "absent"))
+    assert r.returncode != 0
+    assert "freeze" in r.stdout
