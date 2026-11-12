@@ -5,7 +5,7 @@ unit = "dpm"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E828", "E824", "E845", "E846", "E866", "E867", "E868", "E869"]
+evidence = ["E828", "E824", "E845", "E846", "E866", "E867", "E868", "E869", "E870"]
 terms = ["Parameter Buffer (PB)", "CR_TE_AA", "CR_BIF_FAULT"]
 +++
 Split on 2026-11-11 from the laptop check R3-rgn4 (E828), job j4: with the fork's 4 MiB TA-data
@@ -111,3 +111,21 @@ x 1024, 1184 x 768, 1024 x 800, 2048 x 240, 768 x 2048, 2048 x 1536) complete wi
 and no region header off the rule, and the completed ones stay so. If it holds, E824 and E828 get
 corrections (their four-array layout lacks the tail room) and this question narrows to the extent's
 rule.
+
+Note 2026-11-12 (round 6, an offline reading, decision R6-1 a; E870; post hoc, one dump, not held
+out). The form of what a 4x job needs: H-TPM, the tail pointers one dword per tile of the doubled
+grid (16 x 8 pixels) at TA-data offset 4 x Z(x, y), Z-order with y on the even bits. On E869's held
+dump against E867's completed m1, the 1023 headers that lost their stream offset are exactly the
+1023 whose word 1 lies at an in-target tile's entry (0 extra, 0 missing; with x on the even bits
+426). "Fault iff 4 x (Z(2tx - 1, 2ty - 1) + 1) passes the `td.rgn` of the context's maximum" gives
+26 of 26 four-array outcomes on record, E868's included, but the planner had read all 26 before
+writing it and scored 16 variants on them (2 fit, the target's or the header grid's tiles, which
+no own-maximum size up to 2048 separates), so it is an offline check, not a test. What stays
+open: a held-out test of that rule (rows on the rgn4 kernel where it disagrees with every
+size rule, such as 1024 x 1280 completing on its own maximum, and held faults with the frozen
+set of lost offsets; closing6/render4x/exp-render4x-r6.md section 2), and to what E870 leaves
+unexplained: 189 word-0 losses at header-grid entries outside the target, bit 27 set on 914
+headers whose entry lies in the headers (in no completed dump), and the 4096-wide right blocks
+(E828, E846), which H-TPM does not give. If it holds, the room a 4x context needs is 4 x (Z(2tx -
+1, 2ty - 1) + 1) bytes, at most 4 x (2 side)^2, so the planned room (side doubled, four times the
+bytes) is a bound at every size.
