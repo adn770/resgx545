@@ -1,0 +1,9 @@
+title = "r7-rp q287: the stored (not 1.0f) dwords of the ZLS depth store's tile area and their extent per job at H 18, odd widths and the viewport twins (25 jobs)"
+repo = "data"
+paths = ["vectors/closing/r7-rp/zls-extents/"]
+method = "tools/usse-asm/closing_tables.py zls on the published render/closing-r7-rp session (stage q287 of its one attempt, out/20261112-205431), one file; rows are measurements, the table says its replay is the sgx-pipe test that holds every modelled row to the band (rule A: E831 at even sizes, E885 at odd heights, E903 at odd widths; the band's W the viewport's, E903's twins)"
+date = "2026-11-12"
+files = 1
+size = 9021
+sha256 = "7125cee8fb9228dd0c10a120037a0a6b70fe598be0c00e4422dbc10f722219d6"
+recipe = "tools/usse-asm/closing_tables.py"
