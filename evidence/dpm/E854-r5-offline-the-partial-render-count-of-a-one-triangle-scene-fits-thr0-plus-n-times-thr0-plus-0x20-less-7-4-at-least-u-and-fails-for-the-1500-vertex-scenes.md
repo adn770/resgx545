@@ -56,3 +56,10 @@ was seen before, and the older cells pass most of the grid (the 1024x768 cells n
 The rule needs a scene at a U other than 287 and 275, its cells frozen from a measured U, to stand;
 one cell of a one-triangle scene off the rule would refute it. What a partial render frees, and the
 count for scenes of many vertices or several triangles, stay open (Q211).
+
+**Correction 2026-11-12:** The rule failed its held-out test. Round 5's R5-dpm session ran two
+one-triangle scenes at U 119 and 198 (HU1's needs, measured as predicted) with cells frozen from
+them: the rule missed 3 of 10 and 1 of 10 cells, one partial render too many each time (E863).
+Read after that run, no member of the family scanned here fits U 287, 275, 198 and 119 together,
+so "for one-triangle scenes the count is a page quotient with spacing thr0 + 30.25" above does not
+hold beyond the scenes it was fitted on. The fit and its table stand as a fit.
