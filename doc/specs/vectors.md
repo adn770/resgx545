@@ -443,10 +443,11 @@ the 17 register words, the render box in 32 x 16 tiles, the pixel-event PDS prog
 through `sgx-sim` with ir1 = 6 on the last tile, the end-of-tile task and its emit to the PBE (pack
 modes 0 to 3), the pixel shader per pixel of every tile of the box and a copy's texel through
 `tex::sample`. The end-of-tile task stores its tile at the place its U1 tile fields name in
-half-tile units (E876, held out in E884), so a poke of the pixel-event program's U1 word or tile
-masks moves tiles, and a place past the target is cut by the PBE's rectangle. A command word or a
-task no record explains refuses (`Q206`, the words of a transfer with no record, a U1 bit outside
-the tile fields and a tile moved on both axes at once among them), a PDS program or input no record
+half-tile units (E876, held out in E884), each axis by its own field also when both move at once
+(E909, held out at 128 x 64), so a poke of the pixel-event program's U1 word or tile masks moves
+tiles, and a place past the target is cut by the PBE's rectangle. A command word or a task no
+record explains refuses (`Q206`, the words of a transfer with no record and a U1 bit outside the
+tile fields among them), a PDS program or input no record
 measured (a program that is not a template the records ran included) under `Q207`; `Q011` a copy's
 tag; `Q180` the iterator word; `Q066` the background object; `Q205` a copy's iterated coordinates;
 `Q078` the sampler words; `Q076` and `Q003` an access outside the scene's memory, and `Q003` also a
