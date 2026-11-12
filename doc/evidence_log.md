@@ -6748,6 +6748,22 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *zls; HW; data: `render-closing-r6-misc:out/20261112-152213/q287/`,
   `render-closing-r6-misc:out/20261112-144153/q287/`, `render-closing-r6-misc:freeze1/`,
   `render-closing-r6-misc:fold/`, `vectors-closing-r6-misc-zls`.*
+- `E886` R6-misc stage q086 (Q086, 10 of 21 4x jobs run, 11 skipped by the frozen fault budget, one
+  attempt): on contexts made for 4x targets (four region-header arrays) a render with CR_TE_MTILE1,
+  CR_TE_MTILE2 and CR_TE_MACROTILE_STRIDE poked over the kernel's completes exactly when the
+  macrotile grid the words describe (the last boundary plus one more macrotile of the first's size,
+  B3 + B1 tiles per axis) covers the target's 1x grid of 32 x 16 tiles: the six U2 and U2Q words,
+  whose grid covers it, completed 320 x 160 to 640 x 480 with 0 wrong pixels, the closed driver's 64
+  x 64 words (0x802002, 0x802002, 4) at 320 x 160 and E511's HS words (the target's single-sampled
+  words shifted right by one, 0x1004004 at both sizes) at 320 x 160 and 384 x 192, whose grid covers
+  4 or 8 tiles a side of the 10 or 12 needed, faulted the job on the 3D side (BIF fault requestor
+  256, word 0x10000011, 3 of 3), and the control (the rule's own words at 1024 x 768) completed with
+  0 wrong; frozen verdict 'H-COV held (9 of 9 held-out rows), H-ANY refuted (6 of 9); 11 rows not
+  run; control R passes'; read after the run, each faulted image holds the triangle (and one to two
+  tiles of background) inside the rectangle the words' grid covers and the sentinel everywhere past
+  it.
+  *ta; HW, infer; data: `render-closing-r6-misc:out/20261112-144153/q086/`,
+  `render-closing-r6-misc:fold/`.*
 
 ## By unit
 
@@ -6820,7 +6836,7 @@ Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
 E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763, E776, E777,
 E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828, E842, E847, E851, E859,
-E865, E872, E877.
+E865, E872, E877, E886.
 
 ### texture
 
