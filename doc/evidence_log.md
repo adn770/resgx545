@@ -7053,6 +7053,86 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   running timer), so it does not separate them and no Q294 laptop rows follow.
   *edm; HW, RE, infer; data: `render-closing-r6-held`, `edm-closing-r3x-events`,
   `cited-scratch-private`.*
+- `E909` R7-geo stage xf (Q206's both-fields clause, 10 fills at 128 x 64, no fault): with the
+  fill's end-of-tile DOUTU1 x field (bits 11:3) and y field (bits 21:12) XORed in one poke, H-INDEP
+  (each 32 x 16 tile t stored at (2t | f) >> 1 on each axis by that axis's own field, E884's rule
+  applied to both at once, nothing stored past the target) gave the tool's image hash in 8 of 8
+  held-out rows (x field 2 to 7 with y field 2 to 6), H-XFIRST (only the x field acts when both
+  move) and H-YFIRST (only the y field) 0 of 8 each; controls pass (E884's 128 x 64 x ^ 0x10 hash
+  0xa817f56116104325 and the baseline 0xf7befd67a3c8e325); frozen verdict 'Q206 both fields: H-INDEP
+  held (8 of 8 rows decided)'.
+  *transfer; HW; data: `render-closing-r7-geo:out/20261112-211113/xf/`,
+  `render-closing-r7-geo:fold/`.*
+- `E910` R7-geo stage tx, types 1, 3 and 4 (Q283; E725's 64 x 32 map-texture fill, dword i of the
+  texture 0xD0000000 | i, pixel (x, y) sampling texel (x mod w, y mod h); 11 held-out jobs and
+  E725's type 3 control, no fault): types 1 and 3 read a raster of the width (RASTERW) at 64 x 8 and
+  128 x 8 and type 1 at 4 x 16 (5 of 6 held-out rows), type 3 at 4 x 16 read none of the frozen
+  layouts (post hoc: a raster of 8 dwords a row); type 4 at 4 x 16 read stride 32 (S32 and SMAXW),
+  and at 64 x 8, 128 x 8, 64 x 32 and 128 x 32 none of S32, SMAXW, S2WCAP, RASTERW and RASTER2W
+  (post hoc: 32 x 32 blocks of 1024 dwords, columns 32 to 63 at +1024, in all 5 rows); FIX16 and S32
+  failed types 1 and 3 in 6 of 6; controls pass; frozen verdicts 'Q283 types 1 and 3 RASTERW held is
+  not supported: 5 held, 1 FAILED, 0 cannot tell of 6' and 'Q283 type 4 S32 held is not supported: 1
+  held, 4 FAILED, 0 cannot tell of 5'.
+  *texture; HW, infer; data: `render-closing-r7-geo:out/20261112-211113/tx/`,
+  `render-closing-r7-geo:fold/`.*
+- `E911` R7-geo stage tx, type 5 (Q178; E725's 64 x 32 map-texture fill, dword i of the texture
+  0xD0000000 | i; 6 jobs, no fault): TEXTYPE 5 reads the texture memory: with the program zeroing
+  the texture's first 112 dwords before its sample the 16 x 16 image is 0x00000000 in all 2048
+  pixels, with it setting them to 0xffffffff 0x0000ffff in all 2048, where the plain 16 x 16 control
+  gives E894's image (0 at x mod 16 below 8, 0x0000ffff above, every row alike), so H-STEP's premise
+  that the image does not follow the texture failed 2 of 2; at 32 x 32 and 64 x 64 the image is
+  E894's 16-column step again (H-FIX16, 2 of 3) and not a step at half the width (H-STEP, 0 of 3),
+  and at 8 x 8 it is constant along each row and alternates by row (0 in even rows, 0x0000ffff in
+  odd ones, post hoc), which neither rival predicted; frozen verdicts 'Q178 H-STEP (memory: the
+  image does not follow the texture) held is not supported: 0 held, 2 FAILED', 'Q178 type 5 H-STEP
+  held is not supported: 0 held, 3 FAILED' and 'Q178 type 5 H-FIX16 held is not supported: 2 held, 1
+  FAILED'.
+  *texture; HW, infer; data: `render-closing-r7-geo:out/20261112-211113/tx/`,
+  `render-closing-r7-geo:fold/`.*
+- `E912` R7-geo stages zd and zi (Q262; 128 jobs on 512 x 256, 640 x 480, 1024 x 768, 2048 x 1024
+  and 4096 x 4096, random triangles with vertices inside the target on the 1/256 grid and depth
+  planes of gradient below 0.03, no fault): E606's coverage rule drew every image and triangle count
+  (H-E606, 100 of 100 depth jobs and 24 of 24 iteration probes) and the depth store wrote the whole
+  tile area and nothing outside it (H-ZLS, 100 of 100), but the stored depth stayed within E606's 3
+  units of 2^-23 of the plane in 94 of 100 jobs (H-DEPTH; 9.01 units at most) and the iterated clip
+  z within 4 units in 21 of 24 (H-ITER; 11.09 at most); read after the run, each of the 6 depth
+  misses is a triangle covering 1 or 2 pixels, every job covering 5 pixels or more stayed within
+  2.64 units, and the 3 iteration misses are near-constant offsets of 3.6 to 5.8 units over 2 to 17
+  pixels; controls pass (E606's cases 412 and 1206, E680's 1024 x 768 case 1400246); frozen verdicts
+  'Q262 depth H-E606 held on every size (100 of 100 rows decided)', the same for H-ZLS, 'Q262 depth
+  H-DEPTH held on every size is not supported: 94 held, 6 FAILED', 'Q262 iteration H-E606 held (24
+  of 24 rows decided)' and 'Q262 iteration H-ITER held is not supported: 21 held, 3 FAILED'.
+  *isp; HW, infer; data: `render-closing-r7-geo:out/20261112-211113/zd/`,
+  `render-closing-r7-geo:out/20261112-211113/zi/`, `render-closing-r7-geo:fold/`.*
+- `E913` R7-geo stage zf (Q240; 242 depth jobs, no fault): on ten targets E606 did not run, 64 x
+  128, 128 x 64, 256 x 64, 128 x 96, 128 x 144, 32 x 16 and 16 x 8 (below one tile), 4096 x 16, and
+  the odd heights 64 x 33 and 96 x 47 (round 6's t6 tool), 12 small and 12 medium random triangles
+  each with vertices inside the target on the 1/256 grid, E606's coverage rule drew every image and
+  triangle count (H-E606, 240 of 240) and the depth store wrote the whole tile area and nothing
+  outside it (H-ZLS, 240 of 240), held out; the depth stayed within E606's 3 units of 2^-23 in 228
+  of 240 jobs (H-DEPTH; misses at every size but 128 x 64, 256 x 64 and 128 x 96, 15.90 units at
+  most), every miss a triangle covering 1 or 2 pixels (post hoc); controls pass (E606's cases 262 at
+  64 x 64 and 926 at 128 x 128: hash, triangle count and dump sha256); frozen verdicts 'Q240 family
+  H-E606 held on every size (240 of 240 rows decided)', the same for H-ZLS, and 'Q240 family H-DEPTH
+  held on every size is not supported: 228 held, 12 FAILED, 0 cannot tell of 240'.
+  *isp; HW, infer; data: `render-closing-r7-geo:out/20261112-211113/zf/`,
+  `render-closing-r7-geo:fold/`.*
+- `E914` R7-geo stage zs (Q260; 230 jobs on 512 x 256, vertices in 1/4096 pixel, no fault): no
+  frozen rounding is exact on the 143 held-out rows (half away from zero for negative coordinates,
+  HA, and SETUP with c = 7, the one c the -0.5 x sweep fits, 125 of 143; half up, HU, 121; HU with
+  the far side rounded half down, FAR, 119), and HU at +0.5 y and +64.5 x and y, the positive
+  mirror, gave 42 of 51; read after the run, the image changes one step after the 1/512 tie on the
+  sweeps at -0.5, -3.5 and -64.5 x and -0.5 and -3.5 y (the tie of a negative coordinate going away
+  from zero, every step of those five sweeps HA's), at the tie on the +0.5, +64.5 and far-side
+  sweeps (half up, FAR refuted 2 of 2 at the far tie), and not at all at -64.5 y; the 18 held-out
+  rows no rival matches (all 17 steps of -64.5 y and one of 24 non-tie cases) and the 9 mirror
+  misses (+64.5 y at and after the tie) differ from HU in 1 to 11 pixels, each within 6.4e-4 pixel
+  of an edge 258 to 313 pixels long; controls pass (E681's case 1400606, E683's case 1401234, the
+  +0.5 x sweep 17 of 17 under HU); frozen verdicts 'Q260 H-HA exact on the held-out rows is not
+  supported: 125 held, 18 FAILED' and 'HU at +0.5 y and +64.5 (the mirror) is not supported: 42
+  held, 9 FAILED'.
+  *isp; HW, infer; data: `render-closing-r7-geo:out/20261112-211113/zs/`,
+  `render-closing-r7-geo:fold/`.*
 
 ## By unit
 
@@ -7089,7 +7169,7 @@ E215, E216, E217, E218, E219, E220, E222, E224, E225, E226, E227, E228, E229, E2
 E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E290, E291, E330,
 E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E508, E510, E590,
 E606, E607, E618, E660, E661, E662, E680, E681, E682, E683, E684, E727, E728, E731, E739, E740,
-E741, E757, E758, E762, E825, E827, E829.
+E741, E757, E758, E762, E825, E827, E829, E912, E913, E914.
 
 ### mte
 
@@ -7133,12 +7213,12 @@ E865, E872, E877, E879, E886, E888, E893, E897.
 Records: E033, E034, E035, E036, E037, E038, E039, E040, E041, E042, E114, E116, E242, E254, E271,
 E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441, E560, E561, E562,
 E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E726, E733, E743,
-E744, E760, E765, E787, E844, E894.
+E744, E760, E765, E787, E844, E894, E910, E911.
 
 ### transfer
 
 Records: E015, E016, E018, E019, E020, E021, E022, E024, E027, E028, E272, E398, E455, E620, E766,
-E876, E884.
+E876, E884, E909.
 
 ### tsp
 

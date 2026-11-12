@@ -5,7 +5,7 @@ unit = "isp"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E606", "E072", "E465", "E731", "E741", "E758"]
+evidence = ["E606", "E072", "E465", "E731", "E741", "E758", "E912", "E913"]
 terms = []
 +++
 E606: the stored depth of covered pixels is within 1 unit (2^-23, absolute) of the exact plane at
@@ -77,3 +77,12 @@ pixels, -1 and -2 ulps), not on 256 x 192, not on 256 x 512 and not with the tri
 to -1 ulps). Post hoc (not held out): on 256 x 256 the deviating set is the covered pixels with x +
 y >= 319. Still open: what the presence depends on (not monotone in the target's height), the
 arithmetic, and why x + 2y on 256 x 128 and x + y on 256 x 256.
+
+Note 2026-11-12 (round 7, R7-geo, E912 and E913; no rule settled). On 15 targets other than
+E606's three, 18 of 340 random triangles of gradient below 0.03 stored a depth more than E606's 3
+units off the exact plane (up to 15.9 units, one or two pixels each), every one of them a triangle
+covering 1 or 2 pixels; the 138 jobs covering 5 pixels or more stayed within 2.64 units (read after
+the run). E606 reports 1.9 units at most for its own 529 triangles below 0.03, so the tolerance the
+simulator uses on E606's targets is not a bound for tiny triangles elsewhere; whether it is one on
+E606's targets is not measured. The iterated clip z of 3 of 24 medium triangles (E912) is offset by
+3.6 to 5.8 units, nearly constant over each triangle.
