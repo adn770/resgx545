@@ -628,6 +628,7 @@ either a refused status with a reason or a replayed one naming its test.
 | `vectors-closing-r3-geo-c-counts` | `r3-geo-c/counts/` | `counts` | g-qf 22, g-qh 8 (+ 6 void) | E832 |
 | `vectors-closing-r3-geo-c-zls` | `r3-geo-c/zls-extents/` | `zls` | g-z, 15 | E831 |
 | `vectors-closing-r6-misc-zls` | `r6-misc/zls-extents/` | `zls` | q287, 20 | E885 |
+| `vectors-closing-r7-rp-zls` | `r7-rp/zls-extents/` | `zls` | q287, 25 | E903 |
 | `vectors-closing-r3k-pixel-pb-pages` | `r3k-pixel/pb-pages/` | `pbpages` | k-f4, 10 dumps | E824 |
 
 - `depth`: per job the stored depth word and 1/w of each vertex of the first object of the render
@@ -643,10 +644,11 @@ either a refused status with a reason or a replayed one naming its test.
   (`the_band_replays_every_modelled_row_of_the_zls_tables`): per job, the pixels of the tile area
   that the job's triangle (the full-screen one, or the `--tri-v` of `cases.tsv` in the session's
   stage directory: `render/closing-r3-geo-c/out/g-z/`,
-  `render/closing-r6-misc/out/20261112-152213/q287/`) covers inside `zls::in_band` (rule A: E831 at
-  even sizes, E885 at odd heights) are the stored ones, and their count and extent equal the row's:
-  15 of 15 and 20 of 20 match, none refused. A row at an odd width would be counted as refused
-  (Q287), never as a pass; a table's `replay` says `replayed` only because no modelled row
+  `render/closing-r6-misc/out/20261112-152213/q287/`, `render/closing-r7-rp/out/20261112-205431/
+  q287/`) covers inside `zls::in_band` (rule A: E831 at even sizes, E885 at odd heights, E903 at
+  odd widths; the band's W twice the viewport's x scale where a job pokes it, E903's twins, else
+  the target's) are the stored ones, and their count and extent equal the row's: 15 of 15, 20 of 20
+  and 25 of 25 match, none refused. A table's `replay` says `replayed` only because no modelled row
   mismatched. The test skips without the data. sgx-sim does not model the band.
 - `pbpages`: per dump the non-zero 4 KiB pages of the parameter buffer, their runs, the TA data
   size and the tile count; refused, the page writes are not modelled (the page model the table

@@ -158,8 +158,8 @@ TAIL = """\
 - **zls**: nothing for the address rule (built). The formats 0 to 2 and the negation bit (E466,
   E490) have 22 dumps and no rule in `sgx-pipe`; loads (E467) have datasets (`zls/load-store`,
   `load-copy`) but no dump directory. The pixels past the target follow the band (E831) at even
-  sizes; overflow store (Q107), formats 3 to 7 (Q120), stencil order (Q121) and the band at odd
-  sizes (Q287) stay refused.
+  sizes and odd ones (E885, E903); overflow store (Q107), formats 3 to 7 (Q120) and stencil order
+  (Q121) stay refused.
 - **ta**: the region test, the object layout and its failures are built. Missing: the macrotile
   table of the target (a fitted table, `tiling3d.py`, right on 123 and 69 only: Q100, Q139, Q086),
   lines and points (rules in the dataset's recompute script, not coded: Q159 to Q161), the

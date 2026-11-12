@@ -188,14 +188,11 @@ fn kind_zls_store(v: &Json, ctx: &Ctx) -> Result<Modelled, String> {
     let ay = crate::data::dwords(&file(ctx, i.get("y"))?);
     let c = zls::check_store(w, h, g, &ax, &ay);
     let e = v.get("expect");
-    // pixels past the target hold the depth inside the band and the background past it (E831);
-    // at an odd width the band's edge is open (Q287, odd heights follow E885's rule A); the
-    // overflowed jobs' zero tiles and the background tiles after them are Q107's
+    // pixels past the target hold the depth inside the band and the background past it (E831,
+    // at odd heights E885 and odd widths E903); the overflowed jobs' zero tiles and the
+    // background tiles after them are Q107's
     let matched = c.at_rule + c.at_rule_outside + c.background_outside;
     let mut seen = Seen { matched, mismatched: c.other, ..Seen::default() };
-    if c.past_odd > 0 {
-        seen.refused.insert("Q287".into(), c.past_odd);
-    }
     if c.zero + c.background_tiles > 0 {
         seen.refused.insert("Q107".into(), c.zero + c.background_tiles);
     }
@@ -736,7 +733,7 @@ mod tests {
         got.seen.refused.insert("Q107".into(), 3);
         assert!(matches!(judge(&e, &got), Verdict::Mismatch(_)));
         let mut other = m(Outcome::Ok, 8, 0);
-        other.seen.refused.insert("Q287".into(), 2);
+        other.seen.refused.insert("Q242".into(), 2);
         assert!(matches!(judge(&e, &other), Verdict::Mismatch(_)));
     }
 

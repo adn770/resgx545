@@ -1,9 +1,9 @@
 title = "L1b g-z: the stored (not 1.0f) dwords of the ZLS depth store's tile area and their extent per job (15 jobs)"
 repo = "data"
 paths = ["vectors/closing/r3-geo-c/zls-extents/"]
-method = "tools/usse-asm/closing_tables.py zls on the published render/closing-r3-geo-c session, one file a stage; rows are measurements, the table says its replay is the sgx-pipe test that holds every modelled row to E831's band (regenerated 2026-11-12: the replay names the test of both zls tables and the band at odd heights, E885; the rows unchanged)"
+method = "tools/usse-asm/closing_tables.py zls on the published render/closing-r3-geo-c session, one file a stage; rows are measurements, the table says its replay is the sgx-pipe test that holds every modelled row to E831's band (regenerated 2026-11-12: the replay names the test of both zls tables and the band at odd heights, E885; the rows unchanged; again 2026-11-12: the model holds rule A at odd widths too, E903, and takes the band's W from the viewport)"
 date = "2026-11-10"
 files = 1
-size = 5486
-sha256 = "c996b19752494c9ac19c6fa0cc9c956a887c3d98bc55caed85060eb707686f58"
+size = 5513
+sha256 = "fbdd76b8698f599314cf018580bf96f5fa2bd75a3a2eba7a7432148e79073f5b"
 recipe = "tools/usse-asm/closing_tables.py"

@@ -1,11 +1,11 @@
 +++
 id = "Q276"
-question = "is a write to o4 to o7 stored at all in E709's command (state block word 4 at 0x00030001), now that their own words reach no pixel of any kept image (E871) and a read of them inside the instance (`mov r10, oN`, then o0 = r10) returned the word of o0 to o3, the register number modulo 4, whether o4 or o5 was written or not (E878, read post hoc: the frozen readback test is cannot tell), and does a predicate set by `xor.testtaz.chan0 !c0, p1, g25, #k` gate the write `p1 or.skipinv o4` (it gates o0's write per lane, and read post hoc o3's, E878)"
+question = "in E709's command (state block word 4 at 0x00030001), why is the o3 word in the tag-5 OR that of lane 0 of the quad in a job whose words carry x and of lane 1 in one whose words carry y (E880, held out), and what selects the lane"
 unit = "pds"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E709", "E570", "E406", "E742", "E759", "E772", "E808", "E838", "E850", "E858", "E081", "E871", "E878", "E880"]
+evidence = ["E709", "E570", "E406", "E742", "E759", "E772", "E808", "E838", "E850", "E858", "E081", "E871", "E878", "E880", "E905"]
 terms = ["PDS_SIZE.BITS17_16"]
 +++
 Q023 asks which lanes write o4 to o7 in the four-output-room setup. E709 guarded o4 by a test of g25
@@ -163,3 +163,20 @@ corrected). Open: whether an `o4` to `o7` write is stored anywhere (a frozen rer
 and x-rd-4 with the class share taken over the own-source words would decide the readback; if `o4`
 reads as `o0` there, nothing in this command observes an `o4` write and the predicate clause can be
 retired as not observable), and why the lane of the OR's `o3` word depends on the job.
+
+Narrowed 2026-11-12 (r7-rp p7-rdc and p7-rd, E905; the question line is reworded, the question is
+not retired). The line read "is a write to o4 to o7 stored at all in E709's command (state block
+word 4 at 0x00030001), now that their own words reach no pixel of any kept image (E871) and a read
+of them inside the instance (`mov r10, oN`, then o0 = r10) returned the word of o0 to o3, the
+register number modulo 4, whether o4 or o5 was written or not (E878, read post hoc: the frozen
+readback test is cannot tell), and does a predicate set by `xor.testtaz.chan0 !c0, p1, g25, #k`
+gate the write `p1 or.skipinv o4` (it gates o0's write per lane, and read post hoc o3's, E878)".
+The rerun with the class share taken over the own-source words held H-MOD4 (17 of 17 entries): R6's
+vector S S S A0 A4 A4 A4 replicated, the held-out x-rd-6, x-rd-7 and n-rd-5 read o2's, o3's and
+o1's words, the clean rows (only o0 and o_j written) read word A for o4 and no word of the job for
+o5 to o7, and cl-p4's predicated o4 write read word A on every lane. So no read of o4 to o7 shows a
+word of their own, and with E871 no image does: an o4 to o7 write is not observable in this
+command. Whether it is stored somewhere nothing reads has no finite test and is not pursued; the
+predicate clause is retired as not observable (R6-6 a, carried by the round 7 plan's user decision
+4 a). What is left is E880's clause: why the OR's o3 word comes from lane 0 in the x job and lane 1
+in the y job.

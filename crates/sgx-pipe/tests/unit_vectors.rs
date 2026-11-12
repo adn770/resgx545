@@ -102,7 +102,7 @@ fn the_counts_of_the_records_hold() {
     assert_eq!(rep.items_fitted["zls"], 3_225_000 + 54_132 + 1_124 + 7_864_320 + 983_040 + 103_709);
     assert_eq!(rep.items_refused["zls"]["Q107"], 128_640 + 6_656);
     assert_eq!((rep.units["zls"].refused["Q242"], rep.units["zls"].refused["Q120"]), (8, 3 + 1));
-    assert!(!rep.items_refused["zls"].contains_key("Q287"), "no odd size among E489's cases");
+    assert_eq!(rep.items_refused["zls"].len(), 1, "Q107's tiles only: E489's cases are even sizes");
     assert_eq!(rep.items_fitted["isp"], 773);
     assert_eq!(rep.items_refused["isp"]["Q141"], 13);
     // 14656 (primitive, tile) pairs of E542 and 56 of E541's jobs

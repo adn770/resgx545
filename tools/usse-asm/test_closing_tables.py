@@ -20,6 +20,7 @@ GEO = DATA / "render" / "closing-r3-geo"
 K = DATA / "render" / "closing-r3k-pixel"
 GEOC = pathlib.Path(os.environ.get("RESGX545_GEOC") or DATA / "render" / "closing-r3-geo-c")
 R6M = DATA / "render" / "closing-r6-misc"
+R7RP = DATA / "render" / "closing-r7-rp"
 
 HEAD = "name\tstage\tset\trisk\tP\tknobs\trt\targs\trc\tclass\tnote\n"
 
@@ -194,7 +195,8 @@ def test_zls_table_names_the_test_that_replays_it_and_others_stay_refused(tmp_pa
     t = ct.zls_table(d, "s")
     assert t["replay"]["status"] == "replayed"
     assert t["replay"]["test"].endswith("zls_table.rs::the_band_replays_every_modelled_row_of_the_zls_tables")
-    assert "E885" in t["replay"]["model"] and "odd widths" in t["replay"]["model"]
+    assert "E885" in t["replay"]["model"] and "E903" in t["replay"]["model"]
+    assert "viewport" in t["replay"]["model"] and "Q287" not in t["replay"]["model"]
     assert "reason" not in t["replay"]
     assert ct.counts_table(d, "s")["replay"]["status"] == "refused"
 
@@ -258,6 +260,23 @@ def test_r3_geo_c_tables():
     assert len(f["rows"]) == 22
     h = ct.counts_table(ct.find_stage(GEOC, "g-qh"), "x")
     assert len(h["rows"]) == 8 and len(h["skipped"]) == 6
+
+
+@pytest.mark.skipif(not R7RP.is_dir(), reason="no render/closing-r7-rp")
+def test_r7_rp_q287_table_is_e903s_odd_widths():
+    # one attempt, 25 rows at H 18: the gate, controls, fit, held-out and .25 cells at odd and
+    # even widths, and the three twins at W 20
+    d = ct.find_stage(R7RP, "q287")
+    assert d.parent.name == "20261112-205431"
+    z = ct.zls_table(d, "x")
+    assert len(z["rows"]) == 25 and not z["skipped"]
+    got = {(r["width"], tuple(r["extent"]), r["stored"]) for r in z["rows"] if not r["id"].startswith("z-pk")}
+    assert got == {(33, (41, 22), 902), (34, (42, 22), 924), (19, (24, 22), 528), (7, (9, 22), 198),
+                   (11, (14, 22), 308), (23, (29, 22), 638), (35, (44, 22), 968), (43, (54, 22), 1188),
+                   (51, (64, 22), 1408), (17, (21, 22), 462), (21, (26, 22), 572)}
+    twins = {r["id"]: r["stored"] for r in z["rows"] if r["id"].startswith("z-pk")}
+    assert twins == {"z-pk-20x18-scr": 550, "z-pk-20x18-vp": 528, "z-pk-20x18-both": 528}
+    assert all(r["height"] == 18 and r["full_screen"] and r["diff_zero"] for r in z["rows"])
 
 
 @pytest.mark.skipif(not R6M.is_dir(), reason="no render/closing-r6-misc")

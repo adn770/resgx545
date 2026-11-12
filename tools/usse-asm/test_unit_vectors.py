@@ -61,11 +61,11 @@ def test_zls_classes_follow_the_band_of_e831_and_leave_odd_sizes_to_q287():
     cells = [(41, 2, ramp(41, 34), ramp(2, 18)), (50, 3, bg, bg),
              (42, 2, ramp(42, 34), ramp(2, 18)), (41, 21, bg, bg)]
     c = uv.zls_classes(34, 18, 3, *dumps(34, 18, cells))
-    assert (c["outside"], c["bg_outside"], c["other"], c["odd"]) == (1, 1, 2, 0)
-    # 35 x 18: 1.25 W = 43.75, rule A and FLOOR differ; every pixel past the target is Q287's
-    cells = [(43, 2, ramp(43, 35), ramp(2, 18)), (50, 3, bg, bg)]
+    assert (c["outside"], c["bg_outside"], c["other"]) == (1, 1, 2)
+    # 35 x 18: 1.25 W = 43.75, rule A keeps column 43 (E903, odd widths; E885 odd heights)
+    cells = [(43, 2, ramp(43, 35), ramp(2, 18)), (50, 3, bg, bg), (44, 4, bg, bg)]
     c = uv.zls_classes(35, 18, 3, *dumps(35, 18, cells))
-    assert (c["outside"], c["bg_outside"], c["other"], c["odd"]) == (0, 0, 0, 2)
+    assert (c["outside"], c["bg_outside"], c["other"]) == (1, 2, 0) and "odd" not in c
 
 
 def test_te_region_has_the_35_jobs_and_14656_pairs_with_no_mismatch():

@@ -7053,6 +7053,113 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   running timer), so it does not separate them and no Q294 laptop rows follow.
   *edm; HW, RE, infer; data: `render-closing-r6-held`, `edm-closing-r3x-events`,
   `cited-scratch-private`.*
+- `E903` r7-rp stage q287 (Q287, 25 depth-dump jobs at H 18, odd widths through t7, the tool built
+  from main 1c64f3a): at odd target widths the ZLS store's band past the target is rule A (x + 0.5 <
+  1.25 W), not FLOOR (x < floor(1.25 W)): the full-screen triangle stored 22 rows times 9, 14, 29,
+  44, 54 and 64 columns at W 7, 11, 23, 35, 43 and 51 (two runs each at 7 to 35) and 24, 29 and 44
+  columns with the y ramp at 19, 23 and 35, rule A's set and one column more than FLOOR's in every
+  held-out cell (9 of 9), the fit cell 19 x 18 stored 528 (24 columns) in both runs, the .25 cells
+  17 and 21 stored 462 and 572 (A = FLOOR, 2 of 2), the gate row 33 x 18 902 (41 columns), and 34 x
+  18 reproduced E831's 924 with t4, t6 and t7 (both ramps with t7); ROUND, CEIL and the strict x + 1
+  < 1.25 W failed every fit and held-out cell; and in the poke twins at W 20 (frozen with no
+  favourite) the band followed the viewport words, not CR_MTE_SCREEN: the screen word poked to 19 x
+  18 left W 20's 25 columns (550) and the viewport's x scale and offset poked to 9.5 stored W 19's
+  24 (528), both together 528; frozen verdict 'rule A held on the held-out cells (9 of 9), FLOOR
+  refuted (0 of 9); fit cell 19: A held, FLOOR refuted; .25 confirmations A 2 of 2; controls pass;
+  poke twins (W 20, gate nothing): scr H-VP, vp H-VP, both both (same set)'.
+  *zls; HW, infer; data: `render-closing-r7-rp:out/20261112-205431/q287/`,
+  `render-closing-r7-rp:out/20261112-205431/s0/`, `render-closing-r7-rp:fold/`,
+  `vectors-closing-r7-rp-zls`.*
+- `E904` r7-rp stages q291g and q291 (Q291, 27 jobs with t6): the pixel tasks past the target run
+  over the ZLS store's band and nowhere else, with the attribute iterated linearly there: with
+  E898's position-store program (each valid instance stores its iterated pa0 and pa1 and its lane at
+  the scratch slot of its place in its 32 x 16 tile), E437's position pair (pa0 = x + 0.5, pa1 = y +
+  0.5) and one tile touched a job, the set of slots that held a valid instance's store was rule A's
+  band cut to the tile and the triangle (x + 0.5 < 1.25 W, y + 0.5 < 1.25 H; H-BAND) in 12 of 12
+  held-out rows (18 x 12, 24 x 8, 12 x 12, 20 x 8, 26 x 10 and 10 x 6 on one tile; W 34, 36, 44 and
+  50 at H 16 and H 18 and 24 at W 32 with the triangle cut to one tile: 330, 300, 225, 250, 384, 84,
+  160, 208, 368, 480, 192 and 448 slots), against 0 of 12 for H-TARGET (the target's pixels only)
+  and H-TILE (the whole tile), and every stored pa0 and pa1 was f32(x + 0.5) and f32(y + 0.5) of the
+  slot past the target too (H-LIN, 12 of 12 rows); the vertex pair (E606: pa0 the clip z, pa1 the
+  clip x iterated) gave the band at 20 x 12, 18 x 12 and 24 x 8 (3 of 3) with clip x within E661's
+  tolerance; the fit pair 20 x 12 stored 375 slots twice; the depth twins (E885's depth row at 20 x
+  12, 18 x 12, 24 x 8, 12 x 12 and 10 x 6) stored rule A's sets, 375, 330, 300, 225 and 84 dwords (5
+  of 5); the gate row (32 x 16, all 512 slots, each its position and lane), the pix_pa0 image and
+  the cut-triangle and vertex controls passed; frozen verdict 'Q291 H-BAND held: held-out P 12 held,
+  0 FAILED, 0 cannot tell of 12; rivals H-TARGET 0, H-TILE 0; values H-LIN held (12 held ...); fit
+  pair held; vertex pair H-BAND 3 held ..., values E661 held (3 held ...); depth twins rule A 5 held
+  ...'.
+  *zls; HW, infer; data: `render-closing-r7-rp:out/20261112-205431/q291g/`,
+  `render-closing-r7-rp:out/20261112-205431/q291/`, `render-closing-r7-rp:out/20261112-205431/s0/`,
+  `render-closing-r7-rp:bins/`, `render-closing-r7-rp:fold/`.*
+- `E905` r7-rp stages p7-rdc and p7-rd (Q276, 48 jobs, E878's readback rerun with the class share
+  taken over the own-source words): in E709's command (state block word 4 at 0x00030001) a `mov`
+  from o1 to o3 inside the instance reads back that output's own word and a read of o4 to o7 reads
+  the word of o0 to o3, the register number modulo 4, so no read of o4 to o7 shows a word written
+  there: R6's rd-1 to rd-7 replicated the vector S S S A0 A4 A4 A4 (H-MOD4) at own-source shares of
+  0.905 to 1.000 with every rival class at 0, n-rd-4 and x-rd-4 read o0's word (A0) as in R6; held
+  out, x-rd-6 and x-rd-7 (o6 and o7 written with tags of their own) read o2's and o3's words and
+  n-rd-5 (no o5 write) o1's; the clean rows, which write only o0 (word A) and o_j (word B) and read
+  o_j, read word A for o4 (cl-4, 1062 of 1062 TRI pixels in both jobs) and for o5 to o7 no word of
+  the job (cl-5 to cl-7: background, zero and another configuration's words, never word B), and
+  cl-p4 (cl-4 with `p1 or.skipinv o4` under the g25 test, k = 0) read word A on every lane; R6's
+  bridge controls passed (c-u tag-2 fraction 0.990, c-all4 5:1, c-ow and c-rd-0 1.0 of TRI,
+  c-prd-0's lanes as frozen); frozen verdict 'H-MOD4 held (17 of 17 entries): rd vector S S S A0 A4
+  A4 A4 (H-FOUR, H-MOD4) replicated; n-rd-4 A0, x-rd-4 A0; x-rd-6 A4 (o2's word), x-rd-7 A4 (o3's),
+  n-rd-5 A4 (o1's); cl-4 A0 (word A); cl-5 X (no word of the job), cl-6 X (no word of the job), cl-7
+  X (no word of the job) (not word B); cl-p4 1:2,1:2,1:2,1:2 (word A on every lane)'.
+  *pds; HW, infer; data: `render-closing-r7-rp:out/20261112-205431/p7-rdc/`,
+  `render-closing-r7-rp:out/20261112-205431/p7-rd/`, `render-closing-r7-rp:out/20261112-205431/s0/`,
+  `render-closing-r7-rp:bins/`, `render-closing-r7-rp:fold/`.*
+- `E906` r7-rp stage q293 (Q293, 4 jobs, three renders of one scene with CR_TE_AA 0x40000000): the
+  3D reads render 2's own object as it reads render 1's: with the kernel's poke before render 3
+  putting render 2's object (dump dwords 27 to 53) in the bit-29-set layout (E829's twin words
+  shifted by 27, 16 of 16 pokes applied and seen in the dump) render 3 drew 4096 triangle pixels of
+  4096, 0 wrong against render 3's colours, while render 1's and render 3's objects stayed
+  displaced, and 0xffffffff poked at its dword 11 (dump dword 38) drew nothing (0 of 4096); the
+  control of three renders left objects at dwords 0, 27 and 54, each with a zero at its dword 11 and
+  the format word 0x00040101 at its dword 12, and drew nothing, and E888's t7 row repeated its kept
+  dump head, image counts, diff count and target hash 0x8ea26cdfee74a325 on module 41E2F5C7; frozen
+  verdict 'Q293: render 2's own object is read as render 1's: put in the bit-29-set layout by a poke
+  before render 3 it draws (u3, 4096 triangle pixels) and 0xffffffff at its dword 11 draws nothing
+  (u4); three renders leave objects at 0, 27, 54 in the displaced layout and draw nothing (u1) (2 of
+  2 rows decided)'.
+  *ta; HW, infer; data: `render-closing-r7-rp:out/20261112-205431/q293/`,
+  `render-closing-r7-rp:out/20261112-205431/s0/`, `render-closing-r7-rp:fold/`.*
+- `E907` r7-rp stage q139 (Q139, 24 TA-dump jobs at E877's missed macrotile cases, 256 x 256 and 640
+  x 480): every case replicated its dataset's wrong-tile map (21 of 21), and the frozen H-MOVED, a
+  tile is wrong iff its region header is not at the baseline's slot, is not supported on the fit
+  rows (2 held, 8 failed of 10): every wrong tile's header had left its slot (no wrong tile with its
+  header in place, H-INPLACE never) but in 9 fit rows headers also moved for tiles that drew; read
+  at the fold from the fit rows' dumps, a target tile is wrong exactly when no header names it (3296
+  of 3296 tiles), and a placement rule fitted on them (R7-BLK: headers in 4 x 4 tile blocks of 16
+  slots per macrotile, N * S + block * 16 + (y mod 4) * 4 + x mod 4 with the blocks counted from the
+  macrotile's first tile at the first macrotile's width over 4, the TA writing tiles past the target
+  to the last bound plus the first macrotile's width, a later header overwriting an earlier one)
+  matched all 11 fit rows tile for tile, was hashed and committed to the data repository (8e6fd91b)
+  and then predicted the held-out rows' wrong-tile sets and header slots in 9 of 10, bit 31 clear at
+  640 x 480 among them, and failed at stride 4 (68 of 84 wrong tiles in common, 96 of 128 slots);
+  held-out verdict as printed 'Q139 held out: the fitted placement model predicts the held-out
+  wrong-tile sets is not supported: 9 held, 1 FAILED, 0 cannot tell of 10'; read after that, a write
+  order by 4 x 4 tile block fits all 21 rows, stride 4 included [post hoc].
+  *ta; HW, infer; data: `render-closing-r7-rp:out/20261112-205431/q139/`,
+  `render-closing-r7-rp:out/20261112-205431/s0/`, `render-closing-r7-rp:fold/`, `ta-mtile-fields`,
+  `ta-mtile-fields-risky`.*
+- `E908` r7-rp stage q086 (Q086, 11 4x jobs on contexts made for 4x targets, module 41E2F5C7): a 4x
+  render with poked macrotile words completes exactly when their grid (B3 + B1 tiles per axis)
+  covers the target's 1x tile grid on both axes, not when it covers one axis or as many tiles: U2's
+  words (a 12 x 12 grid) faulted the job on the 3D side at 448 x 160 (14 x 10 tiles: short in x,
+  enough in y and in area), 320 x 224 (10 x 14: short in y), 416 x 192 (13 x 12) and 384 x 208 (12 x
+  13), 4 of 4 as H-COV predicted, where H-X, H-Y and H-AREA each predicted completion in 2 of the 4;
+  the rule's own words completed every one of those sizes and 1024 x 768 with 0 wrong pixels; the
+  bridges repeated E886 on the new module (U2 at 320 x 160 completed, the closed driver's 64 x 64
+  words FX faulted); every fault BIF requestor 256, word 0x10000011, followed by a reset and a
+  strict health check that passed (5 faults, the 5 predicted, budget 6); frozen verdict 'Q086: H-COV
+  held (4 of 4 rows), H-X refuted (2 of 4 rows), H-Y refuted (2 of 4 rows), H-AREA refuted (2 of 4
+  rows), H-ANY refuted (0 of 4 rows); bridges: 320x160-U2 ok, 320x160-FX fault; controls pass 5 of
+  5; 11 unrun E886 rows not pursued, by design'.
+  *ta; HW, infer; data: `render-closing-r7-rp:out/20261112-205431/q086/`,
+  `render-closing-r7-rp:out/20261112-205431/s0/`, `render-closing-r7-rp:fold/`.*
 
 ## By unit
 
@@ -7107,7 +7214,7 @@ Records: E043, E044, E045, E046, E047, E048, E125, E126, E127, E128, E129, E130,
 E134, E135, E136, E137, E138, E139, E140, E141, E142, E143, E144, E145, E259, E260, E261, E262,
 E263, E264, E343, E344, E345, E364, E379, E381, E384, E388, E389, E390, E391, E392, E393, E394,
 E395, E396, E400, E420, E421, E428, E430, E436, E437, E454, E459, E460, E709, E742, E759, E772,
-E808, E838, E850, E858, E871, E878, E880.
+E808, E838, E850, E858, E871, E878, E880, E905.
 
 ### platform
 
@@ -7126,7 +7233,7 @@ Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
 E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763, E776, E777,
 E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828, E842, E847, E851, E859,
-E865, E872, E877, E879, E886, E888, E893, E897.
+E865, E872, E877, E879, E886, E888, E893, E897, E906, E907, E908.
 
 ### texture
 
@@ -7164,4 +7271,4 @@ E413, E414, E427, E440, E545, E546, E700, E701, E702, E703, E737, E738, E755, E7
 ### zls
 
 Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467, E489, E490, E615, E628, E629,
-E663, E664, E665, E730, E831, E885.
+E663, E664, E665, E730, E831, E885, E903, E904.

@@ -1,11 +1,11 @@
 +++
 id = "Q139"
-question = "what does a macrotile row's boundary do beyond the first, second and third fields of the macrotile words: what is bit 31, what is the stride's relation to the RT data, why is B2 at or past B3 exact in CR_TE_MTILE2 at 640 x 480, and which rule places a region's header when the words differ from the rule's (the wrong images lose whole tiles, E877)"
+question = "in what order does the TA write a macrotile's region headers (row by row fits 20 of E907's 21 dumped cases and misses stride 4, 4 x 4 tile blocks fit all 21, read after the held-out rows), what is the stride's relation to the RT data, and why do the words that fault (E509) fault"
 unit = "ta"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E505", "E506", "E509", "E407", "E877"]
+evidence = ["E505", "E506", "E509", "E407", "E877", "E907"]
 terms = ["CR_TE_MTILE1", "CR_TE_MTILE2", "CR_TE_MACROTILE_STRIDE"]
 +++
 
@@ -36,3 +36,21 @@ of the risky dataset's 104 jobs with an image and none of its 59 wrong images (S
 per-macrotile step is done; what places a region under words other than the rule's is not. No
 header or stream was dumped in either dataset: a dump of the TA data at the words of the misses
 (two macrotile columns, the stride pokes, B2 at or past B3) is the next step.
+
+Narrowed 2026-11-12 (r7-rp q139, E907; the question line is reworded, the question is not
+retired). The line read "what does a macrotile row's boundary do beyond the first, second and third
+fields of the macrotile words: what is bit 31, what is the stride's relation to the RT data, why is
+B2 at or past B3 exact in CR_TE_MTILE2 at 640 x 480, and which rule places a region's header when
+the words differ from the rule's (the wrong images lose whole tiles, E877)". The TA data of 21 of
+E877's cases was dumped. The frozen H-MOVED (a tile is wrong iff its header left its baseline slot)
+is not supported: no wrong tile kept its header in place, but headers also moved for tiles that
+drew. Read at the fold on the fit rows, a tile is wrong exactly when no header names it (3296 of
+3296 tiles), and the placement rule fitted there (R7-BLK: headers in 4 x 4 tile blocks of 16 slots
+per macrotile, counted at the first macrotile's width, the TA writing whole macrotiles past the
+target, a later header overwriting an earlier one), hashed and committed before the held-out dumps
+were read, predicted their wrong-tile sets and header slots in 9 of 10, with bit 31 clear at 640 x
+480 read as n = 2 and B2 past B3 in CR_TE_MTILE2 exact among them; stride 4 failed. Answered: which
+rule places a region's header (R7-BLK, 9 of 10 held out), what bit 31 does (the count of
+macrotiles per axis and the bounds used), why B2 at or past B3 is exact. Open: the write order
+within a macrotile (block order fits all 21 rows only post hoc), the stride's relation to the RT
+data, and the faulting words of E509, whose dumps were not taken.

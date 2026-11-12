@@ -119,14 +119,15 @@ of sections 1 and 2 are those of the 12.0 scan and were not redone.*
   the band x + 0.5 < 1.25 W and y + 0.5 < 1.25 H, cut at the tile area, the background 1.0 past
   it (E730, E831). Refused: formats 3, 5 and 6 (Q120), the stencil store's order and its edge
   tiles (Q121), the overflow store (E628, E629: the loaded buffer and the sign bit after a raised
-  abort; Q107), the band at odd sizes (Q287) and an integer format at an edge (Q242).
+  abort; Q107) and an integer format at an edge (Q242); the band at odd sizes follows rule A
+  (E885, E903).
 - **ta**: the region test, the object layout and its failures are built, and since 12.2 the
   vertex side and the TA as a whole (E650: 89 of 89 dumped one- to five-triangle jobs byte for
   byte, every one fitted; 266 more scenes refused by question). Missing: the macrotile table of
   the target (a fitted table, `tiling3d.py`, right on 123 and 69 only: Q100, Q139, Q086), lines and
   points (Q159 to Q161), the object's format bits above 7:0 and the masks beyond the settings seen
   (Q070), the prim word's extra dword (Q164), a state word nobody flipped in a two-object stream
-  (Q047, Q112), the 4x object with `CR_TE_AA` bit 29 clear (E728, E829; Q293).
+  (Q047, Q112), the 4x object with `CR_TE_AA` bit 29 clear (E728, E829, E906; refused as Q142).
 - **vdm, mte**: the stream parser and the MTE's viewport are in E650's model; the dump directories
   it refuses wait for Q047, Q069, Q112 and the state word rules. No unit vector is built: the
   inputs are in the render dumps only through the PB, so they need the scene's `memory`.

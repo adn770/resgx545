@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: 2026 Josep Torra
-//! The closing pass's ZLS tables (`vectors/closing/r3-geo-c/zls-extents/g-z.table.json`, E831, and
-//! `vectors/closing/r6-misc/zls-extents/q287.table.json`, E885) replayed with the store band of
+//! The closing pass's ZLS tables (`vectors/closing/r3-geo-c/zls-extents/g-z.table.json`, E831,
+//! `vectors/closing/r6-misc/zls-extents/q287.table.json`, E885, and
+//! `vectors/closing/r7-rp/zls-extents/q287.table.json`, E903) replayed with the store band of
 //! `zls.rs`: for each job the pixels of the target's tile area that the triangle covers inside the
-//! band (`in_band`, rule A) are the stored ones, and their count and extent are compared with the
-//! row's. An odd width is a refused row (Q287: rule A and FLOOR differ there and no odd width ran),
-//! never a pass; a triangle the model cannot read is refused too. Each table's `replay` names
+//! band (`in_band`, rule A, at even and odd sizes) are the stored ones, and their count and extent
+//! are compared with the row's. The band's W is the viewport's, twice its x scale when a job pokes
+//! it (`blk:6`, E903's twins), else the target's; a triangle the model cannot read is refused,
+//! never a pass. Each table's `replay` names
 //! `the_band_replays_every_modelled_row_of_the_zls_tables` once every modelled row matched. Skips
 //! without the data, and fails with `RESGX545_REQUIRE_DATA` set.
 
@@ -21,6 +23,11 @@ const TABLES: &[(&str, &str, usize)] = &[
         "vectors/closing/r6-misc/zls-extents/q287.table.json",
         "render/closing-r6-misc/out/20261112-152213/q287/cases.tsv",
         20,
+    ),
+    (
+        "vectors/closing/r7-rp/zls-extents/q287.table.json",
+        "render/closing-r7-rp/out/20261112-205431/q287/cases.tsv",
+        25,
     ),
 ];
 const NAME: &str = "the_band_replays_every_modelled_row_of_the_zls_tables";
@@ -57,13 +64,20 @@ fn triangle(args: &str, w: i64, h: i64) -> Option<Tri> {
         .then(|| Tri { v: [(v[0], v[1]), (v[2], v[3]), (v[4], v[5])], z: [z[0], z[1], z[2]] })
 }
 
-/// What the model stores for a `w` x `h` target: the count and the extent of the covered pixels
-/// inside the band, in the tile area of 32 x 16 tiles.
-fn model(t: &Tri, w: u32, h: u32) -> (u64, [u32; 2]) {
+/// The band's width: twice the viewport's x scale when the job pokes it (`--poke blk:6=` an f32,
+/// E903's twins), else the target's.
+fn band_width(args: &str, w: u32) -> u32 {
+    let v = args.split("--poke blk:6=0x").nth(1).and_then(|s| s.split_whitespace().next());
+    v.map_or(w, |h| (2.0 * f32::from_bits(u32::from_str_radix(h, 16).unwrap())) as u32)
+}
+
+/// What the model stores for a `w` x `h` target whose band is `bw` wide: the count and the extent
+/// of the covered pixels inside the band, in the tile area of 32 x 16 tiles.
+fn model(t: &Tri, w: u32, h: u32, bw: u32) -> (u64, [u32; 2]) {
     let (mut n, mut ext) = (0, [0, 0]);
     for y in 0..h.div_ceil(16) * 16 {
         for x in 0..w.div_ceil(32) * 32 {
-            if in_band(x, y, w, h) && t.covers(x, y) {
+            if in_band(x, y, bw, h) && t.covers(x, y) {
                 n += 1;
                 ext = [ext[0].max(x + 1), ext[1].max(y + 1)];
             }
@@ -74,15 +88,12 @@ fn model(t: &Tri, w: u32, h: u32) -> (u64, [u32; 2]) {
 
 fn replay(row: &Json, cases: &str) -> Row {
     let (w, h) = (row.get("width").num().unwrap() as u32, row.get("height").num().unwrap() as u32);
-    if w % 2 == 1 {
-        return Row::Refused("Q287");
-    }
     let id = row.get("id").str().unwrap();
     let line = cases.lines().find(|l| l.split('\t').next() == Some(id));
-    let Some(tri) = line.and_then(|l| triangle(l, w.into(), h.into())) else {
+    let Some((line, tri)) = line.and_then(|l| Some((l, triangle(l, w.into(), h.into())?))) else {
         return Row::Refused("no triangle for the job in cases.tsv");
     };
-    let (n, ext) = model(&tri, w, h);
+    let (n, ext) = model(&tri, w, h, band_width(line, w));
     let want = row.get("extent").arr();
     let got = (
         row.get("stored").num().unwrap() as u64,
@@ -108,20 +119,36 @@ fn the_band_replays_every_modelled_row_of_the_zls_tables() {
             res.iter().filter_map(|x| if let Row::Mismatched(s) = x { Some(s) } else { None }).collect();
         eprintln!("{table}: {m} matched, {r} refused, {} mismatched", bad.len());
         assert!(bad.is_empty(), "mismatched rows: {bad:?}");
-        // E831's cells are all at even sizes; E885's at W 34 and odd heights
+        // E831's cells are at even sizes, E885's at W 34 and odd heights, E903's at H 18 and odd
+        // widths (and the viewport twins at W 20): every row is modelled
         assert_eq!((m, r), (n, 0), "{table}");
     }
 }
 
 #[test]
-fn an_odd_width_is_a_refused_row_an_odd_height_is_modelled_and_a_wrong_extent_a_mismatch() {
+fn odd_sizes_are_modelled_by_rule_a_and_a_wrong_extent_is_a_mismatch() {
     let (table, cases, _) = TABLES[0];
     let Some((_, cases)) = load(table, cases) else { return };
     let edit = |w: &str, ext: &str| {
         parse(&format!(r#"{{"id":"z-ctl-34x18-x","width":{w},"height":18,"stored":924,"extent":{ext}}}"#))
     };
-    assert_eq!(replay(&edit("33", "[42,22]"), &cases), Row::Refused("Q287"));
     assert!(matches!(replay(&edit("34", "[43,22]"), &cases), Row::Mismatched(_)));
+    // E903's fit cell: 19 x 18 stores 24 columns under rule A, FLOOR's 23 is a mismatch
+    let (table, cases, _) = TABLES[2];
+    let Some((_, cases)) = load(table, cases) else { return };
+    let w19 = |ext: &str, n: u32| {
+        parse(&format!(r#"{{"id":"z-fit-19x18-x-r1","width":19,"height":18,"stored":{n},"extent":{ext}}}"#))
+    };
+    assert_eq!(replay(&w19("[24,22]", 528), &cases), Row::Matched);
+    assert!(matches!(replay(&w19("[23,22]", 506), &cases), Row::Mismatched(_)));
+    // the twins at W 20: the viewport poked to W 19 stores W 19's band, the screen word alone
+    // W 20's
+    let twin = |id: &str, n: u32, x: u32| {
+        parse(&format!(r#"{{"id":"{id}","width":20,"height":18,"stored":{n},"extent":[{x},22]}}"#))
+    };
+    assert_eq!(replay(&twin("z-pk-20x18-vp", 528, 24), &cases), Row::Matched);
+    assert_eq!(replay(&twin("z-pk-20x18-scr", 550, 25), &cases), Row::Matched);
+    assert!(matches!(replay(&twin("z-pk-20x18-vp", 550, 25), &cases), Row::Mismatched(_)));
     // E885's fit cell: 34 x 19 stores 24 rows under rule A, FLOOR's 23 rows is a mismatch
     let (table, cases, _) = TABLES[1];
     let Some((_, cases)) = load(table, cases) else { return };

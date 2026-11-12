@@ -1,9 +1,9 @@
 title = "R6-misc q287: the stored (not 1.0f) dwords of the ZLS depth store's tile area and their extent per job at W 34 and odd heights (20 jobs)"
 repo = "data"
 paths = ["vectors/closing/r6-misc/zls-extents/"]
-method = "tools/usse-asm/closing_tables.py zls on the published render/closing-r6-misc session (stage q287 of the latest attempt, out/20261112-152213), one file; rows are measurements, the table says its replay is the sgx-pipe test that holds every modelled row to the band (rule A: E831 at even sizes, E885 at odd heights)"
+method = "tools/usse-asm/closing_tables.py zls on the published render/closing-r6-misc session (stage q287 of the latest attempt, out/20261112-152213), one file; rows are measurements, the table says its replay is the sgx-pipe test that holds every modelled row to the band (rule A: E831 at even sizes, E885 at odd heights; regenerated 2026-11-12: the model holds rule A at odd widths too, E903, and takes the band's W from the viewport, the rows unchanged)"
 date = "2026-11-12"
 files = 1
-size = 7355
-sha256 = "2b8fdf0506e57b27be13221020cc6888c671590a3bb7f8649a1ffe7099e75700"
+size = 7382
+sha256 = "51f8abacd2486736ffa34426f3ce162103edd6ed5fe91daf6b8dfa6166050b43"
 recipe = "tools/usse-asm/closing_tables.py"
