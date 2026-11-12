@@ -5,7 +5,7 @@ unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E310", "E312", "E464", "E625", "E627", "E629", "E704", "E734", "E753", "E774", "E779", "E785", "E786", "E799", "E800", "E801", "E802", "E852", "E853", "E860", "E861", "E862", "E863", "E864", "E873", "E874"]
+evidence = ["E310", "E312", "E464", "E625", "E627", "E629", "E704", "E734", "E753", "E774", "E779", "E785", "E786", "E799", "E800", "E801", "E802", "E852", "E853", "E860", "E861", "E862", "E863", "E864", "E873", "E874", "E881", "E882"]
 terms = ["Dynamic Parameter Management (DPM)", "CR_DPM_STATE_BASE0", "ta3d_ctl"]
 +++
 
@@ -248,3 +248,21 @@ the refused request being the list's page itself (H-PENDREQ). Open until held ou
 new bands and targets against the frozen replay, the cause of the bursts (`--vtx-coords`: the
 dumps show blocks opening every 15 entries, H-BURST-CAP's reading), the lag, and the 2048x4096 S3
 miss.
+
+Note 2026-11-12 (round 6, laptop session R6-dpm, E881 and E882; the question stays open). Every
+frozen headline of the session is "cannot tell", gated by an r-a0 control that has no reading by
+construction (a full calibration at knob `0x400` takes no partial render; a design slip of the
+builder); the other r-a0 controls held. Read ungated after the run [HW, post hoc]: E874's step
+replay gave the steps and needs of three targets never run before (2048x1024, 1024x2048,
+1536x1536: 18 of 18 steps in their brackets, U 277, 288, 314) and H-PHASE their bands 3 and 4, 18
+of 18, with R-5's raise flipping at B3 at all three (14 of 14); at 2048x2048 bands 5 to 7 H-PHASE
+failed 5 of 15 cells, one page being left only from B_k + 2, + 2 and + 1 (`0x178`, `0x1c3`,
+`0x20d`), H-GREQ held 15 of 15 (E881; E874's claim corrected). With `--vtx-coords` 4 and 8 neither
+H-BURST-CAP (10 of 13 rows at N 4, 1 of 19 at N 8) nor H-BURST-PAGE (1 of 13, 1 of 14) gave the
+steps; at N 4 the object block is 127 dwords, at N 8 two sizes (E882). Our own task read R-5's
+`sa8` bits at 3 of 3 held-out cells; the 2048x4096 creep cell was voided by its scene check, and
+read without it (dword 36 = 2, one page left, `sa8 & 0x380` = 0, silent, twice) it is what E864's
+`isub16` order predicts. Open: a frozen verdict for the step model and the margin at bands 3 and 4
+(rerun with a control that can read); what keeps the second page at bands 5 to 7; what opens the
+bursts for larger objects; the lag; the 2048x4096 S3 miss; the counts at the passes (oomring2 is
+refused by both verifiers).
