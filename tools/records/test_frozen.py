@@ -301,3 +301,23 @@ def test_a_line_may_name_its_repository(tmp_path):
     (s / "FROZEN.commits").write_text(f"# h\n{sha('b')}  {c['01']}  resgx545:tools/b.c\n")
     bad = frozen.check(tmp_path / "data", repo)
     assert len(bad) == 1 and "tools/a.py" in bad[0] and "has no line" in bad[0]
+
+
+def test_a_data_line_is_checked_at_its_commit_when_the_data_history_is_there(tmp_path):
+    """A `data:PATH` line pins a file of the data repository by commit, as the session kit's
+    freeze writes it (tools/closing/kit): once the data checkout has a history, the line is
+    verified against the blob at its commit, never against the working tree, so the data
+    repository may move after the freeze."""
+    repo, c = history(tmp_path)
+    s = session(tmp_path, [f"{sha('q')}  score/score_x.py"])
+    data = tmp_path / "data"
+    git(data, "init", "-q")
+    d1 = commit(data, {"render/closing-y/p.bin": "p1"}, "2026-11-01")
+    commit(data, {"render/closing-y/p.bin": "p2"}, "2026-11-02")
+    (s / "FROZEN.commits").write_text(f"# h\n{sha('p1')}  {d1}  data:render/closing-y/p.bin\n")
+    assert frozen.check(data, repo) == []
+    (s / "FROZEN.commits").write_text(f"# h\n{sha('p2')}  {d1}  data:render/closing-y/p.bin\n"
+                                      f"{sha('p1')}  {'b' * 40}  data:render/closing-y/p.bin\n"
+                                      f"{sha('k')}  {'a' * 40}  linux:drivers/k.c\n")
+    bad = frozen.check(data, repo)
+    assert len(bad) == 2 and "data:render/closing-y/p.bin" in bad[0] and "b" * 40 in bad[1]

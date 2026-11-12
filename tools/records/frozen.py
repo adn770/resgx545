@@ -24,8 +24,10 @@ of the tool tree but a cite, published as cited/<path> of resgx545-data or of
 resgx545-data-private, and checked against that copy. A session may name the repository of each
 FROZEN.commits line (R5-dpm: `resgx545:PATH`, `linux:PATH`, `data:PATH`, for every outside file
 its freeze pins or its checks read): a resgx545 line is checked as a bare path is, without needing
-a freeze pin; a line of another repository is left to the session. The published freeze bytes
-are never rewritten: FROZEN.commits is a new file beside them.
+a freeze pin; a data line is checked at its commit in the data repository's history (the blob,
+never the working tree, as the session kit's freeze verify reads it: tools/closing/kit) when that
+history is there; a line of another repository (linux:) is left to the session. The published
+freeze bytes are never rewritten: FROZEN.commits is a new file beside them.
 
 --write finds, for each session whose freezes pin resgx545 files and that has no
 FROZEN.commits, the commits in this tree's history (`git log -- <path>`): the newest commit at
@@ -60,6 +62,7 @@ ROOT = datasets.ROOT
 NAME = "FROZEN.commits"
 UNTRACKED = "untracked"
 TREE = "resgx545"
+DATA = "data"
 SCRATCH = "/scratch/resgx545/"
 HEADER = """\
 # FROZEN.commits: the resgx545 commit that holds each file of the resgx545 tree this session's
@@ -71,6 +74,12 @@ HEADER = """\
 """
 LINE = re.compile(r"([0-9a-f]{64})  ([0-9a-f]{7,40}|" + UNTRACKED + r")  (\S.*)")
 REPO = re.compile(r"([a-z][a-z0-9-]*):(\S.*)")
+
+
+def data_path(path: str) -> str | None:
+    """The path in the data repository of a `data:PATH` line, None for any other line."""
+    m = REPO.fullmatch(path)
+    return m[2] if m is not None and m[1] == DATA else None
 
 
 def tree_path(path: str) -> str | None:
@@ -251,11 +260,25 @@ def write(data: pathlib.Path, repo: pathlib.Path, dates: dict[str, str]) -> list
     return bad
 
 
+def data_line_problems(find: Finder, where: str, sha256: str, c: str, named: str) -> list[str]:
+    """A `data:PATH` line against the data repository's history: the blob at the commit, never
+    the working tree (the session kit's freeze verify reads it the same way)."""
+    if c == UNTRACKED:
+        return [f"{where}: {named} is untracked: a data file is pinned by commit"]
+    got = find.sha(c, data_path(named))
+    if got is None:
+        return [f"{where}: {c}:{named} is not in the data history"]
+    if got != sha256:
+        return [f"{where}: {c}:{named} hashes to {got}, not {sha256}"]
+    return []
+
+
 def check(data: pathlib.Path, repo: pathlib.Path,
           private: pathlib.Path | None = None) -> list[str]:
     """What is wrong with the FROZEN.commits of the data repository (and the published copies of
     the scratch inputs, in it or in the private one)."""
     find, bad = Finder(repo), []
+    in_data = Finder(data) if has_history(data) else None
     all_sessions = sessions(data)
     adopted = any((s / NAME).exists() for s in all_sessions)
     for s in all_sessions:
@@ -276,6 +299,8 @@ def check(data: pathlib.Path, repo: pathlib.Path,
             sha256, c, named = m.groups()
             path = tree_path(named)
             if path is None:
+                if in_data is not None and data_path(named) is not None:
+                    bad += data_line_problems(in_data, f"{name}/{NAME}", sha256, c, named)
                 continue
             have.add((sha256, path))
             if (sha256, path) not in want and path == named:

@@ -125,8 +125,11 @@ build product the history never held (`tools/usse-asm/usse-asm`). `tools/records
 --write` finds the commits (the newest at or before the manifest's date whose blob has the
 pinned hash) and writes the missing files; `--check`, a step of `tools/check.sh`, verifies each
 line with `git show <commit>:<path>` and refuses a session that pins this tree without one.
-Future freezes are pinned the same way when they are published. The published freeze bytes are
-never rewritten: a `FROZEN.commits` is a new file, and the manifest's digest and method follow it.
+Future freezes are pinned the same way when they are published. A `data:PATH` line pins a file
+of the data repository the same way: `--check` verifies it at its commit in the data history
+when that history is there (the session kit's freeze writes such lines, below). The published
+freeze bytes are never rewritten: a `FROZEN.commits` is a new file, and the manifest's digest and
+method follow it.
 
 ## Generated files and merges
 
@@ -226,6 +229,62 @@ and calls from its own tests, rather than hand-rolling the check:
   `mkdir -p` with a test) makes sure every directory the tool writes into exists; a mock's fake
   tool refuses a missing one as the real tool does (r6-misc's `--depth-dump` directory was never
   made and q287 kept no dump).
+
+### Session kit
+
+Rounds 5 to 7 built every laptop session by copying an earlier one and adapting its runner,
+staging, freeze, mock, guard and health scripts, 30 to 60 minutes a builder, and most of their
+slips came from that copied plumbing. `tools/closing/kit` holds the plumbing once (tests in
+`tools/closing/test_kit.py`), and a session declares only what is its own:
+
+- `session.toml`: the env (laptop prefix, module srcversion, tools with their sha256, the debugfs
+  knobs a row may write with their default and allowed values, the stages in order with their
+  alarm and gate, the commits the freeze pins and the inputs it pins as `resgx545:PATH` or
+  `data:PATH`, extra laptop files);
+- `tables/STAGE.txt`: job rows `name|set|risk|knobs|tool|args` (the knob words of
+  `kit/run_stage.sh`'s header, plus the session's own, read by `run/hooks.sh`);
+- `predictions/STAGE.tsv`, `score/score.py` (scorekit-based, with `REQUIRED`, `read_files`,
+  `producible`, and the `gate` and `premise` commands) and `mock/world.py` (`answer(tool, argv,
+  world)` and `EXPECT`, the driver's and each stage's status in each world).
+
+`tools/closing/new_session.py DIR --name ... --prefix ... --srcversion ... --tool t4=PATH:SHA256`
+scaffolds a working session, the kit copied into `DIR/kit` from the blobs of a named resgx545
+commit (never a working tree). `kit/session.py` then does the rest, each step from the one file
+list of laptop files (`run/staged.lst`, written with `run/session.env` and `run/required.tsv` from
+session.toml and the scorer's `REQUIRED`): `guard` (the laptop rules on the kit runner and the
+hooks, and the tables' knobs, tools, options and controls), `freeze`, `verify`, `stage` (one
+bounded ssh with BatchMode and the HostKeyAlias, then every copy and tool checked by sha256),
+`run` (verify, gate, the runner, the copy back, sessioncheck kept, the score, the premise; its
+stop codes are in its header) and `mock`. The laptop runner keeps everything under
+`~/scratch/<prefix>/`, works in `mktemp -d ~/scratch/tmp/<prefix>.XXXXXX` directories, checks the
+free space, marks the kernel log, bounds every command with `timeout -k`, resets and checks
+health between jobs, restores the knobs after every job and by its exit trap, makes the
+directories `outdir_opts` name and stops when a file the scorer requires was not kept.
+
+The freeze is pinned by commit, so main and data may move while sessions are built and run:
+FROZEN.sha256 names the session's files by relative path and each pinned input by absolute path,
+and FROZEN.commits gives each kit copy and each pin as `<sha256>  <commit>  resgx545:PATH` or
+`data:PATH`. `verify` reads every pin at its commit (`git cat-file`), never the working tree,
+and refuses a session file that changed or a new one; `tools/records/frozen.py --check` accepts
+the same file once the session is published.
+
+`kit/session.py mock` copies the session, freezes the copy if it is not frozen, stages it onto a
+fake laptop through the same `stage` and `run` code, and runs the staged runner under an empty
+environment (a fake ssh that keeps only HOME, the laptop PATH and the mock's own variables). The
+fake tool answers from its name and argv through `mock/world.py`, writes a file only into a
+directory that exists, and nothing waits on a clock: every sleep of the runner is a `*_WAIT` the
+mock sets to 0. Each world of `EXPECT` must end with its statuses, keep its files under the
+prefix, write only the allowed debugfs values, leave the knobs at their defaults, print no
+"command not found" or "No such file" line, keep every file `REQUIRED` names (sessioncheck kept)
+and stage a complete tree (sessioncheck staged). A session's own tests (the argv twin, the
+scorer on kept records it must hold on and fail on) sit in `tests/` and `tests/run_all.sh` runs
+them with the guard, the mock and the verify. Every command a README gives is run through its
+interpreter (`bash ...`, `python3 ...`), never by its mode bits: r7-geo's stage script had mode
+644 and staged nothing; the guard refuses a README command that leans on the exec bit.
+
+A session whose flow the runner does not cover (a held recovery, a cell of steps) extends it
+through `run/hooks.sh` only as far as reading goes (`hook_reading`, `hook_check`, which run in
+the runner's shell); a new kind of job is added to the kit, with its test, not to a session.
 
 ## Firmware tasks of our own
 
