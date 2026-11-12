@@ -281,7 +281,18 @@ page or area limit and none of four frozen tail-pointer extents fits (E868). A h
 fault had written its whole scene (321 pages) and left 1212 of its 12288 region headers off the
 doubled-grid rule from `td.rgn` (0x7000) to 0xd804, most with word 0 intact and a zero stream
 offset, nothing below `td.rgn` non-zero (E869, the off headers' kinds post hoc); [infer] a zero
-offset points the 3D at the request base, page 0x10000, never mapped. What the job needs of the
+offset points the 3D at the request base, page 0x10000, never mapped. Read offline from that dump
+against a completed twin, the lost offsets are the tail pointers: with one dword per tile of the
+doubled grid (16 x 8 pixels) at TA-data offset 4 x Z(x, y), Z the bit interleave with y on the even
+bits and x on the odd bits, the 1023 headers that lost word 1 are exactly those whose word 1 lies
+at an in-target tile's entry (H-TPM; with x on the even bits 426). "A 4x job faults iff the end of
+its target's entries, 4 x (Z(2tx - 1, 2ty - 1) + 1), passes the `td.rgn` of its context's maximum"
+then gives all 26 four-array outcomes on record, the faults of E868 at 2048 x 240 and 768 x 2048
+included: a wide target faults early because x 64 sets bit 13 of the index (E870; post hoc, one
+dump, the 26 outcomes known when the rule was written, so not held out). The room a 4x context
+needs is then 4 x (Z(2tx - 1, 2ty - 1) + 1) bytes, at most 4 x (2 side)^2 [infer]. Not explained:
+189 word-0 losses at header-grid entries outside the target, bit 27 set on 914 headers and in no
+completed dump, and the 4096-wide right blocks of E828 and E846 (E870). What the job needs of the
 layout, as a function of its target, is Q292.
 
 After a TA write fault (0x90004, `SB` 6) and the reset, the next renders that run the TA fault at
@@ -305,7 +316,7 @@ and shading processor and its pre-processor; `PBE` pixel back end (tile write-ou
 
 *Based on sgx545-ce `src/services4/srvkm/hwdefs/sgx545defs.h`,
 `src/services4/srvkm/devices/sgx/sgxreset.c`; E357, E360, E457, E507, E511, E573, E729, E745,
-E761, E764 to E767, E789, E824, E826, E828, E845, E846, E848, E866 to E869.*
+E761, E764 to E767, E789, E824, E826, E828, E845, E846, E848, E866 to E870.*
 
 ## 6. How the DDK resets and starts the core
 

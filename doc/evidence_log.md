@@ -6596,6 +6596,23 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   zero.
   *dpm; HW, infer; data: `render-closing-r5-render4x:out/20261112-100112/d/`,
   `render-closing-r5-render4x:postrun/`.*
+- `E870` Round 6 offline reading of E869's held dump and of the 26 four-array 4x outcomes on record
+  (Q292; post hoc, one dump, nothing held out): H-TPM, the tail pointers of a 4x job are one dword
+  per tile of the doubled grid (16 x 8 pixel tiles) at TA-data offset 4 x Z(x, y), Z the bit
+  interleave with y on the even bits and x on the odd bits (Z-order), fits the dump exactly: the
+  1023 region headers that lost their stream offset (word 1) against the completed twin m1 are the
+  1023 headers whose word-1 dword is the entry of an in-target tile (0 extra, 0 missing; with x on
+  the even bits 426 of 1708 predicted are lost); the check not used for the fit, 'a job faults iff
+  the entries of its target's tiles pass the td.rgn of its context's maximum', gives 26 of 26
+  recorded outcomes (E824, E828, E845, E846, E867, E868 incl. its eight rows no frozen rule fitted,
+  E869), but every one of them was known when the rule was written, so it is an offline check, not a
+  held-out one; other interleaves and limits miss 3 to 8; left unexplained: 189 word-0 losses (all
+  at header-grid entries outside the target), bit 27 set on 914 headers (never in a completed dump),
+  and the 4096-wide right block of E828 and E846.
+  *dpm; HW, infer; data: `render-closing-r5-render4x:out/20261112-100112/d/`,
+  `render-closing-r5-render4x:out/20261112-100112/m/`,
+  `render-closing-r5-render4x:out/20261112-100112/l/`,
+  `render-closing-r5-render4x:out/20261112-100112/x/`, `cited-scratch:cited/closing6/render4x/`.*
 
 ## By unit
 
@@ -6609,7 +6626,7 @@ Records: E199, E200, E201, E202, E204, E205, E206, E203, E253, E256, E309, E310,
 E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E468, E574, E591,
 E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753, E773, E774, E775, E779, E785,
 E786, E790, E799, E800, E801, E802, E803, E832, E845, E846, E852, E853, E854, E860, E861, E862,
-E863, E864, E866, E867, E868, E869.
+E863, E864, E866, E867, E868, E869, E870.
 
 ### edm
 
