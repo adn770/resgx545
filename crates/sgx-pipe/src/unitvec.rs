@@ -189,8 +189,8 @@ fn kind_zls_store(v: &Json, ctx: &Ctx) -> Result<Modelled, String> {
     let c = zls::check_store(w, h, g, &ax, &ay);
     let e = v.get("expect");
     // pixels past the target hold the depth inside the band and the background past it (E831);
-    // at an odd size the band's edge is open (Q287); the overflowed jobs' zero tiles and the
-    // background tiles after them are Q107's
+    // at an odd width the band's edge is open (Q287, odd heights follow E885's rule A); the
+    // overflowed jobs' zero tiles and the background tiles after them are Q107's
     let matched = c.at_rule + c.at_rule_outside + c.background_outside;
     let mut seen = Seen { matched, mismatched: c.other, ..Seen::default() };
     if c.past_odd > 0 {
