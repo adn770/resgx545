@@ -112,51 +112,179 @@ fn rhw_rz32(w: f32) -> f32 {
     if f64::from(r).abs() > exact.abs() { f32::from_bits(r.to_bits() - 1) } else { r }
 }
 
-/// The w of a vertex of a perspective triangle (a w of its own at each vertex, z = 0) whose stored
-/// 1/w was measured RZ of 1/w: E782's kept vertices (0.875, 1.0625, 1.4375 and 1.625; t3-nocut's
-/// window was 32 + 32 x / w of each vertex's own w) and E798's (1.3125, 1.0625 and 1.625). At
-/// 1.40625, 1.59375 and 1.6875 E798 read one ulp above RZ, and no rule says which w do, so only
-/// these are taken.
-const PERSPECTIVE_W: [f32; 5] = [0.875, 1.0625, 1.3125, 1.4375, 1.625];
-
-/// The w of a triangle with one w at all three vertices (x and y scaled by w) whose stored 1/w
-/// was measured RZ of 1/w: E754 (3, 7, 0.003, 3e-5), E783 (1.1), E795 and E796 (0.3, 0.5, 1.3,
-/// 1.5, 2, 5, 6, 11, 19, 23 and three w next to 1); at w = 9 and 0.7 E795 and E796 read one ulp
-/// above RZ in every job, so a w that was not run refuses.
-const ALIKE_W: [f32; 18] = [
-    3e-5,
-    0.003,
-    0.3,
-    0.5,
-    1.1,
-    1.3,
-    1.5,
-    2.0,
-    3.0,
-    5.0,
-    6.0,
-    7.0,
-    11.0,
-    19.0,
-    23.0,
-    1.0 + f32::EPSILON,
-    1.0 - f32::EPSILON,
-    1.0 + 3.0 * f32::EPSILON,
+/// The stored 1/w less RZ of 1/w (0 or 1) by the 23-bit mantissa of w, for every mantissa whose
+/// word was read at a kept vertex (196 words: E754, E782, E783, E795, E796, E798, E842 and E859;
+/// `fold/posthoc_r5.txt` of render/closing-r5-pixel lists them). H-MANT, "the delta is a function
+/// of the mantissa of w alone", held on 42 of 42 held-out words at other exponents (E859), and no
+/// mantissa read at two exponents (47 of them) shows both; which mantissas store RZ + 1, by what
+/// rule, is not known, so a mantissa not listed refuses (Q230).
+const RHW_MANTISSA: [(u32, u8); 130] = [
+    (0x00_0000, 0),
+    (0x00_0001, 0),
+    (0x00_0003, 0),
+    (0x02_0000, 1),
+    (0x02_2921, 0),
+    (0x04_0000, 0),
+    (0x05_0000, 0),
+    (0x06_0000, 0),
+    (0x07_0000, 0),
+    (0x08_0000, 0),
+    (0x08_e700, 1),
+    (0x09_0000, 0),
+    (0x09_05fe, 0),
+    (0x0a_0000, 0),
+    (0x0a_336c, 0),
+    (0x0b_0000, 0),
+    (0x0c_0000, 1),
+    (0x0c_cccd, 0),
+    (0x0d_0000, 0),
+    (0x0e_0000, 0),
+    (0x0f_0000, 0),
+    (0x0f_0c30, 0),
+    (0x0f_4438, 0),
+    (0x10_0000, 1),
+    (0x12_0000, 0),
+    (0x12_9355, 0),
+    (0x14_0000, 0),
+    (0x15_8f4d, 1),
+    (0x16_0000, 0),
+    (0x18_0000, 0),
+    (0x19_999a, 0),
+    (0x1a_0000, 0),
+    (0x1c_0000, 0),
+    (0x1d_0000, 0),
+    (0x1e_0000, 0),
+    (0x1f_0000, 0),
+    (0x20_0000, 0),
+    (0x21_0000, 0),
+    (0x22_0000, 0),
+    (0x22_524d, 0),
+    (0x23_0000, 0),
+    (0x24_0000, 0),
+    (0x25_0000, 0),
+    (0x26_0000, 0),
+    (0x26_6666, 0),
+    (0x27_0000, 0),
+    (0x28_0000, 0),
+    (0x28_2e6c, 0),
+    (0x28_3d12, 0),
+    (0x28_6904, 0),
+    (0x29_b969, 1),
+    (0x2a_0000, 1),
+    (0x2c_0000, 0),
+    (0x2e_0000, 0),
+    (0x30_0000, 0),
+    (0x32_0000, 0),
+    (0x33_3333, 1),
+    (0x34_0000, 1),
+    (0x35_0000, 0),
+    (0x36_0000, 0),
+    (0x37_0000, 0),
+    (0x38_0000, 0),
+    (0x39_0000, 1),
+    (0x39_7b97, 0),
+    (0x3a_0000, 0),
+    (0x3b_0000, 0),
+    (0x3b_2b3a, 0),
+    (0x3b_992f, 0),
+    (0x3c_0000, 0),
+    (0x3d_0000, 0),
+    (0x3e_0000, 0),
+    (0x3f_0000, 1),
+    (0x40_0000, 0),
+    (0x42_0000, 0),
+    (0x44_0000, 0),
+    (0x44_9ba6, 0),
+    (0x46_0000, 0),
+    (0x46_73ad, 1),
+    (0x48_0000, 0),
+    (0x48_26b3, 0),
+    (0x4a_0000, 0),
+    (0x4c_0000, 1),
+    (0x4d_0000, 1),
+    (0x4e_0000, 1),
+    (0x4e_cfc1, 1),
+    (0x4f_0000, 0),
+    (0x50_0000, 0),
+    (0x51_0000, 0),
+    (0x52_0000, 0),
+    (0x53_0000, 0),
+    (0x54_0000, 0),
+    (0x55_0000, 0),
+    (0x56_0000, 0),
+    (0x57_0000, 0),
+    (0x58_0000, 1),
+    (0x5a_0000, 0),
+    (0x5c_0000, 0),
+    (0x5e_0000, 0),
+    (0x5e_5ca1, 0),
+    (0x60_0000, 0),
+    (0x60_d10e, 1),
+    (0x62_0000, 0),
+    (0x62_430c, 0),
+    (0x62_caeb, 1),
+    (0x63_99d4, 0),
+    (0x64_0000, 1),
+    (0x65_0000, 0),
+    (0x66_0000, 0),
+    (0x67_0000, 0),
+    (0x68_0000, 0),
+    (0x69_0000, 0),
+    (0x6a_0000, 0),
+    (0x6b_0000, 0),
+    (0x6c_0000, 1),
+    (0x6d_0000, 0),
+    (0x6e_0000, 0),
+    (0x6f_0000, 0),
+    (0x70_0000, 0),
+    (0x71_3881, 0),
+    (0x72_0000, 0),
+    (0x74_0000, 0),
+    (0x74_6675, 1),
+    (0x76_0000, 0),
+    (0x78_0000, 0),
+    (0x7a_0000, 0),
+    (0x7a_d92c, 1),
+    (0x7b_a882, 0),
+    (0x7c_0000, 0),
+    (0x7e_0000, 0),
+    (0x7f_fffe, 0),
 ];
 
-/// The w values whose stored 1/w was measured, at z = 0 for the depth: one w at all three
-/// vertices in `ALIKE_W`, x and y scaled by w (the divided position is the original triangle,
-/// inside the viewport), or a perspective triangle with each vertex's w in `PERSPECTIVE_W`.
-/// Anything else with a w other than 1 stays refused (Q230): other w (the 1/w is RZ at most w and
-/// one ulp above at some, E795, E798), depth at w other than 1 (no formula: E783, E795, E796),
-/// the guard band's limit.
+/// The exponents of w at which words were read and H-MANT held out (E859's words at -2, -1, 0, 1,
+/// 2 and 4; E842's at 0 to 2). Below them only the two w that were read themselves.
+const RHW_EXP: std::ops::RangeInclusive<i32> = -2..=4;
+
+/// The w below the exponents of `RHW_EXP` whose word was read: E754's 3e-5 and 0.003, RZ.
+const RHW_READ_LOW: [f32; 2] = [3e-5, 0.003];
+
+/// The stored 1/w less RZ of 1/w: by the mantissa table at an exponent of `RHW_EXP`
+/// [infer from H-MANT for a pair of mantissa and exponent not read], 0 at the w of
+/// `RHW_READ_LOW`, `None` elsewhere.
+fn rhw_delta(w: f32) -> Option<u32> {
+    if RHW_READ_LOW.contains(&w) {
+        return Some(0);
+    }
+    let b = w.to_bits();
+    let e = ((b >> 23) & 0xff) as i32 - 127;
+    if w <= 0.0 || !RHW_EXP.contains(&e) {
+        return None;
+    }
+    RHW_MANTISSA
+        .binary_search_by_key(&(b & 0x7f_ffff), |&(m, _)| m)
+        .ok()
+        .map(|i| u32::from(RHW_MANTISSA[i].1))
+}
+
+/// The w values whose stored 1/w the model gives, at z = 0 for the depth: every vertex's w
+/// known to `rhw_delta`, one w at all three vertices or a w of its own at each (E754 and E782
+/// ran both shapes), every vertex inside the viewport after its divide. Anything else with a w
+/// other than 1 stays refused (Q230): a w whose mantissa was not read or outside the exponents
+/// run, depth at w other than 1 (no formula: E783, E795, E796), the guard band's limit.
 fn band_w(c: &[[f32; 4]; 3]) -> Result<(), Outcome> {
-    let alike = c.iter().all(|v| v[3] == c[0][3]);
-    let known =
-        if alike { ALIKE_W.contains(&c[0][3]) } else { c.iter().all(|v| PERSPECTIVE_W.contains(&v[3])) };
-    if !known {
+    if c.iter().any(|v| rhw_delta(v[3]).is_none()) {
         return Err(refuse230(
-            "a w other than 1 whose stored 1/w was not run: RZ of 1/w at the w of E754, E782, E783 and E795 to E798, one ulp above at w = 9, 0.7, 1.40625, 1.59375 and 1.6875, no rule (E063, E194)",
+            "a w whose 1/w word is not known: RZ of 1/w or one ulp above by the mantissa of w (H-MANT, E859), the mantissa not read or the exponent outside -2 to 4",
         ));
     }
     if c.iter().any(|v| v[2] != 0.0) {
@@ -206,7 +334,8 @@ pub fn triangle(
     let mut out = [Vertex { x: 0.0, y: 0.0, z: 0.0, rhw: 0.0 }; 3];
     for (o, v) in out.iter_mut().zip(&c) {
         let (min, clamp) = (f32::from_bits(rhw_min), f32::from_bits(rhw_clamp));
-        let r = rhw_rz32(v[3]);
+        // w = 1 is in the table (RZ, exact)
+        let r = f32::from_bits(rhw_rz32(v[3]).to_bits() + rhw_delta(v[3]).unwrap_or(0));
         if r == min {
             return Err(refuse230(
                 "a 1/w equal to the minimum: E197's values were all clear of the boundary",
@@ -515,27 +644,54 @@ mod tests {
     }
 
     #[test]
+    fn the_1_over_w_is_rz_plus_the_delta_of_the_mantissa_of_w_e859() {
+        let s = state(&block([32.0; 4])).unwrap();
+        let rhw = |w: f32| triangle(&s, scaled(w), 0, 0).map(|(v, _)| v.map(|p| p.rhw.to_bits()));
+        // E859 [HW, held out]: words of g5-rw's dense table, RZ + 1 at d-15's 5.30388 and d-18's
+        // 1.55041, RZ at d-14's 2.53125; the same w at all three vertices
+        assert_eq!(rhw(f32::from_bits(0x40a9_b969)).unwrap(), [0x3e41_10ec; 3]);
+        assert_eq!(rhw(f32::from_bits(0x3fc6_73ad)).unwrap(), [0x3f25_1e3e; 3]);
+        assert_eq!(rhw(f32::from_bits(0x4022_0000)).unwrap(), [0x3eca_4587; 3]);
+        // H-MANT (E859, 42 of 42 held out): the delta follows the mantissa at another exponent of
+        // w inside the exponents run (-2 to 4): 1.125 is RZ + 1 (E842), so are 2.25 and 0.5625;
+        // 1.25 is RZ, so is 10 (2^3, no word of that mantissa read there)
+        for (w, d) in [(2.25f32, 1u32), (0.5625, 1), (9.0, 1), (0.7, 1), (1.4, 1), (10.0, 0), (2.5, 0)] {
+            assert_eq!(rhw(w).unwrap(), [rhw_rz32(w).to_bits() + d; 3], "w = {w}");
+        }
+        // a mantissa never read, an exponent outside -2 to 4, and the two w read below it (E754)
+        for w in [1.7f32, 2.1, 40.0, 0.2] {
+            refused(triangle(&s, scaled(w), 0, 0), "Q230");
+        }
+        assert_eq!(rhw(3e-5).unwrap(), [0x4702_3555; 3]);
+        assert_eq!(rhw(0.003).unwrap(), [0x43a6_aaaa; 3]);
+    }
+
+    #[test]
     fn the_1_over_w_is_rz_only_at_the_w_that_were_run_and_one_ulp_above_at_9_and_0_7_e795() {
         let s = state(&block([32.0; 4])).unwrap();
         // E795, E796 [HW, read after the run]: one w at all three vertices, RZ of 1/w at w = 5,
-        // 11 and 0.3; one ulp above it at w = 9 (0x3de38e39) and 0.7 (0x3fb6db6e): no rule says
-        // which, so a w that was not run refuses
-        for (w, word) in [(5.0f32, 0x3e4c_ccccu32), (11.0, 0x3dba_2e8b), (0.3, 0x4055_5554)] {
+        // 11 and 0.3; one ulp above it at w = 9 (0x3de38e39) and 0.7 (0x3fb6db6e), now given by
+        // the mantissa table (E859)
+        for (w, word) in [
+            (5.0f32, 0x3e4c_ccccu32),
+            (11.0, 0x3dba_2e8b),
+            (0.3, 0x4055_5554),
+            (9.0, 0x3de3_8e39),
+            (0.7, 0x3fb6_db6e),
+        ] {
             let (v, _) = triangle(&s, scaled(w), 0, 0).unwrap();
             assert_eq!(v.map(|p| p.rhw.to_bits()), [word; 3], "w = {w}");
-        }
-        for w in [9.0f32, 0.7, 4.0, 2.5] {
-            refused(triangle(&s, scaled(w), 0, 0), "Q230");
         }
         // E798 [HW, read after the run]: a kept vertex at w = 1.40625, 1.59375 or 1.6875 stored
         // one ulp above RZ; E782's own triangle (0.875, 1.625, 1.0625) stays as measured
         let t =
             [clip(-0.75, -0.75, 0.0, 0.875), clip(0.75, -0.375, 0.0, 1.625), clip(-0.375, 0.75, 0.0, 1.0625)];
         assert!(triangle(&s, t, 0, 0).is_ok());
-        for w in [1.40625f32, 1.59375, 1.6875, 1.25] {
+        for (w, d) in [(1.40625f32, 1u32), (1.59375, 1), (1.6875, 1), (1.25, 0)] {
             let mut u = t;
             u[2] = clip(-0.375 * w, 0.75 * w, 0.0, w);
-            refused(triangle(&s, u, 0, 0), "Q230");
+            let (v, _) = triangle(&s, u, 0, 0).unwrap();
+            assert_eq!(v[2].rhw.to_bits(), rhw_rz32(w).to_bits() + d, "w = {w}");
         }
     }
 
@@ -547,12 +703,13 @@ mod tests {
             f(&mut t);
             t
         };
-        // the w values run span 3e-5 to 7
-        refused(triangle(&s, scaled(10.0), 0, 0), "Q230");
+        // a w whose mantissa was not read (1.7), or beyond the exponents run (40 = 1.25 x 2^5)
+        refused(triangle(&s, scaled(1.7), 0, 0), "Q230");
+        refused(triangle(&s, scaled(40.0), 0, 0), "Q230");
         refused(triangle(&s, scaled(1e-6), 0, 0), "Q230");
         refused(triangle(&s, scaled(-3.0), 0, 0), "Q230");
-        // a vertex of another w (a perspective triangle) outside E782's span: not run
-        refused(triangle(&s, w3(&|t| t[1][3] = F(4.0)), 0, 0), "Q230");
+        // a vertex of another w (a perspective triangle) whose mantissa was not read
+        refused(triangle(&s, w3(&|t| t[1][3] = F(4.1)), 0, 0), "Q230");
         // depth at a w other than 1 has no formula (E783); z = 0 only
         refused(triangle(&s, w3(&|t| t[0][2] = F(0.5)), 0, 0), "Q230");
         // a vertex outside the viewport after the divide: the guard band's limit was not run
@@ -580,7 +737,7 @@ mod tests {
             assert!((p.x - x).abs() < 1e-3 && (p.y - y).abs() < 1e-3, "{p:?}");
             assert_eq!(p.z, 0.5);
         }
-        // what E782 did not run stays refused: a w outside its span at one vertex, a vertex
+        // what was not run stays refused: a w whose mantissa was not read at one vertex, a vertex
         // outside the viewport after its own divide, and a depth other than 0 (E783)
         let with = |f: &dyn Fn(&mut [[u32; 4]; 3])| {
             let mut u = t;
@@ -588,7 +745,7 @@ mod tests {
             u
         };
         refused(triangle(&s, with(&|u| u[0][3] = F(0.5)), 0, 0), "Q230");
-        refused(triangle(&s, with(&|u| u[2][3] = F(2.0)), 0, 0), "Q230");
+        refused(triangle(&s, with(&|u| u[2][3] = F(2.1)), 0, 0), "Q230");
         refused(triangle(&s, with(&|u| u[0][0] = F(1.9)), 0, 0), "Q230");
         refused(triangle(&s, with(&|u| u[1][2] = F(-0.5)), 0, 0), "Q230");
     }

@@ -1,11 +1,11 @@
 +++
 id = "Q276"
-question = "which of the pixel words of E709's four-output setup are o4's own (E838: whatever a triangle's pixel program wrote to o4, tag 13, tag 5 with bit 4 or 5, alone or with the plain tag-5 word in either order, every word at the tag-5 pixels was the plain tag 5 with bits 5:3 clear, and no tag-4 word was ever read), and does a predicate set by `xor.testtaz.chan0 !c0, p1, g25, #k` gate the write `p1 or.skipinv o4`, and which instances run when it does"
+question = "where do the own words of o4 to o7 go in E709's command (state block word 4 at 0x00030001), now that the word at the tag-5 pixels is the OR of the source instance's o0 and o3 words (E858: the walk read OR(o0,o3)'s vector and a program with no o4 write read tag 5), and does a predicate set by `xor.testtaz.chan0 !c0, p1, g25, #k` gate the write `p1 or.skipinv o4`"
 unit = "pds"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E709", "E570", "E406", "E742", "E759", "E772", "E808", "E838", "E850"]
+evidence = ["E709", "E570", "E406", "E742", "E759", "E772", "E808", "E838", "E850", "E858"]
 terms = ["PDS_SIZE.BITS17_16"]
 +++
 Q023 asks which lanes write o4 to o7 in the four-output-room setup. E709 guarded o4 by a test of g25
@@ -103,3 +103,22 @@ separates all nine (plan closing5/pixel/exp-pixel-r5.md, stage p5-o4). The quest
 5:3 clear" is true of E838's marker-layout jobs only, and its "E709's four-output setup" means
 E709's command (state block word 4 at 0x00030001), not E406's full setup with the ISP word 0 and
 `CR_REG_0148` bits; both are reworded when the question is next narrowed.
+
+Narrowed 2026-11-12 (R5-pixel p5-o4, E858; the question line is reworded, the question is not
+retired). The line read "which of the pixel words of E709's four-output setup are o4's own (E838:
+whatever a triangle's pixel program wrote to o4, tag 13, tag 5 with bit 4 or 5, alone or with the
+plain tag-5 word in either order, every word at the tag-5 pixels was the plain tag 5 with bits 5:3
+clear, and no tag-4 word was ever read), and does a predicate set by `xor.testtaz.chan0 !c0, p1,
+g25, #k` gate the write `p1 or.skipinv o4`, and which instances run when it does". The walk of
+p5-o4 (bit 4 on one output, bit 5 on the others, 16 held-out jobs) read bits 5:4 = 3, 2, 2, 3, 2,
+2, 2, 2 at the tag-5 words for o0 to o7, OR(o0, o3)'s vector, and the independent rows and the
+replicate agreed (frozen verdict "the tag-5 word is OR(o0,o3)"): none of the tag-5 words is o4's,
+so the first half is answered "none", and the predicate clause cannot be read in this shape (P4
+cannot tell by design). Of E850's nine models the other eight are refuted; E850's family check
+had assumed o4 written at the source lane in three predicated configurations (its correction of
+2026-11-12). Post hoc, not held out: the o3 predicate rows (P3) fit a gated o3 write at k = 3 and
+7 in both orders and refute "the last write lands" in the swapped order, while at k = 0 the x jobs
+read the p1 word and the y jobs the !p1 word, unexplained. Open: where o4 to o7's own words land
+(a run that reads them, for example with o0 and o3 written as tag 0 so that no OR reaches the
+tag-5 pixels), then whether the predicate gates the o4 write; the line says "E709's command"
+rather than "four-output setup", as E850's note asked.

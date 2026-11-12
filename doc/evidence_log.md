@@ -6452,6 +6452,35 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   (39), 51 of 51 non-control rows decided.
   *edm; HW, RE, infer; data: `edm-closing-r5-events:out/a1/h3/`,
   `cited-scratch-private:cited/closing5/r6/`.*
+- `E858` R5-pixel stage p5-o4 (Q276, 58 jobs in E838's shape: a triangle's pixel program writing
+  tagged words to o0 to o7 in E709's command, state block word 4 at 0x00030001; frozen verdict 'the
+  tag-5 word is OR(o0,o3) (walk, z-o3, l-o4, l-o6 and the replicate)'): the word read at the tag-5
+  pixels is the OR of the source instance's o0 (tag 1) and o3 (tag 4) words: with bit 4 on one
+  output and bit 5 on every other, bits 5:4 of the tag-5 words read 3, 2, 2, 3, 2, 2, 2, 2 for o0 to
+  o7 (16 held-out jobs, OR(o0,o3)'s vector; each other model of E850 is refuted by the w-0 entry
+  alone), o3 written as tag 0 left no tag-5 word and 46 displaced tag-1 pairs, o4 written as tag 4,
+  o6 as tag 3 and no o4 write at all each read the plain tag 5, and the replicate of w-3 agreed; the
+  controls and the walk's positive controls passed (c-all4 5:1, c-v-a4 5:0, c-e709-x bits 5:4 = 3 at
+  28 of 28 tag-5 words, G-o1 0.996 of 488 sources, bit 4 at 887 of 887 and 486 of 486 own words);
+  o4's own word was not seen, so the predicate rows on o4 (P4) are cannot tell by design, and the o3
+  predicate rows (P3) cannot tell by the frozen rule, their k = 0 x and y jobs reading different
+  classes.
+  *pds; HW, infer; data: `render-closing-r5-pixel:out/20261112-091752/p5-o4/`,
+  `render-closing-r5-pixel:fold/`.*
+- `E859` R5-pixel stages g5-rwa and g5-rw (Q230, 12 and 36 jobs in E842's shape with every vertex
+  inside the viewport; frozen verdicts 'part a: PASS' and 'H-MANT held: 42 of 42 m words equal R4's
+  delta at another exponent; every word is RZ or RZ+1 of 1/w (126 of 126 rows decided)'): whether
+  the stored 1/w of a kept vertex is RZ of 1/w or one ulp above follows the mantissa of w: E842's 14
+  triangles rerun with every w halved (7 jobs) or multiplied by four (7 jobs) stored R4's delta at
+  all 42 vertices (11 RZ + 1), held out, and the replicates of two of them the same six words; the
+  six quarter-scaled triangles E842 lost at the guard band, now scaled to stay inside the viewport,
+  wrote 3-vertex objects whose 18 words (w 0.254 to 0.443) are RZ or RZ + 1 (3 RZ + 1), the 4 of
+  them at a mantissa read before equal to it; a dense table of 60 new mantissas (w 0.254 to 7.54, 20
+  jobs) is RZ or RZ + 1 at all 60 (8 RZ + 1), split FIT / HELD OUT by a frozen hash for a later fit;
+  the six controls exact; read post hoc over all 196 words now known, none of the 47 mantissas read
+  at two or more exponents shows both RZ and RZ + 1, and which mantissas store RZ + 1 has no rule.
+  *ta; HW, infer; data: `render-closing-r5-pixel:out/20261112-091752/g5-rwa/`,
+  `render-closing-r5-pixel:out/20261112-091752/g5-rw/`, `render-closing-r5-pixel:fold/`.*
 
 ## By unit
 
@@ -6504,7 +6533,7 @@ Records: E043, E044, E045, E046, E047, E048, E125, E126, E127, E128, E129, E130,
 E134, E135, E136, E137, E138, E139, E140, E141, E142, E143, E144, E145, E259, E260, E261, E262,
 E263, E264, E343, E344, E345, E364, E379, E381, E384, E388, E389, E390, E391, E392, E393, E394,
 E395, E396, E400, E420, E421, E428, E430, E436, E437, E454, E459, E460, E709, E742, E759, E772,
-E808, E838, E850.
+E808, E838, E850, E858.
 
 ### platform
 
@@ -6522,7 +6551,7 @@ E448, E449, E451, E458, E462, E732, E770.
 Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180, E181, E247, E257,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
 E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763, E776, E777,
-E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828, E842, E847, E851.
+E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828, E842, E847, E851, E859.
 
 ### texture
 
