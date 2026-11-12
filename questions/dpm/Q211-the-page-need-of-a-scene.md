@@ -5,7 +5,7 @@ unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E310", "E625", "E630", "E705", "E735", "E773", "E779", "E832", "E853", "E854", "E863", "E866"]
+evidence = ["E310", "E625", "E630", "E705", "E735", "E773", "E779", "E832", "E853", "E854", "E863", "E866", "E874", "E875"]
 terms = ["Dynamic Parameter Management (DPM)", "Parameter Buffer (PB)"]
 +++
 
@@ -141,3 +141,14 @@ question stays open). The tool's full-screen triangle at 1x and 1024 x 768 compl
 frozen 97; the model fits its one earlier dump (r2-pixel's 320 x 400, 10 pages) and this boundary,
 two scenes of another shape than the tool's triangle. At 4x on four arrays U4 = 1 + ceil(2 tiles16 /
 32) held at three boundaries one page apart (E866, two of them held out).
+
+Note 2026-11-12 (round 6, offline stage F7 and F9, E875 and E874; decision R6-1 a; the question
+stays open). [HW, SEMI and post hoc; infer] A page-by-page replay with no fitted number (HU1's
+regions walked in an order, a stream each, a page per macrotile every 32 streams, the one raise)
+gives the count of one-triangle scenes where no spacing constant does, if the walk order is right:
+the order frozen on g-qf's counts (columns, 22 of 22) missed 3 of the 29 counts of s275, s198 and
+s119 (E875), and row order, named after the counts were read, gives 54 of 56 kept counts over U
+287, 275, 198 and 119 and every run's peak within 3 pages in 29 of 29. For the 1500-vertex scene
+E874's replay with partial renders gives 43 of 43 counts at 2048x2048 (exploratory). Open: the
+walk order, held out on new scenes; what row order misses; scenes of many objects in general,
+multi-kick scenes; the U clause as above.

@@ -6645,6 +6645,61 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *ta; HW, infer; data: `render-closing-r4-pixel:out/20261111-210423/`,
   `render-closing-r5-pixel:out/20261112-091752/`, `render-closing-r5-pixel:fold/`,
   `cited-scratch:closing6/pixel/`.*
+- `E873` Round 6 offline reading of the kept DPM timelines (Q210, A2b; a reading rule applied to
+  data already seen, post hoc, nothing held out): a step of the global page count between two
+  samples of the first TA run with page counts a and b only places S_k, the count before global page
+  k appears, in [a, max(a, b - 1)]; read so, every one of the 31 (target, scene, step) keys of the
+  kept sessions has a non-empty intersection over its jobs (28 one value, 3 a two-page range, 0
+  empty), so no step moves between jobs, and S2 of the tool's 1500-vertex triangle at 4096x2048 is
+  0x97 in 13 of 13 kept jobs, a2b-cal-4x2 included: its bracket is [0x97, 0x98] (as in 5 more jobs
+  of R3-geo g-c5), and the round 5 reading of 0x98 that gated d-a2b (E861) was the upper end max(a,
+  b - 1); every value of E852's table and E861's frozen S lies in the bracket of every job of its
+  key (the point rule gives the same value in all jobs of every key but 4096x2048 S2, 7 of 13); at
+  2048x2048 S6 and S7 are 0x181 and 0x1ca (6 jobs each).
+  *dpm; HW; data: `render-closing-r1-pixgeo`, `render-closing-r2-geo`, `render-closing-r3-geo`,
+  `render-closing-r5-dpm`.*
+- `E874` Round 6 offline replay of the TA's page take for the tool's triangle with 1500 vertices
+  (Q210; read from kept dumps and timelines that had been seen, so post hoc and SEMI, nothing held
+  out in the strict sense): the global list holds 67-dword object blocks back to back (5 triangles
+  each) and global page k begins inside object b_k = floor(1024 (k - 1) / 67), 149 of 149 global
+  pages in kept dumps beginning where that puts them (2 fit pages; the first frozen version of the
+  check was defective and its output seen before the fix, so SEMI); a region's stream block holds 31
+  dwords of entries and the entry of object b_k carries one more, the base of the new page, so every
+  region covering the triangle opens a block at objects 0, 15, 30, ... (2089 to 2341 regions each at
+  2048x2048, read in the dumps); a block-level replay with only those constants and one fitted lag
+  (the TA writes object b to the list 3 objects before it tiles it, fitted on 2048x2048) gives the
+  dumps' block openings exactly, U = 0x213 at 2048x2048 and 0x3f7 at 4096x2048 (the kept needs), and
+  20 of 21 steps of the four other targets in their brackets (2048x4096 S3 is 0x129 against 0x12c);
+  the steps are the page counts when b_k is written, the bursts the blocks opened at the next
+  multiple of 15, the creep the regions that the moving copies reach later; the pages left by the
+  first partial render are 2 iff the first threshold falls between a step and the model's burst end
+  B_k, else 1 (H-PHASE: 26 of 26 fit rows at 2048x2048, 60 of 61 rows of the other targets, the miss
+  a row reading 0), so the first silent cell of the raise is B3 at all five targets (E774, E799,
+  E801; post hoc), where the frozen timeline burst-end rule placed only 49 of 61; read after the
+  fact, at the 21 kept grow cells the global count goes from 1 to 2 at the first sample after the
+  render (H-PENDREQ), E802's --tri-full scene (71-dword blocks, 3-dword entries) has S2 0x201 and S3
+  0x302 by the same replay, so one global page at all its cells, and the replay with partial renders
+  gives 43 of 43 partial-render counts of kept 2048x2048 jobs (exploratory).
+  *dpm; HW, infer; data: `render-closing-r1-pixgeo:out/g-c1/`, `render-closing-r2-geo:out/g-c2/`,
+  `render-closing-r2-geo:out/g-c3/`, `render-closing-r3-geo:out/g-c4/`,
+  `render-closing-r3-geo:out/g-c5/`, `render-closing-r3-geo:out/g-c6/`,
+  `render-closing-r3-geo:out/g-c7/`, `render-closing-r3-geo:out/g-d36/`,
+  `render-closing-r5-dpm:out/a2/`, `render-closing-s1:out/g-e1/`, `render-closing-s1b:out/g-e1/`.*
+- `E875` Round 6 offline replay of the partial-render count of one-triangle scenes (Q211; no numeric
+  constant fitted, one walk order picked from a closed family of six on E832's 22 g-qf cells, the
+  rest SEMI since every count had been read before): HU1's regions walked in an order, one 128-byte
+  stream each from its macrotile's current page, 32 a page, a refused page starting a partial render
+  that frees all but the global page, the threshold raised by 0x20 once; the frozen pick, column
+  order (22 of 22 g-qf counts), gave 26 of 29 counts of the scenes it was not picked on (s275 7 of
+  7, s198 9 of 11, s119 10 of 11, one render too many at each miss), so H-REPLAY with the frozen
+  order is refuted on kept data; read after, row order (and macrotile rows, the same numbers) gives
+  20 of 22 g-qf, 29 of 29 of the others and 5 of 5 repeats, 54 of 56 kept counts where no spacing of
+  E854's family fits all four scenes, with every run's peak within 3 pages in 29 of 29 and the last
+  run's exact in 19; every member gives E625's and E779's 4096x4096 cells and E625's 1024x768 cells
+  (37, counts only) but the three macrotile-first orders (36); E854's d = 7/4 gives 22 of 22 and 22
+  of 29, d = 1 17 of 22 and 26 of 29.
+  *dpm; HW, infer; data: `render-closing-r3-geo-c:out/g-qf/`, `render-closing-r3-geo-c:out/g-qh/`,
+  `render-closing-r5-dpm:out/a2/d-b/`.*
 
 ## By unit
 
@@ -6658,7 +6713,7 @@ Records: E199, E200, E201, E202, E204, E205, E206, E203, E253, E256, E309, E310,
 E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E468, E574, E591,
 E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753, E773, E774, E775, E779, E785,
 E786, E790, E799, E800, E801, E802, E803, E832, E845, E846, E852, E853, E854, E860, E861, E862,
-E863, E864, E866, E867, E868, E869, E870.
+E863, E864, E866, E867, E868, E869, E870, E873, E874, E875.
 
 ### edm
 
