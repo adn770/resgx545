@@ -83,3 +83,17 @@ def test_the_sources_that_ran_in_11_30_are_the_blobs_the_runs_uploaded():
     m = json.loads((fwtask.ASM / "fwtask.map").read_text())
     for name, sha in ran.items():
         assert m[name]["sha256"].startswith(sha), name
+
+
+def test_oomring2_is_the_blob_r7_dpm_ran_and_reads_the_two_page_counts_only():
+    """oomring2 (round 7, R7-4 a): R5-dpm's oomring with two read-only loads, CR_DPM_PAGE_STATUS
+    (#457) and CR_DPM_GLOBAL_PAGE_STATUS (#459), stored in each rung's words 6 and 7. It lands as
+    the blob R7-dpm's set B armed on module 37EC97AB (resgx545-data render/closing-r7-dpm,
+    bins/blobs.json; E918), accepted by the Python verifier; no str."""
+    blob = fwtask.blob_of("oomring2")
+    assert hashlib.sha256(blob).hexdigest() == "c855818ec4334a0826be4361f0c0c1ae6819fba681e7b9f3a4f9dab028399676"
+    assert fwtask.refusal(blob, fwtask.load_regs()) is None
+    text = (fwtask.ASM / "oomring2.s").read_text()
+    code = [ln.split(";")[0].split() for ln in text.splitlines()]
+    assert sorted({w[2] for w in code if w and w[0] == "ldr"}) == ["#457,", "#459,", "#81,"]
+    assert not [w for w in code if w and w[0] == "str"]

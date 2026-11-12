@@ -34,6 +34,13 @@
   "source": "null.s",
   "source_sha256": "5bf00b7bc83d181f62e80bcfbc7f6dcc725bc8cb16bf375ca8c93486f38d7782"
  },
+ "oomring2": {
+  "bytes": 6984,
+  "insns": 850,
+  "sha256": "c855818ec4334a0826be4361f0c0c1ae6819fba681e7b9f3a4f9dab028399676",
+  "source": "oomring2.s",
+  "source_sha256": "c0f9c8687b543169b68ef32989cfcd0a0adb5899046e2f76db0bc57beaf1ceb4"
+ },
  "slow": {
   "bytes": 346,
   "insns": 39,
