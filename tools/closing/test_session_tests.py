@@ -553,9 +553,21 @@ def built_world(world, source=V1, recipe="data:edm/closing-demo/lead/build.sh"):
 
 def test_a_built_binary_is_verified_by_its_source_not_its_bytes(world, tmp_path):
     """A FROZEN.commits built line stands for the binary: the runner checks the source blob at
-    the commit and the recipe's place, drops the binary's line from the copy's freeze and never
-    looks for the bytes (nor the private copy); the worktree stays at the tool tree's commit."""
+    the commit and the recipe's place and never looks for the bytes (nor a private copy). The
+    binary's place holds a stand-in that `shasum -a 256` reads as the pinned hash, so the
+    session's own freeze, verify and re-freeze steps run (R7-geo's run_mock re-freezes copies
+    and its freeze script compares the binary with TOOL6.sha256); a changed stand-in hashes as
+    itself."""
     s = built_world(world)
+    run_all = (s / "tests/run_all.sh").read_text().replace(
+        'echo "RUN_ALL PASSED"',
+        '[ "$(shasum -a 256 bin/t/tool | cut -c1-64)" = "%s" ] || { echo "stand-in"; exit 1; }\n'
+        'cp -R bin bin2 && printf x >> bin2/t/tool\n'
+        '[ "$(shasum -a 256 bin2/t/tool | cut -c1-64)" != "%s" ] || { echo "changed"; exit 1; }\n'
+        'echo "RUN_ALL PASSED"' % (sha("BIN"), sha("BIN")))
+    (s / "tests/run_all.sh").write_text(run_all)
+    frozen = (s / "FROZEN.sha256").read_text().replace(sha(RUN_ALL), sha(run_all))
+    (s / "FROZEN.sha256").write_text(frozen)
     priv = tmp_path / "data-private"
     (priv / "cited/closing7/demo/bin/t").mkdir(parents=True)
     (priv / "cited/closing7/demo/bin/t/tool").write_text("NOT THE BINARY")
@@ -563,7 +575,8 @@ def test_a_built_binary_is_verified_by_its_source_not_its_bytes(world, tmp_path)
     assert r.returncode == 0, r.stdout + r.stderr
     assert "RUN_ALL PASSED" in r.stdout
     assert "built bin/t/tool" in r.stdout and "source verified" in r.stdout
-    assert sha("BIN") in (s / "FROZEN.sha256").read_text()      # the published freeze is kept
+    assert (s / "FROZEN.sha256").read_text() == frozen          # the published freeze is kept
+    assert not (s / "bin").exists()
 
 
 def test_a_built_binary_whose_source_differs_fails(world):

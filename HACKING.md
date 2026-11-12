@@ -135,7 +135,10 @@ record of what ran, and `FROZEN.commits` binds it to its source with a line
 commit it was built from, the source file whose blob there hashes to `<source-sha256>`, and the
 recipe that built it (`data:PATH` in resgx545-data, else a path of this tree at the commit).
 `frozen.py --check` and `tools/closing/session_tests.sh` verify the source blob and the recipe's
-place, never the binary bytes; the runner drops the binary's line from its copy of the freeze.
+place, never the binary bytes. The runner puts a stand-in at the binary's place in its copy (a
+text line naming the hash) and a `shasum` wrapper first on PATH reads that exact stand-in as the
+pinned hash, so the session's own freeze, verify and re-freeze steps run as frozen; a changed
+stand-in hashes as itself, and the session's mocks run fakes of the tool, never the binary.
 Neither data repository holds the binary.
 
 ## Closing-session scorers
