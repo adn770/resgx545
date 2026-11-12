@@ -66,7 +66,7 @@ def zls_classes(w, h, g, ax, ay):
     """The stored dwords of a pair of ramp dumps by class, from the dumps alone (written here, not
     taken from the dataset's recompute): at the rule's address inside the target, at it for a pixel
     past the target inside the band, background past the band in a tile of the target (both by
-    E831's band, x + 0.5 < 1.25 W and y + 0.5 < 1.25 H; at an odd W or H either is "odd", Q287),
+    E831's band, x + 0.5 < 1.25 W and y + 0.5 < 1.25 H, rule A at odd sizes too: E885, E903),
     background or zero in a slot that is no tile of the target or all zero (Q107), anything else
     (unexplained)."""
     def ramp(v, size):
@@ -83,8 +83,7 @@ def zls_classes(w, h, g, ax, ay):
     def band(x, y):
         return 4 * x + 2 < 5 * w and 4 * y + 2 < 5 * h
 
-    odd = w % 2 or h % 2
-    c = dict(inside=0, outside=0, bg_outside=0, bg_tiles=0, zero=0, odd=0, other=0)
+    c = dict(inside=0, outside=0, bg_outside=0, bg_tiles=0, zero=0, other=0)
     for i, (vx, vy) in enumerate(zip(ax, ay)):
         if vx == 0xDEADBEEF:
             continue
@@ -100,8 +99,6 @@ def zls_classes(w, h, g, ax, ay):
         if vx == vy == 0x3F800000 and (not in_grid or past):
             if not in_grid:
                 c["bg_tiles"] += 1
-            elif odd:
-                c["odd"] += 1
             else:
                 c["other" if band(32 * tx + x, 16 * ty + y) else "bg_outside"] += 1
         elif vx == vy == 0:
@@ -111,8 +108,6 @@ def zls_classes(w, h, g, ax, ay):
             if px is not None and py is not None and 512 * (py // 16 * (g + 1) + px // 32) + index(px % 32, py % 16) == i:
                 if px < w and py < h:
                     c["inside"] += 1
-                elif odd:
-                    c["odd"] += 1
                 else:
                     c["outside" if band(px, py) else "other"] += 1
             else:
@@ -136,11 +131,9 @@ def zls_store(data):
                          words(data / Z / "dumps" / (base + "-rampy.bin.gz")))
         # the dataset's own totals must still hold: its "at the rule" is the inside and the
         # outside pixels together, its "background" the two background classes
-        assert cl["inside"] + cl["outside"] + cl["odd"] + cl["bg_outside"] + cl["bg_tiles"] == int(ok) + int(bg), (base, cl)
+        assert cl["inside"] + cl["outside"] + cl["bg_outside"] + cl["bg_tiles"] == int(ok) + int(bg), (base, cl)
         assert cl["zero"] == int(und) and cl["other"] == 0
         expect = {"stored": int(stored), "matched": cl["inside"] + cl["outside"] + cl["bg_outside"], "refused": {}}
-        if cl["odd"]:
-            expect["refused"]["Q287"] = cl["odd"]
         if cl["zero"] + cl["bg_tiles"]:
             expect["refused"]["Q107"] = cl["zero"] + cl["bg_tiles"]
         if m[13] is not None:
