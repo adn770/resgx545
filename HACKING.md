@@ -160,8 +160,11 @@ lines that changed. `out/`, the predictions and the freeze the run used are neve
 `tools/closing/session_tests.sh <area/closing-name>` re-runs a published session's own offline
 tests from a scratch copy (the data repository is never written to): the session's siblings are
 linked where the tests expect them, a fake HOME holds the tool tree at the commits of the
-session's `FROZEN.commits`, and a session's `debug-src/` is copied to `debug/`. It prints PASS or
-FAIL with the tests' exit code. Builds of the pinned tool go to the runner's own target
+session's `FROZEN.commits`, and a session's `debug-src/` is copied to `debug/`. A session whose
+generator scans an area of the data repository lists the sessions of that area its freeze saw in
+`postrun/data-view.txt`; the fake home's data repository then shows only those there, so the
+session's own kept rows and later sessions do not change what its checks regenerate. It prints
+PASS or FAIL with the tests' exit code. Builds of the pinned tool go to the runner's own target
 (`RESGX545_SESSION_TARGET`, default `scratch/resgx545/session-target`), never the main
 checkout's: old binaries would replace current ones there.
 

@@ -1,11 +1,11 @@
 +++
 id = "Q293"
-question = "why does the TA insert a zero dword between an object's line widths and its format word (dword 11 of the parameter buffer) when CR_TE_AA bit 29 is clear and bit 30 or 31 is set, which leaves the image empty because the 3D reads the zero as the format word"
+question = "with CR_TE_AA bit 29 clear and bit 30 or 31 set the TA inserts one zero dword right before the format word of a triangle, line or point object (at 0x40 and 0x80, on one array and on four: E728, E847, E865), and the 3D reads the zero as the format word and draws nothing (E829): is there a setting under which the 3D reads the displaced layout, and what do another value at that dword and render 2's own object give"
 unit = "ta"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E728", "E829", "E847"]
+evidence = ["E728", "E829", "E847", "E865"]
 terms = ["CR_TE_AA", "Parameter Buffer (PB)", "PB_OBJ.FORMAT"]
 +++
 Split on 2026-11-11 from the TA side of a retired question answered by E829. E728: with
@@ -47,3 +47,14 @@ empty, so the dword is zero for objects with a width too [infer: padding]. A fro
 line and point rows with the dump name fixed in the scorer would make this a held-out result;
 still open: other values at the dword, render 2's own object, a setting that makes the 3D read
 the displaced layout.
+
+Narrowed 2026-11-12 (round 5, session R5-render4x stage t, E865; the question text above is the
+narrowed one). Frozen verdict, 6 of 6 rows decided, every control passed (E827's row, the unpoked
+11.31 line and point): the dword the TA inserts is zero and sits right before the object's format
+word, at dword 9 of the line and dword 11 of the point with 0x80000000 (held out) as with 0x40000000
+(E847's post hoc reading, replicated), and at dword 11 of the triangle on a context made for 4x
+targets with both values, the image empty in every case. H-FIELD (a non-zero field) was not seen;
+[infer] the dword is padding the TA writes in this configuration. So the dword is zero for every
+object kind the tool draws, at both values and whatever the region-header array count (settled by
+E865). Open: whether any register makes the 3D read the displaced layout, 0xc0000000 on a line or a
+point, a non-zero value poked into the dword, render 2's own object.

@@ -18,18 +18,19 @@
 #     the newest commit holding exactly that tool source), each pinned file replaced by its
 #     pinned blob (a FROZEN.commits line may name its repository, R5-dpm's resgx545:PATH; a
 #     line of another repository, linux: or data:, is left to the session's own checks), and
-#     src/scratch/resgx545 is the scratch tree. The copy's FROZEN.sha256 has its
-#     absolute resgx545 and resgx545-data paths pointed at the fake home, so the freeze
-#     verifies against the pinned source; a pin of a tree that sat under scratch/resgx545/
-#     (round 4 froze against closing4/lead/wt) is pointed at the worktree by its FROZEN.commits
-#     path, and a frozen file of the session that only lists such
-#     paths of the freeze (R4-G's gen/data/sources.lst) is pointed there too, its hash line
-#     following;
-#   - src/resgx545-data is the data repository; the worktree's target/ is the runner's own
-#     (RESGX545_SESSION_TARGET, kept between runs, never the main checkout's), the main
-#     checkout's userspace/libsgxfive/build/ is copied and its .venv linked (current, not
-#     pinned), and a session's debug-src/ is copied to debug/ with its path dependencies on
-#     crates/ pointed at the worktree;
+#     src/scratch/resgx545 is the scratch tree. The copy's FROZEN.sha256 has its absolute
+#     resgx545 and resgx545-data paths pointed at the fake home, so the freeze verifies against
+#     the pinned source; a pin of a tree that sat under scratch/resgx545/ (round 4 froze against
+#     closing4/lead/wt) is pointed at the worktree by its FROZEN.commits path, and a frozen file
+#     of the session that only lists such paths of the freeze (R4-G's gen/data/sources.lst) is
+#     pointed there too, its hash line following;
+#   - src/resgx545-data is the data repository (or, when the session has a
+#     postrun/data-view.txt, a view of it in which each area the file names holds only the
+#     sessions it lists: the corpus a generator that scans the area saw at the freeze); the
+#     worktree's target/ is the runner's own (RESGX545_SESSION_TARGET, kept between runs, never
+#     the main checkout's), the main checkout's userspace/libsgxfive/build/ is copied and its
+#     .venv linked (current, not pinned), and a session's debug-src/ is copied to debug/ with its
+#     path dependencies on crates/ pointed at the worktree;
 #   - TOOL_SRC, RESGX545 and RESGX545_MAIN name the pinned worktree and RESGX545_DATA the fake
 #     home's data link (the sessions' overrides of their tool and data trees, which some default
 #     to an agent worktree that no longer exists or to the author's absolute paths);
@@ -86,7 +87,27 @@ trap cleanup EXIT
 
 mkdir -p "$HOMEDIR/src" "$S/closing" "$S/closing2" "$S/closing3"
 ln -s "$W/scratch" "$HOMEDIR/src/scratch"
-ln -s "$DATA" "$HOMEDIR/src/resgx545-data"
+# a session whose generator scans an area of the data repository lists in postrun/data-view.txt
+# the sessions of that area its freeze saw; the fake home's data repository is then a view that
+# holds only those in each listed area, every other entry linked whole
+VIEW=$SRC/postrun/data-view.txt
+if [ -f "$VIEW" ]; then
+    FD=$HOMEDIR/src/resgx545-data
+    mkdir "$FD"
+    for e in "$DATA"/*; do
+        a=$(basename "$e")
+        if grep -q "^$a/" "$VIEW"; then
+            mkdir "$FD/$a"
+            for s in "$e"/*; do
+                grep -qxF "$a/$(basename "$s")" "$VIEW" && ln -s "$s" "$FD/$a/"
+            done
+        else
+            ln -s "$e" "$FD/$a"
+        fi
+    done
+else
+    ln -s "$DATA" "$HOMEDIR/src/resgx545-data"
+fi
 export CARGO_HOME=${CARGO_HOME:-$HOME/.cargo} RUSTUP_HOME=${RUSTUP_HOME:-$HOME/.rustup}
 for g in closing closing2 closing3; do   # a session's shims find it beside the session's group
     mkdir -p "$S/$g/pixel-faults/.venv/bin"

@@ -58,3 +58,11 @@ the TA writes in this configuration rather than a field of the object.
 One value of the poke for the line and the point (0x40), one object each, one run; other values
 at dword 11, render 2's own object, and whether some other setting makes the 3D read the
 displaced layout, stay open (Q293).
+
+**Correction 2026-11-12:** (after R5-render4x, E865) The post hoc reading of this record holds
+under a frozen verdict: with the scorer finding a probe's dump by its program's name, the baselines
+passed and 0x40000000 inserted one zero dword at 9 for the line and at 11 for the point, as read
+here (replicates), and 0x80000000, never run on them before, did the same (held out): 6 of 6 rows
+decided (E865). Of the open items above, 0x80 on the line and the point is now measured; the other
+values at the dword, render 2's own object and a setting that makes the 3D read the displaced
+layout stay open (Q293).

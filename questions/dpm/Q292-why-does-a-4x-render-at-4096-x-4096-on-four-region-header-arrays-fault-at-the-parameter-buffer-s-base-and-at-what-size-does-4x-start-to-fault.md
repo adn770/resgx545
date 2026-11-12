@@ -1,11 +1,11 @@
 +++
 id = "Q292"
-question = "why does a 4x render on a context made for 4x targets (four region-header arrays) fault at the parameter buffer's base (BIF_INT_STAT 0x90100, BIF_FAULT 0x10000011) at 1280 x 1024 and larger targets, whose scenes fit the buffer (not an overflow: E845, E846), and is it the width past 1024, the height past 768 or the size between 1024 x 768 and 1280 x 1024 that starts it"
+question = "a 4x render of the full triangle on a context made for 4x targets (four region-header arrays) faults at the parameter buffer's base (BIF_INT_STAT 0x90100, BIF_FAULT 0x10000011) past 1024 x 768 on its own maximum, with stream offsets of the first region headers zero (E869), and completes at the same size on a context made for a larger maximum with more tail-pointer room (E867): what part of the context's layout does a 4x job need, as a function of its target, which no fixed size limit and none of four tail-pointer extents gives (E868), and what clears the stream offsets"
 unit = "dpm"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E828", "E824", "E845", "E846"]
+evidence = ["E828", "E824", "E845", "E846", "E866", "E867", "E868", "E869"]
 terms = ["Parameter Buffer (PB)", "CR_TE_AA", "CR_BIF_FAULT"]
 +++
 Split on 2026-11-11 from the laptop check R3-rgn4 (E828), job j4: with the fork's 4 MiB TA-data
@@ -79,3 +79,35 @@ separates them. Open: which of these starts it, and what the 3D-side access at p
 (requestor bit 8) is. To settle it: 4096 x 960 and 960 x 4096 (the two cells p did not reach),
 then a ladder in the dimension that faults (1088, 1152, 1216 wide at 768, or 832, 896, 960 high at
 1024), with a kept image of each faulting job.
+
+Narrowed 2026-11-12 (round 5, session R5-render4x, E866 to E869; the question text above is the
+narrowed one). Not the overflow, now under a frozen verdict: a 4x scene that overflows ends in
+-ENOSPC without a fault, one page short of its need, held out at 640 x 480 and 512 x 384 (H-ENOSPC4,
+6 of 6 rows decided, E866). The cause depends on the context: 1280 x 1024 completed on contexts made
+for 1280 x 1040 and 2048 x 2048 and 2048 x 1536 on 4096 x 4096, whose tail-pointer room (4 side^2
+bytes) is four times their own, and 1280 x 1024 faulted on 2048 x 1024, whose region buffer grows
+and whose room does not (H-TPC held, 4 of 4, every size rule refuted, E867). The onset on the
+target's own maximum fits none of the eleven frozen rules over the 13 decided rows: 1184 x 768, 1024
+x 800, 1280 x 768, 1024 x 1024, 2048 x 240 and 768 x 2048 faulted, 1024 x 512 and 256 x 1536
+completed, so no width, height, count, page or area limit, and none of H-TPC's four extents of the
+doubled grid (d, rs, rb against the region headers or the state page) fits; a post hoc search of 192
+such extents finds none (E868). The held 1280 x 1024 fault (E869) replicated E845 with the whole
+scene written (321 pages): 1212 of 12288 region headers are off the rule from td.rgn 0x7000 to
+0xd804, most with word 0 intact and a zero stream offset, in macrotiles 0 to 2, and nothing below
+td.rgn is non-zero [post hoc]; [infer] a zero offset sends the 3D to the request base, the fault's
+page. Open: the extent a 4x job needs as a function of target and maximum, and what clears the
+offsets (the TA's tail pointers or the order of the TA's writes); the 4096-wide residue (a right
+block, E828, E846) stays as it was.
+
+Planned 2026-11-12 (decision R5-8 a; a kernel item for the next boot, no kernel work this round).
+Since H-TPC held in E867's reading, the kernel's tail-pointer room on a context made for 4x targets
+is to be sized for the doubled tile grid: side doubled, four times the bytes
+(closing5/render4x/exp-render4x-r5.md section 4). Every four-array 4x job whose context had at least
+that room for its target completed, 4 of 4 (E867's m0, m1, m2, m4), and none faulted; every
+own-maximum job had less [post hoc]. At 4096 x 4096 the TA data grows from 0x223000 to 0x2e3000
+bytes, inside the 4 MiB slot. The change goes KUnit first in the fork, built on cachix, booted
+one-shot with the user's OK; its held-out test: the own-maximum cells that faulted (E845, E868: 1280
+x 1024, 1184 x 768, 1024 x 800, 2048 x 240, 768 x 2048, 2048 x 1536) complete with 0 wrong pixels
+and no region header off the rule, and the completed ones stay so. If it holds, E824 and E828 get
+corrections (their four-array layout lacks the tail room) and this question narrows to the extent's
+rule.

@@ -65,3 +65,12 @@ for its own row, so every row is gated. Why an overflow at 288 x 144 with one us
 the completed image while at 1024 x 768 it gives 4096 triangle pixels, under the fork's rule that
 an overflowed image is undefined; o6's question (whether the 3D reads ext-Z region headers) did
 not run. One run each.
+
+**Correction 2026-11-12:** (after R5-render4x, E866) The sentence "the frozen need 97 is the model
+of the full triangle" above is wrong for 1x: 97 was the model, and the model was wrong. The 1x full
+triangle at 1024 x 768 needs 49 scene pages: it completed at P 0x53 with 49 pages in its dump and
+ended in -ENOSPC at 0x52 (E866, exploratory, at the need a per-macrotile model gave before the run).
+So had o2 run the full triangle at P 0x82 (96 usable) it would have completed as well; the record's
+reading that the control said nothing against the page rule stands. The post hoc reading of this
+record (a 4x overflow ends in -ENOSPC without a fault) now holds under a frozen verdict, held out at
+640 x 480 and 512 x 384 (E866, H-ENOSPC4, 6 of 6 rows decided).
