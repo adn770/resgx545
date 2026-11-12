@@ -484,6 +484,63 @@ def gen_events_m():
     return s.text()
 
 
+OOM_RUNGS, OOM_RING_AT, OOM_RUNG_WORDS = 48, 0x400, 8
+OOM_MASK = (1 << 22) | (1 << 21) | (1 << 20) | (1 << 10) | (1 << 9) | (1 << 4)
+OOM_BASES = ("r2", "r3", "r6")      # res + 0x400, + 0x600, + 0x800: 16 rungs a base register
+
+
+def gen_oomring2():
+    """Round 7 (R7-4 a, E918): four stubs count their passes in dwords 16 + slot and, at an event
+    whose pa1 has a bit of OOM_MASK (the out-of-memory and end-of-render kinds), append a rung
+    [slot + 1, pa0, pa1, sa8, sa9, CR_TIMER, CR_DPM_PAGE_STATUS, CR_DPM_GLOBAL_PAGE_STATUS] to a
+    48-rung ring at res + 0x400 (dword 20 counts the rungs a full ring loses); then each goes on to
+    the closed task of its slot. R5-dpm's oomring (resgx545-data render/closing-r5-dpm) with the two
+    read-only loads round 7's register list allows; the blob R7-dpm's set B ran."""
+    s = Src("oomring2", "Q210: four stubs append [slot + 1, pa0, pa1, sa8, sa9, CR_TIMER, 0x0724, 0x072c] "
+            "to a ring at an out-of-memory or end-of-render event", "R7-4")
+    for k in range(4):
+        s("@entry %d" % k,
+          "mov r1, #0xdeadbeef                 ; @patch res+0",
+          "mov r2, #0xdeadbeef                 ; @patch res+0x%x" % OOM_RING_AT,
+          "mov r3, #0xdeadbeef                 ; @patch res+0x%x" % (OOM_RING_AT + 0x200),
+          "mov r6, #0xdeadbeef                 ; @patch res+0x%x" % (OOM_RING_AT + 0x400),
+          "mov r10, #0x%08x                 ; the slot tag of a rung" % (k + 1),
+          "mov r4, pa0", "mov r5, pa1",
+          "ldad.bypassl1 r8, [r1,+#%d], drc0" % (16 + k), "wdf drc0",
+          "mov r9, #0xffffffff", "ima32.u r8, r8, #1, r9.neg",
+          "stad [r1,+#%d], r8                 ; passes of slot %d" % (16 + k, k),
+          "idf drc0, bif", "wdf drc0",
+          "mov r8, #0x%08x" % OOM_MASK,
+          "and.testtanz.chan0 !c0, p0, r5, r8  ; p0 = pa1 & 0x%08x != 0" % OOM_MASK,
+          "!p0 br @x%d" % k,
+          "mov r12, sa8", "mov r13, sa9",
+          "ldr r11, #81, drc0                  ; CR_TIMER", "wdf drc0",
+          "ldr r14, #457, drc0                 ; CR_DPM_PAGE_STATUS (0x0724), read only", "wdf drc0",
+          "ldr r15, #459, drc0                 ; CR_DPM_GLOBAL_PAGE_STATUS (0x072c), read only", "wdf drc0",
+          "br @ring")
+        tail(s, "x%d" % k, k)
+    s("ring:")
+    for j in range(OOM_RUNGS):
+        b, o = OOM_BASES[j // 16], OOM_RUNG_WORDS * (j % 16)
+        if j:
+            s("r%d:" % j)
+        s("ldad.bypassl1 r7, [%s,+#%d], drc0" % (b, o), "wdf drc0",
+          "and.testtanz.chan0 !c0, p0, r7, r7  ; p0 = rung taken",
+          "p0 br @%s" % ("r%d" % (j + 1) if j + 1 < OOM_RUNGS else "full"))
+        s(*["stad [%s,+#%d], %s" % (b, o + i, r) for i, r in enumerate(("r10", "r4", "r5", "r12", "r13", "r11", "r14", "r15"))])
+        s("idf drc0, bif", "wdf drc0", "br @done")
+    s("full:",
+      "ldad.bypassl1 r8, [r1,+#20], drc0", "wdf drc0",
+      "mov r9, #0xffffffff", "ima32.u r8, r8, #1, r9.neg",
+      "stad [r1,+#20], r8                 ; rungs lost to a full ring",
+      "idf drc0, bif", "wdf drc0",
+      "done:")
+    for k in range(3):
+        s("xor.testtaz.chan0 !c0, p1, r10, #%d   ; p1 = slot %d" % (k + 1, k), "p1 br @x%d" % k)
+    s("br @x3")
+    return s.text()
+
+
 TRC_STAIRS = [8, 9, 12, 16, 24, 31, 32, 40, 48, 49, 64]
 TRCP_STAIRS = [32, 36, 40, 44, 48]          # 11.33
 
@@ -492,7 +549,8 @@ def all_sources():
     d = {"null": gen_null(), "mem": gen_mem(), "ldr": gen_ldr(),
          "x9b_r1": gen_9b("R1"), "x9b_r2": gen_9b("R2"),
          "state": gen_state(), "events": gen_events(), "slow": gen_slow(),
-         "state2": gen_state2(), "state3": gen_state3(), "events_m": gen_events_m()}
+         "state2": gen_state2(), "state3": gen_state3(), "events_m": gen_events_m(),
+         "oomring2": gen_oomring2()}
     for t in TRC_STAIRS:
         d["trc_%02d" % t] = gen_trc(t)
     for t in TRCP_STAIRS:

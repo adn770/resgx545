@@ -1,11 +1,11 @@
 +++
 id = "Q211"
-question = "what rule gives the partial-render count of a one-triangle scene of page need U at the first threshold thr0 = P - 0x22 (E625's 1 + floor((U + k - thr0) / (thr0 + s)) is refuted at U = 287, E779 and E832; E854's spacing thr0 + 0x20 - d fits each scene with its own d and failed held out at U 119 and 198, no one d fitting U 287, 275, 198 and 119, E863; E875's page-by-page replay in row order, post hoc on 56 kept counts, failed on four new scenes, 28 of 32 counts and 13 of 32 run peaks read ungated, E883), and does the page need U of HU1 (E773, E863: exact for E773's 15 held-out scenes made of the tool's triangle and E863's 2) hold for wide scenes of many vertices and other shapes (E630)?"
+question = "does the page need U of HU1 (E773, E863, E883, E916: exact for 26 held-out scenes made of the tool's triangle) hold for wide scenes of many vertices and other shapes (E630), and what gives the partial-render count of scenes of many objects or of several kicks (for one object in one kick it is E875's page replay in the walk order E899 read from the dumps, held out by E916)?"
 unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E310", "E625", "E630", "E705", "E735", "E773", "E779", "E832", "E853", "E854", "E863", "E866", "E874", "E875", "E883", "E899"]
+evidence = ["E310", "E625", "E630", "E705", "E735", "E773", "E779", "E832", "E853", "E854", "E863", "E866", "E874", "E875", "E883", "E899", "E916"]
 terms = ["Dynamic Parameter Management (DPM)", "Parameter Buffer (PB)"]
 +++
 
@@ -178,3 +178,25 @@ one-triangle cells at 4096x4096 and E625's and E779's 37 record counts, where ro
 counts. [infer] A later kick walks again and fills the pages its macrotiles have open. Open: the
 replay held out on new scenes (the plan's s-b stage) before the count clause is called answered;
 scenes of many objects; the U clause as above.
+
+Narrowed 2026-11-12 (round 7, laptop session R7-dpm stage s-b, E916; decision R7-7 a; the question
+stays open). The question line asked "what rule gives the partial-render count of a one-triangle
+scene of page need U at the first threshold thr0 = P - 0x22 (E625's 1 + floor((U + k - thr0) / (thr0
++ s)) is refuted at U = 287, E779 and E832; E854's spacing thr0 + 0x20 - d fits each scene with its
+own d and failed held out at U 119 and 198, no one d fitting U 287, 275, 198 and 119, E863; E875's
+page-by-page replay in row order, post hoc on 56 kept counts, failed on four new scenes, 28 of 32
+counts and 13 of 32 run peaks read ungated, E883), and does the page need U of HU1 (E773, E863:
+exact for E773's 15 held-out scenes made of the tool's triangle and E863's 2) hold for wide scenes
+of many vertices and other shapes (E630)?"; the count clause is answered for one-object, one-kick
+scenes and the line now asks the rest. [HW, held out] E875's page replay with the regions walked in
+E899's order, frozen before the run, gave the count of partial renders of five new scenes of one
+moved default triangle at 4096x4096 (twice), 4096x2048, 2048x2048 and 1024x768, 24 of 24 cells, and
+every TA run's peak at 23 of 24; its frozen verdict held on four scenes and read "not supported" on
+the 1024x768 one (7 of 8 rows), where the one peak row that failed is a first TA run no timeline
+sample fell in (the reader's peak 0, read post hoc; that scene's four counts held). H-WALK64 placed
+every block of a 2048x2048 dump never opened; row order failed on all five scenes (15 of 48 rows), d
+= 7/4 gave 20 of 24 counts and d = 1 22 of 24. The five calibrations needed HU1's U (157, 131, 145,
+78, 22). So the count of a one-object, one-kick scene is that replay, which `dpm.rs` now gives at
+the four targets run (`one_triangle_partial_renders`). Not answered: HU1's U for wide scenes of many
+vertices and other shapes, and the count of scenes of many objects (the 1500-vertex scene's counts
+are E874's exploratory F9) or of several kicks (E899's G4 reading).

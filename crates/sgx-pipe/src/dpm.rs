@@ -3,6 +3,7 @@
 //! DPM: parameter buffer pool, state page, overflow and partial render (12.7).
 
 use crate::Outcome;
+use std::collections::BTreeMap;
 
 /// Open questions that block the unit.
 pub const OPEN: &[&str] = &["Q045", "Q036", "Q038", "Q081", "Q103", "Q191", "Q192", "Q210", "Q211"];
@@ -219,6 +220,225 @@ pub fn four_array_4x_ending_on(w: u32, h: u32, mw: u32, mh: u32, p: u32, room: T
     } else {
         None
     }
+}
+
+/// The tool's default triangle moved by (dx, dy) pixels (`tri -n 1 --move 1:DX,DY`).
+fn default_triangle(w: u32, h: u32, dx: f64, dy: f64) -> crate::ta::Tri {
+    let (w, h) = (w as f64, h as f64);
+    [
+        (8.0 * w / 64.0 + dx, 8.0 * h / 64.0 + dy),
+        (56.0 * w / 64.0 + dx, 20.0 * h / 64.0 + dy),
+        (20.0 * w / 64.0 + dx, 56.0 * h / 64.0 + dy),
+    ]
+}
+
+/// The macrotile of the 32 x 16 region (c, r): the TA's index, column * n + row.
+fn macrotile(t: &crate::ta::Tiling, c: u32, r: u32) -> u32 {
+    (c / t.mx) * t.n + r / t.my
+}
+
+/// The regions (column, row, macrotile) that list one moved default triangle in either 16 x 16
+/// tile (HU1's test, E773), in the TA's walk order H-WALK64 (E899, held out on the hardware by
+/// E916): strips of 64 pixel rows, each strip in 64 x 64-pixel blocks left to right, a block's
+/// regions row by row.
+fn walk64_regions(w: u32, h: u32, dx: u32, dy: u32) -> Vec<(u32, u32, u32)> {
+    let t = crate::ta::tiling(w, h);
+    let tri = default_triangle(w, h, dx as f64, dy as f64);
+    let mut out = vec![];
+    for r in 0..t.ty {
+        for c in 0..t.tx {
+            let (x0, y0) = (32.0 * c as f64, 16.0 * r as f64);
+            if crate::ta::tile_lists(&tri, x0, y0) || crate::ta::tile_lists(&tri, x0 + 16.0, y0) {
+                out.push((c, r, macrotile(&t, c, r)));
+            }
+        }
+    }
+    out.sort_by_key(|&(c, r, _)| (r / 4, c / 2, r, c));
+    out
+}
+
+/// HU1, the page need U of one moved default triangle (E773: 128 bytes a stream, a page per 32
+/// streams of a macrotile, plus the global page; E916's five calibrations held out).
+pub fn one_triangle_page_need(w: u32, h: u32, dx: u32, dy: u32) -> u32 {
+    let mut per = BTreeMap::new();
+    for (_, _, m) in walk64_regions(w, h, dx, dy) {
+        *per.entry(m).or_insert(0u32) += 1;
+    }
+    1 + per.values().map(|k| k.div_ceil(32)).sum::<u32>()
+}
+
+/// The targets where the walk-order replay of a one-triangle count was held out (E916: s44a and
+/// s44b at 4096x4096, s42 at 4096x2048, s22 at 2048x2048, s17 at 1024x768).
+const COUNT_TARGETS: &[(u32, u32)] = &[(4096, 4096), (4096, 2048), (2048, 2048), (1024, 768)];
+
+/// The partial renders of one moved default triangle in one kick at the first threshold `thr0`
+/// (`P - 0x22`), and each TA run's peak page count: E875's page replay in H-WALK64 order (E899)
+/// with no fitted number. Each region takes one 128-byte stream from its macrotile's current page
+/// (32 a page); the global page is page 1; a page request above the threshold (thr0 in the first
+/// run, thr0 + 0x20 after the one raise) is refused, a partial render frees every page but the
+/// global one and the walk goes on at the same region. Held out on five new scenes (E916): 29 of
+/// 29 counts and every run's peak where the first run was sampled. `None` at a target no
+/// held-out scene ran, a threshold below 2 or at the clamp, and where the raised threshold
+/// still holds no page (scenes of many objects and several kicks are not this function's: Q211).
+pub fn one_triangle_partial_renders(w: u32, h: u32, dx: u32, dy: u32, thr0: u32) -> Option<(u32, Vec<u32>)> {
+    if !COUNT_TARGETS.contains(&(w, h)) || !(2..0x400).contains(&thr0) {
+        return None;
+    }
+    let (mut used, mut thr, mut n) = (1u32, thr0, 0u32);
+    let mut cur: BTreeMap<u32, u32> = BTreeMap::new();
+    let mut peaks = vec![];
+    for (_, _, m) in walk64_regions(w, h, dx, dy) {
+        if cur.get(&m).copied().unwrap_or(0) == 0 {
+            if used + 1 > thr {
+                peaks.push(used);
+                n += 1;
+                used = 1;
+                cur.clear();
+                thr = thr0 + 0x20;
+                if used + 1 > thr {
+                    return None;
+                }
+            }
+            used += 1;
+            cur.insert(m, 32);
+        }
+        *cur.get_mut(&m)? -= 1;
+    }
+    peaks.push(used);
+    Some((n, peaks))
+}
+
+/// E874's block-level replay of the TA for the tool's triangle with 1500 vertices (`--tri pixel
+/// --vertices 1500`): triangle j is the default one moved j/16 pixel right and down, object b
+/// holds triangles 5b to 5b + 4 in a 67-dword block, global page k is requested by object
+/// b_k = floor(1024 (k - 1) / 67) and written 3 objects before that object is tiled (the fitted
+/// lag); a region's entry is 2 dwords, or 3 with a mask, plus the base dword at b_k; a 128-byte
+/// stream block holds 31 dwords of entries; a macrotile takes a page every 32 blocks. Returns the
+/// steps S2 to S7 by k (the page count before global page k is taken) and the page count after
+/// each object is tiled (the last is U), computed once a target.
+fn tool_triangle_replay(w: u32, h: u32) -> (BTreeMap<u32, u32>, Vec<u32>) {
+    use std::sync::{Mutex, OnceLock};
+    type Replay = (BTreeMap<u32, u32>, Vec<u32>);
+    static DONE: OnceLock<Mutex<BTreeMap<(u32, u32), Replay>>> = OnceLock::new();
+    let done = DONE.get_or_init(|| Mutex::new(BTreeMap::new()));
+    if let Some(r) = done.lock().ok().and_then(|d| d.get(&(w, h)).cloned()) {
+        return r;
+    }
+    let r = replay_1500(w, h);
+    if let Ok(mut d) = done.lock() {
+        d.insert((w, h), r.clone());
+    }
+    r
+}
+
+fn replay_1500(w: u32, h: u32) -> (BTreeMap<u32, u32>, Vec<u32>) {
+    const L: u32 = 67;
+    const CAP: u32 = 31;
+    const OBJS: u32 = 100;
+    const PER: u32 = 5;
+    const LAG: u32 = 3;
+    let t = crate::ta::tiling(w, h);
+    let bk = |k: u32| 1024 * (k - 1) / L;
+    let gk: BTreeMap<u32, u32> = (2..12).map(|k| (bk(k), k)).collect();
+    let tri = |j: u32| default_triangle(w, h, j as f64 / 16.0, j as f64 / 16.0);
+    let mut writes: BTreeMap<u32, Vec<u32>> = BTreeMap::new();
+    for b in 0..OBJS {
+        writes.entry(b.saturating_sub(LAG)).or_default().push(b);
+    }
+    let (mut used, mut mt_blocks) = (BTreeMap::new(), BTreeMap::new());
+    let (mut pages, mut steps, mut after) = (1u32, BTreeMap::new(), vec![]);
+    for ob in 0..OBJS {
+        for b in writes.get(&ob).into_iter().flatten() {
+            if let Some(&k) = gk.get(b) {
+                steps.insert(k, pages);
+                pages += 1;
+            }
+        }
+        let ts: Vec<_> = (0..PER).map(|i| tri(PER * ob + i)).collect();
+        let xs = ts.iter().flat_map(|t| t.map(|p| p.0));
+        let (x0, x1) = xs.fold((f64::MAX, f64::MIN), |(a, b), x| (a.min(x), b.max(x)));
+        let ys = ts.iter().flat_map(|t| t.map(|p| p.1));
+        let (y0, y1) = ys.fold((f64::MAX, f64::MIN), |(a, b), y| (a.min(y), b.max(y)));
+        let rows = ((y0 / 16.0).floor().max(0.0) as u32)..t.ty.min((y1 / 16.0).floor() as u32 + 1);
+        for r in rows {
+            for c in ((x0 / 32.0).floor().max(0.0) as u32)..t.tx.min((x1 / 32.0).floor() as u32 + 1) {
+                let (xa, ya) = (32.0 * c as f64, 16.0 * r as f64);
+                let left = ts.iter().filter(|t| crate::ta::tile_lists(t, xa, ya)).count() as u32;
+                let right = ts.iter().filter(|t| crate::ta::tile_lists(t, xa + 16.0, ya)).count() as u32;
+                if left == 0 && right == 0 {
+                    continue;
+                }
+                let both = left > 0 && right > 0;
+                let mut dw = if (both && left == PER && right == PER) || (!both && left.max(right) <= 2) {
+                    2
+                } else {
+                    3
+                };
+                dw += u32::from(gk.contains_key(&ob));
+                let u = used.entry((c, r)).or_insert(CAP + 1);
+                if *u + dw > CAP {
+                    *u = 0;
+                    let nb = mt_blocks.entry(macrotile(&t, c, r)).or_insert(0u32);
+                    if *nb % 32 == 0 {
+                        pages += 1;
+                    }
+                    *nb += 1;
+                }
+                *u += dw;
+            }
+        }
+        after.push(pages);
+    }
+    (steps, after)
+}
+
+/// The targets of the 1500-vertex scene whose calibration's steps all fell in their brackets as
+/// the step replay froze them (H-STEPMODEL, E915: 3072x3072, 3072x2048, 2560x2560, 1024x1024; the
+/// premise target 2048x2048, E874's fit). 2048x3072 (S6 one page off, E915) and 2048x4096 (S3
+/// three off, E874) are not.
+const STEP_TARGETS: &[(u32, u32)] = &[(2048, 2048), (3072, 3072), (3072, 2048), (2560, 2560), (1024, 1024)];
+
+/// The steps S2 to S7 of the global page count in the first TA run of the tool's triangle with 1500
+/// vertices and its page need U, by E874's replay, at a target where they were held out (E915).
+pub fn tool_triangle_steps(w: u32, h: u32) -> Option<(Vec<u32>, u32)> {
+    if !STEP_TARGETS.contains(&(w, h)) {
+        return None;
+    }
+    let (steps, after) = tool_triangle_replay(w, h);
+    Some((steps.values().copied().collect(), *after.last()?))
+}
+
+/// The bands k (S_k < thr0 <= the next step) where H-SPAN's frozen cells held (E915): s-m's
+/// bands 3 and 5 of the new targets, band 5 of 3072x3072 (its band 6 failed at A_6, as 2560x2560's
+/// did), 2560x2560's band 3, and 2048x2048's bands 2 to 7 (s-a0's controls and the replicates of
+/// R6-dpm's band 5 to 7 cells). The 2048x3072 cells were scored on its calibration's steps, which
+/// at bands 3 and 5 are the replay's.
+const SPAN_BANDS: &[((u32, u32), &[u32])] = &[
+    ((2048, 2048), &[2, 3, 4, 5, 6, 7]),
+    ((3072, 3072), &[5]),
+    ((3072, 2048), &[3, 5]),
+    ((2048, 3072), &[3, 5]),
+    ((2560, 2560), &[3]),
+    ((1024, 1024), &[3, 5]),
+];
+
+/// The global pages left by the first partial render of the tool's triangle with 1500 vertices at
+/// the first threshold `thr0` (H-SPAN, E900, held out by E915): 2 iff S_k < thr0 < A_k, else 1,
+/// where A_k is the page count once object b_k, whose block straddles global pages k - 1 and k, is
+/// tiled. `None` on a step (thr0 = S_k grows the global list, H-GREQ), at a band or target where
+/// no frozen cell held, and below S2.
+pub fn first_partial_render_global_pages_left(w: u32, h: u32, thr0: u32) -> Option<u32> {
+    let bands = SPAN_BANDS.iter().find(|(t, _)| *t == (w, h))?.1;
+    let (steps, after) = tool_triangle_replay(w, h);
+    let (&k, &s) = steps.iter().rfind(|&(_, &s)| s <= thr0)?;
+    if thr0 == s || !bands.contains(&k) {
+        return None;
+    }
+    if steps.get(&(k + 1)).is_some_and(|&next| thr0 >= next) {
+        return None;
+    }
+    let a = *after.get((1024 * (k - 1) / 67) as usize)?;
+    Some(if thr0 < a { 2 } else { 1 })
 }
 
 #[cfg(test)]
@@ -654,6 +874,199 @@ mod tests {
         // a shape that matched U4 keeps its exact boundary (E866: 1024 x 768 at 0xe3 and 0xe2)
         assert_eq!(four_array_4x_ending(1024, 768, 1024, 768, 0xe3), Some(Ending4x::Complete));
         assert_eq!(four_array_4x_ending(1024, 768, 1024, 768, 0xe2), Some(Ending4x::Enospc));
+    }
+
+    #[test]
+    fn one_moved_triangle_needs_hu1_s_pages_at_the_scenes_r7_dpm_ran() {
+        // E916 [HW]: s-b's calibrations at P 0x422 needed HU1's U with no partial render
+        for (w, h, dx, dy, u) in [
+            (4096, 4096, 0, 2304, 157),
+            (4096, 4096, 2048, 1792, 131),
+            (4096, 2048, 768, 256, 145),
+            (2048, 2048, 0, 384, 78),
+            (1024, 768, 64, 64, 22),
+        ] {
+            assert_eq!(one_triangle_page_need(w, h, dx, dy), u, "{w}x{h} move {dx},{dy}");
+        }
+    }
+
+    #[test]
+    fn the_walk64_replay_gives_the_held_out_counts_and_run_peaks_of_r7_dpm() {
+        // E916 [HW, held out]: every cell of s44a, s44b, s42 and s22, the g-qf control (E832's
+        // 4096x4096 scene at P 0xa2) and the s17 cells whose first run was sampled; (thr0,
+        // partial renders, each TA run's peak of the 0x0724 page count)
+        type Cell = (u32, u32, &'static [u32]);
+        let cells: &[(u32, u32, u32, u32, &[Cell])] = &[
+            (
+                4096,
+                4096,
+                0,
+                2304,
+                &[
+                    (0x2, 5, &[0x2, 0x22, 0x22, 0x22, 0x22, 0x1a]),
+                    (0x7, 4, &[0x7, 0x27, 0x27, 0x27, 0x27]),
+                    (0x20, 3, &[0x20, 0x40, 0x40, 0x3]),
+                    (0x30, 2, &[0x30, 0x50, 0x21]),
+                    (0x65, 1, &[0x65, 0x3a]),
+                    (0x9a, 1, &[0x9a, 0x5]),
+                ],
+            ),
+            (
+                4096,
+                4096,
+                2048,
+                1792,
+                &[
+                    (0x3, 4, &[0x3, 0x23, 0x23, 0x23, 0x1b]),
+                    (0x17, 3, &[0x17, 0x37, 0x37, 0x2]),
+                    (0x1b, 2, &[0x1b, 0x3b, 0x2f]),
+                    (0x32, 1, &[0x32, 0x52]),
+                    (0x3e, 1, &[0x3e, 0x46]),
+                    (0x81, 1, &[0x81, 0x3]),
+                ],
+            ),
+            (
+                4096,
+                2048,
+                768,
+                256,
+                &[
+                    (0x5, 4, &[0x5, 0x25, 0x25, 0x25, 0x24]),
+                    (0xd, 3, &[0xd, 0x2d, 0x2d, 0x2d]),
+                    (0x1c, 2, &[0x1c, 0x3c, 0x3c]),
+                    (0x45, 1, &[0x45, 0x4d]),
+                ],
+            ),
+            (
+                2048,
+                2048,
+                0,
+                384,
+                &[
+                    (0x2, 3, &[0x2, 0x22, 0x22, 0xb]),
+                    (0x6, 2, &[0x6, 0x26, 0x26]),
+                    (0x18, 1, &[0x18, 0x37]),
+                    (0x49, 1, &[0x49, 0x7]),
+                ],
+            ),
+            (1024, 768, 64, 64, &[(0x2, 1, &[0x2, 0x15]), (0xe, 1, &[0xe, 0x9]), (0x15, 1, &[0x15, 0x3])]),
+            (4096, 4096, 0, 0, &[(0x80, 2, &[0x80, 0xa0, 0x2])]),
+        ];
+        for &(w, h, dx, dy, rows) in cells {
+            for &(thr0, n, peaks) in rows {
+                let got = one_triangle_partial_renders(w, h, dx, dy, thr0);
+                assert_eq!(got, Some((n, peaks.to_vec())), "{w}x{h} move {dx},{dy} thr0 {thr0:#x}");
+            }
+        }
+        // s17 0x9: one partial render, the second run's peak 0xe; the timeline has no sample in the
+        // first run (E916, read post hoc), the replay's first peak is the threshold
+        assert_eq!(one_triangle_partial_renders(1024, 768, 64, 64, 0x9), Some((1, vec![0x9, 0xe])));
+    }
+
+    #[test]
+    fn a_one_triangle_count_outside_what_was_held_out_is_refused() {
+        // a target no held-out scene ran, a threshold below 2 (no page past the global one) or at
+        // the clamp; a scene that fits its threshold takes no partial render
+        assert_eq!(one_triangle_partial_renders(3072, 3072, 0, 0, 0x40), None);
+        assert_eq!(one_triangle_partial_renders(4096, 4096, 0, 2304, 1), None);
+        assert_eq!(one_triangle_partial_renders(4096, 4096, 0, 2304, 0x400), None);
+        assert_eq!(one_triangle_partial_renders(2048, 2048, 0, 384, 78), Some((0, vec![78])));
+    }
+
+    #[test]
+    fn the_first_partial_render_keeps_two_global_pages_up_to_the_straddling_block() {
+        // E915 [HW, held out] H-SPAN: 1500 vertices of the tool's triangle, the pages left by the
+        // first partial render at the cells of s-m (and s-a0's 2048x2048 controls); 2 iff
+        // S_k < thr0 < A_k, where E874's burst end B_k gave 1 at the 19 discriminating cells
+        type Row = (u32, u32);
+        let cells: &[(u32, u32, &[Row])] = &[
+            (
+                3072,
+                3072,
+                &[(0x329, 2), (0x32a, 2), (0x32b, 2), (0x32c, 2), (0x32d, 2), (0x32e, 2), (0x32f, 1)],
+            ),
+            (
+                3072,
+                2048,
+                &[
+                    (0x14c, 2),
+                    (0x14d, 1),
+                    (0x224, 2),
+                    (0x225, 2),
+                    (0x226, 2),
+                    (0x227, 2),
+                    (0x228, 2),
+                    (0x229, 1),
+                ],
+            ),
+            (
+                2048,
+                3072,
+                &[(0x14e, 2), (0x14f, 1), (0x229, 2), (0x22a, 2), (0x22b, 2), (0x22c, 2), (0x22d, 1)],
+            ),
+            (2560, 2560, &[(0x157, 2), (0x158, 1)]),
+            (1024, 1024, &[(0x40, 2), (0x41, 1), (0x6a, 2), (0x6b, 2), (0x6c, 2), (0x6d, 1)]),
+            (
+                2048,
+                2048,
+                &[
+                    (0x97, 1),
+                    (0xe2, 2),
+                    (0xe3, 1),
+                    (0xe9, 2),
+                    (0x140, 2),
+                    (0x177, 2),
+                    (0x178, 1),
+                    (0x1c2, 2),
+                    (0x1c3, 1),
+                    (0x20c, 2),
+                    (0x20d, 1),
+                ],
+            ),
+        ];
+        for &(w, h, rows) in cells {
+            for &(thr0, left) in rows {
+                assert_eq!(
+                    first_partial_render_global_pages_left(w, h, thr0),
+                    Some(left),
+                    "{w}x{h} thr0 {thr0:#x}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn the_span_rule_is_refused_where_it_failed_or_was_not_held_out() {
+        // E915: band 6 of 3072x3072 and 2560x2560 left 2 pages at A_k (0x3cf, 0x2b1); a step cell
+        // (a grow, not scored), a band no frozen cell ran, a target no held-out cell ran
+        assert_eq!(first_partial_render_global_pages_left(3072, 3072, 0x3cf), None);
+        assert_eq!(first_partial_render_global_pages_left(2560, 2560, 0x2b1), None);
+        assert_eq!(first_partial_render_global_pages_left(2048, 2048, 0x9d), None);
+        assert_eq!(first_partial_render_global_pages_left(2048, 3072, 0x240), None);
+        assert_eq!(first_partial_render_global_pages_left(2048, 4096, 0x24a), None);
+    }
+
+    #[test]
+    fn the_step_replay_gives_the_steps_and_need_of_the_held_out_calibrations() {
+        // E915 [HW, held out] H-STEPMODEL: E874's block-level replay (lag 3) at the s-m targets;
+        // 2048x3072's S6 read 0x234 against 0x233, so that target is refused
+        let cal: &[(u32, u32, &[u32], Option<u32>)] = &[
+            (3072, 3072, &[0xa9, 0x14d, 0x1ef, 0x293, 0x335, 0x3d9], None),
+            (3072, 2048, &[0x77, 0xe2, 0x150, 0x1bf, 0x22c, 0x299], Some(0x305)),
+            (2560, 2560, &[0x7a, 0xeb, 0x15c, 0x1d4, 0x244, 0x2b6], Some(0x328)),
+            (1024, 1024, &[0x1c, 0x30, 0x45, 0x5a, 0x6f, 0x86], Some(0x99)),
+            (2048, 2048, &[0x51, 0x9d, 0xe8, 0x132, 0x181, 0x1ca], Some(0x213)),
+        ];
+        for &(w, h, steps, need) in cal {
+            let (s, u) = tool_triangle_steps(w, h).expect("a held-out target");
+            assert_eq!(s, steps, "{w}x{h}");
+            // 3072x3072 needs 0x479 pages by the replay, above the clamp: its need was not read
+            if let Some(need) = need {
+                assert_eq!(u, need, "{w}x{h}");
+            }
+        }
+        assert_eq!(tool_triangle_steps(2048, 3072), None);
+        assert_eq!(tool_triangle_steps(2048, 4096), None);
     }
 
     #[test]

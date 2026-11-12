@@ -70,3 +70,11 @@ frozen held-out cells the plan puts on the laptop (stage s-b). Scenes of many ob
 1500-vertex scene uses E874's replay, in row order inside an object), the six new walks of G4 that
 opened a page, and Q211's U clause for wide scenes are outside it. Contexts larger than the target
 (`--max-width`), 4x arrays and hand-poked runs were not scored.
+
+**Correction 2026-11-12:** The replay was held out on the hardware. Round 7's R7-dpm stage s-b
+froze H-REPLAY64 for five new one-triangle scenes at 4096x4096 (twice), 4096x2048, 2048x2048 and
+1024x768 (E916) [HW, held out]: 24 of 24 counts and every run's peak at 23 of 24 cells (the
+frozen verdict held on four scenes and read "not supported" on the 1024x768 one, whose missing
+peak is a first TA run that fell between two timeline samples, read post hoc), and H-WALK64 placed
+every block of the scene's 2048x2048 calibration dump, a dump never opened, where row order placed
+113 of 2306.
