@@ -278,6 +278,13 @@ other units **[RE]**. What each port does with its words, where we know it:
   uses three. The tile position the pixel-event program puts in the end-of-tile task's U1
   does not place the tile: flipping its lowest `tile_x` or `tile_y` bit changed no pixel of a
   64x64 render (2026-10-24, the triangle probe host) **[HW]**, so the PBE words place it.
+  On the fill, read after the fact from the kept sweeps of every value of the x field (bits
+  11:3) and the y field (bits 21:12) poked into the program's U1 word, the fields do place it,
+  in half-tile units (16 pixels in x, 8 rows in y): each 32 x 16 tile t stores at
+  (2t | f) >> 1 or (2t + f) >> 1 per axis and nothing is stored where that lies outside the
+  target, which gives the tool's image hash in 1536 of 1536 jobs, XOR in place of OR in 1532
+  (E876, post hoc). The lowest bit is half a tile, which is why its flip changed nothing; OR
+  against addition, the copy and the two fields together are Q289's.
 - **`doutd`** **[CAP/HW]**. The first word is the source address; the second is
   burst size − 1 (bits 3-0), lines − 1 (7-4), the destination attribute (19-8) and
   stride − 1 (29-22) With `movsa` the third source is added to

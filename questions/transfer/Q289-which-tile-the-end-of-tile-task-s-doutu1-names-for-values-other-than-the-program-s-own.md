@@ -5,7 +5,7 @@ unit = "transfer"
 kind = "hw"
 value = "medium"
 phase = 12
-evidence = ["E043", "E044", "E126", "E620"]
+evidence = ["E043", "E044", "E126", "E620", "E876"]
 terms = ["PIXEL_EVENT.END_OF_TILE", "DOUTU1.BITS11_3", "DOUTU1.BITS21_12"]
 +++
 
@@ -27,3 +27,13 @@ sweep and hold it out on the y sweep, the copy's pokes and E126's exchanges), wh
 fields name together, and the data-word pokes of the pixel-event program that only move U1
 against those that change the masks' meaning (the tile_x mask, dword 9, E620). The 12 hangs among
 the 1813 refusals (E620) are Q003's, not an image.
+
+Note 2026-11-12 (round 6, offline, E876; post hoc, no frozen verdict). The kept x and y sweeps of
+the fill (1536 jobs, every one `ok`, nothing stored outside the target) fit the rule above on both
+axes: reading the poked field f in half-tile units (16 pixels in x, 8 rows in y), each 32 x 16 tile
+t stores at (2t | f) >> 1 or (2t + f) >> 1 and nothing is stored where that lies outside the
+target; that reproduces the tool's image hash in 1536 of 1536 cases, XOR in place of OR fails 4.
+Both sweeps were read before the rule was written, and on the 64 x 32 fill OR and ADD give the
+same image for every value. Still open: OR or ADD (they first differ at four tiles on an axis:
+the held-out fill row at 128 x 64 and 256 x 32 the round 6 ranking froze, R6-1), the copy
+(E620's pokes), E126's exchanges on the triangle render and the two fields together.
