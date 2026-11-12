@@ -54,3 +54,11 @@ entry grows the global list exactly when thr0 is a step, at both targets and at 
 **What it does not show.** Why the steps fall where they do, or why a page is pending at the
 resume only after a grow (Q210). S5 at 2048x2048 decides nothing. d-a2b's rows are gated by the
 frozen rule: the three other targets are read, not held out.
+
+**Correction 2026-11-12:** "a2b-cal-4x2 read S2 = 0x98" is the session reader's point rule, the
+larger of the count before the step and the count after it less one. Read as the bracket the two
+samples allow (E873), that job's S2 lies in [`0x97`, `0x98`], which holds the frozen `0x97`, as do
+the brackets of all 13 kept jobs at 4096x2048; the S2 = `0x99` that E852 read in the 2048x4096
+calibration is likewise the upper end of [`0x99`, `0x9a`]. So the calibration did not read a step
+one page late. The stage's gate stands as it ran: its frozen rule marked the headlines GATED, and
+the three other targets stay read, not held out. The S4 results of d-a2b are unchanged.

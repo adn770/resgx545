@@ -5,7 +5,7 @@ unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E310", "E312", "E464", "E625", "E627", "E629", "E704", "E734", "E753", "E774", "E779", "E785", "E786", "E799", "E800", "E801", "E802", "E852", "E853", "E860", "E861", "E862", "E863", "E864"]
+evidence = ["E310", "E312", "E464", "E625", "E627", "E629", "E704", "E734", "E753", "E774", "E779", "E785", "E786", "E799", "E800", "E801", "E802", "E852", "E853", "E860", "E861", "E862", "E863", "E864", "E873", "E874"]
 terms = ["Dynamic Parameter Management (DPM)", "CR_DPM_STATE_BASE0", "ta3d_ctl"]
 +++
 
@@ -229,3 +229,22 @@ partial render leaves one global page fewer from 6, 5 and 4 pages below S3, S4 a
 (E862). [HW, post hoc] Within a target the steps fall nearly evenly (E861). Open: the page
 accounting that sets the steps and the margins, by target and scene; E802's one global page; why the
 page is pending only after a grow. These need the DPM's page bookkeeping, not the guard.
+
+Note 2026-11-12 (round 6, offline stage F1 to F9, E873 and E874; decision R6-1 a, before any
+round 6 session; the question stays open). [HW, post hoc] A sampled step is a bracket: read so, no
+step of any kept job moves between jobs, and A2b's S2 at 4096x2048 is `0x97` in 13 of 13 (E873;
+E861's correction). [HW, post hoc and SEMI; infer] A block-level replay of the TA for the tool's
+1500-vertex triangle answers each clause on kept data (E874), none of it held out on the hardware
+yet. The steps S_k: the global list holds 67-dword object blocks and page k is taken when object
+floor(1024 (k - 1) / 67) is written; with stream blocks of 31 entry dwords, the base dword at those
+objects and a fitted lag of 3 objects, the replay gives the dumps' block openings, U, the six steps
+at 2048x2048 (fit) and 20 of 21 at the other four targets (2048x4096 S3 off by 3). The margin: the
+first partial render leaves 2 global pages iff thr0 lies between a step and the model's burst end
+B_k, else 1, 26 of 26 fit rows and 60 of 61 others; B3 is the first silent cell of the raise at
+all five targets, so C = B3 + `0x1f` with R-5's guard. E802's scene: its 71-dword blocks and
+3-dword entries put S2 at `0x201` (bracket [`0x200`, `0x201`]), above every cell it ran. The
+pending page: at the 21 kept grow cells the first sample after the render reads 2 global pages,
+the refused request being the list's page itself (H-PENDREQ). Open until held out on the hardware:
+new bands and targets against the frozen replay, the cause of the bursts (`--vtx-coords`: the
+dumps show blocks opening every 15 entries, H-BURST-CAP's reading), the lag, and the 2048x4096 S3
+miss.
