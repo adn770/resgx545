@@ -55,6 +55,9 @@
 #     keeps the bytes that ran;
 #   - the entry is tests/run_all.sh, else tests/run_mock.sh, else tests/run_mock.py.
 #
+# The run's PID is written to $TARGET/session_tests.pid (named in the first output line, removed on
+# exit): tools/waitfor.py --pidfile <it> --timeout N waits on it exactly, with no process-name match.
+#
 # Environment: PY (the python the tests use; default <tool>/.venv/bin/python, else python3),
 # RESGX545_TOOL (the tool repository; default this checkout), RESGX545_DATA (default
 # ../resgx545-data beside the tool repository), RESGX545_DATA_PRIVATE (default
@@ -70,6 +73,11 @@ die() { echo "session_tests: $*" >&2; exit 2; }
 
 SESSION=${1%/}
 [ -n "$SESSION" ] && [ $# = 1 ] || die "usage: $0 <area/closing-name>"
+# a waiter needs something exact, never a process name: the PID of this run, named here
+PIDFILE=$TARGET/session_tests.pid
+mkdir -p "$TARGET" && echo $$ > "$PIDFILE" || die "cannot write $PIDFILE"
+echo "session_tests: pidfile $PIDFILE (pid $$); wait with tools/waitfor.py --pidfile $PIDFILE --timeout N"
+trap 'rm -f "$PIDFILE"' EXIT
 [ -n "$DATA" ] || die "no data repository (set RESGX545_DATA)"
 SRC="$DATA/$SESSION"
 [ -d "$SRC" ] || die "no such session: $SESSION"
@@ -92,6 +100,7 @@ HOMEDIR=$W/home
 R=$HOMEDIR/src/resgx545
 S=$W/scratch/resgx545
 cleanup() {
+    rm -f "$PIDFILE"
     git -C "$TOOL" worktree remove --force "$R" >/dev/null 2>&1
     git -C "$TOOL" worktree prune >/dev/null 2>&1
     [ "$KEEP" = 1 ] && echo "session_tests: kept $W" || rm -rf "$W"
