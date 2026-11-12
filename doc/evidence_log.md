@@ -7092,6 +7092,25 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *zls; HW, infer; data: `render-closing-r7-rp:out/20261112-205431/q291g/`,
   `render-closing-r7-rp:out/20261112-205431/q291/`, `render-closing-r7-rp:out/20261112-205431/s0/`,
   `render-closing-r7-rp:bins/`, `render-closing-r7-rp:fold/`.*
+- `E905` r7-rp stages p7-rdc and p7-rd (Q276, 48 jobs, E878's readback rerun with the class share
+  taken over the own-source words): in E709's command (state block word 4 at 0x00030001) a `mov`
+  from o1 to o3 inside the instance reads back that output's own word and a read of o4 to o7 reads
+  the word of o0 to o3, the register number modulo 4, so no read of o4 to o7 shows a word written
+  there: R6's rd-1 to rd-7 replicated the vector S S S A0 A4 A4 A4 (H-MOD4) at own-source shares of
+  0.905 to 1.000 with every rival class at 0, n-rd-4 and x-rd-4 read o0's word (A0) as in R6; held
+  out, x-rd-6 and x-rd-7 (o6 and o7 written with tags of their own) read o2's and o3's words and
+  n-rd-5 (no o5 write) o1's; the clean rows, which write only o0 (word A) and o_j (word B) and read
+  o_j, read word A for o4 (cl-4, 1062 of 1062 TRI pixels in both jobs) and for o5 to o7 no word of
+  the job (cl-5 to cl-7: background, zero and another configuration's words, never word B), and
+  cl-p4 (cl-4 with `p1 or.skipinv o4` under the g25 test, k = 0) read word A on every lane; R6's
+  bridge controls passed (c-u tag-2 fraction 0.990, c-all4 5:1, c-ow and c-rd-0 1.0 of TRI,
+  c-prd-0's lanes as frozen); frozen verdict 'H-MOD4 held (17 of 17 entries): rd vector S S S A0 A4
+  A4 A4 (H-FOUR, H-MOD4) replicated; n-rd-4 A0, x-rd-4 A0; x-rd-6 A4 (o2's word), x-rd-7 A4 (o3's),
+  n-rd-5 A4 (o1's); cl-4 A0 (word A); cl-5 X (no word of the job), cl-6 X (no word of the job), cl-7
+  X (no word of the job) (not word B); cl-p4 1:2,1:2,1:2,1:2 (word A on every lane)'.
+  *pds; HW, infer; data: `render-closing-r7-rp:out/20261112-205431/p7-rdc/`,
+  `render-closing-r7-rp:out/20261112-205431/p7-rd/`, `render-closing-r7-rp:out/20261112-205431/s0/`,
+  `render-closing-r7-rp:bins/`, `render-closing-r7-rp:fold/`.*
 
 ## By unit
 
@@ -7146,7 +7165,7 @@ Records: E043, E044, E045, E046, E047, E048, E125, E126, E127, E128, E129, E130,
 E134, E135, E136, E137, E138, E139, E140, E141, E142, E143, E144, E145, E259, E260, E261, E262,
 E263, E264, E343, E344, E345, E364, E379, E381, E384, E388, E389, E390, E391, E392, E393, E394,
 E395, E396, E400, E420, E421, E428, E430, E436, E437, E454, E459, E460, E709, E742, E759, E772,
-E808, E838, E850, E858, E871, E878, E880.
+E808, E838, E850, E858, E871, E878, E880, E905.
 
 ### platform
 
