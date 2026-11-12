@@ -23,7 +23,10 @@
 #     path, and a frozen file of the session that only lists such
 #     paths of the freeze (R4-G's gen/data/sources.lst) is pointed there too, its hash line
 #     following;
-#   - src/resgx545-data is the data repository; the worktree's target/ is the runner's own
+#   - src/resgx545-data is the data repository (or, when the session has a
+#     postrun/data-view.txt, a view of it in which each area the file names holds only the
+#     sessions it lists: the corpus a generator that scans the area saw at the freeze); the
+#     worktree's target/ is the runner's own
 #     (RESGX545_SESSION_TARGET, kept between runs, never the main checkout's), the main
 #     checkout's userspace/libsgxfive/build/ is copied and its .venv linked (current, not
 #     pinned), and a session's debug-src/ is copied to debug/ with its path dependencies on
@@ -78,7 +81,27 @@ trap cleanup EXIT
 
 mkdir -p "$HOMEDIR/src" "$S/closing" "$S/closing2" "$S/closing3"
 ln -s "$W/scratch" "$HOMEDIR/src/scratch"
-ln -s "$DATA" "$HOMEDIR/src/resgx545-data"
+# a session whose generator scans an area of the data repository lists in postrun/data-view.txt
+# the sessions of that area its freeze saw; the fake home's data repository is then a view that
+# holds only those in each listed area, every other entry linked whole
+VIEW=$SRC/postrun/data-view.txt
+if [ -f "$VIEW" ]; then
+    FD=$HOMEDIR/src/resgx545-data
+    mkdir "$FD"
+    for e in "$DATA"/*; do
+        a=$(basename "$e")
+        if grep -q "^$a/" "$VIEW"; then
+            mkdir "$FD/$a"
+            for s in "$e"/*; do
+                grep -qxF "$a/$(basename "$s")" "$VIEW" && ln -s "$s" "$FD/$a/"
+            done
+        else
+            ln -s "$e" "$FD/$a"
+        fi
+    done
+else
+    ln -s "$DATA" "$HOMEDIR/src/resgx545-data"
+fi
 export CARGO_HOME=${CARGO_HOME:-$HOME/.cargo} RUSTUP_HOME=${RUSTUP_HOME:-$HOME/.rustup}
 for g in closing closing2 closing3; do   # a session's shims find it beside the session's group
     mkdir -p "$S/$g/pixel-faults/.venv/bin"

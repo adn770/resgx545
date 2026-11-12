@@ -276,3 +276,39 @@ def test_a_frozen_list_of_the_freezes_own_paths_moves_with_them(world):
     assert r.returncode == 0, r.stdout + r.stderr
     assert "RUN_ALL PASSED" in r.stdout
     assert (s / "gen/sources.lst").read_text() == lst
+
+
+def test_a_data_view_shows_an_area_as_the_freeze_saw_it(world):
+    """A session whose generator scans an area of the data repository (r5-render4x's twins: every
+    kept row of render/closing-*) reads more once it and later sessions are published, and its
+    check that the generated files are as frozen then fails. postrun/data-view.txt lists, for an
+    area, the sessions the freeze saw; the fake home's data repository then holds only those in
+    that area (the session's own directory left out too) and every other entry whole."""
+    data = world[1]
+    s = data / "edm/closing-demo"
+    (data / "edm/closing-later").mkdir()
+    (data / "edm/closing-later/marker").write_text("l")
+    (data / "render/closing-other").mkdir(parents=True)
+    (s / "postrun").mkdir()
+    (s / "postrun/data-view.txt").write_text("# the edm sessions the freeze saw\nedm/closing-sib\n")
+    run_all = RUN_ALL.replace(
+        'echo "RUN_ALL PASSED"',
+        'D=$RESGX545_DATA\n'
+        '[ -d "$D/edm/closing-later" ] && { echo "later seen"; exit 1; }\n'
+        '[ -d "$D/edm/closing-demo" ] && { echo "self seen"; exit 1; }\n'
+        '[ -d "$D/edm/closing-notests" ] && { echo "unlisted seen"; exit 1; }\n'
+        '[ -f "$D/edm/closing-sib/marker" ] || { echo "listed missing"; exit 1; }\n'
+        '[ -d "$D/render/closing-other" ] || { echo "other area missing"; exit 1; }\n'
+        'echo "RUN_ALL PASSED"')
+    (s / "tests/run_all.sh").write_text(run_all)
+    frozen = (s / "FROZEN.sha256").read_text()
+    (s / "FROZEN.sha256").write_text(frozen.replace(sha(RUN_ALL), sha(run_all)))
+    before = snapshot(data)
+    r = run(world, "edm/closing-demo")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "RUN_ALL PASSED" in r.stdout
+    assert snapshot(data) == before
+    # without the file the data repository is linked whole, as before
+    (s / "postrun/data-view.txt").unlink()
+    r = run(world, "edm/closing-demo")
+    assert "later seen" in r.stdout
