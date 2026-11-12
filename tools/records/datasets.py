@@ -61,10 +61,14 @@ def repos(root: pathlib.Path = ROOT) -> dict[str, pathlib.Path]:
 
 
 def files_of(paths: list[str], root: pathlib.Path) -> list[pathlib.Path]:
+    """The files of a dataset's paths, without those under a `__pycache__` directory (a
+    published script run in place leaves one; it is gitignored and never data)."""
     out = []
     for p in paths:
         q = root / p
-        out += [q] if q.is_file() else sorted(x for x in q.rglob("*") if x.is_file())
+        out += [q] if q.is_file() else sorted(
+            x for x in q.rglob("*")
+            if x.is_file() and "__pycache__" not in x.relative_to(q).parts)
     return sorted(set(out))
 
 

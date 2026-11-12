@@ -47,6 +47,18 @@ def test_the_digest_lists_files_in_path_order(tmp_path):
     assert datasets.digest(["a-b/", "a/"], tmp_path) == (3, 3, sha)
 
 
+def test_the_digest_skips_python_caches(tmp_path):
+    """A published script run in place leaves __pycache__/ in the data repository; it is
+    gitignored and never data, so it changes no dataset's count, size or hash."""
+    (tmp_path / "s" / "tool").mkdir(parents=True)
+    (tmp_path / "s" / "tool" / "gen.py").write_text("g")
+    before = datasets.digest(["s/"], tmp_path)
+    (tmp_path / "s" / "tool" / "__pycache__").mkdir()
+    (tmp_path / "s" / "tool" / "__pycache__" / "gen.cpython-313.pyc").write_bytes(b"c")
+    assert datasets.files_of(["s/"], tmp_path) == [tmp_path / "s" / "tool" / "gen.py"]
+    assert datasets.digest(["s/"], tmp_path) == before
+
+
 def test_a_record_names_a_known_repo_and_its_keys_in_order(tmp_path):
     assert any("repo" in m for m in datasets.problems("x", record(repo="elsewhere"), {}))
     assert any("repo" in m for m in datasets.problems("x", record(repo=["data"]), {}))
