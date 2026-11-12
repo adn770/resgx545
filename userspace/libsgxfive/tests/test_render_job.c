@@ -106,6 +106,36 @@ static void triangle(void)
 	env_fini(&e);
 }
 
+/*
+ * Odd widths: the image at the even row pitch, its pad pixel and the guard area
+ * untouched, and an even width after an odd one.
+ */
+static void odd_width(void)
+{
+	static const uint32_t sizes[][2] = { { 19, 18 }, { 33, 17 }, { 1, 1 }, { 63, 64 }, { 64, 64 } };
+	struct sgxfive_tri_counts n;
+	struct sgxfive_tri_params p;
+	struct env e;
+
+	env_init(&e);
+	for (unsigned int i = 0; i < sizeof(sizes) / sizeof(sizes[0]); i++) {
+		const uint32_t w = sizes[i][0], h = sizes[i][1], s = sgxfive_tri_stride_px(w);
+		const uint32_t *fb;
+
+		sgxfive_tri_default(&p, w, h);
+		CHECK_EQ(sgxfive_render_tri(e.r, &p, 0, 0), 0);
+		CHECK_EQ(sgxfive_render_wait(e.r, NSEC), 0);
+		fb = sgxfive_render_fb(e.r);
+		CHECK_EQ(sgxfive_tri_check(&p, fb, &n), 0);
+		CHECK_EQ(n.other, 0);
+		CHECK_EQ(n.tri + n.bg, w * h);
+		CHECK_EQ(sgxfive_render_guard_dirty(e.r, &p), 0);
+		for (uint32_t y = 0; s != w && y < h; y++)
+			CHECK_EQ(fb[(uint64_t)y * s + w], SGXFIVE_TRI_SENTINEL);
+	}
+	env_fini(&e);
+}
+
 /* The kernel's rules on render contexts, commands and the reserved heaps. */
 static void rules(void)
 {
@@ -493,6 +523,7 @@ int main(void)
 {
 	query();
 	triangle();
+	odd_width();
 	rules();
 	aa4();
 	max_size();

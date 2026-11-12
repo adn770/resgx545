@@ -34,7 +34,7 @@ void sgxfive_tiling_cmd(struct drm_sgxfive_render_cmd *c, uint32_t width, uint32
 
 /* One flat-coloured triangle over a background colour, ARGB8888 W x H. */
 struct sgxfive_tri_params {
-	uint32_t width, height;		/* width even (PBE line stride: 2 pixels), <= MAX_W x MAX_H */
+	uint32_t width, height;		/* <= MAX_W x MAX_H; rows sgxfive_tri_stride_px apart */
 	uint32_t colour, bg_colour;	/* ARGB8888 */
 	int32_t v[3][2];		/* vertices in 1/16 pixel, window coordinates */
 	float zndc[3];			/* each vertex's clip z; 0: depth 0.5 (= 0.5 + 0.5 z) */
@@ -46,6 +46,16 @@ struct sgxfive_tri_params {
 	uint32_t fine_shift;		/* the unit of v256 is 1/2^fine_shift pixel (8: 1/256) */
 	int32_t v256[3][2];
 };
+
+/*
+ * The colour buffer's row pitch in pixels: the width rounded up to even pixels, as the PBE
+ * line stride counts 2-pixel units. An odd width leaves one pad pixel at the end of each row,
+ * which the PBE window (XMAX = W - 1) does not write.
+ */
+static inline uint32_t sgxfive_tri_stride_px(uint32_t width)
+{
+	return (width + 1) & ~1u;
+}
 
 /* Set the triangle's vertices in 1/256 pixel (see sgxfive_tri_params.fine). */
 void sgxfive_tri_fine(struct sgxfive_tri_params *p, const int32_t v256[3][2]);
@@ -59,7 +69,7 @@ void sgxfive_tri_default(struct sgxfive_tri_params *p, uint32_t width, uint32_t 
 /*
  * Where the scene lives, by GPU address: one page each for the vertex PDS and
  * USSE programs, the pixel PDS and USSE programs and the VDM streams with the
- * geometry, then the colour buffer (stride = 4 x width). The code and PDS
+ * geometry, then the colour buffer (stride = 4 x sgxfive_tri_stride_px). The code and PDS
  * bases are the heap bases DEV_QUERY reports: USE_CODE_BASE_0 (pixel),
  * USE_CODE_BASE_10 (vertex) and PDS_EXEC_BASE, which the kernel keeps at the
  * PDS_PIXEL heap base.
@@ -133,7 +143,7 @@ int sgxfive_tri_scene(const struct sgxfive_tri_cpu *c, const struct sgxfive_tri_
  */
 int sgxfive_tri_expect(const struct sgxfive_tri_params *p, uint32_t x, uint32_t y);
 
-/* Every pixel of fb (stride 4 x width) against the reference. */
+/* Every pixel of fb (stride 4 x sgxfive_tri_stride_px(width)) against the reference. */
 struct sgxfive_tri_counts {
 	uint32_t tri, bg, other;	/* pixels of each colour, and neither */
 	uint32_t wrong_in, wrong_out, wrong_edge;

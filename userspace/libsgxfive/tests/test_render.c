@@ -198,6 +198,7 @@ static void test_vdm(void)
 /* The programs in place with their patched fields, as sgx_tri_test_scene. */
 static void test_scene(void)
 {
+	static const uint32_t even_w[] = { 2, 4, 18, 20, 32, 62, 64, 100, 128, 640, 1024, 4094, 4096 };
 	struct sgxfive_tri_cpu c = {
 		calloc(1, 4096), calloc(1, 4096), calloc(1, 4096), calloc(1, 4096),
 		calloc(1, 4096), 0,
@@ -316,7 +317,7 @@ static void test_scene(void)
 	CHECK_EQ(cmd.te_mtile2, MT4(12));
 	CHECK_EQ(cmd.te_mtile_stride, 16 * 2 * 3);
 	CHECK_EQ(cmd.mte_screen, 1023 | 767 << 16);
-	/* Odd heights build (the line stride is in 2-pixel units, so odd widths do not). */
+	/* Odd heights build. */
 	sgxfive_tri_default(&p, 64, 17);
 	CHECK_EQ(sgxfive_tri_scene(&c, &L, &p, &cmd), 0);
 	CHECK_EQ(cmd.te_screen, (2 - 1) << 12 | (2 - 1));
@@ -324,17 +325,40 @@ static void test_scene(void)
 	sgxfive_tri_default(&p, 32, 1);
 	CHECK_EQ(sgxfive_tri_scene(&c, &L, &p, &cmd), 0);
 	CHECK_EQ(cmd.mte_screen, 31);
-	/* The device's largest; sizes beyond it, odd widths. */
+	/* The device's largest; sizes beyond it. */
 	sgxfive_tri_default(&p, 4096, 4096);
 	CHECK_EQ(sgxfive_tri_scene(&c, &L, &p, &cmd), 0);
 	sgxfive_tri_default(&p, 64, 4098);
 	CHECK_EQ(sgxfive_tri_scene(&c, &L, &p, &cmd), -EINVAL);
 	sgxfive_tri_default(&p, 4098, 64);
 	CHECK_EQ(sgxfive_tri_scene(&c, &L, &p, &cmd), -EINVAL);
-	sgxfive_tri_default(&p, 63, 64);
-	CHECK_EQ(sgxfive_tri_scene(&c, &L, &p, &cmd), -EINVAL);
+	/*
+	 * Odd widths build: the PBE window ends at W - 1, the line stride (2-pixel units)
+	 * is the row pitch rounded up to even pixels, 20 pixels (field 9) at W 19.
+	 */
+	sgxfive_tri_default(&p, 19, 18);
+	CHECK_EQ(sgxfive_tri_scene(&c, &L, &p, &cmd), 0);
+	CHECK_EQ(sgxfive_limm_get(qw(c.usep + SGXFIVE_TRI_UP_EOT / 4, 2)), 18 | 17 << 16);
+	CHECK_EQ((sgxfive_limm_get(qw(c.usep + SGXFIVE_TRI_UP_EOT / 4, 3)) >> 16) & 0xfff, 9);
+	CHECK_EQ(cmd.mte_screen, 18 | 17 << 16);
 	sgxfive_tri_default(&p, 63, 17);
-	CHECK_EQ(sgxfive_tri_scene(&c, &L, &p, &cmd), -EINVAL);
+	CHECK_EQ(sgxfive_tri_scene(&c, &L, &p, &cmd), 0);
+	CHECK_EQ(cmd.mte_screen, 62 | 16 << 16);
+	/* Even widths keep the PBE words of the stride 4 x W. */
+	for (unsigned int k = 0; k < sizeof(even_w) / sizeof(even_w[0]); k++) {
+		const uint32_t w = even_w[k];
+		const struct sgxfive_rect r = { 0, 0, w, 18 };
+		uint32_t pbe[SGXFIVE_PBE_WORDS];
+
+		sgxfive_pbe(pbe, &r, 4 * w, L.fb);
+		sgxfive_tri_default(&p, w, 18);
+		CHECK_EQ(sgxfive_tri_scene(&c, &L, &p, &cmd), 0);
+		for (unsigned int i = 0; i < 4; i++)
+			CHECK_EQ(sgxfive_limm_get(qw(c.usep + SGXFIVE_TRI_UP_EOT / 4, 1 + i)),
+				 pbe[i]);
+		CHECK_EQ(qw(c.usep + SGXFIVE_TRI_UP_EOT / 4, 6),
+			 sgxfive_emitpix_sb_set(qw(c.usep + SGXFIVE_TRI_UP_EOT / 4, 6), pbe[4]));
+	}
 	free(c.pdsv);
 	free(c.usev);
 	free(c.pdsp);
@@ -415,8 +439,44 @@ static void test_expect(void)
 	free(fb);
 }
 
+/* The colour buffer's row pitch: the width rounded up to even pixels (PBE stride). */
+static void test_stride_px(void)
+{
+	CHECK_EQ(sgxfive_tri_stride_px(1), 2);
+	CHECK_EQ(sgxfive_tri_stride_px(19), 20);
+	CHECK_EQ(sgxfive_tri_stride_px(20), 20);
+	CHECK_EQ(sgxfive_tri_stride_px(4095), 4096);
+	CHECK_EQ(sgxfive_tri_stride_px(4096), 4096);
+}
+
+/* An odd-width image is read at the even row pitch: the pad pixel is not the image. */
+static void test_check_stride(void)
+{
+	struct sgxfive_tri_params p;
+	struct sgxfive_tri_counts n;
+	uint32_t *fb = calloc(20 * 18, 4);
+
+	sgxfive_tri_default(&p, 19, 18);
+	p.colour = 0xff00ff00;
+	p.bg_colour = 0xff203040;
+	for (uint32_t y = 0; y < 18; y++) {
+		for (uint32_t x = 0; x < 19; x++)
+			fb[y * 20 + x] = sgxfive_tri_expect(&p, x, y) == 1 ? p.colour : p.bg_colour;
+		fb[y * 20 + 19] = 0x12345678;		/* the pad pixel */
+	}
+	CHECK_EQ(sgxfive_tri_check(&p, fb, &n), 0);
+	CHECK_EQ(n.other, 0);
+	CHECK_EQ(n.tri + n.bg, 19 * 18);
+	fb[5 * 20 + 0] = 0x12345678;			/* (0, 5): background */
+	CHECK_EQ(sgxfive_tri_check(&p, fb, &n), -EIO);
+	CHECK_EQ(n.wrong_out, 1);
+	free(fb);
+}
+
 int main(void)
 {
+	test_stride_px();
+	test_check_stride();
 	test_words();
 	test_default();
 	test_block();

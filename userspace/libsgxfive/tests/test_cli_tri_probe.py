@@ -20,6 +20,7 @@ TOOL = os.environ.get("SGXFIVE_TEST", str(HERE.parent / "build" / "sgxfive-test"
 PROBES = ROOT / "probes" / "pds" / "templates"
 PHAS = "phas #0, #0, pixel, end, parallel\n"
 BG = 0xff203040                 # the first triangle's background (sgxfive_tri_default)
+SENTINEL = 0xdeadbeef           # SGXFIVE_TRI_SENTINEL: a pixel no render wrote
 
 
 def run(*args: str) -> subprocess.CompletedProcess[str]:
@@ -84,15 +85,24 @@ def test_tri_pixel_event_and_end_of_tile(tmp_path):
     assert vals.get(BG, 0) > 0 and sum(vals.values()) == 32 * 16
 
 
-def test_tri_odd_height_runs_and_odd_width_is_refused(tmp_path):
+def test_tri_odd_height_and_odd_width_run(tmp_path):
     f = assemble(tmp_path, "x", PHAS + "mov.skipinv.end o0, #0x12345678\n")
     r = run("--mock", "probe", "--tri", "pixel", "--pixels", "--width", "32", "--height", "17",
             str(f))
     assert r.returncode == 0, r.stdout + r.stderr
     assert re.search(r"^probe x: tri 32x17,", r.stdout, re.M), r.stdout
     assert len(re.findall(r"^probe x: row \d+:", r.stdout, re.M)) == 17
-    r = run("--mock", "probe", "--tri", "pixel", "--width", "33", "--height", "16", str(f))
-    assert r.returncode == 2, r.stdout + r.stderr
+    # an odd width: the row pitch is rounded up to 34 pixels, the readback skips the pad pixel
+    r = run("--mock", "probe", "--tri", "pixel", "--pixels", "--width", "33", "--height", "17",
+            str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^probe x: tri 33x17,", r.stdout, re.M), r.stdout
+    rows = re.findall(r"^probe x: row \d+:(.*)$", r.stdout, re.M)
+    assert len(rows) == 17
+    assert all(len(row.split()) == 33 for row in rows), rows
+    vals = summary(r.stdout, "x")
+    assert sum(vals.values()) == 33 * 17 and vals.get(BG, 0) > 0, vals
+    assert "%08x" % SENTINEL not in r.stdout, r.stdout
 
 
 def test_tri_every_file_runs_in_its_own_render(tmp_path):
@@ -141,7 +151,6 @@ def test_tri_pixels_prints_every_row(tmp_path):
     ["--tri", "pixel", "--slot", "pixel=x.bin"],  # the case's own slot
     ["--tri", "pixel", "--slot", "bogus=x.bin"],
     ["--tri", "pixel", "--slot", "eot"],
-    ["--tri", "pixel", "--width", "33"],        # odd
     ["--tri", "pixel", "--width", "64", "--max-width", "32"],
     ["--width", "32"],                          # --width needs --tri
 ])

@@ -429,7 +429,7 @@ int sgxfive_tri_probe_apply(const struct sgxfive_tri_cpu *c, const struct sgxfiv
 		uint32_t pbe[SGXFIVE_PBE_WORDS];
 
 		/* as render.c's put_eot */
-		sgxfive_pbe(pbe, &r, 4 * p->width, l->fb);
+		sgxfive_pbe(pbe, &r, 4 * sgxfive_tri_stride_px(p->width), l->fb);
 		w = put_usse(c->usep, SGXFIVE_TRI_PROBE_UP_EOT, g, &ib);
 		for (unsigned int i = 0; i < 4; i++)
 			set_insn(w, 1 + i, sgxfive_limm_set(get_insn(w, 1 + i) + ((uint64_t)i << 21),
@@ -643,7 +643,7 @@ int sgxfive_tri_rig_create(struct sgxfive_vm *vm, uint32_t ctx, uint32_t max_w, 
 	g->dev = dev;
 	g->ctx = ctx;
 	/* the target and a guard page after it, whole pages */
-	g->fb_size = ((uint64_t)max_w * max_h * 4 + 2 * SGXFIVE_PAGE_SIZE - 1) &
+	g->fb_size = ((uint64_t)sgxfive_tri_stride_px(max_w) * max_h * 4 + 2 * SGXFIVE_PAGE_SIZE - 1) &
 		     ~(uint64_t)(SGXFIVE_PAGE_SIZE - 1);
 	ret = sgxfive_bo_create(dev, (PG_COUNT - 1 + SGXFIVE_TRI_PROBE_GEN_PAGES) * SGXFIVE_PAGE_SIZE,
 				DRM_SGXFIVE_BO_ALLOW_CPU_ACCESS, &g->bo);
@@ -733,7 +733,8 @@ int sgxfive_tri_rig_build(struct sgxfive_tri_rig *g, const struct sgxfive_tri_pa
 
 	if (g->pending)
 		return -EBUSY;
-	if ((uint64_t)p->width * p->height * 4 + SGXFIVE_PAGE_SIZE > g->fb_size)
+	if ((uint64_t)sgxfive_tri_stride_px(p->width) * p->height * 4 + SGXFIVE_PAGE_SIZE >
+	    g->fb_size)
 		return -EINVAL;
 	ret = sgxfive_tri_scene(&g->cpu, &g->layout, p, &g->cmd);
 	if (!ret && pr)

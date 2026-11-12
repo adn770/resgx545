@@ -244,7 +244,7 @@ static void put_eot(const struct sgxfive_tri_cpu *c, const struct sgxfive_tri_la
 	const struct sgxfive_rect r = { 0, 0, p->width, p->height };
 	uint32_t pbe[SGXFIVE_PBE_WORDS], *w;
 
-	sgxfive_pbe(pbe, &r, 4 * p->width, l->fb);	/* ARGB8888 */
+	sgxfive_pbe(pbe, &r, 4 * sgxfive_tri_stride_px(p->width), l->fb);	/* ARGB8888 */
 	w = PUT_USSE(c->usep, SGXFIVE_TRI_UP_EOT, tri_use_eot);
 	for (unsigned int i = 0; i < 4; i++)
 		set_insn(w, 1 + i, sgxfive_limm_set(get_insn(w, 1 + i) + ((uint64_t)i << 21),
@@ -392,8 +392,8 @@ int sgxfive_tri_scene(const struct sgxfive_tri_cpu *c, const struct sgxfive_tri_
 	uint32_t *v = c->gen + SGXFIVE_TRI_G_VTX / 4;
 	const uint16_t idx[4] = { 0, 1, 2, 0 };
 
-	if (!p->width || !p->height || p->width % 2 ||
-	    p->width > SGXFIVE_TRI_MAX_W || p->height > SGXFIVE_TRI_MAX_H)
+	if (!p->width || !p->height || p->width > SGXFIVE_TRI_MAX_W ||
+	    p->height > SGXFIVE_TRI_MAX_H)
 		return -EINVAL;
 	memset(c->pdsv, 0, SGXFIVE_PAGE_SIZE);
 	memset(c->usev, 0, SGXFIVE_PAGE_SIZE);
@@ -445,10 +445,12 @@ int sgxfive_tri_expect(const struct sgxfive_tri_params *p, uint32_t x, uint32_t 
 int sgxfive_tri_check(const struct sgxfive_tri_params *p, const uint32_t *fb,
 		      struct sgxfive_tri_counts *n)
 {
+	const uint32_t stride = sgxfive_tri_stride_px(p->width);
+
 	memset(n, 0, sizeof(*n));
 	for (uint32_t y = 0; y < p->height; y++) {
 		for (uint32_t x = 0; x < p->width; x++) {
-			uint32_t v = fb[y * p->width + x];
+			uint32_t v = fb[(uint64_t)y * stride + x];
 			int e = sgxfive_tri_expect(p, x, y);
 			int f = sgxfive_tri_expect(p, x, p->height - 1 - y);
 
@@ -477,10 +479,10 @@ static const uint32_t page_heap[PG_COUNT] = {
 	DRM_SGXFIVE_HEAP_USSE_PIXEL, DRM_SGXFIVE_HEAP_GENERAL,
 };
 
-/* A W x H ARGB8888 colour buffer with a guard page after it, whole pages. */
+/* A W x H ARGB8888 colour buffer, rows at the even pitch, a guard page after it: whole pages. */
 static uint64_t fb_size(uint32_t width, uint32_t height)
 {
-	return ((uint64_t)width * height * 4 + 2 * SGXFIVE_PAGE_SIZE - 1) &
+	return ((uint64_t)sgxfive_tri_stride_px(width) * height * 4 + 2 * SGXFIVE_PAGE_SIZE - 1) &
 	       ~(uint64_t)(SGXFIVE_PAGE_SIZE - 1);
 }
 
@@ -741,8 +743,8 @@ uint32_t sgxfive_render_guard_dirty(const struct sgxfive_render *r,
 {
 	uint32_t n = 0;
 
-	for (uint64_t i = (uint64_t)p->width * p->height; i < fb_size(p->width, p->height) / 4;
-	     i++)
+	for (uint64_t i = (uint64_t)sgxfive_tri_stride_px(p->width) * p->height;
+	     i < fb_size(p->width, p->height) / 4; i++)
 		n += r->fb[i] != SGXFIVE_TRI_SENTINEL;
 	return n;
 }

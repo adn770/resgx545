@@ -1655,25 +1655,26 @@ static uint32_t probe_scratch(const char *name, const uint32_t *sp, uint32_t max
 }
 
 /*
- * A probe's readback: the target's width x height pixels as o0 (the value, or the four
- * most frequent when they differ; every pixel, row by row, with pixels) and the scratch
- * dwords changed, at most max_shown of them.
+ * A probe's readback: the target's width x height pixels (rows sgxfive_tri_stride_px apart)
+ * as o0 (the value, or the four most frequent when they differ; every pixel, row by row,
+ * with pixels) and the scratch dwords changed, at most max_shown of them.
  */
 static void probe_report(const char *name, const uint32_t *p, uint32_t width,
 			 uint32_t height, bool pixels, const uint32_t *sp, uint32_t max_shown)
 {
-	const uint32_t total = width * height;
+	const uint32_t total = width * height, stride = sgxfive_tri_stride_px(width);
 	uint32_t val[64], cnt[64], nv = 0, other = 0;
 
 	for (uint32_t i = 0; i < total; i++) {
+		const uint32_t v = p[(uint64_t)(i / width) * stride + i % width];
 		uint32_t k = 0;
 
-		while (k < nv && val[k] != p[i])
+		while (k < nv && val[k] != v)
 			k++;
 		if (k < nv)
 			cnt[k]++;
 		else if (nv < 64)
-			val[nv] = p[i], cnt[nv++] = 1;
+			val[nv] = v, cnt[nv++] = 1;
 		else
 			other++;
 	}
@@ -1702,7 +1703,7 @@ static void probe_report(const char *name, const uint32_t *p, uint32_t width,
 	for (uint32_t y = 0; pixels && y < height; y++) {
 		printf("probe %s: row %u:", name, y);
 		for (uint32_t x = 0; x < width; x++)
-			printf(" %08x", p[y * width + x]);
+			printf(" %08x", p[(uint64_t)y * stride + x]);
 		printf("\n");
 	}
 	probe_scratch(name, sp, max_shown);
@@ -2028,7 +2029,7 @@ static int probe_tri_check(struct probe_opts *po)
 	pt->height = pt->height ? pt->height : 64;
 	pt->max_width = pt->max_width ? pt->max_width : pt->width;
 	pt->max_height = pt->max_height ? pt->max_height : pt->height;
-	if (pt->width % 2 || pt->max_width > SGXFIVE_TRI_MAX_W ||
+	if (pt->max_width > SGXFIVE_TRI_MAX_W ||
 	    pt->max_height > SGXFIVE_TRI_MAX_H || pt->width > pt->max_width ||
 	    pt->height > pt->max_height)
 		return -1;
@@ -2117,7 +2118,7 @@ static int emit_tri_scene(const char *path, const struct sgxfive_tri_rig *g,
 	fprintf(f, "{\"kind\": \"render\", \"target\": {\"w\": %u, \"h\": %u, \"base\": \"0x%llx\", "
 		"\"format\": \"", g->params.width, g->params.height, (unsigned long long)g->fb_addr);
 	emit_lower(f, "ARGB8888");	/* the scene format spells the pixel format in lower case */
-	fprintf(f, "\", \"stride\": %u},\n", 4 * g->params.width);
+	fprintf(f, "\", \"stride\": %u},\n", 4 * sgxfive_tri_stride_px(g->params.width));
 	fprintf(f, " \"cmd\": ");
 	emit_words(f, (const uint32_t *)&g->cmd, sizeof(g->cmd) / 4);
 	fprintf(f, ",\n \"vertices\": %u,\n", pt->vertices);
@@ -2342,7 +2343,8 @@ static void probe_tri_one(struct tool *t, const struct probe_file *f,
 		if (ret == -ENOSPC)
 			probe_report(f->name, g->fb, pt->width, pt->height, po->pixels, sp,
 				     SCRATCH_PAGES * SGXFIVE_PAGE_SIZE / 4);
-	} else if (pixels_all(g->fb, pt->width * pt->height, SGXFIVE_TRI_SENTINEL)) {
+	} else if (pixels_all(g->fb, sgxfive_tri_stride_px(pt->width) * pt->height,
+			      SGXFIVE_TRI_SENTINEL)) {
 		PROBE_FAILED("probe %s: failed: no pixel written\n", f->name);
 	} else {
 		probe_report(f->name, g->fb, pt->width, pt->height, po->pixels, sp,
@@ -2383,7 +2385,7 @@ static void tri_show(const struct sgxfive_tri_params *p, const uint32_t *fb)
 {
 	for (uint32_t y = 0; y < p->height && y < 128; y++) {
 		for (uint32_t x = 0; x < p->width && x < 128; x++) {
-			uint32_t v = fb[y * p->width + x];
+			uint32_t v = fb[(uint64_t)y * sgxfive_tri_stride_px(p->width) + x];
 
 			putchar(v == p->colour ? '#' : v == p->bg_colour ? '.' :
 				v == SGXFIVE_TRI_SENTINEL ? 's' : '?');
@@ -3116,7 +3118,8 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		if (sgxfive_render_fb(r)) {	/* none before the first scene is built */
 			struct sgxfive_tri_layout l;
 
-			print_target(&(struct target){ p.width, p.height, p.width,
+			print_target(&(struct target){ p.width, p.height,
+						       sgxfive_tri_stride_px(p.width),
 						       sgxfive_render_fb(r), tri_ok, &p },
 				     sgxfive_render_guard_dirty(r, &p), o->pixels);
 			sgxfive_render_get_layout(r, &l);

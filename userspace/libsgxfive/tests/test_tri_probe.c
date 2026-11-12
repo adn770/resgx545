@@ -674,7 +674,8 @@ static void env_fini(struct env *e)
 /* The default scene through the probe engine draws the first triangle. */
 static void rig_default(void)
 {
-	static const uint32_t sizes[][2] = { { 64, 64 }, { 32, 16 }, { 32, 4096 } };
+	static const uint32_t sizes[][2] = { { 64, 64 }, { 32, 16 }, { 32, 4096 }, { 19, 18 },
+					     { 4095, 64 } };
 
 	for (size_t k = 0; k < sizeof(sizes) / sizeof(sizes[0]); k++) {
 		struct sgxfive_tri_counts n;
@@ -689,7 +690,10 @@ static void rig_default(void)
 		CHECK_EQ(sgxfive_tri_rig_submit(e.g), -EBUSY);
 		CHECK_EQ(sgxfive_tri_rig_wait(e.g, 5 * NSEC), 0);
 		CHECK_EQ(sgxfive_tri_check(&p, e.g->fb, &n), 0);
-		CHECK_EQ(e.g->fb[(uint64_t)p.width * p.height], SGXFIVE_TRI_SENTINEL);
+		CHECK_EQ(e.g->fb[(uint64_t)sgxfive_tri_stride_px(p.width) * p.height],
+			 SGXFIVE_TRI_SENTINEL);
+		if (p.width % 2)			/* the pad pixel of the first row */
+			CHECK_EQ(e.g->fb[p.width], SGXFIVE_TRI_SENTINEL);
 		env_fini(&e);
 	}
 	{
