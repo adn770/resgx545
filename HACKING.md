@@ -393,6 +393,17 @@ pushed before `tools/clean-room/guard.py --history` has run over every ref.
   fails on a record neither cited nor listed and on a listed one the code cites;
   `--write-baseline` only removes once the list exists). A fold that models or refuses a record
   cites it in the code and takes it off the list in the same commit.
+- **Replay vectors.** A session's measured rows become a vectors table in resgx545-data
+  (`vectors/closing/<session>/...table.json`, format `sgx545-tables` of
+  `tools/usse-asm/closing_tables.py`) when the fold lands. Its `replay` field says what happens
+  to it: `replayed`, with the test (`file::function`) under `crates/sgx-pipe/tests` or
+  `crates/sgx-sim/tests` that holds every modelled row to the model and counts the rest as
+  refused rows, never as passes (`zls_table.rs` replays the ZLS tables of E831 and E885); or
+  `refused`, with the reason no simulator models it. The replaying test names the records its
+  table measures; a refused table's records are cited where sgx-sim or sgx-pipe refuses them, or
+  stay in `crates/SIM_UNMODELLED.toml` with the table's reason, so `sim_coverage.py` sees them
+  either way. A fold with measured rows
+  and no table says why in its report.
 - A path of the scratch area that the tree cites (`closing4/p7/reading-r5.md`, bare or after
   `scratch/resgx545/`) is published: a session directory of a data repository
   (`closingN/<name>/` is `<area>/closing-<name>/`) or a copy under `cited/` of resgx545-data,
