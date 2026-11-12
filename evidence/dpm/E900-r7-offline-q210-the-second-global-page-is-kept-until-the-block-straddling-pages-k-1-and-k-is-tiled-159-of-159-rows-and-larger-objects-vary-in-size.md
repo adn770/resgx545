@@ -73,3 +73,11 @@ covers 4689 regions are not read, so H-CUM is not frozen and Q210 keeps "what op
 larger objects". The N 4 step misses (S4, S9, S10) stay as E882 left them. The 2048x4096 S3 miss
 and the lag are not read: no kept 2048x4096 dump is of a single TA run, and the kept dumps are end
 states, not the abort.
+
+**Correction 2026-11-12:** H-SPAN was held out on the hardware (R7-dpm stage s-m, E915) [HW, held
+out]. It held at all 19 cells where it parts from E874's B_k, at bands 3 and 5 of four targets
+never run before and at the six 2048x2048 replicates of bands 5 to 7; but at band 6 of 3072x3072
+and of 2560x2560 the cell at thr0 = A_6 (`0x3cf`, `0x2b1`) left 2 global pages where H-SPAN gives
+1, so its frozen verdict at those two targets is "not supported" (10 of 11, 6 of 7) and the margin
+can run past the straddling block. With `--vtx-coords 8` the same command made other object blocks
+and steps in another run (E917), so this record's N 8 sizes are of R6-dpm's one run.

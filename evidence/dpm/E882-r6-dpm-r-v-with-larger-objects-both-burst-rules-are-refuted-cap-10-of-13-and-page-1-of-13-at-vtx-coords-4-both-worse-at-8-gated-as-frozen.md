@@ -56,3 +56,10 @@ scorer's line under that tag. Why the N 8 blocks have two sizes; where the burst
 larger objects; the margin at these scenes (the N 8 cells were not scored, the N 4 cells test one
 band). That the bursts stay near fixed page counts is read after the run from one calibration
 each.
+
+**Correction 2026-11-12:** The N 8 readings above are of one run, not of a fixed scene. Round 7's
+R7-dpm ran the same calibration commands again (E917, exploration): at N 4 every step, the need
+538 and the 127-dword blocks repeated, but at N 8 the dump's blocks ran 187, 198, 187, 198, 187
+dwords (here 187, 187, 198, 198, 198), the steps were others from S3 on (`0x50`, `0x53`, `0x99`,
+...) and the need 610 pages against 691 [HW]. So "the N 8 blocks have two sizes" and the N 8 steps
+in the table above describe this run only.

@@ -49,3 +49,12 @@ high.
 **What it does not show.** Why the page is pending at the resume only after a grow; the operand
 order of `isub16` stays [infer] (no cell with the two counts equal and non-zero was read). One
 scene, one target, eight jobs; the task logs passes of the four slots only, not the exit paths.
+
+**Correction 2026-11-12:** The operand order of `isub16` is no longer only [infer]. Round 7's
+laptop session R7-dpm froze it as a held-out verdict at the 2048x4096 creep cell, where dword 36
+(2) is above the one global page left, so only the order "the count read minus dword 36" keeps the
+raise off: our own task read `sa8 & 0x380` = 0 at its decision entry and the threshold was not
+raised, twice, and the scorer printed "isub16 is source 1 minus source 2 (the count read minus
+dword 36): E864's [infer] read directly" (E918) [HW, held out]. The same task, loading both DPM
+page status registers, read 1 global page at the end of the partial render of both grow cells where
+the host's next sample read 2, the pending page this record left unexplained (E918, post hoc).

@@ -7053,6 +7053,67 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   running timer), so it does not separate them and no Q294 laptop rows follow.
   *edm; HW, RE, infer; data: `render-closing-r6-held`, `edm-closing-r3x-events`,
   `cited-scratch-private`.*
+- `E915` R7-dpm stages s-a0 and s-m, set A, on the test module 41E2F5C7 (Q210; the tool's triangle
+  with 1500 vertices, frozen from E874's step replay and E900's straddling-block rule H-SPAN): the
+  premise held, 29 of 29 control rows (S2 to S7 and the need 0x213 in their brackets, c4-b5 R and 2
+  global pages left, c4-b6 N and 1, t-s3m6 1, g-qf at P 0xa2 two partial renders with H-REPLAY64's
+  run peaks, the knob read back); held out, H-SPAN (the first partial render leaves 2 global pages
+  iff S_k < thr0 < A_k) held at all 19 cells where it parts from E874's burst end B_k (2 pages left
+  where B_k said 1) and per target at 3072x2048 8 of 8, 2048x3072 7 of 7 (cells re-picked on its
+  calibration's steps), 1024x1024 6 of 6 and the six 2048x2048 replicates of bands 5 to 7, but its
+  frozen verdict is 'not supported' at 3072x3072 (10 of 11) and 2560x2560 (6 of 7): at both the band
+  6 cell thr0 = A_6 (0x3cf, 0x2b1) left 2 pages, so the second page is kept past A_6 there; E874's
+  step model gave the steps of four of five new targets in their brackets (3072x3072, 3072x2048,
+  2560x2560, 1024x1024; the needs 773, 808, 153 as replayed) and missed 2048x3072's S6 by one page
+  (0x233 against 0x234); R-5's raise flipped at B3 at the three band 3 targets scored, 6 of 6.
+  *dpm; HW, infer; data: `render-closing-r7-dpm:out/a1/s-a0/`, `render-closing-r7-dpm:out/a1/s-m/`,
+  `render-closing-r7-dpm:postrun/`.*
+- `E916` R7-dpm stage s-b, set A, on the test module 41E2F5C7 (Q211; one default triangle moved to
+  five places never run, one kick): held out, E875's page replay with the regions walked in E899's
+  order (H-REPLAY64) gave the count of partial renders at 24 of 24 cells and every TA run's peak at
+  23 of 24, so its frozen verdict held on s44a and s44b (4096x4096, moves 0,2304 and 2048,1792; 12
+  of 12 rows each), s42 (4096x2048, 768,256; 8 of 8) and s22 (2048x2048, 0,384; 8 of 8) and read
+  'not supported' on s17 (1024x768, 64,64; 7 of 8): at b-s17-0x9 the reader's first run peak was 0
+  where the replay has 0x9, and read after the run the timeline holds no sample of that first TA run
+  (row 1, before the job's threshold was set, then row 2 155 us later inside the partial render with
+  the page count at 9), so that row reads the capture, not the TA (post hoc); the five calibrations
+  needed HU1's U (157, 131, 145, 78, 22) with no partial render and one global page; H-WALK64 placed
+  every block of b-cal-s22's dump at its page and slot (row order 113 of 2306); the rivals' frozen
+  tallies: row order 15 of 48 rows (it fails on all five scenes), E854's d = 7/4 20 of 24 counts and
+  d = 1 22 of 24.
+  *dpm; HW, infer; data: `render-closing-r7-dpm:out/a1/s-b/`, `render-closing-r7-dpm:postrun/`.*
+- `E917` R7-dpm stage s-v, set A, on the test module 41E2F5C7 (Q210, larger objects; exploration, no
+  verdict frozen: E900 froze no step rule for them): the 2048x2048 calibration of the tool's
+  triangle with 1500 vertices and --vtx-coords 4 repeated R6-dpm's reading 14 of 14 (S2 to S13 0x4f,
+  0x52, 0x98, 0x9f, 0xe7, 0x12e, 0x133, 0x17d, 0x182, 0x1c7, 0x1cd, 0x214, the need 538, no partial
+  render; its dump's object blocks again 127 dwords, 8 of 8 periods), while the same command with
+  --vtx-coords 8 repeated it 2 of 19: S2 0x4f and no partial render held, but its 17 steps S2 to S18
+  read 0x4f, 0x50, 0x53, 0x99, 0xa0, 0xe6, 0xe9, 0x130, 0x133, 0x137, 0x17e, 0x183, 0x1c8, 0x1cb,
+  0x1cf, 0x218, 0x21b against R6-dpm's 0x4f, 0x98, 0x9e, 0xe5, ..., and the need 610 against 691;
+  read after the run, the dump's object blocks run 187, 198, 187, 198, 187 dwords where R6-dpm's ran
+  187, 187, 198, 198, 198, so at 8 coordinate pairs the scene the TA writes is not the same from one
+  run of the command to the next.
+  *dpm; HW, infer; data: `render-closing-r7-dpm:out/a1/s-v/`, `render-closing-r7-dpm:postrun/`,
+  `render-closing-r6-dpm:out/a2/r-v/`, `render-closing-r6-dpm:postrun/`.*
+- `E918` R7-dpm stage s-k, set B, on module 37EC97AB after the lead's one-shot boot (Q210; our own
+  task oomring2 armed before each of 10 jobs, logging pa1, sa8, sa9 and, new, the two DPM page
+  status registers at every out-of-memory and end-of-render event): the premise held (every
+  out-of-memory rung of k-b6 holds non-zero counts inside the host's samples) and both controls
+  (c4-b5 sa8 & 0x380 = 0x180 and raised, c4-b6 0 and silent); the frozen verdicts: R-5's sa8 bits at
+  the decision entry 'not supported', 5 held, 1 FAILED, 2 cannot tell of 8 (k-b3, k-s3, k-s3m6 and
+  both creep cells held; k-s4p1, thr0 S4 + 1 at 2048x2048, read 0 and silent where the session froze
+  0x180; band 5 A - 1 and A took one partial render each, so no decision entry); H-PASS 'not
+  supported', 20 held, 8 FAILED, 2 cannot tell of 30 (the task's global count at the abort is the
+  host's, 10 of 10, and its page count lies between the host's samples, 10 of 10, but its global
+  count at the decision entry is not the pages left, 0 of 8); the creep cell (dword 36 = 2, one page
+  left), twice: silent with sa8 & 0x380 = 0, 'isub16 is source 1 minus source 2 (the count read
+  minus dword 36): E864's [infer] read directly'; read after the run (post hoc), k-s4p1's miss is
+  the session's shortcut for R-5 ('2 pages left raises'), not R-5: its abort saved dword 36 = 4 - 2
+  = 2 and the end of its partial render left 2 global pages, not above it (R6-dpm read the same cell
+  silent, E881), and the 'decision entry' is the second TA run's own abort (0x0724 = thr0, 8 of 8),
+  while the end-of-render rung reads the global pages left as the host's last sample in the render,
+  10 of 10, and 1 at both grow cells where the host's next sample reads 2 (H-PENDREQ).
+  *dpm; HW, infer; data: `render-closing-r7-dpm:out/b1/s-k/`, `render-closing-r7-dpm:postrun/`.*
 
 ## By unit
 
@@ -7067,7 +7128,7 @@ E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E4
 E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753, E773, E774, E775, E779, E785,
 E786, E790, E799, E800, E801, E802, E803, E832, E845, E846, E852, E853, E854, E860, E861, E862,
 E863, E864, E866, E867, E868, E869, E870, E873, E874, E875, E881, E882, E883, E887, E889, E899,
-E900.
+E900, E915, E916, E917, E918.
 
 ### edm
 
