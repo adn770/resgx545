@@ -11,7 +11,11 @@ machine with Python 3.15 (`requirements-dev.txt`: pytest, reuse).
   a glossary view kept beside the records tooling, renders the glossary's inferred terms as
   `doc/open_rows.md`; `citations.py` checks the citation records
   (`citations/<source>/C<nnnn>-<slug>.md`: locator, link at the pin, one quoted line) and the
-  glossary's references to them.
+  glossary's references to them. `new_record.py --session DIR --id E<nnn> --stage S` drafts
+  a record's front matter, method and printed verdicts from a published closing session's own
+  files, leaving the claim and the readings as `TODO-FILL` markers. `digest.py [--check]`
+  renders `doc/state_digest.md`, the project's state on one page (open questions, recent
+  records, closing sessions, tool and fork versions).
 - `clean-room/`: the glossary tooling: `glossary.py` loads the glossary terms under
   `glossary/` and renders `doc/glossary.md`; `glossary_coverage.py` counts them per unit. Also
   the clean-room guard, `guard.py`: no identifier found only in the confidential sources, and

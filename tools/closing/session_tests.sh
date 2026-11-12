@@ -1,7 +1,7 @@
 #!/bin/bash
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: 2026 Josep Torra
-# usage: tools/closing/session_tests.sh <area/closing-name>     e.g. edm/closing-r4-q152
+# usage: tools/closing/session_tests.sh [--cached] <area/closing-name>   e.g. edm/closing-r4-q152
 #
 # Re-runs a published closing session's own tests (resgx545-data) from a scratch copy, laid out
 # the way the session was run, and prints PASS or FAIL with the tests' exit code (the script's
@@ -77,6 +77,10 @@
 # ../resgx545-data-private; only its cited/ copies are read), RESGX545_SESSION_TARGET (default
 # scratch/resgx545/session-target beside the tool repository), KEEP=1 (keep the scratch tree and
 # print it).
+#
+# A pass is recorded as $RESGX545_SESSION_TARGET/passes/<key>, the key from passcache.py (the
+# session's path and files, this runner's digest, the commits the session pins, PY); --cached
+# prints CACHED PASS and runs nothing when the key has passed before.
 HERE=$(cd "$(dirname "$0")" && pwd)
 TOOL=$(cd "${RESGX545_TOOL:-$HERE/../..}" && pwd)
 DATA=$(cd "${RESGX545_DATA:-$TOOL/../resgx545-data}" 2>/dev/null && pwd)
@@ -84,6 +88,8 @@ DATAP=$(cd "${RESGX545_DATA_PRIVATE:-$TOOL/../resgx545-data-private}" 2>/dev/nul
 TARGET=${RESGX545_SESSION_TARGET:-$(dirname "$TOOL")/scratch/resgx545/session-target}
 die() { echo "session_tests: $*" >&2; exit 2; }
 
+CACHED=0
+[ "$1" = --cached ] && { CACHED=1; shift; }
 SESSION=${1%/}
 [ -n "$SESSION" ] && [ $# = 1 ] || die "usage: $0 <area/closing-name>"
 # a waiter needs something exact, never a process name: the PID of this run, named here
@@ -106,6 +112,13 @@ case "$PY" in /*) ;; *) PY=$(command -v "$PY") ;; esac
 NAME=$(basename "$SESSION"); NAME=${NAME#closing-}
 COMMON=$(cd "$TOOL" && git rev-parse --path-format=absolute --git-common-dir) \
     || die "$TOOL is not a git repository"
+KEY=$("$PY" "$HERE/passcache.py" key "$SRC" "$TOOL" "$PY" "$HERE/session_tests.sh" \
+    "$HERE/passcache.py") \
+    || { KEY=; echo "session_tests: warning: no pass key, nothing cached"; }
+if [ "$CACHED" = 1 ] && [ -n "$KEY" ] && [ -f "$TARGET/passes/$KEY" ]; then
+    echo "session_tests: $SESSION CACHED PASS"
+    exit 0
+fi
 
 W=$(mktemp -d "${TMPDIR:-/tmp}/session_tests.XXXXXX") || die "no scratch directory"
 W=$(cd "$W" && pwd -P)
@@ -463,5 +476,7 @@ case "$ENTRY" in
 esac
 rc=$?
 if [ $rc = 0 ]; then verdict=PASS; else verdict=FAIL; fi
+[ $rc = 0 ] && [ -n "$KEY" ] && mkdir -p "$TARGET/passes" \
+    && echo "$SESSION $(date '+%Y-%m-%d %H:%M:%S')" > "$TARGET/passes/$KEY"
 echo "session_tests: $SESSION $verdict (exit $rc)"
 exit $rc

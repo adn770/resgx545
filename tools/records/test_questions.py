@@ -170,12 +170,13 @@ def test_main_lets_earlier_records_cite_an_answered_question(tree, monkeypatch):
     assert questions.main(["--check"]) == 1
 
 
-def test_main_leaves_the_generated_evidence_log_to_the_records(tree, monkeypatch):
-    """doc/evidence_log.md copies the records' claims; their citations are checked in the
-    records themselves."""
+@pytest.mark.parametrize("name", ["evidence_log.md", "state_digest.md"])
+def test_main_leaves_the_generated_evidence_log_to_the_records(tree, monkeypatch, name):
+    """doc/evidence_log.md and doc/state_digest.md copy the records' claims; their citations
+    are checked in the records themselves."""
     monkeypatch.setattr(questions, "RETIRED", {"Q002": "answered by E003"})
     (tree / "evidence" / "isp" / "E002-x.md").write_text("see Q002")
-    (tree / "doc" / "evidence_log.md").write_text("- `E002` see Q002\n")
+    (tree / "doc" / name).write_text("- `E002` see Q002\n")
     assert questions.main(["--check"]) == 0
     (tree / "doc" / "other.md").write_text("see Q002\n")
     assert questions.main(["--check"]) == 1
@@ -292,8 +293,7 @@ def test_references_name_open_questions():
     for d, pat in (("evidence", "*/*.md"), ("glossary", "*/*.toml"), ("doc", "**/*.md")):
         for p in sorted((questions.ROOT / d).glob(pat)):
             rec = p.name[:4] if d == "evidence" else None
-            gen = (questions.DOC, questions.ROOT / "doc" / "evidence_log.md")
-            if p not in gen and (m := questions.reference_problems(p.read_text(),
+            if p not in questions.generated() and (m := questions.reference_problems(p.read_text(),
                                                                          open_ids, rec)):
                 bad[str(p.relative_to(questions.ROOT))] = m
     assert not bad, bad
