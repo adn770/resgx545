@@ -59,3 +59,9 @@ windows of stage g6-rw). Exponents outside -2 to 4, the made vertex's 1/w and th
 (Q230). The HELD OUT half has now been used once, for counts: a second use for a variant of H-FRAC
 would not be held out; it stays unread for a declared model fit. sgx-pipe does not take H-FRAC as
 a rule for unread mantissas (decision 6 of the plan: after g6-rw).
+
+**Correction 2026-11-12:** (adds a reading; the claim stands.) "What it does not show" says
+sgx-pipe does not take H-FRAC until g6-rw has run. g6-rw ran (E879): of 240 mantissas never read
+before, the 117 whose exact 1/w lies less than half an ulp above RZ all stored RZ, held out, and
+83 of the 123 above it RZ + 1. With that, sgx-pipe gives RZ for an unread mantissa below half an
+ulp (decision R6-7 a); the windows of neighbouring mantissas did not decide how e varies.

@@ -2517,11 +2517,12 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *platform; HW; data: `platform-register-limits-combos`.*
 - `E406` With ISP word 0 bit 26 or 27 (0x05d00200 or 0x09d00200), CR_REG_0148 (render details dword
   9) bit 0 and the state block's word 4 at 0x00030001 (PDS_SIZE 3, one data row), a shader writing
-  o0 to o7 with a tag in each leaves o0 on its own pixel and o4 on other pixels (tags 1 and 5) and
-  o1 to o3 (tags 2 to 4) on no pixel at all, in 27 of 27 jobs, where the plain job shows o1 to o3 on
-  447 to 600 other pixels; with the data rows at 2 to 4 the pattern is tags 1, 3, 5 and 7 and at 5
-  to 7 the job hangs; no single flip of 1797 jobs over PDS_SIZE, the VDM stream, the state block and
-  20 render details words gives the setup's pattern, three give the tags 1, 3, 5, 7 pattern.
+  o0 to o7 with a tag in each leaves o0 on its own pixel and a tag-5 word on other pixels (tags 1
+  and 5), which is the OR of o0 and o3, not o4 (E880), and o1 to o3 (tags 2 to 4) on no pixel at
+  all, in 27 of 27 jobs, where the plain job shows o1 to o3 on 447 to 600 other pixels; with the
+  data rows at 2 to 4 the pattern is tags 1, 3, 5 and 7 and at 5 to 7 the job hangs; no single flip
+  of 1797 jobs over PDS_SIZE, the VDM stream, the state block and 20 render details words gives the
+  setup's pattern, three give the tags 1, 3, 5, 7 pattern [corrected 2026-11-12, see Correction].
   *usse; HW; data: `usse-output-room`, `usse-output-room-vdm`, `usse-output-room-blk`,
   `usse-output-room-rd`, `usse-output-room-bit15`, `usse-output-room-isp0`,
   `usse-output-room-combos`, `usse-output-room-four`, `usse-output-room-seq`,
@@ -6722,6 +6723,54 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   by the dataset's own split: 0 of 4), so H-SLOT is FAILED.
   *ta; HW, infer; data: `ta-mtile-fields`, `ta-mtile-fields-risky`, `cited-scratch:closing6/rank/`,
   `cited-scratch:closing6/fold-misc/q139/`.*
+- `E878` R6-pixel stage p6-rd (Q276, 58 jobs in E709's command: a triangle's pixel program writes
+  R5's walk words to o0 to o7, then `mov.skipinv r10, oJ` and `mov.skipinv.end o0, r10`, so the own
+  pixel shows what oJ held; frozen verdict 'cannot tell: rd entries rd-1, rd-2, rd-3, rd-4, rd-5,
+  rd-6, rd-7 not decided'): every control passed (c-u G-o1 0.990 of 492 sources, c-all4 5:1, c-ow
+  1.0 and c-rd-0 1.0 of the 1062 TRI pixels, both c-prd-0 rows' lanes as frozen: the predicate gates
+  an o0 write per lane), but no readback configuration reached the frozen class share of 90 percent
+  of TRI in both jobs: the top label of each rd entry held 87 to 89 percent in the x job and 88 to
+  97 percent in the y job, the rest mostly words of the job from another source pixel (113 to 134 a
+  job in the x jobs), so the rd vector, the independent rows, the replicate and the predicate rows
+  are cannot tell; read after the run, not held out: the top labels are o1's, o2's and o3's own
+  words at rd-1 to rd-3 and o0's, o1's, o2's and o3's words at rd-4 to rd-7 (H-MOD4's vector, 99.7
+  to 100 percent of the x jobs' own-source words), o4 read o0's word with no o4 write and with o4
+  written as tag 13, o5 written as tag 14 read o1's word, and the readback of o3 after `p1
+  or.skipinv o3` showed the predicated word on lane k only at k = 0 to 3 and on no lane at k = 7,
+  while that of o4 showed o0's word on every lane.
+  *pds; HW, infer; data: `render-closing-r6-pixel:out/20261112-142113/p6-rd/`,
+  `render-closing-r6-pixel:fold/`.*
+- `E879` R6-pixel stages g6-rwa and g6-rw (Q230, 8 and 106 jobs in E859's shape with every vertex
+  inside the viewport; frozen verdicts 'part a: PASS' and 'H-FRAC PASS (0 RZ + 1 of 117 below 0.5);
+  H-SMOOTH 2^1 mixed, 2^8 cannot tell, 2^16 cannot tell; H-MANT -12: held 12 of 12, -6: held 12 of
+  12, -3: held 12 of 12, 5: held 12 of 12, 8: held 12 of 12, 12: held 12 of 12; every word is RZ or
+  RZ+1 of 1/w (318 of 318 rows decided)'): H-FRAC held out: of 240 new mantissas (six windows of 36
+  neighbours at strides 1, 2^8 and 2^16, and 24 near the half ulp), the 117 whose exact 1/w lies
+  less than half an ulp above RZ all stored RZ, and 83 of the 123 above it RZ + 1, the smallest at
+  frac 0.5294; H-MANT held at 72 of 72 words of R4's rw-01, rw-02, rw-10 and rw-12 rerun at the
+  exponents -12, -6, -3, 5, 8 and 12 of w (w from 2.5e-4 to 8027); every one of the 318 words is RZ
+  or RZ + 1 and every job wrote its 3-vertex object; the eight controls exact and the two replicates
+  repeated their six words; how e varies between neighbours is not decided: at stride 1 one window
+  was separable by frac (e in [0.2809, 0.3220)) and the other had 3 inversions, at 2^8 and 2^16 one
+  window each had too few RZ words above 0.5 and the other inversions (the printed '2^1' is the
+  stride-1 pair, a label slip of the frozen scorer).
+  *ta; HW, infer; data: `render-closing-r6-pixel:out/20261112-142113/g6-rwa/`,
+  `render-closing-r6-pixel:out/20261112-142113/g6-rw/`, `render-closing-r6-pixel:fold/`.*
+- `E880` R6-pixel stages p6-l3 and p6-s (Q276 and Q023, 8 and 22 jobs; frozen verdicts 'H-Y1; x jobs
+  5:1, 5:1 (frozen 5:1)' and 'H-OR: 5:3 5:2 5:2 5:3 5:2 5:2 5:2 5:2 5:0; restore check (r-u G-o1)
+  PASS'): in E709's command the o3 word that enters the tag-5 OR word is the word of lane 0 of the
+  quad in the x job and of lane 1 in the y job: with o3 written as one word under `p1` (g25 == k)
+  and another under `!p1`, the x job read the `!p1` word at k = 1 and 2 and the y job the `p1` word
+  at k = 1 and the `!p1` word at k = 2 (H-Y1, held out; R5's k = 0 and k = 3 programs repeated R5's
+  reading, the determinism control); in E406's full setup (ISP word 0 at 0x05d00200, render details
+  dword 9 bit 0 set by the tool's `--kpoke rd:9=1`, state block word 4 at 0x00030001), whose
+  eight-tag control again left tags 1 and 5 only (997 and 65, 992 and 70 words), the walk read bits
+  5:4 of the tag-5 word as 3, 2, 2, 3, 2, 2, 2, 2 for o0 to o7 and a program with no o4 write the
+  plain tag 5 (H-OR, held out, 18 jobs; H-OWN4 refuted at s-0, s-3, s-4 and s-n4), so the tag-5 word
+  E406 read as o4 on other pixels is the OR of o0 and o3 there too (E406 corrected); the restore
+  check with dword 9 back at its default passed G-o1 (0.992 of 498 sources).
+  *pds; HW, infer; data: `render-closing-r6-pixel:out/20261112-142113/p6-l3/`,
+  `render-closing-r6-pixel:out/20261112-142113/p6-s/`.*
 
 ## By unit
 
@@ -6775,7 +6824,7 @@ Records: E043, E044, E045, E046, E047, E048, E125, E126, E127, E128, E129, E130,
 E134, E135, E136, E137, E138, E139, E140, E141, E142, E143, E144, E145, E259, E260, E261, E262,
 E263, E264, E343, E344, E345, E364, E379, E381, E384, E388, E389, E390, E391, E392, E393, E394,
 E395, E396, E400, E420, E421, E428, E430, E436, E437, E454, E459, E460, E709, E742, E759, E772,
-E808, E838, E850, E858, E871.
+E808, E838, E850, E858, E871, E878, E880.
 
 ### platform
 
@@ -6794,7 +6843,7 @@ Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
 E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763, E776, E777,
 E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828, E842, E847, E851, E859,
-E865, E872, E877.
+E865, E872, E877, E879.
 
 ### texture
 
