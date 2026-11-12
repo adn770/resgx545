@@ -180,7 +180,9 @@ the register; a program's `tim` is that register while it is stopped (bit 24 cle
 `sgx-tools/tests/pds_sim.rs` runs our transfer templates and the microkernel's five PDS
 programs to their port writes; #13 and #14 stop at their first `movs`, which passes `ir0.l`
 (all of `ir0`), `ir1.l` or `tim.l` on: the task loop does not give ir0, and the other two are
-open (`doc/specs/pds_isa.md` *Open questions* 9).
+open (`doc/specs/pds_isa.md` *Open questions* 9). `sgx-tools/tests/posstore_sim.rs` runs the
+position-store pixel program (`probes/pds/templates/pix_posstore.s`, Q291) as a triangle's pixel
+instance at each of the 2048 pixels of a 64 x 32 area and checks its four scratch stores (E898).
 
 ### The task loop
 
