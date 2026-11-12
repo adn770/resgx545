@@ -43,7 +43,7 @@
 //! Everything else is refused: `Closed{2}` on a kick pass, `Closed{1}` and `Closed{3}` anywhere
 //! (not run), `Closed{0}` on a kick pass, the `phas` end, a `cfi.global` or `Exit` on a kick pass
 //! (E835's row KP kept the tick 2 of 2 and is not taken here yet; the slot 3 pass, E836, is not a
-//! [`PassKind`] here), sa64 and sa65 written together, any sa64 or sa65 write with another end, a
+//! [`PassKind`] here: [`skipped_render`] gives its later stop), sa64 and sa65 written together, any sa64 or sa65 write with another end, a
 //! timer store of another word, with another end or with an sa64 or sa65 write, and a count byte
 //! other than 2. Which of dword
 //! 12 and the next pclink the rows of 5 and 7 left was not read, so both are `None` there. A
@@ -240,6 +240,108 @@ fn sa65_row(
         0xb009_c4dc => Ok(stalled(0, 0)),
         _ => Err(no(format!("sa65 = {w:#x}: not run (bits 4, 7 and 10 are untried)"))),
     }
+}
+
+/// TA3DCtl dword 58 (`+0xe8`) at every marked stop read: E849's and the 10 of E855 to E857.
+pub const SIGNATURE_3D_READ: u32 = 0xaac2_67c2;
+
+/// What the host did between the slot 3 entry and the stop (round 5's r5-events).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum HostBeforeStop {
+    /// No host write and no command (stages h1 and h2).
+    Nothing,
+    /// `CR_EVENT_HOST_CLEAR` bit 15, then bit 18, at the slot 3 entry, then one GETMISCINFO,
+    /// answered (stage h3).
+    ClearsThenMiscinfo,
+}
+
+/// A fill whose slot 3 end-of-render pass our task skipped once and ended with the `phas` end
+/// (`ring_skip3p.s`, E836), the knob `timer_clock` giving HostCtl dword 6.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SkippedRender {
+    /// HostCtl dword 6 (`host_ctl.ukernel_timer_clock`; the knob 0 gives 400000).
+    pub timer_clock: u32,
+    /// HostCtl dword 5 (`host_ctl.hw_recovery_sample_rate`).
+    pub hw_recovery_sample_rate: u32,
+    pub host: HostBeforeStop,
+}
+
+/// The stop after a [`SkippedRender`], as the stop dumps read it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Lockup {
+    /// Slot 0 passes from the fill's kick entry to the stop.
+    pub passes_after_kick: u32,
+    /// HostCtl dword 3 at the stop less at the arm (`host_ctl.ukernel_detected_lockups`).
+    pub lockups: u32,
+    /// HostCtl dword 8 (`host_ctl.interrupt_flags`).
+    pub interrupt_flags: u32,
+    /// The kernel's count of `SW_EVENT` interrupts.
+    pub sw_events: u32,
+    /// TA3DCtl dword 57 (`ta3d_ctl.kick_clear_3d`).
+    pub kick_clear_3d: u32,
+    /// TA3DCtl dword 58.
+    pub signature_3d: u32,
+    /// `CR_EVENT_STATUS` at the stop.
+    pub event_status: u32,
+    pub ccb_read_minus_write: i32,
+    pub after: AfterPass,
+}
+
+/// One tick in `CR_TIMER` units at HostCtl dword 6, for the clocks whose grid was read (E084,
+/// E855, E856: 25000, 50000, 100000); others `None`.
+pub fn tick_units(timer_clock: u32) -> Option<u32> {
+    matches!(timer_clock, 400_000 | 800_000 | 1_600_000).then_some(timer_clock / 16)
+}
+
+/// The stop after slot 3's end-of-render pass skipped and ended with the `phas` end: the EDM's
+/// 3D lockup check, 20 slot 0 passes after the fill's kick entry (2 x dword 5) at the three
+/// clocks run, with the marks (E855: 3 of 3 at 400000; E856: 2 of 2 at 800000 and at 1600000,
+/// the count in passes and not in time; E857: 3 of 3 at 1600000 with the host's clears of
+/// bits 15 and 18 and one answered GETMISCINFO before it). [RE] (R-6, E855) the check is armed
+/// while sa9 bit 0 is set, which the skipped handler would have cleared; the sim models the
+/// measured outcome, not the firmware. Refused: another dword 5, another clock, the clears at
+/// another clock (not run), a skip without the `phas` end (E823: a stop at once, no marks).
+pub fn skipped_render(s: &SkippedRender) -> Result<Lockup, Error> {
+    if s.hw_recovery_sample_rate != 10 {
+        return Err(no(format!(
+            "hw_recovery_sample_rate {}: only 10 was run (E855, E856)",
+            s.hw_recovery_sample_rate
+        )));
+    }
+    if tick_units(s.timer_clock).is_none() {
+        return Err(no(format!(
+            "timer_clock {}: only 400000, 800000 and 1600000 were run (E855, E856)",
+            s.timer_clock
+        )));
+    }
+    let event_status = match (s.host, s.timer_clock) {
+        (HostBeforeStop::Nothing, _) => 0x2004_0000,
+        (HostBeforeStop::ClearsThenMiscinfo, 1_600_000) => 0x2000_0000,
+        (HostBeforeStop::ClearsThenMiscinfo, c) => {
+            return Err(no(format!(
+                "the clears before the stop at timer_clock {c}: run at 1600000 only (E857)"
+            )));
+        }
+    };
+    Ok(Lockup {
+        passes_after_kick: 2 * s.hw_recovery_sample_rate,
+        lockups: 1,
+        interrupt_flags: 1,
+        sw_events: 1,
+        kick_clear_3d: 0,
+        signature_3d: SIGNATURE_3D_READ,
+        event_status,
+        ccb_read_minus_write: 0,
+        after: AfterPass {
+            tick: Tick::Stalled,
+            ccb_read_minus_write: 0,
+            hostctl_dword14: 0,
+            dword12_advances: None,
+            next_pclink: None,
+            next_on_grid: false,
+            next_gap: None,
+        },
+    })
 }
 
 /// Whether a later event is delivered after this pass: refused once stalled (E793, E537, E817,
@@ -494,6 +596,59 @@ mod tests {
         assert!(refused(kick));
         let both = Inputs { sa64: Some(2), ..with(TIMER_WORD_RUN, PassEnd::Closed { slot: 0 }) };
         assert!(refused(both));
+    }
+
+    fn skipped(timer_clock: u32, host: HostBeforeStop) -> SkippedRender {
+        SkippedRender { timer_clock, hw_recovery_sample_rate: 10, host }
+    }
+
+    #[test]
+    fn a_skipped_slot_3_pass_ended_with_the_phas_end_stops_after_twenty_tick_passes_with_the_marks() {
+        // E855 (h1, 3 of 3 at 400000), E856 (h2, 2 of 2 at 800000 and 2 of 2 at 1600000): the
+        // count is in tick passes, 2 x hw_recovery_sample_rate, whatever the clock
+        for clock in [400_000, 800_000, 1_600_000] {
+            let l = skipped_render(&skipped(clock, HostBeforeStop::Nothing)).unwrap();
+            assert_eq!(l.passes_after_kick, 20, "{clock}");
+            assert_eq!((l.lockups, l.interrupt_flags, l.sw_events), (1, 1, 1), "{clock}");
+            assert_eq!((l.kick_clear_3d, l.signature_3d), (0, SIGNATURE_3D_READ), "{clock}");
+            assert_eq!(l.event_status, 0x2004_0000, "{clock}: bit 18 a level, bit 6 clear");
+            assert_eq!(l.ccb_read_minus_write, 0);
+            assert_eq!(l.after.tick, Tick::Stalled);
+            assert!(deliver_after(&l.after).is_err(), "P3 was not answered, 0 of 10");
+        }
+        // so its time follows the tick: one tick is dword 6 / 16 CR_TIMER units (E084)
+        assert_eq!(tick_units(400_000), Some(25_000));
+        assert_eq!(tick_units(800_000), Some(50_000));
+        assert_eq!(tick_units(1_600_000), Some(100_000));
+    }
+
+    #[test]
+    fn the_host_clears_and_a_miscinfo_before_the_stop_change_nothing_but_bit_18() {
+        // E857 (h3, 3 of 3 at 1600000): CLEAR of bit 15 then bit 18 at the slot 3 entry, one
+        // GETMISCINFO answered after them; the stop still came at 20 passes from the fill's kick
+        let l = skipped_render(&skipped(1_600_000, HostBeforeStop::ClearsThenMiscinfo)).unwrap();
+        assert_eq!(l.passes_after_kick, 20);
+        assert_eq!((l.lockups, l.interrupt_flags, l.sw_events), (1, 1, 1));
+        assert_eq!(l.event_status, 0x2000_0000);
+        assert_eq!(l.after.tick, Tick::Stalled);
+    }
+
+    #[test]
+    fn what_the_session_did_not_run_is_refused() {
+        // other clocks, another sample rate, the clears at the stock or 800000 clock
+        for clock in [0, 200_000, 400_001, 1_200_000, 3_200_000] {
+            assert!(skipped_render(&skipped(clock, HostBeforeStop::Nothing)).is_err(), "{clock}");
+        }
+        for clock in [400_000, 800_000] {
+            let s = skipped(clock, HostBeforeStop::ClearsThenMiscinfo);
+            assert!(skipped_render(&s).is_err(), "{clock}");
+        }
+        for rate in [0, 5, 20] {
+            let s =
+                SkippedRender { hw_recovery_sample_rate: rate, ..skipped(400_000, HostBeforeStop::Nothing) };
+            assert!(skipped_render(&s).is_err(), "{rate}");
+        }
+        assert_eq!(tick_units(1_200_000), None);
     }
 
     #[test]
