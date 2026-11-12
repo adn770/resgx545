@@ -10,7 +10,7 @@
 use crate::Outcome;
 
 /// Open questions that block the unit.
-pub const OPEN: &[&str] = &["Q069", "Q039", "Q116", "Q162", "Q230"];
+pub const OPEN: &[&str] = &["Q069", "Q039", "Q116", "Q162", "Q230", "Q296"];
 
 /// A refusing stub for the parts of the unit nothing models yet.
 pub fn refuse() -> Outcome {
@@ -104,6 +104,11 @@ fn refuse230(why: impl AsRef<str>) -> Outcome {
     Outcome::unsupported(why.as_ref(), &["Q230"])
 }
 
+/// A kept vertex's 1/w word the rules do not give (split from Q230).
+fn refuse296(why: impl AsRef<str>) -> Outcome {
+    Outcome::unsupported(why.as_ref(), &["Q296"])
+}
+
 /// The float32 reciprocal of `w` rounded toward zero (RZ32): what E754's e3i jobs measured stored
 /// as 1/w inside the guard band, 4 of 4 (round-to-nearest refuted).
 fn rhw_rz32(w: f32) -> f32 {
@@ -120,7 +125,7 @@ fn rhw_rz32(w: f32) -> f32 {
 /// of the mantissa of w alone", held on 42 of 42 held-out words at other exponents (E859) and 72
 /// of 72 at six more (E879), and no mantissa read at two exponents shows both. Below half an ulp
 /// the rule `rhw_frac_below_half` gives RZ (H-FRAC); above it which mantissas store RZ + 1 has no
-/// rule, so a mantissa not listed refuses (Q230).
+/// rule, so a mantissa not listed refuses (Q296).
 const RHW_MANTISSA: [(u32, u8); 253] = [
     (0x00_0000, 0),
     (0x00_0001, 0),
@@ -415,11 +420,14 @@ fn rhw_delta(w: f32) -> Option<u32> {
 /// The w values whose stored 1/w the model gives, at z = 0 for the depth: every vertex's w
 /// known to `rhw_delta`, one w at all three vertices or a w of its own at each (E754 and E782
 /// ran both shapes), every vertex inside the viewport after its divide. Anything else with a w
-/// other than 1 stays refused (Q230): a w whose mantissa was not read or outside the exponents
-/// run, depth at w other than 1 (no formula: E783, E795, E796), the guard band's limit.
+/// other than 1 stays refused: a w whose mantissa was not read or outside the exponents run
+/// (Q296), depth at w other than 1 (no formula: E783, E795, E796), the guard band's limit (Q230).
 fn band_w(c: &[[f32; 4]; 3]) -> Result<(), Outcome> {
+    if c.iter().any(|v| v[3] <= 0.0 || v[3].is_nan()) {
+        return Err(refuse230("a w at or below 0: no word of such a vertex was read"));
+    }
     if c.iter().any(|v| rhw_delta(v[3]).is_none()) {
-        return Err(refuse230(
+        return Err(refuse296(
             "a w whose 1/w word is not known: RZ of 1/w or one ulp above by the mantissa of w (H-MANT, E859, E879), a mantissa not read whose exact 1/w lies half an ulp or more above RZ (H-FRAC gives RZ below it, E872, E879), or an exponent no word was read at",
         ));
     }
@@ -797,7 +805,7 @@ mod tests {
         // a mantissa never read whose exact 1/w lies half an ulp or more above RZ (2.1: frac
         // 0.678), and exponents no word was read at (2^10, 2^-20); the two w read below (E754)
         for w in [2.1f32, 1.25 * 1024.0, 1.25 / 1_048_576.0] {
-            refused(triangle(&s, scaled(w), 0, 0), "Q230");
+            refused(triangle(&s, scaled(w), 0, 0), "Q296");
         }
         assert_eq!(rhw(3e-5).unwrap(), [0x4702_3555; 3]);
         assert_eq!(rhw(0.003).unwrap(), [0x43a6_aaaa; 3]);
@@ -869,12 +877,12 @@ mod tests {
         };
         // a w whose mantissa was not read and lies half an ulp or more above RZ (2.1), or at an
         // exponent no word was read at (1280 = 1.25 x 2^10)
-        refused(triangle(&s, scaled(2.1), 0, 0), "Q230");
-        refused(triangle(&s, scaled(1280.0), 0, 0), "Q230");
-        refused(triangle(&s, scaled(1e-6), 0, 0), "Q230");
+        refused(triangle(&s, scaled(2.1), 0, 0), "Q296");
+        refused(triangle(&s, scaled(1280.0), 0, 0), "Q296");
+        refused(triangle(&s, scaled(1e-6), 0, 0), "Q296");
         refused(triangle(&s, scaled(-3.0), 0, 0), "Q230");
         // a vertex of another w (a perspective triangle) whose mantissa was not read
-        refused(triangle(&s, w3(&|t| t[1][3] = F(4.1)), 0, 0), "Q230");
+        refused(triangle(&s, w3(&|t| t[1][3] = F(4.1)), 0, 0), "Q296");
         // depth at a w other than 1 has no formula (E783); z = 0 only
         refused(triangle(&s, w3(&|t| t[0][2] = F(0.5)), 0, 0), "Q230");
         // a vertex outside the viewport after the divide: the guard band's limit was not run
@@ -910,7 +918,7 @@ mod tests {
             u
         };
         refused(triangle(&s, with(&|u| u[0][3] = F(0.5)), 0, 0), "Q230");
-        refused(triangle(&s, with(&|u| u[2][3] = F(2.1)), 0, 0), "Q230");
+        refused(triangle(&s, with(&|u| u[2][3] = F(2.1)), 0, 0), "Q296");
         refused(triangle(&s, with(&|u| u[0][0] = F(1.9)), 0, 0), "Q230");
         refused(triangle(&s, with(&|u| u[1][2] = F(-0.5)), 0, 0), "Q230");
     }
