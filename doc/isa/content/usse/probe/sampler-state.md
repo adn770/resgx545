@@ -91,6 +91,9 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   pixels, E726). **The face is that of the coordinate of largest magnitude, with its sign**: E726's
   post hoc rule held out on two off-axis programs whose dominant axis changes inside the image,
   2048 of 2048 pixels each, all six faces between them (E844). The faces' (s, t) and edges: Q284.
+  Type 5 at 16 x 16 returned no texel: 0 at x mod 16 below 8 and `0x0000ffff` above in every row,
+  under `smp2d` and `smp3d` alike, with every texel naming its offset (E894, E567's dumps read post
+  hoc); it is not a layout of the 32-bit texels [infer] (Q178).
 
 *Simulator check, 2026-10-23.* The simulator's texture unit
 (`crates/sgx-sim`, `tex.rs`) follows this page and *Texture sampling*; it reproduces every
@@ -100,7 +103,7 @@ recorded formats and modes, tiled textures, and filtered `.pcf` at other weights
 chains in the five sizes run, `smp3d` as `smp2d` where it ran, and the YUV formats as black only
 for a job that records the colour-space set as unloaded.
 
-**Undecided:** type 4 beyond the sizes read and type 5, the LOD fraction's residual (Q280), the
-border modes on the u axis, formats 23 to 26 and the YUV conversion in a fill, sRGB under
-bilinear filtering (Q282), the cube map's edges and (s, t) within a face (Q284), `smp3d` beyond
-the textures it ran on, `.sinf`/`.rsd`, and state from `sa` or `c`.
+**Undecided:** type 4 beyond the sizes read and what type 5 returns (Q178), the LOD fraction's
+residual (Q280), the border modes on the u axis, formats 23 to 26 and the YUV conversion in a fill,
+sRGB under bilinear filtering (Q282), the cube map's edges and (s, t) within a face (Q284), `smp3d`
+beyond the textures it ran on, `.sinf`/`.rsd`, and state from `sa` or `c`.
