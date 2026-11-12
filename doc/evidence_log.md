@@ -7111,6 +7111,21 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *pds; HW, infer; data: `render-closing-r7-rp:out/20261112-205431/p7-rdc/`,
   `render-closing-r7-rp:out/20261112-205431/p7-rd/`, `render-closing-r7-rp:out/20261112-205431/s0/`,
   `render-closing-r7-rp:bins/`, `render-closing-r7-rp:fold/`.*
+- `E906` r7-rp stage q293 (Q293, 4 jobs, three renders of one scene with CR_TE_AA 0x40000000): the
+  3D reads render 2's own object as it reads render 1's: with the kernel's poke before render 3
+  putting render 2's object (dump dwords 27 to 53) in the bit-29-set layout (E829's twin words
+  shifted by 27, 16 of 16 pokes applied and seen in the dump) render 3 drew 4096 triangle pixels of
+  4096, 0 wrong against render 3's colours, while render 1's and render 3's objects stayed
+  displaced, and 0xffffffff poked at its dword 11 (dump dword 38) drew nothing (0 of 4096); the
+  control of three renders left objects at dwords 0, 27 and 54, each with a zero at its dword 11 and
+  the format word 0x00040101 at its dword 12, and drew nothing, and E888's t7 row repeated its kept
+  dump head, image counts, diff count and target hash 0x8ea26cdfee74a325 on module 41E2F5C7; frozen
+  verdict 'Q293: render 2's own object is read as render 1's: put in the bit-29-set layout by a poke
+  before render 3 it draws (u3, 4096 triangle pixels) and 0xffffffff at its dword 11 draws nothing
+  (u4); three renders leave objects at 0, 27, 54 in the displaced layout and draw nothing (u1) (2 of
+  2 rows decided)'.
+  *ta; HW, infer; data: `render-closing-r7-rp:out/20261112-205431/q293/`,
+  `render-closing-r7-rp:out/20261112-205431/s0/`, `render-closing-r7-rp:fold/`.*
 
 ## By unit
 
@@ -7184,7 +7199,7 @@ Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
 E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763, E776, E777,
 E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828, E842, E847, E851, E859,
-E865, E872, E877, E879, E886, E888, E893, E897.
+E865, E872, E877, E879, E886, E888, E893, E897, E906.
 
 ### texture
 

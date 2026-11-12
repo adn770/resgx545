@@ -127,7 +127,7 @@ of sections 1 and 2 are those of the 12.0 scan and were not redone.*
   the target (a fitted table, `tiling3d.py`, right on 123 and 69 only: Q100, Q139, Q086), lines and
   points (Q159 to Q161), the object's format bits above 7:0 and the masks beyond the settings seen
   (Q070), the prim word's extra dword (Q164), a state word nobody flipped in a two-object stream
-  (Q047, Q112), the 4x object with `CR_TE_AA` bit 29 clear (E728, E829; Q293).
+  (Q047, Q112), the 4x object with `CR_TE_AA` bit 29 clear (E728, E829, E906; refused as Q142).
 - **vdm, mte**: the stream parser and the MTE's viewport are in E650's model; the dump directories
   it refuses wait for Q047, Q069, Q112 and the state word rules. No unit vector is built: the
   inputs are in the render dumps only through the PB, so they need the scene's `memory`.
