@@ -463,6 +463,24 @@ pushed before `tools/clean-room/guard.py --history` has run over every ref.
   listed in `doc/specs/UNCITED.toml` with the reason it is not yet; the list only shrinks
   (`tools/records/spec_coverage.py --check`, a step of `check.sh`, fails on a record neither
   cited nor listed and on a listed one that a spec cites). A fold lands its spec text with it.
+- The same records are cited by the simulators too, as a model or as a refusal: by a file of
+  `crates/sgx-sim`, `crates/sgx-pipe` or `crates/pysgx` (sources, tests, examples), or listed in
+  `crates/SIM_UNMODELLED.toml` with a one-line reason. That list started at 119 of 224 records
+  (2026-11-12) and only shrinks (`tools/records/sim_coverage.py --check`, a step of `check.sh`,
+  fails on a record neither cited nor listed and on a listed one the code cites;
+  `--write-baseline` only removes once the list exists). A fold that models or refuses a record
+  cites it in the code and takes it off the list in the same commit.
+- **Replay vectors.** A session's measured rows become a vectors table in resgx545-data
+  (`vectors/closing/<session>/...table.json`, format `sgx545-tables` of
+  `tools/usse-asm/closing_tables.py`) when the fold lands. Its `replay` field says what happens
+  to it: `replayed`, with the test (`file::function`) under `crates/sgx-pipe/tests` or
+  `crates/sgx-sim/tests` that holds every modelled row to the model and counts the rest as
+  refused rows, never as passes (`zls_table.rs` replays the ZLS tables of E831 and E885); or
+  `refused`, with the reason no simulator models it. The replaying test names the records its
+  table measures; a refused table's records are cited where sgx-sim or sgx-pipe refuses them, or
+  stay in `crates/SIM_UNMODELLED.toml` with the table's reason, so `sim_coverage.py` sees them
+  either way. A fold with measured rows
+  and no table says why in its report.
 - A path of the scratch area that the tree cites (`closing4/p7/reading-r5.md`, bare or after
   `scratch/resgx545/`) is published: a session directory of a data repository
   (`closingN/<name>/` is `<area>/closing-<name>/`) or a copy under `cited/` of resgx545-data,
@@ -515,6 +533,13 @@ pushed before `tools/clean-room/guard.py --history` has run over every ref.
   (e.g. the series check's `build-on`), copied once into the delivery directory and never
   changed. Without a seed the chroot runner refuses the full build (most of a day on the Atom)
   unless `FORK_DELIVER_FULL=1`.
+- The IGT fork's sgxfive tests are built the same way, with no laptop:
+  `tools/bringup/build-igt.sh COMMIT` (a commit of the clone's `sgxfive` branch; `IGT_FORCE=1`
+  for another) sends a `git archive` and `build-igt-host.sh` to the build host, builds libigt and
+  every program of `tests/sgxfive` for i686 in `SGX_TOOLS_IMAGE`, runs each binary's
+  `--list-subtests` in the same image as a smoke, and copies the binaries, the subtest lists and
+  a manifest (commit, image id, meson options, sha256 per file, smoke per binary) back to
+  `<clone git dir>/igt-deliver/<commit12>/`, checking each sha256 and the i686 ELF header.
 - Commit style is the one under Commits. The test-cycle scripts and their settings are in
   `tools/bringup/` (`local.env.example`).
 
@@ -526,6 +551,21 @@ pushed before `tools/clean-room/guard.py --history` has run over every ref.
   pidfile (`$TARGET/session_tests.pid`) in its first output line.
 - Never poll process names with `pgrep -f` (it matches the waiting shell's own command line, so
   the loop never ends), and never write a wait loop without a timeout.
+
+## Known tool weaknesses
+
+Weaknesses of our tools that a session or a fold has found and that are not fixed yet. Each
+round reviews this list: an entry leaves it with the commit that fixes it (and its test), or
+stays with what a session must do around it.
+
+- `tri --depth` (`userspace/libsgxfive/tools/sgxfive-test.c`): `depth_min_pages` sizes the
+  depth buffer, and the floor of `--depth-pages`, as W x H dwords, below the depth store's tile
+  extent (tiles of 32 x 16), so a target that is not a whole number of tiles gets fewer pages
+  than the store writes, `DEPTH_MARGIN_PAGES` aside (found by closing7/r7-rp's builder).
+- sgx-sim refusals that block oracles: the sim refuses what is not modelled, and some of those
+  refusals stop a replay that would otherwise serve as an oracle, e.g. `0x0728` and the `pclink`
+  path before E902's seeds. A session that needs the sim as an oracle checks first that its
+  path does not hit one.
 
 ## Markdown
 

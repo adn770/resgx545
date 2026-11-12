@@ -71,7 +71,7 @@ if [ "$mode" = quick ]; then
     step numpy_staged
     if [ -f "$TOP/tools/records/questions.py" ] && [ "$TOP" = "$ROOT" ]; then
         for t in questions evidence open_rows evidence_log citations register_coverage \
-                 check_refs spec_coverage scratch_cites; do
+                 check_refs spec_coverage sim_coverage scratch_cites; do
             step "$PY" "tools/records/$t.py" --check
         done
         step "$PY" tools/clean-room/glossary.py --check
@@ -87,7 +87,7 @@ else
     step make -C userspace/libsgxfive check
     step "$PY" -m pytest -q -n "${CHECK_JOBS:-auto}" --dist loadfile
     for t in questions evidence datasets frozen open_rows evidence_log citations register_coverage \
-             check_refs spec_coverage scratch_cites; do
+             check_refs spec_coverage sim_coverage scratch_cites; do
         step "$PY" "tools/records/$t.py" --check
     done
     step "$PY" tools/clean-room/glossary.py --check
