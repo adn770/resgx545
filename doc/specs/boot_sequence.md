@@ -374,10 +374,15 @@ the firmware's code). The lockup path has been seen once on the hardware (E849, 
 after the hypothesis, 1 job): with slot 3's end-of-render pass skipped by a task of ours (E836),
 the stop left `uKernelDetectedLockups` = 1, `InterruptFlags` = 1 (`HWR`), one `SW_EVENT` and
 TA3DCtl `+0xe8` written, all 0 at the arm, after exactly 20 tick passes after the 3D kick, 2 x
-`HWRecoverySampleRate`; [infer] the routine samples a 3D progress word every
-`HWRecoverySampleRate` passes and counts a lockup when two samples are equal. The clearing of
-bit 0 has not been seen: our kernel never answers the request (it reads no dword 8), and the
-stop was recovered by a reset.
+`HWRecoverySampleRate`. Held out it came in 10 of 10 such jobs (E855 to E857), each with the
+lockup counted once, `InterruptFlags` = 1 and one `SW_EVENT`, after 20 tick passes at
+`uKernelTimerClock` 400000, 800000 and 1600000 alike: the routine samples in tick passes, not in
+time (E856). [RE] (our reading R-6, E855) It samples a signature of the USE pixel service
+counters and four other registers every `HWRecoverySampleRate` passes while sa9 bit 0 (3D
+running) is set, and counts a lockup when two samples are equal; then it requests the DPM state
+clear and waits for it with no exit, the host's reset being the way out. The clearing of bit 0 has
+not been seen: our kernel never answers the request (it reads no dword 8), and every stop was
+recovered by a reset.
 
 **Host watchdog: `SGXOSTimer`, every 50 ms while powered.** It reads `USE0_SERV_EVENT`
 (`0xb14`) XOR `USE1_SERV_EVENT` (`0xb20`), the EDM task registers named by the init info
@@ -417,7 +422,7 @@ three. §5 lists the required changes.
 *Based on sgx545-ce `src/services4/srvkm/devices/sgx/sgxinit.c`,
 `src/services4/system/unified/sysconfig.c:1022`; Linux v7.3
 `drivers/gpu/drm/gma500/psb_irq.c`; E006, E008, E009, E010, E011, E317, E318, E319, E321,
-E353, E836, E849.*
+E353, E836, E849, E855, E856, E857.*
 
 ## 4. `FIX_HW_BRN_SAMPLE_CACHE` and the heap layout
 

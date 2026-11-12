@@ -11,8 +11,8 @@
 # so they are not in the list.
 #
 # Round 3 (2026-11-10, R3-K1): str, never ldr, of the two host clear registers CR_EVENT_HOST_CLEAR2
-# (0x0114) and CR_EVENT_HOST_CLEAR (0x0134), for Q166's clear test (E3); the closed tick handler
-# writes 0x0134 itself (E155). Both are write-only in the register dump.
+# (0x0114) and CR_EVENT_HOST_CLEAR (0x0134), for the clear test (E3; E821, E822, E857); the closed
+# tick handler writes 0x0134 itself (E155). Both are write-only in the register dump.
 # Round 3 (R3-K10): str, never ldr, of CR_EVENT_TIMER (0x0acc), which the closed tick handler
 # writes (E155), for the end of a pass (E818). The verifier cannot see the value stored: the
 # session's guard on the assembled code pins it to the word the ticks carry (E746).
@@ -69,12 +69,12 @@ record = "E246, E009"
 name = "CR_EVENT_HOST_CLEAR2"
 offset = 0x0114
 use = "str"
-record = "E357, Q166"
+record = "E357, E822"
 [[allow]]
 name = "CR_EVENT_HOST_CLEAR"
 offset = 0x0134
 use = "str"
-record = "E155, E357, Q166"
+record = "E155, E357, E857"
 [[allow]]
 name = "CR_EVENT_TIMER"
 offset = 0x0acc

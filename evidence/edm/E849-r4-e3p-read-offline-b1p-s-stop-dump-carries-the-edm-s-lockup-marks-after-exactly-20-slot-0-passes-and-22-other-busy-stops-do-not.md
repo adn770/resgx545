@@ -86,3 +86,14 @@ continuing after the request (the DDK's host answers a recovery request with a r
 not answer it). Whether a host clear of `CR_EVENT_STATUS` bit 18 before the 20th pass changes
 anything. The idle and busy dumps read here were not taken for this purpose: a stop that kept no
 dump is not in the scan.
+
+**Correction 2026-11-12:** Held out after this record (round 5 session r5-events), the stop came
+the same way in 10 of 10 jobs that skipped the pass: after 20 slot 0 passes at the stock tick
+(E855, 3 of 3) and at half and a quarter of it (E856, 4 of 4: passes, not time), and with host
+clears of bit 15 and 18 and a GETMISCINFO before it (E857, 3 of 3), TA3DCtl dword 58 reading
+0xaac267c2 in every one, as here. The "3D progress word" above is, in our reading R-6 of the
+firmware [RE] (E855), a signature of the USE pixel service counters and four other registers,
+sampled while sa9 bit 0 ("3D running") is set; "which state the skipped handler would have
+cleared" and "why the EDM stops instead of continuing" are read there: sa9 bit 0, and a wait for
+the DPM state clear that only the host's reset ends (not read on the hardware: our kernel does
+not read `CR_DPM_TASK_STATE`).

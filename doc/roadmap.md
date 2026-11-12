@@ -204,7 +204,8 @@ two EDM tasks, answered by E752) and the 6 `kernel` ones (the
 design
 of our kernel driver: the firmware-identity one, answered later by E402, the one on the hung
 job's object, answered later by E422, and Q095, the 4x fault question (since folded into Q003),
-Q166, and the one on the module load, answered later by E828) stay open, parked. By unit: bif 4, dpm
+the one on `CR_EVENT_HOST_CLEAR`, answered later by E857, and the one on the module load, answered
+later by E828) stay open, parked. By unit: bif 4, dpm
 7, edm 13, isp 11, mte 3, pbe 5, pds 16, platform 5, render 9, ta 14, texture 14, transfer 3, usse
 36, vdm 9, zls 6. A question is removed when a record answers it; one that mixed a hardware part
 with a firmware or kernel part was narrowed to the hardware part or folded into the hardware
@@ -677,8 +678,9 @@ at 33 by program (E546); the short pulses of the event bits are 4.2 to 6.1 micro
 firmware's acknowledgement [infer], and seven of them raised a host interrupt of their own in a
 triangle (E547, E548). The points question is folded into Q161 and retired (E544 answers its size
 and footprint for our program; the closed driver's row is Q161); Q070, Q047, Q092, Q094 and Q111 are
-narrowed; eight questions open (Q159 to Q166; hw: medium, low, low, low, medium, low, low for Q159
-to Q165, and Q166 kernel, parked: it needs a kernel change). The TA and VDM models of the simulator
+narrowed; eight questions open (Q159 to Q165 and the one on `CR_EVENT_HOST_CLEAR`, answered later by
+E857; hw: medium, low, low, low, medium, low, low for Q159 to Q165, and that one kernel, parked: it
+needs a kernel change). The TA and VDM models of the simulator
 (region test, object format, points, vertex-task capacity) wait for phase 12; nothing here touches
 the USSE, PDS or texture models, so sgx-sim is unchanged and the vectors are the same. The roadmap
 counts the questions from the built `doc/open_questions.md`: 143 open (ids up to 167), 127 hw (high

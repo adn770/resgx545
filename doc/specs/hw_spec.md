@@ -363,7 +363,7 @@ value, is `doc/specs/boot_sequence.md`.
 `TA_*` is the geometry and tiling front end, `ISP` the hidden-surface stage, `PIXELBE` the tile
 write-out, `DPM` the parameter memory manager. Which event sets which bit in an ordinary job is
 partly known; how long a bit stays set is known for the two below (STATUS2 bit 6, STATUS bit
-18) and open for the rest (Q111, Q166). Seen on the hardware (E547, E548):
+18) and open for the rest (Q111). Seen on the hardware (E547, E548):
 PIXELBE_END_RENDER, DPM_3D_MEM_FREE and MADD_CACHE_INVALCOMPLETE show in a triangle, TA_FINISHED,
 TPC_FLUSH and the DPM state and control bits in the 256-pixel and partial jobs, a fill shows
 PIXELBE_END_RENDER and a copy only SW_EVENT, which comes with MASTER_INTERRUPT (41 of 41 jobs);
@@ -455,9 +455,13 @@ entry (7 of 7, held out, 1 job) and two seconds later, and never in the fill wit
 9; E837); E823's job, read after the run, had it set from 7.3 ms to the end of its watch (8 of 9,
 its first read before the render's end). A host write of bit 18 to `CR_EVENT_HOST_CLEAR` (0x0134)
 cleared it within 1 ms and kept it clear at 20 ms, a write of bit 15 left it set (E823 post hoc,
-E837: H-W on two jobs, both with the EDM stopped, the replicates not run). Its 4 to 6 µs pulses in
-ordinary jobs are then the firmware's acknowledgement [infer] (E547). How long the other bits stay
-set is open (Q111), and what CLEAR does to other bits and on more jobs (Q166).
+E837). Held out the bit is a level in every job with the pass skipped (E855, 9 of 9 watch reads in
+3 of 3 jobs; E856, 4 of 4 at two slower ticks) and the host's write clears the bits written and no
+others that are set, bit 15 leaving bit 18 and `TIMER`, bit 18 clearing bit 18 alone: 3 of 3 with
+the EDM stopped (E855) and 3 of 3 with it running, the writes at the slot 3 entry (E857; H-W, H-ALL
+and H-NONE refuted; 8 jobs with E823 and E837). Its 4 to 6 µs pulses in ordinary jobs are then the
+firmware's acknowledgement [infer] (E547). How long the other bits stay set, and what a write of
+the other bits clears, is open (Q111).
 
 Both STATUS2 latches are host events: written alone into
 `CR_EVENT_HOST_ENABLE2` they raise the host interrupt once set (E444), as do `TIMER`
@@ -836,10 +840,14 @@ unread (read = write - 1, HostCtl dword 14 0) because the closed reader never ra
 tick comes 24994 units after the one before the kick, as after an acted tick pass (E835: the phase
 end is what a pass of either kind needs). Slot 3's end-of-render pass skipped and ended with the
 `phas` was followed by 10 ticks on the grid, where without the `phas` nothing followed it (E823),
-but the tick stopped later, after exactly 20 slot 0 passes after the fill's kick (about 19.3 ms),
-with the fill held (E836, 1 job; the count read offline from its page, E849): the phase end ended
-the pass, and the stop is the EDM's own lockup check, which the skipped closed handler would have
-ended (Q295). A stop reads
+but the tick stopped later, after exactly 20 slot 0 passes after the fill's kick, with the fill
+held (E836, 1 job; the count read offline from its page, E849; held out in 3 of 3, E855): the phase
+end ended the pass, and the stop is the EDM's own 3D lockup check, which the skipped closed handler
+would have ended. The count is in tick passes, not time: with HostCtl dword 6 at 800000 and 1600000
+the stop came after the same 20 passes, about 40 and 80 ms after the kick (E856, 4 of 4; a stop at
+a fixed 19.3 ms refuted). Host clears of `CR_EVENT_STATUS` bits 15 and 18 at the slot 3 entry and a
+GETMISCINFO served after them, with the EDM still running, did not prevent it (E857, 3 of 3: the
+same 20 passes and marks). A stop reads
 `CR_CLKGATESTATUS` 0x000ccfa0, `USE0_SERV_EVENT` bit 16 clear and its count frozen, the event timer
 counting and `CR_EVENT_STATUS` 0x20000000; it answers no host command (0 of 8 tries) and one
 debugfs reset recovers it (13 of 13 stops in the records, E533 to E830); a task still running inside
@@ -852,9 +860,18 @@ hypothesis, post hoc): the stop after the skipped slot 3 pass left HostCtl dword
 `SW_EVENT` and TA3DCtl dword 58 (`+0xe8`) written, all 0 at the arm, after 20 passes = 2 x
 dword 5 (`host_ctl.hw_recovery_sample_rate`, 10): the lockup path of E353, seen once; the 22
 other kept dumps with this signature (stops of a pass without the phase end, phantom kicks,
-reads inside a long task) read dwords 3 and 8 and TA3DCtl dwords 56 to 58 as 0. [infer] After a
-3D kick the tick routine samples a progress word every dword 5 passes and counts a lockup when
-two samples are equal; which state arms it is open (Q295).
+reads inside a long task) read dwords 3 and 8 and TA3DCtl dwords 56 to 58 as 0. Held out, the
+marked kind came in 10 of 10 jobs that skipped the pass (E855 to E857: dword 3 + 1, dword 8 = 1,
+one `SW_EVENT`, dword 57 0, dword 58 0xaac267c2 in every one, `CR_EVENT_STATUS` bit 6 clear) and
+each was recovered by one reset. [RE] (our reading R-6 of the firmware, the reading frozen
+before the run; E855, E857) After a 3D kick, while sa9 bit 0 ("3D running") is set, the tick
+routine counts its passes in dword 57 against dword 5, stores a signature of the USE pixel service
+counters and four other registers in dword 58 at the 10th and compares at the 20th; equal, it
+counts the lockup, sets dword 8 bit 0, writes `SW_EVENT` and `CR_DPM_TASK_STATE` = 2 and polls
+`CR_EVENT_STATUS` bit 6 (`DPM_STATE_CLEAR`) under a lock with no exit, which is why the EDM is busy
+afterwards: it waits for the host's reset. The 3D kicks set sa9 bit 0 and only the end-of-render
+path (and the recovery) clears it; on the hardware that state survives a host clear of bit 18 and
+a command (E857), and `CR_DPM_TASK_STATE` is not read by our kernel (cannot tell, E855).
 
 **The kick [HW].** A kick is the command at the CCB write offset, the kicker word bumped (mod 256)
 and a write to `CR_EVENT_KICK`. It is one event in the general slot, `pa0` = 0, `pa1` = (K << 24) |

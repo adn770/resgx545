@@ -78,7 +78,8 @@ open driver:
    `sa` (Q129); where a write past the allocation goes (Q132); what bounds a `phas` request
    and what a request above 256 allocates, which is [infer] at least 124 for 260 to 376, T = 101 to
    123 not run (Q133). What survives from one firmware task to the next beyond one writer's
-   `sa`, `r`, `i` and p (E809, E810; Q158), what stops the tick after a skipped slot 3 pass
-   (Q295) and the allocation of a firmware task above TRC 31 are not measured.
+   `sa`, `r`, `i` and p (E809, E810; Q158), whether a task that ends a skipped slot 3 pass and
+   clears the 3D lockup check's arm keeps the tick (the check is E855 to E857) and the allocation
+   of a firmware task above TRC 31 are not measured.
 
 <!-- @simopen 12 -->
