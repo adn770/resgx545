@@ -298,3 +298,15 @@ def test_chroot_with_full_builds_allowed_goes_ahead(world):
     r = deliver(w, w["c1"], FORK_CHECK_RUNNER="chroot", FORK_DELIVER_FULL="1")
     assert r.returncode == 0, r.stdout + r.stderr
     assert builds(w).count("full") == 1
+
+
+def test_reads_the_example_settings(world):
+    w = world
+    env = {k: v for k, v in w["env"].items()
+           if k not in ("FORK_CHECK_CLONE", "FORK_DELIVER_WORK", "FORK_DELIVER_CONFIG")}
+    env["SGX_LOCAL_ENV"] = str(HERE.parent / "bringup" / "local.env.example")
+    (w["tmp"] / "pass").write_text(w["c1"] + "\n")
+    r = subprocess.run([str(DELIVER), w["c1"]], cwd=w["home"], env=env, capture_output=True,
+                       text=True, timeout=60)
+    assert r.returncode != 0                      # the example's clone is not on this host
+    assert "(src/linux-sgx-check)" in r.stderr
