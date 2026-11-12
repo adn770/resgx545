@@ -21,8 +21,11 @@ closing4/lead/wt, listed in scratch_cites.NOT_FILES) is named by the FROZEN.comm
 hash whose path ends it. Any other line under scratch/resgx545/ is an input the session read from
 scratch (round 5's r5-events froze its plan, the decisions and a reading of the firmware): no file
 of the tool tree but a cite, published as cited/<path> of resgx545-data or of
-resgx545-data-private, and checked against that copy. The published freeze bytes are never
-rewritten: FROZEN.commits is a new file beside them.
+resgx545-data-private, and checked against that copy. A session may name the repository of each
+FROZEN.commits line (R5-dpm: `resgx545:PATH`, `linux:PATH`, `data:PATH`, for every outside file
+its freeze pins or its checks read): a resgx545 line is checked as a bare path is, without needing
+a freeze pin; a line of another repository is left to the session. The published freeze bytes
+are never rewritten: FROZEN.commits is a new file beside them.
 
 --write finds, for each session whose freezes pin resgx545 files and that has no
 FROZEN.commits, the commits in this tree's history (`git log -- <path>`): the newest commit at
@@ -34,8 +37,9 @@ replaced (one that differs from what would be written is reported).
 --check verifies every FROZEN.commits: each resgx545 pin of the session's freezes has a line,
 each line is a pin, `git show <commit>:<path>` hashes to the pinned sha256, and an untracked
 line names a path the history has never tracked; each scratch input has a published copy with its
-hash (one found in neither repository is reported only when the private one is present). Once any session has a FROZEN.commits, a
-session whose freezes pin resgx545 files without one is a problem. It skips quietly when the
+hash (one found in neither repository is reported only when the private one is present). Once
+any session has a FROZEN.commits, a session whose freezes pin resgx545 files without one is a
+problem. It skips quietly when the
 data repository (found as datasets.py finds it) or this tree's git history is absent.
 
     python3 tools/records/frozen.py [--check]   check the FROZEN.commits of the data
@@ -66,6 +70,17 @@ HEADER = """\
 # tools/records/frozen.py --write; the freezes themselves are never rewritten.
 """
 LINE = re.compile(r"([0-9a-f]{64})  ([0-9a-f]{7,40}|" + UNTRACKED + r")  (\S.*)")
+REPO = re.compile(r"([a-z][a-z0-9-]*):(\S.*)")
+
+
+def tree_path(path: str) -> str | None:
+    """The path in this tree of a FROZEN.commits line's path: a bare path, or one named
+    `resgx545:PATH` (R5-dpm's form, which names the repository of every line); None for a line
+    of another repository (`linux:`, `data:`), which the session checks itself."""
+    m = REPO.fullmatch(path)
+    if m is None:
+        return path
+    return m[2] if m[1] == TREE else None
 
 
 def pins(freeze: pathlib.Path) -> list[tuple[str, str]]:
@@ -94,8 +109,8 @@ def committed(session: pathlib.Path) -> dict[str, set[str]]:
     f = session / NAME
     for line in f.read_text().splitlines() if f.exists() else []:
         m = LINE.fullmatch(line)
-        if m:
-            out.setdefault(m[1], set()).add(m[3])
+        if m and tree_path(m[3]) is not None:
+            out.setdefault(m[1], set()).add(tree_path(m[3]))
     return out
 
 
@@ -258,9 +273,12 @@ def check(data: pathlib.Path, repo: pathlib.Path,
             if not m:
                 bad.append(f"{name}/{NAME}: not '<sha256>  <commit>  <path>': {line!r}")
                 continue
-            sha256, c, path = m.groups()
+            sha256, c, named = m.groups()
+            path = tree_path(named)
+            if path is None:
+                continue
             have.add((sha256, path))
-            if (sha256, path) not in want:
+            if (sha256, path) not in want and path == named:
                 bad.append(f"{name}/{NAME}: {path} {sha256} is pinned by no freeze")
             if c == UNTRACKED:
                 if find.log(path):

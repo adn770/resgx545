@@ -6481,6 +6481,66 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   at two or more exponents shows both RZ and RZ + 1, and which mantissas store RZ + 1 has no rule.
   *ta; HW, infer; data: `render-closing-r5-pixel:out/20261112-091752/g5-rwa/`,
   `render-closing-r5-pixel:out/20261112-091752/g5-rw/`, `render-closing-r5-pixel:fold/`.*
+- `E860` R5-dpm stages d-a0 and d-a1 on the rgn4 module (Q210; 2048x2048 and 4096x4096, the tool's
+  triangle with 1500 vertices, thr0 = P - 0x22 read back from the job's own 0x0624, 16 registers
+  sampled with 0x0734, 0x0730, 0x012c and 0x0a74 in place of four that read 0 in every kept DPM
+  timeline): the premise held, 29 of 29 rows (the two calibrations stepped the global page count at
+  E852's S2 to S5 = 0x51, 0x9d, 0xe8, 0x132 at 2048x2048 and 0x125, 0x240, 0x35b at 4096x4096, with
+  no grow; the six kept flip cells repeated, thr0 0xe2 and 0xc0 raised and 0xe3, 0x100, 0x35a and
+  0x35c did not); then c4-b3 (P 0x10a, thr0 0xe8 = S4) grew the TA's global list before its first
+  abort in 5 of 5 repeats, with 0x0734 bit 0 clear before the grow in 5 of 5, and stayed silent in 5
+  of 5, while the four cells around it (thr0 0xe7, 0xe9, 0xe4, 0xf0) grew in none and were silent:
+  the frozen verdict is H-GREQ held on its fit side (5 of 5, neighbours 4 of 4) and H-NOISE (at most
+  1 grow in 5) refuted.
+  *dpm; HW, infer; data: `render-closing-r5-dpm:out/a2/d-a0/`, `render-closing-r5-dpm:out/a2/d-a1/`,
+  `render-closing-r5-dpm:out/d-a0/`.*
+- `E861` R5-dpm stages d-a2 and d-a2b on the rgn4 module (Q210; the tool's triangle with 1500
+  vertices, cells picked by frozen rules from the session's own calibrations, none run before): at
+  2048x2048 and 4096x4096 the first abort grew the TA's global list at every cell whose first
+  threshold thr0 equals a step S_k and at none one page either side (H-GREQ 16 of 16 rows; grow at
+  S2, S3 twice and S5 at 2048x2048 and S3 twice and S4 twice at 4096x4096), and the five
+  raising-side step cells (S2 0x51 and S3 0x9d twice at 2048x2048, S3 0x240 twice at 4096x4096, 1 or
+  2 global pages at the abort) all raised the threshold by 0x20: the frozen verdict is H-PEND (R-5's
+  guard intact, c4-b3 a sampling artefact of the count estimate) for 5 of 5, H-BLOCK FAILED in 5 of
+  5; the S4 cells at 4096x4096 stayed silent (2 of 2), the guard placed 6 of the 8 neighbours (S5 -
+  1 and S5 + 1 cannot tell: one partial render, no second entry), and the S5 cell gave no reading
+  for the same reason; in d-a2b the S4 cells at 4096x2048, 2048x4096 and 3072x3072 grew and stayed
+  silent, 3 of 3, but every headline of the stage is GATED because a2b-cal-4x2 read S2 = 0x98
+  against the frozen 0x97 and had no abort to read a grow from.
+  *dpm; HW, infer; data: `render-closing-r5-dpm:out/a2/d-a2/`,
+  `render-closing-r5-dpm:out/a2/d-a2b/`.*
+- `E862` R5-dpm stage d-t on the rgn4 module (Q210; exploratory; 2048x2048, the tool's triangle with
+  1500 vertices, thr0 S3 - 7 to S3 - 4 = 0x96 to 0x99 and S5 - 7 to S5 - 4 = 0x12b to 0x12e): the
+  global pages left at the last in-stretch sample of the first partial render were 2, 1, 1, 1 below
+  S3 and 2, 2, 2, 1 below S5, so H-TAIL (2, 2, 1, 1 in each band, the margin m = 6 of E852's S4
+  carried to the other steps) held in 6 of 8 cells and FAILED at S3 - 6 and S5 - 5; the band below
+  S3 raised and the band below S5 stayed silent, R-5's guard 7 held and 1 cannot tell of 8 (S5 - 4:
+  one partial render), with no grow and every control held (8 of 8).
+  *dpm; HW, infer; data: `render-closing-r5-dpm:out/a2/d-t/`.*
+- `E863` R5-dpm stage d-b on the rgn4 module (Q211; 4096x4096, one triangle of the tool, single
+  kick): the five g-qf controls repeated E832's counts (9, 4, 3, 2, 1 at P 0x24, 0x53, 0x54, 0xa2,
+  0xa3; 10 of 10 rows), two scenes moved to (2560, 0) and (1984, 0) needed 119 and 198 pages with no
+  partial render at P 0x422, the U HU1 gave them before the run (E773's model, 2 of 2), and over 10
+  held-out cells each (thr0 2 to 0x54, frozen from HU1's U) E854's count rule n = min{n >= 1 : thr0
+  + n (thr0 + 0x20 - 7/4) >= U} (H-CNT) missed 3 cells at U 119 (thr0 7, 0x13, 0x2c: it predicted
+  one partial render more) and 1 at U 198 (thr0 2): the frozen verdict is 'H-CNT on scene s119 is
+  not supported: 7 held, 3 FAILED' and 'on scene s198: 9 held, 1 FAILED', so H-CNT is refuted held
+  out; of the seven alternatives frozen beside it, d = 1 missed none at either scene and d = 5/4
+  none at U 198 (post hoc: d = 1 misses 5 of E832's 22 cells at U 287, and no member of E854's
+  family of 2716 fits U 287, 275, 198 and 119 together).
+  *dpm; HW, infer; data: `render-closing-r5-dpm:out/a2/d-b/`.*
+- `E864` R5-dpm stage d-a3 on the rgn4 module (Q210; 2048x2048, the tool's triangle with 1500
+  vertices, our own firmware task oomring armed in the four event slots, logging pa0, pa1, sa8, sa9
+  and CR_TIMER at each pass with pa1 bit 22, 21, 20, 10, 9 or 4 set): the first direct read of sa8
+  in DPM jobs gave R-5's reading of the guard 6 of 6 held out (at the out-of-memory entry after the
+  first partial render sa8 & 0x380 read 0x180 in c4-b5, which raised, and 0 in c4-b6, which did not,
+  twice each, and 0x380 at the next entry after the raise, twice), with both controls still raising
+  and silent under the task; c4-b3 (thr0 0xe8 = S4, three repeats, each growing the global list)
+  entered that decision with sa8 & 0x380 = 0 and sa9 bit 8 clear at the end of its partial render,
+  and the S3 cell (thr0 0x9d, grow) with 0x180 and raised: the frozen verdict is H-PEND 7 held of 7
+  and H-BLOCK 3 held, 4 FAILED of 7 (sa9 bit 8 clear in 3 of 3 c4-b3 repeats where H-BLOCK by skip
+  predicted it set, and the S3 cell raised).
+  *dpm; HW, RE, infer; data: `render-closing-r5-dpm:out/a2/d-a3/`.*
 
 ## By unit
 
@@ -6493,7 +6553,8 @@ Records: E151, E457, E573, E592, E745, E761, E767, E789, E826, E848.
 Records: E199, E200, E201, E202, E204, E205, E206, E203, E253, E256, E309, E310, E311, E312, E313,
 E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E468, E574, E591,
 E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753, E773, E774, E775, E779, E785,
-E786, E790, E799, E800, E801, E802, E803, E832, E845, E846, E852, E853, E854.
+E786, E790, E799, E800, E801, E802, E803, E832, E845, E846, E852, E853, E854, E860, E861, E862,
+E863, E864.
 
 ### edm
 

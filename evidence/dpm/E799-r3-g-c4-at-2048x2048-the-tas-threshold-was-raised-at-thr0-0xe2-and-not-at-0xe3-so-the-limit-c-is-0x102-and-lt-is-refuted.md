@@ -56,3 +56,11 @@ the second entry out [open]; the sampled registers cannot say which. On the rule
 flip on the wrong side" this cell is on the wrong side of the ladder, so the guard is a reading that
 fits the flips and 288 of 289 decisions, not a law, until c4-b3 is repeated with `0x0734` and sa8
 observed.
+
+**Correction 2026-11-12:** The open cell above is closed by round 5's R5-dpm session, and the claim
+stands. c4-b3 repeated grew the global list and stayed silent in 5 of 5 (E860); the held-out step
+cells on the raising side grew and raised, 5 of 5, so a grow does not block the raise (E861); and
+our own firmware task read `sa8` bits 7 to 9 clear at c4-b3's decision entry and `sa9` bit 8 clear
+at the end of its partial render in 3 of 3 repeats, with R-5's bits in the raised and silent
+controls (E864). The resume compared one global page, not the two this record's timeline sampled:
+the guard holds and the cell is on the silent side, as the ladder says.

@@ -307,3 +307,20 @@ def test_frozen_scratch_inputs_are_read_from_their_published_copies(world, tmp_p
     r = run(world, "edm/closing-demo", RESGX545_DATA_PRIVATE=str(tmp_path / "absent"))
     assert r.returncode != 0
     assert "freeze" in r.stdout
+
+
+def test_lines_that_name_their_repository_pin_only_the_tool_tree(world):
+    """R5-dpm's FROZEN.commits names the repository of each line (`resgx545:PATH`, and
+    `linux:PATH`, `data:PATH` with commits of other repositories): the tool tree is pinned by
+    its resgx545 lines, and the other lines neither choose the worktree's commit nor stop it."""
+    tool, data = world[0], world[1]
+    c1 = git(tool, "rev-list", "--max-parents=0", "HEAD")
+    s = data / "edm/closing-demo"
+    (s / "FROZEN.commits").write_text(
+        "# header\n"
+        f"{sha(V1)}  {c1}  resgx545:tools/x.py\n"
+        f"{sha('k')}  {'a' * 40}  linux:drivers/k.c\n"
+        f"{sha('d')}  {'b' * 40}  data:edm/closing-sib/marker\n")
+    r = run(world, "edm/closing-demo")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "RUN_ALL PASSED" in r.stdout

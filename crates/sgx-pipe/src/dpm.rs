@@ -74,6 +74,39 @@ pub fn dword36_from_abort_counts(counts: &[u32]) -> u32 {
     counts.last().map_or(0, |c| c.saturating_sub(2))
 }
 
+/// The guard of the firmware's raise of the first threshold by 0x20, from the global page counts
+/// (the high half of CR_DPM_GLOBAL_PAGE_STATUS) at the first abort, at the resume after the partial
+/// render and at the next out-of-memory entry: the abort saves dword 36 as its count less 2 (floor
+/// 0, E803), the resume sets `sa8` bits 7 and 8 when its count is above dword 36, and the entry
+/// raises when bit 7 is set and its count is above dword 36 again (R-5 [RE], 3d.md section 6.4).
+/// Held on the hardware: `sa8` read by our own task, 6 of 6, and c4-b3, the guard's one miss on
+/// the timelines, silent because its resume compared one global page (E864); the raising-side step
+/// cells raised after a grow (E861). The resume's count is the one the firmware read: after a grow
+/// the timeline's last sample in the partial render can read one page more (E860).
+pub fn guard_raises(abort_global: u32, resume_global: u32, entry_global: u32) -> bool {
+    let d36 = dword36_from_abort_counts(&[abort_global]);
+    resume_global > d36 && entry_global > d36
+}
+
+/// The first threshold steps S_k of the global page count of the tool's triangle with 1500
+/// vertices, measured held out where a grow was tested at and around them (E852's table, repeated
+/// by the calibrations of E860, the cells of E861). The steps of 4096x2048, 2048x4096 and 3072x3072
+/// are left out: their only held-out stage is gated (E861's d-a2b).
+const GLOBAL_STEPS: &[((u32, u32), &[u32])] =
+    &[((2048, 2048), &[0x51, 0x9d, 0xe8, 0x132]), ((4096, 4096), &[0x125, 0x240, 0x35b])];
+
+/// Whether the first out-of-memory entry grows the TA's share of the global list
+/// (`CR_DPM_TA_GLOBAL_LIST`, the list-kind branch of 3d.md section 6.4): exactly when the first
+/// threshold is a step S_k (H-GREQ, E860 5 of 5 repeats, E861 16 of 16 held-out rows). `None` past
+/// the page after the last measured step, at other targets and for other scenes.
+pub fn grows_at_first_abort(scene: Scene, width: u32, height: u32, thr0: u32) -> Option<bool> {
+    if scene != Scene::ToolTriangle {
+        return None;
+    }
+    let steps = GLOBAL_STEPS.iter().find(|(t, _)| *t == (width, height))?.1;
+    (thr0 <= steps.last()? + 1).then(|| steps.contains(&thr0))
+}
+
 /// Whether the raise limit C admits a raise of `thr0` by 0x20 (E774). Necessary for a raise at the
 /// measured scene and target and not sufficient anywhere else: whether the second run reaches thr0
 /// (E625's rule, Q210) is not part of it, nor is the count of partial renders: E625's formula for it
@@ -201,6 +234,48 @@ mod tests {
         assert_eq!(dword36_from_abort_counts(&[7]), 5);
         assert_eq!(dword36_from_abort_counts(&[1, 1, 2, 2, 2]), 0);
         assert_eq!(dword36_from_abort_counts(&[1, 2, 1]), 0);
+    }
+
+    #[test]
+    fn the_guard_raises_when_the_resume_and_the_entry_count_above_dword_36_e864() {
+        // R-5 [RE] held on the hardware (E864: sa8 bits 7 and 8 set by the resume, read by our own
+        // task), counts of global pages at the first abort, at the resume, at the next entry
+        assert!(guard_raises(3, 2, 4)); // E799's c4-b5, the last raise at 2048x2048
+        assert!(!guard_raises(3, 1, 3)); // c4-b6, the first silent cell
+        assert!(guard_raises(1, 1, 1)); // E802's raised cells: dword 36 floors at 0
+        // E861 [HW, held out]: the raising-side step cells grew and raised (1 or 2 at the abort)
+        assert!(guard_raises(1, 1, 2) && guard_raises(2, 1, 2));
+        // E864 [HW, held out]: c4-b3's resume compared one global page (sa8 bits 7 to 9 clear
+        // at its decision entry), so it is silent, as are the 4096x4096 S4 cells of E861
+        assert!(!guard_raises(3, 1, 4));
+        // E862: 4 global pages at the abort below S5 make dword 36 = 2, silent with 1 or 2 left
+        assert!(!guard_raises(4, 2, 4) && !guard_raises(4, 1, 4));
+        // the entry must see the count above dword 36 again
+        assert!(!guard_raises(3, 2, 1));
+    }
+
+    #[test]
+    fn the_first_abort_grows_the_global_list_exactly_on_a_step_e861() {
+        // E860, E861 [HW, held out]: the tool's triangle with 1500 vertices; grow at every first
+        // threshold on a step and at none one page either side, at 2048x2048 and 4096x4096
+        let grows = |w, h, t| grows_at_first_abort(Scene::ToolTriangle, w, h, t);
+        for t in [0x51, 0x9d, 0xe8, 0x132] {
+            assert_eq!(grows(2048, 2048, t), Some(true), "{t:#x}");
+            assert_eq!(grows(2048, 2048, t - 1), Some(false), "{t:#x}");
+            assert_eq!(grows(2048, 2048, t + 1), Some(false), "{t:#x}");
+        }
+        for t in [0x240, 0x35b] {
+            assert_eq!(grows(4096, 4096, t), Some(true), "{t:#x}");
+        }
+        assert_eq!(grows(4096, 4096, 0x23f), Some(false));
+        assert_eq!(grows(4096, 4096, 0x35a), Some(false));
+        // E852's kept jobs: no grow off a step (the default c4 cells)
+        assert_eq!(grows(2048, 2048, 0xe2), Some(false));
+        // above the last measured step, at the gated targets (E861's d-a2b) and for other
+        // scenes the model refuses
+        assert_eq!(grows(2048, 2048, 0x140), None);
+        assert_eq!(grows(4096, 2048, 0x1b9), None);
+        assert_eq!(grows_at_first_abort(Scene::ToolTriangleFull, 2048, 2048, 0xe8), None);
     }
 
     #[test]

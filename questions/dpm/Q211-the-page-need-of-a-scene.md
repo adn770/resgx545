@@ -1,11 +1,11 @@
 +++
 id = "Q211"
-question = "what rule gives the partial-render count of a scene of page need U at the first threshold thr0 = P - 0x22 (E625's 1 + floor((U + k - thr0) / (thr0 + s)) is refuted at U = 287 for every k from -60 to 60 and s from 1 to 0x5f, E779 and E832, whose 22 cells are the count curve to fit), and does the page need U of HU1 (E773: exact for 15 held-out scenes made of the tool's triangle) hold for wide scenes of many vertices and other shapes (E630)?"
+question = "what rule gives the partial-render count of a one-triangle scene of page need U at the first threshold thr0 = P - 0x22 (E625's 1 + floor((U + k - thr0) / (thr0 + s)) is refuted at U = 287, E779 and E832; E854's spacing thr0 + 0x20 - d fits each scene with its own d and failed held out at U 119 and 198, no one d fitting U 287, 275, 198 and 119, E863), and does the page need U of HU1 (E773, E863: exact for E773's 15 held-out scenes made of the tool's triangle and E863's 2) hold for wide scenes of many vertices and other shapes (E630)?"
 unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E310", "E625", "E630", "E705", "E735", "E773", "E779", "E832", "E853", "E854"]
+evidence = ["E310", "E625", "E630", "E705", "E735", "E773", "E779", "E832", "E853", "E854", "E863"]
 terms = ["Dynamic Parameter Management (DPM)", "Parameter Buffer (PB)"]
 +++
 
@@ -118,3 +118,18 @@ thr0 + 30.25. The rule does not hold for the 1500-vertex scenes, which do not co
 17 counts at 2048x2048, post hoc). Open: a held-out test of the rule on one-triangle scenes at other
 U, cells frozen from a measured U; what a partial render frees; the count for scenes of many
 vertices; the U clause as above.
+
+Narrowed 2026-11-12 (round 5, R5-dpm stage B, E863). The question line asked "what rule gives the
+partial-render count of a scene of page need U at the first threshold thr0 = P - 0x22 (E625's 1 +
+floor((U + k - thr0) / (thr0 + s)) is refuted at U = 287 for every k from -60 to 60 and s from 1 to
+0x5f, E779 and E832, whose 22 cells are the count curve to fit), and does the page need U of HU1
+(E773: exact for 15 held-out scenes made of the tool's triangle) hold for wide scenes of many
+vertices and other shapes (E630)?". [HW, held out] E854's rule (d = 7/4, k = 0) failed on two scenes
+of one moved triangle at U 119 and 198, cells frozen from HU1's U before the run: 3 of 10 and 1 of
+10 cells missed, one partial render too many each time; the five g-qf controls repeated E832's
+counts and both scenes needed HU1's U with no partial render at P `0x422`. [HW, post hoc] Of the
+seven alternatives frozen as a tally, d = 1 missed none at either scene and misses 5 of E832's 22
+cells; no member of the 2716-member family fits U 287, 275, 198 and 119 together, so the spacing is
+not one constant for one-triangle scenes. Open: what a partial render frees and keeps, by scene (the
+fitting d moves with the scene: at least 1.5625 at U 287, at most 1.5 at U 198); the count for
+scenes of many vertices; the U clause as above.
