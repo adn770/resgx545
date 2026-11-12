@@ -5,7 +5,7 @@ unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E310", "E625", "E630", "E705", "E735", "E773", "E779", "E832", "E853", "E854", "E863", "E866", "E874", "E875", "E883"]
+evidence = ["E310", "E625", "E630", "E705", "E735", "E773", "E779", "E832", "E853", "E854", "E863", "E866", "E874", "E875", "E883", "E899"]
 terms = ["Dynamic Parameter Management (DPM)", "Parameter Buffer (PB)"]
 +++
 
@@ -167,3 +167,14 @@ one partial render too many each time) and every run's peak exactly in 13 of 32 
 pages in 28), so H-REPLAY as frozen fails on new scenes; column order gave 19 of 32 counts, E854's
 d = 7/4 18 and d = 1 27 (E875's correction). Open: the rule of the count (what a partial render
 frees, by scene); scenes of many objects and multi-kick scenes; the U clause as above.
+
+Note 2026-11-12 (round 7, offline stage G1, G2 and G4, E899; decision R7-1 a; the question stays
+open). [HW, held out on dumps] The walk order is read from the dumps: the TA takes stream blocks in
+strips of 64 pixel rows, each strip in 64 x 64-pixel blocks left to right, a block's regions row by
+row (H-WALK64), every block of 760 kept dumps of one-object, one-kick jobs at its page and slot
+(28621; 749 dumps held out, 18 of them separating it from row order, none above 1024x768). [HW,
+SEMI] E875's replay in that order gives the count and every run's peak of all 89 kept
+one-triangle cells at 4096x4096 and E625's and E779's 37 record counts, where row order gives 83
+counts. [infer] A later kick walks again and fills the pages its macrotiles have open. Open: the
+replay held out on new scenes (the plan's s-b stage) before the count clause is called answered;
+scenes of many objects; the U clause as above.
