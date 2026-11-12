@@ -1,11 +1,11 @@
 +++
 id = "Q210"
-question = "what does the DPM compare with the limit C that decides whether the first abort's threshold is raised by 0x20 (E774: raised iff thr0 + 0x20 <= C = 0x371 at 4096x4096, 1350 and 1500 vertices; E786: the limit is on the threshold the TA runs, not on the knob P; E785 and E799: C = 0x102 at 2048x2048; E801: 0x1d2 at 4096x2048, 0x1d6 at 2048x4096 and 0x208 at 3072x3072; E800: the target sets it, not the context; E802: another scene raises above 0x102 at 2048x2048; wd-glist-1500's missing raise at P of 0x422 and above is the clamp of thr0 at 0x400, E753), why is the raise 0x20, and what makes C differ between the targets and the scenes (no law in the target's size fits, E801)"
+question = "what sets the page counts S_k at which the global page count steps in the first TA run (E852, E861: nearly evenly spaced within a target, different between targets and scenes), and the margin below each step in which a partial render leaves one global page instead of two (E852, E862: 6, 5 and 4 pages below S3, S4 and S5 at 2048x2048), which places the flip of the first threshold's raise by 0x20 (the guard of the firmware's write compares global page counts, E853, E864; C at five targets, E774, E785, E799, E801; E802's scene raises above it); why E802's scene holds one global page; and why a page is pending at the resume only after a grow of the global list (E861, E864)"
 unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E310", "E312", "E464", "E625", "E627", "E629", "E704", "E734", "E753", "E774", "E779", "E785", "E786", "E799", "E800", "E801", "E802", "E852", "E853"]
+evidence = ["E310", "E312", "E464", "E625", "E627", "E629", "E704", "E734", "E753", "E774", "E779", "E785", "E786", "E799", "E800", "E801", "E802", "E852", "E853", "E860", "E861", "E862", "E863", "E864"]
 terms = ["Dynamic Parameter Management (DPM)", "CR_DPM_STATE_BASE0", "ta3d_ctl"]
 +++
 
@@ -206,3 +206,26 @@ the second kick added post hoc (E853); those cells hold one global page, so they
 and bit 9, not the compare. Open: H-PEND against H-BLOCK (a repeat of c4-b3 and the S cells with
 `0x0734` sampled, or `sa8` read by a task of ours), the margin m by target and scene, and why
 E802's scene holds one global page.
+
+Narrowed 2026-11-12 (round 5, R5-dpm, E860 to E864; the session's stages A0 to A3 on the rgn4
+module). The question line asked "what does the DPM compare with the limit C that decides whether
+the first abort's threshold is raised by 0x20 (E774: raised iff thr0 + 0x20 <= C = 0x371 at
+4096x4096, 1350 and 1500 vertices; E786: the limit is on the threshold the TA runs, not on the knob
+P; E785 and E799: C = 0x102 at 2048x2048; E801: 0x1d2 at 4096x2048, 0x1d6 at 2048x4096 and 0x208 at
+3072x3072; E800: the target sets it, not the context; E802: another scene raises above 0x102 at
+2048x2048; wd-glist-1500's missing raise at P of 0x422 and above is the clamp of thr0 at 0x400,
+E753), why is the raise 0x20, and what makes C differ between the targets and the scenes (no law in
+the target's size fits, E801)". [HW, held out] The guard R-5 read stands on the hardware: our own
+firmware task read `sa8 & 0x380` as `0x180` at the decision entry of the raised c4-b5, 0 at that of
+the silent c4-b6 and `0x380` at the entry after a raise, twice each (E864). Its one miss is closed:
+c4-b3 repeated grew the global list and stayed silent 5 of 5 (H-NOISE refuted, E860), the step cells
+on the raising side grew and raised 5 of 5 (H-BLOCK refuted, E861), and at c4-b3's decision entry
+`sa8` bits 7 to 9 were clear with `sa9` bit 8 clear, 3 of 3 (E864): the resume compared one global
+page, the timeline's sample after a grow reads 1 or 2 (H-PEND). The first entry grows the global
+list exactly when thr0 is a step, held out at both targets (E861; the other three targets read but
+gated). So what the firmware compares, and why the raise is `0x20`, are answered by R-5 with E864
+[RE; HW]. [HW, exploratory] The margin below a step is not one constant at a target: the first
+partial render leaves one global page fewer from 6, 5 and 4 pages below S3, S4 and S5 at 2048x2048
+(E862). [HW, post hoc] Within a target the steps fall nearly evenly (E861). Open: the page
+accounting that sets the steps and the margins, by target and scene; E802's one global page; why the
+page is pending only after a grow. These need the DPM's page bookkeeping, not the guard.
