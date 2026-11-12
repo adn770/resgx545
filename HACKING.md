@@ -168,6 +168,16 @@ PASS or FAIL with the tests' exit code. Builds of the pinned tool go to the runn
 (`RESGX545_SESSION_TARGET`, default `scratch/resgx545/session-target`), never the main
 checkout's: old binaries would replace current ones there.
 
+A session's runner on the laptop keeps every file under the home scratch area
+`~/scratch/<prefix>/` (`run/`, `stage/`, `out/` and the per-job work directories), never in
+`/tmp`: there `/tmp` is a 991 MiB tmpfs, in the laptop's 2 GiB of RAM, and the work directories
+round 4 and round 5 left in it filled it and cut r5-dpm's first attempt (E860). A `mktemp` names
+its directory (`mktemp -d ~/scratch/tmp/<prefix>.XXXXXX`), since `sudo` drops `TMPDIR`; the runner
+checks the free space before each job and removes its work directories once their files are
+kept. Finished sessions' laptop directories move to `~/scratch/archive/`. An offline mock does
+not depend on a few milliseconds of process start-up: r5-events' fake laptop had 16 ms to start
+the fill and fails on a loaded Mac.
+
 ## Firmware tasks of our own
 
 Phases 11.29, 11.30 and 11.32 run tasks of ours as firmware (EDM) tasks. The rules below are what
