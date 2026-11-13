@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-158 open: 148 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+157 open: 147 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -36,7 +36,7 @@ list.
 - `Q205` isp, high: what is the arithmetic by which the ISP decides the coverage and the depth of a
   pixel for an arbitrary triangle, and the iterators' ... (E215, E307, E542)
 - `Q260` isp, high: the tie of a negative window coordinate 1/512 above the 1/256 grid rounds away
-  from zero wherever the aimed pixel is clear of E914's band ... (E914, E943, E952)
+  from zero wherever the aimed pixel is clear of E914's band ... (E943, E952, E984)
 - `Q023` pds, high: how many output dwords does a pixel task get per setup, and what do the data
   rows limit (E406) (E742, E759, E880)
 - `Q276` pds, high: in E709's command (state block word 4 at 0x00030001), why is the o3 word in the
@@ -74,7 +74,7 @@ list.
 - `Q240` isp, medium: does the coverage rule of E606 (vertices on the 1/256 pixel grid, exact centre
   test, left and top edges owning ties) hold for random ... (E682, E912, E913)
 - `Q261` isp, medium: how large is the error band of the ISP's edge evaluation (E684: 16 pixels in
-  14 of 208 cases within 5.6e-4 pixel of an edge line) as a ... (E682, E684, E979)
+  14 of 208 cases within 5.6e-4 pixel of an edge line) as a ... (E684, E979, E984)
 - `Q262` isp, medium: what bounds the error of the stored depth and of the iterated clip z on E680's
   targets, where E606's tolerances fail for some triangles of ... (E684, E912, E913)
 - `Q288` isp, medium: what rule gives the stored depth of a plane with a non-dyadic gradient in x
@@ -185,9 +185,9 @@ list.
 - `Q107` zls, medium: why does the final render of a job that overflows store zeros for the first
   row of macrotiles and the depth with its sign bit set for the ... (E489, E628, E629)
 - `Q120` zls, medium: what do the stored depth formats 3 to 7 (CR_ISP_ZLSCTL bits 26:24) hold and
-  how are they laid out, given that they store depth and stencil ... (E466, E490, E978)
+  how are they laid out, given that they store depth and stencil ... (E490, E978, E985)
 - `Q121` zls, medium: what is the in-tile order of the stencil store (one byte a pixel, 128 dwords a
-  32 x 16 tile) and what does the stencil test do against a ... (E466, E467)
+  32 x 16 tile) and what does the stencil test do against a ... (E466, E467, E985)
 - `Q109` bif, low: do page directory entries whose page-size field (bits 3:1) names 16 KiB to 4 MiB
   translate on the hardware, and with which address mask and ... (E021, E151)
 - `Q110` bif, low: what do the bus interface's tiled address ranges (BIF_TILE0 and up: start, end,
@@ -258,16 +258,14 @@ list.
   one, how are its slices laid out, and how do the third ... (E342, E567)
 - `Q115` texture, low: does the sampler filter anisotropically on this core, and which bits of the
   texture words or the smp operands select it and its ratio? (E564, E720, E723)
-- `Q177` texture, low: what sets the offset that T0 address modes 4 to 7 add on the u axis (the v
-  rule's texel moved by 116, 180 and 308 dwords at 8 x 8, 16 x 16 ... (E565, E932, E957)
+- `Q177` texture, low: does the offset that T0 address modes 4 to 7 add on the u axis (the v rule's
+  texel moved by 116, 180 and 308 dwords at 8 x 8, 16 x 16 and ... (E932, E957, E983)
 - `Q179` texture, low: how are the blocks and the data bits of formats 23 to 26 laid out (a data bit
   changes 7 to 13 pixels, the blocks of 23 and 24 do not differ ... (E342, E568, E724)
 - `Q181` texture, low: does the fill's transfer command load a colour-space set at all (xfer:17^=1
   and xfer:18 to 22 made no difference for formats 28 and 29, ... (E037, E040, E568)
 - `Q280` texture, low: what makes up to 56 of 2048 pixels of a gradient job differ from the
   Euclidean footprint of the pairs (op0, op2) and (op1, op3) with a LOD ... (E563, E721, E744)
-- `Q282` texture, low: what arithmetic gives the bilinear sample of an sRGB texel (T0 bit 27) given
-  that decode-then-filter in float fits 43% to 56% of the pixels ... (E720, E723, E976)
 - `Q017` usse, low: why does g19 read 0x1a as a store's source but 0 through a mov and as the pixel?
   (E085, E086, E372)
 - `Q048` usse, low: do the MADD0 and MADD1 clock gates follow the USSE pipes' floating-point
@@ -331,9 +329,21 @@ list.
 
 ## Recent records
 
-119 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+123 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E985` zls, 2026-11-13: Round 10 offline (Q120, Q121; no run): E978's kept dumps (a loaded index
+  stencil, one x depth ramp, 64 x 32 and 96 x 48) decode for stored depth formats 3, 4, 5 and 6,
+  every changed dword at both ...
+- `E984` isp, 2026-11-13: Round 10 offline (Q261, post hoc on E979's kept rows; no run): of the 46
+  pixels of E979's 11 rows whose centre lies within 1e-3 pixel of an edge line (E684's band), the 26
+  that lie on a far edge ...
+- `E983` texture, 2026-11-13: Round 10 offline (Q177; no run): on E565's kept 32 x 8 twiddled jobs
+  bd-hb-ns-uv4, uv6 and uv7 (u and v in mode 4, 6, 7), never read for the offset, every pixel reads
+  the dword the v rule names plus ...
+- `E982` texture, 2026-11-13: Round 10 offline (Q282; no run): one lerp stage of a bilinear sRGB
+  sample (T0 bit 27) on two decoded halves A (weight 64 - k) and B (weight k) returns A unchanged at
+  k = 0 and otherwise floors both ...
 - `E981` zls, 2026-11-13: r9-z2 stage z2 (10 jobs, 256 x 128, G 7): with the viewport's z offset
   (state-block word 10) at -0.25, so a modelled depth of -0.75 to -0.25, format 0 stored 0.0 at
   every dword and formats 1 and 2 ...

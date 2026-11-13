@@ -5,8 +5,9 @@
 //! (the tests skip, saying so, without it and fail with `RESGX545_REQUIRE_DATA`). Every pixel of
 //! every such job (64 x 32 each) is sampled with the job's state words, coordinates and texels
 //! (`gen/cases.json`: the scratch dword i is 0xD0000000 | i unless the job injected it) and the
-//! first register the sample writes must equal the recorded o0. The bilinear sRGB fills (Q282)
-//! and type 4 (its stride fitted only, E725) must stay refused.
+//! first register the sample writes must equal the recorded o0. The bilinear sRGB fills follow
+//! E982's stage rule (fitted on r9-x's single-stage rows, frozen before either fill was scored);
+//! type 4 (its stride fitted only, E725) must stay refused.
 
 use sgx_pipe::data::Ctx;
 use sgx_sim::json::{Json, parse};
@@ -142,10 +143,17 @@ fn types_3_and_1_equal_e725s_held_out_fills() {
 }
 
 #[test]
-fn bilinear_srgb_and_type_4_stay_refused() {
+fn bilinear_srgb_equals_e723s_fills_by_e982s_stage_rule() {
+    // E982: x then y, each stage on two halves floored to the larger one's ulp, lerped
+    // exactly and rounded to nearest with ties up, A unchanged at weight 0
+    exact(&["g-bl-st-a", "g-bl-st-b"]);
+}
+
+#[test]
+fn type_4_stays_refused() {
     let Some(b) = base() else { return };
     let cases = parse(&std::fs::read_to_string(b.join("gen/cases.json")).unwrap());
-    for name in ["g-bl-st-a", "g-bl-st-b", "ty4-8x8", "ty4-32x32", "ty4-32x16", "ty4-16x32"] {
+    for name in ["ty4-8x8", "ty4-32x32", "ty4-32x16", "ty4-16x32"] {
         let j = job(&b, &cases, name);
         let r = sample_at(&j.spec, &injected(&j.spec), 3, 2);
         assert!(matches!(r, Err(tex::Fail::Open(_))), "{name}: {r:?}");

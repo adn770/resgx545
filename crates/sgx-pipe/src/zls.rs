@@ -243,8 +243,17 @@ impl Ctl {
             0 => Ok(Format::F32),
             1 => Ok(Format::U24),
             2 => Ok(Format::U16),
+            // E985 read the layouts of 3 to 6 from E978's kept dumps with a loaded stencil, fitted at
+            // 64 x 32 and checked at 96 x 48 (SEMI): no run held them out
+            c @ 3..=6 => Err(open(
+                format!(
+                    "stored depth format {c}: its layout was read offline at two sizes only (E985, SEMI; E466, E490, \
+                     E978)"
+                ),
+                &["Q120"],
+            )),
             c => Err(open(
-                format!("stored depth format {c}: its layout was not decoded (E466, E490, E978)"),
+                format!("stored depth format {c}: its layout was not decoded (E466, E490, E978, E985)"),
                 &["Q120"],
             )),
         }
@@ -396,7 +405,8 @@ fn depth_dwords(ctl: &Ctl, w: u32, h: u32, stencil_buffer: bool) -> Result<Dword
 }
 
 /// The dwords of the stencil buffer a store writes: 128 a tile slot (Q121: the in-tile order is
-/// not modelled, nor what an edge tile stores).
+/// not modelled, nor what an edge tile stores; E985 read byte j of a tile as the depth's in-tile
+/// index j on the lane-0 bytes only, offline and SEMI).
 fn stencil_dwords(ctl: &Ctl, w: u32, h: u32) -> Result<Dwords, Outcome> {
     let mut d = Dwords::new();
     if !ctl.store_stencil() {
@@ -905,6 +915,15 @@ mod tests {
         for f in [3u32, 4, 5, 6, 7] {
             assert_eq!(ids(ctl(0x0017_110c | f << 24).format()), ["Q120"]);
         }
+        // E985 read 3 to 6 offline at two sizes (SEMI, held out by no run); 7 was not decoded
+        let why = |f: u32| match ctl(0x0017_110c | f << 24).format() {
+            Err(Outcome::Unsupported { why, .. }) => why,
+            r => panic!("{r:?}"),
+        };
+        for f in [3u32, 4, 5, 6] {
+            assert!(why(f).contains("E985"), "{f}: {}", why(f));
+        }
+        assert!(why(7).contains("not decoded"), "{}", why(7));
         assert_eq!(ctl(0x0017_110c | 2 << 24).format(), Ok(Format::U16));
     }
 

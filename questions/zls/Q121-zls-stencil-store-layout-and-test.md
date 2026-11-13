@@ -5,7 +5,7 @@ unit = "zls"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E466", "E467"]
+evidence = ["E466", "E467", "E985"]
 terms = ["CR_ISP_ZLSCTL", "CR_ISP_STENCIL_LOAD_BASE", "CR_ISP_STENCIL_STORE_BASE"]
 +++
 
@@ -28,3 +28,11 @@ Note 2026-11-13. Round 9 could not run Q121's rows: they need ISP word 2 (a sten
 the ZLS stencil buffers, and tool t4 sets ISP word 2 only in `probe --tri`, which has no stencil
 buffers, while `tri` takes no `--isp2` (render/closing-r9-x README.md). A tool change, `tri --isp2`
 (test first), comes first.
+
+Note 2026-11-13 (round 10 offline, decision R10-1 a; E985, SEMI). The stencil bytes that stored
+formats 3, 4 and 5 pair with each pixel in E978's dumps are byte j of the tile's 128 loaded dwords
+with j the depth's in-tile index (y0 x0 y1 x1 y2 x2 y3 x3 x4), 13 of 13 tiles, where the raster
+order and E466's format 2 order match none; the lane of pixel (x, y) is y0 | x0 << 1. The index
+fill sets only lane 0 and, from the third tile slot, lane 1, so lanes 2 and 3 are untested. Open:
+the order on every lane with a fill that varies them, and the stencil test against a loaded
+stencil (needs `tri --isp2`, the seeds plan's stage st1).
