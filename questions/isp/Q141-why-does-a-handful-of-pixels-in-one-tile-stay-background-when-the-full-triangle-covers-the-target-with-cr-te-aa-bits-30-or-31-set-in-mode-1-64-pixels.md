@@ -5,7 +5,7 @@ unit = "isp"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E502", "E503", "E504", "E618", "E727", "E762", "E922"]
+evidence = ["E502", "E503", "E504", "E618", "E727", "E762", "E922", "E934"]
 terms = ["CR_TE_AA", "CR_ISP_MSAA"]
 +++
 
@@ -31,3 +31,11 @@ tiles in sgx-pipe. What stays: the held-out row, R8-1 of session r8-geo (24 jobs
 each frozen under the model and its halves-off rival in
 `closing8/offline/r8-1/q141_r8pred.tsv`); the question retires on it if every held-out set is
 exact.
+
+Note 2026-11-13 (round 8, session r8-geo; E934). R8-1's held-out row did not run: the module
+(37EC97AB, fork 664fd0d0) refuses a render whose CR_TE_AA sets bit 31 or 30 unless its context was
+created for 4x targets, and the rows, copied from E504's and E727's command lines, lacked the
+tool's --aa4; 23 of 24 jobs were rejected at submission, and the TE 0x20000000 control stored no
+hole as frozen. The question stays as narrowed above: the held-out row reruns with --aa4 (whether
+the 4x context's four region-header arrays change what E502, E504 and E727 stored with one is part
+of what it then shows).
