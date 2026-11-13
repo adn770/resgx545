@@ -324,7 +324,7 @@ pub fn image(sc: &Scene, out: &ta::Written) -> R<Image> {
         for p in &o.prims {
             if p.rhw != [1.0; 3] {
                 return Err(open(
-                    "a vertex with 1/w other than 1: perspective is not shown (E606)",
+                    "a vertex with 1/w other than 1: E606's coverage held on the stored vertices (E992), the perspective planes are not shown",
                     &["Q202"],
                 ));
             }

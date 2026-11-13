@@ -51,3 +51,11 @@ def test_lines_are_wrapped_and_clean():
 
 def test_no_records_renders_an_empty_log():
     assert "No evidence records yet." in evidence_log.render([])
+
+
+def test_chronology_and_units_order_e1000_after_e999():
+    a = dict(A, id="E999", date="2026-11-13")
+    b = dict(B, id="E1000", date="2026-11-13", unit="dpm")
+    text = evidence_log.render([b, a])
+    assert text.index("E999") < text.index("E1000")
+    assert "E999, E1000" in text.split("## By unit")[1]

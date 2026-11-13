@@ -171,7 +171,7 @@ TAIL = """\
   only through the PB, so they need the scene's `memory`.
 - **isp**: the multisample window is built (786 tiles, 13 with seam holes refused: E953).
   Everything else needs a scene (`memory`) and, for pixels, the arithmetic of coverage, depth and
-  iteration (Q205): no record gives it. The sample position, line, polygon offset and stencil
+  iteration (E606, Q200): none gives it. The sample position, line, polygon offset and stencil
   rules (E214, E279, E071, E216) are in `isp` triangle-host vectors, not in dump directories.
 - **pbe, iter**: only whole-job vectors (`pbe` 206, the pixel-event and texture runs): the
   end-of-tile words and the pixel PDS launch are not in any dump. 12.1 needs `memory` from a
@@ -198,7 +198,7 @@ probes' images only, no dump. What they establish:
   clipped polygon's vertices (only pixel counts of the result exist); anything below the 64 x 64
   target. So an MTE model can state the z clip volume and the w clamp as measured and must
   refuse x or y clipping (Q069, Q116), and the pixel counts of the clipped scenes can only be
-  reproduced by a model of the ISP arithmetic (Q205).
+  reproduced by a model of the ISP arithmetic (E606, Q200).
 
 ## 5. Corrections to the plan's numbers
 
@@ -261,7 +261,7 @@ def report(data):
     w("")
     w("The units a scene goes through decide what it can check before its unit models exist: the")
     w("pixel side (`pbe`, `texture`, `pds`, `usse` rows) needs 12.1 and 12.3, `ta`, `vdm`, `mte`")
-    w("rows need 12.2, and every `isp` row needs the arithmetic of coverage (Q205) to be pixel exact.")
+    w("rows need 12.2, and every `isp` row needs the ISP's arithmetic (E606, Q200) to be pixel exact.")
     w("")
     w("## 2. The dump directories")
     w("")

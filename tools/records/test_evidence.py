@@ -104,7 +104,7 @@ def test_main_reports_misplaced_files(tmp_path, monkeypatch, capsys):
 
 import re  # noqa: E402
 
-E_REF = re.compile(r"\bE\d{3}\b")
+E_REF = re.compile(r"\bE\d{3,}\b")
 
 
 def _records():
@@ -184,3 +184,14 @@ def test_a_claim_edited_after_landing_carries_the_corrected_mark():
     bad = [p for p in sorted(edited) if (root / p).exists()
            and "[corrected " not in evidence.parse(root / p)[0]["claim"]]
     assert not bad, bad
+
+
+def test_record_numbers_past_e999_are_accepted(tmp_path):
+    p = record(tmp_path, GOOD.replace('"E001"', '"E1000"'), name="E1000-example.md")
+    assert evidence.problems(p, {"CR_X"}) == []
+    p = record(tmp_path, GOOD.replace('"E001"', '"E12345"'), name="E12345-example.md")
+    assert evidence.problems(p, {"CR_X"}) == []
+    assert evidence.num("E1000") > evidence.num("E999") > evidence.num("E099")
+    assert sorted(["E1000", "E999", "E100"], key=evidence.num) == ["E100", "E999", "E1000"]
+    p = record(tmp_path, name="E01-example.md")      # too few digits stays refused
+    assert evidence.problems(p, {"CR_X"})

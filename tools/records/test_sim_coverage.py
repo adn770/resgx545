@@ -33,7 +33,7 @@ def tree(tmp_path, monkeypatch):
 def test_cited_tokens_and_ranges_are_spec_coverages():
     assert sim_coverage.cited("E601 and E804-E806; E810 to E811 (E820..E821)") == {
         "E601", "E804", "E805", "E806", "E810", "E811", "E820", "E821"}
-    assert sim_coverage.cited("E8040 xE601 0xE601") == set()
+    assert sim_coverage.cited("E12 xE601 0xE601 E601x") == set()
 
 
 def test_only_hardware_records_from_e600_must_be_cited(tree):

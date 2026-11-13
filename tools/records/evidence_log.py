@@ -18,7 +18,7 @@ WIDTH = 100
 def records() -> list[dict]:
     """The front matter of every record, in date then id order."""
     return sorted((evidence.parse(p)[0] for p in evidence.DIR.glob("*/E*.md")),
-                  key=lambda fm: (fm["date"], fm["id"]))
+                  key=lambda fm: (fm["date"], evidence.num(fm["id"])))
 
 
 def _wrap(text: str, indent: str = "") -> list[str]:
@@ -33,7 +33,7 @@ def _entry(fm: dict) -> list[str]:
 
 
 def render(recs: list[dict]) -> str:
-    recs = sorted(recs, key=lambda fm: (fm["date"], fm["id"]))
+    recs = sorted(recs, key=lambda fm: (fm["date"], evidence.num(fm["id"])))
     out = ["<!-- SPDX-" "License-Identifier: MIT -->",
            "<!-- SPDX-FileCopyrightText: 2026 Josep Torra -->",
            "# SGX545 evidence log", "",

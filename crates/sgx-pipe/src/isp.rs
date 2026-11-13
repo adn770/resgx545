@@ -564,8 +564,9 @@ pub fn resolve_tile_from(
 /// The source pixel (x, y) that the stored pixel (a, b) of tile (tx, ty), 32 x 16 pixels, holds
 /// in a multisampled render of `mode` (CR_ISP_MSAA mode 0 to 2) with `te_aa` the CR_TE_AA word
 /// (E503): x = 32 tx + 16 b31 + a div sx, y = 16 ty + 8 b30 + b div sy, (sx, sy) = (1, 1),
-/// (2, 1), (2, 2) for the modes 0, 1, 2; b30 counts in mode 2 only. Mode 0 was run with both
-/// bits clear only, and mode 3 not at all: they refuse for other inputs.
+/// (2, 1), (2, 2) for the modes 0, 1, 2; b30 counts in mode 2 only. E281's sample slots hold in
+/// the tiles past the first under every window run (E990). Mode 0 was read as an identity map with
+/// both bits clear only, and mode 3 not run at all: they refuse for other inputs (Q030).
 pub fn msaa_source(mode: u32, te_aa: u32, tx: u32, ty: u32, a: u32, b: u32) -> Result<(u32, u32), Outcome> {
     let (b31, b30) = (te_aa >> 31 & 1, te_aa >> 30 & 1);
     let (sx, sy) = match mode {
@@ -579,8 +580,8 @@ pub fn msaa_source(mode: u32, te_aa: u32, tx: u32, ty: u32, a: u32, b: u32) -> R
             ));
         }
         _ => {
-            // no question asks about mode 3 (no run used it): Q030 is the MSAA question that
-            // covers the tile and window past the first
+            // no other question asks about mode 3 (no run used it): Q030 keeps it with mode 0's
+            // windows once E990 held E281's slots past the first tile
             return Err(Outcome::unsupported("the window of mode 3 was not measured", &["Q030"]));
         }
     };

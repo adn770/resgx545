@@ -297,3 +297,17 @@ def test_references_name_open_questions():
                                                                          open_ids, rec)):
                 bad[str(p.relative_to(questions.ROOT))] = m
     assert not bad, bad
+
+
+def test_retirements_and_citing_records_past_e999(monkeypatch):
+    questions.check_retired({"Q002": "answered by E1000", "Q003": "folded into Q001 after E1234"})
+    with pytest.raises(ValueError):
+        questions.check_retired({"Q002": "answered by E12"})
+    monkeypatch.setattr(questions, "RETIRED", {"Q002": "answered by E1000",
+                                               "Q003": "folded into Q001 after E1000"})
+    for q in ("Q002", "Q003"):
+        assert questions.reference_problems(q, {"Q001"}, record="E999") == []
+        assert questions.reference_problems(q, {"Q001"}, record="E1000") == []
+        assert questions.reference_problems(q, {"Q001"}, record="E1001") != []
+    monkeypatch.setattr(questions, "RETIRED", {"Q002": "answered by E999"})
+    assert questions.reference_problems("Q002", {"Q001"}, record="E1000") != []

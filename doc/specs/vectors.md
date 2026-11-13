@@ -450,7 +450,7 @@ tiles, and a place past the target is cut by the PBE's rectangle. A command word
 record explains refuses (`Q206`, the words of a transfer with no record and a U1 bit outside the
 tile fields among them), a PDS program or input no record
 measured (a program that is not a template the records ran included) under `Q207`; `Q011` a copy's
-tag; `Q180` the iterator word; `Q066` the background object; `Q205` a copy's iterated coordinates;
+tag; `Q180` the iterator word; `Q066` the background object; `Q200` a copy's iterated coordinates;
 `Q078` the sampler words; `Q076` and `Q003` an access outside the scene's memory, and `Q003` also a
 job whose completion the words leave unknown. A refusal depends on the scene's words only, never on
 the recorded result. The scene vector lists the questions its poked words are open under in

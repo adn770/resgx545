@@ -26,7 +26,7 @@ DOC = evidence.ROOT / "doc" / "register_coverage.md"
 
 REG_LOC = re.compile(r"0x([0-9a-fA-F]{4})")
 FIELD_LOC = re.compile(r"0x([0-9a-fA-F]{4})\[(\d+)(?::(\d+))?\]")
-E_ID = re.compile(r"\bE\d{3}\b")
+E_ID = re.compile(evidence.ID_REF)
 TABLE_HEAD = re.compile(r"^\|(.+)\|\s*$")
 WRITE_COLUMN = "bits that took a write"
 REG_AND_MASK = re.compile(r"\b0x([0-9a-fA-F]{4}) 0x([0-9a-fA-F]{8})\b")
@@ -142,7 +142,7 @@ def registers(rows: list[dict] | None = None,
         if m and int(m.group(1), 16) == reg.offset:
             reg.fields[leaf] = reg.fields.get(leaf, 0) | _bits(m.group(2), m.group(3))
     for name, reg in regs.items():
-        reg.records = sorted(ids[name])
+        reg.records = sorted(ids[name], key=evidence.num)
     return sorted(regs.values(), key=lambda g: (g.offset, g.name))
 
 

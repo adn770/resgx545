@@ -320,18 +320,28 @@ static uint32_t ndc(int32_t px16, uint32_t size)
 /* The same for a vertex in 1/2^shift pixel: px / (2^(shift - 1) * size) - 1, computed in double. */
 static uint32_t ndc_unit(int32_t px, uint32_t size, unsigned int shift)
 {
-	return sgxfive_f32((float)((double)px / ((double)(1u << (shift - 1)) * (double)size) - 1.0));
+	return sgxfive_f32((float)((double)px / ((double)(1u << shift) / 2.0 * (double)size) - 1.0));
 }
 
+/*
+ * The CPU reference holds the vertices in 1/16 pixel, nearest and half up, and saturates at
+ * 2^29 so that the reference's products stay in 64 bits; a unit from 1 pixel (shift 0) to 1/2^20
+ * and any int32 coordinate are accepted.
+ */
 void sgxfive_tri_fine_unit(struct sgxfive_tri_params *p, const int32_t v[3][2], unsigned int shift)
 {
+	const int64_t lim = 1 << 29;
+
 	p->fine = true;
 	p->fine_shift = shift;
 	for (unsigned int i = 0; i < 3; i++)
 		for (unsigned int k = 0; k < 2; k++) {
+			int64_t x = v[i][k];
+
 			p->v256[i][k] = v[i][k];
-			/* the nearest 1/16 pixel, half up */
-			p->v[i][k] = (v[i][k] + (1 << (shift - 5))) >> (shift - 4);
+			x = shift >= 5 ? (x + ((int64_t)1 << (shift - 5))) >> (shift - 4) :
+			    x * ((int64_t)1 << (4 - shift));
+			p->v[i][k] = (int32_t)(x > lim ? lim : x < -lim ? -lim : x);
 		}
 }
 

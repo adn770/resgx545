@@ -7988,6 +7988,48 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   1 at tile slots 2 and up carry a nonzero byte under the index fill.
   *zls; HW, infer; data: `render-closing-r9-x:out/20261113-081821/zst/`,
   `cited-scratch:closing10/seeds/q120/`.*
+- `E990` Round 10 offline (Q030; no run): on the 48 kept --pixels images of r9-geo's stages seam1
+  and seam4 (E953, E954: tri-full renders 64 x 96 to 128 x 96 and six single triangles of new
+  slopes, CR_ISP_MSAA modes 0 to 2, CR_TE_AA 0x2, 0x6, 0xa and 0xe windows, the two controls
+  included), the landed region model (msaa_model.py, 1c0e8205..., frozen before the run) with E281's
+  sample slots (6, 2), (14, 6), (2, 10), (10, 14) in every tile gives the stored triangle pixels of
+  every tile past the first exactly, 48 of 48 jobs and 0 pixels off; five rival slot sets declared
+  and hashed before the images were read (q030_slots_rule.json, 0dd46dec...: every sample at the
+  centre, E281 mirrored in x, mirrored in y, transposed, the slots swapped within a pair) differ
+  from E281's on 30 to 42 jobs and are off the kept images past the first tile by 504, 484, 948, 264
+  and 910 pixels [HW data, read offline after the rivals' freeze; the E281 sets were frozen before
+  the run]; mode 0 with bits 31 or 30 ran on tri-full renders only, where the slots decide the edge
+  pixels but no identity map was read, and mode 3 did not run.
+  *isp; HW, infer; data: `render-closing-r9-geo:out/20261113-081038/seam1/`,
+  `render-closing-r9-geo:out/20261113-081038/seam4/`, `cited-scratch:closing10/rank/`.*
+- `E991` Round 10 offline (Q242; no run): past the target of r9-x's z242-c (80 x 40, G 2, a tile
+  area of 96 x 48, E977 scored only its 3200 in-target pixels), stored format 1 is min(floor(z0 *
+  2^24), 0xffffff) and format 2 floor(z0 * 2^16) in E490's layout, z0 the format-0 float the same
+  pixel stores there (E831's band, 105 distinct values from 0.403 to 1.0): H-EXT 1408 of 1408 dwords
+  (format 1) and 704 of 704 (format 2), frozen by hash (q242_edge_rule.json, ae732269...) before the
+  past-target dwords were read, against H-FILL (the fill left) 0 and 0 and H-ROUND (round(z0 *
+  0xffffff)) 832 and 683 [HW data, held out in dwords, not in jobs: the session's fit rows]; E465's
+  address rule recomputed for E411's 64 x 64 target (depth at scratch page 12, stencil at page 4, a
+  16-page buffer) gives the stored pages of E411's table for G 0, 1, 3, 5, 9 and 17 up to the first
+  page past the buffer each faulting row reaches (G 5: depth 12 and 15, stencil 4, then 18; G 9 and
+  17: depth 12, stencil 4, then 17 and 21), and E977 ran G 7 and 9 with a buffer sized to the extent
+  without a fault, so the extent past the buffer, not the pitch field, faults the job [infer]; one
+  misfit: at G 3 the rule puts tile rows 2 and 3 at pages 16 and 18 and E411 saw no fault.
+  *zls; HW, infer; data: `render-closing-r9-x:out/20261113-081821/zls/`,
+  `cited-scratch:closing10/rank/`.*
+- `E992` Round 10 offline (Q202, the perspective clause; no run): on r6-pixel's 114 kept jobs with w
+  other than 1 (stages g6-rwa 8 and g6-rw 106, E859; 64 x 64, w from 2.5e-4 to 8027, 58 distinct
+  snapped triangles), E606's coverage rule (centre sample, vertices rounded half up to 1/256 pixel,
+  E607, top-left ties) applied to the window coordinates 32 + 32 S x / w gives every stored image
+  exactly, 0 of 466944 pixels off, 114 of 114 jobs and 7296 of 7296 rows, under each of four rivals
+  for the divide declared and hashed before any image was compared (rule.json, 830bb58d...: exact x
+  / w, a float32 divide, a float32 reciprocal and product, and the TA's stored window X and Y
+  decoded from each kept parameter buffer) [HW data, held out: E606 frozen 2026-11-09, the jobs ran
+  2026-11-12]; the stored X and Y equal the exact snapped x / w at all 342 vertices, and no pixel
+  parts the rivals (the w ratio across a triangle is at most 1.1 in 105 jobs, 3.0 at most), so the
+  divide's arithmetic is not split [infer].
+  *isp; HW, infer; data: `render-closing-r6-pixel:out/20261112-142113/g6-rwa/`,
+  `render-closing-r6-pixel:out/20261112-142113/g6-rw/`, `cited-scratch:closing10/rank/`.*
 
 ## By unit
 
@@ -8026,7 +8068,7 @@ E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E2
 E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E508, E510, E590,
 E606, E607, E618, E660, E661, E662, E680, E681, E682, E683, E684, E727, E728, E731, E739, E740,
 E741, E757, E758, E762, E825, E827, E829, E912, E913, E914, E922, E934, E943, E952, E953, E954,
-E970, E971, E972, E973, E979, E984.
+E970, E971, E972, E973, E979, E984, E990, E992.
 
 ### mte
 
@@ -8102,4 +8144,4 @@ E413, E414, E427, E440, E545, E546, E700, E701, E702, E703, E737, E738, E755, E7
 ### zls
 
 Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467, E489, E490, E615, E628, E629,
-E663, E664, E665, E730, E831, E885, E903, E904, E977, E978, E981, E985.
+E663, E664, E665, E730, E831, E885, E903, E904, E977, E978, E981, E985, E991.

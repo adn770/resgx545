@@ -94,6 +94,7 @@ RETIRED: dict[str, str] = {
     "Q283": "answered by E958",
     "Q190": "answered by E971",
     "Q282": "answered by E982",
+    "Q205": "folded into Q200 after E992",
 }
 NAME = re.compile(r"Q\d{3}-[a-z0-9]+(-[a-z0-9]+)*\.md")
 REF = re.compile(r"\bQ\d{3}\b")
@@ -170,7 +171,7 @@ def check_retired(retired: dict[str, str]) -> None:
     the document that states the decision that closed it."""
     for q, why in retired.items():
         if not re.fullmatch(r"Q\d{3}", q) or not re.fullmatch(
-                r"answered by E\d{3}|folded into Q\d{3}( after E\d{3})?|decided in [\w./-]+\.md",
+                r"answered by E\d{3,}|folded into Q\d{3}( after E\d{3,})?|decided in [\w./-]+\.md",
                 why):
             raise ValueError(f"{q}: retired as {why!r}, not 'answered by E<nnn>', "
                              "'folded into Q<nnn>[ after E<nnn>]' or 'decided in <doc>.md'")
@@ -207,14 +208,14 @@ def reference_problems(text: str, open_ids: set[str], record: str | None = None)
     out = []
     for q in dict.fromkeys(REF.findall(text)):
         if q in RETIRED and RETIRED[q].startswith("folded into ") and record \
-                and " after E" in RETIRED[q] and int(record[1:]) <= int(RETIRED[q][-3:]):
+                and " after E" in RETIRED[q] and evidence.num(record) <= evidence.num(RETIRED[q].split()[-1]):
             continue
         elif q in RETIRED and RETIRED[q].startswith("folded into "):
             out.append(f"{q} was {RETIRED[q]}: cite {fold_target(RETIRED[q])}")
         elif q in RETIRED and RETIRED[q].startswith("decided in "):
             continue
         elif q in RETIRED and record and RETIRED[q].startswith("answered by ") \
-                and int(record[1:]) <= int(RETIRED[q][-3:]):
+                and evidence.num(record) <= evidence.num(RETIRED[q].split()[-1]):
             continue
         elif q in RETIRED:
             out.append(f"{q} is answered ({RETIRED[q]}): cite the answer")

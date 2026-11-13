@@ -1438,12 +1438,57 @@ def test_tri_unit_sets_the_vertex_unit():
     assert re.search(r"^tri: vertices4096 32768 32768 196608 81920 81920 229376$", r.stdout, re.M), r.stdout
 
 
-@pytest.mark.parametrize("k", ["3", "4", "21", "x", ""])
+@pytest.mark.parametrize("k", ["21", "x", "", "-1", "100"])
 def test_tri_unit_is_checked(k):
     r = run("--mock", "tri", "--tri-unit", k, "--tri-v", "0,0,256,0,0,256")
     assert r.returncode == 2 and "--tri-unit" in r.stderr, (k, r.stderr)
 
 
+@pytest.mark.parametrize("k", [0, 1, 4, 5, 20])
+def test_tri_unit_takes_0_to_20(k):
+    # Q199 past 2^25 px: units from a whole pixel (K 0) to 1/2^20; 0 is a unit, not "default"
+    v = "0,0,64,0,0,64"
+    r = run("--mock", "tri", "--tri-unit", str(k), "--tri-v", v)
+    # accepted and drawn (the reference may or may not agree with the mock at a tiny unit)
+    assert r.returncode in (0, 1) and "bad option" not in r.stderr, (k, r.stdout + r.stderr)
+    assert re.search(rf"^tri: vertices{1 << k} 0 0 64 0 0 64$", r.stdout, re.M), r.stdout
+
+
+def test_tri_v_takes_the_int32_range():
+    for v in ("-2147483648,2147483647,0,0,5,5", "2147483647,0,0,-2147483648,0,0"):
+        r = run("--mock", "tri", "--tri-unit", "0", "--tri-v", v)
+        assert r.returncode in (0, 1) and "bad option" not in r.stderr, (v, r.stdout + r.stderr)
+        assert f"vertices1 {v.replace(',', ' ')}" in r.stdout, r.stdout
+    for v in ("2147483648,0,0,0,0,0", "-2147483649,0,0,0,0,0"):
+        r = run("--mock", "tri", "--tri-v", v)
+        assert r.returncode == 2 and "six integers" in r.stderr, (v, r.stderr)
+
+
 def test_tri_unit_needs_tri_v():
     r = run("--mock", "tri", "--tri-unit", "12")
     assert r.returncode == 2 and "--tri-unit" in r.stderr and "--tri-v" in r.stderr, r.stderr
+
+
+def test_tri_stencil_fill_bytes_numbers_the_bytes(tmp_path, monkeypatch):
+    # Q121's lane 1: a fill `bytes` holds byte j = j & 0xff (a stencil byte names its own pixel),
+    # `bytes:S` starts the count at S (a shifted fill); the dump is the buffer as written
+    kp = tmp_path / "kpoke"
+    kp.write_text("")
+    monkeypatch.setenv("SGXFIVE_KPOKE", str(kp))
+    for fill, first in (("bytes", 0), ("bytes:3", 3), ("bytes:255", 255)):
+        d = tmp_path / fill.replace(":", "_")
+        d.mkdir()
+        r = run(*depth_args("--depth-pages", "4", "--stencil", "--stencil-fill", fill,
+                            "--isp2", "0x0e0200ff", "--depth-dump", str(d)))
+        assert r.returncode == 0, (fill, r.stdout + r.stderr)
+        assert re.search(rf"^stencil: 0x[0-9a-f]{{8}} 4 pages, fill {fill}$", r.stdout, re.M), \
+            r.stdout
+        assert (d / "stencil.1.bin").read_bytes() == bytes(
+            (first + j) & 0xff for j in range(16384)), fill
+
+
+@pytest.mark.parametrize("fill", ["bytes:", "bytes:256", "bytes:x", "bytes:-1", "byte"])
+def test_tri_fill_bytes_is_checked(fill):
+    r = run(*depth_args("--stencil", "--stencil-fill", fill))
+    assert r.returncode == 2 and "bad option --stencil-fill" in r.stderr, (fill, r.stderr)
+    assert "bytes" in r.stderr

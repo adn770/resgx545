@@ -301,7 +301,10 @@ session.toml binds to the tool (`source = "COMMIT:userspace/libsgxfive/tools/sgx
 `source_sha256`, checked at the commit, built from `git archive` into `debug/libmock/`): a `job:
 rejected` line or a usage refusal stops the mock before any world runs (r8-geo's world answered 23
 rows the kernel refuses `job: ok`). A row's `dbg:NAME=V` words are passed as `--mock-knob NAME=V`
-to a mock that lists that option, so a row with the wrong knob state is the tool's own refusal.
+to a mock that lists that option, so a row with the wrong knob state is the tool's own refusal. The
+replay has a kpoke file (`SGXFIVE_KPOKE`) as the real runner does, and any end that is
+not rc 0, or a `failed:` line, is a refusal unless the row declares it (`expect:NAME`, `expectdiff`,
+`expectfault`): a row that never ran is not "none refused".
 A tool needs a `source` or a `no_source = "reason"` (the guard, so the mock and the freeze, fail
 without either; round 8's sessions declared neither and no row was replayed), and `new_session.py`
 demands `--tool-src` or `--no-source NAME=REASON` for every tool. Then it copies the

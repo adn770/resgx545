@@ -62,7 +62,7 @@
  *                                 --dump-render files after every render N (DIR/tri.N.*);
  *                                 --depth: a depth buffer the ZLS pokes point at, its
  *                                 changed dwords and frequent values reported per render;
- *                                 a fill F is a value, index or bit:K; --depth-store,
+ *                                 a fill F is a value, index, bit:K or bytes[:S] (byte j holds (j + S) & 255); --depth-store,
  *                                 --stencil, --stencil-store: further buffers (the store base
  *                                 on its own, the stencil bases); --tri-full: the triangle
  *                                 covers the target; --tri-z A,B,C: its vertices' depths, -1 to 2;
@@ -290,10 +290,14 @@ static const char *const heap_names[DRM_SGXFIVE_HEAP_COUNT] = {
 
 #define KPR_MAX	16
 
-/* A buffer's fill: one value, the dword's index, or 0.25f / 0.75f by bit K of the index. */
+/*
+ * A buffer's fill: one value, the dword's index, 0.25f / 0.75f by bit K of the index, or
+ * `bytes[:S]`: byte j of the buffer is (j + S) & 0xff (a stencil buffer whose bytes name
+ * themselves).
+ */
 struct fill {
-	enum { FILL_VALUE, FILL_INDEX, FILL_BIT } mode;
-	uint32_t val;			/* the value, or the bit K */
+	enum { FILL_VALUE, FILL_INDEX, FILL_BIT, FILL_BYTES } mode;
+	uint32_t val;			/* the value, the bit K, or the bytes' start S */
 	bool given;
 };
 
@@ -303,6 +307,12 @@ static uint32_t fill_at(const struct fill *f, uint64_t i)
 		return (uint32_t)i;
 	if (f->mode == FILL_BIT)
 		return i >> f->val & 1 ? 0x3f400000 : 0x3e800000;
+	if (f->mode == FILL_BYTES) {
+		const uint32_t b = (uint32_t)(i * 4) + f->val;
+
+		return (b & 0xff) | ((b + 1) & 0xff) << 8 | ((b + 2) & 0xff) << 16 |
+		       ((b + 3) & 0xff) << 24;
+	}
 	return f->val;
 }
 
@@ -312,6 +322,10 @@ static void fill_print(const struct fill *f)
 		printf("fill index");
 	else if (f->mode == FILL_BIT)
 		printf("fill bit %u", f->val);
+	else if (f->mode == FILL_BYTES && f->val)
+		printf("fill bytes:%u", f->val);
+	else if (f->mode == FILL_BYTES)
+		printf("fill bytes");
 	else
 		printf("fill 0x%08x", f->val);
 }
@@ -357,7 +371,8 @@ struct opts {
 	bool tri_full;			/* tri --tri-full: the triangle covers the target */
 	bool tri_v_given;		/* tri --tri-v: the vertices, in 1/2^tri_unit pixel (default 1/256) */
 	int32_t tri_v[3][2];
-	uint32_t tri_unit;		/* tri --tri-unit: 0 (8), or 4 to 20 */
+	uint32_t tri_unit;		/* tri --tri-unit: 0 to 20 (a whole pixel to 1/2^20) */
+	bool tri_unit_given;		/* else 8 */
 	bool tri_z_given;		/* tri --tri-z A,B,C: the screen depth at each vertex */
 	float tri_z[3];
 	bool tri_isp2_given;		/* tri --isp2 V: ISP word 2 (stencil) in the state block */
@@ -1600,7 +1615,8 @@ struct probe_opts {
 		const char *emit_scene;	/* --emit-scene FILE: the built job's words */
 		bool v_set;		/* --tri-v: the vertices, in 1/2^unit pixel */
 		int32_t v256[3][2];
-		uint32_t unit;		/* --tri-unit: 0, or the shift (4 to 20) */
+		uint32_t unit;		/* --tri-unit: the shift (0 to 20) */
+		bool unit_set;		/* else 8 */
 		bool z_set;		/* --tri-z: the vertices' screen depths */
 		float z[3];
 		bool isp2_set;		/* --isp2 V: ISP word 2 in the state block */
@@ -2009,7 +2025,7 @@ static int probe_tri_check(struct probe_opts *po)
 		return fixed || pt->bg_layer || pt->width || pt->height || pt->max_width || pt->max_height ||
 		       pt->vertices || pt->coords || pt->copy_depth || pt->index_width ||
 		       pt->isp2_set || pt->blk_mask ||
-		       pt->v_set || pt->z_set || pt->unit ||
+		       pt->v_set || pt->z_set || pt->unit_set ||
 		       pt->add_mask || pt->blk_xor_mask || pt->cmd_xor_mask || pt->pbe_mask ||
 		       pt->cmd_mask || pt->vdm_mask || pt->vdm_xor_mask || pt->sideband_set || pt->dump_dir ||
 		       pt->nkpoke || pt->obj2 || pt->obj2_blk_mask || pt->obj2_pixel.n ||
@@ -2021,7 +2037,7 @@ static int probe_tri_check(struct probe_opts *po)
 		return -1;
 	if (pt->v_set && (pt->full || pt->vertices))
 		return -1;
-	if (pt->unit && !pt->v_set)
+	if (pt->unit_set && !pt->v_set)
 		return -1;
 	/* the second object: whole triangles among the copies, and its words only with it */
 	if (pt->obj2 && (pt->obj2 % 3 || pt->obj2 >= pt->vertices))
@@ -2366,14 +2382,14 @@ static void probe_tri_one(struct tool *t, const struct probe_file *f,
 			       p.v[2][0] / 16, p.v[2][1] / 16);
 		}
 		if (pt->v_set)
-			sgxfive_tri_fine_unit(&p, pt->v256, pt->unit ? pt->unit : 8);
+			sgxfive_tri_fine_unit(&p, pt->v256, pt->unit_set ? pt->unit : 8);
 		if (pt->z_set)
 			for (int v = 0; v < 3; v++)
 				p.zndc[v] = 2 * pt->z[v] - 1;
 		if (pt->v_set || pt->z_set) {
 			printf("probe %s:", f->name);
 			if (pt->v_set)
-				printf(" vertices%u %d %d %d %d %d %d%s", 1u << (pt->unit ? pt->unit : 8),
+				printf(" vertices%u %d %d %d %d %d %d%s", 1u << (pt->unit_set ? pt->unit : 8),
 				       pt->v256[0][0], pt->v256[0][1],
 				       pt->v256[1][0], pt->v256[1][1], pt->v256[2][0], pt->v256[2][1],
 				       pt->z_set ? "," : "");
@@ -3132,7 +3148,7 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 			p.v[2][1] = 3 * 16 * (int32_t)p.height;
 		}
 		if (o->tri_v_given)
-			sgxfive_tri_fine_unit(&p, o->tri_v, o->tri_unit ? o->tri_unit : 8);
+			sgxfive_tri_fine_unit(&p, o->tri_v, o->tri_unit_given ? o->tri_unit : 8);
 		if (o->tri_z_given)
 			for (int v = 0; v < 3; v++)
 				p.zndc[v] = 2 * o->tri_z[v] - 1;
@@ -3141,7 +3157,7 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		if (o->tri_isp2_given)
 			printf("tri: isp2 0x%08x\n", o->tri_isp2);
 		if (o->tri_v_given) {
-			printf("tri: vertices%u %d %d %d %d %d %d", 1u << (o->tri_unit ? o->tri_unit : 8),
+			printf("tri: vertices%u %d %d %d %d %d %d", 1u << (o->tri_unit_given ? o->tri_unit : 8),
 			       o->tri_v[0][0], o->tri_v[0][1],
 			       o->tri_v[1][0], o->tri_v[1][1], o->tri_v[2][0], o->tri_v[2][1]);
 			if (o->tri_z_given)
@@ -3548,6 +3564,11 @@ static bool parse_fill(const char *s, struct fill *f)
 		f->val = k;
 		return true;
 	}
+	if (!strncmp(s, "bytes", 5) && (!s[5] || s[5] == ':')) {
+		f->mode = FILL_BYTES;
+		f->val = 0;
+		return !s[5] || (parse_u32(s + 6, &k) && k <= 255 && (f->val = k, true));
+	}
 	f->mode = FILL_VALUE;
 	return parse_u32(s, &f->val);
 }
@@ -3568,7 +3589,7 @@ static bool parse_tri_z(const char *s, float z[3])
 	return true;
 }
 
-/* --tri-v X0,Y0,X1,Y1,X2,Y2: six integers, window coordinates in 1/256 pixel (below 2^22) */
+/* --tri-v X0,Y0,X1,Y1,X2,Y2: six integers, window coordinates in 1/2^K pixel, an int32 each (K 8 unless --tri-unit) */
 static bool parse_tri_v(const char *s, int32_t v[3][2])
 {
 	char *end;
@@ -3578,7 +3599,7 @@ static bool parse_tri_v(const char *s, int32_t v[3][2])
 
 		errno = 0;
 		x = strtoll(s, &end, 10);
-		if (errno || end == s || x < -(1 << 30) || x >= (1 << 30) ||
+		if (errno || end == s || x < INT32_MIN || x > INT32_MAX ||
 		    *end != (i < 5 ? ',' : 0))
 			return false;
 		v[i / 2][i % 2] = (int32_t)x;
@@ -3655,12 +3676,13 @@ static int parse_opts(int argc, char **argv, struct opts *o)
 			char *end;
 			unsigned long k = strtoul(argv[i + 1], &end, 10);
 
-			if (!*argv[i + 1] || *end || k < 5 || k > 20) {
-				fprintf(stderr, "sgxfive-test: bad option --tri-unit (5 to 20: --tri-v is in "
+			if (!*argv[i + 1] || *end || k > 20) {
+				fprintf(stderr, "sgxfive-test: bad option --tri-unit (0 to 20: --tri-v is in "
 					"1/2^K pixel)\n");
 				return -1;
 			}
 			o->tri_unit = (uint32_t)k;
+			o->tri_unit_given = true;
 			continue;
 		}
 		if (!strcmp(argv[i], "--tri-v") && i + 1 < argc) {
@@ -3701,8 +3723,8 @@ static int parse_opts(int argc, char **argv, struct opts *o)
 			if (strcmp(argv[i], fills[k]))
 				continue;
 			if (i + 1 >= argc || !parse_fill(argv[i + 1], fillp[k])) {
-				fprintf(stderr, "sgxfive-test: bad option %s (a value, index or bit:K, K "
-					"0 to 31)\n", argv[i]);
+				fprintf(stderr, "sgxfive-test: bad option %s (a value, index, bit:K, K "
+					"0 to 31, or bytes[:S], S 0 to 255)\n", argv[i]);
 				return -1;
 			}
 			o->zgiven |= k > 1 || k == 1;
@@ -4214,12 +4236,13 @@ int main(int argc, char **argv)
 				char *end;
 				unsigned long k = strtoul(argv[++i], &end, 10);
 
-				if (!*argv[i] || *end || k < 5 || k > 20) {
-					fprintf(stderr, "sgxfive-test: bad option --tri-unit (5 to 20: --tri-v "
+				if (!*argv[i] || *end || k > 20) {
+					fprintf(stderr, "sgxfive-test: bad option --tri-unit (0 to 20: --tri-v "
 						"is in 1/2^K pixel)\n");
 					return 2;
 				}
 				popts.tri.unit = (uint32_t)k;
+				popts.tri.unit_set = true;
 				continue;
 			}
 			if (!strcmp(argv[i], "--tri-v") && i + 1 < argc) {
@@ -4466,11 +4489,11 @@ int main(int argc, char **argv)
 		fprintf(stderr, "sgxfive-test: --isp2 is for tri and probe --tri\n");
 		return 2;
 	}
-	if (o.tri_unit && !o.tri_v_given) {
+	if (o.tri_unit_given && !o.tri_v_given) {
 		fprintf(stderr, "sgxfive-test: --tri-unit needs --tri-v\n");
 		return 2;
 	}
-	if (o.tri_unit && strcmp(cmd, "tri")) {
+	if (o.tri_unit_given && strcmp(cmd, "tri")) {
 		fprintf(stderr, "sgxfive-test: --tri-unit is for tri and probe --tri, with --tri-v\n");
 		return 2;
 	}

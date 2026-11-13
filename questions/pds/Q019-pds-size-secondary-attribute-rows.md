@@ -5,7 +5,7 @@ unit = "pds"
 kind = "hw"
 value = "medium"
 phase = 7
-evidence = ["E125", "E391"]
+evidence = ["E125", "E391", "E973"]
 terms = []
 +++
 
@@ -46,3 +46,12 @@ every pixel (exploration rows, Q066's word 1): whether the texel arrives at ever
 `douta` words reached sa0 to sa15 at 0, 1 and 4 rows (E125, E391), or is lost at 0 rows. It reads
 the size against a layered background's attribute, not the 32 or 64 attributes this question's
 experiment names, which stays to be run.
+
+Note 2026-11-13 (round 10 offline, decision R10-1 a (O10-5); no claim settled). E973 is the first
+record in which the secondary attribute size changes a result: in r9-k1's layered background object,
+bgobj_words[1] at 0 rows (0x30000) gave each background pixel a texel of the source but its own at
+only 74 of 3034 (143 distinct texels, mostly within 8 columns and 4 rows of its own; no texel at
+all, H-NOTEX, refuted), while at 1 and 4 rows every pixel had its own texel. So at 0 rows the field
+limits what reaches the background layer's task [infer], unlike E125's and E391's fill, where 0 rows
+passed all of the attributes tried. Which attributes go missing is not read (the texels are a
+symptom, not a register dump), and the 32 or 64 attribute experiment above stays to be run.
