@@ -815,6 +815,76 @@ def test_the_replay_has_a_kpoke_file_and_counts_every_unexpected_end_as_a_refusa
     assert len(bad) == 1 and "status 3" in bad[0], (bad, m.stdout)
 
 
+UNKNOWN_SRC = """#!/bin/sh
+[ "$1" = --mock ] || { echo "usage: not the library mock" >&2; exit 2; }
+shift
+[ "$1" = probe ] || { echo "job: ok"; echo "diff: 0 of 2048 pixels"; exit 0; }
+for a; do last=$a; done
+n=$(basename "$last" .bin)
+case "$*" in
+*--usage*) echo "usage: sgxfive-test probe: --usage" >&2; exit 2 ;;
+*--rejected*) echo "job: rejected (Invalid argument)"; exit 3 ;;
+esac
+echo "programs asm"
+case "$*" in *--noscratch*) ;; *) echo "probe $n: scratch at 0x3e003000 (64 KiB)" ;; esac
+case "$*" in
+*--hung*) echo "probe $n: failed: job hung, context lost (Timer expired)" ;;
+*) echo "probe $n: failed: job faulted, context lost (Input/output error)" ;;
+esac
+echo "probe $n: scratch unchanged"
+exit 3
+"""
+# libsgxfive src/mock.c runs a fill's or a copy's program only when its qword 1 is a limm
+# `mov o0, #imm` (a fill) or its own copy shader's instruction (a copy, probe --coords)
+LIMM_MOV_Q = 0xfc << 56 | 1 << 53 | 0x1234
+COPY_Q = 0x28851001 << 32 | 0xa0000000
+
+
+def program_bins(kp):
+    (kp / "bins").mkdir(exist_ok=True)
+    for name, q1 in (("own", LIMM_MOV_Q), ("own0", 0x1), ("copy", COPY_Q)):
+        (kp / "bins" / f"{name}.bin").write_bytes(
+            (0x5).to_bytes(8, "little") + q1.to_bytes(8, "little") + bytes(8))
+    toml = (kp / "session.toml").read_text()
+    (kp / "session.toml").write_text(toml.replace("[files]\nlaptop = []",
+                                                  '[files]\nlaptop = ["bins/*.bin"]'))
+
+
+def test_the_replay_runs_a_probe_of_our_program_as_not_simulated_and_stays_strict(repos):
+    """r13-tex and r13-flag named their probe fills t10p, a second name for t10 with no_source:
+    libsgxfive's mock runs only its own copy and fill programs, so every probe of a program of
+    ours faults there ("an unknown program") and 287031c's replay refused it. That end is now
+    the expected end of such a row (a `probe` of program files the mock would not run), said as
+    "program not simulated"; a usage refusal, `job: rejected`, another failure, a failure with
+    no scratch line (the job never submitted), a program the mock would run, or a --tri probe
+    still fail."""
+    kp = scaffold(repos)
+    bind_source(repos, kp, src=UNKNOWN_SRC)
+    program_bins(kp)
+    base = (kp / "tables/s0.txt").read_text()
+    ok_rows = ('n1|fit|safe|-|t4|probe --temps 32 --coords --pixels "$S/bins/own.bin"\n'
+               'n2|fit|safe|-|t4|probe --temps 32 "$S/bins/own0.bin"\n'
+               'n3|fit|risky|expectfault|t4|probe --temps 32 --coords "$S/bins/own.bin"\n')
+    m, bad = replay_findings(repos, kp, base, ok_rows)
+    assert not bad, (bad, m.stdout)
+    assert re.search(r"^ok +libmock: 5 rows of t4 replayed on \S+, none refused; 3 of them "
+                     r"program not simulated", m.stdout, re.M), m.stdout
+    assert re.search(r"^note libmock: program not simulated .*: tables/s0.txt n1, "
+                     r"tables/s0.txt n2, tables/s0.txt n3$", m.stdout, re.M), m.stdout
+    for row, word in [
+            ('x1|fit|safe|-|t4|probe --usage --coords "$S/bins/own.bin"', "usage"),
+            ('x1|fit|safe|-|t4|probe --rejected --coords "$S/bins/own.bin"', "job: rejected"),
+            ('x1|fit|safe|-|t4|probe --hung --coords "$S/bins/own.bin"', "status 3"),
+            ('x1|fit|safe|-|t4|probe --noscratch --coords "$S/bins/own.bin"', "status 3"),
+            ('x1|fit|safe|-|t4|probe --coords "$S/bins/copy.bin"', "status 3"),
+            ('x1|fit|safe|-|t4|probe --temps 32 "$S/bins/own.bin"', "status 3"),
+            ('x1|fit|safe|-|t4|probe --tri pixel --coords "$S/bins/own.bin"', "status 3"),
+            ('x1|fit|safe|-|t4|probe --coords --pixels', "status 3")]:
+        m, bad = replay_findings(repos, kp, base, row + "\n")
+        assert m.returncode != 0 and len(bad) == 1 and "tables/s0.txt x1" in bad[0] \
+            and word in bad[0] and "not simulated" not in m.stdout, (row, bad, m.stdout)
+
+
 def test_a_library_mock_without_mock_knob_replays_as_before(repos):
     kp = knob_session(repos, FAKE_SRC)
     t = kp / "tables/s0.txt"

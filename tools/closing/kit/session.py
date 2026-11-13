@@ -807,6 +807,45 @@ def libmock_build(kp, c, t):
     return binp, None
 
 
+# libsgxfive's mock (src/mock.c) runs a fill's or a copy's program only when it is its own: qword 1
+# a limm `mov o0, #imm` (a fill) or its copy shader's instruction (a copy, probe --coords); any
+# other program is "an unknown program" and the job faults. A probe of a program of ours ends so.
+MOCK_LIMM_MASK, MOCK_LIMM_MOV = 0xff << 56 | 3 << 52, 0xfc << 56 | 1 << 53
+MOCK_COPY = 0x28851001 << 32 | 0xa0000000
+UNKNOWN_END = re.compile(r"probe (\S+): failed: job faulted, context lost \(Input/output error\)")
+# probe forms whose program is not the fill's or copy's own (a triangle, a slot, a PDS, a place)
+NOT_A_FILL_PROBE = ("--tri", "--slot", "--pds", "--use", "--place", "--place-form")
+
+
+def _not_simulated(argv, r, cwd):
+    """Whether a replay ended as the library mock's unknown program: a `probe` fill or copy (no
+    --tri, --slot, --pds, --use, --place) of program files the mock would not run (qword 1 not its
+    copy instruction with --coords, not a limm mov without), ending rc 3 with no other failure
+    than `probe NAME: failed: job faulted, context lost (Input/output error)`, each after NAME's
+    scratch line (the argv accepted, the job submitted) and NAME one of the program files."""
+    if not argv or argv[0] != "probe" or any(a.split("=")[0] in NOT_A_FILL_PROBE for a in argv):
+        return False
+    progs = [p for p in (pathlib.Path(cwd) / a for a in argv[1:] if not a.startswith("-"))
+             if p.is_file()]
+    if not progs or r.returncode != 3:
+        return False
+    for p in progs:
+        b = p.read_bytes()
+        q1 = int.from_bytes(b[8:16], "little") if len(b) >= 16 else None
+        if q1 is None or (q1 == MOCK_COPY if "--coords" in argv
+                          else q1 & MOCK_LIMM_MASK == MOCK_LIMM_MOV):
+            return False
+    out = (r.stdout + r.stderr).splitlines()
+    fails = [i for i, ln in enumerate(out) if re.search(r"\bfailed:", ln)]
+    names = {p.stem for p in progs}
+    for i in fails:
+        m = UNKNOWN_END.fullmatch(out[i].strip())
+        if not m or m.group(1) not in names or not any(
+                ln.startswith(f"probe {m.group(1)}: scratch at ") for ln in out[:i]):
+            return False
+    return bool(fails)
+
+
 def _expand(args, env):
     """The argv a row's args give in the runner's shell (`eval "set -- $args"`)."""
     r = bounded(["bash", "-c", 'eval "set -- $1"; printf "%s\\0" "$@"', "_", args], 60,
@@ -826,7 +865,9 @@ def libmock(kp, say=print):
     (rc 2) or a crash is a finding, 'tables/STAGE.txt NAME: what'. A tool with no `source` in
     session.toml is said, not replayed. A row's `dbg:NAME=V` words are passed as `--mock-knob NAME=V`
     to a mock that lists that option, so a row whose knob state is wrong is the tool's own
-    refusal (E934's twin). Returns the findings."""
+    refusal (E934's twin). A probe of a program of ours that ends as the mock's unknown program
+    (_not_simulated) is not a finding but said, "program not simulated": the mock checked its
+    argv, usage and the kernel's refusals only. Returns the findings."""
     kp = pathlib.Path(kp).resolve()
     c = config(kp)
     paths = {tool_path(c, c["prefix"], t): t for t in c["tools"]}
@@ -850,6 +891,7 @@ def libmock(kp, say=print):
     home = top / "home"
     home.mkdir()
     n = stateless = 0
+    nsim = {}
     for st in stages(c):
         for row in _rows(kp / "tables" / f"{st}.txt"):
             name, tool, args = row[0], row[4], row[5]
@@ -894,14 +936,21 @@ def libmock(kp, say=print):
                 bad.append(f"{where}: the tool's usage refusal: {r.stderr.splitlines()[0]}")
             elif r.returncode < 0 or r.returncode >= 128 or r.returncode == 142:
                 bad.append(f"{where}: the library mock ended with status {r.returncode}")
+            elif _not_simulated(argv, r, w):
+                nsim.setdefault(tool, []).append(where)
             else:
                 why = _unexpected_end(row[3].split(), r)
                 if why:
                     bad.append(f"{where}: {why} (the row never ran on the library mock)")
     if not bad:
         for t, k in count.items():
+            ns = len(nsim.get(t, []))
             say(f"ok   libmock: {k} rows of {t} replayed on {c['tools'][t]['source']}, none "
-                "refused")
+                "refused" + (f"; {ns} of them program not simulated" if ns else ""))
+    for t, rows in nsim.items():
+        say(f"note libmock: program not simulated (a probe of a program of ours: the mock's "
+            f"unknown program fault, after the argv, usage and rejection checks): "
+            + ", ".join(rows))
     if stateless:
         say(f"note libmock: {stateless} noreset row(s) replayed without the state of the row "
             "before (every replay starts from a fresh library mock)")

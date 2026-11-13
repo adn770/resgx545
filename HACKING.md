@@ -304,7 +304,15 @@ rows the kernel refuses `job: ok`). A row's `dbg:NAME=V` words are passed as `--
 to a mock that lists that option, so a row with the wrong knob state is the tool's own refusal. The
 replay has a kpoke file (`SGXFIVE_KPOKE`) as the real runner does, and any end that is
 not rc 0, or a `failed:` line, is a refusal unless the row declares it (`expect:NAME`, `expectdiff`,
-`expectfault`): a row that never ran is not "none refused".
+`expectfault`): a row that never ran is not "none refused". One end is expected without a word:
+the mock runs a fill's or a copy's program only when it is its own (`src/mock.c`: qword 1 a limm
+`mov o0, #imm`, or its copy shader's instruction with `--coords`), so a `probe` of a program of
+ours (no `--tri`, `--slot`, `--pds`, `--use` or `--place`) faults there as "an unknown program".
+When the row's program files are not ones the mock runs and the replay ends rc 3 with no other
+failure than `probe NAME: failed: job faulted, context lost (Input/output error)` after NAME's
+scratch line, the row passes and the replay lists it as "program not simulated": its argv, usage
+and the kernel's refusals were checked, its program was not (round 13's t10p name, a second name
+for t10 with `no_source`, is no longer needed).
 A tool needs a `source` or a `no_source = "reason"` (the guard, so the mock and the freeze, fail
 without either; round 8's sessions declared neither and no row was replayed), and `new_session.py`
 demands `--tool-src` or `--no-source NAME=REASON` for every tool. Then it copies the
