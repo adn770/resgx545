@@ -672,3 +672,41 @@ def test_a_freeze_the_session_freezes_keeps_its_bytes(world):
     r = run(world, "edm/closing-demo")
     assert r.returncode == 0, r.stdout + r.stderr
     assert "RUN_ALL PASSED" in r.stdout
+
+
+def toolsrc_world(world):
+    tool, data = world[0], world[1]
+    src = tool / "userspace/t.c"
+    src.parent.mkdir(parents=True)
+    commits = {}
+    for v in ("one\n", "two\n", "three\n"):
+        src.write_text(v)
+        git(tool, "add", "userspace")
+        git(tool, "commit", "-qm", v.strip())
+        commits[v.strip()] = git(tool, "rev-parse", "HEAD")
+    s = data / "edm/closing-demo"
+    frozen = (s / "FROZEN.sha256").read_text()
+    run_all = s / "tests/run_all.sh"
+    run_all.write_text(run_all.read_text().replace(
+        'echo "RUN_ALL PASSED"',
+        '[ "$(cat "$HOME/src/resgx545/userspace/t.c")" = two ] || { echo "toolsrc"; exit 1; }\n'
+        'echo "RUN_ALL PASSED"'))
+    (s / "FROZEN.sha256").write_text(frozen.replace(sha(RUN_ALL), sha(run_all.read_text())))
+    return s, commits
+
+
+def test_a_tool_source_pinned_by_commit_is_verified_at_that_commit(world):
+    """r8-k2 and r8-lgeo pin their tool source as `<sha256>  <commit>:<path>` in TOOLSRC.sha256:
+    the blob at that commit is verified and the worktree is that commit (no warning)."""
+    s, commits = toolsrc_world(world)
+    (s / "TOOLSRC.sha256").write_text(f"{sha('two' + chr(10))}  {commits['two'][:7]}:userspace/t.c\n")
+    r = run(world, "edm/closing-demo")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "warning" not in r.stdout, r.stdout
+
+
+def test_a_tool_source_pinned_by_commit_that_differs_fails(world):
+    s, commits = toolsrc_world(world)
+    (s / "TOOLSRC.sha256").write_text(f"{sha('two' + chr(10))}  {commits['one']}:userspace/t.c\n")
+    r = run(world, "edm/closing-demo")
+    assert r.returncode != 0 and "FAIL (TOOLSRC" in r.stdout and "hashes to" in r.stdout, r.stdout

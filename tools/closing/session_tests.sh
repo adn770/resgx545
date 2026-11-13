@@ -213,7 +213,19 @@ toolsrc_commit() {
         [ $ok = 1 ] && { echo "$c"; return; }
     done
 }
-if [ -f "$C/TOOLSRC.sha256" ] && ! awk '$2 ~ /^\//' "$C/TOOLSRC.sha256" | grep -q .; then
+# a source pinned by commit (`<sha256>  <commit>:<path>`, r8-k2 and r8-lgeo) is verified at that
+# commit, and the worktree is that commit
+if [ -f "$C/TOOLSRC.sha256" ] && awk '$2 ~ /^[0-9a-f]+:/' "$C/TOOLSRC.sha256" | grep -q .; then
+    while read -r h spec; do
+        case "$spec" in [0-9a-f]*:*) ;; *) continue ;; esac
+        tc=$(git -C "$TOOL" rev-parse --verify -q "${spec%%:*}^{commit}") \
+            || { echo "session_tests: $SESSION FAIL (TOOLSRC.sha256: no commit ${spec%%:*})"; exit 1; }
+        sum=$(git -C "$TOOL" show "$tc:${spec#*:}" 2>/dev/null | shasum -a 256 | cut -d' ' -f1)
+        [ "$sum" = "$h" ] || { echo "session_tests: $SESSION FAIL (TOOLSRC.sha256: $spec hashes to $sum, not $h)"; exit 1; }
+        BASE=$tc
+        echo "session_tests: tool source verified, $spec"
+    done < "$C/TOOLSRC.sha256"
+elif [ -f "$C/TOOLSRC.sha256" ] && ! awk '$2 ~ /^\//' "$C/TOOLSRC.sha256" | grep -q .; then
     tc=$(toolsrc_commit "$C/TOOLSRC.sha256")
     if [ -n "$tc" ]; then BASE=$tc
     else echo "session_tests: warning: no commit holds the frozen tool source (TOOLSRC.sha256)"
