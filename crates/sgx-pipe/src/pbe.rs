@@ -63,6 +63,11 @@ pub fn pack_of(sideband: u32) -> Result<Pack, Outcome> {
         return Err(Outcome::unsupported("a sideband without the tile-relative bit 9", &["Q074"]));
     }
     // bits 8:6 pick a channel only in modes 7 and 8 and change no pixel in modes 0 to 3 (E030, E383)
+    if sideband & 0xffff_fc00 == 0x1000 && sideband & 0x3f <= 6 {
+        // E383: words of no colour; E1028: no fixed image (its replicate control failed; post hoc
+        // per-pixel classes whose layout moves between sessions and whose fields follow o0)
+        return Err(Outcome::unsupported("sideband bit 12 in pack modes 0 to 6 (E1028)", &["Q046"]));
+    }
     if sideband & 0xffff_fc00 != 0 {
         return Err(Outcome::unsupported("sideband bits 10 and up in a pack mode 0 to 3", &["Q046"]));
     }
@@ -291,6 +296,21 @@ mod tests {
         assert_eq!(ids(0x600), ["Q046"]);
         // bits 8:6 change no pixel in modes 0 to 3 (E030, E383)
         assert!(pack_of(0x200 | 7 << 6).is_ok());
+    }
+
+    #[test]
+    fn sideband_bit_12_has_no_model() {
+        // E1028: bit 12's words in modes 0 to 6 are no fixed image (its replicate control failed;
+        // post hoc a per-pixel class layout that moves between sessions, fields that follow o0)
+        for m in 0..7u32 {
+            match pack_of(0x1200 | m) {
+                Err(Outcome::Unsupported { why, ids }) => {
+                    assert_eq!(ids, ["Q046"], "mode {m}");
+                    assert!(why.contains("E1028"), "{why}");
+                }
+                o => panic!("mode {m}: {o:?}"),
+            }
+        }
     }
 
     #[test]

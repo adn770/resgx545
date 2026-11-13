@@ -1,11 +1,11 @@
 +++
 id = "Q177"
-question = "does the offset that T0 address modes 4 to 7 add on the u axis, 8 max(W, H) + 52 dwords past the v rule's texel (post hoc on eleven twiddled textures, E1000; no kept job outside them parts max(W, H) from W, E1017), hold on a held-out shape with H > W, format and type, and are mode 5's reads off the texture a rule: 5 M + 52 + t left and 6 M + 52 + t right (E983, E1000), 7 M + 52 + s above and 4 M + 52 + s below, and one dword per corner from a base that changes with the shape (16 at 16 x 16, 20 at 32 x 8; post hoc, E1017), M = max(W, H)"
+question = "what is the base of mode 5's corner dwords past the texture (16 at 16 x 16, 20 at 32 x 8, 24 at 64 x 16 and 16 x 64; post hoc 4 log2 max(W, H), E1026), why does a u mode 4 to 7 add 8 max(W, H) + 52 texels and mode 5 its side constants, and do texture types 1, 3 and 4 take these modes"
 unit = "texture"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E565", "E033", "E932", "E957", "E983", "E1000", "E1017"]
+evidence = ["E565", "E033", "E932", "E957", "E983", "E1000", "E1017", "E1026"]
 terms = ["T0.ADDRMODE_U", "T0.ADDRMODE_V"]
 +++
 
@@ -71,3 +71,13 @@ constant per side plus s (7 M + 52 + s above, 4 M + 52 + s below, post hoc); E98
 u, naming this question. What stays: a held-out H > W shape outside E1000's (16 x 64 or 64 x 16
 parts the corner bases (W + H) / 2 and 12 + M / 4, 40 against 28; 8 x 64 parts max from W), mode
 5 above and below where M is not W, why these constants, other formats and texture types.
+
+Narrowed 2026-11-13 (round 13, session r13-tex, decision R13-1 a; E1026; the question line is
+rewritten to what stays, the question is not retired: every frozen corner form failed). Held out:
+8 max(W, H) + 52 past E561's index at 32 x 64, 8 x 64 and 128 x 32 in modes 4 and 6 and 32 x 64 in
+mode 7 (7 of 7; the width's form failed 5, the height's 2), in texels on a u16 32 x 64; with u and v
+in mode 5 the side, above and below reads follow max(W, H) (5 M, 6 M, 7 M and 4 M + 52 plus the
+row or column) and the inside the index plus 8 M + 52, at 64 x 16 and 16 x 64. The corners read a
+base plus 0 to 3; the base is 24 at both shapes, which no frozen form gave ((W + H) / 2, 12 + M / 4,
+12 + W / 4). The strided type reads modes 4 to 7 as mode 0 (E565's bd-st rows, read at the fold).
+What stays: the corner base held out, the constants' reason, types 1, 3 and 4.

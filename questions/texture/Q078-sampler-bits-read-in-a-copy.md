@@ -1,11 +1,11 @@
 +++
 id = "Q078"
-question = "what do T3 bits 11 and 12 select, given that they change nothing on a strided texture and every pixel of a twiddled chain texture (E564, E566), and what does bit 14 do on a twiddled texture, where it faulted (E566), and in a filtered sample, given that on a strided texture it moves a point sample by floor(4096 clamp(u, 0, 1)) texels (E1003)?"
+question = "what does T3 bit 14 do on a twiddled texture, where it faulted (E566), given that on a strided texture it moves a point sample by floor(4096 clamp(u, 0, 1)) texels (E1003) and a bilinear footprint as a whole (E1027)"
 unit = "texture"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E274", "E397", "E566", "E564", "E722", "E723", "E968", "E975", "E1003"]
+evidence = ["E274", "E397", "E566", "E564", "E722", "E723", "E968", "E975", "E1003", "E1027"]
 terms = ["T3.BIT10", "T3.BIT14", "T3.BITS19_18", "T3.BITS28_27", "T0.BIT27", "T3.BITS7_0"]
 +++
 
@@ -111,3 +111,11 @@ more), the last level and a constant dword, nearest and bilinear. E564 and E975 
 corrections that say so. A later row: bit 11 cleared at LOD 0 to 6, bit 12 with T0's maximum
 level below 6 and at LOD 0, bits 12:11 = 10, a 32 x 32 chain. [infer] A 2-bit LOD-mode field (00
 level 0, 01 the gradient's level, 11 the coarsest) fits the three values seen; 10 is untested.
+
+Narrowed 2026-11-13 (round 13, session r13-tex, decision R13-1 a; E1027; the question line is
+rewritten to what stays; not retired: R13-9 needs r13-flag's F1 for bit 14 on a twiddled texture).
+Answered: T3 bits 12:11 select the level on a twiddled chain whatever the LOD: 00 level 0 (9 of 9
+held-out rows, LOD 0 to 6, a 32 x 32 chain, mips off), 01 the LOD's level, 11 and 10 the last level
+T0's max level allows (3 of 3 and 1 of 1); a LOD bias and a constant address failed. Bit 14 under a
+bilinear sample on a strided texture moves the footprint by E1003's count (1 of 1). What stays: bit
+14 on a twiddled texture.

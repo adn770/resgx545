@@ -45,8 +45,8 @@ list.
   in an ordinary TA, 3D, DPM or transfer job, and how long does ... (E890, E902, E921)
 - `Q070` ta, high: what do the TA object's format word bits 15:8 and above and its set masks select
   beyond the settings seen, and does the fitted region test ... (E543, E544, E777)
-- `Q078` texture, high: what do T3 bits 11 and 12 select, given that they change nothing on a
-  strided texture and every pixel of a twiddled chain texture (E564, ... (E968, E975, E1003)
+- `Q078` texture, high: what does T3 bit 14 do on a twiddled texture, where it faulted (E566), given
+  that on a strided texture it moves a point sample by ... (E975, E1003, E1027)
 - `Q050` usse, high: what do the visibility group's instructions do, and how do smp's mipmaps and
   LOD values, the border address modes, the compressed and YUV ... (E563, E565, E568)
 - `Q047` vdm, high: what do VDM_STATE1 bit 8, bits 11:9 and bits 15:13 select for a state task, when
@@ -85,8 +85,8 @@ list.
   IEEE single (sign, NaN and exponent) and store it at some of the ... (E387, E406, E429)
 - `Q040` pbe, medium: what do EMIT2 bits 15:8 count, given that 4v pixels of each tile are stored
   for an even v up to 0x80, odd values hang and values above 0x80 ... (E266, E267, E382)
-- `Q046` pbe, medium: do SIDEBAND bits 8:6 select a channel in pack modes 20 and 27 (they do in
-  modes 7 and 8 and are ignored in 15, 18, 24, 25 and 28, E383), ... (E269, E383, E999)
+- `Q046` pbe, medium: what are the words sideband bit 12 stores in pack modes 0 to 6 (post hoc,
+  E1028: per-pixel classes whose layout changes between sessions ... (E383, E999, E1028)
 - `Q074` pbe, medium: why does a second end-of-tile emit in a tile leave the next job's image wrong,
   and does SIDEBAND bit 9 mark an emit that counts against a ... (E239, E240, E386)
 - `Q019` pds, medium: what does the secondary attribute size (bits 24:18 of dword 1 of the
@@ -252,16 +252,16 @@ list.
   value does, E567, E726), and if one does, how are its slices ... (E941, E942, E958)
 - `Q115` texture, low: does the sampler filter anisotropically on this core, and which bits of the
   texture words or the smp operands select it and its ratio? (E564, E720, E723)
-- `Q177` texture, low: does the offset that T0 address modes 4 to 7 add on the u axis, 8 max(W, H) +
-  52 dwords past the v rule's texel (post hoc on eleven ... (E983, E1000, E1017)
+- `Q177` texture, low: what is the base of mode 5's corner dwords past the texture (16 at 16 x 16,
+  20 at 32 x 8, 24 at 64 x 16 and 16 x 64; post hoc 4 log2 max(W, ... (E1000, E1017, E1026)
 - `Q179` texture, low: how are the blocks and the data bits of formats 23 to 26 laid out (a data bit
   changes 7 to 13 pixels, the blocks of 23 and 24 do not differ ... (E342, E568, E724)
 - `Q181` texture, low: does the fill's transfer command load a colour-space set at all (xfer:17^=1
   and xfer:18 to 22 made no difference for formats 28 and 29, ... (E037, E040, E568)
 - `Q280` texture, low: what makes up to 56 of 2048 pixels of a gradient job differ from the
   Euclidean footprint of the pairs (op0, op2) and (op1, op3) with a LOD ... (E563, E721, E744)
-- `Q282` texture, low: does the bilinear sRGB sample (T0 bit 27), E982's stage rule with every stage
-  result below 2^-14 flushed to +0 (held out offline on ... (E982, E1004, E1016)
+- `Q282` texture, low: how does a trilinear sRGB sample (T0 bit 27 with T0 bit 9) lerp the two
+  levels' halves, given that E982's stage rule with the flush below ... (E1004, E1016, E1025)
 - `Q017` usse, low: why does g19 read 0x1a as a store's source but 0 through a mov and as the pixel?
   (E085, E086, E372)
 - `Q048` usse, low: do the MADD0 and MADD1 clock gates follow the USSE pipes' floating-point
@@ -323,7 +323,7 @@ list.
 
 ## Recent records
 
-160 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+164 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
 - `E1032` dpm, 2026-11-13: r13-dpm stage pr2 on module B60AB0B4 (Q036: does 0x0748 bit 2 clear with
@@ -338,6 +338,18 @@ the claims are cut at 200 characters.
 - `E1029` zls, 2026-11-13: r13-zls stage zbase (11 jobs, E977's z243 form on t10 with the depth test
   never and the load buffer filled with its own dword indices, render details dword 12 poked after
   the tool's own pokes): the ...
+- `E1028` pbe, 2026-11-13: r13-tex stage sb12 on module B60AB0B4 (Q046 sideband bit 12; E383's probe
+  --tri form, sideband 0x1200 | mode, modes 0 to 6, colours 0xc0804020 and 0x13579bdf, one moved
+  triangle; 16 jobs): the mode 0 ...
+- `E1027` texture, 2026-11-13: r13-tex stage t3c on module B60AB0B4 (Q078; T3 bits 11, 12 and 14, 16
+  probe fills): the control passed (E564's an-t3b11, its kept image); on twiddled chains with
+  smp2dreplace, T3 bits 12:11 = 00 read ...
+- `E1026` texture, 2026-11-13: r13-tex stage addr4 on module B60AB0B4 (Q177; T0 u address modes 4 to
+  7 on twiddled textures, 12 probe fills): both controls passed (E1000's 16 x 64 mode 4 and E565's
+  bd-uv5, their kept images); ...
+- `E1025` texture, 2026-11-13: r13-tex stage srgb3 on module B60AB0B4 (Q282; bilinear sRGB, T0 bit
+  27, 9 probe fills): both controls passed (E723's g-bl-st-a and p1132's an-t0b27, their kept
+  images, 2048 of 2048); 'FTZ-OUT ...
 - `E1021` vdm, 2026-11-13: Round 12 offline (Q163; no run): on the 11.31 VDM state sweeps
   (vdm/state-units: 133 jobs of three scripts in run order, E545's two-block stream; c taken as 0 at
   each script's start, every script ...
@@ -809,7 +821,7 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-50 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+51 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
 - `render/closing-r9-z2`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t9
@@ -826,6 +838,7 @@ srcversion, fork tip, laptop tools.
   tools ~/sgxfive-test-rgn4
 - `render/closing-r8-geo`: 2026-11-13; module 37EC97AB0CB37213C42FCCC; tools ~/sgxfive-test-rgn4
 - `render/closing-r13-zls`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
+- `render/closing-r13-tex`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r13-dpm`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r10-zls`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4,
   ~/sgxfive-test-t9
@@ -885,7 +898,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 16 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 17 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at

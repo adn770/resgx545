@@ -96,7 +96,10 @@ pub fn sample(s: &Sample, load: &mut Load) -> Result<Vec<u32>, Fail> {
         // E723, E724: point samples of level 0, as Texture::new admits them; E982: sRGB bilinear
         // (on E723's fills only; E1004: the rule misses where a stage's result is subnormal)
         if levels != [(0, 64)] || s.pcf.is_some() || s.srd != Srd::None || bilinear && tex.format == 27 {
-            return open("ETC1 or sRGB blended, with .pcf or an SRD mode, or ETC1 filtered (not run; Q282)");
+            return open(
+                "ETC1 or sRGB blended (E1025: a trilinear sRGB lerp is not the stage rule), with .pcf or an SRD \
+                 mode, or ETC1 filtered (not run; Q282)",
+            );
         }
         if bilinear {
             return Ok(vec![tex.srgb_bilinear(u, v, s.one_d, load)?]);
@@ -326,12 +329,13 @@ fn half_to_f32(h: u32) -> f32 {
 /// bit 11: the captured pixel fetches of the closed driver set it (0x00800800)
 /// **[CAP]**, the mip probes (E041), which do, read as the model without it. On a twiddled
 /// texture only those are measured; bits 10, 13, 14, 27 and 28 act in ways
-/// not modelled here; bits 11 and 12 change nothing on a strided texture again in E975. Bit 14 on
+/// not modelled here; bits 11 and 12 change nothing on a strided texture again in E975, and on a
+/// twiddled chain select the level (E1027, Texture::pick). Bit 14 on
 /// a stride texture moves the texel by floor(4096 clamp(u, 0, 1)) texels (E968's S * S rule
 /// failed; E975 post hoc; E1003: texels, not dwords, on a 16-bit texture; held out on six
 /// geometries), see sample.
 fn t3_fields(t3: u32, stride: bool) -> Result<([i64; 2], u32), Fail> {
-    let not_measured = if stride { 0x1800_2400 } else { 0x187c_77ff };
+    let not_measured = if stride { 0x1800_2400 } else { 0x187c_67ff };
     if t3 & not_measured != 0 {
         return open(format!("T3 bits 0x{:08x}", t3 & not_measured));
     }
@@ -412,8 +416,9 @@ fn half_value(h: u32) -> f64 {
 /// 0 the first half unchanged; else both halves floored to the ulp of the larger one (an 11-bit
 /// mantissa at its exponent), lerped exactly by k / 64 towards `b`, and rounded to a half,
 /// nearest with ties up; a result below 2^-14 (a subnormal half) is flushed to +0 (E1004 post
-/// hoc, held out offline on an-t0b27's 12 halves where it parts, one pixel column, E1016; the y
-/// stage's own flush rests on one half and the threshold between 5.7e-5 and 6.4e-5, Q282).
+/// hoc, held out offline on an-t0b27's 12 halves where it parts, one pixel column, E1016; held out
+/// on hardware with the y stage's own result flushed, five strided rows reading each stage alone
+/// and both, the threshold between 5.69e-5 and 6.16e-5, E1025).
 fn srgb_stage(a: u32, b: u32, k: u32) -> u32 {
     if k == 0 {
         return a;
@@ -538,6 +543,9 @@ struct Texture {
     bits: bool,
     /// T0 bit 27: the sRGB decode (E723).
     srgb: bool,
+    /// T3 bits 12:11 on a twiddled texture (E1027): 1 the LOD's level, 0 level 0, 2 and 3 the
+    /// last level T0's max level allows (pick).
+    lodsel: u32,
 }
 
 impl Texture {
@@ -591,6 +599,7 @@ impl Texture {
             blocks: t1 >> 29 == 4,
             bits: t1 >> 29 == 5,
             srgb,
+            lodsel: if stride { 1 } else { t3 >> 11 & 3 },
         };
         if t1 >> 29 == 3 {
             // E940, E958: max(8, w) texels a row, 8 dwords at format 12, 8 16-bit words at format 5
@@ -647,6 +656,28 @@ impl Texture {
             };
         }
         let min = matches!(t0 >> 10 & 3, 1 | 2);
+        if self.lodsel != 1 {
+            // E1027: T3 bits 12:11 = 00 read level 0 whatever the LOD (mips off too), 1x the last
+            // level T0's max level allows; run with one filter both ways and without bit 9 only
+            if mag != min || t0 >> 9 & 1 != 0 || one_d {
+                return open("T3 bits 12:11 other than 01 with T0 bit 9, two filters or 1D (not run; Q078)");
+            }
+            let (mx, top) = (t0 >> 17 & 15, t0 >> 21 & 0x3f);
+            if self.lodsel == 0 {
+                return level0(min);
+            }
+            if top == 0 || mx == 0 || mx == 15 {
+                return open("T3 bit 12 with mips off (not run; Q078)");
+            }
+            if self.w != self.h && !CHAIN_SIZES.contains(&(self.w, self.h)) {
+                return open(format!("mipmaps of a non-square {}x{} texture (not run)", self.w, self.h));
+            }
+            let last = self.w.trailing_zeros().max(self.h.trailing_zeros()).min(mx);
+            if last > 0 && self.bytes()? != 4 {
+                return open("mip levels of a format other than 32 bits");
+            }
+            return Ok((vec![(last, 64)], min));
+        }
         // E276, E441: bits 20:17 are the highest level read (0 and 15 level 0 only), bits 26:21 an
         // LOD bias in eighths, 63 as none; the level is also capped at the chain's last
         let mx = t0 >> 17 & 15;
@@ -879,8 +910,25 @@ impl Texture {
     /// single-side rival failing a held-out shape, post hoc), and past the texture mode 5 reads
     /// 5 max(W, H) + 52 + t left and 6 max(W, H) + 52 + t right (E983, E1000, post hoc), above and
     /// below it 7 M + 52 + s and 4 M + 52 + s and a corner dword whose base moves with the shape
-    /// (E1017, post hoc; no kept job parts max(W, H) from W): open (Q177).
+    /// (E1017, post hoc). E1026 held out 8 max(W, H) + 52 texels on seven shapes of both
+    /// orientations in modes 4, 6 and 7 and on a 16-bit format: on u, modes 4 and 5 wrap as v's
+    /// 4 (repeat), 6 and 7 clamp, and the index moves by that many texels; mode 5 inside the
+    /// texture alike. Mode 5 past the texture (its sides and above and below held out with M by
+    /// E1026, the corner base no frozen form gave) is not modelled: open (Q177).
     fn fetch(&self, x: i64, y: i64, load: &mut Load) -> Result<u32, Fail> {
+        let mut umode_extra = 0u32;
+        if self.row.is_none() && (4..8).contains(&self.address[0]) {
+            let (ux, vy) = (self.offset[0] + x, self.offset[1] + y);
+            let past_u = self.address[0] == 5 && !(0..self.w as i64).contains(&ux);
+            let past_v = self.address[0] == 5 && self.address[1] == 5 && !(0..self.h as i64).contains(&vy);
+            if past_u || past_v {
+                return open(
+                    "address mode 5 on u past the texture (E1000, E1017 post hoc; E1026: the sides by \
+                     max(W, H), the corner base no frozen form; Q177)",
+                );
+            }
+            umode_extra = 8 * self.w.max(self.h) + 52;
+        }
         let axis = |t: i64, n: u32, mode: u32, v: bool| -> Result<u32, Fail> {
             let n = n as i64;
             let clamp = |t: i64| t.clamp(0, n - 1);
@@ -895,12 +943,11 @@ impl Texture {
                     }
                     2 => clamp(t),
                     3 => clamp(if t < 0 { -t - 1 } else { t }),
-                    4 | 5 if v => t.rem_euclid(n),
-                    6 | 7 if v => clamp(t),
+                    4 | 5 if v || self.row.is_none() => t.rem_euclid(n),
+                    6 | 7 if v || self.row.is_none() => clamp(t),
                     m => {
                         return open(format!(
-                            "address mode {m} on u (E932, E957, E983, E1000: an offset of 8 max(W, H) + 52 dwords, \
-                             post hoc, never held out against the width, E1017; Q177)"
+                            "address mode {m} on u of a raster type (types 1, 3, 4 and 5 never ran it; Q177)"
                         ));
                     }
                 }
@@ -919,7 +966,10 @@ impl Texture {
             Some(row) => (y * row + x * bytes) << self.shift,
             None => morton(x, y, self.w, self.h) * bytes,
         };
-        let a = self.base.wrapping_add(off).wrapping_add(self.extra.wrapping_mul(bytes));
+        let a = self
+            .base
+            .wrapping_add(off)
+            .wrapping_add(self.extra.wrapping_add(umode_extra).wrapping_mul(bytes));
         let dw = load(a & !3).map_err(Fail::Load)?;
         if self.bits {
             return Ok(if dw & 1 != 0 { 0x0000_ffff } else { 0 });
@@ -1090,8 +1140,10 @@ pub fn smp3d_as_2d(state: [u32; 4], pcf_or_srd: bool) -> Result<(), String> {
 }
 
 /// The sizes of 32-bit twiddled textures, with a side above 16, that p1132 ran (E561 tx-twiddle,
-/// E562 tx-shapes): the tiles of 16 x 16 and their raster order are measured there only.
-const TILE_SIZES: [(u32, u32); 14] = [
+/// E562 tx-shapes) and r13-tex's 32 x 64 (E1026: three rows, every pixel the tile law's index plus
+/// the u-mode offset): the tiles of 16 x 16 and their raster order are measured there only.
+const TILE_SIZES: [(u32, u32); 15] = [
+    (32, 64),
     (32, 32),
     (64, 32),
     (64, 16),
@@ -1189,7 +1241,8 @@ mod tests {
         assert_eq!(x(1, 1.3), Ok(vec![0x108]), "mirror: 5 is 2");
         assert_eq!(x(2, 1.3), Ok(vec![0x10a]), "clamp");
         assert_eq!(x(3, -0.3), Ok(vec![0x102]), "mirror once: |-1.2| is 1");
-        assert!(x(4, 0.0).is_err());
+        // mode 4: repeat, then 8 max(W, H) + 52 = 84 texels on (E1026)
+        assert_eq!(x(4, 1.3), Ok(vec![0x102 + 84]), "mode 4 on u");
     }
 
     #[test]
@@ -1201,15 +1254,31 @@ mod tests {
         assert_eq!(y(5, 1.3), Ok(vec![0x101]), "repeat");
         assert_eq!(y(6, 1.3), Ok(vec![0x105]), "clamp: 5 is 3");
         assert_eq!(y(7, -0.3), Ok(vec![0x100]), "clamp: -2 is 0");
-        // on u the reads are 180 dwords on (post hoc, E932): no model
-        assert!(at(state(0, 12, 4, 4, 1, 4 << 6, 0), 0.3, 0.0).is_err());
-        // E957: the offset is 116, 180 and 308 dwords at 8, 16 and 32 (8 N + 52, fitted); E983:
-        // 308 on E565's 32 x 8 too; E1000: 8 max(W, H) + 52 on W != H, post hoc, and no kept job
-        // holds max out against W (E1017): the refusal names them and the question
-        let e = format!("{:?}", at(state(0, 12, 4, 4, 1, 6 << 6, 0), 0.3, 0.0).unwrap_err());
-        for id in ["E957", "E983", "E1000", "E1017", "Q177"] {
+        // mode 5 on u past the texture (5 M + 52 + t left, 6 M right, and a corner base no
+        // frozen form gave, E1026): no model; the refusal names the records and the question
+        let e = format!("{:?}", at(state(0, 12, 4, 4, 1, 5 << 6, 0), 1.3, 0.0).unwrap_err());
+        for id in ["E1000", "E1017", "E1026", "Q177"] {
             assert!(e.contains(id), "{id}: {e}");
         }
+        // mode 5 with v in mode 5 and t outside reads past the texture too: no model
+        assert!(at(state(0, 12, 4, 4, 1, 5 << 6 | 5 << 3, 0), 0.3, 1.3).is_err());
+    }
+
+    #[test]
+    fn u_modes_4_to_7_add_8_max_w_h_plus_52_texels() {
+        // E1026 (held out: 32 x 64, 8 x 64, 128 x 32 in modes 4 and 6, 32 x 64 in mode 7, a u16
+        // 32 x 64): the v rule's index of the wrapped texel plus 8 max(W, H) + 52 texels;
+        // the values from E561's tile law (render/closing-r13-tex gen/addr.py)
+        let t = |w: u32, h: u32, m: u32, s: i32, tt: u32| {
+            let (u, v) = ((s as f32 + 0.5) / w as f32, (tt as f32 + 0.5) / h as f32);
+            at(state(0, 12, w, h, 1, m << 6, 0), u, v)
+        };
+        assert_eq!(t(32, 64, 4, -1, 32), Ok(vec![0x100 + 2014]), "32 x 64 mode 4");
+        assert_eq!(t(32, 64, 6, 40, 5), Ok(vec![0x100 + 1007]), "32 x 64 mode 6");
+        assert_eq!(t(128, 32, 7, -3, 16), Ok(vec![0x100 + 3124]), "128 x 32 mode 7");
+        assert_eq!(t(16, 16, 4, 17, 0), Ok(vec![0x100 + 182]), "16 x 16 mode 4 (E932's 180)");
+        // mode 5 inside the texture (v mode 0): the same offset
+        assert_eq!(t(16, 64, 5, 3, 40), Ok(vec![0x100 + 1150]), "16 x 64 mode 5 inside");
     }
 
     #[test]
@@ -1434,6 +1503,32 @@ mod tests {
     /// texture-mipmaps-mip-level and texture-mipmaps-mip-mipfilter's coordinates: level 0 texel (3, 10).
     fn lod(t0: u32, l: f32) -> Result<Vec<u32>, Fail> {
         mip(t0, 12, 0.21875, 0.65625, Lod::Value(l))
+    }
+
+    #[test]
+    fn t3_bits_12_11_pick_level_0_or_the_last_level() {
+        // E1027 (held out with smp2dreplace on 64 x 64 and 32 x 32 chains): 00 reads level 0 and
+        // 1x the last level T0's max level allows, whatever the LOD; 01 is the LOD's level
+        let at = |t0: u32, t3: u32, l: f32| {
+            let s = Sample {
+                state: [t0, 0x0c00_f00f, 0x2000, t3],
+                u: 0.21875,
+                v: 0.65625,
+                one_d: false,
+                srd: Srd::None,
+                pcf: None,
+                lod: Lod::Value(l),
+            };
+            sample(&s, &mut |a| Ok(0xd000_0000 | ((a - 0x2000) / 4 + 0x800)))
+        };
+        assert_eq!(at(0x07fa_0000, 0x0080_0000, 3.0), Ok(vec![0xd000_084e]), "00: level 0");
+        assert_eq!(at(0x07fa_0000, 0x0080_1800, 0.0), Ok(vec![0xd000_0954]), "11: level 4");
+        assert_eq!(at(0x07fa_0000, 0x0080_1000, 1.0), Ok(vec![0xd000_0954]), "10: level 4");
+        assert_eq!(at(0x07e4_0000, 0x0080_1800, 0.0), Ok(vec![0xd000_0944]), "11, max level 2");
+        assert_eq!(at(0x07fa_0000, 0x0080_0800, 2.0), Ok(vec![0xd000_0944]), "01: the LOD's");
+        // not run: the bits with T0 bit 9 (a blend of levels) or with mips off
+        assert!(at(0x07fa_0200, 0x0080_1800, 0.0).is_err(), "bit 9");
+        assert!(at(0x001a_0000, 0x0080_1800, 0.0).is_err(), "mips off");
     }
 
     #[test]
@@ -1952,8 +2047,10 @@ mod tests {
         for fmt in 23..=27 {
             assert!(other(fmt).iter().all(|r| r.is_err()), "format {fmt}");
         }
-        // texture-sampler-smp-address-border: modes 4-7 read other texels, one coordinate each
-        for mode in 4..8 {
+        // texture-sampler-smp-address-border: past the texture mode 5 reads no model (E1026);
+        // modes 4, 6 and 7 are the offset rule (u_modes_4_to_7_add_8_max_w_h_plus_52_texels)
+        {
+            let mode = 5;
             let st = [0x001e_0000 | mode << 6, 12 << 24 | 15 << 12 | 15, 0x1000, 0xa080_0000];
             let s = Sample {
                 state: st,

@@ -1,11 +1,11 @@
 +++
 id = "Q046"
-question = "do SIDEBAND bits 8:6 select a channel in pack modes 20 and 27 (they do in modes 7 and 8 and are ignored in 15, 18, 24, 25 and 28, E383), what are the fixed words sideband bit 12 stores in modes 0 to 6, and what does bit 11 do (it faults the job in modes 0 to 8)?"
+question = "what are the words sideband bit 12 stores in pack modes 0 to 6 (post hoc, E1028: per-pixel classes whose layout changes between sessions and whose 0xff fields follow the colour), and what does bit 11 do (it faults the job in modes 0 to 8)?"
 unit = "pbe"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E030", "E031", "E210", "E269", "E383", "E999"]
+evidence = ["E030", "E031", "E210", "E269", "E383", "E999", "E1028"]
 terms = ["SIDEBAND.BITS8_6", "SIDEBAND.PACKMODE", "CR_ISP_MSAA"]
 +++
 
@@ -46,3 +46,12 @@ Narrowed 2026-11-13 (r10-x, E999). Pack modes 20 and 27 store the low 16 bits of
 image of mode 15, at bits 8:6 = 0 to 3 with both colours (16 of 16 held out): the field selects
 nothing there. Open: bit 11 (faults the job in every mode run, not safe to sweep) and what the
 fixed words of bit 12 in modes 0 to 6 are.
+
+Narrowed 2026-11-13 (round 13, session r13-tex, decisions R13-1 a and R13-11 a; E1028; the
+question line is rewritten). Text fix: the clause on bits 8:6 in pack modes 20 and 27 is dropped,
+E999 answered it (the field selects nothing there, 16 of 16). r13-tex's stage sb12 drew no verdict
+on bit 12: its colour 0 replicate control failed (172 of 4096 pixels outside E383's words). Post hoc
+(fold/sb12_post.py, not held out): the colour 1 image follows the colour 0 image of its mode by one
+word map (4056 to 4096 of 4096), the 0x66 fields fixed and the 0xff fields the colour's, and the
+layout of the classes differs from E383's on 390 to 799 pixels. What stays: what sets the layout and
+the colour fields' rule, and bit 11.
