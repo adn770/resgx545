@@ -5,7 +5,7 @@ unit = "zls"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E466", "E490", "E978", "E985", "E986"]
+evidence = ["E466", "E490", "E978", "E985", "E986", "E1015"]
 terms = ["CR_ISP_ZLSCTL"]
 +++
 
@@ -47,3 +47,14 @@ tile row repeats one depth (the y ramp) or a tile holds the constant background 
 target, formats 5 and 6 store fewer dwords, in another layout [infer: compressed]; format 7 stores
 48 dwords under a constant stencil and 784 under the index one. None of 3 to 7 writes the stencil
 store. Open: the layouts of formats 5 and 6 when they store less, and format 7's.
+
+Narrowed 2026-11-13 (round 11 offline, decision R11-10 a; E1015). Two of the "store less" layouts
+decode byte for byte from E986's kept dumps: format 7 under a constant stencil fill writes a 48-byte
+template of 0x3f, 0x1f and the fill byte at the start of each 256-dword tile block (fitted on 0xa5,
+held out blind on 0x00 and 0xff), and format 6 where four tile rows each hold one depth writes a
+12-dword group of records (0x9e, the float with its sign clear, 0x00) and mask words 0x3f000000
+(fitted on one block, two more blocks SEMI). sgx-pipe now models formats 3 and 4 as E986 held them
+(a loaded and stored stencil, G + 1 the tiles across, format 3's edge tiles at an even size). Open:
+format 7 under a varying stencil, format 5 under constant rows, format 6's edge tiles and its
+variable-length runs, the template at fills equal to its markers and at other sizes, what parts the
+pitch from the tiles across, and every packed format without a stencil buffer.

@@ -6,7 +6,7 @@ kind = "hw"
 value = "medium"
 phase = 11
 evidence = ["E057", "E169", "E216", "E228", "E284", "E337", "E411", "E465", "E466", "E467", "E665",
-            "E989", "E997"]
+            "E989", "E997", "E1014"]
 terms = ["CR_ISP_ZLSCTL", "CR_ISP_BGOBJVALS.STENCIL", "ISP2"]
 +++
 
@@ -22,16 +22,17 @@ the stores, bits 17 and 18 the stencil and depth stores, bits 11:3 the tile pitc
 bits 3 and 4 and its faults with bits 5 to 11 set fit the pitch running out of the scratch buffer
 (E465's derivation by hand; no fault was reproduced) [infer].
 
-What is open: bits 12, 15, 16, 20 to 23 and 27 to 31 change nothing seen in the stores of E411
-(one flip each of 0x17100c, two runs, on a 64 x 64 target: bits 12, 16 and 20 cleared, bits 15, 21
-to 23 and 27 to 31 set; not tried with bit 1, a stencil test, formats 1 to 7, a larger target or a
-partial render; E466 varies only bits 26:24, 19, 2, 17 and 18, E467 bits 1, 13 and 14). Bit 12 and
-bit 16 are set in the window-surface controls of the closed driver (0x0017100c, 0x0017700e), so
-they may matter to a stage this setup does not reach; E337's control for a texture's depth
-attachment, 0x00140008, has both clear. Also open: the stencil test against a stencil the render
-loaded (Q121). The stored formats 3 to 7 are Q120 and bit 19 with the integer formats is Q101. To
-settle it: the same ramp stores with each of those bits flipped in a render with a stencil test
-and a loaded stencil, the pitch and format fields set so that the stored dwords are readable.
+What is open: bits 12, 15, 16, 20 to 23 and 27 to 31 change nothing seen in the stores of E411 (one
+flip each of 0x17100c, two runs, on a 64 x 64 target: bits 12, 16 and 20 cleared, bits 15, 21 to 23
+and 27 to 31 set; not tried with bit 1, a stencil test, formats 1 to 7, a larger target or a partial
+render; E466 varies only bits 26:24, 19, 2, 17 and 18, E467 bits 1, 13 and 14). Bit 12 and bit 16
+are set in the window-surface controls of the closed driver (0x0017100c, 0x0017700e), so they may
+matter to a stage this setup does not reach; E337's control for a texture's depth attachment,
+0x00140008, has both clear. Also open: the stencil test against a stencil the render loaded (Q121).
+The stored formats 3 to 7 are Q120; bit 19 with the integer formats changes no dword on any route
+that ran (E490, E981, E987; the viewport's word 10 is Q069's). To settle it: the same ramp stores
+with each of those bits flipped in a render with a stencil test and a loaded stencil, the pitch and
+format fields set so that the stored dwords are readable.
 
 Folded here 2026-11-12 (round 6 housekeeping, decision R6-1 a): Q244 asked the same control bits
 (12, 15, 16, 20 to 23, 27 to 31) set in combination, and bit 0 under another control; both fit
@@ -59,3 +60,12 @@ Narrowed 2026-11-13 (E989, with E988's stencil test). Under a stencil test again
 invert stored 0xff at every byte, while the depth dump and the loaded buffer stayed the base rows'.
 So these bits are not all inert. Open: which of them does it (a flip of each under the same test),
 and what they do to the depth path.
+
+Narrowed 2026-11-13 (round 11 offline, decision R11-5 a; E1014, E997's correction). Under E989's
+control the stencil test reads 0, not the loaded buffer at a linear offset: frozen before the rows
+were read, H-ZEROLOAD held 2 of 2 and three linear load maps and E988's twiddled order failed 2 of
+2, so E989's reading stands and "the load is linear too" is refuted. E997's linear store is ordered
+in y as well (dword 96 y + x equals the twiddled control at (x, y), 4608 of 4608 in its three rows,
+post hoc): its rows are named. No kept row clears a strict subset of bits 12, 16 and 20. Open:
+which of them makes the store linear and which stops the stencil read (each bit and each pair
+under E977's ramp store and E988's stencil test), and whether a depth load under them is linear.
