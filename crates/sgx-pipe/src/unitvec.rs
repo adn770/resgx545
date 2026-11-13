@@ -653,7 +653,9 @@ fn kind_isp_tile(v: &Json, ctx: &Ctx) -> Result<Modelled, String> {
             if c.equal > c.equal_full {
                 // the tiles with background pixels: E922 reads every one, in sample, as a seam
                 // hole of the region model (a stored half takes only its half-region's list;
-                // E727's model, out of sample in E727 and E762); refused until a held-out row
+                // E727's model, out of sample in E727 and E762), held out by E953 (22 of 22, one
+                // array) and E954 (23 of 23, four arrays), which answer Q141; refused under its
+                // old key until the model is ported here and the isp-tile vectors expect it
                 seen.refused.insert("Q141".into(), c.equal - c.equal_full);
             }
             Ok(Modelled { outcome: crate::rules::ISP_MSAA_WINDOW.outcome(), seen })

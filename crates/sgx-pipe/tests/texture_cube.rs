@@ -5,7 +5,9 @@
 //! E726's eight jobs (texture/p1141 tex-h-cube, the (s, t) rule's fit) and E844's two off-axis
 //! jobs (render/closing-r4-render4x stage c, held out offline by E923), and r8-geo's stage cube
 //! (render/closing-r8-geo, E930: four off-axis 16 x 16 programs and three at 8 x 8 faces held
-//! out on hardware; 32 x 32 faces by E561's twiddle law, E951). Every pixel's value is
+//! out on hardware; 32 x 32 faces by E561's twiddle law, E951), and r9-geo's stage cube2
+//! (render/closing-r9-geo, E955 and E956: faces of 32, 64 and 4 held out, the pixels of the
+//! face-tie sweeps that are no tie). Every pixel's value is
 //! 0xD0000000 | the dword index the sample read; the coordinates are the probe programs' own
 //! (an fmad of (1 + x / 64 or 1 + y / 32) by K plus C, or a constant, all exact in f32). A pixel
 //! the model refuses (an exact texel boundary at a major magnitude that is not a power of two,
@@ -169,5 +171,58 @@ fn r8_geo_off_axis_8_x_8_and_32_x_32_jobs_read_the_model() {
     for (n, uvw, ok) in [("b1", a1, 1436), ("b2", a2, 1585), ("b3", a4, 1810)] {
         let got = replay_size(&b, &format!("{R8}/cube-n32-{n}.txt.gz"), uvw, 32);
         assert_eq!(got, (ok, 2048 - ok), "cube-n32-{n}: E561's index (E951)");
+    }
+}
+
+const R9: &str = "render/closing-r9-geo/out/20261113-081038/cube2";
+
+fn base_r9() -> Option<PathBuf> {
+    let b = Ctx::from_env().root.filter(|r| r.join(R9).is_dir());
+    if b.is_none() {
+        assert!(std::env::var_os("RESGX545_REQUIRE_DATA").is_none(), "no r9-geo cube2 jobs (RESGX545_DATA)");
+        eprintln!("SKIPPED: no {R9} (set RESGX545_DATA)");
+    }
+    b
+}
+
+#[test]
+fn r9_geo_faces_of_4_32_and_64_and_the_face_ties_read_the_model() {
+    let Some(b) = base_r9() else { return };
+    // E955 (r9-geo gen/cube.py): three new directions at 32 x 32 and r8-geo's b1, b2, b3 at 64 x 64
+    // (E561's law held out, H-PAIRSWAP refuted at 64) and b1, b2 at 4 x 4 (faces 16 dwords
+    // apart); (matched, refused) as the frozen predictions count them
+    let a1 = [L, LY, C::Const(-0.625)];
+    let a2 = [C::Const(0.625), C::X(1.5, -2.5), C::Y(1.5, -2.0)];
+    let a4 = [C::X(1.5, -2.0), C::Const(-0.6875), C::Y(1.5, -2.5)];
+    let c1 = [C::Const(-0.6875), L, C::Y(1.5, -2.0)];
+    let c2 = [C::Y(1.5, -2.5), C::X(1.5, -2.0), C::Const(0.625)];
+    let c3 = [C::X(1.5, -2.5), C::Const(-0.625), C::Y(2.0, -3.0)];
+    for (n, uvw, ok) in [("c1", c1, 1796), ("c2", c2, 1590), ("c3", c3, 1596)] {
+        let got = replay_size(&b, &format!("{R9}/cube-n32-{n}.txt.gz"), uvw, 32);
+        assert_eq!(got, (ok, 2048 - ok), "cube-n32-{n}");
+    }
+    for (n, uvw, ok) in [("b1", a1, 1404), ("b2", a2, 1585), ("b3", a4, 1810)] {
+        let got = replay_size(&b, &format!("{R9}/cube-n64-{n}.txt.gz"), uvw, 64);
+        assert_eq!(got, (ok, 2048 - ok), "cube-n64-{n}");
+    }
+    for (n, uvw, ok) in [("b1", a1, 1928), ("b2", a2, 1889)] {
+        let got = replay_size(&b, &format!("{R9}/cube-n4-{n}.txt.gz"), uvw, 4);
+        assert_eq!(got, (ok, 2048 - ok), "cube-n4-{n}");
+    }
+    // E956: the four face-tie sweeps; their 32 tie pixels each are refused (a face tie: the
+    // higher axis on all 128 here, but not on 7 of the 599 tie pixels of the kept cube jobs, post
+    // hoc), as are their exact texel boundaries at |ma| 0.75; the 1889 others read the model
+    let up = C::X(0.0625, 0.65625);
+    let dn = C::X(-0.0625, -0.65625);
+    let third = C::Y(0.25, -0.375);
+    let ties = [
+        ("xy-pn", [C::Const(0.75), dn, third]),
+        ("xy-np", [C::Const(-0.75), up, third]),
+        ("yz-pn", [third, C::Const(0.75), dn]),
+        ("yz-np", [third, C::Const(-0.75), up]),
+    ];
+    for (n, uvw) in ties {
+        let got = replay_size(&b, &format!("{R9}/cube-ftie-{n}.txt.gz"), uvw, 16);
+        assert_eq!(got, (1889, 2048 - 1889), "cube-ftie-{n}");
     }
 }
