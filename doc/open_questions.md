@@ -70,13 +70,13 @@
 - `Q012` (phase 6, hw, medium): what float formats are pack modes 22 and 34, given that both read o0 as an IEEE single (sign, NaN and exponent) and store it at some of the triangle's dwords while the rest change with the job before? (E032, E270, E387, E406, E429)
 - `Q040` (phase 11, hw, medium): what do EMIT2 bits 15:8 count, given that 4v pixels of each tile are stored for an even v up to 0x80, odd values hang and values above 0x80 change the image, and what do EMIT2 bits 6:0 select? (E046, E265, E266, E267, E382)
 - `Q044` (phase 11, hw, low): what do bits 11:0 of CR_REG_0400 (0x80 as built) do, when no value of them changes a stored pixel in pack modes 0 to 3, and does bit 25 act on the other pack modes? (E029, E028, E031, E251, E268, E385)
-- `Q046` (phase 11, hw, medium): do SIDEBAND bits 8:6 select the channel only in pack mode 8, or in the other one-channel modes too (24, 25 and those that store G8B8), and what do sideband bits 11 and 12 do? (E030, E031, E210, E269, E383)
+- `Q046` (phase 11, hw, medium): do SIDEBAND bits 8:6 select a channel in pack modes 20 and 27 (they do in modes 7 and 8 and are ignored in 15, 18, 24, 25 and 28, E383), what are the fixed words sideband bit 12 stores in modes 0 to 6, and what does bit 11 do (it faults the job in modes 0 to 8)? (E030, E031, E210, E269, E383)
 - `Q074` (phase 11, hw, medium): why does a second end-of-tile emit in a tile leave the next job's image wrong, and does SIDEBAND bit 9 mark an emit that counts against a PBE tile? (E030, E130, E239, E240, E386)
 
 ### pds
 
 - `Q013` (phase 6, hw, low): what does bit 18 of the copy's pixel-event data word 2 do, when it leaves the copy unchanged and changes a few pixels of the fill and the triangle? (E043, E046, E388)
-- `Q019` (phase 7, hw, medium): what does the secondary attribute size (bits 24:18 of dword 1 of the background object) limit, given that all sixteen douta words reach sa0 to sa15 with 0, 1 and 4 rows, or does the task take its size from elsewhere? (E125, E391)
+- `Q019` (phase 7, hw, medium): what does the secondary attribute size (bits 24:18 of dword 1 of the background object) limit, given that all sixteen douta words reach sa0 to sa15 with 0, 1 and 4 rows, or does the task take its size from elsewhere? (E125, E391, E973)
 - `Q020` (phase 7, hw, medium): what does a douta in the triangle's primary pixel program do, when its markers never reach the USE task and the readback is the memory table's inputs for markers A in both runs, and other values for markers B in the first? (E125, E381)
 - `Q023` (phase 7, hw, high): how many output dwords does a pixel task get per setup, and what do the data rows limit (E406) (E139, E081, E406, E570, E709, E742, E759, E880)
 - `Q024` (phase 7, hw, low): does CR_PDS_REG_0A78 change timing, when two of its values were slower in one timing run? (E141, E045, E396)

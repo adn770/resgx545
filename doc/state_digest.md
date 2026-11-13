@@ -87,12 +87,12 @@ list.
   IEEE single (sign, NaN and exponent) and store it at some of the ... (E387, E406, E429)
 - `Q040` pbe, medium: what do EMIT2 bits 15:8 count, given that 4v pixels of each tile are stored
   for an even v up to 0x80, odd values hang and values above 0x80 ... (E266, E267, E382)
-- `Q046` pbe, medium: do SIDEBAND bits 8:6 select the channel only in pack mode 8, or in the other
-  one-channel modes too (24, 25 and those that store G8B8), and ... (E210, E269, E383)
+- `Q046` pbe, medium: do SIDEBAND bits 8:6 select a channel in pack modes 20 and 27 (they do in
+  modes 7 and 8 and are ignored in 15, 18, 24, 25 and 28, E383), ... (E210, E269, E383)
 - `Q074` pbe, medium: why does a second end-of-tile emit in a tile leave the next job's image wrong,
   and does SIDEBAND bit 9 mark an emit that counts against a ... (E239, E240, E386)
 - `Q019` pds, medium: what does the secondary attribute size (bits 24:18 of dword 1 of the
-  background object) limit, given that all sixteen douta words reach sa0 ... (E125, E391)
+  background object) limit, given that all sixteen douta words reach sa0 ... (E125, E391, E973)
 - `Q020` pds, medium: what does a douta in the triangle's primary pixel program do, when its markers
   never reach the USE task and the readback is the memory ... (E125, E381)
 - `Q025` pds, medium: what does the SB field of CR_BIF_FAULT encode in the PDS faults, and why did a

@@ -1,6 +1,6 @@
 +++
 id = "Q046"
-question = "do SIDEBAND bits 8:6 select the channel only in pack mode 8, or in the other one-channel modes too (24, 25 and those that store G8B8), and what do sideband bits 11 and 12 do?"
+question = "do SIDEBAND bits 8:6 select a channel in pack modes 20 and 27 (they do in modes 7 and 8 and are ignored in 15, 18, 24, 25 and 28, E383), what are the fixed words sideband bit 12 stores in modes 0 to 6, and what does bit 11 do (it faults the job in modes 0 to 8)?"
 unit = "pbe"
 kind = "hw"
 value = "medium"
@@ -33,3 +33,11 @@ the coded colours of E270; bits 11 and 12 with each pack mode 0 to 8.
 
 Note 2026-11-12 (round 6 housekeeping, decision R6-1 a): the clause on sideband bits 11 and 12 is
 this question's alone; Q054 dropped its copy and keeps the emit flags.
+
+Correction 2026-11-13 (round 10 offline, decision R10-1 a (O10-5); ranking
+closing10/rank/rank-round10.md finding 6). The "What is open" paragraph above was written before
+11.14 and is overtaken by the paragraph before it (E383): modes 15, 18, 24, 25 and 28 were run with
+bits 8:6 and ignore them, 3 is blue and 4 to 7 read as 3 in mode 8, with colours whose bytes all
+differ. What stays open is pack modes 20 and 27 with the field (not run), what the fixed words of
+bit 12 in modes 0 to 6 are, and bit 11, which faults the job in each mode run and is not safe to
+sweep; the question line now says so.

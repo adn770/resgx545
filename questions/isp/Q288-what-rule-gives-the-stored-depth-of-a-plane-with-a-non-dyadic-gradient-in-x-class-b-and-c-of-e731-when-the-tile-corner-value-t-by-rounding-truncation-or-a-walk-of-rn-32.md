@@ -43,3 +43,14 @@ does not carry between targets: on a 1024 x 32 target one line fits the control'
 first 32 pixels (160 and 288 in rows 16 and 31), every other non-dyadic ramp over 32 to 96 pixels,
 and the same plane differs from E731's 256 x 128 dump by one ulp at 167 of 8192 shared pixels. The
 observable for Q288 is the within-tile step on E731's target, not a row fit.
+
+Note 2026-11-13 (round 10 offline, decision R10-1 a (O10-5); a design aid, no data read:
+closing10/rank/q288_split.py and q288_split.out). The nine gradient rules E731 left unsplit (the
+mantissa truncated to 16, 17, 18 or 20 bits, rounded at 16, fixed point with a least bit of 2^-30,
+2^-31 or 2^-32 truncated or 2^-30 rounded) give one word for E731's A = 1/6400. Over A = 1/D with D
+from 100 to 19999 only 14 values give nine distinct words, and their closest pair differs by 0.1 ulp
+over a 32-pixel tile row at depth 0.5; counted in the ulp of a lower binade (D 64 to 19999
+searched), the best D give a smallest gap of 0.25 ulp just below depth 2^-1, 2 ulps below 2^-4 and
+32 below 2^-8. So a row that splits the rules within one tile needs a plane in the low binades, with
+a dyadic control plane on the same depths, where Q200's below-binade deviation is the risk that the
+control tells nothing.
