@@ -33,6 +33,7 @@ import argparse
 import dataclasses
 import itertools
 import json
+import os
 import pathlib
 import re
 import shlex
@@ -873,7 +874,8 @@ def _sim() -> pathlib.Path:
                             "sgx-sim"], cwd=ROOT, capture_output=True, text=True)
         if r.returncode:
             raise BuildError(f"cargo build sgx-sim: {r.stderr.strip()}")
-        _sim_binary = ROOT / "target/release/sgx-sim"
+        _sim_binary = pathlib.Path(os.environ.get("CARGO_TARGET_DIR") or ROOT / "target") \
+            / "release/sgx-sim"
     return _sim_binary
 
 
