@@ -1,11 +1,11 @@
 +++
 id = "Q211"
-question = "does the page need U of HU1 (E773, E863, E883, E916: exact for 26 held-out scenes made of the tool's triangle) hold for wide scenes of many vertices and other shapes (E630), and what gives the partial-render count of scenes of many objects or of several kicks (for one object in one kick it is E875's page replay in the walk order E899 read from the dumps, held out by E916)?"
+question = "does the page need U of HU1 (E773, E863, E883, E916, E939: exact for 39 held-out scenes, among them five of several kicks and eight one-triangle shapes from the full target to 8-pixel slivers) hold for wide scenes of many vertices (E630), and what gives the partial-render count of scenes of several kicks (neither the kicks replayed in turn nor the union replayed once, E938) and of the 1500-vertex scene where the threshold is not raised (F9's replay 13 of 15 held-out counts, E938)?"
 unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E310", "E625", "E630", "E705", "E735", "E773", "E779", "E832", "E853", "E854", "E863", "E866", "E874", "E875", "E883", "E899", "E916"]
+evidence = ["E310", "E625", "E630", "E705", "E735", "E773", "E779", "E832", "E853", "E854", "E863", "E866", "E874", "E875", "E883", "E899", "E916", "E938", "E939"]
 terms = ["Dynamic Parameter Management (DPM)", "Parameter Buffer (PB)"]
 +++
 
@@ -103,7 +103,8 @@ s275 (U 275) gave 6 counts as data (8, 8, 7, 7, 6, 3 at P 0x26, 0x27, 0x2a, 0x2b
 and s438's cells were void (its geometry-only first render overflowed). Post hoc [infer]: (0,
 0x1e) and (-1, 0x1e) miss one cell of each scene, and a scratch refit of c + floor or ceil((U +
 a) / (P + b)) and of a two-segment form with a raised first threshold found no member that
-fits all 22 cells (`closing4/rank/q211_refit.py`, scratch), so the count is not a plain page quotient. Open: the rule of the
+fits all 22 cells (`closing4/rank/q211_refit.py`, scratch), so the count is not a plain page
+quotient. Open: the rule of the
 count (what a partial render frees and keeps, with Q210's raise), to be fitted on E832's 22 cells
 and held out on s275's 6 before any run; the U clause as above.
 
@@ -200,3 +201,21 @@ every block of a 2048x2048 dump never opened; row order failed on all five scene
 the four targets run (`one_triangle_partial_renders`). Not answered: HU1's U for wide scenes of many
 vertices and other shapes, and the count of scenes of many objects (the 1500-vertex scene's counts
 are E874's exploratory F9) or of several kicks (E899's G4 reading).
+
+Narrowed 2026-11-13 (round 8, laptop session r8-ldpm stages f9, k and u, E938 and E939; decision
+R8-8; the question stays open). The question line asked "does the page need U of HU1 (E773, E863,
+E883, E916: exact for 26 held-out scenes made of the tool's triangle) hold for wide scenes of many
+vertices and other shapes (E630), and what gives the partial-render count of scenes of many objects
+or of several kicks (for one object in one kick it is E875's page replay in the walk order E899 read
+from the dumps, held out by E916)?"; the U clause is answered for
+scenes of several kicks and for other shapes, and the line now asks the rest. [HW, held out] HU1's
+page need of the regions any of a scene's triangles lists gave the need of five scenes of two to
+four kicks (2048x2048 and 4096x4096, U 108 to 492; read by the fixed scorer, the frozen one
+printing cannot tell for a bug, POSTRUN-FIX.md) and of eight one-triangle shapes at four targets
+(U 2 to 257), 13 of 13; a stream for every region of the bounding box failed 5 of 8 (E939);
+`dpm.rs` gives it (`scene_page_need`). F9's replay of the 1500-vertex scene gave 13 of 15 held-out
+counts at three targets; its two misses are band 4 cells where the second TA run peaked at thr0,
+the threshold not raised, read after the run (Q210). At five multi-kick scenes the kicks replayed in
+turn (H-KICKS, OL7 (b), which had not fitted the kept cells) gave 11 of 20 counts, all 8 at
+4096x4096, and the union replayed once none (E938, explore rows). Open: the U of wide scenes of
+many vertices; the count of several kicks; the count where the raise does not come (Q210).

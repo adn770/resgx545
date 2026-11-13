@@ -267,6 +267,28 @@ pub fn one_triangle_page_need(w: u32, h: u32, dx: u32, dy: u32) -> u32 {
     1 + per.values().map(|k| k.div_ceil(32)).sum::<u32>()
 }
 
+/// HU1, the page need U of a scene of any triangles in one render or several kicks of one open
+/// scene: a region that lists any of them counted once, 128 bytes a stream, a page per 32 streams
+/// of a macrotile, plus the global page (E773). Held out on r8-ldpm's five multi-kick scenes and
+/// eight one-triangle shapes from a full-target triangle to slivers (E939); a stream for every
+/// region of the bounding box (H-BBOX) failed 5 of 8 there.
+pub fn scene_page_need(w: u32, h: u32, tris: &[crate::ta::Tri]) -> u32 {
+    let t = crate::ta::tiling(w, h);
+    let mut per = BTreeMap::new();
+    for r in 0..t.ty {
+        for c in 0..t.tx {
+            let (x0, y0) = (32.0 * c as f64, 16.0 * r as f64);
+            if tris
+                .iter()
+                .any(|tri| crate::ta::tile_lists(tri, x0, y0) || crate::ta::tile_lists(tri, x0 + 16.0, y0))
+            {
+                *per.entry(macrotile(&t, c, r)).or_insert(0u32) += 1;
+            }
+        }
+    }
+    1 + per.values().map(|k| k.div_ceil(32)).sum::<u32>()
+}
+
 /// The targets where the walk-order replay of a one-triangle count was held out (E916: s44a and
 /// s44b at 4096x4096, s42 at 4096x2048, s22 at 2048x2048, s17 at 1024x768).
 const COUNT_TARGETS: &[(u32, u32)] = &[(4096, 4096), (4096, 2048), (2048, 2048), (1024, 768)];
@@ -279,7 +301,9 @@ const COUNT_TARGETS: &[(u32, u32)] = &[(4096, 4096), (4096, 2048), (2048, 2048),
 /// global one and the walk goes on at the same region. Held out on five new scenes (E916): 29 of
 /// 29 counts and every run's peak where the first run was sampled. `None` at a target no
 /// held-out scene ran, a threshold below 2 or at the clamp, and where the raised threshold
-/// still holds no page (scenes of many objects and several kicks are not this function's: Q211).
+/// still holds no page (scenes of many objects and several kicks are not this function's: Q211;
+/// F9's replay of the 1500-vertex scene gave 13 of 15 held-out counts, and neither the multi-kick
+/// replay nor the union's gave r8-ldpm's multi-kick counts, E938).
 pub fn one_triangle_partial_renders(w: u32, h: u32, dx: u32, dy: u32, thr0: u32) -> Option<(u32, Vec<u32>)> {
     if !COUNT_TARGETS.contains(&(w, h)) || !(2..0x400).contains(&thr0) {
         return None;
@@ -394,9 +418,14 @@ fn replay_1500(w: u32, h: u32) -> (BTreeMap<u32, u32>, Vec<u32>) {
 
 /// The targets of the 1500-vertex scene whose calibration's steps all fell in their brackets as
 /// the step replay froze them (H-STEPMODEL, E915: 3072x3072, 3072x2048, 2560x2560, 1024x1024; the
-/// premise target 2048x2048, E874's fit). 2048x3072 (S6 one page off, E915) and 2048x4096 (S3
-/// three off, E874) are not.
-const STEP_TARGETS: &[(u32, u32)] = &[(2048, 2048), (3072, 3072), (3072, 2048), (2560, 2560), (1024, 1024)];
+/// premise target 2048x2048, E874's fit), and r8-ldpm's 1536x1536 and 4096x2048 (E936). 2048x3072
+/// (S6 is 0x234, one page above the replay) and 2048x4096 (S3 is 0x12c, three above), both pinned
+/// by the abort's global page count (E935), 2560x3072 (S6 one above) and 3072x2560 (S3 and S6 two
+/// above, E936) are not. Scenes of larger objects (`--vtx-coords`) are not this replay's: with 8
+/// coordinate pairs written by the vertex program the scene needs more than the clamp and its
+/// steps vary by up to 2 pages between runs (E937).
+const STEP_TARGETS: &[(u32, u32)] =
+    &[(2048, 2048), (3072, 3072), (3072, 2048), (2560, 2560), (1024, 1024), (1536, 1536), (4096, 2048)];
 
 /// The steps S2 to S7 of the global page count in the first TA run of the tool's triangle with 1500
 /// vertices and its page need U, by E874's replay, at a target where they were held out (E915).
@@ -412,11 +441,13 @@ pub fn tool_triangle_steps(w: u32, h: u32) -> Option<(Vec<u32>, u32)> {
 /// bands 3 and 5 of the new targets, band 5 of 3072x3072 (its band 6 failed at A_6, as 2560x2560's
 /// did), 2560x2560's band 3, and 2048x2048's bands 2 to 7 (s-a0's controls and the replicates of
 /// R6-dpm's band 5 to 7 cells). The 2048x3072 cells were scored on its calibration's steps, which
-/// at bands 3 and 5 are the replay's.
+/// at bands 3 and 5 are the replay's. r8-ldpm added 3072x2048's band 6 (E936); there band 6 kept
+/// the second page past A_6 at 1536x1536 and 4096x2048 and, read after the run, again at
+/// 3072x3072 and 2560x2560, so band 6 stays refused elsewhere.
 const SPAN_BANDS: &[((u32, u32), &[u32])] = &[
     ((2048, 2048), &[2, 3, 4, 5, 6, 7]),
     ((3072, 3072), &[5]),
-    ((3072, 2048), &[3, 5]),
+    ((3072, 2048), &[3, 5, 6]),
     ((2048, 3072), &[3, 5]),
     ((2560, 2560), &[3]),
     ((1024, 1024), &[3, 5]),
@@ -1077,6 +1108,73 @@ mod tests {
                 assert_eq!(ids, OPEN);
             }
             o => panic!("{o:?}"),
+        }
+    }
+
+    #[test]
+    fn the_step_replay_holds_at_r8_ldpm_s_new_calibration_targets() {
+        // E936 [HW, held out] H-STEPMODEL at r8-ldpm's m6 and f9 calibrations: 1536x1536 and
+        // 4096x2048 never run before, every step in its bracket and the need as replayed
+        let cal: &[(u32, u32, &[u32], u32)] = &[
+            (1536, 1536, &[0x32, 0x5d, 0x8a, 0xb7, 0xe1, 0x10e], 0x13a),
+            (4096, 2048, &[0x97, 0x126, 0x1b9, 0x24a, 0x2db, 0x36c], 0x3f7),
+        ];
+        for &(w, h, steps, need) in cal {
+            assert_eq!(tool_triangle_steps(w, h), Some((steps.to_vec(), need)), "{w}x{h}");
+        }
+        // E935: 2048x3072's S6 is 0x234 and 2048x4096's S3 0x12c, pinned by the abort's global
+        // page count; E936: 2560x3072's S6 (0x2b4) and 3072x2560's S3 and S6 (0x116, 0x2b0) are
+        // off the replay too: refused
+        for (w, h) in [(2048, 3072), (2048, 4096), (2560, 3072), (3072, 2560)] {
+            assert_eq!(tool_triangle_steps(w, h), None, "{w}x{h}");
+        }
+    }
+
+    #[test]
+    fn the_span_rule_holds_at_band_6_of_3072x2048_and_is_refused_where_band_6_kept_two() {
+        // E936 [HW, held out]: 3072x2048 left 2 global pages at A_6 - 1 (0x292) and 1 from A_6
+        // (0x293) to A_6 + 3; band 6 kept the second page past A_6 at 1536x1536 (to A_6 + 1),
+        // 4096x2048 (A_6) and, post hoc, 3072x3072 and 2560x2560 again: refused there
+        for (thr0, left) in [(0x292, 2), (0x293, 1), (0x294, 1), (0x295, 1), (0x296, 1)] {
+            assert_eq!(first_partial_render_global_pages_left(3072, 2048, thr0), Some(left), "{thr0:#x}");
+        }
+        assert_eq!(first_partial_render_global_pages_left(1536, 1536, 0x109), None);
+        assert_eq!(first_partial_render_global_pages_left(4096, 2048, 0x362), None);
+    }
+
+    #[test]
+    fn scenes_of_several_kicks_and_other_shapes_need_hu1_s_pages_of_the_union() {
+        // E939 [HW, held out]: r8-ldpm's k calibrations (the default triangle and K - 1 copies
+        // moved by i (DX, DY), --geometry for all but the last kick; a region counted once) and
+        // u's eight one-triangle shapes (--tri-unit 12 --tri-v, in 1/4096 pixel) needed HU1's U
+        // with no partial render at P 0x422
+        let moved = |w: u32, h: u32, k: i32, dx: f64, dy: f64| -> Vec<crate::ta::Tri> {
+            (0..k).map(|i| default_triangle(w, h, i as f64 * dx, i as f64 * dy)).collect()
+        };
+        for (w, h, k, dx, dy, u) in [
+            (2048, 2048, 2, 256.0, -256.0, 108),
+            (2048, 2048, 3, -256.0, -256.0, 131),
+            (2048, 2048, 4, 256.0, 0.0, 136),
+            (4096, 4096, 2, 0.0, -512.0, 377),
+            (4096, 4096, 4, -512.0, -512.0, 492),
+        ] {
+            assert_eq!(scene_page_need(w, h, &moved(w, h, k, dx, dy)), u, "{w}x{h} K {k}");
+        }
+        let v = |p: [i64; 6]| -> crate::ta::Tri {
+            let f = |x: i64| x as f64 / 4096.0;
+            [(f(p[0]), f(p[1])), (f(p[2]), f(p[3])), (f(p[4]), f(p[5]))]
+        };
+        for (w, h, p, u) in [
+            (1024, 768, [0, 0, 8388608, 0, 0, 6291456], 49),
+            (2048, 2048, [0, 0, 16777216, 0, 0, 16777216], 257),
+            (2048, 2048, [32768, 32768, 8355840, 8339456, 8339456, 8355840], 15),
+            (2048, 2048, [4096000, 4096000, 4177920, 4112384, 4112384, 4177920], 2),
+            (4096, 2048, [65536, 4096000, 16711680, 4177920, 8388608, 4259840], 11),
+            (4096, 2048, [32768, 32768, 16744448, 8339456, 16728064, 8355840], 15),
+            (2048, 4096, [32768, 32768, 8355840, 16728064, 8339456, 16744448], 17),
+            (2048, 2048, [8355840, 32768, 49152, 8355840, 32768, 8339456], 15),
+        ] {
+            assert_eq!(scene_page_need(w, h, &[v(p)]), u, "{w}x{h} {p:?}");
         }
     }
 }

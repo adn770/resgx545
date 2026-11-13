@@ -1,11 +1,11 @@
 +++
 id = "Q210"
-question = "what keeps the second global page past A_k, the page count once the object block straddling global pages k - 1 and k is tiled, at band 6 of 3072x3072 and 2560x2560 (E915; H-SPAN held there at bands 3 and 5 of four new targets and at bands 5 to 7 of 2048x2048), what puts E874's step replay one page off at 2048x3072 S6 (E915) and three at 2048x4096 S3 (E874), what sets the global steps of objects larger than 67 dwords, whose blocks at 8 coordinate pairs differ between runs (E882, E900, E917), and do E802's one global page and the page pending after a grow (H-PENDREQ, read by our own task, E918) follow from E874's replay as read after the runs?"
+question = "what keeps the second global page one to three cells past A_k, the page count once the object block straddling global pages k - 1 and k is tiled, at band 6 of five of ten targets run (E915, E936: 3072x3072, 2560x2560, 1536x1536, 4096x2048, 2560x3072; not the class of target), what puts E874's step replay off at 2048x3072 S6 (0x234) and 2048x4096 S3 (0x12c, pinned by the abort's count, E935), 2560x3072 S6 and 3072x2560 S3 and S6 (E936), why the threshold is not raised after a first partial render at band 4 that leaves 2 global pages (E918, E938), what sets the global steps of objects larger than 67 dwords (with every output written the 8-pair scene repeats its 53 blocks and needs more than the clamp, E937), and do E802's one global page and the page pending after a grow (H-PENDREQ, E918) follow from E874's replay?"
 unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E310", "E312", "E464", "E625", "E627", "E629", "E704", "E734", "E753", "E774", "E779", "E785", "E786", "E799", "E800", "E801", "E802", "E852", "E853", "E860", "E861", "E862", "E863", "E864", "E873", "E874", "E881", "E882", "E900", "E915", "E917", "E918"]
+evidence = ["E310", "E312", "E464", "E625", "E627", "E629", "E704", "E734", "E753", "E774", "E779", "E785", "E786", "E799", "E800", "E801", "E802", "E852", "E853", "E860", "E861", "E862", "E863", "E864", "E873", "E874", "E881", "E882", "E900", "E915", "E917", "E918", "E935", "E936", "E937", "E938"]
 terms = ["Dynamic Parameter Management (DPM)", "CR_DPM_STATE_BASE0", "ta3d_ctl"]
 +++
 
@@ -306,3 +306,27 @@ frozen H-PASS clause at the decision entry failed, that entry being the second r
 after the run, the end-of-render rung holds the global pages left, and 1 at both grow cells where
 the host's next sample reads 2 (E918). With 8 coordinate pairs the same command made other object
 blocks, steps and need than in R6-dpm (E917).
+
+Narrowed 2026-11-13 (round 8, laptop session r8-ldpm stages a0, sp, m6 and v on module 37EC97AB,
+E935 to E938; decision R8-8; the question stays open). The question line asked "what keeps the
+second global page past A_k, the page count once the object block straddling global pages k - 1 and
+k is tiled, at band 6 of 3072x3072 and 2560x2560 (E915; H-SPAN held there at bands 3 and 5 of four
+new targets and at bands 5 to 7 of 2048x2048), what puts E874's step replay one page off at
+2048x3072 S6 (E915) and three at 2048x4096 S3 (E874), what sets the global steps of objects larger
+than 67 dwords, whose blocks at 8 coordinate pairs differ between runs (E882, E900, E917), and do
+E802's one global page and the page pending after a grow (H-PENDREQ, read by our own task, E918)
+follow from E874's replay as read after the runs?"; it now
+names what r8-ldpm left. [HW, held out] R7-dpm's premise repeated on module 37EC97AB (E935). The
+abort's global page count pinned 2048x3072's S6 at `0x234` and 2048x4096's S3 at `0x12c` by the
+cell (H-R7S6 8 of 8, H-KEPTS3 10 of 10; E874's replay 'not supported'); the replay held at
+1536x1536, 1024x1024, 4096x2048 and 3072x2048 and missed 2560x3072 and 3072x2560 by one and two
+pages (E935, E936). At band 6 H-SPAN is 'not supported' (27 of 35): the margin ended at A_6 at
+3072x2048 and, read without the calibration alignment, at 2048x3072, 3072x2560 and 1024x1024, and
+ran one to three cells past it at 1536x1536 and 4096x2048 and, mapped, at 3072x3072 and 2560x2560;
+the three class rivals failed (E936). `dpm.rs` adds 3072x2048's band 6 and the steps of 1536x1536
+and 4096x2048 and refuses the rest. With `vtx_coord8.s` writing every extra output the 8-pair scene
+wrote the same 53 object blocks in three runs, its steps within 2 pages (H-DET as frozen, exact
+values, failed 3 of 3) and its need above the clamp, and the plain 8-pair command repeated within
+the session: E917's difference lies between sessions, through outputs the default program leaves
+unwritten [infer] (E937). Read after the run, the band 4 cells of f9 with 2 pages left were not
+raised (E938), as E918's k-s4p1. Open: as the line says.

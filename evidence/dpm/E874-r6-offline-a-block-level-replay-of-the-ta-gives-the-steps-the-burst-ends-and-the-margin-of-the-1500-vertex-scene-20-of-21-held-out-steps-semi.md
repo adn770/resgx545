@@ -110,3 +110,12 @@ where it now reads "else 1 on the kept rows (H-PHASE: ... the miss a row reading
 R6-dpm, ... E881)" it read "else 1 (H-PHASE: 26 of 26 fit rows at 2048x2048, 60 of 61 rows of the
 other targets, the miss a row reading 0)", and the mark "[corrected 2026-11-12, see Correction]"
 was added at its end.
+
+**Correction 2026-11-13:** r8-ldpm pinned the two steps this replay misses by the cell, from the
+global page count at the first abort (E935) [HW, held out]: 2048x3072's S6 is `0x234` (the replay
+`0x233`, E915's one-sample reading confirmed three times) and 2048x4096's S3 is `0x12c` (the
+replay `0x129`, three pages low, as the kept creep cells read). Its steps held at four more
+targets' calibrations (1536x1536, 1024x1024, 4096x2048, 3072x2048) and missed two new ones,
+2560x3072's S6 by one page and 3072x2560's S3 and S6 by two (E936). F9's replay with partial
+renders gave 13 of 15 held-out counts at 1536x1536, 1024x1024 and 3072x2048; the two misses are
+band 4 cells where the threshold was not raised (E938).
