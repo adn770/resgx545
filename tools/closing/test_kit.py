@@ -92,6 +92,17 @@ def test_the_scaffold_copies_the_kit_from_the_named_commit_not_the_working_tree(
     assert (kp / "kit/scorekit.py").read_bytes() == (HERE / "scorekit.py").read_bytes()
 
 
+def test_the_scaffold_names_the_repo_venv_as_the_python_never_a_scratch_one(repos):
+    """The interpreter with pytest and numpy is the repo's .venv, not a session's scratch
+   : the generated README and tests/run_all.sh say so."""
+    kp = scaffold(repos)
+    readme, run_all = (kp / "README.md").read_text(), (kp / "tests/run_all.sh").read_text()
+    assert "resgx545/.venv/bin/python" in readme and "resgx545/.venv/bin/python" in run_all
+    for f in kp.rglob("*"):
+        if f.is_file() and "kit" not in f.relative_to(kp).parts:
+            assert b"pixel-faults" not in f.read_bytes(), f
+
+
 def test_the_scaffold_passes_its_guard_its_mock_and_its_freeze(repos):
     kp = scaffold(repos)
     g = kit(kp, repos, "guard")

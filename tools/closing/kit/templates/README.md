@@ -8,6 +8,8 @@ TODO: what runs, the order, the job count, the expected time, the stops, the pre
 Every command is run through its interpreter, never by its mode bits (r7-geo's stage script
 had mode 644: "permission denied", nothing staged, the first stage exited 127):
 
+- Python: the repo's own, `$HOME/src/resgx545/.venv/bin/python` (it has pytest and numpy), which
+  the offline tests use unless `PY` names another; never a scratch venv of an older session.
 - Offline: `bash tests/run_all.sh` (guard, own tests, mock of every world, verify).
 - Freeze: `python3 kit/session.py freeze .` once the tests pass, before the first job.
 - Laptop: `python3 kit/session.py stage .`, then `python3 kit/session.py run .`
