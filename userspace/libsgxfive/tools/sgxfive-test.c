@@ -62,7 +62,7 @@
  *                                 --dump-render files after every render N (DIR/tri.N.*);
  *                                 --depth: a depth buffer the ZLS pokes point at, its
  *                                 changed dwords and frequent values reported per render;
- *                                 a fill F is a value, index or bit:K; --depth-store,
+ *                                 a fill F is a value, index, bit:K or bytes[:S] (byte j holds (j + S) & 255); --depth-store,
  *                                 --stencil, --stencil-store: further buffers (the store base
  *                                 on its own, the stencil bases); --tri-full: the triangle
  *                                 covers the target; --tri-z A,B,C: its vertices' depths, -1 to 2;
@@ -290,10 +290,14 @@ static const char *const heap_names[DRM_SGXFIVE_HEAP_COUNT] = {
 
 #define KPR_MAX	16
 
-/* A buffer's fill: one value, the dword's index, or 0.25f / 0.75f by bit K of the index. */
+/*
+ * A buffer's fill: one value, the dword's index, 0.25f / 0.75f by bit K of the index, or
+ * `bytes[:S]`: byte j of the buffer is (j + S) & 0xff (a stencil buffer whose bytes name
+ * themselves).
+ */
 struct fill {
-	enum { FILL_VALUE, FILL_INDEX, FILL_BIT } mode;
-	uint32_t val;			/* the value, or the bit K */
+	enum { FILL_VALUE, FILL_INDEX, FILL_BIT, FILL_BYTES } mode;
+	uint32_t val;			/* the value, the bit K, or the bytes' start S */
 	bool given;
 };
 
@@ -303,6 +307,12 @@ static uint32_t fill_at(const struct fill *f, uint64_t i)
 		return (uint32_t)i;
 	if (f->mode == FILL_BIT)
 		return i >> f->val & 1 ? 0x3f400000 : 0x3e800000;
+	if (f->mode == FILL_BYTES) {
+		const uint32_t b = (uint32_t)(i * 4) + f->val;
+
+		return (b & 0xff) | ((b + 1) & 0xff) << 8 | ((b + 2) & 0xff) << 16 |
+		       ((b + 3) & 0xff) << 24;
+	}
 	return f->val;
 }
 
@@ -312,6 +322,10 @@ static void fill_print(const struct fill *f)
 		printf("fill index");
 	else if (f->mode == FILL_BIT)
 		printf("fill bit %u", f->val);
+	else if (f->mode == FILL_BYTES && f->val)
+		printf("fill bytes:%u", f->val);
+	else if (f->mode == FILL_BYTES)
+		printf("fill bytes");
 	else
 		printf("fill 0x%08x", f->val);
 }
@@ -3550,6 +3564,11 @@ static bool parse_fill(const char *s, struct fill *f)
 		f->val = k;
 		return true;
 	}
+	if (!strncmp(s, "bytes", 5) && (!s[5] || s[5] == ':')) {
+		f->mode = FILL_BYTES;
+		f->val = 0;
+		return !s[5] || (parse_u32(s + 6, &k) && k <= 255 && (f->val = k, true));
+	}
 	f->mode = FILL_VALUE;
 	return parse_u32(s, &f->val);
 }
@@ -3704,8 +3723,8 @@ static int parse_opts(int argc, char **argv, struct opts *o)
 			if (strcmp(argv[i], fills[k]))
 				continue;
 			if (i + 1 >= argc || !parse_fill(argv[i + 1], fillp[k])) {
-				fprintf(stderr, "sgxfive-test: bad option %s (a value, index or bit:K, K "
-					"0 to 31)\n", argv[i]);
+				fprintf(stderr, "sgxfive-test: bad option %s (a value, index, bit:K, K "
+					"0 to 31, or bytes[:S], S 0 to 255)\n", argv[i]);
 				return -1;
 			}
 			o->zgiven |= k > 1 || k == 1;
