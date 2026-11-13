@@ -394,8 +394,8 @@ def test_the_mock_waits_on_no_clock():
     for f in ("lib_kit.sh", "run_stage.sh"):
         for ln in (KIT / f).read_text().splitlines():
             if re.search(r"(^|[;(\s])sleep ", ln) and not ln.lstrip().startswith("#"):
-                assert re.search(r'sleep "\$\{(RESET_WAIT|HEALTH_WAIT|TEE_GRACE):-[0-9]+\}"',
-                                 ln), ln
+                assert re.search(r'sleep "\$\{(RESET_WAIT|HEALTH_WAIT|TEE_GRACE):-[0-9]+\}"'
+                                 r'|sleep "\$\{IDLE_WAIT:-\$idle\}"', ln), ln
     src = (KIT / "session.py").read_text()
     assert 'RESET_WAIT="0"' in src and 'HEALTH_WAIT="0"' in src
     for f in (KIT / "fake").iterdir():
@@ -994,3 +994,181 @@ def test_the_template_runs_pytest_without_a_cache_and_the_freeze_ignores_one(rep
     (kp / "tests/new_test.py").write_text("x = 1\n")      # a real new file is still refused
     v = kit(kp, repos, "verify")
     assert v.returncode != 0 and "new_test.py" in v.stdout, v.stdout
+
+
+# ---- noreset and idle:S: a row that keeps the GPU state of the row before it -------------------
+NR_ROWS = ("n1|fit|safe|noreset|t4|fill --width 8 --height 8\n"
+           "h1|fit|safe|expectfault|t4|fill --hang\n"
+           "n2|fit|safe|noreset idle:120|t4|fill --width 8 --height 4\n"
+           "p1|fit|safe|-|t4|fill --width 4 --height 4\n")
+NR_ANSWER = ("def answer(tool, argv, world):\n"
+             "    if '--hang' in argv:\n"
+             "        return dict(rc=3, out='job: failed: timed out\\n', "
+             "kmsg=['sgxfive: job 9 hung'])\n"
+             "    if '--softfail' in argv:\n"
+             "        return dict(rc=1, out='job: failed: cancelled\\n')\n")
+
+
+def noreset_session(repos, rows, limit=2):
+    """The template's control row first, then ROWS; the world hangs `--hang` (rc 3, `job 9 hung`
+    in the kernel log) and fails `--softfail` (rc 1)."""
+    kp = scaffold(repos)
+    t = kp / "tables/s0.txt"
+    head = [ln for ln in t.read_text().splitlines(keepends=True) if not ln.startswith("f0-fill")]
+    t.write_text("".join(head).replace("#limit 0", f"#limit {limit}") + rows)
+    w = (kp / "mock/world.py").read_text()
+    (kp / "mock/world.py").write_text(w.replace("def answer(tool, argv, world):\n", NR_ANSWER))
+    return kp
+
+
+def resets_between(kmsg, names):
+    """The fake reset lines of the kernel log between each pair of consecutive case markers."""
+    after, cur = {}, None
+    for ln in kmsg.splitlines():
+        m = re.match(r"resgx545 case (\S+) ", ln)
+        if m:
+            cur = m.group(1)
+        elif "SGX reset:" in ln and cur:
+            after[cur] = after.get(cur, 0) + 1
+    return {b: after.get(a, 0) for a, b in zip(names, names[1:])}
+
+
+def test_a_noreset_row_runs_without_the_reset_before_it(repos):
+    """Q163's hang sequences (r13-flag F3) need the GPU state of the row before: `noreset` skips
+    the runner's reset before its row, after a row that ended ok (no reset at all between the
+    two) or after an expected hang (only the runner's own reset after the hang); a plain row
+    still takes its reset. `idle:S` sleeps S seconds before the job, IDLE_WAIT in the mock."""
+    kp = noreset_session(repos, NR_ROWS)
+    g = kit(kp, repos, "guard")
+    assert g.returncode == 0, g.stdout
+    m = kit(kp, repos, "mock", "--world", "model")
+    assert m.returncode == 0, m.stdout + m.stderr
+    assert re.search(r"^ok +world model: driver 0 \(s0 0\)", m.stdout, re.M), m.stdout
+    mm = next(kp.glob("debug/mock.*/model"))
+    kmsg = (mm / "kmsg").read_text()
+    assert resets_between(kmsg, ["c0-tri", "n1", "h1", "n2", "p1"]) == \
+        {"n1": 0, "h1": 1, "n2": 1, "p1": 1}, kmsg
+    assert re.search(r"resgx545 r8t noreset n1 ok ", kmsg), kmsg
+    assert re.search(r"resgx545 r8t noreset n2 hang ", kmsg), kmsg
+    assert re.search(r"resgx545 r8t idle n2 120 ", kmsg), kmsg
+    log = (mm / "out/model/s0/runner.log").read_text()
+    assert "idle 120 s before n2" in log, log
+    sys.path.insert(0, str(kp / "kit"))
+    import kitscore
+    rows = kitscore.rows(str(mm / "out/model/s0"))
+    assert {n: rows[n]["class"] for n in ("n1", "h1", "n2", "p1")} == \
+        {"n1": "ok", "h1": "hang", "n2": "ok", "p1": "ok"}
+
+
+def test_a_noreset_row_after_a_row_that_did_not_end_ok_is_skipped(repos):
+    """A row before that failed (a soft failure, a gate refusal) or was skipped leaves no state a
+    `noreset` row may build on: the row is skipped (never run, not in cases.tsv), and so is a
+    `noreset` row after it; the next plain row runs with its reset."""
+    kp = noreset_session(repos, "s1|fit|safe|soft|t4|fill --softfail\n"
+                                "n3|fit|safe|noreset|t4|fill --width 8 --height 8\n"
+                                "n4|fit|safe|noreset|t4|fill --width 8 --height 4\n"
+                                "p2|fit|safe|-|t4|fill --width 4 --height 4\n")
+    m = kit(kp, repos, "mock", "--world", "model")
+    assert m.returncode == 0, m.stdout + m.stderr
+    assert re.search(r"^ok +world model: driver 0 \(s0 0\)", m.stdout, re.M), m.stdout
+    mm = next(kp.glob("debug/mock.*/model"))
+    log = (mm / "out/model/s0/runner.log").read_text()
+    assert "== n3 skipped: noreset after s1, which ended fail" in log, log
+    assert "== n4 skipped: noreset after n3, which ended skipped" in log, log
+    sys.path.insert(0, str(kp / "kit"))
+    import kitscore
+    kept = mm / "out/model/s0"
+    assert set(kitscore.rows(str(kept))) == {"c0-tri", "p2"}
+    assert set(kitscore.rows(str(kept), "void.tsv")) == {"s1"}
+    assert "resgx545 case n3" not in (mm / "kmsg").read_text()
+
+
+def runner_tree(tmp, rows):
+    """The runner's own table check alone: a staged tree with run_stage.sh, its table and env, and
+    no lib_kit.sh, so a table that passes stops at the frozen-file check (rc 1), never on sudo."""
+    st = tmp / "staged"
+    (st / "kit").mkdir(parents=True)
+    (st / "run").mkdir()
+    (st / "tables").mkdir()
+    (st / "kit/run_stage.sh").write_bytes((KIT / "run_stage.sh").read_bytes())
+    (st / "tables/s0.txt").write_text("#stage s0\n#limit 0\n" + rows)
+    (st / "run/session.env").write_text('PREFIX=r8t\nTOOLS="t4"\nEXTRA_KNOBS=""\nKNOBS=""\n')
+    (st / "FROZEN.sha256").write_text("x\n")
+    fz = hashlib.sha256(b"x\n").hexdigest()
+    return subprocess.run(["bash", str(st / "kit/run_stage.sh"), "s0", fz, "a1"],
+                          capture_output=True, text=True, timeout=60,
+                          env=dict(PATH=os.environ["PATH"], HOME=str(tmp)))
+
+
+@pytest.mark.parametrize("rows,word", [
+    ("n0|fit|safe|noreset|t4|fill\nb|fit|safe|-|t4|fill\n", "first row"),
+    ("a|fit|safe|-|t4|fill\nb|fit|safe|idle:0|t4|fill\n", "idle:0"),
+    ("a|fit|safe|-|t4|fill\nb|fit|safe|idle:121|t4|fill\n", "idle:121"),
+    ("a|fit|safe|-|t4|fill\nb|fit|safe|idle:01|t4|fill\n", "idle:01"),
+    ("a|fit|safe|-|t4|fill\nb|fit|safe|idle:x|t4|fill\n", "idle:x"),
+    ("a|fit|safe|-|t4|fill\nb|fit|safe|idle:5 idle:6|t4|fill\n", "idle"),
+])
+def test_the_runner_refuses_a_first_noreset_row_and_an_idle_out_of_range(tmp_path, rows, word):
+    r = runner_tree(tmp_path, rows)
+    assert r.returncode == 7 and word in r.stdout, (r.returncode, r.stdout + r.stderr)
+
+
+def test_the_runner_accepts_noreset_after_the_first_row_and_idle_1_to_120(tmp_path):
+    r = runner_tree(tmp_path, "a|fit|safe|-|t4|fill\nb|fit|safe|noreset idle:1|t4|fill\n"
+                              "c|fit|safe|idle:120 noreset|t4|fill\n")
+    assert r.returncode == 1 and "is not the frozen one" in r.stdout, (r.returncode, r.stdout)
+
+
+def test_the_guard_refuses_a_first_noreset_row_and_an_idle_out_of_range(repos):
+    kp = scaffold(repos)
+    t = kp / "tables/s0.txt"
+    base = t.read_text()
+    g = kit(kp, repos, "guard")
+    assert g.returncode == 0, g.stdout
+    t.write_text(base + "x|fit|safe|noreset idle:1|t4|fill\ny|fit|safe|idle:120|t4|fill\n")
+    g = kit(kp, repos, "guard")
+    assert g.returncode == 0, g.stdout
+    for row, word in [("x|fit|safe|idle:0|t4|fill", "idle:0"),
+                      ("x|fit|safe|idle:121|t4|fill", "idle:121"),
+                      ("x|fit|safe|idle:5 idle:6|t4|fill", "one idle:")]:
+        t.write_text(base + row + "\n")
+        g = kit(kp, repos, "guard")
+        assert g.returncode != 0 and word in g.stdout, (row, g.stdout)
+    first = base.replace("|reads:diff|", "|reads:diff noreset|", 1)
+    assert first != base
+    t.write_text(first)
+    g = kit(kp, repos, "guard")
+    assert g.returncode != 0 and "first row" in g.stdout and "noreset" in g.stdout, g.stdout
+
+
+def test_the_header_the_runner_and_the_guard_know_the_same_words():
+    run = (KIT / "run_stage.sh").read_text()
+    header = run.split("trap '' PIPE HUP")[0]
+    for w in ("noreset", "idle:S"):
+        assert re.search(rf"^#\s+{re.escape(w)}\s", header, re.M), w
+    for w in ("noreset", "idle:1", "idle:9", "idle:10", "idle:99", "idle:100", "idle:120"):
+        assert S.BASE_KNOBS.match(w), w
+    for w in ("idle:0", "idle:121", "idle:01", "idle:", "idle:x", "noreset:1"):
+        assert not S.BASE_KNOBS.match(w), w
+
+
+def test_the_mock_sets_the_idle_sleep_to_zero_and_the_fake_ssh_passes_it():
+    src = (KIT / "session.py").read_text()
+    assert 'IDLE_WAIT="0"' in src
+    assert "IDLE_WAIT" in (KIT / "fake/ssh.py").read_text()
+    run = (KIT / "run_stage.sh").read_text()
+    assert re.search(r'sleep "\$\{IDLE_WAIT:-\$idle\}"', run), "idle's one sleep"
+
+
+def test_the_library_mock_replays_noreset_and_idle_rows_and_says_it_has_no_state(repos):
+    """The library mock starts every row from a fresh mock: a `noreset` row replays without the
+    state of the row before it, which the replay says; `idle:S` is no option of the tool."""
+    kp = scaffold(repos)
+    bind_source(repos, kp)
+    t = kp / "tables/s0.txt"
+    t.write_text(t.read_text() + "n1|fit|safe|noreset idle:60|t4|fill --width 8 --height 8\n")
+    m = kit(kp, repos, "mock", "--world", "model")
+    assert m.returncode == 0, m.stdout + m.stderr
+    assert re.search(r"^ok +libmock: 3 rows of t4 replayed", m.stdout, re.M), m.stdout
+    assert re.search(r"^note libmock: 1 noreset row\(s\) replayed without the state of the row "
+                     r"before", m.stdout, re.M), m.stdout

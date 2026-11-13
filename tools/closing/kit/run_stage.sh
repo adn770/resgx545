@@ -30,6 +30,12 @@
 #                    (sessioncheck.py premise), else the stage STOPS (rc 25)
 #     dbg:NAME=V     the debugfs knob NAME written V before the job, read back (rc 19), restored to
 #                    its default after the job and by the exit trap (session.toml [knobs])
+#     noreset        no GPU reset before the job, so it starts from the state the row before left
+#                    (Q163's hang sequences): only after a row that ended ok, or an expected hang
+#                    the runner already reset; after any other end (a soft failure, a gate refusal,
+#                    a skipped row) the row is skipped, never run; refused on the first row (rc 7)
+#     idle:S         one fixed sleep of S seconds (1 to 120, one per row) right before the job,
+#                    after the reset and the knobs (IDLE_WAIT, which the mock sets to 0)
 #     EXTRA_KNOBS    the session's own words, for its hooks (run/hooks.sh)
 # Hooks (run/hooks.sh, optional, staged): hook_reading NAME prints a control's `k=v` reading from
 # the job's files ($JW/NAME.out, .err, .dmesg, $W); hook_check NAME prints a reason to stop the
@@ -63,10 +69,18 @@ ALLOWED="$EXTRA_KNOBS"
 for k in $KNOBS; do v="KNOB_${k}_VALUES"; for x in ${!v}; do ALLOWED="$ALLOWED dbg:$k=$x"; done; done
 awk -F'|' -v allowed=" $ALLOWED " -v tools=" $TOOLS " '
 	!/^#/ && NF >= 6 {
-		n = split($4, k, " ")
+		n = split($4, k, " "); row++; idles = 0
 		for (i = 1; i <= n; i++) {
 			w = k[i]
-			if (w ~ /^(-|expectdiff|expectfault|after|soft|gate|grp:[a-z0-9]+|expect:(rc3-overflow)|reads:[a-z0-9_]+(,[a-z0-9_]+)*)$/) continue
+			if (w ~ /^(-|expectdiff|expectfault|after|soft|gate|noreset|grp:[a-z0-9]+|expect:(rc3-overflow)|reads:[a-z0-9_]+(,[a-z0-9_]+)*)$/) {
+				if (w == "noreset" && row == 1) { print $1 ": knob noreset on the stage'"'"'s first row (nothing before it to keep)"; bad = 1 }
+				continue
+			}
+			if (w ~ /^idle:[1-9][0-9]*$/ && substr(w, 6) + 0 <= 120) {
+				if (++idles > 1) { print $1 ": more than one idle: word"; bad = 1 }
+				continue
+			}
+			if (w ~ /^idle:/) { print $1 ": knob " w " (idle:S takes 1 to 120 seconds)"; bad = 1; continue }
 			if (index(allowed, " " w " ")) continue
 			print $1 ": knob " w; bad = 1
 		}
@@ -92,6 +106,8 @@ S=$STAGED
 # ---- the rows ---------------------------------------------------------------------------------
 begin
 njob=0; SKIP_GRPS=""; FAULT_EVENTS=0; SOFT_RUN=0
+# how the row before ended (its class, or skipped), and its name: what a noreset row builds on
+PREV_END=""; PREV_NAME=begin
 grep -v '^#' "$FILE" | grep -v '^$' > "$WROOT/rows"
 TOTAL=$(grep -c . "$WROOT/rows")
 for i in $(seq 1 "$TOTAL"); do
@@ -100,7 +116,7 @@ for i in $(seq 1 "$TOTAL"); do
 $line
 EOF
 	[ -z "$name" ] && continue
-	grp=""; gate=0; soft=0; after=0; expectdiff=0; expectfault=0; reads=""; dbgs=""; expect=""
+	grp=""; gate=0; soft=0; after=0; expectdiff=0; expectfault=0; reads=""; dbgs=""; expect=""; noreset=0; idle=0
 	for k in $knobs; do
 		case "$k" in
 		grp:*) grp=${k#grp:} ;;
@@ -112,20 +128,40 @@ EOF
 		expect:*) expect="$expect ${k#expect:}" ;;
 		reads:*) reads=$(printf '%s' "${k#reads:}" | tr ',' ' ') ;;
 		dbg:*) dbgs="$dbgs ${k#dbg:}" ;;
+		noreset) noreset=1 ;;
+		idle:*) idle=${k#idle:} ;;
 		*) ;;
 		esac
 	done
-	case " $SKIP_GRPS " in *" $grp "*) [ -n "$grp" ] && { echo "== $name skipped: group $grp was refused at its gate"; continue; } ;; esac
+	case " $SKIP_GRPS " in *" $grp "*) [ -n "$grp" ] && { echo "== $name skipped: group $grp was refused at its gate"; PREV_END=skipped; PREV_NAME=$name; continue; } ;; esac
+	# noreset builds on the row before: only an ok end, or an expected hang already reset
+	if [ "$noreset" = 1 ]; then
+		case "$PREV_END" in
+		ok|hang) ;;
+		*) echo "== $name skipped: noreset after $PREV_NAME, which ended ${PREV_END:-nothing}"
+			PREV_END=skipped; PREV_NAME=$name; continue ;;
+		esac
+	fi
 	njob=$((njob + 1))
 	JW=$WROOT/$njob-$name; W=$JW/w; mkdir -p "$W"
 	TT=$(tool_path "$tool")
 	echo "== $name set=$sset risk=$risk tool=$tool knobs=[$knobs]"
 	fk=$(free_kb); space_ok || { echo "## STOP: $fk KiB free on ~ before $name (at least $MIN_FREE_MB MiB)"; exit 22; }
-	reset_gpu || { echo "## STOP: the reset before $name failed"; exit 13; }
+	if [ "$noreset" = 1 ]; then
+		echo "  noreset: no reset before $name (the row before, $PREV_NAME, ended $PREV_END)"
+		mark "noreset $name $PREV_END"
+	else
+		reset_gpu || { echo "## STOP: the reset before $name failed"; exit 13; }
+	fi
 	for kv in $dbgs; do
 		knob_set "${kv%%=*}" "${kv#*=}" || { echo "## STOP: knob ${kv%%=*} does not read back ${kv#*=} before $name"; exit 19; }
 		mark "knob $name $kv"
 	done
+	if [ "$idle" -gt 0 ]; then
+		echo "  idle $idle s before $name"
+		mark "idle $name $idle"
+		sleep "${IDLE_WAIT:-$idle}"
+	fi
 	snap "$name" 0 || { echo "## STOP: registers unreadable before $name"; exit 12; }
 	f0=$(fault_req "$JW/snap0.regs")
 	[ "$f0" = 0 ] || { echo "## STOP: a fault is latched before $name (bits 15:0 = $f0)"; exit 14; }
@@ -162,6 +198,7 @@ EOF
 	fint=-; fword=-
 	if [ "$class" = fault ]; then fint=$(fault_req "$JW/snap9.regs"); fword=$(regval "$JW/snap9.regs" 0x0c08); fi
 	echo "  class $class"
+	PREV_END=$class; PREV_NAME=$name
 	mark "class $name $class"
 	tsv=cases.tsv
 	if [ "$class" = fail ] && { [ "$soft" = 1 ] || { [ "$gate" = 1 ] && [ "$rc" -eq 1 ] && ! grep -q '^diff:' "$JW/$name.out"; }; }; then tsv=void.tsv; fi

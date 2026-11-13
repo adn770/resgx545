@@ -327,6 +327,14 @@ except on a `probe` row (probe's kernel poke, no riskier than tri's `--kpoke-ren
 reads a knob back by value: a debugfs bool written 0 or 1 reads back N or Y, and 1/Y/y and 0/N/n
 are the same value.
 
+Two knob words keep the GPU's state from one row to the next (Q163's hang sequences). `noreset`
+skips the runner's reset before its row, only when the row before ended ok or as an expected hang
+the runner already reset (then that reset is the only one between them); after any other end (a
+soft failure, a gate refusal, a skipped row) the row is skipped, never run, and the runner and the
+guard refuse it on a stage's first row (rc 7). `idle:S` (1 to 120, one a row) is one fixed sleep
+of S seconds right before the job, after the reset and the knobs; the mock sets it to 0
+(`IDLE_WAIT`), and the library mock replays a `noreset` row from a fresh mock, which it says.
+
 A session whose flow the runner does not cover (a held recovery, a cell of steps) extends it
 through `run/hooks.sh` only as far as reading goes (`hook_reading`, `hook_check`, which run in
 the runner's shell, and `hook_fault`, the same after an expected fault or hang row once its reset

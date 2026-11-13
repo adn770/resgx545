@@ -84,8 +84,10 @@ LINE = re.compile(r"([0-9a-f]{64})  ([0-9a-f]{7,40}|untracked)  ([a-z][a-z0-9-]*
 BUILT = re.compile(r"([0-9a-f]{64})  built  ([0-9a-f]{7,40})  (\S+)  ([0-9a-f]{64})  (\S+)")
 SSH = ["ssh"]
 ENV = None          # the environment of every command (the mock's; None: this process's)
-# the kit's knob words; expect:NAME are kitscore.OUTCOMES (run_stage.sh classifies them)
-BASE_KNOBS = re.compile(r"^(-|expectdiff|expectfault|after|soft|gate|grp:[a-z0-9]+|"
+# the kit's knob words; expect:NAME are kitscore.OUTCOMES (run_stage.sh classifies them);
+# idle:S takes 1 to 120 seconds
+BASE_KNOBS = re.compile(r"^(-|expectdiff|expectfault|after|soft|gate|noreset|grp:[a-z0-9]+|"
+                        r"idle:([1-9]|[1-9][0-9]|1[01][0-9]|120)|"
                         r"expect:(rc3-overflow)|reads:[a-z0-9_]+(,[a-z0-9_]+)*)$")
 # --kpoke is probe's kernel poke, no riskier than tri's --kpoke-render: allowed on `probe` rows only
 FORBID_OPTIONS = ("--kpoke", "--kreg", "--clkgate", "--trc-hazard")
@@ -355,7 +357,14 @@ def guard(kp):
             words = knobs.split()
             for w in words:
                 if not BASE_KNOBS.match(w) and w not in allowed:
-                    bad.append(f"{where}: knob {w} is not the kit's nor session.toml's")
+                    bad.append(f"{where}: knob {w} is not the kit's nor session.toml's"
+                               + (" (idle:S takes 1 to 120 seconds)" if w.startswith("idle:")
+                                  else ""))
+            if "noreset" in words and not names - {name}:
+                bad.append(f"{where}: noreset on the stage's first row (no row before it whose "
+                           "state it could keep)")
+            if sum(w.startswith("idle:") for w in words) > 1:
+                bad.append(f"{where}: more than one idle: word (one idle:S a row)")
             if tool not in c["tools"]:
                 bad.append(f"{where}: tool {tool} is not one of session.toml [tools]")
             bad += [f"{where}: {x}" for x in _wrapped(c, tool, args)]
@@ -840,7 +849,7 @@ def libmock(kp, say=print):
     top = pathlib.Path(tempfile.mkdtemp(prefix="libmock.", dir=kp / "debug"))
     home = top / "home"
     home.mkdir()
-    n = 0
+    n = stateless = 0
     for st in stages(c):
         for row in _rows(kp / "tables" / f"{st}.txt"):
             name, tool, args = row[0], row[4], row[5]
@@ -866,6 +875,8 @@ def libmock(kp, say=print):
                 argv = argv[i + 2:]
             if tool not in bins:
                 continue
+            if "noreset" in row[3].split():
+                stateless += 1
             prev = None
             for a in argv:              # the runner makes the directories outdir_opts name
                 if prev in c["outdir_opts"]:
@@ -891,6 +902,9 @@ def libmock(kp, say=print):
         for t, k in count.items():
             say(f"ok   libmock: {k} rows of {t} replayed on {c['tools'][t]['source']}, none "
                 "refused")
+    if stateless:
+        say(f"note libmock: {stateless} noreset row(s) replayed without the state of the row "
+            "before (every replay starts from a fresh library mock)")
     return bad
 
 
@@ -994,6 +1008,7 @@ def mock(kp, worlds=None, say=print):
                    KIT_KMSG=str(m / "kmsg"), KIT_SRCV_PATH=str(m / "srcv"), FAKE_SRCV=c["srcversion"],
                    KIT_PY=sys.executable, KIT_FAKE=str(fakebin), KIT_WORLD=str(world_py),
                    KIT_TOOL_NAMES=" ".join(names), FAKE_WORLD=w, RESET_WAIT="0", HEALTH_WAIT="0",
+                   IDLE_WAIT="0",
                    KIT_WRAPPERS=" ".join(t for t, d in c["tools"].items() if d.get("wraps")),
                    TEE_GRACE="30", SGX_TARGET_HOST="u@mock", PY=_py(c))
         ENV, SSH = env, [sys.executable, str(fakebin / "ssh.py")]

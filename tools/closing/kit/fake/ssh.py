@@ -4,13 +4,13 @@
 """ssh.py [-o OPT]... HOST COMMAND: the fake ssh of the kit's mock. "The laptop" is the directory
 $KIT_FAKE_HOME: the command runs in bash there under an empty environment (env -i) holding only
 HOME, the laptop PATH ($KIT_LAPTOP_PATH: the fake commands and /usr/bin:/bin) and the mock's own
-variables (KIT_*, FAKE_*, RESET_WAIT, HEALTH_WAIT, TEE_GRACE), so the staged tree cannot lean on
-anything of the Mac's environment. stdin passes through (the staging tar)."""
+variables (KIT_*, FAKE_*, RESET_WAIT, HEALTH_WAIT, IDLE_WAIT, TEE_GRACE), so the staged tree cannot
+lean on anything of the Mac's environment. stdin passes through (the staging tar)."""
 import os
 import sys
 
 KEEP = ("KIT_", "FAKE_")
-NAMES = ("RESET_WAIT", "HEALTH_WAIT", "TEE_GRACE")
+NAMES = ("RESET_WAIT", "HEALTH_WAIT", "IDLE_WAIT", "TEE_GRACE")
 
 
 def main(argv):
