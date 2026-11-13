@@ -47,3 +47,10 @@ refusing modes 4 to 7 on u, naming E957 and this record.
 replicated + 308. The claim's "8 W + 52 with W the width" holds only where the width is the longer
 side; post hoc every read of E1000's eleven jobs is 8 max(W, H) + 52, and mode 5's reads past the
 texture use max(W, H) for W. The measurements of E565's jobs are unchanged.
+
+**Correction 2026-11-13:** E1017 (round 11 offline) scored E983's corner reading on the only
+other kept mode 5 job with v outside, bd-uv5 (16 x 16): its corners read dwords 16 to 19 (+0
+above left, +1 above right, +2 below left, +3 below right), not 20 to 23 (0 of 1152 pixels). The
+dwords 20 to 23 are the 32 x 8 texture's; the claim's "[fitted, one size]" stands for them. With s
+inside and t outside both jobs read a constant per side plus s (7 M + 52 + s above, 4 M + 52 + s
+below, post hoc, E1017). The measurements are unchanged.

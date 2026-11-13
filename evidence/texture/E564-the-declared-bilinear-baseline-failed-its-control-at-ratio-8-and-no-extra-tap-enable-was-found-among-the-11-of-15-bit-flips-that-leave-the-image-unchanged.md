@@ -26,3 +26,15 @@ formula) were falsified on all five fit jobs (0 of 5) and on the control (0 of 1
 **Not shown.** Anything about a closed-driver anisotropy request (a capture), bits other than those
 listed, and an image that is a mean of taps: none of the images was tested for it beyond D4. With
 the control failed there is no baseline against which to call an image "one tap" or "more".
+
+**Correction 2026-11-13:** Round 11 offline (closing11/plan/rank-round11.md finding 8, decision
+R11-8 a; closing11/plan/c8-q078/, a decode written after reading these images: post hoc, no
+held-out job). Under the counting fill every dword of the 64 x 64 chain names itself, and E561's
+tile law with E722's offset chain (levels at dwords 0, 4096, 5120, 5376, 5440, 5456, 5460) maps
+the 5461 names one to one. With T3 bit 11 cleared every pixel reads level 0's texel (x, y), 2048
+of 2048 distinct names (the control reads levels 3 and 4); with bit 12 set every pixel reads
+dword 5460, the 1 x 1 level 6, so the claim's "constant 0xd0001554" is the last level of the
+chain. A forced level, mips off and a LOD bias of -3.5 or less (bit 11) or +2.5 or more (bit 12)
+give the same images here, and so do the last level and a constant dword; nearest and bilinear are
+not told apart. The T0 bit 27 job an-t0b27 decodes as E982's bilinear sRGB rule with subnormal
+stage results flushed to +0, 2048 of 2048 (E1016). The measurements are unchanged.

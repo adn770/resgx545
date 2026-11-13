@@ -4,7 +4,8 @@
 //! jobs as a fixture, so the byte-for-byte check runs without the data repository, and every render
 //! scene of `scene-vectors/ta/` (`$RESGX545_DATA`, or `$RESGX545_SCENE_VECTORS` for a set not yet
 //! landed; the data tests skip, saying so, without it, and fail with `RESGX545_REQUIRE_DATA`).
-//! Every result rests on a fitted rule, so none is `matched`: the gate is zero mismatches.
+//! Every result rests on a fitted rule, so none is `matched`: the gate is zero mismatches. The
+//! model record is E650 (89 of 89 dumped jobs byte for byte, the rest refused by question).
 
 use sgx_pipe::data::{Ctx, files};
 use sgx_pipe::job::replay_file;

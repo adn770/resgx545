@@ -44,3 +44,10 @@ bit-11 and bit-12 reads are replicates, not decoded. tw32-t3b14 (E566's fault) w
 strided geometries, one of them a 16-bit format, where the read moved by floor(4096 * clamp(u, 0,
 1)) texels (2048 dwords at u near 1), not dwords: the claim's "plus floor(4096 * clamp(u, 0, 1))"
 counts texels, which are dwords on this record's 32-bit rows only. The measurements are unchanged.
+
+**Correction 2026-11-13:** Round 11 offline (closing11/plan/c8-q078/, post hoc: the replicates
+are E564's images byte for byte, not held out). The "read-out not decoded" of the twiddled bit 11
+and bit 12 images is overtaken: with T3 bit 11 cleared every pixel reads level 0's texel (x, y),
+with bit 12 set dword 5460, the 1 x 1 level of the chain (E564's appended correction). What sets
+the level (a forced level, mips off or a LOD bias) is not parted by these images. The
+measurements are unchanged.

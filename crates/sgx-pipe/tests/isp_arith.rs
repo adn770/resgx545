@@ -5,7 +5,8 @@
 //! `RESGX545_REQUIRE_DATA`). Coverage is exact on every pixel of every image, reported fitted (the
 //! rule is the record's fit); the depth is within 3 units of 2^-23 wherever the plane's gradient is
 //! below 0.03 and refused above; the iterated clip z is within 4 units wherever its range per root
-//! area is below 0.05 and refused above; the clip x has no stated tolerance and refuses.
+//! area is below 0.05 and refused above; the clip x has no stated tolerance and refuses. The
+//! model record is E660 (2752 images: E606's 1536, E607's 874 fine and 342 fine2 cases).
 
 use sgx_pipe::Outcome;
 use sgx_pipe::arith::*;

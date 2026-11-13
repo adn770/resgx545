@@ -34,3 +34,10 @@ less than the rule, 0 or a smaller final value. [fitted] Flushing each stage's s
 
 **What it does not show.** A held-out row for the flush (whether inputs or outputs flush, and
 the y stage's own subnormal results); channels other than the two halves; other filters.
+
+**Correction 2026-11-13:** E1016 (round 11 offline) held the post hoc flush out on p1132 tx-lod's
+an-t0b27, in neither this record's nor E982's fit: the rule with every stage result below 2^-14
+flushed to +0 is exact on its 12 halves where a stage result is subnormal (pixel column x = 4,
+rows 0 to 11) and on all 2048 pixels, the unflushed rule on none of those 12, and a flush of the
+x stage's results only (the final result kept) on 11, missing the one half whose y-stage result
+is subnormal. The flush is held out, thinly (one pixel column). The measurements are unchanged.

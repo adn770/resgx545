@@ -98,3 +98,16 @@ samples: the read is the bit-clear texel plus floor(4096 clamp(u, 0, 1)) texels,
 geometries (strides 16 and 256, u off the grid and past both ends, v varying, a 16-bit format, where
 the count is texels, not dwords); sgx-sim models it. What stays: bit 14 on a twiddled texture
 (E566's fault) and filtered, and bits 11 and 12 on a twiddled chain.
+
+Note 2026-11-13 (round 11 offline, decision R11-8 a; closing11/plan/rank-round11.md finding 8,
+closing11/plan/c8-q078/; no record: a decode written after reading the only two jobs, post hoc).
+E564's twiddled 64 x 64 chain under the counting fill names every dword, and E561's tile law over
+E722's offset chain maps the 5461 names one to one: with T3 bit 11 cleared every pixel reads level
+0's texel (x, y) (2048 of 2048; the control reads levels 3 and 4), with bit 12 set dword 5460, the
+1 x 1 level 6 (2048 of 2048); a stride read, an offset chain from 0 and a bit-10 clone score 8, 1
+and 0 of 2048. r9-x's t3 images are E564's byte for byte (replicates, not held out). Not parted by
+these images: a forced level, mips off and a LOD bias (bit 11: -3.5 or less; bit 12: +2.5 or
+more), the last level and a constant dword, nearest and bilinear. E564 and E975 take appended
+corrections that say so. A later row: bit 11 cleared at LOD 0 to 6, bit 12 with T0's maximum
+level below 6 and at LOD 0, bits 12:11 = 10, a 32 x 32 chain. [infer] A 2-bit LOD-mode field (00
+level 0, 01 the gradient's level, 11 the coarsest) fits the three values seen; 10 is untested.
