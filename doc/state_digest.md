@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-159 open: 149 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+158 open: 148 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -26,7 +26,7 @@ list.
 - `Q211` dpm, high: does E874's replay give the need of wide scenes of other vertex counts than 1500
   (E630's 300 to 900; at 1500 it gave the need of four ... (E960, E962, E963)
 - `Q066` isp, high: what do the three background-object words the 3D kick writes mean to the ISP,
-  and what are the other words of a render's background object? (E216, E410, E590)
+  and what are the other words of a render's background object? (E971, E972, E973)
 - `Q089` isp, high: where does the closed driver's 4x multisampled render become a 64x64 image, when
   its PBE words are those of a single-sampled 64x64 target ... (E510, E727, E893)
 - `Q199` isp, high: what is the integer range and the behaviour at the limits (saturation, wrap,
@@ -69,8 +69,6 @@ list.
   20 to 23, 27 to 31) do, alone and set together, what does ... (E466, E467, E665)
 - `Q073` isp, medium: what does o0 hold at the start of an opaque pass's pixel shader? (E417, E739,
   E757)
-- `Q190` isp, medium: does a render's background object with texture layers (the 23-dword form of a
-  transfer copy: the six words after the PDS words, the layer's ... (E069, E209, E590)
 - `Q200` isp, medium: why do the dyadic controls of E731 store one or two ulps below the truncated
   exact plane, below binade 0, in a region bounded by a diagonal ... (E758, E912, E913)
 - `Q240` isp, medium: does the coverage rule of E606 (vertices on the 1/256 pixel grid, exact centre
@@ -333,7 +331,7 @@ list.
 
 ## Recent records
 
-114 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+119 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
 - `E981` zls, 2026-11-13: r9-z2 stage z2 (10 jobs, 256 x 128, G 7): with the viewport's z offset
@@ -357,6 +355,21 @@ the claims are cut at 200 characters.
 - `E975` texture, 2026-11-13: r9-x stage t3 (19 jobs): with T3 bit 14 set in smp on named memory, on
   six held-out strided geometries (W 16, 32, 48 at strides 32, 64, 128, u off the texel centres and
   past the texture) each with ...
+- `E974` texture, 2026-11-13: R9-k1 stages s1 and s2, read post hoc at the fold (not frozen): at
+  every background pixel whose layer coordinate lies outside [0, 1) under the plane that held (E971,
+  E972), 1/64 texel off a texel ...
+- `E973` isp, 2026-11-13: R9-k1 stage s3 (Q066 explore; 21 jobs, the layered 64 x 64 render, no
+  fault): words 9 and 11 to 14 at 1.0, word 9 and word 13 at 0xffffffff, the format word 10 at 0,
+  0x202, 0x404, 0x101, 0xffff, ...
+- `E972` isp, 2026-11-13: R9-k1 stage s2 (Q066, and the anchor E971 left open; 20 held-out jobs, the
+  layered 64 x 64 render with kernel pokes of the vertex words 15 to 22: a move of 16 pixels and a
+  bit flip each, four ...
+- `E971` isp, 2026-11-13: R9-k1 stage s1 (Q190; 44 jobs, the layered 64 x 64 render with kernel
+  pokes of the object's words 3 to 8, 1 to 3 words a job at k/8 values, 14 fit and 30 held out drawn
+  with the seed r9-k1 after the ...
+- `E970` isp, 2026-11-13: R9-k1 stages s0t and s0p (Q190; the 64 x 64 one-triangle render with
+  debugfs render_bg_layer on and render_bg_src at a mapped 64 x 64 source, 7 controls, no fault):
+  the render details' background tag ...
 - `E968` texture, 2026-11-13: Round 9 offline (Q078; no run): with T3 bit 14 set, smp on a strided
   texture reads dword i + K + M c, i the dword the same job reads without the bit and c its column,
   read on E566's fit job ...
@@ -681,13 +694,15 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-41 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+42 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
 - `render/closing-r9-z2`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t9
 - `render/closing-r9-x`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
 - `render/closing-r9-lgeo`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
 - `render/closing-r9-ldpm`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
+- `render/closing-r9-k1`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4,
+  ~/sgxfive-test-t9
 - `render/closing-r9-geo`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
 - `render/closing-r9-faults`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
 - `render/closing-r8-lgeo`: 2026-11-13; module 37EC97AB0CB37213C42FCCC; tools ~/sgxfive-test-rgn4
@@ -745,7 +760,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 7 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 8 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at

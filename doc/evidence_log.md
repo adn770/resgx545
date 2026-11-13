@@ -7809,6 +7809,64 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   1024 [fitted]; the twiddled job tw32-t3b14 faulted in E566 and kept no image.
   *texture; HW, infer; data: `texture-p1132-tx-t3`, `cited-scratch:closing9/rank/`,
   `cited-scratch:closing9/offline/q078/`.*
+- `E970` R9-k1 stages s0t and s0p (Q190; the 64 x 64 one-triangle render with debugfs
+  render_bg_layer on and render_bg_src at a mapped 64 x 64 source, 7 controls, no fault): the render
+  details' background tag says one layer (rd:18 bits 30:25 = 1) and the object after the job holds
+  the kernel's one-layer words 3 to 10 (0, 0, 1.0, 0, 0, 1.0, 0, 0x202; H-BUILT); with the copy's
+  primary every one of the 3034 background pixels is its own source texel (H-TEX, twice, and with
+  word 5 poked to its own 1.0: c-noop); with a primary whose douti reads coordinate set 1 with two
+  components (DOUTI0 0x40400801), pa0 holds (x + 0.5) / 64 and pa1 (y + 0.5) / 64 at 3034 of 3034
+  within 2^-12 (H-ITER; H-SWAP, H-NONE and H-17 fail, H-LM fails on u); E442's background primary
+  still writes x + 0.5 at 3034 of 3034 with and without the layer (H-POS); the layerless controls
+  keep E590's hash 0x99385a04ee01c585; frozen verdicts 'H-BUILT and H-TEX ... (3 of 3 rows decided)'
+  and 'H-POS and H-ITER ... (4 of 4 rows decided)'.
+  *isp; HW; data: `render-closing-r9-k1:out/20261113-083450/s0t/`,
+  `render-closing-r9-k1:out/20261113-083450/s0p/`, `render-closing-r9-k1:out/20261113-083450/s4/`,
+  `render-closing-r9-k1:fold/`, `vectors-closing-r9-k1-pixels`.*
+- `E971` R9-k1 stage s1 (Q190; 44 jobs, the layered 64 x 64 render with kernel pokes of the object's
+  words 3 to 8, 1 to 3 words a job at k/8 values, 14 fit and 30 held out drawn with the seed r9-k1
+  after the model was frozen, each read through the texel of every background pixel; no fault): the
+  words are (u, v) of the vertices TL, TR and BL in that order and the pixel samples the plane
+  through them at its centre (H-VM + H-AFF: right on 30 of 30 held-out rows and 14 of 14 fit rows,
+  every predicted pixel the predicted texel), where the coordinates read component by component
+  (H-LM), u and v exchanged (H-SWAP), the poke not read (H-NOREAD), one texel (H-NONE) and the
+  17-word layout (H-17) are wrong on 29, 30, 30, 30 and 30 held-out rows; every poked word reads
+  back in the object after the job; frozen verdict 'H-VM + H-AFF: words 3-8 are (u, v) of TL, TR,
+  BL, the plane at the pixel centre (30 of 30 rows decided)'.
+  *isp; HW; data: `render-closing-r9-k1:out/20261113-083450/s1/`, `render-closing-r9-k1:fold/`,
+  `vectors-closing-r9-k1-pixels`.*
+- `E972` R9-k1 stage s2 (Q066, and the anchor E971 left open; 20 held-out jobs, the layered 64 x 64
+  render with kernel pokes of the vertex words 15 to 22: a move of 16 pixels and a bit flip each,
+  four two-word moves; no fault): the layer's plane is anchored at the vertices those words give in
+  E590's encoding (TL, TR, BL as 24-bit Y then X, 8 fraction bits, offset 4096; H-VPLANE: right on
+  20 of 20 rows, every predicted pixel the predicted texel), not at the fixed render box (H-VBOX:
+  wrong on the 16 rows that move a vertex, right on the 4 that poke words 19 and 22, which hold no
+  vertex); every background pixel stays covered and a texel in all 20 (1062 triangle pixels each),
+  as E590's coverage; every poked word reads back; frozen verdict 'H-VBOX: the plane is anchored at
+  the render box, whatever words 15-22 say is not supported: 4 held, 16 FAILED, 0 cannot tell of
+  20'.
+  *isp; HW, infer; data: `render-closing-r9-k1:out/20261113-083450/s2/`,
+  `render-closing-r9-k1:fold/`, `vectors-closing-r9-k1-pixels`.*
+- `E973` R9-k1 stage s3 (Q066 explore; 21 jobs, the layered 64 x 64 render, no fault): words 9 and
+  11 to 14 at 1.0, word 9 and word 13 at 0xffffffff, the format word 10 at 0, 0x202, 0x404, 0x101,
+  0xffff, 0x10000 and 0x80000000, and bgobj_words[1] (render command dword 24) at one and four
+  attribute rows leave every background pixel its own texel (16 of 21 rows, H-FMT0); word 10 at
+  0xffffffff makes every pixel texel (0, 0) (3034 of 3034, E209's copy picture); word 12 at
+  0xffffffff makes every v-texel 0 with u unchanged, word 14 at 0xffffffff every u-texel 0 with v
+  unchanged, word 11 at 0xffffffff every u-texel 0 and v at 35 values (1629 pixels at 63); zero
+  attribute rows (0x30000) gives every pixel a texel of the source but its own at 74 of 3034 (143
+  distinct texels, mostly within 8 columns and 4 rows of its own; H-NOTEX, no texel, wrong); explore
+  rows, frozen verdict 'H-FMT0 (explore): words 9-14 and bgobj_words[1] at 0, 1 or 4 rows change
+  nothing is not supported: 16 held, 5 FAILED, 0 cannot tell of 21'.
+  *isp; HW, infer; data: `render-closing-r9-k1:out/20261113-083450/s3/`,
+  `render-closing-r9-k1:fold/`, `vectors-closing-r9-k1-pixels`.*
+- `E974` R9-k1 stages s1 and s2, read post hoc at the fold (not frozen): at every background pixel
+  whose layer coordinate lies outside [0, 1) under the plane that held (E971, E972), 1/64 texel off
+  a texel edge, the pixel is the clamped texel (min(max(floor(64 u), 0), 63), the same for v) at
+  17453 of 17453 pixels (16367 in s1, 1086 in s2) and the repeated texel (mod 64) at none, as
+  sgx-sim's rule for a stride texture (it clamps to the edge).
+  *texture; HW; data: `render-closing-r9-k1:fold/`, `render-closing-r9-k1:out/20261113-083450/s1/`,
+  `render-closing-r9-k1:out/20261113-083450/s2/`.*
 - `E975` r9-x stage t3 (19 jobs): with T3 bit 14 set in smp on named memory, on six held-out strided
   geometries (W 16, 32, 48 at strides 32, 64, 128, u off the texel centres and past the texture)
   each with its bit-14-clear reference (the references equal texmodel's image, 6 of 6), the frozen
@@ -7911,7 +7969,7 @@ E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E2
 E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E508, E510, E590,
 E606, E607, E618, E660, E661, E662, E680, E681, E682, E683, E684, E727, E728, E731, E739, E740,
 E741, E757, E758, E762, E825, E827, E829, E912, E913, E914, E922, E934, E943, E952, E953, E954,
-E979.
+E970, E971, E972, E973, E979.
 
 ### mte
 
@@ -7956,7 +8014,7 @@ Records: E033, E034, E035, E036, E037, E038, E039, E040, E041, E042, E114, E116,
 E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441, E560, E561, E562,
 E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E726, E733, E743,
 E744, E760, E765, E787, E844, E894, E910, E911, E923, E930, E931, E932, E940, E941, E942, E951,
-E955, E956, E957, E958, E968, E975, E976.
+E955, E956, E957, E958, E968, E974, E975, E976.
 
 ### transfer
 

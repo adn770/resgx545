@@ -36,7 +36,7 @@ RULES = [
          "TE words under 4x"),
     Rule(r"isp/msaa-resolve/", "isp-tile", "scene-only", "E281", "Q089 Q138", "12.8", "resolve"),
     Rule(r"isp/msaa-layout/", "isp-tile", "scene-only", "E210 E211", "Q030", "12.8", "sample layout"),
-    Rule(r"isp/bg-object-pokes/", "isp-tile", "unit-blocked", "E069 E590", "Q066 Q190", "12.1",
+    Rule(r"isp/bg-object-pokes/", "isp-tile", "unit-blocked", "E069 E590", "Q066", "12.1",
          "169 jobs, the background object's words"),
     Rule(r"ta/tri-region/", "te-region", "built", "E542", "Q070", "12.2", "35 jobs"),
     Rule(r"ta/object-format/", "ta-object", "built", "E541", "Q070 Q165", "12.2", "59 jobs"),
