@@ -9,10 +9,8 @@
 
 use crate::Outcome;
 
-pub const OPEN: &[&str] = &[
-    "Q066", "Q030", "Q086", "Q089", "Q141", "Q199", "Q200", "Q202", "Q240", "Q241", "Q262", "Q071", "Q073",
-    "Q032",
-];
+pub const OPEN: &[&str] =
+    &["Q066", "Q030", "Q086", "Q089", "Q199", "Q200", "Q202", "Q240", "Q241", "Q262", "Q071", "Q073", "Q032"];
 
 pub fn refuse() -> Outcome {
     Outcome::unsupported("the ISP past triangle coverage and depth is not modelled (12.3)", OPEN)
@@ -573,8 +571,8 @@ pub fn msaa_source(mode: u32, te_aa: u32, tx: u32, ty: u32, a: u32, b: u32) -> R
         2 => (2, 2),
         0 => {
             return Err(Outcome::unsupported(
-                "the window of mode 0 with CR_TE_AA bits 31 or 30 set was not measured",
-                &["Q141"],
+                "the window of mode 0 with CR_TE_AA bits 31 or 30 set was not read as an identity map (E953 held the region model's holes there)",
+                &["Q030"],
             ));
         }
         _ => {
@@ -997,7 +995,9 @@ mod tests {
 
     #[test]
     fn mode_3_names_the_msaa_question_and_mode_0_bits_the_window_one() {
-        for (mode, te, q) in [(3, 0x2000_0000, "Q030"), (0, 0x6000_0000, "Q141")] {
+        // mode 0 with bits 31 or 30: Q141 is answered (E953 held the region model's holes there),
+        // the window itself (an identity map) was not read: the MSAA layout question, Q030
+        for (mode, te, q) in [(3, 0x2000_0000, "Q030"), (0, 0x6000_0000, "Q030")] {
             match msaa_source(mode, te, 0, 0, 0, 0) {
                 Err(Outcome::Unsupported { ids, .. }) => assert_eq!(ids, [q]),
                 o => panic!("{o:?}"),

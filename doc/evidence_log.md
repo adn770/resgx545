@@ -7620,6 +7620,68 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   `render-closing-r7-geo:out/20261112-211113/zs/`,
   `render-closing-r8-lgeo:out/20261113-024441/zs2/`, `cited-scratch:closing9/seeds/q260/`,
   `cited-scratch:closing9/offline/oz/`.*
+- `E953` R9-geo stage seam1 (Q141; 24 tri renders with E504's pokes, each with --aa4 and debugfs
+  render_rgn_arrays 1, a context made for 4x targets whose region headers are forced to one array,
+  E502's, E504's and E727's condition): the stored image of every held-out job is the landed region
+  model's (E727's msaa_model.py, E922's in-sample reading frozen as the O8 R8-1 table): H-REGION
+  exact on 22 of 22 held-out sets (14 tri-full renders at sizes never run, 64 x 96 to 128 x 96 in
+  modes 0 to 2 with TE 0x6, 0xa or 0xe, 6 single triangles of new slopes and 2 zero-hole twins; 20
+  to 514 holes, 211 to 5564 stored pixels, no other colour), its halves-off rival H-UNION 8 of 22;
+  both controls passed (E502's A-m1-te60-64x64 64 holes as its set, E504's TE 0x20000000 no hole);
+  frozen verdicts 'H-REGION exact on every held-out set (22 of 22 rows decided)' and 'H-UNION ... is
+  not supported: 8 held, 14 FAILED'; Q141 retires.
+  *isp; HW; data: `render-closing-r9-geo:out/20261113-081038/seam1/`,
+  `render-closing-r8-geo:gen/o8/`.*
+- `E954` R9-geo stage seam4 (the seam holes, E953's question; the same 24 renders with --aa4 alone,
+  the 4x context's automatic four region-header arrays, never run before in modes 0 and 1, and
+  E828's j1r as a control): four arrays store the region model's image as one array does: H-SAME4
+  (the O8 table's H-REGION set) exact on 23 of 23 held-out rows (E502's control configuration held
+  out here), H-FULL4 [infer: no hole] 2 of 17 (the two zero-hole twins), H-UNION 8 of 23; both
+  controls passed (j1r hash 0x4a61860dcb4ab325 with no background pixel, as E828; TE 0x20000000 no
+  hole); frozen verdicts 'H-SAME4 exact on every held-out set (23 of 23 rows decided)', H-FULL4 '2
+  held, 15 FAILED', H-UNION '8 held, 15 FAILED'; post hoc, all 24 shared jobs stored the same image
+  pixel for pixel with four arrays as with one (stage seam1, E953).
+  *isp; HW, infer; data: `render-closing-r9-geo:out/20261113-081038/seam4/`,
+  `render-closing-r9-geo:out/fold/`.*
+- `E955` R9-geo stage cube2, sizes (Q284; 8 probe fills of TEXTYPE 2 point-sampled by smp3d, E726's
+  cu-xn the control, no fault): with E923's face and (s, t) rule, the face-local index of 32 x 32
+  and 64 x 64 faces is E561's twiddle law (16 x 16 tiles in raster order with s first; at 64 bits 8,
+  9 = s4, s5 and 10, 11 = t4, t5): H-E561 held out on 3 of 3 new directions at 32 x 32 (1796, 1590
+  and 1596 of as many predicted pixels) and 3 of 3 at 64 x 64 (T1 0x4c03f03f, faces 4096 dwords
+  apart; 1404, 1585, 1810), against E923's plain Morton (0 of 6) and a pairwise order of the bits
+  above 7 (equal to E561's at 32, 0 of 3 at 64); 4 x 4 faces (T1 0x4c003003) sit 16 dwords apart
+  with a 2-bit Morton index (H-NN 2 of 2, 1928 and 1889 pixels) against 64 apart (0 of 2); the
+  control passed; frozen verdicts 'H-E561 at 32 x 32 held out (3 of 3 rows decided)', 'H-E561 at 64
+  x 64 held out (3 of 3 rows decided)', 'H-NN at 4 x 4 held out (2 of 2 rows decided)'.
+  *texture; HW; data: `render-closing-r9-geo:out/20261113-081038/cube2/`.*
+- `E956` R9-geo stage cube2, ties and edges (Q284; 8 probe fills, no fault): a tie of the two
+  largest coordinates went to the face of the higher axis (z over y over x) on 4 of 4 held-out
+  sweeps of x = y and y = z with the tied coordinates of opposite signs (128 of 128 tie pixels;
+  H-LOWAXIS 0 of 4, H-POS, the positive axis, 2 of 4), but post hoc 7 of the 599 two-axis tie pixels
+  of all kept cube jobs (r8-geo's and r9-geo's, none of the sweeps') read the lower axis's face,
+  with the third coordinate 0.62 to 0.93 of |ma| [fitted reading, no rule]; texel ties at |ma| 1.5
+  went up or down by the boundary exactly in E931's pattern for 1.75, 1.625 and 1.875, at 1.25 the
+  same but for boundary 11 of s and of t (down); bilinear at a face edge: the in pixels read their
+  exact in-face blend within 1 (768 of 768 each), and the out pixels the adjacent texel of the
+  neighbour face (H-SEAM-ADJ) on the -y/+x edge (96 of 96) but not on the +z/+x edge (64 of 96),
+  H-SEAM-WRAP 0 of 2; frozen verdicts 'H-HIGHAXIS on every tie pixel (4 of 4 rows decided)',
+  'H-SEAM-ADJ on every out pixel is not supported: 1 held, 1 FAILED', 'H-SEAM-WRAP ... 0 held, 2
+  FAILED'.
+  *texture; HW, infer; data: `render-closing-r9-geo:out/20261113-081038/cube2/`,
+  `render-closing-r9-geo:out/fold/`, `render-closing-r8-geo:out/20261113-015842/cube/`.*
+- `E957` R9-geo stage addr2 (Q177; 11 probe fills of twiddled 32-bit textures at page 12 of a
+  32-page named scratch, the swept axis over 128 positions at one texel a step, no fault): E932's u
+  reading replicates (addr-u4 H-MASK-V's index + 180 dwords, 2048 of 2048; addr-u5's per-position
+  read) and the mode 0 control passed; at 8 x 8 and 32 x 32 in u modes 4 and 6 every rival failed
+  (H-OFF180, H-OFFSCALE + 180 N^2 / 256, H-OFFNONE: 0 of 4 each): every pixel reads H-MASK-V's index
+  + 116 dwords at 8 x 8 and + 308 at 32 x 32, in both modes (2048 of 2048 each; 8 N + 52 through 8,
+  16 and 32, post hoc [fitted]); T3 0, 0x800 and 0x800000 leave + 180 at 16 x 16 (H-T3-INERT 3 of
+  3); with v also in mode 4 the offset stays 180 and v repeats (H-OFF180 1 of 1, H-OFF360 and
+  H-MASK-V refuted); frozen verdicts '... is not supported: 0 held, 4 FAILED' for the three size
+  rivals, 'H-T3-INERT (u mode 4 at 16 x 16 under T3) (3 of 3 rows decided)', 'H-OFF180 (u and v mode
+  4) (1 of 1 rows decided)'.
+  *texture; HW, infer; data: `render-closing-r9-geo:out/20261113-081038/addr2/`,
+  `render-closing-r9-geo:out/fold/`.*
 - `E958` R9-lgeo stage tx6 (Q283; E725's 64 x 32 map-texture fill, dword i of the scratch 0xD0000000
   | i; 14 jobs, 2 controls, no fault): type 4 at widths that are not multiples of 32 keeps ceil(w /
   32) whole 32 x 32 blocks a block row (H-CEIL, E941's rule: 7 of 7 held-out windows of 48 x 64, 80
@@ -7757,7 +7819,8 @@ E215, E216, E217, E218, E219, E220, E222, E224, E225, E226, E227, E228, E229, E2
 E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E290, E291, E330,
 E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E508, E510, E590,
 E606, E607, E618, E660, E661, E662, E680, E681, E682, E683, E684, E727, E728, E731, E739, E740,
-E741, E757, E758, E762, E825, E827, E829, E912, E913, E914, E922, E934, E943, E952, E979.
+E741, E757, E758, E762, E825, E827, E829, E912, E913, E914, E922, E934, E943, E952, E953, E954,
+E979.
 
 ### mte
 
@@ -7802,7 +7865,7 @@ Records: E033, E034, E035, E036, E037, E038, E039, E040, E041, E042, E114, E116,
 E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441, E560, E561, E562,
 E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E726, E733, E743,
 E744, E760, E765, E787, E844, E894, E910, E911, E923, E930, E931, E932, E940, E941, E942, E951,
-E958, E968, E975, E976.
+E955, E956, E957, E958, E968, E975, E976.
 
 ### transfer
 

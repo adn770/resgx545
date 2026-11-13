@@ -1,11 +1,11 @@
 +++
 id = "Q284"
-question = "what does a TEXTYPE 2 cube sample read at an exact texel boundary when |ma| is not a power of two (E923: 14 of 207 such pixels one texel low, the rest up), at a tie between the two largest coordinates, under bilinear filtering across a face edge, and with faces other than 16 x 16"
+question = "what does a TEXTYPE 2 cube sample read at an exact texel boundary when |ma| is not a power of two (E923, E931, E956: up or down by the boundary's place, a pattern that moves at |ma| 1.25), at a tie of the two largest coordinates when the third is large (E956: the higher axis's face on every sweep, the lower on 7 of 599 kept tie pixels), and which texel the out-of-face tap of a bilinear sample reads at a face edge (E956: the adjacent one on one edge of two)"
 unit = "texture"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E726", "E567", "E844", "E923", "E930", "E931", "E951"]
+evidence = ["E726", "E567", "E844", "E923", "E930", "E931", "E951", "E955", "E956"]
 terms = ["TEXTYPE"]
 +++
 E726: the six faces are six consecutive 256-dword blocks in the order +x, -x, +y, -y, +z, -z for a
@@ -55,3 +55,17 @@ replays E930's three jobs with every predicted pixel matched. The 32 x 32 clause
 held-out row on new directions; 64 x 64 faces part E561's law (s4, s5 in bits 8 and 9, t4, t5
 in 10 and 11) from a pairwise order (s4, t4, s5, t5) at half the texels: the round 9 seeds' stage
 cube2 runs both, with the face ties of the other axis pairs and the edges.
+
+Narrowed 2026-11-13 (round 9, session r9-geo, decision R9-3 a; E955, E956; the question line is
+rewritten to what stays). The face sizes are answered: faces of 32 x 32 and 64 x 64 read E561's
+twiddle law (16 x 16 tiles in raster order with s first), held out on three new directions each,
+against E923's plain Morton and, at 64, a pairwise order of the bits above 7 (0 of 3); 4 x 4 faces
+sit 16 dwords apart with a 2-bit Morton (2 of 2, against 64 apart); sgx-pipe's
+`cube::point_index` models faces of 4 to 64. A face tie goes to the higher axis (z over y over x)
+on four held-out sweeps of x = y and y = z with the tied coordinates of opposite signs (128 of 128
+tie pixels; the lower axis and the positive one refuted), but post hoc 7 of the 599 tie pixels of
+every kept cube job read the lower axis's face, all with the third coordinate 0.62 to 0.93 of |ma|:
+no rule, and sgx-pipe still refuses ties. Texel ties at |ma| 1.5 follow E931's table, at 1.25 two
+boundaries go the other way. At a face edge the out-of-face tap reads the neighbour face near the
+adjacent texel (the wrapped local texel refuted 0 of 2), exactly on -y/+x and not on +z/+x. What
+stays is in the question line.

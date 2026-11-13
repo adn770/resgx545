@@ -18,22 +18,29 @@
 //!   face-local index E561's twiddle law of a 32-bit texture: tiles of 16 x 16 interleaved as the
 //!   16 x 16 face, the tiles in raster order with s first (bit 8 = s4, bit 9 = t4). E930 read
 //!   that index post hoc on its three 32 x 32 jobs (4831 of 4831 predicted pixels); E951 shows it
-//!   is E561's law, recorded before E930 ran, at every (s, t) [algebra]; not held out on a face.
+//!   is E561's law, recorded before E930 ran, at every (s, t) [algebra]; held out on three new
+//!   directions (E955).
+//! - Faces of 64 x 64 (E955): 4096 dwords apart, E561's law (tiles of 16 x 16 in raster order
+//!   with s first: bits 8, 9 = s4, s5 and 10, 11 = t4, t5), held out on three programs against a
+//!   pairwise order of the bits above 7 (refuted 3 of 3). Faces of 4 x 4 (E955): 16 dwords apart,
+//!   the 2-bit Morton (E561's whole texture when smaller than a tile), held out on two programs
+//!   against faces 64 dwords apart (refuted 2 of 2).
 //!
-//! Refused, naming Q284: two coordinates of equal largest magnitude (E931 read 64 tie pixels of
-//! |w| = |u| on w's face, two jobs, no rule frozen); a coordinate exactly on a texel boundary when
-//! |ma| is not a power of two (at a power of two the upper texel every time, the floor;
-//! otherwise E923's 14 misses, and E931's boundaries going up or down by their place, no rule
-//! frozen); faces of any size other than 8, 16 and 32 (64 x 64 parts E561's law from a pairwise
-//! order of the bits above 7, E951).
-//! Bilinear filtering, and so a face edge's taps, is not modelled here at all (E931: one decided
-//! job mixed in another face's texel; Q284).
+//! Refused, naming Q284: two coordinates of equal largest magnitude (E956: the higher axis's face,
+//! w over v over u, held out on four sweeps of 32 tie pixels with the third coordinate small, but
+//! post hoc 7 of the 599 tie pixels of the kept cube jobs, none of the sweeps', the third
+//! coordinate 0.62 to 0.93 of |ma|, read the lower axis's face: no rule); a coordinate exactly on
+//! a texel boundary when |ma| is not a power of two (at a power of two the upper texel every time, the floor;
+//! otherwise E923's 14 misses, and E931's and E956's boundaries going up or down by their place,
+//! no rule frozen); faces of any size other than 4, 8, 16, 32 and 64.
+//! Bilinear filtering, and so a face edge's taps, is not modelled here at all (E931, E956: the
+//! out-of-face tap reads another face; the adjacent texel held on one edge of two; Q284).
 
 use crate::Outcome;
 
-/// The face sizes read: 16 x 16, 256 dwords a face, and 8 x 8, 64, held out (E726, E844, E930);
-/// 32 x 32, 1024, E561's law (E930 post hoc, E951).
-pub const FACE_SIZES: [u32; 3] = [8, 16, 32];
+/// The face sizes read, each held out: 16 x 16, 256 dwords a face, and 8 x 8, 64 (E726, E844,
+/// E930); 32 x 32, 1024, and 64 x 64, 4096, E561's law (E951, E955); 4 x 4, 16 (E955).
+pub const FACE_SIZES: [u32; 5] = [4, 8, 16, 32, 64];
 
 /// The face of (u, v, w): 2 * axis + (coordinate < 0), axis 0, 1, 2 for u, v, w (E844), and
 /// the axis. Refuses a tie between the two largest magnitudes and the zero vector.
@@ -45,7 +52,7 @@ pub fn face(c: [f32; 3]) -> Result<(u32, usize), Outcome> {
     }
     if (0..3).any(|i| i != ax && a[i] == a[ax]) {
         return Err(Outcome::unsupported(
-            "two cube coordinates of equal largest magnitude (a face tie, never run)",
+            "two cube coordinates of equal largest magnitude (a face tie: mostly the higher axis, no rule, E956)",
             &["Q284"],
         ));
     }
@@ -111,7 +118,7 @@ fn e561_index(s: u32, t: u32, size: u32) -> u32 {
 /// faces `size` x `size` reads at (u, v, w).
 pub fn point_index(c: [f32; 3], size: u32) -> Result<u32, Outcome> {
     if !FACE_SIZES.contains(&size) {
-        return Err(Outcome::unsupported("a cube face size other than 8, 16 or 32 (E930, E951)", &["Q284"]));
+        return Err(Outcome::unsupported("a cube face size other than 4, 8, 16, 32 or 64 (E955)", &["Q284"]));
     }
     let (f, ax) = face(c)?;
     let ma = c[ax].abs();
@@ -136,7 +143,7 @@ mod tests {
         assert_eq!(face([0.1, -0.9, 0.2]).unwrap(), (3, 1));
         assert_eq!(face([0.1, 0.2, 0.3]).unwrap(), (4, 2));
         assert_eq!(face([0.1, 0.2, -0.3]).unwrap(), (5, 2));
-        assert!(face([0.5, -0.5, 0.1]).is_err(), "a face tie is refused");
+        assert!(face([0.5, -0.5, 0.1]).is_err(), "a face tie is refused (E956: no rule)");
         assert!(face([0.0, 0.0, 0.0]).is_err());
     }
 
@@ -182,7 +189,16 @@ mod tests {
         // +z, |ma| = 1: u = 0.3 is s texel floor(1.3 * 4) = 5, -v = 0.6 is t texel 6
         assert_eq!(point_index([0.3, -0.6, 1.0], 8), Ok(4 * 64 + twiddle_bits(5, 6, 3)));
         assert_eq!(point_index([-0.999, 0.999, -1.0], 8), Ok(5 * 64 + twiddle_bits(7, 0, 3)));
-        assert!(refused(point_index([0.1, 0.2, 1.0], 4)));
-        assert!(refused(point_index([0.1, 0.2, 1.0], 64)));
+        assert!(refused(point_index([0.1, 0.2, 1.0], 2)));
+        assert!(refused(point_index([0.1, 0.2, 1.0], 128)));
+    }
+
+    #[test]
+    fn faces_of_4_and_64() {
+        // 4 x 4: +z, |ma| = 1, u = 0.3 is s texel floor(1.3 * 2) = 2, -v = 0.6 is t 3; 16 apart
+        assert_eq!(point_index([0.3, -0.6, 1.0], 4), Ok(4 * 16 + twiddle_bits(2, 3, 2)));
+        // 64 x 64: u = 0.3 is s 41, -v = 0.6 is t 51: tile (2, 3) of four a row, index 14, local
+        // (9, 3); bits 8, 9 = s4, s5 and 10, 11 = t4, t5 (E561, E955)
+        assert_eq!(point_index([0.3, -0.6, 1.0], 64), Ok(4 * 4096 + 14 * 256 + twiddle(9, 3)));
     }
 }

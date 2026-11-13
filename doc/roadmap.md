@@ -867,7 +867,8 @@ dwords past the target refused then, matched since by E831's band, and those in 
 jobs' tiles refused as Q107), the TA's region test (E542, E616: 14656 pairs, 2414 of them by
 presence only), the object layout (E541, E617: 56 layouts, the three failed jobs refused as Q165,
 not predicted) and the multisample window rule
-(E503, E618: 786 tiles, 13 refused as Q141). Every verdict is fitted, none matched. The inventory of
+(E503, E618: 786 tiles, 13 refused, the seam holes E953 answers). Every verdict is fitted, none
+matched. The inventory of
 the recorded data (E619, `doc/specs/pipe-inventory.md`): 2464 triangle-host vectors, 65 with a
 render dump, and 197 dump directories sorted by what each waits for. The simulator `sgx-sim` is
 unchanged. Q205 (the arithmetic of coverage, depth and iteration for an arbitrary triangle) is new.

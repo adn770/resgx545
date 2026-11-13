@@ -301,7 +301,8 @@ what the model computes.
   Q165).
 - `isp-tile` (E503): 48 runs of `isp/msaa-ident`: the two position dumps and the counts of
   `an_ident_rule.txt`: 786 tiles, all equal to the window rule, 773 decodable in all 512 pixels
-  (matched) and 13 with background pixels (refused, Q141).
+  (matched) and 13 with background pixels (refused: the region model's seam holes, held out by
+  E953, not ported to sgx-pipe).
 
 **The fifth, built in 12.1** (`unit_vectors.py`, `pbe_emit`): `pbe-emit` (E031, E268), 74 vectors.
 `init` is `sideband` (the emit's, pack mode in bits 5:0), `reg0400` (the word that loads
