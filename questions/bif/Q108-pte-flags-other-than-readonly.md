@@ -5,7 +5,7 @@ unit = "bif"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E021", "E151", "E319"]
+evidence = ["E021", "E151", "E319", "E945", "E946"]
 terms = ["CR_BIF_FAULT", "CR_BIF_INT_STAT"]
 +++
 
@@ -29,3 +29,18 @@ directory, then `fill` (a write), `copy` (a read) and
 `tri` (the TA's and the 3D's reads and writes) aimed at that buffer, with `--regs` on the bus
 interface's registers after each job and the job's status; a read of the host's write from the GPU
 side for CACHECONSISTENT.
+
+Narrowed 2026-11-13 (round 8, session r8-k2, decisions R8-5 a and R8-6 a; E945, E946). The round
+8 kernel's debugfs vm_pte_flags put one flag on one client mapping. On a 64 x 64 render (E945,
+frozen): WRITEONLY faulted both rows (H-WO-ALL held 2 of 2): the colour target's writes all
+landed, then the job faulted at the target's last page with SB 31 (BIF_INT_STAT 0x80020), and the
+read of the GENERAL page (VDM stream, indices, vertices) faulted before drawing (0x80008);
+CACHECONSISTENT on that page changed nothing; EDMPROTECT faulted the colour write (0xa0020,
+FAULT_TYPE 2, nothing written) and let the GENERAL page's read through. The transfer's rows (E946)
+were gated cannot tell (the end control did not run) and read the same post hoc: WRITEONLY's fill
+wrote then faulted at its last page (0x80020, SB 31), a copy's texture read of a READONLY +
+WRITEONLY source faulted (0x80002), EDMPROTECT's fill faulted (0xa0020), CACHECONSISTENT on a
+copy's source changed nothing. What stays: which access faults at the last page under WRITEONLY
+(the pixel side's writes land), WRITEONLY alone on a texture read, EDMPROTECT on reads other than
+the stream page's and on the TA's and the EDM's own buffers, flags together, CACHECONSISTENT on
+data cached before the host's write, and a held transfer row.

@@ -138,8 +138,22 @@ Key registers:
   4M); address mask `0xFFFFF000`. The 36-bit layout does not apply (§2). No record shows a run
   with a size other than the smallest (Q109).
 - **PTE** (`sgxmmu.h:65-69`): `VALID` `0x1`, `WRITEONLY` `0x2`, `READONLY` `0x4`,
-  `CACHECONSISTENT` `0x8`, `EDMPROTECT` `0x10`; address mask `0xFFFFF000`. Only `READONLY` is
-  run in a record (a write to a read-only page faults, E021, E319); what the other flags do is Q108.
+  `CACHECONSISTENT` `0x8`, `EDMPROTECT` `0x10`; address mask `0xFFFFF000`. A write to a
+  read-only page faults (E021, E319). The round 8 kernel's debugfs `vm_pte_flags` puts the
+  other three on one client mapping (fork r8-kernel 2a650d74, module B60AB0B4), one flag a job
+  (E945, the triangle's rows, frozen; E946, the transfer's, read post hoc):
+  - `WRITEONLY`: the pixel writes land (the fill's and the triangle's images exact), then the
+    job faults at the image's last page with `SB` 31 (`BIF_INT_STAT` 0x80020, 2 of 2); a read
+    faults at the mapping's first page before anything is drawn: the render's VDM stream page
+    (0x80008) and, with the copy's own `READONLY`, its texture source (0x80002). So no access
+    passes cleanly, but the write is not refused as a read-only one is [infer: the last-page
+    fault is a read by the pixel side after its writes].
+  - `CACHECONSISTENT`: no change to a copy's texture read or a render's stream read of the host's
+    writes made after the map (both images exact).
+  - `EDMPROTECT`: a pixel write faults at the first page with `FAULT_TYPE` 2 (0xa0020, the
+    transfer's and the 3D's, nothing written); the render's stream read passes.
+  The rest (a flag on another requestor, flags together, `WRITEONLY` alone on a texture read)
+  is Q108.
 - **BIF.** The bus interface is the MMU's front end. With 16 directory lists and multiple
   memory contexts, `BIF_DIR_LIST_BASE0..15` hold up to 16 page directories at once, and
   `BIF_BANK0` says which list each requestor translates through (§5.5).
@@ -226,6 +240,10 @@ belongs to is read from the access each record set up, not from a source [infer]
 | 0x90004 | 2 | TA write of region headers past the kernel's layout (`SB` 6) | E729, E789, E826 |
 | 0x90008 | 3 | TA read of an unmapped stream page | E764, E826 |
 | 0x80020 | 5 | transfer write to a read-only alias | E766 |
+| 0x80020 | 5 | fill or render colour write to a `WRITEONLY` page, after the image was written (`SB` 31, the image's last page) | E945, E946 |
+| 0x80002 | 1 | copy's texture read of a `READONLY` + `WRITEONLY` source | E946 |
+| 0x80008 | 3 | render's read of its VDM stream page mapped `WRITEONLY` | E945 |
+| 0xa0020 | 5 | fill or render colour write to an `EDMPROTECT` page (`FAULT_TYPE` 2) | E945, E946 |
 | 0x90100 | 8 | 4x render, at page 0x10000 (`SB` 1) | E511, E828, E845, E846, E867 to E869 |
 | 0xd0400 | 10 | background program's fetch (`FAULT_TYPE` 5) | E764 |
 | 0x91000 | 12 | first job with buffer 0 left out of the client alias | E573, E745, E761 |
