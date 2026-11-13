@@ -7,16 +7,17 @@
 //! no bit-exact arithmetic is known. So a value is `Near`, never matched, and a poorly
 //! conditioned triangle refuses (Q200). Not modelled here, and refused wherever a scene would
 //! need it: four components and other sources (Q180, Q098), no-wait fetches (Q027, Q093),
-//! perspective (w other than 1), and the position source 0 (x + 0.5 at the library's
-//! `CR_ISP_MULTISAMPLECTL` byte 0x88, E437; x + 0.375, y + 0.125 at 0x26, E502, E1010; [infer]
-//! the point byte 0 places, as the coverage sample is, E1018; Q201). E606's setups all ran under
-//! byte 0 = 0x88: an attribute iterated under another value refuses (`sample_point`, Q201).
+//! perspective (w other than 1). The point is `CR_ISP_MULTISAMPLECTL` byte 0's, the coverage
+//! sample's (E1018): the position source 0 reads it (x + 0.5 at the library's 0x88, E437; x +
+//! 0.375, y + 0.125 at 0x26, E502, E1010) and so does an iterated coordinate set (E1022: 18 of 18
+//! held-out rows at 0x3c, 0x0f, 0xf0, 0x5a and 0x26, both programs, x and y; `sample_point`).
+//! E606's tolerance was measured at the centre (0x88).
 
 use crate::Outcome;
 use crate::isp::{DEPTH_UNIT, GRID, Tri};
 
 /// Open questions that block the unit.
-pub const OPEN: &[&str] = &["Q027", "Q093", "Q098", "Q180", "Q200", "Q201"];
+pub const OPEN: &[&str] = &["Q027", "Q093", "Q098", "Q180", "Q200"];
 
 /// A refusing stub for the parts of the unit nothing models yet.
 pub fn refuse() -> Outcome {
@@ -70,20 +71,13 @@ pub fn at_centre(t: &Tri, vals: [f32; 3], attr: Attr, x: u32, y: u32) -> Result<
     Ok(Tri { v: t.v, z: vals }.depth_at(x, y))
 }
 
-/// Whether an attribute can be iterated under `CR_ISP_MULTISAMPLECTL` `ctl` (the render's
-/// cmd:16): only the library's 0x88, the pixel centre, under which E606 measured the plane. Byte
-/// 0 moves the coverage sample (E1018, `isp::sample_offset`) and [infer] the position source with
-/// it, but no kept job iterated a coordinate set under another value (Q201).
-pub fn sample_point(ctl: u32) -> Result<(), Outcome> {
-    if ctl != 0x88 {
-        return Err(Outcome::unsupported(
-            &format!(
-                "an attribute iterated under CR_ISP_MULTISAMPLECTL {ctl:#x}: byte 0 moves the coverage sample (E1018), but E606 iterated under 0x88 only"
-            ),
-            &["Q201"],
-        ));
-    }
-    Ok(())
+/// The point within the pixel at which an attribute is iterated under `CR_ISP_MULTISAMPLECTL`
+/// `ctl` (the render's cmd:16), in 1/256 pixel from its top-left corner: byte 0's, x the low
+/// nibble and y the high one in sixteenths (E1018 for the coverage; E1022 for an iterated
+/// coordinate set and the position source: 18 of 18 held-out rows, each drawn pixel within 1e-5
+/// pixel of it). Bytes 1 to 3 refuse as `isp::sample_offset` does (Q202).
+pub fn sample_point(ctl: u32) -> Result<(i64, i64), Outcome> {
+    crate::isp::sample_offset(ctl)
 }
 
 /// Whether a recorded value is within the tolerance of the model's.
@@ -130,20 +124,31 @@ mod tests {
         assert!((v - 0.5 / 64.0).abs() < 1e-12 && (v - 0.375 / 64.0).abs() > 1e-4);
     }
 
+    /// r13-isp stage q201 (E1022): byte 0, the program (coordinate set 0 or the position source)
+    /// and the offset every drawn pixel read, in sixteenths of a pixel, x and y.
+    const E1022_ROWS: [(u32, &str, (i64, i64)); 11] = [
+        (0x88, "cset", (8, 8)),
+        (0x26, "src0", (6, 2)),
+        (0x26, "cset", (6, 2)),
+        (0x3c, "src0", (12, 3)),
+        (0x3c, "cset", (12, 3)),
+        (0x0f, "src0", (15, 0)),
+        (0x0f, "cset", (15, 0)),
+        (0xf0, "src0", (0, 15)),
+        (0xf0, "cset", (0, 15)),
+        (0x5a, "src0", (10, 5)),
+        (0x5a, "cset", (10, 5)),
+    ];
+
     #[test]
-    fn an_attribute_under_another_sample_point_refuses_and_names_q201() {
-        // E1018: byte 0 of CR_ISP_MULTISAMPLECTL moves the coverage sample; no kept job iterated
-        // a coordinate set under a byte 0 other than 0x88 (E606's setups)
-        assert_eq!(sample_point(0x88), Ok(()));
-        for ctl in [0x26, 0x00, 0x89, 0xff] {
-            match sample_point(ctl) {
-                Err(Outcome::Unsupported { ids, why }) => {
-                    assert_eq!(ids, ["Q201"]);
-                    assert!(why.contains("E1018"));
-                }
-                o => panic!("{ctl:#x}: {o:?}"),
-            }
+    fn an_attribute_is_iterated_at_byte_0s_point() {
+        // E1022: both programs read byte 0's point, x the low nibble (H-SAMPLE0 18 of 18)
+        for (ctl, prog, (x, y)) in E1022_ROWS {
+            assert_eq!(sample_point(ctl), Ok((x * 16, y * 16)), "{ctl:#x} {prog}");
         }
+        assert!(
+            matches!(sample_point(0xeaa26e26), Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q202"])
+        );
     }
 
     #[test]

@@ -8398,6 +8398,36 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   infer: the grid's bits 7:0 explain the v = 1 rows as well as c].
   *vdm; HW, infer; data: `vdm-state-units`, `cited-scratch:closing12/plan/c2-q163/`,
   `cited-scratch:closing12/plan/rank-round12.md`.*
+- `E1022` r13-isp stage q201 (23 jobs, one 64 x 64 triangle that is not the tool's default): under
+  CR_ISP_MULTISAMPLECTL byte 0 = 0x3c, 0x0f, 0xf0, 0x5a and 0x26 (bytes 1 to 3 at 0) both the
+  position source (E437's source 0) and coordinate set 0 iterating the vertices' clip x and y read
+  at byte 0's point (x + lo/16, y + hi/16, lo = bits 3:0) at every drawn pixel, the position source
+  exactly and the coordinate set within 3.8e-6 pixel (frozen H-SAMPLE0 held 18 of 18 held-out rows,
+  x and y of both programs), and the drawn set is E1018's coverage at that point (18 of 18);
+  H-CENTRE and H-SWAP failed 18 of 18, H-SPLIT (the coordinate set stays at the centre) 10 of 18;
+  the five controls (0x88 coordinate set x, y and its end replicate, 0x26 position source x, y)
+  passed.
+  *isp; HW; data: `render-closing-r13-isp:out/20261113-215416/q201/`,
+  `render-closing-r13-isp:fold/`.*
+- `E1023` r13-isp stage q261 (16 jobs): every held-out far vertex draws E1012's clip (the far edges
+  clipped to a guard, each new vertex rounded half up to 1/256 pixel, the edges then exact) at some
+  value of its own guard (frozen H-CLIP held 14 of 14), and one value of each guard fits every 64 x
+  64 row (H-CLIP-ONE): x <= 80 (G = 16 of E1012's 16 to 22, 4 rows along +x), x >= -9 or -16 (3 rows
+  along -x), y in [-16, 80] (4 rows along -y); on 128 x 128 the three rows fit x <= 147 (G = 19) and
+  no other frozen value, so one G on both targets (H-REL) and a guard fixed in pixels (H-ABS) both
+  failed; both controls (E979's far-ctl and far-x24p, E1005's d = 0) drew their kept images; post
+  hoc, a guard a quarter of the target past each edge draws all 24 rows of q261 and far.
+  *isp; HW, infer; data: `render-closing-r13-isp:out/20261113-215416/q261/`,
+  `render-closing-r13-isp:fold/`.*
+- `E1024` r13-isp stage far (8 jobs, last, ascending distance): one far vertex at +2^26 and +2^30
+  pixels in x, -2^28 in x, -2^26 and -2^30 in y and +2^28 in y on a 64 x 64 target (--tri-unit 0,
+  the near vertices E979's rounded) drew with `job: ok`, no fault and no hang, the image of E1012's
+  clip at the guard q261 read: x <= 80 (G = 16), y in [-16, 80] (g = 16), x >= -9 or -16 (frozen
+  H-CLIP held 7 of 7 with E979's x25n replicate, H-CLIP-ONE 1 of 1); a clamp or wrap of a 24.8 word
+  and removal failed 6 of 6, the exact coverage outside E684's band held 6 of 6, the float32 window
+  vertex 5 of 6; the far-ctl control drew its kept image.
+  *isp; HW, infer; data: `render-closing-r13-isp:out/20261113-215416/far/`,
+  `render-closing-r13-isp:fold/`.*
 - `E1025` r13-tex stage srgb3 on module B60AB0B4 (Q282; bilinear sRGB, T0 bit 27, 9 probe fills):
   both controls passed (E723's g-bl-st-a and p1132's an-t0b27, their kept images, 2048 of 2048);
   'FTZ-OUT (heldout) (5 of 5 rows decided)' and the end replicate (1 of 1): R10-BF11 with every
@@ -8532,7 +8562,7 @@ E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E5
 E606, E607, E618, E660, E661, E662, E680, E681, E682, E683, E684, E727, E728, E731, E739, E740,
 E741, E757, E758, E762, E825, E827, E829, E912, E913, E914, E922, E934, E943, E952, E953, E954,
 E970, E971, E972, E973, E979, E984, E989, E990, E992, E995, E998, E1005, E1006, E1010, E1012, E1014,
-E1018.
+E1018, E1022, E1023, E1024.
 
 ### mte
 
