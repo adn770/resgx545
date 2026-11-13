@@ -956,6 +956,14 @@ stays with what a session must do around it.
   the first that passes (a real failure fails every try; the PASS line names the attempt). Still
   run it alone when it matters, not beside the suite. New sessions use the kit's argv-driven
   mock, which has no such margin.
+- the 11.32 sampler model `texmodel.py` (resgx545-data `texture/p1141/support/`, and this tree's
+  `tools/texture/p1132/recompute/`, the same bytes, sha256 ffa41eb9...) addresses a twiddled
+  texture by plain Morton order over the whole side, where E561 says tiles of up to 16 x 16:
+  wrong when both sides are above 16 (r13-tex: E564's an-t3b11 at pixel 16). Both copies are
+  frozen (11.32's declared predictions, the p1141 batch) and stay as they are. A session that
+  needs twiddled textures above 16 a side pins `resgx545:tools/texture/tilemodel.py` with its
+  input `tools/texture/p1132/recompute/texmodel.py`: the same model with E561's address
+  (`tilemodel.tm`, tested on E564's an-t3b11, 2048 of 2048, `tools/texture/test_tilemodel.py`).
 
 ## Simulator coverage baseline
 
