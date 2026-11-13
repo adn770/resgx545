@@ -28,7 +28,7 @@ list.
 - `Q066` isp, high: what do the three background-object words the 3D kick writes mean to the ISP,
   and what are the other words of a render's background object? (E216, E410, E590)
 - `Q089` isp, high: where does the closed driver's 4x multisampled render become a 64x64 image, when
-  its PBE words are those of a single-sampled 64x64 target ... (E508, E510, E727)
+  its PBE words are those of a single-sampled 64x64 target ... (E510, E727, E893)
 - `Q199` isp, high: what is the integer range and the behaviour at the limits (saturation, wrap,
   removal) of the ISP's 1/256-pixel vertex format (E607: window ... (E607, E683, E684)
 - `Q202` isp, high: do the coverage rule (centre sample, vertices on the 1/256 grid, top-left ties)
@@ -62,7 +62,7 @@ list.
 - `Q082` edm, medium: what does CR_EVENT_STATUS2 bit 6 follow in a pixel task (a fill without a
   load: a tile's time near 125 us, E805; a program that waits on a ... (E839, E840, E841)
 - `Q030` isp, medium: does the sample layout of E281 hold in the tiles and windows past the first
-  (what CR_TE_AA bits 31 and 30 do when bit 29 is clear is ... (E504, E728, E829)
+  (what CR_TE_AA bits 31 and 30 do when bit 29 is clear is ... (E728, E829, E893)
 - `Q031` isp, medium: why does ISP word 0 bit 28 hang a multisampled render, when single-sampled it
   widens coverage to the union of eight samples? (E215, E278, E416)
 - `Q032` isp, medium: what does pcoeff hand the ISP in the punch-through pass, when the kept pixels'
@@ -141,8 +141,8 @@ list.
   store RZ + 1 as a kept vertex's 1/w word (106 of the 189 read ... (E859, E872, E879)
 - `Q180` texture, medium: why did all 28 triangle jobs of the four-component DOUTI0 probes hang
   (E569), the two controls with the old source word 0x40800801 included ... (E420, E541, E569)
-- `Q284` texture, medium: what are the (s, t) orientation of each cube face, the edge filtering
-  across faces and the face size limits of TEXTYPE 2 (E567, E726, E844)
+- `Q284` texture, medium: what does a TEXTYPE 2 cube sample read at an exact texel boundary when
+  |ma| is not a power of two (E923: 14 of 207 such pixels one texel ... (E726, E844, E923)
 - `Q003` transfer, medium: which event (if any) does a bus-interface fault raise, and what do the
   fault-request bits of CR_BIF_INT_STAT name, what clears a latched ... (E901, E919, E920)
 - `Q011` transfer, medium: why does a copy whose background-object tag (transfer word 0) is wrong
@@ -218,8 +218,8 @@ list.
   stop the tick through the closed task (E814: that word ... (E812, E814, E902)
 - `Q072` isp, low: what does bit 1 of CR_ISP_REG_04DC do to a punch-through pass, when it hangs
   every one tried and changes no opaque or translucent pass? (E222, E290, E416)
-- `Q141` isp, low: why does a handful of pixels in one tile stay background when the full triangle
-  covers the target, with CR_TE_AA bits 30 or 31 set in mode ... (E502, E503, E504)
+- `Q141` isp, low: do the background pixels of a multisampled render under the full triangle hold
+  out as the seam holes of the region model (E922: every one ... (E727, E762, E922)
 - `Q201` isp, low: why does the position source (E437, E502: x + 0.375, y + 0.125 in mode 0 and
   every multisampling mode tried) differ from the point at which ... (E437, E502, E606)
 - `Q241` isp, low: what do ISP word 0 bits 15, 16, 17 and 18, the depth compares 2, 3, 5 and 6
@@ -343,9 +343,15 @@ list.
 
 ## Recent records
 
-89 records of 2026-11-11 to 2026-11-12 (the last 2 days to the newest record's date), newest first;
+73 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E923` texture, 2026-11-13: Round 8 offline (Q284; no run): the (s, t) of TEXTYPE 2's cube faces
+  under smp3d is the public cube-map table (+x s = -w, t = -v; -x s = +w, t = -v; +y s = +u, t = +w;
+  -y s = +u, t = -w; +z s = +u, t ...
+- `E922` isp, 2026-11-13: Round 8 offline (Q141; no run, in sample): the landed region model
+  (resgx545-data texture/p1141/recompute/msaa_model.py, sha256 1c0e8205..., E727's freeze,
+  unchanged) with its two-halves rule gives ...
 - `E921` usse, 2026-11-12: R7 session r7-faults stage L (Q111's lockup stop, read by R-6 as two
   `lock #0` and no release; E088's counter fill, 64 x 32, each pixel instance adding 1 to one
   scratch dword): with `lock #0` ... ...
@@ -559,60 +565,6 @@ the claims are cut at 200 characters.
 - `E849` edm, 2026-11-12: Read offline after the hypothesis (post hoc, no frozen prediction; round 5
   plan closing5/events, step F0): E836's b1p stop dump, taken at the stop's signature before the
   host's clears, holds HostCtl ...
-- `E848` bif, 2026-11-11: R4-render4x stage h (4 held cells, each a 4x job on one array of region
-  headers that faulted with a TA write, BIF_INT_STAT 0x90004, as frozen, then the debugfs reset, the
-  cell's follow-up and health ...
-- `E847` ta, 2026-11-11: R4-render4x stage t (7 jobs, 64 x 64): the frozen verdict for Q293 is
-  cannot tell, because its two baseline controls (the line and the point object of the 11.31
-  sessions without a poke) are NODATA: ...
-- `E846` dpm, 2026-11-11: R4-render4x stage o (7 of 8 jobs run, o6 skipped by its condition): the
-  frozen verdict is cannot tell for Q292 and for H-SPM4 because the control o2 (1x 1024 x 768 at
-  render_pb_pages 0x82, frozen to ...
-- `E845` dpm, 2026-11-11: R4-render4x stages s0 and p: the three controls reproduced as frozen (1x
-  1024 x 768 hash 0xc9e301d225fe2325; 4x 288 x 144 hash 0x4a61860dcb4ab325, 12 parameter pages; 4x
-  1024 x 768 hash ...
-- `E844` texture, 2026-11-11: R4-render4x stage c (3 probe fills of 64 x 32, TEXTYPE 2 sampled with
-  smp3d): E726's own cu-xn program, run again as the control, read face 1 (-x) on 2048 of 2048
-  pixels with E726's pixels byte for ...
-- `E842` ta, 2026-11-11: R4-pixel stage g4-rw (Q230, 24 jobs: R2's t3-nocut shape, z = 0 and w = C x
-  + D on the tool's three vertices, a table of 60 w split 30 FIT and 30 HELD OUT by the sha256 of
-  their bits before the run): ...
-- `E841` edm, 2026-11-11: R4-pixel stage q4-t (Q082 bit 6 in triangles, 54 jobs: E806's relative
-  8-instruction loop with a MARK as the pixel program of the tool's triangle covering a W x H
-  target, `--tri-full`): the 12 ...
-- `E840` edm, 2026-11-11: R4-pixel stage q4-f (Q082 bit 6, 16 fills of 64 x 32 whose pixel program
-  ends in a MARK only when its loop counters end): the five bridge controls to E804 and E805 passed
-  on the rgn4 module (the ...
-- `E839` edm, 2026-11-11: R4-pixel stage q4-v (Q082 bit 7, 28 jobs, 27 scored: a vertex program on
-  the tool's triangle looping N times on a relative br, the stored depth word 0x3f200000 + N the
-  loop proof, every job under ...
-- `E838` pds, 2026-11-11: R4-pixel stage p4-o4 (Q276, 36 jobs in E808's p-c3 shape: a triangle's
-  pixel program writing tagged words to o0 to o7 in E709's four-output setup, the words at bits 3:0,
-  a job marker at bits 15:6, x ...
-- `E837` platform, 2026-11-11: R4 stage e3p, the status bits (r4-events, the same two jobs as E836;
-  Q166, Q111): in b0 (the fill without the skip, control) CR_EVENT_STATUS read 0x20000000 in 9 of 9
-  watch reads from the slot 3 ...
-- `E836` edm, 2026-11-11: R4 stage e3p, the end of the pass (r4-events, ring_skip3p.s, 2 of its 4
-  jobs run, the stage ended by its stop rule at its first B1P; Q152's slot 3 clause): the fill
-  without the skip (b0, control, ...
-- `E835` edm, 2026-11-11: R4 stage kp (r4-events, 4 jobs of ring_exit2.s, no stop; Q152): with the
-  controls passing (e0, 14 entries on the 25000-unit grid, nothing acted; fk, a plain tick pass
-  ended idf, wdf, phas #0, #0, ...
-- `E834` edm, 2026-11-11: R4 stage kb2 (r4-events, 10 jobs of ring_hold.s, each a reset and an arm,
-  the writes made before the logging window and one miscinfo 1 ms after it opened, no stop; Q290):
-  the ordinary kicks (g0p x2, ...
-- `E833` usse, 2026-11-11: Converted from the published closing-pass sessions (R3-pixel, R3-geo,
-  R3-geo-c, R3k-pixel) as vectors, sgx-sim replays all 204 pixel-loop proofs of R3-pixel (q-f0 10,
-  q-f1a 54, q-f1b 54, q-t 86) and ...
-- `E830` edm, 2026-11-11: R4-B stage fr (Q152 replicate of E817's FCF, 21 jobs in 3 blocks and 3
-  recoveries, ring_exit.s as in E817, module srcversion 99CD90DA, no reset between the arm and fcf
-  in a block, one stop a block): ...
-- `E829` isp, 2026-11-11: R4-A stages a-pb0 and a-pb (Q285 rerun, 8 jobs, split flow -n 2 --geometry
-  1 at 64 x 64, CR_TE_AA 0x40000000, forced render_rgn_arrays 1, module srcversion 99CD90DA,
-  controls frozen from E827's ...
-- `E828` ta, 2026-11-11: R3-rgn4 (the laptop check of the linux fork's 4x render contexts, fork
-  resgx545 a2788bd8, module srcversion 99CD90DA): at render_rgn_arrays 0 (automatic) a 288 x 144 job
-  at CR_TE_AA 0xe0000000, mode ...
 
 ## Closing sessions
 
@@ -697,4 +649,4 @@ stays with what a session must do around it.
 
 ## Simulator coverage baseline
 
-125 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
+122 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).

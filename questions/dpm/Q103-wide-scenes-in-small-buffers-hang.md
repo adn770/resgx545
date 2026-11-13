@@ -67,3 +67,9 @@ without the line if a completion re-armed the timeout [infer]. Q278, which asked
 is decided in doc/specs/3d.md. Not run, still the evidence for the narrowed question: 900 and 1500
 vertices in 0x100 pages without the hold, and a timeline of the partial render count against the
 registers below and above 35.
+
+Note 2026-11-13 (round 8 offline, decision R8-1 a; ranking closing8/rank/rank-round8.md section 5).
+A fold into Q211 is proposed, not made here: what stays of this question, why a wide scene takes 35
+or more partial renders, is the partial-render count that Q211 asks for scenes of many objects
+(E875's page replay in E899's walk order, held out for one object by E916). The fold moves this
+question's evidence to Q211 once round 7's Q211 records are on main.

@@ -5,7 +5,7 @@ unit = "isp"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E210", "E211", "E219", "E220", "E281", "E415", "E502", "E503", "E504", "E728", "E829"]
+evidence = ["E210", "E211", "E219", "E220", "E281", "E415", "E502", "E503", "E504", "E728", "E829", "E893"]
 terms = ["CR_ISP_MSAA", "CR_ISP_MSAA.MODE", "CR_ISP_MSAA.ENABLE", "CR_ISP_MULTISAMPLECTL", "CR_TE_AA", "programmable sample positions"]
 +++
 

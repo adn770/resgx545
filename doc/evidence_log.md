@@ -7346,6 +7346,33 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *usse; HW, RE, infer; data: `render-closing-r7-faults:out/20261112-222800/l/`,
   `render-closing-r7-faults:bins/`.*
 
+### 2026-11-13
+
+- `E922` Round 8 offline (Q141; no run, in sample): the landed region model (resgx545-data
+  texture/p1141/recompute/msaa_model.py, sha256 1c0e8205..., E727's freeze, unchanged) with its
+  two-halves rule gives the background pixels of E502's identity jobs as a set, exactly, in 48 of 48
+  jobs (the 8 with 9 to 192 holes, the 40 with none; with the halves rule off, 40 of 48 and 0 of the
+  8), and of E504's tri-full images in the 15 of 21 jobs outside E829's empty case (the 136 at (32,
+  32) of mode 0 at 0xe0000000 among them); each hole is a staircase at a tile's top-left cut by the
+  diagonal of the TA's clipped quad, where a stored half takes only its half-region's list and that
+  list lacks the second triangle [infer]; the seam was set on E502, so this is a fit, and the
+  out-of-sample evidence is E727 and E762 alone.
+  *isp; HW, infer; data: `isp-msaa-ident`, `isp-msaa-te-dumps`,
+  `texture-isp-msaa-verification-1141`, `cited-scratch:closing8/rank/`,
+  `cited-scratch:closing8/offline/r8-1/`.*
+- `E923` Round 8 offline (Q284; no run): the (s, t) of TEXTYPE 2's cube faces under smp3d is the
+  public cube-map table (+x s = -w, t = -v; -x s = +w, t = -v; +y s = +u, t = +w; -y s = +u, t = -w;
+  +z s = +u, t = -v; -z s = -u, t = -v; each over |ma|, texel floor((q + 1) / 2 * 16), the
+  face-local index the Morton interleave with t in bit 0): one rule a face up to the s/t-swap twin
+  of the same index, fitted on E726's eight jobs (16376 of 16384 pixels), frozen by hash
+  (q284_rule.json, 52162471...) and then held out offline on E844's two off-axis jobs, never used
+  for a fit: 2046 and 2044 of 2048; all 14 misses of fit and held out are one texel low at an exact
+  texel boundary with |ma| not a power of two, where 193 such pixels go up, and at the 3043
+  boundaries with |ma| a power of two the upper texel every time [HW]; the tie rule is not found
+  (post hoc).
+  *texture; HW, infer; data: `texture-isp-msaa-verification-1141`,
+  `render-closing-r4-render4x:out/20261111-211315/c/`, `cited-scratch:closing8/rank/`.*
+
 ## By unit
 
 ### bif
@@ -7381,7 +7408,7 @@ E215, E216, E217, E218, E219, E220, E222, E224, E225, E226, E227, E228, E229, E2
 E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E290, E291, E330,
 E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E508, E510, E590,
 E606, E607, E618, E660, E661, E662, E680, E681, E682, E683, E684, E727, E728, E731, E739, E740,
-E741, E757, E758, E762, E825, E827, E829, E912, E913, E914.
+E741, E757, E758, E762, E825, E827, E829, E912, E913, E914, E922.
 
 ### mte
 
@@ -7425,7 +7452,7 @@ E865, E872, E877, E879, E886, E888, E893, E897, E906, E907, E908.
 Records: E033, E034, E035, E036, E037, E038, E039, E040, E041, E042, E114, E116, E242, E254, E271,
 E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441, E560, E561, E562,
 E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E726, E733, E743,
-E744, E760, E765, E787, E844, E894, E910, E911.
+E744, E760, E765, E787, E844, E894, E910, E911, E923.
 
 ### transfer
 

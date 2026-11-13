@@ -651,6 +651,9 @@ fn kind_isp_tile(v: &Json, ctx: &Ctx) -> Result<Modelled, String> {
         Ok(c) => {
             let mut seen = Seen { matched: c.equal_full, mismatched: c.tiles - c.equal, ..Seen::default() };
             if c.equal > c.equal_full {
+                // the tiles with background pixels: E922 reads every one, in sample, as a seam
+                // hole of the region model (a stored half takes only its half-region's list;
+                // E727's model, out of sample in E727 and E762); refused until a held-out row
                 seen.refused.insert("Q141".into(), c.equal - c.equal_full);
             }
             Ok(Modelled { outcome: crate::rules::ISP_MSAA_WINDOW.outcome(), seen })

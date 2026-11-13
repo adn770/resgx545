@@ -13,6 +13,7 @@
 
 pub mod arith;
 pub mod bif;
+pub mod cube;
 pub mod data;
 pub mod dpm;
 pub mod edm;
