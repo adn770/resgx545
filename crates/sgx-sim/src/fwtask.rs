@@ -7,7 +7,9 @@
 //! a `str` to 0x0814 or 0x0a78 is seen by every later `ldr` of that register and by the host, at once, with
 //! no fence and at any distance run (0 to 64 instructions between, a `wdf`, an `idf`, neither); an
 //! earlier `ldr` is not changed by a later `str`. That is what the register map below does, so
-//! the model is the sequential one, and only for those two registers. Everything else is refused:
+//! the model is the sequential one, and only for those two registers. E604 (stage f15) read the
+//! stored value back again after a 2 ms spin across the start of a client fill, 12 of 12; whether
+//! the fill overlapped the task was not measured, so nothing here models another writer. Everything else is refused:
 //! `str` to any other register or of a value wider than the register (17 and 6 bits), `ldr` of a
 //! register not on the list or not seeded (the identity registers and CR_TIMER are read-only here
 //! and a vector seeds them), an index of more than 14 bits, the register-index forms (no run used

@@ -683,6 +683,7 @@ impl Texture {
         if self.w != self.h && !CHAIN_SIZES.contains(&(self.w, self.h)) {
             return open(format!("mipmaps of a non-square {}x{} texture (not run)", self.w, self.h));
         }
+        // a fractional LOD from gradients: E721 fitted its fraction (truncated to 1/64) with residuals
         if !exact && l < last as f64 {
             return open("a LOD from gradients that are not a power of two");
         }
@@ -717,6 +718,9 @@ impl Texture {
             Lod::Value(x) if x.is_nan() => return open("a NaN LOD"),
             Lod::Value(x) => (x as f64, true),
             Lod::Grad([dudx, dvdx, dudy, dvdy]) => {
+                // E721: with independent operands the footprint is, to within 0.1%, the larger
+                // Euclidean length of (op0, op2) and (op1, op3) scaled by the level size, fitted with
+                // residuals of 19 to 56 pixels on 4 of 8 held-out jobs: no exact rule, refused
                 if dvdx != 0.0 || dudy != 0.0 {
                     return open("gradients off the diagonal");
                 }

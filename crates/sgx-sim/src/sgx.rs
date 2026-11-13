@@ -185,10 +185,11 @@ pub struct Sgx {
     /// The count byte, bits 31:24 of the event word every event carries (Q290, E768): the host
     /// kicks served since the load, mod 256. It starts at 0; the kernel's boot and the arm each
     /// send a GETMISCINFO, so an armed firmware reads 2 (set it, and the kicker word with it).
-    /// The hardware does not read the kicker word W per event (E819 Q1, H-KW refuted); whether the
-    /// count is W as latched at a served kick or a count of served kicks is not separated (Q290):
-    /// the two agree whenever the kernel bumps W by one before each EVENT_KICK write, the only
-    /// kick the sim serves (see `write_reg`).
+    /// The hardware does not read the kicker word W per event (E819 Q1, H-KW refuted), nor latch W
+    /// at a served kick: with W written to 0x42 before an ordinary kick (bumped to 0x43) the ticks
+    /// after it carried 3 (E834, H-LATCH refuted, H-CNT consistent), so the count is of served
+    /// kicks; the sim serves only a kick whose W is bumped by one (see `write_reg`), and refuses a
+    /// kick after W was set otherwise (Q290).
     pub event_count: u8,
     /// Set by an EVENT_KICK write with the kicker word unchanged, which the hardware did not
     /// consume (E819 Q3); every later event and kick is refused (Q290).
@@ -295,10 +296,12 @@ impl Sgx {
     /// bumped by one since the last served kick, as the kernel does before each write: one event
     /// with the kick bit and the count before the bump (E746, E768, E816 G0). W unchanged: no
     /// event, the count and W left, the command not answered (E819 Q3, 3 of 3); [infer] the
-    /// event needs W to change. Whether an event stays pending after it (the ticks after the
-    /// write carried pa2 0x01061a74 in 2 of 3 jobs, post hoc) and the count of the ticks after it
-    /// are open (Q290), so the sim refuses every later event and kick. W set to any other value,
-    /// then kicked: refused (E819 Q2 could not read the count after it, Q290).
+    /// event needs W to change. E834 repeated it (no kick entry in 5 of 5, the ticks after it kept
+    /// the count and carried pa2 0x01061a74, and an ordinary kick after it in a second window was
+    /// served at once with the count unchanged); whether an event stays pending and what the
+    /// marked ticks mean are open (Q290), so the sim refuses every later event and kick. W set to
+    /// any other value, then kicked: refused (E819 Q2 could not read the count after it; E834 read
+    /// 3 after W 0x42 bumped to 0x43, a single row, Q290).
     fn kick(&mut self) -> Result<(), Error> {
         if self.kick_unconsumed {
             return Err(why("a kick after a kick that was not consumed: not run (Q290, E819)"));
