@@ -150,7 +150,8 @@ pub fn overflows(pb_pages: u32, need: u32) -> bool {
 /// The high halves of the 3D free list's STATUS2 registers (0x0710 and 0x071c): 0 in every sample
 /// of every kept job, through partial renders and global lists of up to 18 pages (E358, E443, E574;
 /// E1019, round 12 offline over 697 timelines and 1594 after-reads, held out). What 0x0748 bit 2
-/// marks is not modelled ([infer] it clears with partial renders, E1019; Q036).
+/// marks is not modelled ([infer] it clears with partial renders, E1019; not once per partial render, and
+/// never without one in 2 of 2 runs, E1032; Q036).
 pub const STATUS2_HIGH_HALF: u32 = 0;
 
 /// How a 4x job of the tool's full-screen triangle (`--tri-full --aa4`, `CR_TE_AA` 0xe0000000) on a
@@ -1157,6 +1158,18 @@ mod tests {
         // E1019 [HW, held out offline]: 0x0710 bits 31:16 in 285824 timeline lines of 697 jobs and
         // 0x071c bits 31:16 in 1594 after-reads, global lists up to 18 pages: always 0
         assert_eq!(STATUS2_HIGH_HALF, 0);
+        assert!(OPEN.contains(&"Q036"));
+    }
+
+    #[test]
+    fn bit_2_of_0x0748_is_not_a_clear_per_partial_render_e1032() {
+        // E1032 [HW]: 3072x2048, 1500 vertices at 0, 1, 2 and 4 partial renders, two runs each:
+        // (partial renders, timeline lines with 0x0748 bit 2 clear); the plan's form (a clear line
+        // at least once per partial render, none at 0) holds at none of the six rows with one
+        let rows: [(u32, u32); 8] = [(0, 0), (1, 0), (2, 0), (4, 0), (1, 0), (0, 0), (4, 1), (2, 0)];
+        assert!(rows.iter().filter(|r| r.0 == 0).all(|r| r.1 == 0));
+        assert_eq!(rows.iter().filter(|r| r.0 > 0 && r.1 >= r.0).count(), 0);
+        assert_eq!(rows.iter().map(|r| r.1).sum::<u32>(), 1);
         assert!(OPEN.contains(&"Q036"));
     }
 
