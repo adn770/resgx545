@@ -12,7 +12,7 @@ PY=${PY:-$HOME/src/resgx545/.venv/bin/python}
 "$PY" kit/session.py guard . || exit 1
 for t in tests/test_*.py; do
 	[ -f "$t" ] || continue
-	"$PY" -m pytest -q "$t" || exit 1
+	"$PY" -m pytest -q -p no:cacheprovider "$t" || exit 1
 done
 "$PY" kit/session.py mock . || exit 1
 if [ -f FROZEN.sha256 ]; then "$PY" kit/session.py verify . || exit 1; fi
