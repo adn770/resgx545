@@ -1,11 +1,11 @@
 +++
 id = "Q139"
-question = "does a block row of a first macrotile that is not a multiple of 4 wide take 8 floor(fx / 2) slots on held-out hardware rows (E950, fitted on E944's three readable residue dumps, every slot; no safe kept image parts it from R7-BLK, and every kept job at fx 2 or 3 mod 4 faulted), what is the stride's relation to the RT data, and why do the words that fault (E509) fault"
+question = "does a block row of a first macrotile that is not a multiple of 4 wide take 8 floor(fx / 2) slots on held-out hardware rows (E950, fitted on E944's three readable residue dumps, every slot; no safe kept image parts it from R7-BLK, and every kept job at fx 2 or 3 mod 4 faulted), is the list-end flag (bit 7) on the last target tile in block order or on the highest slot of a target tile's header (E1011: no kept dump parts the two), what is the stride's relation to the RT data, and why do the words that fault (E509) fault"
 unit = "ta"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E505", "E506", "E509", "E407", "E877", "E907", "E944", "E950", "E959", "E1007"]
+evidence = ["E505", "E506", "E509", "E407", "E877", "E907", "E944", "E950", "E959", "E1007", "E1011"]
 terms = ["CR_TE_MTILE1", "CR_TE_MTILE2", "CR_TE_MACROTILE_STRIDE"]
 +++
 
@@ -111,3 +111,19 @@ iff its header lies at or before it (4 of 4, held out). Answered: bit 7 ends the
 3D reads. sgx-pipe's `ta::macrotile_slots` models the measured words with the list end. Open:
 H-EVEN held out (fx 2 or 3 mod 4: only faulting words), the stride's relation to the RT data and
 the faulting words of E509.
+
+Narrowed 2026-11-13 (round 11 offline, decision R11-2 a, E1011; the question line is reworded, the
+question is not retired). It read "does a block row of a first macrotile that is not a multiple of
+4 wide take 8 floor(fx / 2) slots on held-out hardware rows (E950, fitted on E944's three readable
+residue dumps, every slot; no safe kept image parts it from R7-BLK, and every kept job at fx 2 or 3
+mod 4 faulted), what is the stride's relation to the RT data, and why do the words that fault
+(E509) fault". The flag was read offline on r7-rp's 21 poked dumps of E907's run (module 41E2F5C7,
+never read for it), the rules frozen by hash before any dump was opened: one bit-7 header at
+H-EVEN's slot of the last target tile in block order and a tile drawn iff its header lies at or
+before it, 21 of 21 and the poked control; H-EVEN's slots exact on 24 of 24. "The highest slot
+written" fails 17 of 21 (non-target headers written past the target); the highest slot of a target
+tile's header is never parted from the flag's, since no kept dump has its last block-order target
+tile below another target tile's slot. sgx-pipe's `ta::macrotile_slots` admits r7-rp's words with
+every row's wrong tiles and flag. Open: H-EVEN at fx 2 or 3 mod 4, that rival of the flag (a dump
+whose last block-order target tile is not the highest target slot, which may need such words), the
+stride's relation to the RT data and the faulting words of E509.

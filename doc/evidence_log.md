@@ -8228,6 +8228,49 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   holding only where it ties H-IDENT; both E502 controls (mode 1 TE 0xe0000000, mode 0 TE
   0x20000000) reproduced E502's kept images (4096 of 4096).
   *isp; HW; data: `render-closing-r10-x:out/20261113-101116/win0/`.*
+- `E1011` Round 11 offline (Q139; no run): on r7-rp stage q139's 21 poked TA dumps (E907's run on
+  module 41E2F5C7, 10 fit, 10 held-out and 1 replicate row, never read for the flag) and its poked
+  control, frozen by hash before any of their dumps was opened, every dump holds exactly one header
+  with flag bit 7, at H-EVEN's slot of the last target tile in block order (H-FLAGSLOT 21 of 21 and
+  the control), and a target tile draws iff a stream header naming it lies at or before that slot
+  (H-LAST 21 of 21, every one of the 128 or 600 tiles); H-EVEN's (here R7-BLK's) slots are exact on
+  24 of 24 dumps; the rival 'the flag is on the highest header slot written' fails 17 of 21 (flag 95
+  to 743, highest 141 to 1183: non-target headers written past the target), while 'the highest slot
+  of a target tile's header' is never parted from H-FLAGSLOT [HW, held out offline on a second
+  module build; infer: no kept dump has its last block-order target tile below another target tile's
+  slot].
+  *ta; HW, infer; data: `render-closing-r7-rp:out/20261112-205431/q139/`,
+  `cited-scratch:closing11/plan/c1-q139flag/`, `cited-scratch:closing11/plan/rank-round11.md`.*
+- `E1012` Round 11 offline (Q261, post hoc on E1005's and E979's kept rows; no run, no held-out
+  row): none of 236 declared edge set-up arithmetics (float coefficients of 8 to 24 bits, round to
+  nearest or toward zero, in nine arrangements; fixed-point truncation; the far vertex on 2^k grids;
+  32-bit wrap and saturation) draws all 48 far-vertex rows (E1005's 36 pivot rows and its control,
+  E979's ten far rows and control) pixel for pixel (best 46 of 48; float32 11 of 48, as the exact
+  image); written after that miss, a clip of the far edges against a guard x in [-G, 64 + G] on the
+  64 x 64 target, each new vertex rounded half up to 1/256 pixel and the polygon's edges then tested
+  exactly, draws 48 of 48 rows and 318 of 318 band pixels with G = 16, and with every G from 16 to
+  22 (G 15 or less misses far-x24p at d = -416, G 23 or more far-x23p at d = -544; the lower bound
+  fits anywhere from -8 to -32, the y bounds untested) [HW data, fitted post hoc; infer: it gives
+  per-triangle displacements without D proportional to the far vertex's distance, and E979's exact
+  image outside the band].
+  *isp; HW, infer; data: `render-closing-r10-geo:out/20261113-103256/pivot/`,
+  `render-closing-r9-x:out/20261113-081821/far/`, `cited-scratch:closing11/plan/c6-q261/`,
+  `cited-scratch:closing11/plan/rank-round11.md`.*
+- `E1013` Round 11 offline (Q210; no run): over every kept DPM run of r5 to r10 with a published
+  replay of E874's 1500-vertex scene (520 jobs read; 53 calibrations and 118 partial-render cells of
+  the standard workload have an S6 step), the lower end of S6's sampled bracket is the replay R plus
+  a class fixed per target: frozen before any kept sample beyond E1009's own, H-CLASS (R + 1 at
+  E1009's five targets, R at its eight) held at 37 of 37 calibrations (16 held out) and 56 of 56
+  cells (50 held out); beyond the 13 the lower end is R + 1 at 2048x3072, 2560x3072 and 3072x2560
+  and R at 1024x1024, 2560x2560, 3072x2048, 3072x3072, 1024x2048 and 2048x4096, the same at every
+  run of a target, calibration or cell; the frozen aspect rule (biased iff w/h > 2 or w < h, fitted
+  on the 13) fails at 3072x2560, 1024x2048 and 2048x4096, and no simple rule of w, h, area or
+  residue separates the eight biased targets from the fourteen others [HW, held out offline; the
+  scope to the standard workload is post hoc: the 12 exceptions are `--vtx-coords`/`--slot` runs at
+  2048x2048, another scene].
+  *dpm; HW, infer; data: `render-closing-r5-dpm`, `render-closing-r6-dpm`, `render-closing-r7-dpm`,
+  `render-closing-r8-ldpm`, `render-closing-r9-ldpm`, `render-closing-r10-dpm`,
+  `cited-scratch:closing11/plan/c5-q210/`, `cited-scratch:closing11/plan/rank-round11.md`.*
 
 ## By unit
 
@@ -8243,7 +8286,7 @@ E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E4
 E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753, E773, E774, E775, E779, E785,
 E786, E790, E799, E800, E801, E802, E803, E832, E845, E846, E852, E853, E854, E860, E861, E862,
 E863, E864, E866, E867, E868, E869, E870, E873, E874, E875, E881, E882, E883, E887, E889, E899,
-E900, E915, E916, E917, E918, E935, E936, E937, E938, E939, E960, E961, E962, E963, E1009.
+E900, E915, E916, E917, E918, E935, E936, E937, E938, E939, E960, E961, E962, E963, E1009, E1013.
 
 ### edm
 
@@ -8266,7 +8309,7 @@ E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E2
 E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E508, E510, E590,
 E606, E607, E618, E660, E661, E662, E680, E681, E682, E683, E684, E727, E728, E731, E739, E740,
 E741, E757, E758, E762, E825, E827, E829, E912, E913, E914, E922, E934, E943, E952, E953, E954,
-E970, E971, E972, E973, E979, E984, E989, E990, E992, E995, E998, E1005, E1006, E1010.
+E970, E971, E972, E973, E979, E984, E989, E990, E992, E995, E998, E1005, E1006, E1010, E1012.
 
 ### mte
 
@@ -8303,7 +8346,7 @@ Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
 E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763, E776, E777,
 E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828, E842, E847, E851, E859,
-E865, E872, E877, E879, E886, E888, E893, E897, E906, E907, E908, E944, E950, E959, E1007.
+E865, E872, E877, E879, E886, E888, E893, E897, E906, E907, E908, E944, E950, E959, E1007, E1011.
 
 ### texture
 

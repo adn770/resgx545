@@ -1,11 +1,11 @@
 +++
 id = "Q261"
-question = "what sets the displacement of a far vertex that the ISP's edges behave as (E1005: the band pixels of E979's far triangles are the exact coverage of the far vertex moved along y by one amount per triangle, 339 to 467 pixels at (2^24, 2^22), above 586 at (2^23, 2^21) and (-2^25, -2^23), not one displacement or one angle), how does it depend on the far vertex and the edge, and where does the vertex format saturate, wrap or cull past 2^25 pixels (Q199)"
+question = "what sets the displacement of a far vertex that the ISP's edges behave as (E1005: one amount per triangle, 339 to 467 pixels at (2^24, 2^22), above 586 at (2^23, 2^21) and (-2^25, -2^23); E1012, post hoc with no held-out row: a clip of the far edges to a guard x in [-G, 64 + G] with G 16 to 22, the new vertex rounded half up to 1/256, fits all 48 kept rows where no declared set-up arithmetic does), does that clip hold on held-out far vertices and a 128 x 128 target (guard relative to the target or absolute), what are its lower and y bounds, and where does the vertex format saturate, wrap or cull past 2^25 pixels (Q199)"
 unit = "isp"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E684", "E682", "E979", "E984", "E1005"]
+evidence = ["E684", "E682", "E979", "E984", "E1005", "E1012"]
 terms = []
 +++
 E684 puts one vertex, on the 1/256 grid, at 2^9 to 2^21 pixels, on 64 x 64 and 512 x 512 targets
@@ -50,3 +50,21 @@ is 339 to 467 pixels, far-x23p's and far-x25n's above 586. One displacement for 
 angle, are refuted. Open: what sets it (the edge's set-up from these coordinates [infer]), its
 value at other far vertices and the upper bounds of x23p and x25n, and Q199 past 2^25 pixels
 (far2, not run). sgx-pipe keeps the band undetermined.
+
+Narrowed 2026-11-13 (round 11 offline, decision R11-3 a, E1012, post hoc; the question line is
+reworded, the question is not retired). It read "what sets the displacement of a far vertex that the
+ISP's edges behave as (E1005: the band pixels of E979's far triangles are the exact coverage of the
+far vertex moved along y by one amount per triangle, 339 to 467 pixels at (2^24, 2^22), above 586 at
+(2^23, 2^21) and (-2^25, -2^23), not one displacement or one angle), how does it depend on the far
+vertex and the edge, and where does the vertex format saturate, wrap or cull past 2^25 pixels
+(Q199)". Of 236 declared edge set-up
+arithmetics (float coefficients of 8 to 24 bits in nine arrangements, fixed-point truncation, 2^k
+vertex grids, 32-bit wrap and saturation) none draws all 48 kept far rows (E1005's 36 and control,
+E979's ten and control); the best 46, float32 11. Written after that miss, a clip of the far edges
+against a guard x in [-G, 64 + G], each new vertex rounded half up to 1/256 and the edges then
+exact, draws 48 of 48 rows and 318 of 318 band pixels for every G from 16 to 22 and no other; the
+lower bound fits anywhere from -8 to -32 and the y bounds are untested. It is fitted on every kept
+row, so sgx-pipe keeps the band undetermined. Held-out vertices for a later row are in
+closing11/plan/c6-q261/q261_proposals.json (four along +x, three along -x, one or two band pixels
+apart between the surviving G; a 128 x 128 target tells 64 + G from an absolute 80 to 86). Open:
+the clip held out, its bounds, and Q199 past 2^25 pixels.

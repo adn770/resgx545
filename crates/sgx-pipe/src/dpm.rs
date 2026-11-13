@@ -426,7 +426,8 @@ fn replay_1500(w: u32, h: u32) -> (BTreeMap<u32, u32>, Vec<u32>) {
 /// steps vary by up to 2 pages between runs (E937). r9-ldpm held them at 2304x2304, 2304x1792 and
 /// 1792x1792 (E961) and 1280x1280 and 2560x2048 (E963); 2048x2304 (S3 and S6 one above, E961) and
 /// the four wide targets of E962 (S6 one or two above, the needs the replay's) are not: E1009's
-/// replicates read S6's sampled bracket from the replay plus 1 at all five, a bias, not noise.
+/// replicates read S6's sampled bracket from the replay plus 1 at all five, a bias, not noise;
+/// `s6_bracket_lower_end` gives that lower end at the 22 kept targets (E1013).
 const STEP_TARGETS: &[(u32, u32)] = &[
     (2048, 2048),
     (3072, 3072),
@@ -450,6 +451,46 @@ pub fn tool_triangle_steps(w: u32, h: u32) -> Option<(Vec<u32>, u32)> {
     }
     let (steps, after) = tool_triangle_replay(w, h);
     Some((steps.values().copied().collect(), *after.last()?))
+}
+
+/// S6's offset from E874's replay by target (E1013, round 11 offline: every kept standard
+/// 1500-vertex run of r5 to r10 with a replay, 53 calibrations and 118 partial-render cells): the
+/// lower end of the sampled bracket of S6 is the replay plus 1 at the eight biased targets (E1009's
+/// five, fitted, and 2048x3072, 2560x3072, 3072x2560, held out) and the replay at the fourteen
+/// others, constant at every run of a target. No rule of w and h was found (the aspect reading,
+/// biased iff w/h > 2 or w < h, fails at 3072x2560, 1024x2048 and 2048x4096): why a target is
+/// biased is open (Q210). Scenes of larger objects (`--vtx-coords`) are not this replay's (E937).
+const S6_BIAS: &[((u32, u32), u32)] = &[
+    ((4096, 1024), 1),
+    ((4096, 1536), 1),
+    ((3584, 1024), 1),
+    ((2048, 512), 1),
+    ((2048, 2304), 1),
+    ((2048, 3072), 1),
+    ((2560, 3072), 1),
+    ((3072, 2560), 1),
+    ((1280, 1280), 0),
+    ((1536, 1536), 0),
+    ((1792, 1792), 0),
+    ((2048, 2048), 0),
+    ((2304, 1792), 0),
+    ((2304, 2304), 0),
+    ((2560, 2048), 0),
+    ((4096, 2048), 0),
+    ((1024, 1024), 0),
+    ((2560, 2560), 0),
+    ((3072, 2048), 0),
+    ((3072, 3072), 0),
+    ((1024, 2048), 0),
+    ((2048, 4096), 0),
+];
+
+/// The lower end of the bracket the host's samples give S6 (the page count before global page 6
+/// is taken) for the tool's triangle with 1500 vertices: E874's replay plus the target's class
+/// (E1013, E1009). `None` at a target with no kept run (Q210: what sets the class).
+pub fn s6_bracket_lower_end(w: u32, h: u32) -> Option<u32> {
+    let bias = S6_BIAS.iter().find(|(t, _)| *t == (w, h))?.1;
+    Some(tool_triangle_replay(w, h).0.get(&6)? + bias)
 }
 
 /// The bands k (S_k < thr0 <= the next step) where H-SPAN's frozen cells held (E915): s-m's
@@ -1214,6 +1255,51 @@ mod tests {
         }
         // the control: the replay's S6 at the premise target, read exact (0x181)
         assert_eq!(tool_triangle_replay(2048, 2048).0[&6], 0x181);
+    }
+
+    #[test]
+    fn s6_s_sampled_lower_end_is_the_replay_plus_a_per_target_class_e1013() {
+        // E1013 (round 11 offline, every kept standard 1500-vertex DPM run of r5 to r10 with a
+        // published replay; c5-q210's table): the lower end of S6's sampled bracket is constant
+        // per target, the replay R plus 1 at eight targets and R at fourteen; per target R, the
+        // lower end read, and the runs (calibrations, cells). E1009's five and eight fitted the
+        // class; 16 calibrations and 50 cells of the 13 and all nine targets beyond were held out
+        let kept: &[(u32, u32, u32, u32, u32, u32)] = &[
+            (4096, 1024, 0x17c, 0x17d, 4, 0),
+            (4096, 1536, 0x229, 0x22a, 4, 0),
+            (3584, 1024, 0x14d, 0x14e, 4, 0),
+            (2048, 512, 0x6e, 0x6f, 4, 0),
+            (2048, 2304, 0x1ac, 0x1ad, 4, 6),
+            (2048, 3072, 0x233, 0x234, 5, 7),
+            (2560, 3072, 0x2b3, 0x2b4, 1, 5),
+            (3072, 2560, 0x2ae, 0x2af, 1, 5),
+            (1280, 1280, 0xa6, 0xa6, 1, 0),
+            (1536, 1536, 0xe1, 0xe1, 3, 8),
+            (1792, 1792, 0x12b, 0x12b, 2, 6),
+            (2048, 2048, 0x181, 0x181, 6, 16),
+            (2304, 1792, 0x177, 0x177, 1, 6),
+            (2304, 2304, 0x1dd, 0x1dd, 1, 6),
+            (2560, 2048, 0x1d4, 0x1d4, 1, 0),
+            (4096, 2048, 0x2db, 0x2db, 2, 8),
+            (1024, 1024, 0x6f, 0x6f, 3, 6),
+            (2560, 2560, 0x244, 0x244, 2, 15),
+            (3072, 2048, 0x22c, 0x22c, 3, 5),
+            (3072, 3072, 0x335, 0x335, 0, 18),
+            (1024, 2048, 0xd0, 0xd0, 1, 0),
+            (2048, 4096, 0x2e8, 0x2e8, 0, 1),
+        ];
+        let (cal, cells) = kept.iter().fold((0, 0), |(a, b), k| (a + k.4, b + k.5));
+        assert_eq!((kept.len(), cal, cells), (22, 53, 118));
+        for &(w, h, r, lo, _, _) in kept {
+            assert_eq!(tool_triangle_replay(w, h).0[&6], r, "{w}x{h}: the replay's S6");
+            assert_eq!(s6_bracket_lower_end(w, h), Some(lo), "{w}x{h}");
+        }
+        // no simple rule of w and h: 3072x2560 is biased and 3072x3072 is not, 1024x2048 and
+        // 2048x4096 (aspect 1:2) are not while 2048x3072 is; targets not run, or without a
+        // replayed workload (E881's 2048x1024, 4096x4096, 1024x768), are refused (Q210)
+        for (w, h) in [(2048, 1024), (4096, 4096), (1024, 768), (3072, 1024), (512, 512)] {
+            assert_eq!(s6_bracket_lower_end(w, h), None, "{w}x{h}");
+        }
     }
 
     #[test]

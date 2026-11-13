@@ -22,7 +22,7 @@ list.
 - `Q191` dpm, high: what are the words that land in a kept owner's control page (0x00200047), OTPM
   page (0x04000417) and state page (0x00020001, 2) after the ... (E462, E591, E631)
 - `Q210` dpm, high: why does band 6's margin end at the page count once the object after the
-  straddling block (b_6 + 1) is tiled (E960, E961: held out at four ... (E962, E963, E1009)
+  straddling block (b_6 + 1) is tiled (E960, E961: held out at four ... (E963, E1009, E1013)
 - `Q211` dpm, high: does E874's replay give the need of wide scenes of other vertex counts than 1500
   (E630's 300 to 900; at 1500 it gave the need of four ... (E960, E962, E963)
 - `Q066` isp, high: what do the three background-object words the 3D kick writes mean to the ISP,
@@ -70,7 +70,7 @@ list.
 - `Q240` isp, medium: does the coverage rule of E606 (vertices on the 1/256 pixel grid, exact centre
   test, left and top edges owning ties) hold for random ... (E682, E912, E913)
 - `Q261` isp, medium: what sets the displacement of a far vertex that the ISP's edges behave as
-  (E1005: the band pixels of E979's far triangles are the exact ... (E979, E984, E1005)
+  (E1005: one amount per triangle, 339 to 467 pixels at (2^24, ... (E984, E1005, E1012)
 - `Q262` isp, medium: what bounds the error of the stored depth and of the iterated clip z on E680's
   targets, where E606's tolerances fail for some triangles of ... (E684, E912, E913)
 - `Q288` isp, medium: what rule gives the stored depth of a plane with a non-dyadic gradient in x
@@ -122,7 +122,7 @@ list.
 - `Q100` ta, medium: what do the fields of CR_TE_MTILE1 and CR_TE_MTILE2 mean, given that flips of
   their bits change the image or fault the job at 256x256 and ... (E506, E509, E877)
 - `Q139` ta, medium: does a block row of a first macrotile that is not a multiple of 4 wide take 8
-  floor(fx / 2) slots on held-out hardware rows (E950, fitted ... (E950, E959, E1007)
+  floor(fx / 2) slots on held-out hardware rows (E950, fitted ... (E959, E1007, E1011)
 - `Q142` ta, medium: which control-stream form does the TA write in a region of the grid that
   CR_TE_AA bits 30 and 31 halve (16 x 16, 32 x 8 and 16 x 8 ... (E504, E893)
 - `Q159` ta, medium: what rule lists the 32 x 16 regions of a one-line object: at ISP word 1 width
@@ -325,9 +325,18 @@ list.
 
 ## Recent records
 
-145 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+148 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1013` dpm, 2026-11-13: Round 11 offline (Q210; no run): over every kept DPM run of r5 to r10
+  with a published replay of E874's 1500-vertex scene (520 jobs read; 53 calibrations and 118
+  partial-render cells of the standard ...
+- `E1012` isp, 2026-11-13: Round 11 offline (Q261, post hoc on E1005's and E979's kept rows; no run,
+  no held-out row): none of 236 declared edge set-up arithmetics (float coefficients of 8 to 24
+  bits, round to nearest or ...
+- `E1011` ta, 2026-11-13: Round 11 offline (Q139; no run): on r7-rp stage q139's 21 poked TA dumps
+  (E907's run on module 41E2F5C7, 10 fit, 10 held-out and 1 replicate row, never read for the flag)
+  and its poked control, ...
 - `E1010` isp, 2026-11-13: r10-x stage win0 (14 jobs, E502's identity maps: E437's primary PDS
   program iterating the position, a shader writing pa0 or pa1, --tri-full): in CR_ISP_MSAA mode 0
   with CR_TE_AA 0x60000000, ...
