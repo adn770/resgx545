@@ -33,7 +33,11 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   outside those eleven parts max(W, H) from W; mode 5 with s inside and t outside reads 7 M + 52 + s
   above and 4 M + 52 + s below, not the inside offset, and the corner dwords move with the shape
   (16 to 19 at 16 x 16, 20 to 23 at 32 x 8) (E1017, held out offline against the frozen form,
-  the forms post hoc); why, other formats and texture types are open (Q177).
+  the forms post hoc). **Held out (E1026): 8 max(W, H) + 52 texels** at 32 x 64, 8 x 64 and 128 x 32
+  in modes 4, 6 and 7 and on a u16 texture (texels, not dwords), and with u and v in mode 5 the
+  side, above and below reads follow max(W, H) too; the corner base is 24 at 64 x 16 and 16 x 64, no
+  frozen form (post hoc 4 log2 max(W, H)); a strided texture reads modes 4 to 7 as mode 0 (E565).
+  Why, the corner base and types 1, 3 and 4 are open (Q177).
 - **Twiddled layout (`texture-sampler-smp-twiddled`).** Texel `(x, y)` lies at the Morton index with
   **`y` in
   bit 0, `x` in bit 1**, and so on; a non-square texture puts the longer side's extra bits
@@ -77,7 +81,9 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   row and column offsets at every value tried (E566). Bits 8, 9, 20, 21 and 22 change nothing on a
   strided texture, nor do 11 and 12, but on a twiddled chain texture bits 11 and 12 change every
   pixel (E564): bit 11 cleared reads level 0's texel (x, y) and bit 12 set the 1 x 1 level, at
-  one LOD on one chain (post hoc, Q078). Bits 10, 14, 18, 27 and 28 offset the texel by an amount
+  one LOD on one chain (post hoc). **Held out with smp2dreplace (E1027): bits 12:11 pick the level
+  whatever the LOD: 00 level 0, 01 the LOD's level, 11 and 10 the last level T0's max level allows**
+  (not a LOD bias, not a constant address). Bits 10, 14, 18, 27 and 28 offset the texel by an amount
   that changes with the
   pixel position, and bit 13 faults the job. Setting T0 bits 30 or 31 reads other values: they
   act, how is not known.
@@ -88,14 +94,16 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   L, Y >> L), or X >> L + stride (Y >> L) on a strided texture; **bit 10 reads the base dword**;
   the offset bits 7:0 act before. Run on twiddled textures up to 64 x 64 and strided 128 x 32, a
   32-bit format only; the scale shifts the dword address, not the index alone (3 jobs). Bits 11
-  and 12 stay undecided (Q078). **Bit 14 shears a strided read** (E968): at a width equal to the
+  and 12 select the level (above, E1027). **Bit 14 shears a strided read** (E968): at a width equal
+  to the
   stride (64) the dword plus 32 plus 64 per column, held out offline on a second job; at width 32,
   stride 64 the six frozen forms fail, and post hoc dword + floor(S * S * u), u clamped to [0, 1],
   fits all three strided jobs; on a twiddled texture it faulted (E566). **It moves the read by
   floor(4096 clamp(u, 0, 1)) texels** (E975 post hoc in dwords on 32-bit texels; E1003 held out
   on six strided geometries: strides 16 and 256, u off the grid and past both ends, v varying, and
   a 16-bit format, where it is texels, not dwords, 6 of 6; sgx-sim models it point sampled at
-  formats 9 and 12).
+  formats 9 and 12); under a bilinear sample it moves the whole footprint by that count, u the
+  sample's coordinate (E1027, one row); on a twiddled texture it is open (Q078).
 - **sRGB (T0 bit 27; E723).** **A point-sampled texel byte is decoded sRGB to half float** (4 of
   4 held-out fills exact over 2048 pixels: strided 8 x 4, twiddled 8 x 8 twice, twiddled 32 x
   32). Under bilinear filtering neither declared order fits (filter then decode 0 of 2048 pixels,
@@ -105,7 +113,11 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   three two-stage fills, every pixel, with weights on the 1/64 grid (E982); a later held-out row
   missed it where a stage result is subnormal (E1004), and **a stage result below 2^-14 is
   flushed to +0**: held out offline on an-t0b27's 12 halves that part it, one pixel column
-  (E1016; the y stage's own flush rests on one half, Q282).
+  (E1016), **the y stage's own result included** (E1025: held out on five strided rows, every 1/64
+  weight of each stage alone and both together; the threshold between 5.69e-5 and 6.16e-5, the
+  smallest normal half [infer]). A trilinear sample's level lerp is not that stage rule (E1025, one
+  row; post hoc the exact lerp of the levels' halves rounded ties up fits 4091 of 4096 halves); it
+  and bytes 2 and 3 are open (Q282).
 - **ETC1 (format 27; E724).** **Format 27 is ETC1 with the 4 x 4 blocks in Morton order, y in the
   low bit** (6 of 6 held-out fills of random valid blocks exact over 2048 pixels, 8 x 8 to 32 x
   16; raster block order and Morton with x low 0 of 6). Formats 23 to 26 are not decoded.

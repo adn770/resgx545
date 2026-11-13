@@ -8398,6 +8398,57 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   infer: the grid's bits 7:0 explain the v = 1 rows as well as c].
   *vdm; HW, infer; data: `vdm-state-units`, `cited-scratch:closing12/plan/c2-q163/`,
   `cited-scratch:closing12/plan/rank-round12.md`.*
+- `E1025` r13-tex stage srgb3 on module B60AB0B4 (Q282; bilinear sRGB, T0 bit 27, 9 probe fills):
+  both controls passed (E723's g-bl-st-a and p1132's an-t0b27, their kept images, 2048 of 2048);
+  'FTZ-OUT (heldout) (5 of 5 rows decided)' and the end replicate (1 of 1): R10-BF11 with every
+  stage result below 2^-14 flushed to +0 held every pixel of the x stage alone (kx 0 to 63, corners
+  0 and bytes 1 to 3 both ways), the y stage alone and both stages on bytes 0 to 3, frozen by hash
+  (c2's rule_b.py) before the run; the y stage's own subnormal result is flushed: 'FTZ-IN (heldout)
+  is not supported: 2 held, 3 FAILED' (1280, 1564 and 1888 of 2048 on y1, y2 and sub2); a threshold
+  at 6.4e-5 failed every row ('FTZ-T64 ... 0 held, 5 FAILED'), so the kept halves put the flush
+  between 5.69e-5 (flushed) and 6.16e-5 (kept), the smallest normal half 2^-14 inside; the trilinear
+  row (a twiddled 16 x 16 sRGB chain, smp2dreplace at LOD 1.25, T0 bit 9) fitted none of the frozen
+  forms (TRI-OUT and TRI-NOFLUSH 1137, TRI-LO 0 of 2048); post hoc the two levels' FTZ-OUT halves
+  lerped exactly at 16/64 and rounded nearest, ties up, fit 4091 of 4096 halves [infer].
+  *texture; HW, infer; data: `render-closing-r13-tex:out/20261113-214825/srgb3/`,
+  `render-closing-r13-tex:fold/`.*
+- `E1026` r13-tex stage addr4 on module B60AB0B4 (Q177; T0 u address modes 4 to 7 on twiddled
+  textures, 12 probe fills): both controls passed (E1000's 16 x 64 mode 4 and E565's bd-uv5, their
+  kept images); 'H-MAX (heldout) (7 of 7 rows decided)': the read is E561's index plus 8 max(W, H) +
+  52 at 32 x 64, 8 x 64 and 128 x 32 in modes 4 and 6 and 32 x 64 in mode 7 (+564, +564, +1076 every
+  pixel), where the width's form failed 5 and the height's 2; on a 16-bit (u16) 32 x 64 in mode 4
+  the offset is 8 max(W, H) + 52 texels ('H-MAX-TX (heldout) (1 of 1 rows decided)'; in dwords 0 of
+  2048); with u and v both in mode 5 at 64 x 16 and 16 x 64 the reads past the texture follow M =
+  max(W, H): 5 M + 52 + t left and 6 M + 52 + t right, 7 M + 52 + s above and 4 M + 52 + s below,
+  and the index plus 8 M + 52 inside (IN-M, LR-M, AB-M 2 of 2 each); every frozen corner form failed
+  (CO-WH2, CO-12M4, CO-12W4 0 of 2): the corners read c + 0 to 3 with c = 24 at both shapes, and
+  post hoc c = 4 log2 max(W, H) fits all four kept shapes (16, 20, 24, 24) [infer].
+  *texture; HW, infer; data: `render-closing-r13-tex:out/20261113-214825/addr4/`,
+  `render-closing-r13-tex:fold/`.*
+- `E1027` r13-tex stage t3c on module B60AB0B4 (Q078; T3 bits 11, 12 and 14, 16 probe fills): the
+  control passed (E564's an-t3b11, its kept image); on twiddled chains with smp2dreplace, T3 bits
+  12:11 = 00 read level 0 at every LOD 0 to 6, on a 32 x 32 chain and with mips off ('B11-LEVEL0
+  (heldout) (9 of 9 rows decided)'; the LOD's level failed 7 of 9, a bias of -3.5 3 of 9), bit 12
+  set read the last level T0's max level allows (max level 3 and 5 on the 64 x 64 chain, the 1 x 1
+  level of the 32 x 32: 'B12-CAPLVL (heldout) (3 of 3 rows decided)'; the chain's own last level 1
+  of 3, the constant dword 5460 0 of 3, a bias of +2.5 1 of 3), and 12:11 = 10 read the same last
+  level ('AS-11' 1 of 1; level 0 and the LOD's level 0 of 1); T3 bit 14 under a bilinear sample on a
+  strided 64 x 32 moves the whole footprint by floor(4096 u) texels, u the sample's coordinate
+  ('H-FOOT (heldout) (1 of 1 rows decided)', each tap by its own centre 1037 of 2048), its bit-clear
+  reference read the plain bilinear image (2048 of 2048).
+  *texture; HW, infer; data: `render-closing-r13-tex:out/20261113-214825/t3c/`.*
+- `E1028` r13-tex stage sb12 on module B60AB0B4 (Q046 sideband bit 12; E383's probe --tri form,
+  sideband 0x1200 | mode, modes 0 to 6, colours 0xc0804020 and 0x13579bdf, one moved triangle; 16
+  jobs): the mode 0 colour 0 replicate control FAILED (inset 3924 of 4096 in E383's words of mode 0,
+  frozen >= 4055) while E383's mode 8 control passed, so every SUMMARY reads 'controls FAILED' and
+  no frozen verdict is drawn; post hoc (fold/sb12_post.py) every colour 0 row holds 172 to 230
+  pixels of words outside E383's set, at tile-periodic places mostly outside the triangle, and
+  differs from E383's run on 390 to 799 pixels (E383's two runs: 0 to 256), and within the session
+  each colour 1 image is a function of the colour 0 image of its mode, pixel by pixel (4056 to 4096
+  of 4096: the 0x66 fields stay, the 0xff fields become 0x03 or 0x00), so the words are per-pixel
+  classes whose layout changes between sessions and whose values follow o0 [infer].
+  *pbe; HW, infer; data: `render-closing-r13-tex:out/20261113-214825/sb12/`,
+  `render-closing-r13-tex:fold/`.*
 - `E1032` r13-dpm stage pr2 on module B60AB0B4 (Q036: does 0x0748 bit 2 clear with partial renders;
   one scene, 3072x2048 with 1500 vertices, at 0, 1, 2 and 4 partial renders, two replicates each, 8
   jobs): both PR 0 controls passed (no partial render, no bit 2 clear line); every row read the
@@ -8462,7 +8513,7 @@ E348, E418, E419.
 ### pbe
 
 Records: E029, E030, E031, E032, E239, E240, E251, E265, E266, E267, E268, E269, E270, E333, E382,
-E383, E385, E386, E387, E429, E999.
+E383, E385, E386, E387, E429, E999, E1028.
 
 ### pds
 
@@ -8498,7 +8549,7 @@ E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441, E5
 E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E726, E733, E743,
 E744, E760, E765, E787, E844, E894, E910, E911, E923, E930, E931, E932, E940, E941, E942, E951,
 E955, E956, E957, E958, E968, E974, E975, E976, E982, E983, E1000, E1001, E1002, E1003, E1004,
-E1016, E1017.
+E1016, E1017, E1025, E1026, E1027.
 
 ### transfer
 

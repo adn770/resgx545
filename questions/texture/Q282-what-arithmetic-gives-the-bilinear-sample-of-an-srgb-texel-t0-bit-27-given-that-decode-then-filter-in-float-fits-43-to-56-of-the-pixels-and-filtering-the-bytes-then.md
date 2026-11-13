@@ -1,11 +1,11 @@
 +++
 id = "Q282"
-question = "does the bilinear sRGB sample (T0 bit 27), E982's stage rule with every stage result below 2^-14 flushed to +0 (held out offline on an-t0b27's 12 parting halves, one pixel column, E1016), flush the y stage's own subnormal result (one half parts it from a flush of the x stage's results only), where is the threshold, and does the rule hold off E723's form (other channels, negative values, other filters)"
+question = "how does a trilinear sRGB sample (T0 bit 27 with T0 bit 9) lerp the two levels' halves, given that E982's stage rule with the flush below 2^-14 fits only 1137 of 2048 pixels there (post hoc: the exact lerp at f/64 rounded nearest, ties up, 4091 of 4096 halves, E1025), and do texel bytes 2 and 3 (alpha) of an sRGB texel decode and filter as bytes 0 and 1"
 unit = "texture"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E723", "E720", "E976", "E982", "E1004", "E1016"]
+evidence = ["E723", "E720", "E976", "E982", "E1004", "E1016", "E1025"]
 terms = ["T0.BIT27"]
 +++
 E723: g-bl-st-a 1147 and g-bl-st-b 876 of 2048 for decode then filter, 0 for filter then decode.
@@ -74,3 +74,15 @@ the threshold (corners 0, 1, 0, 1 at ky 0 with kx 11 to 14,
 closing11/plan/c2-texture/next_row_b.out;
 the kept data put it between 5.7e-5 and 6.4e-5), and the rule off E723's form. Retire after that
 row (R11-6 a).
+
+Narrowed 2026-11-13 (round 13, session r13-tex, decision R13-1 a; E1025; the question line is
+rewritten to what stays, the question is not retired: R13-9 needs every clause, and the trilinear
+row failed). It read "does the bilinear sRGB sample (T0 bit 27), E982's stage rule with every stage
+result below 2^-14 flushed to +0 (held out offline on an-t0b27's 12 parting halves, one pixel
+column, E1016), flush the y stage's own subnormal result (one half parts it from a flush of the x
+stage's results only), where is the threshold, and does the rule hold off E723's form (other
+channels, negative values, other filters)". Answered: the y stage's own result is flushed (FTZ-OUT
+5 of 5 held-out rows and the replicate; FTZ-IN failed 3), the threshold is bracketed between
+5.69e-5 and 6.16e-5 (a threshold at 6.4e-5 failed every row; 2^-14 the only half boundary inside
+[infer]), both channels and both directions of every stage's 1/64 weights hold; negative values are
+void [infer]. What stays: the trilinear level lerp and bytes 2 and 3.
