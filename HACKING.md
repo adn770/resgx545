@@ -273,12 +273,13 @@ commit (never a working tree). `kit/session.py` then does the rest, each step fr
 list of laptop files (`run/staged.lst`, written with `run/session.env` and `run/required.tsv` from
 session.toml and the scorer's `REQUIRED`): `guard` (the laptop rules on the kit runner and the
 hooks, and the tables' knobs, tools, options and controls), `freeze`, `verify`, `stage` (one
-bounded ssh with BatchMode and the HostKeyAlias, then every copy and tool checked by sha256),
-`run` (verify, gate, the runner, the copy back, sessioncheck kept, the score, the premise; its
-stop codes are in its header) and `mock`. The laptop runner keeps everything under
-`~/scratch/<prefix>/`, works in `mktemp -d ~/scratch/tmp/<prefix>.XXXXXX` directories, checks the
-free space, marks the kernel log, bounds every command with `timeout -k`, resets and checks
-health between jobs, restores the knobs after every job and by its exit trap, makes the
+bounded ssh with BatchMode and the HostKeyAlias of `SGX_TARGET_HOST_KEY_ALIAS`, else of
+`SGX_TARGET_SSH_OPTS` (whose options it passes), else of session.toml, a failure naming them;
+then every copy and tool checked by sha256), `run` (verify, gate, the runner, the copy back,
+sessioncheck kept, the score, the premise; its stop codes are in its header) and `mock`. The
+laptop runner keeps everything under `~/scratch/<prefix>/`, works in
+`mktemp -d ~/scratch/tmp/<prefix>.XXXXXX` directories, checks the free space, marks the kernel
+log, bounds every command with `timeout -k`, resets and checks health between jobs, restores the knobs after every job and by its exit trap, makes the
 directories `outdir_opts` name and stops when a file the scorer requires was not kept.
 
 The freeze is pinned by commit, so main and data may move while sessions are built and run:

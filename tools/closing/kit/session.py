@@ -533,9 +533,30 @@ def verify(kp):
 
 # ---- staging and the run ---------------------------------------------------------------------
 def ssh_opts(c):
-    alias = (ENV or os.environ).get("SGX_TARGET_HOST_KEY_ALIAS", c.get("host_key_alias", "sgx-target"))
-    return ["-o", "BatchMode=yes", "-o", "ConnectTimeout=10", "-o", "ServerAliveInterval=15",
-            "-o", "ServerAliveCountMax=4", "-o", f"HostKeyAlias={alias}"]
+    """The options of every ssh to the laptop. The host key's alias is SGX_TARGET_HOST_KEY_ALIAS,
+    else the HostKeyAlias of SGX_TARGET_SSH_OPTS (the bringup tools' variable, whose options
+    are all passed), else session.toml's host_key_alias: ssh keeps the first value it is given
+    for an option, so the kit's own BatchMode and bounds come first."""
+    e = ENV or os.environ
+    out = ["-o", "BatchMode=yes", "-o", "ConnectTimeout=10", "-o", "ServerAliveInterval=15",
+           "-o", "ServerAliveCountMax=4"]
+    extra = shlex.split(e.get("SGX_TARGET_SSH_OPTS", ""))
+    if e.get("SGX_TARGET_HOST_KEY_ALIAS"):
+        out += ["-o", f"HostKeyAlias={e['SGX_TARGET_HOST_KEY_ALIAS']}"]
+    elif not any(re.search(r"(?i)hostkeyalias", x) for x in extra):
+        extra += ["-o", f"HostKeyAlias={c.get('host_key_alias', 'sgx-target')}"]
+    return out + extra
+
+
+def ssh_hint(c, r):
+    """What a failed ssh to the laptop says: its status, its own last words and the variables
+    that choose the host and its key."""
+    err = r.stderr.decode(errors="replace") if isinstance(r.stderr, bytes) else (r.stderr or "")
+    alias = [o.split("=", 1)[1] for o in ssh_opts(c) if o.lower().startswith("hostkeyalias=")]
+    return (f"ssh exited {r.returncode}: {err.strip()[-300:] or '(no message)'}; the host is "
+            f"SGX_TARGET_HOST ({host(c)}), its key's alias SGX_TARGET_HOST_KEY_ALIAS or the "
+            f"HostKeyAlias of SGX_TARGET_SSH_OPTS, else session.toml's host_key_alias (now "
+            f"{alias[0] if alias else 'none'})")
 
 
 def host(c):
@@ -560,7 +581,7 @@ def stage(kp, say=print):
     files = laptop_files(kp, c) + staged_tools(c) + ["FROZEN.sha256"]
     r = ssh(c, f"mkdir -p {lr}/stage {lr}/out {lr}/run scratch/tmp", 60, capture_output=True)
     if r.returncode:
-        raise Stop(1, f"STAGING FAILED: mkdir on the laptop exited {r.returncode}")
+        raise Stop(1, f"STAGING FAILED: mkdir on the laptop: {ssh_hint(c, r)}")
     buf = io.BytesIO()
     with tarfile.open(fileobj=buf, mode="w", format=tarfile.PAX_FORMAT) as tar:
         for f in files:
@@ -649,7 +670,8 @@ def run(kp, att=None, frm=None, only=None, out_root=None, say=print):
             say("STOP: a laptop command or file was missing:\n" + "\n".join(found[:10]))
             return 45, rcs
         if r.returncode not in (0, 24):
-            say(f"STOP: stage {st} exited {r.returncode} (see {root}/{st}.log)")
+            say(f"STOP: stage {st} exited {r.returncode} (see {root}/{st}.log)"
+                + (f"; {ssh_hint(c, r)}" if r.returncode == 255 else ""))
             return r.returncode, rcs
         if cp.returncode:
             say(f"STOP: copying {lr}/out/{att}/{st} back failed ({cp.returncode})")

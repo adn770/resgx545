@@ -530,3 +530,55 @@ def test_an_expectdiff_reading_is_a_completed_job(repos):
     assert not kitscore.completed(dict(row, knobs="-"))
     assert not kitscore.completed(dict(row, rc=2))
     assert not kitscore.completed(dict(row, **{"class": "fail"}))
+
+
+# ---- the laptop's host key: SGX_TARGET_HOST_KEY_ALIAS or the older SGX_TARGET_SSH_OPTS -------
+def opts_with(c, **env):
+    S.ENV = {k: v for k, v in os.environ.items()
+             if k not in ("SGX_TARGET_HOST_KEY_ALIAS", "SGX_TARGET_SSH_OPTS")} | env
+    try:
+        return S.ssh_opts(c)
+    finally:
+        S.ENV = None
+
+
+def alias_of(opts):
+    return [o.split("=", 1)[1] for o in opts if o.startswith("HostKeyAlias=")][0]
+
+
+def test_the_host_key_alias_comes_from_either_variable():
+    """The lead's environment named the laptop's host key in SGX_TARGET_SSH_OPTS (the bringup
+    tools' variable) and the kit read only SGX_TARGET_HOST_KEY_ALIAS: r8-geo's first staging
+    used session.toml's alias and ssh exited 255. The kit takes SGX_TARGET_SSH_OPTS's options
+    too; ssh keeps the first HostKeyAlias it is given, so the alias variable comes first, the
+    options' own alias next, session.toml's last and only when neither names one."""
+    c = {"host_key_alias": "sgx-target"}
+    assert alias_of(opts_with(c)) == "sgx-target"
+    o = opts_with(c, SGX_TARGET_SSH_OPTS="-o HostKeyAlias=box -o Port=2222")
+    assert alias_of(o) == "box" and "Port=2222" in o and "HostKeyAlias=sgx-target" not in o
+    o = opts_with(c, SGX_TARGET_HOST_KEY_ALIAS="cedar",
+                  SGX_TARGET_SSH_OPTS="-o HostKeyAlias=box")
+    assert alias_of(o) == "cedar"
+    o = opts_with(c, SGX_TARGET_SSH_OPTS="-o Port=2222")
+    assert alias_of(o) == "sgx-target" and "Port=2222" in o
+    assert opts_with(c, SGX_TARGET_SSH_OPTS="-o BatchMode=no")[:2] == ["-o", "BatchMode=yes"]
+
+
+def test_a_staging_that_ssh_refuses_names_the_variables(repos):
+    """ssh's 255 (a host key it does not know, an unreachable host) stops the staging with its
+    own message and the variables that choose the host and its key, never silently."""
+    kp = frozen_session(repos)
+    S.ENV = dict(env_for(repos), SGX_TARGET_HOST="u@laptop")
+    S.ENV.pop("SGX_TARGET_HOST_KEY_ALIAS", None)
+    S.ENV.pop("SGX_TARGET_SSH_OPTS", None)
+    S.SSH = [PY, "-c", "import sys; sys.stderr.write('Host key verification failed.\\n'); "
+                       "sys.exit(255)"]
+    try:
+        with pytest.raises(S.Stop) as e:
+            S.stage(kp, say=lambda *a: None)
+    finally:
+        S.ENV, S.SSH = None, ["ssh"]
+    msg = str(e.value)
+    for word in ("255", "Host key verification failed", "SGX_TARGET_HOST", "u@laptop",
+                 "SGX_TARGET_HOST_KEY_ALIAS", "SGX_TARGET_SSH_OPTS", "sgx-target"):
+        assert word in msg, (word, msg)

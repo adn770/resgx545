@@ -3,7 +3,9 @@
 name = "@NAME@"
 prefix = "@PREFIX@"                 # laptop files under ~/scratch/@PREFIX@/ (run, stage, out)
 srcversion = "@SRCV@"               # the gma500 module: loaded = installed = this build
-host_key_alias = "sgx-target"       # ssh HostKeyAlias; SGX_TARGET_HOST names the host
+host_key_alias = "sgx-target"       # ssh HostKeyAlias, unless SGX_TARGET_HOST_KEY_ALIAS or the
+                                    # HostKeyAlias of SGX_TARGET_SSH_OPTS names one;
+                                    # SGX_TARGET_HOST names the host
 job_timeout = 120                   # seconds one job may take (timeout -k 10)
 min_free_mb = 300                   # MiB free on ~ before each job (HACKING: at least 200)
 health_tool = "@HEALTH@"            # the tool of the health fill and triangle
