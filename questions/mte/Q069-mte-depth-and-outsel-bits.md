@@ -1,11 +1,12 @@
 +++
 id = "Q069"
-question = "what do OUTSEL bit 13 and the state block's presence bits 16-31 select?"
+question = "what do OUTSEL bit 13 and the state block's presence bits 16-31 select, and why does the viewport's z offset (state-block word 10) scale the depth plane when it is below 0.5?"
 unit = "mte"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E061", "E066", "E192", "E193", "E198", "E286", "E287", "E419"]
+evidence = ["E057", "E061", "E066", "E192", "E193", "E198", "E284", "E286", "E287", "E411", "E419",
+            "E465", "E466", "E490", "E981", "E987"]
 terms = ["OUTSEL", "VIEWPORT.Z_OFFSET", "VIEWPORT.Z_SCALE", "PRESENCE"]
 +++
 
@@ -30,3 +31,15 @@ give the same image, an affine interpolation on all 1062 pixels, so the missing 
 iteration nothing (the DOUTI perspective flag was not set). Not run: bit 13 with point sprites or
 the vertex colour, and the presence bits 16 to 31 with appended words (the tool grows the block only
 for presence bits 2 to 5 and 7). Status: narrowed, not answered.
+
+Folded here 2026-11-13 (round 11, decision R11-7 a): the question of bit 19 of CR_ISP_ZLSCTL with
+the integer stored formats, with its evidence. Bit 19 negates the stored float (E466, E490) and
+changes no dword of formats 1 and 2 over every depth that reached them: E490's ramp, E981's 0 to
+0.3, E987's background; and no route that ran brings a negative depth to the integer conversion (a
+depth below 0 after the clip is stored as 0, E981; the background depth is stored with its sign
+cleared, E987; --tri-z outside 0 to 1 is clipped, E287), so the bit-19 clause is answered as no
+observable effect [infer: on every route that ran]. What stays is the MTE's depth: the viewport's
+z offset, word 10, is an offset at 0.5 to 1.0 (z = t + w - 0.5 at every dword, E987) but at 0.25
+gave 0.6 t (E981) and at 0.125 0.4 t (E987) [infer: two points], not t + w - 0.5. Open: why a
+low offset turns into a scale (a sweep of word 10 from 0 to 0.5 with the plane over 0 to 1, and
+the viewport's z scale beside it).

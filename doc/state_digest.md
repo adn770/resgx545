@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-155 open: 145 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+154 open: 144 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -64,7 +64,7 @@ list.
 - `Q032` isp, medium: what does pcoeff hand the ISP in the punch-through pass, when the kept pixels'
   depth is the same without it and moves between runs only ... (E217, E416)
 - `Q071` isp, medium: what do the bits of the ZLS control word that change nothing seen (12, 15, 16,
-  20 to 23, 27 to 31) do, alone and set together, what does ... (E665, E989, E997)
+  20 to 23, 27 to 31) do, alone and set together, what does ... (E989, E997, E1014)
 - `Q073` isp, medium: what does o0 hold at the start of an opaque pass's pixel shader? (E417, E739,
   E757)
 - `Q240` isp, medium: does the coverage rule of E606 (vertices on the 1/256 pixel grid, exact centre
@@ -77,8 +77,8 @@ list.
   (class b and c of E731) when the tile-corner value T by ... (E606, E731, E740)
 - `Q039` mte, medium: where is a user clip plane's state held between jobs, what resets it, and when
   do the vertex's distance dwords decide a plane? (E198, E280, E418)
-- `Q069` mte, medium: what do OUTSEL bit 13 and the state block's presence bits 16-31 select? (E286,
-  E287, E419)
+- `Q069` mte, medium: what do OUTSEL bit 13 and the state block's presence bits 16-31 select, and
+  why does the viewport's z offset (state-block word 10) scale ... (E490, E981, E987)
 - `Q116` mte, medium: what does the MTE state's region clip (enable bit, first and last 32-pixel
   tile column, first and last 16-pixel tile row) do to the objects ... (E340, E347, E348)
 - `Q012` pbe, medium: what float formats are pack modes 22 and 34, given that both read o0 as an
@@ -181,7 +181,7 @@ list.
 - `Q107` zls, medium: why does the final render of a job that overflows store zeros for the first
   row of macrotiles and the depth with its sign bit set for the ... (E489, E628, E629)
 - `Q120` zls, medium: what do the stored depth formats 3 to 7 (CR_ISP_ZLSCTL bits 26:24) hold and
-  how are they laid out, given that they store depth and stencil ... (E978, E985, E986)
+  how are they laid out, given that they store depth and stencil ... (E985, E986, E1015)
 - `Q109` bif, low: do page directory entries whose page-size field (bits 3:1) names 16 KiB to 4 MiB
   translate on the hardware, and with which address mask and ... (E021, E151)
 - `Q110` bif, low: what do the bus interface's tiled address ranges (BIF_TILE0 and up: start, end,
@@ -296,8 +296,6 @@ list.
   (the `[r4,+r5]` form, 8 temporaries, 128x128 and 256x128) ... (E374, E572, E708)
 - `Q272` vdm, low: what makes three vertices of one job read as a constant row (E702: cap-n8-f10-a7,
   ids 55, 66 and 77 at R * V = 33 and 7 attribute rows; 3 ... (E702, E738, E755)
-- `Q101` zls, low: what does bit 19 (the negated float) do with the integer stored formats
-  (CR_ISP_ZLSCTL bits 26:24 = 1 and 2)? (E490, E981, E987)
 - `Q242` zls, low: which pixel's value does a dword shared by two overlapping tiles hold, what do
   the integer formats store past the target at an odd width or ... (E977, E991, E996)
 - `Q243` zls, low: what does the ZLS load do with an integer stored format (bits 26:24 = 1 or 2), at
@@ -325,9 +323,15 @@ list.
 
 ## Recent records
 
-145 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+147 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1015` zls, 2026-11-13: Round 11 offline (Q120; no run): two of E986's 'store less' layouts
+  decode byte for byte from r10-zls zst2's kept dumps, rules frozen by hash (c7_rule.py,
+  4d87c5ad...): format 7 under a constant ...
+- `E1014` isp, 2026-11-13: Round 11 offline (Q071; no run): under E989's control (0xf8e6a00e: the
+  bits E411 flipped singly to no effect flipped together, so bits 12, 16 and 20 cleared as in E997's
+  linear store), the stencil ...
 - `E1010` isp, 2026-11-13: r10-x stage win0 (14 jobs, E502's identity maps: E437's primary PDS
   program iterating the position, a shader writing pa0 or pa1, --tri-full): in CR_ISP_MSAA mode 0
   with CR_TE_AA 0x60000000, ...

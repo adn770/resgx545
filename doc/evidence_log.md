@@ -8228,6 +8228,36 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   holding only where it ties H-IDENT; both E502 controls (mode 1 TE 0xe0000000, mode 0 TE
   0x20000000) reproduced E502's kept images (4096 of 4096).
   *isp; HW; data: `render-closing-r10-x:out/20261113-101116/win0/`.*
+- `E1014` Round 11 offline (Q071; no run): under E989's control (0xf8e6a00e: the bits E411 flipped
+  singly to no effect flipped together, so bits 12, 16 and 20 cleared as in E997's linear store),
+  the stencil test of r10-st1's rows q071-b0 and q071-l1 reads 0, not the loaded buffer at a linear
+  offset: with the rules frozen by hash (q071_rule.py, 5f705c49...) before either row was opened,
+  H-ZEROLOAD (every test reads 0, the invert stores 0xff) held 2 of 2 (2048 of 2048 pixels and 73728
+  of 73728 stencil-store bytes each), and three linear load maps (byte 64 y + x, E997's stride;
+  raster inside the 512-byte tile slot; byte 4 (64 y + x)) and E988's twiddled order failed 2 of 2
+  (1024 extra pixels, or 70176 to 72192 of 73728 store bytes); the twiddled order held E988's base
+  rows st1-b0 and st1-lane1 (the controls, 2 of 2) and the four other maps failed them [HW data,
+  held out in rows]; [infer] any one-to-one map of the 2048 loaded bytes passes half the pixels
+  under a one-bit mask, so 2048 drawn needs the loaded byte unread; no kept row clears a strict
+  subset of bits 12, 16 and 20 (the 56 --depth-ctl values of resgx545-data), so which bit linearises
+  the store and which one stops the stencil read is not separated.
+  *isp; HW, infer; data: `render-closing-r10-st1:out/20261113-103934/st1/`,
+  `cited-scratch:closing11/plan/c4-q071/`.*
+- `E1015` Round 11 offline (Q120; no run): two of E986's 'store less' layouts decode byte for byte
+  from r10-zls zst2's kept dumps, rules frozen by hash (c7_rule.py, 4d87c5ad...): format 7 under a
+  constant stencil fill S (E978's x ramp, 64 x 32) stores the first 12 dwords of each 256-dword tile
+  block as one 48-byte template of 0x3f, 0x1f and S (F7K), fitted on fill 0xa5 and held out blind on
+  fills 0x00 and 0xff (48 of 48 dwords each, no other dword changed), where the same template with S
+  fixed at 0xa5 matched 0 of 48 [HW data, held out]; format 6 where four tile rows each hold one
+  depth (the y ramp) stores 12 dwords for the four rows (F6C: a record 0x9e, the row's float without
+  its sign bit, 0x00 a row at fixed bytes, words 0x3f000000 at fixed dwords), fitted on block 0 and
+  holding on the two applicable groups of blocks 1 and 2 (48 of 48 dwords), where E985's raw layout
+  matched 0 [HW data, SEMI: those blocks were printed before the freeze]; not decoded: format 5
+  under constant rows, format 7 under the index stencil, format 6's edge tiles and its groups after
+  the first non-constant row (116 of z2y-f6's 212 changed dwords; post hoc a one-hot count mask of a
+  row's last n pixels decodes 48 more).
+  *zls; HW, infer; data: `render-closing-r10-zls:out/20261113-102039/zst2/`,
+  `cited-scratch:closing11/plan/c7-q120/`.*
 
 ## By unit
 
@@ -8266,7 +8296,7 @@ E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E2
 E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E508, E510, E590,
 E606, E607, E618, E660, E661, E662, E680, E681, E682, E683, E684, E727, E728, E731, E739, E740,
 E741, E757, E758, E762, E825, E827, E829, E912, E913, E914, E922, E934, E943, E952, E953, E954,
-E970, E971, E972, E973, E979, E984, E989, E990, E992, E995, E998, E1005, E1006, E1010.
+E970, E971, E972, E973, E979, E984, E989, E990, E992, E995, E998, E1005, E1006, E1010, E1014.
 
 ### mte
 
@@ -8343,4 +8373,4 @@ E413, E414, E427, E440, E545, E546, E700, E701, E702, E703, E737, E738, E755, E7
 
 Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467, E489, E490, E615, E628, E629,
 E663, E664, E665, E730, E831, E885, E903, E904, E977, E978, E981, E985, E986, E987, E988, E991,
-E996, E997.
+E996, E997, E1015.

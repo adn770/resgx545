@@ -72,7 +72,7 @@ def format_vectors(data):
         init["depth_y"] = {"ramp": 768} if case == "f0" else ref("y")
         v = {"id": "zls-format__" + case, "init": init,
              "provenance": {"case": case, "records": ["E466", "E490"], "rebuilt": False,
-                            "table": "zls/store-format-dumps", "questions": ["Q101", "Q120", "Q242"],
+                            "table": "zls/store-format-dumps", "questions": ["Q069", "Q120", "Q242"],
                             "depth_input": "geometry within 1e-5 (E490)" if case == "f0"
                             else "the float the format-0 run stored at the pixel (E490)"}}
         if fmt in (3, 5, 6):

@@ -409,8 +409,8 @@ ramp makes every stored dword name its pixel, fills that encode the dword's inde
 control bits 11:3 (E465); bits 26:24 are the stored format (E466); bits 1, 13 and 14 load, the
 stencil and the depth (E467); and what an overflowed job stores is the first row of macrotiles as
 zeros and the rest negated (E468). Q088 stays open as a firmware question (its hardware half is
-answered); Q071, Q101 and Q107 are narrowed; Q120 and the stencil order's question (answered since
-by E988) are new, and so was the question of
+answered); Q071, the bit-19 question (folded into Q069 since) and Q107 are narrowed; Q120 and the
+stencil order's question (answered since by E988) are new, and so was the question of
 the pixels past the target, answered since by E831.
 
 Sub-phase 11.23 ran 15 probe tables on the laptop with no kernel change and no tool change, for the
@@ -459,8 +459,8 @@ in all 24 cases (E488). These are fills, proxies for what firmware tasks do, and
 not answered: two EDM tasks at once (answered by E752) and `str` then `ldr` (Q134). E489 and E490
 recompute
 E465 and E466 from the raw dumps, and E465 and E466 are carried forward with a dated note.
-Records E478-E490; Q051, Q052, Q054, Q098, Q101, Q107, Q120, Q125 and the one on the state between
-EDM tasks (answered later by E809) are narrowed, none
+Records E478-E490; Q051, Q052, Q054, Q098, the bit-19 question (folded into Q069 since), Q107, Q120,
+Q125 and the one on the state between EDM tasks (answered later by E809) are narrowed, none
 retired; Q128 to Q134 are new, the one on two EDM tasks (answered by E752) for the firmware (`fw`).
 
 Sub-phase 11.25 ran 13 probe tables on the laptop (1526 cases, one campaign run each, the false-call
