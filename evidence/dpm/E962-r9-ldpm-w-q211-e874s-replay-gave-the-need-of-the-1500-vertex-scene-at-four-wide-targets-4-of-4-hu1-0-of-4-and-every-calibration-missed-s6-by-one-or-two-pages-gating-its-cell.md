@@ -35,3 +35,10 @@ at all four, as at 2048x3072, 2560x3072 and 3072x2560 (E935, E936).
 
 **What it does not show.** The need of wide scenes of other vertex counts (E630's 300 to 900) or
 of 8 coordinate pairs; why S6 is late; F9's counts as a verdict (gated).
+
+**Correction 2026-11-13 (round 10):** "S6 runs one or two pages above the replay" and "why S6 is
+late" are read with E1009's replicates: the sampled bracket of S6 has its lower end at the replay
+plus 1 in all four of these calibrations (0x6f, 0x14e, 0x17d, 0x22a against 0x6e, 0x14d, 0x17c,
+0x229) and in 15 of 15 new replicates, the upper end moving by a page between runs. The replay is
+low there by a bias of at least one page (H-BIAS 4 of 5 targets, H-NOISE 0 of 5), not by noise.
+The gate of the calibrations on their steps stands as the record printed it.
