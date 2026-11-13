@@ -409,6 +409,101 @@ static void transfers(void)
 }
 
 /*
+ * Q190's layered background on the mock: the knobs (struct sgxfive_mock_config bg_layer and
+ * bg_src, the kernel's debugfs render_bg_layer and render_bg_src) and the kernel's rule: with
+ * the layer on, a source that is not mapped in the context's VM is refused at submit
+ * (-EINVAL); mapped, every background pixel is the source's texel the layer's coordinates
+ * name (the identity here, the source being the target's own size); knob off: today's image.
+ */
+#define BGL_SRC	0x3e800000u
+
+static void bg_layer_env(struct env *e, bool layer, uint32_t src, bool map, uint32_t w,
+			 uint32_t h)
+{
+	const struct sgxfive_mock_config cfg = {
+		.layout = SGXFIVE_MOCK_LAYOUT_REV1, .bg_layer = layer, .bg_src = src,
+	};
+	struct sgxfive_bo *bo = NULL;
+	uint32_t *map_p = NULL;
+	const uint64_t size = ((uint64_t)w * h * 4 + 4095) & ~4095ull;
+
+	memset(e, 0, sizeof(*e));
+	e->mock = sgxfive_mock_create(&cfg);
+	CHECK_EQ(sgxfive_dev_open(sgxfive_mock_backend(e->mock), NULL, &e->dev), 0);
+	CHECK_EQ(sgxfive_vm_create(e->dev, &e->vm), 0);
+	CHECK_EQ(sgxfive_render_ctx_create(e->vm, SGXFIVE_TRI_MAX_W, SGXFIVE_TRI_MAX_H, &e->ctx),
+		 0);
+	if (map) {
+		CHECK_EQ(sgxfive_bo_create(e->dev, size, DRM_SGXFIVE_BO_ALLOW_CPU_ACCESS, &bo), 0);
+		CHECK_EQ(sgxfive_bo_mmap(bo, (void **)&map_p), 0);
+		CHECK_EQ(sgxfive_vm_map(e->vm, BGL_SRC, bo, 0, size, 0), 0);
+		sgxfive_bgl_fill(map_p, w, h);
+	}
+	CHECK_EQ(sgxfive_render_create(e->vm, e->ctx, &e->r), 0);
+}
+
+static void bg_layer(void)
+{
+	static const uint32_t sizes[][2] = { { 64, 64 }, { 128, 64 }, { 100, 60 }, { 32, 16 } };
+	struct sgxfive_tri_counts n;
+	struct sgxfive_tri_params p;
+	struct env e;
+
+	for (unsigned int i = 0; i < sizeof(sizes) / sizeof(sizes[0]); i++) {
+		bg_layer_env(&e, true, BGL_SRC, true, sizes[i][0], sizes[i][1]);
+		sgxfive_tri_default(&p, sizes[i][0], sizes[i][1]);
+		p.bg_src = BGL_SRC;
+		CHECK_EQ(sgxfive_render_tri(e.r, &p, 0, 0), 0);
+		CHECK_EQ(sgxfive_render_wait(e.r, NSEC), 0);
+		CHECK_EQ(sgxfive_tri_check(&p, sgxfive_render_fb(e.r), &n), 0);
+		CHECK(n.tri > 0);
+		CHECK_EQ(n.layer_in_place, n.bg);
+		CHECK(n.bg > 0);
+		CHECK_EQ(n.layer_elsewhere, 0);
+		CHECK_EQ(n.layer_other, 0);
+		CHECK_EQ(n.other, 0);
+		CHECK_EQ(n.wrong_out, 0);
+		CHECK_EQ(sgxfive_render_guard_dirty(e.r, &p), 0);
+		/* the object the kernel builds is the layered one: the tag, not the user's words */
+		env_fini(&e);
+	}
+	/*
+	 * 64 x 64: every pixel is the triangle's or the layer's (the mock's edge rule: 1098 and
+	 * 2998; the hardware's counts differ at the edges)
+	 */
+	bg_layer_env(&e, true, BGL_SRC, true, 64, 64);
+	sgxfive_tri_default(&p, 64, 64);
+	p.bg_src = BGL_SRC;
+	CHECK_EQ(sgxfive_render_tri(e.r, &p, 0, 0), 0);
+	CHECK_EQ(sgxfive_render_wait(e.r, NSEC), 0);
+	CHECK_EQ(sgxfive_tri_check(&p, sgxfive_render_fb(e.r), &n), 0);
+	CHECK_EQ(n.layer_in_place, 2998);
+	CHECK_EQ(n.tri, 1098);
+	CHECK_EQ(n.tri + n.layer_in_place, 64 * 64);
+	env_fini(&e);
+
+	/* knob on, source 0: refused at submit */
+	bg_layer_env(&e, true, 0, true, 64, 64);
+	sgxfive_tri_default(&p, 64, 64);
+	p.bg_src = BGL_SRC;
+	CHECK_EQ(sgxfive_render_tri(e.r, &p, 0, 0), -EINVAL);
+	env_fini(&e);
+	/* knob on, source set but not mapped: refused at submit */
+	bg_layer_env(&e, true, BGL_SRC, false, 64, 64);
+	CHECK_EQ(sgxfive_render_tri(e.r, &p, 0, 0), -EINVAL);
+	env_fini(&e);
+	/* knob off, no layer in the scene: today's image */
+	bg_layer_env(&e, false, 0, false, 64, 64);
+	sgxfive_tri_default(&p, 64, 64);
+	CHECK_EQ(sgxfive_render_tri(e.r, &p, 0, 0), 0);
+	CHECK_EQ(sgxfive_render_wait(e.r, NSEC), 0);
+	CHECK_EQ(sgxfive_tri_check(&p, sgxfive_render_fb(e.r), &n), 0);
+	CHECK_EQ(n.bg, 2998);
+	CHECK_EQ(n.layer_in_place, 0);
+	env_fini(&e);
+}
+
+/*
  * A context renders any target within the maximum it was created with, each
  * dimension on its own, and refuses a job for a larger one without losing
  * the context.
@@ -531,5 +626,6 @@ int main(void)
 	fault_wait();
 	pb_overflow();
 	transfers();
+	bg_layer();
 	return tap_done();
 }

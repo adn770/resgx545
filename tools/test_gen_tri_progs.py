@@ -44,10 +44,21 @@ def test_headers_cite_no_document():
 
 
 def test_user_header_matches_kernel_words():
-    """Both headers carry the same words in the same order."""
+    """Both headers carry the same words in the same order; libsgxfive's then adds the layered
+    background's programs (G.USER_PROGS), which the kernel's test does not use."""
     import re as _re
     words = _re.compile(r"\t(0x[0-9a-f]+)(?:ull)?,")
-    assert words.findall(G.generate()) == words.findall(G.generate(user=True))
+    kernel, user = words.findall(G.generate()), words.findall(G.generate(user=True))
+    assert user[:len(kernel)] == kernel and len(user) > len(kernel)
+
+
+def test_user_header_carries_the_layer_programs():
+    hdr = G.generate(user=True)
+    for name, _isa in G.USER_PROGS:
+        assert re.search(rf"static const uint(32|64)_t tri_{pathlib.Path(name).stem}\[\]", hdr)
+        assert name not in [p for p, _i in G.PROGS]
+    assert "#define TRI_PDS_PRIM_1SRC_DATA\t12" in hdr
+    assert "sgx_tri_use_copy" not in G.generate()
 
 
 def text(name: str, isa: str) -> list[str]:

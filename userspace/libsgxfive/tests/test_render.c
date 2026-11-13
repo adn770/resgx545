@@ -366,6 +366,84 @@ static void test_scene(void)
 	free(c.gen);
 }
 
+/*
+ * Q190's layered background: with bg_src the background primary is the transfer engine's
+ * copy primary (pds_prim_1src, use_copy) for a W x H copy from bg_src, one attribute row in
+ * bgobj_words[1]; without it every word is today's and the new room is untouched.
+ */
+static void test_bg_layer(void)
+{
+	static const uint32_t sizes[][2] = { { 64, 64 }, { 128, 32 }, { 100, 60 } };
+	const uint32_t src_addr = 0x3e800000;
+	struct sgxfive_prog_source *src = sgxfive_prog_asm_create();
+	struct sgxfive_tri_cpu c = {
+		calloc(1, 4096), calloc(1, 4096), calloc(1, 4096), calloc(1, 4096),
+		calloc(1, 4096), 0,
+	};
+	struct drm_sgxfive_render_cmd cmd;
+	struct sgxfive_tri_params p;
+	uint32_t zero[16] = { 0 };
+
+	sgxfive_tri_default(&p, 64, 64);
+	CHECK_EQ(sgxfive_tri_scene(&c, &L, &p, &cmd), 0);
+	CHECK(!memcmp(c.pdsp + SGXFIVE_TRI_PP_BGCOPY / 4, zero, sizeof(zero)));
+	CHECK(!memcmp(c.usep + SGXFIVE_TRI_UP_BGCOPY / 4, zero, 4 * sizeof(uint32_t)));
+	CHECK_EQ(cmd.bgobj_words[1], 0x00030000);
+	CHECK_EQ(cmd.bgobj_words[2], 0x04000102);
+
+	for (unsigned int i = 0; i < sizeof(sizes) / sizeof(sizes[0]); i++) {
+		const uint32_t w = sizes[i][0], h = sizes[i][1];
+		struct sgxfive_prog_env env = { 0 };
+		uint32_t want_pds[16], want_use[4], t[4];
+
+		sgxfive_tri_default(&p, w, h);
+		p.bg_src = src_addr;
+		CHECK_EQ(sgxfive_tri_scene(&c, &L, &p, &cmd), 0);
+		/* one attribute row, the copy's: 1 | 3 << 16 */
+		CHECK_EQ(cmd.bgobj_words[1], 0x00030001);
+		CHECK_EQ(cmd.bgobj_words[2],
+			 sgxfive_tri_pix_ptr(&L, L.pdsp + SGXFIVE_TRI_PP_BGCOPY, 12));
+		CHECK_EQ(cmd.bgobj_words[0], 0x04000104);	/* the secondary is the triangle's */
+		/* the primary: the transfer's copy primary for this copy, word for word */
+		sgxfive_tex_words(t, src_addr, w, h, 4 * w);
+		env.params[SGXFIVE_PARAM_T0] = t[0];
+		env.params[SGXFIVE_PARAM_T1] = t[1];
+		env.params[SGXFIVE_PARAM_SRC] = t[2];
+		env.addr[SGXFIVE_PROG_USE_COPY] = L.usep + SGXFIVE_TRI_UP_BGCOPY;
+		CHECK_EQ(sgxfive_doutu(env.addr[SGXFIVE_PROG_USE_COPY], L.usep_base, 0,
+				       &env.doutu[SGXFIVE_PROG_USE_COPY]), 0);
+		env.heap_base[DRM_SGXFIVE_HEAP_USSE_PIXEL] = L.usep_base;
+		CHECK_EQ(src->ops->build(src, SGXFIVE_PROG_PDS_PRIM_1SRC, &env, want_pds), 0);
+		CHECK_EQ(src->ops->build(src, SGXFIVE_PROG_USE_COPY, &env, want_use), 0);
+		CHECK(!memcmp(c.pdsp + SGXFIVE_TRI_PP_BGCOPY / 4, want_pds, sizeof(want_pds)));
+		CHECK(!memcmp(c.usep + SGXFIVE_TRI_UP_BGCOPY / 4, want_use, sizeof(want_use)));
+		CHECK_EQ(c.pdsp[SGXFIVE_TRI_PP_BGCOPY / 4 + 4], 0x40012001);
+		CHECK_EQ(c.pdsp[SGXFIVE_TRI_PP_BGCOPY / 4 + 1], 0x02000004);
+		CHECK_EQ(c.pdsp[SGXFIVE_TRI_PP_BGCOPY / 4 + 6], src_addr);
+		/* the triangle's own programs and block are untouched */
+		CHECK_EQ(c.pdsp[SGXFIVE_TRI_PP_PRIM / 4], 0x2000);
+		CHECK_EQ(c.pdsv[SGXFIVE_TRI_PV_BLOCK / 4 + 4], 0x00030001);
+		CHECK_EQ(c.pdsv[SGXFIVE_TRI_PV_BLOCK / 4 + 3], 0x04000104);
+	}
+	/* an address a texture cannot have (not dword aligned), a size past the texture's */
+	sgxfive_tri_default(&p, 64, 64);
+	p.bg_src = src_addr + 2;
+	CHECK_EQ(sgxfive_tri_scene(&c, &L, &p, &cmd), -EINVAL);
+	sgxfive_tri_default(&p, 4096, 4096);
+	p.bg_src = src_addr;
+	CHECK_EQ(sgxfive_tri_scene(&c, &L, &p, &cmd), 0);
+	/* the reference's texel: the check byte, x low 12 bits, y next */
+	CHECK_EQ(sgxfive_bgl_texel(0, 0), 0xa5000000);
+	CHECK_EQ(sgxfive_bgl_texel(5, 3), (uint32_t)((5 ^ 3 ^ 0xa5) << 24 | 3 << 12 | 5));
+	CHECK_EQ(sgxfive_bgl_texel(0xfff, 0xfff), (uint32_t)(0xa5 << 24 | 0xfff << 12 | 0xfff));
+	sgxfive_prog_source_destroy(src);
+	free(c.pdsv);
+	free(c.usev);
+	free(c.pdsp);
+	free(c.usep);
+	free(c.gen);
+}
+
 /* Targets of every kind against the rule above. */
 static void test_tiling(void)
 {
@@ -482,6 +560,7 @@ int main(void)
 	test_block();
 	test_vdm();
 	test_scene();
+	test_bg_layer();
 	test_vertex_z();
 	test_fine_vertices();
 	test_fine_unit();

@@ -280,6 +280,30 @@ static void put_pixel_programs(const struct sgxfive_tri_cpu *c,
 	w[12] = 0x00800000;		/* PBENABLE */
 }
 
+/*
+ * The layered background's primary: pds_prim_1src and use_copy, patched as a W x H copy from
+ * bg_src (xfer_job.c's: DOUTU U0 of the copy, U1 SDSOFT | TEXTUREDEPENDENCY, DOUTI word 0 one
+ * fetch from coordinate set 1, T0-T3 of the source), in room the triangle leaves free.
+ */
+static void put_bg_layer(const struct sgxfive_tri_cpu *c, const struct sgxfive_tri_layout *l,
+			 const struct sgxfive_tri_params *p)
+{
+	uint32_t t[4], *w;
+
+	PUT_USSE(c->usep, SGXFIVE_TRI_UP_BGCOPY, tri_use_copy);
+	w = PUT_PDS(c->pdsp, SGXFIVE_TRI_PP_BGCOPY, tri_pds_prim_1src);
+	sgxfive_tex_words(t, p->bg_src, p->width, p->height, 4 * p->width);
+	w[0] = sgxfive_tri_doutu(l->usep + SGXFIVE_TRI_UP_BGCOPY, l->usep_base, 0, 0);
+	w[1] = 0x02000004;
+	w[2] = 0;
+	w[4] = 0x40012001;
+	w[5] = 0;
+	w[6] = t[2];
+	w[7] = t[3];
+	w[8] = t[0];
+	w[9] = t[1];
+}
+
 /* Clip space through the viewport: ndc = px / (W / 2) - 1, px in 1/16. */
 static uint32_t ndc(int32_t px16, uint32_t size)
 {
@@ -384,6 +408,12 @@ static void render_cmd(struct drm_sgxfive_render_cmd *c, const struct sgxfive_tr
 	c->bgobj_words[0] = sec_ptr(l);
 	c->bgobj_words[1] = PIX_SIZE(0);
 	c->bgobj_words[2] = pri_ptr(l, SGXFIVE_TRI_PP_BGPRIM);
+	if (p->bg_src) {
+		/* the layered form: the copy's primary, one attribute row for the texel */
+		c->bgobj_words[1] = PIX_SIZE(1);
+		c->bgobj_words[2] = sgxfive_tri_pix_ptr(l, l->pdsp + SGXFIVE_TRI_PP_BGCOPY,
+							TRI_PDS_PRIM_1SRC_DATA);
+	}
 }
 
 int sgxfive_tri_scene(const struct sgxfive_tri_cpu *c, const struct sgxfive_tri_layout *l,
@@ -395,6 +425,9 @@ int sgxfive_tri_scene(const struct sgxfive_tri_cpu *c, const struct sgxfive_tri_
 	if (!p->width || !p->height || p->width > SGXFIVE_TRI_MAX_W ||
 	    p->height > SGXFIVE_TRI_MAX_H)
 		return -EINVAL;
+	if (p->bg_src && (p->bg_src & 3 || p->width > SGXFIVE_TEX_MAX ||
+			  p->height > SGXFIVE_TEX_MAX))
+		return -EINVAL;
 	memset(c->pdsv, 0, SGXFIVE_PAGE_SIZE);
 	memset(c->usev, 0, SGXFIVE_PAGE_SIZE);
 	memset(c->pdsp, 0, SGXFIVE_PAGE_SIZE);
@@ -402,6 +435,8 @@ int sgxfive_tri_scene(const struct sgxfive_tri_cpu *c, const struct sgxfive_tri_
 	memset(c->gen, 0, SGXFIVE_PAGE_SIZE);
 	put_vertex_programs(c, l, p);
 	put_pixel_programs(c, l, p);
+	if (p->bg_src)
+		put_bg_layer(c, l, p);
 	sgxfive_tri_vdm(c->gen + SGXFIVE_TRI_G_VDM / 4, l);
 	for (unsigned int i = 0; i < 3; i++) {
 		v[4 * i] = p->fine ? ndc_unit(p->v256[i][0], p->width, p->fine_shift) :
@@ -442,6 +477,25 @@ int sgxfive_tri_expect(const struct sgxfive_tri_params *p, uint32_t x, uint32_t 
 	return near ? -1 : 1;
 }
 
+uint32_t sgxfive_bgl_texel(uint32_t x, uint32_t y)
+{
+	return ((x ^ y ^ 0xa5) & 0xff) << 24 | (y & 0xfff) << 12 | (x & 0xfff);
+}
+
+void sgxfive_bgl_fill(uint32_t *dst, uint32_t width, uint32_t height)
+{
+	for (uint32_t y = 0; y < height; y++)
+		for (uint32_t x = 0; x < width; x++)
+			dst[(uint64_t)y * width + x] = sgxfive_bgl_texel(x, y);
+}
+
+bool sgxfive_bgl_decode(uint32_t v, uint32_t width, uint32_t height, uint32_t *x, uint32_t *y)
+{
+	*x = v & 0xfff;
+	*y = (v >> 12) & 0xfff;
+	return *x < width && *y < height && v == sgxfive_bgl_texel(*x, *y);
+}
+
 int sgxfive_tri_check(const struct sgxfive_tri_params *p, const uint32_t *fb,
 		      struct sgxfive_tri_counts *n)
 {
@@ -453,17 +507,28 @@ int sgxfive_tri_check(const struct sgxfive_tri_params *p, const uint32_t *fb,
 			uint32_t v = fb[(uint64_t)y * stride + x];
 			int e = sgxfive_tri_expect(p, x, y);
 			int f = sgxfive_tri_expect(p, x, p->height - 1 - y);
+			/* the background: the colour, or with a layer the pixel's own texel */
+			const uint32_t bg = p->bg_src ? sgxfive_bgl_texel(x, y) : p->bg_colour;
+			uint32_t tx, ty;
 
+			if (p->bg_src && v != p->colour) {
+				if (v == bg)
+					n->layer_in_place++;
+				else if (sgxfive_bgl_decode(v, p->width, p->height, &tx, &ty))
+					n->layer_elsewhere++;
+				else
+					n->layer_other++;
+			}
 			n->tri += v == p->colour;
-			n->bg += v == p->bg_colour;
-			n->other += v != p->colour && v != p->bg_colour;
+			n->bg += v == bg;
+			n->other += v != p->colour && v != bg;
 			if (e == 1 && v != p->colour)
 				n->wrong_in++;
-			else if (e == 0 && v != p->bg_colour)
+			else if (e == 0 && v != bg)
 				n->wrong_out++;
-			else if (e == -1 && v != p->colour && v != p->bg_colour)
+			else if (e == -1 && v != p->colour && v != bg)
 				n->wrong_edge++;
-			if ((f == 1 && v != p->colour) || (f == 0 && v != p->bg_colour))
+			if ((f == 1 && v != p->colour) || (f == 0 && v != bg))
 				n->flipped++;
 		}
 	}

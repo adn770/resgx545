@@ -40,6 +40,8 @@ PROGS = [
     ("transfer/use_sec.s", "usse"), ("transfer/pds_pixevent.s", "pds"), ("tri/use_ptoff.s", "usse"),
     ("transfer/use_eot.s", "usse"), ("transfer/use_eor.s", "usse"),
 ]
+# only libsgxfive's header (--user): the layered background's primary and shader (the copy's)
+USER_PROGS = [("transfer/pds_prim_1src.s", "pds"), ("transfer/use_copy.s", "usse")]
 WORD = {"usse": 8, "pds": 4}
 
 _built = False
@@ -122,7 +124,7 @@ def generate(user: bool = False) -> str:
                " * sources leave at 0 are patched by sgx_tri.c. Included by sgx_tri.c only.",
                " */",
                ""]
-    for name, isa in PROGS:
+    for name, isa in PROGS + (USER_PROGS if user else []):
         out += array(name, isa, user)
     return "\n".join(out)
 
