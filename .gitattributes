@@ -6,6 +6,7 @@ doc/evidence_log.md merge=regen
 doc/open_questions.md merge=regen
 datasets/cited-scratch.toml merge=regen
 datasets/cited-scratch-private.toml merge=regen
+doc/isa/sim-coverage.json merge=regen
 doc/specs/usse_isa.md merge=regen
 doc/specs/usse_guide.md merge=regen
 doc/specs/usse_tutorial.md merge=regen

@@ -9,7 +9,8 @@
 They are doc/evidence_log.md (tools/records/evidence_log.py), doc/open_questions.md
 (tools/records/questions.py), the digests of datasets/cited-scratch{,-private}.toml over the
 cited/ directory of the data repositories (a manifest whose repository is absent is left alone),
-and the books of doc/isa/build.py (doc/specs/usse_isa.md, usse_guide.md, usse_tutorial.md,
+doc/isa/sim-coverage.json (the sgx-sim `coverage` example, which needs the vectors of
+resgx545-data and cargo, and is skipped without them), and the books of doc/isa/build.py (doc/specs/usse_isa.md, usse_guide.md, usse_tutorial.md,
 pds_isa.md), and last doc/state_digest.md (tools/records/digest.py), which reads the others. Edit
 the sources; a hand edit of a generated file is what --check reports.
 """
@@ -28,14 +29,19 @@ import datasets                  # noqa: E402
 
 GENERATED = ["doc/evidence_log.md", "doc/open_questions.md",
              "datasets/cited-scratch.toml", "datasets/cited-scratch-private.toml",
-             "doc/specs/usse_isa.md", "doc/specs/usse_guide.md", "doc/specs/usse_tutorial.md",
+             "doc/isa/sim-coverage.json", "doc/specs/usse_isa.md", "doc/specs/usse_guide.md", "doc/specs/usse_tutorial.md",
              "doc/specs/pds_isa.md", "doc/state_digest.md"]
 MANIFESTS = {"cited-scratch": "data", "cited-scratch-private": "data-private"}
 Runner = Callable[[list[str], pathlib.Path], int]
 
 
 def run(cmd: list[str], cwd: pathlib.Path) -> int:
-    return subprocess.run(cmd, cwd=cwd, stdout=subprocess.DEVNULL).returncode
+    try:
+        return subprocess.run(cmd, cwd=cwd, stdout=subprocess.DEVNULL).returncode
+    except FileNotFoundError:
+        if cmd[0] != "cargo":
+            raise
+        return 0            # no toolchain: the coverage report is left to a machine that has one
 
 
 def _digest(root: pathlib.Path, name: str, repos: dict) -> tuple[pathlib.Path, dict] | None:
@@ -77,15 +83,24 @@ def _py(root: pathlib.Path, rel: str, *args: str) -> list[str]:
     return [sys.executable, str(root / rel), *args]
 
 
+def _coverage(root: pathlib.Path, *args: str) -> list[str]:
+    """The sgx-sim example that writes (or, with --check, compares) doc/isa/sim-coverage.json; it
+    does nothing without the vectors."""
+    return ["cargo", "run", "-q", "--release", "-p", "sgx-sim", "--example", "coverage",
+            *(["--", *args] if args else [])]
+
+
 def problems(root: pathlib.Path = ROOT, repos: dict | None = None,
              runner: Runner = run) -> list[str]:
     repos = datasets.repos(root) if repos is None else repos
     bad = []
     for label, rel in (("doc/evidence_log.md", "tools/records/evidence_log.py"),
                        ("doc/open_questions.md", "tools/records/questions.py"),
+                       ("doc/isa/sim-coverage.json", None),
                        ("doc/isa books", "doc/isa/build.py"),
                        ("doc/state_digest.md", "tools/records/digest.py")):
-        if runner(_py(root, rel, "--check"), root):
+        cmd = _coverage(root, "--check") if rel is None else _py(root, rel, "--check")
+        if runner(cmd, root):
             bad.append(label)
     return bad + manifest_problems(root, repos)
 
@@ -93,9 +108,9 @@ def problems(root: pathlib.Path = ROOT, repos: dict | None = None,
 def regen(root: pathlib.Path = ROOT, repos: dict | None = None, runner: Runner = run) -> int:
     repos = datasets.repos(root) if repos is None else repos
     rc = 0
-    for rel in ("tools/records/evidence_log.py", "tools/records/questions.py",
-                "doc/isa/build.py"):
-        rc |= runner(_py(root, rel), root)
+    for rel in ("tools/records/evidence_log.py", "tools/records/questions.py", None,
+                "doc/isa/build.py"):     # the coverage report first: the ISA books render it
+        rc |= runner(_coverage(root) if rel is None else _py(root, rel), root)
     refresh_manifests(root, repos)
     # Last: the digest reads the open questions and the records the others rebuild.
     rc |= runner(_py(root, "tools/records/digest.py"), root)

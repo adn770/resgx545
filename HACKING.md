@@ -135,7 +135,10 @@ method follow it.
 
 `doc/evidence_log.md`, `doc/open_questions.md`, `datasets/cited-scratch{,-private}.toml` (the
 digests over `cited/` of the data repositories) and the books `doc/specs/usse_isa.md`,
-`usse_guide.md`, `usse_tutorial.md`, `pds_isa.md` and the state digest `doc/state_digest.md`
+`usse_guide.md`, `usse_tutorial.md`, `pds_isa.md`, the sim coverage report
+`doc/isa/sim-coverage.json` (the sgx-sim `coverage` example,
+rebuilt before the books and skipped without `RESGX545_DATA` vectors or cargo) and the state digest
+`doc/state_digest.md`
 (`tools/records/digest.py`, rebuilt last) are generated; never edit them by hand, edit their
 sources (`evidence/`, `questions/`, `doc/isa/content`) and run `tools/regen_generated.py`.
 `tools/regen_generated.py --check` (a step of `check.sh --quick`, so of the pre-commit hook) names

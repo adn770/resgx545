@@ -71,6 +71,22 @@ def test_regeneration_runs_every_generator(tmp_path):
     assert seen[-1].endswith("digest.py")      # the digest reads the other generated files
 
 
+def test_the_sim_coverage_report_is_generated_and_checked(tmp_path):
+    """doc/isa/sim-coverage.json comes from the sgx-sim coverage example, before the ISA books
+    that render it; a hand edit of it is what --check names."""
+    root, repos = manifest(tmp_path)
+    rg.refresh_manifests(root, repos)
+    assert "doc/isa/sim-coverage.json" in rg.GENERATED
+    seen = []
+    rg.regen(root, repos, lambda cmd, cwd: seen.append(" ".join(cmd)) or 0)
+    cov = [i for i, c in enumerate(seen) if "--example coverage" in c]
+    build = [i for i, c in enumerate(seen) if c.endswith("build.py")]
+    assert len(cov) == 1 and cov[0] < build[0]
+    assert "--check" not in seen[cov[0]]
+    bad = rg.problems(root, repos, lambda cmd, cwd: 1 if cmd[0] == "cargo" else 0)
+    assert bad == ["doc/isa/sim-coverage.json"]
+
+
 def test_the_state_digest_is_a_generated_file(tmp_path):
     root, repos = manifest(tmp_path)
     rg.refresh_manifests(root, repos)
