@@ -90,6 +90,36 @@ static void test_block(void)
 	CHECK_EQ(eos[1], 0x00070003);
 }
 
+/*
+ * isp2: the block carries ISP word 2 (stencil) in place of the wrap word, as the probe's layout
+ * does: presence bit 2 set and bit 9 clear, ISP0 bit 8, the word at 3, the pixel pointers and the
+ * viewport one word on, 18 words as before.
+ */
+static void test_block_isp2(void)
+{
+	uint32_t d[SGXFIVE_TRI_BLOCK_WORDS], blk[SGXFIVE_TRI_BLOCK_WORDS];
+	struct sgxfive_tri_params p;
+
+	sgxfive_tri_default(&p, 64, 64);
+	sgxfive_tri_block(d, &L, &p);
+	p.isp2_set = true;
+	p.isp2 = 0x0e0200ff;
+	sgxfive_tri_block(blk, &L, &p);
+	CHECK_EQ(blk[0], 0xdd47);
+	CHECK_EQ(blk[1], d[1] | 0x100);
+	CHECK_EQ(blk[2], d[2]);
+	CHECK_EQ(blk[3], 0x0e0200ff);
+	for (unsigned int i = 4; i <= 12; i++)
+		CHECK_EQ(blk[i], d[i - 1]);
+	for (unsigned int i = 13; i < SGXFIVE_TRI_BLOCK_WORDS; i++)
+		CHECK_EQ(blk[i], d[i]);
+	/* without it, the block is the one test_block checks */
+	p.isp2_set = false;
+	sgxfive_tri_block(blk, &L, &p);
+	for (unsigned int i = 0; i < SGXFIVE_TRI_BLOCK_WORDS; i++)
+		CHECK_EQ(blk[i], d[i]);
+}
+
 /* The vertices' clip z (a depth ramp across the triangle): 0 is the default depth 0.5. */
 static void test_vertex_z(void)
 {
@@ -558,6 +588,7 @@ int main(void)
 	test_words();
 	test_default();
 	test_block();
+	test_block_isp2();
 	test_vdm();
 	test_scene();
 	test_bg_layer();

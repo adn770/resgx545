@@ -1313,6 +1313,34 @@ def test_tri_full_and_z_are_for_tri():
         assert r.returncode == 2 and "are for tri" in r.stderr, (opt, r.stderr)
 
 
+def test_tri_isp2_puts_the_stencil_word_in_the_state_block(tmp_path, monkeypatch):
+    # --isp2 V (Q121): ISP word 2 V in place of the wrap word, as probe --tri --isp2 does; the
+    # mock still finds the viewport and draws the triangle, with or without the stencil buffers
+    kp = tmp_path / "kpoke"
+    kp.write_text("")
+    monkeypatch.setenv("SGXFIVE_KPOKE", str(kp))
+    for extra in ([], ["--depth", "--stencil", "--stencil-store"]):
+        r = run("--mock", "tri", "--isp2", "0x0e0200ff", "--tri-full", "--width", "64",
+                "--height", "32", *extra)
+        assert r.returncode == 0, (extra, r.stdout + r.stderr)
+        assert re.search(r"^tri: isp2 0x0e0200ff$", r.stdout, re.M), r.stdout
+        assert re.search(r"^tri 64x32 #1: 2048 triangle, 0 background", r.stdout, re.M), r.stdout
+    r = run("--mock", "tri", "--width", "64", "--height", "32")
+    assert "isp2" not in r.stdout, r.stdout
+
+
+@pytest.mark.parametrize("v", ["x", "", "0x1ffffffff", "-1", "1,2"])
+def test_tri_isp2_is_checked(v):
+    r = run("--mock", "tri", "--isp2", v)
+    assert r.returncode == 2, (v, r.stdout + r.stderr)
+    assert "--isp2" in r.stderr and "unknown" not in r.stderr, r.stderr
+
+
+def test_isp2_is_for_tri_and_probe_tri():
+    r = run("--mock", "fill", "--isp2", "0")
+    assert r.returncode == 2 and "--isp2 is for tri" in r.stderr, r.stderr
+
+
 def test_tri_v_sets_the_vertices_in_256ths():
     # --tri-v X0,Y0,X1,Y1,X2,Y2: window coordinates in 1/256 pixel (integers), in place of the
     # default triangle; the line printed says what was drawn

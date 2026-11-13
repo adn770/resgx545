@@ -117,6 +117,13 @@ void sgxfive_tri_block(uint32_t blk[SGXFIVE_TRI_BLOCK_WORDS], const struct sgxfi
 	blk[i++] = 0x01555620;		/* mtectl */
 	blk[i++] = 0;			/* coordsize */
 	blk[i++] = 0;			/* coordfmt */
+	if (p->isp2_set) {
+		/* the wrap word (12) makes room: words 3-11 move on by one */
+		memmove(blk + 4, blk + 3, 9 * sizeof(blk[0]));
+		blk[3] = p->isp2;
+		blk[0] = (blk[0] & ~(1u << 9)) | 1u << 2;
+		blk[1] |= 1u << 8;
+	}
 }
 
 /* The end of scene, the last 32 x 32 block column and row. */

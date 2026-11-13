@@ -53,6 +53,13 @@ struct sgxfive_tri_params {
 	 * (the copy's own programs) and its one attribute row. 0: the colour fill, as always.
 	 */
 	uint32_t bg_src;
+	/*
+	 * with isp2_set: the state block carries ISP word 2 (stencil) isp2 in place of the wrap
+	 * word, at word 3, the pixel pointers and viewport one word on (presence 0xdd47, ISP0
+	 * bit 8), as the probe's isp2 does; 18 words still.
+	 */
+	bool isp2_set;
+	uint32_t isp2;
 };
 
 /*

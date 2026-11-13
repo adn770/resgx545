@@ -24,7 +24,7 @@
  *   tri   [--width W --height H -n N] [--max-width W --max-height H] [--aa4] [--fault]
  *         [--scratch N [--scratch-fill V] [--scratch-at ADDR] [--scratch-file FILE]] [--kpoke-render N:SPEC]... [--move N:DX,DY]...
  *         [--geometry N]... [--keep-going] [--keep-overflow] [--dump-render DIR [--dump-each]]
- *         [--tri-full] [--tri-z A,B,C]
+ *         [--tri-full] [--tri-z A,B,C] [--isp2 V]
  *         [--depth [--depth-ctl V] [--depth-ctl-next V] [--depth-fill F] [--depth-base V]
  *                [--depth-pages N] [--depth-dump DIR] [--depth-store [--depth-store-fill F]]
  *                [--stencil [--stencil-fill F] [--stencil-store [--stencil-store-fill F]]]]
@@ -65,7 +65,9 @@
  *                                 a fill F is a value, index or bit:K; --depth-store,
  *                                 --stencil, --stencil-store: further buffers (the store base
  *                                 on its own, the stencil bases); --tri-full: the triangle
- *                                 covers the target; --tri-z A,B,C: its vertices' depths, -1 to 2
+ *                                 covers the target; --tri-z A,B,C: its vertices' depths, -1 to 2;
+ *                                 --isp2 V: ISP word 2 (stencil) V in the state block, in place
+ *                                 of the wrap word (with --depth --stencil, Q121's test rows);
  *                                 --dump-render DIR: after the renders, the kernel's
  *                                 debugfs render_param and render_tadata copied to
  *                                 DIR/tri.param.bin and DIR/tri.tadata.bin;
@@ -358,6 +360,8 @@ struct opts {
 	uint32_t tri_unit;		/* tri --tri-unit: 0 (8), or 4 to 20 */
 	bool tri_z_given;		/* tri --tri-z A,B,C: the screen depth at each vertex */
 	float tri_z[3];
+	bool tri_isp2_given;		/* tri --isp2 V: ISP word 2 (stencil) in the state block */
+	uint32_t tri_isp2;
 	uint32_t depth_pages;		/* UINT32_MAX: the target's and sixteen over */
 	const char *depth_dump;		/* --depth-dump DIR: the buffer after each render */
 	bool ctx2;			/* tri: a second render context in the VM, rendering too */
@@ -415,7 +419,7 @@ static int usage(void)
 		"                      --kpoke-render N:SPEC --move N:DX,DY --geometry N\n"
 		"                      --keep-going --keep-overflow --dump-render DIR [--dump-each]\n"
 		"                      --words DIR\n"
-		"                      [--tri-full] [--tri-z A,B,C] [--bg-layer]\n"
+		"                      [--tri-full] [--tri-z A,B,C] [--isp2 V] [--bg-layer]\n"
 		"                      [--depth [--depth-ctl V] [--depth-ctl-next V] [--depth-fill F]\n"
 		"                       [--depth-base V] [--depth-pages N] [--depth-dump DIR]\n"
 		"                       [--depth-store [--depth-store-fill F]] [--stencil\n"
@@ -3132,6 +3136,10 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		if (o->tri_z_given)
 			for (int v = 0; v < 3; v++)
 				p.zndc[v] = 2 * o->tri_z[v] - 1;
+		p.isp2_set = o->tri_isp2_given;
+		p.isp2 = o->tri_isp2;
+		if (o->tri_isp2_given)
+			printf("tri: isp2 0x%08x\n", o->tri_isp2);
 		if (o->tri_v_given) {
 			printf("tri: vertices%u %d %d %d %d %d %d", 1u << (o->tri_unit ? o->tri_unit : 8),
 			       o->tri_v[0][0], o->tri_v[0][1],
@@ -3671,6 +3679,22 @@ static int parse_opts(int argc, char **argv, struct opts *o)
 				return -1;
 			}
 			o->tri_z_given = true;
+			continue;
+		}
+		if (!strcmp(argv[i], "--isp2") && i + 1 < argc) {
+			char *end;
+			unsigned long long v;
+
+			errno = 0;
+			v = strtoull(argv[i + 1], &end, 0);
+			if (errno || end == argv[i + 1] || *end || argv[i + 1][0] == '-' ||
+			    v > UINT32_MAX) {
+				fprintf(stderr, "sgxfive-test: bad option --isp2 (a number below "
+					"2^32)\n");
+				return -1;
+			}
+			o->tri_isp2_given = true;
+			o->tri_isp2 = (uint32_t)v;
 			continue;
 		}
 		for (size_t k = 0; k < sizeof(fills) / sizeof(fills[0]); k++) {
@@ -4436,6 +4460,10 @@ int main(int argc, char **argv)
 	}
 	if ((o.tri_full || o.tri_z_given || o.tri_v_given) && strcmp(cmd, "tri")) {
 		fprintf(stderr, "sgxfive-test: --tri-full, --tri-z and --tri-v are for tri\n");
+		return 2;
+	}
+	if (o.tri_isp2_given && strcmp(cmd, "tri")) {
+		fprintf(stderr, "sgxfive-test: --isp2 is for tri and probe --tri\n");
 		return 2;
 	}
 	if (o.tri_unit && !o.tri_v_given) {
