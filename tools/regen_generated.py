@@ -85,9 +85,11 @@ def _py(root: pathlib.Path, rel: str, *args: str) -> list[str]:
 
 def _coverage(root: pathlib.Path, *args: str) -> list[str]:
     """The sgx-sim example that writes (or, with --check, compares) doc/isa/sim-coverage.json; it
-    does nothing without the vectors."""
-    return ["cargo", "run", "-q", "--release", "-p", "sgx-sim", "--example", "coverage",
-            *(["--", *args] if args else [])]
+    does nothing without the vectors. The output path is the caller's (--out): never one compiled
+    into the example."""
+    out = str(root / "doc/isa/sim-coverage.json")
+    return ["cargo", "run", "-q", "--release", "-p", "sgx-sim", "--example", "coverage", "--",
+            "--out", out, *args]
 
 
 def problems(root: pathlib.Path = ROOT, repos: dict | None = None,

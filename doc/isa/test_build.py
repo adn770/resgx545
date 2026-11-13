@@ -402,3 +402,20 @@ def test_a_group_says_which_forms_the_hardware_confirmed():
     text = " ".join(B.sim_coverage([{"index": 1}, {"index": 2}, {"index": 3}], cov))
     assert "Confirmed on the hardware (a passing vector): #1" in " ".join(text.split())
     assert "not yet confirmed (as decoded; no passing vector yet): #2, #3" in " ".join(text.split())
+
+
+def test_the_simulator_binary_is_in_the_callers_cargo_target_dir(tmp_path, monkeypatch):
+    """A shared or custom CARGO_TARGET_DIR holds the build, not <repo>/target."""
+    calls = []
+
+    class Done:
+        returncode = 0
+        stderr = ""
+
+    monkeypatch.setattr(B.subprocess, "run", lambda cmd, **kw: calls.append((cmd, kw)) or Done())
+    monkeypatch.setattr(B, "_sim_binary", None)
+    monkeypatch.setenv("CARGO_TARGET_DIR", str(tmp_path / "tgt"))
+    assert B._sim() == tmp_path / "tgt" / "release" / "sgx-sim"
+    monkeypatch.setattr(B, "_sim_binary", None)
+    monkeypatch.delenv("CARGO_TARGET_DIR")
+    assert B._sim() == B.ROOT / "target" / "release" / "sgx-sim"

@@ -5,7 +5,7 @@ unit = "isp"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E683", "E607", "E606", "E680", "E681", "E914", "E943", "E952"]
+evidence = ["E683", "E607", "E606", "E680", "E681", "E914", "E943", "E952", "E984"]
 terms = []
 +++
 E607 fitted a rounding half up to 1/256 pixel at x >= 0 and E681 shows it holds at positive ties up
@@ -87,3 +87,16 @@ matched-length sweeps (zs3) do not run. What stays: which arithmetic decides tho
 candidates outside OZ's forms (the vertex as the TA stores it, an edge set-up from the clip words in
 floating point, a tie rule near a long edge) need an offline fit that beats HA on E683 before any
 row.
+
+Note 2026-11-13 (round 10 offline, decision R10-9 a; the note of E984; no claim settled, the
+question stays open). The round 10 seeds planner declared 352 floating-point edge set-ups (the
+coefficient form, relative to a vertex, to the target or the tile origin, a slope form; mantissas
+of 11 to 24 bits, rounded to nearest even or truncated, on half away from zero's vertices or float
+ones), fitted them on E914's and E943's 395 images and E979's 11 rows and froze the best and the
+family bests by hash before reading E683 (closing10/seeds/q260/). Held out on E683's 240 cases the
+frozen best gives 156 and the family bests 172, 173, 172 and 156, against half away from zero's 173
+and the gate of 235; post hoc the best of all 352 is 174. After E952's fixed-point forms and this
+floating-point family no candidate is left; the forms not tried (an edge set up for far vertices
+only, from the clip words or a clipped polygon, and the vertex as the TA stores it) have none
+formed, so the question has no rows until one is (E984's far band, which the seeds plan's stage
+pivot measures, may supply a far-edge form).

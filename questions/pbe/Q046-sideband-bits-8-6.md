@@ -5,7 +5,7 @@ unit = "pbe"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E030", "E031", "E210", "E269", "E383"]
+evidence = ["E030", "E031", "E210", "E269", "E383", "E999"]
 terms = ["SIDEBAND.BITS8_6", "SIDEBAND.PACKMODE", "CR_ISP_MSAA"]
 +++
 
@@ -41,3 +41,8 @@ bits 8:6 and ignore them, 3 is blue and 4 to 7 read as 3 in mode 8, with colours
 differ. What stays open is pack modes 20 and 27 with the field (not run), what the fixed words of
 bit 12 in modes 0 to 6 are, and bit 11, which faults the job in each mode run and is not safe to
 sweep; the question line now says so.
+
+Narrowed 2026-11-13 (r10-x, E999). Pack modes 20 and 27 store the low 16 bits of the colour, the
+image of mode 15, at bits 8:6 = 0 to 3 with both colours (16 of 16 held out): the field selects
+nothing there. Open: bit 11 (faults the job in every mode run, not safe to sweep) and what the
+fixed words of bit 12 in modes 0 to 6 are.

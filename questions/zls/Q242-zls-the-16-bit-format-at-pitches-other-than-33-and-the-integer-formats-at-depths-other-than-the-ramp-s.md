@@ -5,7 +5,7 @@ unit = "zls"
 kind = "hw"
 value = "low"
 phase = 12
-evidence = ["E466", "E490", "E663", "E977", "E411", "E465", "E991"]
+evidence = ["E466", "E490", "E663", "E977", "E411", "E465", "E991", "E996"]
 terms = ["CR_ISP_ZLSCTL"]
 +++
 
@@ -48,3 +48,10 @@ misfit is G 3, whose tile rows 2 and 3 land on pages 16 and 18 without a fault. 
 dword shared by overlapping tiles holds (the round 10 ranking plans stage zov), the integer formats
 at an odd width or height (their float band is rule A, E885, E903; not run in an integer format),
 and what lies past page 15 in E411's arrangement.
+
+Narrowed 2026-11-13 (r10-x, E996). A slot shared by overlapping tiles holds the 512 dwords of the
+tile the 3D visits last in the region header order (macrotiles column-major, 4 x 4-region blocks
+raster inside): 5 of 5 held out pitches at 64 x 32 to 256 x 64 and format 1 at 64 x 32 G 0, every
+shared dword, no slot mixed; the raster order fails where it parts from the header order. Open: the
+integer formats at an odd width or height, what lies past page 15 in E411's arrangement, and an
+overlapping store with edge tiles or four macrotiles a side.

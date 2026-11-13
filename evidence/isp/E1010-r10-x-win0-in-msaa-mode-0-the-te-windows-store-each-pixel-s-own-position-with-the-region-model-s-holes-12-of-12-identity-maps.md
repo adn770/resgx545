@@ -1,0 +1,35 @@
++++
+id = "E1010"
+claim = "r10-x stage win0 (14 jobs, E502's identity maps: E437's primary PDS program iterating the position, a shader writing pa0 or pa1, --tri-full): in CR_ISP_MSAA mode 0 with CR_TE_AA 0x60000000, 0xa0000000 and 0xe0000000 at 64 x 64 and 128 x 96 every stored pixel holds its own position (x + 0.375, y + 0.125) or, where the landed region model stores nothing, the background (frozen H-IDENT held 12 of 12, 4096 or 12288 pixels each); the window offsets of modes 1 and 2 (H-WIN: 16 b31 in x, 8 b30 in y) failed 8 of 12 and the holeless identity failed 8 of 12, each holding only where it ties H-IDENT; both E502 controls (mode 1 TE 0xe0000000, mode 0 TE 0x20000000) reproduced E502's kept images (4096 of 4096)"
+unit = "isp"
+method = "r10-x (render/closing-r10-x), stage win0 of the question-closing pass (round 10, decision R10-2 (a), plan closing10/rank/rank-round10.md R10-B (Q030)), dataset render-closing-r10-x; attempt out/20261113-101116 (win0 10:18:54 Mac time; driver log run.log; its freeze FROZEN.sha256 e70077bcfa0c94e9061f3a0356b49113bb78ae47322e9f060c5bb280bd007a47; scores score-win0.txt); on the laptop (host cedar, kernel 7.3.0-resgx545, module srcversion B60AB0B475DD1E8972419B5 (linux fork 2a650d74, installed and loaded alike), stock firmware, tool ~/sgxfive-test-rgn4 (sha256 e6951558a93b4b7bc750eeae302997992d7ec6e26719bc527ba1ffc9c6fb779a, built from resgx545 4623753), every job one process of the kit runner (kit/run_stage.sh), a debugfs reset and the health fill and triangle between jobs, every output and dump kept gzipped; the rows are tables/STAGE.txt, the frozen predictions predictions/STAGE.tsv and predictions/STAGE/ (gen/probes.py); every row with the debugfs knob render_rgn_arrays at 1 (a render context that takes a TE_AA with bit 31 or 30 and one region-header array, fork 2a650d74 sgxfive_render_init), restored to 0 after each job); freezes: FROZEN.sha256 e70077bcfa0c94e9061f3a0356b49113bb78ae47322e9f060c5bb280bd007a47 (151 files), PREDICTIONS.sha256 50878089db93e9928483efe7d499118b9a3e578423ed87a2deda89fbd137aa2e (78 files); FROZEN.commits pins: resgx545:tools/closing/kit/session.py at dd291289, resgx545:tools/closing/kit/lib_kit.sh at dd291289, resgx545:tools/closing/kit/run_stage.sh at dd291289, resgx545:tools/closing/kit/kitscore.py at dd291289, resgx545:tools/closing/kit/fake/sudo at dd291289, resgx545:tools/closing/kit/fake/timeout at dd291289, resgx545:tools/closing/kit/fake/df at dd291289, resgx545:tools/closing/kit/fake/modinfo at dd291289, resgx545:tools/closing/kit/fake/sha256sum at dd291289, resgx545:tools/closing/kit/fake/tool.sh at dd291289, resgx545:tools/closing/kit/fake/tool.py at dd291289, resgx545:tools/closing/kit/fake/ssh.py at dd291289, resgx545:tools/closing/scorekit.py at dd291289, resgx545:tools/closing/sessioncheck.py at dd291289, data:render/closing-r9-x/out/20261113-081821/zls/z242-c-f0.depth.1.bin.gz at 1324301b, data:render/closing-r9-x/out/20261113-081821/zls/z242-c-f1.depth.1.bin.gz at 1324301b, data:render/closing-r9-x/out/20261113-081821/zls/z242-c-f2.depth.1.bin.gz at 1324301b, data:render/closing-r9-x/out/20261113-081821/zls/z243-ctl.depth.1.bin.gz at 1324301b, data:render/closing-r9-x/out/20261113-081821/zls/z242-c-f0.txt.gz at 1324301b, data:render/closing-r9-x/out/20261113-081821/zls/z242-c-f1.txt.gz at 1324301b, data:render/closing-r9-x/out/20261113-081821/zls/z242-c-f2.txt.gz at 1324301b, data:render/closing-r9-x/out/20261113-081821/zls/z243-ctl.txt.gz at 1324301b, data:render/closing-r9-x/out/20261113-081821/zls/z243-f1-less.txt.gz at 1324301b, data:pbe/sideband-channels/pbe-sideband-channels-0208/raw.txt at 1324301b, data:pbe/sideband-channels/pbe-sideband-channels-020f/raw.txt at 1324301b, data:pbe/sideband-channels/pbe-sideband-channels-0207/raw.txt at 1324301b, data:pbe/sideband-channels/pbe-sideband-channels-0247/raw.txt at 1324301b, data:pbe/sideband-channels/pbe-sideband-channels-0208/bins/eot_plain.bin at 1324301b, data:pbe/sideband-channels/pbe-sideband-channels-0208/bins/pbe-sideband-channels-0208__0.bin at 1324301b, data:pbe/sideband-channels/pbe-sideband-channels-0208/bins/pbe-sideband-channels-0208__1.bin at 1324301b, data:isp/msaa-ident/dumps/A-m1-tee0-64x64-x.txt.gz at 1324301b, data:isp/msaa-ident/dumps/A-m0-te20-64x64-x.txt.gz at 1324301b, data:isp/msaa-ident/dumps/A-m1-te60-64x64-x.txt.gz at 1324301b, data:dpm/partial-reload-pos/dpm-partial-reload-pos-pa0/bins/dpm-partial-reload-pos-pa0__0.bin at 1324301b, data:dpm/partial-reload-pos/dpm-partial-reload-pos-pa0/bins/pix_pa0.bin at 1324301b, data:dpm/partial-reload-pos/dpm-partial-reload-pos-pa1/bins/pix_pa1.bin at 1324301b, data:texture/p1141/recompute/msaa_model.py at 1324301b, resgx545:crates/sgx-pipe/src/ta.rs at dd291289, resgx545:crates/sgx-pipe/src/zls.rs at dd291289, 4623753f2cc5b9a34b357736801a4c6e66138bf9 at built; tools: TOOLSRC.sha256: 703cbceaae8cdff3eda280b7ef89f3c5ef14ba7d378dd269bc66ef714aaead69 4623753f2cc5b9a34b357736801a4c6e66138bf9:userspace/libsgxfive/tools/sgxfive-test.c; the runner expects: run/session.env SRCV_EXPECT=B60AB0B475DD1E8972419B5; stops in the logs: none; lead decisions in the logs: none"
+tiers = ["HW"]
+date = "2026-11-13"
+data = ["render-closing-r10-x:out/20261113-101116/win0/"]
+terms = ["CR_ISP_MSAA", "CR_TE_AA"]
++++
+**What ran.** `probe --tri pixpds:12 --tri-full` with E437's published primary PDS program
+(dpm-partial-reload-pos-pa0__0.bin; E502's own program files are not published, the controls checked
+the substitution) and pix_pa0 or pix_pa1 as the pixel shader (an x and a y job), cmd:13 = 0x80000000
+(mode 0), cmd:10 and cmd:16 0xeaa26e26, cmd:1 the TE word; 12 rows plus E502's
+A-m1-tee0-64x64-x and A-m0-te20-64x64-x as controls.
+
+**Frozen verdict (as printed).** attempt 20261113-101116, stage win0 (run.log): `SUMMARY: win0:
+H-IDENT (12 of 12 rows decided)`; attempt 20261113-101116, stage win0 (run.log): `SUMMARY: win0:
+H-IDFULL is not supported: 4 held, 8 FAILED, 0 cannot tell of 12`; attempt 20261113-101116, stage
+win0 (run.log): `SUMMARY: win0: H-WIN is not supported: 4 held, 8 FAILED, 0 cannot tell of 12`.
+
+**Results [HW].** H-IDENT 4096/4096 on the six 64 x 64 jobs and 12288/12288 on the six 128 x 96
+ones; the holes the model predicts (0, 0, 136 at 64 x 64 for TE 0x60, 0xa0, 0xe0; 26, 74, 514 at 128
+x 96) hold the background 0xff203040. H-WIN held only the jobs whose axis the TE bit does not move
+(x under 0x60, y under 0xa0); H-IDFULL only where the model has no hole.
+
+**What it shows.** Mode 0 has no window: CR_TE_AA bits 31 and 30 move no stored pixel; they only
+leave the region model's seam holes as background (E953's holes, now with every other pixel's
+position read).
+With E990 (E281's slots past the first tile) and E503 (the windows of modes 1 and 2), the sample
+layout in every tile and window run is answered: Q030 is retired as answered by this record and
+E990; mode 3 hangs (E210) and no question asks for its window.
+
+**What it does not show.** Mode 3; a context made with --aa4 (four region arrays) in mode 0; the
+samples themselves (every slot holds the same iterated value).

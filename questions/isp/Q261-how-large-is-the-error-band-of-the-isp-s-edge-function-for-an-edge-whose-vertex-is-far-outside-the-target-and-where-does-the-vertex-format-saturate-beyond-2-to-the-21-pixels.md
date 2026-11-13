@@ -5,7 +5,7 @@ unit = "isp"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E684", "E682", "E979", "E1005"]
+evidence = ["E684", "E682", "E979", "E984", "E1005"]
 terms = []
 +++
 E684 puts one vertex, on the 1/256 grid, at 2^9 to 2^21 pixels, on 64 x 64 and 512 x 512 targets
@@ -28,6 +28,15 @@ Narrowed 2026-11-13 (E979). The vertex format does not saturate, wrap or cull at
 2^24 both ways and -2^25 the image is the exact one outside the 1e-3 pixel band (10 of 10 rows,
 H-SAT and H-WRAP refuted). Open: the band's width against the far vertex's distance and the edge's
 length (band pixels were not scored).
+
+Narrowed 2026-11-13 (round 10 offline, decision R10-1 a; E984, post hoc). E979's band pixels are
+not noise: the 26 that lie on a far edge between its near vertex and the far one (rows with the
+vertex at 2^23, 2^24 and -2^25 pixels along x) are all drawn, just outside the exact line, and the
+20 others agree. With the near vertices fixed, the far vertex moved alone fits them only from 43,
+52 and 42 pixels in y (or -171, -206 and -167 in x), a one-sided bound about the same at the three
+distances. Open: the displacement itself and its dependence on the distance, the axis and the
+edge's length (the seeds plan's stage pivot, closing10/seeds/exp-seeds-r10.md section 9, sweeps
+the far vertex to pin it), and the format past 2^25 pixels (Q199).
 
 Narrowed 2026-11-13 (round 10, r10-geo stage pivot, E1005; the question line is reworded, the
 question is not retired). It read "how large is the error band of the ISP's edge evaluation (E684:

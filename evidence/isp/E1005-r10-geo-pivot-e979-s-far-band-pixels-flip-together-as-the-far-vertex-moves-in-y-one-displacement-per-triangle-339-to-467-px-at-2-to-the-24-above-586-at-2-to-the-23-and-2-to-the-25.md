@@ -9,7 +9,8 @@ data = ["render-closing-r10-geo:out/20261113-103256/pivot/", "render-closing-r10
 terms = []
 +++
 **What ran.** E979 left 26 band pixels of three far triangles (one vertex at 2^23, 2^24 and
--2^25 pixels) drawn where the exact coverage has them out; the round 10 seeds plan (finding 4)
+-2^25 pixels) drawn where the exact coverage has them out; E984 (the round 10 seeds plan's
+finding 4)
 fitted a displacement of the far vertex of at least 43, 52 and 42 pixels in y, post hoc. The
 in-span band pixels of each triangle lie on one lattice line through the near vertex, so as the
 far vertex moves along y the edge pivots there and they all cross it at one displacement t*
@@ -39,7 +40,8 @@ above 1.7e-5.
 **What it shows.** [HW] Far from the target the hardware's edges through a far vertex are the
 exact edges of a far vertex displaced along y by a fixed amount per triangle, pinned at 339 to 467
 pixels for the vertex at (2^24, 2^22) and above 586 for the vertices at (2^23, 2^21) and (-2^25,
--2^23): not one displacement and not one angle. E979's lower bounds (43, 52, 42) were far below. [infer] The displacement
+-2^23): not one displacement and not one angle. E979's lower bounds (43, 52, 42) were far below.
+[infer] The displacement
 is a property of the edge's set-up from these coordinates (a rounding of a slope or of an edge
 coefficient that depends on the vertex's bits), not of a fixed vertex error; sgx-pipe keeps the
 band undetermined.

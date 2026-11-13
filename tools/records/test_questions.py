@@ -311,3 +311,28 @@ def test_retirements_and_citing_records_past_e999(monkeypatch):
         assert questions.reference_problems(q, {"Q001"}, record="E1001") != []
     monkeypatch.setattr(questions, "RETIRED", {"Q002": "answered by E999"})
     assert questions.reference_problems("Q002", {"Q001"}, record="E1000") != []
+
+
+def test_main_reads_a_four_digit_record_id_whole(tree, monkeypatch):
+    """E1009 is not E100: the id is the part of the file name before the first '-'."""
+    ev = tree / "evidence" / "isp"
+    (ev / "E1009-x.md").write_text("x")
+    (ev / "E100-y.md").write_text("y")
+    q = tree / "questions" / "isp" / "Q001-example-bit.md"
+    base = q.read_text()
+    q.write_text(base.replace('evidence = ["E001"]', 'evidence = ["E1009"]'))
+    assert questions.main([]) == 0          # regenerates the view
+    assert questions.main(["--check"]) == 0
+    (ev / "E1009-x.md").unlink()            # only E100 is left: E1009 does not exist
+    assert questions.main(["--check"]) == 1
+
+
+def test_a_four_digit_record_is_after_a_three_digit_answer(tree, monkeypatch):
+    """A record is compared with the answer by its whole number: E1009 comes after E1005."""
+    monkeypatch.setattr(questions, "RETIRED", {"Q002": "answered by E1005"})
+    ev = tree / "evidence" / "isp"
+    (ev / "E1009-x.md").write_text("cites Q002")
+    assert questions.main(["--check"]) == 1
+    (ev / "E1009-x.md").unlink()
+    (ev / "E1004-x.md").write_text("cites Q002")     # before the answer: allowed
+    assert questions.main(["--check"]) == 0

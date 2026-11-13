@@ -10,7 +10,7 @@
 use crate::Outcome;
 
 pub const OPEN: &[&str] =
-    &["Q066", "Q030", "Q086", "Q089", "Q199", "Q200", "Q202", "Q240", "Q241", "Q262", "Q071", "Q073", "Q032"];
+    &["Q066", "Q086", "Q089", "Q199", "Q200", "Q202", "Q240", "Q241", "Q262", "Q071", "Q073", "Q032"];
 
 pub fn refuse() -> Outcome {
     Outcome::unsupported("the ISP past triangle coverage and depth is not modelled (12.3)", OPEN)
@@ -178,12 +178,14 @@ pub const FAR_BAND: f64 = 1.0e-3;
 /// every pixel whose centre is 1e-3 pixel or more from an edge line, and `None` inside that band
 /// (E684: the 16 pixels it got wrong lay within 5.6e-4 pixel). E979 held this at one vertex up to
 /// 2^24 pixels both ways and -2^25, and at two vertices at +-2^23 and +-2^24, 10 of 10 rows: no
-/// clamp or wrap of a 24.8 word (H-SAT, H-WRAP refuted). Refuses other targets, three far vertices
-/// and the band's own form (Q261), and coordinates past what ran (Q199). E1005 held the exact
-/// coverage outside the band on 36 more rows (E979's x23p, x24p and x25n with the far vertex's y
-/// moved by 0 to -544 pixels) and read the band as a displacement D of the far vertex along y that
-/// fits each triangle's rows but differs between them (x24p: 339 to 467 pixels; x23p and x25n:
-/// above 586) and is not one angle: the band stays `None`.
+/// clamp or wrap of a 24.8 word (H-SAT, H-WRAP refuted). Inside the band E979's rows drew exactly
+/// the pixels on a far edge between its near vertex and the far one (E984, post hoc, 26 of 46 on
+/// three rows: as if the far vertex sat tens of pixels away); E1005 held the exact coverage outside
+/// the band on 36 more rows (E979's x23p, x24p and x25n with the far vertex's y moved by 0 to -544
+/// pixels) and read the band as a displacement D of the far vertex along y that fits each
+/// triangle's rows but differs between them (x24p: 339 to 467 pixels; x23p and x25n: above 586)
+/// and is not one angle: the band stays `None`. Refuses other targets, three far vertices and the
+/// band's own form (Q261), and coordinates past what ran (Q199).
 pub fn far_coverage_image(w: u32, h: u32, t: &FarTri) -> Result<Vec<Option<bool>>, Outcome> {
     if !FAR_TARGETS.contains(&(w, h)) {
         return Err(open(
@@ -324,12 +326,17 @@ impl Tri {
     }
 }
 
-/// The depth comparison of ISP word 0 bits 24:22 (E072, 3d.md 11.1).
+/// The depth comparison of ISP word 0 bits 24:22 in the GL order (E072, E995, 3d.md 11.1), the
+/// object's depth on the left.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Cmp {
     Never,
     Less,
+    Equal,
+    LessEqual,
     Greater,
+    NotEqual,
+    GreaterEqual,
     Always,
 }
 
@@ -381,10 +388,13 @@ pub fn decode_words(isp: [u32; 2], ctl: u32, nprims: usize) -> Result<Mode, Outc
             "Q071",
         ));
     }
-    // bits 15 to 17 changed the image when flipped (48 pixels left, empty: E065) and bit 18 faults
+    // bits 15 to 17 changed the image when flipped (48 pixels left, empty: E065), each removed
+    // E977's ramp triangle under less with writes (E998: one vertex order), and bit 18 faults
     if w0 & 0x0007_8000 != 0 {
         return Err(open(
-            format!("ISP word 0 bit 15 to 18 set ({w0:#x}): E065 saw a changed image, no pixels or a fault"),
+            format!(
+                "ISP word 0 bit 15 to 18 set ({w0:#x}): E065 saw a changed image, no pixels or a fault, E998 the triangle removed on one vertex order"
+            ),
             "Q241",
         ));
     }
@@ -395,24 +405,21 @@ pub fn decode_words(isp: [u32; 2], ctl: u32, nprims: usize) -> Result<Mode, Outc
     if w1 & !(0x3f << 26) != ISP1_LIBRARY {
         return Err(open(
             format!(
-                "ISP word 1 {w1:#x}: only the library's low bits are modelled (a visibility test, the polygon offset or other bits change what is counted or drawn)"
+                "ISP word 1 {w1:#x}: only the library's low bits are modelled (a visibility test, the polygon offset or other bits change what is counted or drawn; E998 saw bits 3 and 23 change nothing on one ramp)"
             ),
             "Q241",
         ));
     }
+    // the GL order, exact on equal depths (E995: 14 of 14 held out; E072 on unequal depths)
     let cmp = match w0 >> 22 & 7 {
         0 => Cmp::Never,
         1 => Cmp::Less,
+        2 => Cmp::Equal,
+        3 => Cmp::LessEqual,
         4 => Cmp::Greater,
-        7 => Cmp::Always,
-        m => {
-            return Err(open(
-                format!(
-                    "depth compare {m}: inferred from the stencil compare's order, never measured against equal depths (E072)"
-                ),
-                "Q241",
-            ));
-        }
+        5 => Cmp::NotEqual,
+        6 => Cmp::GreaterEqual,
+        _ => Cmp::Always,
     };
     let pass = w0 >> 25 & 7;
     let (gate, thr) = (w1 >> 26 & 0x3f, ctl & 0x3f);
@@ -477,22 +484,20 @@ pub fn resolve_tile(tile: (u32, u32), bg_depth: f32, objs: &[Listed]) -> Result<
 }
 
 /// [`resolve_tile`] over a tile whose depth starts as `start` (the 512 pixels in raster order of
-/// the tile): the clear value, or a depth the ZLS loaded (12.4, E467; exact, sign already cleared).
-/// Synthetic tests only: no hardware run of a load with two objects exists, and the single-object
-/// images over a loaded depth of E411 part B are counts and hashes (no dump), with the background
-/// object and the stencil in them, so they do not check this function. A start depth that is NaN,
-/// infinite or negative refuses (Q243).
+/// the tile): the clear value, or a depth the ZLS loaded (12.4, E467). Synthetic tests only: no
+/// hardware run of a load with two objects exists, and the single-object images over a loaded
+/// depth of E411 part B are counts and hashes (no dump), with the background object and the
+/// stencil in them, so they do not check this function. A start depth enters the compare as its
+/// magnitude, NaN and infinity above every depth (E995: -0.25, -0.75, -0.0 and NaN under the
+/// compares 1 to 6, 14 of 14 held out; E977: NaN and infinity under less and greater); a pixel
+/// that no object writes keeps the start value itself.
 pub fn resolve_tile_from(
     tile: (u32, u32),
     start: &[f32; 512],
     objs: &[Listed],
 ) -> Result<Vec<Pixel>, Outcome> {
-    if let Some(d) = start.iter().find(|d| !d.is_finite() || **d < 0.0) {
-        return Err(open(
-            format!("a tile that starts from the depth {d}: a loaded depth is not run"),
-            "Q243",
-        ));
-    }
+    // the compare's view of a depth: its magnitude, NaN above every depth (E995)
+    let key = |d: f64| if d.is_nan() { f64::INFINITY } else { d.abs() };
     let mut px: Vec<Pixel> =
         start.iter().map(|&d| Pixel { tag: None, depth: d as f64, tol: Some(0) }).collect();
     for (o, obj) in objs.iter().enumerate() {
@@ -533,7 +538,7 @@ pub fn resolve_tile_from(
                                     "Q200",
                                 ));
                             };
-                            let d = z - p.depth;
+                            let d = z - key(p.depth);
                             if d.abs() <= (tn + to) as f64 * DEPTH_UNIT {
                                 return Err(open(
                                     format!(
@@ -543,7 +548,13 @@ pub fn resolve_tile_from(
                                     "Q200",
                                 ));
                             }
-                            if c == Cmp::Less { d < 0.0 } else { d > 0.0 }
+                            // equal depths are inside the tolerance and refused above
+                            match c {
+                                Cmp::Less | Cmp::LessEqual => d < 0.0,
+                                Cmp::Greater | Cmp::GreaterEqual => d > 0.0,
+                                Cmp::Equal => false,
+                                _ => true,
+                            }
                         }
                     };
                     if pass {
@@ -566,24 +577,22 @@ pub fn resolve_tile_from(
 /// in a multisampled render of `mode` (CR_ISP_MSAA mode 0 to 2) with `te_aa` the CR_TE_AA word
 /// (E503): x = 32 tx + 16 b31 + a div sx, y = 16 ty + 8 b30 + b div sy, (sx, sy) = (1, 1),
 /// (2, 1), (2, 2) for the modes 0, 1, 2; b30 counts in mode 2 only. E281's sample slots hold in
-/// the tiles past the first under every window run (E990). Mode 0 was read as an identity map with
-/// both bits clear only, and mode 3 not run at all: they refuse for other inputs (Q030).
+/// the tiles past the first under every window run (E990). Mode 0 has no window: every stored
+/// pixel is its own under CR_TE_AA 0x2, 0x6, 0xa and 0xe (E502, E1010: 12 of 12 identity maps
+/// held out, the region model's seam holes background). Mode 3 hangs (E210); its window was not
+/// measured and no question asks for it (the sample-layout question is answered by E1010): it
+/// refuses naming none.
 pub fn msaa_source(mode: u32, te_aa: u32, tx: u32, ty: u32, a: u32, b: u32) -> Result<(u32, u32), Outcome> {
     let (b31, b30) = (te_aa >> 31 & 1, te_aa >> 30 & 1);
     let (sx, sy) = match mode {
-        0 if b31 | b30 == 0 => (1, 1),
+        0 => return Ok((32 * tx + a, 16 * ty + b)),
         1 => (2, 1),
         2 => (2, 2),
-        0 => {
+        m => {
             return Err(Outcome::unsupported(
-                "the window of mode 0 with CR_TE_AA bits 31 or 30 set was not read as an identity map (E953 held the region model's holes there)",
-                &["Q030"],
+                &format!("the window of mode {m} was not measured (mode 3 hangs, E210)"),
+                &[],
             ));
-        }
-        _ => {
-            // no other question asks about mode 3 (no run used it): Q030 keeps it with mode 0's
-            // windows once E990 held E281's slots past the first tile
-            return Err(Outcome::unsupported("the window of mode 3 was not measured", &["Q030"]));
         }
     };
     let b30 = if mode == 2 { b30 } else { 0 };
@@ -704,6 +713,12 @@ mod tests {
             // the hardware drew every determined pixel and some of the band (E979: H-EXACT held)
             assert!(det <= hw && hw <= det + und, "{name}");
         }
+        // E984 (post hoc): 26 of the 46 band pixels were drawn, each on a far edge between its near
+        // vertex and the far one, and the other 20 not; one-sided, but read on three rows only, so
+        // the band stays undetermined
+        let band: usize = E979_ROWS.iter().map(|r| r.3).sum();
+        let drawn_in_band: usize = E979_ROWS.iter().map(|r| r.4 - r.2).sum();
+        assert_eq!((band, drawn_in_band), (46, 26));
     }
 
     /// r10-geo stage pivot (E1005): E979's far-x23p, far-x24p and far-x25n with the far vertex's
@@ -1060,24 +1075,25 @@ mod tests {
     }
 
     #[test]
-    fn mode_3_names_the_msaa_question_and_mode_0_bits_the_window_one() {
-        // mode 0 with bits 31 or 30: Q141 is answered (E953 held the region model's holes there),
-        // the window itself (an identity map) was not read: the MSAA layout question, Q030
-        for (mode, te, q) in [(3, 0x2000_0000, "Q030"), (0, 0x6000_0000, "Q030")] {
-            match msaa_source(mode, te, 0, 0, 0, 0) {
-                Err(Outcome::Unsupported { ids, .. }) => assert_eq!(ids, [q]),
-                o => panic!("{o:?}"),
-            }
+    fn mode_0_has_no_window_and_mode_3_refuses_with_no_question() {
+        // E1010: mode 0 stores each pixel's own position under CR_TE_AA 0x6, 0xa and 0xe
+        for te in [0x2000_0000, 0x6000_0000, 0xa000_0000, 0xe000_0000u32] {
+            assert_eq!(msaa_source(0, te, 2, 3, 17, 9).unwrap(), (81, 57), "{te:#x}");
+        }
+        // mode 3 hangs (E210) and no question asks for its window (the layout one is answered, E1010)
+        match msaa_source(3, 0x2000_0000, 0, 0, 0, 0) {
+            Err(Outcome::Unsupported { ids, .. }) => assert!(ids.is_empty()),
+            o => panic!("{o:?}"),
         }
     }
 
     #[test]
     fn modes_and_bits_no_record_measured_refuse() {
-        // mode 0 ran only with b31 = b30 = 0; mode 3 and above never
+        // mode 0 is the identity under every window (E502, E1010); mode 3 and above never ran
         assert_eq!(msaa_source(0, 0x2000_0000, 1, 1, 7, 9).unwrap(), (39, 25));
-        assert!(matches!(msaa_source(0, 0x6000_0000, 0, 0, 0, 0), Err(Outcome::Unsupported { .. })));
-        assert!(matches!(msaa_source(0, 0xa000_0000, 0, 0, 0, 0), Err(Outcome::Unsupported { .. })));
+        assert_eq!(msaa_source(0, 0x6000_0000, 1, 1, 7, 9).unwrap(), (39, 25));
         assert!(matches!(msaa_source(3, 0x2000_0000, 0, 0, 0, 0), Err(Outcome::Unsupported { .. })));
+        assert!(matches!(msaa_source(4, 0x2000_0000, 0, 0, 0, 0), Err(Outcome::Unsupported { .. })));
     }
 
     #[test]
@@ -1151,6 +1167,39 @@ mod tests {
     }
 
     #[test]
+    fn the_compares_2_3_5_6_decode_in_the_gl_order_e995_held() {
+        // E995: equal, less or equal, not equal, greater or equal, exact at equal depths
+        for (m, c) in [(2u32, Cmp::Equal), (3, Cmp::LessEqual), (5, Cmp::NotEqual), (6, Cmp::GreaterEqual)] {
+            assert_eq!(decode_words([m << 22 | 0x200, 0x10f0], 0, 1).unwrap().cmp, c, "compare {m}");
+        }
+    }
+
+    #[test]
+    fn the_eight_compares_on_e995s_rows_give_its_drawn_counts() {
+        // r10-x dcmp (E995): t the triangle, l the loaded depth, the compare as 0 or all pixels;
+        // the ulp rows are inside the planes' tolerance, so only the order is checked here
+        let rows: [(u32, f32, f32, bool); 10] = [
+            (1, 0.5, 0.75, true),
+            (2, 0.5, 0.75, false),
+            (3, 0.5, 0.75, true),
+            (4, 0.5, 0.75, false),
+            (5, 0.5, 0.75, true),
+            (6, 0.5, 0.75, false),
+            (3, 0.5, 0.25, false),
+            (6, 0.5, 0.25, true),
+            (4, 0.5, -0.25, true), // neg25-m4: the magnitude 0.25
+            (1, 0.5, -0.75, true), // neg75-m1: the magnitude 0.75
+        ];
+        for (m, t, l, drawn) in rows {
+            let tri = [flat(0, t)];
+            let c = decode_words([m << 22 | 0x200, 0x10f0], 0, 1).unwrap().cmp;
+            let o = [Listed { mode: mode(c, true), prims: &tri, left: 1, right: 1 }];
+            let px = resolve_tile_from((0, 0), &[l; 512], &o).unwrap();
+            assert_eq!(px[0].tag.is_some(), drawn, "mode {m}, {t} against {l}");
+        }
+    }
+
+    #[test]
     fn pass_types_3_and_7_remove_the_object_and_the_others_draw_a_single_triangle() {
         for (pass, removed) in
             [(0, false), (1, false), (2, false), (3, true), (4, false), (5, false), (6, false), (7, true)]
@@ -1209,15 +1258,16 @@ mod tests {
         assert_eq!(ids(decode_words([0x01d0_0300, 0x10f0], 0, 1)), ["Q071"], "stencil word present");
         assert_eq!(ids(decode_words([0x01d0_0a00, 0x10f0], 0, 1)), ["Q071"], "two-sided");
         assert_eq!(ids(decode_words([0x01d0_0201, 0x10f0], 0, 1)), ["Q071"], "a stencil reference");
+        // bits 15 to 17 each removed E977's ramp triangle under less with writes (E998), not a
+        // rule over vertex orders; bit 18 faults (E065)
         for bit in [15, 16, 17, 18] {
             assert_eq!(ids(decode_words([0x01d0_0200 | 1 << bit, 0x10f0], 0, 1)), ["Q241"], "bit {bit}");
         }
         assert_eq!(ids(decode_words([0x01d0_0200 | 1 << 28, 0x10f0], 0, 1)), ["Q202"]);
+        // ISP word 1 bits 3 and 23 changed nothing on one ramp (E998): not a rule for the counter
+        // or the offset's units
         for w1 in [0x10f0 | 8, 0x10f0 | 1 << 23, 0x1000] {
             assert_eq!(ids(decode_words([0x01d0_0200, w1], 0, 1)), ["Q241"], "{w1:#x}");
-        }
-        for mode in [2u32, 3, 5, 6] {
-            assert_eq!(ids(decode_words([mode << 22 | 0x200, 0x10f0], 0, 1)), ["Q241"], "compare {mode}");
         }
         assert_eq!(ids(decode_words([1 << 25 | 0x200, 0x10f0], 0, 2)), ["Q073"]);
         assert_eq!(ids(decode_words([4 << 25 | 0x200, 0x10f0], 0, 2)), ["Q032"]);
@@ -1452,16 +1502,27 @@ mod tests {
     }
 
     #[test]
-    fn a_start_depth_that_is_nan_infinite_or_negative_refuses_q243() {
+    fn a_start_depth_compares_with_its_sign_cleared_and_nan_above_every_depth() {
+        // E995 (14 of 14 held out) and E977: the loaded dword's magnitude, NaN and infinity above
         let t = [flat(0, 0.5)];
-        let o = [Listed { mode: mode(Cmp::Less, true), prims: &t, left: 1, right: 1 }];
-        for v in [f32::NAN, f32::INFINITY, -0.25] {
-            let mut start = [1.0f32; 512];
-            start[300] = v; // a pixel the triangle does not cover: refused by the input alone
-            let Err(Outcome::Unsupported { ids, .. }) = resolve_tile_from((0, 0), &start, &o) else {
-                panic!("{v}")
-            };
-            assert_eq!(ids, ["Q243"], "{v}");
+        for (c, v, drawn) in [
+            (Cmp::Less, f32::NAN, true),
+            (Cmp::Greater, f32::NAN, false),
+            (Cmp::LessEqual, f32::NAN, true),
+            (Cmp::GreaterEqual, f32::NAN, false),
+            (Cmp::Equal, f32::NAN, false),
+            (Cmp::NotEqual, f32::NAN, true),
+            (Cmp::Less, f32::INFINITY, true),
+            (Cmp::Greater, f32::INFINITY, false),
+            (Cmp::Less, -0.25, false),
+            (Cmp::Greater, -0.25, true),
+            (Cmp::Less, -0.75, true),
+        ] {
+            let o = [Listed { mode: mode(c, false), prims: &t, left: 1, right: 1 }];
+            let px = resolve_tile_from((0, 0), &[v; 512], &o).unwrap();
+            assert_eq!(px[0].tag.is_some(), drawn, "{c:?} against {v}");
+            // a pixel the triangle does not draw keeps the loaded value itself
+            assert_eq!(px[0].depth.to_bits(), (v as f64).to_bits(), "{c:?} {v}");
         }
     }
 
