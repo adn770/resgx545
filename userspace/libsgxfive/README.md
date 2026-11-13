@@ -347,7 +347,8 @@ store base (`rd:13`) on a buffer of its own (default fill 0xdeadbeef, report `de
 that both stencil bases (`rd:14`, `rd:15`, bit 31 set) point at (`stencil #N`, `stencil.N.bin`), and
 `--stencil-store` a buffer of its own for the stencil store (`stencil store #N`,
 `stencil-store.N.bin`). `--tri-full` makes the triangle
-(0,0), (3W,0), (0,3H), which covers the target; `--tri-z A,B,C` sets its vertices' screen depths
+(0,0), (3W,0), (0,3H), which covers the target; `--tri-z A,B,C` (each -1 to 2) sets its vertices'
+screen depths
 (0 to 1; clip z = 2z - 1), so that a ramp across x or y makes every stored depth dword name its
 pixel.
 `--ctx2` creates a second render context in the VM, for the same size of target, and renders the

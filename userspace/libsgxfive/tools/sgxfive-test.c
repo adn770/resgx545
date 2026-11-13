@@ -64,7 +64,7 @@
  *                                 a fill F is a value, index or bit:K; --depth-store,
  *                                 --stencil, --stencil-store: further buffers (the store base
  *                                 on its own, the stencil bases); --tri-full: the triangle
- *                                 covers the target; --tri-z A,B,C: its vertices' depths
+ *                                 covers the target; --tri-z A,B,C: its vertices' depths, -1 to 2
  *                                 --dump-render DIR: after the renders, the kernel's
  *                                 debugfs render_param and render_tadata copied to
  *                                 DIR/tri.param.bin and DIR/tri.tadata.bin;
@@ -3345,7 +3345,7 @@ static bool parse_fill(const char *s, struct fill *f)
 	return parse_u32(s, &f->val);
 }
 
-/* --tri-z A,B,C: three screen depths, 0 to 1 */
+/* --tri-z A,B,C: three screen depths, -1 to 2 (Q101: outside 0 to 1 reaches the render) */
 static bool parse_tri_z(const char *s, float z[3])
 {
 	char *end;
@@ -3353,7 +3353,7 @@ static bool parse_tri_z(const char *s, float z[3])
 	for (int i = 0; i < 3; i++) {
 		errno = 0;
 		z[i] = strtof(s, &end);
-		if (errno || end == s || !(z[i] >= 0.0f && z[i] <= 1.0f) ||
+		if (errno || end == s || !(z[i] >= -1.0f && z[i] <= 2.0f) ||
 		    *end != (i < 2 ? ',' : 0))
 			return false;
 		s = end + 1;
@@ -3462,8 +3462,8 @@ static int parse_opts(int argc, char **argv, struct opts *o)
 		}
 		if (!strcmp(argv[i], "--tri-z") && i + 1 < argc) {
 			if (!parse_tri_z(argv[i + 1], o->tri_z)) {
-				fprintf(stderr, "sgxfive-test: bad option --tri-z (three screen depths, 0 "
-					"to 1, comma separated)\n");
+				fprintf(stderr, "sgxfive-test: bad option --tri-z (three screen depths, "
+					"-1 to 2, comma separated)\n");
 				return -1;
 			}
 			o->tri_z_given = true;
@@ -3992,7 +3992,7 @@ int main(int argc, char **argv)
 			if (!strcmp(argv[i], "--tri-z") && i + 1 < argc) {
 				if (!parse_tri_z(argv[++i], popts.tri.z)) {
 					fprintf(stderr, "sgxfive-test: bad option --tri-z (three screen "
-						"depths, 0 to 1, comma separated)\n");
+						"depths, -1 to 2, comma separated)\n");
 					return 2;
 				}
 				popts.tri.z_set = true;

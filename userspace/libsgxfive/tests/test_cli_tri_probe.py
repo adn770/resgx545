@@ -519,6 +519,15 @@ def test_tri_probe_vertices_in_256ths_and_depths(tmp_path):
                      r.stdout, re.M), r.stdout
 
 
+def test_tri_probe_depths_range_minus_one_to_two(tmp_path):
+    pix = assemble(tmp_path, "pix", PHAS + "mov.skipinv.end o0, pa0\n")
+    r = run("--mock", "probe", "--tri", "pixel", "--tri-z", "-1,0.5,2", str(pix))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "depth -1 0.5 2\n" in r.stdout, r.stdout
+    r = run("--mock", "probe", "--tri", "pixel", "--tri-z", "-1.5,0.5,2", str(pix))
+    assert r.returncode == 2, r.stdout + r.stderr
+
+
 def test_tri_probe_v_is_checked(tmp_path):
     pix = assemble(tmp_path, "pix", PHAS + "mov.skipinv.end o0, pa0\n")
     for args in (["--tri-v", "1,2,3"], ["--tri-v", "0,0,256,0,0,256", "--tri-full"],

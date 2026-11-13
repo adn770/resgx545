@@ -1288,12 +1288,23 @@ def test_tri_odd_width_prints_every_pixel():
     assert re.search(r"^tri 19x18 #1: 342 triangle, 0 background", r.stdout, re.M), r.stdout
 
 
-@pytest.mark.parametrize("z", ["1", "1,2", "a,b,c", "0.1,0.2,0.3,0.4", "-0.5,0,0", "0,0,1.5", ""])
+@pytest.mark.parametrize("z", ["1", "1,2", "a,b,c", "0.1,0.2,0.3,0.4", "-1.5,0,0", "0,0,2.5",
+                               "nan,0,0", "inf,0,0", ""])
 def test_tri_z_is_checked(z):
     r = run("--mock", "tri", "--tri-z", z)
     assert r.returncode == 2, (z, r.stdout + r.stderr)
     assert "--tri-z" in r.stderr and "unknown" not in r.stderr, r.stderr
     assert "three screen depths" in r.stderr, r.stderr
+
+
+def test_tri_z_accepts_minus_one_to_two():
+    # Q101: a vertex depth outside [0, 1] reaches the render (clip z 2z - 1 in [-3, 3]), the
+    # range is [-1, 2] and the line prints the depths as given
+    for z in ("-1,0.5,2", "-0.5,0,1.5"):
+        r = run("--mock", "tri", "--tri-full", "--tri-z", z)
+        assert r.returncode == 0, (z, r.stdout + r.stderr)
+        want = " ".join(f"{float(x):g}" for x in z.split(","))
+        assert f"depth {want}\n" in r.stdout, r.stdout
 
 
 def test_tri_full_and_z_are_for_tri():
