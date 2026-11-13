@@ -9,7 +9,7 @@
 # ssh does not stop a stage half way); everything printed also goes to the kept runner.log.
 #
 # Table header lines: #stage NAME, #limit N (the faults and hangs of `expectfault` rows the stage
-# may take). Line: name|set|risk|knobs|tool|args (tool: a name of session.toml [tools]; in args
+# may take; a control's expected fault is its reading and is not counted). Line: name|set|risk|knobs|tool|args (tool: a name of session.toml [tools]; in args
 # $W is the job's work directory, every file the tool writes there is kept, and $S the staged tree;
 # a tool declared `wraps = true`, as regtimeline, runs `-- "$HOME/PATH" ...` of a declared tool)
 #   knobs  words, only these (any other: rc 7, nothing runs):
@@ -176,11 +176,13 @@ EOF
 		why=$(cat "$JW/check.txt")
 		[ -z "$why" ] || { echo "## STOP (stage $STAGE): $why, after $name"; health "$name" </dev/null; exit 24; } ;;
 	fault|hang)
-		FAULT_EVENTS=$((FAULT_EVENTS + 1))
 		mark "$class $name ${fint:-unread} ${fword:-unread}"
 		if [ "$expectfault" != 1 ]; then
 			echo "## STOP: unexpected $class in $name"; reset_gpu; strict_health "$name" </dev/null; exit 4
 		fi
+		# a control's expected fault is its reading, not one of the stage's (r8-k2's isolation)
+		if [ "$sset" = control ]; then echo "  $class (the control's reading, not counted against #limit)"
+		else FAULT_EVENTS=$((FAULT_EVENTS + 1)); fi
 		echo "  $class (a reading): events $FAULT_EVENTS of $FAULT_LIMIT; reset, then strict health"
 		reset_gpu; strict_health "$name" </dev/null
 		if [ "$FAULT_EVENTS" -ge "$FAULT_LIMIT" ] && [ "$i" -lt "$TOTAL" ]; then

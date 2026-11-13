@@ -667,3 +667,41 @@ def test_a_tool_without_a_bound_source_is_said_not_replayed(repos):
     m = kit(kp, repos, "mock")
     assert m.returncode == 0, m.stdout
     assert re.search(r"^note libmock: t4 has no source", m.stdout, re.M), m.stdout
+
+
+# ---- #limit: the faults a control expects are not the stage's ------------------------------
+def fault_limit_session(repos, iso_set):
+    kp = scaffold(repos)
+    t = kp / "tables/s0.txt"
+    t.write_text(t.read_text().replace("#limit 0", "#limit 1")
+                 + f"c1-iso|{iso_set}|safe|expectfault reads:diff|t4|fill --fault\n"
+                 + "f1-fill|fit|safe|-|t4|fill --width 32 --height 32\n")
+    w = (kp / "mock/world.py").read_text()
+    w = w.replace("def answer(tool, argv, world):\n",
+                  "def answer(tool, argv, world):\n"
+                  "    if '--fault' in argv:\n"
+                  "        return dict(rc=3, out='job: failed\\ndiff: 0 of 2048 pixels\\n', "
+                  "kmsg=['sgxfive: BIF fault 0x80020 at 0x3e200002 stalls job 9'], "
+                  "latch=(4, 0x3e200002))\n")
+    if iso_set != "control":
+        w = w.replace('EXPECT = {"model": (0, {"s0": 0}), "nodiff": (25, {"s0": 25})}',
+                      'EXPECT = {"model": (0, {"s0": 24})}')
+    else:
+        w = w.replace('EXPECT = {"model": (0, {"s0": 0}), "nodiff": (25, {"s0": 25})}',
+                      'EXPECT = {"model": (0, {"s0": 0})}')
+    (kp / "mock/world.py").write_text(w)
+    return kp
+
+
+def test_a_control_that_expects_its_fault_does_not_count_against_the_limit(repos):
+    """r8-k2's xf stage stopped before its end control: the isolation control's own READONLY
+    fault, the reading it exists for, was counted against `#limit`, which bounds the faults of
+    the rows under test. A control's expected fault is not counted; a fit row's still is."""
+    kp = fault_limit_session(repos, "control")
+    m = kit(kp, repos, "mock")
+    assert m.returncode == 0, m.stdout + m.stderr
+    assert re.search(r"^ok +world model: driver 0 \(s0 0\)", m.stdout, re.M), m.stdout
+    kp = fault_limit_session(dict(repos, tmp=repos["tmp"] / "fit"), "fit")
+    m = kit(kp, repos, "mock")
+    assert m.returncode == 0, m.stdout + m.stderr
+    assert re.search(r"^ok +world model: driver 0 \(s0 24\)", m.stdout, re.M), m.stdout
