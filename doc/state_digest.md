@@ -702,6 +702,16 @@ stays with what a session must do around it.
   path before E902's seeds. A session that needs the sim as an oracle checks first that its
   path does not hit one.
 
+- the `edm/closing-r5-events` mock (resgx545-data, `tests/mockfw/`): its simulated EDM counts
+  ticks on the wall clock (`time.monotonic()` since the boot, a tick every `clock / 399 MHz`), so
+  the fill has about 16 ms to reach it from the fake tool's start before the slot 0 ring is full
+  of ticks (the margin `tests/fake_tool.sh` was written to hold), and `t_trap_restores_knobs`
+  polls the knob files with a 30 s bound. Under `pytest -n auto` or a busy Mac a late start
+  fails it. The session is published and frozen, so the fix (a mock clock that advances by the
+  mock's own events, not by `time`) is not made here: run it alone
+  (`tools/closing/session_tests.sh edm/closing-r5-events`, never beside the suite). New sessions
+  use the kit's argv-driven mock, which has no such margin.
+
 ## Simulator coverage baseline
 
 120 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
