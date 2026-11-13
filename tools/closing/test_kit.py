@@ -1019,6 +1019,51 @@ def test_a_hook_runs_after_a_fault_row_and_its_reason_stops_the_stage(repos):
         assert re.search(rf"^ok +world model: driver 0 \(s0 {status}\)", m.stdout, re.M), m.stdout
 
 
+def two_stage_session(repos, on_stop=None, expect='(0, {"s0": 24, "s1": 0})'):
+    """fault_limit_session's s0, which its #limit stops with 24, then s1, a copy of the
+    template's stage; `on_stop` set on s0 when given."""
+    kp = fault_limit_session(repos, "fit")
+    t0 = (kp / "tables/s0.txt").read_text()
+    (kp / "tables/s1.txt").write_text(
+        "".join(ln for ln in t0.replace("#stage s0", "#stage s1").splitlines(keepends=True)
+                if not ln.startswith("c1-iso")))
+    (kp / "predictions/s1.tsv").write_text((kp / "predictions/s0.tsv").read_text())
+    sc = (kp / "score/score.py").read_text()
+    (kp / "score/score.py").write_text(sc.replace(
+        'REQUIRED = {"s0": (".txt", "cases.tsv", "void.tsv", "readings.tsv")}',
+        'REQUIRED = {s: (".txt", "cases.tsv", "void.tsv", "readings.tsv") for s in ("s0", "s1")}'))
+    st = "s0 = { alarm = 1800" + (f', on_stop = "{on_stop}"' if on_stop else "") + " }\n"
+    toml = (kp / "session.toml").read_text().replace(
+        "s0 = { alarm = 1800 }\n", st + "s1 = { alarm = 1800 }\n")
+    (kp / "session.toml").write_text(toml)
+    w = (kp / "mock/world.py").read_text()
+    (kp / "mock/world.py").write_text(w.replace('EXPECT = {"model": (0, {"s0": 24})}',
+                                                f'EXPECT = {{"model": {expect}}}'))
+    return kp
+
+
+def test_a_stage_stopped_by_its_rule_goes_on_unless_it_declares_on_stop_end(repos):
+    """r13-tex and r13-flag: a stage that stops by its rule (runner status 24) lets the driver go
+    on to the next stage, so a session whose later stages make no sense after that stop leaned
+    on gates. A stage may declare `on_stop = "end"`: its rc 24 then ends the session there (the
+    driver's status 24, no later stage runs). The default, and `on_stop = "next"`, go on."""
+    for sub, on_stop, expect, detail in [
+            ("d", None, '(0, {"s0": 24, "s1": 0})', r"driver 0 \(s0 24, s1 0\)"),
+            ("n", "next", '(0, {"s0": 24, "s1": 0})', r"driver 0 \(s0 24, s1 0\)"),
+            ("e", "end", '(24, {"s0": 24})', r"driver 24 \(s0 24\);")]:
+        kp = two_stage_session(dict(repos, tmp=repos["tmp"] / sub), on_stop, expect)
+        assert kit(kp, repos, "guard").returncode == 0, kit(kp, repos, "guard").stdout
+        m = kit(kp, repos, "mock")
+        assert m.returncode == 0, (on_stop, m.stdout + m.stderr)
+        assert re.search(rf"^ok +world model: {detail}", m.stdout, re.M), (on_stop, m.stdout)
+
+
+def test_the_guard_refuses_an_unknown_on_stop(repos):
+    kp = two_stage_session(repos, "skip")
+    g = kit(kp, repos, "guard")
+    assert g.returncode != 0 and re.search(r"session.toml: stage s0: on_stop", g.stdout), g.stdout
+
+
 # ---- post-run files: fold/ and out/ ----------------------------------------------------------
 def test_verify_lets_a_fold_add_its_files_under_fold_and_out(repos):
     """r8-lgeo's fold had to put its files under out/fold/: verify took any new file of a frozen

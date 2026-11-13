@@ -35,7 +35,8 @@ stage that stopped (after the copy back), and 20 the freeze does not verify, 38 
 or printed no SUMMARY, 39 the attempt's stage directory exists, 43 a file the scorer reads was
 not kept, 44 the premise (a control with no reading), 45 a laptop command or file was missing
 (a "command not found" or "No such file" line in the stage's log), 142 a bounded command reached
-its limit. A runner status 24 (the stage stopped by its rule) goes on to the next stage.
+its limit. A runner status 24 (the stage stopped by its rule) goes on to the next stage, unless
+the stage declares `on_stop = "end"` in session.toml: then the session ends there, status 24.
 """
 import argparse
 import glob
@@ -89,6 +90,9 @@ ENV = None          # the environment of every command (the mock's; None: this p
 BASE_KNOBS = re.compile(r"^(-|expectdiff|expectfault|after|soft|gate|noreset|grp:[a-z0-9]+|"
                         r"idle:([1-9]|[1-9][0-9]|1[01][0-9]|120)|"
                         r"expect:(rc3-overflow)|reads:[a-z0-9_]+(,[a-z0-9_]+)*)$")
+# a stage's on_stop: what follows its runner status 24 (next: the next stage runs; end: the
+# session ends there)
+ON_STOP = ("next", "end")
 # --kpoke is probe's kernel poke, no riskier than tri's --kpoke-render: allowed on `probe` rows only
 FORBID_OPTIONS = ("--kpoke", "--kreg", "--clkgate", "--trc-hazard")
 FORBID = (r"reboot|shutdown|poweroff|kexec|grub|mkinitcpio|(^|[^a-z_-])make |gcc|(^|[^a-z])cc |"
@@ -287,6 +291,10 @@ def guard(kp):
                 and recipe):
             bad.append(f"session.toml: tool {n}'s built_from is not COMMIT:PATH (a full commit) "
                        "with built_sha256 and recipe")
+    for st, d in c["stages"].items():
+        if d.get("on_stop", "next") not in ON_STOP:
+            bad.append(f"session.toml: stage {st}: on_stop {d['on_stop']!r} is not one of "
+                       f"{', '.join(ON_STOP)}")
     if c.get("health_tool") not in c["tools"]:
         bad.append("session.toml: health_tool is not one of [tools]")
     laptop = [f for f in ("kit/lib_kit.sh", "kit/run_stage.sh", "run/hooks.sh") if (kp / f).exists()]
@@ -763,6 +771,9 @@ def run(kp, att=None, frm=None, only=None, out_root=None, say=print):
             if p.returncode:
                 say(p.stdout + f"STOP: the premise of {st}: a control with no reading")
                 return 44, rcs
+        if r.returncode == 24 and c["stages"][st].get("on_stop") == "end":
+            say(f"stage {st} stopped by its rule (rc 24); on_stop = \"end\": the session ends")
+            return 24, rcs
         if r.returncode == 24:
             say(f"stage {st} stopped by its rule (rc 24): the next stage runs")
     say(f"{c['name']} done: {att}")

@@ -349,6 +349,10 @@ the runner's shell, and `hook_fault`, the same after an expected fault or hang r
 and strict health are done: a reason it prints stops the stage with rc 24, so a rule on the
 fault's own kernel lines, two `SGX recovery failed: -110` in a row, is exact); a new kind of job is
 added to the kit, with its test, not to a session.
+A stage stopped by its rule (runner status 24: a hook's reason, its `#limit`) lets the driver go on
+to the next stage; a stage that declares `on_stop = "end"` in session.toml ends the session there
+instead (the driver's status 24, no later stage runs), for a session whose later stages make no
+sense after that stop (round 13's r13-tex and r13-flag used gates for it).
 A job whose normal end is not rc 0 declares it with an expected outcome, `expect:NAME` of
 `kitscore.OUTCOMES` (`expect:rc3-overflow`: rc 3 with "scene overflowed the parameter buffer",
 a `probe` DPM cell's end), which the runner classifies ok and `kitscore.completed` counts as a

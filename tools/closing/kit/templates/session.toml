@@ -19,7 +19,8 @@ forbid_options = []                 # options no row may use, besides the kit's
 #   NAME = { default = "0", values = ["0", "1"] }
 [knobs]
 
-# the stages in run order; alarm: the Mac's bound on the stage (s); gate = true: score.py gate
+# the stages in run order; alarm: the Mac's bound on the stage (s); gate = true: score.py gate;
+# on_stop = "end": the stage's rc 24 (stopped by its rule) ends the session (default "next")
 [stages]
 s0 = { alarm = 1800 }
 
