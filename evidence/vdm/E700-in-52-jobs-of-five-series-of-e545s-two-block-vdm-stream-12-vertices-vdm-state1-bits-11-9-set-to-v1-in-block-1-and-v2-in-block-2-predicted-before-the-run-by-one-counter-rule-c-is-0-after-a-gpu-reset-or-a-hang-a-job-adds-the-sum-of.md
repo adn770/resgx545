@@ -62,3 +62,8 @@ VDM, the TA or the USE is not shown; the rule is a description.
 whether g and T depend on the shape is untested (Q163). The jobs ran seconds apart (the 52 in about
 3 minutes), so nothing here says whether time clears c. Whether a reset that follows no hang clears
 c rests on one job.
+
+**Correction 2026-11-13:** a note, the claim stands. E1021 (round 12 offline) held the counter out
+on E545's 11.31 sweeps, run before it was fitted and never scored against it: 54 of 54 jobs with v 3
+to 7 in a block (13 hangs, each needing the history) and 31 of 31 at v = 2, with c taken as 0 at
+each script's start. The clauses below 2 do not hold there (E701's note).

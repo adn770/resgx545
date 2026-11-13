@@ -1,11 +1,11 @@
 +++
 id = "Q107"
-question = "why does the final render of a job that overflows store zeros for the first row of macrotiles and the depth with its sign bit set for the rest, and in what order are the tiles stored?"
+question = "why does the final render of a job that overflows store zeros for the first row of macrotiles and the depth with its sign bit set for the rest, and in what order does it store the tiles (not E996's overlay of the plain store, E1020)?"
 unit = "zls"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E058", "E411", "E461", "E465", "E468", "E489", "E628", "E629"]
+evidence = ["E058", "E411", "E461", "E465", "E468", "E489", "E628", "E629", "E977", "E987", "E996", "E997", "E1020"]
 terms = ["CR_ISP_ZLSCTL", "CR_ISP_ZSTORE_BASE"]
 +++
 
@@ -54,3 +54,15 @@ raise is the same as P below 0x2d, and the one pair that separates them is E461'
 buffer). Open: the tile order of the store, the shortfall of the first row at both sizes, what the
 11264 extra zero dwords at 1024x768 are, and what negates (the partial render's store or the final
 render's load).
+
+Narrowed in round 12 (offline, E1020). The tile order of a plain store is answered by E996 (the
+tile visited last in header order keeps a shared slot) and held out at 1024 x 768 at G 0, 1 and 2 on
+E489's ramps of jobs without a partial render (6 of 6, every dword). The overflowed jobs' store is
+not that: the 11.38 batch's ten G = 1 depth dumps at 1024 x 768 are not their G = 33 twins
+overlaid in header order (0 of 10), first-visited, raster or zero-fixed order (0 of 10 each). Read
+after the score, every G = 1 dump starts with 15104 zero dwords (slots 0 to 28 and half of slot
+29) and its later slots mostly repeat one tile's content, not each slot's owner. Open, for jobs
+with partial renders: where the zero prefix and the repeated tile come from, the order of the tile
+stores, and the clauses above (the first row's shortfall, the extra zero dwords, what negates). A
+row that would name the tiles: an overflowed 1024 x 768 G = 1 job over a load buffer of ascending
+indices with a marked G = 33 twin. sgx-pipe's `zls::final_store` refuses such a store.

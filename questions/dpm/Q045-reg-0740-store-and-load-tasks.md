@@ -108,3 +108,13 @@ jobs of the 11.38 batch (a statistic of the existing dumps, recomputed with dpm_
 11.39 batch, no model fitted; no evidence record holds it, so it is not an answer, and the timing
 of the second set of lists is part (c)). (c) The slot step's store into a kept owner joins Q191 and
 Q192 and waits for the kept-copy runs of the K1 tool option (none in 11.39).
+
+Round 12 (offline, no record; decision R12-6 a): part (b)'s statistic, the 16 macrotile list
+counts summing to the last run's peak status minus 1, is scoped to the 11.38 scenes. Frozen over
+the 91 raised closing jobs of rounds 1 to 7 (closing12/plan/c4-q045/, a2_rule2.py) it held 4 and
+failed 87; post hoc, 62 of the 87 read an all-zero page where `dpm_raise.py` looks (the 2048-wide
+dumps keep data from 0x12000), and on the 29 non-zero pages it holds 4 and misses 25 (five of them
+another layout), mostly by 3 (570 or 571 against peaks of 573 or 574 on the 4096 x 4096
+1500-vertex scenes). The locator is not general, so the test is weak: a raised 4096 x 4096 job with
+the state
+page located per width would decide it.

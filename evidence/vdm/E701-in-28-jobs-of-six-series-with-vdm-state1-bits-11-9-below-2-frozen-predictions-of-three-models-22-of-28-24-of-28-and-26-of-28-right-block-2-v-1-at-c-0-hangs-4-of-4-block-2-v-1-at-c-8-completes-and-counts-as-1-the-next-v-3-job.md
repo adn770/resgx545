@@ -40,3 +40,10 @@ shown: the sign of c below 0 is not observable in block 1 (B5).
 
 **Not shown.** One sequence each for the c = 8 pairs (B2, B3, B6); the shape dependence of E700's
 Not-shown paragraph applies (Q163).
+
+**Correction 2026-11-13:** a note, the claim stands (it called its models exploration). On E545's
+11.31 sweeps (E1021, round 12 offline, frozen before scoring) the model in which v = 0 resets c
+fails a third time (`st-b1-b119-4-r2` hung at c = 7 where the reset gives c = 4), and the post hoc
+variant's block-2 v = 1 hang at c = 0 misses three block-2 v = 1 hangs at c = 5 (17 of 20 jobs
+below 2); E700's g(1) = -1 gets 14 of 20 there. [infer] Those sweeps' grid bits 7:0 fit the block-2
+v = 1 rows as well as c.

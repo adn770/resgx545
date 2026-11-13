@@ -8333,6 +8333,58 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *texture; HW, infer; data: `texture-p1132-tx-border`,
   `render-closing-r8-geo:out/20261113-015842/addr/`,
   `render-closing-r9-geo:out/20261113-081038/addr2/`, `cited-scratch:closing11/plan/c2-texture/`.*
+- `E1019` Round 12 offline (Q036; no run): over every kept closing-pass job with a DPM register
+  timeline (697 jobs, 285824 timeline lines of closing r1-pixgeo, r2-geo, r3-geo, r3-geo-c, r5, r6
+  and r7-dpm, r8 and r9-ldpm, r10-dpm, s1 and s1b) and every kept after-read of 0x071c (1594, r1 to
+  r7 and s1, s1b), frozen by hash before any of them was scored, the high halves of the STATUS2
+  registers are 0 in every sample: 0x0710 bits 31:16 in 285824 of 285824 lines and 0x071c bits 31:16
+  in 1594 of 1594 after-reads, through jobs whose global page count (0x072c bits 31:16) reached 6
+  (104 jobs), 7 (79), 11 (3), 13 (5) and 18 (4), where every earlier record stopped at 5; the frozen
+  rivals (a non-zero high half once the global list passes 5 pages, or anywhere) are refuted. 0x0748
+  bit 2 clears in 195 of 197136 held-out lines (one line in most jobs that clear it); by log-loss on
+  the held-out jobs a rate per partial render beats a rate per line, the 0x100-page class and a
+  constant at global counts up to 5 (199.5 against 224.9 for the constant) and above (67.5 against
+  114.1) [HW, held out offline; infer: bit 2 clears with partial renders, a ranking, not a rule].
+  *dpm; HW, infer; data: `render-closing-r1-pixgeo`, `render-closing-r2-geo`,
+  `render-closing-r3-geo`, `render-closing-r3-geo-c`, `render-closing-r3-pixel`,
+  `render-closing-r4-pixel`, `render-closing-r5-dpm`, `render-closing-r5-pixel`,
+  `render-closing-r6-dpm`, `render-closing-r6-pixel`, `render-closing-r7-dpm`,
+  `render-closing-r8-ldpm`, `render-closing-r9-ldpm`, `render-closing-r10-dpm`, `render-closing-s1`,
+  `render-closing-s1b`, `cited-scratch:closing12/plan/c1-q036/`,
+  `cited-scratch:closing12/plan/rank-round12.md`.*
+- `E1020` Round 12 offline (Q107, Q038; no run): predicting each G = 1 depth dump of the 11.38
+  batch's overflowed 1024x768 jobs (dpm/partial-model-batch depth-safe.c1 and .c26: z = 0.5 at 0x23,
+  0x28 and 0x30 pages and the ramp at 0x28 and 0x30, runs 1 and 2, 10 dumps) from the same cell's G
+  = 33 dump by E996's overlay (each slot holds, whole, the tile visited last in region header
+  order), frozen by hash before any G = 1 dump's bytes were read, holds 0 of 10 (32201 or 51968 of
+  61440 decidable dwords, 60 or 101 of 120 slots), and so do the rivals (first visited, last in
+  raster order, the zero region fixed in slot space, 0 of 10 each); the sign is not the cause
+  (sign-masked counts equal). The same overlay predicts E489's 1024x768 ramps in x and y at G 0, 1
+  and 2 from their G = 33 dumps, jobs without a partial render, 6 of 6, every dword (held out for
+  E996, whose targets were 64x32 to 256x64). Read after the score: every G = 1 dump begins with
+  15104 zero dwords (slots 0 to 28 and 256 dwords of slot 29, the same in every cell and run) and
+  its later slots mostly repeat one tile's content rather than each slot's owner [HW, held out
+  offline for the overlay; the zero prefix and the repeated tile post hoc; infer: the final store
+  after partial renders is not the plain store overlaid].
+  *zls; HW, infer; data: `dpm-partial-model-batch`, `zls-store-layout-dumps`,
+  `cited-scratch:closing12/plan/c3-q107/`, `cited-scratch:closing12/plan/rank-round12.md`.*
+- `E1021` Round 12 offline (Q163; no run): on the 11.31 VDM state sweeps (vdm/state-units: 133 jobs
+  of three scripts in run order, E545's two-block stream; c taken as 0 at each script's start, every
+  script ending in a GPU reset), with E700's counter frozen by hash before the outcomes were scored
+  (c is 0 after a hang or a reset, a job adds v - 2 a block, hangs iff c + add > 8; c teacher-forced
+  from the outcomes), the 54 jobs with v 3 to 7 in a block (13 hangs) follow it 54 of 54 under
+  E700's g(1) = -1 (M1) and E701's post hoc variant (M3): 12 of 12, 28 of 28 and 14 of 14 in the
+  three scripts, every hang needing the history (a stateless threshold gets 41 of 54, 'v 1 or 6
+  hangs' 37); the 31 jobs at v = 2 in both blocks complete and are predicted, 31 of 31; 28 jobs
+  whose state word E545 had found to hang by its other bits were excluded before scoring and all
+  hung. Below 2 (20 jobs) the counter's clauses do not hold out: M0 and M1 14 of 20, M3 17 of 20
+  (its block-2 v = 1 hang at c = 0 misses three block-2 v = 1 hangs at c = 5), and E701's M2 20 of
+  20 only through its v = 0 reset, which misses a v 3 to 7 job (st-b1-b119-4-r2 hung at c = 7 where
+  the reset gives c = 4), the third refutation of that reset; block-2 v = 1 hung in all 6 jobs of
+  the risky script and completed in the grid's rows 4 to 7 [HW, held out offline with named leaks;
+  infer: the grid's bits 7:0 explain the v = 1 rows as well as c].
+  *vdm; HW, infer; data: `vdm-state-units`, `cited-scratch:closing12/plan/c2-q163/`,
+  `cited-scratch:closing12/plan/rank-round12.md`.*
 
 ## By unit
 
@@ -8348,7 +8400,8 @@ E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E4
 E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753, E773, E774, E775, E779, E785,
 E786, E790, E799, E800, E801, E802, E803, E832, E845, E846, E852, E853, E854, E860, E861, E862,
 E863, E864, E866, E867, E868, E869, E870, E873, E874, E875, E881, E882, E883, E887, E889, E899,
-E900, E915, E916, E917, E918, E935, E936, E937, E938, E939, E960, E961, E962, E963, E1009, E1013.
+E900, E915, E916, E917, E918, E935, E936, E937, E938, E939, E960, E961, E962, E963, E1009, E1013,
+E1019.
 
 ### edm
 
@@ -8443,10 +8496,10 @@ E570, E571, E572, E593, E594, E595, E596, E597, E598, E599, E707, E708, E820, E8
 ### vdm
 
 Records: E059, E060, E184, E185, E186, E187, E189, E190, E191, E188, E299, E300, E318, E346, E349,
-E413, E414, E427, E440, E545, E546, E700, E701, E702, E703, E737, E738, E755, E756, E933.
+E413, E414, E427, E440, E545, E546, E700, E701, E702, E703, E737, E738, E755, E756, E933, E1021.
 
 ### zls
 
 Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467, E489, E490, E615, E628, E629,
 E663, E664, E665, E730, E831, E885, E903, E904, E977, E978, E981, E985, E986, E987, E988, E991,
-E996, E997, E1015.
+E996, E997, E1015, E1020.

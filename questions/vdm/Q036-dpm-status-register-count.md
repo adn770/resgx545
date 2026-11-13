@@ -1,11 +1,11 @@
 +++
 id = "Q036"
-question = "what do the DPM's status words hold (the high half of the STATUS2 registers 0x0710 and 0x071c, 0x0748 bit by bit, CR_DPM_3D_PAGE_COUNTS' high half, and the owner words 0x0700 to 0x0728 a kept owner changes), what do CR_DMS_CTRL bits 2:0 and the signature and settle registers report about the two pipes, and what DPM or page-table-builder state does a base-only builder fault leave that a core reset does not clear?"
+question = "what do the DPM's status words hold (0x0748 bit by bit, CR_DPM_3D_PAGE_COUNTS' high half, and the owner words 0x0700 to 0x0728 a kept owner changes), what do CR_DMS_CTRL bits 2:0 and the signature and settle registers report about the two pipes, and what DPM or page-table-builder state does a base-only builder fault leave that a core reset does not clear?"
 unit = "vdm"
 kind = "hw"
 value = "medium"
 phase = 10
-evidence = ["E153", "E160", "E184", "E200", "E201", "E256", "E309", "E310", "E312", "E316", "E358", "E362", "E438", "E443", "E446", "E448", "E451", "E453", "E458", "E462", "E463", "E574", "E626", "E630", "E631"]
+evidence = ["E153", "E160", "E184", "E200", "E201", "E256", "E309", "E310", "E312", "E316", "E358", "E362", "E438", "E443", "E446", "E448", "E451", "E453", "E458", "E462", "E463", "E574", "E626", "E630", "E631", "E1019"]
 terms = ["Dynamic Parameter Management (DPM)", "Parameter Buffer (PB)", "ta3d_ctl", "hw_pb_desc.page_table_base", "CR_DMS_CTRL", "hw_pb_desc.pb_flags", "FRAG_FLAGS.BIT2", "FRAG_FLAGS.NO_DEALLOCATE"]
 +++
 
@@ -135,3 +135,15 @@ the jobs the kernel watchdog saw (E630), so a rate that rises with the number of
 is [infer] and not separated from the length. The pool is a FIFO and the walk covers every page
 after every render (E626). Open: what the pulse is, the global list above 5 pages, the owner
 words' meaning (E631: 0x04000417 does not follow the buffer's size).
+
+Narrowed in round 12 (offline, E1019). STATUS2's high halves are answered: 0 in every kept
+closing-pass sample, 285824 timeline lines of 697 jobs (0x0710) and 1594 after-reads (0x071c),
+through jobs whose global list reached 6, 7, 11, 13 and 18 pages, the case above five pages that
+no earlier record reached; the clause is off the question. 0x0748 bit 2 clears in 195 of 197136
+held-out lines; of four frozen rates a rate per partial render ranks first on the held-out jobs at
+global counts up to 5 and above, a rate per line, the 0x100-page class and a constant behind it:
+[infer] the pulse goes with partial renders, not with the job's length (the confound E626's batch
+left), but no rule predicts a line. Open: what bit 2 marks and the other bits of 0x0748,
+`CR_DPM_3D_PAGE_COUNTS`' high half, the owner words, and the settle and builder clauses above. A
+row that would part bit 2 from the session: 0x0748 sampled through a controlled count of partial
+renders (0, 1, 2, 4) at one size.

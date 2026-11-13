@@ -41,3 +41,9 @@ of sgx-pipe's `ta::headers` (E893, E652) on these grids [infer: the store follow
 
 **What it does not show.** Targets with edge tiles at an overlapping pitch; 640 x 480 and larger
 (four macrotiles a side); format 2 at an overlapping pitch; multisampled grids.
+
+**Correction 2026-11-13:** a note, the claim stands. E1020 (round 12 offline) held the overlay out
+at 1024 x 768, four macrotiles a side: E489's ramps in x and y at G 0, 1 and 2 equal the G = 33
+dumps overlaid in header order, 6 of 6, every dword. It does not give the final store of a job that
+overflows: the 11.38 batch's overflowed G = 1 dumps are not their G = 33 twins overlaid (0 of 10,
+nor in three other orders). The rule is the store of a render without a partial render.

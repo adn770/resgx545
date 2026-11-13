@@ -6,7 +6,7 @@
 //! tile (E730, E831, E885, E903), the stencil's byte a pixel and its test (E284, E988), the
 //! background depth's sign (E987), formats 3 and 4 with a loaded and stored stencil (E985, E986).
 //! What no record states refuses by question: formats 3 and 4 otherwise and 5 to 7
-//! (Q120), the overflowed job's store (Q107), the integer formats' values outside 0 to 1 (E977) and at an
+//! (Q120), the overflowed job's store (Q107: E628, E629, E1020, [`final_store`]), the integer formats' values outside 0 to 1 (E977) and at an
 //! edge of an odd size (E991 ran 80 x 40), overlapping tiles and the pitches past the scratch
 //! buffer (Q242; E996 gives the overlapping tiles' slots), a load of an integer format (Q243: E977
 //! read an integer format's load as the dword's float, two rows only; a loaded depth compares as
@@ -236,6 +236,7 @@ impl Ctl {
     pub fn load(&self) -> bool {
         self.bit(1)
     }
+    /// Bits 1 and 14 together (E664); bit 1 alone loads no depth (E739).
     pub fn load_depth(&self) -> bool {
         self.bit(1) && self.bit(14)
     }
@@ -669,6 +670,36 @@ pub fn store(
         }
     }
     Ok(s)
+}
+
+/// The final render's depth store of a job that took `partial_renders` partial renders: [`store`]
+/// without one. After one it refuses (Q107): what the store holds is not the scene's depth stored
+/// by the address rule. E628: outside a zero region of the first macrotile row it holds the load
+/// buffer's dword at each address, load bits or not, and the load buffer comes back zeroed there;
+/// E629: its sign bit is set exactly when the first abort's threshold was raised (E625); E1020
+/// (round 12 offline): at 1024 x 768 G 1 it is not E996's overlay of the same job's G 33 store
+/// (0 of 10 dumps, every G 1 dump a prefix of 15104 zero dwords and then mostly one tile repeated),
+/// where the overlay of a job without a partial render holds at that size (E489's G 0, 1 and 2
+/// ramps, 6 of 6, every dword). Neither the zero prefix nor the tile order has a rule.
+pub fn final_store(
+    ctl: &Ctl,
+    w: u32,
+    h: u32,
+    stencil_buffer: bool,
+    partial_renders: u32,
+    depth: &dyn Fn(u32, u32) -> f32,
+) -> Result<Stored, Outcome> {
+    if partial_renders > 0 {
+        return Err(open(
+            format!(
+                "the final store of a {w} x {h} job after {partial_renders} partial render(s): the loaded \
+                 buffer outside a zero region (E628), the sign by the raise (E629), not the overlay of the \
+                 tiles (E1020); no rule gives the zero prefix or the tile order"
+            ),
+            &["Q107"],
+        ));
+    }
+    store(ctl, w, h, stencil_buffer, depth)
 }
 
 /// The byte of the stencil buffer that holds pixel (x, y)'s stencil, for a load and a store alike:
@@ -1186,6 +1217,38 @@ mod tests {
             (true, true, false, false)
         );
         assert!(!ctl(0x0014_0008).store_depth());
+    }
+
+    #[test]
+    fn bit_1_without_bit_14_loads_no_depth_e739() {
+        // E739: two objects under 0x0017100e drew over the background depth 1.0, not the loaded 0.25:
+        // the load needs bit 14 with bit 1 (E664)
+        let c = ctl(0x0017_100e);
+        assert!(c.load() && !c.load_depth() && c.store_depth());
+    }
+
+    #[test]
+    fn the_final_store_of_an_overflowed_job_is_refused_e628_e629_e1020() {
+        let d = |_: u32, _: u32| 0.3;
+        // no partial render: the plain store, E996's overlay at an overlapping pitch
+        for (w, h, word) in [(64, 32, 0x0017_1004u32), (34, 18, 0x0017_100c)] {
+            assert_eq!(
+                final_store(&ctl(word), w, h, false, 0, &d),
+                store(&ctl(word), w, h, false, &d),
+                "{w}x{h}"
+            );
+        }
+        // after a partial render: the loaded buffer outside a zero prefix (E628), the sign set by the
+        // raise (E629), and at 1024 x 768 G 1 not the overlay of the same job's G 33 store (E1020)
+        for word in [0x0017_100cu32, 0x0017_110c, 0x0017_510e] {
+            match final_store(&ctl(word), 1024, 768, false, 1, &d) {
+                Err(Outcome::Unsupported { ids, why }) => {
+                    assert_eq!(ids, ["Q107"], "{why}");
+                    assert!(why.contains("E1020") && why.contains("E628") && why.contains("E629"), "{why}");
+                }
+                r => panic!("{word:#x}: {r:?}"),
+            }
+        }
     }
 
     #[test]

@@ -71,6 +71,8 @@ pub fn raise_within_limit_at(scene: Scene, width: u32, height: u32, thr0: u32) -
 /// floor 0, and 0 without an abort (E803: held out, 6 of 6 in g-d36 with all 3 separating jobs,
 /// and 54 of 54 in the side tables of four more stages; the tool's triangle at five targets and
 /// `--tri-full`). The model has no such counts of its own: this reads them, it does not make them.
+/// The earlier readings it replaces failed held out: the count before the first abort less 2 (E775:
+/// raised jobs 0 of 14) and the same side table in r2-geo (E790: 8 of 15).
 pub fn dword36_from_abort_counts(counts: &[u32]) -> u32 {
     counts.last().map_or(0, |c| c.saturating_sub(2))
 }
@@ -83,7 +85,10 @@ pub fn dword36_from_abort_counts(counts: &[u32]) -> u32 {
 /// Held on the hardware: `sa8` read by our own task, 6 of 6, and c4-b3, the guard's one miss on
 /// the timelines, silent because its resume compared one global page (E864); the raising-side step
 /// cells raised after a grow (E861). The resume's count is the one the firmware read: after a grow
-/// the timeline's last sample in the partial render can read one page more (E860).
+/// the timeline's last sample in the partial render can read one page more (E860). Round 5's offline
+/// test placed 121 of 121 decisions of r3-geo-c's kept timelines (E853); R-5's `sa8` bits at the
+/// decision entry did not hold as frozen in r7-dpm's s-k (E918: 5 held, 1 failed), so the guard
+/// stays E864's reading of the counts and models no `sa8` value.
 pub fn guard_raises(abort_global: u32, resume_global: u32, entry_global: u32) -> bool {
     let d36 = dword36_from_abort_counts(&[abort_global]);
     resume_global > d36 && entry_global > d36
@@ -92,7 +97,8 @@ pub fn guard_raises(abort_global: u32, resume_global: u32, entry_global: u32) ->
 /// The first threshold steps S_k of the global page count of the tool's triangle with 1500
 /// vertices, measured held out where a grow was tested at and around them (E852's table, repeated
 /// by the calibrations of E860, the cells of E861). The steps of 4096x2048, 2048x4096 and 3072x3072
-/// are left out: their only held-out stage is gated (E861's d-a2b).
+/// are left out: their only held-out stage is gated (E861's d-a2b); 4096x2048's S2 is only bracketed
+/// at [0x97, 0x98] by the reading rule of E873.
 const GLOBAL_STEPS: &[((u32, u32), &[u32])] =
     &[((2048, 2048), &[0x51, 0x9d, 0xe8, 0x132]), ((4096, 4096), &[0x125, 0x240, 0x35b])];
 
@@ -111,7 +117,12 @@ pub fn grows_at_first_abort(scene: Scene, width: u32, height: u32, thr0: u32) ->
 /// Whether the raise limit C admits a raise of `thr0` by 0x20 (E774). Necessary for a raise at the
 /// measured scene and target and not sufficient anywhere else: whether the second run reaches thr0
 /// (E625's rule, Q210) is not part of it, nor is the count of partial renders: E625's formula for it
-/// is refuted at U = 287 (E832: 9 down to 2 over 19 buffer sizes, none of the 20 fitting pairs).
+/// is refuted at U = 287 (E832: 9 down to 2 over 19 buffer sizes, none of the 20 fitting pairs;
+/// E779: 2 at P 0xa0 and 1 at 0xa3 to 0xb0, none of the 24 frozen pairs), and E854's offline fit
+/// of the count, a fit with nothing held out, is not modelled: [`one_triangle_partial_renders`]
+/// replays the walk instead.
+/// At 4096x4096 it splits E734's 22 jobs: no raise at P 0x3e0 to 0x422, the two raises at 0x300 and
+/// 0x200 admitted (necessary only: E734's own scorer was void).
 pub fn raise_within_limit(thr0: u32) -> bool {
     thr0.saturating_add(0x20) <= RAISE_LIMIT_C
 }
@@ -120,6 +131,27 @@ pub fn raise_within_limit(thr0: u32) -> bool {
 /// P - 0x22 is below its page need (E625, E735, E773).
 pub const PB_PAGES_DEFAULT: u32 = 0x422;
 const PB_FIXED_RESERVE: u32 = 0x22;
+/// The clamp of the first threshold (E704: 0x0624 reads 0x400 at P 0x422; E734).
+const THRESHOLD_CLAMP: u32 = 0x400;
+
+/// The TA's first threshold for a buffer of `pb_pages` pages: P - 0x22, clamped at 0x400 (the job's
+/// own 0x0624 read it at P 0x200 to 0x420 and the clamp at 0x422, E734).
+pub fn first_threshold(pb_pages: u32) -> u32 {
+    pb_pages.saturating_sub(PB_FIXED_RESERVE).min(THRESHOLD_CLAMP)
+}
+
+/// Whether a scene of page need `need` overflows a buffer of `pb_pages` pages: the need is above the
+/// first threshold (E625; E705's 8 conditions of four moved triangles at P 0x28 and 0x30, the needs
+/// HU1's, post hoc there).
+pub fn overflows(pb_pages: u32, need: u32) -> bool {
+    need > first_threshold(pb_pages)
+}
+
+/// The high halves of the 3D free list's STATUS2 registers (0x0710 and 0x071c): 0 in every sample
+/// of every kept job, through partial renders and global lists of up to 18 pages (E358, E443, E574;
+/// E1019, round 12 offline over 697 timelines and 1594 after-reads, held out). What 0x0748 bit 2
+/// marks is not modelled ([infer] it clears with partial renders, E1019; Q036).
+pub const STATUS2_HIGH_HALF: u32 = 0;
 
 /// How a 4x job of the tool's full-screen triangle (`--tri-full --aa4`, `CR_TE_AA` 0xe0000000) on a
 /// context made for 4x targets (four region-header arrays) ends.
@@ -423,7 +455,8 @@ fn replay_1500(w: u32, h: u32) -> (BTreeMap<u32, u32>, Vec<u32>) {
 /// by the abort's global page count (E935), 2560x3072 (S6 one above) and 3072x2560 (S3 and S6 two
 /// above, E936) are not. Scenes of larger objects (`--vtx-coords`) are not this replay's: with 8
 /// coordinate pairs written by the vertex program the scene needs more than the clamp and its
-/// steps vary by up to 2 pages between runs (E937). r9-ldpm held them at 2304x2304, 2304x1792 and
+/// steps vary by up to 2 pages between runs (E937; E917: --vtx-coords 8 repeated its calibration 2
+/// of 19; E882: neither burst hypothesis held at --vtx-coords 4 or 8). r9-ldpm held them at 2304x2304, 2304x1792 and
 /// 1792x1792 (E961) and 1280x1280 and 2560x2048 (E963); 2048x2304 (S3 and S6 one above, E961) and
 /// the four wide targets of E962 (S6 one or two above, the needs the replay's) are not: E1009's
 /// replicates read S6's sampled bracket from the replay plus 1 at all five, a bias, not noise;
@@ -1057,6 +1090,74 @@ mod tests {
         // s17 0x9: one partial render, the second run's peak 0xe; the timeline has no sample in the
         // first run (E916, read post hoc), the replay's first peak is the threshold
         assert_eq!(one_triangle_partial_renders(1024, 768, 64, 64, 0x9), Some((1, vec![0x9, 0xe])));
+    }
+
+    #[test]
+    fn the_first_render_takes_hu1_s_pages_at_e626_s_six_sizes() {
+        // E626 [HW]: the first render on a fresh table took pages 1 to 2, 3, 5, 5, 8 and 0x13 of the
+        // tool's unmoved triangle at 64x64, 128x128, 192x128, 256x256, 512x384 and 1024x768
+        for (w, h, u) in
+            [(64, 64, 2), (128, 128, 3), (192, 128, 5), (256, 256, 5), (512, 384, 8), (1024, 768, 0x13)]
+        {
+            assert_eq!(one_triangle_page_need(w, h, 0, 0), u, "{w}x{h}");
+        }
+    }
+
+    #[test]
+    fn the_moved_triangles_of_e705_need_hu1_s_pages_and_overflow_by_e625_s_rule() {
+        // E705 [HW]: at 1024x768 the triangle moved by 0, 192, 384 and 576 pixels peaked at 19, 20,
+        // 17 and 12 pages in 0x422 pages; at P 0x28 all four overflowed, at 0x30 the first three
+        // and not the fourth (the 8 distinct conditions, post hoc there; HU1 gives the needs)
+        for (dx, u, at_0x30) in [(0, 19, true), (192, 20, true), (384, 17, true), (576, 12, false)] {
+            assert_eq!(one_triangle_page_need(1024, 768, dx, 0), u, "dx {dx}");
+            assert!(overflows(0x28, u), "dx {dx} at 0x28");
+            assert_eq!(overflows(0x30, u), at_0x30, "dx {dx} at 0x30");
+            assert!(!overflows(PB_PAGES_DEFAULT, u), "dx {dx} at 0x422");
+        }
+        // the first threshold is P - 0x22, clamped at 0x400 (E704, E734)
+        assert_eq!((first_threshold(0x28), first_threshold(0x30)), (6, 14));
+        assert_eq!((first_threshold(0x420), first_threshold(PB_PAGES_DEFAULT)), (0x3fe, 0x400));
+    }
+
+    #[test]
+    fn the_walk_gives_e779_s_partial_render_counts_at_4096x4096() {
+        // E779 [HW, held out against E625's count formula]: the tool's triangle at 4096x4096, one
+        // render: 2 partial renders at P 0xa0, 1 at 0xa3 to 0xa9 and 0xb0
+        for (p, n) in [
+            (0xa0, 2),
+            (0xa3, 1),
+            (0xa4, 1),
+            (0xa5, 1),
+            (0xa6, 1),
+            (0xa7, 1),
+            (0xa8, 1),
+            (0xa9, 1),
+            (0xb0, 1),
+        ] {
+            let got = one_triangle_partial_renders(4096, 4096, 0, 0, first_threshold(p)).map(|r| r.0);
+            assert_eq!(got, Some(n), "P {p:#x}");
+        }
+    }
+
+    #[test]
+    fn the_raise_limit_admits_e734_s_two_raises_and_none_of_its_twenty_silent_jobs() {
+        // E734 [HW]: at 4096x4096 the threshold was raised at P 0x300 (1350 vertices) and 0x200 (900)
+        // and at none of P 0x3e0, 0x400, 0x410, 0x420 and 0x422 (the clamp): the limit is necessary
+        // for a raise, so it must admit the two and may refuse the rest
+        for p in [0x300, 0x200] {
+            assert!(raise_within_limit(first_threshold(p)), "P {p:#x}");
+        }
+        for p in [0x3e0, 0x400, 0x410, 0x420, PB_PAGES_DEFAULT] {
+            assert!(!raise_within_limit(first_threshold(p)), "P {p:#x}");
+        }
+    }
+
+    #[test]
+    fn status2_s_high_halves_are_zero_through_every_kept_timeline_e1019() {
+        // E1019 [HW, held out offline]: 0x0710 bits 31:16 in 285824 timeline lines of 697 jobs and
+        // 0x071c bits 31:16 in 1594 after-reads, global lists up to 18 pages: always 0
+        assert_eq!(STATUS2_HIGH_HALF, 0);
+        assert!(OPEN.contains(&"Q036"));
     }
 
     #[test]

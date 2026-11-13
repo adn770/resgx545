@@ -16,7 +16,7 @@ list.
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
   EDM's PB load) need in the directory of the list it ... (E745, E761, E980)
 - `Q038` dpm, high: what does the final render read back of a partial render's depth (a depth buffer
-  stored by ZLS, the 3D kick's RT status bit 1), now that a ... (E625, E628, E629)
+  stored by ZLS, the 3D kick's RT status bit 1), now that a ... (E629, E996, E1020)
 - `Q045` dpm, high: what does the DPM store in the state page, does a load task read back the
   macrotile lists a partial render stores in the RT data's state ... (E625, E627, E631)
 - `Q191` dpm, high: what are the words that land in a kept owner's control page (0x00200047), OTPM
@@ -168,8 +168,8 @@ list.
   starts work or that another writer changes, with a job running, ... (E445, E534)
 - `Q183` usse, medium: which store forms in the end-of-tile task fault the job and why does E572's
   fault not reproduce in E707 (a program equal to E572's but for ... (E572, E707)
-- `Q036` vdm, medium: what do the DPM's status words hold (the high half of the STATUS2 registers
-  0x0710 and 0x071c, 0x0748 bit by bit, CR_DPM_3D_PAGE_COUNTS' ... (E626, E630, E631)
+- `Q036` vdm, medium: what do the DPM's status words hold (0x0748 bit by bit, CR_DPM_3D_PAGE_COUNTS'
+  high half, and the owner words 0x0700 to 0x0728 a kept owner ... (E630, E631, E1019)
 - `Q042` vdm, medium: what do bits 27:24 of the index list's first trailing word (VDM_INDEX2) do,
   when its low bits move the list's first index and 0x0f000000 ... (E307, E308, E414)
 - `Q092` vdm, medium: what do bits 31:28 of the index list's first trailing word count, which the
@@ -177,9 +177,9 @@ list.
 - `Q112` vdm, medium: what do bits 25:24 of the index list header do, which are clear in all 1888
   captured lists, and does the TA take indices wider than the 16 ... (E414, E737, E756)
 - `Q163` vdm, medium: what is the state the jobs leave that decides whether a job with VDM_STATE1
-  bits 11:9 other than 2 hangs (E700: a counter c, cleared by a ... (E545, E700, E701)
+  bits 11:9 other than 2 hangs (E700: a counter c, cleared by a ... (E700, E701, E1021)
 - `Q107` zls, medium: why does the final render of a job that overflows store zeros for the first
-  row of macrotiles and the depth with its sign bit set for the ... (E489, E628, E629)
+  row of macrotiles and the depth with its sign bit set for the ... (E996, E997, E1020)
 - `Q120` zls, medium: what do the stored depth formats 3 to 7 (CR_ISP_ZLSCTL bits 26:24) hold and
   how are they laid out, given that they store depth and stencil ... (E985, E986, E1015)
 - `Q109` bif, low: do page directory entries whose page-size field (bits 3:1) names 16 KiB to 4 MiB
@@ -323,9 +323,18 @@ list.
 
 ## Recent records
 
-152 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+155 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1021` vdm, 2026-11-13: Round 12 offline (Q163; no run): on the 11.31 VDM state sweeps
+  (vdm/state-units: 133 jobs of three scripts in run order, E545's two-block stream; c taken as 0 at
+  each script's start, every script ...
+- `E1020` zls, 2026-11-13: Round 12 offline (Q107, Q038; no run): predicting each G = 1 depth dump
+  of the 11.38 batch's overflowed 1024x768 jobs (dpm/partial-model-batch depth-safe.c1 and .c26: z =
+  0.5 at 0x23, 0x28 and 0x30 ...
+- `E1019` dpm, 2026-11-13: Round 12 offline (Q036; no run): over every kept closing-pass job with a
+  DPM register timeline (697 jobs, 285824 timeline lines of closing r1-pixgeo, r2-geo, r3-geo,
+  r3-geo-c, r5, r6 and r7-dpm, r8 ...
 - `E1017` texture, 2026-11-13: Round 11 offline (Q177; no run): of the 31 kept twiddled jobs with T0
   u mode 4 to 7 outside E1000's own (p1132 tx-border 16, r8-geo addr 4, r9-geo addr2 11), 27 are
   squares and 4 are E565's 32 x 8 ...
@@ -902,4 +911,4 @@ stays with what a session must do around it.
 
 ## Simulator coverage baseline
 
-108 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
+86 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).

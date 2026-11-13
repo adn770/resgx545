@@ -1,11 +1,11 @@
 +++
 id = "Q163"
-question = "what is the state the jobs leave that decides whether a job with VDM_STATE1 bits 11:9 other than 2 hangs (E700: a counter c, cleared by a hang or a reset; a job adds g(v1) + g(v2) with g(v) = v - 2, g(1) = -1 and g(0) = 0 [fitted]; it hangs iff c + add > 8), does the rule hold for jobs of other shapes, and what else clears the counter or changes it (time between jobs, a job of another kind between two, a reset that follows no hang)"
+question = "what is the state the jobs leave that decides whether a job with VDM_STATE1 bits 11:9 other than 2 hangs (E700: a counter c, cleared by a hang or a reset; a job adds g(v1) + g(v2) with g(v) = v - 2, g(1) = -1 and g(0) = 0 [fitted]; it hangs iff c + add > 8; held out for v 3 to 7 by E1021, the clauses below 2 failing there), does the rule hold for jobs of other shapes, and what else clears the counter or changes it (time between jobs, a job of another kind between two, a reset that follows no hang)"
 unit = "vdm"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E545", "E413", "E700", "E701", "E060", "E185", "E299"]
+evidence = ["E545", "E413", "E700", "E701", "E060", "E185", "E299", "E1021"]
 terms = ["VDM_STATE1.BITS11_9", "VDM_STATE1.BITS15_13"]
 +++
 In a two-object stream (E545, 133 jobs) the state word's bits 11:9 = 1 hung in block 2 (2 of 2) and
@@ -37,7 +37,8 @@ was formed on them and stays fitted. A debugfs reset cleared c once (E700, A5); 
 followed by the harness's reset, so 'a hang clears c' and 'a reset clears c' are one observation.
 
 Open: what c is (the VDM, the TA or a USE partition), the shape dependence, the effect of time
-and of other jobs between (the merged question below holds the experiments), and the held-out confirmation of the
+and of other jobs between (the merged question below holds the experiments), and the held-out
+confirmation of the
 v below 2 clauses.
 
 Folded in 11.39 from Q102 (retired into this question; a fold is not an answer). Its question was:
@@ -54,7 +55,11 @@ partition count of 7 (a field of three bits) does that 3 and 5 do less. To settl
 regtimeline snapshots of the VDM, TA and DPM registers around a completed and a hung job of the
 series, the same series on a fresh boot, and series of 3 and 5 of fifty jobs.
 
-**Correction 2026-11-10:** Q270 is merged into this question (retired as folded into Q163; a fold is not an answer), and its question is now a clause of the one above. Its question was: does the counter that decides whether a VDM_STATE1 job hangs (E700: c cleared by a hang or a reset, a job adds g(v1) + g(v2) with g(v) = v - 2, g(1) = -1, g(0) = 0 [fitted], hang iff c + add > 8) hold for jobs of other shapes, and what else clears it or changes it.
+**Correction 2026-11-10:** Q270 is merged into this question (retired as folded into Q163; a fold is
+not an answer), and its question is now a clause of the one above. Its question was: does the
+counter that decides whether a VDM_STATE1 job hangs (E700: c cleared by a hang or a reset, a job
+adds g(v1) + g(v2) with g(v) = v - 2, g(1) = -1, g(0) = 0 [fitted], hang iff c + add > 8) hold for
+jobs of other shapes, and what else clears it or changes it.
 
 E700 (52 jobs, 16 of them a seeded random walk) and E701 (28 jobs, a post hoc variant of the counter
 for v below 2) describe one job shape: 12 vertices in two objects, 32 temporaries, a 64x64 target,
@@ -78,3 +83,14 @@ predicted per shape from the shape-1 rule before the run; series with plain jobs
 sleep of 0, 10 and 60 seconds at c = 6; a reset at c = 6 after a completed job (the separation E700
 had once), repeated; E701's variants at other counts (block-2 v = 1 at c = 1, v = 0 at c = 5, 6, 7),
 fixed before the run. The jobs are cheap (a hang costs a reset).
+
+Narrowed in round 12 (offline, E1021). E545's 11.31 sweeps, run before the counter was fitted,
+hold it out: 54 of 54 jobs with v 3 to 7 in a block (13 hangs, every one needing the history; a
+stateless threshold gets 41) and 31 of 31 at v = 2, with c taken as 0 at each script's start. The
+clauses below 2 do not hold there: E701's v = 0 reset fails a third time (`st-b1-b119-4-r2`), its
+post hoc block-2 v = 1 hang at c = 0 misses three such hangs at c = 5 (17 of 20), and E700's g(1) =
+-1 gets 14 of 20; block-2 v = 1 hung in all 6 jobs of the risky script and completed in the grid's
+rows 4 to 7, which the grid's bits 7:0 explain as well as c [infer]. Open: the value of v below 2
+(block-2 v = 1 at a controlled c of 0, 2 and 5 with the grid's bits 7:0 held at a completing value;
+those jobs hang, so not the safe class), what the counter is, other shapes, and time and other jobs
+between.
