@@ -510,3 +510,23 @@ def test_an_expectdiff_row_is_a_reading_only_when_the_job_ran(repos):
     sys.path.insert(0, str(kp / "kit"))
     import kitscore
     assert kitscore.rows(str(kept))["d1"]["class"] == "ok"
+
+
+def test_an_expectdiff_reading_is_a_completed_job(repos):
+    """r8-ldpm's k calibrations (expectdiff rows that ended rc 1 with `job: ok` and a diff line)
+    were read as cannot tell: kitscore.completed takes them as completed jobs, and only them."""
+    kp = scaffold(repos)
+    t = kp / "tables/s0.txt"
+    t.write_text(t.read_text() + "d1|fit|safe|expectdiff|t4|fill --odd\n")
+    diff_world(kp, {"model": (0, {"s0": 0})})
+    m = kit(kp, repos, "mock")
+    assert m.returncode == 0, m.stdout + m.stderr
+    kept = next(kp.glob("debug/mock.*/model/out/model/s0"))
+    sys.path.insert(0, str(kp / "kit"))
+    import kitscore
+    row = kitscore.rows(str(kept))["d1"]
+    assert (row["rc"], row["class"]) == (1, "ok")
+    assert kitscore.completed(row)
+    assert not kitscore.completed(dict(row, knobs="-"))
+    assert not kitscore.completed(dict(row, rc=2))
+    assert not kitscore.completed(dict(row, **{"class": "fail"}))
