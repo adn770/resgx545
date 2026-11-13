@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: 2026 Josep Torra
-//! PBE: the end-of-tile emit, pack modes 0 to 3, the stored rectangle (12.1).
+//! PBE: the end-of-tile emit, pack modes 0 to 3 and the one- and two-channel modes, the stored
+//! rectangle (12.1).
 //!
 //! The end-of-tile task hands the PBE four words and a sideband (doc/specs/fw_format.md 9.6):
 //! EMIT0 and EMIT1 give the stored rectangle, inclusive, minimum and maximum x in bits 12:0 and
@@ -8,10 +9,16 @@
 //! in bits 15:8 (0x80 is the whole tile, E266) and the row pitch in bits 27:16 as (value + 1) x
 //! 8 bytes (E267); EMIT3 is the byte address of pixel (0, 0), bits 1:0 ignored (E267). The
 //! sideband's bits 5:0 are the pack mode and bit 9 the tile-relative flag (E030). Of the 64
-//! pack modes only 0 to 3 are modelled: 0 stores the colour as ARGB8888, 1 as ABGR8888, 2 as
-//! BGRA8888, 3 as RGB565 (E031, E030); the rest refuse (Q044, and Q012 for modes 22 and 34).
-//! Bit 25 of the word that loads CR_REG_0400 inverts the stored alpha in the modes 0 to 2 and
-//! nothing in mode 3; no other bit of it changes a pixel in modes 0 to 3 (E268).
+//! pack modes 0 stores the colour as ARGB8888, 1 as ABGR8888, 2 as BGRA8888, 3 as RGB565 (E031,
+//! E030); mode 8 one byte, the channel sideband bits 8:6 pick (0 alpha, 1 red, 2 green, 3 to 7
+//! blue), mode 7 two bytes (0 alpha and red, 1 to 7 green and blue), modes 15, 18, 20, 27 and 28
+//! the low 16 bits and 24 and 25 the blue byte whatever the field (E383, E999 for 20 and 27 at 0
+//! to 3); a pixel of n bytes is at byte x n of its row, so a dword holds 4 / n pixels from its low
+//! byte (every pixel of 139 kept images, tests/pbe_pack_images.rs). The rest refuse (Q044, and
+//! Q012 for modes 22 and 34). Bit 25 of the word that loads CR_REG_0400 inverts the stored alpha
+//! in the modes 0 to 2 and nothing in mode 3; no other bit of it changes a pixel in modes 0 to 3
+//! (E268); in mode 8 bit 25 changes nothing (E385); the one- and two-channel modes ran with the
+//! word 0x80 only.
 
 use crate::Outcome;
 use crate::mem::Mem;
@@ -30,11 +37,23 @@ pub enum Pack {
     Abgr8888,
     Bgra8888,
     Rgb565,
+    /// mode 7 with sideband bits 8:6 = 0: alpha and red, two bytes (E383)
+    AlphaRed,
+    /// the colour's low 16 bits, green and blue: mode 7 at bits 8:6 = 1 to 7, modes 15, 18, 20, 27
+    /// and 28 (E383, E999)
+    Low16,
+    /// one byte, the colour shifted right by this many bits: mode 8's field picks it, 24 and 25
+    /// store blue (E383)
+    Byte(u32),
 }
 
 impl Pack {
     pub fn bytes(self) -> u32 {
-        if self == Pack::Rgb565 { 2 } else { 4 }
+        match self {
+            Pack::Rgb565 | Pack::AlphaRed | Pack::Low16 => 2,
+            Pack::Byte(_) => 1,
+            _ => 4,
+        }
     }
 }
 
@@ -47,19 +66,44 @@ pub fn pack_of(sideband: u32) -> Result<Pack, Outcome> {
     if sideband & 0xffff_fc00 != 0 {
         return Err(Outcome::unsupported("sideband bits 10 and up in a pack mode 0 to 3", &["Q046"]));
     }
+    let field = sideband >> 6 & 7;
     match sideband & 0x3f {
         0 => Ok(Pack::Argb8888),
         1 => Ok(Pack::Abgr8888),
         2 => Ok(Pack::Bgra8888),
         3 => Ok(Pack::Rgb565),
+        // E383: bits 8:6 = 0 to 7 in modes 7, 8, 15, 18, 24, 25 and 28
+        7 if field == 0 => Ok(Pack::AlphaRed),
+        7 | 15 | 18 | 28 => Ok(Pack::Low16),
+        8 => Ok(Pack::Byte([24, 16, 8, 0, 0, 0, 0, 0][field as usize])),
+        24 | 25 => Ok(Pack::Byte(0)),
+        // E999: modes 20 and 27 store mode 15's image at bits 8:6 = 0 to 3, the only values run
+        20 | 27 if field <= 3 => Ok(Pack::Low16),
         22 | 34 => Err(Outcome::unsupported("pack modes 22 and 34 read o0 as a float", &["Q012"])),
-        // modes 15, 18, 20, 27 and 28 store the colour's low 16 bits whatever bits 8:6 hold (E383,
-        // E999), two pixels a dword: the packing is not modelled
-        15 | 18 | 20 | 27 | 28 => Err(Outcome::unsupported(
-            &format!("pack mode {} (the low 16 bits, E383, E999) is not modelled", sideband & 0x3f),
+        m => Err(Outcome::unsupported(
+            &format!("pack mode {m} at sideband bits 8:6 = {field} is not modelled"),
             &["Q044"],
         )),
-        m => Err(Outcome::unsupported(&format!("pack mode {m} is not modelled"), &["Q044"])),
+    }
+}
+
+/// Whether the records give the image for the word that loads CR_REG_0400 in this sideband's
+/// mode: in modes 0 to 3 no bit but 25 changes a pixel (E268); the one- and two-channel modes
+/// ran with the word 0x80 only (E031, E383, E999), and mode 8 with bit 25 too, which changed
+/// nothing there (E385, at bits 8:6 = 0).
+pub fn reg0400_known(sideband: u32, reg: u32) -> Result<(), Outcome> {
+    let ok = match sideband & 0x3f {
+        0..=3 => true,
+        8 if sideband >> 6 & 7 == 0 => reg & !(1 << 25) == 0x80,
+        _ => reg == 0x80,
+    };
+    if ok {
+        Ok(())
+    } else {
+        Err(Outcome::unsupported(
+            &format!("the CR_REG_0400 word {reg:#x} in pack mode {} did not run", sideband & 0x3f),
+            &["Q044"],
+        ))
     }
 }
 
@@ -90,7 +134,10 @@ pub fn rgb565_unknown() -> Outcome {
 /// The value stored for a shader colour `o0` (0xAARRGGBB as the shader writes it) and the number
 /// of bytes it takes. `invert_alpha` is bit 25 of the CR_REG_0400 word (E268).
 pub fn pack_pixel(p: Pack, o0: u32, invert_alpha: bool) -> u32 {
-    let o0 = if invert_alpha && p != Pack::Rgb565 { o0 ^ 0xff00_0000 } else { o0 };
+    // E268: modes 0 to 2; E385: mode 8 (alpha at bits 8:6 = 0) unchanged; the other one- and
+    // two-channel modes refuse the bit (reg0400_known)
+    let inverts = matches!(p, Pack::Argb8888 | Pack::Abgr8888 | Pack::Bgra8888);
+    let o0 = if invert_alpha && inverts { o0 ^ 0xff00_0000 } else { o0 };
     let (a, r, g, b) = (o0 >> 24, o0 >> 16 & 0xff, o0 >> 8 & 0xff, o0 & 0xff);
     match p {
         Pack::Argb8888 => o0,
@@ -98,6 +145,9 @@ pub fn pack_pixel(p: Pack, o0: u32, invert_alpha: bool) -> u32 {
         Pack::Bgra8888 => b << 24 | g << 16 | r << 8 | a,
         // the low bits of each channel dropped (0x80ff8040 -> 0xfc08, 0xff203040 -> 0x2188, E031)
         Pack::Rgb565 => r >> 3 << 11 | g >> 2 << 5 | b >> 3,
+        Pack::AlphaRed => o0 >> 16,
+        Pack::Low16 => o0 & 0xffff,
+        Pack::Byte(s) => o0 >> s & 0xff,
     }
 }
 
@@ -118,6 +168,7 @@ pub fn store_tile(
 ) -> Result<(), Outcome> {
     let [w0, w1, w2, w3] = e.words;
     let pack = pack_of(e.sideband)?;
+    reg0400_known(e.sideband, reg0400)?;
     // EMIT1 bit 31 hangs the job; the other bits above the 13-bit fields are ignored (E267)
     if w1 >> 31 != 0 {
         return Err(Outcome::Hang { record: "E267".into() });
@@ -151,9 +202,11 @@ pub fn store_tile(
         if pack.bytes() == 4 {
             mem.write32(addr, v)?;
         } else {
+            // a dword holds 4 / bytes pixels from its low byte (E383, E999)
             let (a, sh) = (addr & !3, (addr & 3) * 8);
+            let mask = if pack.bytes() == 2 { 0xffff } else { 0xff };
             let old = mem.read32(a)?;
-            mem.write32(a, old & !(0xffff << sh) | (v & 0xffff) << sh)?;
+            mem.write32(a, old & !(mask << sh) | (v & mask) << sh)?;
         }
     }
     Ok(())
@@ -230,14 +283,89 @@ mod tests {
         assert_eq!(ids(0x216), ["Q012"]);
         assert_eq!(ids(0x222), ["Q012"]);
         assert_eq!(ids(0x204), ["Q044"]);
-        // the low-16-bit modes refuse at every value of bits 8:6 (E999: 20 and 27 ignore them)
-        for m in [15u32, 18, 20, 27, 28] {
-            assert_eq!(ids(0x200 | 3 << 6 | m), ["Q044"], "mode {m}");
+        // modes 20 and 27 ran at bits 8:6 = 0 to 3 only (E999)
+        for m in [20u32, 27] {
+            assert_eq!(ids(0x200 | 4 << 6 | m), ["Q044"], "mode {m}");
         }
         assert_eq!(ids(0x003), ["Q074"]);
         assert_eq!(ids(0x600), ["Q046"]);
         // bits 8:6 change no pixel in modes 0 to 3 (E030, E383)
         assert!(pack_of(0x200 | 7 << 6).is_ok());
+    }
+
+    #[test]
+    fn the_one_and_two_channel_modes_store_e383s_and_e999s_values() {
+        // E383: two colours whose bytes all differ and the background, every pixel
+        let (c0, c1) = (0xc080_4020u32, 0x1357_9bdfu32);
+        let store = |sb: u32, c: u32| {
+            let p = pack_of(sb).unwrap();
+            (pack_pixel(p, c, false), p.bytes())
+        };
+        // mode 8: one byte, bits 8:6 = 0 alpha, 1 red, 2 green, 3 to 7 blue
+        for (f, want) in [(0, 0xc0), (1, 0x80), (2, 0x40), (3, 0x20), (7, 0x20)] {
+            assert_eq!(store(0x208 | f << 6, c0), (want, 1), "mode 8 field {f}");
+        }
+        assert_eq!(store(0x248, c1), (0x57, 1));
+        // mode 7: two bytes, 0 alpha and red, 1 to 7 green and blue
+        assert_eq!(store(0x207, c0), (0xc080, 2));
+        assert_eq!(store(0x207 | 5 << 6, c0), (0x4020, 2));
+        assert_eq!(store(0x247, c1), (0x9bdf, 2));
+        // 15, 18 and 28 (E383, bits 8:6 = 0 to 7) and 20 and 27 (E999, 0 to 3): the low 16 bits
+        for (m, top) in [(15u32, 7u32), (18, 7), (28, 7), (20, 3), (27, 3)] {
+            for f in 0..=top {
+                assert_eq!(store(0x200 | f << 6 | m, c1), (0x9bdf, 2), "mode {m} field {f}");
+            }
+        }
+        // 24 and 25: blue, one byte, whatever the field
+        for m in [24u32, 25] {
+            for f in 0..8 {
+                assert_eq!(store(0x200 | f << 6 | m, c0), (0x20, 1), "mode {m} field {f}");
+            }
+        }
+        // E031: the background 0xff203040 and the colour 0x80ff8040 in mode 8 and 7, field 0
+        assert_eq!(store(0x208, A).0, 0xff);
+        assert_eq!(store(0x207, B).0, 0x80ff);
+    }
+
+    #[test]
+    fn the_new_modes_take_only_the_reg_0400_words_that_ran() {
+        // E383, E999, E031 ran with the word 0x80; E385: bit 25 changes nothing in mode 8 (field 0)
+        assert!(reg0400_known(0x20f, 0x80).is_ok());
+        assert!(reg0400_known(0x208, 0x80 | 1 << 25).is_ok());
+        for (sb, reg) in
+            [(0x20f, 0x80 | 1 << 25), (0x207, 0x80 | 1 << 25), (0x248, 0x80 | 1 << 25), (0x218, 0x40)]
+        {
+            let r = reg0400_known(sb, reg);
+            assert!(
+                matches!(r, Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q044"]),
+                "{sb:#x} {reg:#x}"
+            );
+        }
+        // modes 0 to 3: no bit but 25 changes a pixel (E268)
+        assert!(reg0400_known(0x200, 0x0f | 1 << 25).is_ok());
+        // a store that the word does not admit stores nothing
+        let e = emit([0, 31 | 15 << 16, 0x8000 | 3 << 16, 0x1000_0000], 0x20f);
+        let mut m = mem_of(0x1000_0000, 512);
+        assert!(store_tile(&e, 0x80 | 1 << 25, (0, 0), &[A; 512], &mut m).is_err());
+        assert_eq!(m.read32(0x1000_0000).unwrap(), 0xdead_beef);
+    }
+
+    #[test]
+    fn one_and_two_byte_pixels_fill_a_dword_from_its_low_byte() {
+        // E383, E999 (every pixel of 130 kept images, tests/pbe_pack_images.rs): pixel x of a
+        // row is at byte x * size, so the even pixel is the low half (or byte) of the dword
+        let colours: Vec<u32> =
+            (0..512).map(|i| if i % 2 == 1 { 0xc080_4020 } else { 0xff20_3040 }).collect();
+        let mut m = mem_of(0x1000_0000, 512);
+        let e = emit([0, 31 | 15 << 16, 0x8000 | 7 << 16, 0x1000_0000], 0x207);
+        store_tile(&e, 0x80, (0, 0), &colours, &mut m).unwrap();
+        assert_eq!(m.read32(0x1000_0000).unwrap(), 0xc080_ff20);
+        assert_eq!(m.read32(0x1000_0000 + 64).unwrap(), 0xc080_ff20, "row 1 at the pitch of 64 bytes");
+        let mut m = mem_of(0x1000_0000, 512);
+        let e = emit([0, 31 | 15 << 16, 0x8000 | 3 << 16, 0x1000_0000], 0x208);
+        store_tile(&e, 0x80, (0, 0), &colours, &mut m).unwrap();
+        assert_eq!(m.read32(0x1000_0000).unwrap(), 0xc0ff_c0ff);
+        assert_eq!(m.read32(0x1000_0000 + 32).unwrap(), 0xc0ff_c0ff);
     }
 
     fn emit(w: [u32; 4], sb: u32) -> Emit {

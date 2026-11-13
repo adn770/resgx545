@@ -67,8 +67,10 @@ fn fitted_rules_are_never_reported_matched() {
 }
 
 /// E031, E268: pack modes 0 to 3 store the two colours of the triangle jobs as the dumps show
-/// (4 modes, 2 colours) and mode 0 the ten shader colours unchanged; the other 60 modes refuse.
-/// Measured rules: nothing here is fitted.
+/// (4 modes, 2 colours) and mode 0 the ten shader colours unchanged; E383, E999: modes 7, 8, 15,
+/// 18, 20, 24, 25, 27 and 28 store the channels their field picks, and each dword of E031's
+/// histogram is made of the two colours' packed values (9 modes, 23 dword values; every pixel in
+/// tests/pbe_pack_images.rs); the other 51 modes refuse. Measured rules: nothing here is fitted.
 #[test]
 fn the_pack_modes_of_e031_replay_matched_and_the_rest_are_refused_by_question() {
     let Some(rep) = replay_all() else { return };
@@ -77,10 +79,10 @@ fn the_pack_modes_of_e031_replay_matched_and_the_rest_are_refused_by_question() 
         eprintln!("SKIPPED: no pbe vectors in the set");
         return;
     };
-    assert_eq!((c.matched, c.fitted, c.mismatch), (14, 0, 0));
-    assert_eq!(rep.items_matched["pbe"], 4 * 2 + 10);
-    assert_eq!((c.refused["Q012"], c.refused["Q044"]), (2, 58));
-    assert_eq!(c.refused_vectors, 60);
+    assert_eq!((c.matched, c.fitted, c.mismatch), (14 + 9, 0, 0));
+    assert_eq!(rep.items_matched["pbe"], 4 * 2 + 10 + 23);
+    assert_eq!((c.refused["Q012"], c.refused["Q044"]), (2, 49));
+    assert_eq!(c.refused_vectors, 51);
 }
 
 #[test]

@@ -611,8 +611,12 @@ fn kind_ta_object(v: &Json) -> Modelled {
     }
 }
 
-/// pbe-emit (E031, E268): the value the end-of-tile emit stores for each shader colour in a pack
-/// mode of 0 to 3. A vector without a sideband is the stub's (the whole unit refuses).
+/// pbe-emit (E031, E268, E383, E999): the value the end-of-tile emit stores for each shader colour
+/// in a modelled pack mode. A vector without a sideband is the stub's (the whole unit refuses). A
+/// vector of a pixel smaller than a dword records E031's histogram of the target (`mixed`,
+/// "0xVALUExCOUNT", the most frequent values only): each value but the 0xdeadbeef fill must be
+/// made of the colours' packed values, one a pixel from the low byte up (one item each; the
+/// layout itself is held to every pixel by tests/pbe_pack_images.rs).
 fn kind_pbe_emit(v: &Json) -> Modelled {
     let (i, e) = (v.get("init"), v.get("expect"));
     let Some(sb) = i.get("sideband").hex() else { return Modelled::refusing(pbe::refuse()) };
@@ -621,7 +625,39 @@ fn kind_pbe_emit(v: &Json) -> Modelled {
         Ok(p) => p,
         Err(o) => return Modelled::refusing(o),
     };
+    if let Err(o) = pbe::reg0400_known(sb as u32, reg) {
+        return Modelled::refusing(o);
+    }
     let mut seen = Seen::default();
+    if !e.get("mixed").arr().is_empty() {
+        let n = pack.bytes();
+        let mask = if n == 4 { u32::MAX } else { (1u32 << (8 * n)) - 1 };
+        let packed: Vec<u32> = i
+            .get("colours")
+            .arr()
+            .iter()
+            .map(|c| pbe::pack_pixel(pack, c.hex().unwrap_or(0) as u32, reg >> 25 & 1 != 0) & mask)
+            .collect();
+        for m in e.get("mixed").arr() {
+            let s = m.str().unwrap_or("");
+            let Some((val, _)) = s.split_once('x').and_then(|(_, r)| r.split_once('x')) else {
+                seen.mismatched += 1;
+                seen.notes.push(format!("a malformed mixed entry {s}"));
+                continue;
+            };
+            let val = u32::from_str_radix(val, 16).unwrap_or(0);
+            if val == 0xdead_beef {
+                continue;
+            }
+            if (0..4 / n).all(|k| packed.contains(&(val >> (8 * n * k) & mask))) {
+                seen.matched += 1;
+            } else {
+                seen.mismatched += 1;
+                seen.notes.push(format!("{val:#010x} is not made of {packed:x?}"));
+            }
+        }
+        return Modelled { outcome: crate::Outcome::Ok, seen };
+    }
     let want: Vec<Option<u64>> = e.get("stored").arr().iter().map(|j| j.hex()).collect();
     for (k, c) in i.get("colours").arr().iter().enumerate() {
         let o0 = c.hex().unwrap_or(0) as u32;
