@@ -568,19 +568,23 @@ pub fn write(job: &Job) -> Result<Written, Outcome> {
 /// 11 held-out strides with every slot); a later header overwrites an earlier one, and a target
 /// tile draws iff its own header survives (E907). Returns each target tile's slot, None for a
 /// wrong tile. Held out at 256 x 256 and 640 x 480 only, at strides that drew without a fault
-/// (E505, E509: 0 to 31 and 4 to 63, besides the rule's); the rest refuses (Q139), as do poked
-/// macrotile words (E944's residue: no order gives bounds that are not multiples of 4).
+/// (E505, E509: 0 to 31 and 4 to 63, besides the rule's), and at the rule's own stride at 1280 x
+/// 720 and 768 x 640 (E959: the baselines' 1800 and 960 headers); the rest refuses (Q139), as do
+/// poked macrotile words (E944's and E959's residue: their slots follow H-EVEN, 8 floor(fx / 2)
+/// a block row, and a tile whose header lies past the last-region flag does not draw, both read
+/// post hoc).
 pub fn stride_slots(w: u32, h: u32, stride: u32) -> Result<BTreeMap<(u32, u32), Option<u32>>, Outcome> {
     let t = tiling(w, h);
     let ok = match (w, h) {
         (256, 256) => stride <= 31 || stride == t.stride,
         (640, 480) => (4..=63).contains(&stride) || stride == t.stride,
+        (1280, 720) | (768, 640) => stride == t.stride,
         _ => false,
     };
     if !ok {
         return Err(refuse_ids(
             format!(
-                "{w} x {h}, stride {stride}: the header write order is held out at 256 x 256 and 640 x 480 at strides that drew without a fault (E944, E505, E509)"
+                "{w} x {h}, stride {stride}: the header write order is held out at 256 x 256 and 640 x 480 at strides that drew without a fault (E944, E505, E509) and at the rule's stride at 1280 x 720 and 768 x 640 (E959)"
             ),
             &["Q139"],
         ));
@@ -671,6 +675,28 @@ mod tests {
         for (&(c, r), v) in &base {
             assert_eq!(*v, Some(pos(c, r)), "({c}, {r})");
         }
+    }
+
+    #[test]
+    fn the_baselines_of_1280x720_and_768x640_hold_their_headers_in_the_same_blocks() {
+        // E959: the unpoked 1280 x 720 and 768 x 640 baselines (n 4, the first macrotile 12 and
+        // 8 regions wide) hold every one of their 1800 and 960 headers at R7-BLK's slot, block
+        // rows across the macrotile
+        for (w, h, n) in [(1280, 720, 1800), (768, 640, 960)] {
+            let t = tiling(w, h);
+            let base = stride_slots(w, h, t.stride).unwrap();
+            assert_eq!(base.len(), n);
+            let order = header_order(&t, Grid::LIBRARY);
+            for (&(c, r), v) in &base {
+                let m = (c / t.mx) * t.n + r / t.my;
+                let i = (r % t.my) * t.mx + c % t.mx;
+                let want = m * t.stride + order.iter().position(|&k| k == i).unwrap() as u32;
+                assert_eq!(*v, Some(want), "{w}x{h} ({c}, {r})");
+            }
+        }
+        // 1280 x 720's last macrotile column starts at region 36: tile (36, 0) is slot 12 x 144
+        let sl = stride_slots(1280, 720, tiling(1280, 720).stride).unwrap();
+        assert_eq!((tiling(1280, 720).stride, sl[&(36, 0)], sl[&(13, 1)]), (144, Some(1728), Some(581)));
     }
 
     #[test]
