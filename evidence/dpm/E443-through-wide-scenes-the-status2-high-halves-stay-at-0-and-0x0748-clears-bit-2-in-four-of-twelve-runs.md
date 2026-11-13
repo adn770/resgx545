@@ -40,3 +40,9 @@ the one-triangle runs.
 **What it does not show.** What makes bit 2 clear in one run of three (the samples are not
 continuous), which register the closed driver's `CR_DPM_3D_PAGE_COUNTS` is (0x0724 and 0x072c read
 equal halves), or a scene whose global list holds more than five pages.
+
+**Correction 2026-11-13:** a note, the claim stands. E1019 (round 12 offline) read the same high
+halves in every kept closing-pass timeline and after-read, frozen before: 0 in 285824 of 285824
+lines of 697 jobs and 1594 of 1594 after-reads, through global lists of 6, 7, 11, 13 and 18 pages.
+"A scene whose global list holds more than five pages", which this record does not show, is now
+read. E1019 also ranks 0x0748 bit 2's clearing with the count of partial renders [infer].

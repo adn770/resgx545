@@ -77,29 +77,28 @@ fn read_state(w0: u32, w1: u32) -> Result<State, Outcome> {
         ));
     }
     let (field, bit12) = (w1 >> 9 & 7, w1 >> 12 & 1 != 0);
-    // 2 is the library's value: the object is written. 0 and bit 12 remove it (E185, E191). 1, 6
-    // and 7 left the output the same but complete or hang by history (E413, E545, Q163): the
-    // model gives one answer only where the hardware does
+    // 2 is the library's value: the object is written. 0 and bit 12 remove it (E185, E191). 1 and
+    // 3 to 7 leave the output the same but complete or hang by history (E413, E545): a counter c,
+    // 0 after a hang's reset, a job adding v - 2 a block and hanging iff c + add > 8 (E700, 52 of
+    // 52 predicted before the run; E1021, round 12 offline: 54 of 54 held-out jobs of E545's sweeps
+    // with v 3 to 7). Below 2 the counter's clauses are fitted only (E701's M3, post hoc; E1021: its
+    // block-2 v = 1 clause and the v = 0 reset fail on E545's sweeps). The model keeps no job
+    // history, so it gives one answer only where the word alone decides
     let no_object = match field {
         _ if bit12 => true,
         0 => true,
         2 => false,
-        1 | 6 => {
-            return Err(refuse_ids(
-                format!(
-                    "VDM_STATE1 bits 11:9 = {field}: whether the job completes is not a function of the word (E545)"
-                ),
-                &["Q163", "Q047"],
-            ));
-        }
-        7 => {
-            return Err(refuse_ids("VDM_STATE1 bits 11:9 = 7 hangs every second job (E413)", &["Q163"]));
-        }
         f => {
-            return Err(refuse_ids(
-                format!("VDM_STATE1 bits 11:9 = {f} was not run in a state block alone"),
-                &["Q047"],
-            ));
+            let why = format!(
+                "VDM_STATE1 bits 11:9 = {f}: whether the job completes is a function of the word and a \
+                 job-history counter (E700, E1021; {}), and the model keeps no history",
+                match f {
+                    0 | 1 => "below 2 fitted only, E701",
+                    7 => "a series of 7s alternates, E413",
+                    _ => "held out for 3 to 7",
+                }
+            );
+            return Err(refuse_ids(why, &["Q163"]));
         }
     };
     Ok(State {
@@ -110,6 +109,8 @@ fn read_state(w0: u32, w1: u32) -> Result<State, Outcome> {
     })
 }
 
+/// An index list block. A header other than the library's refuses: bit 24 hangs the job, bit 25
+/// faults it (E737) and is not a 32-bit index width (E756), lines and points are open (E543, E544).
 fn read_index(mem: &Mem, w: &[u32; 6]) -> Result<IndexList, Outcome> {
     // bits 27:26 of the header are the topology: 1 lines (E543), 2 points (E544); the TA's rules for
     // their regions are Q159, Q160 and Q161
@@ -151,7 +152,10 @@ fn read_index(mem: &Mem, w: &[u32; 6]) -> Result<IndexList, Outcome> {
     // outputs; any other value is a forced row (E703), which breaks the job (Q094, by decision).
     // The rows are the vertex's output stride: set to the natural value they leave the render
     // intact, one above it at R * V = 6 they break it (E933); the parser does not know N, so a
-    // row in 1 to 4 that is not the vertex's own is not caught here
+    // row in 1 to 4 that is not the vertex's own is not caught here. The attribute rows (bits 14:7)
+    // are the library's 1 only: at R * V = 33 and 32 other values changed the render or lost a
+    // vertex by no function of the words (E702; E738 repeated two events 3 of 3 and changed a
+    // third; E755: a = 8 gave three images in three runs, state carry not ruled out)
     let rows = w[5] >> 24;
     if w[5] & 0x00ff_ff80 != 0x00c0_0080 || !(1..=4).contains(&rows) {
         return Err(refuse_ids(
@@ -384,13 +388,29 @@ mod tests {
         }
         let Block::State(s) = &poked(1, 0x0a02_2405).unwrap()[0] else { panic!() };
         assert!(!s.no_object);
-        // 1 and 6 left the output the same but complete or hang by history (E545, Q163)
-        for w in [0x0a02_2205, 0x0a02_2c05] {
-            refused(poked(1, w), "Q163");
+        // 1 and 3 to 7 leave the output the same but complete or hang by the word and a job-history
+        // counter (E545, E413; E700, held out again for 3 to 7 by E1021; below 2 fitted, E701):
+        // the model keeps no history, so it refuses under Q163 and says why
+        for (w, v) in [
+            (0x0a02_2205, 1),
+            (0x0a02_2605, 3),
+            (0x0a02_2805, 4),
+            (0x0a02_2a05, 5),
+            (0x0a02_2c05, 6),
+            (0x0a02_2e05, 7),
+        ] {
+            match poked(1, w) {
+                Err(Outcome::Unsupported { ids, why }) => {
+                    assert_eq!(ids, ["Q163"], "{w:#x}: {why}");
+                    assert!(why.contains(&format!("= {v}")) && why.contains("counter"), "{why}");
+                    assert!(why.contains("E700") && why.contains("E1021"), "{why}");
+                }
+                r => panic!("{w:#x}: {r:?}"),
+            }
         }
-        refused(poked(1, 0x0a02_2e05), "Q163");
-        for w in [0x0a02_2605, 0x0a02_2805, 0x0a02_2a05] {
-            refused(poked(1, w), "Q047");
+        match poked(1, 0x0a02_2205) {
+            Err(Outcome::Unsupported { why, .. }) => assert!(why.contains("E701"), "{why}"),
+            r => panic!("{r:?}"),
         }
         // a bit nobody flipped (bit 20) is not the library's word
         refused(poked(1, 0x0a12_2405), "Q047");

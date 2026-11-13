@@ -5,7 +5,7 @@ unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 10
-evidence = ["E160", "E202", "E204", "E310", "E311", "E312", "E442", "E461", "E465", "E467", "E468", "E625", "E628", "E629"]
+evidence = ["E160", "E202", "E204", "E310", "E311", "E312", "E442", "E461", "E465", "E467", "E468", "E625", "E628", "E629", "E996", "E1020"]
 terms = ["Parameter Buffer (PB)", "Dynamic Parameter Management (DPM)"]
 +++
 What the missing pixels are is answered (E311): with `CR_ISP_CTL.PROCESS_EMPTY_TILES` clear every
@@ -87,3 +87,8 @@ disagreed on is the raise of E625 (E629). Open: which of the two readings of the
 buffer holds, the colour reload with a depth buffer (the probe's depth scratch, a tool change of
 the batch's plan, was not implemented), what the load reads when its base differs from the
 store's, and the tile order of the store (Q107).
+
+Round 12 (offline): the tile order of the store is E996's overlay for a render without a partial
+render (held at 1024 x 768 too, E1020's control), and not for the final store of an overflowed job
+(E1020: 0 of 10 G = 1 dumps; a 15104-dword zero prefix and a repeated tile read post hoc), so what
+the final render stores after partial renders stays Q107's and this question's.
