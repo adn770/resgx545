@@ -44,3 +44,12 @@ equal, its layout not dumped in a readable form); the stencil test (R10-4, the s
 **Correction 2026-11-13:** the last sentence named the stencil-order question for the stencil test;
 that question is answered by E988 (r10-st1), whose stage ran the test, and E989 ran this record's
 control mask under it. Nothing measured here changes.
+
+**Correction 2026-11-13:** the post hoc bracket "the x of each dword is named; the y of a row is
+not, the ramp is in x only" (and, under what it does not show, "the linear layout's y (a ramp in
+y)") is wrong. The ramp's values vary along each row's edge, so they name the row too: dword 96 y +
+x of zb-clr-f0, zb-all-f0 and zb-all-f1 equals the twiddled control dump (E977's z242-c-f0, -f1) at
+the pixel (x, y) at 4608 of 4608 in each, against 4441 (4444 in format 1) at row y - 1 or y + 1 and
+3350 (3368) at y +- 8 (the round 11 ranking's closing11/plan/c4-q071/yread2.py and yread2.out, post
+hoc; E1014). The linear image is ordered in y as well, rows of 32 (G + 1) dwords apart. Nothing
+measured here changes; which of bits 12, 16 and 20 does it stays open (Q071).
