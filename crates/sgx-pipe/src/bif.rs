@@ -9,7 +9,9 @@ pub const OPEN: &[&str] = &["Q076", "Q108", "Q109", "Q110", "Q003"];
 
 /// A refusing stub until the unit's sub-phase lands: the model never guesses. Among what it
 /// refuses: the client directory's alias of the EDM's buffers (Q076), of which E980 held out that
-/// only buffers 0 and 9 are needed, whatever set of the others is left out, for its scenes.
+/// only buffers 0 and 9 are needed, whatever set of the others is left out, for its scenes (E745:
+/// no pair of 1 to 8, 10 and 11 needed together; E761: buffers 1 to 4 or 6 to 11 left out of two
+/// overflowed 1024x768 renders kept them exact, buffer 0 left out faulted).
 pub fn refuse() -> Outcome {
     Outcome::unsupported("the BIF is not modelled (12.5)", OPEN)
 }
@@ -21,7 +23,10 @@ pub fn refuse() -> Outcome {
 /// (`CR_BIF_CTRL.INVAL_DC` set and cleared) while the fault was held, changes nothing (E892:
 /// H-FLUSH refuted, H-PEND 3 of 3). Only the measured faults (0x90004, pages 0x20006 and
 /// 0x2000a, `SB` 6, list 1) and lists are modelled; how many replays come before a render passes,
-/// what ends them and the -110 boots after some resets are refused (Q003).
+/// what ends them and the -110 boots after some resets are refused (Q003): the first boot after a
+/// held reset timed out only after 0x90004 (E901, 54 of 147), not by the fault page (E919: pages
+/// 0x20006 to 0x20009, E901's page rule refuted held out) nor by a CLEAR_FAULT or the hold's
+/// length (E920), so no rule says which boot comes up.
 pub fn replay_word(int: u32, held: u32, list: u32, flushed: bool) -> Result<u32, Outcome> {
     const RUN: &[(u32, u32, bool)] = &[
         (0x2000_a061, 1, false),

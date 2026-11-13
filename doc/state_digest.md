@@ -92,7 +92,7 @@ list.
 - `Q019` pds, medium: what does the secondary attribute size (bits 24:18 of dword 1 of the
   background object) limit, given that all sixteen douta words reach sa0 ... (E125, E391, E973)
 - `Q020` pds, medium: what does a douta in the triangle's primary pixel program do, when its markers
-  never reach the USE task and the readback is the memory ... (E125, E381)
+  never reach the USE task and the readback is the memory ... (E381, E440, E545)
 - `Q025` pds, medium: what does the SB field of CR_BIF_FAULT encode in the PDS faults, and why did a
   store of one dword fault in the follow-up run only, and a ... (E144, E145, E395)
 - `Q026` pds, medium: why do the per-tile stores of the grid pixel-event probes leave empty slots
@@ -195,19 +195,19 @@ list.
 - `Q158` edm, low: which sa, i and temporaries of a firmware task keep their value across a debugfs
   reset and across a firmware reload and boot (E536's ... (E537, E809, E810)
 - `Q168` edm, low: what limits the temporaries of a firmware task above TRC 48 (E540 predicted a
-  hang for 49 and 64; E550 armed 32 to 48 with trc_hazard=1 and ... (E540, E550)
+  hang for 49 and 64; E550 armed 32 to 48 with trc_hazard=1 and ... (E540, E550, E603)
 - `Q194` edm, low: does a load that is not waited for land by itself in a firmware (EDM) task, at
   what distance, and is that a property of the task, of the ... (E517, E602)
 - `Q196` edm, low: do the client results of 11.36 for the compare and the high word of ima32 (E595,
-  E597), the predicated register moves and ba (E596) and the ... (E598, E599, E601)
+  E597), the predicated register moves and ba (E596) and the ... (E599, E600, E601)
 - `Q290` edm, low: what does a write to CR_EVENT_KICK with the kicker word unchanged start in the
   EDM (E834: no event and no command read, before or after a ... (E819, E834, E835)
 - `Q294` edm, low: which of bits 4, 7 and 10 of the sa65 word of E537 (0xb009c5dc, without bit 8)
   stop the tick through the closed task (E814: that word ... (E812, E814, E902)
 - `Q072` isp, low: what does bit 1 of CR_ISP_REG_04DC do to a punch-through pass, when it hangs
   every one tried and changes no opaque or translucent pass? (E222, E290, E416)
-- `Q201` isp, low: why does the position source (E437, E502: x + 0.375, y + 0.125 in mode 0 and
-  every multisampling mode tried) differ from the point at which ... (E437, E502, E606)
+- `Q201` isp, low: under a CR_ISP_MULTISAMPLECTL byte 0 other than 0x88, does an attribute iterated
+  from a coordinate set read at the point byte 0 places, as ... (E606, E1010, E1018)
 - `Q241` isp, low: what do ISP word 0 bits 15, 16, 17 and 18, the depth compares 2, 3, 5 and 6
   against equal depths, the visibility test (ISP word 1 bit 3), ... (E757, E995, E998)
 - `Q044` pbe, low: what do bits 11:0 of CR_REG_0400 (0x80 as built) do, when no value of them
@@ -248,8 +248,8 @@ list.
   not load set 0 converts with the last loaded words, and the ... (E046, E271, E399)
 - `Q104` texture, low: does a mip chain of a 1D texture, of a texture with a side of 1 at level 0,
   or of a format other than 32 bits read as the non-square chains ... (E276, E441, E562)
-- `Q114` texture, low: how does the sampler read a 3D (volume) texture: which TEXTYPE or words name
-  one, how are its slices laid out, and how do the third ... (E342, E567)
+- `Q114` texture, low: does a texture word other than TEXTYPE name a 3D (volume) texture (no TEXTYPE
+  value does, E567, E726), and if one does, how are its slices ... (E941, E942, E958)
 - `Q115` texture, low: does the sampler filter anisotropically on this core, and which bits of the
   texture words or the smp operands select it and its ratio? (E564, E720, E723)
 - `Q177` texture, low: does the offset that T0 address modes 4 to 7 add on the u axis, 8 max(W, H) +
@@ -279,9 +279,9 @@ list.
 - `Q130` usse, low: when does a load on one counter land while a wdf waits on another: why four ldad
   on drc0 issued after a wdf drc1 that waited for four ldad ... (E479)
 - `Q133` usse, low: what bounds a phas request (it runs when T mod 256 is 4 to 192 and hangs the job
-  when it is 0 or 196 to 252, whatever the task was started ... (E519, E535, E540)
+  when it is 0 or 196 to 252, whatever the task was started ... (E535, E540, E594)
 - `Q135` usse, low: what does the high-word form of ima32, ima32 d, iK, a, b, c, do with immediates
-  and constants other than c56, with cie on the same ... (E525, E526, E528)
+  and constants other than c56, with cie on the same ... (E526, E528, E597)
 - `Q136` usse, low: how long does a value written to sa0 last across jobs, and is the 0xff00ff00 and
   0xff203040 mixture that pa0 reads in the first jobs of a ... (E484, E496)
 - `Q137` usse, low: do the rules of the test field of a class 9 test (zero part: bits 41 over 40;
@@ -311,9 +311,9 @@ list.
 - `Q084` dpm, fw (parked): how does the closed driver turn its PBSize app hint into the parameter
   buffer's page count and thresholds, given 1 MiB and 8 MiB both give ... (E327)
 - `Q088` zls, fw (parked): what reads the render details' unpatched ZLS control word that the closed
-  driver writes between frames (0x0011700a), now that bit 14 is ... (E337, E411, E467)
+  driver writes between frames (0x0011700a), now that bit 14 is ... (E989, E997, E1014)
 - `Q118` render, fw (parked): how does the firmware's kick tell that its context's page directory is
-  in none of the bus interface's directory lists (a compare against ... (E360)
+  in none of the bus interface's directory lists (a compare against ... (E360, E592)
 - `Q119` render, fw (parked): does one TA command carrying both FIRST_KICK and LAST_KICK act as two
   commands in the firmware (a kick and a closing kick)? (E156, E165)
 - `Q277` dpm, fw (parked): what sets the fields of register 0x0740 that the TA kick turns into DPM
@@ -323,7 +323,7 @@ list.
 
 ## Recent records
 
-155 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+156 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
 - `E1021` vdm, 2026-11-13: Round 12 offline (Q163; no run): on the 11.31 VDM state sweeps
@@ -335,6 +335,9 @@ the claims are cut at 200 characters.
 - `E1019` dpm, 2026-11-13: Round 12 offline (Q036; no run): over every kept closing-pass job with a
   DPM register timeline (697 jobs, 285824 timeline lines of closing r1-pixgeo, r2-geo, r3-geo,
   r3-geo-c, r5, r6 and r7-dpm, r8 ...
+- `E1018` isp, 2026-11-13: Round 12 offline (Q201, on E064's kept sweep; no run): E606/E607's exact
+  coverage test with each pixel (x, y) sampled at (x + lo/16, y + hi/16), lo = bits 3:0 and hi =
+  bits 7:4 of cmd:16 ...
 - `E1017` texture, 2026-11-13: Round 11 offline (Q177; no run): of the 31 kept twiddled jobs with T0
   u mode 4 to 7 outside E1000's own (p1132 tx-border 16, r8-geo addr 4, r9-geo addr2 11), 27 are
   squares and 4 are E565's 32 x 8 ...
@@ -911,4 +914,4 @@ stays with what a session must do around it.
 
 ## Simulator coverage baseline
 
-86 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
+66 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).

@@ -5,7 +5,7 @@ unit = "edm"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E540", "E550"]
+evidence = ["E540", "E550", "E603"]
 terms = ["Event Data Master (EDM)", "Universal Scalable Shader Engine (USSE)"]
 +++
 
@@ -19,3 +19,6 @@ To settle it: (a) a source form that names a register above r123 (an indexed or 
 the instruction set has one), read from the specification, not from any closed code; (b) with
 approval, arm 49 and one above with the hazard word and the stop rules of E550, a reset and the
 gate after each. The question needs the closed task only for the tick.
+
+Round 12 cites: E603 (at trc 31 every register r0 to r123 is real storage in a firmware task, 21 of
+21 jobs).

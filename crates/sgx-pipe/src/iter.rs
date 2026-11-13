@@ -7,7 +7,10 @@
 //! no bit-exact arithmetic is known. So a value is `Near`, never matched, and a poorly
 //! conditioned triangle refuses (Q200). Not modelled here, and refused wherever a scene would
 //! need it: four components and other sources (Q180, Q098), no-wait fetches (Q027, Q093),
-//! perspective (w other than 1), and the position source 0 (x + 0.375: E502, Q201).
+//! perspective (w other than 1), and the position source 0 (x + 0.5 at the library's
+//! `CR_ISP_MULTISAMPLECTL` byte 0x88, E437; x + 0.375, y + 0.125 at 0x26, E502, E1010; [infer]
+//! the point byte 0 places, as the coverage sample is, E1018; Q201). E606's setups all ran under
+//! byte 0 = 0x88: an attribute iterated under another value refuses (`sample_point`, Q201).
 
 use crate::Outcome;
 use crate::isp::{DEPTH_UNIT, GRID, Tri};
@@ -21,8 +24,9 @@ pub fn refuse() -> Outcome {
 }
 
 /// What an iterated attribute is. E606 states the tolerance for the vertices' clip z; the clip x of
-/// the same jobs reached 23 units in the same conditioning bin (the record's own table), so no
-/// tolerance is known for another attribute and it refuses (Q200).
+/// the same jobs reached 23 units in the same conditioning bin (the record's own table, E661: 19
+/// pixels of 17 small triangles past 4 units), so no tolerance is known for another attribute and
+/// it refuses (Q200).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Attr {
     ClipZ,
@@ -66,6 +70,22 @@ pub fn at_centre(t: &Tri, vals: [f32; 3], attr: Attr, x: u32, y: u32) -> Result<
     Ok(Tri { v: t.v, z: vals }.depth_at(x, y))
 }
 
+/// Whether an attribute can be iterated under `CR_ISP_MULTISAMPLECTL` `ctl` (the render's
+/// cmd:16): only the library's 0x88, the pixel centre, under which E606 measured the plane. Byte
+/// 0 moves the coverage sample (E1018, `isp::sample_offset`) and [infer] the position source with
+/// it, but no kept job iterated a coordinate set under another value (Q201).
+pub fn sample_point(ctl: u32) -> Result<(), Outcome> {
+    if ctl != 0x88 {
+        return Err(Outcome::unsupported(
+            &format!(
+                "an attribute iterated under CR_ISP_MULTISAMPLECTL {ctl:#x}: byte 0 moves the coverage sample (E1018), but E606 iterated under 0x88 only"
+            ),
+            &["Q201"],
+        ));
+    }
+    Ok(())
+}
+
 /// Whether a recorded value is within the tolerance of the model's.
 pub fn near(got: f32, want: f64) -> bool {
     (got as f64 - want).abs() / DEPTH_UNIT <= TOLERANCE as f64
@@ -104,9 +124,26 @@ mod tests {
 
     #[test]
     fn the_position_source_is_not_the_centre_so_it_is_not_here() {
-        // E502: source 0 gives x + 0.375: a different unit's input (Q201), the plane stays at the centre
+        // E502: source 0 gives x + 0.375 under byte 0 = 0x26 (E1018: that byte's point); the
+        // plane E606 measured under 0x88 stays at the centre
         let v = at_centre(&tri(), [0.0, 1.0, 0.0], Attr::ClipZ, 0, 0).unwrap();
         assert!((v - 0.5 / 64.0).abs() < 1e-12 && (v - 0.375 / 64.0).abs() > 1e-4);
+    }
+
+    #[test]
+    fn an_attribute_under_another_sample_point_refuses_and_names_q201() {
+        // E1018: byte 0 of CR_ISP_MULTISAMPLECTL moves the coverage sample; no kept job iterated
+        // a coordinate set under a byte 0 other than 0x88 (E606's setups)
+        assert_eq!(sample_point(0x88), Ok(()));
+        for ctl in [0x26, 0x00, 0x89, 0xff] {
+            match sample_point(ctl) {
+                Err(Outcome::Unsupported { ids, why }) => {
+                    assert_eq!(ids, ["Q201"]);
+                    assert!(why.contains("E1018"));
+                }
+                o => panic!("{ctl:#x}: {o:?}"),
+            }
+        }
     }
 
     #[test]

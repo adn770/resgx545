@@ -8333,6 +8333,19 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *texture; HW, infer; data: `texture-p1132-tx-border`,
   `render-closing-r8-geo:out/20261113-015842/addr/`,
   `render-closing-r9-geo:out/20261113-081038/addr2/`, `cited-scratch:closing11/plan/c2-texture/`.*
+- `E1018` Round 12 offline (Q201, on E064's kept sweep; no run): E606/E607's exact coverage test
+  with each pixel (x, y) sampled at (x + lo/16, y + hi/16), lo = bits 3:0 and hi = bits 7:4 of
+  cmd:16 (CR_ISP_MULTISAMPLECTL byte 0), predicts the triangle-pixel count of all 256 values of
+  E064's sweep of the 64 x 64 triangle (31 of 31 one-nibble values E064 tabled, 225 of 225
+  two-nibble values held out) and parts the 256 values into exactly the 27 classes of the hardware's
+  image hashes, 256 of 256 values in the right class; the rivals fail: the nibbles swapped 226 of
+  256 counts and 2 of 27 classes, a fixed centre 51 counts and one class, ((n + 0.5)/16) 197 counts
+  and 0 classes; so 0x88 is the pixel centre and 0x26, under which E502 and E1010 read the position
+  source at x + 0.375, y + 0.125, is the point (6, 2)/16 [HW data; infer: the position source reads
+  the point byte 0 places, as the coverage sample does, since E437 read x + 0.5 under 0x88 and no
+  kept job iterates a coordinate set under another byte 0].
+  *isp; HW, infer; data: `isp-sample-positions`, `cited-scratch:closing12/plan/c6-q201/`,
+  `cited-scratch:closing12/plan/rank-round12.md`.*
 - `E1019` Round 12 offline (Q036; no run): over every kept closing-pass job with a DPM register
   timeline (697 jobs, 285824 timeline lines of closing r1-pixgeo, r2-geo, r3-geo, r3-geo-c, r5, r6
   and r7-dpm, r8 and r9-ldpm, r10-dpm, s1 and s1b) and every kept after-read of 0x071c (1594, r1 to
@@ -8424,7 +8437,8 @@ E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E2
 E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E508, E510, E590,
 E606, E607, E618, E660, E661, E662, E680, E681, E682, E683, E684, E727, E728, E731, E739, E740,
 E741, E757, E758, E762, E825, E827, E829, E912, E913, E914, E922, E934, E943, E952, E953, E954,
-E970, E971, E972, E973, E979, E984, E989, E990, E992, E995, E998, E1005, E1006, E1010, E1012, E1014.
+E970, E971, E972, E973, E979, E984, E989, E990, E992, E995, E998, E1005, E1006, E1010, E1012, E1014,
+E1018.
 
 ### mte
 

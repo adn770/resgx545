@@ -6,6 +6,7 @@
 //! that value in every pixel the job drew (`readback.proof`). The simulator runs the program as one instance, from the
 //! code index of its host (0 in a fill, 0x20 in a `--tri pixel` slot), and must leave the same o0; the files of
 //! timings (`timings/`) are measurements the simulator has no clock for and are only checked to be there.
+//! E833 records these replays: the 204 proofs and the 8 direct-read jobs, the 73 vertex loops refused.
 //!
 //! The vectors are in the data repository (`$RESGX545_DATA`, or `$SGX_SIM_OVERLAY` while only in a working copy: a
 //! `vectors/` directory laid out as the data repository's); without them the tests do nothing and say so

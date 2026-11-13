@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E487", "E519", "E540", "E535"]
+evidence = ["E487", "E519", "E540", "E535", "E594"]
 terms = []
 +++
 E487: requests of 8, 16, 32, 64, 96, 124, 128, 132, 136, 144, 160 and 192 ran (15 of 15 jobs,
@@ -55,3 +55,5 @@ request at 192 ([infer] the register file divided by the instances in flight: Q1
 past an allocation goes (Q132), and whether a firmware task's request follows the same rule
 (E540 has the TRC up to 31 only). To settle it: a request of 260 and of 516 with a distinct marker
 written to each of r0 to r7 and r123 (the way E486 did), read back, and a smaller target.
+
+Round 12 cites: E594 (E487's jobs T = 132 to 192 read their own marker back, 8 of 8).

@@ -5,7 +5,7 @@ unit = "usse"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E493", "E494", "E495", "E501", "E525", "E526", "E528"]
+evidence = ["E493", "E494", "E495", "E501", "E525", "E526", "E528", "E597"]
 terms = ["Universal Scalable Shader Engine (USSE)", "REGTYPE.FPINTERNAL"]
 +++
 
@@ -33,3 +33,5 @@ registers read.
 To settle it: the generic-value tables of E525 over each of those forms, with the i registers and
 r10 to r17 read after; and the raw word with bit 46 set over operands that show where 0x2255 comes
 from.
+
+Round 12 cites: E597 (the high word of ima32 in client fills over every operand partition).

@@ -4,7 +4,7 @@ question = "how does the firmware's kick tell that its context's page directory 
 unit = "render"
 kind = "fw"
 phase = 11
-evidence = ["E360"]
+evidence = ["E360", "E592"]
 terms = ["ta3d_ctl.render_context_count", "CR_BIF_DIR_LIST_BASE1"]
 +++
 
@@ -24,3 +24,6 @@ parked.
 Offline in 11.16: edm_dataflow.md holds the routine's registers (section 3) but not the
 comparisons that decide whether a directory is in a list, so the dataflow cannot say how the kick
 tells. To settle it: extend the dataflow to that routine's compares (offline, no hardware run).
+
+Round 12 cites: E592 (the context's directory word equals the list register the kick wrote, 15 of 15
+jobs).

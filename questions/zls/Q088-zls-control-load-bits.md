@@ -4,7 +4,7 @@ question = "what reads the render details' unpatched ZLS control word that the c
 unit = "zls"
 kind = "fw"
 phase = 11
-evidence = ["E335", "E336", "E337", "E411", "E467"]
+evidence = ["E335", "E336", "E337", "E411", "E467", "E665", "E997", "E989", "E1014"]
 terms = ["CR_ISP_ZLSCTL", "hw_render_details.isp_zlsctl"]
 +++
 
@@ -28,3 +28,6 @@ of Q038, not this one. To settle it: a scene that runs out of parameter memory w
 details' word poked to a marked value, to see whether the partial render's reload takes it (the
 same job answers the reload half of Q038; the tile pitch and the stores of E465 make the marked
 word readable now).
+
+Round 12 cites, context for the word's bits: E665 (the ZLS control fields decoded), E997 and E989
+(bits E411 flipped singly, flipped together), E1014 (the stencil test under E989's control reads 0).

@@ -6,10 +6,21 @@
 //! repository (`$RESGX545_DATA`; skipped without it). Each vector runs our wrapper to its tail call
 //! over the results page and the register file of `sgx_sim::fwtask::FwBus`.
 
-/// The vectors of each set, as the conversions made them (E534, E536, E538, E539, E540): a set that
-/// is present must have all of them, so a lost file is a failure and not a smaller count.
-const SETS: [(&str, usize); 5] =
-    [("fwtask-9b", 318), ("fwtask-state", 14), ("fwtask-events", 6), ("fwtask-slow", 10), ("fwtask-trc", 1)];
+/// The vectors of each set, as the conversions made them (E534, E536, E538, E539, E540; phase
+/// 11.37's p1137 stages: f10 E600 the 7-bit and limm test operands, f8 E601 p0 across every gap,
+/// f12 E602 the loads before one `wdf`, f11 E603 r0 to r123 as storage): a set that is present must
+/// have all of them, so a lost file is a failure and not a smaller count.
+const SETS: [(&str, usize); 9] = [
+    ("fwtask-9b", 318),
+    ("fwtask-state", 14),
+    ("fwtask-events", 6),
+    ("fwtask-slow", 10),
+    ("fwtask-trc", 1),
+    ("fwtask-p1137-f10", 7),
+    ("fwtask-p1137-f8", 72),
+    ("fwtask-p1137-f12", 21),
+    ("fwtask-p1137-f11", 21),
+];
 
 use sgx_sim::vectors::{Kind, Outcome, data, kind, load, probe_files, run};
 
