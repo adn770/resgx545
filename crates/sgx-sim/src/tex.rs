@@ -395,15 +395,21 @@ const RASTER_SIZES_E910: [(u32, u32); 2] = [(4, 16), (64, 8)];
 const TYPE3_SIZES_E940: [(u32, u32); 8] =
     [(4, 16), (2, 16), (4, 8), (4, 32), (2, 8), (1, 16), (24, 8), (40, 8)];
 const TYPE1_SIZES_E940: [(u32, u32); 2] = [(2, 16), (1, 16)];
+/// E958 (held out): type 1 at 24 and 40 wide, a raster of the width.
+const TYPE1_SIZES_E958: [(u32, u32); 2] = [(24, 8), (40, 8)];
+/// E958 (held out): type 3 of format 5 (16-bit texels), rows max(8, w) texels apart.
+const TYPE3_F5_SIZES_E958: [(u32, u32); 2] = [(4, 8), (8, 8)];
 /// Type 4's 32 x 32 blocks row by row at every size where all its texels were read: E910's
-/// 4 x 16, 64 x 8 and 64 x 32 and E941's held-out windows.
-const TYPE4_SIZES: [(u32, u32); 7] = [(4, 16), (64, 8), (64, 32), (64, 64), (128, 64), (128, 128), (256, 32)];
+/// 4 x 16, 64 x 8 and 64 x 32, E941's held-out windows and E958's widths that are not multiples of
+/// 32 (ceil(w / 32) blocks a block row).
+const TYPE4_SIZES: [(u32, u32); 10] =
+    [(4, 16), (64, 8), (64, 32), (64, 64), (128, 64), (128, 128), (256, 32), (48, 64), (80, 64), (96, 32)];
 /// Type 5 (format 12, point filters) at E911's and E942's sizes.
 const TYPE5_SIZES: [(u32, u32); 7] = [(8, 8), (16, 16), (32, 32), (64, 64), (32, 8), (8, 32), (16, 8)];
 
 /// T0 bit 27 (sRGB), format 27 (ETC1) and texture types 1, 3, 4 and 5 are admitted with the state
 /// words of the held-out jobs that measured them and at their sizes only (E723, E724, E725, E910,
-/// E940, E941, E942).
+/// E940, E941, E942, E958).
 fn measured_r4(t0: u32, t1: u32, t3: u32) -> Result<(), Fail> {
     let (ty, fmt) = (t1 >> 29, t1 >> 24 & 31);
     let (w, h) = ((t1 >> 12 & 0xfff) + 1, (t1 & 0xfff) + 1);
@@ -422,18 +428,21 @@ fn measured_r4(t0: u32, t1: u32, t3: u32) -> Result<(), Fail> {
                 RASTER_SIZES.contains(&(w, h))
                     || RASTER_SIZES_E910.contains(&(w, h))
                     || TYPE1_SIZES_E940.contains(&(w, h))
+                    || TYPE1_SIZES_E958.contains(&(w, h))
             }
             3 => RASTER_SIZES.contains(&(w, h)) || (w, h) == (64, 8) || TYPE3_SIZES_E940.contains(&(w, h)),
             4 => TYPE4_SIZES.contains(&(w, h)),
             5 => TYPE5_SIZES.contains(&(w, h)),
             _ => false,
         };
-        fmt == 12 && sized && t0 == T0_REP && t3 == T3_TW
+        // E958: type 3 of format 5 at its two held-out sizes
+        let f5 = ty == 3 && fmt == 5 && TYPE3_F5_SIZES_E958.contains(&(w, h));
+        (fmt == 12 && sized || f5) && t0 == T0_REP && t3 == T3_TW
     };
     if !ok {
         return open(format!(
             "T0 0x{t0:08x}, T1 0x{t1:08x}, T3 0x{t3:08x}: sRGB (E723), format 27 (E724) and types 1 and 3 \
-             (E725, E910, E940), 4 (E941) and 5 (E942) ran only with the state words and at the sizes of their \
+             (E725, E910, E940, E958), 4 (E941, E958) and 5 (E942) ran only with the state words and at the sizes of their \
              held-out jobs"
         ));
     }
@@ -489,7 +498,8 @@ impl Texture {
             // p1132 tx-types-risky: TEXTYPE 7 reads as twiddled; measured at 16x16 only
             7 if (w, h) == (16, 16) => None,
             // E725, E940: type 1 indexes a raster of w dwords per row, type 3 of max(8, w)
-            // (measured_r4 checked them)
+            // texels (E958: texels at format 5, so the row is set below from the texel's bytes;
+            // measured_r4 checked them)
             1 => Some(4 * w),
             3 => Some(4 * w.max(8)),
             // E941: type 4's 32 x 32 blocks (fetch); E942: type 5's bits (fetch)
@@ -499,7 +509,7 @@ impl Texture {
             t => return open(format!("texture type {t}")),
         };
         let (offset, shift) = t3_fields(t3, stride)?;
-        let tex = Texture {
+        let mut tex = Texture {
             w,
             h,
             format: t1 >> 24 & 31,
@@ -513,6 +523,10 @@ impl Texture {
             bits: t1 >> 29 == 5,
             srgb,
         };
+        if t1 >> 29 == 3 {
+            // E940, E958: max(8, w) texels a row, 8 dwords at format 12, 8 16-bit words at format 5
+            tex.row = Some(tex.bytes()? * w.max(8));
+        }
         if tex.format == 27 {
             // ETC1's blocks have their own order (Texture::etc1); measured_r4 checked the rest
             return Ok(tex);
@@ -2093,11 +2107,19 @@ mod tests {
                 assert!(is_open(texel(st, 8, 8, 1, 1, &mem)), "{st:08x?}");
             }
         }
-        // type 1 at a width that is not a power of two did not run (E940 ran type 3 only)
-        assert!(is_open(texel([T0_REP, t1(1, 12, 24, 8), 0x1000, T3_TW], 24, 8, 1, 1, &mem)), "type 1 24x8");
+        // type 1 at widths that are not powers of two ran at 24 and 40 only (E958)
+        assert!(is_open(texel([T0_REP, t1(1, 12, 48, 8), 0x1000, T3_TW], 48, 8, 1, 1, &mem)), "type 1 48x8");
+        // type 3 at a 16-bit format ran as format 5 at 4 x 8 and 8 x 8 only (E958)
+        for (f, w, h) in [(5, 16, 16), (5, 2, 8), (2, 4, 8), (9, 4, 8)] {
+            assert!(
+                is_open(texel([T0_REP, t1(3, f, w, h), 0x1000, T3_TW], w, h, 1, 1, &mem)),
+                "type 3 format {f} {w}x{h}"
+            );
+        }
         // type 4: E725's sizes were fitted only, 128 x 8 and 128 x 32 read half their columns
-        // (E910), sizes that are not multiples of 32 above 32 did not run (E941)
-        for (w, h) in [(8, 8), (16, 16), (32, 32), (128, 8), (128, 32), (96, 32), (64, 48)] {
+        // (E910), the sizes that are not multiples of 32 ran at 48 x 64, 80 x 64 and 96 x 32 only
+        // (E958)
+        for (w, h) in [(8, 8), (16, 16), (32, 32), (128, 8), (128, 32), (96, 64), (64, 48), (40, 32)] {
             assert!(
                 is_open(texel([T0_REP, t1(4, 12, w, h), 0x1000, T3_TW], w, h, 1, 1, &mem)),
                 "type 4 {w}x{h}"
@@ -2142,6 +2164,47 @@ mod tests {
                     Ok(vec![0xd000_0000 | (y * pitch + x)]),
                     "{ty} {w}x{h}"
                 );
+            }
+        }
+    }
+
+    #[test]
+    fn e958_type_4_rounds_a_partial_block_up_type_1_keeps_the_width_and_type_3_pads_texels() {
+        // E958 (held out): type 4 at widths that are not multiples of 32 keeps ceil(w / 32) whole
+        // 32 x 32 blocks a block row (H-CEIL, 7 of 7 windows of 48 x 64, 80 x 64 and 96 x 32;
+        // the width rounded up to a power of two failed 2, a partial block w mod 32 wide 5)
+        let mem = |a: u32| 0xd000_0000 | ((a - 0x1000) / 4);
+        for (w, h) in [(48, 64), (80, 64), (96, 32)] {
+            let st = [T0_REP, t1(4, 12, w, h), 0x1000, T3_TW];
+            for (x, y) in [(0, 0), (w - 1, h - 1), (40, 33 % h), (79 % w, 40 % h), (64 % w, 31)] {
+                let want = ((y / 32) * w.div_ceil(32) + x / 32) * 1024 + (y % 32) * 32 + x % 32;
+                assert_eq!(texel(st, w, h, x, y, &mem), Ok(vec![0xd000_0000 | want]), "{w}x{h} ({x}, {y})");
+            }
+        }
+        // 80 x 64: block row 1 starts at block 3 (not 4, the power of two's)
+        let st = [T0_REP, t1(4, 12, 80, 64), 0x1000, T3_TW];
+        assert_eq!(texel(st, 80, 64, 0, 32, &mem), Ok(vec![0xd000_0000 | 3072]));
+        // type 1 at 24 and 40 wide reads a raster of the width (2 of 2, not the power of two above)
+        for w in [24, 40] {
+            let st = [T0_REP, t1(1, 12, w, 8), 0x1000, T3_TW];
+            for (x, y) in [(0, 0), (w - 1, 1), (w / 2, 7)] {
+                assert_eq!(texel(st, w, 8, x, y, &mem), Ok(vec![0xd000_0000 | (y * w + x)]), "type 1 {w}x8");
+            }
+        }
+        // type 3 at format 5 (B5G6R5, two texels a dword, the low half first): rows max(8, w)
+        // texels apart (H-TX8, 2 of 2 at 4 x 8 and 8 x 8; 8 dwords apart failed both), each
+        // field widened by repeating its bits, alpha 0xff
+        let widen = |v: u32| {
+            let (b, g, r) = (v & 31, v >> 5 & 63, v >> 11 & 31);
+            (b << 3 | b >> 2) | (g << 2 | g >> 4) << 8 | (r << 3 | r >> 2) << 16 | 0xff << 24
+        };
+        for w in [4u32, 8] {
+            let st = [T0_REP, t1(3, 5, w, 8), 0x1000, T3_TW];
+            for (x, y) in [(0, 0), (1, 0), (w - 1, 3), (2, 7)] {
+                let k = y * 8.max(w) + x;
+                let dw = 0xd000_0000 | (k / 2);
+                let want = widen(dw >> (16 * (k & 1)) & 0xffff);
+                assert_eq!(texel(st, w, 8, x, y, &mem), Ok(vec![want]), "type 3 format 5 {w}x8 ({x}, {y})");
             }
         }
     }
