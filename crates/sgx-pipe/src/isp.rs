@@ -38,8 +38,9 @@ fn open(why: impl AsRef<str>, id: &str) -> Outcome {
 }
 
 /// floor(256 c + 0.5): the vertex grid and its rounding (E607), exact for c >= 0. A negative
-/// coordinate with a sub-grid fraction refuses (E607 tested x >= 0 only; Q199): on the grid it
-/// converts exactly.
+/// coordinate with a sub-grid fraction refuses (Q199, Q260): its tie rounds away from zero (E914,
+/// E943), but the pixels within 6.4e-4 pixel of a long edge go either way (E943, held out on
+/// none), so no image of such a vertex is exact; on the grid it converts exactly.
 pub fn snap(c: f64) -> Result<i64, Outcome> {
     if !c.is_finite() || c.abs() > 1.0e6 {
         return Err(open(
@@ -49,11 +50,11 @@ pub fn snap(c: f64) -> Result<i64, Outcome> {
     }
     let q = c * GRID as f64;
     if c < 0.0 && q.fract() != 0.0 {
-        return Err(open(
-            format!(
-                "window coordinate {c}: negative with a sub-grid fraction, the rounding there was not tested"
+        return Err(Outcome::unsupported(
+            &format!(
+                "window coordinate {c}: negative with a sub-grid fraction, rounded away from zero at a tie (E914, E943), but the pixels near a long edge are not modelled"
             ),
-            "Q199",
+            &["Q199", "Q260"],
         ));
     }
     Ok((q + 0.5).floor() as i64)
@@ -612,10 +613,12 @@ mod tests {
     }
 
     #[test]
-    fn a_negative_vertex_with_a_sub_grid_fraction_refuses_and_names_q199() {
+    fn a_negative_vertex_with_a_sub_grid_fraction_refuses_and_names_q199_and_q260() {
+        // the tie rounds away from zero (E914, E943), but the pixels within 6.4e-4 pixel of a
+        // long edge go either way (E943: 738 of 738 off pixels there): no image is exact
         for c in [-0.3 / 256.0, -3.3, -0.5 / 256.0] {
             match snap(c) {
-                Err(Outcome::Unsupported { ids, .. }) => assert_eq!(ids, ["Q199"], "{c}"),
+                Err(Outcome::Unsupported { ids, .. }) => assert_eq!(ids, ["Q199", "Q260"], "{c}"),
                 o => panic!("{c}: {o:?}"),
             }
         }
