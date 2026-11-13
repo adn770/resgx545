@@ -41,6 +41,71 @@ pub fn replay_word(int: u32, held: u32, list: u32, flushed: bool) -> Result<u32,
     Ok((held & !0xf) | list)
 }
 
+/// A client access through a page whose PTE flags debugfs `vm_pte_flags` set (Q108): the
+/// transfer's or the 3D's pixel write (`FAULT_REQ` bit 5), the transfer's texture read of a copy's
+/// source (bit 1), the render's read of its GENERAL page, the VDM stream, indices and vertices
+/// (bit 3).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PteAccess {
+    PixelWrite,
+    TextureRead,
+    StreamRead,
+}
+
+/// Where a PTE fault named its page: the mapping's first, or the last page the job wrote.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FaultPage {
+    First,
+    LastWritten,
+}
+
+/// A PTE fault: `BIF_INT_STAT`, the page `BIF_FAULT` names and its `SB`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PteFault {
+    pub int_stat: u32,
+    pub page: FaultPage,
+    pub sb: u32,
+}
+
+/// How a job's access ends under PTE flags `pte` (WO 0x2, RO 0x4, CACHED 0x8, EDMPROT 0x10):
+/// whether its pixels were written and the fault, if any.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PteEnd {
+    pub written: bool,
+    pub fault: Option<PteFault>,
+}
+
+/// The measured PTE flags (E945, the r8-k2 triangle rows, frozen; E946, the transfer rows, read
+/// post hoc; READONLY on a fill's write is E946's isolation control): WRITEONLY lets the pixel
+/// writes land and then faults at the last page written (`SB` 31) and faults the texture and
+/// stream reads before anything is drawn; CACHECONSISTENT changes nothing either read showed;
+/// EDMPROTECT faults a pixel write (`FAULT_TYPE` 2) and lets the stream read through. Any other
+/// flag and access is refused (Q108).
+pub fn pte_access(pte: u32, access: PteAccess) -> Result<PteEnd, Outcome> {
+    use FaultPage::*;
+    use PteAccess::*;
+    let fault = |int_stat, page, sb| PteEnd {
+        written: page == LastWritten,
+        fault: Some(PteFault { int_stat, page, sb }),
+    };
+    let clean = PteEnd { written: true, fault: None };
+    Ok(match (pte, access) {
+        (0, _) => clean,
+        (0x2, PixelWrite) => fault(0x80020, LastWritten, 31),
+        (0x2, StreamRead) => fault(0x80008, First, 0),
+        (0x6, TextureRead) => fault(0x80002, First, 0),
+        (0x4, PixelWrite) => fault(0x80020, First, 0),
+        (0x8, StreamRead) | (0xc, TextureRead) | (0x10, StreamRead) => clean,
+        (0x10, PixelWrite) => fault(0xa0020, First, 0),
+        _ => {
+            return Err(Outcome::unsupported(
+                &format!("PTE flags {pte:#x} on {access:?}: not run (E945, E946)"),
+                &["Q108"],
+            ));
+        }
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -88,5 +153,44 @@ mod tests {
         assert!(refused(0x90004, 0x2000_a062, 1, false), "a fault through list 2");
         assert!(refused(0x90004, 0x2000_a061, 3, false), "list 3 never ran");
         assert!(refused(0x90004, 0x2000_6061, 2, true), "flushed, list 2 at 288 x 144: not run");
+    }
+
+    #[test]
+    fn pte_flags_end_each_measured_access_as_the_r8_k2_rows() {
+        // E945 (r8-k2 stage tri, frozen) and E946 (stage xf, read post hoc): the job's pixels
+        // written or not, BIF_INT_STAT, the faulting page (the mapping's first or the image's
+        // last) and SB
+        use PteAccess::*;
+        let fault = |int_stat, page, sb| Some(PteFault { int_stat, page, sb });
+        let rows: &[(&str, u32, PteAccess, bool, Option<PteFault>)] = &[
+            ("tri-wo-fb", 0x2, PixelWrite, true, fault(0x80020, FaultPage::LastWritten, 31)),
+            ("xf-wo-fill", 0x2, PixelWrite, true, fault(0x80020, FaultPage::LastWritten, 31)),
+            ("tri-wo-gen", 0x2, StreamRead, false, fault(0x80008, FaultPage::First, 0)),
+            ("xf-wo-copy", 0x6, TextureRead, false, fault(0x80002, FaultPage::First, 0)),
+            ("tri-cc-gen", 0x8, StreamRead, true, None),
+            ("xf-cc-copy", 0xc, TextureRead, true, None),
+            ("tri-edm-fb", 0x10, PixelWrite, false, fault(0xa0020, FaultPage::First, 0)),
+            ("xf-edm-fill", 0x10, PixelWrite, false, fault(0xa0020, FaultPage::First, 0)),
+            ("tri-edm-gen", 0x10, StreamRead, true, None),
+            ("xf-c-ro", 0x4, PixelWrite, false, fault(0x80020, FaultPage::First, 0)),
+        ];
+        for (row, pte, access, written, fault) in rows {
+            assert_eq!(pte_access(*pte, *access), Ok(PteEnd { written: *written, fault: *fault }), "{row}");
+        }
+        for access in [PixelWrite, TextureRead, StreamRead] {
+            assert_eq!(pte_access(0, access), Ok(PteEnd { written: true, fault: None }));
+        }
+    }
+
+    #[test]
+    fn pte_flags_no_row_ran_are_refused() {
+        use PteAccess::*;
+        let refused = |p, a| matches!(pte_access(p, a), Err(Outcome::Unsupported { .. }));
+        assert!(refused(0x2, TextureRead), "WO alone on a texture read: not run (RO|WO was)");
+        assert!(refused(0x8, PixelWrite), "CACHED on a write: not run");
+        assert!(refused(0x10, TextureRead), "EDMPROT on a texture read: not run");
+        assert!(refused(0x12, PixelWrite), "two knob flags together: not run");
+        assert!(refused(0x4, StreamRead), "READONLY on a read: not in these rows");
+        assert!(refused(0x1, PixelWrite), "VALID is no flag");
     }
 }

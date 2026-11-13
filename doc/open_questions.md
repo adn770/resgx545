@@ -11,7 +11,7 @@
 ### bif
 
 - `Q076` (phase 11, hw, high): which pages does each bus-interface requestor of a render (the TA, the 3D, the EDM's PB load) need in the directory of the list it translates through (TA3DCtl writable; each of the buffers 6, 7, 8, 10 and 11 alone is not needed: E457), which of the 16 directory lists does each use, and what does a job do whose list was given to another context while it ran? (E021, E023, E151, E303, E314, E315, E316, E319, E360, E457, E573, E592, E745, E761)
-- `Q108` (phase 11, hw, medium): what do the page table entry flags WRITEONLY, CACHECONSISTENT and EDMPROTECT do on the hardware, which of the bus interface's requestors do they stop, and what does the fault report? (E021, E151, E319)
+- `Q108` (phase 11, hw, medium): what do the page table entry flags WRITEONLY, CACHECONSISTENT and EDMPROTECT do on the hardware, which of the bus interface's requestors do they stop, and what does the fault report? (E021, E151, E319, E945, E946)
 - `Q109` (phase 11, hw, low): do page directory entries whose page-size field (bits 3:1) names 16 KiB to 4 MiB translate on the hardware, and with which address mask and which table layout? (E021, E151)
 - `Q110` (phase 11, hw, low): what do the bus interface's tiled address ranges (BIF_TILE0 and up: start, end, stride) do to the addresses of a requestor whose accesses fall inside one? (E021, E151, E246)
 

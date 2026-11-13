@@ -7549,12 +7549,36 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   (blkrow) predicts the wrong-tile sets and every header slot (11 of 11 rows decided)'.
   *ta; HW; data: `render-closing-r8-lgeo:out/20261113-024441/q139/`, `ta-mtile-fields`,
   `ta-mtile-fields-risky`.*
+- `E945` R8-k2 stage tri (Q108; the 64 x 64 triangle with one PTE flag on its colour target or its
+  GENERAL page, 7 renders, both knob-free controls exact): WRITEONLY faulted both rows, the colour
+  target after the whole image was written (exact pixels, BIF_INT_STAT 0x80020 at the target's last
+  page, SB 31) and the GENERAL page's read before anything was drawn (0x80008 at that page);
+  CACHECONSISTENT on the GENERAL page changed nothing (exact); EDMPROTECT faulted the colour write
+  at the target's first page (0xa0020, FAULT_TYPE 2, nothing written) and let the GENERAL page's
+  read through (exact); frozen verdicts 'H-WO-ALL (WRITEONLY faults every access) (2 of 2 rows
+  decided)', H-WO 'not supported: 1 held, 1 FAILED', H-WO-NONE 0 of 2, 'H-CC-NEW (1 of 1 rows
+  decided)', H-CC-STALE refuted, H-EDM-NONE and H-EDM-CLIENT each '1 held, 1 FAILED' (EDMPROTECT
+  stops the 3D's write, not the stream's read).
+  *bif; HW, infer; data: `render-closing-r8-k2:out/20261113-032428/tri/`,
+  `render-closing-r8-k2:out/fold/`.*
+- `E946` R8-k2 stage xf (Q108; a fill's destination and a copy's read-only source with one PTE flag,
+  9 jobs): every frozen verdict 'cannot tell: controls: xf-c-end: cannot tell', since the stage's
+  fourth fault (the isolation control's, then WRITEONLY's fill, EDMPROTECT's fill and RO|WO's copy)
+  reached its #limit 4 with the end control left, so it never ran; read after the run, every other
+  control passed and the rows read as E945's: WRITEONLY's fill wrote its whole image then faulted at
+  the image's last page (0x80020, SB 31), RO|WO's copy faulted its texture read at the source's
+  first page (0x80002, nothing written), CACHECONSISTENT on the copy's source changed nothing
+  (exact), EDMPROTECT's fill faulted at the first page (0xa0020, nothing written); the tool's
+  isolation redid E021's read-only write fault (0x80020 at page 0x3e200000) [HW, post hoc].
+  *bif; HW, infer; data: `render-closing-r8-k2:out/20261113-032428/xf/`,
+  `render-closing-r8-k2:out/fold/`.*
 
 ## By unit
 
 ### bif
 
-Records: E151, E457, E573, E592, E745, E761, E767, E789, E826, E848, E891, E892, E901, E919, E920.
+Records: E151, E457, E573, E592, E745, E761, E767, E789, E826, E848, E891, E892, E901, E919, E920,
+E945, E946.
 
 ### dpm
 

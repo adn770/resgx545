@@ -52,7 +52,7 @@ list.
 - `Q047` vdm, high: what do VDM_STATE1 bit 8, bits 11:9 and bits 15:13 select for a state task, when
   on the one-triangle job bit 8 changes nothing, bits 11:9 ... (E427, E440, E545)
 - `Q108` bif, medium: what do the page table entry flags WRITEONLY, CACHECONSISTENT and EDMPROTECT
-  do on the hardware, which of the bus interface's requestors do ... (E021, E151, E319)
+  do on the hardware, which of the bus interface's requestors do ... (E319, E945, E946)
 - `Q081` dpm, medium: what does CR_DPM_REG_074C bit 8 make the DPM read or write near offset 0x6010
   of the context's TA-data space, and what fixes that place? (E313, E362, E447)
 - `Q103` dpm, medium: why does a scene of 100 to 500 triangles take 35 or more partial renders where
@@ -339,9 +339,15 @@ list.
 
 ## Recent records
 
-88 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+90 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E946` bif, 2026-11-13: R8-k2 stage xf (Q108; a fill's destination and a copy's read-only source
+  with one PTE flag, 9 jobs): every frozen verdict 'cannot tell: controls: xf-c-end: cannot tell',
+  since the stage's fourth ...
+- `E945` bif, 2026-11-13: R8-k2 stage tri (Q108; the 64 x 64 triangle with one PTE flag on its
+  colour target or its GENERAL page, 7 renders, both knob-free controls exact): WRITEONLY faulted
+  both rows, the colour target after ...
 - `E944` ta, 2026-11-13: R8-lgeo stage q139 (Q139; 20 TA-dump jobs at 256 x 256, 640 x 480 and 1280
   x 720, one --kpoke-render of the stride or a macrotile word inside the ranges that drew without a
   fault in the kept data, no ...
@@ -609,11 +615,13 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-34 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+35 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
 - `render/closing-r8-lgeo`: 2026-11-13; module 37EC97AB0CB37213C42FCCC; tools ~/sgxfive-test-rgn4
 - `render/closing-r8-ldpm`: 2026-11-13; module 37EC97AB0CB37213C42FCCC; tools ~/sgxfive-test-rgn4
+- `render/closing-r8-k2`: 2026-11-13; module B60AB0B475DD1E8972419B5; fork r8-kernel at 2a650d74;
+  tools ~/sgxfive-test-rgn4
 - `render/closing-r8-geo`: 2026-11-13; module 37EC97AB0CB37213C42FCCC; tools ~/sgxfive-test-rgn4
 - `render/closing-r7-rp`: 2026-11-12; module 41E2F5C756F96D20F7109A4; tools ~/sgxfive-test-rgn4
 - `render/closing-r7-geo`: 2026-11-12; module 41E2F5C756F96D20F7109A4; tools ~/sgxfive-test-rgn4
@@ -666,6 +674,8 @@ srcversion, fork tip, laptop tools.
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 1 sessions, fork r8-kernel at
+  2a650d74
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at
   3f0b3e74
 - module srcversion 99CD90DA26E3AFF9C450517: last named 2026-11-12, 14 sessions, fork resgx545 at
