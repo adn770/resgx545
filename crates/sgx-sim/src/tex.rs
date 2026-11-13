@@ -75,7 +75,7 @@ pub fn sample(s: &Sample, load: &mut Load) -> Result<Vec<u32>, Fail> {
     if tex.format == 27 || tex.srgb {
         // E723, E724: point samples of level 0, as Texture::new admits them; E982: sRGB bilinear
         if levels != [(0, 64)] || s.pcf.is_some() || s.srd != Srd::None || bilinear && tex.format == 27 {
-            return open("ETC1 or sRGB blended, with .pcf or an SRD mode, or ETC1 filtered (not run)");
+            return open("ETC1 or sRGB blended, with .pcf or an SRD mode, or ETC1 filtered (not run; Q282)");
         }
         if bilinear {
             return Ok(vec![tex.srgb_bilinear(u, v, s.one_d, load)?]);
@@ -386,9 +386,10 @@ fn half_value(h: u32) -> f64 {
 }
 
 /// One lerp stage of a bilinear sRGB sample (E982: exact on r9-x's 16384 single-stage halves,
-/// held out offline on three two-stage fills): at weight 0 the first half unchanged; else both
-/// halves floored to the ulp of the larger one (an 11-bit mantissa at its exponent), lerped
-/// exactly by k / 64 towards `b`, and rounded to a half, nearest with ties up.
+/// held out offline on three two-stage fills; a later held-out row missed it, Q282): at weight
+/// 0 the first half unchanged; else both halves floored to the ulp of the larger one (an 11-bit
+/// mantissa at its exponent), lerped exactly by k / 64 towards `b`, and rounded to a half,
+/// nearest with ties up.
 fn srgb_stage(a: u32, b: u32, k: u32) -> u32 {
     if k == 0 {
         return a;
@@ -483,7 +484,7 @@ fn measured_r4(t0: u32, t1: u32, t3: u32) -> Result<(), Fail> {
         return open(format!(
             "T0 0x{t0:08x}, T1 0x{t1:08x}, T3 0x{t3:08x}: sRGB (E723), format 27 (E724) and types 1 and 3 \
              (E725, E910, E940, E958), 4 (E941, E958) and 5 (E942) ran only with the state words and at the sizes of their \
-             held-out jobs"
+             held-out jobs (sRGB bilinear: E982's rule on E723's fills only, Q282)"
         ));
     }
     Ok(())
@@ -2089,6 +2090,14 @@ mod tests {
             [0x0800_0e00, t1(6, 12, 16, 4), 0x1000, T3_ST],
         ] {
             assert!(is_open(texel(st, 8, 8, 1, 1, &mem)), "{st:08x?}");
+        }
+        // bilinear sRGB past E723's fills names Q282 (a held-out row missed E982's rule)
+        for st in [
+            [T0_REP | 1 << 27 | 1 << 12, t1(0, 12, 8, 8), 0x1000, T3_TW],
+            [T0_SRGB_BL_STRIDE8, t1(6, 12, 8, 4), 0x1000, T3_ST],
+        ] {
+            let e = texel(st, 8, 8, 1, 1, &mem).unwrap_err();
+            assert!(format!("{e:?}").contains("Q282"), "{e:?}");
         }
         // the registers after the first are not known (E723's r11 reads: no model)
         assert!(unknown_after(tw8).is_some());

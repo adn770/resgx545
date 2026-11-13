@@ -74,7 +74,7 @@ E566), why are the rows of bits 27 and 28 exact under 'after the source's height
 64x32 but under no declared rule at a strided 32x32, and what do bits 11 and 12 select, given that
 they change nothing on a strided texture and every pixel of a twiddled chain texture?". Dropped:
 T0 bit 27, which E723 answers for point samples (a texel byte decoded sRGB to half, 4 of 4
-held-out fills; the bilinear part is E982), and bits 10, 18-19 and 27-28, whose transform is
+held-out fills; the bilinear part is Q282), and bits 10, 18-19 and 27-28, whose transform is
 E722's level and scale model held out on 13 of 13 fills that completed (the spec gives it with its
 limits, which stay there). Bit 14 is narrowed by E968: on E566's kept strided jobs the read is the
 dword plus 32 plus 64 per column at W = S = 64, six frozen forms held out offline at 64 x 16 (2048

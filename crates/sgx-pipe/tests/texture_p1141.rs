@@ -6,7 +6,8 @@
 //! every such job (64 x 32 each) is sampled with the job's state words, coordinates and texels
 //! (`gen/cases.json`: the scratch dword i is 0xD0000000 | i unless the job injected it) and the
 //! first register the sample writes must equal the recorded o0. The bilinear sRGB fills follow
-//! E982's stage rule (fitted on r9-x's single-stage rows, frozen before either fill was scored);
+//! E982's stage rule (fitted on r9-x's single-stage rows, frozen before either fill was scored;
+//! Q282 stays open: a later held-out row missed it);
 //! type 4 (its stride fitted only, E725) must stay refused.
 
 use sgx_pipe::data::Ctx;

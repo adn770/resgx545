@@ -91,7 +91,8 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   decode then filter 1147 and 876 of 2048, 2 held-out fills). **Each lerp stage floors both
   halves to the larger one's ulp, lerps exactly and rounds to nearest with ties up** (weight
   0 returns the first half unchanged), x then y: fitted on single stages and held out offline on
-  three two-stage fills, every pixel, with weights on the 1/64 grid (E982).
+  three two-stage fills, every pixel, with weights on the 1/64 grid (E982); a later held-out row
+  missed it (Q282).
 - **ETC1 (format 27; E724).** **Format 27 is ETC1 with the 4 x 4 blocks in Morton order, y in the
   low bit** (6 of 6 held-out fills of random valid blocks exact over 2048 pixels, 8 x 8 to 32 x
   16; raster block order and Morton with x low 0 of 6). Formats 23 to 26 are not decoded.
@@ -143,6 +144,6 @@ for a job that records the colour-space set as unloaded.
 **Undecided:** why type 3 pads to 8 texels and the other 16-bit and 8-bit formats on types 1, 3
 and 4 (E958 ran format 5 on type 3), type 5 with other formats, the LOD fraction's residual
 (Q280), the border modes on the u axis, formats 23 to 26 and the YUV conversion in a fill,
-sRGB under bilinear filtering off the 1/64 weight grid and on subnormal halves (E982), the cube
+sRGB under bilinear filtering beyond E982's rule (Q282), the cube
 map's edges and (s, t) within a face (Q284), `smp3d`
 beyond the textures it ran on, `.sinf`/`.rsd`, and state from `sa` or `c`.

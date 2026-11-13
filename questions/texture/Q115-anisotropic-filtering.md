@@ -37,4 +37,4 @@ the "fit by a search on 6 jobs" caveat for the form and the rounding, not for th
 precision: the 8 jobs have weights on the 1/64 grid (precision 64, 128 and 256 give identical
 images), so the truncation to 1/64 rests on the landed vectors and the 11.32 jobs. Anisotropy is
 unchanged and open. With the sRGB bit the bilinear order is not known (E723; the sRGB stage rule is
-E982).
+E982, still open as Q282).
