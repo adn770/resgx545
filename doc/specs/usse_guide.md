@@ -4854,8 +4854,9 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   sources) clamps to the edge whatever the modes say. On a twiddled texture (type 0) **0
   repeats, 1 mirrors (period twice the size), 2 clamps to the edge, 3 mirrors once** (the
   absolute coordinate, then clamped); bits 2:0 do not act on `u`. **Modes 4-7 (E565):** on the
-  v axis 6 and 7 clamp and 4 and 5 repeat; on the u axis they read other texels, some of them
-  past the texture, which none of clamp, nomask or border fits (Q177).
+  v axis 6 and 7 clamp and 4 and 5 repeat (held out at a pitch of one texel, E932); on the u axis
+  none of clamp, nomask or border fits, and every read is the v rule's index plus 180 dwords in
+  modes 4, 6 and 7 (post hoc, at three bases, E932); mode 5 past the texture is open (Q177).
 - **Twiddled layout (`texture-sampler-smp-twiddled`).** Texel `(x, y)` lies at the Morton index with
   **`y` in
   bit 0, `x` in bit 1**, and so on; a non-square texture puts the longer side's extra bits
@@ -4931,8 +4932,11 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   cube-map table** (+x s = -w, t = -v; -x s = +w, t = -v; +y s = +u, t = +w; -y s = +u, t = -w;
   +z s = +u, t = -v; -z s = -u, t = -v; over |ma|, texel floor((q + 1) / 2 * 16), Morton with t
   in bit 0), fitted on E726 and held out on E844's jobs at 4090 of 4096 pixels, the misses exact
-  texel boundaries at a |ma| not a power of two (E923). The ties, face edges and other face
-  sizes: Q284.
+  texel boundaries at a |ma| not a power of two (E923); held out on hardware on four new 16 x 16
+  programs and at 8 x 8 faces (the rule with 8 for 16, faces 64 dwords apart); 32 x 32 faces read
+  the fifth bits of s and t in the other order (post hoc, E930). A tie of |w| and |u| read w's
+  face, and bilinear at a face edge mixes in another face's texel (readings, E931). The ties and
+  the edge taps: Q284.
   Type 5 at 16 x 16 returned no texel: 0 at x mod 16 below 8 and `0x0000ffff` above in every row,
   under `smp2d` and `smp3d` alike, with every texel naming its offset (E894, E567's dumps read post
   hoc). **Type 5 reads the texture memory**: with the texture's first 112 dwords stored 0 the

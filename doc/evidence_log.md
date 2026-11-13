@@ -7372,6 +7372,65 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   (post hoc).
   *texture; HW, infer; data: `texture-isp-msaa-verification-1141`,
   `render-closing-r4-render4x:out/20261111-211315/c/`, `cited-scratch:closing8/rank/`.*
+- `E930` R8-geo stage cube (Q284; 13 probe fills of TEXTYPE 2 point-sampled by smp3d, E726's cu-xn
+  as the control, no fault): the cube-face (s, t) rule frozen offline (E923, q284_rule.json
+  52162471...) held out on 4 of 4 new off-axis programs at 16 x 16 (6777 of 6777 predicted pixels,
+  all six faces between them) and, with the same rule at N = 8 (texel floor((q + 1) / 2 * 8), 3-bit
+  Morton, faces 64 dwords apart), on 3 of 3 programs at 8 x 8 faces; at 32 x 32 faces (faces 1024
+  dwords apart, the frozen part held) it failed 3 of 3 (718, 783 and 921 of 1436, 1585 and 1810
+  pixels); frozen verdicts 'the frozen q284 rule held out (4 of 4 rows decided)' and 'the rule with
+  N = 8, 32 held out is not supported: 3 held, 3 FAILED, 0 cannot tell of 6'; post hoc, every
+  predicted pixel of the three 32 x 32 jobs (4831 of 4831) reads the rule's index with the fifth
+  bits of s and t in the other order (bits 8 and 9 swapped against a 5-bit Morton) [fitted].
+  *texture; HW, infer; data: `render-closing-r8-geo:out/20261113-015842/cube/`,
+  `render-closing-r8-geo:out/fold/`.*
+- `E931` R8-geo stage cube, ties and edges (Q284; 8 probe fills of TEXTYPE 2 by smp3d, no fault,
+  readings of the frozen plan with no rule frozen but the edge rivals): at a face tie |w| = |u|
+  (column 32 of two w sweeps at 1/1024 a column, u = +0.75 and -0.75) all 64 tie pixels read the +z
+  face (w's, whatever u's sign); at exact texel boundaries the direction depends on the boundary,
+  not on |ma| among 1.75, 1.625 and 1.875 (s boundaries 4 to 8 and 11 and t 5 to 8 and 11 the upper
+  texel, s 9, 10 and t 9, 10, 12 the lower, the same 8 of 16 counts in all three jobs) while at |ma|
+  0.90625 every boundary goes up; bilinear (T0 0x07fe1400) at a face edge, frozen H-CLAMP against
+  H-SEAM: in cube-edge-dz the 'in' pixels blend (768 of 768) and every 'out' pixel reads a G byte
+  other than its face (128 of 128, G 3 on face 4): H-SEAM held, H-CLAMP failed; cube-edge-dx cannot
+  tell (256 of 768 'in' pixels blended, under the frozen half), its 96 'out' pixels G 1 on face 0;
+  frozen verdicts 'H-CLAMP ... is not supported: 0 held, 1 FAILED, 1 cannot tell of 2', 'H-SEAM
+  (taps from the neighbour face) [infer] (1 of 2 rows decided)'.
+  *texture; HW, infer; data: `render-closing-r8-geo:out/20261113-015842/cube/`,
+  `render-closing-r8-geo:out/fold/`.*
+- `E932` R8-geo stage addr (Q177; 9 probe fills of E565's 16 x 16 twiddled texture at page 12 of a
+  24-page scratch whose every dword is named, the swept axis over 128 positions at one texel a step,
+  no fault): on the v axis modes 4 and 5 repeat and modes 6 and 7 clamp (H-MASK-V, E565's v reading,
+  held out at a pitch of one texel: 4 of 4, 2048 of 2048 pixels each); on the u axis H-MASK-V,
+  H-NOMASK-PAGE and H-BORDER all failed 4 of 4; the mode 0 control read the repeat image at page 12
+  (PASS); frozen verdicts 'H-MASK-V on the v axis (4 of 4 rows decided)' and, on u, '0 held, 4
+  FAILED' for each rival; post hoc, every u job's index is H-MASK-V's plus 180 dwords inside the
+  texture (256 of 256) and on all 2048 pixels in modes 4, 6 and 7, as in E565's kept u jobs at base
+  0 and page 1 (bd-u4, u6, u7, hb-u4: 2048 of 2048 each) [fitted]; mode 5 outside the texture reads
+  other dwords.
+  *texture; HW, infer; data: `render-closing-r8-geo:out/20261113-015842/addr/`,
+  `render-closing-r8-geo:out/fold/`, `texture-p1132-tx-border`.*
+- `E933` R8-geo stage vdm (Q271; 8 renders of E703's capacity form, probe --tri pixpds:12 with 126
+  vertices, VDM word 7 SET by --vdm 7=V rather than xored, no fault or hang): word 7 set to its
+  natural value (rows 3 at N = 8 V = 4, 0x03c00082; rows 2 at N = 2 V = 2, 0x02c00082) leaves the
+  image of the natural job (the controls, 2 of 2 PASS); rows set to 3 at N = 2 V = 2 (natural + 1, R
+  V = 6) change the image, the same way in both replicates (H-LAYOUT held 2 of 2, H-COUNT refuted 2
+  of 2); rows set to 2 at N = 8 V = 8 (natural - 1, a reading) change it too; frozen verdicts
+  'H-COUNT (rows a count) is not supported: 0 held, 2 FAILED, 0 cannot tell of 2' and 'H-LAYOUT
+  (rows a stride) (2 of 2 rows decided)'.
+  *vdm; HW, infer; data: `render-closing-r8-geo:out/20261113-015842/vdm/`,
+  `render-closing-r8-geo:out/fold/`.*
+- `E934` R8-geo stage seam (Q141; 24 tri renders with E504's pokes, CR_TE_AA in cmd:1): every job
+  whose CR_TE_AA had bit 31 or 30 set (0x60000000, 0xa0000000, 0xe0000000: 23 of 24) was rejected at
+  submission (the tool's 'job: rejected (Invalid argument)', 0xdeadbeef in every pixel), so no
+  held-out row ran and the control ctl-a-m1-6-64x64 read no hole set (FAILED); the one job with
+  0x20000000 ran and stored no hole as frozen; frozen verdicts 'controls FAILED: ctl-a-m1-6-64x64:
+  FAILED' for H-REGION and H-UNION; the cause, read after the run: the rows did not pass the tool's
+  --aa4, and the module (since fork a2788bd8, round 4) refuses a multisampled TE_AA from a render
+  context not created for 4x targets (sgxfive_render_check) [infer from the source]; Q141 is not
+  answered.
+  *isp; HW, infer; data: `render-closing-r8-geo:out/20261113-015842/seam/`,
+  `render-closing-r8-geo:out/fold/`.*
 
 ## By unit
 
@@ -7408,7 +7467,7 @@ E215, E216, E217, E218, E219, E220, E222, E224, E225, E226, E227, E228, E229, E2
 E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E290, E291, E330,
 E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E508, E510, E590,
 E606, E607, E618, E660, E661, E662, E680, E681, E682, E683, E684, E727, E728, E731, E739, E740,
-E741, E757, E758, E762, E825, E827, E829, E912, E913, E914, E922.
+E741, E757, E758, E762, E825, E827, E829, E912, E913, E914, E922, E934.
 
 ### mte
 
@@ -7452,7 +7511,7 @@ E865, E872, E877, E879, E886, E888, E893, E897, E906, E907, E908.
 Records: E033, E034, E035, E036, E037, E038, E039, E040, E041, E042, E114, E116, E242, E254, E271,
 E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441, E560, E561, E562,
 E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E726, E733, E743,
-E744, E760, E765, E787, E844, E894, E910, E911, E923.
+E744, E760, E765, E787, E844, E894, E910, E911, E923, E930, E931, E932.
 
 ### transfer
 
@@ -7478,7 +7537,7 @@ E570, E571, E572, E593, E594, E595, E596, E597, E598, E599, E707, E708, E820, E8
 ### vdm
 
 Records: E059, E060, E184, E185, E186, E187, E189, E190, E191, E188, E299, E300, E318, E346, E349,
-E413, E414, E427, E440, E545, E546, E700, E701, E702, E703, E737, E738, E755, E756.
+E413, E414, E427, E440, E545, E546, E700, E701, E702, E703, E737, E738, E755, E756, E933.
 
 ### zls
 

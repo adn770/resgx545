@@ -5,7 +5,7 @@ unit = "texture"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E726", "E567", "E844", "E923"]
+evidence = ["E726", "E567", "E844", "E923", "E930", "E931"]
 terms = ["TEXTYPE"]
 +++
 E726: the six faces are six consecutive 256-dword blocks in the order +x, -x, +y, -y, +z, -z for a
@@ -34,3 +34,15 @@ upper texel every time), and no rounding of the reciprocal and product tried fit
 pairs. What stays: that tie rule, a tie between the two largest magnitudes (never run), bilinear
 filtering across a face edge, and faces of 8 x 8 and 32 x 32, which session r8-geo's R8-2 rows
 test ((b) the sizes, (c) the ties, (d) the edge); the question retires when they are decided.
+
+Narrowed 2026-11-13 (round 8, session r8-geo, decision R8-4 a; E930, E931). On hardware rows never
+used for a fit, E923's (s, t) rule held out on four new off-axis 16 x 16 programs (all six faces)
+and, as the same rule with N = 8, on three programs at 8 x 8 faces (faces 64 dwords apart). At 32
+x 32 faces sit 1024 dwords apart but the local index is not the 5-bit Morton: post hoc, the fifth
+bits of s and t sit in the other order (4831 of 4831 pixels, fitted). Readings: a face tie |w| =
+|u| went to w's face for both signs of u (64 of 64); exact texel boundaries at |ma| 1.75, 1.625 and
+1.875 go up or down by the boundary in one pattern, at 0.90625 always up (post hoc pattern);
+bilinear at a face edge read a G byte of another face in the one decided job (H-SEAM held, H-CLAMP
+failed; the other job cannot tell). Not retired: what stays is the 32 x 32 index held out, the
+face-tie rule for other axis pairs, the texel-tie rule, and which neighbour texels an edge's taps
+take.

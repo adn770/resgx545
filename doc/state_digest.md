@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-164 open: 154 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+163 open: 153 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -142,7 +142,7 @@ list.
 - `Q180` texture, medium: why did all 28 triangle jobs of the four-component DOUTI0 probes hang
   (E569), the two controls with the old source word 0x40800801 included ... (E420, E541, E569)
 - `Q284` texture, medium: what does a TEXTYPE 2 cube sample read at an exact texel boundary when
-  |ma| is not a power of two (E923: 14 of 207 such pixels one texel ... (E726, E844, E923)
+  |ma| is not a power of two (E923: 14 of 207 such pixels one texel ... (E923, E930, E931)
 - `Q003` transfer, medium: which event (if any) does a bus-interface fault raise, and what do the
   fault-request bits of CR_BIF_INT_STAT name, what clears a latched ... (E901, E919, E920)
 - `Q011` transfer, medium: why does a copy whose background-object tag (transfer word 0) is wrong
@@ -186,8 +186,6 @@ list.
   captured lists, and does the TA take indices wider than the 16 ... (E414, E737, E756)
 - `Q163` vdm, medium: what is the state the jobs leave that decides whether a job with VDM_STATE1
   bits 11:9 other than 2 hangs (E700: a counter c, cleared by a ... (E545, E700, E701)
-- `Q271` vdm, medium: what does VDM_TASK1 bits 31:24 do when it is forced to differ from the natural
-  (4 + N + 3) / 4 of the vertex's N outputs (E703: the render ... (E546, E702, E703)
 - `Q107` zls, medium: why does the final render of a job that overflows store zeros for the first
   row of macrotiles and the depth with its sign bit set for the ... (E489, E628, E629)
 - `Q120` zls, medium: what do the stored depth formats 3 to 7 (CR_ISP_ZLSCTL bits 26:24) hold and
@@ -219,7 +217,7 @@ list.
 - `Q072` isp, low: what does bit 1 of CR_ISP_REG_04DC do to a punch-through pass, when it hangs
   every one tried and changes no opaque or translucent pass? (E222, E290, E416)
 - `Q141` isp, low: do the background pixels of a multisampled render under the full triangle hold
-  out as the seam holes of the region model (E922: every one ... (E727, E762, E922)
+  out as the seam holes of the region model (E922: every one ... (E762, E922, E934)
 - `Q201` isp, low: why does the position source (E437, E502: x + 0.375, y + 0.125 in mode 0 and
   every multisampling mode tried) differ from the point at which ... (E437, E502, E606)
 - `Q241` isp, low: what do ISP word 0 bits 15, 16, 17 and 18, the depth compares 2, 3, 5 and 6
@@ -267,7 +265,7 @@ list.
 - `Q115` texture, low: does the sampler filter anisotropically on this core, and which bits of the
   texture words or the smp operands select it and its ratio? (E564, E720, E723)
 - `Q177` texture, low: what do T0 address modes 4 to 7 read along the u axis of a 16x16 twiddled
-  texture (indices 324 to 366 past the 256 texels, a period of 6 or ... (E033, E565)
+  texture (indices 324 to 366 past the 256 texels, a period of 6 or ... (E033, E565, E932)
 - `Q178` texture, low: what does TEXTYPE 5 compute from the texture memory it reads (two values, 0
   and 0x0000ffff, that follow the stored dwords, a 16-column step ... (E726, E894, E911)
 - `Q179` texture, low: how are the blocks and the data bits of formats 23 to 26 laid out (a data bit
@@ -343,9 +341,24 @@ list.
 
 ## Recent records
 
-73 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+78 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E934` isp, 2026-11-13: R8-geo stage seam (Q141; 24 tri renders with E504's pokes, CR_TE_AA in
+  cmd:1): every job whose CR_TE_AA had bit 31 or 30 set (0x60000000, 0xa0000000, 0xe0000000: 23 of
+  24) was rejected at submission ...
+- `E933` vdm, 2026-11-13: R8-geo stage vdm (Q271; 8 renders of E703's capacity form, probe --tri
+  pixpds:12 with 126 vertices, VDM word 7 SET by --vdm 7=V rather than xored, no fault or hang):
+  word 7 set to its natural value ...
+- `E932` texture, 2026-11-13: R8-geo stage addr (Q177; 9 probe fills of E565's 16 x 16 twiddled
+  texture at page 12 of a 24-page scratch whose every dword is named, the swept axis over 128
+  positions at one texel a step, no fault): ...
+- `E931` texture, 2026-11-13: R8-geo stage cube, ties and edges (Q284; 8 probe fills of TEXTYPE 2 by
+  smp3d, no fault, readings of the frozen plan with no rule frozen but the edge rivals): at a face
+  tie |w| = |u| (column 32 of two ...
+- `E930` texture, 2026-11-13: R8-geo stage cube (Q284; 13 probe fills of TEXTYPE 2 point-sampled by
+  smp3d, E726's cu-xn as the control, no fault): the cube-face (s, t) rule frozen offline (E923,
+  q284_rule.json 52162471...) held ...
 - `E923` texture, 2026-11-13: Round 8 offline (Q284; no run): the (s, t) of TEXTYPE 2's cube faces
   under smp3d is the public cube-map table (+x s = -w, t = -v; -x s = +w, t = -v; +y s = +u, t = +w;
   -y s = +u, t = -w; +z s = +u, t ...
