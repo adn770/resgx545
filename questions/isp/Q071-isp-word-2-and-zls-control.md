@@ -6,7 +6,7 @@ kind = "hw"
 value = "medium"
 phase = 11
 evidence = ["E057", "E169", "E216", "E228", "E284", "E337", "E411", "E465", "E466", "E467", "E665",
-            "E989", "E997", "E1014"]
+            "E989", "E997", "E1014", "E1030"]
 terms = ["CR_ISP_ZLSCTL", "CR_ISP_BGOBJVALS.STENCIL", "ISP2"]
 +++
 
@@ -69,3 +69,12 @@ in y as well (dword 96 y + x equals the twiddled control at (x, y), 4608 of 4608
 post hoc): its rows are named. No kept row clears a strict subset of bits 12, 16 and 20. Open:
 which of them makes the store linear and which stops the stencil read (each bit and each pair
 under E977's ramp store and E988's stencil test), and whether a depth load under them is linear.
+
+Narrowed 2026-11-13 (r13-zls, E1030). Of bits 12, 16 and 20 cleared alone and in pairs, bit 16 alone
+makes E977's ramp store E997's linear image (6 of 6 held out, byte for byte), and none of them makes
+the stencil test read 0 (E988's 1024 drawn on all six); the set half (15, 21 to 23, 27 to 31) alone
+does (2048 drawn, every stored byte 0xff, 7 of 7 held out). Post hoc, bit 12 cleared makes the
+stencil load read a linear image of 64-byte rows and bit 16 cleared makes the stencil store one;
+bit 20 changes nothing seen. sgx-pipe models bit 16's depth store and these stencil sources. Open:
+which bit of the set half reads 0, the linear stencil images' rows at another pitch, bit 12 or 16
+with a depth load, bit 20, and bit 0 under other controls.

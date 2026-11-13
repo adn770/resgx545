@@ -64,7 +64,7 @@ list.
 - `Q032` isp, medium: what does pcoeff hand the ISP in the punch-through pass, when the kept pixels'
   depth is the same without it and moves between runs only ... (E217, E416)
 - `Q071` isp, medium: what do the bits of the ZLS control word that change nothing seen (12, 15, 16,
-  20 to 23, 27 to 31) do, alone and set together, what does ... (E989, E997, E1014)
+  20 to 23, 27 to 31) do, alone and set together, what does ... (E997, E1014, E1030)
 - `Q073` isp, medium: what does o0 hold at the start of an opaque pass's pixel shader? (E417, E739,
   E757)
 - `Q240` isp, medium: does the coverage rule of E606 (vertices on the 1/256 pixel grid, exact centre
@@ -181,7 +181,7 @@ list.
 - `Q107` zls, medium: why does the final render of a job that overflows store zeros for the first
   row of macrotiles and the depth with its sign bit set for the ... (E996, E997, E1020)
 - `Q120` zls, medium: what do the stored depth formats 3 to 7 (CR_ISP_ZLSCTL bits 26:24) hold and
-  how are they laid out, given that they store depth and stencil ... (E985, E986, E1015)
+  how are they laid out, given that they store depth and stencil ... (E986, E1015, E1031)
 - `Q109` bif, low: do page directory entries whose page-size field (bits 3:1) names 16 KiB to 4 MiB
   translate on the hardware, and with which address mask and ... (E021, E151)
 - `Q110` bif, low: what do the bus interface's tiled address ranges (BIF_TILE0 and up: start, end,
@@ -299,7 +299,7 @@ list.
 - `Q242` zls, low: which pixel's value does a dword shared by two overlapping tiles hold, what do
   the integer formats store past the target at an odd width or ... (E977, E991, E996)
 - `Q243` zls, low: what does the ZLS load do with an integer stored format (bits 26:24 = 1 or 2), at
-  an address other than the one the store writes, and when ... (E664, E977, E995)
+  an address other than the one the store writes, and when ... (E977, E995, E1029)
 - `Q004` transfer, fw (parked): can a transfer context whose flag bit 4 is set be released, which
   agent but the host sets flag bits 1 and 4, and which priorities above 0 ... (E015, E455)
 - `Q029` render, fw (parked): what does the render context's own cleanup wait for once its RT data
@@ -323,12 +323,21 @@ list.
 
 ## Recent records
 
-157 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+160 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
 - `E1032` dpm, 2026-11-13: r13-dpm stage pr2 on module B60AB0B4 (Q036: does 0x0748 bit 2 clear with
   partial renders; one scene, 3072x2048 with 1500 vertices, at 0, 1, 2 and 4 partial renders, two
   replicates each, 8 jobs): both ...
+- `E1031` zls, 2026-11-13: r13-zls stage zfmt (6 jobs, t10): E1015's format-7 template F7K holds
+  held out at the stencil fills 0x3f and 0x1f, equal to its markers (48 of 48 dwords each, no other
+  dword changed; the fixed-byte ...
+- `E1030` zls, 2026-11-13: r13-zls stage zbits (16 jobs, t10): of the ZLS control's bits 12, 16 and
+  20 cleared alone and in pairs, bit 16 alone turns E977's tiled ramp store into E997's linear image
+  (frozen L-BIT-16 held 6 of ...
+- `E1029` zls, 2026-11-13: r13-zls stage zbase (11 jobs, E977's z243 form on t10 with the depth test
+  never and the load buffer filled with its own dword indices, render details dword 12 poked after
+  the tool's own pokes): the ...
 - `E1021` vdm, 2026-11-13: Round 12 offline (Q163; no run): on the 11.31 VDM state sweeps
   (vdm/state-units: 133 jobs of three scripts in run order, E545's two-block stream; c taken as 0 at
   each script's start, every script ...
@@ -800,7 +809,7 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-49 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+50 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
 - `render/closing-r9-z2`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t9
@@ -816,6 +825,7 @@ srcversion, fork tip, laptop tools.
 - `render/closing-r8-k2`: 2026-11-13; module B60AB0B475DD1E8972419B5; fork r8-kernel at 2a650d74;
   tools ~/sgxfive-test-rgn4
 - `render/closing-r8-geo`: 2026-11-13; module 37EC97AB0CB37213C42FCCC; tools ~/sgxfive-test-rgn4
+- `render/closing-r13-zls`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r13-dpm`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r10-zls`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4,
   ~/sgxfive-test-t9
@@ -875,7 +885,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 15 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 16 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at

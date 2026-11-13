@@ -8398,6 +8398,35 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   infer: the grid's bits 7:0 explain the v = 1 rows as well as c].
   *vdm; HW, infer; data: `vdm-state-units`, `cited-scratch:closing12/plan/c2-q163/`,
   `cited-scratch:closing12/plan/rank-round12.md`.*
+- `E1029` r13-zls stage zbase (11 jobs, E977's z243 form on t10 with the depth test never and the
+  load buffer filled with its own dword indices, render details dword 12 poked after the tool's own
+  pokes): the ZLS depth load reads E465's layout from the base in dword 12, not from the store's
+  base, a tile, a page, 16 and 64 KiB away and on the store's own buffer (frozen H-MOVED held 6 of 7
+  held-out moves; H-STOREBASE and H-UNMOVED failed 6 of 7), but a base moved by 4 bytes loads as the
+  unmoved one (H-MOVED failed on zb-m4: every stored dword its own index) while 64 bytes moved it by
+  16 dwords; post hoc (fold/look.py) the seven moves fit the base rounded down to 8, 16, 32 or 64
+  bytes and no frozen rival holds all seven; all four controls passed.
+  *zls; HW; data: `render-closing-r13-zls:out/20261113-213117/zbase/`,
+  `render-closing-r13-zls:fold/`.*
+- `E1030` r13-zls stage zbits (16 jobs, t10): of the ZLS control's bits 12, 16 and 20 cleared alone
+  and in pairs, bit 16 alone turns E977's tiled ramp store into E997's linear image (frozen L-BIT-16
+  held 6 of 6 held-out rows, each dump byte for byte E977's or E997's; every other L rival failed),
+  and none of the six makes the stencil test read 0 (1024 drawn each, E988's count), while bits 15,
+  21 to 23 and 27 to 31 set with 12, 16 and 20 kept set do (2048 drawn, every stored stencil byte
+  0xff: frozen Z-SET held 7 of 7, every other Z rival failed); post hoc (fold/look.py, 2048 of 2048
+  bytes each) bit 12 cleared makes the stencil load read a linear image of 64-byte rows and bit 16
+  cleared makes the stencil store one; all three controls passed.
+  *zls; HW; data: `render-closing-r13-zls:out/20261113-213117/zbits/`,
+  `render-closing-r13-zls:fold/`.*
+- `E1031` r13-zls stage zfmt (6 jobs, t10): E1015's format-7 template F7K holds held out at the
+  stencil fills 0x3f and 0x1f, equal to its markers (48 of 48 dwords each, no other dword changed;
+  the fixed-byte rival 0 of 48), and its format-6 groups F6C hold on a 48 x 32 y ramp of another
+  origin (8 of 8 groups of its two full tiles, F6RAW 0 of 8; the edge tiles' 152 dwords undecoded)
+  but fail on a flat 0.5 where every row of every tile is one depth (0 of 16 groups, F6RAW 0): there
+  each 512-dword block holds the same 44 dwords (post hoc, fold/look.py), no rule fitted; the z2y-f6
+  rerun is E986's dump byte for byte.
+  *zls; HW; data: `render-closing-r13-zls:out/20261113-213117/zfmt/`,
+  `render-closing-r13-zls:fold/`.*
 - `E1032` r13-dpm stage pr2 on module B60AB0B4 (Q036: does 0x0748 bit 2 clear with partial renders;
   one scene, 3072x2048 with 1500 vertices, at 0, 1, 2 and 4 partial renders, two replicates each, 8
   jobs): both PR 0 controls passed (no partial render, no bit 2 clear line); every row read the
@@ -8530,4 +8559,4 @@ E413, E414, E427, E440, E545, E546, E700, E701, E702, E703, E737, E738, E755, E7
 
 Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467, E489, E490, E615, E628, E629,
 E663, E664, E665, E730, E831, E885, E903, E904, E977, E978, E981, E985, E986, E987, E988, E991,
-E996, E997, E1015, E1020.
+E996, E997, E1015, E1020, E1029, E1030, E1031.
