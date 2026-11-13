@@ -253,15 +253,15 @@ list.
 - `Q115` texture, low: does the sampler filter anisotropically on this core, and which bits of the
   texture words or the smp operands select it and its ratio? (E564, E720, E723)
 - `Q177` texture, low: does the offset that T0 address modes 4 to 7 add on the u axis, 8 max(W, H) +
-  52 dwords past the v rule's texel on every pixel of eleven ... (E957, E983, E1000)
+  52 dwords past the v rule's texel (post hoc on eleven ... (E983, E1000, E1017)
 - `Q179` texture, low: how are the blocks and the data bits of formats 23 to 26 laid out (a data bit
   changes 7 to 13 pixels, the blocks of 23 and 24 do not differ ... (E342, E568, E724)
 - `Q181` texture, low: does the fill's transfer command load a colour-space set at all (xfer:17^=1
   and xfer:18 to 22 made no difference for formats 28 and 29, ... (E037, E040, E568)
 - `Q280` texture, low: what makes up to 56 of 2048 pixels of a gradient job differ from the
   Euclidean footprint of the pairs (op0, op2) and (op1, op3) with a LOD ... (E563, E721, E744)
-- `Q282` texture, low: what arithmetic gives the bilinear sample of an sRGB texel (T0 bit 27) given
-  that decode-then-filter in float fits 43% to 56% of the pixels ... (E976, E982, E1004)
+- `Q282` texture, low: does the bilinear sRGB sample (T0 bit 27), E982's stage rule with every stage
+  result below 2^-14 flushed to +0 (held out offline on ... (E982, E1004, E1016)
 - `Q017` usse, low: why does g19 read 0x1a as a store's source but 0 through a mov and as the pixel?
   (E085, E086, E372)
 - `Q048` usse, low: do the MADD0 and MADD1 clock gates follow the USSE pipes' floating-point
@@ -325,9 +325,15 @@ list.
 
 ## Recent records
 
-145 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+147 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1017` texture, 2026-11-13: Round 11 offline (Q177; no run): of the 31 kept twiddled jobs with T0
+  u mode 4 to 7 outside E1000's own (p1132 tx-border 16, r8-geo addr 4, r9-geo addr2 11), 27 are
+  squares and 4 are E565's 32 x 8 ...
+- `E1016` texture, 2026-11-13: Round 11 offline (Q282; no run): E982's bilinear sRGB stage rule
+  R10-BF11 with every stage result below 2^-14 flushed to +0 (FTZ-OUT, E1004's post hoc form),
+  frozen by hash before any held-out pixel ...
 - `E1010` isp, 2026-11-13: r10-x stage win0 (14 jobs, E502's identity maps: E437's primary PDS
   program iterating the position, a shader writing pa0 or pa1, --tri-full): in CR_ISP_MSAA mode 0
   with CR_TE_AA 0x60000000, ...

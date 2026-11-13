@@ -1,11 +1,11 @@
 +++
 id = "Q282"
-question = "what arithmetic gives the bilinear sample of an sRGB texel (T0 bit 27) given that decode-then-filter in float fits 43% to 56% of the pixels and filtering the bytes then decoding fits none"
+question = "does the bilinear sRGB sample (T0 bit 27), E982's stage rule with every stage result below 2^-14 flushed to +0 (held out offline on an-t0b27's 12 parting halves, one pixel column, E1016), flush the y stage's own subnormal result (one half parts it from a flush of the x stage's results only), where is the threshold, and does the rule hold off E723's form (other channels, negative values, other filters)"
 unit = "texture"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E723", "E720", "E976", "E982", "E1004"]
+evidence = ["E723", "E720", "E976", "E982", "E1004", "E1016"]
 terms = ["T0.BIT27"]
 +++
 E723: g-bl-st-a 1147 and g-bl-st-b 876 of 2048 for decode then filter, 0 for filter then decode.
@@ -59,3 +59,18 @@ grid, k = 0 with the other corner larger, two random rows) and missed the row of
 554 of 4096 halves, each below the rule, all where a stage's result is a subnormal half; post hoc
 the rule with each stage's subnormal result flushed to 0 fits every kept row [fitted]. What stays:
 that flush held out (the question stays open, narrowed by E982 and E1004).
+
+Narrowed 2026-11-13 (round 11 offline, decision R11-6 a; E1016; the question line is rewritten to
+what stays, the question is not retired). It read "what arithmetic gives the bilinear sample of an
+sRGB texel (T0 bit 27) given that decode-then-filter in float fits 43% to 56% of the pixels and
+filtering the bytes then decoding fits none". E1004's post hoc flush, frozen by
+hash with its rivals before any held-out pixel was read (closing11/plan/c2-texture/rule_b.py), held
+out on p1132 tx-lod's an-t0b27, in neither E982's nor E1004's fit: 2048 of 2048 pixels and 12 of
+12 on the halves where it parts from the unflushed rule (0 of 12), all in pixel column x = 4. A
+flush of the x stage's results only (the final result kept) misses one of the 12, (4, 4), whose
+y-stage result 5.7e-5 the hardware stores as 0: that one half is the only kept separation. sgx-sim
+models the flush on the forms that ran. What stays: a row of its own for the y stage's flush and
+the threshold (corners 0, 1, 0, 1 at ky 0 with kx 11 to 14,
+closing11/plan/c2-texture/next_row_b.out;
+the kept data put it between 5.7e-5 and 6.4e-5), and the rule off E723's form. Retire after that
+row (R11-6 a).

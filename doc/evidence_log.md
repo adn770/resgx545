@@ -8228,6 +8228,38 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   holding only where it ties H-IDENT; both E502 controls (mode 1 TE 0xe0000000, mode 0 TE
   0x20000000) reproduced E502's kept images (4096 of 4096).
   *isp; HW; data: `render-closing-r10-x:out/20261113-101116/win0/`.*
+- `E1016` Round 11 offline (Q282; no run): E982's bilinear sRGB stage rule R10-BF11 with every stage
+  result below 2^-14 flushed to +0 (FTZ-OUT, E1004's post hoc form), frozen by hash before any
+  held-out pixel was read (closing11/plan/c2-texture/rule_b.py, sha256 84bd4264...), holds out on
+  p1132 tx-lod's an-t0b27 (E564's 64 x 64 twiddled bilinear sRGB job, in neither E982's nor E1004's
+  fit): 2048 of 2048 pixels, and 12 of 12 on the halves where it parts from the unflushed rule
+  (pixel column x = 4, rows 0 to 11, channel 0, two corner quads), where R10-BF11 is right on 0 of
+  the 12 (2036 pixels) and the input-only flush (FTZ-IN: x-stage results flushed entering the y
+  stage, the final result not) on 11 (2047 pixels), missing (4, 4), whose y-stage result 5.7e-5 the
+  hardware stores as 0 [HW, held out offline; thin: one column of one job, 12 correlated halves, the
+  final-result flush on one half]; E723's g-bl-st-a and -b and the reruns srgb2-ctl, srgb-ctl and
+  srgb-eq reach no subnormal stage (2048 of 2048 under every form: no test); an-t0b27's footprint
+  (LOD and layout) is texmodel.py's [infer].
+  *texture; HW, infer; data: `texture-p1132-tx-lod`, `texture-isp-msaa-verification-1141`,
+  `render-closing-r10-tex:out/20261113-102730/srgb2/`,
+  `render-closing-r9-x:out/20261113-081821/srgb/`, `cited-scratch:closing11/plan/c2-texture/`.*
+- `E1017` Round 11 offline (Q177; no run): of the 31 kept twiddled jobs with T0 u mode 4 to 7
+  outside E1000's own (p1132 tx-border 16, r8-geo addr 4, r9-geo addr2 11), 27 are squares and 4 are
+  E565's 32 x 8 (max(W, H) = W), so none parts E1000's 8 max(W, H) + 52 from the width's 8 W + 52
+  (only E1000's fit jobs 8 x 32 and 16 x 64 do): the max form stays fitted, and the 32 x 8 jobs
+  refute only the height's (2048 of 2048 each under max and W, 0 under H); in mode 5 the rule frozen
+  by hash before scoring (closing11/plan/c2-texture/rule_a.py, sha256 1dc23918...) scored 512 of 896
+  pixels on both uv5 jobs (bd-uv5 16 x 16, bd-hb-ns-uv5 32 x 8): every pixel with s inside and t
+  inside or with s outside and t inside held, and the 384 with s inside and t outside missed, a case
+  its text left unpredicted [HW, held out offline]; post hoc those read 7 M + 52 + s above (t < 0)
+  and 4 M + 52 + s below (t >= H) the texture, M = max(W, H) = W in both, 384 of 384 on both jobs
+  [fitted]; with s and t both outside, E983's corner dwords 20 to 23 hold at 32 x 8 (1152 of 1152)
+  and fail at 16 x 16 (0 of 1152), which reads 16 to 19 (+0 above left, +1 above right, +2 below
+  left, +3 below right; the dump's first line was seen before the freeze, disclosed): a corner base
+  of (W + H) / 2 or 12 + M / 4 fits both shapes [fitted, two shapes].
+  *texture; HW, infer; data: `texture-p1132-tx-border`,
+  `render-closing-r8-geo:out/20261113-015842/addr/`,
+  `render-closing-r9-geo:out/20261113-081038/addr2/`, `cited-scratch:closing11/plan/c2-texture/`.*
 
 ## By unit
 
@@ -8311,7 +8343,8 @@ Records: E033, E034, E035, E036, E037, E038, E039, E040, E041, E042, E114, E116,
 E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441, E560, E561, E562,
 E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E726, E733, E743,
 E744, E760, E765, E787, E844, E894, E910, E911, E923, E930, E931, E932, E940, E941, E942, E951,
-E955, E956, E957, E958, E968, E974, E975, E976, E982, E983, E1000, E1001, E1002, E1003, E1004.
+E955, E956, E957, E958, E968, E974, E975, E976, E982, E983, E1000, E1001, E1002, E1003, E1004,
+E1016, E1017.
 
 ### transfer
 

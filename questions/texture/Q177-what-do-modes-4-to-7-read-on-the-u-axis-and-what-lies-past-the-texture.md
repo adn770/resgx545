@@ -1,11 +1,11 @@
 +++
 id = "Q177"
-question = "does the offset that T0 address modes 4 to 7 add on the u axis, 8 max(W, H) + 52 dwords past the v rule's texel on every pixel of eleven twiddled textures of 4 x 4 to 64 x 64 (post hoc, E1000; the width's form of E983 and the height's each failed a held-out shape; 116, 180 and 308 at 8, 16 and 32 square, E957), hold on a held-out shape, format and type, and is mode 5's read past the texture on u (5 max(W, H) + 52 + t left, 6 max(W, H) + 52 + t right, post hoc, E983, E1000) a rule"
+question = "does the offset that T0 address modes 4 to 7 add on the u axis, 8 max(W, H) + 52 dwords past the v rule's texel (post hoc on eleven twiddled textures, E1000; no kept job outside them parts max(W, H) from W, E1017), hold on a held-out shape with H > W, format and type, and are mode 5's reads off the texture a rule: 5 M + 52 + t left and 6 M + 52 + t right (E983, E1000), 7 M + 52 + s above and 4 M + 52 + s below, and one dword per corner from a base that changes with the shape (16 at 16 x 16, 20 at 32 x 8; post hoc, E1017), M = max(W, H)"
 unit = "texture"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E565", "E033", "E932", "E957", "E983", "E1000"]
+evidence = ["E565", "E033", "E932", "E957", "E983", "E1000", "E1017"]
 terms = ["T0.ADDRMODE_U", "T0.ADDRMODE_V"]
 +++
 
@@ -53,3 +53,21 @@ in modes 4 and 6 read 564 and 4 x 4 84; mode 5 followed the longer side past the
 hoc every read of the eleven jobs is 8 max(W, H) + 52 dwords past E561's index, mode 5's 5 max(W,
 H) + 52 + t left and 6 max(W, H) + 52 + t right [fitted]. What stays: a held-out row for max(W, H),
 why that offset, and other formats and texture types.
+
+Narrowed 2026-11-13 (round 11 offline, decision R11-1 a; E1017; the question line is rewritten to
+what stays, the question is not retired). It read "does the offset that T0 address modes 4 to 7 add
+on the u axis, 8 max(W, H) + 52 dwords past the v rule's texel on every pixel of eleven twiddled
+textures of 4 x 4 to 64 x 64 (post hoc, E1000; the width's form of E983 and the height's each failed
+a held-out shape; 116, 180 and 308 at 8, 16 and 32 square, E957), hold on a held-out shape, format
+and type, and is mode 5's read past the texture on u (5 max(W, H) + 52 + t left, 6 max(W, H) + 52 +
+t right, post hoc, E983, E1000) a rule". Of the 31 kept twiddled u mode 4 to 7
+jobs outside E1000's, 27 are squares and 4 are E565's 32 x 8, where max(W, H) is W: none parts the
+max form from the width's, so 8 max(W, H) + 52 stays fitted. In mode 5 the frozen rule
+(closing11/plan/c2-texture/rule_a.py) held on every
+pixel with t inside the texture, and missed the 384 pixels of each uv5 job with s inside and t
+outside, which read a
+constant per side plus s (7 M + 52 + s above, 4 M + 52 + s below, post hoc); E983's corner dwords
+20 to 23 are the 32 x 8 texture's, 16 x 16 reads 16 to 19. sgx-sim keeps refusing modes 4 to 7 on
+u, naming this question. What stays: a held-out H > W shape outside E1000's (16 x 64 or 64 x 16
+parts the corner bases (W + H) / 2 and 12 + M / 4, 40 against 28; 8 x 64 parts max from W), mode
+5 above and below where M is not W, why these constants, other formats and texture types.
