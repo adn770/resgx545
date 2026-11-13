@@ -30,3 +30,15 @@ Euclidean lengths and the LOD fraction truncates to 1/64, held out on 8 of 8 job
 ladders). What the answer leaves besides this question's residual: the quad's own derivatives
 (`lod-auto`) were not run, so the footprint of a quad that takes its own derivatives is not shown
 by E721 and is open here.
+
+Note 2026-11-13 (round 9 offline, decision X-1 a (O9-2); ranking closing9/rank/rank-round9.md
+finding 4; no record, no claim settled, the question stays open). A declared family of LOD
+arithmetic (exact; a piecewise-linear log2 of the length or of its square; the mantissa cut to k =
+3 to 12 bits before an exact log2; squares in float32) was fitted on E721's 8 gradient jobs lg-*
+(closing9/rank/q280_fit.py, q280_fit.out): the best, cutsq10 (the squared length's mantissa cut
+to 10 bits), gives 16351 of 16384 pixels (6 jobs exact, residuals 16 and 17) against the landed
+rule's 16210 (4 exact). Frozen by hash (q280_rule.json 3a0c46a8...) with the prediction "at
+least the baseline on each ladder, more in total", it was scored on E721's 8 ladders lf-*, which
+the fit never read (q280_score.out): 16236 of 16384 for both, cutsq10 exact on 4 ladders and
+worse than the baseline on the other 4 (the ranking's text says 3), so the prediction fails and the
+cut is refuted as the residual's cause. The ladders' and the jobs' misses stay as E721 left them.

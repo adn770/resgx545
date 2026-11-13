@@ -7572,6 +7572,53 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   isolation redid E021's read-only write fault (0x80020 at page 0x3e200000) [HW, post hoc].
   *bif; HW, infer; data: `render-closing-r8-k2:out/20261113-032428/xf/`,
   `render-closing-r8-k2:out/fold/`.*
+- `E950` Round 9 offline (Q139; no run): with the first macrotile fx tiles wide, a block row of it
+  takes 8 floor(fx / 2) region-header slots (H-EVEN) where R7-BLK (E907) has 16 floor(fx / 4); with
+  E944's block order and R7-BLK's slots otherwise unchanged, H-EVEN gives the wrong-tile set and
+  every header slot of E944's three readable residue dumps (256 x 256 m1-B2-10 and m1-B2-11, 128 of
+  128 slots each, and 640 x 480 m1-B1-23, 600 of 600), the only one of 24 declared variants of the
+  block-row width, the order and the local bits to give all three [HW, fitted: chosen on B2-10 and
+  B2-11, the 640 x 480 row checked after the form was chosen]; it equals R7-BLK whenever fx is 0 or
+  1 mod 4, and on the 164 other kept whole images of ta/mtile-fields and ta/mtile-fields-risky it
+  and R7-BLK both give the wrong-tile set of 163 (the miss, 1280 x 720 m2-B3p1, is given by no
+  model); no kept image outside the fit parts the two, every kept job at another fx of 2 or 3 mod 4
+  faulted or was cut (30 jobs), so H-EVEN is not held out; 4 fx slots a block row (H-4FX) fails 5 of
+  the 5 images where it parts.
+  *ta; HW; data: `render-closing-r8-lgeo:out/20261113-024441/q139/`, `ta-mtile-fields`,
+  `ta-mtile-fields-risky`, `cited-scratch:closing9/seeds/q139/`,
+  `cited-scratch:closing9/offline/q139/`.*
+- `E951` Round 9 offline (Q284; no run): the face-local index E930 read post hoc on its three 32 x
+  32 cube jobs (4831 of 4831 predicted pixels: E923's Morton interleave of (s, t) with t in bit 0,
+  and bit 8 = s4, bit 9 = t4) is, at every (s, t) of a 32 x 32 face, E561's twiddle law of a 32-bit
+  texture, recorded in phase 11.32 before E930 ran: tiles of 16 x 16 interleaved with Y in bit 0,
+  the tiles in raster order with x first (i8 = x4, i9 = y4), with s as x and t as y (1024 of 1024 by
+  enumeration, and 256 of 256 at 16 x 16 against E923's rule) [HW, E930's pixels; the identity an
+  algebra]; so a 32 x 32 face reads as an E561 texture [infer]; at 64 x 64 E561's law (i8, i9 = s4,
+  s5; i10, i11 = t4, t5) and a pairwise order of the bits above 7 (s4, t4, s5, t5) agree at 2048 of
+  4096 (s, t) and the plain 6-bit Morton at 512, so a 64 x 64 face parts them.
+  *texture; HW, infer; data: `render-closing-r8-geo:out/20261113-015842/cube/`,
+  `render-closing-r8-geo:out/fold/`, `texture-p1132-tx-twiddle`,
+  `cited-scratch:closing9/offline/q284/`.*
+- `E952` Round 9 offline (Q260; no run), on E683's 240 S3 cases (negative coordinates at 1/4096,
+  kept images, never read by E914's or E943's readings): E943's post hoc reading 'a sweep misses
+  half away from zero's (HA's) image iff a vertex lies past the target's far edge' fails both ways
+  (61 of the 167 cases with such a vertex are off HA, 106 exact; 6 of the 73 without one are off),
+  and its band (off pixels only within 6.4e-4 pixel of an edge of 195 pixels or more) does not bound
+  E683's 101 off pixels (up to 2.3e-3 pixel from an edge line; 20 of them in cases whose longest
+  edge is below 195 pixels); no threshold on distance over length, over the largest |coordinate|, or
+  over both separates the 101 from the 1931 right pixels within 3e-3 pixel of an edge [HW]; OZ, 1613
+  declared fixed-point edge-function variants on HA's vertices (the coefficients quantised to b = 4
+  to 24 fractional bits under three normalisations, three roundings and five origins, or the two
+  products rounded to m = 12 to 40 significant bits), fitted on E914's and E943's 395 kept images,
+  where none beats HA by more than 5 rows (314 of 395 against 309), and frozen by hash (oz_rule.json
+  6c8d2a50...): held out on E683 the frozen best is exact on 154 of 240 cases, the family's other
+  frozen best 162, HA 173, against a gate of 235; post hoc every variant scores at most 175 [HW,
+  held out offline]; the far-vertex clause is dropped as a rule, and no candidate for the long-edge
+  pixels survives.
+  *isp; HW, infer; data: `isp-coverage-envelope-1140`,
+  `render-closing-r7-geo:out/20261112-211113/zs/`,
+  `render-closing-r8-lgeo:out/20261113-024441/zs2/`, `cited-scratch:closing9/seeds/q260/`,
+  `cited-scratch:closing9/offline/oz/`.*
 - `E958` R9-lgeo stage tx6 (Q283; E725's 64 x 32 map-texture fill, dword i of the scratch 0xD0000000
   | i; 14 jobs, 2 controls, no fault): type 4 at widths that are not multiples of 32 keeps ceil(w /
   32) whole 32 x 32 blocks a block row (H-CEIL, E941's rule: 7 of 7 held-out windows of 48 x 64, 80
@@ -7606,6 +7653,19 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *ta; HW, infer; data: `render-closing-r9-lgeo:out/20261113-080029/q139b/`,
   `render-closing-r9-lgeo:fold/`, `vectors-closing-r9-lgeo-ta-slots`,
   `render-closing-r8-lgeo:out/20261113-024441/q139/`, `ta-mtile-fields`, `ta-mtile-fields-risky`.*
+- `E968` Round 9 offline (Q078; no run): with T3 bit 14 set, smp on a strided texture reads dword i
+  + K + M c, i the dword the same job reads without the bit and c its column, read on E566's fit job
+  s64x32-t3b14 (W = S = 64: K = 32, M = 64, 2048 of 2048); six rivals for K (W / 2, S / 2, 32) and M
+  (S, W), equal on the fit job, were frozen by hash (q078_b14_rule.json, fbd25356...) before E566's
+  two other bit 14 jobs were read: s64x16-t3b14 (W = S = 64) 2048 of 2048 for all six, and
+  s32x32-t3b14 (W = 32, S = 64) 0 of 2048 for all six, which refutes every one of them where the
+  width is not the stride [HW, held out offline]; post hoc, dword i + floor(S * S * u) with u the
+  sample's coordinate clamped to [0, 1] (R-U01) is exact on all three jobs (2048 of 2048 each),
+  where the ranking's R-U, S * S * (c + 1/2) / W, misses s32x32's 1024 pixels whose u lies past the
+  texture (they read u = 1, not the clamped column's centre) and the unclamped u misses the same
+  1024 [fitted]; the twiddled job tw32-t3b14 faulted in E566 and kept no image.
+  *texture; HW, infer; data: `texture-p1132-tx-t3`, `cited-scratch:closing9/rank/`,
+  `cited-scratch:closing9/offline/q078/`.*
 
 ## By unit
 
@@ -7643,7 +7703,7 @@ E215, E216, E217, E218, E219, E220, E222, E224, E225, E226, E227, E228, E229, E2
 E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E290, E291, E330,
 E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E508, E510, E590,
 E606, E607, E618, E660, E661, E662, E680, E681, E682, E683, E684, E727, E728, E731, E739, E740,
-E741, E757, E758, E762, E825, E827, E829, E912, E913, E914, E922, E934, E943.
+E741, E757, E758, E762, E825, E827, E829, E912, E913, E914, E922, E934, E943, E952.
 
 ### mte
 
@@ -7680,14 +7740,15 @@ Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
 E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763, E776, E777,
 E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828, E842, E847, E851, E859,
-E865, E872, E877, E879, E886, E888, E893, E897, E906, E907, E908, E944, E959.
+E865, E872, E877, E879, E886, E888, E893, E897, E906, E907, E908, E944, E950, E959.
 
 ### texture
 
 Records: E033, E034, E035, E036, E037, E038, E039, E040, E041, E042, E114, E116, E242, E254, E271,
 E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441, E560, E561, E562,
 E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E726, E733, E743,
-E744, E760, E765, E787, E844, E894, E910, E911, E923, E930, E931, E932, E940, E941, E942, E958.
+E744, E760, E765, E787, E844, E894, E910, E911, E923, E930, E931, E932, E940, E941, E942, E951,
+E958, E968.
 
 ### transfer
 

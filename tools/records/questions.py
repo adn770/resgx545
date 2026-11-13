@@ -80,7 +80,7 @@ RETIRED: dict[str, str] = {
     "Q138": "folded into Q089", "Q150": "folded into Q137", "Q151": "folded into Q137",
     "Q037": "answered by E422", "Q198": "decided in HACKING.md", "Q285": "answered by E829",
     "Q273": "answered by E803", "Q124": "answered by E809", "Q175": "answered by E721",
-    "Q085": "answered by E408", "Q167": "answered by E828", "Q176": "folded into Q078",
+    "Q085": "answered by E408", "Q167": "answered by E828", "Q176": "folded into Q078", "Q103": "folded into Q211 after E968",
     "Q145": "folded into Q128 after E830", "Q140": "folded into Q003 after E830",
     "Q122": "answered by E831", "Q113": "answered by E844",
     "Q021": "folded into Q180 after E830",

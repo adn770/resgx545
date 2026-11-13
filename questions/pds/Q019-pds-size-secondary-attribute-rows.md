@@ -38,3 +38,11 @@ the control word) and stores them all, at 0, 1, 2, 4 and 8 rows; read the regist
 task and compare which attribute indices arrive at each size. Run it twice, since what stays in
 the attributes across jobs differs between the runs. Read `bg:1` back after the poke if the
 interface allows it.
+
+Note 2026-11-13 (round 9 offline, decision X-1 a (O9-3); no record, no claim settled). Round 9's
+K1 session r9-k1 sets the background object's word 1 (the secondary attribute size in bits 24:18
+among its fields) to 0, 1 and 4 rows on a background object whose texture layer feeds one texel to
+every pixel (exploration rows, Q066's word 1): whether the texel arrives at every value, as the 16
+`douta` words reached sa0 to sa15 at 0, 1 and 4 rows (E125, E391), or is lost at 0 rows. It reads
+the size against a layered background's attribute, not the 32 or 64 attributes this question's
+experiment names, which stays to be run.

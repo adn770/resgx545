@@ -4908,8 +4908,11 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   h >> k) (the level sizes, not the stride times the height) and idx the tile-law index of (X >>
   L, Y >> L), or X >> L + stride (Y >> L) on a strided texture; **bit 10 reads the base dword**;
   the offset bits 7:0 act before. Run on twiddled textures up to 64 x 64 and strided 128 x 32, a
-  32-bit format only; the scale shifts the dword address, not the index alone (3 jobs). Bits 11,
-  12 and 14 stay undecided (Q078).
+  32-bit format only; the scale shifts the dword address, not the index alone (3 jobs). Bits 11
+  and 12 stay undecided (Q078). **Bit 14 shears a strided read** (E968): at a width equal to the
+  stride (64) the dword plus 32 plus 64 per column, held out offline on a second job; at width 32,
+  stride 64 the six frozen forms fail, and post hoc dword + floor(S * S * u), u clamped to [0, 1],
+  fits all three strided jobs; on a twiddled texture it faulted (E566).
 - **sRGB (T0 bit 27; E723).** **A point-sampled texel byte is decoded sRGB to half float** (4 of
   4 held-out fills exact over 2048 pixels: strided 8 x 4, twiddled 8 x 8 twice, twiddled 32 x
   32). Under bilinear filtering neither declared order fits (filter then decode 0 of 2048 pixels,
@@ -4941,7 +4944,8 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   in bit 0), fitted on E726 and held out on E844's jobs at 4090 of 4096 pixels, the misses exact
   texel boundaries at a |ma| not a power of two (E923); held out on hardware on four new 16 x 16
   programs and at 8 x 8 faces (the rule with 8 for 16, faces 64 dwords apart); 32 x 32 faces read
-  the fifth bits of s and t in the other order (post hoc, E930). A tie of |w| and |u| read w's
+  the fifth bits of s and t in the other order (post hoc, E930), which is E561's twiddle law, tiles
+  of 16 x 16 in raster order with s first (E951). A tie of |w| and |u| read w's
   face, and bilinear at a face edge mixes in another face's texel (readings, E931). The ties, face
   edges and other face sizes: Q284.
   **Type 5 reads one bit per 8 texels**: with format 12 texel t = (Y mod h) w + (X mod w)

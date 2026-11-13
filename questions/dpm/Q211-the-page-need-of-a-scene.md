@@ -1,11 +1,11 @@
 +++
 id = "Q211"
-question = "does the page need U of HU1 (E773, E863, E883, E916, E939: exact for 39 held-out scenes, among them five of several kicks and eight one-triangle shapes from the full target to 8-pixel slivers) hold for wide scenes of many vertices (E630), and what gives the partial-render count of scenes of several kicks (neither the kicks replayed in turn nor the union replayed once, E938) and of the 1500-vertex scene where the threshold is not raised (F9's replay 13 of 15 held-out counts, E938)?"
+question = "does the page need U of HU1 (E773, E863, E883, E916, E939: exact for 39 held-out scenes, among them five of several kicks and eight one-triangle shapes from the full target to 8-pixel slivers) hold for wide scenes of many vertices (E630), and what gives the partial-render count of scenes of several kicks (neither the kicks replayed in turn nor the union replayed once, E938) and of the 1500-vertex scene where the threshold is not raised (F9's replay 13 of 15 held-out counts, E938), and why a wide scene in a small parameter buffer takes 35 or more partial renders (E438, E706: 300 vertices at 4096x4096 in 0x40 pages; folded from Q103)?"
 unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E310", "E625", "E630", "E705", "E735", "E773", "E779", "E832", "E853", "E854", "E863", "E866", "E874", "E875", "E883", "E899", "E916", "E938", "E939"]
+evidence = ["E310", "E312", "E438", "E625", "E630", "E705", "E706", "E735", "E773", "E779", "E832", "E853", "E854", "E863", "E866", "E874", "E875", "E883", "E899", "E916", "E938", "E939"]
 terms = ["Dynamic Parameter Management (DPM)", "Parameter Buffer (PB)"]
 +++
 
@@ -219,3 +219,18 @@ the threshold not raised, read after the run (Q210). At five multi-kick scenes t
 turn (H-KICKS, OL7 (b), which had not fitted the kept cells) gave 11 of 20 counts, all 8 at
 4096x4096, and the union replayed once none (E938, explore rows). Open: the U of wide scenes of
 many vertices; the count of several kicks; the count where the raise does not come (Q210).
+
+**Correction 2026-11-13:** Q103 is folded into this question (round 9, decisions X-1 a (O9-3) and
+X-8 a; the fold round 8 proposed once round 7's Q211 records were on main, which E899, E916, E938
+and E939 are; a fold is not an answer), and its open part is now the last clause of the line
+above. Its question was: why does a scene of 100 to 500 triangles take 35 or more partial renders
+where the one-triangle scene overflows the parameter buffer and recovers, at 4096x4096 in 0x40 or
+0x23 pages from 300 vertices and in 0x100 pages from 900 (the stop E438 called a hang is the
+kernel's recovery, Q278 decided)? What it had left: E438's wide scenes hang or overflow in small
+buffers where one triangle recovers; the stop is the kernel's recovery after about 1.0 to 1.5 s
+without progress (E630, E706; Q278 decided), not a hardware stop; 300 vertices at 4096x4096 in
+0x40 pages end after 35 partial renders without the hold and 47 with it, 450 vertices in 0x100
+pages after 16 (E706). Not run: 900 and 1500 vertices in 0x100 pages without the hold, and a
+timeline of the partial-render count against the registers below and above 35. The count is the
+one this question asks for scenes of many objects (E875's page replay in E899's walk order, held
+out for one object by E916). Q103's evidence (E310, E312, E438, E630, E706) is in the list above.

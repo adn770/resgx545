@@ -302,7 +302,8 @@ fn half_to_f32(h: u32) -> f32 {
 /// bit 11: the captured pixel fetches of the closed driver set it (0x00800800)
 /// **[CAP]**, the mip probes (E041), which do, read as the model without it. On a twiddled
 /// texture only those are measured; bits 10, 13, 14, 27 and 28 act in ways
-/// not known.
+/// not modelled here (bit 14's sheared read on a strided texture is held out only at a width
+/// equal to the stride, E968).
 fn t3_fields(t3: u32, stride: bool) -> Result<([i64; 2], u32), Fail> {
     let not_measured = if stride { 0x1800_6400 } else { 0x187c_77ff };
     if t3 & not_measured != 0 {
@@ -1921,6 +1922,8 @@ mod tests {
     #[test]
     fn what_is_not_measured_stops() {
         assert!(at(state(6, 12, 4, 4, 4, 1 << 27, 0), 0.0, 0.0).is_err(), "T0 bit 27");
+        // T3 bit 14: dword + floor(S * S * u), u clamped to [0, 1], is held out only where the
+        // width is the stride (64) and fitted post hoc at W != S (E968): refused
         assert!(at(state(6, 12, 4, 4, 4, 0, 1 << 14), 0.0, 0.0).is_err(), "T3 bit 14");
         assert!(at(state(6, 12, 4, 4, 4, 0, 0xa080_0000), 0.0, 0.0).is_ok(), "the copies' T3");
         assert!(at(state(4, 12, 4, 4, 1, 0, 0), 0.0, 0.0).is_err(), "tiled");
