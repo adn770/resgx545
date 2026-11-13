@@ -70,6 +70,8 @@ GENERATED = ("run/session.env", "run/required.tsv", "run/staged.lst")
 # the session subtrees no freeze names: out/ (kept records, lead logs), debug/ (the mock, the
 # library mock) and fold/ (the fold's post-run notes and tables); no laptop file comes from them
 NOT_FROZEN_DIRS = ("out", "debug", "fold")
+# directories a tool leaves in a session as it runs: never session files, wherever they sit
+SKIP_PARTS = {"__pycache__", ".pytest_cache"}
 NOT_FROZEN = ("FROZEN.sha256", "FROZEN.commits", "PREDICTIONS.sha256")
 COMMITS_HEADER = """\
 # FROZEN.commits: the commit that holds each file this session's FROZEN.sha256 pins outside the
@@ -187,7 +189,7 @@ def freeze_files(kp):
         rel = p.relative_to(kp)
         if not p.is_file() or rel.parts[0] in NOT_FROZEN_DIRS or rel.as_posix() in NOT_FROZEN:
             continue
-        if "__pycache__" in rel.parts or p.suffix == ".pyc" or p.name == ".DS_Store":
+        if SKIP_PARTS & set(rel.parts) or p.suffix == ".pyc" or p.name == ".DS_Store":
             continue
         out.append(rel.as_posix())
     return out
@@ -926,7 +928,7 @@ def _copy_tree(kp, dest):
     def ignore(d, names):
         rel = pathlib.Path(d).relative_to(kp)
         return [n for n in names if (rel == pathlib.Path(".") and n in NOT_FROZEN_DIRS)
-                or n == "__pycache__"]
+                or n in SKIP_PARTS]
     shutil.copytree(kp, dest, ignore=ignore)
 
 

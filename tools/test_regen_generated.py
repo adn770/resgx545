@@ -179,3 +179,25 @@ def test_parallel_runs_build_the_shared_tools_once_before_the_workers_start():
 def test_the_controller_can_import_the_modules_that_define_warning_classes():
     top = root_conftest()
     assert all((ROOT / p / "fwtask.py").is_file() for p in top.WARNING_PATHS[:1])
+
+
+def test_the_coverage_example_is_told_where_to_write(tmp_path):
+    """The example's output path was baked in at compile time (CARGO_MANIFEST_DIR), so a binary
+    built in one worktree and reused through a shared cargo target wrote into another's tree:
+    the caller passes the repository root it runs for."""
+    root, repos = manifest(tmp_path)
+    seen = []
+    rg.regen(root, repos, lambda cmd, cwd: seen.append(cmd) or 0)
+    cov = [c for c in seen if "coverage" in c][0]
+    assert cov[cov.index("--out") + 1] == str(root / "doc/isa/sim-coverage.json"), cov
+    rg.problems(root, repos, lambda cmd, cwd: seen.append(cmd) or 0)
+    chk = [c for c in seen if "coverage" in c and "--check" in c][0]
+    assert chk[chk.index("--out") + 1] == str(root / "doc/isa/sim-coverage.json"), chk
+
+
+@pytest.mark.skipif(not os.environ.get("CARGO_TARGET_DIR"), reason="builds the example: set "
+                    "CARGO_TARGET_DIR (never a shared one)")
+def test_the_coverage_example_refuses_to_run_without_an_output_path():
+    r = subprocess.run(["cargo", "run", "-q", "--release", "-p", "sgx-sim", "--example",
+                        "coverage"], cwd=ROOT, capture_output=True, text=True)
+    assert r.returncode == 2 and "--out" in r.stderr, r.stderr

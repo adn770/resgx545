@@ -267,14 +267,14 @@ def test_the_view_separates_the_work_queue_from_the_parked_questions(tmp_path):
 
 def test_the_questions_are_well_formed():
     import evidence
-    ids = {p.name[:4] for p in evidence.DIR.glob("*/E*.md")}
+    ids = {p.name.split("-")[0] for p in evidence.DIR.glob("*/E*.md")}
     terms = evidence.glossary_terms()
     bad = {p.name: m for p in questions.files() if (m := questions.problems(p, ids, terms))}
     assert not bad, bad
     assert not questions.misplaced()
     questions.check_retired(questions.RETIRED)
     assert not questions.fold_problems(questions.RETIRED,
-                                       {p.name[:4] for p in questions.files()})
+                                       {p.name.split("-")[0] for p in questions.files()})
     qs = [questions.parse(p) for p in questions.files()]
     assert not [q["id"] for q in qs if q["kind"] == "hw" and "value" not in q]
 
@@ -288,11 +288,11 @@ def test_the_view_is_current():
 
 def test_references_name_open_questions():
     """Specs, evidence records and glossary terms cite only open questions."""
-    open_ids = {p.name[:4] for p in questions.files()}
+    open_ids = {p.name.split("-")[0] for p in questions.files()}
     bad = {}
     for d, pat in (("evidence", "*/*.md"), ("glossary", "*/*.toml"), ("doc", "**/*.md")):
         for p in sorted((questions.ROOT / d).glob(pat)):
-            rec = p.name[:4] if d == "evidence" else None
+            rec = p.name.split("-")[0] if d == "evidence" else None
             if p not in questions.generated() and (m := questions.reference_problems(p.read_text(),
                                                                          open_ids, rec)):
                 bad[str(p.relative_to(questions.ROOT))] = m
@@ -311,3 +311,28 @@ def test_retirements_and_citing_records_past_e999(monkeypatch):
         assert questions.reference_problems(q, {"Q001"}, record="E1001") != []
     monkeypatch.setattr(questions, "RETIRED", {"Q002": "answered by E999"})
     assert questions.reference_problems("Q002", {"Q001"}, record="E1000") != []
+
+
+def test_main_reads_a_four_digit_record_id_whole(tree, monkeypatch):
+    """E1009 is not E100: the id is the part of the file name before the first '-'."""
+    ev = tree / "evidence" / "isp"
+    (ev / "E1009-x.md").write_text("x")
+    (ev / "E100-y.md").write_text("y")
+    q = tree / "questions" / "isp" / "Q001-example-bit.md"
+    base = q.read_text()
+    q.write_text(base.replace('evidence = ["E001"]', 'evidence = ["E1009"]'))
+    assert questions.main([]) == 0          # regenerates the view
+    assert questions.main(["--check"]) == 0
+    (ev / "E1009-x.md").unlink()            # only E100 is left: E1009 does not exist
+    assert questions.main(["--check"]) == 1
+
+
+def test_a_four_digit_record_is_after_a_three_digit_answer(tree, monkeypatch):
+    """A record is compared with the answer by its whole number: E1009 comes after E1005."""
+    monkeypatch.setattr(questions, "RETIRED", {"Q002": "answered by E1005"})
+    ev = tree / "evidence" / "isp"
+    (ev / "E1009-x.md").write_text("cites Q002")
+    assert questions.main(["--check"]) == 1
+    (ev / "E1009-x.md").unlink()
+    (ev / "E1004-x.md").write_text("cites Q002")     # before the answer: allowed
+    assert questions.main(["--check"]) == 0
