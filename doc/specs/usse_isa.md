@@ -6164,7 +6164,8 @@ probe vectors that test them: 361 match the hardware, 32 stop unsupported, 0 mis
 `texture-sampler-smp-formats-other` 12/28/0, `texture-sampler-smp-lod` 11/0/0,
 `texture-sampler-smp-pcf` 28/0/0, `texture-sampler-smp-point` 13/0/0, `texture-sampler-smp-srd`
 15/0/0, `texture-sampler-smp-twiddled` 16/0/0); unsupported mostly for four texels fix no decoder
-(16); YUV through a colour-space set the vector does not record (8); an offset by size) (4).
+(16); YUV through a colour-space set the vector does not record (8); EN's rule on EN's fills only,
+QN) (4).
 
 Confirmed on the hardware (a passing vector): #120, #122; not yet confirmed (as decoded; no passing
 vector yet): #121, #123.
@@ -9069,11 +9070,13 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   v axis 6 and 7 clamp and 4 and 5 repeat (held out at a pitch of one texel, E932); on the u axis
   none of clamp, nomask or border fits, and every read is the v rule's index plus 180 dwords in
   modes 4, 6 and 7 at 16 x 16 (post hoc, at three bases, E932; whatever T3 or the v mode, E957),
-  116 at 8 x 8 and 308 at 32 x 32 (E957; 8 N + 52 fitted). On textures of W != H (E1000) the
-  frozen rivals (the width, the height, the size as a square, the mean side) each fail a held-out
-  shape, and post hoc every read of eleven jobs is 8 max(W, H) + 52 dwords past the index, mode
-  5's reads left and right of the texture 5 max(W, H) + 52 + t and 6 max(W, H) + 52 + t [fitted,
-  not held out]; why, other formats and texture types are open (Q177).
+  116 at 8 x 8 and 308 at 32 x 32 (E957; 8 N + 52 fitted), and 308 on every pixel of E565's
+  32 x 8 jobs (SEMI, E983). On held-out textures of W != H (E1000) the frozen rivals (the width,
+  the height, the size as a square, the mean side) each fail a shape: 8 x 32 reads the height's
+  308; post hoc every read of eleven jobs is **8 max(W, H) + 52** dwords past the index, mode 5's
+  reads left and right of the texture 5 max(W, H) + 52 + t and 6 max(W, H) + 52 + t, t the texel
+  row, and one dword per corner with v outside too (E983) [fitted, not held out]; why, other
+  formats and texture types are open (Q177).
 - **Twiddled layout (`texture-sampler-smp-twiddled`).** Texel `(x, y)` lies at the Morton index with
   **`y` in
   bit 0, `x` in bit 1**, and so on; a non-square texture puts the longer side's extra bits
@@ -9137,7 +9140,11 @@ scratch buffer whose dwords count up, so every result names the texels it came f
 - **sRGB (T0 bit 27; E723).** **A point-sampled texel byte is decoded sRGB to half float** (4 of
   4 held-out fills exact over 2048 pixels: strided 8 x 4, twiddled 8 x 8 twice, twiddled 32 x
   32). Under bilinear filtering neither declared order fits (filter then decode 0 of 2048 pixels,
-  decode then filter 1147 and 876 of 2048, 2 held-out fills; Q282).
+  decode then filter 1147 and 876 of 2048, 2 held-out fills). **Each lerp stage floors both
+  halves to the larger one's ulp, lerps exactly and rounds to nearest with ties up** (weight
+  0 returns the first half unchanged), x then y: fitted on single stages and held out offline on
+  three two-stage fills, every pixel, with weights on the 1/64 grid (E982); a later held-out row
+  missed it (Q282).
 - **ETC1 (format 27; E724).** **Format 27 is ETC1 with the 4 x 4 blocks in Morton order, y in the
   low bit** (6 of 6 held-out fills of random valid blocks exact over 2048 pixels, 8 x 8 to 32 x
   16; raster block order and Morton with x low 0 of 6). Formats 23 to 26 are not decoded.
@@ -9193,7 +9200,8 @@ for a job that records the colour-space set as unloaded.
 **Undecided:** why type 3 pads to 8 texels and the other 16-bit and 8-bit formats on types 1, 3
 and 4 (E958 ran format 5 on type 3), type 5 with other formats, the LOD fraction's residual
 (Q280), the border modes on the u axis, formats 23 to 26 and the YUV conversion in a fill,
-sRGB under bilinear filtering (Q282), the cube map's edges and (s, t) within a face (Q284), `smp3d`
+sRGB under bilinear filtering beyond E982's rule (Q282), the cube
+map's edges and (s, t) within a face (Q284), `smp3d`
 beyond the textures it ran on, `.sinf`/`.rsd`, and state from `sa` or `c`.
 
 ### 7.38 `rlp`

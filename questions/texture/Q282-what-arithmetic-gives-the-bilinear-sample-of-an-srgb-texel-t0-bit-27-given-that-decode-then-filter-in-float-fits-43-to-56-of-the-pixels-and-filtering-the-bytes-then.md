@@ -5,7 +5,7 @@ unit = "texture"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E723", "E720", "E976"]
+evidence = ["E723", "E720", "E976", "E982", "E1004"]
 terms = ["T0.BIT27"]
 +++
 E723: g-bl-st-a 1147 and g-bl-st-b 876 of 2048 for decode then filter, 0 for filter then decode.
@@ -43,9 +43,19 @@ corner pairs) and both: neither frozen rival (H-HALF2, H-BF11) is exact on any r
 from both: the kept a and b rows are the table to fit one stage's arithmetic on, with c and E723's
 g-bl-st-b held out.
 
+Narrowed 2026-11-13 (round 10 offline, decision R10-1 a; E982; the question is not retired). One
+stage that floors both halves to the larger one's ulp, lerps exactly and rounds to nearest with
+ties up (A unchanged at weight 0), x then y, is exact on r9-x's single-stage rows and held out
+offline on c1, c2 and E723's g-bl-st-b (and g-bl-st-a, scored after the freeze), every pixel, all
+on the 1/64 weight grid. Round 10's session r10-tex then ran stage srgb2 on hardware: the rule held
+on 4 of its 5 held-out rows and missed one, where none of the declared alternatives (k = round(64
+f), exact weights, a floored operand at weight 0) held either; its fold records the row. Open: what
+that row adds to the rule (weights off the grid, the weight-0 bypass with the smaller corner,
+subnormal halves).
+
 Note 2026-11-13 (round 10, session r10-tex, decision R10-2 a; E1004). The stage rule R10-BF11
 (fitted offline on r9-x's rows) held out on hardware on four of five new rows (weights off the 1/64
 grid, k = 0 with the other corner larger, two random rows) and missed the row of corners 0 to 3 on
 554 of 4096 halves, each below the rule, all where a stage's result is a subnormal half; post hoc
 the rule with each stage's subnormal result flushed to 0 fits every kept row [fitted]. What stays:
-that flush held out.
+that flush held out (the question stays open, narrowed by E982 and E1004).

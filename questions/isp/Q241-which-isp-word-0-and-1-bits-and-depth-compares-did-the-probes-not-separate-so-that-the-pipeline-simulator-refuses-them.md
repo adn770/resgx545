@@ -5,8 +5,8 @@ unit = "isp"
 kind = "hw"
 value = "low"
 phase = 12
-evidence = ["E065", "E070", "E071", "E072", "E232", "E235", "E282", "E287", "E291", "E660",
-            "E739", "E757"]
+evidence = ["E065", "E070", "E071", "E072", "E232", "E235", "E282", "E287", "E291", "E660", "E739",
+            "E757", "E995", "E998"]
 terms = ["ISP0.PASS_TYPE", "ISP0.DCMP_MODE", "ISP1.VISTEST", "ISP1.POLY_OFFSET"]
 +++
 
@@ -55,3 +55,13 @@ of 2). Depth order and pass order, E739's two surviving hypotheses, are refuted 
 order and 'pass type 1 changes nothing' are consistent and not separated. Two or more triangles of
 one object, the translucent blend with a shader that writes alpha and the other pass types stay
 open.
+
+Narrowed 2026-11-13 (r10-x, E995 and E998). The compares 2, 3, 5 and 6 are equal, less or equal,
+not equal and greater or equal, decided exactly on equal depths at 0.5 and one ulp either side
+(E995, 14 of 14 held out with the GL order). ISP word 0 bits 15, 16 and 17, each set alone under a
+depth compare with writes, remove E977's ramp triangle whole (no pixel, the background depth
+stored: E998, 3 of 3), and ISP word 1 bits 3 (the visibility test) and 23 (the polygon offset)
+change neither the image nor the stored depth of that ramp (2 of 2). Open: what bits 15 to 17
+select (the other vertex order, E065's 48 pixels), bit 18 (faults), the visibility counter and the
+polygon offset's units, the pass types over several triangles, a vertex depth outside [0, 1] and
+the gate pairs.

@@ -5,7 +5,7 @@ unit = "texture"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E274", "E397", "E566", "E564", "E722", "E723", "E968", "E975"]
+evidence = ["E274", "E397", "E566", "E564", "E722", "E723", "E968", "E975", "E1003"]
 terms = ["T3.BIT10", "T3.BIT14", "T3.BITS19_18", "T3.BITS28_27", "T0.BIT27", "T3.BITS7_0"]
 +++
 

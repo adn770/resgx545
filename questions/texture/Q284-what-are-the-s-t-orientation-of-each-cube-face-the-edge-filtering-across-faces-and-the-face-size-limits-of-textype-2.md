@@ -5,7 +5,7 @@ unit = "texture"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E726", "E567", "E844", "E923", "E930", "E931", "E951", "E955", "E956"]
+evidence = ["E726", "E567", "E844", "E923", "E930", "E931", "E951", "E955", "E956", "E1001", "E1002"]
 terms = ["TEXTYPE"]
 +++
 E726: the six faces are six consecutive 256-dword blocks in the order +x, -x, +y, -y, +z, -z for a

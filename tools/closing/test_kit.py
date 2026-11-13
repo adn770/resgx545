@@ -975,3 +975,22 @@ def test_verify_lets_a_fold_add_its_files_under_fold_and_out(repos):
     (kp / "session.toml").write_text(toml)
     g = kit(kp, repos, "guard")
     assert g.returncode != 0 and "fold/*.bin" in g.stdout, g.stdout
+
+
+def test_the_template_runs_pytest_without_a_cache_and_the_freeze_ignores_one(repos):
+    """A pytest run from the session directory left .pytest_cache/ in it, which verify took for a
+    new file and the freeze pinned. The template's runner passes -p no:cacheprovider, and a cache
+    (or a __pycache__) anywhere in the session is no session file."""
+    run_all = (KIT / "templates/tests/run_all.sh").read_text()
+    assert re.search(r'-m pytest .*-p no:cacheprovider', run_all), run_all
+    kp = frozen_session(repos)
+    (kp / ".pytest_cache").mkdir()
+    (kp / ".pytest_cache/README.md").write_text("cache\n")
+    (kp / "tests/.pytest_cache").mkdir()
+    (kp / "tests/.pytest_cache/v").write_text("cache\n")
+    v = kit(kp, repos, "verify")
+    assert v.returncode == 0, v.stdout
+    assert not [f for f in S.freeze_files(kp) if ".pytest_cache" in f]
+    (kp / "tests/new_test.py").write_text("x = 1\n")      # a real new file is still refused
+    v = kit(kp, repos, "verify")
+    assert v.returncode != 0 and "new_test.py" in v.stdout, v.stdout

@@ -1,11 +1,11 @@
 +++
 id = "Q210"
-question = "why does band 6's margin end at the page count once the object after the straddling block (b_6 + 1) is tiled (E960, E961: held out at four targets, 20 of 20, where A_6, E900's end, gave 14) and do other bands end there too, what puts E874's step replay one to three pages low at some targets' S3 and S6 (2048x3072, 2048x4096, E935; 2560x3072, 3072x2560, E936; 2048x2304, E961; the four wide targets of E962, whose needs are the replay's), why the threshold is not raised after a first partial render at band 4 that leaves 2 global pages (E918, E938, E963: 7 of 7 cells against R-5's guard as formalized), what sets the global steps of objects larger than 67 dwords (E937), and do E802's one global page and the page pending after a grow (H-PENDREQ, E918) follow from E874's replay?"
+question = "why does band 6's margin end at the page count once the object after the straddling block (b_6 + 1) is tiled (E960, E961: held out at four targets, 20 of 20, where A_6, E900's end, gave 14) and do other bands end there too, where does E874's step replay carry its bias of one or more pages at S6 (and S3 at two) and what sets it (the five targets of E1009 and E962: 4096x1024, 4096x1536, 3584x1024, 2048x512, 2048x2304, the bracket's lower end the replay plus 1 in 15 of 15 replicates, H-NOISE 0 of 5; also 2048x3072, 2048x4096, E935; 2560x3072, 3072x2560, E936; where it is exact: 1280x1280, 1536x1536, 1792x1792, 2048x2048, 2304x1792, 2304x2304, 2560x2048, 4096x2048), why the threshold is not raised after a first partial render at band 4 that leaves 2 global pages (E918, E938, E963: 7 of 7 cells against R-5's guard as formalized), what sets the global steps of objects larger than 67 dwords (E937), and do E802's one global page and the page pending after a grow (H-PENDREQ, E918) follow from E874's replay?"
 unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E310", "E312", "E464", "E625", "E627", "E629", "E704", "E734", "E753", "E774", "E779", "E785", "E786", "E799", "E800", "E801", "E802", "E852", "E853", "E860", "E861", "E862", "E863", "E864", "E873", "E874", "E881", "E882", "E900", "E915", "E917", "E918", "E935", "E936", "E937", "E938", "E960", "E961", "E962", "E963"]
+evidence = ["E310", "E312", "E464", "E625", "E627", "E629", "E704", "E734", "E753", "E774", "E779", "E785", "E786", "E799", "E800", "E801", "E802", "E852", "E853", "E860", "E861", "E862", "E863", "E864", "E873", "E874", "E881", "E882", "E900", "E915", "E917", "E918", "E935", "E936", "E937", "E938", "E960", "E961", "E962", "E963", "E1009"]
 terms = ["Dynamic Parameter Management (DPM)", "CR_DPM_STATE_BASE0", "ta3d_ctl"]
 +++
 
@@ -350,3 +350,11 @@ cells repeated on this module. `dpm.rs` gives band 6 at those four targets. The 
 five new calibrations and missed 2048x2304's S3 and S6 and the four wide targets' S6 by one or two
 pages, their needs the replay's (E961, E962). At three more band 4 cells with 2 global pages left
 the threshold was not raised (E963), as at E938's three and E918's k-s4p1. Open: as the line says.
+[HW replicated] Three calibration replicates at each of 4096x1024, 4096x1536, 3584x1024, 2048x512
+and 2048x2304 (E1009): the replay's S6 lay inside no replicate range (H-NOISE 0 of 5) and every
+replicate but one read it plus 1 or 2 (H-BIAS 4 of 5; the fifth read a stalled sample interval of
+28 pages); the sampled bracket's lower end is the replay plus 1 in 15 of 15 replicates and in
+E962's and E961's kept reads, so the step misses are a bias of the replay, not run to run noise.
+The 2048x2048 control read the replay's S6 (0x181). No rule for where the bias comes in is fitted
+(five biased targets, none held out): the step clause of the question now asks that. Open: as the
+line says.

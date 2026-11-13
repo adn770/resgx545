@@ -5,7 +5,7 @@ unit = "zls"
 kind = "hw"
 value = "low"
 phase = 12
-evidence = ["E467", "E628", "E664", "E977"]
+evidence = ["E467", "E628", "E664", "E977", "E995"]
 terms = ["CR_ISP_ZLSCTL", "CR_ISP_ZLOAD_BASE", "CR_ISP_ZSTORE_BASE"]
 +++
 
@@ -31,3 +31,8 @@ Narrowed 2026-11-13 (E977). A load of format 1 or 2 is compared as the stored dw
 less and fails greater against 0.5 while infinity follows IEEE: every load row matches an unsigned
 compare of the bit patterns [infer]. Open: a load at another address than the store's, other compare
 modes against NaN and equal depths.
+
+Narrowed 2026-11-13 (r10-x, E995). A loaded depth enters the compare with its sign bit cleared:
+-0.25, -0.75 and -0.0 act as 0.25, 0.75 and 0, and NaN as a value above every depth, under the
+compares 1, 2, 3, 4, 5 and 6 (14 of 14 held out, the raw unsigned compare refuted on 4); E977's
+[infer] is corrected to it. Open: a load at another address than the store's (the moved load base).

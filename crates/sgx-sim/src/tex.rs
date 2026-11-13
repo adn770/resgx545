@@ -93,12 +93,13 @@ pub fn sample(s: &Sample, load: &mut Load) -> Result<Vec<u32>, Fail> {
         return open("T3's texel offset or address scale filtered, with .pcf or an SRD mode");
     }
     if tex.format == 27 || tex.srgb {
-        // E723, E724: point samples of level 0, as Texture::new admits them
-        if bilinear || levels != [(0, 64)] || s.pcf.is_some() || s.srd != Srd::None {
-            // sRGB bilinear: neither declared arithmetic held stage by stage (E976, Q282); the
-            // fitted stage rule held out on four rows of five, not where a stage is subnormal
-            // (E1004)
-            return open("ETC1 or sRGB filtered, blended, with .pcf or an SRD mode (not run)");
+        // E723, E724: point samples of level 0, as Texture::new admits them; E982: sRGB bilinear
+        // (on E723's fills only; E1004: the rule misses where a stage's result is subnormal)
+        if levels != [(0, 64)] || s.pcf.is_some() || s.srd != Srd::None || bilinear && tex.format == 27 {
+            return open("ETC1 or sRGB blended, with .pcf or an SRD mode, or ETC1 filtered (not run; Q282)");
+        }
+        if bilinear {
+            return Ok(vec![tex.srgb_bilinear(u, v, s.one_d, load)?]);
         }
         let (x, y) = ((u * tex.w as f64).floor() as i64, tex.row_of(v, s.one_d));
         return Ok(vec![if tex.format == 27 {
@@ -383,16 +384,46 @@ fn srgb_word(t: u32) -> u32 {
 
 /// A double in [0, 1] as a half, rounded to nearest even (the exponent read from its bits).
 fn half64(x: f64) -> u32 {
+    half_rounded(x, f64::round_ties_even)
+}
+
+/// A double in [0, 1] as a half, rounded to the half grid by `round`.
+fn half_rounded(x: f64, round: fn(f64) -> f64) -> u32 {
     if x == 0.0 {
         return 0;
     }
     let e = ((x.to_bits() >> 52 & 0x7ff) as i32 - 1023).max(-14);
     if e == -14 && x < 2f64.powi(-14) {
-        return (x * 2f64.powi(24)).round_ties_even() as u32;
+        return round(x * 2f64.powi(24)) as u32;
     }
-    let m = (x / 2f64.powi(e - 10)).round_ties_even() as u32;
+    let m = round(x / 2f64.powi(e - 10)) as u32;
     let (m, e) = if m == 2048 { (1024, e + 1) } else { (m, e) };
     ((e + 15) as u32) << 10 | (m & 0x3ff)
+}
+
+/// The value of a half in [0, 1].
+fn half_value(h: u32) -> f64 {
+    let (e, m) = ((h >> 10 & 31) as i32, (h & 0x3ff) as f64);
+    if e == 0 { m * 2f64.powi(-24) } else { (1024.0 + m) * 2f64.powi(e - 25) }
+}
+
+/// One lerp stage of a bilinear sRGB sample (E982: exact on r9-x's 16384 single-stage halves,
+/// held out offline on three two-stage fills; a later held-out row missed it, Q282): at weight
+/// 0 the first half unchanged; else both halves floored to the ulp of the larger one (an 11-bit
+/// mantissa at its exponent), lerped exactly by k / 64 towards `b`, and rounded to a half,
+/// nearest with ties up.
+fn srgb_stage(a: u32, b: u32, k: u32) -> u32 {
+    if k == 0 {
+        return a;
+    }
+    let (fa, fb) = (half_value(a), half_value(b));
+    let top = fa.max(fb);
+    if top == 0.0 {
+        return 0;
+    }
+    let g = 2f64.powi((top.to_bits() >> 52 & 0x7ff) as i32 - 1023 - 10);
+    let (qa, qb) = ((fa / g).floor() * g, (fb / g).floor() * g);
+    half_rounded(qa + k as f64 / 64.0 * (qb - qa), |v| (v + 0.5).floor())
 }
 
 /// Why the registers a sample writes after those `sample` returns are not known, if they are not:
@@ -409,6 +440,8 @@ const T3_TW: u32 = 0x0080_0800;
 const T3_ST: u32 = 0xa080_0000;
 /// E723's stride texture: T0_REP's role with the stride of 8 dwords and bit 27.
 const T0_SRGB_STRIDE8: u32 = 0x0800_0e00;
+/// E723's bilinear fills (g-bl-st-a and -b, 8 x 8): the same with bilinear filters (E982).
+const T0_SRGB_BL_STRIDE8: u32 = 0x0800_1e00;
 /// The sizes E724 ran format 27 at and E725 types 1 and 3 at (twiddled block grids, rasters), and
 /// those E910 held the raster of the width out at in the window's 64 columns: 4 x 16 for type 1,
 /// 64 x 8 for both (type 3 at 4 x 16 read rows 8 dwords apart; 128 x 8 ran, but only its first
@@ -442,7 +475,11 @@ fn measured_r4(t0: u32, t1: u32, t3: u32) -> Result<(), Fail> {
     let ok = if t0 >> 27 & 1 != 0 {
         fmt == 12
             && match ty {
-                6 => (w, h) == (8, 4) && t0 == T0_SRGB_STRIDE8 && t3 == T3_ST,
+                6 => {
+                    ((w, h) == (8, 4) && t0 == T0_SRGB_STRIDE8
+                        || (w, h) == (8, 8) && t0 == T0_SRGB_BL_STRIDE8)
+                        && t3 == T3_ST
+                }
                 0 => matches!((w, h), (8, 8) | (32, 32)) && t0 == T0_REP | 1 << 27 && t3 == T3_TW,
                 _ => false,
             }
@@ -469,7 +506,7 @@ fn measured_r4(t0: u32, t1: u32, t3: u32) -> Result<(), Fail> {
         return open(format!(
             "T0 0x{t0:08x}, T1 0x{t1:08x}, T3 0x{t3:08x}: sRGB (E723), format 27 (E724) and types 1 and 3 \
              (E725, E910, E940, E958), 4 (E941, E958) and 5 (E942) ran only with the state words and at the sizes of their \
-             held-out jobs"
+             held-out jobs (sRGB bilinear: E982's rule on E723's fills only, Q282)"
         ));
     }
     Ok(())
@@ -717,6 +754,24 @@ impl Texture {
         Ok((t, [(64 - fx) * (64 - fy), fx * (64 - fy), (64 - fx) * fy, fx * fy]))
     }
 
+    /// A bilinear sample of an sRGB texture's first register (E982): bytes 0 and 1 of the four
+    /// texels decoded to halves (E723), each filtered by `srgb_stage` on x on both rows and then
+    /// on y, with `corner`'s 1/64 weights (E723's two fills and r9-x's rows were on that grid).
+    fn srgb_bilinear(&self, u: f64, v: f64, one_d: bool, load: &mut Load) -> Result<u32, Fail> {
+        let ((x0, y0), (fx, fy)) = self.corner(u, v, one_d);
+        let mut t = [0u32; 4];
+        for (k, (dx, dy)) in [(0, 0), (1, 0), (0, 1), (1, 1)].into_iter().enumerate() {
+            t[k] = self.fetch(x0 + dx, y0 + dy, load)?;
+        }
+        let mut out = 0;
+        for c in 0..2 {
+            let h = |k: usize| srgb_half(t[k] >> (8 * c) & 0xff);
+            let (top, bottom) = (srgb_stage(h(0), h(1), fx), srgb_stage(h(2), h(3), fx));
+            out |= srgb_stage(top, bottom, fy) << (16 * c);
+        }
+        Ok(out)
+    }
+
     /// A point or bilinear sample, and whether no channel rounded.
     fn filtered(
         &self,
@@ -812,8 +867,9 @@ impl Texture {
     /// at a pitch of one texel by E932); on u they read the texel the v rule names moved by an
     /// offset that grows with the size, 116, 180 and 308 dwords at 8, 16 and 32 (E932 post hoc,
     /// E957: the same in modes 4 and 6, whatever T3 or the v mode; 8 N + 52 fitted, not held
-    /// out; E1000: 8 max(W, H) + 52 on W != H, post hoc), and other dwords past the texture in 5:
-    /// open.
+    /// out; E983: 308 on E565's 32 x 8 too, SEMI; E1000: 8 max(W, H) + 52 on W != H, every frozen
+    /// single-side rival failing a held-out shape, post hoc), and past the texture mode 5 reads
+    /// 5 max(W, H) + 52 + t left and 6 max(W, H) + 52 + t right (E983, E1000, post hoc): open.
     fn fetch(&self, x: i64, y: i64, load: &mut Load) -> Result<u32, Fail> {
         let axis = |t: i64, n: u32, mode: u32, v: bool| -> Result<u32, Fail> {
             let n = n as i64;
@@ -831,7 +887,12 @@ impl Texture {
                     3 => clamp(if t < 0 { -t - 1 } else { t }),
                     4 | 5 if v => t.rem_euclid(n),
                     6 | 7 if v => clamp(t),
-                    m => return open(format!("address mode {m} on u (E932, E957: an offset by size)")),
+                    m => {
+                        return open(format!(
+                            "address mode {m} on u (E932, E957, E983: an offset of 8 W + 52 dwords, W the width, \
+                             not held out)"
+                        ));
+                    }
                 }
             } as u32)
         };
@@ -1132,10 +1193,10 @@ mod tests {
         assert_eq!(y(7, -0.3), Ok(vec![0x100]), "clamp: -2 is 0");
         // on u the reads are 180 dwords on (post hoc, E932): no model
         assert!(at(state(0, 12, 4, 4, 1, 4 << 6, 0), 0.3, 0.0).is_err());
-        // E957: the offset is 116, 180 and 308 dwords at 8, 16 and 32 (8 N + 52, fitted): the
-        // refusal names it
+        // E957: the offset is 116, 180 and 308 dwords at 8, 16 and 32 (8 N + 52, fitted); E983:
+        // 308 on E565's 32 x 8 too, so 8 W + 52 with W the width (SEMI): the refusal names both
         let e = at(state(0, 12, 4, 4, 1, 6 << 6, 0), 0.3, 0.0).unwrap_err();
-        assert!(format!("{e:?}").contains("E957"), "{e:?}");
+        assert!(format!("{e:?}").contains("E957") && format!("{e:?}").contains("E983"), "{e:?}");
     }
 
     #[test]
@@ -2021,6 +2082,21 @@ mod tests {
     }
 
     #[test]
+    fn a_bilinear_srgb_stage_floors_both_halves_to_the_larger_ones_ulp() {
+        // E982: weight 0 returns A unchanged, equal halves stay (E976's control)
+        assert_eq!(srgb_stage(0x0cf9, 0x3c00, 0), 0x0cf9);
+        assert_eq!(srgb_stage(0x32e8, 0x32e8, 37), 0x32e8);
+        // 1.0 and byte 1's half (3.0e-4, below 1.0's ulp of 2^-10, so floored to 0): 63/64 of the
+        // way down is 1/64 exactly, where the exact lerp of the halves would be 20 ulps above it
+        assert_eq!(srgb_stage(0x3c00, 0x0cf9, 63), 0x2400);
+        // the result rounds to nearest with ties up: between 0.5 and the next half, a quarter of
+        // the way rounds down, half of it (to nearest even would give 0.5) and three quarters up
+        assert_eq!(srgb_stage(0x3800, 0x3801, 16), 0x3800);
+        assert_eq!(srgb_stage(0x3800, 0x3801, 32), 0x3801);
+        assert_eq!(srgb_stage(0x3800, 0x3801, 48), 0x3801);
+    }
+
+    #[test]
     fn srgb_samples_the_textures_e723_ran_and_refuses_the_rest() {
         let mem = |a: u32| 0xd000_0000 | ((a - 0x1000) / 4) | 0x0000_ff00;
         let want = |i: u32| srgb_word(0xd000_ff00 | i);
@@ -2031,16 +2107,28 @@ mod tests {
         assert_eq!(texel(tw8, 8, 8, 1, 0, &mem), Ok(vec![want(2)]));
         let tw32 = [T0_REP | 1 << 27, t1(0, 12, 32, 32), 0x1000, T3_TW];
         assert_eq!(texel(tw32, 32, 32, 0, 1, &mem), Ok(vec![want(1)]));
-        // other sizes, formats, filters, conversions and T3 words did not run (bilinear: Q282)
+        // bilinear on E723's 8 x 8 stride fills (E982): at a texel centre both weights are 0
+        let bl = [T0_SRGB_BL_STRIDE8, t1(6, 12, 8, 8), 0x1000, T3_ST];
+        assert_eq!(texel(bl, 8, 8, 3, 2, &mem), Ok(vec![want(2 * 8 + 3)]));
+        // other sizes, formats, filters, conversions and T3 words did not run (bilinear: E982's
+        // fills only)
         for st in [
             [T0_REP | 1 << 27, t1(0, 12, 16, 16), 0x1000, T3_TW],
             [T0_REP | 1 << 27, t1(0, 13, 8, 8), 0x1000, T3_TW],
             [T0_REP | 1 << 27 | 1 << 12, t1(0, 12, 8, 8), 0x1000, T3_TW],
             [T0_REP | 1 << 27, t1(0, 12, 8, 8), 0x1000, T3_TW | 2 << 16],
-            [0x0800_0e00 | 1 << 12 | 1 << 10, t1(6, 12, 8, 8), 0x1000, T3_ST],
+            [T0_SRGB_BL_STRIDE8, t1(6, 12, 8, 4), 0x1000, T3_ST],
             [0x0800_0e00, t1(6, 12, 16, 4), 0x1000, T3_ST],
         ] {
             assert!(is_open(texel(st, 8, 8, 1, 1, &mem)), "{st:08x?}");
+        }
+        // bilinear sRGB past E723's fills names Q282 (a held-out row missed E982's rule)
+        for st in [
+            [T0_REP | 1 << 27 | 1 << 12, t1(0, 12, 8, 8), 0x1000, T3_TW],
+            [T0_SRGB_BL_STRIDE8, t1(6, 12, 8, 4), 0x1000, T3_ST],
+        ] {
+            let e = texel(st, 8, 8, 1, 1, &mem).unwrap_err();
+            assert!(format!("{e:?}").contains("Q282"), "{e:?}");
         }
         // the registers after the first are not known (E723's r11 reads: no model)
         assert!(unknown_after(tw8).is_some());
