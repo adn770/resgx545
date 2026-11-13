@@ -140,20 +140,26 @@ Key registers:
 - **PTE** (`sgxmmu.h:65-69`): `VALID` `0x1`, `WRITEONLY` `0x2`, `READONLY` `0x4`,
   `CACHECONSISTENT` `0x8`, `EDMPROTECT` `0x10`; address mask `0xFFFFF000`. A write to a
   read-only page faults (E021, E319). The round 8 kernel's debugfs `vm_pte_flags` puts the
-  other three on one client mapping (fork r8-kernel 2a650d74, module B60AB0B4), one flag a job
-  (E945, the triangle's rows, frozen; E946, the transfer's, read post hoc):
-  - `WRITEONLY`: the pixel writes land (the fill's and the triangle's images exact), then the
-    job faults at the image's last page with `SB` 31 (`BIF_INT_STAT` 0x80020, 2 of 2); a read
-    faults at the mapping's first page before anything is drawn: the render's VDM stream page
-    (0x80008) and, with the copy's own `READONLY`, its texture source (0x80002). So no access
-    passes cleanly, but the write is not refused as a read-only one is [infer: the last-page
-    fault is a read by the pixel side after its writes].
+  other three on one client mapping (fork r8-kernel 2a650d74, module B60AB0B4) (E945, the
+  triangle's rows, frozen; E946, the transfer's, read post hoc; E964 and E965, frozen):
+  - `WRITEONLY`: the writes land (the fill's and the triangle's images exact), then the job
+    faults at the page of the last pixel written with `SB` 31 (`BIF_INT_STAT` 0x80020; held out
+    at a 64 x 16 fill from row 16 and at 64 x 64, never the mapping's first or last page, E964);
+    the ZLS store lands whole, then faults at the store window's last page (0x80200, `SB` 0,
+    E965); a read faults at the mapping's first page before anything is drawn: the render's VDM
+    stream page (0x80008) and, with the copy's own `READONLY`, its texture source (0x80002). So
+    no access passes cleanly, but the write is not refused as a read-only one is [infer: the
+    last-page fault is a read by the writing unit after its writes].
   - `CACHECONSISTENT`: no change to a copy's texture read or a render's stream read of the host's
     writes made after the map (both images exact).
-  - `EDMPROTECT`: a pixel write faults at the first page with `FAULT_TYPE` 2 (0xa0020, the
-    transfer's and the 3D's, nothing written); the render's stream read passes.
-  The rest (a flag on another requestor, flags together, `WRITEONLY` alone on a texture read)
-  is Q108.
+  - `EDMPROTECT`: a client write faults at the mapping's first page with `FAULT_TYPE` 2, nothing
+    written: the transfer's and the 3D's pixel write (0xa0020) and the ZLS store (0xa0200,
+    E965); the render's stream read and a copy's texture read of its `READONLY` source (PTE
+    0x14, E964) pass.
+  - `WRITEONLY` with `EDMPROTECT` (0x12) on a colour target faults as `EDMPROTECT` alone, at the
+    first page before any pixel (E965).
+  The rest (either flag alone on a texture read, on a depth load, on the TA's writes or the EDM's
+  buffers; `CACHECONSISTENT` on data cached before the host's write) is Q108.
 - **BIF.** The bus interface is the MMU's front end. With 16 directory lists and multiple
   memory contexts, `BIF_DIR_LIST_BASE0..15` hold up to 16 page directories at once, and
   `BIF_BANK0` says which list each requestor translates through (§5.5).
@@ -243,7 +249,10 @@ belongs to is read from the access each record set up, not from a source [infer]
 | 0x80020 | 5 | fill or render colour write to a `WRITEONLY` page, after the image was written (`SB` 31, the image's last page) | E945, E946 |
 | 0x80002 | 1 | copy's texture read of a `READONLY` + `WRITEONLY` source | E946 |
 | 0x80008 | 3 | render's read of its VDM stream page mapped `WRITEONLY` | E945 |
-| 0xa0020 | 5 | fill or render colour write to an `EDMPROTECT` page (`FAULT_TYPE` 2) | E945, E946 |
+| 0x80020 | 5 | the same at a 64 x 16 fill from row 16 and a 64 x 64 fill (the last pixel's page) | E964 |
+| 0xa0020 | 5 | fill or render colour write to an `EDMPROTECT` page (`FAULT_TYPE` 2), also with `WRITEONLY` | E945, E946, E964, E965 |
+| 0x80200 | 9 | ZLS store to a `WRITEONLY` page, after the store landed (the window's last page) | E965 |
+| 0xa0200 | 9 | ZLS store to an `EDMPROTECT` page (`FAULT_TYPE` 2, nothing stored) | E965 |
 | 0x90100 | 8 | 4x render, at page 0x10000 (`SB` 1) | E511, E828, E845, E846, E867 to E869 |
 | 0xd0400 | 10 | background program's fetch (`FAULT_TYPE` 5) | E764 |
 | 0x91000 | 12 | first job with buffer 0 left out of the client alias | E573, E745, E761 |
@@ -259,7 +268,11 @@ alone, 10 of 10 runs exact); TA3DCtl is, writable (Q076). Nor are buffers 1 to 5
 one at a time (E573), the pairs among 1 to 5 tried and 1 to 5 together in a two-render job, 6, 7,
 8, 10 and 11 together over three renders (E745, held out), and 1 to 4 together in two 1024 x 768
 renders that both overflow the parameter buffer (E761); with buffer 0 left out the first job
-faults (0x91000 at 0x3000b021 or 0x3000b022; E573, E745, E761).
+faults (0x91000 at 0x3000b021 or 0x3000b022; E573, E745, E761). Nor are they needed together:
+every buffer but 0 and 9 left out at once (mask 0x7dfe), the 0x32 heap without TA3DCtl and the
+pairs and the three of 12 to 14 kept two renders exact, and 0x7dfe three renders and two
+overflowing 1024 x 768 renders (E980, held out 8 of 8): of the EDM's buffers the client directory
+needs only 0 and 9.
 
 On the laptop the EDM keeps its own directory in `BASE15` and gives each render context's
 directory one of lists 0 to 14 at its first kick, in turn after a reset (1, 2, ... 14, then 0),
