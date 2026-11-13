@@ -566,3 +566,15 @@ def test_tri_refuses_an_absolute_branch(tmp_path, slot):
     assert f"a ba in the --tri {slot} slot counts from the code base: use br" in r.stderr
     r = probe(br)
     assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_tri_probe_unit_0_and_int32_vertices(tmp_path):
+    pix = assemble(tmp_path, "pix", PHAS + "mov.skipinv.end o0, pa0\n")
+    r = run("--mock", "probe", "--tri", "pixel", "--tri-unit", "0", "--tri-v",
+            "-2147483648,2147483647,0,0,5,5", str(pix))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^probe pix: vertices1 -2147483648 2147483647 0 0 5 5$", r.stdout,
+                     re.M), r.stdout
+    r = run("--mock", "probe", "--tri", "pixel", "--tri-unit", "21", "--tri-v",
+            "0,0,1,1,2,2", str(pix))
+    assert r.returncode == 2, r.stdout + r.stderr

@@ -181,6 +181,51 @@ static void test_fine_vertices(void)
 }
 
 /* a finer unit: vertices in 1/4096 pixel (shift 12) are still exact clip coordinates on a 64 wide target */
+/*
+ * Units of 1 to 1/16 pixel (shift 0 to 4) and the whole int32 range: the 1/16-pixel reference
+ * is exact for a unit of 1/16 or coarser and saturates at 2^29 (its products stay in int64),
+ * the clip coordinate is px / (2^(shift - 1) * size) - 1.
+ */
+static void test_fine_unit_wide(void)
+{
+	struct sgxfive_tri_cpu c = {
+		calloc(1, 4096), calloc(1, 4096), calloc(1, 4096), calloc(1, 4096),
+		calloc(1, 4096), 0,
+	};
+	struct drm_sgxfive_render_cmd cmd;
+	struct sgxfive_tri_params p;
+	const uint32_t *v = c.gen + SGXFIVE_TRI_G_VTX / 4;
+	const int32_t a[3][2] = { { 0, 64 }, { 3, -2 }, { 64, 64 } };
+	const int32_t w[3][2] = { { INT32_MIN, INT32_MAX }, { 0, 32 }, { 5, -5 } };
+
+	sgxfive_tri_default(&p, 64, 64);
+	sgxfive_tri_fine_unit(&p, a, 0);		/* whole pixels */
+	CHECK_EQ(p.fine_shift, 0);
+	CHECK_EQ(p.v[1][0], 48);
+	CHECK_EQ(p.v[1][1], -32);
+	sgxfive_tri_fine_unit(&p, a, 3);		/* eighths */
+	CHECK_EQ(p.v[1][0], 6);
+	CHECK_EQ(p.v[0][1], 128);
+	sgxfive_tri_fine_unit(&p, a, 4);
+	CHECK_EQ(p.v[1][0], 3);
+	CHECK_EQ(sgxfive_tri_scene(&c, &L, &p, &cmd), 0);
+	CHECK_EQ(v[4], sgxfive_f32((float)(3.0 / (8.0 * 64.0) - 1.0)));	/* 1/16 pixel */
+	sgxfive_tri_default(&p, 64, 64);
+	sgxfive_tri_fine_unit(&p, a, 0);
+	CHECK_EQ(sgxfive_tri_scene(&c, &L, &p, &cmd), 0);
+	CHECK_EQ(v[0], 0xbf800000);			/* 0 / (0.5 * 64) - 1 = -1 */
+	CHECK_EQ(v[1], 0x3f800000);			/* 64 / 32 - 1 = 1 */
+	CHECK_EQ(v[4], sgxfive_f32((float)(3.0 / (0.5 * 64.0) - 1.0)));	/* 3 / 32 - 1 */
+	sgxfive_tri_default(&p, 64, 64);
+	sgxfive_tri_fine_unit(&p, w, 5);		/* the int32 extremes */
+	CHECK_EQ(p.v[0][0], -(1 << 29));
+	CHECK_EQ(p.v[0][1], 1 << 29);
+	CHECK_EQ(p.v[2][0], 3);			/* (5 + 1) >> 1 */
+	CHECK_EQ(sgxfive_tri_scene(&c, &L, &p, &cmd), 0);
+	CHECK_EQ(v[0], sgxfive_f32((float)((double)INT32_MIN / (16.0 * 64.0) - 1.0)));
+	CHECK_EQ(v[1], sgxfive_f32((float)((double)INT32_MAX / (16.0 * 64.0) - 1.0)));
+}
+
 static void test_fine_unit(void)
 {
 	struct sgxfive_tri_cpu c = {
@@ -595,6 +640,7 @@ int main(void)
 	test_vertex_z();
 	test_fine_vertices();
 	test_fine_unit();
+	test_fine_unit_wide();
 	test_tiling();
 	test_expect();
 	return tap_done();
