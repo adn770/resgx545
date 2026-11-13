@@ -731,9 +731,11 @@ impl Texture {
 
     /// Texel (x, y) addressed by the modes (texture-sampler-smp-address): a stride texture
     /// clamps to the edge; a twiddled one repeats (0), mirrors (1), clamps
-    /// (2) or mirrors once (3).
+    /// (2) or mirrors once (3). Modes 4 to 7 on v repeat (4, 5) and clamp (6, 7) (E565, held out
+    /// at a pitch of one texel by E932); on u they read 180 dwords past the texel the v rule
+    /// names in modes 4, 6 and 7, and other dwords past the texture in 5 (E932, post hoc): open.
     fn fetch(&self, x: i64, y: i64, load: &mut Load) -> Result<u32, Fail> {
-        let axis = |t: i64, n: u32, mode: u32| -> Result<u32, Fail> {
+        let axis = |t: i64, n: u32, mode: u32, v: bool| -> Result<u32, Fail> {
             let n = n as i64;
             let clamp = |t: i64| t.clamp(0, n - 1);
             Ok(if self.row.is_some() && !self.raster {
@@ -747,12 +749,14 @@ impl Texture {
                     }
                     2 => clamp(t),
                     3 => clamp(if t < 0 { -t - 1 } else { t }),
-                    m => return open(format!("address mode {m}")),
+                    4 | 5 if v => t.rem_euclid(n),
+                    6 | 7 if v => clamp(t),
+                    m => return open(format!("address mode {m} on u (E932: 180 dwords on, post hoc)")),
                 }
             } as u32)
         };
         let (x, y) = (self.offset[0] + x, self.offset[1] + y);
-        let (x, y) = (axis(x, self.w, self.address[0])?, axis(y, self.h, self.address[1])?);
+        let (x, y) = (axis(x, self.w, self.address[0], false)?, axis(y, self.h, self.address[1], true)?);
         let bytes = self.bytes()?;
         let off = match self.row {
             Some(row) => (y * row + x * bytes) << self.shift,
@@ -1026,6 +1030,19 @@ mod tests {
         assert_eq!(x(2, 1.3), Ok(vec![0x10a]), "clamp");
         assert_eq!(x(3, -0.3), Ok(vec![0x102]), "mirror once: |-1.2| is 1");
         assert!(x(4, 0.0).is_err());
+    }
+
+    #[test]
+    fn modes_4_to_7_on_v_repeat_and_clamp_and_on_u_stop() {
+        // E932: on v, 4 and 5 repeat and 6 and 7 clamp (held out at a pitch of one texel); on
+        // column 0 texels 1, 2, 3 are indices 1, 4, 5 (y in bit 0)
+        let y = |mode: u32, v: f32| at(state(0, 12, 4, 4, 1, mode << 3, 0), 0.0, v);
+        assert_eq!(y(4, 1.3), Ok(vec![0x101]), "repeat: 5 is 1");
+        assert_eq!(y(5, 1.3), Ok(vec![0x101]), "repeat");
+        assert_eq!(y(6, 1.3), Ok(vec![0x105]), "clamp: 5 is 3");
+        assert_eq!(y(7, -0.3), Ok(vec![0x100]), "clamp: -2 is 0");
+        // on u the reads are 180 dwords on (post hoc, E932): no model
+        assert!(at(state(0, 12, 4, 4, 1, 4 << 6, 0), 0.3, 0.0).is_err());
     }
 
     #[test]
