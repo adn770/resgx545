@@ -267,14 +267,14 @@ def test_the_view_separates_the_work_queue_from_the_parked_questions(tmp_path):
 
 def test_the_questions_are_well_formed():
     import evidence
-    ids = {p.name[:4] for p in evidence.DIR.glob("*/E*.md")}
+    ids = {p.name.split("-")[0] for p in evidence.DIR.glob("*/E*.md")}
     terms = evidence.glossary_terms()
     bad = {p.name: m for p in questions.files() if (m := questions.problems(p, ids, terms))}
     assert not bad, bad
     assert not questions.misplaced()
     questions.check_retired(questions.RETIRED)
     assert not questions.fold_problems(questions.RETIRED,
-                                       {p.name[:4] for p in questions.files()})
+                                       {p.name.split("-")[0] for p in questions.files()})
     qs = [questions.parse(p) for p in questions.files()]
     assert not [q["id"] for q in qs if q["kind"] == "hw" and "value" not in q]
 
@@ -288,11 +288,11 @@ def test_the_view_is_current():
 
 def test_references_name_open_questions():
     """Specs, evidence records and glossary terms cite only open questions."""
-    open_ids = {p.name[:4] for p in questions.files()}
+    open_ids = {p.name.split("-")[0] for p in questions.files()}
     bad = {}
     for d, pat in (("evidence", "*/*.md"), ("glossary", "*/*.toml"), ("doc", "**/*.md")):
         for p in sorted((questions.ROOT / d).glob(pat)):
-            rec = p.name[:4] if d == "evidence" else None
+            rec = p.name.split("-")[0] if d == "evidence" else None
             if p not in questions.generated() and (m := questions.reference_problems(p.read_text(),
                                                                          open_ids, rec)):
                 bad[str(p.relative_to(questions.ROOT))] = m
