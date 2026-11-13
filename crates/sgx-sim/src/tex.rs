@@ -408,10 +408,12 @@ fn half_value(h: u32) -> f64 {
 }
 
 /// One lerp stage of a bilinear sRGB sample (E982: exact on r9-x's 16384 single-stage halves,
-/// held out offline on three two-stage fills; a later held-out row missed it, Q282): at weight
+/// held out offline on three two-stage fills; a later held-out row missed it, E1004): at weight
 /// 0 the first half unchanged; else both halves floored to the ulp of the larger one (an 11-bit
 /// mantissa at its exponent), lerped exactly by k / 64 towards `b`, and rounded to a half,
-/// nearest with ties up.
+/// nearest with ties up; a result below 2^-14 (a subnormal half) is flushed to +0 (E1004 post
+/// hoc, held out offline on an-t0b27's 12 halves where it parts, one pixel column, E1016; the y
+/// stage's own flush rests on one half and the threshold between 5.7e-5 and 6.4e-5, Q282).
 fn srgb_stage(a: u32, b: u32, k: u32) -> u32 {
     if k == 0 {
         return a;
@@ -423,7 +425,8 @@ fn srgb_stage(a: u32, b: u32, k: u32) -> u32 {
     }
     let g = 2f64.powi((top.to_bits() >> 52 & 0x7ff) as i32 - 1023 - 10);
     let (qa, qb) = ((fa / g).floor() * g, (fb / g).floor() * g);
-    half_rounded(qa + k as f64 / 64.0 * (qb - qa), |v| (v + 0.5).floor())
+    let h = half_rounded(qa + k as f64 / 64.0 * (qb - qa), |v| (v + 0.5).floor());
+    if h < 0x0400 { 0 } else { h }
 }
 
 /// Why the registers a sample writes after those `sample` returns are not known, if they are not:
@@ -869,7 +872,9 @@ impl Texture {
     /// E957: the same in modes 4 and 6, whatever T3 or the v mode; 8 N + 52 fitted, not held
     /// out; E983: 308 on E565's 32 x 8 too, SEMI; E1000: 8 max(W, H) + 52 on W != H, every frozen
     /// single-side rival failing a held-out shape, post hoc), and past the texture mode 5 reads
-    /// 5 max(W, H) + 52 + t left and 6 max(W, H) + 52 + t right (E983, E1000, post hoc): open.
+    /// 5 max(W, H) + 52 + t left and 6 max(W, H) + 52 + t right (E983, E1000, post hoc), above and
+    /// below it 7 M + 52 + s and 4 M + 52 + s and a corner dword whose base moves with the shape
+    /// (E1017, post hoc; no kept job parts max(W, H) from W): open (Q177).
     fn fetch(&self, x: i64, y: i64, load: &mut Load) -> Result<u32, Fail> {
         let axis = |t: i64, n: u32, mode: u32, v: bool| -> Result<u32, Fail> {
             let n = n as i64;
@@ -889,8 +894,8 @@ impl Texture {
                     6 | 7 if v => clamp(t),
                     m => {
                         return open(format!(
-                            "address mode {m} on u (E932, E957, E983: an offset of 8 W + 52 dwords, W the width, \
-                             not held out)"
+                            "address mode {m} on u (E932, E957, E983, E1000: an offset of 8 max(W, H) + 52 dwords, \
+                             post hoc, never held out against the width, E1017; Q177)"
                         ));
                     }
                 }
@@ -1194,9 +1199,12 @@ mod tests {
         // on u the reads are 180 dwords on (post hoc, E932): no model
         assert!(at(state(0, 12, 4, 4, 1, 4 << 6, 0), 0.3, 0.0).is_err());
         // E957: the offset is 116, 180 and 308 dwords at 8, 16 and 32 (8 N + 52, fitted); E983:
-        // 308 on E565's 32 x 8 too, so 8 W + 52 with W the width (SEMI): the refusal names both
-        let e = at(state(0, 12, 4, 4, 1, 6 << 6, 0), 0.3, 0.0).unwrap_err();
-        assert!(format!("{e:?}").contains("E957") && format!("{e:?}").contains("E983"), "{e:?}");
+        // 308 on E565's 32 x 8 too; E1000: 8 max(W, H) + 52 on W != H, post hoc, and no kept job
+        // holds max out against W (E1017): the refusal names them and the question
+        let e = format!("{:?}", at(state(0, 12, 4, 4, 1, 6 << 6, 0), 0.3, 0.0).unwrap_err());
+        for id in ["E957", "E983", "E1000", "E1017", "Q177"] {
+            assert!(e.contains(id), "{id}: {e}");
+        }
     }
 
     #[test]
@@ -2094,6 +2102,38 @@ mod tests {
         assert_eq!(srgb_stage(0x3800, 0x3801, 16), 0x3800);
         assert_eq!(srgb_stage(0x3800, 0x3801, 32), 0x3801);
         assert_eq!(srgb_stage(0x3800, 0x3801, 48), 0x3801);
+    }
+
+    #[test]
+    fn a_bilinear_srgb_stage_result_below_2_to_the_minus_14_is_flushed_to_zero() {
+        // E1004 (post hoc) and E1016 (held out offline): a stage whose result would be a
+        // subnormal half gives +0; byte 0 and byte 2 (6.07e-4) at weight 4 lerp to 3.8e-5
+        let h = srgb_half;
+        assert_eq!(srgb_stage(h(0), h(2), 4), 0);
+        // a normal result is kept: byte 2 at weight 7 is 6.6e-5 (0x045a)
+        assert_eq!(srgb_stage(h(0), h(2), 7), 0x045a);
+        // E1016: p1132 tx-lod's an-t0b27, pixel column x = 4, channel 0: corner bytes 00, 10,
+        // 01, 11, the weights kx and ky of 64, and the half the hardware stored (every one of
+        // the 12 halves where the flush changes the result; detail_b.out of
+        // closing11/plan/c2-texture/)
+        let kept: [([u32; 4], u32, u32, u32); 12] = [
+            ([21, 23, 0, 2], 4, 36, 0x1ac8),
+            ([21, 23, 0, 2], 4, 44, 0x18d8),
+            ([21, 23, 0, 2], 4, 52, 0x15d0),
+            ([21, 23, 0, 2], 4, 60, 0x0fc0),
+            ([0, 2, 1, 3], 4, 4, 0x0000),
+            ([0, 2, 1, 3], 4, 12, 0x0431),
+            ([0, 2, 1, 3], 4, 20, 0x06fd),
+            ([0, 2, 1, 3], 4, 28, 0x08e4),
+            ([0, 2, 1, 3], 4, 36, 0x0a4a),
+            ([0, 2, 1, 3], 4, 44, 0x0bb0),
+            ([0, 2, 1, 3], 4, 52, 0x0c8b),
+            ([0, 2, 1, 3], 4, 60, 0x0d3e),
+        ];
+        for (b, kx, ky, want) in kept {
+            let (top, bottom) = (srgb_stage(h(b[0]), h(b[1]), kx), srgb_stage(h(b[2]), h(b[3]), kx));
+            assert_eq!(srgb_stage(top, bottom, ky), want, "{b:?} kx {kx} ky {ky}");
+        }
     }
 
     #[test]
