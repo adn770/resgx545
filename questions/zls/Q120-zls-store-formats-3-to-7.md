@@ -5,7 +5,7 @@ unit = "zls"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E466", "E490", "E978"]
+evidence = ["E466", "E490", "E978", "E986"]
 terms = ["CR_ISP_ZLSCTL"]
 +++
 
@@ -29,3 +29,11 @@ Note 2026-11-13 (E978). With a loaded index stencil (bits 1 and 13) and bit 17, 
 48: format 4 stores 160 depth dwords a tile (E466 scaled, held), formats 3 and 5 640, 6 512, 7 196 a
 tile at 64 x 32 and not a whole number at 96 x 48; none of 3 to 7 writes the stencil store. The
 dumps are kept; no layout is decoded.
+
+Narrowed 2026-11-13 (E986). E985's offline layouts held out byte for byte: formats 3 and 4 on
+every plane that ran (an x ramp under three constant stencil fills, a y ramp, a plane over 0 to 1,
+40 x 20's edge tiles), formats 5 and 6 where every pixel of a tile row has its own depth. Where a
+tile row repeats one depth (the y ramp) or a tile holds the constant background past an edge
+target, formats 5 and 6 store fewer dwords, in another layout [infer: compressed]; format 7 stores
+48 dwords under a constant stencil and 784 under the index one. None of 3 to 7 writes the stencil
+store. Open: the layouts of formats 5 and 6 when they store less, and format 7's.

@@ -5,7 +5,7 @@ unit = "isp"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E057", "E169", "E216", "E228", "E284", "E337", "E411", "E465", "E466", "E467", "E665"]
+evidence = ["E057", "E169", "E216", "E228", "E284", "E337", "E411", "E465", "E466", "E467", "E665", "E989"]
 terms = ["CR_ISP_ZLSCTL", "CR_ISP_BGOBJVALS.STENCIL", "ISP2"]
 +++
 
@@ -44,3 +44,10 @@ the depth and stencil store are different things. Bit 0 with any other control w
 refuses. To settle it, besides the runs above: the control with several of these bits set
 together, and bit 0 with other controls (the formats, the load bits, another pitch), with the
 depth and stencil dumps kept and the image counted.
+
+Narrowed 2026-11-13 (E989, with E988's stencil test). Under a stencil test against a loaded stencil
+(control 0x0017300e, E988), flipping bits 15, 21 to 23 and 27 to 31 (set) and 12, 16 and 20
+(cleared) together makes the test read 0, not the loaded byte: every EQUAL-to-0 test passed and its
+invert stored 0xff at every byte, while the depth dump and the loaded buffer stayed the base rows'.
+So these bits are not all inert. Open: which of them does it (a flip of each under the same test),
+and what they do to the depth path.

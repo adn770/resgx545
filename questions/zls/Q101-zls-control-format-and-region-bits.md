@@ -5,7 +5,7 @@ unit = "zls"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E057", "E284", "E411", "E465", "E466", "E490", "E981"]
+evidence = ["E057", "E284", "E411", "E465", "E466", "E490", "E981", "E987"]
 terms = ["CR_ISP_ZLSCTL"]
 +++
 
@@ -34,3 +34,12 @@ MTE's clip) reaches the store as 0.0 in format 0 and as 0 in formats 1 and 2, wi
 by the MTE (E287) and cannot make one. So bit 19 never meets a negative integer depth along either
 route that ran. Open: what the poke of word 10 did to the depth plane (+0.25 gave 0.6 t, not t -
 0.25), and bit 19 with format 0 below 0.
+
+Narrowed 2026-11-13 (E987). The third route, the background depth (render details dword 16), is
+stored with its sign cleared in every format: -0.25 stores 0.25 (format 0; -0.25 with bit 19),
+0x400000 and 0x4000 in formats 1 and 2 with and without bit 19, and -0.0 stores 0; so no route
+that ran brings a negative depth to the integer conversion, and bit 19 changes no integer dword
+along any of them. Word 10 is the viewport's z offset at 0.5 to 1.0 (z = t + w - 0.5 at every
+dword) and scales the plane below (0.4 t at 0.125, 0.6 t at 0.25 in E981) [infer: two points].
+Open: why a negative near depth turns the offset into a scale, and bit 19 with a depth that
+reaches an integer conversion negative, if any route does.

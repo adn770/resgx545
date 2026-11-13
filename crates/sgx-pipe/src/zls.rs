@@ -3,13 +3,14 @@
 //! ZLS: the depth/stencil store and load (12.4). The address rule (E465, E489), the control word
 //! (E411, E337), the stored depth formats 0 to 2 and the negation (E466, E490), the load by bits 1,
 //! 13 and 14 with the sign cleared (E467), the pass over a loaded buffer and the band of an edge
-//! tile (E730, E831, E885, E903). What no record states refuses by question: formats 3 to 7 (Q120),
-//! the stencil's in-tile order and its edge tiles (Q121), the
-//! overflowed job's store (Q107), the integer formats' values outside 0 to 1 (E977) and at an
+//! tile (E730, E831, E885, E903), the stencil's byte a pixel and its test (E284, E988), the
+//! background depth's sign (E987). What no record states refuses by question: formats 3 to 7
+//! (Q120), the overflowed job's store (Q107), the integer formats' values outside 0 to 1 (E977) and at an
 //! edge of an odd size (E991 ran 80 x 40), overlapping tiles and the pitches past the scratch
 //! buffer (Q242), a load of an integer format or a loaded depth the compare cannot decide
 //! (Q243: E977 read an integer format's load as the dword's float, two rows only), the load and the
-//! pass over edge tiles (Q243), bit 0 beyond the one control it ran on and the control bits no run explained (Q071),
+//! pass over edge tiles (Q243), bit 0 beyond the one control it ran on and the control bits no run
+//! explained, which E989 found to change the stencil test's source together (Q071),
 //! bit 19 with an integer format or a load (Q101). Every refusal depends on the input alone.
 
 use crate::Outcome;
@@ -18,7 +19,7 @@ use crate::Outcome;
 /// The status of the address rule (rules.rs).
 pub const STORE_STATUS: crate::rules::Status = crate::rules::ZLS_ADDRESS;
 
-pub const OPEN: &[&str] = &["Q071", "Q107", "Q120", "Q121", "Q242", "Q243"];
+pub const OPEN: &[&str] = &["Q071", "Q107", "Q120", "Q242", "Q243"];
 
 pub fn refuse() -> Outcome {
     Outcome::unsupported("zls: this input is not one a record states (12.4)", OPEN)
@@ -245,7 +246,10 @@ impl Ctl {
             1 => Ok(Format::U24),
             2 => Ok(Format::U16),
             c => Err(open(
-                format!("stored depth format {c}: its layout was not decoded (E466, E490, E978)"),
+                format!(
+                    "stored depth format {c}: its layout is not coded (E466, E490, E978; E986 held 3 and 4's \
+                     offline layout and found 5 to 7 data-dependent)"
+                ),
                 &["Q120"],
             )),
         }
@@ -398,21 +402,16 @@ fn depth_dwords(ctl: &Ctl, w: u32, h: u32, stencil_buffer: bool) -> Result<Dword
     Ok(d)
 }
 
-/// The dwords of the stencil buffer a store writes: 128 a tile slot (Q121: the in-tile order is
-/// not modelled, nor what an edge tile stores).
+/// The dwords of the stencil buffer a store writes: 128 a tile slot, a byte a pixel at
+/// [`stencil_byte`], edge tiles included (E988: at 40 x 20 the bytes past the target are the
+/// loaded ones, with E831's band tested as the target is).
 fn stencil_dwords(ctl: &Ctl, w: u32, h: u32) -> Result<Dwords, Outcome> {
     let mut d = Dwords::new();
     if !ctl.store_stencil() {
         return Ok(d);
     }
-    if has_edge(w, h) {
-        return Err(open(
-            format!("the stencil store of a {w} x {h} target: edge tiles were not measured"),
-            &["Q121"],
-        ));
-    }
-    for ty in 0..h / 16 {
-        for tx in 0..w / 32 {
+    for ty in 0..h.div_ceil(16) {
+        for tx in 0..w.div_ceil(32) {
             d.extend((0..128).map(|j| 128 * (ty * (ctl.g() + 1) + tx) + j));
         }
     }
@@ -490,6 +489,98 @@ pub fn store(
     Ok(s)
 }
 
+/// The byte of the stencil buffer that holds pixel (x, y)'s stencil, for a load and a store alike:
+/// 512 bytes a tile slot at the depth's pitch, byte j of the slot the depth's in-tile index
+/// (y0 x0 y1 x1 y2 x2 y3 x3 x4, [`in_tile_index`]). E988: through the stencil test, 13 of 13 held-out
+/// rows on every byte lane and on 40 x 20's edge tiles, the image and the stored bytes; the raster
+/// and the 16-bit format's orders failed.
+pub fn stencil_byte(x: u32, y: u32, g: u32) -> u32 {
+    512 * ((y >> 4) * (g + 1) + (x >> 5)) + in_tile_index(x, y)
+}
+
+/// The background depth (render details dword 16, CR_ISP_BGOBJDEPTH) as the pass starts from it
+/// without a load: the word with its sign cleared, as a loaded depth's is (E467). E987: -0.25
+/// stored 0.25 in format 0 (with bit 19 -0.25), 0x400000 in format 1 and 0x4000 a half in format
+/// 2, bit 19 or not, at every background pixel; -0.0 stored 0; 0.25 and 1.0 stored themselves.
+pub fn clear_word(bg: u32) -> u32 {
+    bg & 0x7fff_ffff
+}
+
+/// Where the stencil test of a render reads its stencil from.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum StencilSource {
+    /// the loaded byte at [`stencil_byte`] (E988, control 0x0017300e)
+    Loaded,
+    /// 0, whatever was loaded: every EQUAL-to-0 test passed and the invert stored 0xff (E989)
+    Zero,
+}
+
+/// The control bits E989 flipped together: 15, 21 to 23 and 27 to 31 set, 12, 16 and 20 cleared.
+const E989_FLIPPED: u32 = 1 << 15 | 0x7 << 21 | 0x1f << 27;
+/// Those bits as the stencil-loading control of E467 and E988 holds them (12, 16 and 20 set).
+const E988_INERT: u32 = 1 << 12 | 1 << 16 | 1 << 20;
+
+/// The stencil the test reads under `ctl` with the stencil load on: the loaded one with the bits
+/// E411 found inert as E467's control has them (E988), 0 with all of them flipped at once (E989);
+/// any other mix of them, or no stencil load, refuses (Q071: which bit does it).
+pub fn stencil_source(ctl: &Ctl) -> Result<StencilSource, Outcome> {
+    if !ctl.load_stencil() {
+        return Err(open(
+            "a stencil test without a stencil load: its start value is not modelled".into(),
+            &["Q071"],
+        ));
+    }
+    match ctl.ignored_bits() {
+        E988_INERT => Ok(StencilSource::Loaded),
+        E989_FLIPPED => Ok(StencilSource::Zero),
+        b => Err(open(
+            format!("CR_ISP_ZLSCTL's inert bits {b:#x} under a stencil test: only E988's and E989's ran"),
+            &["Q071"],
+        )),
+    }
+}
+
+/// ISP word 2's test on a stencil byte `s` with the reference `reference` (ISP word 0 bits 7:0):
+/// whether the stencil test passes, and the byte stored. E284: (reference & mask) compares with
+/// (s & mask) by bits 27:25 (0 never, 1 less, 2 equal, 3 less or equal, 4 greater, 5 not equal,
+/// 6 greater or equal, 7 always), mask bits 15:8; the operation is bits 24:22 when the test
+/// fails, 21:19 when it passes and the depth fails, 18:16 when both pass (0 keep, 1 zero, 2 the
+/// reference, 3 and 4 increment and decrement clamped, 5 invert, 6 and 7 wrapping); bits 7:0 are
+/// written; bits 31:28 change nothing. E988 ran EQUAL with invert against loaded stencils.
+pub fn stencil_test(isp2: u32, reference: u8, s: u8, depth_pass: bool) -> (bool, u8) {
+    let m = (isp2 >> 8) as u8;
+    let (r, v) = (reference & m, s & m);
+    let pass = match isp2 >> 25 & 7 {
+        0 => false,
+        1 => r < v,
+        2 => r == v,
+        3 => r <= v,
+        4 => r > v,
+        5 => r != v,
+        6 => r >= v,
+        _ => true,
+    };
+    let op = if !pass {
+        isp2 >> 22
+    } else if !depth_pass {
+        isp2 >> 19
+    } else {
+        isp2 >> 16
+    } & 7;
+    let new = match op {
+        0 => s,
+        1 => 0,
+        2 => reference,
+        3 => s.saturating_add(1),
+        4 => s.saturating_sub(1),
+        5 => !s,
+        6 => s.wrapping_add(1),
+        _ => s.wrapping_sub(1),
+    };
+    let wm = isp2 as u8;
+    (pass, (s & !wm) | (new & wm))
+}
+
 /// The sign bit of a loaded depth is cleared: 0xdeadbeef reads 0x5eadbeef, 0x80000000 reads 0
 /// (E467; a mask or an absolute value, which the data cannot tell).
 pub fn load_word(v: u32) -> u32 {
@@ -514,9 +605,9 @@ pub struct Pass {
 /// A W x H target (whole tiles) drawn with a flat plane of depth `z` over the pixels `covers`
 /// says, depth test `test`, from the buffers' loaded dwords (`load_depth(i)` and `load_stencil(i)`
 /// read dword i of the load buffers, the address the store writes: E467) and the clear depth.
-/// Without bits 1 and 14 the pass starts from the clear value, with them from the loaded depth
-/// with its sign cleared; the stencil store copies the loaded dword or stores 0 per 128-dword
-/// tile slot (E466, E467: the copy is by dword, not by pixel: Q121). Float format only (Q243: a load
+/// Without bits 1 and 14 the pass starts from the clear value (the background depth) with its sign
+/// cleared ([`clear_word`], E987), with them from the loaded depth with its sign cleared; the stencil store copies the loaded dword or stores 0 per 128-dword
+/// tile slot (E466, E467: the copy is by dword; a pixel's byte is [`stencil_byte`], E988). Float format only (Q243: a load
 /// of formats 1 and 2 compared the dword as a float in E977's two rows, not modelled); a
 /// compare closer than the planes' tolerance refuses (Q200: 12.3's rule), a compare against a
 /// loaded NaN or infinity refuses (Q243: E977's six rows order NaN above every finite depth, one
@@ -560,7 +651,8 @@ pub fn pass(
         for y in 0..h {
             for x in 0..w {
                 let i = store_dword(x, y, g);
-                let base = if ctl.load_depth() { load_word(load_depth(i)) } else { clear.to_bits() };
+                let base =
+                    if ctl.load_depth() { load_word(load_depth(i)) } else { clear_word(clear.to_bits()) };
                 let mut v = base;
                 if covers(x, y) && test == Test::Less {
                     let b = f32::from_bits(base);
@@ -841,8 +933,9 @@ mod tests {
         assert!(store(&ctl(0x0017_110c | 2 << 24), 34, 18, false, &d).is_ok());
         assert_eq!(ids(store(&ctl(0x0017_100c | 1 << 24), 35, 18, false, &d)), ["Q242"]);
         assert_eq!(ids(store(&ctl(0x0017_110c | 2 << 24), 34, 19, false, &d)), ["Q242"]);
-        // the stencil store of an edge tile was not measured (Q121, its in-tile order)
-        assert_eq!(ids(dword_sets(&ctl(0x0017_110c), 34, 16, true)), ["Q121"]);
+        // the stencil store of an edge tile: its tiles' 128 dwords a slot (E988's 40 x 20 rows)
+        let (_, st) = dword_sets(&ctl(0x0017_110c), 34, 16, true).unwrap();
+        assert_eq!(st.len(), 2 * 128);
         let (d, st) = dword_sets(&ctl(0x0015_110c), 34, 16, true).unwrap();
         assert_eq!((d.len(), st.len()), (1024, 0));
     }
@@ -1183,7 +1276,7 @@ mod tests {
         // the 16-bit format at G = 33 and at G = 1 (E977), and a refused edge
         let (d, _) = dword_sets(&ctl(0x0017_110c | 2 << 24), 64, 32, true).unwrap();
         assert_eq!(d.len(), 64 * 32 / 2);
-        assert_eq!(ids(dword_sets(&ctl(0x0017_110c), 34, 16, true)), ["Q121"]);
+        assert!(dword_sets(&ctl(0x0017_110c), 34, 16, true).is_ok(), "E988: edge tiles");
         let (d, _) = dword_sets(&ctl(0x0017_100c | 2 << 24), 64, 64, true).unwrap();
         assert_eq!(d.len(), 64 * 64 / 2, "E977: any pitch");
         assert_eq!(ids(dword_sets(&ctl(0x0017_100c | 4 << 24), 64, 64, true)), ["Q120"]);
@@ -1276,5 +1369,76 @@ mod tests {
         assert_eq!(unexplained(&d, &s), 0);
         d[600] = 7;
         assert_eq!(unexplained(&d, &s), 1);
+    }
+
+    #[test]
+    fn a_negative_background_depth_is_stored_with_its_sign_cleared() {
+        // E987: render details dword 16 at -0.25 stored 0.25 at every background pixel in format
+        // 0 (bit 19: -0.25), 0x400000 in format 1 and 0x4000 a half in format 2, bit 19 or not;
+        // -0.0 stored 0
+        assert_eq!(clear_word(0xbe80_0000), 0x3e80_0000);
+        assert_eq!(clear_word(0x8000_0000), 0);
+        assert_eq!(clear_word(0x3f80_0000), 0x3f80_0000);
+        let never = |c: u32, clear: f32| {
+            pass(&ctl(c), 64, 32, clear, 0.5, Test::Never, &|_, _| true, &|i| i, &|i| i).unwrap()
+        };
+        assert!(never(0x0017_110c, -0.25).depth.values().all(|&v| v == 0x3e80_0000));
+        assert!(never(0x0017_110c | 1 << 19, -0.25).depth.values().all(|&v| v == 0xbe80_0000));
+        assert!(never(0x0017_110c, -0.0).depth.values().all(|&v| v == 0));
+        let z = f32::from_bits(clear_word(0xbe80_0000));
+        for neg in [false, true] {
+            assert_eq!(encode_depth(Format::U24, neg, z), Ok(0x40_0000));
+            assert_eq!(encode_depth(Format::U16, neg, z), Ok(0x4000));
+        }
+    }
+
+    #[test]
+    fn a_pixels_stencil_byte_follows_the_depths_in_tile_order() {
+        // E988: byte j of the tile slot's 512 is the depth's in-tile index y0 x0 y1 x1 y2 x2 y3
+        // x3 x4, every lane and the edge tiles (E985 read lane 0 from E978's dumps)
+        assert_eq!(stencil_byte(0, 0, 1), 0);
+        assert_eq!(stencil_byte(0, 1, 1), 1);
+        assert_eq!(stencil_byte(1, 0, 1), 2);
+        assert_eq!(stencil_byte(1, 1, 1), 3);
+        assert_eq!(stencil_byte(16, 0, 1), 256);
+        assert_eq!(stencil_byte(32, 0, 1), 512);
+        assert_eq!(stencil_byte(0, 16, 1), 1024);
+        assert_eq!(stencil_byte(31, 15, 0), 511);
+        let mut all: Vec<u32> = (0..32).flat_map(|y| (0..64).map(move |x| stencil_byte(x, y, 1))).collect();
+        all.sort_unstable();
+        assert_eq!(all, (0..2048).collect::<Vec<_>>());
+    }
+
+    #[test]
+    fn the_stencil_test_compares_the_reference_with_the_masked_byte() {
+        // E284's fields, E988's rows: EQUAL against reference 0 with mask m draws iff s & m == 0,
+        // and the pass operation invert stores !s; a failing byte is kept (operation 0)
+        for s in 0..=255u8 {
+            let (p, v) = stencil_test(0x0405_01ff, 0, s, true);
+            assert_eq!(p, s & 1 == 0, "{s}");
+            assert_eq!(v, if p { !s } else { s });
+            assert_eq!(stencil_test(0x0e05_ffff, 0, s, true), (true, !s), "always");
+            assert_eq!(stencil_test(0x0005_ffff, 0, s, true), (false, s), "never");
+        }
+        // E284: replace writes the reference through the write mask; bits 31:28 change nothing;
+        // the depth-fail operation (bits 21:19) acts when the stencil passes and the depth fails
+        assert_eq!(stencil_test(0x0e02_ff0f, 0x55, 0xf0, true), (true, 0xf5));
+        assert_eq!(stencil_test(0xfe02_ff0f, 0x55, 0xf0, true), (true, 0xf5));
+        assert_eq!(stencil_test(0x0e10_ffff, 0x55, 0xf0, false), (true, 0x55));
+        assert_eq!(stencil_test(0x0e03_ffff, 0, 0xff, true), (true, 0xff), "increment clamps");
+        assert_eq!(stencil_test(0x0e06_ffff, 0, 0xff, true), (true, 0), "increment wraps");
+        assert_eq!(stencil_test(0x0e04_ffff, 0, 0, true), (true, 0), "decrement clamps");
+        assert_eq!(stencil_test(0x0e07_ffff, 0, 0, true), (true, 0xff), "decrement wraps");
+    }
+
+    #[test]
+    fn the_inert_control_bits_flipped_together_make_the_test_read_zero() {
+        // E988's control 0x0017300e reads the loaded stencil; E989: with bits 15, 21 to 23 and 27
+        // to 31 set and 12, 16 and 20 cleared together it reads 0 (every EQUAL row drew all and
+        // stored 0xff); which of the bits does it, or any other mix, is Q071's
+        assert_eq!(stencil_source(&ctl(0x0017_300e)), Ok(StencilSource::Loaded));
+        assert_eq!(stencil_source(&ctl(0xf8e6_a00e)), Ok(StencilSource::Zero));
+        assert_eq!(ids(stencil_source(&ctl(0x0017_300e | 1 << 15))), ["Q071"]);
+        assert_eq!(ids(stencil_source(&ctl(0x0017_100e))), ["Q071"], "no stencil load");
     }
 }

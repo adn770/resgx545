@@ -60,7 +60,7 @@ model), `scene-only` (a whole job only), `exists` (vectors already in the data r
 | ta-object | unit-ready | 2 | 62 | E306 E308 | Q070 | 12.2 |
 | te-region | unit-ready | 37 | 74 | E177 E180 E305 | Q070 | 12.2 |
 | te-region | unit-ready | 2 | 591 | E543 E544 | Q159 Q160 Q161 | 12.2 |
-| zls-store | unit-ready | 1 | 22 | E466 E490 | Q120 Q121 | 12.4 |
+| zls-store | unit-ready | 1 | 22 | E466 E490 | Q120 | 12.4 |
 | bif-walk | unit-blocked | 2 | 118 | E457 E573 E592 | Q076 Q108 | 12.5 |
 | dpm | unit-blocked | 5 | 229 | E200 E456 E464 | Q045 Q038 Q191 Q192 | 12.7 |
 | events | unit-blocked | 1 | 226 | E154 E357 | Q111 | 12.6 |
@@ -117,8 +117,8 @@ of sections 1 and 2 are those of the 12.0 scan and were not redone.*
   buffer), the load pass over E467's 30 cases (E664: the loaded depth loses its sign bit) and the
   control word's fields (E665), and the pixels past the target at even sizes: the depth inside
   the band x + 0.5 < 1.25 W and y + 0.5 < 1.25 H, cut at the tile area, the background 1.0 past
-  it (E730, E831). Refused: formats 3, 5 and 6 (Q120), the stencil store's order and its edge
-  tiles (Q121), the overflow store (E628, E629: the loaded buffer and the sign bit after a raised
+  it (E730, E831), and the stencil's byte a pixel and its test (E988). Refused: formats 3, 5 and
+  6 (Q120), the overflow store (E628, E629: the loaded buffer and the sign bit after a raised
   abort; Q107) and an integer format at an edge (Q242); the band at odd sizes follows rule A
   (E885, E903).
 - **ta**: the region test, the object layout and its failures are built, and since 12.2 the

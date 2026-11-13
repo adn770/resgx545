@@ -29,7 +29,7 @@ Rule = collections.namedtuple("Rule", "pattern kind status records blockers phas
 RULES = [
     Rule(r"zls/store-layout-dumps/", "zls-store", "built", "E465 E489 E831", "Q107", "12.4",
          "18 cases, 36 depth dumps"),
-    Rule(r"zls/store-format-dumps/", "zls-store", "unit-ready", "E466 E490", "Q120 Q121", "12.4",
+    Rule(r"zls/store-format-dumps/", "zls-store", "unit-ready", "E466 E490", "Q120", "12.4",
          "formats 0 to 2 and the sign bit; the format rule is not coded"),
     Rule(r"isp/msaa-ident/", "isp-tile", "built", "E503 E502 E953", "-", "12.8", "48 runs, 96 dumps"),
     Rule(r"isp/msaa-te-dumps/", "te-region", "unit-blocked", "E507 E511", "Q086 Q003", "12.8",
@@ -158,8 +158,8 @@ TAIL = """\
 - **zls**: nothing for the address rule (built). The formats 0 to 2 and the negation bit (E466,
   E490) have 22 dumps and no rule in `sgx-pipe`; loads (E467) have datasets (`zls/load-store`,
   `load-copy`) but no dump directory. The pixels past the target follow the band (E831) at even
-  sizes and odd ones (E885, E903); overflow store (Q107), formats 3 to 7 (Q120) and stencil order
-  (Q121) stay refused.
+  sizes and odd ones (E885, E903); the stencil's byte a pixel and its test are coded (E988);
+  overflow store (Q107) and formats 3 to 7 (Q120) stay refused.
 - **ta**: the region test, the object layout and its failures are built. Missing: the macrotile
   table of the target (a fitted table, `tiling3d.py`, right on 123 and 69 only: Q100, Q139, Q086),
   lines and points (rules in the dataset's recompute script, not coded: Q159 to Q161), the
