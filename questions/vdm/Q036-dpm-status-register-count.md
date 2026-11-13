@@ -39,7 +39,7 @@ now hold up to 1500 vertices. After the 42 jobs that completed or overflowed, ST
 after a partial render; 0x0748 clears bit 2 (the value 0xb) in 4 of the 12 timelines (the three
 runs of 300 vertices in 0x100 pages and one of 900 in 0x422) and in none of the other 8. A scene of
 300 or more vertices at 4096x4096 in 0x40 or 0x23 pages, or 900 or more in 0x100 pages, hangs where
-the one-triangle scene recovers (24 of 24 jobs; Q103). Status: narrowed, not answered; missing:
+the one-triangle scene recovers (24 of 24 jobs; Q211). Status: narrowed, not answered; missing:
 what makes 0x0748 bit 2 clear, and a scene whose global list holds more than five pages.
 
 Folded in 11.21 from Q067, Q105 and Q106 (retired into this question, and Q106's state page part
