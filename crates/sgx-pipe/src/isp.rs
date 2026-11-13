@@ -184,8 +184,12 @@ pub const FAR_BAND: f64 = 1.0e-3;
 /// the band on 36 more rows (E979's x23p, x24p and x25n with the far vertex's y moved by 0 to -544
 /// pixels) and read the band as a displacement D of the far vertex along y that fits each
 /// triangle's rows but differs between them (x24p: 339 to 467 pixels; x23p and x25n: above 586)
-/// and is not one angle: the band stays `None`. Refuses other targets, three far vertices and the
-/// band's own form (Q261), and coordinates past what ran (Q199).
+/// and is not one angle. E1012 (round 11 offline, post hoc, no held-out row) fits all 48 of those
+/// rows with one integer: the far edges clipped to a guard x in [-G, 64 + G] (G 16 to 22 fit; the
+/// lower bound fits anywhere from -8 to -32, the y bounds untested), each new vertex rounded half
+/// up to 1/256, the edges then exact; being fitted, the band stays `None`. Refuses other
+/// targets, three far vertices and the band's own form (Q261), and coordinates past what ran
+/// (Q199).
 pub fn far_coverage_image(w: u32, h: u32, t: &FarTri) -> Result<Vec<Option<bool>>, Outcome> {
     if !FAR_TARGETS.contains(&(w, h)) {
         return Err(open(

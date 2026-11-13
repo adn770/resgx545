@@ -42,3 +42,11 @@ these two rules together.
 safe class), the stride's relation to the RT data, why the words of E509 fault, and a dump where
 the last-written target tile is not the highest slot (the flag's rule against "the highest slot"
 is not parted by these rows).
+
+**Correction 2026-11-13:** a note, the claim stands. E1011 (round 11 offline) read the flag on
+r7-rp's 21 poked dumps of E907's run, never read for it: one bit-7 header at H-EVEN's slot of the
+last target tile in block order and a tile drawn iff its header lies at or before it, 21 of 21.
+There "the highest slot written" parts from the flag on 17 rows, where non-target headers are
+written past the target (flag 95 to 743, highest slot 141 to 1183). The last sentence above, that
+the flag's rule against "the highest slot" is not parted, holds only for the highest slot of a
+header naming a target tile.

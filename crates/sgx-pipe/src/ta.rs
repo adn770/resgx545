@@ -597,14 +597,40 @@ pub fn stride_slots(w: u32, h: u32, stride: u32) -> Result<BTreeMap<(u32, u32), 
 /// `CR_TE_MTILE1` and stride: `CR_TE_MTILE2` words whose first macrotile is 0 or 1 mod 4 tiles
 /// wide, where E950's H-EVEN and R7-BLK agree (E907 and E1007: 0x0200a008 and 0x0280a00a at fy 10;
 /// E1007 held out: 0x0200b008 at fy 11, 0x05c10018 at fy 23 with n 4; E959: 0x03018025 at 768 x
-/// 640, held out, and at 1280 x 720, whose 12 tiles past the flag E1007 held out the rule of).
-pub const MEASURED_MTILE2: [(u32, u32, u32); 6] = [
+/// 640, held out, and at 1280 x 720, whose 12 tiles past the flag E1007 held out the rule of;
+/// E1011: r7-rp's dumps of 0x0200c008 at 256 x 256 and 0x04410018, 0x02018018, 0x05010018 and
+/// 0x0201c018 at 640 x 480, every slot and the flag, E907's run, read offline).
+pub const MEASURED_MTILE2: [(u32, u32, u32); 11] = [
     (256, 256, 0x0200_a008),
     (256, 256, 0x0280_a00a),
     (256, 256, 0x0200_b008),
+    (256, 256, 0x0200_c008),
     (640, 480, 0x05c1_0018),
+    (640, 480, 0x0441_0018),
+    (640, 480, 0x0201_8018),
+    (640, 480, 0x0501_0018),
+    (640, 480, 0x0201_c018),
     (768, 640, 0x0301_8025),
     (1280, 720, 0x0301_8025),
+];
+
+/// Poked `CR_TE_MTILE1` words measured to draw (wrong in whole tiles) with every header at R7-BLK's
+/// slot and the list ending at the flag, each at its size with the rule's `CR_TE_MTILE2` and
+/// stride: r7-rp's dumped rows (E907: slots and wrong tiles, 9 of 10 held out; E1011, offline on
+/// the same dumps: every slot at H-EVEN's, which is R7-BLK's at these first macrotiles, 4, 5, 8,
+/// 12, 16, 20 and 28 tiles wide (0x02010018 clears bit 31: two macrotiles), and the one flagged
+/// header at the last target tile in block order, 21 of 21 rows never read for the flag).
+pub const MEASURED_MTILE1: [(u32, u32, u32); 10] = [
+    (256, 256, 0x0140_4004),
+    (256, 256, 0x0100_8004),
+    (256, 256, 0x0100_5004),
+    (256, 256, 0x0200_8008),
+    (256, 256, 0x0100_c004),
+    (640, 480, 0x8501_0018),
+    (640, 480, 0x8201_4018),
+    (640, 480, 0x8701_0018),
+    (640, 480, 0x8202_0018),
+    (640, 480, 0x0201_0018),
 ];
 
 /// R7-BLK's region header slots under poked macrotile words (`CR_TE_MTILE1`, `CR_TE_MTILE2`, the
@@ -616,7 +642,9 @@ pub const MEASURED_MTILE2: [(u32, u32, u32); 6] = [
 /// 4 + (c & 3) (E907), a later header overwriting an earlier one. Flag bit 7 marks the header of
 /// the last target tile written whose header survives, and the 3D reads the list up to it: a
 /// target tile draws iff its header survives at or before that slot (E1007, held out on four
-/// dumps; E959 post hoc on 24). Only `MEASURED_MTILE2` and the rule's own words are admitted;
+/// dumps; E959 post hoc on 24; E1011, offline on r7-rp's 21 poked dumps of another module build,
+/// where the highest slot written lies past the flag on 17). Only `MEASURED_MTILE2`,
+/// `MEASURED_MTILE1` and the rule's own words are admitted;
 /// other words refuse (Q139: E950's first-macrotile rule at fx 2 or 3 mod 4 is fitted, and most
 /// poked words faulted, E505 and E509).
 pub fn macrotile_slots(
@@ -629,10 +657,12 @@ pub fn macrotile_slots(
     let rule = mtile1 == t.mtile1
         && mtile2 == t.mtile2
         && [(256, 256), (640, 480), (768, 640), (1280, 720)].contains(&(w, h));
-    if !rule && !(mtile1 == t.mtile1 && MEASURED_MTILE2.contains(&(w, h, mtile2))) {
+    let poked = (mtile1 == t.mtile1 && MEASURED_MTILE2.contains(&(w, h, mtile2)))
+        || (mtile2 == t.mtile2 && MEASURED_MTILE1.contains(&(w, h, mtile1)));
+    if !rule && !poked {
         return Err(refuse_ids(
             format!(
-                "{w} x {h}, CR_TE_MTILE1 {mtile1:#x}, CR_TE_MTILE2 {mtile2:#x}: not a macrotile word measured to draw whole with R7-BLK's slots held out (E907, E959, E1007)"
+                "{w} x {h}, CR_TE_MTILE1 {mtile1:#x}, CR_TE_MTILE2 {mtile2:#x}: not a macrotile word measured with R7-BLK's slots and the list end held out (E907, E959, E1007, E1011)"
             ),
             &["Q139"],
         ));
@@ -810,6 +840,47 @@ mod tests {
             let t = tiling(w, h);
             let (sl, _) = macrotile_slots(w, h, t.mtile1, t.mtile2).unwrap();
             assert_eq!(sl, stride_slots(w, h, t.stride).unwrap(), "{w}x{h}");
+        }
+    }
+
+    #[test]
+    fn r7_rp_s_poked_dumps_end_the_list_at_the_last_target_tile_in_block_order_e1011() {
+        // E1011 (round 11 offline, r7-rp q139's 21 poked dumps and the poked control, E907's run
+        // on module 41E2..., never read for the flag): one header with flag bit 7, at H-EVEN's
+        // (here R7-BLK's: fx 0 or 1 mod 4) slot of the last target tile in block order, the wrong
+        // tiles those whose surviving header is missing or past it; the highest slot written lies
+        // past the flag on 17 of them (non-target headers past the target)
+        for (w, h, m1, m2, wrong, flag) in [
+            (256, 256, 0x0140_4004, 0, 0, 127),
+            (256, 256, 0x0100_8004, 0, 32, 95),
+            (256, 256, 0x0100_5004, 0, 12, 127),
+            (256, 256, 0, 0x0200_a008, 24, 127),
+            (256, 256, 0x0200_8008, 0, 32, 95),
+            (640, 480, 0x8501_0018, 0, 288, 343),
+            (640, 480, 0x8201_4018, 0, 112, 519),
+            (640, 480, 0, 0x0441_0018, 108, 743),
+            (640, 480, 0, 0x0201_8018, 0, 743),
+            (256, 256, 0x0100_c004, 0, 32, 111),
+            (256, 256, 0, 0x0200_c008, 48, 111),
+            (256, 256, 0, 0x0280_a00a, 24, 127),
+            (640, 480, 0x8701_0018, 0, 288, 375),
+            (640, 480, 0x8202_0018, 0, 112, 519),
+            (640, 480, 0, 0x0501_0018, 144, 743),
+            (640, 480, 0, 0x0201_c018, 0, 743),
+            (640, 480, 0x0201_0018, 0, 288, 391),
+        ] {
+            let t = tiling(w, h);
+            let (m1, m2) = (if m1 == 0 { t.mtile1 } else { m1 }, if m2 == 0 { t.mtile2 } else { m2 });
+            let (sl, last) = macrotile_slots(w, h, m1, m2).unwrap();
+            assert_eq!(sl.values().filter(|v| v.is_none()).count(), wrong, "{w}x{h} {m1:#x} {m2:#x}");
+            assert_eq!(last, flag, "{w}x{h} {m1:#x} {m2:#x}");
+        }
+        // the poked strides (stride_slots' wrong tiles, E944): the flag on the last target tile
+        for (s, wrong, flag) in [(8, 72, 55), (16, 48, 79), (4, 84, 43), (24, 24, 103)] {
+            let t = tiling(256, 256);
+            let (sl, last) = slots(&t, t.mtile1, t.mtile2, s);
+            assert_eq!((sl.values().filter(|v| v.is_none()).count(), last), (wrong, flag), "stride {s}");
+            assert_eq!(sl, stride_slots(256, 256, s).unwrap(), "stride {s}");
         }
     }
 

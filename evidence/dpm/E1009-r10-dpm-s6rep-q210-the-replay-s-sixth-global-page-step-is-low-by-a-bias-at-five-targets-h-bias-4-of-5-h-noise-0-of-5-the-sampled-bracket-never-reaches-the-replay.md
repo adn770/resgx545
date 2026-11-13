@@ -60,3 +60,11 @@ covers.
 replay's lag (3 objects) or in the block and region counts; a calibration against a
 partial-render cell (2304x2304 read 0x1e1 in its calibration and 0x1dd in its cells, E961); S3
 or S2 as steps of their own (S3 was one above at two targets).
+
+**Correction 2026-11-13:** a note, the claim stands. E1013 (round 11 offline, every kept standard
+run of r5 to r10 with a replay) held the per-target class out: the lower end is R + 1 at every
+run of these five targets and of 2048x3072, 2560x3072 and 3072x2560, and R at every run of the
+eight held targets above and of 1024x1024, 2560x2560, 3072x2048, 3072x3072, 1024x2048 and
+2048x4096. "The five are the four targets wider than 2:1 and 2048x2304" describes these five
+only: no rule of the aspect gives the class (3072x2560 is biased, 1024x2048 and 2048x4096 are
+not).
