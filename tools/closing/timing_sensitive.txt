@@ -1,0 +1,6 @@
+# session_tests.sh: published sessions whose offline mock depends on the wall clock, with the number
+# of tries (one run that passes is a PASS; a real failure fails every try). Columns: session tries.
+# edm/closing-r5-events: its simulated EDM counts ticks on time.monotonic() and its fake tool has
+# about 16 ms to start the fill, so a late start under load fails the run (HACKING.md, Known tool
+# weaknesses). The session is frozen and published: the fix is here, not in the session.
+edm/closing-r5-events 3

@@ -319,9 +319,17 @@ them with the guard, the mock and the verify. Every command a README gives is ru
 interpreter (`bash ...`, `python3 ...`), never by its mode bits: r7-geo's stage script had mode
 644 and staged nothing; the guard refuses a README command that leans on the exec bit.
 
+The guard refuses the options `--kreg`, `--clkgate` and `--trc-hazard` in every row, and `--kpoke`
+except on a `probe` row (probe's kernel poke, no riskier than tri's `--kpoke-render`). The runner
+reads a knob back by value: a debugfs bool written 0 or 1 reads back N or Y, and 1/Y/y and 0/N/n
+are the same value.
+
 A session whose flow the runner does not cover (a held recovery, a cell of steps) extends it
 through `run/hooks.sh` only as far as reading goes (`hook_reading`, `hook_check`, which run in
-the runner's shell); a new kind of job is added to the kit, with its test, not to a session.
+the runner's shell, and `hook_fault`, the same after an expected fault or hang row once its reset
+and strict health are done: a reason it prints stops the stage with rc 24, so a rule on the
+fault's own kernel lines, two `SGX recovery failed: -110` in a row, is exact); a new kind of job is
+added to the kit, with its test, not to a session.
 A job whose normal end is not rc 0 declares it with an expected outcome, `expect:NAME` of
 `kitscore.OUTCOMES` (`expect:rc3-overflow`: rc 3 with "scene overflowed the parameter buffer",
 a `probe` DPM cell's end), which the runner classifies ok and `kitscore.completed` counts as a
@@ -619,10 +627,12 @@ stays with what a session must do around it.
   the fill has about 16 ms to reach it from the fake tool's start before the slot 0 ring is full
   of ticks (the margin `tests/fake_tool.sh` was written to hold), and `t_trap_restores_knobs`
   polls the knob files with a 30 s bound. Under `pytest -n auto` or a busy Mac a late start
-  fails it. The session is published and frozen, so the fix (a mock clock that advances by the
-  mock's own events, not by `time`) is not made here: run it alone
-  (`tools/closing/session_tests.sh edm/closing-r5-events`, never beside the suite). New sessions
-  use the kit's argv-driven mock, which has no such margin.
+  fails it. The session is published and frozen, so the mock is not fixed; the runner works
+  around it: `tools/closing/session_tests.sh` tries a session named in
+  `tools/closing/timing_sensitive.txt` up to its number of tries (3 for this one) and passes on
+  the first that passes (a real failure fails every try; the PASS line names the attempt). Still
+  run it alone when it matters, not beside the suite. New sessions use the kit's argv-driven
+  mock, which has no such margin.
 
 ## Markdown
 

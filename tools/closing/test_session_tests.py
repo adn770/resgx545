@@ -710,3 +710,56 @@ def test_a_tool_source_pinned_by_commit_that_differs_fails(world):
     (s / "TOOLSRC.sha256").write_text(f"{sha('two' + chr(10))}  {commits['one']}:userspace/t.c\n")
     r = run(world, "edm/closing-demo")
     assert r.returncode != 0 and "FAIL (TOOLSRC" in r.stdout and "hashes to" in r.stdout, r.stdout
+
+
+FLAKY = """#!/bin/bash
+cd "$(dirname "$0")/.." || exit 1
+mkdir -p debug
+n=$(cat debug/attempts 2>/dev/null || echo 0)
+echo $((n + 1)) > debug/attempts
+echo "attempt $((n + 1))"
+[ "$((n + 1))" -ge "${FLAKY_PASS_AT:-2}" ] || exit 1
+exit 0
+"""
+
+
+def flaky_world(world, tmp_path, listed="edm/closing-flaky 3\n"):
+    s = world[1] / "edm/closing-flaky"
+    (s / "tests").mkdir(parents=True)
+    (s / "tests/run_all.sh").write_text(FLAKY)
+    lst = tmp_path / "timing-sensitive.txt"
+    lst.write_text("# session tries\n" + listed)
+    return {"SESSION_TESTS_TIMING_LIST": str(lst)}
+
+
+def test_a_timing_sensitive_session_is_tried_again_and_passes_on_a_later_try(world, tmp_path):
+    """r5-events' mock counts ticks on the wall clock and fails on a loaded Mac, though the
+    published session cannot be fixed: a session named in the timing-sensitive list is run up to
+    its number of tries, and passes when one does (a real failure fails every try)."""
+    env = flaky_world(world, tmp_path)
+    r = run(world, "edm/closing-flaky", **env)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "attempt 1 of 3 failed (exit 1)" in r.stdout, r.stdout
+    assert "edm/closing-flaky PASS (exit 0, attempt 2 of 3)" in r.stdout, r.stdout
+
+
+def test_a_timing_sensitive_session_that_always_fails_fails_after_its_tries(world, tmp_path):
+    env = flaky_world(world, tmp_path)
+    r = run(world, "edm/closing-flaky", FLAKY_PASS_AT="9", **env)
+    assert r.returncode == 1, r.stdout + r.stderr
+    assert "attempt 2 of 3 failed" in r.stdout, r.stdout
+    assert "edm/closing-flaky FAIL (exit 1, attempt 3 of 3)" in r.stdout, r.stdout
+
+
+def test_a_session_not_in_the_list_is_run_once(world, tmp_path):
+    env = flaky_world(world, tmp_path, listed="edm/closing-other 3\n")
+    r = run(world, "edm/closing-flaky", **env)
+    assert r.returncode == 1, r.stdout + r.stderr
+    assert "failed (exit" not in r.stdout and "edm/closing-flaky FAIL (exit 1)" in r.stdout, \
+        r.stdout
+
+
+def test_the_shipped_list_names_r5_events():
+    lst = pathlib.Path(__file__).resolve().parent / "timing_sensitive.txt"
+    rows = [ln.split() for ln in lst.read_text().splitlines() if ln.strip() and ln[0] != "#"]
+    assert ["edm/closing-r5-events", "3"] in rows, rows

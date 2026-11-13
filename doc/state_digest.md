@@ -722,10 +722,12 @@ stays with what a session must do around it.
   the fill has about 16 ms to reach it from the fake tool's start before the slot 0 ring is full
   of ticks (the margin `tests/fake_tool.sh` was written to hold), and `t_trap_restores_knobs`
   polls the knob files with a 30 s bound. Under `pytest -n auto` or a busy Mac a late start
-  fails it. The session is published and frozen, so the fix (a mock clock that advances by the
-  mock's own events, not by `time`) is not made here: run it alone
-  (`tools/closing/session_tests.sh edm/closing-r5-events`, never beside the suite). New sessions
-  use the kit's argv-driven mock, which has no such margin.
+  fails it. The session is published and frozen, so the mock is not fixed; the runner works
+  around it: `tools/closing/session_tests.sh` tries a session named in
+  `tools/closing/timing_sensitive.txt` up to its number of tries (3 for this one) and passes on
+  the first that passes (a real failure fails every try; the PASS line names the attempt). Still
+  run it alone when it matters, not beside the suite. New sessions use the kit's argv-driven
+  mock, which has no such margin.
 
 ## Simulator coverage baseline
 

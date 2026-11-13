@@ -495,13 +495,25 @@ if [ -f "$C/postrun/env-as-frozen.txt" ]; then
             *) die "postrun/env-as-frozen.txt: $v is not a variable this script sets" ;; esac
     done
 fi
-case "$ENTRY" in
-    *.py) "$PY" "$ENTRY" ;;
-    *) bash "$ENTRY" ;;
-esac
-rc=$?
+# a session whose mock depends on the wall clock (timing_sensitive.txt) is tried up to its number of
+# tries, passing on the first that passes: a failure under load is not the session's
+TRIES=$(awk -v s="$SESSION" '$1 == s && $2 ~ /^[1-9][0-9]*$/ {print $2; exit}' \
+    "${SESSION_TESTS_TIMING_LIST:-$HERE/timing_sensitive.txt}" 2>/dev/null)
+TRIES=${TRIES:-1}
+attempt=1
+while :; do
+    case "$ENTRY" in
+        *.py) "$PY" "$ENTRY" ;;
+        *) bash "$ENTRY" ;;
+    esac
+    rc=$?
+    [ $rc = 0 ] || [ "$attempt" -ge "$TRIES" ] && break
+    echo "session_tests: $SESSION attempt $attempt of $TRIES failed (exit $rc): a timing-sensitive mock, trying again"
+    attempt=$((attempt + 1))
+done
 if [ $rc = 0 ]; then verdict=PASS; else verdict=FAIL; fi
+[ "$TRIES" -gt 1 ] && tries=", attempt $attempt of $TRIES" || tries=
 [ $rc = 0 ] && [ -n "$KEY" ] && mkdir -p "$TARGET/passes" \
     && echo "$SESSION $(date '+%Y-%m-%d %H:%M:%S')" > "$TARGET/passes/$KEY"
-echo "session_tests: $SESSION $verdict (exit $rc)"
+echo "session_tests: $SESSION $verdict (exit $rc$tries)"
 exit $rc
