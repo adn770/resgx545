@@ -278,9 +278,10 @@ bounded ssh with BatchMode and the HostKeyAlias of `SGX_TARGET_HOST_KEY_ALIAS`, 
 then every copy and tool checked by sha256), `run` (verify, gate, the runner, the copy back,
 sessioncheck kept, the score, the premise; its stop codes are in its header) and `mock`. The
 laptop runner keeps everything under `~/scratch/<prefix>/`, works in
-`mktemp -d ~/scratch/tmp/<prefix>.XXXXXX` directories, checks the free space, marks the kernel
-log, bounds every command with `timeout -k`, resets and checks health between jobs, restores the knobs after every job and by its exit trap, makes the
-directories `outdir_opts` name and stops when a file the scorer requires was not kept.
+`mktemp -d ~/scratch/tmp/<prefix>.XXXXXX` directories, checks the free space, marks the kernel log,
+bounds every command with `timeout -k`, resets and checks health between jobs, restores the knobs
+after every job and by its exit trap, makes the directories `outdir_opts` name and stops when a file
+the scorer requires was not kept.
 
 The freeze is pinned by commit, so main and data may move while sessions are built and run:
 FROZEN.sha256 names the session's files by relative path and each pinned input by absolute path,
@@ -289,12 +290,18 @@ and FROZEN.commits gives each kit copy and each pin as `<sha256>  <commit>  resg
 and refuses a session file that changed or a new one; `tools/records/frozen.py --check` accepts
 the same file once the session is published.
 
-`kit/session.py mock` copies the session, freezes the copy if it is not frozen, stages it onto a
-fake laptop through the same `stage` and `run` code, and runs the staged runner under an empty
-environment (a fake ssh that keeps only HOME, the laptop PATH and the mock's own variables). The
-fake tool answers from its name and argv through `mock/world.py`, writes a file only into a
-directory that exists, and nothing waits on a clock: every sleep of the runner is a `*_WAIT` the
-mock sets to 0. Each world of `EXPECT` must end with its statuses, keep its files under the
+`kit/session.py mock` first runs every row's argv (the command a wrapper runs included) through the
+library mock, sgxfive-test built on libsgxfive's in-process mock (`--mock`) from the source
+session.toml binds to the tool (`source = "COMMIT:userspace/libsgxfive/tools/sgxfive-test.c"`,
+`source_sha256`, checked at the commit, built from `git archive` into `debug/libmock/`): a `job:
+rejected` line or a usage refusal stops the mock before any world runs (r8-geo's world answered 23
+rows the kernel refuses `job: ok`); a tool with no source is said, not replayed. Then it copies the
+session, freezes the copy if it is not frozen, stages it onto a fake laptop through the same `stage`
+and `run` code, and runs the staged runner under an empty environment (a fake ssh that keeps only
+HOME, the laptop PATH and the mock's own variables). The fake tool answers from its name and argv
+through `mock/world.py`, writes a file only into a directory that exists, and nothing waits on a
+clock: every sleep of the runner is a `*_WAIT` the mock sets to 0. Each world of `EXPECT` must end
+with its statuses, keep its files under the
 prefix, write only the allowed debugfs values, leave the knobs at their defaults, print no
 "command not found" or "No such file" line, keep every file `REQUIRED` names (sessioncheck kept)
 and stage a complete tree (sessioncheck staged). A session's own tests (the argv twin, the

@@ -582,3 +582,88 @@ def test_a_staging_that_ssh_refuses_names_the_variables(repos):
     for word in ("255", "Host key verification failed", "SGX_TARGET_HOST", "u@laptop",
                  "SGX_TARGET_HOST_KEY_ALIAS", "SGX_TARGET_SSH_OPTS", "sgx-target"):
         assert word in msg, (word, msg)
+
+
+# ---- the library mock: every row's argv through the tool's own source ----------------------
+FAKE_SRC = """#!/bin/sh
+[ "$1" = --mock ] || { echo "usage: not the library mock" >&2; exit 2; }
+shift
+case "$*" in *--refused*) echo "job: rejected (Invalid argument)"; echo "diff: 9 of 2048 pixels"
+    exit 1 ;; esac
+case "$1" in fill|tri) echo "job: ok"; echo "diff: 0 of 2048 pixels" ;;
+    *) echo "usage: sgxfive-test COMMAND" >&2; exit 2 ;; esac
+"""
+FAKE_MAKE = ("build/sgxfive-test: tools/sgxfive-test.c\n"
+             "\tmkdir -p build && cp tools/sgxfive-test.c build/sgxfive-test "
+             "&& chmod +x build/sgxfive-test\n")
+SRC_PATH = "userspace/libsgxfive/tools/sgxfive-test.c"
+
+
+def bind_source(repos, kp, src=FAKE_SRC, sha=None):
+    """The tool's source at a commit of the fake resgx545 (a script its Makefile copies, which
+    answers as the library mock does), bound in session.toml [tools.t4]."""
+    main = repos["main"]
+    (main / "userspace/libsgxfive/tools").mkdir(parents=True, exist_ok=True)
+    (main / "include/uapi").mkdir(parents=True, exist_ok=True)
+    (main / SRC_PATH).write_text(src)
+    (main / "userspace/libsgxfive/Makefile").write_text(FAKE_MAKE)
+    (main / "include/uapi/sgxfive.h").write_text("/* uapi */\n")
+    c2 = commit_all(main, "tool")
+    sha = sha or hashlib.sha256(src.encode()).hexdigest()
+    toml = (kp / "session.toml").read_text().replace(
+        f'[tools.t4]\npath = "sgxfive-test-rgn4"\nsha256 = "{TOOL_SHA}"\n',
+        f'[tools.t4]\npath = "sgxfive-test-rgn4"\nsha256 = "{TOOL_SHA}"\n'
+        f'source = "{c2}:{SRC_PATH}"\nsource_sha256 = "{sha}"\n')
+    assert "source_sha256" in toml
+    (kp / "session.toml").write_text(toml)
+    return c2
+
+
+def test_the_mock_replays_every_row_on_the_library_mock_and_stops_on_a_refusal(repos):
+    """r8-geo lost 23 rows to `job: rejected`: its mock's world answered them `job: ok`, so the
+    dry run passed. With the tool's source bound in session.toml (`source`, `source_sha256`) the
+    mock builds the library mock from that commit (never the working tree) and runs every row's
+    argv through it first; a `job: rejected` or a usage refusal stops the mock before any world
+    runs, naming the row."""
+    kp = scaffold(repos)
+    bind_source(repos, kp)
+    assert kit(kp, repos, "guard").returncode == 0
+    m = kit(kp, repos, "mock")
+    assert m.returncode == 0, m.stdout + m.stderr
+    assert re.search(r"^ok +libmock: 2 rows of t4 replayed", m.stdout, re.M), m.stdout
+    t = kp / "tables/s0.txt"
+    base = t.read_text()
+    for row, word in [("r1|fit|safe|-|t4|fill --refused", "job: rejected"),
+                      ("r1|fit|safe|-|t4|bogus", "usage")]:
+        t.write_text(base + row + "\n")
+        m = kit(kp, repos, "mock")
+        assert m.returncode != 0, m.stdout
+        assert re.search(rf"^FAIL libmock: tables/s0.txt r1: .*{word}", m.stdout, re.M), m.stdout
+        assert "world model" not in m.stdout, m.stdout
+
+
+def test_the_library_mock_runs_the_tool_a_wrapper_runs(repos):
+    kp = rt_session(repos, 'o1|fit|safe|-|rt|0 1 0x0c04 -- "$HOME/sgxfive-test-rgn4" fill '
+                           '--refused')
+    bind_source(repos, kp)
+    m = kit(kp, repos, "mock")
+    assert m.returncode != 0 and re.search(r"^FAIL libmock: tables/s0.txt o1: .*job: rejected",
+                                           m.stdout, re.M), m.stdout
+
+
+def test_the_library_mock_is_built_only_from_the_bound_source(repos):
+    kp = scaffold(repos)
+    bind_source(repos, kp, sha="0" * 64)
+    m = kit(kp, repos, "mock")
+    assert m.returncode != 0 and re.search(r"^FAIL libmock: .*not 0{12}", m.stdout, re.M), m.stdout
+    toml = (kp / "session.toml").read_text().replace('source = "', 'source = "nocommit')
+    (kp / "session.toml").write_text(toml)
+    g = kit(kp, repos, "guard")
+    assert g.returncode != 0 and "source" in g.stdout, g.stdout
+
+
+def test_a_tool_without_a_bound_source_is_said_not_replayed(repos):
+    kp = scaffold(repos)
+    m = kit(kp, repos, "mock")
+    assert m.returncode == 0, m.stdout
+    assert re.search(r"^note libmock: t4 has no source", m.stdout, re.M), m.stdout
