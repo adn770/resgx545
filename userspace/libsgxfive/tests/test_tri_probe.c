@@ -1211,6 +1211,57 @@ static void background_slots(void)
 }
 
 /*
+ * Q190's layered background (params.bg_src): the copy's primary and shader sit at
+ * SGXFIVE_TRI_PP_BGCOPY and SGXFIVE_TRI_UP_BGCOPY, above every slot that does not replace the
+ * background (the pixpds and eot slots end at 0xc00), and the command's words point at them; a
+ * bgpds slot takes the command's words over as without a layer and leaves the copy unused.
+ */
+static void bg_layer_slots(void)
+{
+	struct scene s, d;
+	struct sgxfive_tri_probe pr = { .scratch = 0x3e100000 };
+	uint64_t big[(SGXFIVE_TRI_PROBE_PP_BGPDS - SGXFIVE_TRI_PROBE_PP_PIXPDS) / 4], w[12] = { 0 };
+	uint32_t copy[16], use[4];
+
+	scene_init(&d, 64, 64);
+	scene_init(&s, 64, 64);
+	s.p.bg_src = 0x3e800000;
+	CHECK_EQ(sgxfive_tri_scene(&s.c, &s.l, &s.p, &s.cmd), 0);
+	memcpy(copy, s.c.pdsp + SGXFIVE_TRI_PP_BGCOPY / 4, sizeof(copy));
+	memcpy(use, s.c.usep + SGXFIVE_TRI_UP_BGCOPY / 4, sizeof(use));
+	CHECK_EQ(s.cmd.bgobj_words[1], 0x00030001);
+	/* a probe without replacements keeps all of it */
+	CHECK_EQ(sgxfive_tri_probe_apply(&s.c, &s.l, &s.p, &pr, &s.cmd), 0);
+	CHECK_EQ(s.cmd.bgobj_words[1], 0x00030001);
+	CHECK(!memcmp(copy, s.c.pdsp + SGXFIVE_TRI_PP_BGCOPY / 4, sizeof(copy)));
+	/* the widest pixpds and eot replacements stop below the copy */
+	for (unsigned int i = 0; i < sizeof(big) / sizeof(big[0]); i++)
+		big[i] = 0xc0000000u + i;
+	pr.slot[SGXFIVE_TRI_SLOT_PIXPDS] = (struct sgxfive_tri_prog){
+		big, (SGXFIVE_TRI_PROBE_PP_BGPDS - SGXFIVE_TRI_PROBE_PP_PIXPDS) / 4, 128, 0 };
+	pr.slot[SGXFIVE_TRI_SLOT_EOT] = (struct sgxfive_tri_prog){
+		big, (SGXFIVE_TRI_PROBE_UP_BGPIXEL - SGXFIVE_TRI_PROBE_UP_EOT) / 8, 0, 4 };
+	CHECK_EQ(sgxfive_tri_probe_apply(&s.c, &s.l, &s.p, &pr, &s.cmd), 0);
+	CHECK(!memcmp(copy, s.c.pdsp + SGXFIVE_TRI_PP_BGCOPY / 4, sizeof(copy)));
+	CHECK(!memcmp(use, s.c.usep + SGXFIVE_TRI_UP_BGCOPY / 4, sizeof(use)));
+	CHECK_EQ(s.cmd.bgobj_words[1], 0x00030001);
+	CHECK_EQ(s.cmd.bgobj_words[2],
+		 sgxfive_tri_pix_ptr(&s.l, s.l.pdsp + SGXFIVE_TRI_PP_BGCOPY, 12));
+	/* a bgpds slot is the background's primary instead, as without a layer */
+	memset(&pr, 0, sizeof(pr));
+	pr.scratch = 0x3e100000;
+	pr.slot[SGXFIVE_TRI_SLOT_BGPDS] = (struct sgxfive_tri_prog){ w, 12, 8, 0 };
+	CHECK_EQ(sgxfive_tri_probe_apply(&s.c, &s.l, &s.p, &pr, &s.cmd), 0);
+	CHECK_EQ(s.cmd.bgobj_words[1], SGXFIVE_TRI_PROBE_PIX_ROWS | 3u << 16);
+	CHECK_EQ(s.cmd.bgobj_words[2],
+		 sgxfive_tri_pix_ptr(&s.l, s.l.pdsp + SGXFIVE_TRI_PROBE_PP_BGPDS, 8));
+	/* the layerless scene is today's: nothing at the copy's place */
+	CHECK_EQ(d.c.pdsp[SGXFIVE_TRI_PP_BGCOPY / 4], 0);
+	free(d.mem);
+	free(s.mem);
+}
+
+/*
  * pbe: the four PBE words of the end-of-tile task as given, the default task's or the eot slot's,
  * without touching the registers they load into.
  */
@@ -1611,6 +1662,7 @@ int main(void)
 	blk_cmd_xor_words();
 	vdm_second_state();
 	background_slots();
+	bg_layer_slots();
 	pbe_words();
 	rig_vertices();
 	obj2();

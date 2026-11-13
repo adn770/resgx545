@@ -3,7 +3,8 @@
  * sgxfive-test: the kernel's debugfs checks (dri/N/sgx/...) redone from
  * userspace through the sgxfive render node, and the hardware probes.
  *
- *   sgxfive-test [--mock[=rev1|harness|none]] [--mock-pb-pages=N] [--device PATH]
+ *   sgxfive-test [--mock[=rev1|harness|none]] [--mock-pb-pages=N] [--mock-knob NAME=V]
+ *                [--device PATH]
  *                [--programs=asm|fake] <command> [options]
  *
  *   query                         DEV_QUERY: GPU, firmware, job limits, heaps
@@ -64,7 +65,7 @@
  *                                 a fill F is a value, index or bit:K; --depth-store,
  *                                 --stencil, --stencil-store: further buffers (the store base
  *                                 on its own, the stencil bases); --tri-full: the triangle
- *                                 covers the target; --tri-z A,B,C: its vertices' depths
+ *                                 covers the target; --tri-z A,B,C: its vertices' depths, -1 to 2
  *                                 --dump-render DIR: after the renders, the kernel's
  *                                 debugfs render_param and render_tadata copied to
  *                                 DIR/tri.param.bin and DIR/tri.tadata.bin;
@@ -361,6 +362,8 @@ struct opts {
 	const char *depth_dump;		/* --depth-dump DIR: the buffer after each render */
 	bool ctx2;			/* tri: a second render context in the VM, rendering too */
 	bool aa4;			/* tri: its render contexts made for 4x targets */
+	bool bg_layer;			/* tri --bg-layer: Q190's layered background (see bgl_*) */
+	uint64_t bg_src;		/* ... the knob render_bg_src, read by main */
 	bool close_first;		/* tri --ctx2: close the first context before the second */
 	bool close_early;		/* tri --ctx2: ... in the last iteration, between the renders */
 	bool words_between;		/* tri --ctx2 --words: a snapshot before each second render */
@@ -397,6 +400,7 @@ static int usage(void)
 {
 	fprintf(stderr,
 		"usage: sgxfive-test [--mock[=rev1|harness|none]] [--mock-pb-pages=N]\n"
+		"                    [--mock-knob NAME=V]...\n"
 		"                    [--device PATH] [--programs=asm|fake] <command>\n"
 		"       commands: query, dummy [-n N --kpoke-job N:SPEC --wait-ms MS], isolation,\n"
 		"                 regaccess,\n"
@@ -411,7 +415,7 @@ static int usage(void)
 		"                      --kpoke-render N:SPEC --move N:DX,DY --geometry N\n"
 		"                      --keep-going --keep-overflow --dump-render DIR [--dump-each]\n"
 		"                      --words DIR\n"
-		"                      [--tri-full] [--tri-z A,B,C]\n"
+		"                      [--tri-full] [--tri-z A,B,C] [--bg-layer]\n"
 		"                      [--depth [--depth-ctl V] [--depth-ctl-next V] [--depth-fill F]\n"
 		"                       [--depth-base V] [--depth-pages N] [--depth-dump DIR]\n"
 		"                       [--depth-store [--depth-store-fill F]] [--stencil\n"
@@ -432,7 +436,7 @@ static int usage(void)
 		"                       [--poke xfer:N=V|bg:N=V]... [--low ADDR] [--late R:K=V] FILE...,\n"
 		"                 probe --tri SLOT[:N] [--slot SLOT=FILE[:N]]... [--width W\n"
 		"                       --height H --max-width W --max-height H] [--vertices N]\n"
-		"                       [--copy-depth] [--index-width 16|32] [--tri-full]\n"
+		"                       [--copy-depth] [--index-width 16|32] [--tri-full] [--bg-layer]\n"
 		"                       [--vtx-coords N] [--isp2 V]\n"
 		"                       [--blk-add BIT=V[,V]]... [--blk N=V]...\n"
 		"                       [--cmd N=V]... [--vdm N=V]... [--pbe N=V]... [--sideband V]\n"
@@ -1587,6 +1591,8 @@ struct probe_opts {
 		bool copy_depth;	/* --copy-depth: the copies at z = c / 16 */
 		uint32_t index_width;	/* --index-width: 0 (16), 16 or 32 */
 		bool full;		/* --tri-full: the triangle covers the target */
+		bool bg_layer;		/* --bg-layer: as tri's */
+		uint64_t bg_src;
 		const char *emit_scene;	/* --emit-scene FILE: the built job's words */
 		bool v_set;		/* --tri-v: the vertices, in 1/2^unit pixel */
 		int32_t v256[3][2];
@@ -1996,7 +2002,7 @@ static int probe_tri_check(struct probe_opts *po)
 	for (unsigned int k = 0; k < SGXFIVE_TRI_SLOT_COUNT; k++)
 		fixed |= pt->fixed[k].n != 0;
 	if (pt->slot < 0)
-		return fixed || pt->width || pt->height || pt->max_width || pt->max_height ||
+		return fixed || pt->bg_layer || pt->width || pt->height || pt->max_width || pt->max_height ||
 		       pt->vertices || pt->coords || pt->copy_depth || pt->index_width ||
 		       pt->isp2_set || pt->blk_mask ||
 		       pt->v_set || pt->z_set || pt->unit ||
@@ -2150,6 +2156,53 @@ static int emit_tri_scene(const char *path, const struct sgxfive_tri_rig *g,
  * changed (several tiles may each store their own); a failed render is reported, with the
  * scratch, and recovered from.
  */
+/*
+ * Q190's layered background: the W x H source of render_bg_src, mapped in the render's VM at
+ * exactly the knob's address (before the contexts, so nothing else can take the range) and
+ * filled with the texels of sgxfive_bgl_texel; the rest of its last page is the sentinel.
+ */
+struct bgl_src {
+	struct sgxfive_bo *bo;
+	uint64_t addr, size;
+};
+
+static int bgl_source(struct tool *t, struct sgxfive_vm *vm, uint64_t addr, uint32_t w,
+		      uint32_t h, struct bgl_src *s)
+{
+	void *map = NULL;
+	uint32_t *d;
+	int ret;
+
+	s->addr = addr;
+	s->size = ((uint64_t)w * h * 4 + SGXFIVE_PAGE_SIZE - 1) & ~(uint64_t)(SGXFIVE_PAGE_SIZE - 1);
+	ret = sgxfive_bo_create(t->dev, s->size, DRM_SGXFIVE_BO_ALLOW_CPU_ACCESS, &s->bo);
+	if (!ret)
+		ret = sgxfive_bo_mmap(s->bo, &map);
+	if (!ret)
+		ret = sgxfive_vm_map(vm, s->addr, s->bo, 0, s->size, 0);
+	if (ret) {
+		fprintf(stderr, "bg-layer: cannot map the source at 0x%08llx: %s\n",
+			(unsigned long long)addr, strerror(-ret));
+		sgxfive_bo_destroy(s->bo);
+		s->bo = NULL;
+		return ret;
+	}
+	d = map;
+	for (uint64_t i = 0; i < s->size / 4; i++)
+		d[i] = SGXFIVE_TRI_SENTINEL;
+	sgxfive_bgl_fill(d, w, h);
+	printf("bg-layer: source 0x%08llx %ux%u RGBA8888, knob Y\n", (unsigned long long)addr, w, h);
+	return 0;
+}
+
+static void bgl_release(struct sgxfive_vm *vm, struct bgl_src *s)
+{
+	if (s->bo)
+		sgxfive_vm_unmap(vm, s->addr, s->size);
+	sgxfive_bo_destroy(s->bo);
+	s->bo = NULL;
+}
+
 static void probe_tri_one(struct tool *t, const struct probe_file *f,
 			  const struct probe_opts *po)
 {
@@ -2159,6 +2212,7 @@ static void probe_tri_one(struct tool *t, const struct probe_file *f,
 	struct sgxfive_tri_rig *g = NULL;
 	struct sgxfive_vm *vm = NULL;
 	struct sgxfive_bo *sbo = NULL;
+	struct bgl_src bgs = { 0 };
 	uint32_t *sp = NULL, ctx = 0;
 	uint64_t saddr = 0;
 	bool submitted = false;
@@ -2204,6 +2258,8 @@ static void probe_tri_one(struct tool *t, const struct probe_file *f,
 		pr.obj2_pixpds = (struct sgxfive_tri_prog){ pt->obj2_pixpds.words,
 							    pt->obj2_pixpds.n, pt->obj2_pixpds_data, 0 };
 	ret = sgxfive_vm_create(t->dev, &vm);
+	if (!ret && pt->bg_layer)
+		ret = bgl_source(t, vm, pt->bg_src, pt->width, pt->height, &bgs);
 	if (!ret)
 		ret = sgxfive_render_ctx_create(vm, pt->max_width, pt->max_height, &ctx);
 	if (!ret)
@@ -2296,6 +2352,7 @@ static void probe_tri_one(struct tool *t, const struct probe_file *f,
 		for (unsigned int k = 0; k < pt->nkpoke && !ret; k++)
 			ret = kpoke_write(pt->kpoke[k]);
 		sgxfive_tri_default(&p, pt->width, pt->height);
+		p.bg_src = pt->bg_layer ? (uint32_t)pt->bg_src : 0;
 		if (pt->full) {
 			p.v[0][0] = p.v[0][1] = p.v[1][1] = p.v[2][0] = 0;
 			p.v[1][0] = 3 * 16 * (int32_t)p.width;
@@ -2361,6 +2418,7 @@ static void probe_tri_one(struct tool *t, const struct probe_file *f,
 	sgxfive_bo_destroy(sbo);
 	if (ctx)
 		sgxfive_ctx_destroy(t->dev, ctx);
+	bgl_release(vm, &bgs);
 	sgxfive_vm_destroy(vm);
 }
 
@@ -2376,6 +2434,132 @@ static int cmd_probe(struct tool *t, struct probe_file *files, uint32_t n,
 	return probe_failed_jobs ? EXIT_JOB_FAILED : 0;
 }
 
+/* ---- Q190's layered background: the knobs the tool reads, never writes -------------------- */
+
+/*
+ * debugfs render_bg_layer (Y or N) and render_bg_src (hex), as the kernel prints them; the
+ * session kit owns both (`dbg:` row words, restored after the job), the tool refuses a job
+ * whose option and knobs disagree. SGXFIVE_DEBUGFS overrides the directory; without it the
+ * mock reads no debugfs (it has none) and --mock-knob NAME=V gives its values; a file that
+ * is missing (an older module) reads as N and 0.
+ */
+struct bg_knobs {
+	bool layer;
+	uint64_t src;
+};
+
+struct mock_knobs {
+	bool layer_given, src_given;
+	bool layer;
+	uint64_t src;
+};
+
+static bool knob_text(const char *name, bool mock, char *buf, size_t n)
+{
+	const char *dbg = getenv("SGXFIVE_DEBUGFS");
+	char path[4096];
+	FILE *f;
+	bool ok;
+
+	if (!dbg) {
+		if (mock)
+			return false;
+		dbg = "/sys/kernel/debug/dri/0/sgx";
+	}
+	snprintf(path, sizeof(path), "%s/%s", dbg, name);
+	f = fopen(path, "r");
+	if (!f)
+		return false;
+	ok = fgets(buf, (int)n, f) != NULL;
+	fclose(f);
+	return ok;
+}
+
+static void bg_knobs_read(bool mock, const struct mock_knobs *mk, struct bg_knobs *k)
+{
+	char buf[64];
+
+	k->layer = false;
+	k->src = 0;
+	if (mk->layer_given)
+		k->layer = mk->layer;
+	else if (knob_text("render_bg_layer", mock, buf, sizeof(buf)))
+		k->layer = buf[0] == 'Y' || buf[0] == 'y' || buf[0] == '1';
+	if (mk->src_given)
+		k->src = mk->src;
+	else if (knob_text("render_bg_src", mock, buf, sizeof(buf)))
+		k->src = strtoull(buf, NULL, 16);
+}
+
+/* --mock-knob NAME=V: render_bg_layer (1, 0, Y, N) and render_bg_src; others are noted. */
+static int mock_knob_parse(const char *arg, struct mock_knobs *mk)
+{
+	const char *eq = strchr(arg, '=');
+	char name[64], *end;
+
+	if (!eq || eq == arg || (size_t)(eq - arg) >= sizeof(name) || !eq[1])
+		return -1;
+	memcpy(name, arg, (size_t)(eq - arg));
+	name[eq - arg] = 0;
+	if (!strcmp(name, "render_bg_layer")) {
+		if (!strchr("01YNyn", eq[1]) || eq[2])
+			return -1;
+		mk->layer_given = true;
+		mk->layer = strchr("1Yy", eq[1]) != NULL;
+	} else if (!strcmp(name, "render_bg_src")) {
+		errno = 0;
+		mk->src = strtoull(eq + 1, &end, 0);
+		if (errno || *end)
+			return -1;
+		mk->src_given = true;
+	} else {
+		fprintf(stderr, "mock: debugfs %s not modelled\n", name);
+	}
+	return 0;
+}
+
+static int bgl_refuse(const char *what)
+{
+	fprintf(stderr, "usage: sgxfive-test --bg-layer: %s\n", what);
+	return 2;
+}
+
+/*
+ * The checks that need no device: the option and the knobs agree, the source address is a page
+ * in 32 bits, and the options the layer does not combine with are absent. w and h the target.
+ */
+static int bgl_check(bool opt, const struct bg_knobs *k, uint32_t w, uint32_t h, bool tri_full,
+		     bool aa4, bool ctx2, bool geometry, bool fault, uint32_t n)
+{
+	if (!opt)
+		return k->layer ? bgl_refuse("debugfs render_bg_layer is Y: the reference and the "
+					     "row's premise would be wrong without --bg-layer") : 0;
+	if (!k->layer)
+		return bgl_refuse("debugfs render_bg_layer is N (the kit sets it with the row's "
+				  "dbg: words)");
+	if (!k->src || k->src & (SGXFIVE_PAGE_SIZE - 1) || k->src >> 32)
+		return bgl_refuse("debugfs render_bg_src must be a page-aligned address below 4 GiB");
+	if (tri_full || aa4 || ctx2 || geometry || fault || n != 1)
+		return bgl_refuse("not with --tri-full, --aa4, --ctx2, --geometry, --fault or -n "
+				  "other than 1");
+	if (w > 4095 || h > 4095)
+		return bgl_refuse("width and height must be at most 4095");
+	return 0;
+}
+
+/* After the device is open: the source (page-rounded) must fit the general heap. */
+static int bgl_heap_check(const struct tool *t, uint64_t src, uint32_t w, uint32_t h)
+{
+	const struct drm_sgxfive_heap *g = &sgxfive_dev_info(t->dev)->heaps[DRM_SGXFIVE_HEAP_GENERAL];
+	const uint64_t size = ((uint64_t)w * h * 4 + SGXFIVE_PAGE_SIZE - 1) &
+			      ~(uint64_t)(SGXFIVE_PAGE_SIZE - 1);
+
+	if (src < g->base || src + size > g->base + g->size)
+		return bgl_refuse("debugfs render_bg_src and the source it holds must lie in the "
+				  "general heap");
+	return 0;
+}
+
 /* ---- main --------------------------------------------------------------------------- */
 
 /* ---- tri ---------------------------------------------------------------------------- */
@@ -2387,7 +2571,8 @@ static void tri_show(const struct sgxfive_tri_params *p, const uint32_t *fb)
 		for (uint32_t x = 0; x < p->width && x < 128; x++) {
 			uint32_t v = fb[(uint64_t)y * sgxfive_tri_stride_px(p->width) + x];
 
-			putchar(v == p->colour ? '#' : v == p->bg_colour ? '.' :
+			putchar(v == p->colour ? '#' :
+				v == (p->bg_src ? sgxfive_bgl_texel(x, y) : p->bg_colour) ? '.' :
 				v == SGXFIVE_TRI_SENTINEL ? 's' : '?');
 		}
 		putchar('\n');
@@ -2399,9 +2584,11 @@ static bool tri_ok(const void *ctx, uint32_t x, uint32_t y, uint32_t v, uint32_t
 {
 	const struct sgxfive_tri_params *p = ctx;
 	const int e = sgxfive_tri_expect(p, x, y);
+	/* with a layered background the background is the pixel's own texel */
+	const uint32_t bg = p->bg_src ? sgxfive_bgl_texel(x, y) : p->bg_colour;
 
-	*want = e ? p->colour : p->bg_colour;
-	return v == *want || (e < 0 && v == p->bg_colour);
+	*want = e ? p->colour : bg;
+	return v == *want || (e < 0 && v == bg);
 }
 
 /*
@@ -2818,11 +3005,17 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 	const uint32_t ctx_flags = o->aa4 ? DRM_SGXFIVE_CTX_RENDER_AA_4X : 0;
 	const long long wait_ns = o->wait_ms ? o->wait_ms * 1000000LL : WAIT_NS;
 	struct scratch sc = { 0 };
+	struct bgl_src bgs = { 0 };
 	struct zbufs z = { .depth = { 0 } };
 	uint32_t overflowed = 0;
 	int ret;
 
 	ret = sgxfive_vm_create(t->dev, &vm);
+	if (!ret && o->bg_layer) {
+		ret = bgl_source(t, vm, o->bg_src, o->width, o->height, &bgs);
+		if (ret)
+			goto out;
+	}
 	if (!ret)
 		ret = sgxfive_render_ctx_create_flags(vm, max_w, max_h, ctx_flags, &ctx);
 	if (!ret)
@@ -2926,6 +3119,7 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		bool over, ovf_ok, ovf2 = false;
 
 		sgxfive_tri_default(&p, o->width, o->height);
+		p.bg_src = o->bg_layer ? (uint32_t)o->bg_src : 0;
 		p.colour = colours[i % 2][0];
 		p.bg_colour = colours[i % 2][1];
 		if (o->tri_full) {
@@ -3143,9 +3337,13 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		ret = sgxfive_tri_check(&p, sgxfive_render_fb(r), &n);
 		guard = sgxfive_render_guard_dirty(r, &p);
 		printf("tri %ux%u #%u: %s%u triangle, %u background, %u other; wrong %u inside, "
-		       "%u outside, %u at edges; %u if flipped; guard %u\n", p.width, p.height,
+		       "%u outside, %u at edges; %u if flipped; guard %u", p.width, p.height,
 		       i + 1, over ? "overflowed, " : "", n.tri, n.bg, n.other, n.wrong_in,
 		       n.wrong_out, n.wrong_edge, n.flipped, guard);
+		if (p.bg_src)
+			printf("; %u layer texels in place, %u elsewhere, %u not a texel",
+			       n.layer_in_place, n.layer_elsewhere, n.layer_other);
+		putchar('\n');
 		if (over) {		/* counted, not checked: the partial renders drew it */
 			overflowed++;
 			ret = 0;
@@ -3197,6 +3395,7 @@ out:
 	sgxfive_render_destroy(r2);
 	sgxfive_render_destroy(r);
 	scratch_destroy(vm, &sc);
+	bgl_release(vm, &bgs);
 	scratch_destroy(vm, &z.depth);
 	scratch_destroy(vm, &z.depth_store);
 	scratch_destroy(vm, &z.stencil);
@@ -3345,7 +3544,7 @@ static bool parse_fill(const char *s, struct fill *f)
 	return parse_u32(s, &f->val);
 }
 
-/* --tri-z A,B,C: three screen depths, 0 to 1 */
+/* --tri-z A,B,C: three screen depths, -1 to 2 (Q101: outside 0 to 1 reaches the render) */
 static bool parse_tri_z(const char *s, float z[3])
 {
 	char *end;
@@ -3353,7 +3552,7 @@ static bool parse_tri_z(const char *s, float z[3])
 	for (int i = 0; i < 3; i++) {
 		errno = 0;
 		z[i] = strtof(s, &end);
-		if (errno || end == s || !(z[i] >= 0.0f && z[i] <= 1.0f) ||
+		if (errno || end == s || !(z[i] >= -1.0f && z[i] <= 2.0f) ||
 		    *end != (i < 2 ? ',' : 0))
 			return false;
 		s = end + 1;
@@ -3423,6 +3622,11 @@ static int parse_opts(int argc, char **argv, struct opts *o)
 			i--;		/* a flag: no value */
 			continue;
 		}
+		if (!strcmp(argv[i], "--bg-layer")) {
+			o->bg_layer = true;
+			i--;		/* a flag: no value */
+			continue;
+		}
 		if (!strcmp(argv[i], "--keep-overflow") || !strcmp(argv[i], "--dump-each") ||
 		    !strcmp(argv[i], "--depth")) {
 			*(argv[i][2] == 'k' ? &o->keep_overflow : argv[i][2] == 'd' && argv[i][3] == 'u' ?
@@ -3462,8 +3666,8 @@ static int parse_opts(int argc, char **argv, struct opts *o)
 		}
 		if (!strcmp(argv[i], "--tri-z") && i + 1 < argc) {
 			if (!parse_tri_z(argv[i + 1], o->tri_z)) {
-				fprintf(stderr, "sgxfive-test: bad option --tri-z (three screen depths, 0 "
-					"to 1, comma separated)\n");
+				fprintf(stderr, "sgxfive-test: bad option --tri-z (three screen depths, "
+					"-1 to 2, comma separated)\n");
 				return -1;
 			}
 			o->tri_z_given = true;
@@ -3761,6 +3965,9 @@ int main(int argc, char **argv)
 		.depth_pages = UINT32_MAX,	/* the target's, and sixteen over */
 	};
 	struct sgxfive_mock_config mcfg = { 0 };
+	struct mock_knobs mknobs = { 0 };
+	struct bg_knobs knobs = { 0 };
+	bool mock_knob_used = false, bgl_opt = false;
 	const char *device = NULL, *cmd;
 	char *pb_end;
 	bool use_mock = false, needs_programs, fake = false;
@@ -3788,13 +3995,20 @@ int main(int argc, char **argv)
 			if (*pb_end || pb_end == argv[i] + 16 || mcfg.render_pb_pages < 0x23 ||
 			    mcfg.render_pb_pages > 0x422)
 				return usage();
+		} else if ((!strcmp(argv[i], "--mock-knob") && i + 1 < argc) ||
+			   !strncmp(argv[i], "--mock-knob=", 12)) {
+			const char *kv = argv[i][11] == '=' ? argv[i] + 12 : argv[++i];
+
+			if (mock_knob_parse(kv, &mknobs))
+				return usage();
+			mock_knob_used = true;
 		} else if (!strcmp(argv[i], "--device") && i + 1 < argc) {
 			device = argv[++i];
 		} else {
 			return usage();
 		}
 	}
-	if (i >= argc || (mcfg.render_pb_pages && !use_mock))
+	if (i >= argc || ((mcfg.render_pb_pages || mock_knob_used) && !use_mock))
 		return usage();
 	cmd = argv[i++];
 	if (strcmp(cmd, "query") && strcmp(cmd, "dummy") && strcmp(cmd, "fill") &&
@@ -3968,6 +4182,10 @@ int main(int argc, char **argv)
 				popts.tri.full = true;
 				continue;
 			}
+			if (!strcmp(argv[i], "--bg-layer")) {
+				popts.tri.bg_layer = true;
+				continue;
+			}
 			if (!strcmp(argv[i], "--tri-unit") && i + 1 < argc) {
 				char *end;
 				unsigned long k = strtoul(argv[++i], &end, 10);
@@ -3992,7 +4210,7 @@ int main(int argc, char **argv)
 			if (!strcmp(argv[i], "--tri-z") && i + 1 < argc) {
 				if (!parse_tri_z(argv[++i], popts.tri.z)) {
 					fprintf(stderr, "sgxfive-test: bad option --tri-z (three screen "
-						"depths, 0 to 1, comma separated)\n");
+						"depths, -1 to 2, comma separated)\n");
 					return 2;
 				}
 				popts.tri.z_set = true;
@@ -4328,6 +4546,39 @@ int main(int argc, char **argv)
 	}
 
 	/*
+	 * Q190's layered background, tri and probe --tri: the option and the knobs (read here,
+	 * never written) must agree, or the row's premise is wrong; refused before any device call
+	 */
+	if (!strcmp(cmd, "tri") || (!strcmp(cmd, "probe") && popts.tri.slot >= 0)) {
+		const bool probe = !strcmp(cmd, "probe");
+		const struct probe_tri *pt = &popts.tri;
+		bool bgpds = false, bgpixel = false;
+
+		bg_knobs_read(use_mock, &mknobs, &knobs);
+		bgl_opt = probe ? pt->bg_layer : o.bg_layer;
+		for (unsigned int k = 0; probe && k < SGXFIVE_TRI_SLOT_COUNT; k++) {
+			bgpds |= (pt->fixed[k].n || (int)k == pt->slot) && k == SGXFIVE_TRI_SLOT_BGPDS;
+			bgpixel |= (pt->fixed[k].n || (int)k == pt->slot) &&
+				   k == SGXFIVE_TRI_SLOT_BGPIXEL;
+		}
+		ret = probe ? bgl_check(bgl_opt, &knobs, pt->width, pt->height, pt->full, false, false,
+					false, false, 1) :
+			      bgl_check(bgl_opt, &knobs, o.width, o.height, o.tri_full, o.aa4, o.ctx2,
+					o.geometry != 0, o.fault, o.n);
+		if (!ret && bgl_opt && bgpixel && !bgpds)
+			ret = bgl_refuse("a bgpixel slot without a bgpds one would not run: the layer's "
+					 "primary replaces the background's");
+		if (ret)
+			return ret;
+		o.bg_src = popts.tri.bg_src = knobs.src;
+		mcfg.bg_layer = knobs.layer;
+		mcfg.bg_src = (uint32_t)knobs.src;
+	} else if (o.bg_layer) {
+		fprintf(stderr, "sgxfive-test: --bg-layer is for tri and probe --tri\n");
+		return 2;
+	}
+
+	/*
 	 * Programs: our assembled ones by default. The fake source's images are
 	 * not runnable; refuse to send them to a real GPU.
 	 */
@@ -4359,6 +4610,10 @@ int main(int argc, char **argv)
 		else
 			fail(device ? device : "open", ret);
 		ret = 1;
+	} else if (bgl_opt && bgl_heap_check(&t, knobs.src, !strcmp(cmd, "tri") ? o.width :
+					     popts.tri.width, !strcmp(cmd, "tri") ? o.height :
+					     popts.tri.height)) {
+		ret = 2;
 	} else if (!strcmp(cmd, "query")) {
 		ret = cmd_query(&t);
 	} else if (!strcmp(cmd, "dummy")) {

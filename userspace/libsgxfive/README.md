@@ -253,7 +253,8 @@ them. There is no test double for them: the mock's render interpreter runs these
 ## sgxfive-test
 
 ```
-sgxfive-test [--mock[=rev1|harness|none]] [--mock-pb-pages=N] [--device PATH]
+sgxfive-test [--mock[=rev1|harness|none]] [--mock-pb-pages=N] [--mock-knob NAME=V]...
+             [--device PATH]
              [--programs=asm|fake] <command> [options]
 
 query                          GPU, firmware, job limits and heaps
@@ -275,7 +276,7 @@ tri [--width W --height H -n N] [--max-width W --max-height H] [--fault]
     [--move N:DX,DY]...
     [--geometry N]... [--keep-going] [--keep-overflow] [--dump-render DIR [--dump-each]]
     [--words DIR] [--wait-ms MS]
-    [--tri-full] [--tri-z A,B,C]
+    [--tri-full] [--tri-z A,B,C] [--bg-layer]
     [--depth [--depth-ctl V] [--depth-ctl-next V] [--depth-fill F] [--depth-base V]
            [--depth-pages N] [--depth-dump DIR] [--depth-store [--depth-store-fill F]]
            [--stencil [--stencil-fill F] [--stencil-store [--stencil-store-fill F]]]]
@@ -347,9 +348,25 @@ store base (`rd:13`) on a buffer of its own (default fill 0xdeadbeef, report `de
 that both stencil bases (`rd:14`, `rd:15`, bit 31 set) point at (`stencil #N`, `stencil.N.bin`), and
 `--stencil-store` a buffer of its own for the stencil store (`stencil store #N`,
 `stencil-store.N.bin`). `--tri-full` makes the triangle
-(0,0), (3W,0), (0,3H), which covers the target; `--tri-z A,B,C` sets its vertices' screen depths
-(0 to 1; clip z = 2z - 1), so that a ramp across x or y makes every stored depth dword name its
-pixel.
+(0,0), (3W,0), (0,3H), which covers the target; `--tri-z A,B,C` (each -1 to 2) sets its vertices'
+screen depths
+(clip z = 2z - 1; outside 0 to 1 too, for the depth rules at the range's ends), so that a ramp
+across x or y makes every stored depth
+dword name its pixel.
+`--bg-layer` (with `probe --tri` too) is Q190's layered background: the kernel builds the render's
+background object from the tag's one layer when its debugfs `render_bg_layer` is on and checks
+`render_bg_src`, and the tool, which only reads both knobs (the session kit writes and restores
+them), maps a W x H RGBA8888 source of `texel(x, y) = ((x ^ y ^ 0xa5) & 0xff) << 24 | (y & 0xfff)
+<< 12 | (x & 0xfff)` at that address, gives the background the copy's primary with one attribute
+row, and checks every background pixel against its own texel (the summary line gains `L layer
+texels in place, M elsewhere, N not a texel`). It exits 2, before any device call, when the
+option and the knobs disagree (knob off with the option, knob on without it), for an unusable
+`render_bg_src` (0, not page aligned, outside the general heap) and with `--tri-full`, `--aa4`,
+`--ctx2`, `--geometry`, `--fault`, `-n` other than 1 or a target wider or higher than 4095; a
+`probe --tri` with a `bgpixel` slot and no `bgpds` one is refused too. A source that cannot be
+mapped at the knob's address is exit 1. On the mock `--mock-knob NAME=V` gives the knobs
+(`render_bg_layer` 1 or 0, `render_bg_src`; other names are accepted with a `mock: debugfs NAME
+not modelled` line) and `SGXFIVE_DEBUGFS` files are read when set.
 `--ctx2` creates a second render context in the VM, for the same size of target, and renders the
 same scene on it after each render of the first, in the other pair of colours, checking it on
 its own (lines `tri2 ...`); the contexts' buffers are destroyed second context first.

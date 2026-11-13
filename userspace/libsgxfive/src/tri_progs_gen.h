@@ -191,3 +191,30 @@ static const uint64_t tri_use_eor[] = {
 	0xfca0000000000000ull,	/* mov.skipinv r0, #0x00000000 */
 	0xfb26004080200000ull,	/* emitpix2.end.freep #0, r0, #0, r0, #0x00000200 */
 };
+
+/* pds_prim_1src.s */
+static const uint32_t tri_pds_prim_1src[] = {
+	0x00000000,	/* data */
+	0x00000000,	/* data */
+	0x00000000,	/* data */
+	0x00000000,	/* data */
+	0x00000000,	/* data */
+	0x00000000,	/* data */
+	0x00000000,	/* data */
+	0x00000000,	/* data */
+	0x00000000,	/* data */
+	0x00000000,	/* data */
+	0x00000000,	/* data */
+	0x00000000,	/* data */
+	0x07000305,	/* movs doutu, ds0[0], ds0[1], ds1[0], ds0[0] */
+	0x07040202,	/* movs douti, ds0[2], ds0[3], ds0[2], ds0[2] */
+	0x07082364,	/* movs doutt, ds0[4], ds0[5], ds1[2], ds1[3] */
+	0xaf000000,	/* halt */
+};
+#define TRI_PDS_PRIM_1SRC_DATA	12	/* data dwords */
+
+/* use_copy.s */
+static const uint64_t tri_use_copy[] = {
+	0xfa44070000000000ull,	/* phas #0, #0, pixel, end, parallel */
+	0x28851001a0000000ull,	/* mov.skipinv.end o0, pa0 */
+};

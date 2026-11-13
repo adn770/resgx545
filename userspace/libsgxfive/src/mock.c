@@ -94,6 +94,8 @@ struct sgxfive_mock {
 	uint64_t quirks;
 	uint32_t bridge_rev;
 	uint32_t pb_pages;		/* of render contexts created from now on */
+	bool bg_layer;			/* debugfs render_bg_layer: the one-layer background */
+	uint32_t bg_src;		/* debugfs render_bg_src */
 	struct mbo *bos[MAX_OBJS];
 	struct mvm *vms[MAX_OBJS];
 	struct mctx *ctxs[MAX_OBJS];
@@ -755,6 +757,9 @@ static int check_render(struct sgxfive_mock *m, const struct mctx *ctx,
 		return -EINVAL;
 	if (c->te_aa & 0xc0000000u && !ctx->aa4)
 		return -EINVAL;
+	/* the kernel's sgxfive_render_check_bg: the layer's source set and mapped in the VM */
+	if (m->bg_layer && (!m->bg_src || !gpu_ptr(ctx->vm, m->bg_src, false)))
+		return -EINVAL;
 	sgxfive_tiling(&t, w, h);
 	if (c->te_screen != t.te_screen || c->te_mtile1 != t.te_mtile1 ||
 	    c->te_mtile2 != t.te_mtile2 || c->te_mtile_stride != t.te_mtile_stride)
@@ -1048,6 +1053,62 @@ static bool pb_overflows(uint32_t pages, uint32_t mte_screen)
 }
 
 /*
+ * The layered background (debugfs render_bg_layer): the kernel builds the object's 23 words
+ * from the tag's one layer (sgxfive_bgobj_copy: the user's PDS words, the source rectangle
+ * the target's own, so the coordinates run 0 to 1), and what is sampled is whatever the
+ * user's primary names. Here: a primary that starts the copy shader (use_copy) is the copy
+ * the transfer engine runs, the texture words T0-T2 at dwords 8, 9 and 6 of its data; the
+ * attribute is the plane through the three vertices' (u, v) at the corners (0, 0), (W, 0),
+ * (0, H), sampled at the pixel centre, the nearest texel. Another primary is not
+ * interpreted (the background keeps its fill_colour): the mock models the plumbing, not the
+ * iteration rules.
+ */
+struct bgl {
+	uint64_t src;
+	uint32_t w, h, tw, th, stride;	/* the target, the texture, its row pitch in bytes */
+	float u[3], v[3];
+};
+
+static bool bgl_layer(struct xfer_state *x, uint64_t pri, const struct drm_sgxfive_render_cmd *c,
+		      struct bgl *b)
+{
+	const struct sgxfive_rect r = { 0, 0, (c->mte_screen & 0xffff) + 1,
+					(c->mte_screen >> 16) + 1 };
+	uint32_t bg[SGXFIVE_BGOBJ1_DWORDS], t0, t1;
+	uint64_t insn = rd64(x, doutu_addr(x, rd(x, pri)) + 8);
+
+	if (insn != ((uint64_t)0x28851001 << 32 | 0xa0000000))
+		return false;
+	sgxfive_bgobj_copy(bg, 0, 0, 0, 0, 0, &r, &r, r.x1, r.y1);
+	b->w = r.x1;
+	b->h = r.y1;
+	b->src = rd(x, pri + 24) & ~3u;
+	t0 = rd(x, pri + 32);
+	t1 = rd(x, pri + 36);
+	b->tw = ((t1 >> 12) & 0xfff) + 1;
+	b->th = (t1 & 0xfff) + 1;
+	b->stride = ((((t0 >> 9) & 7) | ((t0 >> 17) & 0x3ff) << 3) + 1) * 4;
+	for (unsigned int i = 0; i < 3; i++) {
+		b->u[i] = f32(bg[3 + 2 * i]);
+		b->v[i] = f32(bg[4 + 2 * i]);
+	}
+	return true;
+}
+
+/* The texel the plane names at the centre of pixel (px, y); 0 outside the texture. */
+static uint32_t bgl_texel(struct xfer_state *x, const struct bgl *b, uint32_t px, uint32_t y)
+{
+	const double fx = (px + 0.5) / b->w, fy = (y + 0.5) / b->h;
+	const double u = b->u[0] + (b->u[1] - b->u[0]) * fx + (b->u[2] - b->u[0]) * fy;
+	const double v = b->v[0] + (b->v[1] - b->v[0]) * fx + (b->v[2] - b->v[0]) * fy;
+
+	if (u < 0 || v < 0 || u >= 1 || v >= 1)
+		return 0;
+	return rd(x, b->src + (uint64_t)((uint32_t)(v * b->th)) * b->stride +
+		  4ull * (uint32_t)(u * b->tw));
+}
+
+/*
  * One scene, as our programs would draw it: the VDM stream's state blocks
  * (their pixel primary gives the colour, the viewport the window mapping),
  * index lists of triangles through their vertex PDS (buffer and stride),
@@ -1071,6 +1132,8 @@ static int run_render(struct sgxfive_mock *m, struct mctx *ctx,
 	float tri[MAX_TRIS][3][2], vp[6] = { 0 };
 	uint32_t colour[MAX_TRIS], cur = 0, ntris = 0, pbe[4], bg, stride, x0, y0, x1, y1;
 	uint64_t a = c->vdm_ctrl_stream_base, eot;
+	struct bgl bl;
+	bool layer = false;
 
 	for (unsigned int n = 0; n < 64 && !x.fault; n++) {
 		uint32_t w0 = rd(&x, a);
@@ -1132,6 +1195,9 @@ static int run_render(struct sgxfive_mock *m, struct mctx *ctx,
 	rd(&x, doutu_addr(&x, rd(&x, c->event_pixel_pds_exec)));
 	rd(&x, doutu_addr(&x, rd(&x, c->event_pixel_pds_exec + 16)));
 	bg = fill_colour(&x, pds + ((uint64_t)(c->bgobj_words[2] & 0xffffff) << 4));
+	if (m->bg_layer)
+		layer = bgl_layer(&x, pds + ((uint64_t)(c->bgobj_words[2] & 0xffffff) << 4), c,
+				  &bl);
 	x0 = pbe[0] & 0x1fff;
 	y0 = (pbe[0] >> 16) & 0x1fff;
 	x1 = imin((pbe[1] & 0x1fff) + 1, (c->mte_screen & 0xffff) + 1);
@@ -1145,6 +1211,8 @@ static int run_render(struct sgxfive_mock *m, struct mctx *ctx,
 				uint8_t *dp = gpu_ptr(x.vm, d, true);
 				uint32_t v = bg;
 
+				if (layer)
+					v = bgl_texel(&x, &bl, px, y);
 				for (uint32_t t = 0; t < ntris; t++) {
 					float cx = px + 0.5f, cy = y + 0.5f;
 					float e0 = edge(tri[t][0], tri[t][1], cx, cy);
@@ -1412,6 +1480,8 @@ struct sgxfive_mock *sgxfive_mock_create(const struct sgxfive_mock_config *cfg)
 		m->bridge_rev = 3;
 	}
 	/* As the kernel's debugfs: the default for anything out of range. */
+	m->bg_layer = cfg->bg_layer;
+	m->bg_src = cfg->bg_src;
 	m->pb_pages = cfg->render_pb_pages >= 0x23 && cfg->render_pb_pages <= 0x422 ?
 		      cfg->render_pb_pages : 0x422;
 	return m;

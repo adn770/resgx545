@@ -45,6 +45,14 @@ struct sgxfive_tri_params {
 	bool fine;
 	uint32_t fine_shift;		/* the unit of v256 is 1/2^fine_shift pixel (8: 1/256) */
 	int32_t v256[3][2];
+	/*
+	 * Q190's layered background: not 0, the GPU address of a W x H ARGB8888 source (rows 4 x W
+	 * bytes apart) that the background's primary samples, as a transfer's copy does. The
+	 * kernel builds the layer's words when the render's tag says one layer (debugfs
+	 * render_bg_layer) and checks the source (render_bg_src); the scene gives the primary
+	 * (the copy's own programs) and its one attribute row. 0: the colour fill, as always.
+	 */
+	uint32_t bg_src;
 };
 
 /*
@@ -101,6 +109,7 @@ struct sgxfive_tri_cpu {
 #define SGXFIVE_TRI_PP_PRIM	0x000	/* pds_prim: the triangle's colour */
 #define SGXFIVE_TRI_PP_BGPRIM	0x020	/* pds_prim: the background colour */
 #define SGXFIVE_TRI_PP_SEC	0x040	/* pds_sec */
+#define SGXFIVE_TRI_PP_BGCOPY	0xf00	/* pds_prim_1src: the layered background's (bg_src) */
 #define SGXFIVE_TRI_PP_PIXEV	0x080	/* pds_pixevent */
 #define SGXFIVE_TRI_UP_FILL	0x000	/* use_fill: the triangle's colour */
 #define SGXFIVE_TRI_UP_BGFILL	0x010	/* use_fill: the background colour */
@@ -108,6 +117,7 @@ struct sgxfive_tri_cpu {
 #define SGXFIVE_TRI_UP_PTOFF	0x030	/* use_ptoff */
 #define SGXFIVE_TRI_UP_EOT	0x040	/* use_eot */
 #define SGXFIVE_TRI_UP_EOR	0x080	/* use_eor */
+#define SGXFIVE_TRI_UP_BGCOPY	0xf00	/* use_copy: the layered background's */
 #define SGXFIVE_TRI_G_VDM	0x000	/* the VDM stream */
 #define SGXFIVE_TRI_G_VTX	0x100	/* three vertices {x, y, z, w} */
 #define SGXFIVE_TRI_G_IDX	0x200	/* three 16-bit indices */
@@ -143,9 +153,23 @@ int sgxfive_tri_scene(const struct sgxfive_tri_cpu *c, const struct sgxfive_tri_
  */
 int sgxfive_tri_expect(const struct sgxfive_tri_params *p, uint32_t x, uint32_t y);
 
+/* The layered background's source texel (x, y): its check byte, y and x, 12 bits each. */
+uint32_t sgxfive_bgl_texel(uint32_t x, uint32_t y);
+/* A W x H source image of those texels, rows W dwords apart. */
+void sgxfive_bgl_fill(uint32_t *dst, uint32_t width, uint32_t height);
+/* Whether v is a texel of a W x H source: its coordinates in *x and *y. */
+bool sgxfive_bgl_decode(uint32_t v, uint32_t width, uint32_t height, uint32_t *x, uint32_t *y);
+
 /* Every pixel of fb (stride 4 x sgxfive_tri_stride_px(width)) against the reference. */
 struct sgxfive_tri_counts {
 	uint32_t tri, bg, other;	/* pixels of each colour, and neither */
+	/*
+	 * with bg_src the background is the layer: bg counts the pixels that are their own texel
+	 * (sgxfive_bgl_texel), and these the pixels that are another texel of the source (their
+	 * check byte holds, x and y inside it) and those that are no texel at all (counted, never
+	 * decoded); the triangle's colour is neither
+	 */
+	uint32_t layer_in_place, layer_elsewhere, layer_other;
 	uint32_t wrong_in, wrong_out, wrong_edge;
 	uint32_t flipped;		/* mismatches against the image flipped in y */
 };
