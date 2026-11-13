@@ -275,6 +275,39 @@ def test_the_guard_refuses_a_knob_tool_or_option_the_session_does_not_allow(repo
         assert g.returncode != 0 and word in g.stdout, (row, g.stdout)
 
 
+def test_the_guard_allows_a_probe_kpoke_and_keeps_the_dangerous_forms_refused(repos):
+    kp = scaffold(repos)
+    t = kp / "tables/s0.txt"
+    base = t.read_text()
+    for row, ok in [("x|fit|safe|-|t4|probe --tri --kpoke 1:bg:N=1", True),
+                    ("x|fit|safe|-|t4|probe --tri --kpoke=1:bg:N=1", True),
+                    ("x|fit|safe|-|t4|tri --kpoke-render 1:bg:N=1", True),
+                    ("x|fit|safe|-|t4|fill --kpoke 0x1=2", False),
+                    ("x|fit|safe|-|t4|tri --kpoke 0x1=2", False),
+                    ("x|fit|safe|-|t4|probe --tri --kpoke 1:bg:N=1 --kreg 0x1=2", False),
+                    ("x|fit|safe|-|t4|probe --tri --clkgate", False),
+                    ("x|fit|safe|-|t4|probe --tri --trc-hazard", False)]:
+        t.write_text(base + row + "\n")
+        g = kit(kp, repos, "guard")
+        assert (g.returncode == 0) == ok, (row, g.stdout)
+
+
+def same_value(a, b):
+    lib = (KIT / "lib_kit.sh").read_text()
+    fn = re.search(r"^same_value\(\).*?^}\n", lib, re.M | re.S).group(0)
+    return subprocess.run(["bash", "-c", fn + 'same_value "$1" "$2"', "x", a, b]).returncode == 0
+
+
+@pytest.mark.parametrize("a,b,eq", [
+    ("Y", "1", True), ("y", "1", True), ("1", "Y", True), ("N", "0", True), ("n", "0", True),
+    ("0", "N", True), ("Y", "Y", True), ("N", "N", True),
+    ("Y", "0", False), ("N", "1", False), ("Y", "N", False), ("", "0", False),
+    ("0x00000003", "3", True), ("0x00000003", "4", False), ("abc", "abc", True),
+])
+def test_a_knob_reads_back_by_value_a_bool_as_1_or_y_and_0_or_n(a, b, eq):
+    assert same_value(a, b) == eq
+
+
 def test_the_driver_bounds_every_command_and_names_the_host_key():
     src = (KIT / "session.py").read_text()
     calls = [m.start() for m in re.finditer(r"subprocess\.(run|Popen|call|check_output)\(",

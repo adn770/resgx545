@@ -79,8 +79,11 @@ dbg_write() { # NAME VALUE: `reset 1` or a declared knob value only, bounded; th
 	fi
 	printf '%s\n' "$2" | sudo -n timeout -k 5 20 tee "$D/$1" >/dev/null
 }
-same_value() { # A B: equal as numbers when both are numbers (the kernel prints 0x%08x), else as text
-	case "$1$2" in *[!0-9a-fA-Fx]*) [ "$1" = "$2" ] ;; *) [ -n "$1" ] && [ -n "$2" ] && [ $(( $1 )) -eq $(( $2 )) ] ;; esac
+same_value() { # A B: equal as numbers when both are numbers (the kernel prints 0x%08x), a debugfs bool as 1/Y/y or 0/N/n, else as text
+	local a=$1 b=$2
+	case "$a" in Y|y) a=1 ;; N|n) a=0 ;; esac
+	case "$b" in Y|y) b=1 ;; N|n) b=0 ;; esac
+	case "$a$b" in *[!0-9a-fA-Fx]*) [ "$a" = "$b" ] ;; *) [ -n "$a" ] && [ -n "$b" ] && [ $(( a )) -eq $(( b )) ] ;; esac
 }
 knob_set() { # NAME VALUE: write, then read back; 1 if it does not read back
 	dbg_write "$1" "$2"

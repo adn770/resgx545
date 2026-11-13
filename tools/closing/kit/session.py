@@ -85,6 +85,7 @@ ENV = None          # the environment of every command (the mock's; None: this p
 # the kit's knob words; expect:NAME are kitscore.OUTCOMES (run_stage.sh classifies them)
 BASE_KNOBS = re.compile(r"^(-|expectdiff|expectfault|after|soft|gate|grp:[a-z0-9]+|"
                         r"expect:(rc3-overflow)|reads:[a-z0-9_]+(,[a-z0-9_]+)*)$")
+# --kpoke is probe's kernel poke, no riskier than tri's --kpoke-render: allowed on `probe` rows only
 FORBID_OPTIONS = ("--kpoke", "--kreg", "--clkgate", "--trc-hazard")
 FORBID = (r"reboot|shutdown|poweroff|kexec|grub|mkinitcpio|(^|[^a-z_-])make |gcc|(^|[^a-z])cc |"
           r"push-gma500|deploy-tool|trc_hazard|CLKGATE|clkgate|(^|[^a-z0-9])kreg([^a-z0-9-]|$)|"
@@ -361,6 +362,8 @@ def guard(kp):
             if "gate" in words and not any(w.startswith("grp:") for w in words):
                 bad.append(f"{where}: a gate row without its grp:")
             for o in forbid:
+                if o == "--kpoke" and args.split()[:1] == ["probe"]:
+                    continue
                 if re.search(r"(^|\s)" + re.escape(o) + r"(\s|=|$)", args):
                     bad.append(f"{where}: forbidden option {o}")
             for m in re.findall(r"\$S/([A-Za-z0-9_./-]+)", args):
