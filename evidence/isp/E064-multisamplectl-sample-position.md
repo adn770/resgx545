@@ -41,3 +41,10 @@ hashes, and the tool's own check reports 0 wrong pixels in these cases (the move
 edge tolerance it allows). What the data do show is that the byte is a sampling position with a
 centre at 8 on each nibble and a quantum finer than a pixel, since moving it changes only edge
 pixels. The 1/16 pixel unit is not measured here. One run only.
+
+**Correction 2026-11-13:** a note, the claim stands. E1018 (round 12 offline, a rule frozen before
+the per-case counts and hashes were read) names the nibbles: with the pixel (x, y) sampled at
+(x + lo/16, y + hi/16), lo = bits 3:0 and hi = bits 7:4, E606/E607's exact coverage test predicts
+all 256 counts of this sweep (the 225 two-nibble values held out) and parts the values into the 27
+image classes of the hashes, value for value; with the nibbles swapped 226 counts and 2 classes
+hold. So the low nibble is x and the high nibble y, in sixteenths of a pixel, 8 the centre.

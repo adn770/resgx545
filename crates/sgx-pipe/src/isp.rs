@@ -2,10 +2,14 @@
 // SPDX-FileCopyrightText: 2026 Josep Torra
 //! ISP: coverage and depth of a triangle (12.3, E606, E607) and the multisample store window of a
 //! tile (E503). The coverage rule and the vertex grid are the records' fits, reported fitted; the
-//! depth plane has no bit-exact model and is reported `Near` with the record's tolerance. Coverage
-//! alone is admitted on E680's ten and E913's ten further targets as well (`coverage_image`); the
-//! depth there is not: 1- and 2-pixel triangles missed E606's tolerance on them (E912, E913; Q262,
-//! Q240).
+//! depth plane has no bit-exact model and is reported `Near` with the record's tolerance: under a
+//! tile-corner premise no candidate fits every binade (E731), one line fits a 1024-wide row over
+//! its first 32 to 96 pixels only (E740), and the dyadic plane's lower-binade deviation follows
+//! neither the target nor the triangle (E741, E758; Q200, Q288). Coverage alone is admitted on
+//! E680's ten, E913's ten and E682's four further targets as well (`coverage_image`); the depth
+//! there is not: 1- and 2-pixel triangles missed E606's tolerance on them (E912, E913; Q262,
+//! Q240). The single-sampled pixel's sample point is `CR_ISP_MULTISAMPLECTL` byte 0's (E1018,
+//! `sample_offset`).
 
 use crate::Outcome;
 
@@ -103,6 +107,13 @@ pub const E913_TARGETS: [(u32, u32); 10] = [
     (96, 47),
 ];
 
+/// The four targets of E682's long edges (160 random triangles, each with an edge 105 to 2052
+/// pixels long through the target's centre pixel at a cross product of plus or minus 1 in 1/65536
+/// pixel squared, whole images 0 pixels wrong, 80 held out; `tests/isp_coverage_envelope.rs`
+/// replays them all, and E681's 588 tie sweeps on seven of E680's targets): admitted for coverage
+/// only, the depth not run on 1024 x 1024 and 2048 x 2048 (Q240).
+pub const E682_TARGETS: [(u32, u32); 4] = [(512, 512), (1024, 1024), (2048, 2048), (4096, 4096)];
+
 /// The envelope of coverage and depth together: E606's three targets; E680's ten refuse naming
 /// Q262 (the depth there missed E606's tolerance on 1- and 2-pixel triangles, E912), the rest
 /// Q240 (E913's ten as well: the same miss).
@@ -126,12 +137,13 @@ pub fn target_in_envelope(w: u32, h: u32) -> Result<(), Outcome> {
     Ok(())
 }
 
-/// The envelope of coverage alone: E606's three targets, E680's ten and E913's ten.
+/// The envelope of coverage alone: E606's three targets, E680's ten, E913's ten and E682's four.
 pub fn coverage_target_in_envelope(w: u32, h: u32) -> Result<(), Outcome> {
-    if !E606_TARGETS.contains(&(w, h)) && !E680_TARGETS.contains(&(w, h)) && !E913_TARGETS.contains(&(w, h)) {
+    let ran = |set: &[(u32, u32)]| set.contains(&(w, h));
+    if !ran(&E606_TARGETS) && !ran(&E680_TARGETS) && !ran(&E913_TARGETS) && !ran(&E682_TARGETS) {
         return Err(open(
             format!(
-                "a {w} x {h} target: the coverage rule ran on E606's three, E680's ten and E913's ten targets only (odd widths, sizes between them and past 4096 not run)"
+                "a {w} x {h} target: the coverage rule ran on E606's three, E680's ten, E913's ten and E682's four targets only (odd widths, sizes between them and past 4096 not run)"
             ),
             "Q240",
         ));
@@ -150,11 +162,51 @@ pub fn coverage_vertices_in_envelope(w: u32, h: u32, t: &Tri) -> Result<(), Outc
 }
 
 /// The coverage of a triangle on a target, row by row, inside the coverage envelope: E606's rule
-/// (`Tri::covers`), which E680 and E913 confirmed on their ten targets each with no change.
+/// (`Tri::covers`), which E680 and E913 confirmed on their ten targets each with no change, E681
+/// at the half-grid tie on seven of E680's (588 sweeps) and E682 on four with long edges.
 pub fn coverage_image(w: u32, h: u32, t: &Tri) -> Result<Vec<bool>, Outcome> {
     coverage_target_in_envelope(w, h)?;
     coverage_vertices_in_envelope(w, h, t)?;
     Ok((0..h).flat_map(|y| (0..w).map(move |x| t.covers(x, y))).collect())
+}
+
+/// The single-sampled pixel's sample point, in 1/256 pixel from its top-left corner, from
+/// `CR_ISP_MULTISAMPLECTL` (`ctl`, the render's cmd:16): byte 0's x in bits 3:0 and y in bits
+/// 7:4, in 1/16 pixel (E1018: E606/E607's exact test at that point gives all 256 triangle counts
+/// of E064's sweep of the byte, 225 two-nibble values held out, and parts the 256 values into the
+/// 27 classes the hardware's hashes do; x and y swapped gives 226 counts and 2 classes, a fixed
+/// centre 51). 0x88, the library's, is the pixel centre (E606); 0x26 is E502's x + 0.375,
+/// y + 0.125 (E339's word). Bytes 1 to 3 were 0 in the sweep and sample in the multisampled modes
+/// (E281) or with ISP word 0 bit 28 (E278): refused (Q202).
+pub fn sample_offset(ctl: u32) -> Result<(i64, i64), Outcome> {
+    if ctl > 0xff {
+        return Err(open(
+            format!("CR_ISP_MULTISAMPLECTL {ctl:#x}: E064's sweep held bytes 1 to 3 at 0 (E1018)"),
+            "Q202",
+        ));
+    }
+    Ok((i64::from(ctl & 0xf) * 16, i64::from(ctl >> 4) * 16))
+}
+
+/// The coverage of a triangle sampled at `CR_ISP_MULTISAMPLECTL` byte 0 (`sample_offset`). The
+/// library's 0x88 is `coverage_image`; any other value ran on one 64 x 64 triangle only (E064,
+/// E1018), so it is admitted on that target and refused elsewhere (Q240). The iterators read
+/// the centre only (`iter::sample_point`, Q201).
+pub fn coverage_image_sampled(w: u32, h: u32, t: &Tri, ctl: u32) -> Result<Vec<bool>, Outcome> {
+    let at = sample_offset(ctl)?;
+    if ctl == 0x88 {
+        return coverage_image(w, h, t);
+    }
+    if (w, h) != (64, 64) {
+        return Err(open(
+            format!(
+                "CR_ISP_MULTISAMPLECTL byte 0 {ctl:#x} on a {w} x {h} target: E064 swept the byte on 64 x 64 only (E1018)"
+            ),
+            "Q240",
+        ));
+    }
+    coverage_vertices_in_envelope(w, h, t)?;
+    Ok((0..h).flat_map(|y| (0..w).map(move |x| t.covers_at(x, y, at))).collect())
 }
 
 /// A triangle with one or two vertices far outside the target, in 1/256 pixel on the grid (E684,
@@ -285,11 +337,18 @@ impl Tri {
     /// Whether the pixel (x, y) is covered: its centre exactly inside the triangle, a centre on an
     /// edge belongs to the triangle iff the edge is a left or a top edge (E606). Zero area: never.
     pub fn covers(&self, x: u32, y: u32) -> bool {
+        self.covers_at(x, y, (GRID / 2, GRID / 2))
+    }
+
+    /// Whether the pixel (x, y) is covered when it is sampled at `at` (1/256 pixel from its
+    /// top-left corner): `covers` at another point, the same exact test and tie rule (E1018: the
+    /// point of `CR_ISP_MULTISAMPLECTL` byte 0, `sample_offset`).
+    pub fn covers_at(&self, x: u32, y: u32, at: (i64, i64)) -> bool {
         if self.area2() == 0 {
             return false;
         }
         let v = self.normalised();
-        let (px, py) = (GRID * x as i64 + GRID / 2, GRID * y as i64 + GRID / 2);
+        let (px, py) = (GRID * x as i64 + at.0, GRID * y as i64 + at.1);
         (0..3).all(|i| {
             let (a, b) = (v[i], v[(i + 1) % 3]);
             let (dx, dy) = (b.0 - a.0, b.1 - a.1);
@@ -1005,8 +1064,17 @@ mod tests {
                 (4096, 4096)
             ]
         );
-        for (w, h) in E606_TARGETS.into_iter().chain(E680_TARGETS).chain(E913_TARGETS) {
+        // E682 (S5, 160 of 160 whole images, 80 held out): two of its four are E680's
+        assert_eq!(E682_TARGETS, [(512, 512), (1024, 1024), (2048, 2048), (4096, 4096)]);
+        for (w, h) in E606_TARGETS.into_iter().chain(E680_TARGETS).chain(E913_TARGETS).chain(E682_TARGETS) {
             assert!(coverage_target_in_envelope(w, h).is_ok(), "{w} x {h}");
+        }
+        // coverage only: no depth ran on 1024 x 1024 or 2048 x 2048
+        for (w, h) in [(1024, 1024), (2048, 2048)] {
+            match target_in_envelope(w, h) {
+                Err(Outcome::Unsupported { ids, .. }) => assert_eq!(ids, ["Q240"], "{w} x {h}"),
+                o => panic!("{w} x {h}: {o:?}"),
+            }
         }
         for (w, h) in NOT_RUN {
             match coverage_target_in_envelope(w, h) {
@@ -1537,5 +1605,68 @@ mod tests {
         let start = [(0.5 + DEPTH_UNIT) as f32; 512];
         let Err(Outcome::Unsupported { ids, .. }) = resolve_tile_from((0, 0), &start, &o) else { panic!() };
         assert_eq!(ids, ["Q200"]);
+    }
+
+    /// The tool's 64x64 triangle (`sgxfive_tri_default`), E064's.
+    fn e064_tri() -> Tri {
+        tri([(8 * 256, 8 * 256), (56 * 256, 20 * 256), (20 * 256, 56 * 256)])
+    }
+
+    fn count(img: &[bool]) -> usize {
+        img.iter().filter(|&&c| c).count()
+    }
+
+    #[test]
+    fn byte_0_of_cr_isp_multisamplectl_is_the_sample_x_low_nibble_y_high_in_16ths() {
+        // E1018: 0x88 is the pixel centre (E606), 0x26 E502's x + 0.375, y + 0.125 (E339's word)
+        assert_eq!(sample_offset(0x88), Ok((128, 128)));
+        assert_eq!(sample_offset(0x26), Ok((96, 32)));
+        assert_eq!(sample_offset(0x00), Ok((0, 0)));
+        assert_eq!(sample_offset(0xff), Ok((240, 240)));
+        // bytes 1 to 3 were 0 in E064's sweep
+        assert!(
+            matches!(sample_offset(0x188), Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q202"])
+        );
+        let t = e064_tri();
+        for y in 0..64 {
+            for x in 0..64 {
+                assert_eq!(t.covers_at(x, y, (128, 128)), t.covers(x, y));
+            }
+        }
+    }
+
+    #[test]
+    fn byte_0_moves_e064s_triangle_by_its_one_nibble_tables() {
+        // E064's two tables (the other nibble at 8): triangle pixels per nibble value
+        let low =
+            [1074, 1074, 1086, 1086, 1086, 1086, 1098, 1098, 1062, 1062, 1074, 1074, 1074, 1074, 1086, 1086];
+        let high =
+            [1086, 1074, 1074, 1086, 1086, 1086, 1086, 1098, 1062, 1062, 1062, 1074, 1074, 1074, 1074, 1086];
+        let t = e064_tri();
+        for n in 0..16u32 {
+            assert_eq!(
+                count(&coverage_image_sampled(64, 64, &t, 0x80 | n).unwrap()),
+                low[n as usize],
+                "{n:#x}"
+            );
+            assert_eq!(
+                count(&coverage_image_sampled(64, 64, &t, n << 4 | 8).unwrap()),
+                high[n as usize],
+                "{n:#x}"
+            );
+        }
+        // 0x00 and 0xff: E064's two corners
+        assert_eq!(count(&coverage_image_sampled(64, 64, &t, 0x00).unwrap()), 1062);
+        assert_eq!(count(&coverage_image_sampled(64, 64, &t, 0xff).unwrap()), 1086);
+    }
+
+    #[test]
+    fn another_sample_point_is_admitted_on_e064s_target_only() {
+        let t = e064_tri();
+        assert_eq!(coverage_image_sampled(64, 64, &t, 0x88).unwrap(), coverage_image(64, 64, &t).unwrap());
+        assert!(coverage_image_sampled(128, 128, &t, 0x88).is_ok());
+        assert!(
+            matches!(coverage_image_sampled(128, 128, &t, 0x26), Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q240"])
+        );
     }
 }

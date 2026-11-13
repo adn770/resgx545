@@ -206,8 +206,8 @@ list.
   stop the tick through the closed task (E814: that word ... (E812, E814, E902)
 - `Q072` isp, low: what does bit 1 of CR_ISP_REG_04DC do to a punch-through pass, when it hangs
   every one tried and changes no opaque or translucent pass? (E222, E290, E416)
-- `Q201` isp, low: why does the position source (E437, E502: x + 0.375, y + 0.125 in mode 0 and
-  every multisampling mode tried) differ from the point at which ... (E437, E502, E606)
+- `Q201` isp, low: under a CR_ISP_MULTISAMPLECTL byte 0 other than 0x88, does an attribute iterated
+  from a coordinate set read at the point byte 0 places, as ... (E606, E1010, E1018)
 - `Q241` isp, low: what do ISP word 0 bits 15, 16, 17 and 18, the depth compares 2, 3, 5 and 6
   against equal depths, the visibility test (ISP word 1 bit 3), ... (E757, E995, E998)
 - `Q044` pbe, low: what do bits 11:0 of CR_REG_0400 (0x80 as built) do, when no value of them
@@ -323,9 +323,12 @@ list.
 
 ## Recent records
 
-152 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+153 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1018` isp, 2026-11-13: Round 12 offline (Q201, on E064's kept sweep; no run): E606/E607's exact
+  coverage test with each pixel (x, y) sampled at (x + lo/16, y + hi/16), lo = bits 3:0 and hi =
+  bits 7:4 of cmd:16 ...
 - `E1017` texture, 2026-11-13: Round 11 offline (Q177; no run): of the 31 kept twiddled jobs with T0
   u mode 4 to 7 outside E1000's own (p1132 tx-border 16, r8-geo addr 4, r9-geo addr2 11), 27 are
   squares and 4 are E565's 32 x 8 ...
@@ -902,4 +905,4 @@ stays with what a session must do around it.
 
 ## Simulator coverage baseline
 
-95 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
+88 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
