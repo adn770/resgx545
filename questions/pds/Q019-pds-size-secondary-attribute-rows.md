@@ -44,6 +44,5 @@ K1 session r9-k1 sets the background object's word 1 (the secondary attribute si
 among its fields) to 0, 1 and 4 rows on a background object whose texture layer feeds one texel to
 every pixel (exploration rows, Q066's word 1): whether the texel arrives at every value, as the 16
 `douta` words reached sa0 to sa15 at 0, 1 and 4 rows (E125, E391), or is lost at 0 rows. It reads
-the
-size against a layered background's attribute, not the 32 or 64 attributes this question's
+the size against a layered background's attribute, not the 32 or 64 attributes this question's
 experiment names, which stays to be run.

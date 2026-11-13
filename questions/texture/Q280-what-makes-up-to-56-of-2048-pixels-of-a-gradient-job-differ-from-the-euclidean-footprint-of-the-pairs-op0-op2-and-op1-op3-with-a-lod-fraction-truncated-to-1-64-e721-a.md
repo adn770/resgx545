@@ -41,5 +41,4 @@ rule's 16210 (4 exact). Frozen by hash (q280_rule.json 3a0c46a8...) with the pre
 least the baseline on each ladder, more in total", it was scored on E721's 8 ladders lf-*, which
 the fit never read (q280_score.out): 16236 of 16384 for both, cutsq10 exact on 4 ladders and
 worse than the baseline on the other 4 (the ranking's text says 3), so the prediction fails and the
-cut is refuted as the residual's
-cause. The ladders' and the jobs' misses stay as E721 left them.
+cut is refuted as the residual's cause. The ladders' and the jobs' misses stay as E721 left them.

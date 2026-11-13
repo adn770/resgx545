@@ -32,18 +32,17 @@ a normalisation n (the larger of |dx| and |dy|, the power of two at or above it,
 units) rounded to b fractional bits, b = 4 to 24 (to nearest away from zero, toward zero, floor),
 the edge's constant at an origin (the target's corner, the 32 x 16 tile of S, which is the TA's
 region, P, Q, or the edge's upper vertex) exact or rounded the same way: 1323 variants. Family
-"prod":
-the two products dx (Sy - Oy) and dy (Sx - Ox) and the constant at O each rounded to m significant
-bits, m = 12 to 40 (to nearest even, toward zero), the same origins: 290. E606's tie rule
-throughout. On the 395 fit jobs HA is exact on 309; the best variant, prod-m18-RE-top, on 314,
+"prod": the two products dx (Sy - Oy) and dy (Sx - Ox) and the constant at O each rounded to m
+significant bits, m = 12 to 40 (to nearest even, toward zero), the same origins: 290. E606's tie
+rule throughout. On the 395 fit jobs HA is exact on 309; the best variant, prod-m18-RE-top, on 314,
 the best "coef", major-b20-FL-top-cx, on 312 (`oz_fit.out`); [infer] a variant fine enough to keep
-the pixels the sweeps aim exactly at an edge gives HA's image, and a coarser one breaks those
-before it mends the long-edge ones. Frozen (oz_rule.json 6c8d2a50...), on E683: prod-m18-RE-top
-154 of 240 (145 pixels), major-b20-FL-top-cx 162 (128), HA 173 (101): no candidate reaches 235, so
-the gate fails and zs3 does not run. As controls the two also lose cases HA gets right in the
-dataset's positive groups (S1 575 and 494 of 620, S5 78 and 76 of 160; S2 588 of 588 for all)
-(`oz_score.out`). Post hoc, all 1613 variants on E683: at most 175 of 240 (major-b22-RN-P-cx),
-none at or above 235 (`oz_post.out`).
+the pixels the sweeps aim exactly at an edge gives HA's image, and a coarser one breaks those before
+it mends the long-edge ones. Frozen (oz_rule.json 6c8d2a50...), on E683: prod-m18-RE-top 154 of 240
+(145 pixels), major-b20-FL-top-cx 162 (128), HA 173 (101): no candidate reaches 235, so the gate
+fails and zs3 does not run. As controls the two also lose cases HA gets right in the dataset's
+positive groups (S1 575 and 494 of 620, S5 78 and 76 of 160; S2 588 of 588 for all)
+(`oz_score.out`). Post hoc, all 1613 variants on E683: at most 175 of 240 (major-b22-RN-P-cx), none
+at or above 235 (`oz_post.out`).
 
 **What it shows.** [HW] On data that took no part in it, E943's far-vertex reading and its band are
 not rules: a far vertex makes a miss likelier, no more. [HW, held out offline] No fixed-point

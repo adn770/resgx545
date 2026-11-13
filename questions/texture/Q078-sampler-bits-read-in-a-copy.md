@@ -76,11 +76,10 @@ they change nothing on a strided texture and every pixel of a twiddled chain tex
 T0 bit 27, which E723 answers for point samples (a texel byte decoded sRGB to half, 4 of 4
 held-out fills; the bilinear part is Q282), and bits 10, 18-19 and 27-28, whose transform is
 E722's level and scale model held out on 13 of 13 fills that completed (the spec gives it with its
-limits, which stay there).
-Bit 14 is narrowed by E968: on E566's kept strided jobs the read is the dword plus 32 plus 64 per
-column at W = S = 64, six frozen forms held out offline at 64 x 16 (2048 of 2048) and all refuted
-at W = 32, S = 64 (0 of 2048); post hoc, dword + floor(S * S * u) with u clamped to [0, 1] fits all
-three jobs. What stays: bits 11 and 12, bit 14 held out at other widths and strides (W != S, a
-width that is no power of two, u past both ends) and on a twiddled texture. The round 9 session
-r9-x's stage t3 runs both (bit 14 with u inside and past the texture, bits 11 and 12 on a strided
-and a twiddled texture).
+limits, which stay there). Bit 14 is narrowed by E968: on E566's kept strided jobs the read is the
+dword plus 32 plus 64 per column at W = S = 64, six frozen forms held out offline at 64 x 16 (2048
+of 2048) and all refuted at W = 32, S = 64 (0 of 2048); post hoc, dword + floor(S * S * u) with u
+clamped to [0, 1] fits all three jobs. What stays: bits 11 and 12, bit 14 held out at other widths
+and strides (W != S, a width that is no power of two, u past both ends) and on a twiddled texture.
+The round 9 session r9-x's stage t3 runs both (bit 14 with u inside and past the texture, bits 11
+and 12 on a strided and a twiddled texture).
