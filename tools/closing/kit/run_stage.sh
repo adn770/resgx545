@@ -34,7 +34,8 @@
 # Hooks (run/hooks.sh, optional, staged): hook_reading NAME prints a control's `k=v` reading from
 # the job's files ($JW/NAME.out, .err, .dmesg, $W); hook_check NAME prints a reason to stop the
 # stage after a job that read ok (rc 24), or nothing; it runs in the runner's shell, so a count
-# it keeps survives from row to row.
+# it keeps survives from row to row; hook_fault NAME is the same after an expected fault or hang
+# row (after its reset and strict health), for a rule on the fault's own kernel lines.
 # Exit status: 0 stage done; 1 preflight or a file that is not the frozen one; 3 FATAL kernel
 # message; 4 an unexpected fault, hang or failure; 5 a failed health recovery; 6 a job did not
 # return; 7 a forbidden knob or tool; 12 registers unreadable; 13 a reset failed; 14 a fault latched
@@ -84,6 +85,7 @@ for f in tables/$STAGE.txt $(cat "$STAGED/run/staged.lst"); do
 done
 hook_reading() { return 0; }
 hook_check() { return 0; }
+hook_fault() { return 0; }
 [ -f "$STAGED/run/hooks.sh" ] && . "$STAGED/run/hooks.sh"
 S=$STAGED
 
@@ -185,6 +187,9 @@ EOF
 		else FAULT_EVENTS=$((FAULT_EVENTS + 1)); fi
 		echo "  $class (a reading): events $FAULT_EVENTS of $FAULT_LIMIT; reset, then strict health"
 		reset_gpu; strict_health "$name" </dev/null
+		hook_fault "$name" > "$JW/check.txt"
+		why=$(cat "$JW/check.txt")
+		[ -z "$why" ] || { echo "## STOP (stage $STAGE): $why, after $name"; exit 24; }
 		if [ "$FAULT_EVENTS" -ge "$FAULT_LIMIT" ] && [ "$i" -lt "$TOTAL" ]; then
 			echo "## STOP (stage $STAGE): $FAULT_EVENTS faults or hangs (the limit is $FAULT_LIMIT) with rows left, after $name"; exit 24
 		fi ;;

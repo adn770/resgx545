@@ -11,3 +11,6 @@ hook_reading() {
 }
 # hook_check NAME: after a job that read ok, a reason to stop the stage (rc 24), or nothing
 hook_check() { return 0; }
+# hook_fault NAME: after an expected fault or hang row (reset and strict health done), a reason to
+# stop the stage (rc 24), or nothing
+hook_fault() { return 0; }

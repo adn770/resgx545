@@ -881,6 +881,32 @@ def test_a_control_that_expects_its_fault_does_not_count_against_the_limit(repos
     assert re.search(r"^ok +world model: driver 0 \(s0 24\)", m.stdout, re.M), m.stdout
 
 
+def test_a_hook_runs_after_a_fault_row_and_its_reason_stops_the_stage(repos):
+    """r9-faults: the runner called no hook after a fault row, so a stage rule on the fault's own
+    kernel lines (two `SGX recovery failed: -110` in a row) was read only at the next ok row.
+    hook_fault NAME runs after the fault row's reset and strict health, in the runner's shell, and
+    its reason stops the stage with 24; without a reason the stage goes on."""
+    kp = fault_limit_session(repos, "fit")
+    t = kp / "tables/s0.txt"
+    t.write_text(t.read_text().replace("#limit 1", "#limit 5"))
+    w = (kp / "mock/world.py").read_text()
+    (kp / "mock/world.py").write_text(w.replace('(0, {"s0": 24})', '(0, {"s0": 0})'))
+    m = kit(kp, repos, "mock")
+    assert m.returncode == 0, m.stdout + m.stderr
+    for body, status in [('NF=0\nhook_fault() { NF=$((NF + 1)); [ "$NF" -lt 1 ] || echo "a -110"; }',
+                          24), ("hook_fault() { return 0; }", 0)]:
+        k2 = fault_limit_session(dict(repos, tmp=repos["tmp"] / f"h{status}"), "fit")
+        t = k2 / "tables/s0.txt"
+        t.write_text(t.read_text().replace("#limit 1", "#limit 5"))
+        with open(k2 / "run/hooks.sh", "a") as f:
+            f.write(body + "\n")
+        w = (k2 / "mock/world.py").read_text()
+        (k2 / "mock/world.py").write_text(w.replace('(0, {"s0": 24})', f'(0, {{"s0": {status}}})'))
+        m = kit(k2, repos, "mock")
+        assert m.returncode == 0, (status, m.stdout + m.stderr)
+        assert re.search(rf"^ok +world model: driver 0 \(s0 {status}\)", m.stdout, re.M), m.stdout
+
+
 # ---- post-run files: fold/ and out/ ----------------------------------------------------------
 def test_verify_lets_a_fold_add_its_files_under_fold_and_out(repos):
     """r8-lgeo's fold had to put its files under out/fold/: verify took any new file of a frozen
