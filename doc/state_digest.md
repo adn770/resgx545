@@ -36,7 +36,7 @@ list.
 - `Q205` isp, high: what is the arithmetic by which the ISP decides the coverage and the depth of a
   pixel for an arbitrary triangle, and the iterators' ... (E215, E307, E542)
 - `Q260` isp, high: the tie of a negative window coordinate 1/512 above the 1/256 grid rounds away
-  from zero wherever the aimed pixel is clear of E914's band ... (E683, E914, E943)
+  from zero wherever the aimed pixel is clear of E914's band ... (E914, E943, E952)
 - `Q023` pds, high: how many output dwords does a pixel task get per setup, and what do the data
   rows limit (E406) (E742, E759, E880)
 - `Q276` pds, high: in E709's command (state block word 4 at 0x00030001), why is the o3 word in the
@@ -45,8 +45,8 @@ list.
   in an ordinary TA, 3D, DPM or transfer job, and how long does ... (E890, E902, E921)
 - `Q070` ta, high: what do the TA object's format word bits 15:8 and above and its set masks select
   beyond the settings seen, and does the fitted region test ... (E543, E544, E777)
-- `Q078` texture, high: what do T3 bits 10, 14, 18-19 and 27-28 and T0 bit 27 select, given a copy
-  that reads one texel, a sheared read, coordinates scaled by 2 ... (E564, E566, E722)
+- `Q078` texture, high: what do T3 bits 11 and 12 select, given that they change nothing on a
+  strided texture and every pixel of a twiddled chain texture (E564, ... (E722, E723, E968)
 - `Q050` usse, high: what do the visibility group's instructions do, and how do smp's mipmaps and
   LOD values, the border address modes, the compressed and YUV ... (E563, E565, E568)
 - `Q047` vdm, high: what do VDM_STATE1 bit 8, bits 11:9 and bits 15:13 select for a state task, when
@@ -130,7 +130,7 @@ list.
 - `Q100` ta, medium: what do the fields of CR_TE_MTILE1 and CR_TE_MTILE2 mean, given that flips of
   their bits change the image or fault the job at 256x256 and ... (E506, E509, E877)
 - `Q139` ta, medium: where does the TA write a region's header when the macrotile bounds are not
-  multiples of 4 (E944's residue: 256 x 256 m1-B2-10 and ... (E877, E907, E944)
+  multiples of 4: does a block row of the first macrotile take 8 ... (E907, E944, E950)
 - `Q142` ta, medium: which control-stream form does the TA write in a region of the grid that
   CR_TE_AA bits 30 and 31 halve (16 x 16, 32 x 8 and 16 x 8 ... (E504, E893)
 - `Q159` ta, medium: what rule lists the 32 x 16 regions of a one-line object: at ISP word 1 width
@@ -142,7 +142,7 @@ list.
 - `Q180` texture, medium: why did all 28 triangle jobs of the four-component DOUTI0 probes hang
   (E569), the two controls with the old source word 0x40800801 included ... (E420, E541, E569)
 - `Q284` texture, medium: what does a TEXTYPE 2 cube sample read at an exact texel boundary when
-  |ma| is not a power of two (E923: 14 of 207 such pixels one texel ... (E923, E930, E931)
+  |ma| is not a power of two (E923: 14 of 207 such pixels one texel ... (E930, E931, E951)
 - `Q003` transfer, medium: which event (if any) does a bus-interface fault raise, and what do the
   fault-request bits of CR_BIF_INT_STAT name, what clears a latched ... (E901, E919, E920)
 - `Q011` transfer, medium: why does a copy whose background-object tag (transfer word 0) is wrong
@@ -339,9 +339,21 @@ list.
 
 ## Recent records
 
-90 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+94 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E968` texture, 2026-11-13: Round 9 offline (Q078; no run): with T3 bit 14 set, smp on a strided
+  texture reads dword i + K + M c, i the dword the same job reads without the bit and c its column,
+  read on E566's fit job ...
+- `E952` isp, 2026-11-13: Round 9 offline (Q260; no run), on E683's 240 S3 cases (negative
+  coordinates at 1/4096, kept images, never read by E914's or E943's readings): E943's post hoc
+  reading 'a sweep misses half away from ...
+- `E951` texture, 2026-11-13: Round 9 offline (Q284; no run): the face-local index E930 read post
+  hoc on its three 32 x 32 cube jobs (4831 of 4831 predicted pixels: E923's Morton interleave of (s,
+  t) with t in bit 0, and bit 8 = ...
+- `E950` ta, 2026-11-13: Round 9 offline (Q139; no run): with the first macrotile fx tiles wide, a
+  block row of it takes 8 floor(fx / 2) region-header slots (H-EVEN) where R7-BLK (E907) has 16
+  floor(fx / 4); with E944's ...
 - `E946` bif, 2026-11-13: R8-k2 stage xf (Q108; a fill's destination and a copy's read-only source
   with one PTE flag, 9 jobs): every frozen verdict 'cannot tell: controls: xf-c-end: cannot tell',
   since the stage's fourth ...
@@ -704,4 +716,4 @@ stays with what a session must do around it.
 
 ## Simulator coverage baseline
 
-120 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
+119 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).

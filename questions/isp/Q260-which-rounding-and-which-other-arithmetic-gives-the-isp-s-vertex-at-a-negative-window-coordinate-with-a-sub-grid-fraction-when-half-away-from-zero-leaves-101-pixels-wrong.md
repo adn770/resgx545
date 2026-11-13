@@ -1,11 +1,11 @@
 +++
 id = "Q260"
-question = "the tie of a negative window coordinate 1/512 above the 1/256 grid rounds away from zero wherever the aimed pixel is clear of E914's band (E914, E943): which arithmetic decides the pixels within 6.4e-4 pixel of a long edge (738 of 738 pixels off half away from zero's image lie there, E943), and does a vertex past the target's far edge, read after the run, predict the sweeps that miss"
+question = "the tie of a negative window coordinate 1/512 above the 1/256 grid rounds away from zero wherever the aimed pixel is clear of E914's band (E914, E943): which arithmetic decides the pixels within about 2e-3 pixel of an edge line (738 of 738 pixels off half away from zero's image within 6.4e-4 pixel of a long edge in E943, E683's 101 up to 2.3e-3 pixel, on edges under 195 pixels too), given that neither a vertex past the far edge nor the band is a rule on E683 and no fixed-point edge evaluation on half away from zero's vertices gives E683's images better than the exact one (E952)"
 unit = "isp"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E683", "E607", "E606", "E680", "E681", "E914", "E943"]
+evidence = ["E683", "E607", "E606", "E680", "E681", "E914", "E943", "E952"]
 terms = []
 +++
 E607 fitted a rounding half up to 1/256 pixel at x >= 0 and E681 shows it holds at positive ties up
@@ -71,3 +71,19 @@ and every sweep with a vertex past the far edge missed (12 of 12; post hoc, 4 mo
 1 to 3 pixels without one). The simulator refuses a negative sub-grid vertex naming this question.
 To settle it: freeze the far-vertex reading and the band and hold them out (sweeps with and without
 a vertex past the far edge at matched edge lengths), and find which side a band pixel takes.
+
+Narrowed 2026-11-13 (round 9 offline, decisions S-2 a and R9-8 a, E952; the question line is
+reworded, the question is not retired). It read "the tie of a negative window coordinate 1/512 above
+the 1/256 grid rounds away from zero wherever the aimed pixel is clear of E914's band (E914, E943):
+which arithmetic decides the pixels within 6.4e-4 pixel of a long edge (738 of 738 pixels off half
+away from zero's image lie there, E943), and does a vertex past the target's far edge, read after
+the run, predict the sweeps that miss". On E683's
+240 kept cases, which neither reading used, E943's far-vertex reading fails both ways (61 of 167
+cases with a far vertex off half away from zero, 6 of 73 without) and the band does not bound the
+misses (up to 2.3e-3 pixel, 20 pixels on edges under 195 pixels): the far-vertex clause is
+dropped. OZ, 1613 fixed-point edge-function variants on HA's vertices fitted on E914's and E943's
+395 images and frozen by hash, held out on E683: the frozen best 154 and 162 of 240 against HA's
+173 and the gate of 235 (post hoc at most 175), so the round's matched-length sweeps (zs3) do not
+run. What stays: which arithmetic decides those pixels; candidates outside OZ's forms (the vertex
+as the TA stores it, an edge set-up from the clip words in floating point, a tie rule near a long
+edge) need an offline fit that beats HA on E683 before any row.

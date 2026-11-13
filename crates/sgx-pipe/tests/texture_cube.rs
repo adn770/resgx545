@@ -5,7 +5,7 @@
 //! E726's eight jobs (texture/p1141 tex-h-cube, the (s, t) rule's fit) and E844's two off-axis
 //! jobs (render/closing-r4-render4x stage c, held out offline by E923), and r8-geo's stage cube
 //! (render/closing-r8-geo, E930: four off-axis 16 x 16 programs and three at 8 x 8 faces held
-//! out on hardware; 32 x 32 refused). Every pixel's value is
+//! out on hardware; 32 x 32 faces by E561's twiddle law, E951). Every pixel's value is
 //! 0xD0000000 | the dword index the sample read; the coordinates are the probe programs' own
 //! (an fmad of (1 + x / 64 or 1 + y / 32) by K plus C, or a constant, all exact in f32). A pixel
 //! the model refuses (an exact texel boundary at a major magnitude that is not a power of two,
@@ -146,7 +146,7 @@ fn base_r8() -> Option<PathBuf> {
 }
 
 #[test]
-fn r8_geo_off_axis_and_8_x_8_jobs_hold_out_and_32_x_32_is_refused() {
+fn r8_geo_off_axis_8_x_8_and_32_x_32_jobs_read_the_model() {
     let Some(b) = base_r8() else { return };
     // E930 (r8-geo gen/cube.py): a1 = b1, a2 = b2, a4 = b3; (matched, refused) as the frozen
     // predictions count them (a refused pixel is a face tie or an exact texel boundary at a |ma|
@@ -164,8 +164,10 @@ fn r8_geo_off_axis_and_8_x_8_jobs_hold_out_and_32_x_32_is_refused() {
         let got = replay_size(&b, &format!("{R8}/cube-n8-{n}.txt.gz"), uvw, 8);
         assert_eq!(got, (ok, 2048 - ok), "cube-n8-{n}");
     }
-    for (n, uvw) in [("b1", a1), ("b2", a2), ("b3", a4)] {
+    // 32 x 32 faces: E561's twiddle law (tiles of 16 x 16, the tiles in raster order with s
+    // first), which E930's post hoc index equals at every (s, t) (E951); every predicted pixel
+    for (n, uvw, ok) in [("b1", a1, 1436), ("b2", a2, 1585), ("b3", a4, 1810)] {
         let got = replay_size(&b, &format!("{R8}/cube-n32-{n}.txt.gz"), uvw, 32);
-        assert_eq!(got, (0, 2048), "cube-n32-{n}: refused, the 32 x 32 index is post hoc (E930)");
+        assert_eq!(got, (ok, 2048 - ok), "cube-n32-{n}: E561's index (E951)");
     }
 }

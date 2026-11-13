@@ -5,7 +5,7 @@ unit = "texture"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E726", "E567", "E844", "E923", "E930", "E931"]
+evidence = ["E726", "E567", "E844", "E923", "E930", "E931", "E951"]
 terms = ["TEXTYPE"]
 +++
 E726: the six faces are six consecutive 256-dword blocks in the order +x, -x, +y, -y, +z, -z for a
@@ -46,3 +46,12 @@ bilinear at a face edge read a G byte of another face in the one decided job (H-
 failed; the other job cannot tell). Not retired: what stays is the 32 x 32 index held out, the
 face-tie rule for other axis pairs, the texel-tie rule, and which neighbour texels an edge's taps
 take.
+
+Note 2026-11-13 (round 9 offline, decision S-2 a, E951; the question line is unchanged). E930's
+post hoc 32 x 32 index is E561's twiddle law of a 32-bit texture at every (s, t): tiles of 16 x 16,
+the tiles in raster order with s first (bit 8 = s4, bit 9 = t4), a law recorded before E930 ran
+but not frozen for it. sgx-pipe's `cube::point_index` takes 32 x 32 faces with that index and
+replays E930's three jobs with every predicted pixel matched. The 32 x 32 clause narrows to a
+held-out row on new directions; 64 x 64 faces part E561's law (s4, s5 in bits 8 and 9, t4, t5
+in 10 and 11) from a pairwise order (s4, t4, s5, t5) at half the texels: the round 9 seeds' stage
+cube2 runs both, with the face ties of the other axis pairs and the edges.
