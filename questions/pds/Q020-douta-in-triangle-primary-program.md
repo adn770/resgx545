@@ -5,7 +5,7 @@ unit = "pds"
 kind = "hw"
 value = "medium"
 phase = 7
-evidence = ["E125", "E381"]
+evidence = ["E125", "E381", "E440", "E545"]
 terms = []
 +++
 
@@ -43,3 +43,7 @@ to a task that stores `sa0` to `sa15`, `pa0` to `pa15` and `o0` to `o15` to scra
 case ten times in a fresh context, once after a job that wrote known values and once after a
 fill that wrote the memory table's inputs, to tell stale contents from a fixed constant. Vary the
 control word's attribute index (bits 19:8).
+
+Round 12 cites: E440 (a second block's primary-program douta to sa0 reaches 24 to 270 of 978 pixels,
+varying per run) answers in part whether such a douta writes sa at all; E545 is the stream's
+block-field sweep.

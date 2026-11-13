@@ -5,7 +5,7 @@ unit = "edm"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E595", "E596", "E597", "E598", "E599", "E601"]
+evidence = ["E595", "E596", "E597", "E598", "E599", "E601", "E600"]
 terms = []
 +++
 The firmware-task verifier refuses `ima32` with the extra operand i0 (unknown form), `p0 mov r, r`,
@@ -20,3 +20,6 @@ of i0, which the verifier accepts, was not run.
 To settle it: loader rows for the forms (a separate track), then the tables of E595 to E599 as
 firmware tasks of ours: a task that executes the form for a per-job value from the page and stores
 the result, judged as the fills were. Nothing about the firmware tasks is claimed from the fills.
+
+Round 12 cites: E600 (xor.testtanz with an immediate or a limm operand on rV holds in a firmware
+task, 7 of 7 jobs).
