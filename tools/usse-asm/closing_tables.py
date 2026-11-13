@@ -17,6 +17,19 @@ job say and nothing else.
     zls      r3-geo-c g-z (E730's reader), r6-misc q287 (E885, odd heights) and r7-rp q287 (E903, odd
              widths): the stored (not 1.0f) dwords of the depth store's tile area and their extent
 
+The kinds of the kit sessions (round 8, tools/closing/kit; their stages are named on the command line, a
+rejected job (`job: rejected`, E934), a failure and a void row are skipped with the reason):
+
+    texture  r8-geo addr, vdm, seam; r8-lgeo tx3, tx4, tx5: the --pixels words of each job (digest, value
+             counts, the raw file), the job line, hash and diff, the input bins by sha256  -> pixels/
+    taslots  r8-lgeo q139 (Q139): the wrong tiles of the image and every target tile's header slots  -> ta-slots/
+    kitdpm   r8-ldpm: the counts reading of the regtimeline, the render_pb_pages knob, the control block
+             dwords 36 to 38 of each --words snapshot  -> dpm/
+    pte      r8-k2 (Q108): the PTE knobs, the kernel's PTE and BIF fault lines, the job's outcome  -> pte/
+
+A kit kind's table is refused with its reason unless the fold names the test that replays it:
+`--replayed crates/.../FILE.rs::FUNCTION --model TEXT`.
+
 Format sgx545-tables: {format, version, run, kind, note, replay, rows, skipped}. replay says whether
 a simulator replays the table: only the zls tables do (sgx-pipe's ZLS band, E831, E885 and E903, held to
 every row by crates/sgx-pipe/tests/zls_table.rs), `replayed` with the test's name; the others (the TA's depth words, the DPM, the parameter buffer pages) are not modelled, so they are
@@ -24,7 +37,7 @@ every row by crates/sgx-pipe/tests/zls_table.rs), `replayed` with the test's nam
 of the hardware, the keys the readers' own (closing3/r3-geo-c score/score_r3.py, closing-r3-geo
 score/dpm3.py and score_r3.py, closing4/render4x/pb_pages.py).
 
-    closing_tables.py KIND --session DIR --out OUT STAGE...
+    closing_tables.py KIND --session DIR --out OUT [--replayed TEST --model TEXT] STAGE...
 
 DIR is a session directory of the data repository (render/closing-r3-geo, closing-r3k-pixel,
 closing-r6-misc, closing-r7-rp, or the r3-geo-c session wherever it is published: it is an argument, not a fixed path).
@@ -60,6 +73,13 @@ RULE_REASON = {
     "pbpages": "the TA's parameter buffer page writes are not modelled by sgx-sim",
     "counts": "the DPM abort and partial render sequence is not modelled by sgx-sim or sgx-pipe",
     "zls": "the ZLS store band is not modelled by sgx-sim: a table, not a replay",
+    "texture": "these texture reads (addresses, VDM-fed coordinates, seams, layouts) are not modelled row "
+               "by row by sgx-sim's tex.rs or sgx-pipe: a fold that models them names its test (--replayed)",
+    "taslots": "the TA's region header placement at poked strides and macrotile words is not modelled by "
+               "sgx-pipe's ta.rs: a fold that models block order names its test (--replayed)",
+    "kitdpm": "the DPM abort and partial render sequence is not modelled by sgx-sim or sgx-pipe",
+    "pte": "the PTE flags WRITEONLY, CACHECONSISTENT and EDMPROTECT are not modelled by sgx-pipe's bif.rs "
+           "(it replays fault words, not page permissions)",
 }
 # tables a test replays: kind -> the test (file::function) that holds every modelled row to the model
 REPLAYED = {
@@ -110,12 +130,15 @@ def _h32(v: int) -> str:
     return f"0x{v & 0xffffffff:08x}"
 
 
-def document(kind: str, stage_dir: pathlib.Path, session: str, rows: list, skipped: dict, **extra) -> dict:
+def document(kind: str, stage_dir: pathlib.Path, session: str, rows: list, skipped: dict,
+             replayed: dict | None = None, **extra) -> dict:
+    """replayed: {test, model} a fold names for a table it models (main's --replayed, kit kinds)."""
+    rep = REPLAYED.get(kind) or replayed
     return {"format": TABLES, "version": VERSION, "kind": kind,
             "run": {"session": session, "stage": stage_dir.name, "tool": TOOL},
             "note": "per job, what the kept files say: measurements of the hardware, not a simulator "
                     "prediction and not a rule",
-            "replay": ({"status": "replayed", **REPLAYED[kind]} if kind in REPLAYED
+            "replay": ({"status": "replayed", **rep} if rep
                        else {"status": "refused", "reason": RULE_REASON[kind]}),
             "rows": rows, "skipped": skipped, **extra}
 
@@ -389,21 +412,282 @@ def zls_table(stage_dir: pathlib.Path, session: str) -> dict:
     return document("zls", stage_dir, session, rows, skipped)
 
 
+# ---------------------------------------------------------------------------------------------- kit sessions
+# Round 8's sessions are built with the session kit (tools/closing/kit): cases.tsv in kitscore's columns
+# (name stage set risk knobs tool args rc class fault_int fault_word free_kb), void.tsv for soft and gate
+# refusals, every kept file gzipped as NAME.txt.gz (the tool's output), NAME.dmesg.gz (the job's kernel log)
+# and NAME.<file>.gz (what it wrote in its work directory).
+def _kit_knobs(c: dict) -> dict:
+    """The debugfs knobs the row wrote: {NAME: VALUE} of its dbg:NAME=VALUE words."""
+    return dict(w[4:].split("=", 1) for w in c.get("knobs", "").split() if w.startswith("dbg:") and "=" in w)
+
+
+def _kit_void(c: dict, txt: str | None, faults_read: bool = False) -> str | None:
+    """Why a kit job is not a row: no output, a kernel refusal (`job: rejected`, E934), a failure, or a
+    fault or hang where the table does not read faults. The kit runner's own classes stand: a row it
+    kept as ok (rc 0, an expectdiff reading, a declared outcome) is read."""
+    if txt is None:
+        return "no output kept"
+    rej = re.search(r"^job: rejected.*$", txt, re.M)
+    if rej:
+        return f"{rej.group(0)} (a kernel refusal, not a reading)"
+    cls = c.get("class", "")
+    if cls == "fail" or (cls in ("fault", "hang") and not faults_read):
+        return f"class {cls}"
+    if cls not in ("ok", "fault", "hang"):
+        return f"class {cls or 'unrecorded'}"
+    return None
+
+
+def _kit_common(stage_dir: pathlib.Path, c: dict, txt: str) -> dict:
+    job = re.search(r"^job: (\w+)", txt, re.M)
+    hsh = re.search(r"^target: \S+ hash (0x[0-9a-f]+)", txt, re.M)
+    dif = re.search(r"^diff: (\d+) of (\d+) pixels", txt, re.M)
+    n = c["name"]
+    return {"id": n, "set": c.get("set", ""), "knobs": c.get("knobs", ""), "args": c.get("args", ""),
+            "rc": int(c["rc"]) if c.get("rc", "").lstrip("-").isdigit() else None, "class": c.get("class"),
+            "job": job.group(1) if job else None, "hash": hsh.group(1) if hsh else None,
+            "diff": [int(dif.group(1)), int(dif.group(2))] if dif else None,
+            "raw": f"{stage_dir.name}/{n}.txt.gz", "raw_sha256": _sha(stage_dir, f"{n}.txt.gz")}
+
+
+def _kit_rows(stage_dir: pathlib.Path, row) -> tuple[list, dict]:
+    rows, skipped = [], {}
+    for c in read_cases(stage_dir):
+        r = row(stage_dir, c)
+        if isinstance(r, str):
+            skipped[c["name"]] = r
+        else:
+            rows.append(r)
+    if (stage_dir / "void.tsv").is_file():
+        for c in read_cases_file(stage_dir / "void.tsv"):
+            skipped[c["name"]] = f"void (rc {c.get('rc')}: a soft failure or a gate's refusal)"
+    return rows, skipped
+
+
+def read_cases_file(path: pathlib.Path) -> list[dict]:
+    lines = path.read_text().splitlines()
+    hdr = lines[0].split("\t") if lines else []
+    return [dict(zip(hdr, ln.split("\t"))) for ln in lines[1:] if ln.strip()]
+
+
+def pixel_words(txt: str) -> list[list[int]]:
+    """The --pixels rows of a job's output, probe's `probe L: row N: w...` or tri's `row N: 0xw...`, in
+    row order (the first output's rows when a job prints several)."""
+    rows: dict[int, list[int]] = {}
+    for m in re.finditer(r"^(?:probe \S+: )?row (\d+): ((?:(?:0x)?[0-9a-f]{8} ?)+)$", txt, re.M):
+        y = int(m.group(1))
+        if y not in rows:
+            rows[y] = [int(v, 16) for v in m.group(2).split()]
+    return [rows[y] for y in sorted(rows)]
+
+
+def _inputs(session_dir: pathlib.Path | None, args: str) -> dict:
+    """{PATH: sha256} of the session files a row's args name as $S/PATH."""
+    out = {}
+    for rel in re.findall(r"\$S/([A-Za-z0-9_./-]+)", args):
+        p = session_dir / rel if session_dir else None
+        out[rel] = hashlib.sha256(p.read_bytes()).hexdigest() if p and p.is_file() else None
+    return out
+
+
+def kit_texture_row(stage_dir: pathlib.Path, c: dict, session_dir: pathlib.Path | None = None) -> dict | str:
+    txt = _text(stage_dir, f"{c['name']}.txt.gz")
+    why = _kit_void(c, txt)
+    if why:
+        return why
+    px = pixel_words(txt)
+    if not px:
+        return "no pixel rows"
+    flat = [v for r in px for v in r]
+    hist: dict[int, int] = {}
+    for v in flat:
+        hist[v] = hist.get(v, 0) + 1
+    canon = "".join(" ".join(f"{v:08x}" for v in r) + "\n" for r in px).encode()
+    r = _kit_common(stage_dir, c, txt)
+    r["pixels"] = {"width": max(len(x) for x in px), "height": len(px), "words": len(flat),
+                   "sha256": hashlib.sha256(canon).hexdigest(), "distinct": len(hist),
+                   "values": [[f"0x{v:08x}", k] for v, k in sorted(hist.items(), key=lambda x: (-x[1], x[0]))[:16]]}
+    r["inputs"] = _inputs(session_dir, c.get("args", ""))
+    return r
+
+
+def kit_texture_table(stage_dir: pathlib.Path, session: str, session_dir: pathlib.Path | None = None,
+                      replayed: dict | None = None) -> dict:
+    """Texture pixel tables (r8-geo addr, vdm, seam; r8-lgeo tx3, tx4, tx5): per job the pixel words of its
+    --pixels rows as a digest (sha256 of the words, one row a line, `%08x` joined by spaces) and the value
+    counts (the 16 most frequent), the job line, hash and diff, and the input bins by sha256; the words
+    themselves are in the raw file the row names."""
+    rows, skipped = _kit_rows(stage_dir, lambda d, c: kit_texture_row(d, c, session_dir))
+    return document("texture", stage_dir, session, rows, skipped, replayed)
+
+
+TW, TH = TILE_W, TILE_H     # a 1x tile: one region header
+GREEN = 0xff00ff00          # --tri-full's triangle colour (E877's reading)
+
+
+def _tile_of(col: int, row: int) -> tuple[int, int]:
+    """A header's 1x tile: pixel origin (col * 16, (row & 0xfff) * 8) in 32 x 16 tiles (REGION_HDR.POS)."""
+    return (col * 16 // TW, (row & 0xfff) * 8 // TH)
+
+
+def _tiles_text(tiles) -> str:
+    return ",".join("%d.%d" % t for t in sorted(tiles, key=lambda t: (t[1], t[0]))) or "none"
+
+
+def kit_taslots_row(stage_dir: pathlib.Path, c: dict) -> dict | str:
+    n = c["name"]
+    txt = _text(stage_dir, f"{n}.txt.gz")
+    why = _kit_void(c, txt)
+    if why:
+        return why
+    tad = _gz(stage_dir, f"{n}.tri.tadata.bin.gz")
+    if tad is None:
+        return "no TA data dump"
+    w, h = _opt(c["args"], "--width"), _opt(c["args"], "--height")
+    if not w or not h:
+        return "no --width and --height"
+    px = pixel_words(txt)
+    complete = len(px) == h and all(len(r) == w for r in px)
+    wrong = {(x // TW, y // TH) for y, r in enumerate(px) for x, v in enumerate(r) if v != GREEN}
+    want = {(x, y) for x in range(-(-w // TW)) for y in range(-(-h // TH))}
+    pages = pbdump.written(tad)
+    base = pages[0] * PAGE if pages else None
+    slots: dict[str, list[int]] = {}
+    nslots = 0
+    if base is not None:
+        nslots = (len(tad) - base) // 12
+        for i in range(nslots):
+            w0, w1, w2 = struct.unpack_from("<3I", tad, base + 12 * i)
+            if not (w0 or w1 or w2):
+                continue
+            t = _tile_of((w0 >> 16) & 0xff, w0 & 0xffff)
+            if t in want:
+                slots.setdefault("%d.%d" % t, []).append(i)
+    r = _kit_common(stage_dir, c, txt)
+    r.update({"width": w, "height": h, "kpokes": re.findall(r"--kpoke-render (\S+)", c["args"]),
+              "complete": complete, "wrong_tiles": _tiles_text(wrong), "header_base": base,
+              "slots": dict(sorted(slots.items(), key=lambda kv: tuple(int(v) for v in kv[0].split(".")[::-1]))),
+              "tad": f"{stage_dir.name}/{n}.tri.tadata.bin.gz", "tad_sha256": _sha(stage_dir, f"{n}.tri.tadata.bin.gz")})
+    return r
+
+
+def kit_taslots_table(stage_dir: pathlib.Path, session: str, replayed: dict | None = None) -> dict:
+    """Q139 slot tables (r8-lgeo q139): per job the wrong tiles of its --pixels image (a tile with a pixel
+    that is not the triangle's 0xff00ff00) and, per target tile 'x.y', the slots of every region header that
+    names it, counted from the first written TA data page (header_base, bytes), 12 bytes a slot."""
+    rows, skipped = _kit_rows(stage_dir, kit_taslots_row)
+    return document("taslots", stage_dir, session, rows, skipped, replayed)
+
+
+def kit_dpm_row(stage_dir: pathlib.Path, c: dict) -> dict | str:
+    n = c["name"]
+    txt = _text(stage_dir, f"{n}.txt.gz")
+    why = _kit_void(c, txt)
+    if why:
+        return why
+    job = cv.parse_job(txt)
+    if "0x0658" not in job.regs or "0x0724" not in job.regs:
+        return "no timeline"
+    prs, peaks = _runs(job)
+    cnt = counts_before_aborts(job)
+    pk = _kit_knobs(c).get("render_pb_pages")
+    blocks = []
+    for k in range(64):
+        b = _gz(stage_dir, f"{n}.ta3d.{k}.bin.gz")
+        if b is None:
+            break
+        ws = struct.unpack(f"<{len(b) // 4}I", b[: len(b) // 4 * 4])
+        blocks.append([ws[i] if i < len(ws) else None for i in (36, 37, 38)])
+    r = _kit_common(stage_dir, c, txt)
+    r.update({"pages_knob": int(pk, 0) if pk else None, "knob0624": _knob(job, txt),
+              "partial_renders": len(prs), "thr0": prs[0] if prs else None, "peaks": peaks,
+              "need": max(peaks) if peaks else None,
+              "counts_before_aborts": None if cnt is None else cnt["before"], "control_blocks": blocks,
+              "width": _opt(c["args"], "--width"), "height": _opt(c["args"], "--height"),
+              "vertices": _opt(c["args"], "--vertices")})
+    return r
+
+
+def kit_dpm_table(stage_dir: pathlib.Path, session: str, replayed: dict | None = None) -> dict:
+    """Kit DPM rows (r8-ldpm): the counts reading of each job's regtimeline (partial renders: rising edges of
+    0x0658 bit 0; thr0, the 0x0724 status at the first; the peak of each TA run; the 0x072c counts before
+    each abort), the render_pb_pages knob the row wrote, the job's 0x0624 value, and dwords 36 to 38 of the
+    TA/3D control block of each --words snapshot (NAME.ta3d.K.bin)."""
+    rows, skipped = _kit_rows(stage_dir, kit_dpm_row)
+    return document("kitdpm", stage_dir, session, rows, skipped, replayed)
+
+
+def kit_pte_row(stage_dir: pathlib.Path, c: dict) -> dict | str:
+    n = c["name"]
+    txt = _text(stage_dir, f"{n}.txt.gz")
+    why = _kit_void(c, txt, faults_read=True)
+    if why:
+        return why
+    dm = _text(stage_dir, f"{n}.dmesg.gz") or ""
+    k = _kit_knobs(c)
+    r = _kit_common(stage_dir, c, txt)
+    r.update({"pte_addr": k.get("vm_pte_addr"), "pte_flags": k.get("vm_pte_flags"),
+              "pte_lines": [list(m) for m in re.findall(
+                  r"vm_map (0x[0-9a-f]+) \+(0x[0-9a-f]+): PTE flags (0x[0-9a-f]+)", dm)],
+              "faults": [list(m) for m in re.findall(r"BIF fault (0x[0-9a-f]+) at (0x[0-9a-f]+)", dm)],
+              "fault_int": c.get("fault_int"), "fault_word": c.get("fault_word"),
+              "checks": re.findall(r"^((?:PASS|FAIL) \S+)", txt, re.M),
+              "dmesg": f"{stage_dir.name}/{n}.dmesg.gz", "dmesg_sha256": _sha(stage_dir, f"{n}.dmesg.gz")})
+    return r
+
+
+def kit_pte_table(stage_dir: pathlib.Path, session: str, replayed: dict | None = None) -> dict:
+    """PTE rows (r8-k2): per job the vm_pte_addr and vm_pte_flags knobs it wrote, the kernel's
+    `vm_map A +S: PTE flags F` lines and every `BIF fault S at A` of its kernel log slice, the job line,
+    hash and diff, isolation's PASS/FAIL checks. A fault or hang is a reading here and kept as a row."""
+    rows, skipped = _kit_rows(stage_dir, kit_pte_row)
+    return document("pte", stage_dir, session, rows, skipped, replayed)
+
+
 # ---------------------------------------------------------------------------------------------- CLI
 GEO_STAGES = {"depth": ["g-da", "g-db", "g-dc", "g-dd"],
               "counts": ["g-c4", "g-c5", "g-c6", "g-c7", "g-d36", "g-qf", "g-qh"],
               "dword36": ["g-d36", "g-c4", "g-c5", "g-c6", "g-c7"],
               "pbpages": ["k-f4"], "zls": ["g-z"]}
+# the kit sessions' kinds: (table function, output subdirectory); their stages are named on the command line
+KIT_KINDS = {"texture": (None, "pixels"), "taslots": (kit_taslots_table, "ta-slots"),
+             "kitdpm": (kit_dpm_table, "dpm"), "pte": (kit_pte_table, "pte")}
 
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("kind", choices=sorted(GEO_STAGES))
+    ap.add_argument("kind", choices=sorted(GEO_STAGES) + sorted(KIT_KINDS))
     ap.add_argument("--session", required=True, type=pathlib.Path)
     ap.add_argument("--out", required=True, type=pathlib.Path)
+    ap.add_argument("--replayed", metavar="FILE.rs::FUNCTION",
+                    help="a kit kind's table is replayed by this test (with --model), else refused")
+    ap.add_argument("--model", help="what the replaying test holds the modelled rows to")
     ap.add_argument("stages", nargs="*")
     a = ap.parse_args(argv)
     label = "/".join(a.session.parts[-2:])
+    if a.kind in KIT_KINDS:
+        if not a.stages:
+            ap.error(f"{a.kind}: name the session's stages")
+        rep = None
+        if a.replayed or a.model:
+            if a.kind not in KIT_KINDS or not re.fullmatch(r"crates/[\w./-]+\.rs::\w+", a.replayed or "") \
+                    or not a.model:
+                ap.error("--replayed crates/.../FILE.rs::FUNCTION and --model TEXT go together")
+            rep = {"test": a.replayed, "model": a.model}
+        fn, sub = KIT_KINDS[a.kind]
+        for s in a.stages:
+            try:
+                d = find_stage(a.session, s)
+            except FileNotFoundError:
+                print(f"{s}: not in this session")
+                continue
+            t = (kit_texture_table(d, label, a.session, rep) if a.kind == "texture" else fn(d, label, rep))
+            write(a.out / sub / f"{s}.table.json", t)
+            print(f"{s}: {len(t['rows'])} rows, {len(t['skipped'])} skipped ({t['replay']['status']})")
+        return 0
+    if a.replayed or a.model:
+        ap.error("--replayed is for the kit kinds")
     stages = a.stages or GEO_STAGES[a.kind]
     if a.kind == "dword36":
         t = dword36_table([(s, find_stage(a.session, s)) for s in stages], label)

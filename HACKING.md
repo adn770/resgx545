@@ -509,8 +509,10 @@ pushed before `tools/clean-room/guard.py --history` has run over every ref.
   cites it in the code and takes it off the list in the same commit.
 - **Replay vectors.** A session's measured rows become a vectors table in resgx545-data
   (`vectors/closing/<session>/...table.json`, format `sgx545-tables` of
-  `tools/usse-asm/closing_tables.py`) when the fold lands. Its `replay` field says what happens
-  to it: `replayed`, with the test (`file::function`) under `crates/sgx-pipe/tests` or
+  `tools/usse-asm/closing_tables.py`; a kit session's rows through its kinds `texture`, `taslots`,
+  `kitdpm` and `pte`, which skip a rejected job, `--replayed TEST --model TEXT` naming a replay)
+  when the fold lands. Its `replay` field says what happens to it: `replayed`, with the test
+  (`file::function`) under `crates/sgx-pipe/tests` or
   `crates/sgx-sim/tests` that holds every modelled row to the model and counts the rest as
   refused rows, never as passes (`zls_table.rs` replays the ZLS tables of E831 and E885); or
   `refused`, with the reason no simulator models it. The replaying test names the records its
