@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-162 open: 152 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+161 open: 151 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -129,8 +129,8 @@ list.
   multisampled target, whose 64x64 words are 0x802002, ... (E824, E886, E908)
 - `Q100` ta, medium: what do the fields of CR_TE_MTILE1 and CR_TE_MTILE2 mean, given that flips of
   their bits change the image or fault the job at 256x256 and ... (E506, E509, E877)
-- `Q139` ta, medium: where does the TA write a region's header when the macrotile bounds are not
-  multiples of 4 (E944's residue: 256 x 256 m1-B2-10 and ... (E877, E907, E944)
+- `Q139` ta, medium: does a block row of a first macrotile that is not a multiple of 4 wide take 8
+  floor(fx / 2) slots on held-out hardware rows (H-EVEN, fitted ... (E907, E944, E959)
 - `Q142` ta, medium: which control-stream form does the TA write in a region of the grid that
   CR_TE_AA bits 30 and 31 halve (16 x 16, 32 x 8 and 16 x 8 ... (E504, E893)
 - `Q159` ta, medium: what rule lists the 32 x 16 regions of a one-line object: at ISP word 1 width
@@ -274,8 +274,6 @@ list.
   Euclidean footprint of the pairs (op0, op2) and (op1, op3) with a LOD ... (E563, E721, E744)
 - `Q282` texture, low: what arithmetic gives the bilinear sample of an sRGB texel (T0 bit 27) given
   that decode-then-filter in float fits 43% to 56% of the pixels ... (E720, E723)
-- `Q283` texture, low: why does type 3 pad a row to 8 dwords below 8 texels wide (rows max(8, w)
-  apart, E940), what pitch does type 4 keep at sizes that are not ... (E910, E940, E941)
 - `Q017` usse, low: why does g19 read 0x1a as a store's source but 0 through a mov and as the pixel?
   (E085, E086, E372)
 - `Q048` usse, low: do the MADD0 and MADD1 clock gates follow the USSE pipes' floating-point
@@ -339,9 +337,15 @@ list.
 
 ## Recent records
 
-90 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+92 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E959` ta, 2026-11-13: R9-lgeo stage q139b (Q139; 4 TA-dump jobs at 1280 x 720 and 768 x 640, the
+  datasets' own commands, no fault): the unpoked baselines draw exactly and hold one header with a
+  stream for every target ...
+- `E958` texture, 2026-11-13: R9-lgeo stage tx6 (Q283; E725's 64 x 32 map-texture fill, dword i of
+  the scratch 0xD0000000 | i; 14 jobs, 2 controls, no fault): type 4 at widths that are not
+  multiples of 32 keeps ceil(w / 32) whole ...
 - `E946` bif, 2026-11-13: R8-k2 stage xf (Q108; a fill's destination and a copy's read-only source
   with one PTE flag, 9 jobs): every frozen verdict 'cannot tell: controls: xf-c-end: cannot tell',
   since the stage's fourth ...
@@ -615,9 +619,10 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-35 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+36 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r9-lgeo`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
 - `render/closing-r8-lgeo`: 2026-11-13; module 37EC97AB0CB37213C42FCCC; tools ~/sgxfive-test-rgn4
 - `render/closing-r8-ldpm`: 2026-11-13; module 37EC97AB0CB37213C42FCCC; tools ~/sgxfive-test-rgn4
 - `render/closing-r8-k2`: 2026-11-13; module B60AB0B475DD1E8972419B5; fork r8-kernel at 2a650d74;
@@ -673,9 +678,9 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 1 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 2 sessions, fork r8-kernel at
   2a650d74
+- module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at
   3f0b3e74
 - module srcversion 99CD90DA26E3AFF9C450517: last named 2026-11-12, 14 sessions, fork resgx545 at

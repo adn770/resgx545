@@ -1,0 +1,9 @@
+title = "r9-lgeo q139b: the wrong tiles and every target tile's region header slots of the 1280 x 720 and 768 x 640 baselines and m2-B3p1 rows (4 jobs)"
+repo = "data"
+paths = ["vectors/closing/r9-lgeo/ta-slots/"]
+method = "tools/usse-asm/closing_tables.py taslots on the published render/closing-r9-lgeo session (stage q139b of its one attempt, out/20261113-080029), one file; rows are measurements; the table says its replay is refused (sgx-pipe's ta::stride_slots takes the two baselines, E959, but not poked macrotile words, and no test reads this table)"
+date = "2026-11-13"
+files = 1
+size = 171815
+sha256 = "ce0163d0326ddf0f61145984970990008dca36f5cabdd042fc581c6a7f9e16c4"
+recipe = "tools/usse-asm/closing_tables.py"

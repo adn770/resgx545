@@ -7572,6 +7572,40 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   isolation redid E021's read-only write fault (0x80020 at page 0x3e200000) [HW, post hoc].
   *bif; HW, infer; data: `render-closing-r8-k2:out/20261113-032428/xf/`,
   `render-closing-r8-k2:out/fold/`.*
+- `E958` R9-lgeo stage tx6 (Q283; E725's 64 x 32 map-texture fill, dword i of the scratch 0xD0000000
+  | i; 14 jobs, 2 controls, no fault): type 4 at widths that are not multiples of 32 keeps ceil(w /
+  32) whole 32 x 32 blocks a block row (H-CEIL, E941's rule: 7 of 7 held-out windows of 48 x 64, 80
+  x 64 and 96 x 32 through the linear axis with offsets), where the width rounded up to a power of
+  two (H-P2) held 5 and a partial block w mod 32 columns wide (H-PACK) 2; type 3 at format 5 (16-bit
+  texels, two a dword, the low half first) reads rows max(8, w) texels apart (H-TX8: 2 of 2 at 4 x 8
+  and 8 x 8), not 8 dwords (H-DW8: 0 of 2) nor the width (1 of 2); type 1 at 24 x 8 and 40 x 8 reads
+  a raster of the width, not a power of two above it (2 of 2, soft rows whose bridge, type 1 at 32 x
+  16 through the same axis, gave E725's image); controls pass; frozen verdicts 'Q283 type 4 past a
+  multiple of 32: H-CEIL (ceil(w / 32) blocks a block row) held (7 of 7 rows decided)', 'Q283 type 3
+  padding rival: H-TX8 held (2 of 2 rows decided)' (the frozen favourite H-DW8 'is not supported: 0
+  held, 2 FAILED') and 'Q283 type 1 at 24 and 40 wide (soft, bridge held): RASTERW held (2 of 2 rows
+  decided)'.
+  *texture; HW; data: `render-closing-r9-lgeo:out/20261113-080029/tx6/`,
+  `render-closing-r9-lgeo:fold/`, `vectors-closing-r9-lgeo-pixels`.*
+- `E959` R9-lgeo stage q139b (Q139; 4 TA-dump jobs at 1280 x 720 and 768 x 640, the datasets' own
+  commands, no fault): the unpoked baselines draw exactly and hold one header with a stream for
+  every target tile (controls), at the slots H-EVEN gives (8 floor(fx / 2) slots a block row of the
+  first macrotile; equal to R7-BLK and every round 8 order at fx 12 and 8: 1800 of 1800 and 960 of
+  960 slots); 768 x 640 m2-B3p1 replicated its dataset's 24 wrong tiles with every header slot
+  H-EVEN gives (960 of 960); 1280 x 720 m2-B3p1 (the residue, a reading) replicated its dataset's 52
+  wrong tiles, 40 of them the row no header names and 12 (columns 36 to 39, rows 41 to 43) tiles
+  whose one header sits at H-EVEN's slot with a stream like their neighbours'; frozen verdicts 'Q139
+  the baselines' header slots at 1280 x 720 and 768 x 640: H-EVEN (= R7-BLK at fx 12 and 8) gives
+  every baseline header slot (2 of 2 rows decided)' and 'Q139 768 x 640 m2-B3p1: H-EVEN (= R7-BLK
+  and the round 8 orders there) predicts the wrong-tile set and every header slot (1 of 1 rows
+  decided)'; read post hoc at the fold [infer]: each dump holds one header with flag bit 7 set, the
+  residue's at slot 2211 before the 12 tiles' slots 2212 to 2223, and 'a tile draws iff its header
+  lies at or before that slot' gives every tile of all 24 kept dumps (r8-lgeo's 20 and these 4), and
+  with the flag on the last target tile the TA writes in block order, H-EVEN gives the wrong-tile
+  set of 167 of 167 kept whole images of ta/mtile-fields and ta/mtile-fields-risky (166 without it).
+  *ta; HW, infer; data: `render-closing-r9-lgeo:out/20261113-080029/q139b/`,
+  `render-closing-r9-lgeo:fold/`, `vectors-closing-r9-lgeo-ta-slots`,
+  `render-closing-r8-lgeo:out/20261113-024441/q139/`, `ta-mtile-fields`, `ta-mtile-fields-risky`.*
 
 ## By unit
 
@@ -7646,14 +7680,14 @@ Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
 E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763, E776, E777,
 E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828, E842, E847, E851, E859,
-E865, E872, E877, E879, E886, E888, E893, E897, E906, E907, E908, E944.
+E865, E872, E877, E879, E886, E888, E893, E897, E906, E907, E908, E944, E959.
 
 ### texture
 
 Records: E033, E034, E035, E036, E037, E038, E039, E040, E041, E042, E114, E116, E242, E254, E271,
 E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441, E560, E561, E562,
 E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E726, E733, E743,
-E744, E760, E765, E787, E844, E894, E910, E911, E923, E930, E931, E932, E940, E941, E942.
+E744, E760, E765, E787, E844, E894, E910, E911, E923, E930, E931, E932, E940, E941, E942, E958.
 
 ### transfer
 

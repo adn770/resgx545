@@ -1,11 +1,11 @@
 +++
 id = "Q139"
-question = "where does the TA write a region's header when the macrotile bounds are not multiples of 4 (E944's residue: 256 x 256 m1-B2-10 and m1-B2-11, 640 x 480 m1-B1-23, which block order and R7-BLK do not give, and 1280 x 720 m2-B3p1), what is the stride's relation to the RT data, and why do the words that fault (E509) fault"
+question = "does a block row of a first macrotile that is not a multiple of 4 wide take 8 floor(fx / 2) slots on held-out hardware rows (H-EVEN, fitted on E944's residue dumps; at fx 2 or 3 mod 4 every kept job faulted), does header flag bit 7 end the region list the 3D reads (E959, post hoc), what is the stride's relation to the RT data, and why do the words that fault (E509) fault"
 unit = "ta"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E505", "E506", "E509", "E407", "E877", "E907", "E944"]
+evidence = ["E505", "E506", "E509", "E407", "E877", "E907", "E944", "E959"]
 terms = ["CR_TE_MTILE1", "CR_TE_MTILE2", "CR_TE_MACROTILE_STRIDE"]
 +++
 
@@ -66,3 +66,20 @@ headers in those blocks. Open: the four residue jobs, which replicated their dat
 which no order gives (three with bounds that are not multiples of 4; 1280 x 720 had no baseline
 dump, so its slots were not read), the stride's relation to the RT data, and the faulting words
 of E509 (not run: the session was safe class only).
+
+Narrowed 2026-11-13 (round 9, R9-lgeo stage q139b, E959; the question line is reworded, the
+question is not retired). It read "where does the TA write a region's header when the macrotile
+bounds are not multiples of 4 (E944's residue: 256 x 256 m1-B2-10 and m1-B2-11, 640 x 480
+m1-B1-23, which block order and R7-BLK do not give, and 1280 x 720 m2-B3p1), what is the stride's
+relation to the RT data, and why do the words that fault (E509) fault". The round 9 seeds plan
+fitted H-EVEN offline on E944's three readable residue dumps (a block row of the first macrotile
+takes 8 floor(fx / 2) slots, R7-BLK's 16 floor(fx / 4); the same whenever fx is 0 or 1 mod 4).
+Stage q139b dumped the 1280 x 720 and 768 x 640 baselines and 768 x 640 m2-B3p1: every header at
+H-EVEN's slot (= R7-BLK there, fx 12 and 8), held out, and sgx-pipe's `ta::stride_slots` takes
+the two baselines. The 1280 x 720 residue drew its dataset's 52 wrong tiles with every one of its
+1800 headers at H-EVEN's slot: 12 tiles hold their header and do not draw. Read post hoc at the
+fold, each kept dump has one header with flag bit 7 set, on the last target tile in block order,
+and a tile draws iff its header lies at or before that slot (every tile of 24 kept dumps; with
+H-EVEN, 167 of 167 kept whole images of E877's datasets). Open: H-EVEN held out on hardware (no
+safe-class job parts it from R7-BLK, decision R9-7), the bit 7 reading held out, the stride's
+relation to the RT data, and the faulting words of E509.

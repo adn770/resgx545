@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-162 open: 152 hw (high 19, medium 71, low 62, unrated 0), 9 fw, 1 kernel.
+161 open: 151 hw (high 19, medium 71, low 61, unrated 0), 9 fw, 1 kernel.
 
 ## Work queue: hardware
 
@@ -117,7 +117,7 @@
 - `Q070` (phase 11, hw, high): what do the TA object's format word bits 15:8 and above and its set masks select beyond the settings seen, and does the fitted region test hold for lines and points? (E176, E177, E180, E181, E185, E306, E307, E308, E414, E541, E542, E543, E544, E777)
 - `Q086` (phase 11, hw, medium): what rule gives CR_TE_MTILE1, CR_TE_MTILE2 and CR_TE_MACROTILE_STRIDE for a 4x multisampled target, whose 64x64 words are 0x802002, 0x802002 and 0x4 against the single-sampled rule's 0x1004004, 0x1004004 and 0x10? (E331, E329, E507, E511, E824, E886, E908)
 - `Q100` (phase 11, hw, medium): what do the fields of CR_TE_MTILE1 and CR_TE_MTILE2 mean, given that flips of their bits change the image or fault the job at 256x256 and 1024x768? (E247, E257, E407, E505, E506, E509, E877)
-- `Q139` (phase 11, hw, medium): where does the TA write a region's header when the macrotile bounds are not multiples of 4 (E944's residue: 256 x 256 m1-B2-10 and m1-B2-11, 640 x 480 m1-B1-23, which block order and R7-BLK do not give, and 1280 x 720 m2-B3p1), what is the stride's relation to the RT data, and why do the words that fault (E509) fault (E505, E506, E509, E407, E877, E907, E944)
+- `Q139` (phase 11, hw, medium): does a block row of a first macrotile that is not a multiple of 4 wide take 8 floor(fx / 2) slots on held-out hardware rows (H-EVEN, fitted on E944's residue dumps; at fx 2 or 3 mod 4 every kept job faulted), does header flag bit 7 end the region list the 3D reads (E959, post hoc), what is the stride's relation to the RT data, and why do the words that fault (E509) fault (E505, E506, E509, E407, E877, E907, E944, E959)
 - `Q142` (phase 11, hw, medium): which control-stream form does the TA write in a region of the grid that CR_TE_AA bits 30 and 31 halve (16 x 16, 32 x 8 and 16 x 8 regions), and what are the five parameter-buffer dwords outside the stream blocks that change at 128 x 128 with 0xe0000000 (the region headers and the blocks are answered, E893) (E504, E893)
 - `Q159` (phase 11, hw, medium): what rule lists the 32 x 16 regions of a one-line object: at ISP word 1 width 0x10 the list reaches a near-vertical segment at 0.4375 pixel and not at 0.5, a near-horizontal one at 0.5 and 0.625 pixel at two regions of one job, and at the widths 0x20 to 0xf0 a near-vertical one up to 0 (the own regions), 1.497, 3.493 and 6.487 pixel and not at 1.0, 2.0, 4.0 and 8.0 (E543)
 - `Q160` (phase 11, hw, low): how does the TA split an index list of several lines into objects and regions: two lines at 128 x 128 give two objects of 2 vertices (the second the segment from vertex 2 to vertex 0) or, in the shifted job, one of 4, three lines give 2 and 4 vertices, and at 64 x 64 one object of 4 or 6, with four regions more than its segment in the first object (E543)
@@ -143,7 +143,6 @@
 - `Q181` (phase 11, hw, low): does the fill's transfer command load a colour-space set at all (xfer:17^=1 and xfer:18 to 22 made no difference for formats 28 and 29, E568), and if not, which path loads the set that the YUV conversion reads (E568, E037, E040)
 - `Q280` (phase 11, hw, low): what makes up to 56 of 2048 pixels of a gradient job differ from the Euclidean footprint of the pairs (op0, op2) and (op1, op3) with a LOD fraction truncated to 1/64 (E721), a rounding of the length, of the logarithm or of the operands, or a footprint that is not exactly Euclidean (E721, E563, E744)
 - `Q282` (phase 11, hw, low): what arithmetic gives the bilinear sample of an sRGB texel (T0 bit 27) given that decode-then-filter in float fits 43% to 56% of the pixels and filtering the bytes then decoding fits none (E723, E720)
-- `Q283` (phase 11, hw, low): why does type 3 pad a row to 8 dwords below 8 texels wide (rows max(8, w) apart, E940), what pitch does type 4 keep at sizes that are not multiples of 32 above 32 (32 x 32 blocks row by row held out at multiples of 32, E941), and is type 1 read with a stride of the width at widths that are not powers of two (type 3 is, E940) (E725, E567, E910, E940, E941)
 - `Q284` (phase 11, hw, medium): what does a TEXTYPE 2 cube sample read at an exact texel boundary when |ma| is not a power of two (E923: 14 of 207 such pixels one texel low, the rest up), at a tie between the two largest coordinates, under bilinear filtering across a face edge, and with faces other than 16 x 16 (E726, E567, E844, E923, E930, E931)
 
 ### transfer

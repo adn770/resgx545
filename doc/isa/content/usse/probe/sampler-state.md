@@ -84,17 +84,20 @@ scratch buffer whose dwords count up, so every result names the texels it came f
 - **ETC1 (format 27; E724).** **Format 27 is ETC1 with the 4 x 4 blocks in Morton order, y in the
   low bit** (6 of 6 held-out fills of random valid blocks exact over 2048 pixels, 8 x 8 to 32 x
   16; raster block order and Morton with x low 0 of 6). Formats 23 to 26 are not decoded.
-- **Texture types (E725, E726, E910, E940, E941).** **Types 3 and 1 are read as a raster, the
+- **Texture types (E725, E726, E910, E940, E941, E958).** **Types 3 and 1 are read as a raster, the
   window wrapping at the texture's size** (8 of 8 held-out fills exact, 8 x 8 to 32 x 32; E567's
   fixed 16 refuted, 0 of 8; held out again at 64 x 8 and 128 x 8, E910). **Type 1's rows are the
-  width apart, type 3's max(8, w) dwords**: type 3 at 1, 2 and 4 wide pads a row to 8 dwords (5 of
-  5 held out, E940, after E910's one row at 4 x 16), type 1 at 1, 2 and 4 wide does not (E910,
-  E940); at 24 and 40 wide type 3's rows are the width apart, not a power of two above it (E940,
-  2 of 2). **Type 4 stores 32 x 32 blocks of 1024 dwords, raster inside a block, the blocks row by
-  row**: texel (X, Y) is dword ((Y div 32) ceil(w / 32) + (X div 32)) 1024 + (Y mod 32) 32 + (X
-  mod 32) (18 of 18 held-out windows of 64 x 64 to 128 x 128 and 256 x 32, E941; read post hoc at
-  64 and 128 wide by E910); up to 32 wide that is E725's stride of 32. Sizes that are not
-  multiples of 32 above 32: Q283.
+  width apart, type 3's max(8, w) texels**: type 3 at 1, 2 and 4 wide pads a row to 8 texels (5 of
+  5 held out at format 12, where a texel is a dword, E940, after E910's one row at 4 x 16; at
+  format 5, 16 bits a texel, the low half of a dword first, rows of 8 texels, not 8 dwords: 2 of
+  2, E958), type 1 at 1, 2 and 4 wide does not (E910, E940); at 24 and 40 wide the rows of type 3
+  and of type 1 are the width apart, not a power of two above it (E940, E958, 2 of 2 each).
+  **Type 4 stores 32 x 32 blocks of 1024 dwords, raster inside a block, the blocks row by row**:
+  texel (X, Y) is dword ((Y div 32) ceil(w / 32) + (X div 32)) 1024 + (Y mod 32) 32 + (X mod 32)
+  (18 of 18 held-out windows of 64 x 64 to 128 x 128 and 256 x 32, E941; read post hoc at
+  64 and 128 wide by E910); up to 32 wide that is E725's stride of 32. At widths that are not
+  multiples of 32 a block row keeps ceil(w / 32) whole blocks (7 of 7 held-out windows of 48 x
+  64, 80 x 64 and 96 x 32, E958; the power of two above the width and a partial block refuted).
   **Type 2 is a cube map: six 16 x 16 faces consecutive at 256 dwords a face, read for
   +x, -x, +y, -y, +z, -z as faces 0 to 5** (each axis direction reads one face over 2048 of 2048
   pixels, E726). **The face is that of the coordinate of largest magnitude, with its sign**: E726's
@@ -123,8 +126,8 @@ recorded formats and modes, tiled textures, and filtered `.pcf` at other weights
 chains in the five sizes run, `smp3d` as `smp2d` where it ran, and the YUV formats as black only
 for a job that records the colour-space set as unloaded.
 
-**Undecided:** type 4 at sizes that are not multiples of 32 and type 1 at widths that are not
-powers of two (Q283), type 5 with other formats, the LOD fraction's residual (Q280), the border
-modes on the u axis, formats 23 to 26 and the YUV conversion in a fill,
+**Undecided:** why type 3 pads to 8 texels and the other 16-bit and 8-bit formats on types 1, 3
+and 4 (E958 ran format 5 on type 3), type 5 with other formats, the LOD fraction's residual
+(Q280), the border modes on the u axis, formats 23 to 26 and the YUV conversion in a fill,
 sRGB under bilinear filtering (Q282), the cube map's edges and (s, t) within a face (Q284), `smp3d`
 beyond the textures it ran on, `.sinf`/`.rsd`, and state from `sa` or `c`.

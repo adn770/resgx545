@@ -1,0 +1,9 @@
+title = "r9-lgeo tx6: the --pixels words of each map-texture probe (type 4 at 48 x 64, 80 x 64 and 96 x 32, type 3 at format 5, type 1 at 24 and 40 wide; 14 jobs)"
+repo = "data"
+paths = ["vectors/closing/r9-lgeo/pixels/"]
+method = "tools/usse-asm/closing_tables.py texture on the published render/closing-r9-lgeo session (stage tx6 of its one attempt, out/20261113-080029), one file; rows are measurements; the table says its replay is refused (sgx-sim's tex.rs models the layouts E958 held, in its unit tests, but no test reads this table)"
+date = "2026-11-13"
+files = 1
+size = 20099
+sha256 = "feef238b0167ef83ed042cf32e92f9614c791e02d0e659d6a9f5a935deb5803d"
+recipe = "tools/usse-asm/closing_tables.py"
