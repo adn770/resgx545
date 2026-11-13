@@ -23,7 +23,9 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   absolute coordinate, then clamped); bits 2:0 do not act on `u`. **Modes 4-7 (E565):** on the
   v axis 6 and 7 clamp and 4 and 5 repeat (held out at a pitch of one texel, E932); on the u axis
   none of clamp, nomask or border fits, and every read is the v rule's index plus 180 dwords in
-  modes 4, 6 and 7 (post hoc, at three bases, E932); mode 5 past the texture is open (Q177).
+  modes 4, 6 and 7 at 16 x 16 (post hoc, at three bases, E932; whatever T3 or the v mode, E957),
+  116 at 8 x 8 and 308 at 32 x 32 (E957; 8 N + 52 fitted); what sets it and mode 5 past the
+  texture are open (Q177).
 - **Twiddled layout (`texture-sampler-smp-twiddled`).** Texel `(x, y)` lies at the Morton index with
   **`y` in
   bit 0, `x` in bit 1**, and so on; a non-square texture puts the longer side's extra bits
@@ -109,9 +111,11 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   texel boundaries at a |ma| not a power of two (E923); held out on hardware on four new 16 x 16
   programs and at 8 x 8 faces (the rule with 8 for 16, faces 64 dwords apart); 32 x 32 faces read
   the fifth bits of s and t in the other order (post hoc, E930), which is E561's twiddle law, tiles
-  of 16 x 16 in raster order with s first (E951). A tie of |w| and |u| read w's
-  face, and bilinear at a face edge mixes in another face's texel (readings, E931). The ties, face
-  edges and other face sizes: Q284.
+  of 16 x 16 in raster order with s first (E951), held out at 32 x 32 and 64 x 64 faces, and 4 x 4
+  faces sit 16 dwords apart (E955). A face tie reads the higher axis's face on every sweep run (z
+  over y over x, E931, E956) but not on 7 of 599 kept tie pixels with a large third coordinate, and
+  bilinear at a face edge mixes in a texel of the neighbour face near the adjacent one (E931, E956).
+  The ties, texel boundaries and face edges: Q284.
   **Type 5 reads one bit per 8 texels**: with format 12 texel t = (Y mod h) w + (X mod w)
   returns `0x0000ffff` iff bit 0 of texture dword floor(t / 8) is set, else 0 (E942: 13 of 13
   held-out rows with stored dwords that part it from bit 1 of dword floor(t / 4), and 8 of 8 rows

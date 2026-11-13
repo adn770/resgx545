@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-161 open: 151 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+160 open: 150 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -140,7 +140,7 @@ list.
 - `Q180` texture, medium: why did all 28 triangle jobs of the four-component DOUTI0 probes hang
   (E569), the two controls with the old source word 0x40800801 included ... (E420, E541, E569)
 - `Q284` texture, medium: what does a TEXTYPE 2 cube sample read at an exact texel boundary when
-  |ma| is not a power of two (E923: 14 of 207 such pixels one texel ... (E930, E931, E951)
+  |ma| is not a power of two (E923, E931, E956: up or down by the ... (E951, E955, E956)
 - `Q003` transfer, medium: which event (if any) does a bus-interface fault raise, and what do the
   fault-request bits of CR_BIF_INT_STAT name, what clears a latched ... (E901, E919, E920)
 - `Q011` transfer, medium: why does a copy whose background-object tag (transfer word 0) is wrong
@@ -214,8 +214,6 @@ list.
   stop the tick through the closed task (E814: that word ... (E812, E814, E902)
 - `Q072` isp, low: what does bit 1 of CR_ISP_REG_04DC do to a punch-through pass, when it hangs
   every one tried and changes no opaque or translucent pass? (E222, E290, E416)
-- `Q141` isp, low: do the background pixels of a multisampled render under the full triangle hold
-  out as the seam holes of the region model (E922: every one ... (E762, E922, E934)
 - `Q201` isp, low: why does the position source (E437, E502: x + 0.375, y + 0.125 in mode 0 and
   every multisampling mode tried) differ from the point at which ... (E437, E502, E606)
 - `Q241` isp, low: what do ISP word 0 bits 15, 16, 17 and 18, the depth compares 2, 3, 5 and 6
@@ -262,8 +260,8 @@ list.
   one, how are its slices laid out, and how do the third ... (E342, E567)
 - `Q115` texture, low: does the sampler filter anisotropically on this core, and which bits of the
   texture words or the smp operands select it and its ratio? (E564, E720, E723)
-- `Q177` texture, low: what do T0 address modes 4 to 7 read along the u axis of a 16x16 twiddled
-  texture (indices 324 to 366 past the 256 texels, a period of 6 or ... (E033, E565, E932)
+- `Q177` texture, low: what sets the offset that T0 address modes 4 to 7 add on the u axis (the v
+  rule's texel moved by 116, 180 and 308 dwords at 8 x 8, 16 x 16 ... (E565, E932, E957)
 - `Q179` texture, low: how are the blocks and the data bits of formats 23 to 26 laid out (a data bit
   changes 7 to 13 pixels, the blocks of 23 and 24 do not differ ... (E342, E568, E724)
 - `Q181` texture, low: does the fill's transfer command load a colour-space set at all (xfer:17^=1
@@ -337,12 +335,27 @@ list.
 
 ## Recent records
 
-94 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+99 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
 - `E968` texture, 2026-11-13: Round 9 offline (Q078; no run): with T3 bit 14 set, smp on a strided
   texture reads dword i + K + M c, i the dword the same job reads without the bit and c its column,
   read on E566's fit job ...
+- `E957` texture, 2026-11-13: R9-geo stage addr2 (Q177; 11 probe fills of twiddled 32-bit textures
+  at page 12 of a 32-page named scratch, the swept axis over 128 positions at one texel a step, no
+  fault): E932's u reading ...
+- `E956` texture, 2026-11-13: R9-geo stage cube2, ties and edges (Q284; 8 probe fills, no fault): a
+  tie of the two largest coordinates went to the face of the higher axis (z over y over x) on 4 of 4
+  held-out sweeps of x = y and y ...
+- `E955` texture, 2026-11-13: R9-geo stage cube2, sizes (Q284; 8 probe fills of TEXTYPE 2
+  point-sampled by smp3d, E726's cu-xn the control, no fault): with E923's face and (s, t) rule, the
+  face-local index of 32 x 32 and 64 x 64 ...
+- `E954` isp, 2026-11-13: R9-geo stage seam4 (the seam holes, E953's question; the same 24 renders
+  with --aa4 alone, the 4x context's automatic four region-header arrays, never run before in modes
+  0 and 1, and E828's j1r as a ...
+- `E953` isp, 2026-11-13: R9-geo stage seam1 (Q141; 24 tri renders with E504's pokes, each with
+  --aa4 and debugfs render_rgn_arrays 1, a context made for 4x targets whose region headers are
+  forced to one array, E502's, E504's ...
 - `E952` isp, 2026-11-13: Round 9 offline (Q260; no run), on E683's 240 S3 cases (negative
   coordinates at 1/4096, kept images, never read by E914's or E943's readings): E943's post hoc
   reading 'a sweep misses half away from ...
@@ -625,9 +638,10 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-35 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+36 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r9-geo`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
 - `render/closing-r8-lgeo`: 2026-11-13; module 37EC97AB0CB37213C42FCCC; tools ~/sgxfive-test-rgn4
 - `render/closing-r8-ldpm`: 2026-11-13; module 37EC97AB0CB37213C42FCCC; tools ~/sgxfive-test-rgn4
 - `render/closing-r8-k2`: 2026-11-13; module B60AB0B475DD1E8972419B5; fork r8-kernel at 2a650d74;
@@ -683,9 +697,9 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 1 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 2 sessions, fork r8-kernel at
   2a650d74
+- module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at
   3f0b3e74
 - module srcversion 99CD90DA26E3AFF9C450517: last named 2026-11-12, 14 sessions, fork resgx545 at
