@@ -476,3 +476,260 @@ def test_the_guard_refuses_a_wrapped_command_that_is_not_a_pinned_tool(repos):
                     'o1|fit|safe|-|t4|probe "$HOME/other-tool"')
     g = kit(kp, repos, "guard")
     assert g.returncode != 0 and "$HOME/other-tool" in g.stdout, g.stdout
+
+
+# ---- expectdiff: a reading only when the job ran ---------------------------------------------
+def diff_world(kp, expect):
+    """A world whose `fill --odd` job ends rc 1 with a diff line: `job: ok` (world `model`) or
+    `job: rejected` (world `rejected`, as the real tool prints a kernel refusal and still compares
+    the untouched target)."""
+    w = (kp / "mock/world.py").read_text()
+    w = w.replace('EXPECT = {"model": (0, {"s0": 0}), "nodiff": (25, {"s0": 25})}',
+                  f"EXPECT = {expect!r}")
+    w = w.replace("def answer(tool, argv, world):\n",
+                  "def answer(tool, argv, world):\n"
+                  "    if '--odd' in argv:\n"
+                  "        job = 'job: rejected (Invalid argument)' if 'rejected' in world "
+                  "else 'job: ok'\n"
+                  "        return dict(rc=1, out=job + '\\ndiff: 7 of 2048 pixels\\n')\n")
+    (kp / "mock/world.py").write_text(w)
+
+
+def test_an_expectdiff_row_is_a_reading_only_when_the_job_ran(repos):
+    """r8-geo's E934: `job: rejected` with a diff line under expectdiff was taken as a reading,
+    and 23 rows were refusals. An expectdiff row is a reading when it ends rc 1 with the tool's
+    `job: ok` and a diff line; a rejected job is a failure that stops the stage."""
+    kp = scaffold(repos)
+    t = kp / "tables/s0.txt"
+    t.write_text(t.read_text() + "d1|fit|safe|expectdiff|t4|fill --odd\n")
+    diff_world(kp, {"model": (0, {"s0": 0}), "rejected": (4, {"s0": 4})})
+    m = kit(kp, repos, "mock")
+    assert m.returncode == 0, m.stdout + m.stderr
+    assert re.search(r"^ok +world rejected: driver 4 \(s0 4\)", m.stdout, re.M), m.stdout
+    kept = next(kp.glob("debug/mock.*/model/out/model/s0"))
+    sys.path.insert(0, str(kp / "kit"))
+    import kitscore
+    assert kitscore.rows(str(kept))["d1"]["class"] == "ok"
+
+
+def test_an_expectdiff_reading_is_a_completed_job(repos):
+    """r8-ldpm's k calibrations (expectdiff rows that ended rc 1 with `job: ok` and a diff line)
+    were read as cannot tell: kitscore.completed takes them as completed jobs, and only them."""
+    kp = scaffold(repos)
+    t = kp / "tables/s0.txt"
+    t.write_text(t.read_text() + "d1|fit|safe|expectdiff|t4|fill --odd\n")
+    diff_world(kp, {"model": (0, {"s0": 0})})
+    m = kit(kp, repos, "mock")
+    assert m.returncode == 0, m.stdout + m.stderr
+    kept = next(kp.glob("debug/mock.*/model/out/model/s0"))
+    sys.path.insert(0, str(kp / "kit"))
+    import kitscore
+    row = kitscore.rows(str(kept))["d1"]
+    assert (row["rc"], row["class"]) == (1, "ok")
+    assert kitscore.completed(row)
+    assert not kitscore.completed(dict(row, knobs="-"))
+    assert not kitscore.completed(dict(row, rc=2))
+    assert not kitscore.completed(dict(row, **{"class": "fail"}))
+
+
+# ---- the laptop's host key: SGX_TARGET_HOST_KEY_ALIAS or the older SGX_TARGET_SSH_OPTS -------
+def opts_with(c, **env):
+    S.ENV = {k: v for k, v in os.environ.items()
+             if k not in ("SGX_TARGET_HOST_KEY_ALIAS", "SGX_TARGET_SSH_OPTS")} | env
+    try:
+        return S.ssh_opts(c)
+    finally:
+        S.ENV = None
+
+
+def alias_of(opts):
+    return [o.split("=", 1)[1] for o in opts if o.startswith("HostKeyAlias=")][0]
+
+
+def test_the_host_key_alias_comes_from_either_variable():
+    """The lead's environment named the laptop's host key in SGX_TARGET_SSH_OPTS (the bringup
+    tools' variable) and the kit read only SGX_TARGET_HOST_KEY_ALIAS: r8-geo's first staging
+    used session.toml's alias and ssh exited 255. The kit takes SGX_TARGET_SSH_OPTS's options
+    too; ssh keeps the first HostKeyAlias it is given, so the alias variable comes first, the
+    options' own alias next, session.toml's last and only when neither names one."""
+    c = {"host_key_alias": "sgx-target"}
+    assert alias_of(opts_with(c)) == "sgx-target"
+    o = opts_with(c, SGX_TARGET_SSH_OPTS="-o HostKeyAlias=box -o Port=2222")
+    assert alias_of(o) == "box" and "Port=2222" in o and "HostKeyAlias=sgx-target" not in o
+    o = opts_with(c, SGX_TARGET_HOST_KEY_ALIAS="cedar",
+                  SGX_TARGET_SSH_OPTS="-o HostKeyAlias=box")
+    assert alias_of(o) == "cedar"
+    o = opts_with(c, SGX_TARGET_SSH_OPTS="-o Port=2222")
+    assert alias_of(o) == "sgx-target" and "Port=2222" in o
+    assert opts_with(c, SGX_TARGET_SSH_OPTS="-o BatchMode=no")[:2] == ["-o", "BatchMode=yes"]
+
+
+def test_a_staging_that_ssh_refuses_names_the_variables(repos):
+    """ssh's 255 (a host key it does not know, an unreachable host) stops the staging with its
+    own message and the variables that choose the host and its key, never silently."""
+    kp = frozen_session(repos)
+    S.ENV = dict(env_for(repos), SGX_TARGET_HOST="u@laptop")
+    S.ENV.pop("SGX_TARGET_HOST_KEY_ALIAS", None)
+    S.ENV.pop("SGX_TARGET_SSH_OPTS", None)
+    S.SSH = [PY, "-c", "import sys; sys.stderr.write('Host key verification failed.\\n'); "
+                       "sys.exit(255)"]
+    try:
+        with pytest.raises(S.Stop) as e:
+            S.stage(kp, say=lambda *a: None)
+    finally:
+        S.ENV, S.SSH = None, ["ssh"]
+    msg = str(e.value)
+    for word in ("255", "Host key verification failed", "SGX_TARGET_HOST", "u@laptop",
+                 "SGX_TARGET_HOST_KEY_ALIAS", "SGX_TARGET_SSH_OPTS", "sgx-target"):
+        assert word in msg, (word, msg)
+
+
+# ---- the library mock: every row's argv through the tool's own source ----------------------
+FAKE_SRC = """#!/bin/sh
+[ "$1" = --mock ] || { echo "usage: not the library mock" >&2; exit 2; }
+shift
+case "$*" in *--refused*) echo "job: rejected (Invalid argument)"; echo "diff: 9 of 2048 pixels"
+    exit 1 ;; esac
+case "$1" in fill|tri) echo "job: ok"; echo "diff: 0 of 2048 pixels" ;;
+    *) echo "usage: sgxfive-test COMMAND" >&2; exit 2 ;; esac
+"""
+FAKE_MAKE = ("build/sgxfive-test: tools/sgxfive-test.c\n"
+             "\tmkdir -p build && cp tools/sgxfive-test.c build/sgxfive-test "
+             "&& chmod +x build/sgxfive-test\n")
+SRC_PATH = "userspace/libsgxfive/tools/sgxfive-test.c"
+
+
+def bind_source(repos, kp, src=FAKE_SRC, sha=None):
+    """The tool's source at a commit of the fake resgx545 (a script its Makefile copies, which
+    answers as the library mock does), bound in session.toml [tools.t4]."""
+    main = repos["main"]
+    (main / "userspace/libsgxfive/tools").mkdir(parents=True, exist_ok=True)
+    (main / "include/uapi").mkdir(parents=True, exist_ok=True)
+    (main / SRC_PATH).write_text(src)
+    (main / "userspace/libsgxfive/Makefile").write_text(FAKE_MAKE)
+    (main / "include/uapi/sgxfive.h").write_text("/* uapi */\n")
+    c2 = commit_all(main, "tool")
+    sha = sha or hashlib.sha256(src.encode()).hexdigest()
+    toml = (kp / "session.toml").read_text().replace(
+        f'[tools.t4]\npath = "sgxfive-test-rgn4"\nsha256 = "{TOOL_SHA}"\n',
+        f'[tools.t4]\npath = "sgxfive-test-rgn4"\nsha256 = "{TOOL_SHA}"\n'
+        f'source = "{c2}:{SRC_PATH}"\nsource_sha256 = "{sha}"\n')
+    assert "source_sha256" in toml
+    (kp / "session.toml").write_text(toml)
+    return c2
+
+
+def test_the_mock_replays_every_row_on_the_library_mock_and_stops_on_a_refusal(repos):
+    """r8-geo lost 23 rows to `job: rejected`: its mock's world answered them `job: ok`, so the
+    dry run passed. With the tool's source bound in session.toml (`source`, `source_sha256`) the
+    mock builds the library mock from that commit (never the working tree) and runs every row's
+    argv through it first; a `job: rejected` or a usage refusal stops the mock before any world
+    runs, naming the row."""
+    kp = scaffold(repos)
+    bind_source(repos, kp)
+    assert kit(kp, repos, "guard").returncode == 0
+    m = kit(kp, repos, "mock")
+    assert m.returncode == 0, m.stdout + m.stderr
+    assert re.search(r"^ok +libmock: 2 rows of t4 replayed", m.stdout, re.M), m.stdout
+    t = kp / "tables/s0.txt"
+    base = t.read_text()
+    for row, word in [("r1|fit|safe|-|t4|fill --refused", "job: rejected"),
+                      ("r1|fit|safe|-|t4|bogus", "usage")]:
+        t.write_text(base + row + "\n")
+        m = kit(kp, repos, "mock")
+        assert m.returncode != 0, m.stdout
+        assert re.search(rf"^FAIL libmock: tables/s0.txt r1: .*{word}", m.stdout, re.M), m.stdout
+        assert "world model" not in m.stdout, m.stdout
+
+
+def test_the_library_mock_runs_the_tool_a_wrapper_runs(repos):
+    kp = rt_session(repos, 'o1|fit|safe|-|rt|0 1 0x0c04 -- "$HOME/sgxfive-test-rgn4" fill '
+                           '--refused')
+    bind_source(repos, kp)
+    m = kit(kp, repos, "mock")
+    assert m.returncode != 0 and re.search(r"^FAIL libmock: tables/s0.txt o1: .*job: rejected",
+                                           m.stdout, re.M), m.stdout
+
+
+def test_the_library_mock_is_built_only_from_the_bound_source(repos):
+    kp = scaffold(repos)
+    bind_source(repos, kp, sha="0" * 64)
+    m = kit(kp, repos, "mock")
+    assert m.returncode != 0 and re.search(r"^FAIL libmock: .*not 0{12}", m.stdout, re.M), m.stdout
+    toml = (kp / "session.toml").read_text().replace('source = "', 'source = "nocommit')
+    (kp / "session.toml").write_text(toml)
+    g = kit(kp, repos, "guard")
+    assert g.returncode != 0 and "source" in g.stdout, g.stdout
+
+
+def test_a_tool_without_a_bound_source_is_said_not_replayed(repos):
+    kp = scaffold(repos)
+    m = kit(kp, repos, "mock")
+    assert m.returncode == 0, m.stdout
+    assert re.search(r"^note libmock: t4 has no source", m.stdout, re.M), m.stdout
+
+
+# ---- #limit: the faults a control expects are not the stage's ------------------------------
+def fault_limit_session(repos, iso_set):
+    kp = scaffold(repos)
+    t = kp / "tables/s0.txt"
+    t.write_text(t.read_text().replace("#limit 0", "#limit 1")
+                 + f"c1-iso|{iso_set}|safe|expectfault reads:diff|t4|fill --fault\n"
+                 + "f1-fill|fit|safe|-|t4|fill --width 32 --height 32\n")
+    w = (kp / "mock/world.py").read_text()
+    w = w.replace("def answer(tool, argv, world):\n",
+                  "def answer(tool, argv, world):\n"
+                  "    if '--fault' in argv:\n"
+                  "        return dict(rc=3, out='job: failed\\ndiff: 0 of 2048 pixels\\n', "
+                  "kmsg=['sgxfive: BIF fault 0x80020 at 0x3e200002 stalls job 9'], "
+                  "latch=(4, 0x3e200002))\n")
+    if iso_set != "control":
+        w = w.replace('EXPECT = {"model": (0, {"s0": 0}), "nodiff": (25, {"s0": 25})}',
+                      'EXPECT = {"model": (0, {"s0": 24})}')
+    else:
+        w = w.replace('EXPECT = {"model": (0, {"s0": 0}), "nodiff": (25, {"s0": 25})}',
+                      'EXPECT = {"model": (0, {"s0": 0})}')
+    (kp / "mock/world.py").write_text(w)
+    return kp
+
+
+def test_a_control_that_expects_its_fault_does_not_count_against_the_limit(repos):
+    """r8-k2's xf stage stopped before its end control: the isolation control's own READONLY
+    fault, the reading it exists for, was counted against `#limit`, which bounds the faults of
+    the rows under test. A control's expected fault is not counted; a fit row's still is."""
+    kp = fault_limit_session(repos, "control")
+    m = kit(kp, repos, "mock")
+    assert m.returncode == 0, m.stdout + m.stderr
+    assert re.search(r"^ok +world model: driver 0 \(s0 0\)", m.stdout, re.M), m.stdout
+    kp = fault_limit_session(dict(repos, tmp=repos["tmp"] / "fit"), "fit")
+    m = kit(kp, repos, "mock")
+    assert m.returncode == 0, m.stdout + m.stderr
+    assert re.search(r"^ok +world model: driver 0 \(s0 24\)", m.stdout, re.M), m.stdout
+
+
+# ---- post-run files: fold/ and out/ ----------------------------------------------------------
+def test_verify_lets_a_fold_add_its_files_under_fold_and_out(repos):
+    """r8-lgeo's fold had to put its files under out/fold/: verify took any new file of a frozen
+    session as a change. The session's fold/ subtree (post-run fold notes, tables) and out/ (the
+    kept records, lead logs) are not frozen, and every frozen file stays checked; no laptop
+    file may come from them."""
+    kp = frozen_session(repos)
+    (kp / "fold/tables").mkdir(parents=True)
+    (kp / "fold/FOLD.md").write_text("notes\n")
+    (kp / "fold/tables/t.json").write_text("{}\n")
+    (kp / "out").mkdir(exist_ok=True)
+    (kp / "out/lead-run.log").write_text("log\n")
+    v = kit(kp, repos, "verify")
+    assert v.returncode == 0, v.stdout
+    (kp / "FOLD.md").write_text("notes\n")
+    v = kit(kp, repos, "verify")
+    assert v.returncode != 0 and "FOLD.md" in v.stdout, v.stdout
+    (kp / "FOLD.md").unlink()
+    (kp / "tables/s0.txt").write_text((kp / "tables/s0.txt").read_text() + "# edit\n")
+    v = kit(kp, repos, "verify")
+    assert v.returncode != 0 and "tables/s0.txt" in v.stdout, v.stdout
+    kp = scaffold(dict(repos, tmp=repos["tmp"] / "g"))
+    toml = (kp / "session.toml").read_text().replace("laptop = []", 'laptop = ["fold/*.bin"]')
+    (kp / "session.toml").write_text(toml)
+    g = kit(kp, repos, "guard")
+    assert g.returncode != 0 and "fold/*.bin" in g.stdout, g.stdout

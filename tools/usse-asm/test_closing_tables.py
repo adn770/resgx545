@@ -5,6 +5,7 @@ sim item 4 of R3-P11): depth words (E795-E798), dword 36 (E803), parameter buffe
 count tables (r3-geo, r3-geo-c). Synthetic stages first, then the published sessions when the data
 repository is present."""
 import gzip
+import hashlib
 import json
 import os
 import pathlib
@@ -290,3 +291,157 @@ def test_r6_misc_q287_table_is_e885s_odd_heights():
     assert got == {(17, (42, 21), 882), (18, (42, 22), 924), (19, (42, 24), 1008), (7, (42, 9), 378),
                    (11, (42, 14), 588), (23, (42, 29), 1218), (35, (42, 44), 1848), (21, (42, 26), 1092)}
     assert all(r["width"] == 34 and r["full_screen"] and r["diff_zero"] for r in z["rows"])
+
+
+# ------------------------------------------------------------------------------- kit sessions (round 8)
+KIT_HEAD = "name\tstage\tset\trisk\tknobs\ttool\targs\trc\tclass\tfault_int\tfault_word\tfree_kb\n"
+
+
+def kit_stage(tmp, name, jobs, void=()):
+    """A kit session's kept stage (tools/closing/kit): cases.tsv in kitscore.COLUMNS, NAME.txt.gz and
+    NAME.<file>.gz. jobs: [(name, set, knobs, args, rc, class, text, {file suffix: bytes})]."""
+    d = tmp / "out" / "20261113-000000" / name
+    d.mkdir(parents=True)
+    body = ""
+    for n, st, knobs, args, rc, cls, text, files in jobs:
+        body += f"{n}\t{name}\t{st}\tsafe\t{knobs}\tt4\t{args}\t{rc}\t{cls}\t-\t-\t1000\n"
+        if text is not None:
+            put(d, f"{n}.txt.gz", text)
+        for suf, data in (files or {}).items():
+            put(d, f"{n}.{suf}.gz", data)
+    (d / "cases.tsv").write_text(KIT_HEAD + body)
+    (d / "void.tsv").write_text(KIT_HEAD + "".join(
+        f"{n}\t{name}\tfit\tsafe\tsoft\tt4\tfill\t1\tfail\t-\t-\t1000\n" for n in void))
+    return d
+
+
+def probe_rows(label, rows):
+    return "programs asm\n" + "".join(f"probe {label}: row {y}: " + " ".join(f"{v:08x}" for v in r) + "\n"
+                                      for y, r in enumerate(rows))
+
+
+def tri_rows(rows):
+    return "".join(f"row {y}: " + " ".join(f"0x{v:08x}" for v in r) + "\n" for y, r in enumerate(rows))
+
+
+def test_kit_texture_rows_are_the_pixel_words_of_probe_and_tri_jobs(tmp_path):
+    """Texture pixel tables (r8-geo addr, vdm, seam; r8-lgeo tx3, tx4, tx5): per job the pixel words the
+    kept output prints (probe's `probe L: row N:` and tri's `row N: 0x...`), as a digest and the value
+    counts, the raw file by sha256, the session's input bins by sha256; a rejected job (E934) and a
+    void row are skipped with their reason, never rows; the table is refused with its reason."""
+    sess = tmp_path / "sess"
+    (sess / "bins").mkdir(parents=True)
+    (sess / "bins/a.bin").write_bytes(b"\x01\x02")
+    a = [[0xd0000000, 0xd0000001], [0xd0000000, 0xd0000001]]
+    d = kit_stage(sess, "tx3", [
+        ("p1", "heldout", "-", 'probe --temps 32 --pixels "$S/bins/a.bin"', 0, "ok", probe_rows("a", a), {}),
+        ("t1", "control", "expectdiff reads:pixels", "tri --pixels --width 2 --height 1", 1, "ok",
+         "job: ok\ntarget: 2x1 hash 0x1234\ndiff: 1 of 2 pixels\n" + tri_rows([[0xff00ff00, 0]]), {}),
+        ("r1", "heldout", "expectdiff", "tri --pixels", 1, "ok",
+         "job: rejected (Invalid argument)\ndiff: 2 of 2 pixels\n" + tri_rows([[0, 0]]), {}),
+        ("n1", "heldout", "-", "probe x", 0, "ok", "programs asm\nprobe x: job time: 1 us\n", {}),
+    ], void=["v1"])
+    t = ct.kit_texture_table(d, "render/closing-r8-x", session_dir=sess)
+    assert t["kind"] == "texture" and t["replay"]["status"] == "refused" and t["replay"]["reason"]
+    rows = {r["id"]: r for r in t["rows"]}
+    assert set(rows) == {"p1", "t1"}
+    p = rows["p1"]["pixels"]
+    assert (p["width"], p["height"]) == (2, 2)
+    assert p["values"] == [["0xd0000000", 2], ["0xd0000001", 2]]
+    assert p["sha256"] == hashlib.sha256(b"d0000000 d0000001\nd0000000 d0000001\n").hexdigest()
+    assert rows["p1"]["inputs"] == {"bins/a.bin": hashlib.sha256(b"\x01\x02").hexdigest()}
+    assert rows["t1"]["job"] == "ok" and rows["t1"]["hash"] == "0x1234" and rows["t1"]["diff"] == [1, 2]
+    assert rows["t1"]["rc"] == 1 and rows["t1"]["raw"] == "tx3/t1.txt.gz"
+    assert "rejected" in t["skipped"]["r1"] and "pixel" in t["skipped"]["n1"] and "void" in t["skipped"]["v1"]
+
+
+def test_kit_ta_slot_rows_name_each_tiles_header_slot(tmp_path):
+    """Q139 slot tables (r8-lgeo q139): per job the wrong tiles of the --pixels image and, for every target
+    tile, the slots of the region headers that name it (from the first written TA data page), with the
+    kpokes the row applied."""
+    w, h = 64, 16                        # two 32 x 16 tiles
+    img = [[0xff00ff00] * 32 + [0] * 32 for _ in range(h)]
+    tad = bytearray(2 * 4096)
+    # page 1 holds the headers: slot 0 names tile (1, 0), slot 1 tile (0, 0); col 2 per 32 pixels
+    struct.pack_into("<3I", tad, 4096 + 0, (2 << 16) | 0, 0x2000, 0)
+    struct.pack_into("<3I", tad, 4096 + 12, (0 << 16) | 0, 0x2100, 0)
+    d = kit_stage(tmp_path, "q139", [
+        ("q1", "heldout", "expectdiff", f"tri --tri-full --pixels --width {w} --height {h} "
+         "--kpoke-render 1:ta:146=0x4 --dump-render \"$W\"", 1, "ok",
+         f"job: ok\ntarget: {w}x{h} hash 0x9\ndiff: 512 of 1024 pixels\n" + tri_rows(img),
+         {"tri.tadata.bin": bytes(tad), "tri.param.bin": bytes(4096)}),
+        ("q2", "heldout", "-", "tri --tri-full --pixels --width 64 --height 16", 0, "ok",
+         "job: ok\n" + tri_rows(img), {}),
+    ])
+    t = ct.kit_taslots_table(d, "s")
+    assert t["kind"] == "taslots" and t["replay"]["status"] == "refused"
+    r = t["rows"][0]
+    assert r["id"] == "q1" and r["kpokes"] == ["1:ta:146=0x4"]
+    assert (r["width"], r["height"], r["complete"]) == (64, 16, True)
+    assert r["wrong_tiles"] == "1.0" and r["header_base"] == 4096
+    assert r["slots"] == {"0.0": [1], "1.0": [0]}
+    assert "dump" in t["skipped"]["q2"]
+
+
+def test_kit_dpm_rows_read_the_timeline_and_the_knob(tmp_path):
+    """Kit DPM rows (r8-ldpm): the counts table's reading of the regtimeline (partial renders, the status
+    at each, the peaks, the counts before the aborts) with the render_pb_pages knob the row wrote, the
+    control block dwords 36 to 38 of each --words snapshot, and a declared rc 3 overflow kept as a row."""
+    b9 = [0] * 59
+    b9[36], b9[37], b9[38] = 5, 6, 7
+    d = kit_stage(tmp_path, "k", [
+        ("k1", "heldout", "dbg:render_pb_pages=0x82 expect:rc3-overflow", "0 0.3 0x0624 -- \"$HOME/t\" tri "
+         "--width 64 --height 64", 3, "ok", timeline(ROWS), {"ta3d.0.bin": struct.pack("<59I", *b9)}),
+        ("k2", "heldout", "-", "tri", 4, "fail", timeline(ROWS), {}),
+    ])
+    t = ct.kit_dpm_table(d, "s")
+    assert t["kind"] == "kitdpm" and t["replay"]["status"] == "refused"
+    r = t["rows"][0]
+    assert r["id"] == "k1" and r["pages_knob"] == 0x82 and r["rc"] == 3
+    assert r["partial_renders"] == 2 and r["counts_before_aborts"] == [7, 9]
+    assert r["control_blocks"] == [[5, 6, 7]]
+    assert "fail" in t["skipped"]["k2"]
+
+
+def test_kit_pte_rows_keep_the_flags_the_kernel_logged_and_the_faults(tmp_path):
+    """PTE rows (r8-k2): the flags and address the row wrote, the kernel's `vm_map A +S: PTE flags F`
+    lines and every `BIF fault S at A` of the job's kernel log, the job line, hash and diff; a fault is a
+    reading here (class fault kept as a row), a rejected job is skipped."""
+    dm = ("[ 1.0] gma500: [drm] sgxfive: vm_map 0x3e001000 +0x3000: PTE flags 0x6 (debugfs vm_pte_flags)\n"
+          "[ 1.1] gma500: [drm] *ERROR* sgxfive: BIF fault 0x80002 at 0x3e001001 (PD 0x6) stalls job 3, recovering\n")
+    d = kit_stage(tmp_path, "xf", [
+        ("w1", "heldout", "dbg:vm_pte_addr=0x3e001000 dbg:vm_pte_flags=0x2 expectfault expectdiff after",
+         "copy --print-addrs", 1, "fault",
+         "job: failed: job faulted, context lost (Input/output error)\ntarget: 64x32 hash 0xfc\n"
+         "diff: 2048 of 2048 pixels, first (0, 0) 0xdeadbeef expected 0xa5000000\n", {"dmesg": dm}),
+        ("c1", "control", "reads:job,hash", "fill", 0, "ok", "job: ok\ntarget: 64x32 hash 0xb6\ndiff: 0 of 2048 "
+         "pixels\n", {"dmesg": ""}),
+        ("r1", "heldout", "dbg:vm_pte_flags=0x10", "fill", 1, "fail", "job: rejected (Invalid argument)\n", {}),
+    ])
+    t = ct.kit_pte_table(d, "s")
+    assert t["kind"] == "pte" and t["replay"]["status"] == "refused" and "bif" in t["replay"]["reason"]
+    rows = {r["id"]: r for r in t["rows"]}
+    w = rows["w1"]
+    assert (w["pte_addr"], w["pte_flags"], w["class"]) == ("0x3e001000", "0x2", "fault")
+    assert w["pte_lines"] == [["0x3e001000", "0x3000", "0x6"]]
+    assert w["faults"] == [["0x80002", "0x3e001001"]]
+    assert w["job"] == "failed" and w["diff"] == [2048, 2048]
+    assert rows["c1"]["pte_flags"] is None and rows["c1"]["faults"] == []
+    assert "rejected" in t["skipped"]["r1"]
+
+
+def test_a_kit_table_may_name_the_test_that_replays_it(tmp_path):
+    """A fold that models a kit table's rows names its test on the command line; the table then says
+    `replayed` with the test and the model, and the tool refuses a test that is not FILE.rs::FUNCTION."""
+    sess = tmp_path / "sess"
+    kit_stage(sess, "tx3", [("p1", "heldout", "-", "probe x", 0, "ok", probe_rows("a", [[1, 2]]), {})])
+    out = tmp_path / "vec"
+    assert ct.main(["texture", "--session", str(sess), "--out", str(out), "--replayed",
+                    "crates/sgx-sim/tests/tex.rs::layouts", "--model", "sgx-sim tex layouts", "tx3"]) == 0
+    t = json.loads((out / "pixels" / "tx3.table.json").read_text())
+    assert t["replay"] == {"status": "replayed", "test": "crates/sgx-sim/tests/tex.rs::layouts",
+                           "model": "sgx-sim tex layouts"}
+    with pytest.raises(SystemExit):
+        ct.main(["texture", "--session", str(sess), "--out", str(out), "--replayed", "tex", "tx3"])
+    assert ct.main(["pte", "--session", str(sess), "--out", str(out), "tx3"]) == 0
+    assert json.loads((out / "pte" / "tx3.table.json").read_text())["replay"]["status"] == "refused"

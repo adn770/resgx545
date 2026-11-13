@@ -25,7 +25,8 @@
 #     of the session that only lists such paths of the freeze (R4-G's gen/data/sources.lst) is
 #     pointed there too, its hash line following (a list named in postrun/paths-as-frozen.txt,
 #     r6-held's, which its generator checks against the fixed paths it writes, keeps them, and
-#     the freeze's lines of those paths stay as frozen);
+#     the freeze's lines of those paths stay as frozen; a freeze that a freeze names as a
+#     session file, a post-run fix's FROZEN.pre-fix.sha256, keeps its bytes);
 #   - src/resgx545-data is the data repository (or, when the session has a
 #     postrun/data-view.txt, a view of it in which each area the file names holds only the
 #     sessions it lists: the corpus a generator that scans the area saw at the freeze, with a git
@@ -212,7 +213,19 @@ toolsrc_commit() {
         [ $ok = 1 ] && { echo "$c"; return; }
     done
 }
-if [ -f "$C/TOOLSRC.sha256" ] && ! awk '$2 ~ /^\//' "$C/TOOLSRC.sha256" | grep -q .; then
+# a source pinned by commit (`<sha256>  <commit>:<path>`, r8-k2 and r8-lgeo) is verified at that
+# commit, and the worktree is that commit
+if [ -f "$C/TOOLSRC.sha256" ] && awk '$2 ~ /^[0-9a-f]+:/' "$C/TOOLSRC.sha256" | grep -q .; then
+    while read -r h spec; do
+        case "$spec" in [0-9a-f]*:*) ;; *) continue ;; esac
+        tc=$(git -C "$TOOL" rev-parse --verify -q "${spec%%:*}^{commit}") \
+            || { echo "session_tests: $SESSION FAIL (TOOLSRC.sha256: no commit ${spec%%:*})"; exit 1; }
+        sum=$(git -C "$TOOL" show "$tc:${spec#*:}" 2>/dev/null | shasum -a 256 | cut -d' ' -f1)
+        [ "$sum" = "$h" ] || { echo "session_tests: $SESSION FAIL (TOOLSRC.sha256: $spec hashes to $sum, not $h)"; exit 1; }
+        BASE=$tc
+        echo "session_tests: tool source verified, $spec"
+    done < "$C/TOOLSRC.sha256"
+elif [ -f "$C/TOOLSRC.sha256" ] && ! awk '$2 ~ /^\//' "$C/TOOLSRC.sha256" | grep -q .; then
     tc=$(toolsrc_commit "$C/TOOLSRC.sha256")
     if [ -n "$tc" ]; then BASE=$tc
     else echo "session_tests: warning: no commit holds the frozen tool source (TOOLSRC.sha256)"
@@ -225,6 +238,18 @@ git -C "$TOOL" worktree add -q --detach "$R" "$BASE" || die "cannot check out $B
 freezes() {
     local f
     for f in "$C"/FROZEN*.sha256 "$C"/*/FROZEN*.sha256; do [ -f "$f" ] && echo "$f"; done
+}
+# the freezes whose absolute paths are pointed at the fake home: not a freeze that a freeze beside
+# it names as a session file (a post-run fix's FROZEN.pre-fix.sha256, r8-ldpm): it keeps its bytes
+pointed() {
+    local f g
+    for f in $(freezes); do
+        for g in "$(dirname "$f")"/FROZEN*.sha256; do
+            awk -v n="$(basename "$f")" '$2 == n || $2 == "*" n {found = 1} END {exit !found}' \
+                "$g" && continue 2
+        done
+        echo "$f"
+    done
 }
 for CM in "$C"/FROZEN.commits "$C"/*/FROZEN.commits; do
     [ -f "$CM" ] || continue
@@ -351,7 +376,7 @@ done
 # the fake home as the freeze's are below, and its hash line follows; a list named in
 # postrun/paths-as-frozen.txt (r6-held's, which its generator checks against the fixed data path
 # it writes) keeps its bytes
-for f in $(freezes); do
+for f in $(pointed); do
     R=$R D=$HOMEDIR/src/resgx545-data C=$(dirname "$f") K="$C/postrun/paths-as-frozen.txt" perl -e '
         use Digest::SHA qw(sha256_hex);
         sub moved { my $p = shift;
@@ -385,7 +410,7 @@ KEPT=$W/kept-paths
 # an absolute path under scratch/resgx545/ and pinned by no FROZEN.commits line, is published as
 # cited/<path> of a data repository: the copy is put at its scratch place and the freeze points
 # there
-for f in $(freezes); do
+for f in $(pointed); do
     CM=$(dirname "$f")/FROZEN.commits
     while read -r hash path; do
         case "$path" in /*/scratch/resgx545/*) ;; *) continue ;; esac
@@ -409,7 +434,7 @@ for f in $(freezes); do
             print;
         }' < "$f" > "$f.new" && mv "$f.new" "$f"
 done
-for f in $(freezes); do
+for f in $(pointed); do
     R=$R S=$S D=$HOMEDIR/src/resgx545-data K=$KEPT perl -pe \
         'BEGIN { open my $k, "<", $ENV{K}; %k = map { chomp; ($_ => 1) } <$k> }
          m{^[0-9a-f]{64} [ *](.*)$} && $k{$1}
@@ -420,7 +445,7 @@ for f in $(freezes); do
 done
 # a pin of a tree that sat under scratch/resgx545/ (round 4's integration worktree closing4/lead/wt)
 # is pointed at the pinned worktree by its FROZEN.commits path, matched by hash and path suffix
-for f in $(freezes); do
+for f in $(pointed); do
     CM=$(dirname "$f")/FROZEN.commits
     if [ -f "$CM" ]; then
         R=$R P="$CM" K=$KEPT perl -e '

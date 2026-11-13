@@ -24,8 +24,10 @@ the rest:
                per stage of session.toml: verify, the gate (score.py gate), the laptop runner, the
                copy back, the kept-files check (sessioncheck kept), the score, the premise
   mock    KP [--world W...]
-               the staged tree on a fake laptop under env -i, the fake tool answering by argv
-               (mock/world.py), for every world of its EXPECT; no clock anywhere
+               first every row's argv through the library mock built from the tool's bound
+               source (session.toml `source`, `source_sha256`): a `job: rejected` or a usage
+               refusal stops it; then the staged tree on a fake laptop under env -i, the fake
+               tool answering by argv (mock/world.py), for every world of its EXPECT; no clock
   files   KP [--laptop]   the freeze's file list (or the laptop list)
 
 Exit status of run: the laptop runner's own (kit/run_stage.sh: 1 preflight ... 25 premise) for a
@@ -65,7 +67,9 @@ KIT_SOURCES.update({"kit/scorekit.py": "tools/closing/scorekit.py",
                     "kit/sessioncheck.py": "tools/closing/sessioncheck.py"})
 LAPTOP_KIT = ("kit/lib_kit.sh", "kit/run_stage.sh", "kit/sessioncheck.py", "kit/scorekit.py")
 GENERATED = ("run/session.env", "run/required.tsv", "run/staged.lst")
-NOT_FROZEN_DIRS = ("out", "debug")
+# the session subtrees no freeze names: out/ (kept records, lead logs), debug/ (the mock, the
+# library mock) and fold/ (the fold's post-run notes and tables); no laptop file comes from them
+NOT_FROZEN_DIRS = ("out", "debug", "fold")
 NOT_FROZEN = ("FROZEN.sha256", "FROZEN.commits", "PREDICTIONS.sha256")
 COMMITS_HEADER = """\
 # FROZEN.commits: the commit that holds each file this session's FROZEN.sha256 pins outside the
@@ -260,6 +264,12 @@ def guard(kp):
             bad.append(f"session.toml: tool {t} has no sha256")
         if "path" in d and (d["path"].startswith("/") or ".." in d["path"]):
             bad.append(f"session.toml: tool {t}'s path is not under the laptop's home")
+        if ("source" in d or "source_sha256" in d) and not (
+                re.fullmatch(r"[0-9a-f]{7,40}:userspace/libsgxfive/tools/sgxfive-test\.c",
+                             d.get("source", ""))
+                and re.fullmatch(r"[0-9a-f]{64}", d.get("source_sha256", ""))):
+            bad.append(f"session.toml: tool {t}'s source is not COMMIT:userspace/libsgxfive/"
+                       "tools/sgxfive-test.c with its source_sha256")
     if c.get("health_tool") not in c["tools"]:
         bad.append("session.toml: health_tool is not one of [tools]")
     laptop = [f for f in ("kit/lib_kit.sh", "kit/run_stage.sh", "run/hooks.sh") if (kp / f).exists()]
@@ -301,6 +311,10 @@ def guard(kp):
             for cmd in re.findall(r"`((?:\./)?(?:kit|tests|run|gen|score)/[^`]*\.(?:sh|py)\b[^`]*)`", ln):
                 bad.append(f"README.md:{i}: `{cmd}` leans on the exec bit: name its interpreter "
                            "(bash ..., python3 ...)")
+    for g in c["files"].get("laptop", []):
+        if pathlib.PurePosixPath(g).parts[:1] and pathlib.PurePosixPath(g).parts[0] in NOT_FROZEN_DIRS:
+            bad.append(f"session.toml: laptop file {g} is under {'/, '.join(NOT_FROZEN_DIRS)}/, "
+                       "which no freeze names")
     allowed = set(c["extra_knobs"]) | {f"dbg:{k}={v}" for k, d in c["knobs"].items()
                                        for v in d["values"]}
     forbid = list(FORBID_OPTIONS) + list(c["forbid_options"])
@@ -533,9 +547,30 @@ def verify(kp):
 
 # ---- staging and the run ---------------------------------------------------------------------
 def ssh_opts(c):
-    alias = (ENV or os.environ).get("SGX_TARGET_HOST_KEY_ALIAS", c.get("host_key_alias", "sgx-target"))
-    return ["-o", "BatchMode=yes", "-o", "ConnectTimeout=10", "-o", "ServerAliveInterval=15",
-            "-o", "ServerAliveCountMax=4", "-o", f"HostKeyAlias={alias}"]
+    """The options of every ssh to the laptop. The host key's alias is SGX_TARGET_HOST_KEY_ALIAS,
+    else the HostKeyAlias of SGX_TARGET_SSH_OPTS (the bringup tools' variable, whose options
+    are all passed), else session.toml's host_key_alias: ssh keeps the first value it is given
+    for an option, so the kit's own BatchMode and bounds come first."""
+    e = ENV or os.environ
+    out = ["-o", "BatchMode=yes", "-o", "ConnectTimeout=10", "-o", "ServerAliveInterval=15",
+           "-o", "ServerAliveCountMax=4"]
+    extra = shlex.split(e.get("SGX_TARGET_SSH_OPTS", ""))
+    if e.get("SGX_TARGET_HOST_KEY_ALIAS"):
+        out += ["-o", f"HostKeyAlias={e['SGX_TARGET_HOST_KEY_ALIAS']}"]
+    elif not any(re.search(r"(?i)hostkeyalias", x) for x in extra):
+        extra += ["-o", f"HostKeyAlias={c.get('host_key_alias', 'sgx-target')}"]
+    return out + extra
+
+
+def ssh_hint(c, r):
+    """What a failed ssh to the laptop says: its status, its own last words and the variables
+    that choose the host and its key."""
+    err = r.stderr.decode(errors="replace") if isinstance(r.stderr, bytes) else (r.stderr or "")
+    alias = [o.split("=", 1)[1] for o in ssh_opts(c) if o.lower().startswith("hostkeyalias=")]
+    return (f"ssh exited {r.returncode}: {err.strip()[-300:] or '(no message)'}; the host is "
+            f"SGX_TARGET_HOST ({host(c)}), its key's alias SGX_TARGET_HOST_KEY_ALIAS or the "
+            f"HostKeyAlias of SGX_TARGET_SSH_OPTS, else session.toml's host_key_alias (now "
+            f"{alias[0] if alias else 'none'})")
 
 
 def host(c):
@@ -560,7 +595,7 @@ def stage(kp, say=print):
     files = laptop_files(kp, c) + staged_tools(c) + ["FROZEN.sha256"]
     r = ssh(c, f"mkdir -p {lr}/stage {lr}/out {lr}/run scratch/tmp", 60, capture_output=True)
     if r.returncode:
-        raise Stop(1, f"STAGING FAILED: mkdir on the laptop exited {r.returncode}")
+        raise Stop(1, f"STAGING FAILED: mkdir on the laptop: {ssh_hint(c, r)}")
     buf = io.BytesIO()
     with tarfile.open(fileobj=buf, mode="w", format=tarfile.PAX_FORMAT) as tar:
         for f in files:
@@ -649,7 +684,8 @@ def run(kp, att=None, frm=None, only=None, out_root=None, say=print):
             say("STOP: a laptop command or file was missing:\n" + "\n".join(found[:10]))
             return 45, rcs
         if r.returncode not in (0, 24):
-            say(f"STOP: stage {st} exited {r.returncode} (see {root}/{st}.log)")
+            say(f"STOP: stage {st} exited {r.returncode} (see {root}/{st}.log)"
+                + (f"; {ssh_hint(c, r)}" if r.returncode == 255 else ""))
             return r.returncode, rcs
         if cp.returncode:
             say(f"STOP: copying {lr}/out/{att}/{st} back failed ({cp.returncode})")
@@ -678,6 +714,132 @@ def run(kp, att=None, frm=None, only=None, out_root=None, say=print):
     return 0, rcs
 
 
+# ---- the library mock ------------------------------------------------------------------------
+LIBMOCK_TREES = ("userspace/libsgxfive", "include/uapi")
+
+
+def libmock_build(kp, c, t):
+    """(path, None) of the tool's library-mock build (sgxfive-test on libsgxfive's in-process
+    mock, `--mock`) from session.toml's `source` at its commit, never a working tree: the
+    source blob must hash to `source_sha256`; built once into debug/libmock/. (None, why)."""
+    d = c["tools"][t]
+    rev, _, src = d["source"].partition(":")
+    main = repo_dirs()["resgx545"]
+    commit = git_commit(main, rev)
+    blob = git_blob(main, commit, src) if commit else None
+    if blob is None:
+        return None, f"{d['source']} is not in {main}"
+    if sha_bytes(blob) != d["source_sha256"]:
+        return None, (f"{rev}:{src} hashes to {sha_bytes(blob)[:12]}, not "
+                      f"{d['source_sha256'][:12]} (source_sha256)")
+    out = pathlib.Path(kp).resolve() / "debug/libmock" / f"{commit[:12]}-{d['source_sha256'][:12]}"
+    binp = out / "sgxfive-test"
+    if binp.exists():
+        return binp, None
+    shutil.rmtree(out, ignore_errors=True)
+    (out / "src").mkdir(parents=True)
+    a = bounded(["git", "-C", main, "archive", "-o", out / "src.tar", commit, *LIBMOCK_TREES],
+                120, capture_output=True)
+    if a.returncode:
+        return None, f"git archive {commit[:12]} failed: {a.stderr[-200:]!r}"
+    with tarfile.open(out / "src.tar") as tar:
+        tar.extractall(out / "src", filter="data")
+    lib = out / "src/userspace/libsgxfive"
+    m = bounded(["make", "-s", "-C", lib, "build/sgxfive-test"], 600, capture_output=True)
+    if m.returncode or not (lib / "build/sgxfive-test").exists():
+        return None, f"the library-mock build at {commit[:12]} failed: {m.stderr[-300:]!r}"
+    shutil.copy2(lib / "build/sgxfive-test", binp)
+    return binp, None
+
+
+def _expand(args, env):
+    """The argv a row's args give in the runner's shell (`eval "set -- $args"`)."""
+    r = bounded(["bash", "-c", 'eval "set -- $1"; printf "%s\\0" "$@"', "_", args], 60,
+                capture_output=True, env=env)
+    return r.stdout.decode().split("\0")[:-1] if r.returncode == 0 else None
+
+
+def libmock(kp, say=print):
+    """Every row's argv run through the library mock of its tool (the tool a wrapper runs after
+    `--` included), as the kernel's interface checks it: a `job: rejected` line, a usage refusal
+    (rc 2) or a crash is a finding, 'tables/STAGE.txt NAME: what'. A tool with no `source` in
+    session.toml is said, not replayed. Returns the findings."""
+    kp = pathlib.Path(kp).resolve()
+    c = config(kp)
+    paths = {tool_path(c, c["prefix"], t): t for t in c["tools"]}
+    bins, bad, count = {}, [], {}
+    for t, d in c["tools"].items():
+        if d.get("wraps"):
+            continue
+        if "source" not in d:
+            say(f"note libmock: {t} has no source in session.toml: its rows are not replayed on "
+                "the library mock")
+            continue
+        b, why = libmock_build(kp, c, t)
+        if b is None:
+            bad.append(f"{t}: {why}")
+        else:
+            bins[t] = b
+    if not bins:
+        return bad
+    top = pathlib.Path(tempfile.mkdtemp(prefix="libmock.", dir=kp / "debug"))
+    home = top / "home"
+    home.mkdir()
+    n = 0
+    for st in stages(c):
+        for row in _rows(kp / "tables" / f"{st}.txt"):
+            name, tool, args = row[0], row[4], row[5]
+            n += 1
+            w = top / f"{n}-{name}"
+            (w / "w").mkdir(parents=True)
+            env = {"PATH": os.environ.get("PATH", "/usr/bin:/bin"), "HOME": str(home),
+                   "W": str(w / "w"), "S": str(kp)}
+            argv = _expand(args, env)
+            where = f"tables/{st}.txt {name}"
+            if argv is None:
+                bad.append(f"{where}: the args do not expand")
+                continue
+            if c["tools"].get(tool, {}).get("wraps"):
+                if "--" not in argv or argv.index("--") + 1 >= len(argv):
+                    continue
+                i = argv.index("--")
+                tool = paths.get(os.path.relpath(argv[i + 1], home)) if argv[i + 1].startswith(
+                    str(home) + "/") else None
+                argv = argv[i + 2:]
+            if tool not in bins:
+                continue
+            prev = None
+            for a in argv:              # the runner makes the directories outdir_opts name
+                if prev in c["outdir_opts"]:
+                    pathlib.Path(a).parent.mkdir(parents=True, exist_ok=True)
+                prev = a
+            r = bounded([bins[tool], "--mock", *argv], 120, capture_output=True, text=True,
+                        cwd=w, env=env)
+            count[tool] = count.get(tool, 0) + 1
+            rej = [ln for ln in r.stdout.splitlines() if ln.startswith("job: rejected")]
+            if rej:
+                bad.append(f"{where}: {rej[0]} (a kernel refusal on the library mock)")
+            elif r.returncode == 2 and "usage" in r.stderr:
+                bad.append(f"{where}: the tool's usage refusal: {r.stderr.splitlines()[0]}")
+            elif r.returncode < 0 or r.returncode >= 128 or r.returncode == 142:
+                bad.append(f"{where}: the library mock ended with status {r.returncode}")
+    if not bad:
+        for t, k in count.items():
+            say(f"ok   libmock: {k} rows of {t} replayed on {c['tools'][t]['source']}, none "
+                "refused")
+    return bad
+
+
+def _rows(f):
+    out = []
+    for ln in pathlib.Path(f).read_text().splitlines():
+        if ln.strip() and not ln.startswith("#"):
+            parts = ln.split("|", 5)
+            if len(parts) == 6:
+                out.append(parts)
+    return out
+
+
 # ---- the mock --------------------------------------------------------------------------------
 def _copy_tree(kp, dest):
     def ignore(d, names):
@@ -703,6 +865,13 @@ def mock(kp, worlds=None, say=print):
         except Stop as e:
             say(f"FAIL the mock's copy does not freeze:\n{e}")
             return 1
+    lm = libmock(kp, say=say)
+    if lm:
+        for x in lm:
+            say(f"FAIL libmock: {x}")
+        say("mock: stopped before the worlds: a row the library mock refuses would be refused on "
+            "the laptop")
+        return 1
     world_py = tree / "mock/world.py"
     expect = load_module(world_py, "kit_world").EXPECT
     req = scorer(tree).REQUIRED
