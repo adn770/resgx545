@@ -287,8 +287,10 @@ The freeze is pinned by commit, so main and data may move while sessions are bui
 FROZEN.sha256 names the session's files by relative path and each pinned input by absolute path,
 and FROZEN.commits gives each kit copy and each pin as `<sha256>  <commit>  resgx545:PATH` or
 `data:PATH`. `verify` reads every pin at its commit (`git cat-file`), never the working tree,
-and refuses a session file that changed or a new one; `tools/records/frozen.py --check` accepts
-the same file once the session is published.
+and refuses a session file that changed or a new one, outside the three subtrees no freeze names:
+`out/` (the kept records, lead logs), `debug/` (the mocks) and `fold/` (a fold's post-run notes
+and tables); no laptop file may come from them, and every frozen file stays checked.
+`tools/records/frozen.py --check` accepts the same file once the session is published.
 
 `kit/session.py mock` first runs every row's argv (the command a wrapper runs included) through the
 library mock, sgxfive-test built on libsgxfive's in-process mock (`--mock`) from the source

@@ -705,3 +705,31 @@ def test_a_control_that_expects_its_fault_does_not_count_against_the_limit(repos
     m = kit(kp, repos, "mock")
     assert m.returncode == 0, m.stdout + m.stderr
     assert re.search(r"^ok +world model: driver 0 \(s0 24\)", m.stdout, re.M), m.stdout
+
+
+# ---- post-run files: fold/ and out/ ----------------------------------------------------------
+def test_verify_lets_a_fold_add_its_files_under_fold_and_out(repos):
+    """r8-lgeo's fold had to put its files under out/fold/: verify took any new file of a frozen
+    session as a change. The session's fold/ subtree (post-run fold notes, tables) and out/ (the
+    kept records, lead logs) are not frozen, and every frozen file stays checked; no laptop
+    file may come from them."""
+    kp = frozen_session(repos)
+    (kp / "fold/tables").mkdir(parents=True)
+    (kp / "fold/FOLD.md").write_text("notes\n")
+    (kp / "fold/tables/t.json").write_text("{}\n")
+    (kp / "out").mkdir(exist_ok=True)
+    (kp / "out/lead-run.log").write_text("log\n")
+    v = kit(kp, repos, "verify")
+    assert v.returncode == 0, v.stdout
+    (kp / "FOLD.md").write_text("notes\n")
+    v = kit(kp, repos, "verify")
+    assert v.returncode != 0 and "FOLD.md" in v.stdout, v.stdout
+    (kp / "FOLD.md").unlink()
+    (kp / "tables/s0.txt").write_text((kp / "tables/s0.txt").read_text() + "# edit\n")
+    v = kit(kp, repos, "verify")
+    assert v.returncode != 0 and "tables/s0.txt" in v.stdout, v.stdout
+    kp = scaffold(dict(repos, tmp=repos["tmp"] / "g"))
+    toml = (kp / "session.toml").read_text().replace("laptop = []", 'laptop = ["fold/*.bin"]')
+    (kp / "session.toml").write_text(toml)
+    g = kit(kp, repos, "guard")
+    assert g.returncode != 0 and "fold/*.bin" in g.stdout, g.stdout

@@ -67,7 +67,9 @@ KIT_SOURCES.update({"kit/scorekit.py": "tools/closing/scorekit.py",
                     "kit/sessioncheck.py": "tools/closing/sessioncheck.py"})
 LAPTOP_KIT = ("kit/lib_kit.sh", "kit/run_stage.sh", "kit/sessioncheck.py", "kit/scorekit.py")
 GENERATED = ("run/session.env", "run/required.tsv", "run/staged.lst")
-NOT_FROZEN_DIRS = ("out", "debug")
+# the session subtrees no freeze names: out/ (kept records, lead logs), debug/ (the mock, the
+# library mock) and fold/ (the fold's post-run notes and tables); no laptop file comes from them
+NOT_FROZEN_DIRS = ("out", "debug", "fold")
 NOT_FROZEN = ("FROZEN.sha256", "FROZEN.commits", "PREDICTIONS.sha256")
 COMMITS_HEADER = """\
 # FROZEN.commits: the commit that holds each file this session's FROZEN.sha256 pins outside the
@@ -309,6 +311,10 @@ def guard(kp):
             for cmd in re.findall(r"`((?:\./)?(?:kit|tests|run|gen|score)/[^`]*\.(?:sh|py)\b[^`]*)`", ln):
                 bad.append(f"README.md:{i}: `{cmd}` leans on the exec bit: name its interpreter "
                            "(bash ..., python3 ...)")
+    for g in c["files"].get("laptop", []):
+        if pathlib.PurePosixPath(g).parts[:1] and pathlib.PurePosixPath(g).parts[0] in NOT_FROZEN_DIRS:
+            bad.append(f"session.toml: laptop file {g} is under {'/, '.join(NOT_FROZEN_DIRS)}/, "
+                       "which no freeze names")
     allowed = set(c["extra_knobs"]) | {f"dbg:{k}={v}" for k, d in c["knobs"].items()
                                        for v in d["values"]}
     forbid = list(FORBID_OPTIONS) + list(c["forbid_options"])
