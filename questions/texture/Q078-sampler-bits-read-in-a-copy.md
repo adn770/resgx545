@@ -1,11 +1,11 @@
 +++
 id = "Q078"
-question = "what do T3 bits 10, 14, 18-19 and 27-28 and T0 bit 27 select, given a copy that reads one texel, a sheared read, coordinates scaled by 2 and 4, smaller images after the source, and values of no texel; what position-dependent transform of the texel coordinates do bits 10, 14, 18, 27 and 28 apply in smp (offsets that change every 32 or 64 pixels, E566), why are the rows of bits 27 and 28 exact under 'after the source's height' at 64x16 and 64x32 but under no declared rule at a strided 32x32, and what do bits 11 and 12 select, given that they change nothing on a strided texture and every pixel of a twiddled chain texture?"
+question = "what do T3 bits 11 and 12 select, given that they change nothing on a strided texture and every pixel of a twiddled chain texture (E564, E566), and does bit 14's sheared read, dword + floor(S * S * u) with u clamped to [0, 1] (held out offline where the width is the stride, refuted in its frozen forms at W = 32, S = 64, and fitted post hoc on all three strided jobs, E968), hold at other widths and strides, and what does it do on a twiddled texture, where it faulted (E566)?"
 unit = "texture"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E274", "E397", "E566", "E564", "E722"]
+evidence = ["E274", "E397", "E566", "E564", "E722", "E723", "E968"]
 terms = ["T3.BIT10", "T3.BIT14", "T3.BITS19_18", "T3.BITS28_27", "T0.BIT27", "T3.BITS7_0"]
 +++
 
@@ -47,6 +47,39 @@ that completed; "scale on the index only" fits 10 of 13, "strided chain by strid
 job that completed reads 65536 bytes (Q281; the 64 KiB cause, the probe's scratch size, is
 [infer]). Only a 32-bit format and widths up to 128 were run. T3 bits 11, 12 and 14 were not run.
 
-**Correction 2026-11-11:** Q176 is merged into this question (retired as folded into Q078; a fold is not an answer), and its question is now a clause of the one above. Its question was: what position-dependent transform do T3 bits 10, 14, 18, 27 and 28 apply to the texel coordinates in smp (offsets that change every 32 or 64 pixels, E566), why are the rows of bits 27 and 28 exact under 'after the source's height' at 64x16 and 64x32 but under no declared rule at a strided 32x32, and what do bits 11 and 12 select, given that they change nothing on a strided texture and every pixel of a twiddled chain texture.
+**Correction 2026-11-11:** Q176 is merged into this question (retired as folded into Q078; a fold is
+not an answer), and its question is now a clause of the one above. Its question was: what
+position-dependent transform do T3 bits 10, 14, 18, 27 and 28 apply to the texel coordinates in smp
+(offsets that change every 32 or 64 pixels, E566), why are the rows of bits 27 and 28 exact under
+'after the source's height' at 64x16 and 64x32 but under no declared rule at a strided 32x32, and
+what do bits 11 and 12 select, given that they change nothing on a strided texture and every pixel
+of a twiddled chain texture.
 
-Its text (the paragraph that follows the same E722 paragraph as above): E566 gives, for each of these bits on a strided 64x32 texture, the offsets as they run over the 2048 pixels (bit 10: column 0, -1, -2 ... every 32 pixels; bit 27: column -1, -2, -3 and row 31, 30, 29), not a constant offset. E564 adds that bits 11 and 12, which change nothing on the strided texture, change every pixel of a twiddled 64x64 chain texture (bit 11 cleared reads 2048 distinct names from level 0, bit 12 set one constant). To settle it: for each bit decode the full (column, row) per pixel for the 64x32, 64x16 and 32x32 textures and fit an affine map of (x, y), then predict a fourth geometry before running it; and run bits 11 and 12 on a strided and a twiddled texture of the same size. Q176's evidence (E566, E274, E564, E722) and terms were already in this question's lists.
+Its text (the paragraph that follows the same E722 paragraph as above): E566 gives, for each of
+these bits on a strided 64x32 texture, the offsets as they run over the 2048 pixels (bit 10: column
+0, -1, -2 ... every 32 pixels; bit 27: column -1, -2, -3 and row 31, 30, 29), not a constant offset.
+E564 adds that bits 11 and 12, which change nothing on the strided texture, change every pixel of a
+twiddled 64x64 chain texture (bit 11 cleared reads 2048 distinct names from level 0, bit 12 set one
+constant). To settle it: for each bit decode the full (column, row) per pixel for the 64x32, 64x16
+and 32x32 textures and fit an affine map of (x, y), then predict a fourth geometry before running
+it; and run bits 11 and 12 on a strided and a twiddled texture of the same size. Q176's evidence
+(E566, E274, E564, E722) and terms were already in this question's lists.
+
+Narrowed 2026-11-13 (round 9 offline, decisions X-1 a and X-6 a; the question line is reworded,
+the question is not retired). It read "what do T3 bits 10, 14, 18-19 and 27-28 and T0 bit 27
+select, given a copy that reads one texel, a sheared read, coordinates scaled by 2 and 4, smaller
+images after the source, and values of no texel; what position-dependent transform of the texel
+coordinates do bits 10, 14, 18, 27 and 28 apply in smp (offsets that change every 32 or 64 pixels,
+E566), why are the rows of bits 27 and 28 exact under 'after the source's height' at 64x16 and
+64x32 but under no declared rule at a strided 32x32, and what do bits 11 and 12 select, given that
+they change nothing on a strided texture and every pixel of a twiddled chain texture?". Dropped:
+T0 bit 27, which E723 answers for point samples (a texel byte decoded sRGB to half, 4 of 4
+held-out fills; the bilinear part is Q282), and bits 10, 18-19 and 27-28, whose transform is
+E722's level and scale model held out on 13 of 13 fills that completed (the spec gives it with its
+limits, which stay there). Bit 14 is narrowed by E968: on E566's kept strided jobs the read is the
+dword plus 32 plus 64 per column at W = S = 64, six frozen forms held out offline at 64 x 16 (2048
+of 2048) and all refuted at W = 32, S = 64 (0 of 2048); post hoc, dword + floor(S * S * u) with u
+clamped to [0, 1] fits all three jobs. What stays: bits 11 and 12, bit 14 held out at other widths
+and strides (W != S, a width that is no power of two, u past both ends) and on a twiddled texture.
+The round 9 session r9-x's stage t3 runs both (bit 14 with u inside and past the texture, bits 11
+and 12 on a strided and a twiddled texture).

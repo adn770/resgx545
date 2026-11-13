@@ -40,7 +40,9 @@ fn open(why: impl AsRef<str>, id: &str) -> Outcome {
 /// floor(256 c + 0.5): the vertex grid and its rounding (E607), exact for c >= 0. A negative
 /// coordinate with a sub-grid fraction refuses (Q199, Q260): its tie rounds away from zero (E914,
 /// E943), but the pixels within 6.4e-4 pixel of a long edge go either way (E943, held out on
-/// none), so no image of such a vertex is exact; on the grid it converts exactly.
+/// none; on E683 neither E943's far-vertex reading nor its band is a rule, and no fixed-point
+/// edge evaluation fitted on E914 and E943 beats the exact one, E952), so no image of such a
+/// vertex is exact; on the grid it converts exactly.
 pub fn snap(c: f64) -> Result<i64, Outcome> {
     if !c.is_finite() || c.abs() > 1.0e6 {
         return Err(open(

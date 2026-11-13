@@ -852,7 +852,7 @@ triangles (Q003), ZLS band and depth plane results are E727 to E731 (four questi
 to Q288; E829 answered the first), E732 the accounting. Four questions are
 folded into Q163, the one on two EDM tasks (answered by E752) and the one on the end of a pass
 (answered later by E836, the two folds now in Q294), Q045 is split (Q277 for the
-firmware) and Q103's kernel part is
+firmware) and the kernel part of the wide-scene question (since folded into Q211) is
 Q278; no question is answered. The roadmap counts the questions from the built
 `doc/open_questions.md`: 184 open (Q001 to Q288), 165 hw (high 20, medium 76, low 69), 12 fw and 7
 kernel; isp 20, usse 39, texture 19, pds 17, edm 15, ta 15, dpm 12, vdm 11.

@@ -46,3 +46,12 @@ the background pixel program, E410), the rest of the object in other scenes (ano
 ISP_BGOBJVALS, more triangles), and whether an object with texture layers (the 23-dword form of a
 copy) reads its coordinate words and which of the words 3 to 8 then matter, Q190. Status: narrowed,
 not answered.
+
+Note 2026-11-13 (round 9 offline, decision X-1 a (O9-3); no record, no claim settled). Round 9's
+K1 session r9-k1 (module B60AB0B4's `render_bg_layer` and `render_bg_src` knobs, the 23-dword
+background object with a texture layer, Q190) reads parts of this question's open clauses as
+exploration rows: the vertex words 15 to 22 of the layered object one at a time (whether the
+layer's plane is anchored at the vertices they give or at the fixed render box), words 9 to 14
+(format and zero words, eight values of word 10), and word 1's rows at 0, 1 and 4 with a texel
+layer (whether the texel still arrives). Words 0 to 2 are not poked (the EDM rewrites them, E590).
+Their reading lands in that session's records.

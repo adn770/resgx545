@@ -569,7 +569,9 @@ pub fn write(job: &Job) -> Result<Written, Outcome> {
 /// tile draws iff its own header survives (E907). Returns each target tile's slot, None for a
 /// wrong tile. Held out at 256 x 256 and 640 x 480 only, at strides that drew without a fault
 /// (E505, E509: 0 to 31 and 4 to 63, besides the rule's); the rest refuses (Q139), as do poked
-/// macrotile words (E944's residue: no order gives bounds that are not multiples of 4).
+/// macrotile words (E944's residue: no order gives bounds that are not multiples of 4; E950 fits
+/// a first-macrotile block row of 8 floor(fx / 2) slots on its three readable dumps, in sample
+/// only, the same as the rule's when fx is 0 or 1 mod 4: not modelled until held out).
 pub fn stride_slots(w: u32, h: u32, stride: u32) -> Result<BTreeMap<(u32, u32), Option<u32>>, Outcome> {
     let t = tiling(w, h);
     let ok = match (w, h) {

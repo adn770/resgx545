@@ -14,20 +14,26 @@
 //!   out on hardware on four new off-axis 16 x 16 programs (E930).
 //! - Faces of 8 x 8 (E930): the same rule with 8 for 16 (texel floor((q + 1) / 2 * 8), a 3-bit
 //!   Morton), faces 64 dwords apart, held out on three programs.
+//! - Faces of 32 x 32 (E930, E951): 1024 dwords apart, (s, t) as at 16 with 32 for 16, and the
+//!   face-local index E561's twiddle law of a 32-bit texture: tiles of 16 x 16 interleaved as the
+//!   16 x 16 face, the tiles in raster order with s first (bit 8 = s4, bit 9 = t4). E930 read
+//!   that index post hoc on its three 32 x 32 jobs (4831 of 4831 predicted pixels); E951 shows it
+//!   is E561's law, recorded before E930 ran, at every (s, t) [algebra]; not held out on a face.
 //!
 //! Refused, naming Q284: two coordinates of equal largest magnitude (E931 read 64 tie pixels of
 //! |w| = |u| on w's face, two jobs, no rule frozen); a coordinate exactly on a texel boundary when
 //! |ma| is not a power of two (at a power of two the upper texel every time, the floor;
 //! otherwise E923's 14 misses, and E931's boundaries going up or down by their place, no rule
-//! frozen); faces of 32 x 32 (E930: 1024 dwords apart, the local index the 5-bit Morton with the
-//! fifth bits of s and t in the other order, post hoc only) and of any size other than 8 and 16.
+//! frozen); faces of any size other than 8, 16 and 32 (64 x 64 parts E561's law from a pairwise
+//! order of the bits above 7, E951).
 //! Bilinear filtering, and so a face edge's taps, is not modelled here at all (E931: one decided
 //! job mixed in another face's texel; Q284).
 
 use crate::Outcome;
 
-/// The face sizes held out (E726, E844, E930): 16 x 16, 256 dwords a face, and 8 x 8, 64.
-pub const FACE_SIZES: [u32; 2] = [8, 16];
+/// The face sizes read: 16 x 16, 256 dwords a face, and 8 x 8, 64, held out (E726, E844, E930);
+/// 32 x 32, 1024, E561's law (E930 post hoc, E951).
+pub const FACE_SIZES: [u32; 3] = [8, 16, 32];
 
 /// The face of (u, v, w): 2 * axis + (coordinate < 0), axis 0, 1, 2 for u, v, w (E844), and
 /// the axis. Refuses a tie between the two largest magnitudes and the zero vector.
@@ -83,6 +89,7 @@ fn is_pow2(x: f32) -> bool {
 }
 
 /// Morton index of (s, t) in a 16 x 16 face, t in bit 0.
+#[cfg(test)]
 fn twiddle(s: u32, t: u32) -> u32 {
     twiddle_bits(s, t, 4)
 }
@@ -92,23 +99,25 @@ fn twiddle_bits(s: u32, t: u32, bits: u32) -> u32 {
     (0..bits).fold(0, |i, b| i | (t >> b & 1) << (2 * b) | (s >> b & 1) << (2 * b + 1))
 }
 
-/// The dword index (face * 256 + local) that a point sample of a TEXTYPE 2 texture of faces
-/// `size` x `size` reads at (u, v, w).
+/// E561's index of (s, t) in a face of `size` (a power of two): tiles of min(size, 16) square,
+/// the Morton interleave inside a tile (t in bit 0), the tiles in raster order with s first.
+fn e561_index(s: u32, t: u32, size: u32) -> u32 {
+    let tw = size.min(16);
+    let tile = s / tw + (t / tw) * (size / tw);
+    tile * tw * tw + twiddle_bits(s % tw, t % tw, tw.trailing_zeros())
+}
+
+/// The dword index (face * size * size + local) that a point sample of a TEXTYPE 2 texture of
+/// faces `size` x `size` reads at (u, v, w).
 pub fn point_index(c: [f32; 3], size: u32) -> Result<u32, Outcome> {
-    if size == 32 {
-        return Err(Outcome::unsupported(
-            "a 32 x 32 cube face: its local index reads the fifth bits of s and t in another order, post hoc only (E930)",
-            &["Q284"],
-        ));
-    }
     if !FACE_SIZES.contains(&size) {
-        return Err(Outcome::unsupported("a cube face size other than 8 or 16 (E930)", &["Q284"]));
+        return Err(Outcome::unsupported("a cube face size other than 8, 16 or 32 (E930, E951)", &["Q284"]));
     }
     let (f, ax) = face(c)?;
     let ma = c[ax].abs();
     let (sc, tc) = st(f, c);
     let (s, t) = (texel(sc, ma, size)?, texel(tc, ma, size)?);
-    Ok(f * size * size + twiddle_bits(s, t, size.trailing_zeros()))
+    Ok(f * size * size + e561_index(s, t, size))
 }
 
 #[cfg(test)]
@@ -159,11 +168,20 @@ mod tests {
     }
 
     #[test]
+    fn a_32_x_32_face_reads_e561_s_tiles() {
+        // +z, |ma| = 1: u = 0.3 is s texel floor(1.3 * 16) = 20, -v = 0.6 is t texel 25: tile
+        // (1, 1) of 16 x 16 (index 3 in raster order, s first), local (4, 9) (E561, E951)
+        assert_eq!(point_index([0.3, -0.6, 1.0], 32), Ok(4 * 1024 + 3 * 256 + twiddle(4, 9)));
+        // s = 20, t = 9: tile (1, 0), index 1: bit 8 is s4 and bit 9 is t4 (E930's post hoc form)
+        assert_eq!(point_index([0.3, 0.4, 1.0], 32), Ok(4 * 1024 + 256 + twiddle(4, 9)));
+        assert_eq!(point_index([-0.999, 0.999, -1.0], 32), Ok(5 * 1024 + 256 + twiddle(15, 0)));
+    }
+
+    #[test]
     fn an_8_x_8_face_is_the_rule_with_8_and_other_sizes_are_refused() {
         // +z, |ma| = 1: u = 0.3 is s texel floor(1.3 * 4) = 5, -v = 0.6 is t texel 6
         assert_eq!(point_index([0.3, -0.6, 1.0], 8), Ok(4 * 64 + twiddle_bits(5, 6, 3)));
         assert_eq!(point_index([-0.999, 0.999, -1.0], 8), Ok(5 * 64 + twiddle_bits(7, 0, 3)));
-        assert!(refused(point_index([0.1, 0.2, 1.0], 32)));
         assert!(refused(point_index([0.1, 0.2, 1.0], 4)));
         assert!(refused(point_index([0.1, 0.2, 1.0], 64)));
     }
