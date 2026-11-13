@@ -7619,6 +7619,60 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   `render-closing-r7-geo:out/20261112-211113/zs/`,
   `render-closing-r8-lgeo:out/20261113-024441/zs2/`, `cited-scratch:closing9/seeds/q260/`,
   `cited-scratch:closing9/offline/oz/`.*
+- `E960` Round 9 offline steps of r9-ldpm (Q210, Q211; no run), each frozen by hash before its
+  scoring: OD-1, E874's replay gives the need of the 1500-vertex scene at all nine kept calibrations
+  (E915, E935, E936) and HU1 of its 500 triangles none (0x52 against 0x213 at 2048x2048), so HU1 is
+  not that scene's need, and it picks four wide targets never run (4096x1024, 4096x1536, 3584x1024,
+  2048x512, U 0x20f, 0x302, 0x1d0, 0x9a); OD-2, the 'left 0x6' cells of E936 are the reader's last
+  sample before the global list was trimmed (the next sample reads 2), and band 6 keeps the second
+  global page until the object after the straddling block is tiled (H-NEXT1: 2 iff S_6 < thr0 < the
+  page count once object b_6 + 1 is tiled), fitted on 3072x3072 and 2560x2560 (2 of 2) and SEMI on
+  E936's eight other targets (8 of 8, where H-SPAN's A_6 gives 4 of 8), frozen only after one reader
+  fix written after the first run's table was read (offline/OD2-FIX.md: the first run, its artefact
+  test wrong, froze nothing); OD-3, of a closed family of six multi-kick count rules fitted on OL7
+  (b)'s 31 kept cells the best (H-FLUSH, 30 of 31) gave 7 of 20 of E938's cells (semi-held-out;
+  H-KICKS 11), below the plan's 18, so stage k2 did not run.
+  *dpm; HW, infer; data: `render-closing-r9-ldpm:offline/`,
+  `render-closing-r8-ldpm:out/20261113-021431/m6/`, `render-closing-r8-ldpm:out/20261113-021431/k/`,
+  `render-closing-s1`, `render-closing-r1-pixgeo`.*
+- `E961` r9-ldpm stages a0 and m6b on module B60AB0B4 (Q210; band 6 of the tool's 1500-vertex
+  triangle): the premise held, r8-ldpm's six a0 controls repeated ('a0: the premise held (E935's a0
+  controls repeat on B60AB0B4) (1 of 1 rows decided)'), and E936's six band 6 cells at 1536x1536 and
+  4096x2048 repeated as controls (6 of 6); held out at four targets never run, H-NEXT1 (E960: the
+  first partial render leaves 2 global pages iff S_6 < thr0 < the page count once object b_6 + 1 is
+  tiled) 'holds (20 of 20 rows decided)', where H-SPAN (the end at A_6) is 'not supported', 14 held,
+  6 FAILED of 20: the second page was kept to A_6 + 2 at 2304x2304, A_6 + 3 at 2048x2304 and A_6 + 1
+  at 2304x1792, as H-NEXT1's ends, and ended at A_6 at 1792x1792, where both agree; H-NEXT2 19 of
+  20, E936's class rivals H-BIG6 2 of 4, H-ANY6 4 of 4 (it agrees with H-NEXT1 at these four A_6
+  cells), H-6LATE 3 of 4; the step replay held at three of the four calibrations and missed
+  2048x2304's S3 and S6 by one page (26 of 28), the four needs the replay's.
+  *dpm; HW; data: `render-closing-r9-ldpm:out/20261113-082650/a0/`,
+  `render-closing-r9-ldpm:out/20261113-082650/m6b/`, `render-closing-r9-ldpm:fold/`,
+  `render-closing-r9-ldpm:offline/`, `vectors-closing-r9-ldpm-dpm`.*
+- `E962` r9-ldpm stage w on module B60AB0B4 (Q211, the need of wide scenes of many vertices): held
+  out at four targets wider than 2:1 never run, E874's replay gave the need of the 1500-vertex scene
+  at each calibration ('w: H-REPLAY: H-REPLAY holds (8 of 8 rows decided)': 4096x1024 0x20f,
+  4096x1536 0x302, 3584x1024 0x1d0, 2048x512 0x9a, no partial render) and HU1 of the scene's
+  triangles none ('HU1 holds is not supported: 0 held, 4 FAILED'); every calibration read S6 one or
+  two pages above the replay (and 4096x1536 S3 one above), so each FAILED as a control (its frozen
+  steps) and gated its own cell: the cells' frozen verdicts printed 'controls FAILED' (a result of
+  the premise the build chose, not a scorer fault); read after the run without that gate, the four
+  cells gave F9's count and every run peak (4 of 4), E625's overflow and the abort's global pages
+  (E935's rule) 4 of 4, and E854's d = 7/4 and d = 1 none.
+  *dpm; HW; data: `render-closing-r9-ldpm:out/20261113-082650/w/`, `render-closing-r9-ldpm:fold/`,
+  `render-closing-r9-ldpm:offline/`, `vectors-closing-r9-ldpm-dpm`.*
+- `E963` r9-ldpm stage f9b on module B60AB0B4 (Q211's count of the 1500-vertex scene, Q210's raise
+  at band 4): the three calibrations held as controls (1280x1280, 1792x1792 and 2560x2048 never run:
+  steps in their brackets, needs 0xe2, 0x19f, 0x28c, the replay's); off band 4 F9's replay gave the
+  partial-render count at 5 of 5 cells and every run peak at 2 (the last run's peak 1 to 3 pages off
+  at 3), at the three band 4 cells with 2 global pages left the threshold was not raised (the second
+  TA run peaked at thr0 and a second partial render came: 2 renders where F9 with R-5's guard as
+  formalized gives 1), H-NORAISE's count 3 of 3 (its last run's peak 1 page off at each): frozen 'F9
+  holds is not supported: 7 held, 9 FAILED, 0 cannot tell of 16', 'H-NORAISE holds is not supported:
+  3 held, 3 FAILED of 6'; E625's boundary and the abort's global pages (E935's rule) 8 of 8 each,
+  E854's d = 7/4 and d = 1 0 of 8.
+  *dpm; HW; data: `render-closing-r9-ldpm:out/20261113-082650/f9b/`, `render-closing-r9-ldpm:fold/`,
+  `vectors-closing-r9-ldpm-dpm`.*
 - `E968` Round 9 offline (Q078; no run): with T3 bit 14 set, smp on a strided texture reads dword i
   + K + M c, i the dword the same job reads without the bit and c its column, read on E566's fit job
   s64x32-t3b14 (W = S = 64: K = 32, M = 64, 2048 of 2048); six rivals for K (W / 2, S / 2, 32) and M
@@ -7647,7 +7701,7 @@ E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E4
 E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753, E773, E774, E775, E779, E785,
 E786, E790, E799, E800, E801, E802, E803, E832, E845, E846, E852, E853, E854, E860, E861, E862,
 E863, E864, E866, E867, E868, E869, E870, E873, E874, E875, E881, E882, E883, E887, E889, E899,
-E900, E915, E916, E917, E918, E935, E936, E937, E938, E939.
+E900, E915, E916, E917, E918, E935, E936, E937, E938, E939, E960, E961, E962, E963.
 
 ### edm
 
