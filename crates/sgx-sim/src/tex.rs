@@ -70,7 +70,8 @@ pub fn sample(s: &Sample, load: &mut Load) -> Result<Vec<u32>, Fail> {
     let (levels, bilinear) = tex.pick(t0, &s.lod, s.one_d)?;
     let (u, v) = (s.u as f64, if s.one_d { 0.0 } else { s.v as f64 });
     if t3 >> 14 & 1 != 0 {
-        // T3 bit 14 on a stride texture (E1003, held out on six geometries; E975 post hoc): the
+        // T3 bit 14 on a stride texture (E1003, held out on six geometries; E975 post hoc; on a
+        // twiddled texture it faults the job, E566 and E1033, and is refused): the
         // bit-clear texel moved by floor(4096 clamp(u, 0, 1)) texels, measured point sampled, on
         // level 0, at formats 12 (32-bit) and 9 (16-bit), without T3's offset, scale or conversion
         if bilinear

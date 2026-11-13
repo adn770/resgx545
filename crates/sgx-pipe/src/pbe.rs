@@ -62,10 +62,12 @@ pub fn pack_of(sideband: u32) -> Result<Pack, Outcome> {
     if sideband & 0x200 == 0 {
         return Err(Outcome::unsupported("a sideband without the tile-relative bit 9", &["Q074"]));
     }
-    // bits 8:6 pick a channel only in modes 7 and 8 and change no pixel in modes 0 to 3 (E030, E383)
+    // bits 8:6 pick a channel only in modes 7 and 8 and change no pixel in modes 0 to 3 (E030, E383);
+    // bit 11 faults the job (E383, E1034) and bit 12's words vary in their low half (E1034): refused
     if sideband & 0xffff_fc00 == 0x1000 && sideband & 0x3f <= 6 {
-        // E383: words of no colour; E1028: no fixed image (its replicate control failed; post hoc
-        // per-pixel classes whose layout moves between sessions and whose fields follow o0)
+        // E383: words of no colour; E1028, E1034: no fixed image (their replicate controls failed; post
+        // hoc a high half fixed pixel for pixel, a low half and a class layout that vary between runs,
+        // fields that follow o0)
         return Err(Outcome::unsupported("sideband bit 12 in pack modes 0 to 6 (E1028)", &["Q046"]));
     }
     if sideband & 0xffff_fc00 != 0 {

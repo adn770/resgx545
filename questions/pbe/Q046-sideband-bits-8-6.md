@@ -1,11 +1,11 @@
 +++
 id = "Q046"
-question = "what are the words sideband bit 12 stores in pack modes 0 to 6 (post hoc, E1028: per-pixel classes whose layout changes between sessions and whose 0xff fields follow the colour), and what does bit 11 do (it faults the job in modes 0 to 8)?"
+question = "what are the words sideband bit 12 stores in pack modes 0 to 6 (post hoc, E1028 and E1034: a high half fixed pixel for pixel, a low half and a per-pixel class layout that vary between runs, 0xff fields that follow the colour), and what does bit 11 do (it faults the job in modes 0 to 8, at page 0x37001000 with BIF_INT_STAT 0x91000, E383 and E1034)?"
 unit = "pbe"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E030", "E031", "E210", "E269", "E383", "E999", "E1028"]
+evidence = ["E030", "E031", "E210", "E269", "E383", "E999", "E1028", "E1034"]
 terms = ["SIDEBAND.BITS8_6", "SIDEBAND.PACKMODE", "CR_ISP_MSAA"]
 +++
 
@@ -55,3 +55,12 @@ on bit 12: its colour 0 replicate control failed (172 of 4096 pixels outside E38
 word map (4056 to 4096 of 4096), the 0x66 fields fixed and the 0xff fields the colour's, and the
 layout of the classes differs from E383's on 390 to 799 pixels. What stays: what sets the layout and
 the colour fields' rule, and bit 11.
+
+Note 2026-11-13 (round 13, session r13-flag stage f2, decision R13-3 a; E1034). The stage's frozen
+control, bit 12 in mode 0 with at least 4055 of 4096 words in E383's set, failed (3900), so nothing
+is scored. Post hoc, the words' high 16 bits are E383's pixel for pixel (4096 of 4096, in this run
+and in r13-tex's replicate) and the low 16 bits vary run to run (813 and 799 pixels from E383, 122
+between the two round 13 runs): bit 12's words are a fixed high half and a varying low half [post
+hoc]. Ungated, bit 11 faulted modes 0, 4 and 8 again with E383's status 0x91000 at page 0x37001000
+(low address bits 0x21, 0x11, 0x11, not E383's). Open: what lies at that page and what bit 11
+selects; the source of bit 12's low half.

@@ -8522,6 +8522,35 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   render here, E1019's fit 0.17); 0x0710 peaked at P - 1 (0x421, 0x2b5, 0x1c1, 0xe1).
   *dpm; HW; data: `render-closing-r13-dpm:out/20261113-212348/pr2/`,
   `render-closing-r13-dpm:fold/`.*
+- `E1033` r13-flag stage f1 (4 probe fills on a twiddled 32 x 32 32-bit texture in E566's tx_map
+  form, the default 16-page scratch; planned faults): T3 bit 14 faulted both twiddled rows, E566's
+  own tw32-t3b14 (u in (1, 2)) and a held-out row with u = x / 4096 (E1003's move 0 to 63 texels),
+  BIF fault 0x90002 at the scratch's page + 0x21000 and + 0x40000, past every mapping of the job;
+  frozen 'H-FAULTANY (2 of 2 rows decided)', 'H-E566 (1 of 1 rows decided)', the three move models
+  (the move in the twiddled index, in the column unwrapped, in the column wrapped) 'not supported: 0
+  held, 2 FAILED'; both bit-clear references (E566's tw32-ctl byte for byte, the tile law's column
+  0) passed.
+  *texture; HW, infer; data: `render-closing-r13-flag:out/20261113-220930/f1/`,
+  `render-closing-r13-flag:fold/`.*
+- `E1034` r13-flag stage f2 (4 jobs, E383's probe --tri form; planned faults): the frozen control
+  failed, so every row is cannot tell ('controls FAILED: f2-ctl: FAILED'): E383's bit-12 mode 0 job
+  (sideband 0x1200) completed with 3900 of its 4096 words in E383's set (frozen >= 4055); post hoc,
+  its high 16 bits are E383's pixel for pixel (4096 of 4096, as in r13-tex's replicate of the same
+  job) and its low 16 bits differ on 813 pixels (122 between the two round 13 runs), so the
+  control's word-set rule could fail on a variation E383's two equal runs could not show; ungated,
+  the three bit-11 rows (0x0a00, 0x0a04, 0x0a08) each faulted with BIF_INT_STAT 0x91000 at page
+  0x37001000, E383's status and page, at addresses 0x37001021, 0x37001011 and 0x37001011.
+  *pbe; HW, infer; data: `render-closing-r13-flag:out/20261113-220930/f2/`,
+  `render-closing-r13-flag:fold/`.*
+- `E1035` r13-flag stage f3 (19 jobs, 8 recovered hangs, the kit's noreset and idle:S): E700's
+  counter held on every clause row at v = 7 and failed below 2: a v = 7 job after a completed one
+  hung on a 128 x 128 one-block target, after 60 s idle, after a fill job and after the kit's health
+  fill and triangle, and completed after a reset that followed no hang (M1 and M3 held 5 of 5 there;
+  H-SHAPE, H-DECAY, H-FILLCLR, H-HEALTHCLR and H-RESETKEEP each 0 of 1); block-2 v = 1 (grid bits
+  7:0 = 5) hung at c = 0, 2 and 5 (3 of 3), so 'M1 ... not supported: 5 held, 3 FAILED', 'M3 ... 6
+  held, 2 FAILED', 'H-C05 ... 2 held, 1 FAILED'; the control (E413's v = 7 pair) passed.
+  *vdm; HW, infer; data: `render-closing-r13-flag:out/20261113-220930/f3/`,
+  `render-closing-r13-flag:fold/`.*
 
 ## By unit
 
@@ -8572,7 +8601,7 @@ E348, E418, E419.
 ### pbe
 
 Records: E029, E030, E031, E032, E239, E240, E251, E265, E266, E267, E268, E269, E270, E333, E382,
-E383, E385, E386, E387, E429, E999, E1028.
+E383, E385, E386, E387, E429, E999, E1028, E1034.
 
 ### pds
 
@@ -8608,7 +8637,7 @@ E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441, E5
 E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E726, E733, E743,
 E744, E760, E765, E787, E844, E894, E910, E911, E923, E930, E931, E932, E940, E941, E942, E951,
 E955, E956, E957, E958, E968, E974, E975, E976, E982, E983, E1000, E1001, E1002, E1003, E1004,
-E1016, E1017, E1025, E1026, E1027.
+E1016, E1017, E1025, E1026, E1027, E1033.
 
 ### transfer
 
@@ -8634,7 +8663,8 @@ E570, E571, E572, E593, E594, E595, E596, E597, E598, E599, E707, E708, E820, E8
 ### vdm
 
 Records: E059, E060, E184, E185, E186, E187, E189, E190, E191, E188, E299, E300, E318, E346, E349,
-E413, E414, E427, E440, E545, E546, E700, E701, E702, E703, E737, E738, E755, E756, E933, E1021.
+E413, E414, E427, E440, E545, E546, E700, E701, E702, E703, E737, E738, E755, E756, E933, E1021,
+E1035.
 
 ### zls
 

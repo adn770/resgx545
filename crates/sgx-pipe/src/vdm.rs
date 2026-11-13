@@ -82,7 +82,8 @@ fn read_state(w0: u32, w1: u32) -> Result<State, Outcome> {
     // 0 after a hang's reset, a job adding v - 2 a block and hanging iff c + add > 8 (E700, 52 of
     // 52 predicted before the run; E1021, round 12 offline: 54 of 54 held-out jobs of E545's sweeps
     // with v 3 to 7). Below 2 the counter's clauses are fitted only (E701's M3, post hoc; E1021: its
-    // block-2 v = 1 clause and the v = 0 reset fail on E545's sweeps). The model keeps no job
+    // block-2 v = 1 clause and the v = 0 reset fail on E545's sweeps; E1035: block-2 v = 1 hung at c = 0,
+    // 2 and 5, and time, a fill or the health between jobs leave c). The model keeps no job
     // history, so it gives one answer only where the word alone decides
     let no_object = match field {
         _ if bit12 => true,

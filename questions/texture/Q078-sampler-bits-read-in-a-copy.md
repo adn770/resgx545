@@ -1,11 +1,11 @@
 +++
 id = "Q078"
-question = "what does T3 bit 14 do on a twiddled texture, where it faulted (E566), given that on a strided texture it moves a point sample by floor(4096 clamp(u, 0, 1)) texels (E1003) and a bilinear footprint as a whole (E1027)"
+question = "where does T3 bit 14 send a twiddled read, where it faults the job past every mapping whatever the move E1003 measured (E566, E1033), given that on a strided texture it moves a point sample by floor(4096 clamp(u, 0, 1)) texels (E1003) and a bilinear footprint as a whole (E1027)?"
 unit = "texture"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E274", "E397", "E566", "E564", "E722", "E723", "E968", "E975", "E1003", "E1027"]
+evidence = ["E274", "E397", "E566", "E564", "E722", "E723", "E968", "E975", "E1003", "E1027", "E1033"]
 terms = ["T3.BIT10", "T3.BIT14", "T3.BITS19_18", "T3.BITS28_27", "T0.BIT27", "T3.BITS7_0"]
 +++
 
@@ -119,3 +119,12 @@ held-out rows, LOD 0 to 6, a 32 x 32 chain, mips off), 01 the LOD's level, 11 an
 T0's max level allows (3 of 3 and 1 of 1); a LOD bias and a constant address failed. Bit 14 under a
 bilinear sample on a strided texture moves the footprint by E1003's count (1 of 1). What stays: bit
 14 on a twiddled texture.
+
+Narrowed 2026-11-13 (round 13, session r13-flag stage f1, decision R13-3 a; E1033). Bit 14 on a
+twiddled 32 x 32 texture faulted both rows run: E566's own job again (u past 1) and a held-out row
+with u = x / 4096, where E1003's strided move would be 0 to 63 texels; the fault pages were 132 KiB
+and 256 KiB past the scratch, past every mapping of the job. The three frozen move models (the move
+in the twiddled index, the plan's H-TWMOVE; in the texel column, unwrapped or wrapped) each
+predicted an image there and failed 2 of 2; H-FAULTANY held 2 of 2. So the twiddled clause is
+narrowed to where the read goes (only each job's first faulting page is known); not retired (R13-9:
+no held-out row decodes the address).
