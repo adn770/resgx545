@@ -146,6 +146,45 @@ def test_tools_records_frozen_accepts_the_kit_freeze(repos):
     assert frozen.check(repos["data"], repos["main"]) != []
 
 
+def test_a_declared_tool_source_is_bound_by_toolsrc_and_a_built_line(repos):
+    """new_session.py --tool-src NAME=COMMIT:PATH@RECIPE writes the TOOLSRC.sha256 pin and, at
+    the freeze, the `built` line and the binary's freeze line frozen.py and session_tests.sh
+    verify; nobody writes them by hand."""
+    src = hashlib.sha256((repos["main"] / "tools/bringup/health.sh").read_bytes()).hexdigest()
+    kp = scaffold(repos, extra=("--tool-src",
+                                f"t4={repos['c1'][:9]}:tools/bringup/health.sh@"
+                                "tools/bringup/health.sh"))
+    assert (kp / "TOOLSRC.sha256").read_text() == \
+        f"{src}  {repos['c1']}:tools/bringup/health.sh\n"
+    f = kit(kp, repos, "freeze")
+    assert f.returncode == 0, f.stdout + f.stderr
+    built = f"{TOOL_SHA}  built  {repos['c1']}  tools/bringup/health.sh  {src}  " \
+            "tools/bringup/health.sh\n"
+    assert built in (kp / "FROZEN.commits").read_text()
+    assert f"{TOOL_SHA}  bin/t4\n" in (kp / "FROZEN.sha256").read_text()
+    v = kit(kp, repos, "verify")
+    assert v.returncode == 0, v.stdout
+    pub = repos["data"] / "render" / "closing-r8-t"
+    pub.mkdir(parents=True)
+    for n in ("FROZEN.sha256", "FROZEN.commits"):
+        (pub / n).write_bytes((kp / n).read_bytes())
+    commit_all(repos["data"], "publish")
+    assert frozen.check(repos["data"], repos["main"]) == []
+
+
+def test_a_tool_src_that_names_no_blob_or_a_wrong_tool_is_refused(repos):
+    for spec in (f"t4={repos['c1']}:tools/nope.sh@tools/bringup/health.sh",
+                 f"t9={repos['c1']}:tools/bringup/health.sh@tools/bringup/health.sh",
+                 "t4=tools/bringup/health.sh"):
+        kp = repos["tmp"] / "scratch" / "bad"
+        r = subprocess.run([PY, str(NEW), str(kp), "--name", "r8-t", "--prefix", "r8t",
+                            "--srcversion", SRCV, "--tool", f"t4=sgxfive-test-rgn4:{TOOL_SHA}",
+                            "--tool-src", spec, "--resgx545", str(repos["main"]),
+                            "--commit", repos["c1"], "--data", str(repos["data"]),
+                            "--data-commit", repos["d1"]], capture_output=True, text=True)
+        assert r.returncode != 0 and not (kp / "TOOLSRC.sha256").exists(), spec
+
+
 def test_verify_reads_each_pin_at_its_commit_so_main_and_data_may_move(repos):
     kp = frozen_session(repos)
     (repos["main"] / "tools/bringup/health.sh").write_text("echo moved\n")

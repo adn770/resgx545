@@ -79,6 +79,7 @@ COMMITS_HEADER = """\
 # freeze (tools/closing/kit/session.py), the format tools/records/frozen.py checks.
 """
 LINE = re.compile(r"([0-9a-f]{64})  ([0-9a-f]{7,40}|untracked)  ([a-z][a-z0-9-]*):(\S.*)")
+BUILT = re.compile(r"([0-9a-f]{64})  built  ([0-9a-f]{7,40})  (\S+)  ([0-9a-f]{64})  (\S+)")
 SSH = ["ssh"]
 ENV = None          # the environment of every command (the mock's; None: this process's)
 # the kit's knob words; expect:NAME are kitscore.OUTCOMES (run_stage.sh classifies them)
@@ -270,6 +271,11 @@ def guard(kp):
                 and re.fullmatch(r"[0-9a-f]{64}", d.get("source_sha256", ""))):
             bad.append(f"session.toml: tool {t}'s source is not COMMIT:userspace/libsgxfive/"
                        "tools/sgxfive-test.c with its source_sha256")
+    for n, _, cm, path, sh, recipe in built_tools(c):
+        if not (re.fullmatch(r"[0-9a-f]{40}", cm) and path and re.fullmatch(r"[0-9a-f]{64}", sh)
+                and recipe):
+            bad.append(f"session.toml: tool {n}'s built_from is not COMMIT:PATH (a full commit) "
+                       "with built_sha256 and recipe")
     if c.get("health_tool") not in c["tools"]:
         bad.append("session.toml: health_tool is not one of [tools]")
     laptop = [f for f in ("kit/lib_kit.sh", "kit/run_stage.sh", "run/hooks.sh") if (kp / f).exists()]
@@ -402,6 +408,18 @@ def _pins(c):
     return out
 
 
+def built_tools(c):
+    """[(name, binary sha256, commit, source path, source sha256, recipe)] of the [tools] that
+    declare their source (new_session.py --tool-src: built_from = "COMMIT:PATH", built_sha256,
+    recipe); the freeze binds each binary to it with a `built` line."""
+    out = []
+    for n, d in c["tools"].items():
+        if "built_from" in d:
+            cm, _, path = d["built_from"].partition(":")
+            out.append((n, d["sha256"], cm, path, d.get("built_sha256", ""), d.get("recipe", "")))
+    return out
+
+
 def _commits(c):
     dirs = repo_dirs()
     out = {}
@@ -462,6 +480,12 @@ def freeze(kp):
         h = sha_bytes(blob)
         lines.append((h, commits[repo], repo, path))
         pins.append((h, f"{dirs[repo]}/{path}"))
+    built = []
+    for n, tsha, cm, path, ssha, recipe in built_tools(c):
+        blob = git_blob(dirs["resgx545"], cm, path)
+        if blob is None or sha_bytes(blob) != ssha:
+            probs.append(f"tool {n}: built_from {cm[:12]}:{path} is not the blob built_sha256 names")
+        built.append(f"{tsha}  built  {cm}  {path}  {ssha}  {recipe}\n")
     if probs:
         raise Stop(1, "\n".join(probs))
     preds = sorted(f for f in freeze_files(kp) if f.startswith("predictions/"))
@@ -469,9 +493,10 @@ def freeze(kp):
         raise Stop(1, "no predictions/*.tsv: a frozen prediction comes before the run")
     (kp / "PREDICTIONS.sha256").write_text("".join(f"{sha_file(kp / f)}  {f}\n" for f in preds))
     rel = [(sha_file(kp / f), f) for f in freeze_files(kp)]
-    (kp / "FROZEN.sha256").write_text("".join(f"{h}  {f}\n" for h, f in rel + pins))
+    bins = [(tsha, f"bin/{n}") for n, tsha, *_ in built_tools(c)]
+    (kp / "FROZEN.sha256").write_text("".join(f"{h}  {f}\n" for h, f in rel + bins + pins))
     (kp / "FROZEN.commits").write_text(COMMITS_HEADER + "".join(
-        f"{h}  {cm}  {repo}:{path}\n" for h, cm, repo, path in lines))
+        f"{h}  {cm}  {repo}:{path}\n" for h, cm, repo, path in lines) + "".join(built))
     return f"frozen: {len(rel)} session files, {len(pins)} pins, {len(lines)} lines by commit"
 
 
@@ -499,6 +524,13 @@ def verify(kp):
     for ln in (kp / "FROZEN.commits").read_text().splitlines():
         if not ln.strip() or ln.startswith("#"):
             continue
+        b = BUILT.fullmatch(ln)
+        if b:
+            blob = git_blob(dirs["resgx545"], b[2], b[3])
+            if blob is None or sha_bytes(blob) != b[4]:
+                bad.append(f"FROZEN.commits: built source {b[2][:12]}:{b[3]} is not the blob "
+                           f"{b[4][:12]}")
+            continue
         m = LINE.fullmatch(ln)
         if not m:
             bad.append(f"FROZEN.commits: not '<sha256>  <commit>  <repo>:<path>': {ln!r}")
@@ -514,6 +546,7 @@ def verify(kp):
             bad.append(f"FROZEN.commits: {cm[:12]}:{repo}:{path} hashes to "
                        f"{sha_bytes(blob)[:12]}, not {h[:12]}")
     frozen = set()
+    bins = {f"bin/{n}" for n, *_ in built_tools(config(kp))}
     for ln in (kp / "FROZEN.sha256").read_text().splitlines():
         h, _, f = ln.partition("  ")
         if f.startswith("/"):
@@ -522,6 +555,8 @@ def verify(kp):
                 bad.append(f"{f}: no FROZEN.commits line pins it by commit")
             continue
         frozen.add(f)
+        if f in bins:       # a built tool's binary is named by its freeze line, never shipped
+            continue
         if not (kp / f).exists():
             bad.append(f"{f}: frozen, and gone")
         elif sha_file(kp / f) != h:

@@ -4,7 +4,7 @@
 """new_session.py: scaffold a closing session on the session kit (HACKING.md, "Session kit").
 
   new_session.py DIR --name r8-x --prefix r8x --srcversion SRCV --tool t4=PATH:SHA256 [--tool ...]
-                 [--resgx545 REPO] [--commit REV] [--data REPO] [--data-commit REV]
+                 [--tool-src NAME=COMMIT:PATH@RECIPE] [--resgx545 REPO] [--commit REV] [--data REPO] [--data-commit REV]
 
 DIR must not exist or be empty. The kit (tools/closing/kit, scorekit.py, sessioncheck.py) is
 copied into DIR/kit from the blobs of resgx545 REV (default: its HEAD), never from a working tree,
@@ -12,8 +12,14 @@ and session.toml freezes against REV and the data repository's REV, so main and 
 while the session is built and run. Then: session.toml (the env), tables/s0.txt, predictions/,
 score/score.py (scorekit-based), mock/world.py (answers by argv), run/hooks.sh, tests/run_all.sh
 and README.md, each a working example to replace. A tool's PATH is under the laptop's home.
+
+--tool-src binds a tool's binary to its source: the source file PATH of resgx545 at COMMIT and the
+RECIPE that built it (data:PATH, or PATH of the resgx545 tree). It writes TOOLSRC.sha256
+(`<sha256>  <commit>:<path>`) and the tool's built_from, built_sha256 and recipe into session.toml;
+the freeze then writes the `built` line of FROZEN.commits and the binary's freeze line.
 """
 import argparse
+import hashlib
 import os
 import pathlib
 import re
@@ -42,6 +48,7 @@ def main(argv=None):
     ap.add_argument("--prefix", required=True)
     ap.add_argument("--srcversion", required=True)
     ap.add_argument("--tool", action="append", required=True, metavar="NAME=PATH:SHA256")
+    ap.add_argument("--tool-src", action="append", default=[], metavar="NAME=COMMIT:PATH@RECIPE")
     ap.add_argument("--resgx545", default=str(home / "src/resgx545"))
     ap.add_argument("--commit", default="HEAD")
     ap.add_argument("--data", default=str(home / "src/resgx545-data"))
@@ -62,6 +69,15 @@ def main(argv=None):
             return 1
         tools.append(m.groups())
     commit = git(a.resgx545, "rev-parse", "--verify", f"{a.commit}^{{commit}}")
+    srcs = {}
+    for s in a.tool_src:
+        m = re.fullmatch(r"([a-z][a-z0-9]*)=([^:@]+):([^:@]+)@(\S+)", s)
+        if not m or m[1] not in {n for n, _, _ in tools} or m[1] in srcs:
+            print(f"--tool-src {s!r} is not NAME=COMMIT:PATH@RECIPE of a --tool, once")
+            return 1
+        full = git(a.resgx545, "rev-parse", "--verify", f"{m[2]}^{{commit}}")
+        blob = git(a.resgx545, "show", f"{full}:{m[3]}", binary=True)
+        srcs[m[1]] = (full, m[3], hashlib.sha256(blob).hexdigest(), m[4])
     data_commit = git(a.data, "rev-parse", "--verify", f"{a.data_commit}^{{commit}}")
     for rel, src in S.KIT_SOURCES.items():
         p = kp / rel
@@ -69,7 +85,10 @@ def main(argv=None):
         p.write_bytes(git(a.resgx545, "show", f"{commit}:{src}", binary=True))
         if rel.endswith((".sh", ".py")) or "/fake/" in rel:
             p.chmod(0o755)
-    toolspec = "\n".join(f'[tools.{n}]\npath = "{p}"\nsha256 = "{h}"\n' for n, p, h in tools)
+    toolspec = "\n".join(
+        f'[tools.{n}]\npath = "{p}"\nsha256 = "{h}"\n' + (
+            f'built_from = "{srcs[n][0]}:{srcs[n][1]}"\nbuilt_sha256 = "{srcs[n][2]}"\n'
+            f'recipe = "{srcs[n][3]}"\n' if n in srcs else "") for n, p, h in tools)
     subst = {"@NAME@": a.name, "@PREFIX@": a.prefix, "@SRCV@": a.srcversion,
              "@HEALTH@": tools[0][0], "@COMMIT@": commit, "@COMMIT12@": commit[:12],
              "@DATA_COMMIT@": data_commit, "@TOOLS@": toolspec}
@@ -83,6 +102,9 @@ def main(argv=None):
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(text)
         out.chmod(t.stat().st_mode & 0o777)
+    if srcs:
+        (kp / "TOOLSRC.sha256").write_text("".join(
+            f"{sh}  {cm}:{path}\n" for cm, path, sh, _ in srcs.values()))
     S.prepare(kp)
     print(f"{kp}: kit from resgx545 {commit[:12]}, data {data_commit[:12]}; next: edit the "
           "tables, predictions, scorer and world, then tests/run_all.sh")
