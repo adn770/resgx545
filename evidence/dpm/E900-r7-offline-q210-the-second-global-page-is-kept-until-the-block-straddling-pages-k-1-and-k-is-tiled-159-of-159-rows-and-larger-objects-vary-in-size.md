@@ -81,3 +81,14 @@ and of 2560x2560 the cell at thr0 = A_6 (`0x3cf`, `0x2b1`) left 2 global pages w
 1, so its frozen verdict at those two targets is "not supported" (10 of 11, 6 of 7) and the margin
 can run past the straddling block. With `--vtx-coords 8` the same command made other object blocks
 and steps in another run (E917), so this record's N 8 sizes are of R6-dpm's one run.
+
+**Correction 2026-11-13:** r8-ldpm held band 6 out at seven more targets (E936) [HW, held out]:
+H-SPAN's frozen verdict is "not supported" (27 held, 7 FAILED, 1 cannot tell of 35). The second
+global page was kept past A_6 at 1536x1536 (to A_6 + 1) and 4096x2048 (at A_6) and, mapped cell by
+cell, at 3072x3072 (to A_6 + 2) and 2560x2560 (to A_6 + 1); at 3072x2048, 2048x3072, 3072x2560 and
+1024x1024 the margin ended at A_6, as this rule gives (the last three read without the
+calibration alignment, post hoc). So A_k ends the margin at bands 3 and 5 and at band 6 of half the
+targets run, not at band 6 in general. With every extra output written by the vertex program the
+N 8 scene wrote the same 53 object blocks in three runs (E937), so the run-to-run difference of
+the N 8 blocks read here and in E917 follows from outputs the default program leaves unwritten
+[infer].

@@ -69,3 +69,10 @@ targets it was not read on, with one more one-page miss.
 **What it does not show.** Why band 6 keeps the second page longer at those two targets, and how
 far; the margin at bands not run; the step miss at 2048x3072 S6 (and E874's at 2048x4096 S3); any
 other scene than the tool's 1500-vertex triangle.
+
+**Correction 2026-11-13:** Both band 6 misses repeated in r8-ldpm's mapping of the two targets
+(E936, fit rows read after the run): 3072x3072 kept 2 global pages to A_6 + 2 (`0x3d1`) and
+2560x2560 to A_6 + 1 (`0x2b2`); band 6 also kept the second page past A_6 at two held-out targets
+of other classes (1536x1536, 4096x2048), so the misses are not those of the two large targets
+alone. The S6 miss at 2048x3072 is the step itself, `0x234`, pinned by the abort's page count
+(E935).

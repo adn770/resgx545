@@ -7372,6 +7372,65 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   (post hoc).
   *texture; HW, infer; data: `texture-isp-msaa-verification-1141`,
   `render-closing-r4-render4x:out/20261111-211315/c/`, `cited-scratch:closing8/rank/`.*
+- `E935` r8-ldpm stages a0 and sp on module 37EC97AB (Q210; the tool's triangle with 1500 vertices):
+  the premise held, R7-dpm's six s-a0 controls repeated on this module ('a0: the premise held (R7's
+  s-a0 controls repeat on 37EC97AB) (1 of 1 rows decided)'); held out, the global page count at the
+  first abort (1 + the steps below thr0) pins 2048x3072's S6 at 0x234 (thr0 0x232 to 0x234 read 5
+  pages, 0x235 and 0x236 read 6; three calibrations read S6 0x234) and 2048x4096's S3 at 0x12c (thr0
+  0x125 to 0x12c read 2, 0x12d and 0x12e read 3): frozen verdicts H-R7S6 held 8 of 8 and H-KEPTS3 10
+  of 10, and E874's step replay, which gives 0x233 and 0x129 there, 'not supported' (26 held, 7
+  FAILED of 33); both controls (thr0 0xe8 = S4 of 2048x2048 3 pages, 0xe9 4) held.
+  *dpm; HW; data: `render-closing-r8-ldpm:out/20261113-021431/a0/`,
+  `render-closing-r8-ldpm:out/20261113-021431/sp/`, `render-closing-r8-ldpm:postrun/`.*
+- `E936` r8-ldpm stage m6 on module 37EC97AB (Q210; band 6 of the tool's 1500-vertex triangle): held
+  out at seven targets, H-SPAN (the first partial render leaves 2 global pages iff S_6 < thr0 < A_6,
+  cells aligned on each target's calibration by R7's rule) is 'not supported', 27 held, 7 FAILED, 1
+  cannot tell of 35: 1536x1536 kept 2 pages at A_6 and A_6 + 1 and 4096x2048 at A_6, while 3072x2048
+  held (2 at A_6 - 1, 1 from A_6); the frozen rivals by target class all failed (H-BIG6 3 of 7,
+  H-ANY6 2 of 7, H-6LATE 2 of 7); E874's step replay held at 1536x1536, 1024x1024, 4096x2048 and
+  3072x2048 and missed 2560x3072's S6 (0x2b4 against 0x2b3) and 3072x2560's S3 and S6 (0x116, 0x2b0
+  against 0x114, 0x2ae); read after the run, the first one-page cell lies 0 to 3 cells above A_6 by
+  target (3072x3072 A_6 + 3, 2560x2560 + 2, 1536x1536 + 2, 4096x2048 and 2560x3072 + 1, the rest at
+  A_6), not by the class of target.
+  *dpm; HW, infer; data: `render-closing-r8-ldpm:out/20261113-021431/m6/`,
+  `render-closing-r8-ldpm:postrun/`.*
+- `E937` r8-ldpm stage v on module 37EC97AB (Q210, larger objects): the tool's 1500-vertex triangle
+  with --vtx-coords 8 and our vertex program vtx_coord8.s writing o4 to o11 (plan P3: the default
+  program leaves those outputs unwritten) ran three times; the frozen verdict of H-DET (the three
+  give the same steps, need and object block sizes) is 'not supported', 0 held, 3 FAILED of 3: S5
+  read 0x15e, 0x15c, 0x15e and S10 0x373, 0x371, 0x371, every other step S2 to S11 the same, while
+  read after the run the three dumps hold the same 53 object blocks (sizes 193, 190, 187, 197, 137,
+  ...) and each run took one partial render at the 0x400 clamp (the scene needs more); the N 4
+  control (R7-dpm's v-cal-c4) repeated 14 of 14, the written N 4 runs gave the plain N 4 scene (100
+  blocks of 127 dwords, the same 12 steps and need 538) and the two plain N 8 runs the same 94
+  blocks and need 608 as each other.
+  *dpm; HW, infer; data: `render-closing-r8-ldpm:out/20261113-021431/v/`,
+  `render-closing-r8-ldpm:postrun/`, `cited-scratch:closing8/leftovers/`.*
+- `E938` r8-ldpm stages f9 and k on module 37EC97AB (Q211, the partial-render count of scenes of
+  many objects and of several kicks): held out, F9's replay of the 1500-vertex scene gave the count
+  at 13 of 15 cells and every run's peak at 6 (frozen 'not supported', 19 held, 11 FAILED of 30) at
+  1536x1536, 1024x1024 and 3072x2048, its rivals E854's d = 7/4 and d = 1 4 of 15 each and E625's
+  overflow boundary 15 of 15; the two missed counts (1024x1024 thr0 0x48, 3072x2048 0x1a0) and the
+  run peaks at 1536x1536 0x90 are band 4 cells where the second TA run peaked at thr0, the threshold
+  not raised by 0x20 (read after the run); the three calibrations, controls, held; at five
+  multi-kick scenes (explore: OL7 (b) had not fitted the kept cells) the multi-kick replay H-KICKS
+  gave 11 of 20 counts (8 of 8 at 4096x4096, 3 of 12 at 2048x2048) and no run's peaks, the replay of
+  the union 0 of 20.
+  *dpm; HW, infer; data: `render-closing-r8-ldpm:out/20261113-021431/f9/`,
+  `render-closing-r8-ldpm:out/20261113-021431/k/`, `render-closing-r8-ldpm:postrun/`,
+  `cited-scratch:closing8/leftovers/`.*
+- `E939` r8-ldpm stages k and u on module 37EC97AB (Q211, the U clause): HU1's page need of the
+  union of a scene's triangles (a region counted once, 128 bytes a stream, a page per 32 streams of
+  a macrotile, plus the global page) was held out at five scenes of two to four kicks of the default
+  triangle (2048x2048 and 4096x4096, U 108, 131, 136, 377, 492: 'k: HU1: HU1 holds (10 of 10 rows
+  decided)' by the fixed scorer, the frozen one printing 'cannot tell' for a bug, POSTRUN-FIX.md)
+  and at eight one-triangle shapes drawn by --tri-unit 12 --tri-v at four targets, from the full
+  target to slivers 8 pixels wide and a 20-pixel triangle (U 2 to 257: 'u: HU1: HU1 holds (16 of 16
+  rows decided)'), each a completed job at P 0x422 with no partial render; the rival H-BBOX (a
+  stream for every region of the bounding box) failed 5 of 8 (the slivers need 15 to 17 pages where
+  it gives 257 or 513); the control s22 needed 78 again.
+  *dpm; HW; data: `render-closing-r8-ldpm:out/20261113-021431/k/`,
+  `render-closing-r8-ldpm:out/20261113-021431/u/`, `render-closing-r8-ldpm:postrun/`.*
 
 ## By unit
 
@@ -7386,7 +7445,7 @@ E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E4
 E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753, E773, E774, E775, E779, E785,
 E786, E790, E799, E800, E801, E802, E803, E832, E845, E846, E852, E853, E854, E860, E861, E862,
 E863, E864, E866, E867, E868, E869, E870, E873, E874, E875, E881, E882, E883, E887, E889, E899,
-E900, E915, E916, E917, E918.
+E900, E915, E916, E917, E918, E935, E936, E937, E938, E939.
 
 ### edm
 

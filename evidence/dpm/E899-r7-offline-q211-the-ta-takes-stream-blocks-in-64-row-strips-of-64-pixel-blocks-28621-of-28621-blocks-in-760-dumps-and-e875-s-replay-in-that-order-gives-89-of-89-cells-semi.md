@@ -78,3 +78,11 @@ frozen verdict held on four scenes and read "not supported" on the 1024x768 one,
 peak is a first TA run that fell between two timeline samples, read post hoc), and H-WALK64 placed
 every block of the scene's 2048x2048 calibration dump, a dump never opened, where row order placed
 113 of 2306.
+
+**Correction 2026-11-13:** The reading "a later kick walks again and fills the pages its
+macrotiles have open", made into a replay (H-KICKS, round 8's OL7 (b): each kick's regions walked
+in turn, a region counted once, the open pages filled), did not reproduce 4 of 31 kept multi-kick
+cells offline and gave 11 of 20 counts (8 of 8 at 4096x4096, 3 of 12 at 2048x2048) and no run's
+peaks at r8-ldpm's five multi-kick scenes (E938, explore rows) [HW]; the replay of the union in
+H-WALK64's order gave none. It is not the count rule of several kicks. The one-kick replay this
+record froze is untouched (E916).
