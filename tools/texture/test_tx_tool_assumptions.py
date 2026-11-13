@@ -6,13 +6,16 @@ No tool change is needed by any case of p1132 (tools/texture/p1132/plan.md secti
 scripts and tools/texture/p1132/recompute/recompute_p1132.py read, so that a change of the tool that breaks them is seen at
 once. They pass on the landed tool. Run: SGXFIVE_TEST=path/to/sgxfive-test python3 -m pytest tools/texture
 """
-import os, pathlib, re, subprocess, tempfile
+import os, pathlib, re, subprocess, sys, tempfile
 
 import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 TOOL = os.environ.get("SGXFIVE_TEST", str(ROOT / "userspace/libsgxfive/build/sgxfive-test"))
-ASM = pathlib.Path(os.environ.get("USSE_ASM", str(ROOT / "target/debug/usse-asm")))
+sys.path.insert(0, str(ROOT / "crates" / "pysgx"))
+import load  # noqa: E402
+
+ASM = pathlib.Path(os.environ.get("USSE_ASM", str(load.cargo_target_dir() / "debug" / "usse-asm")))
 
 
 @pytest.fixture(scope="module", autouse=True)

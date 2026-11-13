@@ -128,7 +128,7 @@ def test_bus_exceptions_propagate(sgx):
 
 def test_cli_and_module_agree_on_listings(sgx, tmp_path):
     """usse-dis and the module decode the transfer templates alike."""
-    cli = REPO / "target" / "debug" / "usse-dis"
+    cli = load.cargo_target_dir() / "debug" / "usse-dis"
     subprocess.run(["cargo", "build", "-q", "-p", "sgx-tools", "--bin", "usse-dis"], cwd=REPO,
                    check=True)
     img = sgx.assemble((REPO / "asm" / "transfer" / "transfer.s").read_bytes(),

@@ -452,6 +452,11 @@ that shares state with another file (a tool directory or cargo target that is bu
 outside `tmp_path`) must stay in one file (`--dist loadfile` keeps a file on one worker); the
 root `conftest.py` builds the shared tools once before the workers start.
 
+A worktree may build into its own directory with `CARGO_TARGET_DIR` (a relative path counts from
+the repository root). Python code that runs a built tool or library takes the directory from
+`load.cargo_target_dir()` (`crates/pysgx/load.py`), never `<repo>/target` spelled out
+(`crates/pysgx/tests/test_load.py` checks the callers), so no `target` symlink is needed.
+
 numpy is not in `requirements-dev.txt`: no tracked `.py` imports it (`tools/check.sh` fails if one
 does). Scratch searches use it from the repo `.venv` once it is installed there, with
 `.venv/bin/pip install -r requirements-scratch.txt`, and never from a landed tool.

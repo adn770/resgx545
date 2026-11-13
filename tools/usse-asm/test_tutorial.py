@@ -14,12 +14,16 @@ usse-tutorial.book; its quotes and its runs may not drift from the files and the
 import pathlib
 import re
 import subprocess
+import sys
 
 import pytest
 
 from conftest import HERE
 
 ROOT = HERE.parents[1]
+sys.path.insert(0, str(ROOT / "crates" / "pysgx"))
+import load  # noqa: E402
+
 TUTORIAL = ROOT / "doc" / "specs" / "usse_tutorial.md"
 BLOCK = re.compile(r"(?:^From `([^`]+)`:\n\n)?^```\n(.*?)^```\n", re.M | re.S)
 # where a program named without a path is found, as doc/isa/build.py looks
@@ -61,7 +65,7 @@ def sim():
     r = subprocess.run(["cargo", "build", "-q", "--release", "-p", "sgx-tools", "--bin",
                         "sgx-sim"], cwd=ROOT, capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
-    return ROOT / "target" / "release" / "sgx-sim"
+    return load.cargo_target_dir() / "release" / "sgx-sim"
 
 
 def test_the_tutorial_quotes_sources_and_runs():

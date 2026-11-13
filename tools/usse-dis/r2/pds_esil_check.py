@@ -33,7 +33,10 @@ import tempfile
 ROOT = pathlib.Path(__file__).resolve().parents[3]
 # the radare2 fork's install: R2_PREFIX, or its prefix beside the repository
 PREFIX = pathlib.Path(os.environ.get("R2_PREFIX", ROOT.parent / "radare2-prefix"))
-BIN = ROOT / "target" / "debug"
+sys.path.insert(0, str(ROOT / "crates" / "pysgx"))
+import load  # noqa: E402
+
+BIN = load.cargo_target_dir() / "debug"
 FLAGS = ("p0", "p1", "p2", "aluz", "alun")
 
 FIXED = """\

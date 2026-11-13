@@ -97,7 +97,9 @@ def sgx_asm() -> pathlib.Path:
                        cwd=REPO, capture_output=True, text=True)
     if r.returncode:
         raise AsmError(f"cannot build sgx-asm:\n{r.stderr}")
-    return REPO / "target" / "debug" / "sgx-asm"
+    sys.path.insert(0, str(REPO / "crates" / "pysgx"))
+    import load as pysgx_load
+    return pysgx_load.cargo_target_dir() / "debug" / "sgx-asm"
 
 
 def assemble(source: pathlib.Path, out_dir: pathlib.Path) -> Program:
