@@ -3,7 +3,9 @@
 //! `cube::point_index` (TEXTYPE 2 point-sampled with smp3d) against the kept cube jobs of
 //! `$RESGX545_DATA` (the tests skip, saying so, without it and fail with `RESGX545_REQUIRE_DATA`):
 //! E726's eight jobs (texture/p1141 tex-h-cube, the (s, t) rule's fit) and E844's two off-axis
-//! jobs (render/closing-r4-render4x stage c, held out offline by E923). Every pixel's value is
+//! jobs (render/closing-r4-render4x stage c, held out offline by E923), and r8-geo's stage cube
+//! (render/closing-r8-geo, E930: four off-axis 16 x 16 programs and three at 8 x 8 faces held
+//! out on hardware; 32 x 32 refused). Every pixel's value is
 //! 0xD0000000 | the dword index the sample read; the coordinates are the probe programs' own
 //! (an fmad of (1 + x / 64 or 1 + y / 32) by K plus C, or a constant, all exact in f32). A pixel
 //! the model refuses (an exact texel boundary at a major magnitude that is not a power of two,
@@ -65,6 +67,11 @@ fn image(b: &Path, path: &str) -> Vec<u32> {
 
 /// (matched, refused) over a job's 2048 pixels; panics on a mismatch.
 fn replay(b: &Path, path: &str, uvw: [C; 3]) -> (u32, u32) {
+    replay_size(b, path, uvw, 16)
+}
+
+/// The same for faces of `size` x `size`.
+fn replay_size(b: &Path, path: &str, uvw: [C; 3], size: u32) -> (u32, u32) {
     let img = image(b, path);
     let (mut ok, mut refused) = (0, 0);
     for y in 0..32 {
@@ -72,7 +79,7 @@ fn replay(b: &Path, path: &str, uvw: [C; 3]) -> (u32, u32) {
             let c = uvw.map(|c| coord(c, x, y));
             let hw = img[(y * 64 + x) as usize];
             assert_eq!(hw >> 28, 0xd, "{path} ({x}, {y}): {hw:#x} is no texel tag");
-            match cube::point_index(c, 16) {
+            match cube::point_index(c, size) {
                 Ok(i) => {
                     assert_eq!(i, hw & 0x0fff_ffff, "{path} ({x}, {y}) at {c:?}");
                     ok += 1;
@@ -125,4 +132,40 @@ fn e844_off_axis_jobs_hold_out() {
     // the control of E844 (E726's cu-xn rerun) under the same rule
     let xn = [C::Const(-1.0), L, LY];
     assert_eq!(replay(&b, &format!("{HELD}/c-cu-xn.txt.gz"), xn), (2048, 0));
+}
+
+const R8: &str = "render/closing-r8-geo/out/20261113-015842/cube";
+
+fn base_r8() -> Option<PathBuf> {
+    let b = Ctx::from_env().root.filter(|r| r.join(R8).is_dir());
+    if b.is_none() {
+        assert!(std::env::var_os("RESGX545_REQUIRE_DATA").is_none(), "no r8-geo cube jobs (RESGX545_DATA)");
+        eprintln!("SKIPPED: no {R8} (set RESGX545_DATA)");
+    }
+    b
+}
+
+#[test]
+fn r8_geo_off_axis_and_8_x_8_jobs_hold_out_and_32_x_32_is_refused() {
+    let Some(b) = base_r8() else { return };
+    // E930 (r8-geo gen/cube.py): a1 = b1, a2 = b2, a4 = b3; (matched, refused) as the frozen
+    // predictions count them (a refused pixel is a face tie or an exact texel boundary at a |ma|
+    // that is no power of two)
+    let a1 = [L, LY, C::Const(-0.625)];
+    let a2 = [C::Const(0.625), C::X(1.5, -2.5), C::Y(1.5, -2.0)];
+    let a3 = [C::Y(2.0, -3.0), C::Const(0.6875), L];
+    let a4 = [C::X(1.5, -2.0), C::Const(-0.6875), C::Y(1.5, -2.5)];
+    let jobs16 = [("a1", a1, 1600), ("a2", a2, 1685), ("a3", a3, 1682), ("a4", a4, 1810)];
+    for (n, uvw, ok) in jobs16 {
+        let got = replay_size(&b, &format!("{R8}/cube-off-{n}.txt.gz"), uvw, 16);
+        assert_eq!(got, (ok, 2048 - ok), "cube-off-{n}");
+    }
+    for (n, uvw, ok) in [("b1", a1, 1760), ("b2", a2, 1817), ("b3", a4, 1881)] {
+        let got = replay_size(&b, &format!("{R8}/cube-n8-{n}.txt.gz"), uvw, 8);
+        assert_eq!(got, (ok, 2048 - ok), "cube-n8-{n}");
+    }
+    for (n, uvw) in [("b1", a1), ("b2", a2), ("b3", a4)] {
+        let got = replay_size(&b, &format!("{R8}/cube-n32-{n}.txt.gz"), uvw, 32);
+        assert_eq!(got, (0, 2048), "cube-n32-{n}: refused, the 32 x 32 index is post hoc (E930)");
+    }
 }

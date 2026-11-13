@@ -10,18 +10,24 @@
 //!   at 4090 of 4096): the public cube-map table, our u, v, w as x, y, z [infer]: +x s = -w,
 //!   t = -v; -x s = +w, t = -v; +y s = +u, t = +w; -y s = +u, t = -w; +z s = +u, t = -v;
 //!   -z s = -u, t = -v; each divided by |ma|, texel floor((q + 1) / 2 * 16), and the face-local
-//!   index the Morton interleave of (s, t) with t in bit 0 (E724's "y in the low bit").
+//!   index the Morton interleave of (s, t) with t in bit 0 (E724's "y in the low bit"); held
+//!   out on hardware on four new off-axis 16 x 16 programs (E930).
+//! - Faces of 8 x 8 (E930): the same rule with 8 for 16 (texel floor((q + 1) / 2 * 8), a 3-bit
+//!   Morton), faces 64 dwords apart, held out on three programs.
 //!
-//! Refused, naming Q284: two coordinates of equal largest magnitude (no job ran a face tie); a
-//! coordinate exactly on a texel boundary when |ma| is not a power of two (at a power of two the
-//! upper texel every time, the floor; otherwise E923's 14 misses, which go both ways for one
-//! |ma|); a face size other than 16 (one size ran). Bilinear filtering, and so a face edge's
-//! taps, is not modelled here at all (Q284).
+//! Refused, naming Q284: two coordinates of equal largest magnitude (E931 read 64 tie pixels of
+//! |w| = |u| on w's face, two jobs, no rule frozen); a coordinate exactly on a texel boundary when
+//! |ma| is not a power of two (at a power of two the upper texel every time, the floor;
+//! otherwise E923's 14 misses, and E931's boundaries going up or down by their place, no rule
+//! frozen); faces of 32 x 32 (E930: 1024 dwords apart, the local index the 5-bit Morton with the
+//! fifth bits of s and t in the other order, post hoc only) and of any size other than 8 and 16.
+//! Bilinear filtering, and so a face edge's taps, is not modelled here at all (E931: one decided
+//! job mixed in another face's texel; Q284).
 
 use crate::Outcome;
 
-/// The one face size measured (E726, E844): 16 x 16, 256 dwords a face.
-pub const FACE_SIZE: u32 = 16;
+/// The face sizes held out (E726, E844, E930): 16 x 16, 256 dwords a face, and 8 x 8, 64.
+pub const FACE_SIZES: [u32; 2] = [8, 16];
 
 /// The face of (u, v, w): 2 * axis + (coordinate < 0), axis 0, 1, 2 for u, v, w (E844), and
 /// the axis. Refuses a tie between the two largest magnitudes and the zero vector.
@@ -52,20 +58,23 @@ fn st(face: u32, [u, v, w]: [f32; 3]) -> (f32, f32) {
     }
 }
 
-/// The texel of numerator `c` over magnitude `ma` (|c| < ma): floor((c / ma + 1) * 8), exact.
-fn texel(c: f32, ma: f32) -> Result<u32, Outcome> {
-    // 8c and k * ma (|k| <= 8) are exact in f64, so the boundary test is exact, and a quotient
-    // that is not an integer cannot round onto one (its distance from it is far above 2^-53)
-    let r = 8.0 * c as f64 / ma as f64;
+/// The texel of numerator `c` over magnitude `ma` (|c| < ma) in a face of `size`:
+/// floor((c / ma + 1) * size / 2), exact.
+fn texel(c: f32, ma: f32, size: u32) -> Result<u32, Outcome> {
+    // h c and k * ma (|k| <= h, h = size / 2 a power of two) are exact in f64, so the boundary
+    // test is exact, and a quotient that is not an integer cannot round onto one (its distance
+    // from it is far above 2^-53)
+    let h = (size / 2) as f64;
+    let r = h * c as f64 / ma as f64;
     let k = r.floor();
-    if k * ma as f64 == 8.0 * c as f64 && !is_pow2(ma) {
+    if k * ma as f64 == h * c as f64 && !is_pow2(ma) {
         return Err(Outcome::unsupported(
             "a cube coordinate exactly on a texel boundary with |ma| not a power of two (E923's ties)",
             &["Q284"],
         ));
     }
-    let t = k as i64 + 8;
-    assert!((0..16).contains(&t), "texel {t} outside the face ({c} / {ma})");
+    let t = k as i64 + h as i64;
+    assert!((0..size as i64).contains(&t), "texel {t} outside the face ({c} / {ma})");
     Ok(t as u32)
 }
 
@@ -75,20 +84,31 @@ fn is_pow2(x: f32) -> bool {
 
 /// Morton index of (s, t) in a 16 x 16 face, t in bit 0.
 fn twiddle(s: u32, t: u32) -> u32 {
-    (0..4).fold(0, |i, b| i | (t >> b & 1) << (2 * b) | (s >> b & 1) << (2 * b + 1))
+    twiddle_bits(s, t, 4)
+}
+
+/// Morton index of (s, t) over `bits` bits each, t in bit 0.
+fn twiddle_bits(s: u32, t: u32, bits: u32) -> u32 {
+    (0..bits).fold(0, |i, b| i | (t >> b & 1) << (2 * b) | (s >> b & 1) << (2 * b + 1))
 }
 
 /// The dword index (face * 256 + local) that a point sample of a TEXTYPE 2 texture of faces
 /// `size` x `size` reads at (u, v, w).
 pub fn point_index(c: [f32; 3], size: u32) -> Result<u32, Outcome> {
-    if size != FACE_SIZE {
-        return Err(Outcome::unsupported("a cube face size other than 16 x 16 (one size ran)", &["Q284"]));
+    if size == 32 {
+        return Err(Outcome::unsupported(
+            "a 32 x 32 cube face: its local index reads the fifth bits of s and t in another order, post hoc only (E930)",
+            &["Q284"],
+        ));
+    }
+    if !FACE_SIZES.contains(&size) {
+        return Err(Outcome::unsupported("a cube face size other than 8 or 16 (E930)", &["Q284"]));
     }
     let (f, ax) = face(c)?;
     let ma = c[ax].abs();
     let (sc, tc) = st(f, c);
-    let (s, t) = (texel(sc, ma)?, texel(tc, ma)?);
-    Ok(f * 256 + twiddle(s, t))
+    let (s, t) = (texel(sc, ma, size)?, texel(tc, ma, size)?);
+    Ok(f * size * size + twiddle_bits(s, t, size.trailing_zeros()))
 }
 
 #[cfg(test)]
@@ -139,8 +159,12 @@ mod tests {
     }
 
     #[test]
-    fn other_face_sizes_are_refused() {
-        assert!(refused(point_index([0.1, 0.2, 1.0], 8)));
+    fn an_8_x_8_face_is_the_rule_with_8_and_other_sizes_are_refused() {
+        // +z, |ma| = 1: u = 0.3 is s texel floor(1.3 * 4) = 5, -v = 0.6 is t texel 6
+        assert_eq!(point_index([0.3, -0.6, 1.0], 8), Ok(4 * 64 + twiddle_bits(5, 6, 3)));
+        assert_eq!(point_index([-0.999, 0.999, -1.0], 8), Ok(5 * 64 + twiddle_bits(7, 0, 3)));
         assert!(refused(point_index([0.1, 0.2, 1.0], 32)));
+        assert!(refused(point_index([0.1, 0.2, 1.0], 4)));
+        assert!(refused(point_index([0.1, 0.2, 1.0], 64)));
     }
 }
