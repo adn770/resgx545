@@ -61,6 +61,7 @@ def repos(root: pathlib.Path = ROOT) -> dict[str, pathlib.Path]:
     return out
 
 
+_RUN = subprocess.run   # bound at import: a test that patches subprocess.run must not see our git
 SKIP_DIRS = ("__pycache__", ".pytest_cache")
 
 
@@ -68,7 +69,7 @@ def _git(root: pathlib.Path, *args: str, **kw):
     """git in root, whatever repository the caller (a commit hook) is in."""
     env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")
            or k in ("GIT_CONFIG_GLOBAL", "GIT_CONFIG_SYSTEM", "GIT_CONFIG_NOSYSTEM")}
-    return subprocess.run(["git", "-C", str(root), *args], capture_output=True, env=env, **kw)
+    return _RUN(["git", "-C", str(root), *args], capture_output=True, env=env, **kw)
 
 
 def _tracked(root: pathlib.Path) -> set[str] | None:

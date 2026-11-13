@@ -239,3 +239,17 @@ def test_the_git_listing_ignores_the_callers_git_environment(tmp_path, monkeypat
     monkeypatch.setenv("GIT_INDEX_FILE", str(tmp_path / "other-index"))
     monkeypatch.setenv("GIT_DIR", str(tmp_path / "nowhere"))
     assert datasets.files_of(["s/"], tmp_path) == [tmp_path / "s" / "a.txt"]
+
+
+def test_the_git_listing_does_not_go_through_a_patched_subprocess_run(tmp_path, monkeypatch):
+    """campaign's tests replace subprocess.run (the one module object every tool shares) to
+    record their ssh calls; the digest's own git calls must not land there."""
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    (tmp_path / "s").mkdir()
+    (tmp_path / "s" / "a.txt").write_text("a")
+    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+    (tmp_path / "s" / "untracked.txt").write_text("u")
+    seen = []
+    monkeypatch.setattr(subprocess, "run", lambda *a, **k: seen.append(a))
+    assert datasets.files_of(["s/"], tmp_path) == [tmp_path / "s" / "a.txt"]
+    assert seen == []
