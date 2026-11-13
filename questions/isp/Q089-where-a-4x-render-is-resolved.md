@@ -5,7 +5,7 @@ unit = "isp"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E333", "E339", "E439", "E502", "E503", "E508", "E510", "E727"]
+evidence = ["E333", "E339", "E439", "E502", "E503", "E508", "E510", "E727", "E893"]
 terms = ["CR_ISP_MSAA.MODE", "CR_TE_MTILE1", "CR_TE_MACROTILE_STRIDE", "EMIT1.MAXCLIP_X", "CR_TE_AA", "CR_ISP_MSAA"]
 +++
 The closed driver's 4x render to a 64x64 texture sets `CR_ISP_MSAA` mode 2, a rotated-grid

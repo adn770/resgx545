@@ -42,3 +42,10 @@ only "refuse R * V above 33", which it does; where a capacity limit lies between
 asked any more. What stays open is the forced field: what the rows do when they differ from the
 vertex's own size, whether a forced R below the natural one loses vertices, and a forced = natural
 control.
+
+Note 2026-11-13 (round 8 offline, decision R8-1 a; ranking closing8/rank/rank-round8.md finding 3;
+no claim of E703 changes). "A xor cannot write the natural value" no longer stands for the tool:
+`sgxfive-test --vdm N=V` sets VDM word N to V (`sgxfive-test.c`, `src/poke.c`: a set where E703's
+`7^=` is a xor) through the same path, so the forced = natural control exists without a tool
+change: `--vdm 7=<natural word>` for N = 11 (V = 3) and N = 8 (V = 4), frozen as "the image of the
+natural job", beside the forced-below and natural + 1 rows. They are R8-4's rows of session r8-geo.

@@ -28,7 +28,7 @@ list.
 - `Q066` isp, high: what do the three background-object words the 3D kick writes mean to the ISP,
   and what are the other words of a render's background object? (E216, E410, E590)
 - `Q089` isp, high: where does the closed driver's 4x multisampled render become a 64x64 image, when
-  its PBE words are those of a single-sampled 64x64 target ... (E508, E510, E727)
+  its PBE words are those of a single-sampled 64x64 target ... (E510, E727, E893)
 - `Q199` isp, high: what is the integer range and the behaviour at the limits (saturation, wrap,
   removal) of the ISP's 1/256-pixel vertex format (E607: window ... (E607, E683, E684)
 - `Q202` isp, high: do the coverage rule (centre sample, vertices on the 1/256 grid, top-left ties)
@@ -62,7 +62,7 @@ list.
 - `Q082` edm, medium: what does CR_EVENT_STATUS2 bit 6 follow in a pixel task (a fill without a
   load: a tile's time near 125 us, E805; a program that waits on a ... (E839, E840, E841)
 - `Q030` isp, medium: does the sample layout of E281 hold in the tiles and windows past the first
-  (what CR_TE_AA bits 31 and 30 do when bit 29 is clear is ... (E504, E728, E829)
+  (what CR_TE_AA bits 31 and 30 do when bit 29 is clear is ... (E728, E829, E893)
 - `Q031` isp, medium: why does ISP word 0 bit 28 hang a multisampled render, when single-sampled it
   widens coverage to the union of eight samples? (E215, E278, E416)
 - `Q032` isp, medium: what does pcoeff hand the ISP in the punch-through pass, when the kept pixels'
