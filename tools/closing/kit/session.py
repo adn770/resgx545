@@ -271,6 +271,12 @@ def guard(kp):
                 and re.fullmatch(r"[0-9a-f]{64}", d.get("source_sha256", ""))):
             bad.append(f"session.toml: tool {t}'s source is not COMMIT:userspace/libsgxfive/"
                        "tools/sgxfive-test.c with its source_sha256")
+    for t, d in c["tools"].items():
+        why = d.get("no_source", "")
+        if not d.get("wraps") and "source" not in d and (
+                not why.strip() or why.strip().upper().startswith("TODO")):
+            bad.append(f"session.toml: tool {t}: no `source` (with source_sha256) for the library "
+                       "mock and no `no_source` reason: its rows would never be replayed there")
     for n, _, cm, path, sh, recipe in built_tools(c):
         if not (re.fullmatch(r"[0-9a-f]{40}", cm) and path and re.fullmatch(r"[0-9a-f]{64}", sh)
                 and recipe):
@@ -815,8 +821,8 @@ def libmock(kp, say=print):
         if d.get("wraps"):
             continue
         if "source" not in d:
-            say(f"note libmock: {t} has no source in session.toml: its rows are not replayed on "
-                "the library mock")
+            say(f"note libmock: {t} has no source in session.toml ({d.get('no_source', '')}): "
+                "its rows are not replayed on the library mock")
             continue
         b, why = libmock_build(kp, c, t)
         if b is None:

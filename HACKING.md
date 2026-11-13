@@ -300,7 +300,11 @@ library mock, sgxfive-test built on libsgxfive's in-process mock (`--mock`) from
 session.toml binds to the tool (`source = "COMMIT:userspace/libsgxfive/tools/sgxfive-test.c"`,
 `source_sha256`, checked at the commit, built from `git archive` into `debug/libmock/`): a `job:
 rejected` line or a usage refusal stops the mock before any world runs (r8-geo's world answered 23
-rows the kernel refuses `job: ok`); a tool with no source is said, not replayed. Then it copies the
+rows the kernel refuses `job: ok`). A row's `dbg:NAME=V` words are passed as `--mock-knob NAME=V`
+to a mock that lists that option, so a row with the wrong knob state is the tool's own refusal.
+A tool needs a `source` or a `no_source = "reason"` (the guard, so the mock and the freeze, fail
+without either; round 8's sessions declared neither and no row was replayed), and `new_session.py`
+demands `--tool-src` or `--no-source NAME=REASON` for every tool. Then it copies the
 session, freezes the copy if it is not frozen, stages it onto a fake laptop through the same `stage`
 and `run` code, and runs the staged runner under an empty environment (a fake ssh that keeps only
 HOME, the laptop PATH and the mock's own variables). The fake tool answers from its name and argv
@@ -438,7 +442,8 @@ outside `tmp_path`) must stay in one file (`--dist loadfile` keeps a file on one
 root `conftest.py` builds the shared tools once before the workers start.
 
 numpy is not in `requirements-dev.txt`: no tracked `.py` imports it (`tools/check.sh` fails if one
-does), so keep it in a scratch venv.
+does). Scratch searches use it from the repo `.venv` once it is installed there, with
+`.venv/bin/pip install -r requirements-scratch.txt`, and never from a landed tool.
 
 The record checkers run inside pytest; `python3 tools/records/evidence.py --draft` checks
 records whose ids are not assigned yet. Some checks need inputs from outside this repository

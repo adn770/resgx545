@@ -63,6 +63,11 @@ def repos(tmp_path):
 
 def scaffold(repos, name="r8-t", extra=()):
     kp = repos["tmp"] / "scratch" / name
+    extra = list(extra)
+    bound = [extra[i + 1].split("=")[0] for i, x in enumerate(extra) if x == "--tool-src"]
+    names = ["t4"] + [extra[i + 1].split("=")[0] for i, x in enumerate(extra) if x == "--tool"]
+    extra = [*extra, *(a for n in names if n not in bound
+                       for a in ("--no-source", f"{n}=a test fixture with no library mock"))]
     r = subprocess.run([PY, str(NEW), str(kp), "--name", name, "--prefix", "r8t",
                         "--srcversion", SRCV, "--tool", f"t4=sgxfive-test-rgn4:{TOOL_SHA}",
                         "--resgx545", str(repos["main"]), "--commit", repos["c1"],
@@ -763,11 +768,46 @@ def test_the_library_mock_is_built_only_from_the_bound_source(repos):
     assert g.returncode != 0 and "source" in g.stdout, g.stdout
 
 
-def test_a_tool_without_a_bound_source_is_said_not_replayed(repos):
+def test_a_tool_without_a_source_or_a_reason_fails_the_guard_loudly(repos):
+    """Round 8's sessions declared no `source`, so no row went through the library mock and the
+    E934 fix did nothing for them, silently. A tool needs `source` (+ `source_sha256`) or a
+    `no_source` reason of its own; a wrapper is the tool it wraps."""
     kp = scaffold(repos)
     m = kit(kp, repos, "mock")
     assert m.returncode == 0, m.stdout
-    assert re.search(r"^note libmock: t4 has no source", m.stdout, re.M), m.stdout
+    assert re.search(r"^note libmock: t4 has no source in session.toml \(a test fixture", m.stdout, re.M), \
+        m.stdout
+    toml = (kp / "session.toml").read_text()
+    for bad in ("", 'no_source = "  "\n', 'no_source = "TODO"\n'):
+        (kp / "session.toml").write_text(
+            re.sub(r'no_source = ".*"\n', bad, toml))
+        g = kit(kp, repos, "guard")
+        assert g.returncode != 0 and re.search(r"tool t4: no `source`.*no_source", g.stdout), \
+            (bad, g.stdout)
+        assert kit(kp, repos, "mock").returncode != 0
+        assert kit(kp, repos, "freeze").returncode != 0
+
+
+def test_the_scaffold_demands_a_source_or_a_reason_for_every_tool(repos):
+    kp = repos["tmp"] / "scratch" / "none"
+    r = subprocess.run([PY, str(NEW), str(kp), "--name", "r8-t", "--prefix", "r8t",
+                        "--srcversion", SRCV, "--tool", f"t4=sgxfive-test-rgn4:{TOOL_SHA}",
+                        "--resgx545", str(repos["main"]), "--commit", repos["c1"],
+                        "--data", str(repos["data"]), "--data-commit", repos["d1"]],
+                       capture_output=True, text=True)
+    assert r.returncode != 0 and "--tool-src or --no-source" in r.stdout and not kp.exists()
+
+
+def test_tool_src_of_the_tool_source_declares_it_for_the_library_mock(repos):
+    (repos["main"] / "userspace/libsgxfive/tools").mkdir(parents=True)
+    (repos["main"] / SRC_PATH).write_text(FAKE_SRC)
+    c2 = commit_all(repos["main"], "tool")
+    kp = scaffold(repos, extra=("--tool-src", f"t4={c2}:{SRC_PATH}@tools/bringup/health.sh"))
+    toml = (kp / "session.toml").read_text()
+    sha = hashlib.sha256(FAKE_SRC.encode()).hexdigest()
+    assert f'source = "{c2}:{SRC_PATH}"' in toml and f'source_sha256 = "{sha}"' in toml
+    assert "no_source" not in toml
+    assert kit(kp, repos, "guard").returncode == 0
 
 
 # ---- #limit: the faults a control expects are not the stage's ------------------------------

@@ -4,7 +4,8 @@
 """new_session.py: scaffold a closing session on the session kit (HACKING.md, "Session kit").
 
   new_session.py DIR --name r8-x --prefix r8x --srcversion SRCV --tool t4=PATH:SHA256 [--tool ...]
-                 [--tool-src NAME=COMMIT:PATH@RECIPE] [--resgx545 REPO] [--commit REV] [--data REPO] [--data-commit REV]
+                 [--tool-src NAME=COMMIT:PATH@RECIPE]
+                 [--no-source NAME=REASON] [--resgx545 REPO] [--commit REV] [--data REPO] [--data-commit REV]
 
 DIR must not exist or be empty. The kit (tools/closing/kit, scorekit.py, sessioncheck.py) is
 copied into DIR/kit from the blobs of resgx545 REV (default: its HEAD), never from a working tree,
@@ -40,6 +41,15 @@ def git(repo, *args, binary=False):
     return r.stdout if binary else r.stdout.decode().strip()
 
 
+def library_mock(name, src):
+    """The `source` pair the kit's library-mock replay builds from, for the tool whose source it
+    can build (libsgxfive's sgxfive-test); any other tool has no library mock."""
+    commit, path, sha, _ = src
+    if path == "userspace/libsgxfive/tools/sgxfive-test.c":
+        return f'source = "{commit}:{path}"\nsource_sha256 = "{sha}"\n'
+    return f'no_source = "built from {path}: not a library-mock tool"\n'
+
+
 def main(argv=None):
     home = pathlib.Path.home()
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
@@ -49,6 +59,7 @@ def main(argv=None):
     ap.add_argument("--srcversion", required=True)
     ap.add_argument("--tool", action="append", required=True, metavar="NAME=PATH:SHA256")
     ap.add_argument("--tool-src", action="append", default=[], metavar="NAME=COMMIT:PATH@RECIPE")
+    ap.add_argument("--no-source", action="append", default=[], metavar="NAME=REASON")
     ap.add_argument("--resgx545", default=str(home / "src/resgx545"))
     ap.add_argument("--commit", default="HEAD")
     ap.add_argument("--data", default=str(home / "src/resgx545-data"))
@@ -79,6 +90,18 @@ def main(argv=None):
         blob = git(a.resgx545, "show", f"{full}:{m[3]}", binary=True)
         srcs[m[1]] = (full, m[3], hashlib.sha256(blob).hexdigest(), m[4])
     data_commit = git(a.data, "rev-parse", "--verify", f"{a.data_commit}^{{commit}}")
+    nosrc = {}
+    for s in a.no_source:
+        n, _, why = s.partition("=")
+        if n not in {x for x, _, _ in tools} or n in srcs or n in nosrc or not why.strip():
+            print(f"--no-source {s!r} is not NAME=REASON of a --tool without a --tool-src")
+            return 1
+        nosrc[n] = why.strip().replace('"', "'")
+    for n, _, _ in tools:
+        if n not in srcs and n not in nosrc:
+            print(f"tool {n}: give --tool-src or --no-source (a reason it has no library mock): "
+                  "a tool with neither is never replayed on the library mock")
+            return 1
     for rel, src in S.KIT_SOURCES.items():
         p = kp / rel
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -88,7 +111,8 @@ def main(argv=None):
     toolspec = "\n".join(
         f'[tools.{n}]\npath = "{p}"\nsha256 = "{h}"\n' + (
             f'built_from = "{srcs[n][0]}:{srcs[n][1]}"\nbuilt_sha256 = "{srcs[n][2]}"\n'
-            f'recipe = "{srcs[n][3]}"\n' if n in srcs else "") for n, p, h in tools)
+            f'recipe = "{srcs[n][3]}"\n' + library_mock(n, srcs[n])
+            if n in srcs else f'no_source = "{nosrc[n]}"\n') for n, p, h in tools)
     subst = {"@NAME@": a.name, "@PREFIX@": a.prefix, "@SRCV@": a.srcversion,
              "@HEALTH@": tools[0][0], "@COMMIT@": commit, "@COMMIT12@": commit[:12],
              "@DATA_COMMIT@": data_commit, "@TOOLS@": toolspec}
