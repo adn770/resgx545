@@ -39,4 +39,8 @@ and 20 and E337's texture attachment clears 12 and 16].
 
 **What it does not show.** Which of bits 12, 16, 20 (or which pair) selects the linear layout;
 the linear layout's y (a ramp in y); what the load reads under it (the load row's store line is
-equal, its layout not dumped in a readable form); the stencil test (R10-4, Q121's stage).
+equal, its layout not dumped in a readable form); the stencil test (R10-4, the stage E988 ran).
+
+**Correction 2026-11-13:** the last sentence named the stencil-order question for the stencil test;
+that question is answered by E988 (r10-st1), whose stage ran the test, and E989 ran this record's
+control mask under it. Nothing measured here changes.

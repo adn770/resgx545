@@ -1,0 +1,9 @@
+title = "laptop session r10-st1 of the question-closing pass, round 10 (decisions R10-4 a and R10-6 a of the seeds plan closing10/seeds/exp-seeds-r10.md section 5, and R10-4 a of closing10/rank/rank-round10.md), built on the session kit: one stage st1 (Q121 and Q071, 18 jobs: the stencil test of ISP word 2 against a loaded stencil, the bytes fill read bit by bit, byte lanes, edge tiles, and the ZLS control's inert bits under the test), with the freeze, the kit copy, the tool recipe lead/build_tool10.sh, the generator, predictions, scorer, mock (the tool's source on the library mock) and tests, the pre-run README and PREFLIGHT, the kept outputs, the lead's driver logs and the fold's post hoc read"
+repo = "data"
+paths = ["render/closing-r10-st1/"]
+method = "the session kit (kit/ = resgx545 287031c6's tools/closing/kit, scorekit.py and sessioncheck.py byte for byte, pinned in FROZEN.commits): kit/session.py stage and run on the Mac over ssh to the laptop (host cedar), kit/run_stage.sh with run/hooks.sh on it, every file under ~/scratch/r10s/, 2026-11-13 10:39, kernel 7.3.0-resgx545, module srcversion B60AB0B475DD1E8972419B5 (linux fork 2a650d74, installed and loaded alike), stock firmware, tool ~/sgxfive-test-t10 (sha256 9bedc2d6db70b2691698478572e311cf2b9b54acfaf8d714ed4db47852e322eb, built from resgx545 a581c06 userspace/libsgxfive/tools/sgxfive-test.c by lead/build_tool10.sh, the FROZEN.commits built line; the recipe's printed line names closing-r10-zls, the copy is byte for byte and frozen), TOOLSRC.sha256; 18 jobs, one attempt (out/20261113-103934), rc 0; the freeze FROZEN.sha256 3327dc6b... written before the first job, the driver logs run.log and stage.log; the post hoc read fold/q071_look.py and its output, not frozen"
+date = "2026-11-13"
+files = 201
+size = 423257
+sha256 = "e64bbc8fb89a6da7915f7f14e3fc69c96e5faaec7f91647cd3535682a2e30cb1"
+recipe = "kit/session.py"

@@ -5,7 +5,7 @@ unit = "zls"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E466", "E490", "E978", "E985"]
+evidence = ["E466", "E490", "E978", "E985", "E986"]
 terms = ["CR_ISP_ZLSCTL"]
 +++
 
@@ -39,3 +39,11 @@ rules were fitted at 64 x 32 and frozen before 96 x 48 was scored, after a cover
 48. Open: held-out rows (a y ramp, the whole depth range, other stencil fills, edge tiles: the seeds
 plan's stage zst2, closing10/seeds/exp-seeds-r10.md section 5), what parts 3 from 5, what the 0xf0
 encodes, format 7's layout, and the formats without a stencil buffer.
+
+Narrowed 2026-11-13 (E986). E985's offline layouts held out byte for byte: formats 3 and 4 on
+every plane that ran (an x ramp under three constant stencil fills, a y ramp, a plane over 0 to 1,
+40 x 20's edge tiles), formats 5 and 6 where every pixel of a tile row has its own depth. Where a
+tile row repeats one depth (the y ramp) or a tile holds the constant background past an edge
+target, formats 5 and 6 store fewer dwords, in another layout [infer: compressed]; format 7 stores
+48 dwords under a constant stencil and 784 under the index one. None of 3 to 7 writes the stencil
+store. Open: the layouts of formats 5 and 6 when they store less, and format 7's.

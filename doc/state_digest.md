@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-156 open: 146 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+155 open: 145 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -64,7 +64,7 @@ list.
 - `Q032` isp, medium: what does pcoeff hand the ISP in the punch-through pass, when the kept pixels'
   depth is the same without it and moves between runs only ... (E217, E416)
 - `Q071` isp, medium: what do the bits of the ZLS control word that change nothing seen (12, 15, 16,
-  20 to 23, 27 to 31) do, alone and set together, what does ... (E467, E665, E997)
+  20 to 23, 27 to 31) do, alone and set together, what does ... (E665, E989, E997)
 - `Q073` isp, medium: what does o0 hold at the start of an opaque pass's pixel shader? (E417, E739,
   E757)
 - `Q240` isp, medium: does the coverage rule of E606 (vertices on the 1/256 pixel grid, exact centre
@@ -181,9 +181,7 @@ list.
 - `Q107` zls, medium: why does the final render of a job that overflows store zeros for the first
   row of macrotiles and the depth with its sign bit set for the ... (E489, E628, E629)
 - `Q120` zls, medium: what do the stored depth formats 3 to 7 (CR_ISP_ZLSCTL bits 26:24) hold and
-  how are they laid out, given that they store depth and stencil ... (E490, E978, E985)
-- `Q121` zls, medium: what is the in-tile order of the stencil store (one byte a pixel, 128 dwords a
-  32 x 16 tile) and what does the stencil test do against a ... (E466, E467, E985)
+  how are they laid out, given that they store depth and stencil ... (E978, E985, E986)
 - `Q109` bif, low: do page directory entries whose page-size field (bits 3:1) names 16 KiB to 4 MiB
   translate on the hardware, and with which address mask and ... (E021, E151)
 - `Q110` bif, low: what do the bus interface's tiled address ranges (BIF_TILE0 and up: start, end,
@@ -299,7 +297,7 @@ list.
 - `Q272` vdm, low: what makes three vertices of one job read as a constant row (E702: cap-n8-f10-a7,
   ids 55, 66 and 77 at R * V = 33 and 7 attribute rows; 3 ... (E702, E738, E755)
 - `Q101` zls, low: what does bit 19 (the negated float) do with the integer stored formats
-  (CR_ISP_ZLSCTL bits 26:24 = 1 and 2)? (E466, E490, E981)
+  (CR_ISP_ZLSCTL bits 26:24 = 1 and 2)? (E490, E981, E987)
 - `Q242` zls, low: which pixel's value does a dword shared by two overlapping tiles hold, what do
   the integer formats store past the target at an odd width or ... (E977, E991, E996)
 - `Q243` zls, low: what does the ZLS load do with an integer stored format (bits 26:24 = 1 or 2), at
@@ -327,7 +325,7 @@ list.
 
 ## Recent records
 
-141 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+145 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
 - `E1010` isp, 2026-11-13: r10-x stage win0 (14 jobs, E502's identity maps: E437's primary PDS
@@ -384,6 +382,18 @@ the claims are cut at 200 characters.
 - `E990` isp, 2026-11-13: Round 10 offline (Q030; no run): on the 48 kept --pixels images of
   r9-geo's stages seam1 and seam4 (E953, E954: tri-full renders 64 x 96 to 128 x 96 and six single
   triangles of new slopes, ...
+- `E989` isp, 2026-11-13: r10-st1 rows q071-b0 and q071-l1 (2 jobs): with CR_ISP_ZLSCTL's bits that
+  E411 flipped singly to no effect flipped together under a stencil test (0xf8e6a00e: bits 15, 21 to
+  23 and 27 to 31 set, 12, ...
+- `E988` zls, 2026-11-13: r10-st1 stage st1 (16 jobs of 18, tool t10, `tri --isp2`): against a
+  loaded stencil (CR_ISP_ZLSCTL 0x0017300e) ISP word 2's test reads, for pixel (x, y), byte j of its
+  tile slot's 512 with j the ...
+- `E987` zls, 2026-11-13: r10-zls stages zbgc, zbg and zw (13 jobs, 256 x 128, G 7): render details
+  dword 16 (CR_ISP_BGOBJDEPTH) is the background depth, 1.0 and 0.25 poked stored at all 28279
+  background pixels, and at 0.25 a ...
+- `E986` zls, 2026-11-13: r10-zls stage zst2 (26 jobs, the stencil loaded and stored): E985's
+  layouts held out byte for byte on 13 of 16 rows, formats 3 and 4 on every plane (E978's x ramp
+  with stencil fills 0x00000000, ...
 - `E985` zls, 2026-11-13: Round 10 offline (Q120, Q121; no run): E978's kept dumps (a loaded index
   stencil, one x depth ramp, 64 x 32 and 96 x 48) decode for stored depth formats 3, 4, 5 and 6,
   every changed dword at both ...
@@ -756,7 +766,7 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-46 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+48 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
 - `render/closing-r9-z2`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t9
@@ -772,8 +782,11 @@ srcversion, fork tip, laptop tools.
 - `render/closing-r8-k2`: 2026-11-13; module B60AB0B475DD1E8972419B5; fork r8-kernel at 2a650d74;
   tools ~/sgxfive-test-rgn4
 - `render/closing-r8-geo`: 2026-11-13; module 37EC97AB0CB37213C42FCCC; tools ~/sgxfive-test-rgn4
+- `render/closing-r10-zls`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4,
+  ~/sgxfive-test-t9
 - `render/closing-r10-x`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
 - `render/closing-r10-tex`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
+- `render/closing-r10-st1`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r10-geo`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4,
   ~/sgxfive-test-t9
 - `render/closing-r10-dpm`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
@@ -827,7 +840,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 12 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 14 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at

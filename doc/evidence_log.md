@@ -7988,6 +7988,50 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   1 at tile slots 2 and up carry a nonzero byte under the index fill.
   *zls; HW, infer; data: `render-closing-r9-x:out/20261113-081821/zst/`,
   `cited-scratch:closing10/seeds/q120/`.*
+- `E986` r10-zls stage zst2 (26 jobs, the stencil loaded and stored): E985's layouts held out byte
+  for byte on 13 of 16 rows, formats 3 and 4 on every plane (E978's x ramp with stencil fills
+  0x00000000, 0xffffffff and 0xa5a5a5a5, a y ramp, the plane z = x / 2W + y / 2H from 0.012 to
+  0.988, and 40 x 20's edge tiles) and formats 5 and 6 on that plane; formats 5 and 6 stored fewer
+  dwords and held no frozen model where each tile row holds one depth (the y ramp: 988 and 212
+  changed dwords) and format 6 at the edge tiles (1364 of 2048, constant past the target); the
+  raster and 16-bit stencil orders failed 7 of 7 and format 6's in-tile order 3 of 3; no format 3 to
+  7 wrote the stencil store (21 of 21); format 7 stored 48 dwords under a constant stencil and 784
+  under the index one; the five controls passed, z2x-f0 byte for byte E978's z120-ctl-s.
+  *zls; HW; data: `render-closing-r10-zls:out/20261113-102039/zst2/`,
+  `render-closing-r10-zls:fold/`.*
+- `E987` r10-zls stages zbgc, zbg and zw (13 jobs, 256 x 128, G 7): render details dword 16
+  (CR_ISP_BGOBJDEPTH) is the background depth, 1.0 and 0.25 poked stored at all 28279 background
+  pixels, and at 0.25 a triangle at 0.5 under depth less drew none of its 3721 pixels; poked to
+  -0.25 it is stored with its sign cleared in every format (H-ABS 6 of 6: 0x3e800000 in format 0 and
+  0xbe800000 with bit 19, 0x400000 in format 1 and 0x40004000 in format 2 with and without bit 19),
+  H-RAW, H-CLAMP0 and H-CLAMP0P failing 6 of 6 and H-B19-INT 4, and -0.0 stores 0 (format 1);
+  state-block word 10 poked to 0.5 reproduced E977's z242-a-f0 byte for byte, at 0.75 and 1.0 the
+  depth is t + w - 0.5 at every dword of the target (H-OFF), at 0.125 it is 0.4 t on the frozen mask
+  (H-LIN; 31856 of 32768 dwords post hoc), so no frozen rival held on all three rows (H-OFF 2, H-LIN
+  1, H-HYP 0).
+  *zls; HW; data: `render-closing-r10-zls:out/20261113-102039/zbgc/`,
+  `render-closing-r10-zls:out/20261113-102039/zbg/`,
+  `render-closing-r10-zls:out/20261113-102039/zw/`, `render-closing-r10-zls:fold/`.*
+- `E988` r10-st1 stage st1 (16 jobs of 18, tool t10, `tri --isp2`): against a loaded stencil
+  (CR_ISP_ZLSCTL 0x0017300e) ISP word 2's test reads, for pixel (x, y), byte j of its tile slot's
+  512 with j the depth's in-tile index y0 x0 y1 x1 y2 x2 y3 x3 x4: H-DEPTHORD held out 13 of 13
+  rows, the image and every stored stencil byte of the target's pixels (8 rows reading bit k of j
+  for every pixel through the bytes fill, the bytes:1 carry row, two lane rows of 0x03020100 and two
+  40 x 20 edge rows); EQUAL against reference 0 drew exactly the pixels whose byte and mask are 0
+  and stored them inverted (the pass operation), the others copied; H-RASTER 0, H-F2ORD 3 (rows
+  where its order agrees) and H-NOLOAD 0 of 13; the controls passed (always 2048, never 0, without
+  --isp2 2048); post hoc, at 40 x 20 the bytes past the target are the loaded ones but in E831's
+  band, where the test acts as inside (1248 of 1248 in both edge rows).
+  *zls; HW; data: `render-closing-r10-st1:out/20261113-103934/st1/`,
+  `render-closing-r10-st1:fold/`.*
+- `E989` r10-st1 rows q071-b0 and q071-l1 (2 jobs): with CR_ISP_ZLSCTL's bits that E411 flipped
+  singly to no effect flipped together under a stencil test (0xf8e6a00e: bits 15, 21 to 23 and 27 to
+  31 set, 12, 16 and 20 cleared, from E988's 0x0017300e), H-INERT failed 2 of 2: each row drew all
+  2048 pixels where its base row drew 1024, and stored 0xff at every byte of the 512 stencil dwords
+  of the target's tiles, as a test reading 0 and inverting it would; the depth dump and the loaded
+  stencil buffer are byte for byte the base rows'.
+  *isp; HW; data: `render-closing-r10-st1:out/20261113-103934/st1/`,
+  `render-closing-r10-st1:fold/`.*
 - `E990` Round 10 offline (Q030; no run): on the 48 kept --pixels images of r9-geo's stages seam1
   and seam4 (E953, E954: tri-full renders 64 x 96 to 128 x 96 and six single triangles of new
   slopes, CR_ISP_MSAA modes 0 to 2, CR_TE_AA 0x2, 0x6, 0xa and 0xe windows, the two controls
@@ -8222,7 +8266,7 @@ E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E2
 E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E508, E510, E590,
 E606, E607, E618, E660, E661, E662, E680, E681, E682, E683, E684, E727, E728, E731, E739, E740,
 E741, E757, E758, E762, E825, E827, E829, E912, E913, E914, E922, E934, E943, E952, E953, E954,
-E970, E971, E972, E973, E979, E984, E990, E992, E995, E998, E1005, E1006, E1010.
+E970, E971, E972, E973, E979, E984, E989, E990, E992, E995, E998, E1005, E1006, E1010.
 
 ### mte
 
@@ -8298,4 +8342,5 @@ E413, E414, E427, E440, E545, E546, E700, E701, E702, E703, E737, E738, E755, E7
 ### zls
 
 Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467, E489, E490, E615, E628, E629,
-E663, E664, E665, E730, E831, E885, E903, E904, E977, E978, E981, E985, E991, E996, E997.
+E663, E664, E665, E730, E831, E885, E903, E904, E977, E978, E981, E985, E986, E987, E988, E991,
+E996, E997.

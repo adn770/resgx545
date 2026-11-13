@@ -6,7 +6,7 @@ kind = "hw"
 value = "medium"
 phase = 11
 evidence = ["E057", "E169", "E216", "E228", "E284", "E337", "E411", "E465", "E466", "E467", "E665",
-            "E997"]
+            "E989", "E997"]
 terms = ["CR_ISP_ZLSCTL", "CR_ISP_BGOBJVALS.STENCIL", "ISP2"]
 +++
 
@@ -52,3 +52,10 @@ to 31 set together change nothing; bits 12, 16 and 20 cleared together keep the 
 but store a linear image of the tile area, rows of 32 (G + 1) dwords (post hoc, 4608 of 4608 by the
 x each value names). Open: which of bits 12, 16 and 20 selects the linear layout and its rows' y,
 what the load reads under it, and the stencil test against a loaded stencil (Q121's stage).
+
+Narrowed 2026-11-13 (E989, with E988's stencil test). Under a stencil test against a loaded stencil
+(control 0x0017300e, E988), flipping bits 15, 21 to 23 and 27 to 31 (set) and 12, 16 and 20
+(cleared) together makes the test read 0, not the loaded byte: every EQUAL-to-0 test passed and its
+invert stored 0xff at every byte, while the depth dump and the loaded buffer stayed the base rows'.
+So these bits are not all inert. Open: which of them does it (a flip of each under the same test),
+and what they do to the depth path.
