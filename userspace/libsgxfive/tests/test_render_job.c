@@ -271,6 +271,14 @@ static void aa4(void)
 		cmd.te_aa = ms[i];
 		CHECK_EQ(sgxfive_submit_render(e.dev, ctx, &cmd, 0, 0), 0);
 	}
+	{	/* a command at a 4-byte offset (i686 stack): the call aligns its own copy */
+		_Alignas(8) unsigned char raw[sizeof(cmd) + 8];
+		struct drm_sgxfive_render_cmd *odd = (void *)(raw + 4);
+
+		memcpy(odd, &cmd, sizeof(cmd));
+		CHECK_EQ((uintptr_t)odd % 8, 4);
+		CHECK_EQ(sgxfive_submit_render(e.dev, ctx, odd, 0, 0), 0);
+	}
 	sgxfive_ctx_destroy(e.dev, ctx);
 	/* A 4x context renders a single-sampled triangle as any other. */
 	CHECK_EQ(sgxfive_render_ctx_create_flags(e.vm, 64, 64, DRM_SGXFIVE_CTX_RENDER_AA_4X,

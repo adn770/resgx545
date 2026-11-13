@@ -533,11 +533,17 @@ int sgxfive_submit_transfer(struct sgxfive_dev *dev, uint32_t ctx, uint32_t flag
 {
 	struct drm_sgxfive_sync_op ops[2];
 	uint32_t n = 0;
+	/* the kernel wants an 8-byte aligned stream; a struct of dwords is 4-aligned on i686 */
+	_Alignas(8) struct drm_sgxfive_transfer_cmd copy;
 	struct drm_sgxfive_job job = {
 		.type = DRM_SGXFIVE_JOB_TYPE_TRANSFER, .context_handle = ctx, .flags = flags,
-		.cmd_stream = (uintptr_t)cmd, .cmd_stream_len = cmd ? sizeof(*cmd) : 0,
+		.cmd_stream_len = cmd ? sizeof(*cmd) : 0,
 	};
 
+	if (cmd) {
+		copy = *cmd;
+		job.cmd_stream = (uintptr_t)&copy;
+	}
 	if (wait)
 		ops[n++] = (struct drm_sgxfive_sync_op){
 			.handle = wait, .flags = DRM_SGXFIVE_SYNC_OP_FLAG_WAIT };
@@ -554,9 +560,10 @@ int sgxfive_submit_render(struct sgxfive_dev *dev, uint32_t ctx,
 {
 	struct drm_sgxfive_sync_op ops[2];
 	uint32_t n = 0;
+	_Alignas(8) struct drm_sgxfive_render_cmd copy = *cmd;	/* as in submit_transfer */
 	struct drm_sgxfive_job job = {
 		.type = DRM_SGXFIVE_JOB_TYPE_RENDER, .context_handle = ctx,
-		.cmd_stream = (uintptr_t)cmd, .cmd_stream_len = sizeof(*cmd),
+		.cmd_stream = (uintptr_t)&copy, .cmd_stream_len = sizeof(*cmd),
 	};
 
 	if (wait)

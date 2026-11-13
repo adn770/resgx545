@@ -457,7 +457,23 @@ static void sync_and_submit(void)
 	cmd.bif_3d_req_base = 0x3e000000;
 	cmd.isp_render_box2 = 0xffffffff;
 	CHECK_EQ(sgxfive_submit_transfer(dev, ctx, 0, &cmd, 0, 0), 0);	/* runs, and faults */
+	/*
+	 * The kernel wants an 8-byte aligned command stream, which a struct of dwords on the stack
+	 * of an i686 build is not (the type's alignment is 4): the call aligns its own copy. A
+	 * context of its own, the one above is lost by the fault.
+	 */
+	{
+		_Alignas(8) unsigned char raw[sizeof(cmd) + 8];
+		struct drm_sgxfive_transfer_cmd *odd = (void *)(raw + 4);
+		uint32_t ctx2 = 0;
 
+		memcpy(odd, &cmd, sizeof(cmd));
+		odd->isp_render_box2 = 0;
+		CHECK_EQ((uintptr_t)odd % 8, 4);
+		CHECK_EQ(sgxfive_ctx_create(vm, &ctx2), 0);
+		CHECK_EQ(sgxfive_submit_transfer(dev, ctx2, 0, odd, 0, 0), 0);
+		CHECK_EQ(sgxfive_ctx_destroy(dev, ctx2), 0);
+	}
 	CHECK_EQ(sgxfive_ctx_destroy(dev, ctx), 0);
 	sgxfive_vm_destroy(vm);
 	sgxfive_dev_close(dev);
