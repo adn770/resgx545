@@ -5,7 +5,7 @@ unit = "zls"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E466", "E490", "E978"]
+evidence = ["E466", "E490", "E978", "E985"]
 terms = ["CR_ISP_ZLSCTL"]
 +++
 
@@ -29,3 +29,13 @@ Note 2026-11-13 (E978). With a loaded index stencil (bits 1 and 13) and bit 17, 
 48: format 4 stores 160 depth dwords a tile (E466 scaled, held), formats 3 and 5 640, 6 512, 7 196 a
 tile at 64 x 32 and not a whole number at 96 x 48; none of 3 to 7 writes the stencil store. The
 dumps are kept; no layout is decoded.
+
+Narrowed 2026-11-13 (round 10 offline, decision R10-1 a; E985, SEMI). E978's kept dumps decode for
+formats 3, 4, 5 and 6 at both sizes, every changed dword: 3 and 5 the same bytes, a 5-byte record a
+pixel (the float with its sign bit set, then the stencil byte) in 160-byte chunks a row at fitted
+addresses; 4 the stencil alone, a 0xf0 byte before each quad's four; 6 the float with its sign bit
+set, one dword a pixel; tiles in blocks of 640, 256 and 512 dwords, two tile rows a macro row. The
+rules were fitted at 64 x 32 and frozen before 96 x 48 was scored, after a coverage look at 96 x
+48. Open: held-out rows (a y ramp, the whole depth range, other stencil fills, edge tiles: the seeds
+plan's stage zst2, closing10/seeds/exp-seeds-r10.md section 5), what parts 3 from 5, what the 0xf0
+encodes, format 7's layout, and the formats without a stencil buffer.

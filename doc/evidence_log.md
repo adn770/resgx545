@@ -7931,6 +7931,63 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   bit 19 (byte-identical), missing round(z * 0xffffff), the rivals' encoding, at 8803 of 32768
   dwords; both format-0 controls passed (32768 dwords).
   *zls; HW; data: `render-closing-r9-z2:out/20261113-082522/z2/`, `render-closing-r9-z2:fold/`.*
+- `E982` Round 10 offline (Q282; no run): one lerp stage of a bilinear sRGB sample (T0 bit 27) on
+  two decoded halves A (weight 64 - k) and B (weight k) returns A unchanged at k = 0 and otherwise
+  floors both to the grid 2^(e - 11), e the larger frexp exponent of the two (an 11-bit mantissa
+  shared at the larger one's exponent: the larger half's ulp), lerps exactly and rounds to a half to
+  nearest with ties up (R10-BF11); fitted on r9-x's single-stage rows a1, a2, b1 and b2 (16384 of
+  16384 halves) and frozen by hash with both stage orders declared, it holds out offline with x
+  first then y on r9-x's two-stage c1 and c2 and E723's g-bl-st-b, 2048 of 2048 pixels each (y
+  first: 536 to 773) [HW, held out offline]; E723's g-bl-st-a, scored only after the freeze by
+  sgx-sim, is exact too (2048 of 2048); weights off the 1/64 grid, k = 0 with the smaller corner as
+  B and subnormal halves never ran.
+  *texture; HW, infer; data: `render-closing-r9-x:out/20261113-081821/srgb/`,
+  `texture-isp-msaa-verification-1141`, `cited-scratch:closing10/seeds/q282/`.*
+- `E983` Round 10 offline (Q177; no run): on E565's kept 32 x 8 twiddled jobs bd-hb-ns-uv4, uv6 and
+  uv7 (u and v in mode 4, 6, 7), never read for the offset, every pixel reads the dword the v rule
+  names plus 308 (2048 of 2048 each), which is 8 W + 52 with W = 32 the width, where the height's 8
+  H + 52 (116), the square's 8 sqrt(W H) + 52 (180) and 4 (W + H) + 52 (212) miss every pixel [HW,
+  SEMI: the jobs ran before E957 fitted 8 N + 52 on square textures, and the rivals, named by E957's
+  open part, were not frozen by hash before this reading]; post hoc, in bd-hb-ns-uv5 (mode 5) the
+  128 pixels inside the texture read +308 too, left of the texture the rows inside it read 5 W + 52
+  + t and right of it 6 W + 52 + t (t the texel row, 212 to 219 and 244 to 251), and with v outside
+  too the reads are dwords 20 (above, left), 21 (above, right), 22 (below, left) and 23 (below,
+  right) at every column of that side [fitted, one size].
+  *texture; HW, infer; data: `texture-p1132-tx-border`, `cited-scratch:closing10/seeds/q177/`.*
+- `E984` Round 10 offline (Q261, post hoc on E979's kept rows; no run): of the 46 pixels of E979's
+  11 rows whose centre lies within 1e-3 pixel of an edge line (E684's band), the 26 that lie on a
+  far edge between its near vertex and the far vertex (2 in far-x23p, 10 in far-x24p, 14 in
+  far-x25n, 1.2e-6 to 1.16e-4 pixel off the line) are all drawn where the exact test leaves them
+  out, while the 19 near the same lines past the near vertex and the control's one agree with the
+  exact image; with the near vertices fixed, the far vertex moved alone fits every band pixel of
+  those three rows only from 43, 52 and 42 pixels in y (or -171, -206, -167 in x) at 2^23, 2^24 and
+  -2^25 pixels, a bound from one side only, far above float32's spacing there (0.25 to 1 pixel) [HW,
+  fitted post hoc; the pivot about the near vertex is an inference]; note: 352 floating-point edge
+  set-ups fitted on E914, E943 and these 11 rows give at most 156 of E683's 240 cases held out (half
+  away from zero 173, gate 235, 174 post hoc), and the 38 coarse ones (11 to 19 bits) that reproduce
+  the 46 band pixels give at most 139.
+  *isp; HW, infer; data: `render-closing-r9-x:out/20261113-081821/far/`,
+  `isp-coverage-envelope-1140`, `cited-scratch:closing10/seeds/q261/`,
+  `cited-scratch:closing10/offline2/q261/`, `cited-scratch:closing10/seeds/q260/`,
+  `cited-scratch:closing9/offline/oz/`.*
+- `E985` Round 10 offline (Q120, Q121; no run): E978's kept dumps (a loaded index stencil, one x
+  depth ramp, 64 x 32 and 96 x 48) decode for stored depth formats 3, 4, 5 and 6, every changed
+  dword at both sizes [HW, SEMI: the rules were fitted on 64 x 32 and hashed before 96 x 48 was
+  scored, after a coverage look at 96 x 48's format 3]: the tiles sit in blocks of 640 (formats 3,
+  5), 256 (4) and 512 (6) dwords, tile (tx, ty) in block 2 tw (ty >> 1) + 2 tx + (ty & 1) with tw
+  the tiles across (equal to G + 1 in both dumps); formats 3 and 5 stored the same bytes, a 5-byte
+  record a pixel (format 0's float with the sign bit set, little endian, then the pixel's stencil
+  byte) in 16 chunks of 160 bytes, one a row, at fitted addresses (record P byte q at 1 + 17 g + 5
+  (2 - P mod 3) + q, g = P div 3, less 32 from 16 (g + 1) up); format 4 stores only stencil, in 8
+  groups of 80 bytes (two rows), each quad of a row a record of 0xf0 then its four stencil bytes
+  from x + 3 down, at the same addresses; format 6 is one dword a pixel, x fastest, the float with
+  the sign bit set (its row order untested: the depth varies in x only); format 7 is not decoded;
+  the stencil byte paired with each pixel is byte j of the tile's loaded 128 dwords with j the
+  depth's in-tile index (y0 x0 y1 x1 y2 x2 y3 x3 x4 from the lowest bit), 13 of 13 tiles, where the
+  raster order and E466's format 2 order match none, but only lane-0 pixels (x and y even) and lane
+  1 at tile slots 2 and up carry a nonzero byte under the index fill.
+  *zls; HW, infer; data: `render-closing-r9-x:out/20261113-081821/zst/`,
+  `cited-scratch:closing10/seeds/q120/`.*
 - `E990` Round 10 offline (Q030; no run): on the 48 kept --pixels images of r9-geo's stages seam1
   and seam4 (E953, E954: tri-full renders 64 x 96 to 128 x 96 and six single triangles of new
   slopes, CR_ISP_MSAA modes 0 to 2, CR_TE_AA 0x2, 0x6, 0xa and 0xe windows, the two controls
@@ -8011,7 +8068,7 @@ E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E2
 E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E508, E510, E590,
 E606, E607, E618, E660, E661, E662, E680, E681, E682, E683, E684, E727, E728, E731, E739, E740,
 E741, E757, E758, E762, E825, E827, E829, E912, E913, E914, E922, E934, E943, E952, E953, E954,
-E970, E971, E972, E973, E979, E990, E992.
+E970, E971, E972, E973, E979, E984, E990, E992.
 
 ### mte
 
@@ -8056,7 +8113,7 @@ Records: E033, E034, E035, E036, E037, E038, E039, E040, E041, E042, E114, E116,
 E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441, E560, E561, E562,
 E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E726, E733, E743,
 E744, E760, E765, E787, E844, E894, E910, E911, E923, E930, E931, E932, E940, E941, E942, E951,
-E955, E956, E957, E958, E968, E974, E975, E976.
+E955, E956, E957, E958, E968, E974, E975, E976, E982, E983.
 
 ### transfer
 
@@ -8087,4 +8144,4 @@ E413, E414, E427, E440, E545, E546, E700, E701, E702, E703, E737, E738, E755, E7
 ### zls
 
 Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467, E489, E490, E615, E628, E629,
-E663, E664, E665, E730, E831, E885, E903, E904, E977, E978, E981, E991.
+E663, E664, E665, E730, E831, E885, E903, E904, E977, E978, E981, E985, E991.

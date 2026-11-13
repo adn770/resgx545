@@ -178,8 +178,11 @@ pub const FAR_BAND: f64 = 1.0e-3;
 /// every pixel whose centre is 1e-3 pixel or more from an edge line, and `None` inside that band
 /// (E684: the 16 pixels it got wrong lay within 5.6e-4 pixel). E979 held this at one vertex up to
 /// 2^24 pixels both ways and -2^25, and at two vertices at +-2^23 and +-2^24, 10 of 10 rows: no
-/// clamp or wrap of a 24.8 word (H-SAT, H-WRAP refuted). Refuses other targets, three far vertices
-/// and the band's own form (Q261), and coordinates past what ran (Q199).
+/// clamp or wrap of a 24.8 word (H-SAT, H-WRAP refuted). Inside the band E979's rows drew exactly
+/// the pixels on a far edge between its near vertex and the far one (E984, post hoc, 26 of 46 on
+/// three rows: as if the far vertex sat tens of pixels away), so the band stays `None`. Refuses
+/// other targets, three far vertices and the band's own form (Q261), and coordinates past what ran
+/// (Q199).
 pub fn far_coverage_image(w: u32, h: u32, t: &FarTri) -> Result<Vec<Option<bool>>, Outcome> {
     if !FAR_TARGETS.contains(&(w, h)) {
         return Err(open(
@@ -700,6 +703,12 @@ mod tests {
             // the hardware drew every determined pixel and some of the band (E979: H-EXACT held)
             assert!(det <= hw && hw <= det + und, "{name}");
         }
+        // E984 (post hoc): 26 of the 46 band pixels were drawn, each on a far edge between its near
+        // vertex and the far one, and the other 20 not; one-sided, but read on three rows only, so
+        // the band stays undetermined
+        let band: usize = E979_ROWS.iter().map(|r| r.3).sum();
+        let drawn_in_band: usize = E979_ROWS.iter().map(|r| r.4 - r.2).sum();
+        assert_eq!((band, drawn_in_band), (46, 26));
     }
 
     #[test]
