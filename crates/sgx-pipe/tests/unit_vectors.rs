@@ -4,7 +4,10 @@
 //! `unit-vectors/` (doc/specs/vectors.md section 5; `$RESGX545_DATA`, or `$RESGX545_UNIT_VECTORS`
 //! for a set not yet landed). Skips, saying so, without them; with `RESGX545_REQUIRE_DATA`
 //! set (the release gate) it fails instead. The gate is zero mismatches (D5): refusals are
-//! counted by question, fitted results apart, predicted hangs as matches.
+//! counted by question, fitted results apart, predicted hangs as matches. The model records these
+//! replays hold: E615 (zls::store_dword over E489's 18 cases), E616 (ta::tile_lists, E542's 35
+//! jobs), E617 (ta::object_layout, E541's 59 jobs), E618 (isp::msaa_source, E503's 48 runs),
+//! E664 (the zls load and pass, E467's 30 cases) and E665 (the zls control word, 47 vectors).
 
 use sgx_pipe::data::{Ctx, files};
 use sgx_pipe::report::Report;

@@ -797,7 +797,8 @@ impl Texture {
             t[k] = self.colour_texel(self.fetch(x0 + dx, y0 + dy, load)?)?;
         }
         // E720 (8 of 8 held-out jobs, the joint form 0 of 8): each 8-bit channel is filtered in
-        // two stages, x on both rows and then y, each (a (64 - f) + b f + 32) >> 6. The jobs'
+        // two stages, x on both rows and then y, each (a (64 - f) + b f + 32) >> 6; E733: this
+        // form replays E720's 8 vectors, every other vector's outcome unchanged. The jobs'
         // fractions were on the 1/64 grid; that the weights truncate to it rests on the landed
         // vectors (finer weights miss 8 of 21) and the 11.32 jobs, not on E720.
         let stage = |a: u32, b: u32, f: u32| (a * (64 - f) + b * f + 32) >> 6;
