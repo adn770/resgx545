@@ -127,3 +127,9 @@ def test_main_writes_the_document_where_doc_does_not_exist(tmp_path, monkeypatch
     assert rc.main(["--check"]) == 1
     assert rc.main([]) == 0
     assert rc.main(["--check"]) == 0
+
+
+def test_records_past_e999_are_a_registers_records_in_numeric_order():
+    rows = [row("CR_A", "0x0100", evidence="[HW] E1000 E999"),
+            row("CR_A.LOW", "0x0100[1:0]", "bitfield", citation="E1001", tier="ours")]
+    assert rc.registers(rows, {})[0].records == ["E999", "E1000", "E1001"]

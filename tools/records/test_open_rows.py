@@ -45,3 +45,9 @@ def test_main_writes_the_document_where_doc_does_not_exist(tmp_path, monkeypatch
     assert open_rows.main([]) == 0
     assert open_rows.DOC.read_text() == open_rows.render([ROW])
     assert open_rows.main(["--check"]) == 0
+
+
+def test_records_past_e999_are_listed_in_numeric_order():
+    row = dict(ROW, evidence="E1000 E999 E002", citation="")
+    text = open_rows.render([row])
+    assert "Evidence: E002, E999, E1000." in text

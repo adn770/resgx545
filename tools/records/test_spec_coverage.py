@@ -23,7 +23,7 @@ def tree(tmp_path, monkeypatch):
 def test_cited_tokens_and_ranges():
     assert spec_coverage.cited("E601, E700 and E804-E806; E810 to E811 (E820..E821)") == {
         "E601", "E700", "E804", "E805", "E806", "E810", "E811", "E820", "E821"}
-    assert spec_coverage.cited("E8040 xE601") == set()
+    assert spec_coverage.cited("E12 xE601 E601x") == set()
 
 
 def test_only_hardware_records_from_e600_must_be_cited(tree):
@@ -67,3 +67,9 @@ def test_main_reads_the_baseline_and_checks(tree):
     assert spec_coverage.main(["--check"]) == 1
     (tree / "doc" / "specs" / "UNCITED.toml").write_text('E600 = "not yet in a spec"\n')
     assert spec_coverage.main(["--check"]) == 0
+
+
+def test_tokens_and_ranges_past_e999():
+    assert spec_coverage.cited("E999-E1001, E1100 and E1200 to E1201") == {
+        "E999", "E1000", "E1001", "E1100", "E1200", "E1201"}
+    assert spec_coverage.cited("E1000x xE1000 E99") == set()

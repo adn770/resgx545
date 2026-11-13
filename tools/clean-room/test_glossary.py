@@ -54,7 +54,7 @@ def test_our_own_terms_point_at_our_evidence():
     for r in glossary.load():
         if r["tier"] == "ours":
             assert r["source"] == "resgx545" and r["licence"] == "MIT", r
-            ids = re.findall(r"\bE\d{3}\b", r["citation"])
+            ids = re.findall(r"\bE\d{3,}\b", r["citation"])
             if ids:
                 assert set(ids) <= records, r
             else:

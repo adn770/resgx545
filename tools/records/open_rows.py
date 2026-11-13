@@ -49,7 +49,7 @@ def render(rs: list[dict]) -> str:
             r = trs[0]
             loc = f" ({r['sgx545']})" if r["sgx545"] != "-" else ""
             ids = sorted({e for t in trs for c in ("citation", "evidence")
-                          for e in re.findall(r"\bE\d{3}\b", t[c])})
+                          for e in re.findall(evidence.ID_REF, t[c])}, key=evidence.num)
             text = f"- `{gid}` `{r['name']}`{loc}: {r['meaning']}."
             if ids:
                 text += f" Evidence: {', '.join(ids)}."

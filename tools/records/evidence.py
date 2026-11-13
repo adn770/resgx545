@@ -43,7 +43,14 @@ UNITS = {"platform", "firmware", "bif", "edm", "dpm", "vdm", "ta", "mte", "isp",
          "usse", "texture", "pbe", "zls", "transfer", "render"}
 TIERS = {"HW", "CAP", "RE", "DDK", "infer"}
 RETIRED: dict[str, str] = {}    # id -> why it was withdrawn
-NAME = re.compile(r"(E\d{3}|E\?\?\?)-[a-z0-9]+(-[a-z0-9]+)*\.md")
+NAME = re.compile(r"(E\d{3,}|E\?\?\?)-[a-z0-9]+(-[a-z0-9]+)*\.md")
+# a record id in a text: E followed by at least three digits (E1000 and up are ids too)
+ID_REF = r"\bE\d{3,}\b"
+
+
+def num(rid: str) -> int:
+    """The number of a record id, for ordering (E999 comes before E1000)."""
+    return int(rid[1:])
 
 
 def parse(path: pathlib.Path) -> tuple[dict, str]:

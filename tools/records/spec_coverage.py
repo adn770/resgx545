@@ -20,7 +20,7 @@ import evidence
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 FIRST = 600
-TOKEN = re.compile(r"(?<![\w])E(\d{3})(?:\s*(?:-|to|\.\.)\s*E(\d{3}))?(?![\w])")
+TOKEN = re.compile(r"(?<![\w])E(\d{3,})(?:\s*(?:-|to|\.\.)\s*E(\d{3,}))?(?![\w])")
 BASELINE = "doc/specs/UNCITED.toml"
 
 
