@@ -88,6 +88,8 @@ fn check_cmd(sc: &Scene) -> Result<(), Outcome> {
         ));
     }
     if c[CMD_TE_AA] & 0xc000_0000 != 0 {
+        // without bit 29 the TA's layout is ta::Grid::from_te_aa's refusal (E728, E906)
+        ta::Grid::from_te_aa(c[CMD_TE_AA])?;
         return Err(refuse(
             format!(
                 "CR_TE_AA {:#x}: a multisampled render, which the module refuses at submission from a context not made for 4x targets (E934) and whose control streams are not modelled",
@@ -304,6 +306,16 @@ mod tests {
                 Err(Outcome::Unsupported { ids, .. }) => assert!(ids.iter().any(|i| i == q), "{k}: {ids:?}"),
                 r => panic!("{k}: {r:?}"),
             }
+        }
+        // bit 30 without bit 29: the layout of E728 and E906 (Q142 first, as the TA's refusal)
+        let mut sc = Scene::from_fixture(FIXTURE, id);
+        sc.cmd[CMD_TE_AA] = 0x4000_0000;
+        match run(&sc) {
+            Err(Outcome::Unsupported { ids, why }) => {
+                assert_eq!(ids[0], "Q142", "{why}");
+                assert!(why.contains("E728") && why.contains("E906"), "{why}");
+            }
+            r => panic!("{r:?}"),
         }
         // a multisampled CR_TE_AA (bit 31 or 30): the module refuses it from a context not made
         // for 4x targets (E934), and the scene says nothing of the context

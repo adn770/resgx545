@@ -4,8 +4,10 @@
 //! state. The state block's words (E347: presence 0xdf43, 18 dwords), the viewport on the clip
 //! position (E061, E193), the 1/w the TA stores and its minimum and replacement (E063, E197), the
 //! clip at z = -w and z = w (E287), the structure of a triangle cut at one vertex (E782, E798).
-//! Everything else refuses: culling (MTECTL bits 1:0), the output select other than the
-//! library's, perspective w, a triangle the clip removes, the 1/w and depth of a cut one.
+//! The clipping datasets' census (E619) holds the same: a clip volume of z = -w to w, the w clamp
+//! word and no x or y clipping rule. Everything else refuses: culling (MTECTL bits 1:0), the
+//! output select other than the library's, perspective w, a triangle the clip removes, the 1/w
+//! and depth of a cut one.
 
 use crate::Outcome;
 
@@ -104,7 +106,8 @@ fn refuse230(why: impl AsRef<str>) -> Outcome {
     Outcome::unsupported(why.as_ref(), &["Q230"])
 }
 
-/// A kept vertex's 1/w word the rules do not give (split from Q230).
+/// A kept vertex's 1/w word the rules do not give (split from Q230): RZ or RZ + 1, and no frozen
+/// model of the word fits every read one (E851: 225 models over E842's words, none 19 of 19).
 fn refuse296(why: impl AsRef<str>) -> Outcome {
     Outcome::unsupported(why.as_ref(), &["Q296"])
 }
@@ -486,6 +489,9 @@ pub fn triangle(
             ));
         }
         let (rhw, u) = stored_rhw(r, min, clamp);
+        // E736 (clamp one ulp above w = 1e-3: the clamp's reciprocal, a 0.96-pixel square) and
+        // E781 (six clamps: the word within 1 ulp of 1/clamp, RZ in 2 and RN in 3, the position
+        // divided by the clamp): no rounding rule for the word, so refused
         if u && v[3] != 1.0 {
             return Err(refuse230(
                 "a 1/w replaced by the clamp at a w other than 1: E754's clamp jobs shrank the triangle by w / clamp and stored the clamp's reciprocal, no rule fits all",

@@ -3778,7 +3778,7 @@ impl Machine {
                 self.not_pending(Reg::Pa(r))?;
                 self.read_pa(r)?
             }
-            2 => self.read(self.o[r], self.written.o, r, "o")?,
+            2 => self.read_o(r)?,
             3 => self.read(self.sa[r], self.written.sa, r, "sa")?,
             b => return Err(why(format!("source-0 bank {b}"))),
         })
@@ -3789,10 +3789,7 @@ impl Machine {
         match v >> 7 {
             0 if r < 124 => self.set_r(r, x)?,
             1 => self.set_pa(r, x),
-            2 => {
-                (self.o[r], self.written.o) = (x, self.written.o | 1 << r);
-                self.mark("o", r);
-            }
+            2 => self.write_o(r, x)?,
             3 => {
                 (self.sa[r], self.written.sa) = (x, self.written.sa | 1 << r);
                 self.mark("sa", r);
@@ -3874,7 +3871,7 @@ impl Machine {
         let r = (v & 0x7f) as usize;
         Ok(match v >> 7 {
             0 => self.temp(r)?,
-            1 => self.read(self.o[r], self.written.o, r, "o")?,
+            1 => self.read_o(r)?,
             2 => {
                 self.not_pending(Reg::Pa(r))?;
                 self.read_pa(r)?
@@ -4074,6 +4071,34 @@ impl Machine {
         self.read(self.r[r], self.written.r, r, "r")
     }
 
+    /// A read of output register r. In a triangle's pixel task (Q276, Q023) a read of o4 to o7
+    /// reads o(r mod 4) of the instance (E878, E905, held out): refused, with every o beyond.
+    fn read_o(&self, r: usize) -> Result<u32, Error> {
+        if self.tri_pixel && r >= 4 {
+            return Err(why(format!(
+                "a read of o{r} in a triangle's pixel task (o4 to o7 read o0 to o3, E878, E905: \
+                 refused, Q276)"
+            )));
+        }
+        self.read(self.o[r], self.written.o, r, "o")
+    }
+
+    /// A write of output register r. In a triangle's pixel task (Q276, Q023) only o0's word
+    /// lands at its own pixel: o1 to o3's land at other pixels under g25 predicates (E742, E759,
+    /// E772), o4's pixels hold OR(o0, o3) of a lane the job picks (E709, E838, E850, E858, E880)
+    /// and o4 to o7's own words reach no pixel (E871): no per-pixel rule, so refused.
+    fn write_o(&mut self, r: usize, v: u32) -> Result<(), Error> {
+        if self.tri_pixel && r != 0 {
+            return Err(why(format!(
+                "a write of o{r} in a triangle's pixel task (its word lands at other pixels or \
+                 none, E742, E871, E880: refused, Q276)"
+            )));
+        }
+        (self.o[r], self.written.o) = (v, self.written.o | 1 << r);
+        self.mark("o", r);
+        Ok(())
+    }
+
     /// A read of register n of a bank (see read), noting a near value's bound.
     fn read(&self, v: u32, written: u128, n: usize, bank: &'static str) -> Result<u32, Error> {
         let v = read(v, written, n, bank)?;
@@ -4151,10 +4176,7 @@ impl Machine {
         match d >> 7 {
             0 if r < 124 => self.set_r(r, v)?,
             0 => self.set_i(r - 124, v)?,
-            1 => {
-                (self.o[r], self.written.o) = (v, self.written.o | 1 << r);
-                self.mark("o", r);
-            }
+            1 => self.write_o(r, v)?,
             // hardware (E496, Q098; usse-pa-dest, 3 of 3 jobs, and E380): in a fill a write to
             // pa0 by ima32 or mov is lost, pa0 reading what it read before; E380 (30 fill jobs):
             // a mov to pa1 to pa7 is lost the same way. ima32 to pa1 and up was not run. In an
@@ -4976,6 +4998,41 @@ mod tests {
                 "g{g}: {r:?}"
             );
         }
+    }
+
+    #[test]
+    fn a_triangles_pixel_task_writing_o1_or_reading_o4_up_is_refused_by_q276() {
+        // hardware (Q276, Q023): in a triangle's pixel task the words of o1 to o3 land at other
+        // pixels under g25 predicates (E742, E759, E772), o4 brings out OR(o0, o3) of a lane
+        // chosen by the job (E709, E838, E850, E858, E880), o4 to o7's own words reach no pixel
+        // (E871) and a read of o4 to o7 reads o(r mod 4) (E878, E905): no per-pixel machine
+        // holds this, so only o0 is written and o0 to o3 read
+        let run = |src: &[&str]| {
+            let mut m = Machine { pixel: Some((5, 3)), tri_pixel: true, ..Machine::default() };
+            let mut mem = Memory { base: 0, words: vec![] };
+            let r = m.run(&prog(src), &mut mem, 100);
+            (r, m.o[0])
+        };
+        for src in [
+            &["mov r1, #7", "mov.skipinv o1, r1", "mov.skipinv.end o0, r1"][..],
+            &["mov r1, #7", "mov o7, r1", "mov.skipinv.end o0, r1"],
+            &["mov r1, #7", "mov.skipinv o0, r1", "mov r2, o5", "mov.skipinv.end o0, r2"],
+            &["mov r1, #7", "mov.skipinv o0, r1", "or r2, r1, o6", "mov.skipinv.end o0, r2"],
+        ] {
+            let (r, _) = run(src);
+            assert!(
+                matches!(&r, Err(Error::Unsupported { why, .. }) if why.contains("Q276")),
+                "{src:?}: {r:?}"
+            );
+        }
+        // o0 is written and read back as before
+        let ok = ["mov r1, #7", "mov.skipinv o0, r1", "mov r2, o0", "mov.skipinv.end o0, r2"];
+        assert_eq!(run(&ok), (Ok(()), 7));
+        // a fill's pixel task keeps every output (E570's output room is a triangle's)
+        let mut m = Machine { pixel: Some((5, 3)), ..Machine::default() };
+        let mut mem = Memory { base: 0, words: vec![] };
+        let fill = ["mov r1, #7", "mov.skipinv o1, r1", "mov r2, o1", "mov.skipinv.end o0, r2"];
+        assert_eq!((m.run(&prog(&fill), &mut mem, 100), m.o[0]), (Ok(()), 7));
     }
 
     #[test]
