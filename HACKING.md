@@ -305,6 +305,13 @@ interpreter (`bash ...`, `python3 ...`), never by its mode bits: r7-geo's stage 
 A session whose flow the runner does not cover (a held recovery, a cell of steps) extends it
 through `run/hooks.sh` only as far as reading goes (`hook_reading`, `hook_check`, which run in
 the runner's shell); a new kind of job is added to the kit, with its test, not to a session.
+A job whose normal end is not rc 0 declares it with an expected outcome, `expect:NAME` of
+`kitscore.OUTCOMES` (`expect:rc3-overflow`: rc 3 with "scene overflowed the parameter buffer",
+a `probe` DPM cell's end), which the runner classifies ok and `kitscore.completed` counts as a
+completed job; any other end still stops the stage. A tool declared `wraps = true` in
+session.toml (regtimeline, args `TOTAL LEAD REGS -- "$HOME/TOOL" ...`) must run a declared tool
+after `--` (the guard refuses any `$HOME/PATH` that is not one: the preflight pins only those),
+and the mock runs the wrapped tool's fake and prints a timeline after it, with its status.
 
 ## Firmware tasks of our own
 

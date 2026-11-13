@@ -349,3 +349,130 @@ def test_a_hook_keeps_its_count_across_rows(repos):
     m = kit(kp, repos, "mock")
     assert m.returncode == 0, m.stdout
     assert re.search(r"^ok +world model: driver 0 \(s0 24\)", m.stdout, re.M), m.stdout
+
+
+# ---- expected outcomes: a declared end of a job that is not rc 0 ---------------------------
+OVERFLOW = ("job: failed: scene overflowed the parameter buffer, context kept (No space left on "
+            "device)\n")
+
+
+def overflow_world(kp, expect):
+    """A world whose `probe` cells end as the real DPM cells do: rc 3 with the overflow line
+    (world `model`), or rc 3 with another failure (world `other`)."""
+    w = (kp / "mock/world.py").read_text()
+    w = w.replace('EXPECT = {"model": (0, {"s0": 0}), "nodiff": (25, {"s0": 25})}',
+                  f"EXPECT = {expect!r}")
+    w = w.replace("def answer(tool, argv, world):\n",
+                  "def answer(tool, argv, world):\n"
+                  "    if argv[:1] == ['probe']:\n"
+                  "        if 'other' in world:\n"
+                  "            return dict(rc=3, out='job: failed: cancelled\\n')\n"
+                  f"        return dict(rc=3, out={OVERFLOW!r})\n")
+    (kp / "mock/world.py").write_text(w)
+
+
+def test_a_declared_overflow_is_a_completed_job_for_the_runner_and_the_scorer(repos):
+    """r8-ldpm's `probe` DPM cells end rc 3 "scene overflowed the parameter buffer": the normal
+    end of the cell, which R7-dpm's own runner accepted and the kit's classifier called a
+    failure (rc 4, the stage stopped). A row that declares `expect:rc3-overflow` takes it as a
+    completed job (class ok, kept in cases.tsv, kitscore.completed); any other rc 3 still stops
+    the stage, and so does the overflow on a row that does not declare it."""
+    kp = scaffold(repos)
+    t = kp / "tables/s0.txt"
+    base, world = t.read_text(), (kp / "mock/world.py").read_text()
+    t.write_text(base + "o1|fit|safe|expect:rc3-overflow|t4|probe --tri pixel\n")
+    overflow_world(kp, {"model": (0, {"s0": 0}), "other": (4, {"s0": 4})})
+    g = kit(kp, repos, "guard")
+    assert g.returncode == 0, g.stdout
+    m = kit(kp, repos, "mock")
+    assert m.returncode == 0, m.stdout + m.stderr
+    assert re.search(r"^ok +world model: driver 0 \(s0 0\)", m.stdout, re.M), m.stdout
+    assert re.search(r"^ok +world other: driver 4 \(s0 4\)", m.stdout, re.M), m.stdout
+    kept = next(kp.glob("debug/mock.*/model/out/model/s0"))
+    sys.path.insert(0, str(kp / "kit"))
+    import kitscore
+    row = kitscore.rows(str(kept))["o1"]
+    assert (row["rc"], row["class"]) == (3, "ok")
+    assert kitscore.completed(row)
+    assert not kitscore.completed(dict(row, knobs="-"))
+    assert not kitscore.completed(dict(row, rc=4))
+    t.write_text(base + "o1|fit|safe|-|t4|probe --tri pixel\n")
+    (kp / "mock/world.py").write_text(world)
+    overflow_world(kp, {"model": (4, {"s0": 4})})
+    m = kit(kp, repos, "mock")
+    assert m.returncode == 0, m.stdout + m.stderr
+
+
+def test_an_unknown_expected_outcome_is_refused(repos):
+    kp = scaffold(repos)
+    t = kp / "tables/s0.txt"
+    t.write_text(t.read_text() + "o1|fit|safe|expect:rc5-anything|t4|probe\n")
+    g = kit(kp, repos, "guard")
+    assert g.returncode != 0 and "expect:rc5-anything" in g.stdout, g.stdout
+
+
+def test_the_runner_and_kitscore_know_the_same_outcomes():
+    sys.path.insert(0, str(KIT))
+    import kitscore
+    run = (KIT / "run_stage.sh").read_text()
+    lib = (KIT / "lib_kit.sh").read_text()
+    for name, (rc, line) in kitscore.OUTCOMES.items():
+        assert f"expect:{name}" in run and f'{name}) [ "$rc" -eq {rc} ] && grep -q "{line}"' in lib
+        assert S.BASE_KNOBS.match(f"expect:{name}")
+    assert not S.BASE_KNOBS.match("expect:rc5-anything")
+
+
+# ---- a tool run under regtimeline: a wrapper tool -----------------------------------------
+RT_SHA = "d" * 64
+
+
+def rt_session(repos, row):
+    kp = scaffold(repos, extra=("--tool", f"rt=regtimeline:{RT_SHA}"))
+    toml = (kp / "session.toml").read_text().replace(
+        f'[tools.rt]\npath = "regtimeline"\nsha256 = "{RT_SHA}"\n',
+        f'[tools.rt]\npath = "regtimeline"\nsha256 = "{RT_SHA}"\nwraps = true\n')
+    assert "wraps = true" in toml
+    (kp / "session.toml").write_text(toml)
+    t = kp / "tables/s0.txt"
+    t.write_text(t.read_text() + row + "\n")
+    return kp
+
+
+def test_a_tool_run_under_regtimeline_is_mocked_with_its_timeline(repos):
+    """r8-ldpm runs `probe` under regtimeline (`rt`, args `0 LEAD REGS -- "$HOME/TOOL" ...`):
+    the kit's mock runs the wrapped tool's fake (the world answers it as the tool it is) and
+    prints a timeline after its output, with the wrapped tool's status, as regtimeline does; the
+    declared overflow holds through the wrapper."""
+    kp = rt_session(repos, 'o1|fit|safe|expect:rc3-overflow|rt|0 1 0x0c04,0x0700-0x0708 -- '
+                           '"$HOME/sgxfive-test-rgn4" probe --tri pixel')
+    overflow_world(kp, {"model": (0, {"s0": 0}), "other": (4, {"s0": 4})})
+    g = kit(kp, repos, "guard")
+    assert g.returncode == 0, g.stdout
+    m = kit(kp, repos, "mock")
+    assert m.returncode == 0, m.stdout + m.stderr
+    kept = next(kp.glob("debug/mock.*/model/out/model/s0"))
+    sys.path.insert(0, str(kp / "kit"))
+    import kitscore
+    out = kitscore.text(str(kept), "o1.txt")
+    assert out.startswith(OVERFLOW), out
+    assert re.search(r"^timeline: regs 0x0c04 0x0700 0x0704 0x0708 samples \d+ .* rc 3$", out,
+                     re.M), out
+    assert re.search(r"^tl \d+( [0-9a-f]{8}){4}$", out, re.M), out
+
+
+def test_the_guard_refuses_a_wrapped_command_that_is_not_a_pinned_tool(repos):
+    """The preflight checks the sha256 of the tools of session.toml only, so the command a
+    wrapper runs must be one of them, named by its laptop path."""
+    cases = [('0 1 0x0c04 -- "$HOME/other-tool" probe', "$HOME/other-tool"),
+             ("0 1 0x0c04 -- probe", "--"),
+             ('0 1 0x0c04 "$HOME/sgxfive-test-rgn4" probe', "--"),
+             ('0 1 0x0c04 -- "$HOME/regtimeline" probe', "wrapper")]
+    for i, (args, word) in enumerate(cases):
+        kp = rt_session(dict(repos, tmp=repos["tmp"] / f"w{i}"),
+                        f"o1|fit|safe|-|rt|{args}")
+        g = kit(kp, repos, "guard")
+        assert g.returncode != 0 and word in g.stdout, (args, g.stdout)
+    kp = rt_session(dict(repos, tmp=repos["tmp"] / "plain"),
+                    'o1|fit|safe|-|t4|probe "$HOME/other-tool"')
+    g = kit(kp, repos, "guard")
+    assert g.returncode != 0 and "$HOME/other-tool" in g.stdout, g.stdout

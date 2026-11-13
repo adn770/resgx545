@@ -10,11 +10,16 @@
 #
 # Table header lines: #stage NAME, #limit N (the faults and hangs of `expectfault` rows the stage
 # may take). Line: name|set|risk|knobs|tool|args (tool: a name of session.toml [tools]; in args
-# $W is the job's work directory, every file the tool writes there is kept, and $S the staged tree)
+# $W is the job's work directory, every file the tool writes there is kept, and $S the staged tree;
+# a tool declared `wraps = true`, as regtimeline, runs `-- "$HOME/PATH" ...` of a declared tool)
 #   knobs  words, only these (any other: rc 7, nothing runs):
 #     -              none
 #     expectdiff     rc 1 WITH a `diff:` line (the tool's reference check) is a reading, not a failure
 #     expectfault    a fault or hang is a reading: kept, reset, strict health, counted against #limit
+#     expect:NAME    an expected outcome (kitscore.OUTCOMES): the job's end with that rc and line in
+#                    its output is a completed job (class ok), as rc 0 is; only these:
+#                    expect:rc3-overflow  rc 3 with "scene overflowed the parameter buffer" (a
+#                                         `probe` DPM cell's normal end)
 #     after          the health fill and triangle right after the job (strict)
 #     soft           a failure (no fault, no hang) goes to void.tsv and the stage goes on; the second
 #                    soft failure in a row stops it (rc 24)
@@ -58,7 +63,7 @@ awk -F'|' -v allowed=" $ALLOWED " -v tools=" $TOOLS " '
 		n = split($4, k, " ")
 		for (i = 1; i <= n; i++) {
 			w = k[i]
-			if (w ~ /^(-|expectdiff|expectfault|after|soft|gate|grp:[a-z0-9]+|reads:[a-z0-9_]+(,[a-z0-9_]+)*)$/) continue
+			if (w ~ /^(-|expectdiff|expectfault|after|soft|gate|grp:[a-z0-9]+|expect:(rc3-overflow)|reads:[a-z0-9_]+(,[a-z0-9_]+)*)$/) continue
 			if (index(allowed, " " w " ")) continue
 			print $1 ": knob " w; bad = 1
 		}
@@ -91,7 +96,7 @@ for i in $(seq 1 "$TOTAL"); do
 $line
 EOF
 	[ -z "$name" ] && continue
-	grp=""; gate=0; soft=0; after=0; expectdiff=0; expectfault=0; reads=""; dbgs=""
+	grp=""; gate=0; soft=0; after=0; expectdiff=0; expectfault=0; reads=""; dbgs=""; expect=""
 	for k in $knobs; do
 		case "$k" in
 		grp:*) grp=${k#grp:} ;;
@@ -100,6 +105,7 @@ EOF
 		after) after=1 ;;
 		expectdiff) expectdiff=1 ;;
 		expectfault) expectfault=1 ;;
+		expect:*) expect="$expect ${k#expect:}" ;;
 		reads:*) reads=$(printf '%s' "${k#reads:}" | tr ',' ' ') ;;
 		dbg:*) dbgs="$dbgs ${k#dbg:}" ;;
 		*) ;;
@@ -145,6 +151,7 @@ EOF
 	# 2. classify the job
 	class=$(classify "$rc" "$JW/$name.out" "$JW/$name.err" "$JW/$name.dmesg")
 	if [ "$class" = fail ] && [ "$expectdiff" = 1 ] && [ "$rc" -eq 1 ] && grep -q '^diff:' "$JW/$name.out"; then class=ok; fi
+	if [ "$class" = fail ] && expected_end "$rc" "$JW/$name.out" $expect; then class=ok; echo "  expected end:$expect (rc $rc)"; fi
 	fint=-; fword=-
 	if [ "$class" = fault ]; then fint=$(fault_req "$JW/snap9.regs"); fword=$(regval "$JW/snap9.regs" 0x0c08); fi
 	echo "  class $class"

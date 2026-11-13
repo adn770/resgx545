@@ -77,8 +77,9 @@ COMMITS_HEADER = """\
 LINE = re.compile(r"([0-9a-f]{64})  ([0-9a-f]{7,40}|untracked)  ([a-z][a-z0-9-]*):(\S.*)")
 SSH = ["ssh"]
 ENV = None          # the environment of every command (the mock's; None: this process's)
+# the kit's knob words; expect:NAME are kitscore.OUTCOMES (run_stage.sh classifies them)
 BASE_KNOBS = re.compile(r"^(-|expectdiff|expectfault|after|soft|gate|grp:[a-z0-9]+|"
-                        r"reads:[a-z0-9_]+(,[a-z0-9_]+)*)$")
+                        r"expect:(rc3-overflow)|reads:[a-z0-9_]+(,[a-z0-9_]+)*)$")
 FORBID_OPTIONS = ("--kpoke", "--kreg", "--clkgate", "--trc-hazard")
 FORBID = (r"reboot|shutdown|poweroff|kexec|grub|mkinitcpio|(^|[^a-z_-])make |gcc|(^|[^a-z])cc |"
           r"push-gma500|deploy-tool|trc_hazard|CLKGATE|clkgate|(^|[^a-z0-9])kreg([^a-z0-9-]|$)|"
@@ -328,6 +329,7 @@ def guard(kp):
                     bad.append(f"{where}: knob {w} is not the kit's nor session.toml's")
             if tool not in c["tools"]:
                 bad.append(f"{where}: tool {tool} is not one of session.toml [tools]")
+            bad += [f"{where}: {x}" for x in _wrapped(c, tool, args)]
             if sset == "control" and not any(w.startswith("reads:") for w in words):
                 bad.append(f"{where}: a control row without reads: (a control that cannot fail)")
             if "gate" in words and not any(w.startswith("grp:") for w in words):
@@ -344,6 +346,33 @@ def guard(kp):
                 bad.append(f"{where}: args do not parse: {e}")
             if re.search(r"/tmp|`|\$\(", args):
                 bad.append(f"{where}: /tmp or a command substitution in args")
+    return bad
+
+
+def _wrapped(c, tool, args):
+    """What is wrong with the laptop binaries a row's args name: every `$HOME/PATH` must be a tool
+    of session.toml [tools] (the preflight checks only their sha256), and a tool declared
+    `wraps = true` (regtimeline: `TOTAL LEAD REGS -- COMMAND...`) must run one of them, not a
+    wrapper, as the command after `--`."""
+    paths = {tool_path(c, c["prefix"], t): t for t in c["tools"]}
+    bad = [f"$HOME/{h} is not a tool of session.toml [tools] (the preflight pins only those)"
+           for h in re.findall(r"\$(?:HOME|\{HOME\})/([A-Za-z0-9_./-]+)", args) if h not in paths]
+    if not c["tools"].get(tool, {}).get("wraps"):
+        return bad
+    try:
+        toks = shlex.split(args)
+    except ValueError:
+        return bad
+    if "--" not in toks or toks.index("--") + 1 >= len(toks):
+        return bad + [f"the wrapper {tool} runs no command after --"]
+    cmd = toks[toks.index("--") + 1]
+    m = re.fullmatch(r"\$(?:HOME|\{HOME\})/(.+)", cmd)
+    if m is None or m[1] not in paths:
+        if m is None:
+            bad.append(f"the command after -- of the wrapper {tool} is not $HOME/PATH of a tool "
+                       f"of session.toml [tools]: {cmd}")
+    elif c["tools"][paths[m[1]]].get("wraps"):
+        bad.append(f"the command after -- of the wrapper {tool} is a wrapper itself: {cmd}")
     return bad
 
 
@@ -713,6 +742,7 @@ def mock(kp, worlds=None, say=print):
                    KIT_KMSG=str(m / "kmsg"), KIT_SRCV_PATH=str(m / "srcv"), FAKE_SRCV=c["srcversion"],
                    KIT_PY=sys.executable, KIT_FAKE=str(fakebin), KIT_WORLD=str(world_py),
                    KIT_TOOL_NAMES=" ".join(names), FAKE_WORLD=w, RESET_WAIT="0", HEALTH_WAIT="0",
+                   KIT_WRAPPERS=" ".join(t for t, d in c["tools"].items() if d.get("wraps")),
                    TEE_GRACE="30", SGX_TARGET_HOST="u@mock", PY=_py(c))
         ENV, SSH = env, [sys.executable, str(fakebin / "ssh.py")]
         log = []

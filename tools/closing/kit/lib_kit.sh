@@ -180,6 +180,17 @@ classify() { # RC FILE...: fault | hang | ok | fail
 	elif [ "$rc" -eq 0 ]; then echo ok
 	else echo fail; fi
 }
+# expected_end RC OUT NAME...: 0 if the job's end is one of the expected outcomes NAME... its row
+# declares (`expect:NAME`, kitscore.OUTCOMES): the rc and the outcome's line in its output
+expected_end() {
+	local rc=$1 out=$2 e; shift 2
+	for e in "$@"; do
+		case "$e" in
+		rc3-overflow) [ "$rc" -eq 3 ] && grep -q "scene overflowed the parameter buffer" "$out" && return 0 ;;
+		esac
+	done
+	return 1
+}
 
 # ---- health ---------------------------------------------------------------------------------------
 HN=0

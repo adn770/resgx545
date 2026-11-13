@@ -14,12 +14,20 @@ session's kit/ (byte copies, pinned by commit in FROZEN.commits).
                           run and read every key it declares (scorekit.premise_stops)
   controls(kp, stage)     {name: (keys, row)} of the table's control rows, for
                           scorekit.refuse_unreadable
+  completed(row)          a kept row whose job ran to its end: class ok, with rc 0 or the rc of
+                          an expected outcome its knobs declare (OUTCOMES, `expect:NAME`)
+
+OUTCOMES: {NAME: (rc, line)} the expected outcomes a row may declare with the knob word
+`expect:NAME`: a job that ends with that rc and prints that line is a completed job, not a
+failure (kit/run_stage.sh classifies it ok the same way). rc3-overflow: a `probe` DPM cell's
+normal end, "scene overflowed the parameter buffer" (R7-dpm's runner took it the same way).
 """
 import gzip
 import os
 
 import scorekit
 
+OUTCOMES = {"rc3-overflow": (3, "scene overflowed the parameter buffer")}
 COLUMNS = ("name", "stage", "set", "risk", "knobs", "tool", "args", "rc", "class", "fault_int",
            "fault_word", "free_kb")
 
@@ -95,3 +103,16 @@ def controls(kp, stage):
 def premise(kp, stage, d):
     want = {n: keys for n, (keys, _) in controls(kp, stage).items()}
     return scorekit.premise_stops(want, readings(d))
+
+
+def completed(row):
+    """A kept row (rows()) whose job ran to its end: class ok, and rc 0 or the rc of an
+    expected outcome its knobs declare."""
+    if row.get("class") != "ok":
+        return False
+    if row["rc"] == 0:
+        return True
+    words = row.get("knobs", "")
+    words = words.split() if isinstance(words, str) else words
+    return any(w.startswith("expect:") and OUTCOMES.get(w[len("expect:"):], (None,))[0] == row["rc"]
+               for w in words)
