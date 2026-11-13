@@ -12,6 +12,7 @@
 //! sections 5 and 6.
 
 pub mod arith;
+pub mod bglayer;
 pub mod bif;
 pub mod cube;
 pub mod data;

@@ -311,7 +311,7 @@ fn f32_of(w: u32) -> f64 {
 
 /// The 80-bit vertices of the background object from dword 15 of a copy: Y then X, 24 bits each
 /// (8 fraction bits, offset 4096), then 32 zero bits (transfer.md 4.2).
-fn vertices(bg: &[u32], at: usize) -> Option<[(f64, f64); 3]> {
+pub(crate) fn vertices(bg: &[u32], at: usize) -> Option<[(f64, f64); 3]> {
     let bit = |pos: usize, n: usize| -> Option<u64> {
         let mut v = 0u64;
         for i in 0..n {
@@ -331,7 +331,7 @@ fn vertices(bg: &[u32], at: usize) -> Option<[(f64, f64); 3]> {
 /// A copy's iterated (u, v) at the centre of pixel (x, y): the plane through the three
 /// vertices' normalised coordinates, evaluated exactly (E048: the iterators agree with the exact
 /// iteration to 1.2e-7); a degenerate triangle has no plane (Q205).
-fn uv(bg: &[u32], x: u32, y: u32) -> R<(f32, f32)> {
+pub(crate) fn uv(bg: &[u32], x: u32, y: u32) -> R<(f32, f32)> {
     let v = vertices(bg, 15).ok_or_else(|| refuse("the background object is too short", &["Q066"]))?;
     let (u0, u1, u2) =
         ((f32_of(bg[3]), f32_of(bg[4])), (f32_of(bg[5]), f32_of(bg[6])), (f32_of(bg[7]), f32_of(bg[8])));
@@ -352,7 +352,7 @@ fn uv(bg: &[u32], x: u32, y: u32) -> R<(f32, f32)> {
 /// (the unit square over the target's rectangle, one texel a pixel) it is level 0, as the 1:1
 /// copies are. On any other plane it is open: the texture unit then reads level 0 only where the
 /// texture's state does not depend on it (stride textures) and refuses otherwise.
-fn lod_of(bg: &[u32]) -> tex::Lod {
+pub(crate) fn lod_of(bg: &[u32]) -> tex::Lod {
     let unit = [0.0f32, 0.0, 1.0, 0.0, 0.0, 1.0];
     if bg[3..9].iter().zip(unit).all(|(&c, u)| c == u.to_bits()) {
         tex::Lod::Value(0.0)
