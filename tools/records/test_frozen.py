@@ -385,3 +385,29 @@ def test_a_malformed_built_line_is_reported(tmp_path):
                                       f"{sha('BIN')}  built  {c['01']}  tools/b.c\n")
     bad = frozen.check(tmp_path / "data", repo)
     assert len(bad) == 1 and "built" in bad[0]
+
+
+def test_a_scratch_input_of_a_published_session_is_checked_in_that_session(tmp_path):
+    """R7-rp froze inputs of round 6's sessions by their scratch paths (closingN/r6-misc/...):
+    those sessions are published as <area>/closing-<name>/ of a data repository, so the input
+    resolves there as scratch_cites.py resolves a cite (its aliases included), before cited/."""
+    repo, c = history(tmp_path)
+    sc = "/home/u/src/scratch/resgx545"
+    r6 = "closing" + "6"   # not a scratch cite of this file (scratch_cites.py)
+    s = session(tmp_path, [f"{sha('x')}  {TREE}/tools/a.py",
+                           f"{sha('M')}  {sc}/{r6}/r6-misc/gen/models.py",
+                           f"{sha('V')}  {sc}/{r6}/s1b-v2/README.md"])
+    (s / "FROZEN.commits").write_text(f"# h\n{sha('x')}  {c['03']}  tools/a.py\n")
+    data, priv = tmp_path / "data", tmp_path / "priv"
+    priv.mkdir()
+    bad = frozen.check(data, repo, priv)
+    assert len(bad) == 2 and all("not published" in b for b in bad)
+    (data / "render/closing-r6-misc/gen").mkdir(parents=True)
+    (data / "render/closing-r6-misc/gen/models.py").write_text("M")
+    (priv / "edm/closing-s1b").mkdir(parents=True)
+    (priv / "edm/closing-s1b/README.md").write_text("V")
+    assert frozen.check(data, repo, priv) == []
+    (data / "render/closing-r6-misc/gen/models.py").write_text("changed")
+    bad = frozen.check(data, repo, priv)
+    assert len(bad) == 1 and "render/closing-r6-misc/gen/models.py" in bad[0] \
+        and sha("changed") in bad[0]

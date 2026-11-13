@@ -87,9 +87,9 @@ def cites() -> dict[str, list[str]]:
     return out
 
 
-def resolve(cite: str) -> str | None:
-    """'<repo>:<path>' where the cite is published, or None."""
-    present = repos()
+def locate(cite: str, present: dict[str, pathlib.Path]) -> tuple[str, str] | None:
+    """(repository, path in it) where the cite is published among the repositories given: its
+    session first, then its cited/ copy; None when neither holds it."""
     parts = cite.split("/", 2)
     name = ALIASES.get(parts[1], parts[1]) if len(parts) > 1 else ""
     rest = parts[2] if len(parts) > 2 else ""
@@ -99,11 +99,17 @@ def resolve(cite: str) -> str | None:
         for s in sorted(base.glob(f"*/closing-{name}")):
             if s.is_dir() and (not rest or (s / rest).exists()):
                 rel = s.relative_to(base).as_posix()
-                return f"{repo}:{rel}/{rest}" if rest or cite.endswith("/") else f"{repo}:{rel}/"
+                return (repo, f"{rel}/{rest}" if rest or cite.endswith("/") else f"{rel}/")
     for repo, base in present.items():
         if (base / "cited" / cite).exists():
-            return f"{repo}:cited/{cite}"
+            return (repo, f"cited/{cite}")
     return None
+
+
+def resolve(cite: str) -> str | None:
+    """'<repo>:<path>' where the cite is published, or None."""
+    hit = locate(cite, repos())
+    return f"{hit[0]}:{hit[1]}" if hit else None
 
 
 def problems() -> list[str]:

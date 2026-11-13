@@ -20,8 +20,10 @@ the file itself. A pin of a worktree that sat under scratch/resgx545/ (round 4 f
 closing4/lead/wt, listed in scratch_cites.NOT_FILES) is named by the FROZEN.commits line with its
 hash whose path ends it. Any other line under scratch/resgx545/ is an input the session read from
 scratch (round 5's r5-events froze its plan, the decisions and a reading of the firmware): no file
-of the tool tree but a cite, published as cited/<path> of resgx545-data or of
-resgx545-data-private, and checked against that copy. A session may name the repository of each
+of the tool tree but a cite, published as scratch_cites.py resolves one (aliases included): in
+its session, `closingN/<name>/rest` as `<area>/closing-<name>/rest` of a data repository (R7-rp
+froze round 6's session files by their scratch paths), else as cited/<path> of resgx545-data or
+of resgx545-data-private, and checked against that file. A session may name the repository of each
 FROZEN.commits line (R5-dpm: `resgx545:PATH`, `linux:PATH`, `data:PATH`, for every outside file
 its freeze pins or its checks read): a resgx545 line is checked as a bare path is, without needing
 a freeze pin; a data line is checked at its commit in the data repository's history (the blob,
@@ -364,16 +366,18 @@ def check(data: pathlib.Path, repo: pathlib.Path,
                 bad.append(f"{name}/{NAME}: {c}:{path} hashes to {got}, not {sha256}")
         bad += [f"{name}: {path} {sha256} has no line in {NAME}"
                 for sha256, path in sorted(want - have, key=lambda p: p[1])]
+        present = {r: b for r, b in (("data", data), ("data-private", private))
+                   if b is not None}
         for sha256, path in scratch_inputs(s):
-            copies = [b / "cited" / path for b in (data, private) if b is not None]
-            copies = [p for p in copies if p.is_file()]
-            if not copies:
+            hit = scratch_cites.locate(path, present)
+            if hit is None or not (present[hit[0]] / hit[1]).is_file():
                 if private is not None:
-                    bad.append(f"{name}: scratch input {path} is not published (cited/{path})")
+                    bad.append(f"{name}: scratch input {path} is not published (its session "
+                               f"or cited/{path})")
                 continue
-            got = hashlib.sha256(copies[0].read_bytes()).hexdigest()
+            got = hashlib.sha256((present[hit[0]] / hit[1]).read_bytes()).hexdigest()
             if got != sha256:
-                bad.append(f"{name}: cited/{path} hashes to {got}, not {sha256}")
+                bad.append(f"{name}: {hit[1]} hashes to {got}, not {sha256}")
     return bad
 
 

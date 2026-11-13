@@ -131,3 +131,17 @@ def test_without_any_data_repository_check_passes_with_a_note(world, monkeypatch
     monkeypatch.setattr(sc, "repos", lambda: {})
     assert sc.main(["--check"]) == 0
     assert "no data repository" in capsys.readouterr().err
+
+
+def test_locate_resolves_against_the_repositories_it_is_given(tmp_path):
+    """frozen.py resolves a frozen scratch input with the same rule against the repositories it
+    checks: (repository, path) of the session or the cited/ copy, else None."""
+    data, priv = tmp_path / "data", tmp_path / "priv"
+    put(data, "render/closing-r6-pixel/bins/m.tsv")
+    put(priv, "cited/closing4/p7/reading-r5.md")
+    present = {"data": data, "data-private": priv}
+    assert sc.locate("closing6/r6-pixel/bins/m.tsv", present) == \
+        ("data", "render/closing-r6-pixel/bins/m.tsv")
+    assert sc.locate("closing4/p7/reading-r5.md", present) == \
+        ("data-private", "cited/closing4/p7/reading-r5.md")
+    assert sc.locate("closing6/r6-pixel/bins/none.tsv", present) is None
