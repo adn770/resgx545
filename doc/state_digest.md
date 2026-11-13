@@ -169,7 +169,7 @@ list.
 - `Q183` usse, medium: which store forms in the end-of-tile task fault the job and why does E572's
   fault not reproduce in E707 (a program equal to E572's but for ... (E572, E707)
 - `Q036` vdm, medium: what do the DPM's status words hold (0x0748 bit by bit, CR_DPM_3D_PAGE_COUNTS'
-  high half, and the owner words 0x0700 to 0x0728 a kept owner ... (E630, E631, E1019)
+  high half, and the owner words 0x0700 to 0x0728 a kept owner ... (E631, E1019, E1032)
 - `Q042` vdm, medium: what do bits 27:24 of the index list's first trailing word (VDM_INDEX2) do,
   when its low bits move the list's first index and 0x0f000000 ... (E307, E308, E414)
 - `Q092` vdm, medium: what do bits 31:28 of the index list's first trailing word count, which the
@@ -323,9 +323,12 @@ list.
 
 ## Recent records
 
-156 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+157 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1032` dpm, 2026-11-13: r13-dpm stage pr2 on module B60AB0B4 (Q036: does 0x0748 bit 2 clear with
+  partial renders; one scene, 3072x2048 with 1500 vertices, at 0, 1, 2 and 4 partial renders, two
+  replicates each, 8 jobs): both ...
 - `E1021` vdm, 2026-11-13: Round 12 offline (Q163; no run): on the 11.31 VDM state sweeps
   (vdm/state-units: 133 jobs of three scripts in run order, E545's two-block stream; c taken as 0 at
   each script's start, every script ...
@@ -797,7 +800,7 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-48 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+49 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
 - `render/closing-r9-z2`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t9
@@ -813,6 +816,7 @@ srcversion, fork tip, laptop tools.
 - `render/closing-r8-k2`: 2026-11-13; module B60AB0B475DD1E8972419B5; fork r8-kernel at 2a650d74;
   tools ~/sgxfive-test-rgn4
 - `render/closing-r8-geo`: 2026-11-13; module 37EC97AB0CB37213C42FCCC; tools ~/sgxfive-test-rgn4
+- `render/closing-r13-dpm`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r10-zls`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4,
   ~/sgxfive-test-t9
 - `render/closing-r10-x`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
@@ -871,7 +875,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 14 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 15 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at

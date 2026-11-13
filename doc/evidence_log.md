@@ -8398,6 +8398,20 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   infer: the grid's bits 7:0 explain the v = 1 rows as well as c].
   *vdm; HW, infer; data: `vdm-state-units`, `cited-scratch:closing12/plan/c2-q163/`,
   `cited-scratch:closing12/plan/rank-round12.md`.*
+- `E1032` r13-dpm stage pr2 on module B60AB0B4 (Q036: does 0x0748 bit 2 clear with partial renders;
+  one scene, 3072x2048 with 1500 vertices, at 0, 1, 2 and 4 partial renders, two replicates each, 8
+  jobs): both PR 0 controls passed (no partial render, no bit 2 clear line); every row read the
+  frozen count (H-COUNT 8 of 8) and 0x0710's high half 0 (H0 8 of 8); the plan's strict form, a
+  clear line at least once per partial render, failed at all 6 rows with a partial render
+  (H-PR-STRICT 0 held, 6 FAILED), because 7 of the 8 jobs show no clear line at all and the eighth
+  (PR 4, second replicate) one, 1 clear line in 14 partial renders ('DECISION: R-PR STRICT FAILS ...
+  ranking: R-PR RANKED FIRST'); the frozen ranking puts R-PR first by log-loss (2.43 against R-LEN
+  4.06 and the constant 4.87), which was not the builder's expectation (no ranking) and rests on the
+  absence of clears (R-PR gives the low probability 0.01 to 0.5, the rivals 0.35 to 0.44); bit 2 is
+  therefore not cleared once per partial render and the 0x0748 clear is rare (0.07 lines per partial
+  render here, E1019's fit 0.17); 0x0710 peaked at P - 1 (0x421, 0x2b5, 0x1c1, 0xe1).
+  *dpm; HW; data: `render-closing-r13-dpm:out/20261113-212348/pr2/`,
+  `render-closing-r13-dpm:fold/`.*
 
 ## By unit
 
@@ -8414,7 +8428,7 @@ E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753, E773, E774, E7
 E786, E790, E799, E800, E801, E802, E803, E832, E845, E846, E852, E853, E854, E860, E861, E862,
 E863, E864, E866, E867, E868, E869, E870, E873, E874, E875, E881, E882, E883, E887, E889, E899,
 E900, E915, E916, E917, E918, E935, E936, E937, E938, E939, E960, E961, E962, E963, E1009, E1013,
-E1019.
+E1019, E1032.
 
 ### edm
 

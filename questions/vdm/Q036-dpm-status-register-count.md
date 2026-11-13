@@ -5,7 +5,7 @@ unit = "vdm"
 kind = "hw"
 value = "medium"
 phase = 10
-evidence = ["E153", "E160", "E184", "E200", "E201", "E256", "E309", "E310", "E312", "E316", "E358", "E362", "E438", "E443", "E446", "E448", "E451", "E453", "E458", "E462", "E463", "E574", "E626", "E630", "E631", "E1019"]
+evidence = ["E153", "E160", "E184", "E200", "E201", "E256", "E309", "E310", "E312", "E316", "E358", "E362", "E438", "E443", "E446", "E448", "E451", "E453", "E458", "E462", "E463", "E574", "E626", "E630", "E631", "E1019", "E1032"]
 terms = ["Dynamic Parameter Management (DPM)", "Parameter Buffer (PB)", "ta3d_ctl", "hw_pb_desc.page_table_base", "CR_DMS_CTRL", "hw_pb_desc.pb_flags", "FRAG_FLAGS.BIT2", "FRAG_FLAGS.NO_DEALLOCATE"]
 +++
 
@@ -145,5 +145,16 @@ global counts up to 5 and above, a rate per line, the 0x100-page class and a con
 [infer] the pulse goes with partial renders, not with the job's length (the confound E626's batch
 left), but no rule predicts a line. Open: what bit 2 marks and the other bits of 0x0748,
 `CR_DPM_3D_PAGE_COUNTS`' high half, the owner words, and the settle and builder clauses above. A
-row that would part bit 2 from the session: 0x0748 sampled through a controlled count of partial
-renders (0, 1, 2, 4) at one size.
+row that would part bit 2 from the session (E1032 ran it: see below).
+
+Narrowed in round 13 (E1032, 8 jobs on the laptop). One scene (3072x2048, 1500 vertices) at 0, 1, 2
+and 4 partial renders, two replicates each: both runs at 0 partial renders read no bit 2 clear
+line, and across the six runs with a partial render one clear line in 14 partial renders (a
+run of 4 partial renders), 0 at 1 and 2; so bit 2 is not cleared once per partial render, the form
+the plan froze (0 of 6 rows held), and a clear is rare (0.07 a partial render here, 0.17 in
+E1019's fit). The frozen ranking still put the rate per partial render first (log-loss 2.43
+against 4.06 per line and 4.87 constant), which the builder had not expected: it rests on the seven
+jobs without a clear, not on the one with. STATUS2's high half read 0 again (8 of 8); 0x0710 peaks
+at the buffer's pages less one and 0x0728 at the threshold or the need. Open: what bit 2 marks
+(the pulse is shorter than the sampling, or not tied to the render), the other bits of 0x0748,
+the owner words, and the settle and builder clauses above.
