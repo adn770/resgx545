@@ -92,3 +92,9 @@ targets run, not at band 6 in general. With every extra output written by the ve
 N 8 scene wrote the same 53 object blocks in three runs (E937), so the run-to-run difference of
 the N 8 blocks read here and in E917 follows from outputs the default program leaves unwritten
 [infer].
+
+**Correction 2026-11-13 (round 9):** band 6's margin ends at the page count once object b_6 + 1,
+the object after the straddling block, is tiled, not at A_6: fitted on 3072x3072 and 2560x2560 and
+SEMI on eight more targets (E960), held out at four new targets 20 of 20, where A_6 gave 14 of 20
+(E961). Where object b_6 + 1 opens no page the two ends are the same, which is why this rule held at
+half of the band 6 targets. Bands 3 and 5 are unchanged.

@@ -58,3 +58,9 @@ replay held at four held-out calibrations and missed two new targets by one and 
 
 **What it does not show.** What keeps the second page past A_6 (Q210); whether the calibration
 alignment R7 froze is right (two targets read better unaligned, post hoc); bands above 7.
+
+**Correction 2026-11-13 (round 9):** the cells this record read as 6 global pages left at
+3072x3072 0x3cf and 1024x1024 0x82 are the reader's last sample before the global list was trimmed;
+the next sample reads 2 (E960). What keeps the second page past A_6 is now named: the margin ends
+at the page count once object b_6 + 1 is tiled, which gives every target of this record (E960, fit
+and SEMI) and four new ones held out (E961).
