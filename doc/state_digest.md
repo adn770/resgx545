@@ -31,8 +31,8 @@ list.
   its PBE words are those of a single-sampled 64x64 target ... (E510, E727, E893)
 - `Q199` isp, high: what is the integer range and the behaviour at the limits (saturation, wrap,
   removal) of the ISP's 1/256-pixel vertex format (E607: window ... (E683, E684, E979)
-- `Q202` isp, high: do the coverage rule (centre sample, vertices on the 1/256 grid, top-left ties)
-  and the attribute and depth planes of E606 hold with ... (E281, E502, E606)
+- `Q202` isp, high: do the attribute and depth planes of E606 hold with perspective (w other than
+  1), which arithmetic forms the window x / w (an exact divide, ... (E979, E990, E992)
 - `Q205` isp, high: what is the arithmetic by which the ISP decides the coverage and the depth of a
   pixel for an arbitrary triangle, and the iterators' ... (E215, E307, E542)
 - `Q260` isp, high: the tie of a negative window coordinate 1/512 above the 1/256 grid rounds away
@@ -59,8 +59,8 @@ list.
   partial-render owner left (18 non-zero dwords after its ... (E464, E591, E631)
 - `Q082` edm, medium: what does CR_EVENT_STATUS2 bit 6 follow in a pixel task (a fill without a
   load: a tile's time near 125 us, E805; a program that waits on a ... (E839, E840, E841)
-- `Q030` isp, medium: does the sample layout of E281 hold in the tiles and windows past the first
-  (what CR_TE_AA bits 31 and 30 do when bit 29 is clear is ... (E728, E829, E893)
+- `Q030` isp, medium: which source pixel does each stored pixel hold in CR_ISP_MSAA mode 0 with
+  CR_TE_AA bits 31 or 30 set (its window, never read as an identity ... (E953, E954, E990)
 - `Q031` isp, medium: why does ISP word 0 bit 28 hang a multisampled render, when single-sampled it
   widens coverage to the union of eight samples? (E215, E278, E416)
 - `Q032` isp, medium: what does pcoeff hand the ISP in the punch-through pass, when the kept pixels'
@@ -304,8 +304,8 @@ list.
   ids 55, 66 and 77 at R * V = 33 and 7 attribute rows; 3 ... (E702, E738, E755)
 - `Q101` zls, low: what does bit 19 (the negated float) do with the integer stored formats
   (CR_ISP_ZLSCTL bits 26:24 = 1 and 2)? (E466, E490, E981)
-- `Q242` zls, low: how is the 16-bit stored depth format laid out at a pitch G other than 33 and at
-  an edge, what do the 24-bit and 16-bit formats store for a ... (E490, E663, E977)
+- `Q242` zls, low: which pixel's value does a dword shared by two overlapping tiles hold, what do
+  the integer formats store past the target at an odd width or ... (E663, E977, E991)
 - `Q243` zls, low: what does the ZLS load do with an integer stored format (bits 26:24 = 1 or 2), at
   an address other than the one the store writes, and when ... (E628, E664, E977)
 - `Q004` transfer, fw (parked): can a transfer context whose flag bit 4 is set be released, which
@@ -331,9 +331,18 @@ list.
 
 ## Recent records
 
-119 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+122 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E992` isp, 2026-11-13: Round 10 offline (Q202, the perspective clause; no run): on r6-pixel's 114
+  kept jobs with w other than 1 (stages g6-rwa 8 and g6-rw 106, E859; 64 x 64, w from 2.5e-4 to
+  8027, 58 distinct snapped ...
+- `E991` zls, 2026-11-13: Round 10 offline (Q242; no run): past the target of r9-x's z242-c (80 x
+  40, G 2, a tile area of 96 x 48, E977 scored only its 3200 in-target pixels), stored format 1 is
+  min(floor(z0 * 2^24), ...
+- `E990` isp, 2026-11-13: Round 10 offline (Q030; no run): on the 48 kept --pixels images of
+  r9-geo's stages seam1 and seam4 (E953, E954: tri-full renders 64 x 96 to 128 x 96 and six single
+  triangles of new slopes, ...
 - `E981` zls, 2026-11-13: r9-z2 stage z2 (10 jobs, 256 x 128, G 7): with the viewport's z offset
   (state-block word 10) at -0.25, so a modelled depth of -0.75 to -0.25, format 0 stored 0.0 at
   every dword and formats 1 and 2 ...
