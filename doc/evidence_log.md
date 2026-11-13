@@ -7973,6 +7973,63 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   divide's arithmetic is not split [infer].
   *isp; HW, infer; data: `render-closing-r6-pixel:out/20261112-142113/g6-rwa/`,
   `render-closing-r6-pixel:out/20261112-142113/g6-rw/`, `cited-scratch:closing10/rank/`.*
+- `E1000` r10-tex stage addr3 (11 probe fills of twiddled 32-bit textures at page 12 of a 32-page
+  named scratch, the swept u over 128 positions at one texel a step, v on texel H / 2, no fault):
+  every frozen rival for the offset that u modes 4 and 6 add past E561's index failed a held-out
+  shape: 'H-W (heldout) is not supported: 4 held, 2 FAILED, 0 cannot tell of 6', 'H-H (heldout) is
+  not supported: 5 held, 1 FAILED, 0 cannot tell of 6', H-SQ and H-WH 3 held, 3 FAILED; the 32 x 8
+  replicate read + 308 (H-W, E565's), 8 x 32 + 308 and 16 x 64 + 564 (the height's), 64 x 16 + 564
+  (the width's), 64 x 64 in modes 4 and 6 + 564 and 4 x 4 + 84 (every rival), 2048 of 2048 pixels
+  each; u mode 5: H-B5 held at 32 x 16 and H-B5H at 16 x 32 (1 held, 1 FAILED each); post hoc
+  (out/fold/post_addr.py, not frozen) every pixel of all eleven jobs is 8 max(W, H) + 52 dwords past
+  the index, and mode 5 reads 5 max(W, H) + 52 + t left and 6 max(W, H) + 52 + t right of the
+  texture [fitted]; the mode 0 control passed.
+  *texture; HW, infer; data: `render-closing-r10-tex:out/20261113-102730/addr3/`,
+  `render-closing-r10-tex:out/fold/`.*
+- `E1001` r10-tex stage cube3, ties (13 probe fills of TEXTYPE 2, 16 x 16 faces, point-sampled, 2048
+  two-axis tie pixels in each of 12 new rows): 'H-HIGHAXIS (heldout) is not supported: 9 held, 3
+  FAILED, 0 cannot tell of 12', 'H-FMADNE (heldout) is not supported: 9 held, 3 FAILED, 0 cannot
+  tell of 12', 'H-THIRD (heldout) is not supported: 3 held, 9 FAILED, 0 cannot tell of 12'; every
+  tie of two mov constants (6 of 6 rows) and every ramp tie of y with z or of x with -z read the
+  higher axis (2048 of 2048 each), while ties of the bit-identical fmad ramp x with y, -y or z read
+  +x (the lower axis) on 1856 of 2048 pixels and the higher axis on the other 192, the same six
+  columns (x 10, 11, 18, 22, 42, 50) in all three rows; r8-geo's a2 program replayed its kept image
+  byte for byte ('H-FMADNE (replicate) (1 of 1 rows decided)', its 4 lower reads again); the E726
+  control passed.
+  *texture; HW, infer; data: `render-closing-r10-tex:out/20261113-102730/cube3/`,
+  `render-closing-r10-tex:out/fold/`.*
+- `E1002` r10-tex stage cube3, edges (2 probe fills, bilinear T0 0x07fe1400, 16 x 16 faces, the
+  across coordinate 15 + (x + 1/2) / 64 texels, the along coordinate 7.75 on +z/+x and 8.25 on
+  -y/+x, 512 out pixels of outer weight 1/4 to 1/2 and 1024 in pixels a row): 'H-SEAM-FLOAT
+  (heldout) is not supported: 1 held, 1 FAILED, 0 cannot tell of 2', 'H-SEAM-ADJ (heldout) is not
+  supported: 0 held, 2 FAILED, 0 cannot tell of 2'; on -y/+x every out pixel is within 1 a byte of
+  the neighbour face's bilinear at the outer tap centre's direction (512 of 512), on +z/+x 32 of
+  512, the kept byte 0 above it by 1.6 to 2.0 in every out column; H-SEAM-ADJ 0 of 512 on both; the
+  in pixels read the in-face blend (1024 of 1024 each); the E726 control passed.
+  *texture; HW, infer; data: `render-closing-r10-tex:out/20261113-102730/cube3/`,
+  `render-closing-r10-tex:out/fold/`.*
+- `E1003` r10-tex stage t3b (15 probe fills on strided named memory: six held-out bit-14 geometries
+  each followed by its bit-clear reference, E566's two controls, E975's b14-u01 replicated):
+  'R-4096TX (heldout) (6 of 6 rows decided)', 'R-4096 (heldout) is not supported: 5 held, 1 FAILED,
+  0 cannot tell of 6', 'R-ROUND (heldout) is not supported: 4 held, 2 FAILED', 'H-U01 (heldout) is
+  not supported: 3 held, 3 FAILED', H-UV and H-URAW 0 of 1; the read is the bit-clear texel plus
+  floor(4096 clamp(u, 0, 1)) texels on every pixel of the six (stride 256 and 16, u off the 1/128
+  grid, u from -0.5 to 1.5, u fixed with v a ramp, and a 16-bit format, where 4096 texels are 2048
+  dwords: R-4096 1024 of 2048, R-4096TX 2048 of 2048 on the low 16 bits); the references held
+  texmodel's image 6 of 6, the controls passed and the replicate held.
+  *texture; HW, infer; data: `render-closing-r10-tex:out/20261113-102730/t3b/`.*
+- `E1004` r10-tex stage srgb2 (6 probe fills of E723's bilinear sRGB form, T0 bit 27): 'R10-BF11
+  (heldout) is not supported: 4 held, 1 FAILED, 0 cannot tell of 5': the stage rule fitted offline
+  on r9-x's rows (seeds q282_r10_rule.json, sha256 e9623e35...) held 2048 of 2048 on weights off the
+  1/64 grid (k = floor(64 f): R10-BF11-ROUND 2 and the exact weight 1 of 2048), on k = 0 with B
+  larger than A (the bypass; H-K0FLOOR 1384) and on two random rows, and missed srgb2-sub (corners 0
+  to 3 a byte, fy 5/64) on 554 of 2048 pixels, 554 of 4096 halves, every miss below the rule by 31
+  to 1103 half ulps: 458 where the rule gives a subnormal half (468 kept halves read 0), the others
+  where a first stage would be subnormal; post hoc (out/fold/post_srgb_ftz.py, not frozen) the rule
+  with every stage output below 2^-14 flushed to +0 fits all five rows and r9-x's six kept rows
+  (2048 of 2048 each) [fitted]; the E723 control passed.
+  *texture; HW, infer; data: `render-closing-r10-tex:out/20261113-102730/srgb2/`,
+  `render-closing-r10-tex:out/fold/`.*
 
 ## By unit
 
@@ -8056,7 +8113,7 @@ Records: E033, E034, E035, E036, E037, E038, E039, E040, E041, E042, E114, E116,
 E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441, E560, E561, E562,
 E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E726, E733, E743,
 E744, E760, E765, E787, E844, E894, E910, E911, E923, E930, E931, E932, E940, E941, E942, E951,
-E955, E956, E957, E958, E968, E974, E975, E976.
+E955, E956, E957, E958, E968, E974, E975, E976, E1000, E1001, E1002, E1003, E1004.
 
 ### transfer
 

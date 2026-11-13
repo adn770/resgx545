@@ -329,9 +329,24 @@ list.
 
 ## Recent records
 
-122 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+127 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1004` texture, 2026-11-13: r10-tex stage srgb2 (6 probe fills of E723's bilinear sRGB form, T0
+  bit 27): 'R10-BF11 (heldout) is not supported: 4 held, 1 FAILED, 0 cannot tell of 5': the stage
+  rule fitted offline on r9-x's rows ...
+- `E1003` texture, 2026-11-13: r10-tex stage t3b (15 probe fills on strided named memory: six
+  held-out bit-14 geometries each followed by its bit-clear reference, E566's two controls, E975's
+  b14-u01 replicated): 'R-4096TX ...
+- `E1002` texture, 2026-11-13: r10-tex stage cube3, edges (2 probe fills, bilinear T0 0x07fe1400, 16
+  x 16 faces, the across coordinate 15 + (x + 1/2) / 64 texels, the along coordinate 7.75 on +z/+x
+  and 8.25 on -y/+x, 512 out ...
+- `E1001` texture, 2026-11-13: r10-tex stage cube3, ties (13 probe fills of TEXTYPE 2, 16 x 16
+  faces, point-sampled, 2048 two-axis tie pixels in each of 12 new rows): 'H-HIGHAXIS (heldout) is
+  not supported: 9 held, 3 FAILED, 0 ...
+- `E1000` texture, 2026-11-13: r10-tex stage addr3 (11 probe fills of twiddled 32-bit textures at
+  page 12 of a 32-page named scratch, the swept u over 128 positions at one texel a step, v on texel
+  H / 2, no fault): every frozen ...
 - `E992` isp, 2026-11-13: Round 10 offline (Q202, the perspective clause; no run): on r6-pixel's 114
   kept jobs with w other than 1 (stages g6-rwa 8 and g6-rw 106, E859; 64 x 64, w from 2.5e-4 to
   8027, 58 distinct snapped ...
@@ -701,7 +716,7 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-42 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+43 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
 - `render/closing-r9-z2`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t9
@@ -717,6 +732,7 @@ srcversion, fork tip, laptop tools.
 - `render/closing-r8-k2`: 2026-11-13; module B60AB0B475DD1E8972419B5; fork r8-kernel at 2a650d74;
   tools ~/sgxfive-test-rgn4
 - `render/closing-r8-geo`: 2026-11-13; module 37EC97AB0CB37213C42FCCC; tools ~/sgxfive-test-rgn4
+- `render/closing-r10-tex`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
 - `render/closing-r7-rp`: 2026-11-12; module 41E2F5C756F96D20F7109A4; tools ~/sgxfive-test-rgn4
 - `render/closing-r7-geo`: 2026-11-12; module 41E2F5C756F96D20F7109A4; tools ~/sgxfive-test-rgn4
 - `render/closing-r7-faults`: 2026-11-12; module 41E2F5C756F96D20F7109A4; fork r6-kernel at
@@ -767,7 +783,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 8 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 9 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at

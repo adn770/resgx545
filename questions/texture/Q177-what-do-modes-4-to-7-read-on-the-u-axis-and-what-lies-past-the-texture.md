@@ -33,3 +33,11 @@ every pixel; none of the frozen rivals (180 at every size, 180 N^2 / 256, none o
 says. Post hoc the three offsets are 8 N + 52 dwords [fitted]. What stays: why that offset (width,
 height or size: only square textures were run), a held-out size, other formats and texture types,
 and mode 5 past the texture.
+
+Note 2026-11-13 (round 10, session r10-tex, decision R10-2 a; E1000; the question line is
+unchanged). On textures of W != H every frozen rival for the offset failed a held-out shape: 8 x 32
+and 16 x 64 read the height's 8 H + 52 (308 and 564), 64 x 16 and E565's 32 x 8 the width's, 64 x 64
+in modes 4 and 6 read 564 and 4 x 4 84; mode 5 followed the longer side past the texture too. Post
+hoc every read of the eleven jobs is 8 max(W, H) + 52 dwords past E561's index, mode 5's 5 max(W,
+H) + 52 + t left and 6 max(W, H) + 52 + t right [fitted]. What stays: a held-out row for max(W, H),
+why that offset, and other formats and texture types.

@@ -39,3 +39,8 @@ a strided texture and reproduce on the twiddled chain.
 **What it does not show.** No frozen rule held on all six rows; R-4096 was formed after the run and
 needs a held-out row (another texel size, a twiddled texture, a v-dependent case). The twiddled
 bit-11 and bit-12 reads are replicates, not decoded. tw32-t3b14 (E566's fault) was not rerun.
+
+**Correction 2026-11-13:** E1003 (r10-tex stage t3b) held the post hoc reading out on six more
+strided geometries, one of them a 16-bit format, where the read moved by floor(4096 * clamp(u, 0,
+1)) texels (2048 dwords at u near 1), not dwords: the claim's "plus floor(4096 * clamp(u, 0, 1))"
+counts texels, which are dwords on this record's 32-bit rows only. The measurements are unchanged.

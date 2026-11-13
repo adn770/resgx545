@@ -29,12 +29,15 @@
 //! Refused, naming Q284: two coordinates of equal largest magnitude (E956: the higher axis's face,
 //! w over v over u, held out on four sweeps of 32 tie pixels with the third coordinate small, but
 //! post hoc 7 of the 599 tie pixels of the kept cube jobs, none of the sweeps', the third
-//! coordinate 0.62 to 0.93 of |ma|, read the lower axis's face: no rule); a coordinate exactly on
+//! coordinate 0.62 to 0.93 of |ma|, read the lower axis's face; E1001: ties of an fmad ramp in x
+//! with y or z read +x on 58 of 64 columns, constants and y-z ties the higher axis: no rule); a
+//! coordinate exactly on
 //! a texel boundary when |ma| is not a power of two (at a power of two the upper texel every time, the floor;
 //! otherwise E923's 14 misses, and E931's and E956's boundaries going up or down by their place,
 //! no rule frozen); faces of any size other than 4, 8, 16, 32 and 64.
 //! Bilinear filtering, and so a face edge's taps, is not modelled here at all (E931, E956: the
-//! out-of-face tap reads another face; the adjacent texel held on one edge of two; Q284).
+//! out-of-face tap reads another face; the adjacent texel held on one edge of two; E1002: the
+//! neighbour face's bilinear at the tap centre's direction on one edge of two; Q284).
 
 use crate::Outcome;
 

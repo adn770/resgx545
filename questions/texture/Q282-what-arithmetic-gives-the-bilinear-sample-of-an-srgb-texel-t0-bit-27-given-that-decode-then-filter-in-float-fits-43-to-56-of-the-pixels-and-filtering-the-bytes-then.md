@@ -42,3 +42,10 @@ corner pairs) and both: neither frozen rival (H-HALF2, H-BF11) is exact on any r
 2048 pixels), while a lerp of equal decoded halves returns the half. A single stage already differs
 from both: the kept a and b rows are the table to fit one stage's arithmetic on, with c and E723's
 g-bl-st-b held out.
+
+Note 2026-11-13 (round 10, session r10-tex, decision R10-2 a; E1004). The stage rule R10-BF11
+(fitted offline on r9-x's rows) held out on hardware on four of five new rows (weights off the 1/64
+grid, k = 0 with the other corner larger, two random rows) and missed the row of corners 0 to 3 on
+554 of 4096 halves, each below the rule, all where a stage's result is a subnormal half; post hoc
+the rule with each stage's subnormal result flushed to 0 fits every kept row [fitted]. What stays:
+that flush held out.
