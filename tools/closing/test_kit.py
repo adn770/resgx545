@@ -476,3 +476,37 @@ def test_the_guard_refuses_a_wrapped_command_that_is_not_a_pinned_tool(repos):
                     'o1|fit|safe|-|t4|probe "$HOME/other-tool"')
     g = kit(kp, repos, "guard")
     assert g.returncode != 0 and "$HOME/other-tool" in g.stdout, g.stdout
+
+
+# ---- expectdiff: a reading only when the job ran ---------------------------------------------
+def diff_world(kp, expect):
+    """A world whose `fill --odd` job ends rc 1 with a diff line: `job: ok` (world `model`) or
+    `job: rejected` (world `rejected`, as the real tool prints a kernel refusal and still compares
+    the untouched target)."""
+    w = (kp / "mock/world.py").read_text()
+    w = w.replace('EXPECT = {"model": (0, {"s0": 0}), "nodiff": (25, {"s0": 25})}',
+                  f"EXPECT = {expect!r}")
+    w = w.replace("def answer(tool, argv, world):\n",
+                  "def answer(tool, argv, world):\n"
+                  "    if '--odd' in argv:\n"
+                  "        job = 'job: rejected (Invalid argument)' if 'rejected' in world "
+                  "else 'job: ok'\n"
+                  "        return dict(rc=1, out=job + '\\ndiff: 7 of 2048 pixels\\n')\n")
+    (kp / "mock/world.py").write_text(w)
+
+
+def test_an_expectdiff_row_is_a_reading_only_when_the_job_ran(repos):
+    """r8-geo's E934: `job: rejected` with a diff line under expectdiff was taken as a reading,
+    and 23 rows were refusals. An expectdiff row is a reading when it ends rc 1 with the tool's
+    `job: ok` and a diff line; a rejected job is a failure that stops the stage."""
+    kp = scaffold(repos)
+    t = kp / "tables/s0.txt"
+    t.write_text(t.read_text() + "d1|fit|safe|expectdiff|t4|fill --odd\n")
+    diff_world(kp, {"model": (0, {"s0": 0}), "rejected": (4, {"s0": 4})})
+    m = kit(kp, repos, "mock")
+    assert m.returncode == 0, m.stdout + m.stderr
+    assert re.search(r"^ok +world rejected: driver 4 \(s0 4\)", m.stdout, re.M), m.stdout
+    kept = next(kp.glob("debug/mock.*/model/out/model/s0"))
+    sys.path.insert(0, str(kp / "kit"))
+    import kitscore
+    assert kitscore.rows(str(kept))["d1"]["class"] == "ok"

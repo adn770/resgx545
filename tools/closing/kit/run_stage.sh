@@ -14,7 +14,9 @@
 # a tool declared `wraps = true`, as regtimeline, runs `-- "$HOME/PATH" ...` of a declared tool)
 #   knobs  words, only these (any other: rc 7, nothing runs):
 #     -              none
-#     expectdiff     rc 1 WITH a `diff:` line (the tool's reference check) is a reading, not a failure
+#     expectdiff     rc 1 WITH the tool's `job: ok` and a `diff:` line (its reference check) is a
+#                    reading, not a failure; `job: rejected` (a kernel refusal, r8-geo's E934) or
+#                    any other job line is a failure
 #     expectfault    a fault or hang is a reading: kept, reset, strict health, counted against #limit
 #     expect:NAME    an expected outcome (kitscore.OUTCOMES): the job's end with that rc and line in
 #                    its output is a completed job (class ok), as rc 0 is; only these:
@@ -150,7 +152,10 @@ EOF
 	fi
 	# 2. classify the job
 	class=$(classify "$rc" "$JW/$name.out" "$JW/$name.err" "$JW/$name.dmesg")
-	if [ "$class" = fail ] && [ "$expectdiff" = 1 ] && [ "$rc" -eq 1 ] && grep -q '^diff:' "$JW/$name.out"; then class=ok; fi
+	if [ "$class" = fail ] && [ "$expectdiff" = 1 ] && [ "$rc" -eq 1 ] && grep -q '^diff:' "$JW/$name.out"; then
+		if grep -q '^job: ok' "$JW/$name.out"; then class=ok
+		else echo "  expectdiff: a diff line without \`job: ok\` ($(grep -m 1 '^job:' "$JW/$name.out" || echo 'no job line')): not a reading"; fi
+	fi
 	if [ "$class" = fail ] && expected_end "$rc" "$JW/$name.out" $expect; then class=ok; echo "  expected end:$expect (rc $rc)"; fi
 	fint=-; fword=-
 	if [ "$class" = fault ]; then fint=$(fault_req "$JW/snap9.regs"); fword=$(regval "$JW/snap9.regs" 0x0c08); fi
