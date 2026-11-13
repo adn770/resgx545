@@ -37,12 +37,11 @@ pub const ISP_VERTEX_GRID: Status = Status::Fitted("E607");
 /// The depth store's layout, when a job stores depth and the model reports it (E465, fitted):
 /// the `depth` of a scene result rests on it.
 pub const ISP_DEPTH_STORE: Status = Status::Fitted("E465");
-/// The integer depth formats' value rules: round(z * 0xffffff) and its >> 8 for the 16-bit
-/// format, fitted on the dumps of the run (E466 states the 16-bit one is in-sample; floor(z *
-/// 2^24) clamped is a fourth candidate no dump separates from the 24-bit one, E663), answered
-/// only over the ramp's 0.25 to 0.4166 and 1.0, and the 16-bit layout derived at G = 33 only
-/// (12.4; E466, E490)
-pub const ZLS_INT_FORMATS: Status = Status::Fitted("E466");
+/// The integer depth formats' value rules: min(floor(z * 2^24), 0xffffff) and its >> 8 for the
+/// 16-bit format in E490's layout, frozen as a rival before E977's run and held out there over 0 to
+/// 1 at three pitches (round(z * 0xffffff), E466's fit, refuted from 0.5 up); E981 holds it again
+/// (12.4; E466, E490, E977)
+pub const ZLS_INT_FORMATS: Status = Status::Measured;
 /// Where the transfer's end-of-tile task stores a tile whose U1 names another place than the loop's
 /// (`xfer`, the half-tile place of the U1 tile fields): read post hoc on the fill's kept sweeps
 /// (E876 states the fit) and then held out on larger fills (E884, 20 of 20); only a scene whose

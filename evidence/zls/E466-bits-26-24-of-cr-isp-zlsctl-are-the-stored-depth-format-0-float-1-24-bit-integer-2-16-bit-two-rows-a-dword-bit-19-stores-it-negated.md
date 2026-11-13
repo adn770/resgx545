@@ -1,6 +1,6 @@
 +++
 id = "E466"
-claim = "Bits 26:24 of CR_ISP_ZLSCTL select the format of the stored depth: 0 the 32-bit float (512 dwords a 32 x 16 tile), 1 the 24-bit unsigned integer round(z * 0xffffff) (512 dwords a tile, 786432 of 786432 pixels exact), 2 a 16-bit integer, round(z * 0xffffff) >> 8, with the rows y even and odd of a column in the low and high half of a dword (256 dwords a tile, 786432 of 786432 exact); 4 and 7 store no depth without a stencil buffer, and 3, 5 and 6 store other layouts; bit 19 stores the depth negated (shown by the three most frequent stored dwords only); bits 2 and 18 enable the depth store and bit 17 the stencil store (bit 17 from E411; here clearing it changes nothing without a stencil buffer)"
+claim = "Bits 26:24 of CR_ISP_ZLSCTL select the format of the stored depth: 0 the 32-bit float (512 dwords a 32 x 16 tile), 1 the 24-bit unsigned integer min(floor(z * 2^24), 0xffffff) (512 dwords a tile, 786432 of 786432 pixels exact), 2 a 16-bit integer, that value >> 8, with the rows y even and odd of a column in the low and high half of a dword (256 dwords a tile, 786432 of 786432 exact); 4 and 7 store no depth without a stencil buffer, and 3, 5 and 6 store other layouts; bit 19 stores the depth negated (shown by the three most frequent stored dwords only); bits 2 and 18 enable the depth store and bit 17 the stencil store (bit 17 from E411; here clearing it changes nothing without a stencil buffer) [corrected 2026-11-13, see Correction]"
 unit = "zls"
 method = "probes/zls/store-format.toml (store-format.sh) on the laptop (direct cable), linux fork 6ee9501832af: sgxfive-test tri --tri-full --tri-z (a triangle over the whole 1024 x 768 target with a depth that ramps across x in one run and across y in the other, so that a stored dword names its pixel), --depth with the buffer filled with 0xdeadbeef, G (bits 11:3) 33, the control 0x0017110c with bits 26:24 set to each of 0 to 7, with bit 19, with bits 2, 17 and 18 cleared, and with a stencil buffer (--stencil), reduced on the laptop (python3); one run of each case, each dataset ran once, after one run by hand of the script (outside the data) whose reduction was changed afterwards (see the text); the dataset holds output.txt, kernel.log, env.toml and the script and no raw dumps, so the counts are the script's own at run time and cannot be recomputed from the stored data"
 tiers = ["HW", "infer"]
@@ -117,3 +117,16 @@ column, 0.41656 at the last row), not to 0.75: 0.75 is the depth at the triangle
 0.4166 as stated, and that is all the ramp shows: the integer formats were measured over that range
 and at the clear value 1.0 (E411), not over 0.4166 to 1.0. Found in the review r124 of 12.4; the
 12.4 store model answers the integer formats only there (Q242).
+
+**Correction 2026-11-13:** E977 (r9-x stage zls) held out min(floor(z * 2^24), 0xffffff) for format
+1 and its >> 8 for format 2 over depths 0 to 1 at three pitches, and refuted round(z * 0xffffff)
+from 0.5 up (0 of 76800 and 0 of 3200 dwords); E981 confirms the floor rule over 0 to 0.3 at a
+fourth geometry. The two forms agree on every depth this record ran (0.25 to 0.4166 and 1.0), so its
+counts stand; the rule it named is the wrong one of the two. The claim read: "Bits 26:24 of
+CR_ISP_ZLSCTL select the format of the stored depth: 0 the 32-bit float (512 dwords a 32 x 16 tile),
+1 the 24-bit unsigned integer round(z * 0xffffff) (512 dwords a tile, 786432 of 786432 pixels
+exact), 2 a 16-bit integer, round(z * 0xffffff) >> 8, with the rows y even and odd of a column in
+the low and high half of a dword (256 dwords a tile, 786432 of 786432 exact); 4 and 7 store no depth
+without a stencil buffer, and 3, 5 and 6 store other layouts; bit 19 stores the depth negated (shown
+by the three most frequent stored dwords only); bits 2 and 18 enable the depth store and bit 17 the
+stencil store (bit 17 from E411; here clearing it changes nothing without a stencil buffer)".

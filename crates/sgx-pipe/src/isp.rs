@@ -159,6 +159,85 @@ pub fn coverage_image(w: u32, h: u32, t: &Tri) -> Result<Vec<bool>, Outcome> {
     Ok((0..h).flat_map(|y| (0..w).map(move |x| t.covers(x, y))).collect())
 }
 
+/// A triangle with one or two vertices far outside the target, in 1/256 pixel on the grid (E684,
+/// E979): the coordinates need more than i64 products, so it is its own type.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct FarTri {
+    pub v: [(i64, i64); 3],
+}
+
+/// The far-vertex targets that ran: 64 x 64 (E684, E979) and 512 x 512 (E684).
+pub const FAR_TARGETS: [(u32, u32); 2] = [(64, 64), (512, 512)];
+/// The coordinate range a far vertex ran over, in pixels: -2^25 to +2^24 (E979: +-2^22, +-2^23,
+/// +-2^24 and -2^25 in x or y; the tool reaches no further in its 1/32 unit).
+pub const FAR_LOW: i64 = -(1 << 25);
+pub const FAR_HIGH: i64 = 1 << 24;
+/// E684's band: a pixel centre within 1e-3 pixel of an edge line is undetermined.
+pub const FAR_BAND: f64 = 1.0e-3;
+
+/// The coverage of a triangle with one or two vertices outside the target, row by row: the exact
+/// rule of E606/E607 (centres strictly inside, ties to the left and top edges, either winding) at
+/// every pixel whose centre is 1e-3 pixel or more from an edge line, and `None` inside that band
+/// (E684: the 16 pixels it got wrong lay within 5.6e-4 pixel). E979 held this at one vertex up to
+/// 2^24 pixels both ways and -2^25, and at two vertices at +-2^23 and +-2^24, 10 of 10 rows: no
+/// clamp or wrap of a 24.8 word (H-SAT, H-WRAP refuted). Refuses other targets, three far vertices
+/// and the band's own form (Q261), and coordinates past what ran (Q199).
+pub fn far_coverage_image(w: u32, h: u32, t: &FarTri) -> Result<Vec<Option<bool>>, Outcome> {
+    if !FAR_TARGETS.contains(&(w, h)) {
+        return Err(open(
+            format!("far vertices on a {w} x {h} target: E684 and E979 ran 64 x 64 and 512 x 512"),
+            "Q261",
+        ));
+    }
+    let far = |&(x, y): &(i64, i64)| {
+        let inside = |c: i64, s: u32| (0..=GRID * s as i64).contains(&c);
+        !(inside(x, w) && inside(y, h))
+    };
+    if t.v.iter().filter(|v| far(v)).count() > 2 {
+        return Err(open("three far vertices: E979 ran one or two", "Q261"));
+    }
+    for &(x, y) in &t.v {
+        for c in [x, y] {
+            if !(FAR_LOW * GRID..=FAR_HIGH * GRID).contains(&c) {
+                return Err(open(
+                    format!(
+                        "a vertex coordinate of {} pixels: E979 ran -2^25 to +2^24",
+                        c as f64 / GRID as f64
+                    ),
+                    "Q199",
+                ));
+            }
+        }
+    }
+    let v: Vec<(i128, i128)> = t.v.iter().map(|&(x, y)| (x as i128, y as i128)).collect();
+    let area = (v[1].0 - v[0].0) * (v[2].1 - v[0].1) - (v[2].0 - v[0].0) * (v[1].1 - v[0].1);
+    let v = if area < 0 { [v[0], v[2], v[1]] } else { [v[0], v[1], v[2]] };
+    let band = 1.0 / FAR_BAND;
+    let mut out = Vec::with_capacity((w * h) as usize);
+    for y in 0..h {
+        for x in 0..w {
+            if area == 0 {
+                out.push(Some(false));
+                continue;
+            }
+            let (px, py) = ((GRID * x as i64 + GRID / 2) as i128, (GRID * y as i64 + GRID / 2) as i128);
+            let mut inside = true;
+            let mut near = false;
+            for i in 0..3 {
+                let (a, b) = (v[i], v[(i + 1) % 3]);
+                let (dx, dy) = (b.0 - a.0, b.1 - a.1);
+                let e = dx * (py - a.1) - dy * (px - a.0);
+                inside &= e > 0 || (e == 0 && (dy < 0 || (dy == 0 && dx > 0)));
+                // the centre's distance to the edge line, |e| / (256 |d|), below 1e-3 pixel
+                let (ef, df) = (e as f64, ((dx * dx + dy * dy) as f64).sqrt());
+                near |= ef.abs() * band < GRID as f64 * df;
+            }
+            out.push(if near { None } else { Some(inside) });
+        }
+    }
+    Ok(out)
+}
+
 /// The range of E606's vertices, as fractions of the target: -8.9% to +124.1%.
 const RANGE_LOW: f64 = -0.09;
 const RANGE_HIGH: f64 = 1.241;
@@ -171,7 +250,7 @@ pub fn vertices_in_envelope(w: u32, h: u32, t: &Tri) -> Result<(), Outcome> {
             if !(RANGE_LOW..=RANGE_HIGH).contains(&f) {
                 return Err(open(
                     format!(
-                        "a vertex at {:.3} of the {w} x {h} target: E606 tested -9% to +124%; saturation and wrapping of the 1/256 format are not shown",
+                        "a vertex at {:.3} of the {w} x {h} target: E606 tested -9% to +124% (far vertices: far_coverage_image, E979)",
                         f
                     ),
                     "Q199",
@@ -594,6 +673,57 @@ pub fn check_windows(
 
 #[cfg(test)]
 mod tests {
+
+    /// r9-x stage far (E979) and E684's far21d0: the vertices in 1/256 pixel, the determined pixels
+    /// the frozen H-EXACT drew, its band pixels and the hardware's drawn count.
+    const E979_ROWS: [(&str, [i64; 6], usize, usize, usize); 11] = [
+        ("far-ctl", [4066, 8385, 7356, 9765, 536870912, 11776], 208, 1, 208),
+        ("far-x22p", [2112, 1728, 1408, 14656, 1073741824, 7808], 2854, 0, 2854),
+        ("far-x23p", [14656, 1728, 2147483648, 536870912, 14976, 14656], 310, 16, 312),
+        ("far-x24p", [1600, 2368, 2432, 13760, 4294967296, 1073741824], 2422, 13, 2432),
+        ("far-x25n", [14400, 1984, -8589934592, -2147483648, 14464, 14272], 2596, 16, 2610),
+        ("far-y22n", [1728, 14912, 7616, -1073741824, 14656, 14016], 2825, 0, 2825),
+        ("far-y23p", [1856, 1600, 14400, 1984, 536870912, 2147483648], 2686, 0, 2686),
+        ("far-y24n", [1472, 14656, 1073741824, -4294967296, 14784, 14144], 2784, 0, 2784),
+        ("far-y25n", [1344, 14784, -2147483648, -8589934592, 14912, 14400], 2878, 0, 2878),
+        ("far-2a", [2147483648, 2688, -2147483648, 12992, 8256, 1856], 1536, 0, 1536),
+        ("far-2b", [4294967296, 1073741824, 7872, 15424, -4294967296, -1073741824], 3320, 0, 3320),
+    ];
+
+    #[test]
+    fn far_vertices_draw_the_exact_triangle_outside_e684s_band() {
+        for (name, v, drawn, band, hw) in E979_ROWS {
+            let t = FarTri { v: [(v[0], v[1]), (v[2], v[3]), (v[4], v[5])] };
+            let img = far_coverage_image(64, 64, &t).unwrap();
+            let det = img.iter().filter(|p| **p == Some(true)).count();
+            let und = img.iter().filter(|p| p.is_none()).count();
+            assert_eq!((det, und), (drawn, band), "{name}");
+            // the hardware drew every determined pixel and some of the band (E979: H-EXACT held)
+            assert!(det <= hw && hw <= det + und, "{name}");
+        }
+    }
+
+    #[test]
+    fn far_coverage_refuses_what_did_not_run() {
+        let far = |x: i64| FarTri { v: [(1024, 1024), (1024, 14000), (x, 8000)] };
+        // past 2^24 pixels to the right and 2^25 to the left: not reachable with the tool (Q199)
+        for x in [(1i64 << 32) + 256, -(1i64 << 33) - 256] {
+            assert!(
+                matches!(far_coverage_image(64, 64, &far(x)), Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q199"]),
+                "{x}"
+            );
+        }
+        // targets other than E684's and E979's
+        assert!(
+            matches!(far_coverage_image(4096, 4096, &far(1 << 32)), Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q261"])
+        );
+        // three far vertices did not run
+        let t = FarTri { v: [(1 << 32, 0), (-(1 << 32), 0), (0, 1 << 32)] };
+        assert!(
+            matches!(far_coverage_image(64, 64, &t), Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q261"])
+        );
+    }
+
     use super::*;
 
     fn tri(v: [(i64, i64); 3]) -> Tri {

@@ -5,7 +5,7 @@ unit = "texture"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E723", "E720"]
+evidence = ["E723", "E720", "E976"]
 terms = ["T0.BIT27"]
 +++
 E723: g-bl-st-a 1147 and g-bl-st-b 876 of 2048 for decode then filter, 0 for filter then decode.
@@ -36,3 +36,9 @@ scripts import the sampler model through resgx545-data texture/p1141/recompute/l
 texmodel.py and specs.json are byte for byte the published texture/p1141/support copies. What it
 designs: a row that reads one stage at a time (v on texel centres with every x fraction, then the
 other axis, then both, and equal corners as a control), the round 9 session r9-x's stage srgb.
+
+Note 2026-11-13 (E976). r9-x ran each lerp stage alone (fy = 0, fx = 0, every 1/64 weight, known
+corner pairs) and both: neither frozen rival (H-HALF2, H-BF11) is exact on any row (498 to 1009 of
+2048 pixels), while a lerp of equal decoded halves returns the half. A single stage already differs
+from both: the kept a and b rows are the table to fit one stage's arithmetic on, with c and E723's
+g-bl-st-b held out.

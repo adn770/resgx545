@@ -30,7 +30,7 @@ list.
 - `Q089` isp, high: where does the closed driver's 4x multisampled render become a 64x64 image, when
   its PBE words are those of a single-sampled 64x64 target ... (E510, E727, E893)
 - `Q199` isp, high: what is the integer range and the behaviour at the limits (saturation, wrap,
-  removal) of the ISP's 1/256-pixel vertex format (E607: window ... (E607, E683, E684)
+  removal) of the ISP's 1/256-pixel vertex format (E607: window ... (E683, E684, E979)
 - `Q202` isp, high: do the coverage rule (centre sample, vertices on the 1/256 grid, top-left ties)
   and the attribute and depth planes of E606 hold with ... (E281, E502, E606)
 - `Q205` isp, high: what is the arithmetic by which the ISP decides the coverage and the depth of a
@@ -46,7 +46,7 @@ list.
 - `Q070` ta, high: what do the TA object's format word bits 15:8 and above and its set masks select
   beyond the settings seen, and does the fitted region test ... (E543, E544, E777)
 - `Q078` texture, high: what do T3 bits 11 and 12 select, given that they change nothing on a
-  strided texture and every pixel of a twiddled chain texture (E564, ... (E722, E723, E968)
+  strided texture and every pixel of a twiddled chain texture (E564, ... (E723, E968, E975)
 - `Q050` usse, high: what do the visibility group's instructions do, and how do smp's mipmaps and
   LOD values, the border address modes, the compressed and YUV ... (E563, E565, E568)
 - `Q047` vdm, high: what do VDM_STATE1 bit 8, bits 11:9 and bits 15:13 select for a state task, when
@@ -76,7 +76,7 @@ list.
 - `Q240` isp, medium: does the coverage rule of E606 (vertices on the 1/256 pixel grid, exact centre
   test, left and top edges owning ties) hold for random ... (E682, E912, E913)
 - `Q261` isp, medium: how large is the error band of the ISP's edge evaluation (E684: 16 pixels in
-  14 of 208 cases within 5.6e-4 pixel of an edge line) as a ... (E682, E684)
+  14 of 208 cases within 5.6e-4 pixel of an edge line) as a ... (E682, E684, E979)
 - `Q262` isp, medium: what bounds the error of the stored depth and of the iterated clip z on E680's
   targets, where E606's tolerances fail for some triangles of ... (E684, E912, E913)
 - `Q288` isp, medium: what rule gives the stored depth of a plane with a non-dyadic gradient in x
@@ -187,7 +187,7 @@ list.
 - `Q107` zls, medium: why does the final render of a job that overflows store zeros for the first
   row of macrotiles and the depth with its sign bit set for the ... (E489, E628, E629)
 - `Q120` zls, medium: what do the stored depth formats 3 to 7 (CR_ISP_ZLSCTL bits 26:24) hold and
-  how are they laid out, given that they store depth and stencil ... (E466, E490)
+  how are they laid out, given that they store depth and stencil ... (E466, E490, E978)
 - `Q121` zls, medium: what is the in-tile order of the stencil store (one byte a pixel, 128 dwords a
   32 x 16 tile) and what does the stencil test do against a ... (E466, E467)
 - `Q109` bif, low: do page directory entries whose page-size field (bits 3:1) names 16 KiB to 4 MiB
@@ -271,7 +271,7 @@ list.
 - `Q280` texture, low: what makes up to 56 of 2048 pixels of a gradient job differ from the
   Euclidean footprint of the pairs (op0, op2) and (op1, op3) with a LOD ... (E563, E721, E744)
 - `Q282` texture, low: what arithmetic gives the bilinear sample of an sRGB texel (T0 bit 27) given
-  that decode-then-filter in float fits 43% to 56% of the pixels ... (E720, E723)
+  that decode-then-filter in float fits 43% to 56% of the pixels ... (E720, E723, E976)
 - `Q283` texture, low: why does type 3 pad a row to 8 dwords below 8 texels wide (rows max(8, w)
   apart, E940), what pitch does type 4 keep at sizes that are not ... (E910, E940, E941)
 - `Q017` usse, low: why does g19 read 0x1a as a store's source but 0 through a mov and as the pixel?
@@ -309,11 +309,11 @@ list.
 - `Q272` vdm, low: what makes three vertices of one job read as a constant row (E702: cap-n8-f10-a7,
   ids 55, 66 and 77 at R * V = 33 and 7 attribute rows; 3 ... (E702, E738, E755)
 - `Q101` zls, low: what does bit 19 (the negated float) do with the integer stored formats
-  (CR_ISP_ZLSCTL bits 26:24 = 1 and 2)? (E465, E466, E490)
+  (CR_ISP_ZLSCTL bits 26:24 = 1 and 2)? (E466, E490, E981)
 - `Q242` zls, low: how is the 16-bit stored depth format laid out at a pitch G other than 33 and at
-  an edge, what do the 24-bit and 16-bit formats store for a ... (E466, E490, E663)
+  an edge, what do the 24-bit and 16-bit formats store for a ... (E490, E663, E977)
 - `Q243` zls, low: what does the ZLS load do with an integer stored format (bits 26:24 = 1 or 2), at
-  an address other than the one the store writes, and when ... (E467, E628, E664)
+  an address other than the one the store writes, and when ... (E628, E664, E977)
 - `Q004` transfer, fw (parked): can a transfer context whose flag bit 4 is set be released, which
   agent but the host sets flag bits 1 and 4, and which priorities above 0 ... (E015, E455)
 - `Q029` render, fw (parked): what does the render context's own cleanup wait for once its RT data
@@ -337,9 +337,27 @@ list.
 
 ## Recent records
 
-94 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+100 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E981` zls, 2026-11-13: r9-z2 stage z2 (10 jobs, 256 x 128, G 7): with the viewport's z offset
+  (state-block word 10) at -0.25, so a modelled depth of -0.75 to -0.25, format 0 stored 0.0 at
+  every dword and formats 1 and 2 ...
+- `E979` isp, 2026-11-13: r9-x stage far (11 jobs): with one vertex at +2^22, +2^23, +2^24 or -2^25
+  pixels in x, -2^22, +2^23, -2^24 or -2^25 in y (the other coordinate up to 2^23), or two at +-2^23
+  or +-2^24, and the rest ...
+- `E978` zls, 2026-11-13: r9-x stage zst (12 jobs): with E466's x ramp and a stencil buffer of each
+  dword's index loaded (bits 1 and 13) and stored (bit 17), at 64 x 32 (4 tiles) and 96 x 48 (9
+  tiles), format 4 changed 640 ...
+- `E977` zls, 2026-11-13: r9-x stage zls (16 jobs): stored depth format 1 is min(floor(z * 2^24),
+  0xffffff) of the format-0 float at every dword (frozen H-FLOOR held 3 of 3: 32768, 76800 and 3200
+  dwords at 256 x 128 G 7 over ...
+- `E976` texture, 2026-11-13: r9-x stage srgb (8 jobs): with T0 bit 27 (sRGB) and bilinear filtering
+  on injected strided texels, each lerp stage alone (fy = 0 on two jobs, fx = 0 on two, every 1/64
+  weight) and both (two jobs at ...
+- `E975` texture, 2026-11-13: r9-x stage t3 (19 jobs): with T3 bit 14 set in smp on named memory, on
+  six held-out strided geometries (W 16, 32, 48 at strides 32, 64, 128, u off the texel centres and
+  past the texture) each with ...
 - `E968` texture, 2026-11-13: Round 9 offline (Q078; no run): with T3 bit 14 set, smp on a strided
   texture reads dword i + K + M c, i the dword the same job reads without the bit and c its column,
   read on E566's fit job ...
@@ -625,9 +643,11 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-35 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+37 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r9-z2`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t9
+- `render/closing-r9-x`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
 - `render/closing-r8-lgeo`: 2026-11-13; module 37EC97AB0CB37213C42FCCC; tools ~/sgxfive-test-rgn4
 - `render/closing-r8-ldpm`: 2026-11-13; module 37EC97AB0CB37213C42FCCC; tools ~/sgxfive-test-rgn4
 - `render/closing-r8-k2`: 2026-11-13; module B60AB0B475DD1E8972419B5; fork r8-kernel at 2a650d74;
@@ -683,9 +703,9 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 1 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 3 sessions, fork r8-kernel at
   2a650d74
+- module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at
   3f0b3e74
 - module srcversion 99CD90DA26E3AFF9C450517: last named 2026-11-12, 14 sessions, fork resgx545 at
@@ -724,4 +744,4 @@ stays with what a session must do around it.
 
 ## Simulator coverage baseline
 
-119 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
+118 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).

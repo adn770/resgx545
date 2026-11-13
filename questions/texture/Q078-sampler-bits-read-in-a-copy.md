@@ -5,7 +5,7 @@ unit = "texture"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E274", "E397", "E566", "E564", "E722", "E723", "E968"]
+evidence = ["E274", "E397", "E566", "E564", "E722", "E723", "E968", "E975"]
 terms = ["T3.BIT10", "T3.BIT14", "T3.BITS19_18", "T3.BITS28_27", "T0.BIT27", "T3.BITS7_0"]
 +++
 
@@ -83,3 +83,11 @@ clamped to [0, 1] fits all three jobs. What stays: bits 11 and 12, bit 14 held o
 and strides (W != S, a width that is no power of two, u past both ends) and on a twiddled texture.
 The round 9 session r9-x's stage t3 runs both (bit 14 with u inside and past the texture, bits 11
 and 12 on a strided and a twiddled texture).
+
+Note 2026-11-13 (E975). r9-x held E968's bit-14 rivals out on six strided geometries: the
+column-centre form (R-U) failed all six, i + floor(S * S * clamp(u, 0, 1)) held four and failed the
+two where S * S is not 4096 (W 32 at strides 128 and 32). Post hoc, every pixel of the six reads the
+bit-clear dword plus floor(4096 * clamp(u, 0, 1)), whatever S and W: a rule to hold out (another S,
+a twiddled texture, v varying). Bits 11 and 12 changed nothing on a strided texture again, and
+E564's twiddled bit-11 and bit-12 images replicated byte for byte; their read-out is not decoded.
+Open: bit 14's constant held out, and bits 11 and 12 on a twiddled chain.

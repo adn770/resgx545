@@ -2936,13 +2936,13 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   at 1024 x 768 and 326656 at 4096 x 4096 for the control 0x0017100c, G = 1).
   *zls; HW, infer; data: `zls-store-layout`.*
 - `E466` Bits 26:24 of CR_ISP_ZLSCTL select the format of the stored depth: 0 the 32-bit float (512
-  dwords a 32 x 16 tile), 1 the 24-bit unsigned integer round(z * 0xffffff) (512 dwords a tile,
-  786432 of 786432 pixels exact), 2 a 16-bit integer, round(z * 0xffffff) >> 8, with the rows y even
+  dwords a 32 x 16 tile), 1 the 24-bit unsigned integer min(floor(z * 2^24), 0xffffff) (512 dwords a
+  tile, 786432 of 786432 pixels exact), 2 a 16-bit integer, that value >> 8, with the rows y even
   and odd of a column in the low and high half of a dword (256 dwords a tile, 786432 of 786432
   exact); 4 and 7 store no depth without a stencil buffer, and 3, 5 and 6 store other layouts; bit
   19 stores the depth negated (shown by the three most frequent stored dwords only); bits 2 and 18
   enable the depth store and bit 17 the stencil store (bit 17 from E411; here clearing it changes
-  nothing without a stencil buffer).
+  nothing without a stencil buffer) [corrected 2026-11-13, see Correction].
   *zls; HW, infer; data: `zls-store-format`.*
 - `E467` A render loads depth only with CR_ISP_ZLSCTL bits 1 and 14 and stencil only with bits 1 and
   13 (neither without bit 1; load-only controls without the store enables store nothing), the loaded
@@ -3224,16 +3224,17 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *zls; HW, infer; data: `zls-store-layout-dumps`.*
 - `E490` The depth formats of E466 recomputed from stored dumps of a rerun of the 11.22 store-format
   run, by a separate script: at 1024 x 768 with G = 33, format 0 holds the float z of the ramp at
-  786432 of 786432 pixels (within 1e-5 of the geometry's), format 1 holds round(z * 0xffffff) at
-  786432 of 786432 (z is the float format 0 stores at that pixel; floor, 333955), format 2 packs two
-  rows in one dword in 256 dwords a tile with the dword index lx0 ly1 lx1 ly2 lx2 ly3 lx3 lx4 and
-  the half ly0, derived from the dumps alone (786432 halves, 512 of 512 slots the same in every
-  tile), formats 4 and 7 store nothing without a stencil buffer (0 dwords), formats 3, 5 and 6 store
-  965120, 96580 and 86084 dwords in 1885, 1508 and 1536 slots in the x ramp (the y ramp stores
-  965120, 84480 and 73760; format 3 reaches the last dword of the buffer, so its count is a lower
-  bound), and bit 19 stores the float depth negated at 786432 of 786432 pixels and changes no dword
-  of formats 1 and 2 (the dumps are byte-identical to the dumps without it, same sha256), where E466
-  had shown it by three frequent dwords.
+  786432 of 786432 pixels (within 1e-5 of the geometry's), format 1 holds min(floor(z * 2^24),
+  0xffffff) at 786432 of 786432 (z is the float format 0 stores at that pixel; round(z * 0xffffff)
+  gives the same dwords there, floor(z * 0xffffff) 333955), format 2 packs two rows in one dword in
+  256 dwords a tile with the dword index lx0 ly1 lx1 ly2 lx2 ly3 lx3 lx4 and the half ly0, derived
+  from the dumps alone (786432 halves, 512 of 512 slots the same in every tile), formats 4 and 7
+  store nothing without a stencil buffer (0 dwords), formats 3, 5 and 6 store 965120, 96580 and
+  86084 dwords in 1885, 1508 and 1536 slots in the x ramp (the y ramp stores 965120, 84480 and
+  73760; format 3 reaches the last dword of the buffer, so its count is a lower bound), and bit 19
+  stores the float depth negated at 786432 of 786432 pixels and changes no dword of formats 1 and 2
+  (the dumps are byte-identical to the dumps without it, same sha256), where E466 had shown it by
+  three frequent dwords [corrected 2026-11-13, see Correction].
   *zls; HW; data: `zls-store-format-dumps`.*
 - `E491` A call that is not taken still writes pclink: with the predicate false, ba.savelink and
   br.savelink left pclink at the index of the instruction after the call in all 16 not-taken calls
@@ -7632,6 +7633,59 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   1024 [fitted]; the twiddled job tw32-t3b14 faulted in E566 and kept no image.
   *texture; HW, infer; data: `texture-p1132-tx-t3`, `cited-scratch:closing9/rank/`,
   `cited-scratch:closing9/offline/q078/`.*
+- `E975` r9-x stage t3 (19 jobs): with T3 bit 14 set in smp on named memory, on six held-out strided
+  geometries (W 16, 32, 48 at strides 32, 64, 128, u off the texel centres and past the texture)
+  each with its bit-14-clear reference (the references equal texmodel's image, 6 of 6), the frozen
+  rival H-UCOL (the control column's centre, E968's R-U) failed 6 of 6, H-U01 (i + floor(S * S *
+  clamp(u, 0, 1))) held 4 and failed 2 (W 32 at S 128 and at S 32), H-URAW held 3; post hoc
+  (fold/t3_post.py, not frozen) every pixel of all six rows reads the reference's dword plus
+  floor(4096 * clamp(u, 0, 1)) (12288 of 12288), S and W notwithstanding; T3 bits 11 and 12 on
+  E566's strided 64 x 32 left the control image (replicates, 2 of 2) and E564's twiddled an-t3b11
+  and an-t3b12 replicated byte for byte; all three controls passed.
+  *texture; HW; data: `render-closing-r9-x:out/20261113-081821/t3/`, `render-closing-r9-x:fold/`.*
+- `E976` r9-x stage srgb (8 jobs): with T0 bit 27 (sRGB) and bilinear filtering on injected strided
+  texels, each lerp stage alone (fy = 0 on two jobs, fx = 0 on two, every 1/64 weight) and both (two
+  jobs at fy 21/64 and 43/64), neither frozen rival is exact on any row: H-HALF2 (decode to half,
+  lerps in half, closing9/rank q282_rule.json) 498 to 1009 of 2048 pixels, H-BF11 (block float, 11
+  bits a pair, q282_rule3.json) 502 to 733; the controls passed (E723's g-bl-st-a rerun 2048 of
+  2048, the equal-corner job 2048 of 2048: a lerp of equal decoded halves returns the half, stage 2
+  at fy = 0 returns stage 1).
+  *texture; HW; data: `render-closing-r9-x:out/20261113-081821/srgb/`.*
+- `E977` r9-x stage zls (16 jobs): stored depth format 1 is min(floor(z * 2^24), 0xffffff) of the
+  format-0 float at every dword (frozen H-FLOOR held 3 of 3: 32768, 76800 and 3200 dwords at 256 x
+  128 G 7 over z 0 to 0.5, 320 x 240 G 9 and 80 x 40 G 2 over 0.5 to 1; H-ROUND, round(z * 0xffffff)
+  of E466, failed 0 of 76800 and 0 of 3200 and held only below 0.5) and format 2 is the same >> 8 in
+  E490's 16-bit layout at all three pitches (H-E490/H-FLOOR 3 of 3, the 512-dword slot spacing
+  refuted); a load of format 1 or 2 compares the loaded dword as a float (H-RAW held 2 of 2:
+  0x00400000 failed less against 0.125, 0x3fff3fff passed less against 0.5; the integer
+  back-conversion failed both); a loaded NaN (0x7fc00000) passed less and failed greater against
+  0.5, and infinity passed less and failed greater (IEEE held 3 of 4, failing on NaN under less);
+  all four controls passed.
+  *zls; HW; data: `render-closing-r9-x:out/20261113-081821/zls/`.*
+- `E978` r9-x stage zst (12 jobs): with E466's x ramp and a stencil buffer of each dword's index
+  loaded (bits 1 and 13) and stored (bit 17), at 64 x 32 (4 tiles) and 96 x 48 (9 tiles), format 4
+  changed 640 and 1440 depth dwords (160 a tile, the frozen H-SCALE from E466, held 2 of 2), format
+  7 784 and 2064 (frozen 12 a tile: failed), formats 3 and 5 2560 and 5760 (640 a tile), format 6
+  2048 and 4608 (512 a tile), and no format from 3 to 7 changed a dword of the stencil store; both
+  format-0 controls passed (depth 512 a tile, stencil store E467's copy, 128 a tile).
+  *zls; HW; data: `render-closing-r9-x:out/20261113-081821/zst/`, `render-closing-r9-x:fold/`.*
+- `E979` r9-x stage far (11 jobs): with one vertex at +2^22, +2^23, +2^24 or -2^25 pixels in x,
+  -2^22, +2^23, -2^24 or -2^25 in y (the other coordinate up to 2^23), or two at +-2^23 or +-2^24,
+  and the rest inside a 64 x 64 target (tool unit 1/32), the coverage equals the exact rule of
+  E606/E607 at every pixel outside E684's 1e-3 pixel band in 10 of 10 rows (frozen H-EXACT held); a
+  clamp to the 24.8 range (H-SAT) failed the 5 rows where it differs, a two's-complement wrap of
+  24.8 (H-WRAP) failed 8 of 8 where it differs, nothing drawn (H-CULL) failed 10 of 10; E684's
+  far21d0 rerun drew its 208 pixels (control); no job faulted.
+  *isp; HW; data: `render-closing-r9-x:out/20261113-081821/far/`.*
+- `E981` r9-z2 stage z2 (10 jobs, 256 x 128, G 7): with the viewport's z offset (state-block word
+  10) at -0.25, so a modelled depth of -0.75 to -0.25, format 0 stored 0.0 at every dword and
+  formats 1 and 2 stored 0 at every dword with and without bit 19 (byte-identical dumps), so the
+  four frozen rivals collapse there (each held 4 of 8 rows: ramp b's four); with the offset at +0.25
+  the stored depth ran 0.00059 to 0.2994 (not the modelled -0.25 to +0.25, never 0 or negative), and
+  formats 1 and 2 match min(floor(z * 2^24), 0xffffff) and its >> 8 at every dword with and without
+  bit 19 (byte-identical), missing round(z * 0xffffff), the rivals' encoding, at 8803 of 32768
+  dwords; both format-0 controls passed (32768 dwords).
+  *zls; HW; data: `render-closing-r9-z2:out/20261113-082522/z2/`, `render-closing-r9-z2:fold/`.*
 
 ## By unit
 
@@ -7669,7 +7723,7 @@ E215, E216, E217, E218, E219, E220, E222, E224, E225, E226, E227, E228, E229, E2
 E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E290, E291, E330,
 E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E508, E510, E590,
 E606, E607, E618, E660, E661, E662, E680, E681, E682, E683, E684, E727, E728, E731, E739, E740,
-E741, E757, E758, E762, E825, E827, E829, E912, E913, E914, E922, E934, E943, E952.
+E741, E757, E758, E762, E825, E827, E829, E912, E913, E914, E922, E934, E943, E952, E979.
 
 ### mte
 
@@ -7714,7 +7768,7 @@ Records: E033, E034, E035, E036, E037, E038, E039, E040, E041, E042, E114, E116,
 E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441, E560, E561, E562,
 E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E726, E733, E743,
 E744, E760, E765, E787, E844, E894, E910, E911, E923, E930, E931, E932, E940, E941, E942, E951,
-E968.
+E968, E975, E976.
 
 ### transfer
 
@@ -7745,4 +7799,4 @@ E413, E414, E427, E440, E545, E546, E700, E701, E702, E703, E737, E738, E755, E7
 ### zls
 
 Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467, E489, E490, E615, E628, E629,
-E663, E664, E665, E730, E831, E885, E903, E904.
+E663, E664, E665, E730, E831, E885, E903, E904, E977, E978, E981.

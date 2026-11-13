@@ -75,6 +75,7 @@ pub fn sample(s: &Sample, load: &mut Load) -> Result<Vec<u32>, Fail> {
     if tex.format == 27 || tex.srgb {
         // E723, E724: point samples of level 0, as Texture::new admits them
         if bilinear || levels != [(0, 64)] || s.pcf.is_some() || s.srd != Srd::None {
+            // sRGB bilinear: neither declared arithmetic held stage by stage (E976, Q282)
             return open("ETC1 or sRGB filtered, blended, with .pcf or an SRD mode (not run)");
         }
         let (x, y) = ((u * tex.w as f64).floor() as i64, tex.row_of(v, s.one_d));
@@ -302,8 +303,9 @@ fn half_to_f32(h: u32) -> f32 {
 /// bit 11: the captured pixel fetches of the closed driver set it (0x00800800)
 /// **[CAP]**, the mip probes (E041), which do, read as the model without it. On a twiddled
 /// texture only those are measured; bits 10, 13, 14, 27 and 28 act in ways
-/// not modelled here (bit 14's sheared read on a strided texture is held out only at a width
-/// equal to the stride, E968).
+/// not modelled here (bit 14's read on a strided texture: E968's S * S rule failed two of E975's
+/// six held-out geometries, and the reading that fits all six, floor(4096 u) dwords, is post hoc;
+/// bits 11 and 12 change nothing on a strided texture again in E975).
 fn t3_fields(t3: u32, stride: bool) -> Result<([i64; 2], u32), Fail> {
     let not_measured = if stride { 0x1800_6400 } else { 0x187c_77ff };
     if t3 & not_measured != 0 {
