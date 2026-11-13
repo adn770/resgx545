@@ -1,11 +1,11 @@
 +++
 id = "Q261"
-question = "what sets the displacement of a far vertex that the ISP's edges behave as (E1005: one amount per triangle, 339 to 467 pixels at (2^24, 2^22), above 586 at (2^23, 2^21) and (-2^25, -2^23); E1012, post hoc with no held-out row: a clip of the far edges to a guard x in [-G, 64 + G] with G 16 to 22, the new vertex rounded half up to 1/256, fits all 48 kept rows where no declared set-up arithmetic does), does that clip hold on held-out far vertices and a 128 x 128 target (guard relative to the target or absolute), what are its lower and y bounds, and where does the vertex format saturate, wrap or cull past 2^25 pixels (Q199)"
+question = "on targets other than 64 x 64, where is the guard that the ISP clips far edges to (E1023: on 64 x 64 x in [-16 or -9, 80] and y in [-16, 80], held out on 21 rows; on 128 x 128 x <= 147 among 128 + 16 to 22, so neither one G on both targets nor a guard fixed in pixels; post hoc a quarter of the target past each edge, clip x and y within 1.5 w, fits all 24 rows), is the lower x bound -16 or -9, and is the clip made in clip space or in window pixels"
 unit = "isp"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E684", "E682", "E979", "E984", "E1005", "E1012"]
+evidence = ["E684", "E682", "E979", "E984", "E1005", "E1012", "E1023", "E1024"]
 terms = []
 +++
 E684 puts one vertex, on the 1/256 grid, at 2^9 to 2^21 pixels, on 64 x 64 and 512 x 512 targets
@@ -68,3 +68,20 @@ row, so sgx-pipe keeps the band undetermined. Held-out vertices for a later row 
 closing11/plan/c6-q261/q261_proposals.json (four along +x, three along -x, one or two band pixels
 apart between the surviving G; a 128 x 128 target tells 64 + G from an absolute 80 to 86). Open:
 the clip held out, its bounds, and Q199 past 2^25 pixels.
+
+Narrowed 2026-11-13 (round 13, r13-isp stages q261 and far, E1023 and E1024, held out; the question
+line is reworded, the question is not retired). It read "what sets the displacement of a far vertex
+that the ISP's edges behave as (E1005: one amount per triangle, 339 to 467 pixels at (2^24, 2^22),
+above 586 at (2^23, 2^21) and (-2^25, -2^23); E1012, post hoc with no held-out row: a clip of the
+far edges to a guard x in [-G, 64 + G] with G 16 to 22, the new vertex rounded half up to 1/256,
+fits all 48 kept rows where no declared set-up arithmetic does), does that clip hold on held-out far
+vertices and a 128 x 128 target (guard relative to the target or absolute), what are its lower and y
+bounds, and where does the vertex format saturate, wrap or cull past 2^25 pixels (Q199)". E1012's
+clip held on every held-out
+far vertex (14 of 14 in q261, 7 of 7 in far with E979's x25n), one value of each bound fitting
+every 64 x 64 row: x <= 80 (G = 16), x >= -9 or -16, y in [-16, 80], the far vertex up to 2^30
+pixels. H-PIVOT's per-row displacement is not needed. On 128 x 128 the three rows fit x <= 147 and
+no other frozen value, which refutes both the frozen relative guard (one G) and an absolute one;
+post hoc, a quarter of the target past each edge fits every row of both targets (E1023). sgx-pipe
+models the 64 x 64 guard (`isp::guard_clip_image`). Open: the guard on other targets, held out;
+the lower x bound; clip space or window pixels.

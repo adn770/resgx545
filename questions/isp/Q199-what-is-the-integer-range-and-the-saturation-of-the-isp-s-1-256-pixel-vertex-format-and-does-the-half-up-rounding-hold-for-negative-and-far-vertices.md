@@ -1,11 +1,11 @@
 +++
 id = "Q199"
-question = "what is the integer range and the behaviour at the limits (saturation, wrap, removal) of the ISP's 1/256-pixel vertex format (E607: window coordinates are rounded half up to 1/256 pixel), and does the rounding hold for negative and far-off-screen vertices"
+question = "does E607's half-up rounding to 1/256 pixel hold for negative vertices and for the vertices the guard-band clip makes, and what of the vertex format's range does a vertex inside the guard of a large target (4096 x 4096) reach (E1024: past the guard a far vertex is clipped, not saturated, wrapped or removed, up to 2^30 pixels)"
 unit = "isp"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E606", "E607", "E683", "E684", "E979"]
+evidence = ["E606", "E607", "E683", "E684", "E979", "E1024"]
 terms = []
 +++
 E606 and E607 put vertices between -9% and +124% of targets up to 256 pixels wide and fitted a
@@ -35,3 +35,15 @@ or +-2^24, on a 64 x 64 target: the coverage is exact outside E684's 1e-3 pixel 
 rows, and a clamp or a two's-complement wrap of a 24.8 word is refuted wherever it would differ; no
 fault. Open: past +2^24 and -2^25 (the tool's reach), sub-grid fractions and ties at far vertices, a
 4096 target.
+
+Narrowed 2026-11-13 (round 13, r13-isp stage far, E1024, held out; the question line is reworded,
+the question is not retired). It read "what is the integer range and the behaviour at the limits
+(saturation, wrap, removal) of the ISP's 1/256-pixel vertex format (E607: window coordinates are
+rounded half up to 1/256 pixel), and does the rounding hold for negative and far-off-screen
+vertices". A far vertex at +-2^26, 2^28 and 2^30 pixels in x and
+y on 64 x 64 drew `job: ok` with no fault, the image of the far edges clipped to the guard q261
+read (E1023: x <= 80, y in [-16, 80]); saturation or wrap of a 24.8 word and removal failed 6 of 6.
+So the format's limits are never met by a far vertex: it reaches the format only as a clip vertex
+inside the guard [infer], and its own sub-grid fraction or tie cannot show. Open: negative
+vertices with a sub-grid fraction (E683, Q260), the clip vertices' rounding beyond the rows read,
+a 4096 target (the guard there is Q261's), past 2^30 pixels.

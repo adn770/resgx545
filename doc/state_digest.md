@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-154 open: 144 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+153 open: 143 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -29,8 +29,8 @@ list.
   and what are the other words of a render's background object? (E972, E973, E1006)
 - `Q089` isp, high: where does the closed driver's 4x multisampled render become a 64x64 image, when
   its PBE words are those of a single-sampled 64x64 target ... (E510, E727, E893)
-- `Q199` isp, high: what is the integer range and the behaviour at the limits (saturation, wrap,
-  removal) of the ISP's 1/256-pixel vertex format (E607: window ... (E683, E684, E979)
+- `Q199` isp, high: does E607's half-up rounding to 1/256 pixel hold for negative vertices and for
+  the vertices the guard-band clip makes, and what of the ... (E684, E979, E1024)
 - `Q200` isp, high: why do the dyadic controls of E731 store one or two ulps below the truncated
   exact plane, below binade 0, in a region bounded by a diagonal ... (E758, E912, E913)
 - `Q202` isp, high: do the attribute and depth planes of E606 hold with perspective (w other than
@@ -69,8 +69,8 @@ list.
   E757)
 - `Q240` isp, medium: does the coverage rule of E606 (vertices on the 1/256 pixel grid, exact centre
   test, left and top edges owning ties) hold for random ... (E682, E912, E913)
-- `Q261` isp, medium: what sets the displacement of a far vertex that the ISP's edges behave as
-  (E1005: one amount per triangle, 339 to 467 pixels at (2^24, ... (E984, E1005, E1012)
+- `Q261` isp, medium: on targets other than 64 x 64, where is the guard that the ISP clips far edges
+  to (E1023: on 64 x 64 x in [-16 or -9, 80] and y in [-16, ... (E1012, E1023, E1024)
 - `Q262` isp, medium: what bounds the error of the stored depth and of the iterated clip z on E680's
   targets, where E606's tolerances fail for some triangles of ... (E684, E912, E913)
 - `Q288` isp, medium: what rule gives the stored depth of a plane with a non-dyadic gradient in x
@@ -206,8 +206,6 @@ list.
   stop the tick through the closed task (E814: that word ... (E812, E814, E902)
 - `Q072` isp, low: what does bit 1 of CR_ISP_REG_04DC do to a punch-through pass, when it hangs
   every one tried and changes no opaque or translucent pass? (E222, E290, E416)
-- `Q201` isp, low: under a CR_ISP_MULTISAMPLECTL byte 0 other than 0x88, does an attribute iterated
-  from a coordinate set read at the point byte 0 places, as ... (E606, E1010, E1018)
 - `Q241` isp, low: what do ISP word 0 bits 15, 16, 17 and 18, the depth compares 2, 3, 5 and 6
   against equal depths, the visibility test (ISP word 1 bit 3), ... (E757, E995, E998)
 - `Q044` pbe, low: what do bits 11:0 of CR_REG_0400 (0x80 as built) do, when no value of them
@@ -323,12 +321,21 @@ list.
 
 ## Recent records
 
-157 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+160 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
 - `E1032` dpm, 2026-11-13: r13-dpm stage pr2 on module B60AB0B4 (Q036: does 0x0748 bit 2 clear with
   partial renders; one scene, 3072x2048 with 1500 vertices, at 0, 1, 2 and 4 partial renders, two
   replicates each, 8 jobs): both ...
+- `E1024` isp, 2026-11-13: r13-isp stage far (8 jobs, last, ascending distance): one far vertex at
+  +2^26 and +2^30 pixels in x, -2^28 in x, -2^26 and -2^30 in y and +2^28 in y on a 64 x 64 target
+  (--tri-unit 0, the near ...
+- `E1023` isp, 2026-11-13: r13-isp stage q261 (16 jobs): every held-out far vertex draws E1012's
+  clip (the far edges clipped to a guard, each new vertex rounded half up to 1/256 pixel, the edges
+  then exact) at some value of ...
+- `E1022` isp, 2026-11-13: r13-isp stage q201 (23 jobs, one 64 x 64 triangle that is not the tool's
+  default): under CR_ISP_MULTISAMPLECTL byte 0 = 0x3c, 0x0f, 0xf0, 0x5a and 0x26 (bytes 1 to 3 at 0)
+  both the position source ...
 - `E1021` vdm, 2026-11-13: Round 12 offline (Q163; no run): on the 11.31 VDM state sweeps
   (vdm/state-units: 133 jobs of three scripts in run order, E545's two-block stream; c taken as 0 at
   each script's start, every script ...
@@ -800,7 +807,7 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-49 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+50 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
 - `render/closing-r9-z2`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t9
@@ -816,6 +823,7 @@ srcversion, fork tip, laptop tools.
 - `render/closing-r8-k2`: 2026-11-13; module B60AB0B475DD1E8972419B5; fork r8-kernel at 2a650d74;
   tools ~/sgxfive-test-rgn4
 - `render/closing-r8-geo`: 2026-11-13; module 37EC97AB0CB37213C42FCCC; tools ~/sgxfive-test-rgn4
+- `render/closing-r13-isp`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r13-dpm`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r10-zls`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4,
   ~/sgxfive-test-t9
@@ -875,7 +883,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 15 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 16 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at

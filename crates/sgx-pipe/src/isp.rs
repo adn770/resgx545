@@ -191,7 +191,7 @@ pub fn sample_offset(ctl: u32) -> Result<(i64, i64), Outcome> {
 /// The coverage of a triangle sampled at `CR_ISP_MULTISAMPLECTL` byte 0 (`sample_offset`). The
 /// library's 0x88 is `coverage_image`; any other value ran on one 64 x 64 triangle only (E064,
 /// E1018), so it is admitted on that target and refused elsewhere (Q240). The iterators read
-/// the centre only (`iter::sample_point`, Q201).
+/// byte 0's point too (`iter::sample_point`, E1022).
 pub fn coverage_image_sampled(w: u32, h: u32, t: &Tri, ctl: u32) -> Result<Vec<bool>, Outcome> {
     let at = sample_offset(ctl)?;
     if ctl == 0x88 {
@@ -296,6 +296,121 @@ pub fn far_coverage_image(w: u32, h: u32, t: &FarTri) -> Result<Vec<Option<bool>
         }
     }
     Ok(out)
+}
+
+/// The guard the far edges are clipped to on a 64 x 64 target, in pixels: x in [-16, 80] or
+/// [-9, 80] (both fit every row), y in [-16, 80] (E1023, E1024: held out, 21 rows of r13-isp).
+pub const GUARD_64: (i64, i64, i64, i64) = (-16, 80, -16, 80);
+/// The other lower x bound the held-out rows leave (E1023: a in {9, 16}).
+pub const GUARD_64_XLO_ALT: i64 = -9;
+/// How far a vertex ran, in pixels: 2^30 both ways along x and y, which the tool's float32 clip
+/// coordinate sends as 2^30 + 32 (E1024).
+pub const GUARD_REACH: i64 = (1 << 30) + 32;
+
+fn halfup(n: i128, d: i128) -> i128 {
+    // n / d rounded half up (E607), d > 0
+    (2 * n + d).div_euclid(2 * d)
+}
+
+/// The edge p-q cut at `axis` = `bound` (1/256 pixel), the other coordinate rounded half up to the
+/// 1/256 grid (c6's `inter`, closing11/plan/c6-q261/q261_rule2.py).
+fn guard_cut(p: (i128, i128), q: (i128, i128), axis: usize, bound: i128) -> (i128, i128) {
+    let c = |v: (i128, i128), k: usize| if k == 0 { v.0 } else { v.1 };
+    let (a, b) = (c(p, axis), c(q, axis));
+    let o = 1 - axis;
+    let (mut num, mut den) = (c(p, o) * (b - a) + (bound - a) * (c(q, o) - c(p, o)), b - a);
+    if den < 0 {
+        num = -num;
+        den = -den;
+    }
+    let r = halfup(num, den);
+    if axis == 0 { (bound, r) } else { (r, bound) }
+}
+
+/// Sutherland-Hodgman against the box (pixels), x then y, the low bound then the high one.
+fn guard_clip(v: &[(i128, i128)], b: (i64, i64, i64, i64)) -> Vec<(i128, i128)> {
+    let mut poly = v.to_vec();
+    let g = GRID as i128;
+    for (axis, lo, hi) in [(0usize, b.0, b.1), (1, b.2, b.3)] {
+        for (bound, keep_ge) in [(lo as i128 * g, true), (hi as i128 * g, false)] {
+            let at = |v: (i128, i128)| if axis == 0 { v.0 } else { v.1 };
+            let inside = |v: (i128, i128)| if keep_ge { at(v) >= bound } else { at(v) <= bound };
+            let mut out = Vec::new();
+            for i in 0..poly.len() {
+                let (cur, nxt) = (poly[i], poly[(i + 1) % poly.len()]);
+                if inside(cur) {
+                    out.push(cur);
+                }
+                if inside(cur) != inside(nxt) {
+                    out.push(guard_cut(cur, nxt, axis, bound));
+                }
+            }
+            poly = out;
+            if poly.is_empty() {
+                return poly;
+            }
+        }
+    }
+    poly
+}
+
+fn guard_image(w: u32, h: u32, v: &[(i128, i128); 3], b: (i64, i64, i64, i64)) -> Vec<bool> {
+    let area = (v[1].0 - v[0].0) * (v[2].1 - v[0].1) - (v[2].0 - v[0].0) * (v[1].1 - v[0].1);
+    if area == 0 {
+        return vec![false; (w * h) as usize];
+    }
+    let tri = if area < 0 { [v[0], v[2], v[1]] } else { *v };
+    let poly = guard_clip(&tri, b);
+    let mut out = Vec::with_capacity((w * h) as usize);
+    for y in 0..h {
+        for x in 0..w {
+            let (px, py) = ((GRID * x as i64 + GRID / 2) as i128, (GRID * y as i64 + GRID / 2) as i128);
+            let mut inside = poly.len() >= 3;
+            for i in 0..poly.len() {
+                let (a, b) = (poly[i], poly[(i + 1) % poly.len()]);
+                let (dx, dy) = (b.0 - a.0, b.1 - a.1);
+                let e = dx * (py - a.1) - dy * (px - a.0);
+                inside &= e > 0 || (e == 0 && (dy < 0 || (dy == 0 && dx > 0)));
+            }
+            out.push(inside);
+        }
+    }
+    out
+}
+
+/// The coverage of a triangle with far vertices on a 64 x 64 target, band included: its edges
+/// are clipped to `GUARD_64` (a quarter of the target past each edge), each new vertex rounded
+/// half up to 1/256 pixel, then E606's exact test with its tie rule (E1012's clip, fitted on 48
+/// kept rows; held out on r13-isp's 21 new rows, E1023 and E1024: one guard, x <= 80 and
+/// y in [-16, 80], and no saturation, wrap or removal of a vertex up to 2^30 pixels). The lower x
+/// bound is -16 or -9 (both fit): a pixel the two draw differently is `None`. Refuses other
+/// targets (128 x 128 fits x <= 147 among the frozen 128 + G, so neither the same G nor the same
+/// pixels; the quarter of the target fits it post hoc: Q261), and coordinates past 2^30 pixels
+/// (Q199).
+pub fn guard_clip_image(w: u32, h: u32, t: &FarTri) -> Result<Vec<Option<bool>>, Outcome> {
+    if (w, h) != (64, 64) {
+        return Err(open(
+            format!(
+                "the guard on a {w} x {h} target: held at 64 x 64 only, 128 x 128 fit it post hoc (E1023)"
+            ),
+            "Q261",
+        ));
+    }
+    for &(x, y) in &t.v {
+        for c in [x, y] {
+            if c.abs() > GUARD_REACH * GRID {
+                return Err(open(
+                    format!("a vertex coordinate of {} pixels: E1024 ran to 2^30", c as f64 / GRID as f64),
+                    "Q199",
+                ));
+            }
+        }
+    }
+    let v = [0, 1, 2].map(|i| (t.v[i].0 as i128, t.v[i].1 as i128));
+    let a = guard_image(w, h, &v, GUARD_64);
+    let (_, x1, y0, y1) = GUARD_64;
+    let b = guard_image(w, h, &v, (GUARD_64_XLO_ALT, x1, y0, y1));
+    Ok(a.iter().zip(&b).map(|(p, q)| if p == q { Some(*p) } else { None }).collect())
 }
 
 /// The range of E606's vertices, as fractions of the target: -8.9% to +124.1%.
@@ -843,6 +958,68 @@ mod tests {
         let hw = |n: &str| E1005_ROWS.iter().find(|r| r.0 == n).unwrap().4;
         assert_eq!((hw("piv-x24p-m288"), hw("piv-x24p-m416")), (2432, 2422));
         assert_eq!((hw("piv-x23p-m544"), hw("piv-x25n-m544")), (312, 2610));
+    }
+
+    /// r13-isp's 64 x 64 rows (E1023 q261, E1024 far): the vertices the tool submitted (1/256
+    /// pixel), the kept drawn count and FNV-1a 64 of the kept image ('1'/'0' bytes, raster order).
+    const GUARD_ROWS: [(&str, [i64; 6], usize, u64); 21] = [
+        ("q261-ctl-far21", [4066, 8385, 7356, 9765, 536870912, 11776], 208, 0x899e6f8bd3e540d7),
+        ("q261-px1", [1600, 2368, 2432, 13760, 2837851904, 1172994176], 2241, 0xc57806303efbdf42),
+        ("q261-px2", [1600, 2368, 2432, 13760, 3238585344, -312337120], 2518, 0x2423abd9ff94a1d3),
+        ("q261-px3", [1600, 2368, 2432, 13760, 3947525632, 387754048], 2482, 0x5cf06074ddf740dd),
+        ("q261-px4", [1600, 2368, 2432, 13760, 1649268224, 458830240], 2405, 0x252fce07f5fefd36),
+        ("q261-nx1", [14400, 1984, 14464, 14272, -7705368576, -34468760], 2688, 0x09505fba5f9f2f95),
+        ("q261-nx2", [14400, 1984, 14464, 14272, -2280797184, -128304464], 2688, 0x7328b14497357785),
+        ("q261-nx3", [14400, 1984, 14464, 14272, -2815953408, 2058346112], 1951, 0xcd33b5117b868dea),
+        ("q261-ny1", [1728, 14912, 14656, 14016, -62705496, -4446765568], 2865, 0x95d02802e12c3a08),
+        ("q261-ny2", [1728, 14912, 14656, 14016, -319368512, -8258390016], 2859, 0x8742046110de061a),
+        ("q261-ny3", [1728, 14912, 14656, 14016, 37332264, -7497236992], 2829, 0xab994cdd8c31df64),
+        ("q261-ny4", [1728, 14912, 14656, 14016, 59320832, -8126302720], 2845, 0x508aab86cf410a04),
+        ("q261-ctl-x24p", [1600, 2368, 2432, 13760, 4294967296, 1073741824], 2432, 0xc215f5a990d94ac5),
+        ("far-ctl", [4066, 8385, 7356, 9765, 536870912, 11776], 208, 0x899e6f8bd3e540d7),
+        ("far-x25n", [14400, 1984, -8589934592, -2147483648, 14464, 14272], 2610, 0x9df0116b1e248f19),
+        ("far-x26p", [1536, 2304, 2560, 13824, 17179869184, 3145228800], 2479, 0x14c903b543aea3e4),
+        ("far-y26n", [1792, 14848, 14592, 14080, 1501007360, -17179869184], 2810, 0xdbbc2455ae5b35dd),
+        ("far-x28n", [14336, 2048, 14592, 14336, -68719476736, -2609994496], 2710, 0x897735a62d321e6d),
+        ("far-y28p", [1792, 1536, 14336, 2048, -8032919552, 68719476736], 2806, 0x1148aef263d09a31),
+        ("far-x30p", [1536, 2304, 2560, 13824, 274877915136, 33886466048], 2492, 0x2c88cb6cfe0c9e77),
+        ("far-y30n", [1792, 14848, 14592, 14080, -29239705600, -274877898752], 2843, 0x7689f06c3f8aa1ec),
+    ];
+
+    fn fnv(img: &[Option<bool>]) -> u64 {
+        img.iter().fold(0xcbf29ce484222325u64, |h, p| {
+            (h ^ if *p == Some(true) { b'1' } else { b'0' } as u64).wrapping_mul(0x100000001b3)
+        })
+    }
+
+    #[test]
+    fn the_guard_clip_draws_every_kept_far_row() {
+        // held out: the 21 64 x 64 rows of r13-isp, pixel for pixel (E1023, E1024)
+        for (name, v, drawn, hash) in GUARD_ROWS {
+            let t = FarTri { v: [(v[0], v[1]), (v[2], v[3]), (v[4], v[5])] };
+            let img = guard_clip_image(64, 64, &t).unwrap();
+            assert!(img.iter().all(|p| p.is_some()), "{name}");
+            assert_eq!(img.iter().filter(|p| **p == Some(true)).count(), drawn, "{name}");
+            assert_eq!(fnv(&img), hash, "{name}");
+        }
+        // fitted (E1012): E979's and E1005's 47 rows draw the hardware's count
+        for (name, v, _, _, hw) in E979_ROWS.iter().chain(E1005_ROWS.iter()) {
+            let t = FarTri { v: [(v[0], v[1]), (v[2], v[3]), (v[4], v[5])] };
+            let img = guard_clip_image(64, 64, &t).unwrap();
+            assert_eq!(img.iter().filter(|p| **p == Some(true)).count(), *hw, "{name}");
+        }
+    }
+
+    #[test]
+    fn the_guard_refuses_other_targets_and_vertices_past_2_to_the_30() {
+        let t = FarTri { v: [(400, 592), (608, 3440), (257450388 * 8, 31020207 * 8)] };
+        assert!(
+            matches!(guard_clip_image(128, 128, &t), Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q261"])
+        );
+        let t = FarTri { v: [(1024, 1024), (1024, 14000), ((1i64 << 38) + 33 * 256, 8000)] };
+        assert!(
+            matches!(guard_clip_image(64, 64, &t), Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q199"])
+        );
     }
 
     #[test]
