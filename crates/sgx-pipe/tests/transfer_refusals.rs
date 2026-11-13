@@ -19,7 +19,7 @@ fn fixture() -> Json {
 /// The fixture's base `base` (0 the fill, 1 the copy) with `delta`, against a vector that lists
 /// every question the model may refuse under, as the generator's lists do for a poked space.
 fn with(base: usize, delta: &str) -> Verdict {
-    let any = r#"["Q003", "Q011", "Q066", "Q074", "Q076", "Q078", "Q180", "Q205", "Q206", "Q207"]"#;
+    let any = r#"["Q003", "Q011", "Q066", "Q074", "Q076", "Q078", "Q180", "Q200", "Q206", "Q207"]"#;
     // the baselines' images: the fill's one colour, the copy's source pattern (the fixture's hashes)
     let image =
         if base == 0 { r#"{"hash": "0xb60c6095080bd325"}"# } else { r#"{"hash": "0x9b1c0be484ac0d25"}"# };
@@ -58,9 +58,10 @@ fn a_copys_background_word_10_above_bit_15_refuses_as_e069_swept_the_two_low_byt
 #[test]
 fn a_nan_or_infinite_coordinate_and_a_triangle_off_the_targets_rectangle_refuse() {
     // the iterated plane's u0 is NaN: the texture unit returns a texel for it, the model does not
-    refused(with(1, &bg_at(3, "0x7fc00000")), &["Q205"]);
-    refused(with(1, &bg_at(6, "0x7f800000")), &["Q205"]);
-    refused(with(1, &bg_at(16, "0x1001")), &["Q205"]);
+    // (the iterators' arithmetic: Q200, into which Q205 folded)
+    refused(with(1, &bg_at(3, "0x7fc00000")), &["Q200"]);
+    refused(with(1, &bg_at(6, "0x7f800000")), &["Q200"]);
+    refused(with(1, &bg_at(16, "0x1001")), &["Q200"]);
 }
 
 #[test]

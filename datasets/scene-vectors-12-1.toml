@@ -1,9 +1,9 @@
 title = "scene vectors of the pipeline simulator, 12.1: the fills and copies of the transfer sweeps"
 repo = "data"
 paths = ["scene-vectors/transfer/"]
-method = "tools/usse-asm/transfer_scenes.py on the landed sweeps of transfer, isp, pds, pbe, texture and platform (offline, no new run): each case's words rebuilt by sgxfive-test --mock --emit-scene (a base per distinct unpoked job, a delta per poke) with the recorded outcome and the questions the poked word is open under; the kernel-register cases (put kreg) are listed as excluded, as the cases the kernel rejected; the digest is the one of tools/records/datasets.py, the sha256 of the `sha256  path` lines of the files in path order; the six files of pds/data-words and pds/douti-fields regenerated on 2026-11-11 after the iterator word's question was folded into Q180 (the refuse lists name Q180, nothing else changed)"
+method = "tools/usse-asm/transfer_scenes.py on the landed sweeps of transfer, isp, pds, pbe, texture and platform (offline, no new run): each case's words rebuilt by sgxfive-test --mock --emit-scene (a base per distinct unpoked job, a delta per poke) with the recorded outcome and the questions the poked word is open under; the kernel-register cases (put kreg) are listed as excluded, as the cases the kernel rejected; the digest is the one of tools/records/datasets.py, the sha256 of the `sha256  path` lines of the files in path order; the six files of pds/data-words and pds/douti-fields regenerated on 2026-11-11 after the iterator word's question was folded into Q180 (the refuse lists name Q180, nothing else changed); the seven files of isp/background-object, texture/state-words and texture/tpu-csc regenerated on 2026-11-13 after the iterators' arithmetic question Q205 was folded into Q200 (the refuse lists name Q200, nothing else changed)"
 date = "2026-11-09"
 files = 39
 size = 5946895
-sha256 = "2c44f26b787b0e5c541e0ddb6a848fb355bee2a34177b2398c7c9ba226c2498e"
+sha256 = "4ffb815656b05e1ff4a9828f082d13f96373daebf2c3d777ca0446a9cf474596"
 recipe = "tools/usse-asm/transfer_scenes.py"

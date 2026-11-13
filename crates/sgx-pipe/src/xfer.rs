@@ -51,7 +51,7 @@ use usse_isa::Core;
 pub const SENTINEL: u32 = 0xdead_beef;
 
 /// The questions the model refuses under (the transfer's own; the units' are in their modules).
-pub const OPEN: &[&str] = &["Q206", "Q207", "Q074", "Q011", "Q180", "Q066", "Q205", "Q078", "Q076", "Q003"];
+pub const OPEN: &[&str] = &["Q206", "Q207", "Q074", "Q011", "Q180", "Q066", "Q200", "Q078", "Q076", "Q003"];
 
 /// The EOT and EOR task entries of the builder's use page (the transfer templates, 4 instructions
 /// and 12 instructions in, with 4 and 1 temporaries: fw_format.md 9.2) as a PDS data word U0.
@@ -330,14 +330,14 @@ pub(crate) fn vertices(bg: &[u32], at: usize) -> Option<[(f64, f64); 3]> {
 
 /// A copy's iterated (u, v) at the centre of pixel (x, y): the plane through the three
 /// vertices' normalised coordinates, evaluated exactly (E048: the iterators agree with the exact
-/// iteration to 1.2e-7); a degenerate triangle has no plane (Q205).
+/// iteration to 1.2e-7); a degenerate triangle has no plane (Q200, the iterators' arithmetic).
 pub(crate) fn uv(bg: &[u32], x: u32, y: u32) -> R<(f32, f32)> {
     let v = vertices(bg, 15).ok_or_else(|| refuse("the background object is too short", &["Q066"]))?;
     let (u0, u1, u2) =
         ((f32_of(bg[3]), f32_of(bg[4])), (f32_of(bg[5]), f32_of(bg[6])), (f32_of(bg[7]), f32_of(bg[8])));
     let det = (v[1].0 - v[0].0) * (v[2].1 - v[0].1) - (v[2].0 - v[0].0) * (v[1].1 - v[0].1);
     if det == 0.0 {
-        return Err(refuse("the background object's triangle has no area", &["Q205"]));
+        return Err(refuse("the background object's triangle has no area", &["Q200"]));
     }
     let (px, py) = (x as f64 + 0.5, y as f64 + 0.5);
     let l1 = ((px - v[0].0) * (v[2].1 - v[0].1) - (v[2].0 - v[0].0) * (py - v[0].1)) / det;
@@ -533,7 +533,7 @@ fn run_inner(sc: &Scene) -> R<SceneResult> {
         return Err(refuse("a copy's background object word 10 has bits 31:16 set", &["Q066"]));
     }
     // the iterated coordinates are modelled for the plane of the whole-target rectangle with
-    // finite coordinates; any other triangle is the iterators' arithmetic (Q205)
+    // finite coordinates; any other triangle is the iterators' arithmetic (Q200)
     if layers == 1 {
         let (w, h) = (sc.target.w as f64, sc.target.h as f64);
         let v = vertices(&bg, 15);
@@ -541,7 +541,7 @@ fn run_inner(sc: &Scene) -> R<SceneResult> {
         if !rect || bg[3..9].iter().any(|&c| !f32::from_bits(c).is_finite()) {
             return Err(refuse(
                 "a copy's vertices are not the target's rectangle or a coordinate is not finite",
-                &["Q205"],
+                &["Q200"],
             ));
         }
     }

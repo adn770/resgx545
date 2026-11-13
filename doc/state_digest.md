@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-158 open: 148 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+157 open: 147 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -31,10 +31,10 @@ list.
   its PBE words are those of a single-sampled 64x64 target ... (E510, E727, E893)
 - `Q199` isp, high: what is the integer range and the behaviour at the limits (saturation, wrap,
   removal) of the ISP's 1/256-pixel vertex format (E607: window ... (E683, E684, E979)
+- `Q200` isp, high: why do the dyadic controls of E731 store one or two ulps below the truncated
+  exact plane, below binade 0, in a region bounded by a diagonal ... (E758, E912, E913)
 - `Q202` isp, high: do the attribute and depth planes of E606 hold with perspective (w other than
   1), which arithmetic forms the window x / w (an exact divide, ... (E979, E990, E992)
-- `Q205` isp, high: what is the arithmetic by which the ISP decides the coverage and the depth of a
-  pixel for an arbitrary triangle, and the iterators' ... (E215, E307, E542)
 - `Q260` isp, high: the tie of a negative window coordinate 1/512 above the 1/256 grid rounds away
   from zero wherever the aimed pixel is clear of E914's band ... (E914, E943, E952)
 - `Q023` pds, high: how many output dwords does a pixel task get per setup, and what do the data
@@ -69,8 +69,6 @@ list.
   20 to 23, 27 to 31) do, alone and set together, what does ... (E466, E467, E665)
 - `Q073` isp, medium: what does o0 hold at the start of an opaque pass's pixel shader? (E417, E739,
   E757)
-- `Q200` isp, medium: why do the dyadic controls of E731 store one or two ulps below the truncated
-  exact plane, below binade 0, in a region bounded by a diagonal ... (E758, E912, E913)
 - `Q240` isp, medium: does the coverage rule of E606 (vertices on the 1/256 pixel grid, exact centre
   test, left and top edges owning ties) hold for random ... (E682, E912, E913)
 - `Q261` isp, medium: how large is the error band of the ISP's edge evaluation (E684: 16 pixels in
