@@ -23,3 +23,8 @@ second ISP word, which `tri` does not set.
 Note 2026-11-11 (E831). E831 measured the depth store of edge tiles only; `sgx-pipe` refuses the
 stencil store of a target with edge tiles here, its slots and what they hold past the target being
 unmeasured.
+
+Note 2026-11-13. Round 9 could not run Q121's rows: they need ISP word 2 (a stencil operation) with
+the ZLS stencil buffers, and tool t4 sets ISP word 2 only in `probe --tri`, which has no stencil
+buffers, while `tri` takes no `--isp2` (render/closing-r9-x README.md). A tool change, `tri --isp2`
+(test first), comes first.

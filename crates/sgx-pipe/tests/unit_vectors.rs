@@ -60,7 +60,7 @@ fn fitted_rules_are_never_reported_matched() {
     // inferred load match (15); the two empty stores compare nothing and are counted empty, not
     // matched; every vector that stores through E465 is fitted (tests/zls_vectors.rs)
     let z = &rep.units["zls"];
-    assert_eq!((z.matched, z.empty, z.fitted), (15, 2, 18 + 6 + 30 + 23));
+    assert_eq!((z.matched, z.empty, z.fitted), (15, 2, 18 + 6 + 30 + 24));
     let ta = &rep.units["ta"];
     assert_eq!((ta.hang, ta.fault), (0, 0), "no hang or fault is predicted: E541's three are recalled");
     assert_eq!(ta.refused["Q165"], 3);
@@ -88,7 +88,8 @@ fn the_counts_of_the_records_hold() {
     let Some(rep) = replay_all() else { return };
     // E489 (18 cases), E542 (35 jobs) and E541 (56 completed + 3 failed), E503 (48 runs)
     // 18 layouts, 6 format buffers (f0, f1, f2, b19_0 to b19_2) and 30 loads (12.4)
-    assert_eq!(rep.units["zls"].fitted, 18 + 6 + 30 + 23);
+    // the control words: 24 fitted since E977 admits the 16-bit format at G = 1 (flip-25)
+    assert_eq!(rep.units["zls"].fitted, 18 + 6 + 30 + 24);
     assert_eq!(rep.units["ta"].fitted, 35 + 56);
     assert_eq!(rep.units["isp"].fitted, 48);
     // D6: every item rests on a fitted rule, so none is "matched"
@@ -97,11 +98,12 @@ fn the_counts_of_the_records_hold() {
     }
     // 3279132 at the rule and 1124 of background past the band (E831); the format buffers' 7864320
     // dwords and the loads' 983040 (8 x 40960 + 20 x 32768)
-    // and the 23 fitted control vectors' items: E411's stored pages in dwords and the fields read
-    // (103709, counted by the replay, checked by hand for flip 3: 3200 + 6)
-    assert_eq!(rep.items_fitted["zls"], 3_225_000 + 54_132 + 1_124 + 7_864_320 + 983_040 + 103_709);
+    // and the 24 fitted control vectors' items: E411's stored pages in dwords and the fields read
+    // (103709, counted by the replay, checked by hand for flip 3: 3200 + 6; and 3072 of flip 25,
+    // the 16-bit format at G = 1, admitted since E977)
+    assert_eq!(rep.items_fitted["zls"], 3_225_000 + 54_132 + 1_124 + 7_864_320 + 983_040 + 103_709 + 3_072);
     assert_eq!(rep.items_refused["zls"]["Q107"], 128_640 + 6_656);
-    assert_eq!((rep.units["zls"].refused["Q242"], rep.units["zls"].refused["Q120"]), (8, 3 + 1));
+    assert_eq!((rep.units["zls"].refused["Q242"], rep.units["zls"].refused["Q120"]), (7, 3 + 1));
     assert_eq!(rep.items_refused["zls"].len(), 1, "Q107's tiles only: E489's cases are even sizes");
     assert_eq!(rep.items_fitted["isp"], 773);
     assert_eq!(rep.items_refused["isp"]["Q141"], 13);

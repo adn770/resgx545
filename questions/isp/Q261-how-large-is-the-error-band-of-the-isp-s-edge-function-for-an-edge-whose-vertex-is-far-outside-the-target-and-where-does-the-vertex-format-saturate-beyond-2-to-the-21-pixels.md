@@ -5,7 +5,7 @@ unit = "isp"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E684", "E682"]
+evidence = ["E684", "E682", "E979"]
 terms = []
 +++
 E684 puts one vertex, on the 1/256 grid, at 2^9 to 2^21 pixels, on 64 x 64 and 512 x 512 targets
@@ -23,3 +23,8 @@ to measure the band against the cross product; the same on a target with a half-
 power of two (where the clip coordinate is inexact too).
 
 Status: open.
+
+Narrowed 2026-11-13 (E979). The vertex format does not saturate, wrap or cull at 2^23 pixels: up to
+2^24 both ways and -2^25 the image is the exact one outside the 1e-3 pixel band (10 of 10 rows,
+H-SAT and H-WRAP refuted). Open: the band's width against the far vertex's distance and the edge's
+length (band pixels were not scored).

@@ -1,0 +1,9 @@
+title = "laptop session r9-x of the question-closing pass, round 9 (decision R9-2 a; plan closing9/rank/rank-round9.md section 2), built on the session kit: stages t3 (Q078, 19 jobs: T3 bits 14, 11 and 12 on named memory), srgb (Q282, 8 jobs: bilinear sRGB stage by stage), zls (Q242 and Q243, 16 jobs: the integer stored formats over [0, 1) at three pitches and loads of an integer format, NaN and infinity), zst (Q120, 12 jobs: stored formats 3 to 7 with a loaded stencil) and far (Q199 and Q261, 11 jobs: vertices at 2^22 to 2^25 pixels), with the freeze, the kit copy, the generator, the probe programs, predictions, scorer, mock (the tool's source on the library mock) and tests, the pre-run README and PREFLIGHT, the kept outputs, the lead's driver logs and the fold's post hoc reads"
+repo = "data"
+paths = ["render/closing-r9-x/"]
+method = "the session kit (kit/ = resgx545 f32dfacc's tools/closing/kit, scorekit.py and sessioncheck.py byte for byte, pinned in FROZEN.commits): kit/session.py stage and run on the Mac over ssh to the laptop (host cedar), kit/run_stage.sh with run/hooks.sh on it, every file under ~/scratch/r9x/, 2026-11-13 08:18 to 08:25, kernel 7.3.0-resgx545, module srcversion B60AB0B475DD1E8972419B5 (linux fork 2a650d74, installed and loaded alike), stock firmware, tool ~/sgxfive-test-rgn4 (sha256 e6951558a93b4b7bc750eeae302997992d7ec6e26719bc527ba1ffc9c6fb779a, built from resgx545 4623753 userspace/libsgxfive/tools/sgxfive-test.c, TOOLSRC.sha256); 66 jobs in five stages, one attempt (out/20261113-081821), rc 0; the freeze FROZEN.sha256 11292e03... written before the first job, the driver logs run.log and stage.log; post hoc reads under fold/ (fold/t3_post.py), not frozen"
+date = "2026-11-13"
+files = 659
+size = 2524368
+sha256 = "d34483e186c7c5904a2863533d83a9de03cf135b9f02d16a59b940d277450c9f"
+recipe = "kit/session.py"

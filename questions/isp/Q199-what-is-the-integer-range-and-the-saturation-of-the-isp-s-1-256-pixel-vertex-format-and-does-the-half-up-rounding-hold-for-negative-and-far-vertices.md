@@ -5,7 +5,7 @@ unit = "isp"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E606", "E607", "E683", "E684"]
+evidence = ["E606", "E607", "E683", "E684", "E979"]
 terms = []
 +++
 E606 and E607 put vertices between -9% and +124% of targets up to 256 pixels wide and fitted a
@@ -29,3 +29,9 @@ and no wrap into 2^21 pixels or less (E684). What would settle the rest is not a
 target, a far vertex on a tie and one with a sub-grid fraction, two or three far vertices, and the
 saturation at 2^22 pixels or more (Q261). Negative vertices with a sub-grid fraction are not
 rounded half up (E683, Q260).
+
+Narrowed 2026-11-13 (E979). One vertex at +2^22 to +2^24 or -2^22 to -2^25 pixels, or two at +-2^23
+or +-2^24, on a 64 x 64 target: the coverage is exact outside E684's 1e-3 pixel band in 10 of 10
+rows, and a clamp or a two's-complement wrap of a 24.8 word is refuted wherever it would differ; no
+fault. Open: past +2^24 and -2^25 (the tool's reach), sub-grid fractions and ties at far vertices, a
+4096 target.

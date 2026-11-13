@@ -5,7 +5,7 @@ unit = "zls"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E466", "E490"]
+evidence = ["E466", "E490", "E978"]
 terms = ["CR_ISP_ZLSCTL"]
 +++
 
@@ -24,3 +24,8 @@ the depth words, whether 5 and 6 are compressed and by what), and what the hardw
 7 when no stencil is present. To settle it: a depth ramp and a stencil pattern (a stencil buffer
 with a known value per pixel, through the loads of E467 or a stencil operation) stored in each
 format, the dwords decoded against the pixels, at several sizes.
+
+Note 2026-11-13 (E978). With a loaded index stencil (bits 1 and 13) and bit 17, at 64 x 32 and 96 x
+48: format 4 stores 160 depth dwords a tile (E466 scaled, held), formats 3 and 5 640, 6 512, 7 196 a
+tile at 64 x 32 and not a whole number at 96 x 48; none of 3 to 7 writes the stencil store. The
+dumps are kept; no layout is decoded.

@@ -5,7 +5,7 @@ unit = "zls"
 kind = "hw"
 value = "low"
 phase = 12
-evidence = ["E467", "E628", "E664"]
+evidence = ["E467", "E628", "E664", "E977"]
 terms = ["CR_ISP_ZLSCTL", "CR_ISP_ZLOAD_BASE", "CR_ISP_ZSTORE_BASE"]
 +++
 
@@ -25,3 +25,9 @@ Status: open.
 Note 2026-11-11 (E831). The band of the store past the target (E831) was measured without a load:
 `sgx-pipe`'s pass over a target with edge tiles refuses here, since what a load and the pass hold
 past the target is not measured. To settle it: E467's load run at 34 x 18 with the dumps kept.
+
+Narrowed 2026-11-13 (E977). A load of format 1 or 2 is compared as the stored dword's float
+(0x00400000 fails less against 0.125, 0x3fff3fff passes less against 0.5), and a loaded NaN passes
+less and fails greater against 0.5 while infinity follows IEEE: every load row matches an unsigned
+compare of the bit patterns [infer]. Open: a load at another address than the store's, other compare
+modes against NaN and equal depths.

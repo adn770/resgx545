@@ -5,7 +5,7 @@ unit = "zls"
 kind = "hw"
 value = "low"
 phase = 12
-evidence = ["E466", "E490", "E663"]
+evidence = ["E466", "E490", "E663", "E977"]
 terms = ["CR_ISP_ZLSCTL"]
 +++
 
@@ -29,3 +29,9 @@ tiles that overlap with a per-tile marker; a scratch run with a buffer longer th
 the dumps kept.
 
 Status: open.
+
+Narrowed 2026-11-13 (E977). The 24-bit format stores min(floor(z * 2^24), 0xffffff) and the 16-bit
+one its >> 8, held out over 0 to 1 at G 7, 9 and 2 and on a target with edge tiles (within the
+target); round(z * 0xffffff) fails from 0.5 up (E466 and E490 corrected), and E490's 16-bit layout
+holds at those pitches. Open: the values past the target in edge tiles for the integer formats,
+which pixel a dword shared by overlapping tiles holds, and E411's faults with G past 3.
