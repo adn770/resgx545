@@ -5,7 +5,7 @@ unit = "isp"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E069", "E162", "E209", "E216", "E410", "E590", "E970", "E971", "E972", "E973"]
+evidence = ["E069", "E162", "E209", "E216", "E410", "E590", "E970", "E971", "E972", "E973", "E1006"]
 terms = ["CR_ISP_BGOBJVALS", "hw_render_details.pds_bgnd"]
 +++
 
@@ -69,3 +69,11 @@ own texel at one and four rows and other texels at zero (E973). Still open: what
 hold (only 1.0 and 0xffffffff ran), word 13's and 9's role, the three PDS words beyond word 0
 (E410), and other scenes (sizes, ISP_BGOBJVALS, more than one layer). Status: narrowed, not
 answered.
+
+Narrowed 2026-11-13 (round 10, r10-geo stage bgw, E1006). Words 12, 14 and 11 at 0.25, 0.5, 1.5 and
+-1.0 and words 9 and 13 at 2.0 and -1.0 leave every background pixel its own texel (16 of 16 held
+out), and a scale of one coordinate by the word (0 read as 1) is refuted on 12 of 12: with E973
+the finite values run change no texel and only a NaN does. sgx-pipe's `bglayer::check` admits the
+values that ran. Still open: what words 11 to 14 hold (terms that are zero in this scene
+[infer]), word 13's and 9's role, the three PDS words beyond word 0 (E410), and other scenes.
+Status: narrowed, not answered.

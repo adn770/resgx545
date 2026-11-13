@@ -7973,6 +7973,39 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   divide's arithmetic is not split [infer].
   *isp; HW, infer; data: `render-closing-r6-pixel:out/20261112-142113/g6-rwa/`,
   `render-closing-r6-pixel:out/20261112-142113/g6-rw/`, `cited-scratch:closing10/rank/`.*
+- `E1005` r10-geo stage pivot (Q261; 37 jobs on a 64 x 64 target, no fault): with E979's far-x23p,
+  far-x24p and far-x25n moved by d = 0 to -544 pixels in the far vertex's y, every pixel outside
+  E684's 1e-3 band is the exact coverage in 36 of 36 rows (frozen H-EXACT-BAND held) and the band
+  pixels of each triangle (2, 10 and 14, on one lattice line through the near vertex) are drawn or
+  not all together; each triangle's 12 rows are the exact coverage of one displaced far vertex
+  (frozen H-PIVOT held, 3 of 3): far-x24p's band drew down to d = -288 and not from -416, so its
+  displacement D lies in (339.4, 467.4) pixels, while far-x23p and far-x25n drew theirs at every d
+  (D above 586.6 and 585.6); one D for the three (H-CONSTD) and one angle D / |F| (H-ANGLE) are
+  refuted, and the exact image (H-EXACT) held only on far-x24p's two rows past its D (2 of 36); the
+  control E684's far21d0 passed.
+  *isp; HW, infer; data: `render-closing-r10-geo:out/20261113-103256/pivot/`,
+  `render-closing-r10-geo:fold/`, `vectors-closing-r10-geo-pixels`.*
+- `E1006` r10-geo stage bgw (Q066; 18 jobs, the layered 64 x 64 render, no fault): words 12, 14 and
+  11 of the one-layer background object at 0.25, 0.5, 1.5 and -1.0 and words 9 and 13 at 2.0 and
+  -1.0 leave every one of the 3034 background pixels its own texel (frozen H-INERT held, 16 of 16
+  held-out rows, every poke read back in the dump); a scale of one coordinate by the word (H-SCALE0:
+  12 v, 11 and 14 u, 0 read as 1) is refuted on 12 of 12 (64 to 128 of 3034 pixels its texel); with
+  E973 (0, 1.0 change nothing, 0xffffffff removes a coordinate) the words act on the texel only
+  through a NaN; both controls passed.
+  *isp; HW, infer; data: `render-closing-r10-geo:out/20261113-103256/bgw/`,
+  `render-closing-r10-geo:fold/`, `vectors-closing-r10-geo-pixels`.*
+- `E1007` r10-geo stage q139c (Q139; 6 TA-dump jobs, no fault): the 256 x 256 and 640 x 480
+  baselines draw exactly with one header a target tile (controls); at the y-side macrotile words
+  0x0200b008 (fy 11) and 0x05c10018 (fy 23, 640 x 480) every header sits at R7-BLK's slot and the
+  wrong tiles are its and their datasets' (36 and 180; frozen 'R7-BLK holds (2 of 2 rows decided)',
+  held out), as at E907's two fy-10 words (24 and 24, replicates); in each of the four dumps exactly
+  one header has flag bit 7 set, at the slot of the last target tile in block order (127 and 743,
+  frozen H-FLAGSLOT 4 of 4), and a target tile draws iff its header lies at or before it (frozen
+  H-LAST 4 of 4, every tile): E959's post hoc reading of bit 7 as the end of the region list, held
+  out.
+  *ta; HW; data: `render-closing-r10-geo:out/20261113-103256/q139c/`,
+  `render-closing-r10-geo:fold/`, `vectors-closing-r10-geo-ta-slots`, `ta-mtile-fields-risky`,
+  `render-closing-r7-rp:out/20261112-205431/q139/`.*
 
 ## By unit
 
@@ -8011,7 +8044,7 @@ E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E2
 E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E508, E510, E590,
 E606, E607, E618, E660, E661, E662, E680, E681, E682, E683, E684, E727, E728, E731, E739, E740,
 E741, E757, E758, E762, E825, E827, E829, E912, E913, E914, E922, E934, E943, E952, E953, E954,
-E970, E971, E972, E973, E979, E990, E992.
+E970, E971, E972, E973, E979, E990, E992, E1005, E1006.
 
 ### mte
 
@@ -8048,7 +8081,7 @@ Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
 E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763, E776, E777,
 E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828, E842, E847, E851, E859,
-E865, E872, E877, E879, E886, E888, E893, E897, E906, E907, E908, E944, E950, E959.
+E865, E872, E877, E879, E886, E888, E893, E897, E906, E907, E908, E944, E950, E959, E1007.
 
 ### texture
 

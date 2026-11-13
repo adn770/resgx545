@@ -26,7 +26,7 @@ list.
 - `Q211` dpm, high: does E874's replay give the need of wide scenes of other vertex counts than 1500
   (E630's 300 to 900; at 1500 it gave the need of four ... (E960, E962, E963)
 - `Q066` isp, high: what do the three background-object words the 3D kick writes mean to the ISP,
-  and what are the other words of a render's background object? (E971, E972, E973)
+  and what are the other words of a render's background object? (E972, E973, E1006)
 - `Q089` isp, high: where does the closed driver's 4x multisampled render become a 64x64 image, when
   its PBE words are those of a single-sampled 64x64 target ... (E510, E727, E893)
 - `Q199` isp, high: what is the integer range and the behaviour at the limits (saturation, wrap,
@@ -71,8 +71,8 @@ list.
   E757)
 - `Q240` isp, medium: does the coverage rule of E606 (vertices on the 1/256 pixel grid, exact centre
   test, left and top edges owning ties) hold for random ... (E682, E912, E913)
-- `Q261` isp, medium: how large is the error band of the ISP's edge evaluation (E684: 16 pixels in
-  14 of 208 cases within 5.6e-4 pixel of an edge line) as a ... (E682, E684, E979)
+- `Q261` isp, medium: what sets the displacement of a far vertex that the ISP's edges behave as
+  (E1005: the band pixels of E979's far triangles are the exact ... (E684, E979, E1005)
 - `Q262` isp, medium: what bounds the error of the stored depth and of the iterated clip z on E680's
   targets, where E606's tolerances fail for some triangles of ... (E684, E912, E913)
 - `Q288` isp, medium: what rule gives the stored depth of a plane with a non-dyadic gradient in x
@@ -124,7 +124,7 @@ list.
 - `Q100` ta, medium: what do the fields of CR_TE_MTILE1 and CR_TE_MTILE2 mean, given that flips of
   their bits change the image or fault the job at 256x256 and ... (E506, E509, E877)
 - `Q139` ta, medium: does a block row of a first macrotile that is not a multiple of 4 wide take 8
-  floor(fx / 2) slots on held-out hardware rows (E950, fitted ... (E944, E950, E959)
+  floor(fx / 2) slots on held-out hardware rows (E950, fitted ... (E950, E959, E1007)
 - `Q142` ta, medium: which control-stream form does the TA write in a region of the grid that
   CR_TE_AA bits 30 and 31 halve (16 x 16, 32 x 8 and 16 x 8 ... (E504, E893)
 - `Q159` ta, medium: what rule lists the 32 x 16 regions of a one-line object: at ISP word 1 width
@@ -329,9 +329,18 @@ list.
 
 ## Recent records
 
-122 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+125 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1007` ta, 2026-11-13: r10-geo stage q139c (Q139; 6 TA-dump jobs, no fault): the 256 x 256 and
+  640 x 480 baselines draw exactly with one header a target tile (controls); at the y-side macrotile
+  words 0x0200b008 (fy 11) and ...
+- `E1006` isp, 2026-11-13: r10-geo stage bgw (Q066; 18 jobs, the layered 64 x 64 render, no fault):
+  words 12, 14 and 11 of the one-layer background object at 0.25, 0.5, 1.5 and -1.0 and words 9 and
+  13 at 2.0 and -1.0 leave ...
+- `E1005` isp, 2026-11-13: r10-geo stage pivot (Q261; 37 jobs on a 64 x 64 target, no fault): with
+  E979's far-x23p, far-x24p and far-x25n moved by d = 0 to -544 pixels in the far vertex's y, every
+  pixel outside E684's 1e-3 ...
 - `E992` isp, 2026-11-13: Round 10 offline (Q202, the perspective clause; no run): on r6-pixel's 114
   kept jobs with w other than 1 (stages g6-rwa 8 and g6-rw 106, E859; 64 x 64, w from 2.5e-4 to
   8027, 58 distinct snapped ...
@@ -701,7 +710,7 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-42 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+43 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
 - `render/closing-r9-z2`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t9
@@ -717,6 +726,8 @@ srcversion, fork tip, laptop tools.
 - `render/closing-r8-k2`: 2026-11-13; module B60AB0B475DD1E8972419B5; fork r8-kernel at 2a650d74;
   tools ~/sgxfive-test-rgn4
 - `render/closing-r8-geo`: 2026-11-13; module 37EC97AB0CB37213C42FCCC; tools ~/sgxfive-test-rgn4
+- `render/closing-r10-geo`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4,
+  ~/sgxfive-test-t9
 - `render/closing-r7-rp`: 2026-11-12; module 41E2F5C756F96D20F7109A4; tools ~/sgxfive-test-rgn4
 - `render/closing-r7-geo`: 2026-11-12; module 41E2F5C756F96D20F7109A4; tools ~/sgxfive-test-rgn4
 - `render/closing-r7-faults`: 2026-11-12; module 41E2F5C756F96D20F7109A4; fork r6-kernel at
@@ -767,7 +778,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 8 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 9 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at
@@ -810,4 +821,4 @@ stays with what a session must do around it.
 
 ## Simulator coverage baseline
 
-118 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
+117 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).

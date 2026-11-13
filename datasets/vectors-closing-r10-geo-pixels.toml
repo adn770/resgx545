@@ -1,0 +1,9 @@
+title = "r10-geo: the --pixels words of each job of stages pivot and bgw (Q261's far band, 37 jobs; Q066's background words, 18 jobs)"
+repo = "data"
+paths = ["vectors/closing/r10-geo/pixels/"]
+method = "tools/usse-asm/closing_tables.py texture on the published render/closing-r10-geo session (its one attempt, out/20261113-103256), one file a stage; rows are measurements; bgw says it is replayed by crates/sgx-pipe/tests/bg_layer_table.rs::the_layer_model_replays_every_modelled_row_of_r10_geo (bglayer.rs: 18 layered rows matched at every compared pixel), pivot refused (the far band is not modelled, Q261; the tool's default reason, about texture reads, was replaced at the fold by the band's, the file otherwise as the tool wrote it)"
+date = "2026-11-13"
+files = 2
+size = 55591
+sha256 = "1640a6871f480218aa0d1e81ed186b0301bb2859e51a682b9211a453163d0cf7"
+recipe = "tools/usse-asm/closing_tables.py"

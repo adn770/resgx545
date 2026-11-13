@@ -1,0 +1,9 @@
+title = "r10-geo q139c: the wrong tiles and every target tile's region header slots of the 256 x 256 and 640 x 480 baselines and four poked CR_TE_MTILE2 rows (6 jobs)"
+repo = "data"
+paths = ["vectors/closing/r10-geo/ta-slots/"]
+method = "tools/usse-asm/closing_tables.py taslots on the published render/closing-r10-geo session (stage q139c of its one attempt, out/20261113-103256), one file; rows are measurements; the table says it is replayed by crates/sgx-pipe/tests/ta_slots_table.rs::the_model_replays_every_row_of_the_q139c_slots_table (ta::macrotile_slots: every target tile's slot and every wrong tile of the six rows)"
+date = "2026-11-13"
+files = 1
+size = 49728
+sha256 = "8ae784ba883b476d4f5702b3a60a56390e9c065511868723b9089aa355a56ed7"
+recipe = "tools/usse-asm/closing_tables.py"

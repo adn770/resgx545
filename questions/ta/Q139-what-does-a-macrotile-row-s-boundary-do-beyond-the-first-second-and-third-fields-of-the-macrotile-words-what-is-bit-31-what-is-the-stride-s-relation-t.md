@@ -1,11 +1,11 @@
 +++
 id = "Q139"
-question = "does a block row of a first macrotile that is not a multiple of 4 wide take 8 floor(fx / 2) slots on held-out hardware rows (E950, fitted on E944's three readable residue dumps, every slot; no safe kept image parts it from R7-BLK, and every kept job at fx 2 or 3 mod 4 faulted), does header flag bit 7 end the region list the 3D reads (E959, post hoc: it gives 1280 x 720 m2-B3p1's y side), what is the stride's relation to the RT data, and why do the words that fault (E509) fault"
+question = "does a block row of a first macrotile that is not a multiple of 4 wide take 8 floor(fx / 2) slots on held-out hardware rows (E950, fitted on E944's three readable residue dumps, every slot; no safe kept image parts it from R7-BLK, and every kept job at fx 2 or 3 mod 4 faulted), what is the stride's relation to the RT data, and why do the words that fault (E509) fault"
 unit = "ta"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E505", "E506", "E509", "E407", "E877", "E907", "E944", "E950", "E959"]
+evidence = ["E505", "E506", "E509", "E407", "E877", "E907", "E944", "E950", "E959", "E1007"]
 terms = ["CR_TE_MTILE1", "CR_TE_MTILE2", "CR_TE_MACROTILE_STRIDE"]
 +++
 
@@ -95,3 +95,19 @@ lies at or before that slot (every tile of 24 kept dumps; with H-EVEN, 167 of 16
 of E877's datasets). Open: H-EVEN held out on hardware (no safe-class job parts it from R7-BLK,
 decision R9-7), the bit 7 reading held out, the stride's relation to the RT data, and the faulting
 words of E509.
+
+Narrowed 2026-11-13 (round 10, r10-geo stage q139c, E1007; the question line is reworded, the
+question is not retired). It read "does a block row of a first macrotile that is not a multiple of 4
+wide take 8 floor(fx / 2) slots on held-out hardware rows (E950, fitted on E944's three readable
+residue dumps, every slot; no safe kept image parts it from R7-BLK, and every kept job at fx 2 or 3
+mod 4 faulted), does header flag bit 7 end the region list the 3D reads (E959, post hoc: it gives
+1280 x 720 m2-B3p1's y side), what is the stride's relation to the RT data, and why do the words
+that fault (E509) fault". Stage q139c dumped the four y-side `CR_TE_MTILE2` words of
+ta/mtile-fields-risky that drew whole and never faulted (two replicates of E907's fy-10 rows, fy 11
+and fy 23 with n 4 held out) with the 256 x 256 and 640 x 480 baselines: every header at R7-BLK's
+slot and every wrong tile its (2 of 2 held out, 2 of 2 replicates), and in each dump exactly one
+header with flag bit 7, at H-EVEN's slot of the last target tile in block order, a tile drawing
+iff its header lies at or before it (4 of 4, held out). Answered: bit 7 ends the region list the
+3D reads. sgx-pipe's `ta::macrotile_slots` models the measured words with the list end. Open:
+H-EVEN held out (fx 2 or 3 mod 4: only faulting words), the stride's relation to the RT data and
+the faulting words of E509.
