@@ -1,11 +1,11 @@
 +++
 id = "Q163"
-question = "what is the state the jobs leave that decides whether a job with VDM_STATE1 bits 11:9 other than 2 hangs (E700: a counter c, cleared by a hang or a reset; a job adds g(v1) + g(v2) with g(v) = v - 2, g(1) = -1 and g(0) = 0 [fitted]; it hangs iff c + add > 8; held out for v 3 to 7 by E1021, the clauses below 2 failing there), does the rule hold for jobs of other shapes, and what else clears the counter or changes it (time between jobs, a job of another kind between two, a reset that follows no hang)"
+question = "what is the state the jobs leave that decides whether a job with VDM_STATE1 bits 11:9 other than 2 hangs (E700: a counter c, cleared by a hang or a reset; a job adds g(v1) + g(v2) with g(v) = v - 2, g(1) = -1 and g(0) = 0 [fitted]; it hangs iff c + add > 8; held out for v 3 to 7 by E1021; E1035: it survives 60 s idle, a fill job and the health fill and triangle, a reset that follows no hang clears it, and it holds for a 128 x 128 one-block job), what decides block-2 v = 1 (hung at c = 0, 2 and 5 after a reset or a v 2 to 7 job, E1035, completed at c = 3 and 8 in E545's grid and E701), and does the rule hold for streams of other vertex, object and temporary counts"
 unit = "vdm"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E545", "E413", "E700", "E701", "E060", "E185", "E299", "E1021"]
+evidence = ["E545", "E413", "E700", "E701", "E060", "E185", "E299", "E1021", "E1035"]
 terms = ["VDM_STATE1.BITS11_9", "VDM_STATE1.BITS15_13"]
 +++
 In a two-object stream (E545, 133 jobs) the state word's bits 11:9 = 1 hung in block 2 (2 of 2) and
@@ -94,3 +94,13 @@ rows 4 to 7, which the grid's bits 7:0 explain as well as c [infer]. Open: the v
 (block-2 v = 1 at a controlled c of 0, 2 and 5 with the grid's bits 7:0 held at a completing value;
 those jobs hang, so not the safe class), what the counter is, other shapes, and time and other jobs
 between.
+
+Narrowed 2026-11-13 (round 13, session r13-flag stage f3, decision R13-4 a; E1035; 19 jobs, 8
+recovered hangs, the kit's noreset and idle:S). Held out on single rows: a v = 7 job after a
+completed one at c = 5 hangs on a 128 x 128 one-block target, after 60 s idle, after a fill job and
+after the kit's health fill and triangle, and completes after a debugfs reset that followed no hang
+(M1 5 of 5 on those rows; each clause rival 0 of 1). Below 2 every frozen clause failed: block-2 v =
+1 with bits 7:0 at 5 hung at c = 0, 2 and 5 (M1 0 of 3, M3 1 of 3, H-C05 2 of 3). The time,
+other-job, reset and target clauses are answered for one job pair each; open: what decides v = 1
+(neither c nor the word: E545's sg-v1-r5 and E701's c = 8 completed), v = 0, other stream shapes and
+what the counter is.

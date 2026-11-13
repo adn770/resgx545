@@ -1,11 +1,11 @@
 +++
 id = "Q046"
-question = "do SIDEBAND bits 8:6 select a channel in pack modes 20 and 27 (they do in modes 7 and 8 and are ignored in 15, 18, 24, 25 and 28, E383), what are the fixed words sideband bit 12 stores in modes 0 to 6, and what does bit 11 do (it faults the job in modes 0 to 8)?"
+question = "do SIDEBAND bits 8:6 select a channel in pack modes 20 and 27 (they do in modes 7 and 8 and are ignored in 15, 18, 24, 25 and 28, E383), what are the fixed words sideband bit 12 stores in modes 0 to 6, and what does bit 11 do (it faults the job in modes 0 to 8, at page 0x37001000 with BIF_INT_STAT 0x91000, E383 and E1034)?"
 unit = "pbe"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E030", "E031", "E210", "E269", "E383", "E999"]
+evidence = ["E030", "E031", "E210", "E269", "E383", "E999", "E1034"]
 terms = ["SIDEBAND.BITS8_6", "SIDEBAND.PACKMODE", "CR_ISP_MSAA"]
 +++
 
@@ -46,3 +46,12 @@ Narrowed 2026-11-13 (r10-x, E999). Pack modes 20 and 27 store the low 16 bits of
 image of mode 15, at bits 8:6 = 0 to 3 with both colours (16 of 16 held out): the field selects
 nothing there. Open: bit 11 (faults the job in every mode run, not safe to sweep) and what the
 fixed words of bit 12 in modes 0 to 6 are.
+
+Note 2026-11-13 (round 13, session r13-flag stage f2, decision R13-3 a; E1034). The stage's frozen
+control, bit 12 in mode 0 with at least 4055 of 4096 words in E383's set, failed (3900), so nothing
+is scored. Post hoc, the words' high 16 bits are E383's pixel for pixel (4096 of 4096, in this run
+and in r13-tex's replicate) and the low 16 bits vary run to run (813 and 799 pixels from E383, 122
+between the two round 13 runs): bit 12's words are a fixed high half and a varying low half [post
+hoc]. Ungated, bit 11 faulted modes 0, 4 and 8 again with E383's status 0x91000 at page 0x37001000
+(low address bits 0x21, 0x11, 0x11, not E383's). Open: what lies at that page and what bit 11
+selects; the source of bit 12's low half.

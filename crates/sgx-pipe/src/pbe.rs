@@ -62,7 +62,8 @@ pub fn pack_of(sideband: u32) -> Result<Pack, Outcome> {
     if sideband & 0x200 == 0 {
         return Err(Outcome::unsupported("a sideband without the tile-relative bit 9", &["Q074"]));
     }
-    // bits 8:6 pick a channel only in modes 7 and 8 and change no pixel in modes 0 to 3 (E030, E383)
+    // bits 8:6 pick a channel only in modes 7 and 8 and change no pixel in modes 0 to 3 (E030, E383);
+    // bit 11 faults the job (E383, E1034) and bit 12's words vary in their low half (E1034): refused
     if sideband & 0xffff_fc00 != 0 {
         return Err(Outcome::unsupported("sideband bits 10 and up in a pack mode 0 to 3", &["Q046"]));
     }

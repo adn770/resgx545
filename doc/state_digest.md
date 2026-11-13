@@ -46,7 +46,7 @@ list.
 - `Q070` ta, high: what do the TA object's format word bits 15:8 and above and its set masks select
   beyond the settings seen, and does the fitted region test ... (E543, E544, E777)
 - `Q078` texture, high: what do T3 bits 11 and 12 select, given that they change nothing on a
-  strided texture and every pixel of a twiddled chain texture (E564, ... (E968, E975, E1003)
+  strided texture and every pixel of a twiddled chain texture (E564, ... (E975, E1003, E1033)
 - `Q050` usse, high: what do the visibility group's instructions do, and how do smp's mipmaps and
   LOD values, the border address modes, the compressed and YUV ... (E563, E565, E568)
 - `Q047` vdm, high: what do VDM_STATE1 bit 8, bits 11:9 and bits 15:13 select for a state task, when
@@ -86,7 +86,7 @@ list.
 - `Q040` pbe, medium: what do EMIT2 bits 15:8 count, given that 4v pixels of each tile are stored
   for an even v up to 0x80, odd values hang and values above 0x80 ... (E266, E267, E382)
 - `Q046` pbe, medium: do SIDEBAND bits 8:6 select a channel in pack modes 20 and 27 (they do in
-  modes 7 and 8 and are ignored in 15, 18, 24, 25 and 28, E383), ... (E269, E383, E999)
+  modes 7 and 8 and are ignored in 15, 18, 24, 25 and 28, E383), ... (E383, E999, E1034)
 - `Q074` pbe, medium: why does a second end-of-tile emit in a tile leave the next job's image wrong,
   and does SIDEBAND bit 9 mark an emit that counts against a ... (E239, E240, E386)
 - `Q019` pds, medium: what does the secondary attribute size (bits 24:18 of dword 1 of the
@@ -177,7 +177,7 @@ list.
 - `Q112` vdm, medium: what do bits 25:24 of the index list header do, which are clear in all 1888
   captured lists, and does the TA take indices wider than the 16 ... (E414, E737, E756)
 - `Q163` vdm, medium: what is the state the jobs leave that decides whether a job with VDM_STATE1
-  bits 11:9 other than 2 hangs (E700: a counter c, cleared by a ... (E700, E701, E1021)
+  bits 11:9 other than 2 hangs (E700: a counter c, cleared by a ... (E701, E1021, E1035)
 - `Q107` zls, medium: why does the final render of a job that overflows store zeros for the first
   row of macrotiles and the depth with its sign bit set for the ... (E996, E997, E1020)
 - `Q120` zls, medium: what do the stored depth formats 3 to 7 (CR_ISP_ZLSCTL bits 26:24) hold and
@@ -323,9 +323,18 @@ list.
 
 ## Recent records
 
-160 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+163 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1035` vdm, 2026-11-13: r13-flag stage f3 (19 jobs, 8 recovered hangs, the kit's noreset and
+  idle:S): E700's counter held on every clause row at v = 7 and failed below 2: a v = 7 job after a
+  completed one hung on a 128 x ...
+- `E1034` pbe, 2026-11-13: r13-flag stage f2 (4 jobs, E383's probe --tri form; planned faults): the
+  frozen control failed, so every row is cannot tell ('controls FAILED: f2-ctl: FAILED'): E383's
+  bit-12 mode 0 job (sideband ...
+- `E1033` texture, 2026-11-13: r13-flag stage f1 (4 probe fills on a twiddled 32 x 32 32-bit texture
+  in E566's tx_map form, the default 16-page scratch; planned faults): T3 bit 14 faulted both
+  twiddled rows, E566's own tw32-t3b14 ...
 - `E1032` dpm, 2026-11-13: r13-dpm stage pr2 on module B60AB0B4 (Q036: does 0x0748 bit 2 clear with
   partial renders; one scene, 3072x2048 with 1500 vertices, at 0, 1, 2 and 4 partial renders, two
   replicates each, 8 jobs): both ...
@@ -809,7 +818,7 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-50 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+51 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
 - `render/closing-r9-z2`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t9
@@ -826,6 +835,7 @@ srcversion, fork tip, laptop tools.
   tools ~/sgxfive-test-rgn4
 - `render/closing-r8-geo`: 2026-11-13; module 37EC97AB0CB37213C42FCCC; tools ~/sgxfive-test-rgn4
 - `render/closing-r13-zls`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
+- `render/closing-r13-flag`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r13-dpm`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r10-zls`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4,
   ~/sgxfive-test-t9
@@ -885,7 +895,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 16 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 17 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at
