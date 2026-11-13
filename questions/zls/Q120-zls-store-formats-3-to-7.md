@@ -5,7 +5,7 @@ unit = "zls"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E466", "E490", "E978", "E985", "E986", "E1015"]
+evidence = ["E466", "E490", "E978", "E985", "E986", "E1015", "E1031"]
 terms = ["CR_ISP_ZLSCTL"]
 +++
 
@@ -58,3 +58,11 @@ held out blind on 0x00 and 0xff), and format 6 where four tile rows each hold on
 format 7 under a varying stencil, format 5 under constant rows, format 6's edge tiles and its
 variable-length runs, the template at fills equal to its markers and at other sizes, what parts the
 pitch from the tiles across, and every packed format without a stencil buffer.
+
+Narrowed 2026-11-13 (r13-zls, E1031). E1015's F7K held out at the fills 0x3f and 0x1f, equal to its
+markers (48 of 48 each, no other dword), and F6C on a 48 x 32 y ramp of another origin (8 of 8
+groups of its full tiles); on a flat 0.5, where every row of every tile is one depth, F6C failed 0
+of 16: each block holds the same 44 dwords, another form (post hoc, no rule). Open: that flat
+form, format 7 under a varying stencil, format 5 under constant rows, format 6's edge tiles and
+variable-length runs, what parts the pitch from the tiles across, and every packed format without a
+stencil buffer.

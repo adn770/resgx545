@@ -11,9 +11,11 @@
 //! buffer (Q242; E996 gives the overlapping tiles' slots), a load of an integer format (Q243: E977
 //! read an integer format's load as the dword's float, two rows only; a loaded depth compares as
 //! its magnitude, NaN above every depth, E995), the load and the pass over edge tiles (Q243), bit 0
-//! with a loaded stencil and bits 12, 16 and 20 cleared together (Q071, E997), and which of the
-//! control bits E989 flipped together switches the stencil test's source (Q071),
-//! bit 19 with a load (Q243). Every refusal depends on the input alone.
+//! with a loaded stencil, bit 12 cleared with a load and bit 16 cleared with a depth load, a
+//! stencil store or the 16-bit format (Q071, E997, E1030), the stencil test's source under any
+//! mix of the control's inert bits but those that ran (Q071, E988, E989, E1030), bit 19 with a
+//! load (Q243). The load reads at the store's address here: E1029's moved
+//! load base (its low bits dropped, a granule of 8 to 64 bytes) is no input (Q243). Every refusal depends on the input alone.
 
 use crate::Outcome;
 
@@ -51,6 +53,12 @@ pub fn in_tile_pixel(k: u32) -> (u32, u32) {
         x |= ((k >> (2 * b + 1)) & 1) << b;
     }
     (x, y)
+}
+
+/// The dword of the depth buffer that holds pixel (x, y) under `ctl`: [`store_dword`] at its pitch,
+/// or with bit 16 cleared the linear image's 32 (G + 1) y + x (E997, E1030).
+pub fn store_dword_of(ctl: &Ctl, x: u32, y: u32) -> u32 {
+    if ctl.linear_store() { 32 * (ctl.g() + 1) * y + x } else { store_dword(x, y, ctl.g()) }
 }
 
 /// The dword of the depth buffer that holds pixel (x, y) when the store's pitch is G + 1 tiles
@@ -177,10 +185,14 @@ pub fn check_store(w: u32, h: u32, g: u32, ax: &[u32], ay: &[u32]) -> StoreCheck
 /// The control 0x0017100c with bit 0 set: the one value E411 ran with bit 0 (twice).
 pub const BIT0_RAN: u32 = 0x0017_100d;
 
-/// Bits 12, 16 and 20: each cleared alone changed nothing (E411); all three cleared with a store or
-/// a load turn the store into a linear image of the tile area, rows of 32 (G + 1) dwords in y
-/// order (E997, post hoc, and its correction: 4608 of 4608 by (x, y)).
-const CTL_LAYOUT: u32 = 1 << 12 | 1 << 16 | 1 << 20;
+/// Bit 16: cleared, the depth store is a linear image of the tile area, rows of 32 (G + 1) dwords
+/// in y order (E997, post hoc, and its correction: 4608 of 4608 by (x, y)); E1030 separated it from
+/// bits 12 and 20 (r13-zls zbits: the ramp's store E997's dump byte for byte exactly when bit 16 is
+/// clear, 6 of 6 held out). E411's single flips compared stored pages, which the layout keeps.
+const CTL_LINEAR: u32 = 1 << 16;
+/// Bit 12: cleared, the stencil load reads another byte order (E1030, post hoc: a linear image of
+/// 64-byte rows at G 1); its depth store stays tiled (E1030).
+const CTL_LOAD_ORDER: u32 = 1 << 12;
 
 const CTL_NO_EFFECT: u32 = 1 << 12 | 1 << 15 | 1 << 16 | 0xf << 20 | 0x1f << 27;
 
@@ -196,8 +208,10 @@ impl Ctl {
     /// Decode a control word. Bit 0 set writes no colour pixel (E057, E411) and stores what the
     /// control stores without it: 0x0017100d (E411, two runs) and formats 0 to 2 at G 2 and the
     /// depth load (E997, 4 of 4 held out); with the stencil loaded it was not run: refused (Q071).
-    /// Two or three of bits 12, 16 and 20 cleared with a store or a load refuse (Q071: all three
-    /// store a linear image, E997, which bit and its rows are not separated; two were not run).
+    /// Bit 12 cleared with a load refuses (Q071: E1030 read the stencil load in another order post
+    /// hoc; a depth load under it was not run); bit 16 cleared (the linear store, E1030) with a
+    /// depth load or the 16-bit format refuses (Q071: not run), and its stencil store into a stencil
+    /// buffer does in [`dword_sets`] (E1030 read it linear post hoc).
     pub fn decode(word: u32) -> Result<Ctl, Outcome> {
         let c = Ctl { word };
         if word & 1 != 0 && word != BIT0_RAN && c.load_stencil() {
@@ -209,11 +223,20 @@ impl Ctl {
                 &["Q071"],
             ));
         }
-        if (c.bit(1) || c.bit(2)) && (!word & CTL_LAYOUT).count_ones() >= 2 {
+        if c.load() && word & CTL_LOAD_ORDER == 0 {
             return Err(open(
                 format!(
-                    "CR_ISP_ZLSCTL {word:#x}: bits 12, 16 and 20 cleared together store a linear image \
-                     (E997), not the tiles; which bit, and two of them, were not separated"
+                    "CR_ISP_ZLSCTL {word:#x}: bit 12 cleared with a load: the stencil load reads another \
+                     byte order (E1030, post hoc), a depth load under it was not run"
+                ),
+                &["Q071"],
+            ));
+        }
+        if c.linear_store() && (c.load_depth() || c.format_code() == 2) {
+            return Err(open(
+                format!(
+                    "CR_ISP_ZLSCTL {word:#x}: bit 16 cleared stores a linear image (E997, E1030); with a \
+                     depth load or the 16-bit format its layout was not read"
                 ),
                 &["Q071"],
             ));
@@ -252,6 +275,10 @@ impl Ctl {
     pub fn negate(&self) -> bool {
         self.bit(19)
     }
+    /// Bit 16 cleared with the depth store on: the linear image of [`store_dword_of`] (E1030).
+    pub fn linear_store(&self) -> bool {
+        self.store_depth() && self.word & CTL_LINEAR == 0
+    }
     pub fn format_code(&self) -> u32 {
         self.word >> 24 & 7
     }
@@ -276,7 +303,8 @@ impl Ctl {
             )),
             // E985 read 5 and 6 at two sizes (SEMI); E986: where a tile row repeats one depth they
             // store less; E1015 read format 6's groups of four constant rows and format 7's template
-            // under a constant stencil, not their variable-length runs: refused whole
+            // under a constant stencil, not their variable-length runs; E1031 held both out but for a
+            // flat tile (44 dwords of another form): refused whole
             c @ 5..=6 => Err(open(
                 format!(
                     "stored depth format {c}: its layout was read offline where every pixel of a tile row \
@@ -549,7 +577,7 @@ fn depth_dwords(ctl: &Ctl, w: u32, h: u32, stencil_buffer: bool) -> Result<Dword
         Format::F32 | Format::U24 => {
             for y in 0..th {
                 for x in 0..tw {
-                    d.insert(store_dword(x, y, g));
+                    d.insert(store_dword_of(ctl, x, y));
                 }
             }
         }
@@ -588,6 +616,22 @@ fn stencil_dwords(ctl: &Ctl, w: u32, h: u32) -> Result<Dwords, Outcome> {
 /// the same refusals as [`store`] except for overlapping tiles. `stencil_buffer` is whether
 /// the target has one (formats 4 and 7 store nothing without, E490).
 pub fn dword_sets(ctl: &Ctl, w: u32, h: u32, stencil_buffer: bool) -> Result<(Dwords, Dwords), Outcome> {
+    if ctl.linear_store() && ctl.store_stencil() {
+        // E1030 read the stencil store under bit 16 post hoc as a linear image of 32 (G + 1)-byte
+        // rows (64 at G 1): as a set its dwords are the tiled ones when the tiles across are G + 1
+        // (E411's flip of bit 16 stored the control's pages), otherwise it refuses
+        if stencil_buffer && w.div_ceil(32) != ctl.g() + 1 {
+            return Err(open(
+                format!(
+                    "CR_ISP_ZLSCTL {:#x}: the stencil store with bit 16 cleared (E1030, post hoc)",
+                    ctl.word
+                ),
+                &["Q071"],
+            ));
+        }
+        let st = if stencil_buffer { stencil_dwords(ctl, w, h)? } else { Dwords::new() };
+        return Ok((depth_dwords(ctl, w, h, stencil_buffer)?, st));
+    }
     Ok((depth_dwords(ctl, w, h, stencil_buffer)?, stencil_dwords(ctl, w, h)?))
 }
 
@@ -651,7 +695,10 @@ pub fn store(
             for (tx, ty) in visit_order(w, h) {
                 for y in 16 * ty..16 * ty + 16 {
                     for x in 32 * tx..32 * tx + 32 {
-                        s.words.insert(store_dword(x, y, g), encode_depth(fmt, ctl.negate(), banded(x, y))?);
+                        s.words.insert(
+                            store_dword_of(ctl, x, y),
+                            encode_depth(fmt, ctl.negate(), banded(x, y))?,
+                        );
                     }
                 }
             }
@@ -735,9 +782,10 @@ const E989_FLIPPED: u32 = 1 << 15 | 0x7 << 21 | 0x1f << 27;
 const E988_INERT: u32 = 1 << 12 | 1 << 16 | 1 << 20;
 
 /// The stencil the test reads under `ctl` with the stencil load on: the loaded one with the bits
-/// E411 found inert as E467's control has them (E988), 0 with all of them flipped at once (E989);
-/// any other mix of them, or no stencil load, refuses (Q071: which bit does it). E989's word
-/// itself refuses [`Ctl::decode`] since E997 (bits 12, 16 and 20 cleared store a linear image).
+/// E411 found inert as E467's control has them (E988) and with bit 16, bit 20 or both cleared
+/// (E1030: E988's count and image, 3 of 3 held out); 0 with bits 15, 21 to 23 and 27 to 31 set,
+/// with 12, 16 and 20 set (E1030, held out) or cleared (E989). Bit 12 cleared reads another order
+/// (E1030, post hoc) and refuses, as any other mix does, or no stencil load (Q071).
 pub fn stencil_source(ctl: &Ctl) -> Result<StencilSource, Outcome> {
     if !ctl.load_stencil() {
         return Err(open(
@@ -745,14 +793,19 @@ pub fn stencil_source(ctl: &Ctl) -> Result<StencilSource, Outcome> {
             &["Q071"],
         ));
     }
-    match ctl.ignored_bits() {
-        E988_INERT => Ok(StencilSource::Loaded),
-        E989_FLIPPED => Ok(StencilSource::Zero),
-        b => Err(open(
-            format!("CR_ISP_ZLSCTL's inert bits {b:#x} under a stencil test: only E988's and E989's ran"),
-            &["Q071"],
-        )),
+    let b = ctl.ignored_bits();
+    if b == E989_FLIPPED || b == E989_FLIPPED | E988_INERT {
+        return Ok(StencilSource::Zero);
     }
+    if b & !(1 << 16 | 1 << 20) == 1 << 12 {
+        return Ok(StencilSource::Loaded);
+    }
+    Err(open(
+        format!(
+            "CR_ISP_ZLSCTL's inert bits {b:#x} under a stencil test: only E988's, E989's and E1030's ran"
+        ),
+        &["Q071"],
+    ))
 }
 
 /// ISP word 2's test on a stencil byte `s` with the reference `reference` (ISP word 0 bits 7:0):
@@ -1395,21 +1448,49 @@ mod tests {
     }
 
     #[test]
-    fn the_inert_bits_together_decode_and_12_16_20_cleared_together_refuse() {
+    fn the_inert_bits_together_decode_and_bit_16_alone_selects_the_linear_store() {
         // E997: 15, 21 to 23 and 27 to 31 set together change nothing
         let c = ctl(0xf8f7_9014);
-        assert_eq!((c.g(), c.format_code(), c.store_depth()), (2, 0, true));
-        // one of 12, 16, 20 cleared alone changed nothing (E411)
-        for b in [12, 16, 20] {
-            assert!(Ctl::decode(0x0017_1014 & !(1 << b)).is_ok(), "bit {b}");
+        assert_eq!((c.g(), c.format_code(), c.store_depth(), c.linear_store()), (2, 0, true, false));
+        // E1030 (r13-zls zbits, 6 of 6 held out): of bits 12, 16 and 20 cleared alone and in pairs
+        // on E977's ramp store, exactly the words with bit 16 clear store E997's linear image
+        for w in [0x0016_1014u32, 0x0016_0014, 0x0006_1014, 0x0006_0014, 0x0106_0014] {
+            assert!(ctl(w).linear_store(), "{w:#x}");
         }
-        // all three cleared with a store or a load: a linear image of the tile area (E997), which
-        // bit is not separated; two cleared were not run
-        for w in [0x0006_0014u32, 0xf8e6_8014, 0x0106_0014, 0x0006_400e, 0x0016_0014, 0x0007_0014] {
+        for w in [0x0017_1014u32, 0x0017_0014, 0x0007_1014, 0x0007_0014] {
+            assert!(!ctl(w).linear_store(), "{w:#x}");
+        }
+        // not run: bit 12 clear with a load (E1030: the stencil load reads another order, post
+        // hoc), bit 16 clear with a depth load, a stencil store or the 16-bit format
+        for w in [0xf8e6_a00eu32, 0x0017_200e, 0x0016_400e, 0x0216_1014, 0x0006_400e] {
             assert_eq!(ids(Ctl::decode(w)), ["Q071"], "{w:#x}");
         }
+        assert_eq!(ids(dword_sets(&ctl(0x0016_3006), 64, 32, true)), ["Q071"], "stencil store");
+        // with the tiles across G + 1 the linear stencil store's dwords are the tiled ones (E411's
+        // flip of bit 16 at 64 x 64, G 1: the control's pages)
+        let (lin, til) =
+            (dword_sets(&ctl(0x0016_100c), 64, 64, true), dword_sets(&ctl(0x0017_100c), 64, 64, true));
+        assert_eq!(lin.unwrap().1, til.unwrap().1);
         // with nothing loaded or stored (E337's texture attachment value) the word decodes
         assert!(!ctl(0x0014_0008).store_depth());
+    }
+
+    #[test]
+    fn the_linear_store_holds_the_tiled_values_at_32_g_plus_1_y_plus_x() {
+        // E997 (post hoc) and E1030 (zbr-c16, -c12-16, -c16-20 byte for byte E997's dump): dword
+        // 32 (G + 1) y + x holds what the tiled store puts at store_dword(x, y, G), edge tiles too
+        let (lin, til) = (
+            store(&ctl(0x0016_1014), 80, 40, false, &plane).unwrap(),
+            store(&ctl(0x0017_1014), 80, 40, false, &plane).unwrap(),
+        );
+        assert_eq!(lin.words.len(), 4608);
+        for y in 0..48 {
+            for x in 0..96 {
+                assert_eq!(lin.words[&(96 * y + x)], til.words[&store_dword(x, y, 2)], "({x}, {y})");
+            }
+        }
+        let (d, _) = dword_sets(&ctl(0x0016_1014), 80, 40, false).unwrap();
+        assert_eq!(d, lin.words.keys().copied().collect());
     }
 
     fn plane(x: u32, y: u32) -> f32 {
@@ -1867,5 +1948,21 @@ mod tests {
         assert_eq!(stencil_source(&Ctl { word: 0xf8e6_a00e }), Ok(StencilSource::Zero));
         assert_eq!(ids(stencil_source(&ctl(0x0017_300e | 1 << 15))), ["Q071"]);
         assert_eq!(ids(stencil_source(&ctl(0x0017_100e))), ["Q071"], "no stencil load");
+    }
+
+    #[test]
+    fn the_set_half_alone_makes_the_test_read_zero_and_bits_16_20_keep_the_loaded_byte() {
+        // E1030 (r13-zls zbits, Z-SET 7 of 7 held out): bits 15, 21 to 23 and 27 to 31 set with 12,
+        // 16 and 20 kept set read 0 (2048 drawn, every stored byte 0xff)
+        assert_eq!(stencil_source(&ctl(0xf8f7_b00e)), Ok(StencilSource::Zero));
+        // 16, 20 or both cleared: E988's 1024 drawn and its image, the loaded byte
+        for w in [0x0016_300eu32, 0x0007_300e, 0x0006_300e] {
+            assert_eq!(stencil_source(&Ctl { word: w }), Ok(StencilSource::Loaded), "{w:#x}");
+        }
+        // 12 cleared: 1024 drawn but another byte order (post hoc: a linear image of 64-byte
+        // rows), not modelled
+        for w in [0x0017_200eu32, 0x0016_200e, 0x0007_200e] {
+            assert_eq!(ids(stencil_source(&Ctl { word: w })), ["Q071"], "{w:#x}");
+        }
     }
 }

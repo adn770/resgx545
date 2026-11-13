@@ -5,7 +5,7 @@ unit = "zls"
 kind = "hw"
 value = "low"
 phase = 12
-evidence = ["E467", "E628", "E664", "E977", "E995"]
+evidence = ["E467", "E628", "E664", "E977", "E995", "E1029"]
 terms = ["CR_ISP_ZLSCTL", "CR_ISP_ZLOAD_BASE", "CR_ISP_ZSTORE_BASE"]
 +++
 
@@ -36,3 +36,10 @@ Narrowed 2026-11-13 (r10-x, E995). A loaded depth enters the compare with its si
 -0.25, -0.75 and -0.0 act as 0.25, 0.75 and 0, and NaN as a value above every depth, under the
 compares 1, 2, 3, 4, 5 and 6 (14 of 14 held out, the raw unsigned compare refuted on 4); E977's
 [infer] is corrected to it. Open: a load at another address than the store's (the moved load base).
+
+Narrowed 2026-11-13 (r13-zls, E1029). A load at another address than the store's reads E465's
+layout from the poked base (render details dword 12): moves of a tile, a page, 16 and 64 KiB and
+onto the store's own buffer all held out (the frozen H-MOVED, 6 of 7; the store's base and the
+unmoved base refuted), but a base 4 bytes off loaded as the unmoved one while 64 bytes moved it
+(post hoc: the base rounded down to 8, 16, 32 or 64 bytes). Open: that granule (a base moved by 8,
+16 and 32 bytes), and the moved base with an integer format or a moved stencil load base.
