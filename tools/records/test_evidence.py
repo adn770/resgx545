@@ -124,14 +124,14 @@ def test_a_retired_id_is_not_reused(tmp_path, monkeypatch):
 
 
 def test_ids_are_unique():
-    ids = [p.name[:4] for p in _records()]
+    ids = [p.name.split("-")[0] for p in _records()]
     assert len(ids) == len(set(ids))
 
 
 def test_references_between_records_resolve():
     """A record names another as E<nnn>; no placeholder for a document section is left, since
     nothing cites a spec."""
-    ids = {p.name[:4] for p in _records()}
+    ids = {p.name.split("-")[0] for p in _records()}
     for p in _records():
         body = evidence.parse(p)[1]
         assert "{{ref:" not in body, p
@@ -144,7 +144,7 @@ def test_the_glossary_cites_records_not_documents():
     import sys
     sys.path.insert(0, str(evidence.ROOT / "tools" / "clean-room"))
     import glossary
-    ids = {p.name[:4] for p in _records()}
+    ids = {p.name.split("-")[0] for p in _records()}
     for r in glossary.load():
         for col in ("citation", "evidence", "meaning"):
             assert not re.search(r"\bdoc/[\w./-]+\.md|§", r[col]), \

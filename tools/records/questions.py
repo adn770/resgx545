@@ -264,7 +264,7 @@ def generated() -> tuple[pathlib.Path, ...]:
 
 def main(argv: list[str] | None = None) -> int:
     a = sys.argv[1:] if argv is None else argv
-    ids = {p.name[:4] for p in evidence.DIR.glob("*/E*.md")}
+    ids = {p.name.split("-")[0] for p in evidence.DIR.glob("*/E*.md")}
     terms, bad = evidence.glossary_terms(), 0
     for p in files():
         for msg in problems(p, ids, terms):
@@ -278,14 +278,14 @@ def main(argv: list[str] | None = None) -> int:
     except ValueError as e:
         print(f"RETIRED: {e}")
         bad += 1
-    open_ids = {p.name[:4] for p in files()}
+    open_ids = {p.name.split("-")[0] for p in files()}
     for msg in fold_problems(RETIRED, open_ids) + decision_problems(RETIRED, ROOT):
         print(f"RETIRED: {msg}")
         bad += 1
     for d, pat in (("evidence", "*/*.md"), ("glossary", "*/*.toml"), ("doc", "**/*.md")):
         for p in sorted((ROOT / d).glob(pat)):
             if p not in generated():
-                rec = p.name[:4] if d == "evidence" else None
+                rec = p.name.split("-")[0] if d == "evidence" else None
                 for msg in reference_problems(p.read_text(), open_ids, rec):
                     print(f"{p.relative_to(ROOT)}: {msg}")
                     bad += 1
