@@ -171,7 +171,7 @@ TAIL = """\
   only through the PB, so they need the scene's `memory`.
 - **isp**: the multisample window is built (786 tiles, 13 with seam holes refused: E953).
   Everything else needs a scene (`memory`) and, for pixels, the arithmetic of coverage, depth and
-  iteration (E606 the coverage, Q200 the planes): no record gives the planes. The sample position, line, polygon offset and stencil
+  iteration (E606, Q200): none gives it. The sample position, line, polygon offset and stencil
   rules (E214, E279, E071, E216) are in `isp` triangle-host vectors, not in dump directories.
 - **pbe, iter**: only whole-job vectors (`pbe` 206, the pixel-event and texture runs): the
   end-of-tile words and the pixel PDS launch are not in any dump. 12.1 needs `memory` from a
