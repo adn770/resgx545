@@ -87,6 +87,15 @@ fn check_cmd(sc: &Scene) -> Result<(), Outcome> {
             &["Q100", "Q139", "Q086"],
         ));
     }
+    if c[CMD_TE_AA] & 0xc000_0000 != 0 {
+        return Err(refuse(
+            format!(
+                "CR_TE_AA {:#x}: a multisampled render, which the module refuses at submission from a context not made for 4x targets (E934) and whose control streams are not modelled",
+                c[CMD_TE_AA]
+            ),
+            &["Q142"],
+        ));
+    }
     if c[CMD_TE_AA] != TE_AA {
         return Err(refuse(
             format!(
@@ -296,6 +305,11 @@ mod tests {
                 r => panic!("{k}: {r:?}"),
             }
         }
+        // a multisampled CR_TE_AA (bit 31 or 30): the module refuses it from a context not made
+        // for 4x targets (E934), and the scene says nothing of the context
+        let mut sc = Scene::from_fixture(FIXTURE, id);
+        sc.cmd[CMD_TE_AA] = 0xe000_0000;
+        assert!(matches!(run(&sc), Err(Outcome::Unsupported { why, .. }) if why.contains("E934")));
         // no command words: refused naming the scene
         let mut sc = Scene::from_fixture(FIXTURE, id);
         sc.cmd.clear();

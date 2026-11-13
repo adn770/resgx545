@@ -148,7 +148,10 @@ fn read_index(mem: &Mem, w: &[u32; 6]) -> Result<IndexList, Outcome> {
     }
     // task word 1: output rows (31:24), vertex size 4 (23:22 = 3), bit 7, the data rows. The rows
     // are the natural ones, 1 (the library's) or the 2 to 4 the tool writes for N = 1 to 11
-    // outputs; any other value is a forced row (E703), which breaks the job (Q094, by decision)
+    // outputs; any other value is a forced row (E703), which breaks the job (Q094, by decision).
+    // The rows are the vertex's output stride: set to the natural value they leave the render
+    // intact, one above it at R * V = 6 they break it (E933); the parser does not know N, so a
+    // row in 1 to 4 that is not the vertex's own is not caught here
     let rows = w[5] >> 24;
     if w[5] & 0x00ff_ff80 != 0x00c0_0080 || !(1..=4).contains(&rows) {
         return Err(refuse_ids(
