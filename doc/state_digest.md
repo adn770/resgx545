@@ -46,7 +46,7 @@ list.
 - `Q070` ta, high: what do the TA object's format word bits 15:8 and above and its set masks select
   beyond the settings seen, and does the fitted region test ... (E543, E544, E777)
 - `Q078` texture, high: what do T3 bits 11 and 12 select, given that they change nothing on a
-  strided texture and every pixel of a twiddled chain texture (E564, ... (E723, E968, E975)
+  strided texture and every pixel of a twiddled chain texture (E564, ... (E968, E975, E1003)
 - `Q050` usse, high: what do the visibility group's instructions do, and how do smp's mipmaps and
   LOD values, the border address modes, the compressed and YUV ... (E563, E565, E568)
 - `Q047` vdm, high: what do VDM_STATE1 bit 8, bits 11:9 and bits 15:13 select for a state task, when
@@ -134,7 +134,7 @@ list.
 - `Q180` texture, medium: why did all 28 triangle jobs of the four-component DOUTI0 probes hang
   (E569), the two controls with the old source word 0x40800801 included ... (E420, E541, E569)
 - `Q284` texture, medium: what does a TEXTYPE 2 cube sample read at an exact texel boundary when
-  |ma| is not a power of two (E923, E931, E956: up or down by the ... (E951, E955, E956)
+  |ma| is not a power of two (E923, E931, E956: up or down by the ... (E956, E1001, E1002)
 - `Q003` transfer, medium: which event (if any) does a bus-interface fault raise, and what do the
   fault-request bits of CR_BIF_INT_STAT name, what clears a latched ... (E901, E919, E920)
 - `Q011` transfer, medium: why does a copy whose background-object tag (transfer word 0) is wrong
@@ -254,8 +254,8 @@ list.
   one, how are its slices laid out, and how do the third ... (E342, E567)
 - `Q115` texture, low: does the sampler filter anisotropically on this core, and which bits of the
   texture words or the smp operands select it and its ratio? (E564, E720, E723)
-- `Q177` texture, low: does the offset that T0 address modes 4 to 7 add on the u axis (the v rule's
-  texel moved by 116, 180 and 308 dwords at 8 x 8, 16 x 16 and ... (E932, E957, E983)
+- `Q177` texture, low: does the offset that T0 address modes 4 to 7 add on the u axis, 8 max(W, H) +
+  52 dwords past the v rule's texel on every pixel of eleven ... (E957, E983, E1000)
 - `Q179` texture, low: how are the blocks and the data bits of formats 23 to 26 laid out (a data bit
   changes 7 to 13 pixels, the blocks of 23 and 24 do not differ ... (E342, E568, E724)
 - `Q181` texture, low: does the fill's transfer command load a colour-space set at all (xfer:17^=1
@@ -263,7 +263,7 @@ list.
 - `Q280` texture, low: what makes up to 56 of 2048 pixels of a gradient job differ from the
   Euclidean footprint of the pairs (op0, op2) and (op1, op3) with a LOD ... (E563, E721, E744)
 - `Q282` texture, low: what arithmetic gives the bilinear sample of an sRGB texel (T0 bit 27) given
-  that decode-then-filter in float fits 43% to 56% of the pixels ... (E723, E976, E982)
+  that decode-then-filter in float fits 43% to 56% of the pixels ... (E976, E982, E1004)
 - `Q017` usse, low: why does g19 read 0x1a as a store's source but 0 through a mov and as the pixel?
   (E085, E086, E372)
 - `Q048` usse, low: do the MADD0 and MADD1 clock gates follow the USSE pipes' floating-point
@@ -327,7 +327,7 @@ list.
 
 ## Recent records
 
-136 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+141 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
 - `E1010` isp, 2026-11-13: r10-x stage win0 (14 jobs, E502's identity maps: E437's primary PDS
@@ -345,6 +345,21 @@ the claims are cut at 200 characters.
 - `E1005` isp, 2026-11-13: r10-geo stage pivot (Q261; 37 jobs on a 64 x 64 target, no fault): with
   E979's far-x23p, far-x24p and far-x25n moved by d = 0 to -544 pixels in the far vertex's y, every
   pixel outside E684's 1e-3 ...
+- `E1004` texture, 2026-11-13: r10-tex stage srgb2 (6 probe fills of E723's bilinear sRGB form, T0
+  bit 27): 'R10-BF11 (heldout) is not supported: 4 held, 1 FAILED, 0 cannot tell of 5': the stage
+  rule fitted offline on r9-x's rows ...
+- `E1003` texture, 2026-11-13: r10-tex stage t3b (15 probe fills on strided named memory: six
+  held-out bit-14 geometries each followed by its bit-clear reference, E566's two controls, E975's
+  b14-u01 replicated): 'R-4096TX ...
+- `E1002` texture, 2026-11-13: r10-tex stage cube3, edges (2 probe fills, bilinear T0 0x07fe1400, 16
+  x 16 faces, the across coordinate 15 + (x + 1/2) / 64 texels, the along coordinate 7.75 on +z/+x
+  and 8.25 on -y/+x, 512 out ...
+- `E1001` texture, 2026-11-13: r10-tex stage cube3, ties (13 probe fills of TEXTYPE 2, 16 x 16
+  faces, point-sampled, 2048 two-axis tie pixels in each of 12 new rows): 'H-HIGHAXIS (heldout) is
+  not supported: 9 held, 3 FAILED, 0 ...
+- `E1000` texture, 2026-11-13: r10-tex stage addr3 (11 probe fills of twiddled 32-bit textures at
+  page 12 of a 32-page named scratch, the swept u over 128 positions at one texel a step, v on texel
+  H / 2, no fault): every frozen ...
 - `E999` pbe, 2026-11-13: r10-x stage sb (18 jobs, E383's 64 x 64 triangle with eot_plain and two
   colours whose bytes all differ): pack modes 20 and 27 store, at sideband bits 8:6 = 0 to 3 and for
   both colours, the image ...
@@ -741,7 +756,7 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-45 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+46 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
 - `render/closing-r9-z2`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t9
@@ -758,6 +773,7 @@ srcversion, fork tip, laptop tools.
   tools ~/sgxfive-test-rgn4
 - `render/closing-r8-geo`: 2026-11-13; module 37EC97AB0CB37213C42FCCC; tools ~/sgxfive-test-rgn4
 - `render/closing-r10-x`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
+- `render/closing-r10-tex`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
 - `render/closing-r10-geo`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4,
   ~/sgxfive-test-t9
 - `render/closing-r10-dpm`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
@@ -811,7 +827,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 11 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 12 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at

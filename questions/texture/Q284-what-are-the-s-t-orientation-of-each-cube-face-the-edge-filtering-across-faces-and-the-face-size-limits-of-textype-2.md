@@ -5,7 +5,7 @@ unit = "texture"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E726", "E567", "E844", "E923", "E930", "E931", "E951", "E955", "E956"]
+evidence = ["E726", "E567", "E844", "E923", "E930", "E931", "E951", "E955", "E956", "E1001", "E1002"]
 terms = ["TEXTYPE"]
 +++
 E726: the six faces are six consecutive 256-dword blocks in the order +x, -x, +y, -y, +z, -z for a
@@ -69,3 +69,12 @@ no rule, and sgx-pipe still refuses ties. Texel ties at |ma| 1.5 follow E931's t
 boundaries go the other way. At a face edge the out-of-face tap reads the neighbour face near the
 adjacent texel (the wrapped local texel refuted 0 of 2), exactly on -y/+x and not on +z/+x. What
 stays is in the question line.
+
+Note 2026-11-13 (round 10, session r10-tex, decision R10-2 a; E1001, E1002; the question
+line is unchanged). Ties: twelve rows of 2048 two-axis tie pixels each. Ties of two mov constants
+and of fmad ramps in y and z read the higher axis (9 of 12 rows), and r8-geo's a2 replayed its kept
+image byte for byte, lower reads included; but ties of the bit-identical ramp x with y, -y or z read
++x on 1856 of 2048 pixels, the higher axis in the same six columns of each row: no rule, and the
+third coordinate (0.5 there) is not what decides. Edges: the neighbour face's bilinear at the outer
+tap centre's direction held on -y/+x (512 of 512 out pixels within 1) and missed by 1.6 to 2 a byte
+on +z/+x; the adjacent texel failed both. The tie and edge clauses stay, narrowed.

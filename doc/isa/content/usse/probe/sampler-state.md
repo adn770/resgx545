@@ -25,10 +25,12 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   none of clamp, nomask or border fits, and every read is the v rule's index plus 180 dwords in
   modes 4, 6 and 7 at 16 x 16 (post hoc, at three bases, E932; whatever T3 or the v mode, E957),
   116 at 8 x 8 and 308 at 32 x 32 (E957; 8 N + 52 fitted), and 308 on every pixel of E565's
-  32 x 8 jobs, so **8 W + 52 with W the width** (SEMI, E983; no non-square size held out). Mode 5
-  past the texture reads 5 W + 52 + t left of it and 6 W + 52 + t right of it, t the texel row,
-  and one dword per corner with v outside too (post hoc at 32 x 8, E983); a held-out size and
-  other formats and types are open (Q177).
+  32 x 8 jobs (SEMI, E983). On held-out textures of W != H (E1000) the frozen rivals (the width,
+  the height, the size as a square, the mean side) each fail a shape: 8 x 32 reads the height's
+  308; post hoc every read of eleven jobs is **8 max(W, H) + 52** dwords past the index, mode 5's
+  reads left and right of the texture 5 max(W, H) + 52 + t and 6 max(W, H) + 52 + t, t the texel
+  row, and one dword per corner with v outside too (E983) [fitted, not held out]; why, other
+  formats and texture types are open (Q177).
 - **Twiddled layout (`texture-sampler-smp-twiddled`).** Texel `(x, y)` lies at the Morton index with
   **`y` in
   bit 0, `x` in bit 1**, and so on; a non-square texture puts the longer side's extra bits
@@ -84,7 +86,11 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   and 12 stay undecided (Q078). **Bit 14 shears a strided read** (E968): at a width equal to the
   stride (64) the dword plus 32 plus 64 per column, held out offline on a second job; at width 32,
   stride 64 the six frozen forms fail, and post hoc dword + floor(S * S * u), u clamped to [0, 1],
-  fits all three strided jobs; on a twiddled texture it faulted (E566).
+  fits all three strided jobs; on a twiddled texture it faulted (E566). **It moves the read by
+  floor(4096 clamp(u, 0, 1)) texels** (E975 post hoc in dwords on 32-bit texels; E1003 held out
+  on six strided geometries: strides 16 and 256, u off the grid and past both ends, v varying, and
+  a 16-bit format, where it is texels, not dwords, 6 of 6; sgx-sim models it point sampled at
+  formats 9 and 12).
 - **sRGB (T0 bit 27; E723).** **A point-sampled texel byte is decoded sRGB to half float** (4 of
   4 held-out fills exact over 2048 pixels: strided 8 x 4, twiddled 8 x 8 twice, twiddled 32 x
   32). Under bilinear filtering neither declared order fits (filter then decode 0 of 2048 pixels,
@@ -123,8 +129,12 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   the fifth bits of s and t in the other order (post hoc, E930), which is E561's twiddle law, tiles
   of 16 x 16 in raster order with s first (E951), held out at 32 x 32 and 64 x 64 faces, and 4 x 4
   faces sit 16 dwords apart (E955). A face tie reads the higher axis's face on every sweep run (z
-  over y over x, E931, E956) but not on 7 of 599 kept tie pixels with a large third coordinate, and
-  bilinear at a face edge mixes in a texel of the neighbour face near the adjacent one (E931, E956).
+  over y over x, E931, E956) but not on 7 of 599 kept tie pixels with a large third coordinate; a
+  tie of two bit-identical fmad ramps with x the lower axis reads +x on 58 of 64 columns (E1001,
+  three rows of six; constant ties and ties of y and z read the higher axis, 9 of 12 rows), and
+  bilinear at a face edge mixes in a texel of the neighbour face near the adjacent one (E931, E956),
+  the neighbour face's bilinear at the outer tap centre's direction on -y/+x and not on +z/+x
+  (E1002).
   The ties, texel boundaries and face edges: Q284.
   **Type 5 reads one bit per 8 texels**: with format 12 texel t = (Y mod h) w + (X mod w)
   returns `0x0000ffff` iff bit 0 of texture dword floor(t / 8) is set, else 0 (E942: 13 of 13

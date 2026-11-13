@@ -41,3 +41,9 @@ stage addr3 freezes the rivals for them), widths other than 8 to 32, formats oth
 texels and texture types other than twiddled. Mode 5's form rests on one size and its two sides;
 E932's values at 16 x 16 agree with it only through the planner's reading of one row. sgx-sim keeps
 refusing modes 4 to 7 on u, naming E957 and this record.
+
+**Correction 2026-11-13:** E1000 (r10-tex stage addr3) ran held-out shapes: 8 x 32 read + 308 and
+16 x 64 + 564, the height's 8 H + 52, while 64 x 16 read the width's + 564 and E565's 32 x 8 form
+replicated + 308. The claim's "8 W + 52 with W the width" holds only where the width is the longer
+side; post hoc every read of E1000's eleven jobs is 8 max(W, H) + 52, and mode 5's reads past the
+texture use max(W, H) for W. The measurements of E565's jobs are unchanged.

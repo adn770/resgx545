@@ -1,11 +1,11 @@
 +++
 id = "Q078"
-question = "what do T3 bits 11 and 12 select, given that they change nothing on a strided texture and every pixel of a twiddled chain texture (E564, E566), and does bit 14's sheared read, dword + floor(S * S * u) with u clamped to [0, 1] (held out offline where the width is the stride, refuted in its frozen forms at W = 32, S = 64, and fitted post hoc on all three strided jobs, E968), hold at other widths and strides, and what does it do on a twiddled texture, where it faulted (E566)?"
+question = "what do T3 bits 11 and 12 select, given that they change nothing on a strided texture and every pixel of a twiddled chain texture (E564, E566), and what does bit 14 do on a twiddled texture, where it faulted (E566), and in a filtered sample, given that on a strided texture it moves a point sample by floor(4096 clamp(u, 0, 1)) texels (E1003)?"
 unit = "texture"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E274", "E397", "E566", "E564", "E722", "E723", "E968", "E975"]
+evidence = ["E274", "E397", "E566", "E564", "E722", "E723", "E968", "E975", "E1003"]
 terms = ["T3.BIT10", "T3.BIT14", "T3.BITS19_18", "T3.BITS28_27", "T0.BIT27", "T3.BITS7_0"]
 +++
 
@@ -91,3 +91,10 @@ bit-clear dword plus floor(4096 * clamp(u, 0, 1)), whatever S and W: a rule to h
 a twiddled texture, v varying). Bits 11 and 12 changed nothing on a strided texture again, and
 E564's twiddled bit-11 and bit-12 images replicated byte for byte; their read-out is not decoded.
 Open: bit 14's constant held out, and bits 11 and 12 on a twiddled chain.
+
+Narrowed 2026-11-13 (round 10, session r10-tex, decision R10-2 a; E1003; the question line
+is rewritten to what stays). Bit 14 on a strided texture is answered for point
+samples: the read is the bit-clear texel plus floor(4096 clamp(u, 0, 1)) texels, held out on six
+geometries (strides 16 and 256, u off the grid and past both ends, v varying, a 16-bit format, where
+the count is texels, not dwords); sgx-sim models it. What stays: bit 14 on a twiddled texture
+(E566's fault) and filtered, and bits 11 and 12 on a twiddled chain.
