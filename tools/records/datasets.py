@@ -35,6 +35,7 @@ import hashlib
 import os
 import pathlib
 import re
+import subprocess
 import sys
 import tomllib
 
@@ -60,15 +61,45 @@ def repos(root: pathlib.Path = ROOT) -> dict[str, pathlib.Path]:
     return out
 
 
+SKIP_DIRS = ("__pycache__", ".pytest_cache")
+
+
+def _git(root: pathlib.Path, *args: str, **kw):
+    """git in root, whatever repository the caller (a commit hook) is in."""
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")
+           or k in ("GIT_CONFIG_GLOBAL", "GIT_CONFIG_SYSTEM", "GIT_CONFIG_NOSYSTEM")}
+    return subprocess.run(["git", "-C", str(root), *args], capture_output=True, env=env, **kw)
+
+
+def _tracked(root: pathlib.Path) -> set[str] | None:
+    """The tracked files of root when it is the top of a git checkout, else None."""
+    try:
+        top = _git(root, "rev-parse", "--show-toplevel", text=True, timeout=60)
+        if top.returncode or pathlib.Path(top.stdout.strip()).resolve() != root.resolve():
+            return None
+        ls = _git(root, "ls-files", "-z", timeout=120)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return set(ls.stdout.decode().split("\0")) if ls.returncode == 0 else None
+
+
 def files_of(paths: list[str], root: pathlib.Path) -> list[pathlib.Path]:
-    """The files of a dataset's paths, without those under a `__pycache__` directory (a
-    published script run in place leaves one; it is gitignored and never data)."""
+    """The files of a dataset's paths. In a git checkout, the tracked ones (what the repository
+    publishes: an untracked cache or log in a worktree is never data); else every file but those
+    under a `__pycache__` or `.pytest_cache` directory (a published script run in place leaves
+    one)."""
+    tracked = _tracked(root)
     out = []
     for p in paths:
         q = root / p
+        if tracked is not None and q.resolve().is_relative_to(root.resolve()):
+            pre = q.resolve().relative_to(root.resolve()).as_posix().rstrip("/")
+            out += [root / t for t in tracked
+                    if (t == pre or t.startswith(pre + "/")) and (root / t).is_file()]
+            continue
         out += [q] if q.is_file() else sorted(
             x for x in q.rglob("*")
-            if x.is_file() and "__pycache__" not in x.relative_to(q).parts)
+            if x.is_file() and not set(SKIP_DIRS) & set(x.relative_to(q).parts))
     return sorted(set(out))
 
 

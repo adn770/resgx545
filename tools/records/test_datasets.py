@@ -59,6 +59,37 @@ def test_the_digest_skips_python_caches(tmp_path):
     assert datasets.digest(["s/"], tmp_path) == before
 
 
+def test_the_digest_skips_pytest_caches_outside_git(tmp_path):
+    (tmp_path / "s" / ".pytest_cache").mkdir(parents=True)
+    (tmp_path / "s" / "a.txt").write_text("a")
+    before = datasets.digest(["s/"], tmp_path)
+    (tmp_path / "s" / ".pytest_cache" / "README.md").write_text("c")
+    assert datasets.digest(["s/"], tmp_path) == before
+
+
+def test_in_a_git_checkout_the_digest_covers_the_tracked_files_only(tmp_path):
+    """The folds' data worktrees held an untracked .pytest_cache/ that the walk counted: a git
+    checkout is digested from `git ls-files`, what the repository publishes."""
+    def git(*a):
+        subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", *a], cwd=tmp_path,
+                       check=True, capture_output=True)
+    git("init", "-q")
+    (tmp_path / "s").mkdir()
+    (tmp_path / "s" / "a.txt").write_text("a")
+    (tmp_path / "s" / "gone.txt").write_text("g")
+    git("add", ".")
+    git("commit", "-qm", "c")
+    before = datasets.digest(["s/"], tmp_path)
+    assert before[0] == 2
+    (tmp_path / "s" / "scratch.log").write_text("untracked")
+    (tmp_path / "s" / "cache").mkdir()
+    (tmp_path / "s" / "cache" / "x").write_text("untracked")
+    assert datasets.digest(["s/"], tmp_path) == before
+    (tmp_path / "s" / "gone.txt").unlink()           # tracked but deleted: not a file
+    assert datasets.digest(["s/"], tmp_path)[0] == 1
+    assert datasets.files_of(["s/a.txt"], tmp_path) == [tmp_path / "s" / "a.txt"]
+
+
 def test_a_record_names_a_known_repo_and_its_keys_in_order(tmp_path):
     assert any("repo" in m for m in datasets.problems("x", record(repo="elsewhere"), {}))
     assert any("repo" in m for m in datasets.problems("x", record(repo=["data"]), {}))
@@ -195,3 +226,16 @@ def test_every_record_is_cited():
              if d["recipe"] == "tools/records/scratch_cites.py"}
     assert cited == {"cited-scratch", "cited-scratch-private"}
     assert set(datasets.load()) - cited <= used
+
+
+def test_the_git_listing_ignores_the_callers_git_environment(tmp_path, monkeypatch):
+    """Run from a commit hook of another repository, GIT_INDEX_FILE and GIT_DIR name that
+    repository's index: the listing of this one must not read them."""
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    (tmp_path / "s").mkdir()
+    (tmp_path / "s" / "a.txt").write_text("a")
+    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+    (tmp_path / "s" / "untracked.txt").write_text("u")
+    monkeypatch.setenv("GIT_INDEX_FILE", str(tmp_path / "other-index"))
+    monkeypatch.setenv("GIT_DIR", str(tmp_path / "nowhere"))
+    assert datasets.files_of(["s/"], tmp_path) == [tmp_path / "s" / "a.txt"]
