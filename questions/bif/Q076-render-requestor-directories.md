@@ -6,7 +6,7 @@ kind = "hw"
 value = "high"
 phase = 11
 evidence = ["E021", "E023", "E151", "E303", "E314", "E315", "E316", "E319", "E360", "E457",
-            "E573", "E592", "E745", "E761"]
+            "E573", "E592", "E745", "E761", "E980"]
 terms = ["CR_BIF_DIR_LIST_BASE1", "CR_BIF_BANK0", "ta3d_ctl", "ta3d_ctl.render_context_count"]
 +++
 
@@ -109,3 +109,15 @@ control was exact. So a partial render does not need buffers 1 to 4 together or 
 together in that directory. Still open: which list each requestor walks, a buffer reassigned within
 a job, pairs among 12 to 15, a partial render under other masks, and what the requestors do when
 their list is given away while a job runs.
+
+Narrowed 2026-11-13 (round 9, session r9-faults stage bif, decision X-4 (a); E980, frozen,
+every control passed). Left out of the client directory's alias together, the buffers 12 and
+13, 12 and 14, 13 and 14, 12 to 14, the 0x32 heap without TA3DCtl (6, 7, 8, 10 to 14) and every
+buffer but 0 and 9 (mask 0x7dfe) kept two 64 x 64 renders exact (8 of 8 held-out rows and a
+replicate), and 0x7dfe kept three renders and two 1024 x 768 renders that both overflow at
+render_pb_pages 0x23 exact: H-ONLY09 (only buffers 0 and 9 are needed, E457's and E573's
+singles) held, H-SET (a set unneeded alone is needed together) 0 of 8. The pairs among 12 to 15
+(15 names no buffer, E573), the larger scene and the partial render under masks are answered for
+these scenes. Still open: which list each requestor walks, a buffer reassigned within a job, a
+DPM reload under other memory pressure, and what the requestors do when their list is given to
+another directory while a job runs.

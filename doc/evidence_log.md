@@ -7653,6 +7653,32 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *ta; HW, infer; data: `render-closing-r9-lgeo:out/20261113-080029/q139b/`,
   `render-closing-r9-lgeo:fold/`, `vectors-closing-r9-lgeo-ta-slots`,
   `render-closing-r8-lgeo:out/20261113-024441/q139/`, `ta-mtile-fields`, `ta-mtile-fields-risky`.*
+- `E964` R9-faults stage xf2 (Q108; a fill's destination and a copy's read-only source with one PTE
+  flag, 12 jobs, every control passed, E946's nine rows rerun token for token): WRITEONLY on a
+  fill's destination let every pixel land and faulted the job at the page of the last pixel written,
+  BIF_INT_STAT 0x80020 with SB 31, at 64 x 32 (page 0x3e002000), at 64 x 16 from row 16 (0x3e002000,
+  the mapping's first page never written) and at 64 x 64 (0x3e004000), never at the mapping's first
+  or last page; EDMPROTECT let a copy's texture read of its READONLY source through (PTE 0x14,
+  exact) and faulted a fill's write at its first page (0xa0020, nothing written); E946's other rows
+  read as post hoc (CACHECONSISTENT on the copy's source exact, READONLY with WRITEONLY on it
+  0x80002); frozen verdicts 'H-LASTROW (2 of 2 rows decided)' with H-MAPEND and H-FIRST '0 held, 2
+  FAILED', 'H-EDM-WRITE ... (1 of 1 rows decided)' with H-EDM-REQ '0 held, 1 FAILED', 'H-WO-ALL (4
+  of 4 rows decided)', 'H-CC-NEW (1 of 1 rows decided)', 'H-EDM-CLIENT (1 of 1 rows decided)'.
+  *bif; HW, infer; data: `render-closing-r9-faults:out/20261113-084720/xf2/`,
+  `render-closing-r9-faults:fold/`, `vectors-closing-r9-faults-pte`.*
+- `E965` R9-faults stage tri2 (Q108; the 64 x 64 triangle with PTE flags on its colour target or the
+  ZLS buffers of tri --depth --depth-store, 7 renders, the three knob-free controls passed):
+  WRITEONLY and EDMPROTECT together (0x12) on the colour target faulted as EDMPROTECT alone (0xa0020
+  at the target's first page, nothing written; E945's WRITEONLY fault came after the image, at its
+  last page); EDMPROTECT on the depth store's buffer faulted the ZLS store at its first page
+  (0xa0200, FAULT_REQ bit 9, nothing stored, no pixel written); WRITEONLY there let the whole store
+  land (4096 dwords) and faulted at the store window's last page (0x80200 at 0x3e018001, SB 0);
+  EDMPROTECT on the depth buffer, which the clearing control does not load, changed nothing (exact);
+  frozen verdicts 'H-OR ... (1 of 1 rows decided)' (H-CANCEL '0 held, 1 FAILED'), 'H-EDM-FIRST ...
+  (1 of 1 rows decided)' (H-WO-FIRST '0 held, 1 FAILED'), 'H-EDM-WRITE ... (1 of 1 rows decided)'
+  (H-EDM-3D '0 held, 1 FAILED'), 'H-WO-ALL (1 of 1 rows decided)'.
+  *bif; HW, infer; data: `render-closing-r9-faults:out/20261113-084720/tri2/`,
+  `render-closing-r9-faults:fold/`, `vectors-closing-r9-faults-pte`.*
 - `E968` Round 9 offline (Q078; no run): with T3 bit 14 set, smp on a strided texture reads dword i
   + K + M c, i the dword the same job reads without the bit and c its column, read on E566's fit job
   s64x32-t3b14 (W = S = 64: K = 32, M = 64, 2048 of 2048); six rivals for K (W / 2, S / 2, 32) and M
@@ -7666,13 +7692,24 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   1024 [fitted]; the twiddled job tw32-t3b14 faulted in E566 and kept no image.
   *texture; HW, infer; data: `texture-p1132-tx-t3`, `cited-scratch:closing9/rank/`,
   `cited-scratch:closing9/offline/q078/`.*
+- `E980` R9-faults stage bif (Q076; debugfs alias_skip on tri -n 2 --keep-going on a new VM, E457's
+  form, 14 jobs, every control passed): with the pairs and the three of buffers 12 to 14 left out of
+  the client directory's alias, with 6, 7, 8, 10 to 14 (the 0x32 heap without TA3DCtl) and with
+  every buffer but 0 and 9 (mask 0x7dfe) left out, two renders were exact (8 of 8 held-out rows and
+  a replicate: every diff 0, the mask-free control's hashes), and so were three renders and two 1024
+  x 768 renders that both overflow at render_pb_pages 0x23 under 0x7dfe; TA3DCtl left out faulted
+  0x90400 at 0x32004001 and buffer 0 left out 0x91000 at 0x3000b021, as E457 and E745; frozen
+  verdicts 'H-ONLY09 ... (8 of 8 rows decided)' and H-SET 'is not supported: 0 held, 8 FAILED, 0
+  cannot tell of 8'.
+  *bif; HW, infer; data: `render-closing-r9-faults:out/20261113-084720/bif/`,
+  `render-closing-r9-faults:fold/`.*
 
 ## By unit
 
 ### bif
 
 Records: E151, E457, E573, E592, E745, E761, E767, E789, E826, E848, E891, E892, E901, E919, E920,
-E945, E946.
+E945, E946, E964, E965, E980.
 
 ### dpm
 

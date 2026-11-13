@@ -7,7 +7,9 @@ use crate::Outcome;
 /// Open questions that block the unit.
 pub const OPEN: &[&str] = &["Q076", "Q108", "Q109", "Q110", "Q003"];
 
-/// A refusing stub until the unit's sub-phase lands: the model never guesses.
+/// A refusing stub until the unit's sub-phase lands: the model never guesses. Among what it
+/// refuses: the client directory's alias of the EDM's buffers (Q076), of which E980 held out that
+/// only buffers 0 and 9 are needed, whatever set of the others is left out, for its scenes.
 pub fn refuse() -> Outcome {
     Outcome::unsupported("the BIF is not modelled (12.5)", OPEN)
 }
@@ -44,12 +46,13 @@ pub fn replay_word(int: u32, held: u32, list: u32, flushed: bool) -> Result<u32,
 /// A client access through a page whose PTE flags debugfs `vm_pte_flags` set (Q108): the
 /// transfer's or the 3D's pixel write (`FAULT_REQ` bit 5), the transfer's texture read of a copy's
 /// source (bit 1), the render's read of its GENERAL page, the VDM stream, indices and vertices
-/// (bit 3).
+/// (bit 3), the ZLS store of a depth-buffered render (bit 9, E965).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PteAccess {
     PixelWrite,
     TextureRead,
     StreamRead,
+    ZlsStore,
 }
 
 /// Where a PTE fault named its page: the mapping's first, or the last page the job wrote.
@@ -76,11 +79,14 @@ pub struct PteEnd {
 }
 
 /// The measured PTE flags (E945, the r8-k2 triangle rows, frozen; E946, the transfer rows, read
-/// post hoc; READONLY on a fill's write is E946's isolation control): WRITEONLY lets the pixel
-/// writes land and then faults at the last page written (`SB` 31) and faults the texture and
-/// stream reads before anything is drawn; CACHECONSISTENT changes nothing either read showed;
-/// EDMPROTECT faults a pixel write (`FAULT_TYPE` 2) and lets the stream read through. Any other
-/// flag and access is refused (Q108).
+/// post hoc; READONLY on a fill's write is E946's isolation control; E964 and E965, the r9-faults
+/// rows, frozen): WRITEONLY lets the pixel writes land and then faults at the last page written
+/// (`SB` 31; held out at 64 x 16 from row 16 and at 64 x 64, E964), lets the ZLS store land and
+/// then faults at its last page (`SB` 0, E965), and faults the texture and stream reads before
+/// anything is drawn; CACHECONSISTENT changes nothing either read showed; EDMPROTECT faults a
+/// pixel write and the ZLS store at the first page (`FAULT_TYPE` 2) and lets the stream read and
+/// a copy's texture read of its READONLY source through (E964); WRITEONLY with EDMPROTECT faults
+/// a pixel write as EDMPROTECT alone (E965). Any other flag and access is refused (Q108).
 pub fn pte_access(pte: u32, access: PteAccess) -> Result<PteEnd, Outcome> {
     use FaultPage::*;
     use PteAccess::*;
@@ -95,11 +101,13 @@ pub fn pte_access(pte: u32, access: PteAccess) -> Result<PteEnd, Outcome> {
         (0x2, StreamRead) => fault(0x80008, First, 0),
         (0x6, TextureRead) => fault(0x80002, First, 0),
         (0x4, PixelWrite) => fault(0x80020, First, 0),
-        (0x8, StreamRead) | (0xc, TextureRead) | (0x10, StreamRead) => clean,
-        (0x10, PixelWrite) => fault(0xa0020, First, 0),
+        (0x2, ZlsStore) => fault(0x80200, LastWritten, 0),
+        (0x8, StreamRead) | (0xc, TextureRead) | (0x10, StreamRead) | (0x14, TextureRead) => clean,
+        (0x10, PixelWrite) | (0x12, PixelWrite) => fault(0xa0020, First, 0),
+        (0x10, ZlsStore) => fault(0xa0200, First, 0),
         _ => {
             return Err(Outcome::unsupported(
-                &format!("PTE flags {pte:#x} on {access:?}: not run (E945, E946)"),
+                &format!("PTE flags {pte:#x} on {access:?}: not run (E945, E946, E964, E965)"),
                 &["Q108"],
             ));
         }
@@ -177,8 +185,31 @@ mod tests {
         for (row, pte, access, written, fault) in rows {
             assert_eq!(pte_access(*pte, *access), Ok(PteEnd { written: *written, fault: *fault }), "{row}");
         }
-        for access in [PixelWrite, TextureRead, StreamRead] {
+        for access in [PixelWrite, TextureRead, StreamRead, ZlsStore] {
             assert_eq!(pte_access(0, access), Ok(PteEnd { written: true, fault: None }));
+        }
+    }
+
+    #[test]
+    fn pte_flags_end_each_measured_access_as_the_r9_faults_rows() {
+        // E964 (r9-faults stage xf2, frozen) and E965 (tri2, frozen): WRITEONLY's fill writes land
+        // and the fault names the page of the last pixel written, whatever the size (64 x 16 at y
+        // 16, 64 x 64); EDMPROTECT lets a copy's texture read of its READONLY source through; the
+        // two flags together fault as EDMPROTECT alone; on the ZLS store (FAULT_REQ bit 9)
+        // EDMPROTECT faults at the first page, nothing stored, and WRITEONLY lets the store land,
+        // then faults at the store's last page (SB 0)
+        use PteAccess::*;
+        let fault = |int_stat, page, sb| Some(PteFault { int_stat, page, sb });
+        let rows: &[(&str, u32, PteAccess, bool, Option<PteFault>)] = &[
+            ("xf-wo-fill-low", 0x2, PixelWrite, true, fault(0x80020, FaultPage::LastWritten, 31)),
+            ("xf-wo-fill-64", 0x2, PixelWrite, true, fault(0x80020, FaultPage::LastWritten, 31)),
+            ("xf-edm-copy", 0x14, TextureRead, true, None),
+            ("tri-woedm-fb", 0x12, PixelWrite, false, fault(0xa0020, FaultPage::First, 0)),
+            ("tri-edm-dst", 0x10, ZlsStore, false, fault(0xa0200, FaultPage::First, 0)),
+            ("tri-wo-dst", 0x2, ZlsStore, true, fault(0x80200, FaultPage::LastWritten, 0)),
+        ];
+        for (row, pte, access, written, fault) in rows {
+            assert_eq!(pte_access(*pte, *access), Ok(PteEnd { written: *written, fault: *fault }), "{row}");
         }
     }
 
@@ -189,7 +220,9 @@ mod tests {
         assert!(refused(0x2, TextureRead), "WO alone on a texture read: not run (RO|WO was)");
         assert!(refused(0x8, PixelWrite), "CACHED on a write: not run");
         assert!(refused(0x10, TextureRead), "EDMPROT on a texture read: not run");
-        assert!(refused(0x12, PixelWrite), "two knob flags together: not run");
+        assert!(refused(0x12, StreamRead), "two knob flags together on a read: not run");
+        assert!(refused(0x1a, PixelWrite), "three flags together: not run");
+        assert!(refused(0x8, ZlsStore), "CACHED on the ZLS store: not run");
         assert!(refused(0x4, StreamRead), "READONLY on a read: not in these rows");
         assert!(refused(0x1, PixelWrite), "VALID is no flag");
     }

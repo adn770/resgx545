@@ -14,7 +14,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
-  EDM's PB load) need in the directory of the list it ... (E592, E745, E761)
+  EDM's PB load) need in the directory of the list it ... (E745, E761, E980)
 - `Q038` dpm, high: what does the final render read back of a partial render's depth (a depth buffer
   stored by ZLS, the 3D kick's RT status bit 1), now that a ... (E625, E628, E629)
 - `Q045` dpm, high: what does the DPM store in the state page, does a load task read back the
@@ -52,7 +52,7 @@ list.
 - `Q047` vdm, high: what do VDM_STATE1 bit 8, bits 11:9 and bits 15:13 select for a state task, when
   on the one-triangle job bit 8 changes nothing, bits 11:9 ... (E427, E440, E545)
 - `Q108` bif, medium: what do the page table entry flags WRITEONLY, CACHECONSISTENT and EDMPROTECT
-  do on the hardware, which of the bus interface's requestors do ... (E319, E945, E946)
+  do on the hardware, which of the bus interface's requestors do ... (E946, E964, E965)
 - `Q081` dpm, medium: what does CR_DPM_REG_074C bit 8 make the DPM read or write near offset 0x6010
   of the context's TA-data space, and what fixes that place? (E313, E362, E447)
 - `Q192` dpm, medium: does the store that follows the next context's render replace the state page a
@@ -335,12 +335,21 @@ list.
 
 ## Recent records
 
-96 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+99 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E980` bif, 2026-11-13: R9-faults stage bif (Q076; debugfs alias_skip on tri -n 2 --keep-going on
+  a new VM, E457's form, 14 jobs, every control passed): with the pairs and the three of buffers 12
+  to 14 left out of the ...
 - `E968` texture, 2026-11-13: Round 9 offline (Q078; no run): with T3 bit 14 set, smp on a strided
   texture reads dword i + K + M c, i the dword the same job reads without the bit and c its column,
   read on E566's fit job ...
+- `E965` bif, 2026-11-13: R9-faults stage tri2 (Q108; the 64 x 64 triangle with PTE flags on its
+  colour target or the ZLS buffers of tri --depth --depth-store, 7 renders, the three knob-free
+  controls passed): WRITEONLY and ...
+- `E964` bif, 2026-11-13: R9-faults stage xf2 (Q108; a fill's destination and a copy's read-only
+  source with one PTE flag, 12 jobs, every control passed, E946's nine rows rerun token for token):
+  WRITEONLY on a fill's ...
 - `E959` ta, 2026-11-13: R9-lgeo stage q139b (Q139; 4 TA-dump jobs at 1280 x 720 and 768 x 640, the
   datasets' own commands, no fault): the unpoked baselines draw exactly and hold one header with a
   stream for every target ...
@@ -629,10 +638,11 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-36 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+37 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
 - `render/closing-r9-lgeo`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
+- `render/closing-r9-faults`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
 - `render/closing-r8-lgeo`: 2026-11-13; module 37EC97AB0CB37213C42FCCC; tools ~/sgxfive-test-rgn4
 - `render/closing-r8-ldpm`: 2026-11-13; module 37EC97AB0CB37213C42FCCC; tools ~/sgxfive-test-rgn4
 - `render/closing-r8-k2`: 2026-11-13; module B60AB0B475DD1E8972419B5; fork r8-kernel at 2a650d74;
@@ -688,7 +698,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 2 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 3 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at
