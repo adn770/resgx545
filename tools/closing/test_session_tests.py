@@ -654,3 +654,21 @@ def test_a_built_binary_whose_recipe_is_missing_fails(world):
     r = run(world, "edm/closing-demo")
     assert r.returncode == 1 and "RUN_ALL PASSED" not in r.stdout
     assert "gone.sh" in r.stdout and "FAIL" in r.stdout
+
+
+def test_a_freeze_the_session_freezes_keeps_its_bytes(world):
+    """A post-run scorer fix (HACKING.md, "Closing-session scorers") keeps the freeze the run
+    used as FROZEN.pre-fix.sha256 and re-freezes, so FROZEN.sha256 names the pre-fix freeze as a
+    session file by its hash (r8-ldpm). Its absolute paths are not pointed at the fake home: the
+    copy keeps the frozen bytes and the session's freeze still verifies."""
+    s = world[1] / "edm/closing-demo"
+    pre = (f"{sha(RUN_ALL)}  tests/run_all.sh\n"
+           f"{sha(V1)}  /Users/someone/src/resgx545/tools/x.py\n")
+    (s / "FROZEN.pre-fix.sha256").write_text(pre)
+    (s / "FROZEN.sha256").write_text(
+        f"{sha(RUN_ALL)}  tests/run_all.sh\n"
+        f"{sha(pre)}  FROZEN.pre-fix.sha256\n"
+        f"{sha(V1)}  /Users/someone/src/resgx545/tools/x.py\n")
+    r = run(world, "edm/closing-demo")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "RUN_ALL PASSED" in r.stdout
