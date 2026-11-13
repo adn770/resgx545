@@ -572,8 +572,8 @@ pub fn write(job: &Job) -> Result<Written, Outcome> {
 /// 720 and 768 x 640 (E959: the baselines' 1800 and 960 headers); the rest refuses (Q139), as do
 /// poked macrotile words (E944's residue: E950 fits a first-macrotile block row of 8 floor(fx /
 /// 2) slots on its three readable dumps, in sample only, the same as the rule's when fx is 0 or 1
-/// mod 4; E959 reads post hoc that a tile whose header lies past the last-region flag does not
-/// draw: not modelled until held out).
+/// mod 4). The list ends at the scene's last-region flag (E1007, `macrotile_slots`): with the
+/// rule's words it is on the highest surviving slot, so nothing past it is lost here.
 pub fn stride_slots(w: u32, h: u32, stride: u32) -> Result<BTreeMap<(u32, u32), Option<u32>>, Outcome> {
     let t = tiling(w, h);
     let ok = match (w, h) {
@@ -590,13 +590,82 @@ pub fn stride_slots(w: u32, h: u32, stride: u32) -> Result<BTreeMap<(u32, u32), 
             &["Q139"],
         ));
     }
-    let (fx, fy) = (t.mx, t.my);
+    Ok(slots(&t, t.mtile1, t.mtile2, stride).0)
+}
+
+/// Poked macrotile words measured to draw a whole image, each at its size with the rule's
+/// `CR_TE_MTILE1` and stride: `CR_TE_MTILE2` words whose first macrotile is 0 or 1 mod 4 tiles
+/// wide, where E950's H-EVEN and R7-BLK agree (E907 and E1007: 0x0200a008 and 0x0280a00a at fy 10;
+/// E1007 held out: 0x0200b008 at fy 11, 0x05c10018 at fy 23 with n 4; E959: 0x03018025 at 768 x
+/// 640, held out, and at 1280 x 720, whose 12 tiles past the flag E1007 held out the rule of).
+pub const MEASURED_MTILE2: [(u32, u32, u32); 6] = [
+    (256, 256, 0x0200_a008),
+    (256, 256, 0x0280_a00a),
+    (256, 256, 0x0200_b008),
+    (640, 480, 0x05c1_0018),
+    (768, 640, 0x0301_8025),
+    (1280, 720, 0x0301_8025),
+];
+
+/// R7-BLK's region header slots under poked macrotile words (`CR_TE_MTILE1`, `CR_TE_MTILE2`, the
+/// rule's stride), and the slot of the scene's last-region flag. A tile's macrotile is found by
+/// comparing the words' bounds in order of use (E877; n 4 with `CR_TE_MTILE1` bit 31: bounds 0,
+/// B1, B2, B3 per axis; else 0, B2), the first macrotile's width and height being the axis's first
+/// bound; the TA writes every tile up to the last bound plus that width, past the target too, in
+/// block order (E944), at (mcol n + mrow) stride + ((ly >> 2)(fx >> 2) + (lx >> 2)) 16 + (r & 3)
+/// 4 + (c & 3) (E907), a later header overwriting an earlier one. Flag bit 7 marks the header of
+/// the last target tile written whose header survives, and the 3D reads the list up to it: a
+/// target tile draws iff its header survives at or before that slot (E1007, held out on four
+/// dumps; E959 post hoc on 24). Only `MEASURED_MTILE2` and the rule's own words are admitted;
+/// other words refuse (Q139: E950's first-macrotile rule at fx 2 or 3 mod 4 is fitted, and most
+/// poked words faulted, E505 and E509).
+pub fn macrotile_slots(
+    w: u32,
+    h: u32,
+    mtile1: u32,
+    mtile2: u32,
+) -> Result<(BTreeMap<(u32, u32), Option<u32>>, u32), Outcome> {
+    let t = tiling(w, h);
+    let rule = mtile1 == t.mtile1
+        && mtile2 == t.mtile2
+        && [(256, 256), (640, 480), (768, 640), (1280, 720)].contains(&(w, h));
+    if !rule && !(mtile1 == t.mtile1 && MEASURED_MTILE2.contains(&(w, h, mtile2))) {
+        return Err(refuse_ids(
+            format!(
+                "{w} x {h}, CR_TE_MTILE1 {mtile1:#x}, CR_TE_MTILE2 {mtile2:#x}: not a macrotile word measured to draw whole with R7-BLK's slots held out (E907, E959, E1007)"
+            ),
+            &["Q139"],
+        ));
+    }
+    Ok(slots(&t, mtile1, mtile2, t.stride))
+}
+
+/// The bounds of one axis of a macrotile word (n 4: 0, B1, B2, B3; n 2: 0, B2).
+fn word_bounds(n: u32, word: u32, mask: u32) -> Vec<u32> {
+    let b = [(word >> 22) & mask, (word >> 12) & mask, word & mask];
+    if n == 4 { vec![0, b[0], b[1], b[2]] } else { vec![0, b[1]] }
+}
+
+/// A tile's macrotile index along one axis and its offset in it: the bounds compared in order.
+fn place(v: u32, bs: &[u32]) -> (u32, u32) {
+    let mut k = 0;
+    while k + 1 < bs.len() && v >= bs[k + 1] {
+        k += 1;
+    }
+    (k as u32, v - bs[k])
+}
+
+/// Every target tile's surviving slot at or before the flag (None: wrong), and the flag's slot.
+fn slots(t: &Tiling, mtile1: u32, mtile2: u32, stride: u32) -> (BTreeMap<(u32, u32), Option<u32>>, u32) {
+    let n = if mtile1 >> 31 & 1 == 1 { 4 } else { 2 };
+    let (bx, by) = (word_bounds(n, mtile1, 0xff), word_bounds(n, mtile2, 0x1ff));
+    let (fx, fy) = (bx[1], by[1]);
     let mut ws = vec![];
-    for r in 0..t.n * fy {
-        for c in 0..t.n * fx {
-            let (mc, lx, mr, ly) = (c / fx, c % fx, r / fy, r % fy);
+    for r in 0..t.ty.max(by[by.len() - 1] + fy) {
+        for c in 0..t.tx.max(bx[bx.len() - 1] + fx) {
+            let ((mc, lx), (mr, ly)) = (place(c, &bx), place(r, &by));
             let sl =
-                (mc * t.n + mr) * stride + ((ly >> 2) * (fx >> 2) + (lx >> 2)) * 16 + (r & 3) * 4 + (c & 3);
+                (mc * n + mr) * stride + ((ly >> 2) * (fx >> 2) + (lx >> 2)) * 16 + (r & 3) * 4 + (c & 3);
             ws.push(((r >> 2, c >> 2, r, c), sl, (c, r)));
         }
     }
@@ -612,7 +681,18 @@ pub fn stride_slots(w: u32, h: u32, stride: u32) -> Result<BTreeMap<(u32, u32), 
             *v = Some(sl);
         }
     }
-    Ok(out)
+    // the flag: on the surviving header of the target tile last in block order
+    let flag = out
+        .iter()
+        .filter_map(|(&(c, r), v)| v.map(|s| ((r >> 2, c >> 2, r, c), s)))
+        .max()
+        .map_or(0, |(_, s)| s);
+    for v in out.values_mut() {
+        if v.is_some_and(|s| s > flag) {
+            *v = None;
+        }
+    }
+    (out, flag)
 }
 
 #[cfg(test)]
@@ -698,6 +778,56 @@ mod tests {
         // 1280 x 720's last macrotile column starts at region 36: tile (36, 0) is slot 12 x 144
         let sl = stride_slots(1280, 720, tiling(1280, 720).stride).unwrap();
         assert_eq!((tiling(1280, 720).stride, sl[&(36, 0)], sl[&(13, 1)]), (144, Some(1728), Some(581)));
+    }
+
+    #[test]
+    fn poked_y_macrotile_words_keep_r7_blk_slots_and_the_list_ends_at_the_flag() {
+        // E1007 (r10-geo q139c, held out: fy 11 and 23; replicates of E907's fy-10 dumps) and
+        // E959 (768 x 640 m2-B3p1 held out; the 1280 x 720 residue): every target tile's slot is
+        // R7-BLK's, the scene's last-region flag (bit 7) sits on the last target tile the TA
+        // writes in block order, and a tile whose surviving header lies past it does not draw
+        for (w, h, m2, wrong, flag) in [
+            (256, 256, 0x0200_a008, 24, 127),
+            (256, 256, 0x0280_a00a, 24, 127),
+            (256, 256, 0x0200_b008, 36, 127),
+            (640, 480, 0x05c1_0018, 180, 743),
+            (768, 640, 0x0301_8025, 24, 1087),
+            (1280, 720, 0x0301_8025, 52, 2211),
+        ] {
+            let (sl, last) = macrotile_slots(w, h, tiling(w, h).mtile1, m2).unwrap();
+            assert_eq!(sl.values().filter(|v| v.is_none()).count(), wrong, "{w}x{h} {m2:#x}");
+            assert_eq!(last, flag, "{w}x{h} {m2:#x}");
+            assert!(sl.values().flatten().all(|&s| s <= last));
+        }
+        // the residue: row 36 has no header (40 tiles) and columns 36 to 39 of rows 41 to 43
+        // keep theirs at 2212 to 2223, past the flag on tile (39, 44) (E959)
+        let (sl, _) = macrotile_slots(1280, 720, tiling(1280, 720).mtile1, 0x0301_8025).unwrap();
+        assert!((0..40).all(|c| sl[&(c, 36)].is_none()));
+        assert!((41..44).all(|r| (36..40).all(|c| sl[&(c, r)].is_none())));
+        assert_eq!(sl[&(39, 44)], Some(2211));
+        // the unpoked words are the rule's: the same slots as stride_slots, nothing past the flag
+        for (w, h) in [(256, 256), (640, 480), (768, 640), (1280, 720)] {
+            let t = tiling(w, h);
+            let (sl, _) = macrotile_slots(w, h, t.mtile1, t.mtile2).unwrap();
+            assert_eq!(sl, stride_slots(w, h, t.stride).unwrap(), "{w}x{h}");
+        }
+    }
+
+    #[test]
+    fn macrotile_words_that_were_not_held_out_are_refused() {
+        // E944's residue m1-B2-10 (fx 10: E950's H-EVEN fitted, not held out), a word that
+        // faulted (E509: m2-B2-0), and a held-out word at another size
+        let t = tiling(256, 256);
+        for (w, h, m1, m2) in [
+            (256, 256, 0x0100_a004, t.mtile2),
+            (256, 256, t.mtile1, 0x0200_0008),
+            (512, 512, tiling(512, 512).mtile1, 0x0200_a008),
+        ] {
+            assert!(
+                matches!(macrotile_slots(w, h, m1, m2), Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q139"]),
+                "{w}x{h} {m1:#x} {m2:#x}"
+            );
+        }
     }
 
     #[test]

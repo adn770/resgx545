@@ -179,7 +179,11 @@ pub const FAR_BAND: f64 = 1.0e-3;
 /// (E684: the 16 pixels it got wrong lay within 5.6e-4 pixel). E979 held this at one vertex up to
 /// 2^24 pixels both ways and -2^25, and at two vertices at +-2^23 and +-2^24, 10 of 10 rows: no
 /// clamp or wrap of a 24.8 word (H-SAT, H-WRAP refuted). Refuses other targets, three far vertices
-/// and the band's own form (Q261), and coordinates past what ran (Q199).
+/// and the band's own form (Q261), and coordinates past what ran (Q199). E1005 held the exact
+/// coverage outside the band on 36 more rows (E979's x23p, x24p and x25n with the far vertex's y
+/// moved by 0 to -544 pixels) and read the band as a displacement D of the far vertex along y that
+/// fits each triangle's rows but differs between them (x24p: 339 to 467 pixels; x23p and x25n:
+/// above 586) and is not one angle: the band stays `None`.
 pub fn far_coverage_image(w: u32, h: u32, t: &FarTri) -> Result<Vec<Option<bool>>, Outcome> {
     if !FAR_TARGETS.contains(&(w, h)) {
         return Err(open(
@@ -700,6 +704,67 @@ mod tests {
             // the hardware drew every determined pixel and some of the band (E979: H-EXACT held)
             assert!(det <= hw && hw <= det + und, "{name}");
         }
+    }
+
+    /// r10-geo stage pivot (E1005): E979's far-x23p, far-x24p and far-x25n with the far vertex's
+    /// y moved by 0 to -544 pixels (1/256 pixel), the determined pixels drawn, the band and the
+    /// hardware's drawn count.
+    const E1005_ROWS: [(&str, [i64; 6], usize, usize, usize); 36] = [
+        ("piv-x23p-d0", [14656, 1728, 2147483648, 536870912, 14976, 14656], 310, 16, 312),
+        ("piv-x23p-m16", [14656, 1728, 2147483648, 536866816, 14976, 14656], 310, 16, 312),
+        ("piv-x23p-m32", [14656, 1728, 2147483648, 536862720, 14976, 14656], 310, 16, 312),
+        ("piv-x23p-m48", [14656, 1728, 2147483648, 536858624, 14976, 14656], 310, 16, 312),
+        ("piv-x23p-m64", [14656, 1728, 2147483648, 536854528, 14976, 14656], 310, 16, 312),
+        ("piv-x23p-m96", [14656, 1728, 2147483648, 536846336, 14976, 14656], 310, 16, 312),
+        ("piv-x23p-m128", [14656, 1728, 2147483648, 536838144, 14976, 14656], 310, 14, 312),
+        ("piv-x23p-m160", [14656, 1728, 2147483648, 536829952, 14976, 14656], 310, 12, 312),
+        ("piv-x23p-m224", [14656, 1728, 2147483648, 536813568, 14976, 14656], 310, 10, 312),
+        ("piv-x23p-m288", [14656, 1728, 2147483648, 536797184, 14976, 14656], 310, 8, 312),
+        ("piv-x23p-m416", [14656, 1728, 2147483648, 536764416, 14976, 14656], 310, 6, 312),
+        ("piv-x23p-m544", [14656, 1728, 2147483648, 536731648, 14976, 14656], 310, 5, 312),
+        ("piv-x24p-d0", [1600, 2368, 2432, 13760, 4294967296, 1073741824], 2422, 13, 2432),
+        ("piv-x24p-m16", [1600, 2368, 2432, 13760, 4294967296, 1073737728], 2422, 13, 2432),
+        ("piv-x24p-m32", [1600, 2368, 2432, 13760, 4294967296, 1073733632], 2422, 13, 2432),
+        ("piv-x24p-m48", [1600, 2368, 2432, 13760, 4294967296, 1073729536], 2422, 13, 2432),
+        ("piv-x24p-m64", [1600, 2368, 2432, 13760, 4294967296, 1073725440], 2422, 13, 2432),
+        ("piv-x24p-m96", [1600, 2368, 2432, 13760, 4294967296, 1073717248], 2422, 13, 2432),
+        ("piv-x24p-m128", [1600, 2368, 2432, 13760, 4294967296, 1073709056], 2422, 13, 2432),
+        ("piv-x24p-m160", [1600, 2368, 2432, 13760, 4294967296, 1073700864], 2422, 13, 2432),
+        ("piv-x24p-m224", [1600, 2368, 2432, 13760, 4294967296, 1073684480], 2422, 13, 2432),
+        ("piv-x24p-m288", [1600, 2368, 2432, 13760, 4294967296, 1073668096], 2422, 13, 2432),
+        ("piv-x24p-m416", [1600, 2368, 2432, 13760, 4294967296, 1073635328], 2422, 12, 2422),
+        ("piv-x24p-m544", [1600, 2368, 2432, 13760, 4294967296, 1073602560], 2422, 10, 2422),
+        ("piv-x25n-d0", [14400, 1984, -8589934592, -2147483648, 14464, 14272], 2596, 16, 2610),
+        ("piv-x25n-m16", [14400, 1984, -8589934592, -2147487744, 14464, 14272], 2596, 16, 2610),
+        ("piv-x25n-m32", [14400, 1984, -8589934592, -2147491840, 14464, 14272], 2596, 16, 2610),
+        ("piv-x25n-m48", [14400, 1984, -8589934592, -2147495936, 14464, 14272], 2596, 16, 2610),
+        ("piv-x25n-m64", [14400, 1984, -8589934592, -2147500032, 14464, 14272], 2596, 16, 2610),
+        ("piv-x25n-m96", [14400, 1984, -8589934592, -2147508224, 14464, 14272], 2596, 16, 2610),
+        ("piv-x25n-m128", [14400, 1984, -8589934592, -2147516416, 14464, 14272], 2596, 16, 2610),
+        ("piv-x25n-m160", [14400, 1984, -8589934592, -2147524608, 14464, 14272], 2596, 16, 2610),
+        ("piv-x25n-m224", [14400, 1984, -8589934592, -2147540992, 14464, 14272], 2596, 16, 2610),
+        ("piv-x25n-m288", [14400, 1984, -8589934592, -2147557376, 14464, 14272], 2596, 16, 2610),
+        ("piv-x25n-m416", [14400, 1984, -8589934592, -2147590144, 14464, 14272], 2596, 16, 2610),
+        ("piv-x25n-m544", [14400, 1984, -8589934592, -2147622912, 14464, 14272], 2596, 16, 2610),
+    ];
+
+    #[test]
+    fn far_vertices_keep_the_exact_triangle_outside_the_band_and_the_band_stays_open() {
+        for (name, v, drawn, band, hw) in E1005_ROWS {
+            let t = FarTri { v: [(v[0], v[1]), (v[2], v[3]), (v[4], v[5])] };
+            let img = far_coverage_image(64, 64, &t).unwrap();
+            let det = img.iter().filter(|p| **p == Some(true)).count();
+            let und = img.iter().filter(|p| p.is_none()).count();
+            assert_eq!((det, und), (drawn, band), "{name}");
+            // E1005: H-EXACT-BAND 36 of 36 (every determined pixel as drawn)
+            assert!(det <= hw && hw <= det + und, "{name}");
+        }
+        // the band is no fixed rule: far-x24p draws its band pixels down to d = -288 and not from
+        // -416 (D in (339, 467) px), while far-x23p and far-x25n draw theirs at every d to -544
+        // (D above 586): neither "the band drawn" nor "the band empty" holds, nor one D (Q261)
+        let hw = |n: &str| E1005_ROWS.iter().find(|r| r.0 == n).unwrap().4;
+        assert_eq!((hw("piv-x24p-m288"), hw("piv-x24p-m416")), (2432, 2422));
+        assert_eq!((hw("piv-x23p-m544"), hw("piv-x25n-m544")), (312, 2610));
     }
 
     #[test]

@@ -12,8 +12,9 @@
 //! (`xfer::uv`), here off the target's rectangle too.
 //!
 //! Refused (Q066, E973): word 1 other than one or four attribute rows (0 rows gives other
-//! texels), words 9 and 13 other than 0, 1.0 or 0xffffffff, words 11, 12 and 14 other than 0 or
-//! 1.0 (0xffffffff changes the picture: open), the format word outside the seven values E973 and
+//! texels), words 9 and 13 other than 0, 1.0, 2.0, -1.0 or 0xffffffff, words 11, 12 and 14
+//! other than 0, 1.0, 0.25, 0.5, 1.5 or -1.0 (E1006: every finite value run changes nothing;
+//! 0xffffffff changes the picture: open), the format word outside the seven values E973 and
 //! E069 ran without a change (0xffffffff gives texel (0, 0) everywhere: open), a coordinate that is
 //! not finite, a triangle with no area (Q200, the iterators' arithmetic).
 
@@ -28,6 +29,11 @@ pub const WORDS: usize = 23;
 /// Word 10 values measured to change nothing (E069 on a copy; E973 on a render).
 pub const FORMAT_SAME: [u32; 7] = [0, 0x202, 0x404, 0x101, 0xffff, 0x1_0000, 0x8000_0000];
 const ONE: u32 = 0x3f80_0000;
+/// Words 9 and 13 values measured to change nothing (E973: 0, 1.0, 0xffffffff; E1006: 2.0, -1.0).
+pub const W9_13_SAME: [u32; 5] = [0, ONE, 0xffff_ffff, 0x4000_0000, 0xbf80_0000];
+/// Words 11, 12 and 14 values measured to change nothing (E973: 0, 1.0; E1006: 0.25, 0.5, 1.5,
+/// -1.0); 0xffffffff changes the picture (E973).
+pub const W11_14_SAME: [u32; 6] = [0, ONE, 0x3e80_0000, 0x3f00_0000, 0x3fc0_0000, 0xbf80_0000];
 
 fn open(why: impl AsRef<str>, ids: &[&str]) -> Outcome {
     Outcome::unsupported(why.as_ref(), ids)
@@ -42,11 +48,14 @@ pub fn check(bg: &[u32]) -> R<()> {
         return Err(open(format!("background word 1 is {:#x}: only one or four rows ran", bg[1]), &["Q066"]));
     }
     let any = |w: usize, ok: &[u32]| ok.contains(&bg[w]);
-    if !any(9, &[0, ONE, 0xffff_ffff]) || !any(13, &[0, ONE, 0xffff_ffff]) {
+    if !any(9, &W9_13_SAME) || !any(13, &W9_13_SAME) {
         return Err(open("background words 9 or 13 at a value no record ran", &["Q066"]));
     }
-    if [11, 12, 14].iter().any(|&w| !any(w, &[0, ONE])) {
-        return Err(open("background words 11, 12 or 14 not 0 or 1.0 change the picture (E973)", &["Q066"]));
+    if [11, 12, 14].iter().any(|&w| !any(w, &W11_14_SAME)) {
+        return Err(open(
+            "background words 11, 12 or 14 at a value no record ran (E973, E1006; 0xffffffff changes the picture)",
+            &["Q066"],
+        ));
     }
     if !FORMAT_SAME.contains(&bg[10]) {
         return Err(open(
@@ -168,6 +177,29 @@ mod tests {
             let mut o = identity();
             o[w] = v;
             assert_eq!(at(&o, 7, 9), Ok(texel(7, 9)), "word {w}");
+        }
+    }
+
+    #[test]
+    fn the_finite_values_e1006_ran_in_words_9_and_11_to_14_change_nothing() {
+        // r10-geo bgw: 0.25, 0.5, 1.5 and -1.0 in words 11, 12, 14, 2.0 and -1.0 in 9 and 13,
+        // every background pixel its own texel (H-INERT 16 of 16; a factor, H-SCALE0, 0 of 12)
+        let (q, h, f, m, two) = (0x3e80_0000, 0x3f00_0000, 0x3fc0_0000, 0xbf80_0000, 0x4000_0000);
+        for (w, v) in [(11, q), (11, h), (11, f), (11, m), (12, q), (12, h), (12, f), (12, m)]
+            .into_iter()
+            .chain([(14, q), (14, h), (14, f), (14, m), (9, two), (9, m), (13, two), (13, m)])
+        {
+            let mut o = identity();
+            o[w] = v;
+            for (x, y) in [(1, 1), (7, 9), (40, 60), (63, 63)] {
+                assert_eq!(at(&o, x, y), Ok(texel(x, y)), "word {w} = {v:#x}");
+            }
+        }
+        // values no record ran stay refused: 2.0 in word 12, 0.25 in word 9
+        for (w, v) in [(12, two), (9, q), (11, 0x4120_0000)] {
+            let mut o = identity();
+            o[w] = v;
+            assert!(format!("{:?}", at(&o, 1, 1).unwrap_err()).contains("Q066"), "word {w} = {v:#x}");
         }
     }
 }

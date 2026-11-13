@@ -10,7 +10,10 @@
 //! words, Q066) is counted refused, never a pass. The vectors tables of `vectors/closing/r9-k1/
 //! pixels/` name `the_layer_model_replays_every_modelled_row_of_r9_k1` once every modelled row
 //! matched; their layerless controls (c-off, c-off2) are E590's image, held by its hash, not by
-//! this model. Skips without the data, and fails with `RESGX545_REQUIRE_DATA` set.
+//! this model. The r10-geo bgw rows (render/closing-r10-geo, E1006: finite values in words 9 and
+//! 11 to 14) replay the same way, the tables of `vectors/closing/r10-geo/pixels/bgw` naming
+//! `the_layer_model_replays_every_modelled_row_of_r10_geo`. Skips without the data, and fails with
+//! `RESGX545_REQUIRE_DATA` set.
 
 use sgx_pipe::bglayer;
 use sgx_pipe::data::Ctx;
@@ -18,6 +21,7 @@ use sgx_pipe::gz::gunzip;
 
 const SESSION: &str = "render/closing-r9-k1/out/20261113-083450";
 const STAGES: &[&str] = &["s0t", "s1", "s2", "s3", "s4"];
+const R10: &str = "render/closing-r10-geo/out/20261113-103256";
 const OBJ: usize = 0x46_3000;
 const TRI: u32 = 0xff00_ff00;
 const STATE: [u32; 4] =
@@ -33,10 +37,10 @@ fn near_edge(t: f32) -> bool {
 }
 
 /// (matched rows, refused rows, mismatches as text, pixels compared)
-fn replay(root: &std::path::Path) -> (usize, Vec<String>, Vec<String>, u64) {
+fn replay(root: &std::path::Path, session: &str, stages: &[&str]) -> (usize, Vec<String>, Vec<String>, u64) {
     let (mut matched, mut refused, mut bad, mut pixels) = (0, vec![], vec![], 0u64);
-    for st in STAGES {
-        let dir = root.join(SESSION).join(st);
+    for st in stages {
+        let dir = root.join(session).join(st);
         let cases = std::fs::read_to_string(dir.join("cases.tsv")).unwrap();
         for line in cases.lines().skip(1) {
             let f: Vec<&str> = line.split('\t').collect();
@@ -98,11 +102,27 @@ fn the_layer_model_replays_every_modelled_row_of_r9_k1() {
         eprintln!("SKIPPED: no {SESSION}");
         return;
     };
-    let (matched, refused, bad, pixels) = replay(root);
+    let (matched, refused, bad, pixels) = replay(root, SESSION, STAGES);
     assert!(bad.is_empty(), "{bad:#?}");
     // c-tex, c-noop, c-tex2, s1's 44, s2's 20 and s3's 16 unchanged rows; E973's five refused
     assert_eq!(matched, 83, "refused: {refused:#?}");
     assert_eq!(refused.len(), 5, "{refused:#?}");
     assert!(refused.iter().all(|r| r.contains("Q066")));
     assert!(pixels > 200_000, "{pixels} pixels compared");
+}
+
+#[test]
+fn the_layer_model_replays_every_modelled_row_of_r10_geo() {
+    let ctx = Ctx::from_env();
+    let Some(root) = ctx.root.as_ref().filter(|r| r.join(R10).is_dir()) else {
+        assert!(std::env::var_os("RESGX545_REQUIRE_DATA").is_none(), "no {R10}");
+        eprintln!("SKIPPED: no {R10}");
+        return;
+    };
+    let (matched, refused, bad, pixels) = replay(root, R10, &["bgw"]);
+    assert!(bad.is_empty(), "{bad:#?}");
+    // the two controls and the 16 poked rows (E1006: H-INERT 16 of 16)
+    assert_eq!(matched, 18, "refused: {refused:#?}");
+    assert!(refused.is_empty(), "{refused:#?}");
+    assert!(pixels > 50_000, "{pixels} pixels compared");
 }
