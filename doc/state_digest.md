@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-156 open: 146 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+155 open: 145 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -22,7 +22,7 @@ list.
 - `Q191` dpm, high: what are the words that land in a kept owner's control page (0x00200047), OTPM
   page (0x04000417) and state page (0x00020001, 2) after the ... (E462, E591, E631)
 - `Q210` dpm, high: why does band 6's margin end at the page count once the object after the
-  straddling block (b_6 + 1) is tiled (E960, E961: held out at four ... (E961, E962, E963)
+  straddling block (b_6 + 1) is tiled (E960, E961: held out at four ... (E962, E963, E1009)
 - `Q211` dpm, high: does E874's replay give the need of wide scenes of other vertex counts than 1500
   (E630's 300 to 900; at 1500 it gave the need of four ... (E960, E962, E963)
 - `Q066` isp, high: what do the three background-object words the 3D kick writes mean to the ISP,
@@ -36,7 +36,7 @@ list.
 - `Q202` isp, high: do the attribute and depth planes of E606 hold with perspective (w other than
   1), which arithmetic forms the window x / w (an exact divide, ... (E979, E990, E992)
 - `Q260` isp, high: the tie of a negative window coordinate 1/512 above the 1/256 grid rounds away
-  from zero wherever the aimed pixel is clear of E914's band ... (E914, E943, E952)
+  from zero wherever the aimed pixel is clear of E914's band ... (E943, E952, E984)
 - `Q023` pds, high: how many output dwords does a pixel task get per setup, and what do the data
   rows limit (E406) (E742, E759, E880)
 - `Q276` pds, high: in E709's command (state block word 4 at 0x00030001), why is the o3 word in the
@@ -59,20 +59,18 @@ list.
   partial-render owner left (18 non-zero dwords after its ... (E464, E591, E631)
 - `Q082` edm, medium: what does CR_EVENT_STATUS2 bit 6 follow in a pixel task (a fill without a
   load: a tile's time near 125 us, E805; a program that waits on a ... (E839, E840, E841)
-- `Q030` isp, medium: which source pixel does each stored pixel hold in CR_ISP_MSAA mode 0 with
-  CR_TE_AA bits 31 or 30 set (its window, never read as an identity ... (E953, E954, E990)
 - `Q031` isp, medium: why does ISP word 0 bit 28 hang a multisampled render, when single-sampled it
   widens coverage to the union of eight samples? (E215, E278, E416)
 - `Q032` isp, medium: what does pcoeff hand the ISP in the punch-through pass, when the kept pixels'
   depth is the same without it and moves between runs only ... (E217, E416)
 - `Q071` isp, medium: what do the bits of the ZLS control word that change nothing seen (12, 15, 16,
-  20 to 23, 27 to 31) do, alone and set together, what does ... (E467, E665, E989)
+  20 to 23, 27 to 31) do, alone and set together, what does ... (E665, E989, E997)
 - `Q073` isp, medium: what does o0 hold at the start of an opaque pass's pixel shader? (E417, E739,
   E757)
 - `Q240` isp, medium: does the coverage rule of E606 (vertices on the 1/256 pixel grid, exact centre
   test, left and top edges owning ties) hold for random ... (E682, E912, E913)
 - `Q261` isp, medium: how large is the error band of the ISP's edge evaluation (E684: 16 pixels in
-  14 of 208 cases within 5.6e-4 pixel of an edge line) as a ... (E682, E684, E979)
+  14 of 208 cases within 5.6e-4 pixel of an edge line) as a ... (E684, E979, E984)
 - `Q262` isp, medium: what bounds the error of the stored depth and of the iterated clip z on E680's
   targets, where E606's tolerances fail for some triangles of ... (E684, E912, E913)
 - `Q288` isp, medium: what rule gives the stored depth of a plane with a non-dyadic gradient in x
@@ -88,7 +86,7 @@ list.
 - `Q040` pbe, medium: what do EMIT2 bits 15:8 count, given that 4v pixels of each tile are stored
   for an even v up to 0x80, odd values hang and values above 0x80 ... (E266, E267, E382)
 - `Q046` pbe, medium: do SIDEBAND bits 8:6 select a channel in pack modes 20 and 27 (they do in
-  modes 7 and 8 and are ignored in 15, 18, 24, 25 and 28, E383), ... (E210, E269, E383)
+  modes 7 and 8 and are ignored in 15, 18, 24, 25 and 28, E383), ... (E269, E383, E999)
 - `Q074` pbe, medium: why does a second end-of-tile emit in a tile leave the next job's image wrong,
   and does SIDEBAND bit 9 mark an emit that counts against a ... (E239, E240, E386)
 - `Q019` pds, medium: what does the secondary attribute size (bits 24:18 of dword 1 of the
@@ -183,7 +181,7 @@ list.
 - `Q107` zls, medium: why does the final render of a job that overflows store zeros for the first
   row of macrotiles and the depth with its sign bit set for the ... (E489, E628, E629)
 - `Q120` zls, medium: what do the stored depth formats 3 to 7 (CR_ISP_ZLSCTL bits 26:24) hold and
-  how are they laid out, given that they store depth and stencil ... (E490, E978, E986)
+  how are they laid out, given that they store depth and stencil ... (E978, E985, E986)
 - `Q109` bif, low: do page directory entries whose page-size field (bits 3:1) names 16 KiB to 4 MiB
   translate on the hardware, and with which address mask and ... (E021, E151)
 - `Q110` bif, low: what do the bus interface's tiled address ranges (BIF_TILE0 and up: start, end,
@@ -211,7 +209,7 @@ list.
 - `Q201` isp, low: why does the position source (E437, E502: x + 0.375, y + 0.125 in mode 0 and
   every multisampling mode tried) differ from the point at which ... (E437, E502, E606)
 - `Q241` isp, low: what do ISP word 0 bits 15, 16, 17 and 18, the depth compares 2, 3, 5 and 6
-  against equal depths, the visibility test (ISP word 1 bit 3), ... (E660, E739, E757)
+  against equal depths, the visibility test (ISP word 1 bit 3), ... (E757, E995, E998)
 - `Q044` pbe, low: what do bits 11:0 of CR_REG_0400 (0x80 as built) do, when no value of them
   changes a stored pixel in pack modes 0 to 3, and does bit 25 act ... (E251, E268, E385)
 - `Q013` pds, low: what does bit 18 of the copy's pixel-event data word 2 do, when it leaves the
@@ -254,8 +252,8 @@ list.
   one, how are its slices laid out, and how do the third ... (E342, E567)
 - `Q115` texture, low: does the sampler filter anisotropically on this core, and which bits of the
   texture words or the smp operands select it and its ratio? (E564, E720, E723)
-- `Q177` texture, low: what sets the offset that T0 address modes 4 to 7 add on the u axis (the v
-  rule's texel moved by 116, 180 and 308 dwords at 8 x 8, 16 x 16 ... (E565, E932, E957)
+- `Q177` texture, low: does the offset that T0 address modes 4 to 7 add on the u axis (the v rule's
+  texel moved by 116, 180 and 308 dwords at 8 x 8, 16 x 16 and ... (E932, E957, E983)
 - `Q179` texture, low: how are the blocks and the data bits of formats 23 to 26 laid out (a data bit
   changes 7 to 13 pixels, the blocks of 23 and 24 do not differ ... (E342, E568, E724)
 - `Q181` texture, low: does the fill's transfer command load a colour-space set at all (xfer:17^=1
@@ -263,7 +261,7 @@ list.
 - `Q280` texture, low: what makes up to 56 of 2048 pixels of a gradient job differ from the
   Euclidean footprint of the pairs (op0, op2) and (op1, op3) with a LOD ... (E563, E721, E744)
 - `Q282` texture, low: what arithmetic gives the bilinear sample of an sRGB texel (T0 bit 27) given
-  that decode-then-filter in float fits 43% to 56% of the pixels ... (E720, E723, E976)
+  that decode-then-filter in float fits 43% to 56% of the pixels ... (E723, E976, E982)
 - `Q017` usse, low: why does g19 read 0x1a as a store's source but 0 through a mov and as the pixel?
   (E085, E086, E372)
 - `Q048` usse, low: do the MADD0 and MADD1 clock gates follow the USSE pipes' floating-point
@@ -301,9 +299,9 @@ list.
 - `Q101` zls, low: what does bit 19 (the negated float) do with the integer stored formats
   (CR_ISP_ZLSCTL bits 26:24 = 1 and 2)? (E490, E981, E987)
 - `Q242` zls, low: which pixel's value does a dword shared by two overlapping tiles hold, what do
-  the integer formats store past the target at an odd width or ... (E663, E977, E991)
+  the integer formats store past the target at an odd width or ... (E977, E991, E996)
 - `Q243` zls, low: what does the ZLS load do with an integer stored format (bits 26:24 = 1 or 2), at
-  an address other than the one the store writes, and when ... (E628, E664, E977)
+  an address other than the one the store writes, and when ... (E664, E977, E995)
 - `Q004` transfer, fw (parked): can a transfer context whose flag bit 4 is set be released, which
   agent but the host sets flag bits 1 and 4, and which priorities above 0 ... (E015, E455)
 - `Q029` render, fw (parked): what does the render context's own cleanup wait for once its RT data
@@ -327,9 +325,30 @@ list.
 
 ## Recent records
 
-126 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+137 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1010` isp, 2026-11-13: r10-x stage win0 (14 jobs, E502's identity maps: E437's primary PDS
+  program iterating the position, a shader writing pa0 or pa1, --tri-full): in CR_ISP_MSAA mode 0
+  with CR_TE_AA 0x60000000, ...
+- `E1009` dpm, 2026-11-13: r10-dpm stage s6rep on module B60AB0B4 (Q210: is E874's step replay low
+  at S6 by noise or by bias; 3 calibration replicates at each of five targets, 17 jobs): the a0
+  premise pair passed ('s6rep: the ...
+- `E999` pbe, 2026-11-13: r10-x stage sb (18 jobs, E383's 64 x 64 triangle with eot_plain and two
+  colours whose bytes all differ): pack modes 20 and 27 store, at sideband bits 8:6 = 0 to 3 and for
+  both colours, the image ...
+- `E998` isp, 2026-11-13: r10-x stage isp0x (6 jobs, E977's z242-c ramp at 80 x 40 under depth less
+  with writes): ISP word 0 bit 15, 16 or 17 set alone removes the triangle: no pixel drawn (0 of
+  3200, the background colour ...
+- `E997` zls, 2026-11-13: r10-x stage zbits (11 jobs, E977's z242-c ramp at 80 x 40 G 2 and its
+  z243-ctl load): ZLS control bit 0 stores the depth exactly as without it and writes no colour
+  pixel under formats 0, 1 and 2 at G ...
+- `E996` zls, 2026-11-13: r10-x stage zov (11 jobs): with the ZLS pitch G below the tiles across
+  minus one, so that tiles share 512-dword slots, every shared slot holds the 512 dwords of the tile
+  visited last in the region ...
+- `E995` isp, 2026-11-13: r10-x stage dcmp (31 jobs, 64 x 32, a flat triangle over a loaded depth
+  buffer, the drawn count of 2048): ISP word 0's compares 0 to 7 follow the GL order never, less,
+  equal, lequal, greater, ...
 - `E992` isp, 2026-11-13: Round 10 offline (Q202, the perspective clause; no run): on r6-pixel's 114
   kept jobs with w other than 1 (stages g6-rwa 8 and g6-rw 106, E859; 64 x 64, w from 2.5e-4 to
   8027, 58 distinct snapped ...
@@ -351,6 +370,18 @@ the claims are cut at 200 characters.
 - `E986` zls, 2026-11-13: r10-zls stage zst2 (26 jobs, the stencil loaded and stored): E985's
   layouts held out byte for byte on 13 of 16 rows, formats 3 and 4 on every plane (E978's x ramp
   with stencil fills 0x00000000, ...
+- `E985` zls, 2026-11-13: Round 10 offline (Q120, Q121; no run): E978's kept dumps (a loaded index
+  stencil, one x depth ramp, 64 x 32 and 96 x 48) decode for stored depth formats 3, 4, 5 and 6,
+  every changed dword at both ...
+- `E984` isp, 2026-11-13: Round 10 offline (Q261, post hoc on E979's kept rows; no run): of the 46
+  pixels of E979's 11 rows whose centre lies within 1e-3 pixel of an edge line (E684's band), the 26
+  that lie on a far edge ...
+- `E983` texture, 2026-11-13: Round 10 offline (Q177; no run): on E565's kept 32 x 8 twiddled jobs
+  bd-hb-ns-uv4, uv6 and uv7 (u and v in mode 4, 6, 7), never read for the offset, every pixel reads
+  the dword the v rule names plus ...
+- `E982` texture, 2026-11-13: Round 10 offline (Q282; no run): one lerp stage of a bilinear sRGB
+  sample (T0 bit 27) on two decoded halves A (weight 64 - k) and B (weight k) returns A unchanged at
+  k = 0 and otherwise floors both ...
 - `E981` zls, 2026-11-13: r9-z2 stage z2 (10 jobs, 256 x 128, G 7): with the viewport's z offset
   (state-block word 10) at -0.25, so a modelled depth of -0.75 to -0.25, format 0 stored 0.0 at
   every dword and formats 1 and 2 ...
@@ -711,7 +742,7 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-44 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+46 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
 - `render/closing-r9-z2`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t9
@@ -729,7 +760,9 @@ srcversion, fork tip, laptop tools.
 - `render/closing-r8-geo`: 2026-11-13; module 37EC97AB0CB37213C42FCCC; tools ~/sgxfive-test-rgn4
 - `render/closing-r10-zls`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4,
   ~/sgxfive-test-t9
+- `render/closing-r10-x`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
 - `render/closing-r10-st1`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
+- `render/closing-r10-dpm`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
 - `render/closing-r7-rp`: 2026-11-12; module 41E2F5C756F96D20F7109A4; tools ~/sgxfive-test-rgn4
 - `render/closing-r7-geo`: 2026-11-12; module 41E2F5C756F96D20F7109A4; tools ~/sgxfive-test-rgn4
 - `render/closing-r7-faults`: 2026-11-12; module 41E2F5C756F96D20F7109A4; fork r6-kernel at
@@ -780,7 +813,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 10 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 12 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at

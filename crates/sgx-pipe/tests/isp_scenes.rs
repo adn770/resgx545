@@ -111,15 +111,13 @@ fn poke_isp(word: usize, v: u32) -> Scene {
 
 #[test]
 fn isp_words_no_record_settles_are_refused_by_question() {
-    for (w0, q) in [
-        (0x01d0_0300u32, "Q071"),
-        (0x01d0_0200 | 1 << 28, "Q202"),
-        (0x01d0_0200 | 1 << 17, "Q241"),
-        (2 << 22 | 0x0010_0200, "Q241"),
-    ] {
+    for (w0, q) in
+        [(0x01d0_0300u32, "Q071"), (0x01d0_0200 | 1 << 28, "Q202"), (0x01d0_0200 | 1 << 17, "Q241")]
+    {
         assert_eq!(refusal_ids(&poke_isp(1, w0)), [q], "{w0:#x}");
     }
     assert_eq!(refusal_ids(&poke_isp(2, 0x10f8)), ["Q241"], "a visibility test");
+    // compare 2 (equal) decodes since E995 held the GL order on equal depths
 }
 
 #[test]

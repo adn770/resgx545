@@ -425,7 +425,8 @@ fn replay_1500(w: u32, h: u32) -> (BTreeMap<u32, u32>, Vec<u32>) {
 /// coordinate pairs written by the vertex program the scene needs more than the clamp and its
 /// steps vary by up to 2 pages between runs (E937). r9-ldpm held them at 2304x2304, 2304x1792 and
 /// 1792x1792 (E961) and 1280x1280 and 2560x2048 (E963); 2048x2304 (S3 and S6 one above, E961) and
-/// the four wide targets of E962 (S6 one or two above, the needs the replay's) are not.
+/// the four wide targets of E962 (S6 one or two above, the needs the replay's) are not: E1009's
+/// replicates read S6's sampled bracket from the replay plus 1 at all five, a bias, not noise.
 const STEP_TARGETS: &[(u32, u32)] = &[
     (2048, 2048),
     (3072, 3072),
@@ -1185,6 +1186,34 @@ mod tests {
         for (w, h) in [(2048, 2304), (4096, 1024), (4096, 1536), (3584, 1024), (2048, 512)] {
             assert_eq!(tool_triangle_steps(w, h), None, "{w}x{h}");
         }
+    }
+
+    #[test]
+    fn the_replay_is_below_s6_at_the_five_biased_targets_e1009() {
+        // E1009 [HW, replicated]: three calibrations at each target (r10-dpm, 15 jobs): the sampled
+        // bracket of S6 (the page counts a and b either side of the global page step, S6 in
+        // [a, max(a, b - 1)]) has its lower end at the replay plus 1 in every one, the upper end
+        // (E962's reading) the replay plus 1 or 2 but for one stalled sample interval (0x245); H-NOISE,
+        // the replay inside the replicates' range, held at 0 of 5 targets
+        let kept: &[(u32, u32, u32, &[(u32, u32)])] = &[
+            (4096, 1024, 0x17c, &[(0x17d, 0x17d), (0x17d, 0x17e), (0x17d, 0x17e)]),
+            (4096, 1536, 0x229, &[(0x22a, 0x22a), (0x22a, 0x245), (0x22a, 0x22b)]),
+            (3584, 1024, 0x14d, &[(0x14e, 0x14e), (0x14e, 0x14f), (0x14e, 0x14e)]),
+            (2048, 512, 0x6e, &[(0x6f, 0x6f), (0x6f, 0x6f), (0x6f, 0x6f)]),
+            (2048, 2304, 0x1ac, &[(0x1ad, 0x1ad), (0x1ad, 0x1ad), (0x1ad, 0x1ad)]),
+        ];
+        for &(w, h, r, brackets) in kept {
+            let (steps, _) = tool_triangle_replay(w, h);
+            assert_eq!(steps[&6], r, "{w}x{h}: the replay's S6");
+            for &(lo, hi) in brackets {
+                assert_eq!(lo, r + 1, "{w}x{h}: the bracket's lower end");
+                assert!(hi >= lo && !(lo..=hi).contains(&r), "{w}x{h}: the replay is below the bracket");
+            }
+            // refused as a step list: S6 is not the replay's
+            assert_eq!(tool_triangle_steps(w, h), None, "{w}x{h}");
+        }
+        // the control: the replay's S6 at the premise target, read exact (0x181)
+        assert_eq!(tool_triangle_replay(2048, 2048).0[&6], 0x181);
     }
 
     #[test]

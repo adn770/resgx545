@@ -53,6 +53,12 @@ pub fn pack_of(sideband: u32) -> Result<Pack, Outcome> {
         2 => Ok(Pack::Bgra8888),
         3 => Ok(Pack::Rgb565),
         22 | 34 => Err(Outcome::unsupported("pack modes 22 and 34 read o0 as a float", &["Q012"])),
+        // modes 15, 18, 20, 27 and 28 store the colour's low 16 bits whatever bits 8:6 hold (E383,
+        // E999), two pixels a dword: the packing is not modelled
+        15 | 18 | 20 | 27 | 28 => Err(Outcome::unsupported(
+            &format!("pack mode {} (the low 16 bits, E383, E999) is not modelled", sideband & 0x3f),
+            &["Q044"],
+        )),
         m => Err(Outcome::unsupported(&format!("pack mode {m} is not modelled"), &["Q044"])),
     }
 }
@@ -224,6 +230,10 @@ mod tests {
         assert_eq!(ids(0x216), ["Q012"]);
         assert_eq!(ids(0x222), ["Q012"]);
         assert_eq!(ids(0x204), ["Q044"]);
+        // the low-16-bit modes refuse at every value of bits 8:6 (E999: 20 and 27 ignore them)
+        for m in [15u32, 18, 20, 27, 28] {
+            assert_eq!(ids(0x200 | 3 << 6 | m), ["Q044"], "mode {m}");
+        }
         assert_eq!(ids(0x003), ["Q074"]);
         assert_eq!(ids(0x600), ["Q046"]);
         // bits 8:6 change no pixel in modes 0 to 3 (E030, E383)

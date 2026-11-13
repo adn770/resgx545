@@ -46,3 +46,9 @@ finite value].
 **What it does not show.** Values past the target in edge tiles for the integer formats were not
 scored; the loads ran at one size and one address (the moved base of Q243 stays); a loaded NaN under
 equal and the other compare modes did not run.
+
+Correction 2026-11-13 (E995): the [infer] of "What it shows", "an unsigned compare of the bit
+patterns", holds for this record's loads only, which were all non-negative. E995 ran negative
+loaded depths (-0.25, -0.75, -0.0) and NaN under every compare: the raw unsigned compare failed 4 of
+14 held out rows, and a compare of the loaded dword with its sign bit cleared (as an unsigned or a
+non-negative value, NaN above every finite value) held 14 of 14. The claim is unchanged.
