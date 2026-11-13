@@ -128,7 +128,8 @@ renders; the VDM stream, the MTE state and the TA's output (objects, region head
 streams); the ISP words, depth, stencil, ZLS, multisampling, sample positions and punch-through; the
 pixel-event program and iteration. Evidence: 85 records, E149 to E245 (RE for the firmware's paths,
 HW for the state words, with `pbdump.py`, `pixels.py`, `region_tiles.py` and `vtx_tasks.py` to read
-what the hardware wrote); questions Q030 to Q039.
+what the hardware wrote); questions from the sample-layout one
+(answered by E1010 on 2026-11-13) to Q039.
 
 Sub-phase 10.1 carries the names and layouts these records established into the tools. In
 `harness/ukernel-extract`, `edmtrace.py` takes its structure names and pointer fields from
@@ -505,9 +506,9 @@ setting stores 1024 distinct pixels of a 64 x 64 target, and no single bit of th
 sideband resolves (E504, E508, E510). At two macrotile columns the second boundary of the macrotile
 words decides, at four B1, B2 and B3 are all read, the stride must be the rule's, and none of the
 declared readings PA, PB and PC fits both (E505, E506, E509); the closed driver's 64 x 64 words draw
-exactly at 96 x 48 and 128 x 64 and fault at 128 x 128 and larger (E511). Records E502-E511; Q030,
-Q086, Q089 and Q100 are narrowed, none retired; Q089 to Q142 are new, one for the kernel's 4x faults
-(since folded into Q003).
+exactly at 96 x 48 and 128 x 64 and fault at 128 x 128 and larger (E511). Records E502-E511; the
+sample-layout question (answered by E1010 on 2026-11-13), Q086, Q089 and Q100 are narrowed, none
+retired; Q089 to Q142 are new, one for the kernel's 4x faults (since folded into Q003).
 
 Sub-phase 11.27 ran 32 probe tables on the laptop (2027 cases, one campaign run of each, no probe.py
 run first) with the sgxfive-test of 11.26 and the 11.19 linux fork, no kernel change, for the open

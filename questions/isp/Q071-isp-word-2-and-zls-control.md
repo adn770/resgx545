@@ -5,7 +5,8 @@ unit = "isp"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E057", "E169", "E216", "E228", "E284", "E337", "E411", "E465", "E466", "E467", "E665"]
+evidence = ["E057", "E169", "E216", "E228", "E284", "E337", "E411", "E465", "E466", "E467", "E665",
+            "E997"]
 terms = ["CR_ISP_ZLSCTL", "CR_ISP_BGOBJVALS.STENCIL", "ISP2"]
 +++
 
@@ -44,3 +45,10 @@ the depth and stencil store are different things. Bit 0 with any other control w
 refuses. To settle it, besides the runs above: the control with several of these bits set
 together, and bit 0 with other controls (the formats, the load bits, another pitch), with the
 depth and stencil dumps kept and the image counted.
+
+Narrowed 2026-11-13 (r10-x, E997). Bit 0 stores the depth as without it and writes no colour pixel
+under formats 0, 1 and 2 at G 2 and with the depth load (4 of 4 held out). Bits 15, 21 to 23 and 27
+to 31 set together change nothing; bits 12, 16 and 20 cleared together keep the values and counts
+but store a linear image of the tile area, rows of 32 (G + 1) dwords (post hoc, 4608 of 4608 by the
+x each value names). Open: which of bits 12, 16 and 20 selects the linear layout and its rows' y,
+what the load reads under it, and the stencil test against a loaded stencil (Q121's stage).

@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-157 open: 147 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+156 open: 146 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -59,14 +59,12 @@ list.
   partial-render owner left (18 non-zero dwords after its ... (E464, E591, E631)
 - `Q082` edm, medium: what does CR_EVENT_STATUS2 bit 6 follow in a pixel task (a fill without a
   load: a tile's time near 125 us, E805; a program that waits on a ... (E839, E840, E841)
-- `Q030` isp, medium: which source pixel does each stored pixel hold in CR_ISP_MSAA mode 0 with
-  CR_TE_AA bits 31 or 30 set (its window, never read as an identity ... (E953, E954, E990)
 - `Q031` isp, medium: why does ISP word 0 bit 28 hang a multisampled render, when single-sampled it
   widens coverage to the union of eight samples? (E215, E278, E416)
 - `Q032` isp, medium: what does pcoeff hand the ISP in the punch-through pass, when the kept pixels'
   depth is the same without it and moves between runs only ... (E217, E416)
 - `Q071` isp, medium: what do the bits of the ZLS control word that change nothing seen (12, 15, 16,
-  20 to 23, 27 to 31) do, alone and set together, what does ... (E466, E467, E665)
+  20 to 23, 27 to 31) do, alone and set together, what does ... (E467, E665, E997)
 - `Q073` isp, medium: what does o0 hold at the start of an opaque pass's pixel shader? (E417, E739,
   E757)
 - `Q240` isp, medium: does the coverage rule of E606 (vertices on the 1/256 pixel grid, exact centre
@@ -88,7 +86,7 @@ list.
 - `Q040` pbe, medium: what do EMIT2 bits 15:8 count, given that 4v pixels of each tile are stored
   for an even v up to 0x80, odd values hang and values above 0x80 ... (E266, E267, E382)
 - `Q046` pbe, medium: do SIDEBAND bits 8:6 select a channel in pack modes 20 and 27 (they do in
-  modes 7 and 8 and are ignored in 15, 18, 24, 25 and 28, E383), ... (E210, E269, E383)
+  modes 7 and 8 and are ignored in 15, 18, 24, 25 and 28, E383), ... (E269, E383, E999)
 - `Q074` pbe, medium: why does a second end-of-tile emit in a tile leave the next job's image wrong,
   and does SIDEBAND bit 9 mark an emit that counts against a ... (E239, E240, E386)
 - `Q019` pds, medium: what does the secondary attribute size (bits 24:18 of dword 1 of the
@@ -213,7 +211,7 @@ list.
 - `Q201` isp, low: why does the position source (E437, E502: x + 0.375, y + 0.125 in mode 0 and
   every multisampling mode tried) differ from the point at which ... (E437, E502, E606)
 - `Q241` isp, low: what do ISP word 0 bits 15, 16, 17 and 18, the depth compares 2, 3, 5 and 6
-  against equal depths, the visibility test (ISP word 1 bit 3), ... (E660, E739, E757)
+  against equal depths, the visibility test (ISP word 1 bit 3), ... (E757, E995, E998)
 - `Q044` pbe, low: what do bits 11:0 of CR_REG_0400 (0x80 as built) do, when no value of them
   changes a stored pixel in pack modes 0 to 3, and does bit 25 act ... (E251, E268, E385)
 - `Q013` pds, low: what does bit 18 of the copy's pixel-event data word 2 do, when it leaves the
@@ -303,9 +301,9 @@ list.
 - `Q101` zls, low: what does bit 19 (the negated float) do with the integer stored formats
   (CR_ISP_ZLSCTL bits 26:24 = 1 and 2)? (E466, E490, E981)
 - `Q242` zls, low: which pixel's value does a dword shared by two overlapping tiles hold, what do
-  the integer formats store past the target at an odd width or ... (E663, E977, E991)
+  the integer formats store past the target at an odd width or ... (E977, E991, E996)
 - `Q243` zls, low: what does the ZLS load do with an integer stored format (bits 26:24 = 1 or 2), at
-  an address other than the one the store writes, and when ... (E628, E664, E977)
+  an address other than the one the store writes, and when ... (E664, E977, E995)
 - `Q004` transfer, fw (parked): can a transfer context whose flag bit 4 is set be released, which
   agent but the host sets flag bits 1 and 4, and which priorities above 0 ... (E015, E455)
 - `Q029` render, fw (parked): what does the render context's own cleanup wait for once its RT data
@@ -329,9 +327,27 @@ list.
 
 ## Recent records
 
-122 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+128 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1010` isp, 2026-11-13: r10-x stage win0 (14 jobs, E502's identity maps: E437's primary PDS
+  program iterating the position, a shader writing pa0 or pa1, --tri-full): in CR_ISP_MSAA mode 0
+  with CR_TE_AA 0x60000000, ...
+- `E999` pbe, 2026-11-13: r10-x stage sb (18 jobs, E383's 64 x 64 triangle with eot_plain and two
+  colours whose bytes all differ): pack modes 20 and 27 store, at sideband bits 8:6 = 0 to 3 and for
+  both colours, the image ...
+- `E998` isp, 2026-11-13: r10-x stage isp0x (6 jobs, E977's z242-c ramp at 80 x 40 under depth less
+  with writes): ISP word 0 bit 15, 16 or 17 set alone removes the triangle: no pixel drawn (0 of
+  3200, the background colour ...
+- `E997` zls, 2026-11-13: r10-x stage zbits (11 jobs, E977's z242-c ramp at 80 x 40 G 2 and its
+  z243-ctl load): ZLS control bit 0 stores the depth exactly as without it and writes no colour
+  pixel under formats 0, 1 and 2 at G ...
+- `E996` zls, 2026-11-13: r10-x stage zov (11 jobs): with the ZLS pitch G below the tiles across
+  minus one, so that tiles share 512-dword slots, every shared slot holds the 512 dwords of the tile
+  visited last in the region ...
+- `E995` isp, 2026-11-13: r10-x stage dcmp (31 jobs, 64 x 32, a flat triangle over a loaded depth
+  buffer, the drawn count of 2048): ISP word 0's compares 0 to 7 follow the GL order never, less,
+  equal, lequal, greater, ...
 - `E992` isp, 2026-11-13: Round 10 offline (Q202, the perspective clause; no run): on r6-pixel's 114
   kept jobs with w other than 1 (stages g6-rwa 8 and g6-rw 106, E859; 64 x 64, w from 2.5e-4 to
   8027, 58 distinct snapped ...
@@ -701,7 +717,7 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-42 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+43 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
 - `render/closing-r9-z2`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t9
@@ -717,6 +733,7 @@ srcversion, fork tip, laptop tools.
 - `render/closing-r8-k2`: 2026-11-13; module B60AB0B475DD1E8972419B5; fork r8-kernel at 2a650d74;
   tools ~/sgxfive-test-rgn4
 - `render/closing-r8-geo`: 2026-11-13; module 37EC97AB0CB37213C42FCCC; tools ~/sgxfive-test-rgn4
+- `render/closing-r10-x`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
 - `render/closing-r7-rp`: 2026-11-12; module 41E2F5C756F96D20F7109A4; tools ~/sgxfive-test-rgn4
 - `render/closing-r7-geo`: 2026-11-12; module 41E2F5C756F96D20F7109A4; tools ~/sgxfive-test-rgn4
 - `render/closing-r7-faults`: 2026-11-12; module 41E2F5C756F96D20F7109A4; fork r6-kernel at
@@ -767,7 +784,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 8 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 9 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at

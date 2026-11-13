@@ -7973,6 +7973,58 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   divide's arithmetic is not split [infer].
   *isp; HW, infer; data: `render-closing-r6-pixel:out/20261112-142113/g6-rwa/`,
   `render-closing-r6-pixel:out/20261112-142113/g6-rw/`, `cited-scratch:closing10/rank/`.*
+- `E995` r10-x stage dcmp (31 jobs, 64 x 32, a flat triangle over a loaded depth buffer, the drawn
+  count of 2048): ISP word 0's compares 0 to 7 follow the GL order never, less, equal, lequal,
+  greater, notequal, gequal, always, exact to the ulp (frozen H-GL held 14 of 14: the eight modes at
+  equal depths 0.5, modes 2, 3, 5, 6 one ulp above and below); a loaded depth is compared with its
+  sign bit cleared, as an unsigned or non-negative value, NaN above every finite value (frozen H-ABS
+  held 14 of 14 over NaN under 2, 3, 5, 6 and loaded -0.25, -0.75 and -0.0 against 0.5 and 0; the
+  unsigned compare of the raw bits failed 4, the IEEE compare 5 and the negative-as-zero rule 5);
+  the three controls (E977's z243-ctl 2048, never 0, always 2048) passed.
+  *isp; HW; data: `render-closing-r10-x:out/20261113-101116/dcmp/`.*
+- `E996` r10-x stage zov (11 jobs): with the ZLS pitch G below the tiles across minus one, so that
+  tiles share 512-dword slots, every shared slot holds the 512 dwords of the tile visited last in
+  the region header order (macrotiles column-major, 4 x 4-region blocks raster inside): frozen
+  H-LATE/HDR held 5 of 5 (64 x 32 G 0, 128 x 32 G 1, 96 x 48 G 1, 160 x 48 G 2, 256 x 64 G 3: 1536,
+  3072, 3584, 5632 and 10240 dwords, every one), and in format 1 at 64 x 32 G 0 by E991's floor rule
+  (1536 of 1536); the rivals each failed where they part from it (H-EARLY/HDR 0 of 5, H-LATE/RASTER
+  3 of 5 and H-EARLY/RASTER 1 of 5 held, the raster rows parting only at 160 x 48 and 256 x 64);
+  every slot is whole (no tile mixes in a slot); the five full-pitch controls stored a distinct
+  float in every dword of the tiles (E831's count).
+  *zls; HW; data: `render-closing-r10-x:out/20261113-101116/zov/`.*
+- `E997` r10-x stage zbits (11 jobs, E977's z242-c ramp at 80 x 40 G 2 and its z243-ctl load): ZLS
+  control bit 0 stores the depth exactly as without it and writes no colour pixel under formats 0, 1
+  and 2 at G 2 and with the depth load (frozen H-E665 held 4 of 4: E977's kept dumps and store line,
+  drawn 0); bits 15, 21 to 23 and 27 to 31 set together change nothing (H-INERT held: dump, drawn
+  and hash equal to E977's), and the load row with all the bits changed nothing seen (H-INERT held
+  on the load buffer and the store line); bits 12, 16 and 20 cleared together keep every value and
+  the counts but move the dwords (H-INERT failed 3 of 3: zb-clr-f0, zb-all-f0, zb-all-f1); post hoc
+  (fold/zbits_layout.py), every dword then holds the pixel of a linear image of the tile area with
+  rows of 32 (G + 1) dwords (4608 of 4608 by the x each value names), not the twiddled tiles; both
+  controls passed.
+  *zls; HW; data: `render-closing-r10-x:out/20261113-101116/zbits/`, `render-closing-r10-x:fold/`.*
+- `E998` r10-x stage isp0x (6 jobs, E977's z242-c ramp at 80 x 40 under depth less with writes): ISP
+  word 0 bit 15, 16 or 17 set alone removes the triangle: no pixel drawn (0 of 3200, the background
+  colour everywhere) and the stored depth is the background's 1.0 in all 4608 dwords of the tiles
+  (frozen H-NULL failed 3 of 3); ISP word 1 bit 3 (the visibility test) and bit 23 (the polygon
+  offset) each leave the image, its hash and the depth dump equal to E977's (H-NULL held 2 of 2);
+  bit 18 was not run (E065's fault); the unpoked control passed.
+  *isp; HW; data: `render-closing-r10-x:out/20261113-101116/isp0x/`.*
+- `E999` r10-x stage sb (18 jobs, E383's 64 x 64 triangle with eot_plain and two colours whose bytes
+  all differ): pack modes 20 and 27 store, at sideband bits 8:6 = 0 to 3 and for both colours, the
+  image E383's mode 15 stores (frozen H-LOW16 held 16 of 16, 4096 of 4096 pixels each), so the field
+  is ignored there; mode 7's field-0 image (alpha and red) is refuted (H-M7 failed the 4 field-0
+  rows, 2048 of 4096 pixels); both E383 mode 8 controls passed (4096 of 4096).
+  *pbe; HW; data: `render-closing-r10-x:out/20261113-101116/sb/`.*
+- `E1010` r10-x stage win0 (14 jobs, E502's identity maps: E437's primary PDS program iterating the
+  position, a shader writing pa0 or pa1, --tri-full): in CR_ISP_MSAA mode 0 with CR_TE_AA
+  0x60000000, 0xa0000000 and 0xe0000000 at 64 x 64 and 128 x 96 every stored pixel holds its own
+  position (x + 0.375, y + 0.125) or, where the landed region model stores nothing, the background
+  (frozen H-IDENT held 12 of 12, 4096 or 12288 pixels each); the window offsets of modes 1 and 2
+  (H-WIN: 16 b31 in x, 8 b30 in y) failed 8 of 12 and the holeless identity failed 8 of 12, each
+  holding only where it ties H-IDENT; both E502 controls (mode 1 TE 0xe0000000, mode 0 TE
+  0x20000000) reproduced E502's kept images (4096 of 4096).
+  *isp; HW; data: `render-closing-r10-x:out/20261113-101116/win0/`.*
 
 ## By unit
 
@@ -8011,7 +8063,7 @@ E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E2
 E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E508, E510, E590,
 E606, E607, E618, E660, E661, E662, E680, E681, E682, E683, E684, E727, E728, E731, E739, E740,
 E741, E757, E758, E762, E825, E827, E829, E912, E913, E914, E922, E934, E943, E952, E953, E954,
-E970, E971, E972, E973, E979, E990, E992.
+E970, E971, E972, E973, E979, E990, E992, E995, E998, E1010.
 
 ### mte
 
@@ -8021,7 +8073,7 @@ E348, E418, E419.
 ### pbe
 
 Records: E029, E030, E031, E032, E239, E240, E251, E265, E266, E267, E268, E269, E270, E333, E382,
-E383, E385, E386, E387, E429.
+E383, E385, E386, E387, E429, E999.
 
 ### pds
 
@@ -8087,4 +8139,4 @@ E413, E414, E427, E440, E545, E546, E700, E701, E702, E703, E737, E738, E755, E7
 ### zls
 
 Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467, E489, E490, E615, E628, E629,
-E663, E664, E665, E730, E831, E885, E903, E904, E977, E978, E981, E991.
+E663, E664, E665, E730, E831, E885, E903, E904, E977, E978, E981, E991, E996, E997.
