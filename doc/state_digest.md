@@ -21,10 +21,10 @@ list.
   macrotile lists a partial render stores in the RT data's state ... (E625, E627, E631)
 - `Q191` dpm, high: what are the words that land in a kept owner's control page (0x00200047), OTPM
   page (0x04000417) and state page (0x00020001, 2) after the ... (E462, E591, E631)
-- `Q210` dpm, high: what keeps the second global page past A_k, the page count once the object block
-  straddling global pages k - 1 and k is tiled, at band 6 of ... (E915, E917, E918)
-- `Q211` dpm, high: does the page need U of HU1 (E773, E863, E883, E916: exact for 26 held-out
-  scenes made of the tool's triangle) hold for wide scenes of many ... (E883, E899, E916)
+- `Q210` dpm, high: what keeps the second global page one to three cells past A_k, the page count
+  once the object block straddling global pages k - 1 and k is ... (E936, E937, E938)
+- `Q211` dpm, high: does the page need U of HU1 (E773, E863, E883, E916, E939: exact for 39 held-out
+  scenes, among them five of several kicks and eight ... (E916, E938, E939)
 - `Q066` isp, high: what do the three background-object words the 3D kick writes mean to the ISP,
   and what are the other words of a render's background object? (E216, E410, E590)
 - `Q089` isp, high: where does the closed driver's 4x multisampled render become a 64x64 image, when
@@ -343,9 +343,24 @@ list.
 
 ## Recent records
 
-73 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+78 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E939` dpm, 2026-11-13: r8-ldpm stages k and u on module 37EC97AB (Q211, the U clause): HU1's page
+  need of the union of a scene's triangles (a region counted once, 128 bytes a stream, a page per 32
+  streams of a macrotile, ...
+- `E938` dpm, 2026-11-13: r8-ldpm stages f9 and k on module 37EC97AB (Q211, the partial-render count
+  of scenes of many objects and of several kicks): held out, F9's replay of the 1500-vertex scene
+  gave the count at 13 of 15 ...
+- `E937` dpm, 2026-11-13: r8-ldpm stage v on module 37EC97AB (Q210, larger objects): the tool's
+  1500-vertex triangle with --vtx-coords 8 and our vertex program vtx_coord8.s writing o4 to o11
+  (plan P3: the default program ...
+- `E936` dpm, 2026-11-13: r8-ldpm stage m6 on module 37EC97AB (Q210; band 6 of the tool's
+  1500-vertex triangle): held out at seven targets, H-SPAN (the first partial render leaves 2 global
+  pages iff S_6 < thr0 < A_6, cells ...
+- `E935` dpm, 2026-11-13: r8-ldpm stages a0 and sp on module 37EC97AB (Q210; the tool's triangle
+  with 1500 vertices): the premise held, R7-dpm's six s-a0 controls repeated on this module ('a0:
+  the premise held (R7's s-a0 ...
 - `E923` texture, 2026-11-13: Round 8 offline (Q284; no run): the (s, t) of TEXTYPE 2's cube faces
   under smp3d is the public cube-map table (+x s = -w, t = -v; -x s = +w, t = -v; +y s = +u, t = +w;
   -y s = +u, t = -w; +z s = +u, t ...
@@ -568,9 +583,10 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-31 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+32 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r8-ldpm`: 2026-11-13; module 37EC97AB0CB37213C42FCCC; tools ~/sgxfive-test-rgn4
 - `render/closing-r7-rp`: 2026-11-12; module 41E2F5C756F96D20F7109A4; tools ~/sgxfive-test-rgn4
 - `render/closing-r7-geo`: 2026-11-12; module 41E2F5C756F96D20F7109A4; tools ~/sgxfive-test-rgn4
 - `render/closing-r7-faults`: 2026-11-12; module 41E2F5C756F96D20F7109A4; fork r6-kernel at
@@ -621,6 +637,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 664fd0d00765
+- module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 1 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at
   3f0b3e74
 - module srcversion 99CD90DA26E3AFF9C450517: last named 2026-11-12, 14 sessions, fork resgx545 at
