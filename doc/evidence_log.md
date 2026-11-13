@@ -7360,6 +7360,18 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *isp; HW, infer; data: `isp-msaa-ident`, `isp-msaa-te-dumps`,
   `texture-isp-msaa-verification-1141`, `cited-scratch:closing8/rank/`,
   `cited-scratch:closing8/offline/r8-1/`.*
+- `E923` Round 8 offline (Q284; no run): the (s, t) of TEXTYPE 2's cube faces under smp3d is the
+  public cube-map table (+x s = -w, t = -v; -x s = +w, t = -v; +y s = +u, t = +w; -y s = +u, t = -w;
+  +z s = +u, t = -v; -z s = -u, t = -v; each over |ma|, texel floor((q + 1) / 2 * 16), the
+  face-local index the Morton interleave with t in bit 0): one rule a face up to the s/t-swap twin
+  of the same index, fitted on E726's eight jobs (16376 of 16384 pixels), frozen by hash
+  (q284_rule.json, 52162471...) and then held out offline on E844's two off-axis jobs, never used
+  for a fit: 2046 and 2044 of 2048; all 14 misses of fit and held out are one texel low at an exact
+  texel boundary with |ma| not a power of two, where 193 such pixels go up, and at the 3043
+  boundaries with |ma| a power of two the upper texel every time [HW]; the tie rule is not found
+  (post hoc).
+  *texture; HW, infer; data: `texture-isp-msaa-verification-1141`,
+  `render-closing-r4-render4x:out/20261111-211315/c/`, `cited-scratch:closing8/rank/`.*
 
 ## By unit
 
@@ -7440,7 +7452,7 @@ E865, E872, E877, E879, E886, E888, E893, E897, E906, E907, E908.
 Records: E033, E034, E035, E036, E037, E038, E039, E040, E041, E042, E114, E116, E242, E254, E271,
 E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441, E560, E561, E562,
 E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E726, E733, E743,
-E744, E760, E765, E787, E844, E894, E910, E911.
+E744, E760, E765, E787, E844, E894, E910, E911, E923.
 
 ### transfer
 

@@ -141,8 +141,8 @@ list.
   store RZ + 1 as a kept vertex's 1/w word (106 of the 189 read ... (E859, E872, E879)
 - `Q180` texture, medium: why did all 28 triangle jobs of the four-component DOUTI0 probes hang
   (E569), the two controls with the old source word 0x40800801 included ... (E420, E541, E569)
-- `Q284` texture, medium: what are the (s, t) orientation of each cube face, the edge filtering
-  across faces and the face size limits of TEXTYPE 2 (E567, E726, E844)
+- `Q284` texture, medium: what does a TEXTYPE 2 cube sample read at an exact texel boundary when
+  |ma| is not a power of two (E923: 14 of 207 such pixels one texel ... (E726, E844, E923)
 - `Q003` transfer, medium: which event (if any) does a bus-interface fault raise, and what do the
   fault-request bits of CR_BIF_INT_STAT name, what clears a latched ... (E901, E919, E920)
 - `Q011` transfer, medium: why does a copy whose background-object tag (transfer word 0) is wrong
@@ -343,9 +343,12 @@ list.
 
 ## Recent records
 
-72 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+73 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E923` texture, 2026-11-13: Round 8 offline (Q284; no run): the (s, t) of TEXTYPE 2's cube faces
+  under smp3d is the public cube-map table (+x s = -w, t = -v; -x s = +w, t = -v; +y s = +u, t = +w;
+  -y s = +u, t = -w; +z s = +u, t ...
 - `E922` isp, 2026-11-13: Round 8 offline (Q141; no run, in sample): the landed region model
   (resgx545-data texture/p1141/recompute/msaa_model.py, sha256 1c0e8205..., E727's freeze,
   unchanged) with its two-halves rule gives ...
@@ -646,4 +649,4 @@ stays with what a session must do around it.
 
 ## Simulator coverage baseline
 
-123 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
+122 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).

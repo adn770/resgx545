@@ -4927,7 +4927,12 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   +x, -x, +y, -y, +z, -z as faces 0 to 5** (each axis direction reads one face over 2048 of 2048
   pixels, E726). **The face is that of the coordinate of largest magnitude, with its sign**: E726's
   post hoc rule held out on two off-axis programs whose dominant axis changes inside the image,
-  2048 of 2048 pixels each, all six faces between them (E844). The faces' (s, t) and edges: Q284.
+  2048 of 2048 pixels each, all six faces between them (E844). **In a face, (s, t) is the public
+  cube-map table** (+x s = -w, t = -v; -x s = +w, t = -v; +y s = +u, t = +w; -y s = +u, t = -w;
+  +z s = +u, t = -v; -z s = -u, t = -v; over |ma|, texel floor((q + 1) / 2 * 16), Morton with t
+  in bit 0), fitted on E726 and held out on E844's jobs at 4090 of 4096 pixels, the misses exact
+  texel boundaries at a |ma| not a power of two (E923). The ties, face edges and other face
+  sizes: Q284.
   Type 5 at 16 x 16 returned no texel: 0 at x mod 16 below 8 and `0x0000ffff` above in every row,
   under `smp2d` and `smp3d` alike, with every texel naming its offset (E894, E567's dumps read post
   hoc). **Type 5 reads the texture memory**: with the texture's first 112 dwords stored 0 the

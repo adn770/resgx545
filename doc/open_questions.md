@@ -145,7 +145,7 @@
 - `Q280` (phase 11, hw, low): what makes up to 56 of 2048 pixels of a gradient job differ from the Euclidean footprint of the pairs (op0, op2) and (op1, op3) with a LOD fraction truncated to 1/64 (E721), a rounding of the length, of the logarithm or of the operands, or a footprint that is not exactly Euclidean (E721, E563, E744)
 - `Q282` (phase 11, hw, low): what arithmetic gives the bilinear sample of an sRGB texel (T0 bit 27) given that decode-then-filter in float fits 43% to 56% of the pixels and filtering the bytes then decoding fits none (E723, E720)
 - `Q283` (phase 11, hw, low): what layout does type 4 read past 32 texels wide (32 x 32 blocks of 1024 dwords read post hoc at 64 and 128, E910) and in what order are its blocks, why does type 3 read rows 8 dwords apart at 4 wide, and are types 1 and 3 read with a stride of the width at widths that are not powers of two (E725, E567, E910)
-- `Q284` (phase 11, hw, medium): what are the (s, t) orientation of each cube face, the edge filtering across faces and the face size limits of TEXTYPE 2 (E726, E567, E844)
+- `Q284` (phase 11, hw, medium): what does a TEXTYPE 2 cube sample read at an exact texel boundary when |ma| is not a power of two (E923: 14 of 207 such pixels one texel low, the rest up), at a tie between the two largest coordinates, under bilinear filtering across a face edge, and with faces other than 16 x 16 (E726, E567, E844, E923)
 
 ### transfer
 
