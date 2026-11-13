@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-163 open: 153 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+162 open: 152 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -36,7 +36,7 @@ list.
 - `Q205` isp, high: what is the arithmetic by which the ISP decides the coverage and the depth of a
   pixel for an arbitrary triangle, and the iterators' ... (E215, E307, E542)
 - `Q260` isp, high: the tie of a negative window coordinate 1/512 above the 1/256 grid rounds away
-  from zero on five of six sweeps (E914): what makes the y ... (E681, E683, E914)
+  from zero wherever the aimed pixel is clear of E914's band ... (E683, E914, E943)
 - `Q023` pds, high: how many output dwords does a pixel task get per setup, and what do the data
   rows limit (E406) (E742, E759, E880)
 - `Q276` pds, high: in E709's command (state block word 4 at 0x00030001), why is the o3 word in the
@@ -129,8 +129,8 @@ list.
   multisampled target, whose 64x64 words are 0x802002, ... (E824, E886, E908)
 - `Q100` ta, medium: what do the fields of CR_TE_MTILE1 and CR_TE_MTILE2 mean, given that flips of
   their bits change the image or fault the job at 256x256 and ... (E506, E509, E877)
-- `Q139` ta, medium: in what order does the TA write a macrotile's region headers (row by row fits
-  20 of E907's 21 dumped cases and misses stride 4, 4 x 4 tile ... (E509, E877, E907)
+- `Q139` ta, medium: where does the TA write a region's header when the macrotile bounds are not
+  multiples of 4 (E944's residue: 256 x 256 m1-B2-10 and ... (E877, E907, E944)
 - `Q142` ta, medium: which control-stream form does the TA write in a region of the grid that
   CR_TE_AA bits 30 and 31 halve (16 x 16, 32 x 8 and 16 x 8 ... (E504, E893)
 - `Q159` ta, medium: what rule lists the 32 x 16 regions of a one-line object: at ISP word 1 width
@@ -266,8 +266,6 @@ list.
   texture words or the smp operands select it and its ratio? (E564, E720, E723)
 - `Q177` texture, low: what do T0 address modes 4 to 7 read along the u axis of a 16x16 twiddled
   texture (indices 324 to 366 past the 256 texels, a period of 6 or ... (E033, E565, E932)
-- `Q178` texture, low: what does TEXTYPE 5 compute from the texture memory it reads (two values, 0
-  and 0x0000ffff, that follow the stored dwords, a 16-column step ... (E726, E894, E911)
 - `Q179` texture, low: how are the blocks and the data bits of formats 23 to 26 laid out (a data bit
   changes 7 to 13 pixels, the blocks of 23 and 24 do not differ ... (E342, E568, E724)
 - `Q181` texture, low: does the fill's transfer command load a colour-space set at all (xfer:17^=1
@@ -276,8 +274,8 @@ list.
   Euclidean footprint of the pairs (op0, op2) and (op1, op3) with a LOD ... (E563, E721, E744)
 - `Q282` texture, low: what arithmetic gives the bilinear sample of an sRGB texel (T0 bit 27) given
   that decode-then-filter in float fits 43% to 56% of the pixels ... (E720, E723)
-- `Q283` texture, low: what layout does type 4 read past 32 texels wide (32 x 32 blocks of 1024
-  dwords read post hoc at 64 and 128, E910) and in what order are ... (E567, E725, E910)
+- `Q283` texture, low: why does type 3 pad a row to 8 dwords below 8 texels wide (rows max(8, w)
+  apart, E940), what pitch does type 4 keep at sizes that are not ... (E910, E940, E941)
 - `Q017` usse, low: why does g19 read 0x1a as a store's source but 0 through a mov and as the pixel?
   (E085, E086, E372)
 - `Q048` usse, low: do the MADD0 and MADD1 clock gates follow the USSE pipes' floating-point
@@ -341,9 +339,24 @@ list.
 
 ## Recent records
 
-83 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+88 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E944` ta, 2026-11-13: R8-lgeo stage q139 (Q139; 20 TA-dump jobs at 256 x 256, 640 x 480 and 1280
+  x 720, one --kpoke-render of the stride or a macrotile word inside the ranges that drew without a
+  fault in the kept data, no ...
+- `E943` isp, 2026-11-13: R8-lgeo stage zs2 (Q260; 160 sweep steps and 5 controls, 512 x 256 and 256
+  x 512, vertices in 1/4096 pixel, no fault): a negative coordinate 1/512 above the grid rounds away
+  from zero at -1/256, ...
+- `E942` texture, 2026-11-13: R8-lgeo stage tx5 (Q178; type 5 on E725's map-texture fill and on
+  stored dwords, 28 jobs, no fault): TEXTYPE 5 with format 12 returns 0x0000ffff for a texel t = (y
+  mod h) w + (x mod w) iff bit 0 of ...
+- `E941` texture, 2026-11-13: R8-lgeo stage tx4 (Q283; E725's map-texture fill moved over type 4
+  textures by window offsets, 20 jobs, no fault): type 4 stores 32 x 32 blocks of 1024 dwords, (y
+  mod 32) 32 + (x mod 32) inside a ...
+- `E940` texture, 2026-11-13: R8-lgeo stages tx3 and tx4 (Q283; E725's 64 x 32 map-texture fill,
+  dword i of the scratch 0xD0000000 | i; 12 jobs and 3 controls, no fault): below 8 texels wide type
+  3 reads rows max(8, w) dwords ...
 - `E939` dpm, 2026-11-13: r8-ldpm stages k and u on module 37EC97AB (Q211, the U clause): HU1's page
   need of the union of a scene's triangles (a region counted once, 128 bytes a stream, a page per 32
   streams of a macrotile, ...
@@ -596,9 +609,10 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-33 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+34 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r8-lgeo`: 2026-11-13; module 37EC97AB0CB37213C42FCCC; tools ~/sgxfive-test-rgn4
 - `render/closing-r8-ldpm`: 2026-11-13; module 37EC97AB0CB37213C42FCCC; tools ~/sgxfive-test-rgn4
 - `render/closing-r8-geo`: 2026-11-13; module 37EC97AB0CB37213C42FCCC; tools ~/sgxfive-test-rgn4
 - `render/closing-r7-rp`: 2026-11-12; module 41E2F5C756F96D20F7109A4; tools ~/sgxfive-test-rgn4
@@ -651,7 +665,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 2 sessions
+- module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at
   3f0b3e74
 - module srcversion 99CD90DA26E3AFF9C450517: last named 2026-11-12, 14 sessions, fork resgx545 at
@@ -680,4 +694,4 @@ stays with what a session must do around it.
 
 ## Simulator coverage baseline
 
-122 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
+120 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).

@@ -9129,13 +9129,17 @@ scratch buffer whose dwords count up, so every result names the texels it came f
 - **ETC1 (format 27; E724).** **Format 27 is ETC1 with the 4 x 4 blocks in Morton order, y in the
   low bit** (6 of 6 held-out fills of random valid blocks exact over 2048 pixels, 8 x 8 to 32 x
   16; raster block order and Morton with x low 0 of 6). Formats 23 to 26 are not decoded.
-- **Texture types (E725, E726, E910).** **Types 3 and 1 are read with a stride of the texture's
-  width and the window wrapping at its size** (8 of 8 held-out fills exact, 8 x 8 to 32 x 32;
-  E567's fixed 16 refuted, 0 of 8), held out again at 64 x 8 and 128 x 8 for both and at 4 x 16
-  for type 1 (E910, 5 of 6); type 3 at 4 x 16 reads rows 8 dwords apart (no frozen rule; Q283).
-  Type 4 is read with a fixed stride of 32 up to 32 wide (4 of 4 sizes, read after the run, and 4
-  x 16 held out, E910); at 64 and 128 wide no frozen stride fits, and read after the run its
-  texels lie in 32 x 32 blocks of 1024 dwords, columns 32 to 63 at +1024 [infer] (E910, Q283).
+- **Texture types (E725, E726, E910, E940, E941).** **Types 3 and 1 are read as a raster, the
+  window wrapping at the texture's size** (8 of 8 held-out fills exact, 8 x 8 to 32 x 32; E567's
+  fixed 16 refuted, 0 of 8; held out again at 64 x 8 and 128 x 8, E910). **Type 1's rows are the
+  width apart, type 3's max(8, w) dwords**: type 3 at 1, 2 and 4 wide pads a row to 8 dwords (5 of
+  5 held out, E940, after E910's one row at 4 x 16), type 1 at 1, 2 and 4 wide does not (E910,
+  E940); at 24 and 40 wide type 3's rows are the width apart, not a power of two above it (E940,
+  2 of 2). **Type 4 stores 32 x 32 blocks of 1024 dwords, raster inside a block, the blocks row by
+  row**: texel (X, Y) is dword ((Y div 32) ceil(w / 32) + (X div 32)) 1024 + (Y mod 32) 32 + (X
+  mod 32) (18 of 18 held-out windows of 64 x 64 to 128 x 128 and 256 x 32, E941; read post hoc at
+  64 and 128 wide by E910); up to 32 wide that is E725's stride of 32. Sizes that are not
+  multiples of 32 above 32: Q283.
   **Type 2 is a cube map: six 16 x 16 faces consecutive at 256 dwords a face, read for
   +x, -x, +y, -y, +z, -z as faces 0 to 5** (each axis direction reads one face over 2048 of 2048
   pixels, E726). **The face is that of the coordinate of largest magnitude, with its sign**: E726's
@@ -9147,14 +9151,14 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   texel boundaries at a |ma| not a power of two (E923); held out on hardware on four new 16 x 16
   programs and at 8 x 8 faces (the rule with 8 for 16, faces 64 dwords apart); 32 x 32 faces read
   the fifth bits of s and t in the other order (post hoc, E930). A tie of |w| and |u| read w's
-  face, and bilinear at a face edge mixes in another face's texel (readings, E931). The ties and
-  the edge taps: Q284.
-  Type 5 at 16 x 16 returned no texel: 0 at x mod 16 below 8 and `0x0000ffff` above in every row,
-  under `smp2d` and `smp3d` alike, with every texel naming its offset (E894, E567's dumps read post
-  hoc). **Type 5 reads the texture memory**: with the texture's first 112 dwords stored 0 the
-  16 x 16 image is 0 in every pixel, stored 0xffffffff it is `0x0000ffff` in every pixel; at 32
-  and 64 texels it repeats the 16-column step, at 8 x 8 it alternates by row (E911). It returns one
-  of two values from the texels' bits [infer], by a rule not known (Q178).
+  face, and bilinear at a face edge mixes in another face's texel (readings, E931). The ties, face
+  edges and other face sizes: Q284.
+  **Type 5 reads one bit per 8 texels**: with format 12 texel t = (Y mod h) w + (X mod w)
+  returns `0x0000ffff` iff bit 0 of texture dword floor(t / 8) is set, else 0 (E942: 13 of 13
+  held-out rows with stored dwords that part it from bit 1 of dword floor(t / 4), and 8 of 8 rows
+  where the two agree; E911's memory rows and size steps, E894's 16-column step, are this rule
+  on the map fill). With format 9 one row read bit 0 of 16-bit word floor(t / 8), and format 18
+  and the bilinear filter gave the format 12 point images (post hoc, one row each, E942).
 
 *Simulator check, 2026-10-23.* The simulator's texture unit
 (`crates/sgx-sim`, `tex.rs`) follows this page and *Texture sampling*; it reproduces every
@@ -9164,8 +9168,9 @@ recorded formats and modes, tiled textures, and filtered `.pcf` at other weights
 chains in the five sizes run, `smp3d` as `smp2d` where it ran, and the YUV formats as black only
 for a job that records the colour-space set as unloaded.
 
-**Undecided:** type 4 beyond the sizes read and what type 5 returns (Q178), the LOD fraction's
-residual (Q280), the border modes on the u axis, formats 23 to 26 and the YUV conversion in a fill,
+**Undecided:** type 4 at sizes that are not multiples of 32 and type 1 at widths that are not
+powers of two (Q283), type 5 with other formats, the LOD fraction's residual (Q280), the border
+modes on the u axis, formats 23 to 26 and the YUV conversion in a fill,
 sRGB under bilinear filtering (Q282), the cube map's edges and (s, t) within a face (Q284), `smp3d`
 beyond the textures it ran on, `.sinf`/`.rsd`, and state from `sa` or `c`.
 

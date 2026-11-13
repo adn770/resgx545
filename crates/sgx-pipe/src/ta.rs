@@ -404,18 +404,17 @@ pub fn stream_blocks(
     addr
 }
 
-/// A macrotile's local region indices (`row * across + column`) in header order: raster on the
-/// library's grid (E652), 4 x 4-region sub-blocks in raster order, raster inside one, on a halved
-/// grid (E893, measured with library macrotiles of 4 x 4 regions).
+/// A macrotile's local region indices (`row * across + column`) in header order: 4 x 4-region
+/// blocks in raster order, raster inside one, on every grid: a 4 x 4 library macrotile is one
+/// block (E652), the 8 x 8 ones of 640 x 480 hold four (E907's and E944's baselines, 600 of 600
+/// headers at R7-BLK's slots), a halved grid's too (E893).
 pub fn header_order(t: &Tiling, grid: Grid) -> Vec<u32> {
     let (fx, fy) = grid.per_macrotile(t);
     let mut order: Vec<u32> = (0..fx * fy).collect();
-    if grid != Grid::LIBRARY {
-        order.sort_by_key(|&i| {
-            let (c, r) = (i % fx, i / fx);
-            (r / 4, c / 4, r % 4, c % 4)
-        });
-    }
+    order.sort_by_key(|&i| {
+        let (c, r) = (i % fx, i / fx);
+        (r / 4, c / 4, r % 4, c % 4)
+    });
     order
 }
 
@@ -562,9 +561,128 @@ pub fn write(job: &Job) -> Result<Written, Outcome> {
     Ok(out)
 }
 
+/// R7-BLK's region header slots (E907) under a poked `CR_TE_MACROTILE_STRIDE` with the rule's
+/// macrotile words: every region of the rule's macrotiles writes its header at (mcol n + mrow)
+/// stride + (block index) 16 + (r & 3) 4 + (c & 3), the blocks 4 x 4 regions counted across the
+/// macrotile, in block order (block rows across the target, raster inside a block; E944, 11 of
+/// 11 held-out strides with every slot); a later header overwrites an earlier one, and a target
+/// tile draws iff its own header survives (E907). Returns each target tile's slot, None for a
+/// wrong tile. Held out at 256 x 256 and 640 x 480 only, at strides that drew without a fault
+/// (E505, E509: 0 to 31 and 4 to 63, besides the rule's); the rest refuses (Q139), as do poked
+/// macrotile words (E944's residue: no order gives bounds that are not multiples of 4).
+pub fn stride_slots(w: u32, h: u32, stride: u32) -> Result<BTreeMap<(u32, u32), Option<u32>>, Outcome> {
+    let t = tiling(w, h);
+    let ok = match (w, h) {
+        (256, 256) => stride <= 31 || stride == t.stride,
+        (640, 480) => (4..=63).contains(&stride) || stride == t.stride,
+        _ => false,
+    };
+    if !ok {
+        return Err(refuse_ids(
+            format!(
+                "{w} x {h}, stride {stride}: the header write order is held out at 256 x 256 and 640 x 480 at strides that drew without a fault (E944, E505, E509)"
+            ),
+            &["Q139"],
+        ));
+    }
+    let (fx, fy) = (t.mx, t.my);
+    let mut ws = vec![];
+    for r in 0..t.n * fy {
+        for c in 0..t.n * fx {
+            let (mc, lx, mr, ly) = (c / fx, c % fx, r / fy, r % fy);
+            let sl =
+                (mc * t.n + mr) * stride + ((ly >> 2) * (fx >> 2) + (lx >> 2)) * 16 + (r & 3) * 4 + (c & 3);
+            ws.push(((r >> 2, c >> 2, r, c), sl, (c, r)));
+        }
+    }
+    ws.sort_by_key(|w| w.0);
+    let mut own = BTreeMap::new();
+    for (_, sl, tile) in ws {
+        own.insert(sl, tile);
+    }
+    let mut out: BTreeMap<(u32, u32), Option<u32>> =
+        (0..t.ty).flat_map(|r| (0..t.tx).map(move |c| ((c, r), None))).collect();
+    for (sl, tile) in own {
+        if let Some(v) = out.get_mut(&tile) {
+            *v = Some(sl);
+        }
+    }
+    Ok(out)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn library_headers_are_4x4_region_blocks_on_every_macrotile() {
+        // E944's and E907's 640 x 480 baselines (8 x 8 regions a macrotile): every one of the
+        // 600 headers at R7-BLK's slot, block rows across the macrotile, raster inside a block
+        let t = tiling(640, 480);
+        assert_eq!((t.mx, t.my), (8, 8));
+        let o = header_order(&t, Grid::LIBRARY);
+        assert_eq!(&o[..5], &[0, 1, 2, 3, 8]);
+        assert_eq!((o[16], o[32], o[63]), (4, 32, 63));
+        // a macrotile 4 regions wide is raster order (E652: 256 x 256, 4 x 8 regions)
+        let t = tiling(256, 256);
+        assert_eq!(header_order(&t, Grid::LIBRARY), (0..32).collect::<Vec<u32>>());
+    }
+
+    #[test]
+    fn a_poked_stride_keeps_the_last_header_of_each_slot_in_block_order() {
+        // E944 (11 of 11 held out, wrong-tile sets and every slot), E907's stride rows and the
+        // fit rows: the wrong tiles (no surviving header) per stride
+        for (w, h, s, wrong) in [
+            (256, 256, 1, 93),
+            (256, 256, 2, 90),
+            (256, 256, 3, 87),
+            (256, 256, 4, 84),
+            (256, 256, 5, 81),
+            (256, 256, 6, 78),
+            (256, 256, 7, 75),
+            (256, 256, 8, 72),
+            (256, 256, 12, 60),
+            (256, 256, 20, 36),
+            (256, 256, 24, 24),
+            (640, 480, 5, 521),
+            (640, 480, 6, 510),
+            (640, 480, 7, 507),
+            (640, 480, 8, 504),
+            (640, 480, 12, 476),
+        ] {
+            let sl = stride_slots(w, h, s).unwrap();
+            assert_eq!(sl.values().filter(|v| v.is_none()).count(), wrong, "{w}x{h} stride {s}");
+        }
+        // stride 4 at 256 x 256: block order, not row order (E907's miss): tile (4, 8) keeps slot
+        // 12 and (0, 10) loses it, where row order gives the reverse
+        let sl = stride_slots(256, 256, 4).unwrap();
+        assert_eq!(sl[&(0, 0)], Some(0));
+        assert_eq!((sl[&(4, 8)], sl[&(0, 10)], sl[&(5, 9)]), (Some(12), None, Some(17)));
+        // the rule's own stride draws every tile at the library's header slots
+        let t = tiling(640, 480);
+        let base = stride_slots(640, 480, t.stride).unwrap();
+        assert!(base.values().all(|v| v.is_some()));
+        let order = header_order(&t, Grid::LIBRARY);
+        let pos = |c: u32, r: u32| {
+            let m = (c / t.mx) * t.n + r / t.my;
+            let i = (r % t.my) * t.mx + c % t.mx;
+            m * t.stride + order.iter().position(|&k| k == i).unwrap() as u32
+        };
+        for (&(c, r), v) in &base {
+            assert_eq!(*v, Some(pos(c, r)), "({c}, {r})");
+        }
+    }
+
+    #[test]
+    fn strides_and_sizes_that_did_not_draw_or_did_not_run_are_refused() {
+        // E505/E509: 640 x 480 strides 0 and 1 faulted, 256 x 256 strides of 33 and more faulted;
+        // the order is held out at 256 x 256 and 640 x 480 only (E944)
+        for (w, h, s) in
+            [(640, 480, 0), (640, 480, 1), (256, 256, 33), (256, 256, 64), (512, 384, 4), (1280, 720, 8)]
+        {
+            assert!(stride_slots(w, h, s).is_err(), "{w}x{h} stride {s}");
+        }
+    }
 
     const T: Tri = [(0.0, 0.0), (100.0, 0.0), (0.0, 100.0)];
 

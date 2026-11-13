@@ -7490,6 +7490,65 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   it gives 257 or 513); the control s22 needed 78 again.
   *dpm; HW; data: `render-closing-r8-ldpm:out/20261113-021431/k/`,
   `render-closing-r8-ldpm:out/20261113-021431/u/`, `render-closing-r8-ldpm:postrun/`.*
+- `E940` R8-lgeo stages tx3 and tx4 (Q283; E725's 64 x 32 map-texture fill, dword i of the scratch
+  0xD0000000 | i; 12 jobs and 3 controls, no fault): below 8 texels wide type 3 reads rows max(8, w)
+  dwords apart (H-MIN8, frozen from E910's one row: 5 of 5 held out, at 2 x 16, 4 x 8, 4 x 32, 2 x 8
+  and 1 x 16) and type 1 a raster of the width (2 of 2, at 2 x 16 and 1 x 16); through the linear
+  axis type 3 at 24 x 8 and 40 x 8 reads a raster of the width, not the width rounded to a power of
+  two (2 of 2, soft rows whose bridge, type 3 at 32 x 16 through the same axis, gave E725's map
+  image); controls pass; frozen verdicts 'Q283 type 3 below 8 wide: H-MIN8 (rows max(8, w) dwords
+  apart) held (5 of 5 rows decided)', 'Q283 type 1 below 4 wide: RASTERW held (2 of 2 rows decided)'
+  and 'Q283 type 3 at 24 and 40 wide (soft, bridge held): RASTERW held (2 of 2 rows decided)'.
+  *texture; HW; data: `render-closing-r8-lgeo:out/20261113-024441/tx3/`,
+  `render-closing-r8-lgeo:out/20261113-024441/tx4/`.*
+- `E941` R8-lgeo stage tx4 (Q283; E725's map-texture fill moved over type 4 textures by window
+  offsets, 20 jobs, no fault): type 4 stores 32 x 32 blocks of 1024 dwords, (y mod 32) 32 + (x mod
+  32) inside a block, numbered row by row, block (y div 32) ceil(w / 32) + (x div 32) (H-BLKROW,
+  frozen from E910's post hoc reading: 18 of 18 held-out windows of 64 x 64, 128 x 64, 128 x 128 and
+  256 x 32), where blocks column by column (H-BLKCOL) held 4 and the block coordinates interleaved
+  (H-BLKZ) 9; controls pass (E910's 64 x 32 and 4 x 16 images); frozen verdict 'Q283 type 4 block
+  order: H-BLKROW (32 x 32 blocks row by row) held (18 of 18 rows decided)'.
+  *texture; HW; data: `render-closing-r8-lgeo:out/20261113-024441/tx4/`.*
+- `E942` R8-lgeo stage tx5 (Q178; type 5 on E725's map-texture fill and on stored dwords, 28 jobs,
+  no fault): TEXTYPE 5 with format 12 returns 0x0000ffff for a texel t = (y mod h) w + (x mod w) iff
+  bit 0 of texture dword floor(t / 8) is set, else 0 (H-DW8, the round 8 planning's post hoc fit on
+  E911's six rows: 13 of 13 held-out rows where it parts from H-DW4B1, bit 1 of dword floor(t / 4),
+  which held 0; 8 of 8 rows where the two agree, the high bits and the raster index at 32 x 8, 8 x
+  32, 16 x 8 and a 64 x 64 window at y 32); controls pass (E911's 8 x 8, 16 x 16 and zeroed 16 x 16
+  images); read after the run, the format 9 row is bit 0 of 16-bit word floor(t / 8) and format 18
+  and the bilinear filter gave the format 12 point images; frozen verdicts 'Q178 type 5 (rows where
+  the two part): H-DW8 (bit 0 of dword floor(t / 8)) held (13 of 13 rows decided)' and 'H-DW8 =
+  H-DW4B1 held (8 of 8 rows decided)'.
+  *texture; HW, infer; data: `render-closing-r8-lgeo:out/20261113-024441/tx5/`,
+  `render-closing-r8-lgeo:out/fold/`.*
+- `E943` R8-lgeo stage zs2 (Q260; 160 sweep steps and 5 controls, 512 x 256 and 256 x 512, vertices
+  in 1/4096 pixel, no fault): a negative coordinate 1/512 above the grid rounds away from zero at
+  -1/256, -1.25 and -17.75 on both axes (the aimed pixel flips between d 0 and +1: HA's step held on
+  6 of 8 sweeps, HU's on 0), the two others, -200.5 x and -100.5 y, aiming at a pixel within 4e-5
+  pixel of an edge of 300 to 600 pixels; on the long-edge sweeps E914's step table held on 10 of 24,
+  H-SHORT (exactly HA's where no edge reaches 250 pixels) on 66 of 70 rows, H-BAND (off HA's image
+  only within 6.4e-4 pixel of an edge of 250 pixels or more) on 90 of 90, and on 256 x 512 the
+  misses followed the transposed scene (H-GEOM 16 of 24, H-YAXIS 8); read after the run, every one
+  of the 738 pixels off HA's image lies within 6.4e-4 pixel of an edge of 195 to 904 pixels, and
+  every sweep with a vertex past the target's far edge misses (12 of 12); frozen verdicts 'Q260
+  negative ties at other grid points: HA's step ... held is not supported: 6 held, 2 FAILED',
+  'E914's step table ... 10 held, 14 FAILED', 'H-SHORT ... 66 held, 4 FAILED', 'H-BAND ... held (90
+  of 90 rows decided)', 'H-YAXIS ... 8 held, 16 FAILED', 'H-GEOM ... 16 held, 8 FAILED'.
+  *isp; HW, infer; data: `render-closing-r8-lgeo:out/20261113-024441/zs2/`,
+  `render-closing-r8-lgeo:out/fold/`.*
+- `E944` R8-lgeo stage q139 (Q139; 20 TA-dump jobs at 256 x 256, 640 x 480 and 1280 x 720, one
+  --kpoke-render of the stride or a macrotile word inside the ranges that drew without a fault in
+  the kept data, no fault): with R7-BLK's slots (E907) the TA writes the region headers in 4 x 4
+  tile blocks, block rows across the target, a later header overwriting an earlier one (block order,
+  frozen from the round 8 planning's SEMI reading P1: the wrong-tile set and every header slot of 11
+  of 11 held-out strides, 256 x 256 strides 3, 5, 6, 7, 12, 20 and 640 x 480 strides 5, 6, 7, 8,
+  12), where row order (E907 as frozen) held 4 (the strides where the two give one map), blocks
+  column by column 0 and macrotile then block 0; the fit strides 1 and 2 replicated their datasets'
+  images with block order's slots; P1's four residue jobs replicated their images and no order gives
+  them; controls pass; frozen verdict 'Q139 write order on the held-out strides: block order
+  (blkrow) predicts the wrong-tile sets and every header slot (11 of 11 rows decided)'.
+  *ta; HW; data: `render-closing-r8-lgeo:out/20261113-024441/q139/`, `ta-mtile-fields`,
+  `ta-mtile-fields-risky`.*
 
 ## By unit
 
@@ -7526,7 +7585,7 @@ E215, E216, E217, E218, E219, E220, E222, E224, E225, E226, E227, E228, E229, E2
 E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E290, E291, E330,
 E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E508, E510, E590,
 E606, E607, E618, E660, E661, E662, E680, E681, E682, E683, E684, E727, E728, E731, E739, E740,
-E741, E757, E758, E762, E825, E827, E829, E912, E913, E914, E922, E934.
+E741, E757, E758, E762, E825, E827, E829, E912, E913, E914, E922, E934, E943.
 
 ### mte
 
@@ -7563,14 +7622,14 @@ Records: E054, E055, E056, E172, E174, E175, E182, E183, E176, E177, E178, E180,
 E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E506, E507, E509,
 E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763, E776, E777,
 E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828, E842, E847, E851, E859,
-E865, E872, E877, E879, E886, E888, E893, E897, E906, E907, E908.
+E865, E872, E877, E879, E886, E888, E893, E897, E906, E907, E908, E944.
 
 ### texture
 
 Records: E033, E034, E035, E036, E037, E038, E039, E040, E041, E042, E114, E116, E242, E254, E271,
 E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441, E560, E561, E562,
 E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E726, E733, E743,
-E744, E760, E765, E787, E844, E894, E910, E911, E923, E930, E931, E932.
+E744, E760, E765, E787, E844, E894, E910, E911, E923, E930, E931, E932, E940, E941, E942.
 
 ### transfer
 
