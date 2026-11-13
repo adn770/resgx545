@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: 2026 Josep Torra
 """Build and import pysgx without maturin: cargo builds the extension, this puts it where
-Python finds it (target/pysgx/pysgx.abi3.so) and imports it.
+Python finds it (<target>/pysgx/pysgx.abi3.so) and imports it. <target> is cargo's build
+directory, cargo_target_dir(): every Python caller that runs a built tool asks it.
 
     sys.path.insert(0, str(REPO / "crates" / "pysgx"))
     import load; pysgx = load.pysgx()
@@ -16,7 +17,17 @@ import subprocess
 import sys
 
 REPO = pathlib.Path(__file__).resolve().parent.parent.parent
-OUT = REPO / "target" / "pysgx"
+
+
+def cargo_target_dir() -> pathlib.Path:
+    """Where cargo, run from the repository root, puts its builds: CARGO_TARGET_DIR when set
+    (a relative path taken from the repository root, as cargo takes it from its working
+    directory), else <repo>/target."""
+    env = os.environ.get("CARGO_TARGET_DIR")
+    return REPO / env if env else REPO / "target"
+
+
+OUT = cargo_target_dir() / "pysgx"   # where build() puts the module (as of import time)
 
 
 class BuildError(RuntimeError):
@@ -31,12 +42,14 @@ def build() -> pathlib.Path:
                        text=True)
     if r.returncode:
         raise BuildError(f"cannot build pysgx:\n{r.stderr}")
-    lib = next((REPO / "target" / "debug" / f"libpysgx.{x}" for x in ("dylib", "so")
-                if (REPO / "target" / "debug" / f"libpysgx.{x}").is_file()), None)
+    target = cargo_target_dir()
+    lib = next((target / "debug" / f"libpysgx.{x}" for x in ("dylib", "so")
+                if (target / "debug" / f"libpysgx.{x}").is_file()), None)
     if lib is None:
-        raise BuildError("cargo built no libpysgx")
-    install(lib, OUT / "pysgx.abi3.so")
-    return OUT
+        raise BuildError(f"cargo built no libpysgx in {target / 'debug'}")
+    out = target / "pysgx"
+    install(lib, out / "pysgx.abi3.so")
+    return out
 
 
 def install(lib: pathlib.Path, dest: pathlib.Path) -> None:

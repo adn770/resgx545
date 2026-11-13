@@ -48,3 +48,73 @@ def test_install_leaves_a_current_library_alone(tmp_path):
     inode = dest.stat().st_ino
     load.install(lib, dest)
     assert dest.read_bytes() == b"current" and dest.stat().st_ino == inode
+
+
+# load.cargo_target_dir: where cargo puts its builds, for every Python caller that runs a
+# built tool or library (a worktree with its own CARGO_TARGET_DIR needs no target symlink).
+
+def test_target_dir_is_the_repo_target_without_cargo_target_dir(monkeypatch):
+    monkeypatch.delenv("CARGO_TARGET_DIR", raising=False)
+    assert load.cargo_target_dir() == load.REPO / "target"
+
+
+def test_target_dir_is_the_repo_target_when_cargo_target_dir_is_empty(monkeypatch):
+    monkeypatch.setenv("CARGO_TARGET_DIR", "")
+    assert load.cargo_target_dir() == load.REPO / "target"
+
+
+def test_target_dir_is_an_absolute_cargo_target_dir(monkeypatch, tmp_path):
+    monkeypatch.setenv("CARGO_TARGET_DIR", str(tmp_path / "build"))
+    assert load.cargo_target_dir() == tmp_path / "build"
+
+
+def test_target_dir_takes_a_relative_cargo_target_dir_from_the_repo_root(monkeypatch, tmp_path):
+    """cargo runs with cwd = the repo root here, so it resolves a relative path from there."""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("CARGO_TARGET_DIR", "build/mine")
+    assert load.cargo_target_dir() == load.REPO / "build" / "mine"
+
+
+def test_build_installs_from_and_into_the_target_dir(monkeypatch, tmp_path):
+    """build() looks for the library and puts the module under cargo_target_dir()."""
+    monkeypatch.setenv("CARGO_TARGET_DIR", str(tmp_path))
+    (tmp_path / "debug").mkdir()
+    (tmp_path / "debug" / "libpysgx.so").write_bytes(b"lib")
+    ran = []
+
+    class Done:
+        returncode = 0
+        stderr = ""
+
+    monkeypatch.setattr(load.shutil, "which", lambda name: "/bin/" + name)
+    monkeypatch.setattr(load.subprocess, "run", lambda *a, **k: ran.append(a) or Done())
+    assert load.build() == tmp_path / "pysgx"
+    assert (tmp_path / "pysgx" / "pysgx.abi3.so").read_bytes() == b"lib"
+    assert ran
+
+
+# the callers that run built tools ask cargo_target_dir(); none spells <repo>/target itself
+CALLERS = ["tools/fwcutter/asmmap.py", "crates/pysgx/tests/test_pysgx.py",
+           "tools/usse-dis/r2/pds_esil_check.py", "tools/usse-asm/test_tutorial.py",
+           "tools/texture/test_tx_tool_assumptions.py", "crates/pysgx/load.py"]
+
+
+def test_callers_take_the_target_dir_from_load():
+    for rel in CALLERS:
+        text = (load.REPO / rel).read_text()
+        assert "cargo_target_dir()" in text, rel
+        for spelled in ('"target" /', '"target/', "'target' /"):
+            assert spelled not in text, (rel, spelled)
+
+
+def test_asmmap_runs_sgx_asm_from_the_target_dir(monkeypatch, tmp_path):
+    sys.path.insert(0, str(load.REPO / "tools" / "fwcutter"))
+    import asmmap
+
+    class Done:
+        returncode = 0
+        stderr = ""
+
+    monkeypatch.setenv("CARGO_TARGET_DIR", str(tmp_path))
+    monkeypatch.setattr(asmmap.subprocess, "run", lambda *a, **k: Done())
+    assert asmmap.sgx_asm() == tmp_path / "debug" / "sgx-asm"

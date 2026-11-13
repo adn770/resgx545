@@ -301,12 +301,15 @@ impl Grid {
 
     /// The grid of a `CR_TE_AA` word: bits 31 and 30 with bit 29 (E893); 0 and bit 29 alone are
     /// the library's (E504, E281). Bit 30 or 31 without bit 29 removes the triangle (E281) and
-    /// shifts the object (E888): refused, as is any other bit.
+    /// shifts the object (E888): the TA data as with bit 29, the parameter buffer's dwords 11 to
+    /// 26 one dword on and an empty image (E728, E825, E827), a zero dword inserted before the
+    /// object's format word (E847, E865), which the 3D reads in the old layout, render 2's object
+    /// as render 1's (E829, E897, E906): refused (Q142), as is any other bit.
     pub fn from_te_aa(te_aa: u32) -> Result<Grid, Outcome> {
         if te_aa & !0xe000_0000 != 0 || (te_aa & 0xc000_0000 != 0 && te_aa & 0x2000_0000 == 0) {
             return Err(refuse_ids(
                 format!(
-                    "CR_TE_AA {te_aa:#x}: only bits 31 and 30 with bit 29 are a region grid (E893); without bit 29 the triangle is removed (E281, E888)"
+                    "CR_TE_AA {te_aa:#x}: only bits 31 and 30 with bit 29 are a region grid (E893); without bit 29 the triangle is removed (E281, E888) and the object stored with a zero before its format word (E728, E825, E827, E847, E865), read by the 3D in that layout (E829, E897, E906)"
                 ),
                 &["Q142"],
             ));
@@ -495,6 +498,43 @@ pub struct Job<'a> {
     pub no_object: bool,
 }
 
+/// The triangle's bounding box is one whose listing a record measured, or the refusal (Q230):
+/// a box ending at or before the target's low edge (max x or max y at most 0) lists in the first
+/// region by E542's closed low side, but the hardware wrote no object at max x 0.0 (E776; y
+/// alike [infer]); a box under one pixel both ways about the tile corner (32, 32) wrote none from
+/// 0.30 to 0.98 pixel (E780) while E736's 0.96-pixel square there (through a clamp) wrote one: no
+/// rule, so a sub-pixel box about a 16 x 16 tile's corner refuses. Other sub-pixel boxes stay the
+/// tile rule's: arith-1138's small class (E606, E607) replays its images and depth with them, at
+/// pixel corners too (no kept dump says whether those objects were written).
+fn check_extent(tri: &[Vertex; 3]) -> Result<(), Outcome> {
+    let span = |f: fn(&Vertex) -> f32| {
+        let c = tri.map(|v| f(&v) as f64);
+        (c.iter().cloned().fold(f64::MAX, f64::min), c.iter().cloned().fold(f64::MIN, f64::max))
+    };
+    let ((x0, x1), (y0, y1)) = (span(|v| v.x), span(|v| v.y));
+    if x1 <= 0.0 || y1 <= 0.0 {
+        return Err(refuse_ids(
+            format!(
+                "a triangle whose box ends at x {x1} and y {y1}: E542's closed low side lists it at the target's edge, the hardware wrote no object at max x 0.0 (E776)"
+            ),
+            &["Q230"],
+        ));
+    }
+    // a multiple of 16 strictly inside the box's span on both axes: a tile corner
+    let corner = |a: f64, b: f64| 16.0 * (a / 16.0).floor() + 16.0 < b;
+    if x1 - x0 < 1.0 && y1 - y0 < 1.0 && corner(x0, x1) && corner(y0, y1) {
+        return Err(refuse_ids(
+            format!(
+                "a triangle of {} x {} pixels about a tile corner: none was written from 0.30 to 0.98 pixel (E780) and a 0.96-pixel square was (E736): no rule",
+                x1 - x0,
+                y1 - y0
+            ),
+            &["Q230"],
+        ));
+    }
+    Ok(())
+}
+
 /// Write the object, region headers and control streams of a job.
 pub fn write(job: &Job) -> Result<Written, Outcome> {
     let t = tiling(job.w, job.h);
@@ -513,6 +553,9 @@ pub fn write(job: &Job) -> Result<Written, Outcome> {
     let mut masks: BTreeMap<(u32, u32), (u32, u32)> = BTreeMap::new();
     let mut isp = 0;
     if objects {
+        for tri in job.tris {
+            check_extent(tri)?;
+        }
         let words = object_words(job.tris, job.state)?;
         isp = OBJECT_AT / 4 + 3 + 3 * job.tris.len() as u32;
         for (i, w) in words.iter().enumerate() {
@@ -1234,7 +1277,17 @@ mod tests {
     fn a_te_aa_word_with_bit_30_or_31_and_not_bit_29_is_refused() {
         // E281, E888: without bit 29 the triangle is removed and the object shifted
         for te_aa in [0x4000_0000, 0x8000_0000, 0xc000_0000] {
-            assert!(Grid::from_te_aa(te_aa).is_err(), "{te_aa:#x}");
+            match Grid::from_te_aa(te_aa) {
+                Err(Outcome::Unsupported { ids, why }) => {
+                    assert_eq!(ids, ["Q142"], "{why}");
+                    // the records of that layout: the empty image and the shifted dwords, the
+                    // inserted zero before the format word, render 2's object read as render 1's
+                    for e in ["E728", "E825", "E827", "E829", "E847", "E865", "E897", "E906"] {
+                        assert!(why.contains(e), "{te_aa:#x}: {e} not in {why}");
+                    }
+                }
+                r => panic!("{te_aa:#x}: {r:?}"),
+            }
         }
     }
 
@@ -1254,6 +1307,66 @@ mod tests {
         // the same triangle inside the target is written
         let near = [[v(8.0, 8.0, 0.5), v(56.0, 20.0, 0.5), v(20.0, 56.0, 0.5)]];
         assert!(write(&Job { w: 64, h: 64, tris: &near, state: &state(), no_object: false }).is_ok());
+    }
+
+    #[test]
+    fn a_triangle_whose_box_ends_on_the_targets_low_edge_is_refused_the_hardware_listed_none() {
+        // E776: the tool's triangle at x offset -24.0 (x from -48 to 0.0) wrote no object, where
+        // E542's tile rule (low sides closed) lists it in the first region; y alike [infer]
+        let refused = |tri: [Vertex; 3]| match write(&Job {
+            w: 64,
+            h: 64,
+            tris: &[tri],
+            state: &state(),
+            no_object: false,
+        }) {
+            Err(Outcome::Unsupported { ids, why }) => {
+                assert_eq!(ids, ["Q230"], "{why}");
+                assert!(why.contains("E776"), "{why}");
+            }
+            r => panic!("{:?}", r.map(|_| ())),
+        };
+        refused([v(-48.0, 8.0, 0.5), v(0.0, 20.0, 0.5), v(-36.0, 56.0, 0.5)]);
+        refused([v(8.0, -48.0, 0.5), v(20.0, 0.0, 0.5), v(56.0, -36.0, 0.5)]);
+        // E776's x offset 87.5 (min x 63.5) and E736's offsets 8 and 64 are written
+        let at = |dx: f32| [v(8.0 + dx, 8.0, 0.5), v(56.0 + dx, 20.0, 0.5), v(20.0 + dx, 56.0, 0.5)];
+        // (the triangle spans offset - 24 to offset + 24: dx = offset - 32)
+        for dx in [55.5, -24.0, 32.0] {
+            assert!(
+                write(&Job { w: 64, h: 64, tris: &[at(dx)], state: &state(), no_object: false }).is_ok(),
+                "{dx}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_triangle_under_one_pixel_about_a_tile_corner_is_refused_no_rule_says_when_the_ta_keeps_it() {
+        // E780: six triangles about the tile corner (32, 32) with boxes 0.30 to 0.98 pixel and a
+        // 0.30 x 0.98 one wrote no object; E736's 0.96-pixel square (through a clamp) wrote one
+        for (wx, wy) in [(0.30, 0.30), (0.98, 0.98), (0.30, 0.98), (0.5, 0.25)] {
+            let tri = [
+                v(32.0 - wx / 2.0, 32.0 - wy / 2.0, 0.5),
+                v(32.0 + wx / 2.0, 32.0, 0.5),
+                v(32.0, 32.0 + wy / 2.0, 0.5),
+            ];
+            match write(&Job { w: 64, h: 64, tris: &[tri], state: &state(), no_object: false }) {
+                Err(Outcome::Unsupported { ids, why }) => {
+                    assert_eq!(ids, ["Q230"], "{why}");
+                    assert!(why.contains("E780"), "{why}");
+                }
+                r => panic!("{wx} x {wy}: {:?}", r.map(|_| ())),
+            }
+        }
+        // a box of one pixel or more on either axis is the tile rule's (E542), and so are the
+        // sub-pixel boxes of arith-1138's small class (E606, E607: their images and depth replay),
+        // case 272 (0.65 x 0.64 pixel, no corner) and case 336 (about the pixel corner (53, 11))
+        for t in [[11962, 5516, 12105, 5618, 12128, 5456], [13569, 2785, 13478, 2852, 13467, 2814]] {
+            let p = |i: usize| v(t[i] as f32 / 256.0, t[i + 1] as f32 / 256.0, 0.5);
+            let small = [p(0), p(2), p(4)];
+            assert!(write(&Job { w: 64, h: 64, tris: &[small], state: &state(), no_object: false }).is_ok());
+        }
+        let thin = [v(32.0, 8.0, 0.5), v(32.5, 8.0, 0.5), v(32.25, 40.0, 0.5)];
+        assert!(write(&Job { w: 64, h: 64, tris: &[thin], state: &state(), no_object: false }).is_ok());
     }
 
     #[test]

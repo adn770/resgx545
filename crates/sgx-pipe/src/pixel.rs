@@ -250,10 +250,19 @@ impl Ctx {
 
     /// o0 of the shader for pixel (x, y). `tri`: the pixel is the triangle object's, whose task
     /// reads only g23, g24 and g25 of the global bank as measured (E808); the background object's
-    /// task keeps the fill's readings (E086).
+    /// task keeps the fill's readings (E086). The triangle's task writes o0 only and reads o0 to
+    /// o3: its other outputs land at other pixels or none (E742, E759, E772, E709, E838, E850,
+    /// E858, E871, E880) and o4 to o7 read o0 to o3 (E878, E905), refused under Q276.
     fn colour(&mut self, s: &Shader, x: u32, y: u32, tri: bool) -> R<u32> {
         let m = Machine { pixel: Some((x, y)), tri_pixel: tri, ..Machine::default() };
-        let (m, _) = run_task(&mut self.mem, &self.code, s.u0, m, "the pixel shader")?;
+        let (m, _) =
+            run_task(&mut self.mem, &self.code, s.u0, m, "the pixel shader").map_err(|e| match e {
+                Outcome::Unsupported { why, .. } if why.contains("Q276") => open(why, &["Q276"]),
+                e => e,
+            })?;
+        if tri && m.written.o & !1 != 0 {
+            return Err(open("a triangle's pixel shader wrote an output other than o0", &["Q276"]));
+        }
         if m.written.o & 1 == 0 {
             return Err(open("the pixel shader did not write o0", &["Q206"]));
         }
@@ -607,7 +616,8 @@ mod tests {
         let seg = sc.memory.iter_mut().find(|m| m.role == "usep").unwrap();
         let mut d: Vec<u32> = w.iter().flat_map(|x| [*x as u32, (*x >> 32) as u32]).collect();
         let n = seg.dwords.as_ref().unwrap().len();
-        d.truncate(n);
+        // the segment grows to hold a program longer than the fixture's
+        d.truncate(n.max(2 * (at + src.len())));
         seg.dwords = Some(d);
         crate::render::run(&sc).unwrap()
     }
@@ -657,6 +667,26 @@ mod tests {
         }
         // the same read in the background's own program still renders: it is a fill's task
         let r = render_with(3, &["mov.skipinv.end o0, g17"]);
+        assert!(r.pixel_refusal.is_none(), "{:?}", r.pixel_refusal);
+    }
+
+    #[test]
+    fn a_triangles_pixel_program_writing_o1_or_reading_o4_is_refused_by_q276() {
+        // E742, E871, E880, E905: o1 to o7 of a triangle's pixel task do not land at the pixel
+        for src in [
+            &["mov.skipinv o1, g23", "mov.skipinv.end o0, g23"][..],
+            &["mov.skipinv o0, g23", "mov.skipinv r1, o4", "mov.skipinv.end o0, r1"],
+        ] {
+            match render_with(TRI_PROGRAM, src).pixel_refusal {
+                Some(Outcome::Unsupported { why, ids }) => {
+                    assert_eq!(ids, ["Q276"], "{why}");
+                    assert!(why.contains("triangle"), "{why}");
+                }
+                o => panic!("{src:?}: {o:?}"),
+            }
+        }
+        // o0 alone still renders (the test above reads its words)
+        let r = render_with(TRI_PROGRAM, &["mov.skipinv o0, g23", "mov.skipinv.end o0, g23"]);
         assert!(r.pixel_refusal.is_none(), "{:?}", r.pixel_refusal);
     }
 }
