@@ -773,6 +773,48 @@ def test_the_library_mock_replays_a_row_with_the_knob_state_its_dbg_words_set(re
             m.stdout
 
 
+REPLAY_SRC = """#!/bin/sh
+[ "$1" = --mock ] || { echo "usage: not the library mock" >&2; exit 2; }
+shift
+case "$*" in
+*--kpoke-render*) [ -f "${SGXFIVE_KPOKE:-/nonexistent}" ] \\
+    || { echo "sgxfive-test: kpoke: No such file or directory" >&2; exit 1; } ;;
+*--probefail*) echo "probe p: failed: program at 0x1: Invalid argument"; exit 0 ;;
+*--silent1*) exit 1 ;;
+*--overflow*) echo "job: failed: scene overflowed the parameter buffer, context kept"; exit 3 ;;
+esac
+echo "job: ok"; echo "diff: 0 of 2048 pixels"
+"""
+
+
+def replay_findings(repos, kp, base, rows):
+    (kp / "tables/s0.txt").write_text(base + rows)
+    m = kit(kp, repos, "mock")
+    return m, re.findall(r"^FAIL libmock: (.*)$", m.stdout, re.M)
+
+
+def test_the_replay_has_a_kpoke_file_and_counts_every_unexpected_end_as_a_refusal(repos):
+    """round 10's x session: the replay ran without SGXFIVE_KPOKE, so every `--depth` tri row ended
+    `kpoke: No such file` (rc 1) and the replay still said none was refused. It now has a kpoke
+    file as the real runner does, and any rc other than 0, or a `failed:` or `rejected` line, is
+    a refusal; a declared `expect:NAME` end is not."""
+    kp = scaffold(repos)
+    bind_source(repos, kp, src=REPLAY_SRC)
+    base = (kp / "tables/s0.txt").read_text()
+    m, bad = replay_findings(repos, kp, base, "k1|fit|safe|-|t4|tri --kpoke-render 1:rd:1=2\n")
+    assert not bad, (bad, m.stdout)
+    assert re.search(r"^ok +libmock: 3 rows of t4 replayed", m.stdout, re.M), m.stdout
+    for arg, word in [("--silent1", "status 1"), ("--probefail", "failed:")]:
+        m, bad = replay_findings(repos, kp, base, f"x1|fit|safe|-|t4|tri {arg}\n")
+        assert m.returncode != 0 and len(bad) == 1 and "tables/s0.txt x1" in bad[0] \
+            and word in bad[0], (arg, bad, m.stdout)
+    m, bad = replay_findings(repos, kp, base,
+                             "o1|fit|safe|expect:rc3-overflow|t4|probe --overflow\n")
+    assert not bad, (bad, m.stdout)
+    m, bad = replay_findings(repos, kp, base, "o2|fit|safe|-|t4|probe --overflow\n")
+    assert len(bad) == 1 and "status 3" in bad[0], (bad, m.stdout)
+
+
 def test_a_library_mock_without_mock_knob_replays_as_before(repos):
     kp = knob_session(repos, FAKE_SRC)
     t = kp / "tables/s0.txt"

@@ -845,8 +845,11 @@ def libmock(kp, say=print):
             n += 1
             w = top / f"{n}-{name}"
             (w / "w").mkdir(parents=True)
+            # the real runner's debugfs kpoke file: a tri row's --depth and --kpoke-render pokes
+            kpoke = w / "kpoke"
+            kpoke.write_text("")
             env = {"PATH": os.environ.get("PATH", "/usr/bin:/bin"), "HOME": str(home),
-                   "W": str(w / "w"), "S": str(kp)}
+                   "W": str(w / "w"), "S": str(kp), "SGXFIVE_KPOKE": str(kpoke)}
             argv = _expand(args, env)
             where = f"tables/{st}.txt {name}"
             if argv is None:
@@ -878,11 +881,34 @@ def libmock(kp, say=print):
                 bad.append(f"{where}: the tool's usage refusal: {r.stderr.splitlines()[0]}")
             elif r.returncode < 0 or r.returncode >= 128 or r.returncode == 142:
                 bad.append(f"{where}: the library mock ended with status {r.returncode}")
+            else:
+                why = _unexpected_end(row[3].split(), r)
+                if why:
+                    bad.append(f"{where}: {why} (the row never ran on the library mock)")
     if not bad:
         for t, k in count.items():
             say(f"ok   libmock: {k} rows of {t} replayed on {c['tools'][t]['source']}, none "
                 "refused")
     return bad
+
+
+def _unexpected_end(words, r):
+    """What is wrong with a library-mock replay that did not end `ok` (the findings above are
+    for a refusal, a usage line or a crash): any rc other than 0, or a `failed:` line, unless the
+    row declares that end (expect:NAME, expectdiff's rc 1 with a diff line, expectfault)."""
+    import kitscore
+    out = r.stdout + r.stderr
+    fault = "expectfault" in words
+    declared = any(w.startswith("expect:") and kitscore.OUTCOMES.get(w[7:], (None,))[0] ==
+                   r.returncode and kitscore.OUTCOMES[w[7:]][1] in out for w in words)
+    if r.returncode and not (declared or fault or (
+            "expectdiff" in words and r.returncode == 1 and "\ndiff:" in "\n" + r.stdout)):
+        return f"the library mock ended with status {r.returncode}: " + (
+            out.strip().splitlines() or ["no output"])[-1]
+    if re.search(r"\bfailed:", out) and not (declared or fault):
+        return "the library mock printed " + next(
+            ln for ln in out.splitlines() if "failed:" in ln).strip()
+    return None
 
 
 def _rows(f):
