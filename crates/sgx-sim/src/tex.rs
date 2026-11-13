@@ -66,16 +66,38 @@ fn open<T>(s: impl Into<String>) -> Result<T, Fail> {
 /// The registers the sample writes, in order.
 pub fn sample(s: &Sample, load: &mut Load) -> Result<Vec<u32>, Fail> {
     let [t0, t1, t2, t3] = s.state;
-    let tex = Texture::new(t0, t1, t2, t3)?;
+    let mut tex = Texture::new(t0, t1, t2, t3)?;
     let (levels, bilinear) = tex.pick(t0, &s.lod, s.one_d)?;
     let (u, v) = (s.u as f64, if s.one_d { 0.0 } else { s.v as f64 });
+    if t3 >> 14 & 1 != 0 {
+        // T3 bit 14 on a stride texture (E1003, held out on six geometries; E975 post hoc): the
+        // bit-clear texel moved by floor(4096 clamp(u, 0, 1)) texels, measured point sampled, on
+        // level 0, at formats 12 (32-bit) and 9 (16-bit), without T3's offset, scale or conversion
+        if bilinear
+            || levels != [(0, 64)]
+            || s.pcf.is_some()
+            || s.srd != Srd::None
+            || s.one_d
+            || t3 >> 16 & 3 != 0
+            || tex.offset != [0, 0]
+            || tex.shift != 0
+            || !matches!(tex.format, 9 | 12)
+        {
+            return open(
+                "T3 bit 14 filtered, blended, converted, offset, 1D or at a format other than 9 or 12",
+            );
+        }
+        tex.extra = (4096.0 * u.clamp(0.0, 1.0)).floor() as u32;
+    }
     if (tex.offset != [0, 0] || tex.shift != 0) && (bilinear || s.pcf.is_some() || s.srd != Srd::None) {
         return open("T3's texel offset or address scale filtered, with .pcf or an SRD mode");
     }
     if tex.format == 27 || tex.srgb {
         // E723, E724: point samples of level 0, as Texture::new admits them
         if bilinear || levels != [(0, 64)] || s.pcf.is_some() || s.srd != Srd::None {
-            // sRGB bilinear: neither declared arithmetic held stage by stage (E976, Q282)
+            // sRGB bilinear: neither declared arithmetic held stage by stage (E976, Q282); the
+            // fitted stage rule held out on four rows of five, not where a stage is subnormal
+            // (E1004)
             return open("ETC1 or sRGB filtered, blended, with .pcf or an SRD mode (not run)");
         }
         let (x, y) = ((u * tex.w as f64).floor() as i64, tex.row_of(v, s.one_d));
@@ -303,11 +325,12 @@ fn half_to_f32(h: u32) -> f32 {
 /// bit 11: the captured pixel fetches of the closed driver set it (0x00800800)
 /// **[CAP]**, the mip probes (E041), which do, read as the model without it. On a twiddled
 /// texture only those are measured; bits 10, 13, 14, 27 and 28 act in ways
-/// not modelled here (bit 14's read on a strided texture: E968's S * S rule failed two of E975's
-/// six held-out geometries, and the reading that fits all six, floor(4096 u) dwords, is post hoc;
-/// bits 11 and 12 change nothing on a strided texture again in E975).
+/// not modelled here; bits 11 and 12 change nothing on a strided texture again in E975. Bit 14 on
+/// a stride texture moves the texel by floor(4096 clamp(u, 0, 1)) texels (E968's S * S rule
+/// failed; E975 post hoc; E1003: texels, not dwords, on a 16-bit texture; held out on six
+/// geometries), see sample.
 fn t3_fields(t3: u32, stride: bool) -> Result<([i64; 2], u32), Fail> {
-    let not_measured = if stride { 0x1800_6400 } else { 0x187c_77ff };
+    let not_measured = if stride { 0x1800_2400 } else { 0x187c_77ff };
     if t3 & not_measured != 0 {
         return open(format!("T3 bits 0x{:08x}", t3 & not_measured));
     }
@@ -464,6 +487,8 @@ struct Texture {
     /// T3's texel offset (x, y) and address scale (t3_fields).
     offset: [i64; 2],
     shift: u32,
+    /// T3 bit 14's texels past the addressed one (sample; 0 without the bit).
+    extra: u32,
     /// Types 1, 3, 4 and 5: a layout of their own that wraps at the size by the address modes
     /// (E725, E940, E941, E942).
     raster: bool,
@@ -521,6 +546,7 @@ impl Texture {
             address: [t0 >> 6 & 7, t0 >> 3 & 7],
             offset,
             shift,
+            extra: 0,
             raster,
             blocks: t1 >> 29 == 4,
             bits: t1 >> 29 == 5,
@@ -786,7 +812,8 @@ impl Texture {
     /// at a pitch of one texel by E932); on u they read the texel the v rule names moved by an
     /// offset that grows with the size, 116, 180 and 308 dwords at 8, 16 and 32 (E932 post hoc,
     /// E957: the same in modes 4 and 6, whatever T3 or the v mode; 8 N + 52 fitted, not held
-    /// out), and other dwords past the texture in 5: open.
+    /// out; E1000: 8 max(W, H) + 52 on W != H, post hoc), and other dwords past the texture in 5:
+    /// open.
     fn fetch(&self, x: i64, y: i64, load: &mut Load) -> Result<u32, Fail> {
         let axis = |t: i64, n: u32, mode: u32, v: bool| -> Result<u32, Fail> {
             let n = n as i64;
@@ -821,7 +848,7 @@ impl Texture {
             Some(row) => (y * row + x * bytes) << self.shift,
             None => morton(x, y, self.w, self.h) * bytes,
         };
-        let a = self.base.wrapping_add(off);
+        let a = self.base.wrapping_add(off).wrapping_add(self.extra.wrapping_mul(bytes));
         let dw = load(a & !3).map_err(Fail::Load)?;
         if self.bits {
             return Ok(if dw & 1 != 0 { 0x0000_ffff } else { 0 });
@@ -1822,11 +1849,11 @@ mod tests {
             assert_eq!(probe(12, 0, 0xa080_0000 | 1 << bit, 3, 5), Ok(vec![0xd000_0453]), "T3 bit {bit}");
         }
         // the bits that act in other ways stop: T0 27, 30, 31 and T3 10, 13,
-        // 14, 27, 28 (x-smp2 14, 17, 18, 37, 40, 41, 54, 55)
+        // 27, 28 (x-smp2 14, 17, 18, 37, 41, 54, 55); T3 14 (x-smp2 40) is modelled since E1003
         for t0 in [1 << 27, 1 << 30, 1 << 31] {
             assert!(probe(12, t0, 0xa080_0000, 3, 5).is_err(), "T0 0x{t0:08x}");
         }
-        for bit in [10, 13, 14, 27, 28] {
+        for bit in [10, 13, 27, 28] {
             assert!(probe(12, 0, 0xa080_0000 | 1 << bit, 3, 5).is_err(), "T3 bit {bit}");
         }
         // on a twiddled texture they are not measured
@@ -1930,9 +1957,14 @@ mod tests {
     #[test]
     fn what_is_not_measured_stops() {
         assert!(at(state(6, 12, 4, 4, 4, 1 << 27, 0), 0.0, 0.0).is_err(), "T0 bit 27");
-        // T3 bit 14: dword + floor(S * S * u), u clamped to [0, 1], is held out only where the
-        // width is the stride (64) and fitted post hoc at W != S (E968): refused
-        assert!(at(state(6, 12, 4, 4, 4, 0, 1 << 14), 0.0, 0.0).is_err(), "T3 bit 14");
+        // T3 bit 14 (E1003): a stride texture point sampled moves by floor(4096 clamp(u)) texels;
+        // a twiddled texture (E566's fault), a filter or a conversion stays refused
+        assert_eq!(at(state(6, 12, 4, 4, 4, 0, 1 << 14), 0.25, 0.0), Ok(vec![0x100 + 1 + 1024]), "T3 bit 14");
+        assert_eq!(at(state(6, 12, 4, 4, 4, 0, 1 << 14), 1.5, 0.0), Ok(vec![0x100 + 3 + 4096]), "u clamped");
+        assert_eq!(at(state(6, 9, 4, 4, 4, 0, 1 << 14), 0.5, 0.0), Ok(vec![0x100 + 1025]), "16-bit: texels");
+        assert!(at(state(0, 12, 4, 4, 1, 0, 1 << 14), 0.25, 0.0).is_err(), "T3 bit 14 twiddled");
+        assert!(at(state(6, 12, 4, 4, 4, 1 << 12, 1 << 14), 0.25, 0.0).is_err(), "T3 bit 14 bilinear");
+        assert!(at(state(6, 12, 4, 4, 4, 0, 1 << 14 | 2 << 16), 0.25, 0.0).is_err(), "T3 bit 14 converted");
         assert!(at(state(6, 12, 4, 4, 4, 0, 0xa080_0000), 0.0, 0.0).is_ok(), "the copies' T3");
         assert!(at(state(4, 12, 4, 4, 1, 0, 0), 0.0, 0.0).is_err(), "tiled");
         assert!(at(state(6, 23, 4, 4, 4, 0, 0), 0.0, 0.0).is_err(), "format 23");
