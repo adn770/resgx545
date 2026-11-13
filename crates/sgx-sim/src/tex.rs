@@ -767,8 +767,10 @@ impl Texture {
     /// Texel (x, y) addressed by the modes (texture-sampler-smp-address): a stride texture
     /// clamps to the edge; a twiddled one repeats (0), mirrors (1), clamps
     /// (2) or mirrors once (3). Modes 4 to 7 on v repeat (4, 5) and clamp (6, 7) (E565, held out
-    /// at a pitch of one texel by E932); on u they read 180 dwords past the texel the v rule
-    /// names in modes 4, 6 and 7, and other dwords past the texture in 5 (E932, post hoc): open.
+    /// at a pitch of one texel by E932); on u they read the texel the v rule names moved by an
+    /// offset that grows with the size, 116, 180 and 308 dwords at 8, 16 and 32 (E932 post hoc,
+    /// E957: the same in modes 4 and 6, whatever T3 or the v mode; 8 N + 52 fitted, not held
+    /// out), and other dwords past the texture in 5: open.
     fn fetch(&self, x: i64, y: i64, load: &mut Load) -> Result<u32, Fail> {
         let axis = |t: i64, n: u32, mode: u32, v: bool| -> Result<u32, Fail> {
             let n = n as i64;
@@ -786,7 +788,7 @@ impl Texture {
                     3 => clamp(if t < 0 { -t - 1 } else { t }),
                     4 | 5 if v => t.rem_euclid(n),
                     6 | 7 if v => clamp(t),
-                    m => return open(format!("address mode {m} on u (E932: 180 dwords on, post hoc)")),
+                    m => return open(format!("address mode {m} on u (E932, E957: an offset by size)")),
                 }
             } as u32)
         };
@@ -1087,6 +1089,10 @@ mod tests {
         assert_eq!(y(7, -0.3), Ok(vec![0x100]), "clamp: -2 is 0");
         // on u the reads are 180 dwords on (post hoc, E932): no model
         assert!(at(state(0, 12, 4, 4, 1, 4 << 6, 0), 0.3, 0.0).is_err());
+        // E957: the offset is 116, 180 and 308 dwords at 8, 16 and 32 (8 N + 52, fitted): the
+        // refusal names it
+        let e = at(state(0, 12, 4, 4, 1, 6 << 6, 0), 0.3, 0.0).unwrap_err();
+        assert!(format!("{e:?}").contains("E957"), "{e:?}");
     }
 
     #[test]
