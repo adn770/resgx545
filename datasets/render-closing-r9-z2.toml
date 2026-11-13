@@ -1,0 +1,9 @@
+title = "laptop session r9-z2 of the question-closing pass, round 9 (decision R9-3 a; plan closing9/rank/rank-round9.md R9c-F), built on the session kit: one stage z2 (Q101, 10 jobs: the integer stored formats with and without CR_ISP_ZLSCTL bit 19 over two depth ramps made by the viewport's z offset), with the freeze, the kit copy, the tool recipe lead/build_tool9.sh, the generator, predictions, scorer, mock (the tool's source on the library mock) and tests, the pre-run README and PREFLIGHT, the kept outputs, the lead's driver logs and the fold's post hoc reads"
+repo = "data"
+paths = ["render/closing-r9-z2/"]
+method = "the session kit (kit/ = resgx545 02ae0a0e's tools/closing/kit, scorekit.py and sessioncheck.py byte for byte, pinned in FROZEN.commits): kit/session.py stage and run on the Mac over ssh to the laptop (host cedar), every file under ~/scratch/r9z/, 2026-11-13 08:25, kernel 7.3.0-resgx545, module srcversion B60AB0B475DD1E8972419B5, stock firmware, tool ~/sgxfive-test-t9 (sha256 7a28be3952fb310170e861da0622d890a2e215cb761d6f21bc9321223e1b40ce, built from resgx545 97447b04 userspace/libsgxfive/tools/sgxfive-test.c by lead/build_tool9.sh, the FROZEN.commits built line; the recipe's header names r9-k1, the copy is byte for byte and frozen); 10 jobs, one attempt (out/20261113-082522), rc 0; post hoc reads under fold/ (fold/look.py), not frozen"
+date = "2026-11-13"
+files = 115
+size = 305872
+sha256 = "b31d1a052bc092cca24a25a6b2432b6b5a1573c9b60005abe9ffd8d546d4f72d"
+recipe = "kit/session.py"

@@ -1,0 +1,9 @@
+title = "r9-k1: the --pixels words of each job of stages s0t, s0p, s1, s2, s3 and s4 (Q190's layered background, 92 jobs)"
+repo = "data"
+paths = ["vectors/closing/r9-k1/pixels/"]
+method = "tools/usse-asm/closing_tables.py texture on the published render/closing-r9-k1 session (its one attempt, out/20261113-083450), one file a stage; rows are measurements; s0t, s1, s2, s3 and s4 say they are replayed by crates/sgx-pipe/tests/bg_layer_table.rs::the_layer_model_replays_every_modelled_row_of_r9_k1 (bglayer.rs: 83 layered rows matched at every compared pixel, E973's five changed rows refused), s0p (the raw-coordinate and position probes) refused"
+date = "2026-11-13"
+files = 6
+size = 132538
+sha256 = "1e4d91cfb2345af538898985f50321860c6fb9c46b608d17d3f2aefbd8590c87"
+recipe = "tools/usse-asm/closing_tables.py"

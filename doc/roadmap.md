@@ -195,7 +195,8 @@ sub-phase did.
 
 `doc/open_questions.md` lists every open question, generated from `questions/`: Q001 to Q192, 155
 open (the two ids between Q132 and Q137 are reserved, unused, and so is the one between Q181 and
-Q183, and the six between Q183 and Q190; the six ids after Q168 belong to phases not in this
+Q183, and the six between Q183 and the layered-object question, answered by E971 on 2026-11-13;
+the six ids after Q168 belong to phases not in this
 tree). Each has a kind. The work is hardware knowledge, for a simulator and then our own firmware,
 so the 139 `hw` questions are the work queue, each with a value (high 13, medium 68, low 58); the 10
 `fw` questions (the closed firmware's and driver's own behaviour: Q004, Q029, Q034, Q049, Q084,
@@ -757,8 +758,10 @@ page-directory word of a render context equals the list register the kick wrote 
 BASE1 after a reset (E592, Q076), which also corrects the landed statements that it was not
 comparable. Q066, Q045 and Q076 are narrowed and none is retired, the kernel question on the module
 load is narrowed (the amended module's load failed three cases on an order-5 allocation failure, the
-first kernel line for the allocation reading; no load was on a fresh boot), and Q190 to Q192 are new
-(hw: the object with texture layers, the stored words, the partial owner's page). The kernel switch
+first kernel line for the allocation reading; no load was on a fresh boot), and three questions are
+new
+(hw: the object with texture layers, answered by E971 on 2026-11-13; Q191, the stored words; Q192,
+the partial owner's page). The kernel switch
 that would fill the second context's state page between two contexts' renders stays open
 (`tadata_fill` is taken by the first kick after it is armed). The roadmap counts the questions from
 the built `doc/open_questions.md`: 155 open, 139 hw (high 13, medium 68, low 58), 10 fw and 6
@@ -867,7 +870,8 @@ dwords past the target refused then, matched since by E831's band, and those in 
 jobs' tiles refused as Q107), the TA's region test (E542, E616: 14656 pairs, 2414 of them by
 presence only), the object layout (E541, E617: 56 layouts, the three failed jobs refused as Q165,
 not predicted) and the multisample window rule
-(E503, E618: 786 tiles, 13 refused as Q141). Every verdict is fitted, none matched. The inventory of
+(E503, E618: 786 tiles, 13 refused, the seam holes E953 answers). Every verdict is fitted, none
+matched. The inventory of
 the recorded data (E619, `doc/specs/pipe-inventory.md`): 2464 triangle-host vectors, 65 with a
 render dump, and 197 dump directories sorted by what each waits for. The simulator `sgx-sim` is
 unchanged. Q205 (the arithmetic of coverage, depth and iteration for an arbitrary triangle) is new.

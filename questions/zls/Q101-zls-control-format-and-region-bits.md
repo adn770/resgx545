@@ -5,7 +5,7 @@ unit = "zls"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E057", "E284", "E411", "E465", "E466", "E490"]
+evidence = ["E057", "E284", "E411", "E465", "E466", "E490", "E981"]
 terms = ["CR_ISP_ZLSCTL"]
 +++
 
@@ -27,3 +27,10 @@ conversion (the ramps are positive). The formats 3 to 7 are Q120's,
 and bit 12 and the pitch beyond bits 11:3 are Q071's. To settle it: store the integer formats with
 a depth that is negative before the conversion (a depth test greater with a negative ramp) with and
 without bit 19, and compare the whole buffers.
+
+Narrowed 2026-11-13 (E981). A depth below 0 made by the viewport's z offset (word 10, after the
+MTE's clip) reaches the store as 0.0 in format 0 and as 0 in formats 1 and 2, with and without bit
+19, and over 0 to 0.3 bit 19 changes no dword of formats 1 and 2; --tri-z outside [0, 1] is clipped
+by the MTE (E287) and cannot make one. So bit 19 never meets a negative integer depth along either
+route that ran. Open: what the poke of word 10 did to the depth plane (+0.25 gave 0.6 t, not t -
+0.25), and bit 19 with format 0 below 0.

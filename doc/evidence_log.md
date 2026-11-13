@@ -2936,13 +2936,13 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   at 1024 x 768 and 326656 at 4096 x 4096 for the control 0x0017100c, G = 1).
   *zls; HW, infer; data: `zls-store-layout`.*
 - `E466` Bits 26:24 of CR_ISP_ZLSCTL select the format of the stored depth: 0 the 32-bit float (512
-  dwords a 32 x 16 tile), 1 the 24-bit unsigned integer round(z * 0xffffff) (512 dwords a tile,
-  786432 of 786432 pixels exact), 2 a 16-bit integer, round(z * 0xffffff) >> 8, with the rows y even
+  dwords a 32 x 16 tile), 1 the 24-bit unsigned integer min(floor(z * 2^24), 0xffffff) (512 dwords a
+  tile, 786432 of 786432 pixels exact), 2 a 16-bit integer, that value >> 8, with the rows y even
   and odd of a column in the low and high half of a dword (256 dwords a tile, 786432 of 786432
   exact); 4 and 7 store no depth without a stencil buffer, and 3, 5 and 6 store other layouts; bit
   19 stores the depth negated (shown by the three most frequent stored dwords only); bits 2 and 18
   enable the depth store and bit 17 the stencil store (bit 17 from E411; here clearing it changes
-  nothing without a stencil buffer).
+  nothing without a stencil buffer) [corrected 2026-11-13, see Correction].
   *zls; HW, infer; data: `zls-store-format`.*
 - `E467` A render loads depth only with CR_ISP_ZLSCTL bits 1 and 14 and stencil only with bits 1 and
   13 (neither without bit 1; load-only controls without the store enables store nothing), the loaded
@@ -3224,16 +3224,17 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *zls; HW, infer; data: `zls-store-layout-dumps`.*
 - `E490` The depth formats of E466 recomputed from stored dumps of a rerun of the 11.22 store-format
   run, by a separate script: at 1024 x 768 with G = 33, format 0 holds the float z of the ramp at
-  786432 of 786432 pixels (within 1e-5 of the geometry's), format 1 holds round(z * 0xffffff) at
-  786432 of 786432 (z is the float format 0 stores at that pixel; floor, 333955), format 2 packs two
-  rows in one dword in 256 dwords a tile with the dword index lx0 ly1 lx1 ly2 lx2 ly3 lx3 lx4 and
-  the half ly0, derived from the dumps alone (786432 halves, 512 of 512 slots the same in every
-  tile), formats 4 and 7 store nothing without a stencil buffer (0 dwords), formats 3, 5 and 6 store
-  965120, 96580 and 86084 dwords in 1885, 1508 and 1536 slots in the x ramp (the y ramp stores
-  965120, 84480 and 73760; format 3 reaches the last dword of the buffer, so its count is a lower
-  bound), and bit 19 stores the float depth negated at 786432 of 786432 pixels and changes no dword
-  of formats 1 and 2 (the dumps are byte-identical to the dumps without it, same sha256), where E466
-  had shown it by three frequent dwords.
+  786432 of 786432 pixels (within 1e-5 of the geometry's), format 1 holds min(floor(z * 2^24),
+  0xffffff) at 786432 of 786432 (z is the float format 0 stores at that pixel; round(z * 0xffffff)
+  gives the same dwords there, floor(z * 0xffffff) 333955), format 2 packs two rows in one dword in
+  256 dwords a tile with the dword index lx0 ly1 lx1 ly2 lx2 ly3 lx3 lx4 and the half ly0, derived
+  from the dumps alone (786432 halves, 512 of 512 slots the same in every tile), formats 4 and 7
+  store nothing without a stencil buffer (0 dwords), formats 3, 5 and 6 store 965120, 96580 and
+  86084 dwords in 1885, 1508 and 1536 slots in the x ramp (the y ramp stores 965120, 84480 and
+  73760; format 3 reaches the last dword of the buffer, so its count is a lower bound), and bit 19
+  stores the float depth negated at 786432 of 786432 pixels and changes no dword of formats 1 and 2
+  (the dumps are byte-identical to the dumps without it, same sha256), where E466 had shown it by
+  three frequent dwords [corrected 2026-11-13, see Correction].
   *zls; HW; data: `zls-store-format-dumps`.*
 - `E491` A call that is not taken still writes pclink: with the predicate false, ba.savelink and
   br.savelink left pclink at the index of the instruction after the call in all 16 not-taken calls
@@ -7619,6 +7620,68 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   `render-closing-r7-geo:out/20261112-211113/zs/`,
   `render-closing-r8-lgeo:out/20261113-024441/zs2/`, `cited-scratch:closing9/seeds/q260/`,
   `cited-scratch:closing9/offline/oz/`.*
+- `E953` R9-geo stage seam1 (Q141; 24 tri renders with E504's pokes, each with --aa4 and debugfs
+  render_rgn_arrays 1, a context made for 4x targets whose region headers are forced to one array,
+  E502's, E504's and E727's condition): the stored image of every held-out job is the landed region
+  model's (E727's msaa_model.py, E922's in-sample reading frozen as the O8 R8-1 table): H-REGION
+  exact on 22 of 22 held-out sets (14 tri-full renders at sizes never run, 64 x 96 to 128 x 96 in
+  modes 0 to 2 with TE 0x6, 0xa or 0xe, 6 single triangles of new slopes and 2 zero-hole twins; 20
+  to 514 holes, 211 to 5564 stored pixels, no other colour), its halves-off rival H-UNION 8 of 22;
+  both controls passed (E502's A-m1-te60-64x64 64 holes as its set, E504's TE 0x20000000 no hole);
+  frozen verdicts 'H-REGION exact on every held-out set (22 of 22 rows decided)' and 'H-UNION ... is
+  not supported: 8 held, 14 FAILED'; Q141 retires.
+  *isp; HW; data: `render-closing-r9-geo:out/20261113-081038/seam1/`,
+  `render-closing-r8-geo:gen/o8/`.*
+- `E954` R9-geo stage seam4 (the seam holes, E953's question; the same 24 renders with --aa4 alone,
+  the 4x context's automatic four region-header arrays, never run before in modes 0 and 1, and
+  E828's j1r as a control): four arrays store the region model's image as one array does: H-SAME4
+  (the O8 table's H-REGION set) exact on 23 of 23 held-out rows (E502's control configuration held
+  out here), H-FULL4 [infer: no hole] 2 of 17 (the two zero-hole twins), H-UNION 8 of 23; both
+  controls passed (j1r hash 0x4a61860dcb4ab325 with no background pixel, as E828; TE 0x20000000 no
+  hole); frozen verdicts 'H-SAME4 exact on every held-out set (23 of 23 rows decided)', H-FULL4 '2
+  held, 15 FAILED', H-UNION '8 held, 15 FAILED'; post hoc, all 24 shared jobs stored the same image
+  pixel for pixel with four arrays as with one (stage seam1, E953).
+  *isp; HW, infer; data: `render-closing-r9-geo:out/20261113-081038/seam4/`,
+  `render-closing-r9-geo:out/fold/`.*
+- `E955` R9-geo stage cube2, sizes (Q284; 8 probe fills of TEXTYPE 2 point-sampled by smp3d, E726's
+  cu-xn the control, no fault): with E923's face and (s, t) rule, the face-local index of 32 x 32
+  and 64 x 64 faces is E561's twiddle law (16 x 16 tiles in raster order with s first; at 64 bits 8,
+  9 = s4, s5 and 10, 11 = t4, t5): H-E561 held out on 3 of 3 new directions at 32 x 32 (1796, 1590
+  and 1596 of as many predicted pixels) and 3 of 3 at 64 x 64 (T1 0x4c03f03f, faces 4096 dwords
+  apart; 1404, 1585, 1810), against E923's plain Morton (0 of 6) and a pairwise order of the bits
+  above 7 (equal to E561's at 32, 0 of 3 at 64); 4 x 4 faces (T1 0x4c003003) sit 16 dwords apart
+  with a 2-bit Morton index (H-NN 2 of 2, 1928 and 1889 pixels) against 64 apart (0 of 2); the
+  control passed; frozen verdicts 'H-E561 at 32 x 32 held out (3 of 3 rows decided)', 'H-E561 at 64
+  x 64 held out (3 of 3 rows decided)', 'H-NN at 4 x 4 held out (2 of 2 rows decided)'.
+  *texture; HW; data: `render-closing-r9-geo:out/20261113-081038/cube2/`.*
+- `E956` R9-geo stage cube2, ties and edges (Q284; 8 probe fills, no fault): a tie of the two
+  largest coordinates went to the face of the higher axis (z over y over x) on 4 of 4 held-out
+  sweeps of x = y and y = z with the tied coordinates of opposite signs (128 of 128 tie pixels;
+  H-LOWAXIS 0 of 4, H-POS, the positive axis, 2 of 4), but post hoc 7 of the 599 two-axis tie pixels
+  of all kept cube jobs (r8-geo's and r9-geo's, none of the sweeps') read the lower axis's face,
+  with the third coordinate 0.62 to 0.93 of |ma| [fitted reading, no rule]; texel ties at |ma| 1.5
+  went up or down by the boundary exactly in E931's pattern for 1.75, 1.625 and 1.875, at 1.25 the
+  same but for boundary 11 of s and of t (down); bilinear at a face edge: the in pixels read their
+  exact in-face blend within 1 (768 of 768 each), and the out pixels the adjacent texel of the
+  neighbour face (H-SEAM-ADJ) on the -y/+x edge (96 of 96) but not on the +z/+x edge (64 of 96),
+  H-SEAM-WRAP 0 of 2; frozen verdicts 'H-HIGHAXIS on every tie pixel (4 of 4 rows decided)',
+  'H-SEAM-ADJ on every out pixel is not supported: 1 held, 1 FAILED', 'H-SEAM-WRAP ... 0 held, 2
+  FAILED'.
+  *texture; HW, infer; data: `render-closing-r9-geo:out/20261113-081038/cube2/`,
+  `render-closing-r9-geo:out/fold/`, `render-closing-r8-geo:out/20261113-015842/cube/`.*
+- `E957` R9-geo stage addr2 (Q177; 11 probe fills of twiddled 32-bit textures at page 12 of a
+  32-page named scratch, the swept axis over 128 positions at one texel a step, no fault): E932's u
+  reading replicates (addr-u4 H-MASK-V's index + 180 dwords, 2048 of 2048; addr-u5's per-position
+  read) and the mode 0 control passed; at 8 x 8 and 32 x 32 in u modes 4 and 6 every rival failed
+  (H-OFF180, H-OFFSCALE + 180 N^2 / 256, H-OFFNONE: 0 of 4 each): every pixel reads H-MASK-V's index
+  + 116 dwords at 8 x 8 and + 308 at 32 x 32, in both modes (2048 of 2048 each; 8 N + 52 through 8,
+  16 and 32, post hoc [fitted]); T3 0, 0x800 and 0x800000 leave + 180 at 16 x 16 (H-T3-INERT 3 of
+  3); with v also in mode 4 the offset stays 180 and v repeats (H-OFF180 1 of 1, H-OFF360 and
+  H-MASK-V refuted); frozen verdicts '... is not supported: 0 held, 4 FAILED' for the three size
+  rivals, 'H-T3-INERT (u mode 4 at 16 x 16 under T3) (3 of 3 rows decided)', 'H-OFF180 (u and v mode
+  4) (1 of 1 rows decided)'.
+  *texture; HW, infer; data: `render-closing-r9-geo:out/20261113-081038/addr2/`,
+  `render-closing-r9-geo:out/fold/`.*
 - `E958` R9-lgeo stage tx6 (Q283; E725's 64 x 32 map-texture fill, dword i of the scratch 0xD0000000
   | i; 14 jobs, 2 controls, no fault): type 4 at widths that are not multiples of 32 keeps ceil(w /
   32) whole 32 x 32 blocks a block row (H-CEIL, E941's rule: 7 of 7 held-out windows of 48 x 64, 80
@@ -7653,6 +7716,86 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   *ta; HW, infer; data: `render-closing-r9-lgeo:out/20261113-080029/q139b/`,
   `render-closing-r9-lgeo:fold/`, `vectors-closing-r9-lgeo-ta-slots`,
   `render-closing-r8-lgeo:out/20261113-024441/q139/`, `ta-mtile-fields`, `ta-mtile-fields-risky`.*
+- `E960` Round 9 offline steps of r9-ldpm (Q210, Q211; no run), each frozen by hash before its
+  scoring: OD-1, E874's replay gives the need of the 1500-vertex scene at all nine kept calibrations
+  (E915, E935, E936) and HU1 of its 500 triangles none (0x52 against 0x213 at 2048x2048), so HU1 is
+  not that scene's need, and it picks four wide targets never run (4096x1024, 4096x1536, 3584x1024,
+  2048x512, U 0x20f, 0x302, 0x1d0, 0x9a); OD-2, the 'left 0x6' cells of E936 are the reader's last
+  sample before the global list was trimmed (the next sample reads 2), and band 6 keeps the second
+  global page until the object after the straddling block is tiled (H-NEXT1: 2 iff S_6 < thr0 < the
+  page count once object b_6 + 1 is tiled), fitted on 3072x3072 and 2560x2560 (2 of 2) and SEMI on
+  E936's eight other targets (8 of 8, where H-SPAN's A_6 gives 4 of 8), frozen only after one reader
+  fix written after the first run's table was read (offline/OD2-FIX.md: the first run, its artefact
+  test wrong, froze nothing); OD-3, of a closed family of six multi-kick count rules fitted on OL7
+  (b)'s 31 kept cells the best (H-FLUSH, 30 of 31) gave 7 of 20 of E938's cells (semi-held-out;
+  H-KICKS 11), below the plan's 18, so stage k2 did not run.
+  *dpm; HW, infer; data: `render-closing-r9-ldpm:offline/`,
+  `render-closing-r8-ldpm:out/20261113-021431/m6/`, `render-closing-r8-ldpm:out/20261113-021431/k/`,
+  `render-closing-s1`, `render-closing-r1-pixgeo`.*
+- `E961` r9-ldpm stages a0 and m6b on module B60AB0B4 (Q210; band 6 of the tool's 1500-vertex
+  triangle): the premise held, r8-ldpm's six a0 controls repeated ('a0: the premise held (E935's a0
+  controls repeat on B60AB0B4) (1 of 1 rows decided)'), and E936's six band 6 cells at 1536x1536 and
+  4096x2048 repeated as controls (6 of 6); held out at four targets never run, H-NEXT1 (E960: the
+  first partial render leaves 2 global pages iff S_6 < thr0 < the page count once object b_6 + 1 is
+  tiled) 'holds (20 of 20 rows decided)', where H-SPAN (the end at A_6) is 'not supported', 14 held,
+  6 FAILED of 20: the second page was kept to A_6 + 2 at 2304x2304, A_6 + 3 at 2048x2304 and A_6 + 1
+  at 2304x1792, as H-NEXT1's ends, and ended at A_6 at 1792x1792, where both agree; H-NEXT2 19 of
+  20, E936's class rivals H-BIG6 2 of 4, H-ANY6 4 of 4 (it agrees with H-NEXT1 at these four A_6
+  cells), H-6LATE 3 of 4; the step replay held at three of the four calibrations and missed
+  2048x2304's S3 and S6 by one page (26 of 28), the four needs the replay's.
+  *dpm; HW; data: `render-closing-r9-ldpm:out/20261113-082650/a0/`,
+  `render-closing-r9-ldpm:out/20261113-082650/m6b/`, `render-closing-r9-ldpm:fold/`,
+  `render-closing-r9-ldpm:offline/`, `vectors-closing-r9-ldpm-dpm`.*
+- `E962` r9-ldpm stage w on module B60AB0B4 (Q211, the need of wide scenes of many vertices): held
+  out at four targets wider than 2:1 never run, E874's replay gave the need of the 1500-vertex scene
+  at each calibration ('w: H-REPLAY: H-REPLAY holds (8 of 8 rows decided)': 4096x1024 0x20f,
+  4096x1536 0x302, 3584x1024 0x1d0, 2048x512 0x9a, no partial render) and HU1 of the scene's
+  triangles none ('HU1 holds is not supported: 0 held, 4 FAILED'); every calibration read S6 one or
+  two pages above the replay (and 4096x1536 S3 one above), so each FAILED as a control (its frozen
+  steps) and gated its own cell: the cells' frozen verdicts printed 'controls FAILED' (a result of
+  the premise the build chose, not a scorer fault); read after the run without that gate, the four
+  cells gave F9's count and every run peak (4 of 4), E625's overflow and the abort's global pages
+  (E935's rule) 4 of 4, and E854's d = 7/4 and d = 1 none.
+  *dpm; HW; data: `render-closing-r9-ldpm:out/20261113-082650/w/`, `render-closing-r9-ldpm:fold/`,
+  `render-closing-r9-ldpm:offline/`, `vectors-closing-r9-ldpm-dpm`.*
+- `E963` r9-ldpm stage f9b on module B60AB0B4 (Q211's count of the 1500-vertex scene, Q210's raise
+  at band 4): the three calibrations held as controls (1280x1280, 1792x1792 and 2560x2048 never run:
+  steps in their brackets, needs 0xe2, 0x19f, 0x28c, the replay's); off band 4 F9's replay gave the
+  partial-render count at 5 of 5 cells and every run peak at 2 (the last run's peak 1 to 3 pages off
+  at 3), at the three band 4 cells with 2 global pages left the threshold was not raised (the second
+  TA run peaked at thr0 and a second partial render came: 2 renders where F9 with R-5's guard as
+  formalized gives 1), H-NORAISE's count 3 of 3 (its last run's peak 1 page off at each): frozen 'F9
+  holds is not supported: 7 held, 9 FAILED, 0 cannot tell of 16', 'H-NORAISE holds is not supported:
+  3 held, 3 FAILED of 6'; E625's boundary and the abort's global pages (E935's rule) 8 of 8 each,
+  E854's d = 7/4 and d = 1 0 of 8.
+  *dpm; HW; data: `render-closing-r9-ldpm:out/20261113-082650/f9b/`, `render-closing-r9-ldpm:fold/`,
+  `vectors-closing-r9-ldpm-dpm`.*
+- `E964` R9-faults stage xf2 (Q108; a fill's destination and a copy's read-only source with one PTE
+  flag, 12 jobs, every control passed, E946's nine rows rerun token for token): WRITEONLY on a
+  fill's destination let every pixel land and faulted the job at the page of the last pixel written,
+  BIF_INT_STAT 0x80020 with SB 31, at 64 x 32 (page 0x3e002000), at 64 x 16 from row 16 (0x3e002000,
+  the mapping's first page never written) and at 64 x 64 (0x3e004000), never at the mapping's first
+  or last page; EDMPROTECT let a copy's texture read of its READONLY source through (PTE 0x14,
+  exact) and faulted a fill's write at its first page (0xa0020, nothing written); E946's other rows
+  read as post hoc (CACHECONSISTENT on the copy's source exact, READONLY with WRITEONLY on it
+  0x80002); frozen verdicts 'H-LASTROW (2 of 2 rows decided)' with H-MAPEND and H-FIRST '0 held, 2
+  FAILED', 'H-EDM-WRITE ... (1 of 1 rows decided)' with H-EDM-REQ '0 held, 1 FAILED', 'H-WO-ALL (4
+  of 4 rows decided)', 'H-CC-NEW (1 of 1 rows decided)', 'H-EDM-CLIENT (1 of 1 rows decided)'.
+  *bif; HW, infer; data: `render-closing-r9-faults:out/20261113-084720/xf2/`,
+  `render-closing-r9-faults:fold/`, `vectors-closing-r9-faults-pte`.*
+- `E965` R9-faults stage tri2 (Q108; the 64 x 64 triangle with PTE flags on its colour target or the
+  ZLS buffers of tri --depth --depth-store, 7 renders, the three knob-free controls passed):
+  WRITEONLY and EDMPROTECT together (0x12) on the colour target faulted as EDMPROTECT alone (0xa0020
+  at the target's first page, nothing written; E945's WRITEONLY fault came after the image, at its
+  last page); EDMPROTECT on the depth store's buffer faulted the ZLS store at its first page
+  (0xa0200, FAULT_REQ bit 9, nothing stored, no pixel written); WRITEONLY there let the whole store
+  land (4096 dwords) and faulted at the store window's last page (0x80200 at 0x3e018001, SB 0);
+  EDMPROTECT on the depth buffer, which the clearing control does not load, changed nothing (exact);
+  frozen verdicts 'H-OR ... (1 of 1 rows decided)' (H-CANCEL '0 held, 1 FAILED'), 'H-EDM-FIRST ...
+  (1 of 1 rows decided)' (H-WO-FIRST '0 held, 1 FAILED'), 'H-EDM-WRITE ... (1 of 1 rows decided)'
+  (H-EDM-3D '0 held, 1 FAILED'), 'H-WO-ALL (1 of 1 rows decided)'.
+  *bif; HW, infer; data: `render-closing-r9-faults:out/20261113-084720/tri2/`,
+  `render-closing-r9-faults:fold/`, `vectors-closing-r9-faults-pte`.*
 - `E968` Round 9 offline (Q078; no run): with T3 bit 14 set, smp on a strided texture reads dword i
   + K + M c, i the dword the same job reads without the bit and c its column, read on E566's fit job
   s64x32-t3b14 (W = S = 64: K = 32, M = 64, 2048 of 2048); six rivals for K (W / 2, S / 2, 32) and M
@@ -7666,13 +7809,135 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   1024 [fitted]; the twiddled job tw32-t3b14 faulted in E566 and kept no image.
   *texture; HW, infer; data: `texture-p1132-tx-t3`, `cited-scratch:closing9/rank/`,
   `cited-scratch:closing9/offline/q078/`.*
+- `E970` R9-k1 stages s0t and s0p (Q190; the 64 x 64 one-triangle render with debugfs
+  render_bg_layer on and render_bg_src at a mapped 64 x 64 source, 7 controls, no fault): the render
+  details' background tag says one layer (rd:18 bits 30:25 = 1) and the object after the job holds
+  the kernel's one-layer words 3 to 10 (0, 0, 1.0, 0, 0, 1.0, 0, 0x202; H-BUILT); with the copy's
+  primary every one of the 3034 background pixels is its own source texel (H-TEX, twice, and with
+  word 5 poked to its own 1.0: c-noop); with a primary whose douti reads coordinate set 1 with two
+  components (DOUTI0 0x40400801), pa0 holds (x + 0.5) / 64 and pa1 (y + 0.5) / 64 at 3034 of 3034
+  within 2^-12 (H-ITER; H-SWAP, H-NONE and H-17 fail, H-LM fails on u); E442's background primary
+  still writes x + 0.5 at 3034 of 3034 with and without the layer (H-POS); the layerless controls
+  keep E590's hash 0x99385a04ee01c585; frozen verdicts 'H-BUILT and H-TEX ... (3 of 3 rows decided)'
+  and 'H-POS and H-ITER ... (4 of 4 rows decided)'.
+  *isp; HW; data: `render-closing-r9-k1:out/20261113-083450/s0t/`,
+  `render-closing-r9-k1:out/20261113-083450/s0p/`, `render-closing-r9-k1:out/20261113-083450/s4/`,
+  `render-closing-r9-k1:fold/`, `vectors-closing-r9-k1-pixels`.*
+- `E971` R9-k1 stage s1 (Q190; 44 jobs, the layered 64 x 64 render with kernel pokes of the object's
+  words 3 to 8, 1 to 3 words a job at k/8 values, 14 fit and 30 held out drawn with the seed r9-k1
+  after the model was frozen, each read through the texel of every background pixel; no fault): the
+  words are (u, v) of the vertices TL, TR and BL in that order and the pixel samples the plane
+  through them at its centre (H-VM + H-AFF: right on 30 of 30 held-out rows and 14 of 14 fit rows,
+  every predicted pixel the predicted texel), where the coordinates read component by component
+  (H-LM), u and v exchanged (H-SWAP), the poke not read (H-NOREAD), one texel (H-NONE) and the
+  17-word layout (H-17) are wrong on 29, 30, 30, 30 and 30 held-out rows; every poked word reads
+  back in the object after the job; frozen verdict 'H-VM + H-AFF: words 3-8 are (u, v) of TL, TR,
+  BL, the plane at the pixel centre (30 of 30 rows decided)'.
+  *isp; HW; data: `render-closing-r9-k1:out/20261113-083450/s1/`, `render-closing-r9-k1:fold/`,
+  `vectors-closing-r9-k1-pixels`.*
+- `E972` R9-k1 stage s2 (Q066, and the anchor E971 left open; 20 held-out jobs, the layered 64 x 64
+  render with kernel pokes of the vertex words 15 to 22: a move of 16 pixels and a bit flip each,
+  four two-word moves; no fault): the layer's plane is anchored at the vertices those words give in
+  E590's encoding (TL, TR, BL as 24-bit Y then X, 8 fraction bits, offset 4096; H-VPLANE: right on
+  20 of 20 rows, every predicted pixel the predicted texel), not at the fixed render box (H-VBOX:
+  wrong on the 16 rows that move a vertex, right on the 4 that poke words 19 and 22, which hold no
+  vertex); every background pixel stays covered and a texel in all 20 (1062 triangle pixels each),
+  as E590's coverage; every poked word reads back; frozen verdict 'H-VBOX: the plane is anchored at
+  the render box, whatever words 15-22 say is not supported: 4 held, 16 FAILED, 0 cannot tell of
+  20'.
+  *isp; HW, infer; data: `render-closing-r9-k1:out/20261113-083450/s2/`,
+  `render-closing-r9-k1:fold/`, `vectors-closing-r9-k1-pixels`.*
+- `E973` R9-k1 stage s3 (Q066 explore; 21 jobs, the layered 64 x 64 render, no fault): words 9 and
+  11 to 14 at 1.0, word 9 and word 13 at 0xffffffff, the format word 10 at 0, 0x202, 0x404, 0x101,
+  0xffff, 0x10000 and 0x80000000, and bgobj_words[1] (render command dword 24) at one and four
+  attribute rows leave every background pixel its own texel (16 of 21 rows, H-FMT0); word 10 at
+  0xffffffff makes every pixel texel (0, 0) (3034 of 3034, E209's copy picture); word 12 at
+  0xffffffff makes every v-texel 0 with u unchanged, word 14 at 0xffffffff every u-texel 0 with v
+  unchanged, word 11 at 0xffffffff every u-texel 0 and v at 35 values (1629 pixels at 63); zero
+  attribute rows (0x30000) gives every pixel a texel of the source but its own at 74 of 3034 (143
+  distinct texels, mostly within 8 columns and 4 rows of its own; H-NOTEX, no texel, wrong); explore
+  rows, frozen verdict 'H-FMT0 (explore): words 9-14 and bgobj_words[1] at 0, 1 or 4 rows change
+  nothing is not supported: 16 held, 5 FAILED, 0 cannot tell of 21'.
+  *isp; HW, infer; data: `render-closing-r9-k1:out/20261113-083450/s3/`,
+  `render-closing-r9-k1:fold/`, `vectors-closing-r9-k1-pixels`.*
+- `E974` R9-k1 stages s1 and s2, read post hoc at the fold (not frozen): at every background pixel
+  whose layer coordinate lies outside [0, 1) under the plane that held (E971, E972), 1/64 texel off
+  a texel edge, the pixel is the clamped texel (min(max(floor(64 u), 0), 63), the same for v) at
+  17453 of 17453 pixels (16367 in s1, 1086 in s2) and the repeated texel (mod 64) at none, as
+  sgx-sim's rule for a stride texture (it clamps to the edge).
+  *texture; HW; data: `render-closing-r9-k1:fold/`, `render-closing-r9-k1:out/20261113-083450/s1/`,
+  `render-closing-r9-k1:out/20261113-083450/s2/`.*
+- `E975` r9-x stage t3 (19 jobs): with T3 bit 14 set in smp on named memory, on six held-out strided
+  geometries (W 16, 32, 48 at strides 32, 64, 128, u off the texel centres and past the texture)
+  each with its bit-14-clear reference (the references equal texmodel's image, 6 of 6), the frozen
+  rival H-UCOL (the control column's centre, E968's R-U) failed 6 of 6, H-U01 (i + floor(S * S *
+  clamp(u, 0, 1))) held 4 and failed 2 (W 32 at S 128 and at S 32), H-URAW held 3; post hoc
+  (fold/t3_post.py, not frozen) every pixel of all six rows reads the reference's dword plus
+  floor(4096 * clamp(u, 0, 1)) (12288 of 12288), S and W notwithstanding; T3 bits 11 and 12 on
+  E566's strided 64 x 32 left the control image (replicates, 2 of 2) and E564's twiddled an-t3b11
+  and an-t3b12 replicated byte for byte; all three controls passed.
+  *texture; HW; data: `render-closing-r9-x:out/20261113-081821/t3/`, `render-closing-r9-x:fold/`.*
+- `E976` r9-x stage srgb (8 jobs): with T0 bit 27 (sRGB) and bilinear filtering on injected strided
+  texels, each lerp stage alone (fy = 0 on two jobs, fx = 0 on two, every 1/64 weight) and both (two
+  jobs at fy 21/64 and 43/64), neither frozen rival is exact on any row: H-HALF2 (decode to half,
+  lerps in half, closing9/rank q282_rule.json) 498 to 1009 of 2048 pixels, H-BF11 (block float, 11
+  bits a pair, q282_rule3.json) 502 to 733; the controls passed (E723's g-bl-st-a rerun 2048 of
+  2048, the equal-corner job 2048 of 2048: a lerp of equal decoded halves returns the half, stage 2
+  at fy = 0 returns stage 1).
+  *texture; HW; data: `render-closing-r9-x:out/20261113-081821/srgb/`.*
+- `E977` r9-x stage zls (16 jobs): stored depth format 1 is min(floor(z * 2^24), 0xffffff) of the
+  format-0 float at every dword (frozen H-FLOOR held 3 of 3: 32768, 76800 and 3200 dwords at 256 x
+  128 G 7 over z 0 to 0.5, 320 x 240 G 9 and 80 x 40 G 2 over 0.5 to 1; H-ROUND, round(z * 0xffffff)
+  of E466, failed 0 of 76800 and 0 of 3200 and held only below 0.5) and format 2 is the same >> 8 in
+  E490's 16-bit layout at all three pitches (H-E490/H-FLOOR 3 of 3, the 512-dword slot spacing
+  refuted); a load of format 1 or 2 compares the loaded dword as a float (H-RAW held 2 of 2:
+  0x00400000 failed less against 0.125, 0x3fff3fff passed less against 0.5; the integer
+  back-conversion failed both); a loaded NaN (0x7fc00000) passed less and failed greater against
+  0.5, and infinity passed less and failed greater (IEEE held 3 of 4, failing on NaN under less);
+  all four controls passed.
+  *zls; HW; data: `render-closing-r9-x:out/20261113-081821/zls/`.*
+- `E978` r9-x stage zst (12 jobs): with E466's x ramp and a stencil buffer of each dword's index
+  loaded (bits 1 and 13) and stored (bit 17), at 64 x 32 (4 tiles) and 96 x 48 (9 tiles), format 4
+  changed 640 and 1440 depth dwords (160 a tile, the frozen H-SCALE from E466, held 2 of 2), format
+  7 784 and 2064 (frozen 12 a tile: failed), formats 3 and 5 2560 and 5760 (640 a tile), format 6
+  2048 and 4608 (512 a tile), and no format from 3 to 7 changed a dword of the stencil store; both
+  format-0 controls passed (depth 512 a tile, stencil store E467's copy, 128 a tile).
+  *zls; HW; data: `render-closing-r9-x:out/20261113-081821/zst/`, `render-closing-r9-x:fold/`.*
+- `E979` r9-x stage far (11 jobs): with one vertex at +2^22, +2^23, +2^24 or -2^25 pixels in x,
+  -2^22, +2^23, -2^24 or -2^25 in y (the other coordinate up to 2^23), or two at +-2^23 or +-2^24,
+  and the rest inside a 64 x 64 target (tool unit 1/32), the coverage equals the exact rule of
+  E606/E607 at every pixel outside E684's 1e-3 pixel band in 10 of 10 rows (frozen H-EXACT held); a
+  clamp to the 24.8 range (H-SAT) failed the 5 rows where it differs, a two's-complement wrap of
+  24.8 (H-WRAP) failed 8 of 8 where it differs, nothing drawn (H-CULL) failed 10 of 10; E684's
+  far21d0 rerun drew its 208 pixels (control); no job faulted.
+  *isp; HW; data: `render-closing-r9-x:out/20261113-081821/far/`.*
+- `E980` R9-faults stage bif (Q076; debugfs alias_skip on tri -n 2 --keep-going on a new VM, E457's
+  form, 14 jobs, every control passed): with the pairs and the three of buffers 12 to 14 left out of
+  the client directory's alias, with 6, 7, 8, 10 to 14 (the 0x32 heap without TA3DCtl) and with
+  every buffer but 0 and 9 (mask 0x7dfe) left out, two renders were exact (8 of 8 held-out rows and
+  a replicate: every diff 0, the mask-free control's hashes), and so were three renders and two 1024
+  x 768 renders that both overflow at render_pb_pages 0x23 under 0x7dfe; TA3DCtl left out faulted
+  0x90400 at 0x32004001 and buffer 0 left out 0x91000 at 0x3000b021, as E457 and E745; frozen
+  verdicts 'H-ONLY09 ... (8 of 8 rows decided)' and H-SET 'is not supported: 0 held, 8 FAILED, 0
+  cannot tell of 8'.
+  *bif; HW, infer; data: `render-closing-r9-faults:out/20261113-084720/bif/`,
+  `render-closing-r9-faults:fold/`.*
+- `E981` r9-z2 stage z2 (10 jobs, 256 x 128, G 7): with the viewport's z offset (state-block word
+  10) at -0.25, so a modelled depth of -0.75 to -0.25, format 0 stored 0.0 at every dword and
+  formats 1 and 2 stored 0 at every dword with and without bit 19 (byte-identical dumps), so the
+  four frozen rivals collapse there (each held 4 of 8 rows: ramp b's four); with the offset at +0.25
+  the stored depth ran 0.00059 to 0.2994 (not the modelled -0.25 to +0.25, never 0 or negative), and
+  formats 1 and 2 match min(floor(z * 2^24), 0xffffff) and its >> 8 at every dword with and without
+  bit 19 (byte-identical), missing round(z * 0xffffff), the rivals' encoding, at 8803 of 32768
+  dwords; both format-0 controls passed (32768 dwords).
+  *zls; HW; data: `render-closing-r9-z2:out/20261113-082522/z2/`, `render-closing-r9-z2:fold/`.*
 
 ## By unit
 
 ### bif
 
 Records: E151, E457, E573, E592, E745, E761, E767, E789, E826, E848, E891, E892, E901, E919, E920,
-E945, E946.
+E945, E946, E964, E965, E980.
 
 ### dpm
 
@@ -7681,7 +7946,7 @@ E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E4
 E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753, E773, E774, E775, E779, E785,
 E786, E790, E799, E800, E801, E802, E803, E832, E845, E846, E852, E853, E854, E860, E861, E862,
 E863, E864, E866, E867, E868, E869, E870, E873, E874, E875, E881, E882, E883, E887, E889, E899,
-E900, E915, E916, E917, E918, E935, E936, E937, E938, E939.
+E900, E915, E916, E917, E918, E935, E936, E937, E938, E939, E960, E961, E962, E963.
 
 ### edm
 
@@ -7703,7 +7968,8 @@ E215, E216, E217, E218, E219, E220, E222, E224, E225, E226, E227, E228, E229, E2
 E232, E233, E234, E235, E249, E278, E279, E281, E282, E283, E284, E285, E289, E290, E291, E330,
 E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E508, E510, E590,
 E606, E607, E618, E660, E661, E662, E680, E681, E682, E683, E684, E727, E728, E731, E739, E740,
-E741, E757, E758, E762, E825, E827, E829, E912, E913, E914, E922, E934, E943, E952.
+E741, E757, E758, E762, E825, E827, E829, E912, E913, E914, E922, E934, E943, E952, E953, E954,
+E970, E971, E972, E973, E979.
 
 ### mte
 
@@ -7748,7 +8014,7 @@ Records: E033, E034, E035, E036, E037, E038, E039, E040, E041, E042, E114, E116,
 E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441, E560, E561, E562,
 E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E726, E733, E743,
 E744, E760, E765, E787, E844, E894, E910, E911, E923, E930, E931, E932, E940, E941, E942, E951,
-E958, E968.
+E955, E956, E957, E958, E968, E974, E975, E976.
 
 ### transfer
 
@@ -7779,4 +8045,4 @@ E413, E414, E427, E440, E545, E546, E700, E701, E702, E703, E737, E738, E755, E7
 ### zls
 
 Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467, E489, E490, E615, E628, E629,
-E663, E664, E665, E730, E831, E885, E903, E904.
+E663, E664, E665, E730, E831, E885, E903, E904, E977, E978, E981.

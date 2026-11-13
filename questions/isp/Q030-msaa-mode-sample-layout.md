@@ -26,7 +26,8 @@ E415's constant displacement of 4 pixels was the doubling of an in-tile offset. 
 they hold is Q142), and bit 29 alone changes nothing (E281; byte-identical to a clear word in 10 of
 10 pairs of configurations, E502).
 
-What is open, which keeps Q030 open and is not the 13 tiles with background pixels (Q141): what
+What is open, which keeps Q030 open and is not the 13 tiles with background pixels (the region
+model's seam holes, E922, E953): what
 bits 31 and 30 do when bit 29 is clear, where the triangle is not stored (E281; 6 of 6 jobs of
 E504, modes 0 and 2; the tool wrote no dump for them, so the TA's output was not compared), and
 what bit 29 gates; and whether the sample positions of E281, fitted inside the target's first 16 x

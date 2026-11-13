@@ -423,9 +423,23 @@ fn replay_1500(w: u32, h: u32) -> (BTreeMap<u32, u32>, Vec<u32>) {
 /// by the abort's global page count (E935), 2560x3072 (S6 one above) and 3072x2560 (S3 and S6 two
 /// above, E936) are not. Scenes of larger objects (`--vtx-coords`) are not this replay's: with 8
 /// coordinate pairs written by the vertex program the scene needs more than the clamp and its
-/// steps vary by up to 2 pages between runs (E937).
-const STEP_TARGETS: &[(u32, u32)] =
-    &[(2048, 2048), (3072, 3072), (3072, 2048), (2560, 2560), (1024, 1024), (1536, 1536), (4096, 2048)];
+/// steps vary by up to 2 pages between runs (E937). r9-ldpm held them at 2304x2304, 2304x1792 and
+/// 1792x1792 (E961) and 1280x1280 and 2560x2048 (E963); 2048x2304 (S3 and S6 one above, E961) and
+/// the four wide targets of E962 (S6 one or two above, the needs the replay's) are not.
+const STEP_TARGETS: &[(u32, u32)] = &[
+    (2048, 2048),
+    (3072, 3072),
+    (3072, 2048),
+    (2560, 2560),
+    (1024, 1024),
+    (1536, 1536),
+    (4096, 2048),
+    (2304, 2304),
+    (2304, 1792),
+    (1792, 1792),
+    (1280, 1280),
+    (2560, 2048),
+];
 
 /// The steps S2 to S7 of the global page count in the first TA run of the tool's triangle with 1500
 /// vertices and its page need U, by E874's replay, at a target where they were held out (E915).
@@ -443,8 +457,15 @@ pub fn tool_triangle_steps(w: u32, h: u32) -> Option<(Vec<u32>, u32)> {
 /// R6-dpm's band 5 to 7 cells). The 2048x3072 cells were scored on its calibration's steps, which
 /// at bands 3 and 5 are the replay's. r8-ldpm added 3072x2048's band 6 (E936); there band 6 kept
 /// the second page past A_6 at 1536x1536 and 4096x2048 and, read after the run, again at
-/// 3072x3072 and 2560x2560, so band 6 stays refused elsewhere.
+/// 3072x3072 and 2560x2560. Band 6's margin ends at the page count once object b_6 + 1 is tiled
+/// (H-NEXT1, E960's OD-2, fitted on 3072x3072 and 2560x2560 and SEMI on eight more targets): held
+/// out by r9-ldpm at 2304x2304, 2048x2304, 2304x1792 and 1792x1792, 20 of 20 cells (E961); at
+/// 2048x2048 and 3072x2048 that end is A_6. Band 6 stays refused at the fit and SEMI targets.
 const SPAN_BANDS: &[((u32, u32), &[u32])] = &[
+    ((2304, 2304), &[6]),
+    ((2048, 2304), &[6]),
+    ((2304, 1792), &[6]),
+    ((1792, 1792), &[6]),
     ((2048, 2048), &[2, 3, 4, 5, 6, 7]),
     ((3072, 3072), &[5]),
     ((3072, 2048), &[3, 5, 6]),
@@ -456,7 +477,8 @@ const SPAN_BANDS: &[((u32, u32), &[u32])] = &[
 /// The global pages left by the first partial render of the tool's triangle with 1500 vertices at
 /// the first threshold `thr0` (H-SPAN, E900, held out by E915): 2 iff S_k < thr0 < A_k, else 1,
 /// where A_k is the page count once object b_k, whose block straddles global pages k - 1 and k, is
-/// tiled. `None` on a step (thr0 = S_k grows the global list, H-GREQ), at a band or target where
+/// tiled; at band 6 the margin runs to the page count once object b_6 + 1 is tiled (H-NEXT1,
+/// E961). `None` on a step (thr0 = S_k grows the global list, H-GREQ), at a band or target where
 /// no frozen cell held, and below S2.
 pub fn first_partial_render_global_pages_left(w: u32, h: u32, thr0: u32) -> Option<u32> {
     let bands = SPAN_BANDS.iter().find(|(t, _)| *t == (w, h))?.1;
@@ -468,7 +490,8 @@ pub fn first_partial_render_global_pages_left(w: u32, h: u32, thr0: u32) -> Opti
     if steps.get(&(k + 1)).is_some_and(|&next| thr0 >= next) {
         return None;
     }
-    let a = *after.get((1024 * (k - 1) / 67) as usize)?;
+    let b = (1024 * (k - 1) / 67) as usize + usize::from(k == 6);
+    let a = *after.get(b)?;
     Some(if thr0 < a { 2 } else { 1 })
 }
 
@@ -1140,6 +1163,57 @@ mod tests {
         }
         assert_eq!(first_partial_render_global_pages_left(1536, 1536, 0x109), None);
         assert_eq!(first_partial_render_global_pages_left(4096, 2048, 0x362), None);
+    }
+
+    #[test]
+    fn the_step_replay_holds_at_r9_ldpm_s_new_calibration_targets() {
+        // E961, E963 [HW, held out] H-STEPMODEL at r9-ldpm's m6b and f9b calibrations: every step
+        // in its bracket and the need as replayed
+        let cal: &[(u32, u32, &[u32], u32)] = &[
+            (2304, 2304, &[0x64, 0xc2, 0x11f, 0x17f, 0x1dd, 0x23c], 0x298),
+            (2304, 1792, &[0x50, 0x99, 0xe4, 0x12c, 0x177, 0x1c2], 0x208),
+            (1792, 1792, &[0x41, 0x7b, 0xb5, 0xf2, 0x12b, 0x165], 0x19f),
+            (1280, 1280, &[0x26, 0x45, 0x64, 0x85, 0xa6, 0xc4], 0xe2),
+            (2560, 2048, &[0x63, 0xbd, 0x11b, 0x179, 0x1d4, 0x230], 0x28c),
+        ];
+        for &(w, h, steps, need) in cal {
+            assert_eq!(tool_triangle_steps(w, h), Some((steps.to_vec(), need)), "{w}x{h}");
+        }
+        // E961: 2048x2304's S3 and S6 read one page above the replay (0xae, 0x1ad); E962: the
+        // four wide targets' S6 (and 4096x1536's S3) one or two above, their needs the replay's:
+        // refused, as a pair of steps and need
+        for (w, h) in [(2048, 2304), (4096, 1024), (4096, 1536), (3584, 1024), (2048, 512)] {
+            assert_eq!(tool_triangle_steps(w, h), None, "{w}x{h}");
+        }
+    }
+
+    #[test]
+    fn band_6_keeps_the_second_page_until_the_object_after_the_straddling_block_e961() {
+        // E961 [HW, held out] H-NEXT1 (E960's OD-2): band 6 leaves 2 global pages iff
+        // S_6 < thr0 < the page count once object b_6 + 1 is tiled; 20 of 20 cells at four
+        // targets never run, three where it parts from H-SPAN's A_6 (A_6 + 2, + 3, + 1)
+        let cells: &[(u32, u32, &[(u32, u32)])] = &[
+            (2304, 2304, &[(0x232, 2), (0x233, 2), (0x234, 2), (0x235, 1), (0x236, 1)]),
+            (2048, 2304, &[(0x1f6, 2), (0x1f7, 2), (0x1f8, 2), (0x1f9, 2), (0x1fa, 1)]),
+            (2304, 1792, &[(0x1b9, 2), (0x1ba, 2), (0x1bb, 1), (0x1bc, 1), (0x1bd, 1)]),
+            (1792, 1792, &[(0x160, 2), (0x161, 1), (0x162, 1), (0x163, 1), (0x164, 1)]),
+        ];
+        for &(w, h, cs) in cells {
+            for &(thr0, left) in cs {
+                assert_eq!(
+                    first_partial_render_global_pages_left(w, h, thr0),
+                    Some(left),
+                    "{w}x{h} {thr0:#x}"
+                );
+            }
+        }
+        // the ends where the margin was held before: 2048x2048 and 3072x2048 (b_6 + 1 adds no page)
+        assert_eq!(first_partial_render_global_pages_left(2048, 2048, 0x1c2), Some(2));
+        assert_eq!(first_partial_render_global_pages_left(2048, 2048, 0x1c3), Some(1));
+        assert_eq!(first_partial_render_global_pages_left(3072, 2048, 0x293), Some(1));
+        // the fit and SEMI targets of E960 stay refused at band 6 (not held out)
+        assert_eq!(first_partial_render_global_pages_left(3072, 3072, 0x3d0), None);
+        assert_eq!(first_partial_render_global_pages_left(1536, 1536, 0x10a), None);
     }
 
     #[test]

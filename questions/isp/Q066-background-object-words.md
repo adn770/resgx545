@@ -5,7 +5,7 @@ unit = "isp"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E069", "E162", "E209", "E216", "E410", "E590"]
+evidence = ["E069", "E162", "E209", "E216", "E410", "E590", "E970", "E971", "E972", "E973"]
 terms = ["CR_ISP_BGOBJVALS", "hw_render_details.pds_bgnd"]
 +++
 
@@ -55,3 +55,17 @@ layer's plane is anchored at the vertices they give or at the fixed render box),
 (format and zero words, eight values of word 10), and word 1's rows at 0, 1 and 4 with a texel
 layer (whether the texel still arrives). Words 0 to 2 are not poked (the EDM rewrites them, E590).
 Their reading lands in that session's records.
+
+Narrowed 2026-11-13 (r9-k1: E970 to E973; Q190 retired as answered by E971 and E972). With a
+texture layer (module B60AB0B4's `render_bg_layer`) the render's object is the copy's 23 words
+(E970); words 3 to 8 are the layer's (u, v) at TL, TR and BL, read vertex by vertex (E971), and the
+vertex words 15 to 22 anchor the layer's plane at the vertices E590's decoding gives (TL in 15 and
+16, TR in 17 and 18, BL in 20 and 21; 19 and 22 unread in those rows) while the render box stays
+covered whatever they say (E972). Words 9 to 14 and the format word 10 change nothing at 1.0 and
+at seven format values; at 0xffffffff the format word gives texel (0, 0) everywhere, as in a copy,
+words 11, 12 and 14 each remove one coordinate's variation and words 9 and 13 change nothing
+(E973). The command's attribute-row word (bgobj_words[1], copied into word 1) gives each pixel its
+own texel at one and four rows and other texels at zero (E973). Still open: what words 11 to 14
+hold (only 1.0 and 0xffffffff ran), word 13's and 9's role, the three PDS words beyond word 0
+(E410), and other scenes (sizes, ISP_BGOBJVALS, more than one layer). Status: narrowed, not
+answered.

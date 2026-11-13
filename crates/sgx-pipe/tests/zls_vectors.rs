@@ -153,12 +153,13 @@ fn the_control_words_are_matched_fitted_or_refused_as_what_they_rest_on() {
             o => panic!("{id}: {o:?} {:?}", r.seen.notes),
         }
     }
-    // bits 5 to 11 faulted the job in the scratch run (G past the buffer: Q242), the 16-bit format
-    // at G = 1 is Q242, format 4 with a stencil buffer Q120
+    // bits 5 to 11 faulted the job in the scratch run (G past the buffer: Q242), format 4 with a
+    // stencil buffer Q120; the 16-bit format at G = 1 (flip-25) replays since E977 held its layout
+    // at other pitches
     let q = |ids: &[&str]| ids.iter().map(|s| s.to_string()).collect::<Vec<_>>();
     let want: Vec<(String, Vec<String>)> = (5..=11)
         .map(|b| (format!("flip-{b:02}"), q(&["Q242"])))
-        .chain([("flip-25".to_string(), q(&["Q242"])), ("flip-26".to_string(), q(&["Q120"]))])
+        .chain([("flip-26".to_string(), q(&["Q120"]))])
         .collect();
     assert_eq!(refused, want);
     // matched: bits that read as the records state with no address, no format and no inferred load;
@@ -166,10 +167,10 @@ fn the_control_words_are_matched_fitted_or_refused_as_what_they_rest_on() {
     // or a load by bit 1 alone ([infer])
     assert!(matched.contains(&"flip-02".to_string()) && !matched.contains(&"flip-00".to_string()));
     assert!(fitted.contains(&"flip-00".to_string()), "bit 0 stores the control's pages: fitted");
-    for id in ["flip-01", "flip-03", "flip-04", "flip-19", "flip-24", "load-0017110e"] {
+    for id in ["flip-01", "flip-03", "flip-04", "flip-19", "flip-24", "flip-25", "load-0017110e"] {
         assert!(fitted.contains(&id.to_string()), "{id}");
     }
-    assert_eq!((matched.len(), fitted.len(), refused.len()), (15, 23, 9));
+    assert_eq!((matched.len(), fitted.len(), refused.len()), (15, 24, 8));
     // a wrong reading of a bit is a mismatch
     let f = vs.iter().find(|v| id_of(v) == "zls-ctl__flip-19").unwrap();
     let bad = rebuild(f, &|k, x| if k == "negate" { Json::Bool(false) } else { x.clone() });

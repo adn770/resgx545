@@ -1,0 +1,9 @@
+title = "r9-faults xf2 and tri2: the PTE knobs, the kernel's PTE and BIF fault lines and the job's outcome of each job (19 jobs)"
+repo = "data"
+paths = ["vectors/closing/r9-faults/pte/"]
+method = "tools/usse-asm/closing_tables.py pte on the published render/closing-r9-faults session (stages xf2 and tri2 of its one attempt, out/20261113-084720), two files; rows are measurements; replayed by crates/sgx-pipe/tests/pte_table.rs::the_model_replays_every_modelled_row_of_the_pte_tables (sgx-pipe bif::pte_access; 17 rows modelled, the isolation control and the depth buffer's row refused)"
+date = "2026-11-13"
+files = 2
+size = 15450
+sha256 = "4d5bdc36dc660a9c8afc1084688a6f4ad6372c8d70bf2b527458048625f9febe"
+recipe = "tools/usse-asm/closing_tables.py"

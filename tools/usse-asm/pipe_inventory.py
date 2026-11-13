@@ -31,12 +31,12 @@ RULES = [
          "18 cases, 36 depth dumps"),
     Rule(r"zls/store-format-dumps/", "zls-store", "unit-ready", "E466 E490", "Q120 Q121", "12.4",
          "formats 0 to 2 and the sign bit; the format rule is not coded"),
-    Rule(r"isp/msaa-ident/", "isp-tile", "built", "E503 E502", "Q141", "12.8", "48 runs, 96 dumps"),
+    Rule(r"isp/msaa-ident/", "isp-tile", "built", "E503 E502 E953", "-", "12.8", "48 runs, 96 dumps"),
     Rule(r"isp/msaa-te-dumps/", "te-region", "unit-blocked", "E507 E511", "Q086 Q003", "12.8",
          "TE words under 4x"),
     Rule(r"isp/msaa-resolve/", "isp-tile", "scene-only", "E281", "Q089 Q138", "12.8", "resolve"),
     Rule(r"isp/msaa-layout/", "isp-tile", "scene-only", "E210 E211", "Q030", "12.8", "sample layout"),
-    Rule(r"isp/bg-object-pokes/", "isp-tile", "unit-blocked", "E069 E590", "Q066 Q190", "12.1",
+    Rule(r"isp/bg-object-pokes/", "isp-tile", "unit-blocked", "E069 E590", "Q066", "12.1",
          "169 jobs, the background object's words"),
     Rule(r"ta/tri-region/", "te-region", "built", "E542", "Q070", "12.2", "35 jobs"),
     Rule(r"ta/object-format/", "ta-object", "built", "E541", "Q070 Q165", "12.2", "59 jobs"),
@@ -169,7 +169,7 @@ TAIL = """\
   model would have to reproduce; they wait for Q047, Q069 and the state word rules. No unit
   vector is built: the inputs (the stream words, the vertex outputs) are in the render dumps
   only through the PB, so they need the scene's `memory`.
-- **isp**: the multisample window is built (786 tiles, 13 with background pixels refused: Q141).
+- **isp**: the multisample window is built (786 tiles, 13 with seam holes refused: E953).
   Everything else needs a scene (`memory`) and, for pixels, the arithmetic of coverage, depth and
   iteration (Q205): no record gives it. The sample position, line, polygon offset and stencil
   rules (E214, E279, E071, E216) are in `isp` triangle-host vectors, not in dump directories.

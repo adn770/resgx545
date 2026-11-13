@@ -1,0 +1,9 @@
+title = "r9-ldpm m6b, w and f9b: per job the regtimeline counts reading (partial renders, the knob, the run peaks, the need, the counts before the aborts) of the 1500-vertex scene (53 jobs)"
+repo = "data"
+paths = ["vectors/closing/r9-ldpm/dpm/"]
+method = "tools/usse-asm/closing_tables.py kitdpm on the published render/closing-r9-ldpm session (stages m6b, w and f9b of its one attempt, out/20261113-082650), three files; rows are measurements; each table says its replay is refused (sgx-pipe's dpm.rs gives the steps, needs and band 6 margin E961 and E963 held in its unit tests, but no test reads these tables)"
+date = "2026-11-13"
+files = 3
+size = 44764
+sha256 = "0709fb2ba579cdad32f1b2dda4eac1d41bfba0a49ab4ca18efc0c0f0bbf6fe50"
+recipe = "tools/usse-asm/closing_tables.py"

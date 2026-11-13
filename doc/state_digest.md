@@ -10,27 +10,27 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-160 open: 150 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+158 open: 148 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
-  EDM's PB load) need in the directory of the list it ... (E592, E745, E761)
+  EDM's PB load) need in the directory of the list it ... (E745, E761, E980)
 - `Q038` dpm, high: what does the final render read back of a partial render's depth (a depth buffer
   stored by ZLS, the 3D kick's RT status bit 1), now that a ... (E625, E628, E629)
 - `Q045` dpm, high: what does the DPM store in the state page, does a load task read back the
   macrotile lists a partial render stores in the RT data's state ... (E625, E627, E631)
 - `Q191` dpm, high: what are the words that land in a kept owner's control page (0x00200047), OTPM
   page (0x04000417) and state page (0x00020001, 2) after the ... (E462, E591, E631)
-- `Q210` dpm, high: what keeps the second global page one to three cells past A_k, the page count
-  once the object block straddling global pages k - 1 and k is ... (E936, E937, E938)
-- `Q211` dpm, high: does the page need U of HU1 (E773, E863, E883, E916, E939: exact for 39 held-out
-  scenes, among them five of several kicks and eight ... (E916, E938, E939)
+- `Q210` dpm, high: why does band 6's margin end at the page count once the object after the
+  straddling block (b_6 + 1) is tiled (E960, E961: held out at four ... (E961, E962, E963)
+- `Q211` dpm, high: does E874's replay give the need of wide scenes of other vertex counts than 1500
+  (E630's 300 to 900; at 1500 it gave the need of four ... (E960, E962, E963)
 - `Q066` isp, high: what do the three background-object words the 3D kick writes mean to the ISP,
-  and what are the other words of a render's background object? (E216, E410, E590)
+  and what are the other words of a render's background object? (E971, E972, E973)
 - `Q089` isp, high: where does the closed driver's 4x multisampled render become a 64x64 image, when
   its PBE words are those of a single-sampled 64x64 target ... (E510, E727, E893)
 - `Q199` isp, high: what is the integer range and the behaviour at the limits (saturation, wrap,
-  removal) of the ISP's 1/256-pixel vertex format (E607: window ... (E607, E683, E684)
+  removal) of the ISP's 1/256-pixel vertex format (E607: window ... (E683, E684, E979)
 - `Q202` isp, high: do the coverage rule (centre sample, vertices on the 1/256 grid, top-left ties)
   and the attribute and depth planes of E606 hold with ... (E281, E502, E606)
 - `Q205` isp, high: what is the arithmetic by which the ISP decides the coverage and the depth of a
@@ -46,13 +46,13 @@ list.
 - `Q070` ta, high: what do the TA object's format word bits 15:8 and above and its set masks select
   beyond the settings seen, and does the fitted region test ... (E543, E544, E777)
 - `Q078` texture, high: what do T3 bits 11 and 12 select, given that they change nothing on a
-  strided texture and every pixel of a twiddled chain texture (E564, ... (E722, E723, E968)
+  strided texture and every pixel of a twiddled chain texture (E564, ... (E723, E968, E975)
 - `Q050` usse, high: what do the visibility group's instructions do, and how do smp's mipmaps and
   LOD values, the border address modes, the compressed and YUV ... (E563, E565, E568)
 - `Q047` vdm, high: what do VDM_STATE1 bit 8, bits 11:9 and bits 15:13 select for a state task, when
   on the one-triangle job bit 8 changes nothing, bits 11:9 ... (E427, E440, E545)
 - `Q108` bif, medium: what do the page table entry flags WRITEONLY, CACHECONSISTENT and EDMPROTECT
-  do on the hardware, which of the bus interface's requestors do ... (E319, E945, E946)
+  do on the hardware, which of the bus interface's requestors do ... (E946, E964, E965)
 - `Q081` dpm, medium: what does CR_DPM_REG_074C bit 8 make the DPM read or write near offset 0x6010
   of the context's TA-data space, and what fixes that place? (E313, E362, E447)
 - `Q192` dpm, medium: does the store that follows the next context's render replace the state page a
@@ -69,14 +69,12 @@ list.
   20 to 23, 27 to 31) do, alone and set together, what does ... (E466, E467, E665)
 - `Q073` isp, medium: what does o0 hold at the start of an opaque pass's pixel shader? (E417, E739,
   E757)
-- `Q190` isp, medium: does a render's background object with texture layers (the 23-dword form of a
-  transfer copy: the six words after the PDS words, the layer's ... (E069, E209, E590)
 - `Q200` isp, medium: why do the dyadic controls of E731 store one or two ulps below the truncated
   exact plane, below binade 0, in a region bounded by a diagonal ... (E758, E912, E913)
 - `Q240` isp, medium: does the coverage rule of E606 (vertices on the 1/256 pixel grid, exact centre
   test, left and top edges owning ties) hold for random ... (E682, E912, E913)
 - `Q261` isp, medium: how large is the error band of the ISP's edge evaluation (E684: 16 pixels in
-  14 of 208 cases within 5.6e-4 pixel of an edge line) as a ... (E682, E684)
+  14 of 208 cases within 5.6e-4 pixel of an edge line) as a ... (E682, E684, E979)
 - `Q262` isp, medium: what bounds the error of the stored depth and of the iterated clip z on E680's
   targets, where E606's tolerances fail for some triangles of ... (E684, E912, E913)
 - `Q288` isp, medium: what rule gives the stored depth of a plane with a non-dyadic gradient in x
@@ -140,7 +138,7 @@ list.
 - `Q180` texture, medium: why did all 28 triangle jobs of the four-component DOUTI0 probes hang
   (E569), the two controls with the old source word 0x40800801 included ... (E420, E541, E569)
 - `Q284` texture, medium: what does a TEXTYPE 2 cube sample read at an exact texel boundary when
-  |ma| is not a power of two (E923: 14 of 207 such pixels one texel ... (E930, E931, E951)
+  |ma| is not a power of two (E923, E931, E956: up or down by the ... (E951, E955, E956)
 - `Q003` transfer, medium: which event (if any) does a bus-interface fault raise, and what do the
   fault-request bits of CR_BIF_INT_STAT name, what clears a latched ... (E901, E919, E920)
 - `Q011` transfer, medium: why does a copy whose background-object tag (transfer word 0) is wrong
@@ -187,7 +185,7 @@ list.
 - `Q107` zls, medium: why does the final render of a job that overflows store zeros for the first
   row of macrotiles and the depth with its sign bit set for the ... (E489, E628, E629)
 - `Q120` zls, medium: what do the stored depth formats 3 to 7 (CR_ISP_ZLSCTL bits 26:24) hold and
-  how are they laid out, given that they store depth and stencil ... (E466, E490)
+  how are they laid out, given that they store depth and stencil ... (E466, E490, E978)
 - `Q121` zls, medium: what is the in-tile order of the stencil store (one byte a pixel, 128 dwords a
   32 x 16 tile) and what does the stencil test do against a ... (E466, E467)
 - `Q109` bif, low: do page directory entries whose page-size field (bits 3:1) names 16 KiB to 4 MiB
@@ -214,8 +212,6 @@ list.
   stop the tick through the closed task (E814: that word ... (E812, E814, E902)
 - `Q072` isp, low: what does bit 1 of CR_ISP_REG_04DC do to a punch-through pass, when it hangs
   every one tried and changes no opaque or translucent pass? (E222, E290, E416)
-- `Q141` isp, low: do the background pixels of a multisampled render under the full triangle hold
-  out as the seam holes of the region model (E922: every one ... (E762, E922, E934)
 - `Q201` isp, low: why does the position source (E437, E502: x + 0.375, y + 0.125 in mode 0 and
   every multisampling mode tried) differ from the point at which ... (E437, E502, E606)
 - `Q241` isp, low: what do ISP word 0 bits 15, 16, 17 and 18, the depth compares 2, 3, 5 and 6
@@ -262,8 +258,8 @@ list.
   one, how are its slices laid out, and how do the third ... (E342, E567)
 - `Q115` texture, low: does the sampler filter anisotropically on this core, and which bits of the
   texture words or the smp operands select it and its ratio? (E564, E720, E723)
-- `Q177` texture, low: what do T0 address modes 4 to 7 read along the u axis of a 16x16 twiddled
-  texture (indices 324 to 366 past the 256 texels, a period of 6 or ... (E033, E565, E932)
+- `Q177` texture, low: what sets the offset that T0 address modes 4 to 7 add on the u axis (the v
+  rule's texel moved by 116, 180 and 308 dwords at 8 x 8, 16 x 16 ... (E565, E932, E957)
 - `Q179` texture, low: how are the blocks and the data bits of formats 23 to 26 laid out (a data bit
   changes 7 to 13 pixels, the blocks of 23 and 24 do not differ ... (E342, E568, E724)
 - `Q181` texture, low: does the fill's transfer command load a colour-space set at all (xfer:17^=1
@@ -271,7 +267,7 @@ list.
 - `Q280` texture, low: what makes up to 56 of 2048 pixels of a gradient job differ from the
   Euclidean footprint of the pairs (op0, op2) and (op1, op3) with a LOD ... (E563, E721, E744)
 - `Q282` texture, low: what arithmetic gives the bilinear sample of an sRGB texel (T0 bit 27) given
-  that decode-then-filter in float fits 43% to 56% of the pixels ... (E720, E723)
+  that decode-then-filter in float fits 43% to 56% of the pixels ... (E720, E723, E976)
 - `Q017` usse, low: why does g19 read 0x1a as a store's source but 0 through a mov and as the pixel?
   (E085, E086, E372)
 - `Q048` usse, low: do the MADD0 and MADD1 clock gates follow the USSE pipes' floating-point
@@ -307,11 +303,11 @@ list.
 - `Q272` vdm, low: what makes three vertices of one job read as a constant row (E702: cap-n8-f10-a7,
   ids 55, 66 and 77 at R * V = 33 and 7 attribute rows; 3 ... (E702, E738, E755)
 - `Q101` zls, low: what does bit 19 (the negated float) do with the integer stored formats
-  (CR_ISP_ZLSCTL bits 26:24 = 1 and 2)? (E465, E466, E490)
+  (CR_ISP_ZLSCTL bits 26:24 = 1 and 2)? (E466, E490, E981)
 - `Q242` zls, low: how is the 16-bit stored depth format laid out at a pitch G other than 33 and at
-  an edge, what do the 24-bit and 16-bit formats store for a ... (E466, E490, E663)
+  an edge, what do the 24-bit and 16-bit formats store for a ... (E490, E663, E977)
 - `Q243` zls, low: what does the ZLS load do with an integer stored format (bits 26:24 = 1 or 2), at
-  an address other than the one the store writes, and when ... (E467, E628, E664)
+  an address other than the one the store writes, and when ... (E628, E664, E977)
 - `Q004` transfer, fw (parked): can a transfer context whose flag bit 4 is set be released, which
   agent but the host sets flag bits 1 and 4, and which priorities above 0 ... (E015, E455)
 - `Q029` render, fw (parked): what does the render context's own cleanup wait for once its RT data
@@ -335,18 +331,87 @@ list.
 
 ## Recent records
 
-96 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+119 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E981` zls, 2026-11-13: r9-z2 stage z2 (10 jobs, 256 x 128, G 7): with the viewport's z offset
+  (state-block word 10) at -0.25, so a modelled depth of -0.75 to -0.25, format 0 stored 0.0 at
+  every dword and formats 1 and 2 ...
+- `E980` bif, 2026-11-13: R9-faults stage bif (Q076; debugfs alias_skip on tri -n 2 --keep-going on
+  a new VM, E457's form, 14 jobs, every control passed): with the pairs and the three of buffers 12
+  to 14 left out of the ...
+- `E979` isp, 2026-11-13: r9-x stage far (11 jobs): with one vertex at +2^22, +2^23, +2^24 or -2^25
+  pixels in x, -2^22, +2^23, -2^24 or -2^25 in y (the other coordinate up to 2^23), or two at +-2^23
+  or +-2^24, and the rest ...
+- `E978` zls, 2026-11-13: r9-x stage zst (12 jobs): with E466's x ramp and a stencil buffer of each
+  dword's index loaded (bits 1 and 13) and stored (bit 17), at 64 x 32 (4 tiles) and 96 x 48 (9
+  tiles), format 4 changed 640 ...
+- `E977` zls, 2026-11-13: r9-x stage zls (16 jobs): stored depth format 1 is min(floor(z * 2^24),
+  0xffffff) of the format-0 float at every dword (frozen H-FLOOR held 3 of 3: 32768, 76800 and 3200
+  dwords at 256 x 128 G 7 over ...
+- `E976` texture, 2026-11-13: r9-x stage srgb (8 jobs): with T0 bit 27 (sRGB) and bilinear filtering
+  on injected strided texels, each lerp stage alone (fy = 0 on two jobs, fx = 0 on two, every 1/64
+  weight) and both (two jobs at ...
+- `E975` texture, 2026-11-13: r9-x stage t3 (19 jobs): with T3 bit 14 set in smp on named memory, on
+  six held-out strided geometries (W 16, 32, 48 at strides 32, 64, 128, u off the texel centres and
+  past the texture) each with ...
+- `E974` texture, 2026-11-13: R9-k1 stages s1 and s2, read post hoc at the fold (not frozen): at
+  every background pixel whose layer coordinate lies outside [0, 1) under the plane that held (E971,
+  E972), 1/64 texel off a texel ...
+- `E973` isp, 2026-11-13: R9-k1 stage s3 (Q066 explore; 21 jobs, the layered 64 x 64 render, no
+  fault): words 9 and 11 to 14 at 1.0, word 9 and word 13 at 0xffffffff, the format word 10 at 0,
+  0x202, 0x404, 0x101, 0xffff, ...
+- `E972` isp, 2026-11-13: R9-k1 stage s2 (Q066, and the anchor E971 left open; 20 held-out jobs, the
+  layered 64 x 64 render with kernel pokes of the vertex words 15 to 22: a move of 16 pixels and a
+  bit flip each, four ...
+- `E971` isp, 2026-11-13: R9-k1 stage s1 (Q190; 44 jobs, the layered 64 x 64 render with kernel
+  pokes of the object's words 3 to 8, 1 to 3 words a job at k/8 values, 14 fit and 30 held out drawn
+  with the seed r9-k1 after the ...
+- `E970` isp, 2026-11-13: R9-k1 stages s0t and s0p (Q190; the 64 x 64 one-triangle render with
+  debugfs render_bg_layer on and render_bg_src at a mapped 64 x 64 source, 7 controls, no fault):
+  the render details' background tag ...
 - `E968` texture, 2026-11-13: Round 9 offline (Q078; no run): with T3 bit 14 set, smp on a strided
   texture reads dword i + K + M c, i the dword the same job reads without the bit and c its column,
   read on E566's fit job ...
+- `E965` bif, 2026-11-13: R9-faults stage tri2 (Q108; the 64 x 64 triangle with PTE flags on its
+  colour target or the ZLS buffers of tri --depth --depth-store, 7 renders, the three knob-free
+  controls passed): WRITEONLY and ...
+- `E964` bif, 2026-11-13: R9-faults stage xf2 (Q108; a fill's destination and a copy's read-only
+  source with one PTE flag, 12 jobs, every control passed, E946's nine rows rerun token for token):
+  WRITEONLY on a fill's ...
+- `E963` dpm, 2026-11-13: r9-ldpm stage f9b on module B60AB0B4 (Q211's count of the 1500-vertex
+  scene, Q210's raise at band 4): the three calibrations held as controls (1280x1280, 1792x1792 and
+  2560x2048 never run: steps in ...
+- `E962` dpm, 2026-11-13: r9-ldpm stage w on module B60AB0B4 (Q211, the need of wide scenes of many
+  vertices): held out at four targets wider than 2:1 never run, E874's replay gave the need of the
+  1500-vertex scene at each ...
+- `E961` dpm, 2026-11-13: r9-ldpm stages a0 and m6b on module B60AB0B4 (Q210; band 6 of the tool's
+  1500-vertex triangle): the premise held, r8-ldpm's six a0 controls repeated ('a0: the premise held
+  (E935's a0 controls repeat ...
+- `E960` dpm, 2026-11-13: Round 9 offline steps of r9-ldpm (Q210, Q211; no run), each frozen by hash
+  before its scoring: OD-1, E874's replay gives the need of the 1500-vertex scene at all nine kept
+  calibrations (E915, E935, ...
 - `E959` ta, 2026-11-13: R9-lgeo stage q139b (Q139; 4 TA-dump jobs at 1280 x 720 and 768 x 640, the
   datasets' own commands, no fault): the unpoked baselines draw exactly and hold one header with a
   stream for every target ...
 - `E958` texture, 2026-11-13: R9-lgeo stage tx6 (Q283; E725's 64 x 32 map-texture fill, dword i of
   the scratch 0xD0000000 | i; 14 jobs, 2 controls, no fault): type 4 at widths that are not
   multiples of 32 keeps ceil(w / 32) whole ...
+- `E957` texture, 2026-11-13: R9-geo stage addr2 (Q177; 11 probe fills of twiddled 32-bit textures
+  at page 12 of a 32-page named scratch, the swept axis over 128 positions at one texel a step, no
+  fault): E932's u reading ...
+- `E956` texture, 2026-11-13: R9-geo stage cube2, ties and edges (Q284; 8 probe fills, no fault): a
+  tie of the two largest coordinates went to the face of the higher axis (z over y over x) on 4 of 4
+  held-out sweeps of x = y and y ...
+- `E955` texture, 2026-11-13: R9-geo stage cube2, sizes (Q284; 8 probe fills of TEXTYPE 2
+  point-sampled by smp3d, E726's cu-xn the control, no fault): with E923's face and (s, t) rule, the
+  face-local index of 32 x 32 and 64 x 64 ...
+- `E954` isp, 2026-11-13: R9-geo stage seam4 (the seam holes, E953's question; the same 24 renders
+  with --aa4 alone, the 4x context's automatic four region-header arrays, never run before in modes
+  0 and 1, and E828's j1r as a ...
+- `E953` isp, 2026-11-13: R9-geo stage seam1 (Q141; 24 tri renders with E504's pokes, each with
+  --aa4 and debugfs render_rgn_arrays 1, a context made for 4x targets whose region headers are
+  forced to one array, E502's, E504's ...
 - `E952` isp, 2026-11-13: Round 9 offline (Q260; no run), on E683's 240 S3 cases (negative
   coordinates at 1/4096, kept images, never read by E914's or E943's readings): E943's post hoc
   reading 'a sweep misses half away from ...
@@ -629,10 +694,17 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-36 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+42 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r9-z2`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t9
+- `render/closing-r9-x`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
 - `render/closing-r9-lgeo`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
+- `render/closing-r9-ldpm`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
+- `render/closing-r9-k1`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4,
+  ~/sgxfive-test-t9
+- `render/closing-r9-geo`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
+- `render/closing-r9-faults`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
 - `render/closing-r8-lgeo`: 2026-11-13; module 37EC97AB0CB37213C42FCCC; tools ~/sgxfive-test-rgn4
 - `render/closing-r8-ldpm`: 2026-11-13; module 37EC97AB0CB37213C42FCCC; tools ~/sgxfive-test-rgn4
 - `render/closing-r8-k2`: 2026-11-13; module B60AB0B475DD1E8972419B5; fork r8-kernel at 2a650d74;
@@ -688,7 +760,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 2 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 8 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at
@@ -731,4 +803,4 @@ stays with what a session must do around it.
 
 ## Simulator coverage baseline
 
-119 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
+118 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).

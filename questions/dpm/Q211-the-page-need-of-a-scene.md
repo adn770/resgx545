@@ -1,11 +1,11 @@
 +++
 id = "Q211"
-question = "does the page need U of HU1 (E773, E863, E883, E916, E939: exact for 39 held-out scenes, among them five of several kicks and eight one-triangle shapes from the full target to 8-pixel slivers) hold for wide scenes of many vertices (E630), and what gives the partial-render count of scenes of several kicks (neither the kicks replayed in turn nor the union replayed once, E938) and of the 1500-vertex scene where the threshold is not raised (F9's replay 13 of 15 held-out counts, E938), and why a wide scene in a small parameter buffer takes 35 or more partial renders (E438, E706: 300 vertices at 4096x4096 in 0x40 pages; folded from Q103)?"
+question = "does E874's replay give the need of wide scenes of other vertex counts than 1500 (E630's 300 to 900; at 1500 it gave the need of four targets wider than 2:1, E962, as HU1 gives one-object scenes, E939), what gives the partial-render count of scenes of several kicks (neither the kicks replayed in turn nor the union replayed once, E938, nor any of six variants fitted on OL7 (b)'s cells, E960), what sets the last TA run's peak of the 1500-vertex scene (F9's counts held at 18 of 20 cells off band 4, its last peak 1 to 3 pages off, E938, E963), and why a wide scene in a small parameter buffer takes 35 or more partial renders (E438, E706: 300 vertices at 4096x4096 in 0x40 pages; folded from Q103)?"
 unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E310", "E312", "E438", "E625", "E630", "E705", "E706", "E735", "E773", "E779", "E832", "E853", "E854", "E863", "E866", "E874", "E875", "E883", "E899", "E916", "E938", "E939"]
+evidence = ["E310", "E312", "E438", "E625", "E630", "E705", "E706", "E735", "E773", "E779", "E832", "E853", "E854", "E863", "E866", "E874", "E875", "E883", "E899", "E916", "E938", "E939", "E960", "E962", "E963"]
 terms = ["Dynamic Parameter Management (DPM)", "Parameter Buffer (PB)"]
 +++
 
@@ -234,3 +234,21 @@ pages after 16 (E706). Not run: 900 and 1500 vertices in 0x100 pages without the
 timeline of the partial-render count against the registers below and above 35. The count is the
 one this question asks for scenes of many objects (E875's page replay in E899's walk order, held
 out for one object by E916). Q103's evidence (E310, E312, E438, E630, E706) is in the list above.
+
+Narrowed 2026-11-13 (round 9, offline steps and laptop session r9-ldpm on module B60AB0B4, E960,
+E962
+and E963; decision R9-5 (a); the question stays open). The question line asked "does the page need U
+of HU1 (E773, E863, E883, E916, E939: exact for 39 held-out scenes, among them five of several kicks
+and eight one-triangle shapes from the full target to 8-pixel slivers) hold for wide scenes of many
+vertices (E630), and what gives the partial-render count of scenes of several kicks (neither the
+kicks replayed in turn nor the union replayed once, E938) and of the 1500-vertex scene where the
+threshold is not raised (F9's replay 13 of 15 held-out counts, E938), and why a wide scene in a
+small parameter buffer takes 35 or more partial renders (E438, E706: 300 vertices at 4096x4096 in
+0x40 pages; folded from Q103)?"; the U clause is answered for the 1500-vertex scene at wide targets
+and the count clause where the raise does not come, and the line now asks the rest. [HW] E874's
+replay, not HU1, gives the 1500-vertex scene's need at nine kept calibrations (E960) and at four
+targets wider than 2:1 held out, 4 of 4 (E962). F9's replay gave 5 of 5 counts off band 4 at three
+new targets; at band 4 with 2 global pages left the count is F9's without the raise, 3 of 3 (E963).
+Stage w's four F9 cells were gated by their calibrations' steps and matched every prediction only
+post hoc (E962). No rule of six multi-kick variants fitted on OL7 (b)'s 31 cells reached 18 of
+E938's 20 (the best 7), so no multi-kick stage ran (E960). Open: as the line says.

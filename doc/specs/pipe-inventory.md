@@ -51,7 +51,7 @@ model), `scene-only` (a whole job only), `exists` (vectors already in the data r
 
 | kind | status | dirs | files | records | blocked by | phase |
 |---|---|---|---|---|---|---|
-| isp-tile | built | 1 | 96 | E503 E502 | Q141 | 12.8 |
+| isp-tile | built | 1 | 96 | E503 E502 E953 | - | 12.8 |
 | ta-object | built | 1 | 177 | E541 | Q070 Q165 | 12.2 |
 | te-region | built | 1 | 105 | E542 | Q070 | 12.2 |
 | zls-store | built | 1 | 36 | E465 E489 E831 | Q107 | 12.4 |
@@ -64,7 +64,7 @@ model), `scene-only` (a whole job only), `exists` (vectors already in the data r
 | bif-walk | unit-blocked | 2 | 118 | E457 E573 E592 | Q076 Q108 | 12.5 |
 | dpm | unit-blocked | 5 | 229 | E200 E456 E464 | Q045 Q038 Q191 Q192 | 12.7 |
 | events | unit-blocked | 1 | 226 | E154 E357 | Q111 | 12.6 |
-| isp-tile | unit-blocked | 1 | 511 | E069 E590 | Q066 Q190 | 12.1 |
+| isp-tile | unit-blocked | 1 | 511 | E069 E590 | Q066 | 12.1 |
 | mte | unit-blocked | 12 | 78 | E061 E063 E194 E287 | Q069 Q162 | 12.2 |
 | pbe-emit | unit-blocked | 1 | 158 | E043 E044 | Q044 | 12.1 |
 | te-macrotile | unit-blocked | 4 | 348 | E174 E175 E331 | Q100 Q139 Q086 | 12.2 |
@@ -131,7 +131,7 @@ of sections 1 and 2 are those of the 12.0 scan and were not redone.*
 - **vdm, mte**: the stream parser and the MTE's viewport are in E650's model; the dump directories
   it refuses wait for Q047, Q069, Q112 and the state word rules. No unit vector is built: the
   inputs are in the render dumps only through the PB, so they need the scene's `memory`.
-- **isp**: the multisample window is built (786 tiles, 13 with background pixels refused: Q141).
+- **isp**: the multisample window is built (786 tiles, 13 with seam holes refused: E953).
   The coverage rule is a record and is built (E606, E607: 1/256 grid, half up, exact centre test,
   left and top ties; E660 reproduces 2752 of 2752 images through the pipeline), held on ten more
   targets up to 4096 x 4096 (E680 to E682; `sgx-pipe`'s `isp.rs` names the targets it admits); the

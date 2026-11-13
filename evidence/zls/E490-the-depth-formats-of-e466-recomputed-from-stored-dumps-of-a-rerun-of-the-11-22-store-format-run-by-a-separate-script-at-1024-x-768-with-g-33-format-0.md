@@ -1,6 +1,6 @@
 +++
 id = "E490"
-claim = "The depth formats of E466 recomputed from stored dumps of a rerun of the 11.22 store-format run, by a separate script: at 1024 x 768 with G = 33, format 0 holds the float z of the ramp at 786432 of 786432 pixels (within 1e-5 of the geometry's), format 1 holds round(z * 0xffffff) at 786432 of 786432 (z is the float format 0 stores at that pixel; floor, 333955), format 2 packs two rows in one dword in 256 dwords a tile with the dword index lx0 ly1 lx1 ly2 lx2 ly3 lx3 lx4 and the half ly0, derived from the dumps alone (786432 halves, 512 of 512 slots the same in every tile), formats 4 and 7 store nothing without a stencil buffer (0 dwords), formats 3, 5 and 6 store 965120, 96580 and 86084 dwords in 1885, 1508 and 1536 slots in the x ramp (the y ramp stores 965120, 84480 and 73760; format 3 reaches the last dword of the buffer, so its count is a lower bound), and bit 19 stores the float depth negated at 786432 of 786432 pixels and changes no dword of formats 1 and 2 (the dumps are byte-identical to the dumps without it, same sha256), where E466 had shown it by three frequent dwords"
+claim = "The depth formats of E466 recomputed from stored dumps of a rerun of the 11.22 store-format run, by a separate script: at 1024 x 768 with G = 33, format 0 holds the float z of the ramp at 786432 of 786432 pixels (within 1e-5 of the geometry's), format 1 holds min(floor(z * 2^24), 0xffffff) at 786432 of 786432 (z is the float format 0 stores at that pixel; round(z * 0xffffff) gives the same dwords there, floor(z * 0xffffff) 333955), format 2 packs two rows in one dword in 256 dwords a tile with the dword index lx0 ly1 lx1 ly2 lx2 ly3 lx3 lx4 and the half ly0, derived from the dumps alone (786432 halves, 512 of 512 slots the same in every tile), formats 4 and 7 store nothing without a stencil buffer (0 dwords), formats 3, 5 and 6 store 965120, 96580 and 86084 dwords in 1885, 1508 and 1536 slots in the x ramp (the y ramp stores 965120, 84480 and 73760; format 3 reaches the last dword of the buffer, so its count is a lower bound), and bit 19 stores the float depth negated at 786432 of 786432 pixels and changes no dword of formats 1 and 2 (the dumps are byte-identical to the dumps without it, same sha256), where E466 had shown it by three frequent dwords [corrected 2026-11-13, see Correction]"
 unit = "zls"
 method = "on the laptop (direct cable), linux fork 6ee9501832af, module srcversion 14D099861204842EA496D85, tool sgxfive-test-1122 (sha256 ec423efc3d9aa34576553da70916be4ceb715a729cbc02cc4bd89fa052511244): probes/zls/store-format-dumps.toml (script store-format-dumps.sh, store-format.sh with the depth dumps of its parts A and B (formats 0 to 7 and bit 19) kept, gzip level 6, 22 files of 1.3 MB; parts C and D, the enable bits and the stencil, ran as before but their dumps were not kept), run by hand over ssh with a manifest written by hand (as E489); recompute_e466.py of the dataset reads the dumps; output.txt equals the 11.22 run's but for the clock line and one job time (476 us there, 418 us here)"
 tiers = ["HW"]
@@ -45,3 +45,18 @@ formats 1 and 2. Formats 3, 5 and 6 are not decoded here (layouts only counted).
 **What it does not show.** The layouts of formats 3, 5 and 6; the stencil dumps (not kept); bit 19
 with a depth that is negative before the conversion to an integer format (not run; the ramp is
 positive).
+
+**Correction 2026-11-13:** the 24-bit rule is min(floor(z * 2^24), 0xffffff), held out by E977 over
+depths 0 to 1 where round(z * 0xffffff) fails from 0.5 up; on this record's ramp (0.25 to 0.4166)
+the two give the same 786432 dwords, so the counts stand. The claim read: "The depth formats of E466
+recomputed from stored dumps of a rerun of the 11.22 store-format run, by a separate script: at 1024
+x 768 with G = 33, format 0 holds the float z of the ramp at 786432 of 786432 pixels (within 1e-5 of
+the geometry's), format 1 holds round(z * 0xffffff) at 786432 of 786432 (z is the float format 0
+stores at that pixel; floor, 333955), format 2 packs two rows in one dword in 256 dwords a tile with
+the dword index lx0 ly1 lx1 ly2 lx2 ly3 lx3 lx4 and the half ly0, derived from the dumps alone
+(786432 halves, 512 of 512 slots the same in every tile), formats 4 and 7 store nothing without a
+stencil buffer (0 dwords), formats 3, 5 and 6 store 965120, 96580 and 86084 dwords in 1885, 1508 and
+1536 slots in the x ramp (the y ramp stores 965120, 84480 and 73760; format 3 reaches the last dword
+of the buffer, so its count is a lower bound), and bit 19 stores the float depth negated at 786432
+of 786432 pixels and changes no dword of formats 1 and 2 (the dumps are byte-identical to the dumps
+without it, same sha256), where E466 had shown it by three frequent dwords".

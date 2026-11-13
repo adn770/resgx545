@@ -5,7 +5,7 @@ unit = "bif"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E021", "E151", "E319", "E945", "E946"]
+evidence = ["E021", "E151", "E319", "E945", "E946", "E964", "E965"]
 terms = ["CR_BIF_FAULT", "CR_BIF_INT_STAT"]
 +++
 
@@ -44,3 +44,19 @@ copy's source changed nothing. What stays: which access faults at the last page 
 (the pixel side's writes land), WRITEONLY alone on a texture read, EDMPROTECT on reads other than
 the stream page's and on the TA's and the EDM's own buffers, flags together, CACHECONSISTENT on
 data cached before the host's write, and a held transfer row.
+
+Narrowed 2026-11-13 (round 9, session r9-faults, decision S-6 (a); E964, E965, frozen, every
+control passed). WRITEONLY's write fault names the page of the last pixel written, after every
+pixel landed, SB 31: held out at a 64 x 16 fill from row 16 (page 0x3e002000, the mapping's
+first page never written) and at 64 x 64 (0x3e004000), never the mapping's first or last page
+(E964); on the ZLS store it lets the whole store land and faults at the store window's last page
+(0x80200, SB 0, E965). EDMPROTECT faults client writes at the mapping's first page, FAULT_TYPE 2,
+nothing written: the pixel write and the ZLS store (0xa0200, FAULT_REQ bit 9) alike, and lets
+reads through: the stream read (E945) and a copy's texture read of its READONLY source (PTE
+0x14, E964). With both flags on a colour target the job faults as EDMPROTECT alone (0xa0020 at
+the first page, E965). E946's transfer rows, rerun as a held stage with their frozen
+predictions, read as post hoc (E964). What stays: CACHECONSISTENT on data cached before the
+host's write (a tool that reads, writes from the host and reads again in one context);
+WRITEONLY and EDMPROTECT alone on a texture read (the copy maps its source READONLY); either flag
+on a depth load, the TA's own writes and the EDM's buffers; which unit makes the last-page access
+under WRITEONLY.
