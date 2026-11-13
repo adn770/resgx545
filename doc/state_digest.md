@@ -21,10 +21,10 @@ list.
   macrotile lists a partial render stores in the RT data's state ... (E625, E627, E631)
 - `Q191` dpm, high: what are the words that land in a kept owner's control page (0x00200047), OTPM
   page (0x04000417) and state page (0x00020001, 2) after the ... (E462, E591, E631)
-- `Q210` dpm, high: what keeps the second global page one to three cells past A_k, the page count
-  once the object block straddling global pages k - 1 and k is ... (E936, E937, E938)
-- `Q211` dpm, high: does the page need U of HU1 (E773, E863, E883, E916, E939: exact for 39 held-out
-  scenes, among them five of several kicks and eight ... (E916, E938, E939)
+- `Q210` dpm, high: why does band 6's margin end at the page count once the object after the
+  straddling block (b_6 + 1) is tiled (E960, E961: held out at four ... (E961, E962, E963)
+- `Q211` dpm, high: does E874's replay give the need of wide scenes of other vertex counts than 1500
+  (E630's 300 to 900; at 1500 it gave the need of four ... (E960, E962, E963)
 - `Q066` isp, high: what do the three background-object words the 3D kick writes mean to the ISP,
   and what are the other words of a render's background object? (E216, E410, E590)
 - `Q089` isp, high: where does the closed driver's 4x multisampled render become a 64x64 image, when
@@ -337,12 +337,24 @@ list.
 
 ## Recent records
 
-94 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+98 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
 - `E968` texture, 2026-11-13: Round 9 offline (Q078; no run): with T3 bit 14 set, smp on a strided
   texture reads dword i + K + M c, i the dword the same job reads without the bit and c its column,
   read on E566's fit job ...
+- `E963` dpm, 2026-11-13: r9-ldpm stage f9b on module B60AB0B4 (Q211's count of the 1500-vertex
+  scene, Q210's raise at band 4): the three calibrations held as controls (1280x1280, 1792x1792 and
+  2560x2048 never run: steps in ...
+- `E962` dpm, 2026-11-13: r9-ldpm stage w on module B60AB0B4 (Q211, the need of wide scenes of many
+  vertices): held out at four targets wider than 2:1 never run, E874's replay gave the need of the
+  1500-vertex scene at each ...
+- `E961` dpm, 2026-11-13: r9-ldpm stages a0 and m6b on module B60AB0B4 (Q210; band 6 of the tool's
+  1500-vertex triangle): the premise held, r8-ldpm's six a0 controls repeated ('a0: the premise held
+  (E935's a0 controls repeat ...
+- `E960` dpm, 2026-11-13: Round 9 offline steps of r9-ldpm (Q210, Q211; no run), each frozen by hash
+  before its scoring: OD-1, E874's replay gives the need of the 1500-vertex scene at all nine kept
+  calibrations (E915, E935, ...
 - `E952` isp, 2026-11-13: Round 9 offline (Q260; no run), on E683's 240 S3 cases (negative
   coordinates at 1/4096, kept images, never read by E914's or E943's readings): E943's post hoc
   reading 'a sweep misses half away from ...
@@ -625,9 +637,10 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-35 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+36 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r9-ldpm`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
 - `render/closing-r8-lgeo`: 2026-11-13; module 37EC97AB0CB37213C42FCCC; tools ~/sgxfive-test-rgn4
 - `render/closing-r8-ldpm`: 2026-11-13; module 37EC97AB0CB37213C42FCCC; tools ~/sgxfive-test-rgn4
 - `render/closing-r8-k2`: 2026-11-13; module B60AB0B475DD1E8972419B5; fork r8-kernel at 2a650d74;
@@ -683,9 +696,9 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 1 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 2 sessions, fork r8-kernel at
   2a650d74
+- module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at
   3f0b3e74
 - module srcversion 99CD90DA26E3AFF9C450517: last named 2026-11-12, 14 sessions, fork resgx545 at

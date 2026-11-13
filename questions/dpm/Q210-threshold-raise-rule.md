@@ -1,11 +1,11 @@
 +++
 id = "Q210"
-question = "what keeps the second global page one to three cells past A_k, the page count once the object block straddling global pages k - 1 and k is tiled, at band 6 of five of ten targets run (E915, E936: 3072x3072, 2560x2560, 1536x1536, 4096x2048, 2560x3072; not the class of target), what puts E874's step replay off at 2048x3072 S6 (0x234) and 2048x4096 S3 (0x12c, pinned by the abort's count, E935), 2560x3072 S6 and 3072x2560 S3 and S6 (E936), why the threshold is not raised after a first partial render at band 4 that leaves 2 global pages (E918, E938), what sets the global steps of objects larger than 67 dwords (with every output written the 8-pair scene repeats its 53 blocks and needs more than the clamp, E937), and do E802's one global page and the page pending after a grow (H-PENDREQ, E918) follow from E874's replay?"
+question = "why does band 6's margin end at the page count once the object after the straddling block (b_6 + 1) is tiled (E960, E961: held out at four targets, 20 of 20, where A_6, E900's end, gave 14) and do other bands end there too, what puts E874's step replay one to three pages low at some targets' S3 and S6 (2048x3072, 2048x4096, E935; 2560x3072, 3072x2560, E936; 2048x2304, E961; the four wide targets of E962, whose needs are the replay's), why the threshold is not raised after a first partial render at band 4 that leaves 2 global pages (E918, E938, E963: 7 of 7 cells against R-5's guard as formalized), what sets the global steps of objects larger than 67 dwords (E937), and do E802's one global page and the page pending after a grow (H-PENDREQ, E918) follow from E874's replay?"
 unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E310", "E312", "E464", "E625", "E627", "E629", "E704", "E734", "E753", "E774", "E779", "E785", "E786", "E799", "E800", "E801", "E802", "E852", "E853", "E860", "E861", "E862", "E863", "E864", "E873", "E874", "E881", "E882", "E900", "E915", "E917", "E918", "E935", "E936", "E937", "E938"]
+evidence = ["E310", "E312", "E464", "E625", "E627", "E629", "E704", "E734", "E753", "E774", "E779", "E785", "E786", "E799", "E800", "E801", "E802", "E852", "E853", "E860", "E861", "E862", "E863", "E864", "E873", "E874", "E881", "E882", "E900", "E915", "E917", "E918", "E935", "E936", "E937", "E938", "E960", "E961", "E962", "E963"]
 terms = ["Dynamic Parameter Management (DPM)", "CR_DPM_STATE_BASE0", "ta3d_ctl"]
 +++
 
@@ -330,3 +330,23 @@ values, failed 3 of 3) and its need above the clamp, and the plain 8-pair comman
 the session: E917's difference lies between sessions, through outputs the default program leaves
 unwritten [infer] (E937). Read after the run, the band 4 cells of f9 with 2 pages left were not
 raised (E938), as E918's k-s4p1. Open: as the line says.
+
+Narrowed 2026-11-13 (round 9, offline steps and laptop session r9-ldpm on module B60AB0B4, E960 to
+E963; decision R9-5 (a); the question stays open). The question line asked "what keeps the second
+global page one to three cells past A_k, the page count once the object block straddling global
+pages k - 1 and k is tiled, at band 6 of five of ten targets run (E915, E936: 3072x3072, 2560x2560,
+1536x1536, 4096x2048, 2560x3072; not the class of target), what puts E874's step replay off at
+2048x3072 S6 (0x234) and 2048x4096 S3 (0x12c, pinned by the abort's count, E935), 2560x3072 S6 and
+3072x2560 S3 and S6 (E936), why the threshold is not raised after a first partial render at band 4
+that leaves 2 global pages (E918, E938), what sets the global steps of objects larger than 67 dwords
+(with every output written the 8-pair scene repeats its 53 blocks and needs more than the clamp,
+E937), and do E802's one global page and the page pending after a grow (H-PENDREQ, E918) follow from
+E874's replay?"; it now asks why band 6 ends where it does and the rest. [fit and SEMI, then HW held
+out] The "6 pages left" cells of E936 are the reader's last sample before the global list was
+trimmed (E960). Band 6's margin ends at the page count once object b_6 + 1, the object after the
+straddling block, is tiled (H-NEXT1): fitted on two of E936's targets and SEMI on its other eight
+(E960), then held out at four new targets, 20 of 20, where H-SPAN's A_6 gave 14 (E961); E936's six
+cells repeated on this module. `dpm.rs` gives band 6 at those four targets. The step replay held at
+five new calibrations and missed 2048x2304's S3 and S6 and the four wide targets' S6 by one or two
+pages, their needs the replay's (E961, E962). At three more band 4 cells with 2 global pages left
+the threshold was not raised (E963), as at E938's three and E918's k-s4p1. Open: as the line says.
