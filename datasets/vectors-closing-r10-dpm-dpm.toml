@@ -1,0 +1,9 @@
+title = "r10-dpm s6rep: per job the regtimeline counts reading (the knob, the run peaks, the need, the steps) of the 1500-vertex scene (17 jobs: the a0 pair and 15 calibration replicates)"
+repo = "data"
+paths = ["vectors/closing/r10-dpm/dpm/"]
+method = "tools/usse-asm/closing_tables.py kitdpm on the published render/closing-r10-dpm session (stage s6rep of its one attempt, out/20261113-102513), one file; rows are measurements; the table says its replay is refused (sgx-pipe's dpm.rs refuses these five targets' steps, E1009's unit test records the sampled S_6 brackets, but no test reads this table)"
+date = "2026-11-13"
+files = 1
+size = 13970
+sha256 = "1ceb15e904791b52a11454cc9d6c0200038548b668765ee6adb98358cf3ae1c8"
+recipe = "tools/usse-asm/closing_tables.py"

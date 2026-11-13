@@ -8073,6 +8073,18 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   is ignored there; mode 7's field-0 image (alpha and red) is refuted (H-M7 failed the 4 field-0
   rows, 2048 of 4096 pixels); both E383 mode 8 controls passed (4096 of 4096).
   *pbe; HW; data: `render-closing-r10-x:out/20261113-101116/sb/`.*
+- `E1009` r10-dpm stage s6rep on module B60AB0B4 (Q210: is E874's step replay low at S6 by noise or
+  by bias; 3 calibration replicates at each of five targets, 17 jobs): the a0 premise pair passed
+  ('s6rep: the premise held'); the replay's S6 lay inside no target's replicate range (H-NOISE 0 of
+  5) and every replicate but one read R + 1 or R + 2 (H-BIAS 4 of 5 targets, 14 of 15 replicates;
+  'DECISION: BIAS decided; classes 4096x1024 BIAS, 4096x1536 NEITHER, 3584x1024 BIAS, 2048x512 BIAS,
+  2048x2304 BIAS'); the fifth read 0x245 (R + 28) in one replicate of 4096x1536, a sampling gap;
+  post hoc, the sampled bracket of S6 has its lower end at R + 1 in 15 of 15 replicates (and in
+  E962's four and E961's seven reads at 2048x2304), so the replay is below the bracket at all five
+  targets and the spread above is the sampler's: a bias, not noise; the needs were the replay's (30
+  of 30) and the replay's S6 was exact at the 2048x2048 control (0x181).
+  *dpm; HW; data: `render-closing-r10-dpm:out/20261113-102513/s6rep/`,
+  `render-closing-r10-dpm:fold/`, `vectors-closing-r10-dpm-dpm`.*
 - `E1010` r10-x stage win0 (14 jobs, E502's identity maps: E437's primary PDS program iterating the
   position, a shader writing pa0 or pa1, --tri-full): in CR_ISP_MSAA mode 0 with CR_TE_AA
   0x60000000, 0xa0000000 and 0xe0000000 at 64 x 64 and 128 x 96 every stored pixel holds its own
@@ -8097,7 +8109,7 @@ E327, E358, E362, E438, E442, E443, E446, E447, E453, E456, E461, E463, E464, E4
 E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753, E773, E774, E775, E779, E785,
 E786, E790, E799, E800, E801, E802, E803, E832, E845, E846, E852, E853, E854, E860, E861, E862,
 E863, E864, E866, E867, E868, E869, E870, E873, E874, E875, E881, E882, E883, E887, E889, E899,
-E900, E915, E916, E917, E918, E935, E936, E937, E938, E939, E960, E961, E962, E963.
+E900, E915, E916, E917, E918, E935, E936, E937, E938, E939, E960, E961, E962, E963, E1009.
 
 ### edm
 

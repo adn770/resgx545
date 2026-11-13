@@ -22,7 +22,7 @@ list.
 - `Q191` dpm, high: what are the words that land in a kept owner's control page (0x00200047), OTPM
   page (0x04000417) and state page (0x00020001, 2) after the ... (E462, E591, E631)
 - `Q210` dpm, high: why does band 6's margin end at the page count once the object after the
-  straddling block (b_6 + 1) is tiled (E960, E961: held out at four ... (E961, E962, E963)
+  straddling block (b_6 + 1) is tiled (E960, E961: held out at four ... (E962, E963, E1009)
 - `Q211` dpm, high: does E874's replay give the need of wide scenes of other vertex counts than 1500
   (E630's 300 to 900; at 1500 it gave the need of four ... (E960, E962, E963)
 - `Q066` isp, high: what do the three background-object words the 3D kick writes mean to the ISP,
@@ -327,12 +327,15 @@ list.
 
 ## Recent records
 
-132 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+133 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
 - `E1010` isp, 2026-11-13: r10-x stage win0 (14 jobs, E502's identity maps: E437's primary PDS
   program iterating the position, a shader writing pa0 or pa1, --tri-full): in CR_ISP_MSAA mode 0
   with CR_TE_AA 0x60000000, ...
+- `E1009` dpm, 2026-11-13: r10-dpm stage s6rep on module B60AB0B4 (Q210: is E874's step replay low
+  at S6 by noise or by bias; 3 calibration replicates at each of five targets, 17 jobs): the a0
+  premise pair passed ('s6rep: the ...
 - `E999` pbe, 2026-11-13: r10-x stage sb (18 jobs, E383's 64 x 64 triangle with eot_plain and two
   colours whose bytes all differ): pack modes 20 and 27 store, at sideband bits 8:6 = 0 to 3 and for
   both colours, the image ...
@@ -729,7 +732,7 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-43 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+44 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
 - `render/closing-r9-z2`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t9
@@ -746,6 +749,7 @@ srcversion, fork tip, laptop tools.
   tools ~/sgxfive-test-rgn4
 - `render/closing-r8-geo`: 2026-11-13; module 37EC97AB0CB37213C42FCCC; tools ~/sgxfive-test-rgn4
 - `render/closing-r10-x`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
+- `render/closing-r10-dpm`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
 - `render/closing-r7-rp`: 2026-11-12; module 41E2F5C756F96D20F7109A4; tools ~/sgxfive-test-rgn4
 - `render/closing-r7-geo`: 2026-11-12; module 41E2F5C756F96D20F7109A4; tools ~/sgxfive-test-rgn4
 - `render/closing-r7-faults`: 2026-11-12; module 41E2F5C756F96D20F7109A4; fork r6-kernel at
@@ -796,7 +800,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 9 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 10 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at
