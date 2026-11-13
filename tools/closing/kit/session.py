@@ -794,11 +794,19 @@ def _expand(args, env):
     return r.stdout.decode().split("\0")[:-1] if r.returncode == 0 else None
 
 
+def _takes_knobs(binp):
+    """Whether the library mock lists --mock-knob in its usage (older sources do not)."""
+    r = bounded([binp], 30, capture_output=True, text=True)
+    return "--mock-knob" in r.stdout + r.stderr
+
+
 def libmock(kp, say=print):
     """Every row's argv run through the library mock of its tool (the tool a wrapper runs after
     `--` included), as the kernel's interface checks it: a `job: rejected` line, a usage refusal
     (rc 2) or a crash is a finding, 'tables/STAGE.txt NAME: what'. A tool with no `source` in
-    session.toml is said, not replayed. Returns the findings."""
+    session.toml is said, not replayed. A row's `dbg:NAME=V` words are passed as `--mock-knob NAME=V`
+    to a mock that lists that option, so a row whose knob state is wrong is the tool's own
+    refusal (E934's twin). Returns the findings."""
     kp = pathlib.Path(kp).resolve()
     c = config(kp)
     paths = {tool_path(c, c["prefix"], t): t for t in c["tools"]}
@@ -815,6 +823,7 @@ def libmock(kp, say=print):
             bad.append(f"{t}: {why}")
         else:
             bins[t] = b
+    knobbed = {t: _takes_knobs(b) for t, b in bins.items()}
     if not bins:
         return bad
     top = pathlib.Path(tempfile.mkdtemp(prefix="libmock.", dir=kp / "debug"))
@@ -848,7 +857,9 @@ def libmock(kp, say=print):
                 if prev in c["outdir_opts"]:
                     pathlib.Path(a).parent.mkdir(parents=True, exist_ok=True)
                 prev = a
-            r = bounded([bins[tool], "--mock", *argv], 120, capture_output=True, text=True,
+            kn = [x for w in row[3].split() if w.startswith("dbg:") and knobbed[tool]
+                  for x in ("--mock-knob", w[4:])]
+            r = bounded([bins[tool], "--mock", *kn, *argv], 120, capture_output=True, text=True,
                         cwd=w, env=env)
             count[tool] = count.get(tool, 0) + 1
             rej = [ln for ln in r.stdout.splitlines() if ln.startswith("job: rejected")]

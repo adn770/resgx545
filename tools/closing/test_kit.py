@@ -692,6 +692,57 @@ def test_the_mock_replays_every_row_on_the_library_mock_and_stops_on_a_refusal(r
         assert "world model" not in m.stdout, m.stdout
 
 
+KNOB_SRC = """#!/bin/sh
+[ "$1" = --mock ] || { echo "usage: sgxfive-test [--mock [--mock-knob NAME=V]...] COMMAND" >&2
+    exit 2; }
+shift
+bgl=0; src=0
+while [ "$1" = --mock-knob ]; do
+    case "$2" in render_bg_layer=1) bgl=1 ;; render_bg_src=0x*) src=1 ;; esac; shift 2; done
+case " $* " in *" --bg-layer "*)
+    [ $bgl = 1 ] && [ $src = 1 ] \\
+        || { echo "usage: --bg-layer needs both knobs set" >&2; exit 2; } ;; esac
+echo "job: ok"; echo "diff: 0 of 2048 pixels"
+"""
+
+
+def knob_session(repos, src):
+    kp = scaffold(repos)
+    toml = (kp / "session.toml").read_text().replace(
+        "[knobs]\n", '[knobs]\nrender_bg_layer = { default = "0", values = ["0", "1"] }\n'
+        'render_bg_src = { default = "0x0", values = ["0x0", "0x3e800000"] }\n', 1)
+    (kp / "session.toml").write_text(toml)
+    bind_source(repos, kp, src=src)
+    return kp
+
+
+def test_the_library_mock_replays_a_row_with_the_knob_state_its_dbg_words_set(repos):
+    """E934's twin: a row whose premise needs a debugfs knob replayed `job: ok` with no knob
+    state. A library mock that lists --mock-knob gets each of the row's `dbg:NAME=V` words as
+    `--mock-knob NAME=V`; a row with the wrong knob state is then the tool's refusal, a finding."""
+    kp = knob_session(repos, KNOB_SRC)
+    t = kp / "tables/s0.txt"
+    base = t.read_text()
+    both = "dbg:render_bg_layer=1 dbg:render_bg_src=0x3e800000"
+    t.write_text(base + f"k1|fit|safe|{both}|t4|fill --bg-layer\n")
+    m = kit(kp, repos, "mock")
+    assert m.returncode == 0, m.stdout + m.stderr
+    for words in ("-", "dbg:render_bg_layer=1", "dbg:render_bg_src=0x3e800000"):
+        t.write_text(base + f"k2|fit|safe|{words}|t4|fill --bg-layer\n")
+        m = kit(kp, repos, "mock")
+        assert m.returncode != 0, (words, m.stdout)
+        assert re.search(r"^FAIL libmock: tables/s0.txt k2: .*both knobs", m.stdout, re.M), \
+            m.stdout
+
+
+def test_a_library_mock_without_mock_knob_replays_as_before(repos):
+    kp = knob_session(repos, FAKE_SRC)
+    t = kp / "tables/s0.txt"
+    t.write_text(t.read_text() + "k1|fit|safe|dbg:render_bg_layer=1|t4|fill\n")
+    m = kit(kp, repos, "mock")
+    assert m.returncode == 0, m.stdout + m.stderr
+
+
 def test_the_library_mock_runs_the_tool_a_wrapper_runs(repos):
     kp = rt_session(repos, 'o1|fit|safe|-|rt|0 1 0x0c04 -- "$HOME/sgxfive-test-rgn4" fill '
                            '--refused')
