@@ -1,11 +1,11 @@
 +++
 id = "Q260"
-question = "the tie of a negative window coordinate 1/512 above the 1/256 grid rounds away from zero on five of six sweeps (E914): what makes the y sweeps aimed 100 pixels away at -64.5 and +64.5 and one non-tie case differ from every frozen rounding by pixels within 6.4e-4 pixel of an edge 258 to 313 pixels long, and do half away from zero for negative coordinates and a rule for those long edges reproduce E683's 101 pixels"
+question = "the tie of a negative window coordinate 1/512 above the 1/256 grid rounds away from zero wherever the aimed pixel is clear of E914's band (E914, E943): which arithmetic decides the pixels within 6.4e-4 pixel of a long edge (738 of 738 pixels off half away from zero's image lie there, E943), and does a vertex past the target's far edge, read after the run, predict the sweeps that miss"
 unit = "isp"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E683", "E607", "E606", "E680", "E681", "E914"]
+evidence = ["E683", "E607", "E606", "E680", "E681", "E914", "E943"]
 terms = []
 +++
 E607 fitted a rounding half up to 1/256 pixel at x >= 0 and E681 shows it holds at positive ties up
@@ -56,3 +56,18 @@ an edge of 258 to 313 pixels, E684's band, so the open part looks like the edge 
 edges rather than the rounding [infer]. The simulator still refuses a negative coordinate with a
 sub-grid fraction: no rounding held out. To settle it: HA frozen with the long-edge sweeps
 repeated in x and y at 1, 4, 100 and 300 pixels, so that the band and the rounding separate.
+
+Narrowed 2026-11-13 (round 8, R8-lgeo stage zs2, E943; the question line is reworded, the
+question is not retired). It read "the tie of a negative window coordinate 1/512 above the 1/256
+grid rounds away from zero on five of six sweeps (E914): what makes the y sweeps aimed 100 pixels
+away ... differ from every frozen rounding by pixels within 6.4e-4 pixel of an edge 258 to 313
+pixels long, and do half away from zero for negative coordinates and a rule for those long edges
+reproduce E683's 101 pixels". At -1/256, -1.25 and -17.75 on both axes the tie rounds away from
+zero (HA's step 6 of 8 held out, half up 0 of 8; the other two aim at a pixel within 4e-5 pixel of
+a 300 to 600 pixel edge); H-BAND held on 90 of 90 long rows, and read after the run all 738 pixels
+off HA's image lie within 6.4e-4 pixel of an edge line of 195 to 904 pixels. The y-axis reading of
+E914 is refuted: on 256 x 512 the misses follow the transposed scene (H-GEOM 16 of 24, H-YAXIS 8),
+and every sweep with a vertex past the far edge missed (12 of 12; post hoc, 4 more sweeps miss
+1 to 3 pixels without one). The simulator refuses a negative sub-grid vertex naming this question.
+To settle it: freeze the far-vertex reading and the band and hold them out (sweeps with and without
+a vertex past the far edge at matched edge lengths), and find which side a band pixel takes.

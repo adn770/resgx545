@@ -1,11 +1,11 @@
 +++
 id = "Q139"
-question = "in what order does the TA write a macrotile's region headers (row by row fits 20 of E907's 21 dumped cases and misses stride 4, 4 x 4 tile blocks fit all 21, read after the held-out rows), what is the stride's relation to the RT data, and why do the words that fault (E509) fault"
+question = "where does the TA write a region's header when the macrotile bounds are not multiples of 4 (E944's residue: 256 x 256 m1-B2-10 and m1-B2-11, 640 x 480 m1-B1-23, which block order and R7-BLK do not give, and 1280 x 720 m2-B3p1), what is the stride's relation to the RT data, and why do the words that fault (E509) fault"
 unit = "ta"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E505", "E506", "E509", "E407", "E877", "E907"]
+evidence = ["E505", "E506", "E509", "E407", "E877", "E907", "E944"]
 terms = ["CR_TE_MTILE1", "CR_TE_MTILE2", "CR_TE_MACROTILE_STRIDE"]
 +++
 
@@ -54,3 +54,15 @@ rule places a region's header (R7-BLK, 9 of 10 held out), what bit 31 does (the 
 macrotiles per axis and the bounds used), why B2 at or past B3 is exact. Open: the write order
 within a macrotile (block order fits all 21 rows only post hoc), the stride's relation to the RT
 data, and the faulting words of E509, whose dumps were not taken.
+
+Narrowed 2026-11-13 (round 8, R8-lgeo stage q139, E944; the question line is reworded, the
+question is not retired). The write order is answered: with R7-BLK's slots the TA writes the
+headers in 4 x 4 tile blocks, block rows across the target, raster inside a block, a later header
+overwriting an earlier one; frozen from the round 8 planning's SEMI reading, it gave the wrong-tile
+set and every header slot of 11 of 11 held-out strides at 256 x 256 and 640 x 480 (row order 4,
+blocks by column 0, macrotile then block 0), and the baselines' headers sit in the same blocks.
+sgx-pipe models it for poked strides that drew (`ta::stride_slots`) and writes the library's
+headers in those blocks. Open: the four residue jobs, which replicated their datasets' images and
+which no order gives (three with bounds that are not multiples of 4; 1280 x 720 had no baseline
+dump, so its slots were not read), the stride's relation to the RT data, and the faulting words
+of E509 (not run: the session was safe class only).

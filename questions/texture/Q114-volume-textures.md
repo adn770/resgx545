@@ -23,4 +23,5 @@ not yet used (Q078 lists the unexplained bits), the result compared with the 2D 
 Narrowed in 11.32 (E567). The TEXTYPE values 0 to 7 were run at 16x16 (and 6 at 64x32): 7 reads as
 twiddled, 1 and 3 as one image, 4 and 5 as one image each, and 2 changes with smp3d's third
 coordinate; no volume slice read was identified. Whether type 2 is a volume or a cube is open
-(Q178), as are the slice layout, the third coordinate's mode and filter and a volume's mip chain.
+(type 2 is the cube, E726), as are the slice layout, the third coordinate's mode and filter and a
+volume's mip chain.
