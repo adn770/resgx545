@@ -1,11 +1,11 @@
 +++
 id = "Q200"
-question = "why do the dyadic controls of E731 store one or two ulps below the truncated exact plane, below binade 0, in a region bounded by a diagonal line (dp-ax-b1: the pixels with x + 2y >= 319), and what error of the ISP's depth plane that region does not explain remains as a function of the gradient (its rule is Q288's)"
+question = "why do the dyadic controls of E731 store one or two ulps below the truncated exact plane, below binade 0, in a region bounded by a diagonal line (dp-ax-b1: the pixels with x + 2y >= 319), and what error of the ISP's depth plane that region does not explain remains as a function of the gradient (its rule is Q288's); and what arithmetic the iterators use for the values they interpolate (how three vertices' values become a plane, how a pixel's value is read from it, its ulp behaviour: E048 bounds it by 1.2e-7, no rule)"
 unit = "isp"
 kind = "hw"
-value = "medium"
+value = "high"
 phase = 11
-evidence = ["E606", "E072", "E465", "E731", "E741", "E758", "E912", "E913"]
+evidence = ["E606", "E072", "E465", "E731", "E741", "E758", "E912", "E913", "E023", "E148", "E174", "E307", "E048", "E214", "E215", "E542", "E607", "E680"]
 terms = []
 +++
 E606: the stored depth of covered pixels is within 1 unit (2^-23, absolute) of the exact plane at
@@ -86,3 +86,21 @@ the run). E606 reports 1.9 units at most for its own 529 triangles below 0.03, s
 simulator uses on E606's targets is not a bound for tiny triangles elsewhere; whether it is one on
 E606's targets is not measured. The iterated clip z of 3 of 24 medium triangles (E912) is offset by
 3.6 to 5.8 units, nearly constant over each triangle.
+
+Folded in 2026-11-13 (round 10 offline, decision R10-6 a; ranking closing10/rank/rank-round10.md
+finding 4). Q205 asked for the arithmetic by which the ISP decides the coverage and the depth of a
+pixel for an arbitrary triangle and the iterators' arithmetic: the precision of the edge functions,
+the rounding of the plane equations, the rule for a pixel centre exactly on an edge, the ulp
+behaviour of the plane evaluation, and whether very thin, very small or off-target-partly triangles
+follow the same arithmetic. Its coverage clauses are answered by records it did not cite: E606 (a
+pixel is covered iff its centre is inside the triangle with vertices on the 1/256 grid and left and
+top edges owning the tie; 0 of 14368768 pixels, held out on 814 triangles), E607 (every vertex
+rounded half up to 1/256 before the test), E680 and E913 (ten and ten more targets, thin, small and
+partly off-target triangles included). Its depth plane clause is this question's, Q288's (the
+non-dyadic gradient) and Q262's (the error bound); its iterator clause moves here: the plane through
+the three vertices' values and its evaluation at the pixel centre agree with the exact iteration to
+1.2e-7 (E048, a tolerance, not a rule), which the transfer model uses for a copy whose vertices are
+the target's rectangle; any other copy triangle or a coordinate that is not finite refuses under
+this question. Q205's evidence (E023, E148, E174, E307, E048, E214, E215, E542, E072) moves here
+with E607 and E680, and so does its value, high. Q205 is retired as folded into Q200 (a fold, not an
+answer).

@@ -151,7 +151,7 @@ fn refused(v: Verdict, ids: &[&str]) {
 
 #[test]
 fn what_no_record_explains_is_refused_under_the_question_that_covers_it() {
-    let any = r#"{"image": {"o0": "0xff336699"}, "refuse": ["Q011", "Q074", "Q076", "Q003", "Q205", "Q206", "Q207", "Q180", "Q078"]}"#;
+    let any = r#"{"image": {"o0": "0xff336699"}, "refuse": ["Q011", "Q074", "Q076", "Q003", "Q200", "Q206", "Q207", "Q180", "Q078"]}"#;
     // the copy's tag with bit 24 set or at 0 reads the source's last texel (E272): Q011
     refused(scene_with(1, r#"{"xfer": {"0": "0x3000000"}}"#, any), &["Q011"]);
     refused(scene_with(1, r#"{"xfer": {"0": "0x0"}}"#, any), &["Q011"]);
@@ -168,8 +168,9 @@ fn what_no_record_explains_is_refused_under_the_question_that_covers_it() {
         scene_with(1, r#"{"memory": [{"base": "0x2e000000", "at": {"6": "0x3e00a000"}}]}"#, any),
         &["Q076", "Q003"],
     );
-    // a copy's vertices that are not the target's rectangle are the iterators' arithmetic
-    refused(scene_with(1, r#"{"memory": [{"base": "0x3e000000", "at": {"16": "0x1001"}}]}"#, any), &["Q205"]);
+    // a copy's vertices that are not the target's rectangle are the iterators' arithmetic (Q200,
+    // into which Q205 folded)
+    refused(scene_with(1, r#"{"memory": [{"base": "0x3e000000", "at": {"16": "0x1001"}}]}"#, any), &["Q200"]);
 }
 
 fn replay_all() -> Option<Report> {
@@ -219,4 +220,7 @@ fn scene_vectors_replay_with_no_mismatch() {
     let t = &rep.units["transfer"];
     assert!(!t.refused.contains_key("Q021"), "Q021 is folded into Q180");
     assert!(t.refused.get("Q180").is_some_and(|&n| n > 0), "{:?}", t.refused);
+    // a copy's iterated coordinates refuse under Q200, into which Q205 folded
+    assert!(!t.refused.contains_key("Q205"), "Q205 is folded into Q200");
+    assert!(t.refused.get("Q200").is_some_and(|&n| n > 0), "{:?}", t.refused);
 }

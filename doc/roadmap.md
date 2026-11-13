@@ -874,7 +874,8 @@ not predicted) and the multisample window rule
 matched. The inventory of
 the recorded data (E619, `doc/specs/pipe-inventory.md`): 2464 triangle-host vectors, 65 with a
 render dump, and 197 dump directories sorted by what each waits for. The simulator `sgx-sim` is
-unchanged. Q205 (the arithmetic of coverage, depth and iteration for an arbitrary triangle) is new.
+unchanged. A question on the arithmetic of coverage, depth and iteration for an arbitrary triangle
+is new (since folded into Q200).
 The roadmap counts the questions from the built `doc/open_questions.md`: 185 open (Q001 to Q288),
 166 hw (high 21, medium 76, low 69), 12 fw and 7 kernel; isp 21.
 

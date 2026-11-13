@@ -15,7 +15,7 @@
 //! texels), words 9 and 13 other than 0, 1.0 or 0xffffffff, words 11, 12 and 14 other than 0 or
 //! 1.0 (0xffffffff changes the picture: open), the format word outside the seven values E973 and
 //! E069 ran without a change (0xffffffff gives texel (0, 0) everywhere: open), a coordinate that is
-//! not finite, a triangle with no area (Q205).
+//! not finite, a triangle with no area (Q200, the iterators' arithmetic).
 
 use crate::Outcome;
 use crate::xfer::{lod_of, uv, vertices};
@@ -55,7 +55,7 @@ pub fn check(bg: &[u32]) -> R<()> {
         ));
     }
     if bg[3..9].iter().any(|&c| !f32::from_bits(c).is_finite()) {
-        return Err(open("a layer coordinate is not finite", &["Q205"]));
+        return Err(open("a layer coordinate is not finite", &["Q200"]));
     }
     if vertices(bg, 15).is_none() {
         return Err(open("the background object is too short", &["Q066"]));
@@ -158,6 +158,11 @@ mod tests {
             let e = at(&o, 1, 1).unwrap_err();
             assert!(format!("{e:?}").contains("Q066"), "word {w}");
         }
+        // a coordinate that is not finite is the iterators' arithmetic (Q200, into which Q205
+        // folded)
+        let mut o = identity();
+        o[3] = 0x7fc0_0000;
+        assert!(format!("{:?}", at(&o, 1, 1).unwrap_err()).contains("[\"Q200\"]"));
         // and what changed nothing is modelled
         for (w, v) in [(9, 0xffff_ffff), (13, 0xffff_ffff), (11, ONE), (10, 0x8000_0000), (1, 0x3_0004)] {
             let mut o = identity();

@@ -136,3 +136,10 @@ iterator word under Q180 and the six regenerated files of pds/data-words and pds
 scene-vectors-12-1 list Q180 where they listed Q021, nothing else changed. The replay's refusals
 by question now read Q180 291 where this record reads Q021 291 (the same 291 scenes); the other
 counts are as above.
+
+**Correction 2026-11-13:** Q205 is folded into Q200 (decision R10-6 a of round 10), so the model
+refuses a copy's iterated coordinates (vertices that are not the target's rectangle, a coordinate
+that is not finite, a triangle with no area) under Q200, and the seven regenerated files of
+isp/background-object, texture/state-words and texture/tpu-csc in scene-vectors-12-1 list Q200 where
+they listed Q205, nothing else changed. The replay's refusals by question now read Q200 326 where
+this record reads Q205 326 (the same 326 scenes); the other counts are as above.

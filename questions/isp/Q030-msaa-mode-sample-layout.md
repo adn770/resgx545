@@ -1,11 +1,11 @@
 +++
 id = "Q030"
-question = "does the sample layout of E281 hold in the tiles and windows past the first (what CR_TE_AA bits 31 and 30 do when bit 29 is clear is answered by E728 and E829; why the TA inserts the zero dword that leaves the image empty is Q293)?"
+question = "which source pixel does each stored pixel hold in CR_ISP_MSAA mode 0 with CR_TE_AA bits 31 or 30 set (its window, never read as an identity map), and what is mode 3's window (E281's sample slots hold in the tiles and windows past the first, E990; what CR_TE_AA bits 31 and 30 do when bit 29 is clear is answered by E728 and E829; why the TA inserts the zero dword that leaves the image empty is Q293)?"
 unit = "isp"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E210", "E211", "E219", "E220", "E281", "E415", "E502", "E503", "E504", "E728", "E829", "E893"]
+evidence = ["E210", "E211", "E219", "E220", "E281", "E415", "E502", "E503", "E504", "E728", "E829", "E893", "E953", "E954", "E990"]
 terms = ["CR_ISP_MSAA", "CR_ISP_MSAA.MODE", "CR_ISP_MSAA.ENABLE", "CR_ISP_MULTISAMPLECTL", "CR_TE_AA", "programmable sample positions"]
 +++
 
@@ -66,3 +66,13 @@ inserts at dword 11 is read as the format word and the image is empty. "Where th
 is therefore answered, and what is left of the TA side (why the TA inserts the dword) is Q293. What
 stays here is the sample layout in the tiles and windows past the first (every sample slot held the
 same iterated position in E502's identity maps, which cannot show it).
+
+Narrowed 2026-11-13 (round 10 offline, decision R10-1 a, E990). The sample layout clause is answered
+where it ran: on the 48 kept images of r9-geo's seam stages (E953, E954; modes 0 to 2, TE 0x6, 0xa
+and 0xe, 64 x 64 to 128 x 96) the region model with E281's slots in every tile gives the stored
+pixels of every tile past the first, 48 of 48 jobs, while five rival slot sets declared and hashed
+before the read are off by 264 to 948 pixels. Open: mode 0's window with TE bits 31 or 30 as an
+identity map (the seam rows of mode 0 were tri-full renders: the slots decide their edge pixels, but
+which source pixel a stored pixel holds was not read; sgx-pipe's `msaa_source` refuses it), and mode
+3's window (mode 3 hangs, E210; no question but this one names it). The round 10 ranking plans stage
+win0 for mode 0's windows (E502's x and y jobs).

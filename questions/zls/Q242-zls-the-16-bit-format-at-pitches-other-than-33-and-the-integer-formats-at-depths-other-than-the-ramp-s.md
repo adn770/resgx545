@@ -1,11 +1,11 @@
 +++
 id = "Q242"
-question = "how is the 16-bit stored depth format laid out at a pitch G other than 33 and at an edge, what do the 24-bit and 16-bit formats store for a depth outside 0.25 to 0.4166 other than 1.0 (where round(z * 0xffffff) and floor(z * 2^24) differ), which pixel's value does a dword shared by two overlapping tiles hold, and why did the E411 jobs with G past 3 fault?"
+question = "which pixel's value does a dword shared by two overlapping tiles hold, what do the integer formats store past the target at an odd width or height, and why did E411's G 3 job store past its 16-page buffer (pages 16 and 18) without the fault G 5, 9 and 17 met (the formats' values over 0 to 1 and past an 80 x 40 target are E977's and E991's floor rule)?"
 unit = "zls"
 kind = "hw"
 value = "low"
 phase = 12
-evidence = ["E466", "E490", "E663", "E977"]
+evidence = ["E466", "E490", "E663", "E977", "E411", "E465", "E991"]
 terms = ["CR_ISP_ZLSCTL"]
 +++
 
@@ -35,3 +35,16 @@ one its >> 8, held out over 0 to 1 at G 7, 9 and 2 and on a target with edge til
 target); round(z * 0xffffff) fails from 0.5 up (E466 and E490 corrected), and E490's 16-bit layout
 holds at those pitches. Open: the values past the target in edge tiles for the integer formats,
 which pixel a dword shared by overlapping tiles holds, and E411's faults with G past 3.
+
+Narrowed 2026-11-13 (round 10 offline, decision R10-1 a, E991). Past the target of E977's 80 x 40
+job (G 2, tiles of 96 x 48) the integer formats store the floor rule of the float the same pixel
+stores in format 0 (E831's band and the background 1.0): 1408 of 1408 dwords in format 1 and 704 of
+704 in format 2, frozen before the read, against 0 for the fill left and 832 and 683 for the rounded
+rule; sgx-pipe stores the integer formats at an edge of an even size by it. E465's address rule
+recomputed for E411's 64 x 64 scratch arrangement gives E411's stored pages up to the first page
+past the 16-page buffer each faulting row reaches, and E977's G 7 and 9 with a buffer sized to the
+extent did not fault, so the extent past the buffer faults the job, not the pitch field [infer]; the
+misfit is G 3, whose tile rows 2 and 3 land on pages 16 and 18 without a fault. Open: which pixel a
+dword shared by overlapping tiles holds (the round 10 ranking plans stage zov), the integer formats
+at an odd width or height (their float band is rule A, E885, E903; not run in an integer format),
+and what lies past page 15 in E411's arrangement.
