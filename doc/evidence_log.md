@@ -8814,6 +8814,25 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   7.25); every clear is 3890 to 4090 ns wide with 0x0748 reading 0xb or 0x1b.
   *dpm; HW; data: `render-closing-r15-dpm:out/20261114-071243/pr4/`,
   `render-closing-r15-dpm:fold/`.*
+- `E1065` r16-tex stage ty on module B60AB0B4 (Q177; texture types 1 and 4 at 8 x 8, 64 x 64 and
+  type 1 at 64 x 16, with the mode 0 reference of each size, 15 probe fills at base 0 of a 32-page
+  named scratch): the control passed (E1055's ty-ty1u4r rerun, its kept image, 2048 of 2048);
+  'H-HALF (heldout) (9 of 9 rows decided)': every pixel of the nine mode 4 to 7 rows is a named
+  dword with each byte halved, rounded up, the 32 rows alike, and 'H-FLAT (heldout) (2 of 2 rows
+  decided)': mode 5 reads one value on every pixel; **E1055's two-point fit of the name failed at
+  the new sizes**: N13 = 39 W + 52 + (x mod W) (types 1 and 3) 0 of 3 rows (8 x 8, 64 x 64, 64 x
+  16), N4 = 40 W + 20 + (x mod W) (type 4) 1 of 2 (held at 8 x 8, failed at 64 x 64), the quadratic
+  rival NQ13 0 of 3 and NQ4 0 of 2, N13-H (the form in the height) 0 of 1, modes 6 and 7 at 64 x 64
+  'L13' and 'LQ13' 0 of 2, 'H-AS-U4' 0 of 4, H-MODE0 0 of 9; the mode 0 references read a raster of
+  the width for type 1 ('R-W (heldout)' 3 of 3 on type 1) and 32 t + s for type 4 at 8 x 8 ('R-32' 1
+  of 2, not at 64 x 64, where the 32 x 32 blocks of E941 are 1024 dwords apart) [infer]; post hoc
+  (fitted, not held out, labelled): the names seen are c + (x mod W) with c = 172, 676 (or 420),
+  1300 and 4596 for type 1 at W = 8, 16, 32, 64 and 1524 at 64 x 16, type 1 fitting W H + 7 W + 52
+  on all five sizes, mode 5 reading 7 W + 51 (107, 163, 499) and modes 6 and 7 at 64 x 64 mode 4's
+  last column; type 4 340 at 8 x 8 and at 64 x 64 3347 + (x mod 32) in the first 32 columns, 4371 +
+  (x mod 32) in the next 32.
+  *texture; HW, infer; data: `render-closing-r16-tex:out/20261114-090305/ty/`,
+  `render-closing-r16-tex:fold/`, `vectors-closing-r16-tex-pixels`.*
 
 ## By unit
 
@@ -8901,7 +8920,7 @@ E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441, E5
 E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E726, E733, E743,
 E744, E760, E765, E787, E844, E894, E910, E911, E923, E930, E931, E932, E940, E941, E942, E951,
 E955, E956, E957, E958, E968, E974, E975, E976, E982, E983, E1000, E1001, E1002, E1003, E1004,
-E1016, E1017, E1025, E1026, E1027, E1033, E1038, E1039, E1047, E1049, E1052, E1055.
+E1016, E1017, E1025, E1026, E1027, E1033, E1038, E1039, E1047, E1049, E1052, E1055, E1065.
 
 ### transfer
 

@@ -45,7 +45,9 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   modes 4 to 7 as a named dword halved byte by byte, rows alike**, at 32 x 32 (mode 4) and 16 x 16
   (modes 5 to 7); in mode 4 the name follows the column inside the texture (676 + (x mod 16) at 16 x
   16, 1300 + (x mod 32) at 32 x 32 post hoc); modes 6 and 7 read mode 4's last column and mode 5 one
-  other name (post hoc). Why these constants, the size form and the half are open (Q177).
+  other name (post hoc). **The size form failed (E1065): 39 W + 52 (type 4 40 W + 20) read none of
+  8 x 8, 64 x 64 and 64 x 16 on types 1 and 3**; post hoc type 1 reads W H + 7 W + 52 + (x mod W) at
+  five sizes. Why these constants, the size form and the half are open (Q177).
 - **Twiddled layout (`texture-sampler-smp-twiddled`).** Texel `(x, y)` lies at the Morton index with
   **`y` in
   bit 0, `x` in bit 1**, and so on; a non-square texture puts the longer side's extra bits

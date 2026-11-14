@@ -597,6 +597,22 @@ fn measured_r4(t0: u32, t1: u32, t3: u32) -> Result<(), Fail> {
         let t0_ok = t0 == T0_REP || e1055 && t0 == T0_REP | 4 << 6;
         (fmt == 12 && sized || f5 || e1055) && t0_ok && t3 == T3_TW
     };
+    if !ok
+        && matches!(ty, 1 | 3 | 4)
+        && fmt == 12
+        && t3 == T3_TW
+        && (4..8).contains(&(t0 >> 6 & 7))
+        && t0 == T0_REP | (t0 >> 6 & 7) << 6
+    {
+        // E1065: E1055's two-size fit of the name (39 W + 52, type 4 40 W + 20) failed at 8 x 8,
+        // 64 x 64 and 64 x 16 (types 1 and 3: every row; type 4 held at 8 x 8 only); modes 6 and
+        // 7 at 64 x 64 and mode 5 at 8 x 8 and 64 x 64 read other names, post hoc only
+        return open(format!(
+            "T0 0x{t0:08x}, T1 0x{t1:08x}: u modes 4 to 7 of types 1, 3 and 4 ran at 16 x 16 and 32 x 32 only (E1055); \
+             the fit of their name, 39 W + 52 (40 W + 20), failed at 8 x 8, 64 x 64 and 64 x 16 (E1065, post hoc \
+             readings only; Q177)"
+        ));
+    }
     if !ok {
         return open(format!(
             "T0 0x{t0:08x}, T1 0x{t1:08x}, T3 0x{t3:08x}: sRGB (E723), format 27 (E724) and types 1 and 3 \
@@ -1027,11 +1043,18 @@ impl Texture {
         if self.raster && self.address[0] == 4 && self.offset == [0, 0] && self.shift == 0 {
             // E1039 (fitted), E1055 (the form held out on ten rows, the 16 x 16 map's wrap on a
             // held-out u range, 32 x 32 post hoc): types 1, 3 and 4 with u mode 4 read the dword
-            // N + (x mod W) whatever the row, each byte halved, rounded up; N = 39 W + 52 (676 at
-            // 16, 1300 at 32), type 4 at 16 x 16 660 (measured_r4 admits these sizes only). The
-            // halves leave N's byte 1 one of two values: N - 256 (16) and N + 256 (32) fit alike
-            // [infer: 39 W + 52 at both sizes]
-            let n = if self.blocks && self.w == 16 { 660 } else { 39 * self.w + 52 };
+            // N + (x mod W) whatever the row, each byte halved, rounded up; N = 676 at 16
+            // and 1300 at 32, type 4 at 16 x 16 660 (measured_r4 admits these sizes only; the fit
+            // 39 W + 52 failed at 8 x 8, 64 x 64 and 64 x 16, E1065). The halves leave N's byte 1
+            // one of two values: N - 256 (16) and N + 256 (32) fit alike
+            // E1065: not a formula in W: at 8 x 8, 64 x 64 and 64 x 16 it failed (measured_r4
+            // refuses those sizes); the two sizes admitted are their measured names
+            let n = match (self.blocks, self.w) {
+                (true, 16) => 660,
+                (_, 16) => 676,
+                (_, 32) => 1300,
+                (_, w) => return open(format!("the name of u mode 4 at width {w} (E1065: the fit failed)")),
+            };
             let i = n + x.rem_euclid(self.w as i64) as u32;
             let d = load(self.base.wrapping_add(4 * i)).map_err(Fail::Load)?;
             return Ok((0..4).fold(0, |o, k| o | ((d >> (8 * k) & 0xff) + 1) >> 1 << (8 * k)));
@@ -2674,6 +2697,27 @@ mod tests {
                 assert_eq!(past, Ok(vec![0xd000_0000]), "{ty} {w}x{h}");
             }
         }
+    }
+
+    #[test]
+    fn e1065_the_two_size_fit_of_the_name_is_refused_at_the_sizes_it_failed_at() {
+        // E1065 (render/closing-r16-tex ty, out/20261114-090305): E1055's N = 39 W + 52 (types 1
+        // and 3) and 40 W + 20 (type 4) failed at 8 x 8, 64 x 64 and 64 x 16 in mode 4 (N13 0 of 3,
+        // N4 1 of 2: type 4 at 8 x 8 only, not admitted), modes 6 and 7 at 64 x 64 and the
+        // quadratic rival too; every state of E1065's rows but the mode 0 references that ran at
+        // sizes E725 and E941 measured is refused naming E1065
+        let mem = |_| 0u32;
+        for (ty, w, h) in [(1, 8, 8), (4, 8, 8), (1, 64, 64), (4, 64, 64), (1, 64, 16)] {
+            for m in [4u32, 5, 6, 7] {
+                let st = [T0_REP | m << 6, t1(ty, 12, w, h), 0x1000, T3_TW];
+                let e = format!("{:?}", texel(st, w, h, 1, 1, &mem).unwrap_err());
+                assert!(e.contains("E1065"), "type {ty} {w}x{h} mode {m}: {e}");
+            }
+        }
+        // what held is kept as it was: the 16 x 16 and 32 x 32 mode 4 reads of E1055 (above); the
+        // new sizes' mode 0 references (R-W on types 1 and 3, 32 t + s on type 4 at 8 x 8) agree
+        // with the sim's raster and block layouts where it already reads those sizes and are not
+        // newly admitted
     }
 
     #[test]

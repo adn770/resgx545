@@ -1,0 +1,9 @@
+title = "r16-tex: the --pixels words of each job of stage ty (Q177's texture types 1 and 4 at 8 x 8, 64 x 64 and 64 x 16 in u modes 4 to 7 and their mode 0 references, 15 jobs)"
+repo = "data"
+paths = ["vectors/closing/r16-tex/pixels/"]
+method = "tools/usse-asm/closing_tables.py texture on the published render/closing-r16-tex session (its one attempt, out/20261114-090305), one file; rows are measurements; refused (sgx-sim tex.rs models E1055's u mode 4 reads at 16 x 16 and 32 x 32 only and refuses E1065's sizes by name; the tool's default reason was replaced at the fold, the file otherwise as the tool wrote it)"
+date = "2026-11-14"
+files = 1
+size = 17663
+sha256 = "959a613096b455656a79a6269615a4a07c6441cc2530bd56819d539715124040"
+recipe = "tools/usse-asm/closing_tables.py"

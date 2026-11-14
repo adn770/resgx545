@@ -1,11 +1,11 @@
 +++
 id = "Q177"
-question = "which dword do texture types 1, 3 and 4 read, each byte halved, in u address modes 4 to 7 at a held-out size (mode 4: 676 + (x mod 16) at 16 x 16 held out, 1300 + (x mod 32) at 32 x 32 post hoc; modes 6 and 7 one value, mode 4's last column, mode 5 another, post hoc, E1055), and what is the half, and what lies behind the held-out constants of the twiddled type (8 max(W, H) + 52 inside, 5, 6, 7 and 4 max(W, H) + 52 on the sides, above and below, 4 log2 max(W, H) at the corners)"
+question = "which dword do texture types 1, 3 and 4 read, each byte halved, in u address modes 4 to 7 at a size other than 16 x 16 and 32 x 32 (E1055's two-point fit 39 W + 52 + (x mod W), 40 W + 20 for type 4, failed at 8 x 8, 64 x 64 and 64 x 16, E1065; post hoc type 1 reads W H + 7 W + 52 + (x mod W) at five sizes, mode 5 7 W + 51, modes 6 and 7 mode 4's last column, type 4 at 64 x 64 two 32-wide blocks), and what is the half, and what lies behind the held-out constants of the twiddled type (8 max(W, H) + 52 inside, 5, 6, 7 and 4 max(W, H) + 52 on the sides, above and below, 4 log2 max(W, H) at the corners)"
 unit = "texture"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E565", "E033", "E932", "E957", "E983", "E1000", "E1017", "E1026", "E1039", "E1055"]
+evidence = ["E565", "E033", "E932", "E957", "E983", "E1000", "E1017", "E1026", "E1039", "E1055", "E1065"]
 terms = ["T0.ADDRMODE_U", "T0.ADDRMODE_V"]
 +++
 
@@ -110,3 +110,19 @@ width, type 4 its block). The halves leave each name or the one 256 apart. sgx-s
 these types at 16 x 16 and 32 x 32 and refuses modes 5 to 7. What stays: the size form held out (a
 third size), mode 5's constant and modes 6 and 7 held out, what the half is (a blend with zero
 [infer]) and which of the two names is read.
+
+Narrowed 2026-11-14 (round 16, session r16-tex, decision R16-7 a; E1065; the question line is
+rewritten to what stays, the question is not retired). **E1055's two-point fit of the name failed
+at the new sizes**: types 1 and 3's N = 39 W + 52 + (x mod W) 0 of 3 rows (8 x 8, 64 x 64, 64 x
+16), type 4's 40 W + 20 + (x mod W) 1 of 2 (held at 8 x 8, failed at 64 x 64), the quadratic
+through the same two sizes 0 of 5, modes 6 and 7 at 64 x 64 as mode 4's last column of that fit 0
+of 2. Held out and holding: every pixel of the nine mode 4 to 7 rows is a halved name, the rows
+alike (9 of 9), mode 5 one value on every pixel (2 of 2), the mode 0 references a raster of the
+width on type 1 (3 of 3) and 32 t + s on type 4 at 8 x 8. Post hoc (fitted, not held out): type 1
+reads W H + 7 W + 52 + (x mod W) at 8, 16, 32 and 64 and at 64 x 16 (the product, not max(W, H)
+squared), mode 5 reads 7 W + 51 (107, 163, 499), modes 6 and 7 at 64 x 64 mode 4's last column;
+type 4 reads 340 at 8 x 8 and at 64 x 64 3347 + (x mod 32), then 4371 + (x mod 32) from column 32
+(E941's 32 x 32 blocks 1024 dwords apart). sgx-sim keeps the two measured names at 16 x 16 and 32
+x 32 and refuses the other sizes naming E1065. What stays: the size form held out (a round that
+runs W H + 7 W + 52 on new sizes, 16 x 64 for W against max(W, H), type 3 and type 4's block
+form), what the half is, and which of the two names is read.
