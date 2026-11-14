@@ -282,6 +282,8 @@ def test_the_guard_allows_a_probe_kpoke_and_keeps_the_dangerous_forms_refused(re
     for row, ok in [("x|fit|safe|-|t4|probe --tri --kpoke 1:bg:N=1", True),
                     ("x|fit|safe|-|t4|probe --tri --kpoke=1:bg:N=1", True),
                     ("x|fit|safe|-|t4|tri --kpoke-render 1:bg:N=1", True),
+                    ("x|fit|safe|-|t4|tri -n 2 --depth --refill 2:depth=0x3f000000", True),
+                    ("x|fit|safe|-|t4|probe --scratch-pages 256 x.bin", True),
                     ("x|fit|safe|-|t4|fill --kpoke 0x1=2", False),
                     ("x|fit|safe|-|t4|tri --kpoke 0x1=2", False),
                     ("x|fit|safe|-|t4|probe --tri --kpoke 1:bg:N=1 --kreg 0x1=2", False),

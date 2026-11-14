@@ -622,6 +622,40 @@ static void pb_overflow(void)
 	}
 }
 
+/*
+ * fb_fill_set: the target's rows (pads included) hold fb_fill in place of the sentinel when
+ * the job is kicked, the guard page after them the sentinel still. A geometry job draws
+ * nothing, so its colour buffer is what the host wrote; a later render without it is back
+ * to the sentinel and draws as ever.
+ */
+static void fb_fill(void)
+{
+	struct sgxfive_tri_counts n;
+	struct sgxfive_tri_params p;
+	const uint32_t *fb;
+	uint32_t other = 0;
+	struct env e;
+
+	env_init(&e);
+	sgxfive_tri_default(&p, 33, 17);
+	p.fb_fill_set = true;
+	p.fb_fill = 0x12345678;
+	CHECK_EQ(sgxfive_render_tri_flags(e.r, &p, 0, 0, DRM_SGXFIVE_SUBMIT_JOB_RENDER_GEOMETRY), 0);
+	CHECK_EQ(sgxfive_render_wait(e.r, NSEC), 0);
+	fb = sgxfive_render_fb(e.r);
+	for (uint32_t i = 0; i < sgxfive_tri_stride_px(33) * 17; i++)
+		other += fb[i] != 0x12345678;
+	CHECK_EQ(other, 0);
+	CHECK_EQ(sgxfive_render_guard_dirty(e.r, &p), 0);
+	sgxfive_tri_default(&p, 33, 17);
+	CHECK_EQ(sgxfive_render_tri(e.r, &p, 0, 0), 0);
+	CHECK_EQ(sgxfive_render_wait(e.r, NSEC), 0);
+	CHECK_EQ(sgxfive_tri_check(&p, sgxfive_render_fb(e.r), &n), 0);
+	CHECK_EQ(fb[33], SGXFIVE_TRI_SENTINEL);		/* row 0's pad pixel */
+	CHECK_EQ(sgxfive_render_guard_dirty(e.r, &p), 0);
+	env_fini(&e);
+}
+
 int main(void)
 {
 	query();
@@ -635,5 +669,6 @@ int main(void)
 	pb_overflow();
 	transfers();
 	bg_layer();
+	fb_fill();
 	return tap_done();
 }

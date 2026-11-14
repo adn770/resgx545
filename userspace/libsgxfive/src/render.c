@@ -790,7 +790,8 @@ int sgxfive_render_tri_flags(struct sgxfive_render *r, const struct sgxfive_tri_
 	if (ret)
 		return ret;
 	for (uint64_t i = 0; i < fb_size(p->width, p->height) / 4; i++)
-		r->fb[i] = SGXFIVE_TRI_SENTINEL;
+		r->fb[i] = p->fb_fill_set && i < (uint64_t)sgxfive_tri_stride_px(p->width) * p->height ?
+			   p->fb_fill : SGXFIVE_TRI_SENTINEL;
 	if (signal)
 		ops[nops++] = (struct drm_sgxfive_sync_op){
 			.handle = signal, .flags = DRM_SGXFIVE_SYNC_OP_FLAG_SIGNAL };

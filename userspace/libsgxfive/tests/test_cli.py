@@ -46,7 +46,7 @@ def test_usage_names_every_command():
                 "--blk-add", "--vtx-coords", "--obj2", "--pbe", "--ramp", "--print-addrs",
                 "--page-before", "--place", "bgpixel", "N^=V", "--tri-full", "--tri-z",
                 "--depth-store", "--stencil", "--stencil-store", "--stencil-fill",
-                "--depth-store-fill", "--stencil-store-fill"):
+                "--depth-store-fill", "--stencil-store-fill", "--refill"):
         assert opt in usage, opt
 
 
@@ -470,7 +470,7 @@ def test_probe_pds_takes_coords(tmp_path):
 
 
 def test_probe_scratch_pages(tmp_path):
-    # --scratch-pages N (16 to 64): a larger scratch buffer, for a texture chain that does not
+    # --scratch-pages N (16 to 256): a larger scratch buffer, for a texture chain that does not
     # fit 64 KiB; the immediates 0x5CAFnnnn still add nnnn (up to 64 KiB) to its address
     f = assemble(tmp_path, "big", PHAS + "mov.skipinv.end o0, #0x5CAF0010\n")
     r = run("--mock", "probe", "--scratch-pages", "24", str(f))
@@ -479,8 +479,12 @@ def test_probe_scratch_pages(tmp_path):
     assert m, r.stdout
     o0 = re.search(r"^probe big: o0 (0x\w+) ", r.stdout, re.M)
     assert int(o0.group(1), 16) == int(m.group(1), 16) + 0x10
-    for bad in ("15", "65", "x"):
+    for bad in ("15", "257", "x"):
         assert run("--mock", "probe", "--scratch-pages", bad, str(f)).returncode == 2, bad
+    # 256 pages (1 MiB): E1033's second fault page, scratch + 0x40000, lies inside
+    r = run("--mock", "probe", "--scratch-pages", "256", str(f))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert re.search(r"^probe big: scratch at 0x\w+ \(1024 KiB\)$", r.stdout, re.M), r.stdout
 
 
 @pytest.mark.parametrize("order", ["low-first", "pages-first"])
@@ -497,6 +501,8 @@ def test_probe_low_and_scratch_pages_are_checked_together(tmp_path, order):
     # ends exactly at 1 MiB; the mock's job fails there (3), the check passed
     assert probe("0xf0000", "16").returncode == 3
     assert probe("0xc0000", "64").returncode == 3           # 64 pages end at 0x100000
+    assert probe("0x1000", "256").returncode == 2           # 1 MiB never fits past page 0
+    assert probe("0x1000", "255").returncode == 3           # 255 pages end at 0x100000
 
 
 @pytest.mark.parametrize("order", ["late-first", "pages-first"])
@@ -512,6 +518,8 @@ def test_probe_late_is_checked_against_the_scratch_pages(tmp_path, order):
     assert probe("0:20000=1", "24").returncode == 0
     assert probe("0:20000=1", "16").returncode == 2
     assert probe("0:24576=1", "24").returncode == 2
+    assert probe("0:262143=1", "256").returncode == 0       # the last dword of 1 MiB
+    assert probe("0:262144=1", "256").returncode == 2
 
 
 def pixel_rows(out: str, name: str) -> dict:
@@ -1492,3 +1500,92 @@ def test_tri_fill_bytes_is_checked(fill):
     r = run(*depth_args("--stencil", "--stencil-fill", fill))
     assert r.returncode == 2 and "bad option --stencil-fill" in r.stderr, (fill, r.stderr)
     assert "bytes" in r.stderr
+
+
+def _all(path, value):
+    w = words(path)
+    return len(w) > 0 and all(x == value for x in w)
+
+
+def test_tri_refill_writes_the_depth_buffer_between_the_renders(tmp_path, monkeypatch):
+    # Q108's stale-data rows: --refill K:depth=V writes V to every dword of the depth buffer
+    # after render K - 1 is done and read back and before render K's kick. With
+    # --depth-ctl-next the buffer is filled before render 1 only, so render 3 sees what render 2
+    # left (the mock stores no depth: V); the report counts against what the host wrote last
+    kp = tmp_path / "kpoke"
+    kp.write_text("")
+    monkeypatch.setenv("SGXFIVE_KPOKE", str(kp))
+    r = run(*depth_args("-n", "3", "--depth-pages", "4", "--depth-ctl-next", "0x11700a",
+                        "--refill", "2:depth=0x3f000000", "--depth-dump", str(tmp_path)))
+    assert r.returncode == 0, r.stdout + r.stderr
+    lines = r.stdout.splitlines()
+    at = lines.index("refill: render 2 buf depth value 0x3f000000")
+    jobs = [i for i, ln in enumerate(lines) if ln == "job: ok"]
+    assert len(jobs) == 3 and jobs[0] < at < jobs[1], r.stdout
+    assert any(ln.startswith("depth #1: ") for ln in lines[jobs[0]:at]), r.stdout
+    assert _all(tmp_path / "depth.1.bin", 0x3F800000)
+    assert _all(tmp_path / "depth.2.bin", 0x3F000000)
+    assert _all(tmp_path / "depth.3.bin", 0x3F000000)
+    for n in (2, 3):
+        assert f"depth #{n}: 4096 dwords, 0 changed, 1 distinct; 0x3f000000 x 4096" in r.stdout
+    assert r.stdout.count("refill: ") == 1
+
+
+def test_tri_refill_once_then_the_fill_again(tmp_path, monkeypatch):
+    # without --depth-ctl-next the fill goes in before every render: the refill wins at render
+    # K only (written after it), and render K + 1 has the fill again
+    kp = tmp_path / "kpoke"
+    kp.write_text("")
+    monkeypatch.setenv("SGXFIVE_KPOKE", str(kp))
+    r = run(*depth_args("-n", "3", "--depth-pages", "4", "--depth-fill", "1",
+                        "--refill", "2:depth=2", "--depth-dump", str(tmp_path)))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert [_all(tmp_path / f"depth.{n}.bin", v) for n, v in ((1, 1), (2, 2), (3, 1))] == \
+        [True] * 3
+    assert "depth #2: 4096 dwords, 0 changed, 1 distinct; 0x00000002 x 4096" in r.stdout
+    assert "depth #3: 4096 dwords, 0 changed, 1 distinct; 0x00000001 x 4096" in r.stdout
+
+
+def test_tri_refill_stencil_leaves_the_depth_buffer(tmp_path, monkeypatch):
+    kp = tmp_path / "kpoke"
+    kp.write_text("")
+    monkeypatch.setenv("SGXFIVE_KPOKE", str(kp))
+    r = run(*depth_args("-n", "2", "--depth-pages", "4", "--depth-fill", "5", "--stencil",
+                        "--stencil-fill", "6", "--refill", "2:stencil=0x07070707",
+                        "--depth-dump", str(tmp_path)))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "refill: render 2 buf stencil value 0x07070707" in r.stdout
+    assert _all(tmp_path / "stencil.1.bin", 6) and _all(tmp_path / "stencil.2.bin", 0x07070707)
+    assert _all(tmp_path / "depth.2.bin", 5)
+
+
+def test_tri_refill_fb_goes_in_before_the_kick():
+    # fb: the colour buffer's target rows hold V in place of the sentinel the library writes
+    # before each kick (render.c), the guard page the sentinel still; the mock draws every
+    # pixel, so the render checks as ever
+    r = run("--mock", "tri", "-n", "2", "--refill", "2:fb=0x12345678")
+    assert r.returncode == 0, r.stdout + r.stderr
+    lines = r.stdout.splitlines()
+    at = lines.index("refill: render 2 buf fb value 0x12345678")
+    jobs = [i for i, ln in enumerate(lines) if ln == "job: ok"]
+    assert len(jobs) == 2 and jobs[0] < at < jobs[1], r.stdout
+    assert "tri: 2 renders ok" in r.stdout
+
+
+@pytest.mark.parametrize("args", [
+    ["tri", "-n", "2", "--refill", "1:fb=0"],               # K from 2
+    ["tri", "-n", "2", "--refill", "3:fb=0"],               # K up to -n
+    ["tri", "--refill", "2:fb=0"],                          # -n 1
+    ["tri", "-n", "2", "--refill", "2:depth=0"],            # no depth buffer mapped
+    ["tri", "-n", "2", "--depth", "--refill", "2:stencil=0"],
+    ["tri", "-n", "2", "--refill", "2:texture=0"],
+    ["tri", "-n", "2", "--refill", "2:fb"],
+    ["tri", "-n", "2", "--refill", "2:fb=x"],
+    ["tri", "-n", "2", "--refill", "x:fb=1"],
+    ["tri", "-n", "2", "--refill", "2fb=1"],
+    ["fill", "--refill", "2:fb=0"],
+])
+def test_tri_refill_is_checked(args):
+    r = run("--mock", *args)
+    assert r.returncode == 2, (args, r.stdout + r.stderr)
+    assert "--refill" in r.stderr, r.stderr

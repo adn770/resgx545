@@ -60,6 +60,13 @@ struct sgxfive_tri_params {
 	 */
 	bool isp2_set;
 	uint32_t isp2;
+	/*
+	 * with fb_fill_set: the target's rows (pads included) hold fb_fill in place of the
+	 * sentinel when the job is kicked (a host refill of the colour buffer, Q108); the guard
+	 * page after them the sentinel still.
+	 */
+	bool fb_fill_set;
+	uint32_t fb_fill;
 };
 
 /*
@@ -201,8 +208,8 @@ int sgxfive_render_create(struct sgxfive_vm *vm, uint32_t ctx, struct sgxfive_re
 void sgxfive_render_destroy(struct sgxfive_render *r);
 
 /*
- * Build the scene, fill the target's pixels and the colour buffer after them
- * with the sentinel, submit (waiting for syncobj wait, signalling signal, if
+ * Build the scene, fill the target's pixels (fb_fill with fb_fill_set) and the
+ * colour buffer after them with the sentinel, submit (waiting for syncobj wait, signalling signal, if
  * not 0). The previous job must be finished (sgxfive_render_wait).
  */
 int sgxfive_render_tri(struct sgxfive_render *r, const struct sgxfive_tri_params *p,

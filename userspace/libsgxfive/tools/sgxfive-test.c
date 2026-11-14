@@ -24,6 +24,7 @@
  *   tri   [--width W --height H -n N] [--max-width W --max-height H] [--aa4] [--fault]
  *         [--scratch N [--scratch-fill V] [--scratch-at ADDR] [--scratch-file FILE]] [--kpoke-render N:SPEC]... [--move N:DX,DY]...
  *         [--geometry N]... [--keep-going] [--keep-overflow] [--dump-render DIR [--dump-each]]
+ *         [--refill K:BUF=V]...
  *         [--tri-full] [--tri-z A,B,C] [--isp2 V]
  *         [--depth [--depth-ctl V] [--depth-ctl-next V] [--depth-fill F] [--depth-base V]
  *                [--depth-pages N] [--depth-dump DIR] [--depth-store [--depth-store-fill F]]
@@ -68,6 +69,12 @@
  *                                 covers the target; --tri-z A,B,C: its vertices' depths, -1 to 2;
  *                                 --isp2 V: ISP word 2 (stencil) V in the state block, in place
  *                                 of the wrap word (with --depth --stencil, Q121's test rows);
+ *                                 --refill K:BUF=V: the host writes V to every dword of BUF
+ *                                 (depth with --depth, stencil with --stencil, or fb: the
+ *                                 colour buffer's target rows) after render K - 1 is done and
+ *                                 read back and before render K's kick (2 <= K <= N), on the
+ *                                 path of the first fill; the buffer's report then counts
+ *                                 against V (Q108's stale-data rows);
  *                                 --dump-render DIR: after the renders, the kernel's
  *                                 debugfs render_param and render_tadata copied to
  *                                 DIR/tri.param.bin and DIR/tri.tadata.bin;
@@ -119,7 +126,7 @@
  *                                 each FILE (tools/usse-asm output) as the fill
  *                                 shader of its own fill, with N temporaries
  *                                 (default 32) and a 64 KiB scratch buffer (--scratch-pages N: 16
- *                                 to 64 pages); prints
+ *                                 to 256 pages); prints
  *                                 o0 and the scratch dwords the program changed;
  *                                 --coords: as the copy shader of a copy whose
  *                                 source texel (x, y) is (y << 16) | x, so pa0 holds
@@ -330,6 +337,10 @@ static void fill_print(const struct fill *f)
 		printf("fill 0x%08x", f->val);
 }
 
+/* tri --refill K:BUF=V: the buffers BUF names */
+enum { REFILL_DEPTH, REFILL_STENCIL, REFILL_FB, REFILL_COUNT };
+static const char *const refill_bufs[REFILL_COUNT] = { "depth", "stencil", "fb" };
+
 struct opts {
 	uint32_t width, height, x, y, stride, colour;
 	uint32_t sx, sy, src_stride, dst_stride;
@@ -393,6 +404,9 @@ struct opts {
 	/* tri: render n's triangle moved by dx, dy pixels (--move) */
 	struct { uint32_t n; int32_t dx, dy; } moves[KPR_MAX];
 	unsigned int nmoves;
+	/* tri: buffer buf (REFILL_*) rewritten to v by the host before render n (--refill) */
+	struct { uint32_t n, buf, v; } refills[KPR_MAX];
+	unsigned int nrefills;
 	bool every_value;		/* copy: the every-value source pattern */
 	bool ramp;			/* copy: --ramp CH=START, one channel counting */
 	uint32_t ramp_shift, ramp_start;	/* ... the channel's low bit, its first value */
@@ -432,6 +446,7 @@ static int usage(void)
 		"                      --aa4 --fault --scratch N --scratch-fill V --scratch-at ADDR\n"
 		"                      --scratch-file FILE\n"
 		"                      --kpoke-render N:SPEC --move N:DX,DY --geometry N\n"
+		"                      --refill K:depth|stencil|fb=V\n"
 		"                      --keep-going --keep-overflow --dump-render DIR [--dump-each]\n"
 		"                      --words DIR\n"
 		"                      [--tri-full] [--tri-z A,B,C] [--isp2 V] [--bg-layer]\n"
@@ -3027,6 +3042,9 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 	struct scratch sc = { 0 };
 	struct bgl_src bgs = { 0 };
 	struct zbufs z = { .depth = { 0 } };
+	/* what the host wrote last to each ZLS buffer (its fill, or a --refill's value) */
+	struct fill zref[4] = { o->depth_fill, o->depth_store_fill, o->stencil_fill,
+				o->stencil_store_fill };
 	uint32_t overflowed = 0;
 	int ret;
 
@@ -3199,6 +3217,10 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 					zbuf_fill(&z.stencil, &o->stencil_fill);
 				if (z.stencil_store.bo)
 					zbuf_fill(&z.stencil_store, &o->stencil_store_fill);
+				zref[0] = o->depth_fill;
+				zref[1] = o->depth_store_fill;
+				zref[2] = o->stencil_fill;
+				zref[3] = o->stencil_store_fill;
 			}
 		}
 		for (unsigned int k = 0; k < o->nkpr; k++) {
@@ -3212,6 +3234,29 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 			}
 			printf("tri: %s before render %u: %s\n", o->kpr[k].fill ? "tadata_fill" :
 			       o->kpr[k].reg ? "kregnow" : "kpoke", i + 1, o->kpr[k].spec);
+		}
+		/*
+		 * --refill: render i (K - 1) is done and read back; the host writes the buffer
+		 * as the first fill did, after this render's own fill, just before its kick
+		 * (fb: the library writes the target's rows as it would the sentinel)
+		 */
+		for (unsigned int k = 0; k < o->nrefills; k++) {
+			const struct fill f = { .mode = FILL_VALUE, .val = o->refills[k].v,
+						.given = true };
+
+			if (o->refills[k].n != i + 1)
+				continue;
+			if (o->refills[k].buf == REFILL_FB) {
+				p.fb_fill_set = true;
+				p.fb_fill = f.val;
+			} else {
+				const int zk = o->refills[k].buf == REFILL_DEPTH ? 0 : 2;
+
+				zbuf_fill(zk ? &z.stencil : &z.depth, &f);
+				zref[zk] = f;
+			}
+			printf("refill: render %u buf %s value 0x%08x\n", i + 1,
+			       refill_bufs[o->refills[k].buf], f.val);
 		}
 		if (sc.bo)
 			scratch_fill(&sc, o->scratch_fill, o->scratch_data, o->scratch_words);
@@ -3317,11 +3362,10 @@ static int cmd_tri(struct tool *t, const struct opts *o)
 		if (z.depth.bo) {
 			const struct { const char *name, *file; const struct scratch *s;
 				       const struct fill *f; } zr[] = {
-				{ "depth", "depth", &z.depth, &o->depth_fill },
-				{ "depth store", "depth-store", &z.depth_store, &o->depth_store_fill },
-				{ "stencil", "stencil", &z.stencil, &o->stencil_fill },
-				{ "stencil store", "stencil-store", &z.stencil_store,
-				  &o->stencil_store_fill },
+				{ "depth", "depth", &z.depth, &zref[0] },
+				{ "depth store", "depth-store", &z.depth_store, &zref[1] },
+				{ "stencil", "stencil", &z.stencil, &zref[2] },
+				{ "stencil store", "stencil-store", &z.stencil_store, &zref[3] },
 			};
 
 			for (unsigned int k = 0; k < sizeof(zr) / sizeof(zr[0]); k++) {
@@ -3937,6 +3981,31 @@ bad_move:
 			fprintf(stderr, "sgxfive-test: bad --move %s (N:DX,DY)\n", argv[i + 1]);
 			return -1;
 		}
+		if (!strcmp(argv[i], "--refill") && i + 1 < argc) {
+			/* K:BUF=V; K and BUF against -n and the buffers after the options */
+			const char *eq = strchr(argv[i + 1], '=');
+			char *end, name[16];
+			unsigned long long n = strtoull(argv[i + 1], &end, 10);
+			uint32_t b = REFILL_COUNT, v;
+
+			if (end != argv[i + 1] && *end == ':' && eq && eq > end &&
+			    (size_t)(eq - end - 1) < sizeof(name)) {
+				memcpy(name, end + 1, (size_t)(eq - end - 1));
+				name[eq - end - 1] = 0;
+				for (b = 0; b < REFILL_COUNT && strcmp(name, refill_bufs[b]); b++)
+					;
+			}
+			if (o->nrefills == KPR_MAX || b == REFILL_COUNT || !parse_u32(eq + 1, &v) ||
+			    n > UINT32_MAX) {
+				fprintf(stderr, "sgxfive-test: bad --refill %s (K:BUF=V, BUF one of "
+					"depth, stencil, fb)\n", argv[i + 1]);
+				return -1;
+			}
+			o->refills[o->nrefills].n = (uint32_t)n;
+			o->refills[o->nrefills].buf = b;
+			o->refills[o->nrefills++].v = v;
+			continue;
+		}
 		if (!strcmp(argv[i], "--emit-scene") && i + 1 < argc) {
 			o->emit_scene = argv[i + 1];
 			continue;
@@ -4075,9 +4144,14 @@ int main(int argc, char **argv)
 				continue;
 			}
 			if (!strcmp(argv[i], "--scratch-pages") && i + 1 < argc) {
-				/* 16 to 64 pages: a texture chain that does not fit 64 KiB */
+				/*
+				 * 16 to 256 pages: a texture chain that does not fit 64 KiB, or a
+				 * twiddled read's reach (E1033: a fault at scratch + 0x40000); the
+				 * general and texture heaps (rev1: 0xb1fff000, 0x0ffff000 bytes)
+				 * have the room for 1 MiB
+				 */
 				v = strtoul(argv[++i], &end, 0);
-				if (*end || v < 16 || v > 64)
+				if (*end || v < 16 || v > 256)
 					return usage();
 				scratch_pages = (uint32_t)v;
 				continue;
@@ -4574,6 +4648,16 @@ int main(int argc, char **argv)
 			fprintf(stderr, "sgxfive-test: --kpoke-render, --kreg-render and --move are "
 				"for tri, render 1 to %u; --kpoke-job for dummy, job 1 to %u, and "
 				"fill, job 1\n", o.n, o.n);
+			return 2;
+		}
+	}
+	for (unsigned int k = 0; k < o.nrefills; k++) {
+		const uint32_t b = o.refills[k].buf;
+
+		if (strcmp(cmd, "tri") || o.refills[k].n < 2 || o.refills[k].n > o.n ||
+		    (b == REFILL_DEPTH && !o.depth) || (b == REFILL_STENCIL && !o.stencil)) {
+			fprintf(stderr, "sgxfive-test: --refill K:BUF=V is for tri, renders 2 to "
+				"-n, BUF depth (with --depth), stencil (with --stencil) or fb\n");
 			return 2;
 		}
 	}
