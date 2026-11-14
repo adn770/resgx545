@@ -8941,6 +8941,28 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   failed 7 of 8 (it held only at s 0.25, where no vertex is below 0); the control passed.
   *mte; HW; data: `render-closing-r16-zls:out/20261114-092344/zoff/`,
   `render-closing-r16-zls:fold/`.*
+- `E1068` r17-zls rows zo2- (Q299, 8 jobs in stages zovp2 and zovs2, t10): the depth load pass over
+  overlapping tiles with edge tiles (65 x 33 G 1 and 63 x 31 G 0, E996's plane over a 0.2 load)
+  loads each tile's slot, passes each tile on its own over the whole 32 x 16 tile and leaves in a
+  shared slot the tile visited last (frozen H-OVL-PASS-EDGE 2 of 2 rows, 3584 of 3584 and 1536 of
+  1536 dwords and the drawn counts; the first tile failed 2 of 2, an edge tile without its load 2 of
+  2, a load reaching only the pixels inside the extent 2 of 2); the stencil pass at the same shapes
+  held on 63 x 31 (1536 of 1536 bytes) and failed on 65 x 33 by 363 bytes beyond the extent, which
+  keep their load past E831's band (x + 0.5 < 1.25 W, y + 0.5 < 1.25 H) while the frozen model
+  tested them: fitted post hoc, 3584 of 3584 and 1536 of 1536 bytes; all four controls passed.
+  *zls; HW; data: `render-closing-r17-zls:out/20261114-104614/zovp2/`,
+  `render-closing-r17-zls:out/20261114-104614/zovs2/`, `render-closing-r17-zls:fold/`.*
+- `E1069` r17-zls rows zb20- (Q071, 9 jobs in stage zb20, t10): with bit 20 cleared, formats 6 and 7
+  at 96 x 48 G 2 and 128 x 64 G 3 store their per-tile records one after another from dword 2048
+  whatever the size, as E1063 saw at 64 x 32 G 1 (frozen H-PACK2048 held on 3 of 4 rows, 108, 704
+  and 192 dwords of 108, 704 and 192 with the stencil store the twin's and the drawn count the
+  target's; H-PACK-AFTER (4608, 8192) and H-PACK-SCALE (3072, 4096) failed 4 of 4); the fourth row
+  (format 6 at 96 x 48) wrote 396 dwords where the frozen rule took 352 of its twin's records: post
+  hoc, its twin (bit 20 set) stored its nine tile records at slots 0 to 6, 8 and 10 and the frozen
+  rule gathered slots 0 to 8, so H-PACK2048 holds there too on every dword of the twin in address
+  order (396 of 396); the control passed.
+  *zls; HW; data: `render-closing-r17-zls:out/20261114-104614/zb20/`,
+  `render-closing-r17-zls:fold/`.*
 
 ## By unit
 
@@ -9063,4 +9085,4 @@ E1035.
 Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467, E489, E490, E615, E628, E629,
 E663, E664, E665, E730, E831, E885, E903, E904, E977, E978, E981, E985, E986, E987, E988, E991,
 E996, E997, E1015, E1020, E1029, E1030, E1031, E1040, E1041, E1042, E1043, E1050, E1051, E1053,
-E1054, E1059, E1063, E1064.
+E1054, E1059, E1063, E1064, E1068, E1069.

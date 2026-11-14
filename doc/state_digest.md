@@ -62,7 +62,7 @@ list.
 - `Q032` isp, medium: what does pcoeff hand the ISP in the punch-through pass, when the kept pixels'
   depth is the same without it and moves between runs only ... (E217, E416)
 - `Q071` isp, medium: what do the bits of the ZLS control word that change nothing seen (12, 15, 16,
-  20 to 23, 27 to 31) do, alone and set together, what does ... (E1042, E1053, E1063)
+  20 to 23, 27 to 31) do, alone and set together, what does ... (E1053, E1063, E1069)
 - `Q073` isp, medium: what does o0 hold at the start of an opaque pass's pixel shader? (E417, E739,
   E757)
 - `Q240` isp, medium: does the coverage rule of E606 (vertices on the 1/256 pixel grid, exact centre
@@ -283,7 +283,7 @@ list.
 - `Q272` vdm, low: what makes three vertices of one job read as a constant row (E702: cap-n8-f10-a7,
   ids 55, 66 and 77 at R * V = 33 and 7 attribute rows; 3 ... (E702, E738, E755)
 - `Q299` zls, low: does a ZLS store whose extent runs past its buffer fault the job (E411's G 5 to
-  17 in a 16-page buffer), and what does a load pass store ... (E1041, E1051, E1064)
+  17 in a 16-page buffer), and what does a load pass store ... (E1051, E1064, E1068)
 - `Q004` transfer, fw (parked): can a transfer context whose flag bit 4 is set be released, which
   agent but the host sets flag bits 1 and 4, and which priorities above 0 ... (E015, E455)
 - `Q029` render, fw (parked): what does the render context's own cleanup wait for once its RT data
@@ -307,9 +307,15 @@ list.
 
 ## Recent records
 
-130 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
+132 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1069` zls, 2026-11-14: r17-zls rows zb20- (Q071, 9 jobs in stage zb20, t10): with bit 20
+  cleared, formats 6 and 7 at 96 x 48 G 2 and 128 x 64 G 3 store their per-tile records one after
+  another from dword 2048 whatever the ...
+- `E1068` zls, 2026-11-14: r17-zls rows zo2- (Q299, 8 jobs in stages zovp2 and zovs2, t10): the
+  depth load pass over overlapping tiles with edge tiles (65 x 33 G 1 and 63 x 31 G 0, E996's plane
+  over a 0.2 load) loads each ...
 - `E1066` mte, 2026-11-14: r16-zls rows zw2- (Q069, 9 jobs in stage zoff, t10): on E987's ramp (256
   x 128, t = x / 512, format 0) the viewport's z offset w at 0, 1/16, 3/16, 5/16, 3/8 and 7/16
   stored (1.6 w + 0.2) t (frozen ...
@@ -703,10 +709,11 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-69 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+70 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
 - `usse/closing-r16-usse`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
+- `render/closing-r17-zls`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r16-zls`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r16-tw`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t14
@@ -801,7 +808,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 35 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 36 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at

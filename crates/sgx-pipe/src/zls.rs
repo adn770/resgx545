@@ -7,9 +7,8 @@
 //! background depth's sign (E987), formats 3 and 4 with a loaded and stored stencil (E985, E986).
 //! What no record states refuses by question: formats 3 and 4 otherwise and 5 to 7
 //! (Q120), the overflowed job's store (Q107: E628, E629, E1020, [`final_store`]), a NaN depth in an
-//! integer format other than a kept load's and a load pass over overlapping tiles with edge tiles
-//! (Q299; the overlapping stores follow E996, E1041 and E1051 in every format, the pass over them
-//! E1064), a pass plane outside 0 to 1 (Q069: only the viewport's z offset brings one; E1050 ran the pass over edge tiles, with bit 19, in
+//! integer format other than a kept load's (Q299; the overlapping stores follow E996, E1041 and
+//! E1051 in every format, the pass over them E1064 and, with edge tiles, E1068), a pass plane outside 0 to 1 (Q069: only the viewport's z offset brings one; E1050 ran the pass over edge tiles, with bit 19, in
 //! the integer formats and at depths of 0 to 1, E1059 at seven depths fed the no-load plane), bit
 //! 20 cleared with formats 5 to 7, bit 12 cleared with a load and bit 16 cleared with a depth load,
 //! a stencil store or the 16-bit format (Q071, E997, E1030, E1063), the stencil test's source under any
@@ -530,23 +529,6 @@ fn has_edge(w: u32, h: u32) -> bool {
     !w.is_multiple_of(32) || !h.is_multiple_of(16)
 }
 
-/// Tiles of a row that share a dword with the next row's: a pitch G + 1 below the tiles a row
-/// needs. E465 counted the dwords written there; which pixel a shared dword holds is [`store`]'s
-/// (E996), a pass over a loaded buffer at such a pitch was not run.
-fn no_overlap(w: u32, g: u32) -> Result<(), Outcome> {
-    if g + 1 < w.div_ceil(32) {
-        return Err(open(
-            format!(
-                "pitch {} tiles under the {} a row of {w} pixels needs: tiles overlap, which pixel a shared dword holds was not measured",
-                g + 1,
-                w.div_ceil(32)
-            ),
-            &["Q299"],
-        ));
-    }
-    Ok(())
-}
-
 /// The dwords of the depth buffer a store writes, for counting: overlapping tiles allowed (E465
 /// counted them), values not given.
 fn depth_dwords(ctl: &Ctl, w: u32, h: u32, stencil_buffer: bool) -> Result<Dwords, Outcome> {
@@ -954,7 +936,8 @@ pub fn pass(
 /// [`stencil_byte`], E988). Over overlapping tiles (G + 1 under the tiles across) each tile loads
 /// its slot's dwords and passes on its own, and a shared slot holds the tile visited last
 /// ([`visit_order`]: E1064 at 64 x 32 G 0 and 160 x 48 G 2 with E996's plane, the depth and the
-/// stencil load, 4 of 4 held out); with edge tiles that refuses (Q299: not run). A plane depth
+/// stencil load, 4 of 4 held out), edge tiles included (E1068: 65 x 33 G 1 and 63 x 31 G 0 over a
+/// 0.2 load, the whole 32 x 16 tile of an edge tile loaded and passed, 2 of 2 held out). A plane depth
 /// outside 0 to 1 or NaN refuses (Q069, the z offset's: E1050 ran 0, 0.125, 0.75 and 1; E1059 the planes of 0.0625
 /// to 0.625 a no-load twin stores, 7 of 7).
 #[allow(clippy::too_many_arguments)]
@@ -969,9 +952,6 @@ pub fn pass_plane(
     load_depth: &dyn Fn(u32) -> u32,
     load_stencil: &dyn Fn(u32) -> u32,
 ) -> Result<Pass, Outcome> {
-    if has_edge(w, h) {
-        no_overlap(w, ctl.g())?;
-    }
     let (tw, th) = (w.div_ceil(32), h.div_ceil(16));
     for y in 0..16 * th {
         for x in 0..32 * tw {
@@ -1867,14 +1847,14 @@ mod tests {
     fn a_pass_takes_edge_tiles_integer_formats_and_whole_overlapping_tiles() {
         // E831's band is the store's without a load; the load and the pass ran on whole tiles
         // since E1050 both run (H-EDGE, H-INT-PASS); overlapping whole tiles since E1064, with edge
-        // tiles they refuse
+        // tiles since E1068
         let r = pass(&ctl(0x0017_110c), 34, 18, 1.0, 0.5, Test::Never, &|_, _| true, &|i| i, &|i| i);
         assert!(r.is_ok());
         assert!(run(0x0017_110c | 1 << 24, Test::Never, &|i| i).is_ok());
         let r = pass(&ctl(0x0017_1004), 64, 32, 1.0, 0.5, Test::Never, &|_, _| true, &|i| i, &|i| i);
         assert_eq!(r.unwrap().depth.len(), 3 * 512, "E1064: slots 0 to 2");
         let r = pass(&ctl(0x0017_1004), 65, 32, 1.0, 0.5, Test::Never, &|_, _| true, &|i| i, &|i| i);
-        assert!(matches!(r, Err(Outcome::Unsupported { ref ids, .. }) if ids == &["Q299"]));
+        assert_eq!(r.unwrap().depth.len(), 4 * 512, "E1068: 65 x 32 G 0, slots 0 to 3");
     }
 
     #[test]
