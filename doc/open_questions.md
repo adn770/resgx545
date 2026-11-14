@@ -43,7 +43,7 @@
 - `Q031` (phase 10, hw, medium): why does ISP word 0 bit 28 hang a multisampled render, when single-sampled it widens coverage to the union of eight samples? (E214, E215, E278, E416)
 - `Q032` (phase 10, hw, medium): what does pcoeff hand the ISP in the punch-through pass, when the kept pixels' depth is the same without it and moves between runs only when it runs without the iteration it reads? (E217, E416)
 - `Q066` (phase 11, hw, high): what do the three background-object words the 3D kick writes mean to the ISP, and what are the other words of a render's background object? (E069, E162, E209, E216, E410, E590, E970, E971, E972, E973, E1006)
-- `Q071` (phase 11, hw, medium): what do the bits of the ZLS control word that change nothing seen (12, 15, 16, 20 to 23, 27 to 31) do, alone and set together, what does bit 0 store with a control other than 0x0017100c, and how does the ISP use the control in a render with a stencil test? (E057, E169, E216, E228, E284, E337, E411, E465, E466, E467, E665, E989, E997, E1014, E1030, E1042, E1053, E1063)
+- `Q071` (phase 11, hw, medium): what do the bits of the ZLS control word that change nothing seen (12, 15, 16, 20 to 23, 27 to 31) do, alone and set together, what does bit 0 store with a control other than 0x0017100c, and how does the ISP use the control in a render with a stencil test? (E057, E169, E216, E228, E284, E337, E411, E465, E466, E467, E665, E989, E997, E1014, E1030, E1042, E1053, E1063, E1069)
 - `Q072` (phase 11, hw, low): what does bit 1 of CR_ISP_REG_04DC do to a punch-through pass, when it hangs every one tried and changes no opaque or translucent pass? (E068, E073, E213, E222, E290, E416)
 - `Q073` (phase 11, hw, medium): what does o0 hold at the start of an opaque pass's pixel shader? (E077, E283, E417, E739, E757)
 - `Q089` (phase 11, hw, high): where does the closed driver's 4x multisampled render become a 64x64 image, when its PBE words are those of a single-sampled 64x64 target and the hardware stores 4x samples as 2x2 blocks (one render with CR_TE_AA 0xe0000000 stores only a 16 x 8 window of each 32 x 16 tile, E503: are the four windows 0x20000000, 0x60000000, 0xa0000000 and 0xe0000000 four renders of one frame, and what combines them); and do alpha to coverage and sample coverage reach the hardware at all? (E333, E339, E439, E502, E503, E508, E510, E727, E893)
@@ -188,7 +188,7 @@
 
 - `Q107` (phase 11, hw, medium): why does the final render of a job that overflows store zeros for the first row of macrotiles and the depth with its sign bit set for the rest, and in what order does it store the tiles (not E996's overlay of the plain store, E1020)? (E058, E411, E461, E465, E468, E489, E628, E629, E977, E987, E996, E997, E1020)
 - `Q120` (phase 11, hw, medium): what do the stored depth formats 3 to 7 (CR_ISP_ZLSCTL bits 26:24) hold and how are they laid out, given that they store depth and stencil packed or nothing? (E466, E490, E978, E985, E986, E1015, E1031, E1043, E1054)
-- `Q299` (phase 12, hw, low): does a ZLS store whose extent runs past its buffer fault the job (E411's G 5 to 17 in a 16-page buffer), and what does a load pass store over overlapping tiles? (E411, E465, E991, E996, E1041, E1051, E1064)
+- `Q299` (phase 12, hw, low): does a ZLS store whose extent runs past its buffer fault the job (E411's G 5 to 17 in a 16-page buffer), and what does a load pass store over overlapping tiles? (E411, E465, E991, E996, E1041, E1051, E1064, E1068)
 
 ## Parked: not hardware knowledge
 
