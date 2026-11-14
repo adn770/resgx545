@@ -1,0 +1,9 @@
+title = "r15-tw: the --pixels words of each job of stage tw14 (Q078's T3 bit 14 on twiddled textures at W 16 to 128, u16 and bilinear, 14 jobs)"
+repo = "data"
+paths = ["vectors/closing/r15-tw/pixels/"]
+method = "tools/usse-asm/closing_tables.py texture on the published render/closing-r15-tw session (its one attempt, out/20261114-074356), one file; rows are measurements; replayed by crates/sgx-pipe/tests/texture_t3b14.rs::r15_tw_tw14_bit_14_twiddled_reads_a_tile_row_of_w_plus_4096_texels_at_every_width (every point and u16 row and every reference pixel for pixel, the two bilinear rows refused on every pixel)"
+date = "2026-11-14"
+files = 1
+size = 19830
+sha256 = "c7a4f530dd2d2ca93be13b3351e95fd497417be43c6cf8e13617060c4db02d4c"
+recipe = "tools/usse-asm/closing_tables.py"

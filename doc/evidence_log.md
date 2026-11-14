@@ -8703,6 +8703,21 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   two); both baselines passed.
   *ta; HW, infer; data: `render-closing-r14-flag:out/20261114-060824/f2/`,
   `render-closing-r14-flag:fold/`.*
+- `E1049` r15-tw stage tw14 (14 probe fills on t14 with a 1 MiB scratch, E1047's tx_map form; safe
+  class, no fault): T3 bit 14 on twiddled W x 32 32-bit textures at W 16, 64 and 128, with u in (0,
+  1), (1, 2) and (2, 3), reads on every pixel of all six held-out fills the dword of column s +
+  floor(4096 frac(u)) (s the wrapped bit-clear column) in E561's 16 x 16 tiles with a tile row of W
+  + 4096 texels ('H-TWP (6 of 6 rows decided)'; a constant 4128-texel tile row, the 4096 one and the
+  move floor(128 W u) mod 4096 '0 held, 6 FAILED', u clamped to [0, 1] '3 held, 3 FAILED', failing
+  every row past 1), and on a u16 32 x 32 the same form in texels, texel T the half T & 1 of dword T
+  >> 1 ('U16-TX (1 of 1 rows decided)'; the move in dwords and texel pairs a dword 0 of 1); every
+  frozen bilinear footprint failed on two rows whose footprints cross the texture's right edge
+  ('H-FOOT-TW ... 0 held, 2 FAILED', 'H-FOOT-SHIFT ... 1 held, 1 FAILED', 'H-POINT ... 0 held, 2
+  FAILED'): post hoc, the taps read columns X mod W and X + 1 plus floor(4096 frac(u)), X = floor(W
+  frac(u) - 1/2), on every pixel of both [infer]; all five controls (four bit-clear references,
+  E1047's f1-zero rerun) passed.
+  *texture; HW, infer; data: `render-closing-r15-tw:out/20261114-074356/tw14/`,
+  `render-closing-r15-tw:fold/`, `vectors-closing-r15-tw-pixels`.*
 - `E1056` r15-isp stage zcut (11 jobs, E1045's form on six held-out triangles with one vertex depth
   at 1.25 or -0.25): the triangle is clipped as a polygon at z = 1 and z = 0 and each made vertex is
   rounded half away from zero to 1/256 pixel, then covered by E606's rule (frozen H-POLYCLIP held 6
@@ -8810,7 +8825,7 @@ E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441, E5
 E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E726, E733, E743,
 E744, E760, E765, E787, E844, E894, E910, E911, E923, E930, E931, E932, E940, E941, E942, E951,
 E955, E956, E957, E958, E968, E974, E975, E976, E982, E983, E1000, E1001, E1002, E1003, E1004,
-E1016, E1017, E1025, E1026, E1027, E1033, E1038, E1039, E1047.
+E1016, E1017, E1025, E1026, E1027, E1033, E1038, E1039, E1047, E1049.
 
 ### transfer
 

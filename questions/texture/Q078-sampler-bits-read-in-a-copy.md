@@ -1,11 +1,11 @@
 +++
 id = "Q078"
-question = "does T3 bit 14 on a twiddled texture read texel (s + floor(4096 frac(u)), t) of a layout of 16 x 16 tiles with W + 4096 texels a tile row at other sizes and formats (E1047: every pixel of three fills of E566's 32 x 32 32-bit texture, fitted post hoc on E1033's fault pages and held out by u = 0 only), is the tile row W + 4096 or 4128 texels, is u past 1 taken by its fraction or clamped at another width, and what does the bit do to a filtered twiddled sample?"
+question = "under a bilinear sample, does T3 bit 14 on a twiddled texture read taps at columns X mod W and X + 1 plus floor(4096 frac(u)), X = floor(W frac(u) - 1/2) (E1049: post hoc on two rows across the texture's edge, every frozen footprint failed), given that a point sample reads texel (s + floor(4096 frac(u)), t) of 16 x 16 tiles with W + 4096 texels a tile row at W 16 to 128 by 32 and in u16 texels (E1047, E1049), and what does it read at heights other than 32?"
 unit = "texture"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E274", "E397", "E566", "E564", "E722", "E723", "E968", "E975", "E1003", "E1027", "E1033", "E1047"]
+evidence = ["E274", "E397", "E566", "E564", "E722", "E723", "E968", "E975", "E1003", "E1027", "E1033", "E1047", "E1049"]
 terms = ["T3.BIT10", "T3.BIT14", "T3.BITS19_18", "T3.BITS28_27", "T0.BIT27", "T3.BITS7_0"]
 +++
 
@@ -74,7 +74,8 @@ E566), why are the rows of bits 27 and 28 exact under 'after the source's height
 64x32 but under no declared rule at a strided 32x32, and what do bits 11 and 12 select, given that
 they change nothing on a strided texture and every pixel of a twiddled chain texture?". Dropped:
 T0 bit 27, which E723 answers for point samples (a texel byte decoded sRGB to half, 4 of 4
-held-out fills; the bilinear part answered by E1038), and bits 10, 18-19 and 27-28, whose transform is
+held-out fills; the bilinear part answered by E1038), and bits 10, 18-19 and 27-28, whose transform
+is
 E722's level and scale model held out on 13 of 13 fills that completed (the spec gives it with its
 limits, which stay there). Bit 14 is narrowed by E968: on E566's kept strided jobs the read is the
 dword plus 32 plus 64 per column at W = S = 64, six frozen forms held out offline at 64 x 16 (2048
@@ -144,3 +145,23 @@ the fitted inputs (their images new, their inputs not), and only W = 32 ran, so 
 parted from a constant 4128, nor the fraction of u past 1 from a clamp at another width. sgx-sim's
 tex.rs models the 32 x 32 geometry and refuses the rest. To retire: the form held out at two other
 widths (16 x 16 and 64 x 64, say) with u past 1, then filtered.
+
+Narrowed 2026-11-14 (round 15, session r15-tw stage tw14, decision R15-2 (a); E1049; the question
+line is rewritten to what stays; not retired: R15-6 (a) asks every clause decided by held-out rows,
+and the filtered clause failed its frozen forms). It read "does T3 bit 14 on a twiddled texture read
+texel (s + floor(4096 frac(u)), t) of a layout of 16 x 16 tiles with W + 4096 texels a tile row at
+other sizes and formats (E1047: every pixel of three fills of E566's 32 x 32 32-bit texture, fitted
+post hoc on E1033's fault pages and held out by u = 0 only), is the tile row W + 4096 or 4128
+texels, is u past 1 taken by its fraction or clamped at another width, and what does the bit do to a
+filtered twiddled sample?". Held out with every control
+passing: the point read is texel (s + floor(4096 frac(u)), t) of 16 x 16 tiles with W + 4096 texels
+a tile row at W 16, 64 and 128 (H 32) with u in (0, 1), (1, 2) and (2, 3) (H-TWP 6 of 6; a
+constant 4128, a 4096 tile row and the move floor(128 W u) mod 4096 0 of 6; u clamped at 1 fails
+every row past 1), and on a u16 32 x 32 the same in texels, texel T the half T & 1 of dword T >> 1
+(1 of 1). So the sizes, u past 1, the pitch and "other formats" (read as the 16-bit format
+[infer]) are answered; sgx-sim models them. Open: the bilinear sample. On two rows whose
+footprints cross the texture's right edge every frozen footprint failed (each tap at its wrapped
+texel 0 of 2, the second column unwrapped 1 of 2, the filter dropped 0 of 2); post hoc the taps
+read columns X mod W and X + 1 plus floor(4096 frac(u)), X = floor(W frac(u) - 1/2), 2048 of 2048
+on both. To retire: that form held out (other widths, footprints inside the texture and across
+the left edge, v's edge), and a height other than 32 where the reach fits the scratch.

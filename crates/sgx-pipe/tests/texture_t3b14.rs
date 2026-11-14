@@ -11,8 +11,12 @@
 //! (`render/closing-r14-flag`, E1047: bit 14 on E566's twiddled 32 x 32 texture with a 1 MiB
 //! scratch, where E566 and E1033 faulted at 16 pages): its state words and coordinates are
 //! gen/f1.py's (E566's tw32 map, u = x / 4096, u = 0), every pixel the read of column s +
-//! floor(4096 frac(u)) in 16 x 16 tiles with a tile row of W + 4096 texels. Bit 14 on another
-//! twiddled size, filtered or with T3's offset stays refused.
+//! floor(4096 frac(u)) in 16 x 16 tiles with a tile row of W + 4096 texels. And r15-tw's stage
+//! tw14 (`render/closing-r15-tw`, E1049: the same rule held out at W 16, 64 and 128 by 32 with u
+//! past 1 and 2, and on a u16 32 x 32 in texels): its state words and coordinates are gen/tw.py's
+//! (u a ramp of x, v = (y + 1/2) / 32), every point row and reference read as kept; its two
+//! bilinear rows (post hoc footprint) are refused on every pixel. Bit 14 at other sizes, filtered
+//! or with T3's offset stays refused.
 
 use sgx_pipe::data::Ctx;
 use sgx_sim::tex::{self, Lod, Sample, Srd};
@@ -24,6 +28,8 @@ const R9: &str = "render/closing-r9-x";
 const R9_ATT: &str = "out/20261113-081821/t3";
 const R14: &str = "render/closing-r14-flag";
 const R14_ATT: &str = "out/20261114-060824/f1";
+const R15: &str = "render/closing-r15-tw";
+const R15_ATT: &str = "out/20261114-074356/tw14";
 const SCRATCH: u32 = 0x5caf_0000;
 
 fn base() -> Option<PathBuf> {
@@ -206,5 +212,60 @@ fn r14_flag_f1_bit_14_twiddled_reads_a_tile_row_of_w_plus_4096_texels() {
             }
         }
         assert_eq!(ok, 2048, "{name}");
+    }
+}
+
+/// An r15-tw tw14 row: (name, W, format, T0, T3 bit 14, u = a + (x + c) / d).
+const TW14: [(&str, u32, u32, u32, bool, f64, f64, f64); 14] = [
+    ("tw-ref16", 16, 12, 0x07fe_0000, false, 0.0, 0.5, 64.0),
+    ("tw-refu16", 32, 9, 0x07fe_0000, false, 0.0, 0.5, 64.0),
+    ("tw-ref64", 64, 12, 0x07fe_0000, false, 0.0, 0.5, 64.0),
+    ("tw-ref128", 128, 12, 0x07fe_0000, false, 0.0, 0.5, 128.0),
+    ("tw-zero", 32, 12, 0x07fe_0000, true, 0.0, 0.0, f64::INFINITY),
+    ("tw-u16", 32, 9, 0x07fe_0000, true, 0.0, 0.5, 64.0),
+    ("tw16-u0", 16, 12, 0x07fe_0000, true, 0.0, 0.5, 64.0),
+    ("tw-bl16", 16, 12, 0x07fe_1400, true, 1.96875, 0.0, 1024.0),
+    ("tw16-u1", 16, 12, 0x07fe_0000, true, 1.0, 0.5, 64.0),
+    ("tw-bl32", 32, 12, 0x07fe_1400, true, 0.984375, 0.0, 2048.0),
+    ("tw64-u0", 64, 12, 0x07fe_0000, true, 0.0, 0.5, 64.0),
+    ("tw128-u0", 128, 12, 0x07fe_0000, true, 0.0, 0.5, 128.0),
+    ("tw64-u2", 64, 12, 0x07fe_0000, true, 2.0, 0.5, 64.0),
+    ("tw128-u2", 128, 12, 0x07fe_0000, true, 2.0, 0.5, 128.0),
+];
+
+#[test]
+fn r15_tw_tw14_bit_14_twiddled_reads_a_tile_row_of_w_plus_4096_texels_at_every_width() {
+    let Some(b) = Ctx::from_env().root.filter(|r| r.join(R15).join(R15_ATT).is_dir()) else {
+        assert!(std::env::var_os("RESGX545_REQUIRE_DATA").is_none(), "no {R15}/{R15_ATT}");
+        eprintln!("SKIPPED: no {R15}/{R15_ATT} (set RESGX545_DATA)");
+        return;
+    };
+    for (name, w, fmt, t0, b14, a, c, d) in TW14 {
+        let img = image(&b.join(R15).join(R15_ATT).join(format!("{name}.txt.gz")));
+        let bilinear = t0 & 0x1400 != 0;
+        let (mut ok, mut open) = (0, 0);
+        for y in 0..32 {
+            for x in 0..64 {
+                // the bilinear rows sample W u - 1/2 on 1/64 texel steps: v = (y + 3/4) / 32
+                let v = if bilinear { (4 * y + 3) as f64 / 128.0 } else { (2 * y + 1) as f64 / 64.0 };
+                let s = Sample {
+                    state: [t0, fmt << 24 | (w - 1) << 12 | 31, SCRATCH, 0x0080_0800 | u32::from(b14) << 14],
+                    u: (a + (x as f64 + c) / d) as f32,
+                    v: v as f32,
+                    one_d: false,
+                    srd: Srd::None,
+                    pcf: None,
+                    lod: Lod::Flat,
+                };
+                let mut load = |a: u32| Ok(0xd000_0000 | (a.wrapping_sub(SCRATCH) / 4));
+                match tex::sample(&s, &mut load) {
+                    Ok(v) if v[0] == img[(y * 64 + x) as usize] => ok += 1,
+                    Ok(_) => {}
+                    Err(_) => open += 1,
+                }
+            }
+        }
+        let want = if bilinear { (0, 2048) } else { (2048, 0) };
+        assert_eq!((ok, open), want, "{name}");
     }
 }

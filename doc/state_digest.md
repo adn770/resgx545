@@ -43,8 +43,8 @@ list.
   in an ordinary TA, 3D, DPM or transfer job, and how long does ... (E890, E902, E921)
 - `Q070` ta, high: what do the TA object's format word bits 15:8 and above and its set masks select
   beyond the settings seen, and does the fitted region test ... (E543, E544, E777)
-- `Q078` texture, high: does T3 bit 14 on a twiddled texture read texel (s + floor(4096 frac(u)), t)
-  of a layout of 16 x 16 tiles with W + 4096 texels a tile row ... (E1027, E1033, E1047)
+- `Q078` texture, high: under a bilinear sample, does T3 bit 14 on a twiddled texture read taps at
+  columns X mod W and X + 1 plus floor(4096 frac(u)), X = floor(W ... (E1033, E1047, E1049)
 - `Q050` usse, high: what do the visibility group's instructions do, and how do smp's mipmaps and
   LOD values, the border address modes, the compressed and YUV ... (E563, E565, E568)
 - `Q047` vdm, high: what do VDM_STATE1 bit 8, bits 11:9 and bits 15:13 select for a state task, when
@@ -315,7 +315,7 @@ list.
 
 ## Recent records
 
-114 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
+115 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
 - `E1057` dpm, 2026-11-14: r15-dpm stage pr4 on module B60AB0B4 (Q036: r14-dpm's pr3 re-run with the
@@ -324,6 +324,9 @@ the claims are cut at 200 characters.
 - `E1056` isp, 2026-11-14: r15-isp stage zcut (11 jobs, E1045's form on six held-out triangles with
   one vertex depth at 1.25 or -0.25): the triangle is clipped as a polygon at z = 1 and z = 0 and
   each made vertex is rounded ...
+- `E1049` texture, 2026-11-14: r15-tw stage tw14 (14 probe fills on t14 with a 1 MiB scratch,
+  E1047's tx_map form; safe class, no fault): T3 bit 14 on twiddled W x 32 32-bit textures at W 16,
+  64 and 128, with u in (0, 1), (1, 2) ...
 - `E1048` ta, 2026-11-14: r14-flag stage f2 (6 TA-dump jobs, t10: the unpoked 256 x 256 and 768 x
   640 baselines and four CR_TE_MTILE1 words never run, the first macrotile 14 and 15 tiles wide at
   256 x 256 and 26 and 27 at 768 ...
@@ -663,9 +666,11 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-61 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+62 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r15-tw`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t14
 - `render/closing-r15-isp`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r15-dpm`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r14-zls`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
@@ -751,7 +756,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 27 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 28 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at
