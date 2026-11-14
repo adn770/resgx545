@@ -62,7 +62,7 @@ list.
 - `Q032` isp, medium: what does pcoeff hand the ISP in the punch-through pass, when the kept pixels'
   depth is the same without it and moves between runs only ... (E217, E416)
 - `Q071` isp, medium: what do the bits of the ZLS control word that change nothing seen (12, 15, 16,
-  20 to 23, 27 to 31) do, alone and set together, what does ... (E1030, E1042, E1053)
+  20 to 23, 27 to 31) do, alone and set together, what does ... (E1042, E1053, E1063)
 - `Q073` isp, medium: what does o0 hold at the start of an opaque pass's pixel shader? (E417, E739,
   E757)
 - `Q240` isp, medium: does the coverage rule of E606 (vertices on the 1/256 pixel grid, exact centre
@@ -74,7 +74,7 @@ list.
 - `Q039` mte, medium: where is a user clip plane's state held between jobs, what resets it, and when
   do the vertex's distance dwords decide a plane? (E198, E280, E418)
 - `Q069` mte, medium: what do OUTSEL bit 13 and the state block's presence bits 16-31 select, and
-  why does the viewport's z offset (state-block word 10) scale ... (E490, E981, E987)
+  why does the viewport's z offset (state-block word 10) scale ... (E981, E987, E1066)
 - `Q116` mte, medium: what does the MTE state's region clip (enable bit, first and last 32-pixel
   tile column, first and last 16-pixel tile row) do to the objects ... (E340, E347, E348)
 - `Q012` pbe, medium: what float formats are pack modes 22 and 34, given that both read o0 as an
@@ -287,9 +287,9 @@ list.
 - `Q272` vdm, low: what makes three vertices of one job read as a constant row (E702: cap-n8-f10-a7,
   ids 55, 66 and 77 at R * V = 33 and 7 attribute rows; 3 ... (E702, E738, E755)
 - `Q297` zls, low: what does the ZLS load pass (a depth or stencil load feeding the depth test and
-  the store) do over edge tiles, with bit 19 set, with an ... (E1029, E1040, E1050)
+  the store) do over edge tiles, with bit 19 set, with an ... (E1040, E1050, E1059)
 - `Q299` zls, low: does a ZLS store whose extent runs past its buffer fault the job (E411's G 5 to
-  17 in a 16-page buffer), and what does a load pass store ... (E996, E1041, E1051)
+  17 in a 16-page buffer), and what does a load pass store ... (E1041, E1051, E1064)
 - `Q004` transfer, fw (parked): can a transfer context whose flag bit 4 is set be released, which
   agent but the host sets flag bits 1 and 4, and which priorities above 0 ... (E015, E455)
 - `Q029` render, fw (parked): what does the render context's own cleanup wait for once its RT data
@@ -313,12 +313,24 @@ list.
 
 ## Recent records
 
-122 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
+126 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1066` mte, 2026-11-14: r16-zls rows zw2- (Q069, 9 jobs in stage zoff, t10): on E987's ramp (256
+  x 128, t = x / 512, format 0) the viewport's z offset w at 0, 1/16, 3/16, 5/16, 3/8 and 7/16
+  stored (1.6 w + 0.2) t (frozen ...
 - `E1065` texture, 2026-11-14: r16-tex stage ty on module B60AB0B4 (Q177; texture types 1 and 4 at 8
   x 8, 64 x 64 and type 1 at 64 x 16, with the mode 0 reference of each size, 15 probe fills at base
   0 of a 32-page named scratch): ...
+- `E1064` zls, 2026-11-14: r16-zls rows zo- (Q299, 11 jobs in stages zovp and zbits4, t10): a load
+  pass over overlapping tiles (64 x 32 G 0 and 160 x 48 G 2) loads each tile's slot by E465, passes
+  each tile on its own and ...
+- `E1063` zls, 2026-11-14: r16-zls rows zb4- (Q071, 14 jobs in stages zbits4, zovp and zoff, t10):
+  bit 0 under E988's stencil row, E1030's bit 16 cleared and E1031's flat format-6 and F7K rows
+  writes no colour pixel and leaves ...
+- `E1059` zls, 2026-11-14: r16-zls rows zp2- (Q297, 15 jobs in stage zpass2, t10): E1050's load pass
+  (64 x 32, the bit:9 load of 0.25 and 0.75, depth less) at the flat depths 0.125, 0.0625, 0.1, 0.3,
+  0.375, 0.625 and 0.5 + ...
 - `E1057` dpm, 2026-11-14: r15-dpm stage pr4 on module B60AB0B4 (Q036: r14-dpm's pr3 re-run with the
   sampling-period gate at 2000 ns; 0x0748 sampled alone at 0, 1, 4 and 7 partial renders, 10 jobs,
   all ran, rc 0): the period ...
@@ -685,9 +697,10 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-65 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+66 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r16-zls`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r16-tex`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r15-zls`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r15-tw`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10,
@@ -778,7 +791,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 31 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 32 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at

@@ -6,7 +6,7 @@ kind = "hw"
 value = "medium"
 phase = 11
 evidence = ["E057", "E169", "E216", "E228", "E284", "E337", "E411", "E465", "E466", "E467", "E665",
-            "E989", "E997", "E1014", "E1030", "E1042", "E1053"]
+            "E989", "E997", "E1014", "E1030", "E1042", "E1053", "E1063"]
 terms = ["CR_ISP_ZLSCTL", "CR_ISP_BGOBJVALS.STENCIL", "ISP2"]
 +++
 
@@ -94,3 +94,11 @@ of 2), bit 23 alone reads one of 0x3f, 0x80 and 0 by x mod 16 whatever was loade
 the index fill, H23-MOD16 2 of 2), and 21 or 22 with 23 read 0 as the three together do
 (H-PAIR-ZERO 2 of 2). sgx-pipe's `stencil_source` models them. Open: why bit 23 reads those bytes,
 bit 0 under other controls, bit 20, and the ISP's use of the control.
+
+Narrowed 2026-11-14 (r16-zls, E1063). Bit 0 stores the depth and stencil as without it and writes
+no colour with a loaded stencil too (E988's row, bit 16 cleared, formats 6 and 7: H-B0 4 of 4 held
+out). Bit 23's bytes do not follow the reference, the compare mask or the background stencil
+(H23-FIXED 3 of 3). Bit 20 cleared changed nothing at 640 x 480 in format 0 nor with bit 12 cleared
+and a depth load, but in formats 6 and 7 it moved the stored per-tile records, packed one after
+another from dword 2048 (post hoc, one size; H-INERT20 failed 2 of 2). Open: where bit 23's bytes
+come from, bit 20's packed records at other sizes and formats, and the ISP's use of the control.

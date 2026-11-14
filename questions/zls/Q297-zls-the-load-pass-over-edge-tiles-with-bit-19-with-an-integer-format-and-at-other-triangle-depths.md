@@ -5,7 +5,7 @@ unit = "zls"
 kind = "hw"
 value = "low"
 phase = 12
-evidence = ["E467", "E664", "E831", "E977", "E995", "E1029", "E1040", "E1050"]
+evidence = ["E467", "E664", "E831", "E977", "E995", "E1029", "E1040", "E1050", "E1059"]
 terms = ["CR_ISP_ZLSCTL", "CR_ISP_ZLOAD_BASE"]
 +++
 
@@ -32,5 +32,11 @@ stores every depth negated, the kept load too (H-19-RENEG 2 of 2); formats 1 and
 loaded float and store the floor rule (H-INT-PASS 2 of 2); the test is strictly less at 0, 0.75 and
 1 (H-PASS-Z 3 of 4; at 0.125 the drawn count held and the flat plane stored 1 to 9 ulps below the
 depth, Q200's plane error, post hoc). sgx-pipe's `zls::pass` models them.
+
+Narrowed 2026-11-14 (r16-zls, E1059). At seven flat depths (0.125, 0.0625, 0.1, 0.3, 0.375, 0.625,
+0.5 + 2^-20) the pass stores the float its no-load twin stores where that float is below the load,
+else the load (H-PASS-TWIN 7 of 7 held out), and the depth's own float at the three one-float
+depths (H-PASS-EXACT 3 of 3); the twins at 0.125, 0.0625, 0.1 and 0.3 hold up to 9 ulps below the
+depth, Q200's plane error, not the pass's. sgx-pipe's `zls::pass_plane` replays every row.
 
 Status: open.

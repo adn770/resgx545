@@ -1,0 +1,46 @@
++++
+id = "E1059"
+claim = "r16-zls rows zp2- (Q297, 15 jobs in stage zpass2, t10): E1050's load pass (64 x 32, the bit:9 load of 0.25 and 0.75, depth less) at the flat depths 0.125, 0.0625, 0.1, 0.3, 0.375, 0.625 and 0.5 + 2^-20 stores at every dword the float its no-load twin (the same triangle from the clear 1.0) stores where that float is below the load, else the load (frozen H-PASS-TWIN 7 of 7, 2048 of 2048 dwords and the drawn count on each); at the one-float depths 0.375, 0.625 and 0.5 + 2^-20 that is the depth's own float (H-PASS-EXACT 3 of 3), while the twins at 0.125, 0.0625, 0.1 and 0.3 hold 3 to 10 floats up to 9 ulps below the depth, so the depth's own float failed there (H-PASS-OWN 3 held, 4 FAILED); both controls passed"
+unit = "zls"
+method = "r16-zls (render/closing-r16-zls), stage zpass2 of the question-closing pass (round 16, decisions R16-1 (a), R16-3 (a), R16-6 (a) and R16-8 (a): session r16-zls of the round 16 plan, safe class only), dataset render-closing-r16-zls; attempt out/20261114-092344 (zpass2 09:23:44 Mac time; driver log run.log; its freeze FROZEN.sha256 cf144d4f151072150ee03d328ed2705ac2725970a1c5ea15d4e91338357610ce; scores score-zpass2.txt); on the laptop (host cedar, kernel 7.3.0-resgx545, module srcversion B60AB0B475DD1E8972419B5 (linux fork 2a650d74, installed and loaded alike), stock firmware, tool ~/sgxfive-test-t10 (t10, sha256 9bedc2d6db70b2691698478572e311cf2b9b54acfaf8d714ed4db47852e322eb, built from resgx545 a581c06), every job one process of the kit runner (kit/run_stage.sh), a debugfs reset and the health fill and triangle between jobs, every output and dump kept gzipped; the rows are tables/STAGE.txt, grouped by the dump their scorer reads, a row's name prefix naming its record (zp2- E1059, zb4- E1063, zo- E1064, zw2- E1066), the frozen predictions predictions/STAGE.tsv (gen/z16.py)); freezes: FROZEN.sha256 cf144d4f151072150ee03d328ed2705ac2725970a1c5ea15d4e91338357610ce (85 files), PREDICTIONS.sha256 4fa8e22324d9eff9d97b5ee73eda6fc68295612c08d7db9228e56f6ac14f7604 (4 files); FROZEN.commits pins: resgx545:tools/closing/kit/session.py at b2b5288c, resgx545:tools/closing/kit/lib_kit.sh at b2b5288c, resgx545:tools/closing/kit/run_stage.sh at b2b5288c, resgx545:tools/closing/kit/kitscore.py at b2b5288c, resgx545:tools/closing/kit/fake/sudo at b2b5288c, resgx545:tools/closing/kit/fake/timeout at b2b5288c, resgx545:tools/closing/kit/fake/df at b2b5288c, resgx545:tools/closing/kit/fake/modinfo at b2b5288c, resgx545:tools/closing/kit/fake/sha256sum at b2b5288c, resgx545:tools/closing/kit/fake/tool.sh at b2b5288c, resgx545:tools/closing/kit/fake/tool.py at b2b5288c, resgx545:tools/closing/kit/fake/ssh.py at b2b5288c, resgx545:tools/closing/scorekit.py at b2b5288c, resgx545:tools/closing/sessioncheck.py at b2b5288c, data:render/closing-r15-zls/out/20261114-073826/zpass/zp-z125.depth-store.1.bin.gz at 62cb03b3, data:render/closing-r15-zls/out/20261114-073826/zpass/zp-c-467.depth-store.1.bin.gz at 62cb03b3, data:render/closing-r15-zls/out/20261114-073826/zpass/zp-f1.depth-store.1.bin.gz at 62cb03b3, data:render/closing-r14-zls/out/20261114-054846/zbits2/zb2-c-base.stencil-store.1.bin.gz at 62cb03b3, data:render/closing-r14-zls/out/20261114-054846/zbits2/zb2-c-base.depth.1.bin.gz at 62cb03b3, data:render/closing-r14-zls/out/20261114-054846/zbits2/zb2-c-base.txt.gz at 62cb03b3, data:render/closing-r14-zls/out/20261114-054846/zbits2/zb2-b23.stencil-store.1.bin.gz at 62cb03b3, data:render/closing-r14-zls/out/20261114-054846/zbits2/zb2-b23.depth.1.bin.gz at 62cb03b3, data:render/closing-r13-zls/out/20261113-213117/zfmt/zf-flat-f6.stencil-store.1.bin.gz at 62cb03b3, data:render/closing-r13-zls/out/20261113-213117/zfmt/zf-flat-f6.depth.1.bin.gz at 62cb03b3, data:render/closing-r13-zls/out/20261113-213117/zfmt/zf-flat-f6.txt.gz at 62cb03b3, data:render/closing-r13-zls/out/20261113-213117/zfmt/zf-7k-3f.stencil-store.1.bin.gz at 62cb03b3, data:render/closing-r13-zls/out/20261113-213117/zfmt/zf-7k-3f.depth.1.bin.gz at 62cb03b3, data:render/closing-r13-zls/out/20261113-213117/zfmt/zf-7k-3f.txt.gz at 62cb03b3, data:render/closing-r13-zls/out/20261113-213117/zbits/zbs-c16.stencil-store.1.bin.gz at 62cb03b3, data:render/closing-r13-zls/out/20261113-213117/zbits/zbs-c16.depth.1.bin.gz at 62cb03b3, data:render/closing-r13-zls/out/20261113-213117/zbits/zbs-c16.txt.gz at 62cb03b3, data:render/closing-r14-zls/out/20261114-054846/zgran/zb2-d12.depth-store.1.bin.gz at 62cb03b3, data:render/closing-r14-zls/out/20261114-054846/zgran/zb2-d12.txt.gz at 62cb03b3, data:render/closing-r14-zls/out/20261114-054846/zodd/zo-640-f0.depth.1.bin.gz at 62cb03b3, data:render/closing-r14-zls/out/20261114-054846/zodd/zo-640-f0.txt.gz at 62cb03b3, data:render/closing-r10-x/out/20261113-101116/zov/zov-64x32-ctl.depth.1.bin.gz at 62cb03b3, data:render/closing-r10-x/out/20261113-101116/zov/zov-160x48-ctl.depth.1.bin.gz at 62cb03b3, data:render/closing-r10-x/out/20261113-101116/zov/zov-64x32-g0.depth.1.bin.gz at 62cb03b3, data:render/closing-r10-zls/out/20261113-102039/zw/zw-0125.depth.1.bin.gz at 62cb03b3, data:render/closing-r9-z2/out/20261113-082522/z2/z2-a-f0.depth.1.bin.gz at 62cb03b3, data:render/closing-r15-zls/tables/zpass.txt at 62cb03b3, data:render/closing-r14-zls/tables/zbits2.txt at 62cb03b3, data:render/closing-r14-zls/tables/zgran.txt at 62cb03b3, data:render/closing-r14-zls/tables/zodd.txt at 62cb03b3, data:render/closing-r13-zls/tables/zfmt.txt at 62cb03b3, data:render/closing-r13-zls/tables/zbits.txt at 62cb03b3, data:render/closing-r10-zls/tables/zw.txt at 62cb03b3, data:render/closing-r9-z2/tables/z2.txt at 62cb03b3, data:render/closing-r10-x/tables/zov.txt at 62cb03b3, data:render/closing-r10-st1/lead/build_tool10.sh at 62cb03b3, resgx545:crates/sgx-pipe/src/zls.rs at b2b5288c, resgx545:crates/sgx-pipe/src/isp.rs at b2b5288c, a581c06bb24d2f77e03d9b64f7ca1b2d5487b59f at built; tools: TOOLSRC.sha256: 23e1fa76d10bb4e7cfadb0985ac110d4681e4113f2f55f17dd81bdd4b2fe183b a581c06bb24d2f77e03d9b64f7ca1b2d5487b59f:userspace/libsgxfive/tools/sgxfive-test.c; the runner expects: run/session.env SRCV_EXPECT=B60AB0B475DD1E8972419B5; stops in the logs: none; lead decisions in the logs: none"
+tiers = ["HW"]
+date = "2026-11-14"
+data = ["render-closing-r16-zls:out/20261114-092344/zpass2/", "render-closing-r16-zls:fold/"]
+terms = ["CR_ISP_ZLSCTL", "CR_ISP_ZLOAD_BASE"]
++++
+**What ran.** E1050's zpass form (`--tri-full` at 64 x 32, `--depth --depth-store`, `--depth-pages
+20`, the depth buffer filled `bit:9`: 0.25f in tile column 0 and 0.75f in column 1 at G 1, the load
+and store enables 0x0017500e, the depth test less) at the flat depths 0.125, 0.0625, 0.1, 0.3,
+0.375, 0.625 and 0.5 + 2^-20, each pass row followed by its no-load twin (0x0017100c, the store from
+the clear 1.0). Controls: zp2-c-z125 (E1050's zp-z125, the 0.125 pass, its kept store byte for byte;
+the pair's verdict is printed on its twin zp2-t-z125, held out) and zp2-c-467 (E1050's zp-c-467: 256
+x 128 G 7). Frozen (gen/z16.py): H-PASS-TWIN, H-PASS-OWN, and H-PASS-EXACT at the three one-float
+depths of E1054. E1050's H-PASS-LE was not scored: no depth equals a loaded one (README deviation
+5).
+
+**Frozen verdict (as printed).** attempt 20261114-092344, stage zpass2 (run.log): `SUMMARY: zpass2:
+H-PASS-EXACT (3 of 3 rows decided)`; attempt 20261114-092344, stage zpass2 (run.log): `SUMMARY:
+zpass2: H-PASS-OWN is not supported: 3 held, 4 FAILED, 0 cannot tell of 7`; attempt 20261114-092344,
+stage zpass2 (run.log): `SUMMARY: zpass2: H-PASS-TWIN (7 of 7 rows decided)`.
+
+**Results [HW].** Controls: zp2-c-467 16384 drawn and zp2-c-z125 2048 drawn, each store byte for
+byte its kept E1050 record. The twins (READING lines): 0.125 nine floats 0x3dfffff7 to 0x3dffffff
+(as E1050's zp-z125 stored), 0.0625 ten floats 0x3d7ffff7 to 0x3d800000, 0.1 six floats 0x3dccccc6
+to 0x3dcccccb (0.1f is 0x3dcccccd), 0.3 three floats 0x3e999997 to 0x3e999999 (0.3f is 0x3e99999a),
+and 0.375, 0.625 and 0.5 + 2^-20 one float each, the depth's (0x3ec00000, 0x3f200000, 0x3f000010).
+Every pass row held H-PASS-TWIN at 2048 of 2048 dwords with 2048 drawn below 0.25 and 1024 from 0.3
+up; H-PASS-OWN matched 0, 4, 0 and 1024 of 2048 dwords at 0.125, 0.0625, 0.1 and 0.3. The frozen
+scorer re-run on the kept files is byte for byte the run's (fold/reproduce.out). sgx-pipe's
+`zls::pass_plane` fed each twin's floats reproduces every pass store and drawn count
+(tests/closing_r16_zls.rs).
+
+**What it shows.** What a load pass stores at a flat depth is the plane the same triangle stores
+without a load, tested strictly against the loaded float (E995) and kept where it fails: the pass
+adds nothing to the plane's own error, which is Q200's (a flat plane stores up to 9 ulps below a
+depth whose plane is not one float) [infer: the twin's plane is the pass's]. With E1050's edge-tile,
+bit-19 and integer clauses, every clause of Q297's line is decided by held-out rows with passing
+controls.
+
+**What it does not show.** Why the planes at 0.125, 0.0625, 0.1 and 0.3 are not one float (Q200); a
+pass at a depth equal to the load away from 0.75 (E1050); a sloped plane in a pass beyond E996's
+(E1064); the stencil test of a pass other than E988's EQUAL row.

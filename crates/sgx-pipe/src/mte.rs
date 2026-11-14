@@ -454,7 +454,7 @@ const RANGE: std::ops::Range<f32> = -4096.0..12288.0;
 /// z = -w and z = w, and the w other than 1 of `band_w` (z = 0): what the TA writes for a
 /// triangle the clip removes is not modelled, a cut one has its structure only (`cut_triangle`),
 /// and the depth at w other than 1 has no formula (E783, E795, Q230). The depth is the viewport's
-/// offset + scale x z rounded once (E797). `rhw_min` and `rhw_clamp` are the command's float
+/// offset + scale x z rounded once (E797); below 0 it is not, and refuses (Q069: E987, E1066). `rhw_min` and `rhw_clamp` are the command's float
 /// words. Returns the vertices and whether the 1/w replacement was used.
 pub fn triangle(
     st: &State,
@@ -504,6 +504,15 @@ pub fn triangle(
             z: v[2].mul_add(st.vp[5], st.vp[4]),
             rhw,
         };
+        if o.z < 0.0 {
+            // E987, E981 and E1066: below 0 the vertex depth is not offset + scale x z; on E987's
+            // triangle (two vertices at clip z -1) the plane was (1.6 offset + 0.4 scale) t, 8 of 8
+            // held out, except 912 pixels by the far edge (post hoc, no rule): not a vertex rule
+            return Err(Outcome::unsupported(
+                &format!("a viewport depth {} below 0: the z offset's scale (E987, E1066)", o.z),
+                &["Q069"],
+            ));
+        }
         if !RANGE.contains(&o.x) || !RANGE.contains(&o.y) {
             return Err(refuse230(format!(
                 "window coordinate ({}, {}) outside the packed block's range",
