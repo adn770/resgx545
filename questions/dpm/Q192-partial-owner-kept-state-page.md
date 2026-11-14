@@ -5,7 +5,7 @@ unit = "dpm"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E310", "E464", "E591", "E631"]
+evidence = ["E310", "E464", "E591", "E631", "E1084"]
 terms = ["CR_DPM_STATE_BASE0", "CR_DPM_CONTROL_BASE"]
 +++
 
@@ -27,3 +27,14 @@ the store that follows the second context's render and not its creation or the c
 (a kept copy before the close exists only for the 64x64 owner, E631), what that store writes
 besides zero, and whether it holds at another size or buffer (one size, one P). The owner words of
 Q191 do not appear for this owner.
+
+Narrowed in round 19 (E1084). With the owner's TA data copied right after its close and after the
+second context's render: the state page holds the owner's lists after the close and is zero after
+that render at P 0x28 (flags 0xc and 0x4, 3 of 3), 0x24 and at 2048x1536 (5 of 6 rows), so the
+zero is made by the second context's run between the close and its render's end, not by the close
+or the second context's creation. At P 0x30 (1 row, held out) that run left other lists in the
+state page (four macrotile pairs and the global list 0x00010001, 1) and four words 0x002002xx in
+the control page, so what the store writes depends on the run. Open: which event of the second
+context's run stores (its TA kick, a partial render or its render's end), why 0x30 writes lists
+(a repeat, and 0x2d to 0x34 against E627's two regimes), and whether those lists are the second
+context's own.
