@@ -1,0 +1,9 @@
+title = "r18-flag f2: the PTE knobs, the kernel's PTE and BIF fault lines and the job's outcome of each job (4 jobs)"
+repo = "data"
+paths = ["vectors/closing/r18-flag/pte/"]
+method = "tools/usse-asm/closing_tables.py pte on the published render/closing-r18-flag session (stage f2 of its one attempt, out/20261114-133536), one file; rows are measurements; replayed by crates/sgx-pipe/tests/pte_table.rs::the_model_replays_every_modelled_row_of_the_pte_tables (sgx-pipe bif::pte_access with WRITEONLY and EDMPROTECT alone on the ZLS load and the texture read; 4 rows modelled, none refused)"
+date = "2026-11-14"
+files = 1
+size = 4180
+sha256 = "fe781b7d9d9a38b350bc050b9dd1503603805c804b4abefef59f337543841fba"
+recipe = "tools/usse-asm/closing_tables.py"

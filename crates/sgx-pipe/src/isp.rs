@@ -665,7 +665,9 @@ pub fn decode_words(isp: [u32; 2], ctl: u32, nprims: usize) -> Result<Mode, Outc
     }
     // bits 15 to 17 changed the image when flipped (48 pixels left, empty: E065), each removed
     // E977's ramp triangle under less with writes in both vertex orders (E998, E1045: no winding
-    // cull, yet E065's 48 pixels say not every triangle), and bit 18 faults
+    // cull, yet E065's 48 pixels say not every triangle), and bit 18 faults: 0xd0400 at page 0
+    // (FAULT_REQ bit 10, FAULT_TYPE 5) on the library triangle and on E977's ramp with its depth
+    // buffer alike (E1072, held out), a fault the model refuses
     if w0 & 0x0007_8000 != 0 {
         return Err(open(
             format!(

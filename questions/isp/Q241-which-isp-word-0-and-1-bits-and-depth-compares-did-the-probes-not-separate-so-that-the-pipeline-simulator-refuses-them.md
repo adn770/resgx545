@@ -6,7 +6,7 @@ kind = "hw"
 value = "low"
 phase = 12
 evidence = ["E065", "E070", "E071", "E072", "E232", "E235", "E282", "E287", "E291", "E660", "E739",
-            "E757", "E995", "E998", "E1045", "E1056"]
+            "E757", "E995", "E998", "E1045", "E1056", "E1072"]
 terms = ["ISP0.PASS_TYPE", "ISP0.DCMP_MODE", "ISP1.VISTEST", "ISP1.POLY_OFFSET"]
 +++
 
@@ -95,3 +95,9 @@ pixels is the original plane within 7.8e-5 and no plane through three vertices o
 2, E065's jobs again, with the pixels printed), so they are as E1045's rows: removal, not a
 winding. Not retired: bit 18 (faults) was not run this round, nor were the visibility counter, the
 offset's units, the pass types over several triangles, the gate pairs and what bit 15 keeps.
+
+Narrowed 2026-11-14 (round 18, session r18-flag stage f4, E1072). ISP word 0 bit 18 alone faulted
+both E065's library triangle and E977's ramp with its depth buffer loaded and stored, each with
+0xd0400 at page 0 (`FAULT_REQ` bit 10, `FAULT_TYPE` 5: E764's background program fetch), so the bit
+needs no buffer the library job lacks (H-FAULT-ANY 2 of 2, H-NEEDS-BUF failed). Open on bit 18:
+what the fetch is and which word gives its address; sgx-pipe refuses it as before.

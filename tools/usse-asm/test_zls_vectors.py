@@ -105,9 +105,11 @@ def test_a_flip_vector_states_only_what_a_record_measured_and_refuses_the_rest()
     assert "fmt" not in e
     e = zv.flip_expect(0, runs[0])
     assert e["writes_pixels"] is False and e["pages"] == {"4": 1024}
-    # the faulted jobs (G bits 2 to 8) and the formats the model does not decode refuse by question
-    assert zv.flip_expect(5, runs[5]) == {"refuse": ["Q299"]}
-    assert zv.flip_expect(25, {"ok": True, "pages": {4: 1024}, "wrong": 0}) == {"refuse": ["Q299"], "pages": {"4": 1024}}
+    # the faulted jobs (G bits 2 to 8) are faults at E411's page (E1070); the formats the model
+    # does not decode refuse by question
+    assert zv.flip_expect(5, runs[5]) == {"outcome": "fault"}
+    assert zv.flip_expect(5, runs[5], 0x3e016000) == {"outcome": "fault", "addr": "0x3e016000"}
+    assert zv.flip_expect(25, {"ok": True, "pages": {4: 1024}, "wrong": 0}) == {"refuse": ["Q071"], "pages": {"4": 1024}}
     assert zv.flip_expect(26, {"ok": True, "pages": {12: 640}, "wrong": 0}) == {"refuse": ["Q120"], "pages": {"12": 640}}
 
 
@@ -119,6 +121,9 @@ def test_every_flip_of_the_control_bits_run_reads_with_its_two_runs_agreeing():
     assert runs[3]["pages"] == {4: 640, 12: 1024, 13: 1024, 14: 512}
     assert runs[4]["pages"] == {4: 512, 5: 512, 12: 1024, 14: 1024}
     assert runs[0]["wrong"] == 4096 and runs[1]["wrong"] == 0 and runs[2]["pages"] == {}
+    faults = zv.parse_flip_faults((DATA / "zls/control-bits/kernel.log").read_text())
+    assert faults == {5: 0x3e016000, 6: 0x3e017000, 7: 0x3e016000, 8: 0x3e01e000, 9: 0x3e02e000,
+                      10: 0x3e04e000, 11: 0x3e08e000}
 
 
 @needs_data
@@ -128,7 +133,7 @@ def test_the_control_vectors_carry_their_arrangement_and_only_known_keys():
     f = vs["zls-ctl__flip-03"]
     assert f["init"]["arrangement"] == "e411-scratch" and f["init"]["stencil"] is True
     allowed = {"g", "fmt", "load", "load_depth", "load_stencil", "store_depth", "store_stencil", "negate",
-               "writes_pixels", "pages", "refuse"}
+               "writes_pixels", "pages", "refuse", "outcome", "addr"}
     assert all(set(v["expect"]) <= allowed for v in vs.values())
     assert "arrangement" not in vs["zls-ctl__driver-0017100c"]["init"]
     # the provenance says how the expectations were made: from a script's bit arithmetic and the

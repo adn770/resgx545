@@ -5,7 +5,7 @@ unit = "zls"
 kind = "hw"
 value = "low"
 phase = 12
-evidence = ["E411", "E465", "E991", "E996", "E1041", "E1051", "E1064", "E1068"]
+evidence = ["E411", "E465", "E991", "E996", "E1041", "E1051", "E1064", "E1068", "E1070"]
 terms = ["CR_ISP_ZLSCTL"]
 +++
 
@@ -39,3 +39,12 @@ depth pass. Open: only whether a store past its buffer faults (E411's G 5 row in
 a planned fault, not safe class), one row for the user.
 
 Status: open.
+
+Narrowed 2026-11-14 (round 18, session r18-flag stage f1, E1070). E411's G 3 and G 5 stores ran on
+t10 with a 16-page buffer, held out: G 5 faulted the job with 0x90200 at buffer page 21, the first
+page nothing maps (t10's colour buffer covers pages 16 to 20), and G 3, whose stores reach pages 16
+and 18 inside that colour buffer, completed with the control's image (H-PAST-FAULT 2 of 2;
+H-PAST-ANY
+and H-DROP failed), both references passing. Post hoc, the rule gives the page of every one of
+E411's 14 faults and none of its G 0, 1 and 3 jobs; sgx-pipe's `zls::check_scratch_pitch` predicts
+them. The last clause is decided.

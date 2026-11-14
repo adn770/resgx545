@@ -139,7 +139,7 @@ fn the_load_cases_of_e467_reproduce_and_are_fitted() {
 fn the_control_words_are_matched_fitted_or_refused_as_what_they_rest_on() {
     let Some((ctx, vs)) = vectors("zls-ctl") else { return };
     assert_eq!(vs.len(), 32 + 5 + 10);
-    let (mut matched, mut fitted, mut refused) = (vec![], vec![], vec![]);
+    let (mut matched, mut fitted, mut refused, mut faulted) = (vec![], vec![], vec![], vec![]);
     for v in &vs {
         let r = run(&ctx, v);
         let id = id_of(v).trim_start_matches("zls-ctl__").to_string();
@@ -150,18 +150,16 @@ fn the_control_words_are_matched_fitted_or_refused_as_what_they_rest_on() {
             }
             Verdict::Fitted => fitted.push(id),
             Verdict::Refused(q) => refused.push((id, q)),
+            Verdict::PredictedFault => faulted.push(id),
             o => panic!("{id}: {o:?} {:?}", r.seen.notes),
         }
     }
-    // bits 5 to 11 faulted the job in the scratch run (G past the buffer: Q299), format 4 with a
-    // stencil buffer Q120; the 16-bit format at G = 1 (flip-25) replays since E977 held its layout
-    // at other pitches
-    let q = |ids: &[&str]| ids.iter().map(|s| s.to_string()).collect::<Vec<_>>();
-    let want: Vec<(String, Vec<String>)> = (5..=11)
-        .map(|b| (format!("flip-{b:02}"), q(&["Q299"])))
-        .chain([("flip-26".to_string(), q(&["Q120"]))])
-        .collect();
-    assert_eq!(refused, want);
+    // bits 5 to 11 faulted the job in the scratch run: the model predicts each fault at the page
+    // E411's kernel log names (its store's first unmapped page, E1070); format 4 with a stencil
+    // buffer refuses (Q120); the 16-bit format at G = 1 (flip-25) replays since E977 held its
+    // layout at other pitches
+    assert_eq!(faulted, (5..=11).map(|b| format!("flip-{b:02}")).collect::<Vec<_>>());
+    assert_eq!(refused, vec![("flip-26".to_string(), vec!["Q120".to_string()])]);
     // matched: bits that read as the records state with no address, no format and no inferred load;
     // fitted: every vector that compares stored pages (E465's rule), a pitch or a format (E465, E466)
     // or a load by bit 1 alone ([infer])
@@ -170,7 +168,7 @@ fn the_control_words_are_matched_fitted_or_refused_as_what_they_rest_on() {
     for id in ["flip-01", "flip-03", "flip-04", "flip-19", "flip-24", "flip-25", "load-0017110e"] {
         assert!(fitted.contains(&id.to_string()), "{id}");
     }
-    assert_eq!((matched.len(), fitted.len(), refused.len()), (15, 24, 8));
+    assert_eq!((matched.len(), fitted.len(), refused.len(), faulted.len()), (15, 24, 1, 7));
     // a wrong reading of a bit is a mismatch
     let f = vs.iter().find(|v| id_of(v) == "zls-ctl__flip-19").unwrap();
     let bad = rebuild(f, &|k, x| if k == "negate" { Json::Bool(false) } else { x.clone() });

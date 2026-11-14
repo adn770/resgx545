@@ -160,8 +160,12 @@ Key registers:
     0x14, E964) pass.
   - `WRITEONLY` with `EDMPROTECT` (0x12) on a colour target faults as `EDMPROTECT` alone, at the
     first page before any pixel (E965).
-  The rest (either flag alone on a texture read, on a depth load, on the TA's writes or the EDM's
-  buffers; `CACHECONSISTENT` on data cached within one render or by other units) is Q108.
+  - Alone on a mapping that is only read (E1071, held out): `WRITEONLY` faults a ZLS depth load
+    (0x80200) and a texture read of a probe's scratch (0x80002) at the mapping's first page, `SB`
+    0, before anything is read; `EDMPROTECT` lets both through (the load and the texture read
+    exact).
+  The rest (the flags on the TA's writes or the EDM's buffers, the flags together on a read,
+  `CACHECONSISTENT` on data cached within one render or by other units) is Q108.
 - **BIF.** The bus interface is the MMU's front end. With 16 directory lists and multiple
   memory contexts, `BIF_DIR_LIST_BASE0..15` hold up to 16 page directories at once, and
   `BIF_BANK0` says which list each requestor translates through (§5.5).
@@ -246,6 +250,7 @@ belongs to is read from the access each record set up, not from a source [infer]
 |---|---|---|---|
 | 0x90002 | 1 | texture fetch past the probe's scratch (page 0x3e017) | E765, E826 |
 | 0x90004 | 2 | TA write of region headers past the kernel's layout (`SB` 6) | E729, E789, E826 |
+| 0x90004 | 2 | TA header write of a macrotile word whose axis bounds are all 0 (page 0x20008 at 384 x 256) | E1073, E1074 |
 | 0x90008 | 3 | TA read of an unmapped stream page | E764, E826 |
 | 0x80020 | 5 | transfer write to a read-only alias | E766 |
 | 0x80020 | 5 | fill or render colour write to a `WRITEONLY` page, after the image was written (`SB` 31, the image's last page) | E945, E946 |
@@ -256,7 +261,12 @@ belongs to is read from the access each record set up, not from a source [infer]
 | 0x80200 | 9 | ZLS store to a `WRITEONLY` page, after the store landed (the window's last page) | E965 |
 | 0xa0200 | 9 | ZLS store to an `EDMPROTECT` page (`FAULT_TYPE` 2, nothing stored) | E965 |
 | 0x90100 | 8 | 4x render, at page 0x10000 (`SB` 1) | E511, E828, E845, E846, E867 to E869 |
+| 0x90100 | 8 | a macrotile word whose first macrotile ends inside the target, at page 0x10000 | E1073, E1074 |
+| 0x90200 | 9 | ZLS store reaching a page nothing maps, at that page (a mapped page past its buffer takes it) | E1070 |
+| 0x80200 | 9 | ZLS load of a `WRITEONLY` depth buffer, the first page, nothing read | E1071 |
+| 0x80002 | 1 | texture read of a `WRITEONLY` scratch, the first page | E1071 |
 | 0xd0400 | 10 | background program's fetch (`FAULT_TYPE` 5) | E764 |
+| 0xd0400 | 10 | ISP word 0 bit 18, at page 0, on the library triangle and a depth-buffered ramp | E1072 |
 | 0x91000 | 12 | first job with buffer 0 left out of the client alias | E573, E745, E761 |
 
 A held fault sets no bit of `EVENT_STATUS` of its own; `EVENT_STATUS2` bit 7 (TA side) or bit 6

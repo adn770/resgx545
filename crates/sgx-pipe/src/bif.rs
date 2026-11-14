@@ -95,8 +95,12 @@ pub struct PteEnd {
 /// a copy's texture read of its READONLY source through (E964); WRITEONLY with EDMPROTECT faults
 /// a pixel write as EDMPROTECT alone (E965). CACHECONSISTENT on the depth buffer the ZLS loads
 /// ends clean, and with it or without it the load of a second render on the context reads what
-/// the host wrote between the renders, never the first render's data (E1046, r14-bif, frozen). Any
-/// other flag and access is refused (Q108).
+/// the host wrote between the renders, never the first render's data (E1046, r14-bif, frozen).
+/// Alone on a mapping that is only read (E1071, r18-flag, held out): WRITEONLY faults the ZLS load
+/// (0x80200) and a texture read of the probe's scratch (0x80002) at the mapping's first page
+/// (`SB` 0) before anything is drawn, and EDMPROTECT lets both through (the load stores E1046's
+/// store byte for byte, the texture read gives E1047's image). Any other flag and access is
+/// refused (Q108).
 pub fn pte_access(pte: u32, access: PteAccess) -> Result<PteEnd, Outcome> {
     use FaultPage::*;
     use PteAccess::*;
@@ -113,12 +117,14 @@ pub fn pte_access(pte: u32, access: PteAccess) -> Result<PteEnd, Outcome> {
         (0x4, PixelWrite) => fault(0x80020, First, 0),
         (0x2, ZlsStore) => fault(0x80200, LastWritten, 0),
         (0x8, StreamRead) | (0xc, TextureRead) | (0x10, StreamRead) | (0x14, TextureRead) => clean,
-        (0x8, ZlsLoad) => clean,
+        (0x8, ZlsLoad) | (0x10, ZlsLoad) | (0x10, TextureRead) => clean,
+        (0x2, ZlsLoad) => fault(0x80200, First, 0),
+        (0x2, TextureRead) => fault(0x80002, First, 0),
         (0x10, PixelWrite) | (0x12, PixelWrite) => fault(0xa0020, First, 0),
         (0x10, ZlsStore) => fault(0xa0200, First, 0),
         _ => {
             return Err(Outcome::unsupported(
-                &format!("PTE flags {pte:#x} on {access:?}: not run (E945, E946, E964, E965, E1046)"),
+                &format!("PTE flags {pte:#x} on {access:?}: not run (E945, E946, E964, E965, E1046, E1071)"),
                 &["Q108"],
             ));
         }
@@ -232,17 +238,30 @@ mod tests {
     }
 
     #[test]
+    fn writeonly_alone_faults_a_read_and_edmprotect_lets_it_through_as_the_r18_flag_rows() {
+        // E1071 (r18-flag stage f2, frozen, held out): on the ZLS load of the depth buffer and the
+        // probe's texture read of its scratch, each mapping only read
+        use PteAccess::*;
+        let clean = Ok(PteEnd { written: true, fault: None });
+        let first = |int_stat| {
+            Ok(PteEnd { written: false, fault: Some(PteFault { int_stat, page: FaultPage::First, sb: 0 }) })
+        };
+        assert_eq!(pte_access(0x10, ZlsLoad), clean, "q108-edm-load");
+        assert_eq!(pte_access(0x10, TextureRead), clean, "q108-edm-tex");
+        assert_eq!(pte_access(0x2, ZlsLoad), first(0x80200), "q108-wo-load");
+        assert_eq!(pte_access(0x2, TextureRead), first(0x80002), "q108-wo-tex");
+    }
+
+    #[test]
     fn pte_flags_no_row_ran_are_refused() {
         use PteAccess::*;
         let refused = |p, a| matches!(pte_access(p, a), Err(Outcome::Unsupported { .. }));
-        assert!(refused(0x2, TextureRead), "WO alone on a texture read: not run (RO|WO was)");
         assert!(refused(0x8, PixelWrite), "CACHED on a write: not run");
-        assert!(refused(0x10, TextureRead), "EDMPROT on a texture read: not run");
         assert!(refused(0x12, StreamRead), "two knob flags together on a read: not run");
         assert!(refused(0x1a, PixelWrite), "three flags together: not run");
         assert!(refused(0x8, ZlsStore), "CACHED on the ZLS store: not run");
-        assert!(refused(0x2, ZlsLoad), "WO on the ZLS load: not run");
-        assert!(refused(0x10, ZlsLoad), "EDMPROT on the ZLS load: not run");
+        assert!(refused(0x12, ZlsLoad), "WO and EDMPROT together on the ZLS load: not run");
+        assert!(refused(0x12, TextureRead), "WO and EDMPROT together on a texture read: not run");
         assert!(refused(0x4, StreamRead), "READONLY on a read: not in these rows");
         assert!(refused(0x1, PixelWrite), "VALID is no flag");
     }

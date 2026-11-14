@@ -700,7 +700,11 @@ pub const MEASURED_MTILE1: [(u32, u32, u32); 14] = [
 /// where the highest slot written lies past the flag on 17). Only `MEASURED_MTILE2`,
 /// `MEASURED_MTILE1` and the rule's own words are admitted;
 /// other words refuse (Q139: most poked words whose first macrotile ends inside the target
-/// faulted, E505 and E509; E1048's four drew, H-COVER [infer]).
+/// faulted, E505 and E509; E1048's four drew, H-COVER [infer]). Which fault such a word gives is
+/// fitted on E509's 162 faulting cases (E1073, post hoc, 162 of 162) and held out at 384 x 256
+/// (E1074, 2 of 2): an axis whose bounds are all 0 faults the TA's header write (0x90004), the
+/// other faulting words the 3D's read at the parameter heap's first page (0x90100); the faults
+/// stay refused.
 pub fn macrotile_slots(
     w: u32,
     h: u32,

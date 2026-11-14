@@ -48,7 +48,7 @@ list.
 - `Q047` vdm, high: what do VDM_STATE1 bit 8, bits 11:9 and bits 15:13 select for a state task, when
   on the one-triangle job bit 8 changes nothing, bits 11:9 ... (E427, E440, E545)
 - `Q108` bif, medium: what do the page table entry flags WRITEONLY, CACHECONSISTENT and EDMPROTECT
-  do on the hardware, which of the bus interface's requestors do ... (E964, E965, E1046)
+  do on the hardware, which of the bus interface's requestors do ... (E965, E1046, E1071)
 - `Q081` dpm, medium: what does CR_DPM_REG_074C bit 8 make the DPM read or write near offset 0x6010
   of the context's TA-data space, and what fixes that place? (E313, E362, E447)
 - `Q192` dpm, medium: does the store that follows the next context's render replace the state page a
@@ -113,8 +113,8 @@ list.
   multisampled target, whose 64x64 words are 0x802002, ... (E824, E886, E908)
 - `Q100` ta, medium: what do the fields of CR_TE_MTILE1 and CR_TE_MTILE2 mean, given that flips of
   their bits change the image or fault the job at 256x256 and ... (E506, E509, E877)
-- `Q139` ta, medium: what is the stride's relation to the RT data, and why do the macrotile words
-  that fault (E509) fault, given that every kept fault at fx 2 ... (E1007, E1011, E1048)
+- `Q139` ta, medium: what is the stride's relation to the RT data, and what places the TA's region
+  header write of a macrotile word with an axis whose bounds ... (E1048, E1073, E1074)
 - `Q142` ta, medium: which control-stream form does the TA write in a region of the grid that
   CR_TE_AA bits 30 and 31 halve (16 x 16, 32 x 8 and 16 x 8 ... (E504, E893)
 - `Q159` ta, medium: what rule lists the 32 x 16 regions of a one-line object: at ISP word 1 width
@@ -169,9 +169,9 @@ list.
 - `Q092` vdm, medium: what do bits 31:28 of the index list's first trailing word count, which the
   closed driver writes as 0xf on 1886 captured lists and 0xd on a ... (E348, E414, E546)
 - `Q112` vdm, medium: what do bits 25:24 of the index list header do, which are clear in all 1888
-  captured lists, and does the TA take indices wider than the 16 ... (E414, E737, E756)
+  captured lists, and does the TA take indices wider than the 16 ... (E737, E756, E1075)
 - `Q163` vdm, medium: what is the state the jobs leave that decides whether a job with VDM_STATE1
-  bits 11:9 other than 2 hangs (E700: a counter c, cleared by a ... (E701, E1021, E1035)
+  bits 11:9 other than 2 hangs (E700: a counter c, cleared by a ... (E1021, E1035, E1076)
 - `Q107` zls, medium: why does the final render of a job that overflows store zeros for the first
   row of macrotiles and the depth with its sign bit set for the ... (E996, E997, E1020)
 - `Q120` zls, medium: what do the stored depth formats 3 to 7 (CR_ISP_ZLSCTL bits 26:24) hold and
@@ -201,7 +201,7 @@ list.
 - `Q072` isp, low: what does bit 1 of CR_ISP_REG_04DC do to a punch-through pass, when it hangs
   every one tried and changes no opaque or translucent pass? (E222, E290, E416)
 - `Q241` isp, low: what does ISP word 0 bit 15 keep (E065: 48 pixels of the library's triangle;
-  E1045 and E1056: bits 15 to 17 select no winding, and bits 16 ... (E998, E1045, E1056)
+  E1045 and E1056: bits 15 to 17 select no winding, and bits 16 ... (E1045, E1056, E1072)
 - `Q044` pbe, low: what do bits 11:0 of CR_REG_0400 (0x80 as built) do, when no value of them
   changes a stored pixel in pack modes 0 to 3, and does bit 25 act ... (E251, E268, E385)
 - `Q013` pds, low: what does bit 18 of the copy's pixel-event data word 2 do, when it leaves the
@@ -281,7 +281,7 @@ list.
 - `Q272` vdm, low: what makes three vertices of one job read as a constant row (E702: cap-n8-f10-a7,
   ids 55, 66 and 77 at R * V = 33 and 7 attribute rows; 3 ... (E702, E738, E755)
 - `Q299` zls, low: does a ZLS store whose extent runs past its buffer fault the job (E411's G 5 to
-  17 in a 16-page buffer), and what does a load pass store ... (E1051, E1064, E1068)
+  17 in a 16-page buffer), and what does a load pass store ... (E1064, E1068, E1070)
 - `Q004` transfer, fw (parked): can a transfer context whose flag bit 4 is set be released, which
   agent but the host sets flag bits 1 and 4, and which priorities above 0 ... (E015, E455)
 - `Q029` render, fw (parked): what does the render context's own cleanup wait for once its RT data
@@ -305,9 +305,30 @@ list.
 
 ## Recent records
 
-133 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
+140 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1076` vdm, 2026-11-14: r18-flag stage h2 (8 jobs, t10, the kit's noreset; 2 planned hangs): with
+  block 1 at VDM_STATE1 bits 11:9 = 6 (E700's M1: add 4 a job), a job after a reset then two noreset
+  jobs completed, completed ...
+- `E1075` vdm, 2026-11-14: r18-flag stage h1 (1 job, t10, E756's form with --index-width 32 --vdm
+  2^=0x03000000: bit 25 cleared, bit 24 set alone over E414's list written as 32-bit words, never
+  run; 1 planned hang): the job ...
+- `E1074` ta, 2026-11-14: r18-flag stage f3 (2 jobs, t10, E1048's form at 384 x 256, a size of none
+  of E509's cases, two CR_TE_MTILE1 words never run; 2 planned faults): 0x00c00005 (B2 = 0, every
+  bound of the x axis 0) ...
+- `E1073` ta, 2026-11-14: Round 18 offline (O18-1, Q139; no run): on E509's 329 kept cases
+  (ta/mtile-fields and ta/mtile-fields-risky), the first kernel fault line of each of the 162 that
+  faulted gives two kinds, 155 at ...
+- `E1072` isp, 2026-11-14: r18-flag stage f4 (2 jobs, t10, ISP word 0 bit 18 set alone; 2 planned
+  faults): E065's library triangle (tri --poke blk:1^=0x00040000) and E977's 80 x 40 ramp with its
+  depth buffer loaded and stored ...
+- `E1071` bif, 2026-11-14: r18-flag stage f2 (4 jobs, t14, the debugfs knobs vm_pte_addr and
+  vm_pte_flags on a mapping only read, held out; 2 planned faults): WRITEONLY alone (0x2) faulted
+  r14-bif's ZLS load of the depth ...
+- `E1070` zls, 2026-11-14: r18-flag stage f1 (2 jobs, t10: E411's G 3 and G 5 stores in E1051's zv-
+  form with a 16-page depth buffer, never run on t10 at 16 pages, held out; 1 planned fault): G 5
+  faulted the job with BIF fault ...
 - `E1069` zls, 2026-11-14: r17-zls rows zb20- (Q071, 9 jobs in stage zb20, t10): with bit 20
   cleared, formats 6 and 7 at 96 x 48 G 2 and 128 x 64 G 3 store their per-tile records one after
   another from dword 2048 whatever the ...
@@ -710,10 +731,12 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-71 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+72 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
 - `usse/closing-r16-usse`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
+- `render/closing-r18-flag`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t14
 - `render/closing-r17-zls`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r17-tw`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t14
@@ -811,7 +834,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 37 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at

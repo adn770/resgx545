@@ -83,7 +83,9 @@ fn read_state(w0: u32, w1: u32) -> Result<State, Outcome> {
     // 52 predicted before the run; E1021, round 12 offline: 54 of 54 held-out jobs of E545's sweeps
     // with v 3 to 7). Below 2 the counter's clauses are fitted only (E701's M3, post hoc; E1021: its
     // block-2 v = 1 clause and the v = 0 reset fail on E545's sweeps; E1035: block-2 v = 1 hung at c = 0,
-    // 2 and 5, and time, a fill or the health between jobs leave c). The model keeps no job
+    // 2 and 5, and time, a fill or the health between jobs leave c; E1076: the step and the
+    // threshold held on 24 and 48 vertices, one and two objects, 64 x 64 and 128 x 64, block 1
+    // at v = 6 hanging the third job, 4 of 4 held out). The model keeps no job
     // history, so it gives one answer only where the word alone decides
     let no_object = match field {
         _ if bit12 => true,
@@ -126,6 +128,8 @@ fn read_index(mem: &Mem, w: &[u32; 6]) -> Result<IndexList, Outcome> {
             ids,
         ));
     }
+    // bits 25:24 among them: bit 25 faults 0xd0008 over 16- and 32-bit lists (E737, E756), bit 24
+    // alone hangs over both (E737; E1075 over the 32-bit list, held out), a hang the model refuses
     if w[0] >> 22 != 0x203 {
         return Err(refuse_ids(
             format!(

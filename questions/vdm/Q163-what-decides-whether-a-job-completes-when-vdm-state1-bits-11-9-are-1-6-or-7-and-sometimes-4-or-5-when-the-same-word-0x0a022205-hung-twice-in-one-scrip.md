@@ -1,11 +1,11 @@
 +++
 id = "Q163"
-question = "what is the state the jobs leave that decides whether a job with VDM_STATE1 bits 11:9 other than 2 hangs (E700: a counter c, cleared by a hang or a reset; a job adds g(v1) + g(v2) with g(v) = v - 2, g(1) = -1 and g(0) = 0 [fitted]; it hangs iff c + add > 8; held out for v 3 to 7 by E1021; E1035: it survives 60 s idle, a fill job and the health fill and triangle, a reset that follows no hang clears it, and it holds for a 128 x 128 one-block job), what decides block-2 v = 1 (hung at c = 0, 2 and 5 after a reset or a v 2 to 7 job, E1035, completed at c = 3 and 8 in E545's grid and E701), and does the rule hold for streams of other vertex, object and temporary counts"
+question = "what is the state the jobs leave that decides whether a job with VDM_STATE1 bits 11:9 other than 2 hangs (E700: a counter c, cleared by a hang or a reset; a job adds g(v1) + g(v2) with g(v) = v - 2, g(1) = -1 and g(0) = 0 [fitted]; it hangs iff c + add > 8; held out for v 3 to 7 by E1021; E1035: it survives 60 s idle, a fill job and the health fill and triangle, a reset that follows no hang clears it, and it holds for a 128 x 128 one-block job), what decides block-2 v = 1 (hung at c = 0, 2 and 5 after a reset or a v 2 to 7 job, E1035, completed at c = 3 and 8 in E545's grid and E701), given that the rule held on streams of 24 and 48 vertices, one and two objects and 8 and 16 temporaries (E1076)"
 unit = "vdm"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E545", "E413", "E700", "E701", "E060", "E185", "E299", "E1021", "E1035"]
+evidence = ["E545", "E413", "E700", "E701", "E060", "E185", "E299", "E1021", "E1035", "E1076"]
 terms = ["VDM_STATE1.BITS11_9", "VDM_STATE1.BITS15_13"]
 +++
 In a two-object stream (E545, 133 jobs) the state word's bits 11:9 = 1 hung in block 2 (2 of 2) and
@@ -104,3 +104,10 @@ after the kit's health fill and triangle, and completes after a debugfs reset th
 other-job, reset and target clauses are answered for one job pair each; open: what decides v = 1
 (neither c nor the word: E545's sg-v1-r5 and E701's c = 8 completed), v = 0, other stream shapes and
 what the counter is.
+
+Narrowed 2026-11-14 (round 18, session r18-flag stage h2, E1076). E700's counter held on two new
+stream shapes, 24 vertices in one object with 8 temporaries at 64 x 64 and 48 vertices in two
+objects with 16 temporaries at 128 x 64: with block 1 at v = 6 a job after a reset and the next
+completed and the third hung (M1 4 of 4 held out; E413's alternation and a scaled threshold failed),
+the control on E700's shape completing its first two. The shape clause is answered for these
+counts; open: what decides v = 1 and v = 0, and what the counter is.

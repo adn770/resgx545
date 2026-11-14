@@ -5,7 +5,7 @@ unit = "vdm"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E188", "E346", "E414", "E737", "E756"]
+evidence = ["E188", "E346", "E414", "E737", "E756", "E1075"]
 terms = ["VDM_INDEX0.PRIMITIVE_TOPOLOGY", "VDM_INDEX0.WORDS_PRESENT", "VDM_INDEX3.INDEX_WRAP"]
 +++
 
@@ -46,3 +46,8 @@ whether any header bit or other field makes the TA read wider indices (one candi
 bit 24's hang waits on (not tried over a 32-bit list), and what the fault word 0xd0008 names: it is
 in another record after all, as the published kernel log of usse/output-room-vdm holds 16 lines of
 it, at other addresses, from another table.
+
+Narrowed 2026-11-14 (round 18, session r18-flag stage h1, E1075). Bit 24 alone over E756's 32-bit
+list hung the job, as over the 16-bit list (H-B24-HANG 1 of 1, H-B24-W32 failed): it does not select
+32-bit indices. Open: what the hang waits on, the fault word 0xd0008, and whether any other field
+makes the TA read wider indices.

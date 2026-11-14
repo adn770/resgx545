@@ -13,7 +13,11 @@
 //! load: CACHECONSISTENT on the depth buffer of a control word that loads it (0x0017500e); its
 //! rows draw nothing by design (the depth test never), so a clean end is their match. A row the
 //! model has no access for (the depth buffer, which the clearing control does not load; the
-//! tool's isolation) is refused, never a pass. Each table's `replay` names
+//! tool's isolation) is refused, never a pass. The r18-flag table
+//! (`vectors/closing/r18-flag/pte/f2.table.json`, E1071) puts WRITEONLY and EDMPROTECT alone on
+//! that load's buffer and on a probe's scratch read as a texture (`probe ... --scratch-pages 256`,
+//! the scratch at 0x3e003000); a texture read's clean end is its match (its image is the record's
+//! reading, E1047's byte for byte). Each table's `replay` names
 //! `the_model_replays_every_modelled_row_of_the_pte_tables`. Skips without the data, and fails
 //! with `RESGX545_REQUIRE_DATA` set.
 
@@ -26,6 +30,7 @@ const TABLES: &[(&str, usize, usize)] = &[
     ("vectors/closing/r9-faults/pte/xf2.table.json", 12, 11),
     ("vectors/closing/r9-faults/pte/tri2.table.json", 7, 6),
     ("vectors/closing/r14-bif/pte/refill.table.json", 6, 6),
+    ("vectors/closing/r18-flag/pte/f2.table.json", 4, 4),
 ];
 const NAME: &str = "the_model_replays_every_modelled_row_of_the_pte_tables";
 const PAGE: u64 = 0x1000;
@@ -60,6 +65,10 @@ fn access(args: &str, addr: u64) -> Result<(PteAccess, Option<u64>), &'static st
             Ok((PteAccess::PixelWrite, Some(addr + ((y + h - 1) * 256 + w * 4 - 1) / PAGE * PAGE)))
         }
         ("copy", 0x3e00_1000, _) => Ok((PteAccess::TextureRead, None)),
+        // E1071: the probe's 1 MiB scratch, read by E566's tx_map as a texture
+        ("probe", 0x3e00_3000, _) if args.contains("--scratch-pages 256") => {
+            Ok((PteAccess::TextureRead, None))
+        }
         ("tri", 0x3e00_1000, false) => Ok((PteAccess::PixelWrite, Some(addr + 3 * PAGE))),
         ("tri", 0x3e00_0000, _) => Ok((PteAccess::StreamRead, None)),
         ("tri", 0x3e01_5000, true) => Ok((PteAccess::ZlsStore, Some(addr + 4096 * 4 - PAGE))),
@@ -99,14 +108,21 @@ fn replay(row: &Json) -> Row {
     };
     let faults = row.get("faults").arr();
     match (fault, faults.first()) {
-        (None, None) if exact || acc == PteAccess::ZlsStore || acc == PteAccess::ZlsLoad => Row::Matched,
+        (None, None)
+            if exact
+                || acc == PteAccess::ZlsStore
+                || acc == PteAccess::ZlsLoad
+                || acc == PteAccess::TextureRead && args.starts_with("probe") =>
+        {
+            Row::Matched
+        }
         (Some(f), Some(got)) => {
             let (int, at) = (got.arr()[0].hex().unwrap() as u32, got.arr()[1].hex().unwrap());
             let page = match f.page {
                 FaultPage::First => addr,
                 FaultPage::LastWritten => last.unwrap(),
             };
-            let pixels_ok = acc == PteAccess::ZlsStore || written == exact;
+            let pixels_ok = matches!(acc, PteAccess::ZlsStore | PteAccess::ZlsLoad) || written == exact;
             if int == f.int_stat && at & !0xfff == page && (at >> 4 & 0x1f) as u32 == f.sb && pixels_ok {
                 Row::Matched
             } else {

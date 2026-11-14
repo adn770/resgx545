@@ -1,11 +1,11 @@
 +++
 id = "Q139"
-question = "what is the stride's relation to the RT data, and why do the macrotile words that fault (E509) fault, given that every kept fault at fx 2 or 3 mod 4 had a second macrotile inside the target and four held-out words whose first macrotile covers it drew with every header at 8 floor(fx / 2) slots a block row and the list end on the last target tile in block order (E1048)?"
+question = "what is the stride's relation to the RT data, and what places the TA's region header write of a macrotile word with an axis whose bounds are all 0 at TA data page 0x20008 (E1074: 0x90004 there at 384 x 256, E509's page at 256 x 256 on another module, not the first page past the kernel's TA data), given that a faulting word's kind follows its bounds (E1073, held out by E1074: such a word faults the TA's write, the others the 3D's read at page 0x10000)?"
 unit = "ta"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E505", "E506", "E509", "E407", "E877", "E907", "E944", "E950", "E959", "E1007", "E1011", "E1048"]
+evidence = ["E505", "E506", "E509", "E407", "E877", "E907", "E944", "E950", "E959", "E1007", "E1011", "E1048", "E1073", "E1074"]
 terms = ["CR_TE_MTILE1", "CR_TE_MTILE2", "CR_TE_MACROTILE_STRIDE"]
 +++
 
@@ -145,3 +145,17 @@ are measurable and not measured (no row of either ran; [infer] every kept fault 
 had a second macrotile inside the target, E1048's H-COVER, post hoc). To retire: TA dumps of a
 faulting word need the TA data kept across recovery (t10 dumps nothing after a failed render), and
 a stride row with a frozen relation.
+
+Narrowed 2026-11-14 (round 18 offline O18-1, E1073, and session r18-flag stage f3, E1074; the
+question line is reworded, the question is not retired). It read "what is the stride's relation to
+the RT data, and why do the macrotile words that fault (E509) fault, given that every kept fault at
+fx 2 or 3 mod 4 had a second macrotile inside the target and four held-out words whose first
+macrotile covers it drew with every header at 8 floor(fx / 2) slots a block row and the list end on
+the last target tile in block order (E1048)?". Which fault a faulting
+word gives follows its bounds: fitted post hoc on the first fault line of each of E509's 162
+faulting cases (E1073: an axis with every bound 0 faults the TA's header write, 0x90004, the other
+faulting words the 3D's read at the parameter heap's first page, 0x90100; 162 of 162, the rival
+"one kind" 155), and held out on two words never run at 384 x 256 (E1074, 2 of 2). The TA's fault
+fell on TA data page 0x20008, E509's page at 256 x 256 on another module, not the first page past
+the kernel's TA data (0x20006): the page form failed. Open: what places that write, the stride's
+relation to the RT data, and the kind at four macrotiles a side.

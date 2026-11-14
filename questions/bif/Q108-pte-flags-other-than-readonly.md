@@ -5,7 +5,7 @@ unit = "bif"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E021", "E151", "E319", "E945", "E946", "E964", "E965", "E1046"]
+evidence = ["E021", "E151", "E319", "E945", "E946", "E964", "E965", "E1046", "E1071"]
 terms = ["CR_BIF_FAULT", "CR_BIF_INT_STAT"]
 +++
 
@@ -71,3 +71,10 @@ nothing (H-CC-NOOP). What stays: data cached within one render, other units' rea
 (texture, TA, EDM), WRITEONLY and EDMPROTECT alone on a texture read, WRITEONLY or EDMPROTECT on
 a depth load, the TA's own writes and the EDM's buffers; which unit makes the last-page access
 under WRITEONLY.
+
+Narrowed 2026-11-14 (round 18, session r18-flag stage f2, E1071). WRITEONLY alone faults the ZLS
+load of a depth buffer (0x80200) and a texture read of the probe's scratch (0x80002) at the
+mapping's first page before anything is read, and EDMPROTECT alone lets both through (E1046's
+store byte for byte, E1047's image), held out 4 of 4; sgx-pipe's `bif::pte_access` takes them.
+What stays: data cached within one render, the flags on the TA's own writes and the EDM's buffers,
+the flags together on a read, and which unit makes the last-page access under WRITEONLY.

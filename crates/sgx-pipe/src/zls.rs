@@ -613,20 +613,64 @@ pub fn dword_sets(ctl: &Ctl, w: u32, h: u32, stencil_buffer: bool) -> Result<(Dw
     Ok((depth_dwords(ctl, w, h, stencil_buffer)?, stencil_dwords(ctl, w, h)?))
 }
 
-/// E411's scratch runs (a 16-page buffer, a 64 x 64 target): G of 0, 1 and 3 stored and G with
-/// any of bits 2 to 8 set (bits 5 to 11 of the control) faulted the job; that the store's extent
-/// ran past the buffer is [infer] (E991: G 3 stored past it without a fault; E1051: G 5, 9 and 17 stored
-/// E465's pages in a buffer sized past them). Refuses the faulted pitches in that arrangement (Q299); the same
-/// pitches in a large buffer ran (E490 at G = 33), so this is a check of the arrangement, not of
-/// the word.
-pub fn check_scratch_pitch(ctl: &Ctl) -> Result<(), Outcome> {
-    if ctl.g() > 3 {
-        return Err(open(
-            format!("G = {} in the 16-page scratch run: E411's jobs with bits 5 to 11 set faulted", ctl.g()),
-            &["Q299"],
-        ));
+/// The first page a store reaches that nothing maps, in the order the 3D stores (E996's tile
+/// order, a tile's depth then its stencil), the depth buffer at page `depth_page` and the stencil
+/// buffer at `stencil_page` of a region of which pages 0 to `mapped - 1` are mapped: E1070
+/// (r18-flag f1, held out) measured that a ZLS store faults the job there (0x90200: `FAULT_REQ` bit
+/// 9, `FAULT_TYPE` 1) and lands without a fault on a page past its buffer that is mapped (G 3's
+/// pages 16 and 18 in t10's colour buffer, the image exact). Formats other than the float and
+/// 24-bit ones refuse, as [`store`]'s pages do not decide them here.
+pub fn first_unmapped_page(
+    ctl: &Ctl,
+    w: u32,
+    h: u32,
+    depth_page: u32,
+    stencil_page: Option<u32>,
+    mapped: u32,
+) -> Result<Option<u32>, Outcome> {
+    if !matches!(ctl.format()?, Format::F32 | Format::U24) || ctl.linear_store() {
+        return Err(open(format!("the pages of a store through {:#x}: not decided", ctl.word), &["Q071"]));
     }
-    Ok(())
+    for (tx, ty) in visit_order(w, h) {
+        if ctl.store_depth() {
+            for y in 16 * ty..16 * ty + 16 {
+                for x in 32 * tx..32 * tx + 32 {
+                    let p = depth_page + store_dword_of(ctl, x, y) / 1024;
+                    if p >= mapped {
+                        return Ok(Some(p));
+                    }
+                }
+            }
+        }
+        if let Some(sp) = stencil_page.filter(|_| ctl.store_stencil()) {
+            let p = sp + 128 * (ty * (ctl.g() + 1) + tx) / 1024;
+            if p >= mapped {
+                return Ok(Some(p));
+            }
+        }
+    }
+    Ok(None)
+}
+
+/// E411's scratch runs (a 16-page scratch at 0x3e001000, the stencil buffer at its page 4, the
+/// depth buffer at page 12, a 64 x 64 target): G of 0, 1 and 3 stored and G with any of bits 2 to
+/// 8 set (bits 5 to 11 of the control) faulted the job. With the tool's colour buffer right after
+/// the scratch (5 pages with its guard, as t10's at 64 x 64: E1070's premise, read from the kept
+/// `layout: fb` lines) pages 0 to 20 are mapped, and [`first_unmapped_page`] gives the page of all
+/// 14 of E411's faults (0x90200 at 0x3e016 for G 5 and 17, 0x3e017 for G 9, then 0x3e01e, 0x3e02e,
+/// 0x3e04e and 0x3e08e for G 33 to 257: post hoc, read at E1070's fold) and none for G 0, 1 and 3.
+/// The model refuses those jobs with the fault it predicts (E1070); the same pitches in a large
+/// buffer ran (E490 at G = 33), so this is a check of the arrangement, not of the word.
+pub fn check_scratch_pitch(ctl: &Ctl) -> Result<(), Outcome> {
+    const SCRATCH: u32 = 0x3e00_1000;
+    if ctl.g() <= 3 {
+        // E411's stores at G 0, 1 and 3, every flip of the other bits among them, ran
+        return Ok(());
+    }
+    match first_unmapped_page(ctl, 64, 64, 12, Some(4), 16 + 5)? {
+        Some(p) => Err(Outcome::Fault { addr: SCRATCH + 0x1000 * p, record: "E1070".into() }),
+        None => Ok(()),
+    }
 }
 
 /// The depth store of a W x H target for the control `ctl`: `depth(x, y)` is the depth the tile
@@ -1894,14 +1938,33 @@ mod tests {
     }
 
     #[test]
-    fn the_scratch_runs_of_e411_faulted_at_every_g_bit_from_bit_5() {
-        // G 0, 1 and 3 (bit 3 cleared, the control, bit 4 set) ran; bits 5 to 11 set faulted
+    fn the_scratch_runs_of_e411_faulted_at_the_first_unmapped_page() {
+        // G 0, 1 and 3 (bit 3 cleared, the control, bit 4 set) ran; bits 5 to 11 set faulted at the
+        // pages E411's kernel log names (zls/control-bits, both runs of each), E1070's rule
         for w in [0x0017_1004, 0x0017_100c, 0x0017_101c] {
             assert!(check_scratch_pitch(&ctl(w)).is_ok(), "{w:#x}");
         }
-        for b in 5..=11 {
-            assert_eq!(ids(check_scratch_pitch(&ctl(0x0017_100c ^ 1 << b))), ["Q299"], "bit {b}");
+        let pages =
+            [0x3e01_6000, 0x3e01_7000, 0x3e01_6000, 0x3e01_e000, 0x3e02_e000, 0x3e04_e000, 0x3e08_e000];
+        for (b, want) in (5..=11).zip(pages) {
+            match check_scratch_pitch(&ctl(0x0017_100c ^ 1 << b)) {
+                Err(Outcome::Fault { addr, record }) => {
+                    assert_eq!((addr, record.as_str()), (want, "E1070"), "bit {b}")
+                }
+                o => panic!("bit {b}: {o:?}"),
+            }
         }
+    }
+
+    #[test]
+    fn a_store_faults_at_its_first_unmapped_page_as_e1070() {
+        // r18-flag f1 (t10, a 16-page depth buffer at 0x3e001000, the ZLS base 0x3e000000 with
+        // rd:13 = 0xd000, so the store starts at buffer page 12; the colour buffer maps pages 16 to
+        // 20): G 3 stores pages 12, 14, 16 and 18, all mapped; G 5 faults at page 21 (0x3e016000)
+        assert_eq!(first_unmapped_page(&ctl(0x0017_101c), 64, 64, 12, None, 21), Ok(None));
+        assert_eq!(first_unmapped_page(&ctl(0x0017_102c), 64, 64, 12, None, 21), Ok(Some(21)));
+        // past the buffer alone (H-PAST-ANY, refuted) G 3 would fault at page 16
+        assert_eq!(first_unmapped_page(&ctl(0x0017_101c), 64, 64, 12, None, 16), Ok(Some(16)));
     }
 
     #[test]

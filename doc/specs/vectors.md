@@ -349,8 +349,10 @@ otherwise compare nothing and pass). A vector that matched but compared no item 
   target with the stencil buffer). What a field rests on decides the outcome (D6): the pitch
   (E465), the format (E466), a load by bit 1 alone ([infer], E411 part B saw no effect) and every
   stored page make the vector fitted, and one that compares only the store enables, the negation,
-  the loads by bits 13 and 14 and whether the image is written stays matched. 15 matched, 23
-  fitted, 9 refused (bits 5 to 11, which faulted the job, and bit 25: Q299; bit 26: Q120). Bit 0 is
+  the loads by bits 13 and 14 and whether the image is written stays matched. 15 matched, 24
+  fitted (bit 25's 16-bit format at G = 1 among them), 7 predicted faults (bits 5 to 11: the
+  store's first page nothing maps, at the page E411's kernel log names, `expect.outcome` and
+  `expect.addr`, E1070) and 1 refused (bit 26: Q120). Bit 0 is
   the colour image off and stores the control's pages, modelled for 0x0017100d only (Q071).
 
 ## 6. Scene vectors

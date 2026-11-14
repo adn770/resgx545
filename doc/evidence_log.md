@@ -8980,13 +8980,76 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   order (396 of 396); the control passed.
   *zls; HW; data: `render-closing-r17-zls:out/20261114-104614/zb20/`,
   `render-closing-r17-zls:fold/`.*
+- `E1070` r18-flag stage f1 (2 jobs, t10: E411's G 3 and G 5 stores in E1051's zv- form with a
+  16-page depth buffer, never run on t10 at 16 pages, held out; 1 planned fault): G 5 faulted the
+  job with BIF fault 0x90200 at 0x3e016001, buffer page 21, the first page nothing maps (t10's
+  colour buffer, 5 pages with its guard, follows the depth buffer at pages 16 to 20), and G 3, whose
+  stores reach buffer pages 16 and 18 inside that colour buffer, completed with the 20-page
+  control's image (hash 0xd0530839d87ea325, diff 0); frozen 'H-PAST-FAULT ... (2 of 2 rows decided)'
+  and 'H-PAST-FAULT-PAGE ... (1 of 1 rows decided)', H-PAST-ANY and H-DROP '1 held, 1 FAILED',
+  H-PAST-ANY-PAGE '0 held, 2 FAILED'; both references (E1041's and E1051's stores byte for byte, the
+  colour buffer right after the depth buffer) passed.
+  *zls; HW, infer; data: `render-closing-r18-flag:out/20261114-133536/f1/`,
+  `render-closing-r18-flag:fold/`.*
+- `E1071` r18-flag stage f2 (4 jobs, t14, the debugfs knobs vm_pte_addr and vm_pte_flags on a
+  mapping only read, held out; 2 planned faults): WRITEONLY alone (0x2) faulted r14-bif's ZLS load
+  of the depth buffer with 0x80200 at 0x3e001001 and E566's texture read of the probe's scratch with
+  0x80002 at 0x3e003001, each at the mapping's first page; EDMPROTECT alone (0x10) let both through,
+  the load storing E1046's store byte for byte and the texture read giving E1047's image; frozen
+  'H-WO-ALL ... (2 of 2 rows decided)', 'H-EDM-READ ... (2 of 2 rows decided)', H-WO-LOAD-OK,
+  H-EDM-ZLS and H-EDM-TEX '0 held, 1 FAILED' each; both references passed.
+  *bif; HW; data: `render-closing-r18-flag:out/20261114-133536/f2/`,
+  `render-closing-r18-flag:fold/`, `vectors-closing-r18-flag-pte`.*
+- `E1072` r18-flag stage f4 (2 jobs, t10, ISP word 0 bit 18 set alone; 2 planned faults): E065's
+  library triangle (tri --poke blk:1^=0x00040000) and E977's 80 x 40 ramp with its depth buffer
+  loaded and stored (E998's isp0x form, blk:1=0x00440200) both faulted with BIF fault 0xd0400 at 0x1
+  (FAULT_REQ bit 10, FAULT_TYPE 5, page 0), the word of E764's background program fetch; frozen
+  'H-FAULT-ANY ... (2 of 2 rows decided)', H-NEEDS-BUF '1 held, 1 FAILED'; the reference x-ctl
+  (E977's kept dump and hash, on t10) passed.
+  *isp; HW, infer; data: `render-closing-r18-flag:out/20261114-133536/f4/`,
+  `render-closing-r18-flag:fold/`.*
+- `E1073` Round 18 offline (O18-1, Q139; no run): on E509's 329 kept cases (ta/mtile-fields and
+  ta/mtile-fields-risky), the first kernel fault line of each of the 162 that faulted gives two
+  kinds, 155 at 0x90100 (FAULT_REQ bit 8, page 0x10000, SB 1) and 7 at 0x90004 (FAULT_REQ bit 2, TA
+  data pages 0x20008, 0x2000a and 0x20010); the form H-KIND (0x90004 iff an axis's bounds are all 0,
+  n = 2: B2, n = 4: B1, B2 and B3, or the stride puts the last macrotile at or past slot 3072; else
+  0x90100), fitted post hoc on those lines, gives 162 of 162, and its rival H-ONE-KIND (every
+  faulting word 0x90100) 155 of 162 (95.7 %); the stride clause rests on one case; frozen by the
+  sha256 of fit/o18_1.py before r18-flag ran, which held it out (E1074).
+  *ta; HW, infer; data: `ta-mtile-fields`, `ta-mtile-fields-risky`, `render-closing-r18-flag:fit/`.*
+- `E1074` r18-flag stage f3 (2 jobs, t10, E1048's form at 384 x 256, a size of none of E509's cases,
+  two CR_TE_MTILE1 words never run; 2 planned faults): 0x00c00005 (B2 = 0, every bound of the x axis
+  0) faulted with 0x90004 at 0x20008021, the TA's header write, and 0x00406001 (fx 6, a second
+  macrotile inside the target) with 0x90100 at 0x10000011, the 3D's read at the parameter heap's
+  first page, as E1073's form H-KIND gives; frozen 'H-KIND ... (2 of 2 rows decided)', H-ONE-KIND '1
+  held, 1 FAILED', the page form H-PAGE-END '1 held, 1 FAILED' (the TA's fault at page 0x20008, not
+  the first page past the kernel's 0x6000 bytes of TA data); the reference f2-ctl-256 passed.
+  *ta; HW, infer; data: `render-closing-r18-flag:out/20261114-133536/f3/`,
+  `render-closing-r18-flag:fold/`.*
+- `E1075` r18-flag stage h1 (1 job, t10, E756's form with --index-width 32 --vdm 2^=0x03000000: bit
+  25 cleared, bit 24 set alone over E414's list written as 32-bit words, never run; 1 planned hang):
+  the job hung ('job N hung, recovering', recovered, the health clean), as bit 24 did over the
+  16-bit list (E737); frozen 'H-B24-HANG ... (1 of 1 rows decided)', H-B24-W32 (bit 24 selects
+  32-bit indices: E414's object) '0 held, 1 FAILED'; the reference ix32-n (the bit-clear 32-bit
+  list, every pixel the background) passed.
+  *vdm; HW; data: `render-closing-r18-flag:out/20261114-133536/h1/`,
+  `render-closing-r18-flag:fold/`.*
+- `E1076` r18-flag stage h2 (8 jobs, t10, the kit's noreset; 2 planned hangs): with block 1 at
+  VDM_STATE1 bits 11:9 = 6 (E700's M1: add 4 a job), a job after a reset then two noreset jobs
+  completed, completed and hung on two new stream shapes, 24 vertices in one object with 8
+  temporaries at 64 x 64 and 48 vertices in two objects with 16 temporaries at 128 x 64, as M1 gives
+  (c = 4, 8, then 12 > 8); frozen 'M1-SHAPE ... (4 of 4 rows decided)', H-ALT '0 held, 4 FAILED',
+  H-SCALE '2 held, 2 FAILED'; the control (E700's two-block shape, the triple's first two jobs)
+  completed both.
+  *vdm; HW; data: `render-closing-r18-flag:out/20261114-133536/h2/`,
+  `render-closing-r18-flag:fold/`.*
 
 ## By unit
 
 ### bif
 
 Records: E151, E457, E573, E592, E745, E761, E767, E789, E826, E848, E891, E892, E901, E919, E920,
-E945, E946, E964, E965, E980, E1046.
+E945, E946, E964, E965, E980, E1046, E1071.
 
 ### dpm
 
@@ -9020,7 +9083,7 @@ E332, E334, E338, E339, E340, E410, E415, E416, E417, E439, E502, E503, E504, E5
 E606, E607, E618, E660, E661, E662, E680, E681, E682, E683, E684, E727, E728, E731, E739, E740,
 E741, E757, E758, E762, E825, E827, E829, E912, E913, E914, E922, E934, E943, E952, E953, E954,
 E970, E971, E972, E973, E979, E984, E989, E990, E992, E995, E998, E1005, E1006, E1010, E1012, E1014,
-E1018, E1022, E1023, E1024, E1036, E1037, E1045, E1056.
+E1018, E1022, E1023, E1024, E1036, E1037, E1045, E1056, E1072.
 
 ### mte
 
@@ -9058,7 +9121,7 @@ E288, E305, E306, E307, E308, E322, E328, E329, E331, E407, E409, E424, E505, E5
 E511, E541, E542, E543, E544, E616, E617, E650, E651, E652, E729, E736, E754, E763, E776, E777,
 E778, E780, E781, E782, E783, E788, E795, E796, E797, E798, E824, E828, E842, E847, E851, E859,
 E865, E872, E877, E879, E886, E888, E893, E897, E906, E907, E908, E944, E950, E959, E1007, E1011,
-E1048.
+E1048, E1073, E1074.
 
 ### texture
 
@@ -9096,11 +9159,11 @@ E1061, E1062.
 
 Records: E059, E060, E184, E185, E186, E187, E189, E190, E191, E188, E299, E300, E318, E346, E349,
 E413, E414, E427, E440, E545, E546, E700, E701, E702, E703, E737, E738, E755, E756, E933, E1021,
-E1035.
+E1035, E1075, E1076.
 
 ### zls
 
 Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467, E489, E490, E615, E628, E629,
 E663, E664, E665, E730, E831, E885, E903, E904, E977, E978, E981, E985, E986, E987, E988, E991,
 E996, E997, E1015, E1020, E1029, E1030, E1031, E1040, E1041, E1042, E1043, E1050, E1051, E1053,
-E1054, E1059, E1063, E1064, E1068, E1069.
+E1054, E1059, E1063, E1064, E1068, E1069, E1070.

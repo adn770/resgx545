@@ -459,7 +459,7 @@ fn kind_zls_ctl(v: &Json) -> Modelled {
         "negate",
         "writes_pixels",
     ];
-    if let Some(m) = unknown_keys(e, &[&FIELDS[..], &["pages"]].concat()) {
+    if let Some(m) = unknown_keys(e, &[&FIELDS[..], &["pages", "addr"]].concat()) {
         return m;
     }
     let c = match zls::Ctl::decode(i.get("ctl").hex().unwrap_or(0) as u32) {

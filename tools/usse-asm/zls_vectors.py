@@ -72,7 +72,7 @@ def format_vectors(data):
         init["depth_y"] = {"ramp": 768} if case == "f0" else ref("y")
         v = {"id": "zls-format__" + case, "init": init,
              "provenance": {"case": case, "records": ["E466", "E490"], "rebuilt": False,
-                            "table": "zls/store-format-dumps", "questions": ["Q069", "Q120", "Q299"],
+                            "table": "zls/store-format-dumps", "questions": ["Q069", "Q120"],
                             "depth_input": "geometry within 1e-5 (E490)" if case == "f0"
                             else "the float the format-0 run stored at the pixel (E490)"}}
         if fmt in (3, 5, 6):
@@ -214,17 +214,40 @@ def parse_flip_runs(text):
     return out
 
 
-def flip_expect(bit, run):
-    """What the records state of CONTROL with `bit` flipped. A faulted job (bits 5 to 11, G past the
-    16-page scratch buffer [infer]), the 16-bit format at G = 1 and format 4 are refused by question;
-    the rest carries the readings of the changed field, whether the image was written (all 4096
-    pixels right, or all wrong with bit 0) and the pages the run stored."""
+def parse_flip_faults(text):
+    """bit -> the page (address & ~0xfff) of the first `BIF fault S at A` line after each case
+    marker `resgx545 case bitN-rK` of control-bits/kernel.log; the two runs of a bit must agree."""
+    pages, cur = {}, None
+    for line in text.splitlines():
+        m = re.search(r"resgx545 case bit(\d+)-r\d", line)
+        if m:
+            cur = int(m.group(1))
+            pages.setdefault(cur, [])
+            pages[cur].append(None)
+            continue
+        m = re.search(r"sgxfive: BIF fault 0x[0-9a-f]+ at (0x[0-9a-f]+)", line)
+        if m and cur is not None and pages[cur][-1] is None:
+            pages[cur][-1] = int(m.group(1), 16) & ~0xfff
+    out = {}
+    for bit, ps in pages.items():
+        if any(p is not None for p in ps):
+            assert len(set(ps)) == 1, (bit, ps)
+            out[bit] = ps[0]
+    return out
+
+
+def flip_expect(bit, run, fault_page=None):
+    """What the records state of CONTROL with `bit` flipped. A faulted job (bits 5 to 11: the store
+    reaches a page nothing maps past the 16-page scratch and the tool's colour buffer, E1070) is a
+    fault at the page E411's kernel log names; the 16-bit format at G = 1 and format 4 are refused
+    by question; the rest carries the readings of the changed field, whether the image was written
+    (all 4096 pixels right, or all wrong with bit 0) and the pages the run stored."""
     if not run["ok"]:
-        return {"refuse": ["Q299"]}
+        return {"outcome": "fault"} if fault_page is None else {"outcome": "fault", "addr": "0x%08x" % fault_page}
     if bit in (25, 26):
         # the run stored pages the model does not decode; naming them makes the vector compare the
         # store, so a model that stopped refusing is caught (a mismatch of pages), not matched empty
-        return {"refuse": ["Q299" if bit == 25 else "Q120"],
+        return {"refuse": ["Q071" if bit == 25 else "Q120"],
                 "pages": {str(p): n for p, n in sorted(run["pages"].items())}}
     f = flip_fields(bit)
     e = {k: v for k, v in f.items() if k not in ("g", "fmt")}
@@ -242,6 +265,7 @@ def flip_expect(bit, run):
 
 def ctl_vectors(data):
     runs = parse_flip_runs((pathlib.Path(data) / "zls/control-bits/output.txt").read_text())
+    faults = parse_flip_faults((pathlib.Path(data) / "zls/control-bits/kernel.log").read_text())
     out = []
 
     def add(vid, ctl, expect, rec, note, init=None):
@@ -251,8 +275,8 @@ def ctl_vectors(data):
                                    "basis": "a script: the records' bit arithmetic and the run's own page lines"}})
 
     for bit in range(32):
-        add("flip-%02d" % bit, CONTROL ^ 1 << bit, flip_expect(bit, runs[bit]),
-            ["E057", "E411", "E465", "E466"], "0x0017100c with bit %d flipped" % bit,
+        add("flip-%02d" % bit, CONTROL ^ 1 << bit, flip_expect(bit, runs[bit], faults.get(bit)),
+            ["E057", "E411", "E465", "E466"] + (["E1070"] if not runs[bit]["ok"] else []), "0x0017100c with bit %d flipped" % bit,
             {"arrangement": "e411-scratch", "w": 64, "h": 64, "stencil": True})
     for ctl, f in E337.items():
         add("driver-%08x" % ctl, ctl, f, ["E337", "E411", "E467"], "a value the closed driver writes")
