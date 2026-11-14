@@ -9043,6 +9043,36 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   completed both.
   *vdm; HW; data: `render-closing-r18-flag:out/20261114-133536/h2/`,
   `render-closing-r18-flag:fold/`.*
+- `E1077` r19-k0b stages k0 and kg on module E0CC40275493F8AEAD8180B (fork 456404fcffe5, debugfs
+  render_final_pb_pages at its default 0): every control passed and H-SAME held 20 of 20 (k0) and 15
+  of 15 (kg): the module runs B60AB0B4's kept jobs as they were (3072x2048 probe at P 0x2b6: 1
+  partial render, 0x0624 0x294, twice; at P 0xe2: 4 and 0xc0; 2048x2048 a0-cal-2048 at P 0x162:
+  tadata dump byte-identical, param dump identical once each stream's repeated terminate words are
+  masked, 1 partial render, page steps 0x51, 0x9d, 0xe8, 0x132; zb-c-ctl's 64x32 depth store
+  byte-identical on t10 and t18b, 2048 drawn), and t18b gives t10's geometry job (tri 1024x768 -n 2
+  --geometry 1 at P 0x28, two replicates each: the kick overflows with 0x0624 0x6, the final
+  overflows too, final dumps equal, pb:10-13 0x38, 0x6, 0x6, 0); E625's raise held 12 of 12 (TA3DCtl
+  dwords 35, 37, 38 = 0x4, 0x10006, 0x20 after the kick). The first build, r19-k0, stopped at its a0
+  control on 4 dwords past a stream's end (0x12de30 to 0x12de3c of the param dump: 0xc0000000 kept,
+  0 then), which the lead took as a stale tail, not the module.
+  *dpm; HW, infer; data: `render-closing-r19-k0b:out/20261114-224248/k0/`,
+  `render-closing-r19-k0b:out/20261114-224248/kg/`, `render-closing-r19-k0b:fold/`,
+  `render-closing-r19-k0:out/20261114-223342/k0/`, `render-closing-r19-k0:fold/`.*
+- `E1078` r19-k0b stage f0 on module E0CC40275493F8AEAD8180B (12 jobs on t18b: a geometry kick at P,
+  the closing render on its own PB of N pages through render_final_pb_pages, whose TA command
+  carries flag 0x2000 and N's thresholds in dwords 10 to 13): the four controls passed (0x0624 after
+  the job N - 0x22: 0x1de at P 0x422 N 0x200, 0xde at P 0x28 N 0x100, the latter's kick
+  overflowing); the EDM applies the command's thresholds at that kick: in every row 0x0624 takes N -
+  0x22 at the closing render's kick, before it ends, and the PB descriptor's dwords 10 to 13 read
+  (list + 0x10, N - 0x22, N - 0x22, PDS) after it (H-STORE 12 of 12, H-NOSTORE 0 of 12, H-IGN 14 of
+  26); the next scene's first job puts P's back (f0-back: render 3 at 0x6 overflows, H-STICK 0 of
+  4); H-UPD held 48 of 52, its 4 misses f0-down's predicted overflow at N 0x30 (0x0624 0xe with 19
+  pages held: the closing render took no new page, so no abort was due); H-LATE's 26 of 26 are
+  values it shares with H-UPD, and post hoc its claim that the render follows P fails: the knob-0
+  twin (E1077's kg, P 0x28) overflows in the closing render, the same render at N 0x100 does not;
+  the longer list leaves the geometry kick as it was (H-GEO0 1 of 1).
+  *dpm; HW, infer; data: `render-closing-r19-k0b:out/20261114-224248/f0/`,
+  `render-closing-r19-k0b:out/20261114-224248/kg/`, `render-closing-r19-k0b:fold/`.*
 
 ## By unit
 
@@ -9059,7 +9089,7 @@ E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753, E773, E774, E7
 E786, E790, E799, E800, E801, E802, E803, E832, E845, E846, E852, E853, E854, E860, E861, E862,
 E863, E864, E866, E867, E868, E869, E870, E873, E874, E875, E881, E882, E883, E887, E889, E899,
 E900, E915, E916, E917, E918, E935, E936, E937, E938, E939, E960, E961, E962, E963, E1009, E1013,
-E1019, E1032, E1044, E1057.
+E1019, E1032, E1044, E1057, E1077, E1078.
 
 ### edm
 

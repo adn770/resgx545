@@ -1,0 +1,9 @@
+title = "laptop session r19-k0 of the question-closing pass, round 19 (closing19/DECISIONS-R19.md, S1), the first build of r19-k0b: stopped at its third job, the control k0-a0 (the param dump's plain sha256), with the freeze, kit copy, generator, predictions, scorer, hooks, mock and tests, t18b's recipe (lead/build_tool18b.sh, round 18's byte for byte, which round 19's other sessions name), the pre-run README and PREFLIGHT, the kept outputs of the stopped attempt, the lead's driver log and the fold's note"
+repo = "data"
+paths = ["render/closing-r19-k0/"]
+method = "the session kit (kit/ = resgx545 6809cdd's tools/closing/kit, scorekit.py and sessioncheck.py byte for byte, pinned in FROZEN.commits): kit/session.py stage and run on the Mac over the travel cable to the laptop (host cedar), every file under ~/scratch/r19k/, 2026-11-14 22:33 to 22:35, kernel 7.3.0-resgx545, module srcversion E0CC40275493F8AEAD8180B (fork 456404fcffe5), stock firmware, tools t10, t18b and regtimeline as r19-k0b's; attempt out/20261114-223342: k0-pr1-1 and k0-z-t10 passed, k0-a0 stopped the stage and the session (rc 24, no fault: its param dump differs from r10-dpm's in 4 dwords at 0x12de30 to 0x12de3c); the freeze FROZEN.sha256 written before the first job; the lead's log out/r19-k0-run.lead.log; fold/NOTES.md (added at the fold): the diff and the lead's decision to keep the module and build r19-k0b. debug/ and the bytecode caches are not in the copy"
+date = "2026-11-14"
+files = 82
+size = 473416
+sha256 = "913b3b225017879ea5c30786baccfc0ae094f2ce37ae3608216e600ba753c537"
+recipe = "kit/session.py"

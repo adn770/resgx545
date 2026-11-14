@@ -303,9 +303,15 @@ list.
 
 ## Recent records
 
-140 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
+142 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1078` dpm, 2026-11-14: r19-k0b stage f0 on module E0CC40275493F8AEAD8180B (12 jobs on t18b: a
+  geometry kick at P, the closing render on its own PB of N pages through render_final_pb_pages,
+  whose TA command carries flag ...
+- `E1077` dpm, 2026-11-14: r19-k0b stages k0 and kg on module E0CC40275493F8AEAD8180B (fork
+  456404fcffe5, debugfs render_final_pb_pages at its default 0): every control passed and H-SAME
+  held 20 of 20 (k0) and 15 of 15 (kg): ...
 - `E1076` vdm, 2026-11-14: r18-flag stage h2 (8 jobs, t10, the kit's noreset; 2 planned hangs): with
   block 1 at VDM_STATE1 bits 11:9 = 6 (E700's M1: add 4 a job), a job after a reset then two noreset
   jobs completed, completed ...
@@ -729,10 +735,13 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-72 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+74 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
 - `usse/closing-r16-usse`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
+- `render/closing-r19-k0b`: 2026-11-14; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t18b
+- `render/closing-r19-k0`: 2026-11-14; module E0CC40275493F8AEAD8180B; tools not named
 - `render/closing-r18-flag`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t14
 - `render/closing-r17-zls`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
@@ -834,6 +843,7 @@ srcversion, fork tip, laptop tools.
 - fork pin (`tools/forkpin.py`): 456404fcffe5
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74
+- module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-14, 2 sessions
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at
   3f0b3e74
@@ -894,4 +904,4 @@ stays with what a session must do around it.
 
 ## Simulator coverage baseline
 
-41 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
+43 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
