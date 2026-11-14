@@ -8703,6 +8703,37 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   two); both baselines passed.
   *ta; HW, infer; data: `render-closing-r14-flag:out/20261114-060824/f2/`,
   `render-closing-r14-flag:fold/`.*
+- `E1052` r15-tex stage chain on module B60AB0B4 (Q104; 18 probe fills, the scratch as the texture,
+  dword i named 0xD0000000 | i, LOD (y >> 2) + c down the rows): both controls passed (E562's
+  shp-32x16-l5 and shp-128x16-l7-x0 rerun, their kept images, 2048 of 2048); 'A (heldout) (11 of 11
+  rows decided)': the chain halves both sides to 1, levels back to back, the last 1 x 1 and a LOD
+  above it clamping there, on a side of 1 at level 0 (1 x 32 and 32 x 1, whole and half LODs, and 32
+  x 1 with the bias field 0x33), on a 1D texture (smp1dreplace on 64 x 1, whole and half LODs, and
+  the maximum field 3) and on 64 x 32 and 256 x 32 (LODs 0 to 8.5), T0's maximum and bias reading it
+  as E441's rule says, against B (the chain stopping at the short side's 1, 0 of 11) and D
+  (square-padded, 0 of 9); on u16 (T1 format 9: 32 x 16 and 16 x 64) 'A-TX (heldout) (4 of 4 rows
+  decided)': the levels packed in 16-bit texels (A-DW, B-TX, D-TX 0 of 4), and with MIPFILTER at f
+  32 'A-TX-BL16 (heldout) (1 of 1 rows decided)': the two levels' halves blended as one 16-bit lerp,
+  (a (64 - f) + b f + 32) >> 6, not per byte (A-TX-BL8 1536 of 2048).
+  *texture; HW, infer; data: `render-closing-r15-tex:out/20261114-073318/chain/`,
+  `render-closing-r15-tex:fold/`, `vectors-closing-r15-tex-pixels`.*
+- `E1055` r15-tex stage ty on module B60AB0B4 (Q177; texture types 1, 3 and 4 in u modes 4 to 7, 15
+  probe fills at base 0 of a 32-page named scratch): both controls passed (E1000's addr3-16x64-u4
+  and E1039's addr5-ty1-u4 rerun, their kept images, 2048 of 2048); 'H-HALF (heldout) (10 of 10 rows
+  decided)': every pixel of types 1, 3 and 4 at 32 x 32 in u mode 4, of types 1 and 4 at 16 x 16 in
+  u modes 5, 6 and 7 and of type 1 at 16 x 16 in u mode 4 over u from -1.47 to 2.47 is a named dword
+  with each byte halved, rounded up, the 32 rows alike (E1039's post hoc form), against H-WHOLE and
+  H-MODE0 (0 of 9); on that wide u range 'NAME-WRAP (heldout) (1 of 1 rows decided)': the name is
+  676 + (U mod 16), E1039's map of the column inside the texture, not linear in the unwrapped column
+  (NAME-U 512 of 2048); at 32 x 32 the names rise one a column ('H-LIN1' 3 of 3 rows there, post hoc
+  1300 + (x mod 32) on all three types, or the dword 256 above); modes 5 to 7 do not read mode 4's
+  image ('H-AS-U4 ... 0 held, 6 FAILED'): post hoc every pixel of a row is one halved name, in modes
+  6 and 7 mode 4's last column (691 for type 1, 675 for type 4, or 256 below), in mode 5 another
+  (163 for type 1, 371 for type 4, each or the next); the 32 x 32 mode 0 references read a raster of
+  the width for types 1 and 3 ('R-W (heldout) (2 of 2 rows decided)') and 32 t + s for type 4 ('R-32
+  (heldout) (1 of 1 rows decided)', R-2W 64 of 2048) [infer].
+  *texture; HW, infer; data: `render-closing-r15-tex:out/20261114-073318/ty/`,
+  `render-closing-r15-tex:fold/`, `vectors-closing-r15-tex-pixels`.*
 - `E1056` r15-isp stage zcut (11 jobs, E1045's form on six held-out triangles with one vertex depth
   at 1.25 or -0.25): the triangle is clipped as a polygon at z = 1 and z = 0 and each made vertex is
   rounded half away from zero to 1/256 pixel, then covered by E606's rule (frozen H-POLYCLIP held 6
@@ -8810,7 +8841,7 @@ E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441, E5
 E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E726, E733, E743,
 E744, E760, E765, E787, E844, E894, E910, E911, E923, E930, E931, E932, E940, E941, E942, E951,
 E955, E956, E957, E958, E968, E974, E975, E976, E982, E983, E1000, E1001, E1002, E1003, E1004,
-E1016, E1017, E1025, E1026, E1027, E1033, E1038, E1039, E1047.
+E1016, E1017, E1025, E1026, E1027, E1033, E1038, E1039, E1047, E1052, E1055.
 
 ### transfer
 

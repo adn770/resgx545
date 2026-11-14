@@ -1,11 +1,11 @@
 +++
 id = "Q177"
-question = "what do texture types 1, 3 and 4 read with u address modes 4 to 7 (at 16 x 16 in mode 4 a named dword past the texture with each byte halved, the rows alike, post hoc, E1039), and what lies behind the held-out constants of the twiddled type (8 max(W, H) + 52 inside, 5, 6, 7 and 4 max(W, H) + 52 on the sides, above and below, 4 log2 max(W, H) at the corners)"
+question = "which dword do texture types 1, 3 and 4 read, each byte halved, in u address modes 4 to 7 at a held-out size (mode 4: 676 + (x mod 16) at 16 x 16 held out, 1300 + (x mod 32) at 32 x 32 post hoc; modes 6 and 7 one value, mode 4's last column, mode 5 another, post hoc, E1055), and what is the half, and what lies behind the held-out constants of the twiddled type (8 max(W, H) + 52 inside, 5, 6, 7 and 4 max(W, H) + 52 on the sides, above and below, 4 log2 max(W, H) at the corners)"
 unit = "texture"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E565", "E033", "E932", "E957", "E983", "E1000", "E1017", "E1026", "E1039"]
+evidence = ["E565", "E033", "E932", "E957", "E983", "E1000", "E1017", "E1026", "E1039", "E1055"]
 terms = ["T0.ADDRMODE_U", "T0.ADDRMODE_V"]
 +++
 
@@ -96,3 +96,17 @@ named dword past the texture (675 to 691 for types 1 and 3, 659 to 675 for type 
 halved, rounded up, the same on every row (post hoc). "Why these constants" no row can decide: it
 is reworded to the held-out formulas [infer] (R14-6 a, the lead confirms). What stays: types 1, 3
 and 4 in u modes 4 to 7 (a held-out row of the halving reading, other sizes, modes 5 to 7).
+
+Narrowed 2026-11-14 (round 15, session r15-tex, decisions R15-1 a and R15-5 a; E1055). Held out on
+ten rows with passing controls: types 1, 3 and 4 read every pixel in u modes 4 to 7 as a named dword
+with each byte halved, rounded up, the 32 rows alike, at 32 x 32 in mode 4 and at 16 x 16 in modes
+5, 6 and 7 (not the mode 0 image, not an unhalved name); at 16 x 16 in mode 4 the name is 676 + (U
+mod 16) over U = -24 to 39 (the column inside the texture, not the unwrapped one); modes 5 to 7 do
+not read mode 4's image (the question line is rewritten to what stays). Post hoc: at 32 x 32 mode 4
+reads 1300 + (x mod 32) on all three types (39 W + 52 at both sizes for types 1 and 3 [infer]); at
+16 x 16 modes 6 and 7 read mode 4's last column on every pixel and mode 5 one other name (163 or 164
+for type 1, 371 to 628 for type 4); the 32 x 32 mode 0 references read 32 t + s (types 1 and 3 the
+width, type 4 its block). The halves leave each name or the one 256 apart. sgx-sim reads mode 4 on
+these types at 16 x 16 and 32 x 32 and refuses modes 5 to 7. What stays: the size form held out (a
+third size), mode 5's constant and modes 6 and 7 held out, what the half is (a blend with zero
+[infer]) and which of the two names is read.

@@ -1,0 +1,9 @@
+title = "r15-tex: the --pixels words of each job of stages chain and ty (Q104's mip chains, 18 jobs; Q177's texture types 1, 3 and 4 in u modes 4 to 7, 15 jobs)"
+repo = "data"
+paths = ["vectors/closing/r15-tex/pixels/"]
+method = "tools/usse-asm/closing_tables.py texture on the published render/closing-r15-tex session (its one attempt, out/20261114-073318), one file a stage; rows are measurements; both refused (sgx-sim tex.rs models E1052's chains and E1055's u mode 4 reads and its unit tests hold kept pixels of them, not every row; the tool's default reason was replaced at the fold by each stage's, the file otherwise as the tool wrote it)"
+date = "2026-11-14"
+files = 2
+size = 41215
+sha256 = "b8d08c74e672b60db31b80679d8e986112d8109012ec929ebc2af32f4dc0015a"
+recipe = "tools/usse-asm/closing_tables.py"
