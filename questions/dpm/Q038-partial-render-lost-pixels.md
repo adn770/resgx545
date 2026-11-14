@@ -5,7 +5,7 @@ unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 10
-evidence = ["E160", "E202", "E204", "E310", "E311", "E312", "E442", "E461", "E465", "E467", "E468", "E625", "E628", "E629", "E996", "E1020"]
+evidence = ["E160", "E202", "E204", "E310", "E311", "E312", "E442", "E461", "E465", "E467", "E468", "E625", "E628", "E629", "E996", "E1020", "E1081", "E1082"]
 terms = ["Parameter Buffer (PB)", "Dynamic Parameter Management (DPM)"]
 +++
 What the missing pixels are is answered (E311): with `CR_ISP_CTL.PROCESS_EMPTY_TILES` clear every
@@ -92,3 +92,15 @@ Round 12 (offline): the tile order of the store is E996's overlay for a render w
 render (held at 1024 x 768 too, E1020's control), and not for the final store of an overflowed job
 (E1020: 0 of 10 G = 1 dumps; a 15104-dword zero prefix and a repeated tile read post hoc), so what
 the final render stores after partial renders stays Q107's and this question's.
+
+Narrowed 2026-11-14 (r19-dpm, E1081 and E1082). With the final render on its own parameter buffer
+(no abort): after a kick that was not raised (0x30) the final loads and stores as its control says
+(H-HOSTBITS 2 of 2); after a raised kick (0x28) a separate store buffer after the final is byte for
+byte the partial render's store whatever the final's load bits (post hoc: E628's "loads whatever the
+control" is that store left in place), so no frozen form held on all six dl rows (H-PRPATH 5,
+H-HOSTBITS 4 of 6). In one buffer (E628's ov form) the frozen H-OWNCLEAR held 4 of 4 by full dwords,
+but with the sign bit masked the final keeps 59 to 92 % of the partial render's depth (post hoc).
+The layered background loses 44191 triangle pixels of an overflowing -n 1 job (H-LOSS 2 of 2). The
+tool's geometry final draws the whole one-triangle image (diff 0, E1079). Open: where a raised
+kick's final render stores, whether dzo's kept depth is a load, and the colour reload of a final
+that does not overflow (`--bg-layer` refuses `--geometry`).

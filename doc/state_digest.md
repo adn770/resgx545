@@ -10,15 +10,13 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-144 open: 134 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+143 open: 133 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
   EDM's PB load) need in the directory of the list it ... (E745, E761, E980)
 - `Q038` dpm, high: what does the final render read back of a partial render's depth (a depth buffer
-  stored by ZLS, the 3D kick's RT status bit 1), now that a ... (E629, E996, E1020)
-- `Q045` dpm, high: what does the DPM store in the state page, does a load task read back the
-  macrotile lists a partial render stores in the RT data's state ... (E627, E631, E1086)
+  stored by ZLS, the 3D kick's RT status bit 1), now that a ... (E1020, E1081, E1082)
 - `Q191` dpm, high: what are the words that land in a kept owner's control page (0x00200047), OTPM
   page (0x04000417) and state page (0x00020001, 2) after the ... (E1084, E1085, E1087)
 - `Q210` dpm, high: why does band 6's margin end at the page count once the object after the
@@ -173,7 +171,7 @@ list.
 - `Q163` vdm, medium: what is the state the jobs leave that decides whether a job with VDM_STATE1
   bits 11:9 other than 2 hangs (E700: a counter c, cleared by a ... (E1021, E1035, E1076)
 - `Q107` zls, medium: why does the final render of a job that overflows store zeros for the first
-  row of macrotiles and the depth with its sign bit set for the ... (E996, E997, E1020)
+  row of macrotiles and the depth with its sign bit set for the ... (E997, E1020, E1082)
 - `Q120` zls, medium: what do the stored depth formats 3 to 7 (CR_ISP_ZLSCTL bits 26:24) hold and
   how are they laid out, given that they store depth and stencil ... (E1031, E1043, E1054)
 - `Q109` bif, low: do page directory entries whose page-size field (bits 3:1) names 16 KiB to 4 MiB
@@ -291,7 +289,7 @@ list.
 - `Q084` dpm, fw (parked): how does the closed driver turn its PBSize app hint into the parameter
   buffer's page count and thresholds, given 1 MiB and 8 MiB both give ... (E327)
 - `Q088` zls, fw (parked): what reads the render details' unpatched ZLS control word that the closed
-  driver writes between frames (0x0011700a), now that bit 14 is ... (E989, E997, E1014)
+  driver writes between frames (0x0011700a), now that bit 14 is ... (E1014, E1081, E1083)
 - `Q118` render, fw (parked): how does the firmware's kick tell that its context's page directory is
   in none of the bus interface's directory lists (a compare against ... (E360, E592)
 - `Q119` render, fw (parked): does one TA command carrying both FIRST_KICK and LAST_KICK act as two
@@ -303,7 +301,7 @@ list.
 
 ## Recent records
 
-146 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
+151 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
 - `E1087` dpm, 2026-11-14: r19-own1b stage own1 (8 jobs, t18b, render_keep armed, the first context
@@ -318,6 +316,21 @@ the claims are cut at 200 characters.
 - `E1084` dpm, 2026-11-14: r19-own stage own2 (6 jobs, t18b, render_keep armed, 1024x768 owners kept
   by the first context's early close; t18b copied the kept TA data after the close and after the
   second context's render): the ...
+- `E1083` zls, 2026-11-14: r19-dpm stage rd (Q088, 6 jobs, t18b): the partial render of a geometry
+  kick stores the depth with the G of its own kick's ZLS control word (the render details' word the
+  tool sets for render 1), not ...
+- `E1082` zls, 2026-11-14: r19-dpm stages zsc and zs (Q107, 7 jobs): on E629's full-screen ramp with
+  the final on its own PB (no abort), the G 1 store fails E996's header-order overlay against its G
+  33 twin as the overflowed ...
+- `E1081` zls, 2026-11-14: r19-dpm stages dzl, dza, dzc, dzo (Q038, 15 jobs): with the final render
+  on its own PB (no abort), no frozen form of the dl rows held on every row (H-PRPATH 5 of 6,
+  H-HOSTBITS 4 of 6, H-PRZERO 5 of ...
+- `E1080` dpm, 2026-11-14: r19-dpm stage ldb (Q045, 6 jobs, t18b, knob 0): at 4096 x 4096 (the
+  default triangle, -n 1) with the state page located per width (TA data 0x42000, E627), the 16
+  macrotile list counts sum to the last ...
+- `E1079` dpm, 2026-11-14: r19-dpm stage ld (Q045, 8 jobs, t18b): after a geometry kick that
+  overflows at P 0x28, 0x2c and 0x30 (one partial render; the state page, page 6 of the TA data,
+  holding 18, 16 and 20 non-zero dwords ...
 - `E1078` dpm, 2026-11-14: r19-k0b stage f0 on module E0CC40275493F8AEAD8180B (12 jobs on t18b: a
   geometry kick at P, the closing render on its own PB of N pages through render_final_pb_pages,
   whose TA command carries flag ...
@@ -747,7 +760,7 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-77 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+78 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
 - `usse/closing-r16-usse`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
@@ -759,6 +772,8 @@ srcversion, fork tip, laptop tools.
   ~/sgxfive-test-t18b
 - `render/closing-r19-k0`: 2026-11-14; module E0CC40275493F8AEAD8180B; tools not named
 - `render/closing-r19-flag`: 2026-11-14; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
+  ~/sgxfive-test-t18b
+- `render/closing-r19-dpm`: 2026-11-14; module E0CC40275493F8AEAD8180B; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t18b
 - `render/closing-r18-flag`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10,
   ~/sgxfive-test-t14
@@ -861,7 +876,7 @@ srcversion, fork tip, laptop tools.
 - fork pin (`tools/forkpin.py`): 456404fcffe5
 - module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 38 sessions, fork r8-kernel at
   2a650d74
-- module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-14, 5 sessions
+- module srcversion E0CC40275493F8AEAD8180B: last named 2026-11-14, 6 sessions
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at
   3f0b3e74
@@ -922,4 +937,4 @@ stays with what a session must do around it.
 
 ## Simulator coverage baseline
 
-47 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).
+46 entries in `crates/SIM_UNMODELLED.toml` (what the simulator does not model).

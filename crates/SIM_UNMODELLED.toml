@@ -4,7 +4,6 @@
 # as a model or a refusal, each with the reason. tools/records/sim_coverage.py --check; this list
 # only shrinks (HACKING.md).
 E605 = "edm: not modelled or refused by sgx-sim or sgx-pipe yet"
-E627 = "dpm: not modelled or refused by sgx-sim or sgx-pipe yet"
 E630 = "dpm: not modelled or refused by sgx-sim or sgx-pipe yet"
 E631 = "dpm: not modelled or refused by sgx-sim or sgx-pipe yet"
 E706 = "dpm: not modelled or refused by sgx-sim or sgx-pipe yet"

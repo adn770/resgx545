@@ -4,7 +4,7 @@ question = "what reads the render details' unpatched ZLS control word that the c
 unit = "zls"
 kind = "fw"
 phase = 11
-evidence = ["E335", "E336", "E337", "E411", "E467", "E665", "E997", "E989", "E1014"]
+evidence = ["E335", "E336", "E337", "E411", "E467", "E665", "E997", "E989", "E1014", "E1081", "E1083"]
 terms = ["CR_ISP_ZLSCTL", "hw_render_details.isp_zlsctl"]
 +++
 
@@ -31,3 +31,11 @@ word readable now).
 
 Round 12 cites, context for the word's bits: E665 (the ZLS control fields decoded), E997 and E989
 (bits E411 flipped singly, flipped together), E1014 (the stencil test under E989's control reads 0).
+
+Narrowed 2026-11-14 (r19-dpm, E1083 and E1081). A partial render stores with the ZLS control word
+its own kick carries (the render details' word as set per render): the G of render 1's word lays
+out the partial render's store, not the final's nor a constant (H-RD 6 of 6, G 33 and G 1 both
+ways, at 0x28 and 0x30). The load half is not decided: after a kick that was not raised the final
+loads only with its load bits, after a raised one it leaves a separate store untouched (E1081, no
+frozen form held on all rows), so the word stays parked as fw (R19-5's retirement needed both).
+Open: what reads the closed driver's unpatched word between frames.

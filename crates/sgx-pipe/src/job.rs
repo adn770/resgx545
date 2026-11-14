@@ -97,7 +97,7 @@ mod tests {
         let t = blockers(Kind::Transfer);
         let r = blockers(Kind::Render);
         assert!(t.contains(&"Q012") && t.contains(&"Q066") && !t.contains(&"Q047"));
-        assert!(r.contains(&"Q047") && r.contains(&"Q045") && r.contains(&"Q107") && r.len() > t.len());
+        assert!(r.contains(&"Q047") && r.contains(&"Q191") && r.contains(&"Q107") && r.len() > t.len());
         assert!(!r.is_empty() && r.iter().all(|i| i.starts_with('Q')));
         let mut sorted = r.clone();
         sorted.sort();

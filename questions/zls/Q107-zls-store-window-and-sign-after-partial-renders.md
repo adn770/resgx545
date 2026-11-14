@@ -5,7 +5,7 @@ unit = "zls"
 kind = "hw"
 value = "medium"
 phase = 11
-evidence = ["E058", "E411", "E461", "E465", "E468", "E489", "E628", "E629", "E977", "E987", "E996", "E997", "E1020"]
+evidence = ["E058", "E411", "E461", "E465", "E468", "E489", "E628", "E629", "E977", "E987", "E996", "E997", "E1020", "E1082"]
 terms = ["CR_ISP_ZLSCTL", "CR_ISP_ZSTORE_BASE"]
 +++
 
@@ -66,3 +66,11 @@ with partial renders: where the zero prefix and the repeated tile come from, the
 stores, and the clauses above (the first row's shortfall, the extra zero dwords, what negates). A
 row that would name the tiles: an overflowed 1024 x 768 G = 1 job over a load buffer of ascending
 indices with a marked G = 33 twin. sgx-pipe's `zls::final_store` refuses such a store.
+
+Narrowed 2026-11-14 (r19-dpm, E1082). A final render that does not overflow, after partial renders
+of E629's ramp, keeps the zero row (195584 dwords below tile row 12) and fails E996's overlay as the
+overflowed stores do (E1020's form 2 of 2: 51968 of 61440 dwords at 0x28 and 0x30; the -n 1 control
+pair 61440 of 61440): both belong to a store after partial renders, not to the final's own abort.
+Its store is mostly unsigned (35840 signed dwords; H-PRSIGN 0 of 3, H-FINALSIGN 2 of 3). The ramp's
+kick was raised at 0x30 too (need 49 pages), so the not-raised clause stays untested. Open: the tile
+order rule, which tiles keep the sign, and the clauses above.
