@@ -181,6 +181,6 @@ for a job that records the colour-space set as unloaded.
 **Undecided:** why type 3 pads to 8 texels and the other 16-bit and 8-bit formats on types 1, 3
 and 4 (E958 ran format 5 on type 3), type 5 with other formats, the LOD fraction's residual
 (Q280), the border modes on the u axis, formats 23 to 26 and the YUV conversion in a fill,
-sRGB under bilinear filtering beyond E982's rule (Q282), the cube
+the sRGB second register under a trilinear sample, the cube
 map's edges and (s, t) within a face (Q284), `smp3d`
 beyond the textures it ran on, `.sinf`/`.rsd`, and state from `sa` or `c`.

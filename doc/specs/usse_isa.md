@@ -6164,8 +6164,8 @@ probe vectors that test them: 363 match the hardware, 30 stop unsupported, 0 mis
 `texture-sampler-smp-formats-other` 12/28/0, `texture-sampler-smp-lod` 11/0/0,
 `texture-sampler-smp-pcf` 28/0/0, `texture-sampler-smp-point` 13/0/0, `texture-sampler-smp-srd`
 15/0/0, `texture-sampler-smp-twiddled` 16/0/0); unsupported mostly for four texels fix no decoder
-(16); YUV through a colour-space set the vector does not record (8); EN's rule on EN's fills only,
-QN) (4).
+(16); YUV through a colour-space set the vector does not record (8); EN's, EN's and EN's words only)
+(4).
 
 Confirmed on the hardware (a passing vector): #120, #122; not yet confirmed (as decoded; no passing
 vector yet): #121, #123.
@@ -9227,7 +9227,7 @@ for a job that records the colour-space set as unloaded.
 **Undecided:** why type 3 pads to 8 texels and the other 16-bit and 8-bit formats on types 1, 3
 and 4 (E958 ran format 5 on type 3), type 5 with other formats, the LOD fraction's residual
 (Q280), the border modes on the u axis, formats 23 to 26 and the YUV conversion in a fill,
-sRGB under bilinear filtering beyond E982's rule (Q282), the cube
+the sRGB second register under a trilinear sample, the cube
 map's edges and (s, t) within a face (Q284), `smp3d`
 beyond the textures it ran on, `.sinf`/`.rsd`, and state from `sa` or `c`.
 

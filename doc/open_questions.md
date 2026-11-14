@@ -4,7 +4,7 @@
 
 *Generated from `questions/` by `tools/records/questions.py`; do not edit.*
 
-153 open: 143 hw (high 19, medium 66, low 58, unrated 0), 9 fw, 1 kernel.
+152 open: 142 hw (high 19, medium 66, low 57, unrated 0), 9 fw, 1 kernel.
 
 ## Work queue: hardware
 
@@ -136,7 +136,6 @@
 - `Q180` (phase 11, hw, medium): why did all 28 triangle jobs of the four-component DOUTI0 probes hang (E569), the two controls with the old source word 0x40800801 included (is it the four outputs o4 to o7, the two extra temporaries, or something else in the vertex program), and with 4 components (DOUTI0 bits 23:22 = 3) where does the texel land, given pa3 reads 1.0 on most pixels (E569, E420, E541, E132)
 - `Q181` (phase 11, hw, low): does the fill's transfer command load a colour-space set at all (xfer:17^=1 and xfer:18 to 22 made no difference for formats 28 and 29, E568), and if not, which path loads the set that the YUV conversion reads (E568, E037, E040)
 - `Q280` (phase 11, hw, low): what makes up to 56 of 2048 pixels of a gradient job differ from the Euclidean footprint of the pairs (op0, op2) and (op1, op3) with a LOD fraction truncated to 1/64 (E721), a rounding of the length, of the logarithm or of the operands, or a footprint that is not exactly Euclidean (E721, E563, E744)
-- `Q282` (phase 11, hw, low): how does a trilinear sRGB sample (T0 bit 27 with T0 bit 9) lerp the two levels' halves, given that E982's stage rule with the flush below 2^-14 fits only 1137 of 2048 pixels there (post hoc: the exact lerp at f/64 rounded nearest, ties up, 4091 of 4096 halves, E1025), and do texel bytes 2 and 3 (alpha) of an sRGB texel decode and filter as bytes 0 and 1 (E723, E720, E976, E982, E1004, E1016, E1025, E1038)
 - `Q284` (phase 11, hw, medium): what does a TEXTYPE 2 cube sample read at an exact texel boundary when |ma| is not a power of two (E923, E931, E956: up or down by the boundary's place, a pattern that moves at |ma| 1.25), at a tie of the two largest coordinates when the third is large (E956: the higher axis's face on every sweep, the lower on 7 of 599 kept tie pixels), and which texel the out-of-face tap of a bilinear sample reads at a face edge (E956: the adjacent one on one edge of two) (E726, E567, E844, E923, E930, E931, E951, E955, E956, E1001, E1002)
 
 ### transfer

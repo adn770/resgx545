@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-153 open: 143 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+152 open: 142 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -258,8 +258,6 @@ list.
   and xfer:18 to 22 made no difference for formats 28 and 29, ... (E037, E040, E568)
 - `Q280` texture, low: what makes up to 56 of 2048 pixels of a gradient job differ from the
   Euclidean footprint of the pairs (op0, op2) and (op1, op3) with a LOD ... (E563, E721, E744)
-- `Q282` texture, low: how does a trilinear sRGB sample (T0 bit 27 with T0 bit 9) lerp the two
-  levels' halves, given that E982's stage rule with the flush below ... (E1016, E1025, E1038)
 - `Q017` usse, low: why does g19 read 0x1a as a store's source but 0 through a mov and as the pixel?
   (E085, E086, E372)
 - `Q048` usse, low: do the MADD0 and MADD1 clock gates follow the USSE pipes' floating-point

@@ -115,7 +115,7 @@ pub fn sample(s: &Sample, load: &mut Load) -> Result<Vec<u32>, Fail> {
         if levels != [(0, 64)] || s.pcf.is_some() || s.srd != Srd::None || bilinear && tex.format == 27 {
             return open(
                 "ETC1 or sRGB blended other than E1038's trilinear, with .pcf or an SRD mode, or ETC1 \
-                 filtered (not run; Q282)",
+                 filtered (not run; E1038 measured the trilinear lerp)",
             );
         }
         if bilinear {
@@ -557,7 +557,7 @@ fn measured_r4(t0: u32, t1: u32, t3: u32) -> Result<(), Fail> {
         return open(format!(
             "T0 0x{t0:08x}, T1 0x{t1:08x}, T3 0x{t3:08x}: sRGB (E723), format 27 (E724) and types 1 and 3 \
              (E725, E910, E940, E958), 4 (E941, E958) and 5 (E942) ran only with the state words and at the sizes of their \
-             held-out jobs (sRGB bilinear: E982's rule on E723's fills only, Q282)"
+             held-out jobs (sRGB: E982's, E1025's and E1038's words only)"
         ));
     }
     Ok(())
@@ -2457,13 +2457,13 @@ mod tests {
         ] {
             assert!(is_open(texel(st, 8, 8, 1, 1, &mem)), "{st:08x?}");
         }
-        // bilinear sRGB past E723's fills names Q282 (a held-out row missed E982's rule)
+        // bilinear sRGB past the measured words names the records that measured it (E1038)
         for st in [
             [T0_REP | 1 << 27 | 1 << 12, t1(0, 12, 8, 8), 0x1000, T3_TW],
             [T0_SRGB_BL_STRIDE8, t1(6, 12, 8, 4), 0x1000, T3_ST],
         ] {
             let e = texel(st, 8, 8, 1, 1, &mem).unwrap_err();
-            assert!(format!("{e:?}").contains("Q282"), "{e:?}");
+            assert!(format!("{e:?}").contains("E1038"), "{e:?}");
         }
         // the registers after the first are not known (E723's r11 reads: no model)
         assert!(unknown_after(tw8).is_some());
