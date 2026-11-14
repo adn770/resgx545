@@ -98,6 +98,10 @@ BASE_KNOBS = re.compile(r"^(-|expectdiff|expectfault|after|soft|gate|noreset|grp
 ON_STOP = ("next", "end")
 # --kpoke is probe's kernel poke, no riskier than tri's --kpoke-render: allowed on `probe` rows only
 FORBID_OPTIONS = ("--kpoke", "--kreg", "--clkgate", "--trc-hazard")
+# options whose tool writes a debugfs knob itself (the kernel takes it): the session declares
+# the knob at default 0, so the preflight checks the loaded module has it and the exit trap puts
+# it back should a tool die before the kernel took it
+TOOL_KNOBS = {"--final-pb-pages": "render_final_pb_pages"}
 FORBID = (r"reboot|shutdown|poweroff|kexec|grub|mkinitcpio|(^|[^a-z_-])make |gcc|(^|[^a-z])cc |"
           r"push-gma500|deploy-tool|trc_hazard|CLKGATE|clkgate|(^|[^a-z0-9])kreg([^a-z0-9-]|$)|"
           r"kregnow|kicker|kpoke|/dev/mem|git |\| *tail|\|\| *true")
@@ -397,6 +401,13 @@ def guard(kp):
                     continue
                 if re.search(r"(^|\s)" + re.escape(o) + r"(\s|=|$)", args):
                     bad.append(f"{where}: forbidden option {o}")
+            for o, k in TOOL_KNOBS.items():
+                if re.search(r"(^|\s)" + re.escape(o) + r"(\s|=|$)", args) and \
+                        not _zero(c["knobs"].get(k, {}).get("default")):
+                    bad.append(f"{where}: {o} writes debugfs {k}: declare it in session.toml "
+                               f'[knobs] at default "0" ({k} = {{ default = "0", values = '
+                               '["0"] }): the preflight checks the module has it, the exit '
+                               "trap puts it back")
             for m in re.findall(r"\$S/([A-Za-z0-9_./-]+)", args):
                 if m not in have:
                     bad.append(f"{where}: $S/{m} is not a laptop file (session.toml [files] laptop)")
@@ -407,6 +418,14 @@ def guard(kp):
             if re.search(r"/tmp|`|\$\(", args):
                 bad.append(f"{where}: /tmp or a command substitution in args")
     return bad
+
+
+def _zero(v):
+    """Whether a knob's default reads as the number 0 (0, 0x0, 00)."""
+    try:
+        return v is not None and int(str(v), 0) == 0
+    except ValueError:
+        return False
 
 
 def _wrapped(c, tool, args):
@@ -952,10 +971,14 @@ def libmock(kp, say=print):
             # the real runner's debugfs kpoke file: a tri row's --depth and --kpoke-render pokes
             kpoke = w / "kpoke"
             kpoke.write_text("")
-            # and its debugfs: the dumps the tool copies, empty; no knob (dbg: words give those)
+            # and its debugfs: the dumps the tool copies, empty, and the declared knobs' files at
+            # their defaults, for a tool that writes one (TOOL_KNOBS); a knob's state for the
+            # mock comes only from the row's dbg: words
             (w / "dbg").mkdir()
             for f in LIBMOCK_DUMPS:
                 (w / "dbg" / f).write_bytes(b"")
+            for k, d in c["knobs"].items():
+                (w / "dbg" / k).write_text(f"{d['default']}\n")
             env = {"PATH": os.environ.get("PATH", "/usr/bin:/bin"), "HOME": str(home),
                    "W": str(w / "w"), "S": str(kp), "SGXFIVE_KPOKE": str(kpoke),
                    "SGXFIVE_DEBUGFS": str(w / "dbg")}

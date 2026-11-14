@@ -294,6 +294,35 @@ def test_the_guard_allows_a_probe_kpoke_and_keeps_the_dangerous_forms_refused(re
         assert (g.returncode == 0) == ok, (row, g.stdout)
 
 
+FINAL_KNOB = 'render_final_pb_pages = { default = "0", values = ["0"] }\n'
+FINAL_ROW = "f1|fit|safe|-|t4|tri -n 2 --geometry 1 --final-pb-pages 0x40\n"
+
+
+def test_the_guard_wants_the_final_pb_knob_declared_for_a_row_that_writes_it(repos):
+    """`tri --final-pb-pages N` writes debugfs render_final_pb_pages itself, which the kernel's
+    next render context takes once: a row with it needs the knob in session.toml [knobs] at
+    default 0, so the preflight checks the loaded module has the file and the exit trap puts
+    the knob back should a tool die before its context took it."""
+    kp = scaffold(repos)
+    t = kp / "tables/s0.txt"
+    t.write_text(t.read_text() + FINAL_ROW)
+    g = kit(kp, repos, "guard")
+    assert g.returncode != 0 and "render_final_pb_pages" in g.stdout, g.stdout
+    toml = kp / "session.toml"
+    toml.write_text(toml.read_text().replace(
+        "[knobs]\n", '[knobs]\nrender_final_pb_pages = { default = "0x40", values = ["0x40"] }\n',
+        1))
+    g = kit(kp, repos, "guard")
+    assert g.returncode != 0 and "render_final_pb_pages" in g.stdout, g.stdout
+    kp = scaffold(repos, name="r8-u")
+    t = kp / "tables/s0.txt"
+    t.write_text(t.read_text() + FINAL_ROW)
+    toml = kp / "session.toml"
+    toml.write_text(toml.read_text().replace("[knobs]\n", "[knobs]\n" + FINAL_KNOB, 1))
+    g = kit(kp, repos, "guard")
+    assert g.returncode == 0, g.stdout
+
+
 def same_value(a, b):
     lib = (KIT / "lib_kit.sh").read_text()
     fn = re.search(r"^same_value\(\).*?^}\n", lib, re.M | re.S).group(0)
@@ -815,6 +844,32 @@ def test_the_replay_has_a_kpoke_file_and_counts_every_unexpected_end_as_a_refusa
     assert not bad, (bad, m.stdout)
     m, bad = replay_findings(repos, kp, base, "o2|fit|safe|-|t4|probe --overflow\n")
     assert len(bad) == 1 and "status 3" in bad[0], (bad, m.stdout)
+
+
+FINAL_SRC = """#!/bin/sh
+[ "$1" = --mock ] || { echo "usage: not the library mock" >&2; exit 2; }
+shift
+case "$*" in
+*--final-pb-pages*) [ -f "${SGXFIVE_DEBUGFS:-/nonexistent}/render_final_pb_pages" ] \\
+    && printf 0x40 > "$SGXFIVE_DEBUGFS/render_final_pb_pages" \\
+    || { echo "sgxfive-test: render_final_pb_pages: No such file or directory" >&2; exit 1; } ;;
+esac
+echo "job: ok"; echo "diff: 0 of 2048 pixels"
+"""
+
+
+def test_the_replay_has_the_declared_knob_files_for_a_tool_that_writes_one(repos):
+    """The tool writes debugfs render_final_pb_pages itself (tri --final-pb-pages), which needs
+    the file: the replay's debugfs directory holds every knob session.toml declares, at its
+    default, beside the dumps; a knob's state still comes only from a row's dbg: words."""
+    kp = scaffold(repos)
+    bind_source(repos, kp, src=FINAL_SRC)
+    toml = kp / "session.toml"
+    toml.write_text(toml.read_text().replace("[knobs]\n", "[knobs]\n" + FINAL_KNOB, 1))
+    base = (kp / "tables/s0.txt").read_text()
+    m, bad = replay_findings(repos, kp, base, FINAL_ROW)
+    assert not bad, (bad, m.stdout)
+    assert re.search(r"^ok +libmock: 3 rows of t4 replayed", m.stdout, re.M), m.stdout
 
 
 UNKNOWN_SRC = """#!/bin/sh

@@ -324,7 +324,9 @@ for t10 with `no_source`, is no longer needed). The replay also has a debugfs di
 (`SGXFIVE_DEBUGFS`) holding, empty, the kernel's dumps the tool copies (`render_param`,
 `render_tadata`, `render_kept`, `render_words`, `buf09`), so `tri` and `probe --tri
 --dump-render`, `--kept-copy` and `--words` replay (r18-flag dropped `--dump-render` from two
-rows for want of it); it holds no knob, which only a row's `dbg:` words give.
+rows for want of it), and session.toml's knobs' files at their defaults, so a tool that writes one
+itself (`tri --final-pb-pages`) replays; a knob's state still comes only from a row's `dbg:`
+words.
 A tool needs a `source` or a `no_source = "reason"` (the guard, so the mock and the freeze, fail
 without either; round 8's sessions declared neither and no row was replayed), and `new_session.py`
 demands `--tool-src` or `--no-source NAME=REASON` for every tool. Then it copies the
@@ -343,7 +345,10 @@ interpreter (`bash ...`, `python3 ...`), never by its mode bits: r7-geo's stage 
 644 and staged nothing; the guard refuses a README command that leans on the exec bit.
 
 The guard refuses the options `--kreg`, `--clkgate` and `--trc-hazard` in every row, and `--kpoke`
-except on a `probe` row (probe's kernel poke, no riskier than tri's `--kpoke-render`). The runner
+except on a `probe` row (probe's kernel poke, no riskier than tri's `--kpoke-render`). An option
+whose tool writes a debugfs knob itself (`TOOL_KNOBS` in `kit/session.py`: `--final-pb-pages`,
+`render_final_pb_pages`) needs that knob in session.toml `[knobs]` at default 0, so the preflight
+checks the loaded module has it and the exit trap puts it back. The runner
 reads a knob back by value: a debugfs bool written 0 or 1 reads back N or Y, and 1/Y/y and 0/N/n
 are the same value.
 
