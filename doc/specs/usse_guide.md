@@ -3058,19 +3058,19 @@ Mnemonics: `smp1d`, `smp1dbias`, `smp1dgrad`, `smp1dreplace`, `smp2d`, `smp2dbia
 Modifiers: `.nosched`, `.pcf`, `.pcff16`, `.repeatN`, `.rsd`, `.sinf`, `.skipinv`, `.syncs`.
 
 Simulator (`crates/sgx-sim`, from `doc/isa/sim-coverage.json`): 4 of 4 forms have semantics. The
-probe vectors that test them: 362 match the hardware, 31 stop unsupported, 0 mismatch
+probe vectors that test them: 363 match the hardware, 30 stop unsupported, 0 mismatch
 (`texture-mipmaps-mip-bias` 5/0/0, `texture-mipmaps-mip-grad` 8/0/0, `texture-mipmaps-mip-level`
 13/0/0, `texture-mipmaps-mip-level-hostfill` 5/0/0, `texture-mipmaps-mip-minfilter` 15/0/0,
 `texture-mipmaps-mip-mipfilter` 24/0/0, `texture-mipmaps-mip-t0-field` 12/0/0,
 `texture-sampler-cache-texcache-cold` 2/0/0, `texture-sampler-pcff16` 8/0/0,
-`texture-sampler-smp-address` 40/0/0, `texture-sampler-smp-address-border` 3/1/0,
+`texture-sampler-smp-address` 40/0/0, `texture-sampler-smp-address-border` 4/0/0,
 `texture-sampler-smp-bilinear` 21/0/0, `texture-sampler-smp-convert` 48/0/0,
 `texture-sampler-smp-filter-modes` 6/2/0, `texture-sampler-smp-formats` 57/0/0,
 `texture-sampler-smp-formats-other` 12/28/0, `texture-sampler-smp-lod` 11/0/0,
 `texture-sampler-smp-pcf` 28/0/0, `texture-sampler-smp-point` 13/0/0, `texture-sampler-smp-srd`
 15/0/0, `texture-sampler-smp-twiddled` 16/0/0); unsupported mostly for four texels fix no decoder
-(16); YUV through a colour-space set the vector does not record (8); EN's rule on EN's fills only,
-QN) (4).
+(16); YUV through a colour-space set the vector does not record (8); EN's, EN's and EN's words only)
+(4).
 
 Confirmed on the hardware (a passing vector): #120, #122; not yet confirmed (as decoded; no passing
 vector yet): #121, #123.
@@ -4871,7 +4871,11 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   in modes 4, 6 and 7 and on a u16 texture (texels, not dwords), and with u and v in mode 5 the
   side, above and below reads follow max(W, H) too; the corner base is 24 at 64 x 16 and 16 x 64, no
   frozen form (post hoc 4 log2 max(W, H)); a strided texture reads modes 4 to 7 as mode 0 (E565).
-  Why, the corner base and types 1, 3 and 4 are open (Q177).
+  **Held out (E1039): the corner base is 4 log2 max(W, H)**, corners above left, above right, below
+  left, below right at + 0 to 3, at 8 x 8, 32 x 32, 128 x 32, 32 x 128, 128 x 128 and 256 x 32,
+  every other region of mode 5 by max(W, H) there too. Types 1, 3 and 4 at 16 x 16 in u mode 4
+  read neither their mode 0 image nor it plus 180: a named dword past the texture with each byte
+  halved, the rows alike (post hoc). Why these constants and the types are open (Q177).
 - **Twiddled layout (`texture-sampler-smp-twiddled`).** Texel `(x, y)` lies at the Morton index with
   **`y` in
   bit 0, `x` in bit 1**, and so on; a non-square texture puts the longer side's extra bits
@@ -4950,8 +4954,12 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   (E1016), **the y stage's own result included** (E1025: held out on five strided rows, every 1/64
   weight of each stage alone and both together; the threshold between 5.69e-5 and 6.16e-5, the
   smallest normal half [infer]). A trilinear sample's level lerp is not that stage rule (E1025, one
-  row; post hoc the exact lerp of the levels' halves rounded ties up fits 4091 of 4096 halves); it
-  and bytes 2 and 3 are open (Q282).
+  row). **The level lerp floors both levels' halves to 2^-14 of the larger one's leading bit**
+  (a 15-bit grid), lerps exactly by the LOD's fraction in 64ths, floored, rounds to nearest with
+  ties up and flushes below 2^-14 (E1038: held out on seven rows, two chains, levels 0 to 2).
+  **The second register holds texel bytes 2 and 3**: byte 2 decoded and filtered as bytes 0 and 1
+  (low half), byte 3 decoded linearly, b / 255, and filtered by the stage rule (high half) (E1038:
+  three held-out bilinear rows; E723's point reads post hoc).
 - **ETC1 (format 27; E724).** **Format 27 is ETC1 with the 4 x 4 blocks in Morton order, y in the
   low bit** (6 of 6 held-out fills of random valid blocks exact over 2048 pixels, 8 x 8 to 32 x
   16; raster block order and Morton with x low 0 of 6). Formats 23 to 26 are not decoded.
@@ -5007,7 +5015,7 @@ for a job that records the colour-space set as unloaded.
 **Undecided:** why type 3 pads to 8 texels and the other 16-bit and 8-bit formats on types 1, 3
 and 4 (E958 ran format 5 on type 3), type 5 with other formats, the LOD fraction's residual
 (Q280), the border modes on the u axis, formats 23 to 26 and the YUV conversion in a fill,
-sRGB under bilinear filtering beyond E982's rule (Q282), the cube
+the sRGB second register under a trilinear sample, the cube
 map's edges and (s, t) within a face (Q284), `smp3d`
 beyond the textures it ran on, `.sinf`/`.rsd`, and state from `sa` or `c`.
 
@@ -5262,8 +5270,8 @@ open driver:
    clears the 3D lockup check's arm keeps the tick (the check is E855 to E857) and the allocation
    of a firmware task above TRC 31 are not measured.
 
-The simulator (`crates/sgx-sim`) reproduces 30816 probe vectors (15526 of them with near values:
-float functions within their measured bound) and 467 pixel vectors; it stops on 2189 rather than
+The simulator (`crates/sgx-sim`) reproduces 30817 probe vectors (15526 of them with near values:
+float functions within their measured bound) and 470 pixel vectors; it stops on 2185 rather than
 guess, most often because (vectors, from `doc/isa/sim-coverage.json`):
 
 - firh's fixed bank 1 or 2, whose taps are fitted to these vectors (in-sample, not a hardware check)

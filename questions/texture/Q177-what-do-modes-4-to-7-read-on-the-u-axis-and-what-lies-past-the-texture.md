@@ -1,11 +1,11 @@
 +++
 id = "Q177"
-question = "what is the base of mode 5's corner dwords past the texture (16 at 16 x 16, 20 at 32 x 8, 24 at 64 x 16 and 16 x 64; post hoc 4 log2 max(W, H), E1026), why does a u mode 4 to 7 add 8 max(W, H) + 52 texels and mode 5 its side constants, and do texture types 1, 3 and 4 take these modes"
+question = "what do texture types 1, 3 and 4 read with u address modes 4 to 7 (at 16 x 16 in mode 4 a named dword past the texture with each byte halved, the rows alike, post hoc, E1039), and what lies behind the held-out constants of the twiddled type (8 max(W, H) + 52 inside, 5, 6, 7 and 4 max(W, H) + 52 on the sides, above and below, 4 log2 max(W, H) at the corners)"
 unit = "texture"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E565", "E033", "E932", "E957", "E983", "E1000", "E1017", "E1026"]
+evidence = ["E565", "E033", "E932", "E957", "E983", "E1000", "E1017", "E1026", "E1039"]
 terms = ["T0.ADDRMODE_U", "T0.ADDRMODE_V"]
 +++
 
@@ -81,3 +81,18 @@ row or column) and the inside the index plus 8 M + 52, at 64 x 16 and 16 x 64. T
 base plus 0 to 3; the base is 24 at both shapes, which no frozen form gave ((W + H) / 2, 12 + M / 4,
 12 + W / 4). The strided type reads modes 4 to 7 as mode 0 (E565's bd-st rows, read at the fold).
 What stays: the corner base held out, the constants' reason, types 1, 3 and 4.
+
+Narrowed 2026-11-14 (round 14, session r14-tex, decision R14-1 a; E1039; the question line is
+rewritten to what stays, the question is not retired: the types clause read neither frozen form).
+It read "what is the base of mode 5's corner dwords past the texture (16 at 16 x 16, 20 at 32 x 8,
+24 at 64 x 16 and 16 x 64; post hoc 4 log2 max(W, H), E1026), why does a u mode 4 to 7 add 8
+max(W, H) + 52 texels and mode 5 its side constants, and do texture types 1, 3 and 4 take these
+modes". Answered: the corner base is 4 log2 max(W, H), held out at 8 x 8, 32 x 32, 128 x 32, 32 x
+128, 128 x 128 and 256 x 32 against a cap at 24, a floor at 16 and E1026's three failed forms, the
+other regions of mode 5 by max(W, H) at the same six shapes (sgx-sim models every region past the
+texture on 32-bit twiddled textures). Types 1, 3 and 4 with u mode 4 at 16 x 16 read neither their
+mode 0 image (the strided type's reading) nor it plus 180 (the twiddled type's): every pixel is a
+named dword past the texture (675 to 691 for types 1 and 3, 659 to 675 for type 4) with each byte
+halved, rounded up, the same on every row (post hoc). "Why these constants" no row can decide: it
+is reworded to the held-out formulas [infer] (R14-6 a, the lead confirms). What stays: types 1, 3
+and 4 in u modes 4 to 7 (a held-out row of the halving reading, other sizes, modes 5 to 7).

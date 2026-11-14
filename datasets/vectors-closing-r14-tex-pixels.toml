@@ -1,0 +1,9 @@
+title = "r14-tex: the --pixels words of each job of stages srgb4 and addr5 (Q282's trilinear sRGB and bytes 2 and 3, 13 jobs; Q177's mode 5 regions and texture types, 14 jobs)"
+repo = "data"
+paths = ["vectors/closing/r14-tex/pixels/"]
+method = "tools/usse-asm/closing_tables.py texture on the published render/closing-r14-tex session (its one attempt, out/20261114-054258), one file a stage; rows are measurements; both refused (sgx-sim tex.rs models E1038's level lerp and E1039's mode 5 regions and its unit tests hold kept pixels of them, not every row; the tool's default reason was replaced at the fold by each stage's, the file otherwise as the tool wrote it)"
+date = "2026-11-14"
+files = 2
+size = 37507
+sha256 = "489d24fa4bfe226f803200cc1f4a65fd916a3633a7a98f03f712ae770b1ab06c"
+recipe = "tools/usse-asm/closing_tables.py"

@@ -10,7 +10,7 @@ baseline. The records, questions and manifests themselves hold the detail.
 
 ## Open questions
 
-153 open: 143 hw, 10 parked. Each with its unit, value and the last three records of its evidence
+152 open: 142 hw, 10 parked. Each with its unit, value and the last three records of its evidence
 list.
 
 - `Q076` bif, high: which pages does each bus-interface requestor of a render (the TA, the 3D, the
@@ -250,16 +250,14 @@ list.
   value does, E567, E726), and if one does, how are its slices ... (E941, E942, E958)
 - `Q115` texture, low: does the sampler filter anisotropically on this core, and which bits of the
   texture words or the smp operands select it and its ratio? (E564, E720, E723)
-- `Q177` texture, low: what is the base of mode 5's corner dwords past the texture (16 at 16 x 16,
-  20 at 32 x 8, 24 at 64 x 16 and 16 x 64; post hoc 4 log2 max(W, ... (E1000, E1017, E1026)
+- `Q177` texture, low: what do texture types 1, 3 and 4 read with u address modes 4 to 7 (at 16 x 16
+  in mode 4 a named dword past the texture with each byte ... (E1017, E1026, E1039)
 - `Q179` texture, low: how are the blocks and the data bits of formats 23 to 26 laid out (a data bit
   changes 7 to 13 pixels, the blocks of 23 and 24 do not differ ... (E342, E568, E724)
 - `Q181` texture, low: does the fill's transfer command load a colour-space set at all (xfer:17^=1
   and xfer:18 to 22 made no difference for formats 28 and 29, ... (E037, E040, E568)
 - `Q280` texture, low: what makes up to 56 of 2048 pixels of a gradient job differ from the
   Euclidean footprint of the pairs (op0, op2) and (op1, op3) with a LOD ... (E563, E721, E744)
-- `Q282` texture, low: how does a trilinear sRGB sample (T0 bit 27 with T0 bit 9) lerp the two
-  levels' halves, given that E982's stage rule with the flush below ... (E1004, E1016, E1025)
 - `Q017` usse, low: why does g19 read 0x1a as a store's source but 0 through a mov and as the pixel?
   (E085, E086, E372)
 - `Q048` usse, low: do the MADD0 and MADD1 clock gates follow the USSE pipes' floating-point
@@ -321,12 +319,18 @@ list.
 
 ## Recent records
 
-100 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
+102 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
 - `E1044` dpm, 2026-11-14: r14-dpm stage pr3 on module B60AB0B4 (Q036: 0x0748 sampled alone at 0, 1,
   4 and 7 partial renders, 10 planned jobs): ONE job ran, the PR 0 control pr3-c0-1, and the stage
   stopped by its own rule (rc ...
+- `E1039` texture, 2026-11-14: r14-tex stage addr5 on module B60AB0B4 (Q177; 14 probe fills of
+  twiddled 32-bit textures): both controls passed (E1000's 16 x 64 mode 4 and E565's bd-uv5, their
+  kept images, 2048 of 2048); with u and ...
+- `E1038` texture, 2026-11-14: r14-tex stage srgb4 on module B60AB0B4 (Q282; sRGB, T0 bit 27, 13
+  probe fills): the three controls passed (E723's g-bl-st-a, r13-tex's srgb3-tri and srgb3-x1's
+  channel 0 read through the second ...
 - `E1035` vdm, 2026-11-13: r13-flag stage f3 (19 jobs, 8 recovered hangs, the kit's noreset and
   idle:S): E700's counter held on every clause row at v = 7 and failed below 2: a v = 7 job after a
   completed one hung on a 128 x ...
@@ -627,9 +631,10 @@ the claims are cut at 200 characters.
 
 ## Closing sessions
 
-54 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+55 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r14-tex`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r14-dpm`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r9-z2`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t9
 - `render/closing-r9-x`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
@@ -707,7 +712,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 20 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 21 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at

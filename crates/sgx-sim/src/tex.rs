@@ -96,10 +96,26 @@ pub fn sample(s: &Sample, load: &mut Load) -> Result<Vec<u32>, Fail> {
     if tex.format == 27 || tex.srgb {
         // E723, E724: point samples of level 0, as Texture::new admits them; E982: sRGB bilinear
         // (on E723's fills only; E1004: the rule misses where a stage's result is subnormal)
+        if let [(la, _), (lb, f)] = levels[..]
+            && tex.srgb
+            && bilinear
+            && s.pcf.is_none()
+            && s.srd == Srd::None
+        {
+            // E1038: a trilinear sRGB sample (T0 bits 27 and 9) lerps the two levels' bilinear
+            // halves by srgb_level_lerp at f / 64, f the LOD's fraction in 64ths floored (pick)
+            let (a, b) = (
+                tex.level(la).srgb_bilinear(u, v, s.one_d, load)?,
+                tex.level(lb).srgb_bilinear(u, v, s.one_d, load)?,
+            );
+            return Ok(vec![(0..2).fold(0, |o, c| {
+                o | srgb_level_lerp(a >> (16 * c) & 0xffff, b >> (16 * c) & 0xffff, f) << (16 * c)
+            })]);
+        }
         if levels != [(0, 64)] || s.pcf.is_some() || s.srd != Srd::None || bilinear && tex.format == 27 {
             return open(
-                "ETC1 or sRGB blended (E1025: a trilinear sRGB lerp is not the stage rule), with .pcf or an SRD \
-                 mode, or ETC1 filtered (not run; Q282)",
+                "ETC1 or sRGB blended other than E1038's trilinear, with .pcf or an SRD mode, or ETC1 \
+                 filtered (not run; E1038 measured the trilinear lerp)",
             );
         }
         if bilinear {
@@ -421,6 +437,22 @@ fn half_value(h: u32) -> f64 {
 /// on hardware with the y stage's own result flushed, five strided rows reading each stage alone
 /// and both, the threshold between 5.69e-5 and 6.16e-5, E1025).
 fn srgb_stage(a: u32, b: u32, k: u32) -> u32 {
+    srgb_floored_lerp(a, b, k, 10)
+}
+
+/// The lerp of a trilinear sRGB sample between the two levels' halves (E1038, held out on seven
+/// rows of two chains at seven LODs, every pixel; fitted on E1025's row before the run): as
+/// `srgb_stage` but with both halves floored to 2^-14 of the larger one's leading bit (a 15-bit
+/// grid, the stage rule's is 11), the result below 2^-14 flushed to +0 (the dark chain's row
+/// parts the flush, 224 pixels).
+fn srgb_level_lerp(a: u32, b: u32, k: u32) -> u32 {
+    srgb_floored_lerp(a, b, k, 14)
+}
+
+/// A lerp of halves by k / 64 with both floored to 2^-`bits` of the larger one's leading bit,
+/// exact, rounded to a half nearest with ties up, a result below 2^-14 flushed to +0; at k = 0
+/// the first half unchanged.
+fn srgb_floored_lerp(a: u32, b: u32, k: u32, bits: i32) -> u32 {
     if k == 0 {
         return a;
     }
@@ -429,17 +461,20 @@ fn srgb_stage(a: u32, b: u32, k: u32) -> u32 {
     if top == 0.0 {
         return 0;
     }
-    let g = 2f64.powi((top.to_bits() >> 52 & 0x7ff) as i32 - 1023 - 10);
+    let g = 2f64.powi((top.to_bits() >> 52 & 0x7ff) as i32 - 1023 - bits);
     let (qa, qb) = ((fa / g).floor() * g, (fb / g).floor() * g);
     let h = half_rounded(qa + k as f64 / 64.0 * (qb - qa), |v| (v + 0.5).floor());
     if h < 0x0400 { 0 } else { h }
 }
 
 /// Why the registers a sample writes after those `sample` returns are not known, if they are not:
-/// an sRGB sample (T0 bit 27) writes a second register that E723 read without a model.
+/// an sRGB sample (T0 bit 27) writes a second register, texel bytes 2 and 3 (E1038: byte 2 by the
+/// first register's rule in the low half, byte 3 decoded b / 255 and filtered by `srgb_stage` in
+/// the high one, held out on three bilinear rows; E723's point reads post hoc), not modelled here.
 pub fn unknown_after(state: [u32; 4]) -> Option<&'static str> {
-    (state[0] >> 27 & 1 != 0)
-        .then_some("an sRGB sample's register after the first (E723 read it with no model)")
+    (state[0] >> 27 & 1 != 0).then_some(
+        "an sRGB sample's register after the first (bytes 2 and 3: E723 read it, E1038 measured it; not modelled)",
+    )
 }
 
 /// The texture words of the fills of E723 to E725 (p1141): T0 point filters, repeat, level 0
@@ -451,6 +486,9 @@ const T3_ST: u32 = 0xa080_0000;
 const T0_SRGB_STRIDE8: u32 = 0x0800_0e00;
 /// E723's bilinear fills (g-bl-st-a and -b, 8 x 8): the same with bilinear filters (E982).
 const T0_SRGB_BL_STRIDE8: u32 = 0x0800_1e00;
+/// E1025's and E1038's trilinear chains (16 x 16 and 4 x 4, twiddled): sRGB, the LOD the operand
+/// (26:21 0x3f), max level 14, bilinear both ways, T0 bit 9.
+const T0_SRGB_TRI: u32 = 0x0ffc_1600;
 /// The sizes E724 ran format 27 at and E725 types 1 and 3 at (twiddled block grids, rasters), and
 /// those E910 held the raster of the width out at in the window's 64 columns: 4 x 16 for type 1,
 /// 64 x 8 for both (type 3 at 4 x 16 read rows 8 dwords apart; 128 x 8 ran, but only its first
@@ -489,7 +527,11 @@ fn measured_r4(t0: u32, t1: u32, t3: u32) -> Result<(), Fail> {
                         || (w, h) == (8, 8) && t0 == T0_SRGB_BL_STRIDE8)
                         && t3 == T3_ST
                 }
-                0 => matches!((w, h), (8, 8) | (32, 32)) && t0 == T0_REP | 1 << 27 && t3 == T3_TW,
+                0 => {
+                    (matches!((w, h), (8, 8) | (32, 32)) && t0 == T0_REP | 1 << 27
+                        || matches!((w, h), (16, 16) | (4, 4)) && t0 == T0_SRGB_TRI)
+                        && t3 == T3_TW
+                }
                 _ => false,
             }
     } else if fmt == 27 {
@@ -515,7 +557,7 @@ fn measured_r4(t0: u32, t1: u32, t3: u32) -> Result<(), Fail> {
         return open(format!(
             "T0 0x{t0:08x}, T1 0x{t1:08x}, T3 0x{t3:08x}: sRGB (E723), format 27 (E724) and types 1 and 3 \
              (E725, E910, E940, E958), 4 (E941, E958) and 5 (E942) ran only with the state words and at the sizes of their \
-             held-out jobs (sRGB bilinear: E982's rule on E723's fills only, Q282)"
+             held-out jobs (sRGB: E982's, E1025's and E1038's words only)"
         ));
     }
     Ok(())
@@ -728,12 +770,17 @@ impl Texture {
             vec![(lo + (f >= 32.0) as u32, 64)]
         } else if f == 0.0 {
             vec![(lo, 64)]
-        } else if f.fract() != 0.0 {
+        } else if f.fract() != 0.0 && !self.srgb {
             return open("a blend at a LOD fraction other than 1/64");
+        } else if f.floor() == 0.0 {
+            // E1038 (sRGB, LOD 1.2): the fraction in 64ths floored
+            vec![(lo, 64)]
         } else if !self.colour() {
             return open(format!("a blend of levels of format {}", self.format));
         } else {
-            vec![(lo, 64 - f as u32), (lo + 1, f as u32)]
+            // E1038: an sRGB blend floors the fraction (LOD 1.2 read f = 12, not 13)
+            let f = f.floor() as u32;
+            vec![(lo, 64 - f), (lo + 1, f)]
         };
         if levels.iter().any(|&(l, _)| l > 0) && self.bytes()? != 4 {
             return open("mip levels of a format other than 32 bits");
@@ -914,8 +961,12 @@ impl Texture {
     /// (E1017, post hoc). E1026 held out 8 max(W, H) + 52 texels on seven shapes of both
     /// orientations in modes 4, 6 and 7 and on a 16-bit format: on u, modes 4 and 5 wrap as v's
     /// 4 (repeat), 6 and 7 clamp, and the index moves by that many texels; mode 5 inside the
-    /// texture alike. Mode 5 past the texture (its sides and above and below held out with M by
-    /// E1026, the corner base no frozen form gave) is not modelled: open (Q177).
+    /// texture alike. Mode 5 past the texture, 32-bit texels, M = max(W, H), s and t the texel's
+    /// column and row: left 5 M + 52 + t, right 6 M + 52 + t, with v in mode 5 above 7 M + 52 + s
+    /// and below 4 M + 52 + s, and the corners 4 log2 M plus 0 (above left), 1 (above right), 2
+    /// (below left), 3 (below right) texels past the base (E1026 the sides at two shapes; E1039
+    /// held out every region at 8 x 8, 32 x 32, 128 x 32, 32 x 128, 128 x 128 and 256 x 32, the
+    /// corner base E1026's post hoc 4 log2 M against five rivals).
     fn fetch(&self, x: i64, y: i64, load: &mut Load) -> Result<u32, Fail> {
         let mut umode_extra = 0u32;
         if self.row.is_none() && (4..8).contains(&self.address[0]) {
@@ -923,10 +974,20 @@ impl Texture {
             let past_u = self.address[0] == 5 && !(0..self.w as i64).contains(&ux);
             let past_v = self.address[0] == 5 && self.address[1] == 5 && !(0..self.h as i64).contains(&vy);
             if past_u || past_v {
-                return open(
-                    "address mode 5 on u past the texture (E1000, E1017 post hoc; E1026: the sides by \
-                     max(W, H), the corner base no frozen form; Q177)",
-                );
+                if self.bytes()? != 4 || self.extra != 0 || self.shift != 0 {
+                    return open(
+                        "address mode 5 past the texture at a format other than 32 bits, with T3's \
+                                 bit 14 or scale (not run; Q177)",
+                    );
+                }
+                let m = self.w.max(self.h) as i64;
+                let t = if past_v { vy } else { vy.rem_euclid(self.h as i64) };
+                let i = match (past_u, past_v) {
+                    (true, false) => (if ux < 0 { 5 } else { 6 }) * m + 52 + t,
+                    (false, true) => (if vy < 0 { 7 } else { 4 }) * m + 52 + ux,
+                    _ => 4 * m.trailing_zeros() as i64 + 2 * (vy >= 0) as i64 + (ux >= 0) as i64,
+                };
+                return load(self.base.wrapping_add(4 * i as u32) & !3).map_err(Fail::Load);
             }
             umode_extra = 8 * self.w.max(self.h) + 52;
         }
@@ -948,7 +1009,8 @@ impl Texture {
                     6 | 7 if v || self.row.is_none() => clamp(t),
                     m => {
                         return open(format!(
-                            "address mode {m} on u of a raster type (types 1, 3, 4 and 5 never ran it; Q177)"
+                            "address mode {m} on u of a raster type (E1039: types 1, 3 and 4 at 16 x 16 in mode 4 read a \
+                             dword past the texture halved byte by byte, rows alike, post hoc; Q177)"
                         ));
                     }
                 }
@@ -1143,7 +1205,9 @@ pub fn smp3d_as_2d(state: [u32; 4], pcf_or_srd: bool) -> Result<(), String> {
 /// The sizes of 32-bit twiddled textures, with a side above 16, that p1132 ran (E561 tx-twiddle,
 /// E562 tx-shapes) and r13-tex's 32 x 64 (E1026: three rows, every pixel the tile law's index plus
 /// the u-mode offset): the tiles of 16 x 16 and their raster order are measured there only.
-const TILE_SIZES: [(u32, u32); 15] = [
+const TILE_SIZES: [(u32, u32); 16] = [
+    // E1039: 256 x 32 in mode 5 (the inside the tile law's index plus 8 M + 52, every pixel)
+    (256, 32),
     (32, 64),
     (32, 32),
     (64, 32),
@@ -1255,14 +1319,142 @@ mod tests {
         assert_eq!(y(5, 1.3), Ok(vec![0x101]), "repeat");
         assert_eq!(y(6, 1.3), Ok(vec![0x105]), "clamp: 5 is 3");
         assert_eq!(y(7, -0.3), Ok(vec![0x100]), "clamp: -2 is 0");
-        // mode 5 on u past the texture (5 M + 52 + t left, 6 M right, and a corner base no
-        // frozen form gave, E1026): no model; the refusal names the records and the question
-        let e = format!("{:?}", at(state(0, 12, 4, 4, 1, 5 << 6, 0), 1.3, 0.0).unwrap_err());
-        for id in ["E1000", "E1017", "E1026", "Q177"] {
-            assert!(e.contains(id), "{id}: {e}");
+        // mode 5 on u past the texture at a 16-bit format: no model (Q177)
+        let e = format!("{:?}", at(state(0, 9, 4, 4, 1, 5 << 6, 0), 1.3, 0.0).unwrap_err());
+        assert!(e.contains("Q177"), "{e}");
+    }
+
+    #[test]
+    fn mode_5_past_the_texture_reads_its_regions() {
+        // E1039 (render/closing-r14-tex addr5, out/20261114-054258): u and v in mode 5 on 32-bit
+        // twiddled textures, one kept pixel a region a shape: (W, H, s, t, the texel read past
+        // the base); the corners 4 log2 max(W, H) + 0 to 3, the sides 5 M / 6 M + 52 + t, above
+        // and below 7 M / 4 M + 52 + s, inside the index + 8 M + 52 (fold/sim_points.out)
+        let kept: [(u32, u32, i32, i32, u32); 54] = [
+            (8, 8, 0, -12, 108),
+            (8, 8, 0, 8, 84),
+            (8, 8, 0, 0, 116),
+            (8, 8, -28, -12, 12),
+            (8, 8, -28, 8, 14),
+            (8, 8, -28, 0, 92),
+            (8, 8, 8, -12, 13),
+            (8, 8, 8, 8, 15),
+            (8, 8, 8, 0, 100),
+            (32, 32, 0, -16, 276),
+            (32, 32, 0, 32, 180),
+            (32, 32, 0, 0, 308),
+            (32, 32, -16, -16, 20),
+            (32, 32, -16, 32, 22),
+            (32, 32, -16, 0, 212),
+            (32, 32, 32, -16, 21),
+            (32, 32, 32, 32, 23),
+            (32, 32, 32, 0, 244),
+            (128, 32, 0, -16, 948),
+            (128, 32, 0, 32, 564),
+            (128, 32, 0, 0, 1076),
+            (128, 32, -64, -16, 28),
+            (128, 32, -64, 32, 30),
+            (128, 32, -64, 0, 692),
+            (128, 32, 128, -16, 29),
+            (128, 32, 128, 32, 31),
+            (128, 32, 128, 0, 820),
+            (32, 128, 0, -64, 948),
+            (32, 128, 0, 128, 564),
+            (32, 128, 0, 0, 1076),
+            (32, 128, -16, -64, 28),
+            (32, 128, -16, 128, 30),
+            (32, 128, -16, 0, 692),
+            (32, 128, 32, -64, 29),
+            (32, 128, 32, 128, 31),
+            (32, 128, 32, 0, 820),
+            (128, 128, 0, -64, 948),
+            (128, 128, 0, 128, 564),
+            (128, 128, 0, 0, 1076),
+            (128, 128, -64, -64, 28),
+            (128, 128, -64, 128, 30),
+            (128, 128, -64, 0, 692),
+            (128, 128, 128, -64, 29),
+            (128, 128, 128, 128, 31),
+            (128, 128, 128, 0, 820),
+            (256, 32, 0, -16, 1844),
+            (256, 32, 0, 32, 1076),
+            (256, 32, 0, 0, 2100),
+            (256, 32, -128, -16, 32),
+            (256, 32, -128, 32, 34),
+            (256, 32, -128, 0, 1332),
+            (256, 32, 256, -16, 33),
+            (256, 32, 256, 32, 35),
+            (256, 32, 256, 0, 1588),
+        ];
+        for (w, h, s, t, read) in kept {
+            let (u, v) = ((s as f32 + 0.5) / w as f32, (t as f32 + 0.5) / h as f32);
+            assert_eq!(
+                at(state(0, 12, w, h, 1, 5 << 6 | 5 << 3, 0), u, v),
+                Ok(vec![0x100 + read]),
+                "{w}x{h} ({s}, {t})"
+            );
         }
-        // mode 5 with v in mode 5 and t outside reads past the texture too: no model
-        assert!(at(state(0, 12, 4, 4, 1, 5 << 6 | 5 << 3, 0), 0.3, 1.3).is_err());
+    }
+
+    #[test]
+    fn a_trilinear_srgb_sample_lerps_the_levels_on_a_15_bit_grid() {
+        // E1038 (render/closing-r14-tex srgb4, out/20261114-054258): smp2dreplace on twiddled sRGB
+        // chains with T0 bit 9, u = (x + 0.5) / 64, v = (y + 0.5) / 32; the 16 x 16 chain on the
+        // counting fill (dword i = 0xd0000000 | i) at LOD 1.125 and 1.2 (f 12, floored), the
+        // 4 x 4 dark chain (gen/srgb4.py dark_inject) at LOD 0.125; kept pixels, among them
+        // where the 16-bit grid (TRI-RNTU) and the unflushed lerp part (fold/sim_points.out)
+        const DARK: [u32; 21] = [
+            0x0202, 0x0002, 0x0203, 0x0200, 0x0002, 0x0303, 0x0000, 0x0100, 0x0102, 0x0001, 0x0101, 0x0000,
+            0x0001, 0x0100, 0x0300, 0x0100, 0x0098, 0x0074, 0x0175, 0x01bb, 0x0265,
+        ];
+        let kept = [
+            ("srgb4-t1125", 0, 0, 0x0cf9259f),
+            ("srgb4-t1125", 6, 1, 0x0cf92010),
+            ("srgb4-t1125", 13, 5, 0x0cf91fd4),
+            ("srgb4-t1125", 40, 15, 0x0cf92789),
+            ("srgb4-t1125", 28, 23, 0x0cf924fe),
+            ("srgb4-t1125", 63, 31, 0x0cf92790),
+            ("srgb4-t12", 0, 0, 0x0cf92660),
+            ("srgb4-t12", 6, 1, 0x0cf921ce),
+            ("srgb4-t12", 13, 5, 0x0cf92190),
+            ("srgb4-t12", 40, 15, 0x0cf92822),
+            ("srgb4-t12", 28, 23, 0x0cf925d4),
+            ("srgb4-t12", 63, 31, 0x0cf9281c),
+            ("srgb4-tdark", 0, 0, 0x0ff928a4),
+            ("srgb4-tdark", 6, 1, 0x10db286d),
+            ("srgb4-tdark", 13, 5, 0x0fa128aa),
+            ("srgb4-tdark", 40, 15, 0x000028f9),
+            ("srgb4-tdark", 28, 23, 0x084b28ca),
+            ("srgb4-tdark", 63, 31, 0x0fdb28c5),
+            ("srgb4-t1125", 12, 1, 0x0cf92047),  // parts TRI-RNTU
+            ("srgb4-t1125", 16, 3, 0x0cf92034),  // parts TRI-RNTU
+            ("srgb4-tdark", 2, 0, 0x105c2892),   // parts TRI-RNTU
+            ("srgb4-tdark", 5, 0, 0x10ea2876),   // parts TRI-RNTU
+            ("srgb4-tdark", 39, 10, 0x000027e9), // parts TRI-G15-NF
+            ("srgb4-tdark", 40, 10, 0x000027d9), // parts TRI-G15-NF
+        ];
+        for (row, x, y, want) in kept {
+            let (w, lod) = match row {
+                "srgb4-t1125" => (16, 1.125f32),
+                "srgb4-t12" => (16, f32::from_bits(0x3f99_999a)),
+                _ => (4, 0.125),
+            };
+            let mut mem = |a: u32| -> Result<u32, crate::Error> {
+                let i = (a - 0x1000) / 4;
+                Ok(if w == 4 { 0xa55a_0000 | DARK[i as usize] } else { 0xd000_0000 | i })
+            };
+            let st = [T0_SRGB_TRI, (w - 1) << 12 | (w - 1) | 12 << 24, 0x1000, T3_TW];
+            let s = Sample {
+                state: st,
+                u: (x as f32 + 0.5) / 64.0,
+                v: (y as f32 + 0.5) / 32.0,
+                one_d: false,
+                srd: Srd::None,
+                pcf: None,
+                lod: Lod::Value(lod),
+            };
+            assert_eq!(sample(&s, &mut mem), Ok(vec![want]), "{row} ({x}, {y})");
+        }
     }
 
     #[test]
@@ -2048,11 +2240,11 @@ mod tests {
         for fmt in 23..=27 {
             assert!(other(fmt).iter().all(|r| r.is_err()), "format {fmt}");
         }
-        // texture-sampler-smp-address-border: past the texture mode 5 reads no model (E1026);
-        // modes 4, 6 and 7 are the offset rule (u_modes_4_to_7_add_8_max_w_h_plus_52_texels)
+        // texture-sampler-smp-address-border: past the texture mode 5 reads E1039's regions on
+        // 32-bit texels only (mode_5_past_the_texture_reads_its_regions); a 16-bit one has no model
         {
             let mode = 5;
-            let st = [0x001e_0000 | mode << 6, 12 << 24 | 15 << 12 | 15, 0x1000, 0xa080_0000];
+            let st = [0x001e_0000 | mode << 6, 9 << 24 | 15 << 12 | 15, 0x1000, 0xa080_0000];
             let s = Sample {
                 state: st,
                 u: 1.09375,
@@ -2265,13 +2457,13 @@ mod tests {
         ] {
             assert!(is_open(texel(st, 8, 8, 1, 1, &mem)), "{st:08x?}");
         }
-        // bilinear sRGB past E723's fills names Q282 (a held-out row missed E982's rule)
+        // bilinear sRGB past the measured words names the records that measured it (E1038)
         for st in [
             [T0_REP | 1 << 27 | 1 << 12, t1(0, 12, 8, 8), 0x1000, T3_TW],
             [T0_SRGB_BL_STRIDE8, t1(6, 12, 8, 4), 0x1000, T3_ST],
         ] {
             let e = texel(st, 8, 8, 1, 1, &mem).unwrap_err();
-            assert!(format!("{e:?}").contains("Q282"), "{e:?}");
+            assert!(format!("{e:?}").contains("E1038"), "{e:?}");
         }
         // the registers after the first are not known (E723's r11 reads: no model)
         assert!(unknown_after(tw8).is_some());
