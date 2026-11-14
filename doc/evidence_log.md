@@ -8941,6 +8941,23 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   failed 7 of 8 (it held only at s 0.25, where no vertex is below 0); the control passed.
   *mte; HW; data: `render-closing-r16-zls:out/20261114-092344/zoff/`,
   `render-closing-r16-zls:fold/`.*
+- `E1067` r17-tw stage tw17 (14 probe fills on t14 with a 1 MiB scratch, E1047's tx_map form; safe
+  class, no fault, no stop): T3 bit 14 on a twiddled 32-bit texture samples a texture W' = W + 4096
+  texels wide at frac(u) (H-WIDE, fitted post hoc on E1049's and E1058's kept bilinear rows, held
+  out here): under a bilinear sample columns floor(x) and floor(x) + 1 mod W', x = W' frac(u) - 1/2,
+  rows y0 and y0 + 1 mod H, on every pixel of seven held-out fills at 16, 64, 128, 256 and 512 by 32
+  and 2048 by 16, across the left wrap, the right wrap and the v edge, on and off the 1/4096 grid
+  ('H-WIDE: bit 14 bilinear: the sample over W + 4096 texels at frac u, columns mod W' (7 of 7 rows
+  decided)'); column -1 reads W' - 1, not W - 1, by the pre-declared exact-byte rule ('LEFT-WRAP:
+  189 parting pixels, H-WIDE exact 188, H-WIDE-G exact 1: column -1 reads W' - 1 (H-WIDE)'); column
+  W' reads 0, not the next tile row ('H-WIDE-NEXT ... 3 held, 4 FAILED', failing every row where it
+  parts); a point sample reads column floor(W' frac(u)) off the 1/4096 grid at 128 by 32, 256 by 16
+  and 512 by 16 ('H-WIDE-PT ... (3 of 3 rows decided)'; E1049's s + floor(4096 frac(u)) 'H-TWP ... 0
+  held, 3 FAILED'); E1058's post hoc reading, E1049's form and the dropped filter fail ('UNWRAP-G
+  ... 2 held, 5 FAILED', 'F-FRAC ... 1 held, 6 FAILED', 'H-POINT ... 0 held, 7 FAILED'); all four
+  controls (E1058's bl64left rerun, the bit-clear 256 x 32, 512 x 16 and 2048 x 16) passed.
+  *texture; HW, infer; data: `render-closing-r17-tw:out/20261114-104432/tw17/`,
+  `render-closing-r17-tw:fold/`, `render-closing-r17-tw:fit/`, `vectors-closing-r17-tw-pixels`.*
 - `E1068` r17-zls rows zo2- (Q299, 8 jobs in stages zovp2 and zovs2, t10): the depth load pass over
   overlapping tiles with edge tiles (65 x 33 G 1 and 63 x 31 G 0, E996's plane over a 0.2 load)
   loads each tile's slot, passes each tile on its own over the whole 32 x 16 tile and leaves in a
@@ -9050,7 +9067,8 @@ E273, E274, E275, E276, E277, E341, E342, E397, E399, E425, E426, E432, E441, E5
 E563, E564, E565, E566, E567, E568, E569, E720, E721, E722, E723, E724, E725, E726, E733, E743,
 E744, E760, E765, E787, E844, E894, E910, E911, E923, E930, E931, E932, E940, E941, E942, E951,
 E955, E956, E957, E958, E968, E974, E975, E976, E982, E983, E1000, E1001, E1002, E1003, E1004,
-E1016, E1017, E1025, E1026, E1027, E1033, E1038, E1039, E1047, E1049, E1052, E1055, E1058, E1065.
+E1016, E1017, E1025, E1026, E1027, E1033, E1038, E1039, E1047, E1049, E1052, E1055, E1058, E1065,
+E1067.
 
 ### transfer
 

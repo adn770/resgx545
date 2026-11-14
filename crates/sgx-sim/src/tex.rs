@@ -73,17 +73,25 @@ pub fn sample(s: &Sample, load: &mut Load) -> Result<Vec<u32>, Fail> {
         // T3 bit 14 on a twiddled texture (E1047: E566's 32 x 32 32-bit texture, three fills
         // with a 1 MiB scratch, E566's and E1033's faults the reads past 64 KiB; E1049: held out
         // at W 16, 64 and 128 with H 32, u in (0, 1), (1, 2) and (2, 3), and a u16 32 x 32):
-        // column s + floor(4096 frac(u)), s the wrapped bit-clear column, in E561's 16 x 16
-        // tiles with a tile row of W + 4096 texels (a constant 4128 failed 6 of 6), in texels on
-        // u16 (the half T & 1 of dword T >> 1). E1058: held out at H 8 (32 and 128 wide), 16 (32,
-        // 128) and 64 (16, 64; tile rows 2 and 3): row t = floor(H v) mod H, E561's tiles of 16 x
-        // min(H, 16) texels (16 x 8 at H 8; 16 x 16 there failed), the tile row W + 4096 texels.
-        // Other sizes, filtered samples (E1049's post hoc footprint failed 3 of 6 held-out rows
-        // in E1058), other modes and formats stay open (Q078)
-        if !(matches!(tex.w, 16 | 32 | 64 | 128) && tex.h == 32 || T3B14_SIZES.contains(&(tex.w, tex.h)))
+        // E561's 16 x 16 tiles with a tile row of W + 4096 texels (a constant 4128 failed 6 of
+        // 6), in texels on u16 (the half T & 1 of dword T >> 1). E1058: held out at H 8 (32 and
+        // 128 wide), 16 (32, 128) and 64 (16, 64; tile rows 2 and 3): row t = floor(H v) mod H,
+        // E561's tiles of 16 x min(H, 16) texels (16 x 8 at H 8; 16 x 16 there failed).
+        // E1067 (fitted post hoc on E1049's and E1058's kept rows, held out on its own): the
+        // sample is taken over a texture W' = W + 4096 texels wide at frac(u). A point read is
+        // column floor(W' frac(u)) (on the 1/4096 grid E1049's s + floor(4096 frac(u)); off it
+        // that failed 3 of 3, at 128 x 32, 256 x 16 and 512 x 16); a bilinear one takes columns
+        // floor(x) and + 1 mod W', x = W' frac(u) - 1/2 (column -1 reads W' - 1, column W'
+        // reads 0), rows mod H, E720's two-stage filter with the 1/64 weights: every pixel of
+        // E1049's 2, E1058's 6 and E1067's 8 bilinear rows exactly. Other sizes, bilinear u16,
+        // other modes and formats are not run
+        let pt_ran =
+            matches!(tex.w, 16 | 32 | 64 | 128) && tex.h == 32 || T3B14_SIZES.contains(&(tex.w, tex.h));
+        let ran =
+            if bilinear { tex.format == 12 && T3B14_BILINEAR.contains(&(tex.w, tex.h)) } else { pt_ran };
+        if !ran
             || !matches!(tex.format, 9 | 12)
             || tex.format == 9 && (tex.w, tex.h) != (32, 32)
-            || bilinear
             || levels != [(0, 64)]
             || s.pcf.is_some()
             || s.srd != Srd::None
@@ -94,17 +102,36 @@ pub fn sample(s: &Sample, load: &mut Load) -> Result<Vec<u32>, Fail> {
             || tex.address != [0, 0]
         {
             return open(
-                "T3 bit 14 on a twiddled texture other than E1047's, E1049's and E1058's: W 16 to 128 \
-                 by 32 (format 12 or 9), 32 and 128 by 8 and 16, 16 and 64 by 64 (format 12), point \
-                 sampled, repeat, unconverted (Q078)",
+                "T3 bit 14 on a twiddled texture other than E1047's, E1049's, E1058's and E1067's: point \
+                 at W 16 to 128 by 32 (format 12 or 9), 32 and 128 by 8 and 16, 16 and 64 by 64, 256 and \
+                 512 by 16, bilinear at E1067's T3B14_BILINEAR sizes (format 12), repeat, unconverted",
             );
         }
-        let w = tex.w;
-        let col = ((u * w as f64).floor() as i64).rem_euclid(w as i64) as u32
-            + (4096.0 * (u - u.floor())).floor() as u32;
-        let row = tex.row_of(v, false).rem_euclid(tex.h as i64) as u32;
+        let (h, wide) = (tex.h, tex.w + 4096);
+        let fr = u - u.floor();
+        if bilinear {
+            let (x, y) = (wide as f64 * fr - 0.5, v * h as f64 - 0.5);
+            let (x0, y0) = (x.floor(), y.floor());
+            let (fx, fy) = (((x - x0) * 64.0).floor() as u32, ((y - y0) * 64.0).floor() as u32);
+            let cols = [x0 as i64, x0 as i64 + 1].map(|c| c.rem_euclid(wide as i64) as u32);
+            let rows = [y0 as i64, y0 as i64 + 1].map(|r| r.rem_euclid(h as i64) as u32);
+            let mut t = [0u32; 4];
+            for (k, (dx, dy)) in [(0, 0), (1, 0), (0, 1), (1, 1)].into_iter().enumerate() {
+                let a = tex.base.wrapping_add(morton(cols[dx], rows[dy], wide, h) * 4);
+                t[k] = load(a).map_err(Fail::Load)?;
+            }
+            // E720's stages, x on both rows then y, each (a (64 - f) + b f + 32) >> 6
+            let stage = |a: u32, b: u32, f: u32| (a * (64 - f) + b * f + 32) >> 6;
+            let out = (0..4).fold(0, |o, c| {
+                let at = |k: usize| t[k] >> (8 * c) & 0xff;
+                o | stage(stage(at(0), at(1), fx), stage(at(2), at(3), fx), fy) << (8 * c)
+            });
+            return Ok(vec![out]);
+        }
+        let col = (wide as f64 * fr).floor() as u32;
+        let row = tex.row_of(v, false).rem_euclid(h as i64) as u32;
         let bytes = if tex.format == 9 { 2 } else { 4 };
-        let a = tex.base.wrapping_add(morton(col, row, w + 4096, tex.h) * bytes);
+        let a = tex.base.wrapping_add(morton(col, row, wide, h) * bytes);
         let dw = load(a & !3).map_err(Fail::Load)?;
         return Ok(vec![if bytes == 4 { dw } else { dw >> (8 * (a & 3)) & 0xffff }]);
     }
@@ -719,8 +746,10 @@ impl Texture {
         // E1049 (tw-refu16): a u16 32 x 32 read E561's tiles in texels, every pixel
         let u16_ran = tex.format == 9 && (w, h) == (32, 32);
         let u16_chain = tex.format == 9 && CHAIN16_SIZES.contains(&(w, h));
-        // E1058 (pt128h8): a 128 x 8 ran under T3 bit 14 only (sample's bit-14 read)
-        let b14_ran = t3 >> 14 & 1 != 0 && tex.format == 12 && T3B14_SIZES.contains(&(w, h));
+        // E1058 (pt128h8), E1067 (2048 x 16): sizes that ran under T3 bit 14 only (sample's read)
+        let b14_ran = t3 >> 14 & 1 != 0
+            && tex.format == 12
+            && (T3B14_SIZES.contains(&(w, h)) || T3B14_BILINEAR.contains(&(w, h)));
         if tex.row.is_none()
             && (w > 16 || h > 16)
             && !(tile_law_ran(w, h) && (tex.bytes()? == 4 || u16_ran))
@@ -1303,9 +1332,12 @@ pub fn smp3d_as_2d(state: [u32; 4], pcf_or_srd: bool) -> Result<(), String> {
 /// The sizes of 32-bit twiddled textures, with a side above 16, that p1132 ran (E561 tx-twiddle,
 /// E562 tx-shapes) and r13-tex's 32 x 64 (E1026: three rows, every pixel the tile law's index plus
 /// the u-mode offset): the tiles of 16 x 16 and their raster order are measured there only.
-const TILE_SIZES: [(u32, u32); 20] = [
+const TILE_SIZES: [(u32, u32); 22] = [
     // E1058: 32 x 8 (ref32h8, E561's 16 x 8 tiles, every pixel)
     (32, 8),
+    // E1067: 512 x 16 and 2048 x 16 (ref512h16, ref2048h16, across the u edge, every pixel)
+    (512, 16),
+    (2048, 16),
     // E1039: 256 x 32 in mode 5 (the inside the tile law's index plus 8 M + 52, every pixel)
     (256, 32),
     // E1052: a side of 1 at level 0 (1 x 32, 32 x 1 and, read 1D, 64 x 1), every texel its index
@@ -1329,9 +1361,15 @@ const TILE_SIZES: [(u32, u32); 20] = [
     (8, 64),
 ];
 
-/// E1058 (r16-tw tw16): the sizes besides W x 32 at which T3 bit 14 on a twiddled 32-bit texture
-/// read E1049's wide layout with E561's tile height, every pixel of each held-out row.
-const T3B14_SIZES: [(u32, u32); 6] = [(32, 8), (128, 8), (32, 16), (128, 16), (16, 64), (64, 64)];
+/// E1058 (r16-tw tw16) and E1067 (r17-tw tw17): the sizes besides W x 32 at which T3 bit 14 on a
+/// twiddled 32-bit texture point sampled read the wide layout with E561's tile height, every pixel
+/// of each held-out row.
+const T3B14_SIZES: [(u32, u32); 8] =
+    [(32, 8), (128, 8), (32, 16), (128, 16), (16, 64), (64, 64), (256, 16), (512, 16)];
+/// E1049 (tw-bl32, tw-bl16), E1058 (tw16's six bilinear rows) and E1067 (tw17's eight): the sizes
+/// at which T3 bit 14 on a twiddled 32-bit texture sampled bilinearly read H-WIDE's footprint.
+const T3B14_BILINEAR: [(u32, u32); 9] =
+    [(16, 32), (32, 32), (64, 32), (128, 32), (256, 32), (512, 32), (16, 16), (128, 16), (2048, 16)];
 
 /// The non-square sizes whose mip chain p1132 ran (E562 tx-shapes, tx-fields) and r15-tex held out
 /// (E1052: a side of 1, 64 x 1 read 1D, 64 x 32 and 256 x 32; u16 also at 16 x 64, CHAIN16_SIZES).
@@ -2473,7 +2511,7 @@ mod tests {
         assert!(at(state(0, 12, 32, 64, 1, 0, 1 << 14), 0.0, 0.0).is_err(), "32 x 64");
         assert!(at(state(0, 12, 256, 32, 1, 0, 1 << 14), 0.0, 0.0).is_err(), "256 x 32");
         assert!(at(state(0, 12, 8, 32, 1, 0, 1 << 14), 0.0, 0.0).is_err(), "8 x 32");
-        assert!(at(state(0, 12, 32, 32, 1, 1 << 12, 1 << 14), 0.0, 0.0).is_err(), "bilinear");
+        assert!(at(state(0, 12, 32, 64, 1, 1 << 12, 1 << 14), 0.0, 0.0).is_err(), "bilinear 32 x 64");
         assert!(at(state(0, 12, 32, 32, 1, 2 << 6, 1 << 14), 0.0, 0.0).is_err(), "u clamped");
         assert!(at(state(0, 5, 32, 32, 1, 0, 1 << 14), 0.0, 0.0).is_err(), "format 5");
     }
@@ -2502,6 +2540,42 @@ mod tests {
         assert!(tw(128, 64, 0.0, 0.0).is_err(), "128 x 64");
         assert!(at(state(0, 12, 128, 8, 1, 0, 0), 0.0, 0.0).is_err(), "128 x 8 bit clear");
         assert!(at(state(0, 12, 32, 16, 1, 1 << 12, 1 << 14), 0.0, 0.0).is_err(), "bilinear");
+    }
+
+    #[test]
+    fn t3_bit_14_samples_a_texture_w_plus_4096_texels_wide_at_frac_u() {
+        // E1067 (r17-tw tw17, held out; fitted post hoc on E1049's and E1058's kept rows): the
+        // sample is taken over a texture W' = W + 4096 texels wide at frac(u). Point: column
+        // floor(W' frac(u)) (H-WIDE-PT 3 of 3 off the 1/4096 grid, where E1049's s + floor(4096
+        // frac(u)) fails; on it the two are one). Bilinear: x = W' frac(u) - 1/2, columns
+        // floor(x) and + 1 mod W' (column -1 reads W' - 1, column W' reads 0), rows mod H, E720's
+        // two-stage filter with the 1/64 weights (H-WIDE 7 of 7; the LEFT-WRAP rule 188 of 189)
+        let pt = |w: u32, h: u32, u: f32, v: f32| at(state(0, 12, w, h, 1, 0, 1 << 14), u, v);
+        // the programs' words: T0 0x07FE1400 (bilinear, E1027), T3 0x00800800 | bit 14
+        let bl = |w: u32, h: u32, u: f32, v: f32| at(state(0, 12, w, h, 1, 0x07fe_1400, 0x0080_4800), u, v);
+        // off the grid: column floor(W' frac u), not s + m (pt128off x 32, y 5; pt256off x 6,
+        // y 5; pt512off x 4, y 5: 275, 38 and 14 against 273, 36 and 12)
+        assert_eq!(pt(128, 32, 8225.0 / 8192.0, 11.0 / 64.0), Ok(vec![0x100 + 275]));
+        assert_eq!(pt(256, 16, 32787.0 / 16384.0, 11.0 / 64.0), Ok(vec![0x100 + 38]));
+        assert_eq!(pt(512, 16, 23.0 / 32768.0, 11.0 / 64.0), Ok(vec![0x100 + 14]));
+        // the left wrap (bl16left x 0, y 0): u = 1, columns 4111 and 0, kx 32, rows 0 and 1, ky 16
+        assert_eq!(bl(16, 32, 1.0, 3.0 / 128.0), Ok(vec![0x10155]));
+        // the right wrap (bl2048edge x 30, y 3): columns 6143 and 0, kx 26, ky 32
+        assert_eq!(bl(2048, 16, 131071.0 / 65536.0, 0.125), Ok(vec![0x14c68]));
+        // both the right and the v edge (bl256corner x 15, y 20): columns 4351 and 0, rows 31, 0
+        assert_eq!(bl(256, 32, 49151.0 / 16384.0, 509.0 / 512.0), Ok(vec![0x217bc]));
+        // inside, off the grid (bl128off3 x 33, y 7) and near the right wrap (bl512edge x 20, y 9)
+        assert_eq!(bl(128, 32, 8195.0 / 8192.0, 31.0 / 128.0), Ok(vec![0x122]));
+        assert_eq!(bl(512, 32, 8191.0 / 8192.0, 39.0 / 128.0), Ok(vec![0x120ec]));
+        // E1049's and E1058's bilinear sizes too (32 x 32, 16 x 16, 128 x 16)
+        assert!(
+            bl(32, 32, 0.5, 0.5).is_ok() && bl(16, 16, 0.5, 0.5).is_ok() && bl(128, 16, 0.5, 0.5).is_ok()
+        );
+        // not run: bilinear at other sizes, on u16, point at the bilinear-only sizes
+        assert!(bl(32, 16, 0.5, 0.5).is_err(), "bilinear 32 x 16");
+        assert!(bl(1024, 16, 0.5, 0.5).is_err(), "bilinear 1024 x 16");
+        assert!(at(state(0, 9, 32, 32, 1, 0x07fe_1400, 0x0080_4800), 0.5, 0.5).is_err(), "bilinear u16");
+        assert!(pt(2048, 16, 0.5, 0.5).is_err(), "point 2048 x 16");
     }
 
     #[test]
