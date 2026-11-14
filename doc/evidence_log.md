@@ -9097,6 +9097,21 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   cannot tell: no row decided'.
   *dpm; HW, infer; data: `render-closing-r19-own:out/20261114-223625/own1/`,
   `render-closing-r19-own:fold/`.*
+- `E1087` r19-own1b stage own1 (8 jobs, t18b, render_keep armed, the first context closed early;
+  t18b copied the kept TA data right after the close and after the second context's render, every
+  copy made): the 64x64 owner's words 0x00200047, 0x04000417, 0x00020001 and 2 (control, OTPM and
+  state pages, pages 1 to 3) were in no copy made right after the close and in every copy after the
+  second render, flag 0xc, 5 of 5 rows (4 at P 0x422, 1 at 0x200), and in neither copy with flag 0x4
+  (the control), so they are stored by the second context's run between the close and its render's
+  end, not at the close; frozen 'own1a: H-RENDER ... (5 of 5 rows decided)'; for a 1024x768 owner at
+  P 0x422 (no partial render) the state page after the second render begins 0x00010002, 2, not the
+  owner's page count (H-COUNT 'is not supported: 0 held, 2 FAILED'), nor 0x00020001, 2 (H-CONST) nor
+  0 (H-NONE): post hoc it holds 11 macrotile list pairs (count << 16 | head, tail) whose counts sum
+  to 18, U - 1 for the scene's 19 pages, with 11 words 0x002000xx to 0x002002xx in the control page
+  and 0x04000417 at the OTPM page's dword 16, all three pages zero right after the close (2 of 2,
+  identical).
+  *dpm; HW, infer; data: `render-closing-r19-own1b:out/20261114-230658/own1/`,
+  `render-closing-r19-own1b:fold/`.*
 
 ## By unit
 
@@ -9113,7 +9128,7 @@ E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753, E773, E774, E7
 E786, E790, E799, E800, E801, E802, E803, E832, E845, E846, E852, E853, E854, E860, E861, E862,
 E863, E864, E866, E867, E868, E869, E870, E873, E874, E875, E881, E882, E883, E887, E889, E899,
 E900, E915, E916, E917, E918, E935, E936, E937, E938, E939, E960, E961, E962, E963, E1009, E1013,
-E1019, E1032, E1044, E1057, E1077, E1078, E1084, E1085.
+E1019, E1032, E1044, E1057, E1077, E1078, E1084, E1085, E1087.
 
 ### edm
 

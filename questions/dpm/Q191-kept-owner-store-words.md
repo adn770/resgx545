@@ -5,7 +5,7 @@ unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E310", "E458", "E462", "E591", "E631", "E1084", "E1085"]
+evidence = ["E310", "E458", "E462", "E591", "E631", "E1084", "E1085", "E1087"]
 terms = ["CR_DPM_TASK_STATE", "CR_DPM_STATE_BASE0", "CR_DPM_CONTROL_BASE", "ta3d_ctl"]
 +++
 
@@ -46,3 +46,13 @@ partial owner with flag 0x4 are in its control page (page 4 of a 1024x768 contex
 correction), and E1084 saw them again after the second render (o2-4), and at P 0x30 four other
 0x002002xx words there with flag 0xc. Still open: (a) close against render, (b) the 1024x768
 owner's state words against a constant, (c) a load reading them back.
+
+Narrowed in round 19 (E1087, r19-own1b). (a) decided: the words are in none of the 64x64 owner's
+copies made right after its close and in every copy after the second context's render (5 of 5,
+flag 0xc; none with 0x4), so the second context's run stores them by its render's end, not the
+close; which of its kicks (TA or render end) is still not separated. (b) H-COUNT failed (0 of 2):
+for a 1024x768 owner without partial renders the state page after the second render holds eleven
+macrotile lists (count << 16 | head, tail) summing to U - 1, with one control-page word 0x0020xxxx
+per listed macrotile at the same index and 0x04000417 at OTPM dword 16, so the "state words" are
+lists in E627's format [infer], not a count of the owner's pages. Open: the kick, whose scene the
+lists describe (both contexts draw the same one), and (c) a load reading them back.
