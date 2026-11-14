@@ -119,7 +119,7 @@ of sections 1 and 2 are those of the 12.0 scan and were not redone.*
   the band x + 0.5 < 1.25 W and y + 0.5 < 1.25 H, cut at the tile area, the background 1.0 past
   it (E730, E831), and the stencil's byte a pixel and its test (E988). Refused: formats 3, 5 and
   6 (Q120), the overflow store (E628, E629: the loaded buffer and the sign bit after a raised
-  abort; E1020: not E996's overlay; Q107, `final_store`) and an integer format at an edge (Q242);
+  abort; E1020: not E996's overlay; Q107, `final_store`) and an integer format at an edge (E1041 since);
   the band at odd sizes follows rule A
   (E885, E903).
 - **ta**: the region test, the object layout and its failures are built, and since 12.2 the

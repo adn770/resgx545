@@ -774,7 +774,7 @@ mod tests {
         got.seen.refused.insert("Q107".into(), 3);
         assert!(matches!(judge(&e, &got), Verdict::Mismatch(_)));
         let mut other = m(Outcome::Ok, 8, 0);
-        other.seen.refused.insert("Q242".into(), 2);
+        other.seen.refused.insert("Q298".into(), 2);
         assert!(matches!(judge(&e, &other), Verdict::Mismatch(_)));
     }
 

@@ -72,7 +72,7 @@ def format_vectors(data):
         init["depth_y"] = {"ramp": 768} if case == "f0" else ref("y")
         v = {"id": "zls-format__" + case, "init": init,
              "provenance": {"case": case, "records": ["E466", "E490"], "rebuilt": False,
-                            "table": "zls/store-format-dumps", "questions": ["Q069", "Q120", "Q242"],
+                            "table": "zls/store-format-dumps", "questions": ["Q069", "Q120", "Q298"],
                             "depth_input": "geometry within 1e-5 (E490)" if case == "f0"
                             else "the float the format-0 run stored at the pixel (E490)"}}
         if fmt in (3, 5, 6):
@@ -220,11 +220,11 @@ def flip_expect(bit, run):
     the rest carries the readings of the changed field, whether the image was written (all 4096
     pixels right, or all wrong with bit 0) and the pages the run stored."""
     if not run["ok"]:
-        return {"refuse": ["Q242"]}
+        return {"refuse": ["Q298"]}
     if bit in (25, 26):
         # the run stored pages the model does not decode; naming them makes the vector compare the
         # store, so a model that stopped refusing is caught (a mismatch of pages), not matched empty
-        return {"refuse": ["Q242" if bit == 25 else "Q120"],
+        return {"refuse": ["Q298" if bit == 25 else "Q120"],
                 "pages": {str(p): n for p, n in sorted(run["pages"].items())}}
     f = flip_fields(bit)
     e = {k: v for k, v in f.items() if k not in ("g", "fmt")}
