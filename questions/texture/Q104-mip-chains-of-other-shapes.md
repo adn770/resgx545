@@ -5,7 +5,7 @@ unit = "texture"
 kind = "hw"
 value = "low"
 phase = 11
-evidence = ["E276", "E441", "E562"]
+evidence = ["E276", "E441", "E562", "E1052"]
 terms = ["T0.MAX_LEVEL", "T0.BITS26_21", "T0.MIPFILTER"]
 +++
 
@@ -28,3 +28,14 @@ side above 16 (E562 measures short sides of 4 to 16, 32 only in the control).
 To settle it: the generator of E562's shapes (the scratch buffer as the texture, each texel naming
 its dword) at those sizes and formats, with T0 bits 20:17, bits 26:21 and MIPFILTER as E441 varies
 them.
+
+Note 2026-11-14 (round 15, session r15-tex, decision R15-1 a; E1052). Every open clause is decided
+by held-out rows with passing controls (E562's shp-32x16-l5 and shp-128x16-l7-x0 rerun): the chain
+halves both sides down to 1 x 1, levels back to back, on a side of 1 at level 0 (1 x 32, 32 x 1), on
+a 1D texture (smp1dreplace on 64 x 1) and on 64 x 32 and 256 x 32, 11 of 11 rows (the chain stopping
+at the short side's 1 and the square-padded chain 0 of 11 and 0 of 9); T0's maximum (3 on 64 x 1)
+and bias (0x33 on 32 x 1) read these chains by E441's rule; on u16 (32 x 16, 16 x 64) the levels are
+packed back to back in 16-bit texels (4 of 4; in dwords of a 32-bit chain 0 of 4), and MIPFILTER
+blends two 16-bit levels as one 16-bit lerp (a (64 - f) + b f + 32) >> 6, not per byte (one row, f
+32). "1D" reads smp1dreplace on a W x 1 texture [infer] (R15-6 a). sgx-sim reads these chains.
+Retirement proposed per R15-6 a (the lead confirms).

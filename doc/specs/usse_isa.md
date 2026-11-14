@@ -9087,7 +9087,11 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   left, below right at + 0 to 3, at 8 x 8, 32 x 32, 128 x 32, 32 x 128, 128 x 128 and 256 x 32,
   every other region of mode 5 by max(W, H) there too. Types 1, 3 and 4 at 16 x 16 in u mode 4
   read neither their mode 0 image nor it plus 180: a named dword past the texture with each byte
-  halved, the rows alike (post hoc). Why these constants and the types are open (Q177).
+  halved, the rows alike (post hoc). **Held out (E1055): types 1, 3 and 4 read every pixel in u
+  modes 4 to 7 as a named dword halved byte by byte, rows alike**, at 32 x 32 (mode 4) and 16 x 16
+  (modes 5 to 7); in mode 4 the name follows the column inside the texture (676 + (x mod 16) at 16 x
+  16, 1300 + (x mod 32) at 32 x 32 post hoc); modes 6 and 7 read mode 4's last column and mode 5 one
+  other name (post hoc). Why these constants, the size form and the half are open (Q177).
 - **Twiddled layout (`texture-sampler-smp-twiddled`).** Texel `(x, y)` lies at the Morton index with
   **`y` in
   bit 0, `x` in bit 1**, and so on; a non-square texture puts the longer side's extra bits
@@ -9095,7 +9099,10 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   (E561, 32-bit texels, sizes 8 to 128 on a side):** each tile of up to 16 × 16 texels is
   interleaved as above and the tiles follow in raster order, `x` first; 32-bit texels of 14
   sizes were run, and other sizes and texel sizes were not. The mip chain of a non-square
-  texture halves both sides down to 1 × 1 and the T0 fields read it as a square chain (E562).
+  texture halves both sides down to 1 × 1 and the T0 fields read it as a square chain (E562),
+  held out with a side of 1 at level 0, on a 1D texture (`smp1dreplace`, 64 × 1), at 64 × 32 and
+  256 × 32 and at u16, whose levels are packed in 16-bit texels and whose MIPFILTER blend is one
+  16-bit lerp (E1052).
 - **Formats (T1 bits 28:24, no conversion; `texture-sampler-smp-formats`).** 0 and 1 return the byte
   (`s8`
   not extended), 7-11 the half, 12, 15-18, 22 and 31 the dword; **2, 3, 4 and 5
@@ -9483,7 +9490,7 @@ open driver:
    of a firmware task above TRC 31 are not measured.
 
 The simulator (`crates/sgx-sim`) reproduces 30817 probe vectors (15526 of them with near values:
-float functions within their measured bound) and 470 pixel vectors; it stops on 2185 rather than
+float functions within their measured bound) and 473 pixel vectors; it stops on 2182 rather than
 guess, most often because (vectors, from `doc/isa/sim-coverage.json`):
 
 - firh's fixed bank 1 or 2, whose taps are fitted to these vectors (in-sample, not a hardware check)

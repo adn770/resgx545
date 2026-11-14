@@ -151,10 +151,13 @@ fn bilinear_srgb_equals_e723s_fills_by_e982s_stage_rule() {
 }
 
 #[test]
-fn type_4_stays_refused() {
+fn type_4_at_32x32_reads_its_block_and_the_rest_stays_refused() {
+    // E1055 (r15-tex's held-out 32 x 32 reference): type 4 at 32 x 32 reads dword 32 t + s, its
+    // 32 x 32 block (E941); E725's job at that size replays exactly
+    exact(&["ty4-32x32"]);
     let Some(b) = base() else { return };
     let cases = parse(&std::fs::read_to_string(b.join("gen/cases.json")).unwrap());
-    for name in ["ty4-8x8", "ty4-32x32", "ty4-32x16", "ty4-16x32"] {
+    for name in ["ty4-8x8", "ty4-32x16", "ty4-16x32"] {
         let j = job(&b, &cases, name);
         let r = sample_at(&j.spec, &injected(&j.spec), 3, 2);
         assert!(matches!(r, Err(tex::Fail::Open(_))), "{name}: {r:?}");
