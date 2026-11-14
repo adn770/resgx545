@@ -1,0 +1,9 @@
+title = "r17-tw: the --pixels words of each job of stage tw17 (Q078's T3 bit 14 on twiddled textures: H-WIDE held out, bilinear at both edges on and off the 1/4096 grid and point off it, 14 jobs)"
+repo = "data"
+paths = ["vectors/closing/r17-tw/pixels/"]
+method = "tools/usse-asm/closing_tables.py texture on the published render/closing-r17-tw session (its one attempt, out/20261114-104432), one file; rows are measurements; replayed by crates/sgx-pipe/tests/texture_t3b14.rs::r17_tw_tw17_bit_14_samples_a_texture_w_plus_4096_texels_wide_at_frac_u (every row pixel for pixel: the seven bilinear and three point rows, E1058's bl64left rerun and the three bit-clear references)"
+date = "2026-11-14"
+files = 1
+size = 20066
+sha256 = "90c56d00867512f083b67b569ec971c38f1688f4521bc1a421ffa06110b588a3"
+recipe = "tools/usse-asm/closing_tables.py"

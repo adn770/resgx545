@@ -5,7 +5,7 @@ unit = "texture"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E274", "E397", "E566", "E564", "E722", "E723", "E968", "E975", "E1003", "E1027", "E1033", "E1047", "E1049", "E1058"]
+evidence = ["E274", "E397", "E566", "E564", "E722", "E723", "E968", "E975", "E1003", "E1027", "E1033", "E1047", "E1049", "E1058", "E1067"]
 terms = ["T3.BIT10", "T3.BIT14", "T3.BITS19_18", "T3.BITS28_27", "T0.BIT27", "T3.BITS7_0"]
 +++
 
@@ -186,3 +186,14 @@ held out: leaving the left column unwrapped (X + m) reads all of bl64left, but m
 between two 1/4096 steps on the two 128-wide rows and 17 pixels of each of E1049's rows, so no one
 form fits both rounds. To retire: a footprint form that fits E1049's and E1058's edge rows, held
 out on u on and off the 1/4096 grid at both edges.
+
+Held out 2026-11-14 (round 17, session r17-tw stage tw17, decisions R17-1 to R17-4 (a); E1067):
+every clause of the line is decided with all four controls passing. E1049's and E1058's kept
+bilinear rows were fitted post hoc by H-WIDE (the sample over a texture W' = W + 4096 texels wide
+at frac(u)), which the builder re-derived from the kept files before the freeze; held out on seven
+bilinear rows (16 to 512 by 32 and 2048 by 16, both edges, on and off the 1/4096 grid) it held 7 of
+7, column -1 read W' - 1 by the pre-declared exact-byte rule (188 of 189 against 1), column W' read
+0 (the next tile row failed every row where it parts), and the point read off the grid is column
+floor(W' frac(u)) (3 of 3; s + floor(4096 frac(u)) 0 of 3), which is the line's point form on the
+grid. E1058's post hoc reading, E1049's form and the dropped filter failed. The retirement is
+proposed in its own commit, for the lead to confirm.

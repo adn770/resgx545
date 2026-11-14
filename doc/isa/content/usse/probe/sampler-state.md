@@ -116,7 +116,9 @@ scratch buffer whose dwords count up, so every result names the texels it came f
   on six strided geometries: strides 16 and 256, u off the grid and past both ends, v varying, and
   a 16-bit format, where it is texels, not dwords, 6 of 6; sgx-sim models it point sampled at
   formats 9 and 12); under a bilinear sample it moves the whole footprint by that count, u the
-  sample's coordinate (E1027, one row); on a twiddled texture it is open (Q078).
+  sample's coordinate (E1027, one row); on a twiddled texture the sample is taken over a texture
+  W + 4096 texels wide at frac(u), point and bilinear, its columns repeated over that width
+  (E1047, E1049, E1058, E1067; sgx-sim models it at the sizes run).
 - **sRGB (T0 bit 27; E723).** **A point-sampled texel byte is decoded sRGB to half float** (4 of
   4 held-out fills exact over 2048 pixels: strided 8 x 4, twiddled 8 x 8 twice, twiddled 32 x
   32). Under bilinear filtering neither declared order fits (filter then decode 0 of 2048 pixels,

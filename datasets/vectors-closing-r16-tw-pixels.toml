@@ -1,7 +1,7 @@
 title = "r16-tw: the --pixels words of each job of stage tw16 (Q078's T3 bit 14 on twiddled textures at heights 8, 16 and 64 and bilinear at the edges, 17 jobs)"
 repo = "data"
 paths = ["vectors/closing/r16-tw/pixels/"]
-method = "tools/usse-asm/closing_tables.py texture on the published render/closing-r16-tw session (its one attempt, out/20261114-093404), one file; rows are measurements; replayed by crates/sgx-pipe/tests/texture_t3b14.rs::r16_tw_tw16_bit_14_twiddled_keeps_e561s_tile_height_at_h_8_16_64 (every point row and both bit-clear references pixel for pixel, the six bilinear rows and E1049's tw-bl32 rerun refused on every pixel)"
+method = "tools/usse-asm/closing_tables.py texture on the published render/closing-r16-tw session (its one attempt, out/20261114-093404), one file; rows are measurements; replayed by crates/sgx-pipe/tests/texture_t3b14.rs::r16_tw_tw16_bit_14_twiddled_keeps_e561s_tile_height_at_h_8_16_64 (every point row and both bit-clear references pixel for pixel, the six bilinear rows and E1049's tw-bl32 rerun refused on every pixel until E1067, which models them: since then every row pixel for pixel; the table's replay note is as written at E1058)"
 date = "2026-11-14"
 files = 1
 size = 24061
