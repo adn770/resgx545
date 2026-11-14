@@ -720,11 +720,14 @@ mismatches (the draft's 241 of 425 is the figure; `plan.md`, which is kept as de
 141 of 428 for the state before the simulator patches); the replay of the landed vectors is
 unchanged (30623 pass, 1112 fitted, 918 stops, 175 skipped, 1937 left out, 82 and 48 hung, 0
 mismatches), the eight YUV texels of the landed formats-other vectors still stop. The mip-chain
-question (answered since by E1052) is narrowed to the 1D, side-of-1 and non-32-bit cases, Q078,
-Q050, Q115, the cube-map question (answered since by E844), Q114 and the four-component question
+question (answered since by E1052) is narrowed to the 1D, side-of-1 and non-32-bit cases, the T3
+bits
+question (answered since by E1067), Q050, Q115, the cube-map question (answered since by E844), Q114
+and the four-component question
 (folded since into Q180) are narrowed or carry their evidence and none is retired; Q168,
 Q177 to Q181 and two more (the gradient footprint, answered later by E721; the T3 address bits,
-folded later into Q078) are new (hw, low). The roadmap counts the questions from the built
+folded later into the T3 bits question, answered by E1067) are new (hw, low). The roadmap counts the
+questions from the built
 `doc/open_questions.md`: 151 open (Q001 to Q181), 135 hw (high 13, medium 64, low 58), 10 fw and 6
 kernel; edm 13, texture 14. The replay of the tree's data, with the 17 new vector files in the data
 repository: 30864 pass, 1112 fitted, 1102 unsupported, 175 skipped, 1937 left out, 82 and 48 hung, 0

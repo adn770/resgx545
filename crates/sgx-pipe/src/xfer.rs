@@ -51,7 +51,7 @@ use usse_isa::Core;
 pub const SENTINEL: u32 = 0xdead_beef;
 
 /// The questions the model refuses under (the transfer's own; the units' are in their modules).
-pub const OPEN: &[&str] = &["Q206", "Q207", "Q074", "Q011", "Q180", "Q066", "Q200", "Q078", "Q076", "Q003"];
+pub const OPEN: &[&str] = &["Q206", "Q207", "Q074", "Q011", "Q180", "Q066", "Q200", "Q300", "Q076", "Q003"];
 
 /// The EOT and EOR task entries of the builder's use page (the transfer templates, 4 instructions
 /// and 12 instructions in, with 4 and 1 temporaries: fw_format.md 9.2) as a PDS data word U0.
@@ -395,10 +395,10 @@ impl Job {
                         mem.read32(a).map_err(|_| Error::Fault(a))
                     })
                     .map_err(|f| match f {
-                        tex::Fail::Open(w) => refuse(format!("texture sample: {w}"), &["Q078"]),
+                        tex::Fail::Open(w) => refuse(format!("texture sample: {w}"), &["Q300"]),
                         tex::Fail::Load(e) => refusal(e, "texture read", false),
                     })?;
-                    m.pa[0] = *r.first().ok_or_else(|| refuse("an empty texture sample", &["Q078"]))?;
+                    m.pa[0] = *r.first().ok_or_else(|| refuse("an empty texture sample", &["Q300"]))?;
                     m.written.pa |= 1;
                 }
                 let (m, _) = run_task(&mut self.mem, &self.code, 0, m, "the pixel shader")?;

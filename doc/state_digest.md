@@ -43,8 +43,6 @@ list.
   in an ordinary TA, 3D, DPM or transfer job, and how long does ... (E890, E902, E921)
 - `Q070` ta, high: what do the TA object's format word bits 15:8 and above and its set masks select
   beyond the settings seen, and does the fitted region test ... (E543, E544, E777)
-- `Q078` texture, high: under a bilinear sample, which columns does T3 bit 14 on a twiddled texture
-  read where the footprint crosses the texture's left or right ... (E1049, E1058, E1067)
 - `Q050` usse, high: what do the visibility group's instructions do, and how do smp's mipmaps and
   LOD values, the border address modes, the compressed and YUV ... (E563, E565, E568)
 - `Q047` vdm, high: what do VDM_STATE1 bit 8, bits 11:9 and bits 15:13 select for a state task, when
@@ -129,6 +127,8 @@ list.
   (E569), the two controls with the old source word 0x40800801 included ... (E420, E541, E569)
 - `Q284` texture, medium: what does a TEXTYPE 2 cube sample read at an exact texel boundary when
   |ma| is not a power of two (E923, E931, E956: up or down by the ... (E956, E1001, E1002)
+- `Q300` texture, medium: what does a texture sample read and return for the sampler words, formats,
+  sizes and modes that sgx-sim's tex::sample refuses, where a ... (E1049, E1058, E1067)
 - `Q003` transfer, medium: which event (if any) does a bus-interface fault raise, and what do the
   fault-request bits of CR_BIF_INT_STAT name, what clears a latched ... (E901, E919, E920)
 - `Q011` transfer, medium: why does a copy whose background-object tag (transfer word 0) is wrong

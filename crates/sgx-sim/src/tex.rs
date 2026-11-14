@@ -806,14 +806,14 @@ impl Texture {
             // E1027: T3 bits 12:11 = 00 read level 0 whatever the LOD (mips off too), 1x the last
             // level T0's max level allows; run with one filter both ways and without bit 9 only
             if mag != min || t0 >> 9 & 1 != 0 || one_d {
-                return open("T3 bits 12:11 other than 01 with T0 bit 9, two filters or 1D (not run; Q078)");
+                return open("T3 bits 12:11 other than 01 with T0 bit 9, two filters or 1D (not run; Q300)");
             }
             let (mx, top) = (t0 >> 17 & 15, t0 >> 21 & 0x3f);
             if self.lodsel == 0 {
                 return level0(min);
             }
             if top == 0 || mx == 0 || mx == 15 {
-                return open("T3 bit 12 with mips off (not run; Q078)");
+                return open("T3 bit 12 with mips off (not run; Q300)");
             }
             if self.w != self.h && !CHAIN_SIZES.contains(&(self.w, self.h)) {
                 return open(format!("mipmaps of a non-square {}x{} texture (not run)", self.w, self.h));
