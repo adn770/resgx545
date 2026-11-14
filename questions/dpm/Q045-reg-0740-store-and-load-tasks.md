@@ -5,7 +5,7 @@ unit = "dpm"
 kind = "hw"
 value = "high"
 phase = 11
-evidence = ["E158", "E256", "E310", "E312", "E456", "E458", "E462", "E464", "E574", "E591", "E625", "E627", "E631"]
+evidence = ["E158", "E256", "E310", "E312", "E456", "E458", "E462", "E464", "E574", "E591", "E625", "E627", "E631", "E1079", "E1080"]
 terms = ["CR_DPM_TASK_STATE", "CR_DPM_TASK_CONTROL", "CR_DPM_STATE_CONTEXT_ID"]
 +++
 
@@ -118,3 +118,12 @@ another layout), mostly by 3 (570 or 571 against peaks of 573 or 574 on the 4096
 1500-vertex scenes). The locator is not general, so the test is weak: a raised 4096 x 4096 job with
 the state
 page located per width would decide it.
+
+Narrowed 2026-11-14 (r19-dpm, E1079 and E1080; module E0CC4027's final-PB knob). A final render
+that does not overflow, after a geometry kick that did, reads nothing of the state page's lists:
+zeroed between the renders, they change neither the param dump, 0x0730 and 0x0660 nor the image
+(H-NOLOAD 4 of 4, at 0x28, 0x2c and 0x30, both of E627's regimes; H-LOAD 0 of 4), and the final
+stores no lists over the page. Part (b): at 4096 x 4096 with the page located per width the 16
+counts sum to the last run's peak status minus 1 in 4 of 4 raised jobs held out and to thr0 minus
+1 in both jobs that were not (R-PEAK 4 of 4; sgx-pipe `dpm::state_page_list_pages`). Open: part
+(c), the kept owner's slot step and when the second set of lists is stored (Q191's).

@@ -741,7 +741,12 @@ pub fn store(
 /// (round 12 offline): at 1024 x 768 G 1 it is not E996's overlay of the same job's G 33 store
 /// (0 of 10 dumps, every G 1 dump a prefix of 15104 zero dwords and then mostly one tile repeated),
 /// where the overlay of a job without a partial render holds at that size (E489's G 0, 1 and 2
-/// ramps, 6 of 6, every dword). Neither the zero prefix nor the tile order has a rule.
+/// ramps, 6 of 6, every dword). Neither the zero prefix nor the tile order has a rule. E1082: a
+/// final render on a parameter buffer of its own that does not overflow keeps the zero row and fails
+/// the overlay too (51968 of 61440 scored dwords); E1081 (post hoc): after a raised kick it leaves a
+/// separate store buffer as the partial render stored it, after one that was not raised it loads
+/// and stores as its control says; E1083: the partial renders store with the control word of
+/// their own kick (its G), not the final's. All refused here.
 pub fn final_store(
     ctl: &Ctl,
     w: u32,
@@ -755,7 +760,7 @@ pub fn final_store(
             format!(
                 "the final store of a {w} x {h} job after {partial_renders} partial render(s): the loaded \
                  buffer outside a zero region (E628), the sign by the raise (E629), not the overlay of the \
-                 tiles (E1020); no rule gives the zero prefix or the tile order"
+                 tiles (E1020, E1082); no rule gives the zero prefix or the tile order"
             ),
             &["Q107"],
         ));

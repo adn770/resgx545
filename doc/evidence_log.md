@@ -9043,6 +9043,51 @@ record itself, in `evidence/<unit>/`, gives the method and what it does and does
   completed both.
   *vdm; HW; data: `render-closing-r18-flag:out/20261114-133536/h2/`,
   `render-closing-r18-flag:fold/`.*
+- `E1079` r19-dpm stage ld (Q045, 8 jobs, t18b): after a geometry kick that overflows at P 0x28,
+  0x2c and 0x30 (one partial render; the state page, page 6 of the TA data, holding 18, 16 and 20
+  non-zero dwords of macrotile lists), zeroing page 6 before a final render that does not overflow
+  (N 0x100 pages) changes nothing the job leaves: the final parameter dump, 0x0730 and 0x0660 after
+  the job, the target hash and the TA data outside page 6 equal the unfilled twin's (frozen H-NOLOAD
+  4 of 4 rows, 2 fit at 0x28 and 2 held out at 0x2c and 0x30; H-LOAD 0 of 4); the final render
+  neither stores lists over page 6 (the zeroed page stays zero, the unfilled one keeps its lists)
+  nor misses a pixel (diff 0 on all 8); all controls passed.
+  *dpm; HW; data: `render-closing-r19-dpm:out/20261114-224724/ld/`, `render-closing-r19-dpm:fold/`.*
+- `E1080` r19-dpm stage ldb (Q045, 6 jobs, t18b, knob 0): at 4096 x 4096 (the default triangle, -n
+  1) with the state page located per width (TA data 0x42000, E627), the 16 macrotile list counts sum
+  to the last TA run's peak page status minus 1 in 4 of 4 raised jobs held out (P 0x40, 0x60, 0x80,
+  0xa0: sums 17, 41, 69, 5 against peaks 18, 42, 70, 6; frozen R-PEAK 4 of 4, R-NEAR 4 of 4, R-THR 0
+  of 4), and to thr0 minus 1 in both jobs that were not raised (P 0xc0 and 0x100: 157 and 221, the
+  controls, E627's rule); E625's raise held 4 of 4.
+  *dpm; HW; data: `render-closing-r19-dpm:out/20261114-224724/ldb/`,
+  `render-closing-r19-dpm:fold/`.*
+- `E1081` r19-dpm stages dzl, dza, dzc, dzo (Q038, 15 jobs): with the final render on its own PB (no
+  abort), no frozen form of the dl rows held on every row (H-PRPATH 5 of 6, H-HOSTBITS 4 of 6,
+  H-PRZERO 5 of 6, H-CLRREAD 1 of 6): post hoc, after a raised kick (P 0x28) the separate store
+  buffer after the final is byte for byte what the partial render stored (the indices it loaded,
+  whatever the final's load bits, 4 of 4), while after a kick that was not raised (P 0x30) the final
+  stores the scene's depth without load bits and the loaded indices with them (H-HOSTBITS 2 of 2);
+  the layered background loses 44191 triangle pixels of an overflowing -n 1 job (H-LOSS 2 of 2); in
+  E628's ov form the frozen H-OWNCLEAR held 4 of 4 by full dwords, but with the sign bit masked the
+  final's store keeps 59 to 92 % of the partial render's depth (post hoc); all controls passed.
+  *zls; HW; data: `render-closing-r19-dpm:out/20261114-224724/dzl/`,
+  `render-closing-r19-dpm:out/20261114-224724/dza/`,
+  `render-closing-r19-dpm:out/20261114-224724/dzc/`,
+  `render-closing-r19-dpm:out/20261114-224724/dzo/`, `render-closing-r19-dpm:fold/`.*
+- `E1082` r19-dpm stages zsc and zs (Q107, 7 jobs): on E629's full-screen ramp with the final on its
+  own PB (no abort), the G 1 store fails E996's header-order overlay against its G 33 twin as the
+  overflowed stores do (frozen E1020 2 of 2: 51968 of 61440 scored dwords at 0x28 and at 0x30;
+  H-E996 0 of 2) while the -n 1 0x422 control pair holds it (61440 of 61440); the final store keeps
+  the zero row (195584 zero dwords below tile row 12) and 35840 signed dwords (frozen H-PRSIGN 0 of
+  3, H-FINALSIGN 2 of 3); the ramp's kick was raised at 0x30 too (post hoc, need 49 pages), against
+  the frozen premise that it was not; controls passed.
+  *zls; HW; data: `render-closing-r19-dpm:out/20261114-224724/zsc/`,
+  `render-closing-r19-dpm:out/20261114-224724/zs/`, `render-closing-r19-dpm:fold/`.*
+- `E1083` r19-dpm stage rd (Q088, 6 jobs, t18b): the partial render of a geometry kick stores the
+  depth with the G of its own kick's ZLS control word (the render details' word the tool sets for
+  render 1), not the final's and not a constant: frozen H-RD 6 of 6 (render 1 G 33 and render 2 G 1:
+  the G 33 layout in depth.1, 3 rows; swapped: the G 1 layout, 3 rows; at 0x28 and 0x30), H-FW-FINAL
+  0 of 6, H-FW-CONST 3 of 6; premise passed on all six.
+  *zls; HW; data: `render-closing-r19-dpm:out/20261114-224724/rd/`, `render-closing-r19-dpm:fold/`.*
 
 ## By unit
 
@@ -9059,7 +9104,7 @@ E625, E626, E627, E630, E631, E704, E705, E706, E734, E735, E753, E773, E774, E7
 E786, E790, E799, E800, E801, E802, E803, E832, E845, E846, E852, E853, E854, E860, E861, E862,
 E863, E864, E866, E867, E868, E869, E870, E873, E874, E875, E881, E882, E883, E887, E889, E899,
 E900, E915, E916, E917, E918, E935, E936, E937, E938, E939, E960, E961, E962, E963, E1009, E1013,
-E1019, E1032, E1044, E1057.
+E1019, E1032, E1044, E1057, E1079, E1080.
 
 ### edm
 
@@ -9166,4 +9211,4 @@ E1035, E1075, E1076.
 Records: E057, E058, E250, E335, E336, E337, E411, E465, E466, E467, E489, E490, E615, E628, E629,
 E663, E664, E665, E730, E831, E885, E903, E904, E977, E978, E981, E985, E986, E987, E988, E991,
 E996, E997, E1015, E1020, E1029, E1030, E1031, E1040, E1041, E1042, E1043, E1050, E1051, E1053,
-E1054, E1059, E1063, E1064, E1068, E1069, E1070.
+E1054, E1059, E1063, E1064, E1068, E1069, E1070, E1081, E1082, E1083.

@@ -147,6 +147,18 @@ pub fn overflows(pb_pages: u32, need: u32) -> bool {
     need > first_threshold(pb_pages)
 }
 
+/// The pages the 16 macrotile lists of the state page count after a job that overflowed (the sum
+/// of each list's count, dword 2i's high half of the page): the first threshold minus 1 when the
+/// first abort's threshold was not raised (E627, 28 of 28) and the last TA run's peak page status
+/// minus 1 when it was (E1080: 4 of 4 raised 4096 x 4096 jobs held out, the page located per
+/// width; the not-raised controls held E627's rule). `thr0` is the status at the first partial
+/// render, `last_peak` the last TA run's highest status (regtimeline's 0x0724). A closing render
+/// that does not overflow reads none of the lists (E1079: zeroed, they change no free, count or
+/// pixel).
+pub fn state_page_list_pages(raised: bool, thr0: u32, last_peak: u32) -> u32 {
+    if raised { last_peak } else { thr0 }.saturating_sub(1)
+}
+
 /// The high halves of the 3D free list's STATUS2 registers (0x0710 and 0x071c): 0 in every sample
 /// of every kept job, through partial renders and global lists of up to 18 pages (E358, E443, E574;
 /// E1019, round 12 offline over 697 timelines and 1594 after-reads, held out). What 0x0748 bit 2
@@ -576,6 +588,23 @@ pub fn first_partial_render_global_pages_left(w: u32, h: u32, thr0: u32) -> Opti
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn state_page_list_pages_e1080() {
+        // E1080 [HW]: r19-dpm ldb, 4096 x 4096, (P, raised, thr0, last peak, sum of the counts)
+        let rows = [
+            (0xc0, false, 158, 133, 157),
+            (0x100, false, 222, 68, 221),
+            (0x40, true, 30, 18, 17),
+            (0x60, true, 62, 42, 41),
+            (0x80, true, 94, 70, 69),
+            (0xa0, true, 126, 6, 5),
+        ];
+        for (p, raised, thr0, peak, sum) in rows {
+            assert_eq!(first_threshold(p), thr0, "{p:#x}");
+            assert_eq!(state_page_list_pages(raised, thr0, peak), sum, "{p:#x}");
+        }
+    }
 
     #[test]
     fn the_open_list_holds_the_threshold_and_page_need_questions() {
