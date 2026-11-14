@@ -169,7 +169,7 @@ list.
 - `Q183` usse, medium: which store forms in the end-of-tile task fault the job and why does E572's
   fault not reproduce in E707 (a program equal to E572's but for ... (E572, E707)
 - `Q036` vdm, medium: what do the DPM's status words hold (0x0748 bit by bit, CR_DPM_3D_PAGE_COUNTS'
-  high half, and the owner words 0x0700 to 0x0728 a kept owner ... (E631, E1019, E1032)
+  high half, and the owner words 0x0700 to 0x0728 a kept owner ... (E1019, E1032, E1044)
 - `Q042` vdm, medium: what do bits 27:24 of the index list's first trailing word (VDM_INDEX2) do,
   when its low bits move the list's first index and 0x0f000000 ... (E307, E308, E414)
 - `Q092` vdm, medium: what do bits 31:28 of the index list's first trailing word count, which the
@@ -321,9 +321,12 @@ list.
 
 ## Recent records
 
-170 records of 2026-11-12 to 2026-11-13 (the last 2 days to the newest record's date), newest first;
+100 records of 2026-11-13 to 2026-11-14 (the last 2 days to the newest record's date), newest first;
 the claims are cut at 200 characters.
 
+- `E1044` dpm, 2026-11-14: r14-dpm stage pr3 on module B60AB0B4 (Q036: 0x0748 sampled alone at 0, 1,
+  4 and 7 partial renders, 10 planned jobs): ONE job ran, the PR 0 control pr3-c0-1, and the stage
+  stopped by its own rule (rc ...
 - `E1035` vdm, 2026-11-13: r13-flag stage f3 (19 jobs, 8 recovered hangs, the kit's noreset and
   idle:S): E700's counter held on every clause row at v = 7 and failed below 2: a v = 7 job after a
   completed one hung on a 128 x ...
@@ -621,225 +624,13 @@ the claims are cut at 200 characters.
 - `E922` isp, 2026-11-13: Round 8 offline (Q141; no run, in sample): the landed region model
   (resgx545-data texture/p1141/recompute/msaa_model.py, sha256 1c0e8205..., E727's freeze,
   unchanged) with its two-halves rule gives ...
-- `E921` usse, 2026-11-12: R7 session r7-faults stage L (Q111's lockup stop, read by R-6 as two
-  `lock #0` and no release; E088's counter fill, 64 x 32, each pixel instance adding 1 to one
-  scratch dword): with `lock #0` ... ...
-- `E920` bif, 2026-11-12: R7 session r7-faults stage m (Q003; E848's held TA write fault at 288 x
-  144, page 0x20006, with a manipulation while held, before the reset: none, CR_BIF_CTRL.CLEAR_FAULT
-  set then cleared through ...
-- `E919` bif, 2026-11-12: R7 session r7-faults stage d (Q003; E848's held 4x TA write fault, one
-  array, at seven sizes whose fault pages are 0x2000a, 0x20006, 0x20008 and 0x20009, then the held
-  reset and triangles until one ...
-- `E918` dpm, 2026-11-12: R7-dpm stage s-k, set B, on module 37EC97AB after the lead's one-shot boot
-  (Q210; our own task oomring2 armed before each of 10 jobs, logging pa1, sa8, sa9 and, new, the two
-  DPM page status registers ...
-- `E917` dpm, 2026-11-12: R7-dpm stage s-v, set A, on the test module 41E2F5C7 (Q210, larger
-  objects; exploration, no verdict frozen: E900 froze no step rule for them): the 2048x2048
-  calibration of the tool's triangle with ...
-- `E916` dpm, 2026-11-12: R7-dpm stage s-b, set A, on the test module 41E2F5C7 (Q211; one default
-  triangle moved to five places never run, one kick): held out, E875's page replay with the regions
-  walked in E899's order ...
-- `E915` dpm, 2026-11-12: R7-dpm stages s-a0 and s-m, set A, on the test module 41E2F5C7 (Q210; the
-  tool's triangle with 1500 vertices, frozen from E874's step replay and E900's straddling-block
-  rule H-SPAN): the premise ...
-- `E914` isp, 2026-11-12: R7-geo stage zs (Q260; 230 jobs on 512 x 256, vertices in 1/4096 pixel, no
-  fault): no frozen rounding is exact on the 143 held-out rows (half away from zero for negative
-  coordinates, HA, and SETUP ...
-- `E913` isp, 2026-11-12: R7-geo stage zf (Q240; 242 depth jobs, no fault): on ten targets E606 did
-  not run, 64 x 128, 128 x 64, 256 x 64, 128 x 96, 128 x 144, 32 x 16 and 16 x 8 (below one tile),
-  4096 x 16, and the odd ...
-- `E912` isp, 2026-11-12: R7-geo stages zd and zi (Q262; 128 jobs on 512 x 256, 640 x 480, 1024 x
-  768, 2048 x 1024 and 4096 x 4096, random triangles with vertices inside the target on the 1/256
-  grid and depth planes of ...
-- `E911` texture, 2026-11-12: R7-geo stage tx, type 5 (Q178; E725's 64 x 32 map-texture fill, dword
-  i of the texture 0xD0000000 | i; 6 jobs, no fault): TEXTYPE 5 reads the texture memory: with the
-  program zeroing the texture's ...
-- `E910` texture, 2026-11-12: R7-geo stage tx, types 1, 3 and 4 (Q283; E725's 64 x 32 map-texture
-  fill, dword i of the texture 0xD0000000 | i, pixel (x, y) sampling texel (x mod w, y mod h); 11
-  held-out jobs and E725's type 3 ...
-- `E909` transfer, 2026-11-12: R7-geo stage xf (Q206's both-fields clause, 10 fills at 128 x 64, no
-  fault): with the fill's end-of-tile DOUTU1 x field (bits 11:3) and y field (bits 21:12) XORed in
-  one poke, H-INDEP (each 32 x 16 ...
-- `E908` ta, 2026-11-12: r7-rp stage q086 (Q086, 11 4x jobs on contexts made for 4x targets, module
-  41E2F5C7): a 4x render with poked macrotile words completes exactly when their grid (B3 + B1 tiles
-  per axis) covers the ...
-- `E907` ta, 2026-11-12: r7-rp stage q139 (Q139, 24 TA-dump jobs at E877's missed macrotile cases,
-  256 x 256 and 640 x 480): every case replicated its dataset's wrong-tile map (21 of 21), and the
-  frozen H-MOVED, a tile is ...
-- `E906` ta, 2026-11-12: r7-rp stage q293 (Q293, 4 jobs, three renders of one scene with CR_TE_AA
-  0x40000000): the 3D reads render 2's own object as it reads render 1's: with the kernel's poke
-  before render 3 putting render ...
-- `E905` pds, 2026-11-12: r7-rp stages p7-rdc and p7-rd (Q276, 48 jobs, E878's readback rerun with
-  the class share taken over the own-source words): in E709's command (state block word 4 at
-  0x00030001) a `mov` from o1 to o3 ...
-- `E904` zls, 2026-11-12: r7-rp stages q291g and q291 (Q291, 27 jobs with t6): the pixel tasks past
-  the target run over the ZLS store's band and nowhere else, with the attribute iterated linearly
-  there: with E898's ...
-- `E903` zls, 2026-11-12: r7-rp stage q287 (Q287, 25 depth-dump jobs at H 18, odd widths through t7,
-  the tool built from main 1c64f3a): at odd target widths the ZLS store's band past the target is
-  rule A (x + 0.5 < 1.25 W), ...
-- `E902` edm, 2026-11-12: Round 7 offline fold (Q111's 0x0694 clause and Q294): the six held TA jobs
-  of r6-held were each the first render of a new context, so by the module's fork the kicks carried
-  TA flag 0x1 (flags 0x73) ...
-- `E901` bif, 2026-11-12: Round 7 offline reading of every kept kernel log of resgx545-data (Q003;
-  post hoc scans, then one rule frozen as a fit and scored on r6-held, which the planner's scans had
-  already read: SEMI, not ...
-- `E900` dpm, 2026-11-12: Round 7 offline stage G3 and G5 to G7 (Q210; no run): for the tool's
-  1500-vertex triangle the first partial render leaves 2 global pages iff S_k < thr0 < A_k, else 1,
-  A_k being the page count of ...
-- `E899` dpm, 2026-11-12: Round 7 offline stage G1, G2 and G4 (Q211; no run): the TA takes a
-  region's 128-byte stream block walking the target in strips of 64 pixel rows, each strip in 64 x
-  64-pixel blocks left to right and a ...
-- `E898` usse, 2026-11-12: Round 7 offline, a program and tool record, no hardware run (Q291): the
-  position-store pixel program pix_posstore.s (17 instructions, landed as
-  probes/pds/templates/pix_posstore.s), assembled with ...
-- `E897` ta, 2026-11-12: Round 7 offline reading of the kept parameter-buffer dumps (Q293; post hoc,
-  nothing held out): in 13 of 13 kept two-object dumps of `tri --tri-full -n 2 --geometry 1` at 64 x
-  64 with CR_TE_AA ...
-- `E894` texture, 2026-11-12: Round 7 offline reading of E567's kept TEXTYPE 5 dumps (rt5-2d,
-  rt5-3d-w5, rt5-3d-w15; a 16 x 16 texture whose dword i is 0xD0000000 | i, a 64 x 32 fill) [HW,
-  post hoc]: no pixel of the 3 x 2048 ...
-- `E893` ta, 2026-11-12: Round 7 offline decode of E504's dumps (Q142): with CR_TE_AA bit 29 set,
-  bit 31 halves the TA's region width (32 to 16 pixels) and bit 30 its height (16 to 8), a macrotile
-  keeping its pixel area and ...
-- `E892` bif, 2026-11-12: R6 session r6-held part H stage q, the flush rows (Q003; the cells of E891
-  with the r6 kernel's debugfs bif_flush, CR_BIF_CTRL.INVAL_DC set and cleared with the other bits
-  kept, written while E848's ...
-- `E891` bif, 2026-11-12: R6 session r6-held part H stage q, the list rows (Q003's health-triangle
-  clause; E848's held 4x job on one array, a TA write fault BIF_INT_STAT 0x90004, then the debugfs
-  reset, the cell's follow-up ...
-- `E890` edm, 2026-11-12: R6 session r6-held part P (stage p1, E855's job on the r6 kernel with a
-  debugfs peek of 0x0694; Q111, and the lockup rows of E855 to E857): the fill without the skip (b0,
-  control) completed with the ...
-- `E889` dpm, 2026-11-12: R6-render4x set B on the r6-kernel module (fork r6-kernel 3f0b3e74,
-  srcversion 41E2F5C756F96D20F7109A4; 21 jobs, one attempt, 3 faults, all predicted): with four
-  times the 4 side^2 tail room for a ...
-- `E888` ta, 2026-11-12: R6-render4x set A, stage t (4 jobs, one attempt, no fault): Q293's held-out
-  rows, 3 of 3 decided, the control passing (t8, E827's pb-e40-m2-64a with its hash): with CR_TE_AA
-  0xc0000000 the TA inserts ...
-- `E887` dpm, 2026-11-12: R6-render4x set A, stages s0 and a (16 jobs, one attempt, 6 faults, no
-  stop): H-TPM held out, 11 of 11 rows decided: on the rgn4 module a four-array 4x job of the full
-  triangle faults iff the end of ...
-- `E886` ta, 2026-11-12: R6-misc stage q086 (Q086, 10 of 21 4x jobs run, 11 skipped by the frozen
-  fault budget, one attempt): on contexts made for 4x targets (four region-header arrays) a render
-  with CR_TE_MTILE1, ...
-- `E885` zls, 2026-11-12: R6-misc stage q287 (Q287, 20 depth-dump jobs at W 34, rerun as a second
-  attempt on freeze 2 after freeze 1's runner kept no dump): at odd target heights the ZLS store's
-  band past the target is rule A ...
-- `E884` transfer, 2026-11-12: R6-misc stage q289 (Q289, 23 fills, one attempt, no fault): with the
-  fill's end-of-tile DOUTU1 x field (bits 11:3) or y field (bits 21:12) poked by XOR, M-OR (each 32
-  x 16 tile t stored at (2t | f) ...
-- `E883` dpm, 2026-11-12: R6-dpm stage r-b on the rgn4 module (Q211; 4096x4096, one default triangle
-  moved to four new places, single kick): every frozen headline printed 'cannot tell', gated by
-  r-a0's control without a ...
-- `E882` dpm, 2026-11-12: R6-dpm stage r-v on the rgn4 module (Q210, the cause of the bursts;
-  2048x2048, the tool's triangle with 1500 vertices and --vtx-coords 4 or 8, objects larger than
-  E874's 67 dwords): the frozen ...
-- `E881` dpm, 2026-11-12: R6-dpm stages r-a0, r-m, r-n and r-k on the rgn4 module (Q210; the tool's
-  triangle with 1500 vertices; attempt a2 under freeze 2, after attempt a1 stopped in r-a0 on a
-  runner slip): every frozen ...
-- `E880` pds, 2026-11-12: R6-pixel stages p6-l3 and p6-s (Q276 and Q023, 8 and 22 jobs; frozen
-  verdicts 'H-Y1; x jobs 5:1, 5:1 (frozen 5:1)' and 'H-OR: 5:3 5:2 5:2 5:3 5:2 5:2 5:2 5:2 5:0;
-  restore check (r-u G-o1) PASS'): in ...
-- `E879` ta, 2026-11-12: R6-pixel stages g6-rwa and g6-rw (Q230, 8 and 106 jobs in E859's shape with
-  every vertex inside the viewport; frozen verdicts 'part a: PASS' and 'H-FRAC PASS (0 RZ + 1 of 117
-  below 0.5); H-SMOOTH 2^1 ...
-- `E878` pds, 2026-11-12: R6-pixel stage p6-rd (Q276, 58 jobs in E709's command: a triangle's pixel
-  program writes R5's walk words to o0 to o7, then `mov.skipinv r10, oJ` and `mov.skipinv.end o0,
-  r10`, so the own pixel shows ...
-- `E877` ta, 2026-11-12: Round 6 offline reading of the kept images of Q100's macrotile-word pokes
-  (Q139): all 67 wrong images (8 of ta/mtile-fields, 59 of ta/mtile-fields-risky) are wrong in whole
-  32 x 16 tiles, no tile ...
-- `E876` transfer, 2026-11-12: Round 6 offline reading of the two kept sweeps of the fill's
-  end-of-tile DOUTU1 x field (bits 11:3, 512 cases) and y field (bits 21:12, 1024 cases) (Q289; post
-  hoc, nothing held out): every job ...
-- `E875` dpm, 2026-11-12: Round 6 offline replay of the partial-render count of one-triangle scenes
-  (Q211; no numeric constant fitted, one walk order picked from a closed family of six on E832's 22
-  g-qf cells, the rest SEMI ...
-- `E874` dpm, 2026-11-12: Round 6 offline replay of the TA's page take for the tool's triangle with
-  1500 vertices (Q210; read from kept dumps and timelines that had been seen, so post hoc and SEMI,
-  nothing held out in the ...
-- `E873` dpm, 2026-11-12: Round 6 offline reading of the kept DPM timelines (Q210, A2b; a reading
-  rule applied to data already seen, post hoc, nothing held out): a step of the global page count
-  between two samples of the ...
-- `E872` ta, 2026-11-12: Offline fit and test on E859's kept 1/w words (Q230; no new job): the fit
-  E859 left undone was run on the FIT mantissas only (every mantissa read except the 30 of the dense
-  table E859's frozen hash ...
-- `E871` pds, 2026-11-12: Offline reading of kept images (Q276; no new job, post hoc counts, no
-  held-out row): in E709's command the own words of o4 to o7 reach no pixel of any kept image: in
-  E858's walk rows w-4 to w-7, ...
-- `E870` dpm, 2026-11-12: Round 6 offline reading of E869's held dump and of the 26 four-array 4x
-  outcomes on record (Q292; post hoc, one dump, nothing held out): H-TPM, the tail pointers of a 4x
-  job are one dword per tile of ...
-- `E869` dpm, 2026-11-12: R5-render4x row d (1 held job): the 4x full triangle at 1280 x 1024 on its
-  own maximum faulted with E845's word (BIF_INT_STAT 0x90100, BIF_FAULT 0x10000011), replicating
-  E845, and the held dumps were ...
-- `E868` dpm, 2026-11-12: R5-render4x stages l and x (8 jobs on their own maximum, 6 faults): the 4x
-  full triangle on four arrays faulted with E845's word (BIF_INT_STAT 0x90100, BIF_FAULT 0x10000011)
-  at 2048 x 240, 768 x ...
-- `E867` dpm, 2026-11-12: R5-render4x stage m (5 jobs, 1 fault): the 4x full triangle on four
-  arrays, at target sizes that fault on their own maximum (E845), completed with 0 wrong pixels on a
-  context made for a larger ...
-- `E866` dpm, 2026-11-12: R5-render4x stage o (11 jobs, no fault): the controls passed (the tool's
-  default 1x triangle at 1024 x 768 completed at render_pb_pages 0x35 with 19 scene pages and
-  overflowed at 0x34; the 4x full ...
-- `E865` ta, 2026-11-12: R5-render4x stages s0 and t (12 jobs, one attempt, no fault): s0's three
-  controls passed as frozen (1x 1024 x 768 hash 0xc9e301d225fe2325, 4x 288 x 144 0x4a61860dcb4ab325,
-  4x 1024 x 768 ...
-- `E864` dpm, 2026-11-12: R5-dpm stage d-a3 on the rgn4 module (Q210; 2048x2048, the tool's triangle
-  with 1500 vertices, our own firmware task oomring armed in the four event slots, logging pa0, pa1,
-  sa8, sa9 and CR_TIMER at ...
-- `E863` dpm, 2026-11-12: R5-dpm stage d-b on the rgn4 module (Q211; 4096x4096, one triangle of the
-  tool, single kick): the five g-qf controls repeated E832's counts (9, 4, 3, 2, 1 at P 0x24, 0x53,
-  0x54, 0xa2, 0xa3; 10 of 10 ...
-- `E862` dpm, 2026-11-12: R5-dpm stage d-t on the rgn4 module (Q210; exploratory; 2048x2048, the
-  tool's triangle with 1500 vertices, thr0 S3 - 7 to S3 - 4 = 0x96 to 0x99 and S5 - 7 to S5 - 4 =
-  0x12b to 0x12e): the global ...
-- `E861` dpm, 2026-11-12: R5-dpm stages d-a2 and d-a2b on the rgn4 module (Q210; the tool's triangle
-  with 1500 vertices, cells picked by frozen rules from the session's own calibrations, none run
-  before): at 2048x2048 and ...
-- `E860` dpm, 2026-11-12: R5-dpm stages d-a0 and d-a1 on the rgn4 module (Q210; 2048x2048 and
-  4096x4096, the tool's triangle with 1500 vertices, thr0 = P - 0x22 read back from the job's own
-  0x0624, 16 registers sampled with ...
-- `E859` ta, 2026-11-12: R5-pixel stages g5-rwa and g5-rw (Q230, 12 and 36 jobs in E842's shape with
-  every vertex inside the viewport; frozen verdicts 'part a: PASS' and 'H-MANT held: 42 of 42 m
-  words equal R4's delta at ...
-- `E858` pds, 2026-11-12: R5-pixel stage p5-o4 (Q276, 58 jobs in E838's shape: a triangle's pixel
-  program writing tagged words to o0 to o7 in E709's command, state block word 4 at 0x00030001;
-  frozen verdict 'the tag-5 word is ...
-- `E857` edm, 2026-11-12: R5 stage h3 (r5-events, ring_skip3p.s at timer_clock 1600000; Q295, Q166):
-  the fill without the skip (b0, control) completed with the tick alive and bit 18 never set; with
-  slot 3's first ...
-- `E856` edm, 2026-11-12: R5 stage h2, the dose (r5-events, ring_skip3p.s; Q295): with HostCtl dword
-  6 set through the timer_clock knob to 800000 and to 1600000 (read back and read in each arm dump),
-  the fill without the skip ...
-- `E855` edm, 2026-11-12: R5 stage h1 (r5-events, ring_skip3p.s of E836 at the stock timer_clock;
-  Q295, Q166): the fill without the skip (b0, control) completed with the tick alive, bit 18 never
-  set and HostCtl dwords 3 and 8 ...
-- `E854` dpm, 2026-11-12: Round 5 offline fit of the partial-render count (Q211; a FIT, nothing held
-  out by a frozen prediction): for the tool's triangle at 4096x4096 the count n at the first
-  threshold thr0 = P - 0x22 fits n ...
-- `E853` dpm, 2026-11-12: Round 5 offline test of R-5's guard of the firmware's raise (Q210, Q211):
-  the guard as written on 2026-11-11 (closing4/p7/guard.py, imported unchanged) on the kept
-  timelines of R3-geo-c that R-5 ...
-- `E852` dpm, 2026-11-12: Round 5 offline reading of the kept DPM timelines (Q210; post hoc, a FIT
-  on one positive, nothing held out): in the first TA run of every kept job the high half of 0x072c
-  (the global page count) ...
-- `E851` ta, 2026-11-12: Offline reading of E842's kept words (Q230; no new job): the frozen
-  analysis of g4-rw is decided without its 18 unread words: its rule adopts a model only at 30 of 30
-  FIT words, and none of the 225 ...
-- `E850` pds, 2026-11-12: Offline reading of kept images (Q276; no new job, post hoc against E838's
-  reading, no held-out row): E838's reading 'the path that brings o4 out clears bits 5:3 of the
-  word' is refuted on the kept ...
-- `E849` edm, 2026-11-12: Read offline after the hypothesis (post hoc, no frozen prediction; round 5
-  plan closing5/events, step F0): E836's b1p stop dump, taken at the stop's signature before the
-  host's clears, holds HostCtl ...
 
 ## Closing sessions
 
-53 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
+54 published sessions (dataset manifests of `<area>/closing-*`), newest first: date, module
 srcversion, fork tip, laptop tools.
 
+- `render/closing-r14-dpm`: 2026-11-14; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t10
 - `render/closing-r9-z2`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-t9
 - `render/closing-r9-x`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
 - `render/closing-r9-lgeo`: 2026-11-13; module B60AB0B475DD1E8972419B5; tools ~/sgxfive-test-rgn4
@@ -916,7 +707,7 @@ srcversion, fork tip, laptop tools.
 ## Tool and fork versions
 
 - fork pin (`tools/forkpin.py`): 2a650d74b3a1
-- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-13, 19 sessions, fork r8-kernel at
+- module srcversion B60AB0B475DD1E8972419B5: last named 2026-11-14, 20 sessions, fork r8-kernel at
   2a650d74
 - module srcversion 37EC97AB0CB37213C42FCCC: last named 2026-11-13, 3 sessions
 - module srcversion 41E2F5C756F96D20F7109A4: last named 2026-11-12, 6 sessions, fork r6-kernel at

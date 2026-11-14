@@ -5,7 +5,7 @@ unit = "vdm"
 kind = "hw"
 value = "medium"
 phase = 10
-evidence = ["E153", "E160", "E184", "E200", "E201", "E256", "E309", "E310", "E312", "E316", "E358", "E362", "E438", "E443", "E446", "E448", "E451", "E453", "E458", "E462", "E463", "E574", "E626", "E630", "E631", "E1019", "E1032"]
+evidence = ["E153", "E160", "E184", "E200", "E201", "E256", "E309", "E310", "E312", "E316", "E358", "E362", "E438", "E443", "E446", "E448", "E451", "E453", "E458", "E462", "E463", "E574", "E626", "E630", "E631", "E1019", "E1032", "E1044"]
 terms = ["Dynamic Parameter Management (DPM)", "Parameter Buffer (PB)", "ta3d_ctl", "hw_pb_desc.page_table_base", "CR_DMS_CTRL", "hw_pb_desc.pb_flags", "FRAG_FLAGS.BIT2", "FRAG_FLAGS.NO_DEALLOCATE"]
 +++
 
@@ -158,3 +158,10 @@ jobs without a clear, not on the one with. STATUS2's high half read 0 again (8 o
 at the buffer's pages less one and 0x0728 at the threshold or the need. Open: what bit 2 marks
 (the pulse is shorter than the sampling, or not tied to the render), the other bits of 0x0748,
 the owner words, and the settle and builder clauses above.
+
+Round 14 attempt (E1044, no verdict): 0x0748 sampled alone ran one job, the PR 0 control, which
+read no bit 2 clear in 118 lines, and the stage stopped on its own gate: the sampling period of one
+register is 1682 ns, not the 460 ns the plan extrapolated (a floor near 1.3 us plus 0.4 us a
+register, 16 registers 7.5 us). The 0, 1, 4 and 7 partial-render rows did not run; a re-run gates
+the period at about 2000 ns or only reports it, and a one-register timeline gains 4.5 times, not
+16, over E1032's.
